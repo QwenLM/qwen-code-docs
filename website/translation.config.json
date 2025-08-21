@@ -1,0 +1,14 @@
+{
+  "name": "website",
+  "sourceRepo": "https://github.com/QwenLM/qwen-code.git",
+  "docsPath": "docs",
+  "sourceLanguage": "en",
+  "targetLanguages": [
+    "zh",
+    "de",
+    "fr",
+    "ru",
+    "ja"
+  ],
+  "outputDir": "content"
+}

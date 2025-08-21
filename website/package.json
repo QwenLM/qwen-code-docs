@@ -1,0 +1,31 @@
+{
+  "name": "website",
+  "version": "1.0.0",
+  "description": "多语言文档站点，为Qwen Code项目提供AI自动化翻译和高质量的本地化文档体验",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build"
+  },
+  "keywords": [
+    "qwen",
+    "code",
+    "documentation",
+    "translation",
+    "ai",
+    "nextra"
+  ],
+  "author": "Qwen Code Docs Team",
+  "license": "MIT",
+  "dependencies": {
+    "next": "^14.0.0",
+    "nextra": "^4.3.0",
+    "nextra-theme-docs": "^4.3.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

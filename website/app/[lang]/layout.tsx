@@ -1,0 +1,95 @@
+/* eslint-env node */
+
+import type { Metadata } from "next";
+import {
+  Footer,
+  LastUpdated,
+  Layout,
+  Link,
+  LocaleSwitch,
+  Navbar,
+} from "nextra-theme-docs";
+import { Banner, Head } from "nextra/components";
+import { getPageMap } from "nextra/page-map";
+import type { FC, ReactNode } from "react";
+
+type LayoutProps = Readonly<{
+  children: ReactNode;
+  params: Promise<{
+    lang: string;
+  }>;
+}>;
+
+const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
+  const { lang } = await params;
+  console.log("Language Layout - lang:", lang);
+
+  let pageMap = await getPageMap(`/${lang}`);
+
+  if (lang === "en") {
+    pageMap = [...pageMap];
+  }
+
+  const banner = (
+    <Banner storageKey='qwen-code-announce'>
+      🚀 Free 2000 requests per day! Qwen Code AI coding agent is now open
+      source! <Link href='/'>Learn more →</Link>
+    </Banner>
+  );
+
+  const navbar = (
+    <Navbar
+      logo={
+        <>
+          <span
+            className='ms-2 select-none font-extrabold max-md:hidden'
+            title={`Qwen Code: AI Coding Agent`}
+          >
+            Qwen Code
+          </span>
+        </>
+      }
+      projectLink='https://github.com/QwenLM/qwen-code'
+      chatLink='https://github.com/QwenLM/qwen-code/discussions'
+    >
+      <LocaleSwitch lite />
+    </Navbar>
+  );
+
+  const footer = (
+    <Footer>
+      <a
+        rel='noreferrer'
+        target='_blank'
+        className='x:focus-visible:nextra-focus flex items-center gap-2 font-semibold'
+      ></a>
+    </Footer>
+  );
+
+  return (
+    <Layout
+      banner={banner}
+      navbar={navbar}
+      footer={footer}
+      docsRepositoryBase='https://github.com/QwenLM/qwen-code/blob/main/docs'
+      i18n={[
+        { locale: "en", name: "English" },
+        { locale: "zh", name: "中文" },
+        { locale: "de", name: "Deutsch" },
+        { locale: "fr", name: "Français" },
+        { locale: "ru", name: "Русский" },
+        { locale: "ja", name: "日本語" },
+      ]}
+      sidebar={{
+        defaultMenuCollapseLevel: 1,
+        autoCollapse: true,
+      }}
+      pageMap={pageMap}
+      nextThemes={{ defaultTheme: "dark" }}
+    >
+      {children}
+    </Layout>
+  );
+};
+
+export default LanguageLayout;
