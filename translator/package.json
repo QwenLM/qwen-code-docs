@@ -1,0 +1,68 @@
+{
+  "name": "@qwen-code/translator",
+  "version": "1.0.0",
+  "description": "A universal documentation translator for any GitHub project. Instantly translate docs with AI and automatically build a Nextra-based documentation site.",
+  "main": "./dist/cli.js",
+  "bin": {
+    "qwen-translator": "./bin/qwen-translator"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "npm run clear && tsc",
+    "clear": "rm -rf dist",
+    "dev": "npm run clear && tsc --watch",
+    "test": "jest"
+  },
+  "keywords": [
+    "qwen",
+    "code",
+    "documentation",
+    "translation",
+    "ai",
+    "nextra",
+    "github",
+    "localization",
+    "docs"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "cheerio": "^1.0.0-rc.12",
+    "commander": "^11.1.0",
+    "dotenv": "^16.3.0",
+    "fs-extra": "^11.1.0",
+    "glob": "^10.3.0",
+    "inquirer": "^9.2.0",
+    "markdown-it": "^13.0.0",
+    "next": "^14.0.0",
+    "nextra": "^4.3.0",
+    "nextra-theme-docs": "^4.3.0",
+    "node-cron": "^3.0.0",
+    "openai": "^4.20.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "server-only": "^0.0.1",
+    "yaml": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^0.22.0",
+    "@types/fs-extra": "^11.0.0",
+    "@types/inquirer": "^9.0.0",
+    "@types/markdown-it": "^13.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "eslint": "^8.54.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.1.0",
+    "tsx": "^4.6.0",
+    "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@9.15.6+sha512.139cab068fdf0b751268179ac5f909b5be72afb4a75c513d1905d151befc8977b593d3cf8671ed83d4d6637c5c94b98ffbce108125de4a5a27a31233601a99de"
+}

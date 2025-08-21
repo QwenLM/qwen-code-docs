@@ -1,0 +1,65 @@
+#!/usr/bin/env node
+
+const { TranslationCLI } = require("../dist/cli.js");
+
+async function main() {
+  const cli = new TranslationCLI();
+  const { Command } = require("commander");
+  const program = new Command();
+
+  program
+    .name("qwen-translator")
+    .description("AI-powered documentation translation tool")
+    .version("1.0.0");
+
+  // init command
+  program
+    .command("init")
+    .description("Initialize a new translation project")
+    .action(async () => {
+      await cli.initProject();
+    });
+
+  // sync command
+  program
+    .command("sync")
+    .description("Sync source repository documents")
+    .option("-f, --force", "Force sync all documents")
+    .action(async (options) => {
+      await cli.syncDocuments(options.force);
+    });
+
+  // translate command
+  program
+    .command("translate")
+    .description("Translate documents")
+    .option("-l, --language <lang>", "Specify target language")
+    .option("-f, --file <file>", "Specify file to translate")
+    .action(async (options) => {
+      await cli.translateDocuments(options);
+    });
+
+  // config command
+  program
+    .command("config")
+    .description("Manage configuration")
+    .action(async () => {
+      await cli.manageConfig();
+    });
+
+  // status command
+  program
+    .command("status")
+    .description("Show project status")
+    .action(async () => {
+      await cli.showStatus();
+    });
+
+  // Parse command line arguments
+  await program.parseAsync(process.argv);
+}
+
+main().catch((error) => {
+  console.error("❌ Program execution failed:", error.message);
+  process.exit(1);
+});
