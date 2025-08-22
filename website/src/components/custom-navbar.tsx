@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import cn from "clsx";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
-import { GitHubIcon, DiscordIcon, MenuIcon } from "nextra/icons";
+import { GitHubIcon, DiscordIcon } from "nextra/icons";
 import { Button } from "nextra/components";
 import { FileText, Star, BookOpen } from "lucide-react";
 
@@ -110,7 +110,8 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
 }) => {
   const { stars, loading } = useGitHubStars(projectLink);
   // 计算 logo 的对齐方式
-  const logoAlignClass = align === "left" ? "max-md:me-auto" : "me-auto";
+  const logoAlignClass =
+    align === "left" ? "max-md:me-auto" : "max-md:me-0 md:me-auto";
 
   // 主容器样式 - 完全复制 nextra-theme-docs 的样式
   const headerClass = cn(
@@ -128,9 +129,9 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
 
   // 导航栏容器样式
   const navClass = cn(
-    "mx-auto flex max-w-[var(--nextra-content-width)] items-center gap-4",
+    "mx-auto flex max-w-[var(--nextra-content-width)] items-center gap-2 md:gap-4",
     "pl-[max(env(safe-area-inset-left),1.5rem)] pr-[max(env(safe-area-inset-right),1.5rem)]",
-    "justify-end",
+    "justify-between md:justify-end",
     className
   );
 
@@ -175,7 +176,8 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
   };
 
   // 右侧导航区域的对齐方式
-  const rightAlignClass = align === "left" ? "me-auto" : "";
+  const rightAlignClass =
+    align === "left" ? "me-auto" : "max-md:ml-auto md:ml-0";
 
   return (
     <header className={headerClass}>
@@ -190,14 +192,27 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
         {/* Logo 区域 */}
         {logoElement}
 
-        {/* 右侧导航区域 */}
+        {/* 移动端 Document 链接 - 始终显示 */}
+        <NextLink
+          href={getDocumentLink()}
+          className={cn(
+            documentLinkClass,
+            "flex items-center md:hidden",
+            "text-sm px-2 py-1 rounded-md"
+          )}
+          aria-label='Documentation'
+        >
+          <BookOpen height='20' />
+        </NextLink>
+
+        {/* 右侧导航区域 - 桌面端 */}
         <div
           className={cn(
             "flex gap-4 overflow-x-auto nextra-scrollbar py-1.5 max-md:hidden",
             rightAlignClass
           )}
         >
-          {/* Document 链接 */}
+          {/* Document 链接 - 桌面端 */}
           <NextLink
             href={getDocumentLink()}
             className={cn(documentLinkClass, "flex items-center")}
@@ -228,18 +243,6 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
           {/* 子组件 */}
           {children}
         </div>
-
-        {/* 移动端菜单按钮 */}
-        <Button
-          aria-label='Menu'
-          className='nextra-hamburger md:hidden'
-          onClick={() => {
-            // 这里可以添加移动端菜单切换逻辑
-            console.log("Mobile menu toggle");
-          }}
-        >
-          <MenuIcon height='24' />
-        </Button>
       </nav>
     </header>
   );
