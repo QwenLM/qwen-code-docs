@@ -56,21 +56,11 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
     </Navbar>
   );
 
-  const footer = (
-    <Footer>
-      <a
-        rel='noreferrer'
-        target='_blank'
-        className='x:focus-visible:nextra-focus flex items-center gap-2 font-semibold'
-      ></a>
-    </Footer>
-  );
-
   return (
     <Layout
       banner={banner}
       navbar={navbar}
-      footer={footer}
+      footer={null}
       docsRepositoryBase='https://github.com/QwenLM/qwen-code/blob/main/docs'
       i18n={[
         { locale: "en", name: "English" },

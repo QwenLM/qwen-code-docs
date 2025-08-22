@@ -1,7 +1,17 @@
 import { generateStaticParamsFor, importPage } from "nextra/pages";
 import { useMDXComponents as getMDXComponents } from "../../../mdx-components";
 
-export const generateStaticParams = generateStaticParamsFor("mdxPath");
+export const generateStaticParams = async () => {
+  const originalGenerateParams = generateStaticParamsFor("mdxPath");
+  const params = await originalGenerateParams();
+  // 过滤掉图片文件路径
+  return params.filter((param) => {
+    const path = Array.isArray(param.mdxPath)
+      ? param.mdxPath.join("/")
+      : param.mdxPath || "";
+    return !path.match(/\.(png|jpg|jpeg|gif|svg|ico|webp)$/i);
+  });
+};
 
 // 移除TS类型，仅用JS语法
 export async function generateMetadata(props) {
@@ -17,6 +27,7 @@ const Page = async (props) => {
   const params = await props.params;
   const result = await importPage(params.mdxPath, params.lang);
   const { default: MDXContent, toc, metadata, sourceCode } = result;
+  console.log(props, "props", toc, metadata, sourceCode);
   return (
     <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
       <MDXContent {...props} params={params} />
