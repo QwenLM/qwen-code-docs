@@ -3,6 +3,130 @@
 @import "nextra-theme-docs/style.css";
 @source "../**/*.{ts,tsx}";
 
+/* Terminal/Monospace Fonts */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Fira+Code:wght@300..700&display=swap');
+
+/* Local Monoton Font */
+@font-face {
+  font-family: 'Monoton';
+  src: url('/Monoton/Monoton-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Local Orbitron Font - Multiple Weights */
+@font-face {
+  font-family: 'Orbitron';
+  src: url('/Orbitron/Orbitron-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  src: url('/Orbitron/static/Orbitron-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  src: url('/Orbitron/static/Orbitron-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  src: url('/Orbitron/static/Orbitron-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  src: url('/Orbitron/static/Orbitron-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  src: url('/Orbitron/static/Orbitron-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Orbitron';
+  src: url('/Orbitron/static/Orbitron-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Terminal cursor animation */
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.terminal-cursor {
+  animation: cursor-blink 1s infinite;
+}
+
+.terminal-text {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+}
+
+.code-font {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+}
+
+.monoton-font {
+  font-family: 'Monoton', monospace;
+  letter-spacing: 0.1em;
+}
+
+.orbitron-font {
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.05em;
+}
+
+/* Terminal-inspired color adjustments with purple theme */
+.gradient-text {
+  background: linear-gradient(135deg, #615ced 0%, #5347d4 50%, #4539bb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Purple glow effect */
+.terminal-glow {
+  text-shadow: 0 0 5px #615ced, 0 0 10px #615ced, 0 0 15px #615ced;
+}
+
+/* Scanline effect for terminal aesthetic with purple tint */
+.scanlines::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(transparent 50%, rgba(97, 92, 237, 0.02) 51%);
+  background-size: 100% 2px;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .x\:lg\:-translate-y-1\/2,
 .x\:lg\:after\:content-\[\"–\"\],
 .x\:lg\:border-b,
