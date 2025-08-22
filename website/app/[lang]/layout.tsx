@@ -1,14 +1,7 @@
 /* eslint-env node */
 
 import type { Metadata } from "next";
-import {
-  Footer,
-  LastUpdated,
-  Layout,
-  Link,
-  LocaleSwitch,
-  Navbar,
-} from "nextra-theme-docs";
+import { Layout, Link, LocaleSwitch, Navbar } from "nextra-theme-docs";
 import { Banner, Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
 import type { FC, ReactNode } from "react";
@@ -24,11 +17,14 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   const { lang } = await params;
   console.log("Language Layout - lang:", lang);
 
-  let pageMap = await getPageMap(`/${lang}`);
+  let sourcePageMap = await getPageMap(`/${lang}`);
+  //@ts-ignore
+  const { children: pageMap } = sourcePageMap.find((page) => {
+    //@ts-ignore
+    return page.name === lang;
+  });
 
-  if (lang === "en") {
-    pageMap = [...pageMap];
-  }
+  console.log("pageMap", pageMap);
 
   const banner = (
     <Banner storageKey='qwen-code-announce'>
