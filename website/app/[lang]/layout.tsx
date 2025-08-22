@@ -25,12 +25,10 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
     return page.name === lang;
   });
 
-  console.log("pageMap", pageMap);
-
   const banner = (
-    <Banner storageKey='qwen-code-announce'>
+    <Banner storageKey="qwen-code-announce">
       🚀 Free 2000 requests per day! Qwen Code AI coding agent is now open
-      source! <Link href='/'>Learn more →</Link>
+      source! <Link href="/">Learn more →</Link>
     </Banner>
   );
 
@@ -39,25 +37,25 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
       logo={
         <>
           <span
-            className='ms-2 select-none font-extrabold max-md:hidden flex items-center'
+            className="ms-2 select-none font-extrabold max-md:hidden flex items-center"
             title={`Qwen Code: AI Coding Agent`}
           >
             <img
-              src='https://assets.alicdn.com/g/qwenweb/qwen-webui-fe/0.0.191/static/favicon.png'
-              alt='Qwen Code'
+              src="https://assets.alicdn.com/g/qwenweb/qwen-webui-fe/0.0.191/static/favicon.png"
+              alt="Qwen Code"
               width={32}
               height={32}
-              className='inline-block align-middle mr-2'
+              className="inline-block align-middle mr-2"
               style={{ verticalAlign: "middle" }}
             />
-            <span className='text-[1.3rem]  font-normal align-middle mr-1'>
+            <span className="text-[1.3rem]  font-normal align-middle mr-1">
               Qwen
             </span>
-            <span className='text-[1.3rem] font-normal align-middle'>Code</span>
+            <span className="text-[1.3rem] font-normal align-middle">Code</span>
           </span>
         </>
       }
-      projectLink='https://github.com/QwenLM/qwen-code'
+      projectLink="https://github.com/QwenLM/qwen-code"
     >
       <LanguageDropdown currentLang={lang} />
     </Navbar>
@@ -68,7 +66,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
       // banner={banner}
       navbar={navbar}
       footer={null}
-      docsRepositoryBase='https://github.com/QwenLM/qwen-code/blob/main/docs'
+      docsRepositoryBase="https://github.com/QwenLM/qwen-code/blob/main/docs"
       i18n={[
         { locale: "en", name: "English" },
         { locale: "zh", name: "中文" },

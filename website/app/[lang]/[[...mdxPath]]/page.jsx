@@ -27,7 +27,7 @@ const Page = async (props) => {
   const params = await props.params;
   const result = await importPage(params.mdxPath, params.lang);
   const { default: MDXContent, toc, metadata, sourceCode } = result;
-  console.log(props, "props", toc, metadata, sourceCode);
+
   return (
     <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
       <MDXContent {...props} params={params} />
