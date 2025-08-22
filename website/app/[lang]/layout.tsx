@@ -85,7 +85,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
         autoCollapse: true,
       }}
       pageMap={pageMap}
-      nextThemes={{ defaultTheme: "dark" }}
+      nextThemes={{ defaultTheme: "light" }}
     >
       {children}
     </Layout>

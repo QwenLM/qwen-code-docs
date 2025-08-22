@@ -17,10 +17,10 @@ export const metadata: Metadata = {
       "https://assets.vercel.com/image/upload/v1572282926/swr/twitter-card.jpg",
   },
   twitter: {
-    site: "@vercel",
+    site: "@qwenLLM",
   },
   appleWebApp: {
-    title: "SWR",
+    title: "Qwen Code",
   },
   other: {
     "msapplication-TileColor": "#fff",
@@ -35,13 +35,13 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
   return (
     <html suppressHydrationWarning>
       <Head
-        backgroundColor={{
-          dark: "rgb(15,23,42)",
-          light: "rgb(254, 252, 232)",
-        }}
+        // backgroundColor={{
+        //   dark: "rgb(15,23,42)",
+        //   light: "rgb(254, 252, 232)",
+        // }}
         color={{
-          hue: { dark: 120, light: 0 },
-          saturation: { dark: 100, light: 100 },
+          hue: { dark: 248, light: 248 },
+          saturation: { dark: 74, light: 74 },
         }}
       />
       <body>{children}</body>
