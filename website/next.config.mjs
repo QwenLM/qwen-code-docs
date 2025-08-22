@@ -9,8 +9,13 @@ const withNextra = nextra({
   unstable_shouldAddLocaleToLinks: true,
 });
 
+const isProduction = process.env.NODE_ENV === "production";
+const assetPrefix = isProduction ? "/qwen-code-docs" : "";
+
 export default withNextra({
   reactStrictMode: true,
+  basePath: assetPrefix,
+  assetPrefix: assetPrefix,
   i18n: {
     locales: ["en", "zh", "de", "fr", "ru", "ja"],
     defaultLocale: "en",
