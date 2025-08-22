@@ -61,7 +61,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
       <a
         rel='noreferrer'
         target='_blank'
-        className='x:focus-visible:nextra-focus flex items-center gap-2 font-semibold'
+        className='focus-visible:nextra-focus flex items-center gap-2 font-semibold'
       ></a>
     </Footer>
   );

@@ -110,32 +110,32 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
 }) => {
   const { stars, loading } = useGitHubStars(projectLink);
   // 计算 logo 的对齐方式
-  const logoAlignClass = align === "left" ? "x:max-md:me-auto" : "x:me-auto";
+  const logoAlignClass = align === "left" ? "max-md:me-auto" : "me-auto";
 
   // 主容器样式 - 完全复制 nextra-theme-docs 的样式
   const headerClass = cn(
-    "nextra-navbar x:sticky x:top-0 x:z-30 x:w-full x:bg-transparent x:print:hidden",
-    "x:max-md:[.nextra-banner:not([class$=hidden])~&]:top-(--nextra-banner-height)"
+    "nextra-navbar sticky top-0 z-30 w-full bg-transparent print:hidden",
+    "max-md:[.nextra-banner:not([class$=hidden])~&]:top-[var(--nextra-banner-height)]"
   );
 
   // 背景模糊层
   const blurClass = cn(
     "nextra-navbar-blur",
-    "x:absolute x:-z-1 x:size-full",
-    "nextra-border x:border-b",
-    "x:backdrop-blur-md x:bg-nextra-bg/70"
+    "absolute -z-10 size-full",
+    "nextra-border border-b",
+    "backdrop-blur-md bg-nextra-bg/70"
   );
 
   // 导航栏容器样式
   const navClass = cn(
-    "x:mx-auto x:flex x:max-w-(--nextra-content-width) x:items-center x:gap-4",
-    "x:pl-[max(env(safe-area-inset-left),1.5rem)] x:pr-[max(env(safe-area-inset-right),1.5rem)]",
-    "x:justify-end",
+    "mx-auto flex max-w-[var(--nextra-content-width)] items-center gap-4",
+    "pl-[max(env(safe-area-inset-left),1.5rem)] pr-[max(env(safe-area-inset-right),1.5rem)]",
+    "justify-end",
     className
   );
 
   // Logo 容器样式
-  const logoClass = cn("x:flex x:items-center", logoAlignClass);
+  const logoClass = cn("flex items-center", logoAlignClass);
 
   // Logo 元素
   const logoElement = logoLink ? (
@@ -143,7 +143,7 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
       href={typeof logoLink === "string" ? logoLink : "/"}
       className={cn(
         logoClass,
-        "x:transition-opacity x:focus-visible:nextra-focus x:hover:opacity-75"
+        "transition-opacity focus-visible:nextra-focus hover:opacity-75"
       )}
       aria-label='Home page'
     >
@@ -155,17 +155,17 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
 
   // 项目链接样式
   const linkClass = cn(
-    "x:text-sm x:contrast-more:text-gray-700 x:contrast-more:dark:text-gray-100 x:whitespace-nowrap",
-    "x:text-gray-600 x:hover:text-black x:dark:text-gray-400 x:dark:hover:text-gray-200",
-    "x:ring-inset x:transition-colors"
+    "text-sm contrast-more:text-gray-700 contrast-more:dark:text-gray-100 whitespace-nowrap",
+    "text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-gray-200",
+    "ring-inset transition-colors"
   );
 
   // Document 链接样式 - 使用与 nextra navbar 中的链接一致的样式
   const documentLinkClass = cn(
-    "x:text-sm x:contrast-more:text-gray-700 x:contrast-more:dark:text-gray-100 x:whitespace-nowrap",
-    "x:text-gray-800 x:hover:text-black x:dark:text-gray-300 x:dark:hover:text-gray-100",
-    "x:ring-inset x:transition-colors",
-    "x:px-3 x:py-1.5 x:rounded-md x:hover:bg-gray-100 x:dark:hover:bg-gray-800"
+    "text-sm contrast-more:text-gray-700 contrast-more:dark:text-gray-100 whitespace-nowrap",
+    "text-gray-800 hover:text-black dark:text-gray-300 dark:hover:text-gray-100",
+    "ring-inset transition-colors",
+    "px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
   );
 
   // 获取文档链接
@@ -175,7 +175,7 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
   };
 
   // 右侧导航区域的对齐方式
-  const rightAlignClass = align === "left" ? "x:me-auto" : "";
+  const rightAlignClass = align === "left" ? "me-auto" : "";
 
   return (
     <header className={headerClass}>
@@ -193,14 +193,14 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
         {/* 右侧导航区域 */}
         <div
           className={cn(
-            "x:flex x:gap-4 x:overflow-x-auto nextra-scrollbar x:py-1.5 x:max-md:hidden",
+            "flex gap-4 overflow-x-auto nextra-scrollbar py-1.5 max-md:hidden",
             rightAlignClass
           )}
         >
           {/* Document 链接 */}
           <NextLink
             href={getDocumentLink()}
-            className={cn(documentLinkClass, "x:flex x:items-center")}
+            className={cn(documentLinkClass, "flex items-center")}
             aria-label='Documentation'
           >
             <BookOpen height='24' className='mr-1.5' />
@@ -213,12 +213,12 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
               href={projectLink}
               target='_blank'
               rel='noopener noreferrer'
-              className={cn(linkClass, "x:flex x:items-center x:gap-1.5")}
+              className={cn(linkClass, "flex items-center gap-1.5")}
               aria-label='Project repository'
             >
               {projectIcon}
               {stars !== null && (
-                <div className='x:flex x:items-center x:gap-1 x:text-xs'>
+                <div className='flex items-center gap-1 text-xs'>
                   <span>{stars.toLocaleString()}</span>
                 </div>
               )}
@@ -232,7 +232,7 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
         {/* 移动端菜单按钮 */}
         <Button
           aria-label='Menu'
-          className='nextra-hamburger x:md:hidden'
+          className='nextra-hamburger md:hidden'
           onClick={() => {
             // 这里可以添加移动端菜单切换逻辑
             console.log("Mobile menu toggle");
