@@ -1,12 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import cn from "clsx";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { GitHubIcon, DiscordIcon, MenuIcon } from "nextra/icons";
 import { Button } from "nextra/components";
-import { Book } from "lucide-react";
+import { FileText, Star, BookOpen } from "lucide-react";
 
 // 定义接口类型
 interface NavbarProps {
@@ -26,6 +26,48 @@ const defaultGitHubIcon = (
   <GitHubIcon height='24' aria-label='Project repository' />
 );
 const defaultChatIcon = <DiscordIcon width='24' />;
+
+// 获取GitHub仓库stars数量
+const useGitHubStars = (repoUrl?: string) => {
+  const [stars, setStars] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!repoUrl) return;
+
+    const getRepoInfo = (url: string) => {
+      const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+      if (match) {
+        return { owner: match[1], repo: match[2] };
+      }
+      return null;
+    };
+
+    const fetchStars = async () => {
+      const repoInfo = getRepoInfo(repoUrl);
+      if (!repoInfo) return;
+
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setStars(data.stargazers_count);
+        }
+      } catch (error) {
+        console.error("Failed to fetch GitHub stars:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStars();
+  }, [repoUrl]);
+
+  return { stars, loading };
+};
 
 // 获取用户语言的函数
 const getUserLanguage = (): string => {
@@ -66,6 +108,7 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
   className,
   align = "right",
 }) => {
+  const { stars, loading } = useGitHubStars(projectLink);
   // 计算 logo 的对齐方式
   const logoAlignClass = align === "left" ? "x:max-md:me-auto" : "x:me-auto";
 
@@ -120,7 +163,7 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
   // Document 链接样式 - 使用与 nextra navbar 中的链接一致的样式
   const documentLinkClass = cn(
     "x:text-sm x:contrast-more:text-gray-700 x:contrast-more:dark:text-gray-100 x:whitespace-nowrap",
-    "x:text-gray-600 x:hover:text-black x:dark:text-gray-400 x:dark:hover:text-gray-200",
+    "x:text-gray-800 x:hover:text-black x:dark:text-gray-300 x:dark:hover:text-gray-100",
     "x:ring-inset x:transition-colors",
     "x:px-3 x:py-1.5 x:rounded-md x:hover:bg-gray-100 x:dark:hover:bg-gray-800"
   );
@@ -160,7 +203,7 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
             className={cn(documentLinkClass, "x:flex x:items-center")}
             aria-label='Documentation'
           >
-            <Book size={16} className='mr-1.5' />
+            <BookOpen height='24' className='mr-1.5' />
             Documentation
           </NextLink>
 
@@ -170,10 +213,15 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
               href={projectLink}
               target='_blank'
               rel='noopener noreferrer'
-              className={linkClass}
+              className={cn(linkClass, "x:flex x:items-center x:gap-1.5")}
               aria-label='Project repository'
             >
               {projectIcon}
+              {stars !== null && (
+                <div className='x:flex x:items-center x:gap-1 x:text-xs'>
+                  <span>{stars.toLocaleString()}</span>
+                </div>
+              )}
             </a>
           )}
 
