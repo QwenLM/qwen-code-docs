@@ -1,0 +1,236 @@
+"use client";
+
+import React from "react";
+import cn from "clsx";
+import NextLink from "next/link";
+import { useRouter } from "next/navigation";
+import { GitHubIcon, DiscordIcon, MenuIcon } from "nextra/icons";
+import { Button } from "nextra/components";
+import { Book } from "lucide-react";
+
+// 定义接口类型
+interface NavbarProps {
+  logo?: React.ReactNode;
+  logoLink?: boolean | string;
+  projectLink?: string;
+  projectIcon?: React.ReactNode;
+  chatLink?: string;
+  chatIcon?: React.ReactNode;
+  className?: string;
+  align?: "left" | "right";
+  children?: React.ReactNode;
+}
+
+// 默认图标
+const defaultGitHubIcon = (
+  <GitHubIcon height='24' aria-label='Project repository' />
+);
+const defaultChatIcon = <DiscordIcon width='24' />;
+
+// 获取用户语言的函数
+const getUserLanguage = (): string => {
+  if (typeof window === "undefined") return "en";
+
+  // 首先从URL路径中获取语言
+  const pathname = window.location.pathname;
+  const pathSegments = pathname.split("/").filter(Boolean);
+
+  if (pathSegments.length > 0) {
+    const possibleLang = pathSegments[0];
+    const supportedLanguages = ["en", "zh", "de", "fr", "ru", "ja"];
+    if (supportedLanguages.includes(possibleLang)) {
+      return possibleLang;
+    }
+  }
+
+  // 如果URL中没有语言信息，使用浏览器语言
+  const browserLang = navigator.language.toLowerCase();
+  if (browserLang.startsWith("zh")) return "zh";
+  if (browserLang.startsWith("de")) return "de";
+  if (browserLang.startsWith("fr")) return "fr";
+  if (browserLang.startsWith("ru")) return "ru";
+  if (browserLang.startsWith("ja")) return "ja";
+
+  return "en"; // 默认英文
+};
+
+// 自定义 Navbar 组件，完全复制 nextra-theme-docs 的样式和结构
+export const CustomNavbar: React.FC<NavbarProps> = ({
+  children,
+  logoLink = true,
+  logo,
+  projectLink,
+  projectIcon = defaultGitHubIcon,
+  chatLink,
+  chatIcon = defaultChatIcon,
+  className,
+  align = "right",
+}) => {
+  // 计算 logo 的对齐方式
+  const logoAlignClass = align === "left" ? "x:max-md:me-auto" : "x:me-auto";
+
+  // 主容器样式 - 完全复制 nextra-theme-docs 的样式
+  const headerClass = cn(
+    "nextra-navbar x:sticky x:top-0 x:z-30 x:w-full x:bg-transparent x:print:hidden",
+    "x:max-md:[.nextra-banner:not([class$=hidden])~&]:top-(--nextra-banner-height)"
+  );
+
+  // 背景模糊层
+  const blurClass = cn(
+    "nextra-navbar-blur",
+    "x:absolute x:-z-1 x:size-full",
+    "nextra-border x:border-b",
+    "x:backdrop-blur-md x:bg-nextra-bg/70"
+  );
+
+  // 导航栏容器样式
+  const navClass = cn(
+    "x:mx-auto x:flex x:max-w-(--nextra-content-width) x:items-center x:gap-4",
+    "x:pl-[max(env(safe-area-inset-left),1.5rem)] x:pr-[max(env(safe-area-inset-right),1.5rem)]",
+    "x:justify-end",
+    className
+  );
+
+  // Logo 容器样式
+  const logoClass = cn("x:flex x:items-center", logoAlignClass);
+
+  // Logo 元素
+  const logoElement = logoLink ? (
+    <NextLink
+      href={typeof logoLink === "string" ? logoLink : "/"}
+      className={cn(
+        logoClass,
+        "x:transition-opacity x:focus-visible:nextra-focus x:hover:opacity-75"
+      )}
+      aria-label='Home page'
+    >
+      {logo}
+    </NextLink>
+  ) : (
+    <div className={logoClass}>{logo}</div>
+  );
+
+  // 项目链接样式
+  const linkClass = cn(
+    "x:text-sm x:contrast-more:text-gray-700 x:contrast-more:dark:text-gray-100 x:whitespace-nowrap",
+    "x:text-gray-600 x:hover:text-black x:dark:text-gray-400 x:dark:hover:text-gray-200",
+    "x:ring-inset x:transition-colors"
+  );
+
+  // Document 链接样式 - 使用与 nextra navbar 中的链接一致的样式
+  const documentLinkClass = cn(
+    "x:text-sm x:contrast-more:text-gray-700 x:contrast-more:dark:text-gray-100 x:whitespace-nowrap",
+    "x:text-gray-600 x:hover:text-black x:dark:text-gray-400 x:dark:hover:text-gray-200",
+    "x:ring-inset x:transition-colors",
+    "x:px-3 x:py-1.5 x:rounded-md x:hover:bg-gray-100 x:dark:hover:bg-gray-800"
+  );
+
+  // 获取文档链接
+  const getDocumentLink = () => {
+    const userLang = getUserLanguage();
+    return `/${userLang}`;
+  };
+
+  // 右侧导航区域的对齐方式
+  const rightAlignClass = align === "left" ? "x:me-auto" : "";
+
+  return (
+    <header className={headerClass}>
+      {/* 背景模糊层 */}
+      <div className={blurClass} />
+
+      {/* 主导航栏 */}
+      <nav
+        style={{ height: "var(--nextra-navbar-height)" }}
+        className={navClass}
+      >
+        {/* Logo 区域 */}
+        {logoElement}
+
+        {/* 右侧导航区域 */}
+        <div
+          className={cn(
+            "x:flex x:gap-4 x:overflow-x-auto nextra-scrollbar x:py-1.5 x:max-md:hidden",
+            rightAlignClass
+          )}
+        >
+          {/* Document 链接 */}
+          <NextLink
+            href={getDocumentLink()}
+            className={cn(documentLinkClass, "x:flex x:items-center")}
+            aria-label='Documentation'
+          >
+            <Book size={16} className='mr-1.5' />
+            Documentation
+          </NextLink>
+
+          {/* 项目链接 */}
+          {projectLink && (
+            <a
+              href={projectLink}
+              target='_blank'
+              rel='noopener noreferrer'
+              className={linkClass}
+              aria-label='Project repository'
+            >
+              {projectIcon}
+            </a>
+          )}
+
+          {/* 子组件 */}
+          {children}
+        </div>
+
+        {/* 移动端菜单按钮 */}
+        <Button
+          aria-label='Menu'
+          className='nextra-hamburger x:md:hidden'
+          onClick={() => {
+            // 这里可以添加移动端菜单切换逻辑
+            console.log("Mobile menu toggle");
+          }}
+        >
+          <MenuIcon height='24' />
+        </Button>
+      </nav>
+    </header>
+  );
+};
+
+// 简化的 Anchor 组件，用于链接
+interface AnchorProps {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+  [key: string]: any;
+}
+
+export const Anchor: React.FC<AnchorProps> = ({
+  href,
+  children,
+  className,
+  ...props
+}) => {
+  // 判断是否为外部链接
+  const isExternal = href.startsWith("http") || href.startsWith("//");
+
+  if (isExternal) {
+    return (
+      <a
+        href={href}
+        target='_blank'
+        rel='noopener noreferrer'
+        className={className}
+        {...props}
+      >
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <NextLink href={href} className={className} {...props}>
+      {children}
+    </NextLink>
+  );
+};
