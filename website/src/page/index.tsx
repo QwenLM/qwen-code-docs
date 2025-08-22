@@ -12,6 +12,25 @@ const Index = () => {
       <CustomNavbar
         logo={
           <>
+            {/* 移动端显示图标和文字 */}
+            <span
+              className='ms-2 select-none font-extrabold md:hidden flex items-center'
+              title={`Qwen Code: AI Coding Agent`}
+            >
+              <img
+                src='https://assets.alicdn.com/g/qwenweb/qwen-webui-fe/0.0.191/static/favicon.png'
+                alt='Qwen Code'
+                width={24}
+                height={24}
+                className='inline-block align-middle mr-1'
+                style={{ verticalAlign: "middle" }}
+              />
+              <span className='text-lg font-normal align-middle mr-0.5'>
+                Qwen
+              </span>
+              <span className='text-lg font-normal align-middle'>Code</span>
+            </span>
+            {/* 桌面端显示完整logo */}
             <span
               className='ms-2 select-none font-extrabold max-md:hidden flex items-center'
               title={`Qwen Code: AI Coding Agent`}
