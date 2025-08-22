@@ -1,8 +1,8 @@
-import { HeroSection } from "@/components/ui/hero-section";
-import { FeaturesSection } from "@/components/ui/features-section";
-import { InstallationSection } from "@/components/ui/installation-section";
-import { UsageExamples } from "@/components/ui/usage-examples";
-import { CTASection } from "@/components/ui/cta-section";
+import { HeroSection } from "@/components/hero-section";
+import { FeaturesSection } from "@/components/features-section";
+import { InstallationSection } from "@/components/installation-section";
+import { UsageExamples } from "@/components/usage-examples";
+import { CTASection } from "@/components/cta-section";
 import "../styles/globals.css";
 
 const Index = () => {
