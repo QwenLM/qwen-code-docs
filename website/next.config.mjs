@@ -6,6 +6,7 @@ const withNextra = nextra({
     codeblocks: false,
   },
   contentDirBasePath: "/",
+  unstable_shouldAddLocaleToLinks: true,
 });
 
 export default withNextra({
@@ -16,5 +17,10 @@ export default withNextra({
   },
   eslint: {
     ignoreDuringBuilds: true,
+  },
+  output: "export",
+  trailingSlash: true,
+  images: {
+    unoptimized: true, // mandatory, otherwise won't export
   },
 });

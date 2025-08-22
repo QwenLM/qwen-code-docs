@@ -1,14 +1,7 @@
 /* eslint-env node */
 
 import type { Metadata } from "next";
-import {
-  Footer,
-  LastUpdated,
-  Layout,
-  Link,
-  LocaleSwitch,
-  Navbar,
-} from "nextra-theme-docs";
+import { Layout, Link, LocaleSwitch, Navbar } from "nextra-theme-docs";
 import { Banner, Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
 import type { FC, ReactNode } from "react";
@@ -24,11 +17,14 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   const { lang } = await params;
   console.log("Language Layout - lang:", lang);
 
-  let pageMap = await getPageMap(`/${lang}`);
+  let sourcePageMap = await getPageMap(`/${lang}`);
+  //@ts-ignore
+  const { children: pageMap } = sourcePageMap.find((page) => {
+    //@ts-ignore
+    return page.name === lang;
+  });
 
-  if (lang === "en") {
-    pageMap = [...pageMap];
-  }
+  console.log("pageMap", pageMap);
 
   const banner = (
     <Banner storageKey='qwen-code-announce'>
@@ -56,21 +52,11 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
     </Navbar>
   );
 
-  const footer = (
-    <Footer>
-      <a
-        rel='noreferrer'
-        target='_blank'
-        className='x:focus-visible:nextra-focus flex items-center gap-2 font-semibold'
-      ></a>
-    </Footer>
-  );
-
   return (
     <Layout
       banner={banner}
       navbar={navbar}
-      footer={footer}
+      footer={null}
       docsRepositoryBase='https://github.com/QwenLM/qwen-code/blob/main/docs'
       i18n={[
         { locale: "en", name: "English" },
@@ -85,7 +71,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
         autoCollapse: true,
       }}
       pageMap={pageMap}
-      nextThemes={{ defaultTheme: "dark" }}
+      nextThemes={{ defaultTheme: "light" }}
     >
       {children}
     </Layout>
