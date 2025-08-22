@@ -1,7 +1,7 @@
 {
   "name": "website",
   "version": "1.0.0",
-  "description": "多语言文档站点，为Qwen Code项目提供AI自动化翻译和高质量的本地化文档体验",
+  "description": "Multilingual documentation site providing AI-powered automatic translation and high-quality localized documentation experience for the Qwen Code project",
   "scripts": {
     "dev": "next dev",
     "build": "next build"
