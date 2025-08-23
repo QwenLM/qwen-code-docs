@@ -8,8 +8,11 @@ import type { ImgHTMLAttributes } from "react";
 // 自定义 img 组件，动态替换路径
 const CustomImg = (props: ImgHTMLAttributes<HTMLImageElement>) => {
   const { src, ...rest } = props;
-  // 将 ../assets/ 替换为 /assets/
-  const adjustedSrc = src?.replace(/\.\.\/assets\//, "/assets/");
+  // 根据环境设置资源前缀
+  const isProduction = process.env.NODE_ENV === "production";
+  const assetPrefix = isProduction ? "/qwen-code-docs" : "";
+  // 将 ../assets/ 替换为带前缀的 /assets/
+  const adjustedSrc = src?.replace(/\.\.\/assets\//, `${assetPrefix}/assets/`);
   return <img src={adjustedSrc} {...rest} />;
 };
 
