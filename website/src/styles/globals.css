@@ -9,8 +9,7 @@
 /* Local Monoton Font */
 @font-face {
   font-family: "Monoton";
-  src: url('var(--font-prefix, "")/Monoton/Monoton-Regular.ttf')
-    format("truetype");
+  src: url('/Monoton/Monoton-Regular.ttf') format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -19,8 +18,7 @@
 /* Local Orbitron Font - Multiple Weights */
 @font-face {
   font-family: "Orbitron";
-  src: url('var(--font-prefix, "")/Orbitron/Orbitron-VariableFont_wght.ttf')
-    format("truetype-variations");
+  src: url('/Orbitron/Orbitron-VariableFont_wght.ttf') format("truetype-variations");
   font-weight: 400 900;
   font-style: normal;
   font-display: swap;
@@ -28,8 +26,7 @@
 
 @font-face {
   font-family: "Orbitron";
-  src: url('var(--font-prefix, "")/Orbitron/static/Orbitron-Regular.ttf')
-    format("truetype");
+  src: url('/Orbitron/static/Orbitron-Regular.ttf') format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -37,8 +34,7 @@
 
 @font-face {
   font-family: "Orbitron";
-  src: url('var(--font-prefix, "")/Orbitron/static/Orbitron-Medium.ttf')
-    format("truetype");
+  src: url('/Orbitron/static/Orbitron-Medium.ttf') format("truetype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -46,8 +42,7 @@
 
 @font-face {
   font-family: "Orbitron";
-  src: url('var(--font-prefix, "")/Orbitron/static/Orbitron-SemiBold.ttf')
-    format("truetype");
+  src: url('/Orbitron/static/Orbitron-SemiBold.ttf') format("truetype");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -55,8 +50,7 @@
 
 @font-face {
   font-family: "Orbitron";
-  src: url('var(--font-prefix, "")/Orbitron/static/Orbitron-Bold.ttf')
-    format("truetype");
+  src: url('/Orbitron/static/Orbitron-Bold.ttf') format("truetype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -64,8 +58,7 @@
 
 @font-face {
   font-family: "Orbitron";
-  src: url('var(--font-prefix, "")/Orbitron/static/Orbitron-ExtraBold.ttf')
-    format("truetype");
+  src: url('/Orbitron/static/Orbitron-ExtraBold.ttf') format("truetype");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -73,8 +66,7 @@
 
 @font-face {
   font-family: "Orbitron";
-  src: url('var(--font-prefix, "")/Orbitron/static/Orbitron-Black.ttf')
-    format("truetype");
+  src: url('/Orbitron/static/Orbitron-Black.ttf') format("truetype");
   font-weight: 900;
   font-style: normal;
   font-display: swap;

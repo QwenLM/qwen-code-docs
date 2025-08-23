@@ -32,10 +32,6 @@ type LayoutProps = Readonly<{
 }>;
 
 const RootLayout: FC<LayoutProps> = ({ children }) => {
-  // 根据环境设置字体路径前缀
-  const isProduction = process.env.NODE_ENV === "production";
-  const fontPrefix = isProduction ? "/qwen-code-docs" : "";
-
   return (
     <html suppressHydrationWarning>
       <Head
@@ -48,9 +44,7 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
           saturation: { dark: 74, light: 74 },
         }}
       />
-      <body style={{ "--font-prefix": fontPrefix } as React.CSSProperties}>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 };
