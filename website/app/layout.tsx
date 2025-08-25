@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Head } from "nextra/components";
 import type { FC, ReactNode } from "react";
 import "nextra-theme-docs/style.css";
+import { FontLoader } from "../src/components/font-loader";
 
 export const metadata: Metadata = {
   description: "x",
@@ -44,7 +45,10 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
           saturation: { dark: 74, light: 74 },
         }}
       />
-      <body>{children}</body>
+      <body>
+        <FontLoader />
+        {children}
+      </body>
     </html>
   );
 };
