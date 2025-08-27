@@ -1,17 +1,23 @@
 /* eslint-env node */
 
 import type { Metadata } from "next";
-import {
-  Footer,
-  LastUpdated,
-  Layout,
-  Link,
-  LocaleSwitch,
-  Navbar,
-} from "nextra-theme-docs";
-import { Banner, Head } from "nextra/components";
+import { Layout, Link, Navbar } from "nextra-theme-docs";
 import { getPageMap } from "nextra/page-map";
+import { LanguageDropdown } from "../../src/components/language-dropdown";
 import type { FC, ReactNode } from "react";
+import { locales } from "../../asset-prefix.mjs";
+const i18n_maps = [
+  { locale: "en", name: "English" },
+  { locale: "zh", name: "中文" },
+  { locale: "de", name: "Deutsch" },
+  { locale: "fr", name: "Français" },
+  { locale: "ru", name: "Русский" },
+  { locale: "ja", name: "日本語" },
+];
+
+const i18n = i18n_maps.filter((lang) => {
+  return locales.includes(lang.locale);
+});
 
 type LayoutProps = Readonly<{
   children: ReactNode;
@@ -24,72 +30,48 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   const { lang } = await params;
   console.log("Language Layout - lang:", lang);
 
-  let pageMap = await getPageMap(`/${lang}`);
-
-  if (lang === "en") {
-    pageMap = [...pageMap];
-  }
-
-  const banner = (
-    <Banner storageKey='qwen-code-announce'>
-      🚀 Free 2000 requests per day! Qwen Code AI coding agent is now open
-      source! <Link href='/'>Learn more →</Link>
-    </Banner>
-  );
+  let sourcePageMap = await getPageMap(`/${lang}`);
 
   const navbar = (
     <Navbar
       logo={
         <>
-          <span
-            className='ms-2 select-none font-extrabold max-md:hidden'
-            title={`Qwen Code: AI Coding Agent`}
-          >
-            Qwen Code
+          <span className='text-lg font-bold align-middle text-gray-900 dark:text-white'>
+            Your website
           </span>
         </>
       }
-      projectLink='https://github.com/QwenLM/qwen-code'
-      chatLink='https://github.com/QwenLM/qwen-code/discussions'
+      projectLink='https://github.com/GraphScope/neug'
     >
-      <LocaleSwitch lite />
+      <LanguageDropdown currentLang={lang} />
     </Navbar>
-  );
-
-  const footer = (
-    <Footer>
-      <a
-        rel='noreferrer'
-        target='_blank'
-        className='focus-visible:nextra-focus flex items-center gap-2 font-semibold'
-      ></a>
-    </Footer>
   );
 
   return (
     <Layout
-      banner={banner}
+      // banner={banner}
       navbar={navbar}
-      footer={footer}
-      docsRepositoryBase='https://github.com/QwenLM/qwen-code/blob/main/docs'
-      i18n={[
-        { locale: "en", name: "English" },
-        { locale: "zh", name: "中文" },
-        { locale: "de", name: "Deutsch" },
-        { locale: "fr", name: "Français" },
-        { locale: "ru", name: "Русский" },
-        { locale: "ja", name: "日本語" },
-      ]}
+      footer={null}
+      docsRepositoryBase='https://github.com/GraphScope/neug/blob/main/doc'
+      i18n={i18n}
       sidebar={{
         defaultMenuCollapseLevel: 1,
         autoCollapse: true,
       }}
-      pageMap={pageMap}
-      nextThemes={{ defaultTheme: "dark" }}
+      pageMap={sourcePageMap}
+      nextThemes={{ defaultTheme: "light" }}
     >
       {children}
     </Layout>
   );
+};
+
+export const generateStaticParams = async () => {
+  // 支持的语言列表
+
+  return locales.map((lang) => ({
+    lang: lang,
+  }));
 };
 
 export default LanguageLayout;

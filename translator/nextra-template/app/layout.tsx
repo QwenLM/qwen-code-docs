@@ -11,17 +11,6 @@ export const metadata: Metadata = {
     absolute: "",
     template: "%s | ",
   },
-  metadataBase: new URL("https://swr.vercel.app"),
-  openGraph: {
-    images:
-      "https://assets.vercel.com/image/upload/v1572282926/swr/twitter-card.jpg",
-  },
-  twitter: {
-    site: "@vercel",
-  },
-  appleWebApp: {
-    title: "SWR",
-  },
   other: {
     "msapplication-TileColor": "#fff",
   },
@@ -35,13 +24,13 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
   return (
     <html suppressHydrationWarning>
       <Head
-        backgroundColor={{
-          dark: "rgb(15,23,42)",
-          light: "rgb(254, 252, 232)",
-        }}
+        // backgroundColor={{
+        //   dark: "rgb(15,23,42)",
+        //   light: "rgb(254, 252, 232)",
+        // }}
         color={{
-          hue: { dark: 120, light: 0 },
-          saturation: { dark: 100, light: 100 },
+          hue: { dark: 215, light: 215 },
+          saturation: { dark: 95, light: 95 },
         }}
       />
       <body>{children}</body>

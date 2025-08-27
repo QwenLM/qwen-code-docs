@@ -1,4 +1,5 @@
 import nextra from "nextra";
+import { getAssetPrefix, locales } from "./asset-prefix.mjs";
 
 const withNextra = nextra({
   latex: true,
@@ -6,12 +7,17 @@ const withNextra = nextra({
     codeblocks: false,
   },
   contentDirBasePath: "/",
+  unstable_shouldAddLocaleToLinks: true,
 });
+
+const assetPrefix = getAssetPrefix();
 
 export default withNextra({
   reactStrictMode: true,
+  basePath: assetPrefix,
+  assetPrefix: assetPrefix,
   i18n: {
-    locales: ["en", "zh", "de", "fr", "ru", "ja"],
+    locales,
     defaultLocale: "en",
   },
   eslint: {
@@ -22,4 +28,11 @@ export default withNextra({
   images: {
     unoptimized: true, // mandatory, otherwise won't export
   },
+  // redirects: async () => {
+  //   return locales.map((lang) => ({
+  //     source: `${assetPrefix}/${lang}`,
+  //     destination: `${assetPrefix}/${lang}/welcome`,
+  //     statusCode: 302,
+  //   }));
+  // },
 });
