@@ -6,6 +6,8 @@ import { Banner, Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
 import { LanguageDropdown } from "../../src/components/language-dropdown";
 import type { FC, ReactNode } from "react";
+import fs from "fs";
+import path from "path";
 
 type LayoutProps = Readonly<{
   children: ReactNode;
@@ -20,10 +22,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
 
   let sourcePageMap = await getPageMap(`/${lang}`);
   //@ts-ignore
-  const { children: pageMap } = sourcePageMap.find((page) => {
-    //@ts-ignore
-    return page.name === lang;
-  });
+  // 用fs模块将sourcePageMap保存到本地
 
   const banner = (
     <Banner storageKey='qwen-code-announce'>
@@ -81,7 +80,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
         defaultMenuCollapseLevel: 1,
         autoCollapse: true,
       }}
-      pageMap={pageMap}
+      pageMap={sourcePageMap}
       nextThemes={{ defaultTheme: "light" }}
     >
       {children}

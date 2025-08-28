@@ -35,16 +35,16 @@ Dies ist die empfohlene Methode für Endbenutzer, um Qwen Code zu installieren. 
 
 ### 2. Ausführen in einer Sandbox (Docker/Podman)
 
-Aus Gründen der Sicherheit und Isolation kann Qwen Code innerhalb eines Containers ausgeführt werden. Dies ist die Standardmethode, wie die CLI Tools ausführt, die Nebenwirkungen haben könnten.
+Aus Gründen der Sicherheit und Isolation kann Qwen Code innerhalb eines Containers ausgeführt werden. Dies ist die Standardmethode, wie die CLI Tools mit möglichen Nebenwirkungen ausführt.
 
 - **Direkt aus der Registry:**
-  Du kannst das veröffentlichte Sandbox-Image direkt ausführen. Dies ist nützlich für Umgebungen, in denen du nur Docker zur Verfügung hast und die CLI ausführen möchtest.
+  Du kannst das veröffentlichte Sandbox-Image direkt ausführen. Dies ist nützlich für Umgebungen, in denen du nur Docker installiert hast und die CLI ausführen möchtest.
   ```bash
-  # Das veröffentlichte Sandbox-Image ausführen
-  docker run --rm -it ghcr.io/qwenlm/qwen-code:0.0.7
+  # Run the published sandbox image
+  docker run --rm -it ghcr.io/qwenlm/qwen-code:0.0.9
   ```
 - **Verwendung des `--sandbox` Flags:**
-  Wenn du Qwen Code lokal installiert hast (gemäß der oben beschriebenen Standardinstallation), kannst du es anweisen, innerhalb des Sandbox-Containers ausgeführt zu werden.
+  Wenn du Qwen Code lokal installiert hast (gemäß der oben beschriebenen Standardinstallation), kannst du es anweisen, innerhalb des Sandbox-Containers zu laufen.
   ```bash
   qwen --sandbox -y -p "your prompt here"
   ```
@@ -58,11 +58,11 @@ Contributor des Projekts möchten die CLI direkt aus dem Quellcode ausführen.
 - **Entwicklungsmodus:**
   Diese Methode bietet Hot-Reloading und ist nützlich für die aktive Entwicklung.
   ```bash
-  # Vom Root des Repositories
+  # Vom Root des Repositories aus
   npm run start
   ```
 - **Produktionsähnlicher Modus (Verknüpftes Package):**
-  Diese Methode simuliert eine globale Installation, indem sie dein lokales Package verknüpft. Sie ist nützlich, um einen lokalen Build in einem Produktions-Workflow zu testen.
+  Diese Methode simuliert eine globale Installation, indem sie das lokale Package verknüpft. Sie ist nützlich, um einen lokalen Build in einem Produktions-Workflow zu testen.
 
   ```bash
   # Verknüpfe das lokale CLI-Package mit deinen globalen node_modules
@@ -76,7 +76,7 @@ Contributor des Projekts möchten die CLI direkt aus dem Quellcode ausführen.
 
 ### 4. Ausführen des neuesten Qwen Code Commits von GitHub
 
-Du kannst die aktuellste Version von Qwen Code direkt aus dem GitHub-Repository ausführen. Das ist nützlich, um Features zu testen, die sich noch in der Entwicklung befinden.
+Du kannst die aktuellste committete Version von Qwen Code direkt aus dem GitHub-Repository ausführen. Das ist nützlich, um Features zu testen, die sich noch in der Entwicklung befinden.
 
 ```bash
 
@@ -103,11 +103,11 @@ Es gibt zwei verschiedene Build-Prozesse, die je nach Verteilungskanal verwendet
 
 - **NPM-Veröffentlichung:** Für die Veröffentlichung im NPM-Registry wird der TypeScript-Quellcode in `@qwen-code/qwen-code-core` und `@qwen-code/qwen-code` mithilfe des TypeScript Compilers (`tsc`) in Standard-JavaScript transpiliert. Das resultierende `dist/`-Verzeichnis wird im NPM-Paket veröffentlicht. Dies ist ein Standardansatz für TypeScript-Bibliotheken.
 
-- **GitHub `npx`-Ausführung:** Beim direkten Ausführen der neuesten Qwen Code-Version von GitHub wird ein anderer Prozess durch das `prepare`-Script in der `package.json` ausgelöst. Dieses Script verwendet `esbuild`, um die gesamte Anwendung und ihre Abhängigkeiten in eine einzelne, eigenständige JavaScript-Datei zu bündeln. Dieses Bundle wird dynamisch auf dem Rechner des Benutzers erzeugt und nicht im Repository gespeichert.
+- **GitHub `npx`-Ausführung:** Beim direkten Ausführen der neuesten Qwen Code-Version von GitHub wird ein anderer Prozess durch das `prepare`-Skript in der `package.json` ausgelöst. Dieses Skript verwendet `esbuild`, um die gesamte Anwendung und ihre Abhängigkeiten in eine einzelne, eigenständige JavaScript-Datei zu bündeln. Dieses Bundle wird dynamisch auf dem Rechner des Benutzers erstellt und nicht im Repository versioniert.
 
 **Docker-Sandbox-Image**
 
-Die Docker-basierte Ausführungsmethode wird vom `qwen-code-sandbox`-Container-Image unterstützt. Dieses Image wird in einer Container-Registry veröffentlicht und enthält eine vorinstallierte, globale Version von Qwen Code.
+Die Docker-basierte Ausführungsmethode wird vom Container-Image `qwen-code-sandbox` unterstützt. Dieses Image wird in einer Container-Registry veröffentlicht und enthält eine vorinstallierte, globale Version von Qwen Code.
 
 ## Release-Prozess
 

@@ -22,18 +22,18 @@ Qwen Code verwendet `settings.json` Dateien für die persistente Konfiguration. 
   - **Scope:** Gilt für alle Qwen Code Sessions des aktuellen Benutzers.
 - **Project settings file:**
   - **Location:** `.qwen/settings.json` innerhalb des Root-Verzeichnisses deines Projekts.
-  - **Scope:** Gilt nur, wenn Qwen Code aus diesem spezifischen Projekt heraus gestartet wird. Project settings überschreiben User settings.
+  - **Scope:** Gilt nur, wenn Qwen Code aus diesem spezifischen Projekt heraus gestartet wird. Projekt-Einstellungen überschreiben User-Einstellungen.
 - **System settings file:**
   - **Location:** `/etc/gemini-cli/settings.json` (Linux), `C:\ProgramData\gemini-cli\settings.json` (Windows) oder `/Library/Application Support/GeminiCli/settings.json` (macOS). Der Pfad kann mit der Umgebungsvariable `GEMINI_CLI_SYSTEM_SETTINGS_PATH` überschrieben werden.
-  - **Scope:** Gilt für alle Qwen Code Sessions auf dem System, für alle Benutzer. System settings überschreiben User- und Project settings. Kann für Systemadministratoren in Unternehmen nützlich sein, um Kontrolle über die Qwen Code Setups der Benutzer zu haben.
+  - **Scope:** Gilt für alle Qwen Code Sessions auf dem System, für alle Benutzer. Systemeinstellungen überschreiben Benutzer- und Projekteinstellungen. Kann für Systemadministratoren in Unternehmen nützlich sein, um Kontrolle über die Qwen Code Konfigurationen der Benutzer zu haben.
 
-**Hinweis zu Umgebungsvariablen in Settings:** String-Werte innerhalb deiner `settings.json` Dateien können Umgebungsvariablen mit der Syntax `$VAR_NAME` oder `${VAR_NAME}` referenzieren. Diese Variablen werden automatisch aufgelöst, wenn die Settings geladen werden. Wenn du z. B. eine Umgebungsvariable `MY_API_TOKEN` hast, kannst du sie in der `settings.json` so verwenden: `"apiKey": "$MY_API_TOKEN"`.
+**Hinweis zu Umgebungsvariablen in Einstellungen:** String-Werte innerhalb deiner `settings.json` Dateien können Umgebungsvariablen mit der Syntax `$VAR_NAME` oder `${VAR_NAME}` referenzieren. Diese Variablen werden automatisch aufgelöst, wenn die Einstellungen geladen werden. Wenn du z. B. eine Umgebungsvariable `MY_API_TOKEN` hast, kannst du sie in der `settings.json` wie folgt verwenden: `"apiKey": "$MY_API_TOKEN"`.
 
 ### Das `.qwen`-Verzeichnis in deinem Projekt
 
-Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekts auch andere projektspezifische Dateien enthalten, die für den Betrieb von Qwen Code relevant sind, wie z. B.:
+Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekts auch andere projektspezifische Dateien enthalten, die für den Betrieb von Qwen Code relevant sind, wie z.B.:
 
-- [Benutzerdefinierte Sandbox-Profile](#sandboxing) (z. B. `.qwen/sandbox-macos-custom.sb`, `.qwen/sandbox.Dockerfile`).
+- [Benutzerdefinierte Sandbox-Profile](#sandboxing) (z.B. `.qwen/sandbox-macos-custom.sb`, `.qwen/sandbox.Dockerfile`).
 
 ### Verfügbare Einstellungen in `settings.json`:
 
@@ -58,8 +58,8 @@ Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekt
   - **Beschreibung:** Steuert das git-basierte Dateifilterverhalten für @-Befehle und Datei-Suchwerkzeuge.
   - **Standard:** `"respectGitIgnore": true, "enableRecursiveFileSearch": true`
   - **Eigenschaften:**
-    - **`respectGitIgnore`** (boolean): Ob `.gitignore`-Muster bei der Dateierkennung berücksichtigt werden sollen. Bei `true` werden git-ignorierte Dateien (wie `node_modules/`, `dist/`, `.env`) automatisch von @-Befehlen und Dateilistenoperationen ausgeschlossen.
-    - **`enableRecursiveFileSearch`** (boolean): Ob rekursive Suche nach Dateinamen unterhalb des aktuellen Verzeichnisses aktiviert werden soll, wenn @-Präfixe im Prompt vervollständigt werden.
+    - **`respectGitIgnore`** (boolean): Gibt an, ob `.gitignore`-Muster bei der Dateierkennung berücksichtigt werden. Bei `true` werden git-ignorierte Dateien (wie `node_modules/`, `dist/`, `.env`) automatisch von @-Befehlen und Dateilisten ausgeschlossen.
+    - **`enableRecursiveFileSearch`** (boolean): Gibt an, ob rekursiv nach Dateinamen unterhalb des aktuellen Verzeichnisses gesucht wird, wenn @-Präfixe im Prompt vervollständigt werden.
   - **Beispiel:**
     ```json
     "fileFiltering": {
@@ -69,30 +69,30 @@ Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekt
     ```
 
 - **`coreTools`** (Array von Strings):
-  - **Beschreibung:** Ermöglicht es, eine Liste von Core-Tool-Namen anzugeben, die dem Modell zur Verfügung gestellt werden sollen. Damit kann die Menge der eingebauten Tools eingeschränkt werden. Siehe [Built-in Tools](../core/tools-api.md#built-in-tools) für eine Liste der Core-Tools. Es können auch Befehlsspezifische Einschränkungen für Tools wie `ShellTool` festgelegt werden. Beispiel: `"coreTools": ["ShellTool(ls -l)"]` erlaubt nur die Ausführung von `ls -l`.
+  - **Beschreibung:** Ermöglicht es, eine Liste von Core-Tool-Namen anzugeben, die dem Modell zur Verfügung gestellt werden sollen. Damit kann die Menge der eingebauten Tools eingeschränkt werden. Siehe [Built-in Tools](../core/tools-api.md#built-in-tools) für eine Liste der Core-Tools. Es können auch Befehlsspezifische Einschränkungen für Tools wie `ShellTool` festgelegt werden. Beispiel: `"coreTools": ["ShellTool(ls -l)"]` erlaubt nur die Ausführung des `ls -l`-Befehls.
   - **Standard:** Alle Tools, die dem Modell zur Verfügung stehen.
   - **Beispiel:** `"coreTools": ["ReadFileTool", "GlobTool", "ShellTool(ls)"]`.
 
 - **`excludeTools`** (Array von Strings):
-  - **Beschreibung:** Ermöglicht es, eine Liste von Core-Tool-Namen anzugeben, die vom Modell ausgeschlossen werden sollen. Ein Tool, das sowohl in `excludeTools` als auch in `coreTools` aufgeführt ist, wird ausgeschlossen. Es können auch Befehlsspezifische Einschränkungen für Tools wie `ShellTool` festgelegt werden. Beispiel: `"excludeTools": ["ShellTool(rm -rf)"]` blockiert den Befehl `rm -rf`.
+  - **Beschreibung:** Ermöglicht es, eine Liste von Core-Tool-Namen anzugeben, die vom Modell ausgeschlossen werden sollen. Ein Tool, das sowohl in `excludeTools` als auch in `coreTools` aufgeführt ist, wird ausgeschlossen. Auch hier können Befehlsspezifische Einschränkungen wie bei `ShellTool` verwendet werden. Beispiel: `"excludeTools": ["ShellTool(rm -rf)"]` blockiert den `rm -rf`-Befehl.
   - **Standard:** Keine Tools ausgeschlossen.
   - **Beispiel:** `"excludeTools": ["run_shell_command", "findFiles"]`.
-  - **Sicherheitshinweis:** Befehlsspezifische Einschränkungen in `excludeTools` für `run_shell_command` basieren auf einfacher Stringvergleichung und können leicht umgangen werden. Diese Funktion ist **kein Sicherheitsmechanismus** und sollte nicht verwendet werden, um das sichere Ausführen von nicht vertrauenswürdigem Code zu gewährleisten. Es wird empfohlen, `coreTools` zu verwenden, um explizit die ausführbaren Befehle auszuwählen.
+  - **Sicherheitshinweis:** Befehlsspezifische Einschränkungen in `excludeTools` für `run_shell_command` basieren auf einfacher Stringvergleichung und können leicht umgangen werden. Diese Funktion ist **kein Sicherheitsmechanismus** und sollte nicht verwendet werden, um nicht vertrauenswürdigen Code sicher auszuführen. Es wird empfohlen, `coreTools` zu verwenden, um explizit die erlaubten Befehle auszuwählen.
 
 - **`allowMCPServers`** (Array von Strings):
-  - **Beschreibung:** Ermöglicht es, eine Liste von MCP-Servernamen anzugeben, die dem Modell zur Verfügung gestellt werden sollen. Damit kann die Menge der MCP-Server eingeschränkt werden, mit denen eine Verbindung hergestellt wird. Diese Einstellung wird ignoriert, wenn `--allowed-mcp-server-names` gesetzt ist.
+  - **Beschreibung:** Ermöglicht es, eine Liste von MCP-Servernamen anzugeben, die dem Modell zur Verfügung gestellt werden sollen. Damit kann die Menge der MCP-Server eingeschränkt werden, mit denen verbunden wird. Diese Einstellung wird ignoriert, wenn `--allowed-mcp-server-names` gesetzt ist.
   - **Standard:** Alle MCP-Server stehen dem Modell zur Verfügung.
   - **Beispiel:** `"allowMCPServers": ["myPythonServer"]`.
-  - **Sicherheitshinweis:** Diese Einstellung verwendet einfache Stringvergleiche für MCP-Servernamen, die manipuliert werden können. Wenn du als Systemadministrator verhindern möchtest, dass Benutzer diese Einstellung umgehen, solltest du `mcpServers` auf Systemebene konfigurieren, sodass Benutzer keine eigenen MCP-Server konfigurieren können. Diese Funktion sollte **nicht als absoluter Sicherheitsmechanismus** betrachtet werden.
+  - **Sicherheitshinweis:** Diese Funktion verwendet einfache Stringvergleiche für MCP-Servernamen, die manipuliert werden können. Als Systemadministrator sollten Sie ggf. die `mcpServers` auf Systemebene konfigurieren, sodass Benutzer keine eigenen Server konfigurieren können. Diese Funktion sollte **nicht als sicherer Sicherheitsmechanismus betrachtet werden**.
 
 - **`excludeMCPServers`** (Array von Strings):
   - **Beschreibung:** Ermöglicht es, eine Liste von MCP-Servernamen anzugeben, die vom Modell ausgeschlossen werden sollen. Ein Server, der sowohl in `excludeMCPServers` als auch in `allowMCPServers` aufgeführt ist, wird ausgeschlossen. Diese Einstellung wird ignoriert, wenn `--allowed-mcp-server-names` gesetzt ist.
   - **Standard:** Keine MCP-Server ausgeschlossen.
   - **Beispiel:** `"excludeMCPServers": ["myNodeServer"]`.
-  - **Sicherheitshinweis:** Diese Einstellung verwendet einfache Stringvergleiche für MCP-Servernamen, die manipuliert werden können. Wenn du als Systemadministrator verhindern möchtest, dass Benutzer diese Einstellung umgehen, solltest du `mcpServers` auf Systemebene konfigurieren, sodass Benutzer keine eigenen MCP-Server konfigurieren können. Diese Funktion sollte **nicht als absoluter Sicherheitsmechanismus** betrachtet werden.
+  - **Sicherheitshinweis:** Diese Funktion verwendet einfache Stringvergleiche für MCP-Servernamen, die manipuliert werden können. Als Systemadministrator sollten Sie ggf. die `mcpServers` auf Systemebene konfigurieren, sodass Benutzer keine eigenen Server konfigurieren können. Diese Funktion sollte **nicht als sicherer Sicherheitsmechanismus betrachtet werden**.
 
 - **`autoAccept`** (boolean):
-  - **Beschreibung:** Legt fest, ob die CLI automatisch sichere Tool-Aufrufe (z. B. schreibgeschützte Operationen) akzeptiert und ausführt, ohne explizite Benutzerbestätigung. Bei `true` wird die Bestätigungsabfrage für als sicher eingestufte Tools übersprungen.
+  - **Beschreibung:** Legt fest, ob die CLI Tool-Aufrufe, die als sicher gelten (z. B. reine Leseoperationen), automatisch akzeptiert und ausgeführt werden, ohne explizite Benutzerbestätigung. Bei `true` wird die Bestätigungsabfrage für sichere Tools übersprungen.
   - **Standard:** `false`
   - **Beispiel:** `"autoAccept": true`
 
@@ -102,30 +102,30 @@ Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekt
   - **Beispiel:** `"theme": "GitHub"`
 
 - **`vimMode`** (boolean):
-  - **Beschreibung:** Aktiviert oder deaktiviert den vim-Modus für die Eingabebearbeitung. Wenn aktiviert, unterstützt der Eingabebereich vim-ähnliche Navigation und Bearbeitungsbefehle mit NORMAL- und INSERT-Modus. Der vim-Modus-Status wird in der Fußzeile angezeigt und bleibt zwischen Sitzungen erhalten.
+  - **Beschreibung:** Aktiviert oder deaktiviert den Vim-Modus für die Eingabebearbeitung. Im aktivierten Zustand unterstützt der Eingabebereich Vim-ähnliche Navigation und Bearbeitungsbefehle mit NORMAL- und INSERT-Modus. Der Status wird in der Fußzeile angezeigt und bleibt zwischen Sitzungen erhalten.
   - **Standard:** `false`
   - **Beispiel:** `"vimMode": true`
 
 - **`sandbox`** (boolean oder string):
-  - **Beschreibung:** Steuert, ob und wie Sandboxing für die Toolausführung verwendet wird. Bei `true` verwendet Qwen Code ein vorgefertigtes `qwen-code-sandbox` Docker-Image. Weitere Informationen findest du unter [Sandboxing](#sandboxing).
+  - **Beschreibung:** Steuert, ob und wie Sandboxing für Toolausführung verwendet wird. Bei `true` verwendet Qwen Code das vorgefertigte Docker-Image `qwen-code-sandbox`. Weitere Informationen unter [Sandboxing](#sandboxing).
   - **Standard:** `false`
   - **Beispiel:** `"sandbox": "docker"`
 
 - **`toolDiscoveryCommand`** (string):
-  - **Beschreibung:** Definiert einen benutzerdefinierten Shell-Befehl zum Auffinden von Tools aus deinem Projekt. Der Shell-Befehl muss auf `stdout` ein JSON-Array von [Funktionsdeklarationen](https://ai.google.dev/gemini-api/docs/function-calling#function-declarations) zurückgeben. Tool-Wrapper sind optional.
+  - **Beschreibung:** Definiert einen benutzerdefinierten Shell-Befehl zur Erkennung von Tools aus dem Projekt. Der Befehl muss auf `stdout` ein JSON-Array von [Function Declarations](https://ai.google.dev/gemini-api/docs/function-calling#function-declarations) zurückgeben. Tool-Wrapper sind optional.
   - **Standard:** Leer
   - **Beispiel:** `"toolDiscoveryCommand": "bin/get_tools"`
 
 - **`toolCallCommand`** (string):
-  - **Beschreibung:** Definiert einen benutzerdefinierten Shell-Befehl zum Aufrufen eines bestimmten Tools, das über `toolDiscoveryCommand` gefunden wurde. Der Shell-Befehl muss folgende Kriterien erfüllen:
-    - Er muss den Funktionsnamen (genau wie in der [Funktionsdeklaration](https://ai.google.dev/gemini-api/docs/function-calling#function-declarations)) als erstes Kommandozeilenargument entgegennehmen.
-    - Er muss Funktionsargumente als JSON von `stdin` lesen, analog zu [`functionCall.args`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functioncall).
-    - Er muss die Funktionsausgabe als JSON auf `stdout` zurückgeben, analog zu [`functionResponse.response.content`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functionresponse).
+  - **Beschreibung:** Definiert einen benutzerdefinierten Shell-Befehl zum Aufruf eines spezifischen Tools, das über `toolDiscoveryCommand` gefunden wurde. Der Befehl muss folgende Kriterien erfüllen:
+    - Der erste Parameter muss der Funktionsname sein (genau wie in der [Function Declaration](https://ai.google.dev/gemini-api/docs/function-calling#function-declarations)).
+    - Die Funktionsargumente müssen als JSON über `stdin` gelesen werden, analog zu [`functionCall.args`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functioncall).
+    - Die Funktionsausgabe muss als JSON über `stdout` zurückgegeben werden, analog zu [`functionResponse.response.content`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functionresponse).
   - **Standard:** Leer
   - **Beispiel:** `"toolCallCommand": "bin/call_tool"`
 
 - **`mcpServers`** (object):
-  - **Beschreibung:** Konfiguriert Verbindungen zu einem oder mehreren Model-Context Protocol (MCP)-Servern zum Auffinden und Verwenden benutzerdefinierter Tools. Qwen Code versucht, sich mit jedem konfigurierten MCP-Server zu verbinden, um verfügbare Tools zu erkennen. Wenn mehrere MCP-Server ein Tool mit demselben Namen bereitstellen, werden die Toolnamen mit dem Server-Alias aus der Konfiguration vorangestellt (z. B. `serverAlias__actualToolName`), um Konflikte zu vermeiden. Beachte, dass das System bestimmte Schema-Eigenschaften aus MCP-Tooldefinitionen aus Kompatibilitätsgründen entfernen kann.
+  - **Beschreibung:** Konfiguriert Verbindungen zu einem oder mehreren Model-Context Protocol (MCP)-Servern zur Erkennung und Nutzung benutzerdefinierter Tools. Qwen Code versucht, sich mit jedem konfigurierten MCP-Server zu verbinden, um verfügbare Tools zu erkennen. Wenn mehrere Server ein Tool mit demselben Namen anbieten, wird dem Toolname der Server-Alias vorangestellt (z. B. `serverAlias__actualToolName`), um Konflikte zu vermeiden. Das System kann bestimmte Schema-Eigenschaften aus MCP-Tooldefinitionen entfernen, um Kompatibilität zu gewährleisten.
   - **Standard:** Leer
   - **Eigenschaften:**
     - **`<SERVER_NAME>`** (object): Die Serverparameter für den benannten Server.
@@ -134,9 +134,9 @@ Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekt
       - `env` (object, optional): Umgebungsvariablen, die für den Serverprozess gesetzt werden.
       - `cwd` (string, optional): Das Arbeitsverzeichnis, in dem der Server gestartet wird.
       - `timeout` (number, optional): Zeitlimit in Millisekunden für Anfragen an diesen MCP-Server.
-      - `trust` (boolean, optional): Vertraue diesem Server und umgehe alle Tool-Aufrufbestätigungen.
-      - `includeTools` (Array von Strings, optional): Liste der Toolnamen, die von diesem MCP-Server verwendet werden sollen. Wenn angegeben, sind nur die hier aufgelisteten Tools vom Server verfügbar (Whitelist-Verhalten). Wenn nicht angegeben, sind standardmäßig alle Tools des Servers aktiviert.
-      - `excludeTools` (Array von Strings, optional): Liste der Toolnamen, die von diesem MCP-Server ausgeschlossen werden sollen. Die hier aufgelisteten Tools stehen dem Modell nicht zur Verfügung, auch wenn sie vom Server bereitgestellt werden. **Hinweis:** `excludeTools` hat Vorrang vor `includeTools` – wenn ein Tool in beiden Listen steht, wird es ausgeschlossen.
+      - `trust` (boolean, optional): Vertraue diesem Server und umgehe alle Tool-Bestätigungen.
+      - `includeTools` (Array von Strings, optional): Liste der Toolnamen, die von diesem Server verwendet werden sollen. Wenn angegeben, sind nur diese Tools verfügbar (Whitelist-Verhalten). Ohne Angabe sind standardmäßig alle Tools des Servers aktiv.
+      - `excludeTools` (Array von Strings, optional): Liste der Toolnamen, die von diesem Server ausgeschlossen werden sollen. Diese Tools stehen dem Modell nicht zur Verfügung, auch wenn sie vom Server bereitgestellt werden. **Hinweis:** `excludeTools` hat Vorrang vor `includeTools` – wenn ein Tool in beiden Listen steht, wird es ausgeschlossen.
   - **Beispiel:**
     ```json
     "mcpServers": {
@@ -164,10 +164,10 @@ Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekt
     ```
 
 - **`checkpointing`** (object):
-  - **Beschreibung:** Konfiguriert die Checkpointing-Funktion, mit der du Gesprächs- und Dateizustände speichern und wiederherstellen kannst. Weitere Informationen findest du in der [Checkpointing-Dokumentation](../checkpointing.md).
+  - **Beschreibung:** Konfiguriert die Checkpointing-Funktion, mit der Konversations- und Dateizustände gespeichert und wiederhergestellt werden können. Siehe [Checkpointing-Dokumentation](../checkpointing.md) für weitere Details.
   - **Standard:** `{"enabled": false}`
   - **Eigenschaften:**
-    - **`enabled`** (boolean): Wenn `true`, ist der `/restore`-Befehl verfügbar.
+    - **`enabled`** (boolean): Bei `true` ist der `/restore`-Befehl verfügbar.
 
 - **`preferredEditor`** (string):
   - **Beschreibung:** Gibt den bevorzugten Editor zum Anzeigen von Diffs an.
@@ -175,13 +175,13 @@ Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekt
   - **Beispiel:** `"preferredEditor": "vscode"`
 
 - **`telemetry`** (object)
-  - **Beschreibung:** Konfiguriert Logging und Metrikerfassung für Qwen Code. Weitere Informationen findest du unter [Telemetry](../telemetry.md).
+  - **Beschreibung:** Konfiguriert Logging und Metrikerfassung für Qwen Code. Weitere Informationen unter [Telemetry](../telemetry.md).
   - **Standard:** `{"enabled": false, "target": "local", "otlpEndpoint": "http://localhost:4317", "logPrompts": true}`
   - **Eigenschaften:**
-    - **`enabled`** (boolean): Ob Telemetrie aktiviert ist.
-    - **`target`** (string): Das Ziel für gesammelte Telemetriedaten. Unterstützte Werte sind `local` und `gcp`.
-    - **`otlpEndpoint`** (string): Der Endpunkt für den OTLP Exporter.
-    - **`logPrompts`** (boolean): Ob der Inhalt von Benutzerprompts in die Logs aufgenommen werden soll.
+    - **`enabled`** (boolean): Gibt an, ob Telemetrie aktiviert ist.
+    - **`target`** (string): Ziel für gesammelte Telemetriedaten. Unterstützte Werte: `local` und `gcp`.
+    - **`otlpEndpoint`** (string): Endpunkt für den OTLP-Exporter.
+    - **`logPrompts`** (boolean): Gibt an, ob der Inhalt von Benutzerprompts in die Logs aufgenommen wird.
   - **Beispiel:**
     ```json
     "telemetry": {
@@ -193,7 +193,7 @@ Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekt
     ```
 
 - **`usageStatisticsEnabled`** (boolean):
-  - **Beschreibung:** Aktiviert oder deaktiviert die Erfassung von Nutzungsstatistiken. Weitere Informationen findest du unter [Usage Statistics](#usage-statistics).
+  - **Beschreibung:** Aktiviert oder deaktiviert die Erfassung von Nutzungsstatistiken. Siehe [Usage Statistics](#usage-statistics) für weitere Informationen.
   - **Standard:** `true`
   - **Beispiel:**
     ```json
@@ -217,7 +217,7 @@ Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekt
     ```
 
 - **`maxSessionTurns`** (number):
-  - **Beschreibung:** Legt die maximale Anzahl an Turns pro Sitzung fest. Wenn die Sitzung dieses Limit überschreitet, stoppt die CLI die Verarbeitung und startet einen neuen Chat.
+  - **Beschreibung:** Legt die maximale Anzahl an Turns pro Sitzung fest. Wenn das Limit überschritten wird, stoppt die CLI die Verarbeitung und startet einen neuen Chat.
   - **Standard:** `-1` (unbegrenzt)
   - **Beispiel:**
     ```json
@@ -225,7 +225,7 @@ Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekt
     ```
 
 - **`summarizeToolOutput`** (object):
-  - **Beschreibung:** Aktiviert oder deaktiviert die Zusammenfassung der Toolausgabe. Du kannst das Token-Budget für die Zusammenfassung über die `tokenBudget`-Einstellung festlegen.
+  - **Beschreibung:** Aktiviert oder deaktiviert die Zusammenfassung von Toolausgaben. Mit der Einstellung `tokenBudget` kann das Token-Budget für die Zusammenfassung festgelegt werden.
   - Hinweis: Derzeit wird nur das `run_shell_command`-Tool unterstützt.
   - **Standard:** `{}` (standardmäßig deaktiviert)
   - **Beispiel:**
@@ -238,12 +238,15 @@ Neben einer Projekt-Einstellungsdatei kann das `.qwen`-Verzeichnis eines Projekt
     ```
 
 - **`excludedProjectEnvVars`** (Array von Strings):
-  - **Beschreibung:** Gibt Umgebungsvariablen an, die beim Laden aus Projekt-`.env`-Dateien ausgeschlossen werden sollen. Dadurch wird verhindert, dass projektspezifische Umgebungsvariablen (wie `DEBUG=true`) das CLI-Verhalten beeinträchtigen. Variablen aus `.qwen/.env`-Dateien werden nie ausgeschlossen.
+  - **Beschreibung:** Gibt Umgebungsvariablen an, die aus Projekt-`.env`-Dateien ausgeschlossen werden sollen. Dadurch wird verhindert, dass projektspezifische Variablen (wie `DEBUG=true`) das CLI-Verhalten beeinflussen. Variablen aus `.qwen/.env`-Dateien werden nie ausgeschlossen.
   - **Standard:** `["DEBUG", "DEBUG_MODE"]`
   - **Beispiel:**
     ```json
     "excludedProjectEnvVars": ["DEBUG", "DEBUG_MODE", "NODE_ENV"]
-    ``
+    ```
+
+- **`includeDirectories`** (Array von Strings):
+  - **Beschreibung:** Gibt ein Array zusätzlicher absoluter oder relativer Pfade an, die in den Workspace-Kontext aufgenommen werden sollen. Damit können Dateien aus mehreren Verzeichnissen so behandelt werden, als befänden sie sich in einem einzigen Verzeichnis. Pfade können `~` verwenden, um sich auf das Home-Verzeichnis des Benutzers zu beziehen. Diese Einstellung kann mit
 
 ### Beispiel `settings.json`:
 
@@ -292,36 +295,36 @@ Die CLI speichert einen Verlauf der Shell-Befehle, die du ausführst. Um Konflik
   - `<project_hash>` ist eine eindeutige Kennung, die aus dem Root-Pfad deines Projekts generiert wird.
   - Der Verlauf wird in einer Datei mit dem Namen `shell_history` gespeichert.
 
-## Umgebungsvariablen & `.env` Dateien
+## Umgebungsvariablen & `.env`-Dateien
 
 Umgebungsvariablen sind eine gängige Methode, um Anwendungen zu konfigurieren – besonders für sensible Informationen wie API keys oder Einstellungen, die sich zwischen Umgebungen unterscheiden können.
 
-Die CLI lädt Umgebungsvariablen automatisch aus einer `.env` Datei. Die Ladereihenfolge ist:
+Die CLI lädt Umgebungsvariablen automatisch aus einer `.env`-Datei. Die Ladereihenfolge ist wie folgt:
 
-1. `.env` Datei im aktuellen Arbeitsverzeichnis.
-2. Falls nicht gefunden, sucht sie rekursiv in den übergeordneten Verzeichnissen nach einer `.env` Datei, bis entweder eine gefunden wird oder das Projektverzeichnis (erkennbar an einem `.git` Ordner) oder das Home-Verzeichnis erreicht ist.
-3. Wenn immer noch keine gefunden wurde, wird `~/.env` (im Home-Verzeichnis des Benutzers) geladen.
+1.  `.env`-Datei im aktuellen Arbeitsverzeichnis.
+2.  Falls nicht gefunden, sucht sie rekursiv in den übergeordneten Verzeichnissen, bis eine `.env`-Datei gefunden wird oder das Projekt-Root-Verzeichnis (erkennbar an einem `.git`-Ordner) oder das Home-Verzeichnis erreicht ist.
+3.  Falls immer noch nichts gefunden wurde, wird `~/.env` (im Home-Verzeichnis des Benutzers) geladen.
 
-**Ausschluss von Umgebungsvariablen:** Einige Umgebungsvariablen (wie `DEBUG` und `DEBUG_MODE`) werden standardmäßig aus Projekt `.env` Dateien ausgeschlossen, um Interferenzen mit dem CLI-Verhalten zu vermeiden. Variablen aus `.qwen/.env` Dateien werden niemals ausgeschlossen. Du kannst dieses Verhalten über die Einstellung `excludedProjectEnvVars` in deiner `settings.json` Datei anpassen.
+**Ausschluss von Umgebungsvariablen:** Einige Umgebungsvariablen (wie `DEBUG` und `DEBUG_MODE`) werden standardmäßig aus Projekt-`.env`-Dateien ausgeschlossen, um Interferenzen mit dem CLI-Verhalten zu vermeiden. Variablen aus `.qwen/.env`-Dateien werden niemals ausgeschlossen. Du kannst dieses Verhalten über die Einstellung `excludedProjectEnvVars` in deiner `settings.json`-Datei anpassen.
 
-- **`GEMINI_API_KEY`** (Erforderlich):
+- **`GEMINI_API_KEY`** (erforderlich):
   - Dein API key für die Gemini API.
-  - **Wichtig für den Betrieb.** Ohne diesen funktioniert die CLI nicht.
-  - Setze ihn in deinem Shell-Profil (z. B. `~/.bashrc`, `~/.zshrc`) oder in einer `.env` Datei.
+  - **Wichtig für den Betrieb.** Die CLI funktioniert ohne diesen key nicht.
+  - Setze ihn in deinem Shell-Profil (z. B. `~/.bashrc`, `~/.zshrc`) oder in einer `.env`-Datei.
 - **`GEMINI_MODEL`**:
-  - Legt das Standard-Gemini-Modell fest.
+  - Legt das standardmäßig zu verwendende Gemini-Modell fest.
   - Überschreibt den fest codierten Standardwert.
   - Beispiel: `export GEMINI_MODEL="gemini-2.5-flash"`
 - **`GOOGLE_API_KEY`**:
   - Dein Google Cloud API key.
-  - Erforderlich für die Nutzung von Vertex AI im Express-Modus.
+  - Erforderlich für die Nutzung von Vertex AI im express mode.
   - Stelle sicher, dass du die nötigen Berechtigungen hast.
   - Beispiel: `export GOOGLE_API_KEY="YOUR_GOOGLE_API_KEY"`.
 - **`GOOGLE_CLOUD_PROJECT`**:
   - Deine Google Cloud Project ID.
   - Erforderlich für die Nutzung von Code Assist oder Vertex AI.
-  - Bei Verwendung von Vertex AI stelle sicher, dass du die notwendigen Berechtigungen in diesem Projekt besitzt.
-  - **Cloud Shell Hinweis:** In einer Cloud Shell Umgebung wird diese Variable standardmäßig auf ein spezielles Projekt gesetzt, das für Cloud Shell Nutzer bereitgestellt wird. Wenn du `GOOGLE_CLOUD_PROJECT` bereits global in deiner Cloud Shell-Umgebung gesetzt hast, wird es durch diesen Standardwert überschrieben. Um ein anderes Projekt in Cloud Shell zu verwenden, musst du `GOOGLE_CLOUD_PROJECT` in einer `.env` Datei definieren.
+  - Falls du Vertex AI verwendest, stelle sicher, dass du die nötigen Berechtigungen in diesem Projekt hast.
+  - **Hinweis zu Cloud Shell:** Wenn du in einer Cloud Shell-Umgebung arbeitest, wird diese Variable standardmäßig auf ein spezielles Projekt gesetzt, das für Cloud Shell-Benutzer reserviert ist. Falls du `GOOGLE_CLOUD_PROJECT` bereits in deiner globalen Umgebung in Cloud Shell gesetzt hast, wird dieser Wert durch den Standardwert überschrieben. Um ein anderes Projekt in Cloud Shell zu verwenden, musst du `GOOGLE_CLOUD_PROJECT` in einer `.env`-Datei definieren.
   - Beispiel: `export GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"`.
 - **`GOOGLE_APPLICATION_CREDENTIALS`** (string):
   - **Beschreibung:** Der Pfad zu deiner Google Application Credentials JSON-Datei.
@@ -330,36 +333,36 @@ Die CLI lädt Umgebungsvariablen automatisch aus einer `.env` Datei. Die Laderei
   - Deine Google Cloud Project ID für Telemetrie in Google Cloud.
   - Beispiel: `export OTLP_GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"`.
 - **`GOOGLE_CLOUD_LOCATION`**:
-  - Dein Google Cloud Projektstandort (z. B. us-central1).
-  - Erforderlich für die Nutzung von Vertex AI im Nicht-Express-Modus.
+  - Der Standort deines Google Cloud Projekts (z. B. us-central1).
+  - Erforderlich für die Nutzung von Vertex AI im non-express mode.
   - Beispiel: `export GOOGLE_CLOUD_LOCATION="YOUR_PROJECT_LOCATION"`.
 - **`GEMINI_SANDBOX`**:
-  - Alternative zur `sandbox` Einstellung in `settings.json`.
+  - Alternative zur `sandbox`-Einstellung in `settings.json`.
   - Akzeptiert `true`, `false`, `docker`, `podman` oder einen benutzerdefinierten Befehl als String.
 - **`SEATBELT_PROFILE`** (macOS-spezifisch):
-  - Wechselt das Seatbelt (`sandbox-exec`) Profil unter macOS.
-  - `permissive-open`: (Standard) Beschränkt Schreibzugriffe auf den Projektordner (und einige andere, siehe `packages/cli/src/utils/sandbox-macos-permissive-open.sb`), erlaubt aber andere Operationen.
-  - `strict`: Nutzt ein striktes Profil, das standardmäßig alle Operationen ablehnt.
-  - `<profile_name>`: Nutzt ein benutzerdefiniertes Profil. Um ein solches zu definieren, erstelle eine Datei namens `sandbox-macos-<profile_name>.sb` im `.qwen/` Verzeichnis deines Projekts (z. B. `my-project/.qwen/sandbox-macos-custom.sb`).
+  - Wechselt das Seatbelt- (`sandbox-exec`) Profil unter macOS.
+  - `permissive-open`: (Standard) Beschränkt Schreibzugriffe auf den Projektordner (und einige andere Ordner, siehe `packages/cli/src/utils/sandbox-macos-permissive-open.sb`), erlaubt aber andere Operationen.
+  - `strict`: Verwendet ein striktes Profil, das standardmäßig alle Operationen ablehnt.
+  - `<profile_name>`: Verwendet ein benutzerdefiniertes Profil. Um ein solches Profil zu definieren, erstelle eine Datei mit dem Namen `sandbox-macos-<profile_name>.sb` im `.qwen/`-Verzeichnis deines Projekts (z. B. `my-project/.qwen/sandbox-macos-custom.sb`).
 - **`DEBUG` oder `DEBUG_MODE`** (häufig von zugrunde liegenden Bibliotheken oder der CLI selbst verwendet):
-  - Auf `true` oder `1` setzen, um detaillierte Debug-Logs zu aktivieren – hilfreich bei der Fehlersuche.
-  - **Hinweis:** Diese Variablen werden standardmäßig aus Projekt `.env` Dateien ausgeschlossen, um Interferenzen mit dem CLI-Verhalten zu vermeiden. Verwende `.qwen/.env` Dateien, wenn du diese speziell für Qwen Code setzen musst.
+  - Auf `true` oder `1` setzen, um ausführliche Debug-Logs zu aktivieren – nützlich zur Fehlersuche.
+  - **Hinweis:** Diese Variablen werden standardmäßig aus Projekt-`.env`-Dateien ausgeschlossen, um Interferenzen mit dem CLI-Verhalten zu vermeiden. Verwende `.qwen/.env`-Dateien, wenn du diese speziell für Qwen Code setzen musst.
 - **`NO_COLOR`**:
-  - Auf einen beliebigen Wert setzen, um alle Farbausgaben der CLI zu deaktivieren.
+  - Auf einen beliebigen Wert setzen, um alle farbigen Ausgaben in der CLI zu deaktivieren.
 - **`CLI_TITLE`**:
   - Auf einen String setzen, um den Titel der CLI anzupassen.
 - **`CODE_ASSIST_ENDPOINT`**:
-  - Gibt den Endpunkt des Code Assist Servers an.
+  - Legt den Endpunkt für den Code Assist Server fest.
   - Nützlich für Entwicklung und Tests.
 - **`TAVILY_API_KEY`**:
-  - Dein API key für den Tavily Web-Suchdienst.
-  - Erforderlich, um die `web_search` Tool-Funktionalität zu aktivieren.
-  - Wenn nicht konfiguriert, wird das Web-Suchtool deaktiviert und übersprungen.
+  - Dein API key für den Tavily Web Search Service.
+  - Erforderlich, um die Funktionalität des `web_search`-Tools zu aktivieren.
+  - Falls nicht konfiguriert, wird das Web Search Tool deaktiviert und übersprungen.
   - Beispiel: `export TAVILY_API_KEY="tvly-your-api-key-here"`
 
 ## Command-Line Arguments
 
-Argumente, die direkt beim Ausführen des CLI übergeben werden, können andere Konfigurationen für diese spezifische Sitzung überschreiben.
+Argumente, die direkt beim Ausführen der CLI übergeben werden, können andere Konfigurationen für diese spezifische Sitzung überschreiben.
 
 - **`--model <model_name>`** (**`-m <model_name>`**):
   - Gibt das Gemini-Modell an, das für diese Sitzung verwendet werden soll.
@@ -369,12 +372,12 @@ Argumente, die direkt beim Ausführen des CLI übergeben werden, können andere 
 - **`--prompt-interactive <your_prompt>`** (**`-i <your_prompt>`**):
   - Startet eine interaktive Sitzung mit dem übergebenen Prompt als initiale Eingabe.
   - Der Prompt wird innerhalb der interaktiven Sitzung verarbeitet, nicht davor.
-  - Kann nicht verwendet werden, wenn Eingaben von stdin gepiped werden.
+  - Kann nicht verwendet werden, wenn Eingaben über stdin gepiped werden.
   - Beispiel: `qwen -i "explain this code"`
 - **`--sandbox`** (**`-s`**):
   - Aktiviert den Sandbox-Modus für diese Sitzung.
 - **`--sandbox-image`**:
-  - Legt die URI des Sandbox-Images fest.
+  - Setzt die URI des Sandbox-Images.
 - **`--debug`** (**`-d`**):
   - Aktiviert den Debug-Modus für diese Sitzung und gibt detailliertere Ausgaben aus.
 - **`--all-files`** (**`-a`**):
@@ -382,15 +385,22 @@ Argumente, die direkt beim Ausführen des CLI übergeben werden, können andere 
 - **`--help`** (oder **`-h`**):
   - Zeigt Hilfsinformationen zu den Command-Line Arguments an.
 - **`--show-memory-usage`**:
-  - Zeigt den aktuellen Speicherverbrauch an.
+  - Zeigt die aktuelle Speicherauslastung an.
 - **`--yolo`**:
   - Aktiviert den YOLO-Modus, bei dem alle Tool-Aufrufe automatisch genehmigt werden.
+- **`--approval-mode <mode>`**:
+  - Legt den Genehmigungsmodus für Tool-Aufrufe fest. Verfügbare Modi:
+    - `default`: Fordert bei jedem Tool-Aufruf eine Genehmigung an (Standardverhalten)
+    - `auto_edit`: Genehmigt automatisch Edit-Tools (replace, write_file), während andere Tools zur Genehmigung abgefragt werden
+    - `yolo`: Genehmigt automatisch alle Tool-Aufrufe (äquivalent zu `--yolo`)
+  - Kann nicht zusammen mit `--yolo` verwendet werden. Verwende stattdessen `--approval-mode=yolo` für den neuen einheitlichen Ansatz.
+  - Beispiel: `qwen --approval-mode auto_edit`
 - **`--telemetry`**:
   - Aktiviert [Telemetrie](../telemetry.md).
 - **`--telemetry-target`**:
-  - Legt das Telemetrie-Ziel fest. Siehe [Telemetrie](../telemetry.md) für weitere Informationen.
+  - Setzt das Ziel für die Telemetrie. Siehe [Telemetrie](../telemetry.md) für weitere Informationen.
 - **`--telemetry-otlp-endpoint`**:
-  - Legt den OTLP-Endpunkt für die Telemetrie fest. Siehe [Telemetrie](../telemetry.md) für weitere Informationen.
+  - Setzt den OTLP-Endpunkt für die Telemetrie. Siehe [Telemetrie](../telemetry.md) für weitere Informationen.
 - **`--telemetry-log-prompts`**:
   - Aktiviert das Logging von Prompts für die Telemetrie. Siehe [Telemetrie](../telemetry.md) für weitere Informationen.
 - **`--checkpointing`**:
@@ -400,26 +410,26 @@ Argumente, die direkt beim Ausführen des CLI übergeben werden, können andere 
   - Verwende den speziellen Begriff `qwen -e none`, um alle Erweiterungen zu deaktivieren.
   - Beispiel: `qwen -e my-extension -e my-other-extension`
 - **`--list-extensions`** (**`-l`**):
-  - Listet alle verfügbaren Erweiterungen auf und beendet sich anschließend.
+  - Listet alle verfügbaren Erweiterungen auf und beendet sich danach.
 - **`--proxy`**:
-  - Legt den Proxy für das CLI fest.
+  - Setzt den Proxy für die CLI.
   - Beispiel: `--proxy http://localhost:7890`.
 - **`--include-directories <dir1,dir2,...>`**:
-  - Fügt zusätzliche Verzeichnisse zum Workspace hinzu, um Multi-Directory-Support zu ermöglichen.
+  - Fügt zusätzliche Verzeichnisse zum Workspace hinzu, um Multi-Directory-Unterstützung zu ermöglichen.
   - Kann mehrfach oder als kommagetrennte Werte angegeben werden.
   - Maximal 5 Verzeichnisse können hinzugefügt werden.
   - Beispiel: `--include-directories /path/to/project1,/path/to/project2` oder `--include-directories /path/to/project1 --include-directories /path/to/project2`
 - **`--version`**:
-  - Zeigt die Version des CLI an.
+  - Zeigt die Version der CLI an.
 - **`--openai-logging`**:
   - Aktiviert das Logging von OpenAI-API-Aufrufen zur Fehlersuche und Analyse. Dieses Flag überschreibt die Einstellung `enableOpenAILogging` in der `settings.json`.
 - **`--tavily-api-key <api_key>`**:
-  - Legt den Tavily-API-Schlüssel für die Web-Suchfunktion dieser Sitzung fest.
+  - Setzt den Tavily-API-Key für die Web-Suchfunktion dieser Sitzung.
   - Beispiel: `qwen --tavily-api-key tvly-your-api-key-here`
 
 ## Context Files (Hierarchischer Instruktionskontext)
 
-Auch wenn es sich nicht um eine strikte Konfiguration des CLI-_Verhaltens_ handelt, sind Context Files (standardmäßig `QWEN.md`, aber konfigurierbar über die Einstellung `contextFileName`) entscheidend für die Konfiguration des _Instruktionskontexts_ (auch als "Memory" bezeichnet). Diese leistungsstarke Funktion ermöglicht es dir, projektspezifische Anweisungen, Coding-Standards oder andere relevante Hintergrundinformationen an die KI zu übermitteln, wodurch die Antworten gezielter und präziser auf deine Anforderungen abgestimmt werden. Die CLI enthält UI-Elemente, wie z. B. einen Indikator in der Fußzeile, der die Anzahl der geladenen Context Files anzeigt, um dich über den aktiven Kontext zu informieren.
+Auch wenn es sich nicht um eine strikte Konfiguration des CLI-_Verhaltens_ handelt, sind Context Files (standardmäßig `QWEN.md`, aber konfigurierbar über die Einstellung `contextFileName`) entscheidend für die Konfiguration des _Instruktionskontexts_ (auch als "Memory" bezeichnet). Diese leistungsstarke Funktion ermöglicht es dir, projektspezifische Anweisungen, Coding-Standards oder andere relevante Hintergrundinformationen an das KI-Modell zu übergeben, wodurch die Antworten gezielter und präziser auf deine Anforderungen abgestimmt werden. Die CLI enthält UI-Elemente, wie z. B. einen Indikator in der Fußzeile, der die Anzahl der geladenen Context Files anzeigt, um dich über den aktiven Kontext zu informieren.
 
 - **Zweck:** Diese Markdown-Dateien enthalten Anweisungen, Richtlinien oder Kontextinformationen, die du möchtest, dass das Gemini-Modell während eurer Interaktionen berücksichtigt. Das System ist so konzipiert, dass es diesen Instruktionskontext hierarchisch verwaltet.
 
@@ -433,9 +443,9 @@ Hier ist ein konzeptionelles Beispiel dafür, was eine Context-Datei im Stammver
 
 ## Allgemeine Anweisungen:
 
-- Wenn du neuen TypeScript-Code generierst, halte dich bitte an den bestehenden Codierungsstil.
+- Bei der Generierung neuer TypeScript-Code sollte der bestehende Codierungsstil befolgt werden.
 - Stelle sicher, dass alle neuen Funktionen und Klassen über JSDoc-Kommentare verfügen.
-- Bevorzuge funktionale Programmierparadigmen, wo immer es sinnvoll ist.
+- Bevorzuge funktionale Programmierparadigmen, wo dies angemessen ist.
 - Der gesamte Code sollte mit TypeScript 5.0 und Node.js 20+ kompatibel sein.
 
 ## Codierungsstil:
@@ -448,7 +458,7 @@ Hier ist ein konzeptionelles Beispiel dafür, was eine Context-Datei im Stammver
 ## Spezifische Komponente: `src/api/client.ts`
 
 - Diese Datei behandelt alle ausgehenden API-Anfragen.
-- Wenn du neue API-Aufruffunktionen hinzufügst, stelle sicher, dass diese eine robuste Fehlerbehandlung und Protokollierung enthalten.
+- Wenn neue API-Aufruffunktionen hinzugefügt werden, stellen sicher, dass diese eine robuste Fehlerbehandlung und Protokollierung enthalten.
 - Verwende das vorhandene `fetchWithRetry`-Utility für alle GET-Anfragen.
 
 ## Zu den Abhängigkeiten:
@@ -457,26 +467,26 @@ Hier ist ein konzeptionelles Beispiel dafür, was eine Context-Datei im Stammver
 - Falls eine neue Abhängigkeit erforderlich ist, gib bitte den Grund dafür an.
 ```
 
-Dieses Beispiel zeigt, wie du allgemeinen Projektkontext, spezifische Coding-Konventionen und sogar Hinweise zu bestimmten Dateien oder Komponenten bereitstellen kannst. Je relevanter und präziser deine Kontextdateien sind, desto besser kann die KI dich unterstützen. Projekt-spezifische Kontextdateien sind sehr empfohlen, um Konventionen und Kontext festzulegen.
+Dieses Beispiel zeigt, wie du allgemeinen Projektkontext, spezifische Coding-Konventionen und sogar Hinweise zu bestimmten Dateien oder Komponenten bereitstellen kannst. Je relevanter und präziser deine Kontextdateien sind, desto besser kann die KI dir helfen. Projekt-spezifische Kontextdateien sind sehr empfohlen, um Konventionen und Kontext festzulegen.
 
-- **Hierarchisches Laden und Priorität:** Die CLI implementiert ein ausgeklügeltes hierarchisches Speichersystem, indem sie Kontextdateien (z. B. `QWEN.md`) aus mehreren Verzeichnissen lädt. Inhalte aus Dateien weiter unten in dieser Liste (spezifischer) überschreiben oder ergänzen in der Regel Inhalte aus Dateien weiter oben (allgemeiner). Die genaue Reihenfolge der Verkettung und der finale Kontext können mit dem Befehl `/memory show` eingesehen werden. Die typische Ladereihenfolge ist:
+- **Hierarchisches Laden und Priorität:** Die CLI implementiert ein ausgeklügeltes hierarchisches Speichersystem, indem sie Kontextdateien (z. B. `QWEN.md`) aus verschiedenen Verzeichnissen lädt. Inhalte aus Dateien weiter unten in dieser Liste (spezifischer) überschreiben oder ergänzen in der Regel Inhalte aus Dateien weiter oben (allgemeiner). Die genaue Reihenfolge der Verkettung und der finale Kontext können mit dem Befehl `/memory show` eingesehen werden. Die typische Ladereihenfolge ist:
   1.  **Globale Kontextdatei:**
       - Ort: `~/.qwen/<contextFileName>` (z. B. `~/.qwen/QWEN.md` in deinem Benutzer-Home-Verzeichnis).
-      - Geltungsbereich: Stellt Standardanweisungen für alle deine Projekte bereit.
-  2.  **Projekt-Hauptverzeichnis & übergeordnete Verzeichnisse:**
-      - Ort: Die CLI sucht nach der konfigurierten Kontextdatei im aktuellen Arbeitsverzeichnis und danach in jedem übergeordneten Verzeichnis bis entweder zum Projektstamm (erkennbar an einem `.git`-Ordner) oder zu deinem Home-Verzeichnis.
-      - Geltungsbereich: Stellt Kontext bereit, der für das gesamte Projekt oder einen großen Teil davon relevant ist.
-  3.  **Unterverzeichnis-Kontextdateien (kontextuell/lokal):**
+      - Gültigkeitsbereich: Stellt Standardanweisungen für alle deine Projekte bereit.
+  2.  **Projektstamm & übergeordnete Verzeichnisse:**
+      - Ort: Die CLI sucht nach der konfigurierten Kontextdatei im aktuellen Arbeitsverzeichnis und anschließend in jedem übergeordneten Verzeichnis bis entweder zum Projektstamm (erkennbar an einem `.git`-Ordner) oder zu deinem Home-Verzeichnis.
+      - Gültigkeitsbereich: Stellt Kontext bereit, der für das gesamte Projekt oder einen großen Teil davon relevant ist.
+  3.  **Unterverzeichnisse (kontextuell/lokal):**
       - Ort: Die CLI scannt auch nach der konfigurierten Kontextdatei in Unterverzeichnissen _unterhalb_ des aktuellen Arbeitsverzeichnisses (unter Beachtung gängiger Ignoriermuster wie `node_modules`, `.git`, etc.). Die Breite dieser Suche ist standardmäßig auf 200 Verzeichnisse begrenzt, kann aber über das Feld `memoryDiscoveryMaxDirs` in deiner `settings.json`-Datei konfiguriert werden.
-      - Geltungsbereich: Ermöglicht hochspezifische Anweisungen, die für eine bestimmte Komponente, ein Modul oder einen Abschnitt deines Projekts relevant sind.
+      - Gültigkeitsbereich: Ermöglicht hochspezifische Anweisungen, die für eine bestimmte Komponente, ein Modul oder einen Abschnitt deines Projekts relevant sind.
 - **Verkettung & UI-Anzeige:** Die Inhalte aller gefundenen Kontextdateien werden verkettet (mit Trennzeichen, die ihren Ursprung und Pfad angeben) und als Teil des Systemprompts bereitgestellt. In der CLI-Fußzeile wird die Anzahl der geladenen Kontextdateien angezeigt, was dir einen schnellen visuellen Hinweis auf den aktiven Anweisungskontext gibt.
 - **Inhalte importieren:** Du kannst deine Kontextdateien modularisieren, indem du andere Markdown-Dateien mit der Syntax `@path/to/file.md` importierst. Weitere Details findest du in der [Dokumentation zum Memory Import Processor](../core/memport.md).
 - **Befehle zur Speicherverwaltung:**
-  - Nutze `/memory refresh`, um einen erneuten Scan und Reload aller Kontextdateien von allen konfigurierten Orten zu erzwingen. Dies aktualisiert den Anweisungskontext der KI.
-  - Nutze `/memory show`, um den aktuell geladenen kombinierten Anweisungskontext anzuzeigen, sodass du die Hierarchie und den von der KI verwendeten Inhalt überprüfen kannst.
+  - Verwende `/memory refresh`, um einen erneuten Scan und Reload aller Kontextdateien aus allen konfigurierten Orten zu erzwingen. Dadurch wird der Anweisungskontext der KI aktualisiert.
+  - Verwende `/memory show`, um den aktuell geladenen kombinierten Anweisungskontext anzuzeigen, sodass du die Hierarchie und den von der KI verwendeten Inhalt überprüfen kannst.
   - Die vollständigen Details zum `/memory`-Befehl und seinen Unterbefehlen (`show` und `refresh`) findest du in der [Befehlsdokumentation](./commands.md#memory).
 
-Durch das Verstehen und Nutzen dieser Konfigurationsebenen sowie der hierarchischen Struktur von Kontextdateien kannst du den Speicher der KI effektiv verwalten und die Antworten von Qwen Code an deine spezifischen Bedürfnisse und Projekte anpassen.
+Durch das Verstehen und Nutzen dieser Konfigurationsebenen sowie der hierarchischen Struktur von Kontextdateien kannst du den Speicher der KI effektiv verwalten und die Antworten von Qwen Code an deine spezifischen Anforderungen und Projekte anpassen.
 
 ## Sandboxing
 
@@ -486,16 +496,16 @@ Sandboxing ist standardmäßig deaktiviert, aber du kannst es auf verschiedene A
 
 - Mit dem Flag `--sandbox` oder `-s`.
 - Durch Setzen der Umgebungsvariable `GEMINI_SANDBOX`.
-- Im `--yolo`-Modus ist Sandboxing standardmäßig aktiviert.
+- Sandboxing ist standardmäßig aktiviert, wenn du `--yolo` oder `--approval-mode=yolo` verwendest.
 
 Standardmäßig wird ein vorgefertigtes Docker-Image namens `qwen-code-sandbox` verwendet.
 
-Für projektspezifische Anforderungen kannst du ein eigenes Dockerfile unter `.qwen/sandbox.Dockerfile` im Root-Verzeichnis deines Projekts anlegen. Dieses Dockerfile kann auf dem Basis-Sandbox-Image aufbauen:
+Für projektspezifische Anforderungen kannst du ein eigenes Dockerfile unter `.qwen/sandbox.Dockerfile` im Root-Verzeichnis deines Projekts anlegen. Dieses Dockerfile kann auf dem Basis-Sandbox-Image basieren:
 
 ```dockerfile
 FROM qwen-code-sandbox
 
-# Hier kannst du eigene Abhängigkeiten oder Konfigurationen hinzufügen
+# Füge hier deine eigenen Abhängigkeiten oder Konfigurationen hinzu
 
 # Zum Beispiel:
 
@@ -523,8 +533,8 @@ Um uns bei der Verbesserung von Qwen Code zu helfen, sammeln wir anonymisierte N
 
 **Was wir NICHT sammeln:**
 
-- **Personenbezogene Daten (PII):** Wir sammeln keine persönlichen Informationen wie Ihren Namen, Ihre E-Mail-Adresse oder API-Keys.
-- **Prompt- und Response-Inhalte:** Wir protokollieren nicht den Inhalt Ihrer Prompts oder die Antworten des Modells.
+- **Personenbezogene Daten (PII):** Wir sammeln keine persönlichen Informationen wie Ihren Namen, Ihre E-Mail-Adresse oder API-Schlüssel.
+- **Prompt- und Response-Inhalt:** Wir protokollieren nicht den Inhalt Ihrer Prompts oder die Antworten des Modells.
 - **Dateiinhalte:** Wir protokollieren nicht den Inhalt von Dateien, die von der CLI gelesen oder geschrieben werden.
 
 **So deaktivieren Sie die Sammlung:**

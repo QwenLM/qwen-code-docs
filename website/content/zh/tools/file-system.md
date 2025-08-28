@@ -2,7 +2,7 @@
 
 Qwen Code 提供了一套全面的工具，用于与本地文件系统进行交互。这些工具允许模型在你的控制下读取、写入、列出、搜索和修改文件及目录，敏感操作通常需要确认。
 
-**注意：** 出于安全考虑，所有文件系统工具都在一个 `rootDirectory`（通常是启动 CLI 的当前工作目录）内运行。你提供给这些工具的路径通常应为绝对路径，或相对于该根目录解析。
+**注意：** 出于安全考虑，所有文件系统工具都在一个 `rootDirectory`（通常是启动 CLI 的当前工作目录）内运行。你提供给这些工具的路径通常应为绝对路径，或相对于该根目录解析的路径。
 
 ## 1. `list_directory` (ReadFolder)
 
@@ -32,15 +32,15 @@ Qwen Code 提供了一套全面的工具，用于与本地文件系统进行交�
 - **Parameters:**
   - `path` (string, required): 要读取的文件的绝对路径。
   - `offset` (number, optional): 对于文本文件，表示从第几行开始读取（从 0 开始计数）。需要配合 `limit` 使用。
-  - `limit` (number, optional): 对于文本文件，表示最多读取多少行。如果省略，则读取默认最大行数（例如 2000 行），或者在可行的情况下读取整个文件。
+  - `limit` (number, optional): 对于文本文件，表示最多读取多少行。如果未设置，则默认读取最大行数（例如 2000 行），或者在可行的情况下读取整个文件。
 - **Behavior:**
   - 对于文本文件：返回文件内容。如果使用了 `offset` 和 `limit`，则只返回对应范围的行内容。如果因行数限制或单行长度限制导致内容被截断，会进行提示。
   - 对于图像和 PDF 文件：以 base64 编码的数据结构返回文件内容，适用于模型处理。
-  - 对于其他二进制文件：尝试识别并跳过，返回一条消息说明这是一个通用二进制文件。
+  - 对于其他二进制文件：尝试识别并跳过，返回提示信息说明这是一个通用二进制文件。
 - **Output:** (`llmContent`):
   - 对于文本文件：返回文件内容，可能带有截断提示信息（例如 `[File content truncated: showing lines 1-100 of 500 total lines...]\nActual file content...`）。
   - 对于图像/PDF 文件：返回一个包含 `inlineData` 的对象，其中包含 `mimeType` 和 base64 编码的 `data`（例如 `{ inlineData: { mimeType: 'image/png', data: 'base64encodedstring' } }`）。
-  - 对于其他二进制文件：返回类似 `Cannot display content of binary file: /path/to/data.bin` 的消息。
+  - 对于其他二进制文件：返回类似 `Cannot display content of binary file: /path/to/data.bin` 的提示信息。
 - **Confirmation:** No.
 
 ## 3. `write_file` (WriteFile)
@@ -57,7 +57,7 @@ Qwen Code 提供了一套全面的工具，用于与本地文件系统进行交�
   - 将提供的 `content` 写入 `file_path`。
   - 如果父目录不存在，则会自动创建。
 - **Output (`llmContent`):** 成功消息，例如：`Successfully overwrote file: /path/to/your/file.txt` 或 `Successfully created and wrote to new file: /path/to/new/file.txt`。
-- **Confirmation:** 是。在写入前会显示变更的 diff 并请求用户确认。
+- **Confirmation:** 是。在写入前会显示变更的 diff 并要求用户确认。
 
 ## 4. `glob` (FindFiles)
 
@@ -89,10 +89,13 @@ Qwen Code 提供了一套全面的工具，用于与本地文件系统进行交�
   - `pattern` (string, required): 要搜索的正则表达式（regex）（例如 `"function\s+myFunction"`）。
   - `path` (string, optional): 要搜索的目录的绝对路径。默认为当前工作目录。
   - `include` (string, optional): 用于过滤搜索文件的 glob 模式（例如 `"*.js"`、`"src/**/*.{ts,tsx}"`）。如果省略，则搜索大多数文件（遵循常见的忽略规则）。
+  - `maxResults` (number, optional): 返回的最大匹配数量，防止上下文溢出（默认值：20，最大值：100）。对于广泛搜索使用较低值，对于精确搜索使用较高值。
 - **Behavior:**
-  - 如果在 Git 仓库中可用，则优先使用 `git grep` 以提高速度；否则回退到系统 `grep` 或基于 JavaScript 的搜索。
-  - 返回匹配的行列表，每行前面附带其文件路径（相对于搜索目录）和行号。
-- **Output (`llmContent`):** 格式化后的匹配结果字符串，例如：
+  - 如果在 Git 仓库中可用，则使用 `git grep` 以提高速度；否则回退到系统 `grep` 或基于 JavaScript 的搜索。
+  - 返回匹配行的列表，每行前面带有其文件路径（相对于搜索目录）和行号。
+  - 默认将结果限制为最多 20 个匹配项以防止上下文溢出。当结果被截断时，会显示明确的警告，并提供优化搜索的建议。
+- **Output (`llmContent`):** 格式化的匹配结果字符串，例如：
+
   ```
   Found 3 matches for pattern "myFunction" in path "." (filter: "*.ts"):
   ---
@@ -103,38 +106,65 @@ Qwen Code 提供了一套全面的工具，用于与本地文件系统进行交�
   File: src/index.ts
   L5: import { myFunction } from './utils';
   ---
+
+  WARNING: Results truncated to prevent context overflow. To see more results:
+  - Use a more specific pattern to reduce matches
+  - Add file filters with the 'include' parameter (e.g., "*.js", "src/**")
+  - Specify a narrower 'path' to search in a subdirectory
+  - Increase 'maxResults' parameter if you need more matches (current: 20)
   ```
+
 - **Confirmation:** No.
+
+### `search_file_content` 示例
+
+使用默认结果限制搜索模式：
+
+```
+search_file_content(pattern="function\s+myFunction", path="src")
+```
+
+使用自定义结果限制搜索模式：
+
+```
+search_file_content(pattern="function", path="src", maxResults=50)
+```
+
+使用文件过滤和自定义结果限制搜索模式：
+
+```
+search_file_content(pattern="function", include="*.js", maxResults=10)
+```
 
 ## 6. `replace` (编辑)
 
-`replace` 用于替换文件中的文本。默认情况下，只替换第一个匹配项，但如果指定了 `expected_replacements` 参数，则可以替换多个匹配项。此工具设计用于精确、有针对性的修改，并要求 `old_string` 周围有足够的上下文，以确保修改的是正确位置。
+`replace` 用于替换文件中的文本。默认情况下，只替换第一个匹配项，但如果指定了 `expected_replacements` 参数，则可以替换多个匹配项。此工具专为精确、有针对性的修改而设计，要求 `old_string` 周围有足够的上下文，以确保修改的是正确的位置。
 
 - **工具名称:** `replace`
 - **显示名称:** Edit
 - **文件:** `edit.ts`
 - **参数:**
   - `file_path` (string, 必填): 要修改的文件的绝对路径。
-  - `old_string` (string, 必填): 需要被替换的确切文本。
+  - `old_string` (string, 必填): 需要被替换的确切文本内容。
 
     **重要提示：** 此字符串必须能唯一标识要更改的那一处内容。它应至少包含目标文本**之前**和**之后**各 3 行的上下文，并且要精确匹配空格和缩进。如果 `old_string` 为空，则工具会尝试在 `file_path` 创建一个新文件，并将 `new_string` 作为其内容。
 
-  - `new_string` (string, 必填): 用来替换 `old_string` 的确切文本。
+  - `new_string` (string, 必填): 用来替换 `old_string` 的确切文本内容。
   - `expected_replacements` (number, 可选): 要替换的匹配次数。默认值为 `1`。
 
 - **行为:**
-  - 如果 `old_string` 为空，且 `file_path` 不存在，则创建一个新文件，内容为 `new_string`。
-  - 如果提供了 `old_string`，则读取 `file_path` 并尝试找到唯一一处匹配的 `old_string`。
+  - 如果 `old_string` 为空，且 `file_path` 不存在，则会创建一个新文件，并将 `new_string` 作为其内容。
+  - 如果提供了 `old_string`，工具会读取 `file_path` 文件，并尝试找到唯一一处与 `old_string` 匹配的内容。
   - 找到后，将其替换为 `new_string`。
   - **增强可靠性（多阶段编辑校正）：** 为了显著提高编辑成功率，尤其是在模型提供的 `old_string` 可能不够精确的情况下，工具引入了多阶段编辑校正机制。
-    - 如果初始的 `old_string` 未找到或匹配多个位置，工具可以借助 Gemini 模型迭代优化 `old_string`（以及可能的 `new_string`）。
-    - 这种自我校正过程会尝试识别模型原本想要修改的唯一段落，使 `replace` 操作即使在初始上下文略有偏差时也更加稳健。
+    - 如果初始的 `old_string` 未找到或匹配到多个位置，工具可以借助 Gemini 模型迭代优化 `old_string`（以及可能的 `new_string`）。
+    - 这种自我校正过程会尝试识别模型原本想要修改的唯一段落，使 `replace` 操作即使在初始上下文稍有偏差时也更加稳健。
 - **失败条件：** 尽管有校正机制，工具仍会在以下情况下失败：
   - `file_path` 不是绝对路径，或超出了根目录范围。
-  - `old_string` 非空，但 `file_path` 不存在。
-  - `old_string` 为空，但 `file_path` 已存在。
-  - 经过尝试校正后，`old_string` 仍无法在文件中找到。
-  - `old_string` 在文件中匹配多处，且自我校正机制无法将其解析为唯一、明确的匹配项。
+  - `old_string` 非空，但 `file_path` 文件不存在。
+  - `old_string` 为空，但 `file_path` 文件已存在。
+  - 经过尝试校正后，`old_string` 在文件中仍找不到。
+  - `old_string` 在文件中匹配到多个位置，且自我校正机制无法将其解析为唯一、明确的匹配项。
 - **输出 (`llmContent`):**
   - 成功时：`Successfully modified file: /path/to/file.txt (1 replacements).` 或 `Created new file: /path/to/new_file.txt with provided content.`
   - 失败时：返回错误信息说明原因（例如：`Failed to edit, 0 occurrences found...`，`Failed to edit, expected 1 occurrences but found 2...`）。

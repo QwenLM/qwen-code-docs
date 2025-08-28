@@ -89,10 +89,13 @@ Qwen Code provides a comprehensive suite of tools for interacting with the local
   - `pattern` (string, required): The regular expression (regex) to search for (e.g., `"function\s+myFunction"`).
   - `path` (string, optional): The absolute path to the directory to search within. Defaults to the current working directory.
   - `include` (string, optional): A glob pattern to filter which files are searched (e.g., `"*.js"`, `"src/**/*.{ts,tsx}"`). If omitted, searches most files (respecting common ignores).
+  - `maxResults` (number, optional): Maximum number of matches to return to prevent context overflow (default: 20, max: 100). Use lower values for broad searches, higher for specific searches.
 - **Behavior:**
   - Uses `git grep` if available in a Git repository for speed; otherwise, falls back to system `grep` or a JavaScript-based search.
   - Returns a list of matching lines, each prefixed with its file path (relative to the search directory) and line number.
+  - Limits results to a maximum of 20 matches by default to prevent context overflow. When results are truncated, shows a clear warning with guidance on refining searches.
 - **Output (`llmContent`):** A formatted string of matches, e.g.:
+
   ```
   Found 3 matches for pattern "myFunction" in path "." (filter: "*.ts"):
   ---
@@ -103,8 +106,35 @@ Qwen Code provides a comprehensive suite of tools for interacting with the local
   File: src/index.ts
   L5: import { myFunction } from './utils';
   ---
+
+  WARNING: Results truncated to prevent context overflow. To see more results:
+  - Use a more specific pattern to reduce matches
+  - Add file filters with the 'include' parameter (e.g., "*.js", "src/**")
+  - Specify a narrower 'path' to search in a subdirectory
+  - Increase 'maxResults' parameter if you need more matches (current: 20)
   ```
+
 - **Confirmation:** No.
+
+### `search_file_content` examples
+
+Search for a pattern with default result limiting:
+
+```
+search_file_content(pattern="function\s+myFunction", path="src")
+```
+
+Search for a pattern with custom result limiting:
+
+```
+search_file_content(pattern="function", path="src", maxResults=50)
+```
+
+Search for a pattern with file filtering and custom result limiting:
+
+```
+search_file_content(pattern="function", include="*.js", maxResults=10)
+```
 
 ## 6. `replace` (Edit)
 
