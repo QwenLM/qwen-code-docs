@@ -6,8 +6,6 @@ import { Banner, Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
 import { LanguageDropdown } from "../../src/components/language-dropdown";
 import type { FC, ReactNode } from "react";
-import fs from "fs";
-import path from "path";
 
 type LayoutProps = Readonly<{
   children: ReactNode;
