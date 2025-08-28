@@ -7,6 +7,7 @@ export default {
   tools: "工具集合",
   checkpointing: "检查点功能",
   extension: "扩展开发",
+  "ide-integration": "IDE 集成",
   telemetry: "可观测性",
   examples: "示例代码",
   npm: "包管理",
