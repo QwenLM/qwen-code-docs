@@ -1,5 +1,98 @@
 [
   {
+    "timestamp": "2025-08-28T13:34:49.676Z",
+    "commit": "1610c1586e47a867edd12e87d1c64051325648c5",
+    "sourceLanguage": "en",
+    "translatedFiles": {
+      "zh": {
+        "success": [
+          "cli/configuration.md",
+          "deployment.md",
+          "ide-integration.md",
+          "index.md",
+          "integration-tests.md",
+          "npm.md",
+          "tools/file-system.md",
+          "tools/index.md",
+          "tools/shell.md",
+          "tools/todo-write.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "de": {
+        "success": [
+          "cli/configuration.md",
+          "deployment.md",
+          "ide-integration.md",
+          "index.md",
+          "integration-tests.md",
+          "npm.md",
+          "tools/file-system.md",
+          "tools/index.md",
+          "tools/shell.md",
+          "tools/todo-write.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "fr": {
+        "success": [
+          "cli/configuration.md",
+          "deployment.md",
+          "ide-integration.md",
+          "index.md",
+          "integration-tests.md",
+          "npm.md",
+          "tools/file-system.md",
+          "tools/index.md",
+          "tools/shell.md",
+          "tools/todo-write.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ru": {
+        "success": [
+          "cli/configuration.md",
+          "deployment.md",
+          "ide-integration.md",
+          "index.md",
+          "integration-tests.md",
+          "npm.md",
+          "tools/file-system.md",
+          "tools/index.md",
+          "tools/shell.md",
+          "tools/todo-write.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ja": {
+        "success": [
+          "cli/configuration.md",
+          "deployment.md",
+          "ide-integration.md",
+          "index.md",
+          "integration-tests.md",
+          "npm.md",
+          "tools/file-system.md",
+          "tools/index.md",
+          "tools/shell.md",
+          "tools/todo-write.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      }
+    },
+    "stats": {
+      "totalFiles": 11,
+      "languages": 5,
+      "successCount": 55,
+      "failedCount": 0
+    }
+  },
+  {
     "timestamp": "2025-08-21T07:05:29.537Z",
     "commit": "cd5e592b6a874b93f65491ddfe34e45150791fd1",
     "sourceLanguage": "en",

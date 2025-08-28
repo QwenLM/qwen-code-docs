@@ -15,15 +15,16 @@ Qwen Code 将先进的代码模型能力带入你的终端，提供交互式的 
 - **CLI 使用：** `packages/cli` 的文档。
   - **[CLI 简介](./cli/index.md)：** 命令行界面的概述。
   - **[命令](./cli/commands.md)：** 可用 CLI 命令的说明。
-  - **[配置](./cli/configuration.md)：** CLI 配置的相关信息。
+  - **[配置](./cli/configuration.md)：** 配置 CLI 的相关信息。
   - **[检查点](./checkpointing.md)：** 检查点功能的文档。
   - **[扩展](./extension.md)：** 如何通过新功能扩展 CLI。
+  - **[IDE 集成](./ide-integration.md)：** 将 CLI 与你的编辑器连接。
   - **[遥测](./telemetry.md)：** CLI 中遥测功能的概述。
 - **核心详情：** `packages/core` 的文档。
   - **[核心简介](./core/index.md)：** 核心组件的概述。
   - **[工具 API](./core/tools-api.md)：** 核心如何管理和暴露工具的信息。
 - **工具：**
-  - **[工具概述](./tools/index.md)：** 可用工具的概述。
+  - **[工具概览](./tools/index.md)：** 可用工具的概述。
   - **[文件系统工具](./tools/file-system.md)：** `read_file` 和 `write_file` 工具的文档。
   - **[多文件读取工具](./tools/multi-file.md)：** `read_many_files` 工具的文档。
   - **[Shell 工具](./tools/shell.md)：** `run_shell_command` 工具的文档。

@@ -1,6 +1,6 @@
 # Qwen Code 工具
 
-Qwen Code 内置了一系列工具，模型可以通过这些工具与你的本地环境进行交互、获取信息并执行操作。这些工具扩展了 CLI 的功能，使其不仅限于文本生成，还能协助处理各种任务。
+Qwen Code 内置了一系列工具，模型可以通过这些工具与你的本地环境进行交互、获取信息并执行操作。这些工具增强了 CLI 的功能，使其不仅限于文本生成，还能协助处理各种任务。
 
 ## Qwen Code 工具概述
 
@@ -22,35 +22,36 @@ Qwen Code 内置了一系列工具，模型可以通过这些工具与你的本�
 
 1. 你向 CLI 提供一个 prompt。
 2. CLI 将该 prompt 发送给 core。
-3. core 结合你的 prompt 和对话历史，将可用工具列表及其描述/结构发送给配置好的 model API。
-4. 模型分析你的请求。如果它判断需要使用某个工具，其响应中将包含调用特定工具并附带参数的请求。
-5. core 接收到这个工具调用请求后会进行验证，并（通常在用户确认敏感操作后）执行该工具。
-6. 工具的输出结果会被发送回模型。
-7. 模型利用工具的输出结果生成最终答案，并通过 core 返回给 CLI，最终展示给你。
+3. core 结合你的 prompt 和对话历史，将可用工具列表及其描述/schema 发送给配置好的 model API。
+4. model 分析你的请求。如果它判断需要使用某个工具，其响应中将包含一个调用特定工具并附带参数的请求。
+5. core 接收到这个工具调用请求后，会进行验证，并（在敏感操作时通常需要用户确认）执行该工具。
+6. 工具的输出结果会被发送回 model。
+7. model 利用工具的输出结果生成最终回答，并通过 core 返回给 CLI，最终展示给你。
 
-在 CLI 中，你通常会看到提示信息，告知你某个工具正在被调用以及调用是否成功或失败。
+在 CLI 中，你通常会看到提示信息，告知你某个工具正在被调用以及调用是否成功。
 
 ## 安全性和确认机制
 
 许多工具，特别是那些可以修改文件系统或执行命令的工具（如 `write_file`、`edit`、`run_shell_command`），在设计时就考虑了安全性。Qwen Code 通常会：
 
 - **要求确认：** 在执行可能敏感的操作之前提示你，并显示即将执行的操作。
-- **使用沙箱：** 所有工具都受到沙箱强制实施的限制（参见 [Qwen Code 中的沙箱](../sandbox.md)）。这意味着在沙箱中操作时，你希望使用的任何工具（包括 MCP 服务器）都必须在沙箱环境**内部**可用。例如，要通过 `npx` 运行 MCP 服务器，`npx` 可执行文件必须安装在沙箱的 Docker 镜像中，或者在 `sandbox-exec` 环境中可用。
+- **使用沙箱：** 所有工具都受到沙箱强制实施的限制（参见 [Qwen Code 中的沙箱](../sandbox.md)）。这意味着在沙箱中操作时，你希望使用的任何工具（包括 MCP 服务器）都必须在沙箱环境 _内部_ 可用。例如，要通过 `npx` 运行 MCP 服务器，`npx` 可执行文件必须安装在沙箱的 Docker 镜像中，或者在 `sandbox-exec` 环境中可用。
 
 在允许工具继续执行之前，仔细查看确认提示非常重要。
 
 ## 了解更多关于 Qwen Code 的工具
 
-Qwen Code 的内置工具可以大致分为以下几类：
+Qwen Code 内置的工具可以大致分为以下几类：
 
-- **[File System Tools](./file-system.md)：** 用于与文件和目录交互（读取、写入、列出、搜索等）。
+- **[File System Tools](./file-system.md)：** 用于与文件和目录进行交互（读取、写入、列出、搜索等）。
 - **[Shell Tool](./shell.md) (`run_shell_command`)：** 用于执行 shell 命令。
 - **[Web Fetch Tool](./web-fetch.md) (`web_fetch`)：** 用于从 URL 获取内容。
 - **[Web Search Tool](./web-search.md) (`web_search`)：** 用于搜索网络。
-- **[Multi-File Read Tool](./multi-file.md) (`read_many_files`)：** 一个专门用于从多个文件或目录读取内容的工具，通常由 `@` 命令使用。
-- **[Memory Tool](./memory.md) (`save_memory`)：** 用于在会话之间保存和回忆信息。
+- **[Multi-File Read Tool](./multi-file.md) (`read_many_files`)：** 一个专门用于从多个文件或目录中读取内容的工具，通常由 `@` 命令使用。
+- **[Memory Tool](./memory.md) (`save_memory`)：** 用于在不同会话之间保存和回忆信息。
+- **[Todo Write Tool](./todo-write.md) (`todo_write`)：** 用于在编码会话期间创建和管理结构化任务列表。
 
-此外，这些工具还包含：
+此外，这些工具还集成了：
 
-- **[MCP servers](./mcp-server.md)：** MCP 服务器作为模型与本地环境或其他服务（如 API）之间的桥梁。
+- **[MCP servers](./mcp-server.md)：** MCP 服务器充当模型与本地环境或其他服务（如 API）之间的桥梁。
 - **[Sandboxing](../sandbox.md)：** 沙箱机制将模型及其更改与你的环境隔离，以降低潜在风险。

@@ -10,14 +10,14 @@ Dieser Leitfaden bietet Lösungen für häufige Probleme und Debugging-Tipps, da
 ## Authentifizierungs- oder Login-Fehler
 
 - **Fehler: `Failed to login. Message: Request contains an invalid argument`**
-  - Benutzer mit Google Workspace-Konten oder Google Cloud-Konten,
-    die mit ihren Gmail-Konten verknüpft sind, können möglicherweise nicht den Free
-    Tier des Google Code Assist-Plans aktivieren.
-  - Für Google Cloud-Konten kannst du dies umgehen, indem du
-    `GOOGLE_CLOUD_PROJECT` auf deine Projekt-ID setzt.
-  - Alternativ kannst du den Gemini API-Key von
-    [Google AI Studio](http://aistudio.google.com/app/apikey) erhalten, der auch einen
-    separaten Free Tier beinhaltet.
+  - Benutzer mit Google Workspace-Konten oder Google Cloud-Konten, die mit ihren Gmail-Konten verknüpft sind, können möglicherweise den kostenlosen Tarif des Google Code Assist-Plans nicht aktivieren.
+  - Für Google Cloud-Konten kannst du dies umgehen, indem du `GOOGLE_CLOUD_PROJECT` auf deine Projekt-ID setzt.
+  - Alternativ kannst du den Gemini API key von [Google AI Studio](http://aistudio.google.com/app/apikey) erhalten, das ebenfalls einen separaten Free Tier enthält.
+
+- **Fehler: `UNABLE_TO_GET_ISSUER_CERT_LOCALLY` oder `unable to get local issuer certificate`**
+  - **Ursache:** Du befindest dich möglicherweise in einem Unternehmensnetzwerk mit einer Firewall, die SSL/TLS-Verkehr abfängt und untersucht. Dies erfordert oft, dass ein benutzerdefiniertes Root-CA-Zertifikat von Node.js vertraut wird.
+  - **Lösung:** Setze die Umgebungsvariable `NODE_EXTRA_CA_CERTS` auf den absoluten Pfad deiner Unternehmens-Root-CA-Zertifikatsdatei.
+    - Beispiel: `export NODE_EXTRA_CA_CERTS=/path/to/your/corporate-ca.crt`
 
 ## Häufig gestellte Fragen (FAQs)
 
@@ -39,29 +39,29 @@ Dieser Leitfaden bietet Lösungen für häufige Probleme und Debugging-Tipps, da
 - **Fehler: `EADDRINUSE` (Adresse bereits in Verwendung) beim Starten eines MCP-Servers.**
   - **Ursache:** Ein anderer Prozess verwendet bereits den Port, den der MCP-Server binden möchte.
   - **Lösung:**
-    Beende entweder den anderen Prozess, der den Port verwendet, oder konfiguriere den MCP-Server so, dass er einen anderen Port verwendet.
+    Beende den anderen Prozess, der den Port verwendet, oder konfiguriere den MCP-Server so, dass er einen anderen Port verwendet.
 
 - **Fehler: Befehl nicht gefunden (beim Versuch, Qwen Code mit `qwen` auszuführen).**
   - **Ursache:** Die CLI ist nicht korrekt installiert oder befindet sich nicht im `PATH` deines Systems.
   - **Lösung:**
     Das Update hängt davon ab, wie du Qwen Code installiert hast:
-    - Wenn du `qwen` global installiert hast, stelle sicher, dass das globale `npm`-Binary-Verzeichnis in deinem `PATH` enthalten ist. Du kannst mit dem Befehl `npm install -g @qwen-code/qwen-code@latest` aktualisieren.
-    - Wenn du `qwen` aus dem Quellcode ausführst, stelle sicher, dass du den richtigen Befehl zum Aufruf verwendest (z. B. `node packages/cli/dist/index.js ...`). Zum Aktualisieren, lade die neuesten Änderungen aus dem Repository und führe anschließend den Befehl `npm run build` aus.
+    - Wenn du `qwen` global installiert hast, stelle sicher, dass dein globales `npm`-Binary-Verzeichnis im `PATH` enthalten ist. Du kannst mit dem Befehl `npm install -g @qwen-code/qwen-code@latest` aktualisieren.
+    - Wenn du `qwen` aus dem Quellcode ausführst, stelle sicher, dass du den richtigen Befehl zum Aufruf verwendest (z. B. `node packages/cli/dist/index.js ...`). Um zu aktualisieren, pull die neuesten Änderungen aus dem Repository und führe dann den Befehl `npm run build` aus, um neu zu bauen.
 
 - **Fehler: `MODULE_NOT_FOUND` oder Import-Fehler.**
   - **Ursache:** Abhängigkeiten sind nicht korrekt installiert oder das Projekt wurde nicht gebaut.
   - **Lösung:**
-    1. Führe `npm install` aus, um sicherzustellen, dass alle Abhängigkeiten vorhanden sind.
-    2. Führe `npm run build` aus, um das Projekt zu kompilieren.
-    3. Überprüfe mit `npm run start`, ob der Build erfolgreich abgeschlossen wurde.
+    1.  Führe `npm install` aus, um sicherzustellen, dass alle Abhängigkeiten vorhanden sind.
+    2.  Führe `npm run build` aus, um das Projekt zu kompilieren.
+    3.  Überprüfe mit `npm run start`, ob der Build erfolgreich abgeschlossen wurde.
 
 - **Fehler: „Operation not permitted“, „Permission denied“ oder Ähnliches.**
   - **Ursache:** Wenn Sandboxing aktiviert ist, kann Qwen Code versuchen, Operationen durchzuführen, die durch deine Sandbox-Konfiguration eingeschränkt sind, z. B. außerhalb des Projektverzeichnisses oder des systemweiten Temp-Verzeichnisses zu schreiben.
   - **Lösung:** Weitere Informationen findest du in der Dokumentation unter [Configuration: Sandboxing](./cli/configuration.md#sandboxing), einschließlich Anweisungen zur Anpassung deiner Sandbox-Konfiguration.
 
 - **Qwen Code läuft in „CI“-Umgebungen nicht im interaktiven Modus**
-  - **Problem:** Qwen Code startet nicht im interaktiven Modus (es erscheint keine Eingabeaufforderung), wenn eine Umgebungsvariable mit dem Präfix `CI_` (z. B. `CI_TOKEN`) gesetzt ist. Das liegt daran, dass das `is-in-ci`-Paket, das vom zugrunde liegenden UI-Framework verwendet wird, diese Variablen erkennt und eine nicht-interaktive CI-Umgebung annimmt.
-  - **Ursache:** Das `is-in-ci`-Paket prüft auf das Vorhandensein von `CI`, `CONTINUOUS_INTEGRATION` oder beliebigen Umgebungsvariablen mit dem Präfix `CI_`. Wenn eine dieser Variablen gefunden wird, wird davon ausgegangen, dass die Umgebung nicht interaktiv ist, wodurch der Start im interaktiven Modus verhindert wird.
+  - **Problem:** Qwen Code wechselt nicht in den interaktiven Modus (es erscheint keine Eingabeaufforderung), wenn eine Umgebungsvariable mit dem Präfix `CI_` (z. B. `CI_TOKEN`) gesetzt ist. Das liegt daran, dass das `is-in-ci`-Paket, das vom zugrunde liegenden UI-Framework verwendet wird, diese Variablen erkennt und eine nicht-interaktive CI-Umgebung annimmt.
+  - **Ursache:** Das `is-in-ci`-Paket prüft auf das Vorhandensein von `CI`, `CONTINUOUS_INTEGRATION` oder beliebigen Umgebungsvariablen mit dem Präfix `CI_`. Wenn eine dieser Variablen gefunden wird, wird signalisiert, dass die Umgebung nicht interaktiv ist, wodurch die CLI daran gehindert wird, im interaktiven Modus zu starten.
   - **Lösung:** Falls die Variable mit dem Präfix `CI_` für die CLI nicht benötigt wird, kannst du sie vorübergehend für den Befehl deaktivieren, z. B. mit `env -u CI_TOKEN qwen`.
 
 - **DEBUG-Modus funktioniert nicht über die .env-Datei des Projekts**
@@ -75,7 +75,7 @@ Dieser Leitfaden bietet Lösungen für häufige Probleme und Debugging-Tipps, da
 - Starte das integrierte Terminal neu, nachdem du die Extension installiert hast, damit es folgende Umgebungsvariablen übernimmt:
   - `QWEN_CODE_IDE_WORKSPACE_PATH`
   - `QWEN_CODE_IDE_SERVER_PORT`
-- Wenn du in einem Container arbeitest, überprüfe, ob `host.docker.internal` aufgelöst werden kann. Andernfalls musst du den Host entsprechend mappen.
+- Wenn du in einem Container arbeitest, prüfe, ob `host.docker.internal` aufgelöst werden kann. Andernfalls musst du den Host entsprechend mappen.
 - Installiere den Companion neu mit `/ide install` und verwende „Qwen Code: Run“ in der Command Palette, um zu überprüfen, ob er startet.
 
 ## Debugging-Tipps
@@ -92,9 +92,9 @@ Dieser Leitfaden bietet Lösungen für häufige Probleme und Debugging-Tipps, da
 - **Tool-Probleme:**
   - Wenn ein bestimmtes Tool fehlschlägt, versuche das Problem zu isolieren, indem du die einfachste mögliche Version des Befehls oder der Operation ausführst, die das Tool durchführt.
   - Für `run_shell_command` prüfe zuerst, ob der Befehl direkt in deiner Shell funktioniert.
-  - Für _Filesystem-Tools_ stelle sicher, dass die Pfade korrekt sind und prüfe die Berechtigungen.
+  - Für _Filesystem-Tools_ stelle sicher, dass die Pfade korrekt sind und überprüfe die Berechtigungen.
 
-- **Pre-Flight-Checks:**
+- **Pre-flight-Checks:**
   - Führe immer `npm run preflight` vor dem Committen von Code aus. Dies kann viele häufige Probleme im Zusammenhang mit Formatierung, Linting und Typfehlern abfangen.
 
 ## Vorhandene GitHub Issues, die deinem Problem ähneln, oder neue Issues erstellen
