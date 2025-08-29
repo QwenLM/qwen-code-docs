@@ -1,9 +1,11 @@
 import { HeroSection } from "@/components/hero-section";
 import { FeaturesSection } from "@/components/features-section";
+import { ComparisonSection } from "@/components/comparison-section";
 import { InstallationSection } from "@/components/installation-section";
 import { UsageExamples } from "@/components/usage-examples";
 import { CTASection } from "@/components/cta-section";
 import { CustomNavbar } from "@/components/custom-navbar";
+import { ProductHighlights } from "@/components/product-highlights";
 import "../styles/globals.css";
 
 const Index = () => {
@@ -25,9 +27,7 @@ const Index = () => {
                 className='inline-block align-middle mr-1'
                 style={{ verticalAlign: "middle" }}
               />
-              <span className='text-lg font-bold align-middle gradient-text orbitron-font'>
-                Qwen Code
-              </span>
+              <span className='gradient-text'>Qwen Code</span>
             </span>
           </>
         }
@@ -35,9 +35,9 @@ const Index = () => {
       />
       <HeroSection />
       <FeaturesSection />
-      <InstallationSection />
+      <ComparisonSection />
       <UsageExamples />
-      <CTASection />
+      <ProductHighlights />
     </div>
   );
 };

@@ -1,135 +1,139 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Code2, 
-  Zap, 
-  Brain, 
-  GitBranch, 
-  Terminal, 
+import {
+  Code2,
+  Zap,
+  Brain,
+  GitBranch,
+  Terminal,
   Shield,
   Clock,
-  Layers
+  Layers,
+  FileText,
+  Globe,
+  Database,
+  Cog,
+  Download,
 } from "lucide-react";
 
 const features = [
   {
-    icon: Code2,
-    title: "Code Understanding & Editing",
-    description: "Query and edit large codebases beyond traditional context window limits. Understand complex architectures instantly.",
-    color: "text-primary",
-    bgColor: "bg-primary/10"
+    icon: Terminal,
+    title: "Interactive REPL Environment",
+    description:
+      "Experience a rich, interactive Read-Eval-Print Loop that brings AI conversations directly to your terminal.",
+    color: "text-violet-600",
+    bgColor: "bg-violet-500/10",
+  },
+  {
+    icon: FileText,
+    title: "File System Operations",
+    description:
+      "Read, write, and manipulate files seamlessly with AI assistance. Perfect for code reviews and documentation.",
+    color: "text-purple-600",
+    bgColor: "bg-purple-500/10",
+  },
+  {
+    icon: Database,
+    title: "SubAgent Support",
+    description:
+      "AI agents for specialized development tasks. Automate complex workflows with intelligent assistance.",
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-500/10",
+  },
+  {
+    icon: Globe,
+    title: "Multiple AI Models",
+    description:
+      "OpenAI protocol compatible. Use OpenAI, Qwen, ModelScope, OpenRouter and more AI providers.",
+    color: "text-violet-700",
+    bgColor: "bg-violet-600/10",
+  },
+];
+
+const architectureFeatures = [
+  {
+    icon: Shield,
+    title: "Free & Open Source",
+    description:
+      "2000 free daily requests via QwenChat OAuth. MIT licensed and fully customizable.",
   },
   {
     icon: Zap,
-    title: "Workflow Automation",
-    description: "Automate operational tasks like handling pull requests, complex rebases, and repetitive development workflows.",
-    color: "text-accent-blue",
-    bgColor: "bg-accent-blue/10"
+    title: "Easy Installation",
+    description:
+      "One command installation via NPM. Works with Docker and can be built from source.",
   },
-  {
-    icon: Brain,
-    title: "Enhanced Parser",
-    description: "Adapted parser specifically optimized for Qwen-Coder models, ensuring superior code comprehension.",
-    color: "text-accent-purple",
-    bgColor: "bg-accent-purple/10"
-  },
-  {
-    icon: GitBranch,
-    title: "Git Integration",
-    description: "Seamlessly analyze commits, create changelogs, and manage version control workflows with AI assistance.",
-    color: "text-accent-orange",
-    bgColor: "bg-accent-orange/10"
-  },
-  {
-    icon: Terminal,
-    title: "CLI-First Experience",
-    description: "Native command-line interface that integrates perfectly with your existing development environment.",
-    color: "text-primary-glow",
-    bgColor: "bg-primary-glow/10"
-  },
-  {
-    icon: Shield,
-    title: "Security Analysis",
-    description: "Identify vulnerabilities, find hardcoded credentials, and perform comprehensive security audits automatically.",
-    color: "text-accent-blue",
-    bgColor: "bg-accent-blue/10"
-  }
 ];
 
 export const FeaturesSection = () => {
   return (
-    <section className="py-24 bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto px-6">
-        {/* Section Header */}
-        <div className="text-center mb-16">
-          <Badge variant="outline" className="px-4 py-2 mb-4 border-primary/30 bg-primary/10">
-            <Layers className="w-4 h-4 mr-2" />
-            Features
+    <section className='py-24 bg-gradient-to-b from-background to-muted/20'>
+      <div className='container mx-auto px-6'>
+        {/* Core Features Section */}
+        <div className='text-center mb-16'>
+          <Badge
+            variant='outline'
+            className='px-4 py-2 mb-4 border-violet-500/30 bg-violet-500/10'
+          >
+            <Code2 className='w-4 h-4 mr-2' />
+            Core Features
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            <span className="gradient-text">Powerful AI Features</span>
+          <h2 className='text-4xl md:text-5xl font-bold mb-6'>
+            <span className='gradient-text'>Powerful AI Tools</span>
             <br />
             Built for Developers
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Unlock the full potential of your development workflow with advanced AI capabilities designed specifically for code.
+          <p className='text-xl text-muted-foreground max-w-3xl mx-auto'>
+            Qwen Code brings advanced AI capabilities to your terminal, offering
+            a comprehensive toolkit for modern development workflows.
           </p>
         </div>
 
         {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+        <div className='grid md:grid-cols-2 gap-8 mb-16'>
           {features.map((feature, index) => (
-            <Card 
+            <Card
               key={index}
-              className="p-8 bg-gradient-card border-primary/10 hover:border-primary/20 transition-all duration-300 hover:shadow-elegant transform hover:-translate-y-2 group"
+              className='p-8 bg-gradient-to-br from-card to-card/50 border-violet-500/10 hover:border-violet-500/20 transition-all duration-300 hover:shadow-lg hover:shadow-violet-500/10 transform hover:-translate-y-1 group'
             >
-              <div className={`w-12 h-12 ${feature.bgColor} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+              <div
+                className={`w-12 h-12 ${feature.bgColor} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
+              >
                 <feature.icon className={`w-6 h-6 ${feature.color}`} />
               </div>
-              
-              <h3 className="text-xl font-semibold mb-4 text-foreground">
+
+              <h3 className='text-xl font-semibold mb-4 text-foreground'>
                 {feature.title}
               </h3>
-              
-              <p className="text-muted-foreground leading-relaxed">
+
+              <p className='text-muted-foreground leading-relaxed'>
                 {feature.description}
               </p>
             </Card>
           ))}
         </div>
 
-        {/* Free Tier Highlight */}
-        <div className="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 rounded-3xl p-8 md:p-12 text-center border border-primary/20">
-          <div className="flex justify-center mb-4">
-            <Badge className="px-4 py-2 bg-primary text-primary-foreground">
-              <Clock className="w-4 h-4 mr-2" />
-              Free Tier Available
-            </Badge>
-          </div>
-          
-          <h3 className="text-3xl font-bold mb-4">
-            Start Coding with AI Today
-          </h3>
-          
-          <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Get started with <span className="text-primary font-semibold">2,000 free requests per day</span> through Qwen OAuth. 
-            No credit card required, no token limits to worry about.
-          </p>
-          
-          <div className="grid md:grid-cols-3 gap-6 mt-8">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary mb-2">2,000</div>
-              <div className="text-sm text-muted-foreground">Daily Requests</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-accent-blue mb-2">60/min</div>
-              <div className="text-sm text-muted-foreground">Rate Limit</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-accent-purple mb-2">∞</div>
-              <div className="text-sm text-muted-foreground">No Token Limits</div>
-            </div>
-          </div>
+        {/* Why Choose Qwen Code */}
+        <div className='grid md:grid-cols-2 gap-8'>
+          {architectureFeatures.map((feature, index) => (
+            <Card
+              key={index}
+              className='p-8 bg-gradient-to-br from-violet-500/5 to-purple-500/5 border-violet-500/20 hover:border-violet-500/30 transition-all duration-300'
+            >
+              <div className='w-12 h-12 bg-violet-500/10 rounded-2xl flex items-center justify-center mb-6'>
+                <feature.icon className='w-6 h-6 text-violet-600' />
+              </div>
+
+              <h3 className='text-xl font-semibold mb-4 text-foreground'>
+                {feature.title}
+              </h3>
+
+              <p className='text-muted-foreground leading-relaxed'>
+                {feature.description}
+              </p>
+            </Card>
+          ))}
         </div>
       </div>
     </section>

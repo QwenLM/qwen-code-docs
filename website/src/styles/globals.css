@@ -42,9 +42,16 @@
   letter-spacing: 0.05em;
 }
 
-/* Terminal-inspired color adjustments with purple theme */
+/* Modern purple theme inspired by Claude Code */
 .gradient-text {
-  background: linear-gradient(135deg, #615ced 0%, #5347d4 50%, #4539bb 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-accent {
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ea580c 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -52,7 +59,80 @@
 
 /* Purple glow effect */
 .terminal-glow {
-  text-shadow: 0 0 5px #615ced, 0 0 10px #615ced, 0 0 15px #615ced;
+  text-shadow: 0 0 5px #8b5cf6, 0 0 10px #8b5cf6, 0 0 15px #8b5cf6;
+}
+
+/* Modern hero background with purple accents */
+.hero-gradient {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--background) / 0.98) 25%,
+    hsl(262 75% 50% / 0.03) 50%,
+    hsl(var(--background) / 0.98) 75%,
+    hsl(var(--background)) 100%
+  );
+}
+
+/* Claude Code inspired button styles */
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-primary-gradient:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+}
+
+/* Comparison table enhancements */
+.comparison-table {
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.comparison-table-header {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card)) 0%,
+    hsl(var(--muted) / 0.3) 100%
+  );
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.comparison-table-row {
+  transition: background-color 0.15s ease-in-out;
+}
+
+.comparison-table-row:hover {
+  background-color: hsl(var(--muted) / 0.05);
+}
+
+.comparison-category-header {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--muted) / 0.4) 0%,
+    hsl(var(--muted) / 0.2) 100%
+  );
+  font-weight: 600;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+/* Feature status indicators */
+.feature-badge-qwen {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  font-weight: 500;
+}
+
+.feature-badge-claude {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  font-weight: 500;
 }
 
 /* Scanline effect for terminal aesthetic with purple tint */
