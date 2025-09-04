@@ -3,3 +3,6 @@
 .temp-source-repo/
 .source-docs/
 last-sync.json
+
+# Pagefind search index
+_pagefind/
