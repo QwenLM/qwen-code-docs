@@ -1,10 +1,10 @@
 # Exécution et déploiement de Qwen Code
 
-Ce document décrit comment exécuter Qwen Code et explique l'architecture de déploiement utilisée par Qwen Code.
+Ce document explique comment exécuter Qwen Code et décrit l'architecture de déploiement utilisée par Qwen Code.
 
 ## Exécuter Qwen Code
 
-Il existe plusieurs façons d'exécuter Qwen Code. L'option que vous choisissez dépend de la manière dont vous comptez l'utiliser.
+Il existe plusieurs façons d'exécuter Qwen Code. L'option que vous choisissez dépend de votre utilisation prévue.
 
 ---
 
@@ -41,10 +41,10 @@ Pour des raisons de sécurité et d'isolation, Qwen Code peut être exécuté à
   Vous pouvez exécuter l'image du sandbox directement depuis le registry. C'est pratique dans les environnements où vous n'avez que Docker d'installé et que vous souhaitez lancer le CLI.
   ```bash
   # Exécuter l'image du sandbox publiée
-  docker run --rm -it ghcr.io/qwenlm/qwen-code:0.0.9
+  docker run --rm -it ghcr.io/qwenlm/qwen-code:0.0.10
   ```
 
-- **Avec le flag `--sandbox` :**  
+- **Utilisation du flag `--sandbox` :**  
   Si Qwen Code est installé localement (via l'installation standard décrite plus haut), vous pouvez lui demander de s'exécuter à l'intérieur du container sandbox.
   ```bash
   qwen --sandbox -y -p "your prompt here"
@@ -63,7 +63,7 @@ Les contributeurs du projet voudront exécuter le CLI directement depuis le code
   npm run start
   ```
 - **Mode production (package lié) :**
-  Cette méthode simule une installation globale en liant votre package local. Elle est utile pour tester une version locale dans un workflow de production.
+  Cette méthode simule une installation globale en liant votre package local. Elle est utile pour tester un build local dans un workflow de production.
 
   ```bash
   # Lier le package cli local à vos node_modules globaux

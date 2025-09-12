@@ -10,7 +10,7 @@
 
 `save_memory` 接受一个参数：
 
-- `fact` (string, 必填): 需要记住的具体事实或信息片段。这应该是一个清晰、独立的自然语言陈述。
+- `fact` (string, 必填): 需要记住的特定事实或信息片段。这应该是一个清晰、独立的自然语言陈述。
 
 ## 如何在 Qwen Code 中使用 `save_memory`
 
@@ -24,7 +24,7 @@
 save_memory(fact="Your fact here.")
 ```
 
-### `save_memory` 使用示例
+### `save_memory` 示例
 
 记住用户偏好：
 
@@ -32,13 +32,13 @@ save_memory(fact="Your fact here.")
 save_memory(fact="My preferred programming language is Python.")
 ```
 
-存储项目特定信息：
+存储项目特定的细节：
 
 ```
-save_memory(fact="The project I'm currently working on is called 'gemini-cli'.")
+save_memory(fact="The project I'm currently working on is called 'qwen-code'.")
 ```
 
 ## 重要说明
 
 - **一般用法：** 此工具应用于存储简洁、重要的事实。不适用于存储大量数据或对话历史。
-- **Memory 文件：** memory 文件是一个纯文本 Markdown 文件，因此你可以根据需要手动查看和编辑它。
+- **Memory 文件：** Memory 文件是一个纯文本 Markdown 文件，因此你可以根据需要手动查看和编辑它。

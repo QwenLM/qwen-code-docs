@@ -1,5 +1,138 @@
 [
   {
+    "timestamp": "2025-09-12T09:44:34.622Z",
+    "commit": "67e2e270bd548ab9845f3e0d99f0b35423ae94da",
+    "sourceLanguage": "en",
+    "translatedFiles": {
+      "zh": {
+        "success": [
+          "Uninstall.md",
+          "checkpointing.md",
+          "cli/commands.md",
+          "cli/configuration.md",
+          "cli/index.md",
+          "cli/token-caching.md",
+          "cli/welcome-back.md",
+          "deployment.md",
+          "ide-integration.md",
+          "index.md",
+          "keyboard-shortcuts.md",
+          "npm.md",
+          "subagents.md",
+          "telemetry.md",
+          "tools/file-system.md",
+          "tools/mcp-server.md",
+          "tools/memory.md",
+          "tools/web-fetch.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "de": {
+        "success": [
+          "Uninstall.md",
+          "checkpointing.md",
+          "cli/commands.md",
+          "cli/configuration.md",
+          "cli/index.md",
+          "cli/token-caching.md",
+          "cli/welcome-back.md",
+          "deployment.md",
+          "ide-integration.md",
+          "index.md",
+          "keyboard-shortcuts.md",
+          "npm.md",
+          "subagents.md",
+          "telemetry.md",
+          "tools/file-system.md",
+          "tools/mcp-server.md",
+          "tools/memory.md",
+          "tools/web-fetch.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "fr": {
+        "success": [
+          "Uninstall.md",
+          "checkpointing.md",
+          "cli/commands.md",
+          "cli/configuration.md",
+          "cli/index.md",
+          "cli/token-caching.md",
+          "cli/welcome-back.md",
+          "deployment.md",
+          "ide-integration.md",
+          "index.md",
+          "keyboard-shortcuts.md",
+          "npm.md",
+          "subagents.md",
+          "telemetry.md",
+          "tools/file-system.md",
+          "tools/mcp-server.md",
+          "tools/memory.md",
+          "tools/web-fetch.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ru": {
+        "success": [
+          "Uninstall.md",
+          "checkpointing.md",
+          "cli/commands.md",
+          "cli/configuration.md",
+          "cli/index.md",
+          "cli/token-caching.md",
+          "cli/welcome-back.md",
+          "deployment.md",
+          "ide-integration.md",
+          "index.md",
+          "keyboard-shortcuts.md",
+          "npm.md",
+          "subagents.md",
+          "telemetry.md",
+          "tools/file-system.md",
+          "tools/mcp-server.md",
+          "tools/memory.md",
+          "tools/web-fetch.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ja": {
+        "success": [
+          "Uninstall.md",
+          "checkpointing.md",
+          "cli/commands.md",
+          "cli/configuration.md",
+          "cli/index.md",
+          "cli/token-caching.md",
+          "cli/welcome-back.md",
+          "deployment.md",
+          "ide-integration.md",
+          "index.md",
+          "keyboard-shortcuts.md",
+          "npm.md",
+          "subagents.md",
+          "telemetry.md",
+          "tools/file-system.md",
+          "tools/mcp-server.md",
+          "tools/memory.md",
+          "tools/web-fetch.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      }
+    },
+    "stats": {
+      "totalFiles": 19,
+      "languages": 5,
+      "successCount": 95,
+      "failedCount": 0
+    }
+  },
+  {
     "timestamp": "2025-08-28T13:34:49.676Z",
     "commit": "1610c1586e47a867edd12e87d1c64051325648c5",
     "sourceLanguage": "en",

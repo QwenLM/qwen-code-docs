@@ -1,8 +1,8 @@
 # Qwen Code Observability Guide
 
-Telemetry liefert Daten über die Performance, den Zustand und die Nutzung von Qwen Code. Durch die Aktivierung kannst du Abläufe überwachen, Probleme debuggen und die Tool-Nutzung mithilfe von Traces, Metriken und strukturierten Logs optimieren.
+Telemetry liefert Daten über die Performance, den Zustand und die Nutzung von Qwen Code. Wenn du es aktivierst, kannst du Abläufe überwachen, Probleme debuggen und die Tool-Nutzung über Traces, Metriken und strukturierte Logs optimieren.
 
-Das Telemetriesystem von Qwen Code basiert auf dem **[OpenTelemetry] (OTEL)**-Standard und ermöglicht dir, Daten an jedes kompatible Backend zu senden.
+Das Telemetriesystem von Qwen Code basiert auf dem **[OpenTelemetry] (OTEL)**-Standard, wodurch du Daten an jedes kompatible Backend senden kannst.
 
 [OpenTelemetry]: https://opentelemetry.io/
 
@@ -10,9 +10,9 @@ Das Telemetriesystem von Qwen Code basiert auf dem **[OpenTelemetry] (OTEL)**-St
 
 Du kannst Telemetrie auf verschiedene Arten aktivieren. Die Konfiguration erfolgt hauptsächlich über die [`.qwen/settings.json`-Datei](./cli/configuration.md) und Umgebungsvariablen, aber CLI-Flags können diese Einstellungen für eine bestimmte Sitzung überschreiben.
 
-### Rangfolge
+### Reihenfolge der Priorität
 
-Die folgende Liste zeigt die Rangfolge für die Anwendung der Telemetrie-Einstellungen, wobei Einträge weiter oben eine höhere Priorität haben:
+Die folgende Liste zeigt die Priorität beim Anwenden der Telemetrie-Einstellungen, wobei Einträge weiter oben eine höhere Priorität haben:
 
 1.  **CLI-Flags (für den `qwen`-Befehl):**
     - `--telemetry` / `--no-telemetry`: Überschreibt `telemetry.enabled`.
@@ -28,18 +28,18 @@ Die folgende Liste zeigt die Rangfolge für die Anwendung der Telemetrie-Einstel
 
 1.  **Benutzereinstellungsdatei (`~/.qwen/settings.json`):** Werte aus dem `telemetry`-Objekt in dieser globalen Benutzerdatei.
 
-1.  **Standardwerte:** Werden angewandt, wenn sie nicht durch eine der oben genannten Optionen gesetzt wurden.
+1.  **Standardwerte:** Werden angewandt, wenn sie nicht durch eine der oben genannten Quellen gesetzt wurden.
     - `telemetry.enabled`: `false`
     - `telemetry.target`: `local`
     - `telemetry.otlpEndpoint`: `http://localhost:4317`
     - `telemetry.logPrompts`: `true`
 
 **Für das Skript `npm run telemetry -- --target=<gcp|local>`:**
-Das `--target`-Argument dieses Skripts überschreibt _nur_ den `telemetry.target` für die Dauer und den Zweck dieses Skripts (d. h. zur Auswahl des zu startenden Collectors). Es ändert Ihre `settings.json` nicht dauerhaft. Das Skript prüft zunächst in der `settings.json`, ob ein `telemetry.target` als Standardwert vorhanden ist.
+Das `--target`-Argument dieses Skripts überschreibt _nur_ den Wert von `telemetry.target` für die Dauer und den Zweck dieses Skripts (d. h. zur Auswahl des zu startenden Collectors). Es ändert nicht dauerhaft deine `settings.json`. Das Skript prüft zunächst in der `settings.json`, ob dort ein `telemetry.target` definiert ist, und verwendet diesen als Standardwert.
 
 ### Beispiel-Einstellungen
 
-Der folgende Code kann zu deinen Workspace-Einstellungen (`.qwen/settings.json`) oder User-Einstellungen (`~/.qwen/settings.json`) hinzugefügt werden, um Telemetrie zu aktivieren und die Ausgabe an Google Cloud zu senden:
+Der folgende Code kann in deine Workspace-Einstellungen (`.qwen/settings.json`) oder in deine User-Einstellungen (`~/.qwen/settings.json`) hinzugefügt werden, um Telemetrie zu aktivieren und die Ausgabe an Google Cloud zu senden:
 
 ```json
 {
@@ -77,13 +77,16 @@ qwen --telemetry \
 ## Einen OTEL Collector ausführen
 
 Ein OTEL Collector ist ein Service, der Telemetriedaten empfängt, verarbeitet und exportiert.
-Die CLI sendet Daten über das OTLP/gRPC-Protokoll.
+Die CLI kann Daten entweder über das OTLP/gRPC- oder OTLP/HTTP-Protokoll senden.
+Du kannst festlegen, welches Protokoll verwendet werden soll, über das Flag `--telemetry-otlp-protocol`
+oder die Einstellung `telemetry.otlpProtocol` in deiner `settings.json`-Datei. Weitere
+Informationen findest du in der [Konfigurationsdokumentation](./cli/configuration.md#--telemetry-otlp-protocol).
 
-Weitere Informationen zur Standardkonfiguration des OTEL Exporters findest du in der [Dokumentation][otel-config-docs].
+Weitere Informationen zur Standardkonfiguration von OTEL Exportern findest du in der [Dokumentation][otel-config-docs].
 
 [otel-config-docs]: https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
 
-### Lokal
+### Local
 
 Verwende den Befehl `npm run telemetry -- --target=local`, um den Prozess zur Einrichtung einer lokalen Telemetrie-Pipeline zu automatisieren. Dazu gehört auch das Konfigurieren der erforderlichen Einstellungen in deiner `.qwen/settings.json`-Datei. Das zugrunde liegende Skript installiert `otelcol-contrib` (den OpenTelemetry Collector) und `jaeger` (das Jaeger UI zur Anzeige von Traces). So gehst du vor:
 
@@ -94,18 +97,18 @@ Verwende den Befehl `npm run telemetry -- --target=local`, um den Prozess zur Ei
     npm run telemetry -- --target=local
     ```
 
-    Das Skript wird:
-    - Jaeger und OTEL herunterladen, falls nötig.
-    - Eine lokale Jaeger-Instanz starten.
-    - Einen OTEL-Collector starten, der für den Empfang von Daten aus Qwen Code konfiguriert ist.
-    - Telemetrie automatisch in deinen Workspace-Einstellungen aktivieren.
-    - Beim Beenden die Telemetrie wieder deaktivieren.
+    Das Skript führt folgende Aktionen durch:
+    - Lädt Jaeger und OTEL herunter, falls erforderlich.
+    - Startet eine lokale Jaeger-Instanz.
+    - Startet einen OTEL-Collector, der für den Empfang von Daten aus Qwen Code konfiguriert ist.
+    - Aktiviert Telemetrie automatisch in deinen Workspace-Einstellungen.
+    - Deaktiviert beim Beenden die Telemetrie.
 
 1.  **Traces anzeigen**:
     Öffne deinen Webbrowser und navigiere zu **http://localhost:16686**, um auf das Jaeger UI zuzugreifen. Dort kannst du detaillierte Traces der Qwen Code-Vorgänge einsehen.
 
 1.  **Logs und Metriken prüfen**:
-    Das Skript leitet die Ausgabe des OTEL-Collectors (einschließlich Logs und Metriken) in die Datei `~/.qwen/tmp/<projectHash>/otel/collector.log` um. Das Skript stellt dir Links zur Verfügung, um deine Telemetriedaten (Traces, Metriken, Logs) lokal anzusehen, sowie einen Befehl, um sie in Echtzeit zu verfolgen.
+    Das Skript leitet die Ausgabe des OTEL-Collectors (einschließlich Logs und Metriken) in die Datei `~/.qwen/tmp/<projectHash>/otel/collector.log` um. Das Skript stellt Links zur Verfügung, um deine Telemetriedaten (Traces, Metriken, Logs) lokal anzusehen, sowie einen Befehl, um diese live im Terminal zu verfolgen.
 
 1.  **Dienste stoppen**:
     Drücke `Ctrl+C` im Terminal, in dem das Skript läuft, um den OTEL Collector und die Jaeger-Dienste zu stoppen.
@@ -121,7 +124,7 @@ Verwende den Befehl `npm run telemetry -- --target=gcp`, um automatisch einen lo
       export OTLP_GOOGLE_CLOUD_PROJECT="your-project-id"
       ```
     - Authentifiziere dich bei Google Cloud (z. B. mit `gcloud auth application-default login` oder stelle sicher, dass `GOOGLE_APPLICATION_CREDENTIALS` gesetzt ist).
-    - Stelle sicher, dass dein Google Cloud-Konto bzw. dein Service-Account über die erforderlichen IAM-Rollen verfügt: "Cloud Trace Agent", "Monitoring Metric Writer" und "Logs Writer".
+    - Stelle sicher, dass dein Google Cloud-Konto bzw. dein Service-Account über die erforderlichen IAM-Rollen verfügt: „Cloud Trace Agent“, „Monitoring Metric Writer“ und „Logs Writer“.
 
 1.  **Befehl ausführen**:
     Führe den Befehl im Root-Verzeichnis deines Repositorys aus:
@@ -130,12 +133,12 @@ Verwende den Befehl `npm run telemetry -- --target=gcp`, um automatisch einen lo
     npm run telemetry -- --target=gcp
     ```
 
-    Das Skript führt folgende Aktionen durch:
-    - Lädt bei Bedarf die `otelcol-contrib`-Binary herunter.
-    - Startet einen OTEL Collector, der so konfiguriert ist, dass er Daten von Qwen Code empfängt und an dein angegebenes Google Cloud-Projekt exportiert.
-    - Aktiviert automatisch Telemetrie und deaktiviert den Sandbox-Modus in deinen Workspace-Einstellungen (`.qwen/settings.json`).
-    - Stellt direkte Links bereit, um Traces, Metriken und Logs in der Google Cloud Console anzuzeigen.
-    - Beim Beenden (mit Strg+C) wird versucht, deine ursprünglichen Telemetrie- und Sandbox-Einstellungen wiederherzustellen.
+    Das Skript wird:
+    - Die Binary `otelcol-contrib` herunterladen (falls erforderlich).
+    - Einen OTEL Collector starten, der so konfiguriert ist, dass er Daten von Qwen Code empfängt und an dein angegebenes Google Cloud-Projekt exportiert.
+    - Telemetrie automatisch aktivieren und den Sandbox-Modus in deinen Workspace-Einstellungen (`.qwen/settings.json`) deaktivieren.
+    - Direkte Links bereitstellen, um Traces, Metriken und Logs in der Google Cloud Console anzuzeigen.
+    - Beim Beenden (Strg+C) versuchen, deine ursprünglichen Telemetrie- und Sandbox-Einstellungen wiederherzustellen.
 
 1.  **Qwen Code ausführen**:
     Führe in einem separaten Terminal deine Qwen Code-Befehle aus. Dadurch werden Telemetriedaten generiert, die vom Collector erfasst werden.
@@ -144,12 +147,12 @@ Verwende den Befehl `npm run telemetry -- --target=gcp`, um automatisch einen lo
     Verwende die vom Skript bereitgestellten Links, um zur Google Cloud Console zu navigieren und deine Traces, Metriken und Logs einzusehen.
 
 1.  **Lokale Collector-Logs einsehen**:
-    Die Ausgabe des lokalen OTEL Collectors wird in `~/.qwen/tmp/<projectHash>/otel/collector-gcp.log` umgeleitet. Das Skript stellt Links zur Verfügung, um die Logs lokal anzuzeigen oder mit einem Befehl zu verfolgen (tail).
+    Das Skript leitet die Ausgabe des lokalen OTEL Collectors in die Datei `~/.qwen/tmp/<projectHash>/otel/collector-gcp.log` um. Es stellt auch Links und Befehle bereit, um die Logs lokal einzusehen oder zu tailen.
 
 1.  **Dienst stoppen**:
     Drücke `Strg+C` im Terminal, in dem das Skript läuft, um den OTEL Collector zu stoppen.
 
-## Referenz zu Logs und Metriken
+## Referenz für Logs und Metriken
 
 Der folgende Abschnitt beschreibt die Struktur der Logs und Metriken, die für Qwen Code generiert werden.
 
@@ -191,7 +194,7 @@ Logs sind zeitgestempelte Aufzeichnungen spezifischer Ereignisse. Die folgenden 
     - `error_type` (falls zutreffend)
     - `metadata` (falls zutreffend, Dictionary von string -> any)
 
-- `qwen-code.api_request`: Dieses Ereignis tritt auf, wenn eine Anfrage an die Gemini API gesendet wird.
+- `qwen-code.api_request`: Dieses Ereignis tritt auf, wenn eine Anfrage an die Qwen API gesendet wird.
   - **Attribute**:
     - `model`
     - `request_text` (falls zutreffend)
@@ -205,7 +208,7 @@ Logs sind zeitgestempelte Aufzeichnungen spezifischer Ereignisse. Die folgenden 
     - `duration_ms`
     - `auth_type`
 
-- `qwen-code.api_response`: Dieses Ereignis tritt ein, wenn eine Antwort von der Gemini API empfangen wird.
+- `qwen-code.api_response`: Dieses Ereignis tritt ein, wenn eine Antwort von der Qwen API empfangen wird.
   - **Attribute**:
     - `model`
     - `status_code`
@@ -230,43 +233,49 @@ Logs sind zeitgestempelte Aufzeichnungen spezifischer Ereignisse. Die folgenden 
 
 ### Metriken
 
-Metriken sind numerische Messungen des Verhaltens über die Zeit. Die folgenden Metriken werden für Qwen Code gesammelt (Metriknamen bleiben aus Kompatibilitätsgründen `qwen-code.*`):
+Metriken sind numerische Messungen des Verhaltens über die Zeit. Die folgenden Metriken werden für Qwen Code gesammelt (die Metriknamen bleiben aus Kompatibilitätsgründen `qwen-code.*`):
 
-- `qwen-code.session.count` (Zähler, Int): Wird bei jedem CLI-Start um eins erhöht.
+- `qwen-code.session.count` (Counter, Int): Wird bei jedem CLI-Start um eins erhöht.
 
-- `qwen-code.tool.call.count` (Zähler, Int): Zählt die Tool-Aufrufe.
+- `qwen-code.tool.call.count` (Counter, Int): Zählt die Tool-Aufrufe.
   - **Attribute**:
     - `function_name`
     - `success` (boolean)
     - `decision` (string: "accept", "reject" oder "modify", falls zutreffend)
+    - `tool_type` (string: "mcp" oder "native", falls zutreffend)
 
-- `qwen-code.tool.call.latency` (Histogramm, ms): Misst die Latenz von Tool-Aufrufen.
+- `qwen-code.tool.call.latency` (Histogram, ms): Misst die Latenz von Tool-Aufrufen.
   - **Attribute**:
     - `function_name`
     - `decision` (string: "accept", "reject" oder "modify", falls zutreffend)
 
-- `qwen-code.api.request.count` (Zähler, Int): Zählt alle API-Anfragen.
+- `qwen-code.api.request.count` (Counter, Int): Zählt alle API-Anfragen.
   - **Attribute**:
     - `model`
     - `status_code`
     - `error_type` (falls zutreffend)
 
-- `qwen-code.api.request.latency` (Histogramm, ms): Misst die Latenz von API-Anfragen.
+- `qwen-code.api.request.latency` (Histogram, ms): Misst die Latenz von API-Anfragen.
   - **Attribute**:
     - `model`
 
-- `qwen-code.token.usage` (Zähler, Int): Zählt die Anzahl der verwendeten Tokens.
+- `qwen-code.token.usage` (Counter, Int): Zählt die Anzahl der verwendeten Tokens.
   - **Attribute**:
     - `model`
     - `type` (string: "input", "output", "thought", "cache" oder "tool")
 
-- `qwen-code.file.operation.count` (Zähler, Int): Zählt Dateioperationen.
+- `qwen-code.file.operation.count` (Counter, Int): Zählt Dateioperationen.
   - **Attribute**:
-    - `operation` (string: "create", "read", "update"): Die Art der Dateioperation.
+    - `operation` (string: "create", "read", "update"): Der Typ der Dateioperation.
     - `lines` (Int, falls zutreffend): Anzahl der Zeilen in der Datei.
     - `mimetype` (string, falls zutreffend): Mimetype der Datei.
     - `extension` (string, falls zutreffend): Dateierweiterung der Datei.
     - `ai_added_lines` (Int, falls zutreffend): Anzahl der von der KI hinzugefügten/geänderten Zeilen.
     - `ai_removed_lines` (Int, falls zutreffend): Anzahl der von der KI entfernten/geänderten Zeilen.
-    - `user_added_lines` (Int, falls zutreffend): Anzahl der vom Benutzer hinzugefügten/geänderten Zeilen in von der KI vorgeschlagenen Änderungen.
-    - `user_removed_lines` (Int, falls zutreffend): Anzahl der vom Benutzer entfernten/geänderten Zeilen in von der KI vorgeschlagenen Änderungen.
+    - `user_added_lines` (Int, falls zutreffend): Anzahl der vom Benutzer hinzugefügten/geänderten Zeilen in KI-vorgeschlagenen Änderungen.
+    - `user_removed_lines` (Int, falls zutreffend): Anzahl der vom Benutzer entfernten/geänderten Zeilen in KI-vorgeschlagenen Änderungen.
+
+- `qwen-code.chat_compression` (Counter, Int): Zählt Chat-Komprimierungsvorgänge.
+  - **Attribute**:
+    - `tokens_before` (Int): Anzahl der Tokens im Kontext vor der Komprimierung.
+    - `tokens_after` (Int): Anzahl der Tokens im Kontext nach der Komprimierung.

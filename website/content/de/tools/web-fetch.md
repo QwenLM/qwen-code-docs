@@ -4,14 +4,14 @@ Dieses Dokument beschreibt das `web_fetch` Tool für Qwen Code.
 
 ## Beschreibung
 
-Verwende `web_fetch`, um Inhalte von einer angegebenen URL abzurufen und mit einem KI-Modell zu verarbeiten. Das Tool benötigt eine URL und einen Prompt als Eingabe, ruft den Inhalt der URL ab, konvertiert HTML in Markdown und verarbeitet den Inhalt mit dem Prompt unter Verwendung eines kleinen, schnellen Modells.
+Verwende `web_fetch`, um Inhalte von einer angegebenen URL abzurufen und mit einem KI-Modell zu verarbeiten. Das Tool benötigt eine URL und einen Prompt als Eingabe, ruft den Inhalt der URL ab, konvertiert HTML in Markdown und verarbeitet den Inhalt anhand des Prompts mit einem kleinen, schnellen Modell.
 
 ### Argumente
 
 `web_fetch` akzeptiert zwei Argumente:
 
-- `url` (String, erforderlich): Die URL, von der der Inhalt abgerufen werden soll. Muss eine vollständig gültige URL sein, die mit `http://` oder `https://` beginnt.
-- `prompt` (String, erforderlich): Der Prompt, der beschreibt, welche Informationen du aus dem Seiteninhalt extrahieren möchtest.
+- `url` (string, erforderlich): Die URL, von der der Inhalt abgerufen werden soll. Muss eine vollständige, gültige URL sein, die mit `http://` oder `https://` beginnt.
+- `prompt` (string, erforderlich): Der Prompt, der beschreibt, welche Informationen du aus dem Seiteninhalt extrahieren möchtest.
 
 ## Wie man `web_fetch` mit Qwen Code verwendet
 
@@ -39,16 +39,16 @@ Extrahieren spezifischer Informationen:
 web_fetch(url="https://arxiv.org/abs/2401.0001", prompt="What are the key findings and methodology described in this paper?")
 ```
 
-Analyse von GitHub Dokumentation:
+Analyse von GitHub-Dokumentation:
 
 ```
-web_fetch(url="https://github.com/google/gemini-react/blob/main/README.md", prompt="What are the installation steps and main features?")
+web_fetch(url="https://github.com/QwenLM/Qwen/blob/main/README.md", prompt="What are the installation steps and main features?")
 ```
 
 ## Wichtige Hinweise
 
 - **Einzelne URL-Verarbeitung:** `web_fetch` verarbeitet jeweils nur eine URL. Um mehrere URLs zu analysieren, führe separate Aufrufe des Tools durch.
-- **URL-Format:** Das Tool aktualisiert HTTP-URLs automatisch auf HTTPS und wandelt GitHub-Blob-URLs in das Raw-Format um, um einen besseren Zugriff auf den Inhalt zu ermöglichen.
+- **URL-Format:** Das Tool führt HTTP-URLs automatisch auf HTTPS hoch und wandelt GitHub-Blob-URLs in das Raw-Format um, um einen besseren Zugriff auf den Inhalt zu ermöglichen.
 - **Inhaltsverarbeitung:** Das Tool ruft den Inhalt direkt ab und verarbeitet ihn mithilfe eines KI-Modells, wobei HTML in ein lesbares Textformat konvertiert wird.
 - **Ausgabegüte:** Die Qualität der Ausgabe hängt von der Klarheit der Anweisungen im Prompt ab.
-- **MCP-Tools:** Falls ein von MCP bereitgestelltes Web-Fetch-Tool verfügbar ist (beginnend mit "mcp\_\_"), verwende dieses Tool vorzugsweise, da es möglicherweise weniger Einschränkungen unterliegt.
+- **MCP-Tools:** Falls ein von MCP bereitgestelltes Web-Fetch-Tool verfügbar ist (beginnend mit "mcp\_\_"), bevorzuge die Verwendung dieses Tools, da es möglicherweise weniger Einschränkungen unterliegt.

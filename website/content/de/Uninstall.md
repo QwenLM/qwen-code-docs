@@ -4,9 +4,9 @@ Die Methode zur Deinstallation hängt davon ab, wie du die CLI ausgeführt hast.
 
 ## Methode 1: Verwendung von npx
 
-npx führt Pakete aus einem temporären Cache aus, ohne eine dauerhafte Installation vorzunehmen. Um die CLI zu "deinstallieren", musst du diesen Cache leeren, wodurch gemini-cli und alle anderen Pakete, die zuvor mit npx ausgeführt wurden, entfernt werden.
+npx führt Pakete aus einem temporären Cache aus, ohne eine dauerhafte Installation vorzunehmen. Um die CLI zu "deinstallieren", musst du diesen Cache leeren, wodurch qwen-code und alle anderen Pakete, die zuvor mit npx ausgeführt wurden, entfernt werden.
 
-Der npx-Cache ist ein Verzeichnis mit dem Namen `_npx` innerhalb deines Haupt-npm-Cache-Ordners. Du kannst deinen npm-Cache-Pfad finden, indem du `npm config get cache` ausführst.
+Der npx-Cache ist ein Verzeichnis namens `_npx` innerhalb deines Haupt-npm-Cache-Ordners. Du kannst deinen npm-Cache-Pfad herausfinden, indem du `npm config get cache` ausführst.
 
 **Für macOS / Linux**
 
@@ -35,10 +35,10 @@ Remove-Item -Path (Join-Path $env:LocalAppData "npm-cache\_npx") -Recurse -Force
 
 ## Methode 2: Verwendung von npm (Globale Installation)
 
-Wenn du die CLI global installiert hast (z. B. `npm install -g @qwen-code/qwen-code`), verwende den Befehl `npm uninstall` mit dem Flag `-g`, um das Paket zu entfernen.
+Wenn du die CLI global installiert hast (z. B. `npm install -g @qwen-code/qwen-code`), verwende den Befehl `npm uninstall` mit dem Flag `-g`, um das Package zu entfernen.
 
 ```bash
 npm uninstall -g @qwen-code/qwen-code
 ```
 
-Dieser Befehl entfernt das Paket vollständig von deinem System.
+Dieser Befehl entfernt das Package vollständig von deinem System.

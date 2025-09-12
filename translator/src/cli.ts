@@ -7,6 +7,7 @@ import fs from "fs-extra";
 import path from "path";
 import { SyncManager } from "./sync";
 import { DocumentTranslator } from "./translator";
+import { readFileSync } from "fs";
 
 /**
  * CLI project configuration interface
@@ -43,7 +44,9 @@ class TranslationCLI {
    */
   async initProject(): Promise<void> {
     console.log(chalk.blue("🚀 Initializing document translation project"));
-    console.log(chalk.gray("Please provide the following project configuration:\n"));
+    console.log(
+      chalk.gray("Please provide the following project configuration:\n")
+    );
 
     const answers = await inquirer.prompt([
       {
@@ -62,7 +65,8 @@ class TranslationCLI {
         validate: (input: string) => {
           const urlPattern = /^https?:\/\/.+\.git$/;
           return (
-            urlPattern.test(input) || "Please enter a valid Git repository URL (ending with .git)"
+            urlPattern.test(input) ||
+            "Please enter a valid Git repository URL (ending with .git)"
           );
         },
       },
@@ -134,17 +138,31 @@ class TranslationCLI {
     await this.copyEnvExample();
 
     console.log(chalk.green("\n✅ Project initialization completed!"));
-    console.log(chalk.yellow(`📝 Project configuration saved to: ${this.projectConfigPath}`));
+    console.log(
+      chalk.yellow(
+        `📝 Project configuration saved to: ${this.projectConfigPath}`
+      )
+    );
     console.log(chalk.blue("\n📋 Next steps:"));
     console.log(chalk.gray("1. Configure environment variables:"));
     console.log(chalk.gray("   cp .env.example .env"));
     console.log(chalk.gray("   # Edit .env file and add your API keys"));
     console.log(chalk.gray("2. Run commands:"));
-    console.log(chalk.gray("   qwen-translation sync     # Sync source repository docs"));
-    console.log(chalk.gray("   qwen-translation translate # Translate documents"));
-    console.log(chalk.gray("   qwen-translation config    # View/modify configuration"));
-    console.log(chalk.gray("   npm install               # Install dependencies"));
-    console.log(chalk.gray("   npm run dev               # Start development server"));
+    console.log(
+      chalk.gray("   qwen-translation sync     # Sync source repository docs")
+    );
+    console.log(
+      chalk.gray("   qwen-translation translate # Translate documents")
+    );
+    console.log(
+      chalk.gray("   qwen-translation config    # View/modify configuration")
+    );
+    console.log(
+      chalk.gray("   npm install               # Install dependencies")
+    );
+    console.log(
+      chalk.gray("   npm run dev               # Start development server")
+    );
   }
 
   /**
@@ -195,14 +213,16 @@ class TranslationCLI {
       console.log(chalk.green("✅ Nextra template copied successfully"));
     } catch (error: any) {
       if (error.code === "EEXIST") {
-        console.log(chalk.yellow("⚠️  Target directory already contains files, skipping copy"));
+        console.log(
+          chalk.yellow(
+            "⚠️  Target directory already contains files, skipping copy"
+          )
+        );
       } else {
         throw new Error(`Failed to copy template: ${error.message}`);
       }
     }
   }
-
-
 
   /**
    * Update .gitignore file, add translation-related ignore rules
@@ -241,7 +261,9 @@ class TranslationCLI {
         console.log(chalk.green("✅ .gitignore file updated successfully"));
       } else {
         console.log(
-          chalk.yellow("⚠️  .gitignore file already contains translation rules, skipping update")
+          chalk.yellow(
+            "⚠️  .gitignore file already contains translation rules, skipping update"
+          )
         );
       }
     } catch (error: any) {
@@ -265,13 +287,19 @@ class TranslationCLI {
         await fs.copy(examplePath, targetPath);
         console.log(chalk.green("✅ .env example file copied successfully"));
         console.log(
-          chalk.yellow("💡 Please copy .env.example to .env and add your API keys")
+          chalk.yellow(
+            "💡 Please copy .env.example to .env and add your API keys"
+          )
         );
       } else {
-        console.log(chalk.yellow("⚠️  .env example file does not exist, skipping copy"));
+        console.log(
+          chalk.yellow("⚠️  .env example file does not exist, skipping copy")
+        );
       }
     } catch (error: any) {
-      console.log(chalk.yellow(`⚠️  Failed to copy .env example file: ${error.message}`));
+      console.log(
+        chalk.yellow(`⚠️  Failed to copy .env example file: ${error.message}`)
+      );
     }
   }
 
@@ -282,7 +310,9 @@ class TranslationCLI {
     const projectConfig = await this.loadProjectConfig();
     if (!projectConfig) {
       console.error(
-        chalk.red("❌ Project not initialized, please run 'qwen-translation init' first")
+        chalk.red(
+          "❌ Project not initialized, please run 'qwen-translation init' first"
+        )
       );
       return;
     }
@@ -302,7 +332,9 @@ class TranslationCLI {
       const result = await syncManager.syncDocuments(force);
 
       if (result.success) {
-        console.log(chalk.green(`✅ Sync completed! Changed files: ${result.changes}`));
+        console.log(
+          chalk.green(`✅ Sync completed! Changed files: ${result.changes}`)
+        );
 
         if (result.files.length > 0) {
           console.log(chalk.blue("\n📄 Changed files:"));
@@ -338,7 +370,9 @@ class TranslationCLI {
     const projectConfig = await this.loadProjectConfig();
     if (!projectConfig) {
       console.error(
-        chalk.red("❌ Project not initialized, please run 'qwen-translation init' first")
+        chalk.red(
+          "❌ Project not initialized, please run 'qwen-translation init' first"
+        )
       );
       return;
     }
@@ -350,7 +384,11 @@ class TranslationCLI {
       ? [options.language]
       : projectConfig.targetLanguages;
 
-    console.log(chalk.blue(`🌍 Starting document translation (${languages.join(", ")})...`));
+    console.log(
+      chalk.blue(
+        `🌍 Starting document translation (${languages.join(", ")})...`
+      )
+    );
 
     try {
       for (const lang of languages) {
@@ -396,7 +434,9 @@ class TranslationCLI {
     const projectConfig = await this.loadProjectConfig();
     if (!projectConfig) {
       console.error(
-        chalk.red("❌ Project not initialized, please run 'qwen-translation init' first")
+        chalk.red(
+          "❌ Project not initialized, please run 'qwen-translation init' first"
+        )
       );
       return;
     }
@@ -462,7 +502,6 @@ class TranslationCLI {
     console.log(chalk.green("✅ Project configuration updated successfully"));
   }
 
-
   /**
    * Save project configuration
    */
@@ -499,7 +538,9 @@ class TranslationCLI {
 
     if (!projectConfig) {
       console.log(chalk.red("❌ Project not initialized"));
-      console.log(chalk.gray("💡 Run 'qwen-translation init' to initialize project"));
+      console.log(
+        chalk.gray("💡 Run 'qwen-translation init' to initialize project")
+      );
       return;
     }
 
@@ -507,9 +548,13 @@ class TranslationCLI {
     console.log(chalk.gray(`  Project name: ${projectConfig.name}`));
     console.log(chalk.gray(`  Source repository: ${projectConfig.sourceRepo}`));
     console.log(chalk.gray(`  Documentation path: ${projectConfig.docsPath}`));
-    console.log(chalk.gray(`  Source language: ${projectConfig.sourceLanguage}`));
     console.log(
-      chalk.gray(`  Target languages: ${projectConfig.targetLanguages.join(", ")}`)
+      chalk.gray(`  Source language: ${projectConfig.sourceLanguage}`)
+    );
+    console.log(
+      chalk.gray(
+        `  Target languages: ${projectConfig.targetLanguages.join(", ")}`
+      )
     );
     console.log(chalk.gray(`  Output directory: ${projectConfig.outputDir}`));
 
@@ -537,6 +582,20 @@ class TranslationCLI {
 /**
  * Main function - Setup CLI commands
  */
+// Read version from package.json
+function getPackageVersion(): string {
+  try {
+    // Get the directory where this script is located
+    const scriptDir = path.dirname(__filename);
+    const packageJsonPath = path.join(scriptDir, "../package.json");
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+    return packageJson.version;
+  } catch (error) {
+    console.warn("Could not read version from package.json, using default");
+    return "0.0.1";
+  }
+}
+
 async function main() {
   const cli = new TranslationCLI();
   const program = new Command();
@@ -544,7 +603,7 @@ async function main() {
   program
     .name("qwen-translation")
     .description("AI-powered document translation tool")
-    .version("1.0.0");
+    .version(getPackageVersion());
 
   // init command
   program

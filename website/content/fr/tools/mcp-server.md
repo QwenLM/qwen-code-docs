@@ -16,21 +16,21 @@ Avec un serveur MCP, vous pouvez étendre les capacités du CLI pour effectuer d
 
 ## Architecture d'intégration principale
 
-Qwen Code s'intègre avec les serveurs MCP via un système sophistiqué de découverte et d'exécution intégré dans le package principal (`packages/core/src/tools/`) :
+Qwen Code s'intègre aux serveurs MCP via un système sophistiqué de découverte et d'exécution intégré dans le package principal (`packages/core/src/tools/`) :
 
 ### Couche de découverte (`mcp-client.ts`)
 
 Le processus de découverte est orchestré par `discoverMcpTools()`, qui :
 
 1. **Parcourt les serveurs configurés** à partir de la configuration `mcpServers` de votre `settings.json`
-2. **Établit des connexions** en utilisant les mécanismes de transport appropriés (Stdio, SSE, ou Streamable HTTP)
+2. **Établit des connexions** en utilisant les mécanismes de transport appropriés (Stdio, SSE ou Streamable HTTP)
 3. **Récupère les définitions des outils** depuis chaque serveur en utilisant le protocole MCP
-4. **Nettoie et valide** les schémas des outils pour assurer la compatibilité avec l'API Gemini
+4. **Nettoie et valide** les schémas des outils pour assurer la compatibilité avec l'API Qwen
 5. **Enregistre les outils** dans le registre global des outils avec résolution des conflits
 
 ### Couche d'exécution (`mcp-tool.ts`)
 
-Chaque outil MCP découvert est encapsulé dans une instance de `DiscoveredMCPTool` qui :
+Chaque outil MCP découvert est encapsulé dans une instance `DiscoveredMCPTool` qui :
 
 - **Gère la logique de confirmation** en fonction des paramètres de confiance du serveur et des préférences utilisateur
 - **Assure l'exécution de l'outil** en appelant le serveur MCP avec les paramètres appropriés
@@ -39,11 +39,11 @@ Chaque outil MCP découvert est encapsulé dans une instance de `DiscoveredMCPTo
 
 ### Mécanismes de transport
 
-Le CLI prend en charge trois types de transport MCP :
+Le CLI supporte trois types de transport MCP :
 
 - **Transport Stdio :** Lance un sous-processus et communique via stdin/stdout
 - **Transport SSE :** Se connecte aux endpoints Server-Sent Events
-- **Transport HTTP streamable :** Utilise le streaming HTTP pour la communication
+- **Transport HTTP Streamable :** Utilise le streaming HTTP pour la communication
 
 ## Comment configurer votre serveur MCP
 
@@ -78,10 +78,10 @@ Ajoutez un objet `mcpServers` à votre fichier `settings.json` :
 
 Chaque configuration de serveur prend en charge les propriétés suivantes :
 
-#### Requis (un des éléments suivants)
+#### Requis (un des suivants)
 
 - **`command`** (string) : Chemin vers l'exécutable pour le transport Stdio
-- **`url`** (string) : URL du endpoint SSE (ex. : `"http://localhost:8080/sse"`)
+- **`url`** (string) : URL du endpoint SSE (ex. `"http://localhost:8080/sse"`)
 - **`httpUrl`** (string) : URL du endpoint HTTP streaming
 
 #### Optionnel
@@ -90,10 +90,10 @@ Chaque configuration de serveur prend en charge les propriétés suivantes :
 - **`headers`** (object) : En-têtes HTTP personnalisés lors de l'utilisation de `url` ou `httpUrl`
 - **`env`** (object) : Variables d'environnement pour le processus du serveur. Les valeurs peuvent référencer des variables d'environnement en utilisant la syntaxe `$VAR_NAME` ou `${VAR_NAME}`
 - **`cwd`** (string) : Répertoire de travail pour le transport Stdio
-- **`timeout`** (number) : Délai d'expiration de la requête en millisecondes (par défaut : 600 000 ms = 10 minutes)
+- **`timeout`** (number) : Délai d'expiration des requêtes en millisecondes (par défaut : 600 000 ms = 10 minutes)
 - **`trust`** (boolean) : Si `true`, contourne toutes les confirmations d'appel d'outils pour ce serveur (par défaut : `false`)
 - **`includeTools`** (string[]) : Liste des noms d'outils à inclure depuis ce serveur MCP. Lorsque cette liste est spécifiée, seuls les outils listés ici seront disponibles depuis ce serveur (comportement de liste blanche). Si non spécifié, tous les outils du serveur sont activés par défaut.
-- **`excludeTools`** (string[]) : Liste des noms d'outils à exclure de ce serveur MCP. Les outils listés ici ne seront pas disponibles pour le modèle, même s'ils sont exposés par le serveur. **Note :** `excludeTools` prime sur `includeTools` – si un outil est présent dans les deux listes, il sera exclu.
+- **`excludeTools`** (string[]) : Liste des noms d'outils à exclure de ce serveur MCP. Les outils listés ici ne seront pas disponibles pour le modèle, même s'ils sont exposés par le serveur. **Note :** `excludeTools` a priorité sur `includeTools` – si un outil est présent dans les deux listes, il sera exclu.
 
 ### Support OAuth pour les serveurs MCP distants
 
@@ -101,7 +101,7 @@ Qwen Code prend en charge l'authentification OAuth 2.0 pour les serveurs MCP dis
 
 #### Découverte automatique OAuth
 
-Pour les serveurs qui prennent en charge la découverte OAuth, vous pouvez omettre la configuration OAuth et laisser le CLI la découvrir automatiquement :
+Pour les serveurs qui supportent la découverte OAuth, vous pouvez omettre la configuration OAuth et laisser le CLI la découvrir automatiquement :
 
 ```json
 {
@@ -117,7 +117,7 @@ Le CLI va automatiquement :
 
 - Détecter quand un serveur requiert une authentification OAuth (réponses 401)
 - Découvrir les endpoints OAuth depuis les métadonnées du serveur
-- Effectuer un enregistrement dynamique du client si pris en charge
+- Effectuer un enregistrement dynamique du client si supporté
 - Gérer le flux OAuth et la gestion des tokens
 
 #### Flux d'authentification
@@ -141,8 +141,8 @@ Lors de la connexion à un serveur compatible OAuth :
 Cette fonctionnalité ne fonctionnera pas dans :
 
 - Des environnements headless sans accès au navigateur
-- Des sessions SSH distantes sans forwarding X11
-- Des environnements conteneurisés sans support du navigateur
+- Des sessions SSH distantes sans X11 forwarding
+- Des environnements containerisés sans support du navigateur
 
 #### Gestion de l'authentification OAuth
 
@@ -155,22 +155,22 @@ Utilisez la commande `/mcp auth` pour gérer l'authentification OAuth :
 ```
 
 ```markdown
-# S'authentifier avec un serveur spécifique
+# Authentification avec un serveur spécifique
 /mcp auth serverName
 
-# Ré-authentifier si les tokens expirent
+# Ré-authentification si les tokens expirent
 /mcp auth serverName
 ```
 
 #### Propriétés de configuration OAuth
 
 - **`enabled`** (boolean): Active OAuth pour ce serveur
-- **`clientId`** (string): Identifiant du client OAuth (optionnel avec l'enregistrement dynamique)
+- **`clientId`** (string): Identifiant du client OAuth (optionnel avec enregistrement dynamique)
 - **`clientSecret`** (string): Secret du client OAuth (optionnel pour les clients publics)
 - **`authorizationUrl`** (string): Endpoint d'autorisation OAuth (auto-découvert si omis)
 - **`tokenUrl`** (string): Endpoint de token OAuth (auto-découvert si omis)
 - **`scopes`** (string[]): Scopes OAuth requis
-- **`redirectUri`** (string): URI de redirection personnalisée (par défaut : `http://localhost:7777/oauth/callback`)
+- **`redirectUri`** (string): URI de redirection personnalisée (par défaut `http://localhost:7777/oauth/callback`)
 - **`tokenParamName`** (string): Nom du paramètre de requête pour les tokens dans les URLs SSE
 - **`audiences`** (string[]): Audiences pour lesquelles le token est valide
 ```
@@ -188,7 +188,7 @@ Les tokens OAuth sont automatiquement :
 
 Vous pouvez spécifier le type de fournisseur d'authentification en utilisant la propriété `authProviderType` :
 
-- **`authProviderType`** (string) : Spécifie le fournisseur d'authentification. Peut être l'une des valeurs suivantes :
+- **`authProviderType`** (string) : Spécifie le fournisseur d'authentification. Peut prendre l'une des valeurs suivantes :
   - **`dynamic_discovery`** (par défaut) : Le CLI découvrira automatiquement la configuration OAuth depuis le serveur.
   - **`google_credentials`** : Le CLI utilisera les Google Application Default Credentials (ADC) pour s'authentifier auprès du serveur. Lorsque vous utilisez ce fournisseur, vous devez spécifier les scopes requis.
 
@@ -208,7 +208,7 @@ Vous pouvez spécifier le type de fournisseur d'authentification en utilisant la
 
 ### Exemples de configurations
 
-#### Python MCP Server (Stdio)
+#### Serveur MCP Python (Stdio)
 
 ```json
 {
@@ -227,7 +227,7 @@ Vous pouvez spécifier le type de fournisseur d'authentification en utilisant la
 }
 ```
 
-#### Node.js MCP Server (Stdio)
+#### Serveur MCP Node.js (Stdio)
 
 ```json
 {
@@ -242,7 +242,7 @@ Vous pouvez spécifier le type de fournisseur d'authentification en utilisant la
 }
 ```
 
-#### MCP Server basé sur Docker
+#### Serveur MCP basé sur Docker
 
 ```json
 {
@@ -280,7 +280,7 @@ Vous pouvez spécifier le type de fournisseur d'authentification en utilisant la
 }
 ```
 
-#### Serveur MCP basé sur HTTP avec headers personnalisés
+#### Serveur MCP basé sur HTTP avec en-têtes personnalisés
 
 ```json
 {
@@ -337,9 +337,9 @@ Une fois la connexion établie :
 1. **Liste des outils :** Le client appelle l'endpoint de liste des outils du serveur MCP
 2. **Validation du schéma :** La déclaration de chaque fonction d'outil est validée
 3. **Filtrage des outils :** Les outils sont filtrés en fonction de la configuration `includeTools` et `excludeTools`
-4. **Nettoyage des noms :** Les noms des outils sont nettoyés pour respecter les exigences de l'API Gemini :
+4. **Nettoyage des noms :** Les noms des outils sont nettoyés pour respecter les exigences de l'API Qwen :
    - Les caractères invalides (non alphanumériques, underscore, point, trait d'union) sont remplacés par des underscores
-   - Les noms de plus de 63 caractères sont tronqués avec remplacement au milieu (`___`)
+   - Les noms de plus de 63 caractères sont tronqués avec un remplacement au milieu (`___`)
 
 ### 3. Résolution des conflits
 
@@ -349,28 +349,28 @@ Lorsque plusieurs serveurs exposent des outils portant le même nom :
 2. **Préfixage automatique :** Les serveurs suivants reçoivent des noms préfixés : `serverName__toolName`
 3. **Suivi dans le registre :** Le registre des outils maintient les correspondances entre les noms de serveurs et leurs outils
 
-### 4. Traitement des Schémas
+### 4. Traitement des schémas
 
 Les schémas de paramètres des outils sont nettoyés pour assurer la compatibilité avec l'API :
 
 - Les propriétés **`$schema`** sont supprimées
 - Les propriétés **`additionalProperties`** sont retirées
-- Les clauses **`anyOf` avec `default`** voient leurs valeurs par défaut supprimées (pour la compatibilité Vertex AI)
+- Les blocs **`anyOf` avec `default`** voient leurs valeurs par défaut supprimées (pour la compatibilité Vertex AI)
 - Un traitement **récursif** est appliqué aux schémas imbriqués
 
-### 5. Gestion des Connexions
+### 5. Gestion des connexions
 
-Après la découverte des outils :
+Après la découverte :
 
 - **Connexions persistantes :** Les serveurs ayant réussi à enregistrer des outils conservent leur connexion
 - **Nettoyage :** Les connexions des serveurs ne fournissant aucun outil utilisable sont fermées
-- **Mise à jour du statut :** Le statut final des serveurs est défini à `CONNECTED` ou `DISCONNECTED`
+- **Mise à jour du statut :** Le statut final des serveurs est défini sur `CONNECTED` ou `DISCONNECTED`
 
-## Flux d'Exécution des Outils
+## Flux d'exécution des outils
 
 Lorsque le modèle décide d'utiliser un outil MCP, le flux d'exécution suivant se produit :
 
-### 1. Invocation de l'Outil
+### 1. Invocation de l'outil
 
 Le modèle génère un `FunctionCall` contenant :
 
@@ -396,11 +396,11 @@ Le système maintient des listes d'autorisation internes pour :
 - **Niveau serveur :** `serverName` → Tous les outils de ce serveur sont approuvés
 - **Niveau outil :** `serverName.toolName` → Cet outil spécifique est approuvé
 
-#### Gestion du choix utilisateur
+#### Gestion des choix utilisateur
 
 Lorsqu'une confirmation est requise, les utilisateurs peuvent choisir :
 
-- **Procéder une fois :** Exécuter uniquement cette fois-ci
+- **Exécuter une fois :** Exécuter uniquement cette fois-ci
 - **Toujours autoriser cet outil :** Ajouter à la liste d'autorisation au niveau de l'outil
 - **Toujours autoriser ce serveur :** Ajouter à la liste d'autorisation au niveau du serveur
 - **Annuler :** Abandonner l'exécution
@@ -410,7 +410,7 @@ Lorsqu'une confirmation est requise, les utilisateurs peuvent choisir :
 Après confirmation (ou contournement de la vérification de confiance) :
 
 1. **Préparation des paramètres :** Les arguments sont validés par rapport au schéma de l'outil
-2. **Appel MCP :** Le `CallableTool` sous-jacent invoque le serveur avec :
+2. **Appel MCP :** L'outil `CallableTool` sous-jacent invoque le serveur avec :
 
    ```typescript
    const functionCalls = [
@@ -427,7 +427,7 @@ Après confirmation (ou contournement de la vérification de confiance) :
 
 Le résultat de l'exécution contient :
 
-- **`llmContent` :** Parties de la réponse brute destinées au contexte du modèle de langage
+- **`llmContent` :** Parties de la réponse brute destinées au contexte du modèle linguistique
 - **`returnDisplay` :** Sortie formatée pour l'affichage utilisateur (souvent du JSON dans des blocs de code markdown)
 
 ## Comment interagir avec votre serveur MCP
@@ -444,11 +444,11 @@ Elle affiche :
 
 - **Liste des serveurs :** Tous les serveurs MCP configurés
 - **Statut de connexion :** `CONNECTED`, `CONNECTING`, ou `DISCONNECTED`
-- **Détails du serveur :** Résumé de la configuration (données sensibles exclues)
+- **Détails du serveur :** Résumé de la configuration (sans les données sensibles)
 - **Outils disponibles :** Liste des outils de chaque serveur avec leurs descriptions
 - **État de découverte :** Statut global du processus de découverte
 
-### Exemple de sortie de `/mcp`
+### Exemple de sortie de la commande `/mcp`
 
 ```
 MCP Servers Status:
@@ -470,34 +470,34 @@ MCP Servers Status:
 Discovery State: COMPLETED
 ```
 
-### Utilisation des Tools
+### Utilisation des outils
 
-Une fois découverts, les tools MCP sont disponibles pour le modèle Gemini comme des tools intégrés. Le modèle va automatiquement :
+Une fois découverts, les outils MCP sont disponibles pour le modèle Qwen comme des outils intégrés. Le modèle va automatiquement :
 
-1. **Sélectionner les tools appropriés** en fonction de vos requêtes
+1. **Sélectionner les outils appropriés** en fonction de vos requêtes
 2. **Afficher des dialogues de confirmation** (sauf si le serveur est approuvé)
-3. **Exécuter les tools** avec les paramètres appropriés
+3. **Exécuter les outils** avec les paramètres appropriés
 4. **Afficher les résultats** dans un format convivial
 
-## Surveillance du Statut et Dépannage
+## Surveillance du statut et dépannage
 
-### États de Connexion
+### États de connexion
 
 L'intégration MCP suit plusieurs états :
 
-#### Statut du Serveur (`MCPServerStatus`)
+#### Statut du serveur (`MCPServerStatus`)
 
 - **`DISCONNECTED` :** Le serveur n'est pas connecté ou rencontre des erreurs
 - **`CONNECTING` :** Tentative de connexion en cours
 - **`CONNECTED` :** Le serveur est connecté et prêt
 
-#### État de Découverte (`MCPDiscoveryState`)
+#### État de découverte (`MCPDiscoveryState`)
 
 - **`NOT_STARTED` :** La découverte n'a pas encore commencé
 - **`IN_PROGRESS` :** Découverte des serveurs en cours
 - **`COMPLETED` :** Découverte terminée (avec ou sans erreurs)
 
-### Problèmes Courants et Solutions
+### Problèmes courants et solutions
 
 #### Le serveur ne se connecte pas
 
@@ -506,7 +506,7 @@ L'intégration MCP suit plusieurs états :
 **Dépannage :**
 
 1. **Vérifier la configuration :** Assurez-vous que `command`, `args`, et `cwd` sont corrects
-2. **Tester manuellement :** Exécutez la commande du serveur directement pour vérifier qu'elle fonctionne
+2. **Tester manuellement :** Exécutez directement la commande du serveur pour vérifier qu'elle fonctionne
 3. **Vérifier les dépendances :** Assurez-vous que tous les packages requis sont installés
 4. **Consulter les logs :** Recherchez les messages d'erreur dans la sortie CLI
 5. **Vérifier les permissions :** Assurez-vous que le CLI peut exécuter la commande du serveur
@@ -517,7 +517,7 @@ L'intégration MCP suit plusieurs états :
 
 **Dépannage :**
 
-1. **Vérifier l'enregistrement des outils :** Assurez-vous que votre serveur enregistre effectivement des outils
+1. **Vérifier l'enregistrement des outils :** Assurez-vous que votre serveur enregistre réellement des outils
 2. **Vérifier le protocole MCP :** Confirmez que votre serveur implémente correctement le listing des outils MCP
 3. **Consulter les logs du serveur :** Vérifiez la sortie stderr pour détecter les erreurs côté serveur
 4. **Tester le listing des outils :** Testez manuellement le endpoint de découverte d'outils de votre serveur
@@ -535,7 +535,7 @@ L'intégration MCP suit plusieurs états :
 
 #### Compatibilité du sandbox
 
-**Symptômes :** Les serveurs MCP échouent lorsque le sandboxing est activé
+**Symptômes :** Les serveurs MCP échouent quand le sandboxing est activé
 
 **Solutions :**
 
@@ -547,8 +547,8 @@ L'intégration MCP suit plusieurs états :
 ### Conseils de débogage
 
 1. **Activer le mode debug :** Exécutez le CLI avec `--debug` pour obtenir une sortie verbeuse
-2. **Vérifier stderr :** Les erreurs du serveur MCP sont capturées et journalisées (les messages INFO sont filtrés)
-3. **Tester de manière isolée :** Testez votre serveur MCP indépendamment avant l'intégration
+2. **Vérifier stderr :** Les messages stderr du serveur MCP sont capturés et enregistrés (les messages INFO sont filtrés)
+3. **Test isolé :** Testez votre serveur MCP indépendamment avant de l'intégrer
 4. **Configuration progressive :** Commencez par des outils simples avant d'ajouter des fonctionnalités complexes
 5. **Utiliser `/mcp` fréquemment :** Surveillez l'état du serveur pendant le développement
 
@@ -557,28 +557,28 @@ L'intégration MCP suit plusieurs états :
 ### Considérations de sécurité
 
 - **Paramètres de confiance :** L'option `trust` contourne toutes les boîtes de dialogue de confirmation. À utiliser avec prudence et uniquement pour les serveurs que vous contrôlez entièrement
-- **Jetons d'accès :** Soyez vigilant sur la sécurité lors de la configuration des variables d'environnement contenant des clés API ou des jetons
-- **Compatibilité sandbox :** Lors de l'utilisation du sandboxing, assurez-vous que les serveurs MCP sont accessibles depuis l'environnement sandbox
-- **Données privées :** L'utilisation de jetons d'accès personnels à portée large peut entraîner une fuite d'informations entre les repositories
+- **Tokens d'accès :** Soyez vigilant sur la sécurité lors de la configuration des variables d'environnement contenant des API keys ou des tokens
+- **Compatibilité sandbox :** Lors de l'utilisation du sandboxing, assurez-vous que les serveurs MCP sont disponibles dans l'environnement sandbox
+- **Données privées :** L'utilisation de tokens d'accès personnels à portée large peut entraîner une fuite d'informations entre les repositories
 
 ### Performance et Gestion des Ressources
 
 - **Persistance des connexions :** Le CLI maintient des connexions persistantes vers les serveurs qui enregistrent avec succès des outils
 - **Nettoyage automatique :** Les connexions vers les serveurs ne fournissant aucun outil sont automatiquement fermées
 - **Gestion des timeouts :** Configurez des timeouts appropriés en fonction des caractéristiques de réponse de votre serveur
-- **Monitoring des ressources :** Les serveurs MCP s'exécutent en tant que processus séparés et consomment des ressources système
+- **Surveillance des ressources :** Les serveurs MCP s'exécutent en tant que processus séparés et consomment des ressources système
 
 ### Compatibilité des Schémas
 
-- **Suppression de propriétés :** Le système supprime automatiquement certaines propriétés de schéma (`$schema`, `additionalProperties`) pour assurer la compatibilité avec l'API Gemini
-- **Nettoyage des noms :** Les noms d'outils sont automatiquement nettoyés pour respecter les exigences de l'API
-- **Résolution des conflits :** Les conflits de noms d'outils entre serveurs sont résolus par préfixage automatique
+- **Suppression de propriétés :** Le système supprime automatiquement certaines propriétés de schéma (`$schema`, `additionalProperties`) pour assurer la compatibilité avec l'API Qwen
+- **Nettoyage des noms :** Les noms des outils sont automatiquement nettoyés pour satisfaire aux exigences de l'API
+- **Résolution des conflits :** Les conflits de noms d'outils entre serveurs sont résolus par un préfixage automatique
 
 Cette intégration complète fait des serveurs MCP un moyen puissant d'étendre les capacités du CLI tout en maintenant la sécurité, la fiabilité et la facilité d'utilisation.
 
 ## Retourner du contenu riche depuis les outils
 
-Les outils MCP ne se limitent pas à renvoyer du texte simple. Vous pouvez retourner du contenu riche et multi-parties, incluant du texte, des images, de l'audio et d'autres données binaires dans une seule réponse d'outil. Cela vous permet de créer des outils puissants capables de fournir des informations diverses au modèle en un seul tour.
+Les outils MCP ne se limitent pas à retourner du texte simple. Vous pouvez renvoyer du contenu riche et multi-parties, incluant du texte, des images, de l'audio et d'autres données binaires dans une seule réponse d'outil. Cela vous permet de créer des outils puissants capables de fournir des informations diverses au modèle en un seul tour.
 
 Toutes les données retournées par l'outil sont traitées et envoyées au modèle comme contexte pour sa prochaine génération, lui permettant de raisonner ou de résumer les informations fournies.
 
@@ -596,7 +596,7 @@ Vous pouvez combiner différents types de blocs de contenu dans le tableau `cont
 
 ### Exemple : Retourner du texte et une image
 
-Voici un exemple de réponse JSON valide d'un outil MCP qui retourne à la fois une description textuelle et une image :
+Voici un exemple de réponse JSON valide depuis un outil MCP qui retourne à la fois une description textuelle et une image :
 
 ```json
 {
@@ -621,12 +621,12 @@ Voici un exemple de réponse JSON valide d'un outil MCP qui retourne à la fois 
 Lorsque Qwen Code reçoit cette réponse, il va :
 
 1. Extraire tout le texte et le combiner en une seule partie `functionResponse` pour le modèle.
-2. Présenter les données de l'image comme une partie `inlineData` distincte.
-3. Fournir un résumé clair et convivial dans le CLI, indiquant que du texte et une image ont été reçus.
+2. Présenter les données de l’image comme une partie `inlineData` distincte.
+3. Fournir un résumé clair et convivial dans le CLI, indiquant qu’un texte et une image ont été reçus.
 
-Cela vous permet de créer des outils sophistiqués capables de fournir un contexte riche et multi-modale au modèle Gemini.
+Cela vous permet de créer des outils sophistiqués capables de fournir un contexte riche et multi-modale au modèle Qwen.
 
-## Prompts MCP en tant que commandes slash
+## Prompts MCP en tant que commandes Slash
 
 En plus des outils, les serveurs MCP peuvent exposer des prompts prédéfinis qui peuvent être exécutés en tant que commandes slash dans Qwen Code. Cela vous permet de créer des raccourcis pour des requêtes courantes ou complexes qui peuvent être facilement invoquées par leur nom.
 
@@ -668,7 +668,7 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
 
-Cela peut être inclus dans `settings.json` sous `mcpServers` avec :
+Ceci peut être inclus dans `settings.json` sous `mcpServers` avec :
 
 ```json
 "nodeServer": {
@@ -695,7 +695,7 @@ Lorsque vous exécutez cette commande, le CLI exécute la méthode `prompts/get`
 
 ## Gérer les serveurs MCP avec `qwen mcp`
 
-Bien que vous puissiez toujours configurer les serveurs MCP en modifiant manuellement votre fichier `settings.json`, la CLI fournit un ensemble pratique de commandes pour gérer vos configurations de serveur de manière programmatique. Ces commandes simplifient le processus d'ajout, de listage et de suppression de serveurs MCP sans avoir besoin de modifier directement les fichiers JSON.
+Même si vous pouvez toujours configurer les serveurs MCP en modifiant manuellement votre fichier `settings.json`, la CLI fournit un ensemble pratique de commandes pour gérer vos configurations de serveur de manière programmatique. Ces commandes simplifient le processus d'ajout, de listage et de suppression de serveurs MCP sans avoir besoin de modifier directement les fichiers JSON.
 
 ### Ajouter un serveur (`qwen mcp add`)
 
@@ -720,12 +720,12 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 - `--timeout` : Définir le délai d'attente de connexion en millisecondes.
 - `--trust` : Faire confiance au serveur (contourne toutes les demandes de confirmation d'appel d'outils).
 - `--description` : Définir la description du serveur.
-- `--include-tools` : Une liste d'outils à inclure, séparés par des virgules.
-- `--exclude-tools` : Une liste d'outils à exclure, séparés par des virgules.
+- `--include-tools` : Liste des outils à inclure, séparés par des virgules.
+- `--exclude-tools` : Liste des outils à exclure, séparés par des virgules.
 
 #### Ajouter un serveur stdio
 
-Il s'agit du transport par défaut pour exécuter des serveurs locaux.
+C'est le transport par défaut pour exécuter des serveurs locaux.
 
 ```bash
 
@@ -775,7 +775,7 @@ qwen mcp add --transport sse secure-sse https://api.example.com/sse/ --header "A
 
 ### Lister les serveurs (`qwen mcp list`)
 
-Pour afficher tous les serveurs MCP actuellement configurés, utilisez la commande `list`. Elle affiche le nom de chaque serveur, ses détails de configuration ainsi que son statut de connexion.
+Pour afficher tous les serveurs MCP actuellement configurés, utilise la commande `list`. Elle affiche le nom de chaque serveur, ses détails de configuration, ainsi que son statut de connexion.
 
 **Commande :**
 
@@ -791,7 +791,7 @@ qwen mcp list
 ✗ sse-server: https://api.example.com/sse (sse) - Disconnected
 ```
 
-### Suppression d'un serveur (`qwen mcp remove`)
+### Supprimer un serveur (`qwen mcp remove`)
 
 Pour supprimer un serveur de votre configuration, utilisez la commande `remove` avec le nom du serveur.
 

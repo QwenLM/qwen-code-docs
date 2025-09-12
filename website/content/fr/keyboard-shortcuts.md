@@ -7,11 +7,11 @@ Ce document liste les raccourcis clavier disponibles dans Qwen Code.
 | Raccourci | Description                                                                                                           |
 | --------- | --------------------------------------------------------------------------------------------------------------------- |
 | `Esc`     | Fermer les boîtes de dialogue et les suggestions.                                                                     |
-| `Ctrl+C`  | Quitter l'application. Appuyer deux fois pour confirmer.                                                              |
-| `Ctrl+D`  | Quitter l'application si l'entrée est vide. Appuyer deux fois pour confirmer.                                         |
+| `Ctrl+C`  | Annuler la requête en cours et effacer l'entrée. Appuyez deux fois pour quitter l'application.                        |
+| `Ctrl+D`  | Quitter l'application si l'entrée est vide. Appuyez deux fois pour confirmer.                                        |
 | `Ctrl+L`  | Effacer l'écran.                                                                                                      |
 | `Ctrl+O`  | Activer/désactiver l'affichage de la console de débogage.                                                             |
-| `Ctrl+S`  | Permet aux réponses longues de s'afficher complètement, en désactivant la troncature. Utilisez le défilement de votre terminal pour voir la sortie entière. |
+| `Ctrl+S`  | Permet aux réponses longues de s'afficher entièrement, en désactivant la troncature. Utilisez le défilement de votre terminal pour voir la sortie complète. |
 | `Ctrl+T`  | Activer/désactiver l'affichage des descriptions des outils.                                                           |
 | `Ctrl+Y`  | Activer/désactiver l'approbation automatique (mode YOLO) pour tous les appels d'outils.                              |
 
@@ -20,7 +20,7 @@ Ce document liste les raccourcis clavier disponibles dans Qwen Code.
 | Raccourci                                          | Description                                                                                                                         |
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `!`                                                | Basculer en mode shell lorsque l'entrée est vide.                                                                                   |
-| `\` (à la fin de la ligne) + `Enter`               | Insérer un saut de ligne.                                                                                                           |
+| `\` (en fin de ligne) + `Enter`                    | Insérer un saut de ligne.                                                                                                           |
 | `Flèche du bas`                                    | Naviguer vers le bas dans l'historique des entrées.                                                                                 |
 | `Enter`                                            | Soumettre l'invite actuelle.                                                                                                        |
 | `Meta+Delete` / `Ctrl+Delete`                      | Supprimer le mot à droite du curseur.                                                                                               |
@@ -45,11 +45,11 @@ Ce document liste les raccourcis clavier disponibles dans Qwen Code.
 
 ## Suggestions
 
-| Raccourci       | Description                                   |
-| --------------- | --------------------------------------------- |
-| `Down Arrow`    | Naviguer vers le bas dans les suggestions.    |
-| `Tab` / `Enter` | Accepter la suggestion sélectionnée.          |
-| `Up Arrow`      | Naviguer vers le haut dans les suggestions.   |
+| Raccourci       | Description                           |
+| --------------- | ------------------------------------- |
+| `Down Arrow`    | Naviguer vers le bas dans les suggestions. |
+| `Tab` / `Enter` | Accepter la suggestion sélectionnée.  |
+| `Up Arrow`      | Naviguer vers le haut dans les suggestions. |
 
 ## Radio Button Select
 
@@ -59,4 +59,10 @@ Ce document liste les raccourcis clavier disponibles dans Qwen Code.
 | `Enter`            | Confirmer la sélection.                                                                                       |
 | `Up Arrow` / `k`   | Déplacer la sélection vers le haut.                                                                           |
 | `1-9`              | Sélectionner un élément par son numéro.                                                                       |
-| (multi-chiffres)   | Pour les éléments avec des numéros supérieurs à 9, appuyez rapidement sur les chiffres pour sélectionner l'élément correspondant. |
+| (multi-digit)      | Pour les éléments avec des numéros supérieurs à 9, appuyez rapidement sur les chiffres pour sélectionner l'élément correspondant. |
+
+## Intégration IDE
+
+| Raccourci | Description                          |
+| --------- | ------------------------------------ |
+| `Ctrl+G`  | Voir le contexte CLI reçu de l'IDE   |

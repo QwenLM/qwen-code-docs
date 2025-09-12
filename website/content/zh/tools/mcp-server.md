@@ -8,11 +8,11 @@ MCP server 是一个通过 Model Context Protocol 向 CLI 暴露工具和资源�
 
 MCP server 使 CLI 能够：
 
-- **发现工具**：通过标准化的 schema 定义列出可用的工具、它们的描述和参数。
-- **执行工具**：使用定义好的参数调用特定工具，并接收结构化的响应。
-- **访问资源**：从特定资源中读取数据（尽管 CLI 主要专注于工具执行）。
+- **发现工具**：通过标准化的 schema 定义列出可用工具、它们的描述和参数。
+- **执行工具**：使用定义好的参数调用特定工具并接收结构化响应。
+- **访问资源**：从特定资源读取数据（尽管 CLI 主要专注于工具执行）。
 
-通过 MCP server，你可以扩展 CLI 的功能，使其执行超出其内置特性之外的操作，例如与数据库、API、自定义脚本或专业工作流进行交互。
+通过 MCP server，你可以扩展 CLI 的功能，使其执行超出其内置特性的操作，例如与数据库、API、自定义脚本或专业工作流进行交互。
 
 ## 核心集成架构
 
@@ -20,12 +20,12 @@ Qwen Code 通过核心包（`packages/core/src/tools/`）中内置的一套复�
 
 ### 发现阶段（`mcp-client.ts`）
 
-发现过程由 `discoverMcpTools()` 函数编排，其主要工作包括：
+发现过程由 `discoverMcpTools()` 函数编排，该函数会：
 
 1. **遍历配置的服务器**：从你的 `settings.json` 中的 `mcpServers` 配置读取服务器列表  
 2. **建立连接**：使用合适的传输机制（Stdio、SSE 或 Streamable HTTP）与各服务器建立连接  
 3. **获取工具定义**：通过 MCP 协议从每个服务器获取工具定义信息  
-4. **清理并验证 schema**：对工具 schema 进行清理和验证，确保其与 Gemini API 兼容  
+4. **清理并验证**：对工具 schema 进行清理和验证，确保其与 Qwen API 兼容  
 5. **注册工具**：将工具注册到全局工具注册表中，并处理可能的命名冲突问题
 
 ### 执行层 (`mcp-tool.ts`)
@@ -47,11 +47,11 @@ CLI 支持三种 MCP 传输类型：
 
 ## 如何设置你的 MCP 服务器
 
-Qwen Code 使用 `settings.json` 文件中的 `mcpServers` 配置来定位并连接到 MCP 服务器。该配置支持多个服务器，并可使用不同的传输机制。
+Qwen Code 使用 `settings.json` 文件中的 `mcpServers` 配置来定位并连接 MCP 服务器。该配置支持多个服务器，并可使用不同的传输机制。
 
 ### 在 settings.json 中配置 MCP 服务器
 
-你可以在全局级别配置 MCP 服务器，编辑 `~/.qwen/settings.json` 文件，或者在你的项目根目录下创建或打开 `.qwen/settings.json` 文件。在文件中添加 `mcp_servers` 配置块。
+你可以在全局级别配置 MCP 服务器，编辑 `~/.qwen/settings.json` 文件，或者在你的项目根目录下创建或打开 `.qwen/settings.json` 文件。在文件中添加 `mcpServers` 配置块。
 
 ### 配置结构
 
@@ -91,9 +91,9 @@ Qwen Code 使用 `settings.json` 文件中的 `mcpServers` 配置来定位并连
 - **`env`** (object): 服务器进程的环境变量。值可以使用 `$VAR_NAME` 或 `${VAR_NAME}` 语法引用环境变量
 - **`cwd`** (string): Stdio 传输的工作目录
 - **`timeout`** (number): 请求超时时间，单位为毫秒（默认值：600,000ms = 10分钟）
-- **`trust`** (boolean): 当设置为 `true` 时，将跳过此服务器的所有 tool call 确认（默认值：`false`）
-- **`includeTools`** (string[]): 从该 MCP 服务器包含的工具名称列表。指定后，只有此处列出的工具才可从此服务器使用（白名单行为）。未指定时，默认启用服务器提供的所有工具。
-- **`excludeTools`** (string[]): 从该 MCP 服务器排除的工具名称列表。即使服务器提供了这些工具，模型也无法使用。**注意：** `excludeTools` 的优先级高于 `includeTools` —— 如果某个工具同时出现在两个列表中，它将被排除。
+- **`trust`** (boolean): 当设置为 `true` 时，将跳过针对此服务器的所有 tool call 确认（默认值：`false`）
+- **`includeTools`** (string[]): 指定从该 MCP 服务器包含的工具名称列表。指定后，仅此列表中的工具会从该服务器可用（白名单行为）。如果未指定，则默认启用服务器提供的所有工具。
+- **`excludeTools`** (string[]): 指定从该 MCP 服务器排除的工具名称列表。即使服务器提供了这些工具，它们也不会对模型可用。**注意：** `excludeTools` 的优先级高于 `includeTools` —— 如果某个工具同时出现在两个列表中，它将被排除。
 
 ### 远程 MCP 服务器的 OAuth 支持
 
@@ -101,7 +101,7 @@ Qwen Code 支持通过 SSE 或 HTTP 传输方式对远程 MCP 服务器进行 OA
 
 #### 自动 OAuth 发现
 
-对于支持 OAuth 发现的服务器，你可以省略 OAuth 配置，让 CLI 自动完成发现：
+对于支持 OAuth 发现的服务器，你可以省略 OAuth 配置，让 CLI 自动发现配置：
 
 ```json
 {
@@ -136,7 +136,7 @@ CLI 将自动：
 **重要提示：** OAuth 认证要求你的本地机器能够：
 
 - 打开网页浏览器进行认证
-- 接收来自 `http://localhost:7777/oauth/callback` 的重定向
+- 接收来自 `http://localhost:7777/oauth/callback` 的重定向请求
 
 以下环境将无法使用此功能：
 
@@ -165,14 +165,14 @@ CLI 将自动：
 #### OAuth 配置属性
 
 - **`enabled`** (boolean): 为此服务器启用 OAuth
-- **`clientId`** (string): OAuth client ID（使用动态注册时可选）
-- **`clientSecret`** (string): OAuth client secret（对于公共客户端可选）
-- **`authorizationUrl`** (string): OAuth 授权端点（如果省略则自动发现）
-- **`tokenUrl`** (string): OAuth token 端点（如果省略则自动发现）
+- **`clientId`** (string): OAuth 客户端标识符（使用动态注册时可选）
+- **`clientSecret`** (string): OAuth 客户端密钥（公共客户端可选）
+- **`authorizationUrl`** (string): OAuth 授权端点（省略时自动发现）
+- **`tokenUrl`** (string): OAuth token 端点（省略时自动发现）
 - **`scopes`** (string[]): 必需的 OAuth scopes
-- **`redirectUri`** (string): 自定义 redirect URI（默认为 `http://localhost:7777/oauth/callback`）
+- **`redirectUri`** (string): 自定义重定向 URI（默认为 `http://localhost:7777/oauth/callback`）
 - **`tokenParamName`** (string): SSE URLs 中 token 的查询参数名称
-- **`audiences`** (string[]): token 有效的 audiences
+- **`audiences`** (string[]): token 有效的受众列表
 ```
 
 #### Token 管理
@@ -180,9 +180,9 @@ CLI 将自动：
 OAuth tokens 会自动：
 
 - **安全存储** 在 `~/.qwen/mcp-oauth-tokens.json` 中
-- **自动刷新**（如果提供了 refresh token，则在过期时自动刷新）
-- **连接前验证** 每次连接尝试前都会进行有效性验证
-- **清理无效或过期的 token** 当 token 无效或过期时会被自动清除
+- **自动刷新** 当 token 过期时（如果有 refresh token）
+- **连接前验证** 每次连接前都会验证 token 有效性
+- **自动清理** 当 token 无效或过期时自动清除
 
 #### 认证提供者类型
 
@@ -322,13 +322,13 @@ OAuth tokens 会自动：
 
 对于 `mcpServers` 中配置的每个 server：
 
-1. **状态跟踪开始：** Server 状态被设置为 `CONNECTING`
+1. **状态跟踪开始：** Server 状态设置为 `CONNECTING`
 2. **Transport 选择：** 根据配置属性：
    - `httpUrl` → `StreamableHTTPClientTransport`
    - `url` → `SSEClientTransport`
    - `command` → `StdioClientTransport`
-3. **建立连接：** MCP client 尝试在配置的 timeout 内建立连接
-4. **错误处理：** 连接失败会被记录日志，server 状态被设置为 `DISCONNECTED`
+3. **建立连接：** MCP client 尝试与配置的 timeout 连接
+4. **错误处理：** 连接失败会被记录日志，server 状态设置为 `DISCONNECTED`
 
 ### 2. 工具发现
 
@@ -336,17 +336,17 @@ OAuth tokens 会自动：
 
 1. **工具列表获取：** 客户端调用 MCP 服务器的工具列表 endpoint
 2. **Schema 验证：** 验证每个工具的 function 声明
-3. **工具过滤：** 根据 `includeTools` 和 `excludeTools` 配置过滤工具
-4. **名称清理：** 清理工具名称以满足 Gemini API 要求：
+3. **工具过滤：** 根据 `includeTools` 和 `excludeTools` 配置对工具进行过滤
+4. **名称清理：** 清理工具名称以满足 Qwen API 要求：
    - 将无效字符（非字母数字、下划线、点、连字符）替换为下划线
-   - 超过 63 个字符的名称会被截断并用中间替换法处理（`___`）
+   - 超过 63 个字符的名称将被截断并用中间替换（`___`）
 
 ### 3. 冲突解决
 
 当多个服务器暴露同名工具时：
 
 1. **首次注册优先：** 第一个注册工具名称的服务器获得无前缀的名称
-2. **自动添加前缀：** 后续服务器的工具名称会被自动添加前缀：`serverName__toolName`
+2. **自动添加前缀：** 后续服务器获得带前缀的名称：`serverName__toolName`
 3. **注册表跟踪：** 工具注册表维护服务器名称与其工具之间的映射关系
 
 ### 4. Schema 处理
@@ -355,7 +355,7 @@ OAuth tokens 会自动：
 
 - **`$schema` 属性** 会被移除
 - **`additionalProperties`** 会被剥离
-- **包含 `default` 的 `anyOf`** 会移除默认值（为了兼容 Vertex AI）
+- **包含 `default` 的 `anyOf`** 会移除默认值（为兼容 Vertex AI）
 - **递归处理** 会应用到嵌套的 schema
 
 ### 5. 连接管理
@@ -372,9 +372,9 @@ OAuth tokens 会自动：
 
 ### 1. 工具调用
 
-模型会生成一个 `FunctionCall`，包含：
+模型生成一个 `FunctionCall`，包含：
 
-- **工具名称：** 已注册的名称（可能带有前缀）
+- **工具名称：** 注册时的名称（可能带有前缀）
 - **参数：** 符合工具参数 schema 的 JSON 对象
 
 ### 2. 确认流程
@@ -409,8 +409,8 @@ if (this.trust) {
 
 确认后（或绕过信任机制）：
 
-1. **参数准备：** 参数会根据工具的 schema 进行验证
-2. **MCP 调用：** 底层的 `CallableTool` 会向服务器发起调用：
+1. **参数准备：** 参数会根据工具的 schema 进行验证  
+2. **MCP 调用：** 底层 `CallableTool` 会向服务器发起调用：
 
    ```typescript
    const functionCalls = [
@@ -427,14 +427,14 @@ if (this.trust) {
 
 执行结果包含：
 
-- **`llmContent`：** 供语言模型使用的原始响应内容
-- **`returnDisplay`：** 供用户展示的格式化输出（通常是 markdown 代码块中的 JSON）
+- **`llmContent`：** 供语言模型使用的原始响应内容  
+- **`returnDisplay`：** 用于用户展示的格式化输出（通常是 markdown 代码块中的 JSON）
 
 ## 如何与你的 MCP 服务器交互
 
 ### 使用 `/mcp` 命令
 
-`/mcp` 命令提供关于你的 MCP 服务器设置的完整信息：
+`/mcp` 命令提供关于你的 MCP 服务器配置的完整信息：
 
 ```bash
 /mcp
@@ -472,7 +472,7 @@ Discovery State: COMPLETED
 
 ### 工具使用
 
-一旦被发现，MCP 工具就会像内置工具一样提供给 Gemini 模型使用。模型将自动：
+一旦被发现，MCP 工具就会像内置工具一样提供给 Qwen 模型使用。模型将自动：
 
 1. **根据你的请求选择合适的工具**
 2. **显示确认对话框**（除非服务器是受信任的）
@@ -483,7 +483,7 @@ Discovery State: COMPLETED
 
 ### 连接状态
 
-MCP 集成会跟踪几种状态：
+MCP 集成会跟踪以下几种状态：
 
 #### 服务器状态 (`MCPServerStatus`)
 
@@ -493,7 +493,7 @@ MCP 集成会跟踪几种状态：
 
 #### 发现阶段 (`MCPDiscoveryState`)
 
-- **`NOT_STARTED`:** 发现尚未开始
+- **`NOT_STARTED`:** 尚未开始发现
 - **`IN_PROGRESS`:** 正在发现服务器
 - **`COMPLETED`:** 发现已完成（无论是否有错误）
 
@@ -506,21 +506,21 @@ MCP 集成会跟踪几种状态：
 **排查步骤：**
 
 1. **检查配置：** 确认 `command`、`args` 和 `cwd` 配置正确
-2. **手动测试：** 直接运行服务器命令，确保可以正常工作
+2. **手动测试：** 直接运行服务器命令，确保可以正常启动
 3. **检查依赖：** 确保所有必需的 packages 都已安装
 4. **查看日志：** 检查 CLI 输出中的错误信息
-5. **验证权限：** 确保 CLI 可以执行服务器命令
+5. **验证权限：** 确保 CLI 有权限执行服务器命令
 
 #### 未发现工具
 
-**症状：** 服务器连接成功但没有可用工具
+**症状：** 服务器已连接但没有可用的 tools
 
 **排查步骤：**
 
-1. **验证工具注册：** 确保你的服务器实际注册了工具
-2. **检查 MCP 协议：** 确认你的服务器正确实现了 MCP 工具列表功能
+1. **验证工具注册：** 确保你的服务器确实注册了 tools
+2. **检查 MCP 协议：** 确认你的服务器正确实现了 MCP tool 列表功能
 3. **查看服务器日志：** 检查 stderr 输出中的服务器端错误
-4. **测试工具列表：** 手动测试服务器的工具发现 endpoint
+4. **测试工具列表：** 手动测试服务器的 tool discovery endpoint
 
 #### 工具无法执行
 
@@ -547,19 +547,19 @@ MCP 集成会跟踪几种状态：
 ### 调试技巧
 
 1. **启用调试模式：** 使用 `--debug` 参数运行 CLI 以获取详细输出
-2. **检查 stderr：** MCP 服务器的 stderr 输出会被捕获并记录（INFO 级别消息会被过滤）
-3. **独立测试：** 在集成之前，先独立测试你的 MCP 服务器
-4. **增量配置：** 从简单工具开始，再逐步添加复杂功能
-5. **频繁使用 `/mcp`：** 在开发过程中监控服务器状态
+2. **检查 stderr：** MCP server 的 stderr 会被捕获并记录（INFO 级别的消息会被过滤）
+3. **独立测试：** 在集成之前，先独立测试你的 MCP server
+4. **增量配置：** 从简单的 tools 开始，再逐步添加复杂功能
+5. **频繁使用 `/mcp`：** 在开发过程中监控 server 状态
 
 ## 重要说明
 
 ### 安全注意事项
 
-- **信任设置：** `trust` 选项会跳过所有确认对话框。请谨慎使用，仅用于你完全控制的服务器
-- **访问令牌：** 配置包含 API key 或 token 的环境变量时要注意安全性
-- **沙盒兼容性：** 使用沙盒时，确保 MCP 服务器在沙盒环境中可用
-- **私有数据：** 使用范围过广的 personal access token 可能导致不同仓库间的信息泄露
+- **信任设置：** `trust` 选项会跳过所有确认对话框。请谨慎使用，仅用于你完全控制的 server
+- **访问令牌：** 配置包含 API key 或 token 的环境变量时要注意安全
+- **沙盒兼容性：** 使用沙盒时，确保 MCP server 在沙盒环境中可用
+- **私有数据：** 使用范围过广的 personal access token 可能导致不同 repository 间的信息泄露
 
 ### 性能与资源管理
 
@@ -570,17 +570,17 @@ MCP 集成会跟踪几种状态：
 
 ### Schema 兼容性
 
-- **属性剥离：** 为兼容 Gemini API，系统会自动移除某些 schema 属性（如 `$schema`、`additionalProperties`）
+- **属性剥离：** 为兼容 Qwen API，系统会自动移除某些 schema 属性（如 `$schema`、`additionalProperties`）
 - **名称清理：** 工具名称会自动清理以满足 API 要求
 - **冲突解决：** 通过自动添加前缀来解决不同服务器之间的工具名称冲突
 
-这种全面的集成使 MCP 服务器成为扩展 CLI 功能的强大方式，同时保证了安全性、可靠性和易用性。
+这种全面的集成使 MCP 服务器成为扩展 CLI 功能的强大方式，同时兼顾安全性、可靠性和易用性。
 
-## 从 Tools 返回富内容
+## 从工具返回富内容
 
-MCP tools 不仅限于返回简单的文本。你可以返回丰富的多部分的内容，包括文本、图像、音频和其他二进制数据，所有这些都可以在单个 tool response 中完成。这使你能够构建强大的 tools，可以在一次交互中向模型提供多样化的信息。
+MCP 工具不仅限于返回简单的文本。你可以返回丰富的多部分的内容，包括文本、图像、音频和其他二进制数据，所有这些都在单个工具响应中完成。这使你能够构建强大的工具，在一次交互中为模型提供多样化的信息。
 
-所有从 tool 返回的数据都会被处理并作为上下文发送给模型，用于下一次生成，使模型能够对提供的信息进行推理或总结。
+所有从工具返回的数据都会被处理并作为上下文发送给模型，用于下一次生成，使模型能够对提供的信息进行推理或总结。
 
 ### 工作原理
 
@@ -620,11 +620,11 @@ MCP tools 不仅限于返回简单的文本。你可以返回丰富的多部分�
 
 当 Qwen Code 接收到此响应时，它将：
 
-1.  提取所有文本并将其合并为单个 `functionResponse` 部分，供模型使用。
-2.  将图像数据作为单独的 `inlineData` 部分呈现。
-3.  在 CLI 中提供简洁、用户友好的摘要，表明已接收到文本和图像。
+1.  提取所有文本并将其合并为一个单独的 `functionResponse` 部分，供模型使用。
+2.  将图像数据作为独立的 `inlineData` 部分呈现。
+3.  在 CLI 中提供清晰、用户友好的摘要，表明同时收到了文本和图像。
 
-这使你能够构建复杂的工具，为 Gemini 模型提供丰富的多模态上下文。
+这使你能够构建功能强大的工具，为 Qwen 模型提供丰富的多模态上下文。
 
 ## MCP Prompts 作为 Slash Commands
 
@@ -632,7 +632,7 @@ MCP tools 不仅限于返回简单的文本。你可以返回丰富的多部分�
 
 ### 在服务器端定义 Prompts
 
-下面是一个定义了 prompts 的 stdio MCP 服务器的小例子：
+下面是一个定义了 prompts 的 stdio MCP server 小示例：
 
 ```ts
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -668,7 +668,7 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
 
-这段代码可以通过以下方式添加到 `settings.json` 的 `mcpServers` 配置项中：
+这段代码可以在 `settings.json` 中的 `mcpServers` 下这样配置：
 
 ```json
 "nodeServer": {
@@ -695,13 +695,13 @@ await server.connect(transport);
 
 ## 使用 `qwen mcp` 管理 MCP 服务器
 
-虽然你可以通过手动编辑 `settings.json` 文件来配置 MCP 服务器，但 CLI 提供了一套便捷的命令，可以让你以编程方式管理服务器配置。这些命令简化了添加、列出和删除 MCP 服务器的过程，无需直接编辑 JSON 文件。
+虽然你可以通过手动编辑 `settings.json` 文件来配置 MCP 服务器，但 CLI 提供了一套便捷的命令，可以让你以编程方式管理服务器配置。这些命令简化了添加、列出和删除 MCP 服务器的操作，无需直接编辑 JSON 文件。
 
 ### 添加服务器 (`qwen mcp add`)
 
 `add` 命令用于在你的 `settings.json` 中配置一个新的 MCP 服务器。根据作用域 (`-s, --scope`)，该配置将被添加到用户配置文件 `~/.qwen/settings.json` 或项目配置文件 `.qwen/settings.json` 中。
 
-**命令：**
+**命令格式：**
 
 ```bash
 qwen mcp add [options] <name> <commandOrUrl> [args...]
@@ -709,7 +709,7 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 
 - `<name>`: 服务器的唯一名称。
 - `<commandOrUrl>`: 要执行的命令（用于 `stdio`）或 URL（用于 `http`/`sse`）。
-- `[args...]`: 可选参数，用于 `stdio` 命令。
+- `[args...]`: 可选参数，仅适用于 `stdio` 类型的命令。
 
 **选项（Flags）：**
 
@@ -719,7 +719,7 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 - `-H, --header`: 为 SSE 和 HTTP 传输设置 HTTP headers（例如 -H "X-Api-Key: abc123" -H "Authorization: Bearer abc123"）。
 - `--timeout`: 设置连接超时时间（毫秒）。
 - `--trust`: 信任该服务器（跳过所有工具调用确认提示）。
-- `--description`: 设置服务器的描述信息。
+- `--description`: 设置服务器描述信息。
 - `--include-tools`: 包含的工具列表，以逗号分隔。
 - `--exclude-tools`: 排除的工具列表，以逗号分隔。
 
@@ -765,13 +765,11 @@ qwen mcp add --transport http secure-http https://api.example.com/mcp/ --header 
 qwen mcp add --transport sse <name> <url>
 ```
 
-# 示例：添加一个 SSE 服务器
-```bash
+```markdown
+# 示例：添加 SSE 服务器
 qwen mcp add --transport sse sse-server https://api.example.com/sse/
-```
 
-# 示例：添加一个带认证 header 的 SSE 服务器
-```bash
+# 示例：添加带认证 header 的 SSE 服务器
 qwen mcp add --transport sse secure-sse https://api.example.com/sse/ --header "Authorization: Bearer abc123"
 ```
 
@@ -809,4 +807,4 @@ qwen mcp remove <name>
 qwen mcp remove my-server
 ```
 
-该命令会根据作用域 (`-s, --scope`) 在相应的 `settings.json` 文件中找到并删除 `mcpServers` 对象里的 "my-server" 条目。
+该命令会根据作用域 (`-s, --scope`) 在相应的 `settings.json` 文件中查找并删除 `mcpServers` 对象中的 "my-server" 条目。

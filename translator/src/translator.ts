@@ -26,7 +26,6 @@ interface TranslationChunk extends DocumentSection {
   index?: number;
 }
 
-
 export class DocumentTranslator {
   private openai: OpenAI;
   private apiConfig: TranslatorConfig;
@@ -39,7 +38,6 @@ export class DocumentTranslator {
     // 加载环境变量
     const envLoader = createEnvLoader(this.projectRoot);
     envLoader.loadEnv();
-
 
     // 获取API配置
     const apiConfig = envLoader.getApiConfig();
@@ -96,7 +94,6 @@ export class DocumentTranslator {
         parsedContent.structure
       );
 
-
       console.log(chalk.green(`✓ Completed ${path.basename(filePath)}`));
       return translatedDocument;
     } catch (error: any) {
@@ -113,8 +110,12 @@ export class DocumentTranslator {
     targetLang: string,
     index: number
   ): Promise<TranslationChunk> {
-    // Skip code blocks and links
+    // Skip code blocks and links (all code blocks are skipped, including markdown)
     if (chunk.type === "code" || chunk.type === "link") {
+      // Add special logging for markdown code blocks
+      if (chunk.type === "code" && chunk.metadata?.language === "markdown") {
+        console.log(chalk.gray(`    ✓ Skipped markdown code block`));
+      }
       return chunk;
     }
 
@@ -128,7 +129,10 @@ export class DocumentTranslator {
       console.log(chalk.cyan(`    → Chunk ${index + 1} (${targetLang})`));
 
       const prompt = this.buildTranslationPrompt(chunk.content, targetLang);
-      const translatedContent = await this.callTranslationAPI(prompt, targetLang);
+      const translatedContent = await this.callTranslationAPI(
+        prompt,
+        targetLang
+      );
 
       // Cache translation result
       this.translationCache.set(cacheKey, translatedContent);
@@ -148,7 +152,7 @@ export class DocumentTranslator {
   buildSystemPrompt(targetLang: string): string {
     const languageNames: Record<string, string> = {
       zh: "Chinese",
-      de: "German", 
+      de: "German",
       fr: "French",
       ru: "Russian",
       ja: "Japanese",
@@ -167,7 +171,7 @@ Translate from a programmer's perspective - keep it natural and technically accu
 - Tool names: Node.js, React, TypeScript, VS Code, etc.
 - File extensions: .js, .md, .json, .yaml, etc.
 - Command names: npm, git, curl, etc.
-- Code blocks, variable names, function names
+- Code blocks, variable names, function names (especially \`\`\`markdown blocks)
 - URLs, file paths, configuration keys
 
 **TRANSLATE NATURALLY:**
@@ -196,7 +200,7 @@ Think like a developer reading technical docs - what feels most natural and clea
   buildTranslationPrompt(content: string, targetLang: string): string {
     const languageNames: Record<string, string> = {
       zh: "Chinese",
-      de: "German", 
+      de: "German",
       fr: "French",
       ru: "Russian",
       ja: "Japanese",
@@ -212,7 +216,11 @@ ${content}`;
   /**
    * Call translation API (using OpenAI SDK) with retry mechanism
    */
-  async callTranslationAPI(prompt: string, targetLang: string, retryCount = 0): Promise<string> {
+  async callTranslationAPI(
+    prompt: string,
+    targetLang: string,
+    retryCount = 0
+  ): Promise<string> {
     const maxRetries = 3;
     const baseDelay = 1000; // 1 second base delay
 
@@ -236,7 +244,9 @@ ${content}`;
       if (error.status === 429 && retryCount < maxRetries) {
         const delay = baseDelay * Math.pow(2, retryCount); // Exponential backoff
         console.log(
-          chalk.yellow(`    ⏳ Rate limited, retrying in ${delay / 1000}s (${retryCount + 1}/${maxRetries})`)
+          chalk.yellow(
+            `    ⏳ Rate limited, retrying in ${delay / 1000}s (${retryCount + 1}/${maxRetries})`
+          )
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
         return this.callTranslationAPI(prompt, targetLang, retryCount + 1);
@@ -336,7 +346,9 @@ ${content}`;
         await fs.writeFile(targetPath, translatedContent, "utf-8");
         console.log(chalk.green(`✓ Saved: ${path.basename(targetPath)}`));
       } catch (error: any) {
-        console.error(chalk.red(`✗ Failed to translate ${file}: ${error.message}`));
+        console.error(
+          chalk.red(`✗ Failed to translate ${file}: ${error.message}`)
+        );
       }
     }
   }

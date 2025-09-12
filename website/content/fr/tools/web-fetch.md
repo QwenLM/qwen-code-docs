@@ -15,9 +15,9 @@ Utilisez `web_fetch` pour récupérer le contenu d'une URL spécifiée et le tra
 
 ## Comment utiliser `web_fetch` avec Qwen Code
 
-Pour utiliser `web_fetch` avec Qwen Code, fournissez une URL et un prompt décrivant ce que vous souhaitez extraire de cette URL. L'outil demandera une confirmation avant de récupérer l'URL. Une fois confirmé, l'outil récupérera le contenu directement et le traitera en utilisant un modèle AI.
+Pour utiliser `web_fetch` avec Qwen Code, fournissez une URL et un prompt décrivant ce que vous souhaitez extraire de cette URL. L'outil demandera une confirmation avant de récupérer le contenu. Une fois confirmé, l'outil récupérera le contenu directement et le traitera en utilisant un modèle AI.
 
-L'outil convertit automatiquement le HTML en texte, gère les URLs GitHub blob (en les convertissant en URLs brutes), et met à niveau les URLs HTTP en HTTPS pour des raisons de sécurité.
+L'outil convertit automatiquement le HTML en texte, gère les URLs GitHub blob (en les convertissant en URLs raw), et met à niveau les URLs HTTP en HTTPS pour des raisons de sécurité.
 
 Utilisation :
 
@@ -42,13 +42,13 @@ web_fetch(url="https://arxiv.org/abs/2401.0001", prompt="Quels sont les résulta
 Analyser la documentation GitHub :
 
 ```
-web_fetch(url="https://github.com/google/gemini-react/blob/main/README.md", prompt="Quelles sont les étapes d'installation et les principales fonctionnalités ?")
+web_fetch(url="https://github.com/QwenLM/Qwen/blob/main/README.md", prompt="Quelles sont les étapes d'installation et les principales fonctionnalités ?")
 ```
 
 ## Notes importantes
 
-- **Traitement d'une seule URL :** `web_fetch` traite une URL à la fois. Pour analyser plusieurs URLs, effectuez des appels séparés à l'outil.
+- **Traitement d'URL unique :** `web_fetch` traite une seule URL à la fois. Pour analyser plusieurs URLs, effectuez des appels séparés à l'outil.
 - **Format d'URL :** L'outil met automatiquement à niveau les URLs HTTP vers HTTPS et convertit les URLs GitHub blob au format raw pour un meilleur accès au contenu.
-- **Traitement du contenu :** L'outil récupère le contenu directement et le traite en utilisant un modèle AI, convertissant le HTML en texte lisible.
+- **Traitement du contenu :** L'outil récupère le contenu directement et le traite en utilisant un modèle AI, convertissant le HTML en format texte lisible.
 - **Qualité de la sortie :** La qualité de la sortie dépendra de la clarté des instructions dans le prompt.
-- **Outils MCP :** Si un outil web fetch fourni par MCP est disponible (commençant par "mcp\_\_"), préférez utiliser cet outil car il peut avoir moins de restrictions.
+- **Outils MCP :** Si un outil web fetch fourni par MCP est disponible (commençant par "mcp__"), préférez utiliser cet outil car il peut avoir moins de restrictions.

@@ -1,15 +1,16 @@
 # Qwen Code CLI
 
-Dans Qwen Code, `packages/cli` est l'interface utilisateur permettant d'envoyer et de recevoir des prompts avec Qwen et d'autres modèles IA ainsi que leurs outils associés. Pour une vue d'ensemble de Qwen Code, consultez la [page de documentation principale](../index.md).
+Dans Qwen Code, `packages/cli` est l'interface frontend permettant aux utilisateurs d'envoyer et de recevoir des prompts avec Qwen et d'autres modèles IA ainsi que leurs outils associés. Pour une vue d'ensemble de Qwen Code, consultez la [page de documentation principale](../index.md).
 
 ## Navigation dans cette section
 
-- **[Authentification](./authentication.md) :** Guide de configuration de l'authentification avec Qwen OAuth et les fournisseurs compatibles OpenAI.
-- **[Commandes](./commands.md) :** Référence des commandes du Qwen Code CLI (ex. : `/help`, `/tools`, `/theme`).
-- **[Configuration](./configuration.md) :** Guide pour personnaliser le comportement du Qwen Code CLI à l'aide de fichiers de configuration.
-- **[Mise en cache des tokens](./token-caching.md) :** Optimisez les coûts API grâce à la mise en cache des tokens.
-- **[Thèmes](./themes.md) :** Guide pour personnaliser l'apparence du CLI avec différents thèmes.
-- **[Tutoriels](tutorials.md) :** Tutoriel montrant comment utiliser Qwen Code pour automatiser une tâche de développement.
+- **[Authentication](./authentication.md) :** Guide de configuration de l'authentification avec Qwen OAuth et les providers compatibles OpenAI.
+- **[Commands](./commands.md) :** Référence des commandes du Qwen Code CLI (ex. : `/help`, `/tools`, `/theme`).
+- **[Configuration](./configuration.md) :** Guide pour personnaliser le comportement du Qwen Code CLI via des fichiers de configuration.
+- **[Token Caching](./token-caching.md) :** Optimisez les coûts API grâce à la mise en cache des tokens.
+- **[Themes](./themes.md) :** Guide pour personnaliser l'apparence du CLI avec différents thèmes.
+- **[Tutorials](tutorials.md) :** Tutoriel montrant comment utiliser Qwen Code pour automatiser une tâche de développement.
+- **[Welcome Back](./welcome-back.md) :** Découvrez la fonctionnalité Welcome Back qui vous permet de reprendre votre travail facilement d'une session à l'autre.
 
 ## Mode non-interactif
 

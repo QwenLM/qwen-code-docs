@@ -1,12 +1,12 @@
 # Désinstaller la CLI
 
-La méthode de désinstallation dépend de la façon dont vous avez exécuté la CLI. Suivez les instructions correspondant à l'utilisation de npx ou d'une installation npm globale.
+La méthode de désinstallation dépend de la façon dont vous avez exécuté la CLI. Suivez les instructions correspondant à l'utilisation de `npx` ou d'une installation globale via `npm`.
 
 ## Méthode 1 : Utilisation de npx
 
-npx exécute les packages depuis un cache temporaire sans installation permanente. Pour "désinstaller" la CLI, vous devez vider ce cache, ce qui supprimera gemini-cli ainsi que tous les autres packages précédemment exécutés avec npx.
+`npx` exécute les packages depuis un cache temporaire sans installation permanente. Pour "désinstaller" la CLI, vous devez vider ce cache, ce qui supprimera `qwen-code` ainsi que tous les autres packages précédemment exécutés avec `npx`.
 
-Le cache de npx est un répertoire nommé `_npx` situé dans le dossier principal du cache npm. Vous pouvez trouver le chemin de votre cache npm en exécutant `npm config get cache`.
+Le cache de `npx` est un répertoire nommé `_npx` situé dans le dossier principal du cache npm. Vous pouvez trouver le chemin de votre cache npm en exécutant la commande `npm config get cache`.
 
 **Pour macOS / Linux**
 

@@ -4,7 +4,7 @@ Dieses Dokument beschreibt das `save_memory` Tool für Qwen Code.
 
 ## Beschreibung
 
-Verwende `save_memory`, um Informationen über deine Qwen Code-Sitzungen hinweg zu speichern und abzurufen. Mit `save_memory` kannst du die CLI anweisen, wichtige Details über Sitzungen hinweg zu merken und so eine personalisierte und gezielte Unterstützung zu bieten.
+Verwende `save_memory`, um Informationen über deine Qwen Code-Sitzungen hinweg zu speichern und abzurufen. Mit `save_memory` kannst du die CLI anweisen, wichtige Details über Sitzungen hinweg zu merken, um personalisierte und gezielte Unterstützung zu bieten.
 
 ### Argumente
 
@@ -14,19 +14,19 @@ Verwende `save_memory`, um Informationen über deine Qwen Code-Sitzungen hinweg 
 
 ## Verwendung von `save_memory` mit Qwen Code
 
-Das Tool fügt den übergebenen `fact` deiner Kontextdatei im Home-Verzeichnis des Benutzers hinzu (standardmäßig `~/.qwen/QWEN.md`). Dieser Dateiname kann über `contextFileName` konfiguriert werden.
+Das Tool fügt den übergebenen `fact` zur Kontextdatei im Home-Verzeichnis des Benutzers hinzu (standardmäßig `~/.qwen/QWEN.md`). Dieser Dateiname kann über `contextFileName` konfiguriert werden.
 
-Einmal hinzugefügt, werden die Fakten unter einem Abschnitt namens `## Qwen Added Memories` gespeichert. Diese Datei wird in nachfolgenden Sitzungen als Kontext geladen, sodass die CLI die gespeicherten Informationen abrufen kann.
+Einmal hinzugefügt, werden die Fakten unter einem Abschnitt mit dem Namen `## Qwen Added Memories` gespeichert. Diese Datei wird in nachfolgenden Sitzungen als Kontext geladen, sodass die CLI die gespeicherten Informationen abrufen kann.
 
 Verwendung:
 
 ```
-save_memory(fact="Dein Fakt hier.")
+save_memory(fact="Your fact here.")
 ```
 
 ### `save_memory` Beispiele
 
-Eine Benutzerpräferenz speichern:
+Eine Benutzereinstellung merken:
 
 ```
 save_memory(fact="Meine bevorzugte Programmiersprache ist Python.")
@@ -35,10 +35,10 @@ save_memory(fact="Meine bevorzugte Programmiersprache ist Python.")
 Ein projektspezifisches Detail speichern:
 
 ```
-save_memory(fact="Das Projekt, an dem ich gerade arbeite, heißt 'gemini-cli'.")
+save_memory(fact="Das Projekt, an dem ich gerade arbeite, heißt 'qwen-code'.")
 ```
 
 ## Wichtige Hinweise
 
 - **Allgemeine Verwendung:** Dieses Tool sollte für prägnante, wichtige Fakten verwendet werden. Es ist nicht dafür gedacht, große Datenmengen oder Konversationsverläufe zu speichern.
-- **Memory-Datei:** Die Memory-Datei ist eine einfache Markdown-Textdatei, die du bei Bedarf manuell einsehen und bearbeiten kannst.
+- **Memory-Datei:** Die Memory-Datei ist eine einfache Text-Markdown-Datei, daher kannst du sie bei Bedarf manuell einsehen und bearbeiten.
