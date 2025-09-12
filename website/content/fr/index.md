@@ -4,7 +4,7 @@ Cette documentation fournit un guide complet pour installer, utiliser et dévelo
 
 ## Aperçu
 
-Qwen Code apporte les capacités de modèles de code avancés directement dans votre terminal, au sein d'un environnement interactif de type Read-Eval-Print Loop (REPL). Qwen Code se compose d'une application côté client (`packages/cli`) qui communique avec un serveur local (`packages/core`). Qwen Code inclut également divers outils pour effectuer des opérations sur le système de fichiers, exécuter des commandes shell, et récupérer des données depuis le web, tous gérés par `packages/core`.
+Qwen Code apporte les capacités de modèles de code avancés directement dans votre terminal, au sein d'un environnement interactif Read-Eval-Print Loop (REPL). Qwen Code se compose d'une application côté client (`packages/cli`) qui communique avec un serveur local (`packages/core`). Qwen Code inclut également divers outils pour effectuer des opérations sur le système de fichiers, exécuter des commandes shell, et récupérer des données depuis le web, tous gérés par `packages/core`.
 
 ## Navigation dans la documentation
 
@@ -31,9 +31,10 @@ Cette documentation est organisée en plusieurs sections :
   - **[Outil de récupération web](./tools/web-fetch.md) :** Documentation de l'outil `web_fetch`.
   - **[Outil de recherche web](./tools/web-search.md) :** Documentation de l'outil `web_search`.
   - **[Outil de mémoire](./tools/memory.md) :** Documentation de l'outil `save_memory`.
-- **[Guide de contribution et de développement](../CONTRIBUTING.md) :** Informations pour les contributeurs et développeurs, y compris l'installation, la construction, les tests et les conventions de codage.
+- **[Sous-agents](./subagents.md) :** Assistants IA spécialisés pour des tâches ciblées, avec un guide complet de gestion, configuration et utilisation.
+- **[Guide de contribution et développement](../CONTRIBUTING.md) :** Informations pour les contributeurs et développeurs, incluant l'installation, la construction, les tests et les conventions de codage.
 - **[Workspaces NPM et publication](./npm.md) :** Détails sur la gestion et la publication des packages du projet.
-- **[Guide de dépannage](./troubleshooting.md) :** Trouvez des solutions aux problèmes courants et FAQ.
+- **[Guide de dépannage](./troubleshooting.md) :** Trouvez des solutions aux problèmes courants et aux questions fréquentes.
 - **[Conditions d'utilisation et politique de confidentialité](./tos-privacy.md) :** Informations sur les conditions d'utilisation et les mentions de confidentialité applicables à votre utilisation de Qwen Code.
 
 Nous espérons que cette documentation vous aidera à tirer le meilleur parti de Qwen Code !

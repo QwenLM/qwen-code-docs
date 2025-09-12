@@ -1,6 +1,6 @@
 # Qwen Code 执行与部署
 
-本文档介绍如何运行 Qwen Code，并解释 Qwen Code 使用的部署架构。
+本文档介绍了如何运行 Qwen Code，并解释了 Qwen Code 使用的部署架构。
 
 ## 运行 Qwen Code
 
@@ -41,7 +41,7 @@
   你可以直接运行已发布的沙箱镜像。这在你只有 Docker 并希望运行 CLI 的环境中非常有用。
   ```bash
   # 运行已发布的沙箱镜像
-  docker run --rm -it ghcr.io/qwenlm/qwen-code:0.0.9
+  docker run --rm -it ghcr.io/qwenlm/qwen-code:0.0.10
   ```
 - **使用 `--sandbox` 参数：**
   如果你已经在本地安装了 Qwen Code（使用上述标准安装方式），你可以指示它在沙箱容器内运行。
@@ -86,7 +86,7 @@ npx https://github.com/QwenLM/qwen-code
 
 ## 部署架构
 
-上述执行方式的实现依赖于以下架构组件和流程：
+上述执行方式依赖于以下架构组件和流程：
 
 **NPM 包**
 
@@ -95,19 +95,19 @@ Qwen Code 项目是一个 monorepo，会将核心包发布到 NPM registry：
 - `@qwen-code/qwen-code-core`：后端部分，负责处理逻辑和工具执行。
 - `@qwen-code/qwen-code`：面向用户的前端部分。
 
-在执行标准安装或从源码运行 Qwen Code 时，都会使用到这些包。
+在进行标准安装或从源码运行 Qwen Code 时，都会使用到这些包。
 
 **构建与打包流程**
 
-根据不同的分发渠道，会使用两种不同的构建流程：
+根据不同的分发渠道，会采用两种不同的构建流程：
 
-- **NPM 发布**：在发布到 NPM registry 时，`@qwen-code/qwen-code-core` 和 `@qwen-code/qwen-code` 中的 TypeScript 源码会通过 TypeScript Compiler（`tsc`）被转译为标准 JavaScript。最终生成的 `dist/` 目录会被发布为 NPM 包。这是 TypeScript 库的标准发布方式。
+- **NPM 发布：** 在发布到 NPM registry 时，`@qwen-code/qwen-code-core` 和 `@qwen-code/qwen-code` 中的 TypeScript 源码会通过 TypeScript Compiler（`tsc`）被编译为标准 JavaScript。最终生成的 `dist/` 目录会被发布为 NPM 包。这是 TypeScript 库的标准发布方式。
 
-- **GitHub `npx` 执行**：当直接从 GitHub 运行最新版本的 Qwen Code 时，`package.json` 中的 `prepare` 脚本会触发一个不同的构建流程。该脚本使用 `esbuild` 将整个应用及其依赖项打包成一个独立的 JavaScript 文件。这个 bundle 是在用户机器上即时生成的，并不会被提交到代码仓库中。
+- **GitHub `npx` 执行：** 当直接从 GitHub 运行最新版本的 Qwen Code 时，`package.json` 中的 `prepare` 脚本会触发另一个构建流程。该脚本使用 `esbuild` 将整个应用及其依赖项打包成一个独立的 JavaScript 文件。这个 bundle 是在用户机器上即时生成的，并不会被提交到代码仓库中。
 
 **Docker 沙箱镜像**
 
-基于 Docker 的执行方式由 `qwen-code-sandbox` 容器镜像提供支持。该镜像会被发布到容器镜像仓库中，并包含一个预装好的全局版本的 Qwen Code。
+基于 Docker 的执行方式由 `qwen-code-sandbox` 容器镜像支持。该镜像会被发布到容器镜像仓库，其中包含了预装的全局版本的 Qwen Code。
 
 ## 发布流程
 

@@ -1,6 +1,6 @@
 {
   "name": "@qwen-code/translator",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A universal documentation translator for any GitHub project. Instantly translate docs with AI and automatically build a Nextra-based documentation site.",
   "main": "./dist/cli.js",
   "bin": {

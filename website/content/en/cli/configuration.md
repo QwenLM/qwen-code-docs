@@ -23,8 +23,9 @@ Qwen Code uses `settings.json` files for persistent configuration. There are thr
 - **Project settings file:**
   - **Location:** `.qwen/settings.json` within your project's root directory.
   - **Scope:** Applies only when running Qwen Code from that specific project. Project settings override user settings.
+
 - **System settings file:**
-  - **Location:** `/etc/gemini-cli/settings.json` (Linux), `C:\ProgramData\gemini-cli\settings.json` (Windows) or `/Library/Application Support/GeminiCli/settings.json` (macOS). The path can be overridden using the `GEMINI_CLI_SYSTEM_SETTINGS_PATH` environment variable.
+  - **Location:** `/etc/qwen-code/settings.json` (Linux), `C:\ProgramData\qwen-code\settings.json` (Windows) or `/Library/Application Support/QwenCode/settings.json` (macOS). The path can be overridden using the `QWEN_CODE_SYSTEM_SETTINGS_PATH` environment variable.
   - **Scope:** Applies to all Qwen Code sessions on the system, for all users. System settings override user and project settings. May be useful for system administrators at enterprises to have controls over users' Qwen Code setups.
 
 **Note on environment variables in settings:** String values within your `settings.json` files can reference environment variables using either `$VAR_NAME` or `${VAR_NAME}` syntax. These variables will be automatically resolved when the settings are loaded. For example, if you have an environment variable `MY_API_TOKEN`, you could use it in `settings.json` like this: `"apiKey": "$MY_API_TOKEN"`.
@@ -127,16 +128,20 @@ In addition to a project settings file, a project's `.qwen` directory can contai
   - **Example:** `"toolCallCommand": "bin/call_tool"`
 
 - **`mcpServers`** (object):
-  - **Description:** Configures connections to one or more Model-Context Protocol (MCP) servers for discovering and using custom tools. Qwen Code attempts to connect to each configured MCP server to discover available tools. If multiple MCP servers expose a tool with the same name, the tool names will be prefixed with the server alias you defined in the configuration (e.g., `serverAlias__actualToolName`) to avoid conflicts. Note that the system might strip certain schema properties from MCP tool definitions for compatibility.
+  - **Description:** Configures connections to one or more Model-Context Protocol (MCP) servers for discovering and using custom tools. Qwen Code attempts to connect to each configured MCP server to discover available tools. If multiple MCP servers expose a tool with the same name, the tool names will be prefixed with the server alias you defined in the configuration (e.g., `serverAlias__actualToolName`) to avoid conflicts. Note that the system might strip certain schema properties from MCP tool definitions for compatibility. At least one of `command`, `url`, or `httpUrl` must be provided. If multiple are specified, the order of precedence is `httpUrl`, then `url`, then `command`.
   - **Default:** Empty
   - **Properties:**
     - **`<SERVER_NAME>`** (object): The server parameters for the named server.
-      - `command` (string, required): The command to execute to start the MCP server.
+      - `command` (string, optional): The command to execute to start the MCP server via standard I/O.
       - `args` (array of strings, optional): Arguments to pass to the command.
       - `env` (object, optional): Environment variables to set for the server process.
       - `cwd` (string, optional): The working directory in which to start the server.
+      - `url` (string, optional): The URL of an MCP server that uses Server-Sent Events (SSE) for communication.
+      - `httpUrl` (string, optional): The URL of an MCP server that uses streamable HTTP for communication.
+      - `headers` (object, optional): A map of HTTP headers to send with requests to `url` or `httpUrl`.
       - `timeout` (number, optional): Timeout in milliseconds for requests to this MCP server.
       - `trust` (boolean, optional): Trust this server and bypass all tool call confirmations.
+      - `description` (string, optional): A brief description of the server, which may be used for display purposes.
       - `includeTools` (array of strings, optional): List of tool names to include from this MCP server. When specified, only the tools listed here will be available from this server (whitelist behavior). If not specified, all tools from the server are enabled by default.
       - `excludeTools` (array of strings, optional): List of tool names to exclude from this MCP server. Tools listed here will not be available to the model, even if they are exposed by the server. **Note:** `excludeTools` takes precedence over `includeTools` - if a tool is in both lists, it will be excluded.
   - **Example:**
@@ -161,6 +166,20 @@ In addition to a project settings file, a project's `.qwen` directory can contai
         "env": {
           "API_KEY": "$MY_API_TOKEN"
         }
+      },
+      "mySseServer": {
+        "url": "http://localhost:8081/events",
+        "headers": {
+          "Authorization": "Bearer $MY_SSE_TOKEN"
+        },
+        "description": "An example SSE-based MCP server."
+      },
+      "myStreamableHttpServer": {
+        "httpUrl": "http://localhost:8082/stream",
+        "headers": {
+          "X-API-Key": "$MY_HTTP_API_KEY"
+        },
+        "description": "An example Streamable HTTP-based MCP server."
       }
     }
     ```
@@ -341,7 +360,7 @@ The CLI keeps a history of shell commands you run. To avoid conflicts between di
 
 ## Environment Variables & `.env` Files
 
-Environment variables are a common way to configure applications, especially for sensitive information like API keys or for settings that might change between environments.
+Environment variables are a common way to configure applications, especially for sensitive information like API keys or for settings that might change between environments. For authentication setup, see the [Authentication documentation](./authentication.md) which covers all available authentication methods.
 
 The CLI automatically loads environment variables from an `.env` file. The loading order is:
 
@@ -351,35 +370,16 @@ The CLI automatically loads environment variables from an `.env` file. The loadi
 
 **Environment Variable Exclusion:** Some environment variables (like `DEBUG` and `DEBUG_MODE`) are automatically excluded from project `.env` files by default to prevent interference with the CLI behavior. Variables from `.qwen/.env` files are never excluded. You can customize this behavior using the `excludedProjectEnvVars` setting in your `settings.json` file.
 
-- **`GEMINI_API_KEY`** (Required):
-  - Your API key for the Gemini API.
-  - **Crucial for operation.** The CLI will not function without it.
+- **`OPENAI_API_KEY`**:
+  - One of several available [authentication methods](./authentication.md).
   - Set this in your shell profile (e.g., `~/.bashrc`, `~/.zshrc`) or an `.env` file.
-- **`GEMINI_MODEL`**:
-  - Specifies the default Gemini model to use.
+- **`OPENAI_BASE_URL`**:
+  - One of several available [authentication methods](./authentication.md).
+  - Set this in your shell profile (e.g., `~/.bashrc`, `~/.zshrc`) or an `.env` file.
+- **`OPENAI_MODEL`**:
+  - Specifies the default OPENAI model to use.
   - Overrides the hardcoded default
-  - Example: `export GEMINI_MODEL="gemini-2.5-flash"`
-- **`GOOGLE_API_KEY`**:
-  - Your Google Cloud API key.
-  - Required for using Vertex AI in express mode.
-  - Ensure you have the necessary permissions.
-  - Example: `export GOOGLE_API_KEY="YOUR_GOOGLE_API_KEY"`.
-- **`GOOGLE_CLOUD_PROJECT`**:
-  - Your Google Cloud Project ID.
-  - Required for using Code Assist or Vertex AI.
-  - If using Vertex AI, ensure you have the necessary permissions in this project.
-  - **Cloud Shell Note:** When running in a Cloud Shell environment, this variable defaults to a special project allocated for Cloud Shell users. If you have `GOOGLE_CLOUD_PROJECT` set in your global environment in Cloud Shell, it will be overridden by this default. To use a different project in Cloud Shell, you must define `GOOGLE_CLOUD_PROJECT` in a `.env` file.
-  - Example: `export GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"`.
-- **`GOOGLE_APPLICATION_CREDENTIALS`** (string):
-  - **Description:** The path to your Google Application Credentials JSON file.
-  - **Example:** `export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/credentials.json"`
-- **`OTLP_GOOGLE_CLOUD_PROJECT`**:
-  - Your Google Cloud Project ID for Telemetry in Google Cloud
-  - Example: `export OTLP_GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"`.
-- **`GOOGLE_CLOUD_LOCATION`**:
-  - Your Google Cloud Project Location (e.g., us-central1).
-  - Required for using Vertex AI in non express mode.
-  - Example: `export GOOGLE_CLOUD_LOCATION="YOUR_PROJECT_LOCATION"`.
+  - Example: `export OPENAI_MODEL="qwen3-coder-plus"`
 - **`GEMINI_SANDBOX`**:
   - Alternative to the `sandbox` setting in `settings.json`.
   - Accepts `true`, `false`, `docker`, `podman`, or a custom command string.
@@ -409,8 +409,8 @@ The CLI automatically loads environment variables from an `.env` file. The loadi
 Arguments passed directly when running the CLI can override other configurations for that specific session.
 
 - **`--model <model_name>`** (**`-m <model_name>`**):
-  - Specifies the Gemini model to use for this session.
-  - Example: `npm start -- --model gemini-1.5-pro-latest`
+  - Specifies the Qwen model to use for this session.
+  - Example: `npm start -- --model qwen3-coder-plus`
 - **`--prompt <your_prompt>`** (**`-p <your_prompt>`**):
   - Used to pass a prompt directly to the command. This invokes Qwen Code in a non-interactive mode.
 - **`--prompt-interactive <your_prompt>`** (**`-i <your_prompt>`**):
@@ -435,7 +435,7 @@ Arguments passed directly when running the CLI can override other configurations
 - **`--approval-mode <mode>`**:
   - Sets the approval mode for tool calls. Available modes:
     - `default`: Prompt for approval on each tool call (default behavior)
-    - `auto_edit`: Automatically approve edit tools (replace, write_file) while prompting for others
+    - `auto_edit`: Automatically approve edit tools (edit, write_file) while prompting for others
     - `yolo`: Automatically approve all tool calls (equivalent to `--yolo`)
   - Cannot be used together with `--yolo`. Use `--approval-mode=yolo` instead of `--yolo` for the new unified approach.
   - Example: `qwen --approval-mode auto_edit`
@@ -445,6 +445,8 @@ Arguments passed directly when running the CLI can override other configurations
   - Sets the telemetry target. See [telemetry](../telemetry.md) for more information.
 - **`--telemetry-otlp-endpoint`**:
   - Sets the OTLP endpoint for telemetry. See [telemetry](../telemetry.md) for more information.
+- **`--telemetry-otlp-protocol`**:
+  - Sets the OTLP protocol for telemetry (`grpc` or `http`). Defaults to `grpc`. See [telemetry](../telemetry.md) for more information.
 - **`--telemetry-log-prompts`**:
   - Enables logging of prompts for telemetry. See [telemetry](../telemetry.md) for more information.
 - **`--checkpointing`**:
@@ -475,7 +477,7 @@ Arguments passed directly when running the CLI can override other configurations
 
 While not strictly configuration for the CLI's _behavior_, context files (defaulting to `QWEN.md` but configurable via the `contextFileName` setting) are crucial for configuring the _instructional context_ (also referred to as "memory"). This powerful feature allows you to give project-specific instructions, coding style guides, or any relevant background information to the AI, making its responses more tailored and accurate to your needs. The CLI includes UI elements, such as an indicator in the footer showing the number of loaded context files, to keep you informed about the active context.
 
-- **Purpose:** These Markdown files contain instructions, guidelines, or context that you want the Gemini model to be aware of during your interactions. The system is designed to manage this instructional context hierarchically.
+- **Purpose:** These Markdown files contain instructions, guidelines, or context that you want the Qwen model to be aware of during your interactions. The system is designed to manage this instructional context hierarchically.
 
 ### Example Context File Content (e.g., `QWEN.md`)
 
@@ -587,3 +589,11 @@ You can opt out of usage statistics collection at any time by setting the `usage
 ```
 
 Note: When usage statistics are enabled, events are sent to an Alibaba Cloud RUM collection endpoint.
+
+- **`enableWelcomeBack`** (boolean):
+  - **Description:** Show welcome back dialog when returning to a project with conversation history.
+  - **Default:** `true`
+  - **Category:** UI
+  - **Requires Restart:** No
+  - **Example:** `"enableWelcomeBack": false`
+  - **Details:** When enabled, Qwen Code will automatically detect if you're returning to a project with a previously generated project summary (`.qwen/PROJECT_SUMMARY.md`) and show a dialog allowing you to continue your previous conversation or start fresh. This feature integrates with the `/chat summary` command and quit confirmation dialog. See the [Welcome Back documentation](./welcome-back.md) for more details.

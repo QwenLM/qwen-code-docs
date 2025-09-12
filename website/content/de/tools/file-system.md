@@ -6,7 +6,7 @@ Qwen Code bietet eine umfassende Sammlung von Tools zur Interaktion mit dem loka
 
 ## 1. `list_directory` (ReadFolder)
 
-`list_directory` listet die Namen von Dateien und Unterverzeichnissen direkt innerhalb eines angegebenen Verzeichnispfads auf. Optional können Einträge ignoriert werden, die bestimmten Glob-Mustern entsprechen.
+`list_directory` listet die Namen von Dateien und Unterverzeichnissen direkt innerhalb eines angegebenen Verzeichnispfads auf. Es kann optional Einträge ignorieren, die bestimmten Glob-Mustern entsprechen.
 
 - **Tool-Name:** `list_directory`
 - **Anzeigename:** ReadFolder
@@ -24,7 +24,7 @@ Qwen Code bietet eine umfassende Sammlung von Tools zur Interaktion mit dem loka
 
 ## 2. `read_file` (ReadFile)
 
-`read_file` liest und gibt den Inhalt einer angegebenen Datei zurück. Dieses Tool verarbeitet Text-, Bild- (PNG, JPG, GIF, WEBP, SVG, BMP) und PDF-Dateien. Für Textdateien kann es bestimmte Zeilenbereiche lesen. Andere binäre Dateitypen werden in der Regel übersprungen.
+`read_file` liest und gibt den Inhalt einer angegebenen Datei zurück. Dieses Tool verarbeitet Text-, Bild- (PNG, JPG, GIF, WEBP, SVG, BMP) und PDF-Dateien. Bei Textdateien kann es bestimmte Zeilenbereiche lesen. Andere binäre Dateitypen werden in der Regel übersprungen.
 
 - **Tool-Name:** `read_file`
 - **Anzeigename:** ReadFile
@@ -32,7 +32,7 @@ Qwen Code bietet eine umfassende Sammlung von Tools zur Interaktion mit dem loka
 - **Parameter:**
   - `path` (string, erforderlich): Der absolute Pfad zur zu lesenden Datei.
   - `offset` (number, optional): Bei Textdateien die 0-basierte Zeilennummer, ab der das Lesen beginnt. Erfordert, dass `limit` gesetzt ist.
-  - `limit` (number, optional): Bei Textdateien die maximale Anzahl an Zeilen, die gelesen werden sollen. Falls nicht angegeben, wird ein Standardmaximum (z. B. 2000 Zeilen) gelesen oder, wenn möglich, die gesamte Datei.
+  - `limit` (number, optional): Bei Textdateien die maximale Anzahl an Zeilen, die gelesen werden soll. Falls weggelassen, wird ein Standardmaximum (z. B. 2000 Zeilen) gelesen oder, wenn möglich, die gesamte Datei.
 - **Verhalten:**
   - Für Textdateien: Gibt den Inhalt zurück. Wenn `offset` und `limit` verwendet werden, wird nur dieser Abschnitt der Zeilen zurückgegeben. Zeigt an, ob der Inhalt aufgrund von Zeilen- oder Zeilenlängenbeschränkungen gekürzt wurde.
   - Für Bild- und PDF-Dateien: Gibt den Dateiinhalt als base64-kodierte Datenstruktur zurück, die für die Verarbeitung durch das Modell geeignet ist.
@@ -45,7 +45,7 @@ Qwen Code bietet eine umfassende Sammlung von Tools zur Interaktion mit dem loka
 
 ## 3. `write_file` (WriteFile)
 
-`write_file` schreibt Inhalte in eine angegebene Datei. Wenn die Datei bereits existiert, wird sie überschrieben. Falls die Datei nicht existiert, wird sie (samt notwendiger übergeordneter Verzeichnisse) erstellt.
+`write_file` schreibt Inhalte in eine angegebene Datei. Wenn die Datei bereits existiert, wird sie überschrieben. Falls die Datei nicht existiert, wird sie (samt aller notwendigen übergeordneten Verzeichnisse) erstellt.
 
 - **Tool-Name:** `write_file`
 - **Anzeigename:** WriteFile
@@ -57,22 +57,22 @@ Qwen Code bietet eine umfassende Sammlung von Tools zur Interaktion mit dem loka
   - Schreibt den übergebenen `content` in die angegebene `file_path`.
   - Erstellt übergeordnete Verzeichnisse, falls diese nicht existieren.
 - **Ausgabe (`llmContent`):** Eine Erfolgsmeldung, z. B. `Successfully overwrote file: /path/to/your/file.txt` oder `Successfully created and wrote to new file: /path/to/new/file.txt`.
-- **Bestätigung:** Ja. Zeigt einen Diff der Änderungen an und fordert die Nutzerbestätigung vor dem Schreiben an.
+- **Bestätigung:** Ja. Zeigt einen Diff der Änderungen an und fordert die Nutzerbestätigung vor dem Schreibvorgang an.
 
 ## 4. `glob` (FindFiles)
 
-`glob` findet Dateien, die bestimmten Glob-Patterns entsprechen (z. B. `src/**/*.ts`, `*.md`), und gibt absolute Pfade zurück, sortiert nach Änderungszeit (neueste zuerst).
+`glob` sucht Dateien, die einem bestimmten Glob-Muster entsprechen (z. B. `src/**/*.ts`, `*.md`), und gibt absolute Pfade zurück, sortiert nach Änderungszeit (neueste zuerst).
 
 - **Tool-Name:** `glob`
 - **Anzeigename:** FindFiles
 - **Datei:** `glob.ts`
 - **Parameter:**
-  - `pattern` (string, erforderlich): Das Glob-Pattern, gegen das gematcht wird (z. B. `"*.py"`, `"src/**/*.js"`).
+  - `pattern` (string, erforderlich): Das Glob-Muster, gegen das abgeglichen wird (z. B. `"*.py"`, `"src/**/*.js"`).
   - `path` (string, optional): Der absolute Pfad zum Verzeichnis, in dem gesucht werden soll. Falls nicht angegeben, wird im Root-Verzeichnis des Tools gesucht.
-  - `case_sensitive` (boolean, optional): Ob die Suche case-sensitive sein soll. Standardmäßig `false`.
-  - `respect_git_ignore` (boolean, optional): Ob `.gitignore`-Patterns beim Suchen von Dateien berücksichtigt werden sollen. Standardmäßig `true`.
+  - `case_sensitive` (boolean, optional): Ob die Suche Groß-/Kleinschreibung berücksichtigen soll. Standardmäßig `false`.
+  - `respect_git_ignore` (boolean, optional): Ob `.gitignore`-Muster beim Suchen von Dateien berücksichtigt werden sollen. Standardmäßig `true`.
 - **Verhalten:**
-  - Sucht nach Dateien, die dem Glob-Pattern im angegebenen Verzeichnis entsprechen.
+  - Sucht nach Dateien, die dem Glob-Muster im angegebenen Verzeichnis entsprechen.
   - Gibt eine Liste von absoluten Pfaden zurück, sortiert nach Änderungsdatum (neueste zuerst).
   - Ignoriert standardmäßig gängige Verzeichnisse wie `node_modules` und `.git`.
 - **Ausgabe (`llmContent`):** Eine Nachricht wie: `Found 5 file(s) matching "*.ts" within src, sorted by modification time (newest first):\nsrc/file1.ts\nsrc/subdir/file2.ts...`
@@ -80,20 +80,20 @@ Qwen Code bietet eine umfassende Sammlung von Tools zur Interaktion mit dem loka
 
 ## 5. `search_file_content` (SearchText)
 
-`search_file_content` sucht nach einem regulären Ausdruck (regex) innerhalb des Inhalts von Dateien in einem bestimmten Verzeichnis. Es können Dateien anhand eines Glob-Patterns gefiltert werden. Gibt die Zeilen mit Treffern sowie deren Dateipfade und Zeilennummern zurück.
+`search_file_content` sucht nach einem regulären Ausdruck (Regex) innerhalb des Inhalts von Dateien in einem bestimmten Verzeichnis. Es können Dateien über ein Glob-Muster gefiltert werden. Gibt die Zeilen mit Treffern sowie deren Dateipfade und Zeilennummern zurück.
 
 - **Tool-Name:** `search_file_content`
 - **Anzeigename:** SearchText
 - **Datei:** `grep.ts`
 - **Parameter:**
-  - `pattern` (string, erforderlich): Der reguläre Ausdruck, nach dem gesucht werden soll (z. B. `"function\s+myFunction"`).
+  - `pattern` (string, erforderlich): Der reguläre Ausdruck (Regex), nach dem gesucht werden soll (z. B. `"function\s+myFunction"`).
   - `path` (string, optional): Der absolute Pfad zum Verzeichnis, in dem gesucht werden soll. Standardmäßig wird das aktuelle Arbeitsverzeichnis verwendet.
-  - `include` (string, optional): Ein Glob-Pattern, um festzulegen, welche Dateien durchsucht werden (z. B. `"*.js"`, `"src/**/*.{ts,tsx}"`). Falls weggelassen, werden die meisten Dateien durchsucht (unter Berücksichtigung gängiger Ignorier-Regeln).
-  - `maxResults` (number, optional): Maximale Anzahl an Treffern, die zurückgegeben werden, um einen Kontextüberlauf zu vermeiden (Standard: 20, max: 100). Verwende niedrigere Werte bei allgemeinen Suchen, höhere bei spezifischen.
+  - `include` (string, optional): Ein Glob-Muster, um festzulegen, welche Dateien durchsucht werden (z. B. `"*.js"`, `"src/**/*.{ts,tsx}"`). Falls weggelassen, werden die meisten Dateien durchsucht (unter Berücksichtigung gängiger Ignorier-Regeln).
+  - `maxResults` (number, optional): Maximale Anzahl an Treffern, die zurückgegeben werden, um einen Kontextüberlauf zu verhindern (Standard: 20, Max: 100). Verwende niedrigere Werte bei breiten Suchanfragen, höhere bei spezifischen.
 - **Verhalten:**
-  - Verwendet `git grep`, falls verfügbar (in einem Git-Repository) für bessere Performance; ansonsten greift es auf das systemeigene `grep` oder eine JavaScript-basierte Suche zurück.
+  - Verwendet `git grep`, falls verfügbar in einem Git-Repository, für bessere Geschwindigkeit; ansonsten greift es auf das systemeigene `grep` oder eine JavaScript-basierte Suche zurück.
   - Gibt eine Liste der übereinstimmenden Zeilen zurück, jeweils mit Dateipfad (relativ zum Suchverzeichnis) und Zeilennummer vorangestellt.
-  - Begrenzt standardmäßig auf maximal 20 Treffer, um einen Kontextüberlauf zu verhindern. Bei gekürzten Ergebnissen wird eine klare Warnung mit Hinweisen zur Verfeinerung der Suche angezeigt.
+  - Begrenzt standardmäßig die Ergebnisse auf maximal 20 Treffer, um einen Kontextüberlauf zu vermeiden. Bei gekürzten Ergebnissen wird eine klare Warnung mit Hinweisen zur Verfeinerung der Suche angezeigt.
 - **Ausgabe (`llmContent`):** Ein formatierter String mit den Treffern, z. B.:
 
   ```
@@ -136,12 +136,12 @@ Suche nach einem Muster mit Dateifilterung und benutzerdefiniertem Limit für Er
 search_file_content(pattern="function", include="*.js", maxResults=10)
 ```
 
-## 6. `replace` (Editieren)
+## 6. `edit` (Bearbeiten)
 
-`replace` ersetzt Text innerhalb einer Datei. Standardmäßig wird nur eine einzelne Fundstelle ersetzt, aber durch Angabe von `expected_replacements` können auch mehrere Vorkommen ersetzt werden. Dieses Tool ist für präzise, gezielte Änderungen konzipiert und benötigt einen ausreichenden Kontext um den `old_string`, um sicherzustellen, dass die korrekte Stelle verändert wird.
+`edit` ersetzt Text innerhalb einer Datei. Standardmäßig wird nur eine einzelne Fundstelle ersetzt, aber es können auch mehrere Vorkommen ersetzt werden, wenn `expected_replacements` angegeben ist. Dieses Tool ist für präzise, gezielte Änderungen konzipiert und benötigt einen ausreichenden Kontext um den `old_string`, um sicherzustellen, dass die korrekte Stelle verändert wird.
 
-- **Tool-Name:** `replace`
-- **Anzeigename:** Edit
+- **Tool-Name:** `edit`
+- **Anzeigename:** Bearbeiten
 - **Datei:** `edit.ts`
 - **Parameter:**
   - `file_path` (string, erforderlich): Der absolute Pfad zur zu ändernden Datei.
@@ -155,19 +155,19 @@ search_file_content(pattern="function", include="*.js", maxResults=10)
 - **Verhalten:**
   - Wenn `old_string` leer ist und `file_path` nicht existiert, wird eine neue Datei mit `new_string` als Inhalt erstellt.
   - Wenn `old_string` angegeben ist, liest das Tool die Datei unter `file_path` und sucht nach genau einem Vorkommen von `old_string`.
-  - Wird genau ein Treffer gefunden, wird dieser durch `new_string` ersetzt.
-  - **Erweiterte Zuverlässigkeit (Mehrstufige Edit-Korrektur):** Um die Erfolgsrate von Änderungen deutlich zu erhöhen – insbesondere wenn der vom Modell gelieferte `old_string` nicht perfekt präzise ist – verwendet das Tool einen mehrstufigen Korrekturmechanismus.
-    - Falls der ursprüngliche `old_string` nicht gefunden wird oder an mehreren Stellen vorkommt, kann das Tool das Gemini-Modell nutzen, um `old_string` (und ggf. auch `new_string`) iterativ zu verfeinern.
-    - Dieser Selbstkorrektur-Prozess versucht, das eindeutige Segment zu identifizieren, das das Modell eigentlich ändern wollte, wodurch die `replace`-Operation robuster wird, selbst bei leicht ungenauem Ausgangskontext.
+  - Wird genau ein Vorkommen gefunden, wird es durch `new_string` ersetzt.
+  - **Erweiterte Zuverlässigkeit (Mehrstufige Edit-Korrektur):** Um die Erfolgsrate von Änderungen deutlich zu erhöhen – besonders wenn der vom Modell bereitgestellte `old_string` nicht perfekt präzise ist – verwendet das Tool einen mehrstufigen Korrekturmechanismus.
+    - Wenn der ursprüngliche `old_string` nicht gefunden wird oder an mehreren Stellen vorkommt, kann das Tool das Qwen-Modell nutzen, um `old_string` (und gegebenenfalls auch `new_string`) iterativ zu verfeinern.
+    - Dieser Selbstkorrekturprozess versucht, das eindeutige Segment zu identifizieren, das das Modell ändern wollte, wodurch die `edit`-Operation robuster wird, selbst bei leicht ungenauem Ausgangskontext.
 - **Fehlerbedingungen:** Trotz des Korrekturmechanismus schlägt das Tool fehl, wenn:
-  - `file_path` kein absoluter Pfad ist oder außerhalb des Root-Verzeichnisses liegt.
+  - `file_path` kein absoluter Pfad ist oder sich außerhalb des Root-Verzeichnisses befindet.
   - `old_string` nicht leer ist, aber `file_path` nicht existiert.
   - `old_string` leer ist, aber `file_path` bereits existiert.
   - `old_string` nach Korrekturversuchen nicht in der Datei gefunden wird.
-  - `old_string` mehrfach vorkommt und der Selbstkorrektur-Mechanismus keine eindeutige Übereinstimmung finden kann.
+  - `old_string` mehrfach vorkommt und der Selbstkorrekturmechanismus keine eindeutige Übereinstimmung finden kann.
 - **Ausgabe (`llmContent`):**
   - Bei Erfolg: `Successfully modified file: /path/to/file.txt (1 replacements).` oder `Created new file: /path/to/new_file.txt with provided content.`
   - Bei Fehler: Eine Fehlermeldung mit Erklärung des Grundes (z. B. `Failed to edit, 0 occurrences found...`, `Failed to edit, expected 1 occurrences but found 2...`).
 - **Bestätigung:** Ja. Zeigt einen Diff der vorgeschlagenen Änderungen an und fordert die Nutzer:in zur Bestätigung auf, bevor die Datei geschrieben wird.
 
-Diese Filesystem-Tools bilden die Grundlage dafür, dass Qwen Code dein lokales Projekt-Kontext verstehen und damit interagieren kann.
+Diese Filesystem-Tools bilden die Grundlage dafür, dass Qwen Code dein lokales Projektverzeichnis verstehen und damit interagieren kann.

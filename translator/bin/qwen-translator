@@ -2,6 +2,20 @@
 
 const { TranslationCLI } = require("../dist/cli.js");
 
+// Read version from package.json
+function getPackageVersion() {
+  try {
+    const path = require("path");
+    const fs = require("fs");
+    const packageJsonPath = path.join(__dirname, "../package.json");
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+    return packageJson.version;
+  } catch (error) {
+    console.warn("Could not read version from package.json, using default");
+    return "0.0.1";
+  }
+}
+
 async function main() {
   const cli = new TranslationCLI();
   const { Command } = require("commander");
@@ -10,7 +24,7 @@ async function main() {
   program
     .name("qwen-translator")
     .description("AI-powered documentation translation tool")
-    .version("1.0.0");
+    .version(getPackageVersion());
 
   // init command
   program

@@ -1,6 +1,6 @@
 # Qwen Code 可观测性指南
 
-遥测（Telemetry）提供了有关 Qwen Code 性能、健康状况和使用情况的数据。通过启用遥测功能，你可以通过 traces、metrics 和结构化日志来监控操作、调试问题并优化工具使用。
+遥测（Telemetry）提供有关 Qwen Code 性能、健康状况和使用情况的数据。通过启用遥测功能，你可以通过 traces、metrics 和结构化日志来监控运行状态、调试问题并优化工具使用。
 
 Qwen Code 的遥测系统基于 **[OpenTelemetry] (OTEL)** 标准构建，允许你将数据发送到任何兼容的后端。
 
@@ -26,7 +26,7 @@ Qwen Code 的遥测系统基于 **[OpenTelemetry] (OTEL)** 标准构建，允许
 
 1.  **工作区设置文件（`.qwen/settings.json`）：** 该 project-specific 文件中 `telemetry` 对象的值。
 
-1.  **用户设置文件（`~/.qwen/settings.json`）：** 该全局用户文件中 `telemetry` 对象的值。
+1.  **用户设置文件（`~/.qwen/settings.json`）：** 该 global user 文件中 `telemetry` 对象的值。
 
 1.  **默认值：** 如果以上均未设置，则应用以下默认值。
     - `telemetry.enabled`: `false`
@@ -35,11 +35,11 @@ Qwen Code 的遥测系统基于 **[OpenTelemetry] (OTEL)** 标准构建，允许
     - `telemetry.logPrompts`: `true`
 
 **对于 `npm run telemetry -- --target=<gcp|local>` 脚本：**
-该脚本的 `--target` 参数**仅**在该脚本执行期间和目的范围内覆盖 `telemetry.target`（即，选择启动哪个 collector）。它不会永久更改你的 `settings.json`。脚本会首先查看 `settings.json` 中的 `telemetry.target` 作为默认值。
+该脚本的 `--target` 参数**仅**在该脚本执行期间和目的范围内覆盖 `telemetry.target`（即选择启动哪个 collector）。它不会永久更改你的 `settings.json`。脚本会首先查看 `settings.json` 中的 `telemetry.target` 作为默认值。
 
 ### 示例配置
 
-你可以将以下代码添加到你的工作区 (`.qwen/settings.json`) 或用户 (`~/.qwen/settings.json`) 配置文件中，以启用遥测功能并将数据发送到 Google Cloud：
+你可以将以下代码添加到你的工作区配置文件 (`.qwen/settings.json`) 或用户配置文件 (`~/.qwen/settings.json`) 中，以启用遥测功能并将数据发送到 Google Cloud：
 
 ```json
 {
@@ -53,18 +53,18 @@ Qwen Code 的遥测系统基于 **[OpenTelemetry] (OTEL)** 标准构建，允许
 
 ### 导出到文件
 
-你可以将所有遥测数据导出到一个文件中，以便在本地进行检查。
+你可以将所有遥测数据导出到一个文件中，方便在本地查看。
 
-要启用文件导出功能，请使用 `--telemetry-outfile` 参数，并指定你希望输出的文件路径。此操作必须配合 `--telemetry-target=local` 一起运行。
+要启用文件导出功能，请使用 `--telemetry-outfile` 参数，并指定你希望输出的文件路径。此功能必须配合 `--telemetry-target=local` 一起使用。
 
 ```bash
 
-# 设置你期望的输出文件路径
+# 设置你希望输出的文件路径
 TELEMETRY_FILE=".qwen/telemetry.log"
 
-# 使用本地遥测配置运行 Qwen Code
+# 使用本地遥测功能运行 Qwen Code
 
-# 注意：--telemetry-otlp-endpoint="" 是必需的，用于覆盖默认的
+# 注意：必须设置 --telemetry-otlp-endpoint="" 来覆盖默认的
 
 # OTLP 导出器，确保遥测数据写入本地文件。
 qwen --telemetry \
@@ -77,7 +77,10 @@ qwen --telemetry \
 ## 运行 OTEL Collector
 
 OTEL Collector 是一个接收、处理和导出遥测数据的服务。
-CLI 使用 OTLP/gRPC 协议发送数据。
+CLI 可以使用 OTLP/gRPC 或 OTLP/HTTP 协议发送数据。
+你可以通过 `--telemetry-otlp-protocol` flag
+或 `settings.json` 文件中的 `telemetry.otlpProtocol` 设置来指定使用哪种协议。更多
+详情请参见 [配置文档](./cli/configuration.md#--telemetry-otlp-protocol)。
 
 在 [documentation][otel-config-docs] 中了解更多关于 OTEL exporter 标准配置的信息。
 
@@ -85,21 +88,21 @@ CLI 使用 OTLP/gRPC 协议发送数据。
 
 ### 本地部署
 
-使用 `npm run telemetry -- --target=local` 命令可以自动化设置本地 telemetry pipeline，包括在你的 `.qwen/settings.json` 文件中配置必要的设置。该脚本会自动安装 `otelcol-contrib`（即 OpenTelemetry Collector）和 `jaeger`（用于查看 traces 的 Jaeger UI）。使用方式如下：
+使用 `npm run telemetry -- --target=local` 命令可以自动化设置本地 telemetry pipeline，包括在你的 `.qwen/settings.json` 文件中配置必要的设置。底层脚本会安装 `otelcol-contrib`（OpenTelemetry Collector）和 `jaeger`（用于查看 traces 的 Jaeger UI）。使用方式如下：
 
 1.  **运行命令**：
-    在项目根目录下执行以下命令：
+    在 repository 根目录下执行以下命令：
 
     ```bash
     npm run telemetry -- --target=local
     ```
 
     脚本将会：
-    - 如果需要，下载 Jaeger 和 OTEL。
-    - 启动一个本地的 Jaeger 实例。
+    - 如有需要，下载 Jaeger 和 OTEL。
+    - 启动一个本地 Jaeger 实例。
     - 启动一个配置好的 OTEL collector，用于接收来自 Qwen Code 的数据。
     - 自动在你的 workspace settings 中启用 telemetry。
-    - 在退出时自动禁用 telemetry。
+    - 退出时，自动禁用 telemetry。
 
 1.  **查看 traces**：
     打开浏览器并访问 **http://localhost:16686** 进入 Jaeger UI，在这里你可以查看 Qwen Code 操作的详细 traces。
@@ -112,16 +115,16 @@ CLI 使用 OTLP/gRPC 协议发送数据。
 
 ### Google Cloud
 
-使用 `npm run telemetry -- --target=gcp` 命令可以自动设置一个本地 OpenTelemetry collector，将数据转发到你的 Google Cloud 项目，并自动配置 `.qwen/settings.json` 文件中的必要设置。该脚本会安装 `otelcol-contrib`。使用步骤如下：
+使用 `npm run telemetry -- --target=gcp` 命令可以自动化设置一个本地 OpenTelemetry collector，将数据转发到你的 Google Cloud 项目，并自动配置 `.qwen/settings.json` 文件中的必要设置。该脚本底层会安装 `otelcol-contrib`。使用步骤如下：
 
-1.  **前提条件**：
+1.  **前置条件**：
     - 拥有一个 Google Cloud 项目 ID。
     - 导出 `GOOGLE_CLOUD_PROJECT` 环境变量，以便 OTEL collector 可以读取。
       ```bash
       export OTLP_GOOGLE_CLOUD_PROJECT="your-project-id"
       ```
     - 完成 Google Cloud 身份验证（例如运行 `gcloud auth application-default login`，或确保已设置 `GOOGLE_APPLICATION_CREDENTIALS`）。
-    - 确保你的 Google Cloud 账号或 service account 拥有以下 IAM 角色："Cloud Trace Agent"、"Monitoring Metric Writer" 和 "Logs Writer"。
+    - 确保你的 Google Cloud 账户或服务账户拥有以下 IAM 角色："Cloud Trace Agent"、"Monitoring Metric Writer" 和 "Logs Writer"。
 
 1.  **运行命令**：
     在项目根目录下执行以下命令：
@@ -130,12 +133,12 @@ CLI 使用 OTLP/gRPC 协议发送数据。
     npm run telemetry -- --target=gcp
     ```
 
-    脚本将执行以下操作：
+    脚本将会：
     - 如果需要，下载 `otelcol-contrib` 二进制文件。
-    - 启动一个 OTEL collector，用于接收来自 Qwen Code 的数据并导出到你指定的 Google Cloud 项目。
-    - 自动在你的 workspace settings（`.qwen/settings.json`）中启用 telemetry 并关闭 sandbox 模式。
+    - 启动一个 OTEL collector，配置为接收来自 Qwen Code 的数据并导出到你指定的 Google Cloud 项目。
+    - 自动在你的工作区设置（`.qwen/settings.json`）中启用 telemetry 并关闭 sandbox 模式。
     - 提供直接链接，用于在 Google Cloud Console 中查看 traces、metrics 和 logs。
-    - 当你退出（Ctrl+C）时，脚本会尝试恢复你原来的 telemetry 和 sandbox 设置。
+    - 在退出时（Ctrl+C），尝试恢复你原来的 telemetry 和 sandbox 设置。
 
 1.  **运行 Qwen Code**：
     在另一个终端中运行你的 Qwen Code 命令。这将生成 telemetry 数据，由 collector 捕获。
@@ -144,10 +147,10 @@ CLI 使用 OTLP/gRPC 协议发送数据。
     使用脚本提供的链接跳转到 Google Cloud Console，查看你的 traces、metrics 和 logs。
 
 1.  **查看本地 collector 日志**：
-    脚本将本地 OTEL collector 的输出重定向到 `~/.qwen/tmp/<projectHash>/otel/collector-gcp.log`。脚本同时提供查看和实时跟踪 collector 日志的链接和命令。
+    脚本将本地 OTEL collector 的输出重定向到 `~/.qwen/tmp/<projectHash>/otel/collector-gcp.log`。脚本还会提供链接和命令，方便你在本地查看或 tail collector 日志。
 
 1.  **停止服务**：
-    在脚本运行的终端中按 `Ctrl+C`，即可停止 OTEL Collector。
+    在脚本运行的终端中按下 `Ctrl+C`，即可停止 OTEL Collector。
 
 ## 日志和指标参考
 
@@ -177,7 +180,7 @@ CLI 使用 OTLP/gRPC 协议发送数据。
 - `qwen-code.user_prompt`：该事件在用户提交 prompt 时发生。
   - **属性**：
     - `prompt_length`
-    - `prompt`（如果 `log_prompts_enabled` 配置为 `false`，则不包含此属性）
+    - `prompt`（如果 `log_prompts_enabled` 配置为 `false`，则该属性会被排除）
     - `auth_type`
 
 - `qwen-code.tool_call`：该事件在每次函数调用时发生。
@@ -191,7 +194,7 @@ CLI 使用 OTLP/gRPC 协议发送数据。
     - `error_type`（如适用）
     - `metadata`（如适用，string -> any 的字典）
 
-- `qwen-code.api_request`：该事件在向 Gemini API 发起请求时发生。
+- `qwen-code.api_request`：该事件在向 Qwen API 发起请求时发生。
   - **属性**：
     - `model`
     - `request_text`（如适用）
@@ -205,7 +208,7 @@ CLI 使用 OTLP/gRPC 协议发送数据。
     - `duration_ms`
     - `auth_type`
 
-- `qwen-code.api_response`：该事件在接收到 Gemini API 响应时发生。
+- `qwen-code.api_response`：该事件在收到 Qwen API 响应时发生。
   - **属性**：
     - `model`
     - `status_code`
@@ -238,18 +241,19 @@ Metrics 是对行为随时间变化的数值测量。Qwen Code 收集以下指�
   - **Attributes**：
     - `function_name`
     - `success` (boolean)
-    - `decision` (string: "accept", "reject", 或 "modify"，如适用)
+    - `decision` (string: "accept", "reject", 或 "modify"，如果适用)
+    - `tool_type` (string: "mcp", 或 "native"，如果适用)
 
 - `qwen-code.tool.call.latency` (Histogram, ms)：测量工具调用延迟。
   - **Attributes**：
     - `function_name`
-    - `decision` (string: "accept", "reject", 或 "modify"，如适用)
+    - `decision` (string: "accept", "reject", 或 "modify"，如果适用)
 
 - `qwen-code.api.request.count` (Counter, Int)：统计所有 API 请求次数。
   - **Attributes**：
     - `model`
     - `status_code`
-    - `error_type` (如适用)
+    - `error_type` (如果适用)
 
 - `qwen-code.api.request.latency` (Histogram, ms)：测量 API 请求延迟。
   - **Attributes**：
@@ -263,10 +267,15 @@ Metrics 是对行为随时间变化的数值测量。Qwen Code 收集以下指�
 - `qwen-code.file.operation.count` (Counter, Int)：统计文件操作次数。
   - **Attributes**：
     - `operation` (string: "create", "read", "update")：文件操作类型。
-    - `lines` (Int, 如适用)：文件中的行数。
-    - `mimetype` (string, 如适用)：文件的 MIME 类型。
-    - `extension` (string, 如适用)：文件扩展名。
-    - `ai_added_lines` (Int, 如适用)：AI 添加/修改的行数。
-    - `ai_removed_lines` (Int, 如适用)：AI 删除/修改的行数。
-    - `user_added_lines` (Int, 如适用)：用户在 AI 提议的更改中添加/修改的行数。
-    - `user_removed_lines` (Int, 如适用)：用户在 AI 提议的更改中删除/修改的行数。
+    - `lines` (Int, 如果适用)：文件中的行数。
+    - `mimetype` (string, 如果适用)：文件的 MIME 类型。
+    - `extension` (string, 如果适用)：文件扩展名。
+    - `ai_added_lines` (Int, 如果适用)：AI 添加/修改的行数。
+    - `ai_removed_lines` (Int, 如果适用)：AI 删除/修改的行数。
+    - `user_added_lines` (Int, 如果适用)：用户在 AI 提议的更改中添加/修改的行数。
+    - `user_removed_lines` (Int, 如果适用)：用户在 AI 提议的更改中删除/修改的行数。
+
+- `qwen-code.chat_compression` (Counter, Int)：统计聊天压缩操作次数。
+  - **Attributes**：
+    - `tokens_before` (Int)：压缩前上下文中的 token 数量。
+    - `tokens_after` (Int)：压缩后上下文中的 token 数量。
