@@ -11,7 +11,7 @@ Beim Start sucht Qwen Code nach Extensions in zwei Verzeichnissen:
 
 Qwen Code lädt alle Extensions aus beiden Verzeichnissen. Wenn eine Extension mit demselben Namen in beiden Verzeichnissen existiert, hat die Extension im Workspace-Verzeichnis Vorrang.
 
-Innerhalb jedes Verzeichnisses sind einzelne Extensions als Unterverzeichnisse organisiert, die eine `qwen-extension.json` Datei enthalten. Zum Beispiel:
+Innerhalb jedes Verzeichnisses existieren einzelne Extensions als Unterverzeichnis, das eine `qwen-extension.json` Datei enthält. Zum Beispiel:
 
 `<workspace>/.qwen/extensions/my-extension/qwen-extension.json`
 
@@ -43,11 +43,11 @@ Wenn Qwen Code startet, lädt es alle Extensions und führt deren Konfiguratione
 
 ## Extension Commands
 
-Erweiterungen können [benutzerdefinierte Befehle](./cli/commands.md#custom-commands) bereitstellen, indem sie TOML-Dateien in einem `commands/` Unterverzeichnis innerhalb des Erweiterungsverzeichnisses ablegen. Diese Befehle folgen dem gleichen Format wie benutzer- und projektspezifische Custom Commands und verwenden standardisierte Namenskonventionen.
+Erweiterungen können [benutzerdefinierte Befehle](./cli/commands.md#custom-commands) bereitstellen, indem sie TOML-Dateien in einem `commands/` Unterverzeichnis innerhalb des Erweiterungsverzeichnisses ablegen. Diese Befehle folgen demselben Format wie benutzer- und projektspezifische benutzerdefinierte Befehle und verwenden Standard-Namenskonventionen.
 
 ### Beispiel
 
-Eine Erweiterung mit dem Namen `gcp` und folgender Struktur:
+Eine Erweiterung mit dem Namen `gcp` und der folgenden Struktur:
 
 ```
 .qwen/extensions/gcp/
@@ -65,12 +65,36 @@ Stellt diese Befehle zur Verfügung:
 
 ### Konfliktlösung
 
-Extension Commands haben die niedrigste Priorität. Wenn ein Konflikt mit User- oder Project Commands auftritt:
+Erweiterungsbefehle haben die niedrigste Priorität. Wenn ein Konflikt mit Benutzer- oder Projektbefehlen auftritt:
 
-1. **Kein Konflikt**: Das Extension Command verwendet seinen natürlichen Namen (z.B. `/deploy`)
-2. **Mit Konflikt**: Das Extension Command wird mit dem Extension Prefix umbenannt (z.B. `/gcp.deploy`)
+1. **Kein Konflikt**: Der Erweiterungsbefehl verwendet seinen natürlichen Namen (z. B. `/deploy`)
+2. **Mit Konflikt**: Der Erweiterungsbefehl wird mit dem Präfix der Erweiterung umbenannt (z. B. `/gcp.deploy`)
 
-Beispiel: Wenn sowohl ein User als auch die `gcp` Extension ein `deploy` Command definieren:
+Wenn zum Beispiel sowohl ein Benutzer als auch die `gcp`-Erweiterung einen `deploy`-Befehl definieren:
 
-- `/deploy` - Führt das User Deploy Command aus
-- `/gcp.deploy` - Führt das Extension Deploy Command aus (markiert mit `[gcp]` Tag)
+- `/deploy` – Führt den Deploy-Befehl des Benutzers aus
+- `/gcp.deploy` – Führt den Deploy-Befehl der Erweiterung aus (gekennzeichnet mit dem Tag `[gcp]`)
+
+## Installation von Erweiterungen
+
+Du kannst Erweiterungen mithilfe des `install`-Befehls installieren. Dieser Befehl ermöglicht es, Erweiterungen aus einem Git-Repository oder einem lokalen Pfad zu installieren.
+
+### Verwendung
+
+`qwen extensions install <source> | [options]`
+
+### Optionen
+
+- `source <url> positional argument`: Die URL eines Git-Repositorys, von dem die Erweiterung installiert werden soll. Das Repository muss eine `qwen-extension.json`-Datei im Stammverzeichnis enthalten.
+- `--path <path>`: Der Pfad zu einem lokalen Verzeichnis, das als Erweiterung installiert werden soll. Das Verzeichnis muss eine `qwen-extension.json`-Datei enthalten.
+
+# Variablen
+
+Qwen Code Erweiterungen erlauben die Verwendung von Variablen in `qwen-extension.json`. Dies kann nützlich sein, wenn du z. B. das aktuelle Verzeichnis benötigst, um einen MCP-Server mit `"cwd": "${extensionPath}${/}run.ts"` auszuführen.
+
+**Unterstützte Variablen:**
+
+| Variable                   | Beschreibung                                                                                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `${extensionPath}`         | Der vollständige Pfad der Erweiterung im Dateisystem des Benutzers, z. B. '/Users/username/.qwen/extensions/example-extension'. Symbolische Links werden nicht aufgelöst. |
+| `${/} or ${pathSeparator}` | Der Pfadtrenner (unterscheidet sich je nach Betriebssystem).                                                                                              |

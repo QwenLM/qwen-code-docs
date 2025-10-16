@@ -1,16 +1,16 @@
 # Subagents
 
-Subagents 是专门处理 Qwen Code 中特定类型任务的 AI 助手。它们允许你将专注的工作委派给配置了任务特定提示、工具和行为的 AI agents。
+Subagents 是专门处理 Qwen Code 中特定类型任务的 AI 助手。它们允许你将专注的工作委托给配置了任务特定提示、工具和行为的 AI agents。
 
 ## 什么是 Subagents？
 
 Subagents 是独立的 AI 助手，具备以下特点：
 
-- **专精特定任务** - 每个 subagent 都配置了专注于特定类型工作的 system prompt
-- **独立上下文** - 它们维护自己的对话历史，与你的主聊天窗口分离
-- **受控工具访问** - 你可以配置每个 subagent 可以访问的工具
+- **专精特定任务** - 每个 subagent 都配置了专注于特定类型工作的系统提示
+- **拥有独立上下文** - 它们维护自己的对话历史，与你的主聊天分开
+- **使用受控工具** - 你可以配置每个 subagent 可以访问的工具
 - **自主工作** - 一旦分配任务，它们会独立工作直到完成或失败
-- **详细反馈** - 你可以实时查看它们的进度、工具使用情况和执行统计信息
+- **提供详细反馈** - 你可以实时查看它们的进度、工具使用情况和执行统计信息
 
 ## 核心优势
 
@@ -48,14 +48,14 @@ Subagents 是独立的 AI 助手，具备以下特点：
    查看和管理你已配置的 subagents。
 
 3. **自动使用 subagents**：
-   只需让主 AI 执行与你的 subagents 专长相匹配的任务。AI 会自动将合适的工作委派出去。
+   只需让主 AI 执行与你的 subagents 专长匹配的任务。AI 会自动将合适的工作委派出去。
 
 ### 使用示例
 
 ```
 User: "请为认证模块编写全面的测试"
 
-AI: 我将把这个任务委派给你的测试专家 subagent。
+AI: 我会把这个任务委派给你的测试专家 subagent。
 [委派给 "testing-expert" subagent]
 [显示测试创建的实时进度]
 [返回完成的测试文件和执行摘要]
@@ -94,11 +94,11 @@ Subagents 通过 `/agents` 斜杠命令及其子命令进行管理：
 - **项目级别**：`.qwen/agents/`（优先级更高）
 - **用户级别**：`~/.qwen/agents/`（备选方案）
 
-这样你可以同时拥有项目特定的 agent 和跨项目使用的个人 agent。
+这样你可以同时拥有项目专用的 agent 和跨项目使用的个人 agent。
 
 ### 文件格式
 
-子 agent 使用带有 YAML frontmatter 的 Markdown 文件进行配置。这种格式易于阅读，且可以用任何文本编辑器轻松编辑。
+子 agent 使用带有 YAML frontmatter 的 Markdown 文件进行配置。这种格式易于阅读，也方便用任何文本编辑器进行编辑。
 
 #### 基本结构
 
@@ -132,9 +132,31 @@ description: 创建项目文档和 README 文件
 专注于创建清晰、全面的文档，帮助新贡献者和最终用户理解项目。
 ```
 
+## 高效使用 Subagents
+
+### 自动委派
+
+Qwen Code 会根据以下内容主动委派任务：
+
+- 你请求中的任务描述
+- subagent 配置中的 description 字段
+- 当前上下文和可用工具
+
+要鼓励更主动地使用 subagent，可以在 description 字段中加入 "use PROACTIVELY" 或 "MUST BE USED" 等短语。
+
+### 显式调用
+
+通过在命令中提及特定子代理来请求其服务：
+
+```
+> 让 testing-expert 子代理为支付模块创建单元测试
+> 让 documentation-writer 子代理更新 API 参考文档
+> 让 react-specialist 子代理优化这个组件的性能
+```
+
 ## 示例
 
-### 开发工作流 Agents
+### 开发工作流代理
 
 #### 测试专家
 
@@ -151,77 +173,77 @@ tools: read_file, write_file, read_many_files, run_shell_command
 
 你的专业技能包括：
 
-- 使用适当的 mocking 和隔离进行单元测试
+- 使用适当的 mock 和隔离进行单元测试
 - 针对组件交互的集成测试
-- 测试驱动开发实践
-- 边缘情况识别和全面覆盖
-- 在适当时进行性能和负载测试
+- 测试驱动开发（TDD）实践
+- 边缘情况识别和全面覆盖率
+- 在适当情况下进行性能和负载测试
 
 对于每个测试任务：
 
 1. 分析代码结构和依赖关系
 2. 识别关键功能、边缘情况和错误条件
 3. 创建具有描述性名称的全面测试套件
-4. 包含适当的 setup/teardown 和有意义的断言
+4. 包含正确的 setUp/tearDown 和有意义的断言
 5. 添加注释解释复杂的测试场景
-6. 确保测试具有可维护性并遵循 DRY 原则
+6. 确保测试具备可维护性并遵循 DRY 原则
 
-始终遵循所检测语言和框架的测试最佳实践。
-关注正面和负面测试用例。
+始终根据检测到的语言和框架遵循测试最佳实践。
+关注正向和负向测试用例。
 ```
 
 **使用场景：**
 
 - "为认证服务编写单元测试"
 - "为支付处理工作流创建集成测试"
-- "为数据验证模块中的边缘情况添加测试覆盖"
+- "在数据验证模块中增加边缘情况的测试覆盖"
 
-#### Documentation Writer
+#### 文档撰写员
 
 专门负责创建清晰、全面的文档。
 
 ```markdown
 ---
 name: documentation-writer
-description: 创建全面的文档，包括 README 文件、API 文档和用户指南
+description: 负责创建全面的文档，包括 README 文件、API 文档和用户指南
 tools: read_file, write_file, read_many_files, web_search
 ---
 
 你是 ${project_name} 的技术文档专家。
 
-你的职责是创建清晰、全面的文档，服务于开发者和最终用户。重点关注：
+你的职责是为开发者和终端用户创建清晰、全面的文档。重点关注：
 
 **API 文档方面：**
 
-- 清晰的 endpoint 描述及示例
-- 参数详情（包括类型和约束）
-- 响应格式说明
-- 错误码解释
+- 包含示例的清晰 endpoint 描述
+- 带有类型和约束条件的参数详情
+- 响应格式文档
+- 错误代码说明
 - 认证要求
 
 **用户文档方面：**
 
-- 带截图的逐步操作指南（适当情况下）
-- 安装与设置指南
-- 配置选项及示例
-- 常见问题的故障排查章节
+- 带有截图（如有帮助）的逐步操作指南
+- 安装和设置指南
+- 配置选项和示例
+- 常见问题的故障排除部分
 - 基于常见用户问题的 FAQ 部分
 
 **开发者文档方面：**
 
-- 架构概览和设计决策
-- 可实际运行的代码示例
+- 架构概述和设计决策
+- 真正可用的代码示例
 - 贡献指南
-- 开发环境搭建说明
+- 开发环境设置
 
-始终验证代码示例，并确保文档内容与实际实现保持同步。使用清晰的标题、项目符号和示例。
+始终验证代码示例，并确保文档与实际实现保持同步。使用清晰的标题、项目符号和示例。
 ```
 
 **使用场景：**
 
 - "为用户管理 endpoints 创建 API 文档"
-- "为该项目编写一份全面的 README"
-- "记录部署流程并包含故障排查步骤"
+- "为这个项目编写一份全面的 README"
+- "记录部署流程并包含故障排除步骤"
 
 #### Code Reviewer
 
@@ -234,36 +256,36 @@ description: Reviews code for best practices, security issues, performance, and 
 tools: read_file, read_many_files
 ---
 
-你是一位专注于质量、安全性和可维护性的资深代码审查员。
+You are an experienced code reviewer focused on quality, security, and maintainability.
 
-审查标准：
+Review criteria:
 
-- **代码结构**：组织结构、模块化和关注点分离
-- **性能**：算法效率和资源使用情况
-- **安全性**：漏洞评估和安全编码实践
-- **最佳实践**：特定语言/框架的编码规范
-- **错误处理**：正确的异常处理和边界情况覆盖
-- **可读性**：清晰的命名、注释和代码组织
-- **测试**：测试覆盖率和可测试性考虑
+- **Code Structure**: Organization, modularity, and separation of concerns
+- **Performance**: Algorithmic efficiency and resource usage
+- **Security**: Vulnerability assessment and secure coding practices
+- **Best Practices**: Language/framework-specific conventions
+- **Error Handling**: Proper exception handling and edge case coverage
+- **Readability**: Clear naming, comments, and code organization
+- **Testing**: Test coverage and testability considerations
 
-提供建设性反馈，包括：
+Provide constructive feedback with:
 
-1. **严重问题**：安全漏洞、重大 bug
-2. **重要改进**：性能问题、设计缺陷
-3. **次要建议**：风格改进、重构机会
-4. **正面反馈**：实现良好的模式和优秀实践
+1. **Critical Issues**: Security vulnerabilities, major bugs
+2. **Important Improvements**: Performance issues, design problems
+3. **Minor Suggestions**: Style improvements, refactoring opportunities
+4. **Positive Feedback**: Well-implemented patterns and good practices
 
-专注于可操作的反馈，提供具体示例和建议解决方案。
-根据影响程度对问题进行优先级排序，并为建议提供理由。
+Focus on actionable feedback with specific examples and suggested solutions.
+Prioritize issues by impact and provide rationale for recommendations.
 ```
 
 **使用场景：**
 
-- "审查这个认证实现是否存在安全问题"
-- "检查这个数据库查询逻辑的性能影响"
-- "评估代码结构并提出改进建议"
+- "Review this authentication implementation for security issues"
+- "Check the performance implications of this database query logic"
+- "Evaluate the code structure and suggest improvements"
 
-### 技术特定 Agents
+### 技术特定的 Agents
 
 #### React 专家
 
@@ -285,7 +307,7 @@ tools: read_file, write_file, read_many_files, run_shell_command
 - **性能优化**：React.memo、useMemo、useCallback、代码分割
 - **测试**：React Testing Library、Jest、组件测试策略
 - **TypeScript 集成**：props、hooks 和组件的正确类型定义
-- **现代模式**：Suspense、Error Boundaries、Concurrent Features
+- **现代模式**：Suspense、Error Boundaries、并发特性
 
 处理 React 任务时：
 
@@ -296,15 +318,16 @@ tools: read_file, write_file, read_many_files, run_shell_command
 5. 包含适当的错误处理
 6. 编写可测试、可维护的代码
 
-始终保持对 React 最佳实践的跟进，避免使用已弃用的模式。
-关注无障碍性和用户体验考虑。
+始终保持对 React 最佳实践的关注，避免使用已弃用的模式。
+关注无障碍性和用户体验。
+
 ```
 
 **使用场景：**
 
-- "创建一个支持排序和过滤的可复用数据表格组件"
+- "创建一个支持排序和过滤功能的可复用数据表格组件"
 - "实现一个带缓存功能的自定义 hook 用于 API 数据获取"
-- "将这个 class 组件重构为使用现代 React 模式"
+- "将这个 class 组件重构为使用现代 React 模式的组件"
 
 #### Python 专家
 
@@ -327,26 +350,26 @@ tools: read_file, write_file, read_many_files, run_shell_command
 - **数据科学**：pandas、numpy、matplotlib、jupyter notebooks
 - **异步编程**：asyncio、async/await 模式
 - **包管理**：pip、poetry、虚拟环境
-- **代码质量**：PEP 8、类型提示、使用 pylint/flake8 进行 linting
+- **代码质量**：PEP 8、类型提示、使用 pylint/flake8 进行代码检查
 
-处理 Python 任务时：
+处理 Python 任务时请遵循以下原则：
 
 1. 遵循 PEP 8 编码规范
-2. 使用类型提示提升代码可读性
-3. 使用具体异常实现完善的错误处理机制
-4. 编写完整的 docstring
+2. 使用类型提示以增强代码可读性
+3. 实现适当的错误处理机制，捕获具体异常
+4. 编写完整的 docstring 文档
 5. 考虑性能与内存使用情况
-6. 添加适当的日志记录
-7. 编写模块化、易于测试的代码
+6. 添加合适的日志记录
+7. 编写模块化且易于测试的代码
 
-专注于编写符合社区标准的清晰、可维护的 Python 代码。
+专注于编写符合社区标准的清晰、易维护的 Python 代码。
 ```
 
-**使用场景示例：**
+**典型用例：**
 
 - “创建一个基于 FastAPI 的用户认证服务，支持 JWT token”
-- “用 pandas 实现一个具备错误处理能力的数据处理流水线”
-- “使用 argparse 开发一个 CLI 工具，并提供完整的帮助文档”
+- “实现一个包含错误处理机制的数据处理流水线，使用 pandas”
+- “使用 argparse 编写一个命令行工具，并提供详细的帮助文档”
 
 ## 最佳实践
 
@@ -413,10 +436,10 @@ description: 检查代码中的安全漏洞、性能问题和可维护性问题
 **❌ 避免：**
 
 ```markdown
-description: 一个有用的代码审查员
+description: 一个有用的代码审查工具
 ```
 
-**原因：** 清晰的描述有助于主 AI 为每个任务选择正确的 agent。
+**原因：** 清晰的描述能帮助主 AI 为每个任务选择正确的 agent。
 
 ### 配置最佳实践
 
@@ -440,8 +463,8 @@ description: 一个有用的代码审查员
 
 1. 分析代码结构和依赖关系
 2. 识别核心功能和边界情况
-3. 创建全面的测试套件，并使用清晰的命名
-4. 包含 setup/teardown 和正确的断言
+3. 创建全面的测试套件并使用清晰的命名
+4. 包含 setUp/tearDown 和正确的断言
 5. 添加注释解释复杂的测试场景
 ```
 
@@ -450,7 +473,7 @@ description: 一个有用的代码审查员
 ```markdown
 始终遵循以下标准：
 
-- 使用描述性的 test 名称，能够说明测试场景
+- 使用能清楚描述测试场景的测试函数名
 - 包含正向和负向测试用例
 - 为复杂的测试函数添加 docstrings
 - 确保测试之间相互独立，可以按任意顺序运行
@@ -460,7 +483,7 @@ description: 一个有用的代码审查员
 
 - **工具限制**：Subagents 只能访问其配置的工具
 - **沙箱机制**：所有工具执行都遵循与直接使用工具相同的安全模型
-- **审计追踪**：所有 subagent 操作都会被记录，并实时可见
+- **审计追踪**：所有 subagent 操作都会被记录，并可实时查看
 - **访问控制**：项目和用户级别的隔离提供了适当的边界
 - **敏感信息**：避免在 agent 配置中包含 secrets 或 credentials
 - **生产环境**：考虑为生产环境和开发环境使用不同的 agents

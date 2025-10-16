@@ -1,6 +1,6 @@
 # 示例代理脚本
 
-以下是一个可以与 `GEMINI_SANDBOX_PROXY_COMMAND` 环境变量一起使用的代理脚本示例。该脚本只允许 `HTTPS` 连接到 `example.com:443`，并拒绝所有其他请求。
+以下是一个可以与 `GEMINI_SANDBOX_PROXY_COMMAND` 环境变量一起使用的代理脚本示例。该脚本只允许到 `example.com:443` 的 `HTTPS` 连接，拒绝所有其他请求。
 
 ```javascript
 #!/usr/bin/env node
@@ -11,21 +11,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// 示例代理服务器监听 :::8877，只允许 HTTPS 连接到 example.com。
+// 示例代理服务器监听 :::8877，仅允许 HTTPS 连接到 example.com。
 // 设置 `GEMINI_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js` 来在沙箱中运行代理
-// 在沙箱中通过 `curl https://example.com` 测试（在 shell 模式下或通过 shell 工具）
+// 在沙箱内通过 `curl https://example.com` 测试（在 shell 模式下或通过 shell 工具）
 
-import http from 'http';
-import net from 'net';
-import { URL } from 'url';
-import console from 'console';
+import http from 'node:http';
+import net from 'node:net';
+import { URL } from 'node:url';
+import console from 'node:console';
 
 const PROXY_PORT = 8877;
 const ALLOWED_DOMAINS = ['example.com', 'googleapis.com'];
 const ALLOWED_PORT = '443';
 
 const server = http.createServer((req, res) => {
-  // 拒绝所有非 CONNECT 的 HTTPS 请求
+  // 拒绝除 CONNECT 外的所有非 HTTPS 请求
   console.log(
     `[PROXY] Denying non-CONNECT request for: ${req.method} ${req.url}`,
   );
@@ -34,7 +34,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.on('connect', (req, clientSocket, head) => {
-  // req.url 对于 CONNECT 请求来说格式是 "hostname:port"
+  // req.url 对于 CONNECT 请求来说是 "hostname:port" 格式
   const { port, hostname } = new URL(`http://${req.url}`);
 
   console.log(`[PROXY] Intercepted CONNECT request for: ${hostname}:${port}`);
@@ -50,7 +50,7 @@ server.on('connect', (req, clientSocket, head) => {
     // 建立到原始目标的 TCP 连接
     const serverSocket = net.connect(port, hostname, () => {
       clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-      // 通过在客户端和目标服务器之间传输数据来创建隧道
+      // 通过在客户端和目标服务器之间传输数据创建隧道
       serverSocket.write(head);
       serverSocket.pipe(clientSocket);
       clientSocket.pipe(serverSocket);

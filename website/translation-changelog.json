@@ -1,5 +1,118 @@
 [
   {
+    "timestamp": "2025-10-16T03:26:44.011Z",
+    "commit": "9d664623f56dfd025d21c84cedcf63851689248b",
+    "sourceLanguage": "en",
+    "translatedFiles": {
+      "zh": {
+        "success": [
+          "cli/commands.md",
+          "cli/configuration.md",
+          "cli/themes.md",
+          "deployment.md",
+          "examples/proxy-script.md",
+          "extension.md",
+          "gemini-ignore.md",
+          "ide-integration.md",
+          "index.md",
+          "keyboard-shortcuts.md",
+          "qwen-ignore.md",
+          "subagents.md",
+          "telemetry.md",
+          "tools/multi-file.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "de": {
+        "success": [
+          "cli/commands.md",
+          "cli/configuration.md",
+          "cli/themes.md",
+          "deployment.md",
+          "examples/proxy-script.md",
+          "extension.md",
+          "gemini-ignore.md",
+          "ide-integration.md",
+          "index.md",
+          "keyboard-shortcuts.md",
+          "qwen-ignore.md",
+          "subagents.md",
+          "telemetry.md",
+          "tools/multi-file.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "fr": {
+        "success": [
+          "cli/commands.md",
+          "cli/configuration.md",
+          "cli/themes.md",
+          "deployment.md",
+          "examples/proxy-script.md",
+          "extension.md",
+          "gemini-ignore.md",
+          "ide-integration.md",
+          "index.md",
+          "keyboard-shortcuts.md",
+          "qwen-ignore.md",
+          "subagents.md",
+          "telemetry.md",
+          "tools/multi-file.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ru": {
+        "success": [
+          "cli/commands.md",
+          "cli/configuration.md",
+          "cli/themes.md",
+          "deployment.md",
+          "examples/proxy-script.md",
+          "extension.md",
+          "gemini-ignore.md",
+          "ide-integration.md",
+          "index.md",
+          "keyboard-shortcuts.md",
+          "qwen-ignore.md",
+          "subagents.md",
+          "telemetry.md",
+          "tools/multi-file.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ja": {
+        "success": [
+          "cli/commands.md",
+          "cli/configuration.md",
+          "cli/themes.md",
+          "deployment.md",
+          "examples/proxy-script.md",
+          "extension.md",
+          "gemini-ignore.md",
+          "ide-integration.md",
+          "index.md",
+          "keyboard-shortcuts.md",
+          "qwen-ignore.md",
+          "subagents.md",
+          "telemetry.md",
+          "tools/multi-file.md",
+          "troubleshooting.md"
+        ],
+        "failed": []
+      }
+    },
+    "stats": {
+      "totalFiles": 15,
+      "languages": 5,
+      "successCount": 75,
+      "failedCount": 0
+    }
+  },
+  {
     "timestamp": "2025-09-12T09:44:34.622Z",
     "commit": "67e2e270bd548ab9845f3e0d99f0b35423ae94da",
     "sourceLanguage": "en",

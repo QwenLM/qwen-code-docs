@@ -4,180 +4,193 @@ Qwen Code prend en charge plusieurs commandes intégrées pour vous aider à gé
 
 ## Commandes slash (`/`)
 
-Les commandes slash fournissent un contrôle de niveau méta sur le CLI lui-même.
+Les commandes slash fournissent un contrôle au niveau méta sur le CLI lui-même.
 
-### Commandes intégrées
+### Built-in Commands
 
 - **`/bug`**
-  - **Description :** Signaler un problème concernant Qwen Code. Par défaut, le problème est signalé dans le dépôt GitHub de Qwen Code. La chaîne de caractères saisie après `/bug` devient le titre du bug signalé. Le comportement par défaut de `/bug` peut être modifié en utilisant le paramètre `bugCommand` dans vos fichiers `.qwen/settings.json`.
+  - **Description:** File an issue about Qwen Code. By default, the issue is filed within the GitHub repository for Qwen Code. The string you enter after `/bug` will become the headline for the bug being filed. The default `/bug` behavior can be modified using the `bugCommand` setting in your `.qwen/settings.json` files.
 
 - **`/chat`**
-  - **Description :** Sauvegarder et reprendre l'historique des conversations pour gérer des états de conversation multiples de manière interactive, ou reprendre un état précédent lors d'une session ultérieure.
-  - **Sous-commandes :**
+  - **Description:** Save and resume conversation history for branching conversation state interactively, or resuming a previous state from a later session.
+  - **Sub-commands:**
     - **`save`**
-      - **Description :** Sauvegarde l'historique de la conversation en cours. Vous devez ajouter une `<tag>` pour identifier l'état de la conversation.
-      - **Usage :** `/chat save <tag>`
-      - **Emplacement des checkpoints :** Les emplacements par défaut des checkpoints de chat sauvegardés sont :
-        - Linux/macOS : `~/.config/qwen-code/checkpoints/`
-        - Windows : `C:\Users\<VotreNomUtilisateur>\AppData\Roaming\qwen-code\checkpoints\`
-        - Lorsque vous exécutez `/chat list`, le CLI ne scanne que ces répertoires spécifiques pour trouver les checkpoints disponibles.
-        - **Note :** Ces checkpoints servent à sauvegarder et reprendre manuellement les états de conversation. Pour les checkpoints automatiques créés avant les modifications de fichiers, consultez la [documentation sur les checkpoints](../checkpointing.md).
+      - **Description:** Saves the current conversation history. You must add a `<tag>` for identifying the conversation state.
+      - **Usage:** `/chat save <tag>`
+      - **Details on Checkpoint Location:** The default locations for saved chat checkpoints are:
+        - Linux/macOS: `~/.qwen/tmp/<project_hash>/`
+        - Windows: `C:\Users\<YourUsername>\.qwen\tmp\<project_hash>\`
+        - When you run `/chat list`, the CLI only scans these specific directories to find available checkpoints.
+        - **Note:** These checkpoints are for manually saving and resuming conversation states. For automatic checkpoints created before file modifications, see the [Checkpointing documentation](../checkpointing.md).
     - **`resume`**
-      - **Description :** Reprend une conversation à partir d'une sauvegarde précédente.
-      - **Usage :** `/chat resume <tag>`
+      - **Description:** Resumes a conversation from a previous save.
+      - **Usage:** `/chat resume <tag>`
     - **`list`**
-      - **Description :** Liste les tags disponibles pour reprendre un état de conversation.
+      - **Description:** Lists available tags for chat state resumption.
     - **`delete`**
-      - **Description :** Supprime un checkpoint de conversation sauvegardé.
-      - **Usage :** `/chat delete <tag>`
+      - **Description:** Deletes a saved conversation checkpoint.
+      - **Usage:** `/chat delete <tag>`
 
 - **`/clear`**
-  - **Description :** Efface l'écran du terminal, y compris l'historique de session visible et le défilement dans le CLI. Les données de session sous-jacentes (pour rappel de l'historique) peuvent être conservées selon l'implémentation exacte, mais l'affichage visuel est effacé.
-  - **Raccourci clavier :** Appuyez sur **Ctrl+L** à tout moment pour effectuer une action d'effacement.
+  - **Description:** Clear the terminal screen, including the visible session history and scrollback within the CLI. The underlying session data (for history recall) might be preserved depending on the exact implementation, but the visual display is cleared.
+  - **Keyboard shortcut:** Press **Ctrl+L** at any time to perform a clear action.
 
 - **`/summary`**
-  - **Description :** Génère un résumé complet du projet à partir de l'historique de conversation actuel et le sauvegarde dans `.qwen/PROJECT_SUMMARY.md`. Ce résumé inclut l'objectif global, les connaissances clés, les actions récentes et le plan actuel, ce qui est parfait pour reprendre le travail lors de sessions futures.
-  - **Usage :** `/summary`
-  - **Fonctionnalités :**
-    - Analyse l'historique complet de la conversation pour extraire le contexte important
-    - Crée un résumé structuré en markdown avec des sections pour les objectifs, les connaissances, les actions et les plans
-    - Sauvegarde automatiquement dans `.qwen/PROJECT_SUMMARY.md` à la racine de votre projet
-    - Affiche des indicateurs de progression pendant la génération et la sauvegarde
-    - S'intègre à la fonction Welcome Back pour une reprise de session fluide
-  - **Note :** Cette commande nécessite une conversation active avec au moins 2 messages pour générer un résumé pertinent.
+  - **Description:** Generate a comprehensive project summary from the current conversation history and save it to `.qwen/PROJECT_SUMMARY.md`. This summary includes the overall goal, key knowledge, recent actions, and current plan, making it perfect for resuming work in future sessions.
+  - **Usage:** `/summary`
+  - **Features:**
+    - Analyzes the entire conversation history to extract important context
+    - Creates a structured markdown summary with sections for goals, knowledge, actions, and plans
+    - Automatically saves to `.qwen/PROJECT_SUMMARY.md` in your project root
+    - Shows progress indicators during generation and saving
+    - Integrates with the Welcome Back feature for seamless session resumption
+  - **Note:** This command requires an active conversation with at least 2 messages to generate a meaningful summary.
 
 - **`/compress`**
-  - **Description :** Remplace tout le contexte de chat par un résumé. Cela permet d'économiser les tokens utilisés pour les tâches futures tout en conservant un résumé de haut niveau de ce qui s'est produit.
+  - **Description:** Replace the entire chat context with a summary. This saves on tokens used for future tasks while retaining a high level summary of what has happened.
 
 - **`/copy`**
-  - **Description :** Copie la dernière sortie produite par Qwen Code dans votre presse-papiers, pour un partage ou une réutilisation facile.
+  - **Description:** Copies the last output produced by Qwen Code to your clipboard, for easy sharing or reuse.
 
-- **`/directory`** (ou **`/dir`**)
-  - **Description :** Gérer les répertoires de l'espace de travail pour la prise en charge multi-répertoires.
-  - **Sous-commandes :**
-    - **`add`** :
-      - **Description :** Ajoute un répertoire à l'espace de travail. Le chemin peut être absolu ou relatif au répertoire de travail actuel. De plus, la référence depuis le répertoire personnel est également prise en charge.
-      - **Usage :** `/directory add <chemin1>,<chemin2>`
-      - **Note :** Désactivé dans les profils sandbox restrictifs. Si vous l'utilisez, utilisez plutôt `--include-directories` lors du démarrage de la session.
-    - **`show`** :
-      - **Description :** Affiche tous les répertoires ajoutés par `/directory add` et `--include-directories`.
-      - **Usage :** `/directory show`
+- **`/directory`** (or **`/dir`**)
+  - **Description:** Manage workspace directories for multi-directory support.
+  - **Sub-commands:**
+    - **`add`**:
+      - **Description:** Add a directory to the workspace. The path can be absolute or relative to the current working directory. Moreover, the reference from home directory is supported as well.
+      - **Usage:** `/directory add <path1>,<path2>`
+      - **Note:** Disabled in restrictive sandbox profiles. If you're using that, use `--include-directories` when starting the session instead.
+    - **`show`**:
+      - **Description:** Display all directories added by `/directory add` and `--include-directories`.
+      - **Usage:** `/directory show`
 
-- **`/directory`** (ou **`/dir`**)
-  - **Description :** Gérer les répertoires de l'espace de travail pour la prise en charge multi-répertoires.
-  - **Sous-commandes :**
-    - **`add`** :
-      - **Description :** Ajoute un répertoire à l'espace de travail. Le chemin peut être absolu ou relatif au répertoire de travail actuel. De plus, la référence depuis le répertoire personnel est également prise en charge.
-      - **Usage :** `/directory add <chemin1>,<chemin2>`
-      - **Note :** Désactivé dans les profils sandbox restrictifs. Si vous l'utilisez, utilisez plutôt `--include-directories` lors du démarrage de la session.
-    - **`show`** :
-      - **Description :** Affiche tous les répertoires ajoutés par `/directory add` et `--include-directories`.
-      - **Usage :** `/directory show`
+- **`/directory`** (or **`/dir`**)
+  - **Description:** Manage workspace directories for multi-directory support.
+  - **Sub-commands:**
+    - **`add`**:
+      - **Description:** Add a directory to the workspace. The path can be absolute or relative to the current working directory. Moreover, the reference from home directory is supported as well.
+      - **Usage:** `/directory add <path1>,<path2>`
+      - **Note:** Disabled in restrictive sandbox profiles. If you're using that, use `--include-directories` when starting the session instead.
+    - **`show`**:
+      - **Description:** Display all directories added by `/directory add` and `--include-directories`.
+      - **Usage:** `/directory show`
 
 - **`/editor`**
-  - **Description :** Ouvre une boîte de dialogue pour sélectionner les éditeurs pris en charge.
+  - **Description:** Open a dialog for selecting supported editors.
 
 - **`/extensions`**
-  - **Description :** Liste toutes les extensions actives dans la session Qwen Code actuelle. Voir [Extensions Qwen Code](../extension.md).
+  - **Description:** Lists all active extensions in the current Qwen Code session. See [Qwen Code Extensions](../extension.md).
 
-- **`/help`** (ou **`/?`**)
-  - **Description :** Affiche les informations d'aide concernant Qwen Code, y compris les commandes disponibles et leur utilisation.
+- **`/help`** (or **`/?`**)
+  - **Description:** Display help information about the Qwen Code, including available commands and their usage.
 
 - **`/mcp`**
-  - **Description :** Liste les serveurs Model Context Protocol (MCP) configurés, leur statut de connexion, les détails du serveur et les outils disponibles.
-  - **Sous-commandes :**
-    - **`desc`** ou **`descriptions`** :
-      - **Description :** Affiche des descriptions détaillées des serveurs et outils MCP.
-    - **`nodesc`** ou **`nodescriptions`** :
-      - **Description :** Masque les descriptions des outils, n'affichant que les noms des outils.
-    - **`schema`** :
-      - **Description :** Affiche le schéma JSON complet des paramètres configurés de l'outil.
-  - **Raccourci clavier :** Appuyez sur **Ctrl+T** à tout moment pour basculer entre l'affichage et le masquage des descriptions d'outils.
+  - **Description:** List configured Model Context Protocol (MCP) servers, their connection status, server details, and available tools.
+  - **Sub-commands:**
+    - **`desc`** or **`descriptions`**:
+      - **Description:** Show detailed descriptions for MCP servers and tools.
+    - **`nodesc`** or **`nodescriptions`**:
+      - **Description:** Hide tool descriptions, showing only the tool names.
+    - **`schema`**:
+      - **Description:** Show the full JSON schema for the tool's configured parameters.
+  - **Keyboard Shortcut:** Press **Ctrl+T** at any time to toggle between showing and hiding tool descriptions.
 
 - **`/memory`**
-  - **Description :** Gérer le contexte instructionnel de l'IA (mémoire hiérarchique chargée depuis les fichiers `QWEN.md` par défaut ; configurable via `contextFileName`).
-  - **Sous-commandes :**
-    - **`add`** :
-      - **Description :** Ajoute le texte suivant à la mémoire de l'IA. Usage : `/memory add <texte à mémoriser>`
-    - **`show`** :
-      - **Description :** Affiche le contenu complet et concaténé de la mémoire hiérarchique actuelle chargée depuis tous les fichiers de contexte (ex : `QWEN.md`). Cela vous permet d'inspecter le contexte instructionnel fourni au modèle.
-    - **`refresh`** :
-      - **Description :** Recharge la mémoire instructionnelle hiérarchique depuis tous les fichiers de contexte (par défaut : `QWEN.md`) trouvés dans les emplacements configurés (global, projet/ancêtres et sous-répertoires). Cela met à jour le modèle avec le contenu de contexte le plus récent.
-    - **Note :** Pour plus de détails sur la contribution des fichiers de contexte à la mémoire hiérarchique, voir la [documentation de configuration du CLI](./configuration.md#context-files-hierarchical-instructional-context).
+  - **Description:** Manage the AI's instructional context (hierarchical memory loaded from `QWEN.md` files by default; configurable via `contextFileName`).
+  - **Sub-commands:**
+    - **`add`**:
+      - **Description:** Adds the following text to the AI's memory. Usage: `/memory add <text to remember>`
+    - **`show`**:
+      - **Description:** Display the full, concatenated content of the current hierarchical memory that has been loaded from all context files (e.g., `QWEN.md`). This lets you inspect the instructional context being provided to the model.
+    - **`refresh`**:
+      - **Description:** Reload the hierarchical instructional memory from all context files (default: `QWEN.md`) found in the configured locations (global, project/ancestors, and sub-directories). This updates the model with the latest context content.
+    - **Note:** For more details on how context files contribute to hierarchical memory, see the [CLI Configuration documentation](./configuration.md#context-files-hierarchical-instructional-context).
 
 - **`/restore`**
-  - **Description :** Restaure les fichiers du projet à l'état dans lequel ils se trouvaient juste avant l'exécution d'un outil. C'est particulièrement utile pour annuler les modifications de fichiers effectuées par un outil. S'il est exécuté sans ID d'appel d'outil, il listera les checkpoints disponibles pour la restauration.
-  - **Usage :** `/restore [tool_call_id]`
-  - **Note :** Disponible uniquement si le CLI est invoqué avec l'option `--checkpointing` ou configuré via [les paramètres](./configuration.md). Voir la [documentation sur les checkpoints](../checkpointing.md) pour plus de détails.
+  - **Description:** Restores the project files to the state they were in just before a tool was executed. This is particularly useful for undoing file edits made by a tool. If run without a tool call ID, it will list available checkpoints to restore from.
+  - **Usage:** `/restore [tool_call_id]`
+  - **Note:** Only available if the CLI is invoked with the `--checkpointing` option or configured via [settings](./configuration.md). See [Checkpointing documentation](../checkpointing.md) for more details.
 
 - **`/settings`**
-  - **Description :** Ouvre l'éditeur de paramètres pour afficher et modifier les paramètres de Qwen Code.
-  - **Détails :** Cette commande fournit une interface conviviale pour modifier les paramètres qui contrôlent le comportement et l'apparence de Qwen Code. Elle équivaut à modifier manuellement le fichier `.qwen/settings.json`, mais avec validation et assistance pour éviter les erreurs.
-  - **Usage :** Exécutez simplement `/settings` et l'éditeur s'ouvrira. Vous pouvez alors parcourir ou rechercher des paramètres spécifiques, afficher leurs valeurs actuelles et les modifier selon vos besoins. Les modifications de certains paramètres sont appliquées immédiatement, tandis que d'autres nécessitent un redémarrage.
+  - **Description:** Open the settings editor to view and modify Qwen Code settings.
+  - **Details:** This command provides a user-friendly interface for changing settings that control the behavior and appearance of Qwen Code. It is equivalent to manually editing the `.qwen/settings.json` file, but with validation and guidance to prevent errors.
+  - **Usage:** Simply run `/settings` and the editor will open. You can then browse or search for specific settings, view their current values, and modify them as desired. Changes to some settings are applied immediately, while others require a restart.
 
 - **`/stats`**
-  - **Description :** Affiche des statistiques détaillées pour la session Qwen Code actuelle, y compris l'utilisation des tokens, les économies de tokens mis en cache (lorsque disponibles) et la durée de la session. Note : Les informations sur les tokens mis en cache ne sont affichées que lorsque des tokens mis en cache sont utilisés, ce qui se produit avec l'authentification par clé API mais pas avec l'authentification OAuth pour le moment.
+  - **Description:** Display detailed statistics for the current Qwen Code session, including token usage, cached token savings (when available), and session duration. Note: Cached token information is only displayed when cached tokens are being used, which occurs with API key authentication but not with OAuth authentication at this time.
 
 - [**`/theme`**](./themes.md)
-  - **Description :** Ouvre une boîte de dialogue qui vous permet de modifier le thème visuel de Qwen Code.
+  - **Description:** Open a dialog that lets you change the visual theme of Qwen Code.
 
 - **`/auth`**
-  - **Description :** Ouvre une boîte de dialogue qui vous permet de modifier la méthode d'authentification.
+  - **Description:** Open a dialog that lets you change the authentication method.
+
+- **`/approval-mode`**
+  - **Description:** Change the approval mode for tool usage.
+  - **Usage:** `/approval-mode [mode] [--session|--project|--user]`
+  - **Available Modes:**
+    - **`plan`**: Analyze only; do not modify files or execute commands
+    - **`default`**: Require approval for file edits or shell commands
+    - **`auto-edit`**: Automatically approve file edits
+    - **`yolo`**: Automatically approve all tools
+  - **Examples:**
+    - `/approval-mode plan --project` (persist plan mode for this project)
+    - `/approval-mode yolo --user` (persist YOLO mode for this user across projects)
 
 - **`/about`**
-  - **Description :** Affiche les informations de version. Veuillez partager ces informations lors du signalement de problèmes.
+  - **Description:** Show version info. Please share this information when filing issues.
 
 - **`/agents`**
-  - **Description :** Gérer les sous-agents IA spécialisés pour des tâches ciblées. Les sous-agents sont des assistants IA indépendants configurés avec une expertise spécifique et un accès à des outils.
-  - **Sous-commandes :**
-    - **`create`** :
-      - **Description :** Lance un assistant interactif pour créer un nouveau sous-agent. L'assistant vous guide à travers la sélection d'emplacement, la génération de prompts assistée par IA, la sélection d'outils et la personnalisation visuelle.
-      - **Usage :** `/agents create`
-    - **`manage`** :
-      - **Description :** Ouvre une boîte de dialogue de gestion interactive pour afficher, modifier et supprimer les sous-agents existants. Affiche les agents au niveau projet et au niveau utilisateur.
-      - **Usage :** `/agents manage`
-  - **Emplacements de stockage :**
-    - **Niveau projet :** `.qwen/agents/` (partagé avec l'équipe, prioritaire)
-    - **Niveau utilisateur :** `~/.qwen/agents/` (agents personnels, disponibles dans tous les projets)
-  - **Note :** Pour des informations détaillées sur la création et la gestion des sous-agents, voir la [documentation sur les sous-agents](../subagents.md).
+  - **Description:** Manage specialized AI subagents for focused tasks. Subagents are independent AI assistants configured with specific expertise and tool access.
+  - **Sub-commands:**
+    - **`create`**:
+      - **Description:** Launch an interactive wizard to create a new subagent. The wizard guides you through location selection, AI-powered prompt generation, tool selection, and visual customization.
+      - **Usage:** `/agents create`
+    - **`manage`**:
+      - **Description:** Open an interactive management dialog to view, edit, and delete existing subagents. Shows both project-level and user-level agents.
+      - **Usage:** `/agents manage`
+  - **Storage Locations:**
+    - **Project-level:** `.qwen/agents/` (shared with team, takes precedence)
+    - **User-level:** `~/.qwen/agents/` (personal agents, available across projects)
+  - **Note:** For detailed information on creating and managing subagents, see the [Subagents documentation](../subagents.md).
 
 - [**`/tools`**](../tools/index.md)
-  - **Description :** Affiche une liste des outils actuellement disponibles dans Qwen Code.
-  - **Sous-commandes :**
-    - **`desc`** ou **`descriptions`** :
-      - **Description :** Affiche des descriptions détaillées de chaque outil, y compris le nom de chaque outil avec sa description complète telle que fournie au modèle.
-    - **`nodesc`** ou **`nodescriptions`** :
-      - **Description :** Masque les descriptions des outils, n'affichant que les noms des outils.
+  - **Description:** Display a list of tools that are currently available within Qwen Code.
+  - **Usage:** `/tools [desc]`
+  - **Sub-commands:**
+    - **`desc`** or **`descriptions`**:
+      - **Description:** Show detailed descriptions of each tool, including each tool's name with its full description as provided to the model.
+    - **`nodesc`** or **`nodescriptions`**:
+      - **Description:** Hide tool descriptions, showing only the tool names.
 
 - **`/privacy`**
-  - **Description :** Affiche l'Avis de confidentialité et permet aux utilisateurs de choisir s'ils consentent à la collecte de leurs données à des fins d'amélioration du service.
+  - **Description:** Display the Privacy Notice and allow users to select whether they consent to the collection of their data for service improvement purposes.
 
 - **`/quit-confirm`**
-  - **Description :** Affiche une boîte de dialogue de confirmation avant de quitter Qwen Code, vous permettant de choisir comment gérer votre session actuelle.
-  - **Usage :** `/quit-confirm`
-  - **Fonctionnalités :**
-    - **Quitter immédiatement :** Quitter sans sauvegarder quoi que ce soit (équivalent à `/quit`)
-    - **Générer un résumé et quitter :** Créer un résumé du projet en utilisant `/summary` avant de quitter
-    - **Sauvegarder la conversation et quitter :** Sauvegarder la conversation actuelle avec un tag généré automatiquement avant de quitter
-  - **Raccourci clavier :** Appuyez deux fois sur **Ctrl+C** pour déclencher la boîte de dialogue de confirmation de sortie
-  - **Note :** Cette commande est automatiquement déclenchée lorsque vous appuyez une fois sur Ctrl+C, fournissant un mécanisme de sécurité pour prévenir les sorties accidentelles.
+  - **Description:** Show a confirmation dialog before exiting Qwen Code, allowing you to choose how to handle your current session.
+  - **Usage:** `/quit-confirm`
+  - **Features:**
+    - **Quit immediately:** Exit without saving anything (equivalent to `/quit`)
+    - **Generate summary and quit:** Create a project summary using `/summary` before exiting
+    - **Save conversation and quit:** Save the current conversation with an auto-generated tag before exiting
+  - **Keyboard shortcut:** Press **Ctrl+C** twice to trigger the quit confirmation dialog
+  - **Note:** This command is automatically triggered when you press Ctrl+C once, providing a safety mechanism to prevent accidental exits.
 
-- **`/quit`** (ou **`/exit`**)
-  - **Description :** Quitte Qwen Code immédiatement sans boîte de dialogue de confirmation.
+- **`/quit`** (or **`/exit`**)
+  - **Description:** Exit Qwen Code immediately without any confirmation dialog.
 
 - **`/vim`**
-  - **Description :** Active ou désactive le mode vim. Lorsque le mode vim est activé, la zone de saisie prend en charge les commandes de navigation et d'édition de style vim dans les modes NORMAL et INSERT.
-  - **Fonctionnalités :**
-    - **Mode NORMAL :** Naviguer avec `h`, `j`, `k`, `l` ; se déplacer par mots avec `w`, `b`, `e` ; aller au début/fin de ligne avec `0`, `$`, `^` ; aller à des lignes spécifiques avec `G` (ou `gg` pour la première ligne)
-    - **Mode INSERT :** Saisie de texte standard avec échappement pour retourner au mode NORMAL
-    - **Commandes d'édition :** Supprimer avec `x`, changer avec `c`, insérer avec `i`, `a`, `o`, `O` ; opérations complexes comme `dd`, `cc`, `dw`, `cw`
-    - **Support des compteurs :** Préfixer les commandes avec des nombres (ex : `3h`, `5w`, `10G`)
-    - **Répétition de la dernière commande :** Utiliser `.` pour répéter la dernière opération d'édition
-    - **Paramètre persistant :** La préférence du mode vim est sauvegardée dans `~/.qwen/settings.json` et restaurée entre les sessions
-  - **Indicateur de statut :** Lorsqu'activé, affiche `[NORMAL]` ou `[INSERT]` dans le pied de page
+  - **Description:** Toggle vim mode on or off. When vim mode is enabled, the input area supports vim-style navigation and editing commands in both NORMAL and INSERT modes.
+  - **Features:**
+    - **NORMAL mode:** Navigate with `h`, `j`, `k`, `l`; jump by words with `w`, `b`, `e`; go to line start/end with `0`, `$`, `^`; go to specific lines with `G` (or `gg` for first line)
+    - **INSERT mode:** Standard text input with escape to return to NORMAL mode
+    - **Editing commands:** Delete with `x`, change with `c`, insert with `i`, `a`, `o`, `O`; complex operations like `dd`, `cc`, `dw`, `cw`
+    - **Count support:** Prefix commands with numbers (e.g., `3h`, `5w`, `10G`)
+    - **Repeat last command:** Use `.` to repeat the last editing operation
+    - **Persistent setting:** Vim mode preference is saved to `~/.qwen/settings.json` and restored between sessions
+  - **Status indicator:** When enabled, shows `[NORMAL]` or `[INSERT]` in the footer
 
 - **`/init`**
-  - **Description :** Analyse le répertoire actuel et crée un fichier de contexte `QWEN.md` par défaut (ou le nom de fichier spécifié par `contextFileName`). Si un fichier non vide existe déjà, aucune modification n'est apportée. La commande initialise un fichier vide et invite le modèle à le remplir avec des instructions spécifiques au projet.
+  - **Description:** Analyzes the current directory and creates a `QWEN.md` context file by default (or the filename specified by `contextFileName`). If a non-empty file already exists, no changes are made. The command seeds an empty file and prompts the model to populate it with project-specific instructions.
 
 ### Commandes personnalisées
 
@@ -185,12 +198,12 @@ Pour un démarrage rapide, consultez l'[exemple](#example-a-pure-function-refact
 
 Les commandes personnalisées vous permettent de sauvegarder et de réutiliser vos prompts favoris ou les plus fréquemment utilisés comme des raccourcis personnels au sein de Qwen Code. Vous pouvez créer des commandes spécifiques à un seul projet ou des commandes disponibles globalement sur tous vos projets, ce qui rationalise votre workflow et garantit la cohérence.
 
-#### Emplacement des fichiers et priorité
+#### Emplacement des fichiers & Priorité
 
 Qwen Code découvre les commandes à partir de deux emplacements, chargés dans un ordre spécifique :
 
-1. **Commandes utilisateur (globales)** : situées dans `~/.qwen/commands/`. Ces commandes sont disponibles dans n'importe quel projet sur lequel vous travaillez.
-2. **Commandes de projet (locales)** : situées dans `<your-project-root>/.qwen/commands/`. Ces commandes sont spécifiques au projet en cours et peuvent être ajoutées au contrôle de version pour être partagées avec votre équipe.
+1.  **Commandes utilisateur (globales) :** Situées dans `~/.qwen/commands/`. Ces commandes sont disponibles dans n'importe quel projet sur lequel vous travaillez.
+2.  **Commandes de projet (locales) :** Situées dans `<your-project-root>/.qwen/commands/`. Ces commandes sont spécifiques au projet en cours et peuvent être ajoutées au contrôle de version pour être partagées avec votre équipe.
 
 Si une commande dans le répertoire du projet porte le même nom qu'une commande dans le répertoire utilisateur, **la commande du projet sera toujours utilisée.** Cela permet aux projets de remplacer les commandes globales par des versions spécifiques au projet.
 
@@ -207,7 +220,7 @@ Vos fichiers de définition de commande doivent être écrits au format TOML et 
 
 ##### Champs obligatoires
 
-- `prompt` (String) : Le prompt qui sera envoyé au modèle lorsque la commande est exécutée. Il peut s'agir d'une chaîne de caractères sur une ou plusieurs lignes.
+- `prompt` (String) : Le prompt qui sera envoyé au modèle lorsque la commande est exécutée. Il peut s'agir d'une chaîne sur une seule ligne ou multi-lignes.
 
 ##### Champs optionnels
 
@@ -215,7 +228,7 @@ Vos fichiers de définition de commande doivent être écrits au format TOML et 
 
 #### Gestion des Arguments
 
-Les commandes personnalisées prennent en charge deux méthodes puissantes pour gérer les arguments. Le CLI choisit automatiquement la bonne méthode en fonction du contenu du `prompt` de votre commande.
+Les commandes personnalisées prennent en charge deux méthodes puissantes pour gérer les arguments. Le CLI choisit automatiquement la bonne méthode en fonction du contenu de votre `prompt`.
 
 ##### 1. Injection Contextuelle avec `{{args}}`
 
@@ -231,7 +244,7 @@ Lorsqu'elle est utilisée dans le corps principal du prompt, les arguments sont 
 
 ```toml
 
-# Invoqué via : /git:fix "Button is misaligned"
+# Appelé via : /git:fix "Button is misaligned"
 
 description = "Génère un correctif pour un problème donné."
 prompt = "Veuillez fournir un correctif de code pour le problème décrit ici : {{args}}."
@@ -239,9 +252,9 @@ prompt = "Veuillez fournir un correctif de code pour le problème décrit ici : 
 
 Le modèle reçoit : `Veuillez fournir un correctif de code pour le problème décrit ici : "Button is misaligned".`
 
-**B. Utilisation des Arguments dans les Commandes Shell (À l'intérieur des blocs `!{...}`)**
+**B. Utilisation des Arguments dans les Commandes Shell (À l'intérieur des Blocs `!{...}`)**
 
-Lorsque vous utilisez `{{args}}` à l'intérieur d'un bloc d'injection shell (`!{...}`), les arguments sont automatiquement **échappés pour le shell** avant remplacement. Cela vous permet de passer des arguments en toute sécurité aux commandes shell, en garantissant que la commande résultante est syntaxiquement correcte et sécurisée, tout en évitant les vulnérabilités d'injection de commande.
+Lorsque vous utilisez `{{args}}` à l'intérieur d'un bloc d'injection shell (`!{...}`), les arguments sont automatiquement **échappés pour le shell** avant remplacement. Cela vous permet de passer en toute sécurité des arguments aux commandes shell, garantissant que la commande résultante est syntaxiquement correcte et sécurisée tout en évitant les vulnérabilités d'injection de commande.
 
 **Exemple (`/grep-code.toml`) :**
 
@@ -296,11 +309,10 @@ Votre tâche consiste à parser `<version>`, `<change_type>`, et `<message>` dep
 La commande suit ce format : `/changelog <version> <type> <message>`
 - `<type>` doit être parmi : "added", "changed", "fixed", "removed"."""
 
-```markdown
 ## Comportement
 1. Lire le fichier `CHANGELOG.md`.
 2. Trouver la section correspondant à la `<version>` spécifiée.
-3. Ajouter le `<message>` sous le titre `<type>` approprié.
+3. Ajouter le `<message>` sous l'en-tête `<type>` approprié.
 4. Si la section version ou type n'existe pas, la créer.
 5. Suivre strictement le format "Keep a Changelog".
 """
@@ -310,15 +322,15 @@ Lorsque vous exécutez `/changelog 1.2.0 added "New feature"`, le texte final en
 
 ##### 3. Exécution de commandes Shell avec `!{...}`
 
-Vous pouvez rendre vos commandes dynamiques en exécutant directement des commandes shell dans votre `prompt` et en injectant leur sortie. C'est idéal pour récupérer du contexte depuis votre environnement local, comme lire le contenu d'un fichier ou vérifier l'état de Git.
+Vous pouvez rendre vos commandes dynamiques en exécutant directement des commandes shell au sein de votre `prompt` et en injectant leur sortie. C'est idéal pour récupérer du contexte depuis votre environnement local, comme lire le contenu d'un fichier ou vérifier l'état d'un dépôt Git.
 
-Lorsqu'une commande personnalisée tente d'exécuter une commande shell, Qwen Code vous demandera maintenant une confirmation avant de continuer. Il s'agit d'une mesure de sécurité pour s'assurer que seules les commandes voulues sont exécutées.
+Lorsqu'une commande personnalisée tente d'exécuter une commande shell, Qwen Code vous demandera maintenant une confirmation avant de procéder. Il s'agit d'une mesure de sécurité pour s'assurer que seules les commandes intentionnelles sont exécutées.
 
 **Fonctionnement :**
 
 1. **Injection de commandes :** Utilisez la syntaxe `!{...}`.
-2. **Substitution des arguments :** Si `{{args}}` est présent dans le bloc, il est automatiquement échappé pour le shell (voir [Injection contextuelle](#1-context-aware-injection-with-args) ci-dessus).
-3. **Parsing robuste :** L'analyseur gère correctement les commandes shell complexes contenant des accolades imbriquées, comme les payloads JSON.
+2. **Substitution d'arguments :** Si `{{args}}` est présent à l'intérieur du bloc, il est automatiquement échappé pour le shell (voir [Injection contextuelle](#1-context-aware-injection-with-args) ci-dessus).
+3. **Parsing robuste :** L'analyseur gère correctement les commandes shell complexes contenant des accolades imbriquées, comme des payloads JSON. **Note :** Le contenu à l'intérieur de `!{...}` doit avoir des accolades équilibrées (`{` et `}`). Si vous devez exécuter une commande contenant des accolades non équilibrées, envisagez de l'encapsuler dans un script externe et d'appeler ce script à l'intérieur du bloc `!{...}`.
 4. **Vérification de sécurité et confirmation :** Le CLI effectue une vérification de sécurité sur la commande finale résolue (après échappement et substitution des arguments). Une boîte de dialogue apparaîtra montrant la ou les commandes exactes à exécuter.
 5. **Exécution et rapport d'erreurs :** La commande est exécutée. Si la commande échoue, la sortie injectée dans le prompt inclura les messages d'erreur (stderr) suivis d'une ligne indiquant le statut, par exemple `[Shell command exited with code 1]`. Cela permet au modèle de comprendre le contexte de l'échec.
 
@@ -332,7 +344,7 @@ Cette commande récupère le diff git staged et l'utilise pour demander au modè
 
 # Invoqué via : /git:commit
 
-description = "Génère un message de commit Git basé sur les modifications staged."
+description = "Génère un message de commit Git basé sur les modifications stagées."
 
 # Le prompt utilise !{...} pour exécuter la commande et injecter sa sortie.
 prompt = """
@@ -348,11 +360,50 @@ Veuillez générer un message de commit Conventional Commit basé sur le git dif
 
 Lorsque vous exécutez `/git:commit`, le CLI exécute d'abord `git diff --staged`, puis remplace `!{git diff --staged}` par la sortie de cette commande avant d'envoyer le prompt final et complet au modèle.
 
+##### 4. Injection du contenu d'un fichier avec `@{...}`
+
+Vous pouvez directement intégrer le contenu d'un fichier ou une liste de répertoires dans votre prompt en utilisant la syntaxe `@{...}`. Cela est utile pour créer des commandes qui agissent sur des fichiers spécifiques.
+
+**Fonctionnement :**
+
+- **Injection de fichier** : `@{chemin/vers/fichier.txt}` est remplacé par le contenu de `fichier.txt`.
+- **Support multimodal** : Si le chemin pointe vers une image supportée (ex. : PNG, JPEG), un PDF, un fichier audio ou vidéo, il sera correctement encodé et injecté comme entrée multimodale. Les autres fichiers binaires sont gérés proprement et ignorés.
+- **Liste de répertoires** : `@{chemin/vers/dossier}` est parcouru et chaque fichier présent dans ce dossier ainsi que dans tous ses sous-dossiers est inséré dans le prompt. Cette opération respecte les fichiers `.gitignore` et `.qwenignore`, si activés.
+- **Prise en compte de l'espace de travail** : La commande recherche le chemin dans le répertoire courant ainsi que dans les autres répertoires définis dans l’espace de travail. Les chemins absolus sont autorisés s'ils se trouvent à l'intérieur de cet espace.
+- **Ordre de traitement** : L'injection du contenu via `@{...}` est effectuée _avant_ l’exécution des commandes shell (`!{...}`) et la substitution d’arguments (`{{args}}`).
+- **Analyse syntaxique** : Le parseur exige que le contenu entre accolades dans `@{...}` (le chemin) soit bien équilibré en termes d'accolades (`{` et `}`).
+
+**Exemple (`review.toml`) :**
+
+Cette commande injecte le contenu d’un fichier de bonnes pratiques _fixe_ (`docs/best-practices.md`) et utilise les arguments fournis par l'utilisateur pour fournir un contexte à la revue.
+
+```toml
+
+```toml
+# Dans : <project>/.qwen/commands/review.toml
+
+# Invoqué via : /review FileCommandLoader.ts
+
+description = "Examine le contexte fourni en utilisant un guide de bonnes pratiques."
+prompt = """
+Vous êtes un expert en revue de code.
+
+Votre tâche consiste à examiner {{args}}.
+
+Utilisez les bonnes pratiques suivantes lors de votre revue :
+
+@{docs/best-practices.md}
+```
+
+Lorsque vous exécutez `/review FileCommandLoader.ts`, le placeholder `@{docs/best-practices.md}` est remplacé par le contenu de ce fichier, et `{{args}}` est remplacé par le texte que vous avez fourni, avant que le prompt final soit envoyé au modèle.
+
+---
+
 #### Exemple : Commande de refactoring "Fonction Pure"
 
 Créons une commande globale qui demande au modèle de refactorer un morceau de code.
 
-**1. Créer le fichier et les répertoires :**
+**1. Créez le fichier et les répertoires :**
 
 Tout d'abord, assurez-vous que le répertoire des commandes utilisateur existe, puis créez un sous-répertoire `refactor` pour l'organisation et le fichier TOML final.
 
@@ -361,9 +412,9 @@ mkdir -p ~/.qwen/commands/refactor
 touch ~/.qwen/commands/refactor/pure.toml
 ```
 
-**2. Ajouter le contenu au fichier :**
+**2. Ajoutez le contenu au fichier :**
 
-Ouvrez `~/.qwen/commands/refactor/pure.toml` dans votre éditeur et ajoutez le contenu suivant. Nous incluons le `description` optionnel pour respecter les bonnes pratiques.
+Ouvrez `~/.qwen/commands/refactor/pure.toml` dans votre éditeur et ajoutez le contenu suivant. Nous incluons le `description` optionnel par souci de bonne pratique.
 
 ```toml
 
@@ -397,32 +448,32 @@ Qwen Code exécutera alors le prompt multiligne défini dans votre fichier TOML.
 
 ## Commandes At (`@`)
 
-Les commandes At sont utilisées pour inclure le contenu de fichiers ou de répertoires dans votre prompt envoyé au modèle. Ces commandes prennent en charge le filtrage git-aware.
+Les commandes At sont utilisées pour inclure le contenu de fichiers ou de répertoires dans votre prompt envoyé au modèle. Ces commandes prennent en compte le filtrage git-aware.
 
-- **`@<chemin_vers_fichier_ou_répertoire>`**
-  - **Description :** Injecte le contenu du fichier ou des fichiers spécifiés dans votre prompt actuel. Cela est utile pour poser des questions sur du code spécifique, du texte ou des collections de fichiers.
+- **`@<chemin_du_fichier_ou_répertoire>`**
+  - **Description :** Injecte le contenu du fichier ou des fichiers spécifiés dans votre prompt actuel. Cela est utile pour poser des questions sur un code spécifique, un texte ou une collection de fichiers.
   - **Exemples :**
     - `@chemin/vers/votre/fichier.txt Explique ce texte.`
     - `@src/mon_projet/ Résume le code dans ce répertoire.`
     - `De quoi parle ce fichier ? @README.md`
   - **Détails :**
     - Si un chemin vers un seul fichier est fourni, le contenu de ce fichier est lu.
-    - Si un chemin vers un répertoire est fourni, la commande tente de lire le contenu des fichiers dans ce répertoire et ses sous-répertoires.
+    - Si un chemin vers un répertoire est fourni, la commande tente de lire le contenu des fichiers présents dans ce répertoire et ses sous-répertoires.
     - Les espaces dans les chemins doivent être échappés avec un antislash (ex. : `@Mes\ Documents/fichier.txt`).
-    - La commande utilise en interne l'outil `read_many_files`. Le contenu est récupéré puis inséré dans votre requête avant d'être envoyé au modèle.
+    - La commande utilise l'outil `read_many_files` en interne. Le contenu est récupéré puis inséré dans votre requête avant d'être envoyé au modèle.
     - **Filtrage git-aware :** Par défaut, les fichiers ignorés par git (comme `node_modules/`, `dist/`, `.env`, `.git/`) sont exclus. Ce comportement peut être modifié via les paramètres `fileFiltering`.
-    - **Types de fichiers :** La commande est destinée aux fichiers textuels. Bien qu'elle puisse tenter de lire n'importe quel fichier, les fichiers binaires ou très volumineux peuvent être ignorés ou tronqués par l'outil `read_many_files` sous-jacent afin de garantir performance et pertinence. L'outil indique si des fichiers ont été ignorés.
-  - **Sortie :** Le CLI affichera un message d'appel d'outil indiquant que `read_many_files` a été utilisé, accompagné d'un message détaillant le statut et les chemins traités.
+    - **Types de fichiers :** La commande est destinée aux fichiers textuels. Bien qu'elle puisse tenter de lire n’importe quel fichier, les fichiers binaires ou très volumineux peuvent être ignorés ou tronqués par l’outil `read_many_files` afin de garantir performances et pertinence. L’outil indique si certains fichiers ont été ignorés.
+  - **Sortie :** Le CLI affichera un message d'appel à l'outil indiquant que `read_many_files` a été utilisé, accompagné d’un message détaillant le statut ainsi que les chemins traités.
 
 - **`@` (Symbole @ seul)**
-  - **Description :** Si vous tapez un symbole `@` seul sans chemin, la requête est transmise telle quelle au modèle. Cela peut être utile si vous parlez _explicitement_ du symbole `@` dans votre prompt.
+  - **Description :** Si vous saisissez uniquement le symbole `@` sans préciser de chemin, la requête est transmise telle quelle au modèle. Cela peut être utile si vous discutez explicitement _du_ symbole `@` dans votre prompt.
 
 ### Gestion des erreurs pour les commandes `@`
 
 - Si le chemin spécifié après `@` n'est pas trouvé ou est invalide, un message d'erreur sera affiché, et la requête pourrait ne pas être envoyée au modèle, ou elle sera envoyée sans le contenu du fichier.
 - Si l'outil `read_many_files` rencontre une erreur (par exemple, des problèmes de permissions), cela sera également signalé.
 
-## Mode shell & commandes pass-through (`!`)
+## Mode shell & commandes de relais (`!`)
 
 Le préfixe `!` vous permet d'interagir directement avec le shell de votre système depuis Qwen Code.
 
@@ -432,14 +483,14 @@ Le préfixe `!` vous permet d'interagir directement avec le shell de votre syst�
     - `!ls -la` (exécute `ls -la` et retourne à Qwen Code)
     - `!git status` (exécute `git status` et retourne à Qwen Code)
 
-- **`!` (Activer/désactiver le mode shell)**
-  - **Description :** Saisir `!` seul active ou désactive le mode shell.
-    - **Entrer en mode shell :**
-      - Une fois activé, le mode shell utilise une coloration différente et un "Shell Mode Indicator".
+- **`!` (Basculer en mode shell)**
+  - **Description :** Saisir `!` seul permet de basculer en mode shell.
+    - **Entrée en mode shell :**
+      - Lorsqu'il est actif, le mode shell utilise une coloration différente et un "Shell Mode Indicator".
       - En mode shell, le texte que vous saisissez est interprété directement comme une commande shell.
-    - **Sortir du mode shell :**
-      - Une fois désactivé, l'interface retrouve son apparence standard et le comportement normal de Qwen Code reprend.
+    - **Sortie du mode shell :**
+      - Une fois sorti, l'interface retrouve son apparence standard et le comportement normal de Qwen Code reprend.
 
 - **Attention pour toute utilisation de `!` :** Les commandes que vous exécutez en mode shell ont les mêmes permissions et le même impact que si vous les exécutiez directement dans votre terminal.
 
-- **Variable d'environnement :** Lorsqu'une commande est exécutée via `!` ou en mode shell, la variable d'environnement `QWEN_CODE=1` est définie dans l'environnement du sous-processus. Cela permet aux scripts ou outils de détecter s'ils sont exécutés depuis le CLI.
+- **Variable d'environnement :** Lorsqu'une commande est exécutée via `!` ou en mode shell, la variable d'environnement `QWEN_CODE=1` est définie dans l'environnement du sous-processus. Cela permet aux scripts ou outils de détecter s'ils sont exécutés depuis l'interface CLI.

@@ -1,6 +1,6 @@
-# Proxy スクリプトの例
+# プロキシスクリプトの例
 
-以下は、`GEMINI_SANDBOX_PROXY_COMMAND` 環境変数で使用できる Proxy スクリプトの例です。このスクリプトは、`example.com:443` への `HTTPS` 接続のみを許可し、それ以外のリクエストはすべて拒否します。
+以下は、`GEMINI_SANDBOX_PROXY_COMMAND` 環境変数で使用できるプロキシスクリプトの例です。このスクリプトは `example.com:443` への `HTTPS` 接続のみを許可し、それ以外のリクエストはすべて拒否します。
 
 ```javascript
 #!/usr/bin/env node
@@ -11,21 +11,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// :::8877 で listen し、example.com への HTTPS 接続のみを許可する Proxy サーバーの例
-// Proxy を sandbox と一緒に実行するには `GEMINI_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js` を設定してください
-// sandbox 内で（shell モードまたは shell tool 経由で）`curl https://example.com` を使ってテストできます
+// :::8877 を listen するプロキシサーバーの例。example.com への HTTPS 接続のみを許可します。
+// `GEMINI_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js` を設定して、sandbox と一緒にプロキシを起動します。
+// sandbox 内で（shell モードまたは shell tool 経由で）`curl https://example.com` を実行してテストできます。
 
-import http from 'http';
-import net from 'net';
-import { URL } from 'url';
-import console from 'console';
+import http from 'node:http';
+import net from 'node:net';
+import { URL } from 'node:url';
+import console from 'node:console';
 
 const PROXY_PORT = 8877;
 const ALLOWED_DOMAINS = ['example.com', 'googleapis.com'];
 const ALLOWED_PORT = '443';
 
 const server = http.createServer((req, res) => {
-  // HTTPS 用の CONNECT 以外のリクエストはすべて拒否
+  // HTTPS の CONNECT 以外のリクエストはすべて拒否
   console.log(
     `[PROXY] Denying non-CONNECT request for: ${req.method} ${req.url}`,
   );
@@ -34,7 +34,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.on('connect', (req, clientSocket, head) => {
-  // CONNECT リクエストの場合、req.url は "hostname:port" の形式になります
+  // req.url は CONNECT リクエストの場合 "hostname:port" 形式になります。
   const { port, hostname } = new URL(`http://${req.url}`);
 
   console.log(`[PROXY] Intercepted CONNECT request for: ${hostname}:${port}`);
@@ -47,10 +47,10 @@ server.on('connect', (req, clientSocket, head) => {
   ) {
     console.log(`[PROXY] Allowing connection to ${hostname}:${port}`);
 
-    // 実際の宛先への TCP 接続を確立
+    // 宛先サーバーへの TCP 接続を確立します。
     const serverSocket = net.connect(port, hostname, () => {
       clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-      // クライアントと宛先サーバー間でデータをパイプしてトンネルを確立
+      // クライアントと宛先サーバー間でデータをパイプしてトンネルを作成します。
       serverSocket.write(head);
       serverSocket.pipe(clientSocket);
       clientSocket.pipe(serverSocket);
@@ -66,7 +66,7 @@ server.on('connect', (req, clientSocket, head) => {
   }
 
   clientSocket.on('error', (err) => {
-    // クライアントが接続を切った場合などに発生することがあります
+    // クライアントが接続を切った場合などに発生します。
     console.error(`[PROXY] Client socket error: ${err.message}`);
   });
 });

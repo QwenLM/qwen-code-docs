@@ -21,26 +21,28 @@ Qwen Code 内置了一系列预定义主题，你可以在 CLI 中使用 `/theme
   - `Google Code`
   - `Xcode`
 
-### 更改主题
+### 更换主题
 
 1. 在 Qwen Code 中输入 `/theme`。
-2. 系统会弹出一个对话框或选择提示，列出所有可用的主题。
+2. 将出现一个对话框或选择提示，列出可用的主题。
 3. 使用方向键选择一个主题。某些界面在你选择时可能会提供实时预览或高亮显示。
 4. 确认你的选择以应用该主题。
 
+**注意：** 如果你的 `settings.json` 文件中已定义了某个主题（通过名称或文件路径），则必须先从该文件中移除 `"theme"` 设置，然后才能使用 `/theme` 命令更改主题。
+
 ### 主题持久化
 
-选定的主题会保存在 Qwen Code 的 [配置](./configuration.md) 中，这样你的偏好设置会在不同会话间被记住。
+所选主题会保存在 Qwen Code 的 [配置](./configuration.md) 中，这样你的偏好设置会在不同会话之间被记住。
 
 ---
 
 ## 自定义颜色主题
 
-Qwen Code 允许你通过在 `settings.json` 文件中指定来自定义颜色主题。这让你可以完全控制 CLI 中使用的调色板。
+Qwen Code 允许你在 `settings.json` 文件中指定自定义颜色主题。这让你可以完全控制 CLI 中使用的调色板。
 
 ### 如何定义自定义主题
 
-在你的用户、项目或系统 `settings.json` 文件中添加一个 `customThemes` 块。每个自定义主题都定义为一个具有唯一名称和一组颜色键的对象。例如：
+在你的用户、项目或系统级别的 `settings.json` 文件中添加一个 `customThemes` 配置块。每个自定义主题都以一个唯一名称作为 key，值为包含颜色键的对象。例如：
 
 ```json
 {
@@ -68,7 +70,7 @@ Qwen Code 允许你通过在 `settings.json` 文件中指定来自定义颜色�
 }
 ```
 
-**颜色键：**
+**颜色键说明：**
 
 - `Background`
 - `Foreground`
@@ -87,7 +89,7 @@ Qwen Code 允许你通过在 `settings.json` 文件中指定来自定义颜色�
 
 **必需属性：**
 
-- `name`（必须与 `customThemes` 对象中的键匹配，且为字符串）
+- `name`（必须与 `customThemes` 对象中的 key 相同，且为字符串）
 - `type`（必须是字符串 `"custom"`）
 - `Background`
 - `Foreground`
@@ -101,9 +103,49 @@ Qwen Code 允许你通过在 `settings.json` 文件中指定来自定义颜色�
 - `Comment`
 - `Gray`
 
-你可以为任何颜色值使用十六进制代码（例如 `#FF0000`）**或**标准 CSS 颜色名称（例如 `coral`、`teal`、`blue`）。有关支持的名称完整列表，请参见 [CSS 颜色名称](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#color_keywords)。
+你可以使用十六进制颜色码（如 `#FF0000`）**或者**标准 CSS 颜色名称（如 `coral`、`teal`、`blue`）来设置任意颜色值。完整支持的颜色名称列表请参考 [CSS color names](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#color_keywords)。
 
-你可以通过向 `customThemes` 对象添加更多条目来定义多个自定义主题。
+你可以在 `customThemes` 对象中添加多个条目来定义多个自定义主题。
+
+### 从文件加载主题
+
+除了在 `settings.json` 中定义自定义主题外，你还可以通过在 `settings.json` 中指定文件路径来直接从 JSON 文件加载主题。这对于分享主题或将主题与主配置分离非常有用。
+
+要从文件加载主题，请在 `settings.json` 中将 `theme` 属性设置为你的主题文件路径：
+
+```json
+{
+  "theme": "/path/to/your/theme.json"
+}
+```
+
+主题文件必须是有效的 JSON 文件，并且结构与在 `settings.json` 中定义的自定义主题相同。
+
+**示例 `my-theme.json`：**
+
+```json
+{
+  "name": "My File Theme",
+  "type": "custom",
+  "Background": "#282A36",
+  "Foreground": "#F8F8F2",
+  "LightBlue": "#82AAFF",
+  "AccentBlue": "#61AFEF",
+  "AccentPurple": "#BD93F9",
+  "AccentCyan": "#8BE9FD",
+  "AccentGreen": "#50FA7B",
+  "AccentYellow": "#F1FA8C",
+  "AccentRed": "#FF5555",
+  "Comment": "#6272A4",
+  "Gray": "#ABB2BF",
+  "DiffAdded": "#A6E3A1",
+  "DiffRemoved": "#F38BA8",
+  "DiffModified": "#89B4FA",
+  "GradientColors": ["#4796E4", "#847ACE", "#C3677F"]
+}
+```
+
+**安全提示：** 为了你的安全，Gemini CLI 只会加载位于你主目录内的主题文件。如果你尝试从主目录之外加载主题，将会显示警告并且主题不会被加载。这是为了防止从不受信任的来源加载潜在的恶意主题文件。
 
 ### 自定义主题示例
 
@@ -113,7 +155,7 @@ Qwen Code 允许你通过在 `settings.json` 文件中指定来自定义颜色�
 
 - 在 Qwen Code 中使用 `/theme` 命令选择你的自定义主题。你的自定义主题将出现在主题选择对话框中。
 - 或者，通过在 `settings.json` 中添加 `"theme": "MyCustomTheme"` 将其设为默认主题。
-- 自定义主题可以在用户、项目或系统级别进行设置，并遵循与其他设置相同的[配置优先级](./configuration.md)规则。
+- 自定义主题可以在用户、项目或系统级别进行设置，并遵循与其他设置相同的 [配置优先级](./configuration.md) 规则。
 
 ---
 

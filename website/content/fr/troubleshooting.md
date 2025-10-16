@@ -5,19 +5,19 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
 - Erreurs d'authentification ou de connexion
 - Foire aux questions (FAQ)
 - Conseils de débogage
-- Issues GitHub existants similaires au vôtre ou création de nouvelles Issues
+- Issues GitHub existantes similaires à la vôtre ou création de nouvelles Issues
 
 ## Erreurs d'authentification ou de connexion
 
 - **Erreur : `UNABLE_TO_GET_ISSUER_CERT_LOCALLY` ou `unable to get local issuer certificate`**
   - **Cause :** Vous êtes peut-être sur un réseau d'entreprise avec un pare-feu qui intercepte et inspecte le trafic SSL/TLS. Cela nécessite souvent qu'un certificat d'autorité de certification (CA) personnalisé soit approuvé par Node.js.
-  - **Solution :** Définissez la variable d'environnement `NODE_EXTRA_CA_CERTS` avec le chemin absolu vers le fichier de certificat de votre CA racine d'entreprise.
-    - Exemple : `export NODE_EXTRA_CA_CERTS=/path/to/your/corporate-ca.crt`
+  - **Solution :** Définissez la variable d'environnement `NODE_EXTRA_CA_CERTS` avec le chemin absolu vers votre fichier de certificat CA racine d'entreprise.
+    - Exemple : `export NODE_EXTRA_CA_CERTS=/chemin/vers/votre/corporate-ca.crt`
 
 ## Foire aux questions (FAQ)
 
 - **Q : Comment mettre à jour Qwen Code vers la dernière version ?**
-  - R : Si vous l'avez installé globalement via `npm`, mettez-le à jour avec la commande `npm install -g @qwen-code/qwen-code@latest`. Si vous l'avez compilé depuis les sources, récupérez les derniers changements depuis le repository, puis reconstruisez-le avec la commande `npm run build`.
+  - R : Si vous l'avez installé globalement via `npm`, mettez-le à jour avec la commande `npm install -g @qwen-code/qwen-code@latest`. Si vous l'avez compilé depuis les sources, récupérez les dernières modifications du repository, puis reconstruisez-le avec la commande `npm run build`.
 
 - **Q : Où sont stockés les fichiers de configuration ou de paramètres de Qwen Code ?**
   - R : La configuration de Qwen Code est stockée dans deux fichiers `settings.json` :
@@ -26,8 +26,8 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
 
     Consultez [Configuration de Qwen Code](./cli/configuration.md) pour plus de détails.
 
-- **Q : Pourquoi ne vois-je pas les comptages de tokens mis en cache dans la sortie des statistiques ?**
-  - R : Les informations sur les tokens en cache ne s'affichent que lorsque des tokens mis en cache sont utilisés. Cette fonctionnalité est disponible pour les utilisateurs avec une clé API (Qwen API key ou Google Cloud Vertex AI), mais pas pour les utilisateurs OAuth (comme les comptes Google personnels ou professionnels, par exemple Google Gmail ou Google Workspace). Cela est dû au fait que l'API Qwen Code Assist ne prend pas en charge la création de contenu mis en cache. Vous pouvez néanmoins consulter votre consommation totale de tokens à l’aide de la commande `/stats`.
+- **Q : Pourquoi ne vois-je pas les nombres de tokens mis en cache dans la sortie des statistiques ?**
+  - R : Les informations sur les tokens mis en cache ne s'affichent que lorsque ces tokens sont effectivement utilisés. Cette fonctionnalité est disponible pour les utilisateurs avec une API key (Qwen API key ou Google Cloud Vertex AI), mais pas pour les utilisateurs OAuth (comme les comptes Google personnels ou d'entreprise, par exemple Google Gmail ou Google Workspace). Cela est dû au fait que l'API Qwen Code Assist ne prend pas en charge la création de contenu mis en cache. Vous pouvez néanmoins consulter votre consommation totale de tokens en utilisant la commande `/stats`.
 
 ## Messages d'erreur courants et solutions
 
@@ -37,10 +37,10 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
     Arrêtez l'autre processus utilisant ce port ou configurez le serveur MCP pour utiliser un port différent.
 
 - **Erreur : Command not found (lorsque vous tentez d'exécuter Qwen Code avec `qwen`).**
-  - **Cause :** Le CLI n'est pas correctement installé ou il n'est pas dans le `PATH` de votre système.
+  - **Cause :** Le CLI n'est pas installé correctement ou il n'est pas dans le `PATH` de votre système.
   - **Solution :**
     La mise à jour dépend de la façon dont vous avez installé Qwen Code :
-    - Si vous avez installé `qwen` globalement, vérifiez que le répertoire des binaires globaux de `npm` est dans votre `PATH`. Vous pouvez mettre à jour avec la commande `npm install -g @qwen-code/qwen-code@latest`.
+    - Si vous avez installé `qwen` globalement, vérifiez que le répertoire des binaires globaux de `npm` est dans votre `PATH`. Vous pouvez le mettre à jour avec la commande `npm install -g @qwen-code/qwen-code@latest`.
     - Si vous exécutez `qwen` depuis les sources, assurez-vous d'utiliser la bonne commande pour l'invoquer (par exemple, `node packages/cli/dist/index.js ...`). Pour mettre à jour, récupérez les derniers changements depuis le repository, puis reconstruisez avec la commande `npm run build`.
 
 - **Erreur : `MODULE_NOT_FOUND` ou erreurs d'import.**
@@ -48,7 +48,7 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
   - **Solution :**
     1. Exécutez `npm install` pour vous assurer que toutes les dépendances sont présentes.
     2. Exécutez `npm run build` pour compiler le projet.
-    3. Vérifiez que la compilation s'est terminée avec succès avec `npm run start`.
+    3. Vérifiez que la compilation s'est terminée avec succès en exécutant `npm run start`.
 
 - **Erreur : "Operation not permitted", "Permission denied", ou similaire.**
   - **Cause :** Lorsque le sandboxing est activé, Qwen Code peut tenter des opérations restreintes par votre configuration de sandbox, comme écrire en dehors du répertoire du projet ou du répertoire temporaire du système.
@@ -70,17 +70,29 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
 - Redémarrez le terminal intégré après avoir installé l'extension pour qu'il hérite des variables :
   - `QWEN_CODE_IDE_WORKSPACE_PATH`
   - `QWEN_CODE_IDE_SERVER_PORT`
-- Si vous exécutez dans un container, vérifiez que `host.docker.internal` est résolu. Sinon, mappez l'hôte correctement.
+- Si vous exécutez dans un container, vérifiez que `host.docker.internal` est résolu. Sinon, mappez correctement l'hôte.
 - Réinstallez le companion avec `/ide install` et utilisez "Qwen Code: Run" dans la Command Palette pour vérifier qu'il se lance.
+
+## Codes de sortie
+
+Qwen Code utilise des codes de sortie spécifiques pour indiquer la raison de l'arrêt. Cela est particulièrement utile pour les scripts et l'automatisation.
+
+| Code de sortie | Type d'erreur              | Description                                                                                         |
+| -------------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
+| 41             | `FatalAuthenticationError` | Une erreur s'est produite pendant le processus d'authentification.                                  |
+| 42             | `FatalInputError`          | Une entrée invalide ou manquante a été fournie au CLI. (mode non-interactif uniquement)             |
+| 44             | `FatalSandboxError`        | Une erreur s'est produite avec l'environnement de sandbox (ex. Docker, Podman, ou Seatbelt).        |
+| 52             | `FatalConfigError`         | Un fichier de configuration (`settings.json`) est invalide ou contient des erreurs.                 |
+| 53             | `FatalTurnLimitedError`    | Le nombre maximum de tours conversationnels pour la session a été atteint. (mode non-interactif uniquement) |
 
 ## Conseils de débogage
 
 - **Débogage CLI :**
   - Utilisez le flag `--verbose` (si disponible) avec les commandes CLI pour obtenir une sortie plus détaillée.
-  - Consultez les logs CLI, souvent situés dans un répertoire de configuration ou de cache spécifique à l'utilisateur.
+  - Consultez les logs du CLI, souvent situés dans un répertoire de configuration ou de cache spécifique à l'utilisateur.
 
 - **Débogage du core :**
-  - Vérifiez la sortie console du serveur pour repérer les messages d'erreur ou les stack traces.
+  - Vérifiez la sortie de la console du serveur pour repérer les messages d'erreur ou les stack traces.
   - Augmentez le niveau de verbosité des logs si c'est configurable.
   - Utilisez les outils de débogage Node.js (ex. `node --inspect`) si vous devez parcourir le code côté serveur pas à pas.
 
@@ -90,7 +102,7 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
   - Pour les _outils de système de fichiers_, assurez-vous que les chemins sont corrects et vérifiez les permissions.
 
 - **Vérifications préalables :**
-  - Exécutez toujours `npm run preflight` avant de commiter du code. Cela permet de détecter de nombreuses erreurs courantes liées au formatage, au linting et aux erreurs de type.
+  - Exécutez toujours `npm run preflight` avant de commiter du code. Cela permet de détecter de nombreuses erreurs courantes liées au formatage, au linting et aux erreurs de types.
 
 ## Issues GitHub existants similaires au vôtre ou création de nouvelles Issues
 
