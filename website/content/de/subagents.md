@@ -1,31 +1,31 @@
 # Subagents
 
-Subagents sind spezialisierte KI-Assistenten, die bestimmte Arten von Aufgaben innerhalb von Qwen Code übernehmen. Sie ermöglichen es dir, gezielte Arbeiten an KI-Agenten zu delegieren, die mit aufgabenspezifischen Prompts, Tools und Verhaltensweisen konfiguriert sind.
+Subagents sind spezialisierte KI-Assistenten, die bestimmte Arten von Aufgaben innerhalb von Qwen Code übernehmen. Sie ermöglichen es dir, gezielte Arbeit an KI-Agenten zu delegieren, die mit aufgabenspezifischen Prompts, Tools und Verhaltensweisen konfiguriert sind.
 
 ## Was sind Subagents?
 
 Subagents sind unabhängige KI-Assistenten, die:
 
-- **Spezialisierung auf bestimmte Aufgaben** - Jeder Subagent ist mit einem fokussierten System-Prompt für bestimmte Arbeitstypen konfiguriert
-- **Separater Kontext** - Sie führen ihren eigenen Konversationsverlauf unabhängig von deinem Hauptchat
-- **Kontrollierte Tool-Nutzung** - Du kannst festlegen, auf welche Tools jeder Subagent Zugriff hat
-- **Autonome Arbeitsweise** - Sobald eine Aufgabe übergeben wurde, arbeiten sie eigenständig bis zur Fertigstellung oder zum Fehler
-- **Detailliertes Feedback** - Du kannst ihren Fortschritt, die Tool-Nutzung und Ausführungsstatistiken in Echtzeit verfolgen
+- **Spezialisierung auf bestimmte Aufgaben** – Jeder Subagent ist mit einem fokussierten System-Prompt für bestimmte Arbeitstypen konfiguriert
+- **Separater Kontext** – Sie führen ihren eigenen Konversationsverlauf, getrennt von deinem Hauptchat
+- **Kontrollierter Tool-Zugriff** – Du kannst festlegen, welche Tools jeder Subagent nutzen darf
+- **Autonome Arbeitsweise** – Sobald eine Aufgabe erteilt wurde, arbeiten sie eigenständig bis zur Fertigstellung oder zum Fehler
+- **Detailliertes Feedback** – Du kannst ihren Fortschritt, die verwendeten Tools und Ausführungsstatistiken in Echtzeit verfolgen
 
 ## Hauptvorteile
 
 - **Task Specialization**: Erstelle Agents, die für bestimmte Workflows optimiert sind (Testing, Documentation, Refactoring, etc.)
 - **Context Isolation**: Halte spezialisierte Arbeiten separat von deiner Hauptunterhaltung
 - **Reusability**: Speichere und wiederverwende Agent-Konfigurationen über Projekte und Sessions hinweg
-- **Controlled Access**: Beschränke, welche Tools jeder Agent aus Sicherheits- und Fokusgründen nutzen kann
+- **Controlled Access**: Beschränke, welche Tools jeder Agent aus Sicherheits- und Fokusgründen verwenden kann
 - **Progress Visibility**: Überwache die Agent-Ausführung mit Echtzeit-Fortschrittsaktualisierungen
 
 ## Wie Subagents funktionieren
 
 1. **Configuration**: Du erstellst Subagent-Konfigurationen, die ihr Verhalten, ihre Tools und System-Prompts definieren
 2. **Delegation**: Die Haupt-KI kann automatisch Aufgaben an geeignete Subagents delegieren
-3. **Execution**: Subagents arbeiten unabhängig und nutzen ihre konfigurierten Tools, um Aufgaben abzuschließen
-4. **Results**: Sie liefern Ergebnisse und Ausführungsübersichten an die Hauptunterhaltung zurück
+3. **Execution**: Subagents arbeiten unabhängig und verwenden ihre konfigurierten Tools, um Aufgaben abzuschließen
+4. **Results**: Sie geben Ergebnisse und Ausführungsübersichten an die Hauptunterhaltung zurück
 
 ## Erste Schritte
 
@@ -48,16 +48,16 @@ Subagents sind unabhängige KI-Assistenten, die:
    Zeige und verwalte deine konfigurierten Subagenten.
 
 3. **Nutze Subagenten automatisch**:
-   Frage einfach die Haupt-KI, Aufgaben zu erledigen, die den Spezialisierungen deiner Subagenten entsprechen. Die KI wird automatisch die passende Arbeit delegieren.
+   Frage einfach die Haupt-KI, Aufgaben durchzuführen, die den Spezialisierungen deiner Subagenten entsprechen. Die KI wird automatisch passende Arbeit delegieren.
 
 ### Beispielhafte Nutzung
 
 ```
 User: "Bitte schreibe umfassende Tests für das Authentifizierungsmodul"
 
-AI: Ich delegiere das an deinen Testing-Spezialisten-Subagenten.
-[Delegiert an "testing-expert" Subagenten]
-[Zeigt Fortschritt der Testerstellung in Echtzeit]
+AI: Ich übertrage dies an deinen Testing-Spezialisten-Subagenten.
+[Delegiert an "testing-expert" Subagent]
+[Zeigt Echtzeit-Fortschritt der Testerstellung]
 [Gibt fertige Testdateien und Ausführungsübersicht zurück]
 ```
 
@@ -69,9 +69,9 @@ Subagenten werden über den Slash-Befehl `/agents` und seine Unterbefehle verwal
 
 #### `/agents create`
 
-Erstellt einen neuen Subagenten über einen geführten Schritt-für-Schritt-Wizard.
+Erstellt einen neuen Subagenten durch einen geführten Schritt-für-Schritt-Wizard.
 
-**Verwendung:**
+**Nutzung:**
 
 ```
 /agents create
@@ -94,7 +94,7 @@ Subagents werden als Markdown-Dateien an zwei Orten gespeichert:
 - **Projektebene**: `.qwen/agents/` (hat Vorrang)
 - **Benutzerebene**: `~/.qwen/agents/` (Fallback)
 
-So kannst du sowohl projektspezifische Agents als auch persönliche Agents haben, die in allen Projekten funktionieren.
+So können Sie sowohl projektspezifische Agents als auch persönliche Agents haben, die in allen Projekten funktionieren.
 
 ### Dateiformat
 
@@ -109,9 +109,9 @@ description: Kurze Beschreibung, wann und wie dieser Agent verwendet wird
 tools: tool1, tool2, tool3 # Optional
 ---
 
-Der System-Prompt-Inhalt kommt hier hin.
+System Prompt-Inhalt kommt hierhin.
 Mehrere Absätze werden unterstützt.
-Du kannst ${variable} Templating für dynamische Inhalte verwenden.
+Sie können ${variable} Templating für dynamischen Inhalt verwenden.
 ```
 
 #### Beispielverwendung
@@ -122,15 +122,37 @@ name: project-documenter
 description: Erstellt Projektdokumentation und README-Dateien
 ---
 
-Sie sind ein Dokumentationsspezialist für das ${project_name}-Projekt.
+Du bist ein Dokumentationsspezialist für das ${project_name}-Projekt.
 
-Ihre Aufgabe: ${task_description}
+Deine Aufgabe: ${task_description}
 
 Arbeitsverzeichnis: ${current_directory}
 Generiert am: ${timestamp}
 
-Konzentrieren Sie sich auf die Erstellung klarer, umfassender Dokumentation, die sowohl
-neuen Mitwirkenden als auch Endbenutzern hilft, das Projekt zu verstehen.
+Konzentriere dich darauf, klare und umfassende Dokumentation zu erstellen, die sowohl
+neuen Mitwirkenden als auch Endnutzern hilft, das Projekt zu verstehen.
+```
+
+## Effektive Nutzung von Subagents
+
+### Automatische Delegation
+
+Qwen Code delegiert proaktiv Aufgaben basierend auf:
+
+- Der Aufgabenbeschreibung in deiner Anfrage
+- Dem description-Feld in den Subagent-Konfigurationen
+- Dem aktuellen Kontext und den verfügbaren Tools
+
+Um eine proaktivere Nutzung von Subagents zu fördern, füge Formulierungen wie "PROACTIVELY verwenden" oder "MUSS VERWENDET WERDEN" in dein description-Feld ein.
+
+### Expliziter Aufruf
+
+Fordere einen bestimmten Subagenten an, indem du ihn in deinem Befehl erwähnst:
+
+```
+> Lass den testing-expert Subagenten Unit-Tests für das Payment-Modul erstellen
+> Lass den documentation-writer Subagenten die API-Referenz aktualisieren
+> Lass den react-specialist Subagenten die Performance dieser Komponente optimieren
 ```
 
 ## Beispiele
@@ -153,7 +175,7 @@ Du bist ein Testing-Spezialist, der sich auf die Erstellung hochwertiger, wartba
 Deine Expertise umfasst:
 
 - Unit-Testing mit geeignetem Mocking und Isolation
-- Integrationstests für Komponenten-Interaktionen
+- Integrationstests für Komponenteninteraktionen
 - Testgetriebene Entwicklung (TDD)
 - Identifizierung von Edge Cases und umfassende Abdeckung
 - Performance- und Lasttests, wenn angebracht
@@ -163,7 +185,7 @@ Für jede Testing-Aufgabe:
 1. Analysiere die Code-Struktur und Abhängigkeiten
 2. Identifiziere Kernfunktionalitäten, Edge Cases und Fehlerbedingungen
 3. Erstelle umfassende Testsuiten mit beschreibenden Namen
-4. Integriere korrektes Setup/Teardown und aussagekräftige Assertions
+4. Integriere ordnungsgemäßes Setup/Teardown und aussagekräftige Assertions
 5. Füge Kommentare für komplexe Testszenarien hinzu
 6. Stelle sicher, dass Tests wartbar sind und DRY-Prinzipien befolgen
 
@@ -174,12 +196,12 @@ Fokussiere dich sowohl auf positive als auch negative Testfälle.
 **Anwendungsfälle:**
 
 - "Schreibe Unit-Tests für den Authentication Service"
-- "Erstelle Integrationstests für den Payment Processing Workflow"
-- "Füge Testabdeckung für Edge Cases im Data Validation Modul hinzu"
+- "Erstelle Integrationstests für den Payment-Processing-Workflow"
+- "Füge Testabdeckung für Edge Cases im Data-Validation-Modul hinzu"
 
 #### Documentation Writer
 
-Spezialisiert auf das Erstellen von klaren, umfassenden Dokumentationen.
+Spezialisiert auf die Erstellung von klaren, umfassenden Dokumentationen.
 
 ```markdown
 ---
@@ -196,7 +218,7 @@ Entwickler als auch Endnutzer ansprechen. Konzentriere dich auf:
 **Für API-Dokumentationen:**
 
 - Klare Endpoint-Beschreibungen mit Beispielen
-- Detaillierte Parameterbeschreibungen inkl. Typen und Einschränkungen
+- Detaillierte Parameterbeschreibungen inkl. Typen und Constraints
 - Dokumentation der Response-Formate
 - Erläuterung der Fehlercodes
 - Authentifizierungsanforderungen
@@ -217,7 +239,7 @@ Entwickler als auch Endnutzer ansprechen. Konzentriere dich auf:
 - Einrichtung der Entwicklungsumgebung
 
 Überprüfe immer die Codebeispiele und stelle sicher, dass die Dokumentation
-mit der tatsächlichen Implementierung übereinstimmt. Nutze klare Überschriften,
+mit der tatsächlichen Implementierung übereinstimmt. Verwende klare Überschriften,
 Aufzählungen und Beispiele.
 ```
 
@@ -225,7 +247,7 @@ Aufzählungen und Beispiele.
 
 - "Erstelle eine API-Dokumentation für die User-Management-Endpoints"
 - "Schreibe eine umfassende README für dieses Projekt"
-- "Dokumentiere den Deployment-Prozess inkl. Troubleshooting-Schritten"
+- "Dokumentiere den Deployment-Prozess mit Schritten zur Fehlerbehebung"
 
 #### Code Reviewer
 
@@ -267,16 +289,16 @@ Prioritize issues by impact and provide rationale for recommendations.
 - "Check the performance implications of this database query logic"
 - "Evaluate the code structure and suggest improvements"
 
-### Technologie-Spezifische Agents
+### Technologie-spezifische Agents
 
 #### React Specialist
 
-Optimiert für React-Entwicklung, Hooks und Komponentenmuster.
+Optimiert für React-Entwicklung, Hooks und Component-Patterns.
 
 ```markdown
 ---
 name: react-specialist
-description: Experte in React-Entwicklung, Hooks, Komponentenmustern und modernen React-Best-Practices
+description: Experte in React-Entwicklung, Hooks, Component-Patterns und modernen React-Best-Practices
 tools: read_file, write_file, read_many_files, run_shell_command
 ---
 
@@ -284,31 +306,31 @@ Du bist ein React-Spezialist mit tiefgreifender Expertise in moderner React-Entw
 
 Deine Expertise umfasst:
 
-- **Komponentendesign**: Funktionale Komponenten, Custom Hooks, Kompositions-Muster
+- **Component Design**: Function Components, Custom Hooks, Composition Patterns
 - **State Management**: useState, useReducer, Context API und externe Libraries
 - **Performance**: React.memo, useMemo, useCallback, Code Splitting
-- **Testing**: React Testing Library, Jest, Strategien zum Testen von Komponenten
-- **TypeScript-Integration**: Korrekte Typisierung von Props, Hooks und Komponenten
-- **Moderne Muster**: Suspense, Error Boundaries, Concurrent Features
+- **Testing**: React Testing Library, Jest, Component-Testing-Strategien
+- **TypeScript Integration**: Korrekte Typisierung für Props, Hooks und Components
+- **Moderne Patterns**: Suspense, Error Boundaries, Concurrent Features
 
 Für React-Aufgaben:
 
-1. Verwende standardmäßig funktionale Komponenten und Hooks
+1. Verwende standardmäßig Function Components und Hooks
 2. Implementiere korrekte TypeScript-Typisierung
 3. Folge React-Best-Practices und Konventionen
 4. Berücksichtige Performance-Auswirkungen
 5. Integriere angemessenes Error Handling
-6. Schreibe testbaren und wartbaren Code
+6. Schreibe testbaren, wartbaren Code
 
-Bleibe immer auf dem neuesten Stand der React-Best-Practices und vermeide veraltete Muster.
-Fokussiere dich auf Barrierefreiheit und Aspekte der Benutzererfahrung.
+Bleibe immer auf dem neuesten Stand der React-Best-Practices und vermeide deprecated Patterns.
+Fokussiere dich auf Accessibility und User Experience Aspekte.
 ```
 
-**Anwendungsfälle:**
+**Use Cases:**
 
-- "Erstelle eine wiederverwendbare Data-Table-Komponente mit Sortierung und Filterung"
-- "Implementiere einen Custom Hook für API-Datenabruf mit Caching"
-- "Refaktoriere diese Klassenkomponente, um moderne React-Muster zu verwenden"
+- "Erstelle eine wiederverwendbare Data-Table-Component mit Sorting und Filtering"
+- "Implementiere einen Custom Hook für API-Data-Fetching mit Caching"
+- "Refactore diese Class Component, um moderne React-Patterns zu verwenden"
 
 #### Python-Experte
 
@@ -327,7 +349,7 @@ Deine Expertise umfasst:
 
 - **Core Python**: Pythonic Patterns, Datenstrukturen, Algorithmen
 - **Frameworks**: Django, Flask, FastAPI, SQLAlchemy
-- **Testing**: pytest, unittest, Mocking, test-driven development
+- **Testing**: pytest, unittest, Mocking, Test-driven Development
 - **Data Science**: pandas, numpy, matplotlib, Jupyter Notebooks
 - **Async Programming**: asyncio, async/await Patterns
 - **Package Management**: pip, poetry, Virtual Environments
@@ -337,19 +359,19 @@ Für Python-Aufgaben:
 
 1. Befolge die PEP 8 Style Guidelines
 2. Verwende Type Hints für bessere Code-Dokumentation
-3. Implementiere korrektes Error Handling mit spezifischen Exceptions
+3. Implementiere korrekte Fehlerbehandlung mit spezifischen Exceptions
 4. Schreibe umfassende Docstrings
 5. Berücksichtige Performance und Speicherverbrauch
 6. Integriere angemessenes Logging
 7. Schreibe testbaren, modularen Code
 
-Fokus auf sauberen, wartbaren Python-Code, der Community-Standards entspricht.
+Fokussiere dich auf sauberen, wartbaren Python-Code, der Community-Standards entspricht.
 ```
 
 **Anwendungsfälle:**
 
-- "Erstelle einen FastAPI-Service für User Authentication mit JWT Tokens"
-- "Implementiere eine Datenverarbeitungs-Pipeline mit pandas und Error Handling"
+- "Erstelle einen FastAPI-Service für User Authentication mit JWT-Tokens"
+- "Implementiere eine Data Processing Pipeline mit pandas und Fehlerbehandlung"
 - "Schreibe ein CLI-Tool mit argparse und umfassender Hilfe-Dokumentation"
 
 ## Best Practices
@@ -424,7 +446,7 @@ description: A helpful code reviewer
 
 ### Configuration Best Practices
 
-#### Richtlinien für System Prompts
+#### Richtlinien für Systemprompts
 
 **Sei spezifisch bezüglich der Expertise:**
 
@@ -465,6 +487,6 @@ Always follow these standards:
 - **Tool-Einschränkungen**: Subagents haben nur Zugriff auf ihre konfigurierten Tools
 - **Sandboxing**: Die Ausführung aller Tools folgt demselben Sicherheitsmodell wie die direkte Tool-Nutzung
 - **Audit Trail**: Alle Aktionen von Subagents werden protokolliert und in Echtzeit sichtbar
-- **Zugriffskontrolle**: Die Trennung auf Projekt- und Benutzerebene sorgt für angemessene Grenzen
+- **Zugriffskontrolle**: Trennung auf Projekt- und Benutzerebene stellt angemessene Grenzen sicher
 - **Sensible Informationen**: Vermeide es, Secrets oder Zugangsdaten in Agent-Konfigurationen einzubeziehen
-- **Produktionsumgebungen**: Erwäge den Einsatz separater Agents für Produktions- und Entwicklungs-Umgebungen
+- **Produktionsumgebungen**: Erwäge den Einsatz separater Agents für Produktions- vs. Entwicklungs-Umgebungen

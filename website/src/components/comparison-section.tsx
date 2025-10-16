@@ -49,7 +49,37 @@ const comparisonFeatures = [
       },
       {
         name: "SubAgent Support",
-        qwen: "in progress",
+        qwen: true,
+        claude: true,
+      },
+      {
+        name: "SDK Support",
+        qwen: "todo",
+        claude: true,
+      },
+      {
+        name: "GitHub Actions Integration",
+        qwen: "todo",
+        claude: true,
+      },
+      {
+        name: "Output Style Customization",
+        qwen: "todo",
+        claude: true,
+      },
+      {
+        name: "Hooks System",
+        qwen: "todo",
+        claude: true,
+      },
+      {
+        name: "Git Worktree Support",
+        qwen: "todo",
+        claude: true,
+      },
+      {
+        name: "Permission Management",
+        qwen: "todo",
         claude: true,
       },
     ],
@@ -106,12 +136,12 @@ const comparisonFeatures = [
       },
       {
         name: "Git Integration",
-        qwen: "basic",
+        qwen: true,
         claude: true,
       },
       {
         name: "IDE Integration",
-        qwen: "basic",
+        qwen: true,
         claude: true,
       },
     ],
@@ -156,7 +186,7 @@ const getFeatureIcon = (status: boolean | string) => {
     return <X className='w-5 h-5 text-red-400' strokeWidth={2.5} />;
   } else if (status === "2000/day") {
     return (
-      <Badge className='text-xs px-2 py-1 bg-green-500 text-white font-semibold'>
+      <Badge className='h-5 text-xs px-2 py-1 bg-green-500 text-white font-semibold'>
         {status}
       </Badge>
     );
@@ -164,7 +194,7 @@ const getFeatureIcon = (status: boolean | string) => {
     return (
       <Badge
         variant='outline'
-        className='text-xs px-2 py-1 text-amber-600 border-amber-600/50 font-medium'
+        className='h-5 text-xs px-2 py-1 text-amber-600 border-amber-600/50 font-medium'
       >
         {status}
       </Badge>
@@ -202,8 +232,8 @@ export const ComparisonSection = () => {
             <Card className='p-8 bg-gradient-to-br from-violet-500/5 to-purple-500/5 border-violet-500/20 relative'>
               {/* Advantage Badge */}
               <div className='absolute -top-3 left-1/2 transform -translate-x-1/2'>
-                <Badge className='bg-green-500 text-white px-4 py-1 font-semibold'>
-                  🏆 Recommended
+                <Badge className='bg-violet-600 text-white px-4 py-1 font-semibold'>
+                  ⭐ Free & Open Source,Worth Waiting!
                 </Badge>
               </div>
 
@@ -214,9 +244,6 @@ export const ComparisonSection = () => {
                 <h3 className='text-2xl font-bold text-violet-600 mb-2'>
                   Qwen Code
                 </h3>
-                <Badge className='bg-violet-600 text-white'>
-                  Free & Open Source
-                </Badge>
               </div>
 
               <div className='space-y-8'>
@@ -297,7 +324,13 @@ export const ComparisonSection = () => {
               </div>
             </Card>
             {/* Claude Code Card */}
-            <Card className='p-8 bg-gradient-to-br from-orange-500/5 to-red-500/5 border-orange-500/20'>
+            <Card className='p-8 bg-gradient-to-br from-orange-500/5 to-red-500/5 border-orange-500/20 relative'>
+              {/* Advantage Badge */}
+              <div className='absolute -top-3 left-1/2 transform -translate-x-1/2'>
+                <Badge className='bg-orange-600 text-white px-4 py-1 font-semibold'>
+                  🏆 Commercial Solution, Recommended!
+                </Badge>
+              </div>
               <div className='text-center mb-8'>
                 <div className='w-16 h-16 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-4 mx-auto'>
                   <Zap className='w-8 h-8 text-orange-600' />
@@ -305,9 +338,6 @@ export const ComparisonSection = () => {
                 <h3 className='text-2xl font-bold text-orange-600 mb-2'>
                   Claude Code
                 </h3>
-                <Badge className='bg-orange-600 text-white'>
-                  Commercial Solution
-                </Badge>
               </div>
 
               <div className='space-y-8'>

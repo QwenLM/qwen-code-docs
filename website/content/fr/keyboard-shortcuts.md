@@ -4,16 +4,16 @@ Ce document liste les raccourcis clavier disponibles dans Qwen Code.
 
 ## Général
 
-| Raccourci | Description                                                                                                           |
-| --------- | --------------------------------------------------------------------------------------------------------------------- |
-| `Esc`     | Fermer les boîtes de dialogue et les suggestions.                                                                     |
-| `Ctrl+C`  | Annuler la requête en cours et effacer l'entrée. Appuyez deux fois pour quitter l'application.                        |
-| `Ctrl+D`  | Quitter l'application si l'entrée est vide. Appuyez deux fois pour confirmer.                                        |
-| `Ctrl+L`  | Effacer l'écran.                                                                                                      |
-| `Ctrl+O`  | Activer/désactiver l'affichage de la console de débogage.                                                             |
-| `Ctrl+S`  | Permet aux réponses longues de s'afficher entièrement, en désactivant la troncature. Utilisez le défilement de votre terminal pour voir la sortie complète. |
-| `Ctrl+T`  | Activer/désactiver l'affichage des descriptions des outils.                                                           |
-| `Ctrl+Y`  | Activer/désactiver l'approbation automatique (mode YOLO) pour tous les appels d'outils.                              |
+| Raccourci   | Description                                                                                                           |
+| ----------- | --------------------------------------------------------------------------------------------------------------------- |
+| `Esc`       | Fermer les boîtes de dialogue et les suggestions.                                                                     |
+| `Ctrl+C`    | Annuler la requête en cours et effacer l'entrée. Appuyez deux fois pour quitter l'application.                        |
+| `Ctrl+D`    | Quitter l'application si l'entrée est vide. Appuyez deux fois pour confirmer.                                         |
+| `Ctrl+L`    | Effacer l'écran.                                                                                                      |
+| `Ctrl+O`    | Activer/désactiver l'affichage de la console de débogage.                                                             |
+| `Ctrl+S`    | Permet aux réponses longues de s'afficher entièrement, en désactivant la troncature. Utilisez le défilement de votre terminal pour voir la sortie complète. |
+| `Ctrl+T`    | Activer/désactiver l'affichage des descriptions des outils.                                                           |
+| `Shift+Tab` | Parcourir les modes d'approbation (`plan` → `default` → `auto-edit` → `yolo`).                                        |
 
 ## Input Prompt
 
@@ -21,14 +21,15 @@ Ce document liste les raccourcis clavier disponibles dans Qwen Code.
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `!`                                                | Basculer en mode shell lorsque l'entrée est vide.                                                                                   |
 | `\` (en fin de ligne) + `Enter`                    | Insérer un saut de ligne.                                                                                                           |
-| `Flèche du bas`                                    | Naviguer vers le bas dans l'historique des entrées.                                                                                 |
+| `Flèche bas`                                       | Naviguer vers le bas dans l'historique des entrées.                                                                                 |
 | `Enter`                                            | Soumettre l'invite actuelle.                                                                                                        |
 | `Meta+Delete` / `Ctrl+Delete`                      | Supprimer le mot à droite du curseur.                                                                                               |
 | `Tab`                                              | Compléter automatiquement la suggestion actuelle si elle existe.                                                                    |
-| `Flèche du haut`                                   | Naviguer vers le haut dans l'historique des entrées.                                                                                |
+| `Flèche haut`                                      | Naviguer vers le haut dans l'historique des entrées.                                                                                |
 | `Ctrl+A` / `Home`                                  | Déplacer le curseur au début de la ligne.                                                                                           |
 | `Ctrl+B` / `Flèche gauche`                         | Déplacer le curseur d'un caractère vers la gauche.                                                                                  |
 | `Ctrl+C`                                           | Effacer l'invite d'entrée.                                                                                                          |
+| `Esc` (appui double)                               | Effacer l'invite d'entrée.                                                                                                          |
 | `Ctrl+D` / `Delete`                                | Supprimer le caractère à droite du curseur.                                                                                         |
 | `Ctrl+E` / `End`                                   | Déplacer le curseur à la fin de la ligne.                                                                                           |
 | `Ctrl+F` / `Flèche droite`                         | Déplacer le curseur d'un caractère vers la droite.                                                                                  |
@@ -51,7 +52,7 @@ Ce document liste les raccourcis clavier disponibles dans Qwen Code.
 | `Tab` / `Enter` | Accepter la suggestion sélectionnée.  |
 | `Up Arrow`      | Naviguer vers le haut dans les suggestions. |
 
-## Radio Button Select
+## Sélection par bouton radio
 
 | Raccourci          | Description                                                                                                   |
 | ------------------ | ------------------------------------------------------------------------------------------------------------- |
@@ -59,7 +60,7 @@ Ce document liste les raccourcis clavier disponibles dans Qwen Code.
 | `Enter`            | Confirmer la sélection.                                                                                       |
 | `Up Arrow` / `k`   | Déplacer la sélection vers le haut.                                                                           |
 | `1-9`              | Sélectionner un élément par son numéro.                                                                       |
-| (multi-digit)      | Pour les éléments avec des numéros supérieurs à 9, appuyez rapidement sur les chiffres pour sélectionner l'élément correspondant. |
+| (multi-chiffres)   | Pour les éléments avec des numéros supérieurs à 9, appuyez rapidement sur les chiffres pour sélectionner l'élément correspondant. |
 
 ## Intégration IDE
 

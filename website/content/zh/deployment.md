@@ -18,7 +18,7 @@
   npm install -g @qwen-code/qwen-code
   ```
 
-  然后可以在任意位置运行 CLI：
+  然后，可以在任意位置运行 CLI：
 
   ```bash
   qwen
@@ -33,15 +33,15 @@
 
 ---
 
-### 2. 在沙箱中运行 (Docker/Podman)
+### 2. 在沙箱中运行（Docker/Podman）
 
 为了安全性和隔离性，Qwen Code 可以在容器内运行。这也是 CLI 执行可能产生副作用的工具时的默认方式。
 
 - **直接从 Registry 运行：**
-  你可以直接运行已发布的沙箱镜像。这在你只有 Docker 并希望运行 CLI 的环境中非常有用。
+  你可以直接运行已发布的沙箱镜像。这在你只有 Docker 并想运行 CLI 的环境中非常有用。
   ```bash
   # 运行已发布的沙箱镜像
-  docker run --rm -it ghcr.io/qwenlm/qwen-code:0.0.10
+  docker run --rm -it ghcr.io/qwenlm/qwen-code:0.0.11
   ```
 - **使用 `--sandbox` 参数：**
   如果你已经在本地安装了 Qwen Code（使用上述标准安装方式），你可以指示它在沙箱容器内运行。
@@ -53,7 +53,7 @@
 
 ### 3. 从源码运行（推荐 Qwen Code 贡献者使用）
 
-项目贡献者会希望直接从源码运行 CLI。
+项目贡献者会希望直接从源代码运行 CLI。
 
 - **开发模式：**
   此方法提供热重载功能，适用于积极开发阶段。
@@ -61,7 +61,7 @@
   # 从仓库根目录运行
   npm run start
   ```
-- **生产模式（链接包）：**
+- **生产环境模拟模式（链接包）：**
   此方法通过链接本地包来模拟全局安装。适用于在生产工作流中测试本地构建。
 
   ```bash
@@ -74,7 +74,7 @@
 
 ---
 
-### 4. 从 GitHub 运行最新的 Qwen Code 提交
+### 4. 运行 GitHub 上最新的 Qwen Code 提交版本
 
 你可以直接从 GitHub 仓库运行最新提交的 Qwen Code 版本。这对于测试仍在开发中的功能非常有用。
 
@@ -86,7 +86,7 @@ npx https://github.com/QwenLM/qwen-code
 
 ## 部署架构
 
-上述执行方式依赖于以下架构组件和流程：
+上述执行方式的实现依赖于以下架构组件和流程：
 
 **NPM 包**
 
@@ -95,19 +95,19 @@ Qwen Code 项目是一个 monorepo，会将核心包发布到 NPM registry：
 - `@qwen-code/qwen-code-core`：后端部分，负责处理逻辑和工具执行。
 - `@qwen-code/qwen-code`：面向用户的前端部分。
 
-在进行标准安装或从源码运行 Qwen Code 时，都会使用到这些包。
+在进行标准安装或从源码运行 Qwen Code 时，都会使用这些包。
 
 **构建与打包流程**
 
-根据不同的分发渠道，会采用两种不同的构建流程：
+根据分发渠道的不同，有两种不同的构建流程：
 
-- **NPM 发布：** 在发布到 NPM registry 时，`@qwen-code/qwen-code-core` 和 `@qwen-code/qwen-code` 中的 TypeScript 源码会通过 TypeScript Compiler（`tsc`）被编译为标准 JavaScript。最终生成的 `dist/` 目录会被发布为 NPM 包。这是 TypeScript 库的标准发布方式。
+- **NPM 发布**：当发布到 NPM registry 时，`@qwen-code/qwen-code-core` 和 `@qwen-code/qwen-code` 中的 TypeScript 源码会通过 TypeScript Compiler（`tsc`）被转译为标准 JavaScript。最终生成的 `dist/` 目录会被发布为 NPM 包。这是 TypeScript 库的标准做法。
 
-- **GitHub `npx` 执行：** 当直接从 GitHub 运行最新版本的 Qwen Code 时，`package.json` 中的 `prepare` 脚本会触发另一个构建流程。该脚本使用 `esbuild` 将整个应用及其依赖项打包成一个独立的 JavaScript 文件。这个 bundle 是在用户机器上即时生成的，并不会被提交到代码仓库中。
+- **GitHub `npx` 执行**：当你直接从 GitHub 运行最新版本的 Qwen Code 时，`package.json` 中的 `prepare` 脚本会触发一个不同的构建过程。该脚本使用 `esbuild` 将整个应用及其依赖项打包成一个独立的 JavaScript 文件。这个 bundle 是在用户机器上即时生成的，并不会提交到代码仓库中。
 
 **Docker 沙箱镜像**
 
-基于 Docker 的执行方式由 `qwen-code-sandbox` 容器镜像支持。该镜像会被发布到容器镜像仓库，其中包含了预装的全局版本的 Qwen Code。
+基于 Docker 的执行方式由 `qwen-code-sandbox` 容器镜像支持。该镜像会发布到容器注册中心，其中包含了预装好的全局版 Qwen Code。
 
 ## 发布流程
 

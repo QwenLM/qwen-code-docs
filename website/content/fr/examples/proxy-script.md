@@ -15,10 +15,10 @@ Voici un exemple de script proxy qui peut être utilisé avec la variable d'envi
 // Définir `GEMINI_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js` pour exécuter le proxy en parallèle du sandbox
 // Tester via `curl https://example.com` à l'intérieur du sandbox (en mode shell ou via l'outil shell)
 
-import http from 'http';
-import net from 'net';
-import { URL } from 'url';
-import console from 'console';
+import http from 'node:http';
+import net from 'node:net';
+import { URL } from 'node:url';
+import console from 'node:console';
 
 const PROXY_PORT = 8877;
 const ALLOWED_DOMAINS = ['example.com', 'googleapis.com'];
@@ -67,7 +67,7 @@ server.on('connect', (req, clientSocket, head) => {
 
   clientSocket.on('error', (err) => {
     // Cela peut arriver si le client raccroche.
-    console.error(`[PROXY] Erreur socket client : ${err.message}`);
+    console.error(`[PROXY] Erreur socket cliente : ${err.message}`);
   });
 });
 

@@ -2,19 +2,19 @@
 
 Ce document fournit un aperçu de la fonctionnalité Gemini Ignore (`.geminiignore`) de Qwen Code.
 
-Qwen Code inclut la capacité d'ignorer automatiquement des fichiers, de manière similaire à `.gitignore` (utilisé par Git) et `.aiexclude` (utilisé par Gemini Code Assist). Ajouter des chemins à votre fichier `.geminiignore` les exclura des outils qui supportent cette fonctionnalité, bien qu'ils resteront visibles pour les autres services (comme Git).
+Qwen Code inclut la possibilité d'ignorer automatiquement des fichiers, de manière similaire à `.gitignore` (utilisé par Git) et `.aiexclude` (utilisé par Gemini Code Assist). Ajouter des chemins à votre fichier `.geminiignore` les exclura des outils qui prennent en charge cette fonctionnalité, bien qu'ils resteront visibles pour d'autres services (comme Git).
 
 ## Fonctionnement
 
-Lorsque vous ajoutez un chemin à votre fichier `.geminiignore`, les outils qui respectent ce fichier excluront automatiquement les fichiers et dossiers correspondants de leurs opérations. Par exemple, lorsque vous utilisez la commande [`read_many_files`](./tools/multi-file.md), tous les chemins présents dans votre fichier `.geminiignore` seront automatiquement ignorés.
+Lorsque vous ajoutez un chemin à votre fichier `.geminiignore`, les outils qui respectent ce fichier excluront automatiquement les fichiers et répertoires correspondants de leurs opérations. Par exemple, lorsque vous utilisez la commande [`read_many_files`](./tools/multi-file.md), tous les chemins présents dans votre fichier `.geminiignore` seront automatiquement exclus.
 
 Dans l'ensemble, `.geminiignore` suit les conventions des fichiers `.gitignore` :
 
 - Les lignes vides et les lignes commençant par `#` sont ignorées.
 - Les motifs glob standards sont pris en charge (comme `*`, `?`, et `[]`).
-- Ajouter un `/` à la fin ne correspondra qu'aux dossiers.
+- Ajouter un `/` à la fin ne correspondra qu'aux répertoires.
 - Placer un `/` au début ancre le chemin par rapport au fichier `.geminiignore`.
-- Le symbole `!` permet d'inverser (négation) un motif.
+- `!` inverse un motif (négation).
 
 Vous pouvez modifier votre fichier `.geminiignore` à tout moment. Pour appliquer les changements, vous devez redémarrer votre session Qwen Code.
 
