@@ -119,7 +119,7 @@ export const FeaturesSection = () => {
           {architectureFeatures.map((feature, index) => (
             <Card
               key={index}
-              className='p-8 bg-gradient-to-br from-violet-500/5 to-purple-500/5 border-violet-500/20 hover:border-violet-500/30 transition-all duration-300'
+              className='p-8  from-violet-500/5 to-purple-500/5 border-violet-500/20 hover:border-violet-500/30 transition-all duration-300'
             >
               <div className='w-12 h-12 bg-violet-500/10 rounded-2xl flex items-center justify-center mb-6'>
                 <feature.icon className='w-6 h-6 text-violet-600' />

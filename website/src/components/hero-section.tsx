@@ -34,7 +34,9 @@ export const HeroSection = () => {
         <h1 className='text-5xl md:text-7xl font-bold mb-8 leading-tight tracking-tight'>
           <span className='gradient-text'>A coding agent</span>
           <br />
-          <span className='text-foreground'>that lives in digital world.</span>
+          <span className='text-foreground'>
+            that lives in the digital world
+          </span>
         </h1>
 
         {/* Subheading */}
@@ -55,7 +57,7 @@ export const HeroSection = () => {
           </div>
 
           <div className='space-y-4'>
-            <div className='bg-black/90 border border-violet-500/30 rounded-xl p-6 terminal-text text-sm'>
+            <div className='bg-black/90 border border-violet-500/30 rounded-xl p-6 terminal-text text-sm text-left'>
               <div className='text-violet-400 mb-2'>
                 <span className='text-violet-300'>user@machine</span>
                 <span className='text-white'>:</span>
@@ -65,7 +67,7 @@ export const HeroSection = () => {
                   npm install -g @qwen-code/qwen-code
                 </span>
               </div>
-              <div className='text-gray-400 ml-4'>
+              <div className='text-gray-400 '>
                 ✓ Package installed successfully
               </div>
               <div className='text-violet-400 mt-3'>
@@ -75,7 +77,15 @@ export const HeroSection = () => {
                 <span className='text-white'>$ </span>
                 <span className='text-green-400'>qwen</span>
               </div>
-              <div className='text-gray-300 mt-2 ml-4'>
+              <pre className='text-violet-400 mt-3 font-mono text-[8px] sm:text-xs md:text-sm lg:text-sm xl:text-base leading-tight'>
+                {`██╗       ██████╗ ██╗    ██╗███████╗███╗   ██╗
+╚██╗     ██╔═══██╗██║    ██║██╔════╝████╗  ██║
+ ╚██╗    ██║   ██║██║ █╗ ██║█████╗  ██╔██╗ ██║
+ ██╔╝    ██║▄▄ ██║██║███╗██║██╔══╝  ██║╚██╗██║
+██╔╝     ╚██████╔╝╚███╔███╔╝███████╗██║ ╚████║
+╚═╝       ╚══▀▀═╝  ╚══╝╚══╝ ╚══════╝╚═╝  ╚═══╝`}
+              </pre>
+              <div className='text-gray-300 mt-3'>
                 Welcome to Qwen Code! Type /help for commands.
               </div>
               <div className='text-violet-400 mt-2'>
@@ -87,7 +97,7 @@ export const HeroSection = () => {
               </div>
             </div>
 
-            <p className='text-center text-sm text-muted-foreground'>
+            <p className='text-sm text-muted-foreground'>
               Install Node.js 18+, then run the command above
             </p>
           </div>
@@ -97,15 +107,15 @@ export const HeroSection = () => {
         <div className='flex flex-wrap justify-center gap-8 mt-16 text-sm text-muted-foreground'>
           <div className='flex items-center gap-2 px-4 py-2 bg-card/30 rounded-lg backdrop-blur-sm'>
             <Star className='w-4 h-4 text-violet-500' />
-            <span>10.4k+ GitHub Stars</span>
+            <span>14.4k+ GitHub Stars</span>
           </div>
           <div className='flex items-center gap-2 px-4 py-2 bg-card/30 rounded-lg backdrop-blur-sm'>
             <GitFork className='w-4 h-4 text-violet-500' />
-            <span>753 Forks</span>
+            <span>1.1k Forks</span>
           </div>
           <div className='flex items-center gap-2 px-4 py-2 bg-card/30 rounded-lg backdrop-blur-sm'>
             <Zap className='w-4 h-4 text-violet-500' />
-            <span>2k+ Active Users</span>
+            <span>10k+ Active Users</span>
           </div>
         </div>
       </div>
