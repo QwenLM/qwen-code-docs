@@ -156,6 +156,7 @@ export class DocumentTranslator {
       fr: "French",
       ru: "Russian",
       ja: "Japanese",
+      "pt-BR": "Portuguese (Brazil)",
     };
 
     const targetLanguageName = languageNames[targetLang] || targetLang;
@@ -204,6 +205,7 @@ Think like a developer reading technical docs - what feels most natural and clea
       fr: "French",
       ru: "Russian",
       ja: "Japanese",
+      "pt-BR": "Portuguese (Brazil)",
     };
 
     const targetLanguageName = languageNames[targetLang] || targetLang;

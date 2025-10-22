@@ -18,6 +18,7 @@ interface SyncOptions {
   targetLanguages?: string[];
   projectRoot?: string; // 项目根目录
   outputDir?: string; // 输出目录
+  branch?: string; // 新增：源仓库分支
 }
 
 interface SyncRecord {
@@ -70,6 +71,7 @@ export class SyncManager {
   private outputBasePath: string;
   private sourceLanguage: string; // 新增：源文档语言
   private targetLanguages: string[];
+  private branch: string; // 新增：源仓库分支
   private lastSyncFile: string;
   private changelogFile: string;
   private translator: DocumentTranslator;
@@ -94,7 +96,8 @@ export class SyncManager {
     this.docsPath = options.docsPath || "docs";
     this.outputBasePath = options.outputBasePath || this.projectRoot;
     this.sourceLanguage = options.sourceLanguage || "en";
-    this.targetLanguages = options.targetLanguages || ["zh", "de", "fr", "ru"];
+    this.targetLanguages = options.targetLanguages || ["zh", "de", "fr", "ru", "pt-BR"];
+    this.branch = options.branch || "main"; // 默认使用 main 分支
 
     // 设置输出目录
     this.outputDir = options.outputDir || "content";
@@ -172,12 +175,12 @@ export class SyncManager {
       // 克隆或更新源仓库
       if (!(await fs.pathExists(tempDir))) {
         console.log(chalk.blue("📥 克隆源仓库..."));
-        execSync(`git clone --depth 50 ${this.sourceRepo} ${tempDir}`, {
+        execSync(`git clone --depth 50 --branch ${this.branch} ${this.sourceRepo} ${tempDir}`, {
           stdio: "pipe",
         });
       } else {
         console.log(chalk.blue("🔄 更新源仓库..."));
-        execSync(`cd ${tempDir} && git pull origin main`, { stdio: "pipe" });
+        execSync(`cd ${tempDir} && git fetch origin && git checkout ${this.branch} && git pull origin ${this.branch}`, { stdio: "pipe" });
       }
 
       // 获取最新提交

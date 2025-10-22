@@ -19,6 +19,7 @@ interface ProjectConfig {
   sourceLanguage: string; // Source document language
   targetLanguages: string[];
   outputDir: string;
+  branch?: string; // 源仓库分支
 }
 
 /**
@@ -102,6 +103,7 @@ class TranslationCLI {
           { name: "French (fr)", value: "fr", checked: true },
           { name: "Russian (ru)", value: "ru", checked: true },
           { name: "Japanese (ja)", value: "ja", checked: false },
+          { name: "Portuguese (Brazil) (pt-BR)", value: "pt-BR", checked: false },
         ],
         validate: (choices: string[]) =>
           choices.length > 0 || "Please select at least one target language",
@@ -114,6 +116,14 @@ class TranslationCLI {
         validate: (input: string) =>
           input.trim().length > 0 || "Output directory cannot be empty",
       },
+      {
+        type: "input",
+        name: "branch",
+        message: "Source repository branch:",
+        default: "main",
+        validate: (input: string) =>
+          input.trim().length > 0 || "Branch name cannot be empty",
+      },
     ]);
 
     const projectConfig: ProjectConfig = {
@@ -123,6 +133,7 @@ class TranslationCLI {
       sourceLanguage: answers.sourceLanguage,
       targetLanguages: answers.targetLanguages,
       outputDir: answers.outputDir,
+      branch: answers.branch,
     };
 
     // Copy nextra-template to target location
@@ -326,6 +337,7 @@ class TranslationCLI {
       projectRoot: process.cwd(), // 传递项目根目录
       targetLanguages: projectConfig.targetLanguages, // 传递目标语言
       outputDir: projectConfig.outputDir, // 传递输出目录
+      branch: projectConfig.branch, // 传递分支参数
     });
 
     try {
@@ -483,6 +495,12 @@ class TranslationCLI {
         default: currentConfig.docsPath,
       },
       {
+        type: "input",
+        name: "branch",
+        message: "Source repository branch:",
+        default: currentConfig.branch || "main",
+      },
+      {
         type: "checkbox",
         name: "targetLanguages",
         message: "Target languages:",
@@ -492,6 +510,7 @@ class TranslationCLI {
           { name: "French (fr)", value: "fr" },
           { name: "Russian (ru)", value: "ru" },
           { name: "Japanese (ja)", value: "ja" },
+          { name: "Portuguese (Brazil) (pt-BR)", value: "pt-BR" },
         ],
         default: currentConfig.targetLanguages,
       },
@@ -557,6 +576,7 @@ class TranslationCLI {
       )
     );
     console.log(chalk.gray(`  Output directory: ${projectConfig.outputDir}`));
+    console.log(chalk.gray(`  Source branch: ${projectConfig.branch || "main"}`));
 
     // Check environment variables
     console.log(chalk.blue("\n🔑 Environment Configuration"));
