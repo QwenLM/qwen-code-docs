@@ -281,10 +281,11 @@ export class SyncManager {
       await fs.copy(sourceDocsDir, sourceDocsTargetDir, {
         overwrite: true,
         filter: (src) => {
-          // 只复制markdown文件和资源文件
+          // 只复制markdown文件、JSON文件和资源文件
           const ext = path.extname(src);
           return (
             ext === ".md" ||
+            ext === ".json" ||
             ext === ".png" ||
             ext === ".jpg" ||
             ext === ".gif" ||
