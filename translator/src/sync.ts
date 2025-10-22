@@ -96,7 +96,13 @@ export class SyncManager {
     this.docsPath = options.docsPath || "docs";
     this.outputBasePath = options.outputBasePath || this.projectRoot;
     this.sourceLanguage = options.sourceLanguage || "en";
-    this.targetLanguages = options.targetLanguages || ["zh", "de", "fr", "ru", "pt-BR"];
+    this.targetLanguages = options.targetLanguages || [
+      "zh",
+      "de",
+      "fr",
+      "ru",
+      "pt-BR",
+    ];
     this.branch = options.branch || "main"; // 默认使用 main 分支
 
     // 设置输出目录
@@ -104,7 +110,10 @@ export class SyncManager {
 
     // last-sync.json 应该放在项目根目录下
     this.lastSyncFile = path.join(this.projectRoot, "last-sync.json");
-    this.changelogFile = path.join(this.projectRoot, "translation-changelog.json");
+    this.changelogFile = path.join(
+      this.projectRoot,
+      "translation-changelog.json"
+    );
     this.translator = new DocumentTranslator({
       projectRoot: this.projectRoot,
     });
@@ -145,7 +154,11 @@ export class SyncManager {
       );
 
       // 记录翻译日志
-      await this.saveTranslationChangelog(changes.latestCommit, changes.files, translationResults);
+      await this.saveTranslationChangelog(
+        changes.latestCommit,
+        changes.files,
+        translationResults
+      );
 
       // 更新同步记录
       await this.updateSyncRecord(changes.latestCommit);
@@ -175,12 +188,18 @@ export class SyncManager {
       // 克隆或更新源仓库
       if (!(await fs.pathExists(tempDir))) {
         console.log(chalk.blue("📥 克隆源仓库..."));
-        execSync(`git clone --depth 50 --branch ${this.branch} ${this.sourceRepo} ${tempDir}`, {
-          stdio: "pipe",
-        });
+        execSync(
+          `git clone --depth 50 --branch ${this.branch} ${this.sourceRepo} ${tempDir}`,
+          {
+            stdio: "pipe",
+          }
+        );
       } else {
         console.log(chalk.blue("🔄 更新源仓库..."));
-        execSync(`cd ${tempDir} && git fetch origin && git checkout ${this.branch} && git pull origin ${this.branch}`, { stdio: "pipe" });
+        execSync(
+          `cd ${tempDir} && git fetch origin && git checkout ${this.branch} && git pull origin ${this.branch}`,
+          { stdio: "pipe" }
+        );
       }
 
       // 获取最新提交
@@ -286,6 +305,7 @@ export class SyncManager {
           return (
             ext === ".md" ||
             ext === ".json" ||
+            ext === ".ts" ||
             ext === ".png" ||
             ext === ".jpg" ||
             ext === ".gif" ||
@@ -315,7 +335,9 @@ export class SyncManager {
   async translateChangedFiles(
     changedFiles: string[]
   ): Promise<Record<string, TranslationResult>> {
-    console.log(chalk.yellow(`🌍 开始并行翻译 ${this.targetLanguages.length} 种语言...`));
+    console.log(
+      chalk.yellow(`🌍 开始并行翻译 ${this.targetLanguages.length} 种语言...`)
+    );
 
     // 并行翻译所有语言
     const languagePromises = this.targetLanguages.map(async (language) => {
