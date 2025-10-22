@@ -76,7 +76,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
       ]}
       sidebar={{
         defaultMenuCollapseLevel: 1,
-        autoCollapse: true,
+        autoCollapse: false,
       }}
       pageMap={sourcePageMap}
       nextThemes={{ defaultTheme: "light" }}
