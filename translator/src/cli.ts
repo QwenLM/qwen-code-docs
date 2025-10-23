@@ -7,6 +7,7 @@ import fs from "fs-extra";
 import path from "path";
 import { SyncManager } from "./sync";
 import { DocumentTranslator } from "./translator";
+import { MetaTranslator } from "./meta-translator";
 import { readFileSync } from "fs";
 
 /**
@@ -103,7 +104,11 @@ class TranslationCLI {
           { name: "French (fr)", value: "fr", checked: true },
           { name: "Russian (ru)", value: "ru", checked: true },
           { name: "Japanese (ja)", value: "ja", checked: false },
-          { name: "Portuguese (Brazil) (pt-BR)", value: "pt-BR", checked: false },
+          {
+            name: "Portuguese (Brazil) (pt-BR)",
+            value: "pt-BR",
+            checked: false,
+          },
         ],
         validate: (choices: string[]) =>
           choices.length > 0 || "Please select at least one target language",
@@ -160,13 +165,22 @@ class TranslationCLI {
     console.log(chalk.gray("   # Edit .env file and add your API keys"));
     console.log(chalk.gray("2. Run commands:"));
     console.log(
-      chalk.gray("   qwen-translation sync     # Sync source repository docs")
+      chalk.gray(
+        "   qwen-translation sync          # Sync source repository docs"
+      )
     );
     console.log(
-      chalk.gray("   qwen-translation translate # Translate documents")
+      chalk.gray(
+        "   qwen-translation markdown      # Translate markdown documents"
+      )
     );
     console.log(
-      chalk.gray("   qwen-translation config    # View/modify configuration")
+      chalk.gray("   qwen-translation meta        # Translate _meta.ts files")
+    );
+    console.log(
+      chalk.gray(
+        "   qwen-translation config        # View/modify configuration"
+      )
     );
     console.log(
       chalk.gray("   npm install               # Install dependencies")
@@ -548,6 +562,66 @@ class TranslationCLI {
   }
 
   /**
+   * Translate _meta.ts files
+   */
+  async translateMetaFiles(options: {
+    language?: string;
+    file?: string;
+  }): Promise<void> {
+    const projectConfig = await this.loadProjectConfig();
+    if (!projectConfig) {
+      console.error(
+        chalk.red(
+          "❌ Project not initialized, please run 'qwen-translation init' first"
+        )
+      );
+      return;
+    }
+
+    const metaTranslator = new MetaTranslator({
+      projectRoot: process.cwd(),
+      sourceLanguage: projectConfig.sourceLanguage,
+      targetLanguages: projectConfig.targetLanguages,
+      outputDir: projectConfig.outputDir,
+    });
+
+    try {
+      if (options.file && options.language) {
+        // 翻译单个文件到指定语言
+        await metaTranslator.translateSingleMetaFile(
+          options.file,
+          options.language
+        );
+        console.log(
+          chalk.green(
+            `✅ Meta 文件翻译完成: ${options.file} -> ${options.language}`
+          )
+        );
+      } else {
+        // 翻译所有 _meta.ts 文件到所有目标语言
+        const result = await metaTranslator.translateAllMetaFiles();
+
+        console.log(chalk.green("\n🎉 Meta 文件翻译完成！"));
+        console.log(chalk.blue("\n📊 翻译结果:"));
+
+        for (const [language, stats] of Object.entries(result.results)) {
+          console.log(
+            chalk.gray(
+              `  ${language}: ${stats.success.length} 成功, ${stats.failed.length} 失败`
+            )
+          );
+          if (stats.failed.length > 0) {
+            console.log(chalk.red(`    失败文件: ${stats.failed.join(", ")}`));
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error(chalk.red(`❌ Meta 文件翻译失败: ${error.message}`));
+      process.exit(1);
+    }
+  }
+
+  /**
    * Show status information
    */
   async showStatus(): Promise<void> {
@@ -576,7 +650,9 @@ class TranslationCLI {
       )
     );
     console.log(chalk.gray(`  Output directory: ${projectConfig.outputDir}`));
-    console.log(chalk.gray(`  Source branch: ${projectConfig.branch || "main"}`));
+    console.log(
+      chalk.gray(`  Source branch: ${projectConfig.branch || "main"}`)
+    );
 
     // Check environment variables
     console.log(chalk.blue("\n🔑 Environment Configuration"));
@@ -642,10 +718,10 @@ async function main() {
       await cli.syncDocuments(options.force);
     });
 
-  // translate command
+  // markdown command
   program
-    .command("translate")
-    .description("Translate documents")
+    .command("markdown")
+    .description("Translate markdown documents")
     .option("-l, --language <lang>", "Specify target language")
     .option("-f, --file <file>", "Specify file to translate")
     .action(async (options) => {
@@ -658,6 +734,16 @@ async function main() {
     .description("Manage configuration")
     .action(async () => {
       await cli.manageConfig();
+    });
+
+  // meta command
+  program
+    .command("meta")
+    .description("Translate _meta.ts files to target languages")
+    .option("-l, --language <lang>", "Specify target language")
+    .option("-f, --file <file>", "Specify _meta.ts file to translate")
+    .action(async (options) => {
+      await cli.translateMetaFiles(options);
     });
 
   // status command
@@ -680,4 +766,4 @@ if (require.main === module) {
   });
 }
 
-export { TranslationCLI };
+export { TranslationCLI, main };

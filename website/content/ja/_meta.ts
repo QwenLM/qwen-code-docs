@@ -1,5 +1,5 @@
 export default {
-  index: 'Welcome to Qwen Code',
+  index: 'Qwen Code へようこそ',
   cli: 'CLI',
   core: 'Core',
   tools: 'Tools',
