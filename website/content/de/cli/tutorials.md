@@ -5,16 +5,16 @@ Diese Seite enthält Tutorials zur Interaktion mit Qwen Code.
 ## Einrichten eines Model Context Protocol (MCP) Servers
 
 > [!CAUTION]
-> Stelle sicher, dass du der Quelle eines Drittanbieter-MCP-Servers vertraust und die von ihm bereitgestellten Tools verstehst, bevor du ihn verwendest. Die Nutzung von Servern Dritter erfolgt auf eigene Gefahr.
+> Bevor du einen Drittanbieter-MCP-Server verwendest, stelle sicher, dass du seiner Quelle vertraust und die von ihm bereitgestellten Tools verstehst. Die Nutzung von Drittanbieter-Servern erfolgt auf eigene Gefahr.
 
-Dieses Tutorial zeigt, wie du einen MCP-Server einrichtest, unter Verwendung des [GitHub MCP servers](https://github.com/github/github-mcp-server) als Beispiel. Der GitHub MCP Server stellt Tools zur Interaktion mit GitHub Repositories bereit, wie z. B. das Erstellen von Issues und das Kommentieren von Pull Requests.
+Dieses Tutorial zeigt, wie du einen MCP-Server einrichtest, unter Verwendung des [GitHub MCP Servers](https://github.com/github/github-mcp-server) als Beispiel. Der GitHub MCP Server stellt Tools zur Interaktion mit GitHub Repositories bereit, wie z.B. das Erstellen von Issues und das Kommentieren von Pull Requests.
 
 ### Voraussetzungen
 
 Bevor du beginnst, stelle sicher, dass Folgendes installiert und konfiguriert ist:
 
-- **Docker:** Installiere und führe [Docker] aus.
-- **GitHub Personal Access Token (PAT):** Erstelle einen neuen [classic] oder [fine-grained] PAT mit den erforderlichen Berechtigungen.
+- **Docker:** Installiere und starte [Docker].
+- **GitHub Personal Access Token (PAT):** Erstelle einen neuen [klassischen] oder [fein granularen] PAT mit den erforderlichen Berechtigungen.
 
 [Docker]: https://www.docker.com/
 [classic]: https://github.com/settings/tokens/new
@@ -33,7 +33,7 @@ Erstelle oder öffne im Root-Verzeichnis deines Projekts die Datei [`.qwen/setti
       "command": "docker",
       "args": [
         "run",
-        "-i",
+        "−i",
         "--rm",
         "-e",
         "GITHUB_PERSONAL_ACCESS_TOKEN",
@@ -50,7 +50,7 @@ Erstelle oder öffne im Root-Verzeichnis deines Projekts die Datei [`.qwen/setti
 #### Setze deinen GitHub-Token
 
 > [!CAUTION]
-> Die Verwendung eines weitreichenden Personal Access Tokens (PAT), der Zugriff auf persönliche und private Repositories hat, kann dazu führen, dass Informationen aus dem privaten Repository in das öffentliche Repository gelangen. Wir empfehlen die Verwendung eines fein granulierten Zugriffstokens, das keinen gemeinsamen Zugriff auf sowohl öffentliche als auch private Repositories ermöglicht.
+> Die Verwendung eines weitreichenden Personal Access Tokens (PAT), der Zugriff auf persönliche und private Repositories hat, kann dazu führen, dass Informationen aus dem privaten Repository in das öffentliche Repository gelangen. Wir empfehlen die Verwendung eines fein-granularen Zugriffstokens, das keinen gemeinsamen Zugriff auf öffentliche und private Repositories ermöglicht.
 
 Speichere deinen GitHub PAT in einer Umgebungsvariable:
 
@@ -62,7 +62,7 @@ Qwen Code verwendet diesen Wert in der `mcpServers`-Konfiguration, die du in der
 
 #### Starte Qwen Code und überprüfe die Verbindung
 
-Beim Start von Qwen Code liest es automatisch deine Konfiguration und startet den GitHub MCP-Server im Hintergrund. Danach kannst du mit natürlicher Sprache Eingaben machen, um Qwen Code GitHub-Aktionen ausführen zu lassen. Zum Beispiel:
+Beim Start von Qwen Code liest es automatisch deine Konfiguration und startet den GitHub MCP-Server im Hintergrund. Danach kannst du natürliche Sprachanfragen stellen, um Qwen Code GitHub-Aktionen ausführen zu lassen. Zum Beispiel:
 
 ```bash
 "get all open issues assigned to me in the 'foo/bar' repo and prioritize them"

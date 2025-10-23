@@ -1,10 +1,10 @@
 # Memory Import Processor
 
-Der Memory Import Processor ist eine Funktion, die es dir ermöglicht, deine Context-Dateien (z. B. `QWEN.md`) modular zu gestalten, indem du Inhalte aus anderen Dateien mit der Syntax `@file.md` importierst.
+Der Memory Import Processor ist ein Feature, das es dir ermöglicht, deine Context-Dateien (z. B. `QWEN.md`) modular zu gestalten, indem du Inhalte aus anderen Dateien mit der Syntax `@file.md` importierst.
 
 ## Übersicht
 
-Diese Funktion erlaubt es dir, große Context-Dateien (z. B. `QWEN.md`) in kleinere, überschaubarere Komponenten aufzuteilen, die in verschiedenen Kontexten wiederverwendet werden können. Der Import Processor unterstützt sowohl relative als auch absolute Pfade und verfügt über eingebaute Sicherheitsfunktionen, um zirkuläre Imports zu verhindern und den Dateizugriff abzusichern.
+Dieses Feature erlaubt es dir, große Context-Dateien (z. B. `QWEN.md`) in kleinere, überschaubare Komponenten aufzuteilen, die in verschiedenen Kontexten wiederverwendet werden können. Der Import Processor unterstützt sowohl relative als auch absolute Pfade und verfügt über eingebaute Sicherheitsfunktionen, um zyklische Imports zu verhindern und den Dateizugriff abzusichern.
 
 ## Syntax
 
@@ -12,9 +12,9 @@ Verwende das Symbol `@` gefolgt vom Pfad zur Datei, die du importieren möchtest
 
 ```markdown
 
-# Hauptdatei QWEN.md
+# Haupt-QWEN.md-Datei
 
-Dies ist der Hauptinhalt.
+Das ist der Hauptinhalt.
 
 @./components/instructions.md
 
@@ -27,8 +27,8 @@ Weiterer Inhalt hier.
 
 ### Relative Pfade
 
-- `@./file.md` – Import aus dem gleichen Verzeichnis
-- `@../file.md` – Import aus dem übergeordneten Verzeichnis
+- `@./file.md` – Import aus dem gleichen Verzeichnis  
+- `@../file.md` – Import aus dem übergeordneten Verzeichnis  
 - `@./components/file.md` – Import aus einem Unterverzeichnis
 
 ### Absolute Pfade
@@ -54,7 +54,7 @@ Willkommen in meinem Projekt!
 
 ### Verschachtelte Imports
 
-Die importierten Dateien können ihrerseits ebenfalls Imports enthalten und so eine verschachtelte Struktur erzeugen:
+Die importierten Dateien können ihrerseits weitere Imports enthalten und so eine verschachtelte Struktur erzeugen:
 
 ```markdown
 
@@ -78,7 +78,7 @@ Die importierten Dateien können ihrerseits ebenfalls Imports enthalten und so e
 
 ### Erkennung zirkulärer Imports
 
-Der Prozessor erkennt und verhindert automatisch zirkuläre Imports:
+Der Prozessor erkennt automatisch zirkuläre Imports und verhindert diese:
 
 ```markdown
 
@@ -88,7 +88,7 @@ Der Prozessor erkennt und verhindert automatisch zirkuläre Imports:
 
 # file-b.md
 
-@./file-a.md <!-- Dies wird erkannt und verhindert -->
+@./file-a.md <!-- Wird erkannt und verhindert -->
 ```
 
 ### Dateizugriffssicherheit
@@ -111,11 +111,11 @@ Berechtigungsprobleme oder andere Dateisystemfehler werden mit passenden Fehlerm
 
 ## Code-Regionserkennung
 
-Der Import-Prozessor verwendet die `marked`-Bibliothek, um Codeblöcke und Inline-Code-Spannen zu erkennen. Dadurch werden `@`-Imports innerhalb dieser Bereiche korrekt ignoriert. Dies ermöglicht eine robuste Verarbeitung verschachtelter Codeblöcke und komplexer Markdown-Strukturen.
+Der Import-Prozessor verwendet die `marked`-Bibliothek, um Codeblöcke und Inline-Code-Spannen zu erkennen. Dadurch wird sichergestellt, dass `@`-Imports innerhalb dieser Bereiche korrekt ignoriert werden. Dies ermöglicht eine robuste Verarbeitung verschachtelter Codeblöcke und komplexer Markdown-Strukturen.
 
 ## Import-Tree-Struktur
 
-Der Prozessor gibt einen Import-Tree zurück, der die Hierarchie der importierten Dateien darstellt. Dies hilft Benutzern dabei, Probleme mit ihren Context-Dateien zu debuggen, indem es zeigt, welche Dateien gelesen wurden und wie sie zueinander in Beziehung stehen.
+Der Prozessor gibt einen Import-Tree zurück, der die Hierarchie der importierten Dateien darstellt. Dies hilft Nutzern dabei, Probleme mit ihren Context-Dateien zu debuggen, indem es zeigt, welche Dateien gelesen wurden und wie sie zueinander in Beziehung stehen.
 
 Beispiel für eine Tree-Struktur:
 
@@ -133,13 +133,13 @@ Beispiel für eine Tree-Struktur:
 
 Der Tree behält die Reihenfolge bei, in der die Dateien importiert wurden, und zeigt die vollständige Import-Kette zu Debugging-Zwecken an.
 
-## Vergleich mit Claude Codes `/memory`-Ansatz (`claude.md`)
+## Vergleich mit dem `/memory`-Ansatz von Claude Code (`claude.md`)
 
-Das `/memory`-Feature von Claude Code (wie in `claude.md` zu sehen) erzeugt ein flaches, lineares Dokument durch Verkettung aller eingebundenen Dateien. Dabei werden die Dateigrenzen immer durch klare Kommentare und Pfadnamen markiert. Die Import-Hierarchie wird nicht explizit dargestellt, aber das LLM erhält alle Dateiinhalte und -pfade, was ausreicht, um die Hierarchie bei Bedarf zu rekonstruieren.
+Das `/memory`-Feature von Claude Code (wie in `claude.md` zu sehen) erzeugt ein flaches, lineares Dokument durch Aneinanderreihung aller eingebundenen Dateien. Dabei werden die Dateigrenzen immer durch klare Kommentare und Pfadnamen markiert. Die Import-Hierarchie wird nicht explizit dargestellt, aber das LLM erhält alle Dateiinhalte und Pfade, was ausreichend ist, um die Hierarchie bei Bedarf rekonstruieren zu können.
 
 Hinweis: Der Import-Baum dient hauptsächlich der Übersicht während der Entwicklung und hat nur begrenzte Relevanz für die Verarbeitung durch das LLM.
 
-## API-Referenz
+## API Reference
 
 ### `processImports(content, basePath, debugMode?, importState?)`
 
@@ -152,7 +152,7 @@ Verarbeitet Import-Anweisungen im Kontext der Dateiinhalte.
 - `debugMode` (boolean, optional): Ob das Debug-Logging aktiviert werden soll (Standard: false)
 - `importState` (ImportState, optional): Zustandsverfolgung zur Verhinderung zirkulärer Imports
 
-**Rückgabewert:** Promise<ProcessImportsResult> - Objekt mit verarbeitetem Inhalt und Import-Baumstruktur
+**Rückgabewert:** Promise&lt;ProcessImportsResult&gt; - Objekt mit verarbeitetem Inhalt und Import-Baumstruktur
 
 ### `ProcessImportsResult`
 
@@ -168,7 +168,7 @@ interface ProcessImportsResult {
 ```typescript
 interface MemoryFile {
   path: string; // Der Dateipfad
-  imports?: MemoryFile[]; // Direkte Imports, in der Reihenfolge, wie sie importiert wurden
+  imports?: MemoryFile[]; // Direkte Imports, in der Reihenfolge ihres Imports
 }
 ```
 
@@ -180,19 +180,19 @@ Validiert Import-Pfade, um sicherzustellen, dass sie sicher sind und sich innerh
 
 - `importPath` (string): Der zu validierende Import-Pfad
 - `basePath` (string): Das Basisverzeichnis für die Auflösung von relativen Pfaden
-- `allowedDirectories` (string[]): Array von erlaubten Verzeichnispfaden
+- `allowedDirectories` (string[]): Array mit erlaubten Verzeichnispfaden
 
 **Rückgabewert:** boolean - Ob der Import-Pfad gültig ist
 
 ### `findProjectRoot(startDir)`
 
-Findet das Projekt-Root-Verzeichnis, indem es von dem angegebenen Startverzeichnis auswärts nach einem `.git`-Verzeichnis sucht. Implementiert als **async** Funktion unter Verwendung von nicht-blockierenden Filesystem-APIs, um den Node.js Event Loop nicht zu blockieren.
+Findet das Projekt-Root-Verzeichnis, indem es rekursiv nach einem `.git`-Verzeichnis sucht, beginnend vom angegebenen Startverzeichnis. Implementiert als **async** Funktion unter Verwendung nicht-blockierender Filesystem-APIs, um den Node.js Event Loop nicht zu blockieren.
 
 **Parameter:**
 
-- `startDir` (string): Das Verzeichnis, von dem aus die Suche gestartet wird
+- `startDir` (string): Das Verzeichnis, ab dem die Suche gestartet wird
 
-**Rückgabewert:** Promise<string> - Das Projekt-Root-Verzeichnis (oder das Startverzeichnis, falls kein `.git` gefunden wird)
+**Rückgabewert:** Promise&lt;string&gt; - Das Root-Verzeichnis des Projekts (oder das Startverzeichnis, falls kein `.git` gefunden wurde)
 
 ## Best Practices
 
@@ -207,11 +207,11 @@ Findet das Projekt-Root-Verzeichnis, indem es von dem angegebenen Startverzeichn
 ### Häufige Probleme
 
 1. **Import funktioniert nicht**: Prüfe, ob die Datei existiert und der Pfad korrekt ist
-2. **Zyklische Import-Warnungen**: Überprüfe deine Import-Struktur auf zyklische Referenzen
+2. **Warnungen bei zirkulären Imports**: Überprüfe deine Import-Struktur auf zirkuläre Referenzen
 3. **Berechtigungsfehler**: Stelle sicher, dass die Dateien lesbar sind und sich innerhalb erlaubter Verzeichnisse befinden
-4. **Pfad-Auflösungsprobleme**: Verwende absolute Pfade, wenn relative Pfade nicht korrekt aufgelöst werden
+4. **Probleme bei der Pfadauflösung**: Verwende absolute Pfade, wenn relative Pfade nicht korrekt aufgelöst werden
 
-### Debug Mode
+### Debug Modus
 
 Aktiviere den Debug-Modus, um detaillierte Logs des Import-Prozesses zu sehen:
 

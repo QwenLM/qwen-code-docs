@@ -66,7 +66,7 @@ server.on('connect', (req, clientSocket, head) => {
   }
 
   clientSocket.on('error', (err) => {
-    // Cela peut arriver si le client raccroche.
+    // Cela peut arriver si le client raccroche prématurément.
     console.error(`[PROXY] Erreur socket cliente : ${err.message}`);
   });
 });

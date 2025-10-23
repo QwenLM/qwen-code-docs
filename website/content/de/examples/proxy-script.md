@@ -1,6 +1,6 @@
-# Beispiel Proxy-Skript
+# Beispiel Proxy Script
 
-Das folgende ist ein Beispiel für ein Proxy-Skript, das mit der Umgebungsvariable `GEMINI_SANDBOX_PROXY_COMMAND` verwendet werden kann. Dieses Skript erlaubt nur `HTTPS`-Verbindungen zu `example.com:443` und lehnt alle anderen Anfragen ab.
+Das folgende ist ein Beispiel für ein Proxy-Skript, das mit der Umgebungsvariable `GEMINI_SANDBOX_PROXY_COMMAND` verwendet werden kann. Dieses Skript erlaubt ausschließlich `HTTPS`-Verbindungen zu `example.com:443` und lehnt alle anderen Anfragen ab.
 
 ```javascript
 #!/usr/bin/env node
@@ -12,8 +12,8 @@ Das folgende ist ein Beispiel für ein Proxy-Skript, das mit der Umgebungsvariab
  */
 
 // Beispiel-Proxy-Server, der auf :::8877 lauscht und nur HTTPS-Verbindungen zu example.com erlaubt.
-// Setze `GEMINI_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js`, um den Proxy zusammen mit dem Sandbox-Modus zu starten.
-// Teste ihn mit `curl https://example.com` innerhalb der Sandbox (im Shell-Modus oder über das Shell-Tool).
+// Setze `GEMINI_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js`, um den Proxy zusammen mit der Sandbox zu starten.
+// Teste mit `curl https://example.com` innerhalb der Sandbox (im Shell-Modus oder über das Shell-Tool)
 
 import http from 'node:http';
 import net from 'node:net';
@@ -34,7 +34,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.on('connect', (req, clientSocket, head) => {
-  // req.url hat bei einer CONNECT-Anfrage das Format "hostname:port"
+  // req.url hat für eine CONNECT-Anfrage das Format "hostname:port"
   const { port, hostname } = new URL(`http://${req.url}`);
 
   console.log(`[PROXY] CONNECT-Anfrage abgefangen für: ${hostname}:${port}`);
@@ -45,12 +45,12 @@ server.on('connect', (req, clientSocket, head) => {
     ) &&
     port === ALLOWED_PORT
   ) {
-    console.log(`[PROXY] Verbindung zu ${hostname}:${port} erlaubt`);
+    console.log(`[PROXY] Verbindung erlaubt zu ${hostname}:${port}`);
 
-    // Stelle eine TCP-Verbindung zum ursprünglichen Ziel her.
+    // TCP-Verbindung zum ursprünglichen Ziel herstellen
     const serverSocket = net.connect(port, hostname, () => {
       clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-      // Erstelle einen Tunnel durch Weiterleitung der Daten zwischen Client und Zielserver.
+      // Tunnel erstellen, indem Daten zwischen Client und Zielserver weitergeleitet werden
       serverSocket.write(head);
       serverSocket.pipe(clientSocket);
       clientSocket.pipe(serverSocket);
@@ -61,12 +61,12 @@ server.on('connect', (req, clientSocket, head) => {
       clientSocket.end(`HTTP/1.1 502 Bad Gateway\r\n\r\n`);
     });
   } else {
-    console.log(`[PROXY] Verbindung zu ${hostname}:${port} abgelehnt`);
+    console.log(`[PROXY] Verbindung abgelehnt zu ${hostname}:${port}`);
     clientSocket.end('HTTP/1.1 403 Forbidden\r\n\r\n');
   }
 
   clientSocket.on('error', (err) => {
-    // Kann passieren, wenn der Client die Verbindung schließt.
+    // Kann passieren, wenn der Client die Verbindung abbricht
     console.error(`[PROXY] Client-Socket-Fehler: ${err.message}`);
   });
 });
@@ -75,7 +75,7 @@ server.listen(PROXY_PORT, () => {
   const address = server.address();
   console.log(`[PROXY] Proxy hört auf ${address.address}:${address.port}`);
   console.log(
-    `[PROXY] Erlaubte HTTPS-Verbindungen zu Domains: ${ALLOWED_DOMAINS.join(', ')}`,
+    `[PROXY] HTTPS-Verbindungen erlaubt zu Domains: ${ALLOWED_DOMAINS.join(', ')}`,
   );
 });
 ```

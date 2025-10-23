@@ -1,9 +1,9 @@
 # Authentifizierung einrichten
 
-Qwen Code unterstützt zwei Haupt-Authentifizierungsmethoden für den Zugriff auf KI-Modelle. Wähle die Methode, die am besten zu deinem Anwendungsfall passt:
+Qwen Code unterstützt zwei Hauptmethoden zur Authentifizierung für den Zugriff auf KI-Modelle. Wähle die Methode, die am besten zu deinem Anwendungsfall passt:
 
 1.  **Qwen OAuth (empfohlen):**
-    - Wähle diese Option, um dich mit deinem qwen.ai-Konto anzumelden.
+    - Verwende diese Option, um dich mit deinem qwen.ai-Konto anzumelden.
     - Beim ersten Start leitet Qwen Code dich zur Authentifizierungsseite von qwen.ai weiter. Nach erfolgreicher Authentifizierung werden deine Zugangsdaten lokal zwischengespeichert, sodass du bei zukünftigen Starts den Web-Login überspringen kannst.
     - **Voraussetzungen:**
       - Gültiges qwen.ai-Konto
@@ -11,7 +11,7 @@ Qwen Code unterstützt zwei Haupt-Authentifizierungsmethoden für den Zugriff au
     - **Vorteile:**
       - Nahtloser Zugriff auf Qwen-Modelle
       - Automatische Aktualisierung der Zugangsdaten
-      - Keine manuelle Verwaltung von API-Keys erforderlich
+      - Keine manuelle Verwaltung von API Keys erforderlich
 
     **Erste Schritte:**
 
@@ -22,20 +22,20 @@ Qwen Code unterstützt zwei Haupt-Authentifizierungsmethoden für den Zugriff au
 
     Die CLI öffnet automatisch deinen Browser und führt dich durch den Authentifizierungsprozess.
 
-    **Für Nutzer, die sich mit ihrem qwen.ai-Konto anmelden:**
+    **Für Nutzer, die sich über ihr qwen.ai-Konto authentifizieren:**
 
     **Quota:**
-    - 60 Anfragen pro Minute
-    - 2.000 Anfragen pro Tag
+    - 60 Requests pro Minute
+    - 2.000 Requests pro Tag
     - Token-Nutzung ist nicht relevant
 
     **Kosten:** Kostenlos
 
-    **Hinweis:** Es ist keine spezifische Quota für verschiedene Modelle festgelegt; ein Fallback auf andere Modelle kann erfolgen, um die Qualität der gemeinsamen Nutzung zu gewährleisten.
+    **Hinweis:** Es ist keine spezifische Quota für verschiedene Modelle festgelegt; es kann zu einem Fallback auf andere Modelle kommen, um die Qualität des gemeinsamen Nutzungserlebnisses zu gewährleisten.
 
 2.  **<a id="openai-api"></a>OpenAI-kompatible API:**
-    - Verwende API-Keys von OpenAI oder anderen kompatiblen Anbietern.
-    - Diese Methode ermöglicht den Zugriff auf verschiedene KI-Modelle über API-Keys.
+    - Verwende API Keys von OpenAI oder anderen kompatiblen Anbietern.
+    - Diese Methode ermöglicht den Zugriff auf verschiedene KI-Modelle über API Keys.
 
     **Konfigurationsmöglichkeiten:**
 
@@ -56,7 +56,7 @@ Qwen Code unterstützt zwei Haupt-Authentifizierungsmethoden für den Zugriff au
     OPENAI_MODEL=your_model_choice
     ```
 
-    **Unterstützte Anbieter:**
+    **Unterstützte Provider:**
     - OpenAI (https://platform.openai.com/api-keys)
     - Alibaba Cloud Bailian
     - ModelScope
@@ -74,11 +74,11 @@ Um während einer Sitzung zwischen verschiedenen Authentifizierungsmethoden zu w
 /auth
 ```
 
-Dadurch kannst du deine Authentifizierungsmethode neu konfigurieren, ohne die Anwendung neu zu starten.
+Dadurch kannst du deine Authentifizierungsmethode neu konfigurieren, ohne die Anwendung neu starten zu müssen.
 
-### Persistierung von Umgebungsvariablen mit `.env`-Dateien
+### Umgebungsvariablen mit `.env`-Dateien persistieren
 
-Du kannst eine **`.qwen/.env`**-Datei in deinem Projektverzeichnis oder in deinem Home-Verzeichnis anlegen. Eine einfache **`.env`**-Datei funktioniert ebenfalls, aber `.qwen/.env` wird empfohlen, um die Qwen Code-Variablen von anderen Tools zu isolieren.
+Du kannst eine **`.qwen/.env`**-Datei in deinem Projektverzeichnis oder in deinem Home-Verzeichnis erstellen. Eine einfache **`.env`**-Datei funktioniert ebenfalls, aber `.qwen/.env` wird empfohlen, um die Qwen Code-Variablen von anderen Tools zu isolieren.
 
 **Wichtig:** Einige Umgebungsvariablen (wie `DEBUG` und `DEBUG_MODE`) werden automatisch aus projektweiten `.env`-Dateien ausgeschlossen, um Störungen im Verhalten von qwen-code zu vermeiden. Verwende `.qwen/.env`-Dateien für qwen-code-spezifische Variablen.
 
@@ -132,13 +132,7 @@ die OpenAI-kompatible API-Methode:
 
 **Beispiel für Headless-Umgebungen:**
 
-```bash
-export OPENAI_API_KEY="your-api-key"
-export OPENAI_BASE_URL="https://api-inference.modelscope.cn/v1"
-export OPENAI_MODEL="Qwen/Qwen3-Coder-480B-A35B-Instruct"
+Wenn keine dieser Umgebungsvariablen in einer nicht-interaktiven Sitzung gesetzt ist, wird die CLI mit einem Fehler beendet.
 
-# Qwen Code ausführen
-qwen
-```
-
-Wenn in einer nicht-interaktiven Sitzung kein API-Schlüssel gesetzt ist, wird die CLI mit einem Fehler beendet und fordert dich auf, die Authentifizierung zu konfigurieren.
+Eine umfassende Anleitung zur programmatischen Nutzung von Qwen Code sowie zur Integration in  
+Automatisierungsworkflows findest du im [Headless Mode Guide](../headless.md).

@@ -2,45 +2,45 @@
 
 Qwen Code fournit une suite complète d'outils pour interagir avec le système de fichiers local. Ces outils permettent au modèle de lire, écrire, lister, rechercher et modifier des fichiers et des répertoires, le tout sous votre contrôle et généralement avec confirmation pour les opérations sensibles.
 
-**Note :** Tous les outils de système de fichiers fonctionnent dans un `rootDirectory` (généralement le répertoire de travail actuel où vous avez lancé le CLI) pour des raisons de sécurité. Les chemins que vous fournissez à ces outils sont généralement attendus en absolu ou sont résolus par rapport à ce répertoire racine.
+**Note :** Tous les outils de système de fichiers fonctionnent dans un `rootDirectory` (généralement le répertoire de travail courant où vous avez lancé la CLI) pour des raisons de sécurité. Les chemins que vous fournissez à ces outils sont généralement attendus en absolu ou sont résolus par rapport à ce répertoire racine.
 
 ## 1. `list_directory` (ReadFolder)
 
-`list_directory` liste les noms des fichiers et sous-répertoires directement présents dans un chemin de répertoire spécifié. Il peut éventuellement ignorer les entrées correspondant à des motifs glob fournis.
+`list_directory` liste les noms des fichiers et sous-dossiers directement présents dans un chemin de répertoire spécifié. Il peut éventuellement ignorer les entrées correspondant à des motifs glob fournis.
 
 - **Nom de l'outil :** `list_directory`
 - **Nom d'affichage :** ReadFolder
 - **Fichier :** `ls.ts`
 - **Paramètres :**
   - `path` (string, requis) : Le chemin absolu du répertoire à lister.
-  - `ignore` (tableau de strings, optionnel) : Une liste de motifs glob à exclure du listing (ex. : `["*.log", ".git"]`).
-  - `respect_git_ignore` (boolean, optionnel) : Indique s'il faut respecter les motifs `.gitignore` lors du listing des fichiers. Valeur par défaut : `true`.
+  - `ignore` (tableau de strings, optionnel) : Une liste de motifs glob à exclure de la liste (ex. : `["*.log", ".git"]`).
+  - `respect_git_ignore` (boolean, optionnel) : Indique s'il faut respecter les motifs `.gitignore` lors du listage des fichiers. Valeur par défaut : `true`.
 - **Comportement :**
   - Retourne une liste de noms de fichiers et de répertoires.
   - Indique si chaque entrée est un répertoire.
   - Trie les entrées avec les répertoires en premier, puis par ordre alphabétique.
-- **Sortie (`llmContent`) :** Une chaîne de caractères comme : `Directory listing for /path/to/your/folder:\n[DIR] subfolder1\nfile1.txt\nfile2.png`
+- **Sortie (`llmContent`) :** Une chaîne comme : `Directory listing for /path/to/your/folder:\n[DIR] subfolder1\nfile1.txt\nfile2.png`
 - **Confirmation :** Non.
 
 ## 2. `read_file` (ReadFile)
 
 `read_file` lit et retourne le contenu d’un fichier spécifié. Cet outil gère les fichiers texte, images (PNG, JPG, GIF, WEBP, SVG, BMP) et PDF. Pour les fichiers texte, il peut lire des plages de lignes spécifiques. Les autres types de fichiers binaires sont généralement ignorés.
 
-- **Nom de l’outil :** `read_file`
-- **Nom d’affichage :** ReadFile
-- **Fichier :** `read-file.ts`
-- **Paramètres :**
-  - `path` (string, requis) : Le chemin absolu du fichier à lire.
-  - `offset` (number, optionnel) : Pour les fichiers texte, le numéro de ligne de départ (0-based). Nécessite que `limit` soit défini.
-  - `limit` (number, optionnel) : Pour les fichiers texte, le nombre maximum de lignes à lire. Si omis, lit un maximum par défaut (ex. : 2000 lignes) ou le fichier entier si possible.
-- **Comportement :**
-  - Pour les fichiers texte : Retourne le contenu. Si `offset` et `limit` sont utilisés, retourne uniquement cette portion de lignes. Indique si le contenu a été tronqué en raison de limites de lignes ou de longueur de ligne.
-  - Pour les fichiers image et PDF : Retourne le contenu du fichier sous forme d’une structure encodée en base64 adaptée à la consommation par un modèle.
-  - Pour les autres fichiers binaires : Tente de les identifier et les ignore, en retournant un message indiquant qu’il s’agit d’un fichier binaire générique.
-- **Sortie :** (`llmContent`) :
-  - Pour les fichiers texte : Le contenu du fichier, éventuellement précédé d’un message de troncature (ex. : `[File content truncated: showing lines 1-100 of 500 total lines...]\nActual file content...`).
-  - Pour les fichiers image/PDF : Un objet contenant `inlineData` avec `mimeType` et les `data` encodées en base64 (ex. : `{ inlineData: { mimeType: 'image/png', data: 'base64encodedstring' } }`).
-  - Pour les autres fichiers binaires : Un message tel que `Cannot display content of binary file: /path/to/data.bin`.
+- **Nom de l’outil :** `read_file`  
+- **Nom d’affichage :** ReadFile  
+- **Fichier :** `read-file.ts`  
+- **Paramètres :**  
+  - `path` (string, requis) : Le chemin absolu du fichier à lire.  
+  - `offset` (number, optionnel) : Pour les fichiers texte, le numéro de ligne de départ (commençant à 0). Nécessite que `limit` soit défini.  
+  - `limit` (number, optionnel) : Pour les fichiers texte, le nombre maximum de lignes à lire. S’il est omis, un maximum par défaut est lu (par exemple, 2000 lignes) ou le fichier entier si possible.  
+- **Comportement :**  
+  - Pour les fichiers texte : Retourne le contenu. Si `offset` et `limit` sont utilisés, seul ce segment de lignes est retourné. Indique si le contenu a été tronqué en raison des limites de lignes ou de longueur de ligne.  
+  - Pour les fichiers image et PDF : Retourne le contenu du fichier sous forme d’une structure de données encodée en base64 adaptée à la consommation par le modèle.  
+  - Pour les autres fichiers binaires : Tente de les identifier et les ignore, en retournant un message indiquant qu’il s’agit d’un fichier binaire générique.  
+- **Sortie :** (`llmContent`) :  
+  - Pour les fichiers texte : Le contenu du fichier, éventuellement précédé d’un message de troncature (par exemple, `[File content truncated: showing lines 1-100 of 500 total lines...]\nActual file content...`).  
+  - Pour les fichiers image/PDF : Un objet contenant `inlineData` avec `mimeType` et les `data` encodées en base64 (par exemple, `{ inlineData: { mimeType: 'image/png', data: 'base64encodedstring' } }`).  
+  - Pour les autres fichiers binaires : Un message tel que `Cannot display content of binary file: /path/to/data.bin`.  
 - **Confirmation :** Non.
 
 ## 3. `write_file` (WriteFile)
@@ -51,13 +51,13 @@ Qwen Code fournit une suite complète d'outils pour interagir avec le système d
 - **Nom d'affichage :** WriteFile
 - **Fichier :** `write-file.ts`
 - **Paramètres :**
-  - `file_path` (string, requis) : Le chemin absolu du fichier dans lequel écrire.
+  - `file_path` (string, requis) : Le chemin absolu vers le fichier à écrire.
   - `content` (string, requis) : Le contenu à écrire dans le fichier.
 - **Comportement :**
   - Écrit le `content` fourni dans le `file_path`.
   - Crée les répertoires parents s'ils n'existent pas.
 - **Sortie (`llmContent`) :** Un message de succès, par exemple : `Successfully overwrote file: /path/to/your/file.txt` ou `Successfully created and wrote to new file: /path/to/new/file.txt`.
-- **Confirmation :** Oui. Affiche un diff des modifications et demande l'approbation de l'utilisateur avant d'écrire.
+- **Confirmation :** Oui. Affiche un diff des changements et demande l'approbation de l'utilisateur avant d'écrire.
 
 ## 4. `glob` (FindFiles)
 
@@ -69,8 +69,8 @@ Qwen Code fournit une suite complète d'outils pour interagir avec le système d
 - **Paramètres :**
   - `pattern` (string, requis) : Le pattern glob à utiliser pour la recherche (ex : `"*.py"`, `"src/**/*.js"`).
   - `path` (string, optionnel) : Le chemin absolu du répertoire dans lequel effectuer la recherche. S’il est omis, la recherche se fait à partir du répertoire racine de l’outil.
-  - `case_sensitive` (boolean, optionnel) : Indique si la recherche doit être sensible à la casse. Par défaut, `false`.
-  - `respect_git_ignore` (boolean, optionnel) : Indique si les règles définies dans `.gitignore` doivent être respectées. Par défaut, `true`.
+  - `case_sensitive` (boolean, optionnel) : Indique si la recherche doit être sensible à la casse. Valeur par défaut : `false`.
+  - `respect_git_ignore` (boolean, optionnel) : Indique si les règles du `.gitignore` doivent être respectées lors de la recherche. Valeur par défaut : `true`.
 - **Comportement :**
   - Recherche des fichiers correspondant au pattern glob dans le répertoire spécifié.
   - Retourne une liste de chemins absolus, triés du plus récemment modifié au plus ancien.
@@ -80,21 +80,21 @@ Qwen Code fournit une suite complète d'outils pour interagir avec le système d
 
 ## 5. `search_file_content` (SearchText)
 
-`search_file_content` recherche un motif d'expression régulière (regex) dans le contenu des fichiers d'un répertoire spécifié. Il peut filtrer les fichiers via un motif glob. Retourne les lignes contenant des correspondances, avec leurs chemins de fichiers et numéros de ligne.
+`search_file_content` recherche un motif d’expression régulière (regex) dans le contenu des fichiers d’un répertoire spécifié. Il peut filtrer les fichiers via un glob pattern. Retourne les lignes contenant des correspondances, avec leurs chemins de fichier et numéros de ligne.
 
-- **Nom de l'outil :** `search_file_content`
-- **Nom d'affichage :** SearchText
-- **Fichier :** `grep.ts`
+- **Nom de l’outil :** `search_file_content`  
+- **Nom d'affichage :** SearchText  
+- **Fichier :** `grep.ts`  
 - **Paramètres :**
-  - `pattern` (string, requis) : L'expression régulière à rechercher (ex. : `"function\s+myFunction"`).
-  - `path` (string, optionnel) : Le chemin absolu du répertoire dans lequel effectuer la recherche. Par défaut, utilise le répertoire de travail courant.
-  - `include` (string, optionnel) : Un motif glob pour filtrer les fichiers à explorer (ex. : `"*.js"`, `"src/**/*.{ts,tsx}"`). Si omis, la recherche s'applique à la plupart des fichiers (en respectant les ignorés classiques).
-  - `maxResults` (number, optionnel) : Nombre maximum de correspondances à retourner afin d'éviter un dépassement de contexte (par défaut : 20, max : 100). Utilisez une valeur plus faible pour les recherches larges, plus élevée pour les recherches précises.
+  - `pattern` (string, requis) : L’expression régulière à rechercher (ex. : `"function\s+myFunction"`).
+  - `path` (string, optionnel) : Le chemin absolu du répertoire dans lequel effectuer la recherche. Par défaut, utilise le répertoire courant.
+  - `include` (string, optionnel) : Un glob pattern pour filtrer les fichiers à explorer (ex. : `"*.js"`, `"src/**/*.{ts,tsx}"`). Si omis, la plupart des fichiers sont explorés (en respectant les ignorés classiques).
+  - `maxResults` (number, optionnel) : Nombre maximal de résultats à retourner afin d’éviter un dépassement de contexte (par défaut : 20, max : 100). Utilisez une valeur plus faible pour les recherches larges, et plus élevée pour celles qui sont précises.
 - **Comportement :**
-  - Utilise `git grep` si disponible dans un dépôt Git pour plus de rapidité ; sinon, utilise `grep` système ou une recherche en JavaScript.
-  - Retourne une liste des lignes correspondantes, chacune préfixée par son chemin de fichier (relatif au répertoire de recherche) et son numéro de ligne.
-  - Limite les résultats à 20 correspondances par défaut pour éviter un dépassement de contexte. En cas de troncature, affiche un avertissement clair avec des conseils pour affiner la recherche.
-- **Sortie (`llmContent`) :** Une chaîne formatée des correspondances, par exemple :
+  - Utilise `git grep` si disponible dans un dépôt Git pour accélérer la recherche ; sinon, bascule sur `grep` système ou une implémentation en JavaScript.
+  - Retourne une liste des lignes correspondantes, chacune préfixée par son chemin relatif au répertoire de recherche ainsi que son numéro de ligne.
+  - Limite par défaut les résultats à 20 correspondances maximum afin d’éviter un dépassement de contexte. En cas de troncature, affiche un avertissement clair avec des conseils pour affiner la recherche.
+- **Sortie (`llmContent`) :** Une chaîne formatée des correspondances, ex. :
 
   ```
   Found 3 matches for pattern "myFunction" in path "." (filter: "*.ts"):
@@ -138,36 +138,36 @@ search_file_content(pattern="function", include="*.js", maxResults=10)
 
 ## 6. `edit` (Modifier)
 
-`edit` remplace du texte dans un fichier. Par défaut, il remplace une seule occurrence, mais peut remplacer plusieurs occurrences lorsque `expected_replacements` est spécifié. Cet outil est conçu pour apporter des modifications précises et ciblées, et nécessite un contexte important autour de `old_string` pour s'assurer qu'il modifie le bon endroit.
+L’outil `edit` remplace du texte dans un fichier. Par défaut, il ne remplace qu’une seule occurrence, mais peut en remplacer plusieurs si le paramètre `expected_replacements` est spécifié. Cet outil est conçu pour effectuer des modifications précises et ciblées, et nécessite un contexte important autour de la chaîne `old_string` afin de s'assurer qu’il modifie le bon endroit.
 
-- **Nom de l'outil :** `edit`
+- **Nom de l’outil :** `edit`
 - **Nom affiché :** Modifier
 - **Fichier :** `edit.ts`
 - **Paramètres :**
   - `file_path` (string, requis) : Le chemin absolu vers le fichier à modifier.
   - `old_string` (string, requis) : Le texte littéral exact à remplacer.
 
-    **IMPORTANT :** Cette chaîne doit identifier de manière unique l'instance à modifier. Elle doit inclure au moins 3 lignes de contexte _avant_ et _après_ le texte cible, en respectant précisément les espaces et l'indentation. Si `old_string` est vide, l'outil tente de créer un nouveau fichier à `file_path` avec `new_string` comme contenu.
+    **IMPORTANT :** Cette chaîne doit identifier de manière unique l’instance à modifier. Elle doit inclure au moins 3 lignes de contexte _avant_ et _après_ le texte cible, avec une correspondance exacte sur les espaces et l’indentation. Si `old_string` est vide, l’outil tente de créer un nouveau fichier à l’emplacement `file_path` avec `new_string` comme contenu.
 
   - `new_string` (string, requis) : Le texte littéral exact qui remplacera `old_string`.
-  - `expected_replacements` (number, optionnel) : Le nombre d'occurrences à remplacer. La valeur par défaut est `1`.
+  - `expected_replacements` (nombre, optionnel) : Le nombre d’occurrences à remplacer. La valeur par défaut est `1`.
 
 - **Comportement :**
-  - Si `old_string` est vide et que `file_path` n'existe pas, crée un nouveau fichier avec `new_string` comme contenu.
-  - Si `old_string` est fourni, il lit le fichier `file_path` et tente de trouver exactement une occurrence de `old_string`.
-  - Si une occurrence est trouvée, il la remplace par `new_string`.
-  - **Fiabilité améliorée (Correction d'édition multi-étapes) :** Pour améliorer significativement le taux de réussite des modifications, notamment lorsque la `old_string` fournie par le modèle n'est pas parfaitement précise, l'outil intègre un mécanisme de correction d'édition en plusieurs étapes.
-    - Si la `old_string` initiale n'est pas trouvée ou correspond à plusieurs endroits, l'outil peut utiliser le modèle Qwen pour affiner de manière itérative `old_string` (et potentiellement `new_string`).
-    - Ce processus d'auto-correction tente d'identifier le segment unique que le modèle voulait modifier, rendant l'opération `edit` plus robuste même avec un contexte initial légèrement imparfait.
-- **Conditions d'échec :** Malgré le mécanisme de correction, l'outil échouera si :
-  - `file_path` n'est pas absolu ou se trouve en dehors du répertoire racine.
-  - `old_string` n'est pas vide, mais `file_path` n'existe pas.
-  - `old_string` est vide, mais `file_path` existe déjà.
-  - `old_string` n'est pas trouvé dans le fichier après les tentatives de correction.
-  - `old_string` est trouvé plusieurs fois, et le mécanisme d'auto-correction ne parvient pas à le résoudre en une correspondance unique et non ambiguë.
+  - Si `old_string` est vide et que `file_path` n’existe pas, crée un nouveau fichier contenant `new_string`.
+  - Si `old_string` est fourni, lit le fichier situé à `file_path` et tente de trouver exactement une occurrence de `old_string`.
+  - Si une seule occurrence est trouvée, elle est remplacée par `new_string`.
+  - **Fiabilité améliorée (Correction multi-étapes) :** Pour augmenter significativement le taux de réussite des modifications, notamment lorsque la `old_string` fournie par le modèle n’est pas parfaitement précise, l’outil utilise un mécanisme de correction en plusieurs étapes.
+    - Si la `old_string` initiale n’est pas trouvée ou correspond à plusieurs emplacements, l’outil peut utiliser le modèle Qwen pour raffiner progressivement `old_string` (et potentiellement `new_string`).
+    - Ce processus d’auto-correction tente d’identifier le segment unique que le modèle voulait modifier, rendant ainsi l’opération `edit` plus robuste même avec un contexte initial légèrement imparfait.
+- **Conditions d’échec :** Malgré le mécanisme de correction, l’outil échoue si :
+  - `file_path` n’est pas un chemin absolu ou se trouve en dehors du répertoire racine.
+  - `old_string` n’est pas vide mais le fichier `file_path` n’existe pas.
+  - `old_string` est vide mais le fichier `file_path` existe déjà.
+  - `old_string` n’est pas trouvée dans le fichier après les tentatives de correction.
+  - `old_string` apparaît plusieurs fois et le mécanisme de correction ne parvient pas à isoler une correspondance unique et non ambiguë.
 - **Sortie (`llmContent`) :**
   - En cas de succès : `Successfully modified file: /path/to/file.txt (1 replacements).` ou `Created new file: /path/to/new_file.txt with provided content.`
-  - En cas d'échec : Un message d'erreur expliquant la raison (par exemple, `Failed to edit, 0 occurrences found...`, `Failed to edit, expected 1 occurrences but found 2...`).
-- **Confirmation :** Oui. Affiche un diff des modifications proposées et demande l'approbation de l'utilisateur avant d'écrire dans le fichier.
+  - En cas d’échec : Un message d’erreur expliquant la raison (ex. : `Failed to edit, 0 occurrences found...`, `Failed to edit, expected 1 occurrences but found 2...`).
+- **Confirmation :** Oui. Affiche un diff des changements proposés et demande l’approbation de l’utilisateur avant d’écrire dans le fichier.
 
-Ces outils du système de fichiers fournissent une base pour que Qwen Code puisse comprendre et interagir avec le contexte de votre projet local.
+Ces outils du système de fichiers constituent une base permettant à Qwen Code de comprendre et d’interagir avec le contexte local de votre projet.

@@ -37,7 +37,7 @@ server.on('connect', (req, clientSocket, head) => {
   // req.url будет в формате "hostname:port" для CONNECT запроса.
   const { port, hostname } = new URL(`http://${req.url}`);
 
-  console.log(`[PROXY] Перехватываем CONNECT запрос: ${hostname}:${port}`);
+  console.log(`[PROXY] Перехват CONNECT запроса для: ${hostname}:${port}`);
 
   if (
     ALLOWED_DOMAINS.some(

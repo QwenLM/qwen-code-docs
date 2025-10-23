@@ -4,7 +4,7 @@ Ce document décrit l'outil `save_memory` pour Qwen Code.
 
 ## Description
 
-Utilisez `save_memory` pour sauvegarder et rappeler des informations entre vos sessions Qwen Code. Avec `save_memory`, vous pouvez indiquer au CLI de mémoriser des détails importants d'une session à l'autre, offrant ainsi une assistance personnalisée et ciblée.
+Utilisez `save_memory` pour sauvegarder et rappeler des informations entre vos sessions Qwen Code. Avec `save_memory`, vous pouvez indiquer au CLI de mémoriser des détails importants d'une session à l'autre, afin d'obtenir une assistance personnalisée et ciblée.
 
 ### Arguments
 
@@ -16,7 +16,7 @@ Utilisez `save_memory` pour sauvegarder et rappeler des informations entre vos s
 
 L'outil ajoute le `fact` fourni à votre fichier de contexte situé dans le répertoire utilisateur (`~/.qwen/QWEN.md` par défaut). Ce nom de fichier peut être configuré via `contextFileName`.
 
-Une fois ajoutés, les faits sont stockés sous une section intitulée `## Qwen Added Memories`. Ce fichier est chargé comme contexte lors des sessions suivantes, permettant au CLI de se rappeler les informations sauvegardées.
+Une fois ajoutés, les faits sont stockés sous une section intitulée `## Qwen Added Memories`. Ce fichier est chargé comme contexte lors des sessions suivantes, permettant ainsi au CLI de se souvenir des informations sauvegardées.
 
 Utilisation :
 
@@ -24,18 +24,18 @@ Utilisation :
 save_memory(fact="Votre fait ici.")
 ```
 
-### Exemples avec `save_memory`
+### Exemples de `save_memory`
 
 Mémoriser une préférence utilisateur :
 
 ```
-save_memory(fact="Mon langage de programmation préféré est Python.")
+save_memory(fact="My preferred programming language is Python.")
 ```
 
 Stocker un détail spécifique à un projet :
 
 ```
-save_memory(fact="Le projet sur lequel je travaille actuellement s'appelle 'qwen-code'.")
+save_memory(fact="The project I'm currently working on is called 'qwen-code'.")
 ```
 
 ## Notes importantes

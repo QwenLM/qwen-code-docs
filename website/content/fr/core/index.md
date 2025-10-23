@@ -5,7 +5,7 @@ Le package core de Qwen Code (`packages/core`) constitue la partie backend de Qw
 ## Navigation dans cette section
 
 - **[API des outils principaux](./tools-api.md) :** Informations sur la façon dont les outils sont définis, enregistrés et utilisés par le core.
-- **[Processeur d'importation de mémoire](./memport.md) :** Documentation de la fonctionnalité modulaire d'import QWEN.md utilisant la syntaxe @file.md.
+- **[Processeur d'importation mémoire](./memport.md) :** Documentation de la fonctionnalité modulaire d'import QWEN.md utilisant la syntaxe @file.md.
 
 ## Rôle du core
 
@@ -23,18 +23,18 @@ Bien que la partie `packages/cli` de Qwen Code fournisse l'interface utilisateur
 
 ## Considérations de sécurité
 
-Le cœur joue un rôle essentiel en matière de sécurité :
+Le core joue un rôle essentiel en matière de sécurité :
 
-- **Gestion des clés API :** Il gère les identifiants des fournisseurs et s'assure qu'ils sont utilisés de manière sécurisée lors des communications avec les APIs.
-- **Exécution des outils :** Lorsque les outils interagissent avec le système local (par exemple, `run_shell_command`), le cœur (et les implémentations d'outils sous-jacentes) doit le faire avec une prudence appropriée, souvent en utilisant des mécanismes de sandboxing pour éviter les modifications non intentionnelles.
+- **Gestion des API keys :** Il gère les identifiants des providers et s'assure qu'ils sont utilisés de manière sécurisée lors des communications avec les APIs.
+- **Exécution des outils :** Lorsque les outils interagissent avec le système local (ex. : `run_shell_command`), le core (et les implémentations d'outils sous-jacentes) doit le faire avec une prudence appropriée, souvent en utilisant des mécanismes de sandboxing pour éviter les modifications non intentionnelles.
 
-## Compression de l'historique des discussions
+## Compression de l'historique des conversations
 
-Pour s'assurer que les conversations longues ne dépassent pas les limites de tokens du modèle sélectionné, le cœur inclut une fonctionnalité de compression de l'historique des discussions.
+Pour s'assurer que les longues conversations ne dépassent pas les limites de tokens du modèle sélectionné, le core inclut une fonctionnalité de compression de l'historique des discussions.
 
-Lorsqu'une conversation approche de la limite de tokens pour le modèle configuré, le cœur compresse automatiquement l'historique de la conversation avant de l'envoyer au modèle. Cette compression est conçue pour être sans perte en termes d'informations transmises, mais elle réduit le nombre total de tokens utilisés.
+Lorsqu'une conversation approche de la limite de tokens pour le modèle configuré, le core compresse automatiquement l'historique de la conversation avant de l'envoyer au modèle. Cette compression est conçue pour être sans perte en termes d'informations transmises, mais elle réduit le nombre total de tokens utilisés.
 
-Vous pouvez trouver les limites de tokens pour les modèles de chaque fournisseur dans leur documentation.
+Vous pouvez trouver les limites de tokens pour les modèles de chaque provider dans leur documentation.
 
 ## Fallback de modèle
 
@@ -48,7 +48,7 @@ Le service de découverte de fichiers est responsable de la recherche des fichie
 
 ## Service de découverte mémoire
 
-Le service de découverte mémoire est chargé de rechercher et charger les fichiers de contexte (par défaut : `QWEN.md`) qui fournissent un contexte au modèle. Il recherche ces fichiers de manière hiérarchique, en commençant par le répertoire de travail actuel, puis en remontant jusqu'à la racine du projet et au répertoire personnel de l'utilisateur. Il recherche également dans les sous-répertoires.
+Le service de découverte mémoire est chargé de trouver et charger les fichiers de contexte (par défaut : `QWEN.md`) qui fournissent un contexte au modèle. Il recherche ces fichiers de manière hiérarchique, en commençant par le répertoire de travail courant, puis en remontant jusqu'à la racine du projet et au répertoire personnel de l'utilisateur. Il recherche également dans les sous-répertoires.
 
 Cela vous permet d'avoir des fichiers de contexte globaux, au niveau du projet et au niveau des composants, qui sont tous combinés pour fournir au modèle les informations les plus pertinentes.
 

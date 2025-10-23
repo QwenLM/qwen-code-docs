@@ -1,10 +1,10 @@
 # Memory Import Processor
 
-Le Memory Import Processor est une fonctionnalité qui vous permet de modulariser vos fichiers de contexte (par exemple, `QWEN.md`) en important du contenu depuis d'autres fichiers en utilisant la syntaxe `@file.md`.
+Le Memory Import Processor est une fonctionnalité qui vous permet de modulariser vos fichiers de contexte (par exemple, `QWEN.md`) en important du contenu depuis d'autres fichiers via la syntaxe `@file.md`.
 
 ## Aperçu
 
-Cette fonctionnalité vous permet de découper des fichiers de contexte volumineux (par exemple, `QWEN.md`) en composants plus petits et plus faciles à gérer, qui peuvent être réutilisés dans différents contextes. Le processeur d'import prend en charge à la fois les chemins relatifs et absolus, avec des fonctionnalités de sécurité intégrées pour éviter les imports circulaires et garantir la sécurité d'accès aux fichiers.
+Cette fonctionnalité vous permet de découper des fichiers de contexte volumineux (comme `QWEN.md`) en composants plus petits et plus faciles à gérer, qui peuvent être réutilisés dans différents contextes. Le processeur d'import prend en charge les chemins relatifs et absolus, avec des fonctionnalités de sécurité intégrées pour éviter les imports circulaires et garantir la sécurité d'accès aux fichiers.
 
 ## Syntaxe
 
@@ -23,9 +23,9 @@ Plus de contenu ici.
 @./shared/configuration.md
 ```
 
-## Formats de chemin pris en charge
+## Formats de Chemin Supportés
 
-### Chemins relatifs
+### Chemins Relatifs
 
 - `@./file.md` - Import depuis le même répertoire
 - `@../file.md` - Import depuis le répertoire parent
@@ -88,7 +88,7 @@ Le processeur détecte automatiquement et empêche les imports circulaires :
 
 # file-b.md
 
-@./file-a.md <!-- Ceci sera détecté et empêché -->
+@./file-a.md <!-- Ceci sera détecté et bloqué -->
 ```
 
 ### Sécurité d'accès aux fichiers
@@ -135,9 +135,9 @@ L'arbre préserve l'ordre dans lequel les fichiers ont été importés et montre
 
 ## Comparaison avec l'approche `/memory` de Claude Code (`claude.md`)
 
-La fonctionnalité `/memory` de Claude Code (comme vu dans `claude.md`) produit un document plat et linéaire en concaténant tous les fichiers inclus, en marquant toujours les limites des fichiers avec des commentaires clairs et des noms de chemins. Elle ne présente pas explicitement la hiérarchie d'importation, mais le LLM reçoit tous les contenus et chemins des fichiers, ce qui suffit pour reconstruire la hiérarchie si nécessaire.
+La fonctionnalité `/memory` de Claude Code (comme vu dans `claude.md`) produit un document plat et linéaire en concaténant tous les fichiers inclus, en marquant toujours les limites des fichiers avec des commentaires clairs et des noms de chemins. Elle ne présente pas explicitement la hiérarchie des imports, mais le LLM reçoit tous les contenus et chemins des fichiers, ce qui suffit pour reconstruire la hiérarchie si nécessaire.
 
-Note : L'arbre d'importation est principalement utile pour la clarté pendant le développement et a une pertinence limitée pour la consommation par le LLM.
+Note : L'arbre des imports sert principalement à la clarté pendant le développement et a une pertinence limitée pour la consommation par le LLM.
 
 ## Référence API
 
@@ -149,17 +149,17 @@ Traite les instructions d'import dans le contenu d'un fichier de contexte.
 
 - `content` (string) : Le contenu à traiter pour les imports
 - `basePath` (string) : Le chemin du répertoire où se trouve le fichier courant
-- `debugMode` (boolean, optional) : Active ou non le logging de debug (par défaut : false)
-- `importState` (ImportState, optional) : État de suivi pour prévenir les imports circulaires
+- `debugMode` (boolean, optionnel) : Active ou non le logging de débogage (par défaut : false)
+- `importState` (ImportState, optionnel) : État de suivi pour prévenir les imports circulaires
 
-**Retourne :** Promise<ProcessImportsResult> - Objet contenant le contenu traité et l'arbre des imports
+**Retourne :** Promise&lt;ProcessImportsResult&gt; - Objet contenant le contenu traité et l'arbre des imports
 
 ### `ProcessImportsResult`
 
 ```typescript
 interface ProcessImportsResult {
   content: string; // Le contenu traité avec les imports résolus
-  importTree: MemoryFile; // Structure arborescente montrant la hiérarchie des imports
+  importTree: MemoryFile; // Structure arborescente représentant la hiérarchie des imports
 }
 ```
 
@@ -186,34 +186,34 @@ Valide les chemins d'import pour s'assurer qu'ils sont sûrs et situés dans les
 
 ### `findProjectRoot(startDir)`
 
-Trouve la racine du projet en recherchant un répertoire `.git` en remontant à partir du répertoire de départ donné. Implémentée comme une fonction **async** utilisant des APIs de système de fichiers non bloquantes pour éviter de bloquer la boucle d'événements de Node.js.
+Recherche la racine du projet en cherchant un répertoire `.git` en remontant à partir du répertoire de départ donné. Implémentée comme une fonction **async** utilisant des APIs de système de fichiers non bloquantes pour éviter de bloquer la boucle d'événements de Node.js.
 
 **Paramètres :**
 
 - `startDir` (string) : Le répertoire à partir duquel commencer la recherche
 
-**Retourne :** Promise<string> - Le répertoire racine du projet (ou le répertoire de départ si aucun `.git` n'est trouvé)
+**Retourne :** Promise&lt;string&gt; - Le répertoire racine du projet (ou le répertoire de départ si aucun `.git` n'est trouvé)
 
 ## Bonnes pratiques
 
-1. **Utilisez des noms de fichiers descriptifs** pour les composants importés
-2. **Gardez les imports peu profonds** - évitez les chaînes d'importation trop imbriquées
-3. **Documentez votre structure** - maintenez une hiérarchie claire des fichiers importés
-4. **Testez vos imports** - assurez-vous que tous les fichiers référencés existent et sont accessibles
-5. **Utilisez des chemins relatifs** quand c'est possible pour une meilleure portabilité
+1. **Utilise des noms de fichiers descriptifs** pour les composants importés
+2. **Garde les imports peu profonds** - évite les chaînes d'importation trop imbriquées
+3. **Documente ta structure** - maintiens une hiérarchie claire des fichiers importés
+4. **Teste tes imports** - assure-toi que tous les fichiers référencés existent et sont accessibles
+5. **Utilise des chemins relatifs** quand c'est possible pour une meilleure portabilité
 
 ## Dépannage
 
 ### Problèmes courants
 
-1. **Import qui ne fonctionne pas** : Vérifiez que le fichier existe et que le chemin est correct
-2. **Avertissements d'import circulaire** : Revoyez votre structure d'import pour détecter les références circulaires
-3. **Erreurs de permission** : Assurez-vous que les fichiers sont lisibles et se trouvent dans les répertoires autorisés
-4. **Problèmes de résolution de chemin** : Utilisez des chemins absolus si les chemins relatifs ne se résolvent pas correctement
+1. **Import qui ne fonctionne pas** : Vérifie que le fichier existe et que le chemin est correct
+2. **Avertissements d'import circulaire** : Révise ta structure d'importation pour détecter les références circulaires
+3. **Erreurs de permission** : Assure-toi que les fichiers sont lisibles et se trouvent dans des répertoires autorisés
+4. **Problèmes de résolution de chemin** : Utilise des chemins absolus si les chemins relatifs ne se résolvent pas correctement
 
-### Mode debug
+### Mode débogage
 
-Activez le mode debug pour voir les logs détaillés du processus d'import :
+Active le mode débogage pour voir les logs détaillés du processus d'import :
 
 ```typescript
 const result = await processImports(content, basePath, true);

@@ -4,7 +4,7 @@ Dieses Dokument beschreibt das `web_fetch` Tool für Qwen Code.
 
 ## Beschreibung
 
-Verwende `web_fetch`, um Inhalte von einer angegebenen URL abzurufen und mit einem KI-Modell zu verarbeiten. Das Tool benötigt eine URL und einen Prompt als Eingabe, ruft den Inhalt der URL ab, konvertiert HTML in Markdown und verarbeitet den Inhalt anhand des Prompts mit einem kleinen, schnellen Modell.
+Verwende `web_fetch`, um Inhalte von einer angegebenen URL abzurufen und mit einem KI-Modell zu verarbeiten. Das Tool benötigt eine URL und einen Prompt als Eingabe, ruft den Inhalt der URL ab, konvertiert HTML in Markdown und verarbeitet den Inhalt anschließend mit dem Prompt unter Verwendung eines kleinen, schnellen Modells.
 
 ### Argumente
 
@@ -17,7 +17,7 @@ Verwende `web_fetch`, um Inhalte von einer angegebenen URL abzurufen und mit ein
 
 Um `web_fetch` mit Qwen Code zu verwenden, gib eine URL und einen Prompt an, der beschreibt, was du von dieser URL extrahieren möchtest. Das Tool fordert vor dem Abrufen der URL eine Bestätigung an. Sobald bestätigt, ruft das Tool den Inhalt direkt ab und verarbeitet ihn mithilfe eines KI-Modells.
 
-Das Tool konvertiert HTML automatisch in Text, behandelt GitHub-Blob-URLs (indem es sie in Raw-URLs umwandelt) und aktualisiert HTTP-URLs aus Sicherheitsgründen auf HTTPS.
+Das Tool konvertiert HTML automatisch in Text, verarbeitet GitHub-Blob-URLs (indem es sie in Raw-URLs umwandelt) und aktualisiert HTTP-URLs aus Sicherheitsgründen auf HTTPS.
 
 Verwendung:
 
@@ -48,7 +48,7 @@ web_fetch(url="https://github.com/QwenLM/Qwen/blob/main/README.md", prompt="What
 ## Wichtige Hinweise
 
 - **Einzelne URL-Verarbeitung:** `web_fetch` verarbeitet jeweils nur eine URL. Um mehrere URLs zu analysieren, führe separate Aufrufe des Tools durch.
-- **URL-Format:** Das Tool führt HTTP-URLs automatisch auf HTTPS hoch und wandelt GitHub-Blob-URLs in das Raw-Format um, um einen besseren Zugriff auf den Inhalt zu ermöglichen.
+- **URL-Format:** Das Tool aktualisiert HTTP-URLs automatisch auf HTTPS und wandelt GitHub-Blob-URLs in das Raw-Format um, um einen besseren Zugriff auf den Inhalt zu ermöglichen.
 - **Inhaltsverarbeitung:** Das Tool ruft den Inhalt direkt ab und verarbeitet ihn mithilfe eines KI-Modells, wobei HTML in ein lesbares Textformat konvertiert wird.
 - **Ausgabegüte:** Die Qualität der Ausgabe hängt von der Klarheit der Anweisungen im Prompt ab.
 - **MCP-Tools:** Falls ein von MCP bereitgestelltes Web-Fetch-Tool verfügbar ist (beginnend mit "mcp\_\_"), bevorzuge die Verwendung dieses Tools, da es möglicherweise weniger Einschränkungen unterliegt.
