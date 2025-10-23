@@ -4,7 +4,7 @@ Dieses Dokument bietet eine Anleitung zur Konfiguration und Verwendung von Model
 
 ## Was ist ein MCP-Server?
 
-Ein MCP-Server ist eine Anwendung, die über das Model Context Protocol Tools und Ressourcen für die CLI bereitstellt, sodass diese mit externen Systemen und Datenquellen interagieren kann. MCP-Server fungieren als Brücke zwischen dem Modell und deiner lokalen Umgebung oder anderen Services wie APIs.
+Ein MCP-Server ist eine Anwendung, die Tools und Ressourcen über das Model Context Protocol für die CLI verfügbar macht, wodurch diese mit externen Systemen und Datenquellen interagieren kann. MCP-Server fungieren als Brücke zwischen dem Modell und deiner lokalen Umgebung oder anderen Services wie APIs.
 
 Ein MCP-Server ermöglicht der CLI Folgendes:
 
@@ -12,7 +12,7 @@ Ein MCP-Server ermöglicht der CLI Folgendes:
 - **Tools ausführen:** Bestimmte Tools mit definierten Argumenten aufrufen und strukturierte Antworten erhalten.
 - **Auf Ressourcen zugreifen:** Daten aus bestimmten Ressourcen lesen (wobei sich die CLI hauptsächlich auf die Tool-Ausführung konzentriert).
 
-Mit einem MCP-Server kannst du die Fähigkeiten der CLI erweitern, um Aktionen auszuführen, die über die integrierten Funktionen hinausgehen, wie z. B. die Interaktion mit Datenbanken, APIs, benutzerdefinierten Skripten oder spezialisierten Workflows.
+Mit einem MCP-Server kannst du die Fähigkeiten der CLI erweitern, um Aktionen auszuführen, die über die integrierten Funktionen hinausgehen, wie z. B. die Interaktion mit Datenbanken, APIs, benutzerdefinierten Skripten oder spezialisierten Workflows.
 
 ## Core Integration Architecture
 
@@ -20,21 +20,21 @@ Qwen Code integriert sich über MCP-Server durch ein ausgeklügeltes Discovery- 
 
 ### Discovery Layer (`mcp-client.ts`)
 
-Der Discovery-Prozess wird von `discoverMcpTools()` orchestriert, welches:
+Der Discover-Prozess wird von `discoverMcpTools()` orchestriert, welches:
 
 1. **Durchläuft die konfigurierten Server** aus der `mcpServers`-Konfiguration in deiner `settings.json`
 2. **Stellt Verbindungen her** unter Verwendung geeigneter Transportmechanismen (Stdio, SSE oder Streamable HTTP)
 3. **Ruft Tool-Definitionen** von jedem Server mittels des MCP-Protokolls ab
-4. **Bereinigt und validiert** die Tool-Schemas für die Kompatibilität mit der Qwen API
+4. **Bereinigt und validiert** die Tool-Schemas für Kompatibilität mit der Qwen-API
 5. **Registriert Tools** im globalen Tool-Registry mit Konfliktlösung
 
 ### Execution Layer (`mcp-tool.ts`)
 
 Jedes gefundene MCP-Tool wird in eine `DiscoveredMCPTool`-Instanz verpackt, die:
 
-- **Bestätigungslogik behandelt** basierend auf den Server-Vertrauenseinstellungen und Benutzerpräferenzen
-- **Tool-Ausführung verwaltet** durch Aufruf des MCP-Servers mit korrekten Parametern
-- **Antworten verarbeitet** sowohl für den LLM-Kontext als auch für die Anzeige beim Benutzer
+- **Bestätigungslogik behandelt**, basierend auf den Server-Vertrauenseinstellungen und Benutzerpräferenzen
+- **Tool-Ausführung verwaltet**, indem der MCP-Server mit korrekten Parametern aufgerufen wird
+- **Antworten verarbeitet**, sowohl für den LLM-Kontext als auch zur Anzeige für den Benutzer
 - **Verbindungsstatus verwaltet** und Timeouts behandelt
 
 ### Transportmechanismen
@@ -43,7 +43,7 @@ Die CLI unterstützt drei MCP-Transporttypen:
 
 - **Stdio Transport:** Startet einen Subprozess und kommuniziert über stdin/stdout
 - **SSE Transport:** Verbindet sich mit Server-Sent Events Endpoints
-- **Streamable HTTP Transport:** Nutzt HTTP-Streaming zur Kommunikation
+- **Streamable HTTP Transport:** Nutzt HTTP Streaming zur Kommunikation
 
 ## Wie du deinen MCP-Server einrichtest
 
@@ -51,14 +51,37 @@ Qwen Code verwendet die `mcpServers`-Konfiguration in deiner `settings.json`-Dat
 
 ### Konfiguriere den MCP-Server in settings.json
 
-Du kannst MCP-Server global in der Datei `~/.qwen/settings.json` oder im Stammverzeichnis deines Projekts konfigurieren, indem du die Datei `.qwen/settings.json` erstellst oder öffnest. Füge innerhalb der Datei den Konfigurationsblock `mcp_servers` hinzu.
+Du kannst MCP-Server in deiner `settings.json` Datei auf zwei Hauptarten konfigurieren: über das Top-Level `mcpServers` Objekt für spezifische Server-Definitionen und über das `mcp` Objekt für globale Einstellungen, die die Server-Erkennung und Ausführung steuern.
+
+#### Globale MCP-Einstellungen (`mcp`)
+
+Das `mcp` Objekt in deiner `settings.json` erlaubt dir globale Regeln für alle MCP-Server zu definieren.
+
+- **`mcp.serverCommand`** (string): Ein globaler Befehl zum Starten eines MCP-Servers.
+- **`mcp.allowed`** (Array aus Strings): Eine Liste von MCP-Server-Namen, die erlaubt sind. Wenn dies gesetzt ist, werden nur Server aus dieser Liste (die mit den Keys im `mcpServers` Objekt übereinstimmen) verbunden.
+- **`mcp.excluded`** (Array aus Strings): Eine Liste von MCP-Server-Namen, die ausgeschlossen sind. Server in dieser Liste werden nicht verbunden.
+
+**Beispiel:**
+
+```json
+{
+  "mcp": {
+    "allowed": ["my-trusted-server"],
+    "excluded": ["experimental-server"]
+  }
+}
+```
+
+#### Server-spezifische Konfiguration (`mcpServers`)
+
+Das `mcpServers`-Objekt ist der Ort, an dem du jeden einzelnen MCP-Server definierst, mit dem sich die CLI verbinden soll.
 
 ### Konfigurationsstruktur
 
 Füge ein `mcpServers`-Objekt zu deiner `settings.json`-Datei hinzu:
 
 ```json
-{ ...file contains other config objects
+{ ...Datei enthält andere Konfigurationsobjekte
   "mcpServers": {
     "serverName": {
       "command": "path/to/server",
@@ -78,7 +101,7 @@ Füge ein `mcpServers`-Objekt zu deiner `settings.json`-Datei hinzu:
 
 Jede Server-Konfiguration unterstützt folgende Eigenschaften:
 
-#### Erforderlich (einer der folgenden Werte)
+#### Erforderlich (eine der folgenden)
 
 - **`command`** (string): Pfad zur ausführbaren Datei für den Stdio-Transport
 - **`url`** (string): SSE-Endpoint-URL (z. B. `"http://localhost:8080/sse"`)
@@ -86,14 +109,16 @@ Jede Server-Konfiguration unterstützt folgende Eigenschaften:
 
 #### Optional
 
-- **`args`** (string[]): Command-line-Argumente für den Stdio-Transport
+- **`args`** (string[]): Kommandozeilenargumente für den Stdio-Transport
 - **`headers`** (object): Benutzerdefinierte HTTP-Header bei Verwendung von `url` oder `httpUrl`
-- **`env`** (object): Umgebungsvariablen für den Server-Prozess. Werte können Umgebungsvariablen mit der Syntax `$VAR_NAME` oder `${VAR_NAME}` referenzieren
+- **`env`** (object): Umgebungsvariablen für den Server-Prozess. Werte können mithilfe der Syntax `$VAR_NAME` oder `${VAR_NAME}` auf Umgebungsvariablen verweisen
 - **`cwd`** (string): Arbeitsverzeichnis für den Stdio-Transport
 - **`timeout`** (number): Request-Timeout in Millisekunden (Standard: 600.000 ms = 10 Minuten)
-- **`trust`** (boolean): Wenn `true`, werden alle Tool-Call-Bestätigungen für diesen Server umgangen (Standard: `false`)
-- **`includeTools`** (string[]): Liste der Tool-Namen, die von diesem MCP-Server eingebunden werden sollen. Wenn angegeben, sind nur die hier aufgelisteten Tools von diesem Server verfügbar (Whitelist-Verhalten). Falls nicht angegeben, sind standardmäßig alle Tools des Servers aktiviert.
-- **`excludeTools`** (string[]): Liste der Tool-Namen, die von diesem MCP-Server ausgeschlossen werden sollen. Die hier aufgelisteten Tools stehen dem Modell nicht zur Verfügung, selbst wenn sie vom Server bereitgestellt werden. **Hinweis:** `excludeTools` hat Vorrang vor `includeTools` – wenn ein Tool in beiden Listen enthalten ist, wird es ausgeschlossen.
+- **`trust`** (boolean): Wenn `true`, werden alle Tool-Aufrufbestätigungen für diesen Server umgangen (Standard: `false`)
+- **`includeTools`** (string[]): Liste der Tool-Namen, die von diesem MCP-Server eingebunden werden sollen. Wenn angegeben, sind nur die hier gelisteten Tools von diesem Server verfügbar (Allowlist-Verhalten). Falls nicht angegeben, sind standardmäßig alle Tools des Servers aktiviert.
+- **`excludeTools`** (string[]): Liste der Tool-Namen, die von diesem MCP-Server ausgeschlossen werden sollen. Die hier gelisteten Tools stehen dem Modell nicht zur Verfügung, selbst wenn sie vom Server bereitgestellt werden. **Hinweis:** `excludeTools` hat Vorrang vor `includeTools` – wenn ein Tool in beiden Listen enthalten ist, wird es ausgeschlossen.
+- **`targetAudience`** (string): Die OAuth Client ID, die in der IAP-geschützten Anwendung allowlisted ist, auf die du zugreifen möchtest. Wird verwendet mit `authProviderType: 'service_account_impersonation'`.
+- **`targetServiceAccount`** (string): Die E-Mail-Adresse des Google Cloud Service Accounts, der impersonated werden soll. Wird verwendet mit `authProviderType: 'service_account_impersonation'`.
 
 ### OAuth-Unterstützung für Remote-MCP-Server
 
@@ -120,7 +145,7 @@ Die CLI führt dann automatisch folgende Schritte aus:
 - Führt eine dynamische Client-Registrierung durch, falls unterstützt
 - Verarbeitet den OAuth-Ablauf und das Token-Management
 
-#### Authentication Flow
+#### Authentifizierungsablauf
 
 Beim Verbinden mit einem OAuth-fähigen Server:
 
@@ -129,24 +154,24 @@ Beim Verbinden mit einem OAuth-fähigen Server:
 3. **Browser öffnet sich** für die Benutzerauthentifizierung (erfordert lokalen Browserzugriff)
 4. **Authorization Code** wird gegen Access Tokens eingetauscht
 5. **Tokens werden sicher gespeichert** für zukünftige Verwendung
-6. **Erneuter Verbindungsversuch** gelingt mit gültigen Tokens
+6. **Verbindungsneuversuch** gelingt mit gültigen Tokens
 
-#### Browser Redirect Anforderungen
+#### Browser-Redirect-Anforderungen
 
 **Wichtig:** Die OAuth-Authentifizierung erfordert, dass dein lokaler Rechner:
 
 - Einen Webbrowser für die Authentifizierung öffnen kann
-- Redirects auf `http://localhost:7777/oauth/callback` empfangen kann
+- Redirects unter `http://localhost:7777/oauth/callback` empfangen kann
 
 Dieses Feature funktioniert nicht in:
 
 - Headless-Umgebungen ohne Browserzugriff
-- Remote-SSH-Sessions ohne X11-Forwarding
+- Remote-SSH-Sessions ohne X11-Weiterleitung
 - Containerisierten Umgebungen ohne Browser-Unterstützung
 
 #### Verwalten der OAuth-Authentifizierung
 
-Verwende den `/mcp auth` Befehl, um die OAuth-Authentifizierung zu verwalten:
+Verwende den Befehl `/mcp auth`, um die OAuth-Authentifizierung zu verwalten:
 
 ```bash
 
@@ -158,7 +183,7 @@ Verwende den `/mcp auth` Befehl, um die OAuth-Authentifizierung zu verwalten:
 # Authentifizierung mit einem bestimmten Server
 /mcp auth serverName
 
-# Erneute Authentifizierung, falls Token abgelaufen sind
+# Erneute Authentifizierung, wenn Token abgelaufen sind
 /mcp auth serverName
 ```
 
@@ -184,13 +209,16 @@ OAuth-Tokens werden automatisch:
 - **Validiert** vor jedem Verbindungsversuch
 - **Bereinigt**, wenn sie ungültig oder abgelaufen sind
 
-#### Authentication Provider Type
+#### Authentifizierungs-Provider-Typ
 
-Du kannst den Authentication Provider Type über die `authProviderType` Property angeben:
+Du kannst den Authentifizierungs-Provider-Typ über die `authProviderType`-Property angeben:
 
-- **`authProviderType`** (string): Gibt den Authentication Provider an. Mögliche Werte:
-  - **`dynamic_discovery`** (default): Die CLI ermittelt die OAuth-Konfiguration automatisch vom Server.
-  - **`google_credentials`**: Die CLI verwendet die Google Application Default Credentials (ADC) für die Authentifizierung beim Server. Bei diesem Provider musst du die benötigten scopes angeben.
+- **`authProviderType`** (string): Gibt den Authentifizierungs-Provider an. Mögliche Werte:
+  - **`dynamic_discovery`** (Standard): Die CLI ermittelt die OAuth-Konfiguration automatisch vom Server.
+  - **`google_credentials`**: Die CLI verwendet die Google Application Default Credentials (ADC), um sich beim Server zu authentifizieren. Bei Verwendung dieses Providers musst du die benötigten Scopes angeben.
+  - **`service_account_impersonation`**: Die CLI impersoniert einen Google Cloud Service Account, um sich beim Server zu authentifizieren. Das ist nützlich für den Zugriff auf IAP-geschützte Services (wurde speziell für Cloud Run Services entwickelt).
+
+#### Google Credentials
 
 ```json
 {
@@ -206,7 +234,25 @@ Du kannst den Authentication Provider Type über die `authProviderType` Property
 }
 ```
 
-### Beispiel-Konfigurationen
+#### Service Account Impersonation
+
+Um dich mit einem Server über Service Account Impersonation zu authentifizieren, musst du den `authProviderType` auf `service_account_impersonation` setzen und die folgenden Eigenschaften angeben:
+
+- **`targetAudience`** (string): Die OAuth Client ID, die in der Allowlist der IAP-geschützten Anwendung enthalten ist, auf die du zugreifen möchtest.
+- **`targetServiceAccount`** (string): Die E-Mail-Adresse des Google Cloud Service Accounts, dessen Identität angenommen werden soll.
+
+Die CLI verwendet deine lokalen Application Default Credentials (ADC), um ein OIDC-ID-Token für den angegebenen Service Account und die Zielgruppe zu generieren. Dieses Token wird dann zur Authentifizierung beim MCP-Server verwendet.
+
+#### Setup-Anweisungen
+
+1. **[Erstelle](https://cloud.google.com/iap/docs/oauth-client-creation) oder verwende eine vorhandene OAuth 2.0 Client-ID.** Um eine bestehende OAuth 2.0 Client-ID zu verwenden, folge den Schritten unter [How to share OAuth Clients](https://cloud.google.com/iap/docs/sharing-oauth-clients).
+2. **Füge die OAuth-ID zur Allowlist für den [programmatischen Zugriff](https://cloud.google.com/iap/docs/sharing-oauth-clients#programmatic_access) für die Anwendung hinzu.** Da Cloud Run noch kein unterstützter Ressourcentyp in gcloud iap ist, musst du die Client-ID auf Projektebene auf die Allowlist setzen.
+3. **Erstelle einen Service Account.** [Dokumentation](https://cloud.google.com/iam/docs/service-accounts-create#creating), [Cloud Console Link](https://console.cloud.google.com/iam-admin/serviceaccounts)
+4. **Füge sowohl den Service Account als auch die Benutzer zur IAP-Richtlinie hinzu** im „Security“-Tab des Cloud Run Services selbst oder über gcloud.
+5. **Gib allen Benutzern und Gruppen**, die auf den MCP Server zugreifen werden, die erforderlichen Berechtigungen, um den [Service Account zu impersonalisieren](https://cloud.google.com/docs/authentication/use-service-account-impersonation) (d. h. `roles/iam.serviceAccountTokenCreator`).
+6. **[Aktiviere](https://console.cloud.google.com/apis/library/iamcredentials.googleapis.com) die IAM Credentials API** für dein Projekt.
+
+### Beispielkonfigurationen
 
 #### Python MCP Server (Stdio)
 
@@ -314,21 +360,36 @@ Du kannst den Authentication Provider Type über die `authProviderType` Property
 }
 ```
 
+### SSE MCP Server mit SA-Impersonation
+
+```json
+{
+  "mcpServers": {
+    "myIapProtectedServer": {
+      "url": "https://my-iap-service.run.app/sse",
+      "authProviderType": "service_account_impersonation",
+      "targetAudience": "YOUR_IAP_CLIENT_ID.apps.googleusercontent.com",
+      "targetServiceAccount": "your-sa@your-project.iam.gserviceaccount.com"
+    }
+  }
+}
+```
+
 ## Deep Dive in den Discovery-Prozess
 
-Wenn Qwen Code startet, führt es die MCP Server Discovery durch den folgenden detaillierten Prozess durch:
+Wenn Qwen Code startet, führt es die MCP-Server-Discovery durch den folgenden detaillierten Prozess durch:
 
 ### 1. Server-Iteration und Verbindung
 
 Für jeden konfigurierten Server in `mcpServers`:
 
-1. **Status-Tracking beginnt:** Der Server-Status wird auf `CONNECTING` gesetzt
+1. **Statusverfolgung beginnt:** Der Serverstatus wird auf `CONNECTING` gesetzt
 2. **Transport-Auswahl:** Basierend auf den Konfigurationseigenschaften:
    - `httpUrl` → `StreamableHTTPClientTransport`
    - `url` → `SSEClientTransport`
    - `command` → `StdioClientTransport`
 3. **Verbindungsaufbau:** Der MCP-Client versucht, eine Verbindung mit dem konfigurierten Timeout herzustellen
-4. **Fehlerbehandlung:** Verbindungsfehler werden protokolliert und der Server-Status auf `DISCONNECTED` gesetzt
+4. **Fehlerbehandlung:** Verbindungsfehler werden protokolliert und der Serverstatus auf `DISCONNECTED` gesetzt
 
 ### 2. Tool Discovery
 
@@ -346,7 +407,7 @@ Nach erfolgreicher Verbindung:
 Wenn mehrere Server Tools mit demselben Namen anbieten:
 
 1. **First-come-first-served:** Der erste Server, der einen Tool-Namen registriert, erhält den unpräfixten Namen
-2. **Automatische Präfixierung:** Nachfolgende Server erhalten präfixierte Namen: `serverName__toolName`
+2. **Automatische Präfixierung:** Nachfolgende Server erhalten vorangestellte Namen: `serverName__toolName`
 3. **Registry-Verfolgung:** Die Tool-Registry verwaltet die Zuordnungen zwischen Servernamen und deren Tools
 
 ### 4. Schema-Verarbeitung
@@ -364,15 +425,15 @@ Nach der Discovery:
 
 - **Persistente Verbindungen:** Server, die Tools erfolgreich registrieren, behalten ihre Verbindungen bei
 - **Aufräumen:** Server, die keine nutzbaren Tools bereitstellen, bekommen ihre Verbindungen geschlossen
-- **Status-Updates:** Die finalen Server-Status werden auf `CONNECTED` oder `DISCONNECTED` gesetzt
+- **Statusaktualisierungen:** Die finalen Server-Status werden auf `CONNECTED` oder `DISCONNECTED` gesetzt
 
-## Tool-Ausführungsfluss
+## Tool-Ausführungsflow
 
-Wenn das Model beschließt, ein MCP-Tool zu verwenden, erfolgt der folgende Ausführungsablauf:
+Wenn das Modell beschließt, ein MCP-Tool zu verwenden, erfolgt der folgende Ausführungsflow:
 
 ### 1. Tool-Aufruf
 
-Das Model generiert einen `FunctionCall` mit:
+Das Modell generiert einen `FunctionCall` mit:
 
 - **Tool-Name:** Der registrierte Name (möglicherweise mit Präfix)
 - **Argumente:** JSON-Objekt, das dem Parameter-Schema des Tools entspricht
@@ -389,7 +450,7 @@ if (this.trust) {
 }
 ```
 
-#### Dynamisches Allow-listing
+#### Dynamische Allow-listing
 
 Das System verwaltet interne Allow-lists für:
 
@@ -400,9 +461,9 @@ Das System verwaltet interne Allow-lists für:
 
 Wenn eine Bestätigung erforderlich ist, können Benutzer folgende Optionen wählen:
 
-- **Einmal ausführen:** Nur diesmal ausführen
-- **Dieses Tool immer erlauben:** Zur Allow-list auf Tool-Ebene hinzufügen
-- **Diesen Server immer erlauben:** Zur Allow-list auf Server-Ebene hinzufügen
+- **Einmalig fortfahren:** Nur diesmal ausführen
+- **Dieses Tool immer erlauben:** Zur Tool-Ebene Allow-list hinzufügen
+- **Diesen Server immer erlauben:** Zur Server-Ebene Allow-list hinzufügen
 - **Abbrechen:** Ausführung abbrechen
 
 ### 3. Ausführung
@@ -427,7 +488,7 @@ Nach Bestätigung (oder Umgehung der Vertrauensprüfung):
 
 Das Ausführungsergebnis enthält:
 
-- **`llmContent`:** Rohdaten der Antwortanteile für den Kontext des Language Models
+- **`llmContent`:** Rohdaten der Antwortanteile für den Kontext des Sprachmodells
 - **`returnDisplay`:** Formatierter Output für die Benutzeranzeige (häufig JSON in Markdown-Codeblöcken)
 
 ## Wie du mit deinem MCP-Server interagierst
@@ -440,7 +501,7 @@ Der `/mcp` Befehl liefert umfassende Informationen zu deiner MCP-Server-Konfigur
 /mcp
 ```
 
-Dieser zeigt an:
+Dieser zeigt folgende Informationen an:
 
 - **Serverliste:** Alle konfigurierten MCP-Server
 - **Verbindungsstatus:** `CONNECTED`, `CONNECTING` oder `DISCONNECTED`
@@ -472,10 +533,10 @@ Discovery State: COMPLETED
 
 ### Tool-Nutzung
 
-Sobald sie entdeckt wurden, stehen MCP-Tools dem Qwen-Modell wie eingebaute Tools zur Verfügung. Das Modell wird automatisch:
+Sobald MCP-Tools entdeckt wurden, stehen sie dem Qwen-Modell wie eingebaute Tools zur Verfügung. Das Modell wird automatisch:
 
 1. **Passende Tools auswählen** basierend auf deinen Anfragen
-2. **Bestätigungsdialoge anzeigen** (außer der Server ist vertrauenswürdig)
+2. **Bestätigungsdialoge anzeigen** (es sei denn, der Server ist vertrauenswürdig)
 3. **Tools mit korrekten Parametern ausführen**
 4. **Ergebnisse in einem benutzerfreundlichen Format darstellen**
 
@@ -487,33 +548,33 @@ Die MCP-Integration verfolgt mehrere Zustände:
 
 #### Server-Status (`MCPServerStatus`)
 
-- **`DISCONNECTED`:** Server ist nicht verbunden oder hat Fehler
+- **`DISCONNECTED`:** Server ist nicht verbunden oder es liegen Fehler vor
 - **`CONNECTING`:** Verbindungsversuch läuft
 - **`CONNECTED`:** Server ist verbunden und bereit
 
-#### Entdeckungsstatus (`MCPDiscoveryState`)
+#### Discovery-Status (`MCPDiscoveryState`)
 
-- **`NOT_STARTED`:** Entdeckung hat noch nicht begonnen
-- **`IN_PROGRESS`:** Server werden aktuell entdeckt
-- **`COMPLETED`:** Entdeckung abgeschlossen (mit oder ohne Fehler)
+- **`NOT_STARTED`:** Discovery wurde noch nicht gestartet
+- **`IN_PROGRESS`:** Server werden aktuell gesucht
+- **`COMPLETED`:** Discovery abgeschlossen (mit oder ohne Fehler)
 
 ### Häufige Probleme und Lösungen
 
 #### Server verbindet nicht
 
-**Symptome:** Server zeigt den Status `DISCONNECTED` an
+**Symptome:** Server zeigt den Status `DISCONNECTED`
 
 **Fehlerbehebung:**
 
 1. **Konfiguration prüfen:** Überprüfe, ob `command`, `args` und `cwd` korrekt sind
-2. **Manuell testen:** Führe den Server-Befehl direkt aus, um sicherzustellen, dass er funktioniert
-3. **Abhängigkeiten prüfen:** Stelle sicher, dass alle erforderlichen Pakete installiert sind
+2. **Manueller Test:** Führe den Server-Befehl direkt aus, um sicherzustellen, dass er funktioniert
+3. **Abhängigkeiten prüfen:** Stelle sicher, dass alle benötigten Pakete installiert sind
 4. **Logs überprüfen:** Suche nach Fehlermeldungen in der CLI-Ausgabe
 5. **Berechtigungen verifizieren:** Stelle sicher, dass die CLI den Server-Befehl ausführen kann
 
 #### Keine Tools gefunden
 
-**Symptome:** Server verbindet, aber es sind keine Tools verfügbar
+**Symptome:** Server verbindet, aber keine Tools sind verfügbar
 
 **Fehlerbehebung:**
 
@@ -546,8 +607,8 @@ Die MCP-Integration verfolgt mehrere Zustände:
 
 ### Debugging-Tipps
 
-1. **Debug-Modus aktivieren:** Führe die CLI mit `--debug` aus, um detaillierte Ausgaben zu erhalten  
-2. **stderr prüfen:** MCP-Server-Fehlerausgaben (stderr) werden erfasst und protokolliert (INFO-Meldungen werden gefiltert)  
+1. **Debug-Modus aktivieren:** Führe das CLI mit `--debug` aus, um detaillierte Ausgaben zu erhalten  
+2. **stderr prüfen:** MCP-Server-Fehlerausgaben (stderr) werden erfasst und geloggt (INFO-Meldungen werden gefiltert)  
 3. **Isoliert testen:** Teste deinen MCP-Server unabhängig, bevor du ihn integrierst  
 4. **Schrittweise Einrichtung:** Beginne mit einfachen Tools, bevor du komplexe Funktionalitäten hinzufügst  
 5. **Häufig `/mcp` nutzen:** Überwache den Server-Status während der Entwicklung  
@@ -570,7 +631,7 @@ Die MCP-Integration verfolgt mehrere Zustände:
 
 ### Schema-Kompatibilität
 
-- **Property-Stripping:** Das System entfernt automatisch bestimmte Schema-Eigenschaften (`$schema`, `additionalProperties`) für die Kompatibilität mit der Qwen API
+- **Property-Stripping:** Das System entfernt automatisch bestimmte Schema-Eigenschaften (`$schema`, `additionalProperties`) für die Kompatibilität mit der Qwen-API
 - **Namensbereinigung:** Tool-Namen werden automatisch bereinigt, um die API-Anforderungen zu erfüllen
 - **Konfliktlösung:** Namenskonflikte von Tools zwischen Servern werden durch automatisches Präfixen gelöst
 
@@ -603,7 +664,7 @@ Hier ist ein Beispiel für eine gültige JSON-Antwort eines MCP-Tools, das sowoh
   "content": [
     {
       "type": "text",
-      "text": "Hier ist das Logo, das du angefordert hast."
+      "text": "Here is the logo you requested."
     },
     {
       "type": "image",
@@ -612,7 +673,7 @@ Hier ist ein Beispiel für eine gültige JSON-Antwort eines MCP-Tools, das sowoh
     },
     {
       "type": "text",
-      "text": "Das Logo wurde 2025 erstellt."
+      "text": "The logo was created in 2025."
     }
   ]
 }
@@ -624,15 +685,15 @@ Wenn Qwen Code diese Antwort erhält, wird es:
 2.  Die Bilddaten als separaten `inlineData`-Teil darstellen.
 3.  Eine übersichtliche, benutzerfreundliche Zusammenfassung in der CLI anzeigen, die angibt, dass sowohl Text als auch ein Bild empfangen wurden.
 
-Dadurch kannst du anspruchsvolle Tools entwickeln, die dem Qwen-Modell einen umfangreichen, multimodalen Kontext bieten.
+Dadurch kannst du anspruchsvolle Tools entwickeln, die dem Qwen-Modell einen umfangreichen, multimodalen Kontext liefern.
 
 ## MCP Prompts als Slash Commands
 
 Neben Tools können MCP-Server auch vordefinierte Prompts bereitstellen, die als Slash Commands innerhalb von Qwen Code ausgeführt werden können. Dadurch kannst du Shortcuts für häufige oder komplexe Abfragen erstellen, die einfach über ihren Namen aufgerufen werden können.
 
-### Defining Prompts on the Server
+### Prompts auf dem Server definieren
 
-Hier ist ein kleines Beispiel für einen stdio MCP Server, der Prompts definiert:
+Hier ist ein kleines Beispiel für einen stdio MCP-Server, der Prompts definiert:
 
 ```ts
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -668,12 +729,16 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
 
-Dies kann in der `settings.json` unter `mcpServers` wie folgt eingebunden werden:
+Dieser kann in der `settings.json` unter `mcpServers` wie folgt eingetragen werden:
 
 ```json
-"nodeServer": {
-  "command": "node",
-  "args": ["filename.ts"],
+{
+  "mcpServers": {
+    "nodeServer": {
+      "command": "node",
+      "args": ["filename.ts"]
+    }
+  }
 }
 ```
 
@@ -691,37 +756,37 @@ oder mit Positionsargumenten:
 /poem-writer "Qwen Code" reverent
 ```
 
-Wenn du diesen Befehl ausführst, führt die CLI die Methode `prompts/get` auf dem MCP-Server mit den übergebenen Argumenten aus. Der Server ist dafür verantwortlich, die Argumente in die Prompt-Vorlage einzusetzen und den finalen Prompt-Text zurückzugeben. Die CLI sendet diesen Prompt dann zur Ausführung an das Modell. Dies bietet eine praktische Möglichkeit, gängige Workflows zu automatisieren und zu teilen.
+Wenn du diesen Befehl ausführst, führt die CLI die Methode `prompts/get` auf dem MCP-Server mit den übergebenen Argumenten aus. Der Server ist dafür verantwortlich, die Argumente in das Prompt-Template einzusetzen und den finalen Prompt-Text zurückzugeben. Die CLI sendet diesen Prompt dann zur Ausführung an das Modell. Dies bietet eine praktische Möglichkeit, gängige Workflows zu automatisieren und zu teilen.
 
 ## Verwaltung von MCP-Servern mit `qwen mcp`
 
-Auch wenn du MCP-Server jederzeit durch manuelles Bearbeiten der `settings.json` konfigurieren kannst, bietet das CLI eine praktische Reihe von Befehlen, um deine Server-Konfigurationen programmatisch zu verwalten. Diese Befehle vereinfachen das Hinzufügen, Auflisten und Entfernen von MCP-Servern, ohne dass du JSON-Dateien direkt bearbeiten musst.
+Auch wenn du MCP-Server jederzeit durch manuelles Bearbeiten der `settings.json` konfigurieren kannst, bietet das CLI eine praktische Reihe von Befehlen, um deine Server-Konfigurationen programmatisch zu verwalten. Diese Befehle vereinfachen den Prozess des Hinzufügens, Auflistens und Entfernens von MCP-Servern, ohne dass du direkt JSON-Dateien bearbeiten musst.
 
-### Server hinzufügen (`qwen mcp add`)
+### Einen Server hinzufügen (`qwen mcp add`)
 
-Der `add`-Befehl konfiguriert einen neuen MCP-Server in deiner `settings.json`. Je nach Scope (`-s, --scope`) wird er entweder zur User-Konfiguration `~/.qwen/settings.json` oder zur Projekt-Konfiguration `.qwen/settings.json` hinzugefügt.
+Der `add`-Befehl konfiguriert einen neuen MCP-Server in deiner `settings.json`. Je nach Gültigkeitsbereich (`-s, --scope`) wird er entweder zur Benutzerkonfiguration `~/.qwen/settings.json` oder zur Projekt-Konfigurationsdatei `.qwen/settings.json` hinzugefügt.
 
 **Befehl:**
 
 ```bash
-qwen mcp add [Optionen] <name> <commandOrUrl> [args...]
+qwen mcp add [Optionen] <Name> <BefehlOderURL> [Argumente...]
 ```
 
-- `<name>`: Ein eindeutiger Name für den Server.
-- `<commandOrUrl>`: Der auszuführende Befehl (für `stdio`) oder die URL (für `http`/`sse`).
-- `[args...]`: Optionale Argumente für einen `stdio`-Befehl.
+- `<Name>`: Ein eindeutiger Name für den Server.
+- `<BefehlOderURL>`: Der auszuführende Befehl (für `stdio`) oder die URL (für `http`/`sse`).
+- `[Argumente...]`: Optionale Argumente für einen `stdio`-Befehl.
 
 **Optionen (Flags):**
 
-- `-s, --scope`: Konfigurations-Scope (user oder project). [Standard: "project"]
-- `-t, --transport`: Transport-Typ (stdio, sse, http). [Standard: "stdio"]
-- `-e, --env`: Umgebungsvariablen setzen (z. B. -e KEY=value).
-- `-H, --header`: HTTP-Header für SSE- und HTTP-Transports setzen (z. B. -H "X-Api-Key: abc123" -H "Authorization: Bearer abc123").
-- `--timeout`: Verbindungs-Timeout in Millisekunden festlegen.
-- `--trust`: Dem Server vertrauen (alle Bestätigungsdialoge für Tool-Aufrufe umgehen).
-- `--description`: Beschreibung für den Server festlegen.
-- `--include-tools`: Kommaseparierte Liste der einzubindenden Tools.
-- `--exclude-tools`: Kommaseparierte Liste der auszuschließenden Tools.
+- `-s, --scope`: Konfigurationsbereich (user oder project). [Standard: "project"]
+- `-t, --transport`: Transporttyp (stdio, sse, http). [Standard: "stdio"]
+- `-e, --env`: Umgebungsvariablen setzen (z.B. -e SCHLÜSSEL=wert).
+- `-H, --header`: HTTP-Header für SSE- und HTTP-Transporte festlegen (z.B. -H "X-Api-Key: abc123" -H "Authorization: Bearer abc123").
+- `--timeout`: Verbindungszeitlimit in Millisekunden festlegen.
+- `--trust`: Dem Server vertrauen (alle Bestätigungsdialoge beim Aufruf von Tools umgehen).
+- `--description`: Beschreibung des Servers festlegen.
+- `--include-tools`: Eine durch Kommas getrennte Liste der einzubeziehenden Tools.
+- `--exclude-tools`: Eine durch Kommas getrennte Liste der auszuschließenden Tools.
 
 #### Hinzufügen eines stdio-Servers
 
@@ -769,7 +834,7 @@ qwen mcp add --transport sse <name> <url>
 # Beispiel: Hinzufügen eines SSE-Servers
 qwen mcp add --transport sse sse-server https://api.example.com/sse/
 
-# Beispiel: Hinzufügen eines SSE-Servers mit einem Authentifizierungs-Header
+# Beispiel: Hinzufügen eines SSE-Servers mit einem Authentication-Header
 qwen mcp add --transport sse secure-sse https://api.example.com/sse/ --header "Authorization: Bearer abc123"
 ```
 

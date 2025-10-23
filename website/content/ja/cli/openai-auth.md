@@ -1,6 +1,6 @@
 # OpenAI 認証
 
-Qwen Code CLI は、Google の Gemini モデルではなく OpenAI モデルを使用したいユーザーのために、OpenAI 認証をサポートしています。
+Qwen Code CLI は、Google の Gemini モデルの代わりに OpenAI モデルを使用したいユーザーに対して、OpenAI 認証をサポートしています。
 
 ## 認証方法
 
@@ -8,15 +8,15 @@ Qwen Code CLI は、Google の Gemini モデルではなく OpenAI モデルを�
 
 CLI を初めて実行し、認証方法として OpenAI を選択すると、以下の入力を求められます：
 
-- **API Key**: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys) から取得した OpenAI API key
+- **API Key**: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys) から取得したあなたの OpenAI API key
 - **Base URL**: OpenAI API のベース URL（デフォルトは `https://api.openai.com/v1`）
 - **Model**: 使用する OpenAI モデル（デフォルトは `gpt-4o`）
 
-CLI は各フィールドについてガイドします：
+CLI が各フィールドについてガイドしてくれます：
 
-1. API key を入力して Enter を押す
-2. Base URL を確認／変更して Enter を押す
-3. モデル名を確認／変更して Enter を押す
+1. API key を入力して Enter を押下
+2. Base URL を確認／変更して Enter を押下
+3. モデル名を確認／変更して Enter を押下
 
 **Note**: API key は直接貼り付けることができます — CLI はペースト機能をサポートしており、確認のためにキー全体を表示します。
 
@@ -73,5 +73,5 @@ CLI は OpenAI API 経由で利用可能なすべての OpenAI モデルをサ�
 
 - API キーはセッション中にメモリ上に保存されます
 - 永続的に保存する場合は、環境変数または `.env` ファイルを使用してください
-- API キーをバージョン管理にコミットしないでください
-- CLI は確認用に API キーをプレーンテキストで表示します - 端末が安全であることを確認してください
+- API キーをバージョン管理システムにコミットしないでください
+- CLI では確認のために API キーがプレーンテキストで表示されるため、端末の安全性を確保してください

@@ -73,10 +73,11 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
         { locale: "fr", name: "Français" },
         { locale: "ru", name: "Русский" },
         { locale: "ja", name: "日本語" },
+        { locale: "pt-BR", name: "Português (BR)" },
       ]}
       sidebar={{
         defaultMenuCollapseLevel: 1,
-        autoCollapse: true,
+        autoCollapse: false,
       }}
       pageMap={sourcePageMap}
       nextThemes={{ defaultTheme: "light" }}

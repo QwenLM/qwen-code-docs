@@ -1,6 +1,6 @@
 # Authentification OpenAI
 
-Qwen Code CLI prend en charge l'authentification OpenAI pour les utilisateurs souhaitant utiliser les modèles OpenAI au lieu des modèles Google Gemini.
+Qwen Code CLI prend en charge l'authentification OpenAI pour les utilisateurs souhaitant utiliser les modèles OpenAI au lieu des modèles Gemini de Google.
 
 ## Méthodes d'authentification
 
@@ -18,7 +18,7 @@ Le CLI vous guidera à travers chaque champ :
 2. Vérifiez/modifiez l'URL de base et appuyez sur Entrée
 3. Vérifiez/modifiez le nom du modèle et appuyez sur Entrée
 
-**Note** : Vous pouvez coller directement votre API key — le CLI prend en charge le copier-coller et affichera la clé complète pour vérification.
+**Note** : Vous pouvez coller directement votre API key — le CLI supporte la fonctionnalité de collage et affichera la clé complète pour vérification.
 
 ### 2. Arguments de ligne de commande
 
@@ -36,9 +36,9 @@ qwen-code --openai-api-key "your-api-key-here" --openai-base-url "https://your-c
 qwen-code --openai-api-key "your-api-key-here" --model "gpt-4-turbo"
 ```
 
-### 3. Variables d'environnement
+### 3. Variables d’environnement
 
-Définissez les variables d'environnement suivantes dans votre shell ou dans votre fichier `.env` :
+Définissez les variables d’environnement suivantes dans votre shell ou dans votre fichier `.env` :
 
 ```bash
 export OPENAI_API_KEY="your-api-key-here"
@@ -48,14 +48,14 @@ export OPENAI_MODEL="gpt-4o"  # Optionnel, par défaut gpt-4o
 
 ## Modèles supportés
 
-Le CLI supporte tous les modèles OpenAI disponibles via l'API OpenAI, incluant :
+Le CLI prend en charge tous les modèles OpenAI disponibles via l’API OpenAI, notamment :
 
 - `gpt-4o` (par défaut)
 - `gpt-4o-mini`
 - `gpt-4-turbo`
 - `gpt-4`
 - `gpt-3.5-turbo`
-- Et les autres modèles disponibles
+- Et autres modèles disponibles
 
 ## Endpoints personnalisés
 
@@ -73,5 +73,5 @@ Pour basculer entre les méthodes d'authentification, utilisez la commande `/aut
 
 - Les clés API sont stockées en mémoire pendant la session
 - Pour un stockage persistant, utilisez les variables d'environnement ou les fichiers `.env`
-- Ne commitez jamais les clés API dans le contrôle de version
+- Ne commitez jamais les clés API dans le version control
 - Le CLI affiche les clés API en texte clair pour vérification - assurez-vous que votre terminal est sécurisé

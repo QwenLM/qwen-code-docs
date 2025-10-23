@@ -6,14 +6,14 @@ Qwen Code unterstützt eine Vielzahl von Themes, um das Farbschema und das Ersch
 
 Qwen Code wird mit einer Auswahl vordefinierter Themes geliefert, die du mithilfe des Befehls `/theme` innerhalb der CLI auflisten kannst:
 
-- **Dunkle Themes:**
+- **Dark Themes:**
   - `ANSI`
   - `Atom One`
   - `Ayu`
   - `Default`
   - `Dracula`
   - `GitHub`
-- **Helle Themes:**
+- **Light Themes:**
   - `ANSI Light`
   - `Ayu Light`
   - `Default Light`
@@ -23,48 +23,37 @@ Qwen Code wird mit einer Auswahl vordefinierter Themes geliefert, die du mithilf
 
 ### Themes ändern
 
-1.  Gib `/theme` in Qwen Code ein.
-2.  Ein Dialog oder eine Auswahl-Eingabeaufforderung erscheint, in der die verfügbaren Themes aufgelistet sind.
-3.  Wähle mit den Pfeiltasten ein Theme aus. Manche Oberflächen bieten eventuell eine Live-Vorschau oder markieren das aktuelle Element beim Auswählen.
-4.  Bestätige deine Auswahl, um das Theme anzuwenden.
+1. Gib `/theme` in Qwen Code ein.
+2. Es erscheint ein Dialog oder eine Auswahl-Eingabeaufforderung mit einer Liste der verfügbaren Themes.
+3. Wähle mithilfe der Pfeiltasten ein Theme aus. Manche Oberflächen bieten eventuell eine Live-Vorschau oder markieren das aktuelle Element beim Auswählen.
+4. Bestätige deine Auswahl, um das Theme anzuwenden.
 
-**Hinweis:** Wenn in deiner `settings.json`-Datei bereits ein Theme definiert ist (entweder über den Namen oder einen Dateipfad), musst du den `"theme"`-Eintrag aus der Datei entfernen, bevor du das Theme über den `/theme`-Befehl ändern kannst.
+**Hinweis:** Wenn bereits ein Theme in deiner `settings.json` festgelegt ist (entweder über den Namen oder einen Dateipfad), musst du die `"theme"`-Einstellung aus dieser Datei entfernen, bevor du das Theme per `/theme`-Befehl ändern kannst.
 
 ### Speichern von Themes
 
-Ausgewählte Themes werden in der [Konfiguration](./configuration.md) von Qwen Code gespeichert, sodass deine Präferenz auch über mehrere Sitzungen hinweg beibehalten wird.
+Ausgewählte Themes werden in der [Konfiguration](./configuration.md) von Qwen Code gespeichert, sodass deine Präferenz auch nach dem Neustart erhalten bleibt.
 
 ---
 
 ## Benutzerdefinierte Farb-Themes
 
-Qwen Code erlaubt dir, eigene benutzerdefinierte Farb-Themes zu erstellen, indem du diese in deiner `settings.json`-Datei definierst. Dadurch hast du volle Kontrolle über die Farbpalette, die in der CLI verwendet wird.
+Qwen Code erlaubt dir, eigene benutzerdefinierte Farb-Themes zu erstellen, indem du diese in deiner `settings.json` definierst. Dadurch hast du volle Kontrolle über die verwendete Farbpalette in der CLI.
 
-### Wie du ein benutzerdefiniertes Theme definierst
+### Wie man ein benutzerdefiniertes Theme definiert
 
-Füge einen `customThemes`-Block zu deiner `settings.json`-Datei auf Benutzer-, Projekt- oder Systemebene hinzu. Jedes benutzerdefinierte Theme wird als Objekt mit einem eindeutigen Namen und einer Reihe von Farbschlüsseln definiert. Zum Beispiel:
+Füge einen `customThemes`-Block zu deiner `settings.json`-Datei auf User-, Projekt- oder Systemebene hinzu. Jedes benutzerdefinierte Theme wird als Objekt mit einem eindeutigen Namen und einem Satz von Farbschlüsseln definiert. Zum Beispiel:
 
 ```json
 {
-  "customThemes": {
-    "MyCustomTheme": {
-      "name": "MyCustomTheme",
-      "type": "custom",
-      "Background": "#181818",
-      "Foreground": "#F8F8F2",
-      "LightBlue": "#82AAFF",
-      "AccentBlue": "#61AFEF",
-      "AccentPurple": "#C678DD",
-      "AccentCyan": "#56B6C2",
-      "AccentGreen": "#98C379",
-      "AccentYellow": "#E5C07B",
-      "AccentRed": "#E06C75",
-      "Comment": "#5C6370",
-      "Gray": "#ABB2BF",
-      "DiffAdded": "#A6E3A1",
-      "DiffRemoved": "#F38BA8",
-      "DiffModified": "#89B4FA",
-      "GradientColors": ["#4796E4", "#847ACE", "#C3677F"]
+  "ui": {
+    "customThemes": {
+      "MyCustomTheme": {
+        "name": "MyCustomTheme",
+        "type": "custom",
+        "Background": "#181818",
+        ...
+      }
     }
   }
 }
@@ -103,7 +92,7 @@ Füge einen `customThemes`-Block zu deiner `settings.json`-Datei auf Benutzer-, 
 - `Comment`
 - `Gray`
 
-Du kannst entweder Hex-Codes (z. B. `#FF0000`) **oder** Standard-CSS-Farbnamen (z. B. `coral`, `teal`, `blue`) für jeden Farbwert verwenden. Eine vollständige Liste der unterstützten Namen findest du unter [CSS color names](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#color_keywords).
+Du kannst entweder Hex-Codes (z. B. `#FF0000`) **oder** standardisierte CSS-Farbnamen (z. B. `coral`, `teal`, `blue`) für jeden Farbwert verwenden. Eine vollständige Liste der unterstützten Namen findest du unter [CSS color names](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#color_keywords).
 
 Du kannst mehrere benutzerdefinierte Themes definieren, indem du weitere Einträge zum `customThemes`-Objekt hinzufügst.
 
@@ -115,11 +104,13 @@ Um ein Theme aus einer Datei zu laden, setze die `theme`-Property in deiner `set
 
 ```json
 {
-  "theme": "/path/to/your/theme.json"
+  "ui": {
+    "theme": "/path/to/your/theme.json"
+  }
 }
 ```
 
-Die Theme-Datei muss eine gültige JSON-Datei sein und dieselbe Struktur aufweisen wie ein benutzerdefiniertes Theme, das in der `settings.json` definiert ist.
+Die Theme-Datei muss eine gültige JSON-Datei sein und dieselbe Struktur wie ein benutzerdefiniertes Theme in der `settings.json` haben.
 
 **Beispiel `my-theme.json`:**
 
@@ -145,16 +136,16 @@ Die Theme-Datei muss eine gültige JSON-Datei sein und dieselbe Struktur aufweis
 }
 ```
 
-**Sicherheitshinweis:** Aus Sicherheitsgründen lädt der Gemini CLI nur Theme-Dateien, die sich innerhalb deines Home-Verzeichnisses befinden. Wenn du versuchst, ein Theme von außerhalb deines Home-Verzeichnisses zu laden, wird eine Warnung angezeigt und das Theme wird nicht geladen. Dies verhindert das Laden potenziell schädlicher Theme-Dateien aus nicht vertrauenswürdigen Quellen.
+**Sicherheitshinweis:** Aus Sicherheitsgründen lädt der Gemini CLI nur Theme-Dateien, die sich innerhalb deines Home-Verzeichnisses befinden. Wenn du versuchst, ein Theme von außerhalb deines Home-Verzeichnisses zu laden, wird eine Warnung angezeigt und das Theme nicht geladen. Dies verhindert das Laden potenziell schädlicher Theme-Dateien aus nicht vertrauenswürdigen Quellen.
 
 ### Beispiel für ein benutzerdefiniertes Theme
 
 <img src="../assets/theme-custom.png" alt="Beispiel für ein benutzerdefiniertes Theme" width="600" />
 
-### Verwendung deines benutzerdefinierten Themes
+### Verwenden deines benutzerdefinierten Themes
 
 - Wähle dein benutzerdefiniertes Theme über den Befehl `/theme` in Qwen Code aus. Dein Theme wird dann im Theme-Auswahldialog angezeigt.
-- Oder lege es als Standard fest, indem du `"theme": "MyCustomTheme"` in deiner `settings.json` hinzufügst.
+- Oder lege es als Standard fest, indem du `"theme": "MyCustomTheme"` zum `ui`-Objekt in deiner `settings.json` hinzufügst.
 - Benutzerdefinierte Themes können auf Benutzer-, Projekt- oder Systemebene festgelegt werden und folgen derselben [Konfigurationspriorität](./configuration.md) wie andere Einstellungen.
 
 ---

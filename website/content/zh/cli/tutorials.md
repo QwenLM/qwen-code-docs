@@ -5,13 +5,13 @@
 ## 设置 Model Context Protocol (MCP) 服务器
 
 > [!CAUTION]
-> 在使用第三方 MCP 服务器之前，请确保你信任其来源并了解它提供的工具。你使用第三方服务器的风险由你自己承担。
+> 在使用第三方 MCP 服务器之前，请确保你信任其来源并了解它提供的工具。使用第三方服务器的风险由你自己承担。
 
 本教程演示如何设置 MCP 服务器，以 [GitHub MCP 服务器](https://github.com/github/github-mcp-server) 为例。GitHub MCP 服务器提供了与 GitHub 仓库交互的工具，例如创建 issue 和评论 pull request。
 
 ### 前置条件
 
-开始之前，请确保你已安装并配置了以下内容：
+开始之前，请确保你已安装并配置好以下内容：
 
 - **Docker：** 安装并运行 [Docker]。
 - **GitHub Personal Access Token (PAT)：** 创建一个新的 [classic] 或 [fine-grained] PAT，并授予必要的权限。
@@ -24,7 +24,7 @@
 
 #### 在 `settings.json` 中配置 MCP server
 
-在你的项目根目录下，创建或打开 [`.qwen/settings.json` 文件](./configuration.md)。在文件中添加 `mcpServers` 配置块，用于指定如何启动 GitHub MCP server。
+在你的项目根目录下，创建或打开 [`.qwen/settings.json` 文件](./configuration.md)。在文件中添加 `mcpServers` 配置块，该配置块提供了如何启动 GitHub MCP server 的指令。
 
 ```json
 {
@@ -33,7 +33,7 @@
       "command": "docker",
       "args": [
         "run",
-        "i",
+        "-i",
         "--rm",
         "-e",
         "GITHUB_PERSONAL_ACCESS_TOKEN",
@@ -58,12 +58,12 @@
 GITHUB_PERSONAL_ACCESS_TOKEN="pat_YourActualGitHubTokenHere"
 ```
 
-Qwen Code 会在 `settings.json` 文件中你定义的 `mcpServers` 配置里使用这个值。
+Qwen Code 会在你定义于 `settings.json` 文件中的 `mcpServers` 配置里使用这个值。
 
 #### 启动 Qwen Code 并验证连接
 
-当你启动 Qwen Code 时，它会自动读取你的配置并在后台启动 GitHub MCP server。然后你就可以使用自然语言 prompt 来让 Qwen Code 执行 GitHub 操作。例如：
+当你启动 Qwen Code 时，它会自动读取你的配置并在后台启动 GitHub MCP server。之后你可以通过自然语言提示词让 Qwen Code 执行 GitHub 操作。例如：
 
 ```bash
-"获取 'foo/bar' 仓库中所有分配给我的 open issues 并进行优先级排序"
+"获取 'foo/bar' 仓库中分配给我的所有未关闭 issue，并进行优先级排序"
 ```

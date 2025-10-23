@@ -15,7 +15,7 @@
     "url": "https://github.com/QwenLM/qwen-code-docs.git"
   },
   "scripts": {
-    "build": "npm run clear && tsc",
+    "build": "rm -rf dist && tsc",
     "clear": "rm -rf dist",
     "dev": "npm run clear && tsc --watch",
     "test": "jest"

@@ -12,6 +12,7 @@ const languages = [
   { locale: "fr", name: "Français", flag: "🇫🇷" },
   { locale: "ru", name: "Русский", flag: "🇷🇺" },
   { locale: "ja", name: "日本語", flag: "🇯🇵" },
+  { locale: "pt-BR", name: "Português (BR)", flag: "🇧🇷" },
 ];
 
 interface LanguageDropdownProps {

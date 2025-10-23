@@ -4,7 +4,7 @@
 
 ## 概要
 
-`web_fetch` を使用して、指定された URL からコンテンツを取得し、AI モデルを使って処理します。このツールは、URL と prompt を入力として受け取り、URL のコンテンツを取得、HTML を markdown に変換し、そのコンテンツを prompt と一緒に小型で高速なモデルを使って処理します。
+`web_fetch` を使用して、指定された URL からコンテンツを取得し、AI モデルを使って処理します。このツールは、URL と prompt を入力として受け取り、URL のコンテンツを取得、HTML を markdown に変換し、そのコンテンツを prompt とともに小型で高速なモデルを使って処理します。
 
 ### 引数
 
@@ -15,11 +15,11 @@
 
 ## Qwen Code で `web_fetch` を使う方法
 
-Qwen Code で `web_fetch` を使用するには、URL とその URL から抽出したい内容を記述した prompt を指定します。このツールは、URL を取得する前に確認を求めます。確認が取れれば、ツールはコンテンツを直接取得し、AI モデルを使って処理を行います。
+Qwen Code で `web_fetch` を使用するには、URL とその URL から抽出したい内容を記述した prompt を指定します。このツールは URL を取得する前に確認を求めます。確認されると、ツールはコンテンツを直接取得し、AI モデルを使って処理を行います。
 
 このツールは自動的に HTML をテキストに変換し、GitHub の blob URL を raw URL に変換し、セキュリティのために HTTP URL を HTTPS にアップグレードします。
 
-使用例:
+使い方:
 
 ```
 web_fetch(url="https://example.com", prompt="Summarize the main points of this article")
@@ -45,10 +45,10 @@ GitHub のドキュメントを分析する：
 web_fetch(url="https://github.com/QwenLM/Qwen/blob/main/README.md", prompt="What are the installation steps and main features?")
 ```
 
-## 重要な注意事項
+## 重要な注意点
 
-- **単一URL処理:** `web_fetch` は一度に1つのURLを処理します。複数のURLを分析するには、それぞれのURLに対して個別にツールを呼び出してください。
-- **URLフォーマット:** このツールはHTTP URLを自動的にHTTPSにアップグレードし、GitHubのblob URLをraw形式に変換して、コンテンツへのアクセスを改善します。
-- **コンテンツ処理:** このツールは直接コンテンツを取得し、AIモデルを使用して処理を行い、HTMLを読みやすいテキスト形式に変換します。
+- **単一URL処理:** `web_fetch` は一度に1つのURLを処理します。複数のURLを分析するには、それぞれに対して個別にツールを呼び出してください。
+- **URL形式:** このツールはHTTP URLを自動的にHTTPSにアップグレードし、GitHubのblob URLをraw形式に変換して、より良いコンテンツアクセスを実現します。
+- **コンテンツ処理:** ツールは直接コンテンツを取得し、AIモデルを使用して処理を行い、HTMLを読みやすいテキスト形式に変換します。
 - **出力品質:** 出力の品質は、プロンプト内の指示の明確さに依存します。
-- **MCPツール:** MCPが提供するweb fetchツール（"mcp\_\_"で始まるもの）が利用可能な場合、制限が少ない可能性があるため、そのツールの使用を推奨します。
+- **MCPツール:** MCPが提供するweb fetchツール（"mcp\_\_"で始まるもの）が利用可能な場合、そのツールの方が制限が少ない可能性があるため、そちらの使用を推奨します。

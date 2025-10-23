@@ -31,7 +31,7 @@ Qwen Code prend en charge deux méthodes d'authentification principales pour acc
 
     **Coût :** Gratuit
 
-    **Remarques :** Un quota spécifique pour différents modèles n'est pas précisé ; un fallback de modèle peut survenir pour préserver la qualité de l'expérience partagée.
+    **Remarques :** Un quota spécifique pour différents modèles n'est pas précisé ; un fallback de modèle peut survenir afin de préserver la qualité de l'expérience partagée.
 
 2.  **<a id="openai-api"></a>API compatible OpenAI :**
     - Utilisez des API keys pour OpenAI ou d'autres fournisseurs compatibles.
@@ -84,14 +84,14 @@ Vous pouvez créer un fichier **`.qwen/.env`** dans le répertoire de votre proj
 
 Qwen Code charge automatiquement les variables d'environnement depuis le **premier** fichier `.env` qu'il trouve, en utilisant l'ordre de recherche suivant :
 
-1. En partant du **répertoire courant** et en remontant vers `/`, pour chaque répertoire, il vérifie :
+1. En commençant par le **répertoire courant** et en remontant vers `/`, pour chaque répertoire il vérifie :
    1. `.qwen/.env`
    2. `.env`
 2. Si aucun fichier n'est trouvé, il utilise par défaut votre **répertoire personnel** :
    - `~/.qwen/.env`
    - `~/.env`
 
-> **Important :** La recherche s'arrête au **premier** fichier trouvé — les variables **ne sont pas fusionnées** à partir de plusieurs fichiers.
+> **Important :** La recherche s'arrête au **premier** fichier rencontré — les variables ne sont **pas fusionnées** entre plusieurs fichiers.
 
 #### Exemples
 
@@ -122,7 +122,7 @@ EOF
 Lorsque vous exécutez Qwen Code dans un environnement non interactif, vous ne pouvez pas utiliser le flux de connexion OAuth.  
 Vous devez alors configurer l'authentification en utilisant des variables d'environnement.
 
-Le CLI détectera automatiquement s'il s'exécute dans un terminal non interactif et utilisera la méthode compatible avec l'API OpenAI si elle est configurée :
+Le CLI détectera automatiquement s'il est exécuté dans un terminal non interactif et utilisera la méthode compatible avec l'API OpenAI si elle est configurée :
 
 1. **API compatible OpenAI :**
    - Définissez la variable d'environnement `OPENAI_API_KEY`.
@@ -131,13 +131,6 @@ Le CLI détectera automatiquement s'il s'exécute dans un terminal non interacti
 
 **Exemple pour les environnements headless :**
 
-```bash
-export OPENAI_API_KEY="your-api-key"
-export OPENAI_BASE_URL="https://api-inference.modelscope.cn/v1"
-export OPENAI_MODEL="Qwen/Qwen3-Coder-480B-A35B-Instruct"
+Si aucune de ces variables d'environnement n'est définie lors d'une session non interactive, le CLI se terminera avec une erreur.
 
-# Exécuter Qwen Code
-qwen
-```
-
-Si aucune clé API n'est définie lors d'une session non interactive, le CLI s'arrêtera avec une erreur vous demandant de configurer l'authentification.
+Pour un guide complet sur l'utilisation programmatique de Qwen Code et son intégration dans des workflows automatisés, consultez le [Guide du mode headless](../headless.md).

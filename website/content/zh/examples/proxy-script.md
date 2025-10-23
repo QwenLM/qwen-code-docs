@@ -1,6 +1,6 @@
 # 示例代理脚本
 
-以下是一个可以与 `GEMINI_SANDBOX_PROXY_COMMAND` 环境变量一起使用的代理脚本示例。该脚本只允许到 `example.com:443` 的 `HTTPS` 连接，拒绝所有其他请求。
+以下是一个可以与 `GEMINI_SANDBOX_PROXY_COMMAND` 环境变量一起使用的代理脚本示例。该脚本仅允许到 `example.com:443` 的 `HTTPS` 连接，拒绝所有其他请求。
 
 ```javascript
 #!/usr/bin/env node
@@ -11,9 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// 示例代理服务器监听 :::8877，仅允许 HTTPS 连接到 example.com。
-// 设置 `GEMINI_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js` 来在沙箱中运行代理
-// 在沙箱内通过 `curl https://example.com` 测试（在 shell 模式下或通过 shell 工具）
+// 示例代理服务器监听 :::8877，只允许 HTTPS 连接到 example.com。
+// 设置 `GEMINI_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js` 来启动代理并伴随沙箱运行
+// 在沙箱中通过 shell 模式或使用 shell 工具执行 `curl https://example.com` 测试
 
 import http from 'node:http';
 import net from 'node:net';
@@ -34,7 +34,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.on('connect', (req, clientSocket, head) => {
-  // req.url 对于 CONNECT 请求来说是 "hostname:port" 格式
+  // 对于 CONNECT 请求，req.url 格式为 "hostname:port"
   const { port, hostname } = new URL(`http://${req.url}`);
 
   console.log(`[PROXY] Intercepted CONNECT request for: ${hostname}:${port}`);

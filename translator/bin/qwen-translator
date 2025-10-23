@@ -1,78 +1,9 @@
 #!/usr/bin/env node
 
-const { TranslationCLI } = require("../dist/cli.js");
+// 直接调用 src/cli.ts 中的主函数
+const { main } = require("../dist/cli.js");
 
-// Read version from package.json
-function getPackageVersion() {
-  try {
-    const path = require("path");
-    const fs = require("fs");
-    const packageJsonPath = path.join(__dirname, "../package.json");
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
-    return packageJson.version;
-  } catch (error) {
-    console.warn("Could not read version from package.json, using default");
-    return "0.0.1";
-  }
-}
-
-async function main() {
-  const cli = new TranslationCLI();
-  const { Command } = require("commander");
-  const program = new Command();
-
-  program
-    .name("qwen-translator")
-    .description("AI-powered documentation translation tool")
-    .version(getPackageVersion());
-
-  // init command
-  program
-    .command("init")
-    .description("Initialize a new translation project")
-    .action(async () => {
-      await cli.initProject();
-    });
-
-  // sync command
-  program
-    .command("sync")
-    .description("Sync source repository documents")
-    .option("-f, --force", "Force sync all documents")
-    .action(async (options) => {
-      await cli.syncDocuments(options.force);
-    });
-
-  // translate command
-  program
-    .command("translate")
-    .description("Translate documents")
-    .option("-l, --language <lang>", "Specify target language")
-    .option("-f, --file <file>", "Specify file to translate")
-    .action(async (options) => {
-      await cli.translateDocuments(options);
-    });
-
-  // config command
-  program
-    .command("config")
-    .description("Manage configuration")
-    .action(async () => {
-      await cli.manageConfig();
-    });
-
-  // status command
-  program
-    .command("status")
-    .description("Show project status")
-    .action(async () => {
-      await cli.showStatus();
-    });
-
-  // Parse command line arguments
-  await program.parseAsync(process.argv);
-}
-
+// 执行主函数
 main().catch((error) => {
   console.error("❌ Program execution failed:", error.message);
   process.exit(1);

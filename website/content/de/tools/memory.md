@@ -41,4 +41,4 @@ save_memory(fact="Das Projekt, an dem ich gerade arbeite, heißt 'qwen-code'.")
 ## Wichtige Hinweise
 
 - **Allgemeine Verwendung:** Dieses Tool sollte für prägnante, wichtige Fakten verwendet werden. Es ist nicht dafür gedacht, große Datenmengen oder Konversationsverläufe zu speichern.
-- **Memory-Datei:** Die Memory-Datei ist eine einfache Text-Markdown-Datei, daher kannst du sie bei Bedarf manuell einsehen und bearbeiten.
+- **Memory-Datei:** Die Memory-Datei ist eine einfache Markdown-Textdatei, die bei Bedarf manuell eingesehen und bearbeitet werden kann.

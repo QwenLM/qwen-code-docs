@@ -4,7 +4,7 @@ Ce document décrit l'outil `web_fetch` pour Qwen Code.
 
 ## Description
 
-Utilisez `web_fetch` pour récupérer le contenu d'une URL spécifiée et le traiter à l'aide d'un modèle AI. L'outil prend une URL et un prompt en entrée, récupère le contenu de l'URL, convertit le HTML en markdown, puis traite le contenu avec le prompt en utilisant un modèle petit et rapide.
+Utilisez `web_fetch` pour récupérer le contenu d'une URL spécifiée et le traiter à l'aide d'un modèle IA. L'outil prend une URL et un prompt en entrée, récupère le contenu de l'URL, convertit le HTML en markdown, puis traite le contenu avec le prompt en utilisant un petit modèle rapide.
 
 ### Arguments
 
@@ -47,8 +47,8 @@ web_fetch(url="https://github.com/QwenLM/Qwen/blob/main/README.md", prompt="Quel
 
 ## Notes importantes
 
-- **Traitement d'URL unique :** `web_fetch` traite une seule URL à la fois. Pour analyser plusieurs URLs, effectuez des appels séparés à l'outil.
+- **Traitement d'une seule URL :** `web_fetch` traite une URL à la fois. Pour analyser plusieurs URLs, effectuez des appels séparés à l'outil.
 - **Format d'URL :** L'outil met automatiquement à niveau les URLs HTTP vers HTTPS et convertit les URLs GitHub blob au format raw pour un meilleur accès au contenu.
-- **Traitement du contenu :** L'outil récupère le contenu directement et le traite en utilisant un modèle AI, convertissant le HTML en format texte lisible.
+- **Traitement du contenu :** L'outil récupère le contenu directement et le traite en utilisant un modèle AI, convertissant le HTML en texte lisible.
 - **Qualité de la sortie :** La qualité de la sortie dépendra de la clarté des instructions dans le prompt.
 - **Outils MCP :** Si un outil web fetch fourni par MCP est disponible (commençant par "mcp__"), préférez utiliser cet outil car il peut avoir moins de restrictions.

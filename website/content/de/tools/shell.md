@@ -4,7 +4,9 @@ Dieses Dokument beschreibt das `run_shell_command` Tool für Qwen Code.
 
 ## Beschreibung
 
-Verwende `run_shell_command`, um mit dem zugrunde liegenden System zu interagieren, Skripte auszuführen oder command-line Operationen durchzuführen. `run_shell_command` führt einen gegebenen Shell-Befehl aus. Unter Windows wird der Befehl mit `cmd.exe /c` ausgeführt. Auf anderen Plattformen wird der Befehl mit `bash -c` ausgeführt.
+Verwende `run_shell_command`, um mit dem zugrunde liegenden System zu interagieren, Skripte auszuführen oder command-line Operationen durchzuführen. `run_shell_command` führt einen gegebenen Shell-Befehl aus, einschließlich interaktiver Befehle, die eine Benutzereingabe erfordern (z. B. `vim`, `git rebase -i`), wenn die Einstellung `tools.shell.enableInteractiveShell` auf `true` gesetzt ist.
+
+Unter Windows werden Befehle mit `cmd.exe /c` ausgeführt. Auf anderen Plattformen werden sie mit `bash -c` ausgeführt.
 
 ### Argumente
 
@@ -13,29 +15,29 @@ Verwende `run_shell_command`, um mit dem zugrunde liegenden System zu interagier
 - `command` (string, erforderlich): Der exakte Shell-Befehl, der ausgeführt werden soll.
 - `description` (string, optional): Eine kurze Beschreibung des Zwecks des Befehls, die dem Benutzer angezeigt wird.
 - `directory` (string, optional): Das Verzeichnis (relativ zum Projektstamm), in dem der Befehl ausgeführt werden soll. Wenn nicht angegeben, wird der Befehl im Projektstamm ausgeführt.
-- `is_background` (boolean, erforderlich): Ob der Befehl im Hintergrund ausgeführt werden soll. Dieser Parameter ist erforderlich, um eine explizite Entscheidung über den Ausführungsmodus des Befehls zu gewährleisten. Auf `true` setzen für langlaufende Prozesse wie Entwicklungsserver, Watcher oder Daemons, die weiterlaufen sollen, ohne weitere Befehle zu blockieren. Auf `false` setzen für einmalige Befehle, die abgeschlossen werden müssen, bevor fortgefahren wird.
+- `is_background` (boolean, erforderlich): Ob der Befehl im Hintergrund ausgeführt werden soll. Dieser Parameter ist erforderlich, um eine explizite Entscheidung über den Ausführungsmodus des Befehls zu gewährleisten. Auf `true` setzen für langlaufende Prozesse wie Entwicklungsserver, Watcher oder Daemons, die weiterlaufen sollen, ohne weitere Befehle zu blockieren. Auf `false` setzen für einmalige Befehle, die abgeschlossen sein müssen, bevor fortgefahren wird.
 
 ## Verwendung von `run_shell_command` mit Qwen Code
 
-Bei der Verwendung von `run_shell_command` wird der Befehl als Subprozess ausgeführt. Du kannst steuern, ob Befehle im Hintergrund oder Vordergrund laufen, indem du den Parameter `is_background` verwendest oder explizit ein `&` an die Befehle anhängst. Das Tool gibt detaillierte Informationen über die Ausführung zurück, darunter:
+Bei der Verwendung von `run_shell_command` wird der Befehl als Subprozess ausgeführt. Du kannst steuern, ob Befehle im Hintergrund oder Vordergrund laufen, indem du den Parameter `is_background` verwendest oder explizit `&` zu den Befehlen hinzufügst. Das Tool gibt detaillierte Informationen über die Ausführung zurück, darunter:
 
 ### Erforderlicher Background-Parameter
 
-Der Parameter `is_background` ist **erforderlich** für alle Befehlsausführungen. Dieses Design stellt sicher, dass das LLM (und die Benutzer) explizit entscheiden müssen, ob jeder Befehl im Hintergrund oder Vordergrund ausgeführt werden soll. Dadurch wird ein bewusstes und vorhersehbares Verhalten bei der Befehlsausführung gefördert. Durch die obligatorische Angabe dieses Parameters wird vermieden, dass unbeabsichtigt auf die Vordergrundausführung zurückgegriffen wird, was bei lang laufenden Prozessen nachfolgende Operationen blockieren könnte.
+Der Parameter `is_background` ist **erforderlich** für alle Befehlsausführungen. Dieses Design stellt sicher, dass das LLM (und die Benutzer) explizit entscheiden müssen, ob jeder Befehl im Hintergrund oder Vordergrund ausgeführt werden soll. Dadurch wird ein bewusstes und vorhersehbares Verhalten bei der Befehlsausführung gefördert. Durch die Verpflichtung zur Angabe dieses Parameters wird vermieden, dass unbeabsichtigt auf die Vordergrundausführung zurückgegriffen wird, was bei langlaufenden Prozessen nachfolgende Operationen blockieren könnte.
 
-### Background vs Foreground Execution
+### Hintergrund- vs Vordergrundausführung
 
-Das Tool behandelt Background- und Foreground-Ausführung intelligent basierend auf deiner expliziten Auswahl:
+Das Tool behandelt intelligent Hintergrund- und Vordergrundausführung basierend auf deiner expliziten Auswahl:
 
-**Verwende Background-Ausführung (`is_background: true`) für:**
+**Verwende die Hintergrundausführung (`is_background: true`) für:**
 
-- Langlaufende Development-Server: `npm run start`, `npm run dev`, `yarn dev`
+- Langlaufende Entwicklungsserver: `npm run start`, `npm run dev`, `yarn dev`
 - Build-Watcher: `npm run watch`, `webpack --watch`
-- Datenbank-Server: `mongod`, `mysql`, `redis-server`
-- Web-Server: `python -m http.server`, `php -S localhost:8000`
+- Datenbankserver: `mongod`, `mysql`, `redis-server`
+- Webserver: `python -m http.server`, `php -S localhost:8000`
 - Jeder Befehl, der unbestimmt lange läuft, bis er manuell gestoppt wird
 
-**Verwende Foreground-Ausführung (`is_background: false`) für:**
+**Verwende die Vordergrundausführung (`is_background: false`) für:**
 
 - Einmalige Befehle: `ls`, `cat`, `grep`
 - Build-Befehle: `npm run build`, `make`
@@ -47,7 +49,7 @@ Das Tool behandelt Background- und Foreground-Ausführung intelligent basierend 
 
 Das Tool gibt detaillierte Informationen über die Ausführung zurück, darunter:
 
-- `Command`: Der Befehl, der ausgeführt wurde.
+- `Command`: Der ausgeführte Befehl.
 - `Directory`: Das Verzeichnis, in dem der Befehl ausgeführt wurde.
 - `Stdout`: Ausgabe des Standard-Ausgabestreams.
 - `Stderr`: Ausgabe des Standard-Fehlerstreams.
@@ -78,13 +80,13 @@ Ein Skript in einem bestimmten Verzeichnis ausführen:
 run_shell_command(command="./my_script.sh", directory="scripts", description="Run my custom script", is_background=false)
 ```
 
-Einen Development-Server im Hintergrund starten (empfohlener Ansatz):
+Einen Background-Entwicklungsserver starten (empfohlener Ansatz):
 
 ```bash
 run_shell_command(command="npm run dev", description="Start development server in background", is_background=true)
 ```
 
-Einen Server im Hintergrund starten (Alternative mit explizitem &):
+Einen Background-Server starten (Alternative mit explizitem &):
 
 ```bash
 run_shell_command(command="npm run dev &", description="Start development server in background", is_background=false)
@@ -96,20 +98,77 @@ Einen Build-Befehl im Vordergrund ausführen:
 run_shell_command(command="npm run build", description="Build the project", is_background=false)
 ```
 
-Mehrere Services im Hintergrund starten:
+Mehrere Background-Services starten:
 
 ```bash
 run_shell_command(command="docker-compose up", description="Start all services", is_background=true)
 ```
 
+## Konfiguration
+
+Du kannst das Verhalten des `run_shell_command`-Tools konfigurieren, indem du deine `settings.json`-Datei bearbeitest oder den `/settings`-Befehl im Qwen Code verwendest.
+
+### Interaktive Befehle aktivieren
+
+Um interaktive Befehle zu aktivieren, musst du die Einstellung `tools.shell.enableInteractiveShell` auf `true` setzen. Dadurch wird `node-pty` für die Ausführung von Shell-Befehlen verwendet, was interaktive Sessions ermöglicht. Falls `node-pty` nicht verfügbar ist, greift das System auf die `child_process`-Implementierung zurück, die keine interaktiven Befehle unterstützt.
+
+**Beispiel `settings.json`:**
+
+```json
+{
+  "tools": {
+    "shell": {
+      "enableInteractiveShell": true
+    }
+  }
+}
+```
+
+### Farbige Ausgabe aktivieren
+
+Um Farben in der Shell-Ausgabe anzuzeigen, musst du die Einstellung `tools.shell.showColor` auf `true` setzen. **Hinweis: Diese Einstellung gilt nur, wenn `tools.shell.enableInteractiveShell` aktiviert ist.**
+
+**Beispiel `settings.json`:**
+
+```json
+{
+  "tools": {
+    "shell": {
+      "showColor": true
+    }
+  }
+}
+```
+
+### Pager konfigurieren
+
+Du kannst einen benutzerdefinierten Pager für die Shell-Ausgabe festlegen, indem du die Einstellung `tools.shell.pager` anpasst. Der Standard-Pager ist `cat`. **Hinweis: Diese Einstellung gilt nur, wenn `tools.shell.enableInteractiveShell` aktiviert ist.**
+
+**Beispiel `settings.json`:**
+
+```json
+{
+  "tools": {
+    "shell": {
+      "pager": "less"
+    }
+  }
+}
+```
+
+## Interaktive Befehle
+
+Das `run_shell_command`-Tool unterstützt jetzt interaktive Befehle durch die Integration eines Pseudo-Terminals (pty). Dadurch kannst du Befehle ausführen, die eine Echtzeiteingabe benötigen, wie Texteditoren (`vim`, `nano`), Terminal-basierte UIs (`htop`) oder interaktive Versionskontroll-Operationen (`git rebase -i`).
+
+Während ein interaktiver Befehl läuft, kannst du Eingaben direkt aus Qwen Code senden. Um den Fokus auf die interaktive Shell zu setzen, drücke `Strg+F`. Die Terminalausgabe, inklusive komplexer TUIs, wird korrekt dargestellt.
+
 ## Wichtige Hinweise
 
-- **Sicherheit:** Sei vorsichtig beim Ausführen von Befehlen, besonders solchen, die aus Benutzereingaben zusammengesetzt werden, um Sicherheitslücken zu vermeiden.
-- **Interaktive Befehle:** Vermeide Befehle, die eine interaktive Benutzereingabe erfordern, da dies dazu führen kann, dass das Tool hängen bleibt. Verwende nach Möglichkeit nicht-interaktive Flags (z. B. `npm init -y`).
-- **Fehlerbehandlung:** Prüfe die Felder `Stderr`, `Error` und `Exit Code`, um festzustellen, ob ein Befehl erfolgreich ausgeführt wurde.
-- **Hintergrundprozesse:** Wenn `is_background=true` ist oder wenn ein Befehl `&` enthält, kehrt das Tool sofort zurück und der Prozess läuft im Hintergrund weiter. Das Feld `Background PIDs` enthält die Prozess-ID des Hintergrundprozesses.
-- **Auswahl der Hintergrundausführung:** Der Parameter `is_background` ist erforderlich und bietet explizite Kontrolle über den Ausführungsmodus. Du kannst auch `&` zum Befehl hinzufügen, um die manuelle Hintergrundausführung zu erzwingen, aber der Parameter `is_background` muss dennoch angegeben werden. Der Parameter macht die Absicht klarer und übernimmt automatisch das Setup für die Hintergrundausführung.
-- **Befehlsbeschreibungen:** Bei Verwendung von `is_background=true` enthält die Befehlsbeschreibung einen `[background]`-Hinweis, um den Ausführungsmodus klar zu kennzeichnen.
+- **Sicherheit:** Sei vorsichtig beim Ausführen von Commands, besonders solchen, die aus Benutzereingaben konstruiert werden, um Sicherheitslücken zu vermeiden.
+- **Fehlerbehandlung:** Prüfe die Felder `Stderr`, `Error` und `Exit Code`, um festzustellen, ob ein Command erfolgreich ausgeführt wurde.
+- **Hintergrundprozesse:** Wenn `is_background=true` ist oder wenn ein Command ein `&` enthält, kehrt das Tool sofort zurück und der Prozess läuft im Hintergrund weiter. Das Feld `Background PIDs` enthält dann die Prozess-ID des Hintergrundprozesses.
+- **Optionen für die Hintergrundausführung:** Der Parameter `is_background` ist erforderlich und ermöglicht eine explizite Kontrolle über den Ausführungsmodus. Du kannst auch manuell `&` zum Command hinzufügen, um es im Hintergrund laufen zu lassen, aber der Parameter `is_background` muss trotzdem angegeben werden. Dieser Parameter macht die Absicht klarer und übernimmt automatisch das Setup für die Hintergrundausführung.
+- **Command-Beschreibungen:** Bei Verwendung von `is_background=true` wird in der Command-Beschreibung ein `[background]`-Hinweis eingefügt, um den Ausführungsmodus deutlich zu kennzeichnen.
 
 ## Umgebungsvariablen
 
@@ -117,16 +176,16 @@ Wenn `run_shell_command` einen Befehl ausführt, setzt es die Umgebungsvariable 
 
 ## Command Restrictions
 
-Du kannst die Befehle, die vom `run_shell_command` Tool ausgeführt werden dürfen, mithilfe der Einstellungen `coreTools` und `excludeTools` in deiner Konfigurationsdatei einschränken.
+Du kannst die Befehle einschränken, die vom `run_shell_command` Tool ausgeführt werden dürfen, indem du die Einstellungen `tools.core` und `tools.exclude` in deiner Konfigurationsdatei verwendest.
 
-- `coreTools`: Um `run_shell_command` auf eine bestimmte Menge an Befehlen zu beschränken, füge Einträge im Format `run_shell_command(<command>)` zur `coreTools` Liste hinzu. Beispiel: `"coreTools": ["run_shell_command(git)"]` erlaubt ausschließlich `git` Befehle. Der generische Eintrag `run_shell_command` ohne Angabe eines konkreten Befehls wirkt wie ein Wildcard und erlaubt alle Befehle, die nicht explizit blockiert sind.
-- `excludeTools`: Um bestimmte Befehle zu blockieren, füge Einträge im Format `run_shell_command(<command>)` zur `excludeTools` Liste hinzu. Beispiel: `"excludeTools": ["run_shell_command(rm)"]` blockiert jegliche `rm` Befehle.
+- `tools.core`: Um `run_shell_command` auf eine bestimmte Menge von Befehlen zu beschränken, füge Einträge im Format `run_shell_command(<command>)` zur `core` Liste unter der Kategorie `tools` hinzu. Beispiel: `"tools": {"core": ["run_shell_command(git)"]}` erlaubt nur `git` Befehle. Der generische Eintrag `run_shell_command` wirkt wie ein Wildcard und erlaubt jeden Befehl, der nicht explizit blockiert ist.
+- `tools.exclude`: Um spezifische Befehle zu blockieren, füge Einträge im Format `run_shell_command(<command>)` zur `exclude` Liste unter der Kategorie `tools` hinzu. Beispiel: `"tools": {"exclude": ["run_shell_command(rm)"]}` blockiert `rm` Befehle.
 
 Die Validierungslogik ist sicher und flexibel gestaltet:
 
-1.  **Command Chaining deaktiviert**: Das Tool trennt automatisch verkettete Befehle, die mit `&&`, `||` oder `;` verbunden sind, und validiert jeden Teil separat. Wenn ein Teil der Kette nicht erlaubt ist, wird der gesamte Befehl blockiert.
-2.  **Präfix-basiertes Matching**: Das Tool verwendet Präfix-Vergleiche. Wenn du beispielsweise `git` erlaubst, kannst du auch `git status` oder `git log` ausführen.
-3.  **Blocklist hat Vorrang**: Die `excludeTools` Liste wird immer zuerst überprüft. Wenn ein Befehl einem blockierten Präfix entspricht, wird er abgelehnt – selbst dann, wenn er gleichzeitig einem erlaubten Präfix aus `coreTools` entspricht.
+1.  **Command Chaining deaktiviert**: Das Tool teilt automatisch Befehlsketten, die mit `&&`, `||` oder `;` verbunden sind, in einzelne Teile auf und validiert jeden Teil separat. Wenn ein Teil der Kette nicht erlaubt ist, wird der gesamte Befehl blockiert.
+2.  **Prefix Matching**: Das Tool verwendet Prefix-Matching. Wenn du zum Beispiel `git` erlaubst, kannst du `git status` oder `git log` ausführen.
+3.  **Blocklist hat Vorrang**: Die `tools.exclude` Liste wird immer zuerst überprüft. Wenn ein Befehl einem blockierten Präfix entspricht, wird er abgelehnt – selbst dann, wenn er auch einem erlaubten Präfix in `tools.core` entspricht.
 
 ### Beispiele für Befehlseinschränkungen
 
@@ -136,7 +195,9 @@ Um nur `git`- und `npm`-Befehle zu erlauben und alle anderen zu blockieren:
 
 ```json
 {
-  "coreTools": ["run_shell_command(git)", "run_shell_command(npm)"]
+  "tools": {
+    "core": ["run_shell_command(git)", "run_shell_command(npm)"]
+  }
 }
 ```
 
@@ -150,8 +211,10 @@ Um `rm` zu blockieren und alle anderen Befehle zu erlauben:
 
 ```json
 {
-  "coreTools": ["run_shell_command"],
-  "excludeTools": ["run_shell_command(rm)"]
+  "tools": {
+    "core": ["run_shell_command"],
+    "exclude": ["run_shell_command(rm)"]
+  }
 }
 ```
 
@@ -161,12 +224,14 @@ Um `rm` zu blockieren und alle anderen Befehle zu erlauben:
 
 **Blocklist hat Vorrang**
 
-Wenn ein Befehlspräfix sowohl in `coreTools` als auch in `excludeTools` enthalten ist, wird es blockiert.
+Wenn ein Befehlspräfix sowohl in `tools.core` als auch in `tools.exclude` steht, wird es blockiert.
 
 ```json
 {
-  "coreTools": ["run_shell_command(git)"],
-  "excludeTools": ["run_shell_command(git push)"]
+  "tools": {
+    "core": ["run_shell_command(git)"],
+    "exclude": ["run_shell_command(git push)"]
+  }
 }
 ```
 
@@ -175,17 +240,19 @@ Wenn ein Befehlspräfix sowohl in `coreTools` als auch in `excludeTools` enthalt
 
 **Alle Shell-Befehle blockieren**
 
-Um alle Shell-Befehle zu blockieren, füge den `run_shell_command` Wildcard zu `excludeTools` hinzu:
+Um alle Shell-Befehle zu blockieren, füge den `run_shell_command` Wildcard zu `tools.exclude` hinzu:
 
 ```json
 {
-  "excludeTools": ["run_shell_command"]
+  "tools": {
+    "exclude": ["run_shell_command"]
+  }
 }
 ```
 
 - `ls -l`: Blockiert
-- `any other command`: Blockiert
+- `irgendein anderer Befehl`: Blockiert
 
 ## Sicherheitshinweis für `excludeTools`
 
-Befehlsspezifische Einschränkungen in `excludeTools` für `run_shell_command` basieren auf einfacher String-Matching und können leicht umgangen werden. Diese Funktion ist **kein Sicherheitsmechanismus** und sollte nicht darauf verlassen werden, um nicht vertrauenswürdigen Code sicher auszuführen. Es wird empfohlen, `coreTools` zu verwenden, um explizit die Befehle auszuwählen, die ausgeführt werden dürfen.
+Befehlsspezifische Einschränkungen in `excludeTools` für `run_shell_command` basieren auf einfacher String-Matching und können leicht umgangen werden. Dieses Feature ist **kein Sicherheitsmechanismus** und sollte nicht darauf verlassen werden, um nicht vertrauenswürdigen Code sicher auszuführen. Es wird empfohlen, `coreTools` zu verwenden, um explizit die Befehle auszuwählen, die ausgeführt werden dürfen.
