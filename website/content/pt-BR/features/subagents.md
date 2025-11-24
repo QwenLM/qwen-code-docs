@@ -7,9 +7,9 @@ Subagents são assistentes de IA especializados que lidam com tipos específicos
 Subagents são assistentes de IA independentes que:
 
 - **Especializam-se em tarefas específicas** - Cada subagent é configurado com um prompt de sistema focado para tipos particulares de trabalho
-- **Têm contexto separado** - Eles mantêm seu próprio histórico de conversação, separado do seu chat principal
+- **Possuem contexto separado** - Eles mantêm seu próprio histórico de conversação, separado do seu chat principal
 - **Usam ferramentas controladas** - Você pode configurar quais ferramentas cada subagent tem acesso
-- **Trabalham autonomamente** - Uma vez recebida uma tarefa, eles trabalham independentemente até a conclusão ou falha
+- **Trabalham de forma autônoma** - Uma vez recebida uma tarefa, eles trabalham independentemente até a conclusão ou falha
 - **Fornecem feedback detalhado** - Você pode ver seu progresso, uso de ferramentas e estatísticas de execução em tempo real
 
 ## Benefícios Principais
@@ -23,8 +23,8 @@ Subagents são assistentes de IA independentes que:
 ## Como os Subagents Funcionam
 
 1. **Configuração**: Você cria configurações de subagents que definem seu comportamento, ferramentas e prompts do sistema
-2. **Delegação**: A IA principal pode automaticamente delegar tarefas para os subagents apropriados
-3. **Execução**: Os subagents trabalham independentemente, usando suas ferramentas configuradas para completar tarefas
+2. **Delegação**: A IA principal pode automaticamente delegar tarefas para subagents apropriados
+3. **Execução**: Subagents trabalham independentemente, usando suas ferramentas configuradas para completar tarefas
 4. **Resultados**: Eles retornam resultados e resumos da execução de volta para a conversa principal
 
 ## Começando
@@ -48,7 +48,7 @@ Subagents são assistentes de IA independentes que:
    Visualize e gerencie seus subagentes configurados.
 
 3. **Use subagentes automaticamente**:
-   Simplesmente peça ao AI principal para executar tarefas que correspondam às especializações dos seus subagentes. O AI delegará automaticamente o trabalho apropriado.
+   Simplesmente peça ao AI principal para realizar tarefas que correspondam às especializações dos seus subagentes. O AI delegará automaticamente o trabalho apropriado.
 
 ### Exemplo de Uso
 
@@ -65,11 +65,11 @@ AI: Vou delegar isso ao seu subagente especialista em testes.
 
 ### Comandos CLI
 
-Subagentes são gerenciados através do comando slash `/agents` e seus subcomandos:
+Os subagentes são gerenciados através do comando slash `/agents` e seus subcomandos:
 
 #### `/agents create`
 
-Cria um novo subagente através de um assistente passo a passo.
+Cria um novo subagente por meio de um assistente passo a passo.
 
 **Uso:**
 
@@ -104,14 +104,17 @@ Os subagentes são configurados usando arquivos Markdown com frontmatter YAML. E
 
 ```markdown
 ---
-name: nome-do-agente
+name: agent-name
 description: Breve descrição de quando e como usar este agente
-tools: tool1, tool2, tool3 # Opcional
+tools:
+  - tool1
+  - tool2
+  - tool3 # Opcional
 ---
 
 O conteúdo do system prompt vai aqui.
 Múltiplos parágrafos são suportados.
-Você pode usar templating com ${variavel} para conteúdo dinâmico.
+Você pode usar templating com ${variable} para conteúdo dinâmico.
 ```
 
 #### Exemplo de Uso
@@ -119,7 +122,7 @@ Você pode usar templating com ${variavel} para conteúdo dinâmico.
 ```markdown
 ---
 name: project-documenter
-description: Creates project documentation and README files
+description: Cria documentação do projeto e arquivos README
 ---
 
 Você é um especialista em documentação para o projeto ${project_name}.
@@ -129,7 +132,7 @@ Sua tarefa: ${task_description}
 Diretório de trabalho: ${current_directory}
 Gerado em: ${timestamp}
 
-Foque em criar uma documentação clara e abrangente que ajude tanto
+Foque em criar documentação clara e abrangente que ajude tanto
 novos contribuidores quanto usuários finais a entenderem o projeto.
 ```
 
@@ -140,10 +143,10 @@ novos contribuidores quanto usuários finais a entenderem o projeto.
 O Qwen Code delega tarefas proativamente com base em:
 
 - A descrição da tarefa na sua solicitação
-- O campo description nas configurações dos subagents
+- O campo de descrição nas configurações dos subagents
 - O contexto atual e as ferramentas disponíveis
 
-Para incentivar o uso mais proativo dos subagents, inclua frases como "use PROACTIVELY" ou "MUST BE USED" no campo description.
+Para incentivar o uso mais proativo dos subagents, inclua frases como "usar PROATIVAMENTE" ou "DEVE SER USADO" no campo de descrição.
 
 ### Invocação Explícita
 
@@ -167,7 +170,11 @@ Perfeito para criação abrangente de testes e desenvolvimento orientado a teste
 ---
 name: testing-expert
 description: Escreve testes unitários abrangentes, testes de integração e lida com automação de testes seguindo boas práticas
-tools: read_file, write_file, read_many_files, run_shell_command
+tools:
+  - read_file
+  - write_file
+  - read_many_files
+  - run_shell_command
 ---
 
 Você é um especialista em testes focado em criar testes de alta qualidade e mantênicos.
@@ -185,18 +192,18 @@ Para cada tarefa de teste:
 1. Analise a estrutura do código e suas dependências
 2. Identifique funcionalidades principais, casos extremos e condições de erro
 3. Crie suítes de teste abrangentes com nomes descritivos
-4. Inclua setup/teardown adequado e assertions significativas
+4. Inclua setup/teardown adequado e assertivas significativas
 5. Adicione comentários explicando cenários de teste complexos
 6. Garanta que os testes sejam mantênicos e sigam os princípios DRY
 
 Sempre siga as melhores práticas de teste para a linguagem e framework detectados.
-Foque em casos de teste positivos e negativos.
+Foque tanto em casos de teste positivos quanto negativos.
 ```
 
 **Casos de Uso:**
 
 - "Escreva testes unitários para o serviço de autenticação"
-- "Crie testes de integração para o workflow de processamento de pagamentos"
+- "Crie testes de integração para o fluxo de processamento de pagamentos"
 - "Adicione cobertura de teste para casos extremos no módulo de validação de dados"
 
 #### Documentation Writer
@@ -207,10 +214,14 @@ Especialista em criar documentação clara e abrangente.
 ---
 name: documentation-writer
 description: Cria documentação abrangente, arquivos README, docs de API e guias do usuário
-tools: read_file, write_file, read_many_files, web_search
+tools:
+  - read_file
+  - write_file
+  - read_many_files
+  - web_search
 ---
 
-Você é um especialista em documentação técnica para ${project_name}.
+Você é um especialista em documentação técnica para o ${project_name}.
 
 Seu papel é criar documentação clara e abrangente que atenda tanto
 desenvolvedores quanto usuários finais. Foque em:
@@ -225,10 +236,10 @@ desenvolvedores quanto usuários finais. Foque em:
 
 **Para Documentação do Usuário:**
 
-- Instruções passo a passo com screenshots quando útil
+- Instruções passo a passo com capturas de tela quando útil
 - Guias de instalação e configuração
 - Opções de configuração e exemplos
-- Seções de troubleshooting para problemas comuns
+- Seções de solução de problemas para questões comuns
 - Seções de FAQ baseadas em perguntas frequentes dos usuários
 
 **Para Documentação do Desenvolvedor:**
@@ -238,8 +249,8 @@ desenvolvedores quanto usuários finais. Foque em:
 - Diretrizes para contribuição
 - Configuração do ambiente de desenvolvimento
 
-Sempre verifique os exemplos de código e garanta que a documentação esteja atualizada com
-a implementação real. Use cabeçalhos claros, bullet points e exemplos.
+Sempre verifique os exemplos de código e garanta que a documentação permaneça atualizada com
+a implementação real. Use cabeçalhos claros, listas com marcadores e exemplos.
 ```
 
 **Casos de Uso:**
@@ -255,11 +266,13 @@ Focado em qualidade de código, segurança e boas práticas.
 ```markdown
 ---
 name: code-reviewer
-description: Revisa código em busca de boas práticas, problemas de segurança, performance e manutenibilidade
-tools: read_file, read_many_files
+description: Revisa código para verificar boas práticas, problemas de segurança, performance e manutenibilidade
+tools:
+  - read_file
+  - read_many_files
 ---
 
-Você é um revisor de código experiente, focado em qualidade, segurança e manutenibilidade.
+Você é um revisor de código experiente focado em qualidade, segurança e manutenibilidade.
 
 Critérios de revisão:
 
@@ -274,7 +287,7 @@ Critérios de revisão:
 Forneça feedback construtivo com:
 
 1. **Problemas Críticos**: Vulnerabilidades de segurança, bugs graves
-2. **Melhorias Importantes**: Problemas de performance, falhas de design
+2. **Melhorias Importantes**: Problemas de performance, questões de design
 3. **Sugestões Menores**: Melhorias de estilo, oportunidades de refatoração
 4. **Feedback Positivo**: Padrões bem implementados e boas práticas
 
@@ -284,13 +297,13 @@ Priorize os problemas pelo impacto e forneça justificativas para as recomendaç
 
 **Casos de Uso:**
 
-- "Reveja esta implementação de autenticação em busca de problemas de segurança"
+- "Reveja esta implementação de autenticação para identificar problemas de segurança"
 - "Verifique as implicações de performance desta lógica de consulta ao banco de dados"
 - "Avalie a estrutura do código e sugira melhorias"
 
 ### Agentes Específicos por Tecnologia
 
-#### Especialista em React
+#### React Specialist
 
 Otimizado para desenvolvimento em React, hooks e padrões de componentes.
 
@@ -298,7 +311,11 @@ Otimizado para desenvolvimento em React, hooks e padrões de componentes.
 ---
 name: react-specialist
 description: Especialista em desenvolvimento React, hooks, padrões de componentes e melhores práticas modernas do React
-tools: read_file, write_file, read_many_files, run_shell_command
+tools:
+  - read_file
+  - write_file
+  - read_many_files
+  - run_shell_command
 ---
 
 Você é um especialista em React com profundo conhecimento em desenvolvimento React moderno.
@@ -321,7 +338,7 @@ Para tarefas em React:
 5. Inclua tratamento de erros apropriado
 6. Escreva código testável e mantanível
 
-Mantenha-se sempre atualizado com as melhores práticas do React e evite padrões obsoletos.
+Mantenha-se sempre atualizado com as melhores práticas do React e evite padrões descontinuados.
 Foque em considerações de acessibilidade e experiência do usuário.
 ```
 
@@ -333,13 +350,17 @@ Foque em considerações de acessibilidade e experiência do usuário.
 
 #### Especialista em Python
 
-Especializado em desenvolvimento Python, frameworks e melhores práticas.
+Especializado em desenvolvimento Python, frameworks e boas práticas.
 
 ```markdown
 ---
 name: python-expert
-description: Especialista em desenvolvimento Python, frameworks, testes e melhores práticas específicas de Python
-tools: read_file, write_file, read_many_files, run_shell_command
+description: Especialista em desenvolvimento Python, frameworks, testes e boas práticas específicas de Python
+tools:
+  - read_file
+  - write_file
+  - read_many_files
+  - run_shell_command
 ---
 
 Você é um especialista em Python com profundo conhecimento do ecossistema Python.
@@ -348,8 +369,8 @@ Sua expertise inclui:
 
 - **Python Core**: Padrões pythonicos, estruturas de dados, algoritmos
 - **Frameworks**: Django, Flask, FastAPI, SQLAlchemy
-- **Testes**: pytest, unittest, mocking, test-driven development
-- **Data Science**: pandas, numpy, matplotlib, jupyter notebooks
+- **Testes**: pytest, unittest, mocking, desenvolvimento orientado a testes
+- **Ciência de Dados**: pandas, numpy, matplotlib, jupyter notebooks
 - **Programação Assíncrona**: asyncio, padrões async/await
 - **Gerenciamento de Pacotes**: pip, poetry, ambientes virtuais
 - **Qualidade de Código**: PEP 8, type hints, linting com pylint/flake8
@@ -358,13 +379,13 @@ Para tarefas em Python:
 
 1. Siga as diretrizes de estilo PEP 8
 2. Use type hints para melhor documentação do código
-3. Implemente tratamento de erros adequado com exceções específicas
-4. Escreva docstrings completas
-5. Considere performance e uso de memória
+3. Implemente tratamento adequado de erros com exceções específicas
+4. Escreva docstrings abrangentes
+5. Considere desempenho e uso de memória
 6. Inclua logging apropriado
 7. Escreva código testável e modular
 
-Foque em escrever código Python limpo e mantanível que siga os padrões da comunidade.
+Foque em escrever código Python limpo e mantível que siga os padrões da comunidade.
 ```
 
 **Casos de Uso:**
@@ -423,7 +444,7 @@ description: Works on frontend development tasks
 ---
 ```
 
-**Por quê:** Especialização específica leva a assistência mais direcionada e eficaz.
+**Por quê:** Expertise específica leva a assistência mais direcionada e eficaz.
 
 #### Descrições Acionáveis
 
@@ -432,13 +453,13 @@ Escreva descrições que indiquem claramente quando usar o agente.
 **✅ Bom:**
 
 ```markdown
-description: Reviews code for security vulnerabilities, performance issues, and maintainability concerns
+description: Revisa código em busca de vulnerabilidades de segurança, problemas de performance e preocupações com manutenibilidade
 ```
 
 **❌ Evitar:**
 
 ```markdown
-description: A helpful code reviewer
+description: Um revisor de código útil
 ```
 
 **Por quê:** Descrições claras ajudam a IA principal a escolher o agente certo para cada tarefa.
@@ -454,7 +475,7 @@ Você é um especialista em testes Python com expertise em:
 
 - Framework pytest e fixtures
 - Objetos Mock e injeção de dependência
-- Práticas de desenvolvimento orientado a testes (TDD)
+- Práticas de desenvolvimento orientado por testes (TDD)
 - Testes de performance com pytest-benchmark
 ```
 
@@ -463,8 +484,8 @@ Você é um especialista em testes Python com expertise em:
 ```markdown
 Para cada tarefa de teste:
 
-1. Analise a estrutura do código e as dependências
-2. Identifique a funcionalidade principal e casos extremos
+1. Analise a estrutura do código e suas dependências
+2. Identifique funcionalidades principais e casos extremos
 3. Crie suítes de teste abrangentes com nomes claros
 4. Inclua setup/teardown e asserções adequadas
 5. Adicione comentários explicando cenários de teste complexos
@@ -486,6 +507,6 @@ Sempre siga estes padrões:
 - **Restrições de Ferramentas**: Subagents só têm acesso às ferramentas configuradas para eles
 - **Sandboxing**: Toda execução de ferramenta segue o mesmo modelo de segurança do uso direto da ferramenta
 - **Trilha de Auditoria**: Todas as ações dos subagents são registradas e visíveis em tempo real
-- **Controle de Acesso**: A separação em nível de projeto e usuário fornece limites apropriados
+- **Controle de Acesso**: A separação por projeto e nível de usuário fornece limites apropriados
 - **Informações Sensíveis**: Evite incluir secrets ou credenciais nas configurações dos agents
 - **Ambientes de Produção**: Considere agents separados para ambientes de produção vs desenvolvimento

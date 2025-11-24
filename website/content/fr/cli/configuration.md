@@ -13,7 +13,7 @@ Qwen Code propose plusieurs façons de configurer son comportement, notamment vi
 La configuration est appliquée dans l'ordre de priorité suivant (les nombres plus bas sont écrasés par les nombres plus élevés) :
 
 1.  **Valeurs par défaut :** Valeurs codées en dur dans l'application.
-2.  **Fichier de valeurs par défaut système :** Paramètres par défaut à l'échelle du système qui peuvent être écrasés par d'autres fichiers de configuration.
+2.  **Fichier de paramètres système :** Paramètres par défaut à l'échelle du système qui peuvent être écrasés par d'autres fichiers de configuration.
 3.  **Fichier de paramètres utilisateur :** Paramètres globaux pour l'utilisateur actuel.
 4.  **Fichier de paramètres projet :** Paramètres spécifiques au projet.
 5.  **Fichier de paramètres système :** Paramètres à l'échelle du système qui écrasent tous les autres fichiers de configuration.
@@ -22,31 +22,31 @@ La configuration est appliquée dans l'ordre de priorité suivant (les nombres p
 
 ## Fichiers de configuration
 
-Qwen Code utilise des fichiers de configuration au format JSON pour stocker les paramètres de manière persistante. Il existe quatre emplacements possibles pour ces fichiers :
+Qwen Code utilise des fichiers de configuration au format JSON pour stocker les paramètres de manière persistante. Ces fichiers peuvent être situés à quatre endroits différents :
 
 - **Fichier des valeurs par défaut du système :**
   - **Emplacement :** `/etc/qwen-code/system-defaults.json` (Linux), `C:\ProgramData\qwen-code\system-defaults.json` (Windows) ou `/Library/Application Support/QwenCode/system-defaults.json` (macOS). Ce chemin peut être modifié via la variable d’environnement `QWEN_CODE_SYSTEM_DEFAULTS_PATH`.
   - **Portée :** Fournit une couche de base contenant les paramètres par défaut à l’échelle du système. Ces paramètres ont la priorité la plus faible et sont destinés à être écrasés par les paramètres utilisateur, projet ou système.
 
 - **Fichier des paramètres utilisateur :**
-  - **Emplacement :** `~/.qwen/settings.json` (où `~` correspond à votre répertoire personnel).
+  - **Emplacement :** `~/.qwen/settings.json` (où `~` représente votre répertoire personnel).
   - **Portée :** S’applique à toutes les sessions Qwen Code de l’utilisateur courant.
 
 - **Fichier des paramètres projet :**
-  - **Emplacement :** `.qwen/settings.json` à la racine de votre projet.
-  - **Portée :** S’applique uniquement lorsque Qwen Code est exécuté depuis ce projet spécifique. Les paramètres du projet prennent le pas sur ceux de l'utilisateur.
+  - **Emplacement :** `.qwen/settings.json` dans le répertoire racine de votre projet.
+  - **Portée :** Ne s’applique que lorsque vous exécutez Qwen Code depuis ce projet spécifique. Les paramètres projet prennent le pas sur les paramètres utilisateur.
 
 - **Fichier des paramètres système :**
-  - **Emplacement :** `/etc/qwen-code/settings.json` (Linux), `C:\ProgramData\qwen-code\settings.json` (Windows) ou `/Library/Application Support/QwenCode/settings.json` (macOS). Ce chemin peut être modifié via la variable d’environnement `QWEN_CODE_SYSTEM_SETTINGS_PATH`.
-  - **Portée :** S’applique à toutes les sessions Qwen Code sur le système, pour tous les utilisateurs. Les paramètres système prennent le pas sur les paramètres utilisateur et projet. Peut être utile aux administrateurs système dans un environnement professionnel afin de contrôler les configurations Qwen Code des utilisateurs.
+  - **Emplacement :** `/etc/qwen-code/settings.json` (Linux), `C:\ProgramData\qwen-code\settings.json` (Windows) ou `/Library/Application Support/QwenCode/settings.json` (macOS). Ce chemin peut également être personnalisé avec la variable d’environnement `QWEN_CODE_SYSTEM_SETTINGS_PATH`.
+  - **Portée :** S’applique à toutes les sessions Qwen Code sur l’ensemble du système, pour tous les utilisateurs. Ces paramètres remplacent ceux définis au niveau utilisateur ou projet. Ils peuvent être utiles aux administrateurs système dans un environnement professionnel souhaitant imposer certains réglages pour les installations Qwen Code des utilisateurs.
 
-**Remarque sur les variables d’environnement dans les paramètres :** Les valeurs de type chaîne de caractères dans vos fichiers `settings.json` peuvent faire référence à des variables d’environnement en utilisant la syntaxe `$VAR_NAME` ou `${VAR_NAME}`. Ces variables seront automatiquement résolues au chargement des paramètres. Par exemple, si vous avez une variable d’environnement `MY_API_TOKEN`, vous pouvez l’utiliser dans `settings.json` comme ceci : `"apiKey": "$MY_API_TOKEN"`.
+**Remarque sur l’utilisation des variables d’environnement dans les paramètres :** Dans vos fichiers `settings.json`, les valeurs de type chaîne peuvent faire référence à des variables d’environnement en utilisant soit la syntaxe `$VAR_NAME`, soit `${VAR_NAME}`. Ces variables seront automatiquement résolues lors du chargement des paramètres. Par exemple, si vous avez une variable d’environnement nommée `MY_API_TOKEN`, vous pouvez l’utiliser dans `settings.json` comme ceci : `"apiKey": "$MY_API_TOKEN"`.
 
 ### Le répertoire `.qwen` dans votre projet
 
 En plus du fichier de configuration du projet, le répertoire `.qwen` d'un projet peut contenir d'autres fichiers spécifiques au projet liés au fonctionnement de Qwen Code, tels que :
 
-- [Profils de sandbox personnalisés](#sandboxing) (ex. : `.qwen/sandbox-macos-custom.sb`, `.qwen/sandbox.Dockerfile`).
+- [Profils de sandbox personnalisés](#sandboxing) (ex : `.qwen/sandbox-macos-custom.sb`, `.qwen/sandbox.Dockerfile`).
 
 ### Paramètres disponibles dans `settings.json`
 
@@ -85,51 +85,51 @@ Les paramètres sont organisés par catégories. Tous les paramètres doivent ê
 
 - **`ui.theme`** (string):
   - **Description :** Le thème de couleurs pour l'interface utilisateur. Voir [Themes](./themes.md) pour les options disponibles.
-  - **Valeur par défaut :** `undefined`
+  - **Par défaut :** `undefined`
 
-- **`ui.customThemes`** (object):
+- **`ui.customThemes`** (objet):
   - **Description :** Définitions de thèmes personnalisés.
-  - **Valeur par défaut :** `{}`
+  - **Par défaut :** `{}`
 
-- **`ui.hideWindowTitle`** (boolean):
+- **`ui.hideWindowTitle`** (booléen):
   - **Description :** Masquer la barre de titre de la fenêtre.
-  - **Valeur par défaut :** `false`
+  - **Par défaut :** `false`
 
-- **`ui.hideTips`** (boolean):
+- **`ui.hideTips`** (booléen):
   - **Description :** Masquer les astuces utiles dans l'interface utilisateur.
-  - **Valeur par défaut :** `false`
+  - **Par défaut :** `false`
 
-- **`ui.hideBanner`** (boolean):
+- **`ui.hideBanner`** (booléen):
   - **Description :** Masquer la bannière de l'application.
-  - **Valeur par défaut :** `false`
+  - **Par défaut :** `false`
 
-- **`ui.hideFooter`** (boolean):
+- **`ui.hideFooter`** (booléen):
   - **Description :** Masquer le pied de page de l'interface utilisateur.
-  - **Valeur par défaut :** `false`
+  - **Par défaut :** `false`
 
-- **`ui.showMemoryUsage`** (boolean):
+- **`ui.showMemoryUsage`** (booléen):
   - **Description :** Afficher les informations d'utilisation de la mémoire dans l'interface utilisateur.
-  - **Valeur par défaut :** `false`
+  - **Par défaut :** `false`
 
-- **`ui.showLineNumbers`** (boolean):
+- **`ui.showLineNumbers`** (booléen):
   - **Description :** Afficher les numéros de ligne dans le chat.
-  - **Valeur par défaut :** `false`
+  - **Par défaut :** `false`
 
-- **`ui.showCitations`** (boolean):
+- **`ui.showCitations`** (booléen):
   - **Description :** Afficher les citations pour le texte généré dans le chat.
-  - **Valeur par défaut :** `true`
+  - **Par défaut :** `true`
 
-- **`enableWelcomeBack`** (boolean):
-  - **Description :** Afficher la boîte de dialogue de bienvenue lors du retour à un projet avec un historique de conversation.
-  - **Valeur par défaut :** `true`
+- **`enableWelcomeBack`** (booléen):
+  - **Description :** Afficher une boîte de dialogue de bienvenue lors du retour à un projet avec un historique de conversation.
+  - **Par défaut :** `true`
 
-- **`ui.accessibility.disableLoadingPhrases`** (boolean):
+- **`ui.accessibility.disableLoadingPhrases`** (booléen):
   - **Description :** Désactiver les phrases de chargement pour l'accessibilité.
-  - **Valeur par défaut :** `false`
+  - **Par défaut :** `false`
 
-- **`ui.customWittyPhrases`** (tableau de strings):
-  - **Description :** Une liste de phrases personnalisées à afficher pendant les états de chargement. Lorsqu'elles sont fournies, le CLI parcourra ces phrases au lieu des phrases par défaut.
-  - **Valeur par défaut :** `[]`
+- **`ui.customWittyPhrases`** (tableau de chaînes de caractères):
+  - **Description :** Une liste de phrases personnalisées à afficher pendant les états de chargement. Lorsque cette option est renseignée, le CLI parcourt ces phrases au lieu des phrases par défaut.
+  - **Par défaut :** `[]`
 
 #### `ide`
 
@@ -151,27 +151,64 @@ Les paramètres sont organisés par catégories. Tous les paramètres doivent ê
 
 - **`model.name`** (string):
   - **Description :** Le modèle Qwen à utiliser pour les conversations.
-  - **Default :** `undefined`
+  - **Par défaut :** `undefined`
 
 - **`model.maxSessionTurns`** (number):
-  - **Description :** Nombre maximum de tours utilisateur/modèle/outils à conserver dans une session. -1 signifie illimité.
-  - **Default :** `-1`
+  - **Description :** Nombre maximum de tours utilisateur/modèle/outils à conserver dans une session. La valeur `-1` signifie illimité.
+  - **Par défaut :** `-1`
 
 - **`model.summarizeToolOutput`** (object):
-  - **Description :** Active ou désactive le résumé de la sortie des outils. Vous pouvez spécifier le budget de tokens pour le résumé via le paramètre `tokenBudget`. Note : Actuellement, seul l'outil `run_shell_command` est supporté. Par exemple : `{"run_shell_command": {"tokenBudget": 2000}}`
-  - **Default :** `undefined`
+  - **Description :** Active ou désactive la synthèse de la sortie des outils. Vous pouvez spécifier le budget de tokens pour la synthèse via le paramètre `tokenBudget`. Remarque : Actuellement, seul l'outil `run_shell_command` est pris en charge. Exemple : `{"run_shell_command": {"tokenBudget": 2000}}`
+  - **Par défaut :** `undefined`
 
 - **`model.chatCompression.contextPercentageThreshold`** (number):
-  - **Description :** Définit le seuil de compression de l'historique de chat en pourcentage de la limite totale de tokens du modèle. Il s'agit d'une valeur entre 0 et 1 qui s'applique à la fois à la compression automatique et à la commande manuelle `/compress`. Par exemple, une valeur de `0.6` déclenchera la compression lorsque l'historique dépasse 60 % de la limite de tokens.
-  - **Default :** `0.7`
+  - **Description :** Définit le seuil de compression de l'historique de discussion en pourcentage de la limite totale de tokens du modèle. Il s'agit d'une valeur entre 0 et 1 qui s'applique à la fois à la compression automatique et à la commande manuelle `/compress`. Par exemple, une valeur de `0.6` déclenchera la compression lorsque l'historique dépasse 60 % de la limite de tokens. Utilisez `0` pour désactiver complètement la compression.
+  - **Par défaut :** `0.7`
+
+- **`model.generationConfig`** (object):
+  - **Description :** Paramètres avancés transmis au générateur de contenu sous-jacent. Prend en charge des contrôles comme `timeout`, `maxRetries` et `disableCacheControl`, ainsi que des réglages fins dans `samplingParams` (par exemple `temperature`, `top_p`, `max_tokens`). Laissez ce champ vide pour utiliser les valeurs par défaut du fournisseur.
+  - **Par défaut :** `undefined`
+  - **Exemple :**
+
+    ```json
+    {
+      "model": {
+        "generationConfig": {
+          "timeout": 60000,
+          "disableCacheControl": false,
+          "samplingParams": {
+            "temperature": 0.2,
+            "top_p": 0.8,
+            "max_tokens": 1024
+          }
+        }
+      }
+    }
+    ```
 
 - **`model.skipNextSpeakerCheck`** (boolean):
-  - **Description :** Ignorer la vérification du prochain intervenant.
-  - **Default :** `false`
+  - **Description :** Ignore la vérification du prochain intervenant.
+  - **Par défaut :** `false`
 
 - **`model.skipLoopDetection`** (boolean):
-  - **Description :** Désactive les vérifications de détection de boucle. La détection de boucle empêche les boucles infinies dans les réponses IA, mais peut générer des faux positifs qui interrompent des workflows légitimes. Activez cette option si vous rencontrez fréquemment des interruptions intempestives liées à la détection de boucle.
-  - **Default :** `false`
+  - **Description :** Désactive la détection des boucles infinies. Cette fonctionnalité empêche les réponses IA de tomber dans des boucles infinies mais peut générer des faux positifs qui interrompent des flux légitimes. Activez cette option si vous rencontrez fréquemment de telles interruptions.
+  - **Par défaut :** `false`
+
+- **`model.skipStartupContext`** (boolean):
+  - **Description :** Ne pas envoyer le contexte initial de l'espace de travail (résumé de l'environnement et accusé de réception) au début de chaque session. Activez cette option si vous préférez fournir le contexte manuellement ou si vous souhaitez économiser des tokens au démarrage.
+  - **Par défaut :** `false`
+
+- **`model.enableOpenAILogging`** (boolean):
+  - **Description :** Active la journalisation des appels à l’API OpenAI à des fins de débogage et d’analyse. Si activé, les requêtes et réponses sont enregistrées dans des fichiers JSON.
+  - **Par défaut :** `false`
+
+- **`model.openAILoggingDir`** (string):
+  - **Description :** Chemin personnalisé vers le répertoire des journaux de l’API OpenAI. S’il n’est pas spécifié, le chemin par défaut est `logs/openai` dans le répertoire courant. Supporte les chemins absolus, relatifs (résolus depuis le répertoire courant), ainsi que l’expansion `~` (répertoire personnel).
+  - **Par défaut :** `undefined`
+  - **Exemples :**
+    - `"~/qwen-logs"` – Enregistre les logs dans le dossier `~/qwen-logs`
+    - `"./custom-logs"` – Enregistre les logs dans `./custom-logs` relatif au répertoire courant
+    - `"/tmp/openai-logs"` – Enregistre les logs dans le chemin absolu `/tmp/openai-logs`
 
 #### `context`
 
@@ -184,7 +221,7 @@ Les paramètres sont organisés par catégories. Tous les paramètres doivent ê
   - **Default :** `undefined`
 
 - **`context.discoveryMaxDirs`** (number) :
-  - **Description :** Nombre maximum de répertoires à explorer pour trouver la mémoire.
+  - **Description :** Nombre maximal de répertoires à explorer pour trouver la mémoire.
   - **Default :** `200`
 
 - **`context.includeDirectories`** (array) :
@@ -210,12 +247,12 @@ Les paramètres sont organisés par catégories. Tous les paramètres doivent ê
 #### `tools`
 
 - **`tools.sandbox`** (boolean ou string) :
-  - **Description :** Environnement d'exécution sandboxé (peut être un booléen ou une chaîne représentant un chemin).
+  - **Description :** Environnement d'exécution sandboxé (peut être un booléen ou une chaîne de caractères représentant un chemin).
   - **Par défaut :** `undefined`
 
 - **`tools.shell.enableInteractiveShell`** (boolean) :
 
-  Utilise `node-pty` pour une expérience de shell interactive. Retombe sur `child_process` si nécessaire. Valeur par défaut : `false`.
+  Utilise `node-pty` pour une expérience de shell interactive. Le fallback vers `child_process` reste applicable. Valeur par défaut : `false`.
 
 - **`tools.core`** (tableau de strings) :
   - **Description :** Peut être utilisé pour restreindre l'ensemble des outils intégrés [via une liste autorisée](./enterprise.md#restricting-tool-access). Voir [Outils intégrés](../core/tools-api.md#built-in-tools) pour la liste complète. La logique de correspondance est identique à celle de `tools.allowed`.
@@ -226,7 +263,7 @@ Les paramètres sont organisés par catégories. Tous les paramètres doivent ê
   - **Par défaut :** `undefined`
 
 - **`tools.allowed`** (tableau de strings) :
-  - **Description :** Liste des noms d’outils qui contourneront la boîte de dialogue de confirmation. Utile pour les outils fiables et fréquemment utilisés. Par exemple, `["run_shell_command(git)", "run_shell_command(npm test)"]` permet d’exécuter toutes les commandes `git` et `npm test` sans confirmation. Voir [Restrictions des commandes Shell Tool](../tools/shell.md#command-restrictions) pour plus de détails sur le préfixe de correspondance, l’enchaînement des commandes, etc.
+  - **Description :** Liste des noms d’outils qui contourneront la boîte de dialogue de confirmation. Utile pour les outils fiables et fréquemment utilisés. Par exemple, `["run_shell_command(git)", "run_shell_command(npm test)"]` permet d’exécuter sans confirmation toutes les commandes `git` et `npm test`. Voir [Restrictions sur les commandes Shell](../tools/shell.md#command-restrictions) pour plus de détails sur le préfixe de correspondance, le chaînage des commandes, etc.
   - **Par défaut :** `undefined`
 
 - **`tools.approvalMode`** (string) :
@@ -243,10 +280,33 @@ Les paramètres sont organisés par catégories. Tous les paramètres doivent ê
 
 - **`tools.callCommand`** (string) :
   - **Description :** Définit une commande shell personnalisée pour appeler un outil spécifique découvert via `tools.discoveryCommand`. Cette commande doit respecter les critères suivants :
-    - Elle doit prendre en premier argument le `name` de la fonction (exactement comme dans la [déclaration de fonction](https://ai.google.dev/gemini-api/docs/function-calling#function-declarations)).
-    - Elle doit lire les arguments de la fonction au format JSON depuis `stdin`, de manière similaire à [`functionCall.args`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functioncall).
-    - Elle doit retourner la sortie de la fonction au format JSON sur `stdout`, de manière similaire à [`functionResponse.response.content`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functionresponse).
+    - Elle doit prendre en premier argument le nom de la fonction (exactement comme dans la [déclaration de fonction](https://ai.google.dev/gemini-api/docs/function-calling#function-declarations)).
+    - Elle doit lire les arguments de la fonction au format JSON depuis `stdin`, similaire à [`functionCall.args`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functioncall).
+    - Elle doit renvoyer la sortie de la fonction au format JSON sur `stdout`, similaire à [`functionResponse.response.content`](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference#functionresponse).
   - **Par défaut :** `undefined`
+
+- **`tools.useRipgrep`** (boolean) :
+  - **Description :** Utiliser ripgrep pour la recherche dans le contenu des fichiers au lieu de l'implémentation par défaut. Offre de meilleures performances.
+  - **Par défaut :** `true`
+
+- **`tools.useBuiltinRipgrep`** (boolean) :
+  - **Description :** Utiliser le binaire ripgrep fourni avec l'application. Si défini à `false`, la commande système `rg` sera utilisée à la place. Ce paramètre n’a d’effet que si `tools.useRipgrep` est activé (`true`).
+  - **Par défaut :** `true`
+
+- **`tools.enableToolOutputTruncation`** (boolean) :
+  - **Description :** Activer la troncature des grandes sorties d’outils.
+  - **Par défaut :** `true`
+  - **Redémarrage requis :** Oui
+
+- **`tools.truncateToolOutputThreshold`** (nombre) :
+  - **Description :** Tronquer la sortie d’un outil si elle dépasse ce nombre de caractères. S’applique aux outils Shell, Grep, Glob, ReadFile et ReadManyFiles.
+  - **Par défaut :** `25000`
+  - **Redémarrage requis :** Oui
+
+- **`tools.truncateToolOutputLines`** (nombre) :
+  - **Description :** Nombre maximum de lignes ou entrées conservées lors de la troncature de la sortie d’un outil. S’applique aux outils Shell, Grep, Glob, ReadFile et ReadManyFiles.
+  - **Par défaut :** `1000`
+  - **Redémarrage requis :** Oui
 
 #### `mcp`
 
@@ -284,41 +344,42 @@ Les paramètres sont organisés par catégories. Tous les paramètres doivent ê
 
 - **`advanced.autoConfigureMemory`** (boolean) :
   - **Description :** Configure automatiquement les limites de mémoire de Node.js.
-  - **Default :** `false`
+  - **Défaut :** `false`
 
 - **`advanced.dnsResolutionOrder`** (string) :
   - **Description :** Ordre de résolution DNS.
-  - **Default :** `undefined`
+  - **Défaut :** `undefined`
 
-- **`advanced.excludedEnvVars`** (array of strings) :
+- **`advanced.excludedEnvVars`** (tableau de strings) :
   - **Description :** Variables d’environnement à exclure du contexte du projet.
-  - **Default :** `["DEBUG","DEBUG_MODE"]`
+  - **Défaut :** `["DEBUG","DEBUG_MODE"]`
 
-- **`advanced.bugCommand`** (object) :
+- **`advanced.bugCommand`** (objet) :
   - **Description :** Configuration de la commande de rapport de bug.
-  - **Default :** `undefined`
+  - **Défaut :** `undefined`
 
 - **`advanced.tavilyApiKey`** (string) :
-  - **Description :** Clé API pour le service de recherche web Tavily. Requise pour activer la fonctionnalité de l’outil `web_search`. Si elle n’est pas configurée, l’outil de recherche web sera désactivé et ignoré.
-  - **Default :** `undefined`
+  - **Description :** Clé API pour le service de recherche web Tavily. Utilisée pour activer la fonctionnalité de l’outil `web_search`.
+  - **Note :** Il s'agit d'un format de configuration hérité. Pour les utilisateurs Qwen OAuth, le provider DashScope est automatiquement disponible sans aucune configuration. Pour les autres types d'authentification, configurez les providers Tavily ou Google en utilisant le nouveau format de configuration `webSearch`.
+  - **Défaut :** `undefined`
 
 #### `mcpServers`
 
-Configure les connexions à un ou plusieurs serveurs Model-Context Protocol (MCP) pour découvrir et utiliser des outils personnalisés. Qwen Code tente de se connecter à chaque serveur MCP configuré afin de découvrir les outils disponibles. Si plusieurs serveurs MCP exposent un outil portant le même nom, ces noms d'outils seront préfixés avec l’alias du serveur défini dans la configuration (par exemple, `serverAlias__nomReelDeLOutil`) afin d’éviter tout conflit. Notez que le système peut supprimer certaines propriétés du schéma des définitions d’outils MCP pour des raisons de compatibilité. Au moins un des champs `command`, `url` ou `httpUrl` doit être renseigné. Si plusieurs sont spécifiés, l'ordre de priorité est : `httpUrl`, puis `url`, puis `command`.
+Configure les connexions vers un ou plusieurs serveurs Model-Context Protocol (MCP) pour découvrir et utiliser des outils personnalisés. Qwen Code tente de se connecter à chaque serveur MCP configuré afin de découvrir les outils disponibles. Si plusieurs serveurs MCP exposent un outil portant le même nom, les noms des outils seront préfixés avec l'alias du serveur défini dans la configuration (par exemple, `serverAlias__actualToolName`) afin d'éviter les conflits. Notez que le système peut supprimer certaines propriétés du schéma des définitions d’outils MCP pour des raisons de compatibilité. Au moins un des champs `command`, `url` ou `httpUrl` doit être renseigné. Si plusieurs sont spécifiés, l'ordre de priorité est : `httpUrl`, puis `url`, puis `command`.
 
 - **`mcpServers.<SERVER_NAME>`** (objet) : Les paramètres du serveur identifié par ce nom.
   - `command` (chaîne, optionnel) : La commande à exécuter pour démarrer le serveur MCP via les entrées/sorties standards.
   - `args` (tableau de chaînes, optionnel) : Arguments à passer à la commande.
   - `env` (objet, optionnel) : Variables d’environnement à définir pour le processus du serveur.
-  - `cwd` (chaîne, optionnel) : Le répertoire de travail depuis lequel démarrer le serveur.
+  - `cwd` (chaîne, optionnel) : Le répertoire de travail dans lequel démarrer le serveur.
   - `url` (chaîne, optionnel) : L’URL d’un serveur MCP utilisant Server-Sent Events (SSE) pour communiquer.
   - `httpUrl` (chaîne, optionnel) : L’URL d’un serveur MCP utilisant HTTP en streaming pour communiquer.
   - `headers` (objet, optionnel) : Une map des en-têtes HTTP à envoyer avec les requêtes vers `url` ou `httpUrl`.
   - `timeout` (nombre, optionnel) : Délai d’expiration en millisecondes pour les requêtes vers ce serveur MCP.
-  - `trust` (booléen, optionnel) : Faire confiance à ce serveur et contourner toutes les confirmations d’appel d’outils.
-  - `description` (chaîne, optionnel) : Brève description du serveur, pouvant être utilisée à des fins d'affichage.
+  - `trust` (booléen, optionnel) : Faire confiance à ce serveur et ignorer toutes les confirmations d’appel d’outils.
+  - `description` (chaîne, optionnel) : Une brève description du serveur, pouvant être utilisée à des fins d'affichage.
   - `includeTools` (tableau de chaînes, optionnel) : Liste des noms d’outils à inclure depuis ce serveur MCP. Lorsque cette liste est spécifiée, seuls les outils listés ici seront accessibles depuis ce serveur (comportement de type allowlist). Si non spécifié, tous les outils du serveur sont activés par défaut.
-  - `excludeTools` (tableau de chaînes, optionnel) : Liste des noms d’outils à exclure de ce serveur MCP. Les outils listés ici ne seront pas accessibles au modèle, même s'ils sont exposés par le serveur. **Remarque :** `excludeTools` prime sur `includeTools` – si un outil figure dans les deux listes, il sera exclu.
+  - `excludeTools` (tableau de chaînes, optionnel) : Liste des noms d’outils à exclure de ce serveur MCP. Les outils listés ici ne seront pas accessibles au modèle, même s'ils sont exposés par le serveur. **Remarque :** `excludeTools` prime sur `includeTools` — si un outil figure dans les deux listes, il sera exclu.
 
 #### `telemetry`
 
@@ -335,7 +396,7 @@ Configure la collecte de logs et de métriques pour Qwen Code. Pour plus d'infor
 
 ### Exemple de `settings.json`
 
-Voici un exemple de fichier `settings.json` avec la structure imbriquée, introduite à partir de la version v0.3.0 :
+Voici un exemple de fichier `settings.json` avec la structure imbriquée, introduite depuis la version v0.3.0 :
 
 ```json
 {
@@ -380,6 +441,8 @@ Voici un exemple de fichier `settings.json` avec la structure imbriquée, introd
   "model": {
     "name": "qwen3-coder-plus",
     "maxSessionTurns": 10,
+    "enableOpenAILogging": false,
+    "openAILoggingDir": "~/qwen-logs",
     "summarizeToolOutput": {
       "run_shell_command": {
         "tokenBudget": 100
@@ -412,22 +475,22 @@ Le CLI conserve un historique des commandes shell que vous exécutez. Pour évit
 
 Les variables d'environnement sont une méthode courante pour configurer les applications, en particulier pour les informations sensibles comme les clés API ou les paramètres qui peuvent varier selon les environnements. Pour la configuration de l'authentification, consultez la [documentation sur l'authentification](./authentication.md) qui couvre toutes les méthodes disponibles.
 
-Le CLI charge automatiquement les variables d'environnement depuis un fichier `.env`. L'ordre de chargement est le suivant :
+Le CLI charge automatiquement les variables d’environnement depuis un fichier `.env`. L’ordre de chargement est le suivant :
 
 1. Fichier `.env` dans le répertoire courant.
-2. Si non trouvé, il remonte dans les répertoires parents jusqu'à trouver un fichier `.env` ou atteindre la racine du projet (identifiée par un dossier `.git`) ou le répertoire utilisateur.
-3. Si toujours non trouvé, il cherche `~/.env` (dans le répertoire utilisateur).
+2. Si non trouvé, il remonte dans les répertoires parents jusqu’à trouver un fichier `.env`, ou atteindre la racine du projet (identifiée par un dossier `.git`) ou le répertoire utilisateur.
+3. Si toujours introuvable, il cherche `~/.env` (dans le répertoire utilisateur).
 
-**Exclusion de variables d'environnement :** Certaines variables (comme `DEBUG` et `DEBUG_MODE`) sont automatiquement exclues des fichiers `.env` du projet par défaut afin d'éviter d'interférer avec le comportement du CLI. Les variables provenant des fichiers `.qwen/.env` ne sont jamais exclues. Vous pouvez personnaliser ce comportement via le paramètre `advanced.excludedEnvVars` dans votre fichier `settings.json`.
+**Exclusion de variables d’environnement :** Certaines variables (comme `DEBUG` et `DEBUG_MODE`) sont exclues automatiquement des fichiers `.env` du projet afin d’éviter tout conflit avec le comportement du CLI. Les variables provenant des fichiers `.qwen/.env` ne sont jamais exclues. Vous pouvez personnaliser ce comportement via le paramètre `advanced.excludedEnvVars` dans votre fichier `settings.json`.
 
 - **`OPENAI_API_KEY`** :
-  - Une des [méthodes d'authentification](./authentication.md) disponibles.
+  - Une des nombreuses [méthodes d’authentification](./authentication.md) disponibles.
   - Définissez-la dans votre profil shell (ex. `~/.bashrc`, `~/.zshrc`) ou dans un fichier `.env`.
 - **`OPENAI_BASE_URL`** :
-  - Une des [méthodes d'authentification](./authentication.md) disponibles.
+  - Une des nombreuses [méthodes d’authentification](./authentication.md) disponibles.
   - Définissez-la dans votre profil shell (ex. `~/.bashrc`, `~/.zshrc`) ou dans un fichier `.env`.
 - **`OPENAI_MODEL`** :
-  - Spécifie le modèle OPENAI par défaut à utiliser.
+  - Spécifie le modèle OPENAI à utiliser par défaut.
   - Remplace le modèle codé en dur.
   - Exemple : `export OPENAI_MODEL="qwen3-coder-plus"`
 - **`GEMINI_TELEMETRY_ENABLED`** :
@@ -437,39 +500,39 @@ Le CLI charge automatiquement les variables d'environnement depuis un fichier `.
   - Définit la cible de télémétrie (`local` ou `gcp`).
   - Remplace le paramètre `telemetry.target`.
 - **`GEMINI_TELEMETRY_OTLP_ENDPOINT`** :
-  - Définit l'endpoint OTLP pour la télémétrie.
+  - Définit l’endpoint OTLP utilisé pour la télémétrie.
   - Remplace le paramètre `telemetry.otlpEndpoint`.
 - **`GEMINI_TELEMETRY_OTLP_PROTOCOL`** :
   - Définit le protocole OTLP (`grpc` ou `http`).
   - Remplace le paramètre `telemetry.otlpProtocol`.
 - **`GEMINI_TELEMETRY_LOG_PROMPTS`** :
-  - Définir à `true` ou `1` active ou désactive la journalisation des prompts utilisateur. Toute autre valeur la désactive.
+  - Définir à `true` ou `1` active/désactive la journalisation des prompts utilisateur. Toute autre valeur la désactive.
   - Remplace le paramètre `telemetry.logPrompts`.
 - **`GEMINI_TELEMETRY_OUTFILE`** :
-  - Définit le chemin du fichier où écrire la télémétrie lorsque la cible est `local`.
+  - Définit le chemin du fichier où écrire les données de télémétrie lorsque la cible est `local`.
   - Remplace le paramètre `telemetry.outfile`.
 - **`GEMINI_TELEMETRY_USE_COLLECTOR`** :
-  - Définir à `true` ou `1` active ou désactive l'utilisation d’un collecteur OTLP externe. Toute autre valeur le désactive.
+  - Définir à `true` ou `1` active/désactive l'utilisation d’un collecteur externe OTLP. Toute autre valeur la désactive.
   - Remplace le paramètre `telemetry.useCollector`.
 - **`GEMINI_SANDBOX`** :
   - Alternative au paramètre `sandbox` dans `settings.json`.
-  - Accepte `true`, `false`, `docker`, `podman`, ou une commande personnalisée.
-- **`SEATBELT_PROFILE`** (spécifique macOS) :
+  - Accepte `true`, `false`, `docker`, `podman`, ou une commande personnalisée sous forme de chaîne.
+- **`SEATBELT_PROFILE`** (spécifique à macOS) :
   - Change le profil Seatbelt (`sandbox-exec`) sur macOS.
   - `permissive-open` : (Par défaut) Restreint les écritures au dossier du projet (et quelques autres, voir `packages/cli/src/utils/sandbox-macos-permissive-open.sb`) mais autorise les autres opérations.
   - `strict` : Utilise un profil strict qui refuse les opérations par défaut.
-  - `<profile_name>` : Utilise un profil personnalisé. Pour définir un profil personnalisé, créez un fichier nommé `sandbox-macos-<profile_name>.sb` dans le répertoire `.qwen/` de votre projet (ex. `my-project/.qwen/sandbox-macos-custom.sb`).
+  - `<profile_name>` : Utilise un profil personnalisé. Pour définir un tel profil, créez un fichier nommé `sandbox-macos-<profile_name>.sb` dans le répertoire `.qwen/` de votre projet (par exemple `my-project/.qwen/sandbox-macos-custom.sb`).
 - **`DEBUG` ou `DEBUG_MODE`** (souvent utilisées par les bibliothèques sous-jacentes ou le CLI lui-même) :
   - Définir à `true` ou `1` active la journalisation détaillée, utile pour le débogage.
-  - **Note :** Ces variables sont automatiquement exclues des fichiers `.env` du projet par défaut afin d’éviter d’interférer avec le comportement du CLI. Utilisez des fichiers `.qwen/.env` si vous devez les définir spécifiquement pour Qwen Code.
+  - **Remarque :** Ces variables sont automatiquement exclues des fichiers `.env` du projet afin d’éviter tout conflit avec le comportement du CLI. Utilisez plutôt les fichiers `.qwen/.env` si vous devez spécifiquement activer ces options pour Qwen Code.
 - **`NO_COLOR`** :
-  - Définir à n’importe quelle valeur désactive toute sortie colorée dans le CLI.
+  - Définir n’importe quelle valeur désactive toute sortie colorée dans le CLI.
 - **`CLI_TITLE`** :
-  - Définir à une chaîne de caractères pour personnaliser le titre du CLI.
+  - Permet de personnaliser le titre affiché dans le CLI.
 - **`TAVILY_API_KEY`** :
   - Votre clé API pour le service de recherche web Tavily.
-  - Requise pour activer la fonctionnalité de l’outil `web_search`.
-  - Si non configurée, l’outil de recherche web sera désactivé et ignoré.
+  - Nécessaire pour activer la fonctionnalité de l’outil `web_search`.
+  - **Remarque :** Pour les utilisateurs Qwen OAuth, le fournisseur DashScope est automatiquement disponible sans configuration supplémentaire. Pour les autres types d’authentification, configurez Tavily ou Google pour activer la recherche web.
   - Exemple : `export TAVILY_API_KEY="tvly-your-api-key-here"`
 
 ## Arguments de ligne de commande
@@ -480,44 +543,57 @@ Les arguments passés directement lors de l'exécution du CLI peuvent remplacer 
   - Spécifie le modèle Qwen à utiliser pour cette session.
   - Exemple : `npm start -- --model qwen3-coder-plus`
 - **`--prompt <your_prompt>`** (**`-p <your_prompt>`**) :
-  - Permet de passer un prompt directement à la commande. Cela invoque Qwen Code en mode non interactif.
+  - Utilisé pour passer un prompt directement à la commande. Cela invoque Qwen Code en mode non interactif.
   - Pour des exemples de scripts, utilisez le flag `--output-format json` afin d'obtenir une sortie structurée.
 - **`--prompt-interactive <your_prompt>`** (**`-i <your_prompt>`**) :
   - Démarre une session interactive avec le prompt fourni comme entrée initiale.
   - Le prompt est traité dans la session interactive, et non avant celle-ci.
   - Ne peut pas être utilisé lorsque l'entrée provient d'un pipe via stdin.
   - Exemple : `qwen -i "explain this code"`
-- **`--output-format <format>`** :
+- **`--output-format <format>`** (**`-o <format>`**) :
   - **Description :** Spécifie le format de la sortie CLI en mode non interactif.
   - **Valeurs :**
-    - `text` : (Par défaut) La sortie standard lisible par un humain.
-    - `json` : Une sortie au format JSON, lisible par une machine.
-  - **Remarque :** Pour obtenir une sortie structurée ou effectuer du scripting, utilisez le flag `--output-format json`.
+    - `text` : (Par défaut) Sortie standard lisible par un humain.
+    - `json` : Sortie JSON lisible par une machine émise à la fin de l'exécution.
+    - `stream-json` : Messages JSON diffusés au fur et à mesure de leur apparition pendant l'exécution.
+  - **Remarque :** Pour une sortie structurée et l'utilisation dans des scripts, utilisez le flag `--output-format json` ou `--output-format stream-json`. Voir [Mode Headless](../features/headless.md) pour plus d'informations.
+- **`--input-format <format>`** :
+  - **Description :** Spécifie le format consommé depuis l'entrée standard.
+  - **Valeurs :**
+    - `text` : (Par défaut) Entrée texte standard provenant de stdin ou des arguments de ligne de commande.
+    - `stream-json` : Protocole de messages JSON via stdin pour une communication bidirectionnelle.
+  - **Condition requise :** L'utilisation de `--input-format stream-json` nécessite que `--output-format stream-json` soit également défini.
+  - **Remarque :** En utilisant `stream-json`, stdin est réservé aux messages du protocole. Voir [Mode Headless](../features/headless.md) pour plus d'informations.
+- **`--include-partial-messages`** :
+  - **Description :** Inclut les messages partiels de l’assistant lors de l’utilisation du format de sortie `stream-json`. Si activé, émet des événements de flux (message_start, content_block_delta, etc.) au fur et à mesure de leur apparition pendant le streaming.
+  - **Par défaut :** `false`
+  - **Condition requise :** Nécessite que `--output-format stream-json` soit défini.
+  - **Remarque :** Voir [Mode Headless](../features/headless.md) pour plus d'informations sur les événements de flux.
 - **`--sandbox`** (**`-s`**) :
   - Active le mode sandbox pour cette session.
 - **`--sandbox-image`** :
   - Définit l'URI de l'image sandbox.
 - **`--debug`** (**`-d`**) :
-  - Active le mode debug pour cette session, fournissant une sortie plus détaillée.
+  - Active le mode debug pour cette session, fournissant une sortie plus verbeuse.
 - **`--all-files`** (**`-a`**) :
-  - Si activé, inclut récursivement tous les fichiers du répertoire courant comme contexte pour le prompt.
+  - Si défini, inclut récursivement tous les fichiers du répertoire courant comme contexte pour le prompt.
 - **`--help`** (ou **`-h`**) :
   - Affiche les informations d'aide concernant les arguments de ligne de commande.
 - **`--show-memory-usage`** :
   - Affiche l'utilisation actuelle de la mémoire.
 - **`--yolo`** :
-  - Active le mode YOLO, qui approuve automatiquement tous les appels d’outils.
+  - Active le mode YOLO, qui approuve automatiquement tous les appels d'outils.
 - **`--approval-mode <mode>`** :
-  - Définit le mode d'approbation pour les appels d’outils. Modes pris en charge :
+  - Définit le mode d'approbation pour les appels d'outils. Modes pris en charge :
     - `plan` : Analyse uniquement — ne modifie pas les fichiers ni n’exécute de commandes.
-    - `default` : Nécessite une approbation pour les modifications de fichiers ou les commandes shell (comportement par défaut).
-    - `auto-edit` : Approuve automatiquement les outils d’édition (edit, write_file), tout en demandant une validation pour les autres.
-    - `yolo` : Approuve automatiquement tous les appels d’outils (équivalent à `--yolo`).
+    - `default` : Demande une approbation pour les modifications de fichiers ou les commandes shell (comportement par défaut).
+    - `auto-edit` : Approuve automatiquement les outils d'édition (edit, write_file), tout en demandant une validation pour les autres.
+    - `yolo` : Approuve automatiquement tous les appels d'outils (équivalent à `--yolo`).
   - Ne peut pas être utilisé conjointement avec `--yolo`. Utilisez plutôt `--approval-mode=yolo` pour adopter la nouvelle approche unifiée.
   - Exemple : `qwen --approval-mode auto-edit`
 - **`--allowed-tools <tool1,tool2,...>`** :
-  - Liste séparée par des virgules des noms d’outils qui contourneront la boîte de dialogue de confirmation.
-  - Exemple : `qwen --allowed-tools "ShellTool(git status)"`
+  - Liste séparée par des virgules des noms d'outils qui contourneront la boîte de dialogue de confirmation.
+  - Exemple : `qwen --allowed-tools "Shell(git status)"`
 - **`--telemetry`** :
   - Active la [télémétrie](../telemetry.md).
 - **`--telemetry-target`** :
@@ -540,53 +616,56 @@ Les arguments passés directement lors de l'exécution du CLI peuvent remplacer 
   - Définit le proxy pour le CLI.
   - Exemple : `--proxy http://localhost:7890`.
 - **`--include-directories <dir1,dir2,...>`** :
-  - Inclut des répertoires supplémentaires dans l’espace de travail pour prendre en charge plusieurs répertoires.
+  - Inclut des répertoires supplémentaires dans l'espace de travail pour prendre en charge plusieurs répertoires.
   - Peut être spécifié plusieurs fois ou sous forme de valeurs séparées par des virgules.
-  - Maximum 5 répertoires peuvent être ajoutés.
+  - Un maximum de 5 répertoires peuvent être ajoutés.
   - Exemple : `--include-directories /path/to/project1,/path/to/project2` ou `--include-directories /path/to/project1 --include-directories /path/to/project2`
 - **`--screen-reader`** :
-  - Active le mode lecteur d'écran, ajustant l'interface utilisateur textuelle (TUI) pour une meilleure compatibilité avec les lecteurs d'écran.
+  - Active le mode lecteur d’écran, ajustant l’interface utilisateur textuelle (TUI) pour une meilleure compatibilité avec les lecteurs d’écran.
 - **`--version`** :
   - Affiche la version du CLI.
 - **`--openai-logging`** :
   - Active la journalisation des appels à l'API OpenAI à des fins de débogage et d'analyse. Ce flag remplace le paramètre `enableOpenAILogging` dans `settings.json`.
+- **`--openai-logging-dir <directory>`** :
+  - Définit un chemin personnalisé pour les journaux de l'API OpenAI. Ce flag remplace le paramètre `openAILoggingDir` dans `settings.json`. Prend en charge les chemins absolus, relatifs ainsi que l’expansion de `~`.
+  - **Exemple :** `qwen --openai-logging-dir "~/qwen-logs" --openai-logging`
 - **`--tavily-api-key <api_key>`** :
   - Définit la clé API Tavily pour la fonctionnalité de recherche Web pour cette session.
   - Exemple : `qwen --tavily-api-key tvly-your-api-key-here`
 
 ## Fichiers de contexte (Contexte hiérarchique d'instructions)
 
-Bien qu'ils ne constituent pas strictement une configuration du _comportement_ de la CLI, les fichiers de contexte (par défaut `QWEN.md` mais configurable via le paramètre `context.fileName`) sont essentiels pour configurer le _contexte d'instruction_ (également appelé "mémoire"). Cette fonctionnalité puissante vous permet de fournir des instructions spécifiques au projet, des guides de style de codage ou toute information contextuelle pertinente à l'IA, rendant ainsi ses réponses plus adaptées et précises selon vos besoins. La CLI inclut des éléments d'interface utilisateur, comme un indicateur dans le pied de page montrant le nombre de fichiers de contexte chargés, pour vous tenir informé du contexte actif.
+Bien qu'ils ne constituent pas strictement une configuration du _comportement_ de la CLI, les fichiers de contexte (par défaut `QWEN.md`, mais configurable via le paramètre `context.fileName`) sont essentiels pour configurer le _contexte d'instruction_ (également appelé « mémoire »). Cette fonctionnalité puissante vous permet de fournir des instructions spécifiques au projet, des guides de style de codage ou toute information contextuelle pertinente à l'IA, rendant ainsi ses réponses plus adaptées et précises selon vos besoins. La CLI inclut des éléments d'interface utilisateur, comme un indicateur dans le pied de page montrant le nombre de fichiers de contexte chargés, afin de vous tenir informé du contexte actif.
 
 - **Objectif :** Ces fichiers Markdown contiennent des instructions, des directives ou du contexte que vous souhaitez que le modèle Qwen prenne en compte durant vos interactions. Le système est conçu pour gérer ce contexte d'instruction de manière hiérarchique.
 
-### Exemple de Contenu d'un Fichier Contexte (ex: `QWEN.md`)
+### Exemple de contenu d'un fichier contexte (ex. `QWEN.md`)
 
-Voici un exemple conceptuel du contenu d'un fichier contexte à la racine d'un projet TypeScript :
+Voici un exemple conceptuel du contenu d’un fichier contexte à la racine d’un projet TypeScript :
 
 ```markdown
 
-# Project: My Awesome TypeScript Library
+# Projet : My Awesome TypeScript Library
 
 ## Instructions générales :
 
-- Lors de la génération de nouveau code TypeScript, merci de suivre le style de codage existant.
+- Lors de la génération de nouveau code TypeScript, veuillez suivre le style de codage existant.
 - Assurez-vous que toutes les nouvelles fonctions et classes possèdent des commentaires JSDoc.
-- Privilégiez les paradigmes de programmation fonctionnelle lorsque cela est approprié.
+- Privilégiez les paradigmes de programmation fonctionnelle lorsque cela est pertinent.
 - Tout le code doit être compatible avec TypeScript 5.0 et Node.js 20+.
 
 ## Style de codage :
 
-- Utilisez 2 espaces pour l'indentation.
-- Les noms d'interfaces doivent être préfixés par `I` (ex : `IUserService`).
-- Les membres privés des classes doivent être préfixés par un underscore (`_`).
-- Utilisez toujours l'égalité stricte (`===` et `!==`).
+- Utilisez 2 espaces pour l’indentation.
+- Les noms d’interfaces doivent être préfixés par `I` (ex. : `IUserService`).
+- Les membres privés des classes doivent être préfixés par un tiret bas (`_`).
+- Utilisez toujours l’égalité stricte (`===` et `!==`).
 
 ## Composant spécifique : `src/api/client.ts`
 
 - Ce fichier gère toutes les requêtes API sortantes.
-- Lors de l'ajout de nouvelles fonctions d'appel API, assurez-vous qu'elles incluent une gestion d'erreur robuste et des logs.
-- Utilisez l'utilitaire `fetchWithRetry` existant pour toutes les requêtes GET.
+- Lors de l'ajout de nouvelles fonctions d’appel API, assurez-vous qu’elles incluent une gestion d’erreurs robuste ainsi qu’un logging adéquat.
+- Utilisez l’utilitaire `fetchWithRetry` déjà présent pour toutes les requêtes GET.
 ```
 
 ## Concernant les dépendances :
@@ -595,26 +674,26 @@ Voici un exemple conceptuel du contenu d'un fichier contexte à la racine d'un p
 - Si une nouvelle dépendance est requise, veuillez indiquer la raison.
 ```
 
-Cet exemple montre comment vous pouvez fournir un contexte général sur le projet, des conventions de codage spécifiques, ainsi que des notes concernant certains fichiers ou composants particuliers. Plus vos fichiers de contexte sont pertinents et précis, mieux l'IA pourra vous assister. Les fichiers de contexte spécifiques au projet sont fortement encouragés afin d'établir des conventions et un cadre clair.
+Cet exemple montre comment vous pouvez fournir un contexte général sur le projet, des conventions de codage spécifiques, ainsi que des notes concernant certains fichiers ou composants en particulier. Plus vos fichiers de contexte sont pertinents et précis, mieux l'IA pourra vous assister. Les fichiers de contexte spécifiques au projet sont fortement encouragés afin d'établir des conventions et un cadre clair.
 
-- **Chargement hiérarchique et priorité :** Le CLI implémente un système de mémoire sophistiqué en chargeant les fichiers de contexte (par ex. `QWEN.md`) depuis plusieurs emplacements. Le contenu des fichiers situés plus bas dans cette liste (plus spécifique) remplace généralement ou complète celui des fichiers situés plus haut (plus général). L'ordre exact de concaténation et le contexte final peuvent être inspectés via la commande `/memory show`. L'ordre typique de chargement est :
+- **Chargement hiérarchique et priorité :** Le CLI implémente un système de mémoire sophistiqué en chargeant les fichiers de contexte (par ex. `QWEN.md`) depuis plusieurs emplacements. Le contenu des fichiers situés plus bas dans cette liste (plus spécifiques) remplace généralement ou complète celui des fichiers situés plus haut (plus généraux). L'ordre exact de concaténation et le contexte final peuvent être inspectés via la commande `/memory show`. L'ordre typique de chargement est :
   1.  **Fichier de contexte global :**
-      - Emplacement : `~/.qwen/<nom-du-fichier-de-contexte-configuré>` (par exemple, `~/.qwen/QWEN.md` dans votre répertoire utilisateur).
+      - Emplacement : `~/.qwen/<nom-du-fichier-de-contexte-configuré>` (ex. `~/.qwen/QWEN.md` dans votre répertoire utilisateur).
       - Portée : Fournit des instructions par défaut pour tous vos projets.
   2.  **Fichiers de contexte à la racine du projet et dans ses ancêtres :**
       - Emplacement : Le CLI recherche le fichier de contexte configuré dans le répertoire courant, puis dans chaque répertoire parent jusqu'à atteindre soit la racine du projet (identifiée par un dossier `.git`), soit votre répertoire personnel.
-      - Portée : Fournit un contexte pertinent pour l'ensemble du projet ou une grande partie de celui-ci.
+      - Portée : Fournit un contexte pertinent pour l’ensemble du projet ou une grande partie de celui-ci.
   3.  **Fichiers de contexte dans les sous-répertoires (contextuels/locaux) :**
-      - Emplacement : Le CLI scanne également les sous-répertoires _situés sous_ le répertoire courant (en respectant les motifs d'exclusion usuels comme `node_modules`, `.git`, etc.) à la recherche du fichier de contexte configuré. Par défaut, cette recherche est limitée à 200 répertoires, mais elle peut être ajustée avec le paramètre `context.discoveryMaxDirs` dans votre fichier `settings.json`.
+      - Emplacement : Le CLI scanne également les sous-réportes _sous_ le répertoire courant (en respectant les motifs ignorés classiques comme `node_modules`, `.git`, etc.) à la recherche du fichier de contexte configuré. La profondeur de ce scan est limitée à 200 répertoires par défaut, mais peut être ajustée avec le paramètre `context.discoveryMaxDirs` dans votre fichier `settings.json`.
       - Portée : Permet d’ajouter des instructions très précises applicables à un composant, module ou section spécifique de votre projet.
-- **Concaténation & indication dans l'interface utilisateur :** Le contenu de tous les fichiers de contexte trouvés est concaténé (avec des séparateurs indiquant leur origine et leur chemin) et inclus dans le prompt système. Le pied de page du CLI affiche le nombre total de fichiers de contexte chargés, donnant ainsi un indicateur visuel rapide du contexte instructionnel actif.
+- **Concaténation & indication dans l’interface :** Le contenu de tous les fichiers de contexte trouvés est concaténé (avec des séparateurs indiquant leur origine et leur chemin) et inclus dans le prompt système. Le pied de page du CLI affiche le nombre total de fichiers de contexte chargés, donnant ainsi un indicateur visuel rapide du contexte actif.
 - **Importation de contenu :** Vous pouvez modulariser vos fichiers de contexte en important d'autres fichiers Markdown grâce à la syntaxe `@chemin/vers/fichier.md`. Pour plus de détails, consultez la [documentation du processeur d'import mémoire](../core/memport.md).
 - **Commandes de gestion de la mémoire :**
-  - Utilisez `/memory refresh` pour forcer un nouveau scan et recharger tous les fichiers de contexte depuis leurs emplacements configurés. Cela met à jour le contexte instructionnel utilisé par l'IA.
-  - Utilisez `/memory show` pour afficher le contexte instructionnel combiné actuellement chargé, ce qui vous permet de vérifier la hiérarchie et le contenu effectivement utilisés par l'IA.
+  - Utilisez `/memory refresh` pour forcer un nouveau scan et recharger tous les fichiers de contexte depuis leurs emplacements configurés. Cela met à jour le contexte instructif utilisé par l'IA.
+  - Utilisez `/memory show` pour afficher le contexte instructif combiné actuellement chargé, afin de vérifier la hiérarchie et le contenu pris en compte par l'IA.
   - Consultez la [documentation des commandes](./commands.md#memory) pour obtenir tous les détails sur la commande `/memory` et ses sous-commandes (`show` et `refresh`).
 
-En comprenant et en exploitant ces couches de configuration ainsi que la nature hiérarchique des fichiers de contexte, vous pouvez efficacement gérer la mémoire de l'IA et adapter les réponses de Qwen Code à vos besoins spécifiques et à vos projets.
+En comprenant et en utilisant ces couches de configuration ainsi que la nature hiérarchique des fichiers de contexte, vous pouvez efficacement gérer la mémoire de l'IA et adapter les réponses de Qwen Code à vos besoins spécifiques et à vos projets.
 
 ## Sandboxing
 
@@ -628,7 +707,7 @@ Le sandboxing est désactivé par défaut, mais vous pouvez l'activer de plusieu
 
 Par défaut, il utilise une image Docker pré-construite `qwen-code-sandbox`.
 
-Pour des besoins de sandboxing spécifiques à un projet, vous pouvez créer un Dockerfile personnalisé à l'emplacement `.qwen/sandbox.Dockerfile` dans le répertoire racine de votre projet. Ce Dockerfile peut être basé sur l'image de base du sandbox :
+Pour des besoins spécifiques au projet en matière de sandboxing, vous pouvez créer un Dockerfile personnalisé à l'emplacement `.qwen/sandbox.Dockerfile` dans le répertoire racine de votre projet. Ce Dockerfile peut être basé sur l'image de base du sandbox :
 
 ```dockerfile
 FROM qwen-code-sandbox
@@ -643,7 +722,7 @@ FROM qwen-code-sandbox
 # COPY ./my-config /app/my-config
 ```
 
-Quand `.qwen/sandbox.Dockerfile` existe, vous pouvez utiliser la variable d'environnement `BUILD_SANDBOX` lors de l'exécution de Qwen Code pour construire automatiquement l'image sandbox personnalisée :
+Quand `.qwen/sandbox.Dockerfile` existe, tu peux utiliser la variable d'environnement `BUILD_SANDBOX` lors de l'exécution de Qwen Code pour automatiquement construire l'image du sandbox personnalisé :
 
 ```bash
 BUILD_SANDBOX=1 qwen -s
@@ -656,10 +735,10 @@ Pour nous aider à améliorer Qwen Code, nous collectons des statistiques d'util
 **Ce que nous collectons :**
 
 - **Appels d'outils :** Nous enregistrons les noms des outils appelés, qu'ils réussissent ou échouent, ainsi que leur durée d'exécution. Nous ne collectons pas les arguments passés aux outils ni les données retournées par ceux-ci.
-- **Requêtes API :** Nous enregistrons le modèle utilisé pour chaque requête, la durée de celle-ci et son succès ou échec. Nous ne collectons pas le contenu des prompts ou des réponses.
+- **Requêtes API :** Nous enregistrons le modèle utilisé pour chaque requête, la durée de celle-ci et son statut (réussie ou non). Nous ne collectons pas le contenu des prompts ou des réponses.
 - **Informations de session :** Nous collectons des informations sur la configuration du CLI, comme les outils activés et le mode d'approbation.
 
-**Ce que nous ne collectons PAS :**
+**Ce que nous NE collectons PAS :**
 
 - **Données personnelles (PII) :** Nous ne collectons aucune information personnelle telle que votre nom, adresse e-mail ou clés API.
 - **Contenu des prompts et réponses :** Nous n'enregistrons pas le contenu de vos prompts ou des réponses du modèle.
@@ -677,4 +756,4 @@ Vous pouvez désactiver la collecte des statistiques d'utilisation à tout momen
 }
 ```
 
-Remarque : Lorsque les statistiques d'utilisation sont activées, les événements sont envoyés à un endpoint de collecte Alibaba Cloud RUM.
+Remarque : Lorsque les statistiques d'utilisation sont activées, les événements sont envoyés à un endpoint de collecte RUM d'Alibaba Cloud.

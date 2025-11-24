@@ -1,54 +1,55 @@
 ```markdown
 # Headless Mode
 
-Headless モードでは、インタラクティブな UI を使用せずに、コマンドラインスクリプトや自動化ツールから Qwen Code をプログラムで実行できます。これは、スクリプティング、自動化、CI/CD パイプライン、AI を活用したツール構築に最適です。
+Headless モードでは、Qwen Code を対話的な UI を使用せずに、コマンドラインスクリプトや自動化ツールからプログラム的に実行できます。これは、スクリプティング、自動化、CI/CD パイプライン、AI を活用したツール構築に最適です。
 
 - [Headless Mode](#headless-mode)
   - [概要](#overview)
   - [基本的な使い方](#basic-usage)
-    - [直接プロンプトを入力](#direct-prompts)
+    - [直接プロンプト入力](#direct-prompts)
     - [Stdin からの入力](#stdin-input)
     - [ファイル入力との組み合わせ](#combining-with-file-input)
   - [出力形式](#output-formats)
     - [テキスト出力（デフォルト）](#text-output-default)
     - [JSON 出力](#json-output)
-      - [レスポンススキーマ](#response-schema)
       - [使用例](#example-usage)
-    - [ファイルへのリダイレクト](#file-redirection)
+    - [Stream-JSON 出力](#stream-json-output)
+    - [入力形式](#input-format)
+    - [ファイルリダイレクト](#file-redirection)
   - [設定オプション](#configuration-options)
   - [使用例](#examples)
     - [コードレビュー](#code-review)
     - [コミットメッセージの生成](#generate-commit-messages)
-    - [API ドキュメント](#api-documentation)
-    - [バッチでのコード分析](#batch-code-analysis)
-    - [コードレビュー](#code-review-1)
+    - [API ドキュメント作成](#api-documentation)
+    - [一括コード解析](#batch-code-analysis)
+    - [PR コードレビュー](#pr-code-review)
     - [ログ分析](#log-analysis)
     - [リリースノートの生成](#release-notes-generation)
-    - [モデルとツールの利用状況トラッキング](#model-and-tool-usage-tracking)
-  - [リソース](#resources)
+    - [モデルおよびツール利用状況のトラッキング](#model-and-tool-usage-tracking)
+  - [関連リソース](#resources)
 ```
 
 ## 概要
 
-headless モードは、Qwen Code に対して以下のような機能を提供するインターフェースです：
+headless モードでは、Qwen Code に対して以下のような headless インターフェースが提供されます：
 
 - コマンドライン引数または stdin 経由でプロンプトを受け取る
 - 構造化された出力（テキストまたは JSON）を返す
-- ファイルのリダイレクトとパイプをサポート
-- 自動化およびスクリプト処理のワークフローに対応
-- エラー処理のために一貫した終了コードを提供
+- ファイルのリダイレクトやパイプに対応
+- 自動化やスクリプト処理のワークフローを可能にする
+- エラーハンドリング用に一貫した終了コードを提供
 
 ## 基本的な使い方
 
 ### 直接プロンプトを渡す
 
-`--prompt`（または `-p`）フラグを使って headless モードで実行します：
+headless モードで実行するには、`--prompt`（または `-p`）フラグを使用します：
 
 ```bash
 qwen --prompt "What is machine learning?"
 ```
 
-### 標準入力（stdin）からの入力
+### Stdin からの入力
 
 ターミナルから Qwen Code にパイプで入力できます：
 
@@ -58,13 +59,15 @@ echo "Explain this code" | qwen
 
 ### ファイル入力との組み合わせ
 
-ファイルを読み込んで Qwen Code で処理できます：
+ファイルから読み込んで Qwen Code で処理することも可能です：
 
 ```bash
 cat README.md | qwen --prompt "Summarize this documentation"
 ```
 
 ## 出力形式
+
+Qwen Code は用途に応じて複数の出力形式をサポートしています：
 
 ### テキスト出力（デフォルト）
 
@@ -82,55 +85,9 @@ The capital of France is Paris.
 
 ### JSON Output
 
-レスポンス、統計情報、メタデータを含む構造化されたデータを返します。このフォーマットは、プログラムによる処理や自動化スクリプトに最適です。
+構造化されたデータを JSON 配列として返します。すべてのメッセージはバッファリングされ、セッションが完了した時点でまとめて出力されます。この形式は、プログラムによる処理や自動化スクリプトに最適です。
 
-#### Response Schema
-
-JSON の出力は以下の高レベル構造に従います：
-
-```json
-{
-  "response": "string", // プロンプトに回答するメインの AI 生成コンテンツ
-  "stats": {
-    // 使用状況メトリクスとパフォーマンスデータ
-    "models": {
-      // モデルごとの API およびトークン使用統計
-      "[model-name]": {
-        "api": {
-          /* リクエスト数、エラー、レイテンシ */
-        },
-        "tokens": {
-          /* プロンプト、レスポンス、キャッシュ、合計数 */
-        }
-      }
-    },
-    "tools": {
-      // ツール実行統計
-      "totalCalls": "number",
-      "totalSuccess": "number",
-      "totalFail": "number",
-      "totalDurationMs": "number",
-      "totalDecisions": {
-        /* accept、reject、modify、auto_accept のカウント */
-      },
-      "byName": {
-        /* ツールごとの詳細な統計 */
-      }
-    },
-    "files": {
-      // ファイル変更統計
-      "totalLinesAdded": "number",
-      "totalLinesRemoved": "number"
-    }
-  },
-  "error": {
-    // エラーが発生した場合のみ存在
-    "type": "string", // エラータイプ（例："ApiError"、"AuthError"）
-    "message": "string", // 人間が読めるエラーの説明
-    "code": "number" // オプションのエラーコード
-  }
-}
-```
+JSON 出力は、メッセージオブジェクトの配列です。出力には複数のメッセージタイプが含まれます：システムメッセージ（セッション初期化）、アシスタントメッセージ（AI の応答）、結果メッセージ（実行サマリ）です。
 
 #### 使用例
 
@@ -138,66 +95,84 @@ JSON の出力は以下の高レベル構造に従います：
 qwen -p "What is the capital of France?" --output-format json
 ```
 
-レスポンス:
+出力（実行終了時）:
 
 ```json
-{
-  "response": "The capital of France is Paris.",
-  "stats": {
-    "models": {
-      "qwen3-coder-plus": {
-        "api": {
-          "totalRequests": 2,
-          "totalErrors": 0,
-          "totalLatencyMs": 5053
-        },
-        "tokens": {
-          "prompt": 24939,
-          "candidates": 20,
-          "total": 25113,
-          "cached": 21263,
-          "thoughts": 154,
-          "tool": 0
+[
+  {
+    "type": "system",
+    "subtype": "session_start",
+    "uuid": "...",
+    "session_id": "...",
+    "model": "qwen3-coder-plus",
+    ...
+  },
+  {
+    "type": "assistant",
+    "uuid": "...",
+    "session_id": "...",
+    "message": {
+      "id": "...",
+      "type": "message",
+      "role": "assistant",
+      "model": "qwen3-coder-plus",
+      "content": [
+        {
+          "type": "text",
+          "text": "The capital of France is Paris."
         }
-      }
+      ],
+      "usage": {...}
     },
-    "tools": {
-      "totalCalls": 1,
-      "totalSuccess": 1,
-      "totalFail": 0,
-      "totalDurationMs": 1881,
-      "totalDecisions": {
-        "accept": 0,
-        "reject": 0,
-        "modify": 0,
-        "auto_accept": 1
-      },
-      "byName": {
-        "google_web_search": {
-          "count": 1,
-          "success": 1,
-          "fail": 0,
-          "durationMs": 1881,
-          "decisions": {
-            "accept": 0,
-            "reject": 0,
-            "modify": 0,
-            "auto_accept": 1
-          }
-        }
-      }
-    },
-    "files": {
-      "totalLinesAdded": 0,
-      "totalLinesRemoved": 0
-    }
+    "parent_tool_use_id": null
+  },
+  {
+    "type": "result",
+    "subtype": "success",
+    "uuid": "...",
+    "session_id": "...",
+    "is_error": false,
+    "duration_ms": 1234,
+    "result": "The capital of France is Paris.",
+    "usage": {...}
   }
-}
+]
 ```
+
+### Stream-JSON 出力
+
+Stream-JSON 形式は、実行中にイベントが発生するたびに即座に JSON メッセージを出力するため、リアルタイムでの監視が可能です。この形式では、各行に完全な JSON オブジェクトが含まれる line-delimited JSON を使用します。
+
+```bash
+qwen -p "Explain TypeScript" --output-format stream-json
+```
+
+出力（イベント発生時にストリーミング）:
+
+```json
+{"type":"system","subtype":"session_start","uuid":"...","session_id":"..."}
+{"type":"assistant","uuid":"...","session_id":"...","message":{...}}
+{"type":"result","subtype":"success","uuid":"...","session_id":"..."}
+```
+
+`--include-partial-messages` と組み合わせると、追加のストリームイベント（message_start、content_block_delta など）がリアルタイムで出力されるため、UI のリアルタイム更新が可能になります。
+
+```bash
+qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
+```
+
+### 入力形式
+
+`--input-format` パラメータは、Qwen Code が標準入力から入力を処理する方法を制御します：
+
+- **`text`**（デフォルト）：stdin またはコマンドライン引数からの標準テキスト入力
+- **`stream-json`**：双方向通信のための stdin 経由の JSON メッセージプロトコル
+
+> **注意：** `stream-json` 入力モードは現在開発中であり、SDK との連携を目的としています。このモードを使用するには、`--output-format stream-json` の指定が必要です。
 
 ### ファイルリダイレクト
 
-出力をファイルに保存したり、他のコマンドにパイプしたりできます：
+出力をファイルに保存したり、他のコマンドにパイプで渡したりできます：
 
 ```bash
 
@@ -214,46 +189,53 @@ qwen -p "Explain microservices" | wc -w
 qwen -p "List programming languages" | grep -i "python"
 ```
 
+# リアルタイム処理のための Stream-JSON 出力
+```bash
+qwen -p "Explain Docker" --output-format stream-json | jq '.type'
+qwen -p "Write code" --output-format stream-json --include-partial-messages | jq '.event.type'
+```
+
 ## 設定オプション
 
 headless モードで使用する主要なコマンドラインオプション:
 
-| Option                  | Description                        | Example                                          |
-| ----------------------- | ---------------------------------- | ------------------------------------------------ |
-| `--prompt`, `-p`        | headless モードで実行               | `qwen -p "query"`                                |
-| `--output-format`       | 出力形式を指定 (text, json)         | `qwen -p "query" --output-format json`           |
-| `--model`, `-m`         | Qwen モデルを指定                   | `qwen -p "query" -m qwen3-coder-plus`            |
-| `--debug`, `-d`         | デバッグモードを有効化              | `qwen -p "query" --debug`                        |
-| `--all-files`, `-a`     | すべてのファイルをコンテキストに含める | `qwen -p "query" --all-files`                    |
-| `--include-directories` | 追加のディレクトリを含める          | `qwen -p "query" --include-directories src,docs` |
-| `--yolo`, `-y`          | すべてのアクションを自動承認        | `qwen -p "query" --yolo`                         |
-| `--approval-mode`       | 承認モードを設定                    | `qwen -p "query" --approval-mode auto_edit`      |
+| オプション                     | 説明                                           | 例                                                                      |
+| ------------------------------ | ---------------------------------------------- | ----------------------------------------------------------------------- |
+| `--prompt`, `-p`               | headless モードで実行                          | `qwen -p "query"`                                                       |
+| `--output-format`, `-o`        | 出力形式を指定 (text, json, stream-json)       | `qwen -p "query" --output-format json`                                  |
+| `--input-format`               | 入力形式を指定 (text, stream-json)             | `qwen --input-format text --output-format stream-json`                  |
+| `--include-partial-messages`   | stream-json 出力に部分メッセージを含める       | `qwen -p "query" --output-format stream-json --include-partial-messages`|
+| `--debug`, `-d`                | デバッグモードを有効化                         | `qwen -p "query" --debug`                                               |
+| `--all-files`, `-a`            | コンテキストにすべてのファイルを含める         | `qwen -p "query" --all-files`                                           |
+| `--include-directories`        | 追加のディレクトリを含める                     | `qwen -p "query" --include-directories src,docs`                        |
+| `--yolo`, `-y`                 | すべてのアクションを自動承認                   | `qwen -p "query" --yolo`                                                |
+| `--approval-mode`              | 承認モードを設定                               | `qwen -p "query" --approval-mode auto_edit`                             |
 
-すべての設定オプション、設定ファイル、環境変数の詳細については、[Configuration Guide](./cli/configuration.md) を参照してください。
+利用可能なすべての設定オプション、設定ファイル、環境変数の詳細については、[Configuration Guide](./cli/configuration.md) を参照してください。
 
 ## 例
 
-#### コードレビュー
+### コードレビュー
 
 ```bash
 cat src/auth.py | qwen -p "Review this authentication code for security issues" > security-review.txt
 ```
 
-#### コミットメッセージの生成
+### コミットメッセージの生成
 
 ```bash
 result=$(git diff --cached | qwen -p "Write a concise commit message for these changes" --output-format json)
 echo "$result" | jq -r '.response'
 ```
 
-#### APIドキュメント
+### APIドキュメント
 
 ```bash
 result=$(cat api/routes.js | qwen -p "Generate OpenAPI spec for these routes" --output-format json)
 echo "$result" | jq -r '.response' > openapi.json
 ```
 
-#### バッチコード分析
+### バッチコード分析
 
 ```bash
 for file in src/*.py; do
@@ -264,20 +246,20 @@ for file in src/*.py; do
 done
 ```
 
-#### コードレビュー
+### PRコードレビュー
 
 ```bash
 result=$(git diff origin/main...HEAD | qwen -p "Review these changes for bugs, security issues, and code quality" --output-format json)
 echo "$result" | jq -r '.response' > pr-review.json
 ```
 
-#### ログ分析
+### ログ分析
 
 ```bash
 grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analyze these errors and suggest root cause and fixes" > error-analysis.txt
 ```
 
-#### リリースノートの生成
+### リリースノート生成
 
 ```bash
 result=$(git log --oneline v1.0.0..HEAD | qwen -p "Generate release notes from these commits" --output-format json)
@@ -286,7 +268,7 @@ echo "$response"
 echo "$response" >> CHANGELOG.md
 ```
 
-#### モデルとツールの利用状況トラッキング
+### モデルとツールの利用状況トラッキング
 
 ```bash
 result=$(qwen -p "Explain this database schema" --include-directories db --output-format json)
@@ -300,9 +282,19 @@ echo "Recent usage trends:"
 tail -5 usage.log
 ```
 
+このスクリプトでは、Qwen CLI を使ってデータベーススキーマの説明を生成し、使用されたモデルやツールの統計情報を取得しています。具体的には：
+
+- `qwen` コマンドで指定したディレクトリ（ここでは `db`）以下のファイルを含めてプロンプトを実行し、結果を JSON 形式で出力
+- 結果からトークン数、使用されたモデル名、ツール呼び出し回数、使用されたツール名を抽出
+- これらの情報を `usage.log` に記録
+- 生成されたレスポンス本文を `schema-docs.md` に出力
+- 最後に最近の利用傾向としてログの最新5行を表示
+
+これにより、どのモデルやツールがどれくらい使われているかを追跡できます。
+
 ## リソース
 
 - [CLI Configuration](./cli/configuration.md) - 完全な設定ガイド
 - [Authentication](./cli/authentication.md) - 認証のセットアップ
-- [Commands](./cli/commands.md) - インタラクティブなコマンドリファレンス
+- [Commands](./cli/commands.md) - インタラクティブコマンドリファレンス
 - [Tutorials](./cli/tutorials.md) - ステップバイステップの自動化ガイド
