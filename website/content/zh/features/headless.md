@@ -2,29 +2,30 @@
 
 无头模式允许你通过命令行脚本和自动化工具以编程方式运行 Qwen Code，无需任何交互式 UI。这非常适合用于脚本编写、自动化任务、CI/CD 流水线以及构建 AI 驱动的工具。
 
-- [无头模式（Headless Mode）](#headless-mode)
-  - [概述](#overview)
-  - [基本用法](#basic-usage)
-    - [直接提示词输入](#direct-prompts)
-    - [标准输入（Stdin）](#stdin-input)
-    - [结合文件输入使用](#combining-with-file-input)
-  - [输出格式](#output-formats)
-    - [文本输出（默认）](#text-output-default)
-    - [JSON 输出](#json-output)
-      - [响应结构](#response-schema)
-      - [使用示例](#example-usage)
-    - [文件重定向](#file-redirection)
-  - [配置选项](#configuration-options)
-  - [使用示例](#examples)
-    - [代码审查](#code-review)
-    - [生成提交信息](#generate-commit-messages)
-    - [API 文档生成](#api-documentation)
-    - [批量代码分析](#batch-code-analysis)
-    - [代码审查](#code-review-1)
-    - [日志分析](#log-analysis)
-    - [发布说明生成](#release-notes-generation)
-    - [模型与工具使用追踪](#model-and-tool-usage-tracking)
-  - [相关资源](#resources)
+- [无头模式（Headless Mode）](#无头模式headless-mode)
+  - [概述](#概述)
+  - [基本用法](#基本用法)
+    - [直接提示词](#直接提示词)
+    - [标准输入（Stdin）输入](#标准输入stdin输入)
+    - [结合文件输入使用](#结合文件输入使用)
+  - [输出格式](#输出格式)
+    - [文本输出（默认）](#文本输出默认)
+    - [JSON 输出](#json-输出)
+      - [示例用法](#示例用法)
+    - [流式 JSON 输出（Stream-JSON）](#流式-json-输出stream-json)
+    - [输入格式](#输入格式)
+    - [文件重定向](#文件重定向)
+  - [配置选项](#配置选项)
+  - [示例](#示例)
+    - [代码审查](#代码审查)
+    - [生成提交信息](#生成提交信息)
+    - [API 文档生成](#api-文档生成)
+    - [批量代码分析](#批量代码分析)
+    - [PR 代码审查](#pr-代码审查)
+    - [日志分析](#日志分析)
+    - [发布说明生成](#发布说明生成)
+    - [模型与工具使用追踪](#模型与工具使用追踪)
+  - [资源](#资源)
 
 ## 概述
 
@@ -33,7 +34,7 @@ headless 模式为 Qwen Code 提供了一个无头接口，具备以下特性：
 - 通过命令行参数或 stdin 接收 prompt
 - 返回结构化输出（文本或 JSON）
 - 支持文件重定向和管道操作
-- 支持自动化和脚本工作流
+- 支持自动化和脚本化工作流
 - 提供一致的退出码用于错误处理
 
 ## 基本用法
@@ -56,13 +57,15 @@ echo "Explain this code" | qwen
 
 ### 结合文件输入
 
-从文件中读取内容并由 Qwen Code 处理：
+从文件读取内容并由 Qwen Code 处理：
 
 ```bash
 cat README.md | qwen --prompt "Summarize this documentation"
 ```
 
 ## 输出格式
+
+Qwen Code 支持多种输出格式，适用于不同场景：
 
 ### 文本输出（默认）
 
@@ -80,55 +83,9 @@ The capital of France is Paris.
 
 ### JSON Output
 
-返回结构化数据，包括 response、statistics 和 metadata。这种格式非常适合用于程序化处理和自动化脚本。
+以 JSON 数组的形式返回结构化数据。所有消息都会被缓冲，并在 session 结束时一起输出。这种格式非常适合程序化处理和自动化脚本。
 
-#### Response Schema
-
-JSON 输出遵循以下高层结构：
-
-```json
-{
-  "response": "string", // 主要的 AI 生成内容，用于回答你的 prompt
-  "stats": {
-    // 使用指标和性能数据
-    "models": {
-      // 每个模型的 API 和 token 使用统计
-      "[model-name]": {
-        "api": {
-          /* 请求次数、错误、延迟等 */
-        },
-        "tokens": {
-          /* prompt、response、cached、total 等数量统计 */
-        }
-      }
-    },
-    "tools": {
-      // 工具执行统计
-      "totalCalls": "number",
-      "totalSuccess": "number",
-      "totalFail": "number",
-      "totalDurationMs": "number",
-      "totalDecisions": {
-        /* accept, reject, modify, auto_accept 计数 */
-      },
-      "byName": {
-        /* 每个工具的详细统计数据 */
-      }
-    },
-    "files": {
-      // 文件修改统计
-      "totalLinesAdded": "number",
-      "totalLinesRemoved": "number"
-    }
-  },
-  "error": {
-    // 仅在发生错误时出现
-    "type": "string", // 错误类型（例如："ApiError", "AuthError"）
-    "message": "string", // 人类可读的错误描述
-    "code": "number" // 可选的错误代码
-  }
-}
-```
+JSON 输出是一个包含消息对象的数组。输出内容包括多种消息类型：系统消息（session 初始化）、assistant 消息（AI 响应）以及结果消息（执行摘要）。
 
 #### 使用示例
 
@@ -136,66 +93,84 @@ JSON 输出遵循以下高层结构：
 qwen -p "What is the capital of France?" --output-format json
 ```
 
-响应结果：
+输出（执行结束时）：
 
 ```json
-{
-  "response": "The capital of France is Paris.",
-  "stats": {
-    "models": {
-      "qwen3-coder-plus": {
-        "api": {
-          "totalRequests": 2,
-          "totalErrors": 0,
-          "totalLatencyMs": 5053
-        },
-        "tokens": {
-          "prompt": 24939,
-          "candidates": 20,
-          "total": 25113,
-          "cached": 21263,
-          "thoughts": 154,
-          "tool": 0
+[
+  {
+    "type": "system",
+    "subtype": "session_start",
+    "uuid": "...",
+    "session_id": "...",
+    "model": "qwen3-coder-plus",
+    ...
+  },
+  {
+    "type": "assistant",
+    "uuid": "...",
+    "session_id": "...",
+    "message": {
+      "id": "...",
+      "type": "message",
+      "role": "assistant",
+      "model": "qwen3-coder-plus",
+      "content": [
+        {
+          "type": "text",
+          "text": "The capital of France is Paris."
         }
-      }
+      ],
+      "usage": {...}
     },
-    "tools": {
-      "totalCalls": 1,
-      "totalSuccess": 1,
-      "totalFail": 0,
-      "totalDurationMs": 1881,
-      "totalDecisions": {
-        "accept": 0,
-        "reject": 0,
-        "modify": 0,
-        "auto_accept": 1
-      },
-      "byName": {
-        "google_web_search": {
-          "count": 1,
-          "success": 1,
-          "fail": 0,
-          "durationMs": 1881,
-          "decisions": {
-            "accept": 0,
-            "reject": 0,
-            "modify": 0,
-            "auto_accept": 1
-          }
-        }
-      }
-    },
-    "files": {
-      "totalLinesAdded": 0,
-      "totalLinesRemoved": 0
-    }
+    "parent_tool_use_id": null
+  },
+  {
+    "type": "result",
+    "subtype": "success",
+    "uuid": "...",
+    "session_id": "...",
+    "is_error": false,
+    "duration_ms": 1234,
+    "result": "The capital of France is Paris.",
+    "usage": {...}
   }
-}
+]
 ```
+
+### Stream-JSON 输出
+
+Stream-JSON 格式会在执行过程中一旦产生 JSON 消息就立即输出，从而实现实时监控。该格式使用行分隔的 JSON，每条消息都是单行上的完整 JSON 对象。
+
+```bash
+qwen -p "Explain TypeScript" --output-format stream-json
+```
+
+输出（事件发生时流式输出）：
+
+```json
+{"type":"system","subtype":"session_start","uuid":"...","session_id":"..."}
+{"type":"assistant","uuid":"...","session_id":"...","message":{...}}
+{"type":"result","subtype":"success","uuid":"...","session_id":"..."}
+```
+
+当与 `--include-partial-messages` 结合使用时，会实时输出额外的流事件（如 message_start、content_block_delta 等），适用于实时 UI 更新。
+
+```bash
+qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
+```
+
+### 输入格式
+
+`--input-format` 参数控制 Qwen Code 如何从标准输入读取内容：
+
+- **`text`**（默认）：从 stdin 或命令行参数读取标准文本输入
+- **`stream-json`**：通过 stdin 使用 JSON 消息协议进行双向通信
+
+> **注意：** Stream-json 输入模式目前仍在开发中，主要面向 SDK 集成。使用时需同时设置 `--output-format stream-json`。
 
 ### 文件重定向
 
-将输出保存到文件或管道传递给其他命令：
+将输出保存到文件或通过管道传递给其他命令：
 
 ```bash
 
@@ -206,52 +181,58 @@ qwen -p "Explain Docker" --output-format json > docker-explanation.json
 # 追加到文件
 qwen -p "Add more details" >> docker-explanation.txt
 
-# 管道传递给其他工具
+# 管道传输给其他工具
 qwen -p "What is Kubernetes?" --output-format json | jq '.response'
 qwen -p "Explain microservices" | wc -w
 qwen -p "List programming languages" | grep -i "python"
 ```
 
+# 用于实时处理的 Stream-JSON 输出
+qwen -p "Explain Docker" --output-format stream-json | jq '.type'
+qwen -p "Write code" --output-format stream-json --include-partial-messages | jq '.event.type'
+```
+
 ## 配置选项
 
-用于无头模式（headless）运行的关键命令行选项：
+无头模式（headless）使用的关键命令行选项：
 
-| 选项                     | 描述                           | 示例                                              |
-| ------------------------ | ------------------------------ | ------------------------------------------------- |
-| `--prompt`, `-p`         | 以无头模式运行                 | `qwen -p "query"`                                 |
-| `--output-format`        | 指定输出格式（text, json）     | `qwen -p "query" --output-format json`            |
-| `--model`, `-m`          | 指定使用的 Qwen 模型           | `qwen -p "query" -m qwen3-coder-plus`             |
-| `--debug`, `-d`          | 启用调试模式                   | `qwen -p "query" --debug`                         |
-| `--all-files`, `-a`      | 在上下文中包含所有文件         | `qwen -p "query" --all-files`                     |
-| `--include-directories`  | 包含额外的目录                 | `qwen -p "query" --include-directories src,docs`  |
-| `--yolo`, `-y`           | 自动批准所有操作               | `qwen -p "query" --yolo`                          |
-| `--approval-mode`        | 设置审批模式                   | `qwen -p "query" --approval-mode auto_edit`       |
+| 选项                          | 描述                                           | 示例                                                                       |
+| ----------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------- |
+| `--prompt`, `-p`              | 以无头模式运行                                 | `qwen -p "query"`                                                          |
+| `--output-format`, `-o`       | 指定输出格式 (text, json, stream-json)         | `qwen -p "query" --output-format json`                                     |
+| `--input-format`              | 指定输入格式 (text, stream-json)               | `qwen --input-format text --output-format stream-json`                     |
+| `--include-partial-messages`  | 在 stream-json 输出中包含部分消息              | `qwen -p "query" --output-format stream-json --include-partial-messages`   |
+| `--debug`, `-d`               | 启用调试模式                                   | `qwen -p "query" --debug`                                                  |
+| `--all-files`, `-a`           | 将所有文件包含在上下文中                       | `qwen -p "query" --all-files`                                              |
+| `--include-directories`       | 包含额外的目录                                 | `qwen -p "query" --include-directories src,docs`                           |
+| `--yolo`, `-y`                | 自动批准所有操作                               | `qwen -p "query" --yolo`                                                   |
+| `--approval-mode`             | 设置审批模式                                   | `qwen -p "query" --approval-mode auto_edit`                                |
 
-有关所有可用配置选项、设置文件和环境变量的完整信息，请参阅[配置指南](./cli/configuration.md)。
+有关所有可用配置选项、设置文件和环境变量的完整详细信息，请参阅[配置指南](./cli/configuration.md)。
 
 ## 示例
 
-#### 代码审查
+### 代码审查
 
 ```bash
 cat src/auth.py | qwen -p "Review this authentication code for security issues" > security-review.txt
 ```
 
-#### 生成 commit 信息
+### 生成 commit message
 
 ```bash
 result=$(git diff --cached | qwen -p "Write a concise commit message for these changes" --output-format json)
 echo "$result" | jq -r '.response'
 ```
 
-#### API 文档生成
+### API 文档生成
 
 ```bash
 result=$(cat api/routes.js | qwen -p "Generate OpenAPI spec for these routes" --output-format json)
 echo "$result" | jq -r '.response' > openapi.json
 ```
 
-#### 批量代码分析
+### 批量代码分析
 
 ```bash
 for file in src/*.py; do
@@ -262,20 +243,20 @@ for file in src/*.py; do
 done
 ```
 
-#### 代码审查
+### PR 代码审查
 
 ```bash
 result=$(git diff origin/main...HEAD | qwen -p "Review these changes for bugs, security issues, and code quality" --output-format json)
 echo "$result" | jq -r '.response' > pr-review.json
 ```
 
-#### 日志分析
+### 日志分析
 
 ```bash
 grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analyze these errors and suggest root cause and fixes" > error-analysis.txt
 ```
 
-#### 生成发布说明
+### 发布说明生成
 
 ```bash
 result=$(git log --oneline v1.0.0..HEAD | qwen -p "Generate release notes from these commits" --output-format json)
@@ -284,7 +265,7 @@ echo "$response"
 echo "$response" >> CHANGELOG.md
 ```
 
-#### 模型和工具使用情况跟踪
+### 模型和工具使用情况跟踪
 
 ```bash
 result=$(qwen -p "Explain this database schema" --include-directories db --output-format json)
@@ -297,6 +278,15 @@ echo "$result" | jq -r '.response' > schema-docs.md
 echo "Recent usage trends:"
 tail -5 usage.log
 ```
+
+这段脚本会调用 `qwen` 命令来解释数据库 schema，并以 JSON 格式输出结果。然后通过 `jq` 提取以下信息：
+
+- 使用的总 token 数量 (`total_tokens`)
+- 调用的模型列表 (`models_used`)
+- 工具调用次数 (`tool_calls`)
+- 使用的工具名称列表 (`tools_used`)
+
+这些统计信息会被记录到 `usage.log` 文件中，同时将生成的文档内容保存为 `schema-docs.md`。最后，显示最近 5 条日志记录以便快速查看使用趋势。
 
 ## 资源
 

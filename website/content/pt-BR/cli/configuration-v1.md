@@ -28,13 +28,13 @@ O Qwen Code utiliza arquivos de configuração no formato JSON para armazenar co
 
 - **Arquivo de configurações do projeto:**
   - **Localização:** `.qwen/settings.json` dentro do diretório raiz do seu projeto.
-  - **Escopo:** Aplica-se apenas quando o Qwen Code é executado a partir desse projeto específico. As configurações do projeto sobrescrevem as do usuário.
+  - **Escopo:** Aplica-se apenas quando o Qwen Code é executado a partir desse projeto específico. As configurações do projeto sobrepõem as configurações do usuário.
 
 - **Arquivo de configurações do sistema:**
   - **Localização:** `/etc/qwen-code/settings.json` (Linux), `C:\ProgramData\qwen-code\settings.json` (Windows) ou `/Library/Application Support/QwenCode/settings.json` (macOS). O caminho pode ser substituído utilizando a variável de ambiente `QWEN_CODE_SYSTEM_SETTINGS_PATH`.
-  - **Escopo:** Aplica-se a todas as sessões do Qwen Code no sistema, para todos os usuários. As configurações do sistema sobrescrevem as do usuário e do projeto. Pode ser útil para administradores de sistemas corporativos que precisam controlar as configurações do Qwen Code dos usuários.
+  - **Escopo:** Aplica-se a todas as sessões do Qwen Code no sistema, para todos os usuários. As configurações do sistema sobrepõem as configurações do usuário e do projeto. Pode ser útil para administradores de sistemas corporativos que precisam controlar as configurações do Qwen Code dos usuários.
 
-**Nota sobre variáveis de ambiente nas configurações:** Valores do tipo string nos seus arquivos `settings.json` podem referenciar variáveis de ambiente usando a sintaxe `$VAR_NAME` ou `${VAR_NAME}`. Essas variáveis serão automaticamente resolvidas quando as configurações forem carregadas. Por exemplo, se você tiver uma variável de ambiente chamada `MY_API_TOKEN`, poderá usá-la no `settings.json` assim: `"apiKey": "$MY_API_TOKEN"`.
+**Nota sobre variáveis de ambiente nas configurações:** Valores do tipo string nos seus arquivos `settings.json` podem referenciar variáveis de ambiente usando a sintaxe `$VAR_NAME` ou `${VAR_NAME}`. Essas variáveis serão automaticamente resolvidas quando as configurações forem carregadas. Por exemplo, se você tiver uma variável de ambiente chamada `MY_API_TOKEN`, poderá utilizá-la no `settings.json` da seguinte forma: `"apiKey": "$MY_API_TOKEN"`.
 
 ### O diretório `.qwen` no seu projeto
 
@@ -67,7 +67,7 @@ Além de um arquivo de configurações do projeto, o diretório `.qwen` pode con
   - **Propriedades:**
     - **`respectGitIgnore`** (boolean): Define se os padrões do `.gitignore` devem ser respeitados ao descobrir arquivos. Quando definido como `true`, arquivos ignorados pelo git (como `node_modules/`, `dist/`, `.env`) são automaticamente excluídos dos comandos @ e operações de listagem de arquivos.
     - **`enableRecursiveFileSearch`** (boolean): Define se a busca recursiva por nomes de arquivos no diretório atual deve ser habilitada ao completar prefixos @ no prompt.
-    - **`disableFuzzySearch`** (boolean): Quando definido como `true`, desativa a funcionalidade de busca difusa (fuzzy search) ao procurar por arquivos, o que pode melhorar o desempenho em projetos com muitos arquivos.
+    - **`disableFuzzySearch`** (boolean): Quando definido como `true`, desativa a pesquisa difusa (fuzzy search) ao procurar arquivos, o que pode melhorar o desempenho em projetos com muitos arquivos.
   - **Exemplo:**
     ```json
     "fileFiltering": {
@@ -79,16 +79,16 @@ Além de um arquivo de configurações do projeto, o diretório `.qwen` pode con
 
 ### Solução de Problemas de Desempenho na Busca de Arquivos
 
-Se você estiver enfrentando problemas de desempenho na busca de arquivos (por exemplo, com os completions usando `@`), especialmente em projetos com um número muito grande de arquivos, aqui estão algumas coisas que você pode tentar, em ordem de recomendação:
+Se você estiver enfrentando problemas de desempenho na busca por arquivos (por exemplo, com os recursos de autocompletar usando `@`), especialmente em projetos com um número muito grande de arquivos, aqui estão algumas coisas que você pode tentar, em ordem de recomendação:
 
-1. **Use `.qwenignore`:** Crie um arquivo `.qwenignore` na raiz do seu projeto para excluir diretórios que contenham um grande número de arquivos que você não precisa referenciar (por exemplo, artefatos de build, logs, `node_modules`). Reduzir o número total de arquivos indexados é a forma mais eficaz de melhorar o desempenho.
+1. **Use o `.qwenignore`:** Crie um arquivo `.qwenignore` na raiz do seu projeto para excluir diretórios que contenham um grande número de arquivos que você não precisa referenciar (por exemplo, artefatos de build, logs, `node_modules`). Reduzir o número total de arquivos indexados é a forma mais eficaz de melhorar o desempenho.
 
 2. **Desative a Busca Fuzzy:** Se ignorar arquivos não for suficiente, você pode desativar a busca fuzzy definindo `disableFuzzySearch` como `true` no seu arquivo `settings.json`. Isso usará um algoritmo de correspondência mais simples e não fuzzy, o que pode ser mais rápido.
 
-3. **Desative a Busca Recursiva de Arquivos:** Como último recurso, você pode desativar completamente a busca recursiva de arquivos definindo `enableRecursiveFileSearch` como `false`. Essa será a opção mais rápida, pois evita uma varredura recursiva do seu projeto. Porém, isso significa que você precisará digitar o caminho completo dos arquivos ao usar os completions com `@`.
+3. **Desative a Busca Recursiva de Arquivos:** Como último recurso, você pode desativar completamente a busca recursiva de arquivos definindo `enableRecursiveFileSearch` como `false`. Essa será a opção mais rápida, pois evita uma varredura recursiva do seu projeto. No entanto, isso significa que você precisará digitar o caminho completo dos arquivos ao usar o autocompletar com `@`.
 
 - **`coreTools`** (array de strings):
-  - **Descrição:** Permite especificar uma lista de nomes de ferramentas principais que devem estar disponíveis para o modelo. Pode ser usado para restringir o conjunto de ferramentas integradas. Veja [Built-in Tools](../core/tools-api.md#built-in-tools) para uma lista das ferramentas principais. Você também pode especificar restrições específicas por comando para ferramentas que suportam isso, como a `ShellTool`. Por exemplo, `"coreTools": ["ShellTool(ls -l)"]` permitirá apenas a execução do comando `ls -l`.
+  - **Descrição:** Permite especificar uma lista de nomes de ferramentas principais que devem estar disponíveis para o modelo. Isso pode ser usado para restringir o conjunto de ferramentas integradas. Veja [Built-in Tools](../core/tools-api.md#built-in-tools) para obter uma lista das ferramentas principais. Você também pode especificar restrições específicas por comando para ferramentas que suportam isso, como o `ShellTool`. Por exemplo, `"coreTools": ["ShellTool(ls -l)"]` permitirá apenas a execução do comando `ls -l`.
   - **Padrão:** Todas as ferramentas disponíveis para uso pelo modelo.
   - **Exemplo:** `"coreTools": ["ReadFileTool", "GlobTool", "ShellTool(ls)"]`.
 
@@ -98,22 +98,22 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
   - **Exemplo:** `"allowedTools": ["ShellTool(git status)"]`.
 
 - **`excludeTools`** (array de strings):
-  - **Descrição:** Permite especificar uma lista de nomes de ferramentas principais que devem ser excluídas do modelo. Uma ferramenta listada tanto em `excludeTools` quanto em `coreTools` será excluída. Você também pode especificar restrições específicas por comando para ferramentas que suportam isso, como a `ShellTool`. Por exemplo, `"excludeTools": ["ShellTool(rm -rf)"]` bloqueará o comando `rm -rf`.
+  - **Descrição:** Permite especificar uma lista de nomes de ferramentas principais que devem ser excluídas do modelo. Uma ferramenta listada tanto em `excludeTools` quanto em `coreTools` será excluída. Você também pode especificar restrições específicas por comando para ferramentas que suportam isso, como o `ShellTool`. Por exemplo, `"excludeTools": ["ShellTool(rm -rf)"]` bloqueará o comando `rm -rf`.
   - **Padrão:** Nenhuma ferramenta excluída.
   - **Exemplo:** `"excludeTools": ["run_shell_command", "findFiles"]`.
   - **Nota de Segurança:** Restrições específicas por comando em `excludeTools` para `run_shell_command` são baseadas em correspondência simples de strings e podem ser facilmente contornadas. Este recurso **não é um mecanismo de segurança** e não deve ser usado para executar código não confiável com segurança. É recomendado usar `coreTools` para selecionar explicitamente os comandos que podem ser executados.
 
 - **`allowMCPServers`** (array de strings):
-  - **Descrição:** Permite especificar uma lista de nomes de servidores MCP que devem estar disponíveis para o modelo. Pode ser usado para restringir o conjunto de servidores MCP aos quais se conectar. Observe que isso será ignorado se `--allowed-mcp-server-names` estiver definido.
+  - **Descrição:** Permite especificar uma lista de nomes de servidores MCP que devem estar disponíveis para o modelo. Isso pode ser usado para restringir o conjunto de servidores MCP aos quais se conectar. Observe que isso será ignorado se `--allowed-mcp-server-names` estiver definido.
   - **Padrão:** Todos os servidores MCP estão disponíveis para uso pelo modelo.
   - **Exemplo:** `"allowMCPServers": ["myPythonServer"]`.
-  - **Nota de Segurança:** Isso usa correspondência simples de strings nos nomes dos servidores MCP, o que pode ser modificado. Se você é um administrador de sistema e deseja evitar que usuários contornem essa configuração, considere configurar `mcpServers` no nível das configurações do sistema de modo que o usuário não possa configurar nenhum servidor MCP próprio. Isso não deve ser usado como um mecanismo de segurança infalível.
+  - **Nota de Segurança:** Isso usa correspondência simples de strings nos nomes dos servidores MCP, que podem ser modificados. Se você for um administrador de sistema e quiser evitar que os usuários contornem essa configuração, considere configurar os `mcpServers` no nível das configurações do sistema de modo que o usuário não possa configurar nenhum servidor MCP próprio. Isso não deve ser usado como um mecanismo de segurança infalível.
 
 - **`excludeMCPServers`** (array de strings):
   - **Descrição:** Permite especificar uma lista de nomes de servidores MCP que devem ser excluídos do modelo. Um servidor listado tanto em `excludeMCPServers` quanto em `allowMCPServers` será excluído. Observe que isso será ignorado se `--allowed-mcp-server-names` estiver definido.
   - **Padrão:** Nenhum servidor MCP excluído.
   - **Exemplo:** `"excludeMCPServers": ["myNodeServer"]`.
-  - **Nota de Segurança:** Isso usa correspondência simples de strings nos nomes dos servidores MCP, o que pode ser modificado. Se você é um administrador de sistema e deseja evitar que usuários contornem essa configuração, considere configurar `mcpServers` no nível das configurações do sistema de modo que o usuário não possa configurar nenhum servidor MCP próprio. Isso não deve ser usado como um mecanismo de segurança infalível.
+  - **Nota de Segurança:** Isso usa correspondência simples de strings nos nomes dos servidores MCP, que podem ser modificados. Se você for um administrador de sistema e quiser evitar que os usuários contornem essa configuração, considere configurar os `mcpServers` no nível das configurações do sistema de modo que o usuário não possa configurar nenhum servidor MCP próprio. Isso não deve ser usado como um mecanismo de segurança infalível.
 
 - **`autoAccept`** (booleano):
   - **Descrição:** Controla se a CLI aceita e executa automaticamente chamadas de ferramentas consideradas seguras (por exemplo, operações somente leitura) sem confirmação explícita do usuário. Se definido como `true`, a CLI ignorará o prompt de confirmação para ferramentas consideradas seguras.
@@ -126,7 +126,7 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
   - **Exemplo:** `"theme": "GitHub"`
 
 - **`vimMode`** (booleano):
-  - **Descrição:** Habilita ou desabilita o modo vim para edição de entrada. Quando ativado, a área de entrada suporta comandos de navegação e edição no estilo vim com os modos NORMAL e INSERT. O status do modo vim é exibido no rodapé e persiste entre sessões.
+  - **Descrição:** Habilita ou desabilita o modo vim para edição de entrada. Quando ativado, a área de entrada suporta comandos de navegação e edição no estilo vim com modos NORMAL e INSERT. O status do modo vim é exibido no rodapé e persiste entre sessões.
   - **Padrão:** `false`
   - **Exemplo:** `"vimMode": true`
 
@@ -136,7 +136,7 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
   - **Exemplo:** `"sandbox": "docker"`
 
 - **`toolDiscoveryCommand`** (string):
-  - **Descrição:** **Alinhado com o CLI do Gemini.** Define um comando shell personalizado para descobrir ferramentas do seu projeto. O comando shell deve retornar em `stdout` um array JSON de [declarações de funções](https://ai.google.dev/gemini-api/docs/function-calling#function-declarations). Wrappers de ferramentas são opcionais.
+  - **Descrição:** **Alinhado com o CLI do Gemini.** Define um comando shell personalizado para descobrir ferramentas do seu projeto. O comando shell deve retornar em `stdout` um array JSON de [declarações de função](https://ai.google.dev/gemini-api/docs/function-calling#function-declarations). Os wrappers de ferramentas são opcionais.
   - **Padrão:** Vazio
   - **Exemplo:** `"toolDiscoveryCommand": "bin/get_tools"`
 
@@ -149,7 +149,7 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
   - **Exemplo:** `"toolCallCommand": "bin/call_tool"`
 
 - **`mcpServers`** (objeto):
-  - **Descrição:** Configura conexões com um ou mais servidores Model-Context Protocol (MCP) para descobrir e usar ferramentas personalizadas. O Qwen Code tenta se conectar a cada servidor MCP configurado para descobrir as ferramentas disponíveis. Se múltiplos servidores MCP expuserem uma ferramenta com o mesmo nome, os nomes das ferramentas serão prefixados com o alias do servidor definido na configuração (por exemplo, `serverAlias__actualToolName`) para evitar conflitos. Observe que o sistema pode remover certas propriedades do schema nas definições de ferramentas MCP para compatibilidade. Pelo menos um dos campos `command`, `url` ou `httpUrl` deve ser fornecido. Se vários forem especificados, a ordem de precedência é `httpUrl`, depois `url`, depois `command`.
+  - **Descrição:** Configura conexões com um ou mais servidores Model-Context Protocol (MCP) para descobrir e usar ferramentas personalizadas. O Qwen Code tenta se conectar a cada servidor MCP configurado para descobrir as ferramentas disponíveis. Se vários servidores MCP expuserem uma ferramenta com o mesmo nome, os nomes das ferramentas serão prefixados com o alias do servidor definido na configuração (por exemplo, `serverAlias__actualToolName`) para evitar conflitos. Observe que o sistema pode remover certas propriedades de esquema das definições de ferramentas MCP para compatibilidade. Pelo menos um dos campos `command`, `url` ou `httpUrl` deve ser fornecido. Se mais de um for especificado, a ordem de precedência é `httpUrl`, depois `url`, depois `command`.
   - **Padrão:** Vazio
   - **Propriedades:**
     - **`<SERVER_NAME>`** (objeto): Os parâmetros do servidor nomeado.
@@ -159,12 +159,12 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
       - `cwd` (string, opcional): O diretório de trabalho onde o servidor será iniciado.
       - `url` (string, opcional): A URL de um servidor MCP que usa Server-Sent Events (SSE) para comunicação.
       - `httpUrl` (string, opcional): A URL de um servidor MCP que usa HTTP streamable para comunicação.
-      - `headers` (objeto, opcional): Um mapa de cabeçalhos HTTP a serem enviados com as requisições para `url` ou `httpUrl`.
-      - `timeout` (número, opcional): Tempo limite em milissegundos para requisições a este servidor MCP.
+      - `headers` (objeto, opcional): Um mapa de cabeçalhos HTTP a serem enviados com solicitações para `url` ou `httpUrl`.
+      - `timeout` (número, opcional): Tempo limite em milissegundos para solicitações a este servidor MCP.
       - `trust` (booleano, opcional): Confiar neste servidor e ignorar todas as confirmações de chamadas de ferramentas.
       - `description` (string, opcional): Uma breve descrição do servidor, que pode ser usada para fins de exibição.
       - `includeTools` (array de strings, opcional): Lista de nomes de ferramentas a incluir deste servidor MCP. Quando especificado, apenas as ferramentas listadas aqui estarão disponíveis a partir deste servidor (comportamento de whitelist). Se não especificado, todas as ferramentas do servidor são habilitadas por padrão.
-      - `excludeTools` (array de strings, opcional): Lista de nomes de ferramentas a excluir deste servidor MCP. Ferramentas listadas aqui não estarão disponíveis para o modelo, mesmo que sejam expostas pelo servidor. **Nota:** `excludeTools` tem precedência sobre `includeTools` – se uma ferramenta estiver em ambas as listas, ela será excluída.
+      - `excludeTools` (array de strings, opcional): Lista de nomes de ferramentas a excluir deste servidor MCP. As ferramentas listadas aqui não estarão disponíveis para o modelo, mesmo que sejam expostas pelo servidor. **Nota:** `excludeTools` tem precedência sobre `includeTools` – se uma ferramenta estiver nas duas listas, ela será excluída.
   - **Exemplo:**
     ```json
     "mcpServers": {
@@ -217,11 +217,11 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
   - **Exemplo:** `"preferredEditor": "vscode"`
 
 - **`telemetry`** (objeto)
-  - **Descrição:** Configura a coleta de logs e métricas para o Qwen Code. Para mais informações, veja [Telemetry](../telemetry.md).
+  - **Descrição:** Configura o registro e a coleta de métricas para o Qwen Code. Para mais informações, veja [Telemetry](../telemetry.md).
   - **Padrão:** `{"enabled": false, "target": "local", "otlpEndpoint": "http://localhost:4317", "logPrompts": true}`
   - **Propriedades:**
-    - **`enabled`** (booleano): Se a telemetria está ativada ou não.
-    - **`target`** (string): O destino para a telemetria coletada. Valores suportados são `local` e `gcp`.
+    - **`enabled`** (booleano): Se a telemetria está habilitada ou não.
+    - **`target`** (string): O destino para os dados de telemetria coletados. Valores suportados são `local` e `gcp`.
     - **`otlpEndpoint`** (string): O endpoint para o Exportador OTLP.
     - **`logPrompts`** (booleano): Se o conteúdo dos prompts do usuário deve ser incluído nos logs.
   - **Exemplo:**
@@ -234,7 +234,7 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
     }
     ```
 - **`usageStatisticsEnabled`** (booleano):
-  - **Descrição:** Ativa ou desativa a coleta de estatísticas de uso. Veja [Estatísticas de Uso](#usage-statistics) para mais informações.
+  - **Descrição:** Habilita ou desabilita a coleta de estatísticas de uso. Veja [Estatísticas de Uso](#usage-statistics) para mais informações.
   - **Padrão:** `true`
   - **Exemplo:**
     ```json
@@ -242,7 +242,7 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
     ```
 
 - **`hideTips`** (booleano):
-  - **Descrição:** Ativa ou desativa dicas úteis na interface da CLI.
+  - **Descrição:** Habilita ou desabilita dicas úteis na interface da CLI.
   - **Padrão:** `false`
   - **Exemplo:**
 
@@ -251,7 +251,7 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
     ```
 
 - **`hideBanner`** (booleano):
-  - **Descrição:** Ativa ou desativa o banner inicial (arte ASCII) na interface da CLI.
+  - **Descrição:** Habilita ou desabilita o banner de inicialização (arte ASCII) na interface da CLI.
   - **Padrão:** `false`
   - **Exemplo:**
 
@@ -268,9 +268,9 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
     ```
 
 - **`summarizeToolOutput`** (objeto):
-  - **Descrição:** Ativa ou desativa o resumo da saída das ferramentas. Você pode especificar o orçamento de tokens para o resumo usando a configuração `tokenBudget`.
+  - **Descrição:** Habilita ou desabilita o resumo da saída de ferramentas. Você pode especificar o orçamento de tokens para o resumo usando a configuração `tokenBudget`.
   - Nota: Atualmente, apenas a ferramenta `run_shell_command` é suportada.
-  - **Padrão:** `{}` (Desativado por padrão)
+  - **Padrão:** `{}` (Desabilitado por padrão)
   - **Exemplo:**
     ```json
     "summarizeToolOutput": {
@@ -281,9 +281,9 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
     ```
 
 - **`excludedProjectEnvVars`** (array de strings):
-  - **Descrição:** Especifica variáveis de ambiente que devem ser excluídas do carregamento a partir dos arquivos `.env` do projeto. Isso ev
+  - **Descrição:** Especifica variáveis de ambiente que
 
-### Exemplo `settings.json`:
+### Exemplo de `settings.json`:
 
 ```json
 {
@@ -326,7 +326,7 @@ Se você estiver enfrentando problemas de desempenho na busca de arquivos (por e
 
 ## Histórico do Shell
 
-O CLI mantém um histórico dos comandos shell que você executa. Para evitar conflitos entre diferentes projetos, esse histórico é armazenado em um diretório específico do projeto dentro da pasta home do seu usuário.
+O CLI mantém um histórico dos comandos shell que você executa. Para evitar conflitos entre projetos diferentes, esse histórico é armazenado em um diretório específico do projeto dentro da pasta home do seu usuário.
 
 - **Localização:** `~/.qwen/tmp/<project_hash>/shell_history`
   - `<project_hash>` é um identificador único gerado a partir do caminho raiz do seu projeto.
@@ -334,12 +334,12 @@ O CLI mantém um histórico dos comandos shell que você executa. Para evitar co
 
 ## Variáveis de Ambiente e Arquivos `.env`
 
-Variáveis de ambiente são uma forma comum de configurar aplicações, especialmente para informações sensíveis como chaves de API ou configurações que podem variar entre ambientes. Para a configuração de autenticação, consulte a [documentação de Autenticação](./authentication.md), que aborda todos os métodos disponíveis.
+Variáveis de ambiente são uma forma comum de configurar aplicações, especialmente para informações sensíveis como chaves de API ou configurações que podem variar entre ambientes. Para configurar autenticação, consulte a [documentação de Autenticação](./authentication.md), que aborda todos os métodos disponíveis.
 
 O CLI carrega automaticamente variáveis de ambiente de um arquivo `.env`. A ordem de carregamento é:
 
 1. Arquivo `.env` no diretório atual.
-2. Se não encontrado, ele busca nos diretórios pais até encontrar um arquivo `.env` ou alcançar a raiz do projeto (identificada por uma pasta `.git`) ou o diretório home.
+2. Se não encontrado, ele procura nos diretórios pais até encontrar um arquivo `.env` ou alcançar a raiz do projeto (identificada por uma pasta `.git`) ou o diretório home.
 3. Se ainda não encontrado, ele procura por `~/.env` (no diretório home do usuário).
 
 **Exclusão de Variáveis de Ambiente:** Algumas variáveis de ambiente (como `DEBUG` e `DEBUG_MODE`) são excluídas automaticamente dos arquivos `.env` do projeto por padrão, para evitar interferência no comportamento do CLI. Variáveis de arquivos `.qwen/.env` nunca são excluídas. Você pode personalizar esse comportamento usando a configuração `excludedProjectEnvVars` no seu arquivo `settings.json`.
@@ -351,7 +351,7 @@ O CLI carrega automaticamente variáveis de ambiente de um arquivo `.env`. A ord
   - Um dos vários [métodos de autenticação](./authentication.md) disponíveis.
   - Defina isso no seu perfil do shell (por exemplo, `~/.bashrc`, `~/.zshrc`) ou em um arquivo `.env`.
 - **`OPENAI_MODEL`**:
-  - Especifica o modelo padrão da OPENAI a ser usado.
+  - Especifica o modelo OPENAI padrão a ser usado.
   - Substitui o valor padrão hardcoded.
   - Exemplo: `export OPENAI_MODEL="qwen3-coder-plus"`
 - **`GEMINI_SANDBOX`**:
@@ -361,8 +361,8 @@ O CLI carrega automaticamente variáveis de ambiente de um arquivo `.env`. A ord
   - Alterna o perfil do Seatbelt (`sandbox-exec`) no macOS.
   - `permissive-open`: (Padrão) Restringe escritas na pasta do projeto (e algumas outras pastas, veja `packages/cli/src/utils/sandbox-macos-permissive-open.sb`), mas permite outras operações.
   - `strict`: Usa um perfil restrito que nega operações por padrão.
-  - `<profile_name>`: Usa um perfil personalizado. Para definir um perfil personalizado, crie um arquivo chamado `sandbox-macos-<profile_name>.sb` no diretório `.qwen/` do seu projeto (ex: `my-project/.qwen/sandbox-macos-custom.sb`).
-- **`DEBUG` ou `DEBUG_MODE`** (geralmente usados por bibliotecas subjacentes ou pelo próprio CLI):
+  - `<profile_name>`: Usa um perfil personalizado. Para definir um perfil personalizado, crie um arquivo chamado `sandbox-macos-<profile_name>.sb` no diretório `.qwen/` do seu projeto (ex.: `my-project/.qwen/sandbox-macos-custom.sb`).
+- **`DEBUG` ou `DEBUG_MODE`** (geralmente usadas por bibliotecas subjacentes ou pelo próprio CLI):
   - Defina como `true` ou `1` para habilitar logs detalhados de depuração, o que pode ajudar na resolução de problemas.
   - **Nota:** Essas variáveis são excluídas automaticamente dos arquivos `.env` do projeto por padrão, para evitar interferência no comportamento do CLI. Use arquivos `.qwen/.env` se precisar defini-las especificamente para o Qwen Code.
 - **`NO_COLOR`**:
@@ -374,8 +374,8 @@ O CLI carrega automaticamente variáveis de ambiente de um arquivo `.env`. A ord
   - Útil para desenvolvimento e testes.
 - **`TAVILY_API_KEY`**:
   - Sua chave de API para o serviço de busca web Tavily.
-  - Necessário para habilitar a funcionalidade da ferramenta `web_search`.
-  - Se não configurado, a ferramenta de busca web será desativada e ignorada.
+  - Usada para habilitar a funcionalidade da ferramenta `web_search`.
+  - **Nota:** Para usuários Qwen OAuth, o provedor DashScope está disponível automaticamente sem nenhuma configuração. Para outros tipos de autenticação, configure os provedores Tavily ou Google para habilitar a busca web.
   - Exemplo: `export TAVILY_API_KEY="tvly-your-api-key-here"`
 
 ## Argumentos de Linha de Comando
@@ -390,18 +390,18 @@ Argumentos passados diretamente ao executar o CLI podem substituir outras config
 - **`--prompt-interactive <your_prompt>`** (**`-i <your_prompt>`**):
   - Inicia uma sessão interativa com o prompt fornecido como entrada inicial.
   - O prompt é processado dentro da sessão interativa, e não antes dela.
-  - Não pode ser usado quando há entrada via pipe do stdin.
+  - Não pode ser usado quando há redirecionamento de entrada via stdin.
   - Exemplo: `qwen -i "explain this code"`
 - **`--sandbox`** (**`-s`**):
   - Ativa o modo sandbox para esta sessão.
 - **`--sandbox-image`**:
-  - Define a URI da imagem sandbox.
+  - Define a URI da imagem do sandbox.
 - **`--debug`** (**`-d`**):
-  - Ativa o modo debug para esta sessão, exibindo saídas mais detalhadas.
+  - Ativa o modo debug para esta sessão, fornecendo saída mais detalhada.
 - **`--all-files`** (**`-a`**):
   - Se definido, inclui recursivamente todos os arquivos no diretório atual como contexto para o prompt.
 - **`--help`** (ou **`-h`**):
-  - Exibe informações de ajuda sobre os argumentos da linha de comando.
+  - Exibe informações de ajuda sobre os argumentos de linha de comando.
 - **`--show-memory-usage`**:
   - Exibe o uso atual de memória.
 - **`--yolo`**:
@@ -415,7 +415,7 @@ Argumentos passados diretamente ao executar o CLI podem substituir outras config
   - Não pode ser usado junto com `--yolo`. Use `--approval-mode=yolo` em vez de `--yolo` para a nova abordagem unificada.
   - Exemplo: `qwen --approval-mode auto-edit`
 - **`--allowed-tools <tool1,tool2,...>`**:
-  - Uma lista separada por vírgulas dos nomes das ferramentas que ignoram o diálogo de confirmação.
+  - Uma lista separada por vírgulas com nomes de ferramentas que ignoram o diálogo de confirmação.
   - Exemplo: `qwen --allowed-tools "ShellTool(git status)"`
 - **`--telemetry`**:
   - Ativa a [telemetria](../telemetry.md).
@@ -424,9 +424,9 @@ Argumentos passados diretamente ao executar o CLI podem substituir outras config
 - **`--telemetry-otlp-endpoint`**:
   - Define o endpoint OTLP para telemetria. Veja [telemetria](../telemetry.md) para mais informações.
 - **`--telemetry-otlp-protocol`**:
-  - Define o protocolo OTLP para telemetria (`grpc` ou `http`). O padrão é `grpc`. Veja [telemetria](../telemetry.md) para mais informações.
+  - Define o protocolo OTLP para telemetria (`grpc` ou `http`). Padrão é `grpc`. Veja [telemetria](../telemetry.md) para mais informações.
 - **`--telemetry-log-prompts`**:
-  - Ativa o log de prompts para telemetria. Veja [telemetria](../telemetry.md) para mais informações.
+  - Ativa o log dos prompts para telemetria. Veja [telemetria](../telemetry.md) para mais informações.
 - **`--checkpointing`**:
   - Ativa o [checkpointing](../checkpointing.md).
 - **`--extensions <extension_name ...>`** (**`-e <extension_name ...>`**):
@@ -449,42 +449,45 @@ Argumentos passados diretamente ao executar o CLI podem substituir outras config
   - Exibe a versão do CLI.
 - **`--openai-logging`**:
   - Ativa o log das chamadas à API da OpenAI para depuração e análise. Esta flag sobrescreve a configuração `enableOpenAILogging` no arquivo `settings.json`.
+- **`--openai-logging-dir <directory>`**:
+  - Define um caminho personalizado para os logs da API da OpenAI. Esta flag sobrescreve a configuração `openAILoggingDir` no arquivo `settings.json`. Suporta caminhos absolutos, relativos e expansão do `~`.
+  - **Exemplo:** `qwen --openai-logging-dir "~/qwen-logs" --openai-logging`
 - **`--tavily-api-key <api_key>`**:
   - Define a chave da API Tavily para funcionalidade de busca na web nesta sessão.
   - Exemplo: `qwen --tavily-api-key tvly-your-api-key-here`
 
 ## Arquivos de Contexto (Contexto Instrucional Hierárquico)
 
-Embora não sejam estritamente uma configuração para o _comportamento_ da CLI, os arquivos de contexto (por padrão `QWEN.md`, mas configuráveis via a opção `contextFileName`) são essenciais para definir o _contexto instrucional_ (também chamado de "memória"). Este recurso poderoso permite que você forneça instruções específicas do projeto, guias de estilo de código ou qualquer informação relevante ao AI, tornando suas respostas mais adaptadas e precisas às suas necessidades. A CLI inclui elementos de interface, como um indicador no rodapé mostrando o número de arquivos de contexto carregados, mantendo você informado sobre o contexto ativo.
+Embora não sejam estritamente uma configuração para o _comportamento_ da CLI, os arquivos de contexto (por padrão `QWEN.md`, mas configuráveis via a opção `contextFileName`) são essenciais para definir o _contexto instrucional_ (também chamado de "memória"). Este recurso poderoso permite que você forneça instruções específicas do projeto, guias de estilo de código ou qualquer informação relevante ao AI, tornando suas respostas mais adaptadas e precisas às suas necessidades. A CLI inclui elementos de interface, como um indicador no rodapé mostrando o número de arquivos de contexto carregados, para manter você informado sobre o contexto ativo.
 
 - **Propósito:** Esses arquivos Markdown contêm instruções, diretrizes ou contexto que você deseja que o modelo Qwen leve em consideração durante as interações. O sistema é projetado para gerenciar esse contexto instrucional de forma hierárquica.
 
-### Exemplo de Conteúdo do Arquivo de Contexto (ex: `QWEN.md`)
+### Exemplo de Conteúdo do Arquivo de Contexto (ex.: `QWEN.md`)
 
 Aqui está um exemplo conceitual do que um arquivo de contexto na raiz de um projeto TypeScript pode conter:
 
 ```markdown
 
-# Projeto: Minha Incrível Biblioteca TypeScript
+# Projeto: Minha Incrível Biblioteca em TypeScript
 
 ## Instruções Gerais:
 
-- Ao gerar novo código TypeScript, siga o estilo de codificação existente.
-- Certifique-se de que todas as novas funções e classes tenham comentários JSDoc.
+- Ao gerar novo código em TypeScript, siga o estilo de codificação já existente.
+- Certifique-se de que todas as novas funções e classes tenham comentários em JSDoc.
 - Prefira paradigmas de programação funcional quando apropriado.
 - Todo o código deve ser compatível com TypeScript 5.0 e Node.js 20+.
 
 ## Estilo de Codificação:
 
 - Use 2 espaços para indentação.
-- Nomes de interfaces devem ser prefixados com `I` (ex: `IUserService`).
+- Nomes de interfaces devem ser prefixados com `I` (ex.: `IUserService`).
 - Membros privados de classes devem ser prefixados com um underscore (`_`).
 - Sempre use igualdade estrita (`===` e `!==`).
 
 ## Componente Específico: `src/api/client.ts`
 
 - Este arquivo lida com todas as requisições de API de saída.
-- Ao adicionar novas funções de chamada de API, certifique-se de incluir tratamento de erros robusto e logging.
+- Ao adicionar novas funções de chamada à API, certifique-se de incluir tratamento robusto de erros e logging.
 - Use o utilitário `fetchWithRetry` existente para todas as requisições GET.
 ```
 
@@ -496,24 +499,24 @@ Aqui está um exemplo conceitual do que um arquivo de contexto na raiz de um pro
 
 Este exemplo demonstra como você pode fornecer contexto geral do projeto, convenções específicas de codificação e até mesmo observações sobre arquivos ou componentes particulares. Quanto mais relevantes e precisos forem seus arquivos de contexto, melhor a IA poderá te ajudar. Arquivos de contexto específicos do projeto são altamente recomendados para estabelecer convenções e contexto.
 
-- **Carregamento Hierárquico e Precedência:** O CLI implementa um sistema hierárquico sofisticado de memória carregando os arquivos de contexto (por exemplo, `QWEN.md`) de diversos locais. O conteúdo dos arquivos mais abaixo nesta lista (mais específicos) normalmente substitui ou complementa o conteúdo dos arquivos mais acima (mais gerais). A ordem exata de concatenação e o contexto final podem ser inspecionados usando o comando `/memory show`. A ordem típica de carregamento é:
+- **Carregamento Hierárquico e Precedência:** O CLI implementa um sistema hierárquico sofisticado de memória carregando arquivos de contexto (por exemplo, `QWEN.md`) de diversos locais. Conteúdo de arquivos mais abaixo nesta lista (mais específicos) normalmente substitui ou complementa conteúdo de arquivos mais acima (mais gerais). A ordem exata de concatenação e o contexto final podem ser inspecionados usando o comando `/memory show`. A ordem típica de carregamento é:
   1.  **Arquivo de Contexto Global:**
       - Localização: `~/.qwen/<contextFileName>` (ex.: `~/.qwen/QWEN.md` no diretório home do usuário).
       - Escopo: Fornece instruções padrão para todos os seus projetos.
   2.  **Arquivos de Contexto na Raiz do Projeto e Diretórios Superiores:**
       - Localização: O CLI procura pelo arquivo de contexto configurado no diretório atual e depois em cada diretório pai até encontrar a raiz do projeto (identificada pela pasta `.git`) ou seu diretório home.
       - Escopo: Fornece contexto relevante para todo o projeto ou uma parte significativa dele.
-  3.  **Arquivos de Contexto em Subdiretórios (Contextuais/Locais):**
-      - Localização: O CLI também verifica a presença do arquivo de contexto configurado nos subdiretórios _abaixo_ do diretório atual de trabalho (respeitando padrões comuns de exclusão como `node_modules`, `.git`, etc.). Por padrão, a profundidade dessa busca é limitada a 200 diretórios, mas pode ser ajustada através do campo `memoryDiscoveryMaxDirs` no seu arquivo `settings.json`.
-      - Escopo: Permite instruções altamente específicas relacionadas a um componente, módulo ou seção específica do seu projeto.
-- **Concatenação e Indicação na Interface:** Os conteúdos de todos os arquivos de contexto encontrados são concatenados (com separadores indicando sua origem e caminho) e fornecidos como parte do prompt do sistema. O rodapé do CLI mostra a quantidade de arquivos de contexto carregados, oferecendo uma indicação visual rápida sobre o contexto instrucional ativo.
-- **Importação de Conteúdo:** Você pode modularizar seus arquivos de contexto importando outros arquivos Markdown utilizando a sintaxe `@path/to/file.md`. Para mais detalhes, consulte a [documentação do Processador de Importação de Memória](../core/memport.md).
+  3.  **Arquivos de Contexto em Subdiretórios (Contextual/Local):**
+      - Localização: O CLI também verifica a presença do arquivo de contexto configurado em subdiretórios _abaixo_ do diretório atual de trabalho (respeitando padrões comuns de exclusão como `node_modules`, `.git`, etc.). Por padrão, a profundidade dessa busca é limitada a 200 diretórios, mas pode ser ajustada com o campo `memoryDiscoveryMaxDirs` no seu arquivo `settings.json`.
+      - Escopo: Permite instruções altamente específicas relevantes para um componente, módulo ou seção específica do seu projeto.
+- **Concatenação & Indicação na Interface:** O conteúdo de todos os arquivos de contexto encontrados é concatenado (com separadores indicando sua origem e caminho) e fornecido como parte do prompt do sistema. O rodapé do CLI mostra a quantidade de arquivos de contexto carregados, oferecendo uma indicação visual rápida sobre o contexto instrucional ativo.
+- **Importação de Conteúdo:** Você pode modularizar seus arquivos de contexto importando outros arquivos Markdown usando a sintaxe `@path/to/file.md`. Para mais detalhes, consulte a [documentação do Processador de Importação de Memória](../core/memport.md).
 - **Comandos para Gerenciamento de Memória:**
   - Use `/memory refresh` para forçar uma nova varredura e recarregar todos os arquivos de contexto de todos os locais configurados. Isso atualiza o contexto instrucional da IA.
-  - Use `/memory show` para exibir o contexto instrucional combinado atualmente carregado, permitindo verificar a hierarquia e o conteúdo utilizado pela IA.
+  - Use `/memory show` para exibir o contexto instrucional combinado atualmente carregado, permitindo verificar a hierarquia e o conteúdo usado pela IA.
   - Veja a [documentação dos Comandos](./commands.md#memory) para detalhes completos sobre o comando `/memory` e seus subcomandos (`show` e `refresh`).
 
-Ao compreender e utilizar essas camadas de configuração e a natureza hierárquica dos arquivos de contexto, você poderá gerenciar efetivamente a memória da IA e personalizar as respostas do Qwen Code conforme suas necessidades e projetos específicos.
+Ao entender e utilizar essas camadas de configuração e a natureza hierárquica dos arquivos de contexto, você pode gerenciar efetivamente a memória da IA e adaptar as respostas do Qwen Code às suas necessidades e projetos específicos.
 
 ## Sandboxing
 
@@ -550,12 +553,12 @@ BUILD_SANDBOX=1 qwen -s
 
 ## Estatísticas de Uso
 
-Para nos ajudar a melhorar o Qwen Code, coletamos estatísticas de uso anonimizadas. Esses dados nos ajudam a entender como o CLI está sendo utilizado, identificar problemas comuns e priorizar novas funcionalidades.
+Para nos ajudar a melhorar o Qwen Code, coletamos estatísticas de uso anonimizadas. Esses dados nos ajudam a entender como o CLI está sendo usado, identificar problemas comuns e priorizar novos recursos.
 
 **O que coletamos:**
 
-- **Chamadas de Ferramentas:** Registramos os nomes das ferramentas que são chamadas, se elas tiveram sucesso ou falharam, e quanto tempo levaram para serem executadas. Não coletamos os argumentos passados para as ferramentas nem nenhum dado retornado por elas.
-- **Requisições de API:** Registramos o modelo usado em cada requisição, a duração da requisição e se ela foi bem-sucedida. Não coletamos o conteúdo dos prompts ou das respostas.
+- **Chamadas de Ferramentas:** Registramos os nomes das ferramentas chamadas, se elas tiveram sucesso ou falharam e quanto tempo levaram para serem executadas. Não coletamos os argumentos passados para as ferramentas nem nenhum dado retornado por elas.
+- **Requisições à API:** Registramos o modelo utilizado em cada requisição, a duração da requisição e se ela foi bem-sucedida. Não coletamos o conteúdo dos prompts ou das respostas.
 - **Informações da Sessão:** Coletamos informações sobre a configuração do CLI, como as ferramentas habilitadas e o modo de aprovação.
 
 **O que NÃO coletamos:**
@@ -574,12 +577,12 @@ Você pode desativar a coleta de estatísticas de uso a qualquer momento definin
 }
 ```
 
-Nota: Quando as estatísticas de uso estão ativadas, os eventos são enviados para um endpoint de coleta RUM da Alibaba Cloud.
+Nota: Quando as estatísticas de uso estão ativadas, eventos são enviados para um endpoint de coleta RUM da Alibaba Cloud.
 
 - **`enableWelcomeBack`** (booleano):
-  - **Descrição:** Mostra o diálogo de boas-vindas ao retornar a um projeto com histórico de conversa.
+  - **Descrição:** Mostra uma caixa de diálogo de boas-vindas ao retornar a um projeto com histórico de conversa.
   - **Padrão:** `true`
-  - **Categoria:** UI
-  - **Requer Reinicialização:** Não
+  - **Categoria:** Interface do usuário
+  - **Requer reinicialização:** Não
   - **Exemplo:** `"enableWelcomeBack": false`
-  - **Detalhes:** Quando ativado, o Qwen Code detectará automaticamente se você está retornando a um projeto com um resumo de projeto gerado anteriormente (`/.qwen/PROJECT_SUMMARY.md`) e mostrará um diálogo permitindo que você continue sua conversa anterior ou comece do zero. Este recurso se integra ao comando `/chat summary` e ao diálogo de confirmação de saída. Veja a [documentação do Welcome Back](./welcome-back.md) para mais detalhes.
+  - **Detalhes:** Quando ativado, o Qwen Code detectará automaticamente se você está retornando a um projeto com um resumo gerado anteriormente (`/.qwen/PROJECT_SUMMARY.md`) e mostrará uma caixa de diálogo permitindo que você continue sua conversa anterior ou comece do zero. Este recurso se integra ao comando `/chat summary` e à caixa de confirmação de saída. Veja a [documentação do Welcome Back](./welcome-back.md) para mais detalhes.

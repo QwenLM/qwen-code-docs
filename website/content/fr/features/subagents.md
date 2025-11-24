@@ -1,33 +1,33 @@
 # Subagents
 
-Les subagents sont des assistants IA spécialisés qui gèrent des types de tâches spécifiques au sein de Qwen Code. Ils vous permettent de déléguer un travail ciblé à des agents IA configurés avec des prompts, des outils et des comportements adaptés à chaque tâche.
+Les subagents sont des assistants IA spécialisés qui gèrent des types de tâches spécifiques au sein de Qwen Code. Ils vous permettent de déléguer un travail ciblé à des agents IA configurés avec des prompts, outils et comportements adaptés à chaque tâche.
 
-## Qu'est-ce qu'un Subagent ?
+## Que sont les Subagents ?
 
 Les subagents sont des assistants IA indépendants qui :
 
-- **Se spécialisent dans des tâches précises** - Chaque subagent est configuré avec un prompt système spécifique pour un type particulier de travail
-- **Possèdent leur propre contexte** - Ils maintiennent un historique de conversation distinct de votre discussion principale
-- **Utilisent des outils contrôlés** - Vous pouvez configurer les outils auxquels chaque subagent a accès
+- **Spécialisés dans des tâches précises** - Chaque subagent est configuré avec un prompt système spécifique pour un type particulier de travail
+- **Possèdent un contexte séparé** - Ils maintiennent leur propre historique de conversation, distinct de votre discussion principale
+- **Utilisent des outils contrôlés** - Vous pouvez configurer quels outils chaque subagent peut utiliser
 - **Travaillent de manière autonome** - Une fois une tâche assignée, ils travaillent indépendamment jusqu'à son achèvement ou échec
 - **Fournissent un retour détaillé** - Vous pouvez suivre en temps réel leur progression, l'utilisation des outils et les statistiques d'exécution
 
-## Avantages Clés
+## Principaux avantages
 
-- **Spécialisation des Tâches** : Créez des agents optimisés pour des workflows spécifiques (tests, documentation, refactoring, etc.)
-- **Isolation du Contexte** : Gardez le travail spécialisé séparé de votre conversation principale
+- **Spécialisation des tâches** : Créez des agents optimisés pour des workflows spécifiques (tests, documentation, refactoring, etc.)
+- **Isolation du contexte** : Gardez le travail spécialisé séparé de votre conversation principale
 - **Réutilisabilité** : Sauvegardez et réutilisez les configurations d'agents entre projets et sessions
-- **Accès Contrôlé** : Limitez les outils que chaque agent peut utiliser pour la sécurité et la concentration
-- **Visibilité sur l'Avancement** : Surveillez l'exécution des agents avec des mises à jour en temps réel
+- **Accès contrôlé** : Limitez les outils que chaque agent peut utiliser pour la sécurité et la concentration
+- **Visibilité de l'avancement** : Surveillez l'exécution des agents avec des mises à jour de progression en temps réel
 
-## Comment Fonctionnent les Sous-Agents
+## Comment fonctionnent les sous-agents
 
 1. **Configuration** : Vous créez des configurations de sous-agents qui définissent leur comportement, leurs outils et leurs prompts système
 2. **Délégation** : L'IA principale peut automatiquement déléguer des tâches aux sous-agents appropriés
 3. **Exécution** : Les sous-agents travaillent de manière indépendante, utilisant leurs outils configurés pour accomplir les tâches
 4. **Résultats** : Ils renvoient les résultats et les résumés d'exécution dans la conversation principale
 
-## Premiers Pas
+## Premiers pas
 
 ### Démarrage rapide
 
@@ -58,7 +58,7 @@ Utilisateur : "Veuillez écrire des tests complets pour le module d'authentifica
 IA : Je vais déléguer cela à votre subagent spécialiste des tests.
 [Délégue au subagent "testing-expert"]
 [Affiche la progression en temps réel de la création des tests]
-[Retourne les fichiers de test terminés et un résumé de l'exécution]
+[Renvoie les fichiers de test terminés et un résumé de l'exécution]
 ```
 
 ## Gestion
@@ -79,7 +79,7 @@ Crée un nouveau subagent via un assistant étape par étape.
 
 #### `/agents manage`
 
-Ouvre un dialogue de gestion interactive pour visualiser et gérer les sous-agents existants.
+Ouvre un dialogue de gestion interactif pour visualiser et gérer les sous-agents existants.
 
 **Utilisation :**
 
@@ -106,12 +106,15 @@ Les sous-agents sont configurés à l'aide de fichiers Markdown avec un frontmat
 ---
 name: agent-name
 description: Brève description de quand et comment utiliser cet agent
-tools: tool1, tool2, tool3 # Optionnel
+tools:
+  - tool1
+  - tool2
+  - tool3 # Optionnel
 ---
 
 Le contenu du prompt système va ici.
 Plusieurs paragraphes sont pris en charge.
-Vous pouvez utiliser la syntaxe ${variable} pour du contenu dynamique.
+Vous pouvez utiliser le templating ${variable} pour du contenu dynamique.
 ```
 
 #### Exemple d'utilisation
@@ -151,15 +154,15 @@ Demandez un sous-agent spécifique en le mentionnant dans votre commande :
 
 ```
 > Laissez le sous-agent testing-expert créer des tests unitaires pour le module de paiement
-> Faites en sorte que le sous-agent documentation-writer mette à jour la référence API
-> Demandez au sous-agent react-specialist d'optimiser les performances de ce composant
+> Demandez au sous-agent documentation-writer de mettre à jour la référence API
+> Faites en sorte que le sous-agent react-specialist optimise les performances de ce composant
 ```
 
 ## Exemples
 
 ### Agents de workflow de développement
 
-#### Testing Specialist
+#### Spécialiste en Testing
 
 Parfait pour la création de tests complets et le développement piloté par les tests (TDD).
 
@@ -167,12 +170,16 @@ Parfait pour la création de tests complets et le développement piloté par les
 ---
 name: testing-expert
 description: Rédige des tests unitaires et d'intégration complets, et gère l'automatisation des tests selon les meilleures pratiques
-tools: read_file, write_file, read_many_files, run_shell_command
+tools:
+  - read_file
+  - write_file
+  - read_many_files
+  - run_shell_command
 ---
 
-Vous êtes un spécialiste des tests, concentré sur la création de tests de haute qualité et maintenables.
+Vous êtes un spécialiste du testing concentré sur la création de tests de haute qualité et maintenables.
 
-Votre expertise inclut :
+Votre expertise comprend :
 
 - Les tests unitaires avec mocking et isolation appropriés
 - Les tests d'intégration pour les interactions entre composants
@@ -180,24 +187,24 @@ Votre expertise inclut :
 - L'identification des cas limites et une couverture complète
 - Les tests de performance et de charge lorsque cela est pertinent
 
-Pour chaque tâche de test :
+Pour chaque tâche de testing :
 
 1. Analysez la structure du code et ses dépendances
 2. Identifiez les fonctionnalités clés, les cas limites et les conditions d'erreur
 3. Créez des suites de tests complètes avec des noms explicites
-4. Incluez une configuration/nettoyage appropriés et des assertions significatives
-5. Ajoutez des commentaires pour expliquer les scénarios de test complexes
+4. Incluez une configuration/nettoyage adéquate et des assertions significatives
+5. Ajoutez des commentaires expliquant les scénarios de test complexes
 6. Assurez-vous que les tests sont maintenables et respectent les principes DRY
 
-Appliquez toujours les meilleures pratiques de test pour le langage et le framework détectés.
+Appliquez toujours les meilleures pratiques de testing pour le langage et le framework détectés.
 Portez attention aux cas de test positifs comme négatifs.
 ```
 
-**Cas d'usage :**
+**Cas d'utilisation :**
 
-- "Écris des tests unitaires pour le service d'authentification"
-- "Crée des tests d'intégration pour le workflow de traitement des paiements"
-- "Ajoute une couverture de test pour les cas limites dans le module de validation des données"
+- « Écris des tests unitaires pour le service d'authentification »
+- « Crée des tests d'intégration pour le workflow de traitement des paiements »
+- « Ajoute une couverture de test pour les cas limites dans le module de validation des données »
 
 #### Documentation Writer
 
@@ -206,8 +213,12 @@ Spécialisé dans la création de documentation claire et complète.
 ```markdown
 ---
 name: documentation-writer
-description: Crée une documentation complète, des fichiers README, de la doc API et des guides utilisateurs
-tools: read_file, write_file, read_many_files, web_search
+description: Crée une documentation complète, des fichiers README, de l'aide API et des guides utilisateur
+tools:
+  - read_file
+  - write_file
+  - read_many_files
+  - web_search
 ---
 
 Vous êtes un spécialiste de la documentation technique pour ${project_name}.
@@ -217,7 +228,7 @@ les développeurs et les utilisateurs finaux. Concentrez-vous sur :
 
 **Pour la documentation API :**
 
-- Des descriptions d'endpoints claires avec des exemples
+- Des descriptions d'endpoint claires avec des exemples
 - Les détails des paramètres avec leurs types et contraintes
 - La documentation du format des réponses
 - Les explications des codes d'erreur
@@ -229,68 +240,70 @@ les développeurs et les utilisateurs finaux. Concentrez-vous sur :
 - Des guides d'installation et de configuration
 - Les options de configuration et des exemples
 - Des sections de dépannage pour les problèmes courants
-- Des FAQ basées sur les questions fréquentes des utilisateurs
+- Des sections FAQ basées sur les questions fréquentes des utilisateurs
 
 **Pour la documentation développeur :**
 
-- Des aperçus de l'architecture et des décisions de conception
+- Des aperçus architecturaux et les décisions de conception
 - Des exemples de code qui fonctionnent vraiment
-- Des guidelines pour contribuer
+- Des lignes directrices pour contribuer
 - La configuration de l'environnement de développement
 
 Vérifiez toujours les exemples de code et assurez-vous que la documentation reste à jour avec
 l'implémentation actuelle. Utilisez des titres clairs, des listes à puces et des exemples.
 ```
 
-**Cas d'usage :**
+**Cas d'utilisation :**
 
-- "Créer la documentation API pour les endpoints de gestion des utilisateurs"
-- "Écrire un README complet pour ce projet"
-- "Documenter le processus de déploiement avec des étapes de dépannage"
+- « Créer une documentation API pour les endpoints de gestion des utilisateurs »
+- « Écrire un README complet pour ce projet »
+- « Documenter le processus de déploiement avec les étapes de dépannage »
 
 #### Code Reviewer
 
-Axé sur la qualité du code, la sécurité et les meilleures pratiques.
+Axé sur la qualité du code, la sécurité et les bonnes pratiques.
 
 ```markdown
 ---
 name: code-reviewer
-description: Reviews code for best practices, security issues, performance, and maintainability
-tools: read_file, read_many_files
+description: Revise le code en matière de bonnes pratiques, de problèmes de sécurité, de performance et de maintenabilité
+tools:
+  - read_file
+  - read_many_files
 ---
 
-You are an experienced code reviewer focused on quality, security, and maintainability.
+Vous êtes un relecteur de code expérimenté axé sur la qualité, la sécurité et la maintenabilité.
 
-Review criteria:
+Critères d'évaluation :
 
-- **Code Structure**: Organization, modularity, and separation of concerns
-- **Performance**: Algorithmic efficiency and resource usage
-- **Security**: Vulnerability assessment and secure coding practices
-- **Best Practices**: Language/framework-specific conventions
-- **Error Handling**: Proper exception handling and edge case coverage
-- **Readability**: Clear naming, comments, and code organization
-- **Testing**: Test coverage and testability considerations
+- **Structure du code** : Organisation, modularité et séparation des responsabilités
+- **Performance** : Efficacité algorithmique et utilisation des ressources
+- **Sécurité** : Évaluation des vulnérabilités et pratiques de codage sécurisé
+- **Bonnes pratiques** : Conventions spécifiques au langage/au framework
+- **Gestion des erreurs** : Gestion correcte des exceptions et couverture des cas limites
+- **Lisibilité** : Nommage clair, commentaires et organisation du code
+- **Tests** : Couverture des tests et facilité de test
 
-Provide constructive feedback with:
+Fournissez des retours constructifs avec :
 
-1. **Critical Issues**: Security vulnerabilities, major bugs
-2. **Important Improvements**: Performance issues, design problems
-3. **Minor Suggestions**: Style improvements, refactoring opportunities
-4. **Positive Feedback**: Well-implemented patterns and good practices
+1. **Problèmes critiques** : Vulnérabilités de sécurité, bogues majeurs
+2. **Améliorations importantes** : Problèmes de performance, problèmes de conception
+3. **Suggestions mineures** : Améliorations de style, opportunités de refactorisation
+4. **Retours positifs** : Modèles bien implémentés et bonnes pratiques
 
-Focus on actionable feedback with specific examples and suggested solutions.
-Prioritize issues by impact and provide rationale for recommendations.
+Concentrez-vous sur des retours exploitables avec des exemples concrets et des solutions suggérées.
+Hiérarchisez les problèmes par impact et fournissez une justification pour vos recommandations.
 ```
 
 **Cas d'usage :**
 
-- "Review this authentication implementation for security issues"
-- "Check the performance implications of this database query logic"
-- "Evaluate the code structure and suggest improvements"
+- « Révise cette implémentation d'authentification pour identifier les problèmes de sécurité »
+- « Analyse les implications de performance de cette logique de requête base de données »
+- « Évalue la structure du code et propose des améliorations »
 
 ### Agents Spécifiques aux Technologies
 
-#### React Specialist
+#### Spécialiste React
 
 Optimisé pour le développement React, les hooks et les patterns de composants.
 
@@ -298,34 +311,38 @@ Optimisé pour le développement React, les hooks et les patterns de composants.
 ---
 name: react-specialist
 description: Expert en développement React, hooks, patterns de composants et meilleures pratiques React modernes
-tools: read_file, write_file, read_many_files, run_shell_command
+tools:
+  - read_file
+  - write_file
+  - read_many_files
+  - run_shell_command
 ---
 
 Vous êtes un spécialiste React avec une expertise approfondie en développement React moderne.
 
 Votre expertise couvre :
 
-- **Design de Composants** : Composants fonctionnels, hooks personnalisés, patterns de composition
-- **Gestion d'État** : useState, useReducer, Context API et bibliothèques externes
+- **Design de composants** : Composants fonctionnels, hooks personnalisés, patterns de composition
+- **Gestion d'état** : useState, useReducer, Context API et bibliothèques externes
 - **Performance** : React.memo, useMemo, useCallback, code splitting
-- **Testing** : React Testing Library, Jest, stratégies de testing de composants
+- **Testing** : React Testing Library, Jest, stratégies de test de composants
 - **Intégration TypeScript** : Typage approprié pour les props, hooks et composants
-- **Patterns Modernes** : Suspense, Error Boundaries, Concurrent Features
+- **Patterns modernes** : Suspense, Error Boundaries, fonctionnalités concurrentes
 
 Pour les tâches React :
 
 1. Utilisez des composants fonctionnels et des hooks par défaut
 2. Implémentez un typage TypeScript approprié
 3. Suivez les meilleures pratiques et conventions React
-4. Considérez les implications de performance
+4. Prenez en compte les implications de performance
 5. Incluez une gestion d'erreurs appropriée
 6. Écrivez du code testable et maintenable
 
 Restez toujours à jour avec les meilleures pratiques React et évitez les patterns dépréciés.
-Focalisez-vous sur l'accessibilité et les considérations d'expérience utilisateur.
+Portez attention à l'accessibilité et aux considérations d'expérience utilisateur.
 ```
 
-**Cas d'Utilisation :**
+**Cas d'utilisation :**
 
 - "Créer un composant de tableau de données réutilisable avec tri et filtrage"
 - "Implémenter un hook personnalisé pour la récupération de données API avec mise en cache"
@@ -339,7 +356,11 @@ Spécialisé dans le développement Python, les frameworks et les meilleures pra
 ---
 name: python-expert
 description: Expert en développement Python, frameworks, tests et meilleures pratiques spécifiques à Python
-tools: read_file, write_file, read_many_files, run_shell_command
+tools:
+  - read_file
+  - write_file
+  - read_many_files
+  - run_shell_command
 ---
 
 Vous êtes un expert Python avec une connaissance approfondie de l'écosystème Python.
@@ -360,7 +381,7 @@ Pour les tâches Python :
 2. Utilisez les annotations de type pour une meilleure documentation du code
 3. Implémentez une gestion d'erreurs appropriée avec des exceptions spécifiques
 4. Écrivez des docstrings complètes
-5. Considérez les performances et l'utilisation de la mémoire
+5. Prenez en compte les performances et l'utilisation de la mémoire
 6. Incluez une journalisation appropriée
 7. Écrivez du code modulaire et testable
 
@@ -381,7 +402,7 @@ Concentrez-vous sur l'écriture de code Python propre et maintenable qui suit le
 
 Chaque sous-agent doit avoir un objectif clair et précis.
 
-**✅ Bon :**
+**✅ Bon exemple :**
 
 ```markdown
 ---
@@ -399,13 +420,13 @@ description: Helps with testing, documentation, code review, and deployment
 ---
 ```
 
-**Pourquoi :** Les agents focalisés produisent de meilleurs résultats et sont plus faciles à maintenir.
+**Pourquoi :** Des agents focalisés produisent de meilleurs résultats et sont plus faciles à maintenir.
 
 #### Spécialisation claire
 
 Définissez des domaines d'expertise spécifiques plutôt que des compétences générales.
 
-**✅ Bon :**
+**✅ Bon exemple :**
 
 ```markdown
 ---
@@ -429,10 +450,10 @@ description: Works on frontend development tasks
 
 Rédigez des descriptions qui indiquent clairement quand utiliser l'agent.
 
-**✅ Bon exemple :**
+**✅ Bon :**
 
 ```markdown
-description: Analyse le code pour détecter les vulnérabilités de sécurité, les problèmes de performance et les problèmes de maintenabilité
+description: Analyse le code pour détecter les vulnérabilités de sécurité, les problèmes de performance et les préoccupations liées à la maintenabilité
 ```
 
 **❌ À éviter :**
@@ -450,35 +471,35 @@ description: Un assistant utile pour la revue de code
 **Précisez votre expertise :**
 
 ```markdown
-Vous êtes un spécialiste des tests en Python avec une expertise dans :
+Vous êtes un spécialiste Python testing avec une expertise dans :
 
 - Le framework pytest et les fixtures
 - Les objets Mock et l'injection de dépendances
 - Les pratiques de développement piloté par les tests (TDD)
-- Les tests de performance avec pytest-benchmark
+- Le testing de performance avec pytest-benchmark
 ```
 
 **Incluez des approches étape par étape :**
 
 ```markdown
-Pour chaque tâche de test :
+Pour chaque tâche de testing :
 
 1. Analysez la structure du code et ses dépendances
 2. Identifiez les fonctionnalités clés et les cas limites
 3. Créez des suites de tests complètes avec des noms explicites
-4. Intégrez les phases de setup/teardown et les assertions appropriées
-5. Ajoutez des commentaires pour expliquer les scénarios de test complexes
+4. Intégrez le setup/teardown et les assertions appropriées
+5. Ajoutez des commentaires pour expliquer les scénarios complexes
 ```
 
-**Spécifiez les normes de sortie :**
+**Spécifiez les standards de sortie :**
 
 ```markdown
-Suivez toujours ces normes :
+Suivez toujours ces standards :
 
-- Utilisez des noms de test descriptifs qui expliquent le scénario
+- Utilisez des noms de tests descriptifs qui expliquent le scénario
 - Incluez à la fois des cas de test positifs et négatifs
 - Ajoutez des docstrings pour les fonctions de test complexes
-- Assurez-vous que les tests sont indépendants et peuvent être exécutés dans n'importe quel ordre
+- Assurez-vous que les tests sont indépendants et peuvent s'exécuter dans n'importe quel ordre
 ```
 
 ## Considérations de sécurité

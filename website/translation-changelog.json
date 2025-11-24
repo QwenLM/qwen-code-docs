@@ -1,5 +1,114 @@
 [
   {
+    "timestamp": "2025-11-24T05:51:24.176Z",
+    "commit": "c9af74816ac68f8c83c928cdeecf007e39a419ed",
+    "sourceLanguage": "en",
+    "translatedFiles": {
+      "zh": {
+        "success": [
+          "cli/commands.md",
+          "cli/configuration-v1.md",
+          "cli/configuration.md",
+          "cli/language.md",
+          "core/tools-api.md",
+          "extensions/extension.md",
+          "features/headless.md",
+          "features/subagents.md",
+          "support/troubleshooting.md",
+          "tools/file-system.md",
+          "tools/web-search.md"
+        ],
+        "failed": []
+      },
+      "de": {
+        "success": [
+          "cli/commands.md",
+          "cli/configuration-v1.md",
+          "cli/configuration.md",
+          "cli/language.md",
+          "core/tools-api.md",
+          "extensions/extension.md",
+          "features/headless.md",
+          "features/subagents.md",
+          "support/troubleshooting.md",
+          "tools/file-system.md",
+          "tools/web-search.md"
+        ],
+        "failed": []
+      },
+      "fr": {
+        "success": [
+          "cli/commands.md",
+          "cli/configuration-v1.md",
+          "cli/configuration.md",
+          "cli/language.md",
+          "core/tools-api.md",
+          "extensions/extension.md",
+          "features/headless.md",
+          "features/subagents.md",
+          "support/troubleshooting.md",
+          "tools/file-system.md",
+          "tools/web-search.md"
+        ],
+        "failed": []
+      },
+      "ru": {
+        "success": [
+          "cli/commands.md",
+          "cli/configuration-v1.md",
+          "cli/configuration.md",
+          "cli/language.md",
+          "core/tools-api.md",
+          "extensions/extension.md",
+          "features/headless.md",
+          "features/subagents.md",
+          "support/troubleshooting.md",
+          "tools/file-system.md",
+          "tools/web-search.md"
+        ],
+        "failed": []
+      },
+      "ja": {
+        "success": [
+          "cli/commands.md",
+          "cli/configuration-v1.md",
+          "cli/configuration.md",
+          "cli/language.md",
+          "core/tools-api.md",
+          "extensions/extension.md",
+          "features/headless.md",
+          "features/subagents.md",
+          "support/troubleshooting.md",
+          "tools/file-system.md",
+          "tools/web-search.md"
+        ],
+        "failed": []
+      },
+      "pt-BR": {
+        "success": [
+          "cli/commands.md",
+          "cli/configuration-v1.md",
+          "cli/configuration.md",
+          "cli/language.md",
+          "core/tools-api.md",
+          "extensions/extension.md",
+          "features/headless.md",
+          "features/subagents.md",
+          "support/troubleshooting.md",
+          "tools/file-system.md",
+          "tools/web-search.md"
+        ],
+        "failed": []
+      }
+    },
+    "stats": {
+      "totalFiles": 11,
+      "languages": 6,
+      "successCount": 66,
+      "failedCount": 0
+    }
+  },
+  {
     "timestamp": "2025-10-23T02:55:58.330Z",
     "commit": "5cf609c367335a25d8e5b7fb6b0ac1379e94ade9",
     "sourceLanguage": "en",

@@ -14,7 +14,7 @@ Observe que todos esses comandos só serão refletidos nas sessões ativas do CL
 
 Você pode instalar uma extensão usando `qwen extensions install` com uma URL do GitHub ou um caminho local.
 
-Note que criamos uma cópia da extensão instalada, então você precisará rodar `qwen extensions update` para puxar as mudanças tanto de extensões locais quanto das hospedadas no GitHub.
+Note que criamos uma cópia da extensão instalada, então você precisará executar `qwen extensions update` para puxar as mudanças tanto de extensões definidas localmente quanto das hospedadas no GitHub.
 
 ```
 qwen extensions install https://github.com/qwen-cli-extensions/security
@@ -24,7 +24,7 @@ Isso vai instalar a extensão Qwen Code Security, que oferece suporte para o com
 
 ### Desinstalando uma extensão
 
-Para desinstalar, rode `qwen extensions uninstall nome-da-extensão`, então, no caso do exemplo de instalação:
+Para desinstalar, execute `qwen extensions uninstall nome-da-extensao`, então, no caso do exemplo de instalação:
 
 ```
 qwen extensions uninstall qwen-cli-security
@@ -32,15 +32,15 @@ qwen extensions uninstall qwen-cli-security
 
 ### Desabilitando uma extensão
 
-As extensões são, por padrão, habilitadas em todos os workspaces. Você pode desabilitar uma extensão completamente ou para um workspace específico.
+As extensões são, por padrão, habilitadas em todos os workspaces. Você pode desabilitar uma extensão completamente ou apenas para um workspace específico.
 
-Por exemplo, `qwen extensions disable extension-name` vai desabilitar a extensão no nível do usuário, então ela será desabilitada em todos os lugares. Já `qwen extensions disable extension-name --scope=workspace` vai desabilitar a extensão apenas no workspace atual.
+Por exemplo, `qwen extensions disable extension-name` vai desabilitar a extensão no nível do usuário, então ela ficará desabilitada em todos os lugares. Já `qwen extensions disable extension-name --scope=workspace` só vai desabilitar a extensão no workspace atual.
 
 ### Habilitando uma extensão
 
-Você pode habilitar extensões usando `qwen extensions enable extension-name`. Também é possível habilitar uma extensão para um workspace específico usando `qwen extensions enable extension-name --scope=workspace` dentro desse workspace.
+Você pode habilitar extensões usando `qwen extensions enable extension-name`. Também é possível habilitar uma extensão apenas para um workspace específico utilizando `qwen extensions enable extension-name --scope=workspace` dentro desse workspace.
 
-Isso é útil quando você tem uma extensão desabilitada globalmente e só quer habilitá-la em alguns lugares específicos.
+Isso é útil quando você tem uma extensão desabilitada globalmente e quer ativá-la apenas em alguns lugares específicos.
 
 ### Atualizando uma extensão
 
@@ -106,18 +106,18 @@ O arquivo `qwen-extension.json` contém a configuração da extensão. O arquivo
 }
 ```
 
-- `name`: O nome da extensão. É usado para identificar exclusivamente a extensão e resolver conflitos quando comandos da extensão têm o mesmo nome que comandos do usuário ou do projeto. O nome deve ser em letras minúsculas ou números, usando hífens em vez de sublinhados ou espaços. Assim é como os usuários irão se referir à sua extensão no CLI. Note que esperamos que esse nome corresponda ao nome do diretório da extensão.
+- `name`: O nome da extensão. É usado para identificar exclusivamente a extensão e resolver conflitos quando comandos da extensão têm o mesmo nome que comandos do usuário ou do projeto. O nome deve ser em letras minúsculas ou números, usando hífens em vez de underscores ou espaços. Assim é como os usuários irão se referir à sua extensão na CLI. Note que esperamos que esse nome corresponda ao nome do diretório da extensão.
 - `version`: A versão da extensão.
-- `mcpServers`: Um mapa dos servidores MCP a serem configurados. A chave é o nome do servidor, e o valor é a configuração do servidor. Esses servidores serão carregados na inicialização, assim como os servidores MCP configurados em um arquivo [`settings.json`](./cli/configuration.md). Se tanto uma extensão quanto um arquivo `settings.json` configurarem um servidor MCP com o mesmo nome, o servidor definido no arquivo `settings.json` terá precedência.
+- `mcpServers`: Um mapa de servidores MCP a serem configurados. A chave é o nome do servidor, e o valor é a configuração do servidor. Esses servidores serão carregados na inicialização, assim como os servidores MCP configurados em um arquivo [`settings.json`](./cli/configuration.md). Se tanto uma extensão quanto um arquivo `settings.json` configurarem um servidor MCP com o mesmo nome, o servidor definido no arquivo `settings.json` terá precedência.
   - Observe que todas as opções de configuração do servidor MCP são suportadas, exceto `trust`.
 - `contextFileName`: O nome do arquivo que contém o contexto da extensão. Ele será usado para carregar o contexto a partir do diretório da extensão. Se essa propriedade não for usada, mas um arquivo `QWEN.md` estiver presente no diretório da extensão, então esse arquivo será carregado.
-- `excludeTools`: Uma lista de nomes de ferramentas a serem excluídas do modelo. Você também pode especificar restrições específicas por comando para ferramentas compatíveis, como a ferramenta `run_shell_command`. Por exemplo, `"excludeTools": ["run_shell_command(rm -rf)"]` bloqueará o comando `rm -rf`. Note que isso difere da funcionalidade `excludeTools` do servidor MCP, que pode ser listada na configuração do servidor MCP.
+- `excludeTools`: Uma lista de nomes de ferramentas a serem excluídas do modelo. Você também pode especificar restrições específicas por comando para ferramentas que suportam isso, como a ferramenta `run_shell_command`. Por exemplo, `"excludeTools": ["run_shell_command(rm -rf)"]` bloqueará o comando `rm -rf`. Note que isso difere da funcionalidade `excludeTools` do servidor MCP, que pode ser listada na configuração do servidor MCP. **Importante:** As ferramentas especificadas em `excludeTools` serão desativadas para todo o contexto da conversa e afetarão todas as consultas subsequentes na sessão atual.
 
-Quando o Qwen Code inicia, ele carrega todas as extensões e mescla suas configurações. Se houver algum conflito, a configuração do workspace terá precedência.
+Quando o Qwen Code é iniciado, ele carrega todas as extensões e mescla suas configurações. Se houver algum conflito, a configuração do workspace terá precedência.
 
-### Comandos customizados
+### Comandos personalizados
 
-As extensões podem fornecer [comandos customizados](./cli/commands.md#custom-commands) colocando arquivos TOML em um subdiretório `commands/` dentro do diretório da extensão. Esses comandos seguem o mesmo formato dos comandos customizados de usuário e projeto e utilizam convenções de nomenclatura padrão.
+As extensões podem fornecer [comandos personalizados](./cli/commands.md#custom-commands) colocando arquivos TOML em um subdiretório `commands/` dentro do diretório da extensão. Esses comandos seguem o mesmo formato dos comandos personalizados de usuário e projeto e utilizam convenções de nomenclatura padrão.
 
 **Exemplo**
 
@@ -151,12 +151,12 @@ Por exemplo, se tanto um usuário quanto a extensão `gcp` definirem um comando 
 
 ## Variáveis
 
-As extensões do Qwen Code permitem substituição de variáveis no arquivo `qwen-extension.json`. Isso pode ser útil, por exemplo, quando você precisa do diretório atual para executar um servidor MCP usando `"cwd": "${extensionPath}${/}run.ts"`.
+As extensões do Qwen Code permitem substituição de variáveis no arquivo `qwen-extension.json`. Isso pode ser útil, por exemplo, quando você precisa do diretório atual para rodar um servidor MCP usando `"cwd": "${extensionPath}${/}run.ts"`.
 
 **Variáveis suportadas:**
 
 | variável                   | descrição                                                                                                                                                     |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `${extensionPath}`         | O caminho completo da extensão no sistema de arquivos do usuário, por exemplo, '/Users/username/.qwen/extensions/example-extension'. Não resolve symlinks.   |
-| `${workspacePath}`         | O caminho completo do workspace atual.                                                                                                                        |
-| `${/} or ${pathSeparator}` | O separador de caminhos (varia conforme o sistema operacional).                                                                                               |
+| `${extensionPath}`         | O caminho completo da extensão no sistema de arquivos do usuário, por exemplo, '/Users/username/.qwen/extensions/example-extension'. Não resolve links simbólicos. |
+| `${workspacePath}`         | O caminho completo do workspace atual.                                                                                                                       |
+| `${/} or ${pathSeparator}` | O separador de caminhos (varia conforme o sistema operacional).                                                                                                |

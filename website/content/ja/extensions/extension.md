@@ -1,20 +1,20 @@
 # Qwen Code Extensions
 
-Qwen Code Extensions は、プロンプト、MCP サーバー、カスタムコマンドをパッケージ化し、使い慣れたユーザーフレンドリーな形式で提供します。Extensions を使うことで、Qwen Code の機能を拡張し、その機能を他の人と共有できます。これらは簡単にインストール・共有できるように設計されています。
+Qwen Code Extensions は、プロンプト、MCP サーバー、カスタムコマンドをパッケージ化し、使い慣れたユーザーフレンドリーな形式で提供します。Extensions を使うことで、Qwen Code の機能を拡張し、その機能を他の人と共有できます。インストールや共有が簡単にできるように設計されています。
 
 ## Extension の管理
 
-`qwen extensions` コマンドを使って、Extension の管理ツール一式を提供しています。
+`qwen extensions` コマンドを使って、Extension 管理用のツール群を提供しています。
 
-ただし、これらのコマンドは CLI 内からはサポートされていませんが、`/extensions list` サブコマンドを使用してインストール済みの Extensions を一覧表示することは可能です。
+ただし、これらのコマンドは CLI 内からはサポートされていません。インストール済みの Extensions 一覧は、`/extensions list` サブコマンドで確認できます。
 
-これらのコマンドはすべて、CLI セッションを再起動したときにのみ反映されることに注意してください。
+また、これらのコマンドによる変更は、CLI セッションを再起動するまで反映されません。
 
 ### エクステンションのインストール
 
-エクステンションは、GitHub URL またはローカルパスを指定して `qwen extensions install` コマンドでインストールできます。
+GitHub URL またはローカルパスを指定して、`qwen extensions install` コマンドでエクステンションをインストールできます。
 
-インストールされたエクステンションはコピーが作成されるため、ローカルで定義したエクステンションも、GitHub 上のエクステンションも、変更を反映するには `qwen extensions update` を実行する必要があります。
+インストールされたエクステンションはコピーが作成されるため、ローカルで定義したエクステンションも GitHub 上のエクステンションも、変更を反映するには `qwen extensions update` を実行する必要があります。
 
 ```
 qwen extensions install https://github.com/qwen-cli-extensions/security
@@ -24,7 +24,7 @@ qwen extensions install https://github.com/qwen-cli-extensions/security
 
 ### エクステンションのアンインストール
 
-アンインストールするには、`qwen extensions uninstall extension-name` を実行します。先ほどのインストール例の場合、以下のようになります：
+アンインストールするには、`qwen extensions uninstall extension-name` を実行します。先ほどのインストール例の場合：
 
 ```
 qwen extensions uninstall qwen-cli-security
@@ -32,21 +32,21 @@ qwen extensions uninstall qwen-cli-security
 
 ### 拡張機能の無効化
 
-拡張機能は、デフォルトではすべてのワークスペースで有効になっています。拡張機能を全体的に無効にすることも、特定のワークスペースのみ無効にすることもできます。
+拡張機能はデフォルトで全てのワークスペースで有効になっています。拡張機能を全体的に無効にするか、特定のワークスペースのみ無効にするか選択できます。
 
-例えば、`qwen extensions disable extension-name` はユーザー レベルで拡張機能を無効にするため、すべての場所で無効になります。`qwen extensions disable extension-name --scope=workspace` は現在のワークスペースでのみ拡張機能を無効にします。
+例えば、`qwen extensions disable extension-name` はユーザー レベルで拡張機能を無効にするため、すべての場所で無効になります。`qwen extensions disable extension-name --scope=workspace` は現在のワークスペース内でのみ拡張機能を無効にします。
 
 ### 拡張機能の有効化
 
-`qwen extensions enable extension-name` を使用して拡張機能を有効にできます。また、特定のワークスペース内から `qwen extensions enable extension-name --scope=workspace` を使用して、そのワークスペースでのみ拡張機能を有効にすることもできます。
+`qwen extensions enable extension-name` を使用して拡張機能を有効にできます。また、特定のワークスペース内で `qwen extensions enable extension-name --scope=workspace` を実行することで、そのワークスペースに対してのみ拡張機能を有効にすることも可能です。
 
-これは、トップ レベルでは拡張機能が無効になっていて、特定の場所でのみ有効にしている場合に便利です。
+これは、トップレベルでは拡張機能が無効になっていて、特定の場所でのみ有効にしている場合に便利です。
 
 ### Extensionの更新
 
-ローカルパスまたはGitリポジトリからインストールされたExtensionについては、`qwen extensions update extension-name` を使用して、最新バージョン（`qwen-extension.json` の `version` フィールドに記載されたバージョン）に明示的に更新できます。
+ローカルパスまたはGitリポジトリからインストールされたExtensionについては、`qwen extensions update extension-name` を使用して、最新バージョン（`qwen-extension.json` の `version` フィールドに記載されているバージョン）に明示的に更新できます。
 
-すべてのExtensionを更新するには以下のコマンドを使用します：
+すべてのExtensionを一括で更新するには以下のコマンドを使用します：
 
 ```
 qwen extensions update --all
@@ -54,13 +54,13 @@ qwen extensions update --all
 
 ## Extensionの作成
 
-Extension開発を簡単に進めるために、いくつかのコマンドを提供しています。
+Extension開発をより簡単に進めるために、いくつかの便利なコマンドを提供しています。
 
 ### Boilerplate Extensionの作成
 
-いくつかのサンプルExtensionとして `context`、`custom-commands`、`exclude-tools`、`mcp-server` を用意しています。これらのサンプルは[こちら](https://github.com/QwenLM/qwen-code/tree/main/packages/cli/src/commands/extensions/examples)で確認できます。
+いくつかのサンプルExtensionとして、`context`、`custom-commands`、`exclude-tools`、`mcp-server` を用意しています。これらのサンプルは[こちら](https://github.com/QwenLM/qwen-code/tree/main/packages/cli/src/commands/extensions/examples)で確認できます。
 
-選択した種類のサンプルを、開発用ディレクトリにコピーするには、以下のように実行してください：
+選択した種類のサンプルをコピーして開発ディレクトリに配置するには、次のように実行してください：
 
 ```
 qwen extensions new path/to/directory custom-commands
@@ -78,9 +78,9 @@ qwen extensions link path/to/directory
 
 ## 動作の仕組み
 
-起動時に、Qwen Code は `<home>/.qwen/extensions` から拡張機能を探します。
+起動時に、Qwen Code は `<home>/.qwen/extensions` 内の拡張機能を探します。
 
-拡張機能は、`qwen-extension.json` ファイルを含むディレクトリとして存在します。例:
+拡張機能は、`qwen-extension.json` ファイルを含むディレクトリとして存在します。例：
 
 `<home>/.qwen/extensions/my-extension/qwen-extension.json`
 
@@ -102,14 +102,14 @@ qwen extensions link path/to/directory
 }
 ```
 
-- `name`: エクステンションの名前です。これはエクステンションを一意に識別し、エクステンションのコマンドとユーザーまたはプロジェクトのコマンドが同じ名前の場合の競合解決のために使用されます。名前は小文字または数字で、アンダースコアやスペースの代わりにダッシュを使用してください。これはCLIでユーザーがあなたのエクステンションを参照する方法です。この名前はエクステンションディレクトリ名と一致することを期待しています。
+- `name`: エクステンションの名前です。これはエクステンションを一意に識別し、ユーザーまたはプロジェクトのコマンドと同名の場合に競合を解決するために使用されます。名前は小文字または数字を使用し、アンダースコアやスペースの代わりにダッシュを使用してください。CLI でユーザーがこのエクステンションを参照する際の名前になります。なお、この名前はエクステンションディレクトリ名と一致している必要があります。
 - `version`: エクステンションのバージョンです。
-- `mcpServers`: 設定するMCPサーバーのマップです。キーはサーバーの名前で、値はサーバーの設定です。これらのサーバーは [`settings.json` ファイル](./cli/configuration.md) で設定されたMCPサーバーと同様に起動時にロードされます。エクステンションと `settings.json` ファイルの両方で同じ名前のMCPサーバーが設定されている場合、`settings.json` ファイルで定義されたサーバーが優先されます。
-  - `trust` を除くすべてのMCPサーバー設定オプションがサポートされていることに注意してください。
-- `contextFileName`: エクステンションのコンテキストを含むファイルの名前です。これはエクステンションディレクトリからコンテキストをロードするために使用されます。このプロパティが使用されていないがエクステンションディレクトリに `QWEN.md` ファイルが存在する場合、そのファイルがロードされます。
-- `excludeTools`: モデルから除外するツール名の配列です。`run_shell_command` ツールのように対応しているツールについては、コマンド固有の制限を指定することもできます。例えば、`"excludeTools": ["run_shell_command(rm -rf)"]` とすると `rm -rf` コマンドをブロックします。これはMCPサーバーの `excludeTools` 機能とは異なり、MCPサーバー設定でリストアップできることに注意してください。
+- `mcpServers`: 設定する MCP サーバーのマップです。キーはサーバー名、値はサーバー設定です。これらのサーバーは [`settings.json` ファイル](./cli/configuration.md)で設定された MCP サーバーと同様に起動時にロードされます。もしエクステンションと `settings.json` の両方で同じ名前の MCP サーバーが設定されている場合、`settings.json` ファイルで定義されたサーバーが優先されます。
+  - `trust` を除くすべての MCP サーバー設定オプションがサポートされています。
+- `contextFileName`: エクステンションのコンテキストを含むファイル名です。これを使ってエクステンションディレクトリからコンテキストをロードします。このプロパティが指定されていないが、エクステンションディレクトリ内に `QWEN.md` ファイルがある場合は、そのファイルがロードされます。
+- `excludeTools`: モデルから除外するツール名の配列です。`run_shell_command` ツールのように対応しているツールについては、コマンド単位での制限も指定できます。例えば `"excludeTools": ["run_shell_command(rm -rf)"]` とすると `rm -rf` コマンドがブロックされます。これは MCP サーバー設定でリストできる MCP サーバー側の `excludeTools` 機能とは異なる点に注意してください。**重要：** `excludeTools` で指定されたツールは会話全体のコンテキストで無効化され、現在のセッション内のすべての後続クエリに影響を与えます。
 
-Qwen Code が起動すると、すべてのエクステンションをロードしてその設定をマージします。競合がある場合は、ワークスペースの設定が優先されます。
+Qwen Code が起動すると、すべてのエクステンションをロードしてその設定をマージします。もし競合がある場合は、ワークスペースの設定が優先されます。
 
 ### カスタムコマンド
 
@@ -117,7 +117,7 @@ Qwen Code が起動すると、すべてのエクステンションをロード�
 
 **例**
 
-以下のような構造を持つ `gcp` という名前の拡張機能:
+以下のような構造を持つ `gcp` という名前の拡張機能：
 
 ```
 .qwen/extensions/gcp/
@@ -128,17 +128,17 @@ Qwen Code が起動すると、すべてのエクステンションをロード�
         └── sync.toml
 ```
 
-この拡張機能は以下のコマンドを提供します:
+この拡張機能は以下のコマンドを提供します：
 
-- `/deploy` - ヘルプでは `[gcp] Custom command from deploy.toml` として表示
-- `/gcs:sync` - ヘルプでは `[gcp] Custom command from sync.toml` として表示
+- `/deploy` - ヘルプでは `[gcp] Custom command from deploy.toml` として表示されます
+- `/gcs:sync` - ヘルプでは `[gcp] Custom command from sync.toml` として表示されます
 
 ### コンフリクトの解決
 
 拡張機能のコマンドは最も低い優先順位を持ちます。ユーザーまたはプロジェクトのコマンドと競合が発生した場合：
 
-1. **競合なし**: 拡張機能コマンドは自然な名前を使用（例: `/deploy`）
-2. **競合あり**: 拡張機能コマンドは拡張機能のプレフィックス付きでリネームされる（例: `/gcp.deploy`）
+1. **競合なし**: 拡張機能コマンドは本来の名前を使用（例：`/deploy`）
+2. **競合あり**: 拡張機能コマンドは拡張機能のプレフィックス付きでリネームされる（例：`/gcp.deploy`）
 
 例えば、ユーザーと `gcp` 拡張機能の両方で `deploy` コマンドが定義されている場合：
 
@@ -147,12 +147,12 @@ Qwen Code が起動すると、すべてのエクステンションをロード�
 
 ## 変数
 
-Qwen Code 拡張機能では、`qwen-extension.json` で変数の置換が可能です。例えば、MCP サーバーを実行する際にカレントディレクトリが必要な場合、`"cwd": "${extensionPath}${/}run.ts"` のように指定できます。
+Qwen Code 拡張機能では、`qwen-extension.json` 内で変数の置換が可能です。例えば、MCP サーバーを実行する際にカレントディレクトリが必要な場合、`"cwd": "${extensionPath}${/}run.ts"` のように指定できます。
 
 **サポートされている変数:**
 
-| 変数                        | 説明                                                                                                                                                        |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `${extensionPath}`          | ユーザーのファイルシステムにおける拡張機能の完全修飾パス（例: '/Users/username/.qwen/extensions/example-extension'）。シンボリックリンクは展開されません。 |
-| `${workspacePath}`          | 現在のワークスペースの完全修飾パス。                                                                                                                       |
-| `${/} or ${pathSeparator}`  | パス区切り文字（OS によって異なります）。                                                                                                                  |
+| 変数                        | 説明                                                                                                                                                      |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `${extensionPath}`          | ユーザーのファイルシステムにおける拡張機能の絶対パス（例: '/Users/username/.qwen/extensions/example-extension'）。シンボリックリンクは展開されません。 |
+| `${workspacePath}`          | 現在のワークスペースの絶対パス。                                                                                                                           |
+| `${/} or ${pathSeparator}` | パス区切り文字（OS によって異なります）。                                                                                                                  |
