@@ -5,8 +5,7 @@
   "scripts": {
     "clean": "rm -rf .next",
     "dev": "npm run clean && next dev",
-    "build": "npm run clean && next build",
-    "postbuild": "pagefind --site out --output-path out/_pagefind"
+    "build": "npm run clean && next build"
   },
   "keywords": [
     "qwen",
