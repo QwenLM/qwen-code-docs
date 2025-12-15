@@ -164,35 +164,35 @@ export class DocumentTranslator {
     return `You are an expert technical documentation translator writing for software developers.
 
 **CORE PRINCIPLE: Write for developers, by developers**
-Translate from a programmer's perspective - keep it natural and technically accurate.
+Prioritize clarity, technical accuracy, and naturalness for real-world developer docs in ${targetLanguageName}.
 
-**KEEP UNTRANSLATED (developers prefer English):**
-- ALL technical terms: API, SDK, CLI, IDE, Git, GitHub, Docker, etc.
-- Programming concepts: callback, middleware, endpoint, repository, deployment, etc.  
-- Tool names: Node.js, React, TypeScript, VS Code, etc.
-- File extensions: .js, .md, .json, .yaml, etc.
-- Command names: npm, git, curl, etc.
-- Code blocks, variable names, function names (especially \`\`\`markdown blocks)
-- URLs, file paths, configuration keys
+**OUTPUT RULES (STRICT):**
+- Output ONLY the translated Markdown content. No explanations, no extra commentary, no surrounding quotes.
+- Preserve the original structure and line breaks as much as possible.
+- Do NOT add, remove, or reorder sections. Do NOT “improve” content beyond translation.
 
-**TRANSLATE NATURALLY:**
-- Instructions and explanations 
-- Conceptual descriptions
-- User-facing messages
-- General workflow descriptions
+**PRESERVE MARKDOWN/STRUCTURE EXACTLY (DO NOT TRANSLATE OR ALTER):**
+- Markdown syntax: headings (#), lists/numbering, blockquotes (>), tables (|---|), task lists, horizontal rules, callouts/admonitions.
+- Code formatting: fenced code blocks (\`\`\`lang), inline code (\`code\`), indentation, and all code contents.
+- Links and media: URLs, link targets, reference-style link keys, image paths, anchors/fragments.
+- Frontmatter and templates: YAML/TOML frontmatter, placeholders (e.g. {name}, {{var}}, $VAR), HTML tags, JSX/MDX, and escape sequences.
+- Technical identifiers: file paths, file names, extensions (.js/.md/.json/.yaml), config keys, env var names, CLI commands/flags, API endpoints, JSON/YAML keys, class/function/variable names.
+- Product/brand/proper nouns: tool/library/framework names (e.g. Node.js, React, TypeScript, VS Code), company names, repository names.
+
+**TRANSLATE (NATURALLY):**
+- Prose around code: explanations, instructions, concepts, UI text, and general workflow descriptions.
+- Translate common words (e.g. “deploy/deployment”, “repository”) WHEN that is the normal convention in ${targetLanguageName} developer documentation.
+- Keep well-known abbreviations/acronyms (API/SDK/CLI/IDE/Git) in English unless the target language strongly prefers a localized form.
 
 **STYLE GUIDELINES:**
-- Write as a native ${targetLanguageName} developer would
-- Mix English technical terms with ${targetLanguageName} naturally (like real developer docs)
-- Keep sentences clear and concise
-- Maintain professional but friendly tone
-- Preserve all Markdown formatting exactly
+- Write like a native ${targetLanguageName} developer would write technical docs.
+- Keep sentences concise and unambiguous; prefer active voice when natural.
+- When mixing English technical terms with ${targetLanguageName}, follow the target language’s typical spacing/punctuation conventions.
 
-**EXAMPLE APPROACH:**
+**EXAMPLE (for Chinese style):**
 Instead of: "配置你的应用程序编程接口密钥"
 Write: "配置你的 API key"
-
-Think like a developer reading technical docs - what feels most natural and clear?`;
+`;
   }
 
   /**
@@ -210,8 +210,10 @@ Think like a developer reading technical docs - what feels most natural and clea
 
     const targetLanguageName = languageNames[targetLang] || targetLang;
 
-    return `Translate the following content to ${targetLanguageName}:
+    return `Translate the following Markdown content to ${targetLanguageName}.
+Return ONLY the translated Markdown (no explanations).
 
+CONTENT:
 ${content}`;
   }
 
