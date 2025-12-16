@@ -79,7 +79,7 @@ const getUserLanguage = (): string => {
 
   if (pathSegments.length > 0) {
     const possibleLang = pathSegments[0];
-    const supportedLanguages = ["en", "zh", "de", "fr", "ru", "ja"];
+    const supportedLanguages = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"];
     if (supportedLanguages.includes(possibleLang)) {
       return possibleLang;
     }
@@ -92,6 +92,7 @@ const getUserLanguage = (): string => {
   if (browserLang.startsWith("fr")) return "fr";
   if (browserLang.startsWith("ru")) return "ru";
   if (browserLang.startsWith("ja")) return "ja";
+  if (browserLang.startsWith("pt")) return "pt-BR";
 
   return "en"; // 默认英文
 };
@@ -172,7 +173,7 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
   // 获取文档链接
   const getDocumentLink = () => {
     const userLang = getUserLanguage();
-    return `/${userLang}`;
+    return `/${userLang}/users/overview`;
   };
 
   // 右侧导航区域的对齐方式
