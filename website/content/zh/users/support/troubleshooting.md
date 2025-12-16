@@ -31,7 +31,7 @@
     1. 在你的主目录下：`~/.qwen/settings.json`。
     2. 在你项目的根目录下：`./.qwen/settings.json`。
 
-    更多详情请参考 [Qwen Code 配置](/users/configuration/settings)。
+    更多详情请参考 [Qwen Code 配置](../users/configuration/settings)。
 
 - **问：为什么我在统计输出中看不到缓存的 token 数量？**
   - 答：缓存的 token 信息仅在使用缓存 token 时显示。此功能适用于 API 密钥用户（Qwen API 密钥或 Google Cloud Vertex AI），但不适用于 OAuth 用户（例如 Google 个人/企业账户如 Google Gmail 或 Google Workspace）。这是因为 Qwen Code Assist API 不支持缓存内容的创建。你仍然可以使用 `/stats` 命令查看总 token 使用情况。
@@ -59,7 +59,7 @@
 
 - **错误：出现“操作不被允许”、“权限被拒绝”或类似提示。**
   - **原因：** 当启用沙箱机制时，Qwen Code 可能尝试执行被沙箱配置限制的操作，例如在项目目录或系统临时目录之外进行写入。
-  - **解决方案：** 更多信息请参考 [配置：沙箱机制](/users/features/sandbox) 文档，包括如何自定义沙箱配置。
+  - **解决方案：** 更多信息请参考 [配置：沙箱机制](../users/features/sandbox) 文档，包括如何自定义沙箱配置。
 
 - **Qwen Code 在“CI”环境中未以交互模式运行**
   - **问题：** 如果设置了以 `CI_` 开头的环境变量（如 `CI_TOKEN`），Qwen Code 将不会进入交互模式（即不会显示提示符）。这是因为底层 UI 框架使用的 `is-in-ci` 包检测到了这些变量，并假定当前处于非交互式的 CI 环境。

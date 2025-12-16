@@ -23,7 +23,7 @@ Lorsque vous vous authentifiez à l'aide de votre compte qwen.ai, ces documents 
 - **Conditions d'utilisation :** Votre utilisation est régie par les [Conditions d'utilisation de Qwen](https://qwen.ai/termsservice).
 - **Politique de confidentialité :** La collecte et l'utilisation de vos données sont décrites dans la [Politique de confidentialité de Qwen](https://qwen.ai/privacypolicy).
 
-Pour plus de détails sur la configuration de l'authentification, les quotas et les fonctionnalités prises en charge, consultez [Configuration de l'authentification](/users/configuration/settings).
+Pour plus de détails sur la configuration de l'authentification, les quotas et les fonctionnalités prises en charge, consultez [Configuration de l'authentification](../users/configuration/settings).
 
 ## 2. Si vous utilisez l'authentification compatible avec l'API OpenAI
 
@@ -89,4 +89,4 @@ Vous pouvez passer de l'authentification Qwen OAuth à l'authentification compat
 2. **Dans la CLI** : Utilisez la commande `/auth` pour reconfigurer votre méthode d'authentification
 3. **Variables d'environnement** : Configurez des fichiers `.env` pour une authentification automatique avec l'API compatible OpenAI
 
-Pour des instructions détaillées, consultez la documentation sur [Configuration de l'authentification](/users/configuration/settings#environment-variables-for-api-access).
+Pour des instructions détaillées, consultez la documentation sur [Configuration de l'authentification](../users/configuration/settings#environment-variables-for-api-access).

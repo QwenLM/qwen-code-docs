@@ -51,7 +51,7 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 ```
 
 > [!tip]
-> 高度な設定レイヤー（システムデフォルト／システム設定および優先順位ルール）については、[Settings](/users/configuration/settings) を参照してください。
+> 高度な設定レイヤー（システムデフォルト／システム設定および優先順位ルール）については、[Settings](../users/configuration/settings) を参照してください。
 
 ## サーバーの設定
 

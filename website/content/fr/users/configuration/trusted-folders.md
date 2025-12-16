@@ -56,6 +56,6 @@ Si vous devez modifier une décision ou consulter tous vos paramètres, vous ave
 
 Pour les utilisateurs avancés, il est utile de connaître l'ordre exact des opérations déterminant la confiance :
 
-1. **Signal de confiance de l'IDE** : Si vous utilisez l'[intégration IDE](/users/ide-integration/ide-integration), l'interface CLI demande d'abord à l'IDE si l'espace de travail est approuvé. La réponse de l'IDE a la priorité la plus élevée.
+1. **Signal de confiance de l'IDE** : Si vous utilisez l'[intégration IDE](../users/ide-integration/ide-integration), l'interface CLI demande d'abord à l'IDE si l'espace de travail est approuvé. La réponse de l'IDE a la priorité la plus élevée.
 
 2. **Fichier local de confiance** : Si l'IDE n'est pas connecté, l'interface CLI consulte le fichier central `~/.qwen/trustedFolders.json`.

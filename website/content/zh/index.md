@@ -4,7 +4,7 @@
 
 ## 文档章节
 
-### [用户指南](./users/overview)
+### [用户指南](../users/overview)
 
 了解如何作为最终用户使用 Qwen Code。本节涵盖：
 
@@ -14,7 +14,7 @@
 - 配置选项
 - 故障排除
 
-### [开发者指南](./developers/contributing)
+### [开发者指南](../developers/contributing)
 
 了解如何为 Qwen Code 贡献和开发。本节涵盖：
 

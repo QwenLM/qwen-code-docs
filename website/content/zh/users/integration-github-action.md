@@ -2,42 +2,16 @@
 
 ## 概述
 
-`qwen-code-action` 是一个 GitHub Action，通过 [Qwen Code CLI] 将 [Qwen Code] 集成到你的开发工作流中。它既可以作为自主代理来处理关键的日常编码任务，也可以作为你可以快速委派工作的按需协作者。
+`qwen-code-action` 是一个 GitHub Action，通过 [Qwen Code CLI](../users/features/commands/) 将 [Qwen Code] 集成到你的开发工作流中。它既可以作为自主代理来处理关键的日常编码任务，也可以作为你可以快速委派工作的按需协作者。
 
 使用它可以在 GitHub 仓库内以对话方式（例如，`@qwencoder fix this issue`）执行 GitHub Pull Request 审查、问题分类、代码分析和修改等操作。
-
-- [qwen-code-action](#qwen-code-action)
-  - [概述](#overview)
-  - [功能特性](#features)
-  - [快速开始](#quick-start)
-    - [1. 获取 Qwen API 密钥](#1-get-a-qwen-api-key)
-    - [2. 将其添加为 GitHub Secret](#2-add-it-as-a-github-secret)
-    - [3. 更新你的 .gitignore](#3-update-your-gitignore)
-    - [4. 选择一个工作流](#4-choose-a-workflow)
-    - [5. 试用一下](#5-try-it-out)
-  - [工作流](#workflows)
-    - [Qwen Code 调度](#qwen-code-dispatch)
-    - [问题分类](#issue-triage)
-    - [Pull Request 审查](#pull-request-review)
-    - [Qwen Code CLI 助手](#qwen-code-cli-assistant)
-  - [配置](#configuration)
-    - [输入](#inputs)
-    - [输出](#outputs)
-    - [仓库变量](#repository-variables)
-    - [密钥](#secrets)
-  - [认证](#authentication)
-    - [GitHub 认证](#github-authentication)
-  - [扩展](#extensions)
-  - [最佳实践](#best-practices)
-  - [自定义](#customization)
-  - [贡献](#contributing)
 
 ## 功能特性
 
 - **自动化**：基于事件（例如问题开启）或时间表（例如每晚）触发工作流。
-- **按需协作**：在问题和拉取请求的评论中通过提及 [Qwen Code CLI] 来触发工作流（例如，`@qwencoder /review`）。
+- **按需协作**：在问题和拉取请求的评论中通过提及 [Qwen Code CLI](../users/features/commands/) 来触发工作流（例如，`@qwencoder /review`）。
 - **工具可扩展性**：利用 [Qwen Code] 模型的工具调用功能与其它命令行工具交互，如 [GitHub CLI] (`gh`)。
-- **自定义配置**：使用仓库中的 `QWEN.md` 文件为 [Qwen Code CLI] 提供项目特定的指令和上下文。
+- **自定义配置**：使用仓库中的 `QWEN.md` 文件为 [Qwen Code CLI](../users/features/commands/) 提供项目特定的指令和上下文。
 
 ## 快速开始
 
@@ -45,7 +19,7 @@
 
 ### 1. 获取 Qwen API 密钥
 
-从 [DashScope]（阿里云的 AI 平台）获取您的 API 密钥
+从 [DashScope](https://help.aliyun.com/zh/model-studio/qwen-code?spm=a2c4g.11186623.help-menu-2400256.d_0_9_3.54d2248e4fdRjY)（阿里云的 AI 平台）获取您的 API 密钥
 
 ### 2. 将其添加为 GitHub Secret
 
@@ -60,7 +34,6 @@
 在你的 `.gitignore` 文件中添加以下条目：
 
 ```gitignore
-
 # qwen-code-cli 配置
 .qwen/
 
@@ -88,7 +61,7 @@ gha-creds-*.json
 
 **选项 B：手动复制工作流**
 
-1. 从 [`examples/workflows`](./examples/workflows) 目录复制预构建的工作流到你仓库的 `.github/workflows` 目录。注意：必须同时复制 `qwen-dispatch.yml` 工作流，它用于触发其他工作流运行。
+1. 从 [`examples/workflows`](../users/common-workflow/) 目录复制预构建的工作流到你仓库的 `.github/workflows` 目录。注意：必须同时复制 `qwen-dispatch.yml` 工作流，它用于触发其他工作流运行。
 
 ### 5. 试用一下
 
@@ -117,25 +90,19 @@ gha-creds-*.json
 
 ### Qwen Code 调度
 
-此工作流作为 Qwen Code CLI 的中央调度器，根据触发事件和评论中提供的命令，
-将请求路由到相应的工作流。有关如何设置调度工作流的详细指南，请参阅
-[Qwen Code 调度工作流文档](./examples/workflows/qwen-dispatch)。
+此工作流作为 Qwen Code CLI 的中央调度器，根据触发事件和评论中提供的命令，将请求路由到相应的工作流。有关如何设置调度工作流的详细指南，请参阅 [Qwen Code 调度工作流文档](../users/common-workflow/)。
 
 ### 问题分类
 
-此操作可用于自动或按计划对 GitHub Issues 进行分类。
-有关如何设置问题分类系统的详细指南，请参阅
-[GitHub 问题分类工作流文档](./examples/workflows/issue-triage)。
+此操作可用于自动或按计划对 GitHub Issues 进行分类。有关如何设置问题分类系统的详细指南，请参阅 [GitHub 问题分类工作流文档](../users/common-workflow/)。
 
 ### 拉取请求审查
 
-此操作可用于在打开拉取请求时自动进行审查。
-有关如何设置拉取请求审查系统的详细指南，请参阅
-[GitHub PR 审查工作流文档](./examples/workflows/pr-review)。
+此操作可用于在打开拉取请求时自动进行审查。有关如何设置拉取请求审查系统的详细指南，请参阅 [GitHub PR 审查工作流文档](../users/common-workflow/)。
 
 ### Qwen Code CLI 助手
 
-这种操作可用于在拉取请求和议题中调用通用的、对话式的 Qwen Code AI 助手，以执行各种任务。有关如何设置通用 Qwen Code CLI 工作流的详细指南，请参阅 [Qwen Code 助手工作流文档](./examples/workflows/qwen-assistant)。
+这种操作可用于在拉取请求和议题中调用通用的、对话式的 Qwen Code AI 助手，以执行各种任务。有关如何设置通用 Qwen Code CLI 工作流的详细指南，请参阅 [Qwen Code 助手工作流文档](../users/common-workflow/)。
 
 ## 配置
 
@@ -198,7 +165,7 @@ gha-creds-*.json
 2. 输入变量名称和值。
 3. 保存。
 
-有关仓库变量的详细信息，请参阅 [GitHub 关于变量的文档][variables]。
+有关仓库变量的详细信息，请参阅 [GitHub 关于变量的文档][../users/configuration/settings/]。
 
 ### 密钥
 
@@ -215,7 +182,7 @@ gha-creds-*.json
 2. 输入密钥名称和值。
 3. 保存。
 
-更多信息请参考 [GitHub 官方关于创建和使用加密密钥的文档][secrets]。
+更多信息请参考 [GitHub 官方关于创建和使用加密密钥的文档](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions)。
 
 ## 身份验证
 
@@ -229,14 +196,11 @@ gha-creds-*.json
 2. **自定义 GitHub App（推荐）：** 为了实现最安全和灵活的身份验证，我们建议创建一个自定义的 GitHub App。
 
 有关 Qwen 和 GitHub 身份验证的详细设置说明，请参阅  
-[**身份验证文档**](./docs/authentication.md)。
+[**身份验证文档**](../users/configuration/auth/)。
 
 ## 扩展
 
 Qwen Code CLI 可以通过扩展来增加额外功能。这些扩展从其 GitHub 仓库中以源代码形式安装。
-
-有关如何设置和配置扩展的详细说明，请参阅  
-[扩展文档](./docs/extensions.md)。
 
 ## 最佳实践
 
@@ -247,19 +211,15 @@ Qwen Code CLI 可以通过扩展来增加额外功能。这些扩展从其 GitHu
 - **保护您的仓库：** 实施分支和标签保护，并限制 Pull Request 审批者。
 - **监控与审计：** 定期审查操作日志并启用 OpenTelemetry 以深入了解性能和行为。
 
-有关保护仓库和工作流的完整指南，请参阅我们的 [**最佳实践文档**](./docs/best-practices.md)。
+有关保护仓库和工作流的完整指南，请参阅我们的 [**常用工作流**](../users/common-workflow/)。
 
 ## 自定义
 
-在您的仓库根目录中创建一个 [QWEN.md] 文件，以提供
-项目特定的上下文和说明给 [Qwen Code CLI]。这对于定义
-编码约定、架构模式或模型应遵循的其他指导原则非常有用
-针对给定仓库。
+在您的仓库根目录中创建一个 [QWEN.md] 文件，以提供项目特定的上下文和说明给 [Qwen Code CLI](../users/features/commands/)。这对于定义编码约定、架构模式或模型应遵循的其他指导原则非常有用针对给定仓库。
 
 ## 贡献
 
-欢迎贡献！请查看 Qwen Code CLI
-[**贡献指南**](./CONTRIBUTING.md) 了解更多关于如何开始的详细信息。
+欢迎贡献！请查看 Qwen Code CLI [**贡献指南**](./CONTRIBUTING.md) 了解更多关于如何开始的详细信息。
 
 [secrets]: https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions
 [Qwen Code]: https://github.com/QwenLM/qwen-code
@@ -268,3 +228,4 @@ Qwen Code CLI 可以通过扩展来增加额外功能。这些扩展从其 GitHu
 [variables]: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#creating-configuration-variables-for-a-repository
 [GitHub CLI]: https://docs.github.com/en/github-cli/github-cli
 [QWEN.md]: https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#context-files-hierarchical-instructional-context
+[https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions]: 

@@ -2,7 +2,7 @@
 
 Qwen Code peut s'intégrer à votre IDE pour offrir une expérience plus fluide et contextuelle. Cette intégration permet au CLI de mieux comprendre votre espace de travail et active des fonctionnalités puissantes comme le diff natif dans l'éditeur.
 
-Actuellement, le seul IDE pris en charge est [Visual Studio Code](https://code.visualstudio.com/) ainsi que les autres éditeurs qui supportent les extensions VS Code. Pour développer le support d'autres éditeurs, consultez la [Spécification de l'Extension Compagnon IDE](/users/ide-integration/ide-companion-spec).
+Actuellement, le seul IDE pris en charge est [Visual Studio Code](https://code.visualstudio.com/) ainsi que les autres éditeurs qui supportent les extensions VS Code. Pour développer le support d'autres éditeurs, consultez la [Spécification de l'Extension Compagnon IDE](../users/ide-integration/ide-companion-spec).
 
 ## Fonctionnalités
 

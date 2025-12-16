@@ -211,7 +211,7 @@ READMEにインストール手順を追加してください
 | → `output [language]` | LLM 出力言語を設定                               | `/language output 日本語`     |
 | `/quit`               | Qwen Code を即時終了                             | `/quit` または `/exit`        |
 
-すべてのコマンドの一覧については、[CLI リファレンス](/users/reference/cli-reference)をご確認ください。
+すべてのコマンドの一覧については、[CLI リファレンス](../users/reference/cli-reference)をご確認ください。
 
 ## 初心者のためのプロティップス
 

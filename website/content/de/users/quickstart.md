@@ -210,7 +210,7 @@ Hier sind die wichtigsten Befehle für den täglichen Gebrauch:
 | → `output [Sprache]`  | Ausgabesprache des LLM festlegen                  | `/language output Chinesisch` |
 | `/quit`               | Qwen Code sofort beenden                          | `/quit` oder `/exit`          |
 
-Eine vollständige Liste der Befehle findest du in der [CLI-Referenz](/users/reference/cli-reference).
+Eine vollständige Liste der Befehle findest du in der [CLI-Referenz](../users/reference/cli-reference).
 
 ## Profi-Tipps für Anfänger
 

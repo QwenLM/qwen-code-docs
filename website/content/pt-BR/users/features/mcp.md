@@ -51,7 +51,7 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 ```
 
 > [!tip]
-> Para camadas avançadas de configuração (padrões do sistema/configurações do sistema e regras de precedência), consulte [Configurações](/users/configuration/settings).
+> Para camadas avançadas de configuração (padrões do sistema/configurações do sistema e regras de precedência), consulte [Configurações](../users/configuration/settings).
 
 ## Configurar servidores
 

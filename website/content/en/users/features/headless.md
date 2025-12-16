@@ -203,7 +203,7 @@ Key command-line options for headless usage:
 | `--continue`                 | Resume the most recent session for this project     | `qwen --continue -p "Pick up where we left off"`                         |
 | `--resume [sessionId]`       | Resume a specific session (or choose interactively) | `qwen --resume 123e... -p "Finish the refactor"`                         |
 
-For complete details on all available configuration options, settings files, and environment variables, see the [Configuration Guide](/users/configuration/settings).
+For complete details on all available configuration options, settings files, and environment variables, see the [Configuration Guide](../users/configuration/settings).
 
 ## Examples
 
@@ -276,7 +276,7 @@ tail -5 usage.log
 
 ## Resources
 
-- [CLI Configuration](/users/configuration/settings#command-line-arguments) - Complete configuration guide
-- [Authentication](/users/configuration/settings#environment-variables-for-api-access) - Setup authentication
-- [Commands](/users/reference/cli-reference) - Interactive commands reference
-- [Tutorials](/users/quickstart) - Step-by-step automation guides
+- [CLI Configuration](../users/configuration/settings#command-line-arguments) - Complete configuration guide
+- [Authentication](../users/configuration/settings#environment-variables-for-api-access) - Setup authentication
+- [Commands](../users/reference/cli-reference) - Interactive commands reference
+- [Tutorials](../users/quickstart) - Step-by-step automation guides

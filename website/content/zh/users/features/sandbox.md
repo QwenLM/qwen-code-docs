@@ -225,6 +225,6 @@ qwen -s -p "run shell command: mount | grep workspace"
 
 ## 相关文档
 
-- [配置](/users/configuration/settings)：完整的配置选项。
-- [命令](/users/reference/cli-reference)：可用命令列表。
-- [故障排查](/users/support/troubleshooting)：通用故障排查指南。
+- [配置](../users/configuration/settings)：完整的配置选项。
+- [命令](../users/reference/cli-reference)：可用命令列表。
+- [故障排查](../users/support/troubleshooting)：通用故障排查指南。

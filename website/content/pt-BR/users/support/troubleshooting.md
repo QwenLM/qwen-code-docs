@@ -31,7 +31,7 @@ Este guia fornece soluções para problemas comuns e dicas de depuração, inclu
     1. Em seu diretório pessoal: `~/.qwen/settings.json`.
     2. No diretório raiz do seu projeto: `./.qwen/settings.json`.
 
-    Consulte [Configuração do Qwen Code](/users/configuration/settings) para obter mais detalhes.
+    Consulte [Configuração do Qwen Code](../users/configuration/settings) para obter mais detalhes.
 
 - **P: Por que não vejo contagens de tokens em cache na saída das minhas estatísticas?**
   - R: As informações de tokens em cache só são exibidas quando tokens em cache estão sendo utilizados. Este recurso está disponível para usuários com chave de API (chave da API Qwen ou Google Cloud Vertex AI), mas não para usuários OAuth (como contas pessoais/empresariais do Google, por exemplo, Gmail do Google ou Google Workspace). Isso ocorre porque a API do Qwen Code Assist não suporta a criação de conteúdo em cache. Você ainda pode visualizar o uso total de tokens utilizando o comando `/stats`.
@@ -59,7 +59,7 @@ Este guia fornece soluções para problemas comuns e dicas de depuração, inclu
 
 - **Erro: "Operação não permitida", "Permissão negada" ou similares.**
   - **Causa:** Quando o sandboxing está habilitado, o Qwen Code pode tentar realizar operações restritas pela sua configuração de sandbox, como escrever fora do diretório do projeto ou do diretório temporário do sistema.
-  - **Solução:** Consulte a documentação [Configuração: Sandboxing](/users/features/sandbox) para mais informações, incluindo como personalizar sua configuração de sandbox.
+  - **Solução:** Consulte a documentação [Configuração: Sandboxing](../users/features/sandbox) para mais informações, incluindo como personalizar sua configuração de sandbox.
 
 - **O Qwen Code não está sendo executado no modo interativo em ambientes "CI"**
   - **Problema:** O Qwen Code não entra no modo interativo (nenhum prompt aparece) se uma variável de ambiente começando com `CI_` (ex: `CI_TOKEN`) estiver definida. Isso ocorre porque o pacote `is-in-ci`, usado pelo framework de interface subjacente, detecta essas variáveis e assume um ambiente CI não interativo.

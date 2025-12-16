@@ -56,6 +56,6 @@ Wenn Sie eine Entscheidung ändern oder alle Ihre Einstellungen einsehen möchte
 
 Für fortgeschrittene Benutzer ist es hilfreich, die genaue Reihenfolge der Vorgänge zu kennen, nach der das Vertrauen bestimmt wird:
 
-1.  **IDE-Vertrauenssignal**: Wenn Sie die [IDE-Integration](/users/ide-integration/ide-integration) verwenden, fragt die CLI zunächst die IDE, ob der Arbeitsbereich vertrauenswürdig ist. Die Antwort der IDE hat höchste Priorität.
+1.  **IDE-Vertrauenssignal**: Wenn Sie die [IDE-Integration](../users/ide-integration/ide-integration) verwenden, fragt die CLI zunächst die IDE, ob der Arbeitsbereich vertrauenswürdig ist. Die Antwort der IDE hat höchste Priorität.
 
 2.  **Lokale Vertrauensdatei**: Wenn die IDE nicht verbunden ist, prüft die CLI die zentrale Datei `~/.qwen/trustedFolders.json`.

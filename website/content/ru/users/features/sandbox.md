@@ -224,6 +224,6 @@ qwen -s -p "run shell command: mount | grep workspace"
 
 ## Связанная документация
 
-- [Конфигурация](/users/configuration/settings): Полный список параметров конфигурации.
-- [Команды](/users/reference/cli-reference): Доступные команды.
-- [Устранение неполадок](/users/support/troubleshooting): Общие рекомендации по устранению проблем.
+- [Конфигурация](../users/configuration/settings): Полный список параметров конфигурации.
+- [Команды](../users/reference/cli-reference): Доступные команды.
+- [Устранение неполадок](../users/support/troubleshooting): Общие рекомендации по устранению проблем.

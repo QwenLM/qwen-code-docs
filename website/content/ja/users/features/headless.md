@@ -204,7 +204,7 @@ qwen -p "Write code" --output-format stream-json --include-partial-messages | jq
 | `--continue`                   | このプロジェクトの最新セッションを再開             | `qwen --continue -p "Pick up where we left off"`                         |
 | `--resume [sessionId]`         | 特定のセッションを再開（または対話的に選択）        | `qwen --resume 123e... -p "Finish the refactor"`                         |
 
-利用可能なすべての設定オプション、設定ファイル、環境変数の詳細については、[設定ガイド](/users/configuration/settings)を参照してください。
+利用可能なすべての設定オプション、設定ファイル、環境変数の詳細については、[設定ガイド](../users/configuration/settings)を参照してください。
 
 ## 例
 
@@ -277,7 +277,7 @@ tail -5 usage.log
 
 ## リソース
 
-- [CLI 設定](/users/configuration/settings#command-line-arguments) - 完全な設定ガイド
-- [認証](/users/configuration/settings#environment-variables-for-api-access) - 認証のセットアップ
-- [コマンド](/users/reference/cli-reference) - インタラクティブなコマンドリファレンス
-- [チュートリアル](/users/quickstart) - ステップバイステップの自動化ガイド
+- [CLI 設定](../users/configuration/settings#command-line-arguments) - 完全な設定ガイド
+- [認証](../users/configuration/settings#environment-variables-for-api-access) - 認証のセットアップ
+- [コマンド](../users/reference/cli-reference) - インタラクティブなコマンドリファレンス
+- [チュートリアル](../users/quickstart) - ステップバイステップの自動化ガイド

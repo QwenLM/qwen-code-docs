@@ -31,7 +31,7 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
     1. Dans votre répertoire personnel : `~/.qwen/settings.json`.
     2. Dans le répertoire racine de votre projet : `./.qwen/settings.json`.
 
-    Référez-vous à [Configuration de Qwen Code](/users/configuration/settings) pour plus de détails.
+    Référez-vous à [Configuration de Qwen Code](../users/configuration/settings) pour plus de détails.
 
 - **Q : Pourquoi ne vois-je pas les comptes de jetons mis en cache dans la sortie des statistiques ?**
   - R : Les informations sur les jetons mis en cache ne s'affichent que lorsque des jetons mis en cache sont utilisés. Cette fonctionnalité est disponible pour les utilisateurs avec clé API (clé API Qwen ou Google Cloud Vertex AI) mais pas pour les utilisateurs OAuth (comme les comptes personnels/entreprise Google tels que Google Gmail ou Google Workspace). Cela est dû au fait que l'API Qwen Code Assist ne prend pas en charge la création de contenu mis en cache. Vous pouvez néanmoins consulter votre utilisation totale de jetons en utilisant la commande `/stats`.
@@ -59,7 +59,7 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
 
 - **Erreur : "Opération non autorisée", "Permission refusée", ou similaire.**
   - **Cause :** Lorsque le bac à sable est activé, Qwen Code peut tenter des opérations restreintes par votre configuration de bac à sable, comme écrire en dehors du répertoire du projet ou du répertoire temporaire du système.
-  - **Solution :** Reportez-vous à la documentation [Configuration : Bac à sable](/users/features/sandbox) pour plus d'informations, notamment sur la personnalisation de votre configuration de bac à sable.
+  - **Solution :** Reportez-vous à la documentation [Configuration : Bac à sable](../users/features/sandbox) pour plus d'informations, notamment sur la personnalisation de votre configuration de bac à sable.
 
 - **Qwen Code ne s'exécute pas en mode interactif dans les environnements "CI"**
   - **Problème :** Qwen Code n'entre pas en mode interactif (aucune invite n'apparaît) si une variable d'environnement commençant par `CI_` (par exemple `CI_TOKEN`) est définie. Cela est dû au fait que le paquet `is-in-ci`, utilisé par le framework d'interface sous-jacent, détecte ces variables et suppose un environnement CI non interactif.

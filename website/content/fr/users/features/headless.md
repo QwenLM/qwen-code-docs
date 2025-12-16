@@ -203,7 +203,7 @@ Options principales en ligne de commande pour une utilisation sans interface gra
 | `--continue`                 | Reprendre la session la plus récente pour ce projet | `qwen --continue -p "Reprendre là où nous nous étions arrêtés"`          |
 | `--resume [sessionId]`       | Reprendre une session spécifique (ou choisir de manière interactive) | `qwen --resume 123e... -p "Terminer le refactoring"`                     |
 
-Pour obtenir tous les détails sur les options de configuration disponibles, les fichiers de paramètres et les variables d'environnement, consultez le [Guide de configuration](/users/configuration/settings).
+Pour obtenir tous les détails sur les options de configuration disponibles, les fichiers de paramètres et les variables d'environnement, consultez le [Guide de configuration](../users/configuration/settings).
 
 ## Exemples
 
@@ -276,7 +276,7 @@ tail -5 usage.log
 
 ## Ressources
 
-- [Configuration de la CLI](/users/configuration/settings#command-line-arguments) - Guide complet de configuration
-- [Authentification](/users/configuration/settings#environment-variables-for-api-access) - Configuration de l'authentification
-- [Commandes](/users/reference/cli-reference) - Référence interactive des commandes
-- [Tutoriels](/users/quickstart) - Guides d'automatisation pas à pas
+- [Configuration de la CLI](../users/configuration/settings#command-line-arguments) - Guide complet de configuration
+- [Authentification](../users/configuration/settings#environment-variables-for-api-access) - Configuration de l'authentification
+- [Commandes](../users/reference/cli-reference) - Référence interactive des commandes
+- [Tutoriels](../users/quickstart) - Guides d'automatisation pas à pas

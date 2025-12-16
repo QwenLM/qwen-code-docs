@@ -2,7 +2,7 @@
 
 Qwen Code は、よりシームレスでコンテキストを意識した体験を提供するために、お使いの IDE と連携できます。この連携により、CLI がワークスペースをより適切に理解できるようになり、エディタ内での差分表示といった強力な機能が利用可能になります。
 
-現在サポートされている IDE は [Visual Studio Code](https://code.visualstudio.com/) および VS Code 拡張機能に対応する他のエディタのみです。他のエディタへの対応を構築するには、[IDE コンパニオン拡張仕様](/users/ide-integration/ide-companion-spec) を参照してください。
+現在サポートされている IDE は [Visual Studio Code](https://code.visualstudio.com/) および VS Code 拡張機能に対応する他のエディタのみです。他のエディタへの対応を構築するには、[IDE コンパニオン拡張仕様](../users/ide-integration/ide-companion-spec) を参照してください。
 
 ## 機能
 

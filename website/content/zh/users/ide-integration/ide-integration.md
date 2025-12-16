@@ -2,7 +2,7 @@
 
 Qwen Code 可以与你的 IDE 集成，提供更无缝且具备上下文感知的体验。这种集成使 CLI 能够更好地理解你的工作区，并支持强大的功能，例如编辑器内的原生差异对比。
 
-目前，唯一支持的 IDE 是 [Visual Studio Code](https://code.visualstudio.com/) 以及其他支持 VS Code 扩展的编辑器。如需为其他编辑器构建支持，请参阅 [IDE Companion 扩展规范](/users/ide-integration/ide-companion-spec)。
+目前，唯一支持的 IDE 是 [Visual Studio Code](https://code.visualstudio.com/) 以及其他支持 VS Code 扩展的编辑器。如需为其他编辑器构建支持，请参阅 [IDE Companion 扩展规范](../users/ide-integration/ide-companion-spec)。
 
 ## 功能特性
 

@@ -205,7 +205,7 @@ qwen -p "Напиши код" --output-format stream-json --include-partial-mess
 | `--continue`                 | Возобновить последний сеанс для этого проекта       | `qwen --continue -p "Продолжим с того места, где остановились"`          |
 | `--resume [sessionId]`       | Возобновить определённый сеанс (или выбрать интерактивно) | `qwen --resume 123e... -p "Завершить рефакторинг"`                |
 
-Полное описание всех доступных параметров конфигурации, файлов настроек и переменных окружения см. в [Руководстве по конфигурации](/users/configuration/settings).
+Полное описание всех доступных параметров конфигурации, файлов настроек и переменных окружения см. в [Руководстве по конфигурации](../users/configuration/settings).
 
 ## Примеры
 
@@ -278,7 +278,7 @@ tail -5 usage.log
 
 ## Ресурсы
 
-- [Конфигурация CLI](/users/configuration/settings#command-line-arguments) - Полное руководство по настройке
-- [Аутентификация](/users/configuration/settings#environment-variables-for-api-access) - Настройка аутентификации
-- [Команды](/users/reference/cli-reference) - Интерактивная справка по командам
-- [Руководства](/users/quickstart) - Пошаговые руководства по автоматизации
+- [Конфигурация CLI](../users/configuration/settings#command-line-arguments) - Полное руководство по настройке
+- [Аутентификация](../users/configuration/settings#environment-variables-for-api-access) - Настройка аутентификации
+- [Команды](../users/reference/cli-reference) - Интерактивная справка по командам
+- [Руководства](../users/quickstart) - Пошаговые руководства по автоматизации

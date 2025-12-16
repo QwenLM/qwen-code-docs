@@ -23,7 +23,7 @@ qwen.aiアカウントを使用して認証する場合、以下の利用規約�
 - **利用規約：** ご利用は[Qwen利用規約](https://qwen.ai/termsservice)に従って管理されます。
 - **プライバシー通知：** データの収集および使用については、[Qwenプライバシーポリシー](https://qwen.ai/privacypolicy)に記載されています。
 
-認証の設定、クォータ、サポートされている機能の詳細については、[認証設定](/users/configuration/settings)を参照してください。
+認証の設定、クォータ、サポートされている機能の詳細については、[認証設定](../users/configuration/settings)を参照してください。
 
 ## 2. OpenAI互換のAPI認証を使用している場合
 
@@ -91,4 +91,4 @@ Qwen Codeでは、ユーザーエクスペリエンスおよび製品品質の�
 2. **CLI 内**: `/auth` コマンドを使用して認証方法を再設定します
 3. **環境変数**: 自動的に OpenAI 互換 API 認証を行うために `.env` ファイルを設定します
 
-詳細な手順については、[認証セットアップ](/users/configuration/settings#environment-variables-for-api-access) のドキュメントを参照してください。
+詳細な手順については、[認証セットアップ](../users/configuration/settings#environment-variables-for-api-access) のドキュメントを参照してください。

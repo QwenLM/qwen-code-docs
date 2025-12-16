@@ -23,7 +23,7 @@ Qwen Code 支持两种主要的认证方式来访问 AI 模型。你的认证方
 - **服务条款：** 你的使用受 [通义千问服务条款](https://qwen.ai/termsservice) 约束。
 - **隐私声明：** 你的数据的收集和使用在 [通义千问隐私政策](https://qwen.ai/privacypolicy) 中有描述。
 
-有关认证设置、配额和支持功能的详细信息，请参见 [认证设置](/users/configuration/settings)。
+有关认证设置、配额和支持功能的详细信息，请参见 [认证设置](../users/configuration/settings)。
 
 ## 2. 如果你使用与 OpenAI 兼容的 API 认证方式
 
@@ -91,4 +91,4 @@ Qwen Code 可能会收集匿名的使用统计数据和[遥测数据](/developer
 2. **在 CLI 中**：使用 `/auth` 命令重新配置你的认证方式
 3. **环境变量**：设置 `.env` 文件以自动启用兼容 OpenAI 的 API 认证
 
-详细说明请参阅[认证设置](/users/configuration/settings#environment-variables-for-api-access)文档。
+详细说明请参阅[认证设置](../users/configuration/settings#environment-variables-for-api-access)文档。

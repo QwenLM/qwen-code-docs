@@ -56,6 +56,6 @@
 
 对于高级用户，了解信任判定的确切操作顺序会很有帮助：
 
-1.  **IDE 信任信号**：如果你正在使用 [IDE 集成](/users/ide-integration/ide-integration)，CLI 首先会询问 IDE 当前工作区是否受信任。IDE 的响应具有最高优先级。
+1.  **IDE 信任信号**：如果你正在使用 [IDE 集成](../users/ide-integration/ide-integration)，CLI 首先会询问 IDE 当前工作区是否受信任。IDE 的响应具有最高优先级。
 
 2.  **本地信任文件**：如果 IDE 未连接，CLI 将检查中心化的 `~/.qwen/trustedFolders.json` 文件。

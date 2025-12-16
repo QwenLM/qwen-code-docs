@@ -189,8 +189,8 @@ Then select "create" and follow the prompts to define:
 > - Create project-specific subagents in `.qwen/agents/` for team sharing
 > - Use descriptive `description` fields to enable automatic delegation
 > - Limit tool access to what each subagent actually needs
-> - Know more about [Sub Agents](/users/features/sub-agents)
-> - Know more about [Approval Mode](/users/features/approval-mode)
+> - Know more about [Sub Agents](../users/features/sub-agents)
+> - Know more about [Approval Mode](../users/features/approval-mode)
 
 ## Work with tests
 
@@ -318,7 +318,7 @@ This provides a directory listing with file information.
 Show me the data from @github: repos/owner/repo/issues
 ```
 
-This fetches data from connected MCP servers using the format @server: resource. See [MCP](/users/features/mcp) for details.
+This fetches data from connected MCP servers using the format @server: resource. See [MCP](../users/features/mcp) for details.
 
 > [!tip]
 >

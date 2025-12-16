@@ -203,7 +203,7 @@ Principais opções de linha de comando para uso headless:
 | `--continue`                 | Retomar a sessão mais recente deste projeto         | `qwen --continue -p "Continue de onde paramos"`                          |
 | `--resume [sessionId]`       | Retomar uma sessão específica (ou escolher interativamente) | `qwen --resume 123e... -p "Concluir a refatoração"`                     |
 
-Para detalhes completos sobre todas as opções de configuração disponíveis, arquivos de configuração e variáveis de ambiente, consulte o [Guia de Configuração](/users/configuration/settings).
+Para detalhes completos sobre todas as opções de configuração disponíveis, arquivos de configuração e variáveis de ambiente, consulte o [Guia de Configuração](../users/configuration/settings).
 
 ## Exemplos
 
@@ -276,7 +276,7 @@ tail -5 usage.log
 
 ## Recursos
 
-- [Configuração da CLI](/users/configuration/settings#command-line-arguments) - Guia completo de configuração
-- [Autenticação](/users/configuration/settings#environment-variables-for-api-access) - Configurar autenticação
-- [Comandos](/users/reference/cli-reference) - Referência interativa de comandos
-- [Tutoriais](/users/quickstart) - Guias passo a passo para automação
+- [Configuração da CLI](../users/configuration/settings#command-line-arguments) - Guia completo de configuração
+- [Autenticação](../users/configuration/settings#environment-variables-for-api-access) - Configurar autenticação
+- [Comandos](../users/reference/cli-reference) - Referência interativa de comandos
+- [Tutoriais](../users/quickstart) - Guias passo a passo para automação

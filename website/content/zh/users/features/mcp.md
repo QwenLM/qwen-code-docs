@@ -51,7 +51,7 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 ```
 
 > [!tip]
-> 关于高级配置层（系统默认值/系统设置和优先级规则），请参见 [设置](/users/configuration/settings)。
+> 关于高级配置层（系统默认值/系统设置和优先级规则），请参见 [设置](../users/configuration/settings)。
 
 ## 配置服务器
 

@@ -26,7 +26,7 @@
 
 2. 下载并安装 [Zed Editor](https://zed.dev/)
 
-3. 在 Zed 中，点击右上角的 **设置按钮**，选择 **"Add agent"**，选择 **"Create a custom agent"**，并添加以下配置：
+3. 在 Zed 中，点击右上角的 **设置按钮**，选择 **"Add agent"**，选择 **"Add custom agent"**，并添加以下配置：
 
 ```json
 "Qwen Code": {

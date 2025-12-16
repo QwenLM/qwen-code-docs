@@ -224,6 +224,6 @@ qwen -s -p "run shell command: mount | grep workspace"
 
 ## Documentation associée
 
-- [Configuration](/users/configuration/settings) : Options de configuration complètes.
-- [Commandes](/users/reference/cli-reference) : Commandes disponibles.
-- [Dépannage](/users/support/troubleshooting) : Dépannage général.
+- [Configuration](../users/configuration/settings) : Options de configuration complètes.
+- [Commandes](../users/reference/cli-reference) : Commandes disponibles.
+- [Dépannage](../users/support/troubleshooting) : Dépannage général.

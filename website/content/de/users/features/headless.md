@@ -203,7 +203,7 @@ Wichtige Befehlszeilenoptionen für die headless-Nutzung:
 | `--continue`                 | Die letzte Sitzung für dieses Projekt fortsetzen    | `qwen --continue -p "Mach weiter, wo wir aufgehört haben"`               |
 | `--resume [sessionId]`       | Eine bestimmte Sitzung fortsetzen (oder interaktiv wählen) | `qwen --resume 123e... -p "Beende die Umstrukturierung"`         |
 
-Für vollständige Details zu allen verfügbaren Konfigurationsoptionen, Einstellungsdateien und Umgebungsvariablen, siehe [Konfigurationshandbuch](/users/configuration/settings).
+Für vollständige Details zu allen verfügbaren Konfigurationsoptionen, Einstellungsdateien und Umgebungsvariablen, siehe [Konfigurationshandbuch](../users/configuration/settings).
 
 ## Beispiele
 
@@ -276,7 +276,7 @@ tail -5 usage.log
 
 ## Ressourcen
 
-- [CLI-Konfiguration](/users/configuration/settings#command-line-arguments) - Vollständiger Konfigurationsleitfaden
-- [Authentifizierung](/users/configuration/settings#environment-variables-for-api-access) - Authentifizierung einrichten
-- [Befehle](/users/reference/cli-reference) - Interaktive Befehlsreferenz
-- [Tutorials](/users/quickstart) - Schritt-für-Schritt-Anleitungen zur Automatisierung
+- [CLI-Konfiguration](../users/configuration/settings#command-line-arguments) - Vollständiger Konfigurationsleitfaden
+- [Authentifizierung](../users/configuration/settings#environment-variables-for-api-access) - Authentifizierung einrichten
+- [Befehle](../users/reference/cli-reference) - Interaktive Befehlsreferenz
+- [Tutorials](../users/quickstart) - Schritt-für-Schritt-Anleitungen zur Automatisierung

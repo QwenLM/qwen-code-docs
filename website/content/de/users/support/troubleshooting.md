@@ -31,7 +31,7 @@ Dieser Leitfaden bietet Lösungen für häufige Probleme und Debugging-Tipps, da
     1. In deinem Home-Verzeichnis: `~/.qwen/settings.json`.
     2. Im Stammverzeichnis deines Projekts: `./.qwen/settings.json`.
 
-    Weitere Informationen findest du unter [Qwen Code-Konfiguration](/users/configuration/settings).
+    Weitere Informationen findest du unter [Qwen Code-Konfiguration](../users/configuration/settings).
 
 - **F: Warum sehe ich keine zwischengespeicherten Token-Zähler in meiner Statistik-Ausgabe?**
   - A: Informationen zu zwischengespeicherten Tokens werden nur angezeigt, wenn zwischengespeicherte Tokens verwendet werden. Diese Funktion ist für API-Schlüssel-Benutzer (Qwen API-Schlüssel oder Google Cloud Vertex AI) verfügbar, aber nicht für OAuth-Benutzer (wie z. B. persönliche/Unternehmens-Google-Konten wie Google Gmail oder Google Workspace). Der Grund dafür ist, dass die Qwen Code Assist-API das Erstellen von zwischengespeicherten Inhalten nicht unterstützt. Du kannst deine gesamte Token-Nutzung weiterhin mit dem Befehl `/stats` anzeigen.
@@ -59,7 +59,7 @@ Dieser Leitfaden bietet Lösungen für häufige Probleme und Debugging-Tipps, da
 
 - **Fehler: „Operation not permitted“, „Permission denied“ oder ähnliche Meldungen.**
   - **Ursache:** Wenn Sandboxing aktiviert ist, kann Qwen Code versuchen, Vorgänge auszuführen, die durch Ihre Sandbox-Konfiguration eingeschränkt sind, z. B. Schreibvorgänge außerhalb des Projektverzeichnisses oder des temporären Systemverzeichnisses.
-  - **Lösung:** Weitere Informationen finden Sie in der Dokumentation unter [Konfiguration: Sandboxing](/users/features/sandbox), einschließlich Anweisungen zum Anpassen Ihrer Sandbox-Konfiguration.
+  - **Lösung:** Weitere Informationen finden Sie in der Dokumentation unter [Konfiguration: Sandboxing](../users/features/sandbox), einschließlich Anweisungen zum Anpassen Ihrer Sandbox-Konfiguration.
 
 - **Qwen Code wird in „CI“-Umgebungen nicht im interaktiven Modus ausgeführt**
   - **Problem:** Qwen Code wechselt nicht in den interaktiven Modus (es erscheint keine Eingabeaufforderung), wenn eine Umgebungsvariable mit dem Präfix `CI_` (z. B. `CI_TOKEN`) gesetzt ist. Der Grund dafür ist, dass das Paket `is-in-ci`, das vom zugrunde liegenden UI-Framework verwendet wird, diese Variablen erkennt und annimmt, dass es sich um eine nicht-interaktive CI-Umgebung handelt.

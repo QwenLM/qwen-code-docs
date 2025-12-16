@@ -204,7 +204,7 @@ qwen -p "编写代码" --output-format stream-json --include-partial-messages | 
 | `--continue`                  | 恢复此项目的最近会话                               | `qwen --continue -p "Pick up where we left off"`                          |
 | `--resume [sessionId]`        | 恢复特定会话（或交互式选择）                       | `qwen --resume 123e... -p "Finish the refactor"`                          |
 
-有关所有可用配置选项、设置文件和环境变量的完整详细信息，请参阅[配置指南](/users/configuration/settings)。
+有关所有可用配置选项、设置文件和环境变量的完整详细信息，请参阅[配置指南](../users/configuration/settings)。
 
 ## 示例
 
@@ -277,7 +277,7 @@ tail -5 usage.log
 
 ## 资源
 
-- [CLI 配置](/users/configuration/settings#command-line-arguments) - 完整配置指南
-- [身份验证](/users/configuration/settings#environment-variables-for-api-access) - 设置身份验证
-- [命令](/users/reference/cli-reference) - 交互式命令参考
-- [教程](/users/quickstart) - 逐步自动化指南
+- [CLI 配置](../users/configuration/settings#command-line-arguments) - 完整配置指南
+- [身份验证](../users/configuration/settings#environment-variables-for-api-access) - 设置身份验证
+- [命令](../users/reference/cli-reference) - 交互式命令参考
+- [教程](../users/quickstart) - 逐步自动化指南

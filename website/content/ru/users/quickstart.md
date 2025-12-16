@@ -210,7 +210,7 @@ Qwen Code выполнит следующие действия:
 | → `output [язык]`     | Установить язык вывода LLM                       | `/language output Chinese`    |
 | `/quit`               | Немедленно выйти из Qwen Code                    | `/quit` или `/exit`           |
 
-Полный список команд см. в [справочнике CLI](/users/reference/cli-reference).
+Полный список команд см. в [справочнике CLI](../users/reference/cli-reference).
 
 ## Советы для новичков
 

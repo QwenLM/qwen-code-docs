@@ -210,7 +210,7 @@ Aqui estão os comandos mais importantes para o uso diário:
 | → `output [idioma]`   | Definir idioma de saída do LLM                     | `/language output Chinese`     |
 | `/quit`               | Sair imediatamente do Qwen Code                    | `/quit` ou `/exit`             |
 
-Veja a [referência da CLI](/users/reference/cli-reference) para uma lista completa de comandos.
+Veja a [referência da CLI](../users/reference/cli-reference) para uma lista completa de comandos.
 
 ## Dicas profissionais para iniciantes
 

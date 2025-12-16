@@ -56,6 +56,6 @@
 
 上級ユーザーにとって、信頼がどのように判断されるかの正確な処理順序を理解することは役立ちます：
 
-1.  **IDE 信頼シグナル**：[IDE 統合](/users/ide-integration/ide-integration)を使用している場合、CLI はまず IDE にワークスペースが信頼されているかどうかを尋ねます。IDE の応答が最優先されます。
+1.  **IDE 信頼シグナル**：[IDE 統合](../users/ide-integration/ide-integration)を使用している場合、CLI はまず IDE にワークスペースが信頼されているかどうかを尋ねます。IDE の応答が最優先されます。
 
 2.  **ローカル信頼ファイル**：IDE が接続されていない場合、CLI は中央の `~/.qwen/trustedFolders.json` ファイルをチェックします。
