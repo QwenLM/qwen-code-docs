@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Multilingual documentation site providing AI-powered automatic translation and high-quality localized documentation experience for the Qwen Code project",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "postbuild": "pagefind --site out --output-path out/_pagefind"
+    "clean": "rm -rf .next",
+    "dev": "npm run clean && next dev",
+    "build": "npm run clean && next build"
   },
   "keywords": [
     "qwen",

@@ -1,10 +1,14 @@
 export default {
-  index: 'Qwen Code へようこそ',
-  cli: 'CLI',
-  core: 'Core',
-  tools: 'Tools',
-  features: 'Features',
-  'ide-integration': 'IDE Integration',
-  development: 'Development',
-  support: 'Support',
+  index: {
+    type: 'page',
+    display: 'hidden',
+  },
+  users: {
+    type: 'page',
+    title: 'ユーザーガイド',
+  },
+  developers: {
+    type: 'page',
+    title: '開発者ガイド',
+  },
 };

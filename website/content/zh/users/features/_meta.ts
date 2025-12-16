@@ -1,0 +1,12 @@
+export default {
+  commands: '命令',
+  'sub-agents': '子代理',
+  headless: '无头模式',
+  checkpointing: {
+    display: 'hidden',
+  },
+  'approval-mode': '审批模式',
+  mcp: 'MCP',
+  'token-caching': '令牌缓存',
+  sandbox: '沙箱',
+};

@@ -218,11 +218,37 @@ export class MetaTranslator {
 4. 保持引号类型一致（单引号、双引号或反引号）
 5. 如果值包含多行内容，保持换行格式
 6. 不要添加任何代码块标记（如 \`\`\`typescript 或 \`\`\`javascript）
+7. 【非常重要】以下字段的 value 属于程序枚举/URL，绝对不能翻译（必须保持原样）：
+   - display: 只能是 'hidden' | 'normal' | 'children'（例如 display: 'hidden' 不能翻译成“隐藏/masqué/versteckt”等）
+   - type: 只能是 'page' | 'doc' | 'separator' | 'menu'
+   - href: URL/路径必须保持原样，不要翻译/改写
 
 原始文件内容：
 ${sourceContent}
 
 请直接返回翻译后的完整 TypeScript 代码，不要包含任何解释、代码块标记或额外内容。`;
+
+    const preserveKeyedStringValues = (
+      src: string,
+      out: string,
+      key: string
+    ) => {
+      const re = new RegExp(
+        `(^|[\\s{,])${key}\\s*:\\s*(['"\`])([^'"\`]*?)\\2`,
+        "gm"
+      );
+      const srcValues: string[] = [];
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(src))) srcValues.push(m[3]);
+      if (!srcValues.length) return out;
+
+      let i = 0;
+      return out.replace(re, (full, prefix, quote) => {
+        const v = srcValues[i++];
+        if (v === undefined) return full;
+        return `${prefix}${key}: ${quote}${v}${quote}`;
+      });
+    };
 
     try {
       // 创建一个简单的文档结构来使用现有的翻译器
@@ -254,6 +280,11 @@ ${sourceContent}
 
       // 移除多余的空行
       content = content.trim();
+
+      // 强制保护 _meta.ts 中不能被翻译的枚举/URL 字段，避免出现 display='隐藏' 等导致 Nextra 校验失败
+      content = preserveKeyedStringValues(sourceContent, content, "display");
+      content = preserveKeyedStringValues(sourceContent, content, "type");
+      content = preserveKeyedStringValues(sourceContent, content, "href");
 
       return content;
     } catch (error: any) {

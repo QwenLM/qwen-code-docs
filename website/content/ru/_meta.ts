@@ -1,10 +1,14 @@
 export default {
-  index: "Добро пожаловать в Qwen Code",
-  cli: "CLI",
-  core: "Ядро",
-  tools: "Инструменты",
-  features: "Возможности",
-  "ide-integration": "Интеграция с IDE",
-  development: "Разработка",
-  support: "Поддержка",
+  index: {
+    type: 'page',
+    display: 'hidden',
+  },
+  users: {
+    type: 'page',
+    title: 'Руководство пользователя',
+  },
+  developers: {
+    type: 'page',
+    title: 'Руководство разработчика',
+  },
 };
