@@ -3,7 +3,7 @@ export default {
   'sub-agents': 'SubAgents',
   headless: 'Kopfloser Modus',
   checkpointing: {
-    display: 'versteckt',
+    display: 'hidden',
   },
   'approval-mode': 'Genehmigungsmodus',
   mcp: 'MCP',

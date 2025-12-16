@@ -2,7 +2,7 @@ export default {
   settings: 'Настройки',
   auth: 'Аутентификация',
   memory: {
-    display: 'скрытый',
+    display: 'hidden',
   },
   'qwen-ignore': 'Игнорирование файлов',
   'trusted-folders': 'Доверенные папки',

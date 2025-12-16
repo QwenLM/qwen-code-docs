@@ -6,8 +6,8 @@ export default {
   'todo-write': 'Запись задач',
   task: 'Задача',
   'exit-plan-mode': 'Выход из режима планирования',
-  'web-fetch': 'Веб-запрос',
-  'web-search': 'Веб-поиск',
+  'web-fetch': 'Получение данных из веба',
+  'web-search': 'Поиск в интернете',
   memory: 'Память',
   'mcp-server': 'Серверы MCP',
 };

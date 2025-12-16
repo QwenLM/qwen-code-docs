@@ -19,7 +19,7 @@ export default {
   },
   features: '功能特性',
   configuration: '配置',
-  reference: '参考文档',
+  reference: '参考',
   support: '支持',
   // 需要完善
   'ide-integration': {

@@ -7,7 +7,7 @@ export default {
   roadmap: '路线图',
   contributing: '贡献指南',
   'Qwen Code SDK': {
-    title: 'Agent SDK',
+    title: '代理 SDK',
     type: 'separator',
   },
   'sdk-typescript': 'Typescript SDK',

@@ -3,7 +3,7 @@ export default {
   'sub-agents': '子代理',
   headless: '无头模式',
   checkpointing: {
-    display: '隐藏',
+    display: 'hidden',
   },
   'approval-mode': '审批模式',
   mcp: 'MCP',

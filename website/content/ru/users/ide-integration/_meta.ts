@@ -1,4 +1,4 @@
 export default {
   'ide-integration': 'Введение',
-  'ide-companion-spec': 'Спецификация помощника IDE',
+  'ide-companion-spec': 'Спецификация IDE-компаньона',
 };

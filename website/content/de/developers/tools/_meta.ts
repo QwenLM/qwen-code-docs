@@ -5,9 +5,9 @@ export default {
   shell: 'Shell',
   'todo-write': 'Todo Schreiben',
   task: 'Aufgabe',
-  'exit-plan-mode': 'Planmodus verlassen',
+  'exit-plan-mode': 'Planmodus beenden',
   'web-fetch': 'Web Abrufen',
-  'web-search': 'Websuche',
+  'web-search': 'Web Suche',
   memory: 'Speicher',
   'mcp-server': 'MCP Server',
 };

@@ -2,7 +2,7 @@ export default {
   settings: 'Paramètres',
   auth: 'Authentification',
   memory: {
-    display: 'masqué',
+    display: 'hidden',
   },
   'qwen-ignore': 'Fichiers ignorés',
   'trusted-folders': 'Dossiers de confiance',

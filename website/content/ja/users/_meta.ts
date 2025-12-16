@@ -5,7 +5,7 @@ export default {
   },
   overview: '概要',
   quickstart: 'クイックスタート',
-  'common-workflow': 'コマンドワークフロー',
+  'common-workflow': '一般的なワークフロー',
   'Outside of the terminal': {
     type: 'separator',
     title: 'ターミナル外での利用', // タイトルは任意
@@ -21,7 +21,7 @@ export default {
   configuration: '設定',
   reference: 'リファレンス',
   support: 'サポート',
-  // 要修正
+  // 改善が必要
   'ide-integration': {
     display: 'hidden',
   },

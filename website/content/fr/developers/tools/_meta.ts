@@ -3,7 +3,7 @@ export default {
   'file-system': 'Système de fichiers',
   'multi-file': 'Lecture multi-fichiers',
   shell: 'Shell',
-  'todo-write': 'Écriture de tâches',
+  'todo-write': 'Écriture Todo',
   task: 'Tâche',
   'exit-plan-mode': 'Quitter le mode plan',
   'web-fetch': 'Récupération web',
