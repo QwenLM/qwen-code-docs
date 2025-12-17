@@ -2,16 +2,16 @@
 
 O Qwen Code pode se integrar com sua IDE para proporcionar uma experiência mais fluida e contextual. Essa integração permite que a CLI entenda melhor seu espaço de trabalho e habilite recursos poderosos, como diff nativo diretamente no editor.
 
-Atualmente, a única IDE suportada é o [Visual Studio Code](https://code.visualstudio.com/) e outros editores que suportam extensões do VS Code. Para construir suporte a outros editores, consulte a [Especificação da Extensão Companheira para IDE](../users/ide-integration/ide-companion-spec).
+Atualmente, a única IDE suportada é o [Visual Studio Code](https://code.visualstudio.com/) e outros editores que suportam extensões do VS Code. Para construir suporte a outros editores, consulte a [Especificação da Extensão Companheira para IDE](../ide-integration/ide-companion-spec).
 
 ## Recursos
 
-- **Contexto do Workspace:** A CLI automaticamente obtém conhecimento sobre seu workspace para fornecer respostas mais relevantes e precisas. Este contexto inclui:
-  - Os **10 arquivos mais recentemente acessados** em seu workspace.
+- **Contexto do Workspace:** A CLI automaticamente obtém conhecimento do seu workspace para fornecer respostas mais relevantes e precisas. Este contexto inclui:
+  - Os **10 arquivos mais recentemente acessados** no seu workspace.
   - Sua posição atual do cursor.
   - Qualquer texto selecionado (até um limite de 16KB; seleções maiores serão truncadas).
 
-- **Diff Nativo:** Quando o Qwen sugere modificações de código, você pode visualizar as alterações diretamente no visualizador de diff nativo da sua IDE. Isso permite revisar, editar e aceitar ou rejeitar as alterações sugeridas de forma contínua.
+- **Diff Nativo:** Quando o Qwen sugerir modificações de código, você poderá visualizar as alterações diretamente no visualizador de diff nativo da sua IDE. Isso permite revisar, editar e aceitar ou rejeitar as mudanças sugeridas de forma integrada.
 
 - **Comandos do VS Code:** Você pode acessar os recursos do Qwen Code diretamente da Paleta de Comandos do VS Code (`Cmd+Shift+P` ou `Ctrl+Shift+P`):
   - `Qwen Code: Run`: Inicia uma nova sessão do Qwen Code no terminal integrado.
@@ -100,12 +100,12 @@ Você também pode **modificar as alterações sugeridas** diretamente na visual
 
 Se você selecionar ‘Yes, allow always’ na CLI, as alterações não serão mais exibidas no IDE, pois serão aceitas automaticamente.
 
-## Usando com Sandboxing
+## Usando com Sandbox
 
 Se você estiver usando o Qwen Code dentro de um sandbox, esteja ciente do seguinte:
 
 - **No macOS:** A integração com o IDE requer acesso à rede para se comunicar com a extensão complementar do IDE. Você deve usar um perfil do Seatbelt que permita acesso à rede.
-- **Em um Contêiner Docker:** Se você executar o Qwen Code dentro de um contêiner Docker (ou Podman), a integração com o IDE ainda poderá se conectar à extensão do VS Code em execução na sua máquina host. O CLI é configurado para encontrar automaticamente o servidor do IDE em `host.docker.internal`. Nenhuma configuração especial geralmente é necessária, mas talvez seja preciso garantir que sua configuração de rede do Docker permita conexões do contêiner ao host.
+- **Em um Contêiner Docker:** Se você executar o Qwen Code dentro de um contêiner Docker (ou Podman), a integração com o IDE ainda poderá se conectar à extensão do VS Code em execução na sua máquina host. O CLI é configurado para encontrar automaticamente o servidor do IDE em `host.docker.internal`. Nenhuma configuração especial geralmente é necessária, mas talvez seja necessário garantir que sua configuração de rede do Docker permita conexões do contêiner ao host.
 
 ## Solução de Problemas
 
@@ -135,10 +135,10 @@ Se você encontrar problemas com a integração do IDE, aqui estão algumas mens
 
 ### Erros Gerais
 
-- **Mensagem:** `A integração com IDE não é suportada no seu ambiente atual. Para usar este recurso, execute o Qwen Code em uma das seguintes IDEs compatíveis: [Lista de IDEs]`
+- **Mensagem:** `A integração com IDE não é compatível com seu ambiente atual. Para usar este recurso, execute o Qwen Code em uma das seguintes IDEs compatíveis: [Lista de IDEs]`
   - **Causa:** Você está executando o Qwen Code em um terminal ou ambiente que não é uma IDE compatível.
   - **Solução:** Execute o Qwen Code a partir do terminal integrado de uma IDE compatível, como o VS Code.
 
-- **Mensagem:** `Não há instalador disponível para a IDE. Por favor, instale a extensão Qwen Code Companion manualmente a partir do marketplace.`
-  - **Causa:** Você executou `/ide install`, mas a CLI não possui um instalador automático para a sua IDE específica.
+- **Mensagem:** `Nenhum instalador está disponível para a IDE. Por favor, instale a extensão Qwen Code Companion manualmente a partir do marketplace.`
+  - **Causa:** Você executou `/ide install`, mas a CLI não possui um instalador automático para sua IDE específica.
   - **Solução:** Abra o marketplace de extensões da sua IDE, procure por "Qwen Code Companion" e instale-a manualmente.

@@ -2,7 +2,7 @@
 
 > 👏 Willkommen bei Qwen Code!
 
-Diese Schnellstart-Anleitung zeigt Ihnen in nur wenigen Minuten, wie Sie die KI-gestützte Codierhilfe nutzen können. Am Ende werden Sie verstehen, wie Sie Qwen Code für gängige Entwicklungsaufgaben verwenden.
+Diese Schnellstart-Anleitung zeigt Ihnen in nur wenigen Minuten, wie Sie KI-gestützte Programmierhilfe nutzen können. Am Ende werden Sie verstehen, wie Sie Qwen Code für gängige Entwicklungsaufgaben verwenden können.
 
 ## Bevor Sie beginnen
 
@@ -34,7 +34,7 @@ brew install qwen-code
 
 ## Schritt 2: Anmelden bei Ihrem Konto
 
-Qwen Code erfordert ein Konto für die Nutzung. Wenn Sie eine interaktive Sitzung mit dem Befehl `qwen` starten, müssen Sie sich anmelden:
+Qwen Code benötigt ein Konto zur Nutzung. Wenn Sie eine interaktive Sitzung mit dem Befehl `qwen` starten, müssen Sie sich anmelden:
 
 ```bash
 
@@ -48,15 +48,15 @@ qwen
 /auth
 ```
 
-Wählen Sie `Qwen OAuth`, melden Sie sich mit Ihrem Konto an und folgen Sie den Aufforderungen zur Bestätigung. Sobald Sie angemeldet sind, werden Ihre Anmeldeinformationen gespeichert und Sie müssen sich nicht erneut anmelden.
+Wählen Sie `Qwen OAuth`, melden Sie sich bei Ihrem Konto an und folgen Sie den Aufforderungen zur Bestätigung. Sobald Sie angemeldet sind, werden Ihre Anmeldeinformationen gespeichert und Sie müssen sich nicht erneut anmelden.
 
 > [!note]
 >
-> Wenn Sie Qwen Code zum ersten Mal mit Ihrem Qwen-Konto authentifizieren, wird automatisch ein Arbeitsbereich namens „.qwen“ für Sie erstellt. Dieser Arbeitsbereich bietet zentrale Kostenverfolgung und -verwaltung für alle Qwen Code-Nutzungen in Ihrer Organisation.
+> Wenn Sie Qwen Code zum ersten Mal mit Ihrem Qwen-Konto authentifizieren, wird automatisch ein Arbeitsbereich namens „.qwen“ für Sie erstellt. Dieser Arbeitsbereich bietet eine zentrale Kostenverfolgung und -verwaltung für alle Qwen Code-Nutzungen in Ihrer Organisation.
 
 > [!tip]
 >
-> Wenn Sie sich erneut anmelden oder Konten wechseln müssen, verwenden Sie den Befehl `/auth` innerhalb von Qwen Code.
+> Wenn Sie sich erneut anmelden oder das Konto wechseln müssen, verwenden Sie den Befehl `/auth` innerhalb von Qwen Code.
 
 ## Schritt 3: Starten Sie Ihre erste Sitzung
 
@@ -95,7 +95,7 @@ was kann Qwen Code tun?
 
 ### Machen Sie Ihre erste Codeänderung
 
-Jetzt lassen wir Qwen Code etwas echten Code schreiben. Probieren Sie eine einfache Aufgabe aus:
+Lassen Sie uns nun Qwen Code einige tatsächliche Codierungen durchführen lassen. Versuchen Sie eine einfache Aufgabe:
 
 ```
 füge eine Hello-World-Funktion zur Hauptdatei hinzu
@@ -103,10 +103,10 @@ füge eine Hello-World-Funktion zur Hauptdatei hinzu
 
 Qwen Code wird:
 
-1. Die passende Datei finden
+1. Die geeignete Datei finden
 2. Ihnen die vorgeschlagenen Änderungen anzeigen
-3. Um Ihre Genehmigung bitten
-4. Die Änderung vornehmen
+3. Um Ihre Zustimmung bitten
+4. Die Bearbeitung vornehmen
 
 > [!note]
 >
@@ -121,10 +121,10 @@ welche Dateien habe ich geändert?
 ```
 
 ```
-commite meine Änderungen mit einer aussagekräftigen Nachricht
+commite meine Änderungen mit einer beschreibenden Nachricht
 ```
 
-Sie können auch komplexere Git-Operationen anfordern:
+Sie können auch Eingaben für komplexere Git-Operationen machen:
 
 ```
 erstelle einen neuen Branch namens feature/quickstart
@@ -135,10 +135,10 @@ zeige mir die letzten 5 Commits
 ```
 
 ```
-hilf mir beim Auflösen von Merge-Konflikten
+hilf mir bei der Lösung von Merge-Konflikten
 ```
 
-### Einen Fehler beheben oder eine Funktion hinzufügen
+### Einen Fehler beheben oder ein Feature hinzufügen
 
 Qwen Code ist erfahren im Debugging und bei der Implementierung von Funktionen.
 
@@ -156,7 +156,7 @@ Es gibt einen Fehler, bei dem Benutzer leere Formulare absenden können – behe
 
 Qwen Code wird:
 
-- Den relevanten Code finden
+- Den relevanten Code lokalisieren
 - Den Kontext verstehen
 - Eine Lösung implementieren
 - Tests ausführen, falls verfügbar
@@ -210,43 +210,43 @@ Hier sind die wichtigsten Befehle für den täglichen Gebrauch:
 | → `output [Sprache]`  | Ausgabesprache des LLM festlegen                  | `/language output Chinesisch` |
 | `/quit`               | Qwen Code sofort beenden                          | `/quit` oder `/exit`          |
 
-Eine vollständige Liste der Befehle findest du in der [CLI-Referenz](../users/reference/cli-reference).
+Eine vollständige Liste der Befehle findest du in der [CLI-Referenz](./features/commands).
 
 ## Profi-Tipps für Anfänger
 
-**Seien Sie präzise bei Ihren Anfragen**
+**Sei spezifisch bei deinen Anfragen**
 
 - Anstatt: „behebe den Fehler“
-- Versuchen Sie: „behebe den Login-Fehler, bei dem Benutzer nach der Eingabe falscher Anmeldedaten einen leeren Bildschirm sehen“
+- Versuche: „behebe den Login-Fehler, bei dem Benutzer nach der Eingabe falscher Anmeldedaten einen leeren Bildschirm sehen“
 
-**Verwenden Sie Schritt-für-Schritt-Anweisungen**
+**Verwende Schritt-für-Schritt-Anweisungen**
 
-- Zerlegen Sie komplexe Aufgaben in Teilschritte:
+- Zerlege komplexe Aufgaben in einzelne Schritte:
 
 ```
 1. eine neue Datenbanktabelle für Benutzerprofile erstellen
 2. einen API-Endpunkt zum Abrufen und Aktualisieren von Benutzerprofilen erstellen
-3. eine Webseite erstellen, auf der Benutzer ihre Informationen einsehen und bearbeiten können
+3. eine Webseite erstellen, auf der Benutzer ihre Informationen anzeigen und bearbeiten können
 ```
 
-**Lassen Sie Claude zuerst erkunden**
+**Lass Qwen Code zuerst erkunden**
 
-- Bevor Sie Änderungen vornehmen, lassen Sie Claude Ihren Code verstehen:
-
-```
-Datenbankschema analysieren
-```
+- Bevor du Änderungen vornimmst, lass Qwen Code deinen Code verstehen:
 
 ```
-ein Dashboard erstellen, das die Produkte anzeigt, die am häufigsten von unseren Kunden im Vereinigten Königreich zurückgegeben werden
+analysiere das Datenbankschema
 ```
 
-**Zeit sparen mit Shortcuts**
+```
+erstelle ein Dashboard, das die Produkte anzeigt, die am häufigsten von unseren Kunden im Vereinigten Königreich zurückgegeben werden
+```
 
-- Drücken Sie `?`, um alle verfügbaren Tastenkombinationen anzuzeigen
-- Verwenden Sie die Tabulatortaste zur Befehlsvervollständigung
-- Drücken Sie ↑ für den Befehlsverlauf
-- Geben Sie `/` ein, um alle Slash-Befehle anzuzeigen
+**Spare Zeit mit Shortcuts**
+
+- Drücke `?`, um alle verfügbaren Tastaturkürzel anzuzeigen
+- Verwende Tab zur Befehlsvervollständigung
+- Drücke ↑, um den Befehlsverlauf abzurufen
+- Gib `/` ein, um alle Slash-Befehle anzuzeigen
 
 ## Hilfe erhalten
 

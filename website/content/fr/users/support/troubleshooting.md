@@ -1,6 +1,6 @@
 # Dépannage
 
-Ce guide fournit des solutions aux problèmes courants et des conseils de débogage, incluant les sujets suivants :
+Ce guide fournit des solutions aux problèmes courants et des conseils de débogage, notamment sur les sujets suivants :
 
 - Erreurs d'authentification ou de connexion
 - Foire aux questions (FAQ)
@@ -15,7 +15,7 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
     - Exemple : `export NODE_EXTRA_CA_CERTS=/chemin/vers/votre/corporate-ca.crt`
 
 - **Problème : Impossible d'afficher l'interface utilisateur après un échec d'authentification**
-  - **Cause :** Si l'authentification échoue après avoir sélectionné un type d'authentification, le paramètre `security.auth.selectedType` peut être persisté dans `settings.json`. Au redémarrage, l'interface en ligne de commande peut rester bloquée en essayant de s'authentifier avec le type d'authentification ayant échoué et ne pas afficher l'interface utilisateur.
+  - **Cause :** Si l'authentification échoue après avoir sélectionné un type d'authentification, le paramètre `security.auth.selectedType` peut être persisté dans `settings.json`. Au redémarrage, l'interface en ligne de commande peut se bloquer en essayant de s'authentifier avec le type d'authentification ayant échoué et ne pas parvenir à afficher l'interface utilisateur.
   - **Solution :** Effacez l'élément de configuration `security.auth.selectedType` dans votre fichier `settings.json` :
     - Ouvrez `~/.qwen/settings.json` (ou `./.qwen/settings.json` pour les paramètres spécifiques au projet)
     - Supprimez le champ `security.auth.selectedType`
@@ -31,10 +31,10 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
     1. Dans votre répertoire personnel : `~/.qwen/settings.json`.
     2. Dans le répertoire racine de votre projet : `./.qwen/settings.json`.
 
-    Référez-vous à [Configuration de Qwen Code](../users/configuration/settings) pour plus de détails.
+    Référez-vous à [Configuration de Qwen Code](../configuration/settings) pour plus de détails.
 
 - **Q : Pourquoi ne vois-je pas les comptes de jetons mis en cache dans la sortie des statistiques ?**
-  - R : Les informations sur les jetons mis en cache ne s'affichent que lorsque des jetons mis en cache sont utilisés. Cette fonctionnalité est disponible pour les utilisateurs avec clé API (clé API Qwen ou Google Cloud Vertex AI) mais pas pour les utilisateurs OAuth (comme les comptes personnels/entreprise Google tels que Google Gmail ou Google Workspace). Cela est dû au fait que l'API Qwen Code Assist ne prend pas en charge la création de contenu mis en cache. Vous pouvez néanmoins consulter votre utilisation totale de jetons en utilisant la commande `/stats`.
+  - R : Les informations sur les jetons mis en cache ne s'affichent que lorsque ces derniers sont utilisés. Cette fonctionnalité est disponible pour les utilisateurs avec clé API (clé API Qwen ou Google Cloud Vertex AI) mais pas pour les utilisateurs OAuth (comme les comptes personnels/entreprise Google tels que Google Gmail ou Google Workspace). Cela est dû au fait que l'API Qwen Code Assist ne prend pas en charge la création de contenu mis en cache. Vous pouvez néanmoins consulter votre consommation totale de jetons en utilisant la commande `/stats`.
 
 ## Messages d'erreur courants et solutions
 
@@ -48,7 +48,7 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
   - **Solution :**
     La mise à jour dépend de la façon dont vous avez installé Qwen Code :
     - Si vous avez installé `qwen` globalement, vérifiez que le répertoire des binaires globaux de `npm` est dans votre `PATH`. Vous pouvez effectuer une mise à jour avec la commande `npm install -g @qwen-code/qwen-code@latest`.
-    - Si vous exécutez `qwen` depuis les sources, assurez-vous d'utiliser la bonne commande pour l'invoquer (par exemple `node packages/cli/dist/index.js ...`). Pour mettre à jour, récupérez les dernières modifications depuis le dépôt, puis reconstruisez avec la commande `npm run build`.
+    - Si vous exécutez `qwen` depuis les sources, assurez-vous d'utiliser la bonne commande pour l'invoquer (par exemple `node packages/cli/dist/index.js ...`). Pour mettre à jour, récupérez les dernières modifications du dépôt, puis reconstruisez avec la commande `npm run build`.
 
 - **Erreur : `MODULE_NOT_FOUND` ou erreurs d'importation.**
   - **Cause :** Les dépendances ne sont pas installées correctement, ou le projet n'a pas été construit.
@@ -59,16 +59,16 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
 
 - **Erreur : "Opération non autorisée", "Permission refusée", ou similaire.**
   - **Cause :** Lorsque le bac à sable est activé, Qwen Code peut tenter des opérations restreintes par votre configuration de bac à sable, comme écrire en dehors du répertoire du projet ou du répertoire temporaire du système.
-  - **Solution :** Reportez-vous à la documentation [Configuration : Bac à sable](../users/features/sandbox) pour plus d'informations, notamment sur la personnalisation de votre configuration de bac à sable.
+  - **Solution :** Reportez-vous à la documentation [Configuration : Bac à sable](../features/sandbox) pour plus d'informations, y compris comment personnaliser votre configuration de bac à sable.
 
 - **Qwen Code ne s'exécute pas en mode interactif dans les environnements "CI"**
-  - **Problème :** Qwen Code n'entre pas en mode interactif (aucune invite n'apparaît) si une variable d'environnement commençant par `CI_` (par exemple `CI_TOKEN`) est définie. Cela est dû au fait que le paquet `is-in-ci`, utilisé par le framework d'interface sous-jacent, détecte ces variables et suppose un environnement CI non interactif.
-  - **Cause :** Le paquet `is-in-ci` vérifie la présence de `CI`, `CONTINUOUS_INTEGRATION`, ou toute variable d'environnement préfixée par `CI_`. Lorsque l'une d'elles est trouvée, cela signale que l'environnement est non interactif, ce qui empêche l'interface en ligne de commande de démarrer en mode interactif.
-  - **Solution :** Si la variable préfixée par `CI_` n'est pas nécessaire au fonctionnement de l'interface, vous pouvez la désactiver temporairement pour la commande. Par exemple : `env -u CI_TOKEN qwen`
+  - **Problème :** Qwen Code n'entre pas en mode interactif (aucune invite n'apparaît) si une variable d'environnement commençant par `CI_` (par exemple `CI_TOKEN`) est définie. Cela est dû au fait que le paquet `is-in-ci`, utilisé par le framework d'interface sous-jacent, détecte ces variables et suppose qu'il s'agit d'un environnement CI non interactif.
+  - **Cause :** Le paquet `is-in-ci` vérifie la présence de `CI`, `CONTINUOUS_INTEGRATION`, ou toute variable d'environnement préfixée par `CI_`. Lorsqu'une de ces variables est trouvée, cela indique que l'environnement est non interactif, ce qui empêche l'interface en ligne de commande de démarrer en mode interactif.
+  - **Solution :** Si la variable préfixée par `CI_` n'est pas nécessaire au fonctionnement de l'interface en ligne de commande, vous pouvez la désactiver temporairement pour la commande. Par exemple : `env -u CI_TOKEN qwen`
 
 - **Le mode DEBUG ne fonctionne pas depuis le fichier .env du projet**
   - **Problème :** Définir `DEBUG=true` dans le fichier `.env` d'un projet n'active pas le mode débogage pour l'interface en ligne de commande.
-  - **Cause :** Les variables `DEBUG` et `DEBUG_MODE` sont automatiquement exclues des fichiers `.env` du projet afin d'éviter toute interférence avec le comportement de l'interface.
+  - **Cause :** Les variables `DEBUG` et `DEBUG_MODE` sont automatiquement exclues des fichiers `.env` du projet pour éviter toute interférence avec le comportement de l'interface en ligne de commande.
   - **Solution :** Utilisez plutôt un fichier `.qwen/.env`, ou configurez le paramètre `advanced.excludedEnvVars` dans votre `settings.json` pour exclure moins de variables.
 
 ## Le compagnon IDE ne se connecte pas
@@ -87,7 +87,7 @@ Qwen Code utilise des codes de sortie spécifiques pour indiquer la raison de l'
 | Code de sortie | Type d'erreur              | Description                                                  |
 | -------------- | -------------------------- | ------------------------------------------------------------ |
 | 41             | `FatalAuthenticationError` | Une erreur s'est produite pendant le processus d'authentification. |
-| 42             | `FatalInputError`          | Une entrée invalide ou manquante a été fournie à l'interface CLI. (mode non interactif uniquement) |
+| 42             | `FatalInputError`          | Une entrée invalide ou manquante a été fournie à l'interface en ligne de commande. (mode non interactif uniquement) |
 | 44             | `FatalSandboxError`        | Une erreur s'est produite avec l'environnement de bac à sable (par exemple, Docker, Podman ou Seatbelt). |
 | 52             | `FatalConfigError`         | Un fichier de configuration (`settings.json`) est invalide ou contient des erreurs. |
 | 53             | `FatalTurnLimitedError`    | Le nombre maximal de tours conversationnels pour la session a été atteint. (mode non interactif uniquement) |

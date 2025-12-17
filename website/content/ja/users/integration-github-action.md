@@ -1,61 +1,35 @@
-# GitHub Actions：qwen-code-action
+# Github Actions：qwen-code-action
 
 ## 概要
 
 `qwen-code-action` は、[Qwen Code CLI] を介して開発ワークフローに [Qwen Code] を統合する GitHub Action です。これは、重要な日常的なコーディングタスクの自律エージェントとして機能するだけでなく、迅速に作業を委任できるオンデマンドのコラボレーターとしても機能します。
 
-GitHub リポジトリ内で直接、[Qwen Code] を使用して GitHub のプルリクエストレビュー、課題のトリアージ、コード分析と変更などを対話形式で実行できます（例：`@qwencoder fix this issue`）。
-
-- [qwen-code-action](#qwen-code-action)
-  - [概要](#概要)
-  - [特徴](#特徴)
-  - [クイックスタート](#クイックスタート)
-    - [1. Qwen API キーを取得する](#1-qwen-api-キーを取得する)
-    - [2. GitHub シークレットとして追加する](#2-github-シークレットとして追加する)
-    - [3. .gitignore を更新する](#3-gitignore-を更新する)
-    - [4. ワークフローを選択する](#4-ワークフローを選択する)
-    - [5. 試してみる](#5-試してみる)
-  - [ワークフロー](#ワークフロー)
-    - [Qwen Code ディスパッチ](#qwen-code-ディスパッチ)
-    - [課題のトリアージ](#課題のトリアージ)
-    - [プルリクエストレビュー](#プルリクエストレビュー)
-    - [Qwen Code CLI アシスタント](#qwen-code-cli-アシスタント)
-  - [設定](#設定)
-    - [入力](#入力)
-    - [出力](#出力)
-    - [リポジトリ変数](#リポジトリ変数)
-    - [シークレット](#シークレット)
-  - [認証](#認証)
-    - [GitHub 認証](#github-認証)
-  - [拡張機能](#拡張機能)
-  - [ベストプラクティス](#ベストプラクティス)
-  - [カスタマイズ](#カスタマイズ)
-  - [貢献](#貢献)
+GitHub リポジトリ内で直接、[Qwen Code] を使用して会話形式（例：`@qwencoder fix this issue`）で GitHub プルリクエストのレビュー、問題のトリアージ、コード分析と修正などを実行するために使用します。
 
 ## 機能
 
 - **自動化**: イベント（例：Issueの作成）やスケジュール（例：夜間実行）に基づいてワークフローをトリガーします。
-- **オンデマンドコラボレーション**: Issueやプルリクエストのコメントで[Qwen Code CLI]にメンションすることでワークフローをトリガーできます（例：`@qwencoder /review`）。
-- **ツールによる拡張性**: [Qwen Code]モデルのツール呼び出し機能を活用して、[GitHub CLI]（`gh`）などの他のCLIと連携できます。
-- **カスタマイズ可能**: リポジトリ内に`QWEN.md`ファイルを配置することで、プロジェクト固有の指示やコンテキストを[Qwen Code CLI]に提供できます。
+- **オンデマンドコラボレーション**: Issueやプルリクエストのコメントで [Qwen Code CLI](./features/commands) をメンションしてワークフローをトリガーします（例：`@qwencoder /review`）。
+- **ツールで拡張可能**: [Qwen Code](../developers/tools/introduction.md) モデルのツール呼び出し機能を活用し、[GitHub CLI]（`gh`）などの他のCLIとやり取りできます。
+- **カスタマイズ可能**: リポジトリに `QWEN.md` ファイルを配置することで、プロジェクト固有の指示やコンテキストを [Qwen Code CLI](./features/commands) に提供できます。
 
 ## クイックスタート
 
-数分でリポジトリ内でQwen Code CLIを使い始めることができます：
+数分でリポジトリ内で Qwen Code CLI を使い始めることができます：
 
-### 1. Qwen APIキーを取得する
+### 1. Qwen APIキーの取得
 
-[DashScope]（アリババクラウドのAIプラットフォーム）からAPIキーを取得してください。
+[DashScope](https://help.aliyun.com/zh/model-studio/qwen-code)（アリババクラウドのAIプラットフォーム）からAPIキーを取得してください。
 
 ### 2. GitHubシークレットとして追加する
 
-APIキーを`QWEN_API_KEY`という名前のシークレットとしてリポジトリに保存します：
+APIキーを `QWEN_API_KEY` という名前のシークレットとしてリポジトリに保存します：
 
-- リポジトリの**Settings > Secrets and variables > Actions**に移動
-- **New repository secret**をクリック
+- リポジトリの **Settings > Secrets and variables > Actions** に移動します
+- **New repository secret** をクリックします
 - Name: `QWEN_API_KEY`、Value: あなたのAPIキー
 
-### 3. .gitignore を更新する
+### 3. .gitignoreを更新する
 
 以下のエントリを `.gitignore` ファイルに追加してください：
 
@@ -64,31 +38,31 @@ APIキーを`QWEN_API_KEY`という名前のシークレットとしてリポジ
 # qwen-code-cli 設定
 .qwen/
 
-# GitHub App の認証情報
+# GitHub App 認証情報
 gha-creds-*.json
 ```
 
 ### 4. ワークフローを選択する
 
-ワークフローをセットアップするには、以下の2つのオプションがあります：
+ワークフローを設定するには2つのオプションがあります：
 
-**オプション A: セットアップコマンドを使用（推奨）**
+**オプションA: セットアップコマンドを使用する（推奨）**
 
-1. ターミナルで Qwen Code CLI を起動します：
+1. ターミナルでQwen Code CLIを起動します：
 
    ```shell
    qwen
    ```
 
-2. ターミナルの Qwen Code CLI で以下を入力します：
+2. ターミナルのQwen Code CLIで以下を入力します：
 
    ```
    /setup-github
    ```
 
-**オプション B: 手動でワークフローをコピー**
+**オプションB: ワークフローを手動でコピーする**
 
-1. 事前にビルドされたワークフローを [`examples/workflows`](./examples/workflows) ディレクトリから、あなたのリポジトリの `.github/workflows` ディレクトリにコピーします。注意：ワークフローを実行するトリガーとなる `qwen-dispatch.yml` ワークフローもコピーする必要があります。
+1. 事前にビルドされたワークフローを [`examples/workflows`](./common-workflow) ディレクトリからリポジトリの `.github/workflows` ディレクトリにコピーします。注意：ワークフローを実行するトリガーとなる `qwen-dispatch.yml` ワークフローもコピーする必要があります。
 
 ### 5. 試してみる
 
@@ -117,22 +91,19 @@ gha-creds-*.json
 
 ### Qwen Code ディスパッチ
 
-このワークフローは、Qwen Code CLI の中央ディスパッチャーとして機能し、トリガーイベントとコメント内のコマンドに基づいて適切なワークフローにリクエストをルーティングします。ディスパッチワークフローの設定方法に関する詳細なガイドについては、  
-[Qwen Code ディスパッチワークフローのドキュメント](./examples/workflows/qwen-dispatch) を参照してください。
+このワークフローは、Qwen Code CLI の中央ディスパッチャーとして機能し、トリガーイベントとコメント内のコマンドに基づいて適切なワークフローにリクエストをルーティングします。ディスパッチワークフローの設定方法に関する詳細ガイドについては、[Qwen Code ディスパッチワークフローのドキュメント](./common-workflow) を参照してください。
 
 ### Issue トリアージ
 
-このアクションは、GitHub Issues を自動的にまたはスケジュールに従ってトリアージするために使用できます。Issue トリアージシステムの設定方法に関する詳細なガイドについては、  
-[GitHub Issue トリアージワークフローのドキュメント](./examples/workflows/issue-triage) を参照してください。
+このアクションは、GitHub Issues を自動的にまたはスケジュールに従ってトリアージするために使用できます。Issue トリアージシステムの設定方法に関する詳細ガイドについては、[GitHub Issue トリアージワークフローのドキュメント](./examples/workflows/issue-triage) を参照してください。
 
-### プルリクエストレビュー
+### Pull Request レビュー
 
-このアクションは、プルリクエストがオープンされた際に自動的にレビューを行うために使用できます。プルリクエストレビューシステムの設定方法に関する詳細なガイドについては、  
-[GitHub PR レビューワークフローのドキュメント](./examples/workflows/pr-review) を参照してください。
+このアクションは、プルリクエストがオープンされた際に自動的にレビューを行うために使用できます。プルリクエストレビューシステムの設定方法に関する詳細ガイドについては、[GitHub PR レビュー ワークフローのドキュメント](./common-workflow) を参照してください。
 
 ### Qwen Code CLI アシスタント
 
-このタイプのアクションは、プルリクエストやイシュー内で汎用的な会話型 Qwen Code AI アシスタントを呼び出すために使用され、幅広いタスクを実行できます。汎用的な Qwen Code CLI ワークフローのセットアップ方法について詳しく知るには、[Qwen Code アシスタント ワークフローのドキュメント](./examples/workflows/qwen-assistant)にアクセスしてください。
+このタイプのアクションは、プルリクエストやイシュー内で汎用的な会話型 Qwen Code AI アシスタントを呼び出すために使用でき、幅広いタスクを実行できます。汎用的な Qwen Code CLI ワークフローの設定方法について詳しくは、[Qwen Code アシスタント ワークフローのドキュメント](./common-workflow) を参照してください。
 
 ## 設定
 
@@ -153,17 +124,17 @@ gha-creds-*.json
 - <a name="__input_settings"></a><a href="#user-content-__input_settings"><code>settings</code></a>: _(任意)_ CLI の _プロジェクト_ 設定を構成するために `.qwen/settings.json` に書き込まれる JSON 文字列。
   詳細については、[設定ファイル](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#settings-files) のドキュメントを参照してください。
 
-- <a name="__input_use_qwen_code_assist"></a><a href="#user-content-__input_use_qwen_code_assist"><code>use*qwen_code_assist</code></a>: *(任意、デフォルト: `false`)\_ デフォルトの Qwen Code API キーの代わりに、Qwen Code モデルへのアクセスに Code Assist を使用するかどうか。
+- <a name="__input_use_qwen_code_assist"></a><a href="#user-content-__input_use_qwen_code_assist"><code>use*qwen_code_assist</code></a>: *(任意、デフォルト: `false`)\_ デフォルトの Qwen Code API キーの代わりに Code Assist を使用して Qwen Code モデルにアクセスするかどうか。
   詳細については、[Qwen Code CLI ドキュメント](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md) を参照してください。
 
-- <a name="__input_use_vertex_ai"></a><a href="#user-content-__input_use_vertex_ai"><code>use*vertex_ai</code></a>: *(任意、デフォルト: `false`)\_ デフォルトの Qwen Code API キーの代わりに、Qwen Code モデルへのアクセスに Vertex AI を使用するかどうか。
+- <a name="__input_use_vertex_ai"></a><a href="#user-content-__input_use_vertex_ai"><code>use*vertex_ai</code></a>: *(任意、デフォルト: `false`)\_ デフォルトの Qwen Code API キーの代わりに Vertex AI を使用して Qwen Code モデルにアクセスするかどうか。
   詳細については、[Qwen Code CLI ドキュメント](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md) を参照してください。
 
 - <a name="__input_extensions"></a><a href="#user-content-__input_extensions"><code>extensions</code></a>: _(任意)_ インストールする Qwen Code CLI 拡張機能のリスト。
 
 - <a name="__input_upload_artifacts"></a><a href="#user-content-__input_upload_artifacts"><code>upload*artifacts</code></a>: *(任意、デフォルト: `false`)\_ 成果物を GitHub Actions にアップロードするかどうか。
 
-- <a name="__input_use_pnpm"></a><a href="#user-content-__input_use_pnpm"><code>use*pnpm</code></a>: *(任意、デフォルト: `false`)\_ qwen-code-cli のインストールに npm の代わりに pnpm を使用するかどうか。
+- <a name="__input_use_pnpm"></a><a href="#user-content-__input_use_pnpm"><code>use*pnpm</code></a>: *(任意、デフォルト: `false`)\_ qwen-code-cli をインストールする際に npm の代わりに pnpm を使用するかどうか。
 
 - <a name="__input_workflow_name"></a><a href="#user-content-__input_workflow_name"><code>workflow*name</code></a>: *(任意、デフォルト: `${{ github.workflow }}`)\_ テレメトリ目的で使用される GitHub ワークフロー名。
 
@@ -175,18 +146,18 @@ gha-creds-*.json
 
 - <a name="__output_summary"></a><a href="#user-content-__output_summary"><code>summary</code></a>: Qwen Code CLI 実行からの要約出力。
 
-- <a name="__output_error"></a><a href="#user-content-__output_error"><code>error</code></a>: Qwen Code CLI 実行からのエラー出力（存在する場合）。
+- <a name="__output_error"></a><a href="#user-content-__output_error"><code>error</code></a>: Qwen Code CLI 実行からのエラー出力（ある場合）。
 
 <!-- END_AUTOGEN_OUTPUTS -->
 
 ### リポジトリ変数
 
-以下の値をリポジトリ変数として設定することを推奨します。これにより、すべてのワークフローで再利用できます。あるいは、個々のワークフロー内でアクションの入力としてインラインで設定したり、リポジトリレベルの値を上書きしたりすることも可能です。
+以下の値をリポジトリ変数として設定することを推奨します。これにより、すべてのワークフローで再利用できます。または、個々のワークフロー内でアクションの入力としてインラインで設定するか、リポジトリレベルの値を上書きするために使用することもできます。
 
-| 名前               | 説明                                                       | タイプ   | 必須 | 必須となる状況             |
+| 名前               | 説明                                                       | タイプ   | 必須 | 必須となる条件             |
 | ------------------ | ---------------------------------------------------------- | -------- | ---- | -------------------------- |
 | `DEBUG`            | Qwen Code CLI のデバッグログを有効にします。                | 変数     | いいえ | 常に不要                   |
-| `QWEN_CLI_VERSION` | インストールする Qwen Code CLI のバージョンを指定します。    | 変数     | いいえ | CLI バージョンの固定時     |
+| `QWEN_CLI_VERSION` | インストールされる Qwen Code CLI のバージョンを制御します。 | 変数     | いいえ | CLI バージョンの固定時     |
 | `APP_ID`           | カスタム認証用の GitHub App ID。                           | 変数     | いいえ | カスタム GitHub App 使用時 |
 
 リポジトリ変数を追加するには：
@@ -195,7 +166,7 @@ gha-creds-*.json
 2. 変数名と値を入力します。
 3. 保存します。
 
-リポジトリ変数の詳細については、[GitHub の変数に関するドキュメント][variables] を参照してください。
+リポジトリ変数の詳細については、[変数に関する GitHub ドキュメント][variables] を参照してください。
 
 [variables]: https://docs.github.com/en/actions/learn-github-actions/variables
 
@@ -227,32 +198,35 @@ GitHub への認証には以下の 2 つの方法があります。
 1. **デフォルトの `GITHUB_TOKEN`:** よりシンプルなユースケースでは、ワークフローによって提供されるデフォルトの `GITHUB_TOKEN` を使用できます。
 2. **カスタム GitHub App（推奨）:** 最も安全で柔軟な認証を行うために、カスタム GitHub App の作成を推奨します。
 
-Qwen および GitHub 認証の詳細なセットアップ手順については、[**認証ドキュメント**](./docs/authentication.md) を参照してください。
+Qwen および GitHub 認証の詳細なセットアップ手順については、  
+[**認証ドキュメント**](./configuration/auth) を参照してください。
 
 ## 拡張機能
 
-Qwen Code CLI は、拡張機能を通じて追加の機能で拡張できます。これらの拡張機能は、GitHub リポジトリからソースコードをインストールして利用します。
+Qwen Code CLI は、拡張機能を通じて追加の機能で拡張できます。  
+これらの拡張機能は、GitHub リポジトリからソースコードをインストールして利用します。
 
-拡張機能のセットアップと設定方法の詳細については、[拡張機能ドキュメント](./docs/extensions.md) を参照してください。
+拡張機能のセットアップと設定方法の詳細については、  
+[拡張機能ドキュメント](../developers/extensions/extension) を参照してください。
 
 ## ベストプラクティス
 
-自動化されたワークフローのセキュリティ、信頼性、効率を確保するために、ベストプラクティスに従うことを強く推奨します。これらのガイドラインは、リポジトリのセキュリティ、ワークフロー設定、モニタリングなどの主要分野をカバーしています。
+自動化ワークフローのセキュリティ、信頼性、効率を確保するために、ベストプラクティスに従うことを強く推奨します。これらのガイドラインは、リポジトリのセキュリティ、ワークフロー設定、モニタリングなどの主要分野をカバーしています。
 
-主な推奨事項は以下の通りです：
+主な推奨事項：
 
 - **リポジトリの保護：** ブランチとタグの保護を実装し、プルリクエストの承認者を制限する。
 - **モニタリングと監査：** アクションログを定期的に確認し、パフォーマンスと動作の詳細なインサイトを得るためにOpenTelemetryを有効にする。
 
-リポジトリとワークフローを保護する包括的なガイドについては、[**ベストプラクティスドキュメント**](./docs/best-practices.md)をご参照ください。
+リポジトリとワークフローを保護する包括的なガイドについては、[**ベストプラクティスドキュメント**](./common-workflow)をご参照ください。
 
 ## カスタマイズ
 
-プロジェクト固有のコンテキストと指示を[Qwen Code CLI]に提供するために、リポジトリのルートに[QWEN.md]ファイルを作成してください。これは、コーディング規約、アーキテクチャパターン、または特定のリポジトリでモデルが従うべきその他のガイドラインを定義するのに役立ちます。
+プロジェクト固有のコンテキストと指示を[Qwen Code CLI](./common-workflow)に提供するために、リポジトリのルートにQWEN.mdファイルを作成してください。これは、コーディング規約、アーキテクチャパターン、または特定のリポジトリでモデルが従うべきその他のガイドラインを定義するのに役立ちます。
 
 ## コントリビューションについて
 
-コントリビューションをお待ちしています！詳しくは Qwen Code CLI の [**コントリビューションガイド**](./CONTRIBUTING.md) をご覧ください。
+コントリビューションを歓迎します！詳しくは Qwen Code CLI の「**コントリビューションガイド**」をご確認ください。スタート方法についてはこちらをご覧ください。
 
 [secrets]: https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions
 [Qwen Code]: https://github.com/QwenLM/qwen-code

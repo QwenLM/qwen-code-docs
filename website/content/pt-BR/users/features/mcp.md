@@ -9,9 +9,10 @@ Com servidores MCP conectados, você pode pedir ao Qwen Code para:
 - Trabalhar com arquivos e repositórios (ler/pesquisar/escrever, dependendo das ferramentas habilitadas)
 - Consultar bancos de dados (inspeção de esquema, consultas, relatórios)
 - Integrar serviços internos (envolver suas APIs como ferramentas MCP)
-- Automatizar fluxos de trabalho (tarefas repetíveis expostas como ferramentas/prompts)
+- Automatizar fluxos de trabalho (tarefas repetitivas expostas como ferramentas/prompts)
 
 > [!tip]
+>
 > Se você estiver procurando o "comando único para começar", vá para [Início rápido](#início-rápido).
 
 ## Início rápido
@@ -19,7 +20,7 @@ Com servidores MCP conectados, você pode pedir ao Qwen Code para:
 O Qwen Code carrega os servidores MCP a partir da chave `mcpServers` no seu arquivo `settings.json`. Você pode configurar os servidores de duas maneiras:
 
 - Editando diretamente o arquivo `settings.json`
-- Usando comandos `qwen mcp` (veja [Referência da CLI](#referência-da-cli-qwen-mcp))
+- Usando comandos `qwen mcp` (veja [Referência da CLI](#referência-da-cli-do-qwen-mcp))
 
 ### Adicione seu primeiro servidor
 
@@ -35,7 +36,7 @@ qwen mcp add --transport http my-server http://localhost:3000/mcp
 qwen mcp list
 ```
 
-3. Reinicie o Qwen Code no mesmo projeto (ou inicie-o caso ainda não esteja em execução) e então peça ao modelo para usar ferramentas desse servidor.
+3. Reinicie o Qwen Code no mesmo projeto (ou inicie-o caso ainda não esteja em execução) e depois peça ao modelo para usar ferramentas desse servidor.
 
 ## Onde a configuração é armazenada (escopos)
 
@@ -51,7 +52,8 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 ```
 
 > [!tip]
-> Para camadas avançadas de configuração (padrões do sistema/configurações do sistema e regras de precedência), consulte [Configurações](../users/configuration/settings).
+>
+> Para camadas avançadas de configuração (padrões do sistema/configurações do sistema e regras de precedência), consulte [Configurações](../configuration/settings).
 
 ## Configurar servidores
 
@@ -61,9 +63,10 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 | ---------- | ----------------------------------------------------------------- | ------------------------------------------ |
 | `http`     | Recomendado para serviços remotos; funciona bem para servidores MCP na nuvem | `httpUrl` (+ `headers` opcional)            |
 | `sse`      | Servidores legados/obsoletos que suportam apenas Server-Sent Events    | `url` (+ `headers` opcional)                |
-| `stdio`    | Processo local (scripts, CLIs, Docker) na sua máquina              | `command`, `args` (+ `cwd`, `env` opcionais) |
+| `stdio`    | Processo local (scripts, CLIs, Docker) na sua máquina             | `command`, `args` (+ `cwd`, `env` opcionais) |
 
 > [!note]
+>
 > Se um servidor suportar ambos, prefira **HTTP** em vez de **SSE**.
 
 ### Configurar via `settings.json` vs `qwen mcp add`
@@ -191,7 +194,7 @@ Exemplo:
 
 - **Servidor mostra “Disconnected” em `qwen mcp list`**: verifique se a URL/comando está correta e, em seguida, aumente o `timeout`.
 - **Servidor Stdio falha ao iniciar**: utilize um caminho absoluto para `command` e verifique novamente `cwd`/`env`.
-- **Variáveis de ambiente no JSON não são resolvidas**: certifique-se de que elas existem no ambiente onde o Qwen Code é executado (ambientes de shell versus aplicativo GUI podem ser diferentes).
+- **Variáveis de ambiente no JSON não são resolvidas**: certifique-se de que elas existem no ambiente onde o Qwen Code é executado (ambientes de shell vs aplicativo GUI podem ser diferentes).
 
 ## Referência
 
@@ -209,7 +212,7 @@ Adicione um objeto `mcpServers` ao seu arquivo `settings.json`:
       "command": "caminho/para/o/servidor",
       "args": ["--arg1", "valor1"],
       "env": {
-        "API_KEY": "$MY_API_TOKEN"
+        "API_KEY": "$MEU_TOKEN_DA_API"
       },
       "cwd": "./diretorio-do-servidor",
       "timeout": 30000,
@@ -226,23 +229,23 @@ Obrigatório (uma das seguintes):
 | Propriedade | Descrição                                               |
 | ----------- | ------------------------------------------------------- |
 | `command`   | Caminho para o executável no transporte Stdio           |
-| `url`       | URL do endpoint SSE (ex.: `"http://localhost:8080/sse"`)|
+| `url`       | URL do endpoint SSE (ex.: `"http://localhost:8080/sse"` ) |
 | `httpUrl`   | URL do endpoint de streaming HTTP                       |
 
 Opcional:
 
 | Propriedade            | Tipo/Padrão                  | Descrição                                                                                                                                                                                                                                                           |
 | ---------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `args`                 | array                        | Argumentos de linha de comando para o transporte Stdio                                                                                                                                                                                                                |
-| `headers`              | object                       | Cabeçalhos HTTP personalizados ao usar `url` ou `httpUrl`                                                                                                                                                                                                             |
-| `env`                  | object                       | Variáveis de ambiente para o processo do servidor. Valores podem referenciar variáveis de ambiente usando a sintaxe `$VAR_NAME` ou `${VAR_NAME}`                                                                                                                      |
+| `args`                 | array                        | Argumentos da linha de comando para o transporte Stdio                                                                                                                                                                                                                |
+| `headers`              | objeto                       | Cabeçalhos HTTP personalizados ao usar `url` ou `httpUrl`                                                                                                                                                                                                             |
+| `env`                  | objeto                       | Variáveis de ambiente para o processo do servidor. Os valores podem referenciar variáveis de ambiente usando a sintaxe `$NOME_VAR` ou `${NOME_VAR}`                                                                                                                   |
 | `cwd`                  | string                       | Diretório de trabalho para o transporte Stdio                                                                                                                                                                                                                         |
 | `timeout`              | número<br>(padrão: 600.000)  | Tempo limite da requisição em milissegundos (padrão: 600.000 ms = 10 minutos)                                                                                                                                                                                         |
-| `trust`                | booleano<br>(padrão: false)  | Quando `true`, ignora todas as confirmações de chamada de ferramenta para este servidor (padrão: `false`)                                                                                                                                                              |
-| `includeTools`         | array                        | Lista de nomes de ferramentas a incluir deste servidor MCP. Quando especificado, apenas as ferramentas listadas aqui estarão disponíveis deste servidor (comportamento de lista de permissões). Se não especificado, todas as ferramentas do servidor são habilitadas por padrão. |
-| `excludeTools`         | array                        | Lista de nomes de ferramentas a excluir deste servidor MCP. As ferramentas listadas aqui não estarão disponíveis para o modelo, mesmo que sejam expostas pelo servidor.<br>Nota: `excludeTools` tem precedência sobre `includeTools` — se uma ferramenta estiver nas duas listas, ela será excluída. |
-| `targetAudience`       | string                       | O ID do cliente OAuth permitido no aplicativo protegido por IAP ao qual você está tentando acessar. Usado com `authProviderType: 'service_account_impersonation'`.                                                                                                   |
-| `targetServiceAccount` | string                       | O endereço de e-mail da Conta de Serviço do Google Cloud a ser personificada. Usado com `authProviderType: 'service_account_impersonation'`.                                                                                                                        |
+| `trust`                | booleano<br>(padrão: false)  | Quando definido como `true`, ignora todas as confirmações de chamada de ferramenta para este servidor (padrão: `false`)                                                                                                                                                |
+| `includeTools`         | array                        | Lista com os nomes das ferramentas a serem incluídas deste servidor MCP. Quando especificado, apenas as ferramentas listadas aqui estarão disponíveis a partir deste servidor (comportamento de lista de permissões). Se não for especificado, todas as ferramentas do servidor são habilitadas por padrão. |
+| `excludeTools`         | array                        | Lista com os nomes das ferramentas a serem excluídas deste servidor MCP. As ferramentas listadas aqui não estarão disponíveis para o modelo, mesmo que sejam expostas pelo servidor.<br>Nota: `excludeTools` tem precedência sobre `includeTools` – se uma ferramenta estiver nas duas listas, ela será excluída. |
+| `targetAudience`       | string                       | O ID do Cliente OAuth autorizado no aplicativo protegido por IAP ao qual você está tentando acessar. Usado com `authProviderType: 'service_account_impersonation'`.                                                                                                   |
+| `targetServiceAccount` | string                       | O endereço de e-mail da Conta de Serviço do Google Cloud a ser personificada. Usado com `authProviderType: 'service_account_impersonation'`.                                                                                                                          |
 
 <a id="qwen-mcp-cli"></a>
 
@@ -261,15 +264,15 @@ qwen mcp add [opções] <nome> <comandoOuUrl> [argumentos...]
 | `<nome>`            | Um nome único para o servidor.                                      | —                  | `example-server`                          |
 | `<comandoOuUrl>`    | O comando a ser executado (para `stdio`) ou a URL (para `http`/`sse`). | —                  | `/usr/bin/python` ou `http://localhost:8` |
 | `[argumentos...]`   | Argumentos opcionais para um comando `stdio`.                        | —                  | `--port 5000`                             |
-| `-s`, `--scope`     | Escopo da configuração (usuário ou projeto).                         | `project`          | `-s user`                                 |
+| `-s`, `--scope`     | Escopo da configuração (usuário ou projeto).                        | `project`          | `-s user`                                 |
 | `-t`, `--transport` | Tipo de transporte (`stdio`, `sse`, `http`).                         | `stdio`            | `-t sse`                                  |
 | `-e`, `--env`       | Define variáveis de ambiente.                                       | —                  | `-e KEY=value`                            |
-| `-H`, `--header`    | Define cabeçalhos HTTP para transportes SSE e HTTP.                  | —                  | `-H "X-Api-Key: abc123"`                  |
-| `--timeout`         | Define o tempo limite de conexão em milissegundos.                   | —                  | `--timeout 30000`                         |
+| `-H`, `--header`    | Define cabeçalhos HTTP para transportes SSE e HTTP.                 | —                  | `-H "X-Api-Key: abc123"`                  |
+| `--timeout`         | Define o tempo limite de conexão em milissegundos.                  | —                  | `--timeout 30000`                         |
 | `--trust`           | Confiar no servidor (ignora todos os prompts de confirmação de chamada de ferramenta). | — (`false`)        | `--trust`                                 |
 | `--description`     | Define a descrição do servidor.                                     | —                  | `--description "Ferramentas locais"`       |
-| `--include-tools`   | Uma lista separada por vírgulas das ferramentas a incluir.           | todas as ferramentas incluídas | `--include-tools mytool,othertool`        |
-| `--exclude-tools`   | Uma lista separada por vírgulas das ferramentas a excluir.           | nenhuma            | `--exclude-tools mytool`                  |
+| `--include-tools`   | Uma lista separada por vírgulas das ferramentas a incluir.          | todas as ferramentas incluídas | `--include-tools mytool,othertool`        |
+| `--exclude-tools`   | Uma lista separada por vírgulas das ferramentas a excluir.          | nenhuma            | `--exclude-tools mytool`                  |
 
 #### Listando servidores (`qwen mcp list`)
 

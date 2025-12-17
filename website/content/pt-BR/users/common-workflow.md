@@ -46,7 +46,7 @@ como é feita a autenticação?
 >
 > - Comece com perguntas gerais e depois foque em áreas específicas
 > - Pergunte sobre convenções e padrões de codificação utilizados no projeto
-> - Solicite um glossário de termos específicos do projeto
+> - Solicite um glossário com termos específicos do projeto
 
 ### Encontrar código relevante
 
@@ -61,7 +61,7 @@ encontre os arquivos que tratam da autenticação de usuários
 **2. Obtenha contexto sobre como os componentes interagem**
 
 ```
-como esses arquivos de autenticação trabalham juntos?
+como esses arquivos de autenticação funcionam juntos?
 ```
 
 **3. Entenda o fluxo de execução**
@@ -188,36 +188,36 @@ Em seguida, selecione "create" e siga as instruções para definir:
 >
 > - Crie subagentes específicos do projeto em `.qwen/agents/` para compartilhamento em equipe
 > - Use campos `description` descritivos para permitir delegação automática
-> - Limite o acesso às ferramentas somente ao que cada subagente realmente precisa
-> - Saiba mais sobre [Sub Agentes](../users/features/sub-agents)
-> - Saiba mais sobre [Modo de Aprovação](../users/features/approval-mode)
+> - Limite o acesso às ferramentas ao que cada subagente realmente precisa
+> - Saiba mais sobre [Sub Agentes](./features/sub-agents)
+> - Saiba mais sobre [Modo de Aprovação](./features/approval-mode)
 
-## Trabalhar com testes
+## Trabalhe com testes
 
 Suponha que você precise adicionar testes para código não coberto.
 
-**1. Identificar código não testado**
+**1. Identifique o código não testado**
 
 ```
-encontrar funções em NotificationsService.swift que não estão cobertas por testes
+encontre funções em NotificationsService.swift que não estão cobertas por testes
 ```
 
-**2. Gerar estrutura de testes**
+**2. Gere a estrutura de testes**
 
 ```
-adicionar testes para o serviço de notificação
+adicione testes para o serviço de notificação
 ```
 
-**3. Adicionar casos de teste significativos**
+**3. Adicione casos de teste significativos**
 
 ```
-adicionar casos de teste para condições extremas no serviço de notificação
+adicione casos de teste para condições extremas no serviço de notificação
 ```
 
-**4. Executar e verificar testes**
+**4. Execute e verifique os testes**
 
 ```
-executar os novos testes e corrigir quaisquer falhas
+execute os novos testes e corrija quaisquer falhas
 ```
 
 O Qwen Code pode gerar testes que seguem os padrões e convenções existentes do seu projeto. Ao solicitar testes, seja específico sobre qual comportamento deseja verificar. O Qwen Code examina seus arquivos de teste existentes para corresponder ao estilo, frameworks e padrões de asserção já utilizados.
@@ -318,13 +318,13 @@ Isso fornece uma listagem do diretório com informações dos arquivos.
 Mostre-me os dados de @github: repos/owner/repo/issues
 ```
 
-Isso busca dados de servidores MCP conectados usando o formato @servidor: recurso. Veja [MCP](../users/features/mcp) para detalhes.
+Isso busca dados de servidores MCP conectados usando o formato @servidor: recurso. Veja [MCP](./features/mcp) para detalhes.
 
 > [!tip]
 >
 > - Caminhos de arquivo podem ser relativos ou absolutos
-> - Referências de arquivo @ adicionam `QWEN.md` no diretório do arquivo e nos diretórios pai ao contexto
-> - Referências de diretório mostram listagens de arquivos, não conteúdos
+> - Referências de arquivos @ adicionam `QWEN.md` no diretório do arquivo e nos diretórios pai ao contexto
+> - Referências de diretórios mostram listagens de arquivos, não conteúdos
 > - Você pode referenciar vários arquivos em uma única mensagem (por exemplo, "`@arquivo 1.js` e `@arquivo 2.js`")
 
 ## Retomar conversas anteriores
@@ -377,7 +377,7 @@ Use as setas para navegar e pressione Enter para selecionar uma conversa. Pressi
 >
 > 1. **Armazenamento de Conversas**: Todas as conversas são salvas automaticamente localmente com seu histórico completo de mensagens
 > 2. **Desserialização de Mensagens**: Ao retomar, todo o histórico de mensagens é restaurado para manter o contexto
-> 3. **Estado das Ferramentas**: O uso de ferramentas e resultados da conversa anterior são preservados
+> 3. **Estado das Ferramentas**: O uso de ferramentas e os resultados da conversa anterior são preservados
 > 4. **Restauração de Contexto**: A conversa retoma com todo o contexto anterior intacto
 >
 > **Exemplos**:
@@ -402,16 +402,16 @@ Suponha que você precise trabalhar em múltiplas tarefas simultaneamente com is
 
 **1. Entenda os worktrees do Git**
 
-Worktrees do Git permitem que você faça checkout de múltiplos ramos do mesmo repositório em diretórios separados. Cada worktree possui seu próprio diretório de trabalho com arquivos isolados, compartilhando ao mesmo tempo o histórico do Git. Saiba mais na [documentação oficial do Git worktree](https://git-scm.com/docs/git-worktree).
+Os worktrees do Git permitem fazer checkout de múltiplos ramos do mesmo repositório em diretórios separados. Cada worktree possui seu próprio diretório de trabalho com arquivos isolados, compartilhando ao mesmo tempo o histórico do Git. Saiba mais na [documentação oficial do Git worktree](https://git-scm.com/docs/git-worktree).
 
 **2. Crie um novo worktree**
 
 ```bash
 
-# Crie um novo worktree com um novo ramo
+# Cria um novo worktree com um novo ramo
 git worktree add ../project-feature-a -b feature-a
 
-# Ou crie um worktree com um ramo existente
+# Ou cria um worktree com um ramo existente
 git worktree add ../project-bugfix bugfix-123
 ```
 
@@ -453,12 +453,11 @@ git worktree remove ../project-feature-a
 > - Alterações feitas em uma worktree não afetam outras, evitando que instâncias do Qwen Code interfiram umas nas outras
 > - Todas as worktrees compartilham o mesmo histórico Git e conexões remotas
 > - Para tarefas de longa duração, você pode ter o Qwen Code trabalhando em uma worktree enquanto continua o desenvolvimento em outra
-> - Utilize nomes de diretórios descritivos para identificar facilmente qual tarefa cada worktree está destinada
-> - Lembre-se de inicializar seu ambiente de desenvolvimento em cada nova worktree conforme a configuração do seu projeto. Dependendo da sua stack, isso pode incluir:
+> - Use nomes de diretórios descritivos para identificar facilmente qual tarefa cada worktree está destinada
+> - Lembre-se de inicializar seu ambiente de desenvolvimento em cada nova worktree de acordo com a configuração do seu projeto. Dependendo da sua stack, isso pode incluir:
 >   - Projetos JavaScript: Execução da instalação de dependências (`npm install`, `yarn`)
 >   - Projetos Python: Configuração de ambientes virtuais ou instalação com gerenciadores de pacotes
 >   - Outras linguagens: Seguir o processo padrão de configuração do seu projeto
-```
 
 ## Use Qwen Code como um utilitário no estilo unix
 
@@ -567,10 +566,10 @@ quais são as limitações do Qwen Code?
 
 > [!note]
 >
-> O Qwen Code fornece respostas baseadas na documentação para essas perguntas. Para exemplos executáveis e demonstrações práticas, consulte as seções específicas de fluxo de trabalho acima.
+> O Qwen Code fornece respostas baseadas na documentação para essas perguntas. Para exemplos executáveis e demonstrações práticas, consulte as seções específicas de fluxos de trabalho acima.
 
 > [!tip]
 >
 > - O Qwen Code sempre tem acesso à documentação mais recente do Qwen Code, independentemente da versão que você estiver usando
 > - Faça perguntas específicas para obter respostas detalhadas
-> - O Qwen Code pode explicar recursos complexos como integração MCP, configurações corporativas e fluxos de trabalho avançados
+> - O Qwen Code pode explicar recursos complexos como integração com MCP, configurações corporativas e fluxos de trabalho avançados

@@ -5,7 +5,6 @@ Bem-vindo à documentação do Qwen Code. O Qwen Code é uma ferramenta de codif
 ## Seções da Documentação
 
 ### [Guia do Usuário](./users/overview)
-
 Aprenda como usar o Qwen Code como um usuário final. Esta seção aborda:
 
 - Instalação e configuração básica
@@ -14,7 +13,7 @@ Aprenda como usar o Qwen Code como um usuário final. Esta seção aborda:
 - Opções de configuração
 - Solução de problemas
 
-### [Guia do Desenvolvedor](./developers/contributing)
+### [Guia do Desenvolvedor](./developers/architecture)
 
 Aprenda como contribuir e desenvolver o Qwen Code. Esta seção aborda:
 

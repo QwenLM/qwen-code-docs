@@ -1,3 +1,5 @@
+# Approval Mode
+
 Qwen Code offers three distinct permission modes that allow you to flexibly control how AI interacts with your code and system based on task complexity and risk level.
 
 ## Permission Modes Comparison

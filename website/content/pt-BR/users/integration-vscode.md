@@ -4,15 +4,15 @@
 
 <br/>
 
-<video src="https://cloud.video.taobao.com/vod/JnvYMhUia2EKFAaiuErqNpzWE9mz3odG76vArAHNg94.mp4" controls width="800">
+<video src="https://cloud.video.taobao.com/vod/IKKwfM-kqNI3OJjM_U8uMCSMAoeEcJhs6VNCQmZxUfk.mp4" controls width="800">
   Seu navegador não suporta a tag de vídeo.
 </video>
 
 ### Recursos
 
-- **Experiência nativa do IDE**: Painel lateral dedicado do Qwen Code acessado pelo ícone do Qwen
+- **Experiência nativa do IDE**: Painel da barra lateral dedicado ao Qwen Code acessado pelo ícone do Qwen
 - **Modo de aceitação automática de edições**: Aplica automaticamente as alterações feitas pelo Qwen conforme elas são realizadas
-- **Gerenciamento de arquivos**: Marcar arquivos com @ ou anexar arquivos e imagens usando o seletor de arquivos do sistema
+- **Gerenciamento de arquivos**: Menção a arquivos com @ ou anexar arquivos e imagens usando o seletor de arquivos do sistema
 - **Histórico de conversas**: Acesso às conversas anteriores
 - **Múltiplas sessões**: Executar várias sessões do Qwen Code simultaneamente
 
@@ -34,11 +34,11 @@
 
 ### Extensão não está sendo instalada
 
-- Certifique-se de ter o VS Code 1.98.0 ou superior
+- Certifique-se de que você tem o VS Code 1.98.0 ou superior
 - Verifique se o VS Code tem permissão para instalar extensões
 - Tente instalar diretamente do site do Marketplace
 
-### Qwen Code não responde
+### Qwen Code não está respondendo
 
 - Verifique sua conexão com a internet
 - Inicie uma nova conversa para ver se o problema persiste

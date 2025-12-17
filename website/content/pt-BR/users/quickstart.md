@@ -191,7 +191,7 @@ revise minhas alterações e sugira melhorias
 
 > [!tip]
 >
-> **Lembre-se**: O Qwen Code é seu programador parceiro de IA. Fale com ele como faria com um colega prestativo – descreva o que deseja alcançar, e ele vai te ajudar a chegar lá.
+> **Lembre-se**: O Qwen Code é seu programador parceiro de IA. Fale com ele como faria com um colega útil – descreva o que deseja alcançar, e ele vai te ajudar a chegar lá.
 
 ## Comandos essenciais
 
@@ -210,35 +210,35 @@ Aqui estão os comandos mais importantes para o uso diário:
 | → `output [idioma]`   | Definir idioma de saída do LLM                     | `/language output Chinese`     |
 | `/quit`               | Sair imediatamente do Qwen Code                    | `/quit` ou `/exit`             |
 
-Veja a [referência da CLI](../users/reference/cli-reference) para uma lista completa de comandos.
+Veja a [referência da CLI](./features/commands) para uma lista completa de comandos.
 
 ## Dicas profissionais para iniciantes
 
 **Seja específico com suas solicitações**
 
-- Em vez de: "corrija o bug"
-- Tente: "corrija o bug de login onde os usuários veem uma tela em branco após inserir credenciais erradas"
+- Em vez de: "corrigir o bug"
+- Tente: "corrigir o bug de login onde os usuários veem uma tela em branco após inserir credenciais erradas"
 
 **Use instruções passo a passo**
 
 - Divida tarefas complexas em etapas:
 
 ```
-1. crie uma nova tabela de banco de dados para perfis de usuário
-2. crie um endpoint de API para obter e atualizar perfis de usuário
-3. construa uma página web que permita aos usuários visualizar e editar suas informações
+1. criar uma nova tabela de banco de dados para perfis de usuário
+2. criar um endpoint de API para obter e atualizar perfis de usuário
+3. construir uma página web que permita aos usuários visualizar e editar suas informações
 ```
 
-**Deixe Claude explorar primeiro**
+**Deixe o Qwen Code explorar primeiro**
 
-- Antes de fazer alterações, deixe Claude entender seu código:
-
-```
-analise o esquema do banco de dados
-```
+- Antes de fazer alterações, deixe o Qwen Code entender seu código:
 
 ```
-construa um painel mostrando produtos que são devolvidos com mais frequência por nossos clientes do Reino Unido
+analisar o esquema do banco de dados
+```
+
+```
+construir um painel mostrando produtos que são devolvidos com mais frequência por nossos clientes do Reino Unido
 ```
 
 **Economize tempo com atalhos**
@@ -252,4 +252,4 @@ construa um painel mostrando produtos que são devolvidos com mais frequência p
 
 - **No Qwen Code**: Digite `/help` ou pergunte "como faço para..."
 - **Documentação**: Você está aqui! Navegue por outros guias
-- **Comunidade**: Junte-se à nossa [Discussão no GitHub](https://github.com/QwenLM/qwen-code/discussions) para dicas e suporte
+- **Comunidade**: Participe da nossa [Discussão no GitHub](https://github.com/QwenLM/qwen-code/discussions) para dicas e suporte

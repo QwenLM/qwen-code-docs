@@ -1,12 +1,12 @@
 # Dateien ignorieren
 
-Dieses Dokument bietet einen Überblick über die Qwen Ignore (`.qwenignore`) Funktion von Qwen Code.
+Dieses Dokument bietet einen Überblick über die Qwen Ignore (`.qwenignore`)-Funktion von Qwen Code.
 
 Qwen Code verfügt über die Möglichkeit, Dateien automatisch zu ignorieren, ähnlich wie `.gitignore` (verwendet von Git). Das Hinzufügen von Pfaden zu Ihrer `.qwenignore`-Datei schließt diese von Tools aus, die diese Funktion unterstützen, obwohl sie für andere Dienste (wie Git) weiterhin sichtbar bleiben.
 
 ## So funktioniert es
 
-Wenn du einen Pfad zu deiner `.qwenignore`-Datei hinzufügst, schließen Tools, die diese Datei berücksichtigen, übereinstimmende Dateien und Verzeichnisse von ihren Operationen aus. Zum Beispiel werden bei der Verwendung des Befehls [`read_many_files`](/developers/tools/multi-file) alle Pfade in deiner `.qwenignore`-Datei automatisch ausgeschlossen.
+Wenn du einen Pfad zu deiner `.qwenignore`-Datei hinzufügst, schließen Tools, die diese Datei berücksichtigen, übereinstimmende Dateien und Verzeichnisse von ihren Operationen aus. Wenn du zum Beispiel den Befehl [`read_many_files`](../../developers/tools/multi-file) verwendest, werden alle Pfade in deiner `.qwenignore`-Datei automatisch ausgeschlossen.
 
 Im Wesentlichen folgt `.qwenignore` den Konventionen von `.gitignore`-Dateien:
 

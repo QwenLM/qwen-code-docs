@@ -1,6 +1,6 @@
 # Sandbox
 
-Este documento explica como executar o Qwen Code dentro de um sandbox para reduzir riscos quando ferramentas executam comandos shell ou modificam arquivos.
+Este documento explica como executar o Qwen Code dentro de um sandbox para reduzir riscos quando as ferramentas executam comandos shell ou modificam arquivos.
 
 ## Pré-requisitos
 
@@ -18,11 +18,11 @@ qwen --version
 
 ## Visão geral do sandboxing
 
-O sandboxing isola operações potencialmente perigosas (como comandos shell ou modificações de arquivos) do seu sistema host, fornecendo uma barreira de segurança entre a CLI e seu ambiente.
+O sandboxing isola operações potencialmente perigosas (como comandos shell ou modificações de arquivos) do seu sistema host, fornecendo uma barreira de segurança entre a CLI e o seu ambiente.
 
 Os benefícios do sandboxing incluem:
 
-- **Segurança**: Evita danos acidentais ao sistema ou perda de dados.
+- **Segurança**: Previne danos acidentais ao sistema ou perda de dados.
 - **Isolamento**: Limita o acesso ao sistema de arquivos somente ao diretório do projeto.
 - **Consistência**: Garante ambientes reproduzíveis em diferentes sistemas.
 - **Segurança**: Reduz o risco ao trabalhar com código não confiável ou comandos experimentais.
@@ -33,13 +33,13 @@ Os benefícios do sandboxing incluem:
 
 ## Métodos de sandboxing
 
-Seu método ideal de sandboxing pode variar dependendo da sua plataforma e da solução de contêineres preferida.
+Seu método ideal de sandboxing pode variar dependendo da sua plataforma e da solução de contêineres que você prefere.
 
 ### 1. macOS Seatbelt (somente macOS)
 
 Sandboxing leve e integrado usando `sandbox-exec`.
 
-**Perfil padrão**: `permissive-open` - restringe gravações fora do diretório do projeto, mas permite a maioria das outras operações e acesso à rede de saída.
+**Perfil padrão**: `permissive-open` – restringe gravações fora do diretório do projeto, mas permite a maioria das outras operações e acesso à rede de saída.
 
 **Melhor para**: Rápido, não requer Docker, proteções robustas para gravações de arquivos.
 
@@ -47,7 +47,7 @@ Sandboxing leve e integrado usando `sandbox-exec`.
 
 Sandboxing multiplataforma com isolamento completo de processos.
 
-Por padrão, o Qwen Code usa uma imagem sandbox publicada (configurada no pacote da CLI) e a baixará conforme necessário.
+Por padrão, o Qwen Code usa uma imagem sandbox publicada (configurada no pacote da CLI) e a baixa conforme necessário.
 
 **Melhor para**: Isolamento forte em qualquer sistema operacional, ferramentas consistentes dentro de uma imagem conhecida.
 
@@ -63,11 +63,10 @@ Por padrão, o Qwen Code usa uma imagem sandbox publicada (configurada no pacote
 
 ```bash
 
-# Ative o sandboxing com flag de comando
-qwen -s -p "analyze the code structure"```
+# Ative o sandboxing com um flag de comando
+qwen -s -p "analyze the code structure"
 
-```markdown
-# Ou habilite o sandbox para sua sessão do shell (recomendado para CI / scripts)
+# Ou habilite o sandbox para sua sessão do shell (recomendado para CI/scripts)
 export GEMINI_SANDBOX=true   # true seleciona automaticamente um provedor (veja notas abaixo)
 qwen -p "execute o conjunto de testes"
 
@@ -92,13 +91,12 @@ qwen -p "execute o conjunto de testes"
 ### Habilite o sandbox (em ordem de precedência)
 
 1. **Variável de ambiente**: `GEMINI_SANDBOX=true|false|docker|podman|sandbox-exec`
-2. **Flag / argumento de comando**: `-s`, `--sandbox`, ou `--sandbox=<provedor>`
+2. **Flag/argumento de comando**: `-s`, `--sandbox`, ou `--sandbox=<provedor>`
 3. **Arquivo de configurações**: `tools.sandbox` no seu `settings.json` (ex.: `{"tools": {"sandbox": true}}`).
 
 > [!important]
 >
 > Se `GEMINI_SANDBOX` estiver definido, ele **substitui** a flag da CLI e o `settings.json`.
-```
 
 ### Configurar a imagem do sandbox (Docker/Podman)
 
@@ -107,7 +105,7 @@ qwen -p "execute o conjunto de testes"
 
 Se você não definir nenhuma das duas, o Qwen Code usará a imagem padrão configurada no pacote da CLI (por exemplo, `ghcr.io/qwenlm/qwen-code:<version>`).
 
-### Perfis do Seatbelt no macOS
+### Perfis do macOS Seatbelt
 
 Perfis integrados (definidos pela variável de ambiente `SEATBELT_PROFILE`):
 
@@ -120,7 +118,7 @@ Perfis integrados (definidos pela variável de ambiente `SEATBELT_PROFILE`):
 
 > [!tip]
 >
-> Comece com `permissive-open` e, se seu fluxo de trabalho ainda funcionar, mude para `restrictive-closed`.
+> Comece com `permissive-open` e depois aperte para `restrictive-closed` se seu fluxo de trabalho ainda funcionar.
 
 ### Perfis personalizados do Seatbelt (macOS)
 
@@ -156,11 +154,11 @@ Se você quiser restringir o acesso à rede de saída a uma lista de permissões
 
 Isso é especialmente útil com perfis do Seatbelt do tipo `*-proxied`.
 
-Para um exemplo funcional de proxy estilo lista de permissões, consulte: [Script de Proxy de Exemplo](/developers/examples/proxy-script).
+Para um exemplo funcional de proxy com estilo de lista de permissões, consulte: [Script de Proxy de Exemplo](/developers/examples/proxy-script).
 
 ## Tratamento de UID/GID no Linux
 
-O sandbox trata automaticamente das permissões de usuário no Linux. Substitua essas permissões com:
+O sandbox trata automaticamente as permissões de usuário no Linux. Substitua essas permissões com:
 
 ```bash
 export SANDBOX_SET_UID_GID=true   # Força o uso de UID/GID do host
@@ -224,6 +222,6 @@ qwen -s -p "run shell command: mount | grep workspace"
 
 ## Documentação relacionada
 
-- [Configuração](../users/configuration/settings): Opções completas de configuração.
-- [Comandos](../users/reference/cli-reference): Comandos disponíveis.
-- [Solução de problemas](../users/support/troubleshooting): Solução de problemas geral.
+- [Configuração](../configuration/settings): Opções completas de configuração.
+- [Comandos](../features/commands): Comandos disponíveis.
+- [Solução de problemas](../support/troubleshooting): Solução de problemas geral.

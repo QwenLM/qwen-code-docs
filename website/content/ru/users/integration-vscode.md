@@ -4,13 +4,13 @@
 
 <br/>
 
-<video src="https://cloud.video.taobao.com/vod/JnvYMhUia2EKFAaiuErqNpzWE9mz3odG76vArAHNg94.mp4" controls width="800">
+<video src="https://cloud.video.taobao.com/vod/IKKwfM-kqNI3OJjM_U8uMCSMAoeEcJhs6VNCQmZxUfk.mp4" controls width="800">
   Ваш браузер не поддерживает тег video.
 </video>
 
 ### Возможности
 
-- **Собственный опыт работы в IDE**: Выделенная боковая панель Qwen Code, доступная через значок Qwen
+- **Собственный опыт IDE**: Выделенная боковая панель Qwen Code, доступная через значок Qwen
 - **Режим автоматического принятия правок**: Автоматическое применение изменений Qwen по мере их внесения
 - **Управление файлами**: Упоминание файлов с помощью @ или прикрепление файлов и изображений с помощью системного выбора файлов
 - **История разговоров**: Доступ к прошлым разговорам

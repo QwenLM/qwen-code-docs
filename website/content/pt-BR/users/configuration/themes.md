@@ -25,14 +25,14 @@ O Qwen Code vem com uma seleção de temas predefinidos, que você pode listar u
 
 1.  Digite `/theme` no Qwen Code.
 2.  Uma caixa de diálogo ou prompt de seleção aparece, listando os temas disponíveis.
-3.  Usando as setas do teclado, selecione um tema. Algumas interfaces podem oferecer uma prévia ao vivo ou destaque conforme você seleciona.
+3.  Usando as teclas de seta, selecione um tema. Algumas interfaces podem oferecer uma prévia ao vivo ou destaque conforme você seleciona.
 4.  Confirme sua seleção para aplicar o tema.
 
 **Nota:** Se um tema estiver definido em seu arquivo `settings.json` (por nome ou por caminho de arquivo), você deve remover a configuração `"theme"` do arquivo antes de poder alterar o tema usando o comando `/theme`.
 
 ### Persistência de Temas
 
-Os temas selecionados são salvos na [configuração](./configuration.md) do Qwen Code para que sua preferência seja lembrada entre as sessões.
+Os temas selecionados são salvos na [configuração](../configuration/settings) do Qwen Code para que sua preferência seja lembrada entre as sessões.
 
 ---
 
@@ -136,7 +136,7 @@ O arquivo de tema deve ser um arquivo JSON válido que siga a mesma estrutura de
 }
 ```
 
-**Nota de Segurança:** Para sua segurança, o Gemini CLI só carregará arquivos de tema localizados dentro do seu diretório pessoal. Se você tentar carregar um tema de fora do seu diretório pessoal, um aviso será exibido e o tema não será carregado. Isso serve para evitar o carregamento de arquivos de tema potencialmente maliciosos de fontes não confiáveis.
+**Nota de Segurança:** Para sua segurança, o Gemini CLI só carregará arquivos de tema localizados dentro do seu diretório home. Se você tentar carregar um tema de fora do seu diretório home, um aviso será exibido e o tema não será carregado. Isso serve para prevenir o carregamento de arquivos de tema potencialmente maliciosos de fontes não confiáveis.
 
 ### Exemplo de Tema Personalizado
 
@@ -148,11 +148,11 @@ O arquivo de tema deve ser um arquivo JSON válido que siga a mesma estrutura de
 
 - Selecione seu tema personalizado usando o comando `/theme` no Qwen Code. Seu tema personalizado aparecerá na caixa de diálogo de seleção de temas.
 - Ou defina-o como padrão adicionando `"theme": "MyCustomTheme"` ao objeto `ui` no seu `settings.json`.
-- Temas personalizados podem ser definidos no nível do usuário, projeto ou sistema e seguem a mesma [precedência de configuração](./configuration.md) que outras configurações.
+- Temas personalizados podem ser definidos no nível do usuário, projeto ou sistema e seguem a mesma [precedência de configuração](../configuration/settings) que outras configurações.
 
-## Pré-visualização de Temas
+## Visualização de Temas
 
-| Tema Escuro | Pré-visualização | Tema Claro | Pré-visualização |
+| Tema Escuro | Visualização | Tema Claro | Visualização |
 | :-: | :-: | :-: | :-: |
 | ANSI | <img src="https://gw.alicdn.com/imgextra/i2/O1CN01ZInJiq1GdSZc9gHsI_!!6000000000645-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" /> | ANSI Light | <img src="https://gw.alicdn.com/imgextra/i2/O1CN01IiJQFC1h9E3MXQj6W_!!6000000004234-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" /> |
 | Atom OneDark | <img src="https://gw.alicdn.com/imgextra/i2/O1CN01Zlx1SO1Sw21SkTKV3_!!6000000002310-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" /> | Ayu Light | <img src="https://gw.alicdn.com/imgextra/i3/O1CN01zEUc1V1jeUJsnCgQb_!!6000000004573-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |

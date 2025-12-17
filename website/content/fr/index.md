@@ -1,11 +1,10 @@
-# Documentation Qwen Code
+# Documentation du code Qwen
 
-Bienvenue dans la documentation de Qwen Code. Qwen Code est un outil de codage agentic qui réside dans votre terminal et vous aide à transformer vos idées en code plus rapidement que jamais.
+Bienvenue dans la documentation du code Qwen. Qwen Code est un outil de codage agentic qui réside dans votre terminal et vous aide à transformer vos idées en code plus rapidement que jamais.
 
 ## Sections de la documentation
 
 ### [Guide utilisateur](./users/overview)
-
 Apprenez à utiliser Qwen Code en tant qu'utilisateur final. Cette section couvre :
 
 - Installation et configuration de base
@@ -14,7 +13,7 @@ Apprenez à utiliser Qwen Code en tant qu'utilisateur final. Cette section couvr
 - Options de configuration
 - Dépannage
 
-### [Guide développeur](./developers/contributing)
+### [Guide développeur](./developers/architecture)
 
 Apprenez comment contribuer au développement de Qwen Code. Cette section couvre :
 

@@ -6,13 +6,13 @@ Qwen Code inclut la capacité d'ignorer automatiquement des fichiers, de manièr
 
 ## Fonctionnement
 
-Lorsque vous ajoutez un chemin à votre fichier `.qwenignore`, les outils qui respectent ce fichier excluront automatiquement les fichiers et dossiers correspondants de leurs opérations. Par exemple, lorsque vous utilisez la commande [`read_many_files`](/developers/tools/multi-file), tous les chemins présents dans votre fichier `.qwenignore` seront automatiquement exclus.
+Lorsque vous ajoutez un chemin à votre fichier `.qwenignore`, les outils qui respectent ce fichier excluront automatiquement les fichiers et répertoires correspondants de leurs opérations. Par exemple, lorsque vous utilisez la commande [`read_many_files`](../../developers/tools/multi-file), tous les chemins présents dans votre fichier `.qwenignore` seront automatiquement exclus.
 
 Dans l'ensemble, `.qwenignore` suit les conventions des fichiers `.gitignore` :
 
 - Les lignes vides et les lignes commençant par `#` sont ignorées.
 - Les motifs glob standards sont pris en charge (comme `*`, `?`, et `[]`).
-- Ajouter un `/` à la fin ne correspondra qu'aux dossiers.
+- Ajouter un `/` à la fin ne fera correspondre que les répertoires.
 - Placer un `/` au début ancre le chemin par rapport au fichier `.qwenignore`.
 - `!` inverse un motif.
 
@@ -20,8 +20,8 @@ Vous pouvez modifier votre fichier `.qwenignore` à tout moment. Pour appliquer 
 
 ## Comment utiliser `.qwenignore`
 
-| Étape                     | Description                                                  |
-| ------------------------- | ------------------------------------------------------------ |
+| Étape                     | Description                                                   |
+| ------------------------- | ------------------------------------------------------------- |
 | **Activer .qwenignore**   | Créez un fichier nommé `.qwenignore` dans le répertoire racine de votre projet |
 | **Ajouter des règles d'ignorance** | Ouvrez le fichier `.qwenignore` et ajoutez les chemins à ignorer, exemple : `/archive/` ou `apikeys.txt` |
 

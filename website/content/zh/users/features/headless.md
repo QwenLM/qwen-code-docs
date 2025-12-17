@@ -4,14 +4,14 @@
 
 ## 概述
 
-无头模式为 Qwen Code 提供了一个无头接口，具备以下功能：
+无头模式为 Qwen Code 提供了一个无头接口，该接口：
 
-- 通过命令行参数或标准输入（stdin）接收提示
+- 通过命令行参数或标准输入接受提示
 - 返回结构化输出（文本或 JSON）
 - 支持文件重定向和管道操作
 - 启用自动化和脚本工作流
 - 提供一致的退出代码以便进行错误处理
-- 可以恢复当前项目范围内的先前会话，支持多步骤自动化
+- 可以恢复当前项目范围内的先前会话，以实现多步骤自动化
 
 ## 基本用法
 
@@ -46,7 +46,7 @@ cat README.md | qwen --prompt "总结此文档"
 ```bash
 
 # 继续该项目的最近一次会话并运行新提示
-qwen --continue -p "再次运行测试并总结失败项"
+qwen --continue -p "再次运行测试并总结失败原因"
 
 # 直接恢复特定会话 ID（无界面）
 qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "应用后续重构"
@@ -55,7 +55,7 @@ qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "应用后续重构"
 > [!note]
 >
 > - 会话数据是以项目为范围的 JSONL 文件，存储于 `~/.qwen/projects/<sanitized-cwd>/chats`。
-> - 在发送新提示前，将恢复对话历史、工具输出和聊天压缩检查点。
+> - 在发送新提示之前，将恢复对话历史、工具输出和聊天压缩检查点。
 
 ## 输出格式
 
@@ -77,11 +77,11 @@ qwen -p "法国的首都是哪里？"
 
 ### JSON 输出
 
-以 JSON 数组形式返回结构化数据。所有消息都会被缓冲，并在会话完成时一起输出。此格式适用于程序化处理和自动化脚本。
+以 JSON 数组形式返回结构化数据。所有消息都会被缓存，并在会话完成时一起输出。此格式适用于程序化处理和自动化脚本。
 
 JSON 输出是一个消息对象数组。输出包含多种消息类型：系统消息（会话初始化）、助手消息（AI 响应）和结果消息（执行摘要）。
 
-#### 使用示例
+#### 示例用法
 
 ```bash
 qwen -p "法国的首都是什么？" --output-format json
@@ -131,9 +131,9 @@ qwen -p "法国的首都是什么？" --output-format json
 ]
 ```
 
-### 流式 JSON 输出
+### Stream-JSON 输出
 
-流式 JSON 格式会在执行过程中一有消息就立即输出 JSON 消息，从而实现近实时监控。该格式使用行分隔的 JSON，其中每条消息都是单行上的完整 JSON 对象。
+Stream-JSON 格式会在执行过程中一旦产生 JSON 消息就立即输出，从而实现实时监控。该格式使用行分隔的 JSON，其中每条消息都是单行上的完整 JSON 对象。
 
 ```bash
 qwen -p "Explain TypeScript" --output-format stream-json
@@ -147,7 +147,7 @@ qwen -p "Explain TypeScript" --output-format stream-json
 {"type":"result","subtype":"success","uuid":"...","session_id":"..."}
 ```
 
-当与 `--include-partial-messages` 结合使用时，会实时发出额外的流事件（如 message_start、content_block_delta 等），以实现实时 UI 更新。
+当与 `--include-partial-messages` 结合使用时，会实时发出额外的流事件（如 message_start、content_block_delta 等），以支持实时 UI 更新。
 
 ```bash
 qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
@@ -160,7 +160,7 @@ qwen -p "Write a Python script" --output-format stream-json --include-partial-me
 - **`text`**（默认）：从 stdin 或命令行参数读取标准文本输入
 - **`stream-json`**：通过 stdin 使用 JSON 消息协议进行双向通信
 
-> **注意：** Stream-json 输入模式目前仍在开发中，主要面向 SDK 集成。使用时需同时设置 `--output-format stream-json`。
+> **注意：** Stream-json 输入模式目前正在构建中，旨在用于 SDK 集成。它需要设置 `--output-format stream-json`。
 
 ### 文件重定向
 
@@ -178,8 +178,7 @@ qwen -p "Add more details" >> docker-explanation.txt
 # 管道传递给其他工具
 qwen -p "What is Kubernetes?" --output-format json | jq '.response'
 qwen -p "Explain microservices" | wc -w
-qwen -p "List programming languages" | grep -i "python"
-```
+qwen -p "List programming languages" | grep -i "python"```
 
 # 用于实时处理的 Stream-JSON 输出
 qwen -p "解释 Docker" --output-format stream-json | jq '.type'
@@ -188,23 +187,23 @@ qwen -p "编写代码" --output-format stream-json --include-partial-messages | 
 
 ## 配置选项
 
-无头模式使用的关键命令行选项：
+无头模式（headless）使用的关键命令行选项：
 
 | 选项                          | 描述                                               | 示例                                                                      |
 | ----------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------- |
 | `--prompt`, `-p`              | 以无头模式运行                                     | `qwen -p "query"`                                                         |
-| `--output-format`, `-o`       | 指定输出格式（text, json, stream-json）            | `qwen -p "query" --output-format json`                                    |
-| `--input-format`              | 指定输入格式（text, stream-json）                  | `qwen --input-format text --output-format stream-json`                    |
+| `--output-format`, `-o`       | 指定输出格式（text、json、stream-json）            | `qwen -p "query" --output-format json`                                    |
+| `--input-format`              | 指定输入格式（text、stream-json）                  | `qwen --input-format text --output-format stream-json`                    |
 | `--include-partial-messages`  | 在 stream-json 输出中包含部分消息                  | `qwen -p "query" --output-format stream-json --include-partial-messages`  |
 | `--debug`, `-d`               | 启用调试模式                                       | `qwen -p "query" --debug`                                                 |
-| `--all-files`, `-a`           | 在上下文中包含所有文件                             | `qwen -p "query" --all-files`                                             |
+| `--all-files`, `-a`           | 包含上下文中的所有文件                             | `qwen -p "query" --all-files`                                             |
 | `--include-directories`       | 包含额外的目录                                     | `qwen -p "query" --include-directories src,docs`                          |
 | `--yolo`, `-y`                | 自动批准所有操作                                   | `qwen -p "query" --yolo`                                                  |
 | `--approval-mode`             | 设置审批模式                                       | `qwen -p "query" --approval-mode auto_edit`                               |
-| `--continue`                  | 恢复此项目的最近会话                               | `qwen --continue -p "Pick up where we left off"`                          |
-| `--resume [sessionId]`        | 恢复特定会话（或交互式选择）                       | `qwen --resume 123e... -p "Finish the refactor"`                          |
+| `--continue`                  | 恢复该项目最近一次会话                             | `qwen --continue -p "Pick up where we left off"`                          |
+| `--resume [sessionId]`        | 恢复指定会话（或交互式选择）                       | `qwen --resume 123e... -p "Finish the refactor"`                          |
 
-有关所有可用配置选项、设置文件和环境变量的完整详细信息，请参阅[配置指南](../users/configuration/settings)。
+有关所有可用配置选项、设置文件和环境变量的完整详细信息，请参阅[配置指南](../configuration/settings)。
 
 ## 示例
 
@@ -277,7 +276,7 @@ tail -5 usage.log
 
 ## 资源
 
-- [CLI 配置](../users/configuration/settings#command-line-arguments) - 完整配置指南
-- [身份验证](../users/configuration/settings#environment-variables-for-api-access) - 设置身份验证
-- [命令](../users/reference/cli-reference) - 交互式命令参考
-- [教程](../users/quickstart) - 逐步自动化指南
+- [CLI 配置](../configuration/settings#command-line-arguments) - 完整配置指南
+- [认证](../configuration/settings#environment-variables-for-api-access) - 设置认证
+- [命令](../features/commands) - 交互式命令参考
+- [教程](../quickstart) - 逐步自动化指南

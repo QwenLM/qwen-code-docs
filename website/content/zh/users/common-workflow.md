@@ -79,7 +79,7 @@ how is authentication handled?
 
 假设你遇到了一个错误信息，需要找到并修复其来源。
 
-**1. 与 Qwen Code 分享错误**
+**1. 与 Qwen Code 分享错误信息**
 
 ```
 运行 npm test 时出现错误
@@ -94,7 +94,7 @@ how is authentication handled?
 **3. 应用修复**
 
 ```
-更新 user.ts 以添加你建议的空值检查
+更新 user.ts 以添加你建议的 null 检查
 ```
 
 > [!tip]
@@ -128,7 +128,7 @@ how is authentication handled?
 **4. 验证重构结果**
 
 ```
-为重构后的代码运行测试
+运行重构代码的测试
 ```
 
 > [!tip]
@@ -177,7 +177,7 @@ Qwen Code 会自动将适当的任务委派给专业的子代理：
 /agents
 ```
 
-然后选择“创建”，并按照提示定义以下内容：
+然后选择“create”，并按照提示定义以下内容：
 
 - 描述子代理用途的唯一标识符（例如，`code-reviewer`、`api-designer`）。
 - Qwen Code 应在何时使用该代理
@@ -189,8 +189,8 @@ Qwen Code 会自动将适当的任务委派给专业的子代理：
 > - 在 `.qwen/agents/` 中创建项目专用的子代理以便团队共享
 > - 使用描述性的 `description` 字段以启用自动委派
 > - 将工具访问权限限制在每个子代理实际需要的范围内
-> - 了解更多关于 [子代理](../users/features/sub-agents) 的信息
-> - 了解更多关于 [审批模式](../users/features/approval-mode) 的信息
+> - 了解更多关于[子代理](./features/sub-agents)的信息
+> - 了解更多关于[审批模式](./features/approval-mode)的信息
 
 ## 编写测试
 
@@ -222,7 +222,7 @@ Qwen Code 会自动将适当的任务委派给专业的子代理：
 
 Qwen Code 可以生成遵循项目现有模式和约定的测试。在请求测试时，请具体说明你想要验证的行为。Qwen Code 会检查你现有的测试文件，以匹配已在使用的风格、框架和断言模式。
 
-为了实现全面覆盖，请让 Qwen Code 识别你可能遗漏的边缘情况。Qwen Code 可以分析你的代码路径，并建议对错误条件、边界值和容易被忽略的意外输入进行测试。
+为了实现全面覆盖，请让 Qwen Code 识别你可能遗漏的边缘情况。Qwen Code 可以分析你的代码路径，并建议对容易被忽略的错误条件、边界值和意外输入进行测试。
 
 ## 创建拉取请求
 
@@ -265,7 +265,7 @@ Qwen Code 可以生成遵循项目现有模式和约定的测试。在请求测�
 **1. 识别未文档化的代码**
 
 ```
-查找 auth 模块中缺少适当 JSDoc 注释的函数
+查找 auth 模块中没有适当 JSDoc 注释的函数
 ```
 
 **2. 生成文档**
@@ -294,7 +294,7 @@ Qwen Code 可以生成遵循项目现有模式和约定的测试。在请求测�
 
 ## 引用文件和目录
 
-使用 `@` 快速包含文件或目录，无需等待 Qwen Code 读取它们。
+使用 `@` 快速包含文件或目录，而无需等待 Qwen Code 读取它们。
 
 **1. 引用单个文件**
 
@@ -318,7 +318,7 @@ Qwen Code 可以生成遵循项目现有模式和约定的测试。在请求测�
 显示来自 @github: repos/owner/repo/issues 的数据
 ```
 
-这会使用格式 @server: resource 从已连接的 MCP 服务器获取数据。详情请参见 [MCP](../users/features/mcp)。
+这会使用格式 @server: resource 从已连接的 MCP 服务器获取数据。详情请参见 [MCP](./features/mcp)。
 
 > [!tip]
 >
@@ -329,12 +329,12 @@ Qwen Code 可以生成遵循项目现有模式和约定的测试。在请求测�
 
 ## 恢复之前的对话
 
-假设你一直在使用 Qwen Code 处理某个任务，现在需要在后续会话中继续之前的工作。
+假设你正在使用 Qwen Code 处理一个任务，并希望在后续会话中从上次中断的地方继续。
 
 Qwen Code 提供了两种恢复之前对话的方式：
 
 - 使用 `--continue` 自动继续最近一次的对话
-- 使用 `--resume` 显示一个对话选择器
+- 使用 `--resume` 显示对话选择器
 
 **1. 继续最近一次对话**
 
@@ -342,7 +342,7 @@ Qwen Code 提供了两种恢复之前对话的方式：
 qwen --continue
 ```
 
-此命令将立即恢复你最近一次的对话，不会有任何提示。
+此命令将立即恢复你最近一次的对话，无需任何提示。
 
 **2. 在非交互模式下继续**
 
@@ -350,7 +350,7 @@ qwen --continue
 qwen --continue --p "Continue with my task"
 ```
 
-结合使用 `--print` 和 `--continue` 可以在非交互模式下恢复最近一次对话，非常适合用于脚本或自动化流程。
+结合使用 `--print` 和 `--continue` 可以在非交互模式下恢复最近一次的对话，非常适合用于脚本或自动化流程。
 
 **3. 显示对话选择器**
 
@@ -358,27 +358,27 @@ qwen --continue --p "Continue with my task"
 qwen --resume
 ```
 
-该命令将显示一个交互式对话选择器，清晰地列出以下信息：
+此命令将显示一个交互式对话选择器，清晰地列出以下信息：
 
 - 会话摘要（或初始提示）
 - 元数据：已用时间、消息数量和 Git 分支
 
-你可以使用方向键进行导航，按 Enter 键选择对话，按 Esc 键退出。
+使用方向键导航并按 Enter 键选择对话。按 Esc 键退出。
 
 > [!tip]
 >
-> - 对话历史记录存储在你本地机器上
-> - 使用 `--continue` 快速访问最近一次对话
+> - 对话历史记录存储在本地计算机上
+> - 使用 `--continue` 快速访问最近一次的对话
 > - 使用 `--resume` 选择特定的历史对话
 > - 恢复对话时，你会看到完整的对话历史后再继续
 > - 恢复的对话将使用与原始对话相同的模型和配置
 >
 > **工作原理**：
 >
-> 1. **对话存储**：所有对话都会自动保存在本地，并包含完整的消息历史
-> 2. **消息反序列化**：恢复对话时，系统会还原全部消息历史以保持上下文连贯
-> 3. **工具状态保留**：前一次对话中的工具调用及结果会被保留下来
-> 4. **上下文恢复**：对话将在原有全部上下文中继续进行
+> 1. **对话存储**：所有对话及其完整消息历史都会自动保存在本地
+> 2. **消息反序列化**：恢复时，整个消息历史会被还原以保持上下文
+> 3. **工具状态**：保留前一次对话中的工具使用情况和结果
+> 4. **上下文恢复**：对话将在所有先前上下文完整的情况下继续进行
 >
 > **示例**：
 >
@@ -386,19 +386,19 @@ qwen --resume
 > # 继续最近一次对话
 > qwen --continue
 >
-> # 带指定提示继续最近一次对话
+> # 带有特定提示继续最近一次对话
 > qwen --continue --p "Show me our progress"
 >
 > # 显示对话选择器
 > qwen --resume
 >
-> # 非交互模式下继续最近一次对话
+> # 在非交互模式下继续最近一次对话
 > qwen --continue --p "Run the tests again"
 > ```
 
 ## 使用 Git worktrees 运行并行的 Qwen Code 会话
 
-假设你需要同时处理多个任务，并且希望每个 Qwen Code 实例之间具备完全的代码隔离。
+假设你需要同时处理多个任务，并且希望每个 Qwen Code 实例之间具备完全独立的代码环境。
 
 **1. 了解 Git worktrees**
 
@@ -411,17 +411,17 @@ Git worktrees 允许你将同一仓库中的多个分支检出到不同的目录
 # 创建一个带有新分支的新 worktree
 git worktree add ../project-feature-a -b feature-a
 
-# 或者使用现有分支创建 worktree
+# 或者基于现有分支创建 worktree
 git worktree add ../project-bugfix bugfix-123
 ```
 
-这将在新目录中创建一个仓库的独立工作副本。
+这将在新目录中创建一个与原仓库分离的独立工作副本。
 
 **3. 在每个 worktree 中运行 Qwen Code**
 
 ```bash
 
-# 导航至你的 worktree
+# 导航至你的 worktree 目录
 cd ../project-feature-a
 
 # 在此隔离环境中运行 Qwen 代码
@@ -462,7 +462,7 @@ git worktree remove ../project-feature-a
 
 ### 将 Qwen Code 添加到你的验证流程中
 
-假设你想将 Qwen Code 用作代码检查工具或代码审查工具。
+假设你想将 Qwen Code 用作 linter 或代码审查工具。
 
 **将 Qwen Code 添加到你的构建脚本中：**
 
@@ -472,14 +472,14 @@ git worktree remove ../project-feature-a
     ...
     "scripts": {
         ...
-        "lint:Qwen Code": "qwen -p '你是一个代码检查工具。请查看与 main 分支的差异，并报告任何与拼写错误相关的问题。请在一行中报告文件名和行号，在下一行中描述问题。不要返回其他任何文本。'"
+        "lint:Qwen Code": "qwen -p '你是一个 linter。请查看与 main 分支的差异，并报告任何与拼写错误相关的问题。在一行中报告文件名和行号，在下一行中描述问题。不要返回任何其他文本。'"
     }
 }
 ```
 
 > [!tip]
 >
-> - 在你的 CI/CD 流水线中使用 Qwen Code 进行自动化代码审查
+> - 在 CI/CD 流水线中使用 Qwen Code 进行自动化代码审查
 > - 自定义提示词以检查与你的项目相关的特定问题
 > - 考虑为不同类型的验证创建多个脚本
 
@@ -496,7 +496,7 @@ cat build-error.txt | qwen -p '简洁地解释此构建错误的根本原因' > 
 > [!tip]
 >
 > - 使用管道将 Qwen-Code 集成到现有的 shell 脚本中
-> - 与其他 Unix 工具结合使用，实现强大的工作流
+> - 与其他 Unix 工具结合使用，实现强大的工作流程
 > - 考虑使用 --output-format 获取结构化输出
 
 ### 控制输出格式
@@ -517,7 +517,7 @@ cat data.txt | qwen -p 'summarize this data' --output-format text > summary.txt
 cat code.py | qwen -p 'analyze this code for bugs' --output-format json > analysis.json
 ```
 
-这会输出一个包含元数据（如成本和耗时）的消息 JSON 数组。
+这会输出一个包含元数据（包括成本和持续时间）的消息 JSON 数组。
 
 **3. 使用流式 JSON 格式**
 
@@ -531,11 +531,11 @@ cat log.txt | qwen -p 'parse this log file for errors' --output-format stream-js
 >
 > - 当你只需要 Qwen Code 的响应时，使用 `--output-format text` 进行简单集成
 > - 当你需要完整的对话日志时，使用 `--output-format json`
-> - 当你需要实时输出每次对话回合时，使用 `--output-format stream-json`
+> - 当你需要每个对话回合的实时输出时，使用 `--output-format stream-json`
 
 ## 询问 Qwen Code 的功能
 
-Qwen Code 内置了对其文档的访问权限，可以回答有关其自身功能和限制的问题。
+Qwen Code 内置访问其文档的功能，可以回答有关其自身特性和限制的问题。
 
 ### 示例问题
 
@@ -565,10 +565,10 @@ Qwen Code 有哪些限制？
 
 > [!note]
 >
-> Qwen Code 提供基于文档的答案来回应这些问题。如需可执行示例和动手演示，请参阅上方的具体工作流部分。
+> Qwen Code 提供基于文档的答案来回应这些问题。如需可执行示例和动手演示，请参阅上述特定工作流程部分。
 
 > [!tip]
 >
-> - Qwen Code 始终能够访问最新的 Qwen Code 文档，无论你使用的是哪个版本
+> - Qwen Code 始终能够访问最新的 Qwen Code 文档，无论您使用的是哪个版本
 > - 提出具体问题以获得详细答案
-> - Qwen Code 可以解释复杂的功能，例如 MCP 集成、企业配置和高级工作流程
+> - Qwen Code 可以解释复杂功能，例如 MCP 集成、企业配置和高级工作流程

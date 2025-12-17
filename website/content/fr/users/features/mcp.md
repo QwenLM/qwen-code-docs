@@ -4,7 +4,7 @@ Qwen Code peut se connecter à des outils externes et des sources de données vi
 
 ## Ce que vous pouvez faire avec MCP
 
-Avec des serveurs MCP connectés, vous pouvez demander à Qwen Code de :
+Avec les serveurs MCP connectés, vous pouvez demander à Qwen Code de :
 
 - Travailler avec des fichiers et des dépôts (lire/rechercher/écrire, selon les outils activés)
 - Interroger des bases de données (inspection du schéma, requêtes, rapports)
@@ -12,6 +12,7 @@ Avec des serveurs MCP connectés, vous pouvez demander à Qwen Code de :
 - Automatiser des workflows (tâches reproductibles exposées sous forme d'outils/prompts)
 
 > [!tip]
+>
 > Si vous cherchez la « commande unique pour démarrer », rendez-vous directement à la section [Démarrage rapide](#démarrage-rapide).
 
 ## Démarrage rapide
@@ -51,7 +52,8 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 ```
 
 > [!tip]
-> Pour les couches de configuration avancées (valeurs par défaut du système/paramètres système et règles de priorité), voir [Paramètres](../users/configuration/settings).
+>
+> Pour les couches de configuration avancées (valeurs par défaut du système/paramètres système et règles de priorité), voir [Paramètres](../configuration/settings).
 
 ## Configurer les serveurs
 
@@ -59,16 +61,17 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 
 | Transport | Quand l'utiliser                                                  | Champ(s) JSON                              |
 | --------- | ----------------------------------------------------------------- | ------------------------------------------ |
-| `http`    | Recommandé pour les services distants ; fonctionne bien avec les serveurs MCP cloud | `httpUrl` (+ `headers` facultatifs)        |
-| `sse`     | Serveurs hérités/obsolètes qui ne prennent en charge que les événements envoyés par le serveur | `url` (+ `headers` facultatifs)            |
+| `http`    | Recommandé pour les services distants ; fonctionne bien avec les serveurs MCP cloud | `httpUrl` (+ `headers` facultatif)         |
+| `sse`     | Serveurs hérités/obsolètes qui ne prennent en charge que les événements envoyés par le serveur | `url` (+ `headers` facultatif)             |
 | `stdio`   | Processus local (scripts, CLI, Docker) sur votre machine          | `command`, `args` (+ `cwd`, `env` facultatifs) |
 
 > [!note]
+>
 > Si un serveur prend en charge les deux, préférez **HTTP** à **SSE**.
 
-### Configuration via `settings.json` vs `qwen mcp add`
+### Configuration via `settings.json` ou `qwen mcp add`
 
-Les deux approches produisent les mêmes entrées `mcpServers` dans votre `settings.json` — utilisez celle que vous préférez.
+Les deux approches produisent les mêmes entrées `mcpServers` dans votre fichier `settings.json` — utilisez celle que vous préférez.
 
 #### Serveur Stdio (processus local)
 
@@ -169,12 +172,12 @@ Exemple : inclure uniquement quelques outils :
 }
 ```
 
-### Listes globales d'autorisation/exclusion
+### Listes globales d'autorisation/refus
 
 L'objet `mcp` dans votre `settings.json` définit des règles globales pour tous les serveurs MCP :
 
 - `mcp.allowed` : liste d'autorisation des noms de serveurs MCP (clés dans `mcpServers`)
-- `mcp.excluded` : liste d'exclusion des noms de serveurs MCP
+- `mcp.excluded` : liste de refus des noms de serveurs MCP
 
 Exemple :
 
@@ -211,7 +214,7 @@ Ajoutez un objet `mcpServers` à votre fichier `settings.json` :
       "env": {
         "API_KEY": "$MY_API_TOKEN"
       },
-      "cwd": "./répertoire-serveur",
+      "cwd": "./répertoire-du-serveur",
       "timeout": 30000,
       "trust": false
     }
@@ -231,26 +234,24 @@ Requis (l'une des propriétés suivantes) :
 
 Optionnel :
 
-| Propriété              | Type/Valeur par défaut           | Description                                                                                                                                                                                                                                                      |
-| ---------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `args`                 | tableau                          | Arguments de ligne de commande pour le transport Stdio                                                                                                                                                                                                           |
-| `headers`              | objet                            | En-têtes HTTP personnalisés lors de l'utilisation de `url` ou `httpUrl`                                                                                                                                                                                          |
-| `env`                  | objet                            | Variables d'environnement pour le processus du serveur. Les valeurs peuvent référencer des variables d'environnement en utilisant la syntaxe `$VAR_NAME` ou `${VAR_NAME}`                                                                                           |
-| `cwd`                  | chaîne de caractères             | Répertoire de travail pour le transport Stdio                                                                                                                                                                                                                    |
-| `timeout`              | nombre<br>(par défaut : 600 000) | Délai d'expiration des requêtes en millisecondes (par défaut : 600 000 ms = 10 minutes)                                                                                                                                                                          |
-| `trust`                | booléen<br>(par défaut : false)  | Si `true`, contourne toutes les confirmations d'appel d'outils pour ce serveur (par défaut : `false`)                                                                                                                                                             |
+| Propriété              | Type/Valeur par défaut           | Description                                                                                                                                                                                                                                                           |
+| ---------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `args`                 | tableau                          | Arguments de ligne de commande pour le transport Stdio                                                                                                                                                                                                                |
+| `headers`              | objet                            | En-têtes HTTP personnalisés lors de l'utilisation de `url` ou `httpUrl`                                                                                                                                                                                               |
+| `env`                  | objet                            | Variables d'environnement pour le processus du serveur. Les valeurs peuvent référencer des variables d'environnement en utilisant la syntaxe `$VAR_NAME` ou `${VAR_NAME}`                                                                                              |
+| `cwd`                  | chaîne                           | Répertoire de travail pour le transport Stdio                                                                                                                                                                                                                         |
+| `timeout`              | nombre<br>(par défaut : 600 000) | Délai d'expiration des requêtes en millisecondes (par défaut : 600 000 ms = 10 minutes)                                                                                                                                                                               |
+| `trust`                | booléen<br>(par défaut : false)  | Si `true`, contourne toutes les confirmations d'appel d'outils pour ce serveur (par défaut : `false`)                                                                                                                                                                 |
 | `includeTools`         | tableau                          | Liste des noms d'outils à inclure depuis ce serveur MCP. Lorsque cette propriété est spécifiée, seuls les outils listés ici seront disponibles depuis ce serveur (comportement de liste autorisée). Si non spécifié, tous les outils du serveur sont activés par défaut. |
 | `excludeTools`         | tableau                          | Liste des noms d'outils à exclure depuis ce serveur MCP. Les outils listés ici ne seront pas disponibles pour le modèle, même s'ils sont exposés par le serveur.<br>Note : `excludeTools` prime sur `includeTools` – si un outil figure dans les deux listes, il sera exclu. |
-| `targetAudience`       | chaîne de caractères             | L'ID client OAuth mis sur liste blanche sur l'application protégée par IAP à laquelle vous tentez d'accéder. Utilisé avec `authProviderType: 'service_account_impersonation'`.                                                                                  |
-| `targetServiceAccount` | chaîne de caractères             | Adresse e-mail du compte de service Google Cloud à impersonnaliser. Utilisé avec `authProviderType: 'service_account_impersonation'`.                                                                                                                           |
-
-<a id="qwen-mcp-cli"></a>
+| `targetAudience`       | chaîne                           | L'ID client OAuth mis sur liste blanche sur l'application protégée par IAP à laquelle vous tentez d'accéder. Utilisé avec `authProviderType: 'service_account_impersonation'`.                                                                                      |
+| `targetServiceAccount` | chaîne                           | L'adresse e-mail du compte de service Google Cloud à impersonner. Utilisé avec `authProviderType: 'service_account_impersonation'`.                                                                                                                                 |
 
 ### Gérer les serveurs MCP avec `qwen mcp`
 
 Vous pouvez toujours configurer les serveurs MCP en modifiant manuellement `settings.json`, mais l'interface en ligne de commande est généralement plus rapide.
 
-#### Ajouter un serveur (`qwen mcp add`)
+#### Ajout d’un serveur (`qwen mcp add`)
 
 ```bash
 qwen mcp add [options] <name> <commandOrUrl> [args...]
@@ -259,17 +260,17 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 | Argument/Option     | Description                                                         | Valeur par défaut  | Exemple                                   |
 | ------------------- | ------------------------------------------------------------------- | ------------------ | ----------------------------------------- |
 | `<name>`            | Un nom unique pour le serveur.                                      | —                  | `example-server`                          |
-| `<commandOrUrl>`    | La commande à exécuter (pour `stdio`) ou l'URL (pour `http`/`sse`). | —                  | `/usr/bin/python` ou `http://localhost:8` |
-| `[args...]`         | Arguments optionnels pour une commande `stdio`.                     | —                  | `--port 5000`                             |
+| `<commandOrUrl>`    | La commande à exécuter (pour `stdio`) ou l’URL (pour `http`/`sse`). | —                  | `/usr/bin/python` ou `http://localhost:8` |
+| `[args...]`         | Arguments facultatifs pour une commande `stdio`.                    | —                  | `--port 5000`                             |
 | `-s`, `--scope`     | Portée de la configuration (utilisateur ou projet).                 | `project`          | `-s user`                                 |
 | `-t`, `--transport` | Type de transport (`stdio`, `sse`, `http`).                         | `stdio`            | `-t sse`                                  |
-| `-e`, `--env`       | Définir des variables d'environnement.                              | —                  | `-e KEY=value`                            |
+| `-e`, `--env`       | Définir des variables d’environnement.                              | —                  | `-e KEY=value`                            |
 | `-H`, `--header`    | Définir des en-têtes HTTP pour les transports SSE et HTTP.          | —                  | `-H "X-Api-Key: abc123"`                  |
-| `--timeout`         | Définir le délai d'attente de connexion en millisecondes.           | —                  | `--timeout 30000`                         |
-| `--trust`           | Faire confiance au serveur (contourne toutes les confirmations d'appel d'outils). | — (`false`)        | `--trust`                                 |
+| `--timeout`         | Définir le délai d’expiration de connexion en millisecondes.        | —                  | `--timeout 30000`                         |
+| `--trust`           | Faire confiance au serveur (contourne toutes les confirmations d’appel d’outils). | — (`false`)        | `--trust`                                 |
 | `--description`     | Définir la description du serveur.                                  | —                  | `--description "Outils locaux"`           |
-| `--include-tools`   | Liste d'outils à inclure, séparés par des virgules.                 | tous les outils inclus | `--include-tools mytool,othertool`        |
-| `--exclude-tools`   | Liste d'outils à exclure, séparés par des virgules.                 | aucun              | `--exclude-tools mytool`                  |
+| `--include-tools`   | Liste d’outils à inclure, séparés par des virgules.                 | tous les outils inclus | `--include-tools mytool,othertool`        |
+| `--exclude-tools`   | Liste d’outils à exclure, séparés par des virgules.                 | aucun              | `--exclude-tools mytool`                  |
 
 #### Liste des serveurs (`qwen mcp list`)
 

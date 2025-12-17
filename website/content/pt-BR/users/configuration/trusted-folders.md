@@ -2,9 +2,9 @@
 
 O recurso de Pastas Confiáveis é uma configuração de segurança que oferece controle sobre quais projetos podem utilizar todos os recursos do Qwen Code. Ele evita que códigos potencialmente maliciosos sejam executados, solicitando que você aprove uma pasta antes que a CLI carregue qualquer configuração específica do projeto a partir dela.
 
-## Ativando o Recurso
+## Habilitando o Recurso
 
-O recurso de Pastas Confiáveis está **desativado por padrão**. Para utilizá-lo, você deve primeiro ativá-lo nas suas configurações.
+O recurso de Pastas Confiáveis está **desabilitado por padrão**. Para utilizá-lo, você deve primeiro habilitá-lo nas suas configurações.
 
 Adicione o seguinte ao seu arquivo `settings.json` do usuário:
 
@@ -22,15 +22,15 @@ Adicione o seguinte ao seu arquivo `settings.json` do usuário:
 
 Uma vez que o recurso esteja ativado, na primeira vez que você executar o Qwen Code a partir de uma pasta, um diálogo aparecerá automaticamente, solicitando que você faça uma escolha:
 
-- **Confiar na pasta**: Concede confiança total à pasta atual (por exemplo, `meu-projeto`).
-- **Confiar na pasta pai**: Concede confiança ao diretório pai (por exemplo, `projetos-seguros`), o que também concede confiança automaticamente a todos os seus subdiretórios. Isso é útil se você mantiver todos os seus projetos seguros em um único local.
+- **Confiar na pasta**: Concede confiança total à pasta atual (por exemplo, `my-project`).
+- **Confiar na pasta pai**: Concede confiança ao diretório pai (por exemplo, `safe-projects`), o que também concede confiança automaticamente a todos os seus subdiretórios. Isso é útil se você mantiver todos os seus projetos seguros em um único local.
 - **Não confiar**: Marca a pasta como não confiável. A CLI operará em um "modo seguro" restrito.
 
 Sua escolha é salva em um arquivo central (`~/.qwen/trustedFolders.json`), portanto, você só será perguntado uma vez por pasta.
 
 ## Por Que a Confiança é Importante: O Impacto de um Workspace Não Confiável
 
-Quando uma pasta é **não confiável**, o Qwen Code é executado em um modo restrito "seguro" para proteger você. Nesse modo, os seguintes recursos são desativados:
+Quando uma pasta é **não confiável**, o Qwen Code é executado em um modo "seguro" restrito para proteger você. Nesse modo, os seguintes recursos são desativados:
 
 1.  **As Configurações do Workspace são Ignoradas**: A CLI **não** carregará o arquivo `.qwen/settings.json` do projeto. Isso evita o carregamento de ferramentas personalizadas e outras configurações potencialmente perigosas.
 
@@ -46,16 +46,16 @@ Conceder confiança a uma pasta libera a funcionalidade completa do Qwen Code pa
 
 ## Gerenciando Suas Configurações de Confiança
 
-Se você precisar alterar uma decisão ou visualizar todas as suas configurações, há algumas opções disponíveis:
+Se você precisar alterar uma decisão ou ver todas as suas configurações, você tem algumas opções:
 
-- **Alterar a Confiança da Pasta Atual**: Execute o comando `/permissions` diretamente no CLI. Isso abrirá o mesmo diálogo interativo, permitindo que você altere o nível de confiança para a pasta atual.
+- **Alterar a Confiança da Pasta Atual**: Execute o comando `/permissions` dentro da CLI. Isso abrirá o mesmo diálogo interativo, permitindo que você altere o nível de confiança para a pasta atual.
 
-- **Visualizar Todas as Regras de Confiança**: Para ver uma lista completa de todas as regras de pastas confiáveis e não confiáveis, você pode inspecionar o conteúdo do arquivo `~/.qwen/trustedFolders.json` no seu diretório pessoal.
+- **Ver Todas as Regras de Confiança**: Para ver uma lista completa de todas as suas regras de pastas confiáveis e não confiáveis, você pode inspecionar o conteúdo do arquivo `~/.qwen/trustedFolders.json` no seu diretório home.
 
 ## O Processo de Verificação de Confiança (Avançado)
 
-Para usuários avançados, é útil conhecer a ordem exata das operações usadas para determinar a confiança:
+Para usuários avançados, é útil saber a ordem exata das operações de como a confiança é determinada:
 
-1.  **Sinal de Confiança do IDE**: Se você estiver usando a [Integração com IDE](../users/ide-integration/ide-integration), o CLI primeiro consulta o IDE para saber se o espaço de trabalho é confiável. A resposta do IDE tem a mais alta prioridade.
+1.  **Sinal de Confiança do IDE**: Se você estiver usando a [Integração com IDE](../ide-integration/ide-integration), a CLI primeiro pergunta ao IDE se o workspace é confiável. A resposta do IDE tem a mais alta prioridade.
 
-2.  **Arquivo Local de Confiança**: Se o IDE não estiver conectado, o CLI verifica o arquivo central `~/.qwen/trustedFolders.json`.
+2.  **Arquivo de Confiança Local**: Se o IDE não estiver conectado, a CLI verifica o arquivo central `~/.qwen/trustedFolders.json`.

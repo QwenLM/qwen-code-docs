@@ -7,7 +7,7 @@
 ### Features
 
 - **Native agent experience**: Integrated AI assistant panel within Zed's interface
-- **Agent Control Protocol**: Full support for ACP enabling advanced IDE interactions
+- **Agent Client Protocol**: Full support for ACP enabling advanced IDE interactions
 - **File management**: @-mention files to add them to the conversation context
 - **Conversation history**: Access to past conversations within Zed
 

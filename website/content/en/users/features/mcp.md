@@ -12,6 +12,7 @@ With MCP servers connected, you can ask Qwen Code to:
 - Automate workflows (repeatable tasks exposed as tools/prompts)
 
 > [!tip]
+>
 > If you’re looking for the “one command to get started”, jump to [Quick start](#quick-start).
 
 ## Quick start
@@ -51,7 +52,8 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 ```
 
 > [!tip]
-> For advanced configuration layers (system defaults/system settings and precedence rules), see [Settings](../users/configuration/settings).
+>
+> For advanced configuration layers (system defaults/system settings and precedence rules), see [Settings](../configuration/settings).
 
 ## Configure servers
 
@@ -64,6 +66,7 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 | `stdio`   | Local process (scripts, CLIs, Docker) on your machine             | `command`, `args` (+ optional `cwd`, `env`) |
 
 > [!note]
+>
 > If a server supports both, prefer **HTTP** over **SSE**.
 
 ### Configure via `settings.json` vs `qwen mcp add`

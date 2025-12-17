@@ -1,10 +1,10 @@
 # Visual Studio Code
 
-> L'extension VS Code (Beta) vous permet de voir les modifications de Qwen en temps réel grâce à une interface graphique native intégrée directement dans votre IDE, facilitant l'accès et l'interaction avec Qwen Code.
+> L'extension VS Code (Beta) vous permet de voir les modifications de Qwen en temps réel grâce à une interface graphique native intégrée directement dans votre IDE, facilitant ainsi l'accès et l'interaction avec Qwen Code.
 
 <br/>
 
-<video src="https://cloud.video.taobao.com/vod/JnvYMhUia2EKFAaiuErqNpzWE9mz3odG76vArAHNg94.mp4" controls width="800">
+<video src="https://cloud.video.taobao.com/vod/IKKwfM-kqNI3OJjM_U8uMCSMAoeEcJhs6VNCQmZxUfk.mp4" controls width="800">
   Votre navigateur ne prend pas en charge la balise vidéo.
 </video>
 

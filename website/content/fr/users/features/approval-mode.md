@@ -1,11 +1,13 @@
-Qwen Code offre trois modes de permission distincts qui vous permettent de contrôler de manière flexible la façon dont l'IA interagit avec votre code et votre système, en fonction de la complexité des tâches et du niveau de risque.
+# Mode d'approbation
+
+Qwen Code propose trois modes de permission distincts qui vous permettent de contrôler de manière flexible la façon dont l'IA interagit avec votre code et votre système, en fonction de la complexité des tâches et du niveau de risque.
 
 ## Comparaison des modes de permission
 
 | Mode           | Modification de fichiers         | Commandes shell              | Idéal pour                                                                                                | Niveau de risque |
 | -------------- | -------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------- |
 | **Plan**​      | ❌ Analyse en lecture seule      | ❌ Non exécuté               | • Exploration de code <br>• Planification de changements complexes <br>• Revue de code sécurisée          | Le plus faible   |
-| **Default**​   | ✅ Approbation manuelle requise  | ✅ Approbation manuelle requise | • Nouvelles bases de code inconnues <br>• Systèmes critiques <br>• Collaboration en équipe <br>• Apprentissage et enseignement | Faible           |
+| **Default**​   | ✅ Approbation manuelle requise  | ✅ Approbation manuelle requise | • Nouveaux codes sources/non familiers <br>• Systèmes critiques <br>• Collaboration en équipe <br>• Apprentissage et enseignement | Faible           |
 | **Auto-Edit**​ | ✅ Approuvé automatiquement      | ❌ Approbation manuelle requise | • Tâches de développement quotidiennes <br>• Refactorisation et améliorations de code <br>• Automatisation sécurisée | Moyen            |
 | **YOLO**​      | ✅ Approuvé automatiquement      | ✅ Approuvé automatiquement   | • Projets personnels fiables <br>• Scripts automatisés/CI/CD <br>• Tâches de traitement par lots         | Le plus élevé    |
 
@@ -22,19 +24,19 @@ Qwen Code offre trois modes de permission distincts qui vous permettent de contr
 
 ## 1. Utiliser le Mode Plan pour une analyse sécurisée du code
 
-Le Mode Plan demande à Qwen Code de créer un plan en analysant la base de code à l'aide d'opérations **en lecture seule**, parfait pour explorer des bases de code, planifier des modifications complexes ou examiner du code en toute sécurité.
+Le Mode Plan demande à Qwen Code de créer un plan en analysant la base de code à l’aide d’opérations **en lecture seule**, parfait pour explorer des bases de code, planifier des modifications complexes ou examiner du code en toute sécurité.
 
 ### Quand utiliser le mode Plan
 
 - **Implémentation en plusieurs étapes** : Lorsque votre fonctionnalité nécessite des modifications dans de nombreux fichiers
 - **Exploration du code** : Lorsque vous souhaitez explorer la base de code en profondeur avant d'apporter des modifications
-- **Développement interactif** : Lorsque vous voulez itérer sur la direction avec Qwen Code
+- **Développement interactif** : Lorsque vous souhaitez itérer sur la direction avec Qwen Code
 
 ### Comment utiliser le mode Plan
 
 **Activer le mode Plan pendant une session**
 
-Vous pouvez basculer en mode Plan pendant une session en utilisant **Maj+Tab** pour parcourir les modes d'autorisation.
+Vous pouvez basculer en mode Plan pendant une session en utilisant **Maj+Tab** pour faire défiler les modes d'autorisation.
 
 Si vous êtes en mode Normal, **Maj+Tab** active d'abord le mode `auto-edits`, indiqué par `⏵⏵ accept edits on` en bas du terminal. Un appui supplémentaire sur **Maj+Tab** permet de passer en mode Plan, indiqué par `⏸ plan mode`.
 
@@ -64,7 +66,7 @@ qwen --prompt "Qu'est-ce que l'apprentissage automatique ?"
 Je dois restructurer notre système d'authentification pour utiliser OAuth2. Créez un plan de migration détaillé.
 ```
 
-Qwen Code analyse l'implémentation actuelle et établit un plan complet. Affinez-le avec des demandes complémentaires :
+Qwen Code analyse l'implémentation actuelle et élabore un plan complet. Affinez-le avec des demandes complémentaires :
 
 ```
 Qu'en est-il de la compatibilité ascendante ?
@@ -88,7 +90,7 @@ Le mode par défaut est la manière standard de travailler avec Qwen Code. Dans 
 
 ### Quand utiliser le mode par défaut
 
-- **Nouveau sur une base de code** : Lorsque vous explorez un projet peu familier et que vous souhaitez faire preuve de grande prudence
+- **Nouveau sur une base de code** : Lorsque vous explorez un projet peu familier et que vous souhaitez faire preuve de prudence accrue
 - **Systèmes critiques** : Lorsque vous travaillez sur du code en production, de l'infrastructure ou des données sensibles
 - **Apprentissage et enseignement** : Lorsque vous souhaitez comprendre chaque étape effectuée par Qwen Code
 - **Collaboration en équipe** : Lorsque plusieurs personnes travaillent sur la même base de code
@@ -134,7 +136,7 @@ Qwen Code analysera votre base de code et proposera un plan. Il vous demandera e
 
 Vous pouvez examiner chaque modification proposée et l'approuver ou la rejeter individuellement.
 
-### Configurer le mode par défaut comme default
+### Configurer le mode par défaut comme valeur par défaut
 
 ```bash
 // .qwen/settings.json
@@ -145,9 +147,9 @@ Vous pouvez examiner chaque modification proposée et l'approuver ou la rejeter 
 }
 ```
 
-## 3. Mode Auto Édition
+## 3. Mode Édition Automatique
 
-Le mode Auto-Édition indique à Qwen Code d'approuver automatiquement les modifications de fichiers tout en nécessitant une approbation manuelle pour les commandes shell, idéal pour accélérer les flux de travail de développement tout en maintenant la sécurité du système.
+Le mode Édition Automatique indique à Qwen Code d'approuver automatiquement les modifications de fichiers tout en nécessitant une approbation manuelle pour les commandes shell, idéal pour accélérer les flux de travail de développement tout en maintenant la sécurité du système.
 
 ### Quand utiliser le mode Auto-Accept Edits
 
@@ -186,11 +188,11 @@ Le mode YOLO accorde à Qwen Code les autorisations les plus élevées, approuva
 
 > [!warning]
 >
-> **Utilisez le mode YOLO avec précaution** : L'IA peut exécuter n'importe quelle commande avec les permissions de votre terminal. Assurez-vous que :
+> **Utilisez le mode YOLO avec prudence** : L'IA peut exécuter n'importe quelle commande avec les permissions de votre terminal. Assurez-vous que :
 >
 > 1. Vous faites confiance au code source actuel
 > 2. Vous comprenez toutes les actions que l'IA va effectuer
-> 3. Les fichiers importants sont sauvegardés ou validés dans le contrôle de version
+> 3. Les fichiers importants sont sauvegardés ou commités dans le contrôle de version
 
 ### Comment activer le mode YOLO
 
@@ -219,7 +221,7 @@ Le mode YOLO accorde à Qwen Code les autorisations les plus élevées, approuva
 }
 ```
 
-### Exemple de flux de travail automatisé
+### Exemple de workflow automatisé
 
 ```bash
 
@@ -237,9 +239,9 @@ qwen --prompt "Exécuter la suite de tests, corriger tous les tests en échec, p
 
 ## Changement de mode et configuration
 
-### Changement par raccourci clavier
+### Changement via raccourci clavier
 
-Durant une session Qwen Code, utilisez **Maj+Tab** pour passer rapidement d'un mode à l'autre parmi les trois modes suivants :
+Durant une session Qwen Code, utilisez **Maj+Tab**​ pour passer rapidement d'un mode à l'autre parmi les trois modes suivants :
 
 ```
 Mode par défaut → Mode auto-édition → Mode YOLO → Mode plan → Mode par défaut
@@ -262,6 +264,6 @@ Mode par défaut → Mode auto-édition → Mode YOLO → Mode plan → Mode par
 ### Recommandations d'utilisation des modes
 
 1. **Nouveau sur la base de code** : Commencez par le **Mode Plan** pour une exploration sécurisée  
-2. **Tâches de développement quotidiennes** : Utilisez **Accepter automatiquement les modifications** (mode par défaut), efficace et sécurisé  
+2. **Tâches de développement quotidiennes** : Utilisez **Acceptation automatique des modifications** (mode par défaut), efficace et sécurisé  
 3. **Scripts automatisés** : Utilisez le **Mode YOLO** dans des environnements contrôlés pour une automatisation complète  
 4. **Refactorisation complexe** : Utilisez d'abord le **Mode Plan** pour une planification détaillée, puis passez au mode approprié pour l'exécution
