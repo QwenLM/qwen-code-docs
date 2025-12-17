@@ -4,6 +4,7 @@ import { Pre, withIcons } from "nextra/components";
 import { GitHubIcon } from "nextra/icons";
 import type { UseMDXComponents } from "nextra/mdx-components";
 import type { ImgHTMLAttributes } from "react";
+import { LocaleAnchor } from "./src/components/locale-anchor";
 
 // 自定义 img 组件，动态替换路径
 const CustomImg = (props: ImgHTMLAttributes<HTMLImageElement>) => {
@@ -22,6 +23,7 @@ const docsComponents = getDocsMDXComponents({
 
 export const useMDXComponents: UseMDXComponents<any> = (components = {}) => ({
   ...docsComponents,
+  a: LocaleAnchor,
   img: CustomImg,
   ...components,
 });
