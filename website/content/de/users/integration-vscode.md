@@ -1,19 +1,19 @@
 # Visual Studio Code
 
-> Die VS Code-Erweiterung (Beta) ermöglicht es dir, Änderungen von Qwen in Echtzeit über eine native grafische Oberfläche direkt in deiner IDE zu sehen, was den Zugriff und die Interaktion mit Qwen Code erleichtert.
+> Die VS Code-Erweiterung (Beta) ermöglicht es dir, Änderungen von Qwen in Echtzeit über eine native grafische Oberfläche zu sehen, die direkt in deine IDE integriert ist, was den Zugriff auf und die Interaktion mit Qwen Code erleichtert.
 
 <br/>
 
-<video src="https://cloud.video.taobao.com/vod/JnvYMhUia2EKFAaiuErqNpzWE9mz3odG76vArAHNg94.mp4" controls width="800">
+<video src="https://cloud.video.taobao.com/vod/IKKwfM-kqNI3OJjM_U8uMCSMAoeEcJhs6VNCQmZxUfk.mp4" controls width="800">
   Dein Browser unterstützt das Video-Tag nicht.
 </video>
 
 ### Funktionen
 
-- **Native IDE-Erfahrung**: Dediziertes Qwen Code-Seitenleistenpanel, aufrufbar über das Qwen-Symbol
+- **Native IDE-Erfahrung**: Dediziertes Qwen Code-Seitenleistenpanel, erreichbar über das Qwen-Symbol
 - **Automatischer Übernahmemodus für Bearbeitungen**: Wende Qwens Änderungen automatisch an, sobald sie vorgenommen werden
-- **Dateiverwaltung**: @-Erwähnung von Dateien oder Anhängen von Dateien und Bildern mithilfe des Systemdateipickers
-- **Konversationsverlauf**: Zugriff auf vergangene Konversationen
+- **Dateiverwaltung**: @-Erwähnung von Dateien oder Anhängen von Dateien und Bildern mithilfe des Systemdateiauswahldialogs
+- **Konversationsverlauf**: Zugriff auf vergangene Gespräche
 - **Mehrere Sitzungen**: Führe mehrere Qwen Code-Sitzungen gleichzeitig aus
 
 ### Anforderungen

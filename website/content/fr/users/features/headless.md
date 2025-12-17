@@ -17,7 +17,7 @@ Le mode headless fournit une interface headless à Qwen Code qui :
 
 ### Invites directes
 
-Utilisez le drapeau `--prompt` (ou `-p`) pour exécuter en mode headless :
+Utilisez le flag `--prompt` (ou `-p`) pour exécuter en mode headless :
 
 ```bash
 qwen --prompt "Qu'est-ce que l'apprentissage automatique ?"
@@ -79,7 +79,7 @@ La capitale de la France est Paris.
 
 Retourne des données structurées sous forme de tableau JSON. Tous les messages sont mis en mémoire tampon et sortis ensemble lorsque la session se termine. Ce format est idéal pour le traitement programmatique et les scripts d'automatisation.
 
-La sortie JSON est un tableau d'objets message. La sortie inclut plusieurs types de messages : messages système (initialisation de la session), messages d'assistant (réponses de l'IA) et messages de résultat (résumé de l'exécution).
+La sortie JSON est un tableau d'objets message. La sortie inclut plusieurs types de messages : messages système (initialisation de la session), messages de l'assistant (réponses de l'IA) et messages de résultat (résumé de l'exécution).
 
 #### Exemple d'utilisation
 
@@ -155,12 +155,12 @@ qwen -p "Write a Python script" --output-format stream-json --include-partial-me
 
 ### Format d'entrée
 
-Le paramètre `--input-format` contrôle la façon dont Qwen Code consomme les entrées depuis l'entrée standard :
+Le paramètre `--input-format` contrôle la façon dont Qwen Code consomme l'entrée depuis l'entrée standard :
 
 - **`text`** (par défaut) : Entrée texte standard depuis stdin ou les arguments de ligne de commande
 - **`stream-json`** : Protocole de messages JSON via stdin pour une communication bidirectionnelle
 
-> **Remarque :** Le mode d'entrée Stream-json est actuellement en construction et destiné à l'intégration avec le SDK. Il nécessite que `--output-format stream-json` soit défini.
+> **Remarque :** Le mode d'entrée stream-json est actuellement en construction et destiné à l'intégration avec le SDK. Il nécessite que `--output-format stream-json` soit défini.
 
 ### Redirection de fichiers
 
@@ -169,16 +169,16 @@ Enregistrez la sortie dans des fichiers ou redirigez-la vers d'autres commandes 
 ```bash
 
 # Enregistrer dans un fichier
-qwen -p "Expliquer Docker" > docker-explanation.txt
-qwen -p "Expliquer Docker" --output-format json > docker-explanation.json
+qwen -p "Explain Docker" > docker-explanation.txt
+qwen -p "Explain Docker" --output-format json > docker-explanation.json
 
 # Ajouter à un fichier
-qwen -p "Ajouter plus de détails" >> docker-explanation.txt
+qwen -p "Add more details" >> docker-explanation.txt
 
 # Rediriger vers d'autres outils
-qwen -p "Qu'est-ce que Kubernetes ?" --output-format json | jq '.response'
-qwen -p "Expliquer les microservices" | wc -w
-qwen -p "Lister les langages de programmation" | grep -i "python"```
+qwen -p "What is Kubernetes?" --output-format json | jq '.response'
+qwen -p "Explain microservices" | wc -w
+qwen -p "List programming languages" | grep -i "python"```
 
 # Sortie Stream-JSON pour le traitement en temps réel
 qwen -p "Expliquer Docker" --output-format stream-json | jq '.type'
@@ -203,7 +203,7 @@ Options principales en ligne de commande pour une utilisation sans interface gra
 | `--continue`                 | Reprendre la session la plus récente pour ce projet | `qwen --continue -p "Reprendre là où nous nous étions arrêtés"`          |
 | `--resume [sessionId]`       | Reprendre une session spécifique (ou choisir de manière interactive) | `qwen --resume 123e... -p "Terminer le refactoring"`                     |
 
-Pour obtenir tous les détails sur les options de configuration disponibles, les fichiers de paramètres et les variables d'environnement, consultez le [Guide de configuration](../users/configuration/settings).
+Pour obtenir tous les détails sur les options de configuration disponibles, les fichiers de paramètres et les variables d’environnement, consultez le [Guide de configuration](../configuration/settings).
 
 ## Exemples
 
@@ -276,7 +276,7 @@ tail -5 usage.log
 
 ## Ressources
 
-- [Configuration de la CLI](../users/configuration/settings#command-line-arguments) - Guide complet de configuration
-- [Authentification](../users/configuration/settings#environment-variables-for-api-access) - Configuration de l'authentification
-- [Commandes](../users/reference/cli-reference) - Référence interactive des commandes
-- [Tutoriels](../users/quickstart) - Guides d'automatisation pas à pas
+- [Configuration de la CLI](../configuration/settings#command-line-arguments) - Guide complet de configuration
+- [Authentification](../configuration/settings#environment-variables-for-api-access) - Configuration de l'authentification
+- [Commandes](../features/commands) - Référence des commandes interactives
+- [Tutoriels](../quickstart) - Guides d'automatisation pas à pas

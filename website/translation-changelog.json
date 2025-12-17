@@ -1,5 +1,150 @@
 [
   {
+    "timestamp": "2025-12-17T13:57:07.852Z",
+    "commit": "f9a1ee2442a7ac6f89c9c4e950567c6a69990195",
+    "sourceLanguage": "en",
+    "translatedFiles": {
+      "zh": {
+        "success": [
+          "index.md",
+          "users/common-workflow.md",
+          "users/configuration/qwen-ignore.md",
+          "users/configuration/settings.md",
+          "users/configuration/themes.md",
+          "users/configuration/trusted-folders.md",
+          "users/features/approval-mode.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/sandbox.md",
+          "users/ide-integration/ide-integration.md",
+          "users/integration-github-action.md",
+          "users/integration-vscode.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/tos-privacy.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "de": {
+        "success": [
+          "index.md",
+          "users/common-workflow.md",
+          "users/configuration/qwen-ignore.md",
+          "users/configuration/settings.md",
+          "users/configuration/themes.md",
+          "users/configuration/trusted-folders.md",
+          "users/features/approval-mode.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/sandbox.md",
+          "users/ide-integration/ide-integration.md",
+          "users/integration-github-action.md",
+          "users/integration-vscode.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/tos-privacy.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "fr": {
+        "success": [
+          "index.md",
+          "users/common-workflow.md",
+          "users/configuration/qwen-ignore.md",
+          "users/configuration/settings.md",
+          "users/configuration/themes.md",
+          "users/configuration/trusted-folders.md",
+          "users/features/approval-mode.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/sandbox.md",
+          "users/ide-integration/ide-integration.md",
+          "users/integration-github-action.md",
+          "users/integration-vscode.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/tos-privacy.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ru": {
+        "success": [
+          "index.md",
+          "users/common-workflow.md",
+          "users/configuration/qwen-ignore.md",
+          "users/configuration/settings.md",
+          "users/configuration/themes.md",
+          "users/configuration/trusted-folders.md",
+          "users/features/approval-mode.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/sandbox.md",
+          "users/ide-integration/ide-integration.md",
+          "users/integration-github-action.md",
+          "users/integration-vscode.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/tos-privacy.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ja": {
+        "success": [
+          "index.md",
+          "users/common-workflow.md",
+          "users/configuration/qwen-ignore.md",
+          "users/configuration/settings.md",
+          "users/configuration/themes.md",
+          "users/configuration/trusted-folders.md",
+          "users/features/approval-mode.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/sandbox.md",
+          "users/ide-integration/ide-integration.md",
+          "users/integration-github-action.md",
+          "users/integration-vscode.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/tos-privacy.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "pt-BR": {
+        "success": [
+          "index.md",
+          "users/common-workflow.md",
+          "users/configuration/qwen-ignore.md",
+          "users/configuration/settings.md",
+          "users/configuration/themes.md",
+          "users/configuration/trusted-folders.md",
+          "users/features/approval-mode.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/sandbox.md",
+          "users/ide-integration/ide-integration.md",
+          "users/integration-github-action.md",
+          "users/integration-vscode.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/tos-privacy.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      }
+    },
+    "stats": {
+      "totalFiles": 17,
+      "languages": 6,
+      "successCount": 102,
+      "failedCount": 0
+    }
+  },
+  {
     "timestamp": "2025-12-16T02:04:19.641Z",
     "commit": "9f18f53294d60a0e15b26558c687313fedcabb86",
     "sourceLanguage": "en",

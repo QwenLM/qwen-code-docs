@@ -6,41 +6,14 @@
 
 Use it to perform GitHub pull request reviews, triage issues, perform code analysis and modification, and more using [Qwen Code] conversationally (e.g., `@qwencoder fix this issue`) directly inside your GitHub repositories.
 
-- [qwen-code-action](#qwen-code-action)
-  - [Overview](#overview)
-  - [Features](#features)
-  - [Quick Start](#quick-start)
-    - [1. Get a Qwen API Key](#1-get-a-qwen-api-key)
-    - [2. Add it as a GitHub Secret](#2-add-it-as-a-github-secret)
-    - [3. Update your .gitignore](#3-update-your-gitignore)
-    - [4. Choose a Workflow](#4-choose-a-workflow)
-    - [5. Try it out](#5-try-it-out)
-  - [Workflows](#workflows)
-    - [Qwen Code Dispatch](#qwen-code-dispatch)
-    - [Issue Triage](#issue-triage)
-    - [Pull Request Review](#pull-request-review)
-    - [Qwen Code CLI Assistant](#qwen-code-cli-assistant)
-  - [Configuration](#configuration)
-    - [Inputs](#inputs)
-    - [Outputs](#outputs)
-    - [Repository Variables](#repository-variables)
-    - [Secrets](#secrets)
-  - [Authentication](#authentication)
-    - [GitHub Authentication](#github-authentication)
-  - [Extensions](#extensions)
-  - [Best Practices](#best-practices)
-  - [Customization](#customization)
-  - [Contributing](#contributing)
-
 ## Features
 
 - **Automation**: Trigger workflows based on events (e.g. issue opening) or schedules (e.g. nightly).
 - **On-demand Collaboration**: Trigger workflows in issue and pull request
-  comments by mentioning the [Qwen Code CLI] (e.g., `@qwencoder /review`).
-- **Extensible with Tools**: Leverage [Qwen Code] models' tool-calling capabilities to
-  interact with other CLIs like the [GitHub CLI] (`gh`).
+  comments by mentioning the [Qwen Code CLI](./features/commands) (e.g., `@qwencoder /review`).
+- **Extensible with Tools**: Leverage [Qwen Code](../developers/tools/introduction.md) models' tool-calling capabilities to interact with other CLIs like the [GitHub CLI] (`gh`).
 - **Customizable**: Use a `QWEN.md` file in your repository to provide
-  project-specific instructions and context to [Qwen Code CLI].
+  project-specific instructions and context to [Qwen Code CLI](./features/commands).
 
 ## Quick Start
 
@@ -48,7 +21,7 @@ Get started with Qwen Code CLI in your repository in just a few minutes:
 
 ### 1. Get a Qwen API Key
 
-Obtain your API key from [DashScope] (Alibaba Cloud's AI platform)
+Obtain your API key from [DashScope](https://help.aliyun.com/zh/model-studio/qwen-code) (Alibaba Cloud's AI platform)
 
 ### 2. Add it as a GitHub Secret
 
@@ -90,7 +63,7 @@ You have two options to set up a workflow:
 
 **Option B: Manually copy workflows**
 
-1. Copy the pre-built workflows from the [`examples/workflows`](./examples/workflows) directory to your repository's `.github/workflows` directory. Note: the `qwen-dispatch.yml` workflow must also be copied, which triggers the workflows to run.
+1. Copy the pre-built workflows from the [`examples/workflows`](./common-workflow) directory to your repository's `.github/workflows` directory. Note: the `qwen-dispatch.yml` workflow must also be copied, which triggers the workflows to run.
 
 ### 5. Try it out
 
@@ -119,30 +92,19 @@ This action provides several pre-built workflows for different use cases. Each w
 
 ### Qwen Code Dispatch
 
-This workflow acts as a central dispatcher for Qwen Code CLI, routing requests to
-the appropriate workflow based on the triggering event and the command provided
-in the comment. For a detailed guide on how to set up the dispatch workflow, go
-to the
-[Qwen Code Dispatch workflow documentation](./examples/workflows/qwen-dispatch).
+This workflow acts as a central dispatcher for Qwen Code CLI, routing requests to the appropriate workflow based on the triggering event and the command provided in the comment. For a detailed guide on how to set up the dispatch workflow, go to the [Qwen Code Dispatch workflow documentation](./common-workflow).
 
 ### Issue Triage
 
-This action can be used to triage GitHub Issues automatically or on a schedule.
-For a detailed guide on how to set up the issue triage system, go to the
-[GitHub Issue Triage workflow documentation](./examples/workflows/issue-triage).
+This action can be used to triage GitHub Issues automatically or on a schedule. For a detailed guide on how to set up the issue triage system, go to the [GitHub Issue Triage workflow documentation](./examples/workflows/issue-triage).
 
 ### Pull Request Review
 
-This action can be used to automatically review pull requests when they are
-opened. For a detailed guide on how to set up the pull request review system,
-go to the [GitHub PR Review workflow documentation](./examples/workflows/pr-review).
+This action can be used to automatically review pull requests when they are opened. For a detailed guide on how to set up the pull request review system, go to the [GitHub PR Review workflow documentation](./common-workflow).
 
 ### Qwen Code CLI Assistant
 
-This type of action can be used to invoke a general-purpose, conversational Qwen Code
-AI assistant within the pull requests and issues to perform a wide range of
-tasks. For a detailed guide on how to set up the general-purpose Qwen Code CLI workflow,
-go to the [Qwen Code Assistant workflow documentation](./examples/workflows/qwen-assistant).
+This type of action can be used to invoke a general-purpose, conversational Qwen Code AI assistant within the pull requests and issues to perform a wide range of tasks. For a detailed guide on how to set up the general-purpose Qwen Code CLI workflow, go to the [Qwen Code Assistant workflow documentation](./common-workflow).
 
 ## Configuration
 
@@ -222,8 +184,7 @@ To add a secret:
 2. Enter the secret name and value.
 3. Save.
 
-For more information, refer to the
-[official GitHub documentation on creating and using encrypted secrets][secrets].
+For more information, refer to the [official GitHub documentation on creating and using encrypted secrets][secrets].
 
 ## Authentication
 
@@ -239,7 +200,7 @@ You can authenticate with GitHub in two ways:
    authentication, we recommend creating a custom GitHub App.
 
 For detailed setup instructions for both Qwen and GitHub authentication, go to the
-[**Authentication documentation**](./docs/authentication.md).
+[**Authentication documentation**](./configuration/auth).
 
 ## Extensions
 
@@ -247,7 +208,7 @@ The Qwen Code CLI can be extended with additional functionality through extensio
 These extensions are installed from source from their GitHub repositories.
 
 For detailed instructions on how to set up and configure extensions, go to the
-[Extensions documentation](./docs/extensions.md).
+[Extensions documentation](../developers/extensions/extension).
 
 ## Best Practices
 
@@ -258,20 +219,18 @@ Key recommendations include:
 - **Securing Your Repository:** Implementing branch and tag protection, and restricting pull request approvers.
 - **Monitoring and Auditing:** Regularly reviewing action logs and enabling OpenTelemetry for deeper insights into performance and behavior.
 
-For a comprehensive guide on securing your repository and workflows, please refer to our [**Best Practices documentation**](./docs/best-practices.md).
+For a comprehensive guide on securing your repository and workflows, please refer to our [**Best Practices documentation**](./common-workflow).
 
 ## Customization
 
-Create a [QWEN.md] file in the root of your repository to provide
-project-specific context and instructions to [Qwen Code CLI]. This is useful for defining
+Create a QWEN.md file in the root of your repository to provide
+project-specific context and instructions to [Qwen Code CLI](./common-workflow). This is useful for defining
 coding conventions, architectural patterns, or other guidelines the model should
 follow for a given repository.
 
 ## Contributing
 
-Contributions are welcome! Check out the Qwen Code CLI
-[**Contributing Guide**](./CONTRIBUTING.md) for more details on how to get
-started.
+Contributions are welcome! Check out the Qwen Code CLI **Contributing Guide** for more details on how to get started.
 
 [secrets]: https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions
 [Qwen Code]: https://github.com/QwenLM/qwen-code

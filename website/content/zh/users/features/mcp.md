@@ -7,16 +7,17 @@ Qwen Code 可以通过 [Model Context Protocol (MCP)](https://modelcontextprotoc
 连接 MCP 服务器后，你可以让 Qwen Code：
 
 - 处理文件和代码仓库（读取/搜索/写入，取决于你启用的工具）
-- 查询数据库（结构检查、查询、报告）
+- 查询数据库（模式检查、查询、报告）
 - 集成内部服务（将你的 API 包装为 MCP 工具）
 - 自动化工作流（将可重复任务暴露为工具/提示）
 
 > [!tip]
-> 如果你想快速开始，直接跳到[快速开始](#快速开始)部分。
+>
+> 如果你想找“一条命令快速开始”，请跳转到[快速开始](#quick-start)。
 
 ## 快速开始
 
-Qwen Code 会从 `settings.json` 中的 `mcpServers` 加载 MCP 服务器。你可以通过以下方式配置服务器：
+Qwen Code 从 `settings.json` 中的 `mcpServers` 加载 MCP 服务器。你可以通过以下方式配置服务器：
 
 - 直接编辑 `settings.json`
 - 使用 `qwen mcp` 命令（参见 [CLI 参考](#qwen-mcp-cli)）
@@ -51,19 +52,21 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 ```
 
 > [!tip]
-> 关于高级配置层（系统默认值/系统设置和优先级规则），请参见 [设置](../users/configuration/settings)。
+>
+> 关于高级配置层（系统默认值/系统设置和优先级规则），请参见 [设置](../configuration/settings)。
 
 ## 配置服务器
 
 ### 选择传输方式
 
-| 传输方式 | 适用场景                                                         | JSON 字段                                  |
-| -------- | ---------------------------------------------------------------- | ------------------------------------------ |
-| `http`   | 推荐用于远程服务；适用于云 MCP 服务器                           | `httpUrl`（+ 可选的 `headers`）            |
-| `sse`    | 仅支持服务器发送事件（Server-Sent Events）的旧版/已弃用服务器    | `url`（+ 可选的 `headers`）                |
-| `stdio`  | 本机上的本地进程（脚本、CLI、Docker）                            | `command`，`args`（+ 可选的 `cwd`，`env`） |
+| 传输方式  | 使用场景                                                         | JSON 字段                                  |
+| --------- | ---------------------------------------------------------------- | ------------------------------------------ |
+| `http`    | 推荐用于远程服务；适用于云 MCP 服务器                           | `httpUrl`（+ 可选的 `headers`）            |
+| `sse`     | 仅支持服务器发送事件（Server-Sent Events）的旧版/已弃用服务器    | `url`（+ 可选的 `headers`）                |
+| `stdio`   | 本机上的本地进程（脚本、CLI、Docker）                            | `command`，`args`（+ 可选的 `cwd`，`env`） |
 
 > [!note]
+>
 > 如果服务器同时支持两种方式，请优先使用 **HTTP** 而非 **SSE**。
 
 ### 通过 `settings.json` 与 `qwen mcp add` 进行配置
@@ -72,7 +75,7 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 
 #### Stdio 服务器（本地进程）
 
-JSON (`.qwen/settings.json`):
+JSON（`.qwen/settings.json`）：
 
 ```json
 {
@@ -91,7 +94,7 @@ JSON (`.qwen/settings.json`):
 }
 ```
 
-CLI（默认写入项目范围）:
+CLI（默认写入项目范围）：
 
 ```bash
 qwen mcp add pythonTools -e DATABASE_URL=$DB_CONNECTION_STRING -e API_KEY=$EXTERNAL_API_KEY \
@@ -154,7 +157,7 @@ qwen mcp add --transport sse sseServer http://localhost:8080/sse --timeout 30000
 
 使用 `includeTools` / `excludeTools` 来限制服务器暴露的工具（从 Qwen Code 的角度来看）。
 
-示例：仅包含少数工具：
+示例：仅包含少数几个工具：
 
 ```json
 {
@@ -189,9 +192,9 @@ qwen mcp add --transport sse sseServer http://localhost:8080/sse --timeout 30000
 
 ## 故障排除
 
-- **在 `qwen mcp list` 中服务器显示“Disconnected”**：验证 URL/命令是否正确，然后增加 `timeout`。
+- **在 `qwen mcp list` 中显示“Disconnected”**：验证 URL/命令是否正确，然后增加 `timeout`。
 - **Stdio 服务器启动失败**：使用绝对路径的 `command`，并仔细检查 `cwd`/`env`。
-- **JSON 中的环境变量未解析**：确保它们存在于 Qwen Code 运行的环境中（shell 与 GUI 应用程序环境可能不同）。
+- **JSON 中的环境变量未解析**：确保它们存在于运行 Qwen Code 的环境中（shell 与 GUI 应用程序环境可能不同）。
 
 ## 参考
 
@@ -250,26 +253,26 @@ qwen mcp add --transport sse sseServer http://localhost:8080/sse --timeout 30000
 
 你始终可以通过手动编辑 `settings.json` 来配置 MCP 服务器，但使用 CLI 通常更快。
 
-#### 添加服务器（`qwen mcp add`）
+#### 添加服务器 (`qwen mcp add`)
 
 ```bash
 qwen mcp add [options] <name> <commandOrUrl> [args...]
 ```
 
 | 参数/选项           | 描述                                                               | 默认值             | 示例                                     |
-| ------------------- | ------------------------------------------------------------------- | ------------------ | ----------------------------------------- |
-| `<name>`            | 服务器的唯一名称。                                                  | —                  | `example-server`                          |
+| ------------------- | ------------------------------------------------------------------ | ------------------ | ---------------------------------------- |
+| `<name>`            | 服务器的唯一名称。                                                 | —                  | `example-server`                         |
 | `<commandOrUrl>`    | 要执行的命令（用于 `stdio`）或 URL（用于 `http`/`sse`）。          | —                  | `/usr/bin/python` 或 `http://localhost:8` |
-| `[args...]`         | `stdio` 命令的可选参数。                                            | —                  | `--port 5000`                             |
-| `-s`, `--scope`     | 配置作用域（用户或项目）。                                          | `project`          | `-s user`                                 |
-| `-t`, `--transport` | 传输类型（`stdio`、`sse`、`http`）。                                | `stdio`            | `-t sse`                                  |
-| `-e`, `--env`       | 设置环境变量。                                                      | —                  | `-e KEY=value`                            |
-| `-H`, `--header`    | 为 SSE 和 HTTP 传输设置 HTTP 头。                                   | —                  | `-H "X-Api-Key: abc123"`                  |
-| `--timeout`         | 设置连接超时时间（毫秒）。                                          | —                  | `--timeout 30000`                         |
-| `--trust`           | 信任该服务器（跳过所有工具调用确认提示）。                          | — (`false`)        | `--trust`                                 |
-| `--description`     | 设置服务器描述。                                                    | —                  | `--description "Local tools"`             |
-| `--include-tools`   | 包含的工具列表，以逗号分隔。                                        | 包含所有工具       | `--include-tools mytool,othertool`        |
-| `--exclude-tools`   | 排除的工具列表，以逗号分隔。                                        | 无                 | `--exclude-tools mytool`                  |
+| `[args...]`         | `stdio` 命令的可选参数。                                           | —                  | `--port 5000`                            |
+| `-s`, `--scope`     | 配置范围（用户或项目）。                                            | `project`          | `-s user`                                |
+| `-t`, `--transport` | 传输类型（`stdio`、`sse`、`http`）。                               | `stdio`            | `-t sse`                                 |
+| `-e`, `--env`       | 设置环境变量。                                                      | —                  | `-e KEY=value`                           |
+| `-H`, `--header`    | 为 SSE 和 HTTP 传输设置 HTTP 头。                                   | —                  | `-H "X-Api-Key: abc123"`                 |
+| `--timeout`         | 设置连接超时时间（毫秒）。                                          | —                  | `--timeout 30000`                        |
+| `--trust`           | 信任该服务器（跳过所有工具调用确认提示）。                          | — (`false`)        | `--trust`                                |
+| `--description`     | 设置服务器描述。                                                    | —                  | `--description "Local tools"`            |
+| `--include-tools`   | 包含的工具列表，以逗号分隔。                                        | 包含所有工具       | `--include-tools mytool,othertool`       |
+| `--exclude-tools`   | 排除的工具列表，以逗号分隔。                                        | 无                 | `--exclude-tools mytool`                 |
 
 #### 列出服务器 (`qwen mcp list`)
 

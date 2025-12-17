@@ -1,17 +1,17 @@
 # Visual Studio Code
 
-> VS Code 扩展（测试版）让你可以通过集成在 IDE 中的原生图形界面实时查看 Qwen 的更改，使访问和与 Qwen Code 交互变得更加容易。
+> VS Code 扩展（Beta）通过原生图形界面直接集成到你的 IDE 中，让你能够实时查看 Qwen 的更改，更方便地访问和与 Qwen Code 进行交互。
 
 <br/>
 
-<video src="https://cloud.video.taobao.com/vod/JnvYMhUia2EKFAaiuErqNpzWE9mz3odG76vArAHNg94.mp4" controls width="800">
+<video src="https://cloud.video.taobao.com/vod/IKKwfM-kqNI3OJjM_U8uMCSMAoeEcJhs6VNCQmZxUfk.mp4" controls width="800">
   你的浏览器不支持 video 标签。
 </video>
 
 ### 功能特性
 
 - **原生 IDE 体验**：通过 Qwen 图标访问专用的 Qwen Code 侧边栏面板
-- **自动接受编辑模式**：Qwen 做出更改时自动应用这些更改
+- **自动接受编辑模式**：在 Qwen 做出更改时自动应用这些更改
 - **文件管理**：使用 @ 提及文件或通过系统文件选择器附加文件和图像
 - **对话历史记录**：可访问过去的对话内容
 - **多会话支持**：同时运行多个 Qwen Code 会话

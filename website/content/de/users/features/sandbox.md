@@ -4,13 +4,13 @@ Dieses Dokument erklärt, wie Qwen Code in einer Sandbox ausgeführt wird, um da
 
 ## Voraussetzungen
 
-Bevor Sie die Sandbox-Funktionalität nutzen können, müssen Sie Qwen Code installieren und einrichten:
+Bevor Sie Sandboxing verwenden, müssen Sie Qwen Code installieren und einrichten:
 
 ```bash
 npm install -g @qwen-code/qwen-code
 ```
 
-Um die Installation zu überprüfen:
+Um die Installation zu überprüfen
 
 ```bash
 qwen --version
@@ -22,14 +22,14 @@ Sandboxing isoliert potenziell gefährliche Operationen (wie Shell-Befehle oder 
 
 Die Vorteile von Sandboxing sind:
 
-- **Sicherheit**: Verhindert versehentliche Systembeschädigungen oder Datenverluste.
+- **Sicherheit**: Verhindert versehentliche Systembeschädigung oder Datenverlust.
 - **Isolation**: Begrenzt den Dateisystemzugriff auf das Projektverzeichnis.
 - **Konsistenz**: Stellt reproduzierbare Umgebungen auf verschiedenen Systemen sicher.
 - **Sicherheit**: Reduziert das Risiko bei der Arbeit mit nicht vertrauenswürdigem Code oder experimentellen Befehlen.
 
 > [!note]
 >
-> **Hinweis zur Benennung:** Einige sandbox-bezogene Umgebungsvariablen verwenden aus Gründen der Abwärtskompatibilität noch das Präfix `GEMINI_*`.
+> **Namenshinweis:** Einige sandbox-bezogene Umgebungsvariablen verwenden aus Gründen der Abwärtskompatibilität noch das Präfix `GEMINI_*`.
 
 ## Sandboxing-Methoden
 
@@ -54,8 +54,8 @@ Standardmäßig verwendet Qwen Code ein veröffentlichtes Sandbox-Image (konfigu
 ### Auswahl einer Methode
 
 - **Unter macOS**:
-  - Verwenden Sie Seatbelt, wenn Sie eine leichtgewichtige Sandbox wünschen (für die meisten Benutzer empfohlen).
-  - Verwenden Sie Docker/Podman, wenn Sie eine vollständige Linux-Umgebung benötigen (z. B. Tools, die Linux-Binärdateien voraussetzen).
+  - Verwenden Sie Seatbelt, wenn Sie eine leichtgewichtige Sandbox wünschen (empfohlen für die meisten Benutzer).
+  - Verwenden Sie Docker/Podman, wenn Sie ein vollständiges Linux-Userland benötigen (z. B. Tools, die Linux-Binärdateien erfordern).
 - **Unter Linux/Windows**:
   - Verwenden Sie Docker oder Podman.
 
@@ -105,7 +105,7 @@ qwen -p "run the test suite"
 - **CLI-Flag**: `--sandbox-image <image>`
 - **Umgebungsvariable**: `GEMINI_SANDBOX_IMAGE=<image>`
 
-Wenn Sie keines der beiden festlegen, verwendet Qwen Code das im CLI-Paket konfigurierte Standard-Image (z. B. `ghcr.io/qwenlm/qwen-code:<version>`).
+Wenn Sie keines der beiden festlegen, verwendet Qwen Code das im CLI-Paket konfigurierte Standard-Image (z. B. `ghcr.io/qwenlm/qwen-code:<version>`).
 
 ### macOS Seatbelt-Profile
 
@@ -169,12 +169,12 @@ export SANDBOX_SET_UID_GID=false  # Deaktiviere UID/GID-Zuordnung
 
 ## Anpassen der Sandbox-Umgebung (Docker/Podman)
 
-Falls du zusätzliche Tools innerhalb des Containers benötigst (z. B. `git`, `python`, `rg`), erstelle eine eigene Dockerfile:
+Falls du zusätzliche Tools im Container benötigst (z. B. `git`, `python`, `rg`), erstelle eine eigene Dockerfile:
 
 - Pfad: `.qwen/sandbox.Dockerfile`
 - Dann ausführen mit: `BUILD_SANDBOX=1 qwen -s ...`
 
-Dies erstellt ein projektspezifisches Image basierend auf dem Standard-Sandbox-Image.
+Dies baut ein projektspezifisches Image basierend auf dem Standard-Sandbox-Image.
 
 ## Fehlerbehebung
 
@@ -182,9 +182,9 @@ Dies erstellt ein projektspezifisches Image basierend auf dem Standard-Sandbox-I
 
 **„Operation not permitted“**
 
-- Die Operation erfordert Zugriff außerhalb der Sandbox.
+- Die Operation benötigt Zugriff außerhalb der Sandbox.
 - Unter macOS Seatbelt: Versuche es mit einem weniger restriktiven `SEATBELT_PROFILE`.
-- Unter Docker/Podman: Stelle sicher, dass der Arbeitsbereich gemountet ist und dein Befehl keinen Zugriff außerhalb des Projektverzeichnisses benötigt.
+- Unter Docker/Podman: Stelle sicher, dass das Arbeitsverzeichnis gemountet ist und dein Befehl keinen Zugriff außerhalb des Projektverzeichnisses erfordert.
 
 **Fehlende Befehle**
 
@@ -193,8 +193,8 @@ Dies erstellt ein projektspezifisches Image basierend auf dem Standard-Sandbox-I
 
 **Netzwerkprobleme**
 
-- Überprüfe, ob das Sandbox-Profil Netzwerkzugriff erlaubt.
-- Prüfe die Proxy-Konfiguration.
+- Prüfe, ob das Sandbox-Profil Netzwerkzugriff erlaubt.
+- Überprüfe die Proxy-Konfiguration.
 
 ### Debug-Modus
 
@@ -224,6 +224,6 @@ qwen -s -p "run shell command: mount | grep workspace"
 
 ## Zugehörige Dokumentation
 
-- [Konfiguration](../users/configuration/settings): Alle Konfigurationsoptionen.
-- [Befehle](../users/reference/cli-reference): Verfügbare Befehle.
-- [Fehlerbehebung](../users/support/troubleshooting): Allgemeine Fehlerbehebung.
+- [Konfiguration](../configuration/settings): Alle Konfigurationsoptionen.
+- [Befehle](../features/commands): Verfügbare Befehle.
+- [Fehlerbehebung](../support/troubleshooting): Allgemeine Fehlerbehebung.

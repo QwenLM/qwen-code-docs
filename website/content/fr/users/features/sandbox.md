@@ -49,7 +49,7 @@ Bac à sable multiplateforme avec isolement complet des processus.
 
 Par défaut, Qwen Code utilise une image de bac à sable publiée (configurée dans le paquet CLI) et la récupère si nécessaire.
 
-**Idéal pour** : Isolement fort sur n'importe quel système d'exploitation, outils cohérents à l'intérieur d'une image connue.
+**Idéal pour** : Isolement fort sur n'importe quel système d'exploitation, outillage cohérent à l'intérieur d'une image connue.
 
 ### Choisir une méthode
 
@@ -66,8 +66,7 @@ Par défaut, Qwen Code utilise une image de bac à sable publiée (configurée d
 # Activer le bac à sable avec un drapeau de commande
 qwen -s -p "analyser la structure du code"
 
-```markdown
-# Ou activez le bac à sable pour votre session shell (recommandé pour CI/scripts)
+# Ou activer le bac à sable pour votre session shell (recommandé pour CI/scripts)
 export GEMINI_SANDBOX=true   # true sélectionne automatiquement un fournisseur (voir notes ci-dessous)
 qwen -p "exécuter la suite de tests"
 
@@ -98,7 +97,6 @@ qwen -p "exécuter la suite de tests"
 > [!important]
 >
 > Si `GEMINI_SANDBOX` est défini, il **remplace** l’indicateur CLI et `settings.json`.
-```
 
 ### Configurer l’image du bac à sable (Docker/Podman)
 
@@ -120,7 +118,7 @@ Profils intégrés (définis via la variable d’environnement `SEATBELT_PROFILE
 
 > [!tip]
 >
-> Commencez avec `permissive-open`, puis resserrez jusqu’à `restrictive-closed` si votre flux de travail continue de fonctionner.
+> Commencez avec `permissive-open`, puis resserrez jusqu’à `restrictive-closed` si votre flux de travail fonctionne toujours.
 
 ### Profils Seatbelt personnalisés (macOS)
 
@@ -131,7 +129,7 @@ Pour utiliser un profil Seatbelt personnalisé :
 
 ### Indicateurs de bac à sable personnalisés
 
-Pour le bac à sable basé sur des conteneurs, vous pouvez injecter des indicateurs personnalisés dans la commande `docker` ou `podman` en utilisant la variable d'environnement `SANDBOX_FLAGS`. Cela est utile pour les configurations avancées, comme la désactivation des fonctionnalités de sécurité pour des cas d'utilisation spécifiques.
+Pour le bac à sable basé sur des conteneurs, vous pouvez injecter des indicateurs personnalisés dans la commande `docker` ou `podman` en utilisant la variable d'environnement `SANDBOX_FLAGS`. Cela est utile pour les configurations avancées, telles que la désactivation des fonctionnalités de sécurité pour des cas d'utilisation spécifiques.
 
 **Exemple (Podman)** :
 
@@ -151,7 +149,7 @@ export SANDBOX_FLAGS="--flag1 --flag2=value"
 
 Si vous souhaitez restreindre l'accès réseau sortant à une liste d'autorisation, vous pouvez exécuter un proxy local aux côtés du bac à sable :
 
-- Définissez `GEMINI_SANDBOX_PROXY_COMMAND=<commande>`
+- Définissez `GEMINI_SANDBOX_PROXY_COMMAND=<command>`
 - La commande doit démarrer un serveur proxy qui écoute sur `:::8877`
 
 Ceci est particulièrement utile avec les profils Seatbelt de type `*-proxied`.
@@ -160,7 +158,7 @@ Pour un exemple fonctionnel de proxy avec liste d'autorisation, voir : [Exemple 
 
 ## Gestion des UID/GID Linux
 
-Le bac à sable gère automatiquement les permissions utilisateur sous Linux. Remplacez ces permissions avec :
+Le bac à sable gère automatiquement les permissions utilisateur sur Linux. Remplacez ces permissions avec :
 
 ```bash
 export SANDBOX_SET_UID_GID=true   # Forcer l'UID/GID de l'hôte
@@ -224,6 +222,6 @@ qwen -s -p "run shell command: mount | grep workspace"
 
 ## Documentation associée
 
-- [Configuration](../users/configuration/settings) : Options de configuration complètes.
-- [Commandes](../users/reference/cli-reference) : Commandes disponibles.
-- [Dépannage](../users/support/troubleshooting) : Dépannage général.
+- [Configuration](../configuration/settings) : Options de configuration complètes.
+- [Commandes](../features/commands) : Commandes disponibles.
+- [Dépannage](../support/troubleshooting) : Dépannage général.

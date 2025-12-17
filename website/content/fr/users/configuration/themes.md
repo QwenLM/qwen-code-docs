@@ -24,15 +24,15 @@ Qwen Code est livré avec une sélection de thèmes prédéfinis, que vous pouve
 ### Changer de thèmes
 
 1.  Saisissez `/theme` dans Qwen Code.
-2.  Une boîte de dialogue ou une invite de sélection apparaît, listant les thèmes disponibles.
+2.  Une boîte de dialogue ou une invite de sélection s'affiche, listant les thèmes disponibles.
 3.  À l'aide des touches fléchées, sélectionnez un thème. Certaines interfaces peuvent offrir un aperçu en direct ou un surlignage lors de la sélection.
 4.  Confirmez votre choix pour appliquer le thème.
 
-**Remarque :** Si un thème est défini dans votre fichier `settings.json` (soit par son nom, soit par un chemin de fichier), vous devez supprimer le paramètre `"theme"` du fichier avant de pouvoir changer de thème à l’aide de la commande `/theme`.
+**Remarque :** Si un thème est défini dans votre fichier `settings.json` (par son nom ou par un chemin de fichier), vous devez supprimer le paramètre `"theme"` du fichier avant de pouvoir changer de thème à l'aide de la commande `/theme`.
 
 ### Persistance des thèmes
 
-Les thèmes sélectionnés sont enregistrés dans la [configuration](./configuration.md) de Qwen Code afin que vos préférences soient mémorisées d’une session à l’autre.
+Les thèmes sélectionnés sont enregistrés dans la [configuration](../configuration/settings) de Qwen Code afin que vos préférences soient mémorisées d'une session à l'autre.
 
 ---
 
@@ -94,7 +94,7 @@ Ajoutez un bloc `customThemes` à votre fichier `settings.json` utilisateur, pro
 
 Vous pouvez utiliser soit des codes hexadécimaux (par exemple, `#FF0000`), **soit** des noms de couleurs CSS standard (par exemple, `coral`, `teal`, `blue`) pour toute valeur de couleur. Consultez [les noms de couleurs CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#color_keywords) pour obtenir la liste complète des noms pris en charge.
 
-Vous pouvez définir plusieurs thèmes personnalisés en ajoutant davantage d’entrées à l’objet `customThemes`.
+Vous pouvez définir plusieurs thèmes personnalisés en ajoutant davantage d'entrées à l'objet `customThemes`.
 
 ### Chargement des thèmes depuis un fichier
 
@@ -136,7 +136,7 @@ Le fichier de thème doit être un fichier JSON valide qui suit la même structu
 }
 ```
 
-**Note de sécurité :** Pour votre sécurité, Gemini CLI ne chargera que les fichiers de thème situés dans votre répertoire personnel. Si vous tentez de charger un thème depuis un emplacement en dehors de votre répertoire personnel, un avertissement sera affiché et le thème ne sera pas chargé. Cela permet d'éviter le chargement de fichiers de thème potentiellement malveillants provenant de sources non fiables.
+**Note de sécurité :** Pour votre sécurité, l'interface CLI de Gemini ne chargera que les fichiers de thème situés dans votre répertoire personnel. Si vous tentez de charger un thème depuis un emplacement en dehors de votre répertoire personnel, un avertissement sera affiché et le thème ne sera pas chargé. Ceci permet d'éviter le chargement de fichiers de thème potentiellement malveillants provenant de sources non fiables.
 
 ### Exemple de thème personnalisé
 
@@ -146,9 +146,9 @@ Le fichier de thème doit être un fichier JSON valide qui suit la même structu
 
 ### Utilisation de votre thème personnalisé
 
-- Sélectionnez votre thème personnalisé à l'aide de la commande `/theme` dans Qwen Code. Votre thème personnalisé apparaîtra dans la boîte de dialogue de sélection des thèmes.
-- Ou définissez-le comme thème par défaut en ajoutant `"theme": "MyCustomTheme"` à l'objet `ui` dans votre fichier `settings.json`.
-- Les thèmes personnalisés peuvent être définis au niveau utilisateur, projet ou système, et suivent la même [priorité de configuration](./configuration.md) que les autres paramètres.
+- Sélectionnez votre thème personnalisé en utilisant la commande `/theme` dans Qwen Code. Votre thème personnalisé apparaîtra dans la boîte de dialogue de sélection des thèmes.
+- Ou bien, définissez-le comme thème par défaut en ajoutant `"theme": "MyCustomTheme"` à l'objet `ui` dans votre fichier `settings.json`.
+- Les thèmes personnalisés peuvent être définis au niveau utilisateur, projet ou système, et suivent la même [priorité de configuration](../configuration/settings) que les autres paramètres.
 
 ## Aperçu des thèmes
 

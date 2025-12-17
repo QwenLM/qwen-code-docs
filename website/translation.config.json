@@ -5,5 +5,5 @@
   "sourceLanguage": "en",
   "targetLanguages": ["zh", "de", "fr", "ru", "ja", "pt-BR"],
   "outputDir": "content",
-  "branch": "docs-byYijing"
+  "branch": "docs-fix"
 }

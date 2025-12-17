@@ -1,6 +1,6 @@
 # Qwen Code：服务条款与隐私声明
 
-Qwen Code 是由 Qwen Code 团队维护的开源 AI 编程助手工具。本文档阐述了使用 Qwen Code 的认证方式及 AI 模型服务时所适用的服务条款与隐私政策。
+Qwen Code 是由 Qwen Code 团队维护的开源 AI 编程助手工具。本文档概述了使用 Qwen Code 的身份验证方式及 AI 模型服务时适用的服务条款和隐私政策。
 
 ## 如何确定你的认证方式
 
@@ -11,33 +11,33 @@ Qwen Code 支持两种主要的认证方式来访问 AI 模型。你的认证方
 
 对于每种认证方式，根据底层服务提供商的不同，可能适用不同的服务条款和隐私声明。
 
-| 认证方式              | 提供商            | 服务条款                                                                          | 隐私声明                                             |
-| :-------------------- | :---------------- | :-------------------------------------------------------------------------------- | :--------------------------------------------------- |
-| Qwen OAuth            | Qwen AI           | [Qwen 服务条款](https://qwen.ai/termsservice)                                     | [Qwen 隐私政策](https://qwen.ai/privacypolicy)       |
-| OpenAI-Compatible API | 各种提供商        | 取决于你选择的 API 提供商（OpenAI、阿里云、ModelScope 等）                        | 取决于你选择的 API 提供商                            |
+| 认证方式              | 提供商            | 服务条款                                                                  | 隐私声明                                           |
+| :-------------------- | :---------------- | :------------------------------------------------------------------------ | :------------------------------------------------- |
+| Qwen OAuth            | Qwen AI           | [Qwen 服务条款](https://qwen.ai/termsservice)                             | [Qwen 隐私政策](https://qwen.ai/privacypolicy)     |
+| OpenAI-Compatible API | 各种提供商        | 取决于你选择的 API 提供商（OpenAI、阿里云、ModelScope 等）                | 取决于你选择的 API 提供商                          |
 
-## 1. 如果你使用通义千问 OAuth 认证
+## 1. 如果你使用通义 OAuth 认证
 
 当你使用你的 qwen.ai 账户进行认证时，以下服务条款和隐私声明文档适用：
 
-- **服务条款：** 你的使用受 [通义千问服务条款](https://qwen.ai/termsservice) 约束。
-- **隐私声明：** 你的数据的收集和使用在 [通义千问隐私政策](https://qwen.ai/privacypolicy) 中有描述。
+- **服务条款：** 你的使用受 [通义服务条款](https://qwen.ai/termsservice) 约束。
+- **隐私声明：** 你的数据的收集和使用在 [通义隐私政策](https://qwen.ai/privacypolicy) 中有描述。
 
-有关认证设置、配额和支持功能的详细信息，请参见 [认证设置](../users/configuration/settings)。
+有关认证设置、配额和支持功能的详细信息，请参见 [认证设置](../configuration/settings)。
 
 ## 2. 如果你使用与 OpenAI 兼容的 API 认证方式
 
-当你使用与 OpenAI 兼容的提供商所提供的 API 密钥进行认证时，适用的服务条款和隐私声明将取决于你所选择的提供商。
+当你使用与 OpenAI 兼容的提供商的 API 密钥进行认证时，适用的服务条款和隐私声明将取决于你所选择的提供商。
 
 > [!important]
 >
-> 当使用与 OpenAI 兼容的 API 认证方式时，你需遵守所选 API 提供商的条款和隐私政策，而非 Qwen Code 的相关条款。请查阅你所选提供商的文档以了解有关数据使用、存储及隐私实践的具体信息。
+> 当使用与 OpenAI 兼容的 API 认证方式时，你需遵守所选 API 提供商的条款和隐私政策，而非 Qwen Code 的相关条款。请查阅你所选提供商的文档，了解有关数据使用、存储和隐私实践的具体信息。
 
-Qwen Code 支持多种与 OpenAI 兼容的提供商。请参阅你所选用的特定提供商的服务条款和隐私政策以获取详细信息。
+Qwen Code 支持多种与 OpenAI 兼容的提供商。请参阅你所使用提供商的具体服务条款和隐私政策以获取详细信息。
 
 ## 使用统计与遥测数据
 
-Qwen Code 可能会收集匿名的使用统计数据和[遥测数据](/developers/development/telemetry)，以改善用户体验和产品质量。该数据收集为可选项，可通过配置设置进行控制。
+Qwen Code 可能会收集匿名的使用统计数据和[遥测数据](../../developers/development/telemetry)，以改善用户体验和产品质量。该数据收集是可选的，可通过配置设置进行控制。
 
 ### 收集哪些数据
 
@@ -58,7 +58,7 @@ Qwen Code 可能会收集匿名的使用统计数据和[遥测数据](/developer
 
 你的代码，包括提示和回答，是否用于训练 AI 模型取决于你的认证方式以及你所使用的特定 AI 服务提供商：
 
-- **Qwen OAuth**：数据使用受 [Qwen 隐私政策](https://qwen.ai/privacy) 约束。请参考其政策了解有关数据收集和模型训练实践的具体详情。
+- **Qwen OAuth**：数据使用受 [Qwen 隐私政策](https://qwen.ai/privacy) 约束。请参阅其政策以了解有关数据收集和模型训练实践的具体详情。
 
 - **OpenAI 兼容 API**：数据使用完全取决于你选择的 API 提供商。每个提供商都有自己的数据使用政策。请查看你所使用提供商的隐私政策和服务条款。
 
@@ -91,4 +91,4 @@ Qwen Code 可能会收集匿名的使用统计数据和[遥测数据](/developer
 2. **在 CLI 中**：使用 `/auth` 命令重新配置你的认证方式
 3. **环境变量**：设置 `.env` 文件以自动启用兼容 OpenAI 的 API 认证
 
-详细说明请参阅[认证设置](../users/configuration/settings#environment-variables-for-api-access)文档。
+详细说明请参阅[认证设置](../configuration/settings#environment-variables-for-api-access)文档。

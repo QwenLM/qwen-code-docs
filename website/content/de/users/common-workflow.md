@@ -46,7 +46,7 @@ how is authentication handled?
 >
 > - Beginnen Sie mit allgemeinen Fragen und grenzen Sie diese dann auf spezifische Bereiche ein
 > - Fragen Sie nach den im Projekt verwendeten Codierungsrichtlinien und Mustern
-> - Bitten Sie um ein Glossar der projektspezifischen Begriffe
+> - Fordern Sie ein Glossar projekt-spezifischer Begriffe an
 
 ### Relevanten Code finden
 
@@ -88,7 +88,7 @@ Ich erhalte einen Fehler, wenn ich npm test ausführe
 **2. Bitten Sie um Vorschläge zur Behebung**
 
 ```
-schlage ein paar Möglichkeiten vor, um das @ts-ignore in user.ts zu beheben
+schlage ein paar Möglichkeiten vor, das @ts-ignore in user.ts zu beheben
 ```
 
 **3. Wenden Sie die Korrektur an**
@@ -103,39 +103,39 @@ aktualisiere user.ts, um die von dir vorgeschlagene Null-Prüfung hinzuzufügen
 > - Erwähnen Sie alle Schritte zur Reproduktion des Fehlers
 > - Informieren Sie Qwen Code, ob der Fehler sporadisch oder konstant auftritt
 
-## Code refactoren
+## Code refaktorieren
 
 Angenommen, du musst alten Code aktualisieren, um moderne Muster und Praktiken zu verwenden.
 
-**1. Legacy-Code für das Refactoring identifizieren**
+**1. Legacy-Code für die Refaktorisierung identifizieren**
 
 ```
 veraltete API-Nutzung in unserer Codebasis finden
 ```
 
-**2. Refactoring-Empfehlungen einholen**
+**2. Empfehlungen zur Refaktorisierung erhalten**
 
 ```
-vorschlagen, wie utils.js refactored werden kann, um moderne JavaScript-Funktionen zu nutzen
+vorschlagen, wie utils.js refaktoriert werden kann, um moderne JavaScript-Funktionen zu nutzen
 ```
 
 **3. Die Änderungen sicher anwenden**
 
 ```
-utils.js refactoren, um ES2024-Funktionen zu nutzen, während das gleiche Verhalten beibehalten wird
+utils.js refaktorisieren, um ES-2024-Funktionen zu nutzen, während das gleiche Verhalten beibehalten wird
 ```
 
-**4. Das Refactoring verifizieren**
+**4. Die Refaktorisierung verifizieren**
 
 ```
-Tests für den refactored Code ausführen
+Tests für den refaktorierten Code ausführen
 ```
 
 > [!tip]
 >
 > - Qwen Code bitten, die Vorteile des modernen Ansatzes zu erklären
 > - Anfragen, dass Änderungen bei Bedarf die Abwärtskompatibilität beibehalten
-> - Refactoring in kleinen, testbaren Schritten durchführen
+> - Refaktorisierung in kleinen, testbaren Schritten durchführen
 
 ## Spezialisierte Sub-Agenten verwenden
 
@@ -181,7 +181,7 @@ Wählen Sie dann „create“ und folgen Sie den Anweisungen, um Folgendes festz
 
 - Eine eindeutige Kennung, die den Zweck des Sub-Agenten beschreibt (z. B. `code-reviewer`, `api-designer`).
 - Wann Qwen Code diesen Agenten verwenden soll
-- Welche Tools er zugreifen kann
+- Welche Tools er aufrufen darf
 - Ein System-Prompt, der die Rolle und das Verhalten des Agenten beschreibt
 
 > [!tip]
@@ -189,8 +189,8 @@ Wählen Sie dann „create“ und folgen Sie den Anweisungen, um Folgendes festz
 > - Erstellen Sie projektspezifische Sub-Agenten in `.qwen/agents/` für die gemeinsame Nutzung im Team
 > - Verwenden Sie aussagekräftige `description`-Felder, um die automatische Delegation zu aktivieren
 > - Beschränken Sie den Tool-Zugriff auf das, was jeder Sub-Agent tatsächlich benötigt
-> - Erfahren Sie mehr über [Sub-Agenten](../users/features/sub-agents)
-> - Erfahren Sie mehr über den [Genehmigungsmodus](../users/features/approval-mode)
+> - Erfahren Sie mehr über [Sub-Agenten](./features/sub-agents)
+> - Erfahren Sie mehr über den [Genehmigungsmodus](./features/approval-mode)
 
 ## Mit Tests arbeiten
 
@@ -220,21 +220,21 @@ füge Testfälle für Randbedingungen im Benachrichtigungsdienst hinzu
 führe die neuen Tests aus und behebe alle Fehler
 ```
 
-Qwen Code kann Tests generieren, die den bestehenden Mustern und Konventionen deines Projekts folgen. Sei beim Anfordern von Tests konkret bezüglich des Verhaltens, das du überprüfen möchtest. Qwen Code untersucht deine vorhandenen Testdateien, um den Stil, die Frameworks und die Assertion-Muster zu erkennen, die bereits verwendet werden.
+Qwen Code kann Tests generieren, die den bestehenden Mustern und Konventionen deines Projekts folgen. Sei beim Anfordern von Tests konkret darüber, welches Verhalten du überprüfen möchtest. Qwen Code untersucht deine vorhandenen Testdateien, um den Stil, die Frameworks und die Assertion-Muster zu erkennen, die bereits verwendet werden.
 
-Für eine umfassende Abdeckung kannst du Qwen Code bitten, Randfälle zu identifizieren, die dir möglicherweise entgangen sind. Qwen Code kann deine Codepfade analysieren und Tests für Fehlerbedingungen, Grenzwerte und unerwartete Eingaben vorschlagen, die leicht übersehen werden können.
+Für eine umfassende Abdeckung kannst du Qwen Code bitten, Randfälle zu identifizieren, die dir möglicherweise entgangen sind. Qwen Code kann deine Codepfade analysieren und Vorschläge für Tests bei Fehlerzuständen, Grenzwerten und unerwarteten Eingaben machen, die leicht übersehen werden können.
 
 ## Pull Requests erstellen
 
-Angenommen, Sie müssen einen gut dokumentierten Pull Request für Ihre Änderungen erstellen.
+Angenommen, du musst einen gut dokumentierten Pull Request für deine Änderungen erstellen.
 
-**1. Fassen Sie Ihre Änderungen zusammen**
+**1. Änderungen zusammenfassen**
 
 ```
 fasse die Änderungen zusammen, die ich am Authentifizierungsmodul vorgenommen habe
 ```
 
-**2. Erstellen Sie einen Pull Request mit Qwen Code**
+**2. Einen Pull Request mit Qwen Code generieren**
 
 ```
 erstelle einen PR
@@ -254,13 +254,13 @@ füge Informationen darüber hinzu, wie diese Änderungen getestet wurden
 
 > [!tip]
 >
-> - Bitten Sie Qwen Code direkt, einen PR für Sie zu erstellen
-> - Überprüfen Sie den von Qwen Code generierten PR vor dem Einreichen
-> - Bitten Sie Qwen Code, potenzielle Risiken oder Überlegungen hervorzuheben
+> - Fordere Qwen Code direkt auf, einen PR für dich zu erstellen
+> - Überprüfe den von Qwen Code generierten PR vor dem Einreichen
+> - Bitte Qwen Code, potenzielle Risiken oder Überlegungen hervorzuheben
 
 ## Dokumentation bearbeiten
 
-Angenommen, du musst die Dokumentation für deinen Code hinzufügen oder aktualisieren.
+Angenommen, du musst Dokumentation für deinen Code hinzufügen oder aktualisieren.
 
 **1. Nicht dokumentierten Code identifizieren**
 
@@ -294,7 +294,7 @@ prüfe, ob die Dokumentation unseren Projektstandards entspricht
 
 ## Referenzdateien und -verzeichnisse
 
-Verwenden Sie `@`, um schnell Dateien oder Verzeichnisse einzubeziehen, ohne auf das Lesen durch Qwen Code warten zu müssen.
+Verwenden Sie `@`, um schnell Dateien oder Verzeichnisse einzubinden, ohne auf das Lesen durch Qwen Code warten zu müssen.
 
 **1. Eine einzelne Datei referenzieren**
 
@@ -318,7 +318,7 @@ Dies liefert eine Verzeichnisliste mit Dateiinformationen.
 Zeige mir die Daten von @github: repos/owner/repo/issues
 ```
 
-Dies ruft Daten von verbundenen MCP-Servern im Format @server: Ressource ab. Weitere Informationen finden Sie unter [MCP](../users/features/mcp).
+Dies ruft Daten von verbundenen MCP-Servern im Format @server: Ressource ab. Weitere Informationen finden Sie unter [MCP](./features/mcp).
 
 > [!tip]
 >
@@ -333,10 +333,10 @@ Angenommen, du hast bereits an einer Aufgabe mit Qwen Code gearbeitet und möcht
 
 Qwen Code bietet zwei Optionen, um vorherige Gespräche fortzusetzen:
 
-- `--continue`, um automatisch das letzte Gespräch fortzusetzen
+- `--continue`, um automatisch das neueste Gespräch fortzusetzen
 - `--resume`, um eine Auswahl der Gespräche anzuzeigen
 
-**1. Das letzte Gespräch fortsetzen**
+**1. Das neueste Gespräch fortsetzen**
 
 ```bash
 qwen --continue
@@ -350,7 +350,7 @@ Dies setzt unmittelbar dein zuletzt geführtes Gespräch ohne weitere Eingaben f
 qwen --continue --p "Continue with my task"
 ```
 
-Verwende `--print` zusammen mit `--continue`, um das letzte Gespräch im nicht-interaktiven Modus fortzusetzen – ideal für Skripte oder Automatisierungen.
+Verwende `--print` zusammen mit `--continue`, um das neueste Gespräch im nicht-interaktiven Modus fortzusetzen – ideal für Skripte oder Automatisierung.
 
 **3. Gesprächsauswahl anzeigen**
 
@@ -358,27 +358,27 @@ Verwende `--print` zusammen mit `--continue`, um das letzte Gespräch im nicht-i
 qwen --resume
 ```
 
-Dies zeigt eine interaktive Liste vergangener Gespräche mit folgenden Informationen an:
+Dies zeigt eine interaktive Liste der bisherigen Gespräche an, darunter:
 
-- Zusammenfassung der Sitzung (oder erste Eingabeaufforderung)
+- Eine Zusammenfassung der Sitzung (oder die ursprüngliche Eingabe)
 - Metadaten: verstrichene Zeit, Anzahl der Nachrichten und Git-Branch
 
-Navigiere mithilfe der Pfeiltasten und drücke die Eingabetaste, um ein Gespräch auszuwählen. Drücke Escape, um den Vorgang abzubrechen.
+Navigiere mit den Pfeiltasten und drücke Enter, um ein Gespräch auszuwählen. Drücke Esc zum Beenden.
 
 > [!tip]
 >
 > - Der Gesprächsverlauf wird lokal auf deinem Gerät gespeichert
-> - Verwende `--continue`, um schnell auf das letzte Gespräch zuzugreifen
-> - Nutze `--resume`, wenn du ein bestimmtes früheres Gespräch auswählen willst
-> - Beim Fortsetzen siehst du den vollständigen bisherigen Verlauf des Gesprächs
-> - Das fortgesetzte Gespräch beginnt mit dem gleichen Modell und der gleichen Konfiguration wie das ursprüngliche Gespräch
+> - Verwende `--continue` für schnellen Zugriff auf das letzte Gespräch
+> - Verwende `--resume`, wenn du ein bestimmtes früheres Gespräch auswählen willst
+> - Beim Fortsetzen siehst du den vollständigen Gesprächsverlauf, bevor es weitergeht
+> - Das fortgesetzte Gespräch beginnt mit demselben Modell und derselben Konfiguration wie das ursprüngliche
 >
 > **So funktioniert es**:
 >
-> 1. **Speicherung von Gesprächen**: Alle Gespräche werden automatisch lokal mit vollständigem Nachrichtenverlauf gespeichert
-> 2. **Wiederherstellung von Nachrichten**: Beim Fortsetzen wird der gesamte Nachrichtenverlauf wiederhergestellt, um den Kontext zu bewahren
-> 3. **Zustand von Tools**: Die Nutzung und Ergebnisse von Tools aus dem vorherigen Gespräch bleiben erhalten
-> 4. **Kontextwiederherstellung**: Das Gespräch wird mit allen vorherigen Kontextinformationen fortgesetzt
+> 1. **Speicherung der Gespräche**: Alle Gespräche werden automatisch lokal mit vollständigem Nachrichtenverlauf gespeichert
+> 2. **Wiederherstellung der Nachrichten**: Beim Fortsetzen wird der gesamte Verlauf wiederhergestellt, um den Kontext zu bewahren
+> 3. **Zustand der Werkzeuge**: Die Nutzung und Ergebnisse von Werkzeugen aus dem vorherigen Gespräch bleiben erhalten
+> 4. **Wiederherstellung des Kontexts**: Das Gespräch wird mit allen vorherigen Informationen fortgesetzt
 >
 > **Beispiele**:
 >
@@ -386,7 +386,7 @@ Navigiere mithilfe der Pfeiltasten und drücke die Eingabetaste, um ein Gespräc
 > # Letztes Gespräch fortsetzen
 > qwen --continue
 >
-> # Letztes Gespräch mit spezifischer Aufforderung fortsetzen
+> # Letztes Gespräch mit einer bestimmten Eingabe fortsetzen
 > qwen --continue --p "Show me our progress"
 >
 > # Gesprächsauswahl anzeigen
@@ -402,7 +402,7 @@ Angenommen, Sie müssen gleichzeitig an mehreren Aufgaben arbeiten und dabei ein
 
 **1. Verstehen Sie Git-Worktrees**
 
-Git-Worktrees ermöglichen es Ihnen, mehrere Branches aus demselben Repository in separaten Verzeichnissen auszuchecken. Jeder Worktree verfügt über sein eigenes Arbeitsverzeichnis mit isolierten Dateien, teilt sich jedoch dieselbe Git-Historie. Erfahren Sie mehr in der [offiziellen Git-Worktree-Dokumentation](https://git-scm.com/docs/git-worktree).
+Git-Worktrees ermöglichen es Ihnen, mehrere Branches aus demselben Repository in separaten Verzeichnissen auszuchecken. Jeder Worktree verfügt über ein eigenes Arbeitsverzeichnis mit isolierten Dateien, teilt sich jedoch dieselbe Git-Historie. Erfahren Sie mehr in der [offiziellen Git-Worktree-Dokumentation](https://git-scm.com/docs/git-worktree).
 
 **2. Erstellen Sie einen neuen Worktree**
 
@@ -415,7 +415,7 @@ git worktree add ../project-feature-a -b feature-a
 git worktree add ../project-bugfix bugfix-123
 ```
 
-Dadurch wird ein neues Verzeichnis mit einer separaten Arbeitskopie Ihres Repositories erstellt.
+Dadurch wird ein neues Verzeichnis mit einer separaten Arbeitskopie Ihres Repositorys erstellt.
 
 **3. Führen Sie Qwen Code in jedem Worktree aus**
 
@@ -442,8 +442,8 @@ qwen
 # Alle Worktrees auflisten
 git worktree list
 
-```markdown
 # Entferne einen Worktree nach Abschluss der Arbeit
+```bash
 git worktree remove ../project-feature-a
 ```
 
@@ -458,11 +458,10 @@ git worktree remove ../project-feature-a
 >   - JavaScript-Projekte: Ausführen der Abhängigkeitsinstallation (`npm install`, `yarn`)
 >   - Python-Projekte: Einrichten von virtuellen Umgebungen oder Installation mit Paketmanagern
 >   - Andere Sprachen: Befolgen des Standard-Setup-Prozesses deines Projekts
-```
 
 ## Qwen Code als Unix-ähnliches Dienstprogramm verwenden
 
-### Qwen Code in Ihren Verifizierungsprozess integrieren
+### Qwen Code zu Ihrem Verifizierungsprozess hinzufügen
 
 Angenommen, Sie möchten Qwen Code als Linter oder Code-Reviewer verwenden.
 
@@ -482,8 +481,8 @@ Angenommen, Sie möchten Qwen Code als Linter oder Code-Reviewer verwenden.
 > [!tip]
 >
 > - Verwenden Sie Qwen Code für automatisierte Code-Reviews in Ihrer CI/CD-Pipeline
-> - Passen Sie den Prompt an, um spezifische Probleme zu prüfen, die für Ihr Projekt relevant sind
-> - Erwägen Sie das Erstellen mehrerer Skripte für verschiedene Arten der Verifizierung
+> - Passen Sie den Prompt an, um auf projektspezifische Probleme zu prüfen
+> - Erwägen Sie die Erstellung mehrerer Skripte für verschiedene Arten der Verifizierung
 
 ### Pipe rein, Pipe raus
 
@@ -533,7 +532,7 @@ Dies gibt eine Reihe von JSON-Objekten in Echtzeit aus, während Qwen Code die A
 >
 > - Verwende `--output-format text` für einfache Integrationen, bei denen du nur die Antwort von Qwen Code benötigst
 > - Verwende `--output-format json`, wenn du das vollständige Konversationsprotokoll benötigst
-> - Verwende `--output-format stream-json` für die Echtzeitausgabe jedes Konversationsschritts
+> - Verwende `--output-format stream-json` für die Echtzeitausgabe jeder Konversationseinheit
 
 ## Qwen Code nach seinen Fähigkeiten fragen
 
@@ -542,32 +541,32 @@ Qwen Code hat integrierten Zugriff auf seine Dokumentation und kann Fragen zu se
 ### Beispiel-Fragen
 
 ```
-Kann Qwen Code Pull Requests erstellen?
+kann Qwen Code Pull Requests erstellen?
 ```
 
 ```
-Wie geht Qwen Code mit Berechtigungen um?
+wie geht Qwen Code mit Berechtigungen um?
 ```
 
 ```
-Welche Slash-Befehle sind verfügbar?
+welche Slash-Befehle sind verfügbar?
 ```
 
 ```
-Wie verwende ich MCP mit Qwen Code?
+wie verwende ich MCP mit Qwen Code?
 ```
 
 ```
-Wie konfiguriere ich Qwen Code für Amazon Bedrock?
+wie konfiguriere ich Qwen Code für Amazon Bedrock?
 ```
 
 ```
-Was sind die Einschränkungen von Qwen Code?
+was sind die Einschränkungen von Qwen Code?
 ```
 
 > [!note]
 >
-> Qwen Code liefert dokumentationsbasierte Antworten auf diese Fragen. Für ausführbare Beispiele und praktische Demonstrationen siehe die entsprechenden Workflow-Abschnitte oben.
+> Qwen Code liefert dokumentationsbasierte Antworten auf diese Fragen. Für ausführbare Beispiele und praktische Demonstrationen siehe die spezifischen Workflow-Abschnitte oben.
 
 > [!tip]
 >
