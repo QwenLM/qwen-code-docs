@@ -38,7 +38,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
             title={`Qwen Code: AI Coding Agent`}
           >
             <img
-              src='https://assets.alicdn.com/g/qwenweb/qwen-webui-fe/0.0.191/static/favicon.png'
+              src='/favicon.png'
               alt='Qwen Code'
               width={32}
               height={32}

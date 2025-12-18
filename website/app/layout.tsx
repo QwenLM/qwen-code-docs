@@ -6,23 +6,105 @@ import type { FC, ReactNode } from "react";
 import "nextra-theme-docs/style.css";
 import { FontLoader } from "../src/components/font-loader";
 
+const SITE_NAME = "Qwen Code Docs";
+const DEFAULT_TITLE = "Qwen Code: AI Coding Agent Documentation";
+const DESCRIPTION =
+  "Multilingual documentation for Qwen Code: an open-source AI coding agent. Learn installation, IDE integration, MCP servers, workflows, automation, and best practices.";
+
+const KEYWORDS = [
+  "Qwen Code",
+  "Qwen",
+  "AI coding agent",
+  "AI developer tools",
+  "documentation",
+  "open source",
+  "Next.js",
+  "Nextra",
+  "MCP",
+  "Model Context Protocol",
+  "IDE integration",
+  "workflow automation",
+  "Alibaba",
+  "阿里巴巴",
+  "通义千问",
+  "千问",
+  "大模型",
+];
+
+function getSiteUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
+  if (explicit) return explicit.replace(/\/$/, "");
+
+  const ghRepo = process.env.GITHUB_REPOSITORY; // e.g. owner/repo
+  if (ghRepo && ghRepo.includes("/")) {
+    const [owner, repo] = ghRepo.split("/");
+    if (owner && repo) return `https://${owner}.github.io/${repo}`;
+  }
+
+  return "https://qwenlm.github.io/qwen-code-docs";
+}
+
 export const metadata: Metadata = {
-  description: "x",
+  applicationName: SITE_NAME,
   title: {
-    absolute: "",
-    template: "%s | ",
+    default: DEFAULT_TITLE,
+    template: `%s | ${SITE_NAME}`,
   },
-  metadataBase: new URL("https://swr.vercel.app"),
+  description: DESCRIPTION,
+  keywords: KEYWORDS,
+  metadataBase: new URL(getSiteUrl()),
+  alternates: {
+    canonical: "/",
+    languages: {
+      en: "/en/",
+      zh: "/zh/",
+      de: "/de/",
+      fr: "/fr/",
+      ru: "/ru/",
+      ja: "/ja/",
+      "pt-BR": "/pt-BR/",
+    },
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   openGraph: {
-    images:
-      "https://assets.vercel.com/image/upload/v1572282926/swr/twitter-card.jpg",
+    type: "website",
+    siteName: SITE_NAME,
+    title: DEFAULT_TITLE,
+    description: DESCRIPTION,
+    url: "/",
+    images: [
+      {
+        url: "/assets/qwen-screenshot.png",
+        alt: "Qwen Code Docs",
+      },
+    ],
   },
   twitter: {
     site: "@qwenLLM",
+    card: "summary_large_image",
+    title: DEFAULT_TITLE,
+    description: DESCRIPTION,
+    images: ["/assets/qwen-screenshot.png"],
   },
   appleWebApp: {
     title: "Qwen Code",
   },
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    shortcut: ["/favicon.png"],
+    apple: [{ url: "/favicon.png", type: "image/png" }],
+  },
+  manifest: "/site.webmanifest",
   other: {
     "msapplication-TileColor": "#fff",
   },
@@ -34,7 +116,7 @@ type LayoutProps = Readonly<{
 
 const RootLayout: FC<LayoutProps> = ({ children }) => {
   return (
-    <html suppressHydrationWarning>
+    <html lang='en' suppressHydrationWarning>
       <Head
         // backgroundColor={{
         //   dark: "rgb(15,23,42)",
