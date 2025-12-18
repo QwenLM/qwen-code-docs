@@ -13,27 +13,27 @@ const Index = () => {
     <div className='min-h-screen bg-background'>
       <CustomNavbar
         logo={
-       <>
-          <span
-            className='ms-2 select-none font-extrabold flex items-center'
-            title={`Qwen Code: AI Coding Agent`}
-          >
-            <img
-              src='https://assets.alicdn.com/g/qwenweb/qwen-webui-fe/0.0.191/static/favicon.png'
-              alt='Qwen Code'
-              width={32}
-              height={32}
-              className='inline-block align-middle mr-2 '
-              style={{ verticalAlign: "middle" }}
-            />
-            <span className='text-[1.3rem]  font-normal align-middle mr-1 max-md:hidden'>
-              Qwen
+          <>
+            <span
+              className='ms-2 select-none font-extrabold flex items-center'
+              title={`Qwen Code: AI Coding Agent`}
+            >
+              <img
+                src='/favicon.png'
+                alt='Qwen Code'
+                width={32}
+                height={32}
+                className='inline-block align-middle mr-2 '
+                style={{ verticalAlign: "middle" }}
+              />
+              <span className='text-[1.3rem]  font-normal align-middle mr-1 max-md:hidden'>
+                Qwen
+              </span>
+              <span className='text-[1.3rem] font-normal align-middle max-md:hidden'>
+                Code
+              </span>
             </span>
-            <span className='text-[1.3rem] font-normal align-middle max-md:hidden'>
-              Code
-            </span>
-          </span>
-        </>
+          </>
         }
         projectLink='https://github.com/QwenLM/qwen-code'
       />
