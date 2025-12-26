@@ -1,199 +1,199 @@
 # Commandes
 
-Ce document détaille toutes les commandes prises en charge par Qwen Code, afin de vous aider à gérer efficacement les sessions, personnaliser l'interface et contrôler son comportement.
+Ce document détaille toutes les commandes prises en charge par Qwen Code, vous aidant à gérer efficacement les sessions, personnaliser l'interface et contrôler son comportement.
 
-Les commandes de Qwen Code sont déclenchées via des préfixes spécifiques et se répartissent en trois catégories :
+Les commandes Qwen Code sont déclenchées par des préfixes spécifiques et se répartissent en trois catégories :
 
-| Type de préfixe             | Description de la fonction                          | Cas d'utilisation typique                                          |
-| --------------------------- | --------------------------------------------------- | ------------------------------------------------------------------ |
-| Commandes Slash (`/`)       | Contrôle de Qwen Code au niveau méta                 | Gestion des sessions, modification des paramètres, obtention d'aide |
-| Commandes At (`@`)          | Injection rapide du contenu d'un fichier local dans la conversation | Permettre à l'IA d'analyser des fichiers ou du code spécifié dans des répertoires |
-| Commandes Exclamation (`!`) | Interaction directe avec le Shell système            | Exécution de commandes système telles que `git status`, `ls`, etc. |
+| Type de préfixe            | Description de la fonction                          | Cas d'utilisation typique                                        |
+| -------------------------- | --------------------------------------------------- | ---------------------------------------------------------------- |
+| Commandes slash (`/`)      | Contrôle au niveau méta de Qwen Code lui-même       | Gestion des sessions, modification des paramètres, obtention d'aide |
+| Commandes arobase (`@`)    | Injection rapide du contenu de fichiers locaux dans la conversation | Permettre à l'IA d'analyser des fichiers ou du code spécifiés dans des répertoires |
+| Commandes d'exclamation (`!`) | Interaction directe avec le shell système          | Exécution de commandes système comme `git status`, `ls`, etc.    |
 
-## 1. Commandes Slash (`/`)
+## 1. Commandes slash (`/`)
 
-Les commandes slash sont utilisées pour gérer les sessions, l'interface et le comportement de base de Qwen Code.
+Les commandes slash sont utilisées pour gérer les sessions Qwen Code, l'interface et le comportement de base.
 
-### 1.1 Gestion des Sessions et des Projets
+### 1.1 Gestion des sessions et des projets
 
 Ces commandes vous aident à sauvegarder, restaurer et résumer l'avancement du travail.
 
-| Commande    | Description                                              | Exemples d'utilisation                |
-| ----------- | -------------------------------------------------------- | ------------------------------------- |
-| `/summary`  | Génère un résumé du projet basé sur l'historique de conversation | `/summary`                           |
-| `/compress` | Remplace l'historique de discussion par un résumé pour économiser des Tokens | `/compress`                          |
-| `/restore`  | Restaure les fichiers à leur état précédent à l'exécution de l'outil | `/restore` (liste) ou `/restore <ID>` |
-| `/init`     | Analyse le répertoire actuel et crée un fichier de contexte initial | `/init`                              |
+| Commande    | Description                                               | Exemples d'utilisation               |
+| ----------- | --------------------------------------------------------- | ------------------------------------ |
+| `/init`     | Analyse le répertoire courant et crée le fichier de contexte initial | `/init`                              |
+| `/summary`  | Génère un résumé du projet basé sur l'historique des conversations | `/summary`                           |
+| `/compress` | Remplace l'historique des discussions par un résumé pour économiser des jetons | `/compress`                          |
+| `/resume`   | Reprendre une session de conversation précédente          | `/resume`                            |
+| `/restore`  | Restaure les fichiers dans l'état précédent l'exécution de l'outil | `/restore` (liste) ou `/restore <ID>` |
 
-### 1.2 Contrôle de l'interface et de l'espace de travail
+### 1.2 Interface et contrôle de l'espace de travail
 
 Commandes permettant d'ajuster l'apparence de l'interface et l'environnement de travail.
 
-| Commande     | Description                                      | Exemples d'utilisation          |
-| ------------ | ------------------------------------------------ | ------------------------------- |
-| `/clear`     | Effacer le contenu de l'écran du terminal        | `/clear` (raccourci : `Ctrl+L`) |
-| `/theme`     | Changer le thème visuel de Qwen Code             | `/theme`                        |
+| Commande     | Description                              | Exemples d'utilisation        |
+| ------------ | ---------------------------------------- | ----------------------------- |
+| `/clear`     | Effacer le contenu de l'écran du terminal| `/clear` (raccourci : `Ctrl+L`) |
+| `/theme`     | Changer le thème visuel de Qwen Code     | `/theme`                      |
 | `/vim`       | Activer/désactiver le mode d'édition Vim dans la zone de saisie | `/vim`                        |
-| `/directory` | Gérer les espaces de travail avec prise en charge de plusieurs répertoires | `/dir add ./src,./tests`      |
+| `/directory` | Gérer l'espace de travail avec support multi-répertoires | `/dir add ./src,./tests`      |
 | `/editor`    | Ouvrir une boîte de dialogue pour sélectionner un éditeur pris en charge | `/editor`                     |
 
 ### 1.3 Paramètres de langue
 
-Commandes spécifiquement destinées à contrôler la langue de l'interface et la langue de sortie.
+Commandes spécifiques pour contrôler la langue de l'interface et des sorties.
 
-| Commande              | Description                           | Exemples d'utilisation     |
-| --------------------- | ------------------------------------- | -------------------------- |
+| Commande              | Description                         | Exemples d'utilisation     |
+| --------------------- | ----------------------------------- | -------------------------- |
 | `/language`           | Afficher ou modifier les paramètres de langue | `/language`                |
-| → `ui [langue]`       | Définir la langue de l'interface utilisateur | `/language ui zh-CN`       |
-| → `output [langue]`   | Définir la langue de sortie du LLM    | `/language output Chinese` |
+| → `ui [language]`     | Définir la langue de l'interface    | `/language ui zh-CN`       |
+| → `output [language]` | Définir la langue de sortie du LLM  | `/language output Chinese` |
 
-- Langues d'interface disponibles : `zh-CN` (chinois simplifié), `en-US` (anglais)
+- Langues d'interface intégrées disponibles : `zh-CN` (chinois simplifié), `en-US` (anglais), `ru-RU` (russe), `de-DE` (allemand)
 - Exemples de langues de sortie : `Chinese`, `English`, `Japanese`, etc.
 
-### 1.4 Gestion des outils et des modèles
+### 1.4 Gestion des outils et modèles
 
-Commandes pour gérer les outils et les modèles d'IA.
+Commandes pour gérer les outils et modèles d'IA.
 
 | Commande         | Description                                   | Exemples d'utilisation                        |
 | ---------------- | --------------------------------------------- | --------------------------------------------- |
 | `/mcp`           | Liste les serveurs et outils MCP configurés   | `/mcp`, `/mcp desc`                           |
-| `/tools`         | Affiche la liste des outils disponibles       | `/tools`, `/tools desc`                       |
-| `/approval-mode` | Modifie le mode d'approbation pour l'usage des outils | `/approval-mode <mode (auto-edit)> --project` |
+| `/tools`         | Affiche la liste des outils actuellement disponibles | `/tools`, `/tools desc`                       |
+| `/approval-mode` | Change le mode d'approbation pour l'utilisation des outils | `/approval-mode <mode (auto-edit)> --project` |
 | →`plan`          | Analyse uniquement, pas d'exécution           | Revue sécurisée                               |
-| →`default`       | Nécessite une approbation pour les modifications | Usage quotidien                              |
+| →`default`       | Nécessite l'approbation pour les modifications| Utilisation quotidienne                         |
 | →`auto-edit`     | Approuve automatiquement les modifications    | Environnement de confiance                    |
 | →`yolo`          | Approuve automatiquement tout                 | Prototypage rapide                            |
-| `/model`         | Change le modèle utilisé dans la session actuelle | `/model`                                  |
-| `/extensions`    | Liste toutes les extensions actives dans la session actuelle | `/extensions`                     |
-| `/memory`        | Gère le contexte d'instructions de l'IA        | `/memory add Information importante`          |
+| `/model`         | Change le modèle utilisé dans la session actuelle | `/model`                                      |
+| `/extensions`    | Liste toutes les extensions actives dans la session actuelle | `/extensions`                                 |
+| `/memory`        | Gère le contexte d'instructions de l'IA       | `/memory add Informations importantes`        |
 
-### 1.5 Informations, Paramètres et Aide
+### 1.5 Informations, paramètres et aide
 
-Commandes pour obtenir des informations et effectuer des réglages système.
+Commandes permettant d'obtenir des informations et de modifier les paramètres système.
 
-| Commande        | Description                                        | Exemples d'utilisation                          |
-| --------------- | -------------------------------------------------- | ----------------------------------------------- |
-| `/help`         | Afficher les informations d'aide sur les commandes disponibles | `/help` ou `/?`                                 |
-| `/about`        | Afficher les informations de version               | `/about`                                        |
-| `/stats`        | Afficher les statistiques détaillées de la session en cours | `/stats`                                        |
-| `/settings`     | Ouvrir l'éditeur de paramètres                     | `/settings`                                     |
-| `/auth`         | Changer la méthode d'authentification              | `/auth`                                         |
-| `/bug`          | Soumettre un problème concernant Qwen Code         | `/bug Le bouton ne répond pas au clic`          |
-| `/copy`         | Copier le dernier contenu de sortie dans le presse-papiers | `/copy`                                         |
-| `/quit-confirm` | Afficher une boîte de dialogue de confirmation avant de quitter | `/quit-confirm` (raccourci : appuyer deux fois sur `Ctrl+C`) |
-| `/quit`         | Quitter immédiatement Qwen Code                    | `/quit` ou `/exit`                              |
+| Commande    | Description                                          | Exemples d'utilisation           |
+| ----------- | ---------------------------------------------------- | -------------------------------- |
+| `/help`     | Afficher les informations d'aide pour les commandes disponibles | `/help` ou `/?`                  |
+| `/about`    | Afficher les informations de version                 | `/about`                         |
+| `/stats`    | Afficher les statistiques détaillées pour la session en cours | `/stats`                         |
+| `/settings` | Ouvrir l'éditeur de paramètres                       | `/settings`                      |
+| `/auth`     | Changer la méthode d'authentification                | `/auth`                          |
+| `/bug`      | Soumettre un problème concernant Qwen Code           | `/bug Button click unresponsive` |
+| `/copy`     | Copier le contenu de la dernière sortie dans le presse-papiers | `/copy`                          |
+| `/quit`     | Quitter Qwen Code immédiatement                      | `/quit` ou `/exit`               |
 
 ### 1.6 Raccourcis courants
 
-| Raccourci          | Fonction                 | Note                     |
-| ------------------ | ------------------------ | ------------------------ |
-| `Ctrl/cmd+L`       | Effacer l'écran          | Équivalent à `/clear`    |
-| `Ctrl/cmd+T`       | Basculer la description de l'outil | Gestion des outils MCP   |
-| `Ctrl/cmd+C`×2     | Confirmation de sortie   | Mécanisme de sortie sécurisé |
-| `Ctrl/cmd+Z`       | Annuler la saisie        | Édition de texte         |
-| `Ctrl/cmd+Shift+Z` | Rétablir la saisie       | Édition de texte         |
+| Raccourci          | Fonction                | Note                   |
+| ------------------ | ----------------------- | ---------------------- |
+| `Ctrl/cmd+L`       | Effacer l'écran         | Équivalent à `/clear`  |
+| `Ctrl/cmd+T`       | Basculer la description de l'outil | Gestion des outils MCP |
+| `Ctrl/cmd+C`×2     | Confirmation de sortie  | Mécanisme de sortie sécurisé |
+| `Ctrl/cmd+Z`       | Annuler la saisie       | Édition de texte       |
+| `Ctrl/cmd+Shift+Z` | Rétablir la saisie      | Édition de texte       |
 
 ## 2. Commandes @ (Introduction de fichiers)
 
-Les commandes @ sont utilisées pour ajouter rapidement le contenu d'un fichier ou d'un répertoire local à la conversation.
+Les commandes @ sont utilisées pour ajouter rapidement le contenu de fichiers ou de répertoires locaux à la conversation.
 
-| Format de commande   | Description                                      | Exemples                                           |
-| -------------------- | ------------------------------------------------ | -------------------------------------------------- |
-| `@<chemin_fichier>`  | Injecte le contenu du fichier spécifié           | `@src/main.py Veuillez expliquer ce code`          |
-| `@<chemin_répertoire>` | Lit récursivement tous les fichiers texte du répertoire | `@docs/ Résumez le contenu de ce document`         |
-| `@` seul             | Utilisé lorsqu'on discute du symbole `@` lui-même | `@ À quoi sert ce symbole en programmation ?`      |
+| Format de commande  | Description                                  | Exemples                                         |
+| ------------------- | -------------------------------------------- | ------------------------------------------------ |
+| `@<chemin du fichier>` | Injecte le contenu du fichier spécifié      | `@src/main.py Veuillez expliquer ce code`        |
+| `@<chemin du répertoire>` | Lit récursivement tous les fichiers texte du répertoire | `@docs/ Résumez le contenu de ce document`      |
+| `@` autonome        | Utilisé lorsqu'on discute du symbole `@` lui-même | `@ À quoi sert ce symbole en programmation ?`   |
 
-Remarque : Les espaces dans les chemins doivent être échappés avec une barre oblique inverse (ex. : `@Mes\ Documents/fichier.txt`)
+Remarque : Les espaces dans les chemins doivent être échappés avec une barre oblique inversée (par exemple, `@Mon\ Documents/fichier.txt`)
 
-## 3. Commandes d’exclamation (`!`) - Exécution de commandes Shell
+## 3. Commandes d'exclamation (`!`) - Exécution de commandes Shell
 
-Les commandes d’exclamation vous permettent d’exécuter directement des commandes système dans Qwen Code.
+Les commandes d'exclamation vous permettent d'exécuter directement des commandes système dans Qwen Code.
 
-| Format de commande | Description                                                  | Exemples                          |
-| ------------------ | ------------------------------------------------------------ | --------------------------------- |
-| `!<commande shell>` | Exécute la commande dans un sous-shell                       | `!ls -la`, `!git status`          |
-| `!` seul           | Active le mode Shell, toute entrée est exécutée comme commande Shell | `!`(entrée) → Saisir commande → `!`(sortie) |
+| Format de commande | Description                                                                 | Exemples                               |
+| ------------------ | --------------------------------------------------------------------------- | -------------------------------------- |
+| `!<commande shell>`| Exécuter la commande dans un sous-shell                                     | `!ls -la`, `!git status`               |
+| `!` autonome       | Basculer en mode Shell, toute entrée est exécutée directement comme commande Shell | `!`(entrée) → Saisir la commande → `!`(sortie) |
 
-Variables d’environnement : Les commandes exécutées via `!` définissent la variable d’environnement `QWEN_CODE=1`.
+Variables d'environnement : Les commandes exécutées via `!` définiront la variable d'environnement `QWEN_CODE=1`.
 
 ## 4. Commandes personnalisées
 
-Enregistrez les invites fréquemment utilisées en tant que commandes raccourcies pour améliorer l'efficacité du travail et garantir la cohérence.
+Enregistrez les invites fréquemment utilisées en tant que commandes raccourcies pour améliorer l'efficacité du travail et assurer la cohérence.
 
 ### Aperçu rapide
 
-| Fonction         | Description                                      | Avantages                              | Priorité | Scénarios applicables                                  |
-| ---------------- | ------------------------------------------------ | -------------------------------------- | -------- | ------------------------------------------------------ |
-| Espace de noms   | Le sous-répertoire crée des commandes nommées avec deux-points | Meilleure organisation des commandes   |          |                                                        |
-| Commandes globales | `~/.qwen/commands/`                            | Disponibles dans tous les projets      | Faible   | Commandes personnelles fréquemment utilisées, usage inter-projets |
-| Commandes de projet | `<répertoire racine du projet>/.qwen/commands/` | Spécifiques au projet, contrôlables par version | Élevée   | Partage d'équipe, commandes spécifiques au projet       |
+| Fonction         | Description                                | Avantages                              | Priorité | Scénarios applicables                                |
+| ---------------- | ------------------------------------------ | -------------------------------------- | -------- | ---------------------------------------------------- |
+| Espace de noms   | Le sous-répertoire crée des commandes avec des noms contenant des deux-points | Meilleure organisation des commandes   |          |                                                      |
+| Commandes globales | `~/.qwen/commands/`                        | Disponibles dans tous les projets      | Faible   | Commandes personnelles fréquemment utilisées, usage transversal |
+| Commandes de projet | `<répertoire racine du projet>/.qwen/commands/` | Spécifiques au projet, contrôlables par version | Élevée   | Partage en équipe, commandes spécifiques au projet   |
 
-Règles de priorité : Commandes de projet > Commandes utilisateur (la commande de projet est utilisée lorsque les noms sont identiques)
+Règles de priorité : Les commandes de projet ont priorité sur les commandes utilisateur (la commande de projet est utilisée lorsque les noms sont identiques)
 
 ### Règles de nommage des commandes
 
-#### Tableau de correspondance entre le chemin du fichier et le nom de la commande
+#### Table de correspondance entre chemin de fichier et nom de commande
 
-| Emplacement du fichier       | Commande générée  | Exemple d'appel       |
-| ---------------------------- | ----------------- | --------------------- |
-| `~/.qwen/commands/test.toml` | `/test`           | `/test Paramètre`     |
-| `<projet>/git/commit.toml`   | `/git:commit`     | `/git:commit Message` |
+| Emplacement du fichier       | Commande générée | Exemple d'appel         |
+| ---------------------------- | ----------------- | ----------------------- |
+| `~/.qwen/commands/test.toml` | `/test`           | `/test Paramètre`       |
+| `<project>/git/commit.toml`  | `/git:commit`     | `/git:commit Message`   |
 
 Règles de nommage : Le séparateur de chemin (`/` ou `\`) est converti en deux-points (`:`)
 
 ### Spécification du format de fichier TOML
 
-| Champ         | Requis   | Description                                         | Exemple                                     |
-| ------------- | -------- | --------------------------------------------------- | ------------------------------------------- |
-| `prompt`      | Requis   | Contenu de l'invite envoyé au modèle                | `prompt = "Veuillez analyser le code : {{args}}"` |
-| `description` | Optionnel| Description de la commande (affichée dans /help)    | `description = "Outil d'analyse de code"`    |
+| Champ         | Requis   | Description                              | Exemple                                    |
+| ------------- | -------- | ---------------------------------------- | ------------------------------------------ |
+| `prompt`      | Requis   | Contenu du prompt envoyé au modèle       | `prompt = "Veuillez analyser le code : {{args}}"` |
+| `description` | Optionnel | Description de la commande (affichée dans /help) | `description = "Outil d'analyse de code"` |
 
-### Mécanisme de Traitement des Paramètres
+### Mécanisme de traitement des paramètres
 
-| Méthode de Traitement        | Syntaxe            | Scénarios Applicables                | Fonctionnalités de Sécurité            |
+| Méthode de traitement        | Syntaxe            | Scénarios applicables                | Fonctionnalités de sécurité            |
 | ---------------------------- | ------------------ | ------------------------------------ | -------------------------------------- |
-| Injection Contextuelle       | `{{args}}`         | Nécessite un contrôle précis des paramètres | Échappement Shell automatique          |
-| Traitement par Défaut des Paramètres | Pas de marquage spécial | Commandes simples, ajout de paramètres | Ajout tel quel                         |
-| Injection de Commande Shell  | `!{command}`       | Nécessite du contenu dynamique       | Confirmation d'exécution requise avant |
+| Injection consciente du contexte | `{{args}}`         | Besoin d'un contrôle précis des paramètres | Échappement automatique du shell       |
+| Traitement par défaut des paramètres | Pas de marquage spécial | Commandes simples, ajout de paramètres | Ajout tel quel                          |
+| Injection de commande shell  | `!{command}`       | Besoin de contenu dynamique          | Confirmation d'exécution requise avant |
 
-#### 1. Injection contextuelle (`{{args}}`)
+#### 1. Injection sensible au contexte (`{{args}}`)
 
-| Scénario             | Configuration TOML                     | Méthode d'appel       | Effet réel               |
-| -------------------- | -------------------------------------- | --------------------- | ------------------------ |
-| Injection brute      | `prompt = "Fix: {{args}}"`             | `/fix "Button issue"` | `Fix: "Button issue"`    |
+| Scénario         | Configuration TOML                      | Méthode d'appel       | Effet réel               |
+| ---------------- | --------------------------------------- | --------------------- | ------------------------ |
+| Injection brute  | `prompt = "Fix: {{args}}"`              | `/fix "Button issue"` | `Fix: "Button issue"`    |
 | Dans une commande shell | `prompt = "Search: !{grep {{args}} .}"` | `/search "hello"`     | Exécute `grep "hello" .` |
 
-#### 2. Traitement des paramètres par défaut
+#### 2. Traitement par défaut des paramètres
 
-| Situation d'entrée | Méthode de traitement                                  | Exemple                                        |
-| ------------------ | ------------------------------------------------------ | ---------------------------------------------- |
-| Avec paramètres    | Ajout à la fin de l'invite (séparé par deux sauts de ligne) | `/cmd paramètre` → Invite originale + paramètre |
-| Sans paramètres    | Envoi de l'invite telle quelle                           | `/cmd` → Invite originale                      |
+| Situation d'entrée | Méthode de traitement                                | Exemple                                        |
+| ------------------ | ---------------------------------------------------- | ---------------------------------------------- |
+| A des paramètres   | Ajouter à la fin de l'invite (séparé par deux sauts de ligne) | `/cmd paramètre` → Invite d'origine + paramètre |
+| Pas de paramètres  | Envoyer l'invite telle quelle                        | `/cmd` → Invite d'origine                      |
 
 🚀 Injection de contenu dynamique
 
-| Type d'injection       | Syntaxe        | Ordre de traitement     | Objectif                         |
-| ---------------------- | -------------- | ----------------------- | -------------------------------- |
-| Contenu de fichier     | `@{chemin_fichier}` | Traité en premier     | Injecter des fichiers de référence statiques |
-| Commandes shell        | `!{commande}`  | Traité au milieu        | Injecter les résultats d'exécution dynamiques |
-| Remplacement paramètre | `{{args}}`     | Traité en dernier       | Injecter les paramètres utilisateur |
+| Type d'injection      | Syntaxe        | Ordre de traitement | Objectif                                     |
+| --------------------- | -------------- | ------------------- | -------------------------------------------- |
+| Contenu de fichier    | `@{chemin fichier}` | Traitée en premier  | Injecter des fichiers de référence statiques |
+| Commandes shell       | `!{commande}`  | Traitée au milieu   | Injecter des résultats d'exécution dynamiques |
+| Remplacement de paramètres | `{{args}}`     | Traitée en dernier  | Injecter les paramètres utilisateur          |
 
-#### 3. Exécution de commandes Shell (`!{...}`)
+#### 3. Exécution de commandes shell (`!{...}`)
 
-| Opération                          | Interaction utilisateur  |
-| ---------------------------------- | ------------------------ |
-| 1. Analyser la commande et les paramètres | -                        |
-| 2. Échappement automatique du Shell    | -                        |
-| 3. Afficher une boîte de dialogue de confirmation | ✅ Confirmation de l'utilisateur |
-| 4. Exécuter la commande              | -                        |
-| 5. Injecter la sortie dans l'invite   | -                        |
+| Opération                       | Interaction utilisateur |
+| ------------------------------- | ----------------------- |
+| 1. Analyse de la commande et des paramètres | -                    |
+| 2. Échappement automatique du shell     | -                    |
+| 3. Affichage de la boîte de confirmation     | ✅ Confirmation de l'utilisateur |
+| 4. Exécution de la commande              | -                    |
+| 5. Injection de la sortie dans l'invite      | -                    |
 
 Exemple : Génération de message de commit Git
 
 ```
 
 # git/commit.toml
-description = "Générer un message de commit basé sur les modifications indexées"
+description = "Générer un message de commit basé sur les modifications stagées"
 prompt = """
 Veuillez générer un message de commit basé sur le diff suivant :
 diff
@@ -201,66 +201,66 @@ diff
 """
 ```
 
-#### 4. Injection de Contenu de Fichier (`@{...}`)
+#### 4. Injection de contenu de fichier (`@{...}`)
 
-| Type de Fichier | Statut de Support      | Méthode de Traitement       |
-| --------------- | ---------------------- | --------------------------- |
-| Fichiers Texte  | ✅ Support Complet     | Injecter directement le contenu |
-| Images/PDF      | ✅ Support Multi-modal | Encoder et injecter         |
-| Fichiers Binaires | ⚠️ Support Limité    | Peut être ignoré ou tronqué |
-| Répertoire      | ✅ Injection Récursive | Suivre les règles de .gitignore |
+| Type de fichier | Statut de prise en charge | Méthode de traitement         |
+| --------------- | ------------------------- | ----------------------------- |
+| Fichiers texte  | ✅ Prise en charge complète | Injection directe du contenu  |
+| Images/PDF      | ✅ Prise en charge multimodale | Encodage et injection         |
+| Fichiers binaires | ⚠️ Prise en charge limitée | Peut être ignoré ou tronqué   |
+| Répertoire      | ✅ Injection récursive    | Respecte les règles .gitignore |
 
-Exemple : Commande d'Examen de Code
+Exemple : Commande de revue de code
 
 ```
 
 # review.toml
-description = "Examen du code basé sur les bonnes pratiques"
+description = "Revue de code basée sur les meilleures pratiques"
 prompt = """
-Examiner {{args}}, référencer les normes :
+Revoir {{args}}, référencer les standards :
 
 @{docs/code-standards.md}
 """
 ```
 
-### Exemple de Création Pratique
+### Exemple de création pratique
 
-#### Tableau des étapes de création de la commande "Pure Function Refactoring"
+#### Tableau des étapes de création de la commande "Refactoring de fonction pure"
 
-| Opération                          | Commande/Code                                      |
-| ---------------------------------- | -------------------------------------------------- |
-| 1. Créer la structure de répertoires | `mkdir -p ~/.qwen/commands/refactor`               |
-| 2. Créer le fichier de commande      | `touch ~/.qwen/commands/refactor/pure.toml`        |
-| 3. Modifier le contenu de la commande| Voir le code complet ci-dessous.                   |
-| 4. Tester la commande                | `@file.js` → `/refactor:pure`                      |
+| Opération                   | Commande/Code                               |
+| --------------------------- | ------------------------------------------- |
+| 1. Créer la structure de répertoires | `mkdir -p ~/.qwen/commands/refactor`        |
+| 2. Créer le fichier de commande     | `touch ~/.qwen/commands/refactor/pure.toml` |
+| 3. Éditer le contenu de la commande | Se référer au code complet ci-dessous.      |
+| 4. Tester la commande               | `@file.js` → `/refactor:pure`               |
 
 ```# ~/.qwen/commands/refactor/pure.toml
 description = "Refactoriser le code en fonction pure"
 prompt = """
-	Analysez le code dans le contexte actuel et refactorisez-le en fonction pure.
+	Veuillez analyser le code dans le contexte actuel et le refactoriser en fonction pure.
 	Exigences :
 		1. Fournir le code refactorisé
-		2. Expliquer les changements clés et l'implémentation des caractéristiques d'une fonction pure
-		3. Conserver la fonction inchangée
-	"""
+		2. Expliquer les changements clés et l'implémentation des caractéristiques de fonction pure
+		3. Maintenir la fonction inchangée
+"""
 ```
 
-### Résumé des bonnes pratiques pour les commandes personnalisées
+### Résumé des meilleures pratiques pour les commandes personnalisées
 
-#### Tableau des recommandations de conception des commandes
+#### Tableau des recommandations de conception de commandes
 
-| Points de pratique    | Approche recommandée                 | À éviter                                    |
-| --------------------- | ------------------------------------ | ------------------------------------------- |
-| Nom des commandes     | Utiliser des espaces de noms pour l'organisation | Éviter les noms trop génériques             |
-| Traitement des paramètres | Utiliser clairement `{{args}}`       | S'appuyer sur l'ajout par défaut (facilement confusable) |
-| Gestion des erreurs   | Utiliser la sortie d'erreur du Shell | Ignorer les échecs d'exécution              |
+| Points de pratique   | Approche recommandée                | À éviter                                    |
+| -------------------- | ----------------------------------- | ------------------------------------------- |
+| Nommage des commandes| Utiliser des espaces de noms pour l'organisation | Éviter les noms trop génériques           |
+| Traitement des paramètres | Utiliser clairement `{{args}}`  | S'appuyer sur l'ajout par défaut (facile à confondre) |
+| Gestion des erreurs  | Utiliser la sortie d'erreur du shell| Ignorer l'échec de l'exécution              |
 | Organisation des fichiers | Organiser par fonction dans des répertoires | Toutes les commandes dans le répertoire racine |
-| Champ de description  | Toujours fournir une description claire | S'appuyer sur une description auto-générée  |
+| Champ de description | Toujours fournir une description claire | S'appuyer sur une description générée automatiquement |
 
 #### Tableau de rappel des fonctionnalités de sécurité
 
 | Mécanisme de sécurité  | Effet de protection        | Opération utilisateur  |
 | ---------------------- | -------------------------- | ---------------------- |
-| Échappement shell      | Prévenir l'injection de commandes | Traitement automatique |
+| Échappement de shell   | Prévenir l'injection de commandes | Traitement automatique |
 | Confirmation d'exécution | Éviter l'exécution accidentelle | Confirmation par dialogue |
-| Rapport d'erreurs      | Aider au diagnostic des problèmes | Afficher les informations d'erreur |
+| Rapport d'erreurs      | Aider au diagnostic des problèmes | Affichage des informations d'erreur |

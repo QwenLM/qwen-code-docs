@@ -1,10 +1,10 @@
 # Themes
 
-Qwen Code unterstützt eine Vielzahl von Themes, um das Farbschema und das Erscheinungsbild anzupassen. Du kannst das Theme über den Befehl `/theme` oder die Konfigurationseinstellung `"theme":` ändern, um es deinen Vorlieben anzupassen.
+Qwen Code unterstützt eine Vielzahl von Themes, um das Farbschema und das Erscheinungsbild anzupassen. Sie können das Theme über den Befehl `/theme` oder die Konfigurationseinstellung `"theme":` ändern, um Ihren Vorlieben zu entsprechen.
 
 ## Verfügbare Themes
 
-Qwen Code wird mit einer Auswahl vordefinierter Themes geliefert, die du mithilfe des Befehls `/theme` innerhalb der CLI auflisten kannst:
+Qwen Code enthält eine Auswahl vordefinierter Themes, die Sie mit dem Befehl `/theme` in der CLI auflisten können:
 
 - **Dunkle Themes:**
   - `ANSI`
@@ -21,28 +21,28 @@ Qwen Code wird mit einer Auswahl vordefinierter Themes geliefert, die du mithilf
   - `Google Code`
   - `Xcode`
 
-### Ändern von Themes
+### Themawechsel
 
-1.  Gib `/theme` in Qwen Code ein.
-2.  Es erscheint ein Dialog oder eine Auswahl-Eingabeaufforderung mit einer Liste der verfügbaren Themes.
-3.  Wähle mithilfe der Pfeiltasten ein Theme aus. Einige Oberflächen bieten möglicherweise eine Live-Vorschau oder Hervorhebung während der Auswahl.
-4.  Bestätige deine Auswahl, um das Theme anzuwenden.
+1.  Geben Sie `/theme` in Qwen Code ein.
+2.  Ein Dialog oder eine Auswahlabfrage erscheint und listet die verfügbaren Themen auf.
+3.  Verwenden Sie die Pfeiltasten, um ein Thema auszuwählen. Einige Oberflächen bieten möglicherweise eine Live-Vorschau oder eine Hervorhebung während der Auswahl.
+4.  Bestätigen Sie Ihre Auswahl, um das Thema anzuwenden.
 
-**Hinweis:** Wenn in deiner `settings.json`-Datei ein Theme definiert ist (entweder über den Namen oder einen Dateipfad), musst du die Einstellung `"theme"` aus der Datei entfernen, bevor du das Theme mithilfe des Befehls `/theme` ändern kannst.
+**Hinweis:** Wenn ein Thema in Ihrer `settings.json`-Datei definiert ist (entweder per Name oder durch einen Dateipfad), müssen Sie die Einstellung `"theme"` aus der Datei entfernen, bevor Sie das Thema über den Befehl `/theme` ändern können.
 
-### Speicherung von Themes
+### Themenspeicherung
 
-Ausgewählte Themes werden in der [Konfiguration](../configuration/settings) von Qwen Code gespeichert, sodass deine Präferenz auch über mehrere Sitzungen hinweg beibehalten wird.
+Ausgewählte Themen werden in der [Konfiguration](../configuration/settings) von Qwen Code gespeichert, sodass Ihre Präferenz über Sitzungen hinweg beibehalten wird.
 
 ---
 
-## Benutzerdefinierte Farb-Themes
+## Benutzerdefinierte Farbthemen
 
-Qwen Code ermöglicht es dir, eigene benutzerdefinierte Farb-Themes zu erstellen, indem du diese in deiner `settings.json`-Datei definierst. Dadurch erhältst du vollständige Kontrolle über die in der CLI verwendete Farbpalette.
+Qwen Code ermöglicht es Ihnen, eigene benutzerdefinierte Farbthemen zu erstellen, indem Sie diese in Ihrer `settings.json`-Datei angeben. Dadurch erhalten Sie vollständige Kontrolle über die im CLI verwendete Farbpalette.
 
-### Wie man ein benutzerdefiniertes Theme definiert
+### So definieren Sie ein benutzerdefiniertes Theme
 
-Füge einen `customThemes`-Block zu deiner Benutzer-, Projekt- oder Systemdatei `settings.json` hinzu. Jedes benutzerdefinierte Theme wird als Objekt mit einem eindeutigen Namen und einer Reihe von Farbschlüsseln definiert. Zum Beispiel:
+Fügen Sie einen `customThemes`-Block zu Ihrer Benutzer-, Projekt- oder Systemdatei `settings.json` hinzu. Jedes benutzerdefinierte Theme wird als Objekt mit einem eindeutigen Namen und einem Satz von Farbschlüsseln definiert. Beispiel:
 
 ```json
 {
@@ -92,15 +92,15 @@ Füge einen `customThemes`-Block zu deiner Benutzer-, Projekt- oder Systemdatei 
 - `Comment`
 - `Gray`
 
-Du kannst entweder Hex-Codes (z. B. `#FF0000`) **oder** Standard-CSS-Farbnamen (z. B. `coral`, `teal`, `blue`) für jeden Farbwert verwenden. Eine vollständige Liste der unterstützten Namen findest du unter [CSS-Farbnamen](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#color_keywords).
+Sie können entweder Hex-Codes (z.B. `#FF0000`) **oder** Standard-CSS-Farbnamen (z.B. `coral`, `teal`, `blue`) für beliebige Farbwerte verwenden. Eine vollständige Liste der unterstützten Namen finden Sie unter [CSS-Farbnamen](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#color_keywords).
 
-Du kannst mehrere benutzerdefinierte Themes definieren, indem du weitere Einträge zum `customThemes`-Objekt hinzufügst.
+Sie können mehrere benutzerdefinierte Themes definieren, indem Sie weitere Einträge zum `customThemes`-Objekt hinzufügen.
 
-### Themen aus einer Datei laden
+### Laden von Themes aus einer Datei
 
-Zusätzlich zur Definition benutzerdefinierter Themen in der `settings.json` kannst du auch direkt ein Thema aus einer JSON-Datei laden, indem du den Dateipfad in deiner `settings.json` angibst. Dies ist nützlich, um Themen zu teilen oder sie separat von deiner Hauptkonfiguration zu halten.
+Neben der Definition von benutzerdefinierten Themes in `settings.json` können Sie auch direkt aus einer JSON-Datei ein Theme laden, indem Sie den Dateipfad in Ihrer `settings.json` angeben. Dies ist nützlich, um Themes zu teilen oder sie separat von Ihrer Hauptkonfiguration zu halten.
 
-Um ein Thema aus einer Datei zu laden, setze die Eigenschaft `theme` in deiner `settings.json` auf den Pfad deiner Themendatei:
+Um ein Theme aus einer Datei zu laden, setzen Sie die `theme`-Eigenschaft in Ihrer `settings.json` auf den Pfad Ihrer Theme-Datei:
 
 ```json
 {
@@ -110,7 +110,7 @@ Um ein Thema aus einer Datei zu laden, setze die Eigenschaft `theme` in deiner `
 }
 ```
 
-Die Themendatei muss eine gültige JSON-Datei sein, die dieselbe Struktur wie ein benutzerdefiniertes Thema in der `settings.json` aufweist.
+Die Theme-Datei muss eine gültige JSON-Datei sein, die der gleichen Struktur folgt wie ein benutzerdefiniertes Theme, das in `settings.json` definiert ist.
 
 **Beispiel `my-theme.json`:**
 
@@ -136,27 +136,25 @@ Die Themendatei muss eine gültige JSON-Datei sein, die dieselbe Struktur wie ei
 }
 ```
 
-**Sicherheitshinweis:** Zu deiner Sicherheit lädt die Gemini CLI nur Themendateien, die sich innerhalb deines Home-Verzeichnisses befinden. Wenn du versuchst, ein Thema von außerhalb deines Home-Verzeichnisses zu laden, wird eine Warnung angezeigt und das Thema wird nicht geladen. Dies dient dazu, das Laden potenziell bösartiger Themendateien aus nicht vertrauenswürdigen Quellen zu verhindern.
+**Sicherheitshinweis:** Zu Ihrer Sicherheit lädt das Gemini CLI nur Theme-Dateien, die sich innerhalb Ihres Home-Verzeichnisses befinden. Wenn Sie versuchen, ein Theme außerhalb Ihres Home-Verzeichnisses zu laden, wird eine Warnung angezeigt und das Theme wird nicht geladen. Dies dient dazu, das Laden potenziell schädlicher Theme-Dateien aus nicht vertrauenswürdigen Quellen zu verhindern.
 
 ### Beispiel für ein benutzerdefiniertes Theme
 
-
-
 <img src="https://gw.alicdn.com/imgextra/i1/O1CN01Em30Hc1jYXAdIgls3_!!6000000004560-2-tps-1009-629.png" alt=" " style="zoom:100%;text-align:center;margin: 0 auto;" />
 
-### Verwenden Ihres benutzerdefinierten Themes
+### Verwendung Ihres benutzerdefinierten Themes
 
-- Wählen Sie Ihr benutzerdefiniertes Theme über den Befehl `/theme` in Qwen Code aus. Ihr benutzerdefiniertes Theme wird im Theme-Auswahldialog angezeigt.
-- Oder legen Sie es als Standard fest, indem Sie `"theme": "MyCustomTheme"` zum `ui`-Objekt in Ihrer `settings.json` hinzufügen.
-- Benutzerdefinierte Themes können auf Benutzer-, Projekt- oder Systemebene festgelegt werden und folgen derselben [Konfigurationspriorität](../configuration/settings) wie andere Einstellungen.
+- Wählen Sie Ihr benutzerdefiniertes Theme mit dem Befehl `/theme` in Qwen Code aus. Ihr benutzerdefiniertes Theme wird im Theme-Auswahldialog angezeigt.
+- Alternativ können Sie es als Standard festlegen, indem Sie `"theme": "MyCustomTheme"` zum `ui`-Objekt in Ihrer `settings.json` hinzufügen.
+- Benutzerdefinierte Themes können auf Benutzer-, Projekt- oder Systemebene festgelegt werden und folgen der gleichen [Konfigurationspriorität](../configuration/settings) wie andere Einstellungen.
 
-## Themes Vorschau
+## Theme-Vorschau
 
-| Dunkles Theme | Vorschau | Helles Theme | Vorschau |
-| :-: | :-: | :-: | :-: |
-| ANSI | <img src="https://gw.alicdn.com/imgextra/i2/O1CN01ZInJiq1GdSZc9gHsI_!!6000000000645-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" /> | ANSI Light | <img src="https://gw.alicdn.com/imgextra/i2/O1CN01IiJQFC1h9E3MXQj6W_!!6000000004234-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" /> |
-| Atom OneDark | <img src="https://gw.alicdn.com/imgextra/i2/O1CN01Zlx1SO1Sw21SkTKV3_!!6000000002310-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" /> | Ayu Light | <img src="https://gw.alicdn.com/imgextra/i3/O1CN01zEUc1V1jeUJsnCgQb_!!6000000004573-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
-| Ayu | <img src="https://gw.alicdn.com/imgextra/i3/O1CN019upo6v1SmPhmRjzfN_!!6000000002289-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> | Default Light | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01RHjrEs1u7TXq3M6l3_!!6000000005990-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
-| Default | <img src="https://gw.alicdn.com/imgextra/i4/O1CN016pIeXz1pFC8owmR4Q_!!6000000005330-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" /> | GitHub Light | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01US2b0g1VETCPAVWLA_!!6000000002621-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
-| Dracula | <img src="https://gw.alicdn.com/imgextra/i4/O1CN016htnWH20c3gd2LpUR_!!6000000006869-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" /> | Google Code | <img src="https://gw.alicdn.com/imgextra/i1/O1CN01Ng29ab23iQ2BuYKz8_!!6000000007289-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
-| GitHub | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01fFCRda1IQIQ9qDNqv_!!6000000000887-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> | Xcode | <img src="https://gw.alicdn.com/imgextra/i1/O1CN010E3QAi1Huh5o1E9LN_!!6000000000818-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
+|  Dunkles Theme  |                                                                                Vorschau                                                                                |  Helles Theme  |                                                                                Vorschau                                                                                |
+| :----------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|     ANSI     |     <img src="https://gw.alicdn.com/imgextra/i2/O1CN01ZInJiq1GdSZc9gHsI_!!6000000000645-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />     |  ANSI Light   |     <img src="https://gw.alicdn.com/imgextra/i2/O1CN01IiJQFC1h9E3MXQj6W_!!6000000004234-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />     |
+| Atom OneDark |     <img src="https://gw.alicdn.com/imgextra/i2/O1CN01Zlx1SO1Sw21SkTKV3_!!6000000002310-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />     |   Ayu Light   | <img src="https://gw.alicdn.com/imgextra/i3/O1CN01zEUc1V1jeUJsnCgQb_!!6000000004573-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
+|     Ayu      | <img src="https://gw.alicdn.com/imgextra/i3/O1CN019upo6v1SmPhmRjzfN_!!6000000002289-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> | Default Light | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01RHjrEs1u7TXq3M6l3_!!6000000005990-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
+|   Default    |     <img src="https://gw.alicdn.com/imgextra/i4/O1CN016pIeXz1pFC8owmR4Q_!!6000000005330-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />     | GitHub Light  | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01US2b0g1VETCPAVWLA_!!6000000002621-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
+|   Dracula    |     <img src="https://gw.alicdn.com/imgextra/i4/O1CN016htnWH20c3gd2LpUR_!!6000000006869-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />     |  Google Code  | <img src="https://gw.alicdn.com/imgextra/i1/O1CN01Ng29ab23iQ2BuYKz8_!!6000000007289-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
+|    GitHub    | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01fFCRda1IQIQ9qDNqv_!!6000000000887-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |     Xcode     | <img src="https://gw.alicdn.com/imgextra/i1/O1CN010E3QAi1Huh5o1E9LN_!!6000000000818-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
