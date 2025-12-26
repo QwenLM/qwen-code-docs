@@ -129,18 +129,6 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
         }}
       />
       <body>
-        <Script
-          src='//g.alicdn.com/aes/??tracker/3.3.14/index.js,tracker-plugin-pv/3.0.6/index.js,tracker-plugin-event/3.0.0/index.js,tracker-plugin-jserror/3.0.3/index.js,tracker-plugin-api/3.2.2/index.js,tracker-plugin-resourceError/3.0.5/index.js,tracker-plugin-perf/3.1.3/index.js,tracker-plugin-eventTiming/3.0.0/index.js'
-          strategy='beforeInteractive'
-        />
-        <Script id='aes-init' strategy='afterInteractive'>
-          {`
-            const aes = new AES({
-              pid: "qwen-code-docs"
-            });
-            aes.use([AESPluginPV, AESPluginEvent, AESPluginJSError, AESPluginAPI, AESPluginResourceError, AESPluginPerf, AESPluginEventTiming]);
-          `}
-        </Script>
         {/* Google Analytics */}
         <Script
           src='https://www.googletagmanager.com/gtag/js?id=G-RVBGJ3Q97S'

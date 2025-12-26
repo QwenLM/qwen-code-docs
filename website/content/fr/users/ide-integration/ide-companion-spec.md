@@ -1,10 +1,10 @@
-# Plugin Compagnon Qwen Code : Spécification de l'Interface
+# Plugin Qwen Code Companion : Spécification de l'interface
 
 > Dernière mise à jour : 15 septembre 2025
 
-Ce document définit le contrat pour créer un plugin compagnon permettant d'activer le mode IDE de Qwen Code. Pour VS Code, ces fonctionnalités (comparaison native, conscience du contexte) sont fournies par l'extension officielle ([marketplace](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion)). Cette spécification s'adresse aux contributeurs souhaitant apporter des fonctionnalités similaires à d'autres éditeurs comme les IDE JetBrains, Sublime Text, etc.
+Ce document définit le contrat pour la création d'un plugin compagnon permettant d'activer le mode IDE de Qwen Code. Pour VS Code, ces fonctionnalités (diff natif, conscience du contexte) sont fournies par l'extension officielle ([marketplace](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion)). Cette spécification s'adresse aux contributeurs souhaitant apporter des fonctionnalités similaires à d'autres éditeurs comme les IDE JetBrains, Sublime Text, etc.
 
-## I. L'Interface de Communication
+## I. L'interface de communication
 
 Qwen Code et le plugin IDE communiquent via un canal de communication local.
 
@@ -12,55 +12,53 @@ Qwen Code et le plugin IDE communiquent via un canal de communication local.
 
 Le plugin **DOIT** exécuter un serveur HTTP local qui implémente le **Model Context Protocol (MCP)**.
 
-- **Protocole :** Le serveur doit être un serveur MCP valide. Nous recommandons d'utiliser un SDK MCP existant pour le langage de votre choix, si disponible.
+- **Protocole :** Le serveur doit être un serveur MCP valide. Nous recommandons d'utiliser un SDK MCP existant pour le langage de votre choix s'il est disponible.
 - **Point de terminaison :** Le serveur devrait exposer un seul point de terminaison (par exemple, `/mcp`) pour toutes les communications MCP.
 - **Port :** Le serveur **DOIT** écouter sur un port attribué dynamiquement (c'est-à-dire écouter sur le port `0`).
 
-### 2. Mécanisme de découverte : le fichier port
+### 2. Mécanisme de découverte : Le fichier verrou
 
-Pour que Qwen Code puisse se connecter, il doit découvrir l'instance d'IDE dans laquelle il s'exécute ainsi que le port utilisé par votre serveur. Le plugin **DOIT** faciliter cela en créant un « fichier de découverte ».
+Pour que Qwen Code puisse se connecter, il doit découvrir le port utilisé par votre serveur. L'extension **DOIT** faciliter cela en créant un "fichier verrou" et en définissant la variable d'environnement du port.
 
-- **Comment le CLI trouve le fichier :** Le CLI détermine l'ID du processus (PID) de l'IDE dans lequel il s'exécute en parcourant l'arbre des processus. Il recherche ensuite un fichier de découverte dont le nom contient ce PID.
-- **Emplacement du fichier :** Le fichier doit être créé dans un répertoire spécifique : `os.tmpdir()/qwen/ide/`. Votre plugin doit créer ce répertoire s'il n'existe pas.
-- **Convention de nommage du fichier :** Le nom du fichier est essentiel et **DOIT** suivre le modèle :
-  `qwen-code-ide-server-${PID}-${PORT}.json`
-  - `${PID}` : L'identifiant du processus parent de l'IDE. Votre plugin doit déterminer ce PID et l'inclure dans le nom du fichier.
-  - `${PORT}` : Le port sur lequel votre serveur MCP écoute.
+- **Comment la CLI trouve le fichier :** La CLI lit le port depuis `QWEN_CODE_IDE_SERVER_PORT`, puis lit `~/.qwen/ide/<PORT>.lock`. (Des solutions de repli existent pour les anciennes extensions ; voir note ci-dessous.)
+- **Emplacement du fichier :** Le fichier doit être créé dans un répertoire spécifique : `~/.qwen/ide/`. Votre extension doit créer ce répertoire s'il n'existe pas.
+- **Convention de nommage des fichiers :** Le nom du fichier est critique et **DOIT** suivre le modèle :
+  `<PORT>.lock`
+  - `<PORT>` : Le port sur lequel votre serveur MCP écoute.
 - **Contenu du fichier et validation de l'espace de travail :** Le fichier **DOIT** contenir un objet JSON avec la structure suivante :
 
   ```json
   {
     "port": 12345,
     "workspacePath": "/chemin/vers/projet1:/chemin/vers/projet2",
-    "authToken": "un-token-très-secret",
-    "ideInfo": {
-      "name": "vscode",
-      "displayName": "VS Code"
-    }
+    "authToken": "un-jeton-très-secret",
+    "ppid": 1234,
+    "ideName": "VS Code"
   }
   ```
   - `port` (nombre, requis) : Le port du serveur MCP.
-  - `workspacePath` (chaîne, requise) : Une liste de tous les chemins racines des espaces de travail ouverts, séparés par le séparateur de chemins spécifique au système d'exploitation (`:` pour Linux/macOS, `;` pour Windows). Le CLI utilise ce chemin pour s'assurer qu'il s'exécute dans le même dossier de projet que celui ouvert dans l'IDE. Si le répertoire de travail actuel du CLI n'est pas un sous-répertoire de `workspacePath`, la connexion sera rejetée. Votre plugin **DOIT** fournir les chemins absolus corrects vers la(les) racine(s) de l'(es) espace(s) de travail ouvert(s).
-  - `authToken` (chaîne, requis) : Un jeton secret pour sécuriser la connexion. Le CLI inclura ce jeton dans un en-tête `Authorization: Bearer <token>` pour toutes les requêtes.
-  - `ideInfo` (objet, requis) : Informations sur l'IDE.
-    - `name` (chaîne, requis) : Un identifiant court en minuscules pour l'IDE (ex. : `vscode`, `jetbrains`).
-    - `displayName` (chaîne, requis) : Un nom convivial pour l'utilisateur de l'IDE (ex. : `VS Code`, `JetBrains IDE`).
+  - `workspacePath` (chaîne, requise) : Une liste de tous les chemins racine des espaces de travail ouverts, délimités par le séparateur de chemin spécifique au système d'exploitation (`:` pour Linux/macOS, `;` pour Windows). La CLI utilise ce chemin pour s'assurer qu'elle s'exécute dans le même dossier de projet que celui ouvert dans l'IDE. Si le répertoire de travail actuel de la CLI n'est pas un sous-répertoire de `workspacePath`, la connexion sera rejetée. Votre extension **DOIT** fournir le(s) chemin(s) absolu(s) correct(s) vers la(les) racine(s) de l(espace de travail ouvert(s).
+  - `authToken` (chaîne, requise) : Un jeton secret pour sécuriser la connexion. La CLI inclura ce jeton dans un en-tête `Authorization: Bearer <token>` pour toutes les requêtes.
+  - `ppid` (nombre, requis) : L'ID du processus parent du processus IDE.
+  - `ideName` (chaîne, requise) : Un nom convivial pour l'IDE (par exemple, `VS Code`, `IDE JetBrains`).
 
-- **Authentification :** Pour sécuriser la connexion, le plugin **DOIT** générer un jeton secret unique et l'inclure dans le fichier de découverte. Le CLI inclura ensuite ce jeton dans l'en-tête `Authorization` pour toutes les requêtes vers le serveur MCP (ex. : `Authorization: Bearer un-token-très-secret`). Votre serveur **DOIT** valider ce jeton à chaque requête et rejeter celles non autorisées.
-- **Résolution des conflits avec les variables d’environnement (recommandé) :** Pour une expérience fiable, votre plugin **DEVRAIT** à la fois créer le fichier de découverte et définir la variable d’environnement `QWEN_CODE_IDE_SERVER_PORT` dans le terminal intégré. Le fichier sert de mécanisme principal de découverte, mais la variable d’environnement est cruciale pour trancher en cas d’égalité. Si un utilisateur a plusieurs fenêtres d’IDE ouvertes pour le même espace de travail, le CLI utilise la variable `QWEN_CODE_IDE_SERVER_PORT` pour identifier et se connecter au serveur de la bonne fenêtre.
+- **Authentification :** Pour sécuriser la connexion, l'extension **DOIT** générer un jeton secret unique et l'inclure dans le fichier de découverte. La CLI inclura ensuite ce jeton dans l'en-tête `Authorization` pour toutes les requêtes vers le serveur MCP (par exemple, `Authorization: Bearer un-jeton-très-secret`). Votre serveur **DOIT** valider ce jeton à chaque requête et rejeter celles qui ne sont pas autorisées.
+- **Variables d'environnement (requises) :** Votre extension **DOIT** définir `QWEN_CODE_IDE_SERVER_PORT` dans le terminal intégré pour que la CLI puisse localiser le fichier `<PORT>.lock` correct.
 
-## II. L'Interface de Contexte
+**Note sur l'héritage :** Pour les extensions antérieures à la version 0.5.1, Qwen Code peut revenir à la lecture de fichiers JSON dans le répertoire temporaire du système nommés `qwen-code-ide-server-<PID>.json` ou `qwen-code-ide-server-<PORT>.json`. Les nouvelles intégrations ne devraient pas s'appuyer sur ces anciens fichiers.
 
-Pour permettre la prise en compte du contexte, le plugin **PEUT** fournir au CLI des informations en temps réel sur l'activité de l'utilisateur dans l'IDE.
+## II. L'interface de contexte
+
+Pour permettre la prise en compte du contexte, le plugin **PEUT** fournir à l'interface en ligne de commande des informations en temps réel sur l'activité de l'utilisateur dans l'IDE.
 
 ### Notification `ide/contextUpdate`
 
-Le plugin **PEUT** envoyer une notification `ide/contextUpdate` [notification](https://modelcontextprotocol.io/specification/2025-06-18/basic/index#notifications) à la CLI chaque fois que le contexte de l'utilisateur change.
+Le plugin **PEUT** envoyer une [notification](https://modelcontextprotocol.io/specification/2025-06-18/basic/index#notifications) `ide/contextUpdate` au CLI chaque fois que le contexte de l'utilisateur change.
 
-- **Événements déclencheurs :** Cette notification doit être envoyée (avec un délai de rebond recommandé de 50 ms) lorsque :
-  - Un fichier est ouvert, fermé ou mis en avant.
+- **Événements déclencheurs :** Cette notification doit être envoyée (avec un délai de débouncing recommandé de 50 ms) lorsque :
+  - Un fichier est ouvert, fermé ou mis au premier plan.
   - La position du curseur de l'utilisateur ou la sélection de texte change dans le fichier actif.
-- **Charge utile (`IdeContext`) :** Les paramètres de la notification **DOIVENT** être un objet `IdeContext` :
+- **Charge utile (`IdeContext`) :** Les paramètres de notification **DOIVENT** être un objet `IdeContext` :
 
   ```typescript
   interface IdeContext {
@@ -73,14 +71,14 @@ Le plugin **PEUT** envoyer une notification `ide/contextUpdate` [notification](h
   interface File {
     // Chemin absolu vers le fichier
     path: string;
-    // Horodatage Unix de la dernière mise en avant (pour ordonner)
+    // Horodatage Unix du dernier focus (pour l'ordre)
     timestamp: number;
-    // Vrai si ce fichier est actuellement mis en avant
+    // Vrai si c'est le fichier actuellement mis au premier plan
     isActive?: boolean;
     cursor?: {
-      // Numéro de ligne (commence à 1)
+      // Numéro de ligne basé sur 1
       line: number;
-      // Numéro de caractère (commence à 1)
+      // Numéro de caractère basé sur 1
       character: number;
     };
     // Le texte actuellement sélectionné par l'utilisateur
@@ -90,80 +88,80 @@ Le plugin **PEUT** envoyer une notification `ide/contextUpdate` [notification](h
 
   **Remarque :** La liste `openFiles` ne doit inclure que les fichiers existant sur le disque. Les fichiers virtuels (par exemple, les fichiers non sauvegardés sans chemin, les pages de paramètres de l'éditeur) **DOIVENT** être exclus.
 
-### Comment l'interface CLI utilise ce contexte
+### Comment la CLI utilise ce contexte
 
-Après avoir reçu l'objet `IdeContext`, l'interface CLI effectue plusieurs étapes de normalisation et de troncature avant d'envoyer les informations au modèle.
+Après avoir reçu l'objet `IdeContext`, la CLI effectue plusieurs étapes de normalisation et de troncature avant d'envoyer les informations au modèle.
 
-- **Ordre des fichiers :** L'interface CLI utilise le champ `timestamp` pour déterminer les fichiers les plus récemment utilisés. Elle trie la liste `openFiles` en fonction de cette valeur. Par conséquent, votre plugin **DOIT** fournir un horodatage Unix précis indiquant quand un fichier a été dernièrement mis en avant.
-- **Fichier actif :** L'interface CLI considère uniquement le fichier le plus récent (après tri) comme le fichier « actif ». Elle ignorera l'indicateur `isActive` sur tous les autres fichiers et effacera leurs champs `cursor` et `selectedText`. Votre plugin devrait se concentrer sur le paramétrage de `isActive: true` et fournir les détails du curseur/sélection uniquement pour le fichier actuellement mis en avant.
-- **Troncature :** Pour gérer les limites de jetons, l'interface CLI tronque à la fois la liste des fichiers (à 10 fichiers) et le `selectedText` (à 16 Ko).
+- **Ordre des fichiers :** La CLI utilise le champ `timestamp` pour déterminer les fichiers les plus récemment utilisés. Elle trie la liste `openFiles` selon cette valeur. Par conséquent, votre plugin **DOIT** fournir un horodatage Unix précis indiquant quand un fichier a été focalisé pour la dernière fois.
+- **Fichier actif :** La CLI considère uniquement le fichier le plus récent (après tri) comme étant le fichier "actif". Elle ignorera le drapeau `isActive` sur tous les autres fichiers et effacera leurs champs `cursor` et `selectedText`. Votre plugin devrait se concentrer sur la définition de `isActive: true` et la fourniture des détails du curseur/sélection uniquement pour le fichier actuellement focalisé.
+- **Troncature :** Pour gérer les limites de jetons, la CLI tronque à la fois la liste des fichiers (à 10 fichiers) et le `selectedText` (à 16 Ko).
 
-Bien que l'interface CLI gère la troncature finale, il est fortement recommandé que votre plugin limite également la quantité de contexte qu'il envoie.
+Bien que la CLI gère la troncature finale, il est fortement recommandé que votre plugin limite également la quantité de contexte qu'il envoie.
 
 ## III. L'interface de comparaison
 
-Pour permettre des modifications de code interactives, le plugin **PEUT** exposer une interface de comparaison. Cela permet à la CLI de demander à l'IDE d'ouvrir une vue de comparaison, montrant les modifications proposées pour un fichier. L'utilisateur peut ensuite examiner, modifier et finalement accepter ou rejeter ces modifications directement dans l'IDE.
+Pour permettre les modifications de code interactives, le plugin **PEUT** exposer une interface de comparaison. Cela permet au CLI de demander à l'IDE d'ouvrir une vue de comparaison, affichant les modifications proposées pour un fichier. L'utilisateur peut alors examiner, modifier et finalement accepter ou rejeter ces modifications directement dans l'IDE.
 
 ### Outil `openDiff`
 
 Le plugin **DOIT** enregistrer un outil `openDiff` sur son serveur MCP.
 
-- **Description :** Cet outil indique à l'IDE d'ouvrir une vue de différences modifiable pour un fichier spécifique.
-- **Requête (`OpenDiffRequest`) :** L'outil est invoqué via une requête `tools/call`. Le champ `arguments` dans les `params` de la requête **DOIT** être un objet `OpenDiffRequest`.
+- **Description :** Cet outil indique à l'IDE d'ouvrir une vue de différence modifiable pour un fichier spécifique.
+- **Requête (`OpenDiffRequest`) :** L'outil est invoqué via une requête `tools/call`. Le champ `arguments` dans le `params` de la requête **DOIT** être un objet `OpenDiffRequest`.
 
   ```typescript
   interface OpenDiffRequest {
-    // Le chemin absolu du fichier à comparer.
+    // Le chemin absolu vers le fichier à comparer.
     filePath: string;
     // Le nouveau contenu proposé pour le fichier.
     newContent: string;
   }
   ```
 
-- **Réponse (`CallToolResult`) :** L'outil **DOIT** immédiatement retourner un `CallToolResult` pour accuser réception de la requête et indiquer si la vue de différences a été ouverte avec succès.
-  - En cas de succès : Si la vue de différences a été ouverte avec succès, la réponse **DOIT** contenir un contenu vide (c'est-à-dire `content: []`).
-  - En cas d'échec : Si une erreur a empêché l'ouverture de la vue de différences, la réponse **DOIT** avoir `isError: true` et inclure un bloc `TextContent` dans le tableau `content` décrivant l'erreur.
+- **Réponse (`CallToolResult`) :** L'outil **DOIT** immédiatement retourner un `CallToolResult` pour confirmer la requête et indiquer si la vue de différence a été ouverte avec succès.
+  - En cas de succès : Si la vue de différence a été ouverte avec succès, la réponse **DOIT** contenir un contenu vide (c'est-à-dire `content: []`).
+  - En cas d'échec : Si une erreur a empêché l'ouverture de la vue de différence, la réponse **DOIT** avoir `isError: true` et inclure un bloc `TextContent` dans le tableau `content` décrivant l'erreur.
 
-  Le résultat effectif de la comparaison (acceptation ou rejet) est communiqué de manière asynchrone via des notifications.
+  Le résultat final de la différence (acceptation ou rejet) est communiqué de manière asynchrone via des notifications.
 
 ### Outil `closeDiff`
 
 Le plugin **DOIT** enregistrer un outil `closeDiff` sur son serveur MCP.
 
-- **Description :** Cet outil indique à l'IDE de fermer une vue de diff ouverte pour un fichier spécifique.
+- **Description :** Cet outil indique à l'IDE de fermer une vue de différences ouverte pour un fichier spécifique.
 - **Requête (`CloseDiffRequest`) :** L'outil est invoqué via une requête `tools/call`. Le champ `arguments` dans les `params` de la requête **DOIT** être un objet `CloseDiffRequest`.
 
   ```typescript
   interface CloseDiffRequest {
-    // Le chemin absolu vers le fichier dont la vue de diff doit être fermée.
+    // Le chemin absolu vers le fichier dont la vue de différences doit être fermée.
     filePath: string;
   }
   ```
 
 - **Réponse (`CallToolResult`) :** L'outil **DOIT** retourner un `CallToolResult`.
-  - En cas de succès : Si la vue de diff a été fermée avec succès, la réponse **DOIT** inclure un seul bloc **TextContent** dans le tableau de contenu contenant le contenu final du fichier avant sa fermeture.
-  - En cas d'échec : Si une erreur a empêché la fermeture de la vue de diff, la réponse **DOIT** avoir `isError: true` et inclure un bloc `TextContent` dans le tableau `content` décrivant l'erreur.
+  - En cas de succès : Si la vue de différences a été fermée avec succès, la réponse **DOIT** inclure un seul bloc **TextContent** dans le tableau de contenu contenant le contenu final du fichier avant la fermeture.
+  - En cas d'échec : Si une erreur a empêché la fermeture de la vue de différences, la réponse **DOIT** avoir `isError: true` et inclure un bloc `TextContent` dans le tableau `content` décrivant l'erreur.
 
 ### Notification `ide/diffAccepted`
 
-Lorsque l'utilisateur accepte les modifications dans une vue de différences (par exemple, en cliquant sur un bouton « Appliquer » ou « Enregistrer »), le plugin **DOIT** envoyer une notification `ide/diffAccepted` à la CLI.
+Lorsque l'utilisateur accepte les modifications dans une vue de différences (par exemple, en cliquant sur un bouton "Appliquer" ou "Enregistrer"), le plugin **DOIT** envoyer une notification `ide/diffAccepted` au CLI.
 
-- **Charge utile :** Les paramètres de la notification **DOIVENT** inclure le chemin du fichier et le contenu final du fichier. Le contenu peut différer de `newContent` d'origine si l'utilisateur a effectué des modifications manuelles dans la vue de différences.
+- **Charge utile :** Les paramètres de notification **DOIVENT** inclure le chemin du fichier et le contenu final du fichier. Le contenu peut différer du `newContent` original si l'utilisateur a effectué des modifications manuelles dans la vue de différences.
 
   ```typescript
   {
     // Le chemin absolu vers le fichier qui a été comparé.
     filePath: string;
-    // Le contenu complet du fichier après acceptation.
+    // Le contenu complet du fichier après l'acceptation.
     content: string;
   }
   ```
 
 ### Notification `ide/diffRejected`
 
-Lorsque l'utilisateur rejette les modifications (par exemple, en fermant la vue de différences sans les accepter), le plugin **DOIT** envoyer une notification `ide/diffRejected` à la CLI.
+Lorsque l'utilisateur rejette les modifications (par exemple, en fermant la vue de différences sans accepter), le plugin **DOIT** envoyer une notification `ide/diffRejected` au CLI.
 
-- **Charge utile :** Les paramètres de la notification **DOIVENT** inclure le chemin du fichier de la différence rejetée.
+- **Charge utile :** Les paramètres de notification **DOIVENT** inclure le chemin du fichier de la différence rejetée.
 
   ```typescript
   {
@@ -172,13 +170,13 @@ Lorsque l'utilisateur rejette les modifications (par exemple, en fermant la vue 
   }
   ```
 
-## IV. L'Interface du Cycle de Vie
+## IV. L'interface de cycle de vie
 
 Le plugin **DOIT** gérer correctement ses ressources et le fichier de découverte en fonction du cycle de vie de l'IDE.
 
-- **À l'activation (démarrage de l'IDE/plugin activé) :**
+- **À l'activation (démarrage de l'IDE/activation du plugin) :**
   1.  Démarrer le serveur MCP.
   2.  Créer le fichier de découverte.
-- **À la désactivation (arrêt de l'IDE/plugin désactivé) :**
+- **À la désactivation (arrêt de l'IDE/désactivation du plugin) :**
   1.  Arrêter le serveur MCP.
   2.  Supprimer le fichier de découverte.

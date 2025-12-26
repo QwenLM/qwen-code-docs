@@ -1,23 +1,23 @@
 # Headless-Modus
 
-Der Headless-Modus ermöglicht es Ihnen, Qwen Code programmgesteuert über Kommandozeilen-Skripte und Automatisierungstools ohne interaktive Benutzeroberfläche auszuführen. Dies ist ideal für Skripterstellung, Automatisierung, CI/CD-Pipelines und den Aufbau KI-gestützter Tools.
+Der Headless-Modus ermöglicht es Ihnen, Qwen Code programmgesteuert über Befehlszeilenskripte und Automatisierungstools auszuführen, ohne eine interaktive Benutzeroberfläche zu verwenden. Dies ist ideal für Skripterstellung, Automatisierung, CI/CD-Pipelines und den Bau von KI-gestützten Tools.
 
 ## Übersicht
 
-Der Headless-Modus bietet eine kopflose Schnittstelle zu Qwen Code, die:
+Der Headless-Modus bietet eine headlose Schnittstelle zu Qwen Code, die:
 
-- Eingaben über Kommandozeilenargumente oder stdin akzeptiert
-- Strukturierte Ausgaben liefert (Text oder JSON)
-- Dateiumleitung und Pipes unterstützt
-- Automatisierungs- und Skriptworkflows ermöglicht
-- Konsistente Exit-Codes zur Fehlerbehandlung bereitstellt
-- Vorherige Sitzungen im aktuellen Projektbereich fortsetzen kann für mehrstufige Automatisierung
+- Eingaben über Befehlszeilenargumente oder stdin akzeptiert
+- Strukturierte Ausgabe zurückgibt (Text oder JSON)
+- Datei-Umleitung und Piping unterstützt
+- Automatisierungs- und Skript-Workflows ermöglicht
+- Konsistente Exit-Codes für Fehlerbehandlung bereitstellt
+- Vorherige Sitzungen im Kontext des aktuellen Projekts für mehrstufige Automatisierung fortsetzen kann
 
 ## Grundlegende Verwendung
 
 ### Direkte Eingaben
 
-Verwenden Sie das Flag `--prompt` (oder `-p`), um im Headless-Modus zu starten:
+Verwenden Sie das Flag `--prompt` (oder `-p`), um im Headless-Modus auszuführen:
 
 ```bash
 qwen --prompt "Was ist maschinelles Lernen?"
@@ -31,39 +31,39 @@ Leiten Sie Eingaben von Ihrem Terminal an Qwen Code weiter:
 echo "Erkläre diesen Code" | qwen
 ```
 
-### Kombinieren mit Dateieingabe
+### Kombination mit Dateieingabe
 
 Aus Dateien lesen und mit Qwen Code verarbeiten:
 
 ```bash
-cat README.md | qwen --prompt "Fasse diese Dokumentation zusammen"
+cat README.md | qwen --prompt "Fassen Sie diese Dokumentation zusammen"
 ```
 
 ### Vorherige Sitzungen fortsetzen (Headless)
 
-Konversationskontext des aktuellen Projekts in headless-Skripten wiederverwenden:
+Konversationskontext aus dem aktuellen Projekt in Headless-Skripten wiederverwenden:
 
 ```bash
 
-# Setze die aktuellste Sitzung für dieses Projekt fort und führe eine neue Eingabeaufforderung aus
-qwen --continue -p "Führe die Tests erneut aus und fasse die Fehler zusammen"
+# Die letzte Sitzung für dieses Projekt fortsetzen und eine neue Eingabeaufforderung ausführen
+qwen --continue -p "Führen Sie die Tests erneut aus und fassen Sie die Fehler zusammen"
 
-# Setze direkt eine bestimmte Sitzungs-ID fort (ohne Benutzeroberfläche)
-qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Wende die nachfolgende Refaktorisierung an"
+# Eine bestimmte Sitzungs-ID direkt fortsetzen (ohne UI)
+qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Führen Sie den anschließenden Refactoring durch"
 ```
 
 > [!note]
 >
-> - Sitzungsdaten sind projektbezogenes JSONL unter `~/.qwen/projects/<sanitized-cwd>/chats`.
-> - Stellt Konversationsverlauf, Tool-Ausgaben und Chat-Komprimierungs-Checkpoints vor dem Senden der neuen Eingabeaufforderung wieder her.
+> - Sitzungsdaten sind projektspezifisches JSONL unter `~/.qwen/projects/<sanitized-cwd>/chats`.
+> - Stellt den Gesprächsverlauf, Tool-Ausgaben und Chat-Komprimierungs-Checkpoints wieder her, bevor die neue Eingabeaufforderung gesendet wird.
 
 ## Ausgabeformate
 
 Qwen Code unterstützt mehrere Ausgabeformate für verschiedene Anwendungsfälle:
 
-### Textausgabe (Standard)
+### Text-Ausgabe (Standard)
 
-Standardmäßige menschenlesbare Ausgabe:
+Standard-Ausgabe im menschenlesbaren Format:
 
 ```bash
 qwen -p "Was ist die Hauptstadt von Frankreich?"
@@ -77,9 +77,9 @@ Die Hauptstadt von Frankreich ist Paris.
 
 ### JSON-Ausgabe
 
-Gibt strukturierte Daten als JSON-Array zurück. Alle Nachrichten werden zwischengespeichert und gemeinsam ausgegeben, sobald die Sitzung abgeschlossen ist. Dieses Format eignet sich ideal für die programmatische Verarbeitung und Automatisierungsskripte.
+Gibt strukturierte Daten als JSON-Array zurück. Alle Nachrichten werden zwischengespeichert und gemeinsam ausgegeben, wenn die Sitzung abgeschlossen ist. Dieses Format eignet sich ideal für programmatische Verarbeitung und Automatisierungsskripte.
 
-Die JSON-Ausgabe besteht aus einem Array von Nachrichtenobjekten. Die Ausgabe umfasst mehrere Nachrichtentypen: Systemnachrichten (Initialisierung der Sitzung), Assistentennachrichten (KI-Antworten) und Ergebnisnachrichten (Zusammenfassung der Ausführung).
+Die JSON-Ausgabe ist ein Array von Nachrichtenobjekten. Die Ausgabe enthält mehrere Nachrichtentypen: Systemnachrichten (Sitzungsinitialisierung), Assistentennachrichten (KI-Antworten) und Ergebnisnachrichten (Ausführungszusammenfassung).
 
 #### Beispielverwendung
 
@@ -133,13 +133,13 @@ Ausgabe (am Ende der Ausführung):
 
 ### Stream-JSON-Ausgabe
 
-Das Stream-JSON-Format gibt JSON-Nachrichten sofort aus, sobald sie während der Ausführung auftreten, und ermöglicht so eine Echtzeitüberwachung. Dieses Format verwendet zeilenbasiertes JSON, bei dem jede Nachricht ein vollständiges JSON-Objekt in einer einzelnen Zeile darstellt.
+Das Stream-JSON-Format gibt JSON-Nachrichten sofort aus, sobald sie während der Ausführung auftreten, und ermöglicht so eine Echtzeitüberwachung. Dieses Format verwendet JSON mit Zeilenumbrüchen, wobei jede Nachricht ein vollständiges JSON-Objekt in einer einzelnen Zeile ist.
 
 ```bash
 qwen -p "Erkläre TypeScript" --output-format stream-json
 ```
 
-Ausgabe (wird beim Auftreten von Ereignissen gestreamt):
+Ausgabe (Streaming während der Ereignisse):
 
 ```json
 {"type":"system","subtype":"session_start","uuid":"...","session_id":"..."}
@@ -147,7 +147,7 @@ Ausgabe (wird beim Auftreten von Ereignissen gestreamt):
 {"type":"result","subtype":"success","uuid":"...","session_id":"..."}
 ```
 
-In Kombination mit `--include-partial-messages` werden zusätzliche Stream-Ereignisse in Echtzeit ausgegeben (message_start, content_block_delta usw.), um Aktualisierungen in Echtzeit-Benutzeroberflächen zu ermöglichen.
+In Kombination mit `--include-partial-messages` werden zusätzliche Stream-Ereignisse in Echtzeit ausgegeben (message_start, content_block_delta usw.), um Echtzeit-UI-Aktualisierungen zu ermöglichen.
 
 ```bash
 qwen -p "Schreibe ein Python-Skript" --output-format stream-json --include-partial-messages
@@ -155,14 +155,14 @@ qwen -p "Schreibe ein Python-Skript" --output-format stream-json --include-parti
 
 ### Eingabeformat
 
-Der Parameter `--input-format` steuert, wie Qwen Code die Eingabe über die Standardeingabe verarbeitet:
+Der Parameter `--input-format` steuert, wie Qwen Code Eingaben aus der Standardeingabe verarbeitet:
 
-- **`text`** (Standard): Normale Texteingabe über stdin oder Befehlszeilenargumente
+- **`text`** (Standard): Standard-Texteingabe über stdin oder Befehlszeilenargumente
 - **`stream-json`**: JSON-Nachrichtenprotokoll über stdin für bidirektionale Kommunikation
 
-> **Hinweis:** Der Eingabemodus `stream-json` ist derzeit noch in Entwicklung und für die Integration mit SDKs vorgesehen. Er erfordert die Angabe von `--output-format stream-json`.
+> **Hinweis:** Der Stream-json-Eingabemodus befindet sich derzeit in der Entwicklung und ist für die SDK-Integration vorgesehen. Es erfordert die Einstellung von `--output-format stream-json`.
 
-### Dateiumleitung
+### Datei-Umleitung
 
 Ausgabe in Dateien speichern oder an andere Befehle weiterleiten:
 
@@ -173,37 +173,38 @@ qwen -p "Erkläre Docker" > docker-erklaerung.txt
 qwen -p "Erkläre Docker" --output-format json > docker-erklaerung.json
 
 # An Datei anhängen
-qwen -p "Füge weitere Details hinzu" >> docker-erklaerung.txt
+qwen -p "Weitere Details hinzufügen" >> docker-erklaerung.txt
 
 # An andere Tools weiterleiten
 qwen -p "Was ist Kubernetes?" --output-format json | jq '.response'
 qwen -p "Erkläre Microservices" | wc -w
-qwen -p "Liste Programmiersprachen auf" | grep -i "python"```
+qwen -p "Programmiersprachen auflisten" | grep -i "python"
 
-# Stream-JSON-Ausgabe für Echtzeitverarbeitung
+# Stream-JSON-Ausgabe für die Echtzeitverarbeitung
 qwen -p "Erkläre Docker" --output-format stream-json | jq '.type'
-qwen -p "Schreibe Code" --output-format stream-json --include-partial-messages | jq '.event.type'
+qwen -p "Code schreiben" --output-format stream-json --include-partial-messages | jq '.event.type'
 ```
 
 ## Konfigurationsoptionen
 
-Wichtige Befehlszeilenoptionen für die Verwendung im Headless-Modus:
+Wichtige Befehlszeilenoptionen für den headless-Modus:
 
-| Option                       | Beschreibung                                         | Beispiel                                                                  |
-| ---------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------ |
-| `--prompt`, `-p`             | Im Headless-Modus ausführen                         | `qwen -p "Abfrage"`                                                      |
-| `--output-format`, `-o`      | Ausgabeformat festlegen (text, json, stream-json)    | `qwen -p "Abfrage" --output-format json`                                 |
-| `--input-format`             | Eingabeformat festlegen (text, stream-json)         | `qwen --input-format text --output-format stream-json`                   |
-| `--include-partial-messages` | Teilnachrichten in stream-json-Ausgabe einbeziehen  | `qwen -p "Abfrage" --output-format stream-json --include-partial-messages` |
-| `--debug`, `-d`              | Debug-Modus aktivieren                              | `qwen -p "Abfrage" --debug`                                              |
-| `--all-files`, `-a`          | Alle Dateien im Kontext einbeziehen                 | `qwen -p "Abfrage" --all-files`                                          |
-| `--include-directories`      | Zusätzliche Verzeichnisse einbeziehen               | `qwen -p "Abfrage" --include-directories src,docs`                       |
-| `--yolo`, `-y`               | Alle Aktionen automatisch genehmigen                | `qwen -p "Abfrage" --yolo`                                               |
-| `--approval-mode`            | Genehmigungsmodus festlegen                         | `qwen -p "Abfrage" --approval-mode auto_edit`                            |
-| `--continue`                 | Die letzte Sitzung für dieses Projekt fortsetzen    | `qwen --continue -p "Machen wir weiter, wo wir aufgehört haben"`         |
-| `--resume [sessionId]`       | Eine bestimmte Sitzung fortsetzen (oder interaktiv wählen) | `qwen --resume 123e... -p "Refactoring abschließen"`              |
+| Option                       | Beschreibung                                            | Beispiel                                                                 |
+| ---------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `--prompt`, `-p`             | Im headless-Modus ausführen                             | `qwen -p "Abfrage"`                                                      |
+| `--output-format`, `-o`      | Ausgabeformat festlegen (text, json, stream-json)       | `qwen -p "Abfrage" --output-format json`                                 |
+| `--input-format`             | Eingabeformat festlegen (text, stream-json)             | `qwen --input-format text --output-format stream-json`                   |
+| `--include-partial-messages` | Teilweise Nachrichten in stream-json-Ausgabe einbeziehen| `qwen -p "Abfrage" --output-format stream-json --include-partial-messages` |
+| `--debug`, `-d`              | Debug-Modus aktivieren                                  | `qwen -p "Abfrage" --debug`                                              |
+| `--all-files`, `-a`          | Alle Dateien in den Kontext einbeziehen                 | `qwen -p "Abfrage" --all-files`                                          |
+| `--include-directories`      | Zusätzliche Verzeichnisse einbeziehen                   | `qwen -p "Abfrage" --include-directories src,docs`                       |
+| `--yolo`, `-y`               | Alle Aktionen automatisch genehmigen                    | `qwen -p "Abfrage" --yolo`                                               |
+| `--approval-mode`            | Genehmigungsmodus festlegen                             | `qwen -p "Abfrage" --approval-mode auto_edit`                            |
+| `--continue`                 | Die letzte Sitzung für dieses Projekt fortsetzen        | `qwen --continue -p "Setzen wir fort, wo wir aufgehört haben"`           |
+| `--resume [sessionId]`       | Eine bestimmte Sitzung fortsetzen (oder interaktiv wählen) | `qwen --resume 123e... -p "Refactoring abschließen"`                    |
+| `--experimental-skills`      | Experimentelle Skills aktivieren (registriert das `skill`-Tool) | `qwen --experimental-skills -p "Welche Skills sind verfügbar?"`      |
 
-Für vollständige Details zu allen verfügbaren Konfigurationsoptionen, Einstellungsdateien und Umgebungsvariablen, siehe [Konfigurationsanleitung](../configuration/settings).
+Für vollständige Details zu allen verfügbaren Konfigurationsoptionen, Einstellungsdateien und Umgebungsvariablen siehe [Konfigurationsanleitung](../configuration/settings).
 
 ## Beispiele
 
@@ -223,7 +224,7 @@ echo "$result" | jq -r '.response'
 ### API-Dokumentation
 
 ```bash
-result=$(cat api/routes.js | qwen -p "Generiere eine OpenAPI-Spezifikation für diese Routen" --output-format json)
+result=$(cat api/routes.js | qwen -p "Generiere OpenAPI-Spezifikation für diese Routen" --output-format json)
 echo "$result" | jq -r '.response' > openapi.json
 ```
 
@@ -234,41 +235,41 @@ for file in src/*.py; do
     echo "Analysiere $file..."
     result=$(cat "$file" | qwen -p "Finde potenzielle Fehler und schlage Verbesserungen vor" --output-format json)
     echo "$result" | jq -r '.response' > "reports/$(basename "$file").analysis"
-    echo "Analyse für $(basename "$file") abgeschlossen" >> reports/progress.log
+    echo "Analyse abgeschlossen für $(basename "$file")" >> reports/progress.log
 done
 ```
 
 ### PR-Code-Review
 
 ```bash
-result=$(git diff origin/main...HEAD | qwen -p "Review these changes for bugs, security issues, and code quality" --output-format json)
+result=$(git diff origin/main...HEAD | qwen -p "Überprüfen Sie diese Änderungen auf Fehler, Sicherheitsprobleme und Code-Qualität" --output-format json)
 echo "$result" | jq -r '.response' > pr-review.json
 ```
 
 ### Log-Analyse
 
 ```bash
-grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analyze these errors and suggest root cause and fixes" > error-analysis.txt
+grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analysieren Sie diese Fehler und schlagen Sie Ursache und Lösungen vor" > error-analysis.txt
 ```
 
-### Erstellung von Versionshinweisen
+### Erstellung von Release-Notes
 
 ```bash
-result=$(git log --oneline v1.0.0..HEAD | qwen -p "Generate release notes from these commits" --output-format json)
+result=$(git log --oneline v1.0.0..HEAD | qwen -p "Erstellen Sie Release-Notes aus diesen Commits" --output-format json)
 response=$(echo "$result" | jq -r '.response')
 echo "$response"
 echo "$response" >> CHANGELOG.md
 ```
 
-### Verfolgung der Modell- und Tool-Nutzung
+### Modell- und Tool-Nutzungsverfolgung
 
 ```bash
 result=$(qwen -p "Erkläre dieses Datenbankschema" --include-directories db --output-format json)
 total_tokens=$(echo "$result" | jq -r '.stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
-models_used=$(echo "$result" | jq -r '.stats.models // {} | keys | join(", ") | if . == "" then "keine" else . end')
+models_used=$(echo "$result" | jq -r '.stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
 tool_calls=$(echo "$result" | jq -r '.stats.tools.totalCalls // 0')
-tools_used=$(echo "$result" | jq -r '.stats.tools.byName // {} | keys | join(", ") | if . == "" then "keine" else . end')
-echo "$(date): $total_tokens Tokens, $tool_calls Tool-Aufrufe ($tools_used) verwendet mit Modellen: $models_used" >> usage.log
+tools_used=$(echo "$result" | jq -r '.stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
+echo "$(date): $total_tokens tokens, $tool_calls Tool-Aufrufe ($tools_used) verwendet mit Modellen: $models_used" >> usage.log
 echo "$result" | jq -r '.response' > schema-docs.md
 echo "Aktuelle Nutzungstrends:"
 tail -5 usage.log
@@ -278,5 +279,5 @@ tail -5 usage.log
 
 - [CLI-Konfiguration](../configuration/settings#command-line-arguments) - Vollständiger Konfigurationsleitfaden
 - [Authentifizierung](../configuration/settings#environment-variables-for-api-access) - Authentifizierung einrichten
-- [Befehle](../features/commands) - Interaktive Befehlsreferenz
-- [Tutorials](../quickstart) - Schritt-für-Schritt-Anleitungen zur Automatisierung
+- [Befehle](../features/commands) - Referenz zu interaktiven Befehlen
+- [Tutorials](../quickstart) - Schritt-für-Schritt-Automatisierungsanleitungen

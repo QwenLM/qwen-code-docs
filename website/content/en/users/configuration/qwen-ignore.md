@@ -20,9 +20,9 @@ You can update your `.qwenignore` file at any time. To apply the changes, you mu
 
 ## How to use `.qwenignore`
 
-| Step                   | Description                                                  |
-| ---------------------- | ------------------------------------------------------------ |
-| **Enable .qwenignore** | Create a file named `.qwenignore` in your project root directory |
+| Step                   | Description                                                                            |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| **Enable .qwenignore** | Create a file named `.qwenignore` in your project root directory                       |
 | **Add ignore rules**   | Open `.qwenignore` file and add paths to ignore, example: `/archive/` or `apikeys.txt` |
 
 ### `.qwenignore` examples

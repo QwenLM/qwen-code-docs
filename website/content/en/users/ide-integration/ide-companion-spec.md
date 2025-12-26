@@ -16,16 +16,15 @@ The plugin **MUST** run a local HTTP server that implements the **Model Context 
 - **Endpoint:** The server should expose a single endpoint (e.g., `/mcp`) for all MCP communication.
 - **Port:** The server **MUST** listen on a dynamically assigned port (i.e., listen on port `0`).
 
-### 2. Discovery Mechanism: The Port File
+### 2. Discovery Mechanism: The Lock File
 
-For Qwen Code to connect, it needs to discover which IDE instance it's running in and what port your server is using. The plugin **MUST** facilitate this by creating a "discovery file."
+For Qwen Code to connect, it needs to discover what port your server is using. The plugin **MUST** facilitate this by creating a "lock file" and setting the port environment variable.
 
-- **How the CLI Finds the File:** The CLI determines the Process ID (PID) of the IDE it's running in by traversing the process tree. It then looks for a discovery file that contains this PID in its name.
-- **File Location:** The file must be created in a specific directory: `os.tmpdir()/qwen/ide/`. Your plugin must create this directory if it doesn't exist.
+- **How the CLI Finds the File:** The CLI reads the port from `QWEN_CODE_IDE_SERVER_PORT`, then reads `~/.qwen/ide/<PORT>.lock`. (Legacy fallbacks exist for older extensions; see note below.)
+- **File Location:** The file must be created in a specific directory: `~/.qwen/ide/`. Your plugin must create this directory if it doesn't exist.
 - **File Naming Convention:** The filename is critical and **MUST** follow the pattern:
-  `qwen-code-ide-server-${PID}-${PORT}.json`
-  - `${PID}`: The process ID of the parent IDE process. Your plugin must determine this PID and include it in the filename.
-  - `${PORT}`: The port your MCP server is listening on.
+  `<PORT>.lock`
+  - `<PORT>`: The port your MCP server is listening on.
 - **File Content & Workspace Validation:** The file **MUST** contain a JSON object with the following structure:
 
   ```json
@@ -33,21 +32,20 @@ For Qwen Code to connect, it needs to discover which IDE instance it's running i
     "port": 12345,
     "workspacePath": "/path/to/project1:/path/to/project2",
     "authToken": "a-very-secret-token",
-    "ideInfo": {
-      "name": "vscode",
-      "displayName": "VS Code"
-    }
+    "ppid": 1234,
+    "ideName": "VS Code"
   }
   ```
   - `port` (number, required): The port of the MCP server.
   - `workspacePath` (string, required): A list of all open workspace root paths, delimited by the OS-specific path separator (`:` for Linux/macOS, `;` for Windows). The CLI uses this path to ensure it's running in the same project folder that's open in the IDE. If the CLI's current working directory is not a sub-directory of `workspacePath`, the connection will be rejected. Your plugin **MUST** provide the correct, absolute path(s) to the root of the open workspace(s).
   - `authToken` (string, required): A secret token for securing the connection. The CLI will include this token in an `Authorization: Bearer <token>` header on all requests.
-  - `ideInfo` (object, required): Information about the IDE.
-    - `name` (string, required): A short, lowercase identifier for the IDE (e.g., `vscode`, `jetbrains`).
-    - `displayName` (string, required): A user-friendly name for the IDE (e.g., `VS Code`, `JetBrains IDE`).
+  - `ppid` (number, required): The parent process ID of the IDE process.
+  - `ideName` (string, required): A user-friendly name for the IDE (e.g., `VS Code`, `JetBrains IDE`).
 
 - **Authentication:** To secure the connection, the plugin **MUST** generate a unique, secret token and include it in the discovery file. The CLI will then include this token in the `Authorization` header for all requests to the MCP server (e.g., `Authorization: Bearer a-very-secret-token`). Your server **MUST** validate this token on every request and reject any that are unauthorized.
-- **Tie-Breaking with Environment Variables (Recommended):** For the most reliable experience, your plugin **SHOULD** both create the discovery file and set the `QWEN_CODE_IDE_SERVER_PORT` environment variable in the integrated terminal. The file serves as the primary discovery mechanism, but the environment variable is crucial for tie-breaking. If a user has multiple IDE windows open for the same workspace, the CLI uses the `QWEN_CODE_IDE_SERVER_PORT` variable to identify and connect to the correct window's server.
+- **Environment Variables (Required):** Your plugin **MUST** set `QWEN_CODE_IDE_SERVER_PORT` in the integrated terminal so the CLI can locate the correct `<PORT>.lock` file.
+
+**Legacy note:** For extensions older than v0.5.1, Qwen Code may fall back to reading JSON files in the system temp directory named `qwen-code-ide-server-<PID>.json` or `qwen-code-ide-server-<PORT>.json`. New integrations should not rely on these legacy files.
 
 ## II. The Context Interface
 

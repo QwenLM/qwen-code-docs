@@ -1,64 +1,64 @@
-# 使用 Qwen Code 配置 MCP 服务器
+# 使用 Qwen Code 的 MCP 服务器
 
-本文档提供了使用 Qwen Code 配置和使用模型上下文协议（MCP）服务器的指南。
+本文档提供了关于配置和使用 Model Context Protocol (MCP) 服务器与 Qwen Code 的指南。
 
 ## 什么是 MCP 服务器？
 
-MCP 服务器是一种通过模型上下文协议（Model Context Protocol）向 CLI 暴露工具和资源的应用程序，使其能够与外部系统和数据源进行交互。MCP 服务器充当了模型与本地环境或其他服务（如 API）之间的桥梁。
+MCP 服务器是一种通过模型上下文协议 (Model Context Protocol) 向 CLI 暴露工具和资源的应用程序，使其能够与外部系统和数据源进行交互。MCP 服务器充当模型与你的本地环境或其他服务（如 API）之间的桥梁。
 
 MCP 服务器使 CLI 能够：
 
-- **发现工具：** 通过标准化的模式定义列出可用工具、其描述及参数。
-- **执行工具：** 使用定义好的参数调用特定工具，并接收结构化响应。
-- **访问资源：** 从特定资源中读取数据（尽管 CLI 主要专注于工具执行）。
+- **发现工具：** 通过标准化的模式定义列出可用工具、其描述和参数。
+- **执行工具：** 使用定义的参数调用特定工具并接收结构化响应。
+- **访问资源：** 从特定资源读取数据（尽管 CLI 主要专注于工具执行）。
 
-借助 MCP 服务器，你可以扩展 CLI 的功能，使其执行超出内置特性范围的操作，例如与数据库、API、自定义脚本或专用工作流进行交互。
+通过 MCP 服务器，你可以扩展 CLI 的功能，执行超出其内置功能的操作，例如与数据库、API、自定义脚本或专用工作流进行交互。
 
 ## 核心集成架构
 
-Qwen Code 通过核心包（`packages/core/src/tools/`）中内置的复杂发现和执行系统与 MCP 服务器进行集成：
+Qwen Code 通过内置在核心包 (`packages/core/src/tools/`) 中的复杂发现和执行系统与 MCP 服务器集成：
 
-### 发现阶段（`mcp-client.ts`）
+### 发现层 (`mcp-client.ts`)
 
-发现过程由 `discoverMcpTools()` 编排，该函数：
+发现过程由 `discoverMcpTools()` 协调，该函数：
 
-1. **遍历配置的服务器**：从你的 `settings.json` 中的 `mcpServers` 配置读取服务器列表  
-2. **建立连接**：使用适当的传输机制（Stdio、SSE 或可流式 HTTP）建立连接  
-3. **获取工具定义**：通过 MCP 协议从每个服务器获取工具定义  
-4. **清理并验证**：对工具 schema 进行清理和验证，确保其与 Qwen API 兼容  
-5. **注册工具**：将工具注册到全局工具注册表中，并处理冲突问题
+1. **遍历配置的服务器**，从你的 `settings.json` 中的 `mcpServers` 配置获取
+2. **建立连接**，使用适当的传输机制（Stdio、SSE 或可流式 HTTP）
+3. **从每个服务器获取工具定义**，使用 MCP 协议
+4. **清理和验证** 工具模式，确保与 Qwen API 兼容
+5. **在全局工具注册表中注册工具**，并解决冲突
 
 ### 执行层 (`mcp-tool.ts`)
 
-每个发现的 MCP 工具都会被封装在一个 `DiscoveredMCPTool` 实例中，该实例：
+每个发现的 MCP 工具都被包装在 `DiscoveredMCPTool` 实例中，该实例：
 
-- **处理确认逻辑**：基于服务器信任设置和用户偏好进行判断
-- **管理工具执行**：通过正确的参数调用 MCP 服务器
-- **处理响应**：为 LLM 上下文和用户显示分别处理响应内容
-- **维护连接状态**：处理超时等连接问题
+- **基于服务器信任设置和用户偏好处理确认逻辑**
+- **通过使用正确参数调用 MCP 服务器来管理工具执行**
+- **处理响应**，用于 LLM 上下文和用户显示
+- **维护连接状态** 并处理超时
 
 ### 传输机制
 
 CLI 支持三种 MCP 传输类型：
 
-- **Stdio 传输**：启动一个子进程并通过 stdin/stdout 进行通信
-- **SSE 传输**：连接到 Server-Sent Events 端点
-- **可流式 HTTP 传输**：使用 HTTP 流进行通信
+- **Stdio 传输：** 生成子进程并通过 stdin/stdout 进行通信
+- **SSE 传输：** 连接到服务器发送事件端点
+- **可流式 HTTP 传输：** 使用 HTTP 流进行通信
 
 ## 如何设置你的 MCP 服务器
 
-Qwen Code 使用 `settings.json` 文件中的 `mcpServers` 配置来定位并连接到 MCP 服务器。此配置支持多个使用不同传输机制的服务器。
+Qwen Code 使用你在 `settings.json` 文件中的 `mcpServers` 配置来定位和连接到 MCP 服务器。此配置支持使用不同传输机制的多个服务器。
 
 ### 在 settings.json 中配置 MCP 服务器
 
-你可以在 `settings.json` 文件中通过两种主要方式配置 MCP 服务器：通过顶层的 `mcpServers` 对象来定义特定的服务器，以及通过 `mcp` 对象来配置控制服务器发现和执行的全局设置。
+你可以在 `settings.json` 文件中通过两种主要方式配置 MCP 服务器：通过顶级的 `mcpServers` 对象定义特定服务器，以及通过 `mcp` 对象设置控制服务器发现和执行的全局配置。
 
 #### 全局 MCP 设置 (`mcp`)
 
-在你的 `settings.json` 中的 `mcp` 对象允许你为所有 MCP 服务器定义全局规则。
+`settings.json` 中的 `mcp` 对象允许你为所有 MCP 服务器定义全局规则。
 
-- **`mcp.serverCommand`** (字符串): 启动 MCP 服务器的全局命令。
-- **`mcp.allowed`** (字符串数组): 允许的 MCP 服务器名称列表。如果设置了此项，则只会连接此列表中的服务器（与 `mcpServers` 对象中的键匹配）。
+- **`mcp.serverCommand`** (string): 启动 MCP 服务器的全局命令。
+- **`mcp.allowed`** (字符串数组): 允许的 MCP 服务器名称列表。如果设置了此选项，只会连接到此列表中的服务器（匹配 `mcpServers` 对象中的键）。
 - **`mcp.excluded`** (字符串数组): 排除的 MCP 服务器名称列表。此列表中的服务器将不会被连接。
 
 **示例：**
@@ -74,7 +74,7 @@ Qwen Code 使用 `settings.json` 文件中的 `mcpServers` 配置来定位并连
 
 #### 服务器特定配置 (`mcpServers`)
 
-`mcpServers` 对象用于定义 CLI 需要连接的每个独立 MCP 服务器。
+`mcpServers` 对象是你定义 CLI 需要连接的每个独立 MCP 服务器的地方。
 
 ### 配置结构
 
@@ -103,8 +103,8 @@ Qwen Code 使用 `settings.json` 文件中的 `mcpServers` 配置来定位并连
 
 #### 必需（以下之一）
 
-- **`command`** (string): 用于 Stdio 传输的可执行文件路径
-- **`url`** (string): SSE 端点 URL（例如，`"http://localhost:8080/sse"`）
+- **`command`** (string): Stdio 传输的可执行文件路径
+- **`url`** (string): SSE 端点 URL (例如 `"http://localhost:8080/sse"`)
 - **`httpUrl`** (string): HTTP 流式传输端点 URL
 
 #### 可选
@@ -113,16 +113,16 @@ Qwen Code 使用 `settings.json` 文件中的 `mcpServers` 配置来定位并连
 - **`headers`** (object): 使用 `url` 或 `httpUrl` 时的自定义 HTTP 头
 - **`env`** (object): 服务器进程的环境变量。值可以使用 `$VAR_NAME` 或 `${VAR_NAME}` 语法引用环境变量
 - **`cwd`** (string): Stdio 传输的工作目录
-- **`timeout`** (number): 请求超时时间（毫秒，默认值：600,000ms = 10 分钟）
-- **`trust`** (boolean): 当设置为 `true` 时，将跳过此服务器的所有工具调用确认（默认值：`false`）
-- **`includeTools`** (string[]): 要从此 MCP 服务器包含的工具名称列表。指定后，仅此处列出的工具将可从该服务器使用（白名单行为）。未指定时，默认启用服务器上的所有工具。
-- **`excludeTools`** (string[]): 要从此 MCP 服务器排除的工具名称列表。即使服务器暴露了这些工具，模型也无法使用它们。**注意：** `excludeTools` 的优先级高于 `includeTools` —— 如果某个工具同时出现在两个列表中，则会被排除。
-- **`targetAudience`** (string): 在你尝试访问的受 IAP 保护的应用程序上列入白名单的 OAuth 客户端 ID。与 `authProviderType: 'service_account_impersonation'` 一起使用。
+- **`timeout`** (number): 请求超时时间（毫秒，默认：600,000ms = 10 分钟）
+- **`trust`** (boolean): 为 `true` 时，绕过此服务器的所有工具调用确认（默认：`false`）
+- **`includeTools`** (string[]): 要从此 MCP 服务器包含的工具名称列表。指定时，只有此处列出的工具可从此服务器使用（白名单行为）。如果不指定，默认启用服务器的所有工具。
+- **`excludeTools`** (string[]): 要从此 MCP 服务器排除的工具名称列表。此处列出的工具对模型不可用，即使服务器暴露了这些工具。**注意：** `excludeTools` 优先于 `includeTools` - 如果工具同时在两个列表中，将被排除。
+- **`targetAudience`** (string): 你尝试访问的 IAP 保护应用程序上白名单的 OAuth 客户端 ID。与 `authProviderType: 'service_account_impersonation'` 一起使用。
 - **`targetServiceAccount`** (string): 要模拟的 Google Cloud 服务账户的电子邮件地址。与 `authProviderType: 'service_account_impersonation'` 一起使用。
 
 ### 远程 MCP 服务器的 OAuth 支持
 
-Qwen Code 支持通过 SSE 或 HTTP 传输方式对远程 MCP 服务器进行 OAuth 2.0 身份验证。这使得能够安全地访问需要身份验证的 MCP 服务器。
+Qwen Code 支持使用 SSE 或 HTTP 传输协议对远程 MCP 服务器进行 OAuth 2.0 认证。这使得可以安全访问需要认证的 MCP 服务器。
 
 #### 自动 OAuth 发现
 
@@ -140,20 +140,20 @@ Qwen Code 支持通过 SSE 或 HTTP 传输方式对远程 MCP 服务器进行 OA
 
 CLI 将自动：
 
-- 检测服务器何时需要 OAuth 身份验证（401 响应）
+- 检测服务器何时需要 OAuth 认证（401 响应）
 - 从服务器元数据中发现 OAuth 端点
-- 如果支持，执行动态客户端注册
+- 如果支持则执行动态客户端注册
 - 处理 OAuth 流程和令牌管理
 
 #### 认证流程
 
-当连接到启用 OAuth 的服务器时：
+连接到启用 OAuth 的服务器时：
 
 1. **初始连接尝试** 失败，返回 401 未授权
 2. **OAuth 发现** 找到授权和令牌端点
-3. **浏览器打开** 以进行用户认证（需要本地浏览器访问权限）
-4. **授权码** 被交换为访问令牌
-5. **令牌被安全存储** 以供将来使用
+3. **浏览器打开** 进行用户认证（需要本地浏览器访问）
+4. **授权码** 交换为访问令牌
+5. **令牌被安全存储** 供将来使用
 6. **连接重试** 使用有效令牌成功
 
 #### 浏览器重定向要求
@@ -161,9 +161,9 @@ CLI 将自动：
 **重要：** OAuth 认证要求你的本地机器能够：
 
 - 打开网页浏览器进行认证
-- 在 `http://localhost:7777/oauth/callback` 上接收重定向
+- 接收 `http://localhost:7777/oauth/callback` 上的重定向
 
-此功能将无法在以下环境中工作：
+此功能在以下环境中无法工作：
 
 - 没有浏览器访问权限的无头环境
 - 没有 X11 转发的远程 SSH 会话
@@ -171,7 +171,7 @@ CLI 将自动：
 
 #### 管理 OAuth 认证
 
-使用 `/mcp auth` 命令来管理 OAuth 认证：
+使用 `/mcp auth` 命令管理 OAuth 认证：
 
 ```bash
 
@@ -179,43 +179,42 @@ CLI 将自动：
 /mcp auth
 ```
 
-```markdown
 # 与特定服务器进行身份验证
 /mcp auth serverName
 
-# 令牌过期时重新进行身份验证
+# 如果令牌过期则重新进行身份验证
 /mcp auth serverName
 ```
 
 #### OAuth 配置属性
 
 - **`enabled`** (boolean): 为此服务器启用 OAuth
-- **`clientId`** (string): OAuth 客户端标识符（使用动态注册时为可选）
-- **`clientSecret`** (string): OAuth 客户端密钥（对于公共客户端为可选）
+- **`clientId`** (string): OAuth 客户端标识符（使用动态注册时可选）
+- **`clientSecret`** (string): OAuth 客户端密钥（公共客户端可选）
 - **`authorizationUrl`** (string): OAuth 授权端点（如果省略则自动发现）
 - **`tokenUrl`** (string): OAuth 令牌端点（如果省略则自动发现）
-- **`scopes`** (string[]): 所需的 OAuth 范围
+- **`scopes`** (string[]): 必需的 OAuth 范围
 - **`redirectUri`** (string): 自定义重定向 URI（默认为 `http://localhost:7777/oauth/callback`）
 - **`tokenParamName`** (string): SSE URL 中令牌的查询参数名称
-- **`audiences`** (string[]): 令牌有效的受众列表
+- **`audiences`** (string[]): 令牌有效的受众群体
 
 #### 令牌管理
 
 OAuth 令牌会自动：
 
-- **安全存储** 在 `~/.qwen/mcp-oauth-tokens.json` 中
-- **自动刷新** 过期时（如果有刷新令牌）
-- **连接前验证** 每次连接尝试前
-- **清理无效或过期令牌**
+- **安全存储**在 `~/.qwen/mcp-oauth-tokens.json` 中
+- **刷新**过期的令牌（如果有刷新令牌可用）
+- 在每次连接尝试前**验证**令牌
+- 无效或过期时**清理**令牌
 
-#### 身份验证提供程序类型
+#### 认证提供程序类型
 
-你可以使用 `authProviderType` 属性指定身份验证提供程序类型：
+你可以使用 `authProviderType` 属性指定认证提供程序类型：
 
-- **`authProviderType`**（字符串）：指定身份验证提供程序。可以是以下值之一：
-  - **`dynamic_discovery`**（默认）：CLI 将自动从服务器发现 OAuth 配置。
-  - **`google_credentials`**：CLI 将使用 Google 应用默认凭据（ADC）向服务器进行身份验证。使用此提供程序时，你必须指定所需的范围。
-  - **`service_account_impersonation`**：CLI 将模拟 Google Cloud 服务账号向服务器进行身份验证。这对于访问受 IAP 保护的服务非常有用（这是专门为 Cloud Run 服务设计的）。
+- **`authProviderType`** (string): 指定认证提供程序。可以是以下之一：
+  - **`dynamic_discovery`** (默认): CLI 将自动从服务器发现 OAuth 配置。
+  - **`google_credentials`**: CLI 将使用 Google Application Default Credentials (ADC) 向服务器进行认证。使用此提供程序时，你必须指定所需的范围。
+  - **`service_account_impersonation`**: CLI 将模拟一个 Google Cloud 服务账号向服务器进行认证。这对于访问 IAP 保护的服务很有用（这是专门为 Cloud Run 服务设计的）。
 
 #### Google 凭据
 
@@ -233,25 +232,25 @@ OAuth 令牌会自动：
 }
 ```
 
-#### 服务账户模拟
+#### 服务账号模拟
 
-要使用服务账户模拟向服务器进行身份验证，你必须将 `authProviderType` 设置为 `service_account_impersonation` 并提供以下属性：
+要使用服务账号模拟对服务器进行身份验证，你必须将 `authProviderType` 设置为 `service_account_impersonation` 并提供以下属性：
 
-- **`targetAudience`**（字符串）：在你尝试访问的受 IAP 保护的应用程序上允许列出的 OAuth 客户端 ID。
-- **`targetServiceAccount`**（字符串）：要模拟的 Google Cloud 服务账户的电子邮件地址。
+- **`targetAudience`** (string): OAuth 客户端 ID，允许访问你尝试访问的 IAP 保护应用程序。
+- **`targetServiceAccount`** (string): 要模拟的 Google Cloud 服务账号的邮箱地址。
 
-CLI 将使用你本地的 Application Default Credentials (ADC) 为指定的服务账户和受众生成一个 OIDC ID 令牌。然后该令牌将用于与 MCP 服务器进行身份验证。
+CLI 将使用你的本地应用程序默认凭据 (ADC) 为指定的服务账号和受众生成 OIDC ID 令牌。然后该令牌将用于与 MCP 服务器进行身份验证。
 
 #### 设置说明
 
 1. **[创建](https://cloud.google.com/iap/docs/oauth-client-creation) 或使用现有的 OAuth 2.0 客户端 ID。** 要使用现有的 OAuth 2.0 客户端 ID，请按照 [如何共享 OAuth 客户端](https://cloud.google.com/iap/docs/sharing-oauth-clients) 中的步骤操作。
-2. **将 OAuth ID 添加到应用程序的[程序化访问](https://cloud.google.com/iap/docs/sharing-oauth-clients#programmatic_access)允许列表中。** 由于 Cloud Run 尚未成为 gcloud iap 中支持的资源类型，你必须在项目级别将客户端 ID 加入允许列表。
+2. **将 OAuth ID 添加到应用程序的[程序化访问](https://cloud.google.com/iap/docs/sharing-oauth-clients#programmatic_access) 允许列表中。** 由于 Cloud Run 尚未成为 gcloud iap 中受支持的资源类型，你必须在项目上将客户端 ID 加入允许列表。
 3. **创建服务账号。** [文档](https://cloud.google.com/iam/docs/service-accounts-create#creating)，[Cloud Console 链接](https://console.cloud.google.com/iam-admin/serviceaccounts)
-4. **将服务账号和用户添加到 IAP 策略中**，可以在 Cloud Run 服务本身的“安全”标签页中操作，或通过 gcloud 命令行工具完成。
-5. **为所有将要访问 MCP Server 的用户和组** 授予 [模拟服务账号](https://cloud.google.com/docs/authentication/use-service-account-impersonation) 所需的权限（即 `roles/iam.serviceAccountTokenCreator`）。
-6. **为你的项目[启用](https://console.cloud.google.com/apis/library/iamcredentials.googleapis.com) IAM 凭据 API**。
+4. **在 Cloud Run 服务本身的 "Security" 选项卡中或通过 gcloud，将服务账号和用户都添加到 IAP 策略中**
+5. **授予所有将访问 MCP 服务器的用户和组** [模拟服务账号](https://cloud.google.com/docs/authentication/use-service-account-impersonation) 所需的权限（即 `roles/iam.serviceAccountTokenCreator`）。
+6. **为你的项目[启用](https://console.cloud.google.com/apis/library/iamcredentials.googleapis.com) IAM Credentials API**。
 
-### 示例配置
+### 配置示例
 
 #### Python MCP 服务器 (Stdio)
 
@@ -325,7 +324,7 @@ CLI 将使用你本地的 Application Default Credentials (ADC) 为指定的服�
 }
 ```
 
-#### 带自定义请求头的基于 HTTP 的 MCP 服务器
+#### 带自定义头部的基于 HTTP 的 MCP 服务器
 
 ```json
 {
@@ -359,7 +358,7 @@ CLI 将使用你本地的 Application Default Credentials (ADC) 为指定的服�
 }
 ```
 
-### 带服务账号模拟的 SSE MCP 服务器
+### 使用服务账号模拟的 SSE MCP 服务器
 
 ```json
 {
@@ -378,70 +377,70 @@ CLI 将使用你本地的 Application Default Credentials (ADC) 为指定的服�
 
 当 Qwen Code 启动时，它会通过以下详细过程执行 MCP 服务器发现：
 
-### 1. 服务器迭代与连接
+### 1. 服务器迭代和连接
 
-对于 `mcpServers` 中配置的每个服务器：
+对于 `mcpServers` 中的每个配置服务器：
 
 1. **状态跟踪开始：** 服务器状态设置为 `CONNECTING`
-2. **传输方式选择：** 根据配置属性：
+2. **传输选择：** 基于配置属性：
    - `httpUrl` → `StreamableHTTPClientTransport`
    - `url` → `SSEClientTransport`
    - `command` → `StdioClientTransport`
-3. **建立连接：** MCP 客户端尝试在配置的超时时间内连接
-4. **错误处理：** 连接失败会被记录日志，并将服务器状态设置为 `DISCONNECTED`
+3. **连接建立：** MCP 客户端尝试使用配置的超时时间进行连接
+4. **错误处理：** 连接失败会被记录，服务器状态设置为 `DISCONNECTED`
 
 ### 2. 工具发现
 
 连接成功后：
 
-1. **工具列表获取：** 客户端调用 MCP 服务器的工具列表端点
+1. **工具列表：** 客户端调用 MCP 服务器的工具列表端点
 2. **模式验证：** 验证每个工具的函数声明
-3. **工具过滤：** 根据 `includeTools` 和 `excludeTools` 配置对工具进行过滤
+3. **工具过滤：** 根据 `includeTools` 和 `excludeTools` 配置过滤工具
 4. **名称清理：** 清理工具名称以满足 Qwen API 要求：
-   - 将无效字符（非字母数字、下划线、点号、连字符）替换为下划线
-   - 名称超过 63 个字符时，将中间部分替换为 (`___`) 进行截断
+   - 无效字符（非字母数字、下划线、点、连字符）被替换为下划线
+   - 超过 63 个字符的名称会被截断，中间部分替换为 (`___`)
 
 ### 3. 冲突解决
 
-当多个服务器暴露同名工具时：
+当多个服务器暴露具有相同名称的工具时：
 
-1. **首次注册优先：** 第一个注册该工具名称的服务器获得无前缀的名称
-2. **自动添加前缀：** 后续服务器的工具名称会被加上前缀：`serverName__toolName`
-3. **注册表跟踪：** 工具注册表维护服务器名称与其工具之间的映射关系
+1. **先注册优先：** 第一个注册工具名称的服务器获得无前缀的名称
+2. **自动添加前缀：** 后续服务器获得带前缀的名称：`serverName__toolName`
+3. **注册跟踪：** 工具注册表维护服务器名称和其工具之间的映射关系
 
-### 4. Schema 处理
+### 4. 模式处理
 
-工具参数 schema 会经过清理以确保 API 兼容性：
+工具参数模式会进行清理以确保 API 兼容性：
 
 - **`$schema` 属性** 会被移除
 - **`additionalProperties`** 会被剥离
-- **带有 `default` 的 `anyOf`** 会移除其默认值（兼容 Vertex AI）
-- **递归处理** 会应用到嵌套的 schema
+- **带有 `default` 的 `anyOf`** 会移除其默认值（与 Vertex AI 兼容）
+- **递归处理** 适用于嵌套模式
 
 ### 5. 连接管理
 
-发现完成后：
+发现后：
 
-- **持久连接：** 成功注册工具的服务器将保持其连接
-- **清理：** 对于未提供可用工具的服务器，其连接将被关闭
-- **状态更新：** 最终服务器状态将设置为 `CONNECTED` 或 `DISCONNECTED`
+- **持久连接：** 成功注册工具的服务器会保持其连接
+- **清理：** 未提供可用工具的服务器会关闭其连接
+- **状态更新：** 最终服务器状态设置为 `CONNECTED` 或 `DISCONNECTED`
 
 ## 工具执行流程
 
-当模型决定使用某个 MCP 工具时，将按以下流程执行：
+当模型决定使用 MCP 工具时，会发生以下执行流程：
 
 ### 1. 工具调用
 
 模型生成一个 `FunctionCall`，包含：
 
-- **工具名称：** 注册时的名称（可能带前缀）
-- **参数：** 符合工具参数 schema 的 JSON 对象
+- **工具名称：** 注册的名称（可能带有前缀）
+- **参数：** 与工具参数模式匹配的 JSON 对象
 
 ### 2. 确认流程
 
 每个 `DiscoveredMCPTool` 都实现了复杂的确认逻辑：
 
-#### 基于信任的跳过机制
+#### 基于信任的绕过
 
 ```typescript
 if (this.trust) {
@@ -449,28 +448,28 @@ if (this.trust) {
 }
 ```
 
-#### 动态白名单机制
+#### 动态白名单
 
-系统维护以下内部白名单：
+系统维护内部白名单，包括：
 
-- **服务器级别：** `serverName` → 来自此服务器的所有工具均受信任
-- **工具级别：** `serverName.toolName` → 此特定工具受信任
+- **服务器级别：** `serverName` → 来自此服务器的所有工具都被信任
+- **工具级别：** `serverName.toolName` → 此特定工具被信任
 
 #### 用户选择处理
 
 当需要确认时，用户可以选择：
 
-- **仅本次执行：** 仅此次执行
-- **始终允许此工具：** 添加到工具级别的白名单中
-- **始终允许此服务器：** 添加到服务器级别的白名单中
+- **执行一次：** 仅本次执行
+- **始终允许此工具：** 添加到工具级别白名单
+- **始终允许此服务器：** 添加到服务器级别白名单
 - **取消：** 中止执行
 
 ### 3. 执行
 
-确认后（或绕过信任）：
+确认后（或跳过信任验证）：
 
-1. **参数准备：** 参数根据工具的 schema 进行验证
-2. **MCP 调用：** 底层 `CallableTool` 使用以下内容调用服务器：
+1. **参数准备：** 根据工具的 schema 验证参数
+2. **MCP 调用：** 底层的 `CallableTool` 使用以下方式调用服务器：
 
    ```typescript
    const functionCalls = [
@@ -481,14 +480,14 @@ if (this.trust) {
    ];
    ```
 
-3. **响应处理：** 结果会被格式化，既用于 LLM 上下文也用于用户展示
+3. **响应处理：** 结果格式化为 LLM 上下文和用户显示两种形式
 
 ### 4. 响应处理
 
 执行结果包含：
 
-- **`llmContent`：** 供语言模型上下文使用的原始响应部分
-- **`returnDisplay`：** 供用户展示的格式化输出（通常为 Markdown 代码块中的 JSON）
+- **`llmContent`：** 语言模型上下文的原始响应部分
+- **`returnDisplay`：** 为用户显示格式化的输出（通常在 markdown 代码块中的 JSON）
 
 ## 如何与你的 MCP 服务器交互
 
@@ -500,97 +499,97 @@ if (this.trust) {
 /mcp
 ```
 
-该命令显示以下内容：
+这会显示：
 
 - **服务器列表：** 所有已配置的 MCP 服务器
 - **连接状态：** `CONNECTED`、`CONNECTING` 或 `DISCONNECTED`
-- **服务器详情：** 配置摘要（不包含敏感数据）
-- **可用工具：** 每个服务器提供的工具列表及其描述
-- **发现状态：** 整体发现过程的状态
+- **服务器详情：** 配置摘要（不包括敏感数据）
+- **可用工具：** 来自每个服务器的工具列表及其描述
+- **发现状态：** 整体发现过程状态
 
-### 示例 `/mcp` 输出
+### `/mcp` 输出示例
 
 ```
 MCP 服务器状态：
 
-📡 pythonTools (CONNECTED)
+📡 pythonTools (已连接)
   命令: python -m my_mcp_server --port 8080
   工作目录: ./mcp-servers/python
-  超时时间: 15000ms
+  超时: 15000ms
   工具: calculate_sum, file_analyzer, data_processor
 
-🔌 nodeServer (DISCONNECTED)
+🔌 nodeServer (已断开)
   命令: node dist/server.js --verbose
   错误: 连接被拒绝
 
-.dockerizedServer (CONNECTED)
+🐳 dockerizedServer (已连接)
   命令: docker run -i --rm -e API_KEY my-mcp-server:latest
   工具: docker__deploy, docker__status
 
-发现状态: COMPLETED
+发现状态: 已完成
 ```
 
 ### 工具使用
 
-一旦被发现，MCP 工具就会像内置工具一样提供给 Qwen 模型使用。模型将自动：
+一旦发现，MCP 工具就会像内置工具一样提供给 Qwen 模型使用。模型将自动：
 
-1. **根据你的请求选择合适的工具**
+1. **根据你的请求选择适当的工具**
 2. **显示确认对话框**（除非服务器是受信任的）
-3. **使用正确的参数执行工具**
+3. **使用适当的参数执行工具**
 4. **以用户友好的格式显示结果**
 
 ## 状态监控和故障排除
 
 ### 连接状态
 
-MCP 集成会跟踪以下几种状态：
+MCP 集成跟踪几种状态：
 
 #### 服务器状态 (`MCPServerStatus`)
 
-- **`DISCONNECTED`:** 服务器未连接或出现错误
-- **`CONNECTING`:** 正在尝试连接
-- **`CONNECTED`:** 服务器已连接并准备就绪
+- **`DISCONNECTED`：** 服务器未连接或出现错误
+- **`CONNECTING`：** 连接尝试正在进行中
+- **`CONNECTED`：** 服务器已连接并就绪
 
-#### 发现阶段 (`MCPDiscoveryState`)
+#### 发现状态 (`MCPDiscoveryState`)
 
-- **`NOT_STARTED`:** 尚未开始发现
-- **`IN_PROGRESS`:** 正在发现服务器
-- **`COMPLETED`:** 发现已完成（无论是否有错误）
+- **`NOT_STARTED`：** 发现尚未开始
+- **`IN_PROGRESS`：** 当前正在发现服务器
+- **`COMPLETED`：** 发现完成（无论是否出现错误）
 
-### 常见问题及解决方案
+### 常见问题和解决方案
 
 #### 服务器无法连接
 
 **症状：** 服务器显示 `DISCONNECTED` 状态
 
-**故障排查：**
+**故障排除：**
 
 1. **检查配置：** 验证 `command`、`args` 和 `cwd` 是否正确
 2. **手动测试：** 直接运行服务器命令以确保其正常工作
 3. **检查依赖项：** 确保所有必需的包都已安装
-4. **查看日志：** 在 CLI 输出中查找错误信息
+4. **查看日志：** 在 CLI 输出中查找错误消息
 5. **验证权限：** 确保 CLI 可以执行服务器命令
 
 #### 未发现工具
 
-**症状：** 服务器连接成功但没有可用工具
+**症状：** 服务器连接成功但没有可用的工具
 
-**故障排查：**
+**故障排除：**
 
 1. **验证工具注册：** 确保你的服务器实际注册了工具
 2. **检查 MCP 协议：** 确认你的服务器正确实现了 MCP 工具列表
-3. **查看服务器日志：** 检查 stderr 输出以查找服务器端错误
-4. **测试工具列表：** 手动测试服务器的工具发现端点
+3. **查看服务器日志：** 检查 stderr 输出中的服务器端错误
+4. **测试工具列表：** 手动测试你的服务器的工具发现端点
 
-#### 工具无法执行
+#### 工具未执行
 
 **症状：** 工具被发现但在执行期间失败
 
 **故障排除：**
 
 1. **参数验证：** 确保你的工具接受预期的参数
-2. **模式兼容性：** 验证你的输入模式是否为有效的 JSON Schema
-3. **错误处理：** 检查你的工具是否抛出了未处理的异常
+2. **模式兼容性：** 验证你的输入模式是有效的 JSON Schema
+3. **错误处理：** 检查你的工具是否抛出未处理的异常
 4. **超时问题：** 考虑增加 `timeout` 设置
 
 #### 沙箱兼容性
@@ -602,51 +601,56 @@ MCP 集成会跟踪以下几种状态：
 1. **基于 Docker 的服务器：** 使用包含所有依赖项的 Docker 容器
 2. **路径可访问性：** 确保服务器可执行文件在沙箱中可用
 3. **网络访问：** 配置沙箱以允许必要的网络连接
-4. **环境变量：** 验证所需的环境变量是否已传递
+4. **环境变量：** 验证所需的环境变量已传递通过
 
 ### 调试技巧
 
-1. **启用调试模式：** 使用 `--debug` 参数运行 CLI 以获取详细输出
-2. **检查 stderr：** MCP 服务器的 stderr 输出会被捕获并记录（INFO 级别消息已被过滤）
-3. **独立测试：** 在集成之前，先独立测试你的 MCP 服务器
-4. **增量设置：** 先从简单工具开始，再逐步添加复杂功能
+1. **启用调试模式：** 使用 `--debug` 运行 CLI 以获得详细输出
+2. **检查 stderr：** MCP 服务器的 stderr 会被捕获并记录（INFO 级别消息会被过滤）
+3. **测试隔离：** 在集成之前独立测试你的 MCP 服务器
+4. **渐进式设置：** 从简单工具开始，再添加复杂功能
 5. **频繁使用 `/mcp`：** 在开发过程中监控服务器状态
 
-## 重要说明
+## 重要注意事项
 
-### 安全注意事项
+### 安全考虑
 
-- **信任设置：** `trust` 选项会跳过所有确认对话框。请谨慎使用，仅用于你完全控制的服务器
-- **访问令牌：** 配置包含 API 密钥或令牌的环境变量时，请注意安全风险
-- **沙盒兼容性：** 使用沙盒时，确保 MCP 服务器在沙盒环境中可用
-- **私有数据：** 使用范围过广的个人访问令牌可能导致仓库间信息泄露
+- **信任设置：** `trust` 选项会绕过所有确认对话框。请谨慎使用，仅用于你完全控制的服务器
+- **访问令牌：** 配置包含 API 密钥或令牌的环境变量时请注意安全性
+- **沙盒兼容性：** 使用沙盒时，请确保 MCP 服务器在沙盒环境中可用
+- **私有数据：** 使用范围广泛的个人访问令牌可能导致仓库间的信息泄露
 
-### 性能与资源管理
+### 性能和资源管理
 
-- **连接持久化：** CLI 会与成功注册工具的服务器保持持久连接
-- **自动清理：** 自动关闭未提供任何工具的服务器连接
-- **超时管理：** 根据服务器响应特性配置合适的超时时间
-- **资源监控：** MCP 服务器作为独立进程运行，会消耗系统资源
+- **连接持久性：** CLI 与成功注册工具的服务器保持持久连接
+- **自动清理：** 自动关闭与未提供工具的服务器的连接
+- **超时管理：** 根据服务器的响应特性配置适当的超时时间
+- **资源监控：** MCP 服务器作为独立进程运行并消耗系统资源
 
-### Schema 兼容性
+### 模式兼容性
 
-- **属性剥离：** 系统会自动移除某些 Schema 属性（如 `$schema`、`additionalProperties`）以确保与 Qwen API 的兼容性
-- **名称清理：** 工具名称会被自动清理以满足 API 要求
-- **冲突解决：** 不同服务器之间的工具名称冲突将通过自动添加前缀的方式解决
+- **模式合规模式：** 默认情况下（`schemaCompliance: "auto"`），工具模式会原样传递。在 `settings.json` 中设置 `"model": { "generationConfig": { "schemaCompliance": "openapi_30" } }` 以将模型转换为严格的 OpenAPI 3.0 格式。
+- **OpenAPI 3.0 转换：** 启用 `openapi_30` 模式时，系统会处理：
+  - 可空类型：`["string", "null"]` -> `type: "string", nullable: true`
+  - 常量值：`const: "foo"` -> `enum: ["foo"]`
+  - 排他限制：数值 `exclusiveMinimum` -> 带 `minimum` 的布尔形式
+  - 关键字移除：`$schema`、`$id`、`dependencies`、`patternProperties`
+- **名称清理：** 工具名称会自动清理以满足 API 要求
+- **冲突解决：** 服务器之间的工具名称冲突通过自动前缀解决
 
-这种全面的集成使 MCP 服务器成为扩展 CLI 功能的强大方式，同时兼顾安全性、可靠性和易用性。
+这种全面的集成使 MCP 服务器成为扩展 CLI 功能的强大方式，同时保持安全性、可靠性和易用性。
 
-## 从工具返回丰富内容
+## 从工具返回富内容
 
-MCP 工具不仅限于返回简单的文本。你可以返回丰富的多部分的内容，包括文本、图像、音频和其他二进制数据，所有这些都可以在单个工具响应中完成。这使你能够构建强大的工具，在一次交互中为模型提供多样化的信息。
+MCP 工具不仅限于返回简单的文本。你可以返回丰富的多部分内容，包括文本、图像、音频和其他二进制数据，全部包含在单个工具响应中。这使你能够构建强大的工具，在单次交互中向模型提供多样化信息。
 
-从工具返回的所有数据都会被处理并作为上下文发送给模型，以供其下一次生成使用，从而使模型能够对提供的信息进行推理或总结。
+从工具返回的所有数据都会被处理并作为上下文发送给模型，用于其下一次生成，使模型能够推理或总结提供的信息。
 
 ### 工作原理
 
-要返回富内容，你的工具响应必须遵循 MCP 规范中对 [`CallToolResult`](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#tool-result) 的定义。结果的 `content` 字段应为一个 `ContentBlock` 对象数组。CLI 会正确处理该数组，将文本与二进制数据分离，并打包传递给模型。
+要返回富内容，你的工具响应必须遵循 MCP 规范中的 [`CallToolResult`](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#tool-result)。结果中的 `content` 字段应该是一个 `ContentBlock` 对象数组。CLI 将正确处理此数组，将文本与二进制数据分离并为模型打包。
 
-你可以在 `content` 数组中混合使用不同类型的 content block。支持的 block 类型包括：
+你可以在 `content` 数组中混合使用不同的内容块类型。支持的块类型包括：
 
 - `text`
 - `image`
@@ -656,14 +660,14 @@ MCP 工具不仅限于返回简单的文本。你可以返回丰富的多部分�
 
 ### 示例：返回文本和图像
 
-以下是一个有效的 MCP 工具 JSON 响应示例，该响应同时返回文本描述和图像：
+以下是一个 MCP 工具返回文本描述和图像的有效 JSON 响应示例：
 
 ```json
 {
   "content": [
     {
       "type": "text",
-      "text": "Here is the logo you requested."
+      "text": "这是你请求的 logo。"
     },
     {
       "type": "image",
@@ -672,7 +676,7 @@ MCP 工具不仅限于返回简单的文本。你可以返回丰富的多部分�
     },
     {
       "type": "text",
-      "text": "The logo was created in 2025."
+      "text": "该 logo 创建于 2025 年。"
     }
   ]
 }
@@ -680,19 +684,19 @@ MCP 工具不仅限于返回简单的文本。你可以返回丰富的多部分�
 
 当 Qwen Code 接收到此响应时，它将：
 
-1. 提取所有文本并将其合并为单个 `functionResponse` 部分以供模型使用。
-2. 将图像数据作为单独的 `inlineData` 部分呈现。
-3. 在 CLI 中提供清晰、用户友好的摘要，表明已接收到文本和图像。
+1.  提取所有文本并将其合并为模型的单个 `functionResponse` 部分。
+2.  将图像数据作为单独的 `inlineData` 部分呈现。
+3.  在 CLI 中提供简洁的用户友好摘要，表明已接收到文本和图像。
 
-这使您能够构建复杂的工具，从而向 Qwen 模型提供丰富的多模态上下文。
+这使你能够构建复杂的工具，为 Qwen 模型提供丰富的多模态上下文。
 
-## MCP 提示词作为斜杠命令
+## MCP 提示作为斜杠命令
 
-除了工具之外，MCP 服务器还可以暴露预定义的提示词，这些提示词可以作为斜杠命令在 Qwen Code 中执行。这使你能够为常见或复杂的查询创建快捷方式，通过名称即可轻松调用。
+除了工具之外，MCP 服务器还可以暴露预定义的提示，这些提示可以在 Qwen Code 中作为斜杠命令执行。这允许你为常见或复杂的查询创建快捷方式，可以通过名称轻松调用。
 
 ### 在服务器上定义提示
 
-以下是一个定义了提示的小型 stdio MCP 服务器示例：
+这是一个定义提示的小型 stdio MCP 服务器示例：
 
 ```ts
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -728,7 +732,7 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
 
-可以通过以下方式将其包含在 `settings.json` 的 `mcpServers` 中：
+这可以通过以下方式在 `settings.json` 中的 `mcpServers` 下包含：
 
 ```json
 {
@@ -743,7 +747,7 @@ await server.connect(transport);
 
 ### 调用提示
 
-一旦发现某个提示，你可以通过其名称作为斜杠命令来调用它。CLI 会自动处理参数解析。
+一旦发现提示，你可以使用其名称作为斜杠命令来调用它。CLI 将自动处理参数解析。
 
 ```bash
 /poem-writer --title="Qwen Code" --mood="reverent"
@@ -755,15 +759,15 @@ await server.connect(transport);
 /poem-writer "Qwen Code" reverent
 ```
 
-当你运行此命令时，CLI 会在 MCP 服务器上执行 `prompts/get` 方法，并传入提供的参数。服务器负责将参数代入提示模板并返回最终的提示文本。然后 CLI 将该提示发送给模型执行。这为自动化和共享常见工作流提供了一种便捷的方式。
+当你运行此命令时，CLI 会在 MCP 服务器上执行 `prompts/get` 方法并传入提供的参数。服务器负责将参数代入提示模板并返回最终的提示文本。然后 CLI 将此提示发送给模型执行。这提供了一种便捷的方式来自动化和共享常见工作流程。
 
 ## 使用 `qwen mcp` 管理 MCP 服务器
 
-虽然你始终可以通过手动编辑 `settings.json` 文件来配置 MCP 服务器，但 CLI 提供了一组便捷的命令，可以让你以编程方式管理服务器配置。这些命令简化了添加、列出和删除 MCP 服务器的过程，而无需直接编辑 JSON 文件。
+虽然你可以通过手动编辑 `settings.json` 文件来配置 MCP 服务器，但 CLI 提供了一组便捷的命令来以编程方式管理服务器配置。这些命令简化了添加、列出和删除 MCP 服务器的过程，无需直接编辑 JSON 文件。
 
 ### 添加服务器 (`qwen mcp add`)
 
-`add` 命令用于在你的 `settings.json` 中配置一个新的 MCP 服务器。根据作用域（`-s, --scope`），它将被添加到用户配置文件 `~/.qwen/settings.json` 或项目配置文件 `.qwen/settings.json` 中。
+`add` 命令在你的 `settings.json` 中配置一个新的 MCP 服务器。根据作用域 (`-s, --scope`)，它将被添加到用户配置 `~/.qwen/settings.json` 或项目配置 `.qwen/settings.json` 文件中。
 
 **命令：**
 
@@ -771,60 +775,57 @@ await server.connect(transport);
 qwen mcp add [options] <name> <commandOrUrl> [args...]
 ```
 
-- `<name>`：服务器的唯一名称。
-- `<commandOrUrl>`：要执行的命令（用于 `stdio`）或 URL（用于 `http`/`sse`）。
-- `[args...]`：`stdio` 命令的可选参数。
+- `<name>`: 服务器的唯一名称。
+- `<commandOrUrl>`: 要执行的命令（用于 `stdio`）或 URL（用于 `http`/`sse`）。
+- `[args...]`: `stdio` 命令的可选参数。
 
 **选项（标志）：**
 
-- `-s, --scope`：配置作用域（user 或 project）。[默认值："project"]
-- `-t, --transport`：传输类型（stdio、sse、http）。[默认值："stdio"]
-- `-e, --env`：设置环境变量（例如 -e KEY=value）。
-- `-H, --header`：为 SSE 和 HTTP 传输设置 HTTP 头（例如 -H "X-Api-Key: abc123" -H "Authorization: Bearer abc123"）。
-- `--timeout`：设置连接超时时间（毫秒）。
-- `--trust`：信任该服务器（跳过所有工具调用确认提示）。
-- `--description`：设置服务器描述。
-- `--include-tools`：包含的工具列表，以逗号分隔。
-- `--exclude-tools`：排除的工具列表，以逗号分隔。
+- `-s, --scope`: 配置作用域（用户或项目）。[默认值: "project"]
+- `-t, --transport`: 传输类型（stdio, sse, http）。[默认值: "stdio"]
+- `-e, --env`: 设置环境变量（例如 -e KEY=value）。
+- `-H, --header`: 为 SSE 和 HTTP 传输设置 HTTP 头（例如 -H "X-Api-Key: abc123" -H "Authorization: Bearer abc123"）。
+- `--timeout`: 设置连接超时时间（毫秒）。
+- `--trust`: 信任服务器（绕过所有工具调用确认提示）。
+- `--description`: 设置服务器描述。
+- `--include-tools`: 要包含的工具的逗号分隔列表。
+- `--exclude-tools`: 要排除的工具的逗号分隔列表。
 
 #### 添加 stdio 服务器
 
 这是运行本地服务器的默认传输方式。
 
 ```bash
-
 # 基本语法
 qwen mcp add <name> <command> [args...]
 
-# 示例：添加一个本地服务器
+# 示例：添加本地服务器
 qwen mcp add my-stdio-server -e API_KEY=123 /path/to/server arg1 arg2 arg3
 
-# 示例：添加一个本地 Python 服务器
+# 示例：添加本地 python 服务器
 qwen mcp add python-server python server.py --port 8080
 ```
 
 #### 添加 HTTP 服务器
 
-此传输方式适用于使用可流式 HTTP 传输的服务器。
+此传输方式用于使用可流式 HTTP 传输的服务器。
 
 ```bash
-
 # 基本语法
 qwen mcp add --transport http <name> <url>
 
-# 示例：添加一个 HTTP 服务器
+# 示例：添加 HTTP 服务器
 qwen mcp add --transport http http-server https://api.example.com/mcp/
 
-# 示例：添加一个带认证头部的 HTTP 服务器
+# 示例：添加带有认证头的 HTTP 服务器
 qwen mcp add --transport http secure-http https://api.example.com/mcp/ --header "Authorization: Bearer abc123"
 ```
 
 #### 添加 SSE 服务器
 
-此传输方式适用于使用服务器发送事件（SSE）的服务器。
+此传输方式用于使用服务器发送事件（SSE）的服务器。
 
 ```bash
-
 # 基本语法
 qwen mcp add --transport sse <name> <url>
 ```
@@ -832,13 +833,13 @@ qwen mcp add --transport sse <name> <url>
 # 示例：添加 SSE 服务器
 qwen mcp add --transport sse sse-server https://api.example.com/sse/
 
-# 示例：添加带认证头部的 SSE 服务器
+# 示例：添加带认证头的 SSE 服务器
 qwen mcp add --transport sse secure-sse https://api.example.com/sse/ --header "Authorization: Bearer abc123"
 ```
 
 ### 列出服务器 (`qwen mcp list`)
 
-要查看当前配置的所有 MCP 服务器，可以使用 `list` 命令。该命令会显示每个服务器的名称、配置详情以及连接状态。
+要查看当前配置的所有 MCP 服务器，请使用 `list` 命令。它会显示每个服务器的名称、配置详情和连接状态。
 
 **命令：**
 
@@ -849,14 +850,14 @@ qwen mcp list
 **示例输出：**
 
 ```sh
-✓ stdio-server: command: python3 server.py (stdio) - Connected
-✓ http-server: https://api.example.com/mcp (http) - Connected
-✗ sse-server: https://api.example.com/sse (sse) - Disconnected
+✓ stdio-server: command: python3 server.py (stdio) - 已连接
+✓ http-server: https://api.example.com/mcp (http) - 已连接
+✗ sse-server: https://api.example.com/sse (sse) - 已断开连接
 ```
 
 ### 删除服务器 (`qwen mcp remove`)
 
-要从配置中删除一个服务器，请使用 `remove` 命令并指定服务器名称。
+要从配置中删除服务器，请使用 `remove` 命令并指定服务器名称。
 
 **命令：**
 
@@ -870,4 +871,4 @@ qwen mcp remove <name>
 qwen mcp remove my-server
 ```
 
-该命令会根据作用域（`-s, --scope`）在相应的 `settings.json` 文件中查找并删除 `mcpServers` 对象中的 "my-server" 条目。
+这将根据作用域 (`-s, --scope`) 在相应的 `settings.json` 文件中找到并删除 `mcpServers` 对象中的 "my-server" 条目。
