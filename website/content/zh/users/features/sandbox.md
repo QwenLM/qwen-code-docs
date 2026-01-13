@@ -96,7 +96,7 @@ qwen -p "运行测试套件"
 2. **命令行标志/参数**: `-s`, `--sandbox`, 或 `--sandbox=<provider>`
 3. **设置文件**: 你 `settings.json` 中的 `tools.sandbox`（例如，`{"tools": {"sandbox": true}}`）。
 
-> [!重要]
+> [!important]
 >
 > 如果设置了 `GEMINI_SANDBOX`，它将**覆盖** CLI 标志和 `settings.json`。
 
