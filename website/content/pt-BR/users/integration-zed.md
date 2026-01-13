@@ -1,6 +1,6 @@
 # Editor Zed
 
-> O Editor Zed fornece suporte nativo para assistentes de programação com IA por meio do Agent Control Protocol (ACP). Essa integração permite que você utilize o Qwen Code diretamente na interface do Zed com sugestões de código em tempo real.
+> O Editor Zed fornece suporte nativo para assistentes de programação com IA por meio do Agent Client Protocol (ACP). Essa integração permite que você utilize o Qwen Code diretamente na interface do Zed com sugestões de código em tempo real.
 
 ![Visão Geral do Editor Zed](https://img.alicdn.com/imgextra/i1/O1CN01aAhU311GwEoNh27FP_!!6000000000686-2-tps-3024-1898.png)
 

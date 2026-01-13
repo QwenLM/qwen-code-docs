@@ -1,11 +1,11 @@
 # JetBrains IDE
 
-> JetBrains IDE 通过 Agent Control Protocol (ACP) 为 AI 编程助手提供原生支持。此集成允许你在 JetBrains IDE 中直接使用 Qwen Code，获得实时代码建议。
+> JetBrains IDE 通过 Agent Client Protocol (ACP) 为 AI 编程助手提供原生支持。此集成允许你在 JetBrains IDE 中直接使用 Qwen Code，获得实时代码建议。
 
 ### 功能特性
 
 - **原生代理体验**：在你的 JetBrains IDE 内集成的 AI 助手面板
-- **Agent Control Protocol**：完全支持 ACP，实现高级 IDE 交互
+- **Agent Client Protocol**：完全支持 ACP，实现高级 IDE 交互
 - **符号管理**：使用 #-提及文件将它们添加到对话上下文中
 - **对话历史**：在 IDE 内访问过去的对话记录
 

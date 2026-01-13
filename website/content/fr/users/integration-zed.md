@@ -1,6 +1,6 @@
 # Éditeur Zed
 
-> L'éditeur Zed fournit une prise en charge native des assistants de codage IA via le protocole Agent Control Protocol (ACP). Cette intégration vous permet d'utiliser Qwen Code directement dans l'interface de Zed avec des suggestions de code en temps réel.
+> L'éditeur Zed fournit une prise en charge native des assistants de codage IA via le protocole Agent Client Protocol (ACP). Cette intégration vous permet d'utiliser Qwen Code directement dans l'interface de Zed avec des suggestions de code en temps réel.
 
 ![Aperçu de l'éditeur Zed](https://img.alicdn.com/imgextra/i1/O1CN01aAhU311GwEoNh27FP_!!6000000000686-2-tps-3024-1898.png)
 

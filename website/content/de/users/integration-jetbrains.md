@@ -1,11 +1,11 @@
 # JetBrains IDEs
 
-> JetBrains IDEs bieten nativen Support für KI-Coding-Assistenten über das Agent Control Protocol (ACP). Diese Integration ermöglicht es Ihnen, Qwen Code direkt innerhalb Ihrer JetBrains IDE mit Echtzeit-Code-Vorschlägen zu verwenden.
+> JetBrains IDEs bieten nativen Support für KI-Coding-Assistenten über das Agent Client Protocol (ACP). Diese Integration ermöglicht es Ihnen, Qwen Code direkt innerhalb Ihrer JetBrains IDE mit Echtzeit-Code-Vorschlägen zu verwenden.
 
 ### Funktionen
 
 - **Native Agent-Erfahrung**: Integriertes KI-Assistenten-Panel innerhalb Ihrer JetBrains IDE
-- **Agent Control Protocol**: Vollständige Unterstützung für ACP zur Aktivierung erweiterter IDE-Interaktionen
+- **Agent Client Protocol**: Vollständige Unterstützung für ACP zur Aktivierung erweiterter IDE-Interaktionen
 - **Symbolverwaltung**: #-Erwähnung von Dateien, um sie zum Gesprächskontext hinzuzufügen
 - **Gesprächshistorie**: Zugriff auf vergangene Gespräche innerhalb der IDE
 
