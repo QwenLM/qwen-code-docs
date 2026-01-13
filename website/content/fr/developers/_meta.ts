@@ -7,12 +7,13 @@ export default {
   roadmap: 'Feuille de route',
   contributing: 'Guide de contribution',
   'Qwen Code SDK': {
-    title: 'Agent SDK',
+    title: 'SDK Agent',
     type: 'separator',
   },
-  'sdk-typescript': 'Typescript SDK',
+  'sdk-typescript': 'SDK Typescript',
+  'sdk-java': 'SDK Java (alpha)',
   'Dive Into Qwen Code': {
-    title: 'Plongez dans Qwen Code',
+    title: 'Approfondir Qwen Code',
     type: 'separator',
   },
 

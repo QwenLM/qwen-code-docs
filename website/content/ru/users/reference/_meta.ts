@@ -1,3 +1,3 @@
 export default {
-  'keyboard-shortcuts': 'Горячие клавиши',
+  'keyboard-shortcuts': 'Сочетания клавиш',
 };

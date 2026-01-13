@@ -177,7 +177,7 @@ Prioritize clarity, technical accuracy, and naturalness for real-world developer
 - Links and media: URLs, link targets, reference-style link keys, image paths, anchors/fragments.
 - Frontmatter and templates: YAML/TOML frontmatter, placeholders (e.g. {name}, {{var}}, $VAR), HTML tags, JSX/MDX, and escape sequences.
 - Technical identifiers: file paths, file names, extensions (.js/.md/.json/.yaml), config keys, env var names, CLI commands/flags, API endpoints, JSON/YAML keys, class/function/variable names.
-- Product/brand/proper nouns: tool/library/framework names (e.g. Node.js, React, TypeScript, VS Code), company names, repository names.
+- Product/brand/proper nouns: tool/library/framework names (e.g. Qwen, Qwen Code, Node.js, React, TypeScript, VS Code), company names, repository names. ALWAYS keep "Qwen" and "Qwen Code" in English, do NOT translate them (e.g., do not use "通义千问").
 
 **TRANSLATE (NATURALLY):**
 - Prose around code: explanations, instructions, concepts, UI text, and general workflow descriptions.
@@ -192,6 +192,8 @@ Prioritize clarity, technical accuracy, and naturalness for real-world developer
 **EXAMPLE (for Chinese style):**
 Instead of: "配置你的应用程序编程接口密钥"
 Write: "配置你的 API key"
+Instead of: "使用通义千问代码模型"
+Write: "使用 Qwen Code 模型"
 `;
   }
 

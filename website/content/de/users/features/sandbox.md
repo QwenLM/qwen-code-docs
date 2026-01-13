@@ -1,61 +1,63 @@
 # Sandbox
 
-Dieses Dokument erklärt, wie Qwen Code in einer Sandbox ausgeführt wird, um das Risiko zu reduzieren, wenn Tools Shell-Befehle ausführen oder Dateien ändern.
+Dieses Dokument erklärt, wie Qwen Code innerhalb einer Sandbox ausgeführt wird, um das Risiko zu verringern, wenn Tools Shell-Befehle ausführen oder Dateien ändern.
 
 ## Voraussetzungen
 
-Bevor Sie Sandboxing verwenden, müssen Sie Qwen Code installieren und einrichten:
+Bevor Sie die Sandboxing-Funktionalität nutzen können, müssen Sie Qwen Code installieren und einrichten:
 
 ```bash
 npm install -g @qwen-code/qwen-code
 ```
 
-Um die Installation zu überprüfen
+Zur Überprüfung der Installation
 
 ```bash
 qwen --version
 ```
 
-## Übersicht über Sandboxing
+## Übersicht über die Sandbox
 
-Sandboxing isoliert potenziell gefährliche Operationen (wie Shell-Befehle oder Dateiänderungen) von Ihrem Host-System und bietet eine Sicherheitsbarriere zwischen der CLI und Ihrer Umgebung.
+Sandboxing isoliert potenziell gefährliche Operationen (wie Shell-Befehle oder Dateiänderungen) von Ihrem Host-System und bietet so eine Sicherheitsbarriere zwischen der Befehlszeilenschnittstelle und Ihrer Umgebung.
 
-Die Vorteile von Sandboxing sind:
+Die Vorteile des Sandboxings umfassen:
 
 - **Sicherheit**: Verhindert versehentliche Systembeschädigung oder Datenverlust.
-- **Isolation**: Begrenzt den Dateisystemzugriff auf das Projektverzeichnis.
-- **Konsistenz**: Stellt reproduzierbare Umgebungen auf verschiedenen Systemen sicher.
-- **Sicherheit**: Reduziert das Risiko bei der Arbeit mit nicht vertrauenswürdigem Code oder experimentellen Befehlen.
+- **Isolation**: Beschränkt den Zugriff auf das Dateisystem auf das Projektverzeichnis.
+- **Konsistenz**: Stellt reproduzierbare Umgebungen über verschiedene Systeme hinweg sicher.
+- **Sicherheit**: Reduziert das Risiko beim Arbeiten mit nicht vertrauenswürdigen Code oder experimentellen Befehlen.
 
 > [!note]
 >
-> **Namenshinweis:** Einige sandbox-bezogene Umgebungsvariablen verwenden aus Gründen der Abwärtskompatibilität noch das Präfix `GEMINI_*`.
+> **Hinweis zur Namensgebung:** Einige sandboxespezifische Umgebungsvariablen verwenden aus Gründen der Abwärtskompatibilität noch das Präfix `GEMINI_*`.
 
-## Sandboxing-Methoden
+## Methoden zum Sandboxing
 
-Ihre ideale Methode für Sandboxing kann je nach Plattform und bevorzugter Containerlösung variieren.
+Ihre ideale Methode zum Sandboxing kann je nach Plattform und bevorzugter Containervorlösung unterschiedlich sein.
 
 ### 1. macOS Seatbelt (nur macOS)
 
-Leichtgewichtige, integrierte Sandbox mittels `sandbox-exec`.
+Leichtgewichtige, integrierte Sandbox mithilfe von `sandbox-exec`.
 
-**Standardprofil**: `permissive-open` – beschränkt Schreibzugriffe außerhalb des Projektverzeichnisses, erlaubt jedoch die meisten anderen Vorgänge und ausgehenden Netzwerkzugriff.
+**Standardprofil**: `permissive-open` – beschränkt Schreibzugriffe außerhalb des Projektverzeichnisses, erlaubt aber die meisten anderen Operationen und ausgehenden Netzwerkzugriff.
 
-**Am besten geeignet für**: Schnelle Ausführung, kein Docker erforderlich, starke Beschränkungen beim Dateischreiben.
+**Am besten geeignet für**: Schnelle Ausführung, kein Docker erforderlich, starke Absicherung für Datei-Schreibvorgänge.
 
 ### 2. Container-basiert (Docker/Podman)
 
-Plattformübergreifende Sandbox mit vollständiger Prozessisolation.
+Plattformübergreifende Sandbox mit vollständiger Prozesisolation.
 
-Standardmäßig verwendet Qwen Code ein veröffentlichtes Sandbox-Image (konfiguriert im CLI-Paket) und zieht es bei Bedarf herunter.
+Standardmäßig verwendet Qwen Code ein veröffentlichtes Sandbox-Image (in dem CLI-Paket konfiguriert) und lädt es bei Bedarf herunter.
 
-**Am besten geeignet für**: Starke Isolation auf jedem Betriebssystem, konsistente Werkzeuge innerhalb eines bekannten Images.
+Die Container-Sandbox bindet Ihren Arbeitsbereich und Ihr Verzeichnis `~/.qwen` in den Container ein, sodass Authentifizierung und Einstellungen zwischen den Läufen erhalten bleiben.
+
+**Am besten geeignet für**: Starke Isolation auf jedem Betriebssystem, konsistente Tools innerhalb eines bekannten Images.
 
 ### Auswahl einer Methode
 
 - **Unter macOS**:
-  - Verwenden Sie Seatbelt, wenn Sie eine leichtgewichtige Sandbox wünschen (empfohlen für die meisten Benutzer).
-  - Verwenden Sie Docker/Podman, wenn Sie ein vollständiges Linux-Userland benötigen (z. B. Tools, die Linux-Binärdateien erfordern).
+  - Verwenden Sie Seatbelt, wenn Sie eine leichtgewichtige Sandbox benötigen (empfohlen für die meisten Benutzer).
+  - Verwenden Sie Docker/Podman, wenn Sie eine vollständige Linux-Benutzerumgebung benötigen (z. B. Tools, die Linux-Binärdateien erfordern).
 - **Unter Linux/Windows**:
   - Verwenden Sie Docker oder Podman.
 
@@ -63,15 +65,14 @@ Standardmäßig verwendet Qwen Code ein veröffentlichtes Sandbox-Image (konfigu
 
 ```bash
 
-# Sandboxing per Kommandozeilenflag aktivieren
-qwen -s -p "analyze the code structure"
+# Aktivieren Sie die Sandbox mithilfe eines Befehlsflags
+qwen -s -p "analysiere die Code-Struktur"
 
-```markdown
-# Oder aktiviere Sandboxing für deine Shell-Sitzung (empfohlen für CI / Skripte)
-export GEMINI_SANDBOX=true   # true wählt automatisch einen Anbieter (siehe Hinweise unten)
-qwen -p "run the test suite"
+# Oder aktivieren Sie die Sandbox für Ihre Shell-Sitzung (empfohlen für CI/Scripte)
+export GEMINI_SANDBOX=true   # true wählt automatisch einen Anbieter aus (siehe Hinweise unten)
+qwen -p "führe die Testsuite aus"
 
-# Konfiguration in settings.json
+# Konfigurieren Sie in settings.json
 {
   "tools": {
     "sandbox": true
@@ -81,67 +82,66 @@ qwen -p "run the test suite"
 
 > [!tip]
 >
-> **Hinweise zur Anbieterauswahl:**
+> **Hinweise zur Auswahl des Anbieters:**
 >
-> - Auf **macOS** wählt `GEMINI_SANDBOX=true` typischerweise `sandbox-exec` (Seatbelt), falls verfügbar.
-> - Auf **Linux/Windows** benötigt `GEMINI_SANDBOX=true` installiertes `docker` oder `podman`.
-> - Um einen Anbieter zu erzwingen, setze `GEMINI_SANDBOX=docker|podman|sandbox-exec`.
+> - Unter **macOS** wählt `GEMINI_SANDBOX=true` normalerweise `sandbox-exec` (Seatbelt) aus, falls verfügbar.
+> - Unter **Linux/Windows** muss `docker` oder `podman` installiert sein, wenn `GEMINI_SANDBOX=true` verwendet wird.
+> - Um einen bestimmten Anbieter zu erzwingen, setzen Sie `GEMINI_SANDBOX=docker|podman|sandbox-exec`.
 
 ## Konfiguration
 
-### Sandboxing aktivieren (nach Priorität geordnet)
+### Aktivieren der Sandbox (in Reihenfolge der Priorität)
 
 1. **Umgebungsvariable**: `GEMINI_SANDBOX=true|false|docker|podman|sandbox-exec`
-2. **Befehlsflag / Argument**: `-s`, `--sandbox`, oder `--sandbox=<provider>`
-3. **Einstellungsdatei**: `tools.sandbox` in deiner `settings.json` (z.B. `{"tools": {"sandbox": true}}`).
+2. **Befehlsflag / Argument**: `-s`, `--sandbox` oder `--sandbox=<Anbieter>`
+3. **Einstellungsdatei**: `tools.sandbox` in Ihrer `settings.json` (z. B. `{"tools": {"sandbox": true}}`).
 
 > [!important]
 >
-> Falls `GEMINI_SANDBOX` gesetzt ist, **überschreibt** es das CLI-Flag und die `settings.json`.
-```
+> Falls `GEMINI_SANDBOX` gesetzt ist, **überschreibt** dies das CLI-Flag und die `settings.json`.
 
-### Sandbox-Image konfigurieren (Docker/Podman)
+### Konfigurieren des Sandbox-Images (Docker/Podman)
 
-- **CLI-Flag**: `--sandbox-image <image>`
-- **Umgebungsvariable**: `GEMINI_SANDBOX_IMAGE=<image>`
+- **CLI-Flag**: `--sandbox-image <Image>`
+- **Umgebungsvariable**: `GEMINI_SANDBOX_IMAGE=<Image>`
 
-Wenn Sie keines der beiden festlegen, verwendet Qwen Code das im CLI-Paket konfigurierte Standard-Image (z. B. `ghcr.io/qwenlm/qwen-code:<version>`).
+Falls Sie keines von beiden setzen, verwendet Qwen Code das Standard-Image, das im CLI-Paket konfiguriert ist (zum Beispiel `ghcr.io/qwenlm/qwen-code:<Version>`).
 
 ### macOS Seatbelt-Profile
 
-Integrierte Profile (festgelegt über die Umgebungsvariable `SEATBELT_PROFILE`):
+Eingebaute Profile (festgelegt über die Umgebungsvariable `SEATBELT_PROFILE`):
 
 - `permissive-open` (Standard): Schreibbeschränkungen, Netzwerk erlaubt
 - `permissive-closed`: Schreibbeschränkungen, kein Netzwerk
 - `permissive-proxied`: Schreibbeschränkungen, Netzwerk über Proxy
-- `restrictive-open`: Strenge Beschränkungen, Netzwerk erlaubt
+- `restrictive-open`: Strikte Beschränkungen, Netzwerk erlaubt
 - `restrictive-closed`: Maximale Beschränkungen
-- `restrictive-proxied`: Strenge Beschränkungen, Netzwerk über Proxy
+- `restrictive-proxied`: Strikte Beschränkungen, Netzwerk über Proxy
 
 > [!tip]
 >
-> Beginnen Sie mit `permissive-open` und verschärfen Sie die Einstellungen dann zu `restrictive-closed`, wenn Ihr Workflow weiterhin funktioniert.
+> Beginnen Sie mit `permissive-open` und wechseln Sie zu `restrictive-closed`, wenn Ihr Workflow weiterhin funktioniert.
 
 ### Benutzerdefinierte Seatbelt-Profile (macOS)
 
-Um ein benutzerdefiniertes Seatbelt-Profil zu verwenden:
+So verwenden Sie ein benutzerdefiniertes Seatbelt-Profil:
 
-1. Erstelle eine Datei mit dem Namen `.qwen/sandbox-macos-<profile_name>.sb` in deinem Projekt.
-2. Setze `SEATBELT_PROFILE=<profile_name>`.
+1. Erstellen Sie eine Datei mit dem Namen `.qwen/sandbox-macos-<profil_name>.sb` in Ihrem Projekt.
+2. Setzen Sie `SEATBELT_PROFILE=<profil_name>`.
 
 ### Benutzerdefinierte Sandbox-Flags
 
-Für containerbasiertes Sandboxing kannst du benutzerdefinierte Flags in den `docker`- oder `podman`-Befehl injizieren, indem du die Umgebungsvariable `SANDBOX_FLAGS` verwendest. Dies ist nützlich für erweiterte Konfigurationen, wie z. B. das Deaktivieren von Sicherheitsfunktionen für bestimmte Anwendungsfälle.
+Für containerbasiertes Sandboxing können Sie benutzerdefinierte Flags über die Umgebungsvariable `SANDBOX_FLAGS` in den Befehl `docker` oder `podman` einfügen. Dies ist nützlich für fortgeschrittene Konfigurationen, wie z.B. das Deaktivieren von Sicherheitsfunktionen für spezifische Anwendungsfälle.
 
 **Beispiel (Podman)**:
 
-Um das SELinux-Labeling für Volume-Mounts zu deaktivieren, kannst du Folgendes setzen:
+Um die SELinux-Kennzeichnung für Volume-Mounts zu deaktivieren, können Sie Folgendes festlegen:
 
 ```bash
 export SANDBOX_FLAGS="--security-opt label=disable"
 ```
 
-Mehrere Flags können als durch Leerzeichen getrennter String übergeben werden:
+Mehrere Flags können als durch Leerzeichen getrennte Zeichenkette angegeben werden:
 
 ```bash
 export SANDBOX_FLAGS="--flag1 --flag2=value"
@@ -149,52 +149,43 @@ export SANDBOX_FLAGS="--flag1 --flag2=value"
 
 ### Netzwerk-Proxying (alle Sandbox-Methoden)
 
-Wenn du den ausgehenden Netzwerkzugriff auf eine Allowlist beschränken möchtest, kannst du einen lokalen Proxy neben der Sandbox ausführen:
+Wenn Sie den ausgehenden Netzwerkzugriff auf eine Positivliste beschränken möchten, können Sie einen lokalen Proxy neben der Sandbox ausführen:
 
-- Setze `GEMINI_SANDBOX_PROXY_COMMAND=<Befehl>`
+- Setzen Sie `GEMINI_SANDBOX_PROXY_COMMAND=<Befehl>`
 - Der Befehl muss einen Proxy-Server starten, der auf `:::8877` lauscht
 
 Dies ist besonders nützlich mit `*-proxied` Seatbelt-Profilen.
 
-Ein funktionierendes Beispiel für einen Proxy im Allowlist-Stil findest du hier: [Beispielskript für Proxy](/developers/examples/proxy-script).
+Für ein funktionierendes Beispiel eines Proxy-Skripts im Positivlisten-Stil siehe: [Beispiel-Proxy-Skript](/developers/examples/proxy-script).
 
-## Umgang mit Linux UID/GID
+## Linux UID/GID-Handhabung
 
-Die Sandbox verwaltet automatisch Benutzerberechtigungen unter Linux. Überschreibe diese Berechtigungen mit:
+Unter Linux aktiviert Qwen Code standardmäßig die UID/GID-Zuordnung, sodass die Sandbox unter Ihrem Benutzer läuft (und das gemountete `~/.qwen` wiederverwendet). Überschreiben Sie dies mit:
 
 ```bash
-export SANDBOX_SET_UID_GID=true   # Erzwinge Host-UID/GID
+export SANDBOX_SET_UID_GID=true   # Erzwinge Host UID/GID
 export SANDBOX_SET_UID_GID=false  # Deaktiviere UID/GID-Zuordnung
 ```
 
-## Anpassen der Sandbox-Umgebung (Docker/Podman)
-
-Falls du zusätzliche Tools im Container benötigst (z. B. `git`, `python`, `rg`), erstelle eine eigene Dockerfile:
-
-- Pfad: `.qwen/sandbox.Dockerfile`
-- Dann ausführen mit: `BUILD_SANDBOX=1 qwen -s ...`
-
-Dies baut ein projektspezifisches Image basierend auf dem Standard-Sandbox-Image.
-
-## Fehlerbehebung
+## Problembehandlung
 
 ### Häufige Probleme
 
-**„Operation not permitted“**
+**"Operation not permitted"**
 
-- Die Operation benötigt Zugriff außerhalb der Sandbox.
-- Unter macOS Seatbelt: Versuche es mit einem weniger restriktiven `SEATBELT_PROFILE`.
-- Unter Docker/Podman: Stelle sicher, dass das Arbeitsverzeichnis gemountet ist und dein Befehl keinen Zugriff außerhalb des Projektverzeichnisses erfordert.
+- Die Operation erfordert Zugriff außerhalb der Sandbox.
+- Unter macOS Seatbelt: versuchen Sie ein weniger restriktives `SEATBELT_PROFILE`.
+- Unter Docker/Podman: stellen Sie sicher, dass der Arbeitsbereich eingebunden ist und Ihr Befehl keinen Zugriff außerhalb des Projektverzeichnisses benötigt.
 
 **Fehlende Befehle**
 
-- Container-Sandbox: Füge sie über `.qwen/sandbox.Dockerfile` oder `.qwen/sandbox.bashrc` hinzu.
-- Seatbelt: Deine Host-Binärdateien werden verwendet, aber die Sandbox könnte den Zugriff auf einige Pfade einschränken.
+- Container-Sandbox: fügen Sie diese über `.qwen/sandbox.Dockerfile` oder `.qwen/sandbox.bashrc` hinzu.
+- Seatbelt: Ihre Host-Binärdateien werden verwendet, aber die Sandbox könnte den Zugriff auf einige Pfade einschränken.
 
 **Netzwerkprobleme**
 
-- Prüfe, ob das Sandbox-Profil Netzwerkzugriff erlaubt.
-- Überprüfe die Proxy-Konfiguration.
+- Stellen Sie sicher, dass das Sandbox-Profil Netzwerkzugriff erlaubt.
+- Überprüfen Sie die Proxy-Konfiguration.
 
 ### Debug-Modus
 
@@ -202,7 +193,7 @@ Dies baut ein projektspezifisches Image basierend auf dem Standard-Sandbox-Image
 DEBUG=1 qwen -s -p "debug command"
 ```
 
-**Hinweis:** Wenn du `DEBUG=true` in der `.env`-Datei eines Projekts hast, wirkt sich dies nicht auf die CLI aus, da es automatisch ausgeschlossen wird. Verwende `.qwen/.env`-Dateien für Qwen Code-spezifische Debug-Einstellungen.
+**Hinweis:** Wenn Sie `DEBUG=true` in der `.env`-Datei eines Projekts haben, wirkt sich dies aufgrund der automatischen Ausschließung nicht auf die CLI aus. Verwenden Sie `.qwen/.env`-Dateien für Qwen Code-spezifische Debug-Einstellungen.
 
 ### Sandbox untersuchen
 
@@ -211,19 +202,19 @@ DEBUG=1 qwen -s -p "debug command"
 # Umgebung prüfen
 qwen -s -p "run shell command: env | grep SANDBOX"
 
-# Mounts auflisten
+# Einhängepunkte auflisten
 qwen -s -p "run shell command: mount | grep workspace"
 ```
 
 ## Sicherheitshinweise
 
-- Sandboxing reduziert, aber eliminiert nicht alle Risiken.
-- Verwende das restriktivste Profil, das deine Arbeit zulässt.
-- Der Container-Overhead ist nach dem ersten Pull/Build minimal.
+- Sandboxing reduziert, eliminiert aber nicht alle Risiken.
+- Verwenden Sie das restriktivste Profil, das Ihre Arbeit zulässt.
+- Der Container-Overhead ist nach dem ersten Pullen/Erstellen minimal.
 - GUI-Anwendungen funktionieren möglicherweise nicht in Sandboxes.
 
-## Zugehörige Dokumentation
+## Verwandte Dokumentation
 
-- [Konfiguration](../configuration/settings): Alle Konfigurationsoptionen.
+- [Konfiguration](../configuration/settings): Vollständige Konfigurationsoptionen.
 - [Befehle](../features/commands): Verfügbare Befehle.
 - [Fehlerbehebung](../support/troubleshooting): Allgemeine Fehlerbehebung.

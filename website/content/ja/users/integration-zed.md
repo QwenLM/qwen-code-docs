@@ -1,19 +1,19 @@
-# Zed エディタ
+# Zed Editor
 
-> Zed エディタは、Agent Control Protocol（ACP）を通じて AI コーディングアシスタントをネイティブサポートしています。この統合により、リアルタイムのコード提案を受けながら、Zed のインターフェース内で直接 Qwen Code を使用できます。
+> Zed Editor は、エージェント制御プロトコル (ACP) を通じて AI コーディングアシスタントのネイティブサポートを提供します。この統合により、Zed のインターフェース内で Qwen Code を直接使用し、リアルタイムのコード提案を利用できます。
 
-![Zed エディタ概要](https://img.alicdn.com/imgextra/i1/O1CN01aAhU311GwEoNh27FP_!!6000000000686-2-tps-3024-1898.png)
+![Zed Editor 概要](https://img.alicdn.com/imgextra/i1/O1CN01aAhU311GwEoNh27FP_!!6000000000686-2-tps-3024-1898.png)
 
 ### 機能
 
-- **ネイティブエージェント体験**：Zed のインターフェース内に統合された AI アシスタントパネル  
-- **Agent Control Protocol**：高度な IDE 連携を可能にする ACP のフルサポート  
-- **ファイル管理**：@メンションでファイルを会話コンテキストに追加可能  
-- **会話履歴**：Zed 内で過去の会話を参照可能  
+- **ネイティブエージェント体験**: Zed のインターフェース内に統合された AI アシスタントパネル
+- **エージェントクライアントプロトコル**: 高度な IDE 相互作用を可能にする ACP の完全サポート
+- **ファイル管理**: @メンションでファイルを会話コンテキストに追加
+- **会話履歴**: Zed 内で過去の会話にアクセス
 
-### 動作条件
+### 必要条件
 
-- Zed エディタ（最新バージョン推奨）  
+- Zed Editor (最新バージョン推奨)
 - Qwen Code CLI がインストールされていること
 
 ### インストール
@@ -24,15 +24,15 @@
    npm install -g qwen-code
    ```
 
-2. [Zed Editor](https://zed.dev/) をダウンロードしてインストールします。
+2. [Zed Editor](https://zed.dev/) をダウンロードしてインストールします
 
-3. Zed で右上隅の **設定ボタン** をクリックし、**「Add agent」** を選択、**「Create a custom agent」** を選び、以下の設定を追加します：
+3. Zed で右上隅の**設定ボタン**をクリックし、**「エージェントを追加」**を選択して、**「カスタムエージェントを作成」**を選択し、以下の設定を追加します：
 
 ```json
 "Qwen Code": {
   "type": "custom",
   "command": "qwen",
-  "args": ["--experimental-acp"],
+  "args": ["--acp"],
   "env": {}
 }
 ```
@@ -43,12 +43,12 @@
 
 ### エージェントが表示されない
 
-- ターミナルで `qwen --version` を実行して、インストールを確認してください。
-- JSON の設定が有効であることを確認してください。
-- Zed Editor を再起動してください。
+- ターミナルで `qwen --version` を実行して、インストールを確認してください
+- JSON 設定が有効であることを確認してください
+- Zed Editor を再起動してください
 
 ### Qwen Code が応答しない
 
-- インターネット接続を確認してください。
-- ターミナルで `qwen` を実行して CLI が動作するか確認してください。
-- 問題が解決しない場合は [GitHub に issue を作成](https://github.com/qwenlm/qwen-code/issues) してください。
+- インターネット接続を確認してください
+- ターミナルで `qwen` を実行して CLI が動作することを確認してください
+- 問題が解決しない場合は、[GitHub で問題を報告してください](https://github.com/qwenlm/qwen-code/issues)

@@ -1,5 +1,120 @@
 [
   {
+    "timestamp": "2026-01-13T13:02:18.394Z",
+    "commit": "22916457cd1f4e2f95da9fcb0aa30e74f59ba4fe",
+    "sourceLanguage": "en",
+    "translatedFiles": {
+      "zh": {
+        "success": [
+          "developers/sdk-java.md",
+          "developers/tools/sandbox.md",
+          "users/configuration/settings.md",
+          "users/features/commands.md",
+          "users/features/sandbox.md",
+          "users/features/skills.md",
+          "users/integration-jetbrains.md",
+          "users/integration-vscode.md",
+          "users/integration-zed.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "de": {
+        "success": [
+          "developers/sdk-java.md",
+          "developers/tools/sandbox.md",
+          "users/configuration/settings.md",
+          "users/features/commands.md",
+          "users/features/sandbox.md",
+          "users/features/skills.md",
+          "users/integration-jetbrains.md",
+          "users/integration-vscode.md",
+          "users/integration-zed.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "fr": {
+        "success": [
+          "developers/sdk-java.md",
+          "developers/tools/sandbox.md",
+          "users/configuration/settings.md",
+          "users/features/commands.md",
+          "users/features/sandbox.md",
+          "users/features/skills.md",
+          "users/integration-jetbrains.md",
+          "users/integration-vscode.md",
+          "users/integration-zed.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ru": {
+        "success": [
+          "developers/sdk-java.md",
+          "developers/tools/sandbox.md",
+          "users/configuration/settings.md",
+          "users/features/commands.md",
+          "users/features/sandbox.md",
+          "users/features/skills.md",
+          "users/integration-jetbrains.md",
+          "users/integration-vscode.md",
+          "users/integration-zed.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ja": {
+        "success": [
+          "developers/sdk-java.md",
+          "developers/tools/sandbox.md",
+          "users/configuration/settings.md",
+          "users/features/commands.md",
+          "users/features/sandbox.md",
+          "users/features/skills.md",
+          "users/integration-jetbrains.md",
+          "users/integration-vscode.md",
+          "users/integration-zed.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "pt-BR": {
+        "success": [
+          "developers/sdk-java.md",
+          "developers/tools/sandbox.md",
+          "users/configuration/settings.md",
+          "users/features/commands.md",
+          "users/features/sandbox.md",
+          "users/features/skills.md",
+          "users/integration-jetbrains.md",
+          "users/integration-vscode.md",
+          "users/integration-zed.md",
+          "users/overview.md",
+          "users/quickstart.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      }
+    },
+    "stats": {
+      "totalFiles": 12,
+      "languages": 6,
+      "successCount": 72,
+      "failedCount": 0
+    }
+  },
+  {
     "timestamp": "2025-12-26T15:47:05.193Z",
     "commit": "2bc807951938c68522eef878ef1bce292343b816",
     "sourceLanguage": "en",

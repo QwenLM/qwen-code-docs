@@ -1,15 +1,15 @@
 # Éditeur Zed
 
-> L'éditeur Zed prend en charge nativement les assistants de codage IA via le protocole Agent Control Protocol (ACP). Cette intégration vous permet d'utiliser Qwen Code directement dans l'interface de Zed avec des suggestions de code en temps réel.
+> L'éditeur Zed fournit une prise en charge native des assistants de codage IA via le protocole Agent Control Protocol (ACP). Cette intégration vous permet d'utiliser Qwen Code directement dans l'interface de Zed avec des suggestions de code en temps réel.
 
 ![Aperçu de l'éditeur Zed](https://img.alicdn.com/imgextra/i1/O1CN01aAhU311GwEoNh27FP_!!6000000000686-2-tps-3024-1898.png)
 
 ### Fonctionnalités
 
-- **Expérience d'agent native** : Panneau d'assistant IA intégré dans l'interface de Zed
-- **Protocole Agent Control** : Prise en charge complète de l'ACP permettant des interactions avancées avec l'IDE
-- **Gestion des fichiers** : Mentionnez des fichiers avec @ pour les ajouter au contexte de la conversation
-- **Historique des conversations** : Accès aux conversations passées depuis Zed
+- **Expérience native de l'agent** : Panneau d'assistant IA intégré dans l'interface de Zed
+- **Protocole Client Agent** : Prise en charge complète de l'ACP permettant des interactions avancées avec l'IDE
+- **Gestion des fichiers** : Mentionnez les fichiers avec @ pour les ajouter au contexte de la conversation
+- **Historique des conversations** : Accès aux conversations précédentes dans Zed
 
 ### Prérequis
 
@@ -18,7 +18,7 @@
 
 ### Installation
 
-1. Installez Qwen Code CLI :
+1. Installez le CLI Qwen Code :
 
    ```bash
    npm install -g qwen-code
@@ -26,13 +26,13 @@
 
 2. Téléchargez et installez [Zed Editor](https://zed.dev/)
 
-3. Dans Zed, cliquez sur le **bouton des paramètres** en haut à droite, sélectionnez **"Ajouter un agent"**, choisissez **"Créer un agent personnalisé"**, puis ajoutez la configuration suivante :
+3. Dans Zed, cliquez sur le **bouton des paramètres** dans le coin supérieur droit, sélectionnez **"Ajouter un agent"**, choisissez **"Créer un agent personnalisé"**, puis ajoutez la configuration suivante :
 
 ```json
 "Qwen Code": {
   "type": "custom",
   "command": "qwen",
-  "args": ["--experimental-acp"],
+  "args": ["--acp"],
   "env": {}
 }
 ```
@@ -50,5 +50,5 @@
 ### Qwen Code ne répond pas
 
 - Vérifiez votre connexion Internet
-- Testez le bon fonctionnement du CLI en exécutant `qwen` dans le terminal
+- Assurez-vous que le CLI fonctionne en exécutant `qwen` dans le terminal
 - [Signalez un problème sur GitHub](https://github.com/qwenlm/qwen-code/issues) si le problème persiste

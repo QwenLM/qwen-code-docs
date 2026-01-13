@@ -1,6 +1,6 @@
 # Démarrage rapide
 
-> 👏 Bienvenue sur Qwen Code !
+> 👏 Bienvenue dans Qwen Code !
 
 Ce guide de démarrage rapide vous permettra d'utiliser l'assistance de codage alimentée par l'IA en quelques minutes seulement. À la fin, vous comprendrez comment utiliser Qwen Code pour les tâches de développement courantes.
 
@@ -9,7 +9,7 @@ Ce guide de démarrage rapide vous permettra d'utiliser l'assistance de codage a
 Assurez-vous d'avoir :
 
 - Un **terminal** ou une invite de commande ouverte
-- Un projet de code sur lequel travailler
+- Un projet de code avec lequel travailler
 - Un compte [Qwen Code](https://chat.qwen.ai/auth?mode=register)
 
 ## Étape 1 : Installer Qwen Code
@@ -20,7 +20,7 @@ Pour installer Qwen Code, utilisez l'une des méthodes suivantes :
 
 Nécessite [Node.js 20+](https://nodejs.org/download), vous pouvez utiliser `node -v` pour vérifier la version. Si ce n'est pas installé, utilisez la commande suivante pour l'installer.
 
-Si vous avez [Node.js ou une version plus récente installée](https://nodejs.org/en/download/) :
+Si vous avez [Node.js ou une version plus récente installée](https://nodejs.org/en/download/):
 
 ```sh
 npm install -g @qwen-code/qwen-code@latest
@@ -52,7 +52,7 @@ Sélectionnez `Qwen OAuth`, connectez-vous à votre compte et suivez les invites
 
 > [!note]
 >
-> Lorsque vous authentifiez Qwen Code avec votre compte Qwen pour la première fois, un espace de travail appelé ".qwen" est automatiquement créé pour vous. Cet espace de travail fournit un suivi et une gestion centralisés des coûts pour toutes les utilisations de Qwen Code au sein de votre organisation.
+> Lorsque vous authentifiez Qwen Code pour la première fois avec votre compte Qwen, un espace de travail appelé ".qwen" est automatiquement créé pour vous. Cet espace de travail fournit un suivi centralisé des coûts et une gestion de toutes les utilisations de Qwen Code dans votre organisation.
 
 > [!tip]
 >
@@ -60,14 +60,14 @@ Sélectionnez `Qwen OAuth`, connectez-vous à votre compte et suivez les invites
 
 ## Étape 3 : Démarrez votre première session
 
-Ouvrez votre terminal dans n'importe quel répertoire de projet et démarrez Qwen Code :
+Ouvrez votre terminal dans n'importe quel répertoire de projet et lancez Qwen Code :
 
 ```bash
 
 # optionnel
 cd /chemin/vers/votre/projet
 
-# Démarrer qwen
+# démarrer qwen
 qwen
 ```
 
@@ -75,27 +75,27 @@ Vous verrez l'écran d'accueil de Qwen Code avec les informations de votre sessi
 
 ## Discuter avec Qwen Code
 
-### Poser votre première question
+### Posez votre première question
 
 Qwen Code analysera vos fichiers et fournira un résumé. Vous pouvez également poser des questions plus spécifiques :
 
 ```
-explain the folder structure
+expliquer la structure du dossier
 ```
 
-Vous pouvez aussi interroger Qwen Code sur ses propres capacités :
+Vous pouvez également demander à Qwen Code ses propres capacités :
 
 ```
-what can Qwen Code do?
+que peut faire Qwen Code ?
 ```
 
 > [!note]
 >
-> Qwen Code lit vos fichiers lorsque nécessaire - vous n'avez pas besoin d'ajouter manuellement le contexte. Qwen Code a également accès à sa propre documentation et peut répondre aux questions concernant ses fonctionnalités et ses capacités.
+> Qwen Code lit vos fichiers selon les besoins - vous n'avez pas à ajouter manuellement le contexte. Qwen Code a également accès à sa propre documentation et peut répondre aux questions concernant ses fonctionnalités et capacités.
 
-### Effectuez votre première modification de code
+### Faites votre première modification de code
 
-Maintenant, faisons en sorte que Qwen Code effectue un peu de vraie programmation. Essayez une tâche simple :
+Maintenant, faisons en sorte que Qwen Code effectue du codage réel. Essayez une tâche simple :
 
 ```
 ajouter une fonction hello world au fichier principal
@@ -110,7 +110,7 @@ Qwen Code va :
 
 > [!note]
 >
-> Qwen Code demande toujours l'autorisation avant de modifier des fichiers. Vous pouvez approuver chaque modification individuellement ou activer le mode « Accepter tout » pour une session.
+> Qwen Code demande toujours la permission avant de modifier des fichiers. Vous pouvez approuver les modifications individuellement ou activer le mode "Tout accepter" pour une session.
 
 ### Utiliser Git avec Qwen Code
 
@@ -131,27 +131,27 @@ créer une nouvelle branche appelée feature/quickstart
 ```
 
 ```
-afficher les 5 derniers commits
+montrer les 5 derniers commits
 ```
 
 ```
 m'aider à résoudre les conflits de fusion
 ```
 
-### Corriger un bug ou ajouter une fonctionnalité
+### Corriger un bogue ou ajouter une fonctionnalité
 
-Qwen Code est compétent pour le débogage et l'implémentation de fonctionnalités.
+Qwen Code excelle dans le débogage et l'implémentation de fonctionnalités.
 
 Décrivez ce que vous souhaitez en langage naturel :
 
 ```
-ajouter la validation des entrées au formulaire d'inscription utilisateur
+ajouter la validation des entrées au formulaire d'inscription des utilisateurs
 ```
 
 Ou corrigez les problèmes existants :
 
 ```
-il y a un bug où les utilisateurs peuvent soumettre des formulaires vides - corrigez-le
+il y a un bogue qui permet aux utilisateurs de soumettre des formulaires vides - corrigez-le
 ```
 
 Qwen Code va :
@@ -161,14 +161,14 @@ Qwen Code va :
 - Implémenter une solution
 - Exécuter les tests si disponibles
 
-### Tester d'autres workflows courants
+### Essayez d'autres flux de travail courants
 
-Il existe plusieurs façons de travailler avec Claude :
+Il existe plusieurs façons de travailler avec Qwen Code :
 
-**Refactorer du code**
+**Remanier le code**
 
 ```
-refactoriser le module d'authentification pour utiliser async/await au lieu de callbacks
+remodeler le module d'authentification pour utiliser async/await au lieu des callbacks
 ```
 
 **Écrire des tests**
@@ -186,47 +186,47 @@ mettre à jour le README avec les instructions d'installation
 **Revue de code**
 
 ```
-revoir mes modifications et suggérer des améliorations
+examiner mes modifications et suggérer des améliorations
 ```
 
 > [!tip]
 >
-> **Rappelez-vous** : Qwen Code est votre programmeur en binôme IA. Parlez-lui comme vous le feriez avec un collègue serviable – décrivez ce que vous souhaitez accomplir, et il vous aidera à y parvenir.
+> **Rappelez-vous** : Qwen Code est votre programmeur partenaire IA. Parlez-lui comme vous le feriez avec un collègue utile : décrivez ce que vous souhaitez accomplir, et il vous aidera à y parvenir.
 
 ## Commandes essentielles
 
 Voici les commandes les plus importantes pour une utilisation quotidienne :
 
-| Commande              | Description                                      | Exemple                       |
+| Commande              | Fonction                                         | Exemple                       |
 | --------------------- | ------------------------------------------------ | ----------------------------- |
-| `qwen`                | Démarrer Qwen Code                               | `qwen`                        |
+| `qwen`                | lance Qwen Code                                  | `qwen`                        |
 | `/auth`               | Changer la méthode d'authentification            | `/auth`                       |
-| `/help`               | Afficher l'aide sur les commandes disponibles    | `/help` ou `/?`               |
-| `/compress`           | Remplacer l'historique par un résumé pour économiser des Tokens | `/compress`                   |
+| `/help`               | Afficher les informations d'aide pour les commandes disponibles | `/help` ou `/?`               |
+| `/compress`           | Remplacer l'historique de discussion par un résumé pour économiser des jetons | `/compress`                   |
 | `/clear`              | Effacer le contenu de l'écran du terminal        | `/clear` (raccourci : `Ctrl+L`) |
 | `/theme`              | Changer le thème visuel de Qwen Code             | `/theme`                      |
-| `/language`           | Voir ou modifier les paramètres linguistiques    | `/language`                   |
-| → `ui [language]`     | Définir la langue de l'interface utilisateur     | `/language ui zh-CN`          |
-| → `output [language]` | Définir la langue de sortie du LLM               | `/language output Chinese`    |
-| `/quit`               | Quitter immédiatement Qwen Code                  | `/quit` ou `/exit`            |
+| `/language`           | Afficher ou modifier les paramètres de langue    | `/language`                   |
+| → `ui [language]`     | Définir la langue de l'interface utilisateur     | `/language ui fr-FR`          |
+| → `output [language]` | Définir la langue de sortie du modèle LLM        | `/language output French`     |
+| `/quit`               | Quitter Qwen Code immédiatement                  | `/quit` ou `/exit`            |
 
 Consultez la [référence CLI](./features/commands) pour obtenir la liste complète des commandes.
 
-## Conseils pour les débutants
+## Conseils professionnels pour les débutants
 
 **Soyez précis dans vos demandes**
 
-- Au lieu de : « corrige le bug »
-- Essayez : « corrige le bug de connexion où les utilisateurs voient un écran vide après avoir saisi des identifiants incorrects »
+- Au lieu de : "corrige le bogue"
+- Essayez : "corrige le bogue de connexion où les utilisateurs voient un écran vide après avoir saisi des identifiants incorrects"
 
-**Utilisez des instructions pas à pas**
+**Utilisez des instructions étape par étape**
 
-- Découpez les tâches complexes en étapes :
+- Divisez les tâches complexes en étapes :
 
 ```
 1. créer une nouvelle table de base de données pour les profils utilisateur
-2. créer un point de terminaison API pour récupérer et mettre à jour les profils utilisateur
-3. construire une page web permettant aux utilisateurs de consulter et modifier leurs informations
+2. créer un point de terminaison API pour obtenir et mettre à jour les profils utilisateur
+3. créer une page web permettant aux utilisateurs de voir et modifier leurs informations
 ```
 
 **Laissez Qwen Code explorer en premier**
@@ -238,10 +238,10 @@ analyser le schéma de la base de données
 ```
 
 ```
-construire un tableau de bord affichant les produits les plus souvent retournés par nos clients du Royaume-Uni
+créer un tableau de bord montrant les produits les plus fréquemment retournés par nos clients britanniques
 ```
 
-**Gagnez du temps avec des raccourcis**
+**Gagnez du temps avec les raccourcis**
 
 - Appuyez sur `?` pour voir tous les raccourcis clavier disponibles
 - Utilisez Tab pour la complétion des commandes
@@ -250,6 +250,6 @@ construire un tableau de bord affichant les produits les plus souvent retournés
 
 ## Obtenir de l'aide
 
-- **Dans Qwen Code** : Tapez `/help` ou demandez « comment faire pour... »
+- **Dans Qwen Code** : Tapez `/help` ou demandez "comment faire..."
 - **Documentation** : Vous êtes ici ! Parcourez les autres guides
-- **Communauté** : Rejoignez notre [discussion GitHub](https://github.com/QwenLM/qwen-code/discussions) pour des conseils et du support
+- **Communauté** : Rejoignez notre [Discussion GitHub](https://github.com/QwenLM/qwen-code/discussions) pour obtenir des conseils et du soutien

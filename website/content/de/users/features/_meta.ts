@@ -1,6 +1,7 @@
 export default {
   commands: 'Befehle',
-  'sub-agents': 'SubAgents',
+  'sub-agents': 'Unteragenten',
+  skills: 'Fähigkeiten (Experimentell)',
   headless: 'Kopfloser Modus',
   checkpointing: {
     display: 'hidden',
@@ -9,4 +10,5 @@ export default {
   mcp: 'MCP',
   'token-caching': 'Token-Caching',
   sandbox: 'Sandboxing',
+  language: 'i18n',
 };

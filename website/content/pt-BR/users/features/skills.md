@@ -1,72 +1,80 @@
-# Habilidades do Agente (Experimental)
+# Habilidades de Agente (Experimental)
 
 > Crie, gerencie e compartilhe Habilidades para estender as capacidades do Qwen Code.
 
-Este guia mostra como criar, usar e gerenciar Habilidades do Agente no **Qwen Code**. Habilidades são capacidades modulares que estendem a eficácia do modelo através de pastas organizadas contendo instruções (e opcionalmente scripts/recursos).
+Este guia mostra como criar, usar e gerenciar Habilidades de Agente no **Qwen Code**. As habilidades são capacidades modulares que estendem a eficácia do modelo por meio de pastas organizadas contendo instruções (e opcionalmente scripts/recursos).
 
 > [!note]
 >
-> Habilidades estão atualmente **experimentais** e devem ser habilitadas com `--experimental-skills`.
+> As habilidades estão atualmente em **fase experimental** e devem ser ativadas com `--experimental-skills`.
 
 ## Pré-requisitos
 
 - Qwen Code (versão recente)
-- Executar com a flag experimental habilitada:
+- Executar com o sinalizador experimental ativado:
 
 ```bash
 qwen --experimental-skills
 ```
 
-- Familiaridade básica com Qwen Code ([Início Rápido](../quickstart.md))
+- Familiaridade básica com o Qwen Code ([Início Rápido](../quickstart.md))
 
-## O que são Habilidades do Agente?
+## O que são Habilidades de Agente?
 
-Habilidades do Agente empacotam expertise em capacidades descobríveis. Cada Habilidade consiste em um arquivo `SKILL.md` com instruções que o modelo pode carregar quando relevante, além de arquivos de suporte opcionais como scripts e modelos.
+As Habilidades de Agente empacotam especialização em capacidades descobríveis. Cada habilidade consiste em um arquivo `SKILL.md` com instruções que o modelo pode carregar quando relevante, além de arquivos de suporte opcionais, como scripts e modelos.
 
 ### Como as Skills são invocadas
 
 As Skills são **invocadas pelo modelo** — o modelo decide autonomamente quando usá-las com base em sua solicitação e na descrição da Skill. Isso é diferente dos comandos de barra, que são **invocados pelo usuário** (você digita explicitamente `/comando`).
 
+Se quiser invocar uma Skill explicitamente, utilize o comando de barra `/skills`:
+
+```bash
+/skills <nome-da-skill>
+```
+
+O comando `/skills` só está disponível quando você executa com `--experimental-skills`. Utilize o preenchimento automático para navegar pelas Skills disponíveis e suas descrições.
+
 ### Benefícios
 
 - Estenda o Qwen Code para seus fluxos de trabalho
-- Compartilhe expertise entre sua equipe via git
+- Compartilhe conhecimento especializado entre sua equipe via git
 - Reduza prompts repetitivos
-- Componha múltiplas Skills para tarefas complexas
+- Combine múltiplas Skills para tarefas complexas
 
-## Crie uma Skill
+## Criar uma Skill
 
 As Skills são armazenadas como diretórios contendo um arquivo `SKILL.md`.
 
-### Skills Pessoais
+### Habilidades Pessoais
 
-As Skills Pessoais estão disponíveis em todos os seus projetos. Armazene-as em `~/.qwen/skills/`:
+Habilidades Pessoais estão disponíveis em todos os seus projetos. Armazene-as em `~/.qwen/skills/`:
 
 ```bash
-mkdir -p ~/.qwen/skills/nome-da-minha-skill
+mkdir -p ~/.qwen/skills/nome-da-minha-habilidade
 ```
 
-Use Skills Pessoais para:
+Use habilidades pessoais para:
 
 - Seus fluxos de trabalho e preferências individuais
-- Skills experimentais que você está desenvolvendo
-- Ajudantes de produtividade pessoal
+- Habilidades experimentais que você está desenvolvendo
+- Ajudantes pessoais de produtividade
 
-### Habilidades do Projeto
+### Habilidades de Projeto
 
-As Habilidades do Projeto são compartilhadas com sua equipe. Armazene-as em `.qwen/skills/` dentro do seu projeto:
+Habilidades de Projeto são compartilhadas com sua equipe. Armazene-as em `.qwen/skills/` dentro do seu projeto:
 
 ```bash
 mkdir -p .qwen/skills/nome-da-minha-habilidade
 ```
 
-Use Habilidades do Projeto para:
+Use habilidades de projeto para:
 
 - Fluxos de trabalho e convenções da equipe
 - Especialização específica do projeto
 - Utilitários e scripts compartilhados
 
-As Habilidades do Projeto podem ser adicionadas ao git e automaticamente ficar disponíveis para os colegas de equipe.
+Habilidades de Projeto podem ser adicionadas ao git e automaticamente ficam disponíveis para colegas de equipe.
 
 ## Escreva `SKILL.md`
 
@@ -82,14 +90,15 @@ description: Breve descrição do que esta Habilidade faz e quando usá-la
 
 ## Instruções
 Forneça orientações claras, passo a passo, para o Qwen Code.
-
-## Exemplos
-Mostre exemplos concretos de uso desta Habilidade.
 ```
 
-### Requisitos de campo
+## Exemplos
+Mostre exemplos concretos de uso desta Skill.
+```
 
-O Qwen Code atualmente valida que:
+### Requisitos dos campos
+
+Atualmente, o Qwen Code valida que:
 
 - `name` é uma string não vazia
 - `description` é uma string não vazia
@@ -97,14 +106,14 @@ O Qwen Code atualmente valida que:
 Convenções recomendadas (ainda não aplicadas rigorosamente):
 
 - Use letras minúsculas, números e hífens em `name`
-- Torne `description` específica: inclua **o que** a Skill faz e **quando** usá-la (palavras-chave que os usuários mencionarão naturalmente)
+- Torne `description` específica: inclua tanto **o que** a Skill faz quanto **quando** usá-la (palavras-chave que os usuários mencionarão naturalmente)
 
 ## Adicionar arquivos de suporte
 
 Crie arquivos adicionais ao lado de `SKILL.md`:
 
 ```text
-my-skill/
+minha-skill/
 ├── SKILL.md (obrigatório)
 ├── reference.md (documentação opcional)
 ├── examples.md (exemplos opcionais)
@@ -117,7 +126,7 @@ my-skill/
 Referencie esses arquivos a partir de `SKILL.md`:
 
 ````markdown
-Para uso avançado, veja [reference.md](reference.md).
+Para uso avançado, consulte [reference.md](reference.md).
 
 Execute o script auxiliar:
 
@@ -199,7 +208,7 @@ ls .qwen/skills/minha-habilidade/SKILL.md
 
 ### Verifique a sintaxe YAML
 
-YAML inválido impede o carregamento correto dos metadados da Skill.
+YAML inválido impede que os metadados da Habilidade sejam carregados corretamente.
 
 ```bash
 cat SKILL.md | head -n 15
@@ -209,11 +218,11 @@ Certifique-se de que:
 
 - Abertura `---` na linha 1
 - Fechamento `---` antes do conteúdo Markdown
-- Sintaxe YAML válida (sem tabs, indentação correta)
+- Sintaxe YAML válida (sem tabulações, indentação correta)
 
 ### Visualizar erros
 
-Execute o Qwen Code em modo debug para ver os erros de carregamento da Skill:
+Execute o Qwen Code em modo debug para ver os erros de carregamento da Habilidade:
 
 ```bash
 qwen --experimental-skills --debug
@@ -235,15 +244,15 @@ git push
 
 ## Atualizar uma Skill
 
-Edite `SKILL.md` diretamente:
+Edite o arquivo `SKILL.md` diretamente:
 
 ```bash
 
 # Skill pessoal
-code ~/.qwen/skills/my-skill/SKILL.md
+code ~/.qwen/skills/minha-skill/SKILL.md
 
 # Skill de projeto
-code .qwen/skills/my-skill/SKILL.md
+code .qwen/skills/minha-skill/SKILL.md
 ```
 
 As alterações entram em vigor na próxima vez que você iniciar o Qwen Code. Se o Qwen Code já estiver em execução, reinicie-o para carregar as atualizações.
@@ -255,10 +264,10 @@ Exclua o diretório da Skill:
 ```bash
 
 # Pessoal
-rm -rf ~/.qwen/skills/my-skill
+rm -rf ~/.qwen/skills/minha-skill
 
 # Projeto
-rm -rf .qwen/skills/my-skill
+rm -rf .qwen/skills/minha-skill
 git commit -m "Remove Skill não utilizada"
 ```
 
@@ -268,19 +277,19 @@ git commit -m "Remove Skill não utilizada"
 
 Uma Skill deve abordar uma única capacidade:
 
-- Focada: "preenchimento de formulários PDF", "análise de Excel", "mensagens de commit do Git"
+- Focada: "preenchimento de formulários PDF", "análise de Excel", "mensagens de commit Git"
 - Muito ampla: "processamento de documentos" (divida em Skills menores)
 
 ### Escreva descrições claras
 
-Ajude o modelo a descobrir quando usar as Skills incluindo gatilhos específicos:
+Ajude o modelo a descobrir quando usar as Habilidades incluindo gatilhos específicos:
 
 ```yaml
-description: Analisar planilhas do Excel, criar tabelas dinâmicas e gerar gráficos. Use ao trabalhar com arquivos do Excel, planilhas ou dados .xlsx.
+description: Analise planilhas do Excel, crie tabelas dinâmicas e gere gráficos. Use ao trabalhar com arquivos do Excel, planilhas ou dados em formato .xlsx.
 ```
 
 ### Teste com sua equipe
 
-- A Skill ativa quando esperado?
+- A Habilidade é ativada conforme o esperado?
 - As instruções estão claras?
-- Existem exemplos faltando ou casos de borda?
+- Há exemplos faltando ou casos especiais não cobertos?
