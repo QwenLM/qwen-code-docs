@@ -5,10 +5,10 @@ export default {
   },
   users: {
     type: 'page',
-    title: 'Guide utilisateur',
+    title: 'Guide de l’utilisateur',
   },
   developers: {
     type: 'page',
-    title: 'Guide développeur',
+    title: 'Guide du développeur',
   },
 };

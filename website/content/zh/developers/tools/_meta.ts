@@ -6,8 +6,9 @@ export default {
   'todo-write': '待办写入',
   task: '任务',
   'exit-plan-mode': '退出计划模式',
-  'web-fetch': '网络获取',
-  'web-search': '网络搜索',
-  memory: '内存',
+  'web-fetch': '网页获取',
+  'web-search': '网页搜索',
+  memory: '记忆',
   'mcp-server': 'MCP 服务器',
+  sandbox: '沙箱',
 };

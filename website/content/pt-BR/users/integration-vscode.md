@@ -1,6 +1,6 @@
 # Visual Studio Code
 
-> A extensão do VS Code (Beta) permite que você veja as alterações do Qwen em tempo real por meio de uma interface gráfica nativa integrada diretamente ao seu IDE, facilitando o acesso e a interação com o Qwen Code.
+> A extensão do VS Code (Beta) permite visualizar as alterações do Qwen em tempo real através de uma interface gráfica nativa integrada diretamente ao seu IDE, facilitando o acesso e a interação com o Qwen Code.
 
 <br/>
 
@@ -10,15 +10,15 @@
 
 ### Recursos
 
-- **Experiência nativa do IDE**: Painel da barra lateral dedicado ao Qwen Code acessado pelo ícone do Qwen
-- **Modo de aceitação automática de edições**: Aplica automaticamente as alterações feitas pelo Qwen conforme elas são realizadas
-- **Gerenciamento de arquivos**: Menção a arquivos com @ ou anexar arquivos e imagens usando o seletor de arquivos do sistema
+- **Experiência nativa no IDE**: Painel lateral dedicado ao Qwen Code acessado através do ícone do Qwen
+- **Modo de aceitação automática de edições**: Aplica automaticamente as alterações do Qwen conforme são feitas
+- **Gerenciamento de arquivos**: Mencione arquivos com @ ou anexe arquivos e imagens usando o seletor de arquivos do sistema
 - **Histórico de conversas**: Acesso às conversas anteriores
-- **Múltiplas sessões**: Executar várias sessões do Qwen Code simultaneamente
+- **Múltiplas sessões**: Execute várias sessões do Qwen Code simultaneamente
 
 ### Requisitos
 
-- VS Code 1.98.0 ou superior
+- VS Code 1.85.0 ou superior
 
 ### Instalação
 
@@ -28,17 +28,17 @@
    npm install -g qwen-code
    ```
 
-2. Baixe e instale a extensão no [Visual Studio Code Extension Marketplace](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion).
+2. Baixe e instale a extensão a partir do [Marketplace de Extensões do Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion).
 
 ## Solução de Problemas
 
-### Extensão não está sendo instalada
+### Extensão não está instalando
 
-- Certifique-se de que você tem o VS Code 1.98.0 ou superior
-- Verifique se o VS Code tem permissão para instalar extensões
-- Tente instalar diretamente do site do Marketplace
+- Verifique se você tem o VS Code 1.85.0 ou superior
+- Confirme que o VS Code tem permissão para instalar extensões
+- Tente instalar diretamente pelo site do Marketplace
 
-### Qwen Code não está respondendo
+### O Qwen Code não está respondendo
 
 - Verifique sua conexão com a internet
 - Inicie uma nova conversa para ver se o problema persiste

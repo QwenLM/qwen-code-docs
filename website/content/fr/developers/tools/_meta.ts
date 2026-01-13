@@ -10,4 +10,5 @@ export default {
   'web-search': 'Recherche web',
   memory: 'Mémoire',
   'mcp-server': 'Serveurs MCP',
+  sandbox: 'Isolation',
 };

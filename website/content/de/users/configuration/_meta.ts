@@ -4,7 +4,7 @@ export default {
   memory: {
     display: 'hidden',
   },
-  'qwen-ignore': 'Ignorierte Dateien',
+  'qwen-ignore': 'Dateien ignorieren',
   'trusted-folders': 'Vertrauenswürdige Ordner',
   themes: 'Designs',
 };

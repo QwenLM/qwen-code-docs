@@ -1,4 +1,4 @@
 export default {
-  'ide-integration': '简介',
+  'ide-integration': '介绍',
   'ide-companion-spec': 'IDE 配套规范',
 };
