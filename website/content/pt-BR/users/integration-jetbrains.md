@@ -24,7 +24,7 @@
 
 2. Abra seu IDE JetBrains e navegue até a janela de ferramenta do AI Chat.
 
-3. Clique no menu com 3 pontos no canto superior direito e selecione **Configure ACP Agent** e configure o Qwen Code com as seguintes configurações:
+3. Clique no menu com 3 pontos no canto superior direito e selecione **Configure ACP Agent**, e configure o Qwen Code com as seguintes configurações:
 
 ```json
 {
@@ -38,7 +38,7 @@
 }
 ```
 
-4. O agente Qwen Code agora deve estar disponível no painel do AI Assistant
+4. O agente Qwen Code agora deve estar disponível no painel do Assistente de IA
 
 ![Qwen Code no AI Chat do JetBrains](https://img.alicdn.com/imgextra/i3/O1CN01ZxYel21y433Ci6eg0_!!6000000006524-2-tps-2774-1494.png)
 
@@ -50,7 +50,7 @@
 - Verifique se sua versão do IDE JetBrains suporta ACP
 - Reinicie seu IDE JetBrains
 
-### Qwen Code não responde
+### Qwen Code não está respondendo
 
 - Verifique sua conexão com a internet
 - Verifique se o CLI funciona executando `qwen` no terminal

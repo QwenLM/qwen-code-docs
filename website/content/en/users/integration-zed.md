@@ -20,9 +20,9 @@
 
 1. Install Qwen Code CLI:
 
-   ```bash
-   npm install -g qwen-code
-   ```
+```bash
+npm install -g @qwen-code/qwen-code
+```
 
 2. Download and install [Zed Editor](https://zed.dev/)
 

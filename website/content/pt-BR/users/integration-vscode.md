@@ -1,6 +1,6 @@
 # Visual Studio Code
 
-> A extensão do VS Code (Beta) permite visualizar as alterações do Qwen em tempo real através de uma interface gráfica nativa integrada diretamente ao seu IDE, facilitando o acesso e a interação com o Qwen Code.
+> A extensão do VS Code (Beta) permite visualizar as alterações do Qwen em tempo real por meio de uma interface gráfica nativa integrada diretamente ao seu IDE, facilitando o acesso e a interação com o Qwen Code.
 
 <br/>
 
@@ -22,13 +22,7 @@
 
 ### Instalação
 
-1. Instale o Qwen Code CLI:
-
-   ```bash
-   npm install -g qwen-code
-   ```
-
-2. Baixe e instale a extensão a partir do [Marketplace de Extensões do Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion).
+Baixe e instale a extensão a partir do [Marketplace de Extensões do Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion).
 
 ## Solução de Problemas
 
