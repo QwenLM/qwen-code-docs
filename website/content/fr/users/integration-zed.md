@@ -7,9 +7,9 @@
 ### Fonctionnalités
 
 - **Expérience native de l'agent** : Panneau d'assistant IA intégré dans l'interface de Zed
-- **Protocole Client Agent** : Prise en charge complète de l'ACP permettant des interactions avancées avec l'IDE
+- **Protocole Agent Client Protocol** : Prise en charge complète d'ACP permettant des interactions avancées avec l'IDE
 - **Gestion des fichiers** : Mentionnez les fichiers avec @ pour les ajouter au contexte de la conversation
-- **Historique des conversations** : Accès aux conversations précédentes dans Zed
+- **Historique des conversations** : Accès aux conversations passées dans Zed
 
 ### Prérequis
 
@@ -20,9 +20,9 @@
 
 1. Installez le CLI Qwen Code :
 
-   ```bash
-   npm install -g qwen-code
-   ```
+```bash
+npm install -g @qwen-code/qwen-code
+```
 
 2. Téléchargez et installez [Zed Editor](https://zed.dev/)
 
@@ -37,7 +37,7 @@
 }
 ```
 
-![Intégration de Qwen Code](https://img.alicdn.com/imgextra/i1/O1CN013s61L91dSE1J7MTgO_!!6000000003734-2-tps-2592-1234.png)
+![Intégration Qwen Code](https://img.alicdn.com/imgextra/i1/O1CN013s61L91dSE1J7MTgO_!!6000000003734-2-tps-2592-1234.png)
 
 ## Dépannage
 

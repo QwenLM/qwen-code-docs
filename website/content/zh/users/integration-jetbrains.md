@@ -1,6 +1,6 @@
 # JetBrains IDE
 
-> JetBrains IDE 通过 Agent Client Protocol (ACP) 为 AI 编程助手提供原生支持。此集成允许你在 JetBrains IDE 中直接使用 Qwen Code，获得实时代码建议。
+> JetBrains IDE 通过 Agent Client Protocol (ACP) 为 AI 编码助手提供原生支持。此集成允许你在 JetBrains IDE 中直接使用 Qwen Code，获得实时代码建议。
 
 ### 功能特性
 
@@ -53,5 +53,5 @@
 ### Qwen Code 无响应
 
 - 检查你的网络连接
-- 通过在终端中运行 `qwen` 来验证 CLI 是否正常工作
-- 如果问题仍然存在，请[在 GitHub 上提交问题](https://github.com/qwenlm/qwen-code/issues)
+- 在终端中运行 `qwen` 验证 CLI 是否正常工作
+- 如果问题仍然存在，[在 GitHub 上提交问题](https://github.com/qwenlm/qwen-code/issues)

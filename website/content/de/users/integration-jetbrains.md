@@ -16,15 +16,15 @@
 
 ### Installation
 
-1. Installieren Sie die Qwen Code CLI:
+1. Installiere die Qwen Code CLI:
 
    ```bash
    npm install -g @qwen-code/qwen-code
    ```
 
-2. Öffnen Sie Ihre JetBrains IDE und navigieren Sie zum AI Chat-Tool-Fenster.
+2. Öffne deine JetBrains IDE und navigiere zum AI Chat-Tool-Fenster.
 
-3. Klicken Sie auf das 3-Punkte-Menü in der oberen rechten Ecke und wählen Sie **Configure ACP Agent**, um Qwen Code mit den folgenden Einstellungen zu konfigurieren:
+3. Klicke auf das 3-Punkte-Menü in der oberen rechten Ecke und wähle **Configure ACP Agent**, um Qwen Code mit den folgenden Einstellungen zu konfigurieren:
 
 ```json
 {
@@ -38,7 +38,7 @@
 }
 ```
 
-4. Der Qwen Code-Agent sollte nun im AI Assistant-Bereich verfügbar sein
+4. Der Qwen Code-Agent sollte nun im AI Assistant-Panel verfügbar sein
 
 ![Qwen Code in JetBrains AI Chat](https://img.alicdn.com/imgextra/i3/O1CN01ZxYel21y433Ci6eg0_!!6000000006524-2-tps-2774-1494.png)
 
@@ -46,12 +46,12 @@
 
 ### Agent erscheint nicht
 
-- Führen Sie `qwen --version` in der Konsole aus, um die Installation zu überprüfen
-- Stellen Sie sicher, dass Ihre JetBrains IDE-Version ACP unterstützt
-- Starten Sie Ihre JetBrains IDE neu
+- Führe `qwen --version` im Terminal aus, um die Installation zu überprüfen
+- Stelle sicher, dass deine JetBrains IDE-Version ACP unterstützt
+- Starte deine JetBrains IDE neu
 
 ### Qwen Code antwortet nicht
 
 - Überprüfen Sie Ihre Internetverbindung
-- Stellen Sie sicher, dass die CLI funktioniert, indem Sie `qwen` in der Konsole ausführen
+- Stellen Sie sicher, dass die CLI funktioniert, indem Sie `qwen` im Terminal ausführen
 - [Melden Sie ein Problem auf GitHub](https://github.com/qwenlm/qwen-code/issues), wenn das Problem weiterhin besteht
