@@ -11,86 +11,102 @@ Este guia mostra como criar, usar e gerenciar Habilidades de Agente no **Qwen Co
 ## Pré-requisitos
 
 - Qwen Code (versão recente)
-- Executar com o sinalizador experimental ativado:
+
+## Como ativar
+
+### Via flag de CLI
 
 ```bash
 qwen --experimental-skills
 ```
 
-- Familiaridade básica com o Qwen Code ([Início Rápido](../quickstart.md))
+### Via settings.json
+
+Adicione ao seu `~/.qwen/settings.json` ou ao `.qwen/settings.json` do projeto:
+
+```json
+{
+  "tools": {
+    "experimental": {
+      "skills": true
+    }
+  }
+}
+```
+
+- Familiaridade básica com Qwen Code ([Início Rápido](../quickstart.md))
 
 ## O que são Habilidades de Agente?
 
-As Habilidades de Agente empacotam especialização em capacidades descobríveis. Cada habilidade consiste em um arquivo `SKILL.md` com instruções que o modelo pode carregar quando relevante, além de arquivos de suporte opcionais, como scripts e modelos.
+As Habilidades de Agente empacotam especializações em capacidades descobríveis. Cada Habilidade consiste em um arquivo `SKILL.md` com instruções que o modelo pode carregar quando relevante, além de arquivos opcionais de suporte, como scripts e modelos.
 
-### Como as Skills são invocadas
+### Como as Habilidades são invocadas
 
-As Skills são **invocadas pelo modelo** — o modelo decide autonomamente quando usá-las com base em sua solicitação e na descrição da Skill. Isso é diferente dos comandos de barra, que são **invocados pelo usuário** (você digita explicitamente `/comando`).
+As Habilidades são **invocadas pelo modelo** — o modelo decide autonomamente quando usá-las com base na sua solicitação e na descrição da Habilidade. Isso difere dos comandos com barra ("/"), que são **invocados pelo usuário** (você digita explicitamente `/comando`).
 
-Se quiser invocar uma Skill explicitamente, utilize o comando de barra `/skills`:
+Se quiser invocar uma Habilidade explicitamente, utilize o comando com barra `/skills`:
 
 ```bash
-/skills <nome-da-skill>
+/skills <nome-da-habilidade>
 ```
 
-O comando `/skills` só está disponível quando você executa com `--experimental-skills`. Utilize o preenchimento automático para navegar pelas Skills disponíveis e suas descrições.
+O comando `/skills` só está disponível quando você executa com `--experimental-skills`. Utilize o preenchimento automático para navegar pelas Habilidades e descrições disponíveis.
 
 ### Benefícios
 
 - Estenda o Qwen Code para seus fluxos de trabalho
-- Compartilhe conhecimento especializado entre sua equipe via git
+- Compartilhe especializações entre sua equipe via git
 - Reduza prompts repetitivos
-- Combine múltiplas Skills para tarefas complexas
+- Combine múltiplas Habilidades para tarefas complexas
 
 ## Criar uma Skill
 
-As Skills são armazenadas como diretórios contendo um arquivo `SKILL.md`.
+As skills são armazenadas como diretórios contendo um arquivo `SKILL.md`.
 
-### Habilidades Pessoais
+### Skills Pessoais
 
-Habilidades Pessoais estão disponíveis em todos os seus projetos. Armazene-as em `~/.qwen/skills/`:
+Skills pessoais estão disponíveis em todos os seus projetos. Armazene-as em `~/.qwen/skills/`:
 
 ```bash
-mkdir -p ~/.qwen/skills/nome-da-minha-habilidade
+mkdir -p ~/.qwen/skills/nome-da-minha-skill
 ```
 
-Use habilidades pessoais para:
+Use skills pessoais para:
 
 - Seus fluxos de trabalho e preferências individuais
-- Habilidades experimentais que você está desenvolvendo
+- Skills experimentais que você está desenvolvendo
 - Ajudantes pessoais de produtividade
 
-### Habilidades de Projeto
+### Skills de Projeto
 
-Habilidades de Projeto são compartilhadas com sua equipe. Armazene-as em `.qwen/skills/` dentro do seu projeto:
+Skills de projeto são compartilhadas com sua equipe. Armazene-as em `.qwen/skills/` dentro do seu projeto:
 
 ```bash
-mkdir -p .qwen/skills/nome-da-minha-habilidade
+mkdir -p .qwen/skills/nome-da-minha-skill
 ```
 
-Use habilidades de projeto para:
+Use skills de projeto para:
 
 - Fluxos de trabalho e convenções da equipe
 - Especialização específica do projeto
 - Utilitários e scripts compartilhados
 
-Habilidades de Projeto podem ser adicionadas ao git e automaticamente ficam disponíveis para colegas de equipe.
+Skills de projeto podem ser adicionadas ao git e automaticamente ficam disponíveis para colegas de equipe.
 
-## Escreva `SKILL.md`
+## Escrever `SKILL.md`
 
 Crie um arquivo `SKILL.md` com frontmatter YAML e conteúdo Markdown:
 
 ```yaml
 ---
-name: nome-da-sua-habilidade
-description: Breve descrição do que esta Habilidade faz e quando usá-la
+name: nome-da-sua-skill
+description: Breve descrição do que esta Skill faz e quando usá-la
 ---
 
-# Nome da Sua Habilidade
+# Nome da Sua Skill
 
 ## Instruções
-Forneça orientações claras, passo a passo, para o Qwen Code.
-```
+Forneça orientações claras e passo a passo para o Qwen Code.
 
 ## Exemplos
 Mostre exemplos concretos de uso desta Skill.
@@ -98,7 +114,7 @@ Mostre exemplos concretos de uso desta Skill.
 
 ### Requisitos dos campos
 
-Atualmente, o Qwen Code valida que:
+O Qwen Code atualmente valida que:
 
 - `name` é uma string não vazia
 - `description` é uma string não vazia
@@ -137,7 +153,7 @@ python scripts/helper.py input.txt
 
 ## Visualizar Skills disponíveis
 
-Quando `--experimental-skills` está habilitado, o Qwen Code descobre Skills a partir de:
+Quando `--experimental-skills` está habilitado, o Qwen Code descobre Skills em:
 
 - Skills pessoais: `~/.qwen/skills/`
 - Skills do projeto: `.qwen/skills/`
@@ -208,7 +224,7 @@ ls .qwen/skills/minha-habilidade/SKILL.md
 
 ### Verifique a sintaxe YAML
 
-YAML inválido impede que os metadados da Habilidade sejam carregados corretamente.
+YAML inválido impede que os metadados da habilidade sejam carregados corretamente.
 
 ```bash
 cat SKILL.md | head -n 15
@@ -222,7 +238,7 @@ Certifique-se de que:
 
 ### Visualizar erros
 
-Execute o Qwen Code em modo debug para ver os erros de carregamento da Habilidade:
+Execute o Qwen Code em modo debug para ver os erros de carregamento da habilidade:
 
 ```bash
 qwen --experimental-skills --debug
@@ -285,11 +301,11 @@ Uma Skill deve abordar uma única capacidade:
 Ajude o modelo a descobrir quando usar as Habilidades incluindo gatilhos específicos:
 
 ```yaml
-description: Analise planilhas do Excel, crie tabelas dinâmicas e gere gráficos. Use ao trabalhar com arquivos do Excel, planilhas ou dados em formato .xlsx.
+description: Analisar planilhas do Excel, criar tabelas dinâmicas e gerar gráficos. Use ao trabalhar com arquivos do Excel, planilhas ou dados em formato .xlsx.
 ```
 
 ### Teste com sua equipe
 
-- A Habilidade é ativada conforme o esperado?
+- A Habilidade ativa quando esperado?
 - As instruções estão claras?
-- Há exemplos faltando ou casos especiais não cobertos?
+- Existem exemplos faltando ou casos extremos?
