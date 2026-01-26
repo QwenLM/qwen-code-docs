@@ -1,7 +1,7 @@
 export default {
   'Getting started': {
     type: 'separator',
-    title: 'はじめに', // タイトルは任意です
+    title: '入門', // タイトルは任意です
   },
   overview: '概要',
   quickstart: 'クイックスタート',
@@ -20,6 +20,7 @@ export default {
   },
   features: '機能',
   configuration: '設定',
+  extension: '拡張機能',
   reference: 'リファレンス',
   support: 'サポート',
   // 精査が必要

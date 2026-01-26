@@ -19,9 +19,6 @@ export default {
 
   tools: 'Werkzeuge',
 
-  extensions: {
-    display: 'hidden',
-  },
   examples: {
     display: 'hidden',
   },

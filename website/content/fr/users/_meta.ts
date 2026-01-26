@@ -20,8 +20,9 @@ export default {
   },
   features: 'Fonctionnalités',
   configuration: 'Configuration',
+  extension: 'Extension',
   reference: 'Référence',
-  support: 'Assistance',
+  support: 'Support',
   // besoin d'affiner
   'ide-integration': {
     display: 'hidden',
