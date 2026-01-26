@@ -4,66 +4,68 @@ Este documento lista os atalhos de teclado disponíveis no Qwen Code.
 
 ## Geral
 
-| Atalho      | Descrição                                                                                                              |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `Esc`       | Fecha diálogos e sugestões.                                                                                            |
-| `Ctrl+C`    | Cancela a solicitação em andamento e limpa a entrada. Pressione duas vezes para sair do aplicativo.                    |
-| `Ctrl+D`    | Sai do aplicativo se a entrada estiver vazia. Pressione duas vezes para confirmar.                                      |
-| `Ctrl+L`    | Limpa a tela.                                                                                                          |
-| `Ctrl+O`    | Alterna a exibição do console de depuração.                                                                            |
-| `Ctrl+S`    | Permite que respostas longas sejam impressas completamente, desabilitando o truncamento. Use o scroll do seu terminal para visualizar toda a saída. |
-| `Ctrl+T`    | Alterna a exibição das descrições das ferramentas.                                                                     |
-| `Shift+Tab` | Alterna entre os modos de aprovação (`plan` → `default` → `auto-edit` → `yolo`).                                       |
+| Atalho      | Descrição                                                                                                             |
+| ----------- | --------------------------------------------------------------------------------------------------------------------- |
+| `Esc`       | Fecha diálogos e sugestões.                                                                                           |
+| `Ctrl+C`    | Cancela a solicitação em andamento e limpa a entrada. Pressione duas vezes para sair da aplicação.                   |
+| `Ctrl+D`    | Sai da aplicação se a entrada estiver vazia. Pressione duas vezes para confirmar.                                     |
+| `Ctrl+L`    | Limpa a tela.                                                                                                         |
+| `Ctrl+O`    | Alterna a exibição do console de depuração.                                                                           |
+| `Ctrl+S`    | Permite que respostas longas sejam impressas completamente, desativando o truncamento. Use o histórico de rolagem do seu terminal para visualizar toda a saída. |
+| `Ctrl+T`    | Alterna a exibição das descrições das ferramentas.                                                                    |
+| `Shift+Tab` | Alterna entre os modos de aprovação (`plan` → `default` → `auto-edit` → `yolo`).                                      |
 
 ## Prompt de Entrada
 
 | Atalho                                             | Descrição                                                                                                                           |
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `!`                                                | Alterna para o modo shell quando a entrada está vazia.                                                                              |
+| `!`                                                | Alterna o modo shell quando a entrada está vazia.                                                                                   |
+| `?`                                                | Alterna a exibição dos atalhos de teclado quando a entrada está vazia.                                                              |
 | `\` (no final da linha) + `Enter`                  | Insere uma nova linha.                                                                                                              |
-| `Seta para Baixo`                                  | Navega para baixo no histórico de entradas.                                                                                         |
+| `Seta para Baixo`                                  | Navega para baixo no histórico de entrada.                                                                                          |
 | `Enter`                                            | Envia o prompt atual.                                                                                                               |
 | `Meta+Delete` / `Ctrl+Delete`                      | Exclui a palavra à direita do cursor.                                                                                               |
-| `Tab`                                              | Autocompleta a sugestão atual, se houver uma.                                                                                       |
-| `Seta para Cima`                                   | Navega para cima no histórico de entradas.                                                                                          |
+| `Tab`                                              | Completa automaticamente a sugestão atual, se existir.                                                                              |
+| `Seta para Cima`                                   | Navega para cima no histórico de entrada.                                                                                           |
 | `Ctrl+A` / `Home`                                  | Move o cursor para o início da linha.                                                                                               |
 | `Ctrl+B` / `Seta para Esquerda`                    | Move o cursor um caractere para a esquerda.                                                                                         |
-| `Ctrl+C`                                           | Limpa o prompt de entrada.                                                                                                          |
+| `Ctrl+C`                                           | Limpa o prompt de entrada                                                                                                           |
 | `Esc` (pressionar duas vezes)                      | Limpa o prompt de entrada.                                                                                                          |
 | `Ctrl+D` / `Delete`                                | Exclui o caractere à direita do cursor.                                                                                             |
 | `Ctrl+E` / `End`                                   | Move o cursor para o final da linha.                                                                                                |
 | `Ctrl+F` / `Seta para Direita`                     | Move o cursor um caractere para a direita.                                                                                          |
 | `Ctrl+H` / `Backspace`                             | Exclui o caractere à esquerda do cursor.                                                                                            |
 | `Ctrl+K`                                           | Exclui do cursor até o final da linha.                                                                                              |
-| `Ctrl+Seta para Esquerda` / `Meta+Seta para Esquerda` / `Meta+B` | Move o cursor uma palavra para a esquerda.                                                                            |
-| `Ctrl+N`                                           | Navega para baixo no histórico de entradas.                                                                                         |
-| `Ctrl+P`                                           | Navega para cima no histórico de entradas.                                                                                          |
-| `Ctrl+Seta para Direita` / `Meta+Seta para Direita` / `Meta+F`   | Move o cursor uma palavra para a direita.                                                                             |
+| `Ctrl+Seta para Esquerda` / `Meta+Seta para Esquerda` / `Meta+B` | Move o cursor uma palavra para a esquerda.                                                                                      |
+| `Ctrl+N`                                           | Navega para baixo no histórico de entrada.                                                                                          |
+| `Ctrl+P`                                           | Navega para cima no histórico de entrada.                                                                                           |
+| `Ctrl+R`                                           | Pesquisa reversa no histórico de entrada/shell.                                                                                     |
+| `Ctrl+Seta para Direita` / `Meta+Seta para Direita` / `Meta+F` | Move o cursor uma palavra para a direita.                                                                                       |
 | `Ctrl+U`                                           | Exclui do cursor até o início da linha.                                                                                             |
-| `Ctrl+V`                                           | Cola o conteúdo da área de transferência. Se a área de transferência contiver uma imagem, ela será salva e uma referência a ela será inserida no prompt. |
+| `Ctrl+V`                                           | Cola o conteúdo da área de transferência. Se a área de transferência contiver uma imagem, ela será salva e uma referência será inserida no prompt. |
 | `Ctrl+W` / `Meta+Backspace` / `Ctrl+Backspace`     | Exclui a palavra à esquerda do cursor.                                                                                              |
 | `Ctrl+X` / `Meta+Enter`                            | Abre a entrada atual em um editor externo.                                                                                          |
 
 ## Sugestões
 
-| Atalho          | Descrição                              |
-| --------------- | -------------------------------------- |
-| `Seta para baixo` | Navegar para baixo pelas sugestões.    |
-| `Tab` / `Enter`   | Aceitar a sugestão selecionada.        |
-| `Seta para cima`  | Navegar para cima pelas sugestões.     |
+| Atalho          | Descrição                                        |
+| --------------- | ------------------------------------------------ |
+| `Seta para baixo` | Navega para baixo nas sugestões.                 |
+| `Tab` / `Enter`   | Aceita a sugestão selecionada.                   |
+| `Seta para cima`  | Navega para cima nas sugestões.                  |
 
-## Seleção por Botão de Rádio
+## Seleção de Botão de Rádio
 
-| Atalho             | Descrição                                                                                                      |
-| ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Atalho             | Descrição                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------- |
 | `Seta para baixo` / `j` | Mover seleção para baixo.                                                                                     |
-| `Enter`            | Confirmar seleção.                                                                                             |
-| `Seta para cima` / `k`  | Mover seleção para cima.                                                                                      |
-| `1-9`              | Selecionar um item pelo seu número.                                                                            |
-| (vários dígitos)    | Para itens com números maiores que 9, pressione os dígitos em rápida sucessão para selecionar o item correspondente. |
+| `Enter`            | Confirmar seleção.                                                                                            |
+| `Seta para cima` / `k`   | Mover seleção para cima.                                                                                        |
+| `1-9`              | Selecionar um item pelo seu número.                                                                           |
+| (vários dígitos)   | Para itens com números maiores que 9, pressione os dígitos em rápida sucessão para selecionar o item correspondente. |
 
 ## Integração com IDE
 
-| Atalho   | Descrição                          |
-| -------- | ---------------------------------- |
-| `Ctrl+G` | Ver contexto da CLI recebido da IDE |
+| Atalho   | Descrição                                      |
+| -------- | ---------------------------------------------- |
+| `Ctrl+G` | Ver o contexto da CLI recebido pela IDE        |

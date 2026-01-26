@@ -19,9 +19,6 @@ export default {
 
   tools: 'Ferramentas',
 
-  extensions: {
-    display: 'hidden',
-  },
   examples: {
     display: 'hidden',
   },

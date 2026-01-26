@@ -20,6 +20,7 @@ export default {
   },
   features: '功能特性',
   configuration: '配置',
+  extension: '扩展',
   reference: '参考',
   support: '支持',
   // 需要优化

@@ -11,7 +11,7 @@ export default {
     type: 'separator',
   },
   'sdk-typescript': 'Typescript SDK',
-  'sdk-java': 'Java SDK (альфа-версия)',
+  'sdk-java': 'Java SDK(альфа-версия)',
   'Dive Into Qwen Code': {
     title: 'Погрузиться в Qwen Code',
     type: 'separator',
@@ -19,9 +19,6 @@ export default {
 
   tools: 'Инструменты',
 
-  extensions: {
-    display: 'hidden',
-  },
   examples: {
     display: 'hidden',
   },

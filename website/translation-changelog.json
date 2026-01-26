@@ -1,5 +1,108 @@
 [
   {
+    "timestamp": "2026-01-26T12:20:59.685Z",
+    "commit": "eef9c49e49cef791565f139bddfaba4d609d68fe",
+    "sourceLanguage": "en",
+    "translatedFiles": {
+      "zh": {
+        "success": [
+          "developers/development/npm.md",
+          "developers/extensions/extension.md",
+          "users/configuration/settings.md",
+          "users/extension/extension-releasing.md",
+          "users/extension/getting-started-extensions.md",
+          "users/extension/introduction.md",
+          "users/features/commands.md",
+          "users/features/skills.md",
+          "users/features/sub-agents.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "de": {
+        "success": [
+          "developers/development/npm.md",
+          "developers/extensions/extension.md",
+          "users/configuration/settings.md",
+          "users/extension/extension-releasing.md",
+          "users/extension/getting-started-extensions.md",
+          "users/extension/introduction.md",
+          "users/features/commands.md",
+          "users/features/skills.md",
+          "users/features/sub-agents.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "fr": {
+        "success": [
+          "developers/development/npm.md",
+          "developers/extensions/extension.md",
+          "users/configuration/settings.md",
+          "users/extension/extension-releasing.md",
+          "users/extension/getting-started-extensions.md",
+          "users/extension/introduction.md",
+          "users/features/commands.md",
+          "users/features/skills.md",
+          "users/features/sub-agents.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "ru": {
+        "success": [
+          "developers/development/npm.md",
+          "developers/extensions/extension.md",
+          "users/configuration/settings.md",
+          "users/extension/extension-releasing.md",
+          "users/extension/getting-started-extensions.md",
+          "users/extension/introduction.md",
+          "users/features/commands.md",
+          "users/features/skills.md",
+          "users/features/sub-agents.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "ja": {
+        "success": [
+          "developers/development/npm.md",
+          "developers/extensions/extension.md",
+          "users/configuration/settings.md",
+          "users/extension/extension-releasing.md",
+          "users/extension/getting-started-extensions.md",
+          "users/extension/introduction.md",
+          "users/features/commands.md",
+          "users/features/skills.md",
+          "users/features/sub-agents.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "pt-BR": {
+        "success": [
+          "developers/development/npm.md",
+          "developers/extensions/extension.md",
+          "users/configuration/settings.md",
+          "users/extension/extension-releasing.md",
+          "users/extension/getting-started-extensions.md",
+          "users/extension/introduction.md",
+          "users/features/commands.md",
+          "users/features/skills.md",
+          "users/features/sub-agents.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      }
+    },
+    "stats": {
+      "totalFiles": 10,
+      "languages": 6,
+      "successCount": 60,
+      "failedCount": 0
+    }
+  },
+  {
     "timestamp": "2026-01-19T01:57:40.889Z",
     "commit": "d0104dc4874f2254b1b4015a499f69483b0f74a4",
     "sourceLanguage": "en",
