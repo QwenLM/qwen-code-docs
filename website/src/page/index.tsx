@@ -6,11 +6,11 @@ import { UsageExamples } from "@/components/usage-examples";
 import { CTASection } from "@/components/cta-section";
 import { CustomNavbar } from "@/components/custom-navbar";
 import { ProductHighlights } from "@/components/product-highlights";
-import "../styles/globals.css";
+import { BlogSection } from "@/components/blog-section";
 
 const Index = () => {
   return (
-    <div className='min-h-screen bg-background'>
+    <div className='min-h-screen bg-background text-foreground selection:bg-violet-500/30 font-sans transition-colors duration-300'>
       <CustomNavbar
         logo={
           <>
@@ -26,7 +26,7 @@ const Index = () => {
                 className='inline-block align-middle mr-2 '
                 style={{ verticalAlign: "middle" }}
               />
-              <span className='text-[1.3rem]  font-normal align-middle mr-1 max-md:hidden'>
+              <span className='text-[1.3rem] font-normal align-middle mr-1 max-md:hidden'>
                 Qwen
               </span>
               <span className='text-[1.3rem] font-normal align-middle max-md:hidden'>
@@ -42,6 +42,8 @@ const Index = () => {
       <ComparisonSection />
       <UsageExamples />
       <ProductHighlights />
+      <BlogSection />
+      <CTASection />
     </div>
   );
 };

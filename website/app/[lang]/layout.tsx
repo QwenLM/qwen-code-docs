@@ -5,6 +5,8 @@ import { Layout, Link, Navbar } from "nextra-theme-docs";
 import { Banner, Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
 import { LanguageDropdown } from "../../src/components/language-dropdown";
+import { ThemeToggle } from "../../src/components/theme-toggle";
+import NextLink from "next/link";
 import type { FC, ReactNode } from "react";
 
 type LayoutProps = Readonly<{
@@ -57,6 +59,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
       projectLink='https://github.com/QwenLM/qwen-code'
     >
       <LanguageDropdown currentLang={lang} />
+      <ThemeToggle />
     </Navbar>
   );
 

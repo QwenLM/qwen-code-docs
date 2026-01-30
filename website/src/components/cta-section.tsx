@@ -12,101 +12,56 @@ import {
 
 export const CTASection = () => {
   return (
-    <section className='py-24 bg-gradient-to-br from-background via-muted/10 to-background relative overflow-hidden'>
-      {/* Background Effects */}
-      <div className='absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5' />
-      <div className='absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-primary/10 to-transparent rounded-full blur-3xl opacity-30' />
-
+    <section className='py-32 bg-background relative overflow-hidden'>
+      {/* Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet-600/10 rounded-full blur-[120px] pointer-events-none" />
+      
       <div className='container mx-auto px-6 relative z-10'>
         <div className='max-w-4xl mx-auto text-center'>
-          {/* Badge */}
-          <Badge
-            variant='outline'
-            className='px-4 py-2 mb-6 border-primary/30 bg-primary/10 hover:bg-primary/20 transition-smooth'
-          >
-            <Zap className='w-4 h-4 mr-2' />
-            Ready to Start Coding with AI?
-          </Badge>
-
-          {/* Main Heading */}
-          <h2 className='text-4xl md:text-6xl font-bold mb-6 leading-tight'>
-            Transform Your
+          <h2 className='text-5xl md:text-7xl font-bold mb-8 tracking-tighter'>
+            <span className='gradient-text-white'>Ready to ship</span>
             <br />
-            <span className='gradient-text'>Development Workflow</span>
+            <span className='gradient-text'>faster than ever?</span>
           </h2>
 
-          {/* Description */}
-          <p className='text-xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed'>
-            Join thousands of developers who are already using Qwen Code to
-            understand, edit, and automate their codebases with AI-powered
-            assistance.
+          <p className='text-lg md:text-xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed'>
+            Join the open-source movement. Experience the power of Qwen3-Coder in your terminal today.
           </p>
 
-          {/* Features List */}
-          <div className='flex flex-wrap justify-center gap-6 mb-12'>
-            <div className='flex items-center gap-2 text-sm'>
-              <CheckCircle className='w-5 h-5 text-primary' />
-              <span>2,000 free requests daily</span>
-            </div>
-            <div className='flex items-center gap-2 text-sm'>
-              <CheckCircle className='w-5 h-5 text-primary' />
-              <span>No credit card required</span>
-            </div>
-            <div className='flex items-center gap-2 text-sm'>
-              <CheckCircle className='w-5 h-5 text-primary' />
-              <span>Open source & MIT licensed</span>
-            </div>
-            <div className='flex items-center gap-2 text-sm'>
-              <CheckCircle className='w-5 h-5 text-primary' />
-              <span>Works with any codebase</span>
-            </div>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className='flex flex-col sm:flex-row gap-4 justify-center items-center mb-16'>
+          <div className='flex flex-col sm:flex-row gap-4 justify-center items-center mb-20'>
             <Button
               size='lg'
-              className='px-8 py-4 text-lg font-semibold bg-gradient-primary hover:shadow-glow transition-all duration-300 transform hover:scale-105 group'
+              className='rounded-full px-10 h-14 text-lg bg-violet-600 hover:bg-violet-700 text-white transition-all hover:scale-105 shadow-xl shadow-violet-500/20 border-none'
             >
-              <Terminal className='w-5 h-5 mr-2' />
-              Start Free Now
-              <ArrowRight className='w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform' />
+              Get Started Free <ArrowRight className='w-5 h-5 ml-2' />
             </Button>
 
             <Button
               variant='outline'
               size='lg'
-              className='px-8 py-4 text-lg font-semibold border-primary/30 hover:border-primary/50 hover:bg-primary/10 transition-smooth group'
+              className='rounded-full px-10 h-14 text-lg border-border text-foreground hover:bg-accent transition-all'
             >
               <Github className='w-5 h-5 mr-2' />
-              <span>Star on GitHub</span>
-              <Star className='w-4 h-4 ml-2 group-hover:fill-current transition-all' />
+              <span>View Source</span>
             </Button>
           </div>
 
-          {/* Stats */}
-          <div className='flex justify-center gap-8 mt-12 text-sm text-muted-foreground'>
-            <div className='text-center'>
-              <div className='text-2xl font-bold text-primary mb-1'>10.4k+</div>
-              <div>GitHub Stars</div>
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-8 py-12 border-y border-border'>
+            <div className='flex flex-col gap-1'>
+              <span className='text-3xl font-bold text-foreground'>15k+</span>
+              <span className='text-[10px] uppercase tracking-widest text-muted-foreground font-bold'>GitHub Stars</span>
             </div>
-            <div className='text-center'>
-              <div className='text-2xl font-bold text-accent-blue mb-1'>
-                753
-              </div>
-              <div>Forks</div>
+            <div className='flex flex-col gap-1'>
+              <span className='text-3xl font-bold text-foreground'>2k+</span>
+              <span className='text-[10px] uppercase tracking-widest text-muted-foreground font-bold'>Daily Users</span>
             </div>
-            <div className='text-center'>
-              <div className='text-2xl font-bold text-accent-purple mb-1'>
-                2k+
-              </div>
-              <div>Daily Users</div>
+            <div className='flex flex-col gap-1'>
+              <span className='text-3xl font-bold text-foreground'>2000</span>
+              <span className='text-[10px] uppercase tracking-widest text-muted-foreground font-bold'>Free Requests</span>
             </div>
-            <div className='text-center'>
-              <div className='text-2xl font-bold text-accent-orange mb-1'>
-                MIT
-              </div>
-              <div>License</div>
+            <div className='flex flex-col gap-1'>
+              <span className='text-3xl font-bold text-foreground'>100%</span>
+              <span className='text-[10px] uppercase tracking-widest text-muted-foreground font-bold'>Open Source</span>
             </div>
           </div>
         </div>

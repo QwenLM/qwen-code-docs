@@ -42,19 +42,64 @@
   letter-spacing: 0.05em;
 }
 
-/* Modern purple theme inspired by Claude Code */
+/* Modern purple theme inspired by Claude Code and Mastra */
 .gradient-text {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+  background-image: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #7c3aed 100%);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.gradient-text-white {
+  background-image: linear-gradient(180deg, #000000 0%, rgba(0, 0, 0, 0.7) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.dark .gradient-text-white {
+  background-image: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.7) 100%);
+}
+
+.gradient-border {
+  position: relative;
+  background: linear-gradient(var(--background), var(--background)) padding-box,
+              linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(124, 58, 237, 0.1)) border-box;
+  border: 1px solid transparent;
+}
+
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dark .glass-morphism {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hero-glow {
+  position: absolute;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .gradient-text-accent {
-  background: linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ea580c 100%);
+  background-image: linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ea580c 100%);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 /* Purple glow effect */
@@ -179,7 +224,29 @@
   }
 }
 
-/* @custom-variant dark (&:is(.dark *)); */
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
 
 /* :root {
   --primary: #615ced;
