@@ -8,6 +8,8 @@ import {
   Zap,
   Copy,
   Check,
+  Globe,
+  Puzzle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button";
@@ -138,6 +140,12 @@ export const IntegrationSection = () => {
                   <TabsTrigger value="sdk" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
                     <Box className="w-3.5 h-3.5 mr-2" /> SDK
                   </TabsTrigger>
+                  <TabsTrigger value="chrome" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-yellow-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
+                    <Puzzle className="w-3.5 h-3.5 mr-2" /> Chrome Extension
+                  </TabsTrigger>
+                  <TabsTrigger value="web" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
+                    <Globe className="w-3.5 h-3.5 mr-2" /> Web
+                  </TabsTrigger>
                 </TabsList>
               </div>
             </div>
@@ -149,7 +157,7 @@ export const IntegrationSection = () => {
                         title="Interactive Mode"
                         description="Launch a rich terminal UI to chat with your codebase. Use @ to reference files and symbols, helping you understand and edit code in real-time."
                         command="qwen"
-                        imageSrc="/images/cli-demo.png"
+                        videoSrc="https://tbexpand.alicdn.com/1766039938343/4f37b23fdf1010ac.mp4?auth_key=1769949490-0-0-617e0c9ddc5575894abe47f78cd19c5d&biz=publish-5a1338127dc1a0bc&t=213e035717699467906185741e105e&t=213e035717699467906185741e105e&b=publish&p=cloudvideo_http_video_extranet_notrans&i=546804440792"
                         imageAlt="Interactive Terminal UI"
                     />
                 </TabsContent>
@@ -181,6 +189,26 @@ export const IntegrationSection = () => {
                         command="npm install @qwen-code/sdk"
                         imageSrc="/images/extension-demo.png"
                         imageAlt="TypeScript SDK Integration"
+                    />
+                </TabsContent>
+
+                <TabsContent value="chrome" className="mt-0 focus-visible:outline-none">
+                    <TabContent
+                        title="Chrome Extension"
+                        description="Bring Qwen Code to your browser. The Chrome Extension allows you to interact with AI assistance on any web page, from Stack Overflow to GitHub."
+                        command="Install from Chrome Web Store"
+                        imageSrc="/images/extension-demo.png"
+                        imageAlt="Chrome Extension"
+                    />
+                </TabsContent>
+
+                <TabsContent value="web" className="mt-0 focus-visible:outline-none">
+                    <TabContent
+                        title="Web Interface"
+                        description="Access Qwen Code directly from your browser. No installation required—just open the web app and start coding with AI assistance."
+                        command="Open web.qwen-code.com"
+                        imageSrc="/images/github-demo.png"
+                        imageAlt="Web Interface"
                     />
                 </TabsContent>
             </div>

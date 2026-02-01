@@ -42,24 +42,24 @@ export const FeaturesSection = () => {
   return (
     <section className='py-32 bg-transparent relative overflow-hidden'>
       {/* Background patterns */}
-      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" 
-           style={{ 
+      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none"
+           style={{
              backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-             backgroundSize: '32px 32px' 
-           }} 
+             backgroundSize: '32px 32px'
+           }}
       />
-      
+
       {/* Decorative blobs */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-[120px] -mr-64 -mt-64 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-600/5 rounded-full blur-[100px] -ml-48 -mb-48 pointer-events-none" />
-      
+
       <div className='container mx-auto px-6 relative z-10'>
         <div className='text-center mb-20'>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 mb-6 group cursor-default">
             <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
             <span className="text-xs font-semibold text-violet-400 tracking-wider uppercase">Ecosystem</span>
           </div>
-          
+
           <h2 className='text-4xl md:text-6xl font-bold mb-8 tracking-tight'>
             <span className='gradient-text-white'>Why Choose </span>
             <span className='gradient-text'>Qwen Code?</span>
@@ -77,7 +77,7 @@ export const FeaturesSection = () => {
             >
               {/* Animated Gradient Border */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent group-hover:from-violet-500/40 group-hover:to-blue-500/40 transition-all duration-700" />
-              
+
               <div className='relative h-full bg-card/80 backdrop-blur-sm rounded-[23px] p-10 flex flex-col items-start border border-border'>
                 {/* Icon with glow */}
                 <div className="relative mb-8">
@@ -86,18 +86,18 @@ export const FeaturesSection = () => {
                     <feature.icon className={`w-7 h-7 ${feature.iconColor}`} />
                   </div>
                 </div>
-                
+
                 <h3 className='text-2xl font-bold mb-4 text-card-foreground group-hover:text-violet-400 transition-colors duration-300'>
                   {feature.title}
                 </h3>
-                
+
                 <p className='text-muted-foreground leading-relaxed text-lg group-hover:text-foreground/80 transition-colors duration-300'>
                   {feature.description}
                 </p>
 
                 <div className="mt-auto pt-10 w-full flex items-center justify-between">
                    <span className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground/60">
-                     Feature 0{index + 1}
+                     Advantage 0{index + 1}
                    </span>
                    <div className="h-1 w-24 bg-muted/30 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-violet-500 to-blue-500 w-0 group-hover:w-full transition-all duration-1000 ease-out" />
@@ -111,5 +111,3 @@ export const FeaturesSection = () => {
     </section>
   );
 };
-
-
