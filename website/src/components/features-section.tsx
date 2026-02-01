@@ -78,11 +78,11 @@ export const FeaturesSection = () => {
               {/* Animated Gradient Border */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent group-hover:from-violet-500/40 group-hover:to-blue-500/40 transition-all duration-700" />
               
-              <div className='relative h-full bg-card/80 backdrop-blur-sm rounded-[23px] p-10 flex flex-col items-start border border-white/5'>
+              <div className='relative h-full bg-card/80 backdrop-blur-sm rounded-[23px] p-10 flex flex-col items-start border border-border'>
                 {/* Icon with glow */}
                 <div className="relative mb-8">
                   <div className={`absolute inset-0 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${feature.accent}`} />
-                  <div className={`relative w-14 h-14 ${feature.accent} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500 ring-1 ring-white/10`}>
+                  <div className={`relative w-14 h-14 ${feature.accent} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500 ring-1 ring-border`}>
                     <feature.icon className={`w-7 h-7 ${feature.iconColor}`} />
                   </div>
                 </div>

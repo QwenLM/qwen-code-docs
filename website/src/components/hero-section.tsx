@@ -25,7 +25,7 @@ export const HeroSection = () => {
         <div className="flex justify-center mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
           <Badge
             variant='outline'
-            className='px-4 py-1.5 border-white/10 bg-white/5 text-violet-400 backdrop-blur-md rounded-full flex items-center gap-2 hover:bg-white/10 transition-colors shadow-lg shadow-violet-500/10'
+            className='px-4 py-1.5 border-border bg-muted/50 text-violet-500 backdrop-blur-md rounded-full flex items-center gap-2 hover:bg-muted transition-colors shadow-lg shadow-violet-500/10'
           >
             <span className="flex h-2 w-2 rounded-full bg-violet-500 animate-pulse" />
             <span className="text-xs font-medium tracking-wide uppercase">v0.8.0 is now live</span>
@@ -63,7 +63,7 @@ export const HeroSection = () => {
         </div>
         
         {/* Tech Stack Strip - Integrated visually */}
-        <div className="mt-16 pt-8 border-t border-white/5 w-full max-w-4xl flex justify-center gap-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+        <div className="mt-16 pt-8 border-t border-border w-full max-w-4xl flex justify-center gap-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
              <div className="flex items-center gap-2"><Cpu className="w-4 h-4" /> <span className="text-xs font-mono">Qwen3-Coder</span></div>
              <div className="flex items-center gap-2"><Code2 className="w-4 h-4" /> <span className="text-xs font-mono">VS Code</span></div>
              <div className="flex items-center gap-2"><Box className="w-4 h-4" /> <span className="text-xs font-mono">Docker</span></div>
