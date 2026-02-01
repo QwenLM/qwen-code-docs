@@ -1,6 +1,5 @@
 export default {
   index: {
-    display: 'hidden',
     type: 'page',
     theme: {
       layout: 'full',
