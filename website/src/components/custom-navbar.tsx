@@ -197,17 +197,6 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
         {/* 移动端 Document 链接 - 始终显示 */}
         <div className="flex items-center md:hidden gap-1">
           <NextLink
-            href="/en/blog"
-            className={cn(
-              documentLinkClass,
-              "flex items-center",
-              "text-sm px-2 py-1 rounded-md"
-            )}
-            aria-label='Blog'
-          >
-            <Newspaper height='20' />
-          </NextLink>
-          <NextLink
             href={getDocumentLink()}
             className={cn(
               documentLinkClass,
@@ -228,16 +217,7 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
             rightAlignClass
           )}
         >
-          {/* Blog 链接 - 桌面端 */}
-          <NextLink
-            href="/en/blog"
-            className={cn(documentLinkClass, "flex items-center")}
-            aria-label='Blog'
-          >
-            <Newspaper height='24' className='mr-1.5' />
-            Blog
-          </NextLink>
-
+         
           {/* Document 链接 - 桌面端 */}
           <NextLink
             href={getDocumentLink()}

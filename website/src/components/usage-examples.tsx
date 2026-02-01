@@ -1,55 +1,30 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Search,
-  Code,
-  Workflow,
-  Bug,
-  ChevronRight,
-  Terminal,
+  Sparkles,
+  Briefcase,
+  Bot,
   MessageSquare
 } from "lucide-react";
 
-const examples = [
+const scenarios = [
   {
-    category: "Code Exploration",
-    icon: Search,
-    color: "text-violet-400",
-    items: [
-      "Describe the main pieces of this system's architecture",
-      "Find all API endpoints and their authentication methods",
-      "Generate a dependency graph for this module",
-    ],
-  },
-  {
-    category: "Development",
-    icon: Code,
+    title: "Vibe Coding",
+    icon: Sparkles,
     color: "text-blue-400",
-    items: [
-      "Refactor this function to improve readability and performance",
-      "Create a REST API endpoint for user management",
-      "Generate unit tests for the authentication module",
-    ],
+    description: "Interactive terminal experience. Chat-style coding that turns inspiration into code instantly, making coding feel natural and intuitive.",
   },
   {
-    category: "Automation",
-    icon: Workflow,
+    title: "Serious Coding",
+    icon: Briefcase,
+    color: "text-violet-400",
+    description: "Deep integration with development workflows. Supports VS Code/Zed plugins and Headless mode, handling production challenges from complex refactoring to CI automation with confidence.",
+  },
+  {
+    title: "Personal Assistant",
+    icon: Bot,
     color: "text-green-400",
-    items: [
-      "Create a changelog from recent commits",
-      "Find all TODO comments and create GitHub issues",
-      "Convert all images in this directory to PNG format",
-    ],
-  },
-  {
-    category: "Debugging",
-    icon: Bug,
-    color: "text-red-400",
-    items: [
-      "Identify performance bottlenecks in this React component",
-      "Find all N+1 query problems in the codebase",
-      "Check for potential SQL injection vulnerabilities",
-    ],
+    description: "All-around tech partner. Beyond code generation, it's your technical encyclopedia. Write articles, create presentations, draw charts, troubleshoot complex issues - it excels at everything!",
   },
 ];
 
@@ -57,49 +32,32 @@ export const UsageExamples = () => {
   return (
     <section className='py-32 bg-transparent relative overflow-hidden'>
       <div className='container mx-auto px-6 relative z-10'>
-        <div className='flex flex-col md:flex-row justify-between items-end mb-16 gap-8'>
-          <div className="max-w-2xl">
-            <h2 className='text-4xl md:text-5xl font-bold mb-6 tracking-tight'>
-              <span className='gradient-text-white'>What can you do with</span>
-              <br />
-              <span className='gradient-text'>Qwen Code?</span>
-            </h2>
-            <p className='text-lg text-muted-foreground'>
-              From simple questions to complex refactors, Qwen Code handles the tedious parts so you can focus on building.
-            </p>
-          </div>
-          <Badge variant="outline" className="border-border text-muted-foreground font-mono px-4 py-2 rounded-full hidden md:block">
-            /help for more commands
-          </Badge>
+        <div className='text-center mb-16'>
+          <h2 className='text-4xl md:text-5xl font-bold mb-6 tracking-tight'>
+            <span className='gradient-text'>Three Usage Scenarios</span>
+          </h2>
+          <p className='text-lg text-muted-foreground max-w-2xl mx-auto'>
+            From interactive exploration to professional production, Qwen Code adapts to your unique workflow.
+          </p>
         </div>
 
-        <div className='grid md:grid-cols-2 lg:grid-cols-4 gap-6'>
-          {examples.map((example, index) => (
+        <div className='grid md:grid-cols-3 gap-8'>
+          {scenarios.map((scenario, index) => (
             <div
               key={index}
-              className='group p-8 rounded-3xl bg-card border border-border hover:border-violet-500/20 transition-all duration-300 shadow-sm'
+              className='group p-8 rounded-3xl bg-card border border-border hover:border-violet-500/20 transition-all duration-300 shadow-sm flex flex-col items-center text-center'
             >
-              <div className={`w-10 h-10 rounded-xl bg-muted flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                <example.icon className={`w-5 h-5 ${example.color}`} />
+              <div className={`w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-8 group-hover:scale-110 transition-transform`}>
+                <scenario.icon className={`w-7 h-7 ${scenario.color}`} />
               </div>
               
-              <h3 className='text-lg font-bold text-card-foreground mb-6 tracking-tight'>
-                {example.category}
+              <h3 className='text-2xl font-bold text-card-foreground mb-4 tracking-tight'>
+                {scenario.title}
               </h3>
 
-              <div className='space-y-4'>
-                {example.items.map((item, itemIndex) => (
-                  <div
-                    key={itemIndex}
-                    className='flex items-start gap-2 group/item cursor-default'
-                  >
-                    <MessageSquare className='w-3 h-3 text-muted-foreground/60 mt-1' />
-                    <span className='text-xs text-muted-foreground leading-relaxed group-hover/item:text-violet-500 transition-colors'>
-                      {item}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <p className='text-muted-foreground leading-relaxed'>
+                {scenario.description}
+              </p>
             </div>
           ))}
         </div>

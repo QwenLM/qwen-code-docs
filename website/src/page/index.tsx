@@ -1,12 +1,11 @@
 import { HeroSection } from "@/components/hero-section";
+import { IntegrationSection } from "@/components/integration-section";
 import { FeaturesSection } from "@/components/features-section";
 import { ComparisonSection } from "@/components/comparison-section";
 import { InstallationSection } from "@/components/installation-section";
 import { UsageExamples } from "@/components/usage-examples";
 import { CTASection } from "@/components/cta-section";
 import { CustomNavbar } from "@/components/custom-navbar";
-import { ProductHighlights } from "@/components/product-highlights";
-import { BlogSection } from "@/components/blog-section";
 
 const Index = () => {
   return (
@@ -38,11 +37,10 @@ const Index = () => {
         projectLink='https://github.com/QwenLM/qwen-code'
       />
       <HeroSection />
+      <IntegrationSection />
       <FeaturesSection />
       <ComparisonSection />
       <UsageExamples />
-      <ProductHighlights />
-      <BlogSection />
       <CTASection />
     </div>
   );

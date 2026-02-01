@@ -82,7 +82,7 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({
   // 服务端渲染时返回简单版本
   if (!isMounted) {
     return (
-      <div className='flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 rounded-md'>
+      <div className='flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground bg-secondary/50 rounded-md border border-border'>
         <GlobeIcon className='w-4 h-4' />
         <span>{currentLanguage?.name || currentLang}</span>
       </div>
@@ -94,7 +94,7 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({
       {/* 触发按钮 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className='flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-md transition-colors duration-200 border border-gray-200 dark:border-gray-600'
+        className='flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent bg-secondary/50 rounded-md transition-colors duration-200 border border-border'
         aria-label='选择语言'
       >
         <span className='font-medium'>
@@ -109,22 +109,22 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({
 
       {/* 下拉菜单 */}
       {isOpen && (
-        <div className='absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg z-50 min-w-[160px]'>
+        <div className='absolute top-full right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 min-w-[160px]'>
           <div className='py-1'>
             {languages.map((language) => (
               <button
                 key={language.locale}
                 onClick={() => handleLanguageChange(language.locale)}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 flex items-center gap-2 ${
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors duration-150 flex items-center gap-2 ${
                   language.locale === currentLang
-                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                    : "text-gray-700 dark:text-gray-200"
+                    ? "bg-accent/50 text-primary font-semibold"
+                    : "text-popover-foreground"
                 }`}
               >
                 <span className='text-base'>{language.flag}</span>
                 <span className='font-medium'>{language.name}</span>
                 {language.locale === currentLang && (
-                  <span className='ml-auto text-blue-500 dark:text-blue-400'>
+                  <span className='ml-auto text-primary'>
                     ✓
                   </span>
                 )}

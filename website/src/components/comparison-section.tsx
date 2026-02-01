@@ -55,8 +55,7 @@ export const ComparisonSection = () => {
       <div className='container mx-auto px-6'>
         <div className='text-center mb-20'>
           <h2 className='text-4xl md:text-5xl font-bold mb-6 tracking-tight'>
-            <span className='gradient-text-white'>The Open Alternative to</span>
-            <br />
+            <span className='gradient-text-white'>The Open Alternative to </span>
             <span className='gradient-text'>Claude Code</span>
           </h2>
           <p className='text-lg text-muted-foreground max-w-2xl mx-auto'>

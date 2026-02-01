@@ -6,6 +6,7 @@ import { Banner, Head } from "nextra/components";
 import { getPageMap } from "nextra/page-map";
 import { LanguageDropdown } from "../../src/components/language-dropdown";
 import { ThemeToggle } from "../../src/components/theme-toggle";
+import { GitHubStarLink } from "../../src/components/github-star-link";
 import NextLink from "next/link";
 import type { FC, ReactNode } from "react";
 
@@ -56,9 +57,9 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
           </span>
         </>
       }
-      projectLink='https://github.com/QwenLM/qwen-code'
     >
       <LanguageDropdown currentLang={lang} />
+      <GitHubStarLink projectLink='https://github.com/QwenLM/qwen-code' />
       <ThemeToggle />
     </Navbar>
   );
