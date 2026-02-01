@@ -11,4 +11,12 @@ export default {
     type: 'page',
     title: 'Developer Guide',
   },
+  blog: {
+    type: 'page',
+    title: 'Blog',
+    theme: {
+      sidebar: false,
+      layout: 'full'
+    }
+  },
 };

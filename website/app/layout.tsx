@@ -5,7 +5,9 @@ import Script from "next/script";
 import { Head } from "nextra/components";
 import type { FC, ReactNode } from "react";
 import "nextra-theme-docs/style.css";
+import "../src/styles/globals.css";
 import { FontLoader } from "../src/components/font-loader";
+import { ThemeProvider } from "../src/components/theme-provider";
 
 const SITE_NAME = "Qwen Code Docs";
 const DEFAULT_TITLE = "Qwen Code: AI Coding Agent Documentation";
@@ -144,7 +146,14 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
           `}
         </Script>
         <FontLoader />
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

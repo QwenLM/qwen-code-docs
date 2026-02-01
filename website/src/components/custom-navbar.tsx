@@ -6,7 +6,8 @@ import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { GitHubIcon, DiscordIcon } from "nextra/icons";
 import { Button } from "nextra/components";
-import { FileText, Star, BookOpen } from "lucide-react";
+import { FileText, Star, BookOpen, Newspaper } from "lucide-react";
+import { ThemeToggle } from "./theme-toggle";
 
 // 定义接口类型
 interface NavbarProps {
@@ -124,8 +125,8 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
   const blurClass = cn(
     "nextra-navbar-blur",
     "absolute -z-10 size-full",
-    "nextra-border border-b",
-    "backdrop-blur-md bg-nextra-bg/70"
+    "border-b border-border",
+    "backdrop-blur-xl bg-background/80"
   );
 
   // 导航栏容器样式
@@ -145,29 +146,29 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
       href={typeof logoLink === "string" ? logoLink : "/"}
       className={cn(
         logoClass,
-        "transition-opacity focus-visible:nextra-focus hover:opacity-75"
+        "transition-opacity focus-visible:nextra-focus hover:opacity-75 text-foreground"
       )}
       aria-label='Home page'
     >
       {logo}
     </NextLink>
   ) : (
-    <div className={logoClass}>{logo}</div>
+    <div className={cn(logoClass, "text-foreground")}>{logo}</div>
   );
 
   // 项目链接样式
   const linkClass = cn(
-    "text-sm contrast-more:text-gray-700 contrast-more:dark:text-gray-100 whitespace-nowrap",
-    "text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-gray-200",
+    "text-sm contrast-more:text-foreground whitespace-nowrap",
+    "text-muted-foreground hover:text-foreground",
     "ring-inset transition-colors"
   );
 
   // Document 链接样式 - 使用与 nextra navbar 中的链接一致的样式
   const documentLinkClass = cn(
-    "text-sm contrast-more:text-gray-700 contrast-more:dark:text-gray-100 whitespace-nowrap",
-    "text-gray-800 hover:text-black dark:text-gray-300 dark:hover:text-gray-100",
+    "text-sm contrast-more:text-foreground whitespace-nowrap",
+    "text-muted-foreground hover:text-foreground",
     "ring-inset transition-colors",
-    "px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+    "px-3 py-1.5 rounded-md hover:bg-accent"
   );
 
   // 获取文档链接
@@ -194,17 +195,20 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
         {logoElement}
 
         {/* 移动端 Document 链接 - 始终显示 */}
-        <NextLink
-          href={getDocumentLink()}
-          className={cn(
-            documentLinkClass,
-            "flex items-center md:hidden",
-            "text-sm px-2 py-1 rounded-md"
-          )}
-          aria-label='Documentation'
-        >
-          <BookOpen height='20' />
-        </NextLink>
+        <div className="flex items-center md:hidden gap-1">
+          <NextLink
+            href={getDocumentLink()}
+            className={cn(
+              documentLinkClass,
+              "flex items-center",
+              "text-sm px-2 py-1 rounded-md"
+            )}
+            aria-label='Documentation'
+          >
+            <BookOpen height='20' />
+          </NextLink>
+          <ThemeToggle />
+        </div>
 
         {/* 右侧导航区域 - 桌面端 */}
         <div
@@ -213,6 +217,7 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
             rightAlignClass
           )}
         >
+         
           {/* Document 链接 - 桌面端 */}
           <NextLink
             href={getDocumentLink()}
@@ -240,6 +245,8 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
               )}
             </a>
           )}
+
+          <ThemeToggle />
 
           {/* 子组件 */}
           {children}
