@@ -65,7 +65,7 @@ export const FeaturesSection = () => {
             <span className='gradient-text'>Qwen Code?</span>
           </h2>
           <p className='text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed'>
-            Qwen Code is more than just a terminal tool. It's a complete ecosystem designed to help you build software faster and with higher quality.
+            Powered by Qwen3-Coder. Multi-agent workflows. 2,000 free requests/day. IDE-ready.
           </p>
         </div>
 

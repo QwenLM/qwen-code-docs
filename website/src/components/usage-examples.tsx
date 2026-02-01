@@ -34,10 +34,10 @@ export const UsageExamples = () => {
       <div className='container mx-auto px-6 relative z-10'>
         <div className='text-center mb-16'>
           <h2 className='text-4xl md:text-5xl font-bold mb-6 tracking-tight'>
-            <span className='gradient-text'>Three Usage Scenarios</span>
+            <span className='gradient-text'>Code Your Way</span>
           </h2>
-          <p className='text-lg text-muted-foreground max-w-2xl mx-auto'>
-            From interactive exploration to professional production, Qwen Code adapts to your unique workflow.
+          <p className='text-lg text-muted-foreground max-w-4xl mx-auto'>
+            Casual exploration, serious development, or everyday assistance — whatever your workflow, Qwen Code adapts to you.
           </p>
         </div>
 

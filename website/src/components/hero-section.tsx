@@ -38,7 +38,7 @@ export const HeroSection = () => {
         </h1>
 
         {/* Subheading */}
-        <p className='text-lg text-muted-foreground mb-8 max-w-xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100'>
+        <p className='text-lg text-muted-foreground mb-8 max-w-5xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100'>
           Co-evolving with <span className="text-foreground font-medium">Qwen3-Coder</span>.
           Understand large codebases, automate tedious work, and ship faster.
         </p>

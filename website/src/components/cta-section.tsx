@@ -24,7 +24,7 @@ export const CTASection = () => {
             <span className='gradient-text'>faster than ever?</span>
           </h2>
 
-          <p className='text-lg md:text-xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed'>
+          <p className='text-lg md:text-xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed'>
             Join the open-source movement. Experience the power of Qwen3-Coder in your terminal today.
           </p>
 

@@ -60,7 +60,7 @@ export const ComparisonSection = () => {
             <span className='gradient-text-white'>The Open Alternative to </span>
             <span className='gradient-text'>Claude Code</span>
           </h2>
-          <p className='text-lg text-muted-foreground max-w-2xl mx-auto'>
+          <p className='text-lg text-muted-foreground max-w-4xl mx-auto'>
             Qwen Code provides a similar agentic experience with more freedom, compatibility, and a generous free tier.
           </p>
         </div>

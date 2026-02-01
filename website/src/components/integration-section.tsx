@@ -47,7 +47,7 @@ const TabContent = ({
         <h3 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight mb-4">
           {title}
         </h3>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+        <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed">
           {description}
         </p>
       </div>
