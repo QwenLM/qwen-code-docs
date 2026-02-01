@@ -11,4 +11,12 @@ export default {
     type: 'page',
     title: 'Руководство разработчика',
   },
+  blog: {
+    type: 'page',
+    title: 'Блог',
+    theme: {
+      sidebar: false,
+      layout: 'full'
+    }
+  },
 };
