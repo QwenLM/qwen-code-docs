@@ -11,4 +11,12 @@ export default {
     type: 'page',
     title: '開発者ガイド',
   },
+  blog: {
+    type: 'page',
+    title: 'ブログ',
+    theme: {
+      sidebar: false,
+      layout: 'full'
+    }
+  },
 };

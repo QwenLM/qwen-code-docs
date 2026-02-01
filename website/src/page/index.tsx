@@ -2,7 +2,6 @@ import { HeroSection } from "@/components/hero-section";
 import { IntegrationSection } from "@/components/integration-section";
 import { FeaturesSection } from "@/components/features-section";
 import { ComparisonSection } from "@/components/comparison-section";
-import { InstallationSection } from "@/components/installation-section";
 import { UsageExamples } from "@/components/usage-examples";
 import { CTASection } from "@/components/cta-section";
 import { CustomNavbar } from "@/components/custom-navbar";

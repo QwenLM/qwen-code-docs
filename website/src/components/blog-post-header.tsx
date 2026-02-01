@@ -23,9 +23,22 @@ export const BlogPostHeader: React.FC<BlogPostHeaderProps> = ({
   tags
 }) => {
   const pathname = usePathname();
-  const isZh = pathname?.startsWith("/zh");
-  const blogPath = isZh ? "/zh/blog" : "/en/blog";
-  const backText = isZh ? "返回博客" : "Back to Blog";
+
+  // Extract language prefix from pathname (e.g., /zh/blog -> zh, /en/blog -> en)
+  const langPrefix = pathname?.split('/')[1] || 'en';
+
+  // Map of back-to-blog text for each language
+  const backTextMap: Record<string, string> = {
+    zh: "返回博客",
+    de: "Zurück zum Blog",
+    fr: "Retour au blog",
+    ja: "ブログに戻る",
+    ru: "Назад в блог",
+    'pt-BR': "Voltar ao Blog",
+  };
+
+  const blogPath = `/${langPrefix}/blog`;
+  const backText = backTextMap[langPrefix] || "Back to Blog";
 
   return (
     <div className="mb-12 pt-10">

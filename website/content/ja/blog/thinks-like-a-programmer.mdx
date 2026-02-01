@@ -1,0 +1,117 @@
+---
+title: "Qwen Code: プログラマーのように考えるAIコーディングアシスタント"
+date: "2026-01-30"
+description: "Qwen3-Coderモデルを搭載したオープンソースのAIコーディングツール「Qwen Code」を紹介し、Agentic Workflowの新時代を切り開きます。"
+author: "Qwen Team"
+tags: ["発表", "AIコード", "オープンソース"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code: プログラマーのように考えるAIコーディングアシスタント"
+  date="2026年1月30日"
+  author="Qwen Team"
+/>
+
+AIが世界を変えるとしたら、最初の一歩はデジタル世界の変革です。Qwen Codeは単なるコマンドラインツールではなく、いつでもターミナルから呼び出せるプログラマーの仲間です。
+
+過去1年間で、AIプログラミングのパラダイムは劇的に変化しました。初期のチャットモードから、Copilotの補完モード、そして現在の自律型エージェントモードへ。本日、アリババ通義実験室が開発したAIプログラミングツール「**Qwen Code**」をご紹介します。
+
+これはオープンソースで無料、強力な「**Qwen3-Coder**」モデルによって駆動されます。ターミナルでチャットのような対話を通じてコードを書き、即座にインスピレーションを形にできるだけでなく、開発ワークフローに深く統合されてバグの修正、コードのリファクタリング、複雑なタスクを容易に処理できます。さらに、記事の執筆、図表の作成、日常のワークフローにシームレスに溶け込む万能な仲間でもあります。
+
+## Qwen Codeとは？
+
+<video
+  src="https://cloud.video.taobao.com/vod/SYhqmsPqG3x8FLT5RM1QR9lB65SM3DCDLe7tuXZWtDk.mp4"
+  controls
+  width="100%"
+  height="100%"
+  style={{ borderRadius: '10px' }}
+/>
+
+会話だけでQwen Codeの製品紹介サイトを完成させました。プロセス全体を通じて、Qwen Codeは本物のプログラマーのように考え、行動します：
+
+- **タスクの分解**：包括的なTo-doリストを作成
+- **コードの作成**：ファイルの自動読み書きとスクリプトの実行
+- **自己修正**：エラーが発生した際に自動的にデバッグ
+- **結果の納品**：コードだけでなく、完全なWebアプリケーションやドキュメントを納品
+
+「この関数を書いて」「あの変数を変更して」といった指示で一歩ずつ導く必要はもうありません。これは広範なマニュアルを必要とするツールではなく、自律的で効率的な真のコーディングパートナーです。
+
+## なぜQwen Codeを選ぶのか？
+
+### 1. 強力なコア：Qwen3-Coder搭載
+
+Qwen Codeは強力な「**Qwen3-Coder**」モデルに基づいて構築されており、それに深く最適化されています。トレーニング段階で、モデルがツールを理解できるようにし、フレームワークをモデルに適合させました。コード生成、推論、長いコンテキストの理解において卓越した能力を発揮します。
+
+![](https://img.alicdn.com/imgextra/i3/O1CN01ypIjmp1jcekDsqfLl_!!6000000004569-2-tps-3184-1817.png)
+
+### 2. 真のAgentic Workflow
+
+Qwen Codeは「**Skills**」、「**SubAgents**」、「**Plan Mode**」などの高度な機能を備えており、エージェントをより自律的で信頼性の高いものにします。承認モードは、段階的な確認を可能にすることで作業の安全性を確保するか、「**YOLOモード**」を有効にしてAIに完全な自律性を与えることができます。
+
+![](https://img.alicdn.com/imgextra/i1/O1CN01ZBzNFo1C9SAiM2mXk_!!6000000000038-2-tps-2020-1078.png)
+
+### 3. フルシナリオカバレッジ：必要な場所どこにでも
+
+Qwen Codeはターミナルで生まれましたが、それに制限されることはありません。十分に小さく、また十分に強力で、5つの異なる環境に存在できます：
+
+- **ターミナル環境**：ギークの選択。ターミナルで起動し、洗練されたインタラクティブインターフェースでコーディングと創造性を発揮
+- **IDE環境**：ほとんどの開発者の首选。VS Code、Qoder、Zed、JetBrainsなどの主流エディタをサポートし、GUIの利便性とCodeAgentのパワーの両方を提供
+- **CI/CD環境**：`qwen -p`を使用して「**ヘッドレスモード**」を起動。GitHub Actionsで@QwenCodeに言及して、自動的にIssueへの返信、コードレビュー、PRの送信を行わせることができます
+- **ブラウザ環境**：実験的な機能で、Qwen Codeをブラウザ拡張機能に統合し、Webページの状態を認識しパラメータを分析できます。デバッグとデータ収集の優れたヘルパーです
+- **プログラミング環境**：Qwen Code SDKを使用して、独自の環境にインテリジェントなコーディング機能をもたらします。現在はNode.jsとJavaをサポート
+
+![](https://img.alicdn.com/imgextra/i2/O1CN01MC7wCV1nQz7FKy6Sz_!!6000000005085-2-tps-2880-1536.png)
+
+### 4. オープンソースと無料アクセスへのコミットメント
+
+私たちはオープンソースと無料の戦略にコミットしています。急速なAIコーディングの進化の時代において、オープンソースが安心感を提供し、無料アクセスがユーザーにより多くの可能性を探索することを奨励すると信じています。
+
+- **無料利用**：Qwen OAuthでログインすると、1日2,000回の無料リクエスト枠を享受できます
+- **プロトコル互換性**：オープンソースプロジェクトとして、Anthropic、Google Gemini、OpenAIなどの主流プロトコルと互換性があります
+
+![](https://img.alicdn.com/imgextra/i4/O1CN01B1hmvI1la1hfJkBVt_!!6000000004834-2-tps-2004-832.png)
+
+## ケーススタディ：コーディングを超えたQwen Code
+
+Qwen Codeの想像力は、単にコードを書くことだけにとどまりません。これはオールラウンドなアシスタントでもあります。コミュニティで人気の機能「**Skills**」を見て、Qwen Codeがコンテンツクリエイターにとってどのように「神の贈り物」となるかを見てみましょう：
+
+カスタムSkillを使用すると、Qwen CodeはYouTubeの字幕を自動的にダウンロードし、要約を抽出し、イラストを生成し、完全なブログ記事を出力できます。
+
+<video
+  src="https://cloud.video.taobao.com/vod/VjNePZ5PzC2UKc7pa5tnzLhN5bSLiR95LftYE_t5BpY.mp4"
+  controls
+  width="100%"
+  height="100%"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 今すぐ始める
+
+Qwen Codeは現在GitHubで完全にオープンソース化されており、17.4kのスターを獲得しています。3つの簡単なステップで始められます：
+
+1. **インストール**（Node.js 20+が必要）：
+   ```bash
+   npm install -g @qwen-code/qwen-code@latest
+   ```
+2. **起動**：
+   ```bash
+   qwen
+   ```
+3. **認証**：
+   セッションで`/auth`と入力し、「**Qwen OAuth**」を選択して、AIプログラミングの旅を始めましょう。
+
+## 🔗 リンクとリソース
+
+- **GitHub**：[github.com/QwenLM/qwen-code](https://github.com/QwenLM/qwen-code)
+- **公式ドキュメント**：[qwenlm.github.io/qwen-code-docs](https://qwenlm.github.io/qwen-code-docs)
+
+### コミュニティに参加しよう！
+
+Qwen Codeは、コミュニティの貢献とユーザーフィードバックなしには成り立ちません。Java SDK、VS Codeプラグイン、Chromeブラウザ拡張機能など、多くの重要な機能はパートナーと共に構築されました。Qwen Codeに興味がある場合は、一緒に構築しましょう！
+
+---
+
+ターミナルのQwen Codeから始めて、AIコーディングの新時代を迎えましょう。

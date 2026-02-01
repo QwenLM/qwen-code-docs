@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import NextLink from "next/link";
-import { Calendar, User, ArrowRight, Search } from "lucide-react";
+import { User, ArrowRight, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -106,35 +106,51 @@ export const BlogIndexClient = ({ posts, lang }: BlogIndexClientProps) => {
           </div>
         </div>
 
-        {/* Posts Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+        {/* Posts List */}
+        <div className="flex flex-col gap-0">
           {filteredPosts.map((post, index) => (
-            <NextLink key={index} href={post.link} className="group flex flex-col space-y-4">
-              <div className="aspect-[16/10] overflow-hidden rounded-2xl bg-muted/30">
-                <img 
-                  src={post.image} 
-                  alt={post.title} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+            <NextLink
+              key={index}
+              href={post.link}
+              className="group flex items-start gap-6 py-6 border-b border-border/40 hover:bg-muted/20 transition-colors -mx-4 px-4"
+            >
+              {/* Date - Left Column */}
+              <div className="hidden sm:flex flex-col items-center justify-center w-16 shrink-0 text-center">
+                <span className="text-2xl font-bold text-foreground leading-none">
+                  {new Date(post.date).getDate()}
+                </span>
+                <span className="text-xs text-muted-foreground uppercase mt-1">
+                  {new Date(post.date).toLocaleDateString(isZh ? "zh-CN" : "en-US", { month: "short" })}
+                </span>
               </div>
-              <div className="flex flex-col flex-1">
-                <div className="flex gap-2 mb-3">
-                  {post.tags.slice(0, 1).map(tag => (
-                    <span key={tag} className="text-[10px] uppercase tracking-wider font-bold text-primary">{tag}</span>
+
+              {/* Content - Middle Column */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-2">
+                  {post.tags.slice(0, 2).map(tag => (
+                    <span key={tag} className="text-[10px] uppercase tracking-wider font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                      {tag}
+                    </span>
                   ))}
+                  <span className="sm:hidden text-xs text-muted-foreground">
+                    {formatDate(post.date)}
+                  </span>
                 </div>
-                <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                <h3 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors leading-snug">
                   {post.title}
                 </h3>
-                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                <p className="text-muted-foreground text-sm line-clamp-1">
                   {post.description}
                 </p>
-                <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground font-medium">
-                  <span>{formatDate(post.date)}</span>
-                  <div className="flex items-center gap-1 group-hover:text-foreground transition-colors">
-                    {t.readMore} <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                  </div>
+                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                  <User className="w-3 h-3" />
+                  <span>{post.author}</span>
                 </div>
+              </div>
+
+              {/* Arrow - Right Column */}
+              <div className="hidden sm:flex items-center justify-center w-10 h-10 shrink-0">
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
             </NextLink>
           ))}
