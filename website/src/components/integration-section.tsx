@@ -125,26 +125,24 @@ export const IntegrationSection = () => {
           <Tabs defaultValue="interactive" className="w-full">
 
             {/* Floating Segmented Control */}
-            <div className="flex justify-center mb-12">
-              <div className="inline-flex items-center justify-center p-1.5 bg-muted/20 backdrop-blur-xl border border-border rounded-full shadow-2xl">
+            <div className="flex justify-center mb-12 px-4">
+              <div className="inline-flex items-center justify-center p-1.5 bg-muted/20 backdrop-blur-xl border border-border rounded-full shadow-2xl overflow-x-auto max-w-full">
                 <TabsList className="bg-transparent h-auto p-0 gap-1">
-                  <TabsTrigger value="interactive" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-violet-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Terminal className="w-3.5 h-3.5 mr-2" /> Interactive
+                  <TabsTrigger value="interactive" className="rounded-full px-3 md:px-5 py-2 data-[state=active]:bg-violet-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground whitespace-nowrap">
+                    <Terminal className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                    <span className="hidden md:inline md:ml-2 text-xs font-medium">Interactive</span>
                   </TabsTrigger>
-                  <TabsTrigger value="headless" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Zap className="w-3.5 h-3.5 mr-2" /> Headless
+                  <TabsTrigger value="headless" className="rounded-full px-3 md:px-5 py-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground whitespace-nowrap">
+                    <Zap className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                    <span className="hidden md:inline md:ml-2 text-xs font-medium">Headless</span>
                   </TabsTrigger>
-                  <TabsTrigger value="ide" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Code2 className="w-3.5 h-3.5 mr-2" /> IDE
+                  <TabsTrigger value="ide" className="rounded-full px-3 md:px-5 py-2 data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground whitespace-nowrap">
+                    <Code2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                    <span className="hidden md:inline md:ml-2 text-xs font-medium">IDE</span>
                   </TabsTrigger>
-                  <TabsTrigger value="sdk" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Box className="w-3.5 h-3.5 mr-2" /> SDK
-                  </TabsTrigger>
-                  <TabsTrigger value="chrome" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-yellow-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Puzzle className="w-3.5 h-3.5 mr-2" /> Chrome Extension
-                  </TabsTrigger>
-                  <TabsTrigger value="web" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Globe className="w-3.5 h-3.5 mr-2" /> Web
+                  <TabsTrigger value="sdk" className="rounded-full px-3 md:px-5 py-2 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground whitespace-nowrap">
+                    <Box className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                    <span className="hidden md:inline md:ml-2 text-xs font-medium">SDK</span>
                   </TabsTrigger>
                 </TabsList>
               </div>
