@@ -125,26 +125,24 @@ export const IntegrationSection = () => {
           <Tabs defaultValue="interactive" className="w-full">
 
             {/* Floating Segmented Control */}
-            <div className="flex justify-center mb-12">
-              <div className="inline-flex items-center justify-center p-1.5 bg-muted/20 backdrop-blur-xl border border-border rounded-full shadow-2xl">
+            <div className="flex justify-center mb-12 px-4">
+              <div className="inline-flex items-center justify-center p-1.5 bg-muted/20 backdrop-blur-xl border border-border rounded-full shadow-2xl overflow-x-auto max-w-full">
                 <TabsList className="bg-transparent h-auto p-0 gap-1">
-                  <TabsTrigger value="interactive" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-violet-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Terminal className="w-3.5 h-3.5 mr-2" /> Interactive
+                  <TabsTrigger value="interactive" className="rounded-full px-3 md:px-5 py-2 data-[state=active]:bg-violet-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground whitespace-nowrap">
+                    <Terminal className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                    <span className="hidden md:inline md:ml-2 text-xs font-medium">Interactive</span>
                   </TabsTrigger>
-                  <TabsTrigger value="headless" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Zap className="w-3.5 h-3.5 mr-2" /> Headless
+                  <TabsTrigger value="headless" className="rounded-full px-3 md:px-5 py-2 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground whitespace-nowrap">
+                    <Zap className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                    <span className="hidden md:inline md:ml-2 text-xs font-medium">Headless</span>
                   </TabsTrigger>
-                  <TabsTrigger value="ide" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Code2 className="w-3.5 h-3.5 mr-2" /> IDE
+                  <TabsTrigger value="ide" className="rounded-full px-3 md:px-5 py-2 data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground whitespace-nowrap">
+                    <Code2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                    <span className="hidden md:inline md:ml-2 text-xs font-medium">IDE</span>
                   </TabsTrigger>
-                  <TabsTrigger value="sdk" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Box className="w-3.5 h-3.5 mr-2" /> SDK
-                  </TabsTrigger>
-                  <TabsTrigger value="chrome" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-yellow-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Puzzle className="w-3.5 h-3.5 mr-2" /> Chrome Extension
-                  </TabsTrigger>
-                  <TabsTrigger value="web" className="rounded-full px-5 py-2 text-xs font-medium data-[state=active]:bg-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground">
-                    <Globe className="w-3.5 h-3.5 mr-2" /> Web
+                  <TabsTrigger value="sdk" className="rounded-full px-3 md:px-5 py-2 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all text-muted-foreground hover:text-foreground whitespace-nowrap">
+                    <Box className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                    <span className="hidden md:inline md:ml-2 text-xs font-medium">SDK</span>
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -157,7 +155,7 @@ export const IntegrationSection = () => {
                         title="Interactive Mode"
                         description="Launch a rich terminal UI to chat with your codebase. Use @ to reference files and symbols, helping you understand and edit code in real-time."
                         command="qwen"
-                        videoSrc="https://tbexpand.alicdn.com/1766039938343/4f37b23fdf1010ac.mp4?auth_key=1769949490-0-0-617e0c9ddc5575894abe47f78cd19c5d&biz=publish-5a1338127dc1a0bc&t=213e035717699467906185741e105e&t=213e035717699467906185741e105e&b=publish&p=cloudvideo_http_video_extranet_notrans&i=546804440792"
+                        imageSrc="https://gw.alicdn.com/imgextra/i3/O1CN01NVV7Sy1VckCYdeBuT_!!6000000002674-2-tps-1600-900.png"
                         imageAlt="Interactive Terminal UI"
                     />
                 </TabsContent>
@@ -167,7 +165,7 @@ export const IntegrationSection = () => {
                         title="Headless Mode"
                         description="Execute tasks directly from the command line without the UI. Perfect for one-off prompts, complex shell scripts, and CI/CD pipelines."
                         command='qwen -p "Explain the auth flow"'
-                        imageSrc="/images/github-demo.png"
+                        imageSrc="https://gw.alicdn.com/imgextra/i3/O1CN01gOm37Q1HRNksxmOc0_!!6000000000754-1-tps-1280-720.gif"
                         imageAlt="Headless Mode Automation"
                     />
                 </TabsContent>
@@ -187,7 +185,7 @@ export const IntegrationSection = () => {
                         title="TypeScript SDK"
                         description="Build your own AI agents and tools on top of Qwen Code. Our SDK provides programmable access to the same powerful engine that drives the CLI."
                         command="npm install @qwen-code/sdk"
-                        imageSrc="/images/extension-demo.png"
+                        imageSrc="https://gw.alicdn.com/imgextra/i1/O1CN01np6TOR1uZs6ylG1Fv_!!6000000006052-2-tps-1702-952.png"
                         imageAlt="TypeScript SDK Integration"
                     />
                 </TabsContent>
