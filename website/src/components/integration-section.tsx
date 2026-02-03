@@ -157,7 +157,7 @@ export const IntegrationSection = () => {
                         title="Interactive Mode"
                         description="Launch a rich terminal UI to chat with your codebase. Use @ to reference files and symbols, helping you understand and edit code in real-time."
                         command="qwen"
-                        videoSrc="https://tbexpand.alicdn.com/1766039938343/4f37b23fdf1010ac.mp4?auth_key=1769949490-0-0-617e0c9ddc5575894abe47f78cd19c5d&biz=publish-5a1338127dc1a0bc&t=213e035717699467906185741e105e&t=213e035717699467906185741e105e&b=publish&p=cloudvideo_http_video_extranet_notrans&i=546804440792"
+                        imageSrc="https://gw.alicdn.com/imgextra/i3/O1CN01NVV7Sy1VckCYdeBuT_!!6000000002674-2-tps-1600-900.png"
                         imageAlt="Interactive Terminal UI"
                     />
                 </TabsContent>
@@ -167,7 +167,7 @@ export const IntegrationSection = () => {
                         title="Headless Mode"
                         description="Execute tasks directly from the command line without the UI. Perfect for one-off prompts, complex shell scripts, and CI/CD pipelines."
                         command='qwen -p "Explain the auth flow"'
-                        imageSrc="/images/github-demo.png"
+                        imageSrc="https://gw.alicdn.com/imgextra/i3/O1CN01gOm37Q1HRNksxmOc0_!!6000000000754-1-tps-1280-720.gif"
                         imageAlt="Headless Mode Automation"
                     />
                 </TabsContent>
@@ -187,7 +187,7 @@ export const IntegrationSection = () => {
                         title="TypeScript SDK"
                         description="Build your own AI agents and tools on top of Qwen Code. Our SDK provides programmable access to the same powerful engine that drives the CLI."
                         command="npm install @qwen-code/sdk"
-                        imageSrc="/images/extension-demo.png"
+                        imageSrc="https://gw.alicdn.com/imgextra/i1/O1CN01np6TOR1uZs6ylG1Fv_!!6000000006052-2-tps-1702-952.png"
                         imageAlt="TypeScript SDK Integration"
                     />
                 </TabsContent>
