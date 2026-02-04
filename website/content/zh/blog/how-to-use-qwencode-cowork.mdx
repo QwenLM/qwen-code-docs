@@ -1,0 +1,262 @@
+---
+title: "我用AI整理了乱成一锅粥的桌面，Qwen Code Cowork 使用场景大全"
+date: "2026-02-04"
+description: "免费开源的AI工作助手，帮你整理文件、批量重命名、清理存储空间、自动化日常任务。"
+author: "joeytoday"
+tags: ["user examples", "cowork"]
+---
+
+import { Callout } from 'nextra/components'
+
+# 我用AI整理了乱成一锅粥的桌面，Qwen Code Cowork使用场景大全
+
+> 免费开源的AI工作助手，帮你整理文件、批量重命名、清理存储空间、自动化日常任务。
+
+
+你的桌面是不是也长这样？👇
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN012IV1BI2AAFoGllSTB_!!6000000008162-0-tps-2878-1640.jpg)
+
+- 截图 _20231015、截图 _20231016、截图 _20231017……
+- 新建文件夹、新建文件夹 (1)、新建文件夹 (2)……
+- 微信图片 _20240101、微信图片 _20240102……
+
+每次想找个文件都像在垃圾堆里翻宝藏，明明记得存过，就是找不到。更崩溃的是，每隔几个月就会收到系统提示：**磁盘空间不足**。
+
+我知道应该整理，但是——
+
+> 整理文件这件事，永远在 TODO List 上躺着，永远不会被执行。
+
+直到我发现了 **Qwen Code Cowork**，一个真正能帮你干活的 AI 助手。
+
+## Qwen Code Cowork 是什么？
+
+简单来说，它是一个**免费开源**的桌面 AI 助手，基于 Qwen Code SDK 构建。
+
+但它不只是一个聊天框，而是真正能够**动手帮你干活**的 AI：
+
+| 能力 | 说明 |
+|------|------|
+| 📝 编写编辑代码 | 支持任何编程语言 |
+| 📁 管理文件 | 创建、移动、重命名、整理 |
+| ⚡ 运行命令 | 构建、测试、部署 |
+| 💬 回答问题 | 关于你的代码库或任何问题 |
+| 🔧 自动化任务 | 只要你能用自然语言描述 |
+
+最关键的是：**完全免费，开源可控，数据本地存储**。
+
+相比之下，Claude Code 只对 Max 订阅用户开放，月费 100-200 刀，而 Qwen Code Cowork 零成本就能用上同等能力。
+
+## 使用场景大全
+
+下面是我实际使用中发现的几个超实用场景，每个都附带了具体的操作演示。
+
+### 场景一：整理乱成一锅粥的桌面 / 下载文件夹
+
+桌面和下载文件夹简直是数字垃圾场，各种截图、文档、安装包、临时文件混在一起。每次想找东西都要翻半天，看着就心烦，但手动整理又太费时间。
+
+**Cowork 如何帮你**：
+
+直接告诉它：「帮我整理桌面，按文件类型分类，截图放到截图文件夹，文档放到文档文件夹，安装包放到安装包文件夹」
+
+它会：
+
+1. 先扫描你的桌面，列出所有文件
+2. 给你一个整理方案预览
+3. 你确认后，自动执行分类和移动
+
+ 
+<Callout>
+    **小技巧**：
+    使用 Plan 模式让 AI 先规划，确认方案后再执行，这样更安全可控。
+</Callout> 
+
+【录屏演示👇】
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/8BI8RK1BDWJecJ2iYgy72OdG_2SWtvvVuf9SQ-gHc_Q.mp4" controls></video>
+
+### 场景二：批量重命名文件（照片按日期重命名）
+
+手机导出的照片命名乱七八糟，IMG_0001、IMG_0002……完全看不出是什么时候拍的。想按「2024-01-15_ 海边日落」这样的格式重命名，但几百张照片手动改要改到天荒地老。
+
+**Cowork 如何帮你**：
+
+告诉它：「把这个文件夹里的照片按拍摄日期重命名，格式是 YYYY-MM-DD_ 序号」
+
+它会：
+
+1. 读取每张照片的 EXIF 信息（拍摄日期）
+2. 按你指定的格式生成新文件名
+3. 预览所有重命名操作
+4. 确认后批量执行
+
+【录屏演示👇】
+
+这是我让 Qwen Code 给我模拟演示的文件，所以后缀都是 `txt`，现在我要求它统一把所有文件 `.txt` 后缀都删除。
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/SJZg3DxO_ptxQ0K-flOa-vglA6Sc_7Kk1YM1oSDaYus.mp4" controls></video>
+
+整理完文件的类型，我现在需要把所有文件按照我的要求重命名，当然你也可以进一步要求它分好类：
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/P7uh9dSkCvWwVbelZoubF_p7_PnKmSUofZLeaSdT7Ts.mp4" controls></video>
+
+### 场景三：检查本地存储空间，找出大文件
+
+电脑又提示磁盘空间不足了，但不知道空间都被什么占用了。想清理又怕误删重要文件，打开各种清理软件又担心隐私安全。
+
+**Cowork 如何帮你**：
+
+告诉它：「帮我检查一下电脑存储空间使用情况，找出占用空间最大的 10 个文件夹和文件，并简单说明内容，以及是否可以删除和删除可能造成的影响」
+
+它会：
+
+1. 扫描你的磁盘使用情况
+2. 列出占用空间最大的文件和文件夹
+3. 分析哪些是可以安全删除的（如缓存、临时文件）
+4. 给出清理建议
+
+<Callout type="error">
+    **注意**：
+    删除文件前一定要确认！建议先移动到回收站，确认没问题再彻底删除。
+</Callout>
+
+【录屏演示👇】
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/xoRHR2fuquTLSGfozu3sWyu1_fbB4nQ6163l65tmBtI.mp4" controls></video>
+
+### 场景四：笔记整合与格式化
+
+笔记散落在各个地方：微信收藏、备忘录、Notion、Obsidian……想把它们整合到一起，但格式不统一，手动复制粘贴还要调格式，太麻烦了。
+
+**Cowork 如何帮你**：
+
+告诉它：「把这个文件夹里的所有 docx 文件整合成一个 Markdown 文件，按创建时间排列，统一格式，文件名显示为二级标题」
+
+它会：
+
+1. 读取所有文件内容
+2. 识别并统一格式
+3. 按你指定的规则排序整合
+4. 生成一个格式规范的 Markdown 文件
+
+【录屏演示👇】
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/VpuvQ4OvK41SQxV5_aVcrcYnqPWDuuuMGBTqGwVK8bI.mp4" controls></video>
+
+不仅仅可以合并文件，也可以拆分文件，我就不演示了，大家可以自己尝试看看～👀
+
+### 场景五：批量处理文档（提取 PDF 内容）
+
+下载了一堆 PDF 资料，想把里面的文字提取出来做笔记，但一个个打开复制太慢了。有些 PDF 还是扫描版，复制出来全是乱码。
+
+**Cowork 如何帮你**：
+
+告诉它：「把这个文件夹里的所有 PDF 文件内容提取出来，保存为对应的 markdown 文件」
+
+它会：
+
+1. 遍历文件夹中的所有 PDF
+2. 提取文本内容
+3. 为每个 PDF 生成对应的 txt 文件
+4. 汇报处理结果
+
+【录屏演示👇】
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/o9G1m2fuFiWvrv7-0gHU0Vd_ewPkf8yCV7U8Vz8mFK4.mp4" controls></video>`
+
+## 🚀 快速开始
+
+
+### Qwen Code 直接安装（推荐）
+
+直接告诉 Qwen Code，3 分钟内全搞定。
+
+```
+帮我安装 cowork 项目并启动，仓库地址是：https://github.com/QwenLM/qwen-code-examples
+```
+
+👇 点击播放安装视频：
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/tsV-hCkm9vMjGTWsmDr8qcB8LxY_mfwWb7R97SBR2Ps.mp4"  controls></video>
+
+### 源码安装（进阶）
+
+如果你想从源码构建，需要先安装 Bun：
+
+```bash
+# 安装 Bun
+curl -fsSL https://bun.sh/install | bash
+exec /bin/zsh
+
+# 克隆仓库
+git clone https://github.com/QwenLM/qwen-code-examples
+
+# 进入目录并安装
+cd qwen-code-examples/apps/qwen-cowork
+bun install
+
+# 启动
+bun run dev
+```
+
+## 使用小技巧
+
+### 1. 善用 Plan 模式
+
+对于文件操作这种不可逆的任务，建议先让 AI 规划方案：
+
+```
+「先帮我分析一下这个文件夹的情况，给我一个整理方案，不要直接执行」
+```
+
+确认方案没问题后，再让它执行。
+
+### 2. 指定工作目录
+
+创建会话时可以指定工作目录，这样 AI 就只会在这个目录下操作，更安全。
+
+### 3. 敏感操作需确认
+
+Cowork 对于删除、移动等敏感操作会先询问你的确认，不用担心误操作。
+
+## 更多可能
+
+除了上面列举的场景，Qwen Code Cowork 还能帮你：
+
+- 🔄 自动化日常任务（定时备份、同步文件）
+- 💻 代码项目管理（初始化项目、安装依赖、运行测试）
+- 📊 数据处理（CSV 转换、数据清洗、格式转换）
+- 📝 文档生成（根据代码生成文档、生成 README）
+- 🔍 代码审查（分析代码质量、找出潜在问题）
+
+只要你能用自然语言描述，它就能帮你实现。
+
+## 写在最后
+
+说实话，第一次用 Cowork 整理完桌面的时候，我有一种「终于干净了」的爽感。
+
+那些堆积了几个月的文件，AI 几分钟就帮我分类整理好了。以前觉得「以后再说」的事情，现在真的可以「现在就做」了。
+
+如果你也有类似的困扰，不妨试试 Qwen Code Cowork。毕竟，**能让 AI 干的活，为什么要自己干呢？**
+
+> 📌 项目地址：https://github.com/QwenLM/qwen-code-examples
+>
+> 如果觉得有用，欢迎给项目点个 ⭐️ Star！
+>
+> 有问题或者想分享你的使用场景，欢迎在评论区留言～
+
+
+## 🔗 链接与资源
+
+- **GitHub**: [github.com/QwenLM/qwen-code](https://github.com/QwenLM/qwen-code)
+- **官方文档**: [qwenlm.github.io/qwen-code-docs](https://qwenlm.github.io/qwen-code-docs)
+
+### 欢迎加入我们！
+
+Qwen Code 离不开社区开发者的共建，也离不开内部用户的反馈支持。我们目前的 Java SDK、VS Code 插件、Chrome 浏览器插件等重要特性，都是内部伙伴一起共建的。如果你对 Qwen Code 感兴趣，欢迎一起来共建！
+
+最后也欢迎加入我们，Qwen Code 项目正在招聘 **AI 全栈方向**技术人才，层级不限，欢迎投递简历! pomelo.lcw@alibaba-inc.com 
+
+---
+
+拥抱 AI Coding 的新时代，从终端里的 Qwen Code 开始。
