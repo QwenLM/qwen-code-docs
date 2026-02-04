@@ -8,6 +8,7 @@ import { GitHubIcon, DiscordIcon } from "nextra/icons";
 import { Button } from "nextra/components";
 import { FileText, Star, BookOpen, Newspaper } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+import { get } from "http";
 
 // 定义接口类型
 interface NavbarProps {
@@ -177,6 +178,12 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
     return `/${userLang}/users/overview`;
   };
 
+  // 获取博客链接
+  const getBlogLink = () => {
+    const userLang = getUserLanguage();
+    return `/${userLang}/blog`;
+  };
+
   // 右侧导航区域的对齐方式
   const rightAlignClass =
     align === "left" ? "me-auto" : "max-md:ml-auto md:ml-0";
@@ -207,6 +214,19 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
           >
             <BookOpen height='20' />
           </NextLink>
+
+          <NextLink
+            href={getBlogLink()}
+            className={cn(
+              documentLinkClass,
+              "flex items-center",
+              "text-sm px-2 py-1 rounded-md"
+            )}
+            aria-label='Blog'
+          >
+            <Newspaper height='20' />
+          </NextLink>
+          
           <ThemeToggle />
         </div>
 
@@ -226,6 +246,16 @@ export const CustomNavbar: React.FC<NavbarProps> = ({
           >
             <BookOpen height='24' className='mr-1.5' />
             Documentation
+          </NextLink>
+
+          {/* 博客链接 - 桌面端 */}
+          <NextLink
+            href={getBlogLink()}
+            className={cn(documentLinkClass, "flex items-center")}
+            aria-label='Blog'
+          >
+            <Newspaper height='24' className='mr-1.5' />
+            Blog
           </NextLink>
 
           {/* 项目链接 */}
