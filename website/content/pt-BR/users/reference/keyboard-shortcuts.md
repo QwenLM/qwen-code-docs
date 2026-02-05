@@ -4,16 +4,16 @@ Este documento lista os atalhos de teclado disponíveis no Qwen Code.
 
 ## Geral
 
-| Atalho      | Descrição                                                                                                             |
-| ----------- | --------------------------------------------------------------------------------------------------------------------- |
-| `Esc`       | Fecha diálogos e sugestões.                                                                                           |
-| `Ctrl+C`    | Cancela a solicitação em andamento e limpa a entrada. Pressione duas vezes para sair da aplicação.                   |
-| `Ctrl+D`    | Sai da aplicação se a entrada estiver vazia. Pressione duas vezes para confirmar.                                     |
-| `Ctrl+L`    | Limpa a tela.                                                                                                         |
-| `Ctrl+O`    | Alterna a exibição do console de depuração.                                                                           |
-| `Ctrl+S`    | Permite que respostas longas sejam impressas completamente, desativando o truncamento. Use o histórico de rolagem do seu terminal para visualizar toda a saída. |
-| `Ctrl+T`    | Alterna a exibição das descrições das ferramentas.                                                                    |
-| `Shift+Tab` | Alterna entre os modos de aprovação (`plan` → `default` → `auto-edit` → `yolo`).                                      |
+| Atalho                         | Descrição                                                                                                             |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `Esc`                          | Fecha diálogos e sugestões.                                                                                           |
+| `Ctrl+C`                       | Cancela a solicitação em andamento e limpa a entrada. Pressione duas vezes para sair da aplicação.                    |
+| `Ctrl+D`                       | Sai da aplicação se a entrada estiver vazia. Pressione duas vezes para confirmar.                                     |
+| `Ctrl+L`                       | Limpa a tela.                                                                                                         |
+| `Ctrl+O`                       | Alterna a exibição do console de depuração.                                                                           |
+| `Ctrl+S`                       | Permite que respostas longas sejam impressas completamente, desativando o truncamento. Use o histórico de rolagem do seu terminal para visualizar toda a saída. |
+| `Ctrl+T`                       | Alterna a exibição das descrições das ferramentas.                                                                    |
+| `Shift+Tab` (`Tab` no Windows) | Alterna entre os modos de aprovação (`plan` → `default` → `auto-edit` → `yolo`)                                       |
 
 ## Prompt de Entrada
 
@@ -51,21 +51,21 @@ Este documento lista os atalhos de teclado disponíveis no Qwen Code.
 | Atalho          | Descrição                                        |
 | --------------- | ------------------------------------------------ |
 | `Seta para baixo` | Navega para baixo nas sugestões.                 |
-| `Tab` / `Enter`   | Aceita a sugestão selecionada.                   |
+| `Tab` / `Enter` | Aceita a sugestão selecionada.                   |
 | `Seta para cima`  | Navega para cima nas sugestões.                  |
 
 ## Seleção de Botão de Rádio
 
 | Atalho             | Descrição                                                                                                     |
 | ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `Seta para baixo` / `j` | Mover seleção para baixo.                                                                                     |
+| `Seta para Baixo` / `j` | Mover seleção para baixo.                                                                                     |
 | `Enter`            | Confirmar seleção.                                                                                            |
-| `Seta para cima` / `k`   | Mover seleção para cima.                                                                                        |
+| `Seta para Cima` / `k`   | Mover seleção para cima.                                                                                        |
 | `1-9`              | Selecionar um item pelo seu número.                                                                           |
 | (vários dígitos)   | Para itens com números maiores que 9, pressione os dígitos em rápida sucessão para selecionar o item correspondente. |
 
 ## Integração com IDE
 
-| Atalho   | Descrição                                      |
-| -------- | ---------------------------------------------- |
-| `Ctrl+G` | Ver o contexto da CLI recebido pela IDE        |
+| Atalho   | Descrição                         |
+| -------- | --------------------------------- |
+| `Ctrl+G` | Ver o contexto CLI recebido da IDE |

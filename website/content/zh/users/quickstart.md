@@ -4,7 +4,7 @@
 
 本快速入门指南将帮助你在几分钟内开始使用 AI 驱动的编码辅助。到结束时，你将了解如何使用 Qwen Code 完成常见的开发任务。
 
-## 开始之前
+## 前提条件
 
 请确保你已具备：
 
@@ -18,9 +18,9 @@
 
 ### NPM（推荐）
 
-需要 [Node.js 20+](https://nodejs.org/download)，你可以使用 `node -v` 检查版本。如果尚未安装，请使用以下命令进行安装。
+需要 [Node.js 20+](https://nodejs.org/download)，你可以使用 `node -v` 检查版本。如果尚未安装，请先安装 Node.js。
 
-如果你已经[安装了 Node.js 或更高版本](https://nodejs.org/en/download/)：
+如果你已经[安装了 Node.js 20+ 或更高版本](https://nodejs.org/en/download/)：
 
 ```sh
 npm install -g @qwen-code/qwen-code@latest
@@ -112,7 +112,7 @@ Qwen Code 将会：
 >
 > Qwen Code 在修改文件之前总是会请求许可。你可以批准单个更改，或为一个会话启用“全部接受”模式。
 
-### 将 Git 与 Qwen Code 结合使用
+### 结合使用 Git
 
 Qwen Code 让 Git 操作变得像对话一样简单：
 
@@ -214,7 +214,7 @@ Qwen Code 将会：
 
 ## 初学者的实用技巧
 
-**请求要具体明确**
+**明确具体地请求**
 
 - 不要说："修复这个 bug"
 - 而是说："修复登录 bug，用户输入错误凭据后看到空白屏幕"
@@ -229,7 +229,7 @@ Qwen Code 将会：
 3. 构建一个网页，允许用户查看和编辑他们的信息
 ```
 
-**让 Qwen Code 先探索**
+**先让 Qwen Code 探索**
 
 - 在进行更改之前，先让 Qwen Code 了解你的代码：
 

@@ -186,7 +186,7 @@ npm run lint
 ### 项目结构
 
 - `packages/`：包含项目的各个子包。
-  - `cli/`：命令行界面。
+  - `cli/`：CLI。
   - `core/`：Qwen Code 的核心后端逻辑。
 - `docs/`：包含所有项目文档。
 - `scripts/`：用于构建、测试和开发任务的实用脚本。
