@@ -1,0 +1,55 @@
+import { VideoShowcase } from '@/components/video-showcase'
+
+export const videos = [
+
+  {
+    title: "Qwen Code 简介",
+    description: "了解 Qwen Code 的核心功能和优势，以及如何开始使用这款 AI 编程助手。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000008149/O1CN01s4jvEt2A4IeyzthUR_!!6000000008149-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/csQymc4NChpT34XHza_UH9lB65SM3DCDLe7tuXZWtDk.mp4",
+    category: "Getting Started",
+
+  },
+
+  {
+    title: "将 YouTube 视频转为博客文章",
+    description: "学习如何使用 Qwen Code 和 SOP 技能将 YouTube 视频转换为博客文章。",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
+    category: "Features",
+  },
+  {
+    title: "VS Code 集成",
+    description: "了解如何在 VS Code 中配置和使用 Qwen Code 扩展。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005426/O1CN01XuZxfE1pxAACIE5Yz_!!6000000005426-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/WxcdoDX2cDSWtHJKAcU_O5zWE9mz3odG76vArAHNg94.mp4",
+    duration: "4:50",
+    category: "Tutorials",
+  },
+  {
+    title: "Remotion 技能",
+    description: "学习如何使用 Remotion 技能和 Qwen Code 创建视频。",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005610/O1CN01Q0KFCs1rJR3DOBCmL_!!6000000005610-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/Q7xsDoKLjuSPX867e8wlWtk0U5c7M9_F7ljsuPJrhQQ.mp4",
+    category: "Advanced",
+  },
+];
+
+export const categories = [
+  { id: "Getting Started", label: "入门指南" },
+  { id: "Features", label: "功能特性" },
+  { id: "Tutorials", label: "教程" },
+  { id: "Advanced", label: "进阶" },
+];
+
+export const texts = {
+  title: "视频展示",
+  subtitle: "通过视频演示探索 Qwen Code 的强大功能",
+  featured: "精选",
+  allVideos: "所有视频",
+  all: "全部",
+  close: "关闭",
+  unsupportedVideo: "您的浏览器不支持视频标签。",
+};
+
+<VideoShowcase videos={videos} categories={categories} texts={texts} />

@@ -1,0 +1,55 @@
+import { VideoShowcase } from '@/components/video-showcase'
+
+export const videos = [
+
+  {
+    title: "Qwen Code の紹介",
+    description: "Qwen Code の主な機能と利点、この AI コーディングアシスタントの使い始め方について学びます。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000008149/O1CN01s4jvEt2A4IeyzthUR_!!6000000008149-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/csQymc4NChpT34XHza_UH9lB65SM3DCDLe7tuXZWtDk.mp4",
+    category: "Getting Started",
+
+  },
+
+  {
+    title: "YouTube 動画をブログ記事に変換する",
+    description: "Qwen Code を使用して SOP スキルで YouTube 動画をブログ記事に変換する方法を学びます。",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
+    category: "Features",
+  },
+  {
+    title: "VS Code との統合",
+    description: "VS Code で Qwen Code 拡張機能を設定して使用する方法を学びます。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005426/O1CN01XuZxfE1pxAACIE5Yz_!!6000000005426-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/WxcdoDX2cDSWtHJKAcU_O5zWE9mz3odG76vArAHNg94.mp4",
+    duration: "4:50",
+    category: "Tutorials",
+  },
+  {
+    title: "Remotion スキル",
+    description: "Qwen Code で Remotion スキルを使用して動画を作成する方法を学びます。",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005610/O1CN01Q0KFCs1rJR3DOBCmL_!!6000000005610-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/Q7xsDoKLjuSPX867e8wlWtk0U5c7M9_F7ljsuPJrhQQ.mp4",
+    category: "Advanced",
+  },
+];
+
+export const categories = [
+  { id: "Getting Started", label: "はじめに" },
+  { id: "Features", label: "機能" },
+  { id: "Tutorials", label: "チュートリアル" },
+  { id: "Advanced", label: "上級" },
+];
+
+export const texts = {
+  title: "ビデオショーケース",
+  subtitle: "ビデオデモンストレーションを通じて Qwen Code の強力な機能を探索してください",
+  featured: "注目",
+  allVideos: "すべてのビデオ",
+  all: "すべて",
+  close: "閉じる",
+  unsupportedVideo: "お使いのブラウザはビデオタグをサポートしていません。",
+};
+
+<VideoShowcase videos={videos} categories={categories} texts={texts} />
