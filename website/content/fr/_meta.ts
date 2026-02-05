@@ -11,6 +11,14 @@ export default {
     type: 'page',
     title: 'Guide du développeur',
   },
+  showcase: {
+    type: 'page',
+    title: 'Présentation',
+    theme: {
+      sidebar: false,
+      layout: 'full'
+    }
+  },
   blog: {
     type: 'page',
     title: 'Blog',

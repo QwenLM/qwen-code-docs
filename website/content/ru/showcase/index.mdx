@@ -1,0 +1,55 @@
+import { VideoShowcase } from '@/components/video-showcase'
+
+export const videos = [
+
+  {
+    title: "Введение в Qwen Code",
+    description: "Узнайте о ключевых функциях и преимуществах Qwen Code, а также о том, как начать работу с этим ИИ-ассистентом для программирования.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000008149/O1CN01s4jvEt2A4IeyzthUR_!!6000000008149-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/csQymc4NChpT34XHza_UH9lB65SM3DCDLe7tuXZWtDk.mp4",
+    category: "Getting Started",
+
+  },
+
+  {
+    title: "Превратить видео YouTube в сообщение блога",
+    description: "Узнайте, как использовать Qwen Code для превращения видео YouTube в статью блога с помощью навыков SOP.",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
+    category: "Features",
+  },
+  {
+    title: "Интеграция с VS Code",
+    description: "Узнайте, как настроить и использовать расширение Qwen Code в VS Code.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005426/O1CN01XuZxfE1pxAACIE5Yz_!!6000000005426-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/WxcdoDX2cDSWtHJKAcU_O5zWE9mz3odG76vArAHNg94.mp4",
+    duration: "4:50",
+    category: "Tutorials",
+  },
+  {
+    title: "Навыки Remotion",
+    description: "Узнайте, как использовать Remotion Skill для создания видео с помощью Qwen Code.",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005610/O1CN01Q0KFCs1rJR3DOBCmL_!!6000000005610-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/Q7xsDoKLjuSPX867e8wlWtk0U5c7M9_F7ljsuPJrhQQ.mp4",
+    category: "Advanced",
+  },
+];
+
+export const categories = [
+  { id: "Getting Started", label: "Начало работы" },
+  { id: "Features", label: "Возможности" },
+  { id: "Tutorials", label: "Учебные пособия" },
+  { id: "Advanced", label: "Продвинутый" },
+];
+
+export const texts = {
+  title: "Видеовитрина",
+  subtitle: "Исследуйте мощные возможности Qwen Code через видеодемонстрации",
+  featured: "Рекомендуемые",
+  allVideos: "Все видео",
+  all: "Все",
+  close: "Закрыть",
+  unsupportedVideo: "Ваш браузер не поддерживает видео-тег.",
+};
+
+<VideoShowcase videos={videos} categories={categories} texts={texts} />

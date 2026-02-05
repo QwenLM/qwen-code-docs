@@ -1,0 +1,55 @@
+import { VideoShowcase } from '@/components/video-showcase'
+
+export const videos = [
+
+  {
+    title: "Introduction to Qwen Code",
+    description: "Learn about Qwen Code's core features and advantages, and how to get started with this AI coding assistant.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000008149/O1CN01s4jvEt2A4IeyzthUR_!!6000000008149-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/csQymc4NChpT34XHza_UH9lB65SM3DCDLe7tuXZWtDk.mp4",
+    category: "Getting Started",
+
+  },
+
+  {
+    title: "Turn youtube video into a blog post",
+    description: "Learn how to use Qwen Code to turn a youtube video into a blog article with sop skills",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
+    category: "Features",
+  },
+  {
+    title: "VS Code Integration",
+    description: "Learn how to configure and use the Qwen Code extension in VS Code.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005426/O1CN01XuZxfE1pxAACIE5Yz_!!6000000005426-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/WxcdoDX2cDSWtHJKAcU_O5zWE9mz3odG76vArAHNg94.mp4",
+    duration: "4:50",
+    category: "Tutorials",
+  },
+  {
+    title: "Remotion Skills",
+    description: "Learn how to use Remotion Skill to create videos with Qwen Code.",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005610/O1CN01Q0KFCs1rJR3DOBCmL_!!6000000005610-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/Q7xsDoKLjuSPX867e8wlWtk0U5c7M9_F7ljsuPJrhQQ.mp4",
+    category: "Advanced",
+  },
+];
+
+export const categories = [
+  { id: "Getting Started", label: "Getting Started" },
+  { id: "Features", label: "Features" },
+  { id: "Tutorials", label: "Tutorials" },
+  { id: "Advanced", label: "Advanced" },
+];
+
+export const texts = {
+  title: "Video Showcase",
+  subtitle: "Explore Qwen Code's powerful features through video demonstrations",
+  featured: "Featured",
+  allVideos: "All Videos",
+  all: "All",
+  close: "Close",
+  unsupportedVideo: "Your browser does not support the video tag.",
+};
+
+<VideoShowcase videos={videos} categories={categories} texts={texts} />
