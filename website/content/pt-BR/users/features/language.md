@@ -1,16 +1,16 @@
-# Internacionalização (i18n) & Idioma
+# Internacionalização (i18n) e Idioma
 
-Qwen Code é construído para fluxos de trabalho multilíngues: suporta localização da interface do usuário (i18n/l10n) na CLI, permite escolher o idioma de saída do assistente e permite pacotes de idioma personalizados para a interface.
+O Qwen Code é construído para fluxos de trabalho multilíngues: ele suporta localização da interface do usuário (i18n/l10n) na CLI, permite escolher o idioma de saída do assistente e permite pacotes de idioma personalizados para a interface.
 
-## Visão geral
+## Visão Geral
 
 Do ponto de vista do usuário, a "internacionalização" do Qwen Code abrange múltiplas camadas:
 
 | Capacidade / Configuração | O que controla | Onde é armazenado |
 | ------------------------ | ---------------------------------------------------------------------- | ---------------------------- |
-| `/language ui` | Texto da interface do terminal (menus, mensagens do sistema, prompts) | `~/.qwen/settings.json` |
+| `/language ui` | Texto da interface no terminal (menus, mensagens do sistema, prompts) | `~/.qwen/settings.json` |
 | `/language output` | Idioma em que a IA responde (uma preferência de saída, não tradução da interface) | `~/.qwen/output-language.md` |
-| Pacotes de idioma personalizados | Substituições/estende traduções da interface embutidas | `~/.qwen/locales/*.js` |
+| Pacotes de idioma personalizados | Substituições/extensões das traduções da interface embutidas | `~/.qwen/locales/*.js` |
 
 ## Idioma da Interface
 
@@ -18,13 +18,14 @@ Esta é a camada de localização da interface do CLI (i18n/l10n): controla o id
 
 ### Configurando o Idioma da Interface
 
-Use o comando `/language ui`:
+Utilize o comando `/language ui`:
 
 ```bash
 /language ui zh-CN    # Chinês
 /language ui en-US    # Inglês
 /language ui ru-RU    # Russo
 /language ui de-DE    # Alemão
+/language ui ja-JP    # Japonês
 ```
 
 Aliases também são suportados:
@@ -34,13 +35,14 @@ Aliases também são suportados:
 /language ui en       # Inglês
 /language ui ru       # Russo
 /language ui de       # Alemão
+/language ui ja       # Japonês
 ```
 
 ### Detecção Automática
 
 Na primeira inicialização, o Qwen Code detecta a localidade do seu sistema e define automaticamente o idioma da interface.
 
-Prioridade de detecção:
+Prioridade na detecção:
 
 1. Variável de ambiente `QWEN_CODE_LANG`
 2. Variável de ambiente `LANG`
@@ -53,16 +55,17 @@ O idioma da saída do LLM controla em qual idioma o assistente de IA responde, i
 
 ### Como Funciona
 
-O idioma de saída do LLM é controlado por um arquivo de regras em `~/.qwen/output-language.md`. Este arquivo é incluído automaticamente no contexto do LLM durante a inicialização, instruindo-o a responder no idioma especificado.
+O idioma de saída da LLM é controlado por um arquivo de regras em `~/.qwen/output-language.md`. Este arquivo é incluído automaticamente no contexto da LLM durante a inicialização, instruindo-a a responder no idioma especificado.
 
 ### Detecção Automática
 
-Na primeira inicialização, se nenhum arquivo `output-language.md` existir, o Qwen Code cria um automaticamente com base na localização do seu sistema. Por exemplo:
+Na primeira inicialização, se o arquivo `output-language.md` não existir, o Qwen Code cria um automaticamente com base na localidade do seu sistema. Por exemplo:
 
-- Localização do sistema `zh` cria uma regra para respostas em chinês
-- Localização do sistema `en` cria uma regra para respostas em inglês
-- Localização do sistema `ru` cria uma regra para respostas em russo
-- Localização do sistema `de` cria uma regra para respostas em alemão
+- A localidade do sistema `zh` cria uma regra para respostas em chinês
+- A localidade do sistema `en` cria uma regra para respostas em inglês
+- A localidade do sistema `ru` cria uma regra para respostas em russo
+- A localidade do sistema `de` cria uma regra para respostas em alemão
+- A localidade do sistema `ja` cria uma regra para respostas em japonês
 
 ### Configuração Manual
 
@@ -122,8 +125,8 @@ O diretório do usuário tem precedência sobre as traduções embutidas.
 ```javascript
 // ~/.qwen/locales/es.js
 export default {
-  Hello: 'Olá',
-  Settings: 'Configurações',
+  Hello: 'Hola',
+  Settings: 'Configuración',
   // ... mais traduções
 };
 ```
