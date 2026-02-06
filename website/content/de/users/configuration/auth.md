@@ -30,7 +30,7 @@ Verwenden Sie diese Option, wenn Sie OpenAI-Modelle oder einen beliebigen Anbiet
 
 Verwenden Sie dies, wenn Sie vorhersehbare Kosten mit höheren Nutzungskontingenten für das qwen3-coder-plus-Modell wünschen.
 
-> [!WICHTIG]
+> [!IMPORTANT]
 >
 > Das Coding Plan ist nur für Benutzer im chinesischen Festland (Region Beijing) verfügbar.
 

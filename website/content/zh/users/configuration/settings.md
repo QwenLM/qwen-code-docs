@@ -270,7 +270,7 @@ Qwen Code 会自动将旧的配置设置迁移到新格式。迁移前会备份�
 
 ##### 选择持久化和建议
 
-> [!重要]
+> [!IMPORTANT]
 > 尽可能在用户范围的 `~/.qwen/settings.json` 中定义 `modelProviders`，并避免在任何范围内持久化凭证覆盖。将提供程序目录保存在用户设置中可以防止项目范围和用户范围之间的合并/覆盖冲突，并确保 `/auth` 和 `/model` 更新始终写回到一致的作用域。
 
 - `/model` 和 `/auth` 将 `model.name`（如适用）和 `security.auth.selectedType` 持久化到已定义 `modelProviders` 的最近可写作用域；否则它们会回退到用户作用域。这使工作区/用户文件与活动的提供程序目录保持同步。
