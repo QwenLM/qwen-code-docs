@@ -6,4 +6,5 @@ last-sync.json
 
 # Pagefind search index
 _pagefind/
+
 node_modules/
