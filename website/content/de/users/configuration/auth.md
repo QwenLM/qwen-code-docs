@@ -14,7 +14,7 @@ Verwenden Sie diese Option, wenn Sie die einfachste Einrichtung wünschen und Qw
 - **Funktionsweise**: Beim ersten Start öffnet Qwen Code eine Browser-Anmeldeseite. Nach Abschluss des Vorgangs werden die Anmeldeinformationen lokal zwischengespeichert, sodass Sie normalerweise nicht erneut anmelden müssen.
 - **Voraussetzungen**: Ein `qwen.ai`-Konto + Internetzugang (zumindest für die erste Anmeldung).
 - **Vorteile**: Kein API-Schlüssel-Management, automatische Aktualisierung der Anmeldeinformationen.
-- **Kosten & Kontingent**: Kostenlos, mit einem Kontingent von **60 Anfragen/Minute** und **2.000 Anfragen/Tag**.
+- **Kosten & Kontingent**: Kostenlos, mit einem Kontingent von **60 Anfragen/Minute** und **1.000 Anfragen/Tag**.
 
 Starten Sie die CLI und folgen Sie dem Browser-Ablauf:
 
@@ -32,18 +32,18 @@ Verwenden Sie dies, wenn Sie vorhersehbare Kosten mit höheren Nutzungskontingen
 
 > [!IMPORTANT]
 >
-> Das Coding Plan ist nur für Benutzer auf dem chinesischen Festland (Region Peking) verfügbar.
+> Das Coding Plan ist nur für Benutzer im chinesischen Festland (Region Beijing) verfügbar.
 
-- **Funktionsweise**: Abonnieren Sie das Coding Plan mit einem festen monatlichen Beitrag und konfigurieren Sie anschließend Qwen Code so, dass es den dedizierten Endpunkt und Ihren Abonnement-API-Schlüssel verwendet.
+- **Funktionsweise**: Abonnieren Sie das Coding Plan mit einem festen monatlichen Betrag und konfigurieren Sie anschließend Qwen Code so, dass es den dedizierten Endpunkt und Ihren Abonnement-API-Schlüssel verwendet.
 - **Voraussetzungen**: Ein aktives Coding Plan-Abonnement von [Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing/?tab=globalset#/efm/coding_plan).
 - **Vorteile**: Höhere Nutzungskontingente, vorhersehbare monatliche Kosten, Zugriff auf das neueste qwen3-coder-plus-Modell.
-- **Kosten & Kontingent**: Variiert je nach Plan (siehe Tabelle unten).
+- **Kosten und Kontingent**: Variiert je nach Plan (siehe Tabelle unten).
 
 #### Coding Plan Preise & Kontingente
 
 | Funktion            | Lite Basic Plan       | Pro Advanced Plan     |
 | :------------------ | :-------------------- | :-------------------- |
-| **Preis**           | 40 ¥/Monat            | 200 ¥/Monat           |
+| **Preis**           | ¥40/Monat             | ¥200/Monat            |
 | **5-Stunden-Limit** | Bis zu 1.200 Anfragen | Bis zu 6.000 Anfragen |
 | **Wöchentliches Limit** | Bis zu 9.000 Anfragen | Bis zu 45.000 Anfragen |
 | **Monatliches Limit** | Bis zu 18.000 Anfragen | Bis zu 90.000 Anfragen |
@@ -61,7 +61,7 @@ Wenn Sie die OpenAI-kompatible Option in der CLI auswählen, geben Sie diese Wer
 
 #### Konfiguration über Umgebungsvariablen
 
-Setzen Sie diese Umgebungsvariablen, um Coding Plan zu verwenden:
+Legen Sie diese Umgebungsvariablen fest, um Coding Plan zu verwenden:
 
 ```bash
 export OPENAI_API_KEY="your-coding-plan-api-key"  # Format: sk-sp-xxxxx
@@ -73,7 +73,7 @@ Weitere Details zu Coding Plan, einschließlich Abonnementoptionen und Problembe
 
 ### Andere OpenAI-kompatible Anbieter
 
-Wenn Sie andere Anbieter verwenden (OpenAI, Azure, lokale LLMs usw.), verwenden Sie die folgenden Konfigurationsmethoden.
+Wenn Sie andere Anbieter verwenden (OpenAI, Azure, lokale LLMs usw.), nutzen Sie die folgenden Konfigurationsmethoden.
 
 ### Konfiguration über Befehlszeilenargumente
 
@@ -94,7 +94,7 @@ qwen-code --openai-api-key "your-api-key-here" --model "gpt-4o-mini"
 Sie können diese in Ihrem Shell-Profil, in der CI oder in einer `.env`-Datei festlegen:
 
 ```bash
-export OPENAI_API_KEY="your-api-key-here"
+export OPENAI_API_KEY="ihre-api-schlüssel-hier"
 export OPENAI_BASE_URL="https://api.openai.com/v1"  # optional
 export OPENAI_MODEL="gpt-4o"                        # optional
 ```
@@ -112,7 +112,7 @@ Suchreihenfolge:
    - `~/.qwen/.env`
    - `~/.env`
 
-`.qwen/.env` wird empfohlen, um Qwen Code-Variablen von anderen Tools zu isolieren. Einige Variablen (wie `DEBUG` und `DEBUG_MODE`) sind von Projekt-`.env`-Dateien ausgeschlossen, um die Funktionsweise von qwen-code nicht zu beeinträchtigen.
+`.qwen/.env` wird empfohlen, um Qwen Code-Variablen von anderen Tools zu isolieren. Einige Variablen (wie `DEBUG` und `DEBUG_MODE`) sind von Projekt-`.env`-Dateien ausgeschlossen, um eine Beeinträchtigung des qwen-code-Verhaltens zu vermeiden.
 
 Beispiele:
 
@@ -158,6 +158,6 @@ Wenn keine dieser Variablen in einer nicht-interaktiven Sitzung gesetzt ist, wir
 
 ## Sicherheitshinweise
 
-- Committen Sie keine API-Schlüssel in das Versionskontrollsystem.
-- Verwenden Sie bevorzugt `.qwen/.env` für projektlokale Geheimnisse (und halten Sie es aus git heraus).
-- Behandeln Sie Ihre Terminalausgabe als sensibel, wenn sie Anmeldeinformationen zur Überprüfung ausgibt.
+- Committe keine API-Schlüssel in das Versionskontrollsystem.
+- Verwende bevorzugt `.qwen/.env` für projektlokale Geheimnisse (und halte es aus git heraus).
+- Behandle die Ausgabe deines Terminals als sensibel, wenn sie Anmeldeinformationen zur Überprüfung ausgibt.

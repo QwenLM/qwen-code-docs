@@ -160,7 +160,7 @@ run_shell_command(command="docker-compose up", description="Start all services",
 
 `run_shell_command` 工具现在支持通过集成伪终端（pty）来运行交互式命令。这使得你可以运行需要实时用户输入的命令，例如文本编辑器（`vim`、`nano`）、基于终端的界面（`htop`），以及交互式的版本控制操作（`git rebase -i`）。
 
-当交互式命令正在运行时，你可以从 Qwen Code 发送输入。要聚焦到交互式 shell，请按下 `ctrl+f`。终端输出，包括复杂的 TUI 界面，将被正确渲染。
+当交互式命令正在运行时，你可以从 Qwen Code 发送输入。要聚焦到交互式 Shell，请按下 `ctrl+f`。终端输出，包括复杂的 TUI 界面，将被正确渲染。
 
 ## 重要说明
 

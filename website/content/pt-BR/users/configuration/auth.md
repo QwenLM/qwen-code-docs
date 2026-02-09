@@ -1,9 +1,9 @@
 # Autenticação
 
-O Qwen Code suporta dois métodos de autenticação. Escolha o que corresponde à forma como você deseja executar a CLI:
+O Qwen Code suporta dois métodos de autenticação. Escolha o que corresponda à forma como você deseja executar a CLI:
 
 - **OAuth Qwen (recomendado)**: faça login com sua conta `qwen.ai` em um navegador.
-- **API compatível com OpenAI**: utilize uma chave de API (OpenAI ou qualquer provedor/endpoint compatível com OpenAI).
+- **API compatível com OpenAI**: utilize uma chave de API (OpenAI ou qualquer provedor/endereço compatível com OpenAI).
 
 ![](https://img.alicdn.com/imgextra/i2/O1CN01IxI1bt1sNO543AVTT_!!6000000005754-0-tps-1958-822.jpg)
 
@@ -13,8 +13,8 @@ Use esta opção se quiser a configuração mais simples e estiver usando modelo
 
 - **Como funciona**: na primeira inicialização, o Qwen Code abre uma página de login no navegador. Após finalizar, as credenciais são armazenadas em cache localmente, então geralmente você não precisará fazer login novamente.
 - **Requisitos**: uma conta `qwen.ai` + acesso à internet (pelo menos para o primeiro login).
-- **Benefícios**: sem gerenciamento de chaves de API, atualização automática de credenciais.
-- **Custo e cota**: gratuito, com uma cota de **60 solicitações/minuto** e **2.000 solicitações/dia**.
+- **Benefícios**: sem gerenciamento de chave de API, atualização automática de credenciais.
+- **Custo e cota**: gratuito, com uma cota de **60 solicitações/minuto** e **1.000 solicitações/dia**.
 
 Inicie a CLI e siga o fluxo do navegador:
 
@@ -34,7 +34,7 @@ Use isso se você quiser custos previsíveis com cotas de uso mais altas para o 
 >
 > O Plano de Codificação está disponível apenas para usuários no continente chinês (região de Pequim).
 
-- **Como funciona**: assine o Plano de Codificação com uma taxa mensal fixa, depois configure o Qwen Code para usar o endpoint dedicado e sua chave de API de assinatura.
+- **Como funciona**: assine o Plano de Codificação com uma taxa mensal fixa, então configure o Qwen Code para usar o endpoint dedicado e sua chave de API de assinatura.
 - **Requisitos**: uma assinatura ativa do Plano de Codificação da [Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing/?tab=globalset#/efm/coding_plan).
 - **Benefícios**: cotas de uso mais altas, custos mensais previsíveis, acesso ao mais recente modelo qwen3-coder-plus.
 - **Custo e cota**: varia conforme o plano (veja tabela abaixo).
@@ -45,9 +45,9 @@ Use isso se você quiser custos previsíveis com cotas de uso mais altas para o 
 | :------------------ | :-------------------- | :-------------------- |
 | **Preço**           | ¥40/mês               | ¥200/mês              |
 | **Limite de 5 horas** | Até 1.200 solicitações | Até 6.000 solicitações |
-| **Limite Semanal**  | Até 9.000 solicitações | Até 45.000 solicitações |
-| **Limite Mensal**   | Até 18.000 solicitações | Até 90.000 solicitações |
-| **Modelo Suportado** | qwen3-coder-plus      | qwen3-coder-plus      |
+| **Limite Semanal**  | Até 9.000 solicitações | Até 45.000 solicitações|
+| **Limite Mensal**   | Até 18.000 solicitações| Até 90.000 solicitações|
+| **Modelo Suportado**| qwen3-coder-plus      | qwen3-coder-plus      |
 
 #### Configuração Rápida para o Plano de Codificação
 
@@ -71,7 +71,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 
 Para mais detalhes sobre o Coding Plan, incluindo opções de assinatura e solução de problemas, consulte a [documentação completa do Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3005961).
 
-### Outros Provedores Compatíveis com OpenAI
+### Outros provedores compatíveis com OpenAI
 
 Se você estiver usando outros provedores (OpenAI, Azure, LLMs locais, etc.), utilize os seguintes métodos de configuração.
 
@@ -91,7 +91,7 @@ qwen-code --openai-api-key "sua-chave-api-aqui" --model "gpt-4o-mini"
 
 ### Configurar via variáveis de ambiente
 
-Você pode definir essas variáveis em seu perfil shell, CI ou em um arquivo `.env`:
+Você pode definir essas variáveis em seu perfil do shell, CI ou em um arquivo `.env`:
 
 ```bash
 export OPENAI_API_KEY="sua-chave-de-api-aqui"
@@ -112,7 +112,7 @@ Ordem de busca:
    - `~/.qwen/.env`
    - `~/.env`
 
-`.qwen/.env` é recomendado para manter as variáveis do Qwen Code isoladas de outras ferramentas. Algumas variáveis (como `DEBUG` e `DEBUG_MODE`) são excluídas dos arquivos `.env` do projeto para evitar interferência no comportamento do qwen-code.
+Recomenda-se usar `.qwen/.env` para manter as variáveis do Qwen Code isoladas de outras ferramentas. Algumas variáveis (como `DEBUG` e `DEBUG_MODE`) são excluídas dos arquivos `.env` do projeto para evitar interferência no comportamento do qwen-code.
 
 Exemplos:
 
@@ -121,7 +121,7 @@ Exemplos:
 # Configurações específicas do projeto (recomendado)
 mkdir -p .qwen
 cat >> .qwen/.env <<'EOF'
-OPENAI_API_KEY="sua-chave-api"
+OPENAI_API_KEY="your-api-key"
 OPENAI_BASE_URL="https://api-inference.modelscope.cn/v1"
 OPENAI_MODEL="Qwen/Qwen3-Coder-480B-A35B-Instruct"
 EOF
@@ -132,7 +132,7 @@ EOF
 # Configurações para todos os usuários (disponível em todos os lugares)
 mkdir -p ~/.qwen
 cat >> ~/.qwen/.env <<'EOF'
-OPENAI_API_KEY="sua-chave-api"
+OPENAI_API_KEY="your-api-key"
 OPENAI_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
 OPENAI_MODEL="qwen3-coder-plus"
 EOF
@@ -148,13 +148,13 @@ Na interface do Qwen Code, execute:
 
 ## Ambientes não interativos / sem interface gráfica (CI, SSH, contêineres)
 
-Em um terminal não interativo você normalmente **não pode** completar o fluxo de login OAuth no navegador.
-Use o método de API compatível com OpenAI através de variáveis de ambiente:
+Em um terminal não interativo você normalmente **não pode** concluir o fluxo de login no navegador via OAuth.
+Utilize o método de API compatível com OpenAI através de variáveis de ambiente:
 
 - Defina pelo menos `OPENAI_API_KEY`.
 - Opcionalmente defina `OPENAI_BASE_URL` e `OPENAI_MODEL`.
 
-Se nenhuma dessas for definida em uma sessão não interativa, o Qwen Code sairá com um erro.
+Se nenhuma dessas opções estiver definida em uma sessão não interativa, o Qwen Code será encerrado com um erro.
 
 ## Notas de segurança
 

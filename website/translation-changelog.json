@@ -1,5 +1,96 @@
 [
   {
+    "timestamp": "2026-02-05T14:19:39.171Z",
+    "commit": "d90b6425649cbfed3de1fbc58de310d7d4b29755",
+    "sourceLanguage": "en",
+    "translatedFiles": {
+      "zh": {
+        "success": [
+          "developers/roadmap.md",
+          "developers/tools/web-search.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/language.md",
+          "users/features/lsp.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "de": {
+        "success": [
+          "developers/roadmap.md",
+          "developers/tools/web-search.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/language.md",
+          "users/features/lsp.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "fr": {
+        "success": [
+          "developers/roadmap.md",
+          "developers/tools/web-search.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/language.md",
+          "users/features/lsp.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "ru": {
+        "success": [
+          "developers/roadmap.md",
+          "developers/tools/web-search.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/language.md",
+          "users/features/lsp.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "ja": {
+        "success": [
+          "developers/roadmap.md",
+          "developers/tools/web-search.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/language.md",
+          "users/features/lsp.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "pt-BR": {
+        "success": [
+          "developers/roadmap.md",
+          "developers/tools/web-search.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/language.md",
+          "users/features/lsp.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      }
+    },
+    "stats": {
+      "totalFiles": 8,
+      "languages": 6,
+      "successCount": 48,
+      "failedCount": 0
+    }
+  },
+  {
     "timestamp": "2026-01-26T12:20:59.685Z",
     "commit": "eef9c49e49cef791565f139bddfaba4d609d68fe",
     "sourceLanguage": "en",

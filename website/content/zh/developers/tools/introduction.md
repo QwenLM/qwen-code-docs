@@ -44,7 +44,7 @@ Qwen Code 包含内置工具，模型通过这些工具与本地环境进行交�
 Qwen Code 的内置工具大致可以分为以下几类：
 
 - **[文件系统工具](./file-system.md)：** 用于与文件和目录交互（读取、写入、列出、搜索等）。
-- **[Shell 工具](./shell.md) (`run_shell_command`)：** 用于执行 Shell 命令。
+- **[Shell 工具](./shell.md) (`run_shell_command`)：** 用于执行 shell 命令。
 - **[网页获取工具](./web-fetch.md) (`web_fetch`)：** 用于从 URL 获取内容。
 - **[网络搜索工具](./web-search.md) (`web_search`)：** 用于搜索网络。
 - **[多文件读取工具](./multi-file.md) (`read_many_files`)：** 一种专门用于从多个文件或目录中读取内容的工具，通常由 `@` 命令使用。

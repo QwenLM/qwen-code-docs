@@ -6,7 +6,7 @@ Qwen Code 可以通过 [Model Context Protocol (MCP)](https://modelcontextprotoc
 
 连接 MCP 服务器后，你可以让 Qwen Code：
 
-- 处理文件和代码仓库（读取/搜索/写入，取决于你启用的工具）
+- 处理文件和代码仓库（读取/搜索/写入，取决于启用的工具）
 - 查询数据库（模式检查、查询、报告）
 - 集成内部服务（将你的 API 包装为 MCP 工具）
 - 自动化工作流（将可重复任务暴露为工具/提示）

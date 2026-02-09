@@ -1,16 +1,16 @@
 # 国际化 (i18n) 与语言
 
-Qwen Code 为多语言工作流程而构建：它支持 CLI 中的 UI 本地化 (i18n/l10n)，让你选择助手输出语言，并允许自定义 UI 语言包。
+Qwen Code 为多语言工作流而构建：它支持在 CLI 中进行 UI 本地化 (i18n/l10n)，让你可以选择助手输出语言，并允许自定义 UI 语言包。
 
 ## 概述
 
 从用户角度来看，Qwen Code 的"国际化"涵盖多个层面：
 
-| 功能 / 设置 | 控制内容 | 存储位置 |
-| --- | --- | --- |
-| `/language ui` | 终端 UI 文本（菜单、系统消息、提示） | `~/.qwen/settings.json` |
-| `/language output` | AI 回复所使用的语言（输出偏好，非 UI 翻译） | `~/.qwen/output-language.md` |
-| 自定义 UI 语言包 | 覆盖/扩展内置 UI 翻译 | `~/.qwen/locales/*.js` |
+| 功能 / 设置              | 控制内容                                                             | 存储位置                     |
+| ------------------------ | -------------------------------------------------------------------- | ---------------------------- |
+| `/language ui`           | 终端 UI 文本（菜单、系统消息、提示）                                   | `~/.qwen/settings.json`      |
+| `/language output`       | AI 回复所使用的语言（输出偏好，非 UI 翻译）                           | `~/.qwen/output-language.md` |
+| 自定义 UI 语言包         | 覆盖/扩展内置的 UI 翻译                                              | `~/.qwen/locales/*.js`       |
 
 ## UI 语言
 
@@ -25,6 +25,7 @@ Qwen Code 为多语言工作流程而构建：它支持 CLI 中的 UI 本地化 
 /language ui en-US    # 英语
 /language ui ru-RU    # 俄语
 /language ui de-DE    # 德语
+/language ui ja-JP    # 日语
 ```
 
 也支持别名：
@@ -34,6 +35,7 @@ Qwen Code 为多语言工作流程而构建：它支持 CLI 中的 UI 本地化 
 /language ui en       # 英语
 /language ui ru       # 俄语
 /language ui de       # 德语
+/language ui ja       # 日语
 ```
 
 ### 自动检测
@@ -53,16 +55,17 @@ LLM 输出语言控制 AI 助手以什么语言回复，无论你用什么语言
 
 ### 工作原理
 
-LLM 输出语言由 `~/.qwen/output-language.md` 的规则文件控制。此文件在启动期间自动包含在 LLM 的上下文中，指示它以指定语言进行响应。
+LLM 输出语言由 `~/.qwen/output-language.md` 的规则文件控制。此文件在启动期间自动包含在 LLM 的上下文中，指示它以指定的语言进行响应。
 
 ### 自动检测
 
 首次启动时，如果不存在 `output-language.md` 文件，Qwen Code 会根据你的系统区域设置自动创建一个。例如：
 
-- 系统区域设置 `zh` 创建中文响应规则
-- 系统区域设置 `en` 创建英文响应规则
-- 系统区域设置 `ru` 创建俄文响应规则
-- 系统区域设置 `de` 创建德文响应规则
+- 系统区域设置为 `zh` 时，创建中文响应的规则
+- 系统区域设置为 `en` 时，创建英文响应的规则
+- 系统区域设置为 `ru` 时，创建俄文响应的规则
+- 系统区域设置为 `de` 时，创建德文响应的规则
+- 系统区域设置为 `ja` 时，创建日文响应的规则
 
 ### 手动设置
 
@@ -75,11 +78,11 @@ LLM 输出语言由 `~/.qwen/output-language.md` 的规则文件控制。此文�
 /language output German
 ```
 
-任何语言名称都可以。LLM 将被指示以该语言进行响应。
+任何语言名称都可以。LLM 将被指示以该语言进行回复。
 
 > [!note]
 >
-> 更改输出语言后，需要重启 Qwen Code 使更改生效。
+> 更改输出语言后，重启 Qwen Code 使更改生效。
 
 ### 文件位置
 
@@ -92,7 +95,7 @@ LLM 输出语言由 `~/.qwen/output-language.md` 的规则文件控制。此文�
 ### 通过设置对话框
 
 1. 运行 `/settings`
-2. 在常规设置下找到 "Language"
+2. 在常规设置下找到“语言”
 3. 选择你偏好的 UI 语言
 
 ### 通过环境变量
@@ -101,7 +104,7 @@ LLM 输出语言由 `~/.qwen/output-language.md` 的规则文件控制。此文�
 export QWEN_CODE_LANG=zh
 ```
 
-这会影响首次启动时的自动检测（如果你尚未设置 UI 语言且 `output-language.md` 文件还不存在）。
+这会影响首次启动时的自动检测（如果你尚未设置 UI 语言且 `output-language.md` 文件尚不存在）。
 
 ## 自定义语言包
 
