@@ -64,7 +64,7 @@ public static void runSimpleExample() {
 }
 ```
 
-对于具有自定义传输选项的高级用法：
+对于带有自定义传输选项的高级用法：
 
 ```java
 public static void runTransportOptionsExample() {
@@ -83,7 +83,7 @@ public static void runTransportOptionsExample() {
 }
 ```
 
-对于具有自定义内容消费者的流式处理：
+对于带有自定义内容消费者的流式内容处理：
 
 ```java
 public static void runStreamingExample() {
@@ -122,7 +122,7 @@ public static void runStreamingExample() {
                             assistantUsage.getUsage().getInputTokens(), assistantUsage.getUsage().getOutputTokens());
                 }
             }.setDefaultPermissionOperation(Operation.allow));
-    logger.info("流式处理示例完成。");
+    logger.info("流式示例完成。");
 }
 ```
 
@@ -130,7 +130,7 @@ public static void runStreamingExample() {
 
 ## 架构
 
-SDK 遵循分层架构：
+该 SDK 遵循分层架构：
 
 - **API 层**：通过 `QwenCodeCli` 类提供主要入口点，包含用于基本使用的简单静态方法
 - **会话层**：通过 `Session` 类管理与 Qwen Code CLI 的通信会话
@@ -146,8 +146,8 @@ SDK 支持不同的权限模式来控制工具执行：
 
 - **`default`**: 写入工具被拒绝，除非通过 `canUseTool` 回调或在 `allowedTools` 中批准。只读工具无需确认即可执行。
 - **`plan`**: 阻止所有写入工具，指示 AI 首先提供计划。
-- **`auto-edit`**: 自动批准编辑工具（edit, write_file），而其他工具需要确认。
-- **`yolo`**: 所有工具自动执行，无需确认。
+- **`auto-edit`**: 自动批准编辑工具（edit、write_file），而其他工具需要确认。
+- **`yolo`**: 所有工具都自动执行，无需确认。
 
 ### 会话事件消费者和助手内容消费者
 
@@ -247,7 +247,6 @@ SDK 提供了两个关键接口用于处理来自 CLI 的事件和内容：
 - `allowedTools`: 预批准无需额外确认即可使用的工具列表
 - `authType`: 会话使用的认证类型
 - `includePartialMessages`: 启用在流式响应期间接收部分消息
-- `skillsEnable`: 启用或禁用会话的技能功能
 - `turnTimeout`: 对话完整轮次的超时时间
 - `messageTimeout`: 轮次内单个消息的超时时间
 - `resumeSessionId`: 要恢复的先前会话的 ID

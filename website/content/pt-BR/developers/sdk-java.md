@@ -27,7 +27,7 @@ Adicione a seguinte dependência ao seu `pom.xml` do Maven:
 </dependency>
 ```
 
-Ou se estiver usando Gradle, adicione ao seu `build.gradle`:
+Ou, se estiver usando Gradle, adicione ao seu `build.gradle`:
 
 ```gradle
 implementation 'com.alibaba:qwencode-sdk:{$version}'
@@ -39,7 +39,6 @@ implementation 'com.alibaba:qwencode-sdk:{$version}'
 
 ```bash
 
-```markdown
 # Compilar o projeto
 mvn compile
 
@@ -126,13 +125,13 @@ public static void runStreamingExample() {
 }
 ```
 
-outros exemplos veja src/test/java/com/alibaba/qwen/code/cli/example
+outros exemplos em src/test/java/com/alibaba/qwen/code/cli/example
 
 ## Arquitetura
 
 O SDK segue uma arquitetura em camadas:
 
-- **Camada de API**: Fornece os pontos de entrada principais através da classe `QwenCodeCli` com métodos estáticos simples para uso básico
+- **Camada de API**: Fornece os principais pontos de entrada através da classe `QwenCodeCli` com métodos estáticos simples para uso básico
 - **Camada de Sessão**: Gerencia as sessões de comunicação com o Qwen Code CLI por meio da classe `Session`
 - **Camada de Transporte**: Lida com o mecanismo de comunicação entre o SDK e o processo CLI (atualmente usando transporte de processo via `ProcessTransport`)
 - **Camada de Protocolo**: Define estruturas de dados para comunicação com base no protocolo CLI
@@ -157,8 +156,8 @@ O SDK fornece duas interfaces principais para lidar com eventos e conteúdo prov
 
 A interface `SessionEventConsumers` fornece callbacks para diferentes tipos de mensagens durante uma sessão:
 
-- `onSystemMessage`: Trata mensagens do sistema da CLI (recebe Session e SDKSystemMessage)
-- `onResultMessage`: Trata mensagens de resultado da CLI (recebe Session e SDKResultMessage)
+- `onSystemMessage`: Trata mensagens do sistema provenientes da CLI (recebe Session e SDKSystemMessage)
+- `onResultMessage`: Trata mensagens de resultado provenientes da CLI (recebe Session e SDKResultMessage)
 - `onAssistantMessage`: Trata mensagens do assistente (respostas de IA) (recebe Session e SDKAssistantMessage)
 - `onPartialAssistantMessage`: Trata mensagens parciais do assistente durante o streaming (recebe Session e SDKPartialAssistantMessage)
 - `onUserMessage`: Trata mensagens do usuário (recebe Session e SDKUserMessage)
@@ -189,7 +188,7 @@ A interface `AssistantContentConsumers` lida com diferentes tipos de conteúdo d
 
 **Relação entre Processadores:**
 
-- `SessionEventConsumers` → `AssistantContentConsumers` (SessionEventConsumers utiliza AssistantContentConsumers para processar conteúdo dentro das mensagens do assistente)
+- `SessionEventConsumers` → `AssistantContentConsumers` (SessionEventConsumers usa AssistantContentConsumers para processar conteúdo dentro das mensagens do assistente)
 
 **Relações de Derivação de Eventos:**
 
@@ -234,9 +233,9 @@ Para funcionamento adequado, as seguintes relações de tempo limite devem ser m
 
 ### Opções de Transporte
 
-A classe `TransportOptions` permite configurar como o SDK se comunica com o CLI do Qwen Code:
+A classe `TransportOptions` permite configurar como o SDK se comunica com o Qwen Code CLI:
 
-- `pathToQwenExecutable`: Caminho para o executável do CLI do Qwen Code
+- `pathToQwenExecutable`: Caminho para o executável do Qwen Code CLI
 - `cwd`: Diretório de trabalho para o processo do CLI
 - `model`: Modelo de IA a ser usado na sessão
 - `permissionMode`: Modo de permissão que controla a execução de ferramentas
@@ -247,7 +246,6 @@ A classe `TransportOptions` permite configurar como o SDK se comunica com o CLI 
 - `allowedTools`: Lista de ferramentas pré-aprovadas para uso sem confirmação adicional
 - `authType`: Tipo de autenticação a ser usado na sessão
 - `includePartialMessages`: Habilita o recebimento de mensagens parciais durante respostas em streaming
-- `skillsEnable`: Habilita ou desabilita a funcionalidade de habilidades para a sessão
 - `turnTimeout`: Tempo limite para uma rodada completa de conversa
 - `messageTimeout`: Tempo limite para mensagens individuais dentro de uma rodada
 - `resumeSessionId`: ID de uma sessão anterior para retomar
@@ -269,10 +267,10 @@ O SDK usa um pool de threads para gerenciar operações concorrentes com a segui
 
 - **Tamanho do Pool Principal**: 30 threads
 - **Tamanho Máximo do Pool**: 100 threads
-- **Tempo de Manutenção (Keep-Alive)**: 60 segundos
+- **Tempo de Permanência (Keep-Alive)**: 60 segundos
 - **Capacidade da Fila**: 300 tarefas (usando LinkedBlockingQueue)
 - **Nomeação das Threads**: "qwen_code_cli-pool-{número}"
-- **Threads Daemon**: falso
+- **Threads Daemon**: false
 - **Manipulador de Execução Rejeitada**: CallerRunsPolicy
 
 ## Tratamento de Erros

@@ -147,6 +147,34 @@ export class DocumentTranslator {
   }
 
   /**
+   * Load and format terminology from TERMINOLOGY.md
+   */
+  private loadTerminology(targetLang: string): string {
+    try {
+      const terminologyPath = path.join(
+        this.projectRoot,
+        "TERMINOLOGY.md"
+      );
+      if (fs.existsSync(terminologyPath)) {
+        const terminologyContent = fs.readFileSync(terminologyPath, "utf-8");
+        return `
+
+---
+
+**TERMINOLOGY GUIDELINES (from project's TERMINOLOGY.md):**
+${terminologyContent}
+---`;
+      }
+    } catch (error) {
+      // Silently fail if terminology file is not found
+    }
+    return "";
+  }
+
+  /**
+   * Build system prompt
+   */
+  /**
    * Build system prompt
    */
   buildSystemPrompt(targetLang: string): string {
@@ -160,6 +188,7 @@ export class DocumentTranslator {
     };
 
     const targetLanguageName = languageNames[targetLang] || targetLang;
+    const terminology = this.loadTerminology(targetLang);
 
     return `You are an expert technical documentation translator writing for software developers.
 
@@ -194,6 +223,7 @@ Instead of: "配置你的应用程序编程接口密钥"
 Write: "配置你的 API key"
 Instead of: "使用通义千问代码模型"
 Write: "使用 Qwen Code 模型"
+${terminology}
 `;
   }
 

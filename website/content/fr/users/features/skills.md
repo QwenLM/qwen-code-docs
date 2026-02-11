@@ -1,44 +1,17 @@
-# Compétences de l'agent (Expérimental)
+# Compétences de l'agent
 
 > Créez, gérez et partagez des compétences pour étendre les capacités de Qwen Code.
 
 Ce guide vous montre comment créer, utiliser et gérer les compétences d'agent dans **Qwen Code**. Les compétences sont des capacités modulaires qui étendent l'efficacité du modèle grâce à des dossiers organisés contenant des instructions (et éventuellement des scripts/ressources).
 
-> [!note]
->
-> Les compétences sont actuellement **expérimentales** et doivent être activées avec `--experimental-skills`.
-
 ## Prérequis
 
 - Qwen Code (version récente)
-
-## Comment activer
-
-### Via l'option CLI
-
-```bash
-qwen --experimental-skills
-```
-
-### Via settings.json
-
-Ajoutez à votre `~/.qwen/settings.json` ou au fichier `.qwen/settings.json` du projet :
-
-```json
-{
-  "tools": {
-    "experimental": {
-      "skills": true
-    }
-  }
-}
-```
-
-- Une familiarité de base avec Qwen Code ([Démarrage rapide](../quickstart.md))
+- Connaissance de base de Qwen Code ([Démarrage rapide](../quickstart.md))
 
 ## Qu'est-ce que les compétences d'agent ?
 
-Les compétences d'agent regroupent l'expertise dans des capacités découvrables. Chaque compétence se compose d'un fichier `SKILL.md` contenant des instructions que le modèle peut charger lorsque c'est pertinent, ainsi que des fichiers de support optionnels tels que des scripts et des modèles.
+Les compétences d'agent regroupent l'expertise en capacités détectables. Chaque compétence se compose d'un fichier `SKILL.md` contenant des instructions que le modèle peut charger lorsque c'est pertinent, ainsi que des fichiers de support optionnels tels que des scripts et des modèles.
 
 ### Comment les compétences sont invoquées
 
@@ -50,7 +23,7 @@ Si vous souhaitez invoquer une compétence explicitement, utilisez la commande s
 /skills <nom-de-la-compétence>
 ```
 
-La commande `/skills` n'est disponible que lorsque vous exécutez avec `--experimental-skills`. Utilisez la complétion automatique pour parcourir les compétences disponibles et leurs descriptions.
+Utilisez l'autocomplétion pour parcourir les compétences disponibles et leurs descriptions.
 
 ### Avantages
 
@@ -74,24 +47,24 @@ mkdir -p ~/.qwen/skills/nom-de-ma-compétence
 Utilisez les compétences personnelles pour :
 
 - Vos flux de travail et préférences individuels
-- Les compétences expérimentales que vous développez
+- Les compétences que vous développez
 - Les assistants personnels de productivité
 
-### Compétences de projet
+### Compétences du projet
 
-Les compétences de projet sont partagées avec votre équipe. Stockez-les dans `.qwen/skills/` à l'intérieur de votre projet :
+Les compétences du projet sont partagées avec votre équipe. Stockez-les dans le répertoire `.qwen/skills/` de votre projet :
 
 ```bash
-mkdir -p .qwen/skills/nom-de-ma-compétence
+mkdir -p .qwen/skills/my-skill-name
 ```
 
-Utilisez les compétences de projet pour :
+Utilisez les compétences du projet pour :
 
 - Les flux de travail et conventions d'équipe
 - L'expertise spécifique au projet
 - Les utilitaires et scripts partagés
 
-Les compétences de projet peuvent être ajoutées à git et deviennent automatiquement disponibles pour vos collègues.
+Les compétences du projet peuvent être ajoutées à git et deviennent automatiquement disponibles pour vos collègues.
 
 ## Écrire `SKILL.md`
 
@@ -99,35 +72,34 @@ Créez un fichier `SKILL.md` avec des métadonnées YAML et du contenu Markdown 
 
 ```yaml
 ---
-name: nom-de-votre-compétence
+name: your-skill-name
 description: Brève description de ce que fait cette compétence et quand l'utiliser
 ---
 
 # Nom de votre compétence
-```
 
 ## Instructions
-Fournir des directives claires et étape par étape pour Qwen Code.
+Fournissez un guide clair et étape par étape pour Qwen Code.
 
 ## Exemples
-Montrer des exemples concrets d'utilisation de cette compétence.
+Montrez des exemples concrets d'utilisation de cette compétence.
 ```
 
 ### Exigences relatives aux champs
 
 Qwen Code valide actuellement que :
 
-- `name` est une chaîne non vide
-- `description` est une chaîne non vide
+- `name` est une chaîne de caractères non vide
+- `description` est une chaîne de caractères non vide
 
 Conventions recommandées (pas encore strictement appliquées) :
 
-- Utiliser des lettres minuscules, des chiffres et des traits d'union dans `name`
-- Rendre `description` spécifique : inclure à la fois **ce que** fait la compétence et **quand** l'utiliser (mots-clés que les utilisateurs mentionneront naturellement)
+- Utilisez des lettres minuscules, des chiffres et des traits d'union dans `name`
+- Rendez `description` spécifique : incluez à la fois **ce que fait** la compétence et **quand** l'utiliser (mots-clés que les utilisateurs mentionneront naturellement)
 
-## Ajouter des fichiers de support
+## Ajouter des fichiers complémentaires
 
-Créer des fichiers supplémentaires à côté de `SKILL.md` :
+Créez des fichiers supplémentaires à côté de `SKILL.md` :
 
 ```text
 ma-compétence/
@@ -140,12 +112,12 @@ ma-compétence/
     └── template.txt (modèle facultatif)
 ```
 
-Référencer ces fichiers depuis `SKILL.md` :
+Référez-vous à ces fichiers depuis `SKILL.md` :
 
 ````markdown
-Pour une utilisation avancée, voir [reference.md](reference.md).
+Pour une utilisation avancée, consultez [reference.md](reference.md).
 
-Exécuter le script d'aide :
+Exécutez le script d'aide :
 
 ```bash
 python scripts/helper.py input.txt
@@ -154,7 +126,7 @@ python scripts/helper.py input.txt
 
 ## Voir les compétences disponibles
 
-Lorsque `--experimental-skills` est activé, Qwen Code découvre les compétences à partir de :
+Qwen Code découvre les compétences à partir de :
 
 - Compétences personnelles : `~/.qwen/skills/`
 - Compétences de projet : `.qwen/skills/`
@@ -162,12 +134,9 @@ Lorsque `--experimental-skills` est activé, Qwen Code découvre les compétence
 
 ### Compétences d'extension
 
-Les extensions peuvent fournir des compétences personnalisées qui deviennent disponibles lorsque l'extension est activée. Ces compétences sont stockées dans le répertoire `skills/` de l'extension et suivent le même format que les compétences personnelles et de projet.
+Les extensions peuvent fournir des compétences personnalisées qui deviennent disponibles lorsque l'extension est activée. Ces compétences sont stockées dans le répertoire `skills/` de l'extension et suivent le même format que les compétences personnelles et celles du projet.
 
-Les compétences d'extension sont automatiquement découvertes et chargées lorsque :
-
-- L'extension est installée et activée
-- Le drapeau `--experimental-skills` est activé
+Les compétences d'extension sont automatiquement découvertes et chargées lorsque l'extension est installée et activée.
 
 Pour voir quelles extensions fournissent des compétences, vérifiez le fichier `qwen-extension.json` de l'extension à la recherche d'un champ `skills`.
 
@@ -186,10 +155,9 @@ ls ~/.qwen/skills/
 
 # Lister les compétences de projet (si dans un répertoire de projet)
 ls .qwen/skills/
-```
 
-# Voir le contenu d'une compétence spécifique
-cat ~/.qwen/skills/my-skill/SKILL.md
+# Afficher le contenu d'une compétence spécifique
+cat ~/.qwen/skills/ma-competence/SKILL.md
 ```
 
 ## Tester une compétence
@@ -199,10 +167,10 @@ Après avoir créé une compétence, testez-la en posant des questions qui corre
 Exemple : si votre description mentionne « fichiers PDF » :
 
 ```text
-Pouvez-vous m'aider à extraire du texte de ce PDF ?
+Pouvez-vous m'aider à extraire le texte de ce PDF ?
 ```
 
-Le modèle décide automatiquement d'utiliser votre compétence si elle correspond à la demande — vous n'avez pas besoin de l'invoquer explicitement.
+Le modèle décide de manière autonome d'utiliser votre compétence si elle correspond à la demande — vous n'avez pas besoin de l'invoquer explicitement.
 
 ## Déboguer une compétence
 
@@ -224,21 +192,21 @@ description: Extraire du texte et des tableaux à partir de fichiers PDF, rempli
 
 ### Vérifier le chemin du fichier
 
-- Compétences personnelles : `~/.qwen/skills/<nom-compétence>/SKILL.md`
-- Compétences de projet : `.qwen/skills/<nom-compétence>/SKILL.md`
+- Compétences personnelles : `~/.qwen/skills/<nom-de-la-compétence>/SKILL.md`
+- Compétences de projet : `.qwen/skills/<nom-de-la-compétence>/SKILL.md`
 
 ```bash
 
 # Personnel
-ls ~/.qwen/skills/my-skill/SKILL.md
+ls ~/.qwen/skills/ma-competence/SKILL.md
 
 # Projet
-ls .qwen/skills/my-skill/SKILL.md
+ls .qwen/skills/ma-competence/SKILL.md
 ```
 
 ### Vérifier la syntaxe YAML
 
-Un YAML invalide empêche le chargement correct des métadonnées du Skill.
+Un fichier YAML invalide empêche le chargement correct des métadonnées du Skill.
 
 ```bash
 cat SKILL.md | head -n 15
@@ -246,8 +214,8 @@ cat SKILL.md | head -n 15
 
 Assurez-vous que :
 
-- La ligne 1 contient `---` d'ouverture
-- Une ligne `---` de fermeture se trouve avant le contenu Markdown
+- La ligne 1 contient l'ouverture `---`
+- La fermeture `---` se trouve avant le contenu Markdown
 - La syntaxe YAML est valide (pas de tabulations, indentation correcte)
 
 ### Afficher les erreurs
@@ -255,7 +223,7 @@ Assurez-vous que :
 Exécutez Qwen Code en mode débogage pour voir les erreurs de chargement des Skills :
 
 ```bash
-qwen --experimental-skills --debug
+qwen --debug
 ```
 
 ## Partager des Skills avec votre équipe
@@ -264,11 +232,11 @@ Vous pouvez partager des Skills via des dépôts de projets :
 
 1. Ajoutez le Skill dans `.qwen/skills/`
 2. Faites un commit et poussez
-3. Les membres de l'équipe récupèrent les modifications et exécutent avec `--experimental-skills`
+3. Les membres de l'équipe récupèrent les modifications
 
 ```bash
 git add .qwen/skills/
-git commit -m "Ajout d'un Skill d'équipe pour le traitement des PDF"
+git commit -m "Ajout d'un Skill d'équipe pour le traitement PDF"
 git push
 ```
 
@@ -279,46 +247,48 @@ Modifiez directement `SKILL.md` :
 ```bash
 
 # Skill personnel
-code ~/.qwen/skills/my-skill/SKILL.md
+code ~/.qwen/skills/mon-skill/SKILL.md
 
 # Skill de projet
-code .qwen/skills/my-skill/SKILL.md
+code .qwen/skills/mon-skill/SKILL.md
 ```
 
 Les modifications prennent effet au prochain démarrage de Qwen Code. Si Qwen Code est déjà en cours d'exécution, redémarrez-le pour charger les mises à jour.
 
-## Supprimer une compétence
+## Supprimer un Skill
 
-Supprimez le répertoire de la compétence :
+Supprimez le répertoire du Skill :
 
 ```bash
+```
+
 # Personnel
 rm -rf ~/.qwen/skills/my-skill
 
 # Projet
 rm -rf .qwen/skills/my-skill
-git commit -m "Suppression d'une compétence inutilisée"
+git commit -m "Supprimer le Skill inutilisé"
 ```
 
 ## Meilleures pratiques
 
-### Gardez les compétences ciblées
+### Garder les Skills ciblés
 
-Une compétence devrait traiter une seule capacité :
+Un Skill devrait traiter une seule capacité :
 
-- Ciblé : « Remplissage de formulaires PDF », « Analyse Excel », « Messages de commit Git »
-- Trop large : « Traitement de documents » (divisez en compétences plus petites)
+- Ciblé : "Remplissage de formulaires PDF", "Analyse Excel", "Messages de commit Git"
+- Trop large : "Traitement de documents" (diviser en Skills plus petits)
 
-### Rédigez des descriptions claires
+### Rédiger des descriptions claires
 
-Aidez le modèle à détecter quand utiliser les compétences en incluant des déclencheurs spécifiques :
+Aidez le modèle à découvrir quand utiliser les Skills en incluant des déclencheurs spécifiques :
 
 ```yaml
 description: Analyser les feuilles de calcul Excel, créer des tableaux croisés dynamiques et générer des graphiques. À utiliser lors du travail avec des fichiers Excel, des feuilles de calcul ou des données .xlsx.
 ```
 
-### Testez avec votre équipe
+### Tester avec votre équipe
 
-- La compétence s'active-t-elle comme prévu ?
+- Le Skill s'active-t-il comme prévu ?
 - Les instructions sont-elles claires ?
-- Des exemples ou des cas particuliers sont-ils manquants ?
+- Y a-t-il des exemples manquants ou des cas particuliers non couverts ?

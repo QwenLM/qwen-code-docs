@@ -2,7 +2,7 @@
 
 Режим без графического интерфейса позволяет запускать Qwen Code программно из сценариев командной строки
 и инструментов автоматизации без какого-либо интерактивного пользовательского интерфейса. Это идеальный вариант для
-сценариев, автоматизации, CI/CD конвейеров и создания инструментов с поддержкой ИИ.
+создания скриптов, автоматизации, конвейеров CI/CD и разработки инструментов с искусственным интеллектом.
 
 ## Обзор
 
@@ -10,10 +10,10 @@
 
 - Принимает запросы через аргументы командной строки или stdin
 - Возвращает структурированный вывод (текст или JSON)
-- Поддерживает перенаправление файлов и конвейерную передачу
-- Обеспечивает автоматизацию и сценарии работы
-- Обеспечивает согласованные коды выхода для обработки ошибок
-- Может возобновлять предыдущие сеансы, ограниченные текущим проектом, для многошаговой автоматизации
+- Поддерживает перенаправление файлов и передачу данных через pipe
+- Позволяет автоматизировать рабочие процессы и создавать скрипты
+- Обеспечивает согласованные коды завершения для обработки ошибок
+- Может возобновлять предыдущие сессии в рамках текущего проекта для многоступенчатой автоматизации
 
 ## Основное использование
 
@@ -25,7 +25,7 @@
 qwen --prompt "Что такое машинное обучение?"
 ```
 
-### Ввод из Stdin
+### Ввод через stdin
 
 Передайте ввод в Qwen Code из вашего терминала:
 
@@ -38,7 +38,7 @@ echo "Объясните этот код" | qwen
 Чтение из файлов и обработка с помощью Qwen Code:
 
 ```bash
-cat README.md | qwen --prompt "Summarize this documentation"
+cat README.md | qwen --prompt "Кратко опиши эту документацию"
 ```
 
 ### Возобновление предыдущих сессий (в фоновом режиме)
@@ -47,16 +47,16 @@ cat README.md | qwen --prompt "Summarize this documentation"
 
 ```bash
 
-# Продолжить самую последнюю сессию для этого проекта и выполнить новый запрос
-qwen --continue -p "Run the tests again and summarize failures"
+# Продолжить последнюю сессию для этого проекта и выполнить новый запрос
+qwen --continue -p "Запустить тесты снова и кратко описать ошибки"
 
-# Возобновить конкретный сеанс по ID напрямую (без интерфейса)
-qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refactor"
+# Возобновить конкретную сессию по ID напрямую (без интерфейса)
+qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Применить последующую рефакторизацию"
 ```
 
 > [!note]
 >
-> - Данные сессии хранятся в формате JSONL в `~/.qwen/projects/<sanitized-cwd>/chats`.
+> - Данные сессии хранятся в формате JSONL в директории `~/.qwen/projects/<sanitized-cwd>/chats`, ограниченные проектом.
 > - Восстанавливает историю разговора, вывод инструментов и контрольные точки сжатия чата перед отправкой нового запроса.
 
 ## Форматы вывода
@@ -79,9 +79,9 @@ qwen -p "Какова столица Франции?"
 
 ### Вывод в формате JSON
 
-Возвращает структурированные данные в виде массива JSON. Все сообщения буферизуются и выводятся вместе после завершения сеанса. Этот формат идеально подходит для программной обработки и автоматизации скриптов.
+Возвращает структурированные данные в виде массива JSON. Все сообщения буферизуются и выводятся вместе после завершения сессии. Этот формат идеально подходит для программной обработки и автоматизации скриптов.
 
-Вывод JSON представляет собой массив объектов сообщений. Вывод включает в себя несколько типов сообщений: системные сообщения (инициализация сеанса), сообщения помощника (ответы ИИ) и сообщения с результатами (сводка выполнения).
+Вывод в формате JSON — это массив объектов сообщений. Вывод включает несколько типов сообщений: системные сообщения (инициализация сессии), сообщения помощника (ответы ИИ) и сообщения результатов (сводка выполнения).
 
 #### Пример использования
 
@@ -133,15 +133,15 @@ qwen -p "Какова столица Франции?" --output-format json
 ]
 ```
 
-### Вывод Stream-JSON
+### Вывод в формате Stream-JSON
 
-Формат Stream-JSON немедленно выводит JSON-сообщения по мере их появления во время выполнения, обеспечивая возможность мониторинга в реальном времени. В этом формате используется JSON с разделением строк, где каждое сообщение представляет собой полный JSON-объект в одной строке.
+Формат Stream-JSON немедленно выдает JSON-сообщения по мере их появления во время выполнения, обеспечивая возможность мониторинга в реальном времени. В этом формате используется разделенный строками JSON, где каждое сообщение представляет собой полный JSON-объект в одной строке.
 
 ```bash
 qwen -p "Объясните TypeScript" --output-format stream-json
 ```
 
-Вывод (потоковая передача по мере поступления событий):
+Вывод (потоковая передача по мере возникновения событий):
 
 ```json
 {"type":"system","subtype":"session_start","uuid":"...","session_id":"..."}
@@ -149,20 +149,20 @@ qwen -p "Объясните TypeScript" --output-format stream-json
 {"type":"result","subtype":"success","uuid":"...","session_id":"..."}
 ```
 
-При использовании вместе с `--include-partial-messages` в реальном времени выдаются дополнительные события потока (message_start, content_block_delta и т.д.) для обновления пользовательского интерфейса в реальном времени.
+При использовании вместе с `--include-partial-messages` дополнительные события потока выдаются в режиме реального времени (message_start, content_block_delta и т.д.) для обновления пользовательского интерфейса в режиме реального времени.
 
 ```bash
-qwen -p "Напишите Python-скрипт" --output-format stream-json --include-partial-messages
+qwen -p "Напишите скрипт на Python" --output-format stream-json --include-partial-messages
 ```
 
 ### Формат ввода
 
-Параметр `--input-format` управляет тем, как Qwen Code потребляет ввод из стандартного ввода:
+Параметр `--input-format` управляет тем, как Qwen Code потребляет ввод из стандартного потока ввода:
 
 - **`text`** (по умолчанию): Стандартный текстовый ввод из stdin или аргументов командной строки
-- **`stream-json`**: Протокол сообщений JSON через stdin для двусторонней связи
+- **`stream-json`**: Протокол обмена сообщениями JSON через stdin для двусторонней связи
 
-> **Примечание:** Режим ввода stream-json находится в разработке и предназначен для интеграции с SDK. Для него требуется установить `--output-format stream-json`.
+> **Примечание:** Режим ввода stream-json находится в стадии разработки и предназначен для интеграции с SDK. Требует установки параметра `--output-format stream-json`.
 
 ### Перенаправление файлов
 
@@ -182,31 +182,30 @@ qwen -p "Что такое Kubernetes?" --output-format json | jq '.response'
 qwen -p "Объясните микросервисы" | wc -w
 qwen -p "Перечислите языки программирования" | grep -i "python"
 
-# Потоковый JSON-вывод для обработки в реальном времени
-qwen -p "Объясни Docker" --output-format stream-json | jq '.type'
-qwen -p "Напиши код" --output-format stream-json --include-partial-messages | jq '.event.type'
+# Потоковый вывод JSON для обработки в реальном времени
+qwen -p "Объясните Docker" --output-format stream-json | jq '.type'
+qwen -p "Напишите код" --output-format stream-json --include-partial-messages | jq '.event.type'
 ```
 
 ## Параметры конфигурации
 
 Основные параметры командной строки для использования в режиме headless:
 
-| Параметр                     | Описание                                                | Пример                                                                   |
-| ---------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `--prompt`, `-p`             | Запуск в режиме headless                                | `qwen -p "query"`                                                        |
-| `--output-format`, `-o`      | Указать формат вывода (text, json, stream-json)         | `qwen -p "query" --output-format json`                                   |
-| `--input-format`             | Указать формат ввода (text, stream-json)                | `qwen --input-format text --output-format stream-json`                   |
-| `--include-partial-messages` | Включать частичные сообщения в вывод stream-json        | `qwen -p "query" --output-format stream-json --include-partial-messages` |
-| `--debug`, `-d`              | Включить режим отладки                                  | `qwen -p "query" --debug`                                                |
-| `--all-files`, `-a`          | Включить все файлы в контекст                           | `qwen -p "query" --all-files`                                            |
-| `--include-directories`      | Включить дополнительные каталоги                        | `qwen -p "query" --include-directories src,docs`                         |
-| `--yolo`, `-y`               | Автоматически утверждать все действия                  | `qwen -p "query" --yolo`                                                 |
-| `--approval-mode`            | Установить режим утверждения                            | `qwen -p "query" --approval-mode auto_edit`                              |
-| `--continue`                 | Возобновить последнюю сессию для этого проекта           | `qwen --continue -p "Pick up where we left off"`                         |
-| `--resume [sessionId]`       | Возобновить конкретную сессию (или выбрать интерактивно) | `qwen --resume 123e... -p "Finish the refactor"`                         |
-| `--experimental-skills`      | Включить экспериментальные навыки (регистрирует инструмент `skill`) | `qwen --experimental-skills -p "What Skills are available?"`             |
+| Параметр                     | Описание                                            | Пример                                                                   |
+| ---------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------ |
+| `--prompt`, `-p`             | Запуск в режиме headless                            | `qwen -p "запрос"`                                                       |
+| `--output-format`, `-o`      | Указать формат вывода (text, json, stream-json)     | `qwen -p "запрос" --output-format json`                                  |
+| `--input-format`             | Указать формат ввода (text, stream-json)            | `qwen --input-format text --output-format stream-json`                   |
+| `--include-partial-messages` | Включать частичные сообщения в вывод stream-json    | `qwen -p "запрос" --output-format stream-json --include-partial-messages`|
+| `--debug`, `-d`              | Включить режим отладки                              | `qwen -p "запрос" --debug`                                               |
+| `--all-files`, `-a`          | Включить все файлы в контекст                       | `qwen -p "запрос" --all-files`                                           |
+| `--include-directories`      | Включить дополнительные каталоги                    | `qwen -p "запрос" --include-directories src,docs`                        |
+| `--yolo`, `-y`               | Автоматически подтверждать все действия            | `qwen -p "запрос" --yolo`                                                |
+| `--approval-mode`            | Установить режим подтверждения                      | `qwen -p "запрос" --approval-mode auto_edit`                             |
+| `--continue`                 | Возобновить последнюю сессию для этого проекта       | `qwen --continue -p "Продолжим с того места, где остановились"`          |
+| `--resume [sessionId]`       | Возобновить конкретную сессию (или выбрать интерактивно) | `qwen --resume 123e... -p "Завершить рефакторинг"`                  |
 
-Полные сведения обо всех доступных параметрах конфигурации, файлах настроек и переменных окружения см. в [Руководстве по конфигурации](../configuration/settings).
+Для получения полной информации обо всех доступных параметрах конфигурации, файлах настроек и переменных окружения см. [Руководство по конфигурации](../configuration/settings).
 
 ## Примеры
 
@@ -237,7 +236,7 @@ for file in src/*.py; do
     echo "Анализ $file..."
     result=$(cat "$file" | qwen -p "Найди потенциальные ошибки и предложи улучшения" --output-format json)
     echo "$result" | jq -r '.response' > "reports/$(basename "$file").analysis"
-    echo "Анализ завершен для $(basename "$file")" >> reports/progress.log
+    echo "Завершен анализ $(basename "$file")" >> reports/progress.log
 done
 ```
 
@@ -251,13 +250,13 @@ echo "$result" | jq -r '.response' > pr-review.json
 ### Анализ логов
 
 ```bash
-grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Проанализируй эти ошибки и предложи основную причину и способы устранения" > error-analysis.txt
+grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Проанализируй эти ошибки и предложи основную причину и способы исправления" > error-analysis.txt
 ```
 
-### Генерация заметок о релизе
+### Генерация заметок о выпуске
 
 ```bash
-result=$(git log --oneline v1.0.0..HEAD | qwen -p "Создай заметки о релизе на основе этих коммитов" --output-format json)
+result=$(git log --oneline v1.0.0..HEAD | qwen -p "Создай заметки о выпуске из этих коммитов" --output-format json)
 response=$(echo "$result" | jq -r '.response')
 echo "$response"
 echo "$response" >> CHANGELOG.md
@@ -266,20 +265,20 @@ echo "$response" >> CHANGELOG.md
 ### Отслеживание использования моделей и инструментов
 
 ```bash
-result=$(qwen -p "Объясните эту схему базы данных" --include-directories db --output-format json)
+result=$(qwen -p "Объясни эту схему базы данных" --include-directories db --output-format json)
 total_tokens=$(echo "$result" | jq -r '.stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
 models_used=$(echo "$result" | jq -r '.stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
 tool_calls=$(echo "$result" | jq -r '.stats.tools.totalCalls // 0')
 tools_used=$(echo "$result" | jq -r '.stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
-echo "$(date): $total_tokens tokens, $tool_calls tool calls ($tools_used) used with models: $models_used" >> usage.log
+echo "$(date): $total_tokens токенов, $tool_calls вызовов инструментов ($tools_used) использовано с моделями: $models_used" >> usage.log
 echo "$result" | jq -r '.response' > schema-docs.md
-echo "Recent usage trends:"
+echo "Последние тенденции использования:"
 tail -5 usage.log
 ```
 
 ## Ресурсы
 
-- [Конфигурация CLI](../configuration/settings#command-line-arguments) - Полное руководство по настройке
-- [Аутентификация](../configuration/settings#environment-variables-for-api-access) - Настройка аутентификации
-- [Команды](../features/commands) - Справочник интерактивных команд
-- [Руководства](../quickstart) - Пошаговые руководства по автоматизации
+- [Конфигурация CLI](../configuration/settings#command-line-arguments) — Полное руководство по настройке
+- [Аутентификация](../configuration/settings#environment-variables-for-api-access) — Настройка аутентификации
+- [Команды](../features/commands) — Справочник интерактивных команд
+- [Руководства](../quickstart) — Пошаговые инструкции по автоматизации
