@@ -6,11 +6,11 @@
 
 无头模式为 Qwen Code 提供了一个无头接口，可以：
 
-- 通过命令行参数或 stdin 接收提示
+- 通过命令行参数或标准输入接受提示
 - 返回结构化输出（文本或 JSON）
 - 支持文件重定向和管道
 - 启用自动化和脚本工作流
-- 提供一致的退出码以进行错误处理
+- 提供一致的退出码用于错误处理
 - 可以恢复当前项目范围内的先前会话，用于多步骤自动化
 
 ## 基本用法
@@ -23,7 +23,7 @@
 qwen --prompt "什么是机器学习？"
 ```
 
-### Stdin 输入
+### 标准输入
 
 从终端将输入管道到 Qwen Code：
 
@@ -33,10 +33,10 @@ echo "解释这段代码" | qwen
 
 ### 与文件输入结合
 
-从文件读取并用 Qwen Code 处理：
+从文件读取并使用 Qwen Code 处理：
 
 ```bash
-cat README.md | qwen --prompt "Summarize this documentation"
+cat README.md | qwen --prompt "总结此文档"
 ```
 
 ### 恢复之前的会话（无头模式）
@@ -46,10 +46,10 @@ cat README.md | qwen --prompt "Summarize this documentation"
 ```bash
 
 # 继续此项目的最新会话并运行新提示
-qwen --continue -p "Run the tests again and summarize failures"
+qwen --continue -p "再次运行测试并总结失败项"
 
 # 直接恢复特定会话 ID（无 UI）
-qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refactor"
+qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "应用后续重构"
 ```
 
 > [!note]
@@ -59,7 +59,7 @@ qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refac
 
 ## 输出格式
 
-Qwen Code 支持多种输出格式以适应不同用例：
+Qwen Code 支持多种输出格式以满足不同用例：
 
 ### 文本输出（默认）
 
@@ -77,7 +77,7 @@ qwen -p "法国的首都是什么？"
 
 ### JSON 输出
 
-以 JSON 数组形式返回结构化数据。所有消息都会被缓冲，并在会话完成时一起输出。这种格式非常适合程序化处理和自动化脚本。
+以 JSON 数组形式返回结构化数据。所有消息都会被缓存，并在会话完成时一起输出。这种格式非常适合程序化处理和自动化脚本。
 
 JSON 输出是一个消息对象数组。输出包含多种消息类型：系统消息（会话初始化）、助手消息（AI 响应）和结果消息（执行摘要）。
 
@@ -87,7 +87,7 @@ JSON 输出是一个消息对象数组。输出包含多种消息类型：系统
 qwen -p "法国的首都是什么？" --output-format json
 ```
 
-输出（执行结束时）：
+输出（在执行结束时）：
 
 ```json
 [
@@ -131,15 +131,15 @@ qwen -p "法国的首都是什么？" --output-format json
 ]
 ```
 
-### Stream-JSON 输出
+### 流式 JSON 输出
 
-Stream-JSON 格式在执行过程中立即输出 JSON 消息，实现实时监控。此格式使用换行符分隔的 JSON，其中每条消息都是单行上的完整 JSON 对象。
+流式 JSON 格式在执行过程中立即输出 JSON 消息，实现实时监控。此格式使用换行符分隔的 JSON，每条消息都是单行上的完整 JSON 对象。
 
 ```bash
 qwen -p "解释 TypeScript" --output-format stream-json
 ```
 
-输出（事件发生时流式输出）：
+输出（事件发生时实时流式输出）：
 
 ```json
 {"type":"system","subtype":"session_start","uuid":"...","session_id":"..."}
@@ -147,38 +147,38 @@ qwen -p "解释 TypeScript" --output-format stream-json
 {"type":"result","subtype":"success","uuid":"...","session_id":"..."}
 ```
 
-与 `--include-partial-messages` 结合使用时，会实时输出额外的流事件（message_start、content_block_delta 等）以实现实时 UI 更新。
+与 `--include-partial-messages` 结合使用时，会实时输出额外的流式事件（message_start、content_block_delta 等），用于实时 UI 更新。
 
 ```bash
-qwen -p "编写 Python 脚本" --output-format stream-json --include-partial-messages
+qwen -p "编写一个 Python 脚本" --output-format stream-json --include-partial-messages
 ```
 
 ### 输入格式
 
 `--input-format` 参数控制 Qwen Code 如何从标准输入消费输入：
 
-- **`text`** (默认): 来自 stdin 或命令行参数的标准文本输入
-- **`stream-json`**: 通过 stdin 的 JSON 消息协议，用于双向通信
+- **`text`**（默认）：来自 stdin 或命令行参数的标准文本输入
+- **`stream-json`**：通过 stdin 的 JSON 消息协议，用于双向通信
 
-> **注意:** Stream-json 输入模式目前正在开发中，用于 SDK 集成。它需要设置 `--output-format stream-json`。
+> **注意：** Stream-json 输入模式目前正在建设中，旨在用于 SDK 集成。它需要设置 `--output-format stream-json`。
 
 ### 文件重定向
 
-将输出保存到文件或管道到其他命令：
+将输出保存到文件或管道传输到其他命令：
 
 ```bash
 
 # 保存到文件
-qwen -p "Explain Docker" > docker-explanation.txt
-qwen -p "Explain Docker" --output-format json > docker-explanation.json
+qwen -p "解释 Docker" > docker-explanation.txt
+qwen -p "解释 Docker" --output-format json > docker-explanation.json
 
 # 追加到文件
-qwen -p "Add more details" >> docker-explanation.txt
+qwen -p "添加更多细节" >> docker-explanation.txt
 
-# 管道到其他工具
-qwen -p "What is Kubernetes?" --output-format json | jq '.response'
-qwen -p "Explain microservices" | wc -w
-qwen -p "List programming languages" | grep -i "python"
+# 管道传输到其他工具
+qwen -p "什么是 Kubernetes？" --output-format json | jq '.response'
+qwen -p "解释微服务" | wc -w
+qwen -p "列出编程语言" | grep -i "python"
 ```
 
 # 用于实时处理的流式 JSON 输出
@@ -190,20 +190,19 @@ qwen -p "编写代码" --output-format stream-json --include-partial-messages | 
 
 用于无头模式使用的关键命令行选项：
 
-| 选项                         | 描述                                                    | 示例                                                                     |
-| ---------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `--prompt`, `-p`             | 以无头模式运行                                          | `qwen -p "query"`                                                        |
-| `--output-format`, `-o`      | 指定输出格式 (text, json, stream-json)                  | `qwen -p "query" --output-format json`                                   |
-| `--input-format`             | 指定输入格式 (text, stream-json)                        | `qwen --input-format text --output-format stream-json`                   |
-| `--include-partial-messages` | 在 stream-json 输出中包含部分消息                       | `qwen -p "query" --output-format stream-json --include-partial-messages` |
-| `--debug`, `-d`              | 启用调试模式                                            | `qwen -p "query" --debug`                                                |
-| `--all-files`, `-a`          | 在上下文中包含所有文件                                  | `qwen -p "query" --all-files`                                            |
-| `--include-directories`      | 包含额外目录                                            | `qwen -p "query" --include-directories src,docs`                         |
-| `--yolo`, `-y`               | 自动批准所有操作                                        | `qwen -p "query" --yolo`                                                 |
-| `--approval-mode`            | 设置批准模式                                            | `qwen -p "query" --approval-mode auto_edit`                              |
-| `--continue`                 | 恢复此项目的最近会话                                    | `qwen --continue -p "Pick up where we left off"`                         |
-| `--resume [sessionId]`       | 恢复特定会话（或交互式选择）                            | `qwen --resume 123e... -p "Finish the refactor"`                         |
-| `--experimental-skills`      | 启用实验性 Skills（注册 `skill` 工具）                  | `qwen --experimental-skills -p "What Skills are available?"`             |
+| 选项                         | 描述                                               | 示例                                                                     |
+| ---------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------ |
+| `--prompt`, `-p`             | 以无头模式运行                                     | `qwen -p "query"`                                                        |
+| `--output-format`, `-o`      | 指定输出格式 (text, json, stream-json)             | `qwen -p "query" --output-format json`                                   |
+| `--input-format`             | 指定输入格式 (text, stream-json)                   | `qwen --input-format text --output-format stream-json`                   |
+| `--include-partial-messages` | 在 stream-json 输出中包含部分消息                  | `qwen -p "query" --output-format stream-json --include-partial-messages` |
+| `--debug`, `-d`              | 启用调试模式                                       | `qwen -p "query" --debug`                                                |
+| `--all-files`, `-a`          | 在上下文中包含所有文件                             | `qwen -p "query" --all-files`                                            |
+| `--include-directories`      | 包含额外的目录                                     | `qwen -p "query" --include-directories src,docs`                         |
+| `--yolo`, `-y`               | 自动批准所有操作                                   | `qwen -p "query" --yolo`                                                 |
+| `--approval-mode`            | 设置审批模式                                       | `qwen -p "query" --approval-mode auto_edit`                              |
+| `--continue`                 | 恢复此项目的最近会话                               | `qwen --continue -p "Pick up where we left off"`                         |
+| `--resume [sessionId]`       | 恢复特定会话（或交互式选择）                       | `qwen --resume 123e... -p "Finish the refactor"`                         |
 
 有关所有可用配置选项、设置文件和环境变量的完整详细信息，请参阅[配置指南](../configuration/settings)。
 
@@ -270,15 +269,15 @@ total_tokens=$(echo "$result" | jq -r '.stats.models // {} | to_entries | map(.v
 models_used=$(echo "$result" | jq -r '.stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
 tool_calls=$(echo "$result" | jq -r '.stats.tools.totalCalls // 0')
 tools_used=$(echo "$result" | jq -r '.stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
-echo "$(date): $total_tokens tokens, $tool_calls tool calls ($tools_used) used with models: $models_used" >> usage.log
+echo "$(date): $total_tokens tokens, $tool_calls 工具调用 ($tools_used) 使用的模型: $models_used" >> usage.log
 echo "$result" | jq -r '.response' > schema-docs.md
-echo "Recent usage trends:"
+echo "最近使用趋势:"
 tail -5 usage.log
 ```
 
 ## 资源
 
-- [CLI 配置](../configuration/settings#command-line-arguments) - 完整配置指南
+- [CLI 配置](../configuration/settings#command-line-arguments) - 完整的配置指南
 - [认证](../configuration/settings#environment-variables-for-api-access) - 设置认证
 - [命令](../features/commands) - 交互式命令参考
 - [教程](../quickstart) - 逐步自动化指南

@@ -3,161 +3,223 @@
 Qwen Code prend en charge deux méthodes d'authentification. Choisissez celle qui correspond à la façon dont vous souhaitez exécuter le CLI :
 
 - **OAuth Qwen (recommandé)** : connectez-vous avec votre compte `qwen.ai` dans un navigateur.
-- **API compatible OpenAI** : utilisez une clé API (OpenAI ou tout fournisseur/point de terminaison compatible OpenAI).
+- **Clé API** : utilisez une clé API pour vous connecter à n'importe quel fournisseur pris en charge. Plus flexible — prend en charge OpenAI, Anthropic, Google GenAI, Alibaba Cloud Bailian et d'autres points de terminaison compatibles.
 
-![](https://img.alicdn.com/imgextra/i2/O1CN01IxI1bt1sNO543AVTT_!!6000000005754-0-tps-1958-822.jpg)
+![](https://gw.alicdn.com/imgextra/i4/O1CN01yXSXc91uYxJxhJXBF_!!6000000006050-2-tps-2372-916.png)
 
-## Option 1 : Qwen OAuth (recommandé & gratuit) 👍
+## 👍 Option 1 : Qwen OAuth (recommandé et gratuit)
 
 Utilisez cette option si vous souhaitez la configuration la plus simple et que vous utilisez les modèles Qwen.
 
 - **Fonctionnement** : au premier démarrage, Qwen Code ouvre une page de connexion dans le navigateur. Une fois la connexion terminée, les identifiants sont mis en cache localement, vous n'aurez donc généralement plus besoin de vous reconnecter.
 - **Prérequis** : un compte `qwen.ai` + accès Internet (au moins pour la première connexion).
-- **Avantages** : pas de gestion de clés API, actualisation automatique des identifiants.
-- **Coût & quotas** : gratuit, avec un quota de **60 requêtes/minute** et **1 000 requêtes/jour**.
+- **Avantages** : pas de gestion de clé API, actualisation automatique des identifiants.
+- **Coût et quota** : gratuit, avec un quota de **60 requêtes/minute** et **1 000 requêtes/jour**.
 
-Lancez l'interface en ligne de commande et suivez le processus dans le navigateur :
+Démarrez l'interface en ligne de commande et suivez le processus dans le navigateur :
 
 ```bash
 qwen
 ```
 
-## Option 2 : API compatible OpenAI (clé API)
-
-Utilisez cette option si vous souhaitez utiliser les modèles OpenAI ou tout fournisseur proposant une API compatible OpenAI (par exemple OpenAI, Azure OpenAI, OpenRouter, ModelScope, Alibaba Cloud Bailian ou un point de terminaison auto-hébergé compatible).
-
-### Recommandé : Plan de codage (basé sur un abonnement) 🚀
-
-Utilisez ceci si vous souhaitez des coûts prévisibles avec des quotas d'utilisation plus élevés pour le modèle qwen3-coder-plus.
-
-> [!IMPORTANT]
+> [!note]
 >
-> Le Plan de codage n'est disponible que pour les utilisateurs en Chine continentale (région de Pékin).
+> Dans les environnements non interactifs ou sans interface graphique (par exemple, CI, SSH, conteneurs), vous ne pouvez généralement **pas** effectuer le processus de connexion OAuth via le navigateur.  
+> Dans ces cas, veuillez utiliser la méthode d'authentification par clé API.
 
-- **Fonctionnement** : souscrivez au Plan de codage avec des frais mensuels fixes, puis configurez Qwen Code pour utiliser le point de terminaison dédié et votre clé API d'abonnement.
-- **Prérequis** : un abonnement actif au Plan de codage provenant d'[Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing/?tab=globalset#/efm/coding_plan).
+## 🚀 Option 2 : Clé API (souple)
+
+Utilisez cette option si vous souhaitez plus de flexibilité concernant le fournisseur et le modèle à utiliser. Prend en charge plusieurs protocoles et fournisseurs, notamment OpenAI, Anthropic, Google GenAI, Alibaba Cloud Bailian, Azure OpenAI, OpenRouter, ModelScope ou un point de terminaison compatible auto-hébergé.
+
+### Option 1 : Coding Plan (Aliyun Bailian)
+
+Utilisez cette option si vous souhaitez des coûts prévisibles avec des quotas d'utilisation plus élevés pour le modèle qwen3-coder-plus.
+
+- **Fonctionnement** : souscrivez à l'abonnement Coding Plan avec des frais mensuels fixes, puis configurez Qwen Code pour utiliser le point de terminaison dédié et votre clé API d'abonnement.
+- **Prérequis** : obtenir un abonnement actif au plan Coding Plan depuis [Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing/?tab=globalset#/efm/coding_plan).
 - **Avantages** : quotas d'utilisation plus élevés, coûts mensuels prévisibles, accès au dernier modèle qwen3-coder-plus.
-- **Coût et quota** : varie selon le plan (voir tableau ci-dessous).
+- **Coût et quota** : consultez la [documentation du plan Coding Plan d'Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3005961).
 
-#### Tarification et quotas du plan de codage
+Entrez `qwen` dans le terminal pour lancer Qwen Code, puis entrez la commande `/auth` et sélectionnez `API-KEY`
 
-| Fonctionnalité      | Plan Lite Basic       | Plan Pro Advanced     |
-| :------------------ | :-------------------- | :-------------------- |
-| **Prix**            | 40 ¥/mois             | 200 ¥/mois            |
-| **Limite de 5 heures** | Jusqu'à 1 200 requêtes | Jusqu'à 6 000 requêtes |
-| **Limite hebdomadaire** | Jusqu'à 9 000 requêtes | Jusqu'à 45 000 requêtes |
-| **Limite mensuelle** | Jusqu'à 18 000 requêtes | Jusqu'à 90 000 requêtes |
-| **Modèle pris en charge** | qwen3-coder-plus      | qwen3-coder-plus      |
+![](https://gw.alicdn.com/imgextra/i4/O1CN01yXSXc91uYxJxhJXBF_!!6000000006050-2-tps-2372-916.png)
 
-#### Configuration rapide du plan de codage
+Après avoir entré, sélectionnez `Coding Plan` :
 
-Lorsque vous sélectionnez l'option compatible OpenAI dans le CLI, saisissez ces valeurs :
+![](https://gw.alicdn.com/imgextra/i4/O1CN01Irk0AD1ebfop69o0r_!!6000000003890-2-tps-2308-830.png)
 
-- **Clé API** : `sk-sp-xxxxx`
-- **URL de base** : `https://coding.dashscope.aliyuncs.com/v1`
-- **Modèle** : `qwen3-coder-plus`
+Entrez votre clé `sk-sp-xxxxxxxxx`, puis utilisez la commande `/model` pour basculer entre tous les modèles pris en charge par le `Coding Plan` de Bailian :
 
-> **Remarque** : Les clés API du plan de codage ont le format `sk-sp-xxxxx`, qui est différent des clés API standard d'Alibaba Cloud.
+![](https://gw.alicdn.com/imgextra/i4/O1CN01fWArmf1kaCEgSmPln_!!6000000004699-2-tps-2304-1374.png)
 
-#### Configuration via variables d'environnement
+### Option 2 : Clé API tierce
 
-Définissez ces variables d'environnement pour utiliser Coding Plan :
+Utilisez cette option si vous souhaitez vous connecter à des fournisseurs tiers tels qu'OpenAI, Anthropic, Google, Azure OpenAI, OpenRouter, ModelScope ou un point de terminaison auto-hébergé.
 
-```bash
-export OPENAI_API_KEY="your-coding-plan-api-key"  # Format : sk-sp-xxxxx
-export OPENAI_BASE_URL="https://coding.dashscope.aliyuncs.com/v1"
-export OPENAI_MODEL="qwen3-coder-plus"
+Le concept clé est celui des **Fournisseurs de modèles** (`modelProviders`) : Qwen Code prend en charge plusieurs protocoles d'API, pas uniquement OpenAI. Vous configurez les fournisseurs et modèles disponibles en éditant le fichier `~/.qwen/settings.json`, puis vous basculez entre eux au moment de l'exécution à l'aide de la commande `/model`.
+
+#### Protocoles pris en charge
+
+| Protocole         | Clé `modelProviders` | Variables d'environnement                                    | Fournisseurs                                                                                        |
+| ----------------- | -------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Compatible OpenAI | `openai`             | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`          | OpenAI, Azure OpenAI, OpenRouter, ModelScope, Alibaba Cloud Bailian, tout point de terminaison compatible OpenAI |
+| Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL` | Anthropic Claude                                                                                    |
+| Google GenAI      | `gemini`             | `GEMINI_API_KEY`, `GEMINI_MODEL`                             | Google Gemini                                                                                       |
+| Google Vertex AI  | `vertex-ai`          | `GOOGLE_API_KEY`, `GOOGLE_MODEL`                             | Google Vertex AI                                                                                    |
+
+#### Étape 1 : Configurer `modelProviders` dans `~/.qwen/settings.json`
+
+Définissez quels modèles sont disponibles pour chaque protocole. Chaque entrée de modèle nécessite au minimum un `id` et un `envKey` (le nom de la variable d'environnement qui contient votre clé API).
+
+> [!important]
+>
+> Il est recommandé de définir `modelProviders` dans le fichier utilisateur `~/.qwen/settings.json` pour éviter les conflits de fusion entre les paramètres du projet et ceux de l'utilisateur.
+
+Modifiez `~/.qwen/settings.json` (créez-le s'il n'existe pas) :
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "gpt-4o",
+        "name": "GPT-4o",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1"
+      }
+    ],
+    "anthropic": [
+      {
+        "id": "claude-sonnet-4-20250514",
+        "name": "Claude Sonnet 4",
+        "envKey": "ANTHROPIC_API_KEY"
+      }
+    ],
+    "gemini": [
+      {
+        "id": "gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro",
+        "envKey": "GEMINI_API_KEY"
+      }
+    ]
+  }
+}
 ```
 
-Pour plus de détails sur Coding Plan, y compris les options d'abonnement et la résolution des problèmes, consultez la [documentation complète de Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3005961).
+Vous pouvez mélanger plusieurs protocoles et modèles dans une seule configuration. Les champs de `ModelConfig` sont :
 
-### Autres fournisseurs compatibles OpenAI
+| Champ              | Requis   | Description                                                                 |
+| ------------------ | -------- | --------------------------------------------------------------------------- |
+| `id`               | Oui      | ID du modèle envoyé à l'API (ex. `gpt-4o`, `claude-sonnet-4-20250514`)      |
+| `name`             | Non      | Nom affiché dans le sélecteur `/model` (valeur par défaut : `id`)           |
+| `envKey`           | Oui      | Nom de la variable d'environnement pour la clé API (ex. `OPENAI_API_KEY`)   |
+| `baseUrl`          | Non      | Remplacement du point de terminaison de l'API (utile pour les proxys ou points de terminaison personnalisés) |
+| `generationConfig` | Non      | Ajustement fin de `timeout`, `maxRetries`, `samplingParams`, etc.           |
 
-Si vous utilisez d'autres fournisseurs (OpenAI, Azure, modèles locaux, etc.), utilisez les méthodes de configuration suivantes.
+> [!note]
+>
+> Les identifiants de connexion ne sont **jamais** stockés dans `settings.json`. Le runtime les lit depuis la variable d'environnement spécifiée dans `envKey`.
 
-### Configuration via arguments en ligne de commande
+Pour connaître le schéma complet de `modelProviders` ainsi que les options avancées telles que `generationConfig`, `customHeaders` et `extra_body`, consultez [Référence des paramètres → modelProviders](settings.md#modelproviders).
+
+#### Étape 2 : Définir les variables d'environnement
+
+Qwen Code lit les clés API à partir des variables d'environnement (spécifiées par `envKey` dans la configuration de votre modèle). Il existe plusieurs façons de les fournir, listées ci-dessous par **ordre de priorité décroissante** :
+
+**1. Environnement du shell / `export` (priorité la plus élevée)**
+
+Définissez-les directement dans votre profil shell (`~/.zshrc`, `~/.bashrc`, etc.) ou en ligne avant le lancement :
 
 ```bash
 
-# Clé API uniquement
-qwen-code --openai-api-key "your-api-key-here"
+# Alibaba Dashscope
+export DASHSCOPE_API_KEY="sk-..."
 
-# URL de base personnalisée (endpoint compatible OpenAI)
-qwen-code --openai-api-key "your-api-key-here" --openai-base-url "https://your-endpoint.com/v1"
+# OpenAI / Compatible OpenAI
+export OPENAI_API_KEY="sk-..."
 
-# Modèle personnalisé
-qwen-code --openai-api-key "your-api-key-here" --model "gpt-4o-mini"
+# Anthropic
+export ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
-### Configuration via variables d'environnement
-
-Vous pouvez les définir dans votre profil shell, votre environnement CI ou un fichier `.env` :
-
-```bash
-export OPENAI_API_KEY="votre-clé-api-ici"
-export OPENAI_BASE_URL="https://api.openai.com/v1"  # optionnel
-export OPENAI_MODEL="gpt-4o"                        # optionnel
+# Google GenAI
+export GEMINI_API_KEY="AIza..."
 ```
 
-#### Persistance des variables d'env avec `.env` / `.qwen/.env`
+**2. Fichiers `.env`**
 
-Qwen Code chargera automatiquement les variables d'environnement à partir du **premier** fichier `.env` qu'il trouve (les variables ne sont **pas fusionnées** entre plusieurs fichiers).
+Qwen Code charge automatiquement le **premier** fichier `.env` qu'il trouve (les variables ne sont **pas fusionnées** entre plusieurs fichiers). Seules les variables non déjà présentes dans `process.env` sont chargées.
 
-Ordre de recherche :
+Ordre de recherche (à partir du répertoire courant, en remontant vers `/`) :
 
-1. À partir du **répertoire courant**, en remontant vers `/` :
-   1. `.qwen/.env`
-   2. `.env`
-2. Si rien n'est trouvé, il utilise votre **répertoire home** :
-   - `~/.qwen/.env`
-   - `~/.env`
+1. `.qwen/.env` (préféré — isole les variables de Qwen Code des autres outils)
+2. `.env`
 
-`.qwen/.env` est recommandé pour isoler les variables de Qwen Code des autres outils. Certaines variables (comme `DEBUG` et `DEBUG_MODE`) sont exclues des fichiers `.env` du projet afin d'éviter d'interférer avec le comportement de qwen-code.
+Si rien n'est trouvé, il utilise votre **répertoire personnel** :
 
-Exemples :
+3. `~/.qwen/.env`
+4. `~/.env`
 
-```bash
+> [!tip]
+>
+> `.qwen/.env` est recommandé au lieu de `.env` pour éviter les conflits avec d'autres outils. Certaines variables (comme `DEBUG` et `DEBUG_MODE`) sont exclues des fichiers `.env` au niveau du projet pour éviter d'interférer avec le comportement de Qwen Code.
 
-# Paramètres spécifiques au projet (recommandé)
-```bash
-mkdir -p .qwen
-cat >> .qwen/.env <<'EOF'
-OPENAI_API_KEY="your-api-key"
-OPENAI_BASE_URL="https://api-inference.modelscope.cn/v1"
-OPENAI_MODEL="Qwen/Qwen3-Coder-480B-A35B-Instruct"
-EOF
+**3. `settings.json` → champ `env` (priorité la plus faible)**
+
+Vous pouvez également définir directement des variables d'environnement dans `~/.qwen/settings.json` sous la clé `env`. Celles-ci sont chargées comme solution de **secours à la priorité la plus faible** — uniquement appliquées lorsqu'une variable n'est pas déjà définie par l'environnement système ou les fichiers `.env`.
+
+```json
+{
+  "env": {
+    "DASHSCOPE_API_KEY":"sk-...",
+    "OPENAI_API_KEY": "sk-...",
+    "ANTHROPIC_API_KEY": "sk-ant-...",
+    "GEMINI_API_KEY": "AIza..."
+  },
+  "modelProviders": {
+    ...
+  }
+}
 ```
 
-```bash
-# Paramètres pour tous les projets (disponibles partout)
-mkdir -p ~/.qwen
-cat >> ~/.qwen/.env <<'EOF'
-OPENAI_API_KEY="your-api-key"
-OPENAI_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
-OPENAI_MODEL="qwen3-coder-plus"
-EOF
+> [!note]
+>
+> Ceci est utile lorsque vous souhaitez conserver toute la configuration (fournisseurs + identifiants) dans un seul fichier. Cependant, gardez à l'esprit que `settings.json` peut être partagé ou synchronisé — préférez les fichiers `.env` pour les secrets sensibles.
+
+**Résumé des priorités :**
+
+| Priorité    | Source                           | Comportement de substitution             |
+| ----------- | -------------------------------- | ---------------------------------------- |
+| 1 (max)     | Drapeaux CLI (`--openai-api-key`) | Toujours gagnant                         |
+| 2           | Environnement système (`export`, en ligne) | Remplace `.env` et `settings.env`          |
+| 3           | Fichier `.env`                     | Définit seulement si absent de l'environnement système |
+| 4 (min)     | `settings.json` → `env`            | Définit seulement si absent de l'environnement système ou de `.env` |
+
+#### Étape 3 : Changer de modèle avec `/model`
+
+Après avoir lancé Qwen Code, utilisez la commande `/model` pour basculer entre tous les modèles configurés. Les modèles sont regroupés par protocole :
+
+```
+/model
 ```
 
-## Changer la méthode d'authentification (sans redémarrer)
+Le sélecteur affichera tous les modèles de votre configuration `modelProviders`, regroupés par leur protocole (par exemple `openai`, `anthropic`, `gemini`). Votre sélection est conservée d'une session à l'autre.
 
-Dans l'interface utilisateur de Qwen Code, exécutez :
+Vous pouvez également changer de modèle directement via un argument en ligne de commande, ce qui est pratique lorsque vous travaillez sur plusieurs terminaux.
 
 ```bash
-/auth
+
+# Dans un premier terminal
+
+qwen --model "qwen3-coder-plus"
+
+# Dans un autre terminal
+
+qwen --model "qwen3-coder-next"
 ```
-
-## Environnements non interactifs / sans interface graphique (CI, SSH, conteneurs)
-
-Dans un terminal non interactif, vous ne pouvez généralement **pas** effectuer le flux de connexion OAuth via navigateur.
-Utilisez plutôt la méthode de l'API compatible OpenAI via les variables d'environnement :
-
-- Définissez au minimum `OPENAI_API_KEY`.
-- Vous pouvez éventuellement définir `OPENAI_BASE_URL` et `OPENAI_MODEL`.
-
-Si aucune de ces variables n'est définie dans une session non interactive, Qwen Code se terminera avec une erreur.
 
 ## Notes de sécurité
 
-- Ne commitez pas les clés API dans le système de contrôle de version.
-- Préférez `.qwen/.env` pour les secrets locaux au projet (et gardez-le en dehors de git).
+- N'ajoutez pas les clés API au système de gestion de versions.
+- Préférez le fichier `.qwen/.env` pour les secrets locaux au projet (et assurez-vous qu'il n'est pas suivi par git).
 - Considérez la sortie de votre terminal comme sensible si elle affiche des identifiants à des fins de vérification.

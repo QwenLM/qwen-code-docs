@@ -1,11 +1,11 @@
 # SDK Java Qwen Code
 
-Le SDK Java Qwen Code est un SDK expérimental minimal permettant un accès programmatique aux fonctionnalités de Qwen Code. Il fournit une interface Java pour interagir avec l'interface en ligne de commande (CLI) de Qwen Code, permettant aux développeurs d'intégrer les capacités de Qwen Code dans leurs applications Java.
+Le SDK Java Qwen Code est un SDK expérimental minimal permettant l'accès programmatique aux fonctionnalités de Qwen Code. Il fournit une interface Java pour interagir avec le CLI Qwen Code, permettant aux développeurs d'intégrer les capacités de Qwen Code dans leurs applications Java.
 
 ## Prérequis
 
 - Java >= 1.8
-- Maven >= 3.6.0 (pour la compilation à partir des sources)
+- Maven >= 3.6.0 (pour la compilation depuis les sources)
 - qwen-code >= 0.5.0
 
 ### Dépendances
@@ -27,7 +27,7 @@ Ajoutez la dépendance suivante à votre fichier `pom.xml` Maven :
 </dependency>
 ```
 
-Ou si vous utilisez Gradle, ajoutez ceci à votre fichier `build.gradle` :
+Ou si vous utilisez Gradle, ajoutez à votre fichier `build.gradle` :
 
 ```gradle
 implementation 'com.alibaba:qwencode-sdk:{$version}'
@@ -46,7 +46,7 @@ mvn compile
 # Exécuter les tests
 mvn test
 
-# Créer le package JAR
+# Créer le paquet JAR
 mvn package
 
 # Installer dans le dépôt local
@@ -92,41 +92,41 @@ public static void runStreamingExample() {
 
                 @Override
                 public void onText(Session session, TextAssistantContent textAssistantContent) {
-                    logger.info("Text content received: {}", textAssistantContent.getText());
+                    logger.info("Contenu texte reçu : {}", textAssistantContent.getText());
                 }
 
                 @Override
                 public void onThinking(Session session, ThingkingAssistantContent thingkingAssistantContent) {
-                    logger.info("Thinking content received: {}", thingkingAssistantContent.getThinking());
+                    logger.info("Contenu de réflexion reçu : {}", thingkingAssistantContent.getThinking());
                 }
 
                 @Override
                 public void onToolUse(Session session, ToolUseAssistantContent toolUseContent) {
-                    logger.info("Tool use content received: {} with arguments: {}",
+                    logger.info("Utilisation d'outil reçue : {} avec arguments : {}",
                             toolUseContent, toolUseContent.getInput());
                 }
 
                 @Override
                 public void onToolResult(Session session, ToolResultAssistantContent toolResultContent) {
-                    logger.info("Tool result content received: {}", toolResultContent.getContent());
+                    logger.info("Résultat d'outil reçu : {}", toolResultContent.getContent());
                 }
 
                 @Override
                 public void onOtherContent(Session session, AssistantContent<?> other) {
-                    logger.info("Other content received: {}", other);
+                    logger.info("Autre contenu reçu : {}", other);
                 }
 
                 @Override
                 public void onUsage(Session session, AssistantUsage assistantUsage) {
-                    logger.info("Usage information received: Input tokens: {}, Output tokens: {}",
+                    logger.info("Informations d'utilisation reçues : jetons en entrée : {}, jetons en sortie : {}",
                             assistantUsage.getUsage().getInputTokens(), assistantUsage.getUsage().getOutputTokens());
                 }
             }.setDefaultPermissionOperation(Operation.allow));
-    logger.info("Streaming example completed.");
+    logger.info("Exemple de streaming terminé.");
 }
 ```
 
-d'autres exemples voir src/test/java/com/alibaba/qwen/code/cli/example
+d'autres exemples dans src/test/java/com/alibaba/qwen/code/cli/example
 
 ## Architecture
 
@@ -171,35 +171,35 @@ L'interface `SessionEventConsumers` fournit des rappels pour différents types d
 
 L'interface `AssistantContentConsumers` gère différents types de contenu au sein des messages de l'assistant :
 
-- `onText` : Gère le contenu texte (reçoit une Session et un TextAssistantContent)
-- `onThinking` : Gère le contenu de réflexion (reçoit une Session et un ThingkingAssistantContent)
-- `onToolUse` : Gère l'utilisation d'outils (reçoit une Session et un ToolUseAssistantContent)
-- `onToolResult` : Gère les résultats d'outils (reçoit une Session et un ToolResultAssistantContent)
-- `onOtherContent` : Gère les autres types de contenu (reçoit une Session et un AssistantContent)
-- `onUsage` : Gère les informations d'utilisation (reçoit une Session et un AssistantUsage)
-- `onPermissionRequest` : Gère les demandes de permissions (reçoit une Session et un CLIControlPermissionRequest, retourne un Behavior)
-- `onOtherControlRequest` : Gère les autres demandes de contrôle (reçoit une Session et un ControlRequestPayload, retourne un ControlResponsePayload)
+- `onText` : Gère le contenu texte (reçoit la Session et TextAssistantContent)
+- `onThinking` : Gère le contenu de réflexion (reçoit la Session et ThingkingAssistantContent)
+- `onToolUse` : Gère l'utilisation d'outils (reçoit la Session et ToolUseAssistantContent)
+- `onToolResult` : Gère les résultats d'outils (reçoit la Session et ToolResultAssistantContent)
+- `onOtherContent` : Gère les autres types de contenu (reçoit la Session et AssistantContent)
+- `onUsage` : Gère les informations d'utilisation (reçoit la Session et AssistantUsage)
+- `onPermissionRequest` : Gère les demandes de permission (reçoit la Session et CLIControlPermissionRequest, retourne Behavior)
+- `onOtherControlRequest` : Gère les autres demandes de contrôle (reçoit la Session et ControlRequestPayload, retourne ControlResponsePayload)
 
-#### Relation entre les interfaces
+#### Relation Entre les Interfaces
 
-**Note importante sur la hiérarchie des événements :**
+**Note Importante sur la Hiérarchie des Événements :**
 
 - `SessionEventConsumers` est le processeur d'événements **haut niveau** qui gère différents types de messages (système, assistant, utilisateur, etc.)
 - `AssistantContentConsumers` est le processeur de contenu **bas niveau** qui gère différents types de contenu au sein des messages de l'assistant (texte, outils, réflexion, etc.)
 
-**Relation entre les processeurs :**
+**Relation entre les Processeurs :**
 
 - `SessionEventConsumers` → `AssistantContentConsumers` (SessionEventConsumers utilise AssistantContentConsumers pour traiter le contenu des messages de l'assistant)
 
-**Relations de dérivation des événements :**
+**Relations de Dérivation des Événements :**
 
 - `onAssistantMessage` → `onText`, `onThinking`, `onToolUse`, `onToolResult`, `onOtherContent`, `onUsage`
 - `onPartialAssistantMessage` → `onText`, `onThinking`, `onToolUse`, `onToolResult`, `onOtherContent`
 - `onControlRequest` → `onPermissionRequest`, `onOtherControlRequest`
 
-**Relations de délai d'attente des événements :**
+**Relations de Délai d'Attente des Événements :**
 
-Chaque méthode de gestionnaire d'événement possède une méthode de délai d'attente correspondante qui permet de personnaliser le comportement de délai d'attente pour cet événement spécifique :
+Chaque méthode de gestionnaire d'événement possède une méthode de délai d'attente correspondante permettant de personnaliser le comportement de délai d'attente pour cet événement spécifique :
 
 - `onSystemMessage` ↔ `onSystemMessageTimeout`
 - `onResultMessage` ↔ `onResultMessageTimeout`
@@ -220,12 +220,12 @@ Pour les méthodes de délai d'attente d'AssistantContentConsumers :
 - `onPermissionRequest` ↔ `onPermissionRequestTimeout`
 - `onOtherControlRequest` ↔ `onOtherControlRequestTimeout`
 
-**Valeurs de délai d'attente par défaut :**
+**Valeurs de Délai d'Attente par Défaut :**
 
 - Délai d'attente par défaut de `SessionEventSimpleConsumers` : 180 secondes (Timeout.TIMEOUT_180_SECONDS)
 - Délai d'attente par défaut de `AssistantContentSimpleConsumers` : 60 secondes (Timeout.TIMEOUT_60_SECONDS)
 
-**Exigences de hiérarchie des délais d'attente :**
+**Exigences de Hiérarchie des Délais d'Attente :**
 
 Pour un fonctionnement correct, les relations de délai d'attente suivantes doivent être respectées :
 
@@ -237,30 +237,29 @@ Pour un fonctionnement correct, les relations de délai d'attente suivantes doiv
 La classe `TransportOptions` permet de configurer la manière dont le SDK communique avec l'interface en ligne de commande Qwen Code :
 
 - `pathToQwenExecutable` : Chemin vers l'exécutable de l'interface en ligne de commande Qwen Code
-- `cwd` : Répertoire de travail pour le processus CLI
+- `cwd` : Répertoire de travail pour le processus de l'interface en ligne de commande
 - `model` : Modèle d'intelligence artificielle à utiliser pour la session
 - `permissionMode` : Mode d'autorisation qui contrôle l'exécution des outils
-- `env` : Variables d'environnement à transmettre au processus CLI
+- `env` : Variables d'environnement à transmettre au processus de l'interface en ligne de commande
 - `maxSessionTurns` : Limite le nombre de tours de conversation dans une session
 - `coreTools` : Liste des outils principaux qui devraient être disponibles pour l'IA
 - `excludeTools` : Liste des outils à exclure pour qu'ils ne soient pas disponibles pour l'IA
 - `allowedTools` : Liste des outils pré-approuvés pour une utilisation sans confirmation supplémentaire
 - `authType` : Type d'authentification à utiliser pour la session
-- `includePartialMessages` : Active la réception de messages partiels pendant les réponses en streaming
-- `skillsEnable` : Active ou désactive la fonctionnalité de compétences pour la session
+- `includePartialMessages` : Active la réception de messages partiels pendant les réponses en continu
 - `turnTimeout` : Délai d'attente pour un tour complet de conversation
 - `messageTimeout` : Délai d'attente pour les messages individuels dans un tour
 - `resumeSessionId` : Identifiant d'une session précédente à reprendre
-- `otherOptions` : Options supplémentaires en ligne de commande à transmettre au CLI
+- `otherOptions` : Autres options de ligne de commande à transmettre à l'interface en ligne de commande
 
 ### Fonctionnalités de contrôle des sessions
 
 - **Création de session** : Utilisez `QwenCodeCli.newSession()` pour créer une nouvelle session avec des options personnalisées
-- **Gestion des sessions** : La classe `Session` fournit des méthodes pour envoyer des invites, gérer les réponses et contrôler l'état de la session
-- **Nettoyage des sessions** : Fermez toujours les sessions en utilisant `session.close()` afin de terminer correctement le processus CLI
+- **Gestion des sessions** : La classe `Session` fournit des méthodes pour envoyer des invites, gérer les réponses et gérer l'état de la session
+- **Nettoyage des sessions** : Fermez toujours les sessions en utilisant `session.close()` pour terminer correctement le processus CLI
 - **Reprise de session** : Utilisez `setResumeSessionId()` dans `TransportOptions` pour reprendre une session précédente
 - **Interruption de session** : Utilisez `session.interrupt()` pour interrompre une invite en cours d'exécution
-- **Changement dynamique de modèle** : Utilisez `session.setModel()` pour modifier le modèle pendant une session
+- **Changement dynamique de modèle** : Utilisez `session.setModel()` pour changer de modèle pendant une session
 - **Changement dynamique du mode de permission** : Utilisez `session.setPermissionMode()` pour modifier le mode de permission pendant une session
 
 ### Configuration du pool de threads
@@ -269,9 +268,9 @@ Le SDK utilise un pool de threads pour gérer les opérations concurrentes avec 
 
 - **Taille du pool de base** : 30 threads
 - **Taille maximale du pool** : 100 threads
-- **Durée de maintien en vie** : 60 secondes
+- **Temps de maintien actif** : 60 secondes
 - **Capacité de la file d'attente** : 300 tâches (en utilisant LinkedBlockingQueue)
-- **Nommage des threads** : "qwen_code_cli-pool-{number}"
+- **Nom des threads** : "qwen_code_cli-pool-{nombre}"
 - **Threads daemon** : false
 - **Gestionnaire de rejet d'exécution** : CallerRunsPolicy
 
@@ -285,7 +284,7 @@ Le SDK fournit des types d'exceptions spécifiques pour différents scénarios d
 
 ## FAQ / Dépannage
 
-### Q : Dois-je installer le CLI Qwen séparément ?
+### Q : Dois-je installer séparément la CLI Qwen ?
 
 R : oui, nécessite Qwen CLI version 0.5.5 ou supérieure.
 

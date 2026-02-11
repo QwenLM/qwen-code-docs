@@ -1,48 +1,21 @@
-# Agent Skills (Experimentell)
+# Agent-Fähigkeiten
 
-> Erstellen, verwalten und teilen Sie Skills, um die Fähigkeiten von Qwen Code zu erweitern.
+> Erstellen, verwalten und teilen Sie Fähigkeiten, um die Funktionalität von Qwen Code zu erweitern.
 
-Diese Anleitung zeigt Ihnen, wie Sie Agent Skills in **Qwen Code** erstellen, verwenden und verwalten. Skills sind modulare Fähigkeiten, die die Effektivität des Modells durch organisierte Ordner mit Anweisungen (und optional Skripten/Ressourcen) erweitern.
-
-> [!note]
->
-> Skills sind derzeit **experimentell** und müssen mit `--experimental-skills` aktiviert werden.
+Diese Anleitung zeigt Ihnen, wie Sie Agent-Fähigkeiten in **Qwen Code** erstellen, verwenden und verwalten. Fähigkeiten sind modulare Funktionen, die die Effektivität des Modells durch organisierte Ordner mit Anweisungen (und optional Skripten/Ressourcen) erweitern.
 
 ## Voraussetzungen
 
 - Qwen Code (aktuelle Version)
-
-## So aktivieren Sie
-
-### Über CLI-Flag
-
-```bash
-qwen --experimental-skills
-```
-
-### Über settings.json
-
-Fügen Sie Ihrer `~/.qwen/settings.json` oder der Projekt-`.qwen/settings.json` hinzu:
-
-```json
-{
-  "tools": {
-    "experimental": {
-      "skills": true
-    }
-  }
-}
-```
-
 - Grundlegende Vertrautheit mit Qwen Code ([Schnellstart](../quickstart.md))
 
-## Was sind Agent Skills?
+## Was sind Agent-Fähigkeiten?
 
-Agent Skills verpacken Expertise in auffindbare Fähigkeiten. Jeder Skill besteht aus einer `SKILL.md`-Datei mit Anweisungen, die das Modell bei Bedarf laden kann, sowie optionalen unterstützenden Dateien wie Skripten und Vorlagen.
+Agent-Fähigkeiten bündeln Expertise in auffindbaren Funktionen. Jede Fähigkeit besteht aus einer `SKILL.md`-Datei mit Anweisungen, die das Modell bei Bedarf laden kann, sowie optionalen unterstützenden Dateien wie Skripten und Vorlagen.
 
 ### Wie Skills aufgerufen werden
 
-Skills werden **modellseitig aufgerufen** – das Modell entscheidet eigenständig, wann es diese basierend auf Ihrer Anfrage und der Beschreibung des Skills verwendet. Dies unterscheidet sich von Slash-Befehlen, die **vom Benutzer aufgerufen** werden (Sie geben explizit `/befehl` ein).
+Skills werden **modellseitig aufgerufen** – das Modell entscheidet eigenständig, wann es sie basierend auf Ihrer Anfrage und der Beschreibung des Skills verwenden soll. Dies unterscheidet sich von Slash-Befehlen, die **benutzerseitig aufgerufen** werden (Sie geben explizit `/befehl` ein).
 
 Wenn Sie einen Skill explizit aufrufen möchten, verwenden Sie den Slash-Befehl `/skills`:
 
@@ -50,16 +23,16 @@ Wenn Sie einen Skill explizit aufrufen möchten, verwenden Sie den Slash-Befehl 
 /skills <skill-name>
 ```
 
-Der Befehl `/skills` ist nur verfügbar, wenn Sie mit `--experimental-skills` arbeiten. Nutzen Sie die Autovervollständigung, um verfügbare Skills und deren Beschreibungen zu durchsuchen.
+Nutzen Sie die Autovervollständigung, um verfügbare Skills und deren Beschreibungen zu durchsuchen.
 
 ### Vorteile
 
 - Erweitern Sie Qwen Code für Ihre Workflows
-- Teilen Sie Expertise innerhalb Ihres Teams über Git
-- Reduzieren Sie wiederholte Eingaben/Aufforderungen
+- Teilen Sie Fachwissen innerhalb Ihres Teams über Git
+- Reduzieren Sie wiederholte Eingaben
 - Kombinieren Sie mehrere Skills für komplexe Aufgaben
 
-## Eine Skill erstellen
+## Einen Skill erstellen
 
 Skills werden als Verzeichnisse gespeichert, die eine `SKILL.md`-Datei enthalten.
 
@@ -74,62 +47,62 @@ mkdir -p ~/.qwen/skills/mein-skill-name
 Verwenden Sie persönliche Skills für:
 
 - Ihre individuellen Workflows und Präferenzen
-- Experimentelle Skills, die Sie entwickeln
+- Skills, die Sie entwickeln
 - Persönliche Produktivitätshelfer
 
-### Projektspezifische Skills
+### Projektfähigkeiten
 
-Projektspezifische Skills werden mit Ihrem Team geteilt. Speichern Sie sie in `.qwen/skills/` innerhalb Ihres Projekts:
+Projektfähigkeiten werden mit deinem Team geteilt. Speichere sie im Ordner `.qwen/skills/` innerhalb deines Projekts:
 
 ```bash
-mkdir -p .qwen/skills/mein-skill-name
+mkdir -p .qwen/skills/my-skill-name
 ```
 
-Verwenden Sie projektspezifische Skills für:
+Verwende Projektfähigkeiten für:
 
 - Team-Workflows und Konventionen
-- Projektspezifisches Fachwissen
+- Projekt-spezifisches Fachwissen
 - Gemeinsame Hilfsmittel und Skripte
 
-Projektspezifische Skills können in Git eingecheckt werden und stehen so automatisch Ihren Teamkollegen zur Verfügung.
+Projektfähigkeiten können in git eingecheckt werden und stehen so automatisch für Teamkollegen zur Verfügung.
 
-## `SKILL.md` schreiben
+## Schreibe `SKILL.md`
 
-Erstellen Sie eine `SKILL.md`-Datei mit YAML-Frontmatter und Markdown-Inhalt:
+Erstelle eine Datei `SKILL.md` mit YAML-Frontmatter und Markdown-Inhalt:
 
 ```yaml
 ---
-name: Ihr-Skill-Name
-description: Kurze Beschreibung dessen, was dieser Skill tut und wann er verwendet werden soll
+name: your-skill-name
+description: Kurze Beschreibung dessen, was diese Fähigkeit tut und wann sie verwendet werden soll
 ---
 
-# Ihr Skill-Name
+# Dein Fähigkeitsname
 
 ## Anweisungen
-Geben Sie klare, schrittweise Anleitungen für Qwen Code an.
+Stelle klare, schrittweise Anleitungen für Qwen Code bereit.
 
 ## Beispiele
-Zeigen Sie konkrete Beispiele zur Verwendung dieser Fähigkeit.
+Zeige konkrete Beispiele für die Verwendung dieser Fähigkeit.
 ```
 
 ### Feldanforderungen
 
-Qwen Code überprüft derzeit Folgendes:
+Qwen Code überprüft derzeit, dass:
 
-- `name` ist eine nicht leere Zeichenkette
-- `description` ist eine nicht leere Zeichenkette
+- `name` eine nicht leere Zeichenkette ist
+- `description` eine nicht leere Zeichenkette ist
 
 Empfohlene Konventionen (noch nicht streng erzwungen):
 
 - Verwenden Sie Kleinbuchstaben, Zahlen und Bindestriche in `name`
-- Machen Sie `description` spezifisch: Fügen Sie sowohl **was** die Fähigkeit tut als auch **wann** sie verwendet werden soll hinzu (Schlüsselwörter, die Benutzer natürlich erwähnen werden)
+- Machen Sie `description` spezifisch: Fügen Sie sowohl **was** die Skill tut als auch **wann** sie verwendet werden soll hinzu (Schlüsselwörter, die Benutzer natürlich erwähnen werden)
 
 ## Unterstützende Dateien hinzufügen
 
 Erstellen Sie zusätzliche Dateien neben `SKILL.md`:
 
 ```text
-meine-faehigkeit/
+my-skill/
 ├── SKILL.md (erforderlich)
 ├── reference.md (optionale Dokumentation)
 ├── examples.md (optionale Beispiele)
@@ -139,7 +112,7 @@ meine-faehigkeit/
     └── template.txt (optionale Vorlage)
 ```
 
-Verweisen Sie auf diese Dateien aus `SKILL.md`:
+Verweisen Sie auf diese Dateien aus `SKILL.md` heraus:
 
 ````markdown
 Für fortgeschrittene Nutzung siehe [reference.md](reference.md).
@@ -153,7 +126,7 @@ python scripts/helper.py input.txt
 
 ## Verfügbare Skills anzeigen
 
-Wenn `--experimental-skills` aktiviert ist, entdeckt Qwen Code Skills aus:
+Qwen Code entdeckt Skills aus:
 
 - Persönliche Skills: `~/.qwen/skills/`
 - Projektskills: `.qwen/skills/`
@@ -161,12 +134,9 @@ Wenn `--experimental-skills` aktiviert ist, entdeckt Qwen Code Skills aus:
 
 ### Erweiterungsskills
 
-Erweiterungen können benutzerdefinierte Skills bereitstellen, die verfügbar werden, wenn die Erweiterung aktiviert ist. Diese Skills werden im `skills/`-Verzeichnis der Erweiterung gespeichert und folgen dem gleichen Format wie persönliche und projektspezifische Skills.
+Erweiterungen können benutzerdefinierte Skills bereitstellen, die verfügbar werden, wenn die Erweiterung aktiviert ist. Diese Skills werden im `skills/`-Verzeichnis der Erweiterung gespeichert und folgen dem gleichen Format wie persönliche und Projektskills.
 
-Erweiterungsskills werden automatisch erkannt und geladen, wenn:
-
-- Die Erweiterung installiert und aktiviert ist
-- Das Flag `--experimental-skills` aktiviert ist
+Erweiterungsskills werden automatisch erkannt und geladen, sobald die Erweiterung installiert und aktiviert ist.
 
 Um zu sehen, welche Erweiterungen Skills bereitstellen, überprüfen Sie die Datei `qwen-extension.json` der Erweiterung auf ein `skills`-Feld.
 
@@ -185,15 +155,14 @@ ls ~/.qwen/skills/
 
 # Projektskills auflisten (wenn sich im Projektverzeichnis)
 ls .qwen/skills/
+
+# Inhalt eines bestimmten Skills anzeigen
+cat ~/.qwen/skills/mein-skill/SKILL.md
 ```
 
-# Inhalt einer bestimmten Fähigkeit anzeigen
-cat ~/.qwen/skills/my-skill/SKILL.md
-```
+## Einen Skill testen
 
-## Eine Fähigkeit testen
-
-Nach dem Erstellen einer Fähigkeit testen Sie sie, indem Sie Fragen stellen, die zu Ihrer Beschreibung passen.
+Nachdem Sie einen Skill erstellt haben, testen Sie ihn, indem Sie Fragen stellen, die zu Ihrer Beschreibung passen.
 
 Beispiel: Wenn Ihre Beschreibung „PDF-Dateien“ erwähnt:
 
@@ -201,11 +170,11 @@ Beispiel: Wenn Ihre Beschreibung „PDF-Dateien“ erwähnt:
 Können Sie mir helfen, Text aus dieser PDF zu extrahieren?
 ```
 
-Das Modell entscheidet autonom, ob Ihre Fähigkeit verwendet werden soll, wenn sie zur Anfrage passt – Sie müssen sie nicht explizit aufrufen.
+Das Modell entscheidet eigenständig, Ihren Skill zu verwenden, wenn er zur Anfrage passt – Sie müssen ihn nicht explizit aufrufen.
 
-## Eine Fähigkeit debuggen
+## Einen Skill debuggen
 
-Wenn Qwen Code Ihre Fähigkeit nicht verwendet, überprüfen Sie diese häufigen Probleme:
+Wenn Qwen Code Ihren Skill nicht verwendet, überprüfen Sie diese häufigen Probleme:
 
 ### Machen Sie die Beschreibung spezifisch
 
@@ -223,16 +192,16 @@ description: Extrahiere Text und Tabellen aus PDF-Dateien, fülle Formulare aus,
 
 ### Überprüfen Sie den Dateipfad
 
-- Persönliche Fähigkeiten: `~/.qwen/skills/<fähigkeits-name>/SKILL.md`
-- Projekt-Fähigkeiten: `.qwen/skills/<fähigkeits-name>/SKILL.md`
+- Persönliche Skills: `~/.qwen/skills/<skill-name>/SKILL.md`
+- Projektskills: `.qwen/skills/<skill-name>/SKILL.md`
 
 ```bash
 
 # Persönlich
-ls ~/.qwen/skills/my-skill/SKILL.md
+ls ~/.qwen/skills/mein-skill/SKILL.md
 
 # Projekt
-ls .qwen/skills/my-skill/SKILL.md
+ls .qwen/skills/mein-skill/SKILL.md
 ```
 
 ### YAML-Syntax prüfen
@@ -251,10 +220,10 @@ Stellen Sie sicher:
 
 ### Fehler anzeigen
 
-Führen Sie Qwen Code im Debug-Modus aus, um Fehler beim Laden von Skills zu sehen:
+Führen Sie Qwen Code im Debug-Modus aus, um Fehler beim Laden von Skills anzuzeigen:
 
 ```bash
-qwen --experimental-skills --debug
+qwen --debug
 ```
 
 ## Skills mit Ihrem Team teilen
@@ -262,8 +231,8 @@ qwen --experimental-skills --debug
 Sie können Skills über Projekt-Repositories teilen:
 
 1. Fügen Sie den Skill unter `.qwen/skills/` hinzu
-2. Committen und pushen Sie
-3. Teamkollegen ziehen die Änderungen und führen sie mit `--experimental-skills` aus
+2. Committen und pushen
+3. Teamkollegen ziehen die Änderungen
 
 ```bash
 git add .qwen/skills/
@@ -278,46 +247,48 @@ Bearbeiten Sie `SKILL.md` direkt:
 ```bash
 
 # Persönlicher Skill
-code ~/.qwen/skills/my-skill/SKILL.md
+code ~/.qwen/skills/mein-skill/SKILL.md
 
 # Projekt-Skill
-code .qwen/skills/my-skill/SKILL.md
+code .qwen/skills/mein-skill/SKILL.md
 ```
 
-Änderungen werden wirksam, sobald Sie Qwen Code das nächste Mal starten. Falls Qwen Code bereits läuft, starten Sie es neu, um die Updates zu laden.
+Änderungen werden beim nächsten Start von Qwen Code wirksam. Wenn Qwen Code bereits läuft, starten Sie es neu, um die Aktualisierungen zu laden.
 
 ## Einen Skill entfernen
 
 Löschen Sie das Skill-Verzeichnis:
 
 ```bash
+```
+
 # Persönlich
 rm -rf ~/.qwen/skills/my-skill
 
 # Projekt
 rm -rf .qwen/skills/my-skill
-git commit -m "Unbenutzten Skill entfernen"
+git commit -m "Ungenutzte Skill entfernen"
 ```
 
 ## Best Practices
 
 ### Skills fokussiert halten
 
-Ein Skill sollte eine einzelne Fähigkeit abdecken:
+Eine Skill sollte eine einzelne Fähigkeit abdecken:
 
-- Fokussiert: „PDF-Formulare ausfüllen“, „Excel-Analyse“, „Git Commit-Nachrichten“
-- Zu breit: „Dokumentverarbeitung“ (in kleinere Skills aufteilen)
+- Fokussiert: "PDF-Formular ausfüllen", "Excel-Analyse", "Git Commit-Nachrichten"
+- Zu breit: "Dokumentverarbeitung" (in kleinere Skills aufteilen)
 
 ### Klare Beschreibungen schreiben
 
-Helfen Sie dem Modell herauszufinden, wann Skills verwendet werden sollen, indem Sie spezifische Auslöser einbeziehen:
+Hilf dem Modell herauszufinden, wann Skills verwendet werden sollen, indem du spezifische Auslöser einfügst:
 
 ```yaml
-description: Analysiert Excel-Arbeitsmappen, erstellt Pivot-Tabellen und generiert Diagramme. Verwenden Sie dies bei der Arbeit mit Excel-Dateien, Arbeitsblättern oder .xlsx-Daten.
+description: Analysiere Excel-Arbeitsmappen, erstelle Pivot-Tabellen und generiere Diagramme. Verwende dies bei der Arbeit mit Excel-Dateien, Tabellenkalkulationen oder .xlsx-Daten.
 ```
 
-### Mit Ihrem Team testen
+### Mit deinem Team testen
 
-- Aktiviert sich der Skill wie erwartet?
+- Aktiviert sich die Skill wie erwartet?
 - Sind die Anweisungen verständlich?
 - Gibt es fehlende Beispiele oder Sonderfälle?
