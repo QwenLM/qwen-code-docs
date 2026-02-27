@@ -1,18 +1,18 @@
 # Befehle
 
-Dieses Dokument enthält alle von Qwen Code unterstützten Befehle und hilft Ihnen dabei, Sitzungen effizient zu verwalten, die Benutzeroberfläche anzupassen und deren Verhalten zu steuern.
+Dieses Dokument enthält eine detaillierte Liste aller von Qwen Code unterstützten Befehle und hilft Ihnen dabei, Sitzungen effizient zu verwalten, die Benutzeroberfläche anzupassen und deren Verhalten zu steuern.
 
 Qwen Code-Befehle werden durch spezifische Präfixe ausgelöst und fallen in drei Kategorien:
 
 | Präfixtyp                  | Funktionsbeschreibung                               | Typischer Anwendungsfall                                         |
 | -------------------------- | --------------------------------------------------- | ---------------------------------------------------------------- |
-| Schrägstrich-Befehle (`/`) | Metaebenen-Steuerung von Qwen Code selbst           | Sitzungsverwaltung, Änderung von Einstellungen, Hilfe abrufen    |
-| At-Befehle (`@`)           | Schnelle Einbindung lokalen Dateiinhalts in Gespräch| Analyse bestimmter Dateien oder Code unter Verzeichnissen durch KI ermöglichen |
-| Ausrufezeichen-Befehle (`!`)| Direkte Interaktion mit System-Shell               | Ausführung von Systembefehlen wie `git status`, `ls`, etc.       |
+| Schrägstrich-Befehle (`/`) | Meta-Ebene zur Steuerung von Qwen Code selbst       | Verwaltung von Sitzungen, Änderung von Einstellungen, Hilfeabruf |
+| At-Befehle (`@`)           | Schnelle Einbindung lokalen Dateiinhalts ins Gespräch | Analyse bestimmter Dateien oder Code unter Verzeichnissen durch KI ermöglichen |
+| Ausrufezeichen-Befehle (`!`) | Direkte Interaktion mit der System-Shell            | Ausführung von Systembefehlen wie `git status`, `ls`, etc.       |
 
 ## 1. Slash-Befehle (`/`)
 
-Slash-Befehle werden verwendet, um Qwen Code-Sitzungen, die Benutzeroberfläche und grundlegendes Verhalten zu verwalten.
+Slash-Befehle werden verwendet, um Qwen Code-Sitzungen zu verwalten, die Benutzeroberfläche zu steuern und grundlegendes Verhalten zu definieren.
 
 ### 1.1 Sitzungs- und Projektverwaltung
 
@@ -21,7 +21,7 @@ Diese Befehle helfen Ihnen dabei, Arbeitsfortschritte zu speichern, wiederherzus
 | Befehl      | Beschreibung                                              | Verwendungsbeispiele                 |
 | ----------- | --------------------------------------------------------- | ------------------------------------ |
 | `/init`     | Analysiert das aktuelle Verzeichnis und erstellt eine initiale Kontextdatei | `/init`                              |
-| `/summary`  | Erstellt eine Projektzusammenfassung basierend auf dem Gesprächsverlauf | `/summary`                           |
+| `/summary`  | Erstellt eine Projekts Zusammenfassung basierend auf dem Gesprächsverlauf | `/summary`                           |
 | `/compress` | Ersetzt den Chatverlauf durch eine Zusammenfassung, um Tokens zu sparen | `/compress`                          |
 | `/resume`   | Setzt eine vorherige Gesprächssitzung fort                | `/resume`                            |
 | `/restore`  | Stellt Dateien in den Zustand vor der Tool-Ausführung wieder her | `/restore` (Liste) oder `/restore <ID>` |
@@ -30,23 +30,23 @@ Diese Befehle helfen Ihnen dabei, Arbeitsfortschritte zu speichern, wiederherzus
 
 Befehle zum Anpassen der Oberflächenerscheinung und der Arbeitsumgebung.
 
-| Befehl       | Beschreibung                                            | Verwendungsbeispiele          |
-| ------------ | ------------------------------------------------------- | ----------------------------- |
-| `/clear`     | Inhalt des Terminalbildschirms löschen                | `/clear` (Tastenkürzel: `Strg+L`) |
-| `/theme`     | Visuelles Theme von Qwen Code ändern                  | `/theme`                      |
-| `/vim`       | Vim-Bearbeitungsmodus für Eingabebereich ein-/ausschalten | `/vim`                        |
-| `/directory` | Arbeitsbereich mit Unterstützung mehrerer Verzeichnisse verwalten | `/dir add ./src,./tests`      |
-| `/editor`    | Dialog öffnen, um unterstützten Editor auszuwählen    | `/editor`                     |
+| Befehl       | Beschreibung                                                     | Verwendungsbeispiele          |
+| ------------ | ---------------------------------------------------------------- | ----------------------------- |
+| `/clear`     | Inhalt des Terminalbildschirms löschen                           | `/clear` (Tastenkürzel: `Strg+L`) |
+| `/theme`     | Visuelles Theme von Qwen Code ändern                             | `/theme`                      |
+| `/vim`       | Vim-Bearbeitungsmodus für den Eingabebereich ein-/ausschalten    | `/vim`                        |
+| `/directory` | Arbeitsbereich mit Unterstützung für mehrere Verzeichnisse verwalten | `/dir add ./src,./tests`      |
+| `/editor`    | Dialog öffnen, um unterstützten Editor auszuwählen               | `/editor`                     |
 
 ### 1.3 Spracheinstellungen
 
 Befehle speziell zur Steuerung der Oberflächen- und Ausgabesprache.
 
-| Befehl                | Beschreibung                     | Verwendungsbeispiele       |
-| --------------------- | -------------------------------- | -------------------------- |
-| `/language`           | Spracheinstellungen anzeigen oder ändern | `/language`                |
-| → `ui [Sprache]`      | Sprache der Benutzeroberfläche festlegen | `/language ui de-DE`       |
-| → `output [Sprache]`  | Ausgabesprache des KI-Modells festlegen | `/language output German`  |
+| Befehl                | Beschreibung                          | Verwendungsbeispiele         |
+| --------------------- | ------------------------------------- | ---------------------------- |
+| `/language`           | Spracheinstellungen anzeigen oder ändern | `/language`                  |
+| → `ui [Sprache]`      | Oberflächensprache festlegen          | `/language ui de-DE`         |
+| → `output [Sprache]`  | LLM-Ausgabesprache festlegen          | `/language output German`    |
 
 - Verfügbare eingebaute Oberflächensprachen: `zh-CN` (Vereinfachtes Chinesisch), `en-US` (Englisch), `ru-RU` (Russisch), `de-DE` (Deutsch)
 - Beispiele für Ausgabesprachen: `Chinese`, `English`, `Japanese`, usw.
@@ -55,34 +55,34 @@ Befehle speziell zur Steuerung der Oberflächen- und Ausgabesprache.
 
 Befehle zur Verwaltung von KI-Werkzeugen und -Modellen.
 
-| Befehl           | Beschreibung                                  | Verwendungsbeispiele                          |
-| ---------------- | --------------------------------------------- | --------------------------------------------- |
-| `/mcp`           | Konfigurierte MCP-Server und Werkzeuge auflisten | `/mcp`, `/mcp desc`                           |
-| `/tools`         | Aktuell verfügbare Werkzeugliste anzeigen     | `/tools`, `/tools desc`                       |
-| `/skills`        | Verfügbare Fähigkeiten auflisten und ausführen | `/skills`, `/skills <Name>`                   |
+| Befehl           | Beschreibung                                  | Beispielanwendungen                          |
+| ---------------- | --------------------------------------------- | -------------------------------------------- |
+| `/mcp`           | Konfigurierte MCP-Server und Werkzeuge auflisten | `/mcp`, `/mcp desc`                          |
+| `/tools`         | Aktuell verfügbare Werkzeugliste anzeigen     | `/tools`, `/tools desc`                      |
+| `/skills`        | Verfügbare Skills auflisten und ausführen     | `/skills`, `/skills <Name>`                  |
 | `/approval-mode` | Genehmigungsmodus für Werkzeugnutzung ändern  | `/approval-mode <Modus (auto-edit)> --project` |
-| →`plan`          | Nur Analyse, keine Ausführung                 | Sichere Überprüfung                           |
-| →`default`       | Genehmigung für Änderungen erforderlich       | Tägliche Nutzung                              |
-| →`auto-edit`     | Änderungen automatisch genehmigen             | Vertrauensumgebung                            |
-| →`yolo`          | Alles automatisch genehmigen                  | Schnelle Prototypenerstellung                 |
-| `/model`         | Im aktuellen Sitzung verwendeten Modell wechseln | `/model`                                      |
-| `/extensions`    | Alle aktiven Erweiterungen in der aktuellen Sitzung auflisten | `/extensions`                                 |
-| `/memory`        | Anweisungskontext der KI verwalten            | `/memory add Wichtige Information`            |
+| →`plan`          | Nur Analyse, keine Ausführung                 | Sichere Überprüfung                          |
+| →`default`       | Genehmigung für Änderungen erforderlich       | Tägliche Nutzung                             |
+| →`auto-edit`     | Änderungen automatisch genehmigen             | Vertraute Umgebung                           |
+| →`yolo`          | Alles automatisch genehmigen                  | Schnelle Prototypenerstellung                |
+| `/model`         | Im aktuellen Sitzung verwendeten Modell wechseln | `/model`                                     |
+| `/extensions`    | Alle aktiven Erweiterungen in der aktuellen Sitzung auflisten | `/extensions`                                |
+| `/memory`        | Anweisungskontext der KI verwalten            | `/memory add Wichtige Information`           |
 
 ### 1.5 Informationen, Einstellungen und Hilfe
 
-Befehle zum Abrufen von Informationen und Durchführen von Systemeinstellungen.
+Befehle zum Abrufen von Informationen und zum Durchführen von Systemeinstellungen.
 
-| Befehl        | Beschreibung                                                         | Verwendungsbeispiele             |
-| ------------- | -------------------------------------------------------------------- | -------------------------------- |
-| `/help`       | Hilfetext für verfügbare Befehle anzeigen                            | `/help` oder `/?`                |
-| `/about`      | Versionsinformationen anzeigen                                       | `/about`                         |
-| `/stats`      | Detaillierte Statistiken für die aktuelle Sitzung anzeigen           | `/stats`                         |
-| `/settings`   | Einstellungseditor öffnen                                            | `/settings`                      |
-| `/auth`       | Authentifizierungsmethode ändern                                      | `/auth`                          |
-| `/bug`        | Problem bezüglich Qwen Code melden                                   | `/bug Button click unresponsive` |
-| `/copy`       | Letzten Ausgabecodeinhalt in Zwischenablage kopieren                 | `/copy`                          |
-| `/quit`       | Qwen Code sofort beenden                                             | `/quit` oder `/exit`             |
+| Befehl      | Beschreibung                                                         | Verwendungsbeispiele             |
+| ----------- | -------------------------------------------------------------------- | -------------------------------- |
+| `/help`     | Hilfegrundlagen für verfügbare Befehle anzeigen                      | `/help` oder `/?`                |
+| `/about`    | Versionsinformationen anzeigen                                       | `/about`                         |
+| `/stats`    | Detaillierte Statistiken für die aktuelle Sitzung anzeigen           | `/stats`                         |
+| `/settings` | Einstellungseditor öffnen                                            | `/settings`                      |
+| `/auth`     | Authentifizierungsmethode ändern                                     | `/auth`                          |
+| `/bug`      | Problem bezüglich Qwen Code melden                                   | `/bug Button click unresponsive` |
+| `/copy`     | Letzten Ausgabekontext in Zwischenablage kopieren                    | `/copy`                          |
+| `/quit`     | Qwen Code sofort beenden                                             | `/quit` oder `/exit`             |
 
 ### 1.6 Häufige Tastenkürzel
 
@@ -94,15 +94,15 @@ Befehle zum Abrufen von Informationen und Durchführen von Systemeinstellungen.
 | `Strg/cmd+Z`       | Eingabe rückgängig machen | Textbearbeitung        |
 | `Strg/cmd+Umschalt+Z` | Eingabe wiederholen   | Textbearbeitung        |
 
-## 2. @ Befehle (Dateien einfügen)
+## 2. @-Befehle (Einführung von Dateien)
 
-@ Befehle werden verwendet, um schnell Inhalte aus lokalen Dateien oder Verzeichnissen in die Konversation einzufügen.
+@-Befehle werden verwendet, um schnell Inhalte aus lokalen Dateien oder Verzeichnissen in die Konversation einzufügen.
 
-| Befehlsformat        | Beschreibung                                            | Beispiele                                           |
-| -------------------- | ------------------------------------------------------- | --------------------------------------------------- |
-| `@<Dateipfad>`       | Inhalt der angegebenen Datei einfügen                   | `@src/main.py Bitte erkläre diesen Code`            |
-| `@<Verzeichnispfad>` | Rekursiv alle Textdateien im Verzeichnis lesen          | `@docs/ Fasse den Inhalt dieses Dokuments zusammen` |
-| Alleinstehendes `@`  | Wird verwendet, wenn das Symbol `@` selbst besprochen wird | `@ Wofür wird dieses Symbol in der Programmierung verwendet?` |
+| Befehlsformat        | Beschreibung                                            | Beispiele                                               |
+| -------------------- | ------------------------------------------------------- | ------------------------------------------------------- |
+| `@<Dateipfad>`       | Fügt den Inhalt der angegebenen Datei ein               | `@src/main.py Bitte erkläre diesen Code`                |
+| `@<Verzeichnispfad>` | Liesst rekursiv alle Textdateien im Verzeichnis ein     | `@docs/ Fasse den Inhalt dieses Dokuments zusammen`     |
+| Eigenständiges `@`   | Wird verwendet, wenn das Symbol `@` selbst besprochen wird | `@ Wofür wird dieses Symbol in der Programmierung verwendet?` |
 
 Hinweis: Leerzeichen in Pfaden müssen mit einem Backslash maskiert werden (z.B. `@Meine\ Dokumente/datei.txt`)
 
@@ -112,8 +112,8 @@ Ausrufezeichen-Befehle ermöglichen es Ihnen, Systembefehle direkt innerhalb von
 
 | Befehlsformat        | Beschreibung                                                                 | Beispiele                              |
 | -------------------- | ---------------------------------------------------------------------------- | -------------------------------------- |
-| `!<Shell-Befehl>`   | Befehl in einer Sub-Shell ausführen                                          | `!ls -la`, `!git status`               |
-| Eigenständiges `!`   | Shell-Modus wechseln, jede Eingabe wird direkt als Shell-Befehl ausgeführt   | `!`(Eingabe) → Befehl eingeben → `!`(Beenden) |
+| `!<Shell-Befehl>`   | Befehl in einer Unter-Shell ausführen                                      | `!ls -la`, `!git status`               |
+| Eigenständiges `!`   | Shell-Modus wechseln, jede Eingabe wird direkt als Shell-Befehl ausgeführt | `!`(Eingabe) → Befehl eingeben → `!`(Beenden) |
 
 Umgebungsvariablen: Befehle, die über `!` ausgeführt werden, setzen die Umgebungsvariable `QWEN_CODE=1`.
 
@@ -121,26 +121,28 @@ Umgebungsvariablen: Befehle, die über `!` ausgeführt werden, setzen die Umgebu
 
 Speichern Sie häufig verwendete Prompts als Shortcut-Befehle, um die Arbeits-effizienz zu verbessern und Konsistenz sicherzustellen.
 
-> **Hinweis:** Benutzerdefinierte Befehle verwenden jetzt das Markdown-Format mit optionalem YAML-Frontmatter. Das TOML-Format ist veraltet, wird aber aus Gründen der Abwärtskompatibilität weiterhin unterstützt. Wenn TOML-Dateien erkannt werden, wird eine automatische Migrationsaufforderung angezeigt.
+> [!note]
+>
+> Benutzerdefinierte Befehle verwenden jetzt das Markdown-Format mit optionalem YAML-Frontmatter. Das TOML-Format ist veraltet, wird aber aus Gründen der Abwärtskompatibilität weiterhin unterstützt. Wenn TOML-Dateien erkannt werden, wird eine automatische Migrationsaufforderung angezeigt.
 
 ### Schnellübersicht
 
 | Funktion         | Beschreibung                               | Vorteile                               | Priorität | Anwendbare Szenarien                                 |
-| ---------------- | ------------------------------------------ | -------------------------------------- | -------- | ---------------------------------------------------- |
-| Namensraum       | Unterverzeichnis erstellt Doppelpunkt-Befehle | Bessere Befehlsorganisation           |          |                                                      |
-| Globale Befehle  | `~/.qwen/commands/`                        | In allen Projekten verfügbar           | Niedrig  | Persönlich häufig genutzte Befehle, projektübergreifende Nutzung |
-| Projekt-Befehle  | `<Projekt-Wurzelverzeichnis>/.qwen/commands/` | Projektspezifisch, versionskontrollierbar | Hoch     | Teilen innerhalb des Teams, projektspezifische Befehle |
+| ---------------- | ------------------------------------------ | -------------------------------------- | --------- | ---------------------------------------------------- |
+| Namensraum       | Unterverzeichnis erstellt Doppelpunkt-Befehle | Bessere Befehlsorganisation           |           |                                                      |
+| Globale Befehle  | `~/.qwen/commands/`                        | In allen Projekten verfügbar           | Niedrig   | Persönlich häufig genutzte Befehle, projektübergreifende Nutzung |
+| Projekt-Befehle  | `<Projekt-Wurzelverzeichnis>/.qwen/commands/` | Projektspezifisch, versionskontrollierbar | Hoch    | Teilen innerhalb des Teams, projektspezifische Befehle |
 
-Prioritätsregeln: Projekt-Befehle > Benutzer-Befehle (bei gleichen Namen wird der Projekt-Befehl verwendet)
+Prioritätsregeln: Projekt-Befehle > Benutzer-Befehle (Projekt-Befehl wird verwendet, wenn Namen identisch sind)
 
 ### Namensregeln für Befehle
 
 #### Dateipfad-zu-Befehlsnamen-Zuordnungstabelle
 
-| Dateispeicherort             | Generierter Befehl | Beispielaufruf        |
-| ---------------------------- | ------------------ | --------------------- |
-| `~/.qwen/commands/test.md`   | `/test`            | `/test Parameter`     |
-| `<projekt>/git/commit.md`    | `/git:commit`      | `/git:commit Nachricht` |
+| Dateispeicherort                           | Generierter Befehl | Beispielaufruf        |
+| ------------------------------------------ | ------------------ | --------------------- |
+| `~/.qwen/commands/test.md`                 | `/test`            | `/test Parameter`     |
+| `<Projekt>/.qwen/commands/git/commit.md`   | `/git:commit`      | `/git:commit Nachricht` |
 
 Namensregeln: Pfadseparator (`/` oder `\`) werden in Doppelpunkt (`:`) umgewandelt
 
@@ -164,7 +166,9 @@ Verwenden Sie {{args}} für Parameterinjektion.
 
 ### TOML-Dateiformat (Veraltet)
 
-> **Veraltet:** Das TOML-Format wird noch unterstützt, aber in einer zukünftigen Version entfernt. Bitte migrieren Sie zum Markdown-Format.
+> [!warning]
+>
+> **Veraltet:** Das TOML-Format wird weiterhin unterstützt, aber in einer zukünftigen Version entfernt. Bitte migrieren Sie zum Markdown-Format.
 
 | Feld          | Erforderlich | Beschreibung                                | Beispiel                                   |
 | ------------- | ------------ | ------------------------------------------- | ------------------------------------------ |
@@ -173,11 +177,11 @@ Verwenden Sie {{args}} für Parameterinjektion.
 
 ### Parameterverarbeitungsmechanismus
 
-| Verarbeitungsmethode         | Syntax             | Anwendbare Szenarien                 | Sicherheitsmerkmale                    |
+| Verarbeitungsmethode         | Syntax             | Anwendbare Szenarien                 | Sicherheitsfunktionen                  |
 | ---------------------------- | ------------------ | ------------------------------------ | -------------------------------------- |
 | Kontextbezogene Injektion    | `{{args}}`         | Benötigt präzise Parameterkontrolle  | Automatisches Shell-Escaping           |
-| Standardparameterverarbeitung| Keine besondere Markierung | Einfache Befehle, Parameteranfügung | Unverändertes Anhängen                 |
-| Shell-Befehlsinjektion       | `!{command}`       | Benötigt dynamischen Inhalt          | Ausführungsbestätigung vorher erforderlich |
+| Standardparameterverarbeitung| Keine besondere Markierung | Einfache Befehle, Parameteranfügung | Ohne Änderungen anhängen               |
+| Shell-Befehlsinjektion       | `!{command}`       | Benötigt dynamischen Inhalt          | Ausführungsbestätigung erforderlich    |
 
 #### 1. Kontextabhängige Injection (`{{args}}`)
 
@@ -188,20 +192,20 @@ Verwenden Sie {{args}} für Parameterinjektion.
 
 #### 2. Standardmäßige Parameterverarbeitung
 
-| Eingabesituation | Verarbeitungsmethode                                   | Beispiel                                       |
-| ---------------- | ------------------------------------------------------ | ---------------------------------------------- |
-| Hat Parameter    | An das Ende des Prompts anhängen (getrennt durch zwei Zeilenumbrüche) | `/cmd parameter` → Ursprüngliches Prompt + Parameter |
-| Keine Parameter  | Prompt so senden, wie es ist                           | `/cmd` → Ursprüngliches Prompt                 |
+| Eingabesituation | Verarbeitungsmethode                                 | Beispiel                                     |
+| ---------------- | ---------------------------------------------------- | -------------------------------------------- |
+| Hat Parameter    | An das Ende der Aufforderung anhängen (getrennt durch zwei Zeilenumbrüche) | `/cmd Parameter` → Ursprüngliche Aufforderung + Parameter |
+| Keine Parameter  | Aufforderung so senden, wie sie ist                  | `/cmd` → Ursprüngliche Aufforderung          |
 
 🚀 Dynamische Inhaltsinjektion
 
-| Injektionsart         | Syntax         | Verarbeitungsreihenfolge | Zweck                              |
-| --------------------- | -------------- | ------------------------ | ---------------------------------- |
-| Dateiinhalt           | `@{Dateipfad}` | Wird zuerst verarbeitet  | Statische Referenzdateien einfügen |
-| Shell-Befehle         | `!{Befehl}`    | Wird in der Mitte verarbeitet | Dynamische Ausführungsergebnisse einfügen |
-| Parameterersetzung    | `{{args}}`     | Wird zuletzt verarbeitet | Benutzerparameter einfügen         |
+| Injektionsart           | Syntax         | Verarbeitungsreihenfolge | Zweck                                |
+| ----------------------- | -------------- | ------------------------ | ------------------------------------ |
+| Dateiinhalt             | `@{Dateipfad}` | Wird zuerst verarbeitet  | Statische Referenzdateien einfügen   |
+| Shell-Befehle           | `!{Befehl}`    | Wird in der Mitte verarbeitet | Dynamische Ausführungsergebnisse einfügen |
+| Parameterersetzung      | `{{args}}`     | Wird zuletzt verarbeitet | Benutzerparameter einfügen           |
 
-#### 3. Shell-Befehlsausführung (`!{...}`)
+#### 3. Ausführung von Shell-Befehlen (`!{...}`)
 
 | Vorgang                         | Benutzerinteraktion  |
 | ------------------------------- | -------------------- |
@@ -211,7 +215,7 @@ Verwenden Sie {{args}} für Parameterinjektion.
 | 4. Befehl ausführen             | -                    |
 | 5. Ausgabe in Prompt einfügen   | -                    |
 
-Beispiel: Generierung der Git-Commit-Nachricht
+Beispiel: Generierung von Git-Commit-Nachrichten
 
 ````markdown
 ---
@@ -227,12 +231,12 @@ Bitte generiere eine Commit-Nachricht basierend auf folgendem Diff:
 
 #### 4. Dateiinhaltsinjektion (`@{...}`)
 
-| Dateityp     | Unterstützungstatus    | Verarbeitungsmethode        |
-| ------------ | ---------------------- | --------------------------- |
-| Textdateien  | ✅ Vollständige Unterstützung | Inhalt direkt einfügen      |
-| Bilder/PDF   | ✅ Multimodale Unterstützung | Kodieren und einfügen       |
+| Dateityp     | Unterstützungstatus  | Verarbeitungsmethode        |
+| ------------ | -------------------- | --------------------------- |
+| Textdateien  | ✅ Vollständige Unterstützung | Inhalt direkt injizieren    |
+| Bilder/PDF   | ✅ Multimodale Unterstützung | Kodieren und injizieren     |
 | Binärdateien | ⚠️ Eingeschränkte Unterstützung | Kann übersprungen oder gekürzt werden |
-| Verzeichnis  | ✅ Rekursive Injektion | .gitignore-Regeln beachten  |
+| Verzeichnis  | ✅ Rekursive Injektion | .gitignore-Regeln befolgen  |
 
 Beispiel: Code-Review-Befehl
 
@@ -241,14 +245,14 @@ Beispiel: Code-Review-Befehl
 description: Code-Review basierend auf Best Practices
 ---
 
-Überprüfe {{args}}, Bezug nehmen auf Standards:
+Überprüfe {{args}}, Referenzstandards:
 
 @{docs/code-standards.md}
-````
+```
 
 ### Praktisches Erstellungsbeispiel
 
-#### Tabelle zur Erstellung des Befehls „Pure Function Refactoring“
+#### Tabelle zur Erstellung von „Pure Function Refactoring“-Befehlen
 
 | Vorgang                       | Befehl/Code                               |
 | ----------------------------- | ----------------------------------------- |
@@ -262,24 +266,24 @@ description: Code-Review basierend auf Best Practices
 description: Code zu reiner Funktion umgestalten
 ---
 
-Bitte analysieren Sie den Code im aktuellen Kontext und gestalten Sie ihn zu einer reinen Funktion um.
+Bitte analysieren Sie den Code im aktuellen Kontext und gestalten Sie ihn als reine Funktion neu.
 Anforderungen:
 
-1. Stellen Sie den umgestalteten Code bereit
-2. Erklären Sie die wichtigsten Änderungen und die Implementierung der Merkmale reiner Funktionen
-3. Lassen Sie die Funktion unverändert
+1. Stellen Sie den überarbeiteten Code bereit
+2. Erklären Sie die wesentlichen Änderungen und die Implementierung der Merkmale einer reinen Funktion
+3. Funktion unverändert lassen
 ```
 
 ### Zusammenfassung bewährter Methoden für benutzerdefinierte Befehle
 
-#### Empfehlungstabelle für Befehlsdesign
+#### Empfehlungen zur Befehlsstruktur-Tabelle
 
 | Praxispunkte         | Empfohlener Ansatz                  | Vermeiden                                   |
 | -------------------- | ----------------------------------- | ------------------------------------------- |
-| Befehlsbenennung     | Namensräume zur Organisation nutzen | Zu allgemeine Namen vermeiden               |
-| Parameterverarbeitung| `{{args}}` klar verwenden           | Auf automatische Anhängung verlassen (leicht zu verwechseln) |
+| Befehlsbenennung     | Namensräume für Organisation nutzen | Zu generische Namen vermeiden               |
+| Parameterverarbeitung| `{{args}}` klar verwenden           | Standard-Anhängen verlassen (leicht zu verwechseln) |
 | Fehlerbehandlung     | Shell-Fehlerausgabe nutzen          | Ausführungsfehler ignorieren                |
-| Dateiorganisation    | Nach Funktionen in Verzeichnissen organisieren | Alle Befehle im Hauptverzeichnis        |
+| Dateiorganisation    | Nach Funktion in Verzeichnissen organisieren | Alle Befehle im Root-Verzeichnis        |
 | Beschreibungsfeld    | Immer klare Beschreibung angeben    | Auf automatisch generierte Beschreibung verlassen |
 
 #### Sicherheitsfunktionen Erinnerungstabelle
