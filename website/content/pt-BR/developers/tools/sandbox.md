@@ -6,7 +6,7 @@
 2. Esses scripts de construção não estão incluídos nos pacotes lançados pelo npm.
 3. O código contém verificações de caminho fixas que rejeitam explicitamente solicitações de construção de ambientes que não sejam de código-fonte.
 
-Se você precisar de ferramentas extras dentro do contêiner (por exemplo, `git`, `python`, `rg`), crie um Dockerfile personalizado. A operação específica é a seguinte:
+Se você precisar de ferramentas adicionais dentro do contêiner (por exemplo, `git`, `python`, `rg`), crie um Dockerfile personalizado. A operação específica é a seguinte
 
 #### 1. Clone primeiro o projeto qwen code, https://github.com/QwenLM/qwen-code.git
 
@@ -44,7 +44,6 @@ ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
 qwen -v
 
 # npm link irá sobrescrever o qwen global. Para evitar não conseguir distinguir o mesmo número de versão, você pode desinstalar primeiro o CLI global
-```
 
 #### 3. Crie seu Dockerfile de sandbox no diretório raiz do seu projeto
 
@@ -54,7 +53,7 @@ qwen -v
 
 ```bash
 
-# Baseado na imagem oficial do sandbox Qwen (recomenda-se especificar explicitamente a versão)
+# Baseado na imagem oficial de sandbox do Qwen (recomenda-se especificar explicitamente a versão)
 FROM ghcr.io/qwenlm/qwen-code:sha-570ec43
 
 # Adicione suas ferramentas extras aqui
@@ -69,14 +68,14 @@ RUN apt-get update && apt-get install -y \
 ```bash
 GEMINI_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
 
-# Verifique se a versão da ferramenta sandbox que você iniciou é consistente com a versão da sua imagem personalizada. Se forem consistentes, a inicialização será bem-sucedida
+# Verifique se a versão da ferramenta lançada em sandbox é consistente com a versão da sua imagem personalizada. Se forem consistentes, o início será bem-sucedido
 ```
 
-Isso cria uma imagem específica para o projeto baseada na imagem padrão do sandbox.
+Isso cria uma imagem específica para o projeto com base na imagem padrão de sandbox.
 
 #### Remover link npm
 
-- Se desejar restaurar o CLI oficial do qwen, remova o link npm
+- Se você quiser restaurar a CLI oficial do qwen, remova o link npm
 
 ```bash
 

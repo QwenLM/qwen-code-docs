@@ -8,9 +8,9 @@
 
 Si vous avez besoin d'outils supplémentaires à l'intérieur du conteneur (par exemple, `git`, `python`, `rg`), créez un fichier Dockerfile personnalisé. La procédure spécifique est la suivante :
 
-#### 1. Clonez d'abord le projet qwen code, https://github.com/QwenLM/qwen-code.git
+#### 1. Clonez d'abord le projet qwen code : https://github.com/QwenLM/qwen-code.git
 
-#### 2. Assurez-vous d'effectuer l'opération suivante dans le répertoire du dépôt de code source
+#### 2. Assurez-vous d'effectuer les opérations suivantes dans le répertoire du dépôt de code source
 
 ```bash
 
@@ -44,13 +44,12 @@ ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
 qwen -v
 
 # npm link écrasera le qwen global. Pour éviter de ne pas pouvoir distinguer le même numéro de version, vous pouvez d'abord désinstaller le CLI global
-```
 
 #### 3. Créez votre fichier Dockerfile de sandbox dans le répertoire racine de votre projet
 
 - Chemin : `.qwen/sandbox.Dockerfile`
 
-- Adresse de l'image miroir officielle : https://github.com/QwenLM/qwen-code/pkgs/container/qwen-code
+- Adresse officielle de l'image miroir : https://github.com/QwenLM/qwen-code/pkgs/container/qwen-code
 
 ```bash
 
@@ -79,16 +78,15 @@ Cela construit une image spécifique au projet basée sur l'image sandbox par d�
 - Si vous souhaitez restaurer le CLI officiel de qwen, veuillez supprimer le lien npm
 
 ```bash
-```
 
-# Méthode 1 : Désinstaller globalement
+# Méthode 1 : Dissocier globalement
 npm unlink -g @qwen-code/qwen-code
 
 # Méthode 2 : Supprimer dans le répertoire packages/cli
 cd packages/cli
 npm unlink
 
-# Vérification que la suppression a été effectuée
+# La vérification a été effectuée
 which qwen
 
 # Devrait afficher "qwen not found"
@@ -96,7 +94,7 @@ which qwen
 # Réinstaller la version globale si nécessaire
 npm install -g @qwen-code/qwen-code
 
-# Vérification de la restauration
+# Vérification de la récupération
 which qwen
 qwen --version
 ```

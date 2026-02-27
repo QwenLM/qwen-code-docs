@@ -43,7 +43,8 @@ ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
 # 7. 测试 qwen 的版本
 qwen -v
 
-# npm link 会覆盖全局的 qwen。为了避免无法区分相同的版本号，你可以先卸载全局 CLI
+# npm link 将覆盖全局的 qwen。为了避免无法区分相同的版本号，你可以先卸载全局 CLI
+
 ```
 
 #### 3、在你自己的项目根目录下创建沙箱 Dockerfile
@@ -57,7 +58,7 @@ qwen -v
 # 基于官方 Qwen 沙箱镜像（建议明确指定版本）
 FROM ghcr.io/qwenlm/qwen-code:sha-570ec43
 
-# 在这里添加你的额外工具
+# 在此处添加你的额外工具
 RUN apt-get update && apt-get install -y \
     git \
     python3 \
@@ -69,17 +70,16 @@ RUN apt-get update && apt-get install -y \
 ```bash
 GEMINI_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
 
-# 观察你启动的工具沙箱版本是否与你自定义镜像的版本一致，如果一致则启动成功
+# 观察你启动的工具沙箱版本是否与你的自定义镜像版本一致。如果一致，则启动成功
 ```
 
 这会基于默认沙箱镜像构建一个项目特定的镜像。
 
-#### 移除 npm link
+#### 移除 npm 链接
 
-- 如果你想恢复 qwen 的官方 CLI，请移除 npm link
+- 如果你想恢复 qwen 的官方 CLI，请移除 npm 链接
 
 ```bash
-```
 
 # 方法 1：全局取消链接
 npm unlink -g @qwen-code/qwen-code
