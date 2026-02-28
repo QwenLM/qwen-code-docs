@@ -38,7 +38,6 @@ ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
 # 7.Test the version of qwen
 qwen -v
 # npm link will overwrite the global qwen. To avoid being unable to distinguish the same version number, you can uninstall the global CLI first
-
 ```
 
 #### 3、Create your sandbox Dockerfile under the root directory of your own project

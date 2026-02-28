@@ -19,7 +19,6 @@ npm install
 
 # 2. 构建 Qwen Code 项目
 npm run build
-```
 
 # 3. 验证 dist 目录是否已生成
 ls -la packages/cli/dist/

@@ -19,7 +19,6 @@ npm install
 
 # 2. Construisez le projet Qwen Code
 npm run build
-```
 
 # 3. Vérifier que le répertoire dist a été généré
 ls -la packages/cli/dist/
@@ -44,6 +43,8 @@ ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
 qwen -v
 
 # npm link écrasera le qwen global. Pour éviter de ne pas pouvoir distinguer le même numéro de version, vous pouvez d'abord désinstaller le CLI global
+
+```
 
 #### 3. Créez votre fichier Dockerfile de sandbox dans le répertoire racine de votre projet
 
