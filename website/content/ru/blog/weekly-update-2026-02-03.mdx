@@ -1,0 +1,108 @@
+---
+title: "Qwen Code Еженедельно: Поддержка LSP, Batch Runner, Новые Языки"
+date: "2026-02-03"
+description: "На этой неделе мы выпустили стабильные версии v0.8.1, v0.8.2 и предварительную версию v0.9.0, добавив поддержку LSP, инструмент оценки batch-runner, унифицированную архитектуру UI и поддержку японского и португальского языков."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader 
+  title="Qwen Code Еженедельно: Поддержка LSP, Batch Runner, Новые Языки"
+  date="2026-02-03"
+  author="Qwen Team"
+/>
+
+На этой неделе мы выпустили стабильные версии v0.8.1, v0.8.2 и предварительную версию v0.9.0, добавив поддержку LSP, инструмент оценки batch-runner, унифицированную архитектуру UI и поддержку японского и португальского языков.
+
+- Выпущены две стабильные версии (v0.8.1, v0.8.2) и одна предварительная версия (v0.9.0), исправлено 5+ основных проблем и добавлено несколько новых функций
+- Выпущен SDK TypeScript v0.1.4, позиционируемый как CodeAgent as a Service
+- Общее количество звезд достигло 17984, заняв 10-е место в рейтинге трендов GitHub в прошлую пятницу
+
+## ✨ Новые Функции
+
+### Новая Система Расширений
+
+Qwen Code представляет совершенно новую систему расширений, поддерживающую упаковку промптов, серверов MCP, субагентов, навыков и пользовательских команд. Еще более захватывающе: плагины из Gemini CLI Extensions Gallery и Claude Code Marketplace можно напрямую установить в Qwen Code!
+
+Поддерживает установку из нескольких источников: репозитории Git, локальные пути, Claude Code Marketplace и Gemini CLI Extensions Gallery.
+
+**Доступные Команды Управления Расширениями:**
+
+| Команда | Описание |
+|---------|----------|
+| `/extensions` или `/extensions list` | Список всех установленных расширений |
+| `/extensions install <source>` | Установить расширение (поддерживает git URL, локальный путь, маркетплейс) |
+| `/extensions uninstall <name>` | Удалить указанное расширение |
+| `/extensions enable <name>` | Включить расширение |
+| `/extensions disable <name>` | Отключить расширение |
+| `/extensions update <name>` | Обновить указанное расширение |
+| `/extensions update --all` | Обновить все расширения |
+| `/extensions detail <name>` | Просмотреть детали расширения |
+| `/extensions explore [source]` | Открыть страницу маркетплейса расширений |
+
+👇 Демонстрация установки и практики
+
+<video
+  src="https://cloud.video.taobao.com/vod/Ybs168sWIogca6PT3fHThUI58kPw_kVSPS23AIM4PqQ.mp4"
+  controls
+  width="100%"
+  height="100%"
+  style={{ borderRadius: '10px', marginTop: '20px' }}
+/>
+
+### Новая Поддержка LSP
+
+Введена нативная поддержка Language Server Protocol (LSP), обеспечивающая расширенный интеллект кода. Эта реализация позволяет агентам ИИ понимать код семантически, а не только полагаться на текстовый поиск.
+
+Можно запустить через `qwen --experimental-lsp`, см. PR [#1401](https://github.com/QwenLM/qwen-code/pull/1401)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png)
+
+### Новый Инструмент Пакетной Оценки batch-runner
+
+Добавлен параллельный исполнитель на основе Python, который выполняет несколько задач Qwen Code параллельно с использованием изолированных рабочих деревьев Git. Это обеспечивает эффективное мультизадачное пакетное тестирование и бенчмаркинг на нескольких моделях. Артефакты оценки и траектории могут быть сохранены локально и просмотрены онлайн.
+
+См. PR [#1640](https://github.com/QwenLM/qwen-code/pull/1640)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01u4j9r41kwde3UBP5X_!!6000000004748-2-tps-3372-1026.png)
+
+### Новая Унифицированная Архитектура UI, `@qwen-code/webui`
+
+Извлечено из VSCode IDE Companion в общий пакет `@qwen-code/webui`, вводя унифицированную архитектуру UI. Это позволяет повторно использовать компоненты UI между VSCode, расширениями Chrome, веб-интерфейсами и функциями обмена.
+
+См. PR [#1543](https://github.com/QwenLM/qwen-code/pull/1543)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01TCL20a1z4KvCdwzf4_!!6000000006660-2-tps-2002-1222.png)
+
+### Улучшенная Интернационализация, Поддержка Японского и Португальского
+
+Добавлена поддержка японского и португальского языков на основе сообщества. Пользователи в этих регионах теперь могут установить свой родной язык как язык отображения UI и вывода LLM по умолчанию при первой установке.
+
+См. PR [#1616](https://github.com/QwenLM/qwen-code/pull/1616)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01Dgc5oS1Qp2lDyfC7S_!!6000000002024-2-tps-1468-406.png)
+
+### Экосистема Сообщества: Zed, Skills Официально Интегрируют Qwen Code
+
+- [ACP Registry PR #15](https://github.com/agentclientprotocol/registry/pull/15)
+- [Vercel Skills PR #99](https://github.com/vercel-labs/skills/pull/99)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01w2ee3M1i2BaxOb2hr_!!6000000004354-2-tps-3082-1238.png)
+
+
+## 🔧 Важные Исправления
+
+- **Поддержка Мультимодального Ввода** ([#1564](https://github.com/QwenLM/qwen-code/pull/1564)) - Поддержка изображений, PDF, аудио и других форматов ввода
+- **Исправления Безопасности** ([#1638](https://github.com/QwenLM/qwen-code/pull/1638), [#1601](https://github.com/QwenLM/qwen-code/pull/1601)) - Исправлены уязвимости инъекции команд
+- **Исправление SDK Anthropic** ([#1663](https://github.com/QwenLM/qwen-code/pull/1663)) - Избегать передачи undici agent
+- **Согласованность Версий React** ([#1659](https://github.com/QwenLM/qwen-code/pull/1659)) - Исправлены несоответствия версий в package.json и lockfile
+- **Исправление Потоковой Передачи Суб-агента ACP** ([#1626](https://github.com/QwenLM/qwen-code/pull/1626)) - Исправлена потоковая передача текстовых и блоков рассуждения
+
+<Callout type="info">
+  **Обновление**: Выполните `npm i @qwen-code/qwen-code@latest -g`, чтобы обновиться до последней версии.
+</Callout>
+
+По вопросам или предложениям добро пожаловать на [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!

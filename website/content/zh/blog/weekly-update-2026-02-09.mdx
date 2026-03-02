@@ -1,0 +1,115 @@
+---
+title: "Qwen Code 周报：Agent Skills 转正、一键安装脚本、会话导出"
+date: "2026-02-09"
+description: "本周发布 v0.9.0、v0.9.1 正式版和 v0.10.0 预览版，Agent Skills 移除实验性标识，新增一键安装脚本和会话历史导出功能。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader 
+  title="Qwen Code 周报：Agent Skills 转正、一键安装脚本、会话导出"
+  date="2026年2月9日"
+  author="Qwen Team"
+/>
+
+本周发布 v0.9.0、v0.9.1 正式版和 v0.10.0 预览版。
+
+- Agent Skills 正式移除实验性标识，升级为稳定功能
+- 新增一键安装脚本，进一步降低使用门槛
+- 支持会话历史导出为 Markdown、JSONL、HTML 格式
+- 免费额度从 2000 次/天调整至 1000 次/天
+
+## ✨ 新增特性
+
+### Agent Skills 正式转正
+
+Agent Skills 移除 `--experimental-skills` 标识，这意味着 Skills 自 0.6.0 正式发布以来，已经过 4 个版本周期的充分测试，从实验性状态升级为稳定功能，可安全地在生产环境中使用。
+
+详见 PR [#1738](https://github.com/QwenLM/qwen-code/pull/1738)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01xkzvoE1fomm8znzBG_!!6000000004054-2-tps-1694-952.png)
+
+### 会话历史支持导出
+
+新增 `/export` 命令，支持将会话历史导出为 Markdown、JSONL 以及 HTML 格式。用户可以方便地保存和分享对话记录，生成文档或报告。详见 PR [#1515](https://github.com/QwenLM/qwen-code/pull/1515)
+
+**如何使用？**
+- `/export <format> <session ID>`
+- 当 `<session ID>` 为空时，则导出当前对话。
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01vq4v6W1oJwe6lyVg2_!!6000000005205-1-tps-1280-720.gif)
+
+### 新增一键安装脚本
+
+新增一键安装脚本，进一步降低用户的使用门槛，支持一行命令安装。
+
+详见 PR [#1653](https://github.com/QwenLM/qwen-code/pull/1653)
+
+**Linux / macOS**
+
+```bash
+curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
+```
+
+**Windows (Run as Administrator CMD)**
+
+```bash
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat
+```
+
+<Callout type="info">
+  建议安装后重启终端以确保环境变量生效。
+</Callout>
+
+### 大文件粘贴优化
+
+针对大文件粘贴场景进行了优化，添加了占位符提示，并修复了 macOS 上的回车提交问题。改善了用户体验，特别是在处理大量代码或文本时。
+
+详见 PR [#1713](https://github.com/QwenLM/qwen-code/pull/1713)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01rFSm7o1hoRiIy0xrP_!!6000000004324-1-tps-1280-720.gif)
+
+### SDK 功能优化
+
+- **会话恢复功能**：TypeScript SDK 现在支持 `resume` 选项，等同于 CLI 的 `--resume` 标志，用户现在可以保存会话状态。详见 PR [#1714](https://github.com/QwenLM/qwen-code/pull/1714)
+- **Electron IPC 集成支持**：为 ProcessTransport 添加 FORK_MODE 支持，实现与 Electron IPC 的深度集成，方便开发者构建桌面应用。详见 PR [#1719](https://github.com/QwenLM/qwen-code/pull/1719)
+
+### Plan 模式下支持搜索工具
+
+在计划模式下自动启用 WebFetch 和 WebSearch 工具，简化用户操作。
+
+详见 PR [#1686](https://github.com/QwenLM/qwen-code/pull/1686)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png)
+
+## 🔧 重要修复
+
+- **符号链接支持**：Skills 新增符号链接支持，便于 Skills 的组织和管理 [#1690](https://github.com/QwenLM/qwen-code/pull/1690)
+- **SubAgents 工具限制**：防止未授权的工具使用，增强安全性 [#1691](https://github.com/QwenLM/qwen-code/pull/1691)
+- **文件编辑尾部空白处理**：修复编辑文件时保留尾部空白的问题，确保格式完整性 [#1688](https://github.com/QwenLM/qwen-code/pull/1688)
+- **Docker 构建修复**：修复 Docker 构建错误并支持手动版本构建 [#1722](https://github.com/QwenLM/qwen-code/pull/1722)
+- **CLI 参数解析**：修复 CLI 入口点的参数解析问题 [#1758](https://github.com/QwenLM/qwen-code/pull/1758)
+- **ACP 模型选择**：修复 ACP 模型选择以支持所有配置的认证类型 [#1555](https://github.com/QwenLM/qwen-code/pull/1555)
+- **UTF-8 BOM 保留** [#1680](https://github.com/QwenLM/qwen-code/pull/1680) - 编辑文件时保留 UTF-8 BOM，确保编码兼容性
+- **调试模式重构** [#1610](https://github.com/QwenLM/qwen-code/pull/1610) - 重构调试模式输出，将 console 调用路由到日志文件优先的 debugLogger
+- **构建效率提升** [#1681](https://github.com/QwenLM/qwen-code/pull/1681) - 改进构建流程并添加开发模式
+
+### Windows 兼容性改进
+
+- 启用 Windows PowerShell 中的 Shift+Tab 快捷键 [#1607](https://github.com/QwenLM/qwen-code/pull/1607)
+- 防止 Windows 上自动完成激活时 Tab 键循环切换审批模式 [#1736](https://github.com/QwenLM/qwen-code/pull/1736)
+
+### MCP 功能优化
+
+- 修复 MCP 多部分工具结果的处理逻辑，确保复杂工具调用的正确性 [#1755](https://github.com/QwenLM/qwen-code/pull/1755)
+- 改进 MCP 服务器的管理流程和认证机制，提升稳定性和安全性 [#1752](https://github.com/QwenLM/qwen-code/pull/1752)
+- 正确清理退出时的 MCP 服务器子进程，防止资源泄漏 [#1285](https://github.com/QwenLM/qwen-code/pull/1285)
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！

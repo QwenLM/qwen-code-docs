@@ -1,0 +1,108 @@
+---
+title: "Qwen Code 周报：LSP 支持、批量评测工具、新语言支持"
+date: "2026-02-03"
+description: "本周发布 v0.8.1、v0.8.2 正式版和 v0.9.0 预览版，新增 LSP 支持、batch-runner 批量评测工具、统一 UI 架构，以及日语和葡萄牙语支持。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader 
+  title="Qwen Code 周报：LSP 支持、批量评测工具、新语言支持"
+  date="2026-02-03"
+  author="Qwen Team"
+/>
+
+本周发布 v0.8.1、v0.8.2 正式版和 v0.9.0 预览版，新增 LSP 支持、batch-runner 批量评测工具、统一 UI 架构，以及日语和葡萄牙语支持。
+
+- 发布两个正式版本（v0.8.1，v0.8.2）和一个预览版本（v0.9.0），修复了 5+ 核心问题，新增若干新特性
+- TypeScript SDK 发布 v0.1.4，我们对于 SDK 的定位是 CodeAgent as a Service
+- 总 Star 数达到 17984，并在上周五登顶 GitHub Trending Ranking 第十名
+
+## ✨ 新增特性
+
+### 新增 Extension 扩展系统
+
+Qwen Code 推出全新的 Extension 扩展系统，支持打包 prompts、MCP servers、subagents、skills 和自定义命令。更令人兴奋的是，Gemini CLI Extensions Gallery 和 Claude Code Marketplace 的插件可以直接安装到 Qwen Code 中使用！
+
+支持从多个源安装：Git 仓库、本地路径、Claude Code Marketplace 和 Gemini CLI Extensions Gallery。
+
+**可用的 Extension 管理命令：**
+
+| 命令 | 描述 |
+|------|------|
+| `/extensions` 或 `/extensions list` | 列出所有已安装的扩展 |
+| `/extensions install <source>` | 安装扩展（支持 git URL、本地路径、应用市场） |
+| `/extensions uninstall <name>` | 卸载指定扩展 |
+| `/extensions enable <name>` | 启用扩展 |
+| `/extensions disable <name>` | 禁用扩展 |
+| `/extensions update <name>` | 更新指定扩展 |
+| `/extensions update --all` | 更新所有扩展 |
+| `/extensions detail <name>` | 查看扩展详情 |
+| `/extensions explore [source]` | 打开扩展市场页面 |
+
+👇 安装和实践演示
+
+<video
+  src="https://cloud.video.taobao.com/vod/Ybs168sWIogca6PT3fHThUI58kPw_kVSPS23AIM4PqQ.mp4"
+  controls
+  width="100%"
+  height="100%"
+  style={{ borderRadius: '10px', marginTop: '20px' }}
+/>
+
+### 新增对于 LSP 的支持
+
+引入了原生的 Language Server Protocol（LSP）支持，从而实现了高级的代码智能功能。该实现使得 AI 代理能够从语义上理解代码，而不仅仅依赖于基于文本的搜索。
+
+可通过 `qwen --experimental-lsp` 启动，详见 PR [#1401](https://github.com/QwenLM/qwen-code/pull/1401)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png)
+
+### 新增 batch-runner 批量评测工具
+
+添加一个基于 Python 的并发执行器，使用隔离的 git 工作树并行执行多个 Qwen Code 任务。这使得可以高效地对多个模型进行多任务批量测试和基准评测。同时评测的产物和 trajectory 都可以保存在本地，在线查看。
+
+详见 PR [#1640](https://github.com/QwenLM/qwen-code/pull/1640)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01u4j9r41kwde3UBP5X_!!6000000004748-2-tps-3372-1026.png)
+
+### 新增统一 UI 架构，`@qwen-code/webui`
+
+从 VSCode IDE Companion 中提取到共享的 `@qwen-code/webui` 包中，引入了一个统一的 UI 架构。这使得 UI 组件可以在 VSCode、Chrome 插件、Web 界面和 Share 功能等跨平台场景中复用。
+
+详见 PR [#1543](https://github.com/QwenLM/qwen-code/pull/1543)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01TCL20a1z4KvCdwzf4_!!6000000006660-2-tps-2002-1222.png)
+
+### 国际化增强，支持日语 & 葡萄牙语
+
+由社区驱动，新增了日语和葡萄牙语的支持，该地区的用户首次安装 qwen，即可默认将本国语言设置为 UI 展示语言和 LLM 输出语言。
+
+详见 PR [#1616](https://github.com/QwenLM/qwen-code/pull/1616)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01Dgc5oS1Qp2lDyfC7S_!!6000000002024-2-tps-1468-406.png)
+
+### 社区生态：Zed、Skills 官方集成 Qwen Code
+
+- [ACP Registry PR #15](https://github.com/agentclientprotocol/registry/pull/15)
+- [Vercel Skills PR #99](https://github.com/vercel-labs/skills/pull/99)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01w2ee3M1i2BaxOb2hr_!!6000000004354-2-tps-3082-1238.png)
+
+
+## 🔧 重要修复
+
+- **多模态输入支持** ([#1564](https://github.com/QwenLM/qwen-code/pull/1564)) - 支持图片、PDF、音频等多种输入格式
+- **安全修复** ([#1638](https://github.com/QwenLM/qwen-code/pull/1638), [#1601](https://github.com/QwenLM/qwen-code/pull/1601)) - 修复命令注入漏洞
+- **Anthropic SDK 修复** ([#1663](https://github.com/QwenLM/qwen-code/pull/1663)) - 避免传递 undici agent
+- **React 版本一致性** ([#1659](https://github.com/QwenLM/qwen-code/pull/1659)) - 修复 package.json 和 lockfile 中的版本不一致
+- **ACP 子代理流式修复** ([#1626](https://github.com/QwenLM/qwen-code/pull/1626)) - 修复文本和推理块的流式传输
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
