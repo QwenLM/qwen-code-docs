@@ -1,0 +1,108 @@
+---
+title: "Qwen Code Hebdomadaire : Support LSP, Batch Runner, Nouvelles Langues"
+date: "2026-02-03"
+description: "Cette semaine, nous avons publié les versions stables v0.8.1, v0.8.2 et la préversion v0.9.0, ajoutant le support LSP, l'outil d'évaluation batch-runner, l'architecture UI unifiée et le support des langues japonaise et portugaise."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader 
+  title="Qwen Code Hebdomadaire : Support LSP, Batch Runner, Nouvelles Langues"
+  date="2026-02-03"
+  author="Qwen Team"
+/>
+
+Cette semaine, nous avons publié les versions stables v0.8.1, v0.8.2 et la préversion v0.9.0, ajoutant le support LSP, l'outil d'évaluation batch-runner, l'architecture UI unifiée et le support des langues japonaise et portugaise.
+
+- Publication de deux versions stables (v0.8.1, v0.8.2) et une préversion (v0.9.0), correction de 5+ problèmes critiques et ajout de plusieurs nouvelles fonctionnalités
+- SDK TypeScript v0.1.4 publié, positionné comme CodeAgent as a Service
+- Total des étoiles atteint 17984, classé #10 dans les tendances GitHub vendredi dernier
+
+## ✨ Nouvelles Fonctionnalités
+
+### Nouveau Système d'Extensions
+
+Qwen Code introduit un tout nouveau système d'extensions qui prend en charge l'emballage de prompts, serveurs MCP, subagents, skills et commandes personnalisées. Encore plus excitant : les plugins de la Gemini CLI Extensions Gallery et du Claude Code Marketplace peuvent être directement installés dans Qwen Code !
+
+Supporte l'installation depuis plusieurs sources : dépôts Git, chemins locaux, Claude Code Marketplace et Gemini CLI Extensions Gallery.
+
+**Commandes de Gestion d'Extensions Disponibles :**
+
+| Commande | Description |
+|----------|-------------|
+| `/extensions` ou `/extensions list` | Lister toutes les extensions installées |
+| `/extensions install <source>` | Installer une extension (supporte git URL, chemin local, marketplace) |
+| `/extensions uninstall <name>` | Désinstaller l'extension spécifiée |
+| `/extensions enable <name>` | Activer l'extension |
+| `/extensions disable <name>` | Désactiver l'extension |
+| `/extensions update <name>` | Mettre à jour l'extension spécifiée |
+| `/extensions update --all` | Mettre à jour toutes les extensions |
+| `/extensions detail <name>` | Voir les détails de l'extension |
+| `/extensions explore [source]` | Ouvrir la page du marketplace d'extensions |
+
+👇 Démo d'installation et de pratique
+
+<video
+  src="https://cloud.video.taobao.com/vod/Ybs168sWIogca6PT3fHThUI58kPw_kVSPS23AIM4PqQ.mp4"
+  controls
+  width="100%"
+  height="100%"
+  style={{ borderRadius: '10px', marginTop: '20px' }}
+/>
+
+### Nouveau Support LSP
+
+Introduction du support natif du Language Server Protocol (LSP), permettant une intelligence de code avancée. Cette implémentation permet aux agents IA de comprendre le code sémantiquement, pas seulement de s'appuyer sur la recherche textuelle.
+
+Peut être lancé via `qwen --experimental-lsp`, voir PR [#1401](https://github.com/QwenLM/qwen-code/pull/1401)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png)
+
+### Nouvel Outil d'Évaluation Batch batch-runner
+
+Ajout d'un exécuteur concurrentiel basé sur Python qui exécute plusieurs tâches Qwen Code en parallèle en utilisant des worktrees Git isolés. Cela permet des tests batch multi-tâches et des benchmarks efficaces sur plusieurs modèles. Les artefacts d'évaluation et les trajectoires peuvent être sauvegardés localement et consultés en ligne.
+
+Voir PR [#1640](https://github.com/QwenLM/qwen-code/pull/1640)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01u4j9r41kwde3UBP5X_!!6000000004748-2-tps-3372-1026.png)
+
+### Nouvelle Architecture UI Unifiée, `@qwen-code/webui`
+
+Extrait de VSCode IDE Companion dans un package partagé `@qwen-code/webui`, introduisant une architecture UI unifiée. Cela permet aux composants UI d'être réutilisés entre VSCode, les extensions Chrome, les interfaces Web et les fonctionnalités de partage.
+
+Voir PR [#1543](https://github.com/QwenLM/qwen-code/pull/1543)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01TCL20a1z4KvCdwzf4_!!6000000006660-2-tps-2002-1222.png)
+
+### Internationalisation Améliorée, Support Japonais et Portugais
+
+Ajout communautaire du support japonais et portugais. Les utilisateurs dans ces régions peuvent désormais définir leur langue maternelle comme langue d'affichage UI et de sortie LLM par défaut lors de la première installation.
+
+Voir PR [#1616](https://github.com/QwenLM/qwen-code/pull/1616)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01Dgc5oS1Qp2lDyfC7S_!!6000000002024-2-tps-1468-406.png)
+
+### Écosystème Communautaire : Zed, Skills Intègrent Officiellement Qwen Code
+
+- [ACP Registry PR #15](https://github.com/agentclientprotocol/registry/pull/15)
+- [Vercel Skills PR #99](https://github.com/vercel-labs/skills/pull/99)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01w2ee3M1i2BaxOb2hr_!!6000000004354-2-tps-3082-1238.png)
+
+
+## 🔧 Corrections Importantes
+
+- **Support d'Entrée Multimodale** ([#1564](https://github.com/QwenLM/qwen-code/pull/1564)) - Support des images, PDFs, audio et autres formats d'entrée
+- **Corrections de Sécurité** ([#1638](https://github.com/QwenLM/qwen-code/pull/1638), [#1601](https://github.com/QwenLM/qwen-code/pull/1601)) - Correction des vulnérabilités d'injection de commandes
+- **Correction SDK Anthropic** ([#1663](https://github.com/QwenLM/qwen-code/pull/1663)) - Éviter de passer undici agent
+- **Cohérence de Version React** ([#1659](https://github.com/QwenLM/qwen-code/pull/1659)) - Correction des incohérences de version dans package.json et lockfile
+- **Correction Streaming Sous-agent ACP** ([#1626](https://github.com/QwenLM/qwen-code/pull/1626)) - Correction du streaming des blocs de texte et de raisonnement
+
+<Callout type="info">
+  **Mise à niveau** : Exécutez `npm i @qwen-code/qwen-code@latest -g` pour passer à la dernière version.
+</Callout>
+
+Pour des questions ou suggestions, bienvenue sur [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) !

@@ -1,0 +1,108 @@
+---
+title: "Qwen Code 週報：LSPサポート、バッチランナー、新言語対応"
+date: "2026-02-03"
+description: "今週はv0.8.1、v0.8.2安定版とv0.9.0プレビュー版をリリースし、LSPサポート、batch-runner評価ツール、統一UIアーキテクチャ、および日本語・ポルトガル語対応を追加しました。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader 
+  title="Qwen Code 週報：LSPサポート、バッチランナー、新言語対応"
+  date="2026-02-03"
+  author="Qwen Team"
+/>
+
+今週はv0.8.1、v0.8.2安定版とv0.9.0プレビュー版をリリースし、LSPサポート、batch-runner評価ツール、統一UIアーキテクチャ、および日本語・ポルトガル語対応を追加しました。
+
+- 2つの安定版（v0.8.1、v0.8.2）と1つのプレビュー版（v0.9.0）をリリース、5件以上のコア問題を修正し、複数の新機能を追加
+- TypeScript SDK v0.1.4をリリース、CodeAgent as a Serviceとして位置づけ
+- 総スター数が17984に到達、先週の金曜日にGitHubトレンドランキング10位を獲得
+
+## ✨ 新機能
+
+### 新しいExtensionシステム
+
+Qwen Codeは、プロンプト、MCPサーバー、サブエージェント、スキル、カスタムコマンドをパッケージングする全新しいExtensionシステムを導入しました。さらにエキサイティングなことに、Gemini CLI Extensions GalleryとClaude Code MarketplaceのプラグインをQwen Codeに直接インストールできます！
+
+複数のソースからのインストールをサポート：Gitリポジトリ、ローカルパス、Claude Code Marketplace、Gemini CLI Extensions Gallery。
+
+**利用可能なExtension管理コマンド：**
+
+| コマンド | 説明 |
+|---------|------|
+| `/extensions` または `/extensions list` | インストール済みのすべての拡張機能を一覧表示 |
+| `/extensions install <source>` | 拡張機能をインストール（git URL、ローカルパス、マーケットプレイスをサポート） |
+| `/extensions uninstall <name>` | 指定された拡張機能をアンインストール |
+| `/extensions enable <name>` | 拡張機能を有効化 |
+| `/extensions disable <name>` | 拡張機能を無効化 |
+| `/extensions update <name>` | 指定された拡張機能を更新 |
+| `/extensions update --all` | すべての拡張機能を更新 |
+| `/extensions detail <name>` | 拡張機能の詳細を表示 |
+| `/extensions explore [source]` | 拡張機能マーケットプレイスページを開く |
+
+👇 インストールと実践デモ
+
+<video
+  src="https://cloud.video.taobao.com/vod/Ybs168sWIogca6PT3fHThUI58kPw_kVSPS23AIM4PqQ.mp4"
+  controls
+  width="100%"
+  height="100%"
+  style={{ borderRadius: '10px', marginTop: '20px' }}
+/>
+
+### 新しいLSPサポート
+
+高度なコードインテリジェンスを実現するネイティブLanguage Server Protocol（LSP）サポートを導入しました。この実装により、AIエージェントはテキストベースの検索に依存するだけでなく、コードを意味的に理解できます。
+
+`qwen --experimental-lsp`で起動可能、PR [#1401](https://github.com/QwenLM/qwen-code/pull/1401)を参照
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png)
+
+### 新しいbatch-runnerバッチ評価ツール
+
+分離されたGitワークツリーを使用して複数のQwen Codeタスクを並列実行するPythonベースの並列実行エグゼキュータを追加しました。これにより、複数のモデルにわたる効率的なマルチタスクバッチテストとベンチマークが可能になります。評価成果物とトラジェクトリはローカルに保存され、オンラインで閲覧できます。
+
+PR [#1640](https://github.com/QwenLM/qwen-code/pull/1640)を参照
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01u4j9r41kwde3UBP5X_!!6000000004748-2-tps-3372-1026.png)
+
+### 新しい統一UIアーキテクチャ、`@qwen-code/webui`
+
+VSCode IDE Companionから共有パッケージ`@qwen-code/webui`に抽出し、統一UIアーキテクチャを導入しました。これにより、UIコンポーネントをVSCode、Chrome拡張機能、Webインターフェース、Share機能間で再利用できます。
+
+PR [#1543](https://github.com/QwenLM/qwen-code/pull/1543)を参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01TCL20a1z4KvCdwzf4_!!6000000006660-2-tps-2002-1222.png)
+
+### 国際化強化、日本語・ポルトガル語対応
+
+コミュニティ主導で日本語とポルトガル語のサポートを追加しました。これらの地域のユーザーは、初回インストール時に母国語をデフォルトのUI表示言語およびLLM出力言語として設定できるようになりました。
+
+PR [#1616](https://github.com/QwenLM/qwen-code/pull/1616)を参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01Dgc5oS1Qp2lDyfC7S_!!6000000002024-2-tps-1468-406.png)
+
+### コミュニティエコシステム：Zed、SkillsがQwen Codeを公式統合
+
+- [ACP Registry PR #15](https://github.com/agentclientprotocol/registry/pull/15)
+- [Vercel Skills PR #99](https://github.com/vercel-labs/skills/pull/99)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01w2ee3M1i2BaxOb2hr_!!6000000004354-2-tps-3082-1238.png)
+
+
+## 🔧 重要な修正
+
+- **マルチモーダル入力サポート** ([#1564](https://github.com/QwenLM/qwen-code/pull/1564)) - 画像、PDF、音声などの入力形式をサポート
+- **セキュリティ修正** ([#1638](https://github.com/QwenLM/qwen-code/pull/1638), [#1601](https://github.com/QwenLM/qwen-code/pull/1601)) - コマンドインジェクション脆弱性を修正
+- **Anthropic SDK修正** ([#1663](https://github.com/QwenLM/qwen-code/pull/1663)) - undici agentの受け渡しを回避
+- **Reactバージョン一貫性** ([#1659](https://github.com/QwenLM/qwen-code/pull/1659)) - package.jsonとlockfileのバージョン不整合を修正
+- **ACPサブエージェントストリーミング修正** ([#1626](https://github.com/QwenLM/qwen-code/pull/1626)) - テキストと推論ブロックのストリーミングを修正
+
+<Callout type="info">
+  **アップグレード**：`npm i @qwen-code/qwen-code@latest -g`を実行して最新バージョンにアップグレードしてください。
+</Callout>
+
+ご質問やご提案がございましたら、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues)へようこそ！

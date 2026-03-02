@@ -1,0 +1,108 @@
+---
+title: "Qwen Code Semanal: Suporte LSP, Batch Runner, Novos Idiomas"
+date: "2026-02-03"
+description: "Esta semana lançamos as versões estáveis v0.8.1, v0.8.2 e a prévia v0.9.0, adicionando suporte LSP, ferramenta de avaliação batch-runner, arquitetura UI unificada e suporte aos idiomas japonês e português."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader 
+  title="Qwen Code Semanal: Suporte LSP, Batch Runner, Novos Idiomas"
+  date="2026-02-03"
+  author="Qwen Team"
+/>
+
+Esta semana lançamos as versões estáveis v0.8.1, v0.8.2 e a prévia v0.9.0, adicionando suporte LSP, ferramenta de avaliação batch-runner, arquitetura UI unificada e suporte aos idiomas japonês e português.
+
+- Lançadas duas versões estáveis (v0.8.1, v0.8.2) e uma versão prévia (v0.9.0), corrigindo 5+ problemas principais e adicionando vários novos recursos
+- SDK TypeScript v0.1.4 lançado, posicionado como CodeAgent as a Service
+- Total de estrelas atingiu 17984, alcançando o top 10 no GitHub Trending Ranking na última sexta-feira
+
+## ✨ Novos Recursos
+
+### Novo Sistema de Extensões
+
+O Qwen Code introduz um sistema de extensões totalmente novo que suporta o empacotamento de prompts, servidores MCP, subagentes, skills e comandos personalizados. Ainda mais emocionante: plugins da Gemini CLI Extensions Gallery e do Claude Code Marketplace podem ser instalados diretamente no Qwen Code!
+
+Suporta instalação de várias fontes: repositórios Git, caminhos locais, Claude Code Marketplace e Gemini CLI Extensions Gallery.
+
+**Comandos de Gerenciamento de Extensões Disponíveis:**
+
+| Comando | Descrição |
+|---------|-----------|
+| `/extensions` ou `/extensions list` | Listar todas as extensões instaladas |
+| `/extensions install <source>` | Instalar extensão (suporta git URL, caminho local, marketplace) |
+| `/extensions uninstall <name>` | Desinstalar extensão especificada |
+| `/extensions enable <name>` | Habilitar extensão |
+| `/extensions disable <name>` | Desabilitar extensão |
+| `/extensions update <name>` | Atualizar extensão especificada |
+| `/extensions update --all` | Atualizar todas as extensões |
+| `/extensions detail <name>` | Ver detalhes da extensão |
+| `/extensions explore [source]` | Abrir página do marketplace de extensões |
+
+👇 Demonstração de instalação e prática
+
+<video
+  src="https://cloud.video.taobao.com/vod/Ybs168sWIogca6PT3fHThUI58kPw_kVSPS23AIM4PqQ.mp4"
+  controls
+  width="100%"
+  height="100%"
+  style={{ borderRadius: '10px', marginTop: '20px' }}
+/>
+
+### Novo Suporte LSP
+
+Introduzido suporte nativo ao Language Server Protocol (LSP), permitindo inteligência de código avançada. Esta implementação permite que agentes de IA entendam o código semanticamente, não apenas confiem em pesquisa baseada em texto.
+
+Pode ser lançado via `qwen --experimental-lsp`, veja PR [#1401](https://github.com/QwenLM/qwen-code/pull/1401)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png)
+
+### Nova Ferramenta de Avaliação em Lote batch-runner
+
+Adicionado um executor concorrente baseado em Python que executa várias tarefas Qwen Code em paralelo usando worktrees Git isolados. Isso permite testes em lote multi-tarefa e benchmarking eficiente em vários modelos. Artefatos de avaliação e trajetórias podem ser salvos localmente e visualizados online.
+
+Veja PR [#1640](https://github.com/QwenLM/qwen-code/pull/1640)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01u4j9r41kwde3UBP5X_!!6000000004748-2-tps-3372-1026.png)
+
+### Nova Arquitetura UI Unificada, `@qwen-code/webui`
+
+Extraído do VSCode IDE Companion para um pacote compartilhado `@qwen-code/webui`, introduzindo uma arquitetura UI unificada. Isso permite que componentes UI sejam reutilizados entre VSCode, extensões Chrome, interfaces Web e recursos de compartilhamento.
+
+Veja PR [#1543](https://github.com/QwenLM/qwen-code/pull/1543)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01TCL20a1z4KvCdwzf4_!!6000000006660-2-tps-2002-1222.png)
+
+### Internacionalização Aprimorada, Suporte Japonês e Português
+
+Adição de suporte japonês e português impulsionada pela comunidade. Usuários nessas regiões agora podem ter seu idioma nativo definido como idioma padrão de exibição da UI e saída LLM na primeira instalação.
+
+Veja PR [#1616](https://github.com/QwenLM/qwen-code/pull/1616)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01Dgc5oS1Qp2lDyfC7S_!!6000000002024-2-tps-1468-406.png)
+
+### Ecossistema da Comunidade: Zed, Skills Integram Oficialmente o Qwen Code
+
+- [ACP Registry PR #15](https://github.com/agentclientprotocol/registry/pull/15)
+- [Vercel Skills PR #99](https://github.com/vercel-labs/skills/pull/99)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01w2ee3M1i2BaxOb2hr_!!6000000004354-2-tps-3082-1238.png)
+
+
+## 🔧 Correções Importantes
+
+- **Suporte a Entrada Multimodal** ([#1564](https://github.com/QwenLM/qwen-code/pull/1564)) - Suporte para imagens, PDFs, áudio e outros formatos de entrada
+- **Correções de Segurança** ([#1638](https://github.com/QwenLM/qwen-code/pull/1638), [#1601](https://github.com/QwenLM/qwen-code/pull/1601)) - Corrigidas vulnerabilidades de injeção de comando
+- **Correção SDK Anthropic** ([#1663](https://github.com/QwenLM/qwen-code/pull/1663)) - Evitar passar undici agent
+- **Consistência de Versão React** ([#1659](https://github.com/QwenLM/qwen-code/pull/1659)) - Corrigidas inconsistências de versão no package.json e lockfile
+- **Correção de Streaming Sub-agent ACP** ([#1626](https://github.com/QwenLM/qwen-code/pull/1626)) - Corrigido streaming de blocos de texto e raciocínio
+
+<Callout type="info">
+  **Atualização**: Execute `npm i @qwen-code/qwen-code@latest -g` para atualizar para a versão mais recente.
+</Callout>
+
+Para dúvidas ou sugestões, seja bem-vindo ao [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
