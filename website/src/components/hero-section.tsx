@@ -13,12 +13,19 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+type Platform = "linux" | "windows";
+
 export const HeroSection = () => {
   const [copied, setCopied] = useState(false);
-  const installCommand = "npm i @qwen-code/qwen-code@latest -g";
+  const [platform, setPlatform] = useState<Platform>("linux");
+
+  const installCommands = {
+    linux: "curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash",
+    windows: "curl -fsSL -o %TEMP%\\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\\install-qwen.bat",
+  };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(installCommand);
+    navigator.clipboard.writeText(installCommands[platform]);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -28,7 +35,7 @@ export const HeroSection = () => {
       {/* Background Effects */}
       <div className='absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(262_75%_50%/0.15),transparent_70%)]' />
       <div className='hero-glow opacity-50' />
-      
+
       <div className='container mx-auto px-6 text-center relative z-10 max-w-5xl flex-grow flex flex-col items-center justify-center'>
         {/* Main Heading */}
         <h1 className='text-5xl md:text-7xl font-bold mb-6 leading-[1.08] tracking-tighter animate-in fade-in slide-in-from-bottom-8 duration-700'>
@@ -43,15 +50,40 @@ export const HeroSection = () => {
           Understand large codebases, automate tedious work, and ship faster.
         </p>
 
-        {/* NPM Install Command */}
+        {/* Install Command */}
         <div className="mb-6 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-          <div className="flex items-center gap-3 px-5 py-3 bg-muted/50 backdrop-blur-sm border border-border rounded-full font-mono text-sm hover:border-violet-500/30 transition-colors group">
-            <Terminal className="w-4 h-4 text-violet-500" />
-            <code className="text-foreground">{installCommand}</code>
+          {/* Platform Selector */}
+          <div className="flex justify-center gap-2 mb-3">
+            <button
+              onClick={() => setPlatform("linux")}
+              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                platform === "linux"
+                  ? "bg-violet-500 text-white"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Linux / macOS
+            </button>
+            <button
+              onClick={() => setPlatform("windows")}
+              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                platform === "windows"
+                  ? "bg-violet-500 text-white"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Windows
+            </button>
+          </div>
+
+          {/* Command Display */}
+          <div className="flex items-center gap-3 px-5 py-3 bg-muted/50 backdrop-blur-sm border border-border rounded-full font-mono text-sm hover:border-violet-500/30 transition-colors group max-w-2xl">
+            <Terminal className="w-4 h-4 text-violet-500 flex-shrink-0" />
+            <code className="text-foreground truncate">{installCommands[platform]}</code>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 hover:bg-violet-500/10 hover:text-violet-500 ml-2"
+              className="h-6 w-6 p-0 hover:bg-violet-500/10 hover:text-violet-500 ml-2 flex-shrink-0"
               onClick={handleCopy}
             >
               {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}

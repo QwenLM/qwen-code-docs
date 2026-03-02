@@ -19,7 +19,6 @@ npm install
 
 # 2. Construa o projeto Qwen Code
 npm run build
-```
 
 # 3. Verifique se o diretório dist foi gerado
 ls -la packages/cli/dist/

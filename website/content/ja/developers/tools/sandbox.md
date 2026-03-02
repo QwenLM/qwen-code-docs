@@ -19,7 +19,6 @@ npm install
 
 # 2. Qwen Codeプロジェクトをビルドします
 npm run build
-```
 
 # 3. distディレクトリが生成されたことを確認する
 ls -la packages/cli/dist/
@@ -44,6 +43,7 @@ ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
 qwen -v
 
 # npm linkはグローバルのqwenを上書きします。同じバージョン番号で区別がつかなくなるのを避けるため、最初にグローバルCLIをアンインストールできます
+```
 
 #### 3. 自身のプロジェクトのルートディレクトリ配下にサンドボックス用Dockerfileを作成する
 

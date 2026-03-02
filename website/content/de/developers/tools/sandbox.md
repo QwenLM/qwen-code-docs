@@ -43,6 +43,7 @@ ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
 qwen -v
 
 # npm link wird das globale qwen überschreiben. Um Probleme durch gleiche Versionsnummern zu vermeiden, können Sie zunächst das globale CLI deinstallieren
+```
 
 #### 3. Erstellen Sie Ihre Sandbox-Dockerfile im Stammverzeichnis Ihres Projekts
 
