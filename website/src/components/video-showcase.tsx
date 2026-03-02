@@ -74,7 +74,7 @@ export const VideoShowcase = ({ videos, categories, texts }: VideoShowcaseProps)
         <div className="flex flex-wrap justify-center gap-2 mb-10">
           <button
             onClick={() => setActiveCategory("all")}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
               activeCategory === "all"
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -86,7 +86,7 @@ export const VideoShowcase = ({ videos, categories, texts }: VideoShowcaseProps)
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
                 activeCategory === category.id
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -127,7 +127,11 @@ export const VideoShowcase = ({ videos, categories, texts }: VideoShowcaseProps)
       {/* Video Modal */}
       <Dialog
         open={selectedVideo !== null}
-        onOpenChange={() => setSelectedVideo(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedVideo(null);
+          }
+        }}
       >
         <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-background">
           <DialogHeader className="p-4 pb-2">
