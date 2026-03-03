@@ -1,0 +1,107 @@
+---
+title: "Qwen Code Еженедельно: Аналитика Insight, Изображения из Буфера Обмена, Terminal Capture"
+date: "2026-03-03"
+description: "На этой неделе мы выпустили основные версии v0.10.0, v0.11.0 и 5 версий исправлений ошибок, добавив аналитику Insight, поддержку изображений из буфера обмена, Terminal Capture и многое другое."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader 
+  title="Qwen Code Еженедельно: Аналитика Insight, Изображения из Буфера Обмена, Terminal Capture"
+  date="2026-03-03"
+  author="Qwen Team"
+/>
+
+На этой неделе мы выпустили основные версии v0.10.0, v0.11.0 и 5 версий исправлений ошибок.
+
+- Выпуск двух основных версий: v0.10.0 и v0.11.0, плюс 5 версий исправлений ошибок
+- OAuth-аутентификация с обновлением до qwen3.5-plus, 1000 бесплатных вызовов в день
+- Добавление аналитики Insight
+- Поддержка изображений из буфера обмена
+- Terminal Capture автоматизированная валидация и генерация скриншотов
+
+## ✨ Новые Функции
+
+### Аналитика Insight
+
+Официальная встроенная команда для глубокого анализа локальных записей Session, предоставляющая персонализированные программные инсайты и отчеты об использовании.
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01fU1ONc1cQ6aODsN3J_!!6000000003594-2-tps-1698-954.png)
+
+Использование: Введите `/insight`, чтобы начать параллельный LLM-анализ
+
+Генерирует подробный HTML-отчет, разделенный на 7 разделов:
+- **What You Work On** - Ваш фокус работы
+- **How You Use Qwen Code** - Как вы используете Qwen Code
+- **Impressive Things** - Заметные достижения
+- **Where Things Go Wrong** - Проблемные области
+- **Features to Try** - Функции, которые стоит попробовать
+- **New Usage Patterns** - Новые паттерны использования
+- **On the Horizon** - Будущие перспективы
+
+Наконец, вы можете экспортировать изображение для публикации в социальных сетях.
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01xJKhpq1WNSbVJyveF_!!6000000002776-2-tps-2400-1332.png)
+
+### Поддержка Изображений из Буфера Обмена
+
+Кроссплатформенная поддержка: macOS / Windows / Linux. См. PR [#1612](https://github.com/QwenLM/qwen-code/pull/1612)
+
+Функции:
+- **Захват Изображений**: Захват изображений из системного буфера обмена
+- **Временное Хранение**: Сохранение во временный каталог буфера обмена
+- **LRU Очистка**: Автоматическое удаление 50 старейших изображений при превышении 100
+- **UI Вложений**: `↑` для входа в режим вложений, `←/→` для навигации, `Delete` для удаления
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01MeWAgg1y2DTUFJkSy_!!6000000006520-2-tps-1726-656.png)
+
+### Terminal-Capture
+
+Назначение: Автоматизированный инструмент скриншотов терминала для визуальной верификации CLI, автоматически проверяет функции и создает демонстрационные скриншоты.
+
+Архитектура: node-pty (псевдотерминал) → xterm.js (рендеринг) → Playwright (скриншот), см. PR [#1840](https://github.com/QwenLM/qwen-code/pull/1840)
+
+👇 Демонстрация Функции
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/RD5m8hRBv8Low4QmQ4Jns9WVfGMSxSsX7NqodXDFUkk.mp4"  controls></video>
+
+### Обновления Прогресса Инструментов MCP
+
+Функция: Инструменты MCP поддерживают уведомления о прогрессе в реальном времени
+
+- **Режим TUI**: Отображение `⏳ [50/100] Processing...`
+- **Режим SDK**: Новый тип потокового события `tool_progress`
+
+См. PR [#1756](https://github.com/QwenLM/qwen-code/pull/1756)
+
+## 🔧 Важные Исправления
+
+| PR | Версия | Проблема | Влияние |
+|----|--------|----------|---------|
+| [#1330](https://github.com/QwenLM/qwen-code/pull/1330) | v0.10.0 | Путаница с именованием настроек | Переименование disable* → enable*, авто-миграция |
+| [#1768](https://github.com/QwenLM/qwen-code/pull/1768) | v0.11.0 | Регистр путей Windows | Сбой сопоставления сессий, нормализация в нижний регистр |
+| [#1811](https://github.com/QwenLM/qwen-code/pull/1811) | v0.10.2 | Утечка памяти AbortSignal | MaxListenersExceededWarning |
+| [#1821](https://github.com/QwenLM/qwen-code/pull/1821) | v0.10.2 | Несовместимость JSON Schema | Поддержка draft-2020-12 |
+| [#1791](https://github.com/QwenLM/qwen-code/pull/1791) | v0.10.2 | Ограничение скорости TPM | Обнаружение и ожидание 1 минуты для повторной попытки |
+| [#1825](https://github.com/QwenLM/qwen-code/pull/1825) | v0.10.2 | Накопление abort Subagent | Исправлена утечка слушателей |
+| [#1796](https://github.com/QwenLM/qwen-code/pull/1796) | v0.11.0 | Блокировка отмены ESC | Исправлена проблема блокировки ввода |
+| [#1877](https://github.com/QwenLM/qwen-code/pull/1877) | v0.11.0 | Установка Arch OS | Добавлено обнаружение sudo для проверок разрешений |
+| [#1929](https://github.com/QwenLM/qwen-code/pull/1929) | v0.11.0 | Совместимость LSP | Изменение workspaceFolders на булево значение |
+| [#1857](https://github.com/QwenLM/qwen-code/pull/1857) | v0.10.6 | Обнаружение BOM | Улучшена проверка длины и codePointAt |
+
+### Исправления для Платформы Windows
+
+| PR | Проблема |
+|----|----------|
+| [#1604](https://github.com/QwenLM/qwen-code/pull/1604) | Обнаружение песочницы с использованием PowerShell Get-Command |
+| [#1736](https://github.com/QwenLM/qwen-code/pull/1736) | Клавиша Tab не переключает режимы утверждения при активном автозаполнении |
+| [#1768](https://github.com/QwenLM/qwen-code/pull/1768) | Регистр путей вызывает несоответствие сессий |
+
+<Callout type="info">
+  **Обновление**: Выполните `npm i @qwen-code/qwen-code@latest -g`, чтобы обновиться до последней версии.
+</Callout>
+
+По вопросам или предложениям добро пожаловать в [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
