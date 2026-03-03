@@ -1,0 +1,107 @@
+---
+title: "Qwen Code Semanal: Análise Insight, Imagens da Área de Transferência, Terminal Capture"
+date: "2026-03-03"
+description: "Esta semana lançamos as versões principais v0.10.0, v0.11.0 e 5 versões de correção de bugs, adicionando análise Insight, suporte a imagens da área de transferência, Terminal Capture e mais."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader 
+  title="Qwen Code Semanal: Análise Insight, Imagens da Área de Transferência, Terminal Capture"
+  date="2026-03-03"
+  author="Qwen Team"
+/>
+
+Esta semana lançamos as versões principais v0.10.0, v0.11.0 e 5 versões de correção de bugs.
+
+- Lançamento de duas versões principais: v0.10.0 e v0.11.0, mais 5 versões de correção de bugs
+- Autenticação OAuth com atualização para qwen3.5-plus, 1000 chamadas gratuitas por dia
+- Adição de análise Insight
+- Suporte a imagens da área de transferência
+- Terminal Capture validação automatizada e geração de capturas de tela
+
+## ✨ Novos Recursos
+
+### Análise Insight
+
+Comando integrado oficial que analisa profundamente os registros de Session locais para fornecer insights de programação personalizados e relatórios de análise de uso.
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01fU1ONc1cQ6aODsN3J_!!6000000003594-2-tps-1698-954.png)
+
+Uso: Digite `/insight` para iniciar a análise LLM paralela
+
+Gera um relatório HTML detalhado dividido em 7 seções:
+- **What You Work On** - Seu foco de trabalho
+- **How You Use Qwen Code** - Como você usa o Qwen Code
+- **Impressive Things** - Conquistas notáveis
+- **Where Things Go Wrong** - Áreas problemáticas
+- **Features to Try** - Recursos para experimentar
+- **New Usage Patterns** - Novos padrões de uso
+- **On the Horizon** - Perspectivas futuras
+
+Finalmente, você pode exportar uma imagem para compartilhamento em redes sociais.
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01xJKhpq1WNSbVJyveF_!!6000000002776-2-tps-2400-1332.png)
+
+### Suporte a Imagens da Área de Transferência
+
+Suporte multiplataforma: macOS / Windows / Linux. Veja PR [#1612](https://github.com/QwenLM/qwen-code/pull/1612)
+
+Recursos:
+- **Captura de Imagem**: Capturar imagens da área de transferência do sistema
+- **Armazenamento Temporário**: Salvar no diretório temporário da área de transferência
+- **Limpeza LRU**: Excluir automaticamente as 50 imagens mais antigas ao exceder 100
+- **UI de Anexos**: `↑` para entrar no modo de anexo, `←/→` para navegar, `Delete` para remover
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01MeWAgg1y2DTUFJkSy_!!6000000006520-2-tps-1726-656.png)
+
+### Terminal-Capture
+
+Propósito: Ferramenta automatizada de captura de tela do terminal para verificação visual CLI, valida automaticamente recursos e produz capturas de tela de demonstração.
+
+Arquitetura: node-pty (pseudo-terminal) → xterm.js (renderização) → Playwright (captura de tela), veja PR [#1840](https://github.com/QwenLM/qwen-code/pull/1840)
+
+👇 Demonstração do Recurso
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/RD5m8hRBv8Low4QmQ4Jns9WVfGMSxSsX7NqodXDFUkk.mp4"  controls></video>
+
+### Atualizações de Progresso das Ferramentas MCP
+
+Recurso: Ferramentas MCP suportam notificações de progresso em tempo real
+
+- **Modo TUI**: Exibição de `⏳ [50/100] Processing...`
+- **Modo SDK**: Novo tipo de evento de stream `tool_progress`
+
+Veja PR [#1756](https://github.com/QwenLM/qwen-code/pull/1756)
+
+## 🔧 Correções Importantes
+
+| PR | Versão | Problema | Impacto |
+|----|--------|----------|---------|
+| [#1330](https://github.com/QwenLM/qwen-code/pull/1330) | v0.10.0 | Confusão de nomenclatura de configurações | Renomeação disable* → enable*, migração automática |
+| [#1768](https://github.com/QwenLM/qwen-code/pull/1768) | v0.11.0 | Sensibilidade a maiúsculas/minúsculas de caminhos Windows | Falha na correspondência de sessão, normalizado para minúsculas |
+| [#1811](https://github.com/QwenLM/qwen-code/pull/1811) | v0.10.2 | Vazamento de memória AbortSignal | MaxListenersExceededWarning |
+| [#1821](https://github.com/QwenLM/qwen-code/pull/1821) | v0.10.2 | Incompatibilidade JSON Schema | Suporte a draft-2020-12 |
+| [#1791](https://github.com/QwenLM/qwen-code/pull/1791) | v0.10.2 | Limitação de taxa TPM | Detecção e espera de 1 minuto para tentar novamente |
+| [#1825](https://github.com/QwenLM/qwen-code/pull/1825) | v0.10.2 | Acumulação de abort Subagent | Vazamento de listener corrigido |
+| [#1796](https://github.com/QwenLM/qwen-code/pull/1796) | v0.11.0 | Bloqueio de cancelamento ESC | Problema de bloqueio de entrada corrigido |
+| [#1877](https://github.com/QwenLM/qwen-code/pull/1877) | v0.11.0 | Instalação Arch OS | Adicionada detecção sudo para verificações de permissão |
+| [#1929](https://github.com/QwenLM/qwen-code/pull/1929) | v0.11.0 | Compatibilidade LSP | Alterado workspaceFolders para booleano |
+| [#1857](https://github.com/QwenLM/qwen-code/pull/1857) | v0.10.6 | Detecção BOM | Verificação de comprimento e codePointAt aprimorados |
+
+### Correções da Plataforma Windows
+
+| PR | Problema |
+|----|----------|
+| [#1604](https://github.com/QwenLM/qwen-code/pull/1604) | Detecção de sandbox usando PowerShell Get-Command |
+| [#1736](https://github.com/QwenLM/qwen-code/pull/1736) | Tecla Tab não alterna modos de aprovação quando autocomplete está ativo |
+| [#1768](https://github.com/QwenLM/qwen-code/pull/1768) | Sensibilidade a maiúsculas/minúsculas de caminhos causa incompatibilidade de sessão |
+
+<Callout type="info">
+  **Atualização**: Execute `npm i @qwen-code/qwen-code@latest -g` para atualizar para a versão mais recente.
+</Callout>
+
+Para dúvidas ou sugestões, seja bem-vindo ao [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!

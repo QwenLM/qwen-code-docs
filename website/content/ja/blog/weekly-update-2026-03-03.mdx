@@ -1,0 +1,107 @@
+---
+title: "Qwen Code 週報：Insight 分析、クリップボード画像、Terminal Capture"
+date: "2026-03-03"
+description: "今週はv0.10.0、v0.11.0の主要機能バージョンと5つのバグ修正バージョンをリリースし、Insight分析、クリップボード画像サポート、Terminal Captureなどを追加しました。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader 
+  title="Qwen Code 週報：Insight 分析、クリップボード画像、Terminal Capture"
+  date="2026-03-03"
+  author="Qwen Team"
+/>
+
+今週はv0.10.0、v0.11.0の主要機能バージョンと5つのバグ修正バージョンをリリースしました。
+
+- 2つの主要機能バージョンv0.10.0とv0.11.0、および5つのバグ修正バージョンをリリース
+- OAuth認証、モデルをqwen3.5-plusにアップグレード、1日1000回の無料呼び出し
+- Insight分析を追加
+- クリップボード画像サポート
+- Terminal Capture自動検証とスクリーンショット生成
+
+## ✨ 新機能
+
+### Insight 分析
+
+ローカルSessionレコードを深く分析し、パーソナライズされたプログラミングインサイトと使用状況分析レポートを提供する公式組み込みコマンド。
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01fU1ONc1cQ6aODsN3J_!!6000000003594-2-tps-1698-954.png)
+
+使用方法：`/insight`と入力して並列LLM分析を開始
+
+7つのセクションに分かれた詳細なHTMLレポートを生成：
+- **What You Work On** - あなたの作業焦点
+- **How You Use Qwen Code** - Qwen Codeの使用方法
+- **Impressive Things** - 注目すべき成果
+- **Where Things Go Wrong** - 問題のある領域
+- **Features to Try** - 試す価値のある機能
+- **New Usage Patterns** - 新しい使用パターン
+- **On the Horizon** - 将来の展望
+
+最後に、ソーシャルメディア共有用の画像をエクスポートできます。
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01xJKhpq1WNSbVJyveF_!!6000000002776-2-tps-2400-1332.png)
+
+### クリップボード画像サポート
+
+クロスプラットフォーム対応：macOS / Windows / Linux。PR [#1612](https://github.com/QwenLM/qwen-code/pull/1612)を参照
+
+機能：
+- **画像キャプチャ**：システムクリップボードから画像をキャプチャ
+- **一時保存**：クリップボード一時ディレクトリに保存
+- **LRUクリーンアップ**：100枚を超えると最も古い50枚を自動削除
+- **添付UI**：`↑`で添付モード、`←/→`でナビゲーション、`Delete`で削除
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01MeWAgg1y2DTUFJkSy_!!6000000006520-2-tps-1726-656.png)
+
+### Terminal-Capture
+
+用途：CLI視覚検証の自動化された端末スクリーンショットツール、機能を自動検証しデモスクリーンショットを生成
+
+アーキテクチャ：node-pty（疑似端末）→ xterm.js（レンダリング）→ Playwright（スクリーンショット）、PR [#1840](https://github.com/QwenLM/qwen-code/pull/1840)を参照
+
+👇 機能デモ
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/RD5m8hRBv8Low4QmQ4Jns9WVfGMSxSsX7NqodXDFUkk.mp4"  controls></video>
+
+### MCPツール進捗更新
+
+機能：MCPツールがリアルタイム進捗通知をサポート
+
+- **TUIモード**：`⏳ [50/100] Processing...`を表示
+- **SDKモード**：新しい`tool_progress`ストリームイベントタイプ
+
+PR [#1756](https://github.com/QwenLM/qwen-code/pull/1756)を参照
+
+## 🔧 重要な修正
+
+| PR | バージョン | 問題 | 影響 |
+|----|-----------|------|------|
+| [#1330](https://github.com/QwenLM/qwen-code/pull/1330) | v0.10.0 | 設定名の混乱 | disable* → enable*への名前変更、自動移行 |
+| [#1768](https://github.com/QwenLM/qwen-code/pull/1768) | v0.11.0 | Windowsパスの大文字小文字 | セッションマッチング失敗、小文字に正規化 |
+| [#1811](https://github.com/QwenLM/qwen-code/pull/1811) | v0.10.2 | AbortSignalメモリリーク | MaxListenersExceededWarning |
+| [#1821](https://github.com/QwenLM/qwen-code/pull/1821) | v0.10.2 | JSON Schema非互換 | draft-2020-12をサポート |
+| [#1791](https://github.com/QwenLM/qwen-code/pull/1791) | v0.10.2 | TPMレート制限 | 検出と1分間の待機後再試行 |
+| [#1825](https://github.com/QwenLM/qwen-code/pull/1825) | v0.10.2 | Subagent abort蓄積 | リスナーリークを修正 |
+| [#1796](https://github.com/QwenLM/qwen-code/pull/1796) | v0.11.0 | ESCキャンセルブロック | 入力ブロック問題を修正 |
+| [#1877](https://github.com/QwenLM/qwen-code/pull/1877) | v0.11.0 | Arch OSインストール | 権限チェックにsudo検出を追加 |
+| [#1929](https://github.com/QwenLM/qwen-code/pull/1929) | v0.11.0 | LSP互換性 | workspaceFoldersをブール値に変更 |
+| [#1857](https://github.com/QwenLM/qwen-code/pull/1857) | v0.10.6 | BOM検出 | 長さチェックとcodePointAtを改善 |
+
+### Windowsプラットフォーム修正
+
+| PR | 問題 |
+|----|------|
+| [#1604](https://github.com/QwenLM/qwen-code/pull/1604) | PowerShell Get-Commandを使用したサンドボックス検出 |
+| [#1736](https://github.com/QwenLM/qwen-code/pull/1736) | オートコンプリート有効時にTabキーが承認モードを循環しない |
+| [#1768](https://github.com/QwenLM/qwen-code/pull/1768) | パスの大文字小文字がセッション不一致を引き起こす |
+
+<Callout type="info">
+  **アップグレード**：`npm i @qwen-code/qwen-code@latest -g`を実行して最新バージョンにアップグレードしてください。
+</Callout>
+
+ご質問やご提案があれば、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues)へお気軽にどうぞ！

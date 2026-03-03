@@ -1,0 +1,107 @@
+---
+title: "Qwen Code Wochenbericht: Insight-Analytik, Zwischenablage-Bilder, Terminal Capture"
+date: "2026-03-03"
+description: "Diese Woche wurden die Hauptversions v0.10.0, v0.11.0 und 5 Bugfix-Versionen veröffentlicht, mit neuen Funktionen wie Insight-Analytik, Zwischenablage-Bildunterstützung und Terminal Capture."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader 
+  title="Qwen Code Wochenbericht: Insight-Analytik, Zwischenablage-Bilder, Terminal Capture"
+  date="2026-03-03"
+  author="Qwen Team"
+/>
+
+Diese Woche wurden die Hauptversions v0.10.0, v0.11.0 und 5 Bugfix-Versionen veröffentlicht.
+
+- Veröffentlichung von zwei Hauptversions: v0.10.0 und v0.11.0, sowie 5 Bugfix-Versionen
+- OAuth-Authentifizierung mit Upgrade auf qwen3.5-plus, 1000 kostenlose Aufrufe pro Tag
+- Neue Funktion: Insight-Analytik
+- Zwischenablage-Bildunterstützung
+- Terminal Capture automatisierte Validierung und Screenshot-Generierung
+
+## ✨ Neue Funktionen
+
+### Insight-Analytik
+
+Offizieller integrierter Befehl zur tiefen Analyse lokaler Session-Datensätze für personalisierte Programmier-Einblicke und Nutzungsanalysen.
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01fU1ONc1cQ6aODsN3J_!!6000000003594-2-tps-1698-954.png)
+
+Verwendung: `/insight` eingeben, um parallele LLM-Analyse zu starten
+
+Generiert einen detaillierten HTML-Bericht in 7 Abschnitten:
+- **What You Work On** - Ihre Arbeitsschwerpunkte
+- **How You Use Qwen Code** - Wie Sie Qwen Code nutzen
+- **Impressive Things** - Bemerkenswerte Erfolge
+- **Where Things Go Wrong** - Problembereiche
+- **Features to Try** - Ausprobierenswerte Funktionen
+- **New Usage Patterns** - Neue Nutzungsmuster
+- **On the Horizon** - Zukunftsausblick
+
+Abschließend kann ein Bild für Social-Media-Sharing exportiert werden.
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01xJKhpq1WNSbVJyveF_!!6000000002776-2-tps-2400-1332.png)
+
+### Zwischenablage-Bildunterstützung
+
+Plattformübergreifende Unterstützung: macOS / Windows / Linux. Siehe PR [#1612](https://github.com/QwenLM/qwen-code/pull/1612)
+
+Funktionen:
+- **Bilderfassung**: Bilder aus der Systemzwischenablage erfassen
+- **Temporäre Speicherung**: Im Zwischenablage-Temp-Verzeichnis speichern
+- **LRU-Bereinigung**: Automatisch die ältesten 50 Bilder löschen bei Überschreitung von 100
+- **Anhang-UI**: `↑` für Anhang-Modus, `←/→` zum Navigieren, `Delete` zum Entfernen
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01MeWAgg1y2DTUFJkSy_!!6000000006520-2-tps-1726-656.png)
+
+### Terminal-Capture
+
+Zweck: Automatisiertes Terminal-Screenshot-Tool für CLI-Visuelle-Verifizierung, validiert automatisch Funktionen und erzeugt Demo-Screenshots.
+
+Architektur: node-pty (Pseudo-Terminal) → xterm.js (Rendering) → Playwright (Screenshot), siehe PR [#1840](https://github.com/QwenLM/qwen-code/pull/1840)
+
+👇 Funktionsdemo
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/RD5m8hRBv8Low4QmQ4Jns9WVfGMSxSsX7NqodXDFUkk.mp4"  controls></video>
+
+### MCP-Tool Fortschrittsupdates
+
+Funktion: MCP-Tools unterstützen Echtzeit-Fortschrittsbenachrichtigungen
+
+- **TUI-Modus**: Anzeige von `⏳ [50/100] Processing...`
+- **SDK-Modus**: Neuer `tool_progress` Stream-Ereignistyp
+
+Siehe PR [#1756](https://github.com/QwenLM/qwen-code/pull/1756)
+
+## 🔧 Wichtige Fixes
+
+| PR | Version | Problem | Auswirkung |
+|----|---------|---------|------------|
+| [#1330](https://github.com/QwenLM/qwen-code/pull/1330) | v0.10.0 | Einstellungsnamen-Verwirrung | Umbenennung disable* → enable*, Auto-Migration |
+| [#1768](https://github.com/QwenLM/qwen-code/pull/1768) | v0.11.0 | Windows Pfad-Groß-/Kleinschreibung | Sitzungsabgleich fehlgeschlagen, auf Kleinbuchstaben normalisiert |
+| [#1811](https://github.com/QwenLM/qwen-code/pull/1811) | v0.10.2 | AbortSignal-Speicherleck | MaxListenersExceededWarning |
+| [#1821](https://github.com/QwenLM/qwen-code/pull/1821) | v0.10.2 | JSON Schema-Inkompatibilität | Unterstützung für draft-2020-12 |
+| [#1791](https://github.com/QwenLM/qwen-code/pull/1791) | v0.10.2 | TPM-Ratenbegrenzung | Erkennung und 1 Minute Wartezeit für Wiederholung |
+| [#1825](https://github.com/QwenLM/qwen-code/pull/1825) | v0.10.2 | Subagent abort-Akkumulation | Listener-Leck behoben |
+| [#1796](https://github.com/QwenLM/qwen-code/pull/1796) | v0.11.0 | ESC-Abbrechen-Blockierung | Eingabeblockierungsproblem behoben |
+| [#1877](https://github.com/QwenLM/qwen-code/pull/1877) | v0.11.0 | Arch OS-Installation | Sudo-Erkennung für Berechtigungsprüfungen hinzugefügt |
+| [#1929](https://github.com/QwenLM/qwen-code/pull/1929) | v0.11.0 | LSP-Kompatibilität | workspaceFolders auf Boolean geändert |
+| [#1857](https://github.com/QwenLM/qwen-code/pull/1857) | v0.10.6 | BOM-Erkennung | Verbesserte Längenprüfung und codePointAt |
+
+### Windows-Plattform Fixes
+
+| PR | Problem |
+|----|---------|
+| [#1604](https://github.com/QwenLM/qwen-code/pull/1604) | Sandbox-Erkennung mit PowerShell Get-Command |
+| [#1736](https://github.com/QwenLM/qwen-code/pull/1736) | Tab-Taste wechselt nicht durch Genehmigungsmodi wenn Autocomplete aktiv |
+| [#1768](https://github.com/QwenLM/qwen-code/pull/1768) | Pfad-Groß-/Kleinschreibung verursacht Sitzungsfehlanpassung |
+
+<Callout type="info">
+  **Upgrade**: Führen Sie `npm i @qwen-code/qwen-code@latest -g` aus, um auf die neueste Version zu aktualisieren.
+</Callout>
+
+Bei Fragen oder Vorschlägen besuchen Sie [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
