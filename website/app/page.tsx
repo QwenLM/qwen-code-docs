@@ -1,4 +1,11 @@
-import React from "react";
-import Index from "../src/page";
+"use client";
 
-export default Index;
+import { useEffect } from "react";
+
+export default function RedirectToQwenCode() {
+  useEffect(() => {
+    window.location.href = "https://qwen.ai/qwencode";
+  }, []);
+
+  return null;
+}
