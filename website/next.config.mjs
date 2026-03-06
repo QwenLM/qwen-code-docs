@@ -5,6 +5,7 @@ const withNextra = nextra({
   search: {
     codeblocks: false,
   },
+  defaultShowCopyCode: true,
   contentDirBasePath: "/",
   unstable_shouldAddLocaleToLinks: true,
 });
