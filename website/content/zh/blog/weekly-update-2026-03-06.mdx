@@ -1,0 +1,107 @@
+---
+title: Qwen Code 周报：HTML 导出增强、终端 GIF 录制、GitHub 工作流命令
+date: 2026-03-06
+description: "本周发布 v0.11.1 正式版，并持续推进 v0.12.0 开发，新增 HTML 导出工具调用查看器、终端流式 GIF 录制、GitHub 工作流内置命令等功能。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：HTML 导出增强、终端 GIF 录制、GitHub 工作流命令"
+  date="2026-03-06"
+  author="Qwen Team"
+/>
+
+本周发布 v0.11.1 正式版，包含多项稳定性修复和功能增强。与此同时，v0.12.0 开发分支持续推进，带来几个值得关注的新特性。
+
+- 发布正式版：v0.11.1
+- v0.12.0 开发中，已合并多个新功能 PR
+
+## ✨ 新增特性
+
+### HTML 导出：工具调用内容查看器
+
+导出会话为 HTML 文件后，**点击 Shell 工具调用的 IN / OUT 标签，现在会弹出一个模态窗口显示完整内容**。此前这两个标签点击没有任何响应。详见 PR [#2085](https://github.com/QwenLM/qwen-code/pull/2085)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01jLoKVP29zihmemlWK_!!6000000008139-2-tps-1610-858.png)
+
+### 终端流式截图与 GIF 生成
+
+terminal-capture 工具新增流式捕获模式，可以在命令执行过程中按固定间隔截图，适合录制进度条、spinner 动画等动态终端输出。捕获完成后自动调用 ffmpeg 合成为循环 GIF。详见 PR [#2116](https://github.com/QwenLM/qwen-code/pull/2116)
+
+支持配置截图间隔、延迟启动时间，以及输出稳定后自动停止。未安装 ffmpeg 时会跳过 GIF 生成并继续执行，不影响截图流程。
+
+之前只能截静态图，**现在可以录制完整的命令执行过程**，适合做功能演示和教程。
+
+👇 以下动图完全由 Qwen Code 测试生成：
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01VFg7mt1YGFbKnhOII_!!6000000003031-1-tps-860-584.gif)
+
+### GitHub 工作流内置命令
+
+新增四个内置自定义命令，覆盖常见 GitHub 操作场景，通过 `/qc:<命令名>` 调用：详见 PR [#2117](https://github.com/QwenLM/qwen-code/pull/2117)
+
+- **`/qc:code-review`**：拉取 PR 详情和 diff，生成覆盖正确性、风格、性能、安全性的代码审查报告
+- **`/qc:commit`**：分析暂存区变更，生成符合 Conventional Commits 规范的提交信息，自动处理分支（避免直接提交到 main）
+- **`/qc:create-issue`**：根据代码库上下文起草 GitHub Issue，自动选择 feature request 或 bug report 模板
+- **`/qc:create-pr`**：创建结构完整的 Pull Request，遵循项目 PR 模板
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01yjkkmf1PU94inB5NU_!!6000000001843-1-tps-860-584.gif)
+
+### AGENTS.md 作为默认上下文文件
+
+项目根目录的 `AGENTS.md` 现在会被自动加载为上下文文件，与 `GEMINI.md`、`CLAUDE.md` 等行为一致。在多 Agent 框架下工作时不需要额外配置。详见 PR [#2018](https://github.com/QwenLM/qwen-code/pull/2018)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN018tD4ZB1HuEiAze39i_!!6000000000817-2-tps-1902-1144.png)
+
+### Ctrl+Y 重试失败请求
+
+请求失败后，按 `Ctrl+Y` 可以直接重试，不需要重新输入内容。详见 PR [#2011](https://github.com/QwenLM/qwen-code/pull/2011)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01YtZAzm1ShNMbf8YTt_!!6000000002278-2-tps-1694-956.png)
+
+### 认证对话框布局优化
+
+登录对话框重新设计为三选项布局，选项之间的区分更清晰。详见 PR [#2030](https://github.com/QwenLM/qwen-code/pull/2030)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png)
+
+### 代码高亮 Tab 宽度支持
+
+代码高亮组件新增 `tabWidth` 配置，Tab 字符会被替换为对应数量的空格，解决代码块中 Tab 显示宽度不一致的问题。详见 PR [#2077](https://github.com/QwenLM/qwen-code/pull/2077)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN016C78pF1aCFN1nJhiI_!!6000000003293-2-tps-2868-1346.png)
+
+## 🔧 重要修复
+
+| PR                                                     | 版本      | 问题                                                          | 影响                             |
+| ------------------------------------------------------ | ------- | ----------------------------------------------------------- | ------------------------------ |
+| [#2060](https://github.com/QwenLM/qwen-code/pull/2060) | v0.11.1 | DashScope 子域名 URL 无法被正确识别为 DashScope provider               | 使用自定义子域名接入 DashScope 的用户无法正常使用 |
+| [#2059](https://github.com/QwenLM/qwen-code/pull/2059) | v0.11.1 | ACP 协议缺少 `session/set_config_option` 方法，Zed 编辑器无法通过 UI 修改配置 | Zed 集成用户无法在界面中更新配置项            |
+| [#2021](https://github.com/QwenLM/qwen-code/pull/2021) | v0.11.1 | 工具调用输出被截断时未能检测和保护，可能导致后续解析错误                                | 长输出场景下的稳定性问题                   |
+| [#1982](https://github.com/QwenLM/qwen-code/pull/1982) | v0.11.1 | 读取 PDF 等媒体文件时缺少 modality 默认值，导致 API 报错                      | 使用文件读取功能时偶发 API 错误             |
+| [#2041](https://github.com/QwenLM/qwen-code/pull/2041) | v0.11.1 | 流式输出在会话历史日志中记录过多，日志文件体积异常增大                                 | 长时间使用后日志占用磁盘空间过大               |
+| [#1995](https://github.com/QwenLM/qwen-code/pull/1995) | v0.11.1 | 限流错误码 1305 未被识别，触发限流时不会自动重试                                 | 高频使用场景下请求失败率偏高                 |
+| [#1993](https://github.com/QwenLM/qwen-code/pull/1993) | v0.11.1 | 子 Agent 未继承 output-language.md 语言设置，输出语言与主 Agent 不一致        | 多 Agent 场景下语言输出不统一             |
+
+### Windows 平台专项修复
+
+| PR | 问题 |
+|----|------|
+| [#2078](https://github.com/QwenLM/qwen-code/pull/2078) | Markdown 命令文件使用 CRLF 换行或 UTF-8 BOM 时，frontmatter 解析失败，命令描述无法显示 |
+
+### Zed 编辑器集成修复
+
+| PR | 问题 |
+|----|------|
+| [#2017](https://github.com/QwenLM/qwen-code/pull/2017) | ACP 协议兼容性问题，修复 Zed 编辑器集成异常 |
+| [#2059](https://github.com/QwenLM/qwen-code/pull/2059) | 新增 `session/set_config_option` 支持，Zed UI 可直接修改配置 |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！

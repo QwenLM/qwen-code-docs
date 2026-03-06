@@ -1,0 +1,107 @@
+---
+title: "Qwen Code Semanal: Melhoria do Export HTML, Gravação de GIF no Terminal, Comandos de Workflow do GitHub"
+date: 2026-03-06
+description: "Esta semana lançamos v0.11.1 e continuamos o desenvolvimento do v0.12.0, adicionando um visualizador de chamadas de ferramentas para export HTML, gravação de GIF em streaming no terminal, comandos de workflow do GitHub integrados e mais."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Semanal: Melhoria do Export HTML, Gravação de GIF no Terminal, Comandos de Workflow do GitHub"
+  date="2026-03-06"
+  author="Qwen Team"
+/>
+
+Esta semana lançamos v0.11.1 com várias correções de estabilidade e melhorias de funcionalidades. Enquanto isso, o desenvolvimento da branch v0.12.0 continua com várias novas funcionalidades notáveis.
+
+- Versão estável lançada: v0.11.1
+- v0.12.0 em desenvolvimento, vários novos PRs de funcionalidades mesclados
+
+## ✨ Novos Recursos
+
+### Export HTML: Visualizador de Conteúdo de Chamadas de Ferramentas
+
+Após exportar uma sessão como arquivo HTML, **clicar nos labels IN / OUT das chamadas de ferramentas Shell agora abre uma janela modal exibindo o conteúdo completo**. Anteriormente, clicar nesses labels não tinha nenhum efeito. Veja PR [#2085](https://github.com/QwenLM/qwen-code/pull/2085)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01jLoKVP29zihmemlWK_!!6000000008139-2-tps-1610-858.png)
+
+### Capturas de Tela em Streaming do Terminal e Geração de GIF
+
+A ferramenta terminal-capture agora suporta um modo de captura em streaming que tira capturas de tela em intervalos fixos durante a execução de comandos — ideal para gravar barras de progresso, animações de spinner e outras saídas dinâmicas do terminal. Após a captura, o ffmpeg é automaticamente invocado para compor um GIF em loop. Veja PR [#2116](https://github.com/QwenLM/qwen-code/pull/2116)
+
+As opções configuráveis incluem intervalo de captura de tela, atraso de inicialização e parada automática quando a saída se estabiliza. Se o ffmpeg não estiver instalado, a geração de GIF é ignorada sem interromper o processo de captura de tela.
+
+Anteriormente limitado a capturas de tela estáticas, **agora é possível gravar todo o processo de execução de comandos** — ideal para demos de funcionalidades e tutoriais.
+
+👇 A animação a seguir foi inteiramente gerada pelo Qwen Code durante os testes:
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01VFg7mt1YGFbKnhOII_!!6000000003031-1-tps-860-584.gif)
+
+### Comandos de Workflow do GitHub Integrados
+
+Quatro novos comandos personalizados integrados cobrindo cenários comuns de operações do GitHub, invocados via `/qc:<nome-do-comando>`. Veja PR [#2117](https://github.com/QwenLM/qwen-code/pull/2117)
+
+- **`/qc:code-review`**: Busca detalhes do PR e diff, gera um relatório de revisão de código cobrindo correção, estilo, desempenho e segurança
+- **`/qc:commit`**: Analisa mudanças staged, gera uma mensagem de commit em conformidade com a especificação Conventional Commits e gerencia branches automaticamente (evita commitar diretamente na main)
+- **`/qc:create-issue`**: Elabora um GitHub Issue baseado no contexto do codebase, selecionando automaticamente o template de feature request ou bug report
+- **`/qc:create-pr`**: Cria um Pull Request totalmente estruturado seguindo o template de PR do projeto
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01yjkkmf1PU94inB5NU_!!6000000001843-1-tps-860-584.gif)
+
+### AGENTS.md como Arquivo de Contexto Padrão
+
+`AGENTS.md` na raiz do projeto agora é automaticamente carregado como arquivo de contexto, consistente com o comportamento de `GEMINI.md`, `CLAUDE.md` e arquivos similares. Nenhuma configuração adicional é necessária ao trabalhar em frameworks multi-agente. Veja PR [#2018](https://github.com/QwenLM/qwen-code/pull/2018)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN018tD4ZB1HuEiAze39i_!!6000000000817-2-tps-1902-1144.png)
+
+### Ctrl+Y para Repetir Requisições com Falha
+
+Após uma requisição falhar, pressione `Ctrl+Y` para tentar novamente diretamente sem reinserir o conteúdo. Veja PR [#2011](https://github.com/QwenLM/qwen-code/pull/2011)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01YtZAzm1ShNMbf8YTt_!!6000000002278-2-tps-1694-956.png)
+
+### Melhoria do Layout do Diálogo de Autenticação
+
+O diálogo de login foi redesenhado com um layout de três opções para uma distinção mais clara entre as opções. Veja PR [#2030](https://github.com/QwenLM/qwen-code/pull/2030)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png)
+
+### Suporte à Largura de Tabulação para Destaque de Código
+
+O componente de destaque de código agora suporta uma configuração `tabWidth`. Os caracteres Tab são substituídos pelo número correspondente de espaços, resolvendo a exibição inconsistente da largura de tabulação em blocos de código. Veja PR [#2077](https://github.com/QwenLM/qwen-code/pull/2077)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN016C78pF1aCFN1nJhiI_!!6000000003293-2-tps-2868-1346.png)
+
+## 🔧 Correções Importantes
+
+| PR | Versão | Problema | Impacto |
+|---|---|---|---|
+| [#2060](https://github.com/QwenLM/qwen-code/pull/2060) | v0.11.1 | URLs de subdomínio DashScope não reconhecidas como provider DashScope | Usuários conectando via subdomínios personalizados não conseguem usar DashScope |
+| [#2059](https://github.com/QwenLM/qwen-code/pull/2059) | v0.11.1 | Protocolo ACP sem método `session/set_config_option`, editor Zed não consegue modificar configuração via UI | Usuários da integração Zed não conseguem atualizar itens de configuração na UI |
+| [#2021](https://github.com/QwenLM/qwen-code/pull/2021) | v0.11.1 | Saída de chamada de ferramenta truncada não detectada e protegida, pode causar erros de análise posteriores | Problemas de estabilidade em cenários de saída longa |
+| [#1982](https://github.com/QwenLM/qwen-code/pull/1982) | v0.11.1 | Valor de modalidade padrão ausente ao ler PDF e outros arquivos de mídia, causando erros de API | Erros de API intermitentes ao usar a funcionalidade de leitura de arquivos |
+| [#2041](https://github.com/QwenLM/qwen-code/pull/2041) | v0.11.1 | Saída em streaming excessivamente registrada no histórico de sessão, arquivos de log crescendo anormalmente | Arquivos de log consumindo espaço em disco excessivo após uso prolongado |
+| [#1995](https://github.com/QwenLM/qwen-code/pull/1995) | v0.11.1 | Código de erro de limite de taxa 1305 não reconhecido, sem nova tentativa automática no limite de taxa | Taxa de falha de requisições mais alta em cenários de uso intensivo |
+| [#1993](https://github.com/QwenLM/qwen-code/pull/1993) | v0.11.1 | Sub-agentes não herdam configuração de idioma output-language.md, idioma de saída inconsistente com o agente principal | Saída de idioma inconsistente em cenários multi-agente |
+
+### Correções da Plataforma Windows
+
+| PR | Problema |
+|----|----------|
+| [#2078](https://github.com/QwenLM/qwen-code/pull/2078) | Arquivos de comando Markdown com terminações de linha CRLF ou BOM UTF-8 causam falha na análise do frontmatter, descrições de comandos não exibidas |
+
+### Correções da Integração do Editor Zed
+
+| PR | Problema |
+|----|----------|
+| [#2017](https://github.com/QwenLM/qwen-code/pull/2017) | Problema de compatibilidade do protocolo ACP, anomalias de integração do editor Zed corrigidas |
+| [#2059](https://github.com/QwenLM/qwen-code/pull/2059) | Suporte a `session/set_config_option` adicionado, UI do Zed agora pode modificar configuração diretamente |
+
+<Callout type="info">
+  **Atualização**: Execute `npm i @qwen-code/qwen-code@latest -g` para atualizar para a versão mais recente.
+</Callout>
+
+Para dúvidas ou sugestões, seja bem-vindo ao [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
