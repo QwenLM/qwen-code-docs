@@ -1,0 +1,172 @@
+---
+title: "Termine Lições de Casa, Portfólio e Projetos Open Source em 10 Minutos - Prática com Qwen Code + Coding Plan"
+date: "2026-03-06"
+description: "Use o Qwen Code para criar rapidamente sites pessoais, participar de projetos open source e gerar vídeos demonstrativos. Guia prático para ferramentas de programação por IA."
+author: "joeytoday"
+tags: ["Tutoriais", "exemplos de usuários", "plano de codificação"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader 
+  title="Termine Lições de Casa, Portfólio e Projetos Open Source em 10 Minutos - Prática com Qwen Code + Coding Plan"
+  date="2026-03-06"
+  author="joeytoday"
+/>
+
+Precisa fazer uma apresentação de projeto para seu trabalho final mas fica ajustando CSS até perder os cabelos? Projetos escolares requerem vídeos demo cortados até as três da manhã? Quer contribuir para projetos open source mas não sabe como fazer seu primeiro PR?
+
+Recentemente experimentei essa ferramenta Qwen Code, inicialmente sem muita esperança — afinal, o termo "programação por IA" já foi muito usado. Mas ao utilizá-la, percebi que não se tratava apenas de conversa vazia sobre "IA mudando o mundo", mas sim algo que realmente economiza tempo e permite focar energia em coisas mais valiosas.
+
+Vamos começar com o exemplo mais simples.
+
+## Site de Portfólio Pessoal em 5 Minutos
+
+Precisa de uma boa página de currículo para mostrar seu portfólio na busca por emprego? Em vez de ficar modificando modelos infinitamente, deixe a IA ajudá-lo a gerar um.
+
+Eu simplesmente usei o comando `@` no Qwen Code para referenciar meu currículo, pedindo para ele gerar um site pessoal com belas animações (simulado, PS ficou realmente lindo). Apenas um prompt:
+
+```
+/skills react-native-design build a personal resume website based on @resume-website/resume.md
+```
+
+👇 Resultado:
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/4y_ax6Z4ro0nHbXm3oEZ01TnQpUM2QJ3qRg3R0SPnrs.mp4" controls></video>
+
+Se você tem um design de site favorito, pode replicá-lo diretamente. Por exemplo, eu gostei deste design—
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png)
+
+Processo bem simples:
+
+1. Instalar o plugin de design web através de `/extensions` no Qwen Code (suporta todas as lojas)
+2. Salvar localmente a captura de tela da sua página web favorita
+3. Digitar um prompt para identificar layout, estilos e componentes, depois recriar código executável
+
+Ainda só um prompt:
+
+```
+/skills web-component-design design a web like @website.png
+```
+
+👇 Fluxo de trabalho completo:
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/__EMPIfINdPKI3oSa2MaZ0I58kPw_kVSPS23AIM4PqQ.mp4" controls></video>
+
+**Cenários adequados:**
+
+- Páginas de apresentação individual/projeto em equipe para trabalhos finais
+- Sites de portfólio para candidaturas profissionais
+- Páginas promocionais de atividades de clubes
+- Landing pages de projetos de startups
+
+(A sério, muito mais rápido que mexer com templates)
+
+## Participe de Projetos Open Source Começando com Seu Primeiro PR
+
+Quer contribuir para open source mas não sabe por onde começar? O Qwen Code pode automatizar todo o processo.
+
+Entregue um link de Issue pra ele, e ele fará:
+
+1. Entendimento automático da descrição do problema
+2. Exploração da estrutura do repositório
+3. Localização da posição do bug
+4. Fornecimento do código corretivo
+5. Envio autônomo de PR
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/JV-7WNvq-GF9ZRHhrr1igplZDtHaFeNNoJ412hgkKYI.mp4" controls></video>
+
+Sem necessidade de intervenção manual alguma. Claro, pela primeira vez recomendo revisar manualmente o código antes de deixar totalmente automatizado. (Não pergunte como sei...)
+
+Especialmente útil para estudantes querendo acumular experiência em open source. Você pode começar com correções simples de bugs e gradualmente participar do desenvolvimento de funcionalidades mais complexas.
+
+(Sinceramente recomendo que estudantes de ciência da computação experimentem — experiência em open source realmente ajuda na busca por emprego)
+
+## Gere Vídeos Demo usando Código, Adeus Softwares de Edição
+
+Apresentações escolares, defesas de projetos, roadshows de competições — incluindo seus antigos projetos open source — sempre precisaram de vídeos demo. Aprender Premiere e editar vídeos consome tanto tempo. (Quem já editou sabe!)
+
+Baseado no Remotion (uma biblioteca para criar vídeos com React), o Qwen Code pode gerar vídeos demo profissionais usando código.
+
+Por exemplo, para criar um vídeo introdutório de produto:
+
+1. Instalar habilidades relacionadas ao Remotion
+2. Escrever roteiros e descrições de storyboard
+3. Deixar gerar o código do vídeo
+4. Realizar renderização da saída
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/ZgaPle1nAI5-130zVv4yObnskE3ByRJYnlWABtfZwH4.mp4" controls></video>
+
+**Cenários adequados:**
+
+- Vídeos de defesa de projetos escolares
+- Roadshows de competições de empreendedorismo e inovação
+- Promoções de eventos de clubes
+- Vlogs pessoais automatizados
+
+A vantagem do Remotion é que você pode criar vídeos usando componentes React, suportando animações, transições, legendas, edição de áudio e controle de versão (sim, vídeos também podem ser geridos com Git — bem legal).
+
+## Como Começar?
+
+1. Obter Chave API no console BaiLian
+2. Baixar Qwen Code e iniciar usando `qwen`
+
+```bash
+# Linux/macOS
+curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
+
+# Windows
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat
+```
+
+3. Digite `/auth`, selecione «Alibaba Cloud Coding Plan», cole a Chave API
+4. Use `/model` para escolher modelo, então comece!
+
+O Qwen Code possui uma loja de habilidades (semelhante ao mercado de plugins do VS Code) com diversos pacotes de habilidades prontos. Use o comando `/extensions` para selecionar e instalar extensões, ou explorar mais plugins e habilidades.
+
+Não tente logo de cara projetos grandes. Comece com cenários simples como:
+
+- Pedir à IA para escrever uma página web Hello World
+- Fazer ela explicar um código incompreensível
+- Mandar gerar um modelo de anotações de aula
+
+Depois de familiarizado, gradualmente tente tarefas mais complexas.
+
+(Foi exatamente assim que eu comecei, haha)
+
+## Pacotes de Habilidades Recomendados Para Estudantes Universitários
+
+Baseado na minha experiência, esses pacotes de habilidades são especialmente úteis para estudantes universitários:
+
+| Pacote de Habilidade | Uso | Especialidades Adequadas |
+| --- | --- | --- |
+| `skill-creator` | Criar habilidades segundo padrões, criar suas próprias habilidades | Todas especialidades |
+| `find-skills` | Descobrir e instalar novas habilidades | Todas especialidades |
+| `react-native-design` | Gerar rapidamente páginas web React | Ciência da Computação, Design, Novas Mídias |
+| `web-component-design` | Reproduzir páginas web a partir de capturas de tela | Todas especialidades |
+| `remotion-best-practices` | Gerar vídeos usando código | Jornalismo, Comunicação, Ciência da Computação |
+
+Método de Instalação:
+
+```bash
+npx skills add <NomeDoPacoteDeHabilidade> -g
+```
+
+## Algumas Dicas de Uso
+
+1. **Não dependa completamente da IA.** É uma ferramenta, não um substituto. Entenda o código você mesmo, compreenda seu dever de casa.
+2. **Comece imitando.** Ao ver alguém realizar algo impressionante com certas habilidades, imite primeiro seu prompt, depois aos poucos adapte ao seu próprio estilo.
+3. **Faça bom uso do mercado de habilidades.** A maioria das necessidades que você pensa provavelmente já têm pacotes de habilidades correspondentes. Pesquise antes de criar, evite reinventar a roda.
+4. **Registre seus prompts.** Anote prompts eficazes para reutilização direta ou ajuste fino da próxima vez.
+5. **Compartilhe seu trabalho.** Uma vez criando algo bom, compartilhe no GitHub, Zhihu, Xiaohongshu — tanto para acumular obras quanto conhecer pessoas afinadas.
+
+## Considerações Finais
+
+Ferramentas de programação por IA não pretendem te substituir — estão aqui para ajudar a gastar seu tempo em atividades mais valiosas.
+
+Tempo anteriormente gasto ajustando CSS até perder os cabelos pode agora ir para ler mais artigos; em vez de editar vídeos madrugada adentro, prepare-se para entrevistas; horas configurando ambiente transformam-se em aprender algoritmos fundamentais.
+
+As ferramentas estão aí — usá-las ou não depende de você. Pelo menos agora você tem mais uma opção.
+
+(Espero que essas experiências ajudem, amigos)
