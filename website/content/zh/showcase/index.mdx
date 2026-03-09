@@ -1,147 +1,188 @@
 import { VideoShowcase } from '@/components/video-showcase'
 
-export const videos = [
+{/* ─── 第一层：Quick Start Hero 视频 ─── */}
 
-  {
-    title: "Qwen Code 简介",
-    description: "了解 Qwen Code 的核心功能和优势，以及如何开始使用这款 AI 编程助手。",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000008149/O1CN01s4jvEt2A4IeyzthUR_!!6000000008149-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/csQymc4NChpT34XHza_UH9lB65SM3DCDLe7tuXZWtDk.mp4",
-    category: "Getting Started",
+export const heroVideo = {
+  title: "Qwen Code 简介",
+  description: "30 秒了解 Qwen Code 的核心能力：从安装到对话，再到完成你的第一个任务。你的 AI 编程伙伴，从想法到实现只需一句话。",
+  thumbnail: "https://img.alicdn.com/imgextra/i4/6000000008149/O1CN01s4jvEt2A4IeyzthUR_!!6000000008149-0-tbvideo.jpg",
+  videoUrl: "https://cloud.video.taobao.com/vod/csQymc4NChpT34XHza_UH9lB65SM3DCDLe7tuXZWtDk.mp4",
+  category: "Quick Start",
+};
 
-  },
+{/* ─── 第二层：功能演示视频 ─── */}
 
-  {
-    title: "将 YouTube 视频转为博客文章",
-    description: "学习如何使用 Qwen Code 和 SOP 技能将 YouTube 视频转换为博客文章。",
-    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
-    category: "Features",
-  },
-
+export const featureVideos = [
   {
     title: "VS Code 集成",
-    description: "了解如何在 VS Code 中配置和使用 Qwen Code 扩展。",
+    description: "在 VS Code 中配置和使用 Qwen Code 扩展，体验无缝的 AI 编程辅助。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005426/O1CN01XuZxfE1pxAACIE5Yz_!!6000000005426-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/WxcdoDX2cDSWtHJKAcU_O5zWE9mz3odG76vArAHNg94.mp4",
     duration: "4:50",
-    category: "Tutorials",
+    category: "IDE",
   },
-
   {
-    title: "Remotion 技能",
-    description: "学习如何使用 Remotion 技能和 Qwen Code 创建视频。",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005610/O1CN01Q0KFCs1rJR3DOBCmL_!!6000000005610-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/Q7xsDoKLjuSPX867e8wlWtk0U5c7M9_F7ljsuPJrhQQ.mp4",
-    category: "Advanced",
-  },
-
-  {
-    title: "如何切换语言？",
-    description: "如何在 Qwen Code 中切换 UI 和输出语言",
+    title: "如何切换语言",
+    description: "在 Qwen Code 中切换 UI 和输出语言，支持多语言交互。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/TXmxJiG2GeXT3l46VhPMEoVb8B1bdN5Pe0Up0HhOCuk.mp4",
-    category: "Tutorials",
+    category: "Chat",
   },
-
   {
-    title: "如何使用 Websearch？",
-    description: "如何让 Qwen Code 搜索网络内容",
+    title: "如何使用 Websearch",
+    description: "让 Qwen Code 搜索网络内容，获取实时信息辅助编程。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000001227/O1CN01WiWHUu1Kw15wzjjYI_!!6000000001227-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/xJUnYWDVs5Z_L3yhZhojGcZ905gRxglqKwab-o5iR64.mp4",
-    category: "Tutorials",
+    category: "Chat",
   },
-
   {
-    title: "如何启动 Skills(beta)？",
-    description: "在 Qwen Code 中启动 Skills 功能",
+    title: "如何启动 Skills",
+    description: "在 Qwen Code 中启用 Skills 功能，扩展 AI 的能力边界。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000002514/O1CN01I26Lji1URSpc4sO1g_!!6000000002514-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/VL2ZIdMeoOiUEu2kn_ibVpKfqp0uOAUQLo9LRRrf7FU.mp4",
-    category: "Tutorials",
+    category: "Skills",
   },
-
-  {
-    title: "快速制作一个网页 Todo App",
-    description: "如何使用 Qwen Code 一句话制作一个网页 Todo App",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006895/O1CN01Qkt2Xj20nxzmzJ1c8_!!6000000006895-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/cU4cykBX09onq6NZRj7JUg8n7oZEcx3o1T3H4rCyie4.mp4",
-    category: "Getting Started",
-  },
-  {
-    title: "一句话创作内容",
-    description: "告诉 Qwen Code 要写什么，它会直接帮你写入文件，免去粘贴复制的苦恼",
-    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003593/O1CN0139ueiV1cPeBczAQyA_!!6000000003593-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/3slFKTQTxaEklF6zhnsDocfaWGYmYVsH3hIuj3YWBVg.mp4",
-    category: "Getting Started",
-  },
-  {
-    title: "搭建一个 markdown 格式转公众号格式的本地应用",
-    description: "写完内容直接复制到公众号，免去再排版的苦恼",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000000334/O1CN01OHySgE1EL1PN5I57Q_!!6000000000334-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/cvOTiSr2N0nuAcabN2bvO_xf4PAin8lGe6T7J3Frmdw.mp4",
-    category: "Getting Started",
-  },
-  {
-    title: "网页截图 1:1 复刻",
-    description: "看到喜欢的网页，截图下来，让 Qwen Code 一键复刻",
-    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000000210/O1CN01AIRuJB1DQEIQ2Y9gR_!!6000000000210-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/DSOMEumHGNqo4J4Q7Ky1IjPNiIt2fA25fyPiXUy-XYs.mp4",
-    category: "Getting Started",
-  },
-
   {
     title: "MCP 接入 Nano Banana 绘图",
-    description: "通过 Qwen Code 的 MCP 功能，接入 Nano Banana 进行手绘图创作",
+    description: "通过 MCP 功能接入 Nano Banana，用自然语言驱动手绘图创作。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005269/O1CN01Fls9dH1onFzc47Sj6_!!6000000005269-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/qFM-bUI_bRYN3imXG5j_X7jGDym-SR4CLnqz9Bdvjzc.mp4",
-    category: "Features",
+    category: "MCP",
   },
   {
     title: "MCP 接入 Qwen Image 绘图",
-    description: "通过 Qwen Code 的 MCP 功能，接入 Qwen Image 进行手绘图创作",
+    description: "通过 MCP 功能接入 Qwen Image，实现 AI 驱动的图像生成。",
     thumbnail: "https://img.alicdn.com/imgextra/i2/6000000008081/O1CN01uHNibY29Z9jIgi9rt_!!6000000008081-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/1spSSUJjNkTdj8Vtkdj4pNimLIgFie_qdcTj68tqzow.mp4",
-    category: "Features",
+    category: "MCP",
+  },
+];
+
+{/* ─── 第三层：场景实战视频 ─── */}
+
+export const scenarioVideos = [
+  {
+    title: "快速制作一个网页 Todo App",
+    description: "用一句话让 Qwen Code 从零搭建一个完整的网页应用，体验 Agent 模式的强大能力。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006895/O1CN01Qkt2Xj20nxzmzJ1c8_!!6000000006895-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/cU4cykBX09onq6NZRj7JUg8n7oZEcx3o1T3H4rCyie4.mp4",
+    category: "Scenarios",
+    difficulty: "beginner",
   },
   {
-    title: "通过 PDF Skills 扫描 PDF 文件为文本内容",
-    description: "通过 Qwen Code 使用 PDF Skill，把内容转化为 markdown、docx 等文本格式",
+    title: "一句话创作内容",
+    description: "告诉 Qwen Code 要写什么，它会直接帮你写入文件，免去粘贴复制的苦恼。",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003593/O1CN0139ueiV1cPeBczAQyA_!!6000000003593-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/3slFKTQTxaEklF6zhnsDocfaWGYmYVsH3hIuj3YWBVg.mp4",
+    category: "Scenarios",
+    difficulty: "beginner",
+  },
+  {
+    title: "搭建 Markdown 转公众号格式的本地应用",
+    description: "写完内容直接复制到公众号，免去再排版的苦恼。从需求到可用工具，一步到位。",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000000334/O1CN01OHySgE1EL1PN5I57Q_!!6000000000334-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/cvOTiSr2N0nuAcabN2bvO_xf4PAin8lGe6T7J3Frmdw.mp4",
+    category: "Scenarios",
+    difficulty: "beginner",
+  },
+  {
+    title: "网页截图 1:1 复刻",
+    description: "看到喜欢的网页，截图下来，让 Qwen Code 一键复刻出完整的前端代码。",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000000210/O1CN01AIRuJB1DQEIQ2Y9gR_!!6000000000210-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/DSOMEumHGNqo4J4Q7Ky1IjPNiIt2fA25fyPiXUy-XYs.mp4",
+    category: "Scenarios",
+    difficulty: "beginner",
+  },
+  {
+    title: "将 YouTube 视频转为博客文章",
+    description: "使用 Qwen Code 和 SOP 技能，将视频内容自动转换为结构化的博客文章。",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
+    category: "Scenarios",
+    difficulty: "intermediate",
+  },
+  {
+    title: "通过 PDF Skills 扫描 PDF 为文本",
+    description: "使用 PDF Skill 把文档内容转化为 Markdown、Docx 等可编辑的文本格式。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005081/O1CN01S8JceC1nP9X4IFO3F_!!6000000005081-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/WL03NhCh_KESIQb01I5MyEWU520pZfQidVOnWOY6GMY.mp4",
-    category: "Features",
+    category: "Scenarios",
+    difficulty: "intermediate",
   },
   {
-    title: "通过 Skills 分析自己的日记并进行年度总结",
-    description: "给自己定制年度复盘的 Skill，并对自己文档/日记进行总结复盘",
+    title: "分析日记并生成年度总结",
+    description: "定制年度复盘 Skill，对个人文档和日记进行智能总结与复盘。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000007785/O1CN01ztofv327NaUircVTF_!!6000000007785-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/wEliIHxqPaiDKDX3fIN2RMqW8TWncR5OaWUfNuGu1go.mp4",
-    category: "Features",
+    category: "Scenarios",
+    difficulty: "intermediate",
   },
   {
-    title: "通过 Skills 在 Obsidian 创建可视化白板笔记",
-    description: "通过 Obsidian 的 jscanvas Skill，让 Qwen Code 帮你创建可视化的白板笔记",
+    title: "在 Obsidian 创建可视化白板笔记",
+    description: "通过 Obsidian 的 jscanvas Skill，让 Qwen Code 帮你创建可视化的白板笔记。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/6000000002190/O1CN01ojAaK41S34VS0J13Q_!!6000000002190-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/UTKnHl6GsUjxpfmque75_czEyWlGZVN9mbclTs6scik.mp4",
-    category: "Features",
+    category: "Scenarios",
+    difficulty: "intermediate",
   },
-
+  {
+    title: "Remotion 视频创作",
+    description: "使用 Remotion 技能和 Qwen Code，用代码驱动视频制作流程。",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005610/O1CN01Q0KFCs1rJR3DOBCmL_!!6000000005610-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/Q7xsDoKLjuSPX867e8wlWtk0U5c7M9_F7ljsuPJrhQQ.mp4",
+    category: "Scenarios",
+    difficulty: "advanced",
+  },
 ];
 
-export const categories = [
-  { id: "Getting Started", label: "入门指南" },
-  { id: "Features", label: "功能特性" },
-  { id: "Tutorials", label: "教程" },
-  { id: "Advanced", label: "进阶" },
+{/* ─── 功能分类 ─── */}
+
+export const featureCategories = [
+  { id: "IDE", label: "IDE 集成" },
+  { id: "Chat", label: "对话" },
+  { id: "MCP", label: "MCP" },
+  { id: "Skills", label: "Skills" },
 ];
+
+{/* ─── 难度标签 ─── */}
+
+export const difficultyLevels = [
+  { id: "beginner", label: "零基础友好", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" },
+  { id: "intermediate", label: "需要编程基础", color: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400" },
+  { id: "advanced", label: "进阶技巧", color: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-400" },
+];
+
+{/* ─── 文案 ─── */}
 
 export const texts = {
-  title: "视频展示",
-  subtitle: "通过视频演示探索 Qwen Code 的强大功能",
-  featured: "精选",
-  allVideos: "所有视频",
-  all: "全部",
+  pageTitle: "视频展示",
+  pageSubtitle: "从快速上手到深度实战，通过视频演示探索 Qwen Code 的全部能力",
+  heroSectionTitle: "Quick Start",
+  heroSectionSubtitle: "30 秒了解 Qwen Code",
+  heroCta: "立即安装",
+  latestSectionTitle: "最新视频",
+  latestSectionSubtitle: "最近更新的演示",
+  featureSectionTitle: "功能演示",
+  featureSectionSubtitle: "了解 Qwen Code 的核心能力",
+  scenarioSectionTitle: "场景实战",
+  scenarioSectionSubtitle: "找到你的使用场景",
+  featureTabLabel: "核心功能",
+  scenarioTabLabel: "场景实战",
+  allFilter: "全部",
+  allDifficulties: "全部难度",
+  emptyState: "该分类下暂无视频，更多内容持续更新中",
   close: "关闭",
   unsupportedVideo: "您的浏览器不支持视频标签。",
+  viewTutorial: "查看详细教程",
+  moreComingSoon: "更多场景持续更新中，欢迎提交你的使用案例",
+  submitCase: "在 GitHub 上提交你的 Showcase",
 };
 
-<VideoShowcase videos={videos} categories={categories} texts={texts} />
+<VideoShowcase
+  heroVideo={heroVideo}
+  featureVideos={featureVideos}
+  scenarioVideos={scenarioVideos}
+  featureCategories={featureCategories}
+  difficultyLevels={difficultyLevels}
+  texts={texts}
+/>

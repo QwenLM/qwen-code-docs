@@ -69,3 +69,6 @@ jspm_packages/
 .source-docs/
 last-sync.json
 .claude
+
+# Others
+skills/
