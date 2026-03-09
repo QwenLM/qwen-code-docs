@@ -1,0 +1,172 @@
+---
+title: "Finir ses devoirs, son portfolio et projets open source en 10 minutes - Guide pratique Qwen Code + Coding Plan"
+date: "2026-03-06"
+description: "Utilisez Qwen Code pour créer rapidement des sites personnels, participer à des projets open source et générer des vidéos de démonstration. Guide pratique pour les outils de programmation IA."
+author: "joeytoday"
+tags: ["Tutoriels", "exemples utilisateur", "plan de codage"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader 
+  title="Finir ses devoirs, son portfolio et projets open source en 10 minutes - Guide pratique Qwen Code + Coding Plan"
+  date="2026-03-06"
+  author="joeytoday"
+/>
+
+Vous avez besoin d'une présentation de projet pour votre devoir final mais vous ajustez le CSS jusqu'à la calvitie ? Les projets de cours exigent des vidéos de démo coupées jusqu'à 3 heures du matin ? Vous voulez contribuer à des projets open source mais ne savez pas comment faire votre premier PR ?
+
+Récemment, j'ai essayé cet outil Qwen Code, initialement sans grand espoir — après tout, le terme « programmation IA » a été trop utilisé. Mais en l'utilisant, je me suis rendu compte que ce n'était pas juste des propos creux sur « l'IA changeant le monde », mais qu'il économisait vraiment du temps et permettait de concentrer l'énergie sur des choses plus précieuses.
+
+Commençons par l'exemple le plus simple.
+
+## Site portfolio personnel en 5 minutes
+
+Besoin d'une bonne page de CV pour présenter votre portfolio lors d'une recherche d'emploi ? Plutôt que de modifier indéfiniment des modèles, laissez l'IA vous aider à en générer un.
+
+J'ai simplement utilisé la commande `@` dans Qwen Code pour référencer mon CV, lui demandant de générer un site personnel avec de belles animations (simulation, PS il était vraiment magnifique). Une seule instruction :
+
+```
+/skills react-native-design build a personal resume website based on @resume-website/resume.md
+```
+
+👇 Résultat :
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/4y_ax6Z4ro0nHbXm3oEZ01TnQpUM2QJ3qRg3R0SPnrs.mp4" controls></video>
+
+Si vous avez un design de site préféré, vous pouvez directement le reproduire. Par exemple, j'aimais ce design—
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png)
+
+Processus très simple :
+
+1. Installer le plugin de conception web via `/extensions` dans Qwen Code (prend en charge tous les marchés)
+2. Sauvegarder localement la capture d'écran de votre page web préférée
+3. Entrer une instruction pour identifier la disposition, les styles et les composants, puis recréer du code exécutable
+
+Encore une seule instruction :
+
+```
+/skills web-component-design design a web like @website.png
+```
+
+👇 Flux de travail complet :
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/__EMPIfINdPKI3oSa2MaZ0I58kPw_kVSPS23AIM4PqQ.mp4" controls></video>
+
+**Scénarios adaptés :**
+
+- Pages de présentation individuelles/projets d'équipe pour les devoirs finaux
+- Sites portfolios pour candidatures professionnelles
+- Pages promotionnelles activités associatives
+- Pages d'accueil projets startups
+
+(Franchement, beaucoup plus rapide que bidouiller des modèles)
+
+## Participer à des projets open source en commençant par votre premier PR
+
+Vous voulez contribuer à l'open source mais ne savez pas par où commencer ? Qwen Code peut automatiser l'ensemble du processus.
+
+Donnez-lui un lien Issue, et voici ce qui se passe :
+
+1. Compréhension automatique de la description du problème
+2. Exploration de la structure du dépôt
+3. Localisation de l'emplacement du bug
+4. Fourniture du code correctif
+5. Soumission autonome d'un PR
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/JV-7WNvq-GF9ZRHhrr1igplZDtHaFeNNoJ412hgkKYI.mp4" controls></video>
+
+Aucune intervention humaine requise. Bien sûr, pour la première fois, je recommande de vérifier manuellement le code avant de le laisser totalement automatisé. (Ne me demandez pas comment je sais…)
+
+Particulièrement utile pour les étudiants souhaitant accumuler de l'expérience open source. Vous pouvez commencer par de simples corrections de bugs et progressivement participer au développement de fonctionnalités plus complexes.
+
+(Je conseille sincèrement aux étudiants en informatique d'essayer — l'expérience open source aide vraiment lors des recherches d'emploi)
+
+## Générer des vidéos de démonstration avec du code, dire adieu aux logiciels d'édition
+
+Présentations de cours, soutenances de projets, roadshows compétitions — y compris vos précédents projets open source — nécessitent toujours des vidéos de démo. Apprendre Premiere et éditer des vidéos prend tellement de temps. (Qui a déjà édité sait !)
+
+Basé sur Remotion (une bibliothèque pour créer des vidéos avec React), Qwen Code peut générer des vidéos de démonstration professionnelles grâce au code.
+
+Par exemple, pour créer une vidéo d'introduction produit :
+
+1. Installer les compétences liées à Remotion
+2. Écrire des scripts et descriptions storyboards
+3. Laisser générer le code vidéo
+4. Effectuer le rendu de sortie
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/ZgaPle1nAI5-130zVv4yObnskE3ByRJYnlWABtfZwH4.mp4" controls></video>
+
+**Scénarios adaptés :**
+
+- Vidéos de soutenance projets de cours
+- Roadshows concours entrepreneuriat innovation
+- Promotions événements associations
+- Vlogs personnels automatisés
+
+L'avantage de Remotion est qu'on peut créer des vidéos avec des composants React, prenant en charge les animations, transitions, sous-titres, montage audio, ainsi que le contrôle de versions (oui, les vidéos peuvent aussi être gérées avec Git — c'est assez cool).
+
+## Comment commencer ?
+
+1. Obtenir une clé API depuis la console BaiLian
+2. Télécharger Qwen Code et le lancer avec `qwen`
+
+```bash
+# Linux/macOS
+curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
+
+# Windows
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat
+```
+
+3. Entrer `/auth`, choisir « Alibaba Cloud Coding Plan », coller la clé API
+4. Utiliser `/model` pour sélectionner le modèle, puis commencer !
+
+Qwen Code dispose d'un marché de compétences (semblable au marché de plugins VS Code) avec divers paquets de compétences prêts à l'emploi. Utilisez la commande `/extensions` pour sélectionner et installer des extensions, ou explorer davantage de plugins et compétences.
+
+Ne visez pas de gros projets dès le départ. Commencez par des scénarios simples comme :
+
+- Demander à l'IA d'écrire une page web Hello World
+- Lui faire expliquer un code incompréhensible
+- Lui faire générer un modèle de notes de cours
+
+Une fois habitué, essayez progressivement des tâches plus complexes.
+
+(C'est exactement comme ça que j'ai commencé, haha)
+
+## Paquets de compétences recommandés pour étudiants universitaires
+
+Selon mon expérience, ces paquets de compétences sont particulièrement utiles pour les étudiants universitaires :
+
+| Paquet Compétence | Usage | Spécialités Adaptées |
+| --- | --- | --- |
+| `skill-creator` | Créer des compétences selon normes, créer vos propres compétences | Toutes spécialités |
+| `find-skills` | Découvrir et installer de nouvelles compétences | Toutes spécialités |
+| `react-native-design` | Générer rapidement des pages web React | Informatique, Design, Nouveaux Médias |
+| `web-component-design` | Reproduire des pages web depuis captures d'écran | Toutes spécialités |
+| `remotion-best-practices` | Générer des vidéos avec du code | Journalisme, Communication, Informatique |
+
+Méthode Installation :
+
+```bash
+npx skills add <NomPaquetCompétence> -g
+```
+
+## Quelques conseils d'utilisation
+
+1. **Ne dépendez pas entièrement de l'IA.** C'est un outil, pas un remplaçant. Comprenez le code vous-même, comprenez vos devoirs.
+2. **Commencez par imiter.** Voyant quelqu'un réussir quelque chose d'impressionnant avec certaines compétences, imitez d'abord son prompt, puis adaptez-le progressivement à votre propre style.
+3. **Exploitez bien le marché des compétences.** La plupart des besoins auxquels vous pensez ont probablement déjà des paquets de compétences correspondants. Cherchez avant de créer, évitez de réinventer la roue.
+4. **Notez vos prompts.** Gardez trace des prompts efficaces pour réutilisation directe ou ajustement ultérieur.
+5. **Partagez votre travail.** Une fois créé quelque chose de bon, partagez-le sur GitHub, Zhihu, Xiaohongshu — cela permet d'accumuler des œuvres et de rencontrer des gens partageant les mêmes centres d'intérêt.
+
+## Pensées finales
+
+Les outils de programmation IA ne visent pas à vous remplacer — ils sont là pour vous aider à consacrer votre temps à des activités plus valorisantes.
+
+Le temps passé à ajuster le CSS jusqu'à la calvitie pourrait plutôt servir à lire plus d'articles ; les nuits passées à éditer des vidéos deviennent du temps de préparation aux entretiens ; les heures passées à configurer l'environnement transforment l'apprentissage des algorithmes fondamentaux.
+
+Les outils sont là — si vous choisissez de les utiliser dépend de vous. Au moins maintenant, vous avez une autre possibilité.
+
+(J'espère que ces expériences vous seront utiles, amis)

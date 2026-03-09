@@ -1,0 +1,172 @@
+---
+title: "十分钟搞定作业、作品集和开源项目——Qwen Code+Coding Plan 实践"
+date: "2026-03-06"
+description: "用 Qwen Code 快速搭建个人网站、参与开源项目、生成演示视频，AI 编程工具实战指南。"
+author: "joeytoday"
+tags: ["Tutorials", "user examples", "coding plan"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader 
+  title="十分钟搞定作业、作品集和开源项目——Qwen Code+Coding Plan 实践"
+  date="2026-03-06"
+  author="joeytoday"
+/>
+
+期末作业需要项目演示，调 CSS 调到头秃？课程项目要做演示视频，剪视频剪到凌晨三点？想参与开源项目，却不知道怎么提第一个 PR？
+
+前段时间我试了 Qwen Code 这个工具，本来没抱太大希望——毕竟 "AI 编程 " 这个词已经被用烂了。但用下来发现，它不是那种 "AI 改变世界 " 的空话，而是实打实地帮你节省时间，把精力花在更有价值的地方。
+
+先从一个最简单的例子说起吧。
+
+## 5 分钟搞定个人作品集网站
+
+求职时需要一份好的简历页面展示作品集？与其在模板网站上改来改去，不如直接让 AI 帮你生成。
+
+我直接在 Qwen Code 使用`@`命令引用我的个人简历，让它生成一个带精美动效的个人网站（模拟的，ps 真的非常漂亮）。prompt 只有一句：
+
+```
+/skills react-native-design build a personal resume website based on @resume-website/resume.md
+```
+
+👇 效果：
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/4y_ax6Z4ro0nHbXm3oEZ01TnQpUM2QJ3qRg3R0SPnrs.mp4" controls></video>
+
+如果你有心仪的网站样式，可以直接让它复刻。比如我看中这个设计——
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png)
+
+流程很简单：
+
+1. 在 Qwen Code 通过 `/extensions` 安装网页设计插件（支持所有市面已有市场）
+2. 找到心仪的网页截图保存到本地
+3. 输入 prompt 让它识别布局、样式、组件，还原成可运行的代码
+
+prompt 还是一句：
+
+```
+/skills web-component-design design a web like @website.png
+```
+
+👇 完整流程：
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/__EMPIfINdPKI3oSa2MaZ0I58kPw_kVSPS23AIM4PqQ.mp4" controls></video>
+
+**适合场景：**
+
+- 期末大作业的个人/团队项目展示页
+- 求职用的作品集网站
+- 社团活动宣传页面
+- 创业项目 landing page
+
+（说真的，比在模板网站上改来改去快多了）
+
+## 参与开源项目，从第一个 PR 开始
+
+想参与开源但不知道从哪开始？Qwen Code 可以帮你自动化整个流程。
+
+扔一个 Issue 链接给它，它会：
+
+1. 自动理解问题描述
+2. 探索代码仓库结构
+3. 定位 bug 所在位置
+4. 给出修复代码
+5. 自主提交 PR
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/JV-7WNvq-GF9ZRHhrr1igplZDtHaFeNNoJ412hgkKYI.mp4" controls></video>
+
+全程无需人工参与。当然，第一次建议你还是人工 review 一下代码，熟悉流程后再放手让它自动化。（别问我是怎么知道的）
+
+这对想积累开源经历的同学特别有用。你可以从简单的 bug fix 开始，逐步参与到更复杂的功能开发中。
+
+（我真心建议计算机专业的同学都试试，开源经历在求职时真的加分）
+
+## 用代码生成演示视频，告别剪辑软件
+
+课程展示、项目答辩、比赛路演，包括你之前参与的开源项目，总少不了演示视频。但学 Pr、剪视频真的很花时间。（谁剪谁知道）
+
+Qwen Code 基于 Remotion（一个用 React 做视频的库），可以用代码生成专业演示视频。
+
+比如你要做一个产品介绍视频：
+
+1. 安装 Remotion 相关技能
+2. 写好脚本和分镜描述
+3. 让它生成视频代码
+4. 渲染输出
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/ZgaPle1nAI5-130zVv4yObnskE3ByRJYnlWABtfZwH4.mp4" controls></video>
+
+**适合场景：**
+
+- 课程项目答辩视频
+- 创新创业比赛路演
+- 社团活动宣传
+- 个人 Vlog 自动化生成
+
+Remotion 的优势是你可以用 React 组件的方式做视频，支持动画、转场、字幕、音频剪辑，还能版本控制（没错，视频也能用 Git 管理，这点真的很酷）。
+
+## 如何开始使用？
+
+1. 在百炼控制台获取 API Key
+2. 下载 Qwen Code，并使用 `qwen` 启动
+
+```bash
+# Linux/macOS
+curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
+
+# Windows
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat
+```
+
+3. 输入 `/auth`，选择「Alibaba Cloud Coding Plan」，粘贴 API Key
+4. 用 `/model` 选择模型，开搞！
+
+Qwen Code 有个技能市场（类似 VS Code 的插件市场），里面有各种现成的技能包，使用 `/extensions` 命令就能选择安装扩展，你也可以探索更多插件和技能。
+
+别一上来就想搞个大项目。先从简单的场景开始，比如：
+
+- 让 AI 帮你写一个 Hello World 网页
+- 让它帮你解释一段看不懂的代码
+- 让它帮你生成一个课程的笔记模板
+
+熟悉了再逐步尝试更复杂的任务。
+
+（我当初就是这么过来的，hhh）
+
+## 适合大学生的技能包推荐
+
+根据我的使用经验，这几个技能包对大学生特别有用：
+
+| 技能包                       | 用途                | 适合专业       |
+| ------------------------- | ----------------- | ---------- |
+| `skill-creator`           | 根据标准创建技能，创建属于你的技能 | 所有专业       |
+| `find-skills`             | 发现和安装新技能          | 所有专业       |
+| `react-native-design`     | 快速生成 React 网页     | 计算机、设计、新媒体 |
+| `web-component-design`    | 根据截图复刻网页          | 所有专业       |
+| `remotion-best-practices` | 用代码生成视频           | 新闻、传播、计算机  |
+
+安装方法：
+
+```bash
+npx skills add <技能包名称> -g
+```
+
+## 一些使用建议
+
+1. **别完全依赖 AI**。它是工具，不是替代品。代码还是要自己看懂，作业还是要自己理解。
+2. **从模仿开始**。看到别人用某个技能做出了好东西，先模仿他的 prompt，再逐步调整成自己的风格。
+3. **善用技能市场**。你想到的大部分需求，可能都已经有人做了技能包。先搜索再用，别重复造轮子。
+4. **记录你的 prompt**。好用的 prompt 记下来，下次可以直接复用或者微调。
+5. **分享你的作品**。做出好东西后，可以发到 GitHub、知乎、小红书，既能积累作品，也能认识同好。
+
+## 写在最后
+
+AI 编程工具不是要取代你，而是帮你把时间花在更有价值的地方。
+
+调 CSS 到头秃的时间，可以用来多读几篇论文；剪视频剪到凌晨的时间，可以用来准备面试；配环境配一天的时间，可以用来学习核心算法。
+
+工具就在那里，用不用看你自己。但至少，现在你多了一个选项。
+
+（希望这些经验对你有帮助，朋友们）
