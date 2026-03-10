@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Play, Clock, ArrowRight, Volume2, VolumeX, Sparkles } from "lucide-react";
+import { Play, Clock, ArrowRight, Volume2, VolumeX, Sparkles, Copy, Check, Terminal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -20,9 +20,10 @@ export interface Video {
   videoUrl: string;
   duration?: string;
   category: string;
-  difficulty?: "beginner" | "intermediate" | "advanced";
+  difficulty?: string;
   featured?: boolean;
   link?: string;
+  command?: string;
 }
 
 export interface Category {
@@ -31,7 +32,7 @@ export interface Category {
 }
 
 export interface DifficultyLevel {
-  id: "beginner" | "intermediate" | "advanced";
+  id: string;
   label: string;
   color: string;
 }
@@ -75,7 +76,7 @@ const DifficultyBadge = ({
   difficulty,
   levels,
 }: {
-  difficulty?: "beginner" | "intermediate" | "advanced";
+  difficulty?: string;
   levels: DifficultyLevel[];
 }) => {
   if (!difficulty) return null;
@@ -88,6 +89,46 @@ const DifficultyBadge = ({
     >
       {level.label}
     </span>
+  );
+};
+
+/* ─── Copyable Code Block ─── */
+
+const CopyableCodeBlock = ({ command }: { command: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
+      navigator.clipboard.writeText(command).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    },
+    [command]
+  );
+
+  return (
+    <div
+      className="mt-3 flex items-center gap-1.5 rounded-md bg-muted/60 dark:bg-muted/30 px-2.5 py-1.5 border border-border/40"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <code className="flex-1 text-[11px] font-mono text-muted-foreground truncate select-all">
+        {command}
+      </code>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="shrink-0 w-6 h-6 rounded flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted active:scale-[0.95] transition-all duration-150"
+        aria-label="Copy command"
+      >
+        {copied ? (
+          <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+        ) : (
+          <Copy className="w-3 h-3" />
+        )}
+      </button>
+    </div>
   );
 };
 
@@ -217,12 +258,12 @@ const FeatureVideoCard = ({
 }) => (
   <button
     type="button"
-    className={`group cursor-pointer text-left w-full overflow-hidden rounded-xl border border-border/50 bg-card hover:border-border transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] active:scale-[0.99] ${
+    className={`group cursor-pointer text-left w-full h-full flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card hover:border-border transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] active:scale-[0.99] ${
       variant === "wide" ? "col-span-1 md:col-span-2" : ""
     }`}
     onClick={onClick}
   >
-    <div className="relative aspect-video overflow-hidden">
+    <div className="relative aspect-video overflow-hidden shrink-0">
       <img
         src={video.thumbnail}
         alt={video.title}
@@ -244,7 +285,7 @@ const FeatureVideoCard = ({
         </div>
       )}
     </div>
-    <div className="p-4 md:p-5">
+    <div className="p-4 md:p-5 flex flex-col flex-1">
       <div className="flex flex-wrap items-center gap-1.5 mb-2">
         <Badge
           variant="secondary"
@@ -253,12 +294,13 @@ const FeatureVideoCard = ({
           {video.category}
         </Badge>
       </div>
-      <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors line-clamp-2 mb-1.5">
+      <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors line-clamp-1 mb-1.5">
         {video.title}
       </h3>
       <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 leading-relaxed">
         {video.description}
       </p>
+      {video.command && <CopyableCodeBlock command={video.command} />}
     </div>
   </button>
 );
@@ -278,10 +320,10 @@ const ScenarioVideoCard = ({
 }) => (
   <button
     type="button"
-    className="group cursor-pointer text-left w-full overflow-hidden rounded-xl border border-border/50 bg-card hover:border-border transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] active:scale-[0.99]"
+    className="group cursor-pointer text-left w-full h-full flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card hover:border-border transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] active:scale-[0.99]"
     onClick={onClick}
   >
-    <div className="relative aspect-video overflow-hidden">
+    <div className="relative aspect-video overflow-hidden shrink-0">
       <img
         src={video.thumbnail}
         alt={video.title}
@@ -303,21 +345,22 @@ const ScenarioVideoCard = ({
         </div>
       )}
     </div>
-    <div className="p-4 md:p-5">
+    <div className="p-4 md:p-5 flex flex-col flex-1">
       <div className="flex flex-wrap items-center gap-1.5 mb-2">
         <DifficultyBadge
           difficulty={video.difficulty}
           levels={difficultyLevels}
         />
       </div>
-      <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors line-clamp-2 mb-1.5">
+      <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors line-clamp-1 mb-1.5">
         {video.title}
       </h3>
       <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 leading-relaxed">
         {video.description}
       </p>
+      {video.command && <CopyableCodeBlock command={video.command} />}
       {video.link && (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors mt-3">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors mt-auto pt-3">
           {texts.viewTutorial}
           <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
         </span>
