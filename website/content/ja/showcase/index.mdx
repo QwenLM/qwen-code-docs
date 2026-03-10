@@ -1,147 +1,348 @@
 import { VideoShowcase } from '@/components/video-showcase'
 
-export const videos = [
+{/* ─── 第1層：クイックスタート ヒーロービデオ ─── */}
 
-  {
-    title: "Qwen Code の紹介",
-    description: "Qwen Code の主要機能と利点、およびこの AI プログラミングアシスタントを使い始める方法について学びます。",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000008149/O1CN01s4jvEt2A4IeyzthUR_!!6000000008149-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/csQymc4NChpT34XHza_UH9lB65SM3DCDLe7tuXZWtDk.mp4",
-    category: "Getting Started",
-
-  },
-
-  {
-    title: "YouTube 動画をブログ記事に変換",
-    description: "Qwen Code と SOP スキルを使用して YouTube 動画をブログ記事に変換する方法を学びます。",
-    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
-    category: "Features",
-  },
-
-  {
-    title: "VS Code との統合",
-    description: "VS Code で Qwen Code 拡張機能を設定して使用する方法をご紹介します。",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005426/O1CN01XuZxfE1pxAACIE5Yz_!!6000000005426-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/WxcdoDX2cDSWtHJKAcU_O5zWE9mz3odG76vArAHNg94.mp4",
-    duration: "4:50",
-    category: "Tutorials",
-  },
-
-  {
-    title: "Remotion スキル",
-    description: "Remotion スキルと Qwen Code を使用して動画を作成する方法を学びます。",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005610/O1CN01Q0KFCs1rJR3DOBCmL_!!6000000005610-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/Q7xsDoKLjuSPX867e8wlWtk0U5c7M9_F7ljsuPJrhQQ.mp4",
-    category: "Advanced",
-  },
-
-  {
-    title: "言語を切り替える方法",
-    description: "Qwen Code で UI と出力言語を切り替える方法",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/TXmxJiG2GeXT3l46VhPMEoVb8B1bdN5Pe0Up0HhOCuk.mp4",
-    category: "Tutorials",
-  },
-
-  {
-    title: "Websearch の使い方",
-    description: "Qwen Code にウェブコンテンツを検索させる方法",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000001227/O1CN01WiWHUu1Kw15wzjjYI_!!6000000001227-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/xJUnYWDVs5Z_L3yhZhojGcZ905gRxglqKwab-o5iR64.mp4",
-    category: "Tutorials",
-  },
-
-  {
-    title: "Skills(beta) の起動方法",
-    description: "Qwen Code で Skills 機能を起動する",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000002514/O1CN01I26Lji1URSpc4sO1g_!!6000000002514-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/VL2ZIdMeoOiUEu2kn_ibVpKfqp0uOAUQLo9LRRrf7FU.mp4",
-    category: "Tutorials",
-  },
-
-  {
-    title: "すばやく Web Todo アプリを作成",
-    description: "Qwen Code を使って一言で Web Todo アプリを作成する方法",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006895/O1CN01Qkt2Xj20nxzmzJ1c8_!!6000000006895-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/cU4cykBX09onq6NZRj7JUg8n7oZEcx3o1T3H4rCyie4.mp4",
-    category: "Getting Started",
-  },
-  {
-    title: "一言でコンテンツを作成",
-    description: "Qwen Code に書く内容を伝えるだけで、ファイルに直接書き込んでくれます。コピー＆ペーストの手間が省けます。",
-    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003593/O1CN0139ueiV1cPeBczAQyA_!!6000000003593-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/3slFKTQTxaEklF6zhnsDocfaWGYmYVsH3hIuj3YWBVg.mp4",
-    category: "Getting Started",
-  },
-  {
-    title: "Markdown 形式を公式アカウント形式に変換するローカルアプリを構築",
-    description: "コンテンツを書いたらそのまま公式アカウントにコピーでき、再排版の手間が省けます。",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000000334/O1CN01OHySgE1EL1PN5I57Q_!!6000000000334-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/cvOTiSr2N0nuAcabN2bvO_xf4PAin8lGe6T7J3Frmdw.mp4",
-    category: "Getting Started",
-  },
-  {
-    title: "Web ページのスクリーンショットを 1:1 で再現",
-    description: "気に入った Web ページがあればスクリーンショットを撮って、Qwen Code にワンクリックで再現させましょう。",
-    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000000210/O1CN01AIRuJB1DQEIQ2Y9gR_!!6000000000210-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/DSOMEumHGNqo4J4Q7Ky1IjPNiIt2fA25fyPiXUy-XYs.mp4",
-    category: "Getting Started",
-  },
-
-  {
-    title: "MCP で Nano Banana 描画に接続",
-    description: "Qwen Code の MCP 機能を通じて、Nano Banana に接続して手描き図を作成",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005269/O1CN01Fls9dH1onFzc47Sj6_!!6000000005269-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/qFM-bUI_bRYN3imXG5j_X7jGDym-SR4CLnqz9Bdvjzc.mp4",
-    category: "Features",
-  },
-  {
-    title: "MCP で Qwen Image 描画に接続",
-    description: "Qwen Code の MCP 機能を通じて、Qwen Image に接続して手描き図を作成",
-    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000008081/O1CN01uHNibY29Z9jIgi9rt_!!6000000008081-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/1spSSUJjNkTdj8Vtkdj4pNimLIgFie_qdcTj68tqzow.mp4",
-    category: "Features",
-  },
-  {
-    title: "PDF Skills で PDF ファイルをテキストコンテンツにスキャン",
-    description: "Qwen Code で PDF Skill を使用して、コンテンツを markdown、docx などのテキスト形式に変換",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005081/O1CN01S8JceC1nP9X4IFO3F_!!6000000005081-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/WL03NhCh_KESIQb01I5MyEWU520pZfQidVOnWOY6GMY.mp4",
-    category: "Features",
-  },
-  {
-    title: "Skills で自分の日記を分析し年次サマリーを作成",
-    description: "自分専用の年次振り返り Skill をカスタマイズし、自分のドキュメント/日記を要約・振り返り",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000007785/O1CN01ztofv327NaUircVTF_!!6000000007785-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/wEliIHxqPaiDKDX3fIN2RMqW8TWncR5OaWUfNuGu1go.mp4",
-    category: "Features",
-  },
-  {
-    title: "Skills で Obsidian に視覚化ホワイトボードノートを作成",
-    description: "Obsidian の jscanvas Skill を通じて、Qwen Code に視覚化ホワイトボードノートを作成させる",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000002190/O1CN01ojAaK41S34VS0J13Q_!!6000000002190-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/UTKnHl6GsUjxpfmque75_czEyWlGZVN9mbclTs6scik.mp4",
-    category: "Features",
-  },
-
-];
-
-export const categories = [
-  { id: "Getting Started", label: "入門ガイド" },
-  { id: "Features", label: "機能紹介" },
-  { id: "Tutorials", label: "チュートリアル" },
-  { id: "Advanced", label: "上級者向け" },
-];
-
-export const texts = {
-  title: "動画ショーケース",
-  subtitle: "動画デモで Qwen Code の強力な機能を探索しましょう",
-  featured: "おすすめ",
-  allVideos: "すべての動画",
-  all: "すべて",
-  close: "閉じる",
-  unsupportedVideo: "お使いのブラウザは動画タグをサポートしていません。",
+export const heroVideo = {
+  title: "Qwen Code の紹介",
+  description: "30秒で Qwen Code を知る：インストールから会話、最初のタスク完了まで。一言でアイデアを現実にする AI コーディングパートナー。",
+  thumbnail: "https://img.alicdn.com/imgextra/i4/6000000008149/O1CN01s4jvEt2A4IeyzthUR_!!6000000008149-0-tbvideo.jpg",
+  videoUrl: "https://cloud.video.taobao.com/vod/csQymc4NChpT34XHza_UH9lB65SM3DCDLe7tuXZWtDk.mp4",
+  category: "Quick Start",
 };
 
-<VideoShowcase videos={videos} categories={categories} texts={texts} />
+{/* ─── 第2層：機能デモビデオ ─── */}
+
+export const featureVideos = [
+  // ── 入門ガイド：インストール、設定、基本機能 ──
+  {
+    title: "スクリプトでワンクリックインストール",
+    description: "スクリプトコマンドで Qwen Code を素早くインストール、数秒で環境設定完了。",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4",
+    category: "Guide",
+    command: "# Linux/macOS \ncurl -fsSL https://qwen-code.oss-cn-beijing.aliyuncs.com/install.sh | bash -s -- --install \n\n# Windows (PowerShell)\ncurl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat",
+  },
+  {
+    title: "最初の会話を始める",
+    description: "インストール完了後、Qwen Code との最初の AI 会話を開始。",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4",
+    category: "Guide",
+    command: "what is qwen code? Please give me a brief introduction about it.",
+  },
+  {
+    title: "API 設定",
+    description: "API Key とモデルパラメータを設定し、AI コーディング体験をカスタマイズ。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/JNsallWn_HIKsRrl5vapZ0N0TYGFNzS_NuFpyHk4WJY.mp4",
+    category: "Guide",
+  },
+  {
+    title: "百炼 Coding Plan モード",
+    description: "百炼 Coding Plan を設定し、マルチモデル選択で複雑なタスクの完成品質を向上。",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png",
+    videoUrl: "https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4",
+    category: "Guide",
+  },
+  {
+    title: "VS Code 統合インターフェース",
+    description: "VS Code での Qwen Code の完全なインターフェースを紹介、各機能エリアのレイアウトを確認。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpghttps://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4",
+    category: "Guide",
+  },
+  {
+    title: "認証ログイン",
+    description: "Qwen Code の認証プロセスを理解し、素早くアカウントログインを完了。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png",
+    category: "Guide",
+    command: "/auth",
+  },
+  {
+    title: "Headless モード",
+    description: "GUI なしの環境で Qwen Code を使用、リモートサーバーや CI/CD シナリオに最適。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif",
+    category: "Guide",
+    command: "qwen --p 'what is qwen code?'",
+  },
+  {
+    title: "@file 参照機能",
+    description: "会話中に @file でプロジェクトファイルを参照し、AI に正確なコンテキスト理解を提供。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png",
+    category: "Guide",
+    command: "@file ./src/main.py",
+  },
+  {
+    title: "言語切り替え",
+    description: "Qwen Code で UI と出力言語を切り替え、多言語インタラクションを実現。",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4",
+    category: "Guide",
+    command: "/language ui zh-CN",
+  },
+  {
+    title: "セッション復元",
+    description: "中断した会話をいつでも復元、コンテキストや進捗を失うことなく再開。",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4",
+    category: "Features",
+    command: "qwen --resume",
+  },
+  {
+    title: "Ctrl(Cmd)+Y クイックリトライ",
+    description: "AI の回答に満足できない時、Ctrl(Cmd)+Y でワンクリックリトライしてより良い結果を取得。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01YtZAzm1ShNMbf8YTt_!!6000000002278-2-tps-1694-956.png",
+    category: "Guide",
+  },
+  {
+    title: "コピー文字最適化",
+    description: "最適化されたコードコピー体験、コードスニペットの正確な選択とコピー。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN01rFSm7o1hoRiIy0xrP_!!6000000004324-1-tps-1280-720.gif",
+    category: "Guide",
+  },
+  {
+    title: "Agents 設定ファイル",
+    description: "Agents MD ファイルで AI の動作をカスタマイズし、プロジェクト規範に適応させる。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png",
+    category: "Guide",
+  },
+
+  // ── コア機能：重要な特性 ──
+  {
+    title: "Web Search",
+    description: "Qwen Code にウェブ検索させ、リアルタイム情報でコーディングワークフローを支援。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/FVVvz922HnDIY_STwpKaBGBb1u2JXOCdUCOL36A8WW4.mp4",
+    category: "Features",
+  },
+  {
+    title: "Plan モード + Web Search",
+    description: "Plan モードで Web Search を組み合わせ、先に検索してから計画し、タスクの精度を向上。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png",
+    category: "Features",
+  },
+  {
+    title: "Insight データ分析",
+    description: "個人の AI 使用レポートを表示し、コーディング効率とコラボレーションデータを把握。",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000006496/O1CN01KNUXtG1xrDy75PPA5_!!6000000006496-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/a5X9O6PsdDdmXVqtHdjlzZ97mRNPrqroKO5cf4V71XM.mp4",
+    category: "Features",
+    command: "/insight",
+  },
+  {
+    title: "ターミナル出力キャプチャ スクリーンショット/GIF",
+    description: "製品デモに必須！AI に機能テストを実行させ、ターミナル出力を自動キャプチャ。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005887/O1CN01hBRUux1tMIlTGx2Ym_!!6000000005887-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/eaDeo1zyE3n6VG9QscGbOLWzzY1dGknK8YNbu3srV9w.mp4",
+    category: "Features",
+    command: "/skills terminal-capture",
+  },
+  {
+    title: "MCP 画像生成",
+    description: "MCP 経由で画像生成サービスに接続し、自然言語で AI 画像作成を駆動。",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000008040/O1CN01S2cxYL29GNUmrvmzH_!!6000000008040-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/gQg8C_5f5MGoZE9YKCyKmHlWAgXZSTMbN8WSoN7crbc.mp4",
+    category: "Features",
+  },
+  {
+    title: "クリップボード画像貼り付け",
+    description: "クリップボードの画像を会話に直接貼り付け、AI が即座に画像内容を理解。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png",
+    category: "Features",
+  },
+  {
+    title: "画像認識",
+    description: "Qwen Code は画像内容を読み取り理解し、視覚関連のコーディングタスクを支援。",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000006844/O1CN011X8nmv20QbnWSqSfJ_!!6000000006844-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/1wsWdUwqhw7-x6Hx5W_qQEI58kPw_kVSPS23AIM4PqQ.mp4",
+    category: "Features",
+  },
+  {
+    title: "GitHub コマンド統合",
+    description: "Qwen Code 内で GitHub 操作を直接実行し、リポジトリと PR を管理。",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
+    videoUrl: "https://cloud.video.taobao.com/vod/wWqieOtAazt1jJJdyZnxP0ZWYz4fuV6Ogb2wOvb8bBg.mp4",
+    category: "Features",
+  },
+  {
+    title: "LSP インテリセンス",
+    description: "LSP プロトコルを統合し、正確なコード補完、ナビゲーション、診断機能を提供。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png",
+    category: "Features",
+  },
+  {
+    title: "Agents パネル",
+    description: "Agents パネルを表示し、異なる AI Agent 設定を管理・切り替え。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png",
+    category: "Features",
+  },
+  {
+    title: "複数形式での会話履歴エクスポート",
+    description: "会話記録をエクスポート、Markdown、JSON などの形式をサポート。",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4",
+    category: "Features",
+    command: "/export html <session id>",
+  },
+  // ── Skills ──
+  {
+    title: "プロンプトで Skills をインストール",
+    description: "会話中に Qwen Code に必要な Skill のインストールを直接指示、即座に使用可能。",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/P_mgcdkvU0i46jSQsESpuCOFOwwJy-V2j2iXx6ifZms.mp4",
+    category: "Skills",
+    command: "Please first check if find-skills exists, if not, please use npx skills add https://github.com/vercel-labs/skills --skill find-skills to install this skill, then help me search for and install the skill <skill name>",
+  },
+  {
+    title: "フォルダで Skills をインストール",
+    description: "Skill ファイルを指定ディレクトリに配置すると、Qwen Code が自動的に検出してロード。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005167/O1CN01agk2kT1o2XbAcYSLV_!!6000000005167-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/U3CQ2_n-qK5ag5PhWqivewZZDyxBvo-SxJdu57gyr9w.mp4",
+    category: "Skills",
+  },
+  {
+    title: "Skills パネル",
+    description: "Skills パネルで既存の Skill 拡張を閲覧、インストール、管理。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01xkzvoE1fomm8znzBG_!!6000000004054-2-tps-1694-952.png",
+    category: "Skills",
+    command: "/skills",
+  },
+  // ── SDK ──
+  {
+    title: "SDK インストール",
+    description: "SDK を通じて Qwen Code を開発ツールチェーンに素早く統合。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN014XBWSf1x1TDMSTumq_!!6000000006383-1-tps-1280-720.gif",
+    category: "SDK",
+  },
+];
+
+{/* ─── 第3層：シナリオ実践ビデオ ─── */}
+
+export const scenarioVideos = [
+  {
+    title: "YouTube 動画をブログ記事に変換",
+    description: "Qwen Code と SOP スキルを使用して YouTube 動画をブログ記事に変換する方法を学ぶ。",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
+    category: "Scenarios",
+    difficulty: "office",
+  },
+  {
+    title: "一言でお気に入りのウェブサイトを複製",
+    description: "ウェブサイトのスクリーンショットを Qwen Code に渡し、ページ構造を分析してコードを生成。",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpghttps://img.alicdn.com/imgextra/i1/6000000005112/O1CN01CDiWA71ndLoafEhqx_!!6000000005112-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4",
+    category: "Scenarios",
+    difficulty: "coding",
+  },
+  {
+    title: "一言でファイルに書き込み",
+    description: "Qwen Code に書く内容を伝えるだけで、ファイルの作成と書き込みを直接実行。手動操作不要。",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003593/O1CN0139ueiV1cPeBczAQyA_!!6000000003593-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/ToffPMLiVnt3c_HDiisOPcfaWGYmYVsH3hIuj3YWBVg.mp4",
+    category: "Scenarios",
+    difficulty: "office",
+  },
+  {
+    title: "デスクトップファイルの整理",
+    description: "一言で Qwen Code にデスクトップファイルを自動整理させ、種類別にフォルダに分類。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4",
+    category: "Scenarios",
+    difficulty: "office",
+  },
+  {
+    title: "Remotion 動画制作（プロンプト方式）",
+    description: "自然言語で説明し、Remotion Skill を使用してコード生成による動画コンテンツを作成。",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4",
+    category: "Scenarios",
+    difficulty: "advanced",
+    command: "npx skills add nicepkg/agent-skills@remotion-best-practices",
+  },
+  {
+    title: "Remotion 動画制作（ウェブ方式）",
+    description: "ウェブインターフェースと Remotion Skill を組み合わせ、視覚的に動画を作成・プレビュー。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005167/O1CN01agk2kT1o2XbAcYSLV_!!6000000005167-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/TGbVMvWkRJxgPeJFl04RCgZZDyxBvo-SxJdu57gyr9w.mp4",
+    category: "Scenarios",
+    difficulty: "advanced",
+    command: "npx skills add nicepkg/agent-skills@remotion-best-practices",
+  },
+  {
+    title: "PR Review 自動化",
+    description: "Qwen Code に Pull Request を自動レビューさせ、潜在的な問題を発見し改善提案を提供。",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
+    videoUrl: "https://cloud.video.taobao.com/vod/Dp-BSYguvTThDB9MmIQhmEZWYz4fuV6Ogb2wOvb8bBg.mp4",
+    category: "Scenarios",
+    difficulty: "coding",
+  },
+  {
+    title: "GitHub Issues の修正",
+    description: "Qwen Code に Issue の説明を読ませ、問題を自動的に特定し修正コードを生成。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png",
+    videoUrl: "https://cloud.video.taobao.com/vod/eGU3CQqszEGm87haajzyPplZDtHaFeNNoJ412hgkKYI.mp4",
+    category: "Scenarios",
+    difficulty: "coding",
+  },
+  {
+    title: "一言で美しい個人履歴書サイトを構築",
+    description: "一言で Qwen Code に美しい個人履歴書ウェブサイトを構築させる。",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/Ahk8wwloIrrtO65mpMfApVTnQpUM2QJ3qRg3R0SPnrs.mp4",
+    category: "Scenarios",
+    difficulty: "coding",
+  },
+];
+
+{/* ─── 機能カテゴリ ─── */}
+
+export const featureCategories = [
+  { id: "Guide", label: "入門ガイド" },
+  { id: "Features", label: "コア機能" },
+  { id: "Skills", label: "Skills" },
+  { id: "SDK", label: "SDK" },
+];
+
+{/* ─── 難易度レベル ─── */}
+
+export const difficultyLevels = [
+  { id: "office", label: "オフィス", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" },
+  { id: "coding", label: "コーディング", color: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400" },
+  { id: "advanced", label: "上級", color: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-400" },
+];
+
+{/* ─── テキスト ─── */}
+
+export const texts = {
+  pageTitle: "動画ショーケース",
+  pageSubtitle: "クイックスタートからディープダイブまで、動画デモで Qwen Code の全機能を探索",
+  heroSectionTitle: "Quick Start",
+  heroSectionSubtitle: "30秒で Qwen Code を知る",
+  heroCta: "今すぐインストール",
+  latestSectionTitle: "最新動画",
+  latestSectionSubtitle: "最近追加されたデモ",
+  featureSectionTitle: "機能デモ",
+  featureSectionSubtitle: "Qwen Code のコア機能を探索",
+  scenarioSectionTitle: "シナリオ実践",
+  scenarioSectionSubtitle: "あなたのユースケースを見つける",
+  featureTabLabel: "コア機能",
+  scenarioTabLabel: "シナリオ実践",
+  allFilter: "すべて",
+  allDifficulties: "すべてのシナリオ",
+  emptyState: "このカテゴリにはまだ動画がありません。コンテンツは随時更新中です。",
+  close: "閉じる",
+  unsupportedVideo: "お使いのブラウザは動画タグをサポートしていません。",
+  viewTutorial: "詳細チュートリアルを見る",
+  moreComingSoon: "さらに多くのシナリオが近日公開予定です。ショーケースの投稿を歓迎します。",
+  submitCase: "GitHub でショーケースを投稿する",
+};
+
+<VideoShowcase
+  heroVideo={heroVideo}
+  featureVideos={featureVideos}
+  scenarioVideos={scenarioVideos}
+  featureCategories={featureCategories}
+  difficultyLevels={difficultyLevels}
+  texts={texts}
+/>

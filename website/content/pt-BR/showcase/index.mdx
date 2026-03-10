@@ -1,147 +1,348 @@
 import { VideoShowcase } from '@/components/video-showcase'
 
-export const videos = [
+{/* ─── Camada 1: Vídeo principal de início rápido ─── */}
 
-  {
-    title: "Introdução ao Qwen Code",
-    description: "Conheça os recursos principais e vantagens do Qwen Code, e como começar a usar este assistente de programação com IA.",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000008149/O1CN01s4jvEt2A4IeyzthUR_!!6000000008149-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/csQymc4NChpT34XHza_UH9lB65SM3DCDLe7tuXZWtDk.mp4",
-    category: "Getting Started",
-
-  },
-
-  {
-    title: "Converter vídeos do YouTube em postagens de blog",
-    description: "Aprenda a usar o Qwen Code e as skills SOP para converter vídeos do YouTube em postagens de blog.",
-    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
-    category: "Features",
-  },
-
-  {
-    title: "Integração com VS Code",
-    description: "Saiba como configurar e usar a extensão do Qwen Code no VS Code.",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005426/O1CN01XuZxfE1pxAACIE5Yz_!!6000000005426-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/WxcdoDX2cDSWtHJKAcU_O5zWE9mz3odG76vArAHNg94.mp4",
-    duration: "4:50",
-    category: "Tutorials",
-  },
-
-  {
-    title: "Skill Remotion",
-    description: "Aprenda a usar a skill Remotion e o Qwen Code para criar vídeos.",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005610/O1CN01Q0KFCs1rJR3DOBCmL_!!6000000005610-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/Q7xsDoKLjuSPX867e8wlWtk0U5c7M9_F7ljsuPJrhQQ.mp4",
-    category: "Advanced",
-  },
-
-  {
-    title: "Como alternar idiomas?",
-    description: "Como alternar o idioma da interface e saída no Qwen Code",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/TXmxJiG2GeXT3l46VhPMEoVb8B1bdN5Pe0Up0HhOCuk.mp4",
-    category: "Tutorials",
-  },
-
-  {
-    title: "Como usar o Websearch?",
-    description: "Como fazer o Qwen Code pesquisar conteúdo na web",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000001227/O1CN01WiWHUu1Kw15wzjjYI_!!6000000001227-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/xJUnYWDVs5Z_L3yhZhojGcZ905gRxglqKwab-o5iR64.mp4",
-    category: "Tutorials",
-  },
-
-  {
-    title: "Como ativar Skills (beta)?",
-    description: "Ativar o recurso de Skills no Qwen Code",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000002514/O1CN01I26Lji1URSpc4sO1g_!!6000000002514-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/VL2ZIdMeoOiUEu2kn_ibVpKfqp0uOAUQLo9LRRrf7FU.mp4",
-    category: "Tutorials",
-  },
-
-  {
-    title: "Criar rapidamente um aplicativo Todo web",
-    description: "Como criar um aplicativo Todo web com uma única frase no Qwen Code",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006895/O1CN01Qkt2Xj20nxzmzJ1c8_!!6000000006895-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/cU4cykBX09onq6NZRj7JUg8n7oZEcx3o1T3H4rCyie4.mp4",
-    category: "Getting Started",
-  },
-  {
-    title: "Criar conteúdo com uma única frase",
-    description: "Diga ao Qwen Code o que escrever e ele salvará diretamente no arquivo, sem a necessidade de copiar e colar",
-    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003593/O1CN0139ueiV1cPeBczAQyA_!!6000000003593-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/3slFKTQTxaEklF6zhnsDocfaWGYmYVsH3hIuj3YWBVg.mp4",
-    category: "Getting Started",
-  },
-  {
-    title: "Criar um aplicativo local para converter Markdown para formato de conta oficial",
-    description: "Após escrever o conteúdo, copie diretamente para a conta oficial, sem a necessidade de refazer a formatação",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000000334/O1CN01OHySgE1EL1PN5I57Q_!!6000000000334-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/cvOTiSr2N0nuAcabN2bvO_xf4PAin8lGe6T7J3Frmdw.mp4",
-    category: "Getting Started",
-  },
-  {
-    title: "Replicação 1:1 de capturas de tela de sites",
-    description: "Veja uma página da web que goste, capture a tela e deixe o Qwen Code replicar com um clique",
-    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000000210/O1CN01AIRuJB1DQEIQ2Y9gR_!!6000000000210-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/DSOMEumHGNqo4J4Q7Ky1IjPNiIt2fA25fyPiXUy-XYs.mp4",
-    category: "Getting Started",
-  },
-
-  {
-    title: "Acesso MCP ao desenho Nano Banana",
-    description: "Acesse o desenho manual Nano Banana através da funcionalidade MCP do Qwen Code",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005269/O1CN01Fls9dH1onFzc47Sj6_!!6000000005269-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/qFM-bUI_bRYN3imXG5j_X7jGDym-SR4CLnqz9Bdvjzc.mp4",
-    category: "Features",
-  },
-  {
-    title: "Acesso MCP ao desenho Qwen Image",
-    description: "Acesse o desenho manual Qwen Image através da funcionalidade MCP do Qwen Code",
-    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000008081/O1CN01uHNibY29Z9jIgi9rt_!!6000000008081-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/1spSSUJjNkTdj8Vtkdj4pNimLIgFie_qdcTj68tqzow.mp4",
-    category: "Features",
-  },
-  {
-    title: "Escanear arquivos PDF em texto com PDF Skills",
-    description: "Use o PDF Skill com o Qwen Code para converter conteúdo em formatos de texto como markdown e docx",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005081/O1CN01S8JceC1nP9X4IFO3F_!!6000000005081-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/WL03NhCh_KESIQb01I5MyEWU520pZfQidVOnWOY6GMY.mp4",
-    category: "Features",
-  },
-  {
-    title: "Analisar diários e fazer resumo anual com Skills",
-    description: "Crie uma Skill personalizada para revisão anual e faça resumos de seus documentos/diários",
-    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000007785/O1CN01ztofv327NaUircVTF_!!6000000007785-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/wEliIHxqPaiDKDX3fIN2RMqW8TWncR5OaWUfNuGu1go.mp4",
-    category: "Features",
-  },
-  {
-    title: "Criar notas de quadro branco visual no Obsidian com Skills",
-    description: "Use a skill jscanvas do Obsidian para que o Qwen Code crie notas de quadro branco visual para você",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000002190/O1CN01ojAaK41S34VS0J13Q_!!6000000002190-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/UTKnHl6GsUjxpfmque75_czEyWlGZVN9mbclTs6scik.mp4",
-    category: "Features",
-  },
-
-];
-
-export const categories = [
-  { id: "Getting Started", label: "Primeiros Passos" },
-  { id: "Features", label: "Recursos" },
-  { id: "Tutorials", label: "Tutoriais" },
-  { id: "Advanced", label: "Avançado" },
-];
-
-export const texts = {
-  title: "Showcase de Vídeos",
-  subtitle: "Explore os poderosos recursos do Qwen Code através de demonstrações em vídeo",
-  featured: "Destaque",
-  allVideos: "Todos os vídeos",
-  all: "Todos",
-  close: "Fechar",
-  unsupportedVideo: "Seu navegador não suporta a tag de vídeo.",
+export const heroVideo = {
+  title: "Introdução ao Qwen Code",
+  description: "Conheça o Qwen Code em 30 segundos: da instalação à conversa até a conclusão da sua primeira tarefa. Seu parceiro de codificação IA que transforma ideias em realidade com uma única frase.",
+  thumbnail: "https://img.alicdn.com/imgextra/i4/6000000008149/O1CN01s4jvEt2A4IeyzthUR_!!6000000008149-0-tbvideo.jpg",
+  videoUrl: "https://cloud.video.taobao.com/vod/csQymc4NChpT34XHza_UH9lB65SM3DCDLe7tuXZWtDk.mp4",
+  category: "Quick Start",
 };
 
-<VideoShowcase videos={videos} categories={categories} texts={texts} />
+{/* ─── Camada 2: Vídeos de demonstração de funcionalidades ─── */}
+
+export const featureVideos = [
+  // ── Guia de início: Instalação, Configuração, Funções básicas ──
+  {
+    title: "Instalação com script em um clique",
+    description: "Instale rapidamente o Qwen Code via comando de script, configuração do ambiente em segundos.",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4",
+    category: "Guide",
+    command: "# Linux/macOS \ncurl -fsSL https://qwen-code.oss-cn-beijing.aliyuncs.com/install.sh | bash -s -- --install \n\n# Windows (PowerShell)\ncurl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat",
+  },
+  {
+    title: "Inicie sua primeira conversa",
+    description: "Após a instalação, inicie sua primeira conversa IA com o Qwen Code.",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4",
+    category: "Guide",
+    command: "what is qwen code? Please give me a brief introduction about it.",
+  },
+  {
+    title: "Configurações de API",
+    description: "Configure a chave API e parâmetros do modelo para personalizar sua experiência de codificação IA.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/JNsallWn_HIKsRrl5vapZ0N0TYGFNzS_NuFpyHk4WJY.mp4",
+    category: "Guide",
+  },
+  {
+    title: "Modo Bailian Coding Plan",
+    description: "Configure o Bailian Coding Plan com seleção multi-modelo para melhorar a qualidade de tarefas complexas.",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png",
+    videoUrl: "https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4",
+    category: "Guide",
+  },
+  {
+    title: "Interface de integração VS Code",
+    description: "Apresentação completa da interface do Qwen Code no VS Code, explorando o layout de cada área funcional.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpghttps://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4",
+    category: "Guide",
+  },
+  {
+    title: "Autenticação e login",
+    description: "Conheça o processo de autenticação do Qwen Code e faça login rapidamente.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png",
+    category: "Guide",
+    command: "/auth",
+  },
+  {
+    title: "Modo Headless",
+    description: "Use o Qwen Code sem interface gráfica, ideal para servidores remotos e cenários CI/CD.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif",
+    category: "Guide",
+    command: "qwen --p 'what is qwen code?'",
+  },
+  {
+    title: "Referência @file",
+    description: "Referencie arquivos do projeto nas conversas via @file para dar à IA compreensão precisa do contexto.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png",
+    category: "Guide",
+    command: "@file ./src/main.py",
+  },
+  {
+    title: "Alternar idioma",
+    description: "Alterne o idioma da interface e saída no Qwen Code para interação multilíngue.",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4",
+    category: "Guide",
+    command: "/language ui zh-CN",
+  },
+  {
+    title: "Retomar sessão",
+    description: "Retome conversas interrompidas a qualquer momento sem perder contexto ou progresso.",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4",
+    category: "Features",
+    command: "qwen --resume",
+  },
+  {
+    title: "Ctrl(Cmd)+Y Repetição rápida",
+    description: "Não satisfeito com a resposta da IA? Use Ctrl(Cmd)+Y para repetir rapidamente e obter melhores resultados.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01YtZAzm1ShNMbf8YTt_!!6000000002278-2-tps-1694-956.png",
+    category: "Guide",
+  },
+  {
+    title: "Otimização de cópia",
+    description: "Experiência otimizada de cópia de código com seleção e cópia precisas de trechos de código.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN01rFSm7o1hoRiIy0xrP_!!6000000004324-1-tps-1280-720.gif",
+    category: "Guide",
+  },
+  {
+    title: "Arquivo de configuração Agents",
+    description: "Personalize o comportamento da IA através de arquivos Agents MD para adaptar aos padrões do seu projeto.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png",
+    category: "Guide",
+  },
+
+  // ── Funcionalidades principais ──
+  {
+    title: "Web Search",
+    description: "Deixe o Qwen Code pesquisar na web informações em tempo real para auxiliar seu fluxo de codificação.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/FVVvz922HnDIY_STwpKaBGBb1u2JXOCdUCOL36A8WW4.mp4",
+    category: "Features",
+  },
+  {
+    title: "Modo Plan + Web Search",
+    description: "Combine Web Search com o modo Plan — pesquise primeiro, planeje depois — para maior precisão nas tarefas.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png",
+    category: "Features",
+  },
+  {
+    title: "Insight Análise de dados",
+    description: "Visualize seu relatório pessoal de uso de IA para entender eficiência de codificação e dados de colaboração.",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000006496/O1CN01KNUXtG1xrDy75PPA5_!!6000000006496-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/a5X9O6PsdDdmXVqtHdjlzZ97mRNPrqroKO5cf4V71XM.mp4",
+    category: "Features",
+    command: "/insight",
+  },
+  {
+    title: "Captura de saída do terminal Screenshot/GIF",
+    description: "Essencial para demos de produto! A IA executa testes e captura automaticamente a saída do terminal.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005887/O1CN01hBRUux1tMIlTGx2Ym_!!6000000005887-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/eaDeo1zyE3n6VG9QscGbOLWzzY1dGknK8YNbu3srV9w.mp4",
+    category: "Features",
+    command: "/skills terminal-capture",
+  },
+  {
+    title: "Geração de imagens MCP",
+    description: "Conecte serviços de geração de imagens via MCP, controle a criação de imagens IA com linguagem natural.",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000008040/O1CN01S2cxYL29GNUmrvmzH_!!6000000008040-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/gQg8C_5f5MGoZE9YKCyKmHlWAgXZSTMbN8WSoN7crbc.mp4",
+    category: "Features",
+  },
+  {
+    title: "Colar imagem da área de transferência",
+    description: "Cole imagens da área de transferência diretamente nas conversas, a IA entende instantaneamente o conteúdo.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png",
+    category: "Features",
+  },
+  {
+    title: "Reconhecimento de imagens",
+    description: "O Qwen Code pode ler e entender conteúdo de imagens para auxiliar tarefas de codificação visuais.",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000006844/O1CN011X8nmv20QbnWSqSfJ_!!6000000006844-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/1wsWdUwqhw7-x6Hx5W_qQEI58kPw_kVSPS23AIM4PqQ.mp4",
+    category: "Features",
+  },
+  {
+    title: "Integração de comandos GitHub",
+    description: "Execute operações GitHub diretamente no Qwen Code para gerenciar repositórios e PRs.",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
+    videoUrl: "https://cloud.video.taobao.com/vod/wWqieOtAazt1jJJdyZnxP0ZWYz4fuV6Ogb2wOvb8bBg.mp4",
+    category: "Features",
+  },
+  {
+    title: "LSP IntelliSense",
+    description: "Protocolo LSP integrado para autocompletar código, navegação e diagnóstico precisos.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png",
+    category: "Features",
+  },
+  {
+    title: "Painel Agents",
+    description: "Visualize o painel Agents para gerenciar e alternar entre diferentes configurações de Agent IA.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png",
+    category: "Features",
+  },
+  {
+    title: "Exportar histórico de chat em múltiplos formatos",
+    description: "Exporte registros de conversas, suporta Markdown, JSON e outros formatos.",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4",
+    category: "Features",
+    command: "/export html <session id>",
+  },
+  // ── Skills ──
+  {
+    title: "Instalar Skills via prompt",
+    description: "Peça ao Qwen Code para instalar os Skills necessários diretamente na conversa — instale e use imediatamente.",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/P_mgcdkvU0i46jSQsESpuCOFOwwJy-V2j2iXx6ifZms.mp4",
+    category: "Skills",
+    command: "Please first check if find-skills exists, if not, please use npx skills add https://github.com/vercel-labs/skills --skill find-skills to install this skill, then help me search for and install the skill <skill name>",
+  },
+  {
+    title: "Instalar Skills via pasta",
+    description: "Coloque os arquivos Skill no diretório designado e o Qwen Code detecta e carrega automaticamente.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005167/O1CN01agk2kT1o2XbAcYSLV_!!6000000005167-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/U3CQ2_n-qK5ag5PhWqivewZZDyxBvo-SxJdu57gyr9w.mp4",
+    category: "Skills",
+  },
+  {
+    title: "Painel Skills",
+    description: "Navegue, instale e gerencie extensões Skill existentes através do painel Skills.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01xkzvoE1fomm8znzBG_!!6000000004054-2-tps-1694-952.png",
+    category: "Skills",
+    command: "/skills",
+  },
+  // ── SDK ──
+  {
+    title: "Instalação do SDK",
+    description: "Integre rapidamente o Qwen Code na sua cadeia de ferramentas de desenvolvimento via SDK.",
+    thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN014XBWSf1x1TDMSTumq_!!6000000006383-1-tps-1280-720.gif",
+    category: "SDK",
+  },
+];
+
+{/* ─── Camada 3: Vídeos de cenários práticos ─── */}
+
+export const scenarioVideos = [
+  {
+    title: "Converter vídeos do YouTube em posts de blog",
+    description: "Aprenda a usar o Qwen Code e skills SOP para converter vídeos do YouTube em artigos de blog.",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
+    category: "Scenarios",
+    difficulty: "office",
+  },
+  {
+    title: "Replicar seu site favorito em uma frase",
+    description: "Faça uma captura de tela de um site, o Qwen Code analisa a estrutura da página e gera o código.",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpghttps://img.alicdn.com/imgextra/i1/6000000005112/O1CN01CDiWA71ndLoafEhqx_!!6000000005112-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4",
+    category: "Scenarios",
+    difficulty: "coding",
+  },
+  {
+    title: "Escrever em arquivos com uma frase",
+    description: "Diga ao Qwen Code o que escrever — ele cria e escreve nos arquivos diretamente, sem trabalho manual.",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003593/O1CN0139ueiV1cPeBczAQyA_!!6000000003593-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/ToffPMLiVnt3c_HDiisOPcfaWGYmYVsH3hIuj3YWBVg.mp4",
+    category: "Scenarios",
+    difficulty: "office",
+  },
+  {
+    title: "Organizar arquivos da área de trabalho",
+    description: "Com uma frase, deixe o Qwen Code organizar automaticamente seus arquivos da área de trabalho por tipo em pastas.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4",
+    category: "Scenarios",
+    difficulty: "office",
+  },
+  {
+    title: "Criação de vídeo Remotion (método prompt)",
+    description: "Descreva em linguagem natural e use o Skill Remotion para gerar conteúdo de vídeo por código.",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4",
+    category: "Scenarios",
+    difficulty: "advanced",
+    command: "npx skills add nicepkg/agent-skills@remotion-best-practices",
+  },
+  {
+    title: "Criação de vídeo Remotion (método web)",
+    description: "Crie e pré-visualize vídeos visualmente através de uma interface web combinada com o Skill Remotion.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005167/O1CN01agk2kT1o2XbAcYSLV_!!6000000005167-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/TGbVMvWkRJxgPeJFl04RCgZZDyxBvo-SxJdu57gyr9w.mp4",
+    category: "Scenarios",
+    difficulty: "advanced",
+    command: "npx skills add nicepkg/agent-skills@remotion-best-practices",
+  },
+  {
+    title: "Revisão de PR automatizada",
+    description: "Deixe o Qwen Code revisar automaticamente Pull Requests, identificar problemas e sugerir melhorias.",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
+    videoUrl: "https://cloud.video.taobao.com/vod/Dp-BSYguvTThDB9MmIQhmEZWYz4fuV6Ogb2wOvb8bBg.mp4",
+    category: "Scenarios",
+    difficulty: "coding",
+  },
+  {
+    title: "Corrigir Issues do GitHub",
+    description: "Deixe o Qwen Code ler descrições de Issues, localizar problemas automaticamente e gerar código de correção.",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png",
+    videoUrl: "https://cloud.video.taobao.com/vod/eGU3CQqszEGm87haajzyPplZDtHaFeNNoJ412hgkKYI.mp4",
+    category: "Scenarios",
+    difficulty: "coding",
+  },
+  {
+    title: "Criar um belo site de currículo pessoal em uma frase",
+    description: "Com uma frase, deixe o Qwen Code construir um belo site de currículo pessoal para você.",
+    thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/Ahk8wwloIrrtO65mpMfApVTnQpUM2QJ3qRg3R0SPnrs.mp4",
+    category: "Scenarios",
+    difficulty: "coding",
+  },
+];
+
+{/* ─── Categorias de funcionalidades ─── */}
+
+export const featureCategories = [
+  { id: "Guide", label: "Guia de Início" },
+  { id: "Features", label: "Funcionalidades Principais" },
+  { id: "Skills", label: "Skills" },
+  { id: "SDK", label: "SDK" },
+];
+
+{/* ─── Níveis de dificuldade ─── */}
+
+export const difficultyLevels = [
+  { id: "office", label: "Escritório", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" },
+  { id: "coding", label: "Codificação", color: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400" },
+  { id: "advanced", label: "Avançado", color: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-400" },
+];
+
+{/* ─── Textos ─── */}
+
+export const texts = {
+  pageTitle: "Showcase de Vídeos",
+  pageSubtitle: "Do início rápido ao mergulho profundo, explore tudo o que o Qwen Code pode fazer através de demonstrações em vídeo",
+  heroSectionTitle: "Quick Start",
+  heroSectionSubtitle: "Conheça o Qwen Code em 30 segundos",
+  heroCta: "Instalar agora",
+  latestSectionTitle: "Últimos Vídeos",
+  latestSectionSubtitle: "Demos adicionados recentemente",
+  featureSectionTitle: "Demos de Funcionalidades",
+  featureSectionSubtitle: "Explore as capacidades principais do Qwen Code",
+  scenarioSectionTitle: "Cenários Práticos",
+  scenarioSectionSubtitle: "Encontre seu caso de uso",
+  featureTabLabel: "Funcionalidades Principais",
+  scenarioTabLabel: "Cenários Práticos",
+  allFilter: "Todos",
+  allDifficulties: "Todos os cenários",
+  emptyState: "Ainda não há vídeos nesta categoria. Mais conteúdo em breve.",
+  close: "Fechar",
+  unsupportedVideo: "Seu navegador não suporta a tag de vídeo.",
+  viewTutorial: "Ver tutorial detalhado",
+  moreComingSoon: "Mais cenários em breve. Aceitamos suas submissões de showcase.",
+  submitCase: "Enviar seu showcase no GitHub",
+};
+
+<VideoShowcase
+  heroVideo={heroVideo}
+  featureVideos={featureVideos}
+  scenarioVideos={scenarioVideos}
+  featureCategories={featureCategories}
+  difficultyLevels={difficultyLevels}
+  texts={texts}
+/>
