@@ -1,0 +1,172 @@
+---
+title: "Finish Homework, Portfolio, and Open Source Projects in 10 Minutes - Qwen Code + Coding Plan Practice"
+date: "2026-03-06"
+description: "Use Qwen Code to quickly build personal websites, participate in open source projects, and generate demo videos. Practical guide for AI programming tools."
+author: "joeytoday"
+tags: ["Tutorials", "user examples", "coding plan"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader 
+  title="Finish Homework, Portfolio, and Open Source Projects in 10 Minutes - Qwen Code + Coding Plan Practice"
+  date="2026-03-06"
+  author="joeytoday"
+/>
+
+Need a project demonstration for your final assignment but stuck adjusting CSS until baldness? Course projects require demo videos edited until 3 AM? Want to contribute to open source projects but don't know how to make your first PR?
+
+Recently I tried this Qwen Code tool, initially without much hope—after all, the term "AI programming" has been overused. But upon trying it out, I realized it's not just empty talk about "AI changing the world," but actually saves time and lets you focus energy on more valuable things.
+
+Let me start with the simplest example.
+
+## Personal Portfolio Website in 5 Minutes
+
+Need a good resume page to showcase your portfolio when job hunting? Rather than modifying templates endlessly, let AI help you generate one.
+
+I simply used the `@` command in Qwen Code to reference my personal resume, letting it generate a personal website with beautiful animations (simulated, PS it really looks great). Just one prompt:
+
+```
+/skills react-native-design build a personal resume website based on @resume-website/resume.md
+```
+
+👇 Result:
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/4y_ax6Z4ro0nHbXm3oEZ01TnQpUM2QJ3qRg3R0SPnrs.mp4" controls></video>
+
+If you have a favorite website design, you can directly replicate it. For instance, I liked this design—
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png)
+
+Very simple process:
+
+1. Install web design plugin through `/extensions` in Qwen Code (supports all marketplaces)
+2. Save your favorite webpage screenshot locally
+3. Input prompt for it to identify layout, styles, components, and recreate runnable code
+
+Still just one prompt:
+
+```
+/skills web-component-design design a web like @website.png
+```
+
+👇 Complete workflow:
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/__EMPIfINdPKI3oSa2MaZ0I58kPw_kVSPS23AIM4PqQ.mp4" controls></video>
+
+**Suitable Scenarios:**
+
+- Individual/team project showcase pages for final assignments
+- Portfolio websites for job applications
+- Club activity promotional pages
+- Startup project landing pages
+
+(Honestly, way faster than tweaking templates)
+
+## Participate in Open Source Projects Starting With Your First PR
+
+Want to contribute to open source but unsure where to begin? Qwen Code can automate the entire process.
+
+Give it an Issue link, and it will:
+
+1. Automatically understand the problem description
+2. Explore repository structure
+3. Locate bug position
+4. Provide fixing code
+5. Submit PR autonomously
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/JV-7WNvq-GF9ZRHhrr1igplZDtHaFeNNoJ412hgkKYI.mp4" controls></video>
+
+Zero manual intervention required. Of course, for the first time, I recommend manually reviewing the code to familiarize yourself before letting it automate completely. (Don't ask how I know...)
+
+Especially useful for students wanting to accumulate open source experience. You can start with simple bug fixes and gradually participate in developing more complex features.
+
+(I sincerely suggest computer science students give it a try—open source experience genuinely helps with job hunting)
+
+## Generate Demo Videos Using Code, Say Goodbye To Editing Software
+
+Course presentations, project defenses, competition roadshows—including previous open source projects—you always need demo videos. Learning Premiere and editing videos takes so much time. (Whoever edits knows!)
+
+Based on Remotion (a library for creating videos with React), Qwen Code can generate professional demo videos using code.
+
+For example, to create a product introduction video:
+
+1. Install relevant Remotion skills
+2. Write scripts and storyboard descriptions
+3. Let it generate video code
+4. Render output
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/ZgaPle1nAI5-130zVv4yObnskE3ByRJYnlWABtfZwH4.mp4" controls></video>
+
+**Suitable Scenarios:**
+
+- Course project defense videos
+- Innovation entrepreneurship competition roadshows
+- Club event promotions
+- Automated personal Vlogs
+
+Remotion's advantage is that you can create videos using React components, supporting animations, transitions, subtitles, audio editing, and even version control (yes, videos can also be managed with Git—it's pretty cool).
+
+## How To Get Started?
+
+1. Obtain API Key from BaiLian console
+2. Download Qwen Code and launch using `qwen`
+
+```bash
+# Linux/macOS
+curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
+
+# Windows
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat
+```
+
+3. Enter `/auth`, select 「Alibaba Cloud Coding Plan」, paste API Key
+4. Use `/model` to choose model, then start!
+
+Qwen Code has a skill marketplace (similar to VS Code plugin marketplace) with various ready-made skill packages. Use `/extensions` command to select and install extensions, or explore more plugins and skills.
+
+Don't aim for big projects right away. Start with simple scenarios such as:
+
+- Ask AI to write a Hello World webpage
+- Have it explain incomprehensible code
+- Let it generate a course note template
+
+Once familiarized, gradually attempt more complex tasks.
+
+(This is exactly how I started, haha)
+
+## Recommended Skill Packages For University Students
+
+Based on my experience, these skill packages are especially useful for university students:
+
+| Skill Package              | Purpose                          | Suitable Majors         |
+|----------------------------|----------------------------------|-------------------------|
+| `skill-creator`            | Create skills according to standards, create your own skills | All majors              |
+| `find-skills`              | Discover and install new skills  | All majors              |
+| `react-native-design`      | Quickly generate React webpages  | Computer Science, Design, New Media |
+| `web-component-design`     | Replicate webpages from screenshots | All majors              |
+| `remotion-best-practices`  | Generate videos using code       | Journalism, Communication, Computer Science |
+
+Installation Method:
+
+```bash
+npx skills add <SkillPackageName> -g
+```
+
+## Some Usage Tips
+
+1. **Don't rely entirely on AI.** It's a tool, not a replacement. Understand the code yourself, comprehend your homework.
+2. **Start by mimicking.** When seeing someone achieve something impressive with a certain skill, mimic their prompt first, then gradually adjust into your own style.
+3. **Make good use of the skill marketplace.** Most needs you think of likely already have corresponding skill packages. Search before creating, avoid reinventing wheels.
+4. **Record your prompts.** Note down effective prompts for direct reuse or fine-tuning next time.
+5. **Share your work.** Once you've created something good, share it on GitHub, Zhihu, Xiaohongshu—to both accumulate works and meet like-minded people.
+
+## Final Thoughts
+
+AI programming tools aren't meant to replace you—they're here to help spend your time on more valuable pursuits.
+
+Time spent adjusting CSS until baldness can instead go toward reading more papers; late-night video editing sessions become interview preparation time; hours configuring environments transform into learning core algorithms.
+
+Tools are there—if you choose to use them depends on you. At least now, you have another choice.
+
+(Hopefully these experiences help, friends)

@@ -736,7 +736,11 @@ export const VideoShowcase = ({
       {/* Video Playback Dialog */}
       <Dialog
         open={selectedVideo !== null}
-        onOpenChange={() => setSelectedVideo(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedVideo(null);
+          }
+        }}
       >
         <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-background rounded-xl">
           <DialogHeader className="p-5 pb-0">

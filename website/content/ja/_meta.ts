@@ -6,10 +6,16 @@ export default {
   users: {
     type: 'page',
     title: 'ユーザーガイド',
+    theme: {
+      breadcrumb: false,
+    }
   },
   developers: {
     type: 'page',
     title: '開発者ガイド',
+    theme: {
+      breadcrumb: false,
+    }
   },
   showcase: {
     type: 'page',
@@ -23,6 +29,7 @@ export default {
     type: 'page',
     title: 'ブログ',
     theme: {
+      breadcrumb: false,
       sidebar: false,
       layout: 'full'
     }
