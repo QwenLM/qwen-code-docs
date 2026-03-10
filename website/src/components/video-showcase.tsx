@@ -17,7 +17,7 @@ export interface Video {
   title: string;
   description: string;
   thumbnail: string;
-  videoUrl: string;
+  videoUrl?: string;
   duration?: string;
   category: string;
   difficulty?: string;
@@ -174,41 +174,51 @@ const HeroSection = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <div className="lg:col-span-8 relative group">
             <div className="relative aspect-video rounded-2xl overflow-hidden bg-zinc-950 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)]">
-              <video
-                ref={videoRef}
-                src={video.videoUrl}
-                poster={video.thumbnail}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="w-full h-full object-cover"
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-              />
-              {/* Video controls overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={toggleMute}
-                      className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
-                      aria-label={isMuted ? "Unmute" : "Mute"}
-                    >
-                      {isMuted ? (
-                        <VolumeX className="w-4 h-4 text-white" />
-                      ) : (
-                        <Volume2 className="w-4 h-4 text-white" />
+              {video.videoUrl ? (
+                <>
+                  <video
+                    ref={videoRef}
+                    src={video.videoUrl}
+                    poster={video.thumbnail}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-full h-full object-cover"
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                  />
+                  {/* Video controls overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={toggleMute}
+                          className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
+                          aria-label={isMuted ? "Unmute" : "Mute"}
+                        >
+                          {isMuted ? (
+                            <VolumeX className="w-4 h-4 text-white" />
+                          ) : (
+                            <Volume2 className="w-4 h-4 text-white" />
+                          )}
+                        </button>
+                      </div>
+                      {video.duration && (
+                        <span className="text-xs text-white/80 font-mono">
+                          {video.duration}
+                        </span>
                       )}
-                    </button>
+                    </div>
                   </div>
-                  {video.duration && (
-                    <span className="text-xs text-white/80 font-mono">
-                      {video.duration}
-                    </span>
-                  )}
-                </div>
-              </div>
+                </>
+              ) : (
+                <img
+                  src={video.thumbnail}
+                  alt={video.title}
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
           </div>
 
@@ -270,15 +280,17 @@ const FeatureVideoCard = ({
         className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
         loading="lazy"
       />
-      <div className="absolute inset-0 bg-zinc-950/20 group-hover:bg-zinc-950/10 transition-colors flex items-center justify-center">
-        <div className="w-11 h-11 rounded-full bg-white/90 dark:bg-white/80 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-          <Play
-            className="w-4.5 h-4.5 text-zinc-900 ml-0.5"
-            fill="currentColor"
-          />
+      {video.videoUrl && (
+        <div className="absolute inset-0 bg-zinc-950/20 group-hover:bg-zinc-950/10 transition-colors flex items-center justify-center">
+          <div className="w-11 h-11 rounded-full bg-white/90 dark:bg-white/80 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+            <Play
+              className="w-4.5 h-4.5 text-zinc-900 ml-0.5"
+              fill="currentColor"
+            />
+          </div>
         </div>
-      </div>
-      {video.duration && (
+      )}
+      {video.duration && video.videoUrl && (
         <div className="absolute bottom-2.5 right-2.5 bg-zinc-950/70 backdrop-blur-sm px-2 py-0.5 rounded-md text-xs text-white font-mono flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {video.duration}
@@ -330,15 +342,17 @@ const ScenarioVideoCard = ({
         className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
         loading="lazy"
       />
-      <div className="absolute inset-0 bg-zinc-950/20 group-hover:bg-zinc-950/10 transition-colors flex items-center justify-center">
-        <div className="w-11 h-11 rounded-full bg-white/90 dark:bg-white/80 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-          <Play
-            className="w-4.5 h-4.5 text-zinc-900 ml-0.5"
-            fill="currentColor"
-          />
+      {video.videoUrl && (
+        <div className="absolute inset-0 bg-zinc-950/20 group-hover:bg-zinc-950/10 transition-colors flex items-center justify-center">
+          <div className="w-11 h-11 rounded-full bg-white/90 dark:bg-white/80 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+            <Play
+              className="w-4.5 h-4.5 text-zinc-900 ml-0.5"
+              fill="currentColor"
+            />
+          </div>
         </div>
-      </div>
-      {video.duration && (
+      )}
+      {video.duration && video.videoUrl && (
         <div className="absolute bottom-2.5 right-2.5 bg-zinc-950/70 backdrop-blur-sm px-2 py-0.5 rounded-md text-xs text-white font-mono flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {video.duration}
@@ -723,7 +737,7 @@ export const VideoShowcase = ({
             </DialogTitle>
           </DialogHeader>
           <div className="aspect-video bg-zinc-950">
-            {selectedVideo && (
+            {selectedVideo && selectedVideo.videoUrl ? (
               <video
                 src={selectedVideo.videoUrl}
                 controls
@@ -733,7 +747,13 @@ export const VideoShowcase = ({
               >
                 {texts.unsupportedVideo}
               </video>
-            )}
+            ) : selectedVideo ? (
+              <img
+                src={selectedVideo.thumbnail}
+                alt={selectedVideo.title}
+                className="w-full h-full object-contain"
+              />
+            ) : null}
           </div>
           <div className="p-5 pt-3">
             <p className="text-sm text-muted-foreground leading-relaxed">
