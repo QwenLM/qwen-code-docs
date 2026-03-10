@@ -108,12 +108,16 @@ const CopyableCodeBlock = ({ command }: { command: string }) => {
     [command]
   );
 
+  const isMultiLine = command.includes("\n");
+
   return (
     <div
-      className="mt-3 flex items-center gap-1.5 rounded-md bg-muted/60 dark:bg-muted/30 px-2.5 py-1.5 border border-border/40"
+      className="mt-3 flex items-start gap-1.5 rounded-md bg-muted/60 dark:bg-muted/30 px-2.5 py-1.5 border border-border/40"
       onClick={(event) => event.stopPropagation()}
     >
-      <code className="flex-1 text-[11px] font-mono text-muted-foreground truncate select-all">
+      <code
+        className={`flex-1 text-[11px] font-mono text-muted-foreground select-all ${isMultiLine ? "whitespace-pre-wrap break-all" : "truncate"}`}
+      >
         {command}
       </code>
       <button
