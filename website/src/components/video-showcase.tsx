@@ -270,12 +270,14 @@ const FeatureVideoCard = ({
   onClick: () => void;
   variant?: "default" | "wide";
 }) => (
-  <button
-    type="button"
+  <div
+    role="button"
+    tabIndex={0}
     className={`group cursor-pointer text-left w-full h-full flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card hover:border-border transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] active:scale-[0.99] ${
       variant === "wide" ? "col-span-1 md:col-span-2" : ""
     }`}
     onClick={onClick}
+    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onClick(); }}
   >
     <div className="relative aspect-video overflow-hidden shrink-0">
       <img
@@ -318,7 +320,7 @@ const FeatureVideoCard = ({
       </p>
       {video.command && <CopyableCodeBlock command={video.command} />}
     </div>
-  </button>
+  </div>
 );
 
 /* ─── Scenario Video Card ─── */
@@ -334,10 +336,12 @@ const ScenarioVideoCard = ({
   difficultyLevels: DifficultyLevel[];
   texts: ShowcaseTexts;
 }) => (
-  <button
-    type="button"
+  <div
+    role="button"
+    tabIndex={0}
     className="group cursor-pointer text-left w-full h-full flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card hover:border-border transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)] active:scale-[0.99]"
     onClick={onClick}
+    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onClick(); }}
   >
     <div className="relative aspect-video overflow-hidden shrink-0">
       <img
@@ -384,7 +388,7 @@ const ScenarioVideoCard = ({
         </span>
       )}
     </div>
-  </button>
+  </div>
 );
 
 /* ─── Latest Videos Section ─── */
