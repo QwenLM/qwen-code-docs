@@ -1,0 +1,168 @@
+---
+title: "Tatsächlich kennt mich KI besser als ich mich selbst – Qwen Code Insight-Funktion im Test"
+date: "2026-03-11"
+description: "Erfahrungsbericht zur neuen Insight-Funktion von Qwen Code. Daten zeigen dir, wie du KI nutzt und wie KI dir hilft, sie besser zu verwenden."
+author: "joeytoday"
+tags: ["Tutorials", "user examples", "feature", "insight"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Tatsächlich kennt mich KI besser als ich mich selbst – Qwen Code Insight-Funktion im Test"
+  date="2026-03-11"
+  author="joeytoday"
+/>
+
+> Erfahrungsbericht zur neuen Insight-Funktion von Qwen Code. Daten zeigen dir, wie du KI nutzt und wie KI dir hilft, sie besser zu verwenden.
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01ztrQcd1aEzkPLMKqf_!!6000000003299-2-tps-2400-1374.png)
+
+Kürzlich hat Qwen Code eine neue Funktion erhalten – **Insight**.
+
+Nach einigen Tagen der Nutzung hatte ich ein starkes Gefühl: **Tatsächlich kennt mich KI besser als ich mich selbst**.
+
+Ich dachte immer, dass die Zusammenarbeit mit KI ziemlich reibungslos läuft, bis Insight all jene „gewohnheitsmäßigen Unannehmlichkeiten" offenbarte. Das Interessanteste daran – **KI bringt mir bei, wie ich sie besser nutzen kann**. Sie sagt dir nicht nur „was du getan hast", sondern auch „wie du es besser machen könntest".
+
+Ist das nicht ein **rechtzeitiger, maßgeschneiderter Lehrer**?
+
+## Warum brauchen wir ein „KI-Nutzungs-Review"?
+
+Wir alle wissen, wie wertvoll Reviews sind – Rückblick, Reflexion, Verbesserung. Aber um ehrlich zu sein: **Wie viele Menschen führen aktiv Reviews darüber durch, „wie sie KI nutzen"**?
+
+Die meisten von uns (mich eingeschlossen) befinden sich in folgendem Zustand: **Bei Problemen fragt man die KI, verwendet die gegebene Antwort, und bei Bugs fragt man einfach noch einmal nach**. Tag für Tag denken wir, dass wir es gut machen, aber tatsächlich wiederholen wir vielleicht dieselben ineffizienten Muster und treten in dieselben Fallen.
+
+**Genau das automatisiert Insight für dich.**
+
+Es analysiert alle deine Gesprächsverläufe mit Qwen Code und erstellt einen personalisierten Nutzungsbericht. Ähnlich wie die „Bildschirmzeit" eines Smartphones, aber statt dir zu sagen „wie lange du heute Kurzvideos geschaut hast", zeigt es dir „wie viel Arbeit die KI heute für dich erledigt hat und wie du noch mehr von ihr erledigen lassen kannst".
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01TbTAPo1gEtLwqodNV_!!6000000004111-2-tps-1573-904.png)
+
+## Es ist wie ein Spiegel: Zeigt dir deine „KI-Nutzungsgewohnheiten"
+
+Was mich bei Insight am meisten überzeugt hat, ist, dass es mir **Muster gezeigt hat, die mir selbst nicht bewusst waren**.
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01VJBusI1uz3trvVkRt_!!6000000006107-2-tps-1437-505.png)
+
+Mein Bericht zeigte beispielsweise, dass ich in 4 Tagen 246 Shell-Befehle verwendet habe – deutlich mehr als alle anderen Tools. Insight analysierte daraus:
+
+> **Du planst nicht gerne im Voraus detailliert, sondern arbeitest lieber durch Ausprobieren.**
+>
+> **Du lässt Qwen Code lieber ausführen und validieren, als nur Ratschläge zu geben.**
+
+Als ich das las, war ich kurz überrascht – es traf genau ins Schwarze. Ich bin tatsächlich jemand, der erst handelt und dann nachdenkt, aber mir war nie bewusst, dass diese Gewohnheit meine Effizienz bei der KI-Zusammenarbeit beeinflusst.
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01vuQnjd1QAHVvKHOPT_!!6000000001935-2-tps-1460-580.png)
+
+Das ist der Wert eines Reviews: **Es sagt dir nicht, was du falsch gemacht hast, sondern zeigt dir deine Verhaltensmuster, und dann erkennst du selbst, wo Optimierungsbedarf besteht.**
+
+Insight analysiert auch die Verteilung deiner Arbeitsinhalte, aktive Zeiten und Anforderungstypen und hilft dir, aus makroskopischer Perspektive zu verstehen, wofür du KI eigentlich einsetzt. Mir wurde klar, dass ich in den letzten Tagen hauptsächlich an Dokumentation und Skill-Entwicklung gearbeitet habe (19 Sessions), statt Code zu schreiben – ich bin offenbar ein absoluter „Dokumentationsmensch" (lacht).
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01F77QIP1DLBwYv4e5Q_!!6000000000199-2-tps-1506-969.png)
+
+## Es ist wie ein Diagnostiker: Findet die Stellen, an denen du stecken bleibst
+
+Ein Review besteht nicht nur aus Daten – wichtiger ist es, **Schmerzpunkte zu identifizieren**.
+
+Insight erkennt automatisch Reibungspunkte in deiner KI-Zusammenarbeit und analysiert sie kategorisiert. In meinem Bericht waren die drei größten Schmerzpunkte:
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01kkz3VJ1xoTarHMdRr_!!6000000006490-2-tps-1446-1022.png)
+
+- **Build- und Abhängigkeitsprobleme**: npm-Konflikte, fehlendes ffmpeg, Berechtigungsfehler – jedes Mal mehrere Runden der Fehlersuche
+- **Fehler beim Schreiben von Dateien**: Heredoc-Syntax, beschädigte YAML-Frontmatter – wiederholte Fehler beim Erstellen von Skill-Dateien
+- **Unterbrochene Git-Workflows**: PR-Erstellung fehlgeschlagen, Probleme mit Anführungszeichen-Escaping – Operationen, die in einem Schritt erledigt sein sollten, wurden zu mehrstufigem Debugging
+
+Als ich das sah, wurde mir klar – **diese Probleme waren nicht zufällig, sondern systematisch**. Jedes Mal, wenn ich Build-Probleme hatte, musste ich mehrere Runden kämpfen. Es lag nicht an der KI, sondern an meiner unvollständigen Umgebungskonfiguration. Wenn Insight diese Daten nicht offengelegt hätte, wäre mir das vielleicht nie aufgefallen.
+
+Das ist wie beim Arztbesuch: Du denkst vielleicht „gelegentliche Kopfschmerzen sind nicht schlimm", aber der Gesundheitsbericht zeigt dir erhöhten Blutdruck – **das Problem liegt nicht im einzelnen Symptom, sondern darin, dass du das zugrundeliegende Muster nicht erkennst**.
+
+## Es ist wie ein Coach: Gibt dir konkrete Verbesserungspläne
+
+Und nachdem das Problem erkannt wurde? Hier kommt der wertvollste Teil von Insight – **es diagnostiziert nicht nur, sondern verschreibt auch „Rezepte"**.
+
+Insight gibt basierend auf deinen Schmerzpunkten direkt in QWEN.md (die personalisierte Konfigurationsdatei von Qwen Code) kopierbare Regelvorschläge. Für meine Situation empfahl es:
+
+- Bei PR-Erstellung immer die URL validieren und bereitstellen (da ich mehrfach Probleme mit nicht erstellten PRs hatte)
+- Skill-Dateien mit direktem Dateischreiben statt Heredoc erstellen (da Heredoc wiederholt zu YAML-Beschädigungen führte)
+- Vor dem Build zuerst validieren, ob Abhängigkeiten installiert sind (da fehlende Abhängigkeiten mein größter Zeitfresser waren)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01DLriav1kIKnEsI5Bb_!!6000000004660-2-tps-1453-638.png)
+
+**Das sind keine allgemeinen „Best Practices", sondern personalisierte Empfehlungen, die aus deinen tatsächlichen Nutzungsdaten abgeleitet wurden.** Wie ein Coach, der sich dein Spielvideo ansieht und sagt: „Dein dritter Schritt ist immer einen Tick zu langsam, versuch es so anzupassen" – statt dir ein allgemeines Trainingshandbuch zu geben.
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01qmzio71yXonubltON_!!6000000006589-2-tps-1474-1088.png)
+
+Es empfiehlt auch Funktionen, die du vielleicht brauchst, aber noch nicht verwendet hast. Als es beispielsweise feststellte, dass ich Shell-Befehle als Workaround für PR-Erstellungen verwendete, empfahl es mir, **MCP Servers** auszuprobieren, die es Qwen Code ermöglichen, direkt mit GitHub zu interagieren und die Kommandozeile zu umgehen.
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01ssrTMy1DalPTJKmIf_!!6000000000233-2-tps-1466-824.png)
+
+## Es ermutigt dich auch: Sieh, was du gut machst
+
+Ein gutes Review sucht nicht nur nach Problemen, sondern erkennt auch Fortschritte und Highlights.
+
+Insight zeigt dir, wo du gut bist und in welchen Bereichen dir KI am meisten hilft. Mein Bericht zeigte eine Zufriedenheitsrate von 97 %, 80 % der Aufgaben wurden vollständig oder größtenteils abgeschlossen. Die Fähigkeit, die mir am meisten half, war „proaktive Hilfe" – sie erkennt Probleme aktiv und schlägt Lösungen vor, statt darauf zu warten, dass ich sie Schritt für Schritt anweise.
+
+Der Bericht enthält am Ende auch ein Zukunftsmodul, das die Entwicklungsrichtung der KI-gestützten Entwicklung skizziert – von „passivem Aufgabenerledigen" zu „autonomen Multi-Agenten-Workflows". Nach dem Lesen dachte ich: **Unsere aktuelle Art der KI-Zusammenarbeit ist vielleicht nur ein Ausgangspunkt.**
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01zK0pOT1ll1DL4Nd0A_!!6000000004858-2-tps-1481-1389.png)
+
+## Ein interessantes Easter Egg
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01YNjMMT1I9LmZt55ll_!!6000000000850-2-tps-1455-247.png)
+
+Der Bericht dokumentierte eine kleine Geschichte: Als ich nach der lokalen IP-Adresse fragte, vertippte ich mich und die Eingabe war Kauderwelsch, aber Qwen Code verstand trotzdem korrekt, was ich meinte, und lieferte erfolgreich die IP-Adresse. Dieses „Gedankenlesen" war irgendwie niedlich, haha.
+
+## Wie verwendet man Insight?
+
+Gib einfach den Befehl `/insights` in Qwen Code ein, um deinen Nutzungsbericht zu generieren.
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/KECE0t_PB_P9P2Djf22fMZ97mRNPrqroKO5cf4V71XM.mp4" controls></video>
+
+Der Bericht umfasst sieben Module:
+
+| Modul | Beschreibung |
+|------|------|
+| At a Glance | Nutzungsübersicht, schneller Überblick über die Gesamtnutzung |
+| What You Work On | Arbeitsinhaltsanalyse, versteht die Zeitverteilung |
+| How You Use Qwen Code | Nutzungsmuster, entdeckt Verhaltensgewohnheiten |
+| Impressive Things | Highlights und Erfolge, sieht deinen Fortschritt |
+| Where Things Go Wrong | Problemdiagnose, identifiziert Schmerzpunkte |
+| Features to Try | Funktionsempfehlungen, entdeckt neue Möglichkeiten |
+| On the Horizon | Zukunftsausblick, versteht Entwicklungsrichtungen |
+
+**Jeder Bericht ist einzigartig**, da er vollständig auf deinen eigenen Nutzungsdaten basiert. Deine Schmerzpunkte, deine Gewohnheiten, deine Verbesserungsvorschläge – alles ist maßgeschneidert.
+
+<Callout>
+    **Kleiner Tipp**:
+    Verwende regelmäßig den Befehl `/insights`, um den Bericht anzusehen und deine KI-Zusammenarbeit kontinuierlich zu optimieren.
+</Callout>
+
+Wenn du Qwen Code ebenfalls verwendest, probiere es unbedingt aus. Nicht um Daten zu sehen, sondern um **das unbemerkte Selbst zu erkennen** – und dann die nächste KI-Zusammenarbeit etwas reibungsloser zu gestalten als die vorige.
+
+## Abschließende Gedanken
+
+Insight ist nicht nur eine Funktion, sondern eine neue Perspektive – **KI hilft dir zu verstehen, wie du KI verwendest**.
+
+In einer Zeit, in der KI-gestützte Programmierung immer verbreiteter wird, ist das Erlernen effizienter Nutzung und Zusammenarbeit vielleicht wichtiger als das Beherrschen einer bestimmten Programmiersprache. Und Insight ist dein Spiegel, dein Diagnostiker, dein Coach.
+
+> 📌 Projekt-URL: https://github.com/QwenLM/qwen-code
+>
+> Wenn es dir gefallen hat, gib dem Projekt gerne einen ⭐️ Star!
+>
+> Bei Fragen oder wenn du deine Use Cases teilen möchtest, hinterlasse gerne einen Kommentar!
+
+## 🔗 Links und Ressourcen
+
+- **GitHub**: [github.com/QwenLM/qwen-code](https://github.com/QwenLM/qwen-code)
+- **Offizielle Dokumentation**: [qwenlm.github.io/qwen-code-docs](https://qwenlm.github.io/qwen-code-docs)
+
+### Mach mit!
+
+Qwen Code lebt vom gemeinsamen Aufbau durch Community-Entwickler und vom Feedback interner Nutzer. Wichtige Features wie unser Java SDK, VS Code Plugin und Chrome Browser Extension wurden gemeinsam mit internen Partnern entwickelt. Wenn du Interesse an Qwen Code hast, mach mit!
+
+Außerdem suchen wir für das Qwen Code-Projekt technische Talente im Bereich **AI Full-Stack**, alle Ebenen willkommen. Bitte sende deine Bewerbungsunterlagen an: pomelo.lcw@alibaba-inc.com
+
+---
+
+Umarme die neue Ära von AI Coding, beginnend mit Qwen Code im Terminal.

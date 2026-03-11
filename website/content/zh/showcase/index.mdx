@@ -4,10 +4,11 @@ import { VideoShowcase } from '@/components/video-showcase'
 
 export const heroVideo = {
   title: "Qwen Code 简介",
-  description: "30 秒了解 Qwen Code 的核心能力：从安装到对话，再到完成你的第一个任务。你的 AI 编程伙伴，从想法到实现只需一句话。",
-  thumbnail: "https://img.alicdn.com/imgextra/i4/6000000008149/O1CN01s4jvEt2A4IeyzthUR_!!6000000008149-0-tbvideo.jpg",
-  videoUrl: "https://cloud.video.taobao.com/vod/csQymc4NChpT34XHza_UH9lB65SM3DCDLe7tuXZWtDk.mp4",
+  description: "30 秒了解 Qwen Code 的核心能力：从安装到对话，再到完成你的第一个任务。你的 AI 编程伙伴，从想法到实现只需一句话。\n此视频用 Qwen Code+oss-styles Remotion 技能一键生成。",
+  thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01J4G8Xc1Xm1ShJ4TSX_!!6000000002965-2-videocover-2880-1622.png",
+  videoUrl: "https://cloud.video.taobao.com/vod/LfmsiJ8iFG-Rbfh6UTBCTtkWhLL6FsOeeVT10lCxNWI.mp4",
   category: "Quick Start",
+  link:"https://github.com/QwenLM/qwen-code?tab=readme-ov-file#installation",
 };
 
 {/* ─── 第二层：功能演示 ─── */}
@@ -86,11 +87,11 @@ export const featureVideos = [
     description: "中断的对话可以随时恢复，不丢失任何上下文和进度。",
     thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4",
-    category: "Features",
+    category: "Guide",
     command: "qwen --resume",
   },
   {
-    title: "Ctrl(Cmd)+Y 快速重试",
+    title: "Ctrl+Y 快速重试",
     description: "对 AI 回答不满意时，使用 Ctrl(Cmd)+Y 一键重试获取更好的结果。",
     thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01YtZAzm1ShNMbf8YTt_!!6000000002278-2-tps-1694-956.png",
     category: "Guide",
@@ -109,6 +110,14 @@ export const featureVideos = [
   },
 
   // ── 核心功能：重点特性 ──
+  {
+    title: "终端输出捕获截图/动图",
+    description: "产品演示必备！让 AI 执行功能测试并自动捕获终端输出信息。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005887/O1CN01hBRUux1tMIlTGx2Ym_!!6000000005887-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/eaDeo1zyE3n6VG9QscGbOLWzzY1dGknK8YNbu3srV9w.mp4",
+    category: "Features",
+    command: "/skills terminal-capture",
+  },
   {
     title: "Web Search",
     description: "让 Qwen Code 搜索网络内容，获取实时信息辅助编程。",
@@ -129,14 +138,6 @@ export const featureVideos = [
     videoUrl: "https://cloud.video.taobao.com/vod/a5X9O6PsdDdmXVqtHdjlzZ97mRNPrqroKO5cf4V71XM.mp4",
     category: "Features",
     command: "/insight",
-  },
-  {
-    title: "终端输出捕获截图/动图",
-    description: "产品演示必备！让 AI 执行功能测试并自动捕获终端输出信息。",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005887/O1CN01hBRUux1tMIlTGx2Ym_!!6000000005887-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/eaDeo1zyE3n6VG9QscGbOLWzzY1dGknK8YNbu3srV9w.mp4",
-    category: "Features",
-    command: "/skills terminal-capture",
   },
   {
     title: "MCP 图片生成",
@@ -235,6 +236,7 @@ export const scenarioVideos = [
     videoUrl: "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4",
     category: "Scenarios",
     difficulty: "coding",
+    link: "../blog/qwencode-coding-plan-guide-build-website",
   },
 
     {
@@ -295,6 +297,7 @@ export const scenarioVideos = [
     videoUrl: "https://cloud.video.taobao.com/vod/Ahk8wwloIrrtO65mpMfApVTnQpUM2QJ3qRg3R0SPnrs.mp4",
     category: "Scenarios",
     difficulty: "coding",
+    link: "../blog/qwencode-coding-plan-guide-build-website",
   },
 
 ];

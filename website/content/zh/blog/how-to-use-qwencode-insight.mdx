@@ -1,0 +1,168 @@
+---
+title: "原来 AI 比我更了解我自己——Qwen Code Insight 功能体验"
+date: "2026-03-11"
+description: "Qwen Code 新功能 Insight 体验分享，用数据告诉你你是怎么用 AI 的，以及 AI 如何指导你更好地使用 AI。"
+author: "joeytoday"
+tags: ["Tutorials", "user examples", "feature", "insight"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="原来 AI 比我更了解我自己——Qwen Code Insight 功能体验"
+  date="2026-03-11"
+  author="joeytoday"
+/>
+
+> Qwen Code 新功能 Insight 体验分享，用数据告诉你你是怎么用 AI 的，以及 AI 如何指导你更好地使用 AI。
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01ztrQcd1aEzkPLMKqf_!!6000000003299-2-tps-2400-1374.png)
+
+最近 Qwen Code 更新了一个新功能——**Insight**。
+
+用了几天之后，我有一个很强烈的感受：**原来 AI 比我更了解我自己**。
+
+我以前总觉得自己和 AI 配合得挺顺畅的，直到 Insight 把那些「我习以为常的麻烦」都摆在了明面上。更有意思的是——**AI 在教我如何更好地使用 AI**。它不只是告诉你「你做了什么」，还会告诉你「你可以怎么做得更好」。
+
+这不就是一个**及时复盘的定制化老师**吗？
+
+## 为什么我们需要一个「AI 使用复盘」？
+
+我们都知道复盘的价值——回顾、反思、改进。但说实话，**有多少人会主动复盘自己「怎么用 AI」**？
+
+大多数人（包括我）的状态是：**遇到问题就问 AI，AI 给了答案就用，出了 bug 就再问一轮**。日复一日，我们以为自己用得挺好，但其实可能一直在重复同样的低效模式，踩同样的坑。
+
+**Insight 做的事情，就是帮你把这个复盘自动化了。**
+
+它会分析你和 Qwen Code 的所有对话记录，生成一份个性化的使用报告。有点像手机的「屏幕使用时间」，但不是告诉你「你今天刷了多久短视频」，而是告诉你「你今天让 AI 帮你干了多少活，以及你可以怎么让 AI 帮你干更多活」。
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01TbTAPo1gEtLwqodNV_!!6000000004111-2-tps-1573-904.png)
+
+## 它像一面镜子：帮你看清自己的「AI 使用习惯」
+
+Insight 最打动我的地方，是它让我看到了那些**我自己都没意识到的模式**。
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01VJBusI1uz3trvVkRt_!!6000000006107-2-tps-1437-505.png)
+
+比如我的报告显示，4 天里我用了 246 次 shell 命令，远超其他所有工具。Insight 据此分析出：
+
+> **你不喜欢提前详细规划，而是喜欢边做边调整。**
+>
+> **你更喜欢让 Qwen Code 执行和验证，而不是只给建议。**
+
+读到这段的时候我愣了一下——它说得太准了。我确实是那种「先干再说」的人，但我从来没意识到这个习惯会影响我和 AI 的协作效率。
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01vuQnjd1QAHVvKHOPT_!!6000000001935-2-tps-1460-580.png)
+
+这就是复盘的价值：**不是告诉你做错了什么，而是让你看见自己的行为模式，然后你自己会知道哪里可以优化。**
+
+Insight 还会分析你的工作内容分布、活跃时间、需求类型，帮你从宏观视角理解自己到底在用 AI 做什么。我才发现自己这几天主要在搞文档和技能开发（19 个会话），而不是写代码——原来我是个彻底的「文档人」（笑）。
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01F77QIP1DLBwYv4e5Q_!!6000000000199-2-tps-1506-969.png)
+
+## 它像一个诊断师：帮你找到「卡住你的地方」
+
+复盘不只是看数据，更重要的是**找到痛点**。
+
+Insight 会自动识别你和 AI 协作中的摩擦点，并归类分析。比如我的报告里，最大的三个痛点是：
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01kkz3VJ1xoTarHMdRr_!!6000000006490-2-tps-1446-1022.png)
+
+- **构建和依赖问题**：npm 冲突、缺 ffmpeg、权限错误——每次都折腾好几轮
+- **文件写入失败**：heredoc 语法、YAML frontmatter 损坏——创建技能文件时反复出错
+- **Git 工作流中断**：PR 创建失败、引号转义问题——本该一步到位的操作变成了多轮调试
+
+看到这个我恍然大悟——**原来这些问题不是偶发的，而是系统性的**。我每次遇到构建问题都要折腾好几轮，不是 AI 的问题，是我的环境配置不完整。如果不是 Insight 把这些数据摆出来，我可能永远不会意识到这一点。
+
+这就像去看医生：你可能一直觉得「偶尔头疼没什么」，但体检报告告诉你血压偏高——**问题不在于单次症状，而在于你没看到背后的模式**。
+
+## 它像一个教练：给你具体的改进方案
+
+发现问题之后呢？这才是 Insight 最有价值的部分——**它不只是诊断，还会开「处方」**。
+
+Insight 会根据你的痛点，给出可以直接复制到 QWEN.md（Qwen Code 的个性化配置文件）里的规则建议。比如针对我的情况，它建议：
+
+- 创建 PR 时始终验证并提供 URL（因为我多次遇到 PR 没真正创建的问题）
+- 写技能文件用直接文件写入而不是 heredoc（因为 heredoc 反复导致 YAML 损坏）
+- 开始构建前先验证依赖是否安装（因为缺依赖是我最大的时间黑洞）
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01DLriav1kIKnEsI5Bb_!!6000000004660-2-tps-1453-638.png)
+
+**这些不是泛泛的「最佳实践」，而是从你的实际使用数据中提炼出来的个性化建议。** 就像一个教练看了你的比赛录像后说：「你的第三步总是慢半拍，试试这样调整」——而不是给你一本通用的训练手册。
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01qmzio71yXonubltON_!!6000000006589-2-tps-1474-1088.png)
+
+它还会推荐你可能需要但还没用过的功能。比如它发现我经常用 shell 命令变通地创建 PR，就推荐我试试 **MCP Servers**，可以让 Qwen Code 直接和 GitHub 交互，省去命令行的折腾。
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01ssrTMy1DalPTJKmIf_!!6000000000233-2-tps-1466-824.png)
+
+## 它也会鼓励你：看到自己做得好的地方
+
+好的复盘不只是找问题，也要看到进步和亮点。
+
+Insight 会告诉你哪些地方做得好、AI 在哪些方面对你帮助最大。我的报告显示 97% 的满意率，80% 的任务完全或大部分完成。Qwen Code 对我帮助最大的能力是「主动帮助」——它会主动发现问题并提出解决方案，而不是等我一步步指挥。
+
+报告最后还有一个未来展望模块，描绘了 AI 辅助开发的演进方向——从「被动完成任务」到「自主多智能体工作流」。读完之后会觉得：**我们现在和 AI 的协作方式，可能只是一个起点。**
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01zK0pOT1ll1DL4Nd0A_!!6000000004858-2-tps-1481-1389.png)
+
+## 一个有趣的彩蛋
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01YNjMMT1I9LmZt55ll_!!6000000000850-2-tps-1455-247.png)
+
+报告里记录了一个小故事：我请求本地 IP 地址时打了个错字，输入是乱码，但 Qwen Code 居然正确理解了我的意思并成功提供了 IP 地址。这种「心有灵犀」的感觉还怪可爱的 hhh。
+
+## 如何使用 Insight？
+
+在 Qwen Code 中输入 `/insights` 命令，就可以生成你的使用报告了。
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/KECE0t_PB_P9P2Djf22fMZ97mRNPrqroKO5cf4V71XM.mp4" controls></video>
+
+报告包含七大模块：
+
+| 模块 | 说明 |
+|------|------|
+| At a Glance | 使用概览，快速了解整体使用情况 |
+| What You Work On | 工作内容分析，了解时间分布 |
+| How You Use Qwen Code | 使用模式，发现行为习惯 |
+| Impressive Things | 亮点成就，看到自己的进步 |
+| Where Things Go Wrong | 问题诊断，找出痛点 |
+| Features to Try | 功能推荐，发现新可能 |
+| On the Horizon | 未来展望，了解演进方向 |
+
+**每个人的报告都是独一无二的**，因为它完全基于你自己的使用数据。你的痛点、你的习惯、你的改进建议，都是量身定制的。
+
+<Callout>
+    **小技巧**：
+    定期使用 `/insights` 命令查看报告，持续优化你和 AI 的协作方式。
+</Callout>
+
+如果你也在用 Qwen Code，强烈建议试试。不是为了看数据，而是为了**看见那个你没注意到的自己**——然后让下一次和 AI 的协作，比上一次更顺畅一点。
+
+## 写在最后
+
+Insight 不只是一个功能，更是一种新的视角——**让 AI 帮你理解你如何使用 AI**。
+
+在这个 AI 辅助编程越来越普及的时代，学会高效使用和协作，可能比掌握某门编程语言更重要。而 Insight，就是你的一面镜子、一个诊断师、一位教练。
+
+> 📌 项目地址：https://github.com/QwenLM/qwen-code
+>
+> 如果觉得有用，欢迎给项目点个 ⭐️ Star！
+>
+> 有问题或者想分享你的使用场景，欢迎在评论区留言～
+
+## 🔗 链接与资源
+
+- **GitHub**: [github.com/QwenLM/qwen-code](https://github.com/QwenLM/qwen-code)
+- **官方文档**: [qwenlm.github.io/qwen-code-docs](https://qwenlm.github.io/qwen-code-docs)
+
+### 欢迎加入我们！
+
+Qwen Code 离不开社区开发者的共建，也离不开内部用户的反馈支持。我们目前的 Java SDK、VS Code 插件、Chrome 浏览器插件等重要特性，都是内部伙伴一起共建的。如果你对 Qwen Code 感兴趣，欢迎一起来共建！
+
+最后也欢迎加入我们，Qwen Code 项目正在招聘 **AI 全栈方向**技术人才，层级不限，欢迎投递简历！pomelo.lcw@alibaba-inc.com
+
+---
+
+拥抱 AI Coding 的新时代，从终端里的 Qwen Code 开始。
