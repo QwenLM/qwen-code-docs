@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Play, Clock, ArrowRight, Volume2, VolumeX, Sparkles, Copy, Check, Terminal } from "lucide-react";
+import { Play, Clock, ArrowRight, Volume2, VolumeX, Sparkles, Copy, Check, Terminal, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -737,7 +737,7 @@ export const VideoShowcase = ({
       {/* Footer */}
       <FooterCta texts={texts} />
 
-      {/* Video Playback Dialog */}
+      {/* Video Playback Dialog - Vertical Layout */}
       <Dialog
         open={selectedVideo !== null}
         onOpenChange={(open) => {
@@ -746,51 +746,89 @@ export const VideoShowcase = ({
           }
         }}
       >
-        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-background rounded-xl">
-          <DialogHeader className="p-5 pb-0">
-            <DialogTitle className="text-base font-semibold">
-              {selectedVideo?.title}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="aspect-video bg-zinc-950">
-            {selectedVideo && selectedVideo.videoUrl ? (
-              <video
-                src={selectedVideo.videoUrl}
-                controls
-                autoPlay
-                className="w-full h-full"
-                poster={selectedVideo.thumbnail}
-              >
-                {texts.unsupportedVideo}
-              </video>
-            ) : selectedVideo ? (
-              <img
-                src={selectedVideo.thumbnail}
-                alt={selectedVideo.title}
-                className="w-full h-full object-contain"
-              />
-            ) : null}
-          </div>
-          <div className="p-5 pt-3">
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              {selectedVideo?.description}
-            </p>
-            {selectedVideo?.command && (
-              <div className="mb-4">
-                <CopyableCodeBlock command={selectedVideo.command} />
+        <DialogContent className="max-w-[95vw] xl:max-w-[1200px] w-full p-0 overflow-hidden bg-background border border-border/50 rounded-2xl shadow-2xl">
+          <div className="flex flex-col max-h-[90vh] overflow-y-auto">
+            {/* Video Area - Full width, cinema aspect ratio */}
+            <div className="relative bg-black w-full aspect-video">
+              {selectedVideo && selectedVideo.videoUrl ? (
+                <video
+                  src={selectedVideo.videoUrl}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain"
+                  poster={selectedVideo.thumbnail}
+                >
+                  {texts.unsupportedVideo}
+                </video>
+              ) : selectedVideo ? (
+                <div className="relative w-full h-full">
+                  <img
+                    src={selectedVideo.thumbnail}
+                    alt={selectedVideo.title}
+                    className="w-full h-full object-contain"
+                  />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <div className="text-center text-white/60">
+                      <Play className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <p className="text-base">{texts.unsupportedVideo}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Info Section - Below video */}
+            <div className="bg-background px-8 py-8">
+              {/* Title - Large and prominent */}
+              <DialogTitle className="text-2xl md:text-3xl font-bold text-foreground tracking-tight mb-4 leading-tight">
+                {selectedVideo?.title}
+              </DialogTitle>
+
+              {/* Category & Duration row */}
+              <div className="flex flex-wrap items-center gap-3 mb-6">
+                {selectedVideo?.category && (
+                  <Badge variant="secondary" className="text-sm rounded-md font-medium px-3 py-1">
+                    {selectedVideo.category}
+                  </Badge>
+                )}
+                {selectedVideo?.duration && (
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span>{selectedVideo.duration}</span>
+                  </div>
+                )}
               </div>
-            )}
-            {selectedVideo?.link && (
-              <a
-                href={selectedVideo.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-violet-600 dark:text-violet-400 hover:underline transition-colors"
-              >
-                {texts.viewTutorial}
-                <ArrowRight className="w-3.5 h-3.5" />
-              </a>
-            )}
+
+              {/* Description - Comfortable reading size */}
+              <div className="mb-8">
+                <p className="text-base md:text-lg text-foreground/85 leading-relaxed max-w-4xl">
+                  {selectedVideo?.description}
+                </p>
+              </div>
+
+              {/* Command block - if exists */}
+              {selectedVideo?.command && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Command
+                  </h4>
+                  <CopyableCodeBlock command={selectedVideo.command} />
+                </div>
+              )}
+
+              {/* Tutorial link */}
+              {selectedVideo?.link && (
+                <a
+                  href={selectedVideo.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-base font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors group"
+                >
+                  {texts.viewTutorial}
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </a>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
