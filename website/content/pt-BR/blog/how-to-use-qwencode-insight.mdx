@@ -1,0 +1,168 @@
+---
+title: "A IA me conhece melhor do que eu mesmo — Experiência com o Recurso Insight do Qwen Code"
+date: "2026-03-11"
+description: "Experiência com o novo recurso Insight do Qwen Code, usando dados para mostrar como você usa a IA e como a IA pode orientá-lo a usá-la melhor."
+author: "joeytoday"
+tags: ["Tutorials", "user examples", "feature", "insight"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="A IA me conhece melhor do que eu mesmo — Experiência com o Recurso Insight do Qwen Code"
+  date="2026-03-11"
+  author="joeytoday"
+/>
+
+> Experiência com o novo recurso Insight do Qwen Code, usando dados para mostrar como você usa a IA e como a IA pode orientá-lo a usá-la melhor.
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01ztrQcd1aEzkPLMKqf_!!6000000003299-2-tps-2400-1374.png)
+
+Recentemente, o Qwen Code lançou um novo recurso — **Insight**.
+
+Depois de usá-lo por alguns dias, tive uma sensação muito forte: **a IA me conhece melhor do que eu mesmo**.
+
+Antes, eu sempre achei que minha colaboração com a IA era bem fluída, até que o Insight colocou em evidência todas aquelas «coisas incômodas às quais eu estava acostumado». E o mais interessante é que — **a IA está me ensinando a usá-la melhor**. Ela não apenas diz «o que você fez», mas também mostra «como você poderia fazer melhor».
+
+Isso não é como um **professor personalizado para revisão em tempo real**?
+
+## Por que precisamos de uma «revisão do uso da IA»?
+
+Todos sabemos o valor da revisão — olhar para trás, refletir, melhorar. Mas, sendo sincero, **quantas pessoas realmente fazem uma revisão de como usam a IA**?
+
+A maioria das pessoas (incluindo eu) está neste estado: **quando surge um problema, pergunta à IA; quando a IA dá uma resposta, usa; quando aparece um bug, pergunta de novo**. Dia após dia, pensamos que estamos usando bem a IA, mas na verdade podemos estar apenas repetindo os mesmos padrões ineficientes e caindo nas mesmas armadilhas.
+
+**O que o Insight faz é automatizar essa revisão para você.**
+
+Ele analisa todas as suas conversas com o Qwen Code e gera um relatório de uso personalizado. É como o «tempo de uso da tela» do celular, mas em vez de dizer «quanto tempo você passou assistindo vídeos curtos hoje», ele mostra «quanto trabalho a IA fez por você hoje e como você pode fazer a IA trabalhar ainda mais por você».
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01TbTAPo1gEtLwqodNV_!!6000000004111-2-tps-1573-904.png)
+
+## É como um espelho: ajuda você a enxergar seus «hábitos de uso da IA»
+
+O que mais me tocou no Insight foi que ele me mostrou **padrões dos quais eu nem tinha consciência**.
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01VJBusI1uz3trvVkRt_!!6000000006107-2-tps-1437-505.png)
+
+Por exemplo, meu relatório mostrou que, em 4 dias, usei 246 comandos shell, muito mais do que qualquer outra ferramenta. O Insight analisou isso e concluiu:
+
+> **Você não gosta de planejar detalhadamente com antecedência; prefere ajustar enquanto faz.**
+>
+> **Você prefere que o Qwen Code execute e valide, em vez de apenas dar conselhos.**
+
+Quando li isso, fiquei surpreso — estava certíssimo. Eu realmente sou do tipo «agir primeiro, pensar depois», mas nunca percebi que esse hábito afetava minha eficiência de colaboração com a IA.
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01vuQnjd1QAHVvKHOPT_!!6000000001935-2-tps-1460-580.png)
+
+Esse é o valor da revisão: **não é dizer o que você fez de errado, mas mostrar seus padrões de comportamento, para que você mesmo perceba onde pode melhorar**.
+
+O Insight também analisa a distribuição do seu conteúdo de trabalho, horários de pico e tipos de demandas, ajudando você a entender de uma perspectiva macroscópica o que realmente está fazendo com a IA. Percebi que nesses dias estive principalmente trabalhando com documentação e desenvolvimento de skills (19 sessões), em vez de escrever código — sou definitivamente uma «pessoa de documentação» (risos).
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01F77QIP1DLBwYv4e5Q_!!6000000000199-2-tps-1506-969.png)
+
+## É como um diagnosticador: ajuda você a encontrar «onde está travando»
+
+Revisão não é apenas olhar dados; o mais importante é **identificar pontos problemáticos**.
+
+O Insight identifica automaticamente atritos na sua colaboração com a IA e os analisa por categoria. Por exemplo, no meu relatório, os três maiores pontos problemáticos foram:
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01kkz3VJ1xoTarHMdRr_!!6000000006490-2-tps-1446-1022.png)
+
+- **Problemas de build e dependências**: conflitos npm, falta de ffmpeg, erros de permissão — sempre várias rodadas de tentativa
+- **Falhas na gravação de arquivos**: sintaxe heredoc, frontmatter YAML corrompido — erros repetidos ao criar arquivos de skill
+- **Interrupções no fluxo do Git**: falhas na criação de PR, problemas de escape de aspas — operações que deveriam ser feitas em uma etapa viram depuração em múltiplas rodadas
+
+Ver isso foi como uma revelação — **esses problemas não eram ocasionais, mas sistemáticos**. Toda vez que eu tinha problemas de build, precisava de várias rodadas; não era um problema da IA, mas da minha configuração de ambiente incompleta. Se o Insight não tivesse mostrado esses dados, talvez eu nunca tivesse percebido isso.
+
+É como ir ao médico: você pode achar que «uma dor de cabeça ocasional não é nada», mas o exame mostra que sua pressão está alta — **o problema não está nos sintomas isolados, mas em não enxergar o padrão por trás deles**.
+
+## É como um treinador: oferece soluções específicas de melhoria
+
+Depois de identificar os problemas, vem a parte mais valiosa do Insight — **ele não apenas diagnostica, mas também prescreve**.
+
+O Insight fornece recomendações de regras que podem ser copiadas diretamente para o QWEN.md (arquivo de configuração personalizado do Qwen Code) com base nos seus pontos problemáticos. Por exemplo, para o meu caso, ele recomendou:
+
+- Sempre validar e fornecer URL ao criar um PR (porque encontrei várias vezes o problema de PR não ser realmente criado)
+- Usar gravação direta de arquivos em vez de heredoc para skills (porque heredoc causava repetidamente corrupção de YAML)
+- Verificar se as dependências estão instaladas antes de iniciar o build (porque falta de dependências era meu maior sumidouro de tempo)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01DLriav1kIKnEsI5Bb_!!6000000004660-2-tps-1453-638.png)
+
+**Estas não são «melhores práticas» genéricas, mas recomendações personalizadas extraídas dos seus dados reais de uso.** É como um treinador que assiste à gravação do seu jogo e diz: «Seu terceiro passo está sempre meio atrasado, tente ajustar assim» — em vez de te dar um manual de treinamento genérico.
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01qmzio71yXonubltON_!!6000000006589-2-tps-1474-1088.png)
+
+Ele também recomenda recursos que você pode precisar mas ainda não usou. Por exemplo, ele percebeu que eu frequentemente usava comandos shell como solução alternativa para criar PRs e recomendou que eu experimentasse **MCP Servers**, que permitem que o Qwen Code interaja diretamente com o GitHub, eliminando a necessidade de lidar com a linha de comando.
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01ssrTMy1DalPTJKmIf_!!6000000000233-2-tps-1466-824.png)
+
+## Ele também te encoraja: mostra onde você está indo bem
+
+Uma boa revisão não é apenas encontrar problemas, mas também reconhecer progressos e pontos fortes.
+
+O Insight mostra onde você está indo bem e em quais aspectos a IA mais te ajuda. Meu relatório mostrou 97% de taxa de satisfação e 80% das tarefas completas total ou parcialmente. A capacidade que mais me ajudou no Qwen Code foi «ajuda proativa» — ele identifica problemas ativamente e propõe soluções, em vez de esperar que eu o direcione passo a passo.
+
+O relatório também inclui um módulo de perspectivas futuras, descrevendo a direção da evolução do desenvolvimento assistido por IA — de «executar tarefas passivamente» para «fluxos de trabalho autônomos multi-agentes». Depois de ler, você percebe: **a forma como colaboramos com a IA hoje pode ser apenas um ponto de partida**.
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01zK0pOT1ll1DL4Nd0A_!!6000000004858-2-tps-1481-1389.png)
+
+## Um easter egg interessante
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01YNjMMT1I9LmZt55ll_!!6000000000850-2-tps-1455-247.png)
+
+O relatório registrou uma pequena história: quando pedi o endereço IP local, digitei errado e a entrada saiu como caracteres aleatórios, mas o Qwen Code entendeu corretamente o que eu quis dizer e forneceu o endereço IP com sucesso. Essa sensação de «conexão telepática» foi meio fofa, haha.
+
+## Como usar o Insight?
+
+No Qwen Code, basta digitar o comando `/insights` para gerar seu relatório de uso.
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/KECE0t_PB_P9P2Djf22fMZ97mRNPrqroKO5cf4V71XM.mp4" controls></video>
+
+O relatório contém sete módulos:
+
+| Módulo | Descrição |
+|------|------|
+| At a Glance | Visão geral do uso, para entender rapidamente o uso geral |
+| What You Work On | Análise do conteúdo de trabalho, para entender a distribuição do tempo |
+| How You Use Qwen Code | Padrões de uso, para descobrir hábitos de comportamento |
+| Impressive Things | Destaques e conquistas, para ver seu progresso |
+| Where Things Go Wrong | Diagnóstico de problemas, para identificar pontos problemáticos |
+| Features to Try | Recomendações de recursos, para descobrir novas possibilidades |
+| On the Horizon | Perspectivas futuras, para entender a direção da evolução |
+
+**Cada relatório é único**, pois é baseado inteiramente nos seus próprios dados de uso. Seus pontos problemáticos, seus hábitos, suas recomendações de melhoria — tudo é personalizado.
+
+<Callout>
+    **Dica**:
+    Use o comando `/insights` regularmente para visualizar o relatório e otimizar continuamente sua colaboração com a IA.
+</Callout>
+
+Se você também usa o Qwen Code, recomendo fortemente que experimente. Não é para ver dados, mas para **enxergar aquele «você» que passou despercebido** — e então fazer a próxima colaboração com a IA um pouco mais fluída do que a anterior.
+
+## Para finalizar
+
+O Insight não é apenas um recurso, mas uma nova perspectiva — **deixar a IA te ajudar a entender como você usa a IA**.
+
+Nesta era em que a IA para programação assistida está se tornando cada vez mais popular, aprender a usar e colaborar de forma eficiente pode ser mais importante do que dominar uma linguagem de programação específica. E o Insight é seu espelho, seu diagnosticador, seu treinador.
+
+> 📌 Endereço do projeto: https://github.com/QwenLM/qwen-code
+>
+> Se achou útil, dê um ⭐️ Star no projeto!
+>
+> Se tiver dúvidas ou quiser compartilhar seu cenário de uso, deixe um comentário!
+
+## 🔗 Links e Recursos
+
+- **GitHub**: [github.com/QwenLM/qwen-code](https://github.com/QwenLM/qwen-code)
+- **Documentação Oficial**: [qwenlm.github.io/qwen-code-docs](https://qwenlm.github.io/qwen-code-docs)
+
+### Junte-se a nós!
+
+O Qwen Code não pode existir sem a construção conjunta dos desenvolvedores da comunidade, e também depende do suporte e feedback dos usuários internos. Nossos recursos importantes, como o SDK Java, o plugin para VS Code e a extensão para o navegador Chrome, foram todos construídos em colaboração com parceiros internos. Se você se interessa pelo Qwen Code, venha contribuir conosco!
+
+Também estamos contratando! O projeto Qwen Code está buscando talentos técnicos na área de **IA full-stack**, sem restrição de nível. Envie seu currículo! pomelo.lcw@alibaba-inc.com
+
+---
+
+Abraçando a nova era do AI Coding, começando pelo Qwen Code no terminal.
