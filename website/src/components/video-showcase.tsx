@@ -382,10 +382,14 @@ const ScenarioVideoCard = ({
       </p>
       {video.command && <CopyableCodeBlock command={video.command} />}
       {video.link && (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors mt-auto pt-3">
+        <a
+          href={video.link}
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-violet-600 dark:hover:text-violet-400 transition-colors mt-auto pt-3"
+          onClick={(event) => event.stopPropagation()}
+        >
           {texts.viewTutorial}
           <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-        </span>
+        </a>
       )}
     </div>
   </div>
@@ -768,9 +772,25 @@ export const VideoShowcase = ({
             ) : null}
           </div>
           <div className="p-5 pt-3">
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
               {selectedVideo?.description}
             </p>
+            {selectedVideo?.command && (
+              <div className="mb-4">
+                <CopyableCodeBlock command={selectedVideo.command} />
+              </div>
+            )}
+            {selectedVideo?.link && (
+              <a
+                href={selectedVideo.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-medium text-violet-600 dark:text-violet-400 hover:underline transition-colors"
+              >
+                {texts.viewTutorial}
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+            )}
           </div>
         </DialogContent>
       </Dialog>
