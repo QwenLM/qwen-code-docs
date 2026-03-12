@@ -108,30 +108,29 @@ const CopyableCodeBlock = ({ command }: { command: string }) => {
     [command]
   );
 
-  const isMultiLine = command.includes("\n");
-
   return (
     <div
-      className="mt-3 flex items-start gap-1.5 rounded-md bg-muted/60 dark:bg-muted/30 px-2.5 py-1.5 border border-border/40"
+      className="mt-3 group/code relative rounded-lg bg-zinc-950/5 dark:bg-zinc-50/5 border border-border/30 hover:border-border/60 transition-colors duration-200"
       onClick={(event) => event.stopPropagation()}
     >
-      <code
-        className={`flex-1 text-[11px] font-mono text-muted-foreground select-all ${isMultiLine ? "whitespace-pre-wrap break-all" : "truncate"}`}
-      >
-        {command}
-      </code>
-      <button
-        type="button"
-        onClick={handleCopy}
-        className="shrink-0 w-6 h-6 rounded flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted active:scale-[0.95] transition-all duration-150"
-        aria-label="Copy command"
-      >
-        {copied ? (
-          <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-        ) : (
-          <Copy className="w-3 h-3" />
-        )}
-      </button>
+      <div className="flex items-center gap-2 px-3 py-3">
+        <Terminal className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+        <code className="flex-1 text-xs font-mono text-muted-foreground leading-relaxed whitespace-pre-wrap break-words select-all">
+          {command}
+        </code>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground/40 hover:text-foreground hover:bg-muted/80 active:scale-[0.95] transition-all duration-200"
+          aria-label="Copy command"
+        >
+          {copied ? (
+            <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          ) : (
+            <Copy className="w-3.5 h-3.5" />
+          )}
+        </button>
+      </div>
     </div>
   );
 };
@@ -265,10 +264,12 @@ const FeatureVideoCard = ({
   video,
   onClick,
   variant = "default",
+  texts,
 }: {
   video: Video;
   onClick: () => void;
   variant?: "default" | "wide";
+  texts?: ShowcaseTexts;
 }) => (
   <div
     role="button"
@@ -319,6 +320,16 @@ const FeatureVideoCard = ({
         {video.description}
       </p>
       {video.command && <CopyableCodeBlock command={video.command} />}
+      {video.link && texts && (
+        <a
+          href={video.link}
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-violet-600 dark:hover:text-violet-400 transition-colors mt-auto pt-3"
+          onClick={(event) => event.stopPropagation()}
+        >
+          {texts.viewTutorial}
+          <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+        </a>
+      )}
     </div>
   </div>
 );
@@ -441,6 +452,7 @@ const LatestVideosSection = ({
                 video={video}
                 onClick={() => onVideoSelect(video)}
                 variant={index === 0 ? "wide" : "default"}
+                texts={texts}
               />
             ))}
           </div>
@@ -512,6 +524,7 @@ const FeatureTabContent = ({
               variant={
                 index === 0 && filteredVideos.length > 2 ? "wide" : "default"
               }
+              texts={texts}
             />
           ))}
         </div>
@@ -614,16 +627,16 @@ const TabbedContentSection = ({
     <section id="all-videos" className="w-full border-t border-border/50">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 md:py-24">
         <Tabs defaultValue="features" className="w-full">
-          <TabsList className="mb-10 bg-muted/50 p-1 rounded-xl h-auto">
+          <TabsList className="mb-10 bg-violet-100 dark:bg-violet-950/40 p-1 rounded-xl h-auto border border-violet-200 dark:border-violet-800/50">
             <TabsTrigger
               value="features"
-              className="px-5 py-2.5 text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="px-5 py-2.5 text-sm font-medium rounded-lg text-violet-700 dark:text-violet-300 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-violet-500/25 transition-all duration-200"
             >
               {texts.featureTabLabel}
             </TabsTrigger>
             <TabsTrigger
               value="scenarios"
-              className="px-5 py-2.5 text-sm font-medium rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="px-5 py-2.5 text-sm font-medium rounded-lg text-violet-700 dark:text-violet-300 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-violet-500/25 transition-all duration-200"
             >
               {texts.scenarioTabLabel}
             </TabsTrigger>
