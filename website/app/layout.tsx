@@ -87,7 +87,7 @@ export const metadata: Metadata = {
     url: "/",
     images: [
       {
-        url: "https://img.alicdn.com/imgextra/i3/O1CN01RJmPT71c3Cmk3lgMM_!!6000000003544-2-tps-1838-878.png",
+        url: "https://img.alicdn.com/imgextra/i2/O1CN01lEez1C1UXsNllvx1A_!!6000000002528-2-tps-1600-900.png",
         alt: "Qwen Code Docs",
       },
     ],
@@ -97,7 +97,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: DEFAULT_TITLE,
     description: DESCRIPTION,
-    images: ["https://img.alicdn.com/imgextra/i3/O1CN01RJmPT71c3Cmk3lgMM_!!6000000003544-2-tps-1838-878.png"],
+    images: ["https://img.alicdn.com/imgextra/i2/O1CN01lEez1C1UXsNllvx1A_!!6000000002528-2-tps-1600-900.png"],
   },
   appleWebApp: {
     title: "Qwen Code",
