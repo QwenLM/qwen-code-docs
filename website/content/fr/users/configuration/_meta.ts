@@ -5,6 +5,6 @@ export default {
     display: 'hidden',
   },
   'qwen-ignore': 'Fichiers ignorés',
-  'trusted-folders': 'Dossiers de confiance',
+  'trusted-folders': 'Dossiers approuvés',
   themes: 'Thèmes',
 };

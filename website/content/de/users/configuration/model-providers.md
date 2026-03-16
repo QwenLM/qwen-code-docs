@@ -1,54 +1,53 @@
 # Modellanbieter
 
-Mit Qwen Code können Sie mehrere Modellanbieter über die Einstellung `modelProviders` in Ihrer `settings.json` konfigurieren. Dadurch können Sie mithilfe des Befehls `/model` zwischen verschiedenen KI-Modellen und Anbietern wechseln.
+Qwen Code ermöglicht es Ihnen, mehrere Modellanbieter über die Einstellung `modelProviders` in Ihrer Datei `settings.json` zu konfigurieren. Dadurch können Sie mithilfe des Befehls `/model` zwischen verschiedenen KI-Modellen und Anbietern wechseln.
 
 ## Übersicht
 
-Verwenden Sie `modelProviders`, um kuratierte Modelllisten pro Authentifizierungstyp zu deklarieren, zwischen denen der `/model`-Auswahlmenü wechseln kann. Die Schlüssel müssen gültige Authentifizierungstypen sein (`openai`, `anthropic`, `gemini`, `vertex-ai`, usw.). Jeder Eintrag erfordert eine `id` und **muss `envKey` enthalten**, optional können `name`, `description`, `baseUrl` und `generationConfig` hinzugefügt werden. Anmeldedaten werden niemals in den Einstellungen gespeichert; die Laufzeit liest sie aus `process.env[envKey]`. Qwen-OAuth-Modelle bleiben hartkodiert und können nicht überschrieben werden.
+Verwenden Sie `modelProviders`, um für jeden Authentifizierungstyp kuratierte Modelllisten zu deklarieren, zwischen denen der `/model`-Picker wechseln kann. Die Schlüssel müssen gültige Authentifizierungstypen sein (`openai`, `anthropic`, `gemini`, usw.). Jeder Eintrag erfordert eine `id` und **muss `envKey` enthalten**, optional können `name`, `description`, `baseUrl` und `generationConfig` angegeben werden. Anmeldeinformationen werden niemals in den Einstellungen gespeichert; die Laufzeit liest sie stattdessen aus `process.env[envKey]`. Qwen-OAuth-Modelle bleiben hartcodiert und können nicht überschrieben werden.
 
 > [!note]
 >
-> Nur der Befehl `/model` zeigt Nicht-Standard-Authentifizierungstypen an. Anthropic, Gemini, Vertex AI usw. müssen über `modelProviders` definiert werden. Der Befehl `/auth` listet absichtlich nur die integrierten Qwen-OAuth- und OpenAI-Flows auf.
+> Nur der `/model`-Befehl stellt Nicht-Standard-Authentifizierungstypen zur Verfügung. Anthropic, Gemini usw. müssen über `modelProviders` definiert werden. Der `/auth`-Befehl listet Qwen OAuth, Alibaba Cloud Coding Plan und API Key als integrierte Authentifizierungsoptionen auf.
 
 > [!warning]
 >
-> **Doppelte Modell-IDs innerhalb desselben Authentifizierungstyps:** Das Definieren mehrerer Modelle mit derselben `id` unter einem einzigen `authType` (z.B. zwei Einträge mit `"id": "gpt-4o"` in `openai`) wird derzeit nicht unterstützt. Falls Duplikate vorhanden sind, **gewinnt das erste Vorkommen** und nachfolgende Duplikate werden mit einer Warnung übersprungen. Beachten Sie, dass das Feld `id` sowohl als Konfigurationsidentifikator als auch als tatsächlicher Modellname verwendet wird, der an die API gesendet wird, daher ist die Verwendung eindeutiger IDs (z.B. `gpt-4o-creative`, `gpt-4o-balanced`) keine funktionierende Lösung. Dies ist eine bekannte Einschränkung, die wir in einer zukünftigen Version beheben möchten.
+> **Doppelte Modell-IDs innerhalb desselben Authentifizierungstyps:** Das Definieren mehrerer Modelle mit derselben `id` unter einem einzelnen `authType` (z. B. zwei Einträge mit `"id": "gpt-4o"` in `openai`) wird derzeit nicht unterstützt. Falls Duplikate vorhanden sind, **gewinnt die erste Instanz**, während nachfolgende Duplikate mit einer Warnung übersprungen werden. Beachten Sie, dass das `id`-Feld sowohl als Konfigurationsbezeichner als auch als tatsächlicher Modellname verwendet wird, der an die API gesendet wird. Daher ist die Verwendung eindeutiger IDs (z. B. `gpt-4o-creative`, `gpt-4o-balanced`) keine zulässige Problemumgehung. Dies ist eine bekannte Einschränkung, die wir in einer zukünftigen Version beheben werden.
 
 ## Konfigurationsbeispiele nach Authentifizierungstyp
 
-Nachfolgend finden Sie umfassende Konfigurationsbeispiele für verschiedene Authentifizierungstypen mit den verfügbaren Parametern und deren Kombinationen.
+Im Folgenden finden Sie umfassende Konfigurationsbeispiele für verschiedene Authentifizierungstypen mit Angabe der verfügbaren Parameter und ihrer Kombinationen.
 
-### Unterstützte Authentifizierungsarten
+### Unterstützte Authentifizierungstypen
 
-Die Schlüssel des `modelProviders`-Objekts müssen gültige `authType`-Werte sein. Derzeit unterstützte Authentifizierungsarten sind:
+Die Schlüssel des `modelProviders`-Objekts müssen gültige `authType`-Werte sein. Derzeit unterstützte Authentifizierungstypen sind:
 
-| Authentifizierungsart | Beschreibung                                                                                   |
-| --------------------- | ---------------------------------------------------------------------------------------------- |
-| `openai`              | OpenAI-kompatible APIs (OpenAI, Azure OpenAI, lokale Inferenzserver wie vLLM/Ollama)          |
-| `anthropic`           | Anthropic Claude API                                                                           |
-| `gemini`              | Google Gemini API                                                                              |
-| `vertex-ai`           | Google Vertex AI                                                                               |
-| `qwen-oauth`          | Qwen OAuth (fest codiert, kann nicht in `modelProviders` überschrieben werden)                |
+| Authentifizierungstyp | Beschreibung                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| `openai`              | OpenAI-kompatible APIs (OpenAI, Azure OpenAI, lokale Inferenzserver wie vLLM/Ollama)            |
+| `anthropic`           | Anthropic Claude-API                                                                              |
+| `gemini`              | Google Gemini-API                                                                                 |
+| `qwen-oauth`          | Qwen OAuth (fest codiert, kann in `modelProviders` nicht überschrieben werden)                   |
 
 > [!warning]
-> Wenn ein ungültiger Authentifizierungstyp-Schlüssel verwendet wird (z.B. ein Tippfehler wie `"openai-custom"`), wird die Konfiguration **still übersprungen** und die Modelle erscheinen nicht im `/model`-Auswahlmenü. Verwenden Sie immer einen der oben aufgeführten unterstützten Authentifizierungstypen.
+> Wird ein ungültiger Authentifizierungstyp verwendet (z. B. ein Tippfehler wie `"openai-custom"`), wird die Konfiguration **stillgeschwiegen übersprungen**, und die Modelle erscheinen nicht im `/model`-Auswahlfeld. Verwenden Sie stets einen der oben aufgeführten unterstützten Authentifizierungstypen.
 
 ### SDKs für API-Anfragen
 
-Qwen Code verwendet die folgenden offiziellen SDKs, um Anfragen an jeden Anbieter zu senden:
+Qwen Code verwendet die folgenden offiziellen SDKs, um Anfragen an die jeweiligen Anbieter zu senden:
 
-| Authentifizierungstyp  | SDK-Paket                                                                                       |
-| ---------------------- | ----------------------------------------------------------------------------------------------- |
-| `openai`               | [`openai`](https://www.npmjs.com/package/openai) - Offizielles OpenAI Node.js SDK               |
-| `anthropic`            | [`@anthropic-ai/sdk`](https://www.npmjs.com/package/@anthropic-ai/sdk) - Offizielles Anthropic SDK |
-| `gemini` / `vertex-ai` | [`@google/genai`](https://www.npmjs.com/package/@google/genai) - Offizielles Google GenAI SDK   |
-| `qwen-oauth`           | [`openai`](https://www.npmjs.com/package/openai) mit benutzerdefiniertem Anbieter (DashScope-kompatibel) |
+| Authentifizierungstyp | SDK-Paket                                                                                     |
+| --------------------- | ---------------------------------------------------------------------------------------------- |
+| `openai`              | [`openai`](https://www.npmjs.com/package/openai) – Offizielles OpenAI-Node.js-SDK              |
+| `anthropic`           | [`@anthropic-ai/sdk`](https://www.npmjs.com/package/@anthropic-ai/sdk) – Offizielles Anthropic-SDK |
+| `gemini`              | [`@google/genai`](https://www.npmjs.com/package/@google/genai) – Offizielles Google-GenAI-SDK  |
+| `qwen-oauth`          | [`openai`](https://www.npmjs.com/package/openai) mit benutzerdefiniertem Anbieter (kompatibel mit DashScope) |
 
-Das bedeutet, dass die von Ihnen konfigurierte `baseUrl` mit dem erwarteten API-Format des entsprechenden SDK kompatibel sein muss. Wenn Sie beispielsweise den Authentifizierungstyp `openai` verwenden, muss der Endpunkt OpenAI-API-Format-Anfragen akzeptieren.
+Das bedeutet, dass die von Ihnen konfigurierte `baseUrl` mit dem vom entsprechenden SDK erwarteten API-Format kompatibel sein muss. Wenn Sie beispielsweise den Authentifizierungstyp `openai` verwenden, muss der Endpunkt Anfragen im OpenAI-API-Format akzeptieren.
 
 ### OpenAI-kompatible Anbieter (`openai`)
 
-Dieser Authentifizierungstyp unterstützt nicht nur die offizielle OpenAI-API, sondern auch jeden OpenAI-kompatiblen Endpunkt, einschließlich aggregierter Modellanbieter wie OpenRouter.
+Dieser Authentifizierungstyp unterstützt nicht nur die offizielle OpenAI-API, sondern auch beliebige OpenAI-kompatible Endpunkte – darunter aggregierende Modellanbieter wie OpenRouter.
 
 ```json
 {
@@ -64,6 +63,9 @@ Dieser Authentifizierungstyp unterstützt nicht nur die offizielle OpenAI-API, s
           "maxRetries": 3,
           "enableCacheControl": true,
           "contextWindowSize": 128000,
+          "modalities": {
+            "image": true
+          },
           "customHeaders": {
             "X-Client-Request-ID": "req-123"
           },
@@ -183,34 +185,9 @@ Dieser Authentifizierungstyp unterstützt nicht nur die offizielle OpenAI-API, s
 }
 ```
 
-### Google Vertex AI (`vertex-ai`)
+### Lokale selbstgehostete Modelle (über OpenAI-kompatible API)
 
-```json
-{
-  "modelProviders": {
-    "vertex-ai": [
-      {
-        "id": "gemini-1.5-pro-vertex",
-        "name": "Gemini 1.5 Pro (Vertex AI)",
-        "envKey": "GOOGLE_API_KEY",
-        "baseUrl": "https://generativelanguage.googleapis.com",
-        "generationConfig": {
-          "timeout": 90000,
-          "contextWindowSize": 2000000,
-          "samplingParams": {
-            "temperature": 0.2,
-            "max_tokens": 8192
-          }
-        }
-      }
-    ]
-  }
-}
-```
-
-### Lokale selbstgehostete Modelle (über OpenAI-kompatibles API)
-
-Die meisten lokalen Inference-Server (vLLM, Ollama, LM Studio usw.) stellen einen OpenAI-kompatiblen API-Endpunkt bereit. Konfigurieren Sie diese mit dem `openai` Authentifizierungstyp und einer lokalen `baseUrl`:
+Die meisten lokalen Inferenzserver (vLLM, Ollama, LM Studio usw.) stellen einen OpenAI-kompatiblen API-Endpunkt bereit. Konfigurieren Sie diese mithilfe des Authentifizierungstyps `openai` und einer lokalen `baseUrl`:
 
 ```json
 {
@@ -249,7 +226,7 @@ Die meisten lokalen Inference-Server (vLLM, Ollama, LM Studio usw.) stellen eine
       },
       {
         "id": "local-model",
-        "name": "Local Model (LM Studio)",
+        "name": "Lokales Modell (LM Studio)",
         "envKey": "LMSTUDIO_API_KEY",
         "baseUrl": "http://localhost:1234/v1",
         "generationConfig": {
@@ -268,83 +245,82 @@ Für lokale Server, die keine Authentifizierung erfordern, können Sie einen bel
 
 ```bash
 
-```bash
 # Für Ollama (keine Authentifizierung erforderlich)
 export OLLAMA_API_KEY="ollama"
 
 # Für vLLM (falls keine Authentifizierung konfiguriert ist)
-export VLLM_API_KEY="not-needed"
+export VLLM_API_KEY="nicht-erforderlich"
 ```
 
 > [!note]
-> 
-> Der Parameter `extra_body` wird **nur für OpenAI-kompatible Anbieter** unterstützt (`openai`, `qwen-oauth`). Er wird von den Anbietern Anthropic, Gemini und Vertex AI ignoriert.
+>
+> Der Parameter `extra_body` wird **ausschließlich von OpenAI-kompatiblen Anbietern** (`openai`, `qwen-oauth`) unterstützt. Er wird von Anthropic- und Gemini-Anbietern ignoriert.
 
-## Bailian-Codierungsplan
+## Alibaba Cloud Coding Plan
 
-Der Bailian-Codierungsplan bietet einen vorkonfigurierten Satz an Qwen-Modellen, die für Codierungsaufgaben optimiert sind. Diese Funktion steht Benutzern mit Zugriff auf die Bailian-API zur Verfügung und bietet eine vereinfachte Einrichtungserfahrung mit automatischen Aktualisierungen der Modelleinstellungen.
+Der Alibaba Cloud Coding Plan bietet eine vorkonfigurierte Auswahl an Qwen-Modellen, die speziell für Programmieraufgaben optimiert sind. Diese Funktion steht Nutzern mit Zugriff auf die Alibaba Cloud Coding Plan-API zur Verfügung und bietet eine vereinfachte Einrichtung mit automatischen Aktualisierungen der Modellkonfiguration.
 
 ### Übersicht
 
-Wenn Sie sich mit einem Bailian Coding Plan API-Schlüssel über den Befehl `/auth` authentifizieren, konfiguriert Qwen Code automatisch die folgenden Modelle:
+Wenn Sie sich mit einem Alibaba Cloud Coding Plan-API-Schlüssel über den Befehl `/auth` authentifizieren, konfiguriert Qwen Code automatisch die folgenden Modelle:
 
-| Modell-ID              | Name                 | Beschreibung                           |
-| ---------------------- | -------------------- | -------------------------------------- |
-| `qwen3.5-plus`         | qwen3.5-plus         | Fortgeschrittenes Modell mit aktiviertem Denken |
-| `qwen3-coder-plus`     | qwen3-coder-plus     | Für Codierungs-Aufgaben optimiert      |
-| `qwen3-max-2026-01-23` | qwen3-max-2026-01-23 | Neuestes Max-Modell mit aktiviertem Denken |
+| Modell-ID               | Name                 | Beschreibung                            |
+| ----------------------- | -------------------- | --------------------------------------- |
+| `qwen3.5-plus`          | qwen3.5-plus         | Fortgeschrittenes Modell mit aktivierter Denkfunktion   |
+| `qwen3-coder-plus`      | qwen3-coder-plus     | Für Programmieraufgaben optimiert             |
+| `qwen3-max-2026-01-23`  | qwen3-max-2026-01-23 | Neuestes „max“-Modell mit aktivierter Denkfunktion |
 
 ### Einrichtung
 
-1. Beschaffen Sie sich einen Bailian Coding Plan API-Schlüssel:
+1. Beschaffen Sie einen Alibaba Cloud Coding Plan-API-Schlüssel:
    - **China**: <https://bailian.console.aliyun.com/?tab=model#/efm/coding_plan>
    - **International**: <https://modelstudio.console.alibabacloud.com/?tab=dashboard#/efm/coding_plan>
-2. Führen Sie den Befehl `/auth` in Qwen Code aus
-3. Wählen Sie die Authentifizierungsmethode über API-Schlüssel
-4. Wählen Sie Ihre Region (China oder Global/International)
-5. Geben Sie Ihren API-Schlüssel ein, wenn Sie dazu aufgefordert werden
+2. Führen Sie den Befehl `/auth` in Qwen Code aus.
+3. Wählen Sie **Alibaba Cloud Coding Plan**.
+4. Wählen Sie Ihre Region.
+5. Geben Sie Ihren API-Schlüssel bei entsprechender Aufforderung ein.
 
 Die Modelle werden automatisch konfiguriert und Ihrem `/model`-Auswahlmenü hinzugefügt.
 
 ### Regionen
 
-Der Bailian-Codierungsplan unterstützt zwei Regionen:
+Der Alibaba Cloud Coding Plan unterstützt zwei Regionen:
 
-| Region               | Endpunkt                                          | Beschreibung                 |
-| -------------------- | ------------------------------------------------- | ---------------------------- |
-| China                | `https://coding.dashscope.aliyuncs.com/v1`        | Endpunkt für Festland-China  |
-| Global/International | `https://coding-intl.dashscope.aliyuncs.com/v1`   | Internationaler Endpunkt     |
+| Region               | Endpunkt                                        | Beschreibung                     |
+| -------------------- | ----------------------------------------------- | ---------------------------------- |
+| China                | `https://coding.dashscope.aliyuncs.com/v1`      | Endpunkt für das chinesische Festland |
+| Global/International | `https://coding-intl.dashscope.aliyuncs.com/v1` | Internationaler Endpunkt         |
 
-Die Region wird während der Authentifizierung ausgewählt und in `settings.json` unter `codingPlan.region` gespeichert. Um die Region zu wechseln, führen Sie den Befehl `/auth` erneut aus und wählen Sie eine andere Region.
+Die Region wird während der Authentifizierung ausgewählt und in `settings.json` unter `codingPlan.region` gespeichert. Um die Region zu wechseln, führen Sie den Befehl `/auth` erneut aus und wählen eine andere Region aus.
 
-### API-Schlüsselspeicherung
+### Speicherung des API-Schlüssels
 
-Wenn Sie Coding Plan über den Befehl `/auth` konfigurieren, wird der API-Schlüssel unter Verwendung des reservierten Umgebungsvariablennamens `BAILIAN_CODING_PLAN_API_KEY` gespeichert. Standardmäßig wird er im Feld `settings.env` Ihrer Datei `settings.json` gespeichert.
+Wenn Sie den Coding-Plan über den Befehl `/auth` konfigurieren, wird der API-Schlüssel unter dem reservierten Umgebungsvariablennamen `BAILIAN_CODING_PLAN_API_KEY` gespeichert. Standardmäßig wird er im Feld `env` Ihrer Datei `settings.json` abgelegt.
 
 > [!warning]
 >
-> **Sicherheitsempfehlung**: Aus Sicherheitsgründen wird empfohlen, den API-Schlüssel aus der Datei `settings.json` in eine separate `.env`-Datei zu verschieben und ihn als Umgebungsvariable zu laden. Beispiel:
+> **Sicherheitsempfehlung**: Aus Sicherheitsgründen empfiehlt es sich, den API-Schlüssel aus der Datei `settings.json` in eine separate Datei `.env` zu verschieben und ihn als Umgebungsvariable zu laden. Beispiel:
 >
 > ```bash
 > # ~/.qwen/.env
 > BAILIAN_CODING_PLAN_API_KEY=Ihr-API-Schlüssel-hier
 > ```
 >
-> Stellen Sie anschließend sicher, dass diese Datei zu Ihrer `.gitignore` hinzugefügt wird, wenn Sie projektspezifische Einstellungen verwenden.
+> Stellen Sie sicher, dass diese Datei zu Ihrer `.gitignore` hinzugefügt wird, falls Sie projektspezifische Einstellungen verwenden.
 
 ### Automatische Updates
 
-Die Konfigurationen des Coding Plan-Modells sind versioniert. Wenn Qwen Code eine neuere Version der Modellvorlage erkennt, werden Sie zur Aktualisierung aufgefordert. Durch die Annahme des Updates wird Folgendes durchgeführt:
+Die Konfigurationen des Coding-Plan-Modells sind versionsbasiert. Sobald Qwen Code eine neuere Version der Modellvorlage erkennt, werden Sie zur Aktualisierung aufgefordert. Wenn Sie die Aktualisierung akzeptieren, wird Folgendes ausgeführt:
 
-- Ersetzen der vorhandenen Coding Plan-Modellkonfigurationen durch die neuesten Versionen
-- Beibehalten aller manuell hinzugefügten benutzerdefinierten Modellkonfigurationen
-- Automatisches Wechseln zum ersten Modell in der aktualisierten Konfiguration
+- Die vorhandenen Coding-Plan-Modellkonfigurationen werden durch die neuesten Versionen ersetzt.
+- Alle manuell hinzugefügten benutzerdefinierten Modellkonfigurationen bleiben erhalten.
+- Automatisch wird zum ersten Modell in der aktualisierten Konfiguration gewechselt.
 
-Der Update-Prozess stellt sicher, dass Sie jederzeit Zugriff auf die neuesten Modellkonfigurationen und Funktionen haben, ohne manuelles Eingreifen.
+Der Aktualisierungsprozess stellt sicher, dass Sie stets Zugriff auf die neuesten Modellkonfigurationen und Funktionen haben – ohne manuellen Eingriff.
 
-### Manuelle Konfiguration (Erweitert)
+### Manuelle Konfiguration (Fortgeschritten)
 
-Wenn Sie die Coding Plan-Modelle manuell konfigurieren möchten, können Sie sie wie jeden anderen OpenAI-kompatiblen Anbieter zu Ihrer `settings.json` hinzufügen:
+Falls Sie Coding-Plan-Modelle lieber manuell konfigurieren möchten, können Sie sie wie jeden OpenAI-kompatiblen Anbieter zu Ihrer `settings.json` hinzufügen:
 
 ```json
 {
@@ -353,7 +329,7 @@ Wenn Sie die Coding Plan-Modelle manuell konfigurieren möchten, können Sie sie
       {
         "id": "qwen3-coder-plus",
         "name": "qwen3-coder-plus",
-        "description": "Qwen3-Coder über Bailian Coding Plan",
+        "description": "Qwen3-Coder über den Alibaba Cloud Coding Plan",
         "envKey": "YOUR_CUSTOM_ENV_KEY",
         "baseUrl": "https://coding.dashscope.aliyuncs.com/v1"
       }
@@ -366,67 +342,67 @@ Wenn Sie die Coding Plan-Modelle manuell konfigurieren möchten, können Sie sie
 >
 > Bei Verwendung der manuellen Konfiguration:
 >
-> - Sie können einen beliebigen Namen für die Umgebungsvariable `envKey` verwenden
-> - Sie müssen `codingPlan.*` nicht konfigurieren
-> - **Automatische Updates werden nicht auf manuell konfigurierte Coding Plan-Modelle angewendet**
+> - Sie können für `envKey` einen beliebigen Namen für die Umgebungsvariable verwenden.
+> - Die Konfiguration von `codingPlan.*` ist nicht erforderlich.
+> - **Automatische Updates werden auf manuell konfigurierte Coding-Plan-Modelle nicht angewendet.**
 
 > [!warning]
 >
-> Wenn Sie auch die automatische Coding Plan-Konfiguration verwenden, können automatische Updates Ihre manuellen Konfigurationen überschreiben, wenn dieselben `envKey` und `baseUrl` wie bei der automatischen Konfiguration verwendet werden. Um dies zu vermeiden, stellen Sie sicher, dass Ihre manuelle Konfiguration nach Möglichkeit einen anderen `envKey` verwendet.
+> Falls Sie zusätzlich zur manuellen Konfiguration auch die automatische Coding-Plan-Konfiguration nutzen, können automatische Updates Ihre manuelle Konfiguration überschreiben, sofern dieselben Werte für `envKey` und `baseUrl` wie bei der automatischen Konfiguration verwendet werden. Um dies zu vermeiden, stellen Sie sicher, dass Ihre manuelle Konfiguration – wenn möglich – einen anderen `envKey` verwendet.
 
-## Auflösungsschichten und Atomarität
+## Auflösungsebenen und Atomarität
 
-Die effektiven Authentifizierungs-/Modell-/Anmeldedatenwerte werden pro Feld nach folgender Priorität ausgewählt (zuerst vorhanden gewinnt). Sie können `--auth-type` mit `--model` kombinieren, um direkt auf einen Anbietereintrag zu verweisen; diese CLI-Flags werden vor anderen Schichten ausgeführt.
+Die wirksamen Werte für Authentifizierung, Modell und Anmeldeinformationen werden pro Feld gemäß der folgenden Rangfolge ausgewählt (die erste vorhandene Angabe gewinnt). Sie können `--auth-type` mit `--model` kombinieren, um direkt auf einen Anbieter-Eintrag zu verweisen; diese CLI-Flags werden vor anderen Ebenen ausgeführt.
 
-| Schicht (höchste → niedrigste) | authType                            | model                                           | apiKey                                              | baseUrl                                              | apiKeyEnvKey           | proxy                             |
-| ------------------------------ | ----------------------------------- | ----------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------- | ---------------------- | --------------------------------- |
-| Programmatische Überschreibungen | `/auth`                             | `/auth` Eingabe                                   | `/auth` Eingabe                                       | `/auth` Eingabe                                        | —                      | —                                 |
-| Modellanbieterauswahl          | —                                   | `modelProvider.id`                              | `env[modelProvider.envKey]`                         | `modelProvider.baseUrl`                              | `modelProvider.envKey` | —                                 |
-| CLI-Argumente                  | `--auth-type`                       | `--model`                                       | `--openaiApiKey` (oder anbieterspezifische Äquivalente) | `--openaiBaseUrl` (oder anbieterspezifische Äquivalente) | —                      | —                                 |
-| Umgebungsvariablen             | —                                   | Anbieterspezifisches Mapping (z.B. `OPENAI_MODEL`) | Anbieterspezifisches Mapping (z.B. `OPENAI_API_KEY`)   | Anbieterspezifisches Mapping (z.B. `OPENAI_BASE_URL`)   | —                      | —                                 |
+| Ebene (höchste → niedrigste) | authType                            | model                                           | apiKey                                              | baseUrl                                              | apiKeyEnvKey           | proxy                             |
+| ---------------------------- | ----------------------------------- | ----------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------- | ---------------------- | --------------------------------- |
+| Programmatische Überschreibungen | `/auth`                             | `/auth`-Eingabe                                 | `/auth`-Eingabe                                     | `/auth`-Eingabe                                        | —                      | —                                 |
+| Modellanbieter-Auswahl       | —                                   | `modelProvider.id`                              | `env[modelProvider.envKey]`                         | `modelProvider.baseUrl`                              | `modelProvider.envKey` | —                                 |
+| CLI-Argumente                | `--auth-type`                       | `--model`                                       | `--openaiApiKey` (oder anbieterspezifische Äquivalente) | `--openaiBaseUrl` (oder anbieterspezifische Äquivalente) | —                      | —                                 |
+| Umgebungsvariablen           | —                                   | Anbieterspezifische Zuordnung (z. B. `OPENAI_MODEL`) | Anbieterspezifische Zuordnung (z. B. `OPENAI_API_KEY`)   | Anbieterspezifische Zuordnung (z. B. `OPENAI_BASE_URL`)   | —                      | —                                 |
 | Einstellungen (`settings.json`) | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                              | `security.auth.baseUrl`                              | —                      | —                                 |
-| Standard / berechnet           | Fallback auf `AuthType.QWEN_OAUTH`  | Integrierter Standard (OpenAI ⇒ `qwen3-coder-plus`)  | —                                                   | —                                                    | —                      | `Config.getProxy()` falls konfiguriert |
+| Standard-/berechnete Werte | Fallback auf `AuthType.QWEN_OAUTH` | Integrierter Standard (OpenAI ⇒ `qwen3-coder-plus`) | —                                                   | —                                                    | —                      | `Config.getProxy()`, falls konfiguriert |
 
-\*Falls vorhanden, überschreiben CLI-Auth-Flags die Einstellungen. Andernfalls bestimmen `security.auth.selectedType` oder der implizite Standard den Authentifizierungstyp. Qwen OAuth und OpenAI sind die einzigen Authentifizierungstypen, die ohne zusätzliche Konfiguration angezeigt werden.
+\*Sofern vorhanden, überschreiben CLI-Auth-Flags die Einstellungen. Andernfalls bestimmt `security.auth.selectedType` oder der implizite Standard den Authentifizierungstyp. Qwen OAuth und OpenAI sind die einzigen Authentifizierungstypen, die ohne zusätzliche Konfiguration verfügbar sind.
 
 > [!warning]
-> 
-> **Veraltung von `security.auth.apiKey` und `security.auth.baseUrl`:** Die direkte Konfiguration von API-Anmeldedaten über `security.auth.apiKey` und `security.auth.baseUrl` in `settings.json` ist veraltet. Diese Einstellungen wurden in früheren Versionen für Anmeldedaten verwendet, die über die Benutzeroberfläche eingegeben wurden, aber der Anmeldedateneingabeprozess wurde in Version 0.10.1 entfernt. Diese Felder werden in einer zukünftigen Version vollständig entfernt. **Es wird dringend empfohlen, zu `modelProviders` zu migrieren** für alle Modell- und Anmeldedatenkonfigurationen. Verwenden Sie `envKey` in `modelProviders`, um auf Umgebungsvariablen zu verweisen, um Anmeldedaten sicher zu verwalten, anstatt sie in Einstellungsdateien hart zu codieren.
+>
+> **Veraltung von `security.auth.apiKey` und `security.auth.baseUrl`:** Die direkte Konfiguration von API-Anmeldeinformationen über `security.auth.apiKey` und `security.auth.baseUrl` in `settings.json` ist veraltet. Diese Einstellungen wurden in früheren Versionen für über die Benutzeroberfläche eingegebene Anmeldeinformationen verwendet, doch der Eingabefluss für Anmeldeinformationen wurde in Version 0.10.1 entfernt. Diese Felder werden in einer zukünftigen Version vollständig entfernt. **Es wird dringend empfohlen, für alle Modell- und Anmeldeinformationskonfigurationen auf `modelProviders` umzusteigen.** Verwenden Sie `envKey` innerhalb von `modelProviders`, um auf Umgebungsvariablen für ein sicheres Anmeldeinformationsmanagement zu verweisen, statt Anmeldeinformationen in Einstellungsdateien festzucodieren.
 
-## Generierungskonfigurations-Schichtung: Die undurchdringliche Anbieterschicht
+## Generierungskonfigurations-Überlagerung: Die undurchdringbare Anbieter-Schicht
 
-Die Konfigurationsauflösung folgt einem strengen Schichtungsmodell mit einer entscheidenden Regel: **die modelProvider-Schicht ist undurchdringlich**.
+Die Konfigurationsauflösung folgt einem strengen Schichtenmodell mit einer entscheidenden Regel: **Die `modelProvider`-Schicht ist undurchdringbar.**
 
-### Funktionsweise
+### So funktioniert es
 
-1. **Wenn ein modelProvider-Modell AUSGEWÄHLT ist** (z.B. über den `/model`-Befehl mit Auswahl eines provider-konfigurierten Modells):
-   - Die gesamte `generationConfig` des Providers wird **atomar** angewendet
-   - **Die Provider-Ebene ist völlig undurchlässig** — untere Ebenen (CLI, Umgebung, Einstellungen) beteiligen sich überhaupt nicht an der generationConfig-Auflösung
-   - Alle in `modelProviders[].generationConfig` definierten Felder verwenden die Werte des Providers
-   - Alle Felder, die vom Provider **nicht definiert** sind, werden auf `undefined` gesetzt (nicht von den Einstellungen geerbt)
-   - Dies stellt sicher, dass Provider-Konfigurationen als vollständiges, eigenständiges "versiegeltes Paket" fungieren
+1. **Wenn ein Modell eines `modelProvider` ausgewählt ist** (z. B. über den Befehl `/model`, um ein vom Anbieter konfiguriertes Modell zu wählen):
+   - Die gesamte `generationConfig` des Anbieters wird **atomar** angewendet.
+   - **Die Anbieter-Ebene ist vollständig undurchlässig** – niedrigere Ebenen (CLI, Umgebungsvariablen, Einstellungen) sind bei der Auflösung von `generationConfig` überhaupt nicht beteiligt.
+   - Alle in `modelProviders[].generationConfig` definierten Felder verwenden die Werte des Anbieters.
+   - Alle Felder, die **vom Anbieter nicht definiert** sind, erhalten den Wert `undefined` (sie werden nicht aus den Einstellungen geerbt).
+   - Dadurch wird sichergestellt, dass Konfigurationen von Anbietern als vollständiges, eigenständiges „versiegeltes Paket“ wirken.
 
-2. **Wenn KEIN modelProvider-Modell ausgewählt ist** (z.B. bei Verwendung von `--model` mit einer Roh-Modell-ID oder direkter Nutzung von CLI/Umgebung/Einstellungen):
-   - Die Auflösung fällt auf die unteren Ebenen zurück
-   - Felder werden aus CLI → Umgebung → Einstellungen → Standardwerten befüllt
-   - Dadurch entsteht ein **Laufzeitmodell** (siehe nächsten Abschnitt)
+2. **Wenn KEIN Modell eines `modelProvider` ausgewählt ist** (z. B. bei Verwendung von `--model` mit einer reinen Modell-ID oder bei direkter Nutzung von CLI/Umgabenvariablen/Einstellungen):
+   - Die Auflösung erfolgt schrittweise über die niedrigeren Ebenen.
+   - Felder werden in der Reihenfolge CLI → Umgebungsvariablen → Einstellungen → Standardwerte gefüllt.
+   - Dadurch entsteht ein **Runtime-Modell** (siehe nächsten Abschnitt).
 
-### Feldspezifische Priorität für `generationConfig`
+### Priorität pro Feld für `generationConfig`
 
-| Priorität | Quelle                                        | Verhalten                                                                                                |
-| --------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 1         | Programmatische Überschreibungen              | Laufzeit-Änderungen von `/model`, `/auth`                                                                |
-| 2         | `modelProviders[authType][].generationConfig` | **Undurchlässige Schicht** - ersetzt vollständig alle generationConfig-Felder; untere Schichten beteiligen sich nicht |
-| 3         | `settings.model.generationConfig`             | Wird nur für **Laufzeitmodelle** verwendet (wenn kein Anbietermodell ausgewählt ist)                     |
-| 4         | Standardwerte des Inhaltsgenerators           | Anbieterspezifische Standards (z.B. OpenAI vs. Gemini) - nur für Laufzeitmodelle                        |
+| Priorität | Quelle                                                | Verhalten                                                                                                                              |
+| --------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1         | Programmatische Überschreibungen                      | Laufzeit-Änderungen über `/model` und `/auth`                                                                                           |
+| 2         | `modelProviders[authType][].generationConfig`        | **Undurchlässige Ebene** – ersetzt sämtliche Felder von `generationConfig` vollständig; darunterliegende Ebenen werden nicht berücksichtigt |
+| 3         | `settings.model.generationConfig`                     | Wird nur für **Laufzeitmodelle** verwendet (wenn kein Anbietermodell ausgewählt ist)                                                  |
+| 4         | Standardwerte des Inhalts-Generators                  | Anbieterspezifische Standardwerte (z. B. OpenAI vs. Gemini) – nur für Laufzeitmodelle                                                  |
 
 ### Behandlung atomarer Felder
 
-Die folgenden Felder werden als atomare Objekte behandelt – Anbieterwerte ersetzen das gesamte Objekt vollständig, es erfolgt keine Zusammenführung:
+Die folgenden Felder werden als atomare Objekte behandelt – Anbieterwerte ersetzen das gesamte Objekt vollständig; es erfolgt keine Zusammenführung:
 
-- `samplingParams` – Temperatur, top_p, max_tokens usw.
+- `samplingParams` – Temperatur, `top_p`, `max_tokens` usw.
 - `customHeaders` – Benutzerdefinierte HTTP-Header
-- `extra_body` – Zusätzliche Parameter für den Request-Body
+- `extra_body` – Zusätzliche Parameter für den Anfragetext
 
 ### Beispiel
 
@@ -441,7 +417,7 @@ Die folgenden Felder werden als atomare Objekte behandelt – Anbieterwerte erse
   }
 }
 
-// modelProviders-Konfiguration
+// Konfiguration für modelProviders
 {
   "modelProviders": {
     "openai": [{
@@ -456,19 +432,19 @@ Die folgenden Felder werden als atomare Objekte behandelt – Anbieterwerte erse
 }
 ```
 
-Wenn `gpt-4o` aus modelProviders ausgewählt wird:
+Wenn `gpt-4o` aus `modelProviders` ausgewählt wird:
 
-- `timeout` = 60000 (vom Anbieter, überschreibt Einstellungen)
-- `samplingParams.temperature` = 0.2 (vom Anbieter, ersetzt das Einstellungsobjekt vollständig)
-- `samplingParams.max_tokens` = **undefined** (nicht im Anbieter definiert, und die Anbieterebene erbt nicht von den Einstellungen — Felder werden explizit auf undefined gesetzt, wenn sie nicht bereitgestellt werden)
+- `timeout` = 60000 (aus dem Anbieter, überschreibt die Einstellungen)
+- `samplingParams.temperature` = 0.2 (aus dem Anbieter, ersetzt das gesamte `samplingParams`-Objekt vollständig)
+- `samplingParams.max_tokens` = **undefined** (nicht im Anbieter definiert; die Anbieter-Ebene erbt nicht von den Einstellungen – Felder werden explizit auf `undefined` gesetzt, falls sie nicht angegeben sind)
 
-Beim Verwenden eines Rohmodells über `--model gpt-4` (nicht aus modelProviders, erstellt ein Laufzeitmodell):
+Bei Verwendung eines „rohen“ Modells über `--model gpt-4` (nicht aus `modelProviders`, erstellt ein Laufzeitmodell):
 
 - `timeout` = 30000 (aus den Einstellungen)
 - `samplingParams.temperature` = 0.5 (aus den Einstellungen)
 - `samplingParams.max_tokens` = 1000 (aus den Einstellungen)
 
-Die Merge-Strategie für `modelProviders` selbst ist REPLACE: Das gesamte `modelProviders` aus den Projekteinstellungen überschreibt den entsprechenden Abschnitt in den Benutzereinstellungen, anstatt die beiden zusammenzuführen.
+Die Zusammenführungsstrategie für `modelProviders` selbst lautet ERSETZEN: Der gesamte Abschnitt `modelProviders` aus den Projekteinstellungen überschreibt den entsprechenden Abschnitt in den Benutzereinstellungen vollständig, anstatt beide zu mergen.
 
 ## Anbietermodelle vs. Laufzeitmodelle
 
@@ -476,21 +452,21 @@ Qwen Code unterscheidet zwischen zwei Arten von Modellkonfigurationen:
 
 ### Anbietermodell
 
-- Definiert in der `modelProviders`-Konfiguration
-- Hat ein vollständiges, atomares Konfigurationspaket
-- Wenn ausgewählt, wird seine Konfiguration als undurchlässige Schicht angewendet
-- Erscheint in der Befehlsliste `/model` mit vollständigen Metadaten (Name, Beschreibung, Fähigkeiten)
-- Empfohlen für Multi-Model-Workflows und Team-Konsistenz
+- Definiert in der `modelProviders`-Konfiguration  
+- Enthält ein vollständiges, atomares Konfigurationspaket  
+- Bei Auswahl wird dessen Konfiguration als undurchdringliche Schicht angewendet  
+- Wird in der Befehlsliste `/model` mit vollständigen Metadaten (Name, Beschreibung, Funktionen) angezeigt  
+- Empfohlen für Workflows mit mehreren Modellen und zur Sicherstellung der Konsistenz im Team  
 
 ### Laufzeitmodell
 
-- Wird dynamisch erstellt, wenn Roh-Modell-IDs über die CLI (`--model`), Umgebungsvariablen oder Einstellungen verwendet werden
-- Nicht definiert in `modelProviders`
-- Konfiguration wird durch "Projektion" über Auflösungsschichten erstellt (CLI → Umgebung → Einstellungen → Standardwerte)
-- Wird automatisch als **RuntimeModelSnapshot** erfasst, sobald eine vollständige Konfiguration erkannt wird
-- Erlaubt Wiederverwendung ohne erneutes Eingeben von Anmeldeinformationen
+- Wird dynamisch erstellt, wenn rohe Modell-IDs über die CLI (`--model`), Umgebungsvariablen oder Einstellungen verwendet werden  
+- Nicht in `modelProviders` definiert  
+- Die Konfiguration wird durch „Projektion“ über Auflösungsebenen erstellt (CLI → Umgebungsvariable → Einstellungen → Standardwerte)  
+- Wird automatisch als **RuntimeModelSnapshot** erfasst, sobald eine vollständige Konfiguration erkannt wird  
+- Ermöglicht die Wiederverwendung ohne erneute Eingabe von Anmeldeinformationen
 
-### RuntimeModelSnapshot-Lebenszyklus
+### Lebenszyklus von RuntimeModelSnapshot
 
 Wenn Sie ein Modell konfigurieren, ohne `modelProviders` zu verwenden, erstellt Qwen Code automatisch einen RuntimeModelSnapshot, um Ihre Konfiguration zu speichern:
 
@@ -502,31 +478,31 @@ qwen --auth-type openai --model my-custom-model --openaiApiKey $KEY --openaiBase
 
 Der Snapshot:
 
-- Erfasst Modell-ID, API-Schlüssel, Basis-URL und Generierungskonfiguration
-- Bleibt über Sitzungen hinweg erhalten (wird während der Laufzeit im Speicher gehalten)
-- Erscheint in der Liste des `/model`-Befehls als Laufzeitoption
-- Kann durch `/model $runtime|openai|my-custom-model` gewechselt werden
+- Erfasst die Modell-ID, den API-Schlüssel, die Basis-URL und die Generierungskonfiguration
+- Bleibt über Sitzungen hinweg erhalten (wird während der Laufzeit im Arbeitsspeicher gespeichert)
+- Wird in der Liste des `/model`-Befehls als Laufzeitoption angezeigt
+- Kann mithilfe von `/model $runtime|openai|my-custom-model` aktiviert werden
 
 ### Wichtige Unterschiede
 
-| Aspekt                  | Provider-Modell                   | Laufzeitmodell                             |
+| Aspekt                  | Anbietermodell                    | Laufzeitmodell                             |
 | ----------------------- | --------------------------------- | ------------------------------------------ |
-| Konfigurationsquelle    | `modelProviders` in Einstellungen | CLI, Umgebung, Einstellungsschichten       |
-| Konfigurationsatomizität| Vollständiges, undurchlässiges Paket | Geschichtet, jedes Feld wird unabhängig aufgelöst |
-| Wiederverwendbarkeit    | Immer in der `/model`-Liste verfügbar | Als Snapshot erfasst, erscheint wenn vollständig |
-| Teilen innerhalb des Teams | Ja (über übermittelte Einstellungen) | Nein (benutzerspezifisch)                  |
-| Speicherung von Anmeldedaten | Nur Referenz über `envKey`        | Kann tatsächlichen Schlüssel im Snapshot erfassen |
+| Konfigurationsquelle    | `modelProviders` in den Einstellungen | CLI, Umgebungsvariablen, Einstellungsebenen |
+| Konfigurationsatomarität | Vollständiges, undurchdringliches Paket | Geschichtet: Jedes Feld wird unabhängig aufgelöst |
+| Wiederverwendbarkeit    | Immer in der `/model`-Liste verfügbar | Als Momentaufnahme erfasst; erscheint nur, wenn vollständig |
+| Teamfreigabe            | Ja (über committete Einstellungen) | Nein (nutzerspezifisch)                    |
+| Speicherung von Anmeldeinformationen | Nur als Verweis über `envKey` | Kann den tatsächlichen Schlüssel in der Momentaufnahme enthalten |
 
-### Wann welches verwendet werden sollte
+### Wann welches Modell verwenden?
 
-- **Provider-Modelle verwenden**, wenn: Sie über Standardmodelle verfügen, die im Team gemeinsam genutzt werden, konsistente Konfigurationen benötigen oder versehentliche Überschreibungen verhindern möchten
-- **Laufzeitmodelle (Runtime Models) verwenden**, wenn: Sie schnell ein neues Modell testen, temporäre Anmeldedaten verwenden oder mit Ad-hoc-Endpunkten arbeiten
+- **Verwenden Sie Provider-Modelle**, wenn: Sie Standardmodelle haben, die von einem Team gemeinsam genutzt werden, konsistente Konfigurationen benötigen oder versehentliche Überschreibungen vermeiden möchten.
+- **Verwenden Sie Runtime-Modelle**, wenn: Sie schnell ein neues Modell testen, temporäre Anmeldeinformationen verwenden oder mit Ad-hoc-Endpunkten arbeiten.
 
-## Auswahl-Persistenz und Empfehlungen
+## Persistenz der Auswahl und Empfehlungen
 
 > [!important]
-> 
-> Definieren Sie `modelProviders` im benutzerspezifischen `~/.qwen/settings.json`, wann immer möglich, und vermeiden Sie das Speichern von Anmeldeinformationen in beliebigen Bereichen. Das Festhalten des Provider-Katalogs in den Benutzereinstellungen verhindert Merge-/Überschreibekonflikte zwischen Projekt- und Benutzerbereich und stellt sicher, dass `/auth` und `/model`-Aktualisierungen immer in einen konsistenten Bereich geschrieben werden.
+>
+> Definieren Sie `modelProviders` stets im benutzerspezifischen Bereich in `~/.qwen/settings.json`, sofern möglich, und vermeiden Sie es, Anmeldeinformationen-Überschreibungen in irgendeinem Bereich dauerhaft zu speichern. Durch die Aufnahme des Anbieterkatalogs in den Benutzereinstellungen werden Konflikte durch Zusammenführung oder Überschreibung zwischen Projekt- und Benutzerbereich vermieden, und es ist sichergestellt, dass Aktualisierungen über `/auth` und `/model` stets in einen konsistenten Bereich zurückgeschrieben werden.
 
-- `/model` und `/auth` speichern `model.name` (wenn zutreffend) und `security.auth.selectedType` im nächstgelegenen beschreibbaren Bereich, der bereits `modelProviders` definiert; andernfalls greifen sie auf den Benutzerbereich zurück. Dadurch bleiben Arbeitsbereichs-/Benutzerdateien synchron mit dem aktiven Provider-Katalog.
-- Ohne `modelProviders` kombiniert der Resolver CLI-/Umgebungs-/Einstellungsebenen und erstellt Laufzeitmodelle. Dies ist für Einzelprovider-Setups in Ordnung, aber umständlich bei häufigem Wechsel. Definieren Sie Provider-Kataloge immer dann, wenn Mehrfachmodell-Workflows üblich sind, damit Umschaltvorgänge atomar, quellenbezogen und debuggbar bleiben.
+- `/model` und `/auth` speichern `model.name` (sofern zutreffend) sowie `security.auth.selectedType` im nächstgelegenen beschreibbaren Bereich, der bereits `modelProviders` definiert; andernfalls erfolgt die Speicherung im Benutzerbereich. Dadurch bleiben Arbeitsbereichs- und Benutzerdateien mit dem aktiven Anbieterkatalog synchronisiert.
+- Ohne `modelProviders` kombiniert der Resolver die Ebenen CLI/Umweltvariablen/Einstellungen und erzeugt so *Runtime Models*. Dies ist bei Einzelanbieter-Setups akzeptabel, jedoch umständlich, wenn häufig zwischen Anbietern gewechselt wird. Definieren Sie Anbieterkataloge stets dann, wenn Workflows mit mehreren Modellen üblich sind, damit Wechsel atomar, quellattributiert und fehlerdiagnosefähig bleiben.

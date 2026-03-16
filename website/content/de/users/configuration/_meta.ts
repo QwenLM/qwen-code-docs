@@ -6,5 +6,5 @@ export default {
   },
   'qwen-ignore': 'Dateien ignorieren',
   'trusted-folders': 'Vertrauenswürdige Ordner',
-  themes: 'Designs',
+  themes: 'Themen',
 };

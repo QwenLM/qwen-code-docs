@@ -1,74 +1,74 @@
 # Outil Shell (`run_shell_command`)
 
-Ce document décrit l'outil `run_shell_command` pour Qwen Code.
+Ce document décrit l’outil `run_shell_command` pour Qwen Code.
 
 ## Description
 
-Utilisez `run_shell_command` pour interagir avec le système sous-jacent, exécuter des scripts ou effectuer des opérations en ligne de commande. `run_shell_command` exécute une commande shell donnée, y compris les commandes interactives qui nécessitent une saisie utilisateur (par exemple, `vim`, `git rebase -i`) si le paramètre `tools.shell.enableInteractiveShell` est défini sur `true`.
+Utilisez `run_shell_command` pour interagir avec le système sous-jacent, exécuter des scripts ou effectuer des opérations en ligne de commande. `run_shell_command` exécute une commande shell donnée, y compris les commandes interactives nécessitant une saisie utilisateur (par exemple `vim`, `git rebase -i`) si le paramètre `tools.shell.enableInteractiveShell` est défini sur `true`.
 
-Sur Windows, les commandes sont exécutées avec `cmd.exe /c`. Sur d'autres plateformes, elles sont exécutées avec `bash -c`.
+Sur Windows, les commandes sont exécutées avec `cmd.exe /c`. Sur les autres plateformes, elles sont exécutées avec `bash -c`.
 
 ### Arguments
 
 `run_shell_command` prend les arguments suivants :
 
 - `command` (chaîne de caractères, requis) : La commande shell exacte à exécuter.
-- `description` (chaîne de caractères, optionnel) : Une brève description de l'objectif de la commande, qui sera affichée à l'utilisateur.
-- `directory` (chaîne de caractères, optionnel) : Le répertoire (relatif à la racine du projet) dans lequel exécuter la commande. Si non fourni, la commande s'exécute dans la racine du projet.
-- `is_background` (booléen, requis) : Indique s'il faut exécuter la commande en arrière-plan. Ce paramètre est obligatoire pour garantir une décision explicite concernant le mode d'exécution de la commande. Définir sur true pour les processus longs comme les serveurs de développement, les observateurs ou les démons qui doivent continuer à fonctionner sans bloquer les commandes suivantes. Définir sur false pour les commandes ponctuelles qui doivent se terminer avant de poursuivre.
+- `description` (chaîne de caractères, facultatif) : Une brève description de l’objectif de la commande, qui sera affichée à l’utilisateur.
+- `directory` (chaîne de caractères, facultatif) : Le répertoire (relatif à la racine du projet) dans lequel exécuter la commande. Si aucun répertoire n’est fourni, la commande s’exécute à la racine du projet.
+- `is_background` (booléen, requis) : Indique si la commande doit s’exécuter en arrière-plan. Ce paramètre est obligatoire afin de garantir une prise de décision explicite quant au mode d’exécution de la commande. Définissez sa valeur sur `true` pour les processus longs (par exemple, des serveurs de développement, des observateurs ou des démons) qui doivent continuer à s’exécuter sans bloquer l’exécution des commandes suivantes. Définissez-la sur `false` pour les commandes ponctuelles devant se terminer avant de passer à l’étape suivante.
 
 ## Comment utiliser `run_shell_command` avec Qwen Code
 
-Lors de l'utilisation de `run_shell_command`, la commande est exécutée en tant que sous-processus. Vous pouvez contrôler si les commandes s'exécutent en arrière-plan ou en avant-plan en utilisant le paramètre `is_background`, ou en ajoutant explicitement `&` aux commandes. L'outil renvoie des informations détaillées sur l'exécution, notamment :
+Lors de l’utilisation de `run_shell_command`, la commande est exécutée sous forme de sous-processus. Vous pouvez contrôler si les commandes s’exécutent en arrière-plan ou en premier plan à l’aide du paramètre `is_background`, ou en ajoutant explicitement `&` aux commandes. Cet outil renvoie des informations détaillées sur l’exécution, notamment :
 
-### Paramètre obligatoire `is_background`
+### Paramètre d’arrière-plan obligatoire
 
-Le paramètre `is_background` est **requis** pour toutes les exécutions de commandes. Cette conception garantit que le LLM (et les utilisateurs) doivent explicitement décider si chaque commande doit s'exécuter en arrière-plan ou en avant-plan, favorisant ainsi un comportement d'exécution intentionnel et prévisible. En rendant ce paramètre obligatoire, nous évitons les retours involontaires à une exécution en avant-plan, ce qui pourrait bloquer les opérations suivantes lors du traitement de processus longs.
+Le paramètre `is_background` est **obligatoire** pour toutes les exécutions de commande. Cette conception garantit que le modèle de langage (LLM) — et les utilisateurs — doivent explicitement décider si chaque commande doit s’exécuter en arrière-plan ou en premier plan, ce qui favorise un comportement d’exécution intentionnel et prévisible. En rendant ce paramètre obligatoire, nous évitons tout recours involontaire à l’exécution en premier plan, qui pourrait bloquer les opérations suivantes lorsqu’il s’agit de processus longs.
 
 ### Exécution en arrière-plan vs en premier plan
 
-L'outil gère intelligemment l'exécution en arrière-plan et en premier plan selon votre choix explicite :
+L’outil gère intelligemment l’exécution en arrière-plan et en premier plan, selon votre choix explicite :
 
-**Utilisez l'exécution en arrière-plan (`is_background: true`) pour :**
+**Utilisez l’exécution en arrière-plan (`is_background: true`) pour :**
 
-- Serveurs de développement longs : `npm run start`, `npm run dev`, `yarn dev`
-- Observateurs de construction : `npm run watch`, `webpack --watch`
-- Serveurs de base de données : `mongod`, `mysql`, `redis-server`
-- Serveurs web : `python -m http.server`, `php -S localhost:8000`
-- Toute commande prévue pour s'exécuter indéfiniment jusqu'à son arrêt manuel
+- Les serveurs de développement longue durée : `npm run start`, `npm run dev`, `yarn dev`
+- Les observateurs de compilation (« watchers ») : `npm run watch`, `webpack --watch`
+- Les serveurs de base de données : `mongod`, `mysql`, `redis-server`
+- Les serveurs web : `python -m http.server`, `php -S localhost:8000`
+- Toute commande destinée à s’exécuter indéfiniment jusqu’à son arrêt manuel
 
-**Utilisez l'exécution en premier plan (`is_background: false`) pour :**
+**Utilisez l’exécution en premier plan (`is_background: false`) pour :**
 
-- Commandes ponctuelles : `ls`, `cat`, `grep`
-- Commandes de construction : `npm run build`, `make`
-- Commandes d'installation : `npm install`, `pip install`
-- Opérations Git : `git commit`, `git push`
-- Exécutions de tests : `npm test`, `pytest`
+- Les commandes ponctuelles : `ls`, `cat`, `grep`
+- Les commandes de compilation : `npm run build`, `make`
+- Les commandes d’installation : `npm install`, `pip install`
+- Les opérations Git : `git commit`, `git push`
+- L’exécution des tests : `npm test`, `pytest`
 
-### Informations sur l'exécution
+### Informations sur l’exécution
 
-L'outil renvoie des informations détaillées sur l'exécution, notamment :
+L’outil renvoie des informations détaillées sur l’exécution, notamment :
 
-- `Command` : La commande qui a été exécutée.
-- `Directory` : Le répertoire dans lequel la commande a été exécutée.
+- `Commande` : La commande qui a été exécutée.
+- `Répertoire` : Le répertoire dans lequel la commande a été exécutée.
 - `Stdout` : La sortie du flux de sortie standard.
-- `Stderr` : La sortie du flux d'erreur standard.
-- `Error` : Tout message d'erreur rapporté par le sous-processus.
-- `Exit Code` : Le code de sortie de la commande.
-- `Signal` : Le numéro du signal si la commande a été terminée par un signal.
-- `Background PIDs` : Une liste des PID pour tous les processus en arrière-plan démarrés.
+- `Stderr` : La sortie du flux d’erreur standard.
+- `Erreur` : Tout message d’erreur renvoyé par le sous-processus.
+- `Code de sortie` : Le code de sortie de la commande.
+- `Signal` : Le numéro du signal si la commande a été interrompue par un signal.
+- `PID en arrière-plan` : Une liste des PID des processus démarrés en arrière-plan.
 
 Utilisation :
 
 ```bash
-run_shell_command(command="Vos commandes.", description="Votre description de la commande.", directory="Votre répertoire d'exécution.", is_background=false)
+run_shell_command(command="Vos commandes.", description="Votre description de la commande.", directory="Votre répertoire d’exécution.", is_background=false)
 ```
 
 **Remarque :** Le paramètre `is_background` est obligatoire et doit être explicitement spécifié pour chaque exécution de commande.
 
 ## Exemples de `run_shell_command`
 
-Lister les fichiers dans le répertoire courant :
+Lister les fichiers du répertoire courant :
 
 ```bash
 run_shell_command(command="ls -la", is_background=false)
@@ -86,16 +86,16 @@ Démarrer un serveur de développement en arrière-plan (approche recommandée) 
 run_shell_command(command="npm run dev", description="Démarrer le serveur de développement en arrière-plan", is_background=true)
 ```
 
-Démarrer un serveur en arrière-plan (alternative avec & explicite) :
+Démarrer un serveur en arrière-plan (alternative avec `&` explicite) :
 
 ```bash
 run_shell_command(command="npm run dev &", description="Démarrer le serveur de développement en arrière-plan", is_background=false)
 ```
 
-Exécuter une commande de build en avant-plan :
+Exécuter une commande de compilation en premier plan :
 
 ```bash
-run_shell_command(command="npm run build", description="Construire le projet", is_background=false)
+run_shell_command(command="npm run build", description="Compiler le projet", is_background=false)
 ```
 
 Démarrer plusieurs services en arrière-plan :
@@ -106,13 +106,17 @@ run_shell_command(command="docker-compose up", description="Démarrer tous les s
 
 ## Configuration
 
-Vous pouvez configurer le comportement de l'outil `run_shell_command` en modifiant votre fichier `settings.json` ou en utilisant la commande `/settings` dans Qwen Code.
+Vous pouvez configurer le comportement de l’outil `run_shell_command` en modifiant votre fichier `settings.json` ou en utilisant la commande `/settings` dans Qwen Code.
 
 ### Activation des commandes interactives
 
-Pour activer les commandes interactives, vous devez définir le paramètre `tools.shell.enableInteractiveShell` sur `true`. Cela utilisera `node-pty` pour l'exécution des commandes shell, ce qui permet des sessions interactives. Si `node-pty` n'est pas disponible, le système reviendra à l'implémentation `child_process`, qui ne prend pas en charge les commandes interactives.
+Le paramètre `tools.shell.enableInteractiveShell` détermine si les commandes shell sont exécutées via `node-pty` (PTY interactif) ou via le backend standard `child_process`. Lorsqu’il est activé, les sessions interactives telles que `vim`, `git rebase -i` et les programmes à interface utilisateur textuelle (TUI) fonctionnent correctement.
 
-**Exemple `settings.json` :**
+Ce paramètre est activé par défaut (`true`) sur la plupart des plateformes. Sur les versions de Windows **≤ 19041** (avant la version 2004 de Windows 10), il est désactivé par défaut (`false`) car les anciennes implémentations de ConPTY présentent des problèmes connus de fiabilité (sortie manquante, blocages). Ce seuil correspond à celui utilisé par VS Code ([microsoft/vscode#123725](https://github.com/microsoft/vscode/issues/123725)). Si `node-pty` n’est pas disponible lors de l’exécution, l’outil revient automatiquement à `child_process`, quelle que soit la valeur de ce paramètre.
+
+Pour remplacer explicitement la valeur par défaut, définissez-la dans le fichier `settings.json` :
+
+**Exemple de `settings.json` :**
 
 ```json
 {
@@ -124,11 +128,11 @@ Pour activer les commandes interactives, vous devez définir le paramètre `tool
 }
 ```
 
-### Affichage de la couleur dans la sortie
+### Affichage des couleurs dans la sortie
 
-Pour afficher la couleur dans la sortie du shell, vous devez définir le paramètre `tools.shell.showColor` sur `true`. **Remarque : Ce paramètre s'applique uniquement lorsque `tools.shell.enableInteractiveShell` est activé.**
+Pour afficher des couleurs dans la sortie du shell, vous devez définir l’option `tools.shell.showColor` sur `true`. **Remarque : Cette option n’a d’effet que si `tools.shell.enableInteractiveShell` est activé.**
 
-**Exemple `settings.json` :**
+**Exemple de fichier `settings.json` :**
 
 ```json
 {
@@ -140,11 +144,11 @@ Pour afficher la couleur dans la sortie du shell, vous devez définir le paramè
 }
 ```
 
-### Configuration du Pager
+### Configuration du pager
 
-Vous pouvez définir un pager personnalisé pour la sortie du shell en configurant le paramètre `tools.shell.pager`. Le pager par défaut est `cat`. **Remarque : Ce paramètre s'applique uniquement lorsque `tools.shell.enableInteractiveShell` est activé.**
+Vous pouvez définir un pager personnalisé pour la sortie du shell en configurant l’option `tools.shell.pager`. Le pager par défaut est `cat`. **Remarque : Cette option n’a d’effet que si `tools.shell.enableInteractiveShell` est activé.**
 
-**Exemple de `settings.json` :**
+**Exemple de fichier `settings.json` :**
 
 ```json
 {
@@ -156,40 +160,40 @@ Vous pouvez définir un pager personnalisé pour la sortie du shell en configura
 }
 ```
 
-## Commandes Interactives
+## Commandes interactives
 
-L'outil `run_shell_command` prend désormais en charge les commandes interactives grâce à l'intégration d'un pseudo-terminal (pty). Cela vous permet d'exécuter des commandes nécessitant une saisie utilisateur en temps réel, telles que des éditeurs de texte (`vim`, `nano`), des interfaces utilisateur basées sur le terminal (`htop`) et des opérations de contrôle de version interactives (`git rebase -i`).
+L’outil `run_shell_command` prend désormais en charge les commandes interactives grâce à l’intégration d’un pseudo-terminal (pty). Cela vous permet d’exécuter des commandes nécessitant une saisie utilisateur en temps réel, comme les éditeurs de texte (`vim`, `nano`), les interfaces utilisateur basées sur le terminal (`htop`) ou encore les opérations interactives de contrôle de version (`git rebase -i`).
 
-Lorsqu'une commande interactive est en cours d'exécution, vous pouvez lui envoyer des entrées depuis Qwen Code. Pour donner le focus au shell interactif, appuyez sur `ctrl+f`. La sortie du terminal, y compris les interfaces TUI complexes, sera correctement affichée.
+Lorsqu’une commande interactive est en cours d’exécution, vous pouvez lui envoyer des entrées depuis Qwen Code. Pour recentrer le focus sur le shell interactif, appuyez sur `ctrl+f`. La sortie du terminal, y compris les interfaces utilisateur complexes (TUI), est correctement rendue.
 
-## Notes importantes
+## Remarques importantes
 
-- **Sécurité :** Soyez prudent lors de l'exécution de commandes, en particulier celles construites à partir d'entrées utilisateur, afin d'éviter les vulnérabilités de sécurité.
-- **Gestion des erreurs :** Vérifiez les champs `Stderr`, `Error` et `Exit Code` pour déterminer si une commande s'est exécutée avec succès.
-- **Processus en arrière-plan :** Lorsque `is_background=true` ou lorsqu'une commande contient `&`, l'outil retournera immédiatement et le processus continuera de s'exécuter en arrière-plan. Le champ `Background PIDs` contiendra l'identifiant du processus en arrière-plan.
-- **Choix d'exécution en arrière-plan :** Le paramètre `is_background` est obligatoire et permet un contrôle explicite sur le mode d'exécution. Vous pouvez également ajouter `&` à la commande pour une exécution manuelle en arrière-plan, mais le paramètre `is_background` doit tout de même être spécifié. Ce paramètre clarifie l'intention et gère automatiquement la configuration de l'exécution en arrière-plan.
-- **Descriptions de commandes :** Lors de l'utilisation de `is_background=true`, la description de la commande inclura un indicateur `[background]` pour montrer clairement le mode d'exécution.
+- **Sécurité :** Soyez prudent lors de l’exécution de commandes, en particulier celles construites à partir d’entrées utilisateur, afin d’éviter les vulnérabilités de sécurité.
+- **Gestion des erreurs :** Vérifiez les champs `Stderr`, `Error` et `Code de sortie` pour déterminer si une commande s’est exécutée avec succès.
+- **Processus en arrière-plan :** Lorsque `is_background=true` ou lorsqu’une commande contient `&`, l’outil renvoie immédiatement un résultat et le processus continue de s’exécuter en arrière-plan. Le champ `PID en arrière-plan` contient l’identifiant du processus en arrière-plan.
+- **Choix de l’exécution en arrière-plan :** Le paramètre `is_background` est obligatoire et permet un contrôle explicite du mode d’exécution. Vous pouvez également ajouter `&` à la commande pour une exécution manuelle en arrière-plan, mais le paramètre `is_background` doit tout de même être spécifié. Ce paramètre exprime plus clairement l’intention et configure automatiquement l’exécution en arrière-plan.
+- **Descriptions de commandes :** Lorsque `is_background=true`, la description de la commande inclut un indicateur `[arrière-plan]` afin de préciser clairement le mode d’exécution.
 
-## Variables d'environnement
+## Variables d’environnement
 
-Lorsque `run_shell_command` exécute une commande, elle définit la variable d'environnement `QWEN_CODE=1` dans l'environnement du sous-processus. Cela permet aux scripts ou outils de détecter s'ils sont exécutés depuis l'interface CLI.
+Lorsque `run_shell_command` exécute une commande, elle définit la variable d’environnement `QWEN_CODE=1` dans l’environnement du sous-processus. Cela permet aux scripts ou outils de détecter s’ils sont exécutés depuis l’interface en ligne de commande (CLI).
 
-## Restrictions de commandes
+## Restrictions relatives aux commandes
 
-Vous pouvez restreindre les commandes pouvant être exécutées par l'outil `run_shell_command` en utilisant les paramètres `tools.core` et `tools.exclude` dans votre fichier de configuration.
+Vous pouvez restreindre les commandes pouvant être exécutées par l’outil `run_shell_command` en utilisant les paramètres `tools.core` et `tools.exclude` dans votre fichier de configuration.
 
-- `tools.core` : Pour limiter `run_shell_command` à un ensemble spécifique de commandes, ajoutez des entrées à la liste `core` sous la catégorie `tools` au format `run_shell_command(<commande>)`. Par exemple, `"tools": {"core": ["run_shell_command(git)"]}` n'autorisera que les commandes `git`. Inclure le terme générique `run_shell_command` agit comme un joker, autorisant toute commande non explicitement bloquée.
-- `tools.exclude` : Pour bloquer des commandes spécifiques, ajoutez des entrées à la liste `exclude` sous la catégorie `tools` au format `run_shell_command(<commande>)`. Par exemple, `"tools": {"exclude": ["run_shell_command(rm)"]}` bloquera les commandes `rm`.
+- `tools.core` : Pour limiter `run_shell_command` à un ensemble spécifique de commandes, ajoutez des entrées à la liste `core` sous la catégorie `tools`, au format `run_shell_command(<commande>)`. Par exemple, `"tools": {"core": ["run_shell_command(git)"]}` n’autorisera que les commandes `git`. L’inclusion de l’entrée générique `run_shell_command` agit comme un joker, autorisant toute commande non explicitement bloquée.
+- `tools.exclude` : Pour bloquer des commandes spécifiques, ajoutez des entrées à la liste `exclude` sous la catégorie `tools`, au format `run_shell_command(<commande>)`. Par exemple, `"tools": {"exclude": ["run_shell_command(rm)"]}` bloquera les commandes `rm`.
 
-La logique de validation est conçue pour être sécurisée et flexible :
+La logique de validation est conçue pour être à la fois sécurisée et souple :
 
-1. **Chaînage de commandes désactivé** : L'outil divise automatiquement les commandes chaînées avec `&&`, `||` ou `;` et valide chaque partie séparément. Si une partie de la chaîne est interdite, la commande entière est bloquée.
-2. **Correspondance par préfixe** : L'outil utilise la correspondance par préfixe. Par exemple, si vous autorisez `git`, vous pouvez exécuter `git status` ou `git log`.
-3. **Priorité de la liste de blocage** : La liste `tools.exclude` est toujours vérifiée en premier. Si une commande correspond à un préfixe bloqué, elle sera refusée, même si elle correspond également à un préfixe autorisé dans `tools.core`.
+1.  **Chaînage de commandes désactivé** : L’outil divise automatiquement les commandes chaînées avec `&&`, `||` ou `;` et valide chaque partie séparément. Si l’une quelconque des parties de la chaîne est interdite, la commande entière est bloquée.
+2.  **Correspondance par préfixe** : L’outil utilise une correspondance par préfixe. Par exemple, si vous autorisez `git`, vous pouvez exécuter `git status` ou `git log`.
+3.  **Précédence de la liste de blocage** : La liste `tools.exclude` est toujours vérifiée en premier. Si une commande correspond à un préfixe bloqué, elle sera refusée, même si elle correspond également à un préfixe autorisé dans `tools.core`.
 
-### Exemples de restriction de commandes
+### Exemples de restrictions de commandes
 
-**Autoriser uniquement des préfixes de commande spécifiques**
+**Autoriser uniquement certains préfixes de commande**
 
 Pour autoriser uniquement les commandes `git` et `npm`, et bloquer toutes les autres :
 
@@ -201,13 +205,13 @@ Pour autoriser uniquement les commandes `git` et `npm`, et bloquer toutes les au
 }
 ```
 
-- `git status` : Autorisé
-- `npm install` : Autorisé
-- `ls -l` : Bloqué
+- `git status` : Autorisé  
+- `npm install` : Autorisé  
+- `ls -l` : Bloqué  
 
-**Bloquer des préfixes de commande spécifiques**
+**Bloquer certains préfixes de commande**
 
-Pour bloquer `rm` et autoriser toutes les autres commandes :
+Pour bloquer la commande `rm` tout en autorisant toutes les autres commandes :
 
 ```json
 {
@@ -218,13 +222,13 @@ Pour bloquer `rm` et autoriser toutes les autres commandes :
 }
 ```
 
-- `rm -rf /` : Bloqué
-- `git status` : Autorisé
-- `npm install` : Autorisé
+- `rm -rf /` : Bloqué  
+- `git status` : Autorisé  
+- `npm install` : Autorisé  
 
-**La liste de blocage est prioritaire**
+**La liste de blocage a priorité**
 
-Si un préfixe de commande se trouve à la fois dans `tools.core` et `tools.exclude`, il sera bloqué.
+Si un préfixe de commande figure à la fois dans `tools.core` et dans `tools.exclude`, il sera bloqué.
 
 ```json
 {
@@ -235,12 +239,12 @@ Si un préfixe de commande se trouve à la fois dans `tools.core` et `tools.excl
 }
 ```
 
-- `git push origin main` : Bloqué
-- `git status` : Autorisé
+- `git push origin main` : Bloqué  
+- `git status` : Autorisé  
 
 **Bloquer toutes les commandes shell**
 
-Pour bloquer toutes les commandes shell, ajoutez le joker `run_shell_command` à `tools.exclude` :
+Pour bloquer toutes les commandes shell, ajoutez la forme générique `run_shell_command` à `tools.exclude` :
 
 ```json
 {
@@ -250,9 +254,9 @@ Pour bloquer toutes les commandes shell, ajoutez le joker `run_shell_command` à
 }
 ```
 
-- `ls -l` : Bloqué
-- `toute autre commande` : Bloquée
+- `ls -l` : Bloqué  
+- `toute autre commande` : Bloqué
 
-## Note de sécurité pour `excludeTools`
+## Note de sécurité concernant `excludeTools`
 
-Les restrictions spécifiques aux commandes dans `excludeTools` pour `run_shell_command` reposent sur une simple correspondance de chaînes de caractères et peuvent être facilement contournées. Cette fonctionnalité **n'est pas un mécanisme de sécurité** et ne doit pas être utilisée pour exécuter en toute sécurité du code non fiable. Il est recommandé d'utiliser `coreTools` pour sélectionner explicitement les commandes pouvant être exécutées.
+Les restrictions spécifiques à une commande dans `excludeTools` pour `run_shell_command` reposent sur une simple correspondance de chaînes de caractères et peuvent être facilement contournées. Cette fonctionnalité **n’est pas un mécanisme de sécurité** et ne doit pas être utilisée pour exécuter en toute sécurité du code non fiable. Il est recommandé d’utiliser `coreTools` afin de sélectionner explicitement les commandes pouvant être exécutées.

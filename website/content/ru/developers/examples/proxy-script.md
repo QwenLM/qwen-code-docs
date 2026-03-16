@@ -1,6 +1,6 @@
-# Пример скрипта прокси
+# Пример прокси-скрипта
 
-Ниже приведен пример скрипта прокси, который можно использовать с переменной окружения `GEMINI_SANDBOX_PROXY_COMMAND`. Этот скрипт разрешает только `HTTPS` соединения к `example.com:443` и отклоняет все остальные запросы.
+Ниже приведён пример прокси-скрипта, который можно использовать с переменной окружения `QWEN_SANDBOX_PROXY_COMMAND`. Этот скрипт разрешает только HTTPS-соединения к `example.com:443` и отклоняет все остальные запросы.
 
 ```javascript
 #!/usr/bin/env node
@@ -11,9 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Пример прокси-сервера, который слушает :::8877 и разрешает только HTTPS соединения к example.com.
-// Установите `GEMINI_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js`, чтобы запустить прокси вместе с песочницей
-// Проверьте через `curl https://example.com` внутри песочницы (в режиме оболочки или через инструмент оболочки)
+// Пример прокси-сервера, прослушивающего порт :::8877 и разрешающего только HTTPS-соединения с example.com.
+// Установите `QWEN_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js`, чтобы запустить прокси параллельно с песочницей.
+// Проверьте работу с помощью команды `curl https://example.com` внутри песочницы (в режиме оболочки или через инструмент оболочки).
 
 import http from 'node:http';
 import net from 'node:net';
@@ -27,17 +27,17 @@ const ALLOWED_PORT = '443';
 const server = http.createServer((req, res) => {
   // Отклоняем все запросы, кроме CONNECT для HTTPS
   console.log(
-    `[PROXY] Запрет не-CONNECT запроса для: ${req.method} ${req.url}`,
+    `[PROXY] Отклонён запрос, не являющийся CONNECT: ${req.method} ${req.url}`,
   );
   res.writeHead(405, { 'Content-Type': 'text/plain' });
-  res.end('Method Not Allowed');
+  res.end('Метод не поддерживается');
 });
 
 server.on('connect', (req, clientSocket, head) => {
-  // req.url будет в формате "hostname:port" для CONNECT запроса.
+  // В запросе CONNECT req.url будет иметь формат «имя_хоста:порт».
   const { port, hostname } = new URL(`http://${req.url}`);
 
-  console.log(`[PROXY] Перехват CONNECT запроса для: ${hostname}:${port}`);
+  console.log(`[PROXY] Перехвачен запрос CONNECT для: ${hostname}:${port}`);
 
   if (
     ALLOWED_DOMAINS.some(
@@ -45,37 +45,37 @@ server.on('connect', (req, clientSocket, head) => {
     ) &&
     port === ALLOWED_PORT
   ) {
-    console.log(`[PROXY] Разрешение соединения к ${hostname}:${port}`);
+    console.log(`[PROXY] Разрешено соединение с ${hostname}:${port}`);
 
-    // Устанавливаем TCP соединение с оригинальным адресатом.
+    // Устанавливаем TCP-соединение с исходным целевым хостом.
     const serverSocket = net.connect(port, hostname, () => {
       clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-      // Создаем туннель, передавая данные между клиентом и сервером назначения.
+      // Создаём туннель, передавая данные между клиентом и целевым сервером.
       serverSocket.write(head);
       serverSocket.pipe(clientSocket);
       clientSocket.pipe(serverSocket);
     });
 
     serverSocket.on('error', (err) => {
-      console.error(`[PROXY] Ошибка подключения к адресату: ${err.message}`);
+      console.error(`[PROXY] Ошибка подключения к целевому серверу: ${err.message}`);
       clientSocket.end(`HTTP/1.1 502 Bad Gateway\r\n\r\n`);
     });
   } else {
-    console.log(`[PROXY] Запрет соединения к ${hostname}:${port}`);
+    console.log(`[PROXY] Отклонено соединение с ${hostname}:${port}`);
     clientSocket.end('HTTP/1.1 403 Forbidden\r\n\r\n');
   }
 
   clientSocket.on('error', (err) => {
-    // Это может произойти, если клиент закроет соединение.
-    console.error(`[PROXY] Ошибка клиентского сокета: ${err.message}`);
+    // Это может произойти, если клиент разорвал соединение.
+    console.error(`[PROXY] Ошибка сокета клиента: ${err.message}`);
   });
 });
 
 server.listen(PROXY_PORT, () => {
   const address = server.address();
-  console.log(`[PROXY] Прокси слушает на ${address.address}:${address.port}`);
+  console.log(`[PROXY] Прокси-сервер слушает на ${address.address}:${address.port}`);
   console.log(
-    `[PROXY] Разрешены HTTPS соединения к доменам: ${ALLOWED_DOMAINS.join(', ')}`,
+    `[PROXY] Разрешены HTTPS-соединения с доменами: ${ALLOWED_DOMAINS.join(', ')}`,
   );
 });
 ```

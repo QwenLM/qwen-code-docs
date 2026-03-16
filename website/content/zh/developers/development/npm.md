@@ -1,215 +1,216 @@
 # 包概述
 
-这个单一仓库包含两个主要包：`@qwen-code/qwen-code` 和 `@qwen-code/qwen-code-core`。
+该单体仓库（monorepo）包含两个主要包：`@qwen-code/qwen-code` 和 `@qwen-code/qwen-code-core`。
 
 ## `@qwen-code/qwen-code`
 
-这是 Qwen Code 的主包。它负责用户界面、命令解析以及所有其他面向用户的功功能。
+这是 Qwen Code 的主包，负责用户界面、命令解析以及所有面向用户的其他功能。
 
-当发布此包时，它会被打包成一个单独的可执行文件。该捆绑包包含了包的所有依赖项，包括 `@qwen-code/qwen-code-core`。这意味着无论用户是通过 `npm install -g @qwen-code/qwen-code` 安装包，还是直接通过 `npx @qwen-code/qwen-code` 运行，他们使用的都是这个独立的、自包含的可执行文件。
+当该包发布时，会被打包为一个独立的可执行文件。此打包产物包含该包的所有依赖项（包括 `@qwen-code/qwen-code-core`）。这意味着，无论用户是通过 `npm install -g @qwen-code/qwen-code` 全局安装该包，还是直接通过 `npx @qwen-code/qwen-code` 运行，实际使用的都是这个单一、自包含的可执行文件。
 
 ## `@qwen-code/qwen-code-core`
 
-此包包含 CLI 的核心逻辑。它负责向已配置的提供商发起 API 请求、处理身份验证以及管理本地缓存。
+该包包含 CLI 的核心逻辑，负责向已配置的提供商发起 API 请求、处理身份验证以及管理本地缓存。
 
-此包不会被捆绑。发布时，它会作为一个具有自己依赖项的标准 Node.js 包进行发布。如有需要，这允许它在其他项目中作为独立包使用。`dist` 文件夹中的所有转译后的 js 代码都包含在此包中。
+该包未进行打包。发布时，它以标准 Node.js 包的形式发布，并带有自身的依赖项。如有需要，此包可在其他项目中作为独立包使用。`dist` 目录下的所有转译后 JavaScript 代码均包含在该包中。
 
 # 发布流程
 
-此项目遵循结构化的发布流程，以确保所有包都能正确地进行版本控制和发布。该流程设计为尽可能自动化。
+本项目遵循结构化的发布流程，以确保所有包均能正确地进行版本管理和发布。该流程尽可能实现自动化。
 
 ## 如何发布
 
-发布通过 [release.yml](https://github.com/QwenLM/qwen-code/actions/workflows/release.yml) GitHub Actions 工作流进行管理。要执行补丁或热修复的手动发布：
+发布流程通过 [release.yml](https://github.com/QwenLM/qwen-code/actions/workflows/release.yml) GitHub Actions 工作流进行管理。如需手动发布补丁版本或热修复版本，请执行以下步骤：
 
-1.  导航到仓库的 **Actions** 标签页。
-2.  从列表中选择 **Release** 工作流。
-3.  点击 **Run workflow** 下拉按钮。
-4.  填写所需的输入：
-    - **Version**: 要发布的确切版本（例如，`v0.2.1`）。
-    - **Ref**: 要从中发布的分支或提交 SHA（默认为 `main`）。
-    - **Dry Run**: 保留为 `true` 以测试工作流而不发布，或设置为 `false` 以执行实时发布。
-5.  点击 **Run workflow**。
+1.  进入仓库的 **Actions**（操作）标签页。
+2.  在工作流列表中选择 **Release**（发布）工作流。
+3.  点击 **Run workflow**（运行工作流）下拉按钮。
+4.  填写必需的输入项：
+    - **Version**（版本）：要发布的精确版本号（例如 `v0.2.1`）。
+    - **Ref**（引用）：要从中发布的分支或提交 SHA（默认为 `main`）。
+    - **Dry Run**（试运行）：设为 `true` 可在不实际发布的情况下测试工作流；设为 `false` 则执行正式发布。
+5.  点击 **Run workflow**（运行工作流）。
 
 ## 发布类型
 
-该项目支持多种类型的发布：
+本项目支持多种类型的发布：
 
 ### 稳定版发布
 
-用于生产环境的常规稳定发布。
+面向生产环境使用的常规稳定版本。
 
 ### 预览版发布
 
-每周二 UTC 时间 23:59 进行的周预览发布，可提前体验即将推出的功能。
+每周二 UTC 时间 23:59 发布预览版，供用户提前体验即将推出的新功能。
 
-### 每日夜构建版本
+### 每日构建版本（Nightly Releases）
 
-每日在世界标准时间午夜进行最新的开发测试版本发布。
+每日 UTC 时间凌晨 0:00 发布，用于前沿开发测试。
 
 ## 自动化发布计划
 
-- **每夜构建**: 每天世界标准时间午夜
-- **预览版**: 每周二世界标准时间 23:59
-- **稳定版**: 由维护者手动触发的发布
+- **每日构建（Nightly）**：每天 UTC 时间凌晨 0:00  
+- **预览版（Preview）**：每周二 UTC 时间 23:59  
+- **稳定版（Stable）**：由维护者手动触发发布  
 
 ### 如何使用不同类型的发布版本
 
-要安装每种类型的最新版本：
+安装各类型最新版本的方法如下：
 
 ```bash
+
 # 稳定版（默认）
 npm install -g @qwen-code/qwen-code
 
 # 预览版
 npm install -g @qwen-code/qwen-code@preview
 
-# 每日夜构建版
+# 每日构建版
 npm install -g @qwen-code/qwen-code@nightly
 ```
 
 ### 发布流程详情
 
-每次计划或手动发布都遵循以下步骤：
+每次按计划或手动触发的发布均遵循以下步骤：
 
-1.  检出指定的代码（来自 `main` 分支的最新代码或特定提交）。
+1.  检出指定代码（`main` 分支的最新提交，或指定的某次提交）。
 2.  安装所有依赖项。
-3.  运行完整的 `preflight` 检查和集成测试套件。
-4.  如果所有测试通过，将根据发布类型计算适当的版本号。
-5.  使用适当的 dist-tag 将包构建并发布到 npm。
+3.  运行完整的 `preflight` 检查及集成测试套件。
+4.  若所有测试通过，则根据发布类型计算合适的版本号。
+5.  构建并发布包至 npm，并打上对应的 dist-tag。
 6.  为该版本创建 GitHub Release。
 
 ### 失败处理
 
-如果发布工作流中的任何步骤失败，它将自动在仓库中创建一个新问题，并附上 `bug` 标签和特定类型的失败标签（例如 `nightly-failure`、`preview-failure`）。该问题将包含指向失败工作流运行的链接，以便轻松调试。
+若发布工作流中任一步骤失败，系统将自动在仓库中创建一个新 issue，并添加 `bug` 标签以及一个与失败类型对应的标签（例如 `nightly-failure`、`preview-failure`）。该 issue 将包含指向失败工作流运行的链接，便于快速调试。
 
-## 发布验证
+## 版本发布验证
 
-推送新版本后，应执行冒烟测试以确保包按预期工作。这可以通过本地安装包并运行一组测试来确保它们正常运行。
+推送新版本后，应执行冒烟测试（smoke testing），以确保相关软件包按预期正常工作。具体操作是：在本地安装这些软件包，并运行一组测试，验证其功能是否正确。
 
-- `npx -y @qwen-code/qwen-code@latest --version` 验证推送是否按预期工作（如果你没有进行 rc 或 dev 标签）
-- `npx -y @qwen-code/qwen-code@<release tag> --version` 验证标签是否正确推送
-- _这会在本地造成破坏_ `npm uninstall @qwen-code/qwen-code && npm uninstall -g @qwen-code/qwen-code && npm cache clean --force && npm install @qwen-code/qwen-code@<version>`
-- 建议对几个 LLM 命令和工具进行基本运行的冒烟测试，以确保包按预期工作。我们将在未来对此进行更明确的规范。
+- 若未发布 `rc` 或 `dev` 类型的标签，可运行 `npx -y @qwen-code/qwen-code@latest --version`，验证推送是否成功；
+- 运行 `npx -y @qwen-code/qwen-code@<release tag> --version`，验证指定标签是否已正确推送；
+- _该操作将在本地产生破坏性影响_：`npm uninstall @qwen-code/qwen-code && npm uninstall -g @qwen-code/qwen-code && npm cache clean --force && npm install @qwen-code/qwen-code@<version>`；
+- 建议进行冒烟测试，即基本运行一遍若干 LLM 命令和工具，以确保软件包功能符合预期。我们将在未来进一步将该流程规范化。
 
-## 何时合并版本变更，或不合并？
+## 何时合并版本号变更，何时不合并？
 
-上述从当前或较早提交创建补丁或热修复版本的模式会使仓库处于以下状态：
+上述从当前或较早的提交创建补丁（patch）或热修复（hotfix）发布的模式，会使仓库处于以下状态：
 
-1.  标签（`vX.Y.Z-patch.1`）：此标签正确指向主分支上包含你打算发布的稳定代码的原始提交。这一点至关重要。任何人检出此标签都会得到与发布版本完全相同的代码。
-2.  分支（`release-vX.Y.Z-patch.1`）：此分支在标记的提交基础上包含一个新提交。该新提交仅在 package.json 中包含版本号更改（以及其他相关文件如 package-lock.json）。
+1.  **标签（`vX.Y.Z-patch.1`）**：该标签正确指向 `main` 分支上包含你计划发布稳定代码的原始提交。这一点至关重要——任何检出该标签的用户，都将获得与实际发布完全一致的代码。
+2.  **分支（`release-vX.Y.Z-patch.1`）**：该分支在已打标签的提交之上新增了一个提交，该提交仅包含 `package.json`（以及 `package-lock.json` 等相关文件）中版本号的更新。
 
-这种分离是好的。它保持了主分支历史的整洁，不会混入特定于发布的版本提升，直到你决定合并它们。
+这种分离方式是合理的，它能确保 `main` 分支的历史记录保持干净，避免混入与发布相关的版本号变更，直到你明确决定将其合并。
 
-这是关键决策，完全取决于发布的性质。
+这是关键决策点，其具体选择完全取决于本次发布的性质。
 
-### 合并回稳定补丁和热修复
+### 合并回主分支以发布稳定补丁和热修复
 
-对于任何稳定补丁或热修复发布，你几乎总是希望将 `release-<tag>` 分支合并回 `main`。
+对于任何稳定补丁或热修复发布，你几乎总是需要将 `release-<tag>` 分支合并回 `main` 分支。
 
-- 为什么？主要原因是为了更新 main 分支中 package.json 的版本号。如果你从较早的提交发布 v1.2.1，但从不将版本升级合并回来，那么 main 分支的 package.json 仍会显示 "version": "1.2.0"。下一个为下个功能发布（v1.3.0）开始工作的开发人员将从一个具有错误、较旧版本号的代码库分支。这会导致混淆，并需要稍后手动升级版本。
-- 流程：在创建 release-v1.2.1 分支并且包成功发布后，你应该打开一个拉取请求，将 release-v1.2.1 合并到 main。这个 PR 将只包含一个提交："chore: bump version to v1.2.1"。这是一个干净、简单的集成，使你的 main 分支与最新发布的版本保持同步。
+- **为什么？** 主要原因是更新 `main` 分支中 `package.json` 的版本号。如果你从一个较旧的提交发布了 v1.2.1，但从未将该版本号更新合并回去，那么 `main` 分支的 `package.json` 中仍会显示 `"version": "1.2.0"`。下一位开始开发下一个功能版本（v1.3.0）的开发者，将基于一个版本号错误且过时的代码库进行分支操作。这会导致混淆，并在后续被迫手动更新版本号。
+- **流程：** 在创建 `release-v1.2.1` 分支并成功发布包后，你应该发起一个拉取请求（PR），将 `release-v1.2.1` 合并至 `main`。该 PR 仅包含一个提交：“chore: bump version to v1.2.1”。这是一个干净、简单的集成操作，可确保 `main` 分支始终与最新发布的版本保持同步。
 
-### 预发布版本（RC、Beta、Dev）请勿合并回主分支
+### 不要将预发布版本（RC、Beta、Dev）的分支合并回 `main`
 
-通常情况下，你不会将预发布的版本分支合并回 `main`。
+通常，你不应将预发布版本的发布分支合并回 `main`。
 
-- 原因？预发布版本（例如 v1.3.0-rc.1、v1.3.0-rc.2）按定义来说是不稳定的，并且是临时的。你不希望用一系列候选版本的更新来污染主分支的历史记录。main 分支中的 package.json 应该反映最新的稳定版本，而不是 RC 版本。
-- 流程：创建 release-v1.3.0-rc.1 分支，执行 npm publish --tag rc，然后……这个分支就已经完成了它的使命。你可以直接删除它。RC 的代码已经在 main（或某个功能分支）上，因此不会丢失任何功能代码。发布分支只是版本号的一个临时载体。
+- 为什么？预发布版本（例如 `v1.3.0-rc.1`、`v1.3.0-rc.2`）本质上是不稳定的临时版本。你不希望用一系列候选发布（RC）的版本号更新污染 `main` 分支的历史记录。`main` 分支中的 `package.json` 应反映最新的稳定版本号，而非 RC 版本。
+- 流程：创建 `release-v1.3.0-rc.1` 分支，执行 `npm publish --tag rc`，之后……该分支即已完成其使命，可直接删除。RC 对应的代码已存在于 `main`（或某个功能分支）中，因此不会丢失任何功能代码。该发布分支仅是用于承载版本号的临时载体。
 
-## 本地测试和验证：打包和发布流程的变更
+## 本地测试与验证：打包与发布流程的变更
 
-如果你需要测试发布流程，但不实际发布到 NPM 或创建公开的 GitHub 版本，你可以从 GitHub UI 手动触发工作流。
+如果需要测试发布流程，但又不想真正发布到 NPM 或创建公开的 GitHub 版本，你可以通过 GitHub 界面手动触发工作流。
 
-1.  前往仓库的[操作标签页](https://github.com/QwenLM/qwen-code/actions/workflows/release.yml)。
-2.  点击"Run workflow"下拉菜单。
-3.  保持`dry_run`选项选中（`true`）。
-4.  点击"Run workflow"按钮。
+1.  进入仓库的 [Actions 标签页](https://github.com/QwenLM/qwen-code/actions/workflows/release.yml)。
+2.  点击 “Run workflow” 下拉菜单。
+3.  保持 `dry_run` 选项勾选（值为 `true`）。
+4.  点击 “Run workflow” 按钮。
 
-这将运行整个发布流程，但会跳过`npm publish`和`gh release create`步骤。你可以检查工作流日志以确保一切按预期工作。
+该操作将完整运行整个发布流程，但会跳过 `npm publish` 和 `gh release create` 步骤。你可以检查工作流日志，确认所有步骤均按预期执行。
 
-在提交之前，本地测试打包和发布流程的任何变更至关重要。这能确保包被正确发布，并且用户安装时能按预期工作。
+在提交任何对打包与发布流程的修改前，**务必先在本地进行测试**。这能确保生成的包可被正确发布，并在用户安装后按预期正常工作。
 
-要验证你的变更，你可以执行发布过程的试运行。这将模拟发布过程而不实际将包发布到 npm 注册表。
+为验证你的修改，可执行一次发布的“空跑”（dry run）。该操作将模拟整个发布过程，但不会将包实际发布到 npm 仓库。
 
 ```bash
 npm_package_version=9.9.9 SANDBOX_IMAGE_REGISTRY="registry" SANDBOX_IMAGE_NAME="thename" npm run publish:npm --dry-run
 ```
 
-此命令将执行以下操作：
+该命令将执行以下操作：
 
 1.  构建所有包。
-2.  运行所有预发布脚本。
-3.  创建将发布到 npm 的包压缩文件。
-4.  打印将发布的包摘要。
+2.  运行所有预发布脚本（prepublish scripts）。
+3.  生成待发布至 npm 的包 tarball 文件。
+4.  打印一份将被发布的包清单摘要。
 
-然后你可以检查生成的压缩文件，确保它们包含正确的文件并且`package.json`文件已正确更新。压缩文件将在每个包目录的根目录下创建（例如，`packages/cli/qwen-code-0.1.6.tgz`）。
+随后，你可以检查生成的 tarball 文件，确认其包含正确的文件，且 `package.json` 文件已按预期更新。这些 tarball 将生成于各包目录的根路径下（例如：`packages/cli/qwen-code-0.1.6.tgz`）。
 
-通过执行试运行，你可以确信你对打包过程的变更是正确的，并且包将成功发布。
+通过执行空跑，你可以确信自己对打包流程的修改是正确的，且最终包能够成功发布。
 
-## 发布深度解析
+## 版本发布深度解析
 
-发布过程的主要目标是获取 packages/ 目录中的源代码，构建它，并在项目根目录的临时 `dist` 目录中组装一个干净、独立的包。这个 `dist` 目录才是实际发布到 NPM 的内容。
+发布流程的主要目标是：从 `packages/` 目录中提取源代码，完成构建，并在项目根目录下的临时 `dist` 目录中组装出一个干净、自包含的软件包。这个 `dist` 目录中的内容即为最终发布到 NPM 的产物。
 
 以下是关键阶段：
 
-阶段 1：发布前完整性检查和版本控制
+**阶段 1：发布前健康检查与版本号更新**
 
-- 发生什么：在移动任何文件之前，该过程确保项目处于良好状态。这包括运行测试、代码检查和类型检查（npm run preflight）。根目录 package.json 和 packages/cli/package.json 中的版本号会更新为新的发布版本。
-- 原因：这保证了只有高质量、可工作的代码才会被发布。版本控制是表示新发布的第一步。
+- **执行内容**：在任何文件移动之前，流程首先确保项目处于良好状态——运行测试、代码检查（linting）和类型检查（`npm run preflight`）。同时，更新根目录 `package.json` 及 `packages/cli/package.json` 中的版本号为新发布的版本。
+- **目的**：确保仅发布高质量、功能正常的代码；版本号更新是标识一次新发布的首要步骤。
 
-阶段 2：构建源代码
+**阶段 2：源代码构建**
 
-- 发生什么：packages/core/src 和 packages/cli/src 中的 TypeScript 源代码被编译成 JavaScript。
-- 文件移动：
-  - packages/core/src/\*\*/\*.ts -> 编译到 -> packages/core/dist/
-  - packages/cli/src/\*\*/\*.ts -> 编译到 -> packages/cli/dist/
-- 原因：开发期间编写的 TypeScript 代码需要转换为 Node.js 可以运行的纯 JavaScript。core 包首先构建，因为 cli 包依赖于它。
+- **执行内容**：将 `packages/core/src` 和 `packages/cli/src` 中的 TypeScript 源代码编译为 JavaScript。
+- **文件路径变化**：
+  - `packages/core/src/**/*.ts` → 编译至 → `packages/core/dist/`
+  - `packages/cli/src/**/*.ts` → 编译至 → `packages/cli/dist/`
+- **目的**：开发过程中编写的 TypeScript 代码需转换为 Node.js 可直接运行的纯 JavaScript。由于 `cli` 包依赖 `core` 包，因此先构建 `core` 包。
 
-阶段 3：打包和组装最终可发布的包
+**阶段 3：最终可发布软件包的打包与组装**
 
-这是最关键的阶段，在这里文件被移动和转换为最终的发布状态。该过程使用现代打包技术来创建最终包。
+这是最关键的阶段，所有文件在此阶段被移动并转换为最终发布形态。该过程采用现代打包技术生成最终软件包。
 
-1.  打包创建：
-    - 发生什么：prepare-package.js 脚本在 `dist` 目录中创建一个干净的分发包。
-    - 关键转换：
-      - 复制 README.md 和 LICENSE 到 dist/
-      - 复制 locales 文件夹用于国际化
-      - 创建一个干净的 package.json 用于分发，只包含必要的依赖项
-      - 保持分发依赖项最小化（无捆绑的运行时依赖项）
-      - 维持 node-pty 的可选依赖项
+1. **打包创建**：
+    - **执行内容**：`prepare-package.js` 脚本在 `dist` 目录中创建一个干净的分发软件包。
+    - **关键转换操作**：
+      - 将 `README.md` 和 `LICENSE` 复制到 `dist/`
+      - 复制 `locales` 目录以支持国际化
+      - 为分发生成精简版 `package.json`，仅保留必要依赖
+      - 最小化分发依赖（不打包运行时依赖）
+      - 保留 `node-pty` 的可选依赖（optional dependencies）
 
-2.  JavaScript 包被创建：
-    - 发生什么：来自 packages/core/dist 和 packages/cli/dist 的已构建 JavaScript 使用 esbuild 打包成单个可执行 JavaScript 文件。
-    - 文件位置：dist/cli.js
-    - 原因：这创建了一个包含所有必要应用程序代码的单一优化文件。通过消除安装时复杂的依赖解析需求来简化包。
+2. **JavaScript 主程序包生成**：
+    - **执行内容**：使用 `esbuild` 将 `packages/core/dist` 和 `packages/cli/dist` 中已构建的 JavaScript 合并为单个可执行 JavaScript 文件。
+    - **输出位置**：`dist/cli.js`
+    - **目的**：生成一个单一、高度优化的文件，内含全部应用逻辑，从而简化安装时的依赖解析流程。
 
-3.  静态和支持文件被复制：
-    - 发生什么：不属于源代码但对包正确工作或良好描述必需的文件被复制到 `dist` 目录。
-    - 文件移动：
-      - README.md -> dist/README.md
-      - LICENSE -> dist/LICENSE
-      - locales/ -> dist/locales/
-      - Vendor 文件 -> dist/vendor/
-    - 原因：
-      - README.md 和 LICENSE 是任何 NPM 包都应该包含的标准文件。
-      - Locales 支持国际化功能
-      - Vendor 文件包含必要的运行时依赖项
+3. **静态文件与辅助文件复制**：
+    - **执行内容**：将非源码但对软件包正常运行或良好描述所必需的关键文件复制进 `dist` 目录。
+    - **文件路径变化**：
+      - `README.md` → `dist/README.md`
+      - `LICENSE` → `dist/LICENSE`
+      - `locales/` → `dist/locales/`
+      - 第三方依赖（vendor files）→ `dist/vendor/`
+    - **目的**：
+      - `README.md` 和 `LICENSE` 是任何 NPM 软件包的标准必备文件；
+      - `locales` 支持国际化功能；
+      - `vendor` 目录包含必要的运行时依赖。
 
-阶段 4：发布到 NPM
+**阶段 4：发布到 NPM**
 
-- 发生什么：从根 `dist` 目录内部运行 npm publish 命令。
-- 原因：通过在 `dist` 目录内运行 npm publish，只有我们在阶段 3 中精心组装的文件会被上传到 NPM 注册表。这防止了源代码、测试文件或开发配置被意外发布，为用户提供了干净且最小化的包。
+- **执行内容**：在根目录下的 `dist` 文件夹中执行 `npm publish` 命令。
+- **目的**：通过在 `dist` 目录内执行 `npm publish`，仅上传我们在第 3 阶段精心组装的文件至 NPM 仓库，从而避免意外发布源码、测试文件或开发配置，最终交付给用户一个干净、精简的软件包。
 
-此过程确保最终发布的工件是专门为发布而构建的、干净且高效的项目表示，而不是开发工作区的直接副本。
+该流程确保最终发布的制品是一个专为发布而构建、干净且高效的项目表达，而非开发工作区的直接拷贝。
 
-## NPM Workspaces
+## NPM 工作区
 
-该项目使用 [NPM Workspaces](https://docs.npmjs.com/cli/v10/using-npm/workspaces) 来管理此单体仓库中的包。这通过允许我们在项目根目录中跨多个包管理依赖项和运行脚本来简化开发。
+本项目使用 [NPM 工作区（Workspaces）](https://docs.npmjs.com/cli/v10/using-npm/workspaces) 来管理该单体仓库（monorepo）内的各个包。这简化了开发流程，使我们能够从项目根目录统一管理依赖项，并跨多个包运行脚本。
 
 ### 工作原理
 
-根目录的 `package.json` 文件定义了此项目的工作区：
+根目录下的 `package.json` 文件定义了本项目的工作区：
 
 ```json
 {
@@ -217,10 +218,10 @@ npm_package_version=9.9.9 SANDBOX_IMAGE_REGISTRY="registry" SANDBOX_IMAGE_NAME="
 }
 ```
 
-这告诉 NPM，`packages` 目录中的任何文件夹都是一个独立的包，应该作为工作区的一部分进行管理。
+该配置告知 NPM：`packages` 目录下的所有文件夹均为独立的包，应作为工作区的一部分进行统一管理。
 
 ### 工作区的优势
 
-- **简化的依赖管理**：从项目的根目录运行 `npm install` 将安装工作区内所有包的依赖项并将它们链接在一起。这意味着你不需要在每个包的目录中分别运行 `npm install`。
-- **自动链接**：工作区内的包可以相互依赖。当你运行 `npm install` 时，NPM 会自动在包之间创建符号链接。这意味着当你修改一个包时，其他依赖于该包的包能立即看到这些更改。
-- **简化的脚本执行**：你可以使用 `--workspace` 标志从项目根目录运行任何包中的脚本。例如，要在 `cli` 包中运行 `build` 脚本，可以运行 `npm run build --workspace @qwen-code/qwen-code`。
+- **简化的依赖管理**：从项目根目录运行 `npm install`，将为工作区中的所有包安装全部依赖并自动建立链接。这意味着你无需在每个包的目录中单独运行 `npm install`。
+- **自动链接**：工作区内的包可以相互依赖。当你运行 `npm install` 时，NPM 会自动在这些包之间创建符号链接。因此，当你修改某个包时，其他依赖该包的包会立即获取到这些变更。
+- **简化的脚本执行**：你可以从项目根目录使用 `--workspace` 标志，在任意包中运行脚本。例如，要在 `cli` 包中运行 `build` 脚本，可执行 `npm run build --workspace @qwen-code/qwen-code`。

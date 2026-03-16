@@ -1,14 +1,15 @@
 export default {
   commands: 'コマンド',
   'sub-agents': 'サブエージェント',
-  skills: 'スキル（実験的）',
+  skills: 'スキル',
   headless: 'ヘッドレスモード',
   checkpointing: {
     display: 'hidden',
   },
   'approval-mode': '承認モード',
   mcp: 'MCP',
+  lsp: 'LSP（言語サーバープロトコル）',
   'token-caching': 'トークンキャッシュ',
-  sandbox: 'サンドボックス化',
-  language: '国際化（i18n）',
+  sandbox: 'サンドボックス',
+  language: 'i18n',
 };

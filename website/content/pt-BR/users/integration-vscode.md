@@ -10,9 +10,9 @@
 
 ### Recursos
 
-- **Experiência nativa no IDE**: Painel lateral dedicado ao Qwen Code acessado através do ícone do Qwen
-- **Modo de aceitação automática de edições**: Aplica automaticamente as alterações do Qwen conforme são feitas
-- **Gerenciamento de arquivos**: Mencione arquivos com @ ou anexe arquivos e imagens usando o seletor de arquivos do sistema
+- **Experiência nativa no IDE**: Painel lateral dedicado do Qwen Code acessível pelo ícone do Qwen
+- **Modo de aceitação automática de edições**: Aplica automaticamente as alterações do Qwen à medida que são feitas
+- **Gerenciamento de arquivos**: Mencione arquivos com `@` ou anexe arquivos e imagens usando o seletor de arquivos do sistema
 - **Histórico de conversas**: Acesso às conversas anteriores
 - **Múltiplas sessões**: Execute várias sessões do Qwen Code simultaneamente
 
@@ -22,18 +22,18 @@
 
 ### Instalação
 
-Baixe e instale a extensão a partir do [Marketplace de Extensões do Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion).
+Baixe e instale a extensão na [Visual Studio Code Extension Marketplace](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion).
 
-## Solução de Problemas
+## Solução de problemas
 
-### Extensão não está instalando
+### A extensão não está sendo instalada
 
-- Verifique se você tem o VS Code 1.85.0 ou superior
-- Confirme que o VS Code tem permissão para instalar extensões
-- Tente instalar diretamente pelo site do Marketplace
+- Certifique-se de que você tem o VS Code 1.85.0 ou superior
+- Verifique se o VS Code tem permissão para instalar extensões
+- Tente instalar diretamente pelo site da Marketplace
 
 ### O Qwen Code não está respondendo
 
 - Verifique sua conexão com a internet
-- Inicie uma nova conversa para ver se o problema persiste
-- [Registre um problema no GitHub](https://github.com/qwenlm/qwen-code/issues) caso o problema continue
+- Inicie uma nova conversa para verificar se o problema persiste
+- [Abra um problema no GitHub](https://github.com/qwenlm/qwen-code/issues) se o problema continuar

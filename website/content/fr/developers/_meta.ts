@@ -1,5 +1,5 @@
 export default {
-  'Contribute to Qwen Code': {
+  'Contribuer à Qwen Code': {
     title: 'Contribuer à Qwen Code',
     type: 'separator',
   },
@@ -10,8 +10,8 @@ export default {
     title: 'SDK Agent',
     type: 'separator',
   },
-  'sdk-typescript': 'SDK Typescript',
-  'sdk-java': 'SDK Java (alpha)',
+  'sdk-typescript': 'SDK TypeScript',
+  'sdk-java': 'SDK Java (version alpha)',
   'Dive Into Qwen Code': {
     title: 'Approfondir Qwen Code',
     type: 'separator',

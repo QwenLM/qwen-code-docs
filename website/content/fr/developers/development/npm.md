@@ -4,32 +4,32 @@ Ce monorepo contient deux packages principaux : `@qwen-code/qwen-code` et `@qwen
 
 ## `@qwen-code/qwen-code`
 
-Il s'agit du package principal pour Qwen Code. Il est responsable de l'interface utilisateur, de l'analyse des commandes et de toutes les autres fonctionnalités destinées à l'utilisateur.
+Il s’agit du package principal de Qwen Code. Il est chargé de l’interface utilisateur, de l’analyse des commandes et de toutes les autres fonctionnalités destinées à l’utilisateur.
 
-Lorsque ce package est publié, il est regroupé en un seul fichier exécutable. Ce bundle inclut toutes les dépendances du package, y compris `@qwen-code/qwen-code-core`. Cela signifie que qu'un utilisateur installe le package avec `npm install -g @qwen-code/qwen-code` ou qu'il l'exécute directement avec `npx @qwen-code/qwen-code`, il utilise cet unique exécutable autonome.
+Lorsque ce package est publié, il est regroupé dans un seul fichier exécutable. Ce bundle inclut toutes les dépendances du package, y compris `@qwen-code/qwen-code-core`. Cela signifie que, qu’un utilisateur installe le package avec la commande `npm install -g @qwen-code/qwen-code` ou qu’il l’exécute directement avec `npx @qwen-code/qwen-code`, il utilise ce même fichier exécutable autonome.
 
 ## `@qwen-code/qwen-code-core`
 
-Ce package contient la logique principale pour le CLI. Il est responsable de l'envoi des requêtes API aux fournisseurs configurés, de la gestion de l'authentification et du cache local.
+Ce package contient la logique principale de l’interface en ligne de commande (CLI). Il est chargé d’effectuer les requêtes API vers les fournisseurs configurés, de gérer l’authentification et de superviser le cache local.
 
-Ce package n'est pas embarqué. Lorsqu'il est publié, il l'est en tant que package Node.js standard avec ses propres dépendances. Cela permet de l'utiliser comme package autonome dans d'autres projets, si nécessaire. Tout le code JavaScript transpilé présent dans le dossier `dist` est inclus dans le package.
+Ce package n’est pas intégré (bundled). Lorsqu’il est publié, il l’est sous la forme d’un package Node.js standard avec ses propres dépendances. Cela permet de l’utiliser comme package autonome dans d’autres projets, si nécessaire. Tout le code JavaScript transpilé présent dans le dossier `dist` est inclus dans le package.
 
 # Processus de publication
 
-Ce projet suit un processus de publication structuré afin de s'assurer que tous les packages sont correctement versionnés et publiés. Le processus est conçu pour être aussi automatisé que possible.
+Ce projet suit un processus de publication structuré afin de garantir que tous les packages soient correctement versionnés et publiés. Ce processus est conçu pour être aussi automatisé que possible.
 
 ## Comment effectuer une publication
 
-Les publications sont gérées via le workflow GitHub Actions [release.yml](https://github.com/QwenLM/qwen-code/actions/workflows/release.yml). Pour effectuer manuellement une publication de correctif ou un hotfix :
+Les publications sont gérées via le workflow GitHub Actions [release.yml](https://github.com/QwenLM/qwen-code/actions/workflows/release.yml). Pour effectuer manuellement une publication de correctif ou de correctif urgent :
 
-1.  Accédez à l'onglet **Actions** du dépôt.
+1.  Accédez à l’onglet **Actions** du référentiel.
 2.  Sélectionnez le workflow **Release** dans la liste.
-3.  Cliquez sur le menu déroulant **Run workflow**.
+3.  Cliquez sur le bouton déroulant **Exécuter le workflow**.
 4.  Remplissez les champs requis :
     - **Version** : La version exacte à publier (par exemple, `v0.2.1`).
-    - **Ref** : La branche ou le SHA du commit à partir duquel publier (la valeur par défaut est `main`).
-    - **Dry Run** : Laissez la valeur `true` pour tester le workflow sans publier, ou définissez-la à `false` pour effectuer une publication réelle.
-5.  Cliquez sur **Run workflow**.
+    - **Ref** : La branche ou le hachage de commit à partir duquel effectuer la publication (par défaut : `main`).
+    - **Essai à blanc** : Laissez la valeur sur `true` pour tester le workflow sans publication, ou définissez-la sur `false` pour effectuer une publication réelle.
+5.  Cliquez sur **Exécuter le workflow**.
 
 ## Types de publications
 
@@ -37,20 +37,20 @@ Le projet prend en charge plusieurs types de publications :
 
 ### Publications stables
 
-Publications stables régulières destinées à une utilisation en production.
+Publications stables régulières destinées à un usage en production.
 
-### Publications de prévisualisation
+### Publications préliminaires
 
-Publications hebdomadaires de prévisualisation chaque mardi à 23h59 UTC pour un accès anticipé aux fonctionnalités à venir.
+Publications préliminaires hebdomadaires chaque mardi à 23h59 UTC, offrant un accès anticipé aux nouvelles fonctionnalités à venir.
 
 ### Versions nocturnes
 
-Versions nocturnes quotidiennes à minuit UTC pour les tests de développement en pointe.
+Versions nocturnes quotidiennes à minuit UTC, destinées aux tests de développement en pointe.
 
 ## Calendrier de publication automatisé
 
-- **Nocturne** : Tous les jours à minuit UTC
-- **Aperçu** : Tous les mardis à 23h59 UTC
+- **Nocturne** : Tous les jours à minuit UTC  
+- **Aperçu** : Tous les mardis à 23 h 59 UTC  
 - **Stable** : Publications manuelles déclenchées par les mainteneurs
 
 ### Comment utiliser les différents types de versions
@@ -73,150 +73,144 @@ npm install -g @qwen-code/qwen-code@nightly
 
 Chaque publication planifiée ou manuelle suit ces étapes :
 
-1.  Récupère le code spécifié (dernière version de la branche `main` ou commit spécifique).
+1.  Récupère le code spécifié (dernière version de la branche `main` ou un commit spécifique).
 2.  Installe toutes les dépendances.
-3.  Exécute l'ensemble complet des vérifications `preflight` et des tests d'intégration.
-4.  Si tous les tests réussissent, calcule le numéro de version approprié en fonction du type de publication.
-5.  Construit et publie les paquets sur npm avec le dist-tag approprié.
-6.  Crée une publication GitHub pour la version.
+3.  Exécute l’ensemble complet des vérifications `preflight` et des tests d’intégration.
+4.  Si tous les tests réussissent, il calcule le numéro de version approprié en fonction du type de publication.
+5.  Génère et publie les packages sur npm avec le `dist-tag` approprié.
+6.  Crée une publication GitHub pour cette version.
 
 ### Gestion des échecs
 
-Si une étape du workflow de publication échoue, une nouvelle issue sera automatiquement créée dans le dépôt avec les étiquettes `bug` et une étiquette spécifique au type d'échec (par exemple, `nightly-failure`, `preview-failure`). L'issue contiendra un lien vers l'exécution du workflow ayant échoué pour faciliter le débogage.
+Si une étape quelconque du workflow de publication échoue, un nouveau problème est automatiquement créé dans le référentiel, avec les étiquettes `bug` et une étiquette d’échec spécifique au type de publication (par exemple, `nightly-failure`, `preview-failure`). Ce problème contient un lien vers l’exécution échouée du workflow afin de faciliter le débogage.
 
-## Validation de la version
+## Validation de la version publiée
 
-Après avoir publié une nouvelle version, des tests de validation doivent être effectués pour s'assurer que les paquets fonctionnent comme prévu. Cela peut être fait en installant localement les paquets et en exécutant un ensemble de tests pour vérifier qu'ils fonctionnent correctement.
+Après avoir publié une nouvelle version, un test de fumée (« smoke test ») doit être effectué afin de vérifier que les packages fonctionnent correctement. Cela peut se faire en installant localement les packages et en exécutant un jeu de tests pour s’assurer de leur bon fonctionnement.
 
-- `npx -y @qwen-code/qwen-code@latest --version` pour valider que l'envoi s'est déroulé comme prévu si vous n'avez pas effectué de tag rc ou dev
-- `npx -y @qwen-code/qwen-code@<tag de version> --version` pour valider que le tag a été correctement envoyé
-- _Ceci est destructif localement_ `npm uninstall @qwen-code/qwen-code && npm uninstall -g @qwen-code/qwen-code && npm cache clean --force && npm install @qwen-code/qwen-code@<version>`
-- Il est recommandé d'effectuer des tests de validation basiques en exécutant quelques commandes et outils llm pour s'assurer que les paquets fonctionnent comme prévu. Nous formaliserons cela davantage à l'avenir.
+- `npx -y @qwen-code/qwen-code@latest --version` pour valider que la publication s’est déroulée comme prévu, à condition que vous n’ayez pas publié une version « rc » ou « dev ».
+- `npx -y @qwen-code/qwen-code@<étiquette-de-version> --version` pour valider que l’étiquette a bien été publiée.
+- _Cette commande est destructrice en local_ : `npm uninstall @qwen-code/qwen-code && npm uninstall -g @qwen-code/qwen-code && npm cache clean --force && npm install @qwen-code/qwen-code@<version>`
+- Il est recommandé d’effectuer un test de fumée consistant à exécuter quelques commandes LLM et outils de base, afin de s’assurer que les packages fonctionnent comme attendu. Nous formaliserons davantage cette procédure à l’avenir.
 
-## Quand fusionner le changement de version, ou pas ?
+## Quand fusionner la modification de version, ou pas ?
 
-Le modèle ci-dessus pour créer des versions correctives ou des hotfix à partir de validations actuelles ou antérieures laisse le dépôt dans l'état suivant :
+Le modèle décrit ci-dessus pour créer des versions correctives (« patch ») ou des correctifs urgents (« hotfix ») à partir de validations actuelles ou anciennes laisse le dépôt dans l’état suivant :
 
-1.  L'Étiquette (`vX.Y.Z-patch.1`) : Cette étiquette pointe correctement vers la validation d'origine sur la branche principale qui contient le code stable que vous avez prévu de publier. C'est essentiel. Toute personne qui récupère cette étiquette obtient exactement le code qui a été publié.
-2.  La Branche (`release-vX.Y.Z-patch.1`) : Cette branche contient une nouvelle validation au-dessus de la validation étiquetée. Cette nouvelle validation ne contient que le changement du numéro de version dans package.json (ainsi que d'autres fichiers connexes comme package-lock.json).
+1.  La balise (`vX.Y.Z-patch.1`) : Cette balise pointe correctement vers la validation d’origine sur la branche `main` contenant le code stable que vous souhaitez publier. Cela est crucial : toute personne qui extrait (« checkout ») cette balise obtient exactement le code publié.
+2.  La branche (`release-vX.Y.Z-patch.1`) : Cette branche contient une nouvelle validation ajoutée au-dessus de la validation balisée. Cette nouvelle validation ne modifie que le numéro de version dans le fichier `package.json` (et d’autres fichiers associés comme `package-lock.json`).
 
-Cette séparation est bonne. Elle maintient l'historique de votre branche principale exempt des modifications de version spécifiques aux publications jusqu'à ce que vous décidiez de les fusionner.
+Cette séparation est bénéfique : elle préserve l’historique de la branche `main` propre de toute incrémentation de version liée aux publications, jusqu’à ce que vous décidiez de les y intégrer.
 
-C'est là la décision critique, et elle dépend entièrement de la nature de la publication.
+Il s’agit ici d’une décision critique, entièrement déterminée par la nature de la publication.
 
-### Fusionner pour les correctifs stables et les correctifs urgents
+### Fusionner vers `main` pour les correctifs stables et les correctifs urgents
 
-Vous souhaitez presque toujours fusionner la branche `release-<tag>` dans `main` pour toute version de correctif stable ou correctif urgent.
+Vous devez presque toujours fusionner la branche `release-<tag>` dans `main` pour toute version de correctif stable ou de correctif urgent.
 
-- Pourquoi ? La raison principale est de mettre à jour la version dans le fichier package.json de la branche main. Si vous publiez la version v1.2.1 depuis un ancien commit mais que vous ne fusionnez jamais le changement de version en amont, le fichier package.json de votre branche main indiquera toujours "version": "1.2.0". Le prochain développeur qui commencera à travailler sur la prochaine version de fonctionnalité (v1.3.0) partira d'une base de code ayant un numéro de version incorrect et plus ancien. Cela entraîne de la confusion et nécessite une mise à jour manuelle de la version ultérieurement.
-- Le processus : Une fois la branche release-v1.2.1 créée et le package publié avec succès, vous devez ouvrir une demande de tirage (pull request) pour fusionner release-v1.2.1 dans main. Cette PR contiendra un seul commit : "chore: bump version to v1.2.1". Il s'agit d'une intégration propre et simple qui maintient votre branche principale synchronisée avec la dernière version publiée.
+- Pourquoi ? La raison principale est de mettre à jour la version dans le fichier `package.json` de `main`. Si vous publiez la version `v1.2.1` à partir d’un commit ancien sans jamais fusionner la mise à jour de version dans `main`, le fichier `package.json` de votre branche `main` continuera d’indiquer `"version": "1.2.0"`. Le prochain développeur qui entame le travail sur la prochaine version fonctionnelle (`v1.3.0`) partira alors d’une base de code portant un numéro de version incorrect et obsolète. Cela engendre de la confusion et nécessite une mise à jour manuelle de la version ultérieurement.
+- Procédure : Une fois la branche `release-v1.2.1` créée et le package publié avec succès, ouvrez une demande d’extraction (pull request) afin de fusionner `release-v1.2.1` dans `main`. Cette demande d’extraction ne contiendra qu’un seul commit : « chore : passer à la version v1.2.1 ». Il s’agit d’une intégration propre et simple permettant de maintenir la branche `main` synchronisée avec la dernière version publiée.
 
-### NE PAS fusionner les pré-livraisons (RC, Bêta, Dev)
+### NE PAS FUSIONNER LES BRANCHES DE PRÉ-PUBLICATION DANS `main` (RC, Bêta, Développement)
 
-Vous ne fusionnez généralement pas les branches de pré-livraison dans `main`.
+Vous ne fusionnez généralement pas les branches de publication destinées aux pré-publications dans la branche `main`.
 
-- Pourquoi ? Les versions préliminaires (par exemple, v1.3.0-rc.1, v1.3.0-rc.2) sont, par définition,
-  instables et temporaires. Vous ne souhaitez pas polluer l'historique de votre branche principale avec une
-  série de mises à jour de versions pour des candidats de publication. Le fichier package.json dans main devrait refléter
-  la dernière version stable publiée, pas une version RC.
-- Le processus : La branche release-v1.3.0-rc.1 est créée, la commande npm publish --tag rc est exécutée,
-  puis... la branche a rempli son objectif. Vous pouvez simplement la supprimer. Le code pour
-  la version RC est déjà sur main (ou sur une branche de fonctionnalité), donc aucun code fonctionnel n'est perdu. La
-  branche de publication n'était qu'un véhicule temporaire pour le numéro de version.
+- Pourquoi ? Les versions préliminaires (par exemple `v1.3.0-rc.1`, `v1.3.0-rc.2`) ne sont, par définition, ni stables ni durables. Vous ne souhaitez pas alourdir l’historique de votre branche `main` avec une série de mises à jour de version consacrées aux versions candidates. Le fichier `package.json` présent dans `main` doit refléter la dernière version stable publiée, et non une version candidate.
+- Processus : La branche `release-v1.3.0-rc.1` est créée, la commande `npm publish --tag rc` est exécutée, puis… la branche a rempli son rôle. Vous pouvez simplement la supprimer. Le code correspondant à la version candidate est déjà présent dans `main` (ou dans une branche de fonctionnalité), aucune fonctionnalité n’est donc perdue. La branche de publication n’était qu’un support temporaire pour le numéro de version.
 
-## Test et validation locaux : Modifications du processus d’empaquetage et de publication
+## Tests et validation locaux : modifications du processus d’empaquetage et de publication
 
-Si vous avez besoin de tester le processus de publication sans réellement publier sur NPM ou créer une version publique sur GitHub, vous pouvez déclencher manuellement le workflow depuis l'interface utilisateur de GitHub.
+Si vous devez tester le processus de publication sans réellement publier sur NPM ni créer de version GitHub publique, vous pouvez déclencher manuellement le workflow depuis l’interface utilisateur GitHub.
 
-1.  Accédez à l'[onglet Actions](https://github.com/QwenLM/qwen-code/actions/workflows/release.yml) du dépôt.
-2.  Cliquez sur le menu déroulant "Run workflow".
-3.  Laissez l'option `dry_run` cochée (`true`).
-4.  Cliquez sur le bouton "Run workflow".
+1.  Accédez à l’onglet [Actions](https://github.com/QwenLM/qwen-code/actions/workflows/release.yml) du dépôt.
+2.  Cliquez sur la liste déroulante « Exécuter le workflow ».
+3.  Laissez l’option `dry_run` cochée (`true`).
+4.  Cliquez sur le bouton « Exécuter le workflow ».
 
-Cela lancera l'intégralité du processus de publication mais sautera les étapes `npm publish` et `gh release create`. Vous pouvez examiner les journaux du workflow pour vous assurer que tout fonctionne comme prévu.
+Cela exécutera l’intégralité du processus de publication, mais ignorera les étapes `npm publish` et `gh release create`. Vous pouvez consulter les journaux du workflow pour vérifier que tout fonctionne comme prévu.
 
-Il est essentiel de tester localement toutes modifications apportées au processus d’empaquetage et de publication avant de les valider. Cela garantit que les paquets seront publiés correctement et qu'ils fonctionneront comme prévu lorsqu'ils seront installés par un utilisateur.
+Il est essentiel de tester localement toute modification apportée au processus d’empaquetage et de publication avant de la valider. Cela garantit que les packages seront publiés correctement et qu’ils fonctionneront comme attendu une fois installés par un utilisateur.
 
-Pour valider vos modifications, vous pouvez effectuer une simulation du processus de publication. Cela simulera le processus de publication sans réellement publier les paquets sur le registre npm.
+Pour valider vos modifications, vous pouvez effectuer une exécution simulée (« dry run ») du processus de publication. Celle-ci simule la publication sans publier réellement les packages sur le registre npm.
 
 ```bash
 npm_package_version=9.9.9 SANDBOX_IMAGE_REGISTRY="registry" SANDBOX_IMAGE_NAME="thename" npm run publish:npm --dry-run
 ```
 
-Cette commande effectuera les opérations suivantes :
+Cette commande effectue les opérations suivantes :
 
-1.  Construire tous les paquets.
-2.  Exécuter tous les scripts de prépublication.
-3.  Créer les archives tar des paquets qui seraient publiées sur npm.
-4.  Afficher un résumé des paquets qui seraient publiés.
+1.  Génère tous les packages.
+2.  Exécute tous les scripts préalables à la publication.
+3.  Crée les archives tarball qui seraient publiées sur npm.
+4.  Affiche un résumé des packages qui seraient publiés.
 
-Vous pouvez ensuite examiner les archives tar générées pour vous assurer qu'elles contiennent les fichiers corrects et que les fichiers `package.json` ont été mis à jour correctement. Les archives tar seront créées à la racine du répertoire de chaque paquet (par exemple, `packages/cli/qwen-code-0.1.6.tgz`).
+Vous pouvez ensuite inspecter les archives tarball générées afin de vérifier qu’elles contiennent les bons fichiers et que les fichiers `package.json` ont bien été mis à jour. Ces archives sont créées à la racine du répertoire de chaque package (par exemple : `packages/cli/qwen-code-0.1.6.tgz`).
 
-En effectuant une simulation, vous pouvez être certain que vos modifications du processus d’empaquetage sont correctes et que les paquets seront publiés avec succès.
+En effectuant une exécution simulée, vous pouvez être certain que vos modifications du processus d’empaquetage sont correctes et que les packages seront publiés avec succès.
 
-## Analyse détaillée de la publication
+## Approfondissement de la version publiée
 
-L'objectif principal du processus de publication est de prendre le code source des dossiers packages/, de le compiler et de constituer un package propre et autonome dans un dossier temporaire `dist` à la racine du projet. C'est ce dossier `dist` qui est effectivement publié sur NPM.
+L’objectif principal du processus de publication consiste à prendre le code source depuis le répertoire `packages/`, à le compiler, puis à assembler un package propre et autonome dans un répertoire temporaire `dist` à la racine du projet. Ce répertoire `dist` est précisément ce qui est publié sur NPM.
 
 Voici les étapes clés :
 
-Étape 1 : Vérifications préliminaires et gestion de version
+Étape 1 : Vérifications préliminaires et gestion des versions avant publication
 
-- Ce qui se passe : Avant que tout fichier ne soit déplacé, le processus s'assure que le projet est dans un bon état. Cela implique l'exécution des tests, la vérification du style de code et la vérification des types (npm run preflight). Le numéro de version dans le package.json racine et dans packages/cli/package.json est mis à jour avec la nouvelle version de publication.
-- Pourquoi : Cela garantit que seul du code de qualité, fonctionnel, est publié. La gestion de version est la première étape pour signifier une nouvelle publication.
+- Ce qui se produit : Avant tout déplacement de fichiers, le processus vérifie que le projet est dans un état sain. Cela implique l’exécution des tests, du linting et de la vérification des types (`npm run preflight`). Le numéro de version figurant dans le fichier `package.json` à la racine du projet ainsi que dans `packages/cli/package.json` est mis à jour avec la nouvelle version à publier.  
+- Pourquoi : Cela garantit que seuls du code fonctionnel et de haute qualité sont publiés. La mise à jour de la version constitue la première étape pour marquer officiellement une nouvelle publication.
 
 Étape 2 : Compilation du code source
 
-- Ce qui se passe : Le code source TypeScript situé dans packages/core/src et packages/cli/src est compilé en JavaScript.
-- Déplacement des fichiers :
-  - packages/core/src/\*_/_.ts -> compilé vers -> packages/core/dist/
-  - packages/cli/src/\*_/_.ts -> compilé vers -> packages/cli/dist/
-- Pourquoi : Le code TypeScript écrit pendant le développement doit être converti en JavaScript pur pouvant être exécuté par Node.js. Le package core est compilé en premier car le package cli en dépend.
+- Ce qui se produit : Le code source TypeScript situé dans `packages/core/src` et `packages/cli/src` est compilé en JavaScript.  
+- Déplacement des fichiers :  
+  - `packages/core/src/**/*.ts` → compilé vers → `packages/core/dist/`  
+  - `packages/cli/src/**/*.ts` → compilé vers → `packages/cli/dist/`  
+- Pourquoi : Le code TypeScript écrit pendant le développement doit être converti en JavaScript exécutable par Node.js. Le package `core` est compilé en premier, car le package `cli` en dépend.
 
-Étape 3 : Empaquetage et assemblage du package final publiable
+Étape 3 : Empaquetage et assemblage du package final prêt à être publié
 
-C'est l'étape la plus critique où les fichiers sont déplacés et transformés pour atteindre leur état final avant publication. Le processus utilise des techniques modernes d'empaquetage pour créer le package final.
+Il s’agit de l’étape la plus critique, durant laquelle les fichiers sont déplacés et transformés pour atteindre leur état final destiné à la publication. Le processus utilise des techniques modernes d’empaquetage afin de produire le package final.
 
-1.  Création du bundle :
-    - Ce qui se passe : Le script prepare-package.js crée un package de distribution propre dans le dossier `dist`.
-    - Transformations clés :
-      - Copie README.md et LICENSE dans dist/
-      - Copie le dossier locales pour l'internationalisation
-      - Crée un package.json propre pour la distribution contenant uniquement les dépendances nécessaires
-      - Garde les dépendances de distribution minimales (pas de dépendances runtime embarquées)
-      - Conserve les dépendances optionnelles pour node-pty
+1.  Création de l’empaquetage :  
+    - Ce qui se produit : Le script `prepare-package.js` crée un package de distribution propre dans le répertoire `dist`.  
+    - Transformations clés :  
+      - Copie de `README.md` et de `LICENSE` dans `dist/`  
+      - Copie du dossier `locales` pour la prise en charge de l’internationalisation  
+      - Génération d’un fichier `package.json` propre pour la distribution, ne contenant que les dépendances strictement nécessaires  
+      - Minimisation des dépendances de distribution (aucune dépendance runtime n’est embarquée)  
+      - Conservation des dépendances optionnelles telles que `node-pty`
 
-2.  Le bundle JavaScript est créé :
-    - Ce qui se passe : Le JavaScript compilé provenant à la fois de packages/core/dist et de packages/cli/dist est regroupé en un seul fichier JavaScript exécutable à l'aide d'esbuild.
-    - Emplacement du fichier : dist/cli.js
-    - Pourquoi : Cela crée un seul fichier optimisé contenant tout le code applicatif nécessaire. Cela simplifie le package en supprimant le besoin de résolution complexe de dépendances au moment de l'installation.
+2.  Création du bundle JavaScript :  
+    - Ce qui se produit : Le code JavaScript compilé provenant de `packages/core/dist` et de `packages/cli/dist` est regroupé dans un seul fichier JavaScript exécutable à l’aide d’`esbuild`.  
+    - Emplacement du fichier : `dist/cli.js`  
+    - Pourquoi : Cela produit un fichier unique et optimisé contenant l’intégralité du code applicatif nécessaire. Cela simplifie le package en éliminant le besoin d’une résolution complexe des dépendances au moment de l’installation.
 
-3.  Les fichiers statiques et les fichiers de support sont copiés :
-    - Ce qui se passe : Les fichiers essentiels qui ne font pas partie du code source mais sont requis pour que le package fonctionne correctement ou soit bien documenté sont copiés dans le dossier `dist`.
-    - Déplacement des fichiers :
-      - README.md -> dist/README.md
-      - LICENSE -> dist/LICENSE
-      - locales/ -> dist/locales/
-      - Fichiers vendor -> dist/vendor/
-    - Pourquoi :
-      - Le README.md et la LICENSE sont des fichiers standards qui devraient être inclus dans tout package NPM.
-      - Les locales prennent en charge les fonctionnalités d'internationalisation
-      - Les fichiers vendor contiennent les dépendances runtime nécessaires
+3.  Copie des fichiers statiques et des fichiers auxiliaires :  
+    - Ce qui se produit : Les fichiers essentiels — non issus du code source mais requis pour le bon fonctionnement ou la bonne documentation du package — sont copiés dans le répertoire `dist`.  
+    - Déplacement des fichiers :  
+      - `README.md` → `dist/README.md`  
+      - `LICENSE` → `dist/LICENSE`  
+      - `locales/` → `dist/locales/`  
+      - Fichiers tiers (`vendor`) → `dist/vendor/`  
+    - Pourquoi :  
+      - `README.md` et `LICENSE` sont des fichiers standard devant figurer dans tout package NPM.  
+      - Le dossier `locales` permet de supporter les fonctionnalités d’internationalisation.  
+      - Les fichiers tiers (`vendor`) contiennent les dépendances runtime nécessaires.
 
 Étape 4 : Publication sur NPM
 
-- Ce qui se passe : La commande npm publish est exécutée depuis l'intérieur du dossier racine `dist`.
-- Pourquoi : En exécutant npm publish depuis l'intérieur du dossier `dist`, seuls les fichiers soigneusement assemblés à l'étape 3 sont téléchargés vers le registre NPM. Cela empêche toute publication accidentelle de code source, de fichiers de test ou de configurations de développement, résultant en un package propre et minimal pour les utilisateurs.
+- Ce qui se produit : La commande `npm publish` est exécutée depuis le répertoire `dist` à la racine du projet.  
+- Pourquoi : En lançant `npm publish` depuis le répertoire `dist`, seuls les fichiers soigneusement assemblés à l’étape 3 sont envoyés au registre NPM. Ainsi, aucun code source, aucun fichier de test ni aucune configuration de développement ne risquent d’être publiés par erreur, ce qui garantit un package propre et minimal pour les utilisateurs.
 
-Ce processus garantit que l'artefact finalement publié est une représentation pensée spécifiquement, propre et efficace du projet, plutôt qu'une copie directe de l'espace de travail de développement.
+Ce processus garantit que l’artefact final publié constitue une représentation spécifique, propre et efficace du projet, plutôt qu’une simple copie directe de l’espace de travail de développement.
 
 ## Espaces de travail NPM
 
-Ce projet utilise les [Espaces de travail NPM](https://docs.npmjs.com/cli/v10/using-npm/workspaces) pour gérer les paquets au sein de ce monorepo. Cela simplifie le développement en nous permettant de gérer les dépendances et d'exécuter des scripts sur plusieurs paquets depuis la racine du projet.
+Ce projet utilise les [espaces de travail NPM](https://docs.npmjs.com/cli/v10/using-npm/workspaces) pour gérer les packages au sein de ce monorepo. Cela simplifie le développement en permettant de gérer les dépendances et d’exécuter des scripts sur plusieurs packages depuis la racine du projet.
 
 ### Fonctionnement
 
-Le fichier `package.json` à la racine définit les espaces de travail pour ce projet :
+Le fichier `package.json` à la racine définit les espaces de travail de ce projet :
 
 ```json
 {
@@ -224,10 +218,10 @@ Le fichier `package.json` à la racine définit les espaces de travail pour ce p
 }
 ```
 
-Cela indique à NPM que tout dossier à l'intérieur du répertoire `packages` est un paquet séparé qui doit être géré dans le cadre de l'espace de travail.
+Cela indique à NPM que tout dossier situé dans le répertoire `packages` constitue un package distinct devant être géré dans le cadre de cet espace de travail.
 
 ### Avantages des espaces de travail
 
-- **Gestion simplifiée des dépendances** : L'exécution de `npm install` à la racine du projet installera toutes les dépendances pour tous les paquets de l'espace de travail et les liera entre elles. Cela signifie que vous n'avez pas besoin d'exécuter `npm install` dans chaque répertoire de paquet.
-- **Liaison automatique** : Les paquets au sein de l'espace de travail peuvent dépendre les uns des autres. Lorsque vous exécutez `npm install`, NPM créera automatiquement des liens symboliques entre les paquets. Cela signifie que lorsque vous apportez des modifications à un paquet, celles-ci sont immédiatement disponibles pour les autres paquets qui en dépendent.
-- **Exécution simplifiée des scripts** : Vous pouvez exécuter des scripts dans n'importe quel paquet depuis la racine du projet en utilisant l'option `--workspace`. Par exemple, pour exécuter le script `build` dans le paquet `cli`, vous pouvez exécuter `npm run build --workspace @qwen-code/qwen-code`.
+- **Gestion simplifiée des dépendances** : L’exécution de `npm install` depuis la racine du projet installe toutes les dépendances de tous les packages de l’espace de travail et les lie entre eux. Cela signifie que vous n’avez pas besoin d’exécuter `npm install` dans le répertoire de chaque package.
+- **Liaison automatique** : Les packages au sein de l’espace de travail peuvent dépendre les uns des autres. Lorsque vous exécutez `npm install`, NPM crée automatiquement des liens symboliques entre les packages. Ainsi, lorsque vous modifiez un package, ces modifications sont immédiatement disponibles pour les autres packages qui en dépendent.
+- **Exécution simplifiée des scripts** : Vous pouvez exécuter des scripts dans n’importe quel package depuis la racine du projet à l’aide de l’option `--workspace`. Par exemple, pour exécuter le script `build` dans le package `cli`, vous pouvez lancer `npm run build --workspace @qwen-code/qwen-code`.

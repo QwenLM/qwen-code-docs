@@ -1,56 +1,56 @@
-# Publicação de Extensões
+# Lançamento de Extensões
 
-Existem duas maneiras principais de publicar extensões para os usuários:
+Há duas maneiras principais de disponibilizar extensões para os usuários:
 
-- [Repositório Git](#publicando-através-de-um-repositório-git)
-- [Github Releases](#publicando-através-do-github-releases)
+- [Repositório Git](#lançamento-por-meio-de-um-repositório-git)
+- [Lançamentos no GitHub](#lançamento-por-meio-de-lançamentos-no-github)
 
-As publicações por repositório Git tendem a ser a abordagem mais simples e flexível, enquanto as publicações no GitHub podem ser mais eficientes na instalação inicial, pois são distribuídas como arquivos únicos em vez de exigir um clone git que baixa cada arquivo individualmente. As publicações no Github também podem conter arquivos específicos da plataforma caso você precise distribuir arquivos binários específicos da plataforma.
+Os lançamentos por meio de um repositório Git costumam ser a abordagem mais simples e flexível, enquanto os lançamentos no GitHub podem ser mais eficientes na instalação inicial, pois são distribuídos como arquivos compactados únicos, em vez de exigirem um `git clone`, que baixa cada arquivo individualmente. Os lançamentos no GitHub também podem conter arquivos compactados específicos para determinadas plataformas, caso você precise distribuir binários específicos para cada plataforma.
 
-## Publicação através de um repositório git
+## Lançamento por meio de um repositório Git
 
-Esta é a opção mais flexível e simples. Tudo que você precisa fazer é criar um repositório git acessível publicamente (como um repositório público no GitHub) e então os usuários poderão instalar sua extensão usando `qwen extensions install <uri-do-seu-repo>`, ou para um repositório GitHub eles podem usar o formato simplificado `qwen extensions install <organização>/<repositório>`. Eles podem opcionalmente depender de uma referência específica (branch/tag/commit) usando o argumento `--ref=<alguma-ref>`, cujo padrão é o branch principal.
+Essa é a opção mais flexível e simples. Tudo o que você precisa fazer é criar um repositório Git acessível publicamente (por exemplo, um repositório público no GitHub) e, em seguida, os usuários poderão instalar sua extensão usando `qwen extensions install <seu-uri-do-repo>` ou, para um repositório GitHub, usar o formato simplificado `qwen extensions install <org>/<repo>`. Opcionalmente, eles podem depender de uma referência específica (branch, tag ou commit) usando o argumento `--ref=<alguma-ref>`, cujo valor padrão é a branch padrão.
 
-Sempre que commits forem enviados para a referência na qual um usuário depende, ele será solicitado a atualizar a extensão. Observe que isso também permite reversões fáceis, pois o commit HEAD é sempre tratado como a versão mais recente, independentemente da versão real no arquivo `qwen-extension.json`.
+Sempre que commits forem enviados para a referência da qual um usuário depende, ele será solicitado a atualizar a extensão. Observe que isso também permite reversões fáceis: o commit HEAD é sempre tratado como a versão mais recente, independentemente da versão real especificada no arquivo `qwen-extension.json`.
 
-### Gerenciando canais de lançamento usando um repositório git
+### Gerenciando canais de lançamento usando um repositório Git
 
-Os usuários podem depender de qualquer referência (ref) do seu repositório git, como uma branch ou tag, o que permite gerenciar múltiplos canais de lançamento.
+Os usuários podem depender de qualquer referência (ref) do seu repositório Git, como uma branch ou tag, o que permite gerenciar múltiplos canais de lançamento.
 
-Por exemplo, você pode manter uma branch `stable`, na qual os usuários podem instalar desta forma: `qwen extensions install <uri-do-seu-repo> --ref=stable`. Ou, você poderia tornar isso padrão tratando sua branch principal como a branch de lançamento estável e fazendo o desenvolvimento em outra branch (por exemplo, chamada `dev`). Você pode manter quantas branches ou tags desejar, proporcionando máxima flexibilidade para você e seus usuários.
+Por exemplo, você pode manter uma branch `stable`, que os usuários podem instalar assim: `qwen extensions install <seu-uri-do-repositorio> --ref=stable`. Alternativamente, você pode tornar isso o padrão ao tratar sua branch principal como a branch de lançamento estável e realizar o desenvolvimento em uma branch diferente (por exemplo, chamada `dev`). Você pode manter quantas branches ou tags desejar, oferecendo máxima flexibilidade para você e seus usuários.
 
-Observe que esses argumentos `ref` podem ser tags, branches ou até commits específicos, permitindo que os usuários dependam de uma versão específica da sua extensão. Cabe a você decidir como deseja gerenciar suas tags e branches.
+Observe que esses argumentos `ref` podem ser tags, branches ou até commits específicos, o que permite que os usuários dependam de uma versão específica da sua extensão. Cabe a você decidir como deseja gerenciar suas tags e branches.
 
-### Exemplo de fluxo de lançamento usando um repositório git
+### Exemplo de fluxo de lançamento usando um repositório Git
 
-Embora existam muitas opções para como você deseja gerenciar lançamentos usando um fluxo git, recomendamos tratar seu branch padrão como seu branch de lançamento "estável". Isso significa que o comportamento padrão para `qwen extensions install <seu-repositorio-uri>` será estar no branch de lançamento estável.
+Embora existam muitas opções para gerenciar lançamentos usando um fluxo Git, recomendamos tratar seu branch padrão como o branch de lançamento “estável”. Isso significa que o comportamento padrão de `qwen extensions install <seu-repo-uri>` será usar o branch de lançamento estável.
 
-Digamos que você queira manter três canais de lançamento padrão: `stable`, `preview` e `dev`. Você faria todo o desenvolvimento padrão no branch `dev`. Quando estiver pronto para fazer um lançamento de visualização, você mescla esse branch no seu branch `preview`. Quando estiver pronto para promover seu branch de visualização para estável, você mescla `preview` no seu branch estável (que pode ser seu branch padrão ou um branch diferente).
+Suponha que você deseje manter três canais de lançamento padrão: `stable`, `preview` e `dev`. Você fará todo o desenvolvimento padrão no branch `dev`. Quando estiver pronto para fazer um lançamento de pré-visualização (*preview*), faça o *merge* desse branch no branch `preview`. Quando estiver pronto para promover o branch `preview` para estável, faça o *merge* de `preview` no branch estável (que pode ser seu branch padrão ou um branch diferente).
 
-Você também pode selecionar alterações de um branch para outro usando `git cherry-pick`, mas observe que isso resultará em seus branches tendo uma história ligeiramente divergente entre si, a menos que você force o envio de alterações para seus branches a cada lançamento para restaurar o histórico a um estado limpo (o que pode não ser possível para o branch padrão dependendo das configurações do seu repositório). Se você planeja fazer cherry picks, talvez queira evitar ter seu branch padrão como o branch estável para evitar fazer force-push no branch padrão, o que geralmente deve ser evitado.
+Você também pode selecionar alterações específicas de um branch para outro usando `git cherry-pick`, mas observe que isso fará com que os históricos dos seus branches fiquem ligeiramente divergentes entre si, a menos que você force o *push* das alterações para os branches em cada lançamento, restaurando assim um histórico limpo (o que pode não ser possível para o branch padrão, dependendo das configurações do seu repositório). Se você planeja usar *cherry picks*, talvez seja melhor evitar que o branch padrão seja o branch estável, para não precisar fazer *force push* no branch padrão — prática que, em geral, deve ser evitada.
 
-## Distribuição através de lançamentos no GitHub
+## Lançamento por meio de versões do GitHub
 
-As extensões Qwen Code podem ser distribuídas por meio de [Lançamentos no GitHub](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases). Isso proporciona uma experiência inicial de instalação mais rápida e confiável para os usuários, evitando a necessidade de clonar o repositório.
+As extensões do Qwen Code podem ser distribuídas por meio das [Versões do GitHub](https://docs.github.com/pt/repositories/liberando-projetos-no-github/sobre-versoes). Isso oferece uma experiência inicial de instalação mais rápida e confiável para os usuários, evitando a necessidade de clonar o repositório.
 
-Cada lançamento inclui pelo menos um arquivo de arquivamento que contém todos os conteúdos do repositório na tag à qual foi vinculado. Os lançamentos também podem incluir [arquivos pré-construídos](#custom-pre-built-archives), caso sua extensão exija algum passo de construção ou tenha binários específicos da plataforma anexados a ela.
+Cada versão inclui pelo menos um arquivo compactado, que contém todo o conteúdo do repositório na tag à qual foi vinculada. As versões também podem incluir [arquivos compactados pré-construídos](#arquivos-compactados-pre-construidos-personalizados), caso sua extensão exija alguma etapa de compilação ou tenha binários específicos para determinadas plataformas anexados a ela.
 
-Ao verificar se há atualizações, o qwen code procurará apenas o lançamento mais recente no GitHub (você deve marcá-lo como tal ao criar o lançamento), a menos que o usuário tenha instalado um lançamento específico passando `--ref=<alguma-tag-de-lançamento>`. Atualmente, não oferecemos suporte para optar por versões de pré-lançamento ou semver.
+Ao verificar atualizações, o Qwen Code simplesmente procura a versão mais recente no GitHub (você deve marcá-la como tal ao criar a versão), exceto se o usuário tiver instalado uma versão específica passando `--ref=<alguma-tag-de-versao>`. Atualmente, não há suporte para optar por versões pré-lançamento (pre-release) ou para semver.
 
 ### Arquivos pré-construídos personalizados
 
-Arquivos personalizados devem ser anexados diretamente ao lançamento no GitHub como ativos e devem ser totalmente autossuficientes. Isso significa que eles devem incluir toda a extensão, veja [estrutura do arquivo](#archive-structure).
+Arquivos personalizados devem ser anexados diretamente à versão do GitHub como ativos e devem ser totalmente autônomos. Isso significa que eles devem incluir toda a extensão; consulte a [estrutura do arquivo](#archive-structure).
 
-Se sua extensão for independente de plataforma, você pode fornecer um único ativo genérico. Nesse caso, deve haver apenas um ativo anexado ao lançamento.
+Se sua extensão for independente de plataforma, você pode fornecer um único ativo genérico. Nesse caso, deve haver apenas um ativo anexado à versão.
 
-Arquivos personalizados também podem ser usados se você desejar desenvolver sua extensão dentro de um repositório maior; você pode construir um arquivo que tenha uma estrutura diferente do próprio repositório (por exemplo, poderia ser apenas um arquivo de um subdiretório contendo a extensão).
+Arquivos personalizados também podem ser usados se você deseja desenvolver sua extensão dentro de um repositório maior; nesse caso, você pode criar um arquivo com uma estrutura diferente da do próprio repositório (por exemplo, pode ser apenas um arquivo de um subdiretório que contém a extensão).
 
-#### Arquivos específicos por plataforma
+#### Arquivos específicos da plataforma
 
-Para garantir que o Qwen Code possa encontrar automaticamente o ativo de lançamento correto para cada plataforma, você deve seguir esta convenção de nomenclatura. A CLI buscará os ativos na seguinte ordem:
+Para garantir que o Qwen Code consiga localizar automaticamente o ativo de versão correto para cada plataforma, você deve seguir esta convenção de nomenclatura. A CLI procurará os ativos na seguinte ordem:
 
-1.  **Específico por plataforma e arquitetura:** `{plataforma}.{arquitetura}.{nome}.{extensão}`
-2.  **Específico por plataforma:** `{plataforma}.{nome}.{extensão}`
+1.  **Específico para plataforma e arquitetura:** `{plataforma}.{arquitetura}.{nome}.{extensão}`
+2.  **Específico para plataforma:** `{plataforma}.{nome}.{extensão}`
 3.  **Genérico:** Se apenas um ativo for fornecido, ele será usado como alternativa genérica.
 
 - `{nome}`: O nome da sua extensão.
@@ -61,7 +61,7 @@ Para garantir que o Qwen Code possa encontrar automaticamente o ativo de lançam
 - `{arquitetura}`: A arquitetura. Os valores suportados são:
   - `x64`
   - `arm64`
-- `{extensão}`: A extensão do arquivo do arquivo (por exemplo, `.tar.gz` ou `.zip`).
+- `{extensão}`: A extensão do arquivo compactado (por exemplo, `.tar.gz` ou `.zip`).
 
 **Exemplos:**
 
@@ -72,16 +72,16 @@ Para garantir que o Qwen Code possa encontrar automaticamente o ativo de lançam
 
 #### Estrutura do arquivo
 
-Os arquivos devem ser extensões completamente contidas e possuir todos os requisitos padrão - especificamente, o arquivo `qwen-extension.json` deve estar na raiz do arquivo.
+Os arquivos devem conter extensões completas e atender a todos os requisitos padrão — especificamente, o arquivo `qwen-extension.json` deve estar na raiz do arquivo.
 
-O resto da estrutura deve ser exatamente igual ao de uma extensão típica, veja [extensions.md](extension.md).
+O restante da estrutura deve ser idêntico ao de uma extensão típica; consulte [extensions.md](extension.md).
 
 #### Exemplo de fluxo de trabalho do GitHub Actions
 
-Aqui está um exemplo de um fluxo de trabalho do GitHub Actions que compila e publica uma extensão Qwen Code para múltiplas plataformas:
+Abaixo está um exemplo de um fluxo de trabalho do GitHub Actions que compila e publica uma extensão do Qwen Code para múltiplas plataformas:
 
 ```yaml
-name: Release Extension
+name: Publicar Extensão
 
 on:
   push:
@@ -94,24 +94,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      - name: Configurar Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Instalar dependências
         run: npm ci
 
-      - name: Build extension
+      - name: Compilar extensão
         run: npm run build
 
-      - name: Create release assets
+      - name: Criar ativos da versão
         run: |
           npm run package -- --platform=darwin --arch=arm64
           npm run package -- --platform=linux --arch=x64
           npm run package -- --platform=win32 --arch=x64
 
-      - name: Create GitHub Release
+      - name: Criar versão no GitHub
         uses: softprops/action-gh-release@v1
         with:
           files: |

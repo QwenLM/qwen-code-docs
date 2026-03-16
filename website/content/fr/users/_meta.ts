@@ -1,7 +1,7 @@
 export default {
-  'Premiers pas': {
+  'Bien démarrer': {
     type: 'separator',
-    title: 'Premiers pas', // Le titre est facultatif
+    title: 'Bien démarrer', // Le titre est facultatif
   },
   overview: 'Aperçu',
   quickstart: 'Démarrage rapide',
@@ -23,7 +23,7 @@ export default {
   extension: 'Extension',
   reference: 'Référence',
   support: 'Support',
-  // besoin d'affiner
+  // À affiner
   'ide-integration': {
     display: 'hidden',
   },

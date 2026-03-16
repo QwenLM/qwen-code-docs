@@ -1,6 +1,6 @@
 export default {
-  'Qwen Code に貢献する': {
-    title: 'Qwen Code に貢献する',
+  'Qwen Code への貢献': {
+    title: 'Qwen Code への貢献',
     type: 'separator',
   },
   architecture: 'アーキテクチャ',
@@ -11,9 +11,9 @@ export default {
     type: 'separator',
   },
   'sdk-typescript': 'TypeScript SDK',
-  'sdk-java': 'Java SDK (アルファ版)',
-  'Qwen Code を深く理解する': {
-    title: 'Qwen Code を深く理解する',
+  'sdk-java': 'Java SDK（アルファ版）',
+  'Dive Into Qwen Code': {
+    title: 'Qwen Code を深く掘り下げる',
     type: 'separator',
   },
 

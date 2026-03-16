@@ -1,12 +1,12 @@
 # Desinstalar
 
-O método de desinstalação depende de como você executou a CLI. Siga as instruções para npx ou uma instalação global via npm.
+O método de desinstalação depende de como você executou a CLI. Siga as instruções para npx ou para uma instalação global do npm.
 
 ## Método 1: Usando npx
 
-npx executa pacotes a partir de um cache temporário sem uma instalação permanente. Para "desinstalar" a CLI, você deve limpar este cache, o que removerá o qwen-code e quaisquer outros pacotes previamente executados com npx.
+O npx executa pacotes de um cache temporário sem realizar uma instalação permanente. Para “desinstalar” a CLI, você precisa limpar esse cache, o que removerá o `qwen-code` e quaisquer outros pacotes anteriormente executados com o npx.
 
-O cache do npx é um diretório chamado `_npx` dentro da sua pasta principal de cache do npm. Você pode encontrar o caminho do cache do npm executando `npm config get cache`.
+O cache do npx é um diretório chamado `_npx` dentro da pasta principal de cache do npm. Você pode encontrar o caminho do cache do npm executando `npm config get cache`.
 
 **Para macOS / Linux**
 
@@ -33,7 +33,7 @@ _PowerShell_
 Remove-Item -Path (Join-Path $env:LocalAppData "npm-cache\_npx") -Recurse -Force
 ```
 
-## Método 2: Usando npm (Instalação Global)
+## Método 2: Usando npm (instalação global)
 
 Se você instalou a CLI globalmente (por exemplo, `npm install -g @qwen-code/qwen-code`), use o comando `npm uninstall` com a flag `-g` para removê-la.
 
@@ -41,4 +41,4 @@ Se você instalou a CLI globalmente (por exemplo, `npm install -g @qwen-code/qwe
 npm uninstall -g @qwen-code/qwen-code
 ```
 
-Este comando remove completamente o pacote do seu sistema.
+Esse comando remove completamente o pacote do seu sistema.

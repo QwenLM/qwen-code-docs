@@ -1,5 +1,5 @@
 export default {
-  troubleshooting: 'Solução de problemas',
+  troubleshooting: 'Solucionando problemas',
   'tos-privacy': 'Termos de Serviço',
 
   Uninstall: 'Desinstalar',
