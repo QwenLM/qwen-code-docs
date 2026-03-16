@@ -1,0 +1,179 @@
+---
+title: "Qwen Code 週報：自動化ワークフロー、拡張機能とMCP管理の改善、VS Codeサイドバー"
+date: "2026-03-13"
+description: "今週のアップデートでは、スクリプトの自動実行、MCPと拡張機能の簡単な管理、VS CodeサイドバーへのQwen Code常駐、画面録画からのGIF生成が可能になりました。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：自動化ワークフロー、拡張機能とMCP管理の改善、VS Codeサイドバー"
+  date="2026-03-13"
+  author="Qwen Team"
+/>
+
+今週は**v0.12.0**メジャーバージョンと2つのバグ修正版をリリースし、Hooks自動化システム、MCP管理の強化、VS Codeサイドバーなど、注目のアップデートをお届けします。
+
+## ✨ 新機能
+
+### Hooksシステム：Qwen Codeにスクリプトを自動実行させる
+
+特定のタイミングでQwen Codeが自動的にスクリプトを実行できるようになりました。例えば、コミット前に自動でテストを実行したり、コード生成後に自動でフォーマットしたり—ワークフローを完全にカスタマイズできます。
+
+Hooksシステムを使用すると、Qwen Codeの主要なライフサイクルイベントでカスタムコマンドをトリガーできます：
+
+- プロジェクトコンテキストの自動注入：ユーザーが質問するたびに、重要なプロジェクト情報を自動的に注入
+- AI終了時の作業サマリーログの自動生成：AIが会話を終了するたびに、会話のサマリーをログファイルに自動保存
+
+**使用例：**
+
+- コミット前に自動でテストを実行し、問題のあるコードのプッシュを回避
+- コード生成後に自動でフォーマット、手動でprettierを実行する必要なし
+- 各会話の終了時に作業サマリーを自動保存し、簡単に振り返りが可能
+
+PR [#1988](https://github.com/QwenLM/qwen-code/pull/1988)を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000006240/O1CN01T5iv1Z1vxyZvXQGmi_!!6000000006240-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/2C7e0XiE1AtJSatVtoXTI3EVULxb9iPH1tOUV-4fSDw.mp4" controls></video>
+
+### AIによる積極的な質問：迷ったら聞く
+
+タスク実行中にAIエージェントがインタラクティブな質問をできる新しい`ask_user_question`ツールを導入しました。これによりワークフローがより動的になり、エージェントはリアルタイムでユーザーの好みを収集、要件を明確化し、実装アプローチについて決定できます。
+
+**使用例：**
+
+- 危険な操作の前にAIが確認を求め、誤ったファイル削除を防止
+- 要件が不明確な場合、AIが積極的にフォローアップ質問をして最初から正しく実行
+- 会話のように段階的に要件を明確化し、一度にすべての詳細を考える必要なし
+
+PR [#1828](https://github.com/QwenLM/qwen-code/pull/1828)を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN014AyFhx1ohlFJ0qeax_!!6000000005257-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/dYSFbvjLpgEgRpVr905lv1PI7fA5JhopPbLKb-7V6Gc.mp4" controls></video>
+
+### 拡張機能管理インタラクティブTUI：アプリストアのように拡張機能をインストール
+
+拡張機能のインストールがアプリのインストールと同じくらい簡単に。ビジュアルインターフェースを開き、閲覧、インストール、設定、アンインストールをワンクリックで—コマンドを覚える必要がありません。
+
+拡張機能管理は、リスト、更新、無効化、有効化、アンインストール、詳細操作を統合されたマルチステップインターフェースに統合し、キーボードナビゲーション（↑↓）、選択（Enter）、戻る/閉じる（Esc）をサポートします。
+
+**使用例：**
+
+- アプリストアを閲覧するように新しい拡張機能を発見・インストール
+- 使用していない拡張機能をワンクリックでアンインストールし、環境をクリーンアップ
+- ドキュメントを探すことなく、視覚的に拡張機能のパラメータを設定
+
+PR [#2008](https://github.com/QwenLM/qwen-code/pull/2008)を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN01Nn0Htj1Y4LJ12cAHo_!!6000000003005-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/TU1Mn4k3ATaeCcdc4KHT-9UZMtEIRVD7QbsYn_uvzPU.mp4" controls></video>
+
+### MCP管理TUIの強化：いつでもオン/オフ、再起動不要
+
+MCPサーバーの管理がより便利になりました。Qwen Codeを再起動する必要がなく、ビジュアルインターフェースでいつでもMCPツールを有効化、無効化、設定でき、どのツールが利用可能かをリアルタイムで確認できます。
+
+MCP（Model Context Protocol）管理TUIを強化し、ランタイムでの動的有効化/無効化、視覚的ステータスインジケーター、スコープ選択設定、ヘルスモニタリング、自動再接続機能を追加しました。
+
+**使用例：**
+
+- プログラムを再起動せずにMCPツールをいつでもオン/オフ
+- すべてのMCPサーバーのステータスを一目で確認、問題があればすぐに分かる
+- 新しいMCPサーバーを素早く追加、自分の内部ツールを接続など
+
+PR [#1831](https://github.com/QwenLM/qwen-code/pull/1831)を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN01TGCK1j29dHIfuG70n_!!6000000008090-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/JT49NUzNkRV4G1H7-ETa0BxBB66ttxb9vk67aWEgQG0.mp4" controls></video>
+
+### VS Code Companionサイドバー：ワークスペースに常駐
+
+Qwen CodeがVS Codeサイドバーに常駐できるようになりました。コーディング中に会話履歴を確認でき、デュアルスクリーン作業がより快適に、レイアウトもより柔軟に。
+
+**使用例：**
+
+- サイドバーでいつでも以前の会話を確認、ウィンドウを切り替える必要なし
+- デュアルスクリーンで片方にコード、もう片方にQwen Code—効率2倍
+- レイアウトを自由に調整し、会話を最も便利な位置に配置
+
+PR [#2188](https://github.com/QwenLM/qwen-code/pull/2188)を参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01y53WOJ1RvkAu7WaBE_!!6000000002174-2-tps-1694-952.png)
+
+### GitHub WorkflowカスタムQCコマンド：CI/CDで直接実行
+
+CI/CDで直接Qwen Codeコマンドを実行。コミット時に自動でチェックと修正—コード品質を保証。
+
+**使用例：**
+
+- PR提出時に自動でコードチェックを実行、問題を直接フラグ表示
+- フォーマットやタイプミスなどの単純な問題を自動修正
+- コードレビュー時にAIに最初に確認させ、手動レビュー時間を短縮
+
+PR [#2117](https://github.com/QwenLM/qwen-code/pull/2117)を参照
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01cySDRP1K6GLSnHpwd_!!6000000001114-1-tps-860-584.gif)
+
+### LSツールトランケーションサポート：大規模ディレクトリで画面が溢れない
+
+大規模ディレクトリは表示時に自動的に折りたたまれ—ファイルリストで画面が溢れることがなくなりました。AIの応答がより速く、コンテキストがより集中。
+
+**使用例：**
+
+- node_modulesのような大規模ディレクトリを表示する際、数千のファイルで画面が溢れない
+- トークンを節約し、AIを重要なファイルに集中
+- 応答がより速く、AIが長いファイルリストを処理するのを待つ必要なし
+
+PR [#2324](https://github.com/QwenLM/qwen-code/pull/2324)を参照
+
+**トランケート出力の例**
+
+```
+Listed 150 item(s) in /path/to/dir:
+---
+[DIR] folder1
+file1.txt
+file2.txt
+...
+---
+[50 items truncated] ...
+```
+
+## 📊 改善点
+
+- **よりスムーズなOAuth認証**：認証成功後の明確なフィードバック、多言語サポート、ワンクリックでの認証クリア（[#2327](https://github.com/QwenLM/qwen-code/pull/2327)）
+- **より明確なコンテキスト圧縮の説明**：なぜ圧縮されたか、何が圧縮されたかを通知—もう混乱なし（[#2224](https://github.com/QwenLM/qwen-code/pull/2224)）
+- **インストール後の自動起動**：手動でコマンドを入力する必要なし、インストール後すぐに使用可能（[#2290](https://github.com/QwenLM/qwen-code/pull/2290)）
+- **より認識しやすい一時ファイル**：プレフィックスを`qwen-edit-`に変更、Qwen Code生成と一目で分かる（[#2045](https://github.com/QwenLM/qwen-code/pull/2045)）
+- **コードハイライトがタブ幅をサポート**：好みに合わせてインデントを表示、より快適なコード閲覧（[#2077](https://github.com/QwenLM/qwen-code/pull/2077)）
+
+## 🔧 重要な修正
+
+| PR | バージョン | 修正内容 | 影響 |
+|----|-----------|----------|------|
+| [#2268](https://github.com/QwenLM/qwen-code/pull/2268) | v0.12.2 | exportコマンドが現在のセッションをエクスポート | 履歴エクスポート時に間違ったセッションをエクスポートしない |
+| [#2320](https://github.com/QwenLM/qwen-code/pull/2320) | v0.12.2 | DeepSeek API形式に対応 | DeepSeekモデル使用時のエラーが解消 |
+| [#2298](https://github.com/QwenLM/qwen-code/pull/2298) | v0.12.2 | より明確なファイル操作エラーメッセージ | ファイル操作失敗時に具体的な理由が分かる |
+| [#2289](https://github.com/QwenLM/qwen-code/pull/2289) | v0.12.1 | Windowsターミナルクラッシュを修正 | Windowsユーザーがウィンドウサイズ変更時にクラッシュしない |
+| [#2221](https://github.com/QwenLM/qwen-code/pull/2221) | v0.12.0 | YOLOモードが予期せずエディタを開かない | YOLOモード使用時の中断がなくなった |
+| [#2212](https://github.com/QwenLM/qwen-code/pull/2212) | v0.12.1 | MCP OAuth認証を修正 | MCPサーバー認証がより安定 |
+
+### Windowsプラットフォーム固有の修正
+
+| PR | 修正内容 | 影響 |
+|----|----------|------|
+| [#2289](https://github.com/QwenLM/qwen-code/pull/2289) | ターミナルサイズ変更時のクラッシュを修正 | ウィンドウドラッグ時にクラッシュしない |
+| [#2291](https://github.com/QwenLM/qwen-code/pull/2291) | ファイルが存在しない場合の正しいプロンプト | ファイルが見つからない場合、パスの問題だと分かる |
+| [#2078](https://github.com/QwenLM/qwen-code/pull/2078) | Windows改行コードをサポート | Windowsで作成されたmarkdownファイルが正しく解析できる |
+| [#1890](https://github.com/QwenLM/qwen-code/pull/1890) | CRLFによるサイレント失敗を修正 | 一部の操作が原因不明で失敗しなくなった |
+
+## 🎈 その他の改善
+
+- 8名の新しいコントリビューターを追加：[@zy6p](https://github.com/zy6p), [@lgzzzz](https://github.com/lgzzzz), [@huww98](https://github.com/huww98), [@Aayushyaash](https://github.com/Aayushyaash), [@kkhomej33-netizen](https://github.com/kkhomej33-netizen), [@Deng-Xian-Sheng](https://github.com/Deng-Xian-Sheng), [@xieyonn](https://github.com/xieyonn), [@qqqys](https://github.com/qqqys), [@ossaidqadri](https://github.com/ossaidqadri)
+- VS Code設定にJSON Schema検証を追加
+- 設定移行をシーケンシャルフレームワークにリファクタリングし、アトミックファイル書き込みをサポート
+- ACP統合を@agentclientprotocol/sdkに移行
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g`を実行して最新版にアップグレードできます。
+</Callout>
+
+ご質問やご提案がありましたら、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues)でフィードバックをお願いします！
