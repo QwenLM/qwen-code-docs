@@ -1,0 +1,250 @@
+---
+title: "Qwen Code + Obsidian：ナレッジマネジメントをアクセス可能に"
+date: "2026-03-16"
+description: "プラグインのインストール、認証設定、および文章の推敲、画像生成、ウェブスクレイピングなどのマルチモーダル機能を通じて、Qwen Code を Obsidian に統合し、ナレッジマネジメントの効率を向上させます。"
+author: "pomelo-nwu"
+tags: ["チュートリアル", "ユーザー事例"]
+image: https://img.alicdn.com/imgextra/i2/O1CN01TzurO81g4MFFTXPzm_!!6000000004088-2-tps-1664-928.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code + Obsidian：ナレッジマネジメントをアクセス可能に"
+  date="2026-03-16"
+  author="pomelo-nwu"
+/>
+
+![](https://img.alicdn.com/imgextra/i2/O1CN01TzurO81g4MFFTXPzm_!!6000000004088-2-tps-1664-928.png)
+
+この記事では、**Qwen Code** を**Obsidian** に統合する再利用可能なワークフローを実演します：ノート内で直接ターミナルを開き、インストールと認証を完了し、Skills / MCP を通じて「文章の推敲、画像生成、ウェブスクレイピング」などの機能を日々のナレッジマネジメントワークフローに接続します。
+
+## なぜ Obsidian + Qwen Code なのか？
+
+Obsidian の主な利点は、**ローカル Markdown、双方向リンク、ナレッジグラフ**にあります—あなたのノートは単なる `.md` ファイルであり、エージェントによる読み取りと書き込みに自然に適しています。Qwen Code はターミナルで実行される AI エージェントであり、エディターに依存せず、ターミナルがある場所ならどこでも動作します。
+
+この 2 つを接続することで、あなたのナレッジベースは単なる「ノートを保存する場所」から、**AI が操作できるアクティブなワークスペース**へと変貌します：エージェントはあなたのノートを直接読み取り、コンテンツを変更し、画像を生成し、自動的にタグを追加し、外部ウェブサイトのコンテンツをあなたの vault にスクレイピングすることさえできます。これは VS Code / Cursor のようなコードエディターでは置き換えるのが難しいことです—なぜなら、Obsidian のプラグインエコシステム、双方向リンクグラフ、ナレッジマネジメントワークフローは、「執筆と思考」のために特別に設計されているからです。
+
+## 環境セットアップ
+
+開始する前に、以下のツールがローカルにインストールされていることを確認してください：
+
+- **Obsidian**：[こちらからダウンロード](https://obsidian.md/)
+- **Node.js 18+**：Skills および MCP のインストールには `npx` が必要です、[こちらからダウンロード](https://nodejs.org/)
+- 既存の Obsidian Vault、またはテスト用に新しい空の Vault を作成
+
+準備ができたら、以下の手順に従ってください。
+
+## Obsidian Terminal プラグインをインストール
+
+Obsidian を開き、「設定」→「サードパーティープラグイン」→「コミュニティープラグインマーケットプレイス」に移動し、「Terminal」を検索してインストールします。
+
+![](https://img.alicdn.com/imgextra/i4/O1CN01z4iGql1i9yKcmbRIr_!!6000000004371-2-tps-2160-782.png)
+
+インストール後、サイドバーの Terminal ボタンをクリックし、「Integrated」統合を選択します。操作を容易にするために、Terminal を右サイドバーの上部にドラッグすることをお勧めします。
+
+![](https://img.alicdn.com/imgextra/i4/O1CN0123qrd31pWbD1pwfLh_!!6000000005368-2-tps-3840-1214.png)
+
+## Qwen Code をインストール
+
+ターミナルで以下を入力します：
+
+```bash
+qwen
+```
+
+Qwen Code がローカルにインストールされていない場合は、[GitHub インストールガイド](https://github.com/QwenLM/qwen-code)を参照するか、以下のコマンドを実行してワンクリックインストールします：
+
+**macOS / Linux：**
+```bash
+bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)"
+```
+
+**Windows：**
+```cmd
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat
+```
+
+## Qwen を認証
+
+インストールが成功したら、以下の認証方法から選択します：
+
+- **QwenOAuth**：`Qwen3.5-plus` への 1 日 1000 回の無料呼び出し
+- **Alibaba Cloud Coding Plan**：API キーを購入、高頻度使用シナリオに適しています
+
+![](https://img.alicdn.com/imgextra/i4/O1CN01TqSsrj1a35S3TsUjE_!!6000000003273-2-tps-1908-792.png)
+
+認証後、Qwen Code ナレッジマネジメントの旅を始める準備が整いました。
+
+---
+
+## 実用的なヒント
+
+### ヒント 1：ファイルを参照—エージェントに直接ノートを操作させる
+
+編集したいファイルを見つけ、右クリックして「パスをコピー」→「絶対パス」を選択し、Qwen コマンドラインに貼り付けます（⌘+V / Ctrl+V）：
+
+![](https://img.alicdn.com/imgextra/i3/O1CN01XSMGVX1Whc29M5oYd_!!6000000002820-2-tps-3814-1226.png)
+
+Enter キーを押すと、Qwen が開始します：
+
+![](https://img.alicdn.com/imgextra/i3/O1CN01GVh2HP1P2fJUKyynT_!!6000000001783-2-tps-1954-1092.png)
+
+ファイルを参照することは、「一見させる」だけでなく、はるかに多くのことを可能にします。以下のプロンプトを試してみてください：
+
+```
+この会議ノートから 5 つの主要な結論を抽出し、最後に To-Do リストを追加してください
+```
+
+```
+この英語の研究ノートを中国語に翻訳し、すべての Markdown フォーマットとリンクを保持してください
+```
+
+```
+これら 3 つの週次報告書を読み、プロジェクト次元別に整理して月次概要に統合してください
+```
+
+複数のファイルパスを一度に参照することもでき、エージェントはそれらの関係を自動的に理解します。これは「ノート横断的な要約」シナリオで特に役立ちます。
+
+### ヒント 2：出力言語とテーマを変更
+
+モデルに特定の言語（例：フランス語）で出力させたい場合は、以下のように設定します：
+
+```bash
+/language output French
+```
+
+![](https://img.alicdn.com/imgextra/i2/O1CN01qDNKSy1KfWqIn66U2_!!6000000001191-2-tps-3142-804.png)
+
+同様に、ターミナルインターフェースにダークテーマを使用させたい場合は、Qwen Code に直接伝えることができます：
+
+```
+Obsidian の Terminal テーマをダークに変更してください
+```
+
+その後、再起動して有効にします：
+
+![](https://img.alicdn.com/imgextra/i4/O1CN01MHVw5E1tiHmKqiew0_!!6000000005935-2-tps-2536-906.png)
+
+### ヒント 3：文章推敲 Skills を追加
+
+Qwen Code で以下のプロンプトを入力します：
+
+```md
+まず `find-skills` が存在するか確認し、存在しない場合は `npx skills add https://github.com/vercel-labs/skills --skill find-skills` を使用してインストールしてください。
+
+次に、「文章推敲」に関連する Skills を見つけてインストールしてください。
+```
+
+![](https://img.alicdn.com/imgextra/i4/O1CN01IuGbnF1fJBRtgHM9d_!!6000000003985-2-tps-3138-1508.png)
+
+`Option 1` と `Option 3` を選択すると、Qwen Code が自動的に執筆関連の Skills をインストールします：
+
+![](https://img.alicdn.com/imgextra/i3/O1CN01ahEBnN1qaYF862TJz_!!6000000005512-2-tps-3150-980.png)
+
+簡単に結果をテストしましたが、うまく機能しました。Skill は以下のことを手伝ってくれました：
+
+- 中国語と英語の間のスペースを統一（半角/全角の混在を排除）
+- 長すぎる段落をより読みやすい短い段落に分割
+- 口語的な表現を削除し、より形式的で簡潔な表現に置き換え
+- 段落間の接続文を追加して一貫性を向上
+
+![](https://img.alicdn.com/imgextra/i3/O1CN01ALc1Pu25EJFG8pv2i_!!6000000007494-2-tps-3086-1490.png)
+
+推敲スタイルに特定の要件がある場合（「より口語的」や「より学術的」など）、プロンプトで指定することができ、Skill がそれに応じて調整します。
+
+### ヒント 4：画像生成 Skills を追加
+
+記事のイラストを作成する際は、Qwen Image MCP を使用できます：
+
+> 以下は依然として Qwen Code へのプロンプトです—インストールプロセスを手動で処理する必要はありません。エージェントに任せましょう。
+
+まず `~/.qwen/settings.json` を変更し、`mcpServers` フィールドを手動で追加し、`qwen mcp list` を通じてインストールを確認します：
+
+```json
+"mcpServers": {
+  "playwright": {
+    "command": "npx",
+    "args": [
+      "@playwright/mcp@latest",
+      "--user-data-dir",
+      ".playwright-mcp-profile"
+    ]
+  },
+  "qwenimage": {
+    "url": "https://dashscope.aliyuncs.com/api/v1/mcps/QwenImage/sse",
+    "headers": {
+      "Authorization": "Bearer ${DASHSCOPE_API_KEY}"
+    }
+  }
+}
+```
+
+![](https://img.alicdn.com/imgextra/i4/O1CN01WIZcuL1N4NZ1Fj7lx_!!6000000001516-2-tps-2506-1016.png)
+
+数秒以内に MCP サービスが設定されます：
+
+![](https://img.alicdn.com/imgextra/i1/O1CN01XWtwg81qvcSgTW8Z5_!!6000000005558-2-tps-1446-624.png)
+
+最初のイラストの作成を開始します：
+
+```
+qwen image mcp を使用して、「Qwen Code + Obsidian：ナレッジマネジメントをアクセス可能に」を表現する雑誌スタイルの手描きイラストを作成し、ダウンロードしてください
+```
+
+![](https://img.alicdn.com/imgextra/i4/O1CN01YZmcSO1Oo0dhQ85CS_!!6000000001751-2-tps-3024-908.png)
+
+### ヒント 5：Playwright MCP を使用して保護されたコンテンツにアクセス
+
+執筆時、資料はログインが必要な内部ドキュメント製品に保存されていることがよくあります。エージェントにブラウザを操作させ、ログインを完了し、代わりにコンテンツをスクレイピングさせることができます。
+
+前のステップで Playwright MCP サービスをすでに設定しているので、直接使用しましょう：
+
+```
+playwright mcp を使用して Yuque からコンテンツを取得し、50 文字の中心思想に要約してください：https://aliyuque.antfin.com/pomelo.lcw/hwbywq/wrt6wn7u6p34t17u
+```
+
+エージェントは自動的にブラウザを開き、ログインを完了し（以前に `.playwright-mcp-profile` にログイン状態を保存している場合）、ページコンテンツをスクレイピングし、洗練された要約を返します。あなたは何秒か待つだけで済み、手動でのコピーペーストは不要です。
+
+![](https://img.alicdn.com/imgextra/i3/O1CN01tod9Va1ZkJDFeeRhz_!!6000000003232-2-tps-1450-652.png)
+
+> **ヒント**：初めて使用する際、Playwright は手動ログインを必要とするブラウザウィンドウをポップアップします。ログイン状態は `.playwright-mcp-profile` ディレクトリに保存されるため、以降の呼び出しでは再度ログインする必要はありません。
+
+### ヒント 6：エージェントにナレッジベースの整理を手伝ってもらう
+
+これまでのヒントは「単一コンテンツ制作」に焦点を当てていました。しかし、Obsidian ユーザーが本当に気にするのは、**ナレッジベースレベルの整理**—タグ、双方向リンク、MOC（Map of Content）です。这正是 Qwen Code がバッチ処理で優れた能力を発揮するところです。
+
+**自動タグ付け**：エージェントに指定されたディレクトリ内のすべてのノートをスキャンさせ、コンテンツに基づいてタグの提案を生成し、frontmatter に書き込ませます：
+
+```
+/Notes/Reading ディレクトリ内のすべての .md ファイルをスキャンし、各ノートの frontmatter にコンテンツに基づいて tags フィールドを追加してください（すでに存在する場合はマージ）、中国語のタグを使用し、各ノートあたり 5 つ以下にしてください。
+```
+
+**MOC インデックスの生成**：特定のテーマのノートが蓄積すると、手動でインデックスページを維持するのは疲れます。エージェントに任せましょう：
+
+```
+/Notes/Projects ディレクトリ内のすべてのノートを読み、プロジェクト名別にグループ化し、MOC インデックスページ（Markdown 形式、[[双方向リンク]] 構文を使用）を生成し、/Notes/Projects/MOC.md として保存してください。
+```
+
+**双方向リンクの補完**：ノートは関連しているが、執筆中にリンクを追加し忘れましたか？
+
+```
+/Notes ディレクトリ内のすべてのノートをスキャンし、コンテンツ内で他のノートタイトルが言及されているが [[]] でリンクされていない場所を見つけ、自動的に双方向リンクを追加してください。変更前に確認のために変更リストを表示してください。
+```
+
+これらの「バッチ読み取り → 分析 → バッチ書き込み」タスクは、まさにエージェントが人間よりもはるかに効率的に実行できることです。あなたはプロンプトでルールを説明するだけで、Qwen Code が自動的に走査して変更します。
+
+## まとめ
+
+これで、Qwen Code は Obsidian でスムーズに実行されているはずです。私たちが構築した完全なワークフローを振り返りましょう：
+
+1. **執筆フェーズ**：Skills を使用して推敲 / 拡張 / 翻訳を実行、1 つのプロンプトですべて処理
+2. **イラストフェーズ**：Qwen Image MCP を使用して説明に基づきイラストを生成、ストックサイトを探す必要もうありません
+3. **資料収集**：Playwright MCP を使用してブラウザを操作し、ログインが必要な内部ドキュメントをスクレイピング
+4. **ナレッジ整理**：エージェントにバッチタグ付け、双方向リンクの補完、MOC インデックスの生成を実行させる
+
+最後に、`essay-polish` のような文章推敲 Skill を使用して完全な推敲を行い、同じ vault 内で「調査 → コンテンツ作成 → ナレッジ整理」のループを完了します。
+
+Obsidian が整理を担当し、Qwen Code が実行を担当—これがおそらく現在最も軽量な「AI ナレッジマネジメント」ソリューションです。お役に立てれば幸いです。
+
+---
