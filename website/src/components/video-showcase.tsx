@@ -108,6 +108,9 @@ const CopyableCodeBlock = ({ command }: { command: string }) => {
     [command]
   );
 
+  // 截断命令显示，最多2行
+  const displayCommand = command.length > 80 ? command.slice(0, 80) + "…" : command;
+
   return (
     <div
       className="mt-3 group/code relative rounded-lg bg-zinc-950/5 dark:bg-zinc-50/5 border border-border/30 hover:border-border/60 transition-colors duration-200"
@@ -115,8 +118,11 @@ const CopyableCodeBlock = ({ command }: { command: string }) => {
     >
       <div className="flex items-center gap-2 px-3 py-3">
         <Terminal className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
-        <code className="flex-1 text-xs font-mono text-muted-foreground leading-relaxed whitespace-pre-wrap break-words select-all">
-          {command}
+        <code 
+          className="flex-1 text-xs font-mono text-muted-foreground leading-relaxed line-clamp-2 break-all select-all"
+          title={command}
+        >
+          {displayCommand}
         </code>
         <button
           type="button"
@@ -479,10 +485,14 @@ const FeatureTabContent = ({
 }) => {
   const [activeCategory, setActiveCategory] = useState("all");
 
-  const filteredVideos =
+  // Filter videos by category
+  const baseFilteredVideos =
     activeCategory === "all"
       ? videos
       : videos.filter((videoItem) => videoItem.category === activeCategory);
+
+  // Reverse the order for all categories (newest first)
+  const filteredVideos = [...baseFilteredVideos].reverse();
 
   return (
     <div>
@@ -513,17 +523,15 @@ const FeatureTabContent = ({
         ))}
       </div>
 
-      {/* Asymmetric video grid */}
+      {/* Video grid - 3 columns layout for all categories */}
       {filteredVideos.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredVideos.map((video, index) => (
             <FeatureVideoCard
               key={`${video.title}-${index}`}
               video={video}
               onClick={() => onVideoSelect(video)}
-              variant={
-                index === 0 && filteredVideos.length > 2 ? "wide" : "default"
-              }
+              variant="default"
               texts={texts}
             />
           ))}
@@ -626,19 +634,19 @@ const TabbedContentSection = ({
   return (
     <section id="all-videos" className="w-full border-t border-border/50">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 md:py-24">
-        <Tabs defaultValue="features" className="w-full">
+        <Tabs defaultValue="scenarios" className="w-full">
           <TabsList className="mb-10 bg-violet-100 dark:bg-violet-950/40 p-1 rounded-xl h-auto border border-violet-200 dark:border-violet-800/50">
-            <TabsTrigger
-              value="features"
-              className="px-5 py-2.5 text-sm font-medium rounded-lg text-violet-700 dark:text-violet-300 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-violet-500/25 transition-all duration-200"
-            >
-              {texts.featureTabLabel}
-            </TabsTrigger>
             <TabsTrigger
               value="scenarios"
               className="px-5 py-2.5 text-sm font-medium rounded-lg text-violet-700 dark:text-violet-300 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-violet-500/25 transition-all duration-200"
             >
               {texts.scenarioTabLabel}
+            </TabsTrigger>
+            <TabsTrigger
+              value="features"
+              className="px-5 py-2.5 text-sm font-medium rounded-lg text-violet-700 dark:text-violet-300 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-violet-500/25 transition-all duration-200"
+            >
+              {texts.featureTabLabel}
             </TabsTrigger>
           </TabsList>
 

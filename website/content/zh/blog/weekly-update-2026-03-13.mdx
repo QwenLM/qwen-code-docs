@@ -1,0 +1,179 @@
+---
+title: "Qwen Code 周报：自动化工作流、更顺手的扩展和 MCP 管理、VS Code 常驻侧边栏"
+date: "2026-03-13"
+description: "本周更新让你可以自动执行脚本、更方便管理 MCP 和扩展、在 VS Code 里常驻 Qwen Code，还有录屏一键生成 GIF。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：自动化工作流、更顺手的扩展和 MCP 管理、VS Code 常驻侧边栏"
+  date="2026-03-13"
+  author="Qwen Team"
+/>
+
+本周发布 **v0.12.0** 主要功能版本和 2 个 bugfix 版本，带来 Hooks 自动化系统、MCP 管理增强、VS Code 侧边栏等重磅更新。
+
+## ✨ 新增特性
+
+### Hooks 系统：让 Qwen Code 自动执行你的脚本
+
+现在你可以让 Qwen Code 在特定时刻自动执行你的脚本。比如提交代码前自动跑测试、生成代码后自动格式化——完全自定义你的工作流。
+
+Hooks 系统允许你在 Qwen Code 的关键生命周期事件触发自定义命令，比如：
+
+- 自动添加项目上下文：每次用户提问时，自动注入项目的关键信息
+- AI 结束前自动生成工作摘要日志：每次 AI 结束对话时，自动将本次对话的工作摘要保存到日志文件
+
+**使用场景：**
+
+- 提交代码前自动运行测试，避免把有问题的代码推上去
+- 生成代码后自动格式化，不用手动跑 prettier
+- 每次对话结束时自动保存工作摘要，方便回溯
+
+详见 PR [#1988](https://github.com/QwenLM/qwen-code/pull/1988)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000006240/O1CN01T5iv1Z1vxyZvXQGmi_!!6000000006240-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/2C7e0XiE1AtJSatVtoXTI3EVULxb9iPH1tOUV-4fSDw.mp4" controls></video>
+
+### AI 主动提问：拿不准就问你
+
+引入了新的 `ask_user_question` 工具，使 AI 代理能够在任务执行期间向用户提出交互式问题。这让工作流程更加动态，代理可以实时收集用户偏好、明确需求并就实施方案做出决策。
+
+**使用场景：**
+
+- AI 执行危险操作前问你确认，防止误删文件
+- 需求不明确时让 AI 主动追问，一次性做对
+- 像聊天一样逐步澄清需求，不用一次性想明白所有细节
+
+详见 PR [#1828](https://github.com/QwenLM/qwen-code/pull/1828)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN014AyFhx1ohlFJ0qeax_!!6000000005257-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/dYSFbvjLpgEgRpVr905lv1PI7fA5JhopPbLKb-7V6Gc.mp4" controls></video>
+
+### 扩展管理交互式 TUI：像逛应用商店一样装扩展
+
+装扩展像装 App 一样简单。打开可视化界面，浏览、安装、配置、卸载一键完成，不用记命令。
+
+扩展程序管理，将列表、更新、禁用、启用、卸载和详细信息操作整合到一个统一的多步骤界面中，支持键盘导航 (↑↓)、选择 (Enter) 和返回/关闭 (Esc)。
+
+**使用场景：**
+
+- 像逛应用商店一样发现和安装新扩展
+- 一键卸载不用的扩展，清理环境
+- 可视化配置扩展参数，不用翻文档找配置项
+
+详见 PR [#2008](https://github.com/QwenLM/qwen-code/pull/2008)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN01Nn0Htj1Y4LJ12cAHo_!!6000000003005-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/TU1Mn4k3ATaeCcdc4KHT-9UZMtEIRVD7QbsYn_uvzPU.mp4" controls></video>
+
+### MCP 管理 TUI 增强：随时开关，不用重启
+
+管理 MCP 服务器更方便了。不用重启 Qwen Code，随时可以在可视化界面里启用、禁用或配置 MCP 工具，实时看到哪些工具可用。
+
+增强 MCP（模型上下文协议）管理 TUI，使其具备服务器运行时动态启用/禁用、可视化状态指示器、范围选择配置和运行状况监控以及自动重新连接功能。
+
+**使用场景：**
+
+- 随时开关 MCP 工具，不用重启程序
+- 一眼看到所有 MCP 服务器的状态，有问题马上知道
+- 快速添加新的 MCP 服务器，比如接入你自己的内部工具
+
+详见 PR [#1831](https://github.com/QwenLM/qwen-code/pull/1831)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN01TGCK1j29dHIfuG70n_!!6000000008090-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/JT49NUzNkRV4G1H7-ETa0BxBB66ttxb9vk67aWEgQG0.mp4" controls></video>
+
+### VS Code Companion 侧边栏：常驻你的工作区
+
+Qwen Code 现在可以常驻 VS Code 侧边栏了。一边写代码一边看对话历史，双屏办公更舒服，布局更灵活。
+
+**使用场景：**
+
+- 侧边栏随时查看之前的对话，不用来回切换窗口
+- 双屏办公时一边代码一边 Qwen Code，效率翻倍
+- 自由调整布局，把对话放在最顺手的位置
+
+详见 PR [#2188](https://github.com/QwenLM/qwen-code/pull/2188)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01y53WOJ1RvkAu7WaBE_!!6000000002174-2-tps-1694-952.png)
+
+### GitHub 工作流自定义 QC 命令：CI/CD 里直接跑
+
+在 CI/CD 里直接跑 Qwen Code 命令。提交代码时自动检查、自动修复，代码质量有保障。
+
+**使用场景：**
+
+- 提交 PR 时自动跑代码检查，有问题直接标出来
+- 自动修复简单问题，比如格式化、拼写错误
+- 代码审查时让 AI 先过一遍，减少人工审查时间
+
+详见 PR [#2117](https://github.com/QwenLM/qwen-code/pull/2117)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01cySDRP1K6GLSnHpwd_!!6000000001114-1-tps-860-584.gif)
+
+### LS 工具截断支持：大目录不再刷屏
+
+看大目录时自动折叠，不再被满屏文件列表淹没。AI 响应更快，上下文更聚焦。
+
+**使用场景：**
+
+- 查看 node_modules 这种大目录时，不再被几千个文件刷屏
+- 节省 token，让 AI 把精力放在重要文件上
+- 响应速度更快，不用等 AI 处理冗长的文件列表
+
+详见 PR [#2324](https://github.com/QwenLM/qwen-code/pull/2324)
+
+**Example truncated output**
+
+```
+Listed 150 item(s) in /path/to/dir:
+---
+[DIR] folder1
+file1.txt
+file2.txt
+...
+---
+[50 items truncated] ...
+```
+
+## 📊 优化改进
+
+- **OAuth 认证更顺畅**：认证成功后有明确反馈，支持多语言，还能一键清除授权（[#2327](https://github.com/QwenLM/qwen-code/pull/2327)）
+- **上下文压缩说明更清晰**：告诉你为什么压缩、压缩了什么，不再一脸懵（[#2224](https://github.com/QwenLM/qwen-code/pull/2224)）
+- **装完自动启动**：不用手动输入命令，安装完直接就能用（[#2290](https://github.com/QwenLM/qwen-code/pull/2290)）
+- **临时文件更好认**：前缀改成 `qwen-edit-`，一眼就知道是 Qwen Code 生成的（[#2045](https://github.com/QwenLM/qwen-code/pull/2045)）
+- **代码高亮支持制表符宽度**：按你的习惯显示缩进，看代码更舒服（[#2077](https://github.com/QwenLM/qwen-code/pull/2077)）
+
+## 🔧 重要修复
+
+| PR | 版本 | 修复内容 | 对你的影响 |
+|----|------|----------|-----------|
+| [#2268](https://github.com/QwenLM/qwen-code/pull/2268) | v0.12.2 | export 命令现在导出当前会话 | 导出历史记录时不会再导错会话 |
+| [#2320](https://github.com/QwenLM/qwen-code/pull/2320) | v0.12.2 | 适配 DeepSeek API 格式 | 用 DeepSeek 模型时不会报错了 |
+| [#2298](https://github.com/QwenLM/qwen-code/pull/2298) | v0.12.2 | 文件操作错误提示更清晰 | 文件操作失败时知道具体原因 |
+| [#2289](https://github.com/QwenLM/qwen-code/pull/2289) | v0.12.1 | 修复 Windows 终端崩溃 | Windows 用户调整窗口大小时不会闪退了 |
+| [#2221](https://github.com/QwenLM/qwen-code/pull/2221) | v0.12.0 | YOLO 模式不再意外打开编辑器 | 用 YOLO 模式时不会被打断 |
+| [#2212](https://github.com/QwenLM/qwen-code/pull/2212) | v0.12.1 | 修复 MCP OAuth 认证 | MCP 服务器授权更稳定 |
+
+### Windows 平台专项修复
+
+| PR | 修复内容 | 对你的影响 |
+|----|----------|-----------|
+| [#2289](https://github.com/QwenLM/qwen-code/pull/2289) | 修复终端调整大小崩溃 | 拖动窗口时不会闪退了 |
+| [#2291](https://github.com/QwenLM/qwen-code/pull/2291) | 文件不存在时给出正确提示 | 文件找不到时知道是路径问题 |
+| [#2078](https://github.com/QwenLM/qwen-code/pull/2078) | 支持 Windows 换行符 | Windows 创建的 markdown 文件能正常解析了 |
+| [#1890](https://github.com/QwenLM/qwen-code/pull/1890) | 修复 CRLF 导致的静默失败 | 某些操作不再莫名其妙失败 |
+
+## 🎈 其他改进
+
+- 新增 8 位贡献者：[@zy6p](https://github.com/zy6p), [@lgzzzz](https://github.com/lgzzzz), [@huww98](https://github.com/huww98), [@Aayushyaash](https://github.com/Aayushyaash), [@kkhomej33-netizen](https://github.com/kkhomej33-netizen), [@Deng-Xian-Sheng](https://github.com/Deng-Xian-Sheng), [@xieyonn](https://github.com/xieyonn), [@qqqys](https://github.com/qqqys), [@ossaidqadri](https://github.com/ossaidqadri)
+- 为 VS Code 设置添加 JSON Schema 验证
+- 重构设置迁移为顺序框架并支持原子文件写入
+- 将 ACP 集成迁移到 @agentclientprotocol/sdk
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！

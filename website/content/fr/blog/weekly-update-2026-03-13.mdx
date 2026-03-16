@@ -1,0 +1,179 @@
+---
+title: "Qwen Code Hebdomadaire : Workflows automatisés, meilleure gestion des extensions et MCP, barre latérale VS Code"
+date: "2026-03-13"
+description: "La mise à jour de cette semaine vous permet d'exécuter automatiquement des scripts, de gérer plus facilement MCP et les extensions, de garder Qwen Code dans la barre latérale VS Code, et de générer des GIF à partir d'enregistrements d'écran en un clic."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Hebdomadaire : Workflows automatisés, meilleure gestion des extensions et MCP, barre latérale VS Code"
+  date="2026-03-13"
+  author="Qwen Team"
+/>
+
+Cette semaine, nous avons publié la version majeure **v0.12.0** et 2 versions de correction de bugs, apportant le système d'automatisation Hooks, des améliorations de gestion MCP, la barre latérale VS Code, et d'autres mises à jour passionnantes.
+
+## ✨ Nouvelles fonctionnalités
+
+### Système Hooks : Laissez Qwen Code exécuter automatiquement vos scripts
+
+Vous pouvez maintenant faire exécuter automatiquement vos scripts par Qwen Code à des moments précis. Par exemple, exécuter automatiquement les tests avant de valider le code, ou formater automatiquement après la génération de code—personnalisez entièrement votre flux de travail.
+
+Le système Hooks vous permet de déclencher des commandes personnalisées lors d'événements clés du cycle de vie de Qwen Code, tels que :
+
+- Injection automatique du contexte projet : Injecter automatiquement les informations clés du projet à chaque question de l'utilisateur
+- Génération automatique de journaux de résumé de travail à la fin de l'IA : Sauvegarder automatiquement un résumé de la conversation dans un fichier journal quand l'IA termine
+
+**Cas d'utilisation :**
+
+- Exécuter automatiquement les tests avant de valider le code pour éviter de pousser du code problématique
+- Formater automatiquement après la génération de code, pas besoin d'exécuter manuellement prettier
+- Sauvegarder automatiquement le résumé de travail à la fin de chaque conversation pour un suivi facile
+
+Voir PR [#1988](https://github.com/QwenLM/qwen-code/pull/1988)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000006240/O1CN01T5iv1Z1vxyZvXQGmi_!!6000000006240-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/2C7e0XiE1AtJSatVtoXTI3EVULxb9iPH1tOUV-4fSDw.mp4" controls></video>
+
+### Questions proactives de l'IA : En cas de doute, demandez-vous
+
+Introduction du nouvel outil `ask_user_question` qui permet aux agents IA de poser des questions interactives pendant l'exécution des tâches. Cela rend les flux de travail plus dynamiques, permettant aux agents de collecter les préférences des utilisateurs en temps réel, de clarifier les exigences et de prendre des décisions sur les approches d'implémentation.
+
+**Cas d'utilisation :**
+
+- L'IA demande confirmation avant les opérations dangereuses pour éviter la suppression accidentelle de fichiers
+- Quand les exigences sont floues, l'IA pose des questions de suivi pour réussir du premier coup
+- Clarifier progressivement les exigences comme dans une conversation, sans avoir à tout penser d'avance
+
+Voir PR [#1828](https://github.com/QwenLM/qwen-code/pull/1828)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN014AyFhx1ohlFJ0qeax_!!6000000005257-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/dYSFbvjLpgEgRpVr905lv1PI7fA5JhopPbLKb-7V6Gc.mp4" controls></video>
+
+### Gestion des extensions TUI interactive : Installer des extensions comme dans une boutique d'applications
+
+Installer des extensions est aussi simple que d'installer des applications. Ouvrez l'interface visuelle, parcourez, installez, configurez et désinstallez en un clic—pas besoin de mémoriser des commandes.
+
+La gestion des extensions intègre les opérations de liste, mise à jour, désactivation, activation, désinstallation et détails dans une interface unifiée multi-étapes, prenant en charge la navigation au clavier (↑↓), la sélection (Entrée) et retour/fermeture (Échap).
+
+**Cas d'utilisation :**
+
+- Découvrir et installer de nouvelles extensions comme dans une boutique d'applications
+- Désinstaller en un clic les extensions inutilisées pour nettoyer votre environnement
+- Configurer visuellement les paramètres des extensions sans chercher dans la documentation
+
+Voir PR [#2008](https://github.com/QwenLM/qwen-code/pull/2008)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN01Nn0Htj1Y4LJ12cAHo_!!6000000003005-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/TU1Mn4k3ATaeCcdc4KHT-9UZMtEIRVD7QbsYn_uvzPU.mp4" controls></video>
+
+### Amélioration de la gestion MCP TUI : Activer/désactiver à tout moment, pas de redémarrage
+
+La gestion des serveurs MCP est maintenant plus pratique. Pas besoin de redémarrer Qwen Code—vous pouvez activer, désactiver ou configurer les outils MCP dans l'interface visuelle à tout moment et voir en temps réel quels outils sont disponibles.
+
+TUI de gestion MCP (Model Context Protocol) améliorée avec activation/désactivation dynamique à l'exécution, indicateurs de statut visuels, configuration de sélection de portée, surveillance de santé et fonctionnalité de reconnexion automatique.
+
+**Cas d'utilisation :**
+
+- Activer/désactiver les outils MCP à tout moment sans redémarrer le programme
+- Voir tous les statuts des serveurs MCP d'un coup, savoir immédiatement s'il y a un problème
+- Ajouter rapidement de nouveaux serveurs MCP, comme connecter vos propres outils internes
+
+Voir PR [#1831](https://github.com/QwenLM/qwen-code/pull/1831)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN01TGCK1j29dHIfuG70n_!!6000000008090-2-videocover-1694-952.png" src="https://cloud.video.taobao.com/vod/JT49NUzNkRV4G1H7-ETa0BxBB66ttxb9vk67aWEgQG0.mp4" controls></video>
+
+### Barre latérale VS Code Companion : Toujours dans votre espace de travail
+
+Qwen Code peut maintenant rester dans la barre latérale VS Code. Consultez l'historique des conversations pendant que vous codez, plus confortable pour le travail double écran, et layout plus flexible.
+
+**Cas d'utilisation :**
+
+- Consulter les conversations précédentes dans la barre latérale à tout moment sans changer de fenêtre
+- Travail double écran avec le code d'un côté et Qwen Code de l'autre—doublez votre efficacité
+- Ajuster librement le layout pour placer la conversation à la position la plus pratique
+
+Voir PR [#2188](https://github.com/QwenLM/qwen-code/pull/2188)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01y53WOJ1RvkAu7WaBE_!!6000000002174-2-tps-1694-952.png)
+
+### Commandes QC personnalisées GitHub Workflow : Exécuter directement dans CI/CD
+
+Exécutez les commandes Qwen Code directement dans CI/CD. Vérification et correction automatiques lors du commit—garantit la qualité du code.
+
+**Cas d'utilisation :**
+
+- Exécuter automatiquement les vérifications de code lors de la soumission de PR, signaler les problèmes directement
+- Corriger automatiquement les problèmes simples comme le formatage et les fautes de frappe
+- Laisser l'IA vérifier en premier lors de la revue de code pour réduire le temps de revue manuelle
+
+Voir PR [#2117](https://github.com/QwenLM/qwen-code/pull/2117)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01cySDRP1K6GLSnHpwd_!!6000000001114-1-tps-860-584.gif)
+
+### Support de troncature de l'outil LS : Plus d'inondation d'écran pour les grands répertoires
+
+Les grands répertoires sont automatiquement condensés lors de l'affichage—plus d'écrans inondés de listes de fichiers. L'IA répond plus vite, le contexte est plus focalisé.
+
+**Cas d'utilisation :**
+
+- En visualisant de grands répertoires comme node_modules, plus d'inondation par des milliers de fichiers
+- Économiser des tokens, laisser l'IA se concentrer sur les fichiers importants
+- Réponse plus rapide, pas besoin d'attendre que l'IA traite de longues listes de fichiers
+
+Voir PR [#2324](https://github.com/QwenLM/qwen-code/pull/2324)
+
+**Exemple de sortie tronquée**
+
+```
+Listed 150 item(s) in /path/to/dir:
+---
+[DIR] folder1
+file1.txt
+file2.txt
+...
+---
+[50 items truncated] ...
+```
+
+## 📊 Améliorations
+
+- **Authentification OAuth plus fluide** : Retour clair après authentification réussie, support multilingue et effacement d'autorisation en un clic ([#2327](https://github.com/QwenLM/qwen-code/pull/2327))
+- **Explication plus claire de la compression de contexte** : Vous dit pourquoi la compression a eu lieu et ce qui a été compressé—plus de confusion ([#2224](https://github.com/QwenLM/qwen-code/pull/2224))
+- **Démarrage automatique après installation** : Pas besoin d'entrer manuellement des commandes, prêt à l'emploi juste après l'installation ([#2290](https://github.com/QwenLM/qwen-code/pull/2290))
+- **Fichiers temporaires plus reconnaissables** : Préfixe changé en `qwen-edit-`, immédiatement reconnaissable comme généré par Qwen Code ([#2045](https://github.com/QwenLM/qwen-code/pull/2045))
+- **Le surlignage de code supporte la largeur de tabulation** : Afficher l'indentation selon vos préférences pour une visualisation plus confortable du code ([#2077](https://github.com/QwenLM/qwen-code/pull/2077))
+
+## 🔧 Corrections importantes
+
+| PR | Version | Correction | Impact |
+|----|---------|------------|--------|
+| [#2268](https://github.com/QwenLM/qwen-code/pull/2268) | v0.12.2 | La commande export exporte maintenant la session actuelle | Plus d'export de mauvaise session lors de l'export de l'historique |
+| [#2320](https://github.com/QwenLM/qwen-code/pull/2320) | v0.12.2 | Adapté au format API DeepSeek | Plus d'erreurs lors de l'utilisation des modèles DeepSeek |
+| [#2298](https://github.com/QwenLM/qwen-code/pull/2298) | v0.12.2 | Messages d'erreur de fichiers plus clairs | Connaître la raison spécifique quand les opérations de fichiers échouent |
+| [#2289](https://github.com/QwenLM/qwen-code/pull/2289) | v0.12.1 | Correction du crash terminal Windows | Les utilisateurs Windows n'ont plus de crash lors du redimensionnement de la fenêtre |
+| [#2221](https://github.com/QwenLM/qwen-code/pull/2221) | v0.12.0 | Le mode YOLO n'ouvre plus inopinément l'éditeur | Plus d'interruptions lors de l'utilisation du mode YOLO |
+| [#2212](https://github.com/QwenLM/qwen-code/pull/2212) | v0.12.1 | Correction de l'authentification OAuth MCP | Autorisation de serveur MCP plus stable |
+
+### Corrections spécifiques à la plateforme Windows
+
+| PR | Correction | Impact |
+|----|------------|--------|
+| [#2289](https://github.com/QwenLM/qwen-code/pull/2289) | Correction du crash lors du redimensionnement du terminal | Plus de crash lors du déplacement de la fenêtre |
+| [#2291](https://github.com/QwenLM/qwen-code/pull/2291) | Message correct quand le fichier n'existe pas | Savoir que c'est un problème de chemin quand le fichier est introuvable |
+| [#2078](https://github.com/QwenLM/qwen-code/pull/2078) | Support des fins de ligne Windows | Les fichiers markdown créés sur Windows peuvent maintenant être analysés correctement |
+| [#1890](https://github.com/QwenLM/qwen-code/pull/1890) | Correction des échecs silencieux causés par CRLF | Certaines opérations n'échouent plus inexplicablement |
+
+## 🎈 Autres améliorations
+
+- Ajout de 8 nouveaux contributeurs : [@zy6p](https://github.com/zy6p), [@lgzzzz](https://github.com/lgzzzz), [@huww98](https://github.com/huww98), [@Aayushyaash](https://github.com/Aayushyaash), [@kkhomej33-netizen](https://github.com/kkhomej33-netizen), [@Deng-Xian-Sheng](https://github.com/Deng-Xian-Sheng), [@xieyonn](https://github.com/xieyonn), [@qqqys](https://github.com/qqqys), [@ossaidqadri](https://github.com/ossaidqadri)
+- Ajout de la validation JSON Schema pour les paramètres VS Code
+- Refactorisation de la migration des paramètres vers un framework séquentiel avec support d'écriture atomique de fichiers
+- Migration de l'intégration ACP vers @agentclientprotocol/sdk
+
+<Callout type="info">
+  **Comment mettre à jour** : Exécutez `npm i @qwen-code/qwen-code@latest -g` pour passer à la dernière version.
+</Callout>
+
+Si vous avez des questions ou des suggestions, n'hésitez pas à nous faire part de vos retours sur [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) !
