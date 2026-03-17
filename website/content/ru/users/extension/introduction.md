@@ -41,13 +41,11 @@ qwen extensions install <ссылка-на-github-маркетплейса>
 
 ```bash
 qwen extensions install <название-маркетплейса>:<имя-плагина>
+# или
+qwen extensions install <ссылка-на-github-рынка>:<имя-плагина>
 ```
 
-# или  
-qwen extensions install <ссылка-на-github-рынка>:<имя-плагина>  
-```  
-
-Например, для установки плагина `prompts.chat` из маркетплейса [f/awesome-chatgpt-prompts](https://claudemarketplaces.com/plugins/f-awesome-chatgpt-prompts):  
+Например, для установки плагина `prompts.chat` из маркетплейса [f/awesome-chatgpt-prompts](https://claudemarketplaces.com/plugins/f-awesome-chatgpt-prompts):
 
 ```bash  
 qwen extensions install f/awesome-chatgpt-prompts:prompts.chat  
@@ -63,18 +61,17 @@ qwen extensions install https://github.com/f/awesome-chatgpt-prompts:prompts.cha
 - Конфигурации навыков преобразуются в формат навыков Qwen  
 - Сопоставление инструментов обрабатывается автоматически  
 
-Вы можете быстро просмотреть доступные расширения из разных маркетплейсов с помощью команды `/extensions explore`:  
+Вы можете быстро просмотреть доступные расширения из разных маркетплейсов с помощью команды `/extensions explore`:
 
-```  
-
-# Открыть маркетплейс расширений Gemini CLI  
+```bash
+# Открыть маркетплейс расширений Gemini CLI
 /extensions explore Gemini
 
-# Открыть маркетплейс Claude Code  
-/extensions explore ClaudeCode  
-```  
+# Открыть маркетплейс Claude Code
+/extensions explore ClaudeCode
+```
 
-Эта команда открывает соответствующий маркетплейс в вашем браузере по умолчанию, позволяя находить новые расширения для улучшения вашего опыта работы с Qwen Code.  
+Эта команда открывает соответствующий маркетплейс в вашем браузере по умолчанию, позволяя находить новые расширения для улучшения вашего опыта работы с Qwen Code.
 
 > **Кроссплатформенная совместимость**: Это позволяет использовать богатые экосистемы расширений как Gemini CLI, так и Claude Code, значительно расширяя функциональные возможности для пользователей Qwen Code.  
 

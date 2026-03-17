@@ -30,7 +30,6 @@ Sie können Ihre `.qwenignore`-Datei jederzeit aktualisieren. Um die Änderungen
 Sie können `.qwenignore`, um Verzeichnisse und Dateien zu ignorieren:
 
 ```
-
 # Ignoriert das Verzeichnis `/packages/` und alle Unterverzeichnisse
 /packages/
 
@@ -41,15 +40,16 @@ apikeys.txt
 Sie können Platzhalter (`*`) in Ihrer `.qwenignore`-Datei verwenden:
 
 ```
-
 # Ignoriert alle `.md`-Dateien
 *.md
 ```
 
 Schließlich können Sie Dateien und Verzeichnisse von der Ignorierung mit `!` wieder ausschließen:
 
+```
 # Alle `.md`-Dateien ausschließen, außer `README.md`
-*.md  
-!README.md  
+*.md
+!README.md
+```
 
 Um Pfade aus Ihrer `.qwenignore`-Datei zu entfernen, löschen Sie die entsprechenden Zeilen.

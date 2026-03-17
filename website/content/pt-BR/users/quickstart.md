@@ -57,16 +57,11 @@ brew install qwen-code
 O Qwen Code exige uma conta para ser usado. Ao iniciar uma sessão interativa com o comando `qwen`, você precisará fazer login:
 
 ```bash
-
 # Você será solicitado a fazer login na primeira utilização
 qwen
 ```
 
-# Siga os prompts para fazer login com sua conta  
-`/auth`  
-```
-
-Selecione `Qwen OAuth`, faça login na sua conta e siga os prompts para confirmar. Após o login, suas credenciais são armazenadas e você não precisará fazer login novamente.
+Siga os prompts para fazer login com sua conta. Execute `/auth`, selecione `Qwen OAuth`, faça login na sua conta e siga os prompts para confirmar. Após o login, suas credenciais são armazenadas e você não precisará fazer login novamente.
 
 > [!note]  
 >  

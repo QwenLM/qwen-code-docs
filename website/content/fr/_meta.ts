@@ -11,4 +11,20 @@ export default {
     type: 'page',
     title: 'Guide développeur',
   },
+  showcase: {
+    type: 'page',
+    title: 'Vitrine',
+    theme: {
+      sidebar: false,
+      layout: 'full'
+    }
+  },
+  blog: {
+    type: 'page',
+    title: 'Blog',
+    theme: {
+      sidebar: false,
+      layout: 'full'
+    }
+  },
 };

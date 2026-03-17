@@ -41,13 +41,11 @@ Si vous souhaitez installer un plugin spécifique, utilisez le format incluant l
 
 ```bash
 qwen extensions install <nom-du-marketplace>:<nom-du-plugin>
+# ou
+qwen extensions install <url-github-marché>:<nom-du-plugin>
 ```
 
-# ou  
-qwen extensions install <url-github-marché>:<nom-du-plugin>  
-```  
-
-Par exemple, pour installer le plugin `prompts.chat` depuis le marché [f/awesome-chatgpt-prompts](https://claudemarketplaces.com/plugins/f-awesome-chatgpt-prompts) :  
+Par exemple, pour installer le plugin `prompts.chat` depuis le marché [f/awesome-chatgpt-prompts](https://claudemarketplaces.com/plugins/f-awesome-chatgpt-prompts) :
 
 ```bash  
 qwen extensions install f/awesome-chatgpt-prompts:prompts.chat  
@@ -63,18 +61,17 @@ Les plugins Claude sont automatiquement convertis au format Qwen Code lors de l�
 - Les configurations de compétences sont converties au format compétence Qwen  
 - Les mappages d’outils sont gérés automatiquement  
 
-Vous pouvez parcourir rapidement les extensions disponibles provenant de différents marchés à l’aide de la commande `/extensions explore` :  
+Vous pouvez parcourir rapidement les extensions disponibles provenant de différents marchés à l'aide de la commande `/extensions explore` :
 
-```  
-
-# Ouvrir le marché des extensions Gemini CLI  
+```bash
+# Ouvrir le marché des extensions Gemini CLI
 /extensions explore Gemini
 
-# Ouvrir le marché Claude Code  
-/extensions explorer ClaudeCode  
-```  
+# Ouvrir le marché Claude Code
+/extensions explore ClaudeCode
+```
 
-Cette commande ouvre le marché correspondant dans votre navigateur par défaut, vous permettant de découvrir de nouvelles extensions pour enrichir votre expérience avec Qwen Code.  
+Cette commande ouvre le marché correspondant dans votre navigateur par défaut, vous permettant de découvrir de nouvelles extensions pour enrichir votre expérience avec Qwen Code.
 
 > **Compatibilité multiplateforme** : Cette fonctionnalité vous permet d’exploiter les riches écosystèmes d’extensions de Gemini CLI et de Claude Code, étendant considérablement les fonctionnalités disponibles pour les utilisateurs de Qwen Code.  
 

@@ -41,8 +41,6 @@ Se você quiser instalar um plugin específico, pode usar o formato com o nome d
 
 ```bash
 qwen extensions install <nome-da-marketplace>:<nome-do-plugin>
-```
-
 # ou
 qwen extensions install <url-do-github-do-marketplace>:<nome-do-plugin>
 ```
@@ -66,12 +64,11 @@ Plugins do Claude são automaticamente convertidos para o formato Qwen Code dura
 Você pode navegar rapidamente pelas extensões disponíveis em diferentes marketplaces usando o comando `/extensions explore`:
 
 ```bash
-
 # Abrir o marketplace de extensões Gemini CLI
 /extensions explore Gemini
 
-# Abrir a loja de extensões do Claude Code  
-/extensions explorar ClaudeCode  
+# Abrir a loja de extensões do Claude Code
+/extensions explore ClaudeCode
 ```
 
 Este comando abre a respectiva loja no seu navegador padrão, permitindo que você descubra novas extensões para aprimorar sua experiência com o Qwen Code.
