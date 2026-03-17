@@ -1,71 +1,72 @@
-# Qwen Code Tastaturkürzel
+# Tastaturkürzel für Qwen Code
 
-Dieses Dokument listet die verfügbaren Tastaturkürzel in Qwen Code auf.
+In diesem Dokument sind die verfügbaren Tastaturkürzel in Qwen Code aufgelistet.
 
 ## Allgemein
 
-| Tastenkürzel                   | Beschreibung                                                                                                          |
+| Tastenkombination               | Beschreibung                                                                                                          |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | `Esc`                          | Schließt Dialoge und Vorschläge.                                                                                      |
-| `Strg+C`                       | Bricht die laufende Anfrage ab und leert die Eingabe. Zweimal drücken, um die Anwendung zu beenden.                 |
-| `Strg+D`                       | Beendet die Anwendung, wenn die Eingabe leer ist. Zweimal drücken zur Bestätigung.                                   |
-| `Strg+L`                       | Leert den Bildschirm.                                                                                                 |
-| `Strg+O`                       | Schaltet die Anzeige der Debug-Konsole ein/aus.                                                                       |
-| `Strg+S`                       | Erlaubt es, lange Antworten vollständig auszugeben, ohne sie abzuschneiden. Nutzen Sie den Bildlauf Ihres Terminals, um die gesamte Ausgabe anzusehen. |
-| `Strg+T`                       | Schaltet die Anzeige von Tool-Beschreibungen ein/aus.                                                                 |
-| `Umschalt+Tab` (`Tab` unter Windows) | Wechselt zwischen Genehmigungsmodi (`plan` → `default` → `auto-edit` → `yolo`)                                      |
+| `Strg+C`                       | Bricht die laufende Anfrage ab und löscht die Eingabe. Zweimal drücken, um die Anwendung zu beenden.                  |
+| `Strg+D`                       | Beendet die Anwendung, wenn die Eingabe leer ist. Zweimal drücken, um die Aktion zu bestätigen.                       |
+| `Strg+L`                       | Löscht den Bildschirm.                                                                                                |
+| `Strg+O`                       | Schaltet die Anzeige der Debug-Konsole um.                                                                            |
+| `Strg+S`                       | Erlaubt lange Antworten vollständig anzuzeigen, wodurch die Kürzung deaktiviert wird. Verwenden Sie den Scrollback Ihres Terminals, um die gesamte Ausgabe einzusehen. |
+| `Strg+T`                       | Schaltet die Anzeige der Tool-Beschreibungen um.                                                                      |
+| `Umschalt+Tab` (`Tab` unter Windows) | Wechselt zwischen den Genehmigungsmodi (`plan` → `default` → `auto-edit` → `yolo`)                                 |
 
 ## Eingabeaufforderung
 
-| Tastenkürzel                                        | Beschreibung                                                                                                                        |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `!`                                                 | Shell-Modus umschalten, wenn die Eingabe leer ist.                                                                                 |
-| `?`                                                 | Anzeige der Tastenkürzel umschalten, wenn die Eingabe leer ist.                                                                     |
-| `\` (am Zeilenende) + `Enter`                       | Neue Zeile einfügen.                                                                                                                |
-| `Pfeil nach unten`                                  | Durch den Eingabeverlauf nach unten navigieren.                                                                                     |
-| `Enter`                                             | Aktuelle Eingabeaufforderung absenden.                                                                                              |
-| `Meta+Entf` / `Strg+Entf`                           | Das Wort rechts vom Cursor löschen.                                                                                                 |
-| `Tab`                                               | Die aktuelle Vervollständigung übernehmen, falls eine vorhanden ist.                                                                |
-| `Pfeil nach oben`                                   | Durch den Eingabeverlauf nach oben navigieren.                                                                                      |
-| `Strg+A` / `Pos1`                                   | Den Cursor an den Anfang der Zeile bewegen.                                                                                         |
-| `Strg+B` / `Pfeil nach links`                       | Den Cursor ein Zeichen nach links bewegen.                                                                                          |
-| `Strg+C`                                            | Die Eingabeaufforderung leeren.                                                                                                     |
-| `Esc` (doppelt drücken)                             | Die Eingabeaufforderung leeren.                                                                                                     |
-| `Strg+D` / `Entf`                                   | Das Zeichen rechts vom Cursor löschen.                                                                                              |
-| `Strg+E` / `Ende`                                   | Den Cursor ans Ende der Zeile bewegen.                                                                                              |
-| `Strg+F` / `Pfeil nach rechts`                      | Den Cursor ein Zeichen nach rechts bewegen.                                                                                         |
-| `Strg+H` / `Rücktaste`                              | Das Zeichen links vom Cursor löschen.                                                                                               |
-| `Strg+K`                                            | Ab dem Cursor bis zum Ende der Zeile löschen.                                                                                       |
-| `Strg+Pfeil nach links` / `Meta+Pfeil nach links` / `Meta+B` | Den Cursor ein Wort nach links bewegen.                                                                                         |
-| `Strg+N`                                            | Durch den Eingabeverlauf nach unten navigieren.                                                                                     |
-| `Strg+P`                                            | Durch den Eingabeverlauf nach oben navigieren.                                                                                      |
-| `Strg+R`                                            | Rückwärts durch den Eingabe-/Shell-Verlauf suchen.                                                                                  |
-| `Strg+Pfeil nach rechts` / `Meta+Pfeil nach rechts` / `Meta+F` | Den Cursor ein Wort nach rechts bewegen.                                                                                        |
-| `Strg+U`                                            | Ab dem Cursor bis zum Anfang der Zeile löschen.                                                                                     |
-| `Strg+V` (Windows: `Alt+V`)                         | Inhalt der Zwischenablage einfügen. Falls die Zwischenablage ein Bild enthält, wird es gespeichert und eine Referenz dazu in die Eingabeaufforderung eingefügt. |
-| `Strg+W` / `Meta+Rücktaste` / `Strg+Rücktaste`      | Das Wort links vom Cursor löschen.                                                                                                  |
-| `Strg+X` / `Meta+Enter`                             | Die aktuelle Eingabe in einem externen Editor öffnen.                                                                               |
+| Tastenkombination                                           | Beschreibung                                                                                                                         |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `!`                                                         | Aktiviert den Shell-Modus, wenn die Eingabe leer ist.                                                                                 |
+| `?`                                                         | Zeigt oder blendet die Liste der Tastenkombinationen aus, wenn die Eingabe leer ist.                                                 |
+| `\` (am Zeilenende) + `Enter`                                | Fügt eine neue Zeile ein.                                                                                                            |
+| `Pfeil-nach-unten`                                          | Blättert in der Eingabehistorie nach unten.                                                                                           |
+| `Enter`                                                     | Sendet die aktuelle Eingabeaufforderung ab.                                                                                          |
+| `Meta+Entf` / `Strg+Entf`                                   | Löscht das Wort rechts vom Cursor.                                                                                                   |
+| `Tab`                                                       | Ergänzt automatisch den aktuellen Vorschlag, falls vorhanden.                                                                        |
+| `Pfeil-nach-oben`                                           | Blättert in der Eingabehistorie nach oben.                                                                                            |
+| `Strg+A` / `Pos1`                                           | Bewegt den Cursor an den Anfang der Zeile.                                                                                           |
+| `Strg+B` / `Pfeil-links`                                    | Bewegt den Cursor um ein Zeichen nach links.                                                                                         |
+| `Strg+C`                                                    | Leert die Eingabeaufforderung.                                                                                                       |
+| `Esc` (zweimal drücken)                                     | Leert die Eingabeaufforderung.                                                                                                       |
+| `Strg+D` / `Entf`                                           | Löscht das Zeichen rechts vom Cursor.                                                                                                |
+| `Strg+E` / `Ende`                                           | Bewegt den Cursor ans Ende der Zeile.                                                                                                |
+| `Strg+F` / `Pfeil-rechts`                                   | Bewegt den Cursor um ein Zeichen nach rechts.                                                                                        |
+| `Strg+H` / `Rücktaste`                                      | Löscht das Zeichen links vom Cursor.                                                                                                 |
+| `Strg+K`                                                    | Löscht vom Cursor bis zum Zeilenende.                                                                                                |
+| `Strg+Pfeil-links` / `Meta+Pfeil-links` / `Meta+B`          | Bewegt den Cursor um ein Wort nach links.                                                                                            |
+| `Strg+N`                                                    | Blättert in der Eingabehistorie nach unten.                                                                                          |
+| `Strg+P`                                                    | Blättert in der Eingabehistorie nach oben.                                                                                            |
+| `Strg+R`                                                    | Durchsucht die Eingabe-/Shell-Historie rückwärts.                                                                                     |
+| `Strg+Y`                                                    | Wiederholt die letzte fehlgeschlagene Anfrage.                                                                                       |
+| `Strg+Pfeil-rechts` / `Meta+Pfeil-rechts` / `Meta+F`         | Bewegt den Cursor um ein Wort nach rechts.                                                                                           |
+| `Strg+U`                                                    | Löscht vom Cursor bis zum Zeilenanfang.                                                                                              |
+| `Strg+V` (Windows: `Alt+V`)                                 | Fügt den Inhalt der Zwischenablage ein. Falls die Zwischenablage ein Bild enthält, wird dieses gespeichert und ein Verweis darauf in die Eingabeaufforderung eingefügt. |
+| `Strg+W` / `Meta+Rücktaste` / `Strg+Rücktaste`              | Löscht das Wort links vom Cursor.                                                                                                    |
+| `Strg+X` / `Meta+Enter`                                     | Öffnet die aktuelle Eingabe in einem externen Editor.                                                                                |
 
 ## Vorschläge
 
-| Tastenkürzel   | Beschreibung                                |
-| -------------- | ------------------------------------------- |
-| `Pfeil abwärts`| Durch die Vorschläge nach unten navigieren. |
-| `Tab` / `Enter`| Den ausgewählten Vorschlag akzeptieren.     |
-| `Pfeil aufwärts`| Durch die Vorschläge nach oben navigieren.  |
+| Tastenkombination | Beschreibung                              |
+| ----------------- | ----------------------------------------- |
+| `Pfeil nach unten` | Navigieren Sie durch die Vorschläge nach unten. |
+| `Tab` / `Eingabe`  | Übernehmen Sie den ausgewählten Vorschlag.        |
+| `Pfeil nach oben`  | Navigieren Sie durch die Vorschläge nach oben.    |
 
-## Radio-Button-Auswahl
+## Auswahlfeld (Radio Button)
 
 | Tastenkürzel       | Beschreibung                                                                                                  |
 | ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `Pfeil abwärts` / `j` | Auswahl nach unten verschieben.                                                                               |
+| `Pfeil nach unten` / `j` | Auswahl nach unten verschieben.                                                                               |
 | `Eingabe`          | Auswahl bestätigen.                                                                                           |
-| `Pfeil aufwärts` / `k` | Auswahl nach oben verschieben.                                                                                |
-| `1-9`              | Ein Element anhand seiner Nummer auswählen.                                                                   |
-| (mehrere Ziffern)  | Für Elemente mit Zahlen größer als 9 drücken Sie die Ziffern nacheinander schnell, um das entsprechende Element auszuwählen. |
+| `Pfeil nach oben` / `k`  | Auswahl nach oben verschieben.                                                                                 |
+| `1–9`              | Ein Element anhand seiner Nummer auswählen.                                                                   |
+| (mehrstellig)      | Für Elemente mit Nummern größer als 9 die Ziffern nacheinander schnell eingeben, um das entsprechende Element auszuwählen. |
 
 ## IDE-Integration
 
-| Tastenkürzel | Beschreibung                                |
-| ------------ | ------------------------------------------- |
-| `Strg+G`     | Kontext-CLI anzeigen, die von der IDE empfangen wurde |
+| Tastenkürzel | Beschreibung                              |
+| ------------ | ----------------------------------------- |
+| `Strg+G`     | Kontext anzeigen, den die CLI von der IDE erhalten hat |

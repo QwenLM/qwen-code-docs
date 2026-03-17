@@ -1,61 +1,61 @@
-# Intégration IDE
+# Intégration à l’IDE
 
-Qwen Code peut s'intégrer à votre IDE pour offrir une expérience plus fluide et contextuelle. Cette intégration permet au CLI de mieux comprendre votre espace de travail et active des fonctionnalités puissantes comme le diff natif dans l'éditeur.
+Qwen Code peut s’intégrer à votre IDE afin d’offrir une expérience plus fluide et mieux adaptée au contexte. Cette intégration permet à l’interface en ligne de commande (CLI) de mieux comprendre votre espace de travail et active des fonctionnalités avancées, comme la comparaison native des différences directement dans l’éditeur.
 
-Actuellement, le seul IDE pris en charge est [Visual Studio Code](https://code.visualstudio.com/) ainsi que les autres éditeurs qui supportent les extensions VS Code. Pour développer le support d'autres éditeurs, consultez la [Spécification de l'Extension Compagnon IDE](../ide-integration/ide-companion-spec).
+Pour le moment, le seul IDE pris en charge est [Visual Studio Code](https://code.visualstudio.com/), ainsi que les autres éditeurs compatibles avec les extensions VS Code. Pour ajouter la prise en charge d’autres éditeurs, consultez la [spécification de l’extension IDE Companion](../ide-integration/ide-companion-spec).
 
 ## Fonctionnalités
 
-- **Contexte de l'espace de travail :** L'interface en ligne de commande (CLI) prend automatiquement connaissance de votre espace de travail pour fournir des réponses plus pertinentes et précises. Ce contexte inclut :
+- **Contexte de l’espace de travail** : L’interface en ligne de commande (CLI) prend automatiquement connaissance de votre espace de travail afin de fournir des réponses plus pertinentes et précises. Ce contexte comprend notamment :
   - Les **10 fichiers les plus récemment consultés** dans votre espace de travail.
-  - La position actuelle de votre curseur.
-  - Tout texte que vous avez sélectionné (jusqu'à une limite de 16 Ko ; les sélections plus longues seront tronquées).
+  - La position active de votre curseur.
+  - Tout texte que vous avez sélectionné (jusqu’à une limite de 16 Ko ; les sélections plus longues seront tronquées).
 
-- **Comparaison native :** Lorsque Qwen propose des modifications de code, vous pouvez visualiser les changements directement dans l'outil de comparaison natif de votre IDE. Cela vous permet d'examiner, modifier, accepter ou rejeter facilement les modifications suggérées.
+- **Diff natif** : Lorsque Qwen suggère des modifications de code, vous pouvez visualiser ces changements directement dans l’afficheur de différences natif de votre IDE. Cela vous permet d’examiner, de modifier, puis d’accepter ou de rejeter les modifications suggérées de façon transparente.
 
-- **Commandes VS Code :** Vous pouvez accéder aux fonctionnalités de Qwen Code directement depuis la palette de commandes de VS Code (`Cmd+Maj+P` ou `Ctrl+Maj+P`) :
-  - `Qwen Code : Exécuter` : Démarre une nouvelle session Qwen Code dans le terminal intégré.
-  - `Qwen Code : Accepter les différences` : Accepte les modifications dans l'éditeur de différences actif.
-  - `Qwen Code : Fermer l’éditeur de différences` : Rejette les modifications et ferme l’éditeur de différences actif.
-  - `Qwen Code : Afficher les mentions tierces` : Affiche les mentions relatives aux logiciels tiers utilisés par l'extension.
+- **Commandes VS Code** : Vous pouvez accéder aux fonctionnalités de Qwen Code directement depuis la palette de commandes de VS Code (`Cmd+Maj+P` ou `Ctrl+Maj+P`) :
+  - `Qwen Code : Exécuter` : démarre une nouvelle session Qwen Code dans le terminal intégré.
+  - `Qwen Code : Accepter la différence` : accepte les modifications présentes dans l’éditeur de différences actif.
+  - `Qwen Code : Fermer l’éditeur de différences` : rejette les modifications et ferme l’éditeur de différences actif.
+  - `Qwen Code : Afficher les mentions relatives aux composants tiers` : affiche les mentions légales relatives aux composants tiers utilisés par l’extension.
 
-## Installation et Configuration
+## Installation et configuration
 
-Il existe trois façons de configurer l'intégration de l'IDE :
+Il existe trois façons de configurer l’intégration avec votre environnement de développement intégré (IDE) :
 
-### 1. Invitation Automatique (Recommandé)
+### 1. Invite automatique (recommandé)
 
-Lorsque vous exécutez Qwen Code dans un éditeur pris en charge, il détectera automatiquement votre environnement et vous invitera à vous connecter. Répondre par "Oui" lancera automatiquement la configuration nécessaire, qui inclut l'installation de l'extension associée et l'activation de la connexion.
+Lorsque vous exécutez Qwen Code dans un éditeur pris en charge, celui-ci détecte automatiquement votre environnement et vous invite à établir une connexion. En répondant « Oui », la configuration nécessaire est lancée automatiquement, ce qui inclut l’installation de l’extension complémentaire et l’activation de la connexion.
 
-### 2. Installation Manuelle depuis la CLI
+### 2. Installation manuelle depuis l’interface en ligne de commande (CLI)
 
-Si vous avez précédemment ignoré l'invite ou si vous souhaitez installer l'extension manuellement, vous pouvez exécuter la commande suivante dans Qwen Code :
+Si vous avez précédemment ignoré l’invite ou si vous souhaitez installer l’extension manuellement, exécutez la commande suivante dans Qwen Code :
 
 ```
 /ide install
 ```
 
-Cela trouvera l'extension appropriée pour votre IDE et l'installera.
+Celle-ci identifie l’extension adaptée à votre IDE et l’installe.
 
-### 3. Installation manuelle depuis un marketplace
+### 3. Installation manuelle depuis une place de marché
 
-Vous pouvez également installer l'extension directement depuis un marketplace.
+Vous pouvez également installer l’extension directement depuis une place de marché.
 
-- **Pour Visual Studio Code :** Installez depuis le [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion).
-- **Pour les variantes de VS Code :** Pour prendre en charge les variantes de VS Code, l'extension est également publiée sur le [Registre Open VSX](https://open-vsx.org/extension/qwenlm/qwen-code-vscode-ide-companion). Suivez les instructions de votre éditeur pour installer des extensions depuis ce registre.
+- **Pour Visual Studio Code** : installez-la depuis la [place de marché VS Code](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion).
+- **Pour les versions dérivées de VS Code** : afin de prendre en charge les versions dérivées de VS Code, l’extension est également publiée sur le [registre Open VSX](https://open-vsx.org/extension/qwenlm/qwen-code-vscode-ide-companion). Suivez les instructions de votre éditeur pour installer des extensions à partir de ce registre.
 
-> REMARQUE :
-> L'extension « Qwen Code Companion » peut apparaître vers le bas des résultats de recherche. Si vous ne la voyez pas immédiatement, essayez de faire défiler vers le bas ou triez par « Nouvellement publié ».
+> NOTE :
+> L’extension « Qwen Code Companion » peut apparaître vers le bas des résultats de recherche. Si vous ne la voyez pas immédiatement, essayez de faire défiler vers le bas ou de trier les résultats par « Récemment publié ».
 >
-> Après avoir installé manuellement l'extension, vous devez exécuter `/ide enable` dans la CLI pour activer l'intégration.
+> Après avoir installé manuellement l’extension, vous devez exécuter la commande `/ide enable` dans l’interface CLI pour activer l’intégration.
 
 ## Utilisation
 
-### Activation et Désactivation
+### Activation et désactivation
 
-Vous pouvez contrôler l'intégration de l'IDE depuis la CLI :
+Vous pouvez contrôler l’intégration avec l’IDE directement depuis l’interface CLI :
 
-- Pour activer la connexion à l'IDE, exécutez :
+- Pour activer la connexion à l’IDE, exécutez :
   ```
   /ide enable
   ```
@@ -64,81 +64,81 @@ Vous pouvez contrôler l'intégration de l'IDE depuis la CLI :
   /ide disable
   ```
 
-Lorsqu'elle est activée, Qwen Code tentera automatiquement de se connecter à l'extension compagnon de l'IDE.
+Lorsqu’elle est activée, Qwen Code tente automatiquement de se connecter à l’extension compagnon de l’IDE.
 
-### Vérification du Statut
+### Vérification de l’état
 
-Pour vérifier l'état de la connexion et voir le contexte que la CLI a reçu de l'IDE, exécutez :
+Pour vérifier l’état de la connexion et afficher le contexte reçu par la CLI depuis l’IDE, exécutez :
 
 ```
 /ide status
 ```
 
-Si la connexion est établie, cette commande affichera l'IDE auquel elle est connectée ainsi qu'une liste des fichiers récemment ouverts dont elle a connaissance.
+Si une connexion est établie, cette commande indique l’IDE auquel elle est reliée ainsi qu’une liste des fichiers récemment ouverts dont elle a connaissance.
 
-(Remarque : La liste des fichiers est limitée aux 10 fichiers récemment consultés dans votre espace de travail et inclut uniquement les fichiers locaux présents sur le disque.)
+(Remarque : la liste des fichiers est limitée aux 10 fichiers les plus récemment consultés dans votre espace de travail et ne comprend que les fichiers locaux présents sur le disque.)
 
-### Travailler avec les diffs
+### Travailler avec les différences
 
-Lorsque vous demandez au modèle Qwen de modifier un fichier, il peut ouvrir directement une vue de diff dans votre éditeur.
+Lorsque vous demandez au modèle Qwen de modifier un fichier, celui-ci peut ouvrir directement une vue des différences dans votre éditeur.
 
-**Pour accepter un diff**, vous pouvez effectuer l'une des actions suivantes :
+**Pour accepter une différence**, vous pouvez effectuer l’une des actions suivantes :
 
-- Cliquez sur l'**icône de validation** dans la barre de titre de l'éditeur de diff.
-- Enregistrez le fichier (par exemple, avec `Cmd+S` ou `Ctrl+S`).
-- Ouvrez la palette de commandes et exécutez **Qwen Code: Accept Diff**.
-- Répondez par `yes` dans le CLI lorsque vous y êtes invité.
+- Cliquer sur l’**icône de coche** dans la barre de titre de l’éditeur de différences.
+- Enregistrer le fichier (par exemple avec `Cmd+S` ou `Ctrl+S`).
+- Ouvrir la palette de commandes et exécuter **Qwen Code : Accepter la différence**.
+- Répondre `oui` dans l’interface en ligne de commande (CLI) lorsqu’on vous y invite.
 
-**Pour rejeter un diff**, vous pouvez :
+**Pour rejeter une différence**, vous pouvez :
 
-- Cliquez sur l'**icône 'x'** dans la barre de titre de l'éditeur de diff.
-- Fermez l'onglet de l'éditeur de diff.
-- Ouvrez la palette de commandes et exécutez **Qwen Code: Close Diff Editor**.
-- Répondez par `no` dans le CLI lorsque vous y êtes invité.
+- Cliquer sur l’**icône « × »** dans la barre de titre de l’éditeur de différences.
+- Fermer l’onglet de l’éditeur de différences.
+- Ouvrir la palette de commandes et exécuter **Qwen Code : Fermer l’éditeur de différences**.
+- Répondre `non` dans l’interface en ligne de commande (CLI) lorsqu’on vous y invite.
 
-Vous pouvez également **modifier les changements suggérés** directement dans la vue de diff avant de les accepter.
+Vous pouvez également **modifier directement les changements suggérés** dans la vue des différences avant de les accepter.
 
-Si vous sélectionnez « Yes, allow always » dans le CLI, les modifications ne s'afficheront plus dans l'IDE car elles seront automatiquement acceptées.
+Si vous sélectionnez « Oui, autoriser toujours » dans l’interface en ligne de commande (CLI), les modifications n’apparaîtront plus dans l’IDE, car elles seront automatiquement acceptées.
 
-## Utilisation avec le bac à sable (Sandboxing)
+## Utilisation avec le bac à sable
 
-Si vous utilisez Qwen Code dans un environnement bac à sable (sandbox), veuillez prendre en compte les points suivants :
+Si vous utilisez Qwen Code au sein d’un bac à sable, veuillez prendre en compte les points suivants :
 
-- **Sur macOS :** L'intégration avec l'IDE nécessite un accès réseau pour communiquer avec l'extension compagnon de l'IDE. Vous devez utiliser un profil Seatbelt qui autorise l'accès réseau.
-- **Dans un conteneur Docker :** Si vous exécutez Qwen Code à l'intérieur d'un conteneur Docker (ou Podman), l'intégration avec l'IDE peut toujours se connecter à l'extension VS Code installée sur votre machine hôte. La CLI est configurée pour trouver automatiquement le serveur IDE sur `host.docker.internal`. Aucune configuration particulière n'est généralement requise, mais il se peut que vous deviez vérifier que la configuration réseau de votre Docker autorise les connexions depuis le conteneur vers l'hôte.
+- **Sur macOS :** L’intégration à l’IDE nécessite un accès réseau pour communiquer avec l’extension compagnon de l’IDE. Vous devez utiliser un profil Seatbelt autorisant l’accès réseau.
+- **Dans un conteneur Docker :** Si vous exécutez Qwen Code dans un conteneur Docker (ou Podman), l’intégration à l’IDE peut tout de même se connecter à l’extension VS Code exécutée sur votre machine hôte. L’interface en ligne de commande est configurée pour détecter automatiquement le serveur IDE à l’adresse `host.docker.internal`. Aucune configuration particulière n’est généralement requise, mais vous devrez peut-être vérifier que votre configuration réseau Docker autorise les connexions depuis le conteneur vers la machine hôte.
 
-## Dépannage
+## Résolution des problèmes
 
-Si vous rencontrez des problèmes avec l'intégration de l'IDE, voici quelques messages d'erreur courants et les moyens de les résoudre.
+Si vous rencontrez des problèmes avec l’intégration à l’IDE, voici quelques messages d’erreur courants ainsi que les solutions associées.
 
 ### Erreurs de connexion
 
-- **Message :** `🔴 Déconnecté : Échec de la connexion à l'extension compagnon de l'IDE pour [Nom de l'IDE]. Veuillez vous assurer que l'extension est en cours d'exécution et essayez de redémarrer votre terminal. Pour installer l'extension, exécutez /ide install.`
-  - **Cause :** Qwen Code n'a pas pu trouver les variables d'environnement nécessaires (`QWEN_CODE_IDE_WORKSPACE_PATH` ou `QWEN_CODE_IDE_SERVER_PORT`) pour se connecter à l'IDE. Cela signifie généralement que l'extension compagnon de l'IDE n'est pas en cours d'exécution ou qu'elle ne s'est pas initialisée correctement.
+- **Message :** `🔴 Déconnecté : impossible de se connecter à l’extension compagnon IDE pour [Nom de l’IDE]. Veuillez vous assurer que l’extension est en cours d’exécution, puis redémarrez votre terminal. Pour installer l’extension, exécutez la commande `/ide install`.`
+  - **Cause :** Qwen Code n’a pas pu trouver les variables d’environnement nécessaires (`QWEN_CODE_IDE_WORKSPACE_PATH` ou `QWEN_CODE_IDE_SERVER_PORT`) permettant de se connecter à l’IDE. Cela signifie généralement que l’extension compagnon IDE n’est pas en cours d’exécution ou qu’elle n’a pas été initialisée correctement.
   - **Solution :**
-    1. Assurez-vous d'avoir installé l'extension **Qwen Code Companion** dans votre IDE et qu'elle est activée.
-    2. Ouvrez une nouvelle fenêtre de terminal dans votre IDE pour vous assurer qu'il récupère le bon environnement.
+    1.  Assurez-vous d’avoir installé l’extension **Qwen Code Companion** dans votre IDE et qu’elle est activée.
+    2.  Ouvrez une nouvelle fenêtre de terminal dans votre IDE afin de garantir qu’elle récupère bien les variables d’environnement appropriées.
 
-- **Message :** `🔴 Déconnecté : Erreur de connexion à l'IDE. La connexion a été perdue de manière inattendue. Veuillez essayer de vous reconnecter en exécutant /ide enable`
-  - **Cause :** La connexion à l'extension compagnon de l'IDE a été perdue.
-  - **Solution :** Exécutez `/ide enable` pour tenter de vous reconnecter. Si le problème persiste, ouvrez une nouvelle fenêtre de terminal ou redémarrez votre IDE.
+- **Message :** `🔴 Déconnecté : erreur de connexion à l’IDE. La connexion a été interrompue de façon inattendue. Veuillez essayer de vous reconnecter en exécutant la commande `/ide enable`.`
+  - **Cause :** La connexion à l’extension compagnon IDE a été perdue.
+  - **Solution :** Exécutez `/ide enable` pour tenter de rétablir la connexion. Si le problème persiste, ouvrez une nouvelle fenêtre de terminal ou redémarrez votre IDE.
 
 ### Erreurs de configuration
 
-- **Message :** `🔴 Déconnecté : Incompatibilité de répertoire. Qwen Code s'exécute dans un emplacement différent de celui du espace de travail ouvert dans [IDE Name]. Veuillez exécuter la CLI depuis le même répertoire que le dossier racine de votre projet.`
-  - **Cause :** Le répertoire de travail actuel de la CLI se trouve en dehors du dossier ou de l'espace de travail ouvert dans votre IDE.
-  - **Solution :** Utilisez `cd` pour accéder au même répertoire que celui ouvert dans votre IDE, puis redémarrez la CLI.
+- **Message :** `🔴 Déconnecté : Mismatch de répertoire. Qwen Code s’exécute dans un emplacement différent de l’espace de travail ouvert dans [IDE Name]. Veuillez exécuter l’interface CLI depuis le même répertoire que le dossier racine de votre projet.`
+  - **Cause :** Le répertoire de travail actuel de l’interface CLI se trouve en dehors du dossier ou de l’espace de travail ouvert dans votre IDE.
+  - **Solution :** Utilisez la commande `cd` pour accéder au même répertoire que celui ouvert dans votre IDE, puis redémarrez l’interface CLI.
 
-- **Message :** `🔴 Déconnecté : Pour utiliser cette fonctionnalité, veuillez ouvrir un dossier d'espace de travail dans [IDE Name] et réessayer.`
-  - **Cause :** Aucun espace de travail n'est ouvert dans votre IDE.
-  - **Solution :** Ouvrez un espace de travail dans votre IDE et redémarrez la CLI.
+- **Message :** `🔴 Déconnecté : Pour utiliser cette fonctionnalité, veuillez ouvrir un dossier d’espace de travail dans [IDE Name] et réessayer.`
+  - **Cause :** Aucun espace de travail n’est ouvert dans votre IDE.
+  - **Solution :** Ouvrez un espace de travail dans votre IDE, puis redémarrez l’interface CLI.
 
 ### Erreurs générales
 
-- **Message :** `L'intégration IDE n'est pas prise en charge dans votre environnement actuel. Pour utiliser cette fonctionnalité, exécutez Qwen Code dans l'un de ces IDE pris en charge : [Liste des IDE]`
-  - **Cause :** Vous exécutez Qwen Code dans un terminal ou un environnement qui n'est pas un IDE pris en charge.
-  - **Solution :** Exécutez Qwen Code depuis le terminal intégré d'un IDE pris en charge, comme VS Code.
+- **Message :** `L’intégration à l’IDE n’est pas prise en charge dans votre environnement actuel. Pour utiliser cette fonctionnalité, exécutez Qwen Code depuis l’un des IDE pris en charge suivants : [Liste des IDE]`
+  - **Cause :** Vous exécutez Qwen Code dans un terminal ou un environnement qui n’est pas un IDE pris en charge.
+  - **Solution :** Exécutez Qwen Code depuis le terminal intégré d’un IDE pris en charge, comme VS Code.
 
-- **Message :** `Aucun programme d'installation n'est disponible pour l'IDE. Veuillez installer manuellement l'extension Qwen Code Companion depuis le marketplace.`
-  - **Cause :** Vous avez exécuté `/ide install`, mais la CLI ne dispose pas d'un programme d'installation automatisé pour votre IDE spécifique.
-  - **Solution :** Ouvrez le marketplace d'extensions de votre IDE, recherchez "Qwen Code Companion" et installez-le manuellement.
+- **Message :** `Aucun installateur n’est disponible pour cet IDE. Veuillez installer manuellement l’extension Qwen Code Companion depuis le marketplace.`
+  - **Cause :** Vous avez exécuté la commande `/ide install`, mais l’interface CLI ne dispose pas d’un installateur automatisé pour votre IDE spécifique.
+  - **Solution :** Ouvrez le marketplace d’extensions de votre IDE, recherchez « Qwen Code Companion », puis installez-le manuellement.

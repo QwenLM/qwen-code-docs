@@ -1,14 +1,14 @@
-# Primeiros Passos com Extensões Qwen Code
+# Começando com as Extensões do Qwen Code
 
-Este guia irá acompanhá-lo na criação da sua primeira extensão Qwen Code. Você aprenderá como configurar uma nova extensão, adicionar uma ferramenta personalizada através de um servidor MCP, criar um comando personalizado e fornecer contexto ao modelo com um arquivo `QWEN.md`.
+Este guia orientará você na criação da sua primeira extensão do Qwen Code. Você aprenderá como configurar uma nova extensão, adicionar uma ferramenta personalizada por meio de um servidor MCP, criar um comando personalizado e fornecer contexto ao modelo com um arquivo `QWEN.md`.
 
 ## Pré-requisitos
 
-Antes de começar, certifique-se de ter o Qwen Code instalado e um conhecimento básico de Node.js e TypeScript.
+Antes de começar, certifique-se de que o Qwen Code está instalado e de que você possui conhecimentos básicos de Node.js e TypeScript.
 
 ## Etapa 1: Criar uma Nova Extensão
 
-A maneira mais fácil de começar é usando um dos modelos integrados. Usaremos o exemplo `mcp-server` como nossa base.
+A maneira mais fácil de começar é usando um dos modelos embutidos. Usaremos o exemplo `mcp-server` como base.
 
 Execute o seguinte comando para criar um novo diretório chamado `my-first-extension` com os arquivos do modelo:
 
@@ -26,13 +26,13 @@ my-first-extension/
 └── tsconfig.json
 ```
 
-## Passo 2: Compreender os Arquivos da Extensão
+## Etapa 2: Entenda os arquivos da extensão
 
-Vamos analisar os arquivos principais em sua nova extensão.
+Vamos analisar os arquivos principais da sua nova extensão.
 
 ### `qwen-extension.json`
 
-Este é o arquivo de manifesto para sua extensão. Ele informa ao Qwen Code como carregar e usar sua extensão.
+Este é o arquivo de manifesto da sua extensão. Ele informa ao Qwen Code como carregar e usar sua extensão.
 
 ```json
 {
@@ -48,14 +48,14 @@ Este é o arquivo de manifesto para sua extensão. Ele informa ao Qwen Code como
 }
 ```
 
-- `name`: O nome exclusivo para sua extensão.
+- `name`: O nome exclusivo da sua extensão.
 - `version`: A versão da sua extensão.
-- `mcpServers`: Esta seção define um ou mais servidores Model Context Protocol (MCP). Servidores MCP são como você pode adicionar novas ferramentas para que o modelo utilize.
-  - `command`, `args`, `cwd`: Esses campos especificam como iniciar seu servidor. Observe o uso da variável `${extensionPath}`, que o Qwen Code substitui pelo caminho absoluto para o diretório de instalação da sua extensão. Isso permite que sua extensão funcione independentemente de onde esteja instalada.
+- `mcpServers`: Esta seção define um ou mais servidores do Model Context Protocol (MCP). Servidores MCP são a forma de adicionar novas ferramentas que o modelo pode utilizar.
+  - `command`, `args`, `cwd`: Esses campos especificam como iniciar seu servidor. Observe o uso da variável `${extensionPath}`, que o Qwen Code substitui pelo caminho absoluto até o diretório de instalação da sua extensão. Isso permite que sua extensão funcione independentemente de onde for instalada.
 
 ### `example.ts`
 
-Este arquivo contém o código-fonte para seu servidor MCP. É um servidor Node.js simples que utiliza o `@modelcontextprotocol/sdk`.
+Este arquivo contém o código-fonte do seu servidor MCP. Trata-se de um servidor Node.js simples que utiliza o `@modelcontextprotocol/sdk`.
 
 ```typescript
 /**
@@ -97,21 +97,21 @@ server.registerTool(
   },
 );
 
-// ... (registro de prompt omitido por concisão)
+// ... (registro de prompts omitido por brevidade)
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
 
-Este servidor define uma única ferramenta chamada `fetch_posts` que busca dados de uma API pública.
+Esse servidor define uma única ferramenta chamada `fetch_posts`, que busca dados de uma API pública.
 
 ### `package.json` e `tsconfig.json`
 
-Esses são arquivos de configuração padrão para um projeto TypeScript. O arquivo `package.json` define dependências e um script de `build`, e o `tsconfig.json` configura o compilador TypeScript.
+Esses são arquivos de configuração padrão para um projeto TypeScript. O arquivo `package.json` define as dependências e um script `build`, enquanto o `tsconfig.json` configura o compilador TypeScript.
 
-## Passo 3: Compilar e Vincular sua Extensão
+## Etapa 3: Compile e vincule sua extensão
 
-Antes de poder usar a extensão, você precisa compilar o código TypeScript e vincular a extensão à sua instalação do Qwen Code para desenvolvimento local.
+Antes de usar a extensão, você precisa compilar o código TypeScript e vinculá-la à sua instalação do Qwen Code para desenvolvimento local.
 
 1.  **Instale as dependências:**
 
@@ -126,21 +126,21 @@ Antes de poder usar a extensão, você precisa compilar o código TypeScript e v
     npm run build
     ```
 
-    Isso irá compilar `example.ts` em `dist/example.js`, que é o arquivo referenciado no seu `qwen-extension.json`.
+    Isso compilará `example.ts` em `dist/example.js`, que é o arquivo referenciado no seu `qwen-extension.json`.
 
 3.  **Vincule a extensão:**
 
-    O comando `link` cria um link simbólico do diretório de extensões do Qwen Code para o seu diretório de desenvolvimento. Isso significa que quaisquer alterações que você fizer serão refletidas imediatamente, sem necessidade de reinstalar.
+    O comando `link` cria um link simbólico do diretório de extensões do Qwen Code até seu diretório de desenvolvimento. Isso significa que quaisquer alterações feitas serão refletidas imediatamente, sem necessidade de reinstalar.
 
     ```bash
     qwen extensions link .
     ```
 
-Agora, reinicie sua sessão do Qwen Code. A nova ferramenta `fetch_posts` estará disponível. Você pode testá-la fazendo a pergunta: "fetch posts".
+Agora, reinicie sua sessão do Qwen Code. A nova ferramenta `fetch_posts` estará disponível. Você pode testá-la perguntando: “buscar posts”.
 
-## Passo 4: Adicionar um Comando Personalizado
+## Etapa 4: Adicionar um Comando Personalizado
 
-Comandos personalizados oferecem uma maneira de criar atalhos para prompts complexos. Vamos adicionar um comando que busca por um padrão em seu código.
+Comandos personalizados oferecem uma maneira de criar atalhos para prompts complexos. Vamos adicionar um comando que procure um padrão no seu código.
 
 1.  Crie um diretório `commands` e um subdiretório para o seu grupo de comandos:
 
@@ -152,28 +152,28 @@ Comandos personalizados oferecem uma maneira de criar atalhos para prompts compl
 
     ```markdown
     ---
-    description: Busca por um padrão no código e resume os resultados
+    description: Procurar um padrão no código e resumir os resultados
     ---
 
-    Por favor, resuma os resultados para o padrão `{{args}}`.
+    Por favor, resuma os resultados da busca pelo padrão `{{args}}`.
 
-    Resultados da Busca:
+    Resultados da busca:
     !{grep -r {{args}} .}
     ```
 
-    Este comando, `/fs:grep-code`, receberá um argumento, executará o comando shell `grep` com ele e encaminhará os resultados para um prompt de resumo.
+    Esse comando, `/fs:grep-code`, receberá um argumento, executará o comando de shell `grep` com ele e redirecionará os resultados para um prompt de resumo.
 
-> **Observação:** Comandos utilizam formato Markdown com frontmatter YAML opcional. O formato TOML está obsoleto, mas ainda é suportado para compatibilidade com versões anteriores.
+> **Observação:** Comandos usam o formato Markdown com frontmatter YAML opcional. O formato TOML está obsoleto, mas ainda é suportado para compatibilidade com versões anteriores.
 
 Após salvar o arquivo, reinicie o Qwen Code. Agora você pode executar `/fs:grep-code "algum padrão"` para usar seu novo comando.
 
-## Passo 5: Adicionar Habilidades e Subagentes Personalizados (Opcional)
+## Etapa 5: Adicionar Habilidades e Subagentes Personalizados (Opcional)
 
-Extensões também podem fornecer habilidades e subagentes personalizados para estender as capacidades do Qwen Code.
+Extensões também podem fornecer habilidades e subagentes personalizados para ampliar as capacidades do Qwen Code.
 
-### Adicionando uma Habilidade Personalizada
+### Adicionar uma Habilidade Personalizada
 
-Habilidades são capacidades invocadas pelo modelo que a IA pode usar automaticamente quando relevantes.
+Habilidades são funcionalidades invocadas pelo modelo que a IA pode usar automaticamente quando relevantes.
 
 1.  Crie um diretório `skills` com um subdiretório para a habilidade:
 
@@ -198,7 +198,7 @@ Habilidades são capacidades invocadas pelo modelo que a IA pode usar automatica
     - Complexidade e manutenibilidade do código
     - Dependências e acoplamento
     - Possíveis problemas de desempenho
-    - Sugestões para melhorias
+    - Sugestões de melhorias
 
     ## Exemplos
 
@@ -208,7 +208,7 @@ Habilidades são capacidades invocadas pelo modelo que a IA pode usar automatica
 
 ### Adicionando um Subagente Personalizado
 
-Subagentes são assistentes de IA especializados para tarefas específicas.
+Subagentes são assistentes de IA especializados em tarefas específicas.
 
 1.  Crie um diretório `agents`:
 
@@ -221,7 +221,7 @@ Subagentes são assistentes de IA especializados para tarefas específicas.
     ```markdown
     ---
     name: refactoring-expert
-    description: Especializado em refatoração de código, melhorando a estrutura e manutenibilidade do código
+    description: Especializado em refatoração de código, melhorando a estrutura e a manutenibilidade do código
     tools:
       - read_file
       - write_file
@@ -232,68 +232,68 @@ Subagentes são assistentes de IA especializados para tarefas específicas.
 
     Sua especialidade inclui:
 
-    - Identificação de code smells e anti-padrões
-    - Aplicação dos princípios SOLID
-    - Melhoria da legibilidade e manutenibilidade do código
-    - Refatoração segura com risco mínimo
+    - Identificar cheiros de código e anti-padrões
+    - Aplicar os princípios SOLID
+    - Melhorar a legibilidade e a manutenibilidade do código
+    - Realizar refatorações seguras com risco mínimo
 
     Para cada tarefa de refatoração:
 
     1. Analise a estrutura atual do código
-    2. Identifique áreas para melhoria
+    2. Identifique áreas que precisam de melhoria
     3. Proponha etapas de refatoração
     4. Implemente as alterações de forma incremental
     5. Verifique se a funcionalidade foi preservada
     ```
 
-Após reiniciar o Qwen Code, suas habilidades personalizadas estarão disponíveis através de `/skills` e os subagentes através de `/agents manage`.
+Após reiniciar o Qwen Code, suas habilidades personalizadas estarão disponíveis via `/skills` e os subagentes via `/agents manage`.
 
-## Passo 6: Adicione um `QWEN.md` personalizado
+## Etapa 6: Adicionar um arquivo `QWEN.md` personalizado
 
-Você pode fornecer contexto persistente ao modelo adicionando um arquivo `QWEN.md` à sua extensão. Isso é útil para dar ao modelo instruções sobre como se comportar ou informações sobre as ferramentas da sua extensão. Observe que nem sempre será necessário usar isso em extensões criadas apenas para expor comandos e prompts.
+Você pode fornecer contexto persistente ao modelo adicionando um arquivo `QWEN.md` à sua extensão. Isso é útil para fornecer instruções ao modelo sobre como se comportar ou informações sobre as ferramentas da sua extensão. Observe que você nem sempre precisará disso em extensões criadas para expor comandos e prompts.
 
-1. Crie um arquivo chamado `QWEN.md` na raiz do diretório da sua extensão:
+1.  Crie um arquivo chamado `QWEN.md` na raiz do diretório da sua extensão:
 
-   ```markdown
-   # Instruções da Minha Primeira Extensão
+    ```markdown
+    # Instruções da Minha Primeira Extensão
 
-   Você é um assistente de desenvolvedor especialista. Quando o usuário pedir para buscar posts, utilize a ferramenta `fetch_posts`. Seja conciso em suas respostas.
-   ```
+    Você é um assistente especializado em desenvolvimento. Quando o usuário solicitar a busca de posts, use a ferramenta `fetch_posts`. Seja conciso nas suas respostas.
+    ```
 
-2. Atualize seu `qwen-extension.json` para informar à CLI que deve carregar este arquivo:
+2.  Atualize seu arquivo `qwen-extension.json` para informar à CLI que deve carregar esse arquivo:
 
-   ```json
-   {
-     "name": "my-first-extension",
-     "version": "1.0.0",
-     "contextFileName": "QWEN.md",
-     "mcpServers": {
-       "nodeServer": {
-         "command": "node",
-         "args": ["${extensionPath}${/}dist${/}example.js"],
-         "cwd": "${extensionPath}"
-       }
-     }
-   }
-   ```
+    ```json
+    {
+      "name": "my-first-extension",
+      "version": "1.0.0",
+      "contextFileName": "QWEN.md",
+      "mcpServers": {
+        "nodeServer": {
+          "command": "node",
+          "args": ["${extensionPath}${/}dist${/}example.js"],
+          "cwd": "${extensionPath}"
+        }
+      }
+    }
+    ```
 
-Reinicie novamente a CLI. O modelo agora terá acesso ao contexto do seu arquivo `QWEN.md` em todas as sessões em que a extensão estiver ativa.
+Reinicie a CLI novamente. Agora, o modelo terá acesso ao contexto definido no seu arquivo `QWEN.md` em todas as sessões nas quais a extensão estiver ativa.
 
-## Etapa 7: Publicando sua Extensão
+## Etapa 7: Publicando sua extensão
 
-Quando você estiver satisfeito com sua extensão, poderá compartilhá-la com outras pessoas. As duas formas principais de publicar extensões são através de um repositório Git ou por meio do GitHub Releases. O uso de um repositório Git público é o método mais simples.
+Assim que você estiver satisfeito com sua extensão, poderá compartilhá-la com outras pessoas. As duas formas principais de publicar extensões são por meio de um repositório Git ou por meio de *GitHub Releases*. Usar um repositório Git público é o método mais simples.
 
-Para obter instruções detalhadas sobre ambos os métodos, consulte o [Guia de Publicação de Extensões](extension-releasing.md).
+Para instruções detalhadas sobre ambos os métodos, consulte o [Guia de Publicação de Extensões](extension-releasing.md).
 
 ## Conclusão
 
-Você criou com sucesso uma extensão para o Qwen Code! Você aprendeu como:
+Você criou com sucesso uma extensão do Qwen Code! Você aprendeu como:
 
-- Iniciar uma nova extensão a partir de um modelo.
+- Inicializar uma nova extensão a partir de um modelo.
 - Adicionar ferramentas personalizadas com um servidor MCP.
 - Criar comandos personalizados convenientes.
-- Adicionar habilidades e subagentes personalizados.
+- Adicionar habilidades personalizadas e subagentes.
 - Fornecer contexto persistente ao modelo.
-- Associar sua extensão para desenvolvimento local.
+- Vincular sua extensão para desenvolvimento local.
 
-A partir daqui, você pode explorar recursos mais avançados e construir novas capacidades poderosas no Qwen Code.
+A partir daqui, você pode explorar recursos mais avançados e incorporar novas funcionalidades poderosas ao Qwen Code.

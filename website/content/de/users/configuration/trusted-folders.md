@@ -1,12 +1,12 @@
 # Vertrauenswürdige Ordner
 
-Die Funktion „Vertrauenswürdige Ordner“ ist eine Sicherheitseinstellung, die Ihnen Kontrolle darüber gibt, welche Projekte die vollen Funktionen von Qwen Code nutzen dürfen. Sie verhindert das Ausführen potenziell bösartigen Codes, indem sie Sie auffordert, einen Ordner zu genehmigen, bevor die CLI projektspezifische Konfigurationen aus diesem Ordner lädt.
+Die Funktion „Vertrauenswürdige Ordner“ ist eine Sicherheitseinstellung, mit der Sie steuern können, für welche Projekte die vollständigen Funktionen von Qwen Code verfügbar sind. Sie verhindert das Ausführen potenziell schädlichen Codes, indem Sie vor dem Laden projektspezifischer Konfigurationen durch die CLI zur Genehmigung eines Ordners aufgefordert werden.
 
 ## Aktivieren der Funktion
 
-Die Funktion „Vertrauenswürdige Ordner“ ist **standardmäßig deaktiviert**. Um sie zu verwenden, müssen Sie sie zunächst in Ihren Einstellungen aktivieren.
+Die Funktion „Vertrauenswürdige Ordner“ ist **standardmäßig deaktiviert**. Um sie zu nutzen, müssen Sie sie zunächst in Ihren Einstellungen aktivieren.
 
-Fügen Sie Folgendes zu Ihrer benutzerdefinierten `settings.json`-Datei hinzu:
+Fügen Sie die folgende Konfiguration in Ihre benutzerspezifische Datei `settings.json` ein:
 
 ```json
 {
@@ -20,42 +20,42 @@ Fügen Sie Folgendes zu Ihrer benutzerdefinierten `settings.json`-Datei hinzu:
 
 ## So funktioniert es: Der Vertrauensdialog
 
-Sobald die Funktion aktiviert ist, wird beim ersten Ausführen von Qwen Code aus einem Ordner heraus automatisch ein Dialogfenster angezeigt, das Sie auffordert, eine Auswahl zu treffen:
+Sobald die Funktion aktiviert ist, wird beim ersten Ausführen von Qwen Code aus einem Ordner automatisch ein Dialogfeld angezeigt, in dem Sie eine Auswahl treffen müssen:
 
-- **Ordner vertrauen**: Gewährt volles Vertrauen für den aktuellen Ordner (z. B. `my-project`).
-- **Übergeordneten Ordner vertrauen**: Gewährt Vertrauen für das übergeordnete Verzeichnis (z. B. `safe-projects`), wodurch auch automatisch alle darin enthaltenen Unterordner vertraut werden. Dies ist nützlich, wenn Sie alle Ihre sicheren Projekte an einem Ort aufbewahren.
-- **Nicht vertrauen**: Markiert den Ordner als nicht vertrauenswürdig. Die CLI arbeitet dann im eingeschränkten „sicheren Modus“.
+- **Ordner vertrauen**: Gewährt dem aktuellen Ordner (z. B. `my-project`) uneingeschränktes Vertrauen.  
+- **Übergeordneten Ordner vertrauen**: Gewährt Vertrauen für das übergeordnete Verzeichnis (z. B. `safe-projects`), wodurch automatisch auch alle darin enthaltenen Unterverzeichnisse vertraut werden. Dies ist nützlich, wenn Sie alle Ihre sicheren Projekte an einem Ort speichern.  
+- **Nicht vertrauen**: Markiert den Ordner als nicht vertrauenswürdig. Die CLI arbeitet dann im eingeschränkten „Sicherheitsmodus“.
 
-Ihre Auswahl wird in einer zentralen Datei gespeichert (`~/.qwen/trustedFolders.json`), sodass Sie pro Ordner nur einmal danach gefragt werden.
+Ihre Auswahl wird in einer zentralen Datei gespeichert (`~/.qwen/trustedFolders.json`), sodass Sie pro Ordner nur einmal gefragt werden.
 
 ## Warum Vertrauen wichtig ist: Die Auswirkungen eines nicht vertrauenswürdigen Arbeitsbereichs
 
-Wenn ein Ordner **nicht vertrauenswürdig** ist, wird Qwen Code in einem eingeschränkten „sicheren Modus“ ausgeführt, um Sie zu schützen. In diesem Modus sind die folgenden Funktionen deaktiviert:
+Wenn ein Ordner **nicht vertrauenswürdig** ist, wird Qwen Code im eingeschränkten „Sicherheitsmodus“ ausgeführt, um Sie zu schützen. In diesem Modus sind folgende Funktionen deaktiviert:
 
-1.  **Arbeitsbereichseinstellungen werden ignoriert**: Die CLI lädt **nicht** die Datei `.qwen/settings.json` aus dem Projekt. Dadurch wird das Laden von benutzerdefinierten Tools und anderen potenziell gefährlichen Konfigurationen verhindert.
+1.  **Arbeitsbereichseinstellungen werden ignoriert**: Die CLI lädt **nicht** die Datei `.qwen/settings.json` aus dem Projekt. Dadurch wird das Laden benutzerdefinierter Tools und anderer potenziell gefährlicher Konfigurationen verhindert.
 
 2.  **Umgebungsvariablen werden ignoriert**: Die CLI lädt **keine** `.env`-Dateien aus dem Projekt.
 
-3.  **Erweiterungsverwaltung ist eingeschränkt**: Sie **können keine Erweiterungen installieren, aktualisieren oder deinstallieren**.
+3.  **Erweiterungsverwaltung ist eingeschränkt**: Sie können **keine Erweiterungen installieren, aktualisieren oder deinstallieren**.
 
-4.  **Automatische Tool-Bestätigung ist deaktiviert**: Vor der Ausführung jedes Tools erfolgt stets eine Aufforderung, selbst wenn die automatische Bestätigung global aktiviert ist.
+4.  **Automatische Tool-Akzeptanz ist deaktiviert**: Sie werden immer vor der Ausführung eines Tools gefragt, auch wenn Sie die automatische Akzeptanz global aktiviert haben.
 
-5.  **Automatisches Laden des Speichers ist deaktiviert**: Die CLI lädt keine Dateien automatisch in den Kontext aus Verzeichnissen, die in den lokalen Einstellungen angegeben sind.
+5.  **Automatisches Laden von Speicherinhalten ist deaktiviert**: Die CLI lädt keine Dateien automatisch in den Kontext aus Verzeichnissen, die in den lokalen Einstellungen angegeben sind.
 
-Das Erteilen von Vertrauen für einen Ordner entsperrt die vollständige Funktionalität von Qwen Code für diesen Arbeitsbereich.
+Wenn Sie einem Ordner Vertrauen schenken, wird die volle Funktionalität von Qwen Code für diesen Arbeitsbereich freigegeben.
 
 ## Verwalten Ihrer Vertrauenseinstellungen
 
-Wenn Sie eine Entscheidung ändern oder alle Ihre Einstellungen einsehen möchten, haben Sie mehrere Optionen:
+Falls Sie eine Entscheidung ändern oder alle Ihre Einstellungen anzeigen möchten, haben Sie mehrere Möglichkeiten:
 
-- **Vertrauen des aktuellen Ordners ändern**: Führen Sie den Befehl `/permissions` innerhalb der CLI aus. Daraufhin wird derselbe interaktive Dialog angezeigt, in dem Sie das Vertrauensniveau für den aktuellen Ordner ändern können.
+- **Vertrauenseinstellung des aktuellen Ordners ändern**: Führen Sie den Befehl `/permissions` über die Befehlszeilenschnittstelle (CLI) aus. Daraufhin wird der gleiche interaktive Dialog angezeigt, mit dem Sie die Vertrauensstufe für den aktuellen Ordner ändern können.
 
-- **Alle Vertrauensregeln anzeigen**: Um eine vollständige Liste aller Regeln für vertraute und nicht vertraute Ordner anzuzeigen, können Sie den Inhalt der Datei `~/.qwen/trustedFolders.json` in Ihrem Home-Verzeichnis prüfen.
+- **Alle Vertrauensregeln anzeigen**: Um eine vollständige Liste aller vertrauenswürdigen und nicht vertrauenswürdigen Ordnerregeln anzuzeigen, können Sie den Inhalt der Datei `~/.qwen/trustedFolders.json` in Ihrem Home-Verzeichnis einsehen.
 
-## Der Vertrauensprüfungsprozess (Erweitert)
+## Der Vertrauensprüfungsprozess (Fortgeschritten)
 
-Für fortgeschrittene Benutzer ist es hilfreich, die genaue Reihenfolge der Vorgänge zu kennen, nach der das Vertrauen bestimmt wird:
+Für fortgeschrittene Benutzer ist es hilfreich, die genaue Reihenfolge der Schritte bei der Bestimmung des Vertrauens zu kennen:
 
-1.  **IDE-Vertrauenssignal**: Wenn Sie die [IDE-Integration](../ide-integration/ide-integration) verwenden, fragt die CLI zunächst die IDE, ob der Arbeitsbereich vertrauenswürdig ist. Die Antwort der IDE hat höchste Priorität.
+1.  **IDE-Vertrauenssignal**: Wenn Sie die [IDE-Integration](../ide-integration/ide-integration) verwenden, fragt die CLI zunächst die IDE ab, ob der Workspace als vertrauenswürdig eingestuft ist. Die Antwort der IDE hat höchste Priorität.
 
-2.  **Lokale Vertrauensdatei**: Wenn die IDE nicht verbunden ist, prüft die CLI die zentrale Datei `~/.qwen/trustedFolders.json`.
+2.  **Lokale Vertrauensdatei**: Falls keine Verbindung zur IDE besteht, prüft die CLI die zentrale Datei `~/.qwen/trustedFolders.json`.

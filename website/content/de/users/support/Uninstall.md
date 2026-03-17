@@ -1,18 +1,18 @@
 # Deinstallation
 
-Die Methode zur Deinstallation hängt davon ab, wie du die CLI ausgeführt hast. Folge den Anweisungen für entweder npx oder eine globale npm-Installation.
+Ihre Deinstallationsmethode hängt davon ab, wie Sie die CLI ausgeführt haben. Befolgen Sie die Anweisungen für entweder `npx` oder eine globale npm-Installation.
 
 ## Methode 1: Verwendung von npx
 
-npx führt Pakete aus einem temporären Cache aus, ohne eine dauerhafte Installation vorzunehmen. Um die CLI zu „deinstallieren“, musst du diesen Cache leeren, wodurch qwen-code und alle anderen Pakete, die zuvor mit npx ausgeführt wurden, entfernt werden.
+`npx` führt Pakete aus einem temporären Cache ohne dauerhafte Installation aus. Um die CLI zu „deinstallieren“, müssen Sie diesen Cache leeren, wodurch `qwen-code` und alle anderen zuvor mit `npx` ausgeführten Pakete entfernt werden.
 
-Der npx-Cache ist ein Verzeichnis namens `_npx` innerhalb deines Haupt-npm-Cache-Ordners. Du kannst deinen npm-Cache-Pfad finden, indem du `npm config get cache` ausführst.
+Der `npx`-Cache ist ein Verzeichnis namens `_npx` innerhalb Ihres Haupt-`npm`-Cache-Ordners. Den Pfad zu Ihrem `npm`-Cache ermitteln Sie durch Ausführen von `npm config get cache`.
 
 **Für macOS / Linux**
 
 ```bash
 
-# Der Pfad ist typischerweise ~/.npm/_npx
+# Der Pfad lautet in der Regel ~/.npm/_npx
 rm -rf "$(npm config get cache)/_npx"
 ```
 
@@ -21,7 +21,7 @@ rm -rf "$(npm config get cache)/_npx"
 _Eingabeaufforderung_
 
 ```cmd
-:: Der Pfad ist typischerweise %LocalAppData%\npm-cache\_npx
+:: Der Pfad lautet in der Regel %LocalAppData%\npm-cache\_npx
 rmdir /s /q "%LocalAppData%\npm-cache\_npx"
 ```
 
@@ -29,16 +29,16 @@ _PowerShell_
 
 ```powershell
 
-# Der Pfad ist typischerweise $env:LocalAppData\npm-cache\_npx
+# Der Pfad lautet in der Regel $env:LocalAppData\npm-cache\_npx
 Remove-Item -Path (Join-Path $env:LocalAppData "npm-cache\_npx") -Recurse -Force
 ```
 
-## Methode 2: Verwendung von npm (Globale Installation)
+## Methode 2: Verwenden von npm (globale Installation)
 
-Wenn du die CLI global installiert hast (z. B. `npm install -g @qwen-code/qwen-code`), verwende den Befehl `npm uninstall` mit dem Flag `-g`, um sie zu entfernen.
+Falls Sie die CLI global installiert haben (z. B. `npm install -g @qwen-code/qwen-code`), verwenden Sie den Befehl `npm uninstall` mit dem Flag `-g`, um sie zu entfernen.
 
 ```bash
 npm uninstall -g @qwen-code/qwen-code
 ```
 
-Dieser Befehl entfernt das Paket vollständig von deinem System.
+Dieser Befehl entfernt das Paket vollständig aus Ihrem System.

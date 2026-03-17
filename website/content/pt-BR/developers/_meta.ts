@@ -1,19 +1,19 @@
 export default {
   'Contribute to Qwen Code': {
-    title: 'Contribuir para o Qwen Code',
+    title: 'Contribua para o Qwen Code',
     type: 'separator',
   },
   architecture: 'Arquitetura',
-  roadmap: 'Roteiro',
-  contributing: 'Guia de Contribuição',
+  roadmap: 'Rota de implementação',
+  contributing: 'Guia de contribuição',
   'Qwen Code SDK': {
-    title: 'SDK do Agente',
+    title: 'SDK de Agente',
     type: 'separator',
   },
-  'sdk-typescript': 'SDK Typescript',
-  'sdk-java': 'SDK Java (alpha)',
+  'sdk-typescript': 'SDK em TypeScript',
+  'sdk-java': 'SDK em Java (versão alfa)',
   'Dive Into Qwen Code': {
-    title: 'Aprofundar-se no Qwen Code',
+    title: 'Aprofunde-se no Qwen Code',
     type: 'separator',
   },
 

@@ -1,31 +1,31 @@
 # Subagenten
 
-Subagenten sind spezialisierte KI-Assistenten, die bestimmte Arten von Aufgaben innerhalb von Qwen Code bearbeiten. Sie ermöglichen es Ihnen, gezielte Arbeit an KI-Agenten zu delegieren, die mit aufgabenbezogenen Prompts, Tools und Verhaltensweisen konfiguriert sind.
+Subagenten sind spezialisierte KI-Assistenten, die innerhalb von Qwen Code bestimmte Aufgabentypen übernehmen. Sie ermöglichen es Ihnen, fokussierte Arbeiten an KI-Agenten zu delegieren, die mit aufgabenbezogenen Prompts, Tools und Verhaltensweisen konfiguriert sind.
 
 ## Was sind Subagenten?
 
 Subagenten sind eigenständige KI-Assistenten, die:
 
-- **Auf bestimmte Aufgaben spezialisiert sind** - Jeder Subagent ist mit einem fokussierten System-Prompt für spezielle Arten von Arbeit konfiguriert
-- **Separaten Kontext haben** - Sie verwalten ihren eigenen Gesprächsverlauf, getrennt von Ihrem Hauptchat
-- **Kontrollierte Tools verwenden** - Sie können konfigurieren, auf welche Tools jeder Subagent Zugriff hat
-- **Autonom arbeiten** - Sobald eine Aufgabe übergeben wurde, arbeiten sie unabhängig bis zur Fertigstellung oder zum Scheitern
-- **Detailliertes Feedback liefern** - Sie können deren Fortschritt, Tool-Nutzung und Ausführungsstatistiken in Echtzeit einsehen
+- **Sich auf spezifische Aufgaben spezialisieren** – Jeder Subagent ist mit einem fokussierten System-Prompt für bestimmte Arten von Aufgaben konfiguriert  
+- **Über einen separaten Kontext verfügen** – Sie führen ihre eigene Gesprächshistorie, getrennt vom Hauptchat  
+- **Kontrollierte Tools nutzen** – Sie können festlegen, auf welche Tools jeder Subagent Zugriff hat  
+- **Autonom arbeiten** – Sobald eine Aufgabe zugewiesen wurde, arbeiten sie unabhängig bis zum Abschluss oder beim Auftreten eines Fehlers  
+- **Detailliertes Feedback liefern** – Sie können ihren Fortschritt, den Einsatz von Tools sowie Ausführungsstatistiken in Echtzeit verfolgen
 
 ## Wichtige Vorteile
 
-- **Aufgabenspezialisierung**: Erstellen Sie Agenten, die für spezifische Workflows optimiert sind (Testing, Dokumentation, Refactoring usw.)
-- **Kontextisolation**: Halten Sie spezialisierte Arbeit getrennt von Ihrem Hauptgespräch
-- **Wiederverwendbarkeit**: Speichern und verwenden Sie Agentenkonfigurationen in Projekten und Sitzungen wieder
-- **Kontrollierter Zugriff**: Beschränken Sie, welche Tools jeder Agent aus Sicherheits- und Fokusgründen nutzen kann
-- **Sichtbarkeit des Fortschritts**: Überwachen Sie die Ausführung des Agents mit Echtzeit-Fortschrittsaktualisierungen
+- **Aufgabenspezialisierung**: Erstellen Sie Agenten, die für bestimmte Workflows optimiert sind (z. B. Tests, Dokumentation, Refactoring usw.)
+- **Kontextisolierung**: Halten Sie spezialisierte Arbeiten getrennt von Ihrem Hauptgespräch
+- **Wiederverwendbarkeit**: Speichern und wiederverwenden Sie Agentenkonfigurationen über Projekte und Sitzungen hinweg
+- **Gesteuerte Zugriffskontrolle**: Beschränken Sie die Werkzeuge, die jeder Agent nutzen darf, um Sicherheit und Fokus zu gewährleisten
+- **Sichtbarkeit des Fortschritts**: Überwachen Sie die Ausführung der Agenten mit Echtzeit-Fortschrittsaktualisierungen
 
 ## So funktionieren Subagenten
 
-1. **Konfiguration**: Sie erstellen Subagenten-Konfigurationen, die deren Verhalten, Tools und Systemaufforderungen definieren
-2. **Delegierung**: Die Haupt-KI kann Aufgaben automatisch an geeignete Subagenten delegieren
-3. **Ausführung**: Subagenten arbeiten unabhängig und nutzen ihre konfigurierten Tools, um Aufgaben abzuschließen
-4. **Ergebnisse**: Sie geben Ergebnisse und Ausführungszusammenfassungen zurück ins Hauptgespräch
+1. **Konfiguration**: Sie erstellen Subagenten-Konfigurationen, die ihr Verhalten, ihre Werkzeuge und ihre Systemaufforderungen definieren
+2. **Delegierung**: Die zentrale KI kann Aufgaben automatisch an geeignete Subagenten delegieren
+3. **Ausführung**: Subagenten arbeiten unabhängig und nutzen ihre konfigurierten Werkzeuge, um Aufgaben abzuschließen
+4. **Ergebnisse**: Sie geben Ergebnisse und Zusammenfassungen ihrer Ausführung an das Hauptgespräch zurück
 
 ## Erste Schritte
 
@@ -37,84 +37,84 @@ Subagenten sind eigenständige KI-Assistenten, die:
 
    Folgen Sie dem geführten Assistenten, um einen spezialisierten Agenten zu erstellen.
 
-2. **Vorhandene Agenten verwalten**:
+2. **Verwalten Sie vorhandene Agenten**:
 
    `/agents manage`
 
-   Zeigen und verwalten Sie Ihre konfigurierten Subagenten.
+   Zeigen Sie Ihre konfigurierten Subagenten an und verwalten Sie sie.
 
-3. **Subagenten automatisch verwenden**: Fragen Sie einfach die Haupt-KI, Aufgaben auszuführen, die den Spezialisierungen Ihrer Subagenten entsprechen. Die KI delegiert dann automatisch geeignete Arbeiten.
+3. **Verwenden Sie Subagenten automatisch**: Stellen Sie einfach der Haupt-KI Aufgaben, die den Spezialisierungen Ihrer Subagenten entsprechen. Die KI delegiert die entsprechenden Aufgaben automatisch.
 
-### Beispielverwendung
+### Beispiel für die Nutzung
 
 ```
-Benutzer: "Bitte schreiben Sie umfassende Tests für das Authentifizierungsmodul"
-KI: Ich werde dies an Ihre Testing-Spezialisten-Subagenten weiterleiten.
-[Leitet an "testing-expert" Subagenten weiter]
-[Zeigt Echtzeit-Fortschritt der Test-Erstellung]
-[Liefert fertige Testdateien und Ausführungszusammenfassung zurück]
+Benutzer: „Bitte schreiben Sie umfassende Tests für das Authentifizierungsmodul.“
+KI: Ich werde dies an Ihre spezialisierten Test-Subagenten delegieren.
+[Delegiert an den Subagenten „testing-expert“]
+[Zeigt den Echtzeit-Fortschritt der Testerstellung an]
+[Gibt die fertigen Testdateien sowie eine Zusammenfassung der Ausführung zurück]
 ```
 
 ## Verwaltung
 
 ### CLI-Befehle
 
-Subagenten werden über den Slash-Befehl `/agents` und seine Unterbefehle verwaltet:
+Subagents werden über den Slash-Befehl `/agents` und dessen Unterbefehle verwaltet:
 
-**Verwendung:** `/agents create`. Erstellt einen neuen Subagenten über einen interaktiven Schritt-für-Schritt-Assistenten.
+**Verwendung:** `/agents create` – Erstellt einen neuen Subagenten mithilfe eines interaktiven Assistenten.
 
-**Verwendung:** `/agents manage`. Öffnet einen interaktiven Verwaltungsdialog zum Anzeigen und Verwalten vorhandener Subagenten.
+**Verwendung:** `/agents manage` – Öffnet einen interaktiven Verwaltungsdialog zum Anzeigen und Verwalten vorhandener Subagents.
 
 ### Speicherorte
 
-Subagenten werden als Markdown-Dateien an mehreren Orten gespeichert:
+Subagents werden als Markdown-Dateien an mehreren Stellen gespeichert:
 
 - **Projektebene**: `.qwen/agents/` (höchste Priorität)
 - **Benutzerebene**: `~/.qwen/agents/` (Fallback)
-- **Erweiterungsebene**: Wird von installierten Erweiterungen bereitgestellt
+- **Erweiterungsebene**: Bereitgestellt durch installierte Erweiterungen
 
-Dies ermöglicht es Ihnen, projektspezifische Agenten, persönliche Agenten zu verwenden, die in allen Projekten funktionieren, sowie erweiterungsspezifische Agenten, die spezialisierte Funktionen hinzufügen.
+Dadurch können Sie projektspezifische Agenten, persönliche Agenten, die in allen Projekten funktionieren, sowie von Erweiterungen bereitgestellte Agenten mit spezialisierten Funktionen nutzen.
 
 ### Erweiterungs-Subagenten
 
-Erweiterungen können benutzerdefinierte Subagenten bereitstellen, die verfügbar werden, wenn die Erweiterung aktiviert ist. Diese Agenten werden im `agents/`-Verzeichnis der Erweiterung gespeichert und folgen dem gleichen Format wie persönliche und Projekt-Agenten.
+Erweiterungen können benutzerdefinierte Subagenten bereitstellen, die nach Aktivierung der Erweiterung verfügbar werden. Diese Agenten werden im `agents/`-Verzeichnis der Erweiterung gespeichert und folgen demselben Format wie persönliche und Projekt-Agenten.
 
 Erweiterungs-Subagenten:
 
-- Werden automatisch erkannt, wenn die Erweiterung aktiviert wird
-- Erscheinen im `/agents manage`-Dialog unter dem Abschnitt "Erweiterungs-Agenten"
-- Können nicht direkt bearbeitet werden (stattdessen den Erweiterungsquelltext bearbeiten)
-- Folgen dem gleichen Konfigurationsformat wie benutzerdefinierte Agenten
+- Werden automatisch erkannt, sobald die Erweiterung aktiviert ist  
+- Sind im Dialog `/agents manage` im Abschnitt „Erweiterungs-Agenten“ sichtbar  
+- Können nicht direkt bearbeitet werden (stattdessen die Quelldateien der Erweiterung bearbeiten)  
+- Folgen demselben Konfigurationsformat wie benutzerdefinierte Agenten  
 
-Um zu sehen, welche Erweiterungen Subagenten bereitstellen, überprüfen Sie die `qwen-extension.json`-Datei der Erweiterung auf ein `agents`-Feld.
+Um herauszufinden, welche Erweiterungen Subagenten bereitstellen, prüfen Sie die Datei `qwen-extension.json` der Erweiterung auf ein Feld `agents`.
 
 ### Dateiformat
 
-Subagenten werden über Markdown-Dateien mit YAML-Frontmatter konfiguriert. Dieses Format ist menschenlesbar und kann einfach mit jedem Texteditor bearbeitet werden.
+Subagenten werden über Markdown-Dateien mit YAML-Frontmatter konfiguriert. Dieses Format ist gut lesbar und lässt sich problemlos mit jedem Texteditor bearbeiten.
 
 #### Grundstruktur
 
 ```
 ---
-name: agenten-name
-description: Kurze Beschreibung, wann und wie dieser Agent verwendet werden soll
+name: agent-name
+description: Kurze Beschreibung, wann und wie dieser Agent eingesetzt werden soll
 tools:
-	- werkzeug1
-	- werkzeug2
-	- werkzeug3 # Optional
+	- tool1
+	- tool2
+	- tool3 # Optional
 ---
 
-Der Inhalt des System-Prompts kommt hier hin.
+Inhalt der Systemanweisung folgt hier.
 Mehrere Absätze werden unterstützt.
-Sie können ${variable} für dynamische Inhalte verwenden.
+Sie können die Variablenersetzung `${variable}` für dynamischen Inhalt verwenden.
 ```
 
-#### Beispielverwendung
+#### Beispielhafte Verwendung
 
 ```
 ---
-name: projekt-dokumentierer
-description: Erstellt Projektdokumentationen und README-Dateien
+name: project-documenter
+description: Erstellt Projekt-Dokumentation und README-Dateien
 ---
 
 Sie sind ein Dokumentationsspezialist für das Projekt ${project_name}.
@@ -124,45 +124,43 @@ Ihre Aufgabe: ${task_description}
 Arbeitsverzeichnis: ${current_directory}
 Erstellt am: ${timestamp}
 
-Konzentrieren Sie sich darauf, klare, umfassende Dokumentationen zu erstellen,
-die sowohl neuen Mitwirkenden als auch Endbenutzern helfen,
-das Projekt zu verstehen.
+Achten Sie darauf, klare und umfassende Dokumentation zu erstellen, die sowohl neuen Mitwirkenden als auch Endnutzern hilft, das Projekt zu verstehen.
 ```
 
-## Effektive Verwendung von Subagenten
+## Effektiver Einsatz von Unteragenten
 
 ### Automatische Delegierung
 
-Qwen Code delegiert proaktiv Aufgaben basierend auf:
+Qwen Code delegiert Aufgaben proaktiv basierend auf:
 
-- Der Aufgabenbeschreibung in Ihrer Anfrage
-- Dem Beschreibungsfeld in den Subagenten-Konfigurationen
-- Aktuellem Kontext und verfügbaren Tools
+- Der Aufgabenbeschreibung in Ihrer Anfrage  
+- Dem Beschreibungsfeld in der Konfiguration der Subagents  
+- Dem aktuellen Kontext und den verfügbaren Tools  
 
-Um proaktivere Nutzung von Subagenten zu fördern, fügen Sie Begriffe wie „PROAKTIV VERWENDEN“ oder „MUSS VERWENDET WERDEN“ in Ihr Beschreibungsfeld ein.
+Um eine stärker proaktive Nutzung von Subagents zu fördern, fügen Sie im Beschreibungsfeld Formulierungen wie „PROAKTIV nutzen“ oder „MUSS VERWENDET WERDEN“ ein.
 
-### Explizite Aufrufung
+### Expliziter Aufruf
 
-Fordern Sie einen bestimmten Subagenten an, indem Sie ihn in Ihrem Befehl erwähnen:
+Fordern Sie einen bestimmten Subagenten an, indem Sie ihn in Ihrem Befehl namentlich erwähnen:
 
 ```
-Lassen Sie die Testing-Experten-Subagenten Unittests für das Zahlungsmodul erstellen
-Lassen Sie die Dokumentations-Autoren-Subagenten die API-Referenz aktualisieren
-Lassen Sie die React-Spezialisten-Subagenten die Leistung dieser Komponente optimieren
+Lassen Sie den Subagenten testing-expert Unit-Tests für das Zahlungsmodul erstellen.
+Lassen Sie den Subagenten documentation-writer die API-Referenz aktualisieren.
+Lassen Sie den Subagenten react-specialist die Performance dieser Komponente optimieren.
 ```
 
 ## Beispiele
 
-### Entwicklungsworkflow-Agenten
+### Agenten für Entwicklungs-Workflows
 
-#### Testing-Spezialist
+#### Test-Spezialist
 
-Ideal für umfassende Test-Erstellung und testgetriebene Entwicklung.
+Ideal für umfassende Testerstellung und testgetriebene Entwicklung.
 
 ```
 ---
 name: testing-expert
-description: Schreibt umfassende Unit-Tests, Integrationstests und kümmert sich um Testautomatisierung nach Best Practices
+description: Erstellt umfassende Unit-Tests und Integrationstests sowie automatisierte Tests nach bewährten Methoden
 tools:
   - read_file
   - write_file
@@ -170,34 +168,34 @@ tools:
   - run_shell_command
 ---
 
-Sie sind ein Testing-Spezialist mit Fokus auf die Erstellung hochwertiger, wartbarer Tests.
+Sie sind ein Test-Spezialist mit Fokus auf die Erstellung hochwertiger, wartbarer Tests.
 
-Ihre Expertise umfasst:
+Zu Ihrem Fachgebiet gehören:
 
-- Unit-Testing mit geeignetem Mocking und Isolation
-- Integrationstesting für Komponenteninteraktionen
-- Praktiken der testgetriebenen Entwicklung
-- Identifizierung von Randfällen und umfassende Abdeckung
-- Performance- und Lasttests, wenn angebracht
+- Unit-Tests mit geeignetem Mocking und Isolation
+- Integrationstests für Interaktionen zwischen Komponenten
+- Praktiken der testgetriebenen Entwicklung (TDD)
+- Identifikation von Randfällen und umfassende Testabdeckung
+- Performance- und Lasttests, falls erforderlich
 
 Für jede Testaufgabe:
 
-1. Analysieren Sie die Code-Struktur und Abhängigkeiten
-2. Identifizieren Sie wichtige Funktionalitäten, Randfälle und Fehlerbedingungen
-3. Erstellen Sie umfassende Test-Suiten mit aussagekräftigen Namen
-4. Fügen Sie ordnungsgemäßes Setup/Teardown und sinnvolle Assertions hinzu
-5. Ergänzen Sie Kommentare zur Erklärung komplexer Test-Szenarien
-6. Stellen Sie sicher, dass Tests wartbar sind und den DRY-Prinzipien folgen
+1. Analysieren Sie die Code-Struktur und Abhängigkeiten.
+2. Identifizieren Sie zentrale Funktionalitäten, Randfälle und Fehlerbedingungen.
+3. Erstellen Sie umfassende Test-Suites mit aussagekräftigen Namen.
+4. Stellen Sie korrekte Setup-/Teardown-Mechanismen sowie aussagefähige Assertions sicher.
+5. Kommentieren Sie komplexe Test-Szenarien verständlich.
+6. Gewährleisten Sie Wartbarkeit der Tests und Einhaltung des DRY-Prinzips.
 
-Folgen Sie immer den Testing-Best-Practices für die erkannte Sprache und das Framework.
+Befolgen Sie stets bewährte Testmethoden für die erkannte Programmiersprache und das Framework.  
 Achten Sie sowohl auf positive als auch auf negative Testfälle.
 ```
 
-**Anwendungsfälle:**
+**Einsatzszenarien:**
 
-- „Schreibe Unit-Tests für den Authentifizierungsservice“
-- „Erstelle Integrationstests für den Zahlungsverarbeitungs-Workflow“
-- „Füge Testabdeckung für Randfälle im Datenvalidierungsmodul hinzu“
+- „Schreiben Sie Unit-Tests für den Authentifizierungsdienst.“
+- „Erstellen Sie Integrationstests für den Zahlungsabwicklungs-Workflow.“
+- „Erweitern Sie die Testabdeckung für Randfälle im Datenvalidierungsmodul.“
 
 #### Dokumentationsautor
 
@@ -206,7 +204,7 @@ Spezialisiert auf die Erstellung klarer und umfassender Dokumentation.
 ```
 ---
 name: documentation-writer
-description: Erstellt umfassende Dokumentationen, README-Dateien, API-Dokumentationen und Benutzerhandbücher
+description: Erstellt umfassende Dokumentation, README-Dateien, API-Dokumentationen und Benutzerhandbücher
 tools:
   - read_file
   - write_file
@@ -214,53 +212,50 @@ tools:
   - web_search
 ---
 
-Sie sind ein technischer Dokumentationsspezialist für ${project_name}.
+Sie sind ein Fachexperte für technische Dokumentation für ${project_name}.
 
-Ihre Aufgabe ist es, klare und umfassende Dokumentation zu erstellen, 
-die sowohl Entwickler als auch Endbenutzer anspricht. Konzentrieren Sie sich auf:
+Ihre Aufgabe ist es, klare und umfassende Dokumentation zu erstellen, die sowohl Entwickler als auch Endbenutzer unterstützt. Konzentrieren Sie sich auf:
 
 **Für API-Dokumentation:**
 
-- Klare Beschreibungen der Endpunkte mit Beispielen
-- Details zu Parametern mit Typen und Einschränkungen
-- Dokumentation des Antwortformates
-- Erläuterungen zu Fehlercodes
-- Authentifizierungsanforderungen
+- Klare Beschreibungen der Endpunkte mit Beispielen  
+- Detaillierte Angaben zu Parametern inklusive Typen und Einschränkungen  
+- Dokumentation des Antwortformats  
+- Erläuterungen gängiger Fehlercodes  
+- Angaben zu Authentifizierungsanforderungen  
 
 **Für Benutzerdokumentation:**
 
-- Schritt-für-Schritt-Anleitungen mit Screenshots, wenn hilfreich
-- Installations- und Einrichtungsanleitungen
-- Konfigurationsoptionen und Beispiele
-- Problembehebungsbereiche für häufige Probleme
-- FAQ-Bereiche basierend auf häufig gestellten Benutzerfragen
+- Schritt-für-Schritt-Anleitungen mit Screenshots, wo hilfreich  
+- Installations- und Einrichtungsanleitungen  
+- Konfigurationsoptionen mit Beispielen  
+- Abschnitte zur Fehlerbehebung bei häufig auftretenden Problemen  
+- FAQ-Abschnitte basierend auf typischen Benutzerfragen  
 
 **Für Entwicklerdokumentation:**
 
-- Architekturübersichten und Designentscheidungen
-- Funktionierende Codebeispiele
-- Richtlinien zum Mitwirken
-- Einrichtung der Entwicklungsumgebung
+- Übersichten zur Architektur und Erläuterungen wichtiger Designentscheidungen  
+- Funktionierende Codebeispiele  
+- Richtlinien für Beiträge („Contributing Guidelines“)  
+- Anleitungen zur Einrichtung der Entwicklungsumgebung  
 
-Überprüfen Sie stets Codebeispiele und stellen Sie sicher, dass die Dokumentation 
-mit der tatsächlichen Implementierung aktuell bleibt. Verwenden Sie klare Überschriften, 
-Aufzählungspunkte und Beispiele.
+Überprüfen Sie stets die Codebeispiele und stellen Sie sicher, dass die Dokumentation stets mit der aktuellen Implementierung übereinstimmt. Verwenden Sie klare Überschriften, Aufzählungspunkte und Beispiele.
 ```
 
 **Anwendungsfälle:**
 
-- „Erstellen Sie API-Dokumentation für die Benutzerverwaltungsendpunkte“
-- „Schreiben Sie eine umfassende README-Datei für dieses Projekt“
-- „Dokumentieren Sie den Bereitstellungsprozess mit Schritten zur Problembehebung“
+- „Erstellen Sie eine API-Dokumentation für die Endpunkte zur Benutzerverwaltung.“  
+- „Verfassen Sie eine umfassende README-Datei für dieses Projekt.“  
+- „Dokumentieren Sie den Bereitstellungsprozess inklusive Schritten zur Fehlerbehebung.“
 
-#### Code Reviewer
+#### Code-Reviewer
 
-Ausgerichtet auf Code-Qualität, Sicherheit und Best Practices.
+Fokussiert auf Code-Qualität, Sicherheit und bewährte Verfahren.
 
 ```
 ---
 name: code-reviewer
-description: Überprüft Code hinsichtlich Best Practices, Sicherheitsproblemen, Performance und Wartbarkeit
+description: Überprüft Code hinsichtlich bewährter Verfahren, Sicherheitsprobleme, Performance und Wartbarkeit
 tools:
   - read_file
   - read_many_files
@@ -271,35 +266,34 @@ Sie sind ein erfahrener Code-Reviewer mit Fokus auf Qualität, Sicherheit und Wa
 Überprüfungs-Kriterien:
 
 - **Code-Struktur**: Organisation, Modularität und Trennung von Verantwortlichkeiten
-- **Performance**: Algorithmische Effizienz und Ressourcennutzung
-- **Sicherheit**: Schwachstellenbewertung und sichere Codierungspraktiken
-- **Best Practices**: Sprach-/Framework-spezifische Konventionen
-- **Fehlerbehandlung**: Richtige Exception-Handling und Abdeckung von Randfällen
-- **Lesbarkeit**: Klare Benennung, Kommentare und Code-Organisation
-- **Tests**: Testabdeckung und Testbarkeitsaspekte
+- **Performance**: Algorithmische Effizienz und Ressourcenverbrauch
+- **Sicherheit**: Bewertung von Schwachstellen und Einhaltung sicherer Codierungspraktiken
+- **Bewährte Verfahren**: Sprach- bzw. frameworkspezifische Konventionen
+- **Fehlerbehandlung**: Korrektes Exception-Handling und Abdeckung von Randfällen
+- **Lesbarkeit**: Klare Namensgebung, Kommentare und Code-Organisation
+- **Tests**: Testabdeckung und Berücksichtigung der Testbarkeit
 
-Geben Sie konstruktives Feedback mit:
+Geben Sie konstruktives Feedback mit folgenden Kategorien:
 
-1. **Kritischen Problemen**: Sicherheitslücken, gravierende Fehler
-2. **Wichtigen Verbesserungen**: Performance-Probleme, Design-Probleme
-3. **Kleinen Vorschlägen**: Stilverbesserungen, Refactoring-Möglichkeiten
-4. **Positivem Feedback**: Gut implementierte Muster und gute Praktiken
+1. **Kritische Probleme**: Sicherheitslücken, schwerwiegende Fehler
+2. **Wichtige Verbesserungen**: Performance-Probleme, Design-Mängel
+3. **Kleinere Vorschläge**: Stilverbesserungen, Refactoring-Möglichkeiten
+4. **Positives Feedback**: Gut umgesetzte Muster und bewährte Praktiken
 
-Fokussieren Sie sich auf handlungsorientiertes Feedback mit konkreten Beispielen und vorgeschlagenen Lösungen.
-Priorisieren Sie Probleme nach Auswirkung und geben Sie Begründungen für Empfehlungen ab.
-```
+Konzentrieren Sie sich auf handlungsorientiertes Feedback mit konkreten Beispielen und vorgeschlagenen Lösungen.  
+Priorisieren Sie Probleme nach ihrem Ausmaß und begründen Sie Ihre Empfehlungen.
 
 **Anwendungsfälle:**
 
-- „Überprüfen Sie diese Authentifizierungs-Implementierung auf Sicherheitsprobleme“
-- „Prüfen Sie die Performance-Auswirkungen dieser Datenbank-Query-Logik“
+- „Überprüfen Sie diese Authentifizierungs-Implementierung auf Sicherheitslücken“
+- „Analysieren Sie die Performance-Auswirkungen dieser Datenbank-Abfrage-Logik“
 - „Bewerten Sie die Code-Struktur und schlagen Sie Verbesserungen vor“
 
-### Technologie-spezifische Agenten
+### Agenten für spezifische Technologien
 
 #### React-Spezialist
 
-Optimiert für React-Entwicklung, Hooks und Komponentenmuster.
+Optimiert für die React-Entwicklung, Hooks und Komponentenmuster.
 
 ```
 ---
@@ -312,35 +306,35 @@ tools:
   - run_shell_command
 ---
 
-Sie sind ein React-Spezialist mit tiefgreifender Expertise in moderner React-Entwicklung.
+Sie sind ein React-Spezialist mit tiefgreifender Expertise in der modernen React-Entwicklung.
 
-Ihre Expertise umfasst:
+Zu Ihrem Fachwissen gehören:
 
-- **Komponentendesign**: Funktionskomponenten, benutzerdefinierte Hooks, Kompositions-Muster
-- **State-Management**: useState, useReducer, Context-API und externe Bibliotheken
-- **Performance**: React.memo, useMemo, useCallback, Code-Splitting
-- **Testen**: React Testing Library, Jest, Komponententest-Strategien
-- **TypeScript-Integration**: Richtige Typisierung von Props, Hooks und Komponenten
+- **Komponentendesign**: Funktionale Komponenten, benutzerdefinierte Hooks, Kompositions-Muster
+- **Zustandsverwaltung**: `useState`, `useReducer`, Context-API sowie externe Bibliotheken
+- **Performance**: `React.memo`, `useMemo`, `useCallback`, Code-Splitting
+- **Tests**: React Testing Library, Jest, Strategien zum Testen von Komponenten
+- **TypeScript-Integration**: Korrekte Typisierung von Props, Hooks und Komponenten
 - **Moderne Muster**: Suspense, Error Boundaries, Concurrent Features
 
 Für React-Aufgaben:
 
-1. Verwenden Sie standardmäßig Funktionskomponenten und Hooks
-2. Implementieren Sie ordnungsgemäße TypeScript-Typisierung
-3. Befolgen Sie React-Best-Practices und Konventionen
-4. Berücksichtigen Sie Performance-Auswirkungen
-5. Fügen Sie angemessenes Fehlerhandling hinzu
-6. Schreiben Sie testbaren, wartbaren Code
+1. Verwenden Sie standardmäßig funktionale Komponenten und Hooks.
+2. Implementieren Sie eine korrekte TypeScript-Typisierung.
+3. Befolgen Sie React-Best-Practices und Konventionen.
+4. Berücksichtigen Sie Leistungsaspekte.
+5. Integrieren Sie geeignete Fehlerbehandlung.
+6. Schreiben Sie testbaren und wartbaren Code.
 
-Bleiben Sie stets auf dem neuesten Stand der React-Best-Practices und vermeiden Sie veraltete Muster.
-Achten Sie auf Barrierefreiheit und Benutzererfahrungsaspekte.
+Halten Sie sich stets über aktuelle React-Best-Practices auf dem Laufenden und vermeiden Sie veraltete Muster.  
+Achten Sie besonders auf Barrierefreiheit und Aspekte der Benutzererfahrung.
 ```
 
-**Anwendungsfälle:**
+**Einsatzszenarien:**
 
-- „Erstellen Sie eine wiederverwendbare Datentabelle-Komponente mit Sortierung und Filterung“
-- „Implementieren Sie einen benutzerdefinierten Hook zum Abrufen von API-Daten mit Caching“
-- „Refaktorisieren Sie diese Klassenkomponente unter Verwendung moderner React-Muster“
+- „Erstellen Sie eine wiederverwendbare Datentabelle mit Sortier- und Filterfunktion.“
+- „Implementieren Sie einen benutzerdefinierten Hook zum Abrufen von API-Daten mit Caching.“
+- „Refaktorieren Sie diese Klassenkomponente gemäß moderner React-Muster.“
 
 #### Python-Experte
 
@@ -359,40 +353,40 @@ tools:
 
 Sie sind ein Python-Experte mit tiefem Wissen über das Python-Ökosystem.
 
-Ihre Expertise umfasst:
+Zu Ihrem Fachgebiet gehören:
 
-- **Core Python**: Pythonische Muster, Datenstrukturen, Algorithmen
+- **Kern-Python**: Python-typische Muster, Datenstrukturen, Algorithmen
 - **Frameworks**: Django, Flask, FastAPI, SQLAlchemy
-- **Tests**: pytest, unittest, Mocking, Testgetriebene Entwicklung
+- **Tests**: pytest, unittest, Mocking, Test-Driven Development (TDD)
 - **Data Science**: pandas, numpy, matplotlib, Jupyter-Notebooks
-- **Async-Programmierung**: asyncio, async/await-Muster
-- **Paketverwaltung**: pip, poetry, virtuelle Umgebungen
-- **Code-Qualität**: PEP 8, Type Hints, Linting mit pylint/flake8
+- **Asynchrone Programmierung**: asyncio, async/await-Muster
+- **Paketverwaltung**: pip, Poetry, virtuelle Umgebungen
+- **Code-Qualität**: PEP 8, Typannotationen, statische Analyse mit pylint/flake8
 
 Für Python-Aufgaben:
 
-1. Befolgen Sie die PEP 8-Stilrichtlinien
-2. Verwenden Sie Type Hints für bessere Code-Dokumentation
-3. Implementieren Sie ordnungsgemäßes Fehlerhandling mit spezifischen Exceptions
-4. Schreiben Sie umfassende Docstrings
-5. Berücksichtigen Sie Leistung und Speicherverbrauch
-6. Fügen Sie geeignetes Logging hinzu
-7. Schreiben Sie testbaren, modularen Code
+1. Befolgen Sie die PEP-8-Stilrichtlinien.
+2. Verwenden Sie Typannotationen zur besseren Dokumentation des Codes.
+3. Implementieren Sie eine angemessene Fehlerbehandlung mit spezifischen Ausnahmen.
+4. Schreiben Sie umfassende Docstrings.
+5. Berücksichtigen Sie Leistung und Speicherverbrauch.
+6. Fügen Sie geeignetes Logging ein.
+7. Schreiben Sie testbaren, modularen Code.
 
 Achten Sie darauf, sauberen, wartbaren Python-Code zu schreiben, der den Community-Standards entspricht.
 ```
 
 **Anwendungsfälle:**
 
-- „Erstellen Sie einen FastAPI-Service für Benutzerauthentifizierung mit JWT-Tokens“
-- „Implementieren Sie eine Datenverarbeitungspipeline mit pandas und Fehlerbehandlung“
-- „Schreiben Sie ein CLI-Tool unter Verwendung von argparse mit umfassender Hilfedokumentation“
+- „Erstellen Sie einen FastAPI-Dienst für die Benutzerauthentifizierung mit JWT-Tokens.“
+- „Implementieren Sie eine Datenverarbeitungspipeline mit pandas und Fehlerbehandlung.“
+- „Schreiben Sie ein CLI-Tool mit argparse und umfangreicher Hilfedokumentation.“
 
 ## Best Practices
 
-### Designprinzipien
+### Gestaltungsprinzipien
 
-#### Single Responsibility Prinzip
+#### Prinzip der einzigen Verantwortung
 
 Jeder Subagent sollte einen klaren, fokussierten Zweck haben.
 
@@ -401,7 +395,7 @@ Jeder Subagent sollte einen klaren, fokussierten Zweck haben.
 ```
 ---
 name: testing-expert
-description: Schreibt umfassende Unit-Tests und Integrationstests
+description: Erstellt umfassende Unit-Tests und Integrationstests
 ---
 ```
 
@@ -410,22 +404,22 @@ description: Schreibt umfassende Unit-Tests und Integrationstests
 ```
 ---
 name: general-helper
-description: Hilft bei Tests, Dokumentation, Code-Reviews und Deployment
+description: Unterstützt bei Tests, Dokumentation, Code-Reviews und Deployment
 ---
 ```
 
-**Warum:** Fokussierte Agenten liefern bessere Ergebnisse und sind einfacher zu warten.
+**Warum:** Fokussierte Agenten erzielen bessere Ergebnisse und sind einfacher zu warten.
 
 #### Klare Spezialisierung
 
-Definiere spezifische Fachgebiete statt breiter Fähigkeiten.
+Definieren Sie spezifische Fachgebiete statt allgemeiner Fähigkeiten.
 
 **✅ Gut:**
 
 ```
 ---
 name: react-performance-optimizer
-description: Optimiert React-Anwendungen hinsichtlich Performance unter Verwendung von Profiling und Best Practices
+description: Optimiert React-Anwendungen hinsichtlich Performance mithilfe von Profiling und Best Practices
 ---
 ```
 
@@ -434,73 +428,80 @@ description: Optimiert React-Anwendungen hinsichtlich Performance unter Verwendu
 ```
 ---
 name: frontend-developer
-description: Arbeitet an Frontend-Entwicklungsaufgaben
+description: Bearbeitet Aufgaben im Bereich Frontend-Entwicklung
 ---
 ```
 
-**Warum:** Spezifisches Fachwissen führt zu gezielterer und effektiverer Unterstützung.
+**Warum:** Eine konkrete Fachkompetenz führt zu gezielterer und effektiverer Unterstützung.
 
-#### Aussagekräftige Beschreibungen
+#### Handlungsorientierte Beschreibungen
 
-Schreiben Sie Beschreibungen, die klar anzeigen, wann der Agent verwendet werden soll.
+Verfassen Sie Beschreibungen, die deutlich angeben, wann der Agent eingesetzt werden soll.
 
 **✅ Gut:**
 
 ```
-description: Überprüft Code auf Sicherheitsanfälligkeiten, Leistungsprobleme und Wartbarkeitsaspekte
+description: Überprüft Code auf Sicherheitslücken, Leistungsprobleme und Aspekte der Wartbarkeit
 ```
 
-**❌ Vermeiden:**
+**❌ Vermeiden Sie:**
 
 ```
 description: Ein hilfreicher Code-Reviewer
 ```
 
-**Warum:** Klare Beschreibungen helfen der Haupt-KI, den richtigen Agenten für jede Aufgabe auszuwählen.
+**Warum:** Klare Beschreibungen helfen der zentralen KI dabei, für jede Aufgabe den richtigen Agenten auszuwählen.
 
-### Best Practices für die Konfiguration
+### Empfohlene Konfigurationspraktiken
 
 #### Richtlinien für Systemaufforderungen
 
-**Sei spezifisch über die Expertise:**
+**Geben Sie die Fachkompetenz präzise an:**
 
 ```
-Sie sind ein Python-Testing-Spezialist mit Kenntnissen in:
+Sie sind ein Python-Testspezialist mit Expertise in:
 
 - pytest-Framework und Fixtures
-- Mock-Objekte und Dependency-Injection
-- Testgetriebene Entwicklungsmethoden
-- Performanztests mit pytest-benchmark
+- Mock-Objekten und Dependency Injection
+- Testgetriebener Entwicklung (TDD)
+- Performance-Tests mit pytest-benchmark
 ```
 
-**Schritt-für-Schritt-Ansätze einbeziehen:**
+**Fügen Sie schrittweise Vorgehensweisen hinzu:**
 
 ```
-Für jede Testing-Aufgabe:
+Für jede Testaufgabe:
 
-1. Analysiere die Code-Struktur und Abhängigkeiten
-2. Identifiziere wichtige Funktionalitäten und Randfälle
-3. Erstelle umfassende Testsuiten mit klaren Benennungen
-4. Füge Setup/Teardown und ordnungsgemäße Assertions hinzu
-5. Ergänze Kommentare zur Erklärung komplexer Test-Szenarien
+1. Analysieren Sie die Code-Struktur und Abhängigkeiten
+2. Identifizieren Sie zentrale Funktionalitäten und Randfälle
+3. Erstellen Sie umfassende Test-Suites mit aussagekräftigen Namen
+4. Fügen Sie Setup-/Teardown-Mechanismen und geeignete Assertions hinzu
+5. Kommentieren Sie komplexe Testszenarien verständlich
 ```
 
-**Ausgabestandards festlegen:**
+**Legen Sie Ausgabe-Standards fest:**
 
 ```
-Folgen Sie immer diesen Standards:
+Befolgen Sie stets diese Standards:
 
-- Verwenden Sie aussagekräftige Testnamen, die das Szenario erklären
-- Beziehen Sie positive und negative Testfälle ein
+- Verwenden Sie aussagekräftige Testnamen, die das Szenario erläutern
+- Beziehen Sie sowohl positive als auch negative Testfälle ein
 - Fügen Sie Docstrings für komplexe Testfunktionen hinzu
-- Stellen Sie sicher, dass Tests unabhängig sind und in beliebiger Reihenfolge ausgeführt werden können
+- Stellen Sie sicher, dass Tests unabhängig voneinander sind und in beliebiger Reihenfolge ausgeführt werden können
 ```
 
 ## Sicherheitsüberlegungen
 
-- **Tool-Beschränkungen**: Subagenten haben nur Zugriff auf ihre konfigurierten Tools
-- **Sandboxing**: Alle Tool-Ausführungen folgen dem gleichen Sicherheitsmodell wie die direkte Tool-Nutzung
-- **Audit-Trail**: Alle Aktionen der Subagenten werden protokolliert und in Echtzeit sichtbar
-- **Zugriffskontrolle**: Projektspezifische und benutzerspezifische Trennung gewährleistet angemessene Grenzen
-- **Vertrauliche Informationen**: Vermeiden Sie die Einbindung von Geheimnissen oder Anmeldedaten in Agent-Konfigurationen
-- **Produktionsumgebungen**: Erwägen Sie separate Agenten für Produktions- und Entwicklungs-Umgebungen
+- **Tool-Beschränkungen**: Subagents haben ausschließlich Zugriff auf ihre konfigurierten Tools.
+- **Sandboxing**: Alle Tool-Ausführungen folgen demselben Sicherheitsmodell wie die direkte Tool-Nutzung.
+- **Audit-Trail**: Alle Aktionen von Subagents werden protokolliert und sind in Echtzeit sichtbar.
+- **Zugriffskontrolle**: Die Trennung auf Projekt- und Benutzerebene stellt angemessene Grenzen sicher.
+- **Vertrauliche Informationen**: Vermeiden Sie es, Geheimnisse oder Anmeldeinformationen in Agent-Konfigurationen einzufügen.
+- **Produktionsumgebungen**: Erwägen Sie separate Agents für Produktions- und Entwicklungs-Umgebungen.
+
+## Limits
+
+Die folgenden weichen Warnungen gelten für Subagent-Konfigurationen (es werden keine harten Limits erzwungen):
+
+- **Beschreibungsfeld**: Eine Warnung wird angezeigt, wenn die Beschreibung mehr als 1.000 Zeichen umfasst.
+- **System-Prompt**: Eine Warnung wird angezeigt, wenn der System-Prompt mehr als 10.000 Zeichen umfasst.

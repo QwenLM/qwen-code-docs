@@ -1,14 +1,14 @@
 # アンインストール
 
-CLI の実行方法によってアンインストール方法が異なります。npx を使用した場合と、グローバルな npm インストールの場合のいずれかに応じて、以下の手順に従ってください。
+CLI のアンインストール方法は、CLI を実行した方法によって異なります。`npx` を使用した場合と、npm を用いたグローバルインストールを行った場合のそれぞれに対応する手順に従ってください。
 
-## 方法 1: npx を使用する場合
+## 方法 1: `npx` を使用する場合
 
-npx は、永続的なインストールなしに一時キャッシュからパッケージを実行します。CLI を「アンインストール」するには、このキャッシュをクリアする必要があります。これにより、qwen-code および以前に npx で実行された他のパッケージも削除されます。
+`npx` は、パッケージを一時的なキャッシュから実行し、永続的なインストールを行いません。したがって、CLI を「アンインストール」するには、このキャッシュをクリアする必要があります。これにより、`qwen-code` およびそれ以前に `npx` で実行された他のすべてのパッケージが削除されます。
 
-npx のキャッシュは、メインの npm キャッシュフォルダ内の `_npx` という名前のディレクトリです。`npm config get cache` を実行することで、npm のキャッシュパスを確認できます。
+`npx` のキャッシュは、メインの npm キャッシュフォルダ内にある `_npx` という名前のディレクトリです。npm キャッシュのパスは、`npm config get cache` コマンドを実行することで確認できます。
 
-**macOS / Linux 向け**
+**macOS / Linux の場合**
 
 ```bash
 
@@ -16,16 +16,16 @@ npx のキャッシュは、メインの npm キャッシュフォルダ内の `
 rm -rf "$(npm config get cache)/_npx"
 ```
 
-**Windows 向け**
+**Windows の場合**
 
-_コマンドプロンプト_
+コマンドプロンプト
 
 ```cmd
 :: パスは通常 %LocalAppData%\npm-cache\_npx です
 rmdir /s /q "%LocalAppData%\npm-cache\_npx"
 ```
 
-_PowerShell_
+PowerShell
 
 ```powershell
 
@@ -33,12 +33,12 @@ _PowerShell_
 Remove-Item -Path (Join-Path $env:LocalAppData "npm-cache\_npx") -Recurse -Force
 ```
 
-## 方法2: npmを使用する（グローバルインストール）
+## 方法 2: npm を使用したグローバルインストールのアンインストール
 
-CLIをグローバルにインストールした場合（例: `npm install -g @qwen-code/qwen-code`）、`npm uninstall`コマンドに`-g`フラグを付けて実行することで削除できます。
+CLI をグローバルにインストールした場合（例: `npm install -g @qwen-code/qwen-code`）、`npm uninstall` コマンドに `-g` フラグを指定して、これをアンインストールします。
 
 ```bash
 npm uninstall -g @qwen-code/qwen-code
 ```
 
-このコマンドにより、パッケージはシステムから完全に削除されます。
+このコマンドにより、パッケージがシステムから完全に削除されます。

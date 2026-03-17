@@ -1,22 +1,22 @@
-# Internationalisierung (i18n) & Sprache
+# Internationalisierung (i18n) und Sprache
 
-Qwen Code ist für mehrsprachige Workflows konzipiert: Es unterstützt die Lokalisierung der Benutzeroberfläche (i18n/l10n) in der Befehlszeilenschnittstelle (CLI), ermöglicht die Auswahl der Ausgabesprache des Assistenten und erlaubt benutzerdefinierte Sprachpakete für die Benutzeroberfläche.
+Qwen Code ist für multilinguale Workflows konzipiert: Es unterstützt die Lokalisierung der Benutzeroberfläche (i18n/l10n) in der Befehlszeile, ermöglicht die Auswahl der Ausgabesprache des Assistenten und erlaubt benutzerdefinierte Sprachpakete für die Benutzeroberfläche.
 
 ## Übersicht
 
-Aus Sicht des Benutzers erstreckt sich die „Internationalisierung“ von Qwen Code auf mehrere Ebenen:
+Aus Sicht eines Benutzers umfasst die „Internationalisierung“ von Qwen Code mehrere Ebenen:
 
-| Funktion / Einstellung   | Was wird gesteuert                                                   | Wo gespeichert               |
-| ------------------------ | -------------------------------------------------------------------- | ---------------------------- |
-| `/language ui`           | Text der Terminal-Benutzeroberfläche (Menüs, Systemmeldungen, Aufforderungen) | `~/.qwen/settings.json`      |
-| `/language output`       | Sprache, in der die KI antwortet (eine Ausgabeeinstellung, keine Übersetzung der Benutzeroberfläche) | `~/.qwen/output-language.md` |
-| Benutzerdefinierte Sprachpakete für die Benutzeroberfläche | Überschreibt/erweitert integrierte Übersetzungen der Benutzeroberfläche | `~/.qwen/locales/*.js`       |
+| Funktion / Einstellung       | Was sie steuert                                                                 | Wo gespeichert                     |
+| ---------------------------- | --------------------------------------------------------------------------------- | ------------------------------------ |
+| `/language ui`               | Text der Terminal-Benutzeroberfläche (Menüs, Systemmeldungen, Aufforderungen)      | `~/.qwen/settings.json`             |
+| `/language output`           | Sprache, in der die KI antwortet (eine Ausgabepräferenz, keine Übersetzung der UI) | `~/.qwen/output-language.md`         |
+| Benutzerdefinierte UI-Sprachpakete | Überschreibt oder erweitert die integrierten UI-Übersetzungen                      | `~/.qwen/locales/*.js`              |
 
-## UI-Sprache
+## Benutzeroberflächensprache
 
-Dies ist die Lokalisierungsschicht (i18n/l10n) der CLI-Benutzeroberfläche: Sie steuert die Sprache von Menüs, Eingabeaufforderungen und Systemmeldungen.
+Dies ist die UI-Lokalisierungsschicht (i18n/l10n) der CLI: Sie steuert die Sprache von Menüs, Eingabeaufforderungen und Systemmeldungen.
 
-### Festlegen der UI-Sprache
+### Festlegen der Benutzeroberflächensprache
 
 Verwenden Sie den Befehl `/language ui`:
 
@@ -28,7 +28,7 @@ Verwenden Sie den Befehl `/language ui`:
 /language ui ja-JP    # Japanisch
 ```
 
-Aliase werden ebenfalls unterstützt:
+Aliasnamen werden ebenfalls unterstützt:
 
 ```bash
 /language ui zh       # Chinesisch
@@ -40,36 +40,36 @@ Aliase werden ebenfalls unterstützt:
 
 ### Automatische Erkennung
 
-Beim ersten Start erkennt Qwen Code das Systemsprachumgebung und setzt die UI-Sprache automatisch.
+Beim ersten Start erkennt Qwen Code automatisch Ihre Systemspracheinstellung und stellt die Benutzeroberflächensprache entsprechend ein.
 
-Erkennungspriorität:
+Erkennungsreihenfolge:
 
 1. Umgebungsvariable `QWEN_CODE_LANG`
 2. Umgebungsvariable `LANG`
-3. Systemsprache über JavaScript Intl API
+3. Systemspracheinstellung über die JavaScript-Intl-API
 4. Standard: Englisch
 
-## LLM-Ausgabesprache
+## Ausgabesprache des LLM
 
-Die LLM-Ausgabesprache bestimmt, in welcher Sprache der KI-Assistent antwortet, unabhängig davon, in welcher Sprache Sie Ihre Fragen eingeben.
+Die Ausgabesprache des LLM legt fest, in welcher Sprache der KI-Assistent antwortet – unabhängig davon, in welcher Sprache Sie Ihre Fragen eingeben.
 
 ### Funktionsweise
 
-Die Ausgabesprache des LLM wird durch eine Regeldatei unter `~/.qwen/output-language.md` gesteuert. Diese Datei wird beim Start automatisch in den Kontext des LLM eingebunden und weist es an, in der angegebenen Sprache zu antworten.
+Die Ausgabesprache des LLM wird durch eine Regel-Datei unter `~/.qwen/output-language.md` gesteuert. Diese Datei wird beim Start automatisch in den Kontext des LLM eingebunden und weist das Modell an, in der angegebenen Sprache zu antworten.
 
 ### Automatische Erkennung
 
-Beim ersten Start erstellt Qwen Code automatisch eine solche Datei, wenn noch keine `output-language.md` existiert. Dabei orientiert sich die Erstellung am lokalen Systemgebietsschema. Beispiele:
+Beim ersten Start erstellt Qwen Code automatisch eine `output-language.md`-Datei, falls noch keine vorhanden ist. Die Sprache wird dabei anhand Ihrer System-Locale bestimmt. Beispiele:
 
-- Systemgebietsschema `zh` erzeugt eine Regel für Antworten auf Chinesisch
-- Systemgebietsschema `en` erzeugt eine Regel für Antworten auf Englisch
-- Systemgebietsschema `ru` erzeugt eine Regel für Antworten auf Russisch
-- Systemgebietsschema `de` erzeugt eine Regel für Antworten auf Deutsch
-- Systemgebietsschema `ja` erzeugt eine Regel für Antworten auf Japanisch
+- System-Locale `zh` erzeugt eine Regel für Antworten auf Chinesisch  
+- System-Locale `en` erzeugt eine Regel für Antworten auf Englisch
+- System-Locale `ru` erzeugt eine Regel für Antworten auf Russisch
+- System-Locale `de` erzeugt eine Regel für Antworten auf Deutsch
+- System-Locale `ja` erzeugt eine Regel für Antworten auf Japanisch
 
 ### Manuelle Einstellung
 
-Verwenden Sie `/language output <Sprache>`, um die Sprache zu ändern:
+Verwenden Sie `/language output <Sprache>`, um die Ausgabesprache zu ändern:
 
 ```bash
 /language output Chinesisch
@@ -78,11 +78,11 @@ Verwenden Sie `/language output <Sprache>`, um die Sprache zu ändern:
 /language output Deutsch
 ```
 
-Jeder Sprachname funktioniert. Das KI-Modell wird angewiesen, in dieser Sprache zu antworten.
+Jeder Sprachname funktioniert. Das LLM erhält die Anweisung, in dieser Sprache zu antworten.
 
 > [!note]
 >
-> Nach dem Ändern der Ausgabesprache starten Sie Qwen Code neu, damit die Änderung wirksam wird.
+> Nach der Änderung der Ausgabesprache müssen Sie Qwen Code neu starten, damit die Änderung wirksam wird.
 
 ### Dateispeicherort
 
@@ -94,46 +94,46 @@ Jeder Sprachname funktioniert. Das KI-Modell wird angewiesen, in dieser Sprache 
 
 ### Über den Einstellungsdialog
 
-1. Führen Sie `/settings` aus
-2. Suchen Sie unter Allgemein nach „Language“
-3. Wählen Sie Ihre bevorzugte Oberflächensprache
+1. Führen Sie `/settings` aus.
+2. Suchen Sie unter „Allgemein“ nach „Sprache“.
+3. Wählen Sie Ihre bevorzugte Benutzeroberflächensprache aus.
 
-### Über Umgebungsvariable
+### Über eine Umgebungsvariable
 
 ```bash
 export QWEN_CODE_LANG=zh
 ```
 
-Dies beeinflusst die automatische Erkennung beim ersten Start (falls Sie noch keine Oberflächensprache festgelegt und noch keine Datei `output-language.md` vorhanden ist).
+Dies beeinflusst die automatische Erkennung beim ersten Start (sofern Sie noch keine Benutzeroberflächensprache festgelegt und noch keine Datei `output-language.md` vorhanden ist).
 
 ## Benutzerdefinierte Sprachpakete
 
-Für UI-Übersetzungen können Sie benutzerdefinierte Sprachpakete in `~/.qwen/locales/` erstellen:
+Für Übersetzungen der Benutzeroberfläche können Sie benutzerdefinierte Sprachpakete im Verzeichnis `~/.qwen/locales/` erstellen:
 
 - Beispiel: `~/.qwen/locales/es.js` für Spanisch
 - Beispiel: `~/.qwen/locales/fr.js` für Französisch
 
-Das Benutzerverzeichnis hat Vorrang vor eingebauten Übersetzungen.
+Das Benutzerverzeichnis hat Vorrang vor den integrierten Übersetzungen.
 
 > [!tip]
 >
-> Beiträge sind willkommen! Wenn Sie eingebaute Übersetzungen verbessern oder neue Sprachen hinzufügen möchten.
-> Ein konkretes Beispiel finden Sie unter [PR #1238: feat(i18n): add Russian language support](https://github.com/QwenLM/qwen-code/pull/1238).
+> Beiträge sind willkommen! Wenn Sie die integrierten Übersetzungen verbessern oder neue Sprachen hinzufügen möchten.
+> Ein konkretes Beispiel finden Sie in [PR #1238: feat(i18n): Russian language support hinzufügen](https://github.com/QwenLM/qwen-code/pull/1238).
 
-### Format des Sprachpakets
+### Format eines Sprachpakets
 
 ```javascript
 // ~/.qwen/locales/es.js
 export default {
   Hello: 'Hola',
-  Settings: 'Configuracion',
+  Settings: 'Einstellungen',
   // ... weitere Übersetzungen
 };
 ```
 
 ## Verwandte Befehle
 
-- `/language` - Aktuelle Spracheinstellungen anzeigen
-- `/language ui [lang]` - UI-Sprache festlegen
-- `/language output <Sprache>` - Ausgabesprache der KI festlegen
-- `/settings` - Einstellungsdialog öffnen
+- `/language` – Aktuelle Spracheinstellungen anzeigen
+- `/language ui [lang]` – Sprache der Benutzeroberfläche festlegen
+- `/language output <Sprache>` – Ausgabesprache des LLM festlegen
+- `/settings` – Einstellungsdialog öffnen

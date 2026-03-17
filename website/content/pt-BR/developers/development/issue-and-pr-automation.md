@@ -1,84 +1,84 @@
-# Automação e Processos de Triagem
+# Processos de Automação e Triagem
 
-Este documento fornece uma visão detalhada dos processos automatizados que utilizamos para gerenciar e triar issues e pull requests. Nosso objetivo é fornecer feedback rápido e garantir que as contribuições sejam revisadas e integradas de forma eficiente. Compreender essa automação ajudará você, como contribuidor, a saber o que esperar e como interagir da melhor forma com os bots do nosso repositório.
+Este documento fornece uma visão detalhada dos processos automatizados que utilizamos para gerenciar e triar problemas (*issues*) e *pull requests*. Nosso objetivo é fornecer feedback rápido e garantir que as contribuições sejam revisadas e integradas de forma eficiente. Compreender essa automação ajudará você, como colaborador, a saber o que esperar e como interagir da melhor forma possível com os robôs (*bots*) do nosso repositório.
 
-## Princípio Orientador: Issues e Pull Requests
+## Princípio Orientador: Problemas (*Issues*) e *Pull Requests*
 
-Antes de tudo, quase todo Pull Request (PR) deve estar vinculado a uma Issue correspondente. A issue descreve o "o quê" e o "porquê" (o bug ou recurso), enquanto o PR é o "como" (a implementação). Essa separação nos ajuda a acompanhar o trabalho, priorizar recursos e manter um contexto histórico claro. Nossa automação foi construída em torno desse princípio.
+Antes de tudo, quase todo *Pull Request* (PR) deve estar vinculado a um problema (*issue*) correspondente. O problema descreve o “o quê” e o “por quê” (a falha ou a nova funcionalidade), enquanto o PR representa o “como” (a implementação). Essa separação nos ajuda a acompanhar o trabalho, priorizar funcionalidades e manter um contexto histórico claro. Nossa automação foi desenvolvida com base nesse princípio.
 
 ---
 
 ## Fluxos de Trabalho Automatizados Detalhados
 
-A seguir está uma descrição dos fluxos de trabalho automatizados específicos que são executados em nosso repositório.
+A seguir, apresentamos uma descrição dos fluxos de trabalho automatizados específicos que são executados em nosso repositório.
 
-### 1. Ao abrir uma Issue: `Automated Issue Triage`
+### 1. Quando você abre uma issue: `Triagem Automatizada de Issues`
 
-Este é o primeiro bot com o qual você interagirá ao criar uma issue. Seu trabalho é realizar uma análise inicial e aplicar os rótulos corretos.
+Este é o primeiro bot com o qual você interage ao criar uma issue. Sua função é realizar uma análise inicial e aplicar as etiquetas corretas.
 
-- **Arquivo de Workflow**: `.github/workflows/qwen-automated-issue-triage.yml`
+- **Arquivo de fluxo de trabalho**: `.github/workflows/qwen-automated-issue-triage.yml`
 - **Quando é executado**: Imediatamente após a criação ou reabertura de uma issue.
-- **O que ele faz**:
-  - Utiliza um modelo Qwen para analisar o título e o corpo da issue com base em um conjunto detalhado de diretrizes.
-  - **Aplica um rótulo `area/*`**: Categoriza a issue em uma área funcional do projeto (por exemplo, `area/ux`, `area/models`, `area/platform`).
-  - **Aplica um rótulo `kind/*`**: Identifica o tipo da issue (por exemplo, `kind/bug`, `kind/enhancement`, `kind/question`).
-  - **Aplica um rótulo `priority/*`**: Atribui uma prioridade de P0 (crítico) a P3 (baixo), com base no impacto descrito.
-  - **Pode aplicar `status/need-information`**: Se a issue não contiver detalhes essenciais (como logs ou etapas de reprodução), ela será sinalizada para solicitar mais informações.
-  - **Pode aplicar `status/need-retesting`**: Se a issue fizer referência a uma versão da CLI que esteja seis versões ou mais desatualizada, ela será sinalizada para reteste em uma versão atual.
+- **O que faz**:
+  - Usa um modelo Qwen para analisar o título e o corpo da issue com base em um conjunto detalhado de diretrizes.
+  - **Aplica uma etiqueta `area/*`**: Categoriza a issue em uma área funcional do projeto (por exemplo, `area/ux`, `area/models`, `area/platform`).
+  - **Aplica uma etiqueta `kind/*`**: Identifica o tipo de issue (por exemplo, `kind/bug`, `kind/enhancement`, `kind/question`).
+  - **Aplica uma etiqueta `priority/*`**: Atribui uma prioridade de P0 (crítica) a P3 (baixa), com base no impacto descrito.
+  - **Pode aplicar `status/need-information`**: Se a issue não contiver detalhes essenciais (como logs ou etapas para reprodução), ela será marcada como necessitando de mais informações.
+  - **Pode aplicar `status/need-retesting`**: Se a issue fizer referência a uma versão da CLI com mais de seis versões de antiguidade, ela será marcada para reteste em uma versão atual.
 - **O que você deve fazer**:
-  - Preencha o modelo da issue da forma mais completa possível. Quanto mais detalhes você fornecer, mais precisa será a triagem.
-  - Se o rótulo `status/need-information` for adicionado, forneça os detalhes solicitados em um comentário.
+  - Preencha o modelo de issue da forma mais completa possível. Quanto mais detalhes você fornecer, mais precisa será a triagem.
+  - Se a etiqueta `status/need-information` for adicionada, forneça os detalhes solicitados em um comentário.
 
-### 2. Quando você abre um Pull Request: `Integração Contínua (CI)`
+### 2. Quando você abre uma Pull Request: `Integração Contínua (CI)`
 
-Este workflow garante que todas as alterações atendam aos nossos padrões de qualidade antes de serem mescladas.
+Esse fluxo de trabalho garante que todas as alterações atendam aos nossos padrões de qualidade antes de serem incorporadas.
 
-- **Arquivo do Workflow**: `.github/workflows/ci.yml`
-- **Quando é executado**: Em cada push para um pull request.
-- **O que ele faz**:
-  - **Lint**: Verifica se seu código segue as regras de formatação e estilo do nosso projeto.
-  - **Test**: Executa nossa suíte completa de testes automatizados em macOS, Windows e Linux, e em múltiplas versões do Node.js. Esta é a parte mais demorada do processo de CI.
-  - **Post Coverage Comment**: Após todos os testes terem passado com sucesso, um bot publicará um comentário no seu PR. Este comentário fornece um resumo de quão bem suas alterações são cobertas por testes.
+- **Arquivo do fluxo de trabalho**: `.github/workflows/ci.yml`
+- **Quando é executado**: A cada *push* em uma *pull request*.
+- **O que faz**:
+  - **Lint**: Verifica se seu código está em conformidade com as regras de formatação e estilo do projeto.
+  - **Teste**: Executa toda a nossa suíte de testes automatizados nos sistemas operacionais macOS, Windows e Linux, além de várias versões do Node.js. Essa é a etapa mais demorada do processo de CI.
+  - **Comentário pós-cobertura**: Após a conclusão bem-sucedida de todos os testes, um bot publica um comentário na sua *pull request*. Esse comentário fornece um resumo do grau de cobertura dos seus códigos pelos testes.
 - **O que você deve fazer**:
-  - Certifique-se de que todas as verificações do CI passem. Um visto verde ✅ aparecerá ao lado do seu commit quando tudo estiver correto.
-  - Se uma verificação falhar (um "X" vermelho ❌), clique no link "Details" ao lado da verificação com falha para visualizar os logs, identificar o problema e enviar uma correção.
+  - Garantir que todas as verificações da CI passem. Um marcador verde ✅ aparecerá ao lado do seu *commit* quando tudo for concluído com sucesso.
+  - Se alguma verificação falhar (um "X" vermelho ❌), clique no link "Detalhes" ao lado da verificação com falha para visualizar os logs, identificar o problema e enviar uma correção.
 
-### 3. Triagem Contínua para Pull Requests: `Auditoria de PR e Sincronização de Labels`
+### 3. Triagem contínua de pull requests: `Auditoria de PR e sincronização de rótulos`
 
-Este workflow é executado periodicamente para garantir que todos os PRs abertos estejam corretamente vinculados a issues e possuam labels consistentes.
+Esse fluxo de trabalho é executado periodicamente para garantir que todos os pull requests abertos estejam corretamente vinculados a issues e tenham rótulos consistentes.
 
-- **Arquivo do Workflow**: `.github/workflows/qwen-scheduled-pr-triage.yml`
-- **Quando ele é executado**: A cada 15 minutos em todos os pull requests abertos.
-- **O que ele faz**:
-  - **Verifica se há uma issue vinculada**: O bot examina a descrição do seu PR em busca de uma palavra-chave que o vincule a uma issue (por exemplo, `Fixes #123`, `Closes #456`).
-  - **Adiciona `status/need-issue`**: Se nenhuma issue vinculada for encontrada, o bot adicionará a label `status/need-issue` ao seu PR. Este é um sinal claro de que uma issue precisa ser criada e vinculada.
-  - **Sincroniza labels**: Se uma issue _estiver_ vinculada, o bot garante que as labels do PR correspondam perfeitamente às labels da issue. Ele adicionará quaisquer labels ausentes e removerá aquelas que não pertencem, além de remover a label `status/need-issue`, caso ela esteja presente.
+- **Arquivo do fluxo de trabalho**: `.github/workflows/qwen-scheduled-pr-triage.yml`
+- **Quando é executado**: A cada 15 minutos, em todos os pull requests abertos.
+- **O que faz**:
+  - **Verifica se há uma issue vinculada**: O bot analisa a descrição do seu pull request em busca de uma palavra-chave que o vincule a uma issue (por exemplo, `Fixes #123`, `Closes #456`).
+  - **Adiciona o rótulo `status/need-issue`**: Se nenhuma issue vinculada for encontrada, o bot adicionará o rótulo `status/need-issue` ao seu pull request. Esse é um sinal claro de que uma issue precisa ser criada e vinculada.
+  - **Sincroniza os rótulos**: Se uma issue _estiver_ vinculada, o bot garante que os rótulos do pull request correspondam exatamente aos rótulos da issue. Ele adicionará quaisquer rótulos ausentes, removerá os que não pertencem e também removerá o rótulo `status/need-issue`, caso esteja presente.
 - **O que você deve fazer**:
-  - **Sempre vincule seu PR a uma issue.** Esta é a etapa mais importante. Adicione uma linha como `Resolves #<número-da-issue>` na descrição do seu PR.
-  - Isso garantirá que seu PR seja categorizado corretamente e prossiga suavemente pelo processo de revisão.
+  - **Sempre vincule seu pull request a uma issue.** Este é o passo mais importante. Adicione uma linha como `Resolves #<número-da-issue>` à descrição do seu pull request.
+  - Isso garantirá que seu pull request seja categorizado corretamente e avance sem problemas pelo processo de revisão.
 
-### 4. Triagem Contínua de Problemas: `Triagem Agendada de Problemas`
+### 4. Triagem contínua de problemas: `Triagem programada de problemas`
 
 Este é um fluxo de trabalho alternativo para garantir que nenhum problema seja ignorado pelo processo de triagem.
 
-- **Arquivo do Fluxo de Trabalho**: `.github/workflows/qwen-scheduled-issue-triage.yml`
-- **Quando ele é executado**: A cada hora em todos os problemas em aberto.
-- **O que ele faz**:
-  - Ele procura ativamente por problemas que não possuem rótulos ou ainda têm o rótulo `status/need-triage`.
-  - Em seguida, aciona a mesma análise poderosa baseada no QwenCode usada pelo bot de triagem inicial para aplicar os rótulos corretos.
-- **O que você deve fazer**:
-  - Normalmente, você não precisa fazer nada. Este fluxo de trabalho serve como uma rede de segurança para garantir que todos os problemas sejam eventualmente categorizados, mesmo que a triagem inicial falhe.
-
-### 5. Automação de Releases
-
-Este workflow cuida do processo de empacotamento e publicação de novas versões do Qwen Code.
-
-- **Arquivo do Workflow**: `.github/workflows/release.yml`
-- **Quando é executado**: Em um agendamento diário para releases "nightly", e manualmente para releases oficiais de patch/menor.
+- **Arquivo do fluxo de trabalho**: `.github/workflows/qwen-scheduled-issue-triage.yml`
+- **Quando é executado**: A cada hora, em todos os problemas abertos.
 - **O que faz**:
-  - Constrói automaticamente o projeto, incrementa os números de versão e publica os pacotes no npm.
-  - Cria um release correspondente no GitHub com notas de release geradas automaticamente.
+  - Procura ativamente problemas que não tenham nenhuma etiqueta ou que ainda possuam a etiqueta `status/need-triage`.
+  - Em seguida, aciona a mesma análise robusta baseada no QwenCode usada pelo bot de triagem inicial para aplicar as etiquetas corretas.
 - **O que você deve fazer**:
-  - Como contribuidor, você não precisa fazer nada neste processo. Você pode ter confiança de que, uma vez que seu PR seja mesclado na branch `main`, suas alterações serão incluídas na próxima release nightly.
+  - Normalmente, não é necessário fazer nada. Esse fluxo de trabalho funciona como uma rede de segurança para garantir que todos os problemas sejam eventualmente categorizados, mesmo que a triagem inicial falhe.
 
-Esperamos que esta visão detalhada seja útil. Se você tiver alguma dúvida sobre nossa automação ou processos, não hesite em perguntar!
+### 5. Automação de Lançamento
+
+Este fluxo de trabalho lida com o processo de empacotamento e publicação de novas versões do Qwen Code.
+
+- **Arquivo do fluxo de trabalho**: `.github/workflows/release.yml`
+- **Quando é executado**: Em uma agenda diária para lançamentos "noturnos" (*nightly*) e manualmente para lançamentos oficiais de correções (*patch*) ou menores (*minor*).
+- **O que faz**:
+  - Compila automaticamente o projeto, atualiza os números de versão e publica os pacotes no npm.
+  - Cria um lançamento correspondente no GitHub com notas de lançamento geradas automaticamente.
+- **O que você deve fazer**:
+  - Como colaborador, não é necessário realizar nenhuma ação para esse processo. Você pode ter certeza de que, assim que sua *pull request* for mesclada na branch `main`, suas alterações serão incluídas no próximo lançamento noturno.
+
+Esperamos que esta visão detalhada seja útil. Se tiver alguma dúvida sobre nossa automação ou processos, não hesite em perguntar!

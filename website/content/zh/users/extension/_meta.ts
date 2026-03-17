@@ -1,5 +1,5 @@
 export default {
-  introduction: '介绍',
+  introduction: '简介',
   'getting-started-extensions': {
     display: 'hidden',
   },

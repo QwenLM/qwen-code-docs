@@ -1,66 +1,66 @@
-# Qwen Code Architekturübersicht
+# Architekturübersicht von Qwen Code
 
-Dieses Dokument bietet eine Übersicht auf hoher Ebene über die Architektur von Qwen Code.
+Dieses Dokument bietet einen Überblick auf hoher Ebene über die Architektur von Qwen Code.
 
 ## Kernkomponenten
 
-Qwen Code besteht hauptsächlich aus zwei Hauptpaketen sowie einer Reihe von Tools, die vom System bei der Verarbeitung von Befehlszeileneingaben verwendet werden können:
+Qwen Code besteht hauptsächlich aus zwei Hauptpaketen sowie einer Reihe von Tools, die vom System bei der Verarbeitung von Befehlszeileneingaben eingesetzt werden können:
 
 ### 1. CLI-Paket (`packages/cli`)
 
-**Zweck:** Dieses Paket enthält den benutzerseitigen Teil von Qwen Code, wie die Verarbeitung der ursprünglichen Benutzereingabe, die Darstellung der endgültigen Ausgabe und das Management der gesamten Benutzererfahrung.
+**Zweck:** Dieses Paket enthält den nutzerseitigen Teil von Qwen Code, z. B. die Verarbeitung der ersten Benutzereingaben, die Darstellung der endgültigen Ausgabe sowie das Management der gesamten Benutzererfahrung.
 
 **Wichtige Funktionen:**
 
-- **Eingabeverarbeitung:** Verarbeitet Benutzereingaben über verschiedene Methoden, darunter direkte Texteingabe, Schrägstrich-Befehle (z. B. `/help`, `/clear`, `/model`), At-Befehle (`@file` zum Einbinden von Dateiinhalten) und Ausrufezeichen-Befehle (`!command` zur Shell-Ausführung).
-- **Verwaltung des Verlaufs:** Führt den Konversationsverlauf und ermöglicht Funktionen wie das Fortsetzen von Sitzungen.
-- **Anzeige-Rendering:** Formatiert und präsentiert Antworten im Terminal mit Syntaxhervorhebung und korrekter Formatierung.
-- **Design- und UI-Anpassung:** Unterstützt anpassbare Designs und UI-Elemente für ein personalisiertes Erlebnis.
+- **Eingabeverarbeitung:** Verarbeitet Benutzereingaben über verschiedene Methoden, darunter direkte Texteingabe, Slash-Befehle (z. B. `/help`, `/clear`, `/model`), At-Befehle (`@file` zum Einbinden von Dateiinhalten) und Ausrufezeichen-Befehle (`!command` zur Ausführung von Shell-Befehlen).
+- **Verwaltung des Verlaufs:** Speichert den Gesprächsverlauf und ermöglicht Funktionen wie die Wiederaufnahme einer Sitzung.
+- **Darstellung der Ausgabe:** Formatiert und präsentiert Antworten dem Benutzer im Terminal mit Syntax-Hervorhebung und korrekter Formatierung.
+- **Anpassung von Design und Benutzeroberfläche:** Unterstützt anpassbare Designs und UI-Elemente für ein individuelles Erlebnis.
 - **Konfigurationseinstellungen:** Verwaltet verschiedene Konfigurationsoptionen über JSON-Einstellungsdateien, Umgebungsvariablen und Befehlszeilenargumente.
 
-### 2. Core-Paket (`packages/core`)
+### 2. Kernpaket (`packages/core`)
 
-**Zweck:** Dieses Paket fungiert als Backend für Qwen Code. Es empfängt Anfragen, die von `packages/cli` gesendet werden, orchestriert Interaktionen mit der konfigurierten Modell-API und verwaltet die Ausführung verfügbarer Tools.
+**Zweck:** Dieses Paket fungiert als Backend für Qwen Code. Es empfängt Anfragen von `packages/cli`, koordiniert die Interaktion mit der konfigurierten Modell-API und verwaltet die Ausführung verfügbarer Tools.
 
 **Wichtige Funktionen:**
 
-- **API-Client:** Kommuniziert mit der Qwen-Modell-API, um Prompts zu senden und Antworten zu erhalten.
-- **Prompt-Konstruktion:** Erstellt geeignete Prompts für das Modell unter Einbeziehung des Konversationsverlaufs und verfügbarer Tool-Definitionen.
-- **Tool-Registrierung und -Ausführung:** Verwaltet die Registrierung verfügbarer Tools und führt diese basierend auf Anfragen des Modells aus.
-- **Zustandsverwaltung:** Speichert Informationen zum Konversations- und Sitzungsstatus.
-- **Serverseitige Konfiguration:** Bearbeitet serverseitige Konfigurationen und Einstellungen.
+- **API-Client:** Kommuniziert mit der Qwen-Modell-API, um Prompts zu senden und Antworten zu empfangen.
+- **Prompt-Erstellung:** Erstellt geeignete Prompts für das Modell unter Einbeziehung des Konversationsverlaufs und der verfügbaren Tool-Definitionen.
+- **Tool-Registrierung und -Ausführung:** Verwaltet die Registrierung verfügbarer Tools und führt sie basierend auf Modellanfragen aus.
+- **Zustandsverwaltung:** Verwaltet Informationen zum Konversations- und Sitzungsstatus.
+- **Serverseitige Konfiguration:** Verarbeitet serverseitige Konfigurationen und Einstellungen.
 
 ### 3. Tools (`packages/core/src/tools/`)
 
-**Zweck:** Dies sind einzelne Module, die die Fähigkeiten des Qwen-Modells erweitern und ihm ermöglichen, mit der lokalen Umgebung zu interagieren (z. B. Dateisystem, Shell-Befehle, Webabrufe).
+**Zweck:** Dies sind einzelne Module, die die Fähigkeiten des Qwen-Modells erweitern und es so ermöglichen, mit der lokalen Umgebung zu interagieren (z. B. Dateisystem, Shell-Befehle, Abrufen von Webinhalten).
 
 **Interaktion:** `packages/core` ruft diese Tools basierend auf Anfragen des Qwen-Modells auf.
 
 **Häufig verwendete Tools umfassen:**
 
-- **Dateioperationen:** Lesen, Schreiben und Bearbeiten von Dateien
-- **Shell-Befehle:** Ausführen von Systembefehlen mit Benutzerbestätigung für potenziell gefährliche Operationen
-- **Suchwerkzeuge:** Finden von Dateien und Durchsuchen von Inhalten innerhalb des Projekts
-- **Webtools:** Abrufen von Inhalten aus dem Web
-- **MCP-Integration:** Verbinden mit Model Context Protocol-Servern zur Erweiterung der Funktionen
+- **Dateioperationen:** Lesen, Schreiben und Bearbeiten von Dateien  
+- **Shell-Befehle:** Ausführen von Systembefehlen mit Zustimmung des Benutzers für potenziell gefährliche Operationen  
+- **Suchtools:** Auffinden von Dateien und Durchsuchen von Inhalten innerhalb des Projekts  
+- **Webtools:** Abrufen von Inhalten aus dem Internet  
+- **MCP-Integration:** Verbindung zu Model-Context-Protocol-Servern für erweiterte Funktionen
 
 ## Interaktionsablauf
 
 Eine typische Interaktion mit Qwen Code folgt diesem Ablauf:
 
-1.  **Benutzereingabe:** Der Benutzer gibt einen Prompt oder Befehl im Terminal ein, der von `packages/cli` verwaltet wird.
+1.  **Benutzereingabe:** Der Benutzer gibt eine Anfrage oder einen Befehl in das Terminal ein, das von `packages/cli` verwaltet wird.
 2.  **Anfrage an den Core:** `packages/cli` sendet die Eingabe des Benutzers an `packages/core`.
 3.  **Verarbeitung der Anfrage:** Das Core-Paket:
-    - Erstellt einen geeigneten Prompt für die konfigurierte Modell-API, möglicherweise inklusive Konversationsverlauf und verfügbarer Tool-Definitionen.
-    - Sendet den Prompt an die Modell-API.
-4.  **Antwort der Modell-API:** Die Modell-API verarbeitet den Prompt und gibt eine Antwort zurück. Diese Antwort kann eine direkte Antwort oder eine Anforderung zur Nutzung eines der verfügbaren Tools sein.
-5.  **Ausführung des Tools (falls zutreffend):**
-    - Wenn die Modell-API ein Tool anfordert, bereitet das Core-Paket dessen Ausführung vor.
-    - Falls das angeforderte Tool das Dateisystem ändern oder Shell-Befehle ausführen kann, erhält der Benutzer zunächst Details zum Tool und dessen Argumenten und muss die Ausführung genehmigen.
-    - Reine Leseoperationen wie das Lesen von Dateien erfordern möglicherweise keine explizite Bestätigung durch den Benutzer.
-    - Nach Bestätigung oder falls keine Bestätigung erforderlich ist, führt das Core-Paket die entsprechende Aktion innerhalb des relevanten Tools aus, und das Ergebnis wird vom Core-Paket an die Modell-API zurückgesendet.
+    - Erstellt eine geeignete Anfrage für die konfigurierte Modell-API, ggf. unter Einbeziehung des Konversationsverlaufs und verfügbarer Tool-Definitionen.
+    - Sendet die Anfrage an die Modell-API.
+4.  **Antwort der Modell-API:** Die Modell-API verarbeitet die Anfrage und gibt eine Antwort zurück. Diese Antwort kann entweder eine direkte Antwort sein oder eine Aufforderung zur Nutzung eines der verfügbaren Tools.
+5.  **Tool-Ausführung (falls zutreffend):**
+    - Sobald die Modell-API die Nutzung eines Tools anfordert, bereitet das Core-Paket dessen Ausführung vor.
+    - Falls das angeforderte Tool das Dateisystem modifizieren oder Shell-Befehle ausführen kann, erhält der Benutzer zunächst Details zum Tool und zu seinen Argumenten und muss die Ausführung ausdrücklich bestätigen.
+    - Lesezugriffe (z. B. das Lesen von Dateien) erfordern möglicherweise keine explizite Bestätigung durch den Benutzer.
+    - Nach erfolgter Bestätigung – oder falls keine Bestätigung erforderlich ist – führt das Core-Paket die entsprechende Aktion innerhalb des betreffenden Tools aus; das Ergebnis wird vom Core-Paket an die Modell-API zurückgesendet.
     - Die Modell-API verarbeitet das Tool-Ergebnis und generiert eine endgültige Antwort.
-6.  **Rückmeldung an die CLI:** Das Core-Paket sendet die endgültige Antwort zurück an das CLI-Paket.
+6.  **Antwort an die CLI:** Das Core-Paket sendet die endgültige Antwort an das CLI-Paket zurück.
 7.  **Anzeige für den Benutzer:** Das CLI-Paket formatiert die Antwort und zeigt sie dem Benutzer im Terminal an.
 
 ## Konfigurationsoptionen
@@ -69,27 +69,27 @@ Qwen Code bietet mehrere Möglichkeiten, sein Verhalten zu konfigurieren:
 
 ### Konfigurationsebenen (in Reihenfolge der Priorität)
 
-1. Befehlszeilenargumente
-2. Umgebungsvariablen
-3. Projekteinstellungsdatei (`.qwen/settings.json`)
-4. Benutzereinstellungsdatei (`~/.qwen/settings.json`)
-5. Systemeinstellungsdateien
-6. Standardwerte
+1. Befehlszeilenargumente  
+2. Umgebungsvariablen  
+3. Projekteinstellungsdatei (`.qwen/settings.json`)  
+4. Benutzereinstellungsdatei (`~/.qwen/settings.json`)  
+5. Systemeinstellungsdateien  
+6. Standardwerte  
 
 ### Wichtige Konfigurationskategorien
 
-- **Allgemeine Einstellungen:** Vim-Modus, bevorzugter Editor, Auto-Update-Einstellungen
-- **UI-Einstellungen:** Theme-Anpassung, Sichtbarkeit von Bannern, Footer-Anzeige
-- **Modelleinstellungen:** Modellauswahl, Limits für Sitzungsdurchgänge, Komprimierungseinstellungen
-- **Kontexteinstellungen:** Kontextdateinamen, Verzeichnisinklusion, Dateifilterung
-- **Tool-Einstellungen:** Genehmigungsmodi, Sandboxing, Tool-Einschränkungen
-- **Datenschutzeinstellungen:** Sammlung von Nutzungsstatistiken
-- **Erweiterte Einstellungen:** Debug-Optionen, benutzerdefinierte Fehlerberichtsbefehle
+- **Allgemeine Einstellungen:** Vim-Modus, bevorzugter Editor, Einstellungen für automatische Updates  
+- **Benutzeroberflächeneinstellungen:** Anpassung des Themes, Sichtbarkeit des Banners, Anzeige der Fußzeile  
+- **Modell-Einstellungen:** Modellauswahl, Begrenzung der Gesprächsrunden pro Sitzung, Komprimierungseinstellungen  
+- **Kontext-Einstellungen:** Namen von Kontextdateien, Einbeziehung von Verzeichnissen, Dateifilterung  
+- **Tool-Einstellungen:** Genehmigungsmodi, Sandbox-Umgebung, Einschränkungen für Tools  
+- **Datenschutzeinstellungen:** Erfassung von Nutzungsstatistiken  
+- **Erweiterte Einstellungen:** Debug-Optionen, benutzerdefinierte Befehle für Fehlerberichte
 
-## Wichtige Designprinzipien
+## Wichtige Gestaltungsprinzipien
 
-- **Modularität:** Die Trennung der CLI (Frontend) vom Core (Backend) ermöglicht eine unabhängige Entwicklung und potenzielle zukünftige Erweiterungen (z. B. verschiedene Frontends für dasselbe Backend).
-- **Erweiterbarkeit:** Das Tool-System ist so konzipiert, dass es erweiterbar ist und neue Funktionen durch benutzerdefinierte Tools oder die Integration von MCP-Servern hinzugefügt werden können.
-- **Benutzererfahrung:** Die CLI konzentriert sich darauf, eine umfangreiche und interaktive Terminal-Erfahrung mit Funktionen wie Syntaxhervorhebung, anpassbaren Themes und intuitiven Befehlsstrukturen zu bieten.
-- **Sicherheit:** Implementiert Genehmigungsmechanismen für potenziell gefährliche Operationen sowie Sandbox-Optionen zum Schutz des Benutzersystems.
-- **Flexibilität:** Unterstützt mehrere Konfigurationsmethoden und kann sich an verschiedene Workflows und Umgebungen anpassen.
+- **Modularität:** Die Trennung der CLI (Frontend) vom Core (Backend) ermöglicht eine unabhängige Entwicklung und potenzielle zukünftige Erweiterungen (z. B. verschiedene Frontends für dasselbe Backend).
+- **Erweiterbarkeit:** Das Tool-System ist so konzipiert, dass es sich problemlos erweitern lässt – neue Funktionen können beispielsweise über benutzerdefinierte Tools oder die Integration eines MCP-Servers hinzugefügt werden.
+- **Benutzererfahrung:** Die CLI legt besonderen Wert auf eine umfangreiche und interaktive Terminal-Erfahrung mit Funktionen wie Syntax-Hervorhebung, anpassbaren Themes und intuitiven Befehlsstrukturen.
+- **Sicherheit:** Gefährliche Operationen unterliegen Genehmigungsmechanismen, zudem stehen Sandboxing-Optionen zur Verfügung, um das System des Benutzers zu schützen.
+- **Flexibilität:** Unterstützt mehrere Konfigurationsmethoden und passt sich unterschiedlichen Workflows und Umgebungen an.

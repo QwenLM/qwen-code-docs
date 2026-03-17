@@ -1,6 +1,6 @@
 export default {
-  'Contribute to Qwen Code': {
-    title: '贡献 Qwen Code',
+  '为 Qwen Code 做贡献': {
+    title: '为 Qwen Code 做贡献',
     type: 'separator',
   },
   architecture: '架构',
@@ -10,9 +10,9 @@ export default {
     title: 'Agent SDK',
     type: 'separator',
   },
-  'sdk-typescript': 'Typescript SDK',
-  'sdk-java': 'Java SDK（alpha）',
-  'Dive Into Qwen Code': {
+  'sdk-typescript': 'TypeScript SDK',
+  'sdk-java': 'Java SDK（Alpha）',
+  '深入 Qwen Code': {
     title: '深入 Qwen Code',
     type: 'separator',
   },

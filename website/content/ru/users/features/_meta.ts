@@ -1,13 +1,14 @@
 export default {
   commands: 'Команды',
-  'sub-agents': 'Субагенты',
-  skills: 'Навыки (экспериментальная функция)',
-  headless: 'Режим без головы',
+  'sub-agents': 'Подагенты',
+  skills: 'Навыки',
+  headless: 'Безголовый режим',
   checkpointing: {
     display: 'hidden',
   },
-  'approval-mode': 'Режим утверждения',
+  'approval-mode': 'Режим подтверждения',
   mcp: 'MCP',
+  lsp: 'LSP (протокол сервера языка)',
   'token-caching': 'Кэширование токенов',
   sandbox: 'Песочница',
   language: 'i18n',

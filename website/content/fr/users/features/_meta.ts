@@ -1,14 +1,15 @@
 export default {
   commands: 'Commandes',
   'sub-agents': 'Sous-agents',
-  skills: 'Compétences (Expérimental)',
-  headless: 'Mode Headless',
+  skills: 'Compétences',
+  headless: 'Mode sans interface graphique',
   checkpointing: {
     display: 'hidden',
   },
-  'approval-mode': 'Mode d\'approbation',
+  'approval-mode': 'Mode d’approbation',
   mcp: 'MCP',
+  lsp: 'LSP (Language Server Protocol)',
   'token-caching': 'Mise en cache des jetons',
-  sandbox: 'Isolation (Sandboxing)',
+  sandbox: 'Bac à sable',
   language: 'i18n',
 };

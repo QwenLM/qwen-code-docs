@@ -1,92 +1,112 @@
-# Qwen Code: Nutzungsbedingungen und Datenschutzhinweise
+# Qwen Code: Allgemeine Geschäftsbedingungen und Datenschutzhinweis
 
-Qwen Code ist ein Open-Source-KI-Coding-Assistenten-Tool, das vom Qwen Code-Team betreut wird. Dieses Dokument legt die Nutzungsbedingungen und Datenschutzrichtlinien dar, die bei der Verwendung der Authentifizierungsmethoden und KI-Modell-Dienste von Qwen Code gelten.
+Qwen Code ist ein quelloffenes KI-Tool zur Unterstützung bei der Programmierung, das vom Qwen-Code-Team gepflegt wird. Dieses Dokument beschreibt die Allgemeinen Geschäftsbedingungen und Datenschutzrichtlinien, die bei der Nutzung der Authentifizierungsmethoden und KI-Modell-Dienste von Qwen Code gelten.
 
 ## So ermitteln Sie Ihre Authentifizierungsmethode
 
-Qwen Code unterstützt zwei Hauptauthentifizierungsmethoden für den Zugriff auf KI-Modelle. Ihre Authentifizierungsmethode bestimmt, welche Allgemeinen Geschäftsbedingungen und Datenschutzrichtlinien für Ihre Nutzung gelten:
+Qwen Code unterstützt drei Authentifizierungsmethoden für den Zugriff auf KI-Modelle. Ihre gewählte Authentifizierungsmethode bestimmt, welche Allgemeinen Geschäftsbedingungen und Datenschutzrichtlinien für Ihre Nutzung gelten:
 
-1. **Qwen OAuth** – Melden Sie sich mit Ihrem qwen.ai-Konto an
-2. **OpenAI-kompatible API** – Verwenden Sie API-Schlüssel verschiedener Anbieter von KI-Modellen
+1. **Qwen OAuth** – Melden Sie sich mit Ihrem qwen.ai-Konto an (kostenloses tägliches Kontingent)
+2. **Alibaba Cloud Coding Plan** – Verwenden Sie einen API-Schlüssel von Alibaba Cloud
+3. **API-Schlüssel** – Verwenden Sie Ihren eigenen API-Schlüssel
 
 Für jede Authentifizierungsmethode können je nach zugrunde liegendem Dienstanbieter unterschiedliche Allgemeine Geschäftsbedingungen und Datenschutzhinweise gelten.
 
-| Authentifizierungsmethode | Anbieter          | Allgemeine Geschäftsbedingungen                                               | Datenschutzhinweis                                   |
-| :------------------------ | :---------------- | :---------------------------------------------------------------------------- | :--------------------------------------------------- |
-| Qwen OAuth                | Qwen AI           | [Qwen Allgemeine Geschäftsbedingungen](https://qwen.ai/termsservice)         | [Qwen Datenschutzrichtlinie](https://qwen.ai/privacypolicy) |
-| OpenAI-kompatible API     | Verschiedene Anbieter | Hängt vom gewählten API-Anbieter ab (OpenAI, Alibaba Cloud, ModelScope usw.) | Hängt vom gewählten API-Anbieter ab                  |
+| Authentifizierungsmethode     | Anbieter          | Allgemeine Geschäftsbedingungen                                                   | Datenschutzhinweis                                                     |
+| :---------------------------- | :---------------- | :------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
+| Qwen OAuth                    | Qwen AI           | [Allgemeine Geschäftsbedingungen von Qwen](https://qwen.ai/termsservice)         | [Datenschutzrichtlinie von Qwen](https://qwen.ai/privacypolicy)        |
+| Alibaba Cloud Coding Plan     | Alibaba Cloud     | Siehe [Details unten](#2-if-you-are-using-alibaba-cloud-coding-plan)            | Siehe [Details unten](#2-if-you-are-using-alibaba-cloud-coding-plan)  |
+| API-Schlüssel                 | Verschiedene Anbieter | Hängt vom gewählten API-Anbieter ab (OpenAI, Anthropic usw.)                   | Hängt vom gewählten API-Anbieter ab                                    |
 
-## 1. Wenn Sie die Qwen OAuth-Authentifizierung verwenden
+## 1. Wenn Sie die Qwen-OAuth-Authentifizierung verwenden
 
-Wenn Sie sich mit Ihrem qwen.ai-Konto authentifizieren, gelten diese Dokumente zu den Allgemeinen Geschäftsbedingungen und dem Datenschutzhinweis:
+Wenn Sie sich mit Ihrem qwen.ai-Konto authentifizieren, gelten folgende Dokumente:
 
-- **Allgemeine Geschäftsbedingungen:** Ihre Nutzung unterliegt den [Qwen Allgemeinen Geschäftsbedingungen](https://qwen.ai/termsservice).
-- **Datenschutzhinweis:** Die Erhebung und Verwendung Ihrer Daten wird im [Qwen Datenschutzbestimmungen](https://qwen.ai/privacypolicy) beschrieben.
+- **Nutzungsbedingungen:** Ihre Nutzung unterliegt den [Nutzungsbedingungen von Qwen](https://qwen.ai/termsservice).
+- **Datenschutzhinweis:** Die Erhebung und Verwendung Ihrer Daten ist in der [Datenschutzrichtlinie von Qwen](https://qwen.ai/privacypolicy) beschrieben.
 
-Details zur Authentifizierungseinrichtung, Kontingente und unterstützte Funktionen finden Sie unter [Authentifizierungseinrichtung](../configuration/settings).
+Weitere Informationen zur Einrichtung der Authentifizierung, zu Kontingenten und zu unterstützten Funktionen finden Sie unter [Einrichtung der Authentifizierung](../configuration/settings).
 
-## 2. Wenn Sie eine OpenAI-kompatible API-Authentifizierung verwenden
+## 2. Wenn Sie den Alibaba Cloud Coding Plan verwenden
 
-Wenn Sie sich mit API-Schlüsseln von OpenAI-kompatiblen Anbietern authentifizieren, gelten die entsprechenden Allgemeinen Geschäftsbedingungen und Datenschutzhinweise Ihres gewählten Anbieters.
+Wenn Sie sich mit einem API-Schlüssel von Alibaba Cloud authentifizieren, gelten die jeweiligen Allgemeinen Geschäftsbedingungen und die Datenschutzerklärung von Alibaba Cloud.
+
+Der Alibaba Cloud Coding Plan ist in zwei Regionen verfügbar:
+
+- **阿里云百炼 (aliyun.com)** — [bailian.console.aliyun.com](https://bailian.console.aliyun.com)  
+- **Alibaba Cloud (alibabacloud.com)** — [bailian.console.alibabacloud.com](https://bailian.console.alibabacloud.com)
 
 > [!important]
 >
-> Bei Verwendung einer OpenAI-kompatiblen API-Authentifizierung unterliegen Sie den Bedingungen und Datenschutzrichtlinien Ihres gewählten API-Anbieters, nicht den Bedingungen von Qwen Code. Bitte lesen Sie die Dokumentation Ihres Anbieters für spezifische Details zur Datennutzung, -aufbewahrung und Datenschutzpraktiken.
+> Bei der Nutzung des Alibaba Cloud Coding Plans unterliegen Sie den Allgemeinen Geschäftsbedingungen und Datenschutzrichtlinien von Alibaba Cloud. Bitte lesen Sie deren Dokumentation, um detaillierte Informationen zu Datenverwendung, -speicherung und -schutzpraktiken zu erhalten.
 
-Qwen Code unterstützt verschiedene OpenAI-kompatible Anbieter. Weitere Informationen finden Sie in den Allgemeinen Geschäftsbedingungen und der Datenschutzrichtlinie Ihres jeweiligen Anbieters.
+## 3. Wenn Sie Ihren eigenen API-Schlüssel verwenden
 
-## Nutzungsstatistiken und Telemetrie
+Wenn Sie sich mit API-Schlüsseln anderer Anbieter authentifizieren, gelten die jeweiligen Allgemeinen Geschäftsbedingungen und Datenschutzhinweise Ihres gewählten Anbieters.
 
-Qwen Code kann anonyme Nutzungsstatistiken und [Telemetriedaten](../../developers/development/telemetry) sammeln, um die Benutzererfahrung und Produktqualität zu verbessern. Diese Datenerfassung ist optional und kann über Konfigurationseinstellungen gesteuert werden.
+> [!important]
+>
+> Bei Verwendung Ihres eigenen API-Schlüssels unterliegen Sie den Geschäftsbedingungen und Datenschutzrichtlinien Ihres gewählten API-Anbieters – nicht den Bedingungen von Qwen Code. Bitte lesen Sie die Dokumentation Ihres Anbieters, um Einzelheiten zu Datenverwendung, -speicherung und -schutzpraktiken zu erfahren.
 
-### Welche Daten werden gesammelt
+Qwen Code unterstützt verschiedene OpenAI-kompatible Anbieter. Für detaillierte Informationen wenden Sie sich bitte an die Allgemeinen Geschäftsbedingungen und die Datenschutzrichtlinie Ihres spezifischen Anbieters.
 
-Wenn aktiviert, kann Qwen Code folgende Daten sammeln:
+## Nutzungsstatistiken und Telemetriedaten
+
+Qwen Code kann anonymisierte Nutzungsstatistiken und [Telemetriedaten](../../developers/development/telemetry) sammeln, um die Benutzererfahrung und die Produktqualität zu verbessern. Diese Datenerhebung ist optional und kann über Konfigurationseinstellungen gesteuert werden.
+
+### Welche Daten werden erhoben?
+
+Wenn aktiviert, kann Qwen Code folgende Daten erfassen:
 
 - Anonyme Nutzungsstatistiken (ausgeführte Befehle, Leistungsmetriken)
 - Fehlerberichte und Absturzdaten
 - Nutzungsmuster von Funktionen
 
-### Datenerfassung nach Authentifizierungsmethode
+### Datenerhebung nach Authentifizierungsmethode
 
-- **Qwen OAuth:** Die Nutzungsstatistiken unterliegen der Datenschutzrichtlinie von Qwen. Sie können die Datenerfassung über die Konfigurationseinstellungen von Qwen Code deaktivieren.
-- **OpenAI-kompatible API:** Qwen Code sammelt keine zusätzlichen Daten jenseits dessen, was Ihr gewählter API-Anbieter erfasst.
+- **Qwen-OAuth:** Die Nutzungstatistiken unterliegen der Datenschutzrichtlinie von Qwen. Sie können diese über die Konfigurationseinstellungen von Qwen Code deaktivieren.
+- **Alibaba Cloud Coding-Plan:** Die Nutzungstatistiken unterliegen der Datenschutzrichtlinie von Alibaba Cloud. Sie können diese über die Konfigurationseinstellungen von Qwen Code deaktivieren.
+- **API-Schlüssel:** Qwen Code erhebt keine weiteren Daten über das hinaus, was Ihr gewählter API-Anbieter bereits erfasst.
 
-### 1. Werden mein Code, einschließlich Prompts und Antworten, zur Schulung von KI-Modellen verwendet?
+## Häufig gestellte Fragen (FAQ)
 
-Ob Ihr Code, einschließlich Prompts und Antworten, zur Schulung von KI-Modellen verwendet wird, hängt von Ihrer Authentifizierungsmethode und dem von Ihnen verwendeten KI-Dienstanbieter ab:
+### 1. Wird mein Code – inklusive Prompts und Antworten – zur Schulung von KI-Modellen verwendet?
 
-- **Qwen OAuth**: Die Datennutzung unterliegt der [Qwens Datenschutzerklärung](https://qwen.ai/privacy). Bitte beachten Sie deren Richtlinie für spezifische Details zur Datenerhebung und zu den Praktiken beim Modelltraining.
+Ob Ihr Code, einschließlich Prompts und Antworten, zur Schulung von KI-Modellen verwendet wird, hängt von Ihrer Authentifizierungsmethode und dem jeweiligen Anbieter des KI-Dienstes ab:
 
-- **OpenAI-kompatible API**: Die Datennutzung hängt vollständig vom von Ihnen gewählten API-Anbieter ab. Jeder Anbieter hat eigene Richtlinien zur Datennutzung. Bitte überprüfen Sie die Datenschutzerklärung und die Allgemeinen Geschäftsbedingungen Ihres jeweiligen Anbieters.
+- **Qwen-OAuth**: Die Nutzung Ihrer Daten richtet sich nach der [Datenschutzrichtlinie von Qwen](https://qwen.ai/privacy). Weitere Einzelheiten zu Datenerhebung und Modelltrainingspraktiken finden Sie in deren Richtlinie.
 
-**Wichtig**: Qwen Code selbst verwendet Ihre Prompts, Ihren Code oder Ihre Antworten nicht zum Training von Modellen. Jegliche Datennutzung zu Trainingszwecken würde durch die Richtlinien des KI-Dienstanbieters geregelt, mit dem Sie sich authentifizieren.
+- **Alibaba Cloud-Coding-Plan**: Die Nutzung Ihrer Daten richtet sich nach der Datenschutzrichtlinie von Alibaba Cloud. Weitere Einzelheiten zu Datenerhebung und Modelltrainingspraktiken finden Sie in deren Richtlinie.
 
-### 2. Was sind Nutzungsstatistiken und was bewirkt die Abmeldung?
+- **API-Schlüssel**: Die Nutzung Ihrer Daten hängt vollständig vom gewählten API-Anbieter ab. Jeder Anbieter verfolgt eigene Richtlinien zur Datenverwendung. Bitte prüfen Sie die Datenschutzrichtlinie und die Allgemeinen Geschäftsbedingungen Ihres konkreten Anbieters.
 
-Die Einstellung **Nutzungsstatistiken** steuert die optionale Datenerfassung durch Qwen Code zur Verbesserung der Benutzererfahrung und Produktqualität.
+**Wichtig**: Qwen Code selbst verwendet Ihre Prompts, Ihren Code oder Ihre Antworten nicht für das Training von Modellen. Sollte eine Datenverwendung zum Zweck des Modelltrainings erfolgen, unterliegt diese ausschließlich den Richtlinien des KI-Dienstanbieters, mit dem Sie sich authentifizieren.
 
-Wenn aktiviert, kann Qwen Code folgende Daten sammeln:
+### 2. Was sind Nutzungsstatistiken und was steuert die Opt-out-Einstellung?
+
+Die Einstellung **Nutzungsstatistiken** steuert die optionale Datenerfassung durch Qwen Code zur Verbesserung der Benutzererfahrung und der Produktqualität.
+
+Wenn diese Einstellung aktiviert ist, kann Qwen Code folgende Daten erfassen:
 
 - Anonyme Telemetriedaten (ausgeführte Befehle, Leistungsmetriken, Nutzung von Funktionen)
 - Fehlerberichte und Absturzdaten
 - Allgemeine Nutzungsmuster
 
-**Was NICHT von Qwen Code erfasst wird:**
+**Was Qwen Code NICHT erfasst:**
 
-- Ihr Quellcode-Inhalt
-- Anweisungen, die an KI-Modelle gesendet werden
-- Antworten von KI-Modellen
+- Ihren Quellcode
+- An die KI-Modelle gesendete Prompts
+- Antworten der KI-Modelle
 - Persönliche Informationen
 
-Die Einstellung für Nutzungsstatistiken kontrolliert ausschließlich die Datenerfassung durch Qwen Code selbst. Sie hat keinen Einfluss darauf, welche Daten Ihr gewählter KI-Dienstanbieter (Qwen, OpenAI usw.) gemäß dessen eigenen Datenschutzbestimmungen erfassen darf.
+Die Einstellung „Nutzungsstatistiken“ steuert ausschließlich die Datenerfassung durch Qwen Code selbst. Sie hat keinerlei Einfluss darauf, welche Daten Ihr gewählter KI-Dienstanbieter (z. B. Qwen, OpenAI usw.) gemäß seiner eigenen Datenschutzrichtlinien erheben darf.
 
-### 3. Wie wechsle ich zwischen den Authentifizierungsmethoden?
+### 3. Wie wechsle ich zwischen Authentifizierungsmethoden?
 
-Du kannst jederzeit zwischen Qwen OAuth und der OpenAI-kompatiblen API-Authentifizierung wechseln:
+Sie können jederzeit zwischen Qwen-OAuth, dem Alibaba Cloud Coding-Plan und Ihrem eigenen API-Schlüssel wechseln:
 
-1. **Beim Start**: Wähle deine bevorzugte Authentifizierungsmethode aus, wenn du dazu aufgefordert wirst
-2. **Innerhalb der CLI**: Verwende den Befehl `/auth`, um deine Authentifizierungsmethode neu zu konfigurieren
-3. **Umgebungsvariablen**: Richte `.env`-Dateien für die automatische OpenAI-kompatible API-Authentifizierung ein
+1. **Beim Start**: Wählen Sie Ihre bevorzugte Authentifizierungsmethode bei der entsprechenden Aufforderung aus  
+2. **Innerhalb der CLI**: Verwenden Sie den Befehl `/auth`, um Ihre Authentifizierungsmethode neu zu konfigurieren  
+3. **Umgebungsvariablen**: Richten Sie `.env`-Dateien für eine automatische Authentifizierung mit dem API-Schlüssel ein  
 
-Ausführliche Anweisungen findest du in der Dokumentation zur [Authentifizierungseinrichtung](../configuration/settings#environment-variables-for-api-access).
+Ausführliche Anweisungen finden Sie in der Dokumentation zur [Einrichtung der Authentifizierung](../configuration/settings#environment-variables-for-api-access).

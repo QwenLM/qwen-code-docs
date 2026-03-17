@@ -1,75 +1,75 @@
 # Mode sans interface graphique
 
-Le mode sans interface graphique vous permet d'exécuter Qwen Code par programme à partir de scripts en ligne de commande et d'outils d'automatisation sans aucune interface utilisateur interactive. C'est idéal pour les scripts, l'automatisation, les pipelines CI/CD et la création d'outils alimentés par l'IA.
+Le mode sans interface graphique vous permet d’exécuter Qwen Code par programmation depuis des scripts en ligne de commande et des outils d’automatisation, sans aucune interface utilisateur interactive. Ce mode est idéal pour les scripts, l’automatisation, les pipelines CI/CD et la création d’outils pilotés par l’intelligence artificielle.
 
 ## Aperçu
 
-Le mode sans interface graphique fournit une interface sans interface graphique à Qwen Code qui :
+Le mode sans interface graphique fournit une interface sans interface utilisateur à Qwen Code qui :
 
-- Accepte les invites via des arguments de ligne de commande ou stdin
-- Retourne une sortie structurée (texte ou JSON)
-- Prend en charge la redirection de fichiers et le piping
-- Permet l'automatisation et les flux de travail par script
+- Accepte les invites via des arguments de ligne de commande ou via l’entrée standard (stdin)  
+- Renvoie une sortie structurée (texte ou JSON)
+- Prend en charge la redirection de fichiers et le chaînage (piping)
+- Permet l’automatisation et les workflows de script
 - Fournit des codes de sortie cohérents pour la gestion des erreurs
-- Peut reprendre les sessions précédentes limitées au projet actuel pour l'automatisation en plusieurs étapes
+- Peut reprendre des sessions précédentes limitées au projet courant, afin de prendre en charge des automatisations multi-étapes
 
 ## Utilisation de base
 
 ### Invites directes
 
-Utilisez l'option `--prompt` (ou `-p`) pour exécuter en mode sans interface graphique :
+Utilisez l’option `--prompt` (ou `-p`) pour exécuter Qwen Code en mode sans interface graphique :
 
 ```bash
-qwen --prompt "Qu'est-ce que le machine learning ?"
+qwen --prompt "Qu’est-ce que l’apprentissage automatique ?"
 ```
 
-### Entrée Stdin
+### Entrée via stdin
 
-Transférez l'entrée vers Qwen Code depuis votre terminal :
+Transmettez une entrée à Qwen Code depuis votre terminal à l’aide d’un pipe :
 
 ```bash
 echo "Explique ce code" | qwen
 ```
 
-### Combinaison avec l'entrée de fichiers
+### Combinaison avec une entrée fichier
 
-Lire à partir de fichiers et traiter avec Qwen Code :
+Lisez depuis des fichiers et traitez-les avec Qwen Code :
 
 ```bash
-cat README.md | qwen --prompt "Résumer cette documentation"
+cat README.md | qwen --prompt "Résumez cette documentation"
 ```
 
-### Reprise des sessions précédentes (mode sans interface)
+### Reprise de sessions précédentes (mode sans interface)
 
-Réutiliser le contexte de conversation du projet actuel dans des scripts en mode sans interface :
+Réutilisez le contexte de conversation issu du projet actuel dans des scripts exécutés en mode sans interface :
 
 ```bash
 
-# Poursuivre la session la plus récente pour ce projet et exécuter une nouvelle invite
-qwen --continue -p "Relancer les tests et résumer les échecs"
+# Poursuivez la session la plus récente pour ce projet et exécutez une nouvelle instruction
+qwen --continue -p "Exécutez à nouveau les tests et résumez les échecs"
 
-# Reprendre directement une session spécifique par son ID (sans interface utilisateur)
-qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Appliquer le refactoring demandé"
+# Reprenez directement une session spécifique à l’aide de son identifiant (sans interface utilisateur)
+qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Appliquez la refactorisation complémentaire"
 ```
 
 > [!note]
 >
-> - Les données de session sont stockées au format JSONL dans `~/.qwen/projects/<répertoire-courant-sanitisé>/chats`.
-> - Restaure l'historique des conversations, les sorties d'outils et les points de contrôle de compression de discussion avant d'envoyer la nouvelle invite.
+> - Les données de session sont stockées au format JSONL, par projet, dans `~/.qwen/projects/<répertoire-de-travail-normalisé>/chats`.
+> - La reprise restaure l’historique des conversations, les sorties des outils et les points de contrôle de compression des discussions avant d’envoyer la nouvelle instruction.
 
 ## Formats de sortie
 
-Qwen Code prend en charge plusieurs formats de sortie pour différents cas d'utilisation :
+Qwen Code prend en charge plusieurs formats de sortie adaptés à divers cas d’usage :
 
 ### Sortie texte (par défaut)
 
-Sortie standard lisible par l'humain :
+Sortie lisible par un humain, au format standard :
 
 ```bash
 qwen -p "Quelle est la capitale de la France ?"
 ```
 
-Format de réponse :
+Format de la réponse :
 
 ```
 La capitale de la France est Paris.
@@ -77,17 +77,17 @@ La capitale de la France est Paris.
 
 ### Sortie JSON
 
-Retourne des données structurées sous forme d'un tableau JSON. Tous les messages sont mis en mémoire tampon et affichés ensemble lorsque la session se termine. Ce format est idéal pour le traitement programmé et les scripts d'automatisation.
+Renvoie des données structurées sous forme d’un tableau JSON. Tous les messages sont mis en mémoire tampon et émis ensemble une fois la session terminée. Ce format convient idéalement au traitement automatisé et aux scripts d’automatisation.
 
-La sortie JSON est un tableau d'objets message. La sortie inclut plusieurs types de messages : messages système (initialisation de la session), messages de l'assistant (réponses de l'IA) et messages de résultat (résumé de l'exécution).
+La sortie JSON est un tableau d’objets message. Elle inclut plusieurs types de messages : messages système (initialisation de la session), messages assistant (réponses de l’IA) et messages résultat (résumé de l’exécution).
 
-#### Exemple d'utilisation
+#### Exemple d’utilisation
 
 ```bash
 qwen -p "Quelle est la capitale de la France ?" --output-format json
 ```
 
-Sortie (à la fin de l'exécution) :
+Sortie (à la fin de l’exécution) :
 
 ```json
 [
@@ -133,13 +133,13 @@ Sortie (à la fin de l'exécution) :
 
 ### Sortie Stream-JSON
 
-Le format Stream-JSON émet immédiatement des messages JSON au fur et à mesure de leur occurrence pendant l'exécution, permettant une surveillance en temps réel. Ce format utilise du JSON délimité par des lignes où chaque message est un objet JSON complet sur une seule ligne.
+Le format Stream-JSON émet des messages JSON immédiatement dès qu’ils surviennent pendant l’exécution, ce qui permet une surveillance en temps réel. Ce format utilise un JSON délimité par des lignes, où chaque message est un objet JSON complet sur une seule ligne.
 
 ```bash
 qwen -p "Expliquez TypeScript" --output-format stream-json
 ```
 
-Sortie (diffusion en continu au fur et à mesure des événements) :
+Sortie (diffusée en continu au fur et à mesure que les événements se produisent) :
 
 ```json
 {"type":"system","subtype":"session_start","uuid":"...","session_id":"..."}
@@ -147,39 +147,38 @@ Sortie (diffusion en continu au fur et à mesure des événements) :
 {"type":"result","subtype":"success","uuid":"...","session_id":"..."}
 ```
 
-Lorsqu'il est combiné avec `--include-partial-messages`, des événements de flux supplémentaires sont émis en temps réel (message_start, content_block_delta, etc.) pour les mises à jour d'interface utilisateur en temps réel.
+Lorsqu’il est combiné avec l’option `--include-partial-messages`, des événements supplémentaires sont émis en temps réel (par exemple `message_start`, `content_block_delta`, etc.), permettant des mises à jour en temps réel de l’interface utilisateur.
 
 ```bash
 qwen -p "Écrivez un script Python" --output-format stream-json --include-partial-messages
 ```
 
-### Format d'entrée
+### Format d’entrée
 
-Le paramètre `--input-format` contrôle la manière dont Qwen Code consomme l'entrée depuis l'entrée standard :
+Le paramètre `--input-format` contrôle la façon dont Qwen Code consomme les entrées depuis l’entrée standard :
 
-- **`text`** (par défaut) : Entrée texte standard depuis stdin ou les arguments de ligne de commande
-- **`stream-json`** : Protocole de message JSON via stdin pour une communication bidirectionnelle
+- **`texte`** (par défaut) : Entrée texte standard depuis l’entrée standard ou depuis les arguments de ligne de commande  
+- **`stream-json`** : Protocole de messages JSON via l’entrée standard, destiné à une communication bidirectionnelle  
 
-> **Remarque :** Le mode d'entrée stream-json est actuellement en cours de développement et est destiné à l'intégration avec les SDK. Il nécessite que `--output-format stream-json` soit défini.
+> **Remarque :** Le mode d’entrée `stream-json` est actuellement en cours de développement et prévu pour l’intégration avec les SDK. Il nécessite que l’option `--output-format stream-json` soit également spécifiée.
 
 ### Redirection de fichiers
 
-Enregistrer la sortie dans des fichiers ou rediriger vers d'autres commandes :
+Enregistrer la sortie dans des fichiers ou la transmettre à d’autres commandes :
 
 ```bash
 
 # Enregistrer dans un fichier
-qwen -p "Expliquer Docker" > docker-explanation.txt
-qwen -p "Expliquer Docker" --output-format json > docker-explanation.json
+qwen -p "Expliquez Docker" > docker-explanation.txt
+qwen -p "Expliquez Docker" --output-format json > docker-explanation.json
 
-# Ajouter à un fichier
-qwen -p "Ajouter plus de détails" >> docker-explanation.txt
+# Ajouter à un fichier existant
+qwen -p "Ajoutez plus de détails" >> docker-explanation.txt
 
-# Rediriger vers d'autres outils
-qwen -p "Qu'est-ce que Kubernetes ?" --output-format json | jq '.response'
-qwen -p "Expliquer les microservices" | wc -w
-qwen -p "Lister les langages de programmation" | grep -i "python"
-```
+# Transmettre à d’autres outils
+qwen -p "Qu’est-ce que Kubernetes ?" --output-format json | jq '.response'
+qwen -p "Expliquez les microservices" | wc -w
+qwen -p "Listez les langages de programmation" | grep -i "python"
 
 # Sortie Stream-JSON pour le traitement en temps réel
 qwen -p "Expliquer Docker" --output-format stream-json | jq '.type'
@@ -187,80 +186,80 @@ qwen -p "Écrire du code" --output-format stream-json --include-partial-messages
 
 ## Options de configuration
 
-Principales options de ligne de commande pour une utilisation sans interface graphique :
+Principales options en ligne de commande pour une utilisation sans interface graphique :
 
 | Option                       | Description                                         | Exemple                                                                  |
 | ---------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------ |
 | `--prompt`, `-p`             | Exécuter en mode sans interface graphique           | `qwen -p "requête"`                                                      |
-| `--output-format`, `-o`      | Spécifier le format de sortie (text, json, stream-json) | `qwen -p "requête" --output-format json`                             |
-| `--input-format`             | Spécifier le format d'entrée (text, stream-json)    | `qwen --input-format text --output-format stream-json`                   |
+| `--output-format`, `-o`      | Spécifier le format de sortie (texte, json, stream-json) | `qwen -p "requête" --output-format json`                                 |
+| `--input-format`             | Spécifier le format d’entrée (texte, stream-json)    | `qwen --input-format text --output-format stream-json`                   |
 | `--include-partial-messages` | Inclure les messages partiels dans la sortie stream-json | `qwen -p "requête" --output-format stream-json --include-partial-messages` |
-| `--debug`, `-d`              | Activer le mode débogage                            | `qwen -p "requête" --debug`                                              |
-| `--all-files`, `-a`          | Inclure tous les fichiers dans le contexte          | `qwen -p "requête" --all-files`                                          |
+| `--debug`, `-d`              | Activer le mode débogage                            | `qwen -p "requête" --debug`                                               |
+| `--all-files`, `-a`          | Inclure tous les fichiers dans le contexte          | `qwen -p "requête" --all-files`                                           |
 | `--include-directories`      | Inclure des répertoires supplémentaires             | `qwen -p "requête" --include-directories src,docs`                       |
-| `--yolo`, `-y`               | Approuver automatiquement toutes les actions        | `qwen -p "requête" --yolo`                                               |
-| `--approval-mode`            | Définir le mode d'approbation                       | `qwen -p "requête" --approval-mode auto_edit`                           |
-| `--continue`                 | Reprendre la session la plus récente pour ce projet | `qwen --continue -p "Reprendre là où nous nous étions arrêtés"`          |
-| `--resume [sessionId]`       | Reprendre une session spécifique (ou choisir de manière interactive) | `qwen --resume 123e... -p "Terminer le refactoring"`                |
+| `--yolo`, `-y`               | Approuver automatiquement toutes les actions         | `qwen -p "requête" --yolo`                                               |
+| `--approval-mode`            | Définir le mode d’approbation                      | `qwen -p "requête" --approval-mode auto_edit`                            |
+| `--continue`                 | Reprendre la session la plus récente pour ce projet  | `qwen --continue -p "Reprendre là où nous nous étions arrêtés"`          |
+| `--resume [sessionId]`       | Reprendre une session spécifique (ou choisir de façon interactive) | `qwen --resume 123e... -p "Terminer la refactorisation"`                  |
 
-Pour des détails complets sur toutes les options de configuration disponibles, les fichiers de paramètres et les variables d'environnement, consultez le [Guide de configuration](../configuration/settings).
+Pour obtenir tous les détails concernant les options de configuration disponibles, les fichiers de paramètres et les variables d’environnement, consultez le [Guide de configuration](../configuration/settings).
 
 ## Exemples
 
-### Revue de code
+### Révision de code
 
 ```bash
-cat src/auth.py | qwen -p "Revoir ce code d'authentification pour les problèmes de sécurité" > security-review.txt
+cat src/auth.py | qwen -p "Examine ce code d’authentification pour détecter des problèmes de sécurité" > security-review.txt
 ```
 
-### Générer des messages de commit
+### Génération de messages de validation (commit)
 
 ```bash
-result=$(git diff --cached | qwen -p "Écrire un message de commit concis pour ces modifications" --output-format json)
+result=$(git diff --cached | qwen -p "Rédige un message de validation concis pour ces modifications" --output-format json)
 echo "$result" | jq -r '.response'
 ```
 
-### Documentation d'API
+### Documentation d’API
 
 ```bash
-result=$(cat api/routes.js | qwen -p "Générer la spécification OpenAPI pour ces routes" --output-format json)
+result=$(cat api/routes.js | qwen -p "Génère une spécification OpenAPI pour ces routes" --output-format json)
 echo "$result" | jq -r '.response' > openapi.json
 ```
 
-### Analyse de code par lots
+### Analyse de code par lot
 
 ```bash
 for file in src/*.py; do
     echo "Analyse de $file..."
-    result=$(cat "$file" | qwen -p "Trouver les bogues potentiels et suggérer des améliorations" --output-format json)
+    result=$(cat "$file" | qwen -p "Détecte les bogues potentiels et propose des améliorations" --output-format json)
     echo "$result" | jq -r '.response' > "reports/$(basename "$file").analysis"
     echo "Analyse terminée pour $(basename "$file")" >> reports/progress.log
 done
 ```
 
-### Revue de code PR
+### Révision de code pour les demandes d’intégration (PR)
 
 ```bash
-result=$(git diff origin/main...HEAD | qwen -p "Examiner ces modifications à la recherche de bogues, problèmes de sécurité et qualité du code" --output-format json)
+result=$(git diff origin/main...HEAD | qwen -p "Examiner ces modifications à la recherche de bogues, de problèmes de sécurité et de défauts de qualité du code" --output-format json)
 echo "$result" | jq -r '.response' > pr-review.json
 ```
 
-### Analyse des logs
+### Analyse des journaux (logs)
 
 ```bash
-grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analyser ces erreurs et suggérer les causes racines et correctifs" > error-analysis.txt
+grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analyser ces erreurs et proposer les causes racines ainsi que les correctifs appropriés" > error-analysis.txt
 ```
 
 ### Génération des notes de version
 
 ```bash
-result=$(git log --oneline v1.0.0..HEAD | qwen -p "Générer les notes de version à partir de ces validations" --output-format json)
+result=$(git log --oneline v1.0.0..HEAD | qwen -p "Générer des notes de version à partir de ces validations (commits)" --output-format json)
 response=$(echo "$result" | jq -r '.response')
 echo "$response"
 echo "$response" >> CHANGELOG.md
 ```
 
-### Suivi de l'utilisation des modèles et des outils
+### Suivi de l’utilisation des modèles et des outils
 
 ```bash
 result=$(qwen -p "Expliquez ce schéma de base de données" --include-directories db --output-format json)
@@ -268,15 +267,15 @@ total_tokens=$(echo "$result" | jq -r '.stats.models // {} | to_entries | map(.v
 models_used=$(echo "$result" | jq -r '.stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
 tool_calls=$(echo "$result" | jq -r '.stats.tools.totalCalls // 0')
 tools_used=$(echo "$result" | jq -r '.stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
-echo "$(date): $total_tokens tokens, $tool_calls appels d'outils ($tools_used) utilisés avec les modèles : $models_used" >> usage.log
+echo "$(date): $total_tokens jetons, $tool_calls appels d’outils ($tools_used), utilisés avec les modèles : $models_used" >> usage.log
 echo "$result" | jq -r '.response' > schema-docs.md
-echo "Tendances récentes d'utilisation :"
+echo "Tendances récentes d’utilisation :"
 tail -5 usage.log
 ```
 
 ## Ressources
 
-- [Configuration de l'interface en ligne de commande](../configuration/settings#command-line-arguments) - Guide complet de configuration
-- [Authentification](../configuration/settings#environment-variables-for-api-access) - Configuration de l'authentification
-- [Commandes](../features/commands) - Référence des commandes interactives
-- [Tutoriels](../quickstart) - Guides d'automatisation étape par étape
+- [Configuration de l’interface en ligne de commande (CLI)](../configuration/settings#command-line-arguments) — Guide complet de configuration  
+- [Authentification](../configuration/settings#environment-variables-for-api-access) — Configuration de l’authentification  
+- [Commandes](../features/commands) — Référence des commandes interactives  
+- [Tutoriels](../quickstart) — Guides pas à pas pour l’automatisation

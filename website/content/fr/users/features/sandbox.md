@@ -1,75 +1,75 @@
 # Sandbox
 
-Ce document explique comment exécuter Qwen Code dans un environnement isolé (sandbox) afin de réduire les risques lorsque les outils exécutent des commandes shell ou modifient des fichiers.
+Ce document explique comment exécuter Qwen Code dans un environnement isolé (sandbox) afin de réduire les risques liés à l’exécution de commandes shell ou à la modification de fichiers par les outils.
 
 ## Prérequis
 
-Avant d'utiliser l'isolation (sandboxing), vous devez installer et configurer Qwen Code :
+Avant d’utiliser l’environnement isolé, vous devez installer et configurer Qwen Code :
 
 ```bash
 npm install -g @qwen-code/qwen-code
 ```
 
-Pour vérifier l'installation
+Pour vérifier l’installation :
 
 ```bash
 qwen --version
 ```
 
-## Aperçu du sandboxing
+## Aperçu du bac à sable (sandboxing)
 
-Le sandboxing isole les opérations potentiellement dangereuses (telles que les commandes shell ou les modifications de fichiers) de votre système hôte, en fournissant une barrière de sécurité entre le CLI et votre environnement.
+Le bac à sable isole les opérations potentiellement dangereuses (telles que les commandes shell ou les modifications de fichiers) de votre système hôte, créant ainsi une barrière de sécurité entre l’interface en ligne de commande (CLI) et votre environnement.
 
-Les avantages du sandboxing incluent :
+Les avantages du bac à sable sont les suivants :
 
-- **Sécurité** : Empêche les dommages accidentels au système ou la perte de données.
-- **Isolation** : Limite l'accès au système de fichiers au répertoire du projet.
-- **Cohérence** : Assure des environnements reproductibles sur différents systèmes.
-- **Sécurité** : Réduit les risques lors de l'utilisation de code non approuvé ou de commandes expérimentales.
+- **Sécurité** : évite les dommages accidentels au système ou la perte de données ;
+- **Isolation** : limite l’accès au système de fichiers au répertoire du projet ;
+- **Cohérence** : garantit des environnements reproductibles sur différents systèmes ;
+- **Sécurité renforcée** : réduit les risques lors de l’utilisation de code non fiable ou de commandes expérimentales.
 
 > [!note]
 >
-> **Remarque sur le nommage** : Certaines variables d'environnement liées au sandboxing utilisent encore le préfixe `GEMINI_*` pour des raisons de compatibilité ascendante.
+> **Remarque concernant la dénomination** : Certaines variables d’environnement liées au bac à sable ont pu utiliser historiquement le préfixe `GEMINI_*`. Toutes les nouvelles variables d’environnement utilisent désormais le préfixe `QWEN_*`.
 
-## Méthodes de sandboxing
+## Méthodes de bac à sable
 
-Votre méthode idéale de sandboxing peut varier selon votre plateforme et votre solution de conteneurisation préférée.
+La méthode idéale de bac à sable peut varier selon votre plateforme et votre solution de conteneurisation préférée.
 
-### 1. macOS Seatbelt (macOS uniquement)
+### 1. Seatbelt macOS (macOS uniquement)
 
-Sandboxing intégré et léger utilisant `sandbox-exec`.
+Sandboxing intégré léger utilisant `sandbox-exec`.
 
-**Profil par défaut** : `permissive-open` - restreint les écritures en dehors du répertoire du projet, mais autorise la plupart des autres opérations ainsi que l'accès réseau sortant.
+**Profil par défaut** : `permissive-open` — restreint les écritures en dehors du répertoire du projet, mais autorise la plupart des autres opérations ainsi que l’accès réseau sortant.
 
-**Idéal pour** : Exécution rapide, sans Docker requis, protections solides pour les écritures de fichiers.
+**Idéal pour** : une exécution rapide, sans Docker requis, avec des garde-fous solides contre les écritures de fichiers.
 
-### 2. Basé sur conteneur (Docker/Podman)
+### 2. Basé sur un conteneur (Docker/Podman)
 
-Sandboxing multiplateforme avec isolement complet des processus.
+Sandboxing multiplateforme avec une isolation complète des processus.
 
-Par défaut, Qwen Code utilise une image sandbox publiée (configurée dans le package CLI) et la téléchargera selon les besoins.
+Par défaut, Qwen Code utilise une image de sandbox publiée (configurée dans le package CLI) et la télécharge au besoin.
 
-Le sandbox conteneur monte votre espace de travail et votre répertoire `~/.qwen` dans le conteneur afin que l'authentification et les paramètres persistent entre les exécutions.
+Le sandbox conteneurisé monte votre espace de travail et votre répertoire `~/.qwen` dans le conteneur afin que vos identifiants et paramètres soient conservés entre les exécutions.
 
-**Idéal pour** : Isolation forte sur n'importe quel système d'exploitation, outils cohérents à l'intérieur d'une image connue.
+**Idéal pour** : une isolation forte sur tout système d’exploitation, avec un ensemble d’outils cohérent à l’intérieur d’une image connue.
 
-### Choisir une méthode
+### Choix d’une méthode
 
 - **Sur macOS** :
-  - Utilisez Seatbelt lorsque vous souhaitez une sandboxing légère (recommandé pour la plupart des utilisateurs).
-  - Utilisez Docker/Podman lorsque vous avez besoin d'un environnement utilisateur Linux complet (par exemple, les outils qui nécessitent des binaires Linux).
-- **Sur Linux/Windows** :
+  - Utilisez Seatbelt si vous souhaitez une isolation légère (recommandé pour la plupart des utilisateurs).
+  - Utilisez Docker ou Podman si vous avez besoin d’un environnement utilisateur Linux complet (par exemple, des outils nécessitant des binaires Linux).
+- **Sur Linux ou Windows** :
   - Utilisez Docker ou Podman.
 
 ## Démarrage rapide
 
 ```bash
 
-# Activer le sandboxing avec l'option de commande
+# Activer l’isolation via un indicateur de commande
 qwen -s -p "analyser la structure du code"
 
-# Ou activer le sandboxing pour votre session shell (recommandé pour CI / scripts)
-export GEMINI_SANDBOX=true   # true sélectionne automatiquement un fournisseur (voir notes ci-dessous)
+# Ou activer l’isolation pour votre session shell (recommandé pour les pipelines CI / les scripts)
+export QWEN_SANDBOX=true   # « true » choisit automatiquement un fournisseur (voir remarques ci-dessous)
 qwen -p "exécuter la suite de tests"
 
 # Configurer dans settings.json
@@ -82,109 +82,132 @@ qwen -p "exécuter la suite de tests"
 
 > [!tip]
 >
-> **Notes sur la sélection du fournisseur :**
+> **Remarques sur le choix du fournisseur :**
 >
-> - Sur **macOS**, `GEMINI_SANDBOX=true` sélectionne généralement `sandbox-exec` (Seatbelt) si disponible.
-> - Sur **Linux/Windows**, `GEMINI_SANDBOX=true` nécessite que `docker` ou `podman` soit installé.
-> - Pour forcer un fournisseur, définissez `GEMINI_SANDBOX=docker|podman|sandbox-exec`.
+> - Sur **macOS**, `QWEN_SANDBOX=true` sélectionne généralement `sandbox-exec` (Seatbelt), s’il est disponible.
+> - Sur **Linux/Windows**, `QWEN_SANDBOX=true` nécessite que `docker` ou `podman` soit installé.
+> - Pour imposer un fournisseur spécifique, définissez `QWEN_SANDBOX=docker|podman|sandbox-exec`.
 
 ## Configuration
 
-### Activer le mode bac à sable (par ordre de priorité)
+### Activer la sandbox (par ordre de priorité)
 
-1. **Variable d'environnement** : `GEMINI_SANDBOX=true|false|docker|podman|sandbox-exec`
-2. **Option de commande** : `-s`, `--sandbox`, ou `--sandbox=<fournisseur>`
-3. **Fichier de configuration** : `tools.sandbox` dans votre `settings.json` (par exemple, `{"tools": {"sandbox": true}}`).
+1. **Variable d’environnement** : `QWEN_SANDBOX=true|false|docker|podman|sandbox-exec`
+2. **Indicateur ou argument de ligne de commande** : `-s`, `--sandbox` ou `--sandbox=<fournisseur>`
+3. **Fichier de paramètres** : `tools.sandbox` dans votre fichier `settings.json` (par exemple `{"tools": {"sandbox": true}}`).
 
 > [!important]
 >
-> Si `GEMINI_SANDBOX` est définie, elle **remplace** l'option CLI et le fichier `settings.json`.
+> Si la variable `QWEN_SANDBOX` est définie, elle **remplace** à la fois l’indicateur CLI et le fichier `settings.json`.
 
-### Configurer l'image du bac à sable (Docker/Podman)
+### Configurer l’image de la sandbox (Docker/Podman)
 
-- **Option CLI** : `--sandbox-image <image>`
-- **Variable d'environnement** : `GEMINI_SANDBOX_IMAGE=<image>`
+- **Indicateur CLI** : `--sandbox-image <image>`
+- **Variable d’environnement** : `QWEN_SANDBOX_IMAGE=<image>`
 
-Si vous ne définissez aucune de ces options, Qwen Code utilise l'image par défaut configurée dans le package CLI (par exemple `ghcr.io/qwenlm/qwen-code:<version>`).
+Si aucune de ces deux options n’est définie, Qwen Code utilise l’image par défaut configurée dans le package CLI (par exemple `ghcr.io/qwenlm/qwen-code:<version>`).
 
-### Profils Seatbelt macOS
+### Profils Seatbelt pour macOS
 
-Profils intégrés (définis via la variable d'environnement `SEATBELT_PROFILE`) :
+Profils intégrés (définis via la variable d’environnement `SEATBELT_PROFILE`) :
 
-- `permissive-open` (par défaut) : Restrictions en écriture, réseau autorisé
-- `permissive-closed` : Restrictions en écriture, pas de réseau
-- `permissive-proxied` : Restrictions en écriture, réseau via proxy
-- `restrictive-open` : Restrictions strictes, réseau autorisé
-- `restrictive-closed` : Restrictions maximales
-- `restrictive-proxied` : Restrictions strictes, réseau via proxy
+- `permissive-open` (par défaut) : restrictions en écriture, réseau autorisé  
+- `permissive-closed` : restrictions en écriture, aucun accès réseau  
+- `permissive-proxied` : restrictions en écriture, accès réseau uniquement via un proxy  
+- `restrictive-open` : restrictions strictes, réseau autorisé  
+- `restrictive-closed` : restrictions maximales  
+- `restrictive-proxied` : restrictions strictes, accès réseau uniquement via un proxy  
 
-> [!tip]
->
-> Commencez avec `permissive-open`, puis resserrez vers `restrictive-closed` si votre flux de travail fonctionne toujours.
+> [!tip]  
+>  
+> Commencez avec `permissive-open`, puis durcissez progressivement vers `restrictive-closed` si votre flux de travail fonctionne toujours correctement.
 
 ### Profils Seatbelt personnalisés (macOS)
 
 Pour utiliser un profil Seatbelt personnalisé :
 
-1. Créez un fichier nommé `.qwen/sandbox-macos-<nom_du_profil>.sb` dans votre projet.
-2. Définissez `SEATBELT_PROFILE=<nom_du_profil>`.
+1. Créez un fichier nommé `.qwen/sandbox-macos-<nom_du_profil>.sb` dans votre projet.  
+2. Définissez la variable d’environnement `SEATBELT_PROFILE=<nom_du_profil>`.
 
-### Indicateurs de bac à sable personnalisés
+### Drapeaux personnalisés pour le bac à sable
 
-Pour le bac à sable basé sur les conteneurs, vous pouvez injecter des indicateurs personnalisés dans la commande `docker` ou `podman` en utilisant la variable d'environnement `SANDBOX_FLAGS`. Ceci est utile pour des configurations avancées, comme la désactivation des fonctionnalités de sécurité pour des cas d'usage spécifiques.
+Pour la virtualisation basée sur des conteneurs, vous pouvez injecter des drapeaux personnalisés dans la commande `docker` ou `podman` à l’aide de la variable d’environnement `SANDBOX_FLAGS`. Cette fonctionnalité est utile pour des configurations avancées, par exemple désactiver certaines fonctionnalités de sécurité dans des cas d’usage spécifiques.
 
 **Exemple (Podman)** :
 
-Pour désactiver l'étiquetage SELinux pour les montages de volumes, vous pouvez définir ce qui suit :
+Pour désactiver l’étiquetage SELinux lors du montage de volumes, définissez la variable suivante :
 
 ```bash
 export SANDBOX_FLAGS="--security-opt label=disable"
 ```
 
-Plusieurs indicateurs peuvent être fournis sous forme d'une chaîne séparée par des espaces :
+Plusieurs drapeaux peuvent être fournis sous forme de chaîne séparée par des espaces :
 
 ```bash
-export SANDBOX_FLAGS="--flag1 --flag2=value"
+export SANDBOX_FLAGS="--flag1 --flag2=valeur"
 ```
 
-### Proxy réseau (toutes les méthodes de sandbox)
+### Interception réseau (toutes les méthodes de bac à sable)
 
-Si vous souhaitez restreindre l'accès réseau sortant à une liste blanche, vous pouvez exécuter un proxy local en parallèle avec la sandbox :
+Si vous souhaitez restreindre l’accès réseau sortant à une liste blanche, vous pouvez exécuter un proxy local en parallèle du bac à sable :
 
-- Définissez `GEMINI_SANDBOX_PROXY_COMMAND=<command>`
-- La commande doit démarrer un serveur proxy qui écoute sur `:::8877`
+- Définissez `QWEN_SANDBOX_PROXY_COMMAND=<commande>`
+- La commande doit démarrer un serveur proxy écoutant sur `:::8877`
 
-Ceci est particulièrement utile avec les profils Seatbelt `*-proxied`.
+Cette approche est particulièrement utile avec les profils Seatbelt de type `*-proxied`.
 
-Pour un exemple fonctionnel de proxy en mode liste blanche, consultez : [Exemple de script proxy](/developers/examples/proxy-script).
+Pour un exemple fonctionnel de proxy basé sur une liste blanche, consultez : [Script de proxy d’exemple](/developers/examples/proxy-script).
 
-## Gestion des UID/GID Linux
+## Gestion des UID/GID sous Linux
 
-Sur Linux, Qwen Code active par défaut le mappage des UID/GID afin que la sandbox s'exécute sous votre utilisateur (et réutilise le dossier monté `~/.qwen`). Vous pouvez modifier ce comportement avec :
+Sous Linux, Qwen Code active par défaut le mappage des UID/GID afin que la sandbox s’exécute avec votre utilisateur (et réutilise le répertoire monté `~/.qwen`). Vous pouvez remplacer ce comportement avec :
 
 ```bash
-export SANDBOX_SET_UID_GID=true   # Forcer l'UID/GID hôte
-export SANDBOX_SET_UID_GID=false  # Désactiver le mappage UID/GID
+export SANDBOX_SET_UID_GID=true   # Forcer l’utilisation des UID/GID de l’hôte
+export SANDBOX_SET_UID_GID=false  # Désactiver le mappage des UID/GID
 ```
 
 ## Dépannage
 
 ### Problèmes courants
 
-**"Opération non autorisée"**
+**« Opération non autorisée »**
 
-- L'opération nécessite un accès en dehors du bac à sable.
-- Sur macOS Seatbelt : essayez un `SEATBELT_PROFILE` plus permissif.
-- Sur Docker/Podman : vérifiez que l'espace de travail est monté et que votre commande ne nécessite pas d'accéder en dehors du répertoire du projet.
+- L’opération nécessite un accès en dehors du bac à sable.
+- Sur macOS avec Seatbelt : essayez un profil `SEATBELT_PROFILE` plus permissif.
+- Sur Docker/Podman : vérifiez que l’espace de travail est correctement monté et que votre commande ne nécessite pas d’accéder à des chemins situés en dehors du répertoire du projet.
 
 **Commandes manquantes**
 
-- Bac à sable du conteneur : ajoutez-les via `.qwen/sandbox.Dockerfile` ou `.qwen/sandbox.bashrc`.
-- Seatbelt : vos binaires hôtes sont utilisés, mais le bac à sable peut restreindre l'accès à certains chemins.
+- Bac à sable conteneurisé : ajoutez-les via `.qwen/sandbox.Dockerfile` ou `.qwen/sandbox.bashrc`.
+- Seatbelt : les binaires hôtes sont utilisés, mais le bac à sable peut restreindre l’accès à certains chemins.
+
+**Java indisponible dans le bac à sable Docker**
+
+L’image Docker officielle Qwen Code est volontairement minimaliste afin de garder l’image légère, sécurisée et rapide à télécharger. Les utilisateurs ont des besoins variés en termes d’environnements d’exécution (Java, Python, Node.js, etc.), et intégrer tous ces environnements dans une seule image n’est pas pratique. Par conséquent, Java **n’est pas inclus par défaut** dans le bac à sable Docker.
+
+Si votre flux de travail nécessite Java, vous pouvez étendre l’image de base en créant un fichier `.qwen/sandbox.Dockerfile` dans votre projet :
+
+```dockerfile
+FROM ghcr.io/qwenlm/qwen-code:latest
+
+RUN apt-get update && \
+    apt-get install -y openjdk-17-jre && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+```
+
+Ensuite, reconstruisez l’image du bac à sable :
+
+```bash
+QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
+```
+
+Pour plus de détails sur la personnalisation du bac à sable, consultez [Personnaliser l’environnement du bac à sable](/developers/tools/sandbox).
 
 **Problèmes réseau**
 
-- Vérifiez que le profil du bac à sable autorise l'accès au réseau.
+- Vérifiez que le profil du bac à sable autorise l’accès réseau.
 - Vérifiez la configuration du proxy.
 
 ### Mode débogage
@@ -193,28 +216,28 @@ export SANDBOX_SET_UID_GID=false  # Désactiver le mappage UID/GID
 DEBUG=1 qwen -s -p "commande de débogage"
 ```
 
-**Remarque :** Si vous avez `DEBUG=true` dans le fichier `.env` d'un projet, cela n'affectera pas la CLI en raison de l'exclusion automatique. Utilisez les fichiers `.qwen/.env` pour les paramètres de débogage spécifiques à Qwen Code.
+**Remarque :** Si vous avez `DEBUG=true` dans le fichier `.env` d’un projet, cela n’affectera pas l’interface en ligne de commande (CLI), car ce fichier est automatiquement ignoré. Utilisez plutôt les fichiers `.qwen/.env` pour définir des paramètres de débogage spécifiques à Qwen Code.
 
-### Inspection du bac à sable
+### Inspecter le bac à sable
 
 ```bash
 
-# Vérifier l'environnement
+# Vérifier l’environnement
 qwen -s -p "exécuter la commande shell : env | grep SANDBOX"
 
-# Lister les montages
+# Lister les points de montage
 qwen -s -p "exécuter la commande shell : mount | grep workspace"
 ```
 
-## Notes de sécurité
+## Remarques sur la sécurité
 
-- Le sandboxing réduit mais n'élimine pas tous les risques.
-- Utilisez le profil le plus restrictif qui permette votre travail.
-- La surcharge des conteneurs est minimale après le premier téléchargement/construction.
-- Les applications avec interface graphique peuvent ne pas fonctionner dans les environnements isolés.
+- La mise en bac à sable réduit les risques, mais ne les élimine pas tous.
+- Utilisez le profil le plus restrictif compatible avec vos besoins.
+- La surcharge liée aux conteneurs est minime après le premier téléchargement ou la première compilation.
+- Les applications graphiques peuvent ne pas fonctionner dans les bacs à sable.
 
 ## Documentation connexe
 
 - [Configuration](../configuration/settings) : Options complètes de configuration.
 - [Commandes](../features/commands) : Commandes disponibles.
-- [Dépannage](../support/troubleshooting) : Dépannage général.
+- [Résolution des problèmes](../support/troubleshooting) : Procédures générales de dépannage.

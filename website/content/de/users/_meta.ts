@@ -11,9 +11,9 @@ export default {
     title: 'Außerhalb des Terminals', // Titel ist optional
   },
   'integration-vscode': 'Visual Studio Code',
-  'integration-zed': 'Zed IDE',
-  'integration-jetbrains': 'JetBrains IDEs',
-  'integration-github-action': 'GitHub Actions',
+  'integration-zed': 'Zed-IDE',
+  'integration-jetbrains': 'JetBrains-IDEs',
+  'integration-github-action': 'GitHub-Aktionen',
   'Code mit Qwen Code': {
     type: 'separator',
     title: 'Code mit Qwen Code', // Titel ist optional
@@ -23,7 +23,7 @@ export default {
   extension: 'Erweiterung',
   reference: 'Referenz',
   support: 'Support',
-  // muss überarbeitet werden
+  // muss noch überarbeitet werden
   'ide-integration': {
     display: 'hidden',
   },

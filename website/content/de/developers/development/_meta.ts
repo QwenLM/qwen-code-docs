@@ -1,8 +1,8 @@
 export default {
   npm: 'NPM',
   telemetry: 'Telemetrie',
-  'integration-tests': 'Integrations-Tests',
-  'issue-and-pr-automation': 'Issue- und PR-Automatisierung',
+  'integration-tests': 'Integrationstests',
+  'issue-and-pr-automation': 'Automatisierung von Issues und Pull Requests',
   deployment: {
     display: 'hidden',
   },

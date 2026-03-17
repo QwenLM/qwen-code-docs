@@ -1,6 +1,6 @@
 export default {
   settings: '设置',
-  auth: '认证',
+  auth: '身份验证',
   memory: {
     display: 'hidden',
   },

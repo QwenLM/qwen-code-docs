@@ -14,16 +14,16 @@ export default {
   'integration-zed': 'Zed IDE',
   'integration-jetbrains': 'IDE JetBrains',
   'integration-github-action': 'Действия GitHub',
-  'Программирование с Qwen Code': {
+  'Программирование с помощью Qwen Code': {
     type: 'separator',
-    title: 'Программирование с Qwen Code', // Заголовок необязателен
+    title: 'Программирование с помощью Qwen Code', // Заголовок необязателен
   },
-  features: 'Функции',
+  features: 'Возможности',
   configuration: 'Конфигурация',
   extension: 'Расширение',
   reference: 'Справочник',
   support: 'Поддержка',
-  // нуждается в уточнении
+  // требует уточнения
   'ide-integration': {
     display: 'hidden',
   },

@@ -1,3 +1,3 @@
 export default {
-  'keyboard-shortcuts': 'キーボードショートカット',
+  'keyboard-shortcuts': 'キーボード ショートカット',
 };

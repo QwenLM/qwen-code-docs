@@ -1,40 +1,40 @@
 # Checkpointing
 
-Qwen Code enthält eine Checkpointing-Funktion, die automatisch einen Snapshot des Projektzustands speichert, bevor Dateiänderungen durch KI-gestützte Tools vorgenommen werden. Dies ermöglicht es Ihnen, sicher mit Codeänderungen zu experimentieren und diese anzuwenden, da Sie jederzeit zum Zustand vor dem Ausführen des Tools zurückkehren können.
+Qwen Code bietet eine Checkpointing-Funktion, die automatisch einen Momentaufnahmezustand Ihres Projekts speichert, bevor von KI-gestützten Tools Dateiänderungen vorgenommen werden. Dadurch können Sie sicher mit Codeänderungen experimentieren und diese anwenden – denn Sie können jederzeit sofort zum Zustand vor Ausführung des Tools zurückkehren.
 
-## Funktionsweise
+## So funktioniert es
 
-Wenn du ein Tool genehmigst, das das Dateisystem ändert (wie `write_file` oder `edit`), erstellt die CLI automatisch einen „Checkpoint“. Dieser Checkpoint umfasst:
+Wenn Sie ein Tool genehmigen, das das Dateisystem verändert (z. B. `write_file` oder `edit`), erstellt die CLI automatisch einen „Wiederherstellungspunkt“. Dieser Wiederherstellungspunkt umfasst:
 
-1.  **Ein Git-Snapshot:** Ein Commit wird in einem speziellen, versteckten Git-Repository in deinem Home-Verzeichnis erstellt (`~/.qwen/history/<project_hash>`). Dieser Snapshot erfasst den vollständigen Zustand deiner Projektdateien zu diesem Zeitpunkt. Er greift **nicht** in das eigene Git-Repository deines Projekts ein.
-2.  **Konversationsverlauf:** Die gesamte Konversation, die du bis zu diesem Punkt mit dem Agenten geführt hast, wird gespeichert.
-3.  **Der Tool-Aufruf:** Der spezifische Tool-Aufruf, der ausgeführt werden sollte, wird ebenfalls gespeichert.
+1.  **Eine Git-Sicherungskopie:** Ein Commit wird in einem speziellen, versteckten Git-Repository im Verzeichnis Ihres Home-Ordners (`~/.qwen/history/<project_hash>`) erstellt. Diese Sicherungskopie enthält den vollständigen Zustand aller Projektdateien zu diesem Zeitpunkt. Sie greift **nicht** in Ihr eigenes Git-Repository des Projekts ein.
+2.  **Verlauf der Unterhaltung:** Der gesamte bisherige Dialog mit dem Agenten wird gespeichert.
+3.  **Der Tool-Aufruf:** Der konkrete Tool-Aufruf, der gerade ausgeführt werden sollte, wird ebenfalls gespeichert.
 
-Wenn du die Änderung rückgängig machen oder einfach zurückgehen möchtest, kannst du den Befehl `/restore` verwenden. Das Wiederherstellen eines Checkpoints bewirkt Folgendes:
+Falls Sie die Änderung rückgängig machen oder einfach zurückkehren möchten, können Sie den Befehl `/restore` verwenden. Durch die Wiederherstellung eines Wiederherstellungspunkts wird Folgendes erreicht:
 
-- Alle Dateien im Projekt werden auf den Zustand des Snapshots zurückgesetzt.
-- Der Konversationsverlauf in der CLI wird wiederhergestellt.
-- Der ursprüngliche Tool-Aufruf wird erneut vorgeschlagen, sodass du ihn erneut ausführen, ändern oder einfach ignorieren kannst.
+- Alle Dateien Ihres Projekts werden auf den Zustand zurückgesetzt, der in der Sicherungskopie festgehalten wurde.
+- Der Verlauf der Unterhaltung wird in der CLI wiederhergestellt.
+- Der ursprüngliche Tool-Aufruf wird erneut vorgeschlagen, sodass Sie ihn erneut ausführen, anpassen oder einfach ignorieren können.
 
-Alle Checkpoint-Daten, einschließlich des Git-Snapshots und des Konversationsverlaufs, werden lokal auf deinem Computer gespeichert. Der Git-Snapshot wird im Shadow-Repository gespeichert, während der Konversationsverlauf und die Tool-Aufrufe in einer JSON-Datei im temporären Verzeichnis deines Projekts gespeichert werden, üblicherweise unter `~/.qwen/tmp/<project_hash>/checkpoints`.
+Alle Daten zu Wiederherstellungspunkten – einschließlich der Git-Sicherungskopie und des Unterhaltungsverlaufs – werden lokal auf Ihrem Rechner gespeichert. Die Git-Sicherungskopie befindet sich im versteckten Repository, während der Unterhaltungsverlauf und die Tool-Aufrufe in einer JSON-Datei im temporären Verzeichnis Ihres Projekts gespeichert werden, typischerweise unter `~/.qwen/tmp/<project_hash>/checkpoints`.
 
 ## Aktivieren der Funktion
 
-Die Checkpointing-Funktion ist standardmäßig deaktiviert. Um sie zu aktivieren, kannst du entweder ein Befehlszeilen-Flag verwenden oder deine `settings.json`-Datei bearbeiten.
+Die Funktion „Checkpointing“ ist standardmäßig deaktiviert. Um sie zu aktivieren, können Sie entweder ein Befehlszeilenflag verwenden oder Ihre Datei `settings.json` bearbeiten.
 
-### Verwendung des Befehlszeilen-Flags
+### Verwenden des Befehlszeilenflags
 
-Du kannst das Checkpointing für die aktuelle Sitzung aktivieren, indem du das `--checkpointing`-Flag beim Starten von Qwen Code verwendest:
+Sie können das Checkpointing für die aktuelle Sitzung aktivieren, indem Sie beim Starten von Qwen Code das Flag `--checkpointing` verwenden:
 
 ```bash
 qwen --checkpointing
 ```
 
-### Verwendung der `settings.json`-Datei
+### Verwenden der Datei `settings.json`
 
-Um das Checkpointing standardmäßig für alle Sitzungen zu aktivieren, musst du deine `settings.json`-Datei bearbeiten.
+Um das Checkpointing standardmäßig für alle Sitzungen zu aktivieren, müssen Sie Ihre Datei `settings.json` bearbeiten.
 
-Füge den folgenden Schlüssel zu deiner `settings.json` hinzu:
+Fügen Sie den folgenden Eintrag zu Ihrer `settings.json` hinzu:
 
 ```json
 {
@@ -46,26 +46,26 @@ Füge den folgenden Schlüssel zu deiner `settings.json` hinzu:
 }
 ```
 
-## Verwendung des `/restore`-Befehls
+## Verwenden des Befehls `/restore`
 
-Sobald die Funktion aktiviert ist, werden Checkpoints automatisch erstellt. Um sie zu verwalten, verwendest du den `/restore`-Befehl.
+Sobald die Funktion aktiviert ist, werden automatisch Checkpoints erstellt. Um diese zu verwalten, verwenden Sie den Befehl `/restore`.
 
 ### Verfügbare Checkpoints auflisten
 
-Um eine Liste aller gespeicherten Checkpoints für das aktuelle Projekt anzuzeigen, führe einfach Folgendes aus:
+Um eine Liste aller gespeicherten Checkpoints für das aktuelle Projekt anzuzeigen, führen Sie einfach Folgendes aus:
 
 ```
 /restore
 ```
 
-Die CLI zeigt eine Liste der verfügbaren Checkpoint-Dateien an. Diese Dateinamen setzen sich typischerweise aus einem Zeitstempel, dem Namen der geänderten Datei und dem Namen des Tools zusammen, das ausgeführt werden sollte (z. B. `2025-06-22T10-00-00_000Z-my-file.txt-write_file`).
+Die CLI zeigt eine Liste der verfügbaren Checkpoint-Dateien an. Diese Dateinamen bestehen in der Regel aus einem Zeitstempel, dem Namen der bearbeiteten Datei und dem Namen des gerade ausgeführten Tools (z. B. `2025-06-22T10-00-00_000Z-my-file.txt-write_file`).
 
 ### Einen bestimmten Checkpoint wiederherstellen
 
-Um dein Projekt auf einen bestimmten Checkpoint zurückzusetzen, verwende die Checkpoint-Datei aus der Liste:
+Um Ihr Projekt auf einen bestimmten Checkpoint zurückzusetzen, verwenden Sie die entsprechende Checkpoint-Datei aus der Liste:
 
 ```
-/restore <checkpoint_file>
+/restore <checkpoint_datei>
 ```
 
 Beispiel:
@@ -74,4 +74,4 @@ Beispiel:
 /restore 2025-06-22T10-00-00_000Z-my-file.txt-write_file
 ```
 
-Nach Ausführung des Befehls werden deine Dateien und die Konversation sofort in den Zustand zurückversetzt, in dem sie sich zum Zeitpunkt der Erstellung des Checkpoints befanden, und die ursprüngliche Tool-Eingabeaufforderung wird erneut angezeigt.
+Nach Ausführung des Befehls werden Ihre Dateien und die Konversation sofort in den Zustand zurückversetzt, der zum Zeitpunkt der Erstellung des Checkpoints bestand. Die ursprüngliche Tool-Aufforderung erscheint erneut.

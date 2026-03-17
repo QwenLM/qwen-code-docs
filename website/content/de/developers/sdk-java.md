@@ -1,6 +1,6 @@
 # Qwen Code Java SDK
 
-Das Qwen Code Java SDK ist ein experimentelles SDK mit minimalem Umfang für den programmatischen Zugriff auf Qwen Code-Funktionalitäten. Es bietet eine Java-Schnittstelle zur Interaktion mit der Qwen Code CLI und ermöglicht Entwicklern die Integration von Qwen Code-Funktionen in ihre Java-Anwendungen.
+Das Qwen Code Java SDK ist ein experimentelles Mindest-SDK für den programmatischen Zugriff auf die Funktionen von Qwen Code. Es stellt eine Java-Schnittstelle zum Austausch mit der Qwen Code-Befehlszeilenschnittstelle (CLI) bereit und ermöglicht Entwicklern, Qwen Code-Funktionen in ihre Java-Anwendungen zu integrieren.
 
 ## Voraussetzungen
 
@@ -10,8 +10,8 @@ Das Qwen Code Java SDK ist ein experimentelles SDK mit minimalem Umfang für den
 
 ### Abhängigkeiten
 
-- **Logging**: ch.qos.logback:logback-classic
-- **Utilities**: org.apache.commons:commons-lang3
+- **Protokollierung**: ch.qos.logback:logback-classic
+- **Hilfsfunktionen**: org.apache.commons:commons-lang3
 - **JSON-Verarbeitung**: com.alibaba.fastjson2:fastjson2
 - **Tests**: JUnit 5 (org.junit.jupiter:junit-jupiter)
 
@@ -27,35 +27,33 @@ Fügen Sie die folgende Abhängigkeit zu Ihrer Maven-Datei `pom.xml` hinzu:
 </dependency>
 ```
 
-Oder falls Sie Gradle verwenden, fügen Sie Folgendes zu Ihrer `build.gradle` hinzu:
+Oder bei Verwendung von Gradle fügen Sie die Abhängigkeit zu Ihrer Datei `build.gradle` hinzu:
 
 ```gradle
 implementation 'com.alibaba:qwencode-sdk:{$version}'
 ```
 
-## Erstellen und Ausführen
+## Kompilieren und Ausführen
 
 ### Build-Befehle
 
 ```bash
 
-```markdown
 # Projekt kompilieren
 mvn compile
 
 # Tests ausführen
 mvn test
 
-# JAR paketieren
+# JAR-Paket erstellen
 mvn package
 
-# Im lokalen Repository installieren
+# In das lokale Repository installieren
 mvn install
-```
 
 ## Schnellstart
 
-Die einfachste Möglichkeit, das SDK zu verwenden, ist über die Methode `QwenCodeCli.simpleQuery()`:
+Die einfachste Möglichkeit, das SDK zu verwenden, ist die Methode `QwenCodeCli.simpleQuery()`:
 
 ```java
 public static void runSimpleExample() {
@@ -64,7 +62,7 @@ public static void runSimpleExample() {
 }
 ```
 
-Für fortgeschrittene Verwendung mit benutzerdefinierten Transportoptionen:
+Für erweiterte Anwendungsfälle mit benutzerdefinierten Transportoptionen:
 
 ```java
 public static void runTransportOptionsExample() {
@@ -78,16 +76,16 @@ public static void runTransportOptionsExample() {
             .setMessageTimeout(new Timeout(90L, TimeUnit.SECONDS))
             .setAllowedTools(Arrays.asList("read_file", "write_file", "list_directory"));
 
-    List<String> result = QwenCodeCli.simpleQuery("who are you, what are your capabilities?", options);
+    List<String> result = QwenCodeCli.simpleQuery("Wer bist du und welche Fähigkeiten besitzt du?", options);
     result.forEach(logger::info);
 }
 ```
 
-Für Streaming-Inhalte mit benutzerdefinierten Content-Consumern:
+Für die Verarbeitung von Streaming-Inhalten mit benutzerdefinierten Content-Consumern:
 
 ```java
 public static void runStreamingExample() {
-    QwenCodeCli.simpleQuery("who are you, what are your capabilities?",
+    QwenCodeCli.simpleQuery("Wer bist du und welche Fähigkeiten besitzt du?",
             new TransportOptions().setMessageTimeout(new Timeout(10L, TimeUnit.SECONDS)), new AssistantContentSimpleConsumers() {
 
                 @Override
@@ -102,18 +100,18 @@ public static void runStreamingExample() {
 
                 @Override
                 public void onToolUse(Session session, ToolUseAssistantContent toolUseContent) {
-                    logger.info("Werkzeugnutzungsinhalt empfangen: {} mit Argumenten: {}",
+                    logger.info("Tool-Aufruf empfangen: {} mit Argumenten: {}",
                             toolUseContent, toolUseContent.getInput());
                 }
 
                 @Override
                 public void onToolResult(Session session, ToolResultAssistantContent toolResultContent) {
-                    logger.info("Werkzeugergebnisinhalt empfangen: {}", toolResultContent.getContent());
+                    logger.info("Tool-Ergebnis empfangen: {}", toolResultContent.getContent());
                 }
 
                 @Override
                 public void onOtherContent(Session session, AssistantContent<?> other) {
-                    logger.info("Anderer Inhalt empfangen: {}", other);
+                    logger.info("Weiterer Inhalt empfangen: {}", other);
                 }
 
                 @Override
@@ -126,17 +124,17 @@ public static void runStreamingExample() {
 }
 ```
 
-Weitere Beispiele finden Sie unter src/test/java/com/alibaba/qwen/code/cli/example
+Weitere Beispiele finden Sie unter `src/test/java/com/alibaba/qwen/code/cli/example`.
 
 ## Architektur
 
-Das SDK folgt einer Schichtenarchitektur:
+Das SDK folgt einer geschichteten Architektur:
 
-- **API-Schicht**: Stellt die Hauptzugriffspunkte über die Klasse `QwenCodeCli` mit einfachen statischen Methoden für den Basisgebrauch bereit
-- **Sitzungsschicht**: Verwaltet Kommunikationssitzungen mit der Qwen Code CLI über die Klasse `Session`
-- **Transportschicht**: Behandelt den Kommunikationsmechanismus zwischen dem SDK und dem CLI-Prozess (aktuell erfolgt der Transport über `ProcessTransport`)
-- **Protokollschicht**: Definiert Datenstrukturen für die Kommunikation basierend auf dem CLI-Protokoll
-- **Utils**: Gemeinsame Hilfsfunktionen für parallele Ausführung, Timeout-Behandlung und Fehlermanagement
+- **API-Schicht**: Stellt die zentralen Einstiegspunkte über die Klasse `QwenCodeCli` bereit, mit einfachen statischen Methoden für die grundlegende Nutzung  
+- **Sitzungsschicht**: Verwaltet Kommunikationssitzungen mit der Qwen Code CLI über die Klasse `Session`  
+- **Transport-Schicht**: Verantwortlich für den Kommunikationsmechanismus zwischen SDK und CLI-Prozess (derzeit wird ein Prozess-basierter Transport über `ProcessTransport` verwendet)  
+- **Protokoll-Schicht**: Definiert Datenstrukturen für die Kommunikation basierend auf dem CLI-Protokoll  
+- **Hilfsfunktionen (Utils)**: Allgemeine Hilfsfunktionen für nebenläufige Ausführung, Timeout-Handling und Fehlerbehandlung  
 
 ## Wichtige Funktionen
 
@@ -144,62 +142,62 @@ Das SDK folgt einer Schichtenarchitektur:
 
 Das SDK unterstützt verschiedene Berechtigungsmodi zur Steuerung der Tool-Ausführung:
 
-- **`default`**: Schreibende Tools werden verweigert, es sei denn, sie werden über den `canUseTool`-Callback oder in `allowedTools` genehmigt. Nur lesezugreifende Tools werden ohne Bestätigung ausgeführt.
-- **`plan`**: Blockiert alle schreibenden Tools und weist die KI an, zunächst einen Plan vorzustellen.
-- **`auto-edit`**: Bearbeitungstools (edit, write_file) werden automatisch genehmigt, während andere Tools eine Bestätigung erfordern.
-- **`yolo`**: Alle Tools werden automatisch ohne Bestätigung ausgeführt.
+- **`default`**: Schreib-Tools sind standardmäßig verboten, es sei denn, sie werden über den `canUseTool`-Callback oder in `allowedTools` freigegeben. Lese-Only-Tools werden ohne Bestätigung ausgeführt.
+- **`plan`**: Alle Schreib-Tools werden blockiert; die KI wird angewiesen, zunächst einen Plan vorzulegen.
+- **`auto-edit`**: Bearbeitungs-Tools (z. B. `edit`, `write_file`) werden automatisch freigegeben, während alle anderen Tools eine Bestätigung erfordern.
+- **`yolo`**: Alle Tools werden automatisch und ohne Bestätigung ausgeführt.
 
-### Sitzungs-Ereignisverbraucher und Assistenten-Inhaltsverbraucher
+### Sitzungsereignis-Consumer und Assistenten-Inhalts-Consumer
 
-Das SDK stellt zwei wichtige Schnittstellen zum Behandeln von Ereignissen und Inhalten aus der CLI bereit:
+Das SDK stellt zwei zentrale Schnittstellen zur Verarbeitung von Ereignissen und Inhalten aus der CLI bereit:
 
-#### SessionEventConsumers-Schnittstelle
+#### Schnittstelle `SessionEventConsumers`
 
-Die `SessionEventConsumers`-Schnittstelle stellt Callbacks für verschiedene Arten von Nachrichten während einer Sitzung bereit:
+Die Schnittstelle `SessionEventConsumers` stellt Callbacks für verschiedene Nachrichtentypen während einer Sitzung bereit:
 
-- `onSystemMessage`: Verarbeitet Systemnachrichten der CLI (erhält Session und SDKSystemMessage)
-- `onResultMessage`: Verarbeitet Ergebnisnachrichten der CLI (erhält Session und SDKResultMessage)
-- `onAssistantMessage`: Verarbeitet Assistentennachrichten (KI-Antworten) (erhält Session und SDKAssistantMessage)
-- `onPartialAssistantMessage`: Verarbeitet teilweise Assistentennachrichten während des Streamings (erhält Session und SDKPartialAssistantMessage)
-- `onUserMessage`: Verarbeitet Benutzernachrichten (erhält Session und SDKUserMessage)
-- `onOtherMessage`: Verarbeitet andere Arten von Nachrichten (erhält Session und String-Nachricht)
-- `onControlResponse`: Verarbeitet Steuerungsantworten (erhält Session und CLIControlResponse)
-- `onControlRequest`: Verarbeitet Steuerungsanfragen (erhält Session und CLIControlRequest, gibt CLIControlResponse zurück)
-- `onPermissionRequest`: Verarbeitet Berechtigungsanfragen (erhält Session und CLIControlRequest<CLIControlPermissionRequest>, gibt Behavior zurück)
+- `onSystemMessage`: Verarbeitet Systemnachrichten von der CLI (empfängt `Session` und `SDKSystemMessage`)
+- `onResultMessage`: Verarbeitet Ergebnisnachrichten von der CLI (empfängt `Session` und `SDKResultMessage`)
+- `onAssistantMessage`: Verarbeitet Assistentennachrichten (KI-Antworten) (empfängt `Session` und `SDKAssistantMessage`)
+- `onPartialAssistantMessage`: Verarbeitet teilweise Assistentennachrichten während des Streamings (empfängt `Session` und `SDKPartialAssistantMessage`)
+- `onUserMessage`: Verarbeitet Benachrichtigungen vom Benutzer (empfängt `Session` und `SDKUserMessage`)
+- `onOtherMessage`: Verarbeitet andere Nachrichtentypen (empfängt `Session` und eine Zeichenfolge als Nachricht)
+- `onControlResponse`: Verarbeitet Steuerungsantworten (empfängt `Session` und `CLIControlResponse`)
+- `onControlRequest`: Verarbeitet Steuerungsanfragen (empfängt `Session` und `CLIControlRequest`, gibt `CLIControlResponse` zurück)
+- `onPermissionRequest`: Verarbeitet Berechtigungsanfragen (empfängt `Session` und `CLIControlRequest<CLIControlPermissionRequest>`, gibt `Behavior` zurück)
 
-#### AssistantContentConsumers-Schnittstelle
+#### `AssistantContentConsumers`-Schnittstelle
 
-Die `AssistantContentConsumers`-Schnittstelle verarbeitet verschiedene Arten von Inhalten innerhalb von Assistentennachrichten:
+Die Schnittstelle `AssistantContentConsumers` verarbeitet verschiedene Inhaltsarten innerhalb von Assistenten-Nachrichten:
 
-- `onText`: Verarbeitet Textinhalte (erhält Session und TextAssistantContent)
-- `onThinking`: Verarbeitet Denkinhalte (erhält Session und ThingkingAssistantContent)
-- `onToolUse`: Verarbeitet Tool-Nutzungsinhalte (erhält Session und ToolUseAssistantContent)
-- `onToolResult`: Verarbeitet Tool-Ergebnisinhalte (erhält Session und ToolResultAssistantContent)
-- `onOtherContent`: Verarbeitet andere Inhaltstypen (erhält Session und AssistantContent)
-- `onUsage`: Verarbeitet Nutzungsinformationen (erhält Session und AssistantUsage)
-- `onPermissionRequest`: Verarbeitet Berechtigungsanfragen (erhält Session und CLIControlPermissionRequest, gibt Behavior zurück)
-- `onOtherControlRequest`: Verarbeitet andere Steuerungsanfragen (erhält Session und ControlRequestPayload, gibt ControlResponsePayload zurück)
+- `onText`: Verarbeitet Textinhalte (empfängt `Session` und `TextAssistantContent`)
+- `onThinking`: Verarbeitet Denkinhalte (empfängt `Session` und `ThingkingAssistantContent`)
+- `onToolUse`: Verarbeitet Tool-Aufrufe (empfängt `Session` und `ToolUseAssistantContent`)
+- `onToolResult`: Verarbeitet Tool-Ergebnisse (empfängt `Session` und `ToolResultAssistantContent`)
+- `onOtherContent`: Verarbeitet andere Inhaltsarten (empfängt `Session` und `AssistantContent`)
+- `onUsage`: Verarbeitet Nutzungsdaten (empfängt `Session` und `AssistantUsage`)
+- `onPermissionRequest`: Verarbeitet Berechtigungsanfragen (empfängt `Session` und `CLIControlPermissionRequest`, gibt `Behavior` zurück)
+- `onOtherControlRequest`: Verarbeitet andere Steuerungsanfragen (empfängt `Session` und `ControlRequestPayload`, gibt `ControlResponsePayload` zurück)
 
 #### Beziehung zwischen den Schnittstellen
 
 **Wichtiger Hinweis zur Ereignishierarchie:**
 
-- `SessionEventConsumers` ist der **hochrangige** Ereignisprozessor, der verschiedene Nachrichtentypen verarbeitet (System, Assistent, Benutzer usw.)
-- `AssistantContentConsumers` ist der **niederrangige** Inhaltsprozessor, der verschiedene Arten von Inhalten innerhalb von Assistentennachrichten verarbeitet (Text, Tools, Denken usw.)
+- `SessionEventConsumers` ist der **hochgradige** Ereignisprozessor, der verschiedene Nachrichtentypen verarbeitet (System-, Assistenten-, Benutzer-Nachrichten usw.).
+- `AssistantContentConsumers` ist der **niedriggradige** Inhaltsprozessor, der verschiedene Inhaltstypen innerhalb von Assistenten-Nachrichten verarbeitet (Text, Tools, Denkprozesse usw.).
 
-**Prozessorbeziehung:**
+**Beziehung zwischen den Prozessoren:**
 
-- `SessionEventConsumers` → `AssistantContentConsumers` (SessionEventConsumers verwendet AssistantContentConsumers zur Verarbeitung von Inhalten innerhalb von Assistentennachrichten)
+- `SessionEventConsumers` → `AssistantContentConsumers` (`SessionEventConsumers` verwendet `AssistantContentConsumers`, um Inhalte innerhalb von Assistenten-Nachrichten zu verarbeiten.)
 
-**Ereignis-Ableitungsbeziehungen:**
+**Beziehungen bei der Ableitung von Ereignissen:**
 
 - `onAssistantMessage` → `onText`, `onThinking`, `onToolUse`, `onToolResult`, `onOtherContent`, `onUsage`
 - `onPartialAssistantMessage` → `onText`, `onThinking`, `onToolUse`, `onToolResult`, `onOtherContent`
 - `onControlRequest` → `onPermissionRequest`, `onOtherControlRequest`
 
-**Ereignis-Timeout-Beziehungen:**
+**Beziehungen bei Ereignis-Timeouts:**
 
-Jede Ereignis-Handler-Methode hat eine entsprechende Timeout-Methode, die es ermöglicht, das Timeout-Verhalten für dieses spezifische Ereignis anzupassen:
+Jede Ereignishandler-Methode besitzt eine entsprechende Timeout-Methode, mit der das Timeout-Verhalten für dieses spezifische Ereignis angepasst werden kann:
 
 - `onSystemMessage` ↔ `onSystemMessageTimeout`
 - `onResultMessage` ↔ `onResultMessageTimeout`
@@ -210,7 +208,7 @@ Jede Ereignis-Handler-Methode hat eine entsprechende Timeout-Methode, die es erm
 - `onControlResponse` ↔ `onControlResponseTimeout`
 - `onControlRequest` ↔ `onControlRequestTimeout`
 
-Für AssistantContentConsumers Timeout-Methoden:
+Für `AssistantContentConsumers`-Timeout-Methoden:
 
 - `onText` ↔ `onTextTimeout`
 - `onThinking` ↔ `onThinkingTimeout`
@@ -222,83 +220,83 @@ Für AssistantContentConsumers Timeout-Methoden:
 
 **Standard-Timeout-Werte:**
 
-- `SessionEventSimpleConsumers` Standard-Timeout: 180 Sekunden (Timeout.TIMEOUT_180_SECONDS)
-- `AssistantContentSimpleConsumers` Standard-Timeout: 60 Sekunden (Timeout.TIMEOUT_60_SECONDS)
+- Standard-Timeout für `SessionEventSimpleConsumers`: 180 Sekunden (`Timeout.TIMEOUT_180_SECONDS`)
+- Standard-Timeout für `AssistantContentSimpleConsumers`: 60 Sekunden (`Timeout.TIMEOUT_60_SECONDS`)
 
-**Timeout-Hierarchie-Anforderungen:**
+**Anforderungen an die Timeout-Hierarchie:**
 
-Für einen ordnungsgemäßen Betrieb sollten folgende Timeout-Beziehungen eingehalten werden:
+Für einen korrekten Betrieb müssen folgende Timeout-Beziehungen eingehalten werden:
 
-- Der Rückgabewert von `onAssistantMessageTimeout` sollte größer sein als die Rückgabewerte von `onTextTimeout`, `onThinkingTimeout`, `onToolUseTimeout`, `onToolResultTimeout` und `onOtherContentTimeout`
-- Der Rückgabewert von `onControlRequestTimeout` sollte größer sein als die Rückgabewerte von `onPermissionRequestTimeout` und `onOtherControlRequestTimeout`
+- Der Rückgabewert von `onAssistantMessageTimeout` muss größer sein als die Rückgabewerte von `onTextTimeout`, `onThinkingTimeout`, `onToolUseTimeout`, `onToolResultTimeout` und `onOtherContentTimeout`.
+- Der Rückgabewert von `onControlRequestTimeout` muss größer sein als die Rückgabewerte von `onPermissionRequestTimeout` und `onOtherControlRequestTimeout`.
 
-### Transport-Optionen
+### Transportoptionen
 
-Die Klasse `TransportOptions` ermöglicht die Konfiguration der Kommunikation des SDKs mit der Qwen Code CLI:
+Die Klasse `TransportOptions` ermöglicht die Konfiguration der Kommunikation des SDK mit der Qwen Code-CLI:
 
-- `pathToQwenExecutable`: Pfad zur ausführbaren Qwen Code CLI-Datei
-- `cwd`: Arbeitsverzeichnis für den CLI-Prozess
-- `model`: KI-Modell, das für die Sitzung verwendet werden soll
-- `permissionMode`: Berechtigungsmodus, der die Tool-Ausführung steuert
-- `env`: Umgebungsvariablen, die an den CLI-Prozess übergeben werden sollen
-- `maxSessionTurns`: Begrenzt die Anzahl der Gesprächsrunden in einer Sitzung
-- `coreTools`: Liste der Kernwerkzeuge, die der KI zur Verfügung stehen sollen
-- `excludeTools`: Liste von Werkzeugen, die für die KI nicht verfügbar sein sollen
-- `allowedTools`: Liste von Werkzeugen, die vorab zur Verwendung ohne zusätzliche Bestätigung genehmigt sind
-- `authType`: Authentifizierungstyp für die Sitzung
-- `includePartialMessages`: Aktiviert den Empfang teilweiser Nachrichten während Stream-Antworten
-- `turnTimeout`: Timeout für eine vollständige Gesprächsrunde
-- `messageTimeout`: Timeout für einzelne Nachrichten innerhalb einer Runde
-- `resumeSessionId`: ID einer vorherigen Sitzung, die fortgesetzt werden soll
-- `otherOptions`: Zusätzliche Befehlszeilenoptionen, die an die CLI übergeben werden sollen
+- `pathToQwenExecutable`: Pfad zur ausführbaren Datei der Qwen Code-CLI  
+- `cwd`: Arbeitsverzeichnis für den CLI-Prozess  
+- `model`: KI-Modell, das für die Sitzung verwendet werden soll  
+- `permissionMode`: Berechtigungsmodus, der die Ausführung von Tools steuert  
+- `env`: Umgebungsvariablen, die an den CLI-Prozess übergeben werden  
+- `maxSessionTurns`: Begrenzt die Anzahl der Gesprächsrunden innerhalb einer Sitzung  
+- `coreTools`: Liste der Kern-Tools, die der KI zur Verfügung stehen sollen  
+- `excludeTools`: Liste der Tools, die der KI nicht zur Verfügung gestellt werden sollen  
+- `allowedTools`: Liste der Tools, die vorab ohne zusätzliche Bestätigung genutzt werden dürfen  
+- `authType`: Authentifizierungstyp für die Sitzung  
+- `includePartialMessages`: Aktiviert den Empfang partieller Nachrichten während des Streamings von Antworten  
+- `turnTimeout`: Timeout für eine vollständige Gesprächsrunde  
+- `messageTimeout`: Timeout für einzelne Nachrichten innerhalb einer Gesprächsrunde  
+- `resumeSessionId`: ID einer vorherigen Sitzung, die fortgesetzt werden soll  
+- `otherOptions`: Zusätzliche Befehlszeilenoptionen, die an die CLI übergeben werden
 
-### Funktionen zur Sitzungssteuerung
+### Sitzungssteuerungsfunktionen
 
-- **Sitzungserstellung**: Verwenden Sie `QwenCodeCli.newSession()`, um eine neue Sitzung mit benutzerdefinierten Optionen zu erstellen
-- **Sitzungsverwaltung**: Die Klasse `Session` stellt Methoden bereit, um Anfragen zu senden, Antworten zu verarbeiten und den Sitzungszustand zu verwalten
-- **Sitzungsbereinigung**: Schließen Sie Sitzungen immer mit `session.close()`, um den CLI-Prozess ordnungsgemäß zu beenden
-- **Sitzungswiederaufnahme**: Verwenden Sie `setResumeSessionId()` in `TransportOptions`, um eine vorherige Sitzung fortzusetzen
-- **Sitzungsunterbrechung**: Verwenden Sie `session.interrupt()`, um eine aktuell laufende Anfrage zu unterbrechen
-- **Dynamischer Modellwechsel**: Verwenden Sie `session.setModel()`, um das Modell während einer Sitzung zu ändern
-- **Dynamischer Berechtigungsmodus-Wechsel**: Verwenden Sie `session.setPermissionMode()`, um den Berechtigungsmodus während einer Sitzung zu ändern
+- **Sitzungserstellung**: Verwenden Sie `QwenCodeCli.newSession()`, um eine neue Sitzung mit benutzerdefinierten Optionen zu erstellen.
+- **Sitzungsverwaltung**: Die Klasse `Session` stellt Methoden zum Senden von Eingabeaufforderungen, zum Verarbeiten von Antworten und zum Verwalten des Sitzungszustands bereit.
+- **Sitzungsaufräumung**: Schließen Sie Sitzungen stets mit `session.close()`, um den CLI-Prozess ordnungsgemäß zu beenden.
+- **Sitzungswiederaufnahme**: Verwenden Sie `setResumeSessionId()` in `TransportOptions`, um eine vorherige Sitzung fortzusetzen.
+- **Sitzungsunterbrechung**: Verwenden Sie `session.interrupt()`, um eine aktuell ausgeführte Eingabeaufforderung zu unterbrechen.
+- **Dynamisches Modellwechseln**: Verwenden Sie `session.setModel()`, um das Modell während einer Sitzung zu wechseln.
+- **Dynamisches Wechseln des Berechtigungsmodus**: Verwenden Sie `session.setPermissionMode()`, um den Berechtigungsmodus während einer Sitzung zu ändern.
 
-### Thread-Pool-Konfiguration
+### Konfiguration des Threadpools
 
-Das SDK verwendet einen Thread-Pool zur Verwaltung gleichzeitiger Operationen mit der folgenden Standardkonfiguration:
+Das SDK verwendet einen Threadpool zur Verwaltung gleichzeitiger Operationen mit der folgenden Standardkonfiguration:
 
-- **Kern-Poolgröße**: 30 Threads
-- **Maximale Poolgröße**: 100 Threads
-- **Keep-Alive-Zeit**: 60 Sekunden
-- **Warteschlangenkapazität**: 300 Aufgaben (unter Verwendung von LinkedBlockingQueue)
-- **Thread-Namensgebung**: "qwen_code_cli-pool-{nummer}"
-- **Daemon-Threads**: false
-- **Behandlung abgelehnter Ausführungen**: CallerRunsPolicy
+- **Kern-Threadanzahl**: 30 Threads  
+- **Maximale Threadanzahl**: 100 Threads  
+- **Keep-Alive-Zeit**: 60 Sekunden  
+- **Warteschlangenkapazität**: 300 Aufgaben (mit `LinkedBlockingQueue`)  
+- **Threadbenennung**: `qwen_code_cli-pool-{number}`  
+- **Daemon-Threads**: `false`  
+- **Handler für abgelehnte Ausführungen**: `CallerRunsPolicy`
 
 ## Fehlerbehandlung
 
-Das SDK stellt spezifische Ausnahmetypen für verschiedene Fehlerszenarien bereit:
+Das SDK stellt spezifische Ausnahmetypen für verschiedene Fehlerfälle bereit:
 
-- `SessionControlException`: Wird ausgelöst, wenn ein Problem mit der Sitzungssteuerung vorliegt (Erstellung, Initialisierung usw.)
-- `SessionSendPromptException`: Wird ausgelöst, wenn ein Problem beim Senden einer Eingabeaufforderung oder beim Empfangen einer Antwort vorliegt
-- `SessionClosedException`: Wird ausgelöst, wenn versucht wird, eine geschlossene Sitzung zu verwenden
+- `SessionControlException`: Wird ausgelöst, wenn ein Problem mit der Sitzungssteuerung auftritt (Erstellung, Initialisierung usw.).  
+- `SessionSendPromptException`: Wird ausgelöst, wenn beim Senden einer Eingabeaufforderung oder beim Empfangen einer Antwort ein Problem auftritt.  
+- `SessionClosedException`: Wird ausgelöst, wenn versucht wird, eine bereits geschlossene Sitzung zu verwenden.
 
-## FAQ / Problembehandlung
+## FAQ / Fehlerbehebung
 
-### F: Muss ich die Qwen CLI separat installieren?
+### F: Muss die Qwen CLI separat installiert werden?
 
-A: Ja, benötigt Qwen CLI 0.5.5 oder höher.
+A: Ja, es ist mindestens Qwen CLI 0.5.5 erforderlich.
 
 ### F: Welche Java-Versionen werden unterstützt?
 
 A: Das SDK erfordert Java 1.8 oder höher.
 
-### F: Wie gehe ich mit lang laufenden Anfragen um?
+### F: Wie behandle ich lang andauernde Anfragen?
 
-A: Das SDK enthält Timeouthilfsprogramme. Sie können Timeouts mithilfe der Klasse `Timeout` in `TransportOptions` konfigurieren.
+A: Das SDK enthält Timeout-Hilfsfunktionen. Sie können Timeouts mithilfe der Klasse `Timeout` in `TransportOptions` konfigurieren.
 
 ### F: Warum werden einige Tools nicht ausgeführt?
 
-A: Dies liegt wahrscheinlich an den Berechtigungsmodi. Überprüfen Sie Ihre Berechtigungseinstellungen und erwägen Sie die Verwendung von `allowedTools`, um bestimmte Tools vorab zu genehmigen.
+A: Dies liegt wahrscheinlich an den Berechtigungseinstellungen. Überprüfen Sie Ihre Berechtigungsmoduseinstellungen und erwägen Sie die Verwendung von `allowedTools`, um bestimmte Tools vorab freizugeben.
 
 ### F: Wie kann ich eine vorherige Sitzung fortsetzen?
 
@@ -310,4 +308,4 @@ A: Ja, verwenden Sie die Methode `setEnv()` in `TransportOptions`, um Umgebungsv
 
 ## Lizenz
 
-Apache-2.0 – siehe [LIZENZ](./LICENSE) für Details.
+Apache-2.0 – Einzelheiten finden Sie in der [LIZENZ](./LICENSE).
