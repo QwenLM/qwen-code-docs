@@ -14,14 +14,32 @@ export const generateStaticParams = async () => {
   });
 };
 
-// 移除TS类型，仅用JS语法
+// 移除 TS 类型，仅用 JS 语法
 export async function generateMetadata(props) {
   const params = await props.params;
   const { metadata } = await importPage(params.mdxPath, params.lang);
-  return metadata;
+  
+  // 覆盖 title、openGraph 和 twitter，让分享时显示正确的标题和图片
+  return {
+    ...metadata,
+    title: {
+      default: metadata.title,
+      template: '%s', // 不添加后缀
+    },
+    openGraph: {
+      title: metadata.title,
+      description: metadata.description,
+      ...(metadata.image ? { images: [{ url: metadata.image }] } : {}),
+    },
+    twitter: {
+      title: metadata.title,
+      description: metadata.description,
+      ...(metadata.image ? { images: [metadata.image] } : {}),
+    },
+  };
 }
 
-// 不再声明TS类型
+// 不再声明 TS 类型
 const Wrapper = getMDXComponents().wrapper;
 
 const Page = async (props) => {
