@@ -119,7 +119,7 @@ type LayoutProps = Readonly<{
 
 const RootLayout: FC<LayoutProps> = ({ children }) => {
   return (
-    <html lang='en' suppressHydrationWarning>
+    <html suppressHydrationWarning>
       <Head
         // backgroundColor={{
         //   dark: "rgb(15,23,42)",

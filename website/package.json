@@ -5,7 +5,9 @@
   "scripts": {
     "clean": "rm -rf .next",
     "dev": "npm run clean && next dev",
-    "build": "npm run clean && next build"
+    "build": "npm run clean && next build",
+    "postbuild": "node scripts/set-html-lang.js && pagefind --site out --output-path out/_pagefind",
+    "preview": "node scripts/preview.js"
   },
   "keywords": [
     "qwen",
