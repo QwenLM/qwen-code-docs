@@ -1,6 +1,7 @@
 export default {
   settings: '设置',
   auth: '身份验证',
+  'model-providers': '模型提供商',
   memory: {
     display: 'hidden',
   },

@@ -41,13 +41,11 @@ Wenn Sie ein bestimmtes Plugin installieren möchten, verwenden Sie das Format m
 
 ```bash
 qwen extensions install <marketplace-name>:<plugin-name>
+# oder
+qwen extensions install <Marktplatz-GitHub-URL>:<Plugin-Name>
 ```
 
-# oder  
-qwen extensions install <Marktplatz-GitHub-URL>:<Plugin-Name>  
-```  
-
-Beispiel: Um das Plugin `prompts.chat` aus dem Marktplatz [f/awesome-chatgpt-prompts](https://claudemarketplaces.com/plugins/f-awesome-chatgpt-prompts) zu installieren:  
+Beispiel: Um das Plugin `prompts.chat` aus dem Marktplatz [f/awesome-chatgpt-prompts](https://claudemarketplaces.com/plugins/f-awesome-chatgpt-prompts) zu installieren:
 
 ```bash  
 qwen extensions install f/awesome-chatgpt-prompts:prompts.chat  
@@ -63,18 +61,17 @@ Claude-Plugins werden beim Installieren automatisch in das Qwen Code-Format konv
 - Skill-Konfigurationen werden in das Qwen-Skill-Format konvertiert  
 - Tool-Zuordnungen werden automatisch verarbeitet  
 
-Sie können mithilfe des Befehls `/extensions explore` schnell die verfügbaren Erweiterungen verschiedener Marktplätze durchsuchen:  
+Sie können mithilfe des Befehls `/extensions explore` schnell die verfügbaren Erweiterungen verschiedener Marktplätze durchsuchen:
 
-```  
-
-# Öffnet den Gemini CLI Extensions-Marktplatz  
+```bash
+# Öffnet den Gemini CLI Extensions-Marktplatz
 /extensions explore Gemini
 
-# Öffne den Claude-Code-Marktplatz  
-/extensions erkunden Claude Code  
-```  
+# Öffne den Claude-Code-Marktplatz
+/extensions explore ClaudeCode
+```
 
-Dieser Befehl öffnet den jeweiligen Marktplatz in Ihrem Standardbrowser und ermöglicht es Ihnen, neue Erweiterungen zu entdecken, um Ihr Qwen-Code-Erlebnis zu verbessern.  
+Dieser Befehl öffnet den jeweiligen Marktplatz in Ihrem Standardbrowser und ermöglicht es Ihnen, neue Erweiterungen zu entdecken, um Ihr Qwen-Code-Erlebnis zu verbessern.
 
 > **Plattformübergreifende Kompatibilität**: Dadurch können Sie die umfangreichen Erweiterungsökosysteme sowohl von Gemini CLI als auch von Claude Code nutzen und die verfügbare Funktionalität für Qwen-Code-Nutzer erheblich erweitern.  
 

@@ -30,7 +30,6 @@ Vous pouvez mettre à jour votre fichier `.qwenignore` à tout moment. Pour appl
 Vous pouvez utiliser `.qwenignore` pour ignorer des répertoires et des fichiers :
 
 ```
-
 # Ignorer le répertoire /packages/ et tous ses sous-répertoires
 /packages/
 
@@ -41,13 +40,13 @@ apikeys.txt
 Vous pouvez utiliser des caractères génériques (`*`) dans votre fichier `.qwenignore` :
 
 ```
-
 # Ignorer tous les fichiers .md
 *.md
 ```
 
-Enfin, vous pouvez annuler l’ignorance de fichiers ou de répertoires à l’aide du caractère `!` :
+Enfin, vous pouvez annuler l'ignorance de fichiers ou de répertoires à l'aide du caractère `!` :
 
+```
 # Exclure tous les fichiers `.md` sauf `README.md`
 *.md
 !README.md

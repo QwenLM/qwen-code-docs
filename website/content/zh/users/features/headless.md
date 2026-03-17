@@ -182,6 +182,7 @@ qwen -p "列出编程语言" | grep -i "python"
 # 用于实时处理的 Stream-JSON 输出
 qwen -p "解释 Docker" --output-format stream-json | jq '.type'
 qwen -p "编写代码" --output-format stream-json --include-partial-messages | jq '.event.type'
+```
 
 ## 配置选项
 

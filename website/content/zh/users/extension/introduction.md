@@ -32,7 +32,6 @@ Qwen Code 还支持来自 [Claude Code 商店](https://claudemarketplaces.com/) 
 
 ```bash
 qwen extensions install <marketplace-name>
-
 # 或
 qwen extensions install <marketplace-github-url>
 ```
@@ -41,8 +40,6 @@ qwen extensions install <marketplace-github-url>
 
 ```bash
 qwen extensions install <marketplace-name>:<plugin-name>
-```
-
 # 或
 qwen extensions install <市场 GitHub URL>:<插件名称>
 ```
@@ -51,7 +48,6 @@ qwen extensions install <市场 GitHub URL>:<插件名称>
 
 ```bash
 qwen extensions install f/awesome-chatgpt-prompts:prompts.chat
-
 # 或
 qwen extensions install https://github.com/f/awesome-chatgpt-prompts:prompts.chat
 ```

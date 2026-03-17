@@ -1,6 +1,7 @@
 export default {
   settings: 'Paramètres',
   auth: 'Authentification',
+  'model-providers': 'Fournisseurs de modèles',
   memory: {
     display: 'hidden',
   },

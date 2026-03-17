@@ -30,7 +30,6 @@ Você pode atualizar seu arquivo `.qwenignore` a qualquer momento. Para aplicar 
 Você pode usar o `.qwenignore` para ignorar diretórios e arquivos:
 
 ```
-
 # Ignorar o diretório /packages/ e todos os seus subdiretórios
 /packages/
 
@@ -41,13 +40,13 @@ apikeys.txt
 Você pode usar curingas no seu arquivo `.qwenignore` com o caractere `*`:
 
 ```
-
 # Ignorar todos os arquivos .md
 *.md
 ```
 
 Por fim, você pode incluir novamente arquivos e diretórios excluídos anteriormente usando o caractere `!`:
 
+```
 # Excluir todos os arquivos .md, exceto README.md
 *.md
 !README.md
