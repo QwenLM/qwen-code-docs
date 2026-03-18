@@ -103,7 +103,7 @@ OPENAI_API_KEY=your_qwen_api_key
 
 # Optional: API configuration (defaults shown)
 OPENAI_BASE_URL=https://api.qwen.ai/v1
-QWEN_MODEL=qwen3-coder-plus
+QWEN_MODEL=qwen3.5-plus
 QWEN_MAX_TOKENS=4000
 ```
 
