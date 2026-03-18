@@ -1,0 +1,157 @@
+---
+title: "Uma frase: Crie um vídeo promocional de nível cinematográfico para seu projeto open source"
+date: "2026-03-18"
+description: "Apresentando a habilidade oss-video do Qwen Code: basta fornecer uma URL de repositório do GitHub para gerar automaticamente um vídeo promocional de alta qualidade para seu projeto open source"
+author: "joeytoday"
+tags: ["Tutoriais", "exemplos de usuários", "Habilidades", "Vídeo"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Uma frase: Crie um vídeo promocional de nível cinematográfico para seu projeto open source"
+  date="2026-03-18"
+  author="joeytoday"
+/>
+
+Você já se encontrou nesta situação?
+
+Você passou mais de meio ano trabalhando até tarde em um projeto open source no qual acredita. Seu código no GitHub está bem organizado, e você escreveu várias versões do seu README. Mas na hora de promovê-lo nas redes sociais, você sente que **falta algo**.
+
+Uma captura de tela estática? Muito sem graça. Uma apresentação em texto? Ninguém tem paciência para ler tudo. Fazer um vídeo de demonstração? Você abre e fecha o Jianying (CapCut), e finalmente suspira: "Deixa pra lá, talvez na próxima."
+
+Um amigo desenvolvedor universitário que conheço criou uma biblioteca de componentes frontend bastante interessante no ano passado, mas suas stars estavam travadas em torno de 20-30. Ele reclamou comigo: "Eu sei que meu projeto não é ruim, mas não sei como fazer os outros saberem que não é ruim."
+
+Essa afirmação é dura, mas é de fato a situação real de muitos desenvolvedores.
+
+## Uma frase, e o vídeo está pronto
+
+Recentemente, enquanto usava o Qwen Code, descobri uma habilidade bastante interessante—**[oss-styles](https://github.com/heimanba/oss-video-skill)**.
+
+Simplificando, você só precisa dizer uma frase ao Qwen Code:
+
+```
+Com base nesta habilidade https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md
+Ajude-me a gerar um vídeo de demonstração para o repositório: https://github.com/QwenLM/qwen-code
+```
+
+Então ele automaticamente buscará informações do projeto no GitHub, analisará a stack tecnológica, estatísticas, informações de contribuidores e finalmente gerará um **vídeo promocional digno de cinema**.
+
+Durante todo o processo, você não precisa:
+
+- ❌ Abrir o Jianying ou Premiere
+- ❌ Escrever roteiros ou pensar em storyboards
+- ❌ Encontrar materiais ou combinar música
+- ❌ Ajustar animações ou alinhar linhas do tempo
+
+A IA fará tudo isso para você.
+
+## Como fica o vídeo final?
+
+Testei isso com o projeto Qwen Code, e o vídeo gerado tem cerca de 30-40 segundos, com ritmo acelerado e visuais unificados. Pode ser postado diretamente no Twitter, Xiaohongshu, Jike, ou colocado no início do README do GitHub do seu projeto.
+
+👇 É assim que fica:
+
+<video
+  class="mt-5"
+  poster="https://img.alicdn.com/imgextra/i1/O1CN010tv03t1hn4Wqgr7xf_!!6000000004321-2-videocover-2880-1622.png"
+  src="https://cloud.video.taobao.com/vod/BDZLD4IVc4U3gY46vs4F3xL-C6kLjnj-yakaPtFDKDg.mp4"
+  controls
+  width="100%"
+  style={{ borderRadius: '10px' }}
+></video>
+
+<Callout>
+**Dica profissional**: Após a geração do vídeo, é recomendável visualizá-lo primeiro. Às vezes, a IA pode ter desvios na compreensão do projeto. Ajustar finamente o texto pode melhorar significativamente a qualidade final do vídeo.
+</Callout>
+
+## Quem pode usar isso?
+
+Pensei sobre isso, e esta habilidade é particularmente útil em pelo menos os seguintes aspectos:
+
+### 1. Início frio para desenvolvedores independentes
+
+Você acabou de lançar um side project e quer promovê-lo no Product Hunt ou V2EX. Um vídeo de produto profissional é mais memorável do que uma apresentação seca em texto e imagens.
+
+### 2. Tarefas open source/Projetos de conclusão de curso universitários
+
+Muitos estudantes de ciência da computação têm tarefas de projetos open source. Anteriormente, você poderia apenas enviar um link do GitHub, mas agora pode anexar um vídeo para reproduzir durante sua defesa ou apresentação, o que aumentará muito a nota de impressão dos professores e colegas (ps, é realmente muito útil).
+
+### 3. Material de conteúdo para blogueiros de tecnologia
+
+Se você escreve blogs de tecnologia ou cria vídeos técnicos e quer apresentar um projeto open source, pode usar diretamente o oss-video para gerar clipes de introdução do projeto para inserir em seu conteúdo. Isso economiza o trabalho de gravar a tela e editar.
+
+### 4. Promoção externa para projetos open source de empresas
+
+Muitas empresas open sourcem ferramentas internas, mas as operações frequentemente não acompanham. Esta habilidade permite que equipes de desenvolvimento produzam rapidamente materiais promociais por conta própria, sem esperar pela agenda dos designers.
+
+### 5. Apresentação de projetos em hackathons/competições técnicas
+
+O tempo é curto, as tarefas são pesadas, mas vídeos de demonstração são essenciais. Gere um vídeo com uma frase e gaste o tempo economizado codificando e ajustando o demo.
+
+## Como usar?
+
+Se você já tem o Qwen Code, instalar esta habilidade é simples:
+
+```bash
+# Entrar no diretório do projeto
+cd seu-projeto
+
+# Iniciar Qwen Code
+qwen
+
+# Então diga diretamente ao Qwen Code
+Com base nesta habilidade https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md
+Ajude-me a gerar um vídeo de demonstração para o repositório: <URL do seu repositório>"
+```
+
+A IA automaticamente:
+
+1. Buscará informações do projeto da API do GitHub
+2. Visitara o site oficial do projeto para pegar o logotipo e cores da marca
+3. Analisará o posicionamento do projeto e a stack tecnológica
+4. Gerará clipes de vídeo para 5 cenas
+5. Sintetizará o vídeo final
+
+Se você quiser ajustar o estilo—por exemplo, mudar as cores, modificar o texto, ajustar o ritmo das animações—também pode dizer diretamente à IA. Todo o código é open source, e você pode modificar livremente o projeto Remotion gerado.
+
+<Callout>
+**O poder do open source**: Todo o código é open source, e você pode modificar e estender livremente o projeto Remotion gerado para criar seu próprio estilo de vídeo.
+</Callout>
+
+## Uma pequena reflexão
+
+Para ser honesto, quando vi esta habilidade pela primeira vez, minha primeira reação foi: **o limiar da "fachada" para projetos open source finalmente foi reduzido.**
+
+Antes, apenas projetos open source de grandes empresas tinham orçamento para fazer vídeos promocionales exquisitos. Desenvolvedores independentes ou projetos estudantis só podiam confiar no próprio código para falar. Mas o código não pode falar por si mesmo, especialmente nesta era de sobrecarga de informações.
+
+Agora, uma frase pode gerar um vídeo promocional de nível profissional. O que isso significa?
+
+Significa que **bons projetos são mais fáceis de serem vistos**.
+
+Significa que **a força técnica pode ser melhor comunicada**.
+
+Significa que **a comunidade open source se tornará mais animada e diversa**.
+
+Acho que isso é bom.
+
+## Experimente
+
+Se você tiver um projeto open source em mãos, por que não experimentar esta habilidade? Quer você queira aumentar as stars do seu projeto ou simplesmente ver como a IA entende seu código, é bastante interessante.
+
+## 🔗 Links e recursos
+
+- **URL da habilidade**: [github.com/QwenLM/qwen-code-examples/skills/oss-styles](https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md)
+- **Qwen Code GitHub**: [github.com/QwenLM/qwen-code](https://github.com/QwenLM/qwen-code)
+- **Documentação oficial**: [qwenlm.github.io/qwen-code-docs](https://qwenlm.github.io/qwen-code-docs)
+
+### Bem-vindo para se juntar a nós!
+
+O Qwen Code não pode existir sem a co-construção dos desenvolvedores da comunidade, nem sem o suporte de feedback dos usuários internos. Nosso atual Java SDK, plugin VS Code, plugin de navegador Chrome e outras funcionalidades importantes são todos co-construídos por parceiros internos. Se você está interessado no Qwen Code, bem-vindo para participar da construção!
+
+Também estamos contratando talentos técnicos **AI full-stack** para o projeto Qwen Code, todos os níveis bem-vindos. Envie seu currículo para: pomelo.lcw@alibaba-inc.com
+
+---
+
+Abraçe a nova era do AI Coding, começando com o Qwen Code no seu terminal.

@@ -1,0 +1,157 @@
+---
+title: "一句话，给你的开源项目拍部电影级宣传片"
+date: "2026-03-18"
+description: "介绍 Qwen Code 的 oss-video 技能，只需传入 GitHub 仓库地址，就能自动生成高质量的开源项目宣传视频"
+author: "joeytoday"
+tags: ["Tutorials", "user examples","Skills", "Video"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="一句话，给你的开源项目拍部电影级宣传片"
+  date="2026-03-18"
+  author="joeytoday"
+/>
+
+各位，你有没有遇到过这种情况——
+
+花了大半年时间，熬夜写了一个觉得还不错的开源项目，GitHub 上的代码整理得漂漂亮亮，README 也写了好几版。但就是在社交平台上宣传的时候，总觉得**少了点什么**。
+
+一张静态截图？太干巴了。一段文字介绍？没人有耐心看完。做个演示视频？剪映打开又关掉，最后只能叹气说 "算了，下次一定"。
+
+我认识的一个大学生开发者朋友，去年写了一个挺有意思的前端组件库，stars 一直卡在二三十个。他跟我吐槽："我知道我的项目不差，但不知道怎么让别人知道它不差。"
+
+这句话挺扎心的，但确实是很多开发者的真实处境。
+
+## 一句话，视频就有了
+
+最近我在用 Qwen Code 的时候，发现了一个挺有意思的技能——**[oss-styles](https://github.com/heimanba/oss-video-skill)**。
+
+简单来说，你只需要跟 Qwen Code 说一句话：
+
+```
+基于这个技能 https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md
+帮我为开源仓库：https://github.com/QwenLM/qwen-code 生成一个演示视频
+```
+
+然后它就会自动去 GitHub 拉取项目信息，分析技术栈、统计数据、贡献者信息，最后生成一支**电影感十足的宣传片**。
+
+整个过程你不需要：
+
+- ❌ 打开剪映或 Premiere
+- ❌ 写脚本、想分镜
+- ❌ 找素材、配音乐
+- ❌ 调动画、对时间轴
+
+AI 会帮你做完这一切。
+
+## 成片长什么样？
+
+我拿 Qwen Code 这个项目试了一下，生成的视频大概 30-40 秒，节奏紧凑，视觉统一，完全可以直接发 Twitter、小红书、即刻，或者放在项目的 GitHub README 开头。
+
+👇 成片长这样：
+
+<video
+  class="mt-5"
+  poster="https://img.alicdn.com/imgextra/i1/O1CN010tv03t1hn4Wqgr7xf_!!6000000004321-2-videocover-2880-1622.png"
+  src="https://cloud.video.taobao.com/vod/BDZLD4IVc4U3gY46vs4F3xL-C6kLjnj-yakaPtFDKDg.mp4"
+  controls
+  width="100%"
+  style={{ borderRadius: '10px' }}
+></video>
+
+<Callout>
+**小技巧**：视频生成后，建议自己先预览一遍。AI 有时候会对项目的理解有偏差，微调一下文案，成片效果会好很多。
+</Callout>
+
+## 谁能用上这个？
+
+我琢磨了一下，这个技能至少在以下几个方面特别实用：
+
+### 1. 独立开发者做冷启动
+
+你刚上线了一个 side project，想把它推上 Product Hunt 或者 V2EX。一段专业的产品视频，比干巴巴的图文介绍更容易让人记住。
+
+### 2. 大学生的开源作业/毕设
+
+很多计算机专业的同学会有开源项目的课程作业。以前可能只交一个 GitHub 链接，现在可以附上一支视频，在答辩或者展示的时候播放，老师和其他同学的印象分会高很多（ps 真的非常有用）。
+
+### 3. 技术博主的内容素材
+
+如果你写技术博客或者做技术视频，想要介绍某个开源项目，可以直接用 oss-video 生成项目介绍片段，插在自己的内容里。省去了录屏、剪辑的麻烦。
+
+### 4. 公司开源项目的对外宣传
+
+不少公司会把内部工具开源出来，但运营往往跟不上。这个技能可以让开发团队自己快速产出宣传物料，不用等设计师排期。
+
+### 5. 黑客松/技术大赛的项目展示
+
+时间紧、任务重，但演示视频不能少。一句话生成视频，把时间留给写代码和调 demo。
+
+## 怎么玩？
+
+如果你已经有 Qwen Code，安装这个技能很简单：
+
+```bash
+# 进入项目目录
+cd your-project
+
+# 启动 Qwen Code
+qwen
+
+# 然后直接告诉 Qwen Code
+基于这个技能 https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md
+帮我为开源仓库：<你的仓库地址> 生成一个演示视频"
+```
+
+AI 会自动：
+
+1. 去 GitHub API 拉取项目信息
+2. 访问项目官网抓取 Logo 和品牌色
+3. 分析项目定位和技术栈
+4. 生成 5 个场景的视频片段
+5. 合成最终视频
+
+如果你想调整风格——比如换个配色、改改文案、调整动画节奏——也可以直接跟 AI 说。所有代码都是开源的，生成的 Remotion 项目你可以随意修改。
+
+<Callout>
+**开源的力量**：所有代码都是开源的，生成的 Remotion 项目你可以随意修改和扩展，打造属于你自己的视频风格。
+</Callout>
+
+## 一个小感慨
+
+说实话，看到这个技能的时候，我第一反应是：**开源项目的 "门面" 门槛，终于被拉低了。**
+
+以前，只有大厂的开源项目才有预算做精美的宣传片。独立开发者或者学生项目，只能依靠代码本身说话。但代码是不会自己说话的，尤其是在这个信息过载的时代。
+
+现在，一句话就能生成一支专业级的宣传视频。这意味着什么？
+
+意味着**好项目更容易被看见**。
+
+意味着**技术实力可以更好地被传递**。
+
+意味着**开源社区会变得更热闹、更多元**。
+
+我觉得这挺好的。
+
+## 试试看
+
+如果你手上正好有一个开源项目，不妨试试这个技能。不管你是想给项目涨涨 stars，还是单纯想看看 AI 怎么理解你的代码，都挺有意思的。
+
+## 🔗 链接与资源
+
+- **技能地址**: [github.com/QwenLM/qwen-code-examples/skills/oss-styles](https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md)
+- **Qwen Code GitHub**: [github.com/QwenLM/qwen-code](https://github.com/QwenLM/qwen-code)
+- **官方文档**: [qwenlm.github.io/qwen-code-docs](https://qwenlm.github.io/qwen-code-docs)
+
+### 欢迎加入我们！
+
+Qwen Code 离不开社区开发者的共建，也离不开内部用户的反馈支持。我们目前的 Java SDK、VS Code 插件、Chrome 浏览器插件等重要特性，都是内部伙伴一起共建的。如果你对 Qwen Code 感兴趣，欢迎一起来共建！
+
+最后也欢迎加入我们，Qwen Code 项目正在招聘 **AI 全栈方向**技术人才，层级不限，欢迎投递简历！pomelo.lcw@alibaba-inc.com
+
+---
+
+拥抱 AI Coding 的新时代，从终端里的 Qwen Code 开始。
