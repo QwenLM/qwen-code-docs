@@ -31,10 +31,13 @@ interface SearchProps {
   lang?: string; // 当前语言
 }
 
-// 动态导入 Pagefind
+// 初始化 Pagefind 并设置语言
+let _pagefindInitialized = false;
+let _currentLang: string | null = null;
+
 async function importPagefind() {
   if (typeof window === "undefined") return;
-  
+
   // @ts-ignore
   window.pagefind = await import(
     /* webpackIgnore: true */
@@ -44,19 +47,46 @@ async function importPagefind() {
 
 // 初始化 Pagefind 并设置语言
 async function initPagefind(lang: string) {
+  if (typeof window === "undefined") return;
+
+  // 重要！！！动态路由切换时，需要手动同步 html 的 lang 属性
+  // 因为 pagefind 强依赖 document.querySelector("html").getAttribute("lang") 来决定加载哪个语言的索引
+  document.documentElement.lang = lang;
+
+  
+  // @ts-ignore
+  if (window.pagefind && _pagefindInitialized && _currentLang !== lang) {
+    // @ts-ignore
+    await window.pagefind.destroy();
+    _pagefindInitialized = false;
+  }
+
   // @ts-ignore
   if (!window.pagefind) {
     await importPagefind();
+  } else {
   }
-  
-  // @ts-ignore
-  await window.pagefind.options({
-    baseUrl: "/",
-  });
-  
-  // 初始化特定语言的索引
-  // @ts-ignore
-  await window.pagefind.init(lang);
+
+  // 只在首次初始化时（或 destroy 后重建时）设置 options 并加载对应语言
+  if (!_pagefindInitialized) {
+    // @ts-ignore
+    await window.pagefind.options({
+      baseUrl: "/",
+      // 优化搜索排名权重
+      ranking: {
+        pageLength: 0.1,
+        termFrequency: 0.7,
+        termSimilarity: 0.5,
+      },
+    });
+    
+    // @ts-ignore
+    await window.pagefind.init();
+    
+    _pagefindInitialized = true;
+    _currentLang = lang;
+  }
+
 }
 
 // 防抖函数
@@ -104,19 +134,14 @@ export function Search({
   // 当语言变化时，重新初始化 Pagefind
   useEffect(() => {
     const reinitPagefind = async () => {
-      // @ts-ignore
-      if (window.pagefind) {
-        // 销毁旧实例
-        // @ts-ignore
-        await window.pagefind.destroy?.();
-        // @ts-ignore
-        window.pagefind = undefined;
-      }
-      // 重新初始化新语言
+      
+      // 同步 DOM lang，重新初始化 Pagefind
       await initPagefind(lang);
     };
-    
-    reinitPagefind();
+
+    if (lang) {
+      reinitPagefind();
+    }
   }, [lang]);
   
   // 搜索函数
@@ -127,28 +152,31 @@ export function Search({
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // @ts-ignore
       if (!window.pagefind) {
         await initPagefind(lang);
       }
-      
-      // @ts-ignore
-      const response = await window.pagefind.debouncedSearch(searchQuery);
-      
-      if (!response) {
-        setIsLoading(false);
-        return;
-      }
-      
-      const data = await Promise.all(
-        response.results.map((r: { data: () => Promise<SearchResult> }) => r.data())
-      );
-      
+
+        // 使用 search 方法而不是 debouncedSearch，以便更好地控制
+        // @ts-ignore
+        const response = await window.pagefind.search(searchQuery, {
+          filters: {},
+          sort: {},
+          verbose: false,
+        });
+
+        if (!response) {
+          setIsLoading(false);
+          return;        }
+
+        const data = await Promise.all(
+          response.results.map((r: { data: () => Promise<SearchResult> }) => r.data())
+        );
       // 处理 URL
       const processedResults = data.map((item: SearchResult) => ({
         ...item,
@@ -157,7 +185,7 @@ export function Search({
           url: sub.url.replace(/\.html$/, "").replace(/\.html#/, "#"),
         })),
       }));
-      
+
       setResults(processedResults);
       setIsLoading(false);
     } catch (err) {
@@ -165,7 +193,7 @@ export function Search({
       setError(err instanceof Error ? err.message : String(err));
       setIsLoading(false);
     }
-  }, []);
+  }, [lang]);
   
   // 防抖搜索
   const debouncedSearch = useCallback(
