@@ -1,7 +1,7 @@
 ---
-title: "Qwen Code 周报：Token 限制翻倍、支持 JetBrains 编辑器、Plan Mode 方案对比"
+title: "Qwen Code 周报：Token 限制翻倍、实时显示消耗、支持 JetBrains 编辑器"
 date: "2026-03-20"
-description: "本周新增 Token 限制从 8K 提升到 16K、JetBrains/Zed 编辑器集成、Plan Mode 方案对比，还有 Windows 编码问题修复。"
+description: "本周新增 Token 限制从 8K 提升到 16K、实时显示 Token 消耗、JetBrains/Zed 编辑器集成、Plan Mode 方案对比，还有 Windows 编码问题修复。"
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 ---
@@ -10,17 +10,58 @@ import { BlogPostHeader } from '@/components/blog-post-header'
 import { Callout } from 'nextra/components'
 
 <BlogPostHeader
-  title="Qwen Code 周报：Token 限制翻倍、支持 JetBrains 编辑器、Plan Mode 方案对比"
+  title="Qwen Code 周报：Token 限制翻倍、实时显示消耗、支持 JetBrains 编辑器"
   date="2026-03-20"
   author="Qwen Team"
 />
 
+本周发布 **v0.12.4** 功能版本和 2 个 bugfix 版本，同时推出 **v0.13.0-preview** 预览版。
 
-本周发布 **v0.12.4** 功能版本和 2 个 bugfix 版本。
+想尝鲜预览版新功能？运行 `npm i @qwen-code/qwen-code@v0.13.0-preview.1 -g` 安装。
 
-v0.12.0 上线后收到了不少用户反馈，这周我们重点处理了影响体验的问题：Windows 中文输出乱码、交互式 Shell 输出丢失、API 重试报错。新功能方面，Token 限制翻倍到 16K，AI 能读取更多上下文了；同时支持了 JetBrains 和 Zed 编辑器。
+v0.12.0 上线后收到了不少用户反馈，这周我们重点处理了影响体验的问题：Windows 中文输出乱码、交互式 Shell 输出丢失、API 重试报错。新功能方面，Token 相关做了整体优化：限制翻倍到 16K、实时显示消耗、新增 `/context` 命令查看明细。同时支持了 JetBrains 和 Zed 编辑器。
 
 ## ✨ 新增特性
+
+### Token 限制翻倍：读取更多上下文，得到更多信息
+
+输出 Token 限制从 8K 提升到 16K，AI 可以读取更多上下文、生成更完整的回复。同时自动检测模型的 max_tokens 设置，不用手动配置。
+
+**你能用它做什么：**
+
+- AI 可以读取更多文件内容，理解更大的项目结构
+- 生成更完整的代码和文档，不用分段拼接
+- 自动适配不同模型的 Token 限制，不用担心超出限制报错
+
+详见 PR [#2411](https://github.com/QwenLM/qwen-code/pull/2411)、[#2356](https://github.com/QwenLM/qwen-code/pull/2356)、[#2362](https://github.com/QwenLM/qwen-code/pull/2362)
+
+### Token 使用量实时显示（预览版）
+
+AI 思考和生成时，界面会实时显示 Token 消耗。不用等对话结束，随时知道用了多少 Token。
+
+**你能用它做什么：**
+
+- 对话过程中实时看到 Token 消耗，心里有数
+- 发现消耗异常时及时调整，避免浪费
+- 对比不同任务的 Token 成本，优化使用方式
+
+详见 PR [#2445](https://github.com/QwenLM/qwen-code/pull/2445)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01J3OhN228vlftWyHmx_!!6000000007995-1-tps-1280-720.gif)
+
+### /context 命令：查看上下文 Token 消耗明细（预览版）
+
+用 `/context` 命令可以看到上下文窗口的 Token 消耗明细：哪些文件占用了多少 Token、还剩多少空间，一目了然。
+
+**你能用它做什么：**
+
+- 查看当前对话的 Token 使用情况，知道还能塞多少内容
+- 发现哪些文件占用太多 Token，决定是否需要清理
+- 优化上下文使用，让 AI 更聚焦关键内容
+
+详见 PR [#1835](https://github.com/QwenLM/qwen-code/pull/1835)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01cekEKq1mRc3CM2AQd_!!6000000004951-1-tps-1280-720.gif)
 
 ### Zed 和 JetBrains 编辑器集成
 
@@ -39,18 +80,6 @@ v0.12.0 上线后收到了不少用户反馈，这周我们重点处理了影响
 
 ![](https://gw.alicdn.com/imgextra/i3/O1CN01rTE0X61tikAwLN7Zz_!!6000000005936-2-tps-2032-1386.png)
 
-### Token 限制翻倍：读取更多上下文，得到更多信息
-
-输出 Token 限制从 8K 提升到 16K，AI 可以读取更多上下文、生成更完整的回复。同时自动检测模型的 max_tokens 设置，不用手动配置。
-
-**你能用它做什么：**
-
-- AI 可以读取更多文件内容，理解更大的项目结构
-- 生成更完整的代码和文档，不用分段拼接
-- 自动适配不同模型的 Token 限制，不用担心超出限制报错
-
-详见 PR [#2411](https://github.com/QwenLM/qwen-code/pull/2411)、[#2356](https://github.com/QwenLM/qwen-code/pull/2356)、[#2362](https://github.com/QwenLM/qwen-code/pull/2362)
-
 ### Plan Mode：被拒绝的方案也能看到了
 
 在 Plan Mode 下，AI 给出的方案被你拒绝后，内容不会消失。你可以对比不同方案，选最合适的那个。
@@ -64,6 +93,34 @@ v0.12.0 上线后收到了不少用户反馈，这周我们重点处理了影响
 详见 PR [#2157](https://github.com/QwenLM/qwen-code/pull/2157)
 
 ![](https://gw.alicdn.com/imgextra/i4/O1CN01rGEuoD1XpgdIQ8X2V_!!6000000002973-1-tps-860-584.gif)
+
+### 支持 .agents 目录（预览版）
+
+技能文件现在可以放在项目的 `.agents` 目录下，和项目代码一起管理。团队成员 clone 项目后就能用同一套技能配置。
+
+**你能用它做什么：**
+
+- 把项目相关的技能放在 `.agents` 目录，和代码一起版本管理
+- 团队成员共享技能配置，不用逐个手动配置
+- 不同项目可以有独立的技能配置，互不干扰
+
+详见 PR [#2202](https://github.com/QwenLM/qwen-code/pull/2202)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01S3mZO01RMw4i66XNH_!!6000000002098-1-tps-1280-720.gif)
+
+### 导出会话增加元数据和统计（预览版）
+
+导出会话时，现在会包含元数据和统计信息：对话时间、Token 消耗、消息数量等。方便归档和分析使用情况。
+
+**你能用它做什么：**
+
+- 导出时自动记录对话时间和 Token 消耗，方便回溯
+- 统计分析使用情况，了解自己的使用模式
+- 归档重要对话，保留完整信息
+
+详见 PR [#2328](https://github.com/QwenLM/qwen-code/pull/2328)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN010xCLBN1txrFHqCjhG_!!6000000005969-2-tps-1264-589.png)
 
 ## 📊 优化改进
 
@@ -102,7 +159,9 @@ v0.12.0 上线后收到了不少用户反馈，这周我们重点处理了影响
 - 改进 VS Code 提示取消和流式传输的竞态条件处理（[#2374](https://github.com/QwenLM/qwen-code/pull/2374)）
 
 <Callout type="info">
-  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+  **升级方式**：
+  - 稳定版：`npm i @qwen-code/qwen-code@latest -g`
+  - 预览版：`npm i @qwen-code/qwen-code@v0.13.0-preview.1 -g`
 </Callout>
 
 如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
