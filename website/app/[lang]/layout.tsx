@@ -7,6 +7,7 @@ import { getPageMap } from "nextra/page-map";
 import { LanguageDropdown } from "../../src/components/language-dropdown";
 import { ThemeToggle } from "../../src/components/theme-toggle";
 import { GitHubStarLink } from "../../src/components/github-star-link";
+import { Search } from "../../src/components/search";
 import NextLink from "next/link";
 import type { FC, ReactNode } from "react";
 
@@ -23,7 +24,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
 
   let sourcePageMap = await getPageMap(`/${lang}`);
   //@ts-ignore
-  // 用fs模块将sourcePageMap保存到本地
+  // 用 fs 模块将 sourcePageMap 保存到本地
 
   const banner = (
     <Banner storageKey='qwen-code-announce'>
@@ -58,6 +59,15 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
         </>
       }
     >
+      <Search placeholder={
+    lang === "zh" ? "搜索文档..." :
+    lang === "ja" ? "ドキュメントを検索..." :
+    lang === "de" ? "Dokumentation durchsuchen..." :
+    lang === "fr" ? "Rechercher dans la documentation..." :
+    lang === "ru" ? "Поиск в документации..." :
+    lang === "pt-BR" ? "Pesquisar documentação..." :
+    "Search documentation..."
+  } lang={lang} />
       <LanguageDropdown currentLang={lang} />
       <GitHubStarLink projectLink='https://github.com/QwenLM/qwen-code' />
       <ThemeToggle />
