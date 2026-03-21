@@ -1,0 +1,167 @@
+---
+title: "Qwen Code Semanal: Limite de Tokens Dobrado, Exibição em Tempo Real, Suporte ao Editor JetBrains"
+date: "2026-03-20"
+description: "Esta semana: Limite de tokens aumentado de 8K para 16K, exibição de consumo em tempo real, integração JetBrains/Zed, visualização de comparação no Plan Mode, além de correções de codificação no Windows."
+author: "Qwen Team"
+tags: ["Atualizações do Produto", "release", "semanal"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Semanal: Limite de Tokens Dobrado, Exibição em Tempo Real, Suporte ao Editor JetBrains"
+  date="2026-03-20"
+  author="Qwen Team"
+/>
+
+Esta semana lançamos a versão de funcionalidades **v0.12.4** e 2 versões de correção de bugs, junto com a versão preview **v0.13.0-preview**.
+
+Quer experimentar os novos recursos de preview? Execute `npm i @qwen-code/qwen-code@v0.13.0-preview.1 -g` para instalar.
+
+Após o lançamento do v0.12.0, recebemos muito feedback dos usuários. Esta semana nos concentramos em corrigir problemas que afetam a experiência: problemas de codificação de saída em chinês no Windows, perda de saída do shell interativo e erros de retry da API. Em termos de novos recursos, fizemos melhorias abrangentes em tokens: limite dobrado para 16K, exibição de consumo em tempo real e novo comando `/context` para detalhes. Também adicionamos suporte aos editores JetBrains e Zed.
+
+## ✨ Novos Recursos
+
+### Limite de Tokens Dobrado: Leia Mais Contexto, Obtenha Mais Informações
+
+O limite de tokens de saída foi aumentado de 8K para 16K, permitindo que a IA leia mais contexto e gere respostas mais completas. Também detecta automaticamente a configuração max_tokens do modelo, sem necessidade de configuração manual.
+
+**Casos de Uso:**
+
+- A IA pode ler mais conteúdo de arquivos e entender estruturas de projeto maiores
+- Gerar código e documentos mais completos sem precisar juntar segmentos
+- Adaptar-se automaticamente aos limites de tokens de diferentes modelos sem se preocupar com excedentes
+
+Veja PR [#2411](https://github.com/QwenLM/qwen-code/pull/2411), [#2356](https://github.com/QwenLM/qwen-code/pull/2356), [#2362](https://github.com/QwenLM/qwen-code/pull/2362)
+
+### Exibição de Consumo de Tokens em Tempo Real (Preview)
+
+Durante o pensamento e geração da IA, a interface mostra o consumo de tokens em tempo real. Não precisa esperar a conversa terminar - saiba seu consumo de tokens a qualquer momento.
+
+**Casos de Uso:**
+
+- Ver o consumo de tokens em tempo real durante as conversas
+- Ajustar prontamente quando o consumo estiver anormal para evitar desperdício
+- Comparar custos de tokens de diferentes tarefas para otimizar o uso
+
+Veja PR [#2445](https://github.com/QwenLM/qwen-code/pull/2445)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01J3OhN228vlftWyHmx_!!6000000007995-1-tps-1280-720.gif)
+
+### Comando /context: Visualizar Detalhes do Consumo de Tokens (Preview)
+
+Use o comando `/context` para ver os detalhes do consumo de tokens na janela de contexto: quais arquivos estão usando quantos tokens, quanto espaço resta - tudo de um só olhar.
+
+**Casos de Uso:**
+
+- Ver o uso de tokens da conversa atual, saber quanto mais conteúdo pode ser adicionado
+- Descobrir quais arquivos estão usando tokens demais e decidir se precisa limpar
+- Otimizar o uso do contexto para manter a IA focada no conteúdo principal
+
+Veja PR [#1835](https://github.com/QwenLM/qwen-code/pull/1835)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01cekEKq1mRc3CM2AQd_!!6000000004951-1-tps-1280-720.gif)
+
+### Integração com Editores Zed e JetBrains
+
+Além do VS Code, o Qwen Code agora suporta Zed e a série de editores JetBrains (IntelliJ IDEA, PyCharm, WebStorm, etc.). Veja PR [#2372](https://github.com/QwenLM/qwen-code/pull/2372).
+
+**Casos de Uso:**
+
+- Usar o Qwen Code diretamente nas IDEs JetBrains sem precisar trocar de janela
+- Usuários do editor Zed também podem aproveitar o assistente de codificação com IA
+- Experiência unificada entre diferentes editores, sem precisar se readaptar ao trocar de ferramenta
+
+Documentação:
+
+- [IDE JetBrains | Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/pt-BR/users/integration-jetbrains/)
+- [Editor Zed | Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/pt-BR/users/integration-zed/)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01rTE0X61tikAwLN7Zz_!!6000000005936-2-tps-2032-1386.png)
+
+### Plan Mode: Propostas Rejeitadas Agora Visíveis
+
+No Plan Mode, quando uma proposta da IA é rejeitada por você, o conteúdo não desaparece. Você pode comparar diferentes propostas e escolher a mais adequada.
+
+**Casos de Uso:**
+
+- Comparar múltiplas propostas da IA e escolher a melhor solução
+- Revisar o conteúdo anterior após rejeição sem pedir para a IA regenerar
+- Comparação de propostas mais intuitiva para decisões mais confiantes
+
+Veja PR [#2157](https://github.com/QwenLM/qwen-code/pull/2157)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01rGEuoD1XpgdIQ8X2V_!!6000000002973-1-tps-860-584.gif)
+
+### Suporte ao Diretório .agents (Preview)
+
+Arquivos de skills agora podem ser colocados no diretório `.agents` do projeto, gerenciados junto com o código do projeto. Membros da equipe podem usar a mesma configuração de skills após clonar o projeto.
+
+**Casos de Uso:**
+
+- Colocar skills relacionadas ao projeto no diretório `.agents` para controle de versão com o código
+- Membros da equipe compartilham configuração de skills sem configuração manual individual
+- Diferentes projetos podem ter configurações de skills independentes sem interferência
+
+Veja PR [#2202](https://github.com/QwenLM/qwen-code/pull/2202)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01S3mZO01RMw4i66XNH_!!6000000002098-1-tps-1280-720.gif)
+
+### Exportação de Sessão com Metadados e Estatísticas (Preview)
+
+Ao exportar sessões, metadados e estatísticas agora são incluídos: tempo de conversa, consumo de tokens, número de mensagens, etc. Conveniente para arquivamento e análise de uso.
+
+**Casos de Uso:**
+
+- Registrar automaticamente tempo de conversa e consumo de tokens ao exportar para fácil rastreamento
+- Analisar estatisticamente padrões de uso para entender seus hábitos
+- Arquivar conversas importantes com informações completas
+
+Veja PR [#2328](https://github.com/QwenLM/qwen-code/pull/2328)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN010xCLBN1txrFHqCjhG_!!6000000005969-2-tps-1264-589.png)
+
+## 📊 Melhorias
+
+- **Saída do shell não inunda mais a tela**: Saídas grandes são automaticamente truncadas, saída de ferramentas mais concisa, sem lentidão devido a saídas longas ([#2388](https://github.com/QwenLM/qwen-code/pull/2388))
+- **Localização das descrições de comandos slash**: Descrições de `/help` e outros comandos suportam exibição em múltiplos idiomas ([#2333](https://github.com/QwenLM/qwen-code/pull/2333))
+
+## 🔧 Correções Importantes
+
+| PR | Versão | Correção | Impacto |
+|----|--------|----------|---------|
+| [#2423](https://github.com/QwenLM/qwen-code/pull/2423) | v0.12.5 | Corrigido problema de codificação de saída não-ASCII no Windows | Saídas em chinês, japonês e outros idiomas não-ingleses não ficam mais corrompidas no Windows |
+| [#2438](https://github.com/QwenLM/qwen-code/pull/2438) | v0.12.6 | Melhorado tratamento de max_tokens com valores padrão conservadores | Evita erros de certos modelos devido a max_tokens excessivo |
+| [#2024](https://github.com/QwenLM/qwen-code/pull/2024) | v0.12.4 | Rejeitar arquivos PDF para prevenir corrupção de sessão | Abrir PDFs não causa mais problemas na sessão |
+| [#2389](https://github.com/QwenLM/qwen-code/pull/2389) | v0.12.4 | Corrigida perda de saída rápida do shell interativo | Saída de comandos não perde mais conteúdo |
+| [#2367](https://github.com/QwenLM/qwen-code/pull/2367) | v0.12.4 | Corrigidos erros de retry da API | Não mais erros misteriosos da API |
+| [#2280](https://github.com/QwenLM/qwen-code/pull/2280) | v0.12.4 | Corrigida definição de tipo JSON Schema dos Hooks | Não mais erros de tipo ao configurar Hooks |
+
+### Correções Específicas da Plataforma Windows
+
+| PR | Correção | Impacto |
+|----|----------|---------|
+| [#2423](https://github.com/QwenLM/qwen-code/pull/2423) | Corrigido problema de codificação de saída não-ASCII | Saídas em chinês, japonês e outros idiomas não-ingleses são exibidas corretamente |
+| [#2286](https://github.com/QwenLM/qwen-code/pull/2286) | Corrigida falha na instalação de extensão | Instalação de extensão via git clone não falha mais no Windows |
+| [#1904](https://github.com/QwenLM/qwen-code/pull/1904) | Normalizada variável de ambiente PATH do Windows | Tratamento de variáveis de ambiente mais estável durante execução do shell |
+
+### Correções Específicas da Plataforma macOS
+
+| PR | Correção | Impacto |
+|----|----------|---------|
+| [#2391](https://github.com/QwenLM/qwen-code/pull/2391) | Corrigido problema de permissão do sandbox | Acesso ao dispositivo terminal funciona corretamente no ambiente sandbox do macOS |
+
+## 🎈 Outras Melhorias
+
+- 7 novos contribuidores: [@netbrah](https://github.com/netbrah), [@chen893](https://github.com/chen893), [@hs-ye](https://github.com/hs-ye), [@drewd789](https://github.com/drewd789), [@Sakuranda](https://github.com/Sakuranda), [@kiri-chenchen](https://github.com/kiri-chenchen), [@ShihaoShenDev](https://github.com/ShihaoShenDev)
+- Adicionada documentação de runtime Docker sandbox e uso Java ([#1642](https://github.com/QwenLM/qwen-code/pull/1642))
+- Melhorado tratamento de condição de corrida para cancelamento de prompt VS Code e streaming ([#2374](https://github.com/QwenLM/qwen-code/pull/2374))
+
+<Callout type="info">
+  **Como Atualizar**:
+  - Versão estável: `npm i @qwen-code/qwen-code@latest -g`
+  - Versão preview: `npm i @qwen-code/qwen-code@v0.13.0-preview.1 -g`
+</Callout>
+
+Se você tiver perguntas ou sugestões, sinta-se à vontade para fornecer feedback no [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!

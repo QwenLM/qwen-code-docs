@@ -1,0 +1,167 @@
+---
+title: "Qwen Code 週報：トークン制限倍増、リアルタイム消費表示、JetBrains エディタ対応"
+date: "2026-03-20"
+description: "今週のアップデート：トークン制限を8Kから16Kに増量、リアルタイムトークン消費表示、JetBrains/Zed エディタ統合、Plan Mode の比較表示、Windows エンコーディング問題の修正。"
+author: "Qwen Team"
+tags: ["製品アップデート", "release", "週報"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：トークン制限倍増、リアルタイム消費表示、JetBrains エディタ対応"
+  date="2026-03-20"
+  author="Qwen Team"
+/>
+
+今週は **v0.12.4** 機能バージョンと2つのバグ修正版をリリースし、**v0.13.0-preview** プレビュー版も公開しました。
+
+プレビュー版の新機能を試してみたいですか？`npm i @qwen-code/qwen-code@v0.13.0-preview.1 -g` を実行してインストールしてください。
+
+v0.12.0 のリリース後、多くのユーザーフィードバックをいただきました。今週は体験に影響する問題の修正に注力しました：Windows での日本語出力の文字化け、対話型シェル出力の消失、API リトライエラーなどです。新機能面では、トークン関連の包括的な改善を行いました：制限を16Kに倍増、リアルタイム消費表示、新しい `/context` コマンドで詳細確認。また、JetBrains と Zed エディタのサポートも追加しました。
+
+## ✨ 新機能
+
+### トークン制限倍増：より多くのコンテキストを読み込み、より多くの情報を取得
+
+出力トークン制限を8Kから16Kに引き上げ、AI がより多くのコンテキストを読み込み、より完全な回答を生成できるようになりました。また、モデルの max_tokens 設定を自動検出するため、手動設定は不要です。
+
+**活用例：**
+
+- AI がより多くのファイル内容を読み込み、より大きなプロジェクト構造を理解
+- セグメントをつなぎ合わせることなく、より完全なコードとドキュメントを生成
+- 異なるモデルのトークン制限に自動適応し、制限超過エラーを心配する必要なし
+
+PR [#2411](https://github.com/QwenLM/qwen-code/pull/2411)、[#2356](https://github.com/QwenLM/qwen-code/pull/2356)、[#2362](https://github.com/QwenLM/qwen-code/pull/2362) を参照
+
+### トークン使用量のリアルタイム表示（プレビュー版）
+
+AI の思考と生成中に、インターフェースがトークン消費をリアルタイムで表示します。会話が終わるのを待つ必要なく、いつでもトークン使用量を把握できます。
+
+**活用例：**
+
+- 会話中にリアルタイムでトークン消費を確認
+- 消費が異常な場合はすぐに調整し、無駄を回避
+- 異なるタスクのトークンコストを比較し、使用方法を最適化
+
+PR [#2445](https://github.com/QwenLM/qwen-code/pull/2445) を参照
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01J3OhN228vlftWyHmx_!!6000000007995-1-tps-1280-720.gif)
+
+### /context コマンド：コンテキストトークン消費の詳細表示（プレビュー版）
+
+`/context` コマンドを使用すると、コンテキストウィンドウのトークン消費の詳細を確認できます：どのファイルがどれだけのトークンを使用しているか、残り容量はどれくらいか、一目で分かります。
+
+**活用例：**
+
+- 現在の会話のトークン使用状況を確認し、あとどれくらいのコンテンツを追加できるか把握
+- どのファイルがトークンを消費しすぎているかを発見し、クリーンアップが必要か判断
+- コンテキストの使用を最適化し、AI を重要なコンテンツに集中させる
+
+PR [#1835](https://github.com/QwenLM/qwen-code/pull/1835) を参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01cekEKq1mRc3CM2AQd_!!6000000004951-1-tps-1280-720.gif)
+
+### Zed と JetBrains エディタ統合
+
+VS Code に加え、Qwen Code は Zed と JetBrains シリーズのエディタ（IntelliJ IDEA、PyCharm、WebStorm など）をサポートするようになりました。PR [#2372](https://github.com/QwenLM/qwen-code/pull/2372) を参照。
+
+**活用例：**
+
+- JetBrains IDE で直接 Qwen Code を使用し、ウィンドウを切り替える必要なし
+- Zed エディタのユーザーも AI コーディングアシスタントを活用可能
+- 異なるエディタ間で統一された体験を提供し、ツールを変更しても再適応不要
+
+ドキュメント：
+
+- [JetBrains IDE | Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/ja/users/integration-jetbrains/)
+- [Zed エディタ | Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/ja/users/integration-zed/)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01rTE0X61tikAwLN7Zz_!!6000000005936-2-tps-2032-1386.png)
+
+### Plan Mode：拒否された提案も表示可能に
+
+Plan Mode で、AI の提案が拒否されても内容は消えません。異なる提案を比較し、最適なものを選択できます。
+
+**活用例：**
+
+- AI が提示した複数の提案を比較し、最適な解決策を選択
+- 拒否後も以前の内容を確認でき、AI に再生成を依頼する必要なし
+- より直感的な提案比較で、より自信を持って決定
+
+PR [#2157](https://github.com/QwenLM/qwen-code/pull/2157) を参照
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01rGEuoD1XpgdIQ8X2V_!!6000000002973-1-tps-860-584.gif)
+
+### .agents ディレクトリのサポート（プレビュー版）
+
+スキルファイルをプロジェクトの `.agents` ディレクトリに配置し、プロジェクトコードと一緒に管理できるようになりました。チームメンバーはプロジェクトをクローンするだけで同じスキル設定を使用できます。
+
+**活用例：**
+
+- プロジェクト関連のスキルを `.agents` ディレクトリに配置し、コードと一緒にバージョン管理
+- チームメンバーがスキル設定を共有し、個別に手動設定する必要なし
+- 異なるプロジェクトが独立したスキル設定を持てるため、相互干渉なし
+
+PR [#2202](https://github.com/QwenLM/qwen-code/pull/2202) を参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01S3mZO01RMw4i66XNH_!!6000000002098-1-tps-1280-720.gif)
+
+### セッションエクスポートにメタデータと統計を追加（プレビュー版）
+
+セッションをエクスポートする際、メタデータと統計情報が含まれるようになりました：会話時間、トークン消費、メッセージ数など。アーカイブと使用状況分析に便利です。
+
+**活用例：**
+
+- エクスポート時に会話時間とトークン消費を自動記録し、簡単に遡及可能
+- 使用パターンを統計的に分析し、自分の使用習慣を理解
+- 重要な会話を完全な情報とともにアーカイブ
+
+PR [#2328](https://github.com/QwenLM/qwen-code/pull/2328) を参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN010xCLBN1txrFHqCjhG_!!6000000005969-2-tps-1264-589.png)
+
+## 📊 改善点
+
+- **シェル出力が画面を埋め尽くさない**：大きな出力は自動的に切り詰められ、ツール出力もより簡潔に。長い出力による応答遅延なし ([#2388](https://github.com/QwenLM/qwen-code/pull/2388))
+- **スラッシュコマンドの説明ローカライズ**：`/help` などのコマンド説明が多言語表示に対応 ([#2333](https://github.com/QwenLM/qwen-code/pull/2333))
+
+## 🔧 重要な修正
+
+| PR | バージョン | 修正内容 | 影響 |
+|----|----------|---------|------|
+| [#2423](https://github.com/QwenLM/qwen-code/pull/2423) | v0.12.5 | Windows 非 ASCII 出力エンコーディング問題の修正 | Windows で中国語、日本語などの非英語出力が文字化けしなくなった |
+| [#2438](https://github.com/QwenLM/qwen-code/pull/2438) | v0.12.6 | max_tokens 処理の改善、保守的なデフォルト値を使用 | 一部のモデルで max_tokens が大きすぎることによるエラーを回避 |
+| [#2024](https://github.com/QwenLM/qwen-code/pull/2024) | v0.12.4 | セッション破損を防ぐため PDF ファイルを拒否 | PDF を開いてもセッション異常が発生しなくなった |
+| [#2389](https://github.com/QwenLM/qwen-code/pull/2389) | v0.12.4 | 対話型シェルの高速出力消失問題の修正 | コマンド実行時の出力が消失しなくなった |
+| [#2367](https://github.com/QwenLM/qwen-code/pull/2367) | v0.12.4 | API リトライ時のエラー修正 | 原因不明の API エラーに遭遇しなくなった |
+| [#2280](https://github.com/QwenLM/qwen-code/pull/2280) | v0.12.4 | Hooks JSON Schema 型定義の修正 | Hooks 設定時の型エラーが発生しなくなった |
+
+### Windows プラットフォーム固有の修正
+
+| PR | 修正内容 | 影響 |
+|----|---------|------|
+| [#2423](https://github.com/QwenLM/qwen-code/pull/2423) | 非 ASCII 出力エンコーディング問題の修正 | 中国語、日本語などの非英語出力が正常に表示される |
+| [#2286](https://github.com/QwenLM/qwen-code/pull/2286) | 拡張機能インストール失敗問題の修正 | Windows で git clone 経由の拡張機能インストールが失敗しなくなった |
+| [#1904](https://github.com/QwenLM/qwen-code/pull/1904) | Windows PATH 環境変数の正規化 | シェル実行時の環境変数処理がより安定 |
+
+### macOS プラットフォーム固有の修正
+
+| PR | 修正内容 | 影響 |
+|----|---------|------|
+| [#2391](https://github.com/QwenLM/qwen-code/pull/2391) | サンドボックス権限問題の修正 | macOS サンドボックス環境でターミナルデバイスアクセスが正常に動作 |
+
+## 🎈 その他の改善
+
+- 7名の新しいコントリビューター：[@netbrah](https://github.com/netbrah), [@chen893](https://github.com/chen893), [@hs-ye](https://github.com/hs-ye), [@drewd789](https://github.com/drewd789), [@Sakuranda](https://github.com/Sakuranda), [@kiri-chenchen](https://github.com/kiri-chenchen), [@ShihaoShenDev](https://github.com/ShihaoShenDev)
+- Docker サンドボックスランタイムと Java 使用説明ドキュメントを追加 ([#1642](https://github.com/QwenLM/qwen-code/pull/1642))
+- VS Code プロンプトキャンセルとストリーミングの競合状態処理を改善 ([#2374](https://github.com/QwenLM/qwen-code/pull/2374))
+
+<Callout type="info">
+  **アップグレード方法**：
+  - 安定版：`npm i @qwen-code/qwen-code@latest -g`
+  - プレビュー版：`npm i @qwen-code/qwen-code@v0.13.0-preview.1 -g`
+</Callout>
+
+ご質問やご提案がありましたら、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues) でお気軽にフィードバックください！

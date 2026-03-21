@@ -1,0 +1,167 @@
+---
+title: "Qwen Code Wochenbericht: Token-Limit verdoppelt, Echtzeit-Verbrauchsanzeige, JetBrains-Editor-Unterstützung"
+date: "2026-03-20"
+description: "Diese Woche: Token-Limit von 8K auf 16K erhöht, Echtzeit-Token-Verbrauchsanzeige, JetBrains/Zed-Editor-Integration, Plan-Mode-Vergleichsansicht, plus Windows-Kodierungs-Fixes."
+author: "Qwen Team"
+tags: ["Produkt-Updates", "Release", "Wochenbericht"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Wochenbericht: Token-Limit verdoppelt, Echtzeit-Verbrauchsanzeige, JetBrains-Editor-Unterstützung"
+  date="2026-03-20"
+  author="Qwen Team"
+/>
+
+Diese Woche haben wir **v0.12.4** als Feature-Version und 2 Bugfix-Releases veröffentlicht, zusammen mit **v0.13.0-preview** als Vorschauversion.
+
+Sie möchten die neuen Vorschau-Funktionen ausprobieren? Führen Sie `npm i @qwen-code/qwen-code@v0.13.0-preview.1 -g` zur Installation aus.
+
+Nach dem Start von v0.12.0 haben wir viel Feedback von Benutzern erhalten. Diese Woche haben wir uns auf die Behebung von Problemen konzentriert, die die Benutzererfahrung beeinträchtigen: Windows chinesische Ausgabekodierungsprobleme, Verlust von interaktiver Shell-Ausgabe und API-Wiederholungsfehler. Bei den neuen Funktionen haben wir umfassende Token-Verbesserungen vorgenommen: Limit auf 16K verdoppelt, Echtzeit-Verbrauchsanzeige und neuer `/context`-Befehl für detaillierte Aufschlüsselung. Wir haben auch Unterstützung für JetBrains- und Zed-Editoren hinzugefügt.
+
+## ✨ Neue Funktionen
+
+### Token-Limit verdoppelt: Mehr Kontext lesen, mehr Informationen erhalten
+
+Das Ausgabe-Token-Limit wurde von 8K auf 16K erhöht, sodass die KI mehr Kontext lesen und vollständigere Antworten generieren kann. Es erkennt auch automatisch die max_tokens-Einstellung des Modells – keine manuelle Konfiguration erforderlich.
+
+**Anwendungsfälle:**
+
+- Die KI kann mehr Dateiinhalte lesen und größere Projektstrukturen verstehen
+- Vollständigere Code- und Dokumentgenerierung ohne Zusammenfügen von Segmenten
+- Automatische Anpassung an Token-Limits verschiedener Modelle ohne Sorge vor Überschreitung
+
+Siehe PR [#2411](https://github.com/QwenLM/qwen-code/pull/2411), [#2356](https://github.com/QwenLM/qwen-code/pull/2356), [#2362](https://github.com/QwenLM/qwen-code/pull/2362)
+
+### Echtzeit-Token-Verbrauchsanzeige (Vorschau)
+
+Während des Denkens und Generierens der KI zeigt die Oberfläche den Token-Verbrauch in Echtzeit an. Kein Warten bis zum Ende des Gesprächs – wissen Sie jederzeit Ihren Token-Verbrauch.
+
+**Anwendungsfälle:**
+
+- Token-Verbrauch während Gesprächen in Echtzeit sehen
+- Bei abnormalen Verbrauch rechtzeitig anpassen, um Verschwendung zu vermeiden
+- Token-Kosten verschiedener Aufgaben vergleichen, um die Nutzung zu optimieren
+
+Siehe PR [#2445](https://github.com/QwenLM/qwen-code/pull/2445)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01J3OhN228vlftWyHmx_!!6000000007995-1-tps-1280-720.gif)
+
+### /context-Befehl: Detaillierte Token-Verbrauchsübersicht (Vorschau)
+
+Verwenden Sie den `/context`-Befehl, um die detaillierte Token-Nutzung im Kontextfenster zu sehen: welche Dateien wie viele Tokens verwenden, wie viel Platz noch übrig ist – alles auf einen Blick.
+
+**Anwendungsfälle:**
+
+- Aktuellen Token-Verbrauch des Gesprächs sehen, wissen wie viel mehr Inhalt Platz hat
+- Entdecken, welche Dateien zu viele Tokens verbrauchen und entscheiden, ob Bereinigung nötig ist
+- Kontextnutzung optimieren, um die KI auf wichtige Inhalte zu fokussieren
+
+Siehe PR [#1835](https://github.com/QwenLM/qwen-code/pull/1835)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01cekEKq1mRc3CM2AQd_!!6000000004951-1-tps-1280-720.gif)
+
+### Zed und JetBrains Editor-Integration
+
+Neben VS Code unterstützt Qwen Code jetzt auch Zed und die JetBrains-Editor-Reihe (IntelliJ IDEA, PyCharm, WebStorm usw.). Siehe PR [#2372](https://github.com/QwenLM/qwen-code/pull/2372).
+
+**Anwendungsfälle:**
+
+- Qwen Code direkt in JetBrains-IDEs verwenden, ohne Fenster zu wechseln
+- Zed-Editor-Benutzer können ebenfalls den KI-Coding-Assistenten nutzen
+- Einheitliche Erfahrung über verschiedene Editoren hinweg, kein Umgewöhnen nötig
+
+Dokumentation:
+
+- [JetBrains IDE | Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/de/users/integration-jetbrains/)
+- [Zed Editor | Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/de/users/integration-zed/)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01rTE0X61tikAwLN7Zz_!!6000000005936-2-tps-2032-1386.png)
+
+### Plan-Mode: Abgelehnte Vorschläge jetzt sichtbar
+
+Im Plan-Mode verschwindet der Inhalt nicht, wenn die KI einen Vorschlag macht, den Sie ablehnen. Sie können verschiedene Vorschläge vergleichen und den geeignetsten auswählen.
+
+**Anwendungsfälle:**
+
+- Mehrere Vorschläge der KI vergleichen und die beste Lösung wählen
+- Nach Ablehnung vorherigen Inhalt überprüfen, ohne die KI neu generieren zu lassen
+- Intuitiverer Vorschlagsvergleich für sicherere Entscheidungen
+
+Siehe PR [#2157](https://github.com/QwenLM/qwen-code/pull/2157)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01rGEuoD1XpgdIQ8X2V_!!6000000002973-1-tps-860-584.gif)
+
+### Unterstützung für .agents-Verzeichnis (Vorschau)
+
+Skill-Dateien können jetzt im `.agents`-Verzeichnis des Projekts platziert und zusammen mit dem Projektcode verwaltet werden. Teammitglieder können nach dem Klonen des Projekts dieselbe Skill-Konfiguration verwenden.
+
+**Anwendungsfälle:**
+
+- Projektbezogene Skills im `.agents`-Verzeichnis für Versionskontrolle mit Code platzieren
+- Teammitglieder teilen Skill-Konfiguration ohne einzelne manuelle Einrichtung
+- Verschiedene Projekte können unabhängige Skill-Konfigurationen ohne gegenseitige Beeinflussung haben
+
+Siehe PR [#2202](https://github.com/QwenLM/qwen-code/pull/2202)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01S3mZO01RMw4i66XNH_!!6000000002098-1-tps-1280-720.gif)
+
+### Sitzungsexport mit Metadaten und Statistiken (Vorschau)
+
+Beim Exportieren von Sitzungen werden jetzt Metadaten und Statistiken einbezogen: Gesprächszeit, Token-Verbrauch, Nachrichtenanzahl usw. Praktisch für Archivierung und Nutzungsanalyse.
+
+**Anwendungsfälle:**
+
+- Automatische Aufzeichnung von Gesprächszeit und Token-Verbrauch beim Exportieren für einfache Rückverfolgung
+- Statistische Analyse von Nutzungsmustern zum Verständnis eigener Nutzungsgewohnheiten
+- Wichtige Gespräche mit vollständigen Informationen archivieren
+
+Siehe PR [#2328](https://github.com/QwenLM/qwen-code/pull/2328)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN010xCLBN1txrFHqCjhG_!!6000000005969-2-tps-1264-589.png)
+
+## 📊 Verbesserungen
+
+- **Shell-Ausgabe überflutet nicht mehr den Bildschirm**: Große Ausgaben werden automatisch gekürzt, Tool-Ausgaben sind prägnanter, keine Verlangsamung durch lange Ausgaben ([#2388](https://github.com/QwenLM/qwen-code/pull/2388))
+- **Lokalisierung von Slash-Befehlsbeschreibungen**: `/help` und andere Befehlsbeschreibungen unterstützen mehrsprachige Anzeige ([#2333](https://github.com/QwenLM/qwen-code/pull/2333))
+
+## 🔧 Wichtige Fehlerbehebungen
+
+| PR | Version | Fix | Auswirkung |
+|----|---------|-----|------------|
+| [#2423](https://github.com/QwenLM/qwen-code/pull/2423) | v0.12.5 | Windows Nicht-ASCII-Ausgabekodierungsproblem behoben | Chinesische, japanische und andere nicht-englische Ausgaben unter Windows nicht mehr verstümmelt |
+| [#2438](https://github.com/QwenLM/qwen-code/pull/2438) | v0.12.6 | max_tokens-Handhabung mit konservativen Standardwerten verbessert | Fehler bei bestimmten Modellen durch zu hohe max_tokens vermieden |
+| [#2024](https://github.com/QwenLM/qwen-code/pull/2024) | v0.12.4 | PDF-Dateien abgelehnt um Sitzungskorruption zu verhindern | Öffnen von PDFs verursacht keine Sitzungsprobleme mehr |
+| [#2389](https://github.com/QwenLM/qwen-code/pull/2389) | v0.12.4 | Verlust bei schneller interaktiver Shell-Ausgabe behoben | Befehlsausgabe verliert keine Inhalte mehr |
+| [#2367](https://github.com/QwenLM/qwen-code/pull/2367) | v0.12.4 | API-Wiederholungsfehler behoben | Keine mysteriösen API-Fehler mehr |
+| [#2280](https://github.com/QwenLM/qwen-code/pull/2280) | v0.12.4 | Hooks JSON Schema Typdefinition korrigiert | Keine Typfehler mehr bei Hooks-Konfiguration |
+
+### Windows-Plattform-spezifische Fehlerbehebungen
+
+| PR | Fix | Auswirkung |
+|----|-----|------------|
+| [#2423](https://github.com/QwenLM/qwen-code/pull/2423) | Nicht-ASCII-Ausgabekodierungsproblem behoben | Chinesische, japanische und andere nicht-englische Ausgaben werden korrekt angezeigt |
+| [#2286](https://github.com/QwenLM/qwen-code/pull/2286) | Erweiterungsinstallationsfehler behoben | Erweiterungsinstallation via git clone schlägt unter Windows nicht mehr fehl |
+| [#1904](https://github.com/QwenLM/qwen-code/pull/1904) | Windows PATH-Umgebungsvariable normalisiert | Stabilere Umgebungsvariablenverarbeitung bei Shell-Ausführung |
+
+### macOS-Plattform-spezifische Fehlerbehebungen
+
+| PR | Fix | Auswirkung |
+|----|-----|------------|
+| [#2391](https://github.com/QwenLM/qwen-code/pull/2391) | Sandbox-Berechtigungsproblem behoben | Terminal-Gerätezugriff funktioniert ordnungsgemäß in macOS-Sandbox-Umgebung |
+
+## 🎈 Weitere Verbesserungen
+
+- 7 neue Mitwirkende: [@netbrah](https://github.com/netbrah), [@chen893](https://github.com/chen893), [@hs-ye](https://github.com/hs-ye), [@drewd789](https://github.com/drewd789), [@Sakuranda](https://github.com/Sakuranda), [@kiri-chenchen](https://github.com/kiri-chenchen), [@ShihaoShenDev](https://github.com/ShihaoShenDev)
+- Docker-Sandbox-Runtime und Java-Verwendungsdokumentation hinzugefügt ([#1642](https://github.com/QwenLM/qwen-code/pull/1642))
+- VS Code Prompt-Abbruch und Streaming Race-Condition-Behandlung verbessert ([#2374](https://github.com/QwenLM/qwen-code/pull/2374))
+
+<Callout type="info">
+  **Upgrade-Möglichkeiten**:
+  - Stabile Version: `npm i @qwen-code/qwen-code@latest -g`
+  - Vorschauversion: `npm i @qwen-code/qwen-code@v0.13.0-preview.1 -g`
+</Callout>
+
+Bei Fragen oder Anregungen freuen wir uns über Ihr Feedback auf [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
