@@ -1,0 +1,60 @@
+---
+title: "制作个人简历网站"
+description: "一句话制作个人简历，整合你的经历生成展示页面，支持导出 PDF，方便投递。"
+---
+
+import { VideoShowcaseDetail } from '@/components/video-showcase-detail'
+
+<VideoShowcaseDetail
+  video={{
+    id: "portfolio-site",
+    title: "制作个人简历网站",
+    description: "你可以整合经历都写进简历，再让 Qwen Code 根据简历制作出你的展示页面，还可以直接打印导出为 PDF，方便投递。",
+    thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png",
+    videoUrl: "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4",
+    category: "Scenarios",
+    difficulty: "advanced",
+    steps: [
+      {
+        title: "提供个人经历",
+        description: "告诉 AI 你的教育背景、工作经历、项目经验、技能栈等信息。可以分段提供，也可以一次性给完整简历内容。",
+        command: "我是一名前端工程师，毕业于 XX 大学，有 3 年工作经验，擅长 React 和 TypeScript...",
+      },
+      {
+        title: "选择设计风格",
+        description: "描述你喜欢的简历风格，比如简约、专业、创意等，AI 会根据你的喜好生成设计。",
+        command: "帮我设计一个简约专业风格的简历网站",
+      },
+      {
+        title: "生成简历网站",
+        description: "AI 会创建完整的简历网站项目，包括响应式布局、打印样式等。",
+        command: "npm run dev",
+      },
+      {
+        title: "导出 PDF",
+        description: "使用浏览器打印功能导出为 PDF 格式，简历网站内置了打印优化样式。",
+        command: "Ctrl+P / Cmd+P → 另存为 PDF",
+      },
+    ],
+  }}
+  relatedVideos={[
+    {
+      id: "website-clone",
+      title: "一句话复刻你喜欢的网站",
+      description: "截图给 Qwen Code，告诉它你想复刻的网站，它会帮你分析页面结构并生成代码。",
+      thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg",
+    },
+    {
+      id: "write-file",
+      title: "一句话写入文件",
+      description: "告诉 Qwen Code 要写什么内容，它会帮你创建和写入文件。",
+      thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003593/O1CN0139ueiV1cPeBczAQyA_!!6000000003593-0-tbvideo.jpg",
+    },
+    {
+      id: "remotion-prompt",
+      title: "Remotion 视频创作",
+      description: "通过自然语言描述，使用 Remotion Skill 驱动代码生成视频内容。",
+      thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg",
+    },
+  ]}
+/>

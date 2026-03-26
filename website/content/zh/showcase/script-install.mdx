@@ -1,0 +1,48 @@
+---
+title: "脚本一键安装"
+description: "通过脚本命令快速安装 Qwen Code，几秒钟即可完成环境配置，支持 Linux、macOS 和 Windows 系统。"
+---
+
+import { VideoShowcaseDetail } from '@/components/video-showcase-detail'
+
+<VideoShowcaseDetail
+  video={{
+    id: "script-install",
+    title: "脚本一键安装",
+    description: "通过脚本命令快速安装 Qwen Code，几秒钟即可完成环境配置，支持 Linux、macOS 和 Windows 系统。",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4",
+    category: "Guide",
+    steps: [
+      {
+        title: "Linux/macOS 安装",
+        description: "使用 curl 下载安装脚本并执行，脚本会自动检测系统环境并完成配置。",
+        command: "curl -fsSL https://qwen-code.oss-cn-beijing.aliyuncs.com/install.sh | bash -s -- --install",
+      },
+      {
+        title: "Windows 安装",
+        description: "在 PowerShell 中下载并执行批处理脚本，自动完成环境配置。",
+        command: "curl -fsSL -o %TEMP%\\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\\install-qwen.bat",
+      },
+      {
+        title: "验证安装",
+        description: "安装完成后，运行以下命令验证 Qwen Code 是否正确安装。",
+        command: "qwen --version",
+      },
+    ],
+  }}
+  relatedVideos={[
+    {
+      id: "first-conversation",
+      title: "开始第一次对话",
+      description: "安装完成后，发起你与 Qwen Code 的第一次 AI 对话。",
+      thumbnail: "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg",
+    },
+    {
+      id: "api-setup",
+      title: "API 设置",
+      description: "配置 API Key 和模型参数，自定义你的 AI 编程体验。",
+      thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
+    },
+  ]}
+/>

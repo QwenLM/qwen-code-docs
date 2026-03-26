@@ -1,0 +1,54 @@
+---
+title: "开始第一次对话"
+description: "安装完成后，发起你与 Qwen Code 的第一次 AI 对话，了解它的核心能力和交互方式。"
+---
+
+import { VideoShowcaseDetail } from '@/components/video-showcase-detail'
+
+<VideoShowcaseDetail
+  video={{
+    id: "first-conversation",
+    title: "开始第一次对话",
+    description: "安装完成后，发起你与 Qwen Code 的第一次 AI 对话，了解它的核心能力和交互方式。",
+    thumbnail: "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4",
+    category: "Guide",
+    steps: [
+      {
+        title: "启动 Qwen Code",
+        description: "在终端中输入 qwen 命令启动应用，首次启动会进行初始化配置。",
+        command: "qwen",
+      },
+      {
+        title: "发起对话",
+        description: "在输入框中输入你的问题，开始与 AI 交流。可以从简单的自我介绍开始。",
+        command: "what is qwen code?",
+      },
+      {
+        title: "探索能力",
+        description: "尝试让 AI 帮你完成一些简单任务，比如解释代码、生成函数等。",
+        command: "帮我写一个 Python 函数，计算斐波那契数列",
+      },
+    ],
+  }}
+  relatedVideos={[
+    {
+      id: "script-install",
+      title: "脚本一键安装",
+      description: "通过脚本命令快速安装 Qwen Code。",
+      thumbnail: "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg",
+    },
+    {
+      id: "api-setup",
+      title: "API 设置",
+      description: "配置 API Key 和模型参数，自定义你的 AI 编程体验。",
+      thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
+    },
+    {
+      id: "web-search",
+      title: "Web Search",
+      description: "让 Qwen Code 搜索网络内容，获取实时信息辅助编程。",
+      thumbnail: "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
+    },
+  ]}
+/>

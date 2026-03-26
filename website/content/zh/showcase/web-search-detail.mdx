@@ -1,0 +1,53 @@
+---
+title: "Web Search 网络搜索"
+description: "让 Qwen Code 搜索网络内容，获取实时信息辅助编程，了解最新的技术动态和文档。"
+---
+
+import { VideoShowcaseDetail } from '@/components/video-showcase-detail'
+
+<VideoShowcaseDetail
+  video={{
+    id: "web-search",
+    title: "Web Search 网络搜索",
+    description: "让 Qwen Code 搜索网络内容，获取实时信息辅助编程，了解最新的技术动态和文档。",
+    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/FVVvz922HnDIY_STwpKaBGBb1u2JXOCdUCOL36A8WW4.mp4",
+    category: "Features",
+    steps: [
+      {
+        title: "启用搜索功能",
+        description: "在对话中直接请求搜索网络信息，AI 会自动调用搜索工具。",
+        command: "搜索最新的 React 19 新特性",
+      },
+      {
+        title: "查看搜索结果",
+        description: "AI 会整合多个搜索结果，给出结构化的答案并标注来源。",
+      },
+      {
+        title: "深入追问",
+        description: "基于搜索结果，可以继续追问细节或要求对比分析。",
+        command: "React 19 的 Server Components 和之前的版本有什么区别？",
+      },
+    ],
+  }}
+  relatedVideos={[
+    {
+      id: "plan-with-search",
+      title: "Plan 模式 + Web Search",
+      description: "在 Plan 模式下结合 Web Search，先搜索再规划，提升任务准确性。",
+      thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png",
+    },
+    {
+      id: "first-conversation",
+      title: "开始第一次对话",
+      description: "安装完成后，发起你与 Qwen Code 的第一次 AI 对话。",
+      thumbnail: "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg",
+    },
+    {
+      id: "github-integration",
+      title: "GitHub 命令集成",
+      description: "在 Qwen Code 中直接执行 GitHub 操作，管理仓库和 PR。",
+      thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
+    },
+  ]}
+/>

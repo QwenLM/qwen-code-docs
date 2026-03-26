@@ -1,0 +1,61 @@
+---
+title: "Remotion 视频创作"
+description: "通过 Remotion Skill 使用代码生成视频内容，支持自然语言描述和网页可视化两种创作方式。"
+---
+
+import { VideoShowcaseDetail } from '@/components/video-showcase-detail'
+
+<VideoShowcaseDetail
+  video={{
+    id: "remotion-prompt",
+    title: "Remotion 视频创作（提示词方式）",
+    description: "通过自然语言描述，使用 Remotion Skill 驱动代码生成视频内容，让 AI 帮你制作专业演示视频。",
+    thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4",
+    category: "Scenarios",
+    difficulty: "advanced",
+    command: "npx skills add nicepkg/agent-skills@remotion-best-practices",
+    steps: [
+      {
+        title: "安装 Remotion Skill",
+        description: "使用 npx skills 命令安装 Remotion Best Practices Skill，这是视频创作的核心工具。",
+        command: "npx skills add nicepkg/agent-skills@remotion-best-practices",
+      },
+      {
+        title: "描述创意需求",
+        description: "用自然语言告诉 AI 你想制作什么类型的视频，包括风格、时长、内容等。",
+        command: "帮我制作一个产品介绍视频，包含 logo 动画和功能演示，时长 30 秒",
+      },
+      {
+        title: "预览和调整",
+        description: "AI 会生成 Remotion 代码，在浏览器中预览效果并提出调整意见。",
+        command: "npm run dev",
+      },
+      {
+        title: "渲染导出",
+        description: "满意后使用 build 命令渲染最终视频，支持 MP4、WebM 等格式。",
+        command: "npm run build",
+      },
+    ],
+  }}
+  relatedVideos={[
+    {
+      id: "remotion-web",
+      title: "Remotion 视频创作（网页方式）",
+      description: "通过网页界面配合 Remotion Skill，可视化地创作和预览视频。",
+      thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005167/O1CN01agk2kT1o2XbAcYSLV_!!6000000005167-0-tbvideo.jpg",
+    },
+    {
+      id: "oss-promo-video",
+      title: "给自己开源项目做个宣传视频",
+      description: "给开源项目做了贡献或者有了自己的开源项目，可以直接提供仓库地址给项目做个演示视频。",
+      thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01KKPAv51ZL7QcgguxA_!!6000000003177-2-tps-2880-1622.png",
+    },
+    {
+      id: "skill-install-prompt",
+      title: "通过提示词安装 Skills",
+      description: "在对话中直接告诉 Qwen Code 安装所需的 Skill，即装即用。",
+      thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003086/O1CN01quNtwC1YfRNyxdAsy_!!6000000003086-0-tbvideo.jpg",
+    },
+  ]}
+/>
