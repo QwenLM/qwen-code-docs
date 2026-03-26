@@ -38,11 +38,16 @@ let _currentLang: string | null = null;
 async function importPagefind() {
   if (typeof window === "undefined") return;
 
-  // @ts-ignore
-  window.pagefind = await import(
-    /* webpackIgnore: true */
-    addBasePath("/_pagefind/pagefind.js")
-  );
+  try {
+    // @ts-ignore
+    window.pagefind = await import(
+      /* webpackIgnore: true */
+      addBasePath("/_pagefind/pagefind.js")
+    );
+  } catch (error) {
+    // Pagefind is only available after building the site
+    console.warn("Pagefind not available in dev mode:", error);
+  }
 }
 
 // 初始化 Pagefind 并设置语言
@@ -68,7 +73,7 @@ async function initPagefind(lang: string) {
   }
 
   // 只在首次初始化时（或 destroy 后重建时）设置 options 并加载对应语言
-  if (!_pagefindInitialized) {
+  if (!_pagefindInitialized && window.pagefind) {
     // @ts-ignore
     await window.pagefind.options({
       baseUrl: "/",
@@ -79,7 +84,7 @@ async function initPagefind(lang: string) {
         termSimilarity: 0.5,
       },
     });
-    
+
     // @ts-ignore
     await window.pagefind.init();
     
@@ -160,6 +165,13 @@ export function Search({
       // @ts-ignore
       if (!window.pagefind) {
         await initPagefind(lang);
+      }
+
+      // Check if pagefind is available (might not be in dev mode)
+      // @ts-ignore
+      if (!window.pagefind) {
+        setIsLoading(false);
+        return;
       }
 
         // 使用 search 方法而不是 debouncedSearch，以便更好地控制
