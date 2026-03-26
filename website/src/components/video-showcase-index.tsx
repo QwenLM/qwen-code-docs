@@ -122,6 +122,7 @@ export function VideoShowcaseIndex() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [visibleCount, setVisibleCount] = useState(9);
 
   const allVideos = useMemo(() => getAllVideos(), []);
 
@@ -151,6 +152,11 @@ export function VideoShowcaseIndex() {
     });
   }, [allVideos, searchQuery, selectedCategories, selectedFeatures]);
 
+  // Reset visible count when filters change
+  React.useEffect(() => {
+    setVisibleCount(9);
+  }, [searchQuery, selectedCategories, selectedFeatures]);
+
   const toggleCategory = (category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
@@ -173,6 +179,12 @@ export function VideoShowcaseIndex() {
     searchQuery || selectedCategories.length > 0 || selectedFeatures.length > 0;
 
   const videosToShow = hasActiveFilters ? filteredVideos : allVideos;
+  const displayedVideos = videosToShow.slice(0, visibleCount);
+  const hasMore = visibleCount < videosToShow.length;
+
+  const handleShowMore = () => {
+    setVisibleCount((prev) => prev + 9);
+  };
 
   return (
     <div className="w-full">
@@ -272,12 +284,25 @@ export function VideoShowcaseIndex() {
       {/* Card Grid */}
       <section className="w-full px-4 md:px-8 py-12 md:py-16">
         <div className="max-w-7xl mx-auto">
-          {videosToShow.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              {videosToShow.map((video) => (
-                <ShowcaseCard key={video.id} video={video} />
-              ))}
-            </div>
+          {displayedVideos.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                {displayedVideos.map((video) => (
+                  <ShowcaseCard key={video.id} video={video} />
+                ))}
+              </div>
+
+              {hasMore && (
+                <div className="flex justify-center mt-12">
+                  <button
+                    onClick={handleShowMore}
+                    className="px-8 py-3 text-sm font-medium rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all active:scale-[0.98]"
+                  >
+                    显示更多 ({videosToShow.length - visibleCount} 个)
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="py-24 text-center">
               <p className="text-sm text-zinc-400 dark:text-zinc-500">
