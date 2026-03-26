@@ -210,15 +210,4 @@ function ShowcaseDetailFooter({
   );
 }
 
-// Default export for backward compatibility
-export function ShowcaseDetail(props: ShowcaseDetailProps) {
-  return (
-    <>
-      <ShowcaseDetailHeader {...props} />
-      <ShowcaseDetailFooter {...props} />
-    </>
-  );
-}
-
 export { ShowcaseDetailHeader, ShowcaseDetailFooter };
-export default ShowcaseDetail;
