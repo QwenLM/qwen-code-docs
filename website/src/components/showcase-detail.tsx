@@ -1,3 +1,7 @@
+"use client";
+
+import Link from "next/link";
+
 interface RelatedCase {
   title: string;
   link: string;
@@ -62,26 +66,26 @@ function ShowcaseDetailHeader({
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4">{title}</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">{description}</p>
+        <h1 className="text-3xl font-bold mb-4 text-foreground">{title}</h1>
+        <p className="text-lg text-muted-foreground mb-6">{description}</p>
 
         {/* Meta Info */}
         <div className="flex flex-wrap gap-3 mb-6">
-          <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-sm">
+          <span className="px-3 py-1 rounded-full bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300 text-sm font-medium">
             {role}
           </span>
           {model && (
-            <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-sm">
+            <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 text-sm font-medium">
               {model}
             </span>
           )}
           {difficulty && (
-            <span className={`px-3 py-1 rounded-full text-sm ${getDifficultyColor(difficulty)}`}>
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(difficulty)}`}>
               {difficulty}
             </span>
           )}
           {duration && (
-            <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 text-sm">
+            <span className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm font-medium">
               {duration}
             </span>
           )}
@@ -93,7 +97,7 @@ function ShowcaseDetailHeader({
             {features.map((feature, index) => (
               <span
                 key={index}
-                className="px-2 py-1 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 text-sm"
+                className="px-2.5 py-1 rounded-md bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 text-sm font-medium"
               >
                 {feature}
               </span>
@@ -103,13 +107,13 @@ function ShowcaseDetailHeader({
 
         {/* Author */}
         {author && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">By {author}</p>
+          <p className="text-sm text-muted-foreground">By {author}</p>
         )}
       </div>
 
       {/* Video/Thumbnail */}
       {(videoUrl || thumbnail) && (
-        <div className="mb-8 rounded-lg overflow-hidden">
+        <div className="mb-8 rounded-xl overflow-hidden shadow-lg">
           {videoUrl ? (
             <video
               src={videoUrl}
@@ -130,21 +134,21 @@ function ShowcaseDetailHeader({
       {/* Steps */}
       {steps.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-6">操作步骤</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-foreground">操作步骤</h2>
           <div className="space-y-6">
             {steps.map((step, index) => (
               <div
                 key={index}
-                className="border-l-4 border-blue-500 pl-4 py-2"
+                className="border-l-4 border-violet-500 pl-5 py-3 bg-muted/30 rounded-r-lg"
               >
-                <h3 className="text-lg font-semibold mb-2">
+                <h3 className="text-lg font-semibold mb-2 text-foreground">
                   {index + 1}. {step.title}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-3">
+                <p className="text-muted-foreground mb-3 leading-relaxed">
                   {step.description}
                 </p>
                 {step.command && (
-                  <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md font-mono text-sm overflow-x-auto">
+                  <div className="bg-background border border-border p-3 rounded-md font-mono text-sm overflow-x-auto">
                     <code>{step.command}</code>
                   </div>
                 )}
@@ -166,13 +170,13 @@ function ShowcaseDetailFooter({
       {/* Related Cases */}
       {relatedCases && relatedCases.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-6">相关案例</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-foreground">相关案例</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {relatedCases.map((caseItem, index) => (
-              <a
+              <Link
                 key={index}
                 href={caseItem.link}
-                className="block border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                className="block border border-border rounded-lg overflow-hidden hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-lg transition-all"
               >
                 {caseItem.thumbnail && (
                   <img
@@ -182,9 +186,9 @@ function ShowcaseDetailFooter({
                   />
                 )}
                 <div className="p-4">
-                  <h3 className="font-semibold">{caseItem.title}</h3>
+                  <h3 className="font-semibold text-foreground">{caseItem.title}</h3>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -192,14 +196,14 @@ function ShowcaseDetailFooter({
 
       {/* CTA */}
       {ctaText && (
-        <div className="text-center py-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
-          <p className="text-lg font-medium mb-4">{ctaText}</p>
-          <a
+        <div className="text-center py-8 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl">
+          <p className="text-lg font-medium mb-4 text-foreground">{ctaText}</p>
+          <Link
             href="/zh/docs/getting-started/installation"
-            className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            className="inline-block px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
           >
             开始使用 Qwen Code
-          </a>
+          </Link>
         </div>
       )}
     </div>
