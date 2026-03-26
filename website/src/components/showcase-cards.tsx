@@ -89,7 +89,7 @@ const ShowcaseCardItem = ({
   <div
     role="button"
     tabIndex={0}
-    className="group cursor-pointer text-left w-full h-full flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-300 hover:shadow-[0_12px_40px_-16px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_12px_40px_-16px_rgba(0,0,0,0.4)] active:scale-[0.99]"
+    className="group cursor-pointer text-left w-full h-full flex flex-col overflow-hidden rounded-2xl border border-border bg-card hover:border-violet-300 dark:hover:border-violet-700 transition-all duration-300 hover:shadow-lg dark:hover:shadow-xl active:scale-[0.98]"
     onClick={() => onClick(card)}
     onKeyDown={(event) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -97,29 +97,27 @@ const ShowcaseCardItem = ({
       }
     }}
   >
-    {/* Image with gradient background */}
-    <div className="relative aspect-[4/3] overflow-hidden shrink-0 bg-gradient-to-br from-violet-500 via-fuchsia-500 to-orange-400 p-4 md:p-6">
-      <div className="w-full h-full rounded-xl overflow-hidden shadow-lg">
-        <img
-          src={card.image}
-          alt={card.title}
-          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-          loading="lazy"
-        />
-      </div>
+    {/* Image - direct display without gradient wrapper */}
+    <div className="relative aspect-video overflow-hidden shrink-0">
+      <img
+        src={card.image}
+        alt={card.title}
+        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+        loading="lazy"
+      />
     </div>
 
     {/* Content */}
-    <div className="p-5 md:p-6 flex flex-col flex-1 bg-card rounded-b-2xl">
+    <div className="p-5 md:p-6 flex flex-col flex-1">
       {/* Category badges */}
-      <div className="flex flex-wrap items-center gap-2 mb-3">
+      <div className="flex flex-wrap gap-2 mb-3">
         {card.categories.map((category, index) => (
           <span
             key={`${card.id}-cat-${index}`}
             className={`px-2.5 py-1 rounded-full text-xs font-medium ${
               index === 0
-                ? "border border-border text-foreground bg-transparent"
-                : "bg-muted/60 text-muted-foreground"
+                ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                : "bg-muted text-muted-foreground"
             }`}
           >
             {category}
@@ -140,7 +138,7 @@ const ShowcaseCardItem = ({
       {/* View tutorial link */}
       <a
         href={card.link}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-violet-600 dark:hover:text-violet-400 transition-colors mt-auto"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors mt-auto"
         onClick={(event) => event.stopPropagation()}
       >
         查看教程
@@ -162,13 +160,13 @@ const SearchBar = ({
   placeholder: string;
 }) => (
   <div className="relative w-full max-w-xl">
-    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
     <input
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
+      className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all shadow-sm"
     />
   </div>
 );
@@ -187,7 +185,7 @@ const CategoryFilter = ({
   label: string;
 }) => (
   <div className="space-y-3">
-    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
       {label}
     </span>
     <div className="flex flex-wrap gap-2">
@@ -199,10 +197,10 @@ const CategoryFilter = ({
             <button
               key={item}
               onClick={() => onToggleFilter(item)}
-              className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? "bg-foreground text-background shadow-sm"
-                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  ? "bg-violet-600 text-white shadow-sm hover:bg-violet-700"
+                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted border border-border"
               }`}
             >
               {item}
@@ -231,18 +229,18 @@ const LearningPathCard = ({ path }: { path: LearningPath }) => {
     : path.icon;
 
   return (
-    <div className="flex flex-col h-full p-6 rounded-2xl border border-border/50 bg-card hover:border-violet-200 dark:hover:border-violet-800 transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.3)]">
+    <div className="flex flex-col h-full p-6 rounded-2xl border border-border bg-card hover:border-violet-300 dark:hover:border-violet-700 transition-all duration-300 hover:shadow-lg dark:hover:shadow-xl">
       {/* Header */}
-      <div className="flex items-start gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-muted/60 flex items-center justify-center shrink-0">
+      <div className="flex items-start gap-4 mb-5">
+        <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
           {typeof IconComponent === 'function' ? (
-            <IconComponent className="w-5 h-5 text-foreground" />
+            <IconComponent className="w-6 h-6 text-violet-600 dark:text-violet-400" />
           ) : (
-            <span className="text-xl">{path.icon}</span>
+            <span className="text-2xl">{path.icon}</span>
           )}
         </div>
-        <div>
-          <h3 className="text-base font-semibold text-foreground mb-1">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-semibold text-foreground mb-1.5">
             {path.title}
           </h3>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -252,22 +250,22 @@ const LearningPathCard = ({ path }: { path: LearningPath }) => {
       </div>
 
       {/* Steps */}
-      <div className="flex-1 border-t border-border/50 pt-4 mt-auto">
-        <ul className="space-y-3">
+      <div className="flex-1 border-t border-border pt-5 mt-auto">
+        <ul className="space-y-3.5">
           {(path.items || path.steps)?.map((item: any, index: number) => (
-            <li key={index} className="flex items-center gap-3">
-              <span className="text-xs font-mono text-muted-foreground/60 w-6 shrink-0">
+            <li key={index} className="flex items-start gap-3">
+              <span className="text-xs font-mono text-violet-600 dark:text-violet-400 w-6 shrink-0 pt-0.5">
                 {String(index + 1).padStart(2, '0')}
               </span>
               {'link' in item ? (
                 <a 
                   href={item.link}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors line-clamp-1"
                 >
                   {item.title}
                 </a>
               ) : (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-muted-foreground line-clamp-1">
                   {item.text}
                 </span>
               )}
@@ -350,16 +348,16 @@ export const ShowcaseCards = ({
   });
 
   return (
-    <div className="min-h-[100dvh] pb-16">
+    <div className="min-h-[100dvh] pb-20">
       {/* Hero Section */}
-      <section className="w-full px-4 md:px-8 pt-12 pb-8">
+      <section className="w-full px-4 md:px-8 pt-16 pb-12 border-b border-border/50">
         <div className="max-w-[1400px] mx-auto">
           {/* Title */}
-          <div className="mb-8 max-w-3xl">
-            <h1 className="text-3xl md:text-5xl font-bold tracking-tighter leading-none mb-4 text-foreground">
+          <div className="mb-10 max-w-3xl">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight mb-4 text-foreground">
               {textData.pageTitle}
             </h1>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-[65ch]">
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-[65ch]">
               {textData.pageSubtitle}
             </p>
           </div>
@@ -389,7 +387,7 @@ export const ShowcaseCards = ({
       </section>
 
       {/* Cards Grid */}
-      <section className="w-full px-4 md:px-8 py-8">
+      <section className="w-full px-4 md:px-8 py-12">
         <div className="max-w-[1400px] mx-auto">
           {filteredCards.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -404,9 +402,9 @@ export const ShowcaseCards = ({
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
-                <Search className="w-6 h-6 text-muted-foreground" />
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                <Search className="w-7 h-7 text-muted-foreground" />
               </div>
               <p className="text-sm text-muted-foreground max-w-[40ch]">
                 {textData.emptyState || "未找到匹配的案例，尝试其他搜索词或筛选条件"}
@@ -417,11 +415,11 @@ export const ShowcaseCards = ({
       </section>
 
       {/* Learning Path Section */}
-      <section className="w-full px-4 md:px-8 py-16 border-t border-border/50">
+      <section className="w-full px-4 md:px-8 py-16 border-t border-border">
         <div className="max-w-[1400px] mx-auto">
           {/* Section Header */}
-          <div className="mb-10 max-w-2xl">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tighter leading-none mb-3 text-foreground">
+          <div className="mb-12 max-w-2xl">
+            <h2 className="text-3xl font-bold tracking-tight leading-tight mb-3 text-foreground">
               {(textData as any).learningPathTitle || (textData as any).learningPathsTitle || "学习路径"}
             </h2>
             <p className="text-base text-muted-foreground leading-relaxed">
