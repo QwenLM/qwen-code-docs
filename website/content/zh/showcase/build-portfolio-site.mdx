@@ -1,72 +1,84 @@
 ---
 title: "10 分钟搭建个人作品集网站"
 description: "使用 Qwen Code 的 Agent 模式，快速生成个性化的个人作品集网站，从设计到部署一气呵成。"
-role: "编程开发"
-model: "Qwen-Max"
-author: "Qwen Team"
-features: ["Agent 模式","前端开发","一键部署"]
-difficulty: "beginner"
-duration: "10 分钟"
-
+category: "编程开发"
+features:
+  - "Agent 模式"
 thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+个人作品集网站是展示你技能和项目经验的重要窗口。Qwen Code 的 Agent 模式能够根据你的需求快速生成专业的作品集网站，从设计到部署一气呵成。无需编写复杂的前端代码，只需描述你的想法，AI 就能帮你实现一个美观、响应式的网站。
+
+<ShowcaseDetailMeta category="编程开发" features={["Agent 模式"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png" alt="个人作品集网站" style={{width: '100%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px'}} />
+
+## 操作步骤
+
+<Steps>
+
+### 准备项目目录
+
+创建一个新的文件夹用于存放你的网站项目。选择一个易于记忆的目录名称，方便后续管理和部署。确保你有足够的磁盘空间和必要的开发环境。
+
+```bash
+mkdir my-portfolio && cd my-portfolio
+```
+
+### 启动 Qwen Code
+
+在项目目录中启动 Qwen Code。这样 AI 就能够在当前目录中创建项目文件，并访问生成的代码。Qwen Code 会准备好接收你的网站需求。
+
+```bash
+qwen
+```
+
+### 描述你的需求
+
+告诉 AI 你想要创建一个个人作品集网站，提供你的基本信息和偏好。你可以描述网站的主题、风格、页面结构、功能需求等，AI 会根据你的描述生成合适的网站设计。
+
+```bash
+帮我创建一个个人作品集网站，我是前端开发工程师，喜欢简约现代的设计风格，包含首页、项目展示、关于我三个页面
+```
+
+### 查看并调整
+
+Qwen Code 会生成完整的项目结构和代码，你可以预览并提出修改意见。如果对某些部分不满意，可以直接告诉 AI，它会快速调整代码，直到你满意为止。
+
+### 本地预览
+
+运行开发服务器，在浏览器中预览网站效果。你可以实时查看网站在不同设备上的显示效果，测试各种交互功能，确保一切符合预期。
+
+```bash
+npm run dev
+```
+
+### 部署上线
+
+满意后，可以让 Qwen Code 帮你部署到 Vercel 或其他平台。部署过程简单快捷，几分钟内就能让你的作品集网站上线，与世界分享你的技能和项目。
+
+```bash
+npx vercel --prod
+```
+
+</Steps>
+
+<Callout type="info">
+作品集网站应该突出你的核心技能和代表性项目，使用真实的案例和数据来展示你的能力。
+</Callout>
+
+## 相关推荐
+
+- [批量处理文件，整理桌面](/zh/showcase/batch-file-organize) — 使用 Cowork 功能批量整理文件
+- [数据可视化仪表盘](/zh/showcase/data-dashboard) — 快速创建交互式数据可视化仪表盘
+
 ---
 
-import { ShowcaseDetail } from '@/components/showcase-detail'
-
-<ShowcaseDetail
-  title="10 分钟搭建个人作品集网站"
-  description="使用 Qwen Code 的 Agent 模式，快速生成个性化的个人作品集网站，从设计到部署一气呵成。"
-  role="编程开发"
-  model="Qwen-Max"
-  author="Qwen Team"
-  features={["Agent 模式","前端开发","一键部署"]}
-  difficulty="beginner"
-  duration="10 分钟"
-  
-  thumbnail="https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
-  steps={[
-    {
-      title: "准备项目目录",
-      description: "创建一个新的文件夹用于存放你的网站项目。",
-      command: "mkdir my-portfolio && cd my-portfolio"
-    },
-    {
-      title: "启动 Qwen Code",
-      description: "在项目目录中启动 Qwen Code。",
-      command: "qwen"
-    },
-    {
-      title: "描述你的需求",
-      description: "告诉 AI 你想要创建一个个人作品集网站，提供你的基本信息和偏好。",
-      command: "帮我创建一个个人作品集网站，我是前端开发工程师，喜欢简约现代的设计风格，包含首页、项目展示、关于我三个页面"
-    },
-    {
-      title: "查看并调整生成的代码",
-      description: "Qwen Code 会生成完整的项目结构和代码，你可以预览并提出修改意见。",
-      
-    },
-    {
-      title: "本地预览",
-      description: "运行开发服务器，在浏览器中预览网站效果。",
-      command: "npm run dev"
-    },
-    {
-      title: "部署上线",
-      description: "满意后，可以让 Qwen Code 帮你部署到 Vercel 或其他平台。",
-      command: "npx vercel --prod"
-    }
-  ]}
-  relatedCases={[
-    {
-      title: "批量处理文件，整理桌面",
-      link: "/zh/showcase/batch-file-organize",
-      thumbnail: "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg"
-    },
-    {
-      title: "数据可视化仪表盘",
-      link: "/zh/showcase/data-dashboard",
-      thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg"
-    }
-  ]}
-  ctaText="开始构建你的作品集"
-/>
+<ShowcaseDetailCta />

@@ -1,0 +1,55 @@
+---
+title: "GitHub 命令集成"
+description: "在 Qwen Code 中直接执行 GitHub 操作，管理仓库、PR 和 Issue，无需离开终端。"
+category: "核心功能"
+features:
+  - "GitHub 集成"
+thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png"
+videoUrl: "https://cloud.video.taobao.com/vod/wWqieOtAazt1jJJdyZnxP0ZWYz4fuV6Ogb2wOvb8bBg.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+GitHub 命令集成让你能够在 Qwen Code 中直接执行 GitHub CLI 命令，无需切换到终端或浏览器。无论是管理 Pull Request、处理 Issue、查看仓库状态还是执行 Git 操作，都可以在对话中完成。这种无缝集成的工作流极大地提升了开发效率，让你能够专注于代码本身，而不是频繁切换工具。Qwen Code 会智能解析你的需求，自动构建合适的 GitHub 命令，并展示执行结果。对于复杂的 GitHub 工作流，AI 还能提供操作建议和最佳实践。
+
+<ShowcaseDetailMeta category="核心功能" features={["GitHub 集成"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/wWqieOtAazt1jJJdyZnxP0ZWYz4fuV6Ogb2wOvb8bBg.mp4" poster="https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作步骤
+
+<Steps>
+### 配置 GitHub Token
+
+首先需要配置 GitHub Personal Access Token。在 GitHub 设置中生成具有适当权限的 Token，然后在 Qwen Code 的配置文件中添加 Token 信息。配置完成后，Qwen Code 就能够以你的身份执行 GitHub 操作。建议为不同的使用场景配置不同权限的 Token，确保安全性。
+
+```bash
+gh auth login
+```
+
+### 管理 Pull Request
+
+使用 GitHub CLI 命令管理 Pull Request。例如，使用 `gh pr list` 查看所有 PR，`gh pr view <number>` 查看特定 PR 的详情，`gh pr merge <number>` 合并 PR。Qwen Code 会展示 PR 的详细信息，包括代码变更、评论状态、CI/CD 结果等，帮助你做出合并决策。
+
+### 处理 Issue
+
+同样可以使用命令管理 Issue。`gh issue list` 列出所有 Issue，`gh issue view <number>` 查看详情，`gh issue close <number>` 关闭 Issue。Qwen Code 还可以帮助你分析 Issue 的内容，提供解决方案建议，甚至自动生成回复或创建修复 PR。
+</Steps>
+
+<Callout type="warning">
+请确保 GitHub Token 有足够权限并妥善保管。建议定期轮换 Token，避免泄露风险。不要在公开的对话中分享 Token 信息。
+</Callout>
+
+## 相关推荐
+
+- [PR Review](/zh/showcase/pr-review) — AI 辅助的代码审查
+- [解决 issue](/zh/showcase/solve-issue) — 智能分析和解决 GitHub Issue
+
+---
+
+<ShowcaseDetailCta />

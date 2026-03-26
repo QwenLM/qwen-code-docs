@@ -1,0 +1,56 @@
+---
+title: "认证登录"
+description: "了解 Qwen Code 的认证流程，快速完成账号登录，解锁全部功能。"
+category: "入门指南"
+features:
+  - "终端操作"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+认证登录是使用 Qwen Code 的第一步，通过简单的认证流程，你可以快速解锁全部功能。认证过程安全可靠，支持多种登录方式，确保你的账号和数据安全。完成认证后，你可以享受个性化的 AI 编程体验，包括自定义模型配置、历史记录保存等功能。
+
+<ShowcaseDetailMeta category="入门指南" features={["终端操作"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png" alt="认证登录" style={{width: '100%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px'}} />
+
+## 操作步骤
+
+<Steps>
+
+### 触发认证
+
+在 Qwen Code 中输入 `/auth` 命令，系统会自动启动认证流程。认证命令可以在命令行或 VS Code 扩展中使用，操作方式一致。系统会检测当前的认证状态，如果未登录则引导你完成登录。
+
+```bash
+/auth
+```
+
+### 浏览器登录
+
+系统会自动打开浏览器，跳转到认证页面。在认证页面，你可以选择使用阿里云账号或其他支持的登录方式。登录过程快速便捷，只需几秒钟即可完成。
+
+### 确认登录
+
+登录成功后，浏览器会自动关闭或显示成功提示。回到 Qwen Code 界面，你会看到认证成功的消息，表示你已经成功登录并解锁全部功能。认证信息会自动保存，无需重复登录。
+
+</Steps>
+
+<Callout type="info">
+认证信息安全存储在本地，无需每次重新登录。
+</Callout>
+
+## 相关推荐
+
+- [API 设置](/zh/showcase/api-setup) — 配置 API Key 和模型参数，自定义你的 AI 编程体验
+- [脚本一键安装](/zh/showcase/script-install) — 通过脚本命令快速安装 Qwen Code
+
+---
+
+<ShowcaseDetailCta />

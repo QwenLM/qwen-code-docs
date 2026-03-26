@@ -1,72 +1,75 @@
 ---
 title: "解决 issue"
 description: "使用 Qwen Code 分析并解决开源项目的 issue，全流程跟踪从理解到提交代码。"
-role: "开发者"
-model: "qwen3.5-plus"
-
-features: ["问题诊断","代码修复","开源贡献"]
-difficulty: "intermediate"
-duration: "20 分钟"
-videoUrl: "https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4"
+category: "编程开发"
+features:
+  - "Agent 模式"
+  - "GitHub 集成"
 thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png"
+videoUrl: "https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+为开源项目解决 issue 是提升编程能力和建立技术影响力的重要途径。Qwen Code 能够帮助你快速定位问题、理解相关代码、制定修复方案，并实现代码修改。从问题分析到 PR 提交，全程 AI 辅助，让开源贡献变得更加高效和顺畅。
+
+<ShowcaseDetailMeta category="编程开发" features={["Agent 模式", "GitHub 集成"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4" poster="https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png" controls style={{width: '100%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px'}} />
+
+## 操作步骤
+
+<Steps>
+
+### 选择 issue
+
+在 GitHub 上找到感兴趣或适合解决的问题。优先选择有清晰描述、复现步骤和预期结果的 issue。标签如 `good first issue` 或 `help wanted` 通常表示适合新手的任务。
+
+### 克隆项目并定位问题
+
+下载项目代码，让 AI 帮你定位问题所在。使用 `@file` 引用相关文件，AI 会分析代码逻辑，找出问题根源。这样可以节省大量时间，快速定位到需要修改的代码位置。
+
+```bash
+@file ./src/buggy-module.ts
+帮我分析一下这个 issue 描述的问题出现在哪里
+```
+
+### 理解相关代码
+
+让 AI 解释相关的代码逻辑和依赖关系。理解代码的上下文非常重要，这有助于你制定正确的修复方案。AI 会提供清晰的代码解释，包括设计思路和潜在的问题点。
+
+### 制定修复方案
+
+与 AI 讨论可能的解决方案，选择最优解。AI 会分析不同的修复方案，评估它们的影响范围和潜在风险。选择一个既能解决问题又不会引入新问题的方案。
+
+### 实现代码修改
+
+根据 AI 的指导逐步修改代码并测试。AI 会帮你编写修改后的代码，并确保符合项目的代码规范。修改完成后，运行测试验证修复效果。
+
+```bash
+帮我修改这段代码来解决这个问题
+```
+
+### 提交 PR
+
+完成修改后提交 PR，等待项目维护者审核。在 PR 描述中清晰说明问题原因和修复方案，引用相关的 issue。维护者审核通过后，你的代码就会被合并到项目中。
+
+</Steps>
+
+<Callout type="info">
+解决开源 issue 不仅能提升技术能力，还能建立技术影响力，为职业发展加分。
+</Callout>
+
+## 相关推荐
+
+- [代码学习](/zh/showcase/code-learning) — 克隆开源仓库并学习理解代码
+- [PR Review](/zh/showcase/pr-review) — 让 AI 帮你审查 Pull Request，提升代码质量
+
 ---
 
-import { ShowcaseDetail } from '@/components/showcase-detail'
-
-<ShowcaseDetail
-  title="解决 issue"
-  description="使用 Qwen Code 分析并解决开源项目的 issue，全流程跟踪从理解到提交代码。"
-  role="开发者"
-  model="qwen3.5-plus"
-  
-  features={["问题诊断","代码修复","开源贡献"]}
-  difficulty="intermediate"
-  duration="20 分钟"
-  videoUrl="https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4"
-  thumbnail="https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png"
-  steps={[
-    {
-      title: "选择要解决的 issue",
-      description: "在 GitHub 上找到感兴趣或适合解决的问题。",
-      
-    },
-    {
-      title: "克隆项目并定位问题",
-      description: "下载项目代码，让 AI 帮你定位问题所在。",
-      command: "@file ./src/buggy-module.ts\n帮我分析一下这个 issue 描述的问题出现在哪里"
-    },
-    {
-      title: "理解相关代码",
-      description: "让 AI 解释相关的代码逻辑和依赖关系。",
-      
-    },
-    {
-      title: "制定修复方案",
-      description: "与 AI 讨论可能的解决方案，选择最优解。",
-      
-    },
-    {
-      title: "实现代码修改",
-      description: "根据 AI 的指导逐步修改代码并测试。",
-      command: "帮我修改这段代码来解决这个问题"
-    },
-    {
-      title: "提交 Pull Request",
-      description: "完成修改后提交 PR 等待项目维护者审核。",
-      
-    }
-  ]}
-  relatedCases={[
-    {
-      title: "代码学习",
-      link: "/zh/showcase/code-learning",
-      thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png"
-    },
-    {
-      title: "PR Review",
-      link: "/zh/showcase/pr-review",
-      thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png"
-    }
-  ]}
-  ctaText="参与开源贡献"
-/>
+<ShowcaseDetailCta />

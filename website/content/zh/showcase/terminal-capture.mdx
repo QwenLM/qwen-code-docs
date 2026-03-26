@@ -1,59 +1,71 @@
 ---
 title: "终端输出捕获"
 description: "产品演示必备技能！让 AI 执行功能测试并自动捕获终端输出信息，生成精美的截图分享。"
+category: "核心功能"
+features:
+  - "Skills"
+  - "终端操作"
+thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005887/O1CN01hBRUux1tMIlTGx2Ym_!!6000000005887-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/eaDeo1zyE3n6VG9QscGbOLWzzY1dGknK8YNbu3srV9w.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+终端输出捕获是产品演示和文档编写的必备技能。通过这个 Skill，Qwen Code 能够自动执行测试命令、捕获终端输出信息，并生成精美的截图。无论是展示测试结果、记录错误日志，还是分享命令行操作，都能轻松实现专业的视觉效果。
+
+<ShowcaseDetailMeta category="核心功能" features={["Skills", "终端操作"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/eaDeo1zyE3n6VG9QscGbOLWzzY1dGknK8YNbu3srV9w.mp4" poster="https://img.alicdn.com/imgextra/i4/6000000005887/O1CN01hBRUux1tMIlTGx2Ym_!!6000000005887-0-tbvideo.jpg" controls style={{width: '100%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px'}} />
+
+## 操作步骤
+
+<Steps>
+
+### 安装 Skill
+
+使用命令或对话方式安装终端捕获 Skill，这是社区贡献的实用工具。安装过程简单快速，安装后即可立即使用。Skill 会自动处理终端输出的捕获和格式化。
+
+```bash
+/skills terminal-capture
+```
+
+### 执行测试命令
+
+让 AI 执行项目测试命令，它会运行并监控终端输出。你可以执行任何命令，包括测试、构建、部署等，AI 会实时捕获所有输出信息。
+
+```bash
+npm test
+```
+
+### 自动捕获输出
+
+AI 会自动捕获终端输出信息，包括成功/失败状态、错误日志、性能数据等。捕获的内容会被格式化处理，确保清晰易读。你可以指定需要捕获的输出类型和格式。
+
+### 生成截图分享
+
+使用捕获的内容生成精美的截图，可以分享到社交媒体或文档中。截图支持多种样式和主题，你可以根据需要选择最适合的展示方式。
+
+```bash
+生成测试报告截图
+```
+
+</Steps>
+
+<Callout type="info">
+终端捕获 Skill 特别适合用于生成技术文档、教程和产品演示材料。
+</Callout>
+
+## 相关推荐
+
+- [通过提示词安装 Skills](/zh/showcase/skill-install) — 在对话中直接告诉 Qwen Code 安装所需的 Skill
+- [Web Search](/zh/showcase/web-search) — 让 Qwen Code 搜索网络内容，获取实时信息辅助编程
+- [Insight 数据洞察](/zh/showcase/insight) — 查看个人 AI 使用报告，了解编程效率和协作数据
+
 ---
 
-import { VideoShowcaseDetail } from '@/components/video-showcase-detail'
-
-<VideoShowcaseDetail
-  video={{
-    id: "terminal-capture",
-    title: "终端输出捕获",
-    description: "产品演示必备技能！让 AI 执行功能测试并自动捕获终端输出信息，生成精美的截图分享。",
-    thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005887/O1CN01hBRUux1tMIlTGx2Ym_!!6000000005887-0-tbvideo.jpg",
-    videoUrl: "https://cloud.video.taobao.com/vod/eaDeo1zyE3n6VG9QscGbOLWzzY1dGknK8YNbu3srV9w.mp4",
-    category: "Features",
-    command: "/skills terminal-capture",
-    steps: [
-      {
-        title: "安装 Skill",
-        description: "使用命令或对话方式安装终端捕获 Skill，这是社区贡献的实用工具。",
-        command: "/skills terminal-capture",
-      },
-      {
-        title: "执行测试命令",
-        description: "让 AI 执行项目测试命令，它会运行并监控终端输出。",
-        command: "npm test",
-      },
-      {
-        title: "自动捕获输出",
-        description: "AI 会自动捕获终端输出信息，包括成功/失败状态、错误日志等。",
-      },
-      {
-        title: "生成截图分享",
-        description: "使用捕获的内容生成精美的截图，可以分享到社交媒体或文档中。",
-        command: "生成测试报告截图",
-      },
-    ],
-  }}
-  relatedVideos={[
-    {
-      id: "skill-install-prompt",
-      title: "通过提示词安装 Skills",
-      description: "在对话中直接告诉 Qwen Code 安装所需的 Skill，即装即用。",
-      thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003086/O1CN01quNtwC1YfRNyxdAsy_!!6000000003086-0-tbvideo.jpg",
-    },
-    {
-      id: "web-search",
-      title: "Web Search",
-      description: "让 Qwen Code 搜索网络内容，获取实时信息辅助编程。",
-      thumbnail: "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
-    },
-    {
-      id: "insight",
-      title: "Insight 数据洞察",
-      description: "查看个人 AI 使用报告，了解编程效率和协作数据。",
-      thumbnail: "https://img.alicdn.com/imgextra/i1/6000000006496/O1CN01KNUXtG1xrDy75PPA5_!!6000000006496-0-tbvideo.jpg",
-    },
-  ]}
-/>
+<ShowcaseDetailCta />

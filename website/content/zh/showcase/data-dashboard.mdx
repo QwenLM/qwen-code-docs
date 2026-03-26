@@ -1,71 +1,88 @@
 ---
 title: "数据可视化仪表盘"
 description: "使用 Qwen Code 的 Agent 模式和 Custom visuals 能力，快速创建交互式数据可视化仪表盘，让数据说话。"
-role: "数据分析"
-model: "Qwen-Max"
-features: ["Agent 模式","Custom visuals","数据可视化"]
-difficulty: "intermediate"
-duration: "20 分钟"
-
+category: "数据分析"
+features:
+  - "Agent 模式"
 thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+数据可视化是理解数据、发现洞察的重要手段。Qwen Code 的 Agent 模式能够根据你的需求快速创建交互式数据可视化仪表盘，无需编写复杂的可视化代码。无论是销售数据分析、用户行为追踪，还是业务指标监控，都能轻松实现专业的数据展示。
+
+<ShowcaseDetailMeta category="数据分析" features={["Agent 模式"]} model="qwen3.5-plus" />
+
+<img src="https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg" alt="数据可视化仪表盘" style={{width: '100%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px'}} />
+
+## 操作步骤
+
+<Steps>
+
+### 准备数据
+
+准备好你想要可视化的数据文件。支持多种数据格式，包括 CSV、JSON、Excel 等。确保数据结构清晰，字段命名规范，这样 AI 能够更好地理解数据含义并生成合适的可视化方案。
+
+```bash
+ls data/
+```
+
+### 启动 Qwen Code
+
+在包含数据的目录中启动 Qwen Code。这样 AI 就能够访问你的数据文件，分析数据结构和内容。Qwen Code 会自动识别数据类型，为后续的可视化设计做准备。
+
+```bash
+qwen
+```
+
+### 描述可视化需求
+
+告诉 AI 你想要创建什么样的仪表盘，包括需要展示的指标和图表类型。你可以描述业务场景、关键指标、图表偏好等，AI 会根据你的描述设计合适的可视化方案。
+
+```bash
+帮我创建一个销售数据可视化仪表盘，展示月度销售额趋势、各产品类别占比、地区分布对比，使用折线图、饼图和地图
+```
+
+### 预览和调整
+
+Qwen Code 会生成完整的可视化应用，你可以在本地预览并根据反馈进行调整。预览过程中，如果发现需要调整的地方，可以直接告诉 AI，它会快速修改代码。
+
+```bash
+npm run dev
+```
+
+### 添加交互功能
+
+如果需要，可以让 AI 添加筛选器、时间范围选择器等交互功能。这些交互功能能够让用户更灵活地探索数据，发现更多有价值的信息。
+
+```bash
+添加一个日期范围筛选器和产品分类下拉菜单
+```
+
+### 部署分享
+
+满意后部署到线上，与团队分享你的数据洞察。你可以选择 Vercel、Netlify 等平台快速部署，或者部署到自己的服务器上。
+
+```bash
+npx vercel --prod
+```
+
+</Steps>
+
+<Callout type="info">
+良好的数据可视化不仅要美观，更要能够清晰传达数据背后的故事和洞察。
+</Callout>
+
+## 相关推荐
+
+- [批量处理文件](/zh/showcase/batch-file-organize) — 使用 Qwen Code 一键批量整理文件
+- [10 分钟搭建个人网站](/zh/showcase/build-portfolio-site) — 快速搭建个人作品集网站
+
 ---
 
-import { ShowcaseDetail } from '@/components/showcase-detail'
-
-<ShowcaseDetail
-  title="数据可视化仪表盘"
-  description="使用 Qwen Code 的 Agent 模式和 Custom visuals 能力，快速创建交互式数据可视化仪表盘，让数据说话。"
-  role="数据分析"
-  model="Qwen-Max"
-  
-  features={["Agent 模式","Custom visuals","数据可视化"]}
-  difficulty="intermediate"
-  duration="20 分钟"
-  
-  thumbnail="https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg"
-  steps={[
-    {
-      title: "准备数据",
-      description: "准备好你想要可视化的数据文件（CSV、JSON、Excel 等格式）。",
-      command: "ls data/"
-    },
-    {
-      title: "启动 Qwen Code",
-      description: "在包含数据的目录中启动 Qwen Code。",
-      command: "qwen"
-    },
-    {
-      title: "描述可视化需求",
-      description: "告诉 AI 你想要创建什么样的仪表盘，包括需要展示的指标和图表类型。",
-      command: "帮我创建一个销售数据可视化仪表盘，展示月度销售额趋势、各产品类别占比、地区分布对比，使用折线图、饼图和地图"
-    },
-    {
-      title: "预览和调整",
-      description: "Qwen Code 会生成完整的可视化应用，你可以在本地预览并根据反馈进行调整。",
-      command: "npm run dev"
-    },
-    {
-      title: "添加交互功能",
-      description: "如果需要，可以让 AI 添加筛选器、时间范围选择器等交互功能。",
-      command: "添加一个日期范围筛选器和产品分类下拉菜单"
-    },
-    {
-      title: "部署分享",
-      description: "满意后部署到线上，与团队分享你的数据洞察。",
-      command: "npx vercel --prod"
-    }
-  ]}
-  relatedCases={[
-    {
-      title: "分析日记并生成年度总结",
-      link: "/zh/showcase/diary-annual-summary",
-      thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png"
-    },
-    {
-      title: "10 分钟搭建个人网站",
-      link: "/zh/showcase/build-portfolio-site",
-      thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
-    }
-  ]}
-  ctaText="开始创建你的仪表盘"
-/>
+<ShowcaseDetailCta />

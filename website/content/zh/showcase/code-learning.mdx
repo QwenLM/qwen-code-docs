@@ -1,67 +1,77 @@
 ---
 title: "代码学习"
 description: "克隆开源仓库并学习理解代码，让 Qwen Code 指导你如何为开源项目做贡献。"
-role: "开发者"
-model: "qwen3.5-plus"
-
-features: ["代码理解","开源贡献","学习指导"]
-difficulty: "intermediate"
-duration: "15 分钟"
-videoUrl: "https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4"
+category: "编程开发"
+features:
+  - "Agent 模式"
 thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png"
+videoUrl: "https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+学习优秀的开源代码是提升编程能力的绝佳途径。Qwen Code 可以帮助你深入理解复杂项目的架构和实现细节，找到适合你的贡献点，并指导你完成代码修改。无论是想学习新技术栈，还是想为开源社区做贡献，Qwen Code 都是你理想的编程导师。
+
+<ShowcaseDetailMeta category="编程开发" features={["Agent 模式"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4" poster="https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png" controls style={{width: '100%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px'}} />
+
+## 操作步骤
+
+<Steps>
+
+### 克隆仓库
+
+使用 git clone 下载开源项目到本地。选择一个你感兴趣的项目，将其克隆到你的开发环境中。确保项目有良好的文档和活跃的社区，这样学习过程会更加顺利。
+
+```bash
+git clone https://github.com/QwenLM/qwen-code.git && cd qwen-code
+```
+
+### 启动 Qwen Code
+
+在项目目录中启动 Qwen Code。这样 AI 就能够访问项目的所有文件，为你提供上下文相关的代码解释和建议。Qwen Code 会自动分析项目结构，识别主要模块和依赖关系。
+
+```bash
+qwen
+```
+
+### 请求代码解释
+
+告诉 AI 你想了解项目的哪个部分或功能。你可以询问整体架构、特定模块的实现逻辑，或者某个功能的设计思路。AI 会用清晰的语言解释代码，并提供相关的背景知识。
+
+```bash
+帮我解释一下这个项目的整体架构和主要模块
+```
+
+### 寻找贡献点
+
+让 AI 帮你找到适合新手参与的 issue 或功能。AI 会分析项目的 issues 列表，根据难度、标签和描述推荐适合你的贡献点。这是开始开源贡献的好方法。
+
+```bash
+有哪些适合初学者参与的 open issues？
+```
+
+### 实现修改
+
+根据 AI 的指导逐步实现代码修改。AI 会帮你分析问题、设计解决方案、编写代码，并确保修改符合项目的代码规范。完成修改后，你可以提交 PR，为开源项目做出贡献。
+
+</Steps>
+
+<Callout type="info">
+通过参与开源项目，你不仅能提升编程技能，还能建立技术影响力，结识志同道合的开发者。
+</Callout>
+
+## 相关推荐
+
+- [解决 issue](/zh/showcase/solve-issue) — 使用 Qwen Code 分析并解决开源项目的 issue
+- [PR Review](/zh/showcase/pr-review) — 让 AI 帮你审查 Pull Request，提升代码质量
+
 ---
 
-import { ShowcaseDetail } from '@/components/showcase-detail'
-
-<ShowcaseDetail
-  title="代码学习"
-  description="克隆开源仓库并学习理解代码，让 Qwen Code 指导你如何为开源项目做贡献。"
-  role="开发者"
-  model="qwen3.5-plus"
-  
-  features={["代码理解","开源贡献","学习指导"]}
-  difficulty="intermediate"
-  duration="15 分钟"
-  videoUrl="https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4"
-  thumbnail="https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png"
-  steps={[
-    {
-      title: "克隆仓库",
-      description: "使用 git clone 下载开源项目到本地。",
-      command: "git clone https://github.com/QwenLM/qwen-code.git && cd qwen-code"
-    },
-    {
-      title: "启动 Qwen Code",
-      description: "在项目目录中启动 Qwen Code。",
-      command: "qwen"
-    },
-    {
-      title: "请求代码解释",
-      description: "告诉 AI 你想了解项目的哪个部分或功能。",
-      command: "帮我解释一下这个项目的整体架构和主要模块"
-    },
-    {
-      title: "寻找贡献点",
-      description: "让 AI 帮你找到适合新手参与的 issue 或功能。",
-      command: "有哪些适合初学者参与的 open issues？"
-    },
-    {
-      title: "实现修改",
-      description: "根据 AI 的指导逐步实现代码修改。",
-      
-    }
-  ]}
-  relatedCases={[
-    {
-      title: "解决 issue",
-      link: "/zh/showcase/solve-issue",
-      thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png"
-    },
-    {
-      title: "PR Review",
-      link: "/zh/showcase/pr-review",
-      thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png"
-    }
-  ]}
-  ctaText="开始开源之旅"
-/>
+<ShowcaseDetailCta />

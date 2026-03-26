@@ -1,0 +1,61 @@
+---
+title: "语言切换"
+description: "灵活切换 UI 界面语言和 AI 输出语言，支持多语言交互。"
+category: "入门指南"
+features:
+  - "终端操作"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+Qwen Code 支持灵活的语言切换，你可以独立设置 UI 界面语言和 AI 输出语言。无论是中文、英文还是其他语言，都能找到适合的设置。多语言支持让你能够在熟悉的语言环境中工作，提高沟通效率和舒适度。
+
+<ShowcaseDetailMeta category="入门指南" features={["终端操作"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg" controls style={{width: '100%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px'}} />
+
+## 操作步骤
+
+<Steps>
+
+### 切换 UI 语言
+
+使用 `/language ui` 命令切换界面语言，支持中文、英文等多种语言。UI 语言切换后，菜单、提示信息、帮助文档等都会使用你选择的语言显示。
+
+```bash
+/language ui zh-CN
+```
+
+### 切换输出语言
+
+使用 `/language output` 命令切换 AI 的输出语言。AI 会使用你指定的语言回答问题、生成代码注释、提供解释等，让交流更加自然顺畅。
+
+```bash
+/language output zh-CN
+```
+
+### 混合语言使用
+
+你还可以为 UI 和输出设置不同的语言，实现混合语言使用。例如，UI 使用中文，AI 输出使用英文，适合需要阅读英文技术文档的场景。
+
+</Steps>
+
+<Callout type="info">
+语言设置会自动保存，下次启动时会使用你上次选择的语言。
+</Callout>
+
+## 相关推荐
+
+- [开始第一次对话](/zh/showcase/first-conversation) — 安装完成后，发起你与 Qwen Code 的第一次 AI 对话
+- [API 设置](/zh/showcase/api-setup) — 配置 API Key 和模型参数，自定义你的 AI 编程体验
+
+---
+
+<ShowcaseDetailCta />

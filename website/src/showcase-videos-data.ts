@@ -13,6 +13,9 @@ export interface VideoShowcaseItem {
     description: string;
     command?: string;
   }[];
+  hasDetailPage?: boolean; // 标记是否有独立的 MDX 详情页
+  showcaseCategory?: string; // 分类标签：日常任务、编程开发、数据分析、入门指南、核心功能、Skills 扩展
+  showcaseFeatures?: string[]; // 功能标签数组：Agent 模式、Cowork、Skills、Web Search、MCP、Plan 模式、GitHub 集成、图片识别、Remotion 等
 }
 
 // Hero Video - Quick Start
@@ -24,6 +27,9 @@ export const heroVideo: VideoShowcaseItem = {
   videoUrl: "https://cloud.video.taobao.com/vod/LfmsiJ8iFG-Rbfh6UTBCTtkWhLL6FsOeeVT10lCxNWI.mp4",
   category: "Quick Start",
   link: "https://github.com/QwenLM/qwen-code?tab=readme-ov-file#installation",
+  hasDetailPage: false,
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Agent 模式"],
   steps: [
     {
       title: "安装 Qwen Code",
@@ -52,6 +58,9 @@ export const guideVideos: VideoShowcaseItem[] = [
     thumbnail: "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4",
     category: "Guide",
+    hasDetailPage: true,
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["终端操作"],
     command: "# Linux/macOS\ncurl -fsSL https://qwen-code.oss-cn-beijing.aliyuncs.com/install.sh | bash -s -- --install\n\n# Windows (PowerShell)\ncurl -fsSL -o %TEMP%\\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\\install-qwen.bat",
     steps: [
       {
@@ -73,6 +82,9 @@ export const guideVideos: VideoShowcaseItem[] = [
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4",
     category: "Guide",
+    hasDetailPage: true,
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Agent 模式"],
     command: "what is qwen code? Please give me a brief introduction about it.",
     steps: [
       {
@@ -94,6 +106,9 @@ export const guideVideos: VideoShowcaseItem[] = [
     thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/JNsallWn_HIKsRrl5vapZ0N0TYGFNzS_NuFpyHk4WJY.mp4",
     category: "Guide",
+    hasDetailPage: false,
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["API 设置"],
     steps: [
       {
         title: "获取 API Key",
