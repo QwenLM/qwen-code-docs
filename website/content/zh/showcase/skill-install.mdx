@@ -1,0 +1,57 @@
+---
+title: "通过提示词安装 Skills"
+description: "在对话中直接告诉 Qwen Code 安装所需的 Skill，即装即用，无需手动操作。"
+role: "开发者"
+model: "qwen3.5-plus"
+
+features: ["Skills","自然语言安装","扩展功能"]
+difficulty: "beginner"
+duration: "2 分钟"
+videoUrl: "https://cloud.video.taobao.com/vod/WYeH55IR7WQ8OXKqmQfjM1WyK7xZ4llKM3A_dtf19wI.mp4"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003086/O1CN01quNtwC1YfRNyxdAsy_!!6000000003086-0-tbvideo.jpg"
+---
+
+import { ShowcaseDetail } from '@/components/showcase-detail'
+
+<ShowcaseDetail
+  title="通过提示词安装 Skills"
+  description="在对话中直接告诉 Qwen Code 安装所需的 Skill，即装即用，无需手动操作。"
+  role="开发者"
+  model="qwen3.5-plus"
+  
+  features={["Skills","自然语言安装","扩展功能"]}
+  difficulty="beginner"
+  duration="2 分钟"
+  videoUrl="https://cloud.video.taobao.com/vod/WYeH55IR7WQ8OXKqmQfjM1WyK7xZ4llKM3A_dtf19wI.mp4"
+  thumbnail="https://img.alicdn.com/imgextra/i2/6000000003086/O1CN01quNtwC1YfRNyxdAsy_!!6000000003086-0-tbvideo.jpg"
+  steps={[
+    {
+      title: "请求安装 Skill",
+      description: "用自然语言告诉 AI 你想要安装某个 Skill。",
+      command: "帮我安装 find-skills 这个 skill"
+    },
+    {
+      title: "AI 自动执行",
+      description: "Qwen Code 会自动搜索并安装指定的 Skill。",
+      command: "Please first check if find-skills exists, if not, please use npx skills add https://github.com/vercel-labs/skills --skill find-skills to install this skill"
+    },
+    {
+      title: "使用已安装的 Skill",
+      description: "安装完成后即可在对话中使用该 Skill 的功能。",
+      command: "现在帮我搜索一下有哪些适合 React 开发的 skills"
+    }
+  ]}
+  relatedCases={[
+    {
+      title: "Skills 面板",
+      link: "/zh/showcase/skills-panel",
+      thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01xkzvoE1fomm8znzBG_!!6000000004054-2-tps-1694-952.png"
+    },
+    {
+      title: "终端输出捕获截图/动图",
+      link: "/zh/showcase/terminal-capture",
+      thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005887/O1CN01hBRUux1tMIlTGx2Ym_!!6000000005887-0-tbvideo.jpg"
+    }
+  ]}
+  ctaText="探索 Skills 生态"
+/>

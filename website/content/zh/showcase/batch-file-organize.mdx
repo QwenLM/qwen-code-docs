@@ -1,0 +1,62 @@
+---
+title: "批量处理文件，整理桌面"
+description: "使用 Qwen Code 的 Cowork 功能，一键批量整理桌面杂乱文件，按类型自动分类到对应文件夹。"
+role: "日常任务"
+model: "Qwen-Max"
+author: "Qwen Team"
+features: ["Cowork","文件系统操作","自动化"]
+difficulty: "beginner"
+duration: "5 分钟"
+videoUrl: "https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4"
+thumbnail: "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg"
+---
+
+import { ShowcaseDetail } from '@/components/showcase-detail'
+
+<ShowcaseDetail
+  title="批量处理文件，整理桌面"
+  description="使用 Qwen Code 的 Cowork 功能，一键批量整理桌面杂乱文件，按类型自动分类到对应文件夹。"
+  role="日常任务"
+  model="Qwen-Max"
+  author="Qwen Team"
+  features={["Cowork","文件系统操作","自动化"]}
+  difficulty="beginner"
+  duration="5 分钟"
+  videoUrl="https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4"
+  thumbnail="https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg"
+  steps={[
+    {
+      title: "启动对话",
+      description: "打开终端或命令行，输入 qwen 启动 Qwen Code。",
+      command: "qwen"
+    },
+    {
+      title: "发出整理指令",
+      description: "告诉 Qwen Code 你想要整理桌面文件，AI 会自动识别文件类型并创建分类文件夹。",
+      command: "帮我整理一下桌面的文件，按照文档、图片、视频、压缩包等类型分类放到不同的文件夹里"
+    },
+    {
+      title: "确认执行方案",
+      description: "Qwen Code 会先列出将要执行的操作计划，确认无误后允许执行。",
+      
+    },
+    {
+      title: "完成整理",
+      description: "AI 自动执行文件移动操作，完成后显示整理报告，告诉你哪些文件被移到了哪里。",
+      
+    }
+  ]}
+  relatedCases={[
+    {
+      title: "10 分钟搭建个人网站",
+      link: "/zh/showcase/build-portfolio-site",
+      thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+    },
+    {
+      title: "分析日记生成年度总结",
+      link: "/zh/showcase/diary-annual-summary",
+      thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png"
+    }
+  ]}
+  ctaText="立即体验文件整理"
+/>

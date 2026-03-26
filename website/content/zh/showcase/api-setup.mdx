@@ -1,0 +1,92 @@
+---
+title: "API 设置"
+description: "配置 API Key 和模型参数，自定义你的 AI 编程体验，支持多种模型选择。"
+role: "开发者"
+model: "qwen3.5-plus"
+author: "Qwen Team"
+features: ["API 配置", "模型选择", "个性化设置"]
+difficulty: "beginner"
+duration: "3 分钟"
+videoUrl: "https://cloud.video.taobao.com/vod/JNsallWn_HIKsRrl5vapZ0N0TYGFNzS_NuFpyHk4WJY.mp4"
+thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg"
+---
+
+import { ShowcaseDetailHeader, ShowcaseDetailFooter } from '@/components/showcase-detail'
+import { Callout } from 'nextra/components'
+
+<ShowcaseDetailHeader
+  title="API 设置"
+  description="配置 API Key 和模型参数，自定义你的 AI 编程体验，支持多种模型选择。"
+  role="开发者"
+  model="qwen3.5-plus"
+  author="Qwen Team"
+  features={["API 配置", "模型选择", "个性化设置"]}
+  difficulty="beginner"
+  duration="3 分钟"
+  videoUrl="https://cloud.video.taobao.com/vod/JNsallWn_HIKsRrl5vapZ0N0TYGFNzS_NuFpyHk4WJY.mp4"
+  thumbnail="https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg"
+/>
+
+## 获取 API Key
+
+在阿里云控制台创建并获取你的 API Key。
+
+访问 [阿里云百炼平台](https://bailian.console.aliyun.com/)，在个人中心找到 API Key 管理页面，创建新的 API Key。
+
+<Callout type="warning">
+  请妥善保管你的 API Key，不要泄露给他人。
+</Callout>
+
+## 配置环境变量
+
+将 API Key 设置为环境变量，确保安全访问。
+
+```bash
+export QWEN_API_KEY='your-api-key-here'
+```
+
+你也可以将这一行添加到你的 shell 配置文件（如 `~/.bashrc` 或 `~/.zshrc`）中，使其永久生效：
+
+```bash
+echo 'export QWEN_API_KEY="your-api-key-here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+## 选择模型
+
+根据需要选择合适的模型，平衡速度和性能。
+
+```bash
+/model qwen3.5-plus
+```
+
+常用模型选项：
+- `qwen3.5-plus`: 功能强大，适合复杂任务
+- `qwen3.5-flash`: 速度快，适合简单任务
+- `qwen-max`: 最强模型，适合高难度任务
+
+## 测试连接
+
+发送一条测试消息确认 API 配置正确。
+
+```bash
+Hello, can you help me with coding?
+```
+
+如果配置成功，Qwen Code 会立即回复你。
+
+<ShowcaseDetailFooter
+  relatedCases={[
+    {
+      title: "开始第一次对话",
+      link: "/zh/showcase/first-conversation",
+      thumbnail: "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg"
+    },
+    {
+      title: "百炼 Coding Plan 模式",
+      link: "/zh/showcase/bailian-coding-plan",
+      thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png"
+    }
+  ]}
+  ctaText="配置你的 AI 助手"
+/>

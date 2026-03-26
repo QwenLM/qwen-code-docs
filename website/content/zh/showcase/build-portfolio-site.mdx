@@ -1,0 +1,72 @@
+---
+title: "10 分钟搭建个人作品集网站"
+description: "使用 Qwen Code 的 Agent 模式，快速生成个性化的个人作品集网站，从设计到部署一气呵成。"
+role: "编程开发"
+model: "Qwen-Max"
+author: "Qwen Team"
+features: ["Agent 模式","前端开发","一键部署"]
+difficulty: "beginner"
+duration: "10 分钟"
+
+thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+---
+
+import { ShowcaseDetail } from '@/components/showcase-detail'
+
+<ShowcaseDetail
+  title="10 分钟搭建个人作品集网站"
+  description="使用 Qwen Code 的 Agent 模式，快速生成个性化的个人作品集网站，从设计到部署一气呵成。"
+  role="编程开发"
+  model="Qwen-Max"
+  author="Qwen Team"
+  features={["Agent 模式","前端开发","一键部署"]}
+  difficulty="beginner"
+  duration="10 分钟"
+  
+  thumbnail="https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+  steps={[
+    {
+      title: "准备项目目录",
+      description: "创建一个新的文件夹用于存放你的网站项目。",
+      command: "mkdir my-portfolio && cd my-portfolio"
+    },
+    {
+      title: "启动 Qwen Code",
+      description: "在项目目录中启动 Qwen Code。",
+      command: "qwen"
+    },
+    {
+      title: "描述你的需求",
+      description: "告诉 AI 你想要创建一个个人作品集网站，提供你的基本信息和偏好。",
+      command: "帮我创建一个个人作品集网站，我是前端开发工程师，喜欢简约现代的设计风格，包含首页、项目展示、关于我三个页面"
+    },
+    {
+      title: "查看并调整生成的代码",
+      description: "Qwen Code 会生成完整的项目结构和代码，你可以预览并提出修改意见。",
+      
+    },
+    {
+      title: "本地预览",
+      description: "运行开发服务器，在浏览器中预览网站效果。",
+      command: "npm run dev"
+    },
+    {
+      title: "部署上线",
+      description: "满意后，可以让 Qwen Code 帮你部署到 Vercel 或其他平台。",
+      command: "npx vercel --prod"
+    }
+  ]}
+  relatedCases={[
+    {
+      title: "批量处理文件，整理桌面",
+      link: "/zh/showcase/batch-file-organize",
+      thumbnail: "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg"
+    },
+    {
+      title: "数据可视化仪表盘",
+      link: "/zh/showcase/data-dashboard",
+      thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg"
+    }
+  ]}
+  ctaText="开始构建你的作品集"
+/>

@@ -1,0 +1,72 @@
+---
+title: "数据可视化仪表盘"
+description: "使用 Qwen Code 的 Agent 模式和 Custom visuals 能力，快速创建交互式数据可视化仪表盘，让数据说话。"
+role: "数据分析"
+model: "Qwen-Max"
+
+features: ["Agent 模式","Custom visuals","数据可视化"]
+difficulty: "intermediate"
+duration: "20 分钟"
+
+thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg"
+---
+
+import { ShowcaseDetail } from '@/components/showcase-detail'
+
+<ShowcaseDetail
+  title="数据可视化仪表盘"
+  description="使用 Qwen Code 的 Agent 模式和 Custom visuals 能力，快速创建交互式数据可视化仪表盘，让数据说话。"
+  role="数据分析"
+  model="Qwen-Max"
+  
+  features={["Agent 模式","Custom visuals","数据可视化"]}
+  difficulty="intermediate"
+  duration="20 分钟"
+  
+  thumbnail="https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg"
+  steps={[
+    {
+      title: "准备数据",
+      description: "准备好你想要可视化的数据文件（CSV、JSON、Excel 等格式）。",
+      command: "ls data/"
+    },
+    {
+      title: "启动 Qwen Code",
+      description: "在包含数据的目录中启动 Qwen Code。",
+      command: "qwen"
+    },
+    {
+      title: "描述可视化需求",
+      description: "告诉 AI 你想要创建什么样的仪表盘，包括需要展示的指标和图表类型。",
+      command: "帮我创建一个销售数据可视化仪表盘，展示月度销售额趋势、各产品类别占比、地区分布对比，使用折线图、饼图和地图"
+    },
+    {
+      title: "预览和调整",
+      description: "Qwen Code 会生成完整的可视化应用，你可以在本地预览并根据反馈进行调整。",
+      command: "npm run dev"
+    },
+    {
+      title: "添加交互功能",
+      description: "如果需要，可以让 AI 添加筛选器、时间范围选择器等交互功能。",
+      command: "添加一个日期范围筛选器和产品分类下拉菜单"
+    },
+    {
+      title: "部署分享",
+      description: "满意后部署到线上，与团队分享你的数据洞察。",
+      command: "npx vercel --prod"
+    }
+  ]}
+  relatedCases={[
+    {
+      title: "分析日记并生成年度总结",
+      link: "/zh/showcase/diary-annual-summary",
+      thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png"
+    },
+    {
+      title: "10 分钟搭建个人网站",
+      link: "/zh/showcase/build-portfolio-site",
+      thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+    }
+  ]}
+  ctaText="开始创建你的仪表盘"
+/>

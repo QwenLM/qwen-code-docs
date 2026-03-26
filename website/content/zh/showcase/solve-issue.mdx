@@ -1,0 +1,72 @@
+---
+title: "解决 issue"
+description: "使用 Qwen Code 分析并解决开源项目的 issue，全流程跟踪从理解到提交代码。"
+role: "开发者"
+model: "qwen3.5-plus"
+
+features: ["问题诊断","代码修复","开源贡献"]
+difficulty: "intermediate"
+duration: "20 分钟"
+videoUrl: "https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4"
+thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png"
+---
+
+import { ShowcaseDetail } from '@/components/showcase-detail'
+
+<ShowcaseDetail
+  title="解决 issue"
+  description="使用 Qwen Code 分析并解决开源项目的 issue，全流程跟踪从理解到提交代码。"
+  role="开发者"
+  model="qwen3.5-plus"
+  
+  features={["问题诊断","代码修复","开源贡献"]}
+  difficulty="intermediate"
+  duration="20 分钟"
+  videoUrl="https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4"
+  thumbnail="https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png"
+  steps={[
+    {
+      title: "选择要解决的 issue",
+      description: "在 GitHub 上找到感兴趣或适合解决的问题。",
+      
+    },
+    {
+      title: "克隆项目并定位问题",
+      description: "下载项目代码，让 AI 帮你定位问题所在。",
+      command: "@file ./src/buggy-module.ts\n帮我分析一下这个 issue 描述的问题出现在哪里"
+    },
+    {
+      title: "理解相关代码",
+      description: "让 AI 解释相关的代码逻辑和依赖关系。",
+      
+    },
+    {
+      title: "制定修复方案",
+      description: "与 AI 讨论可能的解决方案，选择最优解。",
+      
+    },
+    {
+      title: "实现代码修改",
+      description: "根据 AI 的指导逐步修改代码并测试。",
+      command: "帮我修改这段代码来解决这个问题"
+    },
+    {
+      title: "提交 Pull Request",
+      description: "完成修改后提交 PR 等待项目维护者审核。",
+      
+    }
+  ]}
+  relatedCases={[
+    {
+      title: "代码学习",
+      link: "/zh/showcase/code-learning",
+      thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png"
+    },
+    {
+      title: "PR Review",
+      link: "/zh/showcase/pr-review",
+      thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png"
+    }
+  ]}
+  ctaText="参与开源贡献"
+/>

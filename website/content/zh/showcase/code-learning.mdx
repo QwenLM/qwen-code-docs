@@ -1,0 +1,67 @@
+---
+title: "代码学习"
+description: "克隆开源仓库并学习理解代码，让 Qwen Code 指导你如何为开源项目做贡献。"
+role: "开发者"
+model: "qwen3.5-plus"
+
+features: ["代码理解","开源贡献","学习指导"]
+difficulty: "intermediate"
+duration: "15 分钟"
+videoUrl: "https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4"
+thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png"
+---
+
+import { ShowcaseDetail } from '@/components/showcase-detail'
+
+<ShowcaseDetail
+  title="代码学习"
+  description="克隆开源仓库并学习理解代码，让 Qwen Code 指导你如何为开源项目做贡献。"
+  role="开发者"
+  model="qwen3.5-plus"
+  
+  features={["代码理解","开源贡献","学习指导"]}
+  difficulty="intermediate"
+  duration="15 分钟"
+  videoUrl="https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4"
+  thumbnail="https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png"
+  steps={[
+    {
+      title: "克隆仓库",
+      description: "使用 git clone 下载开源项目到本地。",
+      command: "git clone https://github.com/QwenLM/qwen-code.git && cd qwen-code"
+    },
+    {
+      title: "启动 Qwen Code",
+      description: "在项目目录中启动 Qwen Code。",
+      command: "qwen"
+    },
+    {
+      title: "请求代码解释",
+      description: "告诉 AI 你想了解项目的哪个部分或功能。",
+      command: "帮我解释一下这个项目的整体架构和主要模块"
+    },
+    {
+      title: "寻找贡献点",
+      description: "让 AI 帮你找到适合新手参与的 issue 或功能。",
+      command: "有哪些适合初学者参与的 open issues？"
+    },
+    {
+      title: "实现修改",
+      description: "根据 AI 的指导逐步实现代码修改。",
+      
+    }
+  ]}
+  relatedCases={[
+    {
+      title: "解决 issue",
+      link: "/zh/showcase/solve-issue",
+      thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png"
+    },
+    {
+      title: "PR Review",
+      link: "/zh/showcase/pr-review",
+      thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png"
+    }
+  ]}
+  ctaText="开始开源之旅"
+/>

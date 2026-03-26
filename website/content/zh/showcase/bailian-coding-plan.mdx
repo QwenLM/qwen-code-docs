@@ -1,0 +1,62 @@
+---
+title: "百炼 Coding Plan 模式"
+description: "配置使用百炼 Coding Plan，多模型选择，提升复杂任务的完成质量。"
+role: "开发者"
+model: "qwen3.5-plus"
+
+features: ["多模型支持","复杂任务优化","智能规划"]
+difficulty: "intermediate"
+duration: "5 分钟"
+videoUrl: "https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4"
+thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png"
+---
+
+import { ShowcaseDetail } from '@/components/showcase-detail'
+
+<ShowcaseDetail
+  title="百炼 Coding Plan 模式"
+  description="配置使用百炼 Coding Plan，多模型选择，提升复杂任务的完成质量。"
+  role="开发者"
+  model="qwen3.5-plus"
+  
+  features={["多模型支持","复杂任务优化","智能规划"]}
+  difficulty="intermediate"
+  duration="5 分钟"
+  videoUrl="https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4"
+  thumbnail="https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png"
+  steps={[
+    {
+      title: "启用 Coding Plan",
+      description: "在设置中开启百炼 Coding Plan 模式。",
+      command: "/settings enable coding-plan"
+    },
+    {
+      title: "选择模型组合",
+      description: "根据任务复杂度选择合适的模型组合，平衡速度和准确性。",
+      command: "/model select --plan bailian"
+    },
+    {
+      title: "描述任务需求",
+      description: "详细描述你的编程任务，Coding Plan 会自动规划执行步骤。",
+      
+    },
+    {
+      title: "审查执行计划",
+      description: "AI 会先生成详细的执行计划，确认无误后开始执行。",
+      
+    }
+  ]}
+  relatedCases={[
+    {
+      title: "API 设置",
+      link: "/zh/showcase/api-setup",
+      thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg"
+    },
+    {
+      title: "解决 issue",
+      link: "/zh/showcase/solve-issue",
+      thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png"
+    }
+  ]}
+  ctaText="体验高级编程模式"
+/>
