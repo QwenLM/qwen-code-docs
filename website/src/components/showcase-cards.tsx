@@ -2,7 +2,8 @@
 
 import React, { useState, useCallback, useMemo } from "react";
 import { ArrowRight, Search, Zap, Book, TrendingUp } from "lucide-react";
-import { featuredItems, texts, learningPaths } from "../../showcase-data";
+import Link from "next/link";
+import { featuredItems, texts, learningPaths } from "../showcase-data";
 
 /* ─── Type Definitions ─── */
 
@@ -81,71 +82,61 @@ const getCategoryGroups = (cards: ShowcaseCard[]): CategoryGroup[] => {
 
 const ShowcaseCardItem = ({
   card,
-  onClick,
 }: {
   card: ShowcaseCard;
-  onClick: (card: ShowcaseCard) => void;
 }) => (
-  <div
-    role="button"
-    tabIndex={0}
-    className="group cursor-pointer text-left w-full h-full flex flex-col overflow-hidden rounded-2xl border border-border bg-card hover:border-violet-300 dark:hover:border-violet-700 transition-all duration-300 hover:shadow-lg dark:hover:shadow-xl active:scale-[0.98]"
-    onClick={() => onClick(card)}
-    onKeyDown={(event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        onClick(card);
-      }
-    }}
-  >
-    {/* Image - direct display without gradient wrapper */}
-    <div className="relative aspect-video overflow-hidden shrink-0">
-      <img
-        src={card.image}
-        alt={card.title}
-        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-        loading="lazy"
-      />
-    </div>
-
-    {/* Content */}
-    <div className="p-5 md:p-6 flex flex-col flex-1">
-      {/* Category badges */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        {card.categories.map((category, index) => (
-          <span
-            key={`${card.id}-cat-${index}`}
-            className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-              index === 0
-                ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {category}
-          </span>
-        ))}
+  <Link href={card.link} className="group text-left w-full h-full block">
+    <div
+      className="cursor-pointer text-left w-full h-full flex flex-col overflow-hidden rounded-2xl border border-border bg-card hover:border-violet-300 dark:hover:border-violet-700 transition-all duration-300 hover:shadow-lg dark:hover:shadow-xl active:scale-[0.98]"
+    >
+      {/* Image - direct display without gradient wrapper */}
+      <div className="relative aspect-video overflow-hidden shrink-0">
+        <img
+          src={card.image}
+          alt={card.title}
+          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+          loading="lazy"
+        />
       </div>
 
-      {/* Title */}
-      <h3 className="text-base md:text-lg font-semibold text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors mb-2 line-clamp-1">
-        {card.title}
-      </h3>
+      {/* Content */}
+      <div className="p-5 md:p-6 flex flex-col flex-1">
+        {/* Category badges */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {card.categories.map((category, index) => (
+            <span
+              key={`${card.id}-cat-${index}`}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                index === 0
+                  ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {category}
+            </span>
+          ))}
+        </div>
 
-      {/* Description */}
-      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 mb-4">
-        {card.description}
-      </p>
+        {/* Title */}
+        <h3 className="text-base md:text-lg font-semibold text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors mb-2 line-clamp-1">
+          {card.title}
+        </h3>
 
-      {/* View tutorial link */}
-      <a
-        href={card.link}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors mt-auto"
-        onClick={(event) => event.stopPropagation()}
-      >
-        查看教程
-        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-      </a>
+        {/* Description */}
+        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 mb-4">
+          {card.description}
+        </p>
+
+        {/* View tutorial link */}
+        <span
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 group-hover:text-violet-700 dark:group-hover:text-violet-300 transition-colors mt-auto"
+        >
+          查看教程
+          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+        </span>
+      </div>
     </div>
-  </div>
+  </Link>
 );
 
 /* ─── Search Bar Component ─── */
@@ -395,9 +386,6 @@ export const ShowcaseCards = ({
                 <ShowcaseCardItem
                   key={card.id}
                   card={card}
-                  onClick={() => {
-                    window.location.href = card.link;
-                  }}
                 />
               ))}
             </div>
