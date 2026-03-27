@@ -3,36 +3,18 @@
 import React, { useState, useMemo } from "react";
 import { Search, ArrowRight, BookOpen, Zap, GraduationCap } from "lucide-react";
 import Link from "next/link";
-import {
-  getAllVideos,
-  type VideoShowcaseItem,
-} from "../showcase-videos-data";
+import showcaseItems from "../generated/showcase-data.json";
 
-const CATEGORY_TAGS = [
-  "入门指南",
-  "核心功能",
-  "编程开发",
-  "日常任务",
-  "数据分析",
-  "Skills 扩展",
-];
-
-const FEATURE_TAGS = [
-  "Agent 模式",
-  "Cowork",
-  "Skills",
-  "Web Search",
-  "MCP",
-  "Plan 模式",
-  "GitHub 集成",
-  "图片识别",
-  "Remotion",
-  "LSP",
-  "Headless",
-  "终端操作",
-  "文件操作",
-  "视频创作",
-];
+interface ShowcaseItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  features: string[];
+  thumbnail: string;
+  videoUrl: string | null;
+  model: string;
+}
 
 const LEARNING_PATHS = [
   {
@@ -40,10 +22,10 @@ const LEARNING_PATHS = [
     description: "快速上手 Qwen Code 核心功能，10 分钟完成你的第一个 AI 编程任务",
     icon: <BookOpen className="w-5 h-5" />,
     cases: [
-      { id: "script-install", label: "脚本一键安装" },
-      { id: "first-conversation", label: "开始第一次对话" },
-      { id: "api-setup", label: "API 设置" },
-      { id: "skill-install-prompt", label: "通过提示词安装 Skills" },
+      { id: "guide-script-install", label: "脚本一键安装" },
+      { id: "guide-first-conversation", label: "开始第一次对话" },
+      { id: "guide-api-setup", label: "API 配置指南" },
+      { id: "guide-skill-install", label: "安装 Skills" },
     ],
   },
   {
@@ -51,10 +33,10 @@ const LEARNING_PATHS = [
     description: "深入学习高级功能和编程场景，掌握智能搜索和开源协作技巧",
     icon: <Zap className="w-5 h-5" />,
     cases: [
-      { id: "bailian-coding-plan", label: "百炼 Coding Plan 模式" },
-      { id: "web-search", label: "Web Search 网络搜索" },
-      { id: "plan-with-search", label: "Plan 模式 + Web Search" },
-      { id: "github-integration", label: "GitHub 命令集成" },
+      { id: "guide-bailian-coding-plan", label: "百炼 Coding Plan 模式" },
+      { id: "guide-web-search", label: "Web Search 网络搜索" },
+      { id: "guide-plan-with-search", label: "Plan 模式 + Web Search" },
+      { id: "code-lsp-intelligence", label: "LSP 智能感知" },
     ],
   },
   {
@@ -62,22 +44,22 @@ const LEARNING_PATHS = [
     description: "复杂项目开发和真实业务场景应用，参与开源贡献和代码审查",
     icon: <GraduationCap className="w-5 h-5" />,
     cases: [
-      { id: "code-learning", label: "代码学习" },
-      { id: "solve-issue", label: "解决 issue" },
-      { id: "pr-review", label: "PR Review" },
-      { id: "read-paper", label: "读论文" },
+      { id: "study-learning", label: "代码学习" },
+      { id: "code-solve-issue", label: "解决 issue" },
+      { id: "code-pr-review", label: "PR Review" },
+      { id: "study-read-paper", label: "读论文" },
     ],
   },
 ];
 
-function ShowcaseCard({ video }: { video: VideoShowcaseItem }) {
+function ShowcaseCard({ item }: { item: ShowcaseItem }) {
   return (
-    <Link href={`/zh/showcase/${video.id}`} className="group block">
+    <Link href={`/zh/showcase/${item.id}`} className="group block">
       <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.4)] active:scale-[0.98]">
         <div className="relative aspect-video overflow-hidden bg-zinc-100 dark:bg-zinc-900">
           <img
-            src={video.thumbnail}
-            alt={video.title}
+            src={item.thumbnail}
+            alt={item.title}
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
             loading="lazy"
           />
@@ -85,12 +67,12 @@ function ShowcaseCard({ video }: { video: VideoShowcaseItem }) {
 
         <div className="p-5">
           <div className="flex flex-wrap items-center gap-1.5 mb-3">
-            {video.showcaseCategory && (
+            {item.category && (
               <span className="px-2 py-0.5 text-[11px] font-medium rounded border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300">
-                {video.showcaseCategory}
+                {item.category}
               </span>
             )}
-            {video.showcaseFeatures?.slice(0, 2).map((feature) => (
+            {item.features.slice(0, 2).map((feature) => (
               <span
                 key={feature}
                 className="px-2 py-0.5 text-[11px] font-medium rounded text-zinc-500 dark:text-zinc-400"
@@ -101,11 +83,11 @@ function ShowcaseCard({ video }: { video: VideoShowcaseItem }) {
           </div>
 
           <h3 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100 mb-1.5 line-clamp-1 tracking-tight">
-            {video.title}
+            {item.title}
           </h3>
 
           <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed mb-4">
-            {video.description}
+            {item.description}
           </p>
 
           <span className="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100 group-hover:gap-2 transition-all">
@@ -124,35 +106,53 @@ export function VideoShowcaseIndex() {
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(9);
 
-  const allVideos = useMemo(() => getAllVideos(), []);
+  const allItems = useMemo(() => showcaseItems as ShowcaseItem[], []);
+  const allItemIds = useMemo(() => new Set(allItems.map((item) => item.id)), [allItems]);
 
-  const filteredVideos = useMemo(() => {
-    return allVideos.filter((video) => {
+  const categoryTags = useMemo(() => {
+    const categories = new Set<string>();
+    for (const item of allItems) {
+      if (item.category) categories.add(item.category);
+    }
+    return Array.from(categories).sort();
+  }, [allItems]);
+
+  const featureTags = useMemo(() => {
+    const features = new Set<string>();
+    for (const item of allItems) {
+      for (const feature of item.features) {
+        features.add(feature);
+      }
+    }
+    return Array.from(features).sort();
+  }, [allItems]);
+
+  const filteredItems = useMemo(() => {
+    return allItems.filter((item) => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesSearch =
-          video.title.toLowerCase().includes(query) ||
-          video.description.toLowerCase().includes(query);
+          item.title.toLowerCase().includes(query) ||
+          item.description.toLowerCase().includes(query);
         if (!matchesSearch) return false;
       }
 
       if (selectedCategories.length > 0) {
-        if (!video.showcaseCategory || !selectedCategories.includes(video.showcaseCategory)) {
+        if (!item.category || !selectedCategories.includes(item.category)) {
           return false;
         }
       }
 
       if (selectedFeatures.length > 0) {
-        if (!video.showcaseFeatures?.some((feature) => selectedFeatures.includes(feature))) {
+        if (!item.features.some((feature) => selectedFeatures.includes(feature))) {
           return false;
         }
       }
 
       return true;
     });
-  }, [allVideos, searchQuery, selectedCategories, selectedFeatures]);
+  }, [allItems, searchQuery, selectedCategories, selectedFeatures]);
 
-  // Reset visible count when filters change
   React.useEffect(() => {
     setVisibleCount(9);
   }, [searchQuery, selectedCategories, selectedFeatures]);
@@ -178,9 +178,9 @@ export function VideoShowcaseIndex() {
   const hasActiveFilters =
     searchQuery || selectedCategories.length > 0 || selectedFeatures.length > 0;
 
-  const videosToShow = hasActiveFilters ? filteredVideos : allVideos;
-  const displayedVideos = videosToShow.slice(0, visibleCount);
-  const hasMore = visibleCount < videosToShow.length;
+  const itemsToShow = hasActiveFilters ? filteredItems : allItems;
+  const displayedItems = itemsToShow.slice(0, visibleCount);
+  const hasMore = visibleCount < itemsToShow.length;
 
   const handleShowMore = () => {
     setVisibleCount((prev) => prev + 9);
@@ -221,7 +221,7 @@ export function VideoShowcaseIndex() {
               分类
             </span>
             <div className="flex flex-wrap gap-2 mt-2">
-              {CATEGORY_TAGS.map((category) => (
+              {categoryTags.map((category) => (
                 <button
                   key={category}
                   onClick={() => toggleCategory(category)}
@@ -243,7 +243,7 @@ export function VideoShowcaseIndex() {
               功能
             </span>
             <div className="flex flex-wrap gap-2 mt-2">
-              {FEATURE_TAGS.map((feature) => (
+              {featureTags.map((feature) => (
                 <button
                   key={feature}
                   onClick={() => toggleFeature(feature)}
@@ -263,7 +263,7 @@ export function VideoShowcaseIndex() {
           {hasActiveFilters && (
             <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
               <span>
-                {filteredVideos.length} 个结果
+                {filteredItems.length} 个结果
               </span>
               <button
                 onClick={clearFilters}
@@ -284,11 +284,11 @@ export function VideoShowcaseIndex() {
       {/* Card Grid */}
       <section className="w-full px-4 md:px-8 py-12 md:py-16">
         <div className="max-w-7xl mx-auto">
-          {displayedVideos.length > 0 ? (
+          {displayedItems.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                {displayedVideos.map((video) => (
-                  <ShowcaseCard key={video.id} video={video} />
+                {displayedItems.map((item) => (
+                  <ShowcaseCard key={item.id} item={item} />
                 ))}
               </div>
 
@@ -298,7 +298,7 @@ export function VideoShowcaseIndex() {
                     onClick={handleShowMore}
                     className="px-8 py-3 text-sm font-medium rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all active:scale-[0.98]"
                   >
-                    显示更多 ({videosToShow.length - visibleCount} 个)
+                    显示更多 ({itemsToShow.length - visibleCount} 个)
                   </button>
                 </div>
               )}
@@ -345,7 +345,9 @@ export function VideoShowcaseIndex() {
                 </p>
 
                 <div className="space-y-1">
-                  {path.cases.map((caseItem, index) => (
+                  {path.cases
+                    .filter((caseItem) => allItemIds.has(caseItem.id))
+                    .map((caseItem, index) => (
                     <Link
                       key={caseItem.id}
                       href={`/zh/showcase/${caseItem.id}`}

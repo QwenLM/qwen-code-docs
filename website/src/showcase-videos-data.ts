@@ -14,7 +14,7 @@ export interface VideoShowcaseItem {
     command?: string;
   }[];
   hasDetailPage?: boolean; // 标记是否有独立的 MDX 详情页
-  showcaseCategory?: string; // 分类标签：日常任务、编程开发、数据分析、入门指南、核心功能、Skills 扩展
+  showcaseCategory?: string; // 分类标签：入门指南、编程开发、设计创作、产品构思、日常任务
   showcaseFeatures?: string[]; // 功能标签数组：Agent 模式、Cowork、Skills、Web Search、MCP、Plan 模式、GitHub 集成、图片识别、Remotion 等
 }
 
@@ -52,7 +52,7 @@ export const heroVideo: VideoShowcaseItem = {
 // Feature Videos - Guide Category
 export const guideVideos: VideoShowcaseItem[] = [
   {
-    id: "script-install",
+    id: "guide-script-install",
     title: "脚本一键安装",
     description: "通过脚本命令快速安装 Qwen Code，几秒钟即可完成环境配置。",
     thumbnail: "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg",
@@ -76,7 +76,7 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "first-conversation",
+    id: "guide-first-conversation",
     title: "开始第一次对话",
     description: "安装完成后，发起你与 Qwen Code 的第一次 AI 对话。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg",
@@ -100,7 +100,7 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "api-setup",
+    id: "guide-api-setup",
     title: "API 设置",
     description: "配置 API Key 和模型参数，自定义你的 AI 编程体验。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
@@ -108,7 +108,7 @@ export const guideVideos: VideoShowcaseItem[] = [
     category: "Guide",
     hasDetailPage: false,
     showcaseCategory: "入门指南",
-    showcaseFeatures: ["API 设置"],
+    showcaseFeatures: ["Agent 模式"],
     steps: [
       {
         title: "获取 API Key",
@@ -128,12 +128,14 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "bailian-coding-plan",
+    id: "guide-bailian-coding-plan",
     title: "百炼 Coding Plan 模式",
     description: "配置使用百炼 Coding Plan，多模型选择，提升复杂任务的完成质量。",
     thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png",
     videoUrl: "https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4",
     category: "Guide",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Plan 模式"],
     steps: [
       {
         title: "进入设置",
@@ -151,12 +153,14 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "vscode-integration",
+    id: "guide-vscode-integration",
     title: "VS Code 集成界面",
     description: "Qwen Code 在 VS Code 中的完整界面展示，了解各功能区域的布局。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4",
     category: "Guide",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Agent 模式"],
     steps: [
       {
         title: "安装 VS Code 扩展",
@@ -174,11 +178,13 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "authentication",
+    id: "guide-authentication",
     title: "认证登录",
     description: "了解 Qwen Code 的认证流程，快速完成账号登录。",
     thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png",
     category: "Guide",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Agent 模式"],
     command: "/auth",
     steps: [
       {
@@ -197,11 +203,13 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "headless-mode",
+    id: "guide-headless-mode",
     title: "Headless 模式",
     description: "在无 GUI 环境下使用 Qwen Code，适用于远程服务器和 CI/CD 场景。",
     thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif",
     category: "Guide",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Headless"],
     command: "qwen --p 'what is qwen code?'",
     steps: [
       {
@@ -216,11 +224,13 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "file-reference",
+    id: "office-file-reference",
     title: "@file 引用功能",
     description: "在对话中通过 @file 引用项目文件，让 AI 精准理解上下文。",
     thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png",
     category: "Guide",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["文件操作"],
     command: "@file ./src/main.py",
     steps: [
       {
@@ -235,12 +245,14 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "language-switch",
+    id: "guide-language-switch",
     title: "语言切换",
     description: "在 Qwen Code 中切换 UI 和输出语言，支持多语言交互。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4",
     category: "Guide",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Agent 模式"],
     command: "/language ui zh-CN",
     steps: [
       {
@@ -256,12 +268,14 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "resume-session",
+    id: "guide-resume-session",
     title: "Resume 会话恢复",
     description: "中断的对话可以随时恢复，不丢失任何上下文和进度。",
     thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4",
     category: "Guide",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Agent 模式"],
     command: "qwen --resume",
     steps: [
       {
@@ -277,11 +291,13 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "retry-shortcut",
+    id: "guide-retry-shortcut",
     title: "Ctrl+Y 快速重试",
     description: "对 AI 回答不满意时，使用 Ctrl(Cmd)+Y 一键重试获取更好的结果。",
     thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01YtZAzm1ShNMbf8YTt_!!6000000002278-2-tps-1694-956.png",
     category: "Guide",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Agent 模式"],
     steps: [
       {
         title: "触发重试",
@@ -294,11 +310,13 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "copy-optimization",
+    id: "guide-copy-optimization",
     title: "复制字符优化",
     description: "优化的代码复制体验，精准选取和复制代码片段。",
     thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN01rFSm7o1hoRiIy0xrP_!!6000000004324-1-tps-1280-720.gif",
     category: "Guide",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Agent 模式"],
     steps: [
       {
         title: "选择代码块",
@@ -311,11 +329,13 @@ export const guideVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "agents-config",
+    id: "guide-agents-config",
     title: "Agents 配置文件",
     description: "通过 Agents MD 文件自定义 AI 行为，让 AI 适配你的项目规范。",
     thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png",
     category: "Guide",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Agent 模式"],
     steps: [
       {
         title: "创建配置文件",
@@ -337,12 +357,14 @@ export const guideVideos: VideoShowcaseItem[] = [
 // Core Features Videos
 export const featureVideos: VideoShowcaseItem[] = [
   {
-    id: "terminal-capture",
+    id: "guide-terminal-capture",
     title: "终端输出捕获",
     description: "产品演示必备！让 AI 执行功能测试并自动捕获终端输出信息。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005887/O1CN01hBRUux1tMIlTGx2Ym_!!6000000005887-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/eaDeo1zyE3n6VG9QscGbOLWzzY1dGknK8YNbu3srV9w.mp4",
     category: "Features",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["终端操作", "Skills"],
     command: "/skills terminal-capture",
     steps: [
       {
@@ -362,12 +384,14 @@ export const featureVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "web-search",
+    id: "guide-web-search",
     title: "Web Search",
     description: "让 Qwen Code 搜索网络内容，获取实时信息辅助编程。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/FVVvz922HnDIY_STwpKaBGBb1u2JXOCdUCOL36A8WW4.mp4",
     category: "Features",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Web Search"],
     steps: [
       {
         title: "启用搜索",
@@ -381,11 +405,13 @@ export const featureVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "plan-with-search",
+    id: "guide-plan-with-search",
     title: "Plan 模式 + Web Search",
     description: "在 Plan 模式下结合 Web Search，先搜索再规划，提升任务准确性。",
     thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png",
     category: "Features",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Plan 模式", "Web Search"],
     steps: [
       {
         title: "启用 Plan 模式",
@@ -403,12 +429,14 @@ export const featureVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "insight",
+    id: "product-insight",
     title: "Insight 数据洞察",
     description: "查看个人 AI 使用报告，了解编程效率和协作数据。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000006496/O1CN01KNUXtG1xrDy75PPA5_!!6000000006496-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/a5X9O6PsdDdmXVqtHdhlzZ97mRNPrqroKO5cf4V71XM.mp4",
     category: "Features",
+    showcaseCategory: "产品构思",
+    showcaseFeatures: ["Agent 模式"],
     link: "../blog/how-to-use-qwencode-insight",
     command: "/insight",
     steps: [
@@ -424,12 +452,14 @@ export const featureVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "mcp-image-gen",
+    id: "office-mcp-image-gen",
     title: "MCP 图片生成",
     description: "通过 MCP 接入图片生成服务，用自然语言驱动 AI 创作图像。",
     thumbnail: "https://img.alicdn.com/imgextra/i3/6000000008040/O1CN01S2cxYL29GNUmrvmzH_!!6000000008040-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/gQg8C_5f5MGoZE9YKCyKmHlWAgXZSTMbN8WSoN7crbc.mp4",
     category: "Features",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["MCP", "图片识别"],
     steps: [
       {
         title: "配置 MCP",
@@ -447,11 +477,13 @@ export const featureVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "clipboard-paste",
+    id: "office-clipboard-paste",
     title: "剪贴板图片粘贴",
     description: "直接粘贴剪贴板中的图片到对话，AI 即时理解图片内容。",
     thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png",
     category: "Features",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["图片识别"],
     steps: [
       {
         title: "复制图片",
@@ -470,12 +502,14 @@ export const featureVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "image-recognition",
+    id: "office-image-recognition",
     title: "图片识别",
     description: "Qwen Code 可以读取和理解图片内容，辅助视觉相关的编程任务。",
     thumbnail: "https://img.alicdn.com/imgextra/i3/6000000006844/O1CN011X8nmv20QbnWSqSfJ_!!6000000006844-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/1wsWdUwqhw7-x6Hx5W_qQEI58kPw_kVSPS23AIM4PqQ.mp4",
     category: "Features",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["图片识别"],
     steps: [
       {
         title: "上传图片",
@@ -489,12 +523,14 @@ export const featureVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "github-integration",
+    id: "code-github-integration",
     title: "GitHub 命令集成",
     description: "在 Qwen Code 中直接执行 GitHub 操作，管理仓库和 PR。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
     videoUrl: "https://cloud.video.taobao.com/vod/wWqieOtAazt1jJJdyZnxP0ZWYz4fuV6Ogb2wOvb8bBg.mp4",
     category: "Features",
+    showcaseCategory: "编程开发",
+    showcaseFeatures: ["GitHub 集成"],
     steps: [
       {
         title: "配置 GitHub",
@@ -509,11 +545,13 @@ export const featureVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "lsp-intelligence",
+    id: "code-lsp-intelligence",
     title: "LSP 智能感知",
     description: "集成 LSP 协议，提供精准的代码补全、跳转和诊断能力。",
     thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png",
     category: "Features",
+    showcaseCategory: "编程开发",
+    showcaseFeatures: ["LSP"],
     steps: [
       {
         title: "自动检测",
@@ -526,12 +564,14 @@ export const featureVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "export-conversation",
+    id: "office-export-conversation",
     title: "导出对话记录",
     description: "导出对话记录，支持 Markdown、JSON 等格式。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4",
     category: "Features",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["Agent 模式"],
     command: "/export html <session id>",
     steps: [
       {
@@ -551,12 +591,14 @@ export const featureVideos: VideoShowcaseItem[] = [
 // Skills Videos
 export const skillsVideos: VideoShowcaseItem[] = [
   {
-    id: "skill-install-prompt",
+    id: "guide-skill-install",
     title: "通过提示词安装 Skills",
     description: "在对话中直接告诉 Qwen Code 安装所需的 Skill，即装即用。",
     thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003086/O1CN01quNtwC1YfRNyxdAsy_!!6000000003086-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/WYeH55IR7WQ8OXKqmQfjM1WyK7xZ4llKM3A_dtf19wI.mp4",
     category: "Skills",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Skills"],
     command: "Please first check if find-skills exists, if not, please use npx skills add https://github.com/vercel-labs/skills --skill find-skills",
     steps: [
       {
@@ -576,12 +618,14 @@ export const skillsVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "skill-install-folder",
+    id: "guide-skill-install-folder",
     title: "通过文件夹安装 Skills",
     description: "将 Skill 文件放入指定目录，Qwen Code 自动识别并加载。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4",
     category: "Skills",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Skills"],
     steps: [
       {
         title: "下载 Skill",
@@ -600,11 +644,13 @@ export const skillsVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "skills-panel",
+    id: "guide-skills-panel",
     title: "Skills 面板",
     description: "通过 Skills 面板浏览、安装和管理已有的 Skill 扩展。",
     thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01xkzvoE1fomm8znzBG_!!6000000004054-2-tps-1694-952.png",
     category: "Skills",
+    showcaseCategory: "入门指南",
+    showcaseFeatures: ["Skills"],
     command: "/skills",
     steps: [
       {
@@ -648,12 +694,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "terminal-theme",
+    id: "office-terminal-theme",
     title: "Terminal 主题切换",
     description: "一句话更换 terminal 主题，可以用自然语言应用任何你想要的主题样式。",
     thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01AsDV5C1aSHEa8IY3M_!!6000000003328-0-videocover-3163-1800.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/zxYwfE9B3STo2bLnbTBwePKBTtWPbqt6pS2BCZMJpTM.mp4",
     category: "Scenarios",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["终端操作"],
     difficulty: "quickstart",
     steps: [
       {
@@ -668,12 +716,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "weekly-report",
+    id: "office-weekly-report",
     title: "自动获取生成周报",
     description: "定制技能，一行命令自动爬取本周更新，并按照设定的模板写作产品更新周报。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png",
     videoUrl: "https://cloud.video.taobao.com/vod/BrL3c4NkeIqLiT3MAAWUSp26QgM0hjN67ukuKQmgE4M.mp4",
     category: "Scenarios",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["Agent 模式"],
     difficulty: "office",
     steps: [
       {
@@ -693,12 +743,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "ppt-presentation",
+    id: "office-ppt-presentation",
     title: "汇报展示：做 PPT",
     description: "根据产品演示的截图制作 PPT，你只需要提供截图，输入命令，然后等待，bling bling 的就完成了。",
     thumbnail: "https://img.alicdn.com/imgextra/i2/O1CN01ZlnCqO1HtmJhfhZSm_!!6000000000816-2-videocover-2546-1388.png",
     videoUrl: "https://cloud.video.taobao.com/vod/08IfFcYkp4OkyvbSDklR11rrL69fTNuc8Rkz_2ikqOg.mp4",
     category: "Scenarios",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["Agent 模式"],
     difficulty: "office",
     steps: [
       {
@@ -717,12 +769,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "read-paper",
+    id: "study-read-paper",
     title: "读论文",
     description: "直接读取下载网络上的论文，比如这篇 attention is all you need，然后你可以直接跟 AI 对话学习。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01616oQD1d9RnY1XuLt_!!6000000003693-2-videocover-1696-956.png",
     videoUrl: "https://cloud.video.taobao.com/vod/is3SsCe3w-U5Y0ZxL-z6reSbw8NBhnzCtQfjH26lLFE.mp4",
     category: "Scenarios",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["Agent 模式"],
     difficulty: "coding",
     steps: [
       {
@@ -742,12 +796,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "code-learning",
+    id: "study-learning",
     title: "代码学习",
     description: "直接克隆仓库学习理解，让 Qwen Code 直接告诉你该如何给开源项目做贡献。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png",
     videoUrl: "https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4",
     category: "Scenarios",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["Agent 模式"],
     difficulty: "coding",
     steps: [
       {
@@ -768,12 +824,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "solve-issue",
+    id: "code-solve-issue",
     title: "解决 issue",
     description: "根据上面的规划，你可以开始给开源项目解决 issue 了。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png",
     videoUrl: "https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4",
     category: "Scenarios",
+    showcaseCategory: "编程开发",
+    showcaseFeatures: ["GitHub 集成"],
     difficulty: "coding",
     steps: [
       {
@@ -796,12 +854,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "pr-review",
+    id: "code-pr-review",
     title: "PR Review",
     description: "解决了 issue，自动提交了 pr，你还可以直接使用 Qwen Code 对 PR 进行测试 review。",
     thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
     videoUrl: "https://cloud.video.taobao.com/vod/Eu3Gyad-mLiz_FZqrXp76EZWYz4fuV6Ogb2wOvb8bBg.mp4",
     category: "Scenarios",
+    showcaseCategory: "编程开发",
+    showcaseFeatures: ["GitHub 集成"],
     difficulty: "coding",
     steps: [
       {
@@ -821,12 +881,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "oss-promo-video",
+    id: "creator-oss-promo-video",
     title: "给自己开源项目做个宣传视频",
     description: "给开源项目做了贡献或者有了自己的开源项目，还可以直接提供仓库地址给项目做个演示视频。",
     thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01KKPAv51ZL7QcgguxA_!!6000000003177-2-tps-2880-1622.png",
     videoUrl: "https://cloud.video.taobao.com/vod/TwRRLlr4EHfv-8kvb0J-w7zj70zxoGY7wiaPewqm4l0.mp4",
     category: "Scenarios",
+    showcaseCategory: "设计创作",
+    showcaseFeatures: ["Remotion", "视频创作"],
     difficulty: "advanced",
     command: "based on this skill：https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md, help me to generate a video for <your repository url>",
     steps: [
@@ -847,12 +909,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "portfolio-site",
+    id: "creator-portfolio-site-quick",
     title: "一句话制作个人简历",
     description: "你可以整合经历都写进简历，再让 Qwen Code 根据简历制作出你的展示页面。",
     thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png",
     videoUrl: "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4",
     category: "Scenarios",
+    showcaseCategory: "设计创作",
+    showcaseFeatures: ["Agent 模式"],
     difficulty: "advanced",
     steps: [
       {
@@ -872,12 +936,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "youtube-to-blog",
+    id: "office-youtube-to-blog",
     title: "将 YouTube 视频转为博客文章",
     description: "学习如何使用 Qwen Code 和 SOP 技能将 YouTube 视频转换为博客文章。",
     thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
     category: "Scenarios",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["Agent 模式"],
     difficulty: "office",
     steps: [
       {
@@ -896,12 +962,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "website-clone",
+    id: "creator-website-clone",
     title: "一句话复刻你喜欢的网站",
     description: "截图给 Qwen Code，告诉它你想复刻的网站，它会帮你分析页面结构并生成代码。",
     thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4",
     category: "Scenarios",
+    showcaseCategory: "设计创作",
+    showcaseFeatures: ["图片识别"],
     difficulty: "coding",
     link: "../blog/qwencode-coding-plan-guide-build-website",
     steps: [
@@ -926,12 +994,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "write-file",
+    id: "office-write-file",
     title: "一句话写入文件",
     description: "告诉 Qwen Code 要写什么内容，它会帮你创建和写入文件。",
     thumbnail: "https://img.alicdn.com/imgextra/i2/6000000003593/O1CN0139ueiV1cPeBczAQyA_!!6000000003593-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/ToffPMLiVnt3c_HDiisOPcfaWGYmYVsH3hIuj3YWBVg.mp4",
     category: "Scenarios",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["文件操作"],
     difficulty: "office",
     steps: [
       {
@@ -950,12 +1020,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "organize-desktop",
+    id: "office-organize-desktop",
     title: "整理桌面文件",
     description: "用一句话让 Qwen Code 帮你自动整理桌面文件，按类型归类到对应文件夹。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4",
     category: "Scenarios",
+    showcaseCategory: "日常任务",
+    showcaseFeatures: ["文件操作", "Cowork"],
     difficulty: "office",
     steps: [
       {
@@ -974,12 +1046,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "remotion-prompt",
+    id: "creator-remotion-prompt",
     title: "Remotion 视频创作（提示词方式）",
     description: "通过自然语言描述，使用 Remotion Skill 驱动代码生成视频内容。",
     thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4",
     category: "Scenarios",
+    showcaseCategory: "设计创作",
+    showcaseFeatures: ["Remotion", "视频创作"],
     difficulty: "advanced",
     command: "npx skills add nicepkg/agent-skills@remotion-best-practices",
     steps: [
@@ -1001,12 +1075,14 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "remotion-web",
+    id: "creator-remotion-web",
     title: "Remotion 视频创作（网页方式）",
     description: "通过网页界面配合 Remotion Skill，可视化地创作和预览视频。",
     thumbnail: "https://img.alicdn.com/imgextra/i4/6000000005167/O1CN01agk2kT1o2XbAcYSLV_!!6000000005167-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/TGbVMvWkRJxgPeJFl04RCgZZDyxBvo-SxJdu57gyr9w.mp4",
     category: "Scenarios",
+    showcaseCategory: "设计创作",
+    showcaseFeatures: ["Remotion", "视频创作"],
     difficulty: "advanced",
     command: "npx skills add nicepkg/agent-skills@remotion-best-practices",
     steps: [

@@ -1,0 +1,61 @@
+---
+title: "百炼 Coding Plan 模式"
+description: "配置使用百炼 Coding Plan，多模型选择，提升复杂任务的完成质量。"
+category: "入门指南"
+features:
+  - "Plan 模式"
+thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png"
+videoUrl: "https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+百炼 Coding Plan 模式是 Qwen Code 的高级功能，专为复杂编程任务设计。通过智能的多模型协作，它能够将大型任务拆解为可执行的步骤，并自动规划最优的执行路径。无论是重构大型代码库还是实现复杂功能，Coding Plan 都能显著提升任务完成的质量和效率。
+
+<ShowcaseDetailMeta category="入门指南" features={["Plan 模式"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4" poster="https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作步骤
+
+<Steps>
+
+### 进入设置界面
+
+启动 Qwen Code 输入 `/auth` 命令。
+
+### 选择 Coding Plan
+
+在设置中启用百炼 Coding Plan 模式，输入你的 API Key，Qwen Code 会自动为你配置 Coding Plan 支持的模型。
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01cDz8AJ1Cq30rXjuXS_!!6000000000131-2-tps-1696-952.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### 选择模型
+
+直接输入 `/model` 命令，选择你想要模型。
+
+### 开始复杂任务
+
+描述你的编程任务，Coding Plan 会自动规划执行步骤。你可以详细说明任务的目标、约束条件和预期结果。AI 会分析任务需求，生成一个结构化的执行计划，包括每个步骤的具体操作和预期产出。
+
+```bash
+我需要重构这个项目的数据层，将数据库从 MySQL 迁移到 PostgreSQL，同时保持 API 接口不变
+```
+
+</Steps>
+
+<Callout type="info">
+Coding Plan 模式特别适合需要多步骤协作的复杂任务，如架构重构、功能迁移等。
+</Callout>
+
+## 相关推荐
+
+- [API 设置](./guide-api-setup.mdx) — 配置 API Key 和模型参数，自定义你的 AI 编程体验
+- [Plan 模式 + Web Search](./plan-with-search) — 结合 Web Search 处理需要最新信息的复杂任务
+
+<ShowcaseDetailCta />

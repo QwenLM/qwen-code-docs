@@ -1,0 +1,50 @@
+---
+title: "MCP 图片生成"
+description: 通过 MCP 接入图片生成服务，用自然语言描述即可驱动 AI 创作高质量图像。"
+category: "日常使用"
+features:
+  - "MCP"
+  - "图片生成"
+thumbnail: "https://img.alicdn.com/imgextra/i3/6000000008040/O1CN01S2cxYL29GNUmrvmzH_!!6000000008040-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/gQg8C_5f5MGoZE9YKCyKmHlWAgXZSTMbN8WSoN7crbc.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+MCP（Model Context Protocol）图片生成功能让你能够通过自然语言描述，直接在 Qwen Code 中驱动 AI 创作高质量图像。无需切换到专门的图片生成工具，只需在对话中描述你的需求，Qwen Code 就会调用集成的图片生成服务，为你生成符合要求的图片。无论是 UI 原型设计、图标创作、插画绘制还是概念图制作，MCP 图片生成都能提供强大的支持。这种无缝集成的工作流极大地提升了设计和开发的效率，让创意实现更加便捷。
+
+<ShowcaseDetailMeta category="日常使用" features={["MCP", "图片生成"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/gQg8C_5f5MGoZE9YKCyKmHlWAgXZSTMbN8WSoN7crbc.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000008040/O1CN01S2cxYL29GNUmrvmzH_!!6000000008040-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作步骤
+
+<Steps>
+### 配置 MCP 服务
+
+首先需要配置 MCP 图片生成服务。在配置文件中添加图片生成服务的 API 密钥和端点信息。Qwen Code 支持多种主流的图片生成服务，你可以根据自己的需求和预算选择合适的服务。配置完成后，重启 Qwen Code 即可生效。
+
+### 描述图片需求
+
+在对话中用自然语言详细描述你想要生成的图片。包括图片的主题、风格、色彩、构图、细节等要素。描述越具体，生成的图片越符合你的预期。你可以参考艺术风格、特定艺术家、或者上传参考图片来帮助 AI 更好地理解你的需求。
+
+### 查看和保存结果
+
+Qwen Code 会生成多张图片供你选择。你可以预览每张图片，选择最符合需求的一张。如果需要调整，可以继续描述修改意见，Qwen Code 会根据反馈重新生成。满意后，可以直接保存图片到本地，或者复制图片链接在其他地方使用。
+</Steps>
+
+<Callout type="info">
+MCP 图片生成支持多种风格和尺寸，可以根据项目需求灵活调整。生成的图片版权归属取决于所使用的服务，请注意查看服务条款。
+</Callout>
+
+## 相关推荐
+
+- [图片识别](./office-image-recognition.mdx) — 让 AI 理解和分析图片内容
+- [剪贴板图片粘贴](./office-clipboard-paste.mdx) — 快速将图片粘贴到对话中
+
+<ShowcaseDetailCta />

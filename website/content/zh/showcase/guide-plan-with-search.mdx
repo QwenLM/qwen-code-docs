@@ -1,0 +1,59 @@
+---
+title: "Plan 模式 + Web Search"
+description: 在 Plan 模式下结合 Web Search，先搜索最新信息再制定执行计划，显著提升复杂任务的准确性。
+category: "入门指南"
+features:
+  - "Plan 模式"
+  - "Web Search"
+thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+Plan 模式是 Qwen Code 的智能规划能力，能够将复杂的任务分解为可执行的步骤。当与 Web Search 结合使用时，它会先主动搜索最新的技术文档、最佳实践和解决方案，然后基于这些实时信息制定更加精准的执行计划。这种组合特别适合处理涉及新框架、新 API 或需要遵循最新规范的开发任务，能够显著提升代码质量和任务完成效率。无论是迁移项目、集成新功能还是解决复杂的技术难题，Plan + Web Search 都能为你提供最前沿的解决方案。
+
+<ShowcaseDetailMeta category="入门指南" features={["Plan 模式", "Web Search"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png" alt="Plan 模式 + Web Search" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作步骤
+
+<Steps>
+### 启用 Plan 模式
+
+在对话中输入 `/approval-mode plan` 命令即可激活 Plan 模式。此时 Qwen Code 会进入规划状态，准备接收你的任务描述并开始思考。Plan 模式会自动分析任务的复杂度，判断是否需要搜索外部信息来补充知识库。
+
+```bash
+/approval-mode plan
+```
+
+### 请求搜索最新信息
+
+描述你的任务需求，Qwen Code 会自动识别需要搜索的关键词。它会主动发起 Web Search 请求，获取最新的技术文档、API 参考、最佳实践和解决方案。搜索结果会被整合到知识库中，为后续的规划提供准确的信息基础。
+
+### 查看执行计划
+
+基于搜索到的信息，Qwen Code 会为你生成详细的执行计划。计划会包含清晰的步骤说明、需要关注的技术要点、潜在的坑和解决方案。你可以审查这个计划，提出修改意见或确认开始执行。
+
+### 逐步执行计划
+
+确认计划后，Qwen Code 会按照步骤逐步执行。在每个关键节点，它会向你汇报进度和结果，确保你对整个过程有完全的掌控。如果遇到问题，它会基于最新的搜索信息提供解决方案，而不是依赖过时的知识。
+</Steps>
+
+<Callout type="info">
+Web Search 会自动识别任务中的技术关键词，无需手动指定搜索内容。对于快速迭代的框架和库，建议在 Plan 模式下开启 Web Search 以获取最新信息。
+</Callout>
+
+## 相关推荐
+
+- [Web Search](./guide-web-search.mdx) — 实时获取最新的技术文档和解决方案
+- [百炼 Coding Plan](./guide-bailian-coding-plan.mdx) — 针对百炼平台的专属规划能力
+
+---
+
+<ShowcaseDetailCta />

@@ -1,0 +1,46 @@
+---
+title: "LSP 智能感知"
+description: "通过集成 LSP（Language Server Protocol），Qwen Code 提供专业级的代码补全和导航体验，实时诊断代码问题。"
+category: "编程开发"
+features:
+  - "LSP"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概述
+
+LSP（Language Server Protocol）智能感知让 Qwen Code 能够提供与专业 IDE 相媲美的代码补全和导航体验。通过集成语言服务器，Qwen Code 可以精准理解代码结构、类型信息和上下文关系，提供高质量的代码建议。无论是函数签名、参数提示、变量名补全，还是定义跳转、引用查找、重构操作，LSP 智能感知都能流畅支持。实时诊断功能会在你编码时即时发现语法错误、类型问题和潜在 bug，让你能够快速修复，提升代码质量。
+
+<ShowcaseDetailMeta category="编程提效" features={["LSP"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png" alt="LSP 智能感知" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作步骤
+
+<Steps>
+### 自动检测
+
+Qwen Code 会自动检测项目中的语言服务器配置。对于主流的编程语言和框架，它会自动识别并启动对应的 LSP 服务。无需手动配置，开箱即用。如果项目使用的是自定义的语言服务器，也可以通过配置文件指定 LSP 的路径和参数。
+
+### 享受智能感知
+
+开始编码时，LSP 智能感知会自动激活。输入代码时，它会根据上下文提供精准的补全建议，包括函数名、变量名、类型注解等。补全建议会显示类型信息和文档说明，帮助你快速选择正确的代码。支持 Tab 键快速接受建议，或者使用方向键浏览更多选项。
+
+### 错误诊断
+
+LSP 实时诊断会在你编码时持续分析代码，发现潜在的问题。错误和警告会以直观的方式显示，包括问题位置、错误类型和修复建议。点击问题可以直接跳转到对应位置，或者使用快捷键快速导航到下一个问题。这种即时反馈机制让你能够尽早发现并修复问题。
+</Steps>
+
+<Callout type="info">
+支持 TypeScript、Python、Java、Go、Rust 等主流语言，以及 React、Vue、Angular 等前端框架。LSP 服务的性能取决于语言服务器的实现，大型项目可能需要几秒钟的初始化时间。
+</Callout>
+
+## 相关推荐
+
+- [VS Code 集成界面](./guide-vscode-integration.mdx) — 在 VS Code 中使用 Qwen Code
+- [代码学习](./study-learning.mdx) — 通过智能感知学习新代码库
+
+<ShowcaseDetailCta />
