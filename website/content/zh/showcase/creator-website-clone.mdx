@@ -30,8 +30,12 @@ import Link from 'next/link'
 
 截取你想要复刻的网站界面，确保截图清晰完整，包含主要的布局和设计元素。
 
+### 安装对应的 Skill
+
+安装图片识别和前端代码生成相关的 Skill，这些 Skill 包含了分析网页设计和生成代码的能力。
+
 ```bash
-我已经准备好了网站截图
+查看我是否有find skills，没有就直接帮我安装：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code，然后帮我安装 web-component-design 到当前目录qwen code skills中。
 ```
 
 ### 粘贴截图并描述需求
@@ -39,24 +43,16 @@ import Link from 'next/link'
 将截图粘贴到对话中，并告诉 Qwen Code 你的具体需求，比如使用什么技术栈、需要哪些功能等。
 
 ```bash
-帮我复刻这个网站的设计，使用 React 和 Tailwind CSS
+/skills web-component-design 根据这个技能，基于 @website.png 帮我复刻一个网页html，注意图片引用需有效。
 ```
 
-### 生成前端代码
+示例截图：
 
-Qwen Code 会分析截图，识别页面结构，生成完整的前端代码，包括 HTML、CSS 和 JavaScript。
-
-```bash
-生成这个页面的完整代码
-```
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
 
 ### 运行和预览
 
-使用生成的代码启动开发服务器，在浏览器中预览效果。如果需要调整，可以告诉 Qwen Code 修改细节。
-
-```bash
-npm run dev
-```
+打开对应网页查看情况。如果需要调整设计或功能，可以继续与 AI 交互，修改代码直到满意为止。
 
 </Steps>
 
@@ -66,7 +62,7 @@ npm run dev
 
 ## 相关推荐
 
-- [10 分钟搭建个人网站](./creator-portfolio-site.mdx) — 快速创建个人网站
+- [搭建个人简历网站](./creator-resume-site-quick.mdx) — 快速创建个人网站
 - [图片识别](./office-image-recognition.mdx) — 识别和分析图片内容
 
 ---

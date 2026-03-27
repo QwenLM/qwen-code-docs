@@ -31,7 +31,7 @@ import Link from 'next/link'
 首先安装 Remotion 相关的 Skill，这个 Skill 包含了视频创作的最佳实践和模板。
 
 ```bash
-npx skills add nicepkg/agent-skills@remotion-best-practices
+npx skills add nicepkg/agent-skills@remotion-best-practices -y -a qwen-code
 ```
 
 ### 描述你的创意
@@ -39,7 +39,7 @@ npx skills add nicepkg/agent-skills@remotion-best-practices
 用自然语言详细描述你想要创作的视频内容，包括主题、风格、时长、关键场景等。
 
 ```bash
-我想制作一个 30 秒的产品宣传视频，风格简洁现代，展示产品的主要功能
+@fiel 基于文档制作一个 30 秒的产品宣传视频，风格简洁现代，展示产品的主要功能，。
 ```
 
 ### 预览和调整
@@ -55,7 +55,7 @@ npm run dev
 满意后使用 build 命令渲染最终视频，支持 MP4、WebM 等格式。
 
 ```bash
-npm run build
+直接帮我渲染成视频并导出。
 ```
 
 </Steps>
@@ -66,8 +66,7 @@ npm run build
 
 ## 相关推荐
 
-- [Remotion 视频创作（网页方式）](./creator-remotion-web.mdx) — 可视化编辑视频内容
-- [给开源项目做宣传视频](./creator-oss-promo-video.mdx) — 为项目生成宣传视频
+- [Remotion 视频创作（提示词方式）](./creator-remotion-video.mdx) — 通过自然语言描述创意生成视频
 
 ---
 
