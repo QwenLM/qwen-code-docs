@@ -1,0 +1,154 @@
+---
+title: "Qwen Code ベータ版：WeChatチャンネルでAIにコードを書かせよう！"
+date: "2026-03-18"
+description: "注意、注意！これはザリガニではありません。Qwen Codeのチャンネル機能です！焼きたて"
+author: "pomelo.lcw"
+tags: ["チュートリアル", "ユーザー事例", "スキル", "チャンネル"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code ベータ版：WeChatチャンネルでAIにコードを書かせよう！"
+  date="2026-03-26"
+  author="pomelo.lcw"
+/>
+
+# Qwen Code ベータ版：WeChatチャンネルでAIにコードを書かせよう！
+
+> **開発者の皆様、お知らせです！** 本日より、Qwen CodeはWeChatチャンネル機能を正式にサポートします。ターミナルやIDEを開く必要はありません。WeChatでメッセージを送るだけで、AIアシスタントがコードを書いたり、ドキュメントを調べたり、技術的な問題を解決したりしてくれます。注意、注意！これはザリガニではありません。Qwen Codeのチャンネル機能です！焼きたて：https://github.com/QwenLM/qwen-code/pull/2628
+
+---
+
+## 💡 実際のシナリオテスト、叩き台として！
+
+食堂で食事中に、突然GitHubの新しいissue通知を受け取りました。チャンネル機能があれば、スクリーンショットを撮ってWeChatに送るだけで、WeChatがローカルのQwen Codeを起動し、楽しいコミュニティQ&Aの旅が始まります！
+
+![](https://img.alicdn.com/imgextra/i1/O1CN01UsiEbV1iFT5QGXI7m_!!6000000004383-2-tps-3340-1640.png)
+
+## 🎯 なぜWeChatチャンネルが必要なのか？
+
+![WeChatチャンネルコア概念図](https://img.alicdn.com/imgextra/i4/O1CN01p9WUdg27Z2P6L8UTB_!!6000000007810-0-tps-1376-768.jpg)
+
+開発者として、このようなシナリオによく遭遇しませんか：
+
+- **通勤中**にバグの解決策を突然思いつき、すぐにAIにアプローチを検証してほしい
+- **会議の合間**にAPIの使い方を素早く調べたいが、PCを開きたくない
+- **深夜**ベッドでインスピレーションが湧き、AIにコードフレームワークを生成してほしい
+- **旅行中**に緊急のオンライン問題が発生し、リモートで同僚のトラブルシューティングを支援する必要がある
+
+以前は、Qwen Codeを使うためにPCを開いてターミナルを起動する必要がありました。今、**あなたのWeChatが開発環境です**。
+
+---
+
+## 🚀 クイックスタートガイド
+
+### 準備
+
+以下をご確認ください：
+
+- ✅ Qwen Codeのプレビュー版をインストール `npm i @qwen-code/qwen-code@0.14.0-preview.0 -g`
+- ✅ メッセージを受信できるWeChatアカウントを準備
+
+> AI時代、誰がまだ手動でパラメータを設定しますか？`npx skills add https://github.com/QwenLM/qwen-code-examples --skill weixin-channel-setup` でこのweixin-channel-setupスキルをインストールし、Qwenを開いて `/skills weixin-channel-setup 設定を手伝ってください` と聞くだけ
+
+昔ながらの設定方法がお好きなら、以下の3ステップをご参照ください：
+
+![3ステップ設定フローチャート](https://img.alicdn.com/imgextra/i4/O1CN01aWJWAF1YwqRJ6ryra_!!6000000003124-0-tps-1376-768.jpg)
+
+### ステップ1：スキャンして接続
+
+ターミナルで実行：
+
+```bash
+qwen channel configure-weixin
+```
+
+ターミナルに「QR code URL」があります。リンクをコピーしてブラウザで開き、WeChatでスキャンしてください。
+
+- WeChatのインストールが必要な場合があります
+  スキャンが成功すると、以下が表示されます：
+
+```
+Connected to WeChat successfully!
+Credentials saved. You can now start a weixin channel with:
+  qwen channel start <name>
+```
+
+これで、WeChatの認証情報がローカルに安全に保存されました。
+
+### ステップ2：チャンネル設定
+
+`~/.qwen/settings.json`を編集し、以下の設定を追加：
+
+```json
+"channels": {
+    "my-weixin": {
+      "type": "weixin",
+      "senderPolicy": "open",
+      "sessionScope": "user",
+      "model": "qwen3.5-plus",
+      "instructions": "You are a concise coding assistant responding via WeChat. Keep responses under 500 characters. Use plain text only."
+    }
+  }
+```
+
+### ステップ3：起動とテスト
+
+```bash
+qwen channel start my-weixin
+```
+
+`[Channel] "my-weixin" is running.` というプロンプトが表示されたら、WeChatを開いて：
+
+1. ボットアシスタントを見つける（先ほどスキャンしたもの）
+2. メッセージを送信：「こんにちは、PythonのHello Worldを書いてください」
+3. 返信を待つ...
+
+🎉 **おめでとうございます！これでWeChatでコードが書けるようになりました！**
+
+---
+
+## 🔧 高度な使い方
+
+### 1. AIのペルソナをカスタマイズ
+
+`instructions`フィールドで、専用のAIアシスタントを作成できます：
+
+```json
+{
+  "instructions": "あなたはシニアTypeScriptエンジニアです。質問に答える際：\n1. 実行可能なコード例を優先\n2. 重要な設計判断を説明\n3. 潜在的なエッジケースを指摘\n4. プロフェッショナルだがフレンドリーな口調を維持"
+}
+```
+
+### 2. 起動時自動起動
+
+正直なところ、この問題はQwen Codeに聞いたほうがいい結果が得られるかもしれません。設定を手伝ってもらいましょう～
+
+さらなる使い方は、あなたの貢献をお待ちしています～
+
+---
+
+## 📢 フィードバックとご提案
+
+使用体験を大切にしています！ご使用中に問題が発生した場合や、新しい機能のご提案がある場合は、以下の方法でお知らせください：
+
+- 🐛 **バグ報告**：<https://github.com/QwenLM/qwen-code/issues>
+- 💡 **機能提案**：<https://github.com/QwenLM/qwen-code/discussions>
+- 💬 **コミュニティ交流**：開発者コミュニティに参加
+
+---
+
+## 🎓 結びに
+
+![](https://img.alicdn.com/imgextra/i2/O1CN01LLNV5D1Wz15PztdB3_!!6000000002858-2-tps-2642-996.png)
+
+私たちのビジョンは、AI時代に真に自律的に実行できるAI従業員を創造することです。全能で、生産力を完全に解放し、草原、山、渓谷、草原、ビーチで人生を楽しみ、楽しみを創造できる存在です。
+
+**将来的には、以下もサポート予定です：**
+
+- 📱 DingTalk、Feishuなどの企業IMプラットフォーム
+- 🤖 音声入力サポート、より多くのメディアフォーマット処理
+
+これらの機能は重要ですが、優先順位が高くない可能性があります。コミュニティの皆様との共築に大きく依存しています。ご参加をお待ちしています！
