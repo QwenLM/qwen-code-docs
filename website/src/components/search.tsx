@@ -8,6 +8,17 @@ import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useDeferredValue } from "react";
 
+// Declare pagefind on window for TypeScript
+declare global {
+  interface Window {
+    pagefind?: {
+      options: (opts: { baseUrl: string; ranking?: Record<string, number> }) => Promise<void>;
+      init: () => Promise<void>;
+      destroy: () => void;
+    };
+  }
+}
+
 interface SearchResult {
   url: string;
   title: string;
