@@ -88,7 +88,23 @@ function generateShowcaseData() {
     });
   }
 
-  items.sort((a, b) => a.id.localeCompare(b.id));
+  // Sort by category order, then by id
+  const categoryOrder = {
+    "入门指南": 1,
+    "编程开发": 2,
+    "设计创作": 3,
+    "产品构思": 4,
+    "日常任务": 5,
+  };
+
+  items.sort((a, b) => {
+    const orderA = categoryOrder[a.category] || 99;
+    const orderB = categoryOrder[b.category] || 99;
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    return a.id.localeCompare(b.id);
+  });
 
   const outputDir = path.dirname(OUTPUT_FILE);
   if (!fs.existsSync(outputDir)) {
