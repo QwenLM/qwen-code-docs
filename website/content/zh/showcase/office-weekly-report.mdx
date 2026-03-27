@@ -25,28 +25,36 @@ import Link from 'next/link'
 
 <Steps>
 
-### 配置数据源
+### 安装 skills-creator 技能
 
-首先告诉 Qwen Code 你需要收集哪些数据源的信息，比如 GitHub 仓库更新、产品发布日志、用户反馈等。AI 会根据你的需求配置相应的数据爬取规则。
+首先安装技能，让 AI 了解你需要收集哪些数据源的信息。
 
-```bash
-帮我配置周报数据源，包括 GitHub 提交记录和产品更新日志
+```
+查看我是否有find skills，没有就直接帮我安装：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code，然后帮我安装 skills-creator 到qwen code skills中。
+```
+
+### 创建周报技能
+
+使用技能创建功能，告诉 AI 你需要一个定制的周报生成技能，描述你需要收集的数据类型和周报的结构。AI 会根据你的需求生成一个新的技能。
+
+```
+我需要给开源项目：https://github.com/QwenLM/qwen-code 每周制作周报，主要包括本周提交的issue、解决的bug、新上的版本和feature，以及复盘和反思，语言要以用户为中心，具有利他性、能感知。创建一个技能。
 ```
 
 ### 生成周报内容
 
 配置完成后，输入生成命令，Qwen Code 会自动爬取本周的更新信息，并按照产品周报模板整理成结构化的文档。
 
-```bash
-生成本周的产品更新报告
+```
+生成本周的 qwen-code 产品更新周报
 ```
 
-### 导出和分享
+### 打开周报，编辑调整
 
-生成的周报可以直接导出为 Markdown 格式，方便你进一步编辑或在团队中分享。你也可以让 AI 帮你调整格式和内容重点。
+生成的周报可以打开调整，方便你进一步编辑或在团队中分享。你也可以让 AI 帮你调整格式和内容重点。
 
-```bash
-/export markdown weekly-report
+```
+周报的语言更活泼一些
 ```
 
 </Steps>

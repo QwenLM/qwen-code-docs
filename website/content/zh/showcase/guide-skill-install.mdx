@@ -21,26 +21,30 @@ Qwen Code 支持多种 Skill 安装方式，你可以根据实际场景选择最
 
 <video src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
 
-## 方式一：命令行安装
+## 方式一：让 Qwen Code 安装
 
 适合在线环境，通过 npx 命令直接从 GitHub 仓库安装 Skill。
 
 <Steps>
 
-### 检查并安装 Skill
+### 检查并安装 find-skills Skill
 
 在 Qwen Code 中直接描述你的需求，让它帮你检查并安装所需的 Skill：
 
 ```
-查看我是否有 find-skills，没有就直接帮我安装
+查看我是否有find skills，没有就直接帮我安装：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code
 ```
 
-### 执行安装命令
+### 安装你需要的 Skill，比如安装 web-component-design：
 
-Qwen Code 会自动执行安装命令，从指定仓库下载并安装 Skill：
+```
+/skills find-skills install web-component-design -y -a qwen-code
+```
 
-```bash
-npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code
+Qwen Code 会自动执行安装命令，从指定仓库下载并安装 Skill，你也可以使用一句话安装：
+
+```
+查看我是否有find skills，没有就直接帮我安装：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code，然后帮我安装【技能名称】到当前目录qwen code skills中。
 ```
 
 ### 验证安装
@@ -79,6 +83,8 @@ mkdir -p my-custom-skill
 
 将 Skill 文件夹复制到 Qwen Code 的 Skills 目录。默认位置为 `~/.qwen/skills/`，如果目录不存在需手动创建。
 
+手动创建与命令行创建复制都可以，下面是命令行方式：
+
 ```bash
 # 创建目录（如果不存在）
 mkdir -p ~/.qwen/skills
@@ -87,13 +93,13 @@ mkdir -p ~/.qwen/skills
 cp -r my-custom-skill ~/.qwen/skills/
 ```
 
-### 重新加载并验证
+### 验证安装
 
 在 Qwen Code 中执行重新加载命令，系统会扫描目录并加载所有可用的 Skill。
 
 ```bash
-# 重新加载 Skills
-/skills reload
+#启动 Qwen Code
+qwen
 
 # 验证安装
 /skills

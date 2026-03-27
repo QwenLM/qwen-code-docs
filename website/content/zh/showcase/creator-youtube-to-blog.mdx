@@ -1,7 +1,7 @@
 ---
 title: "将 YouTube 视频转为博客文章"
 description: "使用 Qwen Code 将 YouTube 视频自动转换为结构化的博客文章。"
-category: "日常任务"
+category: "设计创作"
 features:
   - "Skills"
   - "Web Search"
@@ -18,9 +18,9 @@ import Link from 'next/link'
 
 看到精彩的 YouTube 视频，想要将其转化为博客文章分享给更多人？Qwen Code 可以帮你自动提取视频内容，生成结构清晰、内容丰富的博客文章。AI 会获取视频转录，理解内容要点，按照博客文章的标准格式组织内容，并添加合适的标题和小节。无论是技术教程、产品介绍还是知识分享，都能快速生成高质量的文章。
 
-<ShowcaseDetailMeta category="日常任务" features={["Skills", "Web Search"]} model="qwen3.5-plus" />
+<ShowcaseDetailMeta category="设计创作" features={["Skills", "Web Search"]} model="qwen3.5-plus" />
 
-<video src="https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+<video src="https://cloud.video.taobao.com/vod/FygmzZ4WOMD1fEBdGDY9R2H8LPtgWtE4vMBjDdBQUKM.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000006843/O1CN01KOQQeW20Q9PKPAfbZ_!!6000000006843-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
 
 ## 操作步骤
 
@@ -30,32 +30,16 @@ import Link from 'next/link'
 
 告诉 Qwen Code 你想要转换的 YouTube 视频链接，AI 会自动获取视频信息和转录内容。
 
-```bash
-帮我将这个视频转为博客文章：https://youtube.com/watch?v=xxx
+```
+基于这个技能：https://github.com/QwenLM/qwen-code-examples/tree/main/skills/youtube-transcript-extractor，帮我把这个视频写作成博客：https://www.youtube.com/watch?v=fJSLnxi1i64
 ```
 
-### 获取视频转录
+### 生成博客文章，编辑修改
 
-Qwen Code 会提取视频的字幕或自动生成转录，将视频内容转换为文本形式，为生成文章做准备。
+AI 会分析转录内容，提取关键信息，按照博客文章的结构生成文章，包括标题、引言、正文和总结。你可以继续修改：
 
-```bash
-获取视频的完整转录内容
 ```
-
-### 生成博客文章
-
-AI 会分析转录内容，提取关键信息，按照博客文章的结构生成文章，包括标题、引言、正文和总结。
-
-```bash
-根据转录内容生成一篇结构化的博客文章
-```
-
-### 编辑和发布
-
-查看生成的文章，如果需要调整可以告诉 Qwen Code，比如"增加代码示例"、"调整段落顺序"。满意后即可发布。
-
-```bash
-帮我调整文章的语言风格，让它更专业
+帮我把这篇文章的语言风格调整得更适合技术博客
 ```
 
 </Steps>

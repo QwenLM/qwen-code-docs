@@ -29,15 +29,22 @@ import Link from 'next/link'
 
 告诉 Qwen Code 你想阅读的论文，可以提供论文标题、PDF 文件路径或 arXiv 链接。AI 会自动获取并分析论文内容。
 
-```bash
-帮我分析这篇论文：attention is all you need
+```
+帮我下载并分析这篇论文：attention is all you need https://arxiv.org/abs/1706.03762
+```
+
+### 阅读论文
+安装 PDF 相关技能，让 Qwen Code 分析论文内容，并生成结构化的学习卡片。你可以查看论文摘要、核心观点、关键概念和重要结论。
+
+```
+查看我是否有find skills，没有就直接帮我安装：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code，然后帮我安装 Anthropic pdf 等办公技能到qwen code skills中。
 ```
 
 ### 深入学习和提问
 
 阅读过程中，你可以随时向 Qwen Code 提问，比如"解释一下自注意力机制"、"这个公式是怎么推导的"。AI 会详细解答，帮助你深入理解。
 
-```bash
+```
 请解释一下 Transformer 架构的核心思想
 ```
 

@@ -27,33 +27,33 @@ import Link from 'next/link'
 
 ### 准备产品截图
 
-收集需要展示的产品界面截图，包括主要功能页面、特色功能演示等。截图要清晰，能充分展示产品的价值和特点。
+收集需要展示的产品界面截图，包括主要功能页面、特色功能演示等。截图要清晰，能充分展示产品的价值和特点，放在一个文件夹中，例如：qwen-code-images
 
-```bash
-我已经准备好了 5 张产品截图
+### 安装相关 Skill
+
+安装PPT 生成相关的 Skill，这些 Skill 包含了分析截图内容和生成演示文稿的能力。
+
+```
+查看我是否有find skills，没有就直接帮我安装：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code，然后帮我安装 zarazhangrui/frontend-slides 到qwen code skills中。
 ```
 
 ### 生成演示文稿
 
-将截图粘贴到对话中，并告诉 Qwen Code 你的需求，比如演示的目的、受众、重点内容等。AI 会根据这些信息生成 PPT。
+引用对饮文件，并告诉 Qwen Code 你的需求，比如演示的目的、受众、重点内容等。AI 会根据这些信息生成 PPT。
 
-```bash
-根据这些截图制作一个产品演示 PPT，面向技术团队，重点展示新功能
+```
+@qwen-code-images 根据这些截图制作一个产品演示 PPT，面向技术团队，重点展示新功能
 ```
 
 ### 调整和导出
 
 查看生成的 PPT，如果需要调整可以告诉 Qwen Code，比如"增加一页介绍架构"、"调整这个页面的文案"。满意后导出为可编辑的格式。
 
-```bash
+```
 帮我调整第 3 页的文案，让它更简洁
 ```
 
 </Steps>
-
-<Callout type="info">
-生成的 PPT 可以导出为多种格式，包括 PowerPoint、PDF 等。你可以进一步在 PowerPoint 中编辑完善，或者直接使用生成的版本。
-</Callout>
 
 ## 相关推荐
 

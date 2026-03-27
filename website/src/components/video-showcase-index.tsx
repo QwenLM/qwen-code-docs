@@ -54,7 +54,7 @@ const LEARNING_PATHS = [
 
 function ShowcaseCard({ item }: { item: ShowcaseItem }) {
   return (
-    <Link href={`/zh/showcase/${item.id}`} className="group block">
+    <Link href={`/zh/showcase/${item.id}`} target="_blank" rel="noopener noreferrer" className="group block">
       <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.4)] active:scale-[0.98]">
         <div className="relative aspect-video overflow-hidden bg-zinc-100 dark:bg-zinc-900">
           <img
@@ -104,6 +104,8 @@ function ShowcaseListItem({ item }: { item: ShowcaseItem }) {
   return (
     <Link
       href={`/zh/showcase/${item.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
       className="group flex items-center gap-6 py-4 px-4 -mx-4 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
     >
       <div className="flex-1 min-w-0">
