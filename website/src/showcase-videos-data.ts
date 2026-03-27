@@ -1046,9 +1046,9 @@ export const scenarioVideos: VideoShowcaseItem[] = [
     ],
   },
   {
-    id: "creator-remotion-prompt",
-    title: "Remotion 视频创作（提示词方式）",
-    description: "通过自然语言描述，使用 Remotion Skill 驱动代码生成视频内容。",
+    id: "creator-remotion-video",
+    title: "Remotion 视频创作",
+    description: "通过自然语言描述创意，使用 Remotion Skill 驱动代码生成视频内容。",
     thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4",
     category: "Scenarios",

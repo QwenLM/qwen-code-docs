@@ -3,8 +3,7 @@ title: "解决 issue"
 description: "使用 Qwen Code 分析并解决开源项目的 issue，全流程跟踪从理解到提交代码。"
 category: "编程开发"
 features:
-  - "Agent 模式"
-  - "GitHub 集成"
+  - "GitHub"
 thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png"
 videoUrl: "https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4"
 model: "qwen3.5-plus"
@@ -18,7 +17,7 @@ import Link from 'next/link'
 
 为开源项目解决 issue 是提升编程能力和建立技术影响力的重要途径。Qwen Code 能够帮助你快速定位问题、理解相关代码、制定修复方案，并实现代码修改。从问题分析到 PR 提交，全程 AI 辅助，让开源贡献变得更加高效和顺畅。
 
-<ShowcaseDetailMeta category="编程开发" features={["Agent 模式", "GitHub 集成"]} model="qwen3.5-plus" />
+<ShowcaseDetailMeta category="编程开发" features={["GitHub"]} model="qwen3.5-plus" />
 
 <video src="https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4" poster="https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
 
@@ -35,8 +34,7 @@ import Link from 'next/link'
 下载项目代码，让 AI 帮你定位问题所在。使用 `@file` 引用相关文件，AI 会分析代码逻辑，找出问题根源。这样可以节省大量时间，快速定位到需要修改的代码位置。
 
 ```bash
-@file ./src/buggy-module.ts
-帮我分析一下这个 issue 描述的问题出现在哪里
+帮我分析一下这个 issue 描述的问题出现在哪里，issue链接：<issue链接>
 ```
 
 ### 理解相关代码
@@ -58,6 +56,10 @@ import Link from 'next/link'
 ### 提交 PR
 
 完成修改后提交 PR，等待项目维护者审核。在 PR 描述中清晰说明问题原因和修复方案，引用相关的 issue。维护者审核通过后，你的代码就会被合并到项目中。
+
+```bash
+帮我提交一个 PR 来解决这个问题
+```
 
 </Steps>
 

@@ -29,8 +29,14 @@ import Link from 'next/link'
 
 告诉 Qwen Code 你想要审查的 Pull Request，可以提供 PR 编号或链接。AI 会自动获取 PR 的详细信息和代码变更。
 
+<Callout type="tip">
+你可以使用相关的 pr review 技能来帮助你分析 PR，安装技能参考：[安装技能](./guide-skill-install.mdx)。
+
+</Callout>
+
+
 ```bash
-帮我 review 这个 PR：#123
+/skill pr-review 帮我 review 这个 PR：<pr 链接或编号>
 ```
 
 ### 运行测试和检查
@@ -38,7 +44,7 @@ import Link from 'next/link'
 Qwen Code 会分析代码变更，识别需要运行的测试用例，并执行相关测试来验证代码的正确性。
 
 ```bash
-npm test
+运行测试，检查这个 PR 是否通过所有测试用例
 ```
 
 ### 查看审查报告
