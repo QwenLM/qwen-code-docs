@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Search, ArrowRight, BookOpen, Zap, GraduationCap } from "lucide-react";
+import { Search, ArrowRight, BookOpen, Zap, GraduationCap, LayoutGrid, List } from "lucide-react";
 import Link from "next/link";
 import showcaseItems from "../generated/showcase-data.json";
 
@@ -100,11 +100,52 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
   );
 }
 
+function ShowcaseListItem({ item }: { item: ShowcaseItem }) {
+  return (
+    <Link
+      href={`/zh/showcase/${item.id}`}
+      className="group flex items-center gap-4 py-4 px-4 -mx-4 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
+    >
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+          {item.title}
+        </h3>
+      </div>
+
+      <div className="flex items-center gap-6 flex-shrink-0">
+        {item.category && (
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 w-20 text-center">
+            {item.category}
+          </span>
+        )}
+
+        <span className="text-xs text-zinc-400 dark:text-zinc-500 w-24 text-center font-mono">
+          {item.model}
+        </span>
+
+        <div className="flex items-center gap-1.5 w-32">
+          {item.features.slice(0, 2).map((feature) => (
+            <span
+              key={feature}
+              className="px-2 py-0.5 text-[11px] font-medium rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+            >
+              {feature}
+            </span>
+          ))}
+        </div>
+
+        <ArrowRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors" />
+      </div>
+    </Link>
+  );
+}
+
 export function VideoShowcaseIndex() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(9);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const allItems = useMemo(() => showcaseItems as ShowcaseItem[], []);
   const allItemIds = useMemo(() => new Set(allItems.map((item) => item.id)), [allItems]);
@@ -203,16 +244,44 @@ export function VideoShowcaseIndex() {
       {/* Search + Filters */}
       <section className="w-full px-4 md:px-8 pb-10">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Search */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-            <input
-              type="text"
-              placeholder="搜索案例..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 focus:border-zinc-400 dark:focus:border-zinc-600 transition-all placeholder:text-zinc-400"
-            />
+          {/* Search and View Toggle */}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="搜索案例..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-zinc-100/10 focus:border-zinc-400 dark:focus:border-zinc-600 transition-all placeholder:text-zinc-400"
+              />
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex items-center border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 transition-colors ${
+                  viewMode === "grid"
+                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                }`}
+                title="网格视图"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 transition-colors ${
+                  viewMode === "list"
+                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                }`}
+                title="列表视图"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Category */}
@@ -281,16 +350,35 @@ export function VideoShowcaseIndex() {
         <div className="max-w-7xl mx-auto border-t border-zinc-200 dark:border-zinc-800" />
       </div>
 
-      {/* Card Grid */}
+      {/* Card Grid / List */}
       <section className="w-full px-4 md:px-8 py-12 md:py-16">
         <div className="max-w-7xl mx-auto">
           {displayedItems.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                {displayedItems.map((item) => (
-                  <ShowcaseCard key={item.id} item={item} />
-                ))}
-              </div>
+              {viewMode === "grid" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                  {displayedItems.map((item) => (
+                    <ShowcaseCard key={item.id} item={item} />
+                  ))}
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                  {/* List Header */}
+                  <div className="flex items-center gap-4 py-3 px-4 text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+                    <div className="flex-1">标题</div>
+                    <div className="flex items-center gap-6 flex-shrink-0">
+                      <span className="w-20 text-center">分类</span>
+                      <span className="w-24 text-center">模型</span>
+                      <span className="w-32 text-center">功能</span>
+                      <span className="w-4" />
+                    </div>
+                  </div>
+                  {/* List Items */}
+                  {displayedItems.map((item) => (
+                    <ShowcaseListItem key={item.id} item={item} />
+                  ))}
+                </div>
+              )}
 
               {hasMore && (
                 <div className="flex justify-center mt-12">
