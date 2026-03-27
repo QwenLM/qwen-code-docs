@@ -1,0 +1,154 @@
+---
+title: "Qwen Code Beta : Utilisez l'IA pour écrire du code dans votre canal WeChat !"
+date: "2026-03-18"
+description: "Attention, attention ! Ce n'est pas une écrevisse, c'est la fonctionnalité Channel de Qwen Code ! Tout juste sortie du four"
+author: "pomelo.lcw"
+tags: ["Tutoriels", "exemples utilisateurs", "Skills", "Channels"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Beta : Utilisez l'IA pour écrire du code dans votre canal WeChat !"
+  date="2026-03-26"
+  author="pomelo.lcw"
+/>
+
+# Qwen Code Beta : Utilisez l'IA pour écrire du code dans votre canal WeChat !
+
+> **Bonne nouvelle pour les développeurs !** À partir d'aujourd'hui, Qwen Code prend officiellement en charge la fonctionnalité de canal WeChat. Plus besoin d'ouvrir un terminal ou un IDE—envoyez simplement un message sur WeChat, et laissez l'assistant IA vous aider à écrire du code, consulter la documentation et résoudre des problèmes techniques. Attention, attention ! Ce n'est pas une écrevisse, c'est la fonctionnalité Channel de Qwen Code ! Tout juste sortie du four : https://github.com/QwenLM/qwen-code/pull/2628
+
+---
+
+## 💡 Test de scénario réel, pour vous inspirer !
+
+En mangeant à la cantine, j'ai soudain reçu une notification de nouveau ticket GitHub. Avec la fonctionnalité de canal, je peux simplement prendre une capture d'écran et l'envoyer sur WeChat, puis WeChat démarre mon Qwen Code local, et je commence un agréable voyage de réponse aux questions de la communauté !
+
+![](https://img.alicdn.com/imgextra/i1/O1CN01UsiEbV1iFT5QGXI7m_!!6000000004383-2-tps-3340-1640.png)
+
+## 🎯 Pourquoi avez-vous besoin d'un canal WeChat ?
+
+![Diagramme du concept principal du canal WeChat](https://img.alicdn.com/imgextra/i4/O1CN01p9WUdg27Z2P6L8UTB_!!6000000007810-0-tps-1376-768.jpg)
+
+En tant que développeur, rencontrez-vous souvent ces scénarios :
+
+- **Pendant votre trajet**, vous pensez soudain à une solution de bug et voulez que l'IA vérifie votre approche immédiatement
+- **Entre deux réunions**, vous devez rapidement vérifier l'utilisation d'une API mais ne voulez pas ouvrir votre ordinateur
+- **Tard dans la nuit**, l'inspiration vous frappe au lit, et vous voulez que l'IA génère un framework de code pour vous
+- **En voyage**, vous rencontrez un problème urgent en ligne et devez aider vos collègues à distance
+
+Auparavant, vous deviez ouvrir votre ordinateur et démarrer un terminal pour utiliser Qwen Code. Maintenant, **votre WeChat est votre environnement de développement**.
+
+---
+
+## 🚀 Guide de démarrage rapide
+
+### Prérequis
+
+Assurez-vous d'avoir :
+
+- ✅ Installé la version preview de Qwen Code `npm i @qwen-code/qwen-code@0.14.0-preview.0 -g`
+- ✅ Préparé un compte WeChat capable de recevoir des messages
+
+> À l'ère de l'IA, qui configure encore les paramètres manuellement ? Vous avez juste besoin de `npx skills add https://github.com/QwenLM/qwen-code-examples --skill weixin-channel-setup` pour installer ce skill weixin-channel-setup, puis ouvrez Qwen et demandez : `/skills weixin-channel-setup Aidez-moi à configurer`
+
+Si vous préférez la méthode de configuration traditionnelle, reportez-vous aux trois étapes ci-dessous :
+
+![Diagramme des trois étapes de configuration](https://img.alicdn.com/imgextra/i4/O1CN01aWJWAF1YwqRJ6ryra_!!6000000003124-0-tps-1376-768.jpg)
+
+### Étape 1 : Scanner pour se connecter
+
+Exécutez dans le terminal :
+
+```bash
+qwen channel configure-weixin
+```
+
+Il y a une "URL de code QR" dans le terminal. Copiez le lien et ouvrez-le dans votre navigateur, puis scannez avec WeChat.
+
+- Vous pouvez être invité à installer WeChat
+  Après un scan réussi, vous verrez :
+
+```
+Connected to WeChat successfully!
+Credentials saved. You can now start a weixin channel with:
+  qwen channel start <name>
+```
+
+À ce stade, vos identifiants WeChat ont été sauvegardés en toute sécurité localement.
+
+### Étape 2 : Configurer le canal
+
+Éditez `~/.qwen/settings.json` et ajoutez la configuration suivante :
+
+```json
+"channels": {
+    "my-weixin": {
+      "type": "weixin",
+      "senderPolicy": "open",
+      "sessionScope": "user",
+      "model": "qwen3.5-plus",
+      "instructions": "You are a concise coding assistant responding via WeChat. Keep responses under 500 characters. Use plain text only."
+    }
+  }
+```
+
+### Étape 3 : Démarrer et tester
+
+```bash
+qwen channel start my-weixin
+```
+
+Après avoir vu le message `[Channel] "my-weixin" is running.`, ouvrez WeChat :
+
+1. Trouvez votre assistant bot (celui que vous venez de scanner)
+2. Envoyez un message : "Bonjour, aidez-moi à écrire un Hello World en Python"
+3. Attendez la réponse...
+
+🎉 **Félicitations ! Vous pouvez maintenant écrire du code avec WeChat !**
+
+---
+
+## 🔧 Utilisation avancée
+
+### 1. Personnaliser le persona de l'IA
+
+Via le champ `instructions`, vous pouvez créer votre propre assistant IA :
+
+```json
+{
+  "instructions": "Vous êtes un ingénieur TypeScript senior. Lorsque vous répondez aux questions :\n1. Priorisez les exemples de code exécutables\n2. Expliquez les décisions de conception clés\n3. Signalez les cas limites potentiels\n4. Gardez un ton professionnel mais amical"
+}
+```
+
+### 2. Démarrage automatique au boot
+
+Honnêtement, demander à Qwen Code pourrait donner de meilleurs résultats—laissez-le vous aider à configurer～
+
+Plus de fonctionnalités attendent votre contribution !
+
+---
+
+## 📢 Retours et suggestions
+
+Nous valorisons votre expérience ! Si vous rencontrez des problèmes ou avez des suggestions de nouvelles fonctionnalités, n'hésitez pas à nous faire part de vos retours via :
+
+- 🐛 **Signaler un bug** : <https://github.com/QwenLM/qwen-code/issues>
+- 💡 **Suggestions de fonctionnalités** : <https://github.com/QwenLM/qwen-code/discussions>
+- 💬 **Discussion communautaire** : Rejoignez notre communauté de développeurs
+
+---
+
+## 🎁 Conclusion
+
+![](https://img.alicdn.com/imgextra/i2/O1CN01LLNV5D1Wz15PztdB3_!!6000000002858-2-tps-2642-996.png)
+
+Notre vision est de créer un groupe d'employés IA véritablement autonomes à l'ère de l'IA—des êtres omnipotents qui peuvent libérer complètement notre productivité, nous permettant de profiter de la vie et de créer du plaisir dans les prairies, les montagnes, les vallées, les prairies et les plages.
+
+**À l'avenir, nous prévoyons également de prendre en charge :**
+
+- 📱 DingTalk, Feishu et autres plateformes IM d'entreprise
+- 🤖 Support de saisie vocale, traitement de davantage de formats multimédias
+
+Ces fonctionnalités sont importantes mais peuvent ne pas être notre priorité. Nous dépendons fortement de la co-construction communautaire. Nous attendons votre participation !

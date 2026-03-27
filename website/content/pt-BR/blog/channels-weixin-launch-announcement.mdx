@@ -1,0 +1,154 @@
+---
+title: "Qwen Code Beta: Use IA para escrever código no seu canal WeChat!"
+date: "2026-03-18"
+description: "Atenção, atenção! Isso não é lagosta, é o recurso de Canal do Qwen Code! Recém-saído do forno"
+author: "pomelo.lcw"
+tags: ["Tutoriais", "exemplos de usuários", "Skills", "Channels"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Beta: Use IA para escrever código no seu canal WeChat!"
+  date="2026-03-26"
+  author="pomelo.lcw"
+/>
+
+# Qwen Code Beta: Use IA para escrever código no seu canal WeChat!
+
+> **Boas notícias para desenvolvedores!** A partir de hoje, o Qwen Code suporta oficialmente a funcionalidade de canal WeChat. Não precisa abrir terminal ou IDE—basta enviar uma mensagem no WeChat e deixar o assistente de IA ajudar você a escrever código, consultar documentação e resolver problemas técnicos. Atenção, atenção! Isso não é lagosta, é o recurso de Canal do Qwen Code! Recém-saído do forno: https://github.com/QwenLM/qwen-code/pull/2628
+
+---
+
+## 💡 Teste de cenário real, para inspirar!
+
+Comendo no refeitório, de repente recebi uma notificação de nova issue no GitHub. Com o recurso de canal, posso simplesmente tirar um screenshot e enviar para o WeChat, então o WeChat inicia meu Qwen Code local, e começo uma agradável jornada de Q&A comunitário!
+
+![](https://img.alicdn.com/imgextra/i1/O1CN01UsiEbV1iFT5QGXI7m_!!6000000004383-2-tps-3340-1640.png)
+
+## 🎯 Por que você precisa de um canal WeChat?
+
+![Diagrama do conceito principal do canal WeChat](https://img.alicdn.com/imgextra/i4/O1CN01p9WUdg27Z2P6L8UTB_!!6000000007810-0-tps-1376-768.jpg)
+
+Como desenvolvedor, você frequentemente encontra esses cenários:
+
+- **Durante o trajeto**, você de repente pensa em uma solução para um bug e quer que a IA verifique sua abordagem imediatamente
+- **Entre reuniões**, você precisa verificar rapidamente o uso de uma API mas não quer abrir o computador
+- **Tarde da noite**, a inspiração surge na cama, e você quer que a IA gere um framework de código para você
+- **Em viagem**, você encontra um problema online urgente e precisa ajudar colegas remotamente
+
+Anteriormente, você tinha que abrir o computador e iniciar o terminal para usar o Qwen Code. Agora, **seu WeChat é seu ambiente de desenvolvimento**.
+
+---
+
+## 🚀 Guia de início rápido
+
+### Pré-requisitos
+
+Certifique-se de ter:
+
+- ✅ Instalado a versão preview do Qwen Code `npm i @qwen-code/qwen-code@0.14.0-preview.0 -g`
+- ✅ Preparado uma conta WeChat que pode receber mensagens
+
+> Na era da IA, quem ainda configura parâmetros manualmente? Você só precisa executar `npx skills add https://github.com/QwenLM/qwen-code-examples --skill weixin-channel-setup` para instalar este skill weixin-channel-setup, depois abrir o Qwen e perguntar: `/skills weixin-channel-setup Por favor me ajude a configurar`
+
+Se você prefere o método de configuração tradicional, consulte os três passos abaixo:
+
+![Diagrama de configuração em três passos](https://img.alicdn.com/imgextra/i4/O1CN01aWJWAF1YwqRJ6ryra_!!6000000003124-0-tps-1376-768.jpg)
+
+### Passo 1: Escanear para conectar
+
+Execute no terminal:
+
+```bash
+qwen channel configure-weixin
+```
+
+Há uma "URL de código QR" no terminal. Copie o link e abra no navegador, depois escaneie com o WeChat.
+
+- Você pode ser solicitado a instalar o WeChat
+  Após escanear com sucesso, você verá:
+
+```
+Connected to WeChat successfully!
+Credentials saved. You can now start a weixin channel with:
+  qwen channel start <name>
+```
+
+Neste ponto, suas credenciais do WeChat foram salvas com segurança localmente.
+
+### Passo 2: Configurar o canal
+
+Edite `~/.qwen/settings.json` e adicione a seguinte configuração:
+
+```json
+"channels": {
+    "my-weixin": {
+      "type": "weixin",
+      "senderPolicy": "open",
+      "sessionScope": "user",
+      "model": "qwen3.5-plus",
+      "instructions": "You are a concise coding assistant responding via WeChat. Keep responses under 500 characters. Use plain text only."
+    }
+  }
+```
+
+### Passo 3: Iniciar e testar
+
+```bash
+qwen channel start my-weixin
+```
+
+Após ver a mensagem `[Channel] "my-weixin" is running.`, abra o WeChat:
+
+1. Encontre seu assistente bot (aquele que você acabou de escanear)
+2. Envie uma mensagem: "Olá, me ajude a escrever um Hello World em Python"
+3. Aguarde a resposta...
+
+🎉 **Parabéns! Agora você pode escrever código usando o WeChat!**
+
+---
+
+## 🔧 Dicas avançadas
+
+### 1. Personalizar a persona da IA
+
+Através do campo `instructions`, você pode criar seu próprio assistente de IA:
+
+```json
+{
+  "instructions": "Você é um engenheiro TypeScript sênior. Ao responder perguntas:\n1. Priorize exemplos de código executáveis\n2. Explique decisões de design importantes\n3. Aponte casos de borda potenciais\n4. Mantenha um tom profissional mas amigável"
+}
+```
+
+### 2. Inicialização automática no boot
+
+Honestamente, perguntar ao Qwen Code pode dar melhores resultados—deixe-o ajudá-lo a configurar～
+
+Mais recursos aguardam sua contribuição!
+
+---
+
+## 📢 Feedback e sugestões
+
+Valorizamos sua experiência! Se você encontrar problemas ou tiver sugestões de novos recursos durante o uso, sinta-se à vontade para nos dar feedback através de:
+
+- 🐛 **Reportar bug**: <https://github.com/QwenLM/qwen-code/issues>
+- 💡 **Sugestões de recursos**: <https://github.com/QwenLM/qwen-code/discussions>
+- 💬 **Discussão comunitária**: Junte-se à nossa comunidade de desenvolvedores
+
+---
+
+## 🎁 Conclusão
+
+![](https://img.alicdn.com/imgextra/i2/O1CN01LLNV5D1Wz15PztdB3_!!6000000002858-2-tps-2642-996.png)
+
+Nossa visão é criar um grupo de funcionários de IA verdadeiramente autônomos na era da IA—seres onipotentes que podem libertar completamente nossa produtividade, nos permitindo aproveitar a vida e criar alegria em pradarias, montanhas, vales, campinas e praias.
+
+**No futuro, também planejamos suportar:**
+
+- 📱 DingTalk, Feishu e outras plataformas de IM empresariais
+- 🤖 Suporte a entrada de voz, processamento de mais formatos de mídia
+
+Esses recursos são importantes, mas podem não ser nossa prioridade. Dependemos fortemente da co-construção da comunidade. Aguardamos sua participação!

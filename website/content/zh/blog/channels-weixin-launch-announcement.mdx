@@ -1,0 +1,156 @@
+---
+title: "Qwen Code 功能内测:在你的微信 Channel 里用 AI 写代码!"
+date: "2026-03-18"
+description: "注意，注意，这不是小龙虾，这不是小龙虾，这是 Qwen Code 的 Channel 功能！新鲜出炉"
+author: "pomelo.lcw"
+tags: ["Tutorials", "user examples","Skills", "Channels", ]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 功能内测:在你的微信 Channel 里用 AI 写代码!"
+  date="2026-03-26"
+  author="pomelo.lcw"
+/>
+
+# Qwen Code 功能内测:在你的微信 Channel 里用 AI 写代码!
+
+> **开发者们,好消息!** 从今天起,Qwen Code 正式支持微信通道功能。无需打开终端或 IDE,只需在微信中发送消息,就能让 AI 助手帮你写代码、查文档、解决技术问题。注意，注意，这不是小龙虾，这不是小龙虾，这是 Qwen Code 的 Channel 功能！新鲜出炉：https://github.com/QwenLM/qwen-code/pull/2628
+
+---
+
+## 💡 场景实测，抛砖引玉！
+
+刚在食堂吃饭的途中，突然收到 github 的新增 issue 提醒，有了 channel 功能，直接截图丢给微信，然后微信启动我本地的 qwen code，开启愉快的社区答疑之旅
+
+![](https://img.alicdn.com/imgextra/i1/O1CN01UsiEbV1iFT5QGXI7m_!!6000000004383-2-tps-3340-1640.png)
+
+## 🎯 为什么需要微信通道?
+
+![微信通道核心概念图](https://img.alicdn.com/imgextra/i4/O1CN01p9WUdg27Z2P6L8UTB_!!6000000007810-0-tps-1376-768.jpg)
+
+作为开发者,你是否经常遇到这些场景:
+
+- **通勤路上** 突然想到一个 bug 的解决方案,想立刻让 AI 帮你验证思路
+- **会议间隙** 需要快速查阅 API 用法,但不想打开电脑
+- **深夜灵感** 躺在床上时灵感迸发,想让 AI 帮你生成代码框架
+- **外出旅行** 遇到线上紧急问题,需要远程协助同事排查
+
+以前,你必须打开电脑、启动终端才能使用 Qwen Code。现在,**你的微信就是开发环境**。
+
+---
+
+## 🚀 快速上手指南
+
+### 准备工作
+
+确保你已:
+
+- ✅ 安装体验预览版本的 Qwen Code `npm i @qwen-code/qwen-code@0.14.0-preview.0 -g`
+- ✅ 准备一个可接收消息的微信账号
+
+> AI 时代下，谁还自己配置参数哇，你只需要 ` npx skills add https://github.com/QwenLM/qwen-code-examples --skill weixin-channel-setup` 安装这个 weixin-channel-setup Skill，然后打开qwen，问它 `/skills weixin-channel-setup 请帮我配置`
+
+如果你喜欢古法配置，不妨参考下面三步走
+
+![三步配置流程图](https://img.alicdn.com/imgextra/i4/O1CN01aWJWAF1YwqRJ6ryra_!!6000000003124-0-tps-1376-768.jpg)
+
+### 第一步:扫码连接
+
+在终端中运行:
+
+```bash
+qwen channel configure-weixin
+```
+
+终端中有「QR code URL」，复制链接在浏览器中打开，打开后用微信扫描。
+
+- 可能需要提醒你安装微信
+  扫码成功后,你会看到:
+
+```
+Connected to WeChat successfully!
+Credentials saved. You can now start a weixin channel with:
+  qwen channel start <name>
+```
+
+此时,你的微信凭证已安全保存到本地。
+
+### 第二步:配置通道
+
+编辑 `~/.qwen/settings.json`,添加以下配置:
+
+```json
+"channels": {
+    "my-weixin": {
+      "type": "weixin",
+      "senderPolicy": "open",
+      "sessionScope": "user",
+      "model": "qwen3.5-plus",
+      "instructions": "You are a concise coding assistant responding via WeChat. Keep responses under 500 characters. Use plain text only."
+    }
+  }
+```
+
+### 第三步:启动并测试
+
+```bash
+qwen channel start my-weixin
+```
+
+看到 `[Channel] "my-weixin" is running.` 提示后,打开微信:
+
+1. 找到你的机器人助手(就是你刚才扫码的那个)
+2. 发送消息:"你好,帮我写一个 Python 的 Hello World"
+3. 等待回复...
+
+🎉 **恭喜你!现在开始就可以用微信写代码了!**
+
+---
+
+
+
+## 🔧 高级玩法
+
+### 1. 自定义 AI 人设
+
+通过 `instructions` 字段,你可以打造专属 AI 助手:
+
+```json
+{
+  "instructions": "你是一个资深的 TypeScript 工程师。回答问题时:\n1. 优先给出可运行的代码示例\n2. 解释关键设计决策\n3. 指出潜在的边界情况\n4. 保持语气专业但友好"
+}
+```
+
+### 2. 开机自启
+
+老实讲，这个问题问 qwen code 可能效果更好，让它帮你配置～
+
+更多玩法，等待你来贡献～
+
+---
+
+## 📢 反馈与建议
+
+我们非常重视你的使用体验!如果在使用过程中遇到任何问题,或有新的功能建议,欢迎通过以下方式反馈:
+
+- 🐛 **提交 Bug**:<https://github.com/QwenLM/qwen-code/issues>
+- 💡 **功能建议**:<https://github.com/QwenLM/qwen-code/discussions>
+- 💬 **社区交流**:加入我们的开发者社群
+
+---
+
+## 🎁 结语
+
+![](https://img.alicdn.com/imgextra/i2/O1CN01LLNV5D1Wz15PztdB3_!!6000000002858-2-tps-2642-996.png)
+
+我们的愿景是能够在 AI 时代下创造一批真正能够自主执行的 AI 员工，他无所不能，可以彻底解放我们的的生产力，让我们在草原，高山，河谷，草甸，沙滩，享受人生，创造乐趣。
+
+**未来,我们还计划支持:**
+
+- 📱 钉钉、飞书等企业 IM 平台
+- 🤖 语音输入支持，更多媒体格式处理
+
+这些功能虽然重要，但是可能不是我们的优先级，我们严重依赖社区朋友的共建，期待你的加入！

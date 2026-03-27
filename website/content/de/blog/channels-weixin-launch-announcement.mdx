@@ -1,0 +1,154 @@
+---
+title: "Qwen Code Beta: Nutze KI, um Code in deinem WeChat-Kanal zu schreiben!"
+date: "2026-03-18"
+description: "Achtung, Achtung! Das ist kein Flusskrebs, das ist die Channel-Funktion von Qwen Code! Frisch aus dem Ofen"
+author: "pomelo.lcw"
+tags: ["Tutorials", "Benutzerbeispiele", "Skills", "Channels"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Beta: Nutze KI, um Code in deinem WeChat-Kanal zu schreiben!"
+  date="2026-03-26"
+  author="pomelo.lcw"
+/>
+
+# Qwen Code Beta: Nutze KI, um Code in deinem WeChat-Kanal zu schreiben!
+
+> **Gute Nachrichten für Entwickler!** Ab heute unterstützt Qwen Code offiziell die WeChat-Channel-Funktionalität. Kein Terminal oder IDE öffnen mehr nötig—sende einfach eine Nachricht in WeChat, und lass den KI-Assistenten dir beim Coden helfen, Dokumentation prüfen und technische Probleme lösen. Achtung, Achtung! Das ist kein Flusskrebs, das ist die Channel-Funktion von Qwen Code! Frisch aus dem Ofen: https://github.com/QwenLM/qwen-code/pull/2628
+
+---
+
+## 💕 Praxistest, um Ideen zu geben!
+
+Beim Essen in der Kantine habe ich plötzlich eine neue GitHub-Issue-Benachrichtigung erhalten. Mit der Channel-Funktion kann ich einfach einen Screenshot machen und an WeChat senden, dann startet WeChat mein lokales Qwen Code, und ich beginne eine angenehme Reise der Community-Q&A!
+
+![](https://img.alicdn.com/imgextra/i1/O1CN01UsiEbV1iFT5QGXI7m_!!6000000004383-2-tps-3340-1640.png)
+
+## 🎯 Warum brauchst du einen WeChat-Channel?
+
+![WeChat-Channel Kernkonzept-Diagramm](https://img.alicdn.com/imgextra/i4/O1CN01p9WUdg27Z2P6L8UTB_!!6000000007810-0-tps-1376-768.jpg)
+
+Als Entwickler begegnest du oft diesen Szenarien:
+
+- **Während des Pendelns** fällt dir plötzlich eine Bug-Lösung ein, und du möchtest, dass die KI deinen Ansatz sofort überprüft
+- **Zwischen Meetings** musst du schnell die API-Nutzung prüfen, möchtest aber den Computer nicht öffnen
+- **Spät in der Nacht** kommt die Inspiration im Bett, und du möchtest, dass die KI ein Code-Framework für dich generiert
+- **Auf Reisen** tritt ein dringendes Online-Problem auf, und du musst Kollegen remote bei der Fehlerbehebung helfen
+
+Früher musstest du den Computer öffnen und das Terminal starten, um Qwen Code zu nutzen. Jetzt **ist dein WeChat deine Entwicklungsumgebung**.
+
+---
+
+## 🚀 Schnellstart-Anleitung
+
+### Voraussetzungen
+
+Stelle sicher, dass du:
+
+- ✅ Die Preview-Version von Qwen Code installiert hast `npm i @qwen-code/qwen-code@0.14.0-preview.0 -g`
+- ✅ Ein WeChat-Konto vorbereitet hast, das Nachrichten empfangen kann
+
+> Im KI-Zeitalter, wer konfiguriert noch manuell Parameter? Du musst nur `npx skills add https://github.com/QwenLM/qwen-code-examples --skill weixin-channel-setup` ausführen, um diesen weixin-channel-setup Skill zu installieren, dann Qwen öffnen und fragen: `/skills weixin-channel-setup Bitte hilf mir bei der Konfiguration`
+
+Wenn du die traditionelle Konfigurationsmethode bevorzugst, schau dir die drei Schritte unten an:
+
+![Drei-Schritte-Konfigurations-Diagramm](https://img.alicdn.com/imgextra/i4/O1CN01aWJWAF1YwqRJ6ryra_!!6000000003124-0-tps-1376-768.jpg)
+
+### Schritt 1: Scannen zum Verbinden
+
+Führe im Terminal aus:
+
+```bash
+qwen channel configure-weixin
+```
+
+Es gibt eine "QR-Code-URL" im Terminal. Kopiere den Link und öffne ihn im Browser, dann scanne mit WeChat.
+
+- Möglicherweise wirst du aufgefordert, WeChat zu installieren
+  Nach erfolgreichem Scannen siehst du:
+
+```
+Connected to WeChat successfully!
+Credentials saved. You can now start a weixin channel with:
+  qwen channel start <name>
+```
+
+An diesem Punkt wurden deine WeChat-Anmeldedaten sicher lokal gespeichert.
+
+### Schritt 2: Channel konfigurieren
+
+Bearbeite `~/.qwen/settings.json` und füge folgende Konfiguration hinzu:
+
+```json
+"channels": {
+    "my-weixin": {
+      "type": "weixin",
+      "senderPolicy": "open",
+      "sessionScope": "user",
+      "model": "qwen3.5-plus",
+      "instructions": "You are a concise coding assistant responding via WeChat. Keep responses under 500 characters. Use plain text only."
+    }
+  }
+```
+
+### Schritt 3: Starten und Testen
+
+```bash
+qwen channel start my-weixin
+```
+
+Nachdem du die Meldung `[Channel] "my-weixin" is running.` gesehen hast, öffne WeChat:
+
+1. Finde deinen Bot-Assistenten (den du gerade gescannt hast)
+2. Sende eine Nachricht: "Hallo, hilf mir ein Python Hello World zu schreiben"
+3. Warte auf die Antwort...
+
+🎉 **Herzlichen Glückwunsch! Du kannst jetzt mit WeChat Code schreiben!**
+
+---
+
+## 🔧 Erweiterte Tipps
+
+### 1. KI-Persona anpassen
+
+Über das Feld `instructions` kannst du deinen eigenen KI-Assistenten erstellen:
+
+```json
+{
+  "instructions": "Du bist ein Senior TypeScript Engineer. Beim Beantworten von Fragen:\n1. Priorisiere ausführbare Code-Beispiele\n2. Erkläre wichtige Design-Entscheidungen\n3. Weise auf potenzielle Edge Cases hin\n4. Behalte einen professionellen aber freundlichen Ton"
+}
+```
+
+### 2. Autostart beim Booten
+
+Ehrlich gesagt könnte es besser sein, Qwen Code dazu zu fragen—lass es dir bei der Konfiguration helfen～
+
+Weitere Funktionen warten auf deinen Beitrag!
+
+---
+
+## 📢 Feedback und Vorschläge
+
+Wir schätzen deine Erfahrung! Wenn du während der Nutzung auf Probleme stößt oder neue Funktionsvorschläge hast, kannst du uns gerne über folgende Wege Feedback geben:
+
+- 🐛 **Bug melden**: <https://github.com/QwenLM/qwen-code/issues>
+- 💡 **Funktionsvorschläge**: <https://github.com/QwenLM/qwen-code/discussions>
+- 💬 **Community-Diskussion**: Tritt unserer Entwickler-Community bei
+
+---
+
+## 🎁 Fazit
+
+![](https://img.alicdn.com/imgextra/i2/O1CN01LLNV5D1Wz15PztdB3_!!6000000002858-2-tps-2642-996.png)
+
+Unsere Vision ist es, in der KI-Ära eine Gruppe wirklich autonomer KI-Mitarbeiter zu schaffen—allmächtige Wesen, die unsere Produktivität vollständig befreien können und es uns ermöglichen, das Leben zu genießen und Freude zu schaffen auf Wiesen, Bergen, Tälern, Auen und Stränden.
+
+**In Zukunft planen wir auch zu unterstützen:**
+
+- 📱 DingTalk, Feishu und andere Enterprise-IM-Plattformen
+- 🤖 Sprachinput-Unterstützung, Verarbeitung weiterer Medienformate
+
+Diese Funktionen sind wichtig, haben aber möglicherweise nicht unsere höchste Priorität. Wir sind stark auf die Mitgestaltung der Community angewiesen. Wir freuen uns auf deine Teilnahme!
