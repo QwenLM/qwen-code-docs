@@ -104,37 +104,36 @@ function ShowcaseListItem({ item }: { item: ShowcaseItem }) {
   return (
     <Link
       href={`/zh/showcase/${item.id}`}
-      className="group flex items-center gap-4 py-4 px-4 -mx-4 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
+      className="group flex items-center gap-6 py-4 px-4 -mx-4 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
     >
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
           {item.title}
         </h3>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-1">
+          {item.description}
+        </p>
       </div>
 
-      <div className="flex items-center gap-6 flex-shrink-0">
+      <div className="flex items-center gap-4 flex-shrink-0">
         {item.category && (
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 w-20 text-center">
+          <span className="px-2.5 py-1 text-xs font-medium rounded border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300">
             {item.category}
           </span>
         )}
 
-        <span className="text-xs text-zinc-400 dark:text-zinc-500 w-24 text-center font-mono">
-          {item.model}
-        </span>
-
-        <div className="flex items-center gap-1.5 w-32">
+        <div className="flex items-center gap-1.5">
           {item.features.slice(0, 2).map((feature) => (
             <span
               key={feature}
-              className="px-2 py-0.5 text-[11px] font-medium rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+              className="px-2 py-0.5 text-xs rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
             >
               {feature}
             </span>
           ))}
         </div>
 
-        <ArrowRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors" />
+        <ArrowRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
       </div>
     </Link>
   );
@@ -364,12 +363,11 @@ export function VideoShowcaseIndex() {
               ) : (
                 <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
                   {/* List Header */}
-                  <div className="flex items-center gap-4 py-3 px-4 text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+                  <div className="flex items-center gap-6 py-3 px-4 text-xs font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                     <div className="flex-1">标题</div>
-                    <div className="flex items-center gap-6 flex-shrink-0">
-                      <span className="w-20 text-center">分类</span>
-                      <span className="w-24 text-center">模型</span>
-                      <span className="w-32 text-center">功能</span>
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                      <span className="text-center">分类</span>
+                      <span>功能</span>
                       <span className="w-4" />
                     </div>
                   </div>
