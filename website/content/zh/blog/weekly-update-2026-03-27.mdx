@@ -1,0 +1,155 @@
+---
+title: "Qwen Code 周报：Hooks 系统、/review 代码审查、Agent 协作竞技场"
+date: "2026-03-27"
+description: "本周发布 v0.13.0 正式版，新增 Hooks 扩展机制、/review 代码审查、/btw 侧问命令、Agent 协作竞技场，优化 Token 用量展示和权限系统。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：Hooks 系统、/review 代码审查、Agent 协作竞技场"
+  date="2026-03-27"
+  author="Qwen Team"
+/>
+
+本周发布 **v0.13.0** 正式版和 v0.13.1 preview 版本。
+
+v0.12.x 上线以来，不少用户反馈希望 Qwen Code 能更 " 可编程 "——不只是对话，还能嵌入到自己的工作流里。这周的 v0.13.0 就是围绕这个方向做的：Hooks 系统让你在关键节点插入自定义脚本，Skills 目录让团队共享自定义技能，`/btw` 解决了 " 正在做 A 突然想问 B" 的尴尬。另外，`/review` 让 AI 帮你审查代码，Agent 协作竞技场让你同时跑多个模型、自动选最优结果。
+
+感谢本周的新贡献者 [**@simon100500**](https://github.com/simon100500) 和 [**@Br1an67**](https://github.com/Br1an67) 🎉
+
+## ✨ 新增特性
+
+### /review：让 AI 帮你审查代码
+
+提交代码前总想找人帮忙看一眼，但同事忙得顾不上？现在直接用 `/review`，AI 会帮你检查代码质量、发现潜在问题、提出改进建议。不是简单的 lint 检查，而是像一个有经验的同事那样审查你的逻辑、命名、边界处理。
+
+**你能用它做什么：**
+
+- 提交代码前先让 AI 过一遍，发现问题早修复，不用等 Code Review 时才被指出来
+- 独立开发时当你的 " 第二双眼睛 "，减少低级错误
+- 学习代码最佳实践——AI 会解释为什么这样写更好，不只是告诉你 " 这里有问题 "
+
+详见 PR [#2348](https://github.com/QwenLM/qwen-code/pull/2348)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4"  controls></video>
+
+### /btw 侧问：写代码时随手问一句，不打断思路
+
+写代码写到一半，突然想不起来某个 API 的参数顺序。以前你得开个新对话去查，查完再切回来，上下文全断了。
+
+现在输入 `/btw`，直接在当前对话里插一句题外话。Qwen Code 回答完后自动回到之前的上下文，就像什么都没发生过一样。你的主线对话不会被污染，AI 也不会把你的题外话当成正在做的任务的一部分。
+
+**你能用它做什么：**
+
+- 写 React 组件时随手查个 Hook 的用法，查完继续写
+- 调试到一半临时确认一个配置项的含义，不用开新窗口
+- 想到一个不相关的问题，问完就忘，不影响当前工作
+
+详见 PR [#2371](https://github.com/QwenLM/qwen-code/pull/2371)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif)
+
+### Agent 协作竞技场：多个模型同时解题，自动选最优
+
+重要的代码你会让同事帮忙 review，现在你也可以让多个 AI 模型同时处理同一个任务。
+
+竞技场模式把你的任务同时丢给多个模型并发执行，完成后自动对比结果，你可以直接选最优方案。适合重构关键模块、设计架构方案这类对质量要求高的场景。
+
+**你能用它做什么：**
+
+- 重构核心模块时，让 Claude、GPT、Qwen 同时给方案，挑最好的
+- 写算法题时对比不同模型的解法，学习不同思路
+- 评估新模型在你的项目上表现如何，用实际任务说话
+
+详见 PR [#1912](https://github.com/QwenLM/qwen-code/pull/1912)
+
+【添加<用竞技场模式让两个模型同时重构一段代码并对比结果>演示】
+
+### auth 命令和 Qwen Code Claw 技能
+
+新增 `auth` CLI 命令，统一管理认证信息。同时内置了 Qwen Code Claw 技能，扩展 AI 的能力边界。
+
+详见 PR [#2440](https://github.com/QwenLM/qwen-code/pull/2440)
+
+### VS Code 图片粘贴：截图直接丢给 AI
+
+在 VS Code 里直接 Ctrl+V 粘贴截图发给 AI。看到一个 UI bug？截图丢过去让 AI 分析。想还原一个设计稿？截图发过去让 AI 写代码。不用再保存图片、找路径、手动上传。
+
+**你能用它做什么：**
+
+- 截个 UI bug 的图，让 AI 帮你定位问题
+- 粘贴设计稿截图，让 AI 直接写出对应的组件代码
+- 错误信息太长不想打字？截图发过去
+
+详见 PR [#1978](https://github.com/QwenLM/qwen-code/pull/1978)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01uZKxQv1NKPQdOWDAe_!!6000000001551-2-tps-2880-1800.png)
+
+### Explore Agent：让 AI 先调研再动手
+
+新增 Explore Agent，专门用来做代码调研。在动手改代码之前，先让 Explore Agent 帮你摸清代码结构、理解依赖关系、找到关键入口。调研完再让主 Agent 动手，方向更准确。
+
+详见 PR [#2489](https://github.com/QwenLM/qwen-code/pull/2489)
+
+### 系统提示词自定义：让 AI 按你的风格回答
+
+通过 SDK 和 CLI 配置自定义系统提示词，控制 AI 的回答风格和行为。比如让它始终用中文回答、代码注释用英文、遵循你团队的命名规范。不用每次对话都重复说一遍 " 请用中文回答 "。
+
+详见 PR [#2400](https://github.com/QwenLM/qwen-code/pull/2400)
+
+## 📊 优化改进
+
+- **Token 用量实时展示**：AI 思考过程中直接显示当前 Token 消耗，不用等回答结束才知道用了多少（[#2445](https://github.com/QwenLM/qwen-code/pull/2445)）
+- **Sub Agent 并发执行**：以前多个子任务排队跑，现在同时跑。复杂任务处理速度明显提升，你等待的时间更短（[#2434](https://github.com/QwenLM/qwen-code/pull/2434)）
+- **权限提示更清晰**：权限弹窗现在用人话告诉你 " 要读取 xxx 文件 " 而不是一串技术参数，拒绝操作时也会告诉你为什么被拒绝（[#2637](https://github.com/QwenLM/qwen-code/pull/2637)、[#2283](https://github.com/QwenLM/qwen-code/pull/2283)）
+- **VS Code 文件补全更智能**：输入文件名时用模糊搜索匹配，打 `comp` 就能找到 `src/components/Button.tsx`，不用记完整路径（[#2437](https://github.com/QwenLM/qwen-code/pull/2437)）
+- **Tab 键行为更符合直觉**：VS Code 中按 Tab 只填充补全内容，不再意外触发缩进或其他操作（[#2431](https://github.com/QwenLM/qwen-code/pull/2431)）
+- **MCP 工具输出自动截断**：MCP 工具返回超长内容时自动截断，不会撑爆上下文导致后续对话质量下降（[#2446](https://github.com/QwenLM/qwen-code/pull/2446)）
+- **Ctrl+R 历史搜索**：搜索结果按最新优先排列，你最近用过的命令排在最前面（[#2425](https://github.com/QwenLM/qwen-code/pull/2425)）
+- **错误处理和配额检测优化**：遇到 API 限流或配额用完时，提示信息更明确，不再只显示一个模糊的错误码（[#2458](https://github.com/QwenLM/qwen-code/pull/2458)）
+
+## 🔧 重要修复
+
+| PR | 版本 | 修复内容 | 对你的影响 |
+|----|------|----------|-----------|
+| [#2403](https://github.com/QwenLM/qwen-code/pull/2403) | v0.13.0 | 修复 OpenRouter 重复 finish_reason 导致的解析错误 | 使用 OpenRouter 时对话不再莫名中断 |
+| [#2457](https://github.com/QwenLM/qwen-code/pull/2457) | v0.13.0 | 修复 Windows 路径 URI 处理 | Windows 用户点击文件链接能正常跳转了 |
+| [#2501](https://github.com/QwenLM/qwen-code/pull/2501) | v0.13.0 | VS Code 代理配置透传到 CLI | 公司内网环境下不再连接失败 |
+| [#2472](https://github.com/QwenLM/qwen-code/pull/2472) | v0.13.0 | 子进程退出时清理 ACP 连接状态 | 异常退出后重启不再残留僵尸连接 |
+| [#2611](https://github.com/QwenLM/qwen-code/pull/2611) | v0.13.1 | 修复 Shell PTY 竞态条件 | 快速连续执行命令时不再报错崩溃 |
+| [#2547](https://github.com/QwenLM/qwen-code/pull/2547) | v0.13.1 | 改进 C++/Java/Python 语言服务器支持 | 这三种语言的代码跳转、补全更准确 |
+| [#2631](https://github.com/QwenLM/qwen-code/pull/2631) | v0.13.1 | 清理过期的 Sub Agent diff 确认状态 | IDE 接受代码后不再残留确认弹窗 |
+| [#2591](https://github.com/QwenLM/qwen-code/pull/2591) | v0.13.1 | 切换模型时保留模型元数据 | 切换模型后配置不再丢失 |
+| [#2546](https://github.com/QwenLM/qwen-code/pull/2546) | v0.13.1 | 改进 ACP 错误处理 | VS Code 加载时不再无提示卡住 |
+| [#2080](https://github.com/QwenLM/qwen-code/pull/2080) | v0.13.1 | 启动认证失败时保留已选认证方式 | 网络波动后不用重新选择登录方式 |
+
+### Windows 平台专项修复
+
+| PR | 修复内容 | 对你的影响 |
+|----|----------|-----------|
+| [#2645](https://github.com/QwenLM/qwen-code/pull/2645) | 支持 Git Bash/MSYS2 Shell 检测 | 用 Git Bash 终端时 Qwen Code 能正确识别了 |
+| [#2457](https://github.com/QwenLM/qwen-code/pull/2457) | 修复路径 URI 处理 | 文件路径包含中文或空格时正常工作 |
+
+## 🎈 其他改进
+
+- 导出功能新增元数据和统计信息，导出的文件包含对话轮次、Token 用量等信息（[#2328](https://github.com/QwenLM/qwen-code/pull/2328)）
+- 修正 MiniMax-M2.5 和 GLM 模型的 Token 限制配置，使用这些模型时上下文空间更准确（[#2470](https://github.com/QwenLM/qwen-code/pull/2470)）
+- 支持可配置的运行时输出目录，日志和临时文件可以放到你指定的位置（[#2127](https://github.com/QwenLM/qwen-code/pull/2127)）
+- `/memory show --project` 和 `--global` 现在能正确显示所有配置的上下文文件，不再遗漏（[#2368](https://github.com/QwenLM/qwen-code/pull/2368)）
+- 扩展安装支持非 GitHub 的 Git URL，用 GitLab、Gitee 托管的扩展也能直接装（[#2539](https://github.com/QwenLM/qwen-code/pull/2539)）
+- QWEN.md 重命名为 AGENTS.md，与社区规范保持一致（[#2527](https://github.com/QwenLM/qwen-code/pull/2527)）
+
+## 👋 欢迎新贡献者
+
+- [**@simon100500**](https://github.com/simon100500) — 首次贡献，修复了 OpenRouter 的解析问题（[#2403](https://github.com/QwenLM/qwen-code/pull/2403)）
+- [**@Br1an67**](https://github.com/Br1an67) — 首次贡献，更新了 VS Code 扩展的服务条款链接，并支持了 .agents/skills 目录（[#2495](https://github.com/QwenLM/qwen-code/pull/2495)、[#2476](https://github.com/QwenLM/qwen-code/pull/2476)）
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
