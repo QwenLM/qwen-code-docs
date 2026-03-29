@@ -1,0 +1,48 @@
+---
+title: "剪贴板图片粘贴"
+description: "直接粘贴剪贴板中的截图到对话窗口，AI 即时理解图片内容并提供帮助。"
+category: "日常任务"
+features:
+  - "图片识别"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概述
+
+剪贴板图片粘贴功能让你能够将任何截图直接粘贴到 Qwen Code 的对话窗口中，无需先保存文件再上传。无论是错误截图、UI 设计稿、代码片段截图还是任何其他图片，Qwen Code 都能即时理解其内容，并根据你的需求提供帮助。这种便捷的交互方式极大地提升了沟通效率，让你能够在遇到问题时快速获得 AI 的分析和建议。
+
+<ShowcaseDetailMeta category="日常任务" features={["图片识别"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png" alt="剪贴板图片粘贴" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作步骤
+
+<Steps>
+### 复制图片到剪贴板
+
+使用系统截图工具（macOS: `Cmd+Shift+4`，Windows: `Win+Shift+S`）截取屏幕内容，或者从浏览器、文件管理器中复制图片。截图会自动保存到剪贴板中，无需额外操作。
+
+### 粘贴到对话窗口
+
+在 Qwen Code 的对话输入框中，使用 `Cmd+V`（macOS）或 `Ctrl+V`（Windows）粘贴图片。图片会自动显示在输入框中，你可以同时输入文字描述你的问题或需求。
+
+### 获取 AI 分析结果
+
+发送消息后，Qwen Code 会分析图片内容并给出回复。它可以识别代码截图中的错误、分析 UI 设计稿的布局、解读图表数据等。你可以继续追问，深入讨论图片中的任何细节。
+</Steps>
+
+<Callout type="info">
+支持 PNG、JPEG、GIF 等常见图片格式。图片大小建议不超过 10MB，以确保最佳的识别效果。对于代码截图，建议使用高分辨率以提高文字识别准确率。
+</Callout>
+
+## 相关推荐
+
+- [图片识别](./office-image-recognition.mdx) — 深入了解 Qwen Code 的图片理解能力
+- [MCP 图片生成](./office-mcp-image-gen.mdx) — 使用 MCP 工具生成图片
+
+---
+
+<ShowcaseDetailCta />

@@ -1,0 +1,65 @@
+---
+title: "@file 引用功能"
+description: "在对话中通过 @file 引用项目文件，让 AI 精准理解你的代码上下文。"
+category: "入门指南"
+features:
+  - "文件引用"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+@file 引用功能让你能够在对话中直接引用项目文件，让 AI 精准理解你的代码上下文。无论是单个文件还是多个文件，AI 都会读取并分析代码内容，提供更准确的建议和解答。这个功能特别适合代码审查、问题排查和代码重构等场景。
+
+<ShowcaseDetailMeta category="入门指南" features={["文件引用"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png" alt="@file 引用功能" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作步骤
+
+<Steps>
+
+### 引用单个文件
+
+使用 `@file` 命令后跟文件路径，引用单个文件。AI 会读取文件内容，理解代码结构和逻辑，然后根据你的问题提供针对性的解答。
+
+```bash
+@file ./src/main.py
+解释一下这个函数的作用
+```
+
+你还可以引用参考文件，让 Qwen Code 给你整理写作为新的文档，这样可以很大避免 AI 误解你的需求，生成非参考资料中的内容：
+
+```bash
+@file 基于这个文件帮我写一份公众号文章
+```
+
+### 描述需求
+
+在引用文件后，清晰地描述你的需求或问题。AI 会基于文件内容进行分析，提供准确的答案或建议。你可以询问代码逻辑、查找问题、请求优化等。
+
+### 引用多个文件
+
+通过多次使用 `@file` 命令，可以同时引用多个文件。AI 会综合分析所有引用的文件，理解它们之间的关系和内容，提供更全面的解答。
+
+```bash
+@file1 @file2 基于这两个文件中的资料，帮我整理一份适合新手的学习文档
+```
+
+</Steps>
+
+<Callout type="info">
+@file 支持相对路径和绝对路径，也支持通配符匹配多个文件。
+</Callout>
+
+## 相关推荐
+
+- [代码学习](./study-learning.mdx) — 克隆开源仓库并学习理解代码
+- [开始第一次对话](./guide-first-conversation.mdx) — 安装完成后，发起你与 Qwen Code 的第一次 AI 对话
+
+<ShowcaseDetailCta />

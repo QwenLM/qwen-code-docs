@@ -1,0 +1,118 @@
+---
+title: "API 配置指南"
+description: "配置 API Key 和模型参数，自定义你的 AI 编程体验，支持多种模型选择。"
+category: "入门指南"
+features:
+  - "设置"
+  - "API"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+videoUrl: "https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+配置 API Key 是使用 Qwen Code 的重要步骤，它将解锁全部功能并让你能够访问强大的 AI 模型。通过阿里云百炼平台，你可以轻松获取 API Key，并根据不同场景选择最适合的模型。无论是日常开发还是复杂任务，合适的模型配置都能显著提升你的工作效率。
+
+<ShowcaseDetailMeta category="入门指南" features={["设置", "API"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4" poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作步骤
+
+如果是百炼 Coding Plan 模式的用户，请参考 [百炼 Coding Plan API 配置指南](./guide-bailian-coding-plan.mdx) 来获取 API Key 和配置模型。
+
+<Steps>
+
+## 获取 API Key
+
+访问 [阿里云百炼平台](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key)，在个人中心找到 API Key 管理页面。点击创建新的 API Key，系统会生成一个唯一的密钥。这个密钥是你访问 Qwen Code 服务的凭证，请务必妥善保管。
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+<Callout type="warning">
+请妥善保管你的 API Key，不要泄露给他人或在代码仓库中提交。
+</Callout>
+
+## 在 Qwen Code 中配置 API Key
+
+**1. 让 Qwen Code 自动配置**
+
+打开终端，在根目录下直接启动 Qwen Code，复制以下代码并告知你的 API-KEY，即可配置成功，重启 Qwen Code 输入 `/model` 即可切换配置的模型。
+
+```json
+按照以下内容帮我配置`settings.json`百炼的模型：
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<模型名称>",
+            "name": "[Bailian] <模型名称>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<需替换为用户的KEY>"
+    },
+}
+模型名称输入可参考：https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all
+我的API-KEY是：
+```
+
+然后粘贴你的 API-KEY 到输入框，告知你需要的模型名称，比如 `qwen3.5-plus`，发送即可配置成功。
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+**2. 手动配置**
+
+手动配置 settings.json 文件，文件位置在 `<用户根目录>/.qwen` 目录下，可直接复制以下内容后修改你的 API-KEY 和模型名称。
+
+```json
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<模型名称>",
+            "name": "[Bailian] <模型名称>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<需替换为用户的KEY>"
+    },
+}
+```
+
+## 选择模型
+
+根据需要选择合适的模型，平衡速度和性能。不同的模型适用于不同的场景，你可以根据任务的复杂程度和响应时间要求来选择。使用 `/model` 命令可以快速切换模型。
+
+常用模型选项：
+- `qwen3.5-plus`: 功能强大，适合复杂任务
+- `qwen3.5-flash`: 速度快，适合简单任务
+- `qwen-max`: 最强模型，适合高难度任务
+
+## 测试连接
+
+发送一条测试消息确认 API 配置正确。如果配置成功，Qwen Code 会立即回复你，这意味着你已经准备好开始使用 AI 辅助编程了。如果遇到问题，请检查 API Key 是否正确设置。
+
+```bash
+Hello, can you help me with coding?
+```
+
+</Steps>
+
+## 相关推荐
+
+- [开始第一次对话](./guide-first-conversation.mdx) — 安装完成后，发起你与 Qwen Code 的第一次 AI 对话
+- [百炼 Coding Plan 模式](./guide-bailian-coding-plan.mdx) — 配置使用百炼 Coding Plan，多模型选择，提升复杂任务的完成质量
+
+<ShowcaseDetailCta />

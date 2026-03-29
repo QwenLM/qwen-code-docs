@@ -1,0 +1,74 @@
+---
+title: "制作个人简历网站"
+description: "一句话制作个人简历，整合你的经历生成展示页面，支持导出 PDF，方便投递。"
+category: "编程开发"
+features:
+  - "Skills"
+thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+videoUrl: "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+个人简历网站是求职和自我展示的重要工具。Qwen Code 能够根据你的简历内容快速生成专业的展示页面，支持导出 PDF 格式，方便投递。无论是求职应聘还是个人品牌建设，一个精美的简历网站都能让你脱颖而出。
+
+<ShowcaseDetailMeta category="编程开发" features={["Skills"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4" poster="https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作步骤
+
+<Steps>
+
+### 提供个人经历
+
+告诉 AI 你的教育背景、工作经历、项目经验、技能栈等信息。可以分段提供，也可以一次性给完整简历内容。AI 会理解你的经历，并提取关键信息用于简历设计。
+
+```bash
+我是一名前端工程师，毕业于 XX 大学，有 3 年工作经验，擅长 React 和 TypeScript...
+```
+
+### 安装网页设计 Skill
+
+安装网页设计 Skill，提供简历设计模板，AI 会根据模板生成简历网站。
+
+```bash
+查看我是否有find skills，没有就直接帮我安装：npx skills add https://github.com/vercel-labs/skills --skill find-skills，然后帮我安装 web-component-design 到当前目录qwen code skills中。
+```
+
+### 选择设计风格
+
+描述你喜欢的简历风格，比如简约、专业、创意等，AI 会根据你的喜好生成设计。你可以参考一些优秀的简历网站，告诉 AI 你喜欢的设计元素和布局。
+
+```bash
+/skills web-component-design 帮我设计一个简约专业风格的简历网站
+```
+
+### 生成简历网站
+
+AI 会创建完整的简历网站项目，包括响应式布局、打印样式等。项目会包含所有必要的文件和配置，你只需要运行开发服务器即可查看效果。
+
+```bash
+npm run dev
+```
+
+</Steps>
+
+<Callout type="info">
+简历网站应该突出你的核心优势和成就，使用具体的数据和案例来支撑你的描述。
+</Callout>
+
+## 相关推荐
+
+- [一句话复刻你喜欢的网站](./creator-website-clone.mdx) — 截图给 Qwen Code，告诉它你想复刻的网站
+- [一句话写入文件](./office-write-file.mdx) — 告诉 Qwen Code 要写什么内容，它会帮你创建和写入文件
+- [Remotion 视频创作](./creator-remotion-video.mdx) — 通过自然语言描述，使用 Remotion Skill 驱动代码生成视频内容
+
+---
+
+<ShowcaseDetailCta />

@@ -1,0 +1,70 @@
+---
+title: "一句话复刻你喜欢的网站"
+description: "截图给 Qwen Code，AI 分析页面结构并生成完整前端代码。"
+category: "编程开发"
+features:
+  - "Agent 模式"
+  - "图片识别"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+
+## 概述
+
+看到喜欢的网站设计，想要快速复刻出来？只需截图给 Qwen Code，AI 就能分析页面结构，生成完整的前端代码。Qwen Code 会识别页面布局、颜色方案、组件结构，并使用现代前端技术栈生成可运行的代码。无论是学习设计、快速原型还是项目参考，都能大幅提升你的开发效率，让你在几分钟内获得高质量的代码。
+
+<ShowcaseDetailMeta category="编程开发" features={["Agent 模式", "图片识别"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作步骤
+
+<Steps>
+
+### 准备网站截图
+
+截取你想要复刻的网站界面，确保截图清晰完整，包含主要的布局和设计元素。
+
+### 安装对应的 Skill
+
+安装图片识别和前端代码生成相关的 Skill，这些 Skill 包含了分析网页设计和生成代码的能力。
+
+```bash
+查看我是否有find skills，没有就直接帮我安装：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code，然后帮我安装 web-component-design 到当前目录qwen code skills中。
+```
+
+### 粘贴截图并描述需求
+
+将截图粘贴到对话中，并告诉 Qwen Code 你的具体需求，比如使用什么技术栈、需要哪些功能等。
+
+```bash
+/skills web-component-design 根据这个技能，基于 @website.png 帮我复刻一个网页html，注意图片引用需有效。
+```
+
+示例截图：
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### 运行和预览
+
+打开对应网页查看情况。如果需要调整设计或功能，可以继续与 AI 交互，修改代码直到满意为止。
+
+</Steps>
+
+<Callout type="info">
+生成的代码遵循现代前端最佳实践，具有良好的结构和可维护性。你可以进一步定制和扩展，添加交互功能和后端集成。
+</Callout>
+
+## 相关推荐
+
+- [搭建个人简历网站](./creator-resume-site-quick.mdx) — 快速创建个人网站
+- [图片识别](./office-image-recognition.mdx) — 识别和分析图片内容
+
+---
+
+<ShowcaseDetailCta />
