@@ -1,0 +1,166 @@
+---
+title: "Qwen Code Hebdomadaire : L'IA vous aide à revoir votre code, poser des questions sans interrompre votre flux de travail, et automatiser vos workflows personnalisés"
+date: "2026-03-27"
+description: "Cette semaine, version v0.13.0 publiée : /review pour faire passer l'IA sur votre code avant la soumission, /btw pour poser une question sans perdre le contexte, Hooks pour exécuter automatiquement les tests avant la soumission et formater après la génération, Arena pour faire résoudre des problèmes par plusieurs modèles et choisir le meilleur."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Hebdomadaire : L'IA vous aide à revoir votre code, poser des questions sans interrompre votre flux de travail, et automatiser vos workflows personnalisés"
+  date="2026-03-27"
+  author="Qwen Team"
+/>
+
+Cette semaine, les versions officielles **v0.13.0** et v0.13.1 preview ont été publiées.
+
+Depuis le lancement de v0.12.x, de nombreux utilisateurs ont exprimé le souhait que Qwen Code soit plus "programmable" — pas seulement pour la conversation, mais aussi pour s'intégrer dans leurs workflows. La v0.13.0 de cette semaine a été développée dans cette direction : le système Hooks vous permet d'insérer des scripts personnalisés aux points clés, le répertoire Skills permet à l'équipe de partager des compétences personnalisées, `/btw` résout le problème embarrassant de "faire A et soudain vouloir demander B". De plus, `/review` permet à l'IA de réviser votre code, et l'arène de collaboration d'agents vous permet d'exécuter plusieurs modèles simultanément et de sélectionner automatiquement le meilleur résultat.
+
+Merci aux nouveaux contributeurs de cette semaine [**@simon100500**](https://github.com/simon100500) et [**@Br1an67**](https://github.com/Br1an67) 🎉
+
+## ✨ Nouvelles fonctionnalités
+
+### /review : Laissez l'IA réviser votre code
+
+Avant de soumettre votre code, vous voulez toujours que quelqu'un y jette un œil, mais vos collègues sont trop occupés ? Maintenant, utilisez simplement `/review`, l'IA vérifiera la qualité de votre code, détectera les problèmes potentiels et proposera des améliorations. Ce n'est pas une simple vérification lint, mais une révision de votre logique, de votre nommage et de votre gestion des limites comme le ferait un collègue expérimenté.
+
+**Ce que vous pouvez faire avec :**
+
+- Faire passer l'IA sur votre code avant de le soumettre, détecter les problèmes tôt et les corriger, sans attendre qu'ils soient signalés lors de la révision de code
+- Avoir une "seconde paire d'yeux" lors du développement indépendant, réduisant les erreurs bêtes
+- Apprendre les meilleures pratiques de code — l'IA expliquera pourquoi c'est mieux écrit ainsi, pas seulement dire "il y a un problème ici"
+
+Voir PR [#2348](https://github.com/QwenLM/qwen-code/pull/2348)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4" controls></video>
+
+### /btw question latérale : Posez une question en cours de codage sans interrompre votre flux
+
+Vous êtes en train d'écrire du code et vous ne vous souvenez plus de l'ordre des paramètres d'une API. Avant, vous deviez ouvrir une nouvelle conversation pour vérifier, puis revenir, et le contexte était complètement perdu.
+
+Maintenant, tapez `/btw`, insérez simplement une question hors sujet dans la conversation actuelle. Qwen Code répondra puis reviendra automatiquement au contexte précédent, comme si rien ne s'était passé. Votre conversation principale ne sera pas polluée, et l'IA ne considérera pas votre question hors sujet comme faisant partie de la tâche en cours.
+
+**Ce que vous pouvez faire avec :**
+
+- Vérifier rapidement l'utilisation d'un Hook en écrivant un composant React, puis continuer à écrire
+- Confirmer temporairement la signification d'une option de configuration pendant le débogage, sans ouvrir de nouvelle fenêtre
+- Penser à une question sans rapport, l'oublier après l'avoir posée, sans affecter votre travail actuel
+
+Voir PR [#2371](https://github.com/QwenLM/qwen-code/pull/2371)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif)
+
+### Mécanisme d'extension Hooks : Faites fonctionner Qwen Code selon vos règles
+
+Avez-vous déjà rencontré cette situation — l'IA génère du code, mais le format est incorrect, et vous devez exécuter prettier manuellement à chaque fois ? Ou vous avez oublié d'exécuter les tests avant de soumettre, et la CI échoue ? Le système Hooks est là pour résoudre ces problèmes. Vous pouvez accrocher vos propres scripts aux 10 points clés de Qwen Code, et ils s'exécuteront automatiquement à des moments spécifiques.
+
+Ce que vous pouvez faire avec :
+
+- Exécuter automatiquement les tests avant la soumission — éviter de pousser du code qui ne passe pas, la CI ne sera plus rouge à cause de vous
+- Formater automatiquement après la génération de code — une fois l'IA a terminé d'écrire le code, prettier/eslint s'exécute automatiquement, vous n'avez pas besoin de le faire manuellement
+- Sauvegarder automatiquement les journaux de conversation à la fin de la session — preuves disponibles pour retracer les problèmes
+- Vérifier les permissions avant l'exécution d'outils — une couche de protection supplémentaire pour les opérations sensibles
+
+La configuration est également très simple, placez simplement les fichiers de script dans `.agents/hooks` à la racine du projet. Voir PR [#2352](https://github.com/QwenLM/qwen-code/pull/2352), [#2203](https://github.com/QwenLM/qwen-code/pull/2203)
+
+<video class="mt-5" poster="https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4" src="https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4"  controls></video>
+
+### Arène de collaboration d'agents : Plusieurs modèles résolvent des problèmes simultanément, choisissez le meilleur résultat
+
+Pour du code important, vous demanderez à vos collègues de le réviser, maintenant vous pouvez aussi laisser plusieurs modèles d'IA traiter la même tâche simultanément. Pour comparer les capacités des modèles, vous pouvez directement utiliser la commande `/arena` pour sélectionner les modèles et saisir la tâche.
+
+**Ce que vous pouvez faire avec :**
+
+- Lors de la refactorisation de modules principaux, laisser plusieurs modèles proposer des solutions simultanément et choisir la meilleure
+- Comparer les solutions de différents modèles lors de l'écriture d'algorithmes, apprendre différentes approches
+- Évaluer les performances d'un nouveau modèle sur votre projet, laisser les tâches réelles parler
+
+Voir PR [#1912](https://github.com/QwenLM/qwen-code/pull/1912)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4"  controls></video>
+
+### Collage d'images VS Code : Envoyez directement des captures d'écran à l'IA
+
+Dans VS Code, faites simplement Ctrl+V pour coller une capture d'écran et l'envoyer à l'IA. Vous voyez un bug d'interface ? Envoyez la capture d'écran pour que l'IA l'analyse. Vous voulez reproduire une maquette ? Envoyez la capture d'écran pour que l'IA écrive le code. Plus besoin de sauvegarder l'image, de trouver le chemin, de télécharger manuellement.
+
+**Ce que vous pouvez faire avec :**
+
+- Capturer une image d'un bug d'interface, laisser l'IA vous aider à localiser le problème
+- Coller une capture d'écran de maquette, laisser l'IA écrire directement le code du composant correspondant
+- Le message d'erreur est trop long et vous ne voulez pas taper ? Envoyez la capture d'écran
+
+Voir PR [#1978](https://github.com/QwenLM/qwen-code/pull/1978)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01uZKxQv1NKPQdOWDAe_!!6000000001551-2-tps-2880-1800.png)
+
+### Personnalisation des invites système : Faites répondre l'IA selon votre style
+
+Configurez des invites système personnalisées via le SDK et le CLI pour contrôler le style et le comportement des réponses de l'IA. Par exemple, faites-la toujours répondre en français, utiliser des commentaires de code en anglais, suivre les conventions de nommage de votre équipe. Pas besoin de répéter à chaque conversation "veuillez répondre en français".
+
+Voir PR [#2400](https://github.com/QwenLM/qwen-code/pull/2400)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4"  controls></video>
+
+### Explore Agent : Laissez l'IA d'abord enquêter puis agir
+
+Nouvel Explore Agent, spécialement conçu pour faire des recherches sur le code. Avant de modifier le code, laissez d'abord Explore Agent clarifier la structure du code, comprendre les dépendances, trouver les points d'entrée clés. Après l'enquête, laissez l'agent principal agir, la direction sera plus précise.
+
+Voir PR [#2489](https://github.com/QwenLM/qwen-code/pull/2489)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png)
+
+## 📊 Optimisations et améliorations
+
+- **Affichage en temps réel de l'utilisation des tokens** : Affiche directement la consommation actuelle de tokens pendant la réflexion de l'IA, pas besoin d'attendre la fin de la réponse pour savoir combien a été utilisé ([#2445](https://github.com/QwenLM/qwen-code/pull/2445))
+- **Exécution concurrente des sous-agents** : Avant, plusieurs sous-tâches s'exécutaient en file d'attente, maintenant elles s'exécutent simultanément. La vitesse de traitement des tâches complexes est nettement améliorée, vous attendez moins ([#2434](https://github.com/QwenLM/qwen-code/pull/2434))
+- **Alertes de permission plus claires** : La fenêtre de permission vous dit maintenant en langage humain "va lire le fichier xxx" au lieu d'une chaîne de paramètres techniques, et lors du refus de l'opération, vous explique pourquoi ([#2637](https://github.com/QwenLM/qwen-code/pull/2637), [#2283](https://github.com/QwenLM/qwen-code/pull/2283))
+- **Complétion de fichiers VS Code plus intelligente** : Utilise la recherche floue lors de la saisie du nom de fichier, tapez `comp` pour trouver `src/components/Button.tsx`, pas besoin de mémoriser le chemin complet ([#2437](https://github.com/QwenLM/qwen-code/pull/2437))
+- **Comportement de la touche Tab plus intuitif** : Dans VS Code, appuyer sur Tab remplit uniquement le contenu de complétion, ne déclenche plus accidentellement l'indentation ou d'autres opérations ([#2431](https://github.com/QwenLM/qwen-code/pull/2431))
+- **Troncature automatique de la sortie des outils MCP** : Lorsque les outils MCP renvoient un contenu trop long, ils sont automatiquement tronqués, n'explosant pas le contexte et n'affectant pas la qualité des conversations ultérieures ([#2446](https://github.com/QwenLM/qwen-code/pull/2446))
+- **Recherche d'historique Ctrl+R** : Les résultats de recherche sont classés par ordre de récence, vos commandes les plus récentes apparaissent en premier ([#2425](https://github.com/QwenLM/qwen-code/pull/2425))
+- **Optimisation de la gestion des erreurs et de la détection des quotas** : En cas de limitation de l'API ou de quota épuisé, les messages sont plus clairs, n'affichant plus seulement un code d'erreur vague ([#2458](https://github.com/QwenLM/qwen-code/pull/2458))
+
+## 🔧 Corrections importantes
+
+| PR | Version | Contenu de la correction | Impact sur vous |
+|----|------|----------|-----------|
+| [#2403](https://github.com/QwenLM/qwen-code/pull/2403) | v0.13.0 | Correction de l'erreur d'analyse causée par finish_reason en double d'OpenRouter | Les conversations avec OpenRouter ne s'interrompent plus sans raison |
+| [#2457](https://github.com/QwenLM/qwen-code/pull/2457) | v0.13.0 | Correction du traitement des URI de chemins Windows | Les utilisateurs Windows peuvent maintenant cliquer sur les liens de fichiers normalement |
+| [#2501](https://github.com/QwenLM/qwen-code/pull/2501) | v0.13.0 | Transmission de la configuration proxy VS Code au CLI | Plus d'échecs de connexion dans l'environnement intranet de l'entreprise |
+| [#2472](https://github.com/QwenLM/qwen-code/pull/2472) | v0.13.0 | Nettoyage de l'état de connexion ACP à la sortie du sous-processus | Plus de connexions zombies résiduelles après redémarrage suite à une sortie anormale |
+| [#2611](https://github.com/QwenLM/qwen-code/pull/2611) | v0.13.1 | Correction de la condition de concurrence PTY Shell | Plus d'erreurs ou de plantages lors de l'exécution rapide et successive de commandes |
+| [#2547](https://github.com/QwenLM/qwen-code/pull/2547) | v0.13.1 | Amélioration de la prise en charge des serveurs de langage C++/Java/Python | Les sauts et complétions de code pour ces trois langues sont plus précis |
+| [#2631](https://github.com/QwenLM/qwen-code/pull/2631) | v0.13.1 | Nettoyage des états de confirmation diff de sous-agents expirés | Plus de fenêtres de confirmation résiduelles après acceptation du code dans l'IDE |
+| [#2591](https://github.com/QwenLM/qwen-code/pull/2591) | v0.13.1 | Conservation des métadonnées du modèle lors du changement de modèle | La configuration n'est plus perdue après le changement de modèle |
+| [#2546](https://github.com/QwenLM/qwen-code/pull/2546) | v0.13.1 | Amélioration de la gestion des erreurs ACP | VS Code ne se bloque plus sans indication lors du chargement |
+| [#2080](https://github.com/QwenLM/qwen-code/pull/2080) | v0.13.1 | Conservation de la méthode d'authentification sélectionnée en cas d'échec de l'authentification au démarrage | Pas besoin de rechoisir la méthode de connexion après des fluctuations réseau |
+
+### Corrections spécifiques pour la plateforme Windows
+
+| PR | Contenu de la correction | Impact sur vous |
+|----|----------|-----------|
+| [#2645](https://github.com/QwenLM/qwen-code/pull/2645) | Prise en charge de la détection de shell Git Bash/MSYS2 | Qwen Code peut maintenant reconnaître correctement lors de l'utilisation du terminal Git Bash |
+| [#2457](https://github.com/QwenLM/qwen-code/pull/2457) | Correction du traitement des URI de chemins | Fonctionne normalement lorsque le chemin de fichier contient des caractères chinois ou des espaces |
+
+## 🎈 Autres améliorations
+
+- La fonction d'exportation ajoute des métadonnées et des statistiques, les fichiers exportés contiennent des informations telles que le nombre de tours de conversation et l'utilisation des tokens ([#2328](https://github.com/QwenLM/qwen-code/pull/2328))
+- Correction de la configuration de la limite de tokens pour les modèles MiniMax-M2.5 et GLM, l'espace de contexte est plus précis lors de l'utilisation de ces modèles ([#2470](https://github.com/QwenLM/qwen-code/pull/2470))
+- Prise en charge du répertoire de sortie d'exécution configurable, les journaux et fichiers temporaires peuvent être placés à l'emplacement que vous spécifiez ([#2127](https://github.com/QwenLM/qwen-code/pull/2127))
+- `/memory show --project` et `--global` peuvent maintenant afficher correctement tous les fichiers de contexte configurés, sans omission ([#2368](https://github.com/QwenLM/qwen-code/pull/2368))
+- L'installation d'extensions prend en charge les URL Git non GitHub, les extensions hébergées sur GitLab, Gitee peuvent également être installées directement ([#2539](https://github.com/QwenLM/qwen-code/pull/2539))
+- QWEN.md renommé en AGENTS.md, conforme aux normes de la communauté ([#2527](https://github.com/QwenLM/qwen-code/pull/2527))
+
+## 👋 Bienvenue aux nouveaux contributeurs
+
+- [**@simon100500**](https://github.com/simon100500) — Première contribution, a corrigé le problème d'analyse d'OpenRouter ([#2403](https://github.com/QwenLM/qwen-code/pull/2403))
+- [**@Br1an67**](https://github.com/Br1an67) — Première contribution, a mis à jour le lien des conditions d'utilisation de l'extension VS Code et a pris en charge le répertoire .agents/skills ([#2495](https://github.com/QwenLM/qwen-code/pull/2495), [#2476](https://github.com/QwenLM/qwen-code/pull/2476))
+
+<Callout type="info">
+  **Méthode de mise à niveau** : Exécutez `npm i @qwen-code/qwen-code@latest -g` pour mettre à niveau vers la dernière version.
+</Callout>
+
+Pour toute question ou suggestion, n'hésitez pas à faire part de vos commentaires sur [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) !

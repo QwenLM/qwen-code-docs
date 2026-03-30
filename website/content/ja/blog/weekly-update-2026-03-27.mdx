@@ -1,0 +1,166 @@
+---
+title: "Qwen Code 週報：AIによるコードレビュー、コード作成中の即時質問、カスタムワークフローの自動化"
+date: "2026-03-27"
+description: "今週は v0.13.0 をリリース。/review でコミット前に AI がコードをチェック、/btw でコード作成中に質問してもコンテキストを維持、Hooks でコミット前に自動テスト・生成後に自動フォーマット、Arena で複数モデルが同時に問題を解いて最適な結果を選択。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：AIによるコードレビュー、コード作成中の即時質問、カスタムワークフローの自動化"
+  date="2026-03-27"
+  author="Qwen Team"
+/>
+
+今週は **v0.13.0** 正式版と v0.13.1 プレビュー版をリリースしました。
+
+v0.12.x のリリース以来、多くのユーザーから Qwen Code をより「プログラマブル」にしてほしいというフィードバックをいただきました。単なる会話だけでなく、自分のワークフローに組み込みたいという要望です。今週の v0.13.0 はこの方向性で開発されました：Hooks システムで重要なポイントにカスタムスクリプトを挿入でき、Skills ディレクトリでチームがカスタムスキルを共有でき、`/btw` は「A をしている最中に突然 B を聞きたい」という場面を解決します。さらに、`/review` で AI がコードをレビューし、Agent 協調アリーナで複数のモデルを同時に実行して最適な結果を自動選択できます。
+
+今週の新しいコントリビューター [**@simon100500**](https://github.com/simon100500) と [**@Br1an67**](https://github.com/Br1an67) に感謝します 🎉
+
+## ✨ 新機能
+
+### /review：AIによるコードレビュー
+
+コードをコミットする前に誰かに見てもらいたいけれど、同僚が忙しくて手が回らない？今は `/review` を直接使用するだけで、AI がコード品質をチェックし、潜在的な問題を発見し、改善提案をしてくれます。単純な lint チェックではなく、経験豊富な同僚のようにロジック、命名、境界処理をレビューしてくれます。
+
+**できること：**
+
+- コードをコミットする前に AI にチェックしてもらい、問題を早期発見して修正。Code Review で指摘されるのを待つ必要がありません
+- 独自開発時に「第二の目」として活用し、初歩的なミスを減らします
+- コードのベストプラクティスを学習—AI はなぜこの書き方が良いのかを説明してくれ、「ここに問題がある」と言うだけではありません
+
+詳細は PR [#2348](https://github.com/QwenLM/qwen-code/pull/2348) をご覧ください
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4" controls></video>
+
+### /btw 側問：コード作成中に即座に質問、思考の流れを中断しない
+
+コードを書いている最中に、ある API のパラメータ順序を思い出せなくなることがあります。以前は新しい会話を開いて調べる必要があり、調べ終わって戻るとコンテキストが途切れていました。
+
+今は `/btw` を入力するだけで、現在の会話に直接質問を挟めます。Qwen Code が回答した後、自動的に以前のコンテキストに戻り、何もなかったかのように振る舞います。メインの会話が汚染されることはなく、AI もあなたの質問を現在のタスクの一部とは見なしません。
+
+**できること：**
+
+- React コンポーネントを書いている最中に Hook の使い方を調べ、調べ終わったら書き続ける
+- デバッグ中に一時的に設定項目の意味を確認し、新しいウィンドウを開く必要がない
+- 関連しない質問を思いつき、聞き終わったら忘れて、現在の作業に影響を与えない
+
+詳細は PR [#2371](https://github.com/QwenLM/qwen-code/pull/2371) をご覧ください
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif)
+
+### Hooks 拡張メカニズム：Qwen Code をあなたのルールで動作させる
+
+AI がコードを生成したけれどフォーマットが正しくなく、毎回手動で prettier を実行する必要がある、という経験はありませんか？あるいはコミット前にテストを実行するのを忘れて、結果として CI が失敗してしまう？Hooks システムはこれらの問題を解決するために作られました。Qwen Code の 10 のキーポイントに独自のスクリプトを掛け、特定のタイミングで自動的に実行させることができます。
+
+できること：
+
+- コミット前に自動でテストを実行—動かないコードをプッシュせず、CI があなたのせいで赤くなることがなくなります
+- コード生成後に自動でフォーマット—AI がコードを書き終わると、prettier/eslint が自動的に実行され、手動で処理する手間が省けます
+- 会話終了時に自動的に会話ログを保存—問題を振り返る際に証拠が残ります
+- ツール実行前に権限チェック—機密操作に追加の保護レイヤーを提供
+
+設定も簡単で、プロジェクトルートの `.agents/hooks` にスクリプトファイルを置くだけです。詳細は PR [#2352](https://github.com/QwenLM/qwen-code/pull/2352)、[#2203](https://github.com/QwenLM/qwen-code/pull/2203) をご覧ください
+
+<video class="mt-5" poster="https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4" src="https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4"  controls></video>
+
+### Agent 協調アリーナ：複数のモデルが同時に問題を解決し、最適な結果を選択
+
+重要なコードは同僚にレビューしてもらうことがありますが、今は複数の AI モデルに同じタスクを同時に処理させることもできます。モデルの能力を比較するには、直接 `/arena` コマンドを呼び出してモデルを選択し、タスクを入力します。
+
+**できること：**
+
+- コアモジュールをリファクタリングする際、複数のモデルに同時に案を出させ、最良のものを選ぶ
+- アルゴリズム問題を解く際、異なるモデルの解法を比較し、異なるアプローチを学習する
+- 新しいモデルがあなたのプロジェクトでどの程度動作するか、実際のタスクで評価する
+
+詳細は PR [#1912](https://github.com/QwenLM/qwen-code/pull/1912) をご覧ください
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4"  controls></video>
+
+### VS Code 画像貼り付け：スクリーンショットを直接 AI に送る
+
+VS Code で Ctrl+V を押してスクリーンショットを直接 AI に送信できます。UI バグを発見しましたか？スクリーンショットを AI に送って分析させましょう。デザインを再現したいですか？スクリーンショットを送って AI にコードを書かせましょう。画像を保存したり、パスを探したり、手動でアップロードする必要がありません。
+
+**できること：**
+
+- UI バグのスクリーンショットを撮り、AI に問題の特定を手伝わせる
+- デザインのスクリーンショットを貼り付け、AI に対応するコンポーネントコードを直接書かせる
+- エラーメッセージが長すぎて入力したくない？スクリーンショットを送る
+
+詳細は PR [#1978](https://github.com/QwenLM/qwen-code/pull/1978) をご覧ください
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01uZKxQv1NKPQdOWDAe_!!6000000001551-2-tps-2880-1800.png)
+
+### システムプロンプトのカスタマイズ：AI をあなたのスタイルで回答させる
+
+SDK と CLI を通じてカスタムシステムプロンプトを設定し、AI の回答スタイルと動作を制御できます。例えば、常に日本語で回答させ、コードコメントは英語にし、チームの命名規則に従わせることができます。毎回の会話で「日本語で回答してください」と繰り返す必要がありません。
+
+詳細は PR [#2400](https://github.com/QwenLM/qwen-code/pull/2400) をご覧ください
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4"  controls></video>
+
+### Explore Agent：AI に先に調査させ、その後に実行させる
+
+Explore Agent を新しく追加しました。これはコード調査に特化しています。コードを変更する前に、まず Explore Agent にコード構造を把握させ、依存関係を理解させ、重要なエントリポイントを見つけさせます。調査が終わってからメイン Agent に実行させることで、方向性がより正確になります。
+
+詳細は PR [#2489](https://github.com/QwenLM/qwen-code/pull/2489) をご覧ください
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png)
+
+## 📊 改善・最適化
+
+- **Token 使用量のリアルタイム表示**：AI が思考している過程で現在の Token 消費量を直接表示し、回答が終わるのを待たずに使用量を知ることができます（[#2445](https://github.com/QwenLM/qwen-code/pull/2445)）
+- **Sub Agent の並列実行**：以前は複数のサブタスクがキューで実行されていましたが、今は同時に実行されます。複雑なタスクの処理速度が明らかに向上し、待ち時間が短縮されます（[#2434](https://github.com/QwenLM/qwen-code/pull/2434)）
+- **権限プロンプトがより明確に**：権限ダイアログが人間の言葉で「xxx ファイルを読み取ろうとしています」と伝えるようになり、技術的なパラメータの羅列ではなくなりました。操作を拒否した際も、なぜ拒否されたかが表示されます（[#2637](https://github.com/QwenLM/qwen-code/pull/2637)、[#2283](https://github.com/QwenLM/qwen-code/pull/2283)）
+- **VS Code のファイル補完がよりスマートに**：ファイル名を入力する際にファジー検索で一致し、`comp` と入力するだけで `src/components/Button.tsx` が見つかり、完全なパスを覚える必要がありません（[#2437](https://github.com/QwenLM/qwen-code/pull/2437)）
+- **Tab キーの動作がより直感的に**：VS Code で Tab を押すと補完内容のみが入力され、インデントやその他の操作が予期せずトリガーされることがなくなりました（[#2431](https://github.com/QwenLM/qwen-code/pull/2431)）
+- **MCP ツール出力の自動切り捨て**：MCP ツールが超長いコンテンツを返す際に自動的に切り捨てられ、コンテキストが爆発して後続の会話品質が低下することがなくなりました（[#2446](https://github.com/QwenLM/qwen-code/pull/2446)）
+- **Ctrl+R 履歴検索**：検索結果が最新のものが優先され、最近使用したコマンドが最上位に表示されます（[#2425](https://github.com/QwenLM/qwen-code/pull/2425)）
+- **エラー処理とクォータ検出の最適化**：API レート制限やクォータ使い切りに遭遇した際、プロンプトがより明確になり、曖昧なエラーコードだけが表示されることがなくなりました（[#2458](https://github.com/QwenLM/qwen-code/pull/2458)）
+
+## 🔧 重要な修正
+
+| PR | バージョン | 修正内容 | 影響 |
+|----|------|----------|-----------|
+| [#2403](https://github.com/QwenLM/qwen-code/pull/2403) | v0.13.0 | OpenRouter の重複 finish_reason による解析エラーを修正 | OpenRouter 使用時の会話が不明瞭に中断されなくなりました |
+| [#2457](https://github.com/QwenLM/qwen-code/pull/2457) | v0.13.0 | Windows パス URI 処理を修正 | Windows ユーザーがファイルリンクをクリックしても正常にジャンプするようになりました |
+| [#2501](https://github.com/QwenLM/qwen-code/pull/2501) | v0.13.0 | VS Code プロキシ設定を CLI に透過 | 社内ネットワーク環境での接続失敗がなくなりました |
+| [#2472](https://github.com/QwenLM/qwen-code/pull/2472) | v0.13.0 | サブプロセス終了時に ACP 接続状態をクリア | 異常終了後の再起動でゾンビ接続が残らなくなりました |
+| [#2611](https://github.com/QwenLM/qwen-code/pull/2611) | v0.13.1 | Shell PTY 競合状態を修正 | コマンドを連続して高速実行してもエラーでクラッシュしなくなりました |
+| [#2547](https://github.com/QwenLM/qwen-code/pull/2547) | v0.13.1 | C++/Java/Python 言語サーバーのサポートを改善 | これら 3 つの言語のコードジャンプ、補完がより正確になりました |
+| [#2631](https://github.com/QwenLM/qwen-code/pull/2631) | v0.13.1 | 期限切れの Sub Agent diff 確認状態をクリア | IDE がコードを受け入れた後、確認ダイアログが残らなくなりました |
+| [#2591](https://github.com/QwenLM/qwen-code/pull/2591) | v0.13.1 | モデル切り替え時にモデルメタデータを保持 | モデル切り替え後の設定が失われなくなりました |
+| [#2546](https://github.com/QwenLM/qwen-code/pull/2546) | v0.13.1 | ACP エラー処理を改善 | VS Code のロード時にプロンプトなしでフリーズしなくなりました |
+| [#2080](https://github.com/QwenLM/qwen-code/pull/2080) | v0.13.1 | 認証失敗時に選択済み認証方式を保持 | ネットワーク変動後にログイン方式を再選択する必要がなくなりました |
+
+### Windows プラットフォーム専用修正
+
+| PR | 修正内容 | 影響 |
+|----|----------|-----------|
+| [#2645](https://github.com/QwenLM/qwen-code/pull/2645) | Git Bash/MSYS2 Shell 検出をサポート | Git Bash ターミナル使用時に Qwen Code が正しく認識するようになりました |
+| [#2457](https://github.com/QwenLM/qwen-code/pull/2457) | パス URI 処理を修正 | ファイルパスに日本語やスペースが含まれていても正常に動作します |
+
+## 🎈 その他の改善
+
+- エクスポート機能にメタデータと統計情報を追加し、エクスポートされたファイルに会話回数、Token 使用量などの情報が含まれるようになりました（[#2328](https://github.com/QwenLM/qwen-code/pull/2328)）
+- MiniMax-M2.5 と GLM モデルの Token 制限設定を修正し、これらのモデル使用時のコンテキスト空間がより正確になりました（[#2470](https://github.com/QwenLM/qwen-code/pull/2470)）
+- 設定可能なランタイム出力ディレクトリをサポートし、ログと一時ファイルを指定した場所に配置できるようになりました（[#2127](https://github.com/QwenLM/qwen-code/pull/2127)）
+- `/memory show --project` と `--global` ですべての設定済みコンテキストファイルが正しく表示されるようになり、見落としがなくなりました（[#2368](https://github.com/QwenLM/qwen-code/pull/2368)）
+- 拡張機能のインストールで GitHub 以外の Git URL をサポートし、GitLab、Gitee でホストされている拡張機能も直接インストールできるようになりました（[#2539](https://github.com/QwenLM/qwen-code/pull/2539)）
+- QWEN.md を AGENTS.md にリネームし、コミュニティ規範と一致させました（[#2527](https://github.com/QwenLM/qwen-code/pull/2527)）
+
+## 👋 新しいコントリビューターを歓迎します
+
+- [**@simon100500**](https://github.com/simon100500) — 初回コントリビューション、OpenRouter の解析問題を修正（[#2403](https://github.com/QwenLM/qwen-code/pull/2403)）
+- [**@Br1an67**](https://github.com/Br1an67) — 初回コントリビューション、VS Code 拡張の利用規約リンクを更新し、.agents/skills ディレクトリをサポート（[#2495](https://github.com/QwenLM/qwen-code/pull/2495)、[#2476](https://github.com/QwenLM/qwen-code/pull/2476)）
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行するだけで最新バージョンにアップグレードできます。
+</Callout>
+
+ご質問やご提案があれば、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues) までお気軽にご連絡ください！
