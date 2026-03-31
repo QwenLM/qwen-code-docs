@@ -1,6 +1,6 @@
 import React from "react";
 import { useMDXComponents as getDocsMDXComponents } from "nextra-theme-docs";
-import { Pre, withIcons } from "nextra/components";
+import { Pre, withIcons, Callout } from "nextra/components";
 import { GitHubIcon } from "nextra/icons";
 import type { UseMDXComponents } from "nextra/mdx-components";
 import type { ImgHTMLAttributes } from "react";
@@ -25,5 +25,6 @@ export const useMDXComponents: UseMDXComponents<any> = (components = {}) => ({
   ...docsComponents,
   a: LocaleAnchor,
   img: CustomImg,
+  Callout,
   ...components,
 });
