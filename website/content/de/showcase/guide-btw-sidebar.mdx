@@ -1,0 +1,61 @@
+---
+date: "2026-03-31"
+title: "/btw Seitenleiste: Schnell eine Frage stellen beim Programmieren"
+description: "Fügen Sie eine unabhängige Frage in das aktuelle Gespräch ein. Die KI beantwortet sie und kehrt automatisch zum vorherigen Kontext zurück, ohne das Hauptgespräch zu beeinträchtigen."
+category: "Erste Schritte"
+features:
+  - "Agent Mode"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Überblick
+
+Sie programmieren und können sich plötzlich nicht an die Parameterreihenfolge einer API erinnern. Früher mussten Sie ein neues Gespräch öffnen, nachschlagen und dann zurückwechseln — der gesamte Kontext ging verloren. Jetzt geben Sie einfach `/btw` ein und stellen eine Nebenfrage direkt im aktuellen Gespräch. Qwen Code beantwortet sie und kehrt automatisch zum vorherigen Kontext zurück, als wäre nichts passiert.
+
+<ShowcaseDetailMeta />
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif" alt="/btw Seitenleiste Demo" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Was Sie damit tun können
+
+- **Schnell API nachschlagen**: Beim Schreiben einer React-Komponente kurz die Verwendung eines Hooks nachschlagen und dann weiter programmieren
+- **Konfiguration spontan bestätigen**: Mitten beim Debuggen die Bedeutung einer Konfigurationsoption bestätigen, ohne ein neues Fenster zu öffnen
+- **Fragen und vergessen**: Eine unabhängige Frage stellen, die Antwort erhalten und weiterarbeiten, ohne die aktuelle Arbeit zu beeinträchtigen
+
+## Schritte
+
+<Steps>
+
+### Sie befinden sich mitten in einem Hauptgespräch
+
+Sie besprechen eine Aufgabe mit Qwen Code, zum Beispiel das Refactoring einer Komponente.
+
+### Geben Sie /btw gefolgt von Ihrer Frage ein
+
+Müssen Sie etwas nachschlagen? Geben Sie einfach `/btw` gefolgt von Ihrer Frage ein:
+
+```bash
+/btw Unterstützt die JavaScript Array.prototype.at()-Methode negative Indizes?
+```
+
+### KI antwortet und stellt den Kontext automatisch wieder her
+
+Nachdem Qwen Code Ihre Nebenfrage beantwortet hat, kehrt es automatisch zum Kontext des Hauptgesprächs zurück. Sie können Ihre vorherige Aufgabe fortsetzen, als wäre nichts passiert.
+
+</Steps>
+
+<Callout type="info">
+`/btw`-Antworten beeinträchtigen nicht den Kontext des Hauptgesprächs. Die KI behandelt Ihre Nebenfrage nicht als Teil der aktuellen Aufgabe.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [Erstes Gespräch starten](./guide-first-conversation.mdx) — Nach der Installation Ihr erstes KI-Gespräch mit Qwen Code beginnen
+- [Web-Suche](./guide-web-search.mdx) — KI im Internet nach aktuellen Informationen suchen lassen
+
+---
+
+<ShowcaseDetailCta />

@@ -1,0 +1,61 @@
+---
+date: "2026-03-31"
+title: "/btw サイドバー：コーディング中にサッと質問する"
+description: "現在の会話に関係のない質問を挿入します。AIが回答した後、自動的に以前のコンテキストに戻り、メインの会話が汚染されません。"
+category: "入門ガイド"
+features:
+  - "Agent Mode"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概要
+
+コードを書いている最中に、突然あるAPIのパラメータの順番が思い出せなくなることがあります。以前は新しい会話を開いて調べてから戻る必要があり、コンテキストが完全に途切れていました。今は `/btw` と入力するだけで、現在の会話にサイドクエスチョンを挿入できます。Qwen Codeが回答した後、自動的に以前のコンテキストに戻ります。まるで何も起きなかったかのように。
+
+<ShowcaseDetailMeta />
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif" alt="/btw サイドバーデモ" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## これでできること
+
+- **素早くAPIを調べる**：Reactコンポーネントを書きながらHookの使い方をサッと調べて、そのままコーディングを続ける
+- **設定をその場で確認**：デバッグ中に設定項目の意味を確認、新しいウィンドウを開く必要なし
+- **聞いて忘れる**：関係のない質問をして、答えを得たらそのまま作業を続ける
+
+## 手順
+
+<Steps>
+
+### メインの会話中
+
+Qwen Codeとタスクについて話し合っています。例えばコンポーネントのリファクタリングなど。
+
+### /btw に続けて質問を入力
+
+何か調べたいことがある？ `/btw` に続けて質問を入力するだけ：
+
+```bash
+/btw JavaScriptのArray.prototype.at()メソッドは負のインデックスをサポートしていますか？
+```
+
+### AIが回答し、自動的にコンテキストを復元
+
+Qwen Codeがサイドクエスチョンに回答した後、自動的にメインの会話コンテキストに戻ります。何も起きなかったかのように、以前のタスクを続けることができます。
+
+</Steps>
+
+<Callout type="info">
+`/btw` の回答はメインの会話コンテキストを汚染しません。AIはあなたのサイドクエスチョンを現在のタスクの一部として扱いません。
+</Callout>
+
+## 関連おすすめ
+
+- [最初の会話を始める](./guide-first-conversation.mdx) — インストール後、Qwen Codeとの最初のAI会話を始める
+- [Web検索](./guide-web-search.mdx) — AIにウェブで最新情報を検索させる
+
+---
+
+<ShowcaseDetailCta />

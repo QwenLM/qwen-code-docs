@@ -1,0 +1,63 @@
+---
+date: "2026-03-31"
+title: "/review : Revue de code assistée par IA"
+description: "Utilisez la commande /review avant le commit pour faire vérifier la qualité du code par l'IA, trouver les problèmes potentiels et suggérer des améliorations — comme un collègue expérimenté qui révise votre code."
+category: "Programmation"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Aperçu
+
+Vous voulez que quelqu'un relise votre code avant le commit, mais vos collègues sont trop occupés ? Utilisez simplement `/review` — l'IA vérifiera la qualité du code, trouvera les problèmes potentiels et suggérera des améliorations. Ce n'est pas une simple vérification lint, mais une revue approfondie de votre logique, nommage et gestion des cas limites, comme un collègue expérimenté.
+
+<ShowcaseDetailMeta />
+
+<video poster='https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg' src="https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Ce que vous pouvez faire avec
+
+- **Revue avant le commit** : Faire passer votre code par l'IA, détecter les problèmes tôt — plus de surprises lors du Code Review
+- **Un deuxième regard pour le développement solo** : Réduire les erreurs basiques, améliorer la qualité du code
+- **Apprendre les meilleures pratiques** : L'IA explique pourquoi une certaine approche est meilleure, pas seulement « il y a un problème ici »
+
+## Étapes
+
+<Steps>
+
+### Ouvrir le fichier à réviser
+
+Dans Qwen Code, ouvrez le fichier de code ou le répertoire du projet que vous souhaitez réviser. Assurez-vous que votre code est sauvegardé.
+
+### Entrer la commande /review
+
+Tapez `/review` dans le chat. Qwen Code analysera automatiquement le fichier actuel ou les modifications de code récentes.
+
+```bash
+/review
+```
+
+### Consulter les résultats de la revue
+
+L'IA fournira des retours de revue sur plusieurs dimensions : qualité du code, exactitude logique, conventions de nommage et gestion des cas limites, accompagnés de suggestions d'amélioration spécifiques.
+
+</Steps>
+
+<Callout type="info">
+`/review` est différent des simples vérifications lint — il comprend en profondeur la logique du code, identifiant les bugs potentiels, les problèmes de performance et les défauts de conception.
+</Callout>
+
+## Recommandations associées
+
+- [PR Review](./code-pr-review.mdx) — Revue de code intelligente pour les Pull Requests
+- [Résoudre des issues](./code-solve-issue.mdx) — Utiliser Qwen Code pour analyser et résoudre les issues de projets open-source
+
+---
+
+<ShowcaseDetailCta />

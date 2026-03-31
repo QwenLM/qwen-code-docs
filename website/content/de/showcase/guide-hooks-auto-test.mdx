@@ -1,0 +1,120 @@
+---
+date: "2026-03-31"
+title: "Hooks: Testskripte automatisch vor dem Commit ausführen"
+description: "Hängen Sie benutzerdefinierte Skripte an Schlüsselstellen in Qwen Code an, um automatisierte Workflows wie Tests vor dem Commit und automatische Formatierung nach der Codegenerierung zu implementieren."
+category: "Programmierung"
+features:
+  - "Hooks"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4"
+model: "qwen3.5-plus"
+author: "xuewenjie123"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Überblick
+
+KI hat Code generiert, aber die Formatierung stimmt nicht, und Sie müssen jedes Mal manuell prettier ausführen? Oder Sie haben vor dem Commit vergessen, Tests auszuführen, und die CI ist fehlgeschlagen? Das Hooks-System löst diese Probleme. Sie können an 10 Schlüsselstellen in Qwen Code eigene Skripte anhängen, die zu bestimmten Zeitpunkten automatisch ausgeführt werden.
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Was Sie damit tun können
+
+- **Tests vor dem Commit automatisch ausführen**: Vermeiden Sie es, fehlerhaften Code zu pushen — CI wird nicht mehr wegen Ihnen rot
+- **Automatische Formatierung nach Codegenerierung**: Nach dem Schreiben durch KI läuft prettier/eslint automatisch, spart Ihnen manuelle Arbeit
+- **Gesprächsprotokolle bei Sitzungsende automatisch speichern**: Nachvollziehbare Aufzeichnungen bei der Problemanalyse
+- **Berechtigungsprüfung vor Werkzeugausführung**: Zusätzliche Schutzschicht für sensible Operationen
+
+## Schritte
+
+<Steps>
+
+### Hooks-Verzeichnis erstellen
+
+Erstellen Sie ein `.agents/hooks`-Verzeichnis im Projektstammverzeichnis für Hook-Skripte:
+
+```bash
+mkdir -p .agents/hooks
+```
+
+### Hook-Skript schreiben
+
+Erstellen Sie ein Hook-Skript, zum Beispiel automatische Formatierung nach Codeänderung:
+
+```bash
+#!/bin/bash
+# post-edit-format.sh
+# Prettier-Formatierung nach Codeänderung automatisch ausführen
+
+INPUT=$(cat)
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
+
+case "$TOOL_NAME" in
+  write_file|edit) ;;
+  *) exit 0 ;;
+esac
+
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+[ -z "$FILE_PATH" ] && exit 0
+
+# Prettier-Formatierung ausführen
+npx prettier --write "$FILE_PATH" 2>/dev/null
+
+echo '{"decision": "allow", "reason": "File formatted"}'
+exit 0
+```
+
+Ausführungsrechte erteilen:
+
+```bash
+chmod +x .agents/hooks/post-edit-format.sh
+```
+
+### Hooks konfigurieren
+
+Fügen Sie die Hooks-Konfiguration in `~/.qwen/settings.json` hinzu:
+
+```json
+{
+  "hooksConfig": {
+    "enabled": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "(write_file|edit)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".agents/hooks/post-edit-format.sh",
+            "name": "auto-format",
+            "description": "Automatische Formatierung nach Codeänderung",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Wirkung überprüfen
+
+Starten Sie Qwen Code, lassen Sie die KI eine Codedatei ändern und beobachten Sie, ob der Hook die Formatierung automatisch auslöst.
+
+</Steps>
+
+<Callout type="info">
+Hooks unterstützen 10 Schlüsselstellen: PreToolUse, PostToolUse, SessionStart, SessionEnd und mehr. Die Konfiguration ist einfach — legen Sie einfach Skriptdateien unter `.agents/hooks` im Projektstammverzeichnis ab.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [Skills installieren](./guide-skill-install.mdx) — Qwen Code Erweiterungsfähigkeiten installieren und verwalten
+
+---
+
+<ShowcaseDetailCta />

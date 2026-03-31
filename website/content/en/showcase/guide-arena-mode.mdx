@@ -1,0 +1,75 @@
+---
+date: "2026-03-31"
+title: "Agent Arena: Multiple Models Solving Problems Simultaneously"
+description: "Use the /arena command to have multiple AI models process the same task simultaneously, compare results, and choose the best solution."
+category: "Programming"
+features:
+  - "Arena"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Overview
+
+For important code, you'd ask a colleague to review it. Now you can have multiple AI models process the same task simultaneously. The Agent Arena lets you compare different models' capabilities — just call `/arena`, select models, input your task, and pick the best result.
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## What You Can Do With It
+
+- **Refactor core modules**: Have multiple models propose solutions simultaneously, pick the best one
+- **Compare approaches**: Compare different models' solutions when writing algorithms, learn different perspectives
+- **Evaluate new models**: Use real tasks to evaluate how new models perform on your project
+
+## Steps
+
+<Steps>
+
+### Enter the /arena command
+
+In the Qwen Code chat, type `/arena` and select `start` to enter arena mode.
+
+```bash
+/arena start
+```
+
+### Select participating models
+
+From the available model list, select the models you want to compare. Press `space` to select 2 or more models to participate.
+
+### Enter the task description
+
+Enter the task you want each model to handle, for example:
+
+```
+Refactor this function to improve readability and performance
+```
+
+### Compare results and pick the best
+
+All models will process the task simultaneously. Once done, you can compare their solutions and apply the best result to your code.
+
+```bash
+/arena select
+```
+
+</Steps>
+
+<Callout type="info">
+Arena mode is especially suited for important code decisions, letting multiple AI models provide different perspectives on solutions.
+</Callout>
+
+## Related
+
+- [/review: AI-Powered Code Review](./guide-review-command.mdx) — Have AI check code quality before committing
+- [API Configuration Guide](./guide-api-setup.mdx) — Configure API Key and model parameters
+
+---
+
+<ShowcaseDetailCta />

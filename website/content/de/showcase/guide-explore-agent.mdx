@@ -1,0 +1,65 @@
+---
+date: "2026-03-31"
+title: "Explore Agent: KI zuerst recherchieren lassen"
+description: "Verwenden Sie den Explore Agent, um vor Codeänderungen die Codestruktur, Abhängigkeiten und wichtige Einstiegspunkte zu verstehen und die nachfolgende Entwicklung präziser zu gestalten."
+category: "Programmierung"
+features:
+  - "Explore"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Überblick
+
+Bevor Sie Code ändern, lassen Sie den Explore Agent die Codestruktur verstehen, Abhängigkeiten analysieren und wichtige Einstiegspunkte finden. Erst recherchieren, dann den Haupt-Agent arbeiten lassen — präzisere Richtung, weniger Nacharbeit durch blindes Ändern.
+
+<ShowcaseDetailMeta />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png" alt="Explore Agent" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Was Sie damit tun können
+
+- **Codestruktur verstehen**: Schnell die Architektur und Modulaufteilung eines unbekannten Projekts erfassen
+- **Abhängigkeiten zuordnen**: Herausfinden, welche Dateien und Module eine Funktion betrifft
+- **Wichtige Einstiegspunkte lokalisieren**: In großen Projekten schnell die Codestellen finden, die geändert werden müssen
+
+## Schritte
+
+<Steps>
+
+### Zum Explore Agent wechseln
+
+Wechseln Sie in Qwen Code zum Explore-Agent-Modus, um sich auf Code-Recherche statt auf Änderungen zu konzentrieren.
+
+### Rechercheziel beschreiben
+
+Teilen Sie dem Explore Agent mit, was Sie verstehen möchten, zum Beispiel:
+
+```
+Analysiere das Authentifizierungsmodul dieses Projekts, finde alle zugehörigen Dateien und Abhängigkeiten
+```
+
+### Recherchebericht erhalten
+
+Der Explore Agent analysiert die Codestruktur und gibt einen detaillierten Recherchebericht aus, einschließlich Dateilisten, Abhängigkeitsgraphen, wichtiger Einstiegspunkte usw.
+
+### Zum Haupt-Agent zurückwechseln und mit der Entwicklung beginnen
+
+Nach Abschluss der Recherche wechseln Sie zum Haupt-Agent zurück und beginnen mit den eigentlichen Codeänderungen basierend auf den Rechercheergebnissen. Der Recherchebericht wird als Kontext an den Haupt-Agent übergeben.
+
+</Steps>
+
+<Callout type="info">
+Der Explore Agent recherchiert nur — er ändert keinen Code. Seine Ausgabe kann direkt als Eingabe für den Haupt-Agent verwendet werden und bildet einen effizienten Workflow: „Erst recherchieren, dann entwickeln".
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [Code-Lernen](./study-learning.mdx) — Mit Qwen Code Open-Source-Projektcode lernen und verstehen
+- [LSP-Intelligenz](./code-lsp-intelligence.mdx) — LSP-Protokoll für präzise Code-Vervollständigung und Navigation integrieren
+
+---
+
+<ShowcaseDetailCta />

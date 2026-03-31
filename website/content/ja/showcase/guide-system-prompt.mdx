@@ -1,0 +1,75 @@
+---
+date: "2026-03-31"
+title: "カスタムシステムプロンプト：AIをあなたのスタイルで回答させる"
+description: "SDKとCLIでカスタムシステムプロンプトを設定し、AIの回答スタイルと動作を制御して、常にチームの規約に従うようにします。"
+category: "入門ガイド"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概要
+
+SDKとCLIでカスタムシステムプロンプトを設定し、AIの回答スタイルと動作を制御します。例えば、常に中国語で回答させる、コードコメントは英語で書かせる、チームの命名規約に従わせるなど。毎回の会話で「中国語で回答してください」と繰り返す必要はありません。
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## これでできること
+
+- **回答言語を統一**：AIに常に好みの言語で回答させ、コードコメントは英語で
+- **チーム規約に従う**：AIにチームの命名規約やコードスタイルに従わせる
+- **動作をカスタマイズ**：AIの回答の詳細度、積極的に質問するかどうかなどを制御
+
+## 手順
+
+<Steps>
+
+### システムプロンプトファイルを作成
+
+プロジェクトルートに `AGENTS.md` ファイル（旧 `QWEN.md`）を作成し、カスタムシステムプロンプトを記述します：
+
+```markdown
+# プロジェクト規約
+
+- 常に中国語で回答する
+- コードコメントは英語で
+- 変数名はcamelCaseを使用
+- Reactは関数コンポーネント + Hooksを使用
+- TypeScriptを優先
+```
+
+### グローバルシステムプロンプトを設定
+
+すべてのプロジェクトに規約を適用するには、`~/.qwen/AGENTS.md` でグローバルシステムプロンプトを設定します。
+
+以下のコマンドも使用できます：
+
+```bash
+qwen --system-prompt "中国語で質問されたら中国語で回答し、英語で質問されたら英語で回答してください。"
+```
+
+### 効果を確認
+
+Qwen Codeを起動し、会話を始めて、AIがシステムプロンプトの規約に従って回答するか確認します。
+
+</Steps>
+
+<Callout type="info">
+プロジェクトレベルの `AGENTS.md` はグローバル設定を上書きします。プロジェクトごとに異なる規約を設定でき、チームメンバーは同じ設定ファイルを共有して一貫性を保てます。
+</Callout>
+
+## 関連おすすめ
+
+- [API設定ガイド](./guide-api-setup.mdx) — APIキーとモデルパラメータを設定
+- [最初の会話を始める](./guide-first-conversation.mdx) — Qwen Codeとの最初のAI会話を始める
+
+---
+
+<ShowcaseDetailCta />

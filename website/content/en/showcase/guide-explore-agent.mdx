@@ -1,0 +1,65 @@
+---
+date: "2026-03-31"
+title: "Explore Agent: Let AI Research Before Taking Action"
+description: "Use Explore Agent to understand code structure, dependencies, and key entry points before modifying code, making subsequent development more accurate."
+category: "Programming"
+features:
+  - "Explore"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Overview
+
+Before modifying code, let Explore Agent help you understand the code structure, dependencies, and key entry points. Research first, then let the main Agent take action — more accurate direction, less rework from blind modifications.
+
+<ShowcaseDetailMeta />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png" alt="Explore Agent" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## What You Can Do With It
+
+- **Understand code structure**: Quickly grasp the architecture and module layout of an unfamiliar project
+- **Map dependencies**: Find out which files and modules a feature involves
+- **Locate key entry points**: Quickly find the code locations that need modification in large projects
+
+## Steps
+
+<Steps>
+
+### Switch to Explore Agent
+
+In Qwen Code, switch to Explore Agent mode to focus on code research rather than modification.
+
+### Describe your research goal
+
+Tell Explore Agent what you want to understand, for example:
+
+```
+Analyze the authentication module of this project, find all related files and dependencies
+```
+
+### Get the research report
+
+Explore Agent will analyze the code structure and output a detailed research report, including file lists, dependency graphs, key entry points, etc.
+
+### Switch back to the main Agent to start development
+
+After research is complete, switch back to the main Agent and start actual code modifications based on the research results. The research report will be passed as context to the main Agent.
+
+</Steps>
+
+<Callout type="info">
+Explore Agent only does research — it won't modify any code. Its output can be directly used as input for the main Agent, forming an efficient "research first, develop later" workflow.
+</Callout>
+
+## Related
+
+- [Code Learning](./study-learning.mdx) — Use Qwen Code to learn and understand open-source project code
+- [LSP Intelligence](./code-lsp-intelligence.mdx) — Integrate LSP protocol for precise code completion and navigation
+
+---
+
+<ShowcaseDetailCta />

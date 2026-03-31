@@ -142,7 +142,7 @@ export function ShowcaseDetailMeta() {
   const { category, features, model, author } = resolveShowcaseMeta(pathname);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 mt-8 mb-10 py-6 border-y border-zinc-200 dark:border-zinc-800">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8 mt-10 mb-12 py-7 border-y border-zinc-200 dark:border-zinc-800">
       {/* Author */}
       <MetaItem icon={<PenLine className="w-4 h-4" />} label="Author">
         {author}
@@ -191,7 +191,7 @@ export function ShowcaseDetailCta() {
   const texts = CTA_TEXTS[locale] || CTA_TEXTS.zh;
 
   return (
-    <div className="mt-16 mb-4 flex flex-col items-center gap-4">
+    <div className="mt-20 mb-8 flex flex-col items-center gap-5">
       <Link
         href={`/${locale}/users/overview`}
         className="inline-flex items-center justify-center px-8 py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg font-semibold no-underline text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors active:scale-[0.98]"

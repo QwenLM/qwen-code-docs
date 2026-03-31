@@ -1,0 +1,75 @@
+---
+date: "2026-03-31"
+title: "Prompts système personnalisés : Faire répondre l'IA selon votre style"
+description: "Configurez des prompts système personnalisés via SDK et CLI pour contrôler le style de réponse et le comportement de l'IA, en vous assurant qu'elle suit toujours les conventions de votre équipe."
+category: "Guide de démarrage"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Aperçu
+
+Configurez des prompts système personnalisés via SDK et CLI pour contrôler le style de réponse et le comportement de l'IA. Par exemple, faites-la toujours répondre en chinois, écrire les commentaires de code en anglais, ou suivre les conventions de nommage de votre équipe. Plus besoin de répéter « veuillez répondre en chinois » à chaque conversation.
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Ce que vous pouvez faire avec
+
+- **Unifier la langue de réponse** : Faire répondre l'IA toujours dans votre langue préférée avec les commentaires de code en anglais
+- **Suivre les conventions d'équipe** : Faire suivre à l'IA les conventions de nommage et le style de code de votre équipe
+- **Personnaliser le comportement** : Contrôler le niveau de détail des réponses de l'IA, si elle pose des questions proactivement, etc.
+
+## Étapes
+
+<Steps>
+
+### Créer un fichier de prompt système
+
+Créez un fichier `AGENTS.md` (anciennement `QWEN.md`) à la racine de votre projet avec votre prompt système personnalisé :
+
+```markdown
+# Conventions du projet
+
+- Toujours répondre en chinois
+- Commentaires de code en anglais
+- Utiliser camelCase pour le nommage des variables
+- Utiliser les composants fonctionnels + Hooks pour React
+- Préférer TypeScript
+```
+
+### Configurer les prompts système globaux
+
+Pour appliquer des conventions à tous les projets, configurez les prompts système globaux dans `~/.qwen/AGENTS.md`.
+
+Vous pouvez aussi utiliser :
+
+```bash
+qwen --system-prompt "Quand je pose une question en chinois, réponds en chinois ; quand je pose une question en anglais, réponds en anglais."
+```
+
+### Vérifier l'effet
+
+Lancez Qwen Code, commencez une conversation et observez si l'IA répond selon vos conventions de prompt système.
+
+</Steps>
+
+<Callout type="info">
+Le fichier `AGENTS.md` au niveau du projet remplace la configuration globale. Vous pouvez définir des conventions différentes pour différents projets, et les membres de l'équipe peuvent partager le même fichier de configuration pour rester cohérents.
+</Callout>
+
+## Recommandations associées
+
+- [Guide de configuration API](./guide-api-setup.mdx) — Configurer la clé API et les paramètres du modèle
+- [Démarrer votre première conversation](./guide-first-conversation.mdx) — Lancez votre première conversation IA avec Qwen Code
+
+---
+
+<ShowcaseDetailCta />

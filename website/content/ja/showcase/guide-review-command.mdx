@@ -1,0 +1,63 @@
+---
+date: "2026-03-31"
+title: "/review：AI搭載コードレビュー"
+description: "コミット前に/reviewコマンドを使ってAIにコード品質のチェック、潜在的な問題の発見、改善提案をさせましょう — 経験豊富な同僚がコードをレビューしてくれるように。"
+category: "プログラミング"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概要
+
+コミット前に誰かにコードを見てもらいたいけど、同僚は忙しくて手が空かない？`/review` を使うだけ — AIがコード品質をチェックし、潜在的な問題を見つけ、改善を提案します。単純なlintチェックではなく、経験豊富な同僚のように、ロジック、命名、エッジケースの処理を徹底的にレビューします。
+
+<ShowcaseDetailMeta />
+
+<video poster='https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg' src="https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## これでできること
+
+- **コミット前レビュー**：AIにコードを通してもらい、問題を早期発見 — Code Reviewでの驚きはもうありません
+- **ソロ開発の第二の目**：低レベルなエラーを減らし、コード品質を向上
+- **ベストプラクティスを学ぶ**：AIは「ここに問題がある」だけでなく、なぜそのアプローチが良いのかを説明します
+
+## 手順
+
+<Steps>
+
+### レビューするファイルを開く
+
+Qwen Codeでレビューしたいコードファイルまたはプロジェクトディレクトリを開きます。コードが保存されていることを確認してください。
+
+### /reviewコマンドを入力
+
+チャットで `/review` と入力します。Qwen Codeが自動的に現在のファイルまたは最近のコード変更を分析します。
+
+```bash
+/review
+```
+
+### レビュー結果を確認
+
+AIがコード品質、ロジックの正確性、命名規約、エッジケースの処理など、複数の観点からレビューフィードバックを提供し、具体的な改善提案を添えます。
+
+</Steps>
+
+<Callout type="info">
+`/review` は単純なlintチェックとは異なります — コードロジックを深く理解し、潜在的なバグ、パフォーマンスの問題、設計上の欠陥を特定します。
+</Callout>
+
+## 関連おすすめ
+
+- [PR Review](./code-pr-review.mdx) — Pull Requestのインテリジェントコードレビュー
+- [Issueを解決](./code-solve-issue.mdx) — Qwen Codeを使ってオープンソースプロジェクトのissueを分析・解決
+
+---
+
+<ShowcaseDetailCta />

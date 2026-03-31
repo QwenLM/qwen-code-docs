@@ -1,0 +1,65 @@
+---
+date: "2026-03-31"
+title: "Explore Agent：AIに先に調査させてから行動する"
+description: "Explore Agentを使って、コードを変更する前にコード構造、依存関係、主要なエントリーポイントを理解し、その後の開発をより正確にします。"
+category: "プログラミング"
+features:
+  - "Explore"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概要
+
+コードを変更する前に、Explore Agentにコード構造の把握、依存関係の理解、主要なエントリーポイントの特定を手伝ってもらいましょう。先に調査してからメインAgentに作業させることで、より正確な方向性が得られ、盲目的な変更による手戻りを減らせます。
+
+<ShowcaseDetailMeta />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png" alt="Explore Agent" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## これでできること
+
+- **コード構造を把握**：不慣れなプロジェクトのアーキテクチャとモジュール構成を素早く理解
+- **依存関係をマッピング**：ある機能がどのファイルやモジュールに関わっているか把握
+- **主要なエントリーポイントを特定**：大規模プロジェクトで変更が必要なコードの場所を素早く見つける
+
+## 手順
+
+<Steps>
+
+### Explore Agentに切り替え
+
+Qwen CodeでExplore Agentモードに切り替え、コードの変更ではなく調査に集中します。
+
+### 調査目標を説明
+
+Explore Agentに何を理解したいか伝えます。例えば：
+
+```
+このプロジェクトの認証モジュールを分析して、関連するすべてのファイルと依存関係を見つけてください
+```
+
+### 調査レポートを取得
+
+Explore Agentがコード構造を分析し、ファイルリスト、依存関係グラフ、主要なエントリーポイントなどを含む詳細な調査レポートを出力します。
+
+### メインAgentに戻って開発を開始
+
+調査が完了したら、メインAgentに戻り、調査結果に基づいて実際のコード変更を開始します。調査レポートはコンテキストとしてメインAgentに渡されます。
+
+</Steps>
+
+<Callout type="info">
+Explore Agentは調査のみを行い、コードを変更しません。その出力はメインAgentの入力として直接使用でき、「先に調査、後で開発」という効率的なワークフローを形成します。
+</Callout>
+
+## 関連おすすめ
+
+- [コード学習](./study-learning.mdx) — Qwen Codeを使ってオープンソースプロジェクトのコードを学習・理解
+- [LSPインテリジェンス](./code-lsp-intelligence.mdx) — LSPプロトコルを統合して正確なコード補完とナビゲーションを実現
+
+---
+
+<ShowcaseDetailCta />

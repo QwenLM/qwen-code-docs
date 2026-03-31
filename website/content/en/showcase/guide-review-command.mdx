@@ -1,0 +1,63 @@
+---
+date: "2026-03-31"
+title: "/review: AI-Powered Code Review"
+description: "Use the /review command before committing to have AI check code quality, find potential issues, and suggest improvements — like having an experienced colleague review your code."
+category: "Programming"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Overview
+
+Want someone to review your code before committing, but your colleagues are too busy? Just use `/review` — AI will check code quality, find potential issues, and suggest improvements. It's not a simple lint check, but a thorough review of your logic, naming, and edge case handling, like an experienced colleague.
+
+<ShowcaseDetailMeta />
+
+<video poster='https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg' src="https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## What You Can Do With It
+
+- **Pre-commit review**: Have AI go through your code, catch issues early — no more surprises during Code Review
+- **A second pair of eyes for solo development**: Reduce low-level errors, improve code quality
+- **Learn best practices**: AI explains why a certain approach is better, not just "there's a problem here"
+
+## Steps
+
+<Steps>
+
+### Open the file to review
+
+In Qwen Code, open the code file or project directory you want to review. Make sure your code is saved.
+
+### Enter the /review command
+
+Type `/review` in the chat. Qwen Code will automatically analyze the current file or recent code changes.
+
+```bash
+/review
+```
+
+### View the review results
+
+AI will provide review feedback from multiple dimensions including code quality, logical correctness, naming conventions, and edge case handling, along with specific improvement suggestions.
+
+</Steps>
+
+<Callout type="info">
+`/review` is different from simple lint checks — it deeply understands code logic, identifying potential bugs, performance issues, and design flaws.
+</Callout>
+
+## Related
+
+- [PR Review](./code-pr-review.mdx) — Intelligent code review for Pull Requests
+- [Solve Issues](./code-solve-issue.mdx) — Use Qwen Code to analyze and solve open-source project issues
+
+---
+
+<ShowcaseDetailCta />

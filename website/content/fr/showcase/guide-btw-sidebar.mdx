@@ -1,0 +1,61 @@
+---
+date: "2026-03-31"
+title: "/btw Barre latérale : Poser une question rapide en codant"
+description: "Insérez une question indépendante dans la conversation en cours. L'IA y répond et revient automatiquement au contexte précédent, sans polluer la conversation principale."
+category: "Guide de démarrage"
+features:
+  - "Agent Mode"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Aperçu
+
+Vous codez et soudain vous ne vous souvenez plus de l'ordre des paramètres d'une API. Avant, il fallait ouvrir une nouvelle conversation pour vérifier, puis revenir — tout le contexte était perdu. Maintenant, tapez simplement `/btw` pour insérer une question annexe directement dans la conversation en cours. Qwen Code y répond et revient automatiquement au contexte précédent, comme si rien ne s'était passé.
+
+<ShowcaseDetailMeta />
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif" alt="Démo /btw barre latérale" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Ce que vous pouvez faire avec
+
+- **Recherche rapide d'API** : Vérifier l'utilisation d'un Hook en écrivant un composant React, puis continuer à coder
+- **Confirmer une configuration à la volée** : Confirmer la signification d'une option de configuration en plein débogage sans ouvrir une nouvelle fenêtre
+- **Demander et oublier** : Poser une question sans rapport, obtenir la réponse et continuer sans affecter le travail en cours
+
+## Étapes
+
+<Steps>
+
+### Vous êtes au milieu d'une conversation principale
+
+Vous discutez d'une tâche avec Qwen Code, comme le refactoring d'un composant.
+
+### Tapez /btw suivi de votre question
+
+Besoin de vérifier quelque chose ? Tapez simplement `/btw` suivi de votre question :
+
+```bash
+/btw La méthode JavaScript Array.prototype.at() supporte-t-elle les indices négatifs ?
+```
+
+### L'IA répond et restaure automatiquement le contexte
+
+Après que Qwen Code a répondu à votre question annexe, il revient automatiquement au contexte de la conversation principale. Vous pouvez continuer votre tâche précédente comme si rien ne s'était passé.
+
+</Steps>
+
+<Callout type="info">
+Les réponses `/btw` ne polluent pas le contexte de la conversation principale. L'IA ne traitera pas votre question annexe comme faisant partie de la tâche en cours.
+</Callout>
+
+## Recommandations associées
+
+- [Démarrer votre première conversation](./guide-first-conversation.mdx) — Après l'installation, lancez votre première conversation IA avec Qwen Code
+- [Recherche Web](./guide-web-search.mdx) — Laissez l'IA rechercher sur le web les informations les plus récentes
+
+---
+
+<ShowcaseDetailCta />

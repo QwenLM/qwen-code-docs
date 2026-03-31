@@ -1,0 +1,63 @@
+---
+date: "2026-03-31"
+title: "/review: Ревью кода с помощью ИИ"
+description: "Используйте команду /review перед коммитом, чтобы ИИ проверил качество кода, нашёл потенциальные проблемы и предложил улучшения — как опытный коллега, проверяющий ваш код."
+category: "Программирование"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Обзор
+
+Хотите, чтобы кто-то проверил ваш код перед коммитом, но коллеги слишком заняты? Просто используйте `/review` — ИИ проверит качество кода, найдёт потенциальные проблемы и предложит улучшения. Это не простая проверка lint, а тщательный обзор вашей логики, именования и обработки граничных случаев, как опытный коллега.
+
+<ShowcaseDetailMeta />
+
+<video poster='https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg' src="https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Что вы можете с этим делать
+
+- **Ревью перед коммитом**: Пусть ИИ просмотрит ваш код, обнаружит проблемы заранее — больше никаких сюрпризов на Code Review
+- **Второй взгляд при самостоятельной разработке**: Уменьшить простые ошибки, повысить качество кода
+- **Изучение лучших практик**: ИИ объясняет, почему определённый подход лучше, а не просто «здесь есть проблема»
+
+## Шаги
+
+<Steps>
+
+### Откройте файл для ревью
+
+В Qwen Code откройте файл кода или директорию проекта, которую хотите проверить. Убедитесь, что код сохранён.
+
+### Введите команду /review
+
+Введите `/review` в чате. Qwen Code автоматически проанализирует текущий файл или недавние изменения кода.
+
+```bash
+/review
+```
+
+### Просмотрите результаты ревью
+
+ИИ предоставит обратную связь по нескольким измерениям: качество кода, логическая корректность, конвенции именования и обработка граничных случаев, а также конкретные предложения по улучшению.
+
+</Steps>
+
+<Callout type="info">
+`/review` отличается от простых проверок lint — он глубоко понимает логику кода, выявляя потенциальные баги, проблемы производительности и недостатки дизайна.
+</Callout>
+
+## Рекомендации
+
+- [PR Review](./code-pr-review.mdx) — Интеллектуальное ревью кода для Pull Request
+- [Решение Issues](./code-solve-issue.mdx) — Используйте Qwen Code для анализа и решения issues open-source проектов
+
+---
+
+<ShowcaseDetailCta />

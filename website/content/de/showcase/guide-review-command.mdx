@@ -1,0 +1,63 @@
+---
+date: "2026-03-31"
+title: "/review: KI-gestützte Code-Überprüfung"
+description: "Verwenden Sie den /review-Befehl vor dem Commit, um die KI die Codequalität prüfen, potenzielle Probleme finden und Verbesserungsvorschläge machen zu lassen — wie ein erfahrener Kollege, der Ihren Code überprüft."
+category: "Programmierung"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Überblick
+
+Sie möchten vor dem Commit jemanden bitten, Ihren Code zu überprüfen, aber Ihre Kollegen sind zu beschäftigt? Verwenden Sie einfach `/review` — die KI prüft die Codequalität, findet potenzielle Probleme und macht Verbesserungsvorschläge. Es ist keine einfache Lint-Prüfung, sondern eine gründliche Überprüfung Ihrer Logik, Benennung und Grenzfallbehandlung, wie ein erfahrener Kollege.
+
+<ShowcaseDetailMeta />
+
+<video poster='https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg' src="https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Was Sie damit tun können
+
+- **Überprüfung vor dem Commit**: KI Ihren Code durchgehen lassen, Probleme frühzeitig erkennen — keine Überraschungen mehr beim Code Review
+- **Zweites Augenpaar bei Einzelentwicklung**: Weniger einfache Fehler, bessere Codequalität
+- **Best Practices lernen**: KI erklärt, warum ein bestimmter Ansatz besser ist, nicht nur „hier gibt es ein Problem"
+
+## Schritte
+
+<Steps>
+
+### Zu überprüfende Datei öffnen
+
+Öffnen Sie in Qwen Code die Codedatei oder das Projektverzeichnis, das Sie überprüfen möchten. Stellen Sie sicher, dass Ihr Code gespeichert ist.
+
+### /review-Befehl eingeben
+
+Geben Sie `/review` im Chat ein. Qwen Code analysiert automatisch die aktuelle Datei oder die letzten Codeänderungen.
+
+```bash
+/review
+```
+
+### Überprüfungsergebnisse ansehen
+
+Die KI gibt Feedback aus mehreren Dimensionen: Codequalität, logische Korrektheit, Namenskonventionen und Grenzfallbehandlung, zusammen mit konkreten Verbesserungsvorschlägen.
+
+</Steps>
+
+<Callout type="info">
+`/review` unterscheidet sich von einfachen Lint-Prüfungen — es versteht die Code-Logik tiefgehend und identifiziert potenzielle Bugs, Leistungsprobleme und Designfehler.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [PR Review](./code-pr-review.mdx) — Intelligente Code-Überprüfung für Pull Requests
+- [Issues lösen](./code-solve-issue.mdx) — Mit Qwen Code Issues von Open-Source-Projekten analysieren und lösen
+
+---
+
+<ShowcaseDetailCta />

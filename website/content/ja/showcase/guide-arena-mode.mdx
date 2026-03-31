@@ -1,0 +1,75 @@
+---
+date: "2026-03-31"
+title: "Agent Arena：複数のモデルが同時に問題を解決"
+description: "/arenaコマンドを使って複数のAIモデルに同じタスクを同時に処理させ、結果を比較して最適なソリューションを選択します。"
+category: "プログラミング"
+features:
+  - "Arena"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概要
+
+重要なコードは同僚にレビューを頼みますよね。今では複数のAIモデルに同じタスクを同時に処理させることができます。Agent Arenaでは異なるモデルの能力を比較できます — `/arena` を呼び出し、モデルを選択し、タスクを入力して、最良の結果を選びましょう。
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## これでできること
+
+- **コアモジュールのリファクタリング**：複数のモデルに同時にソリューションを提案させ、最良のものを選ぶ
+- **アプローチの比較**：アルゴリズムを書く際に異なるモデルの解法を比較し、異なる視点を学ぶ
+- **新しいモデルの評価**：実際のタスクで新しいモデルがプロジェクトでどう機能するか評価する
+
+## 手順
+
+<Steps>
+
+### /arenaコマンドを入力
+
+Qwen Codeのチャットで `/arena` と入力し、`start` を選択してアリーナモードに入ります。
+
+```bash
+/arena start
+```
+
+### 参加するモデルを選択
+
+利用可能なモデルリストから比較したいモデルを選択します。`space` を押して2つ以上のモデルを選択できます。
+
+### タスクの説明を入力
+
+各モデルに処理させたいタスクを入力します。例えば：
+
+```
+この関数をリファクタリングして、可読性とパフォーマンスを向上させてください
+```
+
+### 結果を比較して最良のものを選ぶ
+
+すべてのモデルが同時にタスクを処理します。完了後、それぞれのソリューションを比較し、最良の結果をコードに適用できます。
+
+```bash
+/arena select
+```
+
+</Steps>
+
+<Callout type="info">
+アリーナモードは重要なコード決定に特に適しており、複数のAIモデルが異なる視点のソリューションを提供します。
+</Callout>
+
+## 関連おすすめ
+
+- [/review：AI搭載コードレビュー](./guide-review-command.mdx) — コミット前にAIにコード品質をチェックさせる
+- [API設定ガイド](./guide-api-setup.mdx) — APIキーとモデルパラメータを設定
+
+---
+
+<ShowcaseDetailCta />

@@ -1,0 +1,75 @@
+---
+date: "2026-03-31"
+title: "Agent Arena: Múltiplos modelos resolvendo problemas simultaneamente"
+description: "Use o comando /arena para fazer múltiplos modelos de IA processarem a mesma tarefa simultaneamente, comparar resultados e escolher a melhor solução."
+category: "Programação"
+features:
+  - "Arena"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Visão Geral
+
+Para código importante, você pediria a um colega para revisar. Agora você pode fazer múltiplos modelos de IA processarem a mesma tarefa simultaneamente. O Agent Arena permite comparar as capacidades de diferentes modelos — basta chamar `/arena`, selecionar modelos, inserir sua tarefa e escolher o melhor resultado.
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## O que você pode fazer com isso
+
+- **Refatorar módulos principais**: Fazer múltiplos modelos proporem soluções simultaneamente e escolher a melhor
+- **Comparar abordagens**: Comparar soluções de diferentes modelos ao escrever algoritmos, aprender diferentes perspectivas
+- **Avaliar novos modelos**: Usar tarefas reais para avaliar o desempenho de novos modelos no seu projeto
+
+## Passos
+
+<Steps>
+
+### Inserir o comando /arena
+
+No chat do Qwen Code, digite `/arena` e selecione `start` para entrar no modo arena.
+
+```bash
+/arena start
+```
+
+### Selecionar os modelos participantes
+
+Na lista de modelos disponíveis, selecione os modelos que deseja comparar. Pressione `space` para selecionar 2 ou mais modelos.
+
+### Inserir a descrição da tarefa
+
+Insira a tarefa que deseja que cada modelo processe, por exemplo:
+
+```
+Refatore esta função para melhorar a legibilidade e o desempenho
+```
+
+### Comparar resultados e escolher o melhor
+
+Todos os modelos processarão a tarefa simultaneamente. Após a conclusão, você pode comparar suas soluções e aplicar o melhor resultado ao seu código.
+
+```bash
+/arena select
+```
+
+</Steps>
+
+<Callout type="info">
+O modo arena é especialmente adequado para decisões importantes de código, permitindo que múltiplos modelos de IA forneçam diferentes perspectivas de soluções.
+</Callout>
+
+## Recomendações relacionadas
+
+- [/review: Revisão de código com IA](./guide-review-command.mdx) — Faça a IA verificar a qualidade do código antes do commit
+- [Guia de configuração de API](./guide-api-setup.mdx) — Configurar chave de API e parâmetros do modelo
+
+---
+
+<ShowcaseDetailCta />

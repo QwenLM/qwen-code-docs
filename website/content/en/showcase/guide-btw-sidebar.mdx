@@ -1,0 +1,61 @@
+---
+date: "2026-03-31"
+title: "/btw Sidebar: Quickly Ask a Question While Coding"
+description: "Insert an unrelated question into the current conversation. AI answers it and automatically returns to the previous context, keeping the main conversation clean."
+category: "Getting Started"
+features:
+  - "Agent Mode"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Overview
+
+You're coding and suddenly can't remember the parameter order of an API. Before, you'd have to open a new conversation to look it up, then switch back, losing all context. Now just type `/btw` to insert a side question right in the current conversation. Qwen Code answers it and automatically returns to the previous context, as if nothing happened.
+
+<ShowcaseDetailMeta />
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif" alt="/btw sidebar demo" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## What You Can Do With It
+
+- **Quick API lookup**: Look up a Hook's usage while writing a React component, then continue coding
+- **Confirm configuration on the fly**: Confirm the meaning of a config option mid-debugging without opening a new window
+- **Ask and forget**: Ask an unrelated question, get the answer, and move on without affecting your current work
+
+## Steps
+
+<Steps>
+
+### You're in the middle of a main conversation
+
+You're discussing a task with Qwen Code, like refactoring a component.
+
+### Type /btw followed by your question
+
+Need to look something up? Just type `/btw` followed by your question:
+
+```bash
+/btw Does JavaScript's Array.prototype.at() method support negative indices?
+```
+
+### AI answers and automatically restores context
+
+After Qwen Code answers your side question, it automatically returns to the main conversation context. You can continue your previous task as if nothing happened.
+
+</Steps>
+
+<Callout type="info">
+`/btw` answers won't pollute the main conversation context. AI won't treat your side question as part of the task you're working on.
+</Callout>
+
+## Related
+
+- [Start Your First Conversation](./guide-first-conversation.mdx) — After installation, start your first AI conversation with Qwen Code
+- [Web Search](./guide-web-search.mdx) — Let AI search the web for the latest information
+
+---
+
+<ShowcaseDetailCta />

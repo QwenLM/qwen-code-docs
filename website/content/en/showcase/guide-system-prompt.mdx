@@ -1,0 +1,75 @@
+---
+date: "2026-03-31"
+title: "Custom System Prompts: Make AI Respond in Your Style"
+description: "Configure custom system prompts via SDK and CLI to control AI's response style and behavior, ensuring it always follows your team's conventions."
+category: "Getting Started"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Overview
+
+Configure custom system prompts via SDK and CLI to control AI's response style and behavior. For example, make it always respond in Chinese, write code comments in English, or follow your team's naming conventions. No need to repeat "please respond in Chinese" every conversation.
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## What You Can Do With It
+
+- **Unify response language**: Make AI always respond in your preferred language with code comments in English
+- **Follow team conventions**: Make AI follow your team's naming conventions and code style
+- **Customize behavior**: Control AI's response detail level, whether it proactively asks questions, etc.
+
+## Steps
+
+<Steps>
+
+### Create a system prompt file
+
+Create an `AGENTS.md` file (formerly `QWEN.md`) in your project root with your custom system prompt:
+
+```markdown
+# Project Conventions
+
+- Always respond in Chinese
+- Code comments in English
+- Use camelCase for variable naming
+- Use functional components + Hooks for React
+- Prefer TypeScript
+```
+
+### Configure global system prompts
+
+To apply conventions across all projects, configure global system prompts in `~/.qwen/AGENTS.md`.
+
+You can also use:
+
+```bash
+qwen --system-prompt "When I ask in Chinese, respond in Chinese; when I ask in English, respond in English."
+```
+
+### Verify the effect
+
+Start Qwen Code, begin a conversation, and observe whether AI responds according to your system prompt conventions.
+
+</Steps>
+
+<Callout type="info">
+Project-level `AGENTS.md` overrides global configuration. You can set different conventions for different projects, and team members can share the same config file to stay consistent.
+</Callout>
+
+## Related
+
+- [API Configuration Guide](./guide-api-setup.mdx) — Configure API Key and model parameters
+- [Start Your First Conversation](./guide-first-conversation.mdx) — Start your first AI conversation with Qwen Code
+
+---
+
+<ShowcaseDetailCta />

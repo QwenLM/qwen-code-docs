@@ -1,0 +1,120 @@
+---
+date: "2026-03-31"
+title: "Hooks : Exécuter automatiquement les scripts de test avant le commit"
+description: "Attachez des scripts personnalisés aux points clés de Qwen Code pour automatiser les workflows comme l'exécution de tests avant les commits et le formatage automatique après la génération de code."
+category: "Programmation"
+features:
+  - "Hooks"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4"
+model: "qwen3.5-plus"
+author: "xuewenjie123"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Aperçu
+
+L'IA a généré du code mais le formatage n'est pas bon, et vous devez exécuter prettier manuellement à chaque fois ? Ou vous avez oublié de lancer les tests avant le commit, et la CI a échoué ? Le système Hooks résout ces problèmes. Vous pouvez attacher vos propres scripts à 10 points clés dans Qwen Code, les laissant s'exécuter automatiquement à des moments spécifiques.
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Ce que vous pouvez faire avec
+
+- **Exécuter les tests automatiquement avant le commit** : Évitez de pousser du code cassé — la CI ne sera plus rouge à cause de vous
+- **Formatage automatique après génération de code** : Après que l'IA a écrit du code, prettier/eslint s'exécute automatiquement, vous épargnant le travail manuel
+- **Sauvegarde automatique des journaux de conversation en fin de session** : Des enregistrements pour retracer les problèmes
+- **Vérification des permissions avant l'exécution d'outils** : Une couche de protection supplémentaire pour les opérations sensibles
+
+## Étapes
+
+<Steps>
+
+### Créer le répertoire hooks
+
+Créez un répertoire `.agents/hooks` à la racine de votre projet pour stocker les scripts hook :
+
+```bash
+mkdir -p .agents/hooks
+```
+
+### Écrire un script hook
+
+Créez un script hook, par exemple, formatage automatique après modification de code :
+
+```bash
+#!/bin/bash
+# post-edit-format.sh
+# Exécuter automatiquement le formatage prettier après modification de code
+
+INPUT=$(cat)
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
+
+case "$TOOL_NAME" in
+  write_file|edit) ;;
+  *) exit 0 ;;
+esac
+
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+[ -z "$FILE_PATH" ] && exit 0
+
+# Exécuter le formatage prettier
+npx prettier --write "$FILE_PATH" 2>/dev/null
+
+echo '{"decision": "allow", "reason": "File formatted"}'
+exit 0
+```
+
+Accorder les permissions d'exécution :
+
+```bash
+chmod +x .agents/hooks/post-edit-format.sh
+```
+
+### Configurer les hooks
+
+Ajoutez la configuration des hooks dans `~/.qwen/settings.json` :
+
+```json
+{
+  "hooksConfig": {
+    "enabled": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "(write_file|edit)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".agents/hooks/post-edit-format.sh",
+            "name": "auto-format",
+            "description": "Formatage automatique après modification de code",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Vérifier l'effet
+
+Lancez Qwen Code, faites modifier un fichier de code par l'IA et observez si le hook déclenche automatiquement le formatage.
+
+</Steps>
+
+<Callout type="info">
+Les Hooks supportent 10 points clés : PreToolUse, PostToolUse, SessionStart, SessionEnd, et plus encore. La configuration est simple — placez simplement les fichiers de script sous `.agents/hooks` à la racine de votre projet.
+</Callout>
+
+## Recommandations associées
+
+- [Installer des Skills](./guide-skill-install.mdx) — Installer et gérer les compétences d'extension de Qwen Code
+
+---
+
+<ShowcaseDetailCta />

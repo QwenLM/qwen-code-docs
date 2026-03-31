@@ -1,0 +1,75 @@
+---
+date: "2026-03-31"
+title: "Agent Arena: Mehrere Modelle gleichzeitig Aufgaben lösen lassen"
+description: "Verwenden Sie den /arena-Befehl, um mehrere KI-Modelle gleichzeitig dieselbe Aufgabe bearbeiten zu lassen, Ergebnisse zu vergleichen und die beste Lösung auszuwählen."
+category: "Programmierung"
+features:
+  - "Arena"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Überblick
+
+Bei wichtigem Code bitten Sie Kollegen um ein Review. Jetzt können Sie auch mehrere KI-Modelle gleichzeitig dieselbe Aufgabe bearbeiten lassen. Die Agent Arena ermöglicht es Ihnen, die Fähigkeiten verschiedener Modelle zu vergleichen — rufen Sie einfach `/arena` auf, wählen Sie Modelle aus, geben Sie Ihre Aufgabe ein und wählen Sie das beste Ergebnis.
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Was Sie damit tun können
+
+- **Kernmodule refaktorisieren**: Mehrere Modelle gleichzeitig Lösungen vorschlagen lassen und die beste auswählen
+- **Ansätze vergleichen**: Beim Schreiben von Algorithmen verschiedene Lösungsansätze der Modelle vergleichen und unterschiedliche Perspektiven kennenlernen
+- **Neue Modelle evaluieren**: Mit realen Aufgaben bewerten, wie neue Modelle in Ihrem Projekt abschneiden
+
+## Schritte
+
+<Steps>
+
+### /arena-Befehl eingeben
+
+Geben Sie im Qwen Code Chat `/arena` ein und wählen Sie `start`, um den Arena-Modus zu betreten.
+
+```bash
+/arena start
+```
+
+### Teilnehmende Modelle auswählen
+
+Wählen Sie aus der verfügbaren Modellliste die Modelle aus, die Sie vergleichen möchten. Drücken Sie `space`, um 2 oder mehr Modelle auszuwählen.
+
+### Aufgabenbeschreibung eingeben
+
+Geben Sie die Aufgabe ein, die jedes Modell bearbeiten soll, zum Beispiel:
+
+```
+Refaktorisiere diese Funktion, um Lesbarkeit und Leistung zu verbessern
+```
+
+### Ergebnisse vergleichen und das beste auswählen
+
+Alle Modelle bearbeiten die Aufgabe gleichzeitig. Nach Abschluss können Sie ihre Lösungen vergleichen und das beste Ergebnis auf Ihren Code anwenden.
+
+```bash
+/arena select
+```
+
+</Steps>
+
+<Callout type="info">
+Der Arena-Modus eignet sich besonders für wichtige Code-Entscheidungen und lässt mehrere KI-Modelle verschiedene Lösungsperspektiven bieten.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [/review: KI-gestützte Code-Überprüfung](./guide-review-command.mdx) — KI vor dem Commit die Codequalität prüfen lassen
+- [API-Konfigurationsanleitung](./guide-api-setup.mdx) — API-Key und Modellparameter konfigurieren
+
+---
+
+<ShowcaseDetailCta />

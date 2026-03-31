@@ -1,0 +1,120 @@
+---
+date: "2026-03-31"
+title: "Hooks: Automatically Run Test Scripts Before Committing Code"
+description: "Attach custom scripts to key points in Qwen Code to automate workflows like running tests before commits and auto-formatting after code generation."
+category: "Programming"
+features:
+  - "Hooks"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4"
+model: "qwen3.5-plus"
+author: "xuewenjie123"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Overview
+
+AI generated code but the formatting is off, and you have to manually run prettier every time? Or forgot to run tests before committing, and CI failed? The Hooks system solves these problems. You can attach your own scripts to 10 key points in Qwen Code, letting them run automatically at specific moments.
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## What You Can Do With It
+
+- **Auto-run tests before commits**: Avoid pushing broken code — CI won't go red because of you anymore
+- **Auto-format after code generation**: After AI writes code, prettier/eslint runs automatically, saving you manual work
+- **Auto-save conversation logs on session end**: Have records to trace back when investigating issues
+- **Permission checks before tool execution**: Add an extra layer of protection for sensitive operations
+
+## Steps
+
+<Steps>
+
+### Create the hooks directory
+
+Create a `.agents/hooks` directory in your project root to store hook scripts:
+
+```bash
+mkdir -p .agents/hooks
+```
+
+### Write a hook script
+
+Create a hook script, for example, auto-format after code modification:
+
+```bash
+#!/bin/bash
+# post-edit-format.sh
+# Automatically run prettier formatting after code modification
+
+INPUT=$(cat)
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
+
+case "$TOOL_NAME" in
+  write_file|edit) ;;
+  *) exit 0 ;;
+esac
+
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+[ -z "$FILE_PATH" ] && exit 0
+
+# Run prettier formatting
+npx prettier --write "$FILE_PATH" 2>/dev/null
+
+echo '{"decision": "allow", "reason": "File formatted"}'
+exit 0
+```
+
+Grant execution permission:
+
+```bash
+chmod +x .agents/hooks/post-edit-format.sh
+```
+
+### Configure hooks
+
+Add hooks configuration in `~/.qwen/settings.json`:
+
+```json
+{
+  "hooksConfig": {
+    "enabled": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "(write_file|edit)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".agents/hooks/post-edit-format.sh",
+            "name": "auto-format",
+            "description": "Auto-format after code modification",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Verify the effect
+
+Start Qwen Code, have AI modify a code file, and observe whether the hook automatically triggers formatting.
+
+</Steps>
+
+<Callout type="info">
+Hooks support 10 key points: PreToolUse, PostToolUse, SessionStart, SessionEnd, and more. Configuration is simple — just place script files under `.agents/hooks` in your project root.
+</Callout>
+
+## Related
+
+- [Install Skills](./guide-skill-install.mdx) — Install and manage Qwen Code extension skills
+
+---
+
+<ShowcaseDetailCta />

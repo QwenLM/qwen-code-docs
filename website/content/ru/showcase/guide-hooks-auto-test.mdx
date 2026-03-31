@@ -1,0 +1,120 @@
+---
+date: "2026-03-31"
+title: "Hooks: Автоматический запуск тестов перед коммитом"
+description: "Прикрепите пользовательские скрипты к ключевым точкам в Qwen Code для автоматизации рабочих процессов: запуск тестов перед коммитом, автоформатирование после генерации кода и другое."
+category: "Программирование"
+features:
+  - "Hooks"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4"
+model: "qwen3.5-plus"
+author: "xuewenjie123"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Обзор
+
+ИИ сгенерировал код, но форматирование неправильное, и каждый раз приходится вручную запускать prettier? Или забыли запустить тесты перед коммитом, и CI упал? Система Hooks решает эти проблемы. Вы можете прикрепить свои скрипты к 10 ключевым точкам в Qwen Code, позволяя им запускаться автоматически в определённые моменты.
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Что вы можете с этим делать
+
+- **Автоматический запуск тестов перед коммитом**: Избегайте отправки сломанного кода — CI больше не будет красным из-за вас
+- **Автоформатирование после генерации кода**: После того как ИИ напишет код, prettier/eslint запустится автоматически, экономя ручную работу
+- **Автосохранение логов разговоров при завершении сессии**: Записи для отслеживания проблем
+- **Проверка разрешений перед выполнением инструментов**: Дополнительный уровень защиты для чувствительных операций
+
+## Шаги
+
+<Steps>
+
+### Создайте директорию hooks
+
+Создайте директорию `.agents/hooks` в корне проекта для хранения hook-скриптов:
+
+```bash
+mkdir -p .agents/hooks
+```
+
+### Напишите hook-скрипт
+
+Создайте hook-скрипт, например, автоформатирование после изменения кода:
+
+```bash
+#!/bin/bash
+# post-edit-format.sh
+# Автоматический запуск форматирования prettier после изменения кода
+
+INPUT=$(cat)
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
+
+case "$TOOL_NAME" in
+  write_file|edit) ;;
+  *) exit 0 ;;
+esac
+
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+[ -z "$FILE_PATH" ] && exit 0
+
+# Запуск форматирования prettier
+npx prettier --write "$FILE_PATH" 2>/dev/null
+
+echo '{"decision": "allow", "reason": "File formatted"}'
+exit 0
+```
+
+Предоставьте права на выполнение:
+
+```bash
+chmod +x .agents/hooks/post-edit-format.sh
+```
+
+### Настройте hooks
+
+Добавьте конфигурацию hooks в `~/.qwen/settings.json`:
+
+```json
+{
+  "hooksConfig": {
+    "enabled": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "(write_file|edit)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".agents/hooks/post-edit-format.sh",
+            "name": "auto-format",
+            "description": "Автоформатирование после изменения кода",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Проверьте эффект
+
+Запустите Qwen Code, попросите ИИ изменить файл кода и проверьте, автоматически ли hook запускает форматирование.
+
+</Steps>
+
+<Callout type="info">
+Hooks поддерживают 10 ключевых точек: PreToolUse, PostToolUse, SessionStart, SessionEnd и другие. Настройка проста — просто разместите файлы скриптов в `.agents/hooks` в корне проекта.
+</Callout>
+
+## Рекомендации
+
+- [Установка Skills](./guide-skill-install.mdx) — Установка и управление расширениями Qwen Code
+
+---
+
+<ShowcaseDetailCta />

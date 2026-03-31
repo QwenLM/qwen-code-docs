@@ -264,13 +264,13 @@ function ShowcaseCard({ item, locale, texts }: { item: ShowcaseItem; locale: Loc
         <div className="relative aspect-video overflow-hidden bg-zinc-100 dark:bg-zinc-900">
           <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" loading="lazy" />
         </div>
-        <div className="p-5">
-          <div className="flex flex-wrap items-center gap-1.5 mb-3">
-            {item.category && (<span className="px-2 py-0.5 text-[11px] font-medium rounded border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300">{item.category}</span>)}
+        <div className="p-6">
+          <div className="flex flex-wrap items-center gap-1.5 mb-4">
+            {item.category && (<span className="px-2.5 py-0.5 text-[11px] font-medium rounded border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300">{item.category}</span>)}
             {item.features.slice(0, MAX_FEATURES_DISPLAY).map((feature) => (<span key={feature} className="px-2 py-0.5 text-[11px] font-medium rounded text-zinc-500 dark:text-zinc-400">{feature}</span>))}
           </div>
-          <h3 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100 mb-1.5 line-clamp-1 tracking-tight">{item.title}</h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed mb-4">{item.description}</p>
+          <h3 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100 mb-2 line-clamp-1 tracking-tight">{item.title}</h3>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed mb-5">{item.description}</p>
           <span className="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100 group-hover:gap-2 transition-all">
             {texts.viewTutorial}
             <ArrowRight className="w-3.5 h-3.5" />
@@ -356,29 +356,29 @@ export function VideoShowcaseIndex() {
   return (
     <div className="w-full">
       {/* Hero */}
-      <section className="w-full px-4 md:px-8 pt-16 pb-12 md:pt-24 md:pb-16">
+      <section className="w-full px-6 md:px-10 pt-16 pb-10 md:pt-20 md:pb-12">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-3">Qwen Code Showcases</h1>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-4">Qwen Code Showcases</h1>
           <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 max-w-[55ch] leading-relaxed">{texts.heroSubtitle}</p>
         </div>
       </section>
 
       {/* Learning Paths */}
-      <section className="w-full px-4 md:px-8 py-16">
+      <section className="w-full px-6 md:px-10 py-10 md:py-12">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">{texts.learningPathTitle}</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-3">{texts.learningPathTitle}</h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">{texts.learningPathSubtitle}</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-200 dark:bg-zinc-800 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
             {learningPaths.map((path) => (
-              <div key={path.level} className="bg-background p-6 md:p-8">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600 dark:text-zinc-400">{path.icon}</div>
+              <div key={path.level} className="bg-background p-7 md:p-9">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600 dark:text-zinc-400">{path.icon}</div>
                   <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">{path.level}</h3>
                 </div>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-6">{path.description}</p>
-                <div className="space-y-1">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mb-7">{path.description}</p>
+                <div className="space-y-0.5">
                   {path.cases.filter((caseItem) => allItemIds.has(caseItem.id)).map((caseItem, index) => (
-                    <Link key={caseItem.id} href={`/${locale}/showcase/${caseItem.id}`} className="flex items-center gap-3 py-2.5 px-3 -mx-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors group">
+                    <Link key={caseItem.id} href={`/${locale}/showcase/${caseItem.id}`} className="flex items-center gap-3 py-3 px-3 -mx-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors group">
                       <span className="flex-shrink-0 text-xs font-mono text-zinc-400 dark:text-zinc-600 tabular-nums w-5">{String(index + 1).padStart(2, "0")}</span>
                       <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">{caseItem.label}</span>
                     </Link>
@@ -391,11 +391,11 @@ export function VideoShowcaseIndex() {
       </section>
 
       {/* Divider */}
-      <div className="w-full px-4 md:px-8"><div className="max-w-7xl mx-auto border-t border-zinc-200 dark:border-zinc-800" /></div>
+      <div className="w-full px-6 md:px-10"><div className="max-w-7xl mx-auto border-t border-zinc-200 dark:border-zinc-800" /></div>
 
       {/* Search + Filters */}
-      <section className="w-full px-4 md:px-8 py-10">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <section className="w-full px-6 md:px-10 py-8 md:py-10">
+        <div className="max-w-7xl mx-auto space-y-7">
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -428,12 +428,12 @@ export function VideoShowcaseIndex() {
       </section>
 
       {/* Card Grid / List */}
-      <section className="w-full px-4 md:px-8 py-12 md:py-16">
+      <section className="w-full px-6 md:px-10 pt-4 pb-14 md:pt-6 md:pb-20">
         <div className="max-w-7xl mx-auto">
           {displayedItems.length > 0 ? (
             <>
               {viewMode === "grid" ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 lg:gap-9">
                   {displayedItems.map((item) => (<ShowcaseCard key={item.id} item={item} locale={locale} texts={texts} />))}
                 </div>
               ) : (

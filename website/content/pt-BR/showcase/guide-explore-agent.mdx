@@ -1,0 +1,65 @@
+---
+date: "2026-03-31"
+title: "Explore Agent: Deixe a IA pesquisar antes de agir"
+description: "Use o Explore Agent para entender a estrutura do código, dependências e pontos de entrada principais antes de modificar o código, tornando o desenvolvimento subsequente mais preciso."
+category: "Programação"
+features:
+  - "Explore"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Visão Geral
+
+Antes de modificar o código, deixe o Explore Agent ajudá-lo a entender a estrutura do código, dependências e pontos de entrada principais. Pesquise primeiro, depois deixe o Agent principal agir — direção mais precisa, menos retrabalho por modificações cegas.
+
+<ShowcaseDetailMeta />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png" alt="Explore Agent" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## O que você pode fazer com isso
+
+- **Entender a estrutura do código**: Compreender rapidamente a arquitetura e organização de módulos de um projeto desconhecido
+- **Mapear dependências**: Descobrir quais arquivos e módulos uma funcionalidade envolve
+- **Localizar pontos de entrada principais**: Encontrar rapidamente os locais de código que precisam de modificação em projetos grandes
+
+## Passos
+
+<Steps>
+
+### Mudar para o Explore Agent
+
+No Qwen Code, mude para o modo Explore Agent para focar na pesquisa de código em vez de modificação.
+
+### Descrever seu objetivo de pesquisa
+
+Diga ao Explore Agent o que você quer entender, por exemplo:
+
+```
+Analise o módulo de autenticação deste projeto, encontre todos os arquivos e dependências relacionados
+```
+
+### Obter o relatório de pesquisa
+
+O Explore Agent analisará a estrutura do código e produzirá um relatório de pesquisa detalhado, incluindo listas de arquivos, grafos de dependências, pontos de entrada principais, etc.
+
+### Voltar ao Agent principal para iniciar o desenvolvimento
+
+Após a pesquisa ser concluída, volte ao Agent principal e comece as modificações reais de código baseadas nos resultados da pesquisa. O relatório de pesquisa será passado como contexto para o Agent principal.
+
+</Steps>
+
+<Callout type="info">
+O Explore Agent apenas faz pesquisa — ele não modificará nenhum código. Sua saída pode ser usada diretamente como entrada para o Agent principal, formando um fluxo de trabalho eficiente de "pesquisar primeiro, desenvolver depois".
+</Callout>
+
+## Recomendações relacionadas
+
+- [Aprendizado de código](./study-learning.mdx) — Use o Qwen Code para aprender e entender código de projetos open-source
+- [Inteligência LSP](./code-lsp-intelligence.mdx) — Integrar o protocolo LSP para completação e navegação de código precisas
+
+---
+
+<ShowcaseDetailCta />

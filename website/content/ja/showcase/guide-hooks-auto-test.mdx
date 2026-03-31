@@ -1,0 +1,120 @@
+---
+date: "2026-03-31"
+title: "Hooks：コミット前にテストスクリプトを自動実行"
+description: "Qwen Codeの主要なポイントにカスタムスクリプトを設定し、コミット前のテスト自動実行やコード生成後の自動フォーマットなどの自動化ワークフローを実現します。"
+category: "プログラミング"
+features:
+  - "Hooks"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4"
+model: "qwen3.5-plus"
+author: "xuewenjie123"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概要
+
+AIがコードを生成したけどフォーマットがおかしくて、毎回手動でprettierを実行している？コミット前にテストを実行し忘れてCIが失敗した？Hooksシステムはこれらの問題を解決します。Qwen Codeの10の主要なポイントに独自のスクリプトを設定し、特定のタイミングで自動実行させることができます。
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## これでできること
+
+- **コミット前にテストを自動実行**：壊れたコードをプッシュするのを防ぐ — もうあなたのせいでCIが赤くなることはありません
+- **コード生成後に自動フォーマット**：AIがコードを書いた後、prettier/eslintが自動実行され、手動作業を省けます
+- **セッション終了時に会話ログを自動保存**：問題調査時に追跡可能な記録を残す
+- **ツール実行前の権限チェック**：機密操作に追加の保護層を設ける
+
+## 手順
+
+<Steps>
+
+### hooksディレクトリを作成
+
+プロジェクトルートに `.agents/hooks` ディレクトリを作成し、hookスクリプトを格納します：
+
+```bash
+mkdir -p .agents/hooks
+```
+
+### hookスクリプトを作成
+
+hookスクリプトを作成します。例えば、コード変更後の自動フォーマット：
+
+```bash
+#!/bin/bash
+# post-edit-format.sh
+# コード変更後にprettierフォーマットを自動実行
+
+INPUT=$(cat)
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
+
+case "$TOOL_NAME" in
+  write_file|edit) ;;
+  *) exit 0 ;;
+esac
+
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+[ -z "$FILE_PATH" ] && exit 0
+
+# prettierフォーマットを実行
+npx prettier --write "$FILE_PATH" 2>/dev/null
+
+echo '{"decision": "allow", "reason": "File formatted"}'
+exit 0
+```
+
+実行権限を付与：
+
+```bash
+chmod +x .agents/hooks/post-edit-format.sh
+```
+
+### hooksを設定
+
+`~/.qwen/settings.json` にhooks設定を追加します：
+
+```json
+{
+  "hooksConfig": {
+    "enabled": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "(write_file|edit)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".agents/hooks/post-edit-format.sh",
+            "name": "auto-format",
+            "description": "コード変更後の自動フォーマット",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 効果を確認
+
+Qwen Codeを起動し、AIにコードファイルを変更させて、hookが自動的にフォーマットをトリガーするか確認します。
+
+</Steps>
+
+<Callout type="info">
+Hooksは10の主要なポイントをサポート：PreToolUse、PostToolUse、SessionStart、SessionEndなど。設定は簡単 — プロジェクトルートの `.agents/hooks` にスクリプトファイルを配置するだけです。
+</Callout>
+
+## 関連おすすめ
+
+- [Skillsをインストール](./guide-skill-install.mdx) — Qwen Codeの拡張スキルをインストール・管理
+
+---
+
+<ShowcaseDetailCta />

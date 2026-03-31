@@ -1,0 +1,120 @@
+---
+date: "2026-03-31"
+title: "Hooks: Executar scripts de teste automaticamente antes do commit"
+description: "Anexe scripts personalizados a pontos-chave no Qwen Code para automatizar fluxos de trabalho como execução de testes antes de commits e formatação automática após geração de código."
+category: "Programação"
+features:
+  - "Hooks"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4"
+model: "qwen3.5-plus"
+author: "xuewenjie123"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Visão Geral
+
+A IA gerou código mas a formatação está errada, e você precisa executar o prettier manualmente toda vez? Ou esqueceu de executar os testes antes do commit, e a CI falhou? O sistema de Hooks resolve esses problemas. Você pode anexar seus próprios scripts a 10 pontos-chave no Qwen Code, fazendo-os executar automaticamente em momentos específicos.
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## O que você pode fazer com isso
+
+- **Executar testes automaticamente antes do commit**: Evite enviar código quebrado — a CI não ficará vermelha por sua causa
+- **Formatação automática após geração de código**: Depois que a IA escreve código, prettier/eslint executa automaticamente, economizando trabalho manual
+- **Salvar logs de conversa automaticamente ao final da sessão**: Ter registros para rastrear problemas
+- **Verificação de permissões antes da execução de ferramentas**: Adicionar uma camada extra de proteção para operações sensíveis
+
+## Passos
+
+<Steps>
+
+### Criar o diretório hooks
+
+Crie um diretório `.agents/hooks` na raiz do seu projeto para armazenar scripts hook:
+
+```bash
+mkdir -p .agents/hooks
+```
+
+### Escrever um script hook
+
+Crie um script hook, por exemplo, formatação automática após modificação de código:
+
+```bash
+#!/bin/bash
+# post-edit-format.sh
+# Executar automaticamente a formatação prettier após modificação de código
+
+INPUT=$(cat)
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
+
+case "$TOOL_NAME" in
+  write_file|edit) ;;
+  *) exit 0 ;;
+esac
+
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+[ -z "$FILE_PATH" ] && exit 0
+
+# Executar formatação prettier
+npx prettier --write "$FILE_PATH" 2>/dev/null
+
+echo '{"decision": "allow", "reason": "File formatted"}'
+exit 0
+```
+
+Conceder permissão de execução:
+
+```bash
+chmod +x .agents/hooks/post-edit-format.sh
+```
+
+### Configurar hooks
+
+Adicione a configuração de hooks em `~/.qwen/settings.json`:
+
+```json
+{
+  "hooksConfig": {
+    "enabled": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "(write_file|edit)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".agents/hooks/post-edit-format.sh",
+            "name": "auto-format",
+            "description": "Formatação automática após modificação de código",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Verificar o efeito
+
+Inicie o Qwen Code, faça a IA modificar um arquivo de código e observe se o hook aciona automaticamente a formatação.
+
+</Steps>
+
+<Callout type="info">
+Hooks suportam 10 pontos-chave: PreToolUse, PostToolUse, SessionStart, SessionEnd e mais. A configuração é simples — basta colocar arquivos de script em `.agents/hooks` na raiz do seu projeto.
+</Callout>
+
+## Recomendações relacionadas
+
+- [Instalar Skills](./guide-skill-install.mdx) — Instalar e gerenciar habilidades de extensão do Qwen Code
+
+---
+
+<ShowcaseDetailCta />

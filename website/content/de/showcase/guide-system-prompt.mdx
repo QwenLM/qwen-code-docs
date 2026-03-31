@@ -1,0 +1,75 @@
+---
+date: "2026-03-31"
+title: "Benutzerdefinierte System-Prompts: KI nach Ihrem Stil antworten lassen"
+description: "Konfigurieren Sie benutzerdefinierte System-Prompts über SDK und CLI, um den Antwortstil und das Verhalten der KI zu steuern und sicherzustellen, dass sie stets Ihren Teamkonventionen folgt."
+category: "Erste Schritte"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Überblick
+
+Konfigurieren Sie benutzerdefinierte System-Prompts über SDK und CLI, um den Antwortstil und das Verhalten der KI zu steuern. Zum Beispiel, dass sie immer auf Chinesisch antwortet, Code-Kommentare auf Englisch schreibt oder die Namenskonventionen Ihres Teams befolgt. Sie müssen nicht bei jedem Gespräch wiederholen: „Bitte antworten Sie auf Chinesisch".
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Was Sie damit tun können
+
+- **Antwortsprache vereinheitlichen**: KI immer in Ihrer bevorzugten Sprache antworten lassen, Code-Kommentare auf Englisch
+- **Teamkonventionen befolgen**: KI die Namenskonventionen und den Code-Stil Ihres Teams befolgen lassen
+- **Verhalten anpassen**: Detailgrad der KI-Antworten steuern, ob sie proaktiv Fragen stellt usw.
+
+## Schritte
+
+<Steps>
+
+### System-Prompt-Datei erstellen
+
+Erstellen Sie eine `AGENTS.md`-Datei (ehemals `QWEN.md`) im Projektstammverzeichnis mit Ihrem benutzerdefinierten System-Prompt:
+
+```markdown
+# Projektkonventionen
+
+- Immer auf Chinesisch antworten
+- Code-Kommentare auf Englisch
+- camelCase für Variablennamen verwenden
+- Funktionale Komponenten + Hooks für React
+- TypeScript bevorzugen
+```
+
+### Globale System-Prompts konfigurieren
+
+Um Konventionen projektübergreifend anzuwenden, konfigurieren Sie globale System-Prompts in `~/.qwen/AGENTS.md`.
+
+Sie können auch verwenden:
+
+```bash
+qwen --system-prompt "Wenn ich auf Chinesisch frage, antworte auf Chinesisch; wenn ich auf Englisch frage, antworte auf Englisch."
+```
+
+### Wirkung überprüfen
+
+Starten Sie Qwen Code, beginnen Sie ein Gespräch und beobachten Sie, ob die KI gemäß Ihren System-Prompt-Konventionen antwortet.
+
+</Steps>
+
+<Callout type="info">
+Die projektspezifische `AGENTS.md` überschreibt die globale Konfiguration. Sie können für verschiedene Projekte unterschiedliche Konventionen festlegen, und Teammitglieder können dieselbe Konfigurationsdatei teilen, um konsistent zu bleiben.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [API-Konfigurationsanleitung](./guide-api-setup.mdx) — API-Key und Modellparameter konfigurieren
+- [Erstes Gespräch starten](./guide-first-conversation.mdx) — Ihr erstes KI-Gespräch mit Qwen Code starten
+
+---
+
+<ShowcaseDetailCta />
