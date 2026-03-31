@@ -1,0 +1,69 @@
+---
+title: "好きなウェブサイトを一言で再現"
+description: "Qwen Code にスクリーンショットを渡すと、AI がページ構造を分析して完全なフロントエンドコードを生成します。"
+category: "クリエイターツール"
+features:
+  - "エージェントモード"
+  - "画像認識"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+気に入ったウェブサイトのデザインを素早く再現したい？Qwen Code にスクリーンショットを渡すだけで、AI がページ構造を分析して完全なフロントエンドコードを生成します。Qwen Code はページレイアウト、カラースキーム、コンポーネント構造を認識し、モダンなフロントエンド技術スタックを使用して実行可能なコードを生成します。
+
+<ShowcaseDetailMeta category="クリエイターツール" features={["エージェントモード", "画像認識"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### ウェブサイトのスクリーンショットを準備
+
+再現したいウェブサイトのインターフェースをスクリーンショットし、主要なレイアウトとデザイン要素を含む明確で完全なものにします。
+
+### 対応するスキルをインストール
+
+画像認識とフロントエンドコード生成スキルをインストールします。
+
+```bash
+find skills があるか確認し、なければ直接インストール：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code、その後 web-component-design をインストールしてください。
+```
+
+### スクリーンショットを貼り付けて要件を説明
+
+スクリーンショットを会話に貼り付け、使用する技術スタックや必要な機能など具体的な要件を Qwen Code に伝えます。
+
+```bash
+/skills web-component-design このスキルに基づいて、@website.png を元にウェブページ HTML を再現してください。画像参照が有効であることに注意してください。
+```
+
+サンプルスクリーンショット：
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### 実行とプレビュー
+
+対応するウェブページを開いて確認します。デザインや機能を調整する必要がある場合は、AI との対話を続けてコードを修正します。
+
+</Steps>
+
+<Callout type="info">
+生成されたコードはモダンなフロントエンドのベストプラクティスに従い、良好な構造と保守性を持ちます。さらにカスタマイズして拡張できます。
+</Callout>
+
+## 関連コンテンツ
+
+- [個人履歴書サイトを作成](./creator-resume-site-quick.mdx) — 素早く個人サイトを作成する
+- [画像認識](./office-image-recognition.mdx) — 画像コンテンツを認識・分析する
+
+---
+
+<ShowcaseDetailCta />

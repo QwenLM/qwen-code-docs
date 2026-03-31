@@ -1,0 +1,72 @@
+---
+title: "Gerar Relatório Semanal Automaticamente"
+description: "Personalize Skills. Com um comando, rastreie automaticamente as atualizações desta semana e crie um relatório semanal de atualizações do produto seguindo um modelo."
+category: "Tarefas Diárias"
+features:
+  - "Skills"
+thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png"
+videoUrl: "https://cloud.video.taobao.com/vod/BrL3c4NkeIqLiT3MAAWUSp26QgM0hjN67ukuKQmgE4M.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão Geral
+
+Criar relatórios semanais de atualizações do produto toda semana é uma tarefa repetitiva e demorada. Com as Skills personalizadas do Qwen Code, você pode fazer a IA rastrear automaticamente as informações de atualização do produto desta semana e gerar um relatório semanal estruturado seguindo um modelo padrão. Com um comando, a IA coleta dados, analisa conteúdo, organiza em documentos, melhorando significativamente a eficiência de trabalho. Você pode se concentrar no produto em si e deixar a IA lidar com o trabalho tedioso de documentação.
+
+<ShowcaseDetailMeta category="Tarefas Diárias" features={["Skills"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/BrL3c4NkeIqLiT3MAAWUSp26QgM0hjN67ukuKQmgE4M.mp4" poster="https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Instalar Skill skills-creator
+
+Primeiro, instale a Skill para que a IA entenda quais fontes de dados precisam coletar informações.
+
+```
+Verifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale skills-creator no qwen code skills.
+```
+
+### Criar Skill de Relatório Semanal
+
+Use o recurso de criação de Skills para informar à IA que você precisa de uma Skill personalizada de geração de relatórios semanais. Descreva os tipos de dados que precisam ser coletados e a estrutura do relatório. A IA gerará uma nova Skill com base em suas necessidades.
+
+```
+Preciso criar um relatório semanal para o projeto de código aberto: https://github.com/QwenLM/qwen-code. Inclui principalmente issues enviadas esta semana, bugs resolvidos, novas versões e recursos, e reflexões e revisões. A linguagem deve ser centrada no usuário, altruísta e perceptível. Crie a Skill.
+```
+
+### Gerar Conteúdo do Relatório Semanal
+
+Após a configuração, digite o comando de geração. O Qwen Code rastreará automaticamente as informações de atualização desta semana e as organizará em um documento estruturado seguindo o modelo de relatório semanal do produto.
+
+```
+Gere o relatório semanal de atualizações do produto qwen-code desta semana
+```
+
+### Abrir e Editar/ajustar Relatório
+
+O relatório semanal gerado pode ser aberto para ajustes, e você pode editá-lo mais ou compartilhá-lo com a equipe. Você também pode pedir ao Qwen Code para ajustar o formato e o foco do conteúdo.
+
+```
+Torne a linguagem do relatório semanal mais vívida
+```
+
+</Steps>
+
+<Callout type="info">
+Ao usar pela primeira vez, você precisa configurar as fontes de dados. Uma vez configurado, pode ser reutilizado. Você também pode configurar tarefas agendadas para fazer o Qwen Code gerar relatórios semanais automaticamente toda semana, liberando totalmente suas mãos.
+</Callout>
+
+## Recomendações Relacionadas
+
+- [Apresentação: Criação de PPT](./office-ppt-presentation.mdx) — Converta o conteúdo do relatório semanal em belos slides de apresentação
+- [Exportar Histórico de Conversa](./office-export-conversation.mdx) — Exporte e organize o conteúdo de conversas históricas
+
+---
+
+<ShowcaseDetailCta />

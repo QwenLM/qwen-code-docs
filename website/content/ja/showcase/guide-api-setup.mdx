@@ -1,0 +1,117 @@
+---
+title: "API設定ガイド"
+description: "APIキーとモデルパラメータを設定してAIプログラミング体験をカスタマイズし、複数のモデル選択をサポートします。"
+category: "入門ガイド"
+features:
+  - "設定"
+  - "API"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+videoUrl: "https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+APIキーの設定はQwen Codeを使用する上で重要なステップであり、すべての機能をアンロックし、強力なAIモデルにアクセスできるようにします。Alibaba Cloud百煉プラットフォームを通じて、APIキーを簡単に取得し、さまざまなシナリオに最適なモデルを選択できます。日常的な開発から複雑なタスクまで、適切なモデル設定は作業効率を大幅に向上させることができます。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["設定", "API"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4" poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 手順
+
+百煉Coding Planモードのユーザーの場合は、APIキーの取得とモデルの設定について[百煉Coding Plan API設定ガイド](./guide-bailian-coding-plan.mdx)を参照してください。
+
+<Steps>
+
+## APIキーを取得
+
+[Alibaba Cloud百煉プラットフォーム](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key)にアクセスし、パーソナルセンターでAPIキー管理ページを見つけます。新しいAPIキーを作成をクリックすると、システムが一意のキーを生成します。このキーはQwen Codeサービスにアクセスするための認証情報ですので、必ず安全に保管してください。
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+<Callout type="warning">
+APIキーは安全に保管し、他人に漏らしたりコードリポジトリにコミットしたりしないでください。
+</Callout>
+
+## Qwen CodeでAPIキーを設定
+
+**1. Qwen Codeに自動設定させる**
+
+ターミナルを開き、ルートディレクトリでQwen Codeを直接起動し、以下のコードをコピーしてAPIキーを伝えると、設定が成功します。Qwen Codeを再起動して`/model`を入力すると、設定したモデルに切り替えることができます。
+
+```json
+以下の内容に従って百煉のモデルの`settings.json`を設定してください：
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<モデル名>",
+            "name": "[Bailian] <モデル名>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<ユーザーのKEYに置換>"
+    },
+}
+モデル名の入力については、以下を参照してください：https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all
+私のAPIキーは：
+```
+
+その後、APIキーを入力ボックスに貼り付け、必要なモデル名（例：`qwen3.5-plus`）を伝え、送信すると設定が完了します。
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+**2. 手動設定**
+
+settings.jsonファイルを手動で設定します。ファイルの場所は`<ユーザールートディレクトリ>/.qwen`ディレクトリにあります。以下の内容をコピーして、APIキーとモデル名を変更してください。
+
+```json
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<モデル名>",
+            "name": "[Bailian] <モデル名>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<ユーザーのKEYに置換>"
+    },
+}
+```
+
+## モデルを選択
+
+ニーズに応じて適切なモデルを選択し、速度とパフォーマンスのバランスを取ります。異なるモデルは異なるシナリオに適しています。タスクの複雑さと応答時間の要件に基づいて選択できます。`/model`コマンドを使用すると、モデルを素早く切り替えることができます。
+
+一般的なモデルオプション：
+- `qwen3.5-plus`: 強力で、複雑なタスクに適している
+- `qwen3.5-flash`: 高速で、単純なタスクに適している
+- `qwen-max`: 最強のモデルで、高難易度のタスクに適している
+
+## 接続をテスト
+
+テストメッセージを送信して、API設定が正しいことを確認します。設定が成功すると、Qwen Codeはすぐに返信し、AI支援プログラミングを開始する準備ができていることを意味します。問題が発生した場合は、APIキーが正しく設定されているかどうかを確認してください。
+
+```bash
+Hello, can you help me with coding?
+```
+
+</Steps>
+
+## 関連推奨
+
+- [最初の会話を開始](./guide-first-conversation.mdx) — インストール後、Qwen Codeとの最初のAI会話を開始
+- [百煉Coding Planモード](./guide-bailian-coding-plan.mdx) — 百煉Coding Planを設定して使用し、複数のモデル選択で複雑なタスクの完了品質を向上
+
+<ShowcaseDetailCta />

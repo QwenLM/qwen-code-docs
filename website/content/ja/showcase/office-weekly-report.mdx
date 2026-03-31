@@ -1,0 +1,72 @@
+---
+title: "週報を自動生成"
+description: "Skillsをカスタマイズします。1コマンドで今週の更新を自動クロールし、テンプレートに従って製品更新週報を作成します。"
+category: "日常タスク"
+features:
+  - "Skills"
+thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png"
+videoUrl: "https://cloud.video.taobao.com/vod/BrL3c4NkeIqLiT3MAAWUSp26QgM0hjN67ukuKQmgE4M.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+毎週製品更新週報を作成するのは反復的で時間のかかる作業です。Qwen CodeのカスタムSkillsを使用すると、AIに今週の製品更新情報を自動クロールさせ、標準テンプレートに従って構造化された週報を生成させることができます。1コマンドで、AIがデータを収集し、コンテンツを分析し、ドキュメントに整理し、作業効率を大幅に向上させます。製品自体に集中でき、AIに面倒なドキュメント作業を任せることができます。
+
+<ShowcaseDetailMeta category="日常タスク" features={["Skills"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/BrL3c4NkeIqLiT3MAAWUSp26QgM0hjN67ukuKQmgE4M.mp4" poster="https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 手順
+
+<Steps>
+
+### skills-creator Skillをインストール
+
+まず、SkillをインストールしてAIにどのデータソースの情報を収集する必要があるかを理解させます。
+
+```
+find skillsがあるか確認し、なければ直接インストールしてください：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code、そしてskills-creatorをqwen code skillsにインストールしてください。
+```
+
+### 週報Skillを作成
+
+Skill作成機能を使用して、カスタム週報生成Skillが必要であることをAIに伝えます。収集する必要があるデータタイプと週報構造を記述します。AIはニーズに基づいて新しいSkillを生成します。
+
+```
+オープンソースプロジェクト：https://github.com/QwenLM/qwen-code の週報を作成する必要があります。主に今週提出されたissue、解決されたbug、新しいバージョンとfeature、および振り返りと反省を含みます。言語はユーザー中心で、利他的で、感知可能である必要があります。Skillを作成してください。
+```
+
+### 週報コンテンツを生成
+
+設定完了後、生成コマンドを入力します。Qwen Codeが今週の更新情報を自動クロールし、製品週報テンプレートに従って構造化されたドキュメントに整理します。
+
+```
+今週のqwen-code製品更新週報を生成してください
+```
+
+### 週報を開き、編集・調整
+
+生成された週報は開いて調整でき、さらに編集したりチームと共有したりできます。AIにフォーマットとコンテンツの重点を調整させることもできます。
+
+```
+週報の言語をより活発にしてください
+```
+
+</Steps>
+
+<Callout type="info">
+初回使用時はデータソースを設定する必要があります。一度設定すると再利用できます。スケジュールタスクを設定して、Qwen Codeに毎週自動的に週報を生成させ、完全に手を解放することもできます。
+</Callout>
+
+## 関連おすすめ
+
+- [プレゼンテーション：PPT作成](./office-ppt-presentation.mdx) — 週報コンテンツを美しいプレゼンテーションスライドに変換
+- [会話履歴をエクスポート](./office-export-conversation.mdx) — 履歴会話コンテンツをエクスポート・整理
+
+---
+
+<ShowcaseDetailCta />

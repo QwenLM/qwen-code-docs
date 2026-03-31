@@ -1,0 +1,64 @@
+---
+title: "Präsentation: PPT erstellen"
+description: "Erstellen Sie Präsentationen basierend auf Produkt-Screenshots. Stellen Sie Screenshots und Beschreibungen bereit, und AI generiert schöne Präsentationsfolien."
+category: "Tägliche Aufgaben"
+features:
+  - "Agent-Modus"
+thumbnail: "https://img.alicdn.com/imgextra/i2/O1CN01ZlnCqO1HtmJhfhZSm_!!6000000000816-2-videocover-2546-1388.png"
+videoUrl: "https://cloud.video.taobao.com/vod/08IfFcYkp4OkyvbSDklR11rrL69fTNuc8Rkz_2ikqOg.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Müssen Sie eine Produktpräsentation-PPT erstellen, möchten aber nicht bei Null anfangen? Stellen Sie einfach Produkt-Screenshots und einfache Beschreibungen bereit, und Qwen Code kann Ihnen helfen, gut strukturierte, schön gestaltete Präsentationsfolien zu generieren. AI analysiert Screenshot-Inhalte, versteht Produktmerkmale, organisiert automatisch die Folienstruktur und fügt geeigneten Text und Layout hinzu. Ob Produktstarts, Teampräsentationen oder Kundenpräsentationen – Sie können schnell professionelle PPTs erhalten und viel Zeit und Energie sparen.
+
+<ShowcaseDetailMeta category="Tägliche Aufgaben" features={["Agent-Modus"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/08IfFcYkp4OkyvbSDklR11rrL69fTNuc8Rkz_2ikqOg.mp4" poster="https://img.alicdn.com/imgextra/i2/O1CN01ZlnCqO1HtmJhfhZSm_!!6000000000816-2-videocover-2546-1388.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+
+### Produkt-Screenshots vorbereiten
+
+Sammeln Sie Produktoberflächen-Screenshots, die angezeigt werden müssen, einschließlich Hauptfunktionsseiten, Funktionsdemonstrationen usw. Screenshots sollten klar sein und den Wert und die Merkmale des Produkts vollständig anzeigen. Platzieren Sie sie in einem Ordner, zum Beispiel: qwen-code-images
+
+### Verwandte Skills installieren
+
+Installieren Sie PPT-Generierungs-bezogene Skills. Diese Skills enthalten Fähigkeiten zur Analyse von Screenshot-Inhalten und Generierung von Präsentationsfolien.
+
+```
+Überprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, und helfen Sie mir dann, zarazhangrui/frontend-slides in qwen code skills zu installieren.
+```
+
+### Präsentation generieren
+
+Referenzieren Sie die entsprechende Datei und sagen Sie Qwen Code Ihre Bedürfnisse, wie Zweck der Präsentation, Zielgruppe, Hauptinhalt usw. AI generiert die PPT basierend auf diesen Informationen.
+
+```
+@qwen-code-images Erstellen Sie eine Produktpräsentation-PPT basierend auf diesen Screenshots,面向 technisches Team, mit Fokus auf die Vorstellung neuer Funktionen
+```
+
+### Anpassen und exportieren
+
+Zeigen Sie die generierte PPT an. Wenn Anpassungen erforderlich sind, können Sie Qwen Code sagen, wie z. B. "eine Seite zur Architektur-Vorstellung hinzufügen" oder "den Text auf dieser Seite anpassen". Wenn Sie zufrieden sind, exportieren Sie in ein bearbeitbares Format.
+
+```
+Helfen Sie mir, den Text auf Seite 3 anzupassen, um ihn prägnanter zu machen
+```
+
+</Steps>
+
+## Verwandte Empfehlungen
+
+- [Automatisch Wochenbericht generieren](./office-weekly-report.mdx) — Automatisch Daten sammeln und Berichte generieren
+- [Datei mit einem Satz schreiben](./office-write-file.mdx) — Schnell verschiedene Dokumente erstellen
+
+---
+
+<ShowcaseDetailCta />

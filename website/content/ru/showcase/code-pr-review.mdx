@@ -1,0 +1,67 @@
+---
+title: "Ревью PR"
+description: "Используйте Qwen Code для интеллектуального ревью кода Pull Request и автоматического обнаружения потенциальных проблем."
+category: "Программирование"
+features:
+  - "GitHub"
+thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png"
+videoUrl: "https://cloud.video.taobao.com/vod/Eu3Gyad-mLiz_FZqrXp76EZWYz4fuV6Ogb2wOvb8bBg.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+Ревью кода — важный шаг для обеспечения качества кода, но часто занимает много времени и чревато ошибками. Qwen Code может помочь вам проводить интеллектуальное ревью кода Pull Request, автоматически анализировать изменения кода, находить потенциальные баги, проверять стандарты кода и предоставлять подробные отчёты о ревью.
+
+<ShowcaseDetailMeta category="Программирование" features={["GitHub"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/Eu3Gyad-mLiz_FZqrXp76EZWYz4fuV6Ogb2wOvb8bBg.mp4" poster="https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+<Steps>
+
+### Указать PR для ревью
+
+Сообщите Qwen Code, какой Pull Request вы хотите проверить, указав номер или ссылку на PR.
+
+<Callout type="tip">
+Вы можете использовать скилл pr-review для анализа PR. Об установке скилла см.: [Установка скиллов](./guide-skill-install.mdx).
+</Callout>
+
+```bash
+/skill pr-review Пожалуйста, проверьте этот PR: <ссылка или номер PR>
+```
+
+### Запустить тесты и проверки
+
+Qwen Code проанализирует изменения кода, определит соответствующие тест-кейсы и запустит тесты для проверки корректности кода.
+
+```bash
+Запустить тесты и проверить, проходит ли этот PR все тест-кейсы
+```
+
+### Просмотреть отчёт о ревью
+
+После ревью Qwen Code генерирует подробный отчёт, включающий обнаруженные проблемы, потенциальные риски и предложения по улучшению.
+
+```bash
+Показать отчёт о ревью и перечислить все обнаруженные проблемы
+```
+
+</Steps>
+
+<Callout type="info">
+Ревью кода Qwen Code анализирует не только синтаксис и стандарты, но и логику кода для выявления потенциальных проблем производительности, уязвимостей безопасности и дефектов проектирования.
+</Callout>
+
+## Связанный контент
+
+- [Решение issues](./code-solve-issue.mdx) — Использование Qwen Code для анализа и решения issues open source проектов
+
+---
+
+<ShowcaseDetailCta />

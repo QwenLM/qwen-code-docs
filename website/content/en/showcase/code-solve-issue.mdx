@@ -1,0 +1,76 @@
+---
+title: "Resolve Issues"
+description: "Use Qwen Code to analyze and resolve open source project issues, with full-process tracking from understanding to code submission."
+category: "Programming"
+features:
+  - "GitHub"
+thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png"
+videoUrl: "https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Resolving issues for open source projects is an important way to improve programming skills and build technical influence. Qwen Code can help you quickly locate problems, understand related code, formulate fix plans, and implement code changes. From problem analysis to PR submission, AI assistance throughout the entire process makes open source contributions more efficient and smooth.
+
+<ShowcaseDetailMeta category="Programming" features={["GitHub"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4" poster="https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Choose an Issue
+
+Find an interesting or suitable issue to resolve on GitHub. Prioritize issues with clear descriptions, reproduction steps, and expected results. Labels like `good first issue` or `help wanted` typically indicate tasks suitable for newcomers.
+
+### Clone the Project and Locate the Problem
+
+Download the project code and let AI help you locate the problem. Use `@file` to reference relevant files, and the AI will analyze the code logic to find the root cause. This saves a lot of time and quickly pinpoints the code that needs to be modified.
+
+```bash
+Help me analyze where the problem described in this issue occurs, issue link: <issue link>
+```
+
+### Understand the Related Code
+
+Have the AI explain the relevant code logic and dependencies. Understanding the code context is very important and helps you formulate the correct fix plan. The AI will provide clear code explanations, including design rationale and potential problem points.
+
+### Formulate a Fix Plan
+
+Discuss possible solutions with the AI and choose the best one. The AI will analyze different fix plans, evaluating their scope of impact and potential risks. Choose a plan that solves the problem without introducing new issues.
+
+### Implement Code Changes
+
+Gradually modify the code and test it with AI guidance. The AI will help you write the modified code and ensure it conforms to the project's code standards. After modifications, run tests to verify the fix.
+
+```bash
+Help me modify this code to resolve this issue
+```
+
+### Submit a PR
+
+After completing the modifications, submit a PR and wait for the project maintainer to review. Clearly explain the problem cause and fix plan in the PR description, referencing the related issue. Once the maintainer approves, your code will be merged into the project.
+
+```bash
+Help me submit a PR to resolve this issue
+```
+
+</Steps>
+
+<Callout type="info">
+Resolving open source issues not only improves technical skills but also builds technical influence, adding value to your career development.
+</Callout>
+
+## Related
+
+- [Code Learning](./study-learning.mdx) — Clone open source repositories and learn to understand code
+- [PR Review](./code-pr-review.mdx) — Have AI review your Pull Requests to improve code quality
+
+---
+
+<ShowcaseDetailCta />

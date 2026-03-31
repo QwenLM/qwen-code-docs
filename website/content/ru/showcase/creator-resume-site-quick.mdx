@@ -1,0 +1,73 @@
+---
+title: "Создание персонального сайта-резюме"
+description: "Создайте персональный сайт-резюме одной фразой — интегрируйте свой опыт для создания страницы-портфолио с экспортом в PDF."
+category: "Инструменты для творчества"
+features:
+  - "Skills"
+thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+videoUrl: "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+Персональный сайт-резюме — важный инструмент для поиска работы и самопрезентации. Qwen Code может быстро создать профессиональную страницу-портфолио на основе содержимого вашего резюме с поддержкой экспорта в PDF для удобной подачи заявок.
+
+<ShowcaseDetailMeta category="Инструменты для творчества" features={["Skills"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4" poster="https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+<Steps>
+
+### Предоставить личный опыт
+
+Сообщите ИИ о своём образовании, опыте работы, проектном опыте и навыках.
+
+```bash
+Я фронтенд-разработчик, окончил университет XX, имею 3 года опыта, специализируюсь на React и TypeScript...
+```
+
+### Установить скилл веб-дизайна
+
+Установите скилл веб-дизайна, предоставляющий шаблоны дизайна резюме.
+
+```bash
+Проверьте, есть ли у меня find skills, если нет, установите напрямую: npx skills add https://github.com/vercel-labs/skills --skill find-skills, затем помогите мне установить web-component-design.
+```
+
+### Выбрать стиль дизайна
+
+Опишите предпочтительный стиль резюме, например минималистичный, профессиональный или творческий.
+
+```bash
+/skills web-component-design Помогите мне создать сайт-резюме в минималистичном профессиональном стиле
+```
+
+### Создать сайт-резюме
+
+ИИ создаст полный проект сайта-резюме с адаптивной вёрсткой и стилями печати.
+
+```bash
+npm run dev
+```
+
+</Steps>
+
+<Callout type="info">
+Ваш сайт-резюме должен подчёркивать ваши ключевые сильные стороны и достижения, используя конкретные данные и примеры для подтверждения описаний.
+</Callout>
+
+## Связанный контент
+
+- [Воссоздать любимый сайт](./creator-website-clone.mdx) — Дать Qwen Code скриншот и указать, какой сайт воссоздать
+- [Запись в файл](./office-write-file.mdx) — Сказать Qwen Code, какой контент записать, и он создаст файлы за вас
+- [Создание видео с Remotion](./creator-remotion-video.mdx) — Создание видеоконтента с помощью скилла Remotion
+
+---
+
+<ShowcaseDetailCta />

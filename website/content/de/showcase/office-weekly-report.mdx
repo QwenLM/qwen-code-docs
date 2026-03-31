@@ -1,0 +1,72 @@
+---
+title: "Automatisch Wochenbericht generieren"
+description: "Skills anpassen. Automatisch Updates dieser Woche mit einem Befehl crawlen und Produktupdate-Wochenberichte gemäß Vorlagen schreiben."
+category: "Tägliche Aufgaben"
+features:
+  - "Skills"
+thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png"
+videoUrl: "https://cloud.video.taobao.com/vod/BrL3c4NkeIqLiT3MAAWUSp26QgM0hjN67ukuKQmgE4M.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Jeden Woche Produktupdate-Wochenberichte zu schreiben ist eine repetitive und zeitaufwendige Aufgabe. Mit den angepassten Skills von Qwen Code können Sie AI automatisch die Produktupdate-Informationen dieser Woche crawlen lassen und gemäß Standardvorlagen strukturierte Wochenberichte generieren. Mit nur einem Befehl sammelt AI Daten, analysiert Inhalte und organisiert sie in ein Dokument, was Ihre Arbeitseffizienz erheblich verbessert. Sie können sich auf das Produkt selbst konzentrieren und AI die mühsame Dokumentarbeit erledigen lassen.
+
+<ShowcaseDetailMeta category="Tägliche Aufgaben" features={["Skills"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/BrL3c4NkeIqLiT3MAAWUSp26QgM0hjN67ukuKQmgE4M.mp4" poster="https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+
+### skills-creator Skill installieren
+
+Installieren Sie zuerst den Skill, damit AI versteht, welche Informationen aus welchen Datenquellen Sie sammeln müssen.
+
+```
+Überprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, und helfen Sie mir dann, skills-creator in qwen code skills zu installieren.
+```
+
+### Wochenbericht-Skill erstellen
+
+Verwenden Sie die Skill-Erstellungsfunktion, um AI zu sagen, dass Sie einen angepassten Wochenbericht-Generierungs-Skill benötigen. Beschreiben Sie die Datentypen, die Sie sammeln müssen, und die Wochenbericht-Struktur. AI generiert einen neuen Skill basierend auf Ihren Bedürfnissen.
+
+```
+Ich muss wöchentliche Berichte für das Open-Source-Projekt erstellen: https://github.com/QwenLM/qwen-code, hauptsächlich einschließlich Issues, die diese Woche eingereicht wurden, behobene Bugs, neue Versionen und Features, sowie Überprüfungen und Reflexionen. Die Sprache sollte benutzerzentriert, altruistisch und wahrnehmend sein. Erstellen Sie einen Skill.
+```
+
+### Wochenbericht-Inhalt generieren
+
+Nach Abschluss der Konfiguration geben Sie den Generierungsbefehl ein. Qwen Code crawlt automatisch die Update-Informationen dieser Woche und organisiert sie gemäß der Produkt-Wochenbericht-Vorlage in ein strukturiertes Dokument.
+
+```
+Generieren Sie den qwen-code Produktupdate-Wochenbericht dieser Woche
+```
+
+### Wochenbericht öffnen, bearbeiten und anpassen
+
+Der generierte Wochenbericht kann geöffnet und angepasst werden, um weiter bearbeitet oder mit dem Team geteilt zu werden. Sie können AI auch bitten, Format und Inhaltsfokus anzupassen.
+
+```
+Machen Sie die Sprache des Wochenberichts lebendiger
+```
+
+</Steps>
+
+<Callout type="info">
+Bei der ersten Verwendung müssen Sie Datenquellen konfigurieren. Nach einmaliger Konfiguration kann sie wiederverwendet werden. Sie können geplante Aufgaben einrichten, damit Qwen Code jeden Woche automatisch Wochenberichte generiert, was Ihre Hände vollständig befreit.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [Präsentation: PPT erstellen](./office-ppt-presentation.mdx) — Wochenbericht-Inhalt in schöne Präsentationsfolien umwandeln
+- [Gesprächsverlauf exportieren](./office-export-conversation.mdx) — Historische Gesprächsinhalte exportieren und organisieren
+
+---
+
+<ShowcaseDetailCta />

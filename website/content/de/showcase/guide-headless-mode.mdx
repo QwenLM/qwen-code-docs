@@ -1,0 +1,67 @@
+---
+title: "Headless-Modus"
+description: "Verwenden Sie Qwen Code in GUI-freien Umgebungen, geeignet für Remote-Server, CI/CD-Pipelines und Automatisierungsskript-Szenarien."
+category: "Erste Schritte"
+features:
+  - "Headless"
+thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Der Headless-Modus ermöglicht es Ihnen, Qwen Code in GUI-freien Umgebungen zu verwenden, besonders geeignet für Remote-Server, CI/CD-Pipelines und Automatisierungsskript-Szenarien. Durch Befehlszeilenparameter und Pipeline-Eingabe können Sie Qwen Code nahtlos in vorhandene Workflows integrieren und automatisierte KI-unterstützte Programmierung erreichen.
+
+<ShowcaseDetailMeta category="Erste Schritte" features={["Headless"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif" alt="Headless-Modus" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+
+### Prompt-Modus verwenden
+
+Verwenden Sie den Parameter `--p`, um Prompts direkt in der Befehlszeile zu übergeben. Qwen Code gibt die Antwort zurück und beendet sich automatisch. Diese Methode eignet sich für einmalige Abfragen und kann einfach in Skripte integriert werden.
+
+```bash
+qwen --p 'what is qwen code?'
+```
+
+### Pipeline-Eingabe
+
+Übergeben Sie die Ausgabe anderer Befehle über Pipelines an Qwen Code, um automatisierte Verarbeitung zu erreichen. Sie können Protokolldateien, Fehlermeldungen usw. direkt an die KI zur Analyse senden.
+
+```bash
+cat error.log | qwen --p 'Fehler analysieren'
+```
+
+### Skript-Integration
+
+Integrieren Sie Qwen Code in Shell-Skripte, um komplexe automatisierte Workflows zu erreichen. Sie können basierend auf den Rückgabeergebnissen der KI verschiedene Operationen ausführen und intelligente automatisierte Skripte erstellen.
+
+```bash
+#!/bin/bash
+result=$(qwen --p 'prüfen, ob es Probleme mit dem Code gibt')
+if [[ $result == *"hat Probleme"* ]]; then
+  echo "Code-Probleme gefunden"
+fi
+```
+
+</Steps>
+
+<Callout type="info">
+Der Headless-Modus unterstützt alle Qwen Code-Funktionen, einschließlich Codegenerierung, Problemlösung, Dateioperationen usw.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [Authentifizierungsanmeldung](./guide-authentication.mdx) — Den Authentifizierungsprozess von Qwen Code verstehen, Kontanmeldung schnell abschließen
+- [Agents-Konfigurationsdatei](./guide-agents-config.mdx) — KI-Verhalten über Agents-MD-Dateien anpassen
+
+---
+
+<ShowcaseDetailCta />

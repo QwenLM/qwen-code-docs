@@ -1,0 +1,64 @@
+---
+title: "Apresentação: Criação de PPT"
+description: "Crie uma apresentação com base em capturas de tela do produto. Fornça capturas de tela e descrições, e a IA gerará slides de apresentação bonitos."
+category: "Tarefas Diárias"
+features:
+  - "Modo Agente"
+thumbnail: "https://img.alicdn.com/imgextra/i2/O1CN01ZlnCqO1HtmJhfhZSm_!!6000000000816-2-videocover-2546-1388.png"
+videoUrl: "https://cloud.video.taobao.com/vod/08IfFcYkp4OkyvbSDklR11rrL69fTNuc8Rkz_2ikqOg.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão Geral
+
+Precisa criar uma apresentação PPT do produto, mas não quer começar do zero? Basta fornecer capturas de tela do produto e uma breve descrição, e o Qwen Code pode gerar slides de apresentação estruturados e bem projetados. A IA analisará o conteúdo das capturas de tela, entenderá os recursos do produto, organizará automaticamente a estrutura dos slides, e adicionará textos e layouts apropriados. Seja para lançamento de produto, apresentação de equipe ou apresentação ao cliente, você pode obter rapidamente um PPT profissional, economizando muito tempo e energia.
+
+<ShowcaseDetailMeta category="Tarefas Diárias" features={["Modo Agente"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/08IfFcYkp4OkyvbSDklR11rrL69fTNuc8Rkz_2ikqOg.mp4" poster="https://img.alicdn.com/imgextra/i2/O1CN01ZlnCqO1HtmJhfhZSm_!!6000000000816-2-videocover-2546-1388.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Preparar Capturas de Tela do Produto
+
+Colete capturas de tela das interfaces do produto que deseja exibir. Inclui páginas principais de funcionalidades, demonstrações de recursos importantes, etc. As capturas de tela devem ser claras e mostrar plenamente o valor e os recursos do produto. Coloque-as em uma pasta. Por exemplo: qwen-code-images
+
+### Instalar Skills Relacionados
+
+Instale Skills relacionadas à geração de PPT. Essas Skills incluem funcionalidades para analisar conteúdo de capturas de tela e gerar slides de apresentação.
+
+```
+Verifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale zarazhangrui/frontend-slides no qwen code skills.
+```
+
+### Gerar Apresentação
+
+Referencie os arquivos correspondentes e informe ao Qwen Code suas necessidades. Inclua o propósito da apresentação, público-alvo, conteúdo principal, etc. A IA gerará o PPT com base nessas informações.
+
+```
+@qwen-code-images Crie uma apresentação PPT do produto com base nessas capturas de tela. Para a equipe técnica, focando nos novos recursos
+```
+
+### Ajustar e Exportar
+
+Visualize o PPT gerado. Se precisar de ajustes, pode informar o Qwen Code. Por exemplo: "Adicionar página de introdução de arquitetura", "Ajustar o texto desta página". Quando estiver satisfeito, exporte em um formato editável.
+
+```
+Ajuste o texto da terceira página para ser mais conciso
+```
+
+</Steps>
+
+## Recomendações Relacionadas
+
+- [Gerar Relatório Semanal Automaticamente](./office-weekly-report.mdx) — Colete dados automaticamente e gere relatórios
+- [Escrever Arquivo com Uma Frase](./office-write-file.mdx) — Crie vários documentos rapidamente
+
+---
+
+<ShowcaseDetailCta />

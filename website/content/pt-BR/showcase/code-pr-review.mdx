@@ -1,0 +1,67 @@
+---
+title: "Revisão de PR"
+description: "Use o Qwen Code para realizar revisões de código inteligentes em Pull Requests e descobrir automaticamente problemas potenciais."
+category: "Programação"
+features:
+  - "GitHub"
+thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png"
+videoUrl: "https://cloud.video.taobao.com/vod/Eu3Gyad-mLiz_FZqrXp76EZWYz4fuV6Ogb2wOvb8bBg.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão Geral
+
+A revisão de código é um passo crucial para garantir a qualidade do código, mas muitas vezes é demorada e propensa a erros. O Qwen Code pode ajudá-lo a realizar revisões de código inteligentes em Pull Requests, analisar automaticamente as alterações de código, encontrar bugs potenciais, verificar padrões de código e fornecer relatórios de revisão detalhados.
+
+<ShowcaseDetailMeta category="Programação" features={["GitHub"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/Eu3Gyad-mLiz_FZqrXp76EZWYz4fuV6Ogb2wOvb8bBg.mp4" poster="https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Especificar a PR para Revisão
+
+Informe ao Qwen Code qual Pull Request você deseja revisar fornecendo o número ou link da PR.
+
+<Callout type="tip">
+Você pode usar o skill pr-review para analisar PRs. Para instalação do skill, veja: [Instalar Skills](./guide-skill-install.mdx).
+</Callout>
+
+```bash
+/skill pr-review Por favor, revise esta PR: <link ou número da PR>
+```
+
+### Executar Testes e Verificações
+
+O Qwen Code analisará as alterações de código, identificará casos de teste relevantes e executará testes para verificar a correção do código.
+
+```bash
+Executar testes para verificar se esta PR passa em todos os casos de teste
+```
+
+### Ver o Relatório de Revisão
+
+Após a revisão, o Qwen Code gera um relatório detalhado incluindo problemas descobertos, riscos potenciais e sugestões de melhoria.
+
+```bash
+Exibir o relatório de revisão e listar todos os problemas descobertos
+```
+
+</Steps>
+
+<Callout type="info">
+A revisão de código do Qwen Code analisa não apenas sintaxe e padrões, mas também a lógica do código para identificar problemas de desempenho potenciais, vulnerabilidades de segurança e falhas de design.
+</Callout>
+
+## Conteúdo Relacionado
+
+- [Resolver Issues](./code-solve-issue.mdx) — Usar o Qwen Code para analisar e resolver issues de projetos open source
+
+---
+
+<ShowcaseDetailCta />

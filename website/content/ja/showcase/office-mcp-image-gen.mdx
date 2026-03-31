@@ -1,0 +1,49 @@
+---
+title: "MCP画像生成"
+description: "MCPを通じて画像生成サービスを統合します。自然言語の記述でAIを駆動し、高品質な画像を作成します。"
+category: "日常タスク"
+features:
+  - "MCP"
+  - "画像生成"
+thumbnail: "https://img.alicdn.com/imgextra/i3/6000000008040/O1CN01S2cxYL29GNUmrvmzH_!!6000000008040-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/gQg8C_5f5MGoZE9YKCyKmHlWAgXZSTMbN8WSoN7crbc.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+MCP（Model Context Protocol）画像生成機能により、自然言語の記述を通じてQwen CodeでAIを直接駆動し、高品質な画像を作成できます。専用の画像生成ツールに切り替える必要はなく、会話でニーズを記述するだけで、Qwen Codeが統合された画像生成サービスを呼び出し、要件を満たす画像を生成します。UIプロトタイプデザイン、アイコン作成、イラスト描画、コンセプト図制作に関わらず、MCP画像生成は強力なサポートを提供します。このシームレスに統合されたワークフローはデザインと開発の効率を大幅に向上させ、クリエイティブの実現をより便利にします。
+
+<ShowcaseDetailMeta category="日常タスク" features={["MCP", "画像生成"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/gQg8C_5f5MGoZE9YKCyKmHlWAgXZSTMbN8WSoN7crbc.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000008040/O1CN01S2cxYL29GNUmrvmzH_!!6000000008040-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 手順
+
+<Steps>
+### MCPサービスを設定
+
+まず、MCP画像生成サービスを設定する必要があります。設定ファイルに画像生成サービスのAPIキーとエンドポイント情報を追加します。Qwen Codeは複数の主流画像生成サービスをサポートしており、ニーズと予算に応じて適切なサービスを選択できます。設定完了後、Qwen Codeを再起動して有効にします。
+
+### 画像要件を記述
+
+会話で自然言語で生成したい画像を詳細に記述します。画像のテーマ、スタイル、色、構成、詳細などの要素を含めます。記述が具体的であるほど、生成された画像は期待に近づきます。アートスタイル、特定のアーティストを参照したり、参照画像をアップロードしてAIがニーズをより良く理解するのを助けることができます。
+
+### 結果を表示・保存
+
+Qwen Codeは複数の画像を生成し、選択できるようにします。各画像をプレビューし、要件に最も適した画像を選択できます。調整が必要な場合は、修正意見を引き続き記述し、Qwen Codeはフィードバックに基づいて再生成します。満足したら、画像を直接ローカルに保存するか、画像リンクをコピーして他の場所で使用できます。
+</Steps>
+
+<Callout type="info">
+MCP画像生成は複数のスタイルとサイズをサポートし、プロジェクトニーズに応じて柔軟に調整できます。生成された画像の著作権は使用されるサービスによって異なります。利用規約を確認してください。
+</Callout>
+
+## 関連おすすめ
+
+- [画像認識](./office-image-recognition.mdx) — AIに画像コンテンツを理解・分析させる
+- [クリップボード画像貼り付け](./office-clipboard-paste.mdx) — 画像を会話に素早く貼り付け
+
+<ShowcaseDetailCta />

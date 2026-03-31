@@ -1,0 +1,46 @@
+---
+title: "LSP IntelliSense"
+description: "Ao integrar o LSP (Language Server Protocol), o Qwen Code oferece conclusão de código e navegação de nível profissional com diagnósticos em tempo real."
+category: "Programação"
+features:
+  - "LSP"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Visão Geral
+
+O LSP (Language Server Protocol) IntelliSense permite que o Qwen Code forneça experiências de conclusão de código e navegação comparáveis às IDEs profissionais. Ao integrar servidores de linguagem, o Qwen Code pode entender com precisão a estrutura do código, informações de tipo e relações contextuais para fornecer sugestões de código de alta qualidade. Seja para assinaturas de funções, dicas de parâmetros, conclusão de nomes de variáveis, saltos de definição, busca de referências ou operações de refatoração, o LSP IntelliSense lida com tudo de forma fluida.
+
+<ShowcaseDetailMeta category="Programação" features={["LSP"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png" alt="LSP IntelliSense" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+### Detecção Automática
+
+O Qwen Code detecta automaticamente as configurações do servidor de linguagem no seu projeto. Para linguagens de programação e frameworks comuns, ele reconhece e inicia automaticamente o serviço LSP correspondente. Sem configuração manual necessária, pronto para usar imediatamente.
+
+### Aproveitar o IntelliSense
+
+Ao codificar, o LSP IntelliSense é ativado automaticamente. Enquanto você digita, ele fornece sugestões de conclusão precisas baseadas no contexto, incluindo nomes de funções, nomes de variáveis e anotações de tipo. Pressione Tab para aceitar rapidamente uma sugestão.
+
+### Diagnóstico de Erros
+
+O diagnóstico em tempo real do LSP analisa continuamente seu código durante a codificação, detectando problemas potenciais. Erros e avisos são exibidos intuitivamente com localização do problema, tipo de erro e sugestões de correção.
+</Steps>
+
+<Callout type="info">
+Suporta linguagens comuns como TypeScript, Python, Java, Go, Rust e frameworks frontend como React, Vue e Angular.
+</Callout>
+
+## Conteúdo Relacionado
+
+- [Integração com VS Code](./guide-vscode-integration.mdx) — Usar o Qwen Code no VS Code
+- [Aprendizado de Código](./study-learning.mdx) — Aprender novas bases de código com IntelliSense
+
+<ShowcaseDetailCta />

@@ -1,0 +1,64 @@
+---
+title: "Presentation: Create PPT"
+description: "Create presentations based on product screenshots. Provide screenshots and descriptions, and AI generates beautiful presentation slides."
+category: "Daily Tasks"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i2/O1CN01ZlnCqO1HtmJhfhZSm_!!6000000000816-2-videocover-2546-1388.png"
+videoUrl: "https://cloud.video.taobao.com/vod/08IfFcYkp4OkyvbSDklR11rrL69fTNuc8Rkz_2ikqOg.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Need to create a product presentation PPT but don't want to start from scratch? Just provide product screenshots and simple descriptions, and Qwen Code can help you generate well-structured, beautifully designed presentation slides. AI will analyze screenshot content, understand product features, automatically organize slide structure, and add appropriate copy and layout. Whether it's product launches, team presentations, or client presentations, you can quickly get professional PPTs, saving you a lot of time and energy.
+
+<ShowcaseDetailMeta category="Daily Tasks" features={["Agent Mode"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/08IfFcYkp4OkyvbSDklR11rrL69fTNuc8Rkz_2ikqOg.mp4" poster="https://img.alicdn.com/imgextra/i2/O1CN01ZlnCqO1HtmJhfhZSm_!!6000000000816-2-videocover-2546-1388.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Prepare Product Screenshots
+
+Collect product interface screenshots that need to be displayed, including main function pages, feature demonstrations, etc. Screenshots should be clear and fully display the product's value and features. Place them in a folder, for example: qwen-code-images
+
+### Install Related Skills
+
+Install PPT generation related Skills. These Skills include capabilities to analyze screenshot content and generate presentation slides.
+
+```
+Check if I have find skills, if not, help me install it directly: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, then help me install zarazhangrui/frontend-slides to qwen code skills.
+```
+
+### Generate Presentation
+
+Reference the corresponding file and tell Qwen Code your needs, such as the purpose of the presentation, audience, key content, etc. AI will generate the PPT based on this information.
+
+```
+@qwen-code-images Create a product presentation PPT based on these screenshots,面向 technical team, focusing on showcasing new features
+```
+
+### Adjust and Export
+
+View the generated PPT. If adjustments are needed, you can tell Qwen Code, such as "add a page introducing architecture" or "adjust the copy on this page". When satisfied, export to an editable format.
+
+```
+Help me adjust the copy on page 3 to make it more concise
+```
+
+</Steps>
+
+## Related Recommendations
+
+- [Automatically Generate Weekly Report](./office-weekly-report.mdx) — Automatically collect data and generate reports
+- [Write File with One Sentence](./office-write-file.mdx) — Quickly create various documents
+
+---
+
+<ShowcaseDetailCta />

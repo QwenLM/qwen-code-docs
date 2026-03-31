@@ -1,0 +1,72 @@
+---
+title: "Remotion 動画制作"
+description: "自然言語でアイデアを説明し、Remotion スキルを使用してコード生成の動画コンテンツを作成します。"
+category: "クリエイターツール"
+features:
+  - "Skills"
+  - "Remotion"
+thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+動画を作りたいけどコードが書けない？自然言語でアイデアを説明するだけで、Qwen Code が Remotion スキルを使用して動画コードを生成します。AI があなたのクリエイティブな説明を理解し、シーン設定、アニメーション効果、テキストレイアウトを含む Remotion プロジェクトコードを自動生成します。
+
+<ShowcaseDetailMeta category="クリエイターツール" features={["Skills", "Remotion"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### Remotion スキルをインストール
+
+まず、動画制作のベストプラクティスとテンプレートを含む Remotion スキルをインストールします。
+
+```bash
+find skills があるか確認し、なければ直接インストール：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code、その後 remotion-best-practice をインストールしてください。
+```
+
+### アイデアを説明
+
+作りたい動画コンテンツをテーマ、スタイル、長さ、主要シーンを含めて自然言語で詳しく説明します。
+
+```bash
+@file ドキュメントに基づいて、モダンでシンプルなスタイルの 30 秒の製品プロモーション動画を作成してください。
+```
+
+### プレビューと調整
+
+Qwen Code があなたの説明に基づいて Remotion プロジェクトコードを生成します。開発サーバーを起動してプレビューします。
+
+```bash
+npm run dev
+```
+
+### レンダリングとエクスポート
+
+満足したら、ビルドコマンドを使用して最終動画をレンダリングします。
+
+```bash
+動画を直接レンダリングしてエクスポートしてください。
+```
+
+</Steps>
+
+<Callout type="info">
+プロンプトベースのアプローチは素早いプロトタイピングとクリエイティブな探索に最適です。生成されたコードはさらに手動で編集できます。
+</Callout>
+
+## 関連コンテンツ
+
+- [Remotion 動画制作（プロンプトモード）](./creator-remotion-video.mdx) — 自然言語の説明から動画を生成する
+
+---
+
+<ShowcaseDetailCta />

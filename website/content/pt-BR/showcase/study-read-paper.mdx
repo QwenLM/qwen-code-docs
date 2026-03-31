@@ -1,0 +1,71 @@
+---
+title: "Ler Artigos"
+description: "Leia e analise artigos acadêmicos diretamente. A IA entende conteúdo de pesquisa complexo e gera cartões de aprendizagem."
+category: "Aprendizado e Pesquisa"
+features:
+  - "Web Search"
+thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01616oQD1d9RnY1XuLt_!!6000000003693-2-videocover-1696-956.png"
+videoUrl: "https://cloud.video.taobao.com/vod/is3SsCe3w-U5Y0ZxL-z6reSbw8NBhnzCtQfjH26lLFE.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão Geral
+
+Artigos acadêmicos são muitas vezes difíceis e demoram muito para serem compreendidos. O Qwen Code pode ajudá-lo a ler e analisar artigos diretamente, extrair pontos principais, explicar conceitos complexos e resumir métodos de pesquisa. A IA entende profundamente o conteúdo do artigo, explica em linguagem fácil de entender e gera cartões de aprendizagem estruturados para facilitar revisão e compartilhamento. Seja aprendendo uma nova tecnologia ou pesquisando fronteiras, você pode melhorar significativamente a eficiência de aprendizagem.
+
+<ShowcaseDetailMeta category="Aprendizado e Pesquisa" features={["Web Search"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/is3SsCe3w-U5Y0ZxL-z6reSbw8NBhnzCtQfjH26lLFE.mp4" poster="https://img.alicdn.com/imgextra/i4/O1CN01616oQD1d9RnY1XuLt_!!6000000003693-2-videocover-1696-956.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Fornecer Informações do Artigo
+
+Informe ao Qwen Code qual artigo deseja ler. Você pode fornecer o título do artigo, caminho do arquivo PDF ou link do arXiv. A IA obterá e analisará automaticamente o conteúdo do artigo.
+
+```
+Baixe e analise este artigo: attention is all you need https://arxiv.org/abs/1706.03762
+```
+
+### Ler o Artigo
+Instale Skills relacionadas a PDF para que o Qwen Code analise o conteúdo do artigo e gere cartões de aprendizagem estruturados. Você pode ver resumos do artigo, pontos principais, conceitos principais, conclusões importantes, etc.
+
+```
+Verifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale Skills de escritório como Anthropic pdf no qwen code skills.
+```
+
+### Aprendizagem Profunda e Perguntas
+
+Durante a leitura, você pode perguntar ao Qwen Code a qualquer momento. Por exemplo: "Explique o mecanismo de auto-atenção", "Como esta fórmula foi derivada". A IA responderá em detalhes, ajudando você a entender profundamente.
+
+```
+Explique as principais ideias da arquitetura Transformer
+```
+
+### Gerar Cartão de Aprendizagem
+
+Após concluir o aprendizado, peça ao Qwen Code para gerar um cartão de aprendizagem, resumindo os pontos principais, conceitos principais e conclusões importantes do artigo. Esses cartões facilitam a revisão e o compartilhamento com a equipe.
+
+```bash
+Gere um cartão de aprendizagem para este artigo
+```
+
+</Steps>
+
+<Callout type="info">
+O Qwen Code suporta múltiplos formatos de artigos, incluindo PDF, links do arXiv, etc. Para fórmulas e gráficos, a IA explicará seu significado em detalhes, ajudando você a entender completamente o conteúdo do artigo.
+</Callout>
+
+## Recomendações Relacionadas
+
+- [Pesquisa Web](./guide-web-search.mdx) — Pesquise materiais relacionados e informações de fundo
+- [Aprender Código](./study-learning.mdx) — Aprenda a implementação de código do artigo
+
+---
+
+<ShowcaseDetailCta />

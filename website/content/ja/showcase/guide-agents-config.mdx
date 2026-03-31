@@ -1,0 +1,67 @@
+---
+title: "Agents設定ファイル"
+description: "Agents MDファイルでAIの動作をカスタマイズし、AIをプロジェクト仕様とコーディングスタイルに適応させます。"
+category: "入門ガイド"
+features:
+  - "エージェントモード"
+thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+Agents設定ファイルを使用すると、MarkdownファイルでAIの動作をカスタマイズし、AIをプロジェクト仕様とコーディングスタイルに適応させることができます。コードスタイル、命名規則、コメント要件などを定義でき、AIはこれらの設定に基づいてプロジェクト標準に準拠したコードを生成します。この機能は特にチームコラボレーションに適しており、すべてのメンバーが生成するコードスタイルの一貫性を確保します。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["エージェントモード"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png" alt="Agents設定ファイル" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 手順
+
+<Steps>
+
+### 設定ファイルを作成
+
+プロジェクトルートディレクトリに`.qwen`フォルダを作成し、その中に`AGENTS.md`ファイルを作成します。このファイルはAIの動作設定を保存します。
+
+```bash
+mkdir -p .qwen && touch .qwen/AGENTS.md
+```
+
+### 設定を記述
+
+Markdown形式で設定を記述し、自然言語でプロジェクト仕様を記述します。コードスタイル、命名規則、コメント要件、フレームワークの好みなどを定義でき、AIはこれらの設定に基づいて動作を調整します。
+
+```markdown
+# プロジェクト仕様
+
+## コードスタイル
+- TypeScriptを使用
+- 関数型プログラミングを使用
+- 詳細なコメントを追加
+
+## 命名規則
+- 変数はcamelCaseを使用
+- 定数はUPPER_SNAKE_CASEを使用
+- クラス名はPascalCaseを使用
+```
+
+### 設定を適用
+
+設定ファイルを保存すると、AIは自動的にこれらの設定を読み込んで適用します。次回の対話で、AIは設定に基づいてプロジェクト標準に準拠したコードを生成し、仕様を繰り返し説明する必要がありません。
+
+</Steps>
+
+<Callout type="info">
+Markdown形式をサポートし、自然言語でプロジェクト仕様を記述します。
+</Callout>
+
+## 関連推奨
+
+- [ヘッドレスモード](./guide-headless-mode) — GUIのない環境でQwen Codeを使用
+- [API設定](./guide-api-setup.mdx) — APIキーとモデルパラメータを設定し、AIプログラミング体験をカスタマイズ
+
+<ShowcaseDetailCta />

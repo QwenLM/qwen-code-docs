@@ -1,0 +1,62 @@
+---
+title: "Plan Mode + Web Search"
+description: Combine Web Search in Plan mode to search for the latest information first and then formulate an execution plan, significantly improving the accuracy of complex tasks.
+category: "Getting Started"
+features:
+  - "Plan Mode"
+  - "Web Search"
+thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Plan mode is Qwen Code's intelligent planning capability, able to break down complex tasks into executable steps. When combined with Web Search, it will proactively search for the latest technical documentation, best practices, and solutions first, then formulate more accurate execution plans based on this real-time information. This combination is especially suitable for handling development tasks involving new frameworks, new APIs, or requiring compliance with the latest specifications, which can significantly improve code quality and task completion efficiency. Whether migrating projects, integrating new features, or solving complex technical problems, Plan + Web Search can provide you with the most cutting-edge solutions.
+
+<ShowcaseDetailMeta category="Getting Started" features={["Plan Mode", "Web Search"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png" alt="Plan Mode + Web Search" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+### Enable Plan Mode
+
+Enter the `/approval-mode plan` command in the conversation to activate Plan mode. At this point, Qwen Code will enter the planning state, ready to receive your task description and start thinking. Plan mode will automatically analyze the complexity of the task and determine whether it needs to search for external information to supplement the knowledge base.
+
+```bash
+/approval-mode plan
+```
+
+### Request Search for Latest Information
+
+Describe your task requirements, and Qwen Code will automatically identify keywords that need to be searched. It will proactively initiate Web Search requests to obtain the latest technical documentation, API references, best practices, and solutions. Search results will be integrated into the knowledge base, providing an accurate information foundation for subsequent planning.
+
+```
+Help me search for the latest news in the AI field and organize it into a report for me
+```
+
+### View Execution Plan
+
+Based on the searched information, Qwen Code will generate a detailed execution plan for you. The plan will include clear step descriptions, technical points to focus on, potential pitfalls, and solutions. You can review this plan, provide modification suggestions, or confirm to start execution.
+
+### Execute Plan Step by Step
+
+After confirming the plan, Qwen Code will execute it step by step. At each key node, it will report progress and results to you, ensuring you have complete control over the entire process. If problems are encountered, it will provide solutions based on the latest search information rather than relying on outdated knowledge.
+</Steps>
+
+<Callout type="info">
+Web Search will automatically identify technical keywords in the task, no need to manually specify search content. For rapidly iterating frameworks and libraries, it is recommended to enable Web Search in Plan mode to get the latest information.
+</Callout>
+
+## Related Recommendations
+
+- [Web Search](./guide-web-search.mdx) — Get the latest technical documentation and solutions in real time
+- [Bailian Coding Plan](./guide-bailian-coding-plan.mdx) — Exclusive planning capabilities for the Bailian platform
+
+---
+
+<ShowcaseDetailCta />

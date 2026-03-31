@@ -1,0 +1,117 @@
+---
+title: "Guide de configuration de l'API"
+description: "Configurez la clé API et les paramètres du modèle pour personnaliser votre expérience de programmation IA, prenant en charge plusieurs sélections de modèles."
+category: "Guide de démarrage"
+features:
+  - "Paramètres"
+  - "API"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+videoUrl: "https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Vue d'ensemble
+
+La configuration d'une clé API est une étape importante pour utiliser Qwen Code, car elle débloque toutes les fonctionnalités et vous permet d'accéder à des modèles IA puissants. Via la plateforme Alibaba Cloud Bailian, vous pouvez facilement obtenir une clé API et choisir le modèle le plus adapté pour différents scénarios. Que ce soit pour le développement quotidien ou des tâches complexes, la bonne configuration du modèle peut améliorer considérablement votre efficacité de travail.
+
+<ShowcaseDetailMeta category="Guide de démarrage" features={["Paramètres", "API"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4" poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+Si vous êtes un utilisateur du mode Bailian Coding Plan, veuillez vous référer au [Guide de configuration de l'API Bailian Coding Plan](./guide-bailian-coding-plan.mdx) pour obtenir la clé API et configurer le modèle.
+
+<Steps>
+
+## Obtenir la clé API
+
+Visitez la [plateforme Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key), trouvez la page de gestion des clés API dans le centre personnel. Cliquez pour créer une nouvelle clé API, et le système générera une clé unique. Cette clé est votre justificatif d'accès aux services Qwen Code, veuillez donc la conserver en sécurité.
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+<Callout type="warning">
+Veuillez conserver votre clé API en sécurité et ne la divulguez pas à d'autres personnes ou ne la commitez pas dans le dépôt de code.
+</Callout>
+
+## Configurer la clé API dans Qwen Code
+
+**1. Laisser Qwen Code configurer automatiquement**
+
+Ouvrez le terminal, démarrez Qwen Code directement dans le répertoire racine, copiez le code suivant et indiquez votre CLÉ-API, la configuration sera réussie. Redémarrez Qwen Code et entrez `/model` pour basculer vers le modèle configuré.
+
+```json
+Aidez-moi à configurer `settings.json` pour le modèle Bailian selon le contenu suivant :
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<nom du modèle>",
+            "name": "[Bailian] <nom du modèle>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<remplacer par la CLÉ de l'utilisateur>"
+    },
+}
+Pour la saisie du nom du modèle, veuillez vous référer à : https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all
+Ma CLÉ-API est :
+```
+
+Ensuite, collez votre CLÉ-API dans la zone de saisie, indiquez le nom du modèle dont vous avez besoin, comme `qwen3.5-plus`, et envoyez-la pour terminer la configuration.
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+**2. Configuration manuelle**
+
+Configurez manuellement le fichier settings.json. L'emplacement du fichier se trouve dans le répertoire `<répertoire racine utilisateur>/.qwen`. Vous pouvez directement copier le contenu suivant et modifier votre CLÉ-API et le nom du modèle.
+
+```json
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<nom du modèle>",
+            "name": "[Bailian] <nom du modèle>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<remplacer par la CLÉ de l'utilisateur>"
+    },
+}
+```
+
+## Sélectionner le modèle
+
+Choisissez le modèle approprié en fonction de vos besoins, en équilibrant la vitesse et les performances. Différents modèles conviennent à différents scénarios. Vous pouvez choisir en fonction de la complexité de la tâche et des exigences de temps de réponse. Utilisez la commande `/model` pour basculer rapidement entre les modèles.
+
+Options de modèles courants :
+- `qwen3.5-plus` : Puissant, adapté aux tâches complexes
+- `qwen3.5-flash` : Rapide, adapté aux tâches simples
+- `qwen-max` : Modèle le plus puissant, adapté aux tâches de haute difficulté
+
+## Tester la connexion
+
+Envoyez un message de test pour confirmer que la configuration de l'API est correcte. Si la configuration réussit, Qwen Code vous répondra immédiatement, ce qui signifie que vous êtes prêt à commencer à utiliser la programmation assistée par l'IA. Si vous rencontrez des problèmes, veuillez vérifier si la clé API est correctement configurée.
+
+```bash
+Hello, can you help me with coding?
+```
+
+</Steps>
+
+## Recommandations connexes
+
+- [Commencer la première conversation](./guide-first-conversation.mdx) — Après l'installation, initiez votre première conversation IA avec Qwen Code
+- [Mode Bailian Coding Plan](./guide-bailian-coding-plan.mdx) — Configurer pour utiliser Bailian Coding Plan, sélection multiple de modèles, améliorer la qualité d'achèvement des tâches complexes
+
+<ShowcaseDetailCta />

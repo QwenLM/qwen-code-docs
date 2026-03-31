@@ -1,0 +1,73 @@
+---
+title: "Create a Personal Resume Website"
+description: "Build a personal resume website with one sentence—integrate your experience to generate a showcase page with PDF export support for easy submission."
+category: "Creator Tools"
+features:
+  - "Skills"
+thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+videoUrl: "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+A personal resume website is an important tool for job hunting and self-presentation. Qwen Code can quickly generate a professional showcase page based on your resume content, with PDF export support for easy submission. Whether for job applications or personal branding, a beautiful resume website can help you stand out.
+
+<ShowcaseDetailMeta category="Creator Tools" features={["Skills"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4" poster="https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Provide Your Experience
+
+Tell the AI your educational background, work experience, project experience, skill stack, and other information. You can provide it in sections or all at once. The AI will understand your experience and extract key information for the resume design.
+
+```bash
+I'm a frontend engineer, graduated from XX University, with 3 years of experience, skilled in React and TypeScript...
+```
+
+### Install the Web Design Skill
+
+Install the web design Skill, which provides resume design templates. The AI will generate the resume website based on the template.
+
+```bash
+Check if I have find skills, if not install it directly: npx skills add https://github.com/vercel-labs/skills --skill find-skills, then help me install web-component-design to the current directory qwen code skills.
+```
+
+### Choose a Design Style
+
+Describe the resume style you prefer, such as minimalist, professional, or creative. The AI will generate a design based on your preferences. You can reference excellent resume websites and tell the AI which design elements and layouts you like.
+
+```bash
+/skills web-component-design Help me design a minimalist professional resume website
+```
+
+### Generate the Resume Website
+
+The AI will create a complete resume website project, including responsive layout, print styles, and more. The project will contain all necessary files and configurations—just run the development server to preview.
+
+```bash
+npm run dev
+```
+
+</Steps>
+
+<Callout type="info">
+Your resume website should highlight your core strengths and achievements, using specific data and examples to support your descriptions.
+</Callout>
+
+## Related
+
+- [Replicate Your Favorite Website](./creator-website-clone.mdx) — Give Qwen Code a screenshot and tell it which website you want to replicate
+- [Write to File with One Sentence](./office-write-file.mdx) — Tell Qwen Code what content to write and it will create and write files for you
+- [Remotion Video Creation](./creator-remotion-video.mdx) — Use natural language descriptions with the Remotion Skill to generate video content
+
+---
+
+<ShowcaseDetailCta />

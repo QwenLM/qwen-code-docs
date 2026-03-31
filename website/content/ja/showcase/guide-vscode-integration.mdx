@@ -1,0 +1,56 @@
+---
+title: "VS Code統合インターフェース"
+description: "VS CodeでのQwen Codeの完全なインターフェース表示。各機能エリアのレイアウトと使用方法を理解します。"
+category: "入門ガイド"
+features:
+  - "エージェントモード"
+thumbnail: "https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+VS Codeは最も人気のあるコードエディタの一つであり、Qwen Codeは深く統合されたVS Code拡張機能を提供しています。この拡張機能を通じて、馴染みのあるエディタ環境でAIと直接会話し、シームレスなプログラミング体験を享受できます。拡張機能は直感的なインターフェースレイアウトを提供し、すべての機能に簡単にアクセスできます。コード補完、問題解決、ファイル操作など、すべてを効率的に完了できます。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["エージェントモード"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4" poster="https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 手順
+
+<Steps>
+
+### VS Code拡張機能をインストール
+
+VS Code拡張機能マーケットプレースで「Qwen Code」を検索し、インストールをクリックします。インストールプロセスはシンプルで高速で、数秒で完了します。インストール後、VS CodeサイドバーにQwen Codeのアイコンが表示され、拡張機能が正常に読み込まれたことを示します。
+
+### アカウントにログイン
+
+`/auth`コマンドを使用して認証プロセスをトリガーします。システムが自動的にブラウザを開いてログインします。ログインプロセスは安全で便利で、複数の認証方法をサポートしています。ログイン成功後、アカウント情報がVS Code拡張機能に自動的に同期され、すべての機能がアンロックされます。
+
+```bash
+/auth
+```
+
+### 使用を開始
+
+サイドバーでQwen Codeパネルを開き、AIとの会話を開始します。質問を直接入力したり、ファイルを参照したり、コマンドを実行したりできます。すべての操作がVS Codeで完了します。拡張機能はマルチタブ、履歴、ショートカットキーなどの機能をサポートし、完全なプログラミングアシスタンス体験を提供します。
+
+</Steps>
+
+<Callout type="info">
+VS Code拡張機能はコマンドラインバージョンと完全に同じ機能です。使用シーンに合わせて自由に選択できます。
+</Callout>
+
+## 関連おすすめ
+
+- [スクリプトワンクリックインストール](./guide-script-install.mdx) — スクリプトコマンドでQwen Codeを高速インストール
+- [最初の会話を始める](./guide-first-conversation.mdx) — インストール後、Qwen Codeとの最初のAI会話を開始
+
+---
+
+<ShowcaseDetailCta />

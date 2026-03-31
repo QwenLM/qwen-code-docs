@@ -1,0 +1,62 @@
+---
+title: "Plan-Modus + Web-Suche"
+description: "Kombinieren Sie die Web-Suche im Plan-Modus, um zuerst die neuesten Informationen zu suchen und dann einen Ausführungsplan zu erstellen, was die Genauigkeit komplexer Aufgaben erheblich verbessert."
+category: "Erste Schritte"
+features:
+  - "Plan-Modus"
+  - "Web-Suche"
+thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Der Plan-Modus ist die intelligente Planungsfähigkeit von Qwen Code, die komplexe Aufgaben in ausführbare Schritte zerlegen kann. Wenn er mit der Web-Suche kombiniert wird, sucht er zuerst proaktiv nach den neuesten technischen Dokumentationen, Best Practices und Lösungen und formuliert dann basierend auf diesen Echtzeitinformationen genauere Ausführungspläne. Diese Kombination ist besonders geeignet für die Bearbeitung von Entwicklungsaufgaben, die neue Frameworks, neue APIs oder die Einhaltung der neuesten Spezifikationen erfordern, was die Codequalität und die Aufgabenabschluss-Effizienz erheblich verbessern kann. Ob beim Migrieren von Projekten, Integrieren neuer Funktionen oder Lösen komplexer technischer Probleme - Plan + Web-Suche kann Ihnen die modernsten Lösungen bieten.
+
+<ShowcaseDetailMeta category="Erste Schritte" features={["Plan-Modus", "Web-Suche"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png" alt="Plan-Modus + Web-Suche" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+### Plan-Modus aktivieren
+
+Geben Sie den Befehl `/approval-mode plan` im Gespräch ein, um den Plan-Modus zu aktivieren. Zu diesem Zeitpunkt geht Qwen Code in den Planungsstatus, bereit, Ihre Aufgabenbeschreibung zu empfangen und mit dem Denken zu beginnen. Der Plan-Modus analysiert automatisch die Komplexität der Aufgabe und bestimmt, ob externe Informationen durchsucht werden müssen, um die Wissensdatenbank zu ergänzen.
+
+```bash
+/approval-mode plan
+```
+
+### Suche nach neuesten Informationen anfordern
+
+Beschreiben Sie Ihre Aufgabenanforderungen, und Qwen Code identifiziert automatisch Schlüsselwörter, die durchsucht werden müssen. Es initiiert proaktiv Web-Suche-Anfragen, um die neuesten technischen Dokumentationen, API-Referenzen, Best Practices und Lösungen zu erhalten. Suchergebnisse werden in die Wissensdatenbank integriert und bieten eine präzise Informationsgrundlage für die nachfolgende Planung.
+
+```
+Helfen Sie mir, die neuesten Nachrichten im KI-Bereich zu suchen und sie mir als Bericht zusammenzustellen
+```
+
+### Ausführungsplan anzeigen
+
+Basierend auf den durchsuchten Informationen generiert Qwen Code einen detaillierten Ausführungsplan für Sie. Der Plan enthält klare Schrittbeschreibungen, zu beachtende technische Punkte, potenzielle Fallstricke und Lösungen. Sie können diesen Plan überprüfen, Änderungsvorschläge machen oder den Beginn der Ausführung bestätigen.
+
+### Plan schrittweise ausführen
+
+Nach Bestätigung des Plans führt Qwen Code ihn schrittweise aus. An jedem wichtigen Knotenpunkt berichtet es Ihnen über Fortschritt und Ergebnisse und stellt sicher, dass Sie die vollständige Kontrolle über den gesamten Prozess haben. Wenn Probleme auftreten, bietet es Lösungen basierend auf den neuesten Suchinformationen an, anstatt sich auf veraltetes Wissen zu verlassen.
+</Steps>
+
+<Callout type="info">
+Die Web-Suche identifiziert automatisch technische Schlüsselwörter in der Aufgabe, keine manuelle Angabe des Suchinhalts erforderlich. Für schnell iterierende Frameworks und Bibliotheken wird empfohlen, die Web-Suche im Plan-Modus zu aktivieren, um die neuesten Informationen zu erhalten.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [Web-Suche](./guide-web-search.mdx) — Neueste technische Dokumentationen und Lösungen in Echtzeit erhalten
+- [Bailian Coding Plan](./guide-bailian-coding-plan.mdx) — Exklusive Planungsfähigkeiten für die Bailian-Plattform
+
+---
+
+<ShowcaseDetailCta />

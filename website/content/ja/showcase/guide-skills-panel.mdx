@@ -1,0 +1,54 @@
+---
+title: "Skillsパネル"
+description: "Skillsパネルを通じて既存のSkill拡張を閲覧・インストール・管理し、AI機能ライブラリをワンストップで管理します。"
+category: "入門ガイド"
+features:
+  - "Skills"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01xkzvoE1fomm8znzBG_!!6000000004054-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+Skillsパネルは、Qwen Codeの拡張機能を管理するためのコントロールセンターです。この直感的なインターフェースを通じて、公式およびコミュニティが提供する様々なSkillを閲覧し、各Skillの機能と用途を理解し、ワンクリックで拡張機能をインストールまたはアンインストールできます。新しいAI機能を発見したい場合でも、インストール済みのSkillを管理したい場合でも、Skillsパネルは便利な操作体験を提供し、パーソナライズされたAIツールボックスを簡単に構築できます。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["Skills"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01xkzvoE1fomm8znzBG_!!6000000004054-2-tps-1694-952.png" alt="Skillsパネル" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 手順
+
+<Steps>
+
+### Skillsパネルを開く
+
+Qwen Code会話でコマンドを入力してSkillsパネルを開きます。このコマンドは、インストール済みおよび未インストールの拡張機能を含む、利用可能なすべてのSkillのリストを表示します。
+
+```bash
+/skills
+```
+
+### Skillsを閲覧・検索
+
+パネルで様々なSkill拡張を閲覧します。各Skillには詳細な説明と機能説明があります。検索機能を使用して必要な特定のSkillを素早く見つけたり、カテゴリ別に様々なタイプの拡張機能を閲覧したりできます。
+
+### Skillをインストールまたはアンインストール
+
+興味のあるSkillを見つけたら、インストールボタンをクリックしてQwen Codeにワンクリックで追加します。同様に、不要なSkillはいつでもアンインストールでき、AI機能ライブラリを整理・効率化できます。
+
+</Steps>
+
+<Callout type="info">
+Skillsパネルは定期的に更新され、最新リリースのSkill拡張を表示します。定期的にパネルを確認して、作業効率を向上させる強力なAI機能を発見することをお勧めします。
+</Callout>
+
+## 関連おすすめ
+
+- [Skillsをインストール](./guide-skill-install.mdx) — 複数の方法でSkill拡張をインストール
+
+---
+
+<ShowcaseDetailCta />

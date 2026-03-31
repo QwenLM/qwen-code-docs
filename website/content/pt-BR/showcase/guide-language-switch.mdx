@@ -1,0 +1,59 @@
+---
+title: "Troca de idioma"
+description: "Troca flexível de idioma da interface de usuário e idioma de saída da IA, suportando interação multilíngue."
+category: "Guia de Início"
+features:
+  - "Configurações"
+  - "Multilíngue"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+Qwen Code suporta troca de idioma flexível. Você pode definir independentemente o idioma da interface de usuário e o idioma de saída da IA. Seja chinês, inglês ou outros idiomas, você pode encontrar configurações adequadas. O suporte multilíngue permite que você trabalhe em um ambiente de idioma familiar, melhorando a eficiência de comunicação e o conforto.
+
+<ShowcaseDetailMeta category="Guia de Início" features={["Configurações", "Multilíngue"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Trocar idioma da UI
+
+Use o comando `/language ui` para trocar o idioma da interface, suportando chinês, inglês e outros idiomas. Após trocar o idioma da UI, menus, mensagens de prompt, documentação de ajuda, etc. serão exibidos no idioma escolhido.
+
+```bash
+/language ui zh-CN
+```
+
+### Trocar idioma de saída
+
+Use o comando `/language output` para trocar o idioma de saída da IA. A IA usará o idioma especificado para responder perguntas, gerar comentários de código, fornecer explicações, etc., tornando a comunicação mais natural e suave.
+
+```bash
+/language output zh-CN
+```
+
+### Uso misto de idiomas
+
+Você também pode definir diferentes idiomas para UI e saída para alcançar uso misto de idiomas. Por exemplo, usar chinês para UI e inglês para saída da IA, adequado para cenários onde você precisa ler documentação técnica em inglês.
+
+</Steps>
+
+<Callout type="info">
+As configurações de idioma são salvas automaticamente e usarão o idioma escolhido anteriormente na próxima inicialização.
+</Callout>
+
+## Recomendações relacionadas
+
+- [Iniciar primeira conversa](./guide-first-conversation.mdx) — Após a instalação, inicie sua primeira conversa com IA com Qwen Code
+- [Configuração de API](./guide-api-setup.mdx) — Configure a chave API e parâmetros do modelo para personalizar sua experiência de programação com IA
+
+<ShowcaseDetailCta />

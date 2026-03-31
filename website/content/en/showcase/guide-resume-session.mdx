@@ -1,0 +1,68 @@
+---
+title: "Resume Session Recovery"
+description: "Interrupted conversations can be resumed at any time without losing any context and progress."
+category: "Getting Started"
+features:
+  - "Terminal Operations"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+The Resume session recovery feature allows you to interrupt conversations at any time and resume them when needed without losing any context and progress. Whether you have something to do temporarily or are multitasking, you can safely pause the conversation and seamlessly continue later. This feature greatly improves work flexibility, allowing you to manage time and tasks more efficiently.
+
+<ShowcaseDetailMeta category="Getting Started" features={["Terminal Operations"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### View Session List
+
+Use the `qwen --resume` command to view all historical sessions. The system will display the time, topic, and brief information of each session, helping you quickly find the conversation you need to resume.
+
+```bash
+qwen --resume
+```
+
+### Resume Session
+
+Use the `qwen --resume` command to resume a specified session. You can select the conversation to resume by session ID or number, and the system will load the complete context history.
+
+```bash
+qwen --resume
+```
+
+### Continue Working
+
+After resuming the session, you can continue the conversation as if it had never been interrupted. All context, history, and progress will be completely preserved, and AI can accurately understand the previous discussion content.
+
+### Switch Sessions After Starting Qwen Code
+
+After starting Qwen Code, you can use the `/resume` command to switch to a previous session.
+
+```bash
+/resume
+```
+
+</Steps>
+
+<Callout type="info">
+Session history is automatically saved and supports cross-device synchronization. You can resume the same session on different devices.
+</Callout>
+
+## Related Recommendations
+
+- [Start First Conversation](./guide-first-conversation.mdx) — After installation, initiate your first AI conversation with Qwen Code
+- [Export Conversation Records](./office-export-conversation.mdx) — Export conversation records for easy saving and sharing
+
+---
+
+<ShowcaseDetailCta />

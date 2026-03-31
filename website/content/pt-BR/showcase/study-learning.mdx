@@ -1,0 +1,74 @@
+---
+title: "Aprender Código"
+description: "Clone repositórios de código aberto para aprender e entender o código. O Qwen Code orienta como contribuir para projetos de código aberto."
+category: "Aprendizado e Pesquisa"
+features:
+  - "Web Search"
+thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png"
+videoUrl: "https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão Geral
+
+Aprender com código de código aberto de alta qualidade é uma excelente maneira de melhorar suas habilidades de programação. O Qwen Code pode ajudá-lo a entender profundamente a arquitetura e detalhes de implementação de projetos complexos, encontrar pontos de contribuição apropriados e orientar correções de código. Seja para aprender uma nova pilha de tecnologia ou contribuir com a comunidade de código aberto, o Qwen Code é o mentor de programação ideal.
+
+<ShowcaseDetailMeta category="Aprendizado e Pesquisa" features={["Web Search"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4" poster="https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Clonar Repositório
+
+Use git clone para baixar o projeto de código aberto localmente. Escolha um projeto de seu interesse e clone-o em seu ambiente de desenvolvimento. Certifique-se de que o projeto tenha boa documentação e uma comunidade ativa, o que tornará o processo de aprendizagem mais suave.
+
+```bash
+git clone https://github.com/QwenLM/qwen-code.git && cd qwen-code
+```
+
+### Iniciar Qwen Code
+
+Inicie o Qwen Code no diretório do projeto. Isso permite que a IA acesse todos os arquivos do projeto e forneça explicações de código contextualmente relevantes. O Qwen Code analisará automaticamente a estrutura do projeto e identificará os principais módulos e dependências.
+
+```bash
+qwen
+```
+
+### Solicitar Explicação de Código
+
+Informe à IA qual parte ou funcionalidade do projeto você deseja entender. Você pode perguntar sobre a arquitetura geral, lógica de implementação de módulos específicos ou ideias de design de funcionalidades específicas. A IA explicará o código em linguagem clara e fornecerá conhecimento de fundo relevante.
+
+```bash
+Explique a arquitetura geral e os principais módulos deste projeto
+```
+
+### Encontrar Pontos de Contribuição
+
+Peça à IA para ajudá-lo a encontrar issues ou recursos apropriados para iniciantes participarem. A IA analisará a lista de issues do projeto e recomendará pontos de contribuição apropriados com base em dificuldade, tags e descrição. Esta é uma ótima maneira de começar a contribuir com código aberto.
+
+```bash
+Há issues abertas que iniciantes podem participar?
+```
+
+### Implementar Correção
+
+Implemente a correção de código passo a passo seguindo a orientação da IA. A IA ajudará a analisar o problema, projetar a solução e escrever o código, garantindo que a correção esteja em conformidade com os padrões de código do projeto. Após a conclusão, você pode enviar um PR para contribuir com o projeto de código aberto.
+
+</Steps>
+
+<Callout type="info">
+Participar de projetos de código aberto não apenas melhora suas habilidades de programação, mas também constrói influência técnica e permite conhecer desenvolvedores com interesses semelhantes.
+</Callout>
+
+## Recomendações Relacionadas
+
+- [Resolver Issues](./code-solve-issue.mdx) — Use o Qwen Code para analisar e resolver issues de projetos de código aberto
+- [Revisão de PR](./code-pr-review.mdx) — Deixe a IA revisar pull requests para melhorar a qualidade do código
+
+<ShowcaseDetailCta />

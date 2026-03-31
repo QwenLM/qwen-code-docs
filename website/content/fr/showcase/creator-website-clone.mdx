@@ -1,0 +1,69 @@
+---
+title: "Répliquer votre site web préféré en une phrase"
+description: "Donnez une capture d'écran à Qwen Code et l'IA analyse la structure de la page pour générer du code frontend complet."
+category: "Outils créatifs"
+features:
+  - "Mode Agent"
+  - "Reconnaissance d'images"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Aperçu
+
+Vous avez trouvé un design de site web que vous aimez et souhaitez le répliquer rapidement ? Donnez simplement une capture d'écran à Qwen Code et l'IA peut analyser la structure de la page et générer du code frontend complet. Qwen Code reconnaîtra la mise en page, le schéma de couleurs et la structure des composants, puis générera du code exécutable avec des technologies frontend modernes.
+
+<ShowcaseDetailMeta category="Outils créatifs" features={["Mode Agent", "Reconnaissance d'images"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Préparer une capture d'écran du site web
+
+Prenez une capture d'écran de l'interface du site web que vous souhaitez répliquer, en vous assurant qu'elle est claire et complète.
+
+### Installer le Skill correspondant
+
+Installez le Skill de reconnaissance d'images et de génération de code frontend.
+
+```bash
+Vérifie si j'ai find skills, sinon installe-le directement : npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, puis aide-moi à installer web-component-design.
+```
+
+### Coller la capture d'écran et décrire les besoins
+
+Collez la capture d'écran dans la conversation et indiquez à Qwen Code vos besoins spécifiques.
+
+```bash
+/skills web-component-design Basé sur ce skill, réplique une page web HTML basée sur @website.png, en veillant à ce que les références d'images soient valides.
+```
+
+Exemple de capture d'écran :
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### Exécuter et prévisualiser
+
+Ouvrez la page web correspondante pour vérifier le résultat. Si vous devez ajuster le design ou les fonctionnalités, continuez à interagir avec l'IA.
+
+</Steps>
+
+<Callout type="info">
+Le code généré suit les meilleures pratiques frontend modernes avec une bonne structure et maintenabilité. Vous pouvez le personnaliser et l'étendre davantage.
+</Callout>
+
+## Recommandations
+
+- [Créer un site web de CV personnel](./creator-resume-site-quick.mdx) — Créer rapidement un site web personnel
+- [Reconnaissance d'images](./office-image-recognition.mdx) — Reconnaître et analyser le contenu des images
+
+---
+
+<ShowcaseDetailCta />

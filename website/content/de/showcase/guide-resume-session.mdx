@@ -1,0 +1,68 @@
+---
+title: "Resume-Sitzungswiederherstellung"
+description: "Unterbrochene Gespräche können jederzeit fortgesetzt werden, ohne Kontext und Fortschritt zu verlieren."
+category: "Erste Schritte"
+features:
+  - "Terminal-Operationen"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Die Resume-Sitzungswiederherstellungsfunktion ermöglicht es Ihnen, Gespräche jederzeit zu unterbrechen und bei Bedarf fortzusetzen, ohne Kontext und Fortschritt zu verlieren. Ob Sie vorübergehend etwas zu tun haben oder mehrere Aufgaben parallel bearbeiten - Sie können das Gespräch sicher pausieren und später nahtlos fortsetzen. Diese Funktion verbessert die Arbeitsflexibilität erheblich und ermöglicht es Ihnen, Zeit und Aufgaben effizienter zu verwalten.
+
+<ShowcaseDetailMeta category="Erste Schritte" features={["Terminal-Operationen"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+
+### Sitzungsliste anzeigen
+
+Verwenden Sie den Befehl `qwen --resume`, um alle historischen Sitzungen anzuzeigen. Das System zeigt die Zeit, das Thema und kurze Informationen jeder Sitzung an und hilft Ihnen, das Gespräch zu finden, das Sie fortsetzen müssen.
+
+```bash
+qwen --resume
+```
+
+### Sitzung fortsetzen
+
+Verwenden Sie den Befehl `qwen --resume`, um eine angegebene Sitzung fortzusetzen. Sie können das fortzusetzende Gespräch über die Sitzungs-ID oder die Nummer auswählen, und das System lädt den vollständigen Kontextverlauf.
+
+```bash
+qwen --resume
+```
+
+### Arbeit fortsetzen
+
+Nach dem Fortsetzen der Sitzung können Sie das Gespräch so fortsetzen, als wäre es nie unterbrochen worden. Der gesamte Kontext, der Verlauf und der Fortschritt werden vollständig beibehalten, und die KI kann den vorherigen Diskussionsinhalt genau verstehen.
+
+### Sitzungen nach dem Start von Qwen Code wechseln
+
+Nach dem Start von Qwen Code können Sie den Befehl `/resume` verwenden, um zu einer vorherigen Sitzung zu wechseln.
+
+```bash
+/resume
+```
+
+</Steps>
+
+<Callout type="info">
+Sitzungsverlauf wird automatisch gespeichert und unterstützt geräteübergreifende Synchronisation. Sie können dieselbe Sitzung auf verschiedenen Geräten fortsetzen.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [Erstes Gespräch starten](./guide-first-conversation.mdx) — Nach der Installation Ihr erstes KI-Gespräch mit Qwen Code initiieren
+- [Gesprächsaufzeichnungen exportieren](./office-export-conversation.mdx) — Gesprächsaufzeichnungen exportieren, um sie einfach zu speichern und zu teilen
+
+---
+
+<ShowcaseDetailCta />

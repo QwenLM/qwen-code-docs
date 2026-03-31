@@ -1,0 +1,62 @@
+---
+title: "Modo Plan + Pesquisa Web"
+description: "Combine Pesquisa Web no modo Plan para pesquisar as últimas informações primeiro e depois formular um plano de execução, melhorando significativamente a precisão de tarefas complexas."
+category: "Guia de Início"
+features:
+  - "Modo Plan"
+  - "Pesquisa Web"
+thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+O modo Plan é a capacidade de planejamento inteligente do Qwen Code, capaz de decompor tarefas complexas em etapas executáveis. Quando combinado com Pesquisa Web, ele pesquisará proativamente as últimas documentações técnicas, melhores práticas e soluções primeiro, e depois formulará planos de execução mais precisos com base nessas informações em tempo real. Esta combinação é especialmente adequada para lidar com tarefas de desenvolvimento envolvendo novos frameworks, novas APIs ou necessidade de seguir as últimas especificações, o que pode melhorar significativamente a qualidade do código e a eficiência de conclusão de tarefas. Seja migrando projetos, integrando novas funcionalidades ou resolvendo problemas técnicos complexos, Plan + Pesquisa Web pode fornecer as soluções mais avançadas.
+
+<ShowcaseDetailMeta category="Guia de Início" features={["Modo Plan", "Pesquisa Web"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png" alt="Modo Plan + Pesquisa Web" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+### Habilitar modo Plan
+
+Digite o comando `/approval-mode plan` na conversa para ativar o modo Plan. Neste ponto, Qwen Code entrará no estado de planejamento, pronto para receber sua descrição de tarefa e começar a pensar. O modo Plan analisará automaticamente a complexidade da tarefa e determinará se é necessário pesquisar informações externas para complementar a base de conhecimento.
+
+```bash
+/approval-mode plan
+```
+
+### Solicitar pesquisa das últimas informações
+
+Descreva seus requisitos de tarefa, e Qwen Code identificará automaticamente as palavras-chave que precisam ser pesquisadas. Ele iniciará proativamente solicitações de Pesquisa Web para obter as últimas documentações técnicas, referências de API, melhores práticas e soluções. Os resultados da pesquisa serão integrados na base de conhecimento, fornecendo uma base de informações precisa para o planejamento subsequente.
+
+```
+Ajude-me a pesquisar as últimas notícias no campo de IA e organizá-las em um relatório para mim
+```
+
+### Ver plano de execução
+
+Com base nas informações pesquisadas, Qwen Code gerará um plano de execução detalhado para você. O plano incluirá descrições claras de etapas, pontos técnicos a serem observados, armadilhas potenciais e soluções. Você pode revisar este plano, fornecer sugestões de modificação ou confirmar para começar a execução.
+
+### Executar plano passo a passo
+
+Após confirmar o plano, Qwen Code o executará passo a passo. Em cada ponto chave, ele relatará o progresso e os resultados, garantindo que você tenha controle completo sobre todo o processo. Se surgirem problemas, ele fornecerá soluções com base nas últimas informações pesquisadas, em vez de depender de conhecimento desatualizado.
+</Steps>
+
+<Callout type="info">
+A Pesquisa Web identificará automaticamente palavras-chave técnicas na tarefa, sem necessidade de especificar manualmente o conteúdo da pesquisa. Para frameworks e bibliotecas de iteração rápida, recomenda-se habilitar Pesquisa Web no modo Plan para obter as últimas informações.
+</Callout>
+
+## Recomendações relacionadas
+
+- [Pesquisa Web](./guide-web-search.mdx) — Obter as últimas documentações técnicas e soluções em tempo real
+- [Bailian Coding Plan](./guide-bailian-coding-plan.mdx) — Capacidades de planejamento exclusivas para a plataforma Bailian
+
+---
+
+<ShowcaseDetailCta />

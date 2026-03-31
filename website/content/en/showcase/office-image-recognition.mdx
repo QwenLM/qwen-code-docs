@@ -1,0 +1,55 @@
+---
+title: "Image Recognition"
+description: "Qwen Code can read and understand image content, whether it's UI design mockups, error screenshots, or architecture diagrams."
+category: "Daily Tasks"
+features:
+  - "Image Recognition"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01JahZiH1yV4QoVXcEV_!!6000000006583-2-tps-1700-958.png"
+videoUrl: "https://cloud.video.taobao.com/vod/j0eaRLacpjRbMBDAerJ1tP9qJ9qbvUHFyyR-VdZBwIg.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Overview
+
+Qwen Code has powerful image recognition capabilities and can read and understand various types of image content. Whether it's UI design mockups, error screenshots, architecture diagrams, flowcharts, or handwritten notes, Qwen Code can accurately identify them and provide valuable analysis. This capability allows you to directly integrate visual information into your programming workflow, greatly improving communication efficiency and problem-solving speed.
+
+<ShowcaseDetailMeta category="Daily Tasks" features={["Image Recognition"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/j0eaRLacpjRbMBDAerJ1tP9qJ9qbvUHFyyR-VdZBwIg.mp4" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+### Upload Image
+
+Drag and drop the image into the conversation window, or use clipboard paste (`Cmd+V` / `Ctrl+V`). Supports common formats such as PNG, JPEG, GIF, WebP, etc.
+
+Reference: [Clipboard Image Paste](./office-clipboard-paste.mdx) shows how to quickly paste screenshots into the conversation.
+
+### Describe Your Needs
+
+In the input box, describe what you want AI to do with the image. For example:
+
+```
+Based on the image content, help me generate a simple html file
+```
+
+### Get Analysis Results
+
+Qwen Code will analyze the image content and give a detailed reply. You can continue to ask questions, discuss any details in the image in depth, or ask AI to generate code based on the image content.
+</Steps>
+
+<Callout type="info">
+The image recognition feature supports multiple scenarios: code screenshot analysis, UI design mockup to code conversion, error information interpretation, architecture diagram understanding, chart data extraction, etc. It is recommended to use clear high-resolution images for the best recognition effect.
+</Callout>
+
+## Related Recommendations
+
+- [Clipboard Image Paste](./office-clipboard-paste.mdx) — Quickly paste screenshots into the conversation
+- [MCP Image Generation](./office-mcp-image-gen.mdx) — Use MCP tools to generate images
+
+---
+
+<ShowcaseDetailCta />

@@ -1,0 +1,117 @@
+---
+title: "Руководство по настройке API"
+description: "Настройте ключ API и параметры модели для настройки вашего опыта программирования с ИИ, поддерживая множественный выбор моделей."
+category: "Руководство по началу работы"
+features:
+  - "Настройки"
+  - "API"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+videoUrl: "https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+Настройка ключа API — это важный шаг для использования Qwen Code, так как она разблокирует все функции и позволяет получить доступ к мощным моделям ИИ. Через платформу Alibaba Cloud Bailian вы можете легко получить ключ API и выбрать наиболее подходящую модель для различных сценариев. Будь то ежедневная разработка или сложные задачи, правильная настройка модели может значительно повысить вашу эффективность работы.
+
+<ShowcaseDetailMeta category="Руководство по началу работы" features={["Настройки", "API"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4" poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+Если вы пользователь режима Bailian Coding Plan, пожалуйста, обратитесь к [Руководству по настройке API Bailian Coding Plan](./guide-bailian-coding-plan.mdx) для получения ключа API и настройки модели.
+
+<Steps>
+
+## Получить ключ API
+
+Посетите [платформу Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key), найдите страницу управления ключами API в личном центре. Нажмите для создания нового ключа API, и система сгенерирует уникальный ключ. Этот ключ — ваше удостоверение для доступа к сервисам Qwen Code, пожалуйста, храните его в безопасности.
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+<Callout type="warning">
+Пожалуйста, храните свой ключ API в безопасности и не раскрывайте его другим лицам или не коммитите в репозиторий кода.
+</Callout>
+
+## Настроить ключ API в Qwen Code
+
+**1. Позволить Qwen Code настроить автоматически**
+
+Откройте терминал, запустите Qwen Code напрямую в корневом каталоге, скопируйте следующий код и сообщите ваш КЛЮЧ-API, настройка будет успешной. Перезапустите Qwen Code и введите `/model`, чтобы переключиться на настроенную модель.
+
+```json
+Помогите мне настроить `settings.json` для модели Bailian в соответствии со следующим содержимым:
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<имя модели>",
+            "name": "[Bailian] <имя модели>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<заменить на КЛЮЧ пользователя>"
+    },
+}
+Для ввода имени модели, пожалуйста, обратитесь к: https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all
+Мой КЛЮЧ-API:
+```
+
+Затем вставьте ваш КЛЮЧ-API в поле ввода, сообщите имя нужной модели, например `qwen3.5-plus`, и отправьте для завершения настройки.
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+**2. Ручная настройка**
+
+Настройте файл settings.json вручную. Расположение файла находится в каталоге `<корневой каталог пользователя>/.qwen`. Вы можете напрямую скопировать следующее содержимое и изменить ваш КЛЮЧ-API и имя модели.
+
+```json
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<имя модели>",
+            "name": "[Bailian] <имя модели>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<заменить на КЛЮЧ пользователя>"
+    },
+}
+```
+
+## Выбрать модель
+
+Выберите подходящую модель в соответствии с вашими потребностями, балансируя скорость и производительность. Различные модели подходят для различных сценариев. Вы можете выбрать на основе сложности задачи и требований к времени ответа. Используйте команду `/model` для быстрого переключения между моделями.
+
+Общие варианты модели:
+- `qwen3.5-plus`: Мощный, подходит для сложных задач
+- `qwen3.5-flash`: Быстрый, подходит для простых задач
+- `qwen-max`: Самая мощная модель, подходит для задач высокой сложности
+
+## Проверить соединение
+
+Отправьте тестовое сообщение для подтверждения правильности настройки API. Если настройка успешна, Qwen Code ответит вам немедленно, что означает, что вы готовы начать использование программирования с поддержкой ИИ. Если вы столкнулись с проблемами, пожалуйста, проверьте, правильно ли настроен ключ API.
+
+```bash
+Hello, can you help me with coding?
+```
+
+</Steps>
+
+## Связанные рекомендации
+
+- [Начать первый разговор](./guide-first-conversation.mdx) — После установки инициируйте свой первый разговор с ИИ с Qwen Code
+- [Режим Bailian Coding Plan](./guide-bailian-coding-plan.mdx) — Настройте для использования Bailian Coding Plan, множественный выбор моделей, улучшение качества выполнения сложных задач
+
+<ShowcaseDetailCta />

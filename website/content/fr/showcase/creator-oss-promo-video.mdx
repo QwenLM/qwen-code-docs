@@ -1,0 +1,52 @@
+---
+title: "Créer une vidéo promotionnelle pour votre projet open source"
+description: "Fournissez une URL de dépôt et l'IA génère une belle vidéo de démonstration du projet pour vous."
+category: "Outils créatifs"
+features:
+  - "Skills"
+  - "Remotion"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01KKPAv51ZL7QcgguxA_!!6000000003177-2-tps-2880-1622.png"
+videoUrl: "https://cloud.video.taobao.com/vod/TwRRLlr4EHfv-8kvb0J-w7zj70zxoGY7wiaPewqm4l0.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Aperçu
+
+Vous souhaitez créer une vidéo promotionnelle pour votre projet open source mais manquez d'expérience en production vidéo ? Qwen Code peut générer automatiquement de belles vidéos de démonstration de projet. Fournissez simplement l'URL du dépôt GitHub, et l'IA analysera la structure du projet, extraira les fonctionnalités clés, générera des scripts d'animation et rendra une vidéo professionnelle avec Remotion.
+
+<ShowcaseDetailMeta category="Outils créatifs" features={["Skills", "Remotion"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/TwRRLlr4EHfv-8kvb0J-w7zj70zxoGY7wiaPewqm4l0.mp4" poster="https://gw.alicdn.com/imgextra/i2/O1CN01KKPAv51ZL7QcgguxA_!!6000000003177-2-tps-2880-1622.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Préparer le dépôt
+
+Assurez-vous que votre dépôt GitHub contient des informations complètes sur le projet et de la documentation, incluant README, captures d'écran et descriptions des fonctionnalités.
+
+### Générer la vidéo promotionnelle
+
+Indiquez à Qwen Code le style et le focus de la vidéo souhaitée, et l'IA analysera automatiquement le projet et générera la vidéo.
+
+```bash
+Basé sur ce skill https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md, aide-moi à générer une vidéo de démonstration pour le dépôt open source : <URL du dépôt>
+```
+
+</Steps>
+
+<Callout type="info">
+Les vidéos générées prennent en charge plusieurs résolutions et formats, et peuvent être directement téléchargées sur YouTube et d'autres plateformes vidéo.
+</Callout>
+
+## Recommandations
+
+- [Création vidéo Remotion](./creator-remotion-video.mdx) — Générer des vidéos à partir de descriptions créatives en langage naturel
+
+---
+
+<ShowcaseDetailCta />

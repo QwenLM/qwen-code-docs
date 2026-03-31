@@ -1,0 +1,72 @@
+---
+title: "Automatically Generate Weekly Report"
+description: "Customize skills. Automatically crawl this week's updates with one command and write product update weekly reports according to templates."
+category: "Daily Tasks"
+features:
+  - "Skills"
+thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png"
+videoUrl: "https://cloud.video.taobao.com/vod/BrL3c4NkeIqLiT3MAAWUSp26QgM0hjN67ukuKQmgE4M.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Writing product update weekly reports every week is a repetitive and time-consuming task. Using Qwen Code's customized skills, you can let AI automatically crawl this week's product update information and generate structured weekly reports according to standard templates. With just one command, AI will collect data, analyze content, and organize it into a document, greatly improving your work efficiency. You can focus on the product itself and let AI handle tedious document work.
+
+<ShowcaseDetailMeta category="Daily Tasks" features={["Skills"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/BrL3c4NkeIqLiT3MAAWUSp26QgM0hjN67ukuKQmgE4M.mp4" poster="https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Install skills-creator Skill
+
+First, install the skill so AI understands which data sources' information you need to collect.
+
+```
+Check if I have find skills, if not, help me install it directly: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, then help me install skills-creator to qwen code skills.
+```
+
+### Create Weekly Report Skill
+
+Use the skill creation feature to tell AI you need a customized weekly report generation skill. Describe the data types you need to collect and the weekly report structure. AI will generate a new skill based on your needs.
+
+```
+I need to create weekly reports for the open source project: https://github.com/QwenLM/qwen-code, mainly including issues submitted this week, bugs resolved, new versions and features released, as well as reviews and reflections. The language should be user-centered, altruistic, and perceptive. Create a skill.
+```
+
+### Generate Weekly Report Content
+
+After configuration is complete, enter the generation command. Qwen Code will automatically crawl this week's update information and organize it into a structured document according to the product weekly report template.
+
+```
+Generate this week's qwen-code product update weekly report
+```
+
+### Open Weekly Report, Edit and Adjust
+
+The generated weekly report can be opened and adjusted for further editing or sharing with the team. You can also ask AI to help you adjust format and content focus.
+
+```
+Make the weekly report language more lively
+```
+
+</Steps>
+
+<Callout type="info">
+On first use, you need to configure data sources. After configuration once, it can be reused. You can set up scheduled tasks to let Qwen Code automatically generate weekly reports every week, completely freeing your hands.
+</Callout>
+
+## Related Recommendations
+
+- [Presentation: Create PPT](./office-ppt-presentation.mdx) — Convert weekly report content into beautiful presentation slides
+- [Export Conversation History](./office-export-conversation.mdx) — Export and organize historical conversation content
+
+---
+
+<ShowcaseDetailCta />

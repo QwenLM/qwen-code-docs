@@ -1,0 +1,55 @@
+---
+title: "Reconnaissance d'images"
+description: "Qwen Code peut lire et comprendre le contenu des images, qu'il s'agisse de maquettes de conception UI, de captures d'erreur ou de diagrammes d'architecture."
+category: "Tâches quotidiennes"
+features:
+  - "Reconnaissance d'images"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01JahZiH1yV4QoVXcEV_!!6000000006583-2-tps-1700-958.png"
+videoUrl: "https://cloud.video.taobao.com/vod/j0eaRLacpjRbMBDAerJ1tP9qJ9qbvUHFyyR-VdZBwIg.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Vue d'ensemble
+
+Qwen Code possède de puissantes capacités de reconnaissance d'images et peut lire et comprendre divers types de contenu d'images. Qu'il s'agisse de maquettes de conception UI, de captures d'erreur, de diagrammes d'architecture, de diagrammes de flux ou de notes manuscrites, Qwen Code peut les identifier avec précision et fournir des analyses précieuses. Cette capacité vous permet d'intégrer directement des informations visuelles dans votre flux de travail de programmation, améliorant considérablement l'efficacité de la communication et la vitesse de résolution de problèmes.
+
+<ShowcaseDetailMeta category="Tâches quotidiennes" features={["Reconnaissance d'images"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/j0eaRLacpjRbMBDAerJ1tP9qJ9qbvUHFyyR-VdZBwIg.mp4" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+### Télécharger l'image
+
+Faites glisser l'image dans la fenêtre de conversation ou utilisez le collage du presse-papiers (`Cmd+V` / `Ctrl+V`). Prend en charge les formats courants tels que PNG, JPEG, GIF, WebP, etc.
+
+Référence : [Coller une image du presse-papiers](./office-clipboard-paste.mdx) montre comment coller rapidement des captures d'écran dans la conversation.
+
+### Décrire vos besoins
+
+Dans la zone de saisie, décrivez ce que vous voulez que l'IA fasse avec l'image. Par exemple :
+
+```
+Basé sur le contenu de l'image, aidez-moi à générer un fichier HTML simple
+```
+
+### Obtenir les résultats de l'analyse
+
+Qwen Code analysera le contenu de l'image et donnera une réponse détaillée. Vous pouvez continuer à poser des questions, discuter en détail de tous les détails de l'image, ou demander à l'IA de générer du code basé sur le contenu de l'image.
+</Steps>
+
+<Callout type="info">
+La fonction de reconnaissance d'images prend en charge plusieurs scénarios : analyse de captures de code, conversion de maquettes de conception UI en code, interprétation d'informations d'erreur, compréhension de diagrammes d'architecture, extraction de données de graphiques, etc. Il est recommandé d'utiliser des images haute résolution claires pour le meilleur effet de reconnaissance.
+</Callout>
+
+## Recommandations connexes
+
+- [Coller une image du presse-papiers](./office-clipboard-paste.mdx) — Coller rapidement des captures d'écran dans la conversation
+- [Génération d'images MCP](./office-mcp-image-gen.mdx) — Utiliser les outils MCP pour générer des images
+
+---
+
+<ShowcaseDetailCta />

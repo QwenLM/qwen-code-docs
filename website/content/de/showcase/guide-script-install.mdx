@@ -1,0 +1,61 @@
+---
+title: "Skript-Installation mit einem Klick"
+description: "Installieren Sie Qwen Code schnell über einen Skriptbefehl. Schließen Sie die Umgebungskonfiguration in Sekunden ab. Unterstützt Linux, macOS und Windows-Systeme."
+category: "Erste Schritte"
+features:
+  - "Installation"
+thumbnail: "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Qwen Code unterstützt die schnelle Installation über einen einzigen Skriptbefehl. Keine manuelle Konfiguration von Umgebungsvariablen oder Download von Abhängigkeiten erforderlich. Das Skript erkennt automatisch Ihren Betriebssystemtyp, lädt das entsprechende Installationspaket herunter und schließt die Konfiguration ab. Der gesamte Vorgang dauert nur wenige Sekunden und unterstützt drei Hauptplattformen: **Linux**, **macOS** und **Windows**.
+
+<ShowcaseDetailMeta category="Erste Schritte" features={["Installation"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+### Linux / macOS Installation
+
+Öffnen Sie Ihr Terminal und führen Sie den folgenden Befehl aus. Das Skript erkennt automatisch Ihre Systemarchitektur (x86_64 / ARM), lädt die entsprechende Version herunter und schließt die Installationskonfiguration ab.
+
+```bash
+bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source website
+```
+
+### Windows Installation
+
+Führen Sie den folgenden Befehl in PowerShell aus. Das Skript lädt eine Batch-Datei herunter und führt den Installationsvorgang automatisch aus. Nach Abschluss können Sie den `qwen`-Befehl in jedem Terminal verwenden.
+
+```bash
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat --source website
+```
+
+### Installation überprüfen
+
+Nach Abschluss der Installation führen Sie den folgenden Befehl in Ihrem Terminal aus, um zu bestätigen, dass Qwen Code korrekt installiert wurde. Wenn Sie die Versionsnummer sehen, war die Installation erfolgreich.
+
+```bash
+qwen --version
+```
+</Steps>
+
+<Callout type="info">
+Wenn Sie npm bevorzugen, können Sie auch global über `npm install -g @qwen-code/qwen-code` installieren. Geben Sie nach der Installation einfach `qwen` ein, um zu starten. Wenn Sie Berechtigungsprobleme haben, verwenden Sie `sudo npm install -g @qwen-code/qwen-code` und geben Sie Ihr Passwort ein, um zu installieren.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [Starten Sie Ihr erstes Gespräch](./guide-first-conversation.mdx) — Starten Sie nach der Installation Ihr erstes AI-Gespräch mit Qwen Code
+- [API-Einstellungen](./guide-api-setup.mdx) — Konfigurieren Sie API-Schlüssel und Modellparameter, um Ihre AI-Programmiererfahrung anzupassen
+- [VS Code-Integrationsoberfläche](./guide-vscode-integration.mdx) — Nutzen Sie die vollständigen Funktionen von Qwen Code in VS Code
+
+<ShowcaseDetailCta />

@@ -1,0 +1,74 @@
+---
+title: "Code-Lernen"
+description: "Open-Source-Repositories klonen und lernen, Code zu verstehen. Lassen Sie Qwen Code Sie anleiten, wie Sie zu Open-Source-Projekten beitragen können."
+category: "Lernen & Forschen"
+features:
+  - "Web Search"
+thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png"
+videoUrl: "https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Lernen von exzellentem Open-Source-Code ist ein hervorragender Weg, um Programmierfähigkeiten zu verbessern. Qwen Code kann Ihnen helfen, komplexe Projektarchitekturen und Implementierungsdetails tief zu verstehen, geeignete Beiträge zu finden und Sie durch Codemodifikationen zu leiten. Ob Sie neue Technologie-Stacks lernen oder zur Open-Source-Community beitragen möchten – Qwen Code ist Ihr idealer Programmiermentor.
+
+<ShowcaseDetailMeta category="Lernen & Forschen" features={["Web Search"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4" poster="https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+
+### Repository klonen
+
+Verwenden Sie git clone, um das Open-Source-Projekt lokal herunterzuladen. Wählen Sie ein Projekt, das Sie interessiert, und klonen Sie es in Ihre Entwicklungsumgebung. Stellen Sie sicher, dass das Projekt gute Dokumentation und eine aktive Community hat, damit der Lernprozess reibungsloser verläuft.
+
+```bash
+git clone https://github.com/QwenLM/qwen-code.git && cd qwen-code
+```
+
+### Qwen Code starten
+
+Starten Sie Qwen Code im Projektverzeichnis. Auf diese Weise kann AI auf alle Projektdateien zugreifen und kontextrelevante Codeerklärungen und -vorschläge geben. Qwen Code analysiert automatisch die Projektstruktur und identifiziert Hauptmodule und Abhängigkeiten.
+
+```bash
+qwen
+```
+
+### Codeerklärung anfordern
+
+Sagen Sie AI, welchen Teil oder welche Funktionalität des Projekts Sie verstehen möchten. Sie können nach der Gesamtarchitektur, der Implementierungslogik bestimmter Module oder den Designideen bestimmter Funktionen fragen. AI erklärt den Code in klarer Sprache und bietet relevantes Hintergrundwissen.
+
+```bash
+Helfen Sie mir, die Gesamtarchitektur und Hauptmodule dieses Projekts zu erklären
+```
+
+### Beiträge finden
+
+Lassen Sie AI Ihnen helfen, Issues oder Funktionen zu finden, die für Anfänger geeignet sind, daran teilzunehmen. AI analysiert die Issues-Liste des Projekts und empfiehlt geeignete Beiträge basierend auf Schwierigkeit, Tags und Beschreibungen. Dies ist ein guter Weg, um mit Open-Source-Beiträgen zu beginnen.
+
+```bash
+Welche offenen Issues sind für Anfänger geeignet, daran teilzunehmen?
+```
+
+### Modifikationen implementieren
+
+Implementieren Sie Codemodifikationen schrittweise basierend auf der Anleitung von AI. AI hilft Ihnen, Probleme zu analysieren, Lösungen zu entwerfen, Code zu schreiben und sicherzustellen, dass Modifikationen den Projekt-Codestandards entsprechen. Nach Abschluss der Modifikationen können Sie einen PR einreichen und zum Open-Source-Projekt beitragen.
+
+</Steps>
+
+<Callout type="info">
+Durch die Teilnahme an Open-Source-Projekten können Sie nicht nur Programmierfähigkeiten verbessern, sondern auch technischen Einfluss aufbauen und gleichgesinnte Entwickler kennenlernen.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [Issues lösen](./code-solve-issue.mdx) — Qwen Code verwenden, um Open-Source-Projekt-Issues zu analysieren und zu lösen
+- [PR-Review](./code-pr-review.mdx) — AI helfen lassen, Pull Requests zu überprüfen und die Codequalität zu verbessern
+
+<ShowcaseDetailCta />

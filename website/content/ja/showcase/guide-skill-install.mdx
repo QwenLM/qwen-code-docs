@@ -1,0 +1,136 @@
+---
+title: "Skillsをインストール"
+description: "コマンドラインインストールやフォルダインストールなど、複数の方法でSkill拡張をインストールし、様々なシーンのニーズに対応します。"
+category: "入門ガイド"
+features:
+  - "Skills"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+Qwen Codeは複数のSkillインストール方法をサポートしています。実際のシーンに合わせて最適な方法を選択できます。コマンドラインインストールはオンライン環境に適しており、高速で便利です。フォルダインストールはオフライン環境やカスタムSkillに適しており、柔軟で制御可能です。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["Skills"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 方法1：Qwen Codeにインストールさせる
+
+オンライン環境に適しており、npxコマンドでGitHubリポジトリから直接Skillをインストールします。
+
+<Steps>
+
+### find-skills Skillを確認してインストール
+
+Qwen Codeでニーズを直接記述し、必要なSkillの確認とインストールを手伝ってもらいます：
+
+```
+find skillsがあるか確認し、なければ直接インストールしてください：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code
+```
+
+### 必要なSkillをインストール、例えばweb-component-designをインストール：
+
+```
+/skills find-skills install web-component-design -y -a qwen-code
+```
+
+Qwen Codeがインストールコマンドを自動実行し、指定されたリポジトリからSkillをダウンロードしてインストールします。1文でインストールすることもできます：
+
+```
+find skillsがあるか確認し、なければ直接インストールしてください：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code、そして【スキル名】を現在のqwen code skillsディレクトリにインストールしてください。
+```
+
+### インストールの確認
+
+インストール完了後、Skillが正常に読み込まれたことを確認します：
+
+```bash
+/skills
+```
+
+</Steps>
+
+<Callout type="info">
+コマンドラインインストールにはネットワーク接続が必要です。`-y`パラメータは自動確認を意味し、`-a qwen-code`はQwen Codeへのインストールを指定します。
+</Callout>
+
+## 方法2：フォルダインストール
+
+オフライン環境、企業イントラネット、またはカスタム開発のSkillを使用する場合に適しています。
+
+<Steps>
+
+### Skillファイルを準備
+
+インストールしたいSkillファイルを取得します。公式リポジトリからダウンロードするか、独自に開発したSkillを使用します。Skillディレクトリ構造が完全で、`skill.md`設定ファイルが含まれていることを確認します。
+
+```bash
+# GitHubからSkillをダウンロード
+git clone https://github.com/username/qwen-skill-example.git
+
+# または独自のSkillディレクトリを作成
+mkdir -p my-custom-skill
+```
+
+### Skillsディレクトリに配置
+
+SkillフォルダをQwen CodeのSkillsディレクトリにコピーします。デフォルトの場所は`~/.qwen/skills/`です。ディレクトリが存在しない場合は手動で作成する必要があります。
+
+手動作成とコマンドライン作成・コピーの両方が可能です。コマンドライン方法は以下の通りです：
+
+```bash
+# ディレクトリを作成（存在しない場合）
+mkdir -p ~/.qwen/skills
+
+# Skillをディレクトリにコピー
+cp -r my-custom-skill ~/.qwen/skills/
+```
+
+### インストールの確認
+
+Qwen Codeでリロードコマンドを実行します。システムがディレクトリをスキャンし、利用可能なすべてのSkillを読み込みます。
+
+```bash
+# Qwen Codeを起動
+qwen
+
+# インストールを確認
+/skills
+```
+
+</Steps>
+
+<Callout type="info">
+**Skillディレクトリ構造要件**
+
+各Skillフォルダには`skill.md`ファイルを含める必要があり、Skillの名前、説明、トリガールールを定義します：
+
+```
+~/.qwen/skills/
+├── my-skill/
+│   ├── SKILL.md      # 必須：Skill設定ファイル
+│   └── scripts/      # オプション：スクリプトファイル
+└── another-skill/
+    └── SKILL.md
+```
+</Callout>
+
+## インストール方法の比較
+
+| 方法 | 適したシーン | メリット | デメリット |
+|------|-------------|----------|-----------|
+| コマンドラインインストール | オンライン環境 | 高速・便利、自動ダウンロード | ネットワークが必要 |
+| フォルダインストール | オフライン/カスタム | 柔軟・制御可能、カスタマイズ対応 | 手動操作が必要 |
+
+## 関連おすすめ
+
+- [プロンプトでSkillsをインストール](./guide-skill-install.mdx-prompt) — オンラインで公式Skillを高速インストール
+- [Skillsパネル](./guide-skills-panel.mdx) — すべてのSkill拡張をワンストップで管理
+
+<ShowcaseDetailCta />

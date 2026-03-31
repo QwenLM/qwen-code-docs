@@ -1,0 +1,73 @@
+---
+title: "Persönliche Lebenslauf-Website erstellen"
+description: "Erstellen Sie mit einem Satz eine persönliche Lebenslauf-Website – integrieren Sie Ihre Erfahrungen, generieren Sie eine Präsentationsseite mit PDF-Export."
+category: "Kreativ-Tools"
+features:
+  - "Skills"
+thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+videoUrl: "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Eine persönliche Lebenslauf-Website ist ein wichtiges Werkzeug für die Jobsuche und Selbstpräsentation. Qwen Code kann basierend auf Ihrem Lebenslaufinhalt schnell eine professionelle Präsentationsseite generieren, die PDF-Export unterstützt.
+
+<ShowcaseDetailMeta category="Kreativ-Tools" features={["Skills"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4" poster="https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+
+### Persönliche Erfahrungen angeben
+
+Teilen Sie der KI Ihren Bildungshintergrund, Berufserfahrung, Projekterfahrung und Fähigkeiten mit.
+
+```bash
+Ich bin Frontend-Entwickler, habe an der XX-Universität studiert, 3 Jahre Erfahrung, spezialisiert auf React und TypeScript...
+```
+
+### Web-Design Skill installieren
+
+Installieren Sie den Web-Design Skill, der Lebenslauf-Design-Vorlagen bereitstellt.
+
+```bash
+Prüfe, ob ich find skills habe, falls nicht, installiere es direkt: npx skills add https://github.com/vercel-labs/skills --skill find-skills, dann hilf mir, web-component-design zu installieren.
+```
+
+### Designstil wählen
+
+Beschreiben Sie Ihren bevorzugten Lebenslaufstil, z.B. minimalistisch, professionell oder kreativ.
+
+```bash
+/skills web-component-design Hilf mir, eine minimalistische professionelle Lebenslauf-Website zu gestalten
+```
+
+### Lebenslauf-Website generieren
+
+Die KI erstellt ein vollständiges Lebenslauf-Website-Projekt mit responsivem Layout und Druckstilen.
+
+```bash
+npm run dev
+```
+
+</Steps>
+
+<Callout type="info">
+Ihre Lebenslauf-Website sollte Ihre Kernstärken und Leistungen hervorheben und spezifische Daten und Beispiele zur Untermauerung verwenden.
+</Callout>
+
+## Verwandte Themen
+
+- [Ihre Lieblingswebsite nachbilden](./creator-website-clone.mdx) — Screenshot an Qwen Code geben und die gewünschte Website nachbilden lassen
+- [In Datei schreiben](./office-write-file.mdx) — Qwen Code Dateien erstellen und beschreiben lassen
+- [Remotion Videoerstellung](./creator-remotion-video.mdx) — Videos mit dem Remotion Skill generieren
+
+---
+
+<ShowcaseDetailCta />

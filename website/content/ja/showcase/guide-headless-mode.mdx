@@ -1,0 +1,67 @@
+---
+title: "ヘッドレスモード"
+description: "GUIのない環境でQwen Codeを使用し、リモートサーバー、CI/CDパイプライン、自動化スクリプトシナリオに適しています。"
+category: "入門ガイド"
+features:
+  - "Headless"
+thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+ヘッドレスモードを使用すると、GUIのない環境でQwen Codeを使用でき、特にリモートサーバー、CI/CDパイプライン、自動化スクリプトシナリオに適しています。コマンドラインパラメータとパイプライン入力を通じて、Qwen Codeを既存のワークフローにシームレスに統合し、自動化されたAI支援プログラミングを実現できます。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["Headless"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif" alt="ヘッドレスモード" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 手順
+
+<Steps>
+
+### プロンプトモードを使用
+
+`--p`パラメータを使用して、コマンドラインで直接プロンプトを渡します。Qwen Codeは回答を返して自動的に終了します。この方法はワンタイムクエリに適しており、スクリプトに簡単に統合できます。
+
+```bash
+qwen --p 'what is qwen code?'
+```
+
+### パイプライン入力
+
+パイプを通じて他のコマンドの出力をQwen Codeに渡し、自動化処理を実現します。ログファイル、エラーメッセージなどを直接AIに送信して分析できます。
+
+```bash
+cat error.log | qwen --p 'エラーを分析'
+```
+
+### スクリプト統合
+
+シェルスクリプトにQwen Codeを統合し、複雑な自動化ワークフローを実現します。AIの戻り結果に基づいて異なる操作を実行し、インテリジェントな自動化スクリプトを構築できます。
+
+```bash
+#!/bin/bash
+result=$(qwen --p 'コードに問題があるか確認')
+if [[ $result == *"問題がある"* ]]; then
+  echo "コードの問題が見つかりました"
+fi
+```
+
+</Steps>
+
+<Callout type="info">
+ヘッドレスモードはコード生成、問題解決、ファイル操作など、Qwen Codeのすべての機能をサポートします。
+</Callout>
+
+## 関連推奨
+
+- [認証ログイン](./guide-authentication.mdx) — Qwen Codeの認証プロセスを理解し、アカウントログインを素早く完了
+- [Agents設定ファイル](./guide-agents-config.mdx) — Agents MDファイルでAIの動作をカスタマイズ
+
+---
+
+<ShowcaseDetailCta />

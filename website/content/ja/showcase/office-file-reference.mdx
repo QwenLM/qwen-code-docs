@@ -1,0 +1,64 @@
+---
+title: "@file参照機能"
+description: "会話で@fileを使用してプロジェクトファイルを参照し、AIにコードコンテキストを正確に理解させます。"
+category: "入門ガイド"
+features:
+  - "ファイル参照"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+@file参照機能により、会話でプロジェクトファイルを直接参照でき、AIにコードコンテキストを正確に理解させることができます。単一ファイルでも複数ファイルでも、AIはコードコンテンツを読み取り・分析し、より正確な提案と回答を提供します。この機能はコードレビュー、問題トラブルシューティング、コードリファクタリングなどのシーンに特に適しています。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["ファイル参照"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png" alt="@file参照機能" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 手順
+
+<Steps>
+
+### 単一ファイルを参照
+
+`@file`コマンドの後にファイルパスを続けて使用し、単一ファイルを参照します。AIはファイルコンテンツを読み取り、コード構造とロジックを理解し、質問に基づいて的確な回答を提供します。
+
+```bash
+@file ./src/main.py
+この関数の役割を説明してください
+```
+
+参照ファイルを参照し、Qwen Codeに新しいドキュメントとして整理・作成させることもできます。これにより、AIがニーズを誤解して参照資料に含まれないコンテンツを生成することを大幅に回避できます：
+
+```bash
+@file このファイルに基づいて公式アカウントの記事を書いてください
+```
+
+### ニーズを記述
+
+ファイルを参照した後、ニーズや質問を明確に記述します。AIはファイルコンテンツに基づいて分析し、正確な回答や提案を提供します。コードロジック、問題検索、最適化要求などを尋ねることができます。
+
+### 複数ファイルを参照
+
+`@file`コマンドを複数回使用することで、複数のファイルを同時に参照できます。AIは参照されたすべてのファイルを包括的に分析し、それらの関係とコンテンツを理解し、より包括的な回答を提供します。
+
+```bash
+@file1 @file2 これら2つのファイルの資料に基づいて、初心者向けの学習ドキュメントを整理してください
+```
+
+</Steps>
+
+<Callout type="info">
+@fileは相対パスと絶対パスをサポートし、複数ファイルのワイルドカードマッチもサポートしています。
+</Callout>
+
+## 関連おすすめ
+
+- [コード学習](./study-learning.mdx) — オープンソースリポジトリをクローンしてコードを学習・理解
+- [最初の会話を始める](./guide-first-conversation.mdx) — インストール後、Qwen Codeとの最初のAI会話を開始
+
+<ShowcaseDetailCta />

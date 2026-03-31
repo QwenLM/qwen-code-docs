@@ -1,0 +1,64 @@
+---
+title: "Présentation : Créer un PPT"
+description: "Créez des présentations basées sur des captures d'écran de produit. Fournissez des captures d'écran et des descriptions, et l'IA génère de belles diapositives de présentation."
+category: "Tâches quotidiennes"
+features:
+  - "Mode Agent"
+thumbnail: "https://img.alicdn.com/imgextra/i2/O1CN01ZlnCqO1HtmJhfhZSm_!!6000000000816-2-videocover-2546-1388.png"
+videoUrl: "https://cloud.video.taobao.com/vod/08IfFcYkp4OkyvbSDklR11rrL69fTNuc8Rkz_2ikqOg.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Vue d'ensemble
+
+Besoin de créer une présentation PPT mais ne voulez pas commencer de zéro ? Fournissez simplement des captures d'écran de produit et des descriptions simples, et Qwen Code peut vous aider à générer des diapositives de présentation bien structurées et magnifiquement conçues. L'IA analysera le contenu des captures d'écran, comprendra les caractéristiques du produit, organisera automatiquement la structure des diapositives et ajoutera le texte et la mise en page appropriés. Qu'il s'agisse de lancements de produit, de présentations d'équipe ou de présentations client, vous pouvez obtenir rapidement des PPT professionnels, économisant beaucoup de temps et d'énergie.
+
+<ShowcaseDetailMeta category="Tâches quotidiennes" features={["Mode Agent"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/08IfFcYkp4OkyvbSDklR11rrL69fTNuc8Rkz_2ikqOg.mp4" poster="https://img.alicdn.com/imgextra/i2/O1CN01ZlnCqO1HtmJhfhZSm_!!6000000000816-2-videocover-2546-1388.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Préparer les captures d'écran de produit
+
+Rassemblez les captures d'écran de l'interface produit qui doivent être affichées, y compris les pages de fonctionnalités principales, les démonstrations de fonctionnalités, etc. Les captures d'écran doivent être claires et montrer pleinement la valeur et les caractéristiques du produit. Placez-les dans un dossier, par exemple : qwen-code-images
+
+### Installer les Skills connexes
+
+Installez les Skills liés à la génération PPT. Ces Skills incluent des capacités pour analyser le contenu des captures d'écran et générer des diapositives de présentation.
+
+```
+Vérifiez si j'ai find-skills, sinon aidez-moi à l'installer directement : npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, puis aidez-moi à installer zarazhangrui/frontend-slides dans qwen code skills.
+```
+
+### Générer la présentation
+
+Référencez le fichier correspondant et dites à Qwen Code vos besoins, comme le but de la présentation, le public cible, le contenu principal, etc. L'IA générera le PPT basé sur ces informations.
+
+```
+@qwen-code-images Créez une présentation PPT de produit basée sur ces captures d'écran,面向 l'équipe technique, en mettant l'accent sur la présentation des nouvelles fonctionnalités
+```
+
+### Ajuster et exporter
+
+Voyez le PPT généré. Si des ajustements sont nécessaires, vous pouvez dire à Qwen Code, comme "ajouter une page présentant l'architecture" ou "ajuster le texte sur cette page". Lorsque vous êtes satisfait, exportez vers un format modifiable.
+
+```
+Aidez-moi à ajuster le texte de la page 3 pour le rendre plus concis
+```
+
+</Steps>
+
+## Recommandations connexes
+
+- [Générer automatiquement un rapport hebdomadaire](./office-weekly-report.mdx) — Collecter automatiquement des données et générer des rapports
+- [Écrire un fichier en une phrase](./office-write-file.mdx) — Créer rapidement divers documents
+
+---
+
+<ShowcaseDetailCta />

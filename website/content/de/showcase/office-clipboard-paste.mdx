@@ -1,0 +1,48 @@
+---
+title: "Clipboard-Bild einfügen"
+description: "Fügen Sie Screenshots direkt aus der Zwischenablage in das Gesprächsfenster ein. AI versteht den Bildinhalt sofort und bietet Hilfe an."
+category: "Tägliche Aufgaben"
+features:
+  - "Bilderkennung"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Übersicht
+
+Die Funktion zum Einfügen von Clipboard-Bildern ermöglicht es Ihnen, jeden Screenshot direkt in das Gesprächsfenster von Qwen Code einzufügen, ohne die Datei zuerst zu speichern und dann hochzuladen. Ob es sich um Fehler-Screenshots, UI-Design-Mockups, Code-Snippet-Screenshots oder andere Bilder handelt – Qwen Code kann den Inhalt sofort verstehen und basierend auf Ihren Bedürfnissen Hilfe anbieten. Diese praktische Interaktionsmethode verbessert die Kommunikationseffizienz erheblich und ermöglicht es Ihnen, bei Problemen schnell AI-Analysen und Vorschläge zu erhalten.
+
+<ShowcaseDetailMeta category="Tägliche Aufgaben" features={["Bilderkennung"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png" alt="Clipboard-Bild einfügen" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+### Bild in die Zwischenablage kopieren
+
+Verwenden Sie das System-Screenshot-Tool (macOS: `Cmd+Shift+4`, Windows: `Win+Shift+S`), um Bildschirminhalte aufzunehmen, oder kopieren Sie Bilder aus Browsern oder Dateimanagern. Screenshots werden automatisch in der Zwischenablage gespeichert, ohne zusätzliche Operationen.
+
+### In das Gesprächsfenster einfügen
+
+Verwenden Sie im Eingabefeld des Qwen Code-Gesprächs `Cmd+V` (macOS) oder `Ctrl+V` (Windows), um das Bild einzufügen. Das Bild wird automatisch im Eingabefeld angezeigt, und Sie können gleichzeitig Text eingeben, der Ihre Frage oder Bedürfnisse beschreibt.
+
+### AI-Analyseergebnisse erhalten
+
+Nach dem Senden der Nachricht analysiert Qwen Code den Bildinhalt und gibt eine Antwort. Es kann Fehler in Code-Screenshots identifizieren, das Layout von UI-Design-Mockups analysieren, Diagrammdaten interpretieren usw. Sie können weiter Fragen stellen und alle Details im Bild ausführlich diskutieren.
+</Steps>
+
+<Callout type="info">
+Unterstützt gängige Bildformate wie PNG, JPEG, GIF. Die Bildgröße sollte 10 MB nicht überschreiten, um den besten Erkennungseffekt zu gewährleisten. Für Code-Screenshots wird die Verwendung hoher Auflösung empfohlen, um die Genauigkeit der Texterkennung zu verbessern.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [Bilderkennung](./office-image-recognition.mdx) — Vertiefen Sie Ihr Verständnis der Bildverständnisfähigkeiten von Qwen Code
+- [MCP-Bildgenerierung](./office-mcp-image-gen.mdx) — Verwenden Sie MCP-Tools, um Bilder zu generieren
+
+---
+
+<ShowcaseDetailCta />

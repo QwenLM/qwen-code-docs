@@ -1,0 +1,58 @@
+---
+title: "Export Conversation History"
+description: "Export conversation history to Markdown, HTML, or JSON format for easy archiving and sharing."
+category: "Daily Tasks"
+features:
+  - "Export Conversation"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Overview
+
+Export conversation history feature
+
+<ShowcaseDetailMeta category="Daily Tasks" features={["Export Conversation"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+### View Session List
+
+Use the `/resume` command to view all historical sessions. The list will display information such as creation time and topic summary for each session, helping you quickly find the conversation you need to export. You can use keyword search or sort by time to precisely locate the target session.
+
+```bash
+/resume
+```
+
+### Select Export Format
+
+After determining the session to export, use the `/export` command and specify the format and session ID. Three formats are supported: `markdown`, `html`, and `json`. Markdown format is suitable for use in documentation tools, HTML format can be opened directly in a browser for viewing, and JSON format is suitable for programmatic processing.
+
+```bash
+# If no <session-id> parameter, defaults to exporting current session
+/export html <session-id> # Export as HTML format
+/export markdown <session-id> # Export as Markdown format
+/export json <session-id> # Export as JSON format
+```
+
+### Share and Archive
+
+Exported files will be saved to the specified directory. Markdown and HTML files can be shared directly with colleagues or used in team documentation. JSON files can be imported into other tools for secondary processing. We recommend regularly archiving important conversations to build a team knowledge base. Exported files can also serve as backups to prevent loss of important information.
+</Steps>
+
+<Callout type="info">
+The exported HTML format includes complete styles and can be opened directly in any browser. JSON format preserves all metadata and is suitable for data analysis and processing.
+</Callout>
+
+## Related Recommendations
+
+- [Resume Session Recovery](./guide-resume-session.mdx) — Resume previous conversations to continue discussion
+- [Insight Data Insights](./product-insight.mdx) — Analyze your usage data and conversation patterns
+
+<ShowcaseDetailCta />

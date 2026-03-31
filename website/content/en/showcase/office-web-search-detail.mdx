@@ -1,0 +1,49 @@
+---
+title: "Web Search"
+description: "Let Qwen Code search web content to get real-time information to assist with programming. Learn about the latest technology trends and documentation."
+category: "Getting Started"
+features:
+  - "Web Search"
+thumbnail: "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/FVVvz922HnDIY_STwpKaBGBb1u2JXOCdUCOL36A8WW4.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Overview
+
+The Web Search feature enables Qwen Code to search the internet in real-time for the latest information, helping you obtain the latest technical documentation, API references, best practices, and solutions. When you encounter unfamiliar technology stacks, need to understand changes in the latest versions, or want to find solutions to specific problems, Web Search allows AI to provide accurate answers based on the latest web information.
+
+<ShowcaseDetailMeta category="Getting Started" features={["Web Search"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/FVVvz922HnDIY_STwpKaBGBb1u2JXOCdUCOL36A8WW4.mp4" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+### Initiate Search Request
+
+Directly describe in the conversation what you want to search for. For example: "search for the latest React 19 new features", "find best practices for Next.js App Router". Qwen Code will automatically determine whether network search is needed.
+
+### View Integrated Results
+
+AI will search multiple web sources, integrate search results, and provide a structured answer. The answer will include source links for key information, making it convenient for you to further understand in depth.
+
+### Continue Conversation Based on Results
+
+You can continue to ask questions based on the search results, letting AI help you apply the searched information to actual programming tasks. For example, after searching for new API usage, you can directly ask AI to help you refactor code.
+</Steps>
+
+<Callout type="info">
+Web Search is particularly suitable for the following scenarios: understanding changes in the latest framework versions, finding solutions to specific errors, obtaining the latest API documentation, understanding industry best practices, etc. Search results are updated in real-time to ensure you get the latest information.
+</Callout>
+
+## Related Recommendations
+
+- [Plan Mode + Web Search](./guide-plan-with-search.mdx) — Combine Plan Mode and Web Search to handle complex tasks
+- [Code Learning](./study-learning.mdx) — Use search capabilities to learn open source projects
+
+---
+
+<ShowcaseDetailCta />

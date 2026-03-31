@@ -1,0 +1,57 @@
+---
+title: "YouTube 動画をブログ記事に変換"
+description: "Qwen Code を使用して YouTube 動画を構造化されたブログ記事に自動変換します。"
+category: "クリエイターツール"
+features:
+  - "Skills"
+  - "Web Search"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+素晴らしい YouTube 動画を見つけてブログ記事に変換したい？Qwen Code が自動的に動画コンテンツを抽出し、構造が明確で内容豊富なブログ記事を生成します。AI が動画の文字起こしを取得し、要点を理解し、標準的なブログ記事形式でコンテンツを整理します。
+
+<ShowcaseDetailMeta category="クリエイターツール" features={["Skills", "Web Search"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/FygmzZ4WOMD1fEBdGDY9R2H8LPtgWtE4vMBjDdBQUKM.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000006843/O1CN01KOQQeW20Q9PKPAfbZ_!!6000000006843-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### 動画リンクを提供
+
+変換したい YouTube 動画のリンクを Qwen Code に伝えます。
+
+```
+このスキルに基づいて：https://github.com/QwenLM/qwen-code-examples/tree/main/skills/youtube-transcript-extractor、この動画をブログとして書いてください：https://www.youtube.com/watch?v=fJSLnxi1i64
+```
+
+### ブログ記事を生成して編集
+
+AI が文字起こしを分析し、タイトル、導入、本文、まとめを含む記事を生成します。
+
+```
+この記事の言語スタイルを技術ブログに適したものに調整してください
+```
+
+</Steps>
+
+<Callout type="info">
+生成された記事は Markdown 形式をサポートし、ブログプラットフォームや GitHub Pages に直接公開できます。
+</Callout>
+
+## 関連コンテンツ
+
+- [論文を読む](./study-read-paper.mdx) — 学術コンテンツを深く理解する
+- [一言でファイルに書き込む](./office-write-file.mdx) — 様々なドキュメントを素早く作成する
+
+---
+
+<ShowcaseDetailCta />

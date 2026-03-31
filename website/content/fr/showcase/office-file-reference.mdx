@@ -1,0 +1,64 @@
+---
+title: "Fonction de référence @file"
+description: "Référencez les fichiers du projet dans la conversation avec @file pour permettre à l'IA de comprendre précisément votre contexte de code."
+category: "Guide de démarrage"
+features:
+  - "Référence de fichier"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Vue d'ensemble
+
+La fonction de référence @file vous permet de référencer directement des fichiers de projet dans la conversation, permettant à l'IA de comprendre précisément votre contexte de code. Qu'il s'agisse d'un seul fichier ou de plusieurs fichiers, l'IA lira et analysera le contenu du code pour fournir des suggestions et des réponses plus précises. Cette fonction est particulièrement adaptée aux scénarios tels que la revue de code, le dépannage et le refactoring de code.
+
+<ShowcaseDetailMeta category="Guide de démarrage" features={["Référence de fichier"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png" alt="Fonction de référence @file" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Référencer un seul fichier
+
+Utilisez la commande `@file` suivie du chemin du fichier pour référencer un seul fichier. L'IA lira le contenu du fichier, comprendra la structure et la logique du code, puis fournira des réponses ciblées basées sur vos questions.
+
+```bash
+@file ./src/main.py
+Expliquez ce que fait cette fonction
+```
+
+Vous pouvez également référencer des fichiers de référence et demander à Qwen Code de les organiser et de les écrire comme un nouveau document. Cela évite largement que l'IA ne comprenne mal vos besoins et ne génère du contenu qui n'est pas dans les matériaux de référence :
+
+```bash
+@file Aidez-moi à écrire un article de compte public basé sur ce fichier
+```
+
+### Décrire les besoins
+
+Après avoir référencé le fichier, décrivez clairement vos besoins ou vos questions. L'IA analysera basé sur le contenu du fichier et fournira des réponses ou des suggestions précises. Vous pouvez poser des questions sur la logique du code, trouver des problèmes, demander des optimisations, etc.
+
+### Référencer plusieurs fichiers
+
+En utilisant la commande `@file` plusieurs fois, vous pouvez référencer plusieurs fichiers simultanément. L'IA analysera de manière exhaustive tous les fichiers référencés, comprendra leurs relations et contenus, et fournira des réponses plus complètes.
+
+```bash
+@file1 @file2 Basé sur les matériaux dans ces deux fichiers, aidez-moi à organiser un document d'apprentissage adapté aux débutants
+```
+
+</Steps>
+
+<Callout type="info">
+@file prend en charge les chemins relatifs et absolus, ainsi que la correspondance de caractères génériques pour plusieurs fichiers.
+</Callout>
+
+## Recommandations connexes
+
+- [Apprentissage du code](./study-learning.mdx) — Cloner des dépôts open source et apprendre à comprendre le code
+- [Commencez votre première conversation](./guide-first-conversation.mdx) — Après l'installation, lancez votre première conversation IA avec Qwen Code
+
+<ShowcaseDetailCta />

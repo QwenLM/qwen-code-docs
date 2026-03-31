@@ -1,0 +1,67 @@
+---
+title: "Mode Headless"
+description: "Utiliser Qwen Code dans des environnements sans interface graphique, adapté aux serveurs distants, pipelines CI/CD et scénarios de scripts d'automatisation."
+category: "Guide de démarrage"
+features:
+  - "Headless"
+thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Vue d'ensemble
+
+Le mode Headless vous permet d'utiliser Qwen Code dans des environnements sans interface graphique, particulièrement adapté aux serveurs distants, pipelines CI/CD et scénarios de scripts d'automatisation. Grâce aux paramètres de ligne de commande et à l'entrée par pipeline, vous pouvez intégrer de manière transparente Qwen Code dans vos workflows existants, réalisant une programmation assistée par l'IA automatisée.
+
+<ShowcaseDetailMeta category="Guide de démarrage" features={["Headless"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif" alt="Mode Headless" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Utiliser le mode prompt
+
+Utilisez le paramètre `--p` pour passer directement des invites dans la ligne de commande. Qwen Code retournera la réponse et quittera automatiquement. Cette méthode convient aux requêtes ponctuelles et peut être facilement intégrée dans des scripts.
+
+```bash
+qwen --p 'what is qwen code?'
+```
+
+### Entrée par pipeline
+
+Passez la sortie d'autres commandes à Qwen Code via des pipelines pour réaliser un traitement automatisé. Vous pouvez envoyer directement des fichiers de journal, des messages d'erreur, etc. à l'IA pour analyse.
+
+```bash
+cat error.log | qwen --p 'analyser les erreurs'
+```
+
+### Intégration de script
+
+Intégrez Qwen Code dans des scripts Shell pour réaliser des workflows automatisés complexes. Vous pouvez effectuer différentes opérations en fonction des résultats de retour de l'IA, créant des scripts automatisés intelligents.
+
+```bash
+#!/bin/bash
+result=$(qwen --p 'vérifier s'il y a des problèmes avec le code')
+if [[ $result == *"a des problèmes"* ]]; then
+  echo "Problèmes de code trouvés"
+fi
+```
+
+</Steps>
+
+<Callout type="info">
+Le mode Headless prend en charge toutes les fonctionnalités de Qwen Code, y compris la génération de code, la résolution de problèmes, les opérations de fichiers, etc.
+</Callout>
+
+## Recommandations connexes
+
+- [Authentification et connexion](./guide-authentication.mdx) — Comprendre le processus d'authentification de Qwen Code, compléter rapidement la connexion au compte
+- [Fichier de configuration Agents](./guide-agents-config.mdx) — Personnaliser le comportement de l'IA via les fichiers MD Agents
+
+---
+
+<ShowcaseDetailCta />

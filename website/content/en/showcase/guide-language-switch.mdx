@@ -1,0 +1,59 @@
+---
+title: "Language Switch"
+description: "Flexibly switch UI interface language and AI output language, supporting multilingual interaction."
+category: "Getting Started"
+features:
+  - "Settings"
+  - "Multilingual"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Qwen Code supports flexible language switching. You can independently set the UI interface language and AI output language. Whether it's Chinese, English, or other languages, you can find suitable settings. Multilingual support allows you to work in a familiar language environment, improving communication efficiency and comfort.
+
+<ShowcaseDetailMeta category="Getting Started" features={["Settings", "Multilingual"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Switch UI Language
+
+Use the `/language ui` command to switch the interface language, supporting Chinese, English, and other languages. After switching the UI language, menus, prompt messages, help documents, etc. will all be displayed in the language you selected.
+
+```bash
+/language ui zh-CN
+```
+
+### Switch Output Language
+
+Use the `/language output` command to switch AI's output language. AI will use the language you specified to answer questions, generate code comments, provide explanations, etc., making communication more natural and smooth.
+
+```bash
+/language output zh-CN
+```
+
+### Mixed Language Usage
+
+You can also set different languages for UI and output to achieve mixed language usage. For example, use Chinese for UI and English for AI output, suitable for scenarios where you need to read English technical documentation.
+
+</Steps>
+
+<Callout type="info">
+Language settings are automatically saved and will use the language you selected last time on next startup.
+</Callout>
+
+## Related Recommendations
+
+- [Start First Conversation](./guide-first-conversation.mdx) — After installation, initiate your first AI conversation with Qwen Code
+- [API Setup](./guide-api-setup.mdx) — Configure API Key and model parameters to customize your AI programming experience
+
+<ShowcaseDetailCta />

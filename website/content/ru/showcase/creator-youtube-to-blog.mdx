@@ -1,0 +1,57 @@
+---
+title: "Конвертация YouTube-видео в статьи блога"
+description: "Используйте Qwen Code для автоматической конвертации YouTube-видео в структурированные статьи блога."
+category: "Инструменты для творчества"
+features:
+  - "Skills"
+  - "Web Search"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+Нашли отличное YouTube-видео и хотите превратить его в статью блога? Qwen Code может автоматически извлекать содержимое видео и создавать хорошо структурированные, содержательные статьи блога. ИИ получает транскрипт видео, понимает ключевые моменты и организует контент в стандартном формате статьи блога.
+
+<ShowcaseDetailMeta category="Инструменты для творчества" features={["Skills", "Web Search"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/FygmzZ4WOMD1fEBdGDY9R2H8LPtgWtE4vMBjDdBQUKM.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000006843/O1CN01KOQQeW20Q9PKPAfbZ_!!6000000006843-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+<Steps>
+
+### Предоставить ссылку на видео
+
+Сообщите Qwen Code ссылку на YouTube-видео, которое хотите конвертировать.
+
+```
+На основе этого скилла: https://github.com/QwenLM/qwen-code-examples/tree/main/skills/youtube-transcript-extractor, помогите мне написать это видео как блог: https://www.youtube.com/watch?v=fJSLnxi1i64
+```
+
+### Создать и отредактировать статью блога
+
+ИИ проанализирует транскрипт и создаст статью с заголовком, введением, основной частью и заключением.
+
+```
+Помогите мне скорректировать языковой стиль этой статьи, чтобы он больше подходил для технического блога
+```
+
+</Steps>
+
+<Callout type="info">
+Созданные статьи поддерживают формат Markdown и могут быть напрямую опубликованы на блог-платформах или GitHub Pages.
+</Callout>
+
+## Связанный контент
+
+- [Чтение статей](./study-read-paper.mdx) — Глубокое понимание академического контента
+- [Запись в файл](./office-write-file.mdx) — Быстрое создание различных документов
+
+---
+
+<ShowcaseDetailCta />

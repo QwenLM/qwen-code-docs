@@ -1,0 +1,65 @@
+---
+title: "ファイルの一括処理、デスクトップ整理"
+description: "Qwen CodeのCowork機能を使用して、散らかったデスクトップファイルをワンクリックで一括整理し、タイプ別に自動分類して対応するフォルダに配置します。"
+category: "日常タスク"
+features:
+  - "Cowork"
+thumbnail: "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+デスクトップファイルが散らかっていますか？Qwen CodeのCowork機能を使用すると、ワンクリックでファイルを一括整理でき、ファイルタイプを自動識別して対応するフォルダに分類できます。ドキュメント、画像、動画、その他のファイルタイプに関わらず、すべてインテリジェントに識別してアーカイブでき、作業環境を整理し、作業効率を向上させることができます。
+
+<ShowcaseDetailMeta category="日常タスク" features={["Cowork"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4" poster="https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 手順
+
+<Steps>
+
+### 会話を開始
+
+ターミナルまたはコマンドラインを開き、`qwen`と入力してQwen Codeを起動します。整理が必要なディレクトリにいるか、どのディレクトリのファイルを整理するかをAIに明確に伝えます。Qwen Codeは整理指示を受け入れる準備ができています。
+
+```bash
+cd ~/Desktop
+qwen
+```
+
+### 整理指示を出す
+
+Qwen Codeにデスクトップファイルを整理したいと伝えます。AIはファイルタイプを自動識別し、分類フォルダを作成します。整理するディレクトリ、分類ルール、ターゲットフォルダ構造を指定できます。AIはニーズに基づいて整理計画を作成します。
+
+```bash
+デスクトップのファイルを整理してください。ドキュメント、画像、動画、圧縮ファイルなどタイプ別に異なるフォルダに分類します
+```
+
+### 実行計画を確認
+
+Qwen Codeはまず実行される操作計画をリストアップします。問題がないことを確認した後、実行を許可します。このステップは非常に重要です。整理計画を確認して、AIがニーズを理解していることを確認し、誤操作を回避できます。
+
+### 整理を完了
+
+AIがファイル移動操作を自動実行し、完了後に整理レポートを表示し、どのファイルがどこに移動されたかを伝えます。全体のプロセスは高速で効率的で、手動操作は不要で、大幅な時間を節約できます。
+
+</Steps>
+
+<Callout type="info">
+Cowork機能はカスタム分類ルールをサポートしています。必要に応じてファイルタイプとターゲットフォルダのマッピング関係を指定できます。
+</Callout>
+
+## 関連おすすめ
+
+- [個人履歴書サイトを作成](./creator-resume-site-quick.mdx) — 1文で個人履歴書サイトを作成
+- [デスクトップファイルを整理](./office-organize-desktop.mdx) — AIを使用してデスクトップファイルをインテリジェントに整理
+
+---
+
+<ShowcaseDetailCta />

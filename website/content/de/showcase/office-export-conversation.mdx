@@ -1,0 +1,58 @@
+---
+title: "Gesprächsverlauf exportieren"
+description: "Exportieren Sie den Gesprächsverlauf in Markdown-, HTML- oder JSON-Format für einfaches Archivieren und Teilen."
+category: "Tägliche Aufgaben"
+features:
+  - "Gespräch exportieren"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## Übersicht
+
+Funktion zum Exportieren des Gesprächsverlaufs
+
+<ShowcaseDetailMeta category="Tägliche Aufgaben" features={["Gespräch exportieren"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+### Sitzungsliste anzeigen
+
+Verwenden Sie den `/resume`-Befehl, um alle historischen Sitzungen anzuzeigen. Die Liste zeigt Informationen wie Erstellungszeit und Themenzusammenfassung für jede Sitzung an, was Ihnen hilft, das Gespräch zu finden, das Sie exportieren müssen. Sie können Schlüsselwortsuche verwenden oder nach Zeit sortieren, um die Zielsitzung präzise zu lokalisieren.
+
+```bash
+/resume
+```
+
+### Exportformat auswählen
+
+Nachdem Sie die zu exportierende Sitzung bestimmt haben, verwenden Sie den `/export`-Befehl und geben Sie Format und Sitzungs-ID an. Drei Formate werden unterstützt: `markdown`, `html` und `json`. Markdown-Format eignet sich für die Verwendung in Dokumentations-Tools, HTML-Format kann direkt im Browser zum Anzeigen geöffnet werden, und JSON-Format eignet sich für die programmatische Verarbeitung.
+
+```bash
+# Wenn kein <session-id>-Parameter vorhanden, wird standardmäßig die aktuelle Sitzung exportiert
+/export html <session-id> # Als HTML-Format exportieren
+/export markdown <session-id> # Als Markdown-Format exportieren
+/export json <session-id> # Als JSON-Format exportieren
+```
+
+### Teilen und archivieren
+
+Exportierte Dateien werden im angegebenen Verzeichnis gespeichert. Markdown- und HTML-Dateien können direkt mit Kollegen geteilt oder in Teamdokumentationen verwendet werden. JSON-Dateien können in andere Tools für die sekundäre Verarbeitung importiert werden. Wir empfehlen, wichtige Gespräche regelmäßig zu archivieren, um ein Team-Wissensrepository aufzubauen. Exportierte Dateien können auch als Sicherungen dienen, um den Verlust wichtiger Informationen zu verhindern.
+</Steps>
+
+<Callout type="info">
+Das exportierte HTML-Format enthält vollständige Stile und kann in jedem Browser direkt geöffnet werden. JSON-Format behält alle Metadaten bei und eignet sich für Datenanalyse und -verarbeitung.
+</Callout>
+
+## Verwandte Empfehlungen
+
+- [Sitzungswiederherstellung](./guide-resume-session.mdx) — Frühere Gespräche wiederhernehmen, um die Diskussion fortzusetzen
+- [Insight-Dateneinblicke](./product-insight.mdx) — Analysieren Sie Ihre Nutzungsdaten und Gesprächsmuster
+
+<ShowcaseDetailCta />

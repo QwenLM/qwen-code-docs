@@ -1,0 +1,136 @@
+---
+title: "Skills installieren"
+description: "Mehrere Möglichkeiten zur Installation von Skill-Erweiterungen, einschließlich Befehlszeileninstallation und Ordnerinstallation, die verschiedenen Szenarioanforderungen gerecht werden."
+category: "Erste Schritte"
+features:
+  - "Skills"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Qwen Code unterstützt mehrere Skill-Installationsmethoden. Sie können die für Ihr Szenario am besten geeignete Methode wählen. Die Befehlszeileninstallation eignet sich für Online-Umgebungen und ist schnell und praktisch; die Ordnerinstallation eignet sich für Offline-Umgebungen oder benutzerdefinierte Skills und bietet Flexibilität und Kontrolle.
+
+<ShowcaseDetailMeta category="Erste Schritte" features={["Skills"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Methode 1: Qwen Code installieren lassen
+
+Geeignet für Online-Umgebungen, installieren Sie Skills direkt aus GitHub-Repositories mit dem npx-Befehl.
+
+<Steps>
+
+### find-skills Skill überprüfen und installieren
+
+Beschreiben Sie Ihre Bedürfnisse direkt in Qwen Code und lassen Sie es Ihnen helfen, den erforderlichen Skill zu überprüfen und zu installieren:
+
+```
+Überprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code
+```
+
+### Installieren Sie den Skill, den Sie benötigen, zum Beispiel web-component-design installieren:
+
+```
+/skills find-skills install web-component-design -y -a qwen-code
+```
+
+Qwen Code führt den Installationsbefehl automatisch aus, lädt den Skill aus dem angegebenen Repository herunter und installiert ihn. Sie können auch mit einem Satz installieren:
+
+```
+Überprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, und helfen Sie mir dann, [Skill-Name] im aktuellen qwen code skills-Verzeichnis zu installieren.
+```
+
+### Installation überprüfen
+
+Nach Abschluss der Installation überprüfen Sie, ob der Skill erfolgreich geladen wurde:
+
+```bash
+/skills
+```
+
+</Steps>
+
+<Callout type="info">
+Die Befehlszeileninstallation erfordert eine Netzwerkverbindung. Der Parameter `-y` bedeutet automatische Bestätigung, und `-a qwen-code` gibt die Installation bei Qwen Code an.
+</Callout>
+
+## Methode 2: Ordnerinstallation
+
+Geeignet für Offline-Umgebungen, Unternehmens-Intranets oder die Verwendung von benutzerdefinierten Skills.
+
+<Steps>
+
+### Skill-Dateien vorbereiten
+
+Beschaffen Sie die Skill-Dateien, die Sie installieren möchten. Sie können sie aus dem offiziellen Repository herunterladen oder Ihre eigenen entwickelten Skills verwenden. Stellen Sie sicher, dass die Skill-Verzeichnisstruktur vollständig ist und die Konfigurationsdatei `skill.md` enthält.
+
+```bash
+# Skill von GitHub herunterladen
+git clone https://github.com/username/qwen-skill-example.git
+
+# Oder erstellen Sie Ihren eigenen Skill-Ordner
+mkdir -p my-custom-skill
+```
+
+### In Skills-Verzeichnis platzieren
+
+Kopieren Sie den Skill-Ordner in das Qwen Code Skills-Verzeichnis. Der Standardspeicherort ist `~/.qwen/skills/`. Wenn das Verzeichnis nicht existiert, müssen Sie es manuell erstellen.
+
+Sowohl manuelle Erstellung als auch Befehlszeilenerstellung und Kopierung sind akzeptabel. Hier ist die Befehlszeilenmethode:
+
+```bash
+# Verzeichnis erstellen (falls es nicht existiert)
+mkdir -p ~/.qwen/skills
+
+# Skill in Verzeichnis kopieren
+cp -r my-custom-skill ~/.qwen/skills/
+```
+
+### Installation überprüfen
+
+Führen Sie den Neulade-Befehl in Qwen Code aus. Das System durchsucht das Verzeichnis und lädt alle verfügbaren Skills.
+
+```bash
+# Qwen Code starten
+qwen
+
+# Installation überprüfen
+/skills
+```
+
+</Steps>
+
+<Callout type="info">
+**Anforderungen an die Skill-Verzeichnisstruktur**
+
+Jeder Skill-Ordner muss eine `skill.md`-Datei enthalten, die den Namen, die Beschreibung und die Auslöserregeln des Skills definiert:
+
+```
+~/.qwen/skills/
+├── my-skill/
+│   ├── SKILL.md      # Erforderlich: Skill-Konfigurationsdatei
+│   └── scripts/      # Optional: Skriptdateien
+└── another-skill/
+    └── SKILL.md
+```
+</Callout>
+
+## Vergleich der Installationsmethoden
+
+| Methode | Geeignetes Szenario | Vorteile | Nachteile |
+|---------|---------------------|----------|-----------|
+| Befehlszeileninstallation | Online-Umgebungen | Schnell und praktisch, automatischer Download | Erfordert Netzwerk |
+| Ordnerinstallation | Offline/Benutzerdefiniert | Flexibel und kontrollierbar, unterstützt Anpassung | Erfordert manuelle Bedienung |
+
+## Verwandte Empfehlungen
+
+- [Skills über Prompts installieren](./guide-skill-install.mdx-prompt) — Offizielle Skills schnell online installieren
+- [Skills-Panel](./guide-skills-panel.mdx) — One-Stop-Verwaltung aller Skill-Erweiterungen
+
+<ShowcaseDetailCta />

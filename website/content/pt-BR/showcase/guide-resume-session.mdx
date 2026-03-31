@@ -1,0 +1,68 @@
+---
+title: "Retomar sessão Resume"
+description: "Conversas interrompidas podem ser retomadas a qualquer momento sem perder contexto e progresso."
+category: "Guia de Início"
+features:
+  - "Operações de terminal"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+A função de retomada de sessão Resume permite que você interrompa conversas a qualquer momento e as retome quando necessário, sem perder contexto e progresso. Seja algo temporário ou multitarefa em paralelo, você pode pausar a conversa com segurança e continuá-la mais tarde de forma perfeita. Este recurso melhora significativamente a flexibilidade do trabalho, permitindo que você gerencie tempo e tarefas com mais eficiência.
+
+<ShowcaseDetailMeta category="Guia de Início" features={["Operações de terminal"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Ver lista de sessões
+
+Use o comando `qwen --resume` para ver todas as sessões históricas. O sistema exibirá o tempo, tópico e informações breves de cada sessão, ajudando você a encontrar rapidamente a conversa que precisa retomar.
+
+```bash
+qwen --resume
+```
+
+### Retomar sessão
+
+Use o comando `qwen --resume` para retomar uma sessão especificada. Você pode selecionar a conversa a retomar pelo ID da sessão ou número, e o sistema carregará o histórico completo do contexto.
+
+```bash
+qwen --resume
+```
+
+### Continuar trabalhando
+
+Após retomar a sessão, você pode continuar a conversa como se nunca tivesse sido interrompida. Todo o contexto, histórico e progresso serão totalmente preservados, e a IA poderá entender com precisão o conteúdo da discussão anterior.
+
+### Trocar sessões após iniciar Qwen Code
+
+Após iniciar Qwen Code, você pode usar o comando `/resume` para alternar para uma sessão anterior.
+
+```bash
+/resume
+```
+
+</Steps>
+
+<Callout type="info">
+O histórico de sessões é salvo automaticamente e suporta sincronização entre dispositivos. Você pode retomar a mesma sessão em diferentes dispositivos.
+</Callout>
+
+## Recomendações relacionadas
+
+- [Iniciar primeira conversa](./guide-first-conversation.mdx) — Após a instalação, inicie sua primeira conversa com IA com Qwen Code
+- [Exportar registros de conversa](./office-export-conversation.mdx) — Exportar registros de conversa para fácil salvamento e compartilhamento
+
+---
+
+<ShowcaseDetailCta />

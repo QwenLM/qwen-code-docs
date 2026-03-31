@@ -1,0 +1,49 @@
+---
+title: "Geração de Imagem MCP"
+description: "Integre serviços de geração de imagem através do MCP. Use descrições em linguagem natural para direcionar a IA a criar imagens de alta qualidade."
+category: "Tarefas Diárias"
+features:
+  - "MCP"
+  - "Geração de Imagem"
+thumbnail: "https://img.alicdn.com/imgextra/i3/6000000008040/O1CN01S2cxYL29GNUmrvmzH_!!6000000008040-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/gQg8C_5f5MGoZE9YKCyKmHlWAgXZSTMbN8WSoN7crbc.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão Geral
+
+O recurso de geração de imagem MCP (Model Context Protocol) permite que você use descrições em linguagem natural para direcionar a IA a criar imagens de alta qualidade diretamente no Qwen Code. Não há necessidade de alternar para ferramentas de geração de imagem dedicadas - basta descrever suas necessidades na conversa, e o Qwen Code chamará o serviço de geração de imagem integrado para gerar imagens que atendam aos seus requisitos. Seja criação de protótipos de UI, criação de ícones, desenho de ilustrações ou produção de diagramas conceituais, a geração de imagem MCP oferece suporte poderoso. Este fluxo de trabalho perfeitamente integrado melhora significativamente a eficiência de design e desenvolvimento, tornando a realização criativa mais conveniente.
+
+<ShowcaseDetailMeta category="Tarefas Diárias" features={["MCP", "Geração de Imagem"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/gQg8C_5f5MGoZE9YKCyKmHlWAgXZSTMbN8WSoN7crbc.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000008040/O1CN01S2cxYL29GNUmrvmzH_!!6000000008040-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+### Configurar Serviço MCP
+
+Primeiro, você precisa configurar o serviço de geração de imagem MCP. Adicione informações de chave de API e endpoint do serviço de geração de imagem ao arquivo de configuração. O Qwen Code suporta vários serviços de geração de imagem mainstream, e você pode escolher o serviço apropriado com base em suas necessidades e orçamento. Após a configuração, reinicie o Qwen Code para ativar.
+
+### Descrever Requisitos de Imagem
+
+Na conversa, descreva em linguagem natural a imagem que deseja gerar em detalhes. Inclua elementos como tema, estilo, cores, composição e detalhes da imagem. Quanto mais específica a descrição, mais próxima a imagem gerada será de suas expectativas. Você pode especificar estilos artísticos, referenciar artistas específicos, ou carregar uma imagem de referência para ajudar a IA a entender melhor suas necessidades.
+
+### Visualizar e Salvar Resultados
+
+O Qwen Code gerará múltiplas imagens para você escolher. Você pode visualizar cada imagem e selecionar a que melhor atende aos seus requisitos. Se precisar de ajustes, pode continuar descrevendo opiniões de modificação, e o Qwen Code regenerará com base no feedback. Quando estiver satisfeito, pode salvar a imagem localmente ou copiar o link da imagem para uso em outros lugares.
+</Steps>
+
+<Callout type="info">
+A geração de imagem MCP suporta múltiplos estilos e tamanhos, que podem ser ajustados flexivelmente de acordo com as necessidades do projeto. Os direitos autorais das imagens geradas variam dependendo do serviço usado. Verifique os termos de uso.
+</Callout>
+
+## Recomendações Relacionadas
+
+- [Reconhecimento de Imagem](./office-image-recognition.mdx) — Deixe a IA entender e analisar conteúdo de imagem
+- [Colar Imagem da Área de Transferência](./office-clipboard-paste.mdx) — Cole rapidamente imagens na conversa
+
+<ShowcaseDetailCta />

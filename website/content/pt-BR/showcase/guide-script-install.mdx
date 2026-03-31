@@ -1,0 +1,61 @@
+---
+title: "Instalação com um Clique de Script"
+description: "Instale o Qwen Code rapidamente com um comando de script. Configure seu ambiente em segundos. Compatível com Linux, macOS e Windows."
+category: "Guia de Início"
+features:
+  - "Instalação"
+thumbnail: "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão Geral
+
+O Qwen Code suporta instalação rápida com um único comando de script. Não há necessidade de configurar variáveis de ambiente manualmente ou baixar dependências. O script detecta automaticamente o tipo de sistema operacional, baixa o pacote de instalação correspondente e conclui a configuração. Todo o processo leva apenas alguns segundos e suporta as três principais plataformas: **Linux**, **macOS** e **Windows**.
+
+<ShowcaseDetailMeta category="Guia de Início" features={["Instalação"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+### Instalação no Linux / macOS
+
+Abra o terminal e execute o seguinte comando. O script detectará automaticamente a arquitetura do sistema (x86_64 / ARM) e baixará a versão correspondente para concluir a instalação.
+
+```bash
+bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source website
+```
+
+### Instalação no Windows
+
+Execute o seguinte comando no PowerShell. O script baixará um arquivo em lote e executará automaticamente o processo de instalação. Após a conclusão, você poderá usar o comando `qwen` em qualquer terminal.
+
+```bash
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat --source website
+```
+
+### Verificar a Instalação
+
+Após a conclusão da instalação, execute o seguinte comando no terminal para verificar se o Qwen Code foi instalado corretamente. Se o número da versão for exibido, a instalação foi bem-sucedida.
+
+```bash
+qwen --version
+```
+</Steps>
+
+<Callout type="info">
+Se preferir usar o npm, você também pode instalar globalmente com `npm install -g @qwen-code/qwen-code`. Após a instalação, digite `qwen` para iniciar. Se houver problemas de permissão, use `sudo npm install -g @qwen-code/qwen-code` e digite sua senha para instalar.
+</Callout>
+
+## Recomendações Relacionadas
+
+- [Iniciar Sua Primeira Conversa](./guide-first-conversation.mdx) — Após a instalação, inicie sua primeira conversa de IA com o Qwen Code
+- [Configuração de API](./guide-api-setup.mdx) — Configure chaves de API e parâmetros do modelo para personalizar sua experiência de programação de IA
+- [Interface de Integração VS Code](./guide-vscode-integration.mdx) — Use todos os recursos do Qwen Code no VS Code
+
+<ShowcaseDetailCta />

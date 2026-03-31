@@ -1,0 +1,72 @@
+---
+title: "Remotion Video Creation"
+description: "Describe your creative ideas in natural language and use the Remotion Skill to drive code-generated video content."
+category: "Creator Tools"
+features:
+  - "Skills"
+  - "Remotion"
+thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Want to create videos but don't know how to code? By describing your creative ideas in natural language, Qwen Code can use the Remotion Skill to generate video code. The AI understands your creative description and automatically generates Remotion project code, including scene setup, animation effects, text layout, and more. Whether for product promotion, social media content, or educational videos, you can quickly generate professional video content.
+
+<ShowcaseDetailMeta category="Creator Tools" features={["Skills", "Remotion"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Install the Remotion Skill
+
+First, install the Remotion-related Skill, which contains best practices and templates for video creation.
+
+```bash
+Check if I have find skills, if not install it directly: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, then help me install remotion-best-practice and copy them to the current directory qwen code skills.
+```
+
+### Describe Your Creative Idea
+
+Use natural language to describe in detail the video content you want to create, including theme, style, duration, and key scenes.
+
+```bash
+@file Based on the document, create a 30-second product promo video with a clean modern style showcasing the main features.
+```
+
+### Preview and Adjust
+
+Qwen Code will generate Remotion project code based on your description. Start the development server to preview the result, then render the final video when satisfied.
+
+```bash
+npm run dev
+```
+
+### Render and Export
+
+When satisfied, use the build command to render the final video, supporting MP4, WebM, and other formats.
+
+```bash
+Help me render and export the video directly.
+```
+
+</Steps>
+
+<Callout type="info">
+The prompt-based approach is great for rapid prototyping and creative exploration. You can continuously refine your description to let the AI optimize the video. The generated code can be further manually edited to implement more complex features.
+</Callout>
+
+## Related
+
+- [Remotion Video Creation (Prompt Mode)](./creator-remotion-video.mdx) — Generate videos through natural language creative descriptions
+
+---
+
+<ShowcaseDetailCta />

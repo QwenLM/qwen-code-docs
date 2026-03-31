@@ -1,0 +1,56 @@
+---
+title: "Interface d'intégration VS Code"
+description: "Affichage complet de l'interface de Qwen Code dans VS Code. Comprenez la mise en page et l'utilisation de chaque zone fonctionnelle."
+category: "Guide de démarrage"
+features:
+  - "Mode Agent"
+thumbnail: "https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Vue d'ensemble
+
+VS Code est l'un des éditeurs de code les plus populaires, et Qwen Code fournit une extension VS Code profondément intégrée. Grâce à cette extension, vous pouvez communiquer directement avec l'IA dans l'environnement d'éditeur familier et profiter d'une expérience de programmation transparente. L'extension fournit une mise en page d'interface intuitive, vous permettant d'accéder facilement à toutes les fonctionnalités. Qu'il s'agisse de complétion de code, de résolution de problèmes ou d'opérations de fichiers, tout peut être effectué efficacement.
+
+<ShowcaseDetailMeta category="Guide de démarrage" features={["Mode Agent"]} model="qwen3.5-plus" />
+
+<video src="https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4" poster="https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Installer l'extension VS Code
+
+Recherchez "Qwen Code" dans le marketplace d'extensions VS Code et cliquez sur installer. Le processus d'installation est simple et rapide, terminé en quelques secondes. Après l'installation, une icône Qwen Code apparaîtra dans la barre latérale VS Code, indiquant que l'extension a été chargée avec succès.
+
+### Se connecter à votre compte
+
+Utilisez la commande `/auth` pour déclencher le processus d'authentification. Le système ouvrira automatiquement un navigateur pour la connexion. Le processus de connexion est sécurisé et pratique, prenant en charge plusieurs méthodes d'authentification. Après une connexion réussie, vos informations de compte seront automatiquement synchronisées avec l'extension VS Code, débloquant toutes les fonctionnalités.
+
+```bash
+/auth
+```
+
+### Commencer à utiliser
+
+Ouvrez le panneau Qwen Code dans la barre latérale et commencez à communiquer avec l'IA. Vous pouvez entrer directement des questions, référencer des fichiers, exécuter des commandes — toutes les opérations sont effectuées dans VS Code. L'extension prend en charge les onglets multiples, l'historique, les raccourcis clavier et autres fonctionnalités, offrant une expérience complète d'assistance à la programmation.
+
+</Steps>
+
+<Callout type="info">
+L'extension VS Code a des fonctionnalités identiques à la version en ligne de commande. Vous pouvez choisir librement selon votre scénario d'utilisation.
+</Callout>
+
+## Recommandations connexes
+
+- [Installation en un clic avec script](./guide-script-install.mdx) — Installer rapidement Qwen Code via une commande de script
+- [Commencez votre première conversation](./guide-first-conversation.mdx) — Après l'installation, lancez votre première conversation IA avec Qwen Code
+
+---
+
+<ShowcaseDetailCta />

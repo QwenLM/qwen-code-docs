@@ -1,0 +1,64 @@
+---
+title: "Recurso @file"
+description: "Use @file na conversa para referenciar arquivos do projeto, permitindo que a IA entenda com precisão o contexto do código."
+category: "Guia de Início"
+features:
+  - "Referência de Arquivo"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão Geral
+
+O recurso @file permite referenciar arquivos do projeto diretamente na conversa, permitindo que a IA entenda com precisão o contexto do código. Seja um único arquivo ou múltiplos arquivos, a IA pode ler e analisar o conteúdo do código, fornecendo sugestões e respostas mais precisas. Este recurso é especialmente adequado para cenários como revisão de código, solução de problemas e refatoração de código.
+
+<ShowcaseDetailMeta category="Guia de Início" features={["Referência de Arquivo"]} model="qwen3.5-plus" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png" alt="Recurso @file" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Referenciar Arquivo Único
+
+Use o comando `@file` seguido do caminho do arquivo para referenciar um único arquivo. A IA lerá o conteúdo do arquivo, entenderá a estrutura e lógica do código, e fornecerá respostas direcionadas com base em suas perguntas.
+
+```bash
+@file ./src/main.py
+Explique o papel desta função
+```
+
+Você também pode referenciar um arquivo e pedir ao Qwen Code para organizar e criar um novo documento com base nele. Isso evita muito que a IA entenda mal suas necessidades e gere conteúdo que não está incluído no material de referência:
+
+```bash
+@file Escreva um artigo para conta oficial com base neste arquivo
+```
+
+### Descrever Necessidades
+
+Após referenciar o arquivo, descreva claramente suas necessidades ou perguntas. A IA analisará com base no conteúdo do arquivo e fornecerá respostas ou sugestões precisas. Você pode perguntar sobre lógica de código, buscar problemas, solicitar otimizações, etc.
+
+### Referenciar Múltiplos Arquivos
+
+Você pode referenciar múltiplos arquivos simultaneamente usando o comando `@file` várias vezes. A IA analisará de forma abrangente todos os arquivos referenciados, entenderá suas relações e conteúdo, e fornecerá respostas mais abrangentes.
+
+```bash
+@file1 @file2 Organize um documento de aprendizagem para iniciantes com base nos materiais destes dois arquivos
+```
+
+</Steps>
+
+<Callout type="info">
+@file suporta caminhos relativos e absolutos, e também suporta correspondência curinga para múltiplos arquivos.
+</Callout>
+
+## Recomendações Relacionadas
+
+- [Aprender Código](./study-learning.mdx) — Clone repositórios de código aberto para aprender e entender o código
+- [Iniciar Sua Primeira Conversa](./guide-first-conversation.mdx) — Após a instalação, inicie sua primeira conversa de IA com o Qwen Code
+
+<ShowcaseDetailCta />
