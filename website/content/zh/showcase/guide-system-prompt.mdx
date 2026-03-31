@@ -1,0 +1,75 @@
+---
+date: "2026-03-31"
+title: "系统提示词自定义：让 AI 按你的风格回答"
+description: "通过 SDK 和 CLI 配置自定义系统提示词，控制 AI 的回答风格和行为，让它始终遵循你的团队规范。"
+category: "入门指南"
+features:
+  - "Agent 模式"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概述
+
+通过 SDK 和 CLI 配置自定义系统提示词，控制 AI 的回答风格和行为。比如让它始终用中文回答、代码注释用英文、遵循你团队的命名规范。不用每次对话都重复说一遍"请用中文回答"。
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 你能用它做什么
+
+- **统一回答语言**：让 AI 始终用中文回答，代码注释用英文
+- **遵循团队规范**：让 AI 遵循你团队的命名规范、代码风格
+- **定制行为模式**：控制 AI 的回答详细程度、是否主动提问等
+
+## 操作步骤
+
+<Steps>
+
+### 创建系统提示词文件
+
+在项目根目录创建 `AGENTS.md` 文件（原 `QWEN.md`），写入你的自定义系统提示词：
+
+```markdown
+# 项目规范
+
+- 始终使用中文回答
+- 代码注释使用英文
+- 变量命名使用 camelCase
+- React 组件使用函数式组件 + Hooks
+- 优先使用 TypeScript
+```
+
+### 配置全局系统提示词
+
+如果你想让所有项目都遵循某些规范，可以在 `~/.qwen/AGENTS.md` 中配置全局系统提示词。
+
+也可以使用：
+
+```bash
+qwen --system-prompt "当我用中文提问时，请用中文回答；当我用英文提问时，请用英文回答。"
+```
+
+### 验证效果
+
+启动 Qwen Code，开始对话，观察 AI 是否按照你的系统提示词规范回答。
+
+</Steps>
+
+<Callout type="info">
+项目级的 `AGENTS.md` 会覆盖全局配置。你可以为不同项目设置不同的规范，团队成员共享同一份配置文件即可保持一致。
+</Callout>
+
+## 相关推荐
+
+- [API 配置指南](./guide-api-setup.mdx) — 配置 API Key 和模型参数
+- [开始第一次对话](./guide-first-conversation.mdx) — 发起你与 Qwen Code 的第一次 AI 对话
+
+---
+
+<ShowcaseDetailCta />

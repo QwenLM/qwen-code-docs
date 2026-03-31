@@ -1,0 +1,63 @@
+---
+date: "2026-03-31"
+title: "/review：让 AI 帮你审查代码"
+description: "提交代码前用 /review 命令让 AI 检查代码质量、发现潜在问题、提出改进建议，像一个有经验的同事帮你审查代码。"
+category: "编程开发"
+features:
+  - "Agent 模式"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概述
+
+提交代码前总想找人帮忙看一眼，但同事忙得顾不上？现在直接用 `/review`，AI 会帮你检查代码质量、发现潜在问题、提出改进建议。不是简单的 lint 检查，而是像一个有经验的同事那样审查你的逻辑、命名、边界处理。
+
+<ShowcaseDetailMeta />
+
+<video poster='https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg' src="https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 你能用它做什么
+
+- **提交前审查**：让 AI 过一遍代码，发现问题早修复，不用等 Code Review 时才被指出来
+- **独立开发的第二双眼睛**：减少低级错误，提升代码质量
+- **学习最佳实践**：AI 会解释为什么这样写更好，不只是告诉你"这里有问题"
+
+## 操作步骤
+
+<Steps>
+
+### 打开需要审查的文件
+
+在 Qwen Code 中打开你想要审查的代码文件或项目目录。确保你的代码已经保存。
+
+### 输入 /review 命令
+
+在对话框中输入 `/review`，Qwen Code 会自动分析当前文件或最近的代码变更。
+
+```bash
+/review
+```
+
+### 查看审查结果
+
+AI 会从代码质量、逻辑正确性、命名规范、边界处理等多个维度给出审查意见，并提供具体的改进建议。
+
+</Steps>
+
+<Callout type="info">
+`/review` 不同于简单的 lint 检查，它会深入理解代码逻辑，识别潜在的 bug、性能问题和设计缺陷。
+</Callout>
+
+## 相关推荐
+
+- [PR Review](./code-pr-review.mdx) — 对 Pull Request 进行智能代码审查
+- [解决 issue](./code-solve-issue.mdx) — 使用 Qwen Code 分析并解决开源项目的 issue
+
+---
+
+<ShowcaseDetailCta />

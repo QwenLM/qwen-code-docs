@@ -1,0 +1,75 @@
+---
+date: "2026-03-31"
+title: "Agent 竞技场：多个模型同时解题"
+description: "使用 /arena 命令让多个 AI 模型同时处理同一个任务，对比结果选择最优方案。"
+category: "编程开发"
+features:
+  - "Arena"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4"
+model: "qwen3.5-plus"
+author: "joeytoday"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概述
+
+重要的代码你会让同事帮忙 review，现在你也可以让多个 AI 模型同时处理同一个任务。Agent 协作竞技场让你对比不同模型的能力，直接调用 `/arena` 命令选择模型并输入任务，挑选最优结果。
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 你能用它做什么
+
+- **重构核心模块**：让多个模型同时给方案，挑最好的
+- **对比解法**：写算法题时对比不同模型的解法，学习不同思路
+- **评估新模型**：用实际任务评估新模型在你的项目上表现如何
+
+## 操作步骤
+
+<Steps>
+
+### 输入 /arena 命令
+
+在 Qwen Code 对话框中输入 `/arena`，选择 `start` 进入竞技场模式。
+
+```bash
+/arena start
+```
+
+### 选择参与的模型
+
+从可用模型列表中选择你想要对比的模型，点击 `space` 可以选择 2 个或更多模型同时参与。
+
+### 输入任务描述
+
+输入你想要各模型处理的任务，例如：
+
+```
+帮我重构这个函数，提升可读性和性能
+```
+
+### 对比结果选最优
+
+各模型会同时处理任务，完成后你可以对比它们的方案，选择最优的结果应用到代码中。
+
+```bash
+/arena select
+```
+
+</Steps>
+
+<Callout type="info">
+竞技场模式特别适合重要的代码决策场景，让多个 AI 模型为你提供不同视角的解决方案。
+</Callout>
+
+## 相关推荐
+
+- [/review：让 AI 帮你审查代码](./guide-review-command.mdx) — 提交前让 AI 检查代码质量
+- [API 配置指南](./guide-api-setup.mdx) — 配置 API Key 和模型参数
+
+---
+
+<ShowcaseDetailCta />

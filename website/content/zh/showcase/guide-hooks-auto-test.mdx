@@ -1,0 +1,121 @@
+---
+date: "2026-03-31"
+title: "Hooks：提交代码前自动执行测试脚本"
+description: "在 Qwen Code 的关键节点挂上自定义脚本，实现提交前自动跑测试、代码生成后自动格式化等自动化工作流。"
+category: "编程开发"
+features:
+  - "Hooks"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4"
+model: "qwen3.5-plus"
+author: "xuewenjie123"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概述
+
+AI 生成了代码，但格式不对，每次都要手动跑一遍 prettier？或者提交前忘了跑测试，结果 CI 挂了？Hooks 系统就是来解决这些问题的。你可以在 Qwen Code 的 10 个关键节点挂上自己的脚本，让它在特定时刻自动执行。
+
+<ShowcaseDetailMeta />
+
+<video src="https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 你能用它做什么
+
+- **提交前自动跑测试**：避免把跑不过的代码推上去，CI 不会再因为你而红了
+- **代码生成后自动格式化**：AI 写完代码，prettier/eslint 自动跑一遍，省得你手动处理
+- **会话结束时自动保存对话日志**：回溯问题时有据可查
+- **工具执行前做权限检查**：敏感操作多一层保护
+
+## 操作步骤
+
+<Steps>
+
+### 创建 hooks 目录
+
+在项目根目录下创建 `.agents/hooks` 目录，用于存放 hook 脚本：
+
+```bash
+mkdir -p .agents/hooks
+```
+
+### 编写 hook 脚本
+
+创建一个 hook 脚本，例如代码修改后自动格式化：
+
+```bash
+#!/bin/bash
+# post-edit-format.sh
+# 代码修改后自动运行 prettier 格式化
+
+INPUT=$(cat)
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
+
+case "$TOOL_NAME" in
+  write_file|edit) ;;
+  *) exit 0 ;;
+esac
+
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+[ -z "$FILE_PATH" ] && exit 0
+
+# 运行 prettier 格式化
+npx prettier --write "$FILE_PATH" 2>/dev/null
+
+echo '{"decision": "allow", "reason": "File formatted"}'
+exit 0
+```
+
+赋予执行权限：
+
+```bash
+chmod +x .agents/hooks/post-edit-format.sh
+```
+
+### 配置 hooks
+
+在 `~/.qwen/settings.json` 中添加 hooks 配置：
+
+```json
+{
+  "hooksConfig": {
+    "enabled": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "(write_file|edit)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".agents/hooks/post-edit-format.sh",
+            "name": "auto-format",
+            "description": "代码修改后自动格式化",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 验证效果
+
+启动 Qwen Code，让 AI 修改一个代码文件，观察 hook 是否自动触发格式化。
+
+</Steps>
+
+<Callout type="info">
+Hooks 支持 10 个关键节点：PreToolUse、PostToolUse、SessionStart、SessionEnd 等。配置方式也很简单，在项目根目录的 `.agents/hooks` 下放脚本文件就行。
+</Callout>
+
+## 相关推荐
+
+- [Hook 实战：代码修改后自动跑测试](./hooks-auto-test.mdx) — 利用 PostToolUse Hook 实现自动测试闭环
+- [安装 Skills](./guide-skill-install.mdx) — 安装和管理 Qwen Code 的扩展技能
+
+---
+
+<ShowcaseDetailCta />

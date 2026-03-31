@@ -1,0 +1,61 @@
+---
+date: "2026-03-31"
+title: "/btw 侧问：写代码时随手问一句"
+description: "在当前对话中插入一个不相关的问题，AI 回答后自动回到之前的上下文，主线对话不被污染。"
+category: "入门指南"
+features:
+  - "Agent 模式"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概述
+
+写代码写到一半，突然想不起来某个 API 的参数顺序。以前你得开个新对话去查，查完再切回来，上下文全断了。现在输入 `/btw`，直接在当前对话里插一句题外话。Qwen Code 回答完后自动回到之前的上下文，就像什么都没发生过一样。
+
+<ShowcaseDetailMeta />
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif" alt="/btw 侧问演示" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 你能用它做什么
+
+- **随手查 API**：写 React 组件时随手查个 Hook 的用法，查完继续写
+- **临时确认配置**：调试到一半临时确认一个配置项的含义，不用开新窗口
+- **问完就忘**：想到一个不相关的问题，问完就忘，不影响当前工作
+
+## 操作步骤
+
+<Steps>
+
+### 正在进行主线对话
+
+你正在和 Qwen Code 讨论一个任务，比如重构某个组件。
+
+### 输入 /btw 加上你的问题
+
+突然想查个东西？直接输入 `/btw` 加上你的问题：
+
+```bash
+/btw JavaScript 的 Array.prototype.at() 方法支持负数索引吗？
+```
+
+### AI 回答后自动恢复上下文
+
+Qwen Code 回答完你的题外话后，自动回到之前的主线对话上下文。你可以继续之前的任务，就像什么都没发生过一样。
+
+</Steps>
+
+<Callout type="info">
+`/btw` 的回答不会污染主线对话的上下文，AI 不会把你的题外话当成正在做的任务的一部分。
+</Callout>
+
+## 相关推荐
+
+- [开始第一次对话](./guide-first-conversation.mdx) — 安装完成后，发起你与 Qwen Code 的第一次 AI 对话
+- [Web Search 网络搜索](./guide-web-search.mdx) — 让 AI 搜索网络获取最新信息
+
+---
+
+<ShowcaseDetailCta />

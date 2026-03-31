@@ -22,6 +22,8 @@ interface ShowcaseItem {
   thumbnail: string;
   videoUrl: string | null;
   model: string;
+  author: string;
+  date: string;
 }
 
 type Locale = "zh" | "en" | "de" | "fr" | "ja" | "pt-BR" | "ru";

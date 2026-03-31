@@ -103,12 +103,22 @@ function generateForLocale(locale) {
       thumbnail: frontmatter.thumbnail || "",
       videoUrl: frontmatter.videoUrl || null,
       model: frontmatter.model || "qwen3.5-plus",
+      author: frontmatter.author || "",
+      date: frontmatter.date || "",
     });
   }
 
   const categoryOrder = CATEGORY_ORDER[locale] || {};
 
+  // Primary sort: date descending (newest first).
+  // Secondary sort: category order ascending.
+  // Tertiary sort: id alphabetically.
   items.sort((a, b) => {
+    const dateA = a.date || "1970-01-01";
+    const dateB = b.date || "1970-01-01";
+    if (dateA !== dateB) {
+      return dateB.localeCompare(dateA); // newest first
+    }
     const orderA = categoryOrder[a.category] || 99;
     const orderB = categoryOrder[b.category] || 99;
     if (orderA !== orderB) {

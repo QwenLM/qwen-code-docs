@@ -1,0 +1,65 @@
+---
+date: "2026-03-31"
+title: "Explore Agent：让 AI 先调研再动手"
+description: "使用 Explore Agent 在动手改代码之前先摸清代码结构、理解依赖关系、找到关键入口，让后续开发方向更准确。"
+category: "编程开发"
+features:
+  - "Explore"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png"
+model: "qwen3.5-plus"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+
+## 概述
+
+在动手改代码之前，先让 Explore Agent 帮你摸清代码结构、理解依赖关系、找到关键入口。调研完再让主 Agent 动手，方向更准确，避免盲目修改导致的返工。
+
+<ShowcaseDetailMeta />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png" alt="Explore Agent" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 你能用它做什么
+
+- **摸清代码结构**：快速了解一个陌生项目的架构和模块划分
+- **理解依赖关系**：找出某个功能涉及哪些文件和模块
+- **定位关键入口**：在大型项目中快速找到需要修改的代码位置
+
+## 操作步骤
+
+<Steps>
+
+### 切换到 Explore Agent
+
+在 Qwen Code 中切换到 Explore Agent 模式，专注于代码调研而不是修改。
+
+### 描述你的调研目标
+
+告诉 Explore Agent 你想了解什么，例如：
+
+```
+帮我分析这个项目的认证模块，找出所有相关的文件和依赖关系
+```
+
+### 获取调研报告
+
+Explore Agent 会分析代码结构，输出详细的调研报告，包括文件列表、依赖关系图、关键入口点等。
+
+### 切换回主 Agent 开始开发
+
+调研完成后，切换回主 Agent，基于调研结果开始实际的代码修改。调研报告会作为上下文传递给主 Agent。
+
+</Steps>
+
+<Callout type="info">
+Explore Agent 只做调研，不会修改任何代码。它的输出可以直接作为主 Agent 的输入，形成"先调研后开发"的高效工作流。
+</Callout>
+
+## 相关推荐
+
+- [代码学习](./study-learning.mdx) — 使用 Qwen Code 学习和理解开源项目代码
+- [LSP 智能感知](./code-lsp-intelligence.mdx) — 集成 LSP 协议实现精确的代码补全和导航
+
+---
+
+<ShowcaseDetailCta />

@@ -1,212 +1,17 @@
 [
   {
-    "title": "API 设置",
-    "description": "配置 API Key 和模型参数，自定义你的 AI 编程体验，支持多种模型选择。",
-    "link": "/zh/showcase/api-setup/",
-    "category": "setup",
+    "title": "10 分钟搭建个人作品集网站",
+    "description": "使用 Qwen Code 的 Agent 模式，快速生成个性化的个人作品集网站，从设计到部署一气呵成。",
+    "link": "/zh/showcase/build-portfolio-site/",
+    "category": "daily",
     "difficulty": "beginner",
-    "model": "qwen3.5-plus",
-    "duration": "3 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
-    "features": [
-      "API 配置",
-      "模型选择",
-      "个性化设置"
-    ]
-  },
-  {
-    "title": "开始第一次对话",
-    "description": "安装完成后，发起你与 Qwen Code 的第一次 AI 对话，了解它的核心能力。",
-    "link": "/zh/showcase/first-conversation/",
-    "category": "setup",
-    "difficulty": "beginner",
-    "model": "qwen3.5-plus",
-    "duration": "2 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg",
-    "features": [
-      "自然语言交互",
-      "智能问答",
-      "上下文理解"
-    ]
-  },
-  {
-    "title": "脚本一键安装",
-    "description": "通过脚本命令快速安装 Qwen Code，几秒钟即可完成环境配置。支持 Linux/macOS 和 Windows 平台。",
-    "link": "/zh/showcase/script-install/",
-    "category": "setup",
-    "difficulty": "beginner",
-    "model": "qwen3.5-plus",
-    "duration": "1 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg",
-    "features": [
-      "跨平台支持",
-      "自动化安装",
-      "环境配置"
-    ]
-  },
-  {
-    "title": "Plan 模式 + Web Search",
-    "description": "在 Plan 模式下结合 Web Search，先搜索再规划，提升任务准确性。",
-    "link": "/zh/showcase/plan-web-search/",
-    "category": "search",
-    "difficulty": "intermediate",
-    "model": "qwen3.5-plus",
-    "duration": "5 分钟",
-    "thumbnail": "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png",
-    "features": [
-      "智能规划",
-      "网络搜索",
-      "任务分解"
-    ]
-  },
-  {
-    "title": "读论文",
-    "description": "直接读取和分析论文内容，让 AI 帮你理解复杂的学术论文并生成学习卡片。",
-    "link": "/zh/showcase/read-paper/",
-    "category": "search",
-    "difficulty": "intermediate",
-    "model": "qwen3.5-plus",
-    "duration": "10 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01616oQD1d9RnY1XuLt_!!6000000003693-2-videocover-1696-956.png",
-    "features": [
-      "论文阅读",
-      "知识提取",
-      "学习辅助"
-    ]
-  },
-  {
-    "title": "Web Search 网络搜索",
-    "description": "让 Qwen Code 搜索网络内容，获取实时信息辅助编程和解决问题。",
-    "link": "/zh/showcase/web-search/",
-    "category": "search",
-    "difficulty": "beginner",
-    "model": "qwen3.5-plus",
-    "duration": "2 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
-    "features": [
-      "实时搜索",
-      "信息获取",
-      "问题解答"
-    ]
-  },
-  {
-    "title": "百炼 Coding Plan 模式",
-    "description": "配置使用百炼 Coding Plan，多模型选择，提升复杂任务的完成质量。",
-    "link": "/zh/showcase/bailian-coding-plan/",
-    "category": "development",
-    "difficulty": "intermediate",
-    "model": "qwen3.5-plus",
-    "duration": "5 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png",
-    "features": [
-      "多模型支持",
-      "复杂任务优化",
-      "智能规划"
-    ]
-  },
-  {
-    "title": "代码学习",
-    "description": "克隆开源仓库并学习理解代码，让 Qwen Code 指导你如何为开源项目做贡献。",
-    "link": "/zh/showcase/code-learning/",
-    "category": "development",
-    "difficulty": "intermediate",
-    "model": "qwen3.5-plus",
-    "duration": "15 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png",
-    "features": [
-      "代码理解",
-      "开源贡献",
-      "学习指导"
-    ]
-  },
-  {
-    "title": "GitHub 命令集成",
-    "description": "在 Qwen Code 中直接执行 GitHub 操作，管理仓库、PR 和 issue，无需离开终端。",
-    "link": "/zh/showcase/github-integration/",
-    "category": "development",
-    "difficulty": "intermediate",
-    "model": "qwen3.5-plus",
-    "duration": "5 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
-    "features": [
-      "GitHub API",
-      "仓库管理",
-      "自动化"
-    ]
-  },
-  {
-    "title": "PR Review",
-    "description": "使用 Qwen Code 对 Pull Request 进行代码审查，确保代码质量和规范遵循。",
-    "link": "/zh/showcase/pr-review/",
-    "category": "development",
-    "difficulty": "intermediate",
-    "model": "qwen3.5-plus",
-    "duration": "10 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
-    "features": [
-      "代码审查",
-      "质量检查",
-      "反馈生成"
-    ]
-  },
-  {
-    "title": "解决 issue",
-    "description": "使用 Qwen Code 分析并解决开源项目的 issue，全流程跟踪从理解到提交代码。",
-    "link": "/zh/showcase/solve-issue/",
-    "category": "development",
-    "difficulty": "intermediate",
-    "model": "qwen3.5-plus",
-    "duration": "20 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png",
-    "features": [
-      "问题诊断",
-      "代码修复",
-      "开源贡献"
-    ]
-  },
-  {
-    "title": "通过提示词安装 Skills",
-    "description": "在对话中直接告诉 Qwen Code 安装所需的 Skill，即装即用，无需手动操作。",
-    "link": "/zh/showcase/skill-install/",
-    "category": "skills",
-    "difficulty": "beginner",
-    "model": "qwen3.5-plus",
-    "duration": "2 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000003086/O1CN01quNtwC1YfRNyxdAsy_!!6000000003086-0-tbvideo.jpg",
-    "features": [
-      "Skills",
-      "自然语言安装",
-      "扩展功能"
-    ]
-  },
-  {
-    "title": "数据可视化仪表盘",
-    "description": "使用 Qwen Code 的 Agent 模式和 Custom visuals 能力，快速创建交互式数据可视化仪表盘，让数据说话。",
-    "link": "/zh/showcase/data-dashboard/",
-    "category": "data",
-    "difficulty": "intermediate",
     "model": "Qwen-Max",
-    "duration": "20 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
+    "duration": "10 分钟",
+    "thumbnail": "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png",
     "features": [
       "Agent 模式",
-      "Custom visuals",
-      "数据可视化"
-    ]
-  },
-  {
-    "title": "分析日记并生成年度总结",
-    "description": "使用 Qwen Code 的 Skills 功能，自动分析你的日记内容，提取关键事件和情感趋势，生成精美的年度总结报告。",
-    "link": "/zh/showcase/diary-annual-summary/",
-    "category": "data",
-    "difficulty": "intermediate",
-    "model": "Qwen-Max",
-    "duration": "15 分钟",
-    "thumbnail": "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png",
-    "features": [
-      "Skills",
-      "文本分析",
-      "数据可视化"
+      "前端开发",
+      "一键部署"
     ]
   },
   {
@@ -225,18 +30,213 @@
     ]
   },
   {
-    "title": "10 分钟搭建个人作品集网站",
-    "description": "使用 Qwen Code 的 Agent 模式，快速生成个性化的个人作品集网站，从设计到部署一气呵成。",
-    "link": "/zh/showcase/build-portfolio-site/",
-    "category": "daily",
-    "difficulty": "beginner",
+    "title": "分析日记并生成年度总结",
+    "description": "使用 Qwen Code 的 Skills 功能，自动分析你的日记内容，提取关键事件和情感趋势，生成精美的年度总结报告。",
+    "link": "/zh/showcase/diary-annual-summary/",
+    "category": "data",
+    "difficulty": "intermediate",
     "model": "Qwen-Max",
-    "duration": "10 分钟",
-    "thumbnail": "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png",
+    "duration": "15 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png",
+    "features": [
+      "Skills",
+      "文本分析",
+      "数据可视化"
+    ]
+  },
+  {
+    "title": "数据可视化仪表盘",
+    "description": "使用 Qwen Code 的 Agent 模式和 Custom visuals 能力，快速创建交互式数据可视化仪表盘，让数据说话。",
+    "link": "/zh/showcase/data-dashboard/",
+    "category": "data",
+    "difficulty": "intermediate",
+    "model": "Qwen-Max",
+    "duration": "20 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
     "features": [
       "Agent 模式",
-      "前端开发",
-      "一键部署"
+      "Custom visuals",
+      "数据可视化"
+    ]
+  },
+  {
+    "title": "通过提示词安装 Skills",
+    "description": "在对话中直接告诉 Qwen Code 安装所需的 Skill，即装即用，无需手动操作。",
+    "link": "/zh/showcase/skill-install/",
+    "category": "skills",
+    "difficulty": "beginner",
+    "model": "qwen3.5-plus",
+    "duration": "2 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000003086/O1CN01quNtwC1YfRNyxdAsy_!!6000000003086-0-tbvideo.jpg",
+    "features": [
+      "Skills",
+      "自然语言安装",
+      "扩展功能"
+    ]
+  },
+  {
+    "title": "解决 issue",
+    "description": "使用 Qwen Code 分析并解决开源项目的 issue，全流程跟踪从理解到提交代码。",
+    "link": "/zh/showcase/solve-issue/",
+    "category": "development",
+    "difficulty": "intermediate",
+    "model": "qwen3.5-plus",
+    "duration": "20 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png",
+    "features": [
+      "问题诊断",
+      "代码修复",
+      "开源贡献"
+    ]
+  },
+  {
+    "title": "PR Review",
+    "description": "使用 Qwen Code 对 Pull Request 进行代码审查，确保代码质量和规范遵循。",
+    "link": "/zh/showcase/pr-review/",
+    "category": "development",
+    "difficulty": "intermediate",
+    "model": "qwen3.5-plus",
+    "duration": "10 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
+    "features": [
+      "代码审查",
+      "质量检查",
+      "反馈生成"
+    ]
+  },
+  {
+    "title": "GitHub 命令集成",
+    "description": "在 Qwen Code 中直接执行 GitHub 操作，管理仓库、PR 和 issue，无需离开终端。",
+    "link": "/zh/showcase/github-integration/",
+    "category": "development",
+    "difficulty": "intermediate",
+    "model": "qwen3.5-plus",
+    "duration": "5 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
+    "features": [
+      "GitHub API",
+      "仓库管理",
+      "自动化"
+    ]
+  },
+  {
+    "title": "代码学习",
+    "description": "克隆开源仓库并学习理解代码，让 Qwen Code 指导你如何为开源项目做贡献。",
+    "link": "/zh/showcase/code-learning/",
+    "category": "development",
+    "difficulty": "intermediate",
+    "model": "qwen3.5-plus",
+    "duration": "15 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png",
+    "features": [
+      "代码理解",
+      "开源贡献",
+      "学习指导"
+    ]
+  },
+  {
+    "title": "百炼 Coding Plan 模式",
+    "description": "配置使用百炼 Coding Plan，多模型选择，提升复杂任务的完成质量。",
+    "link": "/zh/showcase/bailian-coding-plan/",
+    "category": "development",
+    "difficulty": "intermediate",
+    "model": "qwen3.5-plus",
+    "duration": "5 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png",
+    "features": [
+      "多模型支持",
+      "复杂任务优化",
+      "智能规划"
+    ]
+  },
+  {
+    "title": "Web Search 网络搜索",
+    "description": "让 Qwen Code 搜索网络内容，获取实时信息辅助编程和解决问题。",
+    "link": "/zh/showcase/web-search/",
+    "category": "search",
+    "difficulty": "beginner",
+    "model": "qwen3.5-plus",
+    "duration": "2 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
+    "features": [
+      "实时搜索",
+      "信息获取",
+      "问题解答"
+    ]
+  },
+  {
+    "title": "读论文",
+    "description": "直接读取和分析论文内容，让 AI 帮你理解复杂的学术论文并生成学习卡片。",
+    "link": "/zh/showcase/read-paper/",
+    "category": "search",
+    "difficulty": "intermediate",
+    "model": "qwen3.5-plus",
+    "duration": "10 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01616oQD1d9RnY1XuLt_!!6000000003693-2-videocover-1696-956.png",
+    "features": [
+      "论文阅读",
+      "知识提取",
+      "学习辅助"
+    ]
+  },
+  {
+    "title": "Plan 模式 + Web Search",
+    "description": "在 Plan 模式下结合 Web Search，先搜索再规划，提升任务准确性。",
+    "link": "/zh/showcase/plan-web-search/",
+    "category": "search",
+    "difficulty": "intermediate",
+    "model": "qwen3.5-plus",
+    "duration": "5 分钟",
+    "thumbnail": "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png",
+    "features": [
+      "智能规划",
+      "网络搜索",
+      "任务分解"
+    ]
+  },
+  {
+    "title": "脚本一键安装",
+    "description": "通过脚本命令快速安装 Qwen Code，几秒钟即可完成环境配置。支持 Linux/macOS 和 Windows 平台。",
+    "link": "/zh/showcase/script-install/",
+    "category": "setup",
+    "difficulty": "beginner",
+    "model": "qwen3.5-plus",
+    "duration": "1 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg",
+    "features": [
+      "跨平台支持",
+      "自动化安装",
+      "环境配置"
+    ]
+  },
+  {
+    "title": "开始第一次对话",
+    "description": "安装完成后，发起你与 Qwen Code 的第一次 AI 对话，了解它的核心能力。",
+    "link": "/zh/showcase/first-conversation/",
+    "category": "setup",
+    "difficulty": "beginner",
+    "model": "qwen3.5-plus",
+    "duration": "2 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg",
+    "features": [
+      "自然语言交互",
+      "智能问答",
+      "上下文理解"
+    ]
+  },
+  {
+    "title": "API 设置",
+    "description": "配置 API Key 和模型参数，自定义你的 AI 编程体验，支持多种模型选择。",
+    "link": "/zh/showcase/api-setup/",
+    "category": "setup",
+    "difficulty": "beginner",
+    "model": "qwen3.5-plus",
+    "duration": "3 分钟",
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000006672/O1CN01q0ZOki1z9pg48tM4i_!!6000000006672-0-tbvideo.jpg",
+    "features": [
+      "API 配置",
+      "模型选择",
+      "个性化设置"
     ]
   }
 ]
