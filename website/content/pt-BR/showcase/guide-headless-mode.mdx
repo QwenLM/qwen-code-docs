@@ -1,0 +1,62 @@
+---
+title: "Modo Headless"
+description: "Use Qwen Code em ambientes sem GUI, adequado para servidores remotos, pipelines CI/CD e cenários de scripts de automação."
+category: "Guia de Início"
+features:
+  - "Terminal"
+thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+O modo Headless permite que você use Qwen Code em ambientes sem GUI, especialmente adequado para servidores remotos, pipelines CI/CD e cenários de scripts de automação. Através de parâmetros de linha de comando e entrada de pipeline, você pode integrar perfeitamente o Qwen Code em seus fluxos de trabalho existentes, alcançando programação assistida por IA automatizada.
+
+<ShowcaseDetailMeta category="Guia de Início" features={["Terminal"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif" alt="Modo Headless" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Usar modo prompt
+
+Use o parâmetro `--p` para passar prompts diretamente na linha de comando. Qwen Code retornará a resposta e sairá automaticamente. Este método é adequado para consultas únicas e pode ser facilmente integrado em scripts.
+
+```bash
+qwen --p 'what is qwen code?'
+```
+
+### Entrada de pipeline
+
+Passe a saída de outros comandos para Qwen Code através de pipelines para alcançar processamento automatizado. Você pode enviar arquivos de log, mensagens de erro, etc. diretamente para a IA para análise.
+
+```bash
+cat error.log | qwen --p 'analisar erros'
+```
+
+### Integração de script
+
+Integre Qwen Code em scripts Shell para alcançar fluxos de trabalho automatizados complexos. Você pode executar diferentes operações com base nos resultados de retorno da IA, criando scripts automatizados inteligentes.
+
+```bash
+#!/bin/bash
+result=$(qwen --p 'verificar se há problemas com o código')
+if [[ $result == *"tem problemas"* ]]; then
+  echo "Problemas de código encontrados"
+fi
+```
+
+</Steps>
+
+<Callout type="info">
+O modo Headless suporta todos os recursos do Qwen Code, incluindo geração de código, resolução de problemas, operações de arquivo, etc.
+</Callout>
+
+<ShowcaseDetailCta />

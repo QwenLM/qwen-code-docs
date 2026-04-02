@@ -1,0 +1,58 @@
+---
+title: "会話履歴をエクスポート"
+description: "会話履歴をMarkdown、HTML、またはJSON形式でエクスポートし、アーカイブや共有を容易にします。"
+category: "日常タスク"
+features:
+  - "Terminal"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+会話履歴エクスポート機能
+
+<ShowcaseDetailMeta category="日常タスク" features={["Terminal"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### セッションリストを表示
+
+`/resume`コマンドを使用してすべての履歴セッションを表示します。リストは各セッションの作成時間、トピック要約などの情報を表示し、エクスポートが必要な会話を素早く見つけるのに役立ちます。キーワード検索や時間による並べ替えを使用して、ターゲットセッションを正確に特定できます。
+
+```bash
+/resume
+```
+
+### エクスポート形式を選択
+
+エクスポートするセッションを決定した後、`/export`コマンドを使用して形式とセッションIDを指定します。3つの形式がサポートされています：`markdown`、`html`、`json`。Markdown形式はドキュメントツールでの使用に適しており、HTML形式はブラウザで直接開いて表示でき、JSON形式はプログラムによる処理に適しています。
+
+```bash
+# <session-id>パラメータがない場合、デフォルトで現在のセッションをエクスポート
+/export html <session-id> # HTML形式でエクスポート
+/export markdown <session-id> # Markdown形式でエクスポート
+/export json <session-id> # JSON形式でエクスポート
+```
+
+### 共有とアーカイブ
+
+エクスポートされたファイルは指定されたディレクトリに保存されます。MarkdownおよびHTMLファイルは同僚と直接共有したり、チームドキュメントで使用したりできます。JSONファイルは他のツールにインポートして二次処理できます。重要な会話を定期的にアーカイブしてチームナレッジベースを構築することをお勧めします。エクスポートされたファイルはバックアップとしても使用でき、重要な情報の損失を防ぐことができます。
+
+</Steps>
+
+<Callout type="info">
+エクスポートされたHTML形式には完全なスタイルが含まれており、任意のブラウザで直接開いて表示できます。JSON形式はすべてのメタデータを保持し、データ分析と処理に適しています。
+</Callout>
+
+<ShowcaseDetailCta />

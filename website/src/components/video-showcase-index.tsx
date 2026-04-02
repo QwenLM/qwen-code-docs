@@ -3,7 +3,17 @@
 import React, { useState, useMemo } from "react";
 import { Search, ArrowRight, BookOpen, Zap, GraduationCap, LayoutGrid, List } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import showcaseItems from "../generated/showcase-data.json";
+
+const SUPPORTED_LOCALES = ["zh", "en", "de", "fr", "ja", "pt-BR", "ru"];
+
+function useLocale(): string {
+  const pathname = usePathname();
+  if (!pathname) return "zh";
+  const firstSegment = pathname.split("/").filter(Boolean)[0];
+  return firstSegment && SUPPORTED_LOCALES.includes(firstSegment) ? firstSegment : "zh";
+}
 
 interface ShowcaseItem {
   id: string;
@@ -52,9 +62,9 @@ const LEARNING_PATHS = [
   },
 ];
 
-function ShowcaseCard({ item }: { item: ShowcaseItem }) {
+function ShowcaseCard({ item, locale }: { item: ShowcaseItem; locale: string }) {
   return (
-    <Link href={`/zh/showcase/${item.id}`} target="_blank" rel="noopener noreferrer" className="group block">
+    <Link href={`/${locale}/showcase/${item.id}`} target="_blank" rel="noopener noreferrer" className="group block">
       <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.4)] active:scale-[0.98]">
         <div className="relative aspect-video overflow-hidden bg-zinc-100 dark:bg-zinc-900">
           <img
@@ -100,10 +110,10 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
   );
 }
 
-function ShowcaseListItem({ item }: { item: ShowcaseItem }) {
+function ShowcaseListItem({ item, locale }: { item: ShowcaseItem; locale: string }) {
   return (
     <Link
-      href={`/zh/showcase/${item.id}`}
+      href={`/${locale}/showcase/${item.id}`}
       target="_blank"
       rel="noopener noreferrer"
       className="group flex items-center gap-6 py-4 px-4 -mx-4 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
@@ -142,6 +152,7 @@ function ShowcaseListItem({ item }: { item: ShowcaseItem }) {
 }
 
 export function VideoShowcaseIndex() {
+  const locale = useLocale();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
@@ -277,7 +288,7 @@ export function VideoShowcaseIndex() {
                     .map((caseItem, index) => (
                     <Link
                       key={caseItem.id}
-                      href={`/zh/showcase/${caseItem.id}`}
+                      href={`/${locale}/showcase/${caseItem.id}`}
                       className="flex items-center gap-3 py-2.5 px-3 -mx-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors group"
                     >
                       <span className="flex-shrink-0 text-xs font-mono text-zinc-400 dark:text-zinc-600 tabular-nums w-5">
@@ -412,7 +423,7 @@ export function VideoShowcaseIndex() {
               {viewMode === "grid" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                   {displayedItems.map((item) => (
-                    <ShowcaseCard key={item.id} item={item} />
+                    <ShowcaseCard key={item.id} item={item} locale={locale} />
                   ))}
                 </div>
               ) : (
@@ -428,7 +439,7 @@ export function VideoShowcaseIndex() {
                   </div>
                   {/* List Items */}
                   {displayedItems.map((item) => (
-                    <ShowcaseListItem key={item.id} item={item} />
+                    <ShowcaseListItem key={item.id} item={item} locale={locale} />
                   ))}
                 </div>
               )}

@@ -1,0 +1,78 @@
+---
+title: "Skillsをインストール"
+description: "コマンドラインインストールやフォルダインストールなど、複数の方法でSkill拡張をインストールし、様々なシーンのニーズに対応します。"
+category: "入門ガイド"
+features:
+  - "Skills"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+Qwen Codeは複数のSkillインストール方法をサポートしています。実際のシーンに合わせて最適な方法を選択できます。コマンドラインインストールはオンライン環境に適しており、高速で便利です。フォルダインストールはオフライン環境やカスタムSkillに適しており、柔軟で制御可能です。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["Skills"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### find-skills Skillを確認してインストール
+
+Qwen Codeでニーズを直接記述し、必要なSkillの確認とインストールを手伝ってもらいます：
+
+```
+find skillsがあるか確認し、なければ直接インストールしてください：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code
+```
+
+### 必要なSkillをインストール、例えばweb-component-designをインストール：
+
+```
+/skills find-skills install web-component-design -y -a qwen-code
+```
+
+Qwen Codeがインストールコマンドを自動実行し、指定されたリポジトリからSkillをダウンロードしてインストールします。1文でインストールすることもできます：
+
+```
+find skillsがあるか確認し、なければ直接インストールしてください：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code、そして【スキル名】を現在のqwen code skillsディレクトリにインストールしてください。
+```
+
+### インストールの確認
+
+インストール完了後、Skillが正常に読み込まれたことを確認します：
+
+```bash
+/skills
+```
+
+</Steps>
+
+<Callout type="info">
+コマンドラインインストールにはネットワーク接続が必要です。`-y`パラメータは自動確認を意味し、`-a qwen-code`はQwen Codeへのインストールを指定します。
+</Callout>
+
+<Callout type="info">
+**Skillディレクトリ構造要件**
+
+各Skillフォルダには`skill.md`ファイルを含める必要があり、Skillの名前、説明、トリガールールを定義します：
+
+```
+~/.qwen/skills/
+├── my-skill/
+│   ├── SKILL.md      # 必須：Skill設定ファイル
+│   └── scripts/      # オプション：スクリプトファイル
+└── another-skill/
+    └── SKILL.md
+```
+</Callout>
+
+<ShowcaseDetailCta />

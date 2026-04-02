@@ -1,0 +1,52 @@
+---
+title: "Convert YouTube Videos to Blog Posts"
+description: "Use Qwen Code to automatically convert YouTube videos into structured blog articles."
+category: "Creator Tools"
+features:
+  - "Skills"
+  - "Web Search"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Found an amazing YouTube video and want to convert it into a blog post to share with more people? Qwen Code can automatically extract video content and generate well-structured, content-rich blog articles. The AI fetches the video transcript, understands the key points, organizes the content in standard blog article format, and adds appropriate headings and sections. Whether it's technical tutorials, product introductions, or knowledge sharing, you can quickly generate high-quality articles.
+
+<ShowcaseDetailMeta category="Creator Tools" features={["Skills", "Web Search"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Provide the Video Link
+
+Tell Qwen Code the YouTube video link you want to convert, and the AI will automatically fetch the video information and transcript.
+
+```
+Based on this skill: https://github.com/QwenLM/qwen-code-examples/tree/main/skills/youtube-transcript-extractor, help me write this video as a blog post: https://www.youtube.com/watch?v=fJSLnxi1i64
+```
+
+### Generate the Blog Post and Edit
+
+The AI will analyze the transcript, extract key information, and generate an article in blog post structure, including title, introduction, body, and conclusion. You can continue to refine it:
+
+```
+Help me adjust the language style of this article to be more suitable for a technical blog
+```
+
+</Steps>
+
+<Callout type="info">
+Generated articles support Markdown format and can be directly published to blog platforms or GitHub Pages. You can also have the AI help you add images, code blocks, and citations to enrich the article.
+</Callout>
+
+<ShowcaseDetailCta />

@@ -1,0 +1,62 @@
+---
+title: "Headless Mode"
+description: "Use Qwen Code in GUI-less environments, suitable for remote servers, CI/CD pipelines, and automation script scenarios."
+category: "Getting Started"
+features:
+  - "Terminal"
+thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Headless mode allows you to use Qwen Code in GUI-less environments, especially suitable for remote servers, CI/CD pipelines, and automation script scenarios. Through command line parameters and pipeline input, you can seamlessly integrate Qwen Code into existing workflows, achieving automated AI-assisted programming.
+
+<ShowcaseDetailMeta category="Getting Started" features={["Terminal"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif" alt="Headless Mode" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Use Prompt Mode
+
+Use the `--p` parameter to directly pass prompts in the command line. Qwen Code will return the answer and automatically exit. This method is suitable for one-time queries and can be easily integrated into scripts.
+
+```bash
+qwen --p 'what is qwen code?'
+```
+
+### Pipeline Input
+
+Pass the output of other commands to Qwen Code through pipelines to achieve automated processing. You can directly send log files, error messages, etc. to AI for analysis.
+
+```bash
+cat error.log | qwen --p 'analyze errors'
+```
+
+### Script Integration
+
+Integrate Qwen Code in Shell scripts to achieve complex automated workflows. You can perform different operations based on AI's return results, building intelligent automated scripts.
+
+```bash
+#!/bin/bash
+result=$(qwen --p 'check if there are any problems with the code')
+if [[ $result == *"has problems"* ]]; then
+  echo "Code problems found"
+fi
+```
+
+</Steps>
+
+<Callout type="info">
+Headless mode supports all Qwen Code features, including code generation, problem solving, file operations, etc.
+</Callout>
+
+<ShowcaseDetailCta />

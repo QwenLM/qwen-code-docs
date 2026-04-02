@@ -1,0 +1,53 @@
+---
+title: "Reconhecimento de Imagem"
+description: "O Qwen Code pode ler e entender conteúdo de imagens. Mockups de design de UI, capturas de tela de erro, diagramas de arquitetura, etc."
+category: "Tarefas Diárias"
+features:
+  - "Image Recognition"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01JahZiH1yV4QoVXcEV_!!6000000006583-2-tps-1700-958.png"
+videoUrl: "https://cloud.video.taobao.com/vod/j0eaRLacpjRbMBDAerJ1tP9qJ9qbvUHFyyR-VdZBwIg.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+O Qwen Code possui poderosos recursos de reconhecimento de imagem, podendo ler e entender vários tipos de conteúdo de imagem. Seja mockups de design de UI, capturas de tela de erro, diagramas de arquitetura, fluxogramas, notas manuscritas ou outros, o Qwen Code pode identificar com precisão e fornecer análises valiosas. Esta capacidade permite integrar informações visuais diretamente ao fluxo de trabalho de programação, melhorando significativamente a eficiência da comunicação e a velocidade de resolução de problemas.
+
+<ShowcaseDetailMeta category="Tarefas Diárias" features={["Image Recognition"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/j0eaRLacpjRbMBDAerJ1tP9qJ9qbvUHFyyR-VdZBwIg.mp4" poster="https://gw.alicdn.com/imgextra/i1/O1CN01JahZiH1yV4QoVXcEV_!!6000000006583-2-tps-1700-958.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Carregar Imagem
+
+Arraste e solte a imagem na janela de conversa ou use colagem da área de transferência (`Cmd+V` / `Ctrl+V`). Suporta formatos comuns como PNG, JPEG, GIF, WebP, etc.
+
+Referência: [Colar Imagem da Área de Transferência](./office-clipboard-paste.mdx) mostra como colar rapidamente capturas de tela na conversa.
+
+### Descrever Necessidades
+
+Na caixa de entrada, descreva o que deseja que a IA faça com a imagem. Por exemplo:
+
+```
+Com base no conteúdo da imagem, gere um arquivo html simples
+```
+
+### Obter Resultados da Análise
+
+O Qwen Code analisará o conteúdo da imagem e fornecerá uma resposta detalhada. Você pode fazer mais perguntas para discutir detalhes da imagem em profundidade ou pedir ao Qwen Code para gerar código com base no conteúdo da imagem.
+
+</Steps>
+
+<Callout type="info">
+O recurso de reconhecimento de imagem suporta múltiplos cenários: análise de capturas de tela de código, conversão de mockups de design de UI para código, interpretação de informações de erro, compreensão de diagramas de arquitetura, extração de dados de gráficos, etc. Recomenda-se usar imagens claras e de alta resolução para obter o melhor efeito de reconhecimento.
+</Callout>
+
+<ShowcaseDetailCta />

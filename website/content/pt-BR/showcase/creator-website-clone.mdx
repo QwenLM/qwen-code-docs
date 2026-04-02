@@ -1,0 +1,63 @@
+---
+title: "Replicar Seu Site Favorito com Uma Frase"
+description: "Dê uma captura de tela ao Qwen Code e a IA analisa a estrutura da página para gerar código frontend completo."
+category: "Ferramentas de Criação"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+Encontrou um design de site que gostou e quer replicá-lo rapidamente? Basta dar uma captura de tela ao Qwen Code e a IA pode analisar a estrutura da página e gerar código frontend completo. O Qwen Code reconhecerá o layout da página, esquema de cores e estrutura de componentes, e gerará código executável usando tecnologias frontend modernas.
+
+<ShowcaseDetailMeta category="Ferramentas de Criação" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Preparar Captura de Tela do Site
+
+Faça uma captura de tela da interface do site que deseja replicar, garantindo que seja clara e completa.
+
+### Instalar o Skill Correspondente
+
+Instale o Skill de reconhecimento de imagens e geração de código frontend.
+
+```bash
+Verifique se tenho find skills, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, depois me ajude a instalar web-component-design.
+```
+
+### Colar a Captura de Tela e Descrever os Requisitos
+
+Cole a captura de tela na conversa e informe ao Qwen Code seus requisitos específicos.
+
+```bash
+/skills web-component-design Com base neste skill, replique uma página web HTML baseada em @website.png, garantindo que as referências de imagens sejam válidas.
+```
+
+Exemplo de captura de tela:
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### Executar e Visualizar
+
+Abra a página web correspondente para verificar. Se precisar ajustar o design ou funcionalidades, continue interagindo com a IA para modificar o código.
+
+</Steps>
+
+<Callout type="info">
+O código gerado segue as melhores práticas frontend modernas com boa estrutura e manutenibilidade. Você pode personalizá-lo e expandi-lo ainda mais.
+</Callout>
+
+<ShowcaseDetailCta />

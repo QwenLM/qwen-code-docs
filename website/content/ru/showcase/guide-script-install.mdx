@@ -1,0 +1,59 @@
+---
+title: "Установка скриптом в один клик"
+description: "Быстро установите Qwen Code с помощью команды скрипта. Настройте среду за несколько секунд. Поддержка Linux, macOS и Windows."
+category: "Руководство по началу работы"
+features:
+  - "Terminal"
+thumbnail: "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+Qwen Code поддерживает быструю установку одной командой скрипта. Нет необходимости вручную настраивать переменные окружения или загружать зависимости. Скрипт автоматически определяет тип операционной системы, загружает соответствующий установочный пакет и завершает настройку. Весь процесс занимает всего несколько секунд и поддерживает три основные платформы: **Linux**, **macOS** и **Windows**.
+
+<ShowcaseDetailMeta category="Руководство по началу работы" features={["Terminal"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+<Steps>
+
+### Установка на Linux / macOS
+
+Откройте терминал и выполните следующую команду. Скрипт автоматически определит архитектуру системы (x86_64 / ARM) и загрузит соответствующую версию для завершения установки.
+
+```bash
+bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source website
+```
+
+### Установка на Windows
+
+Выполните следующую команду в PowerShell. Скрипт загрузит пакетный файл и автоматически выполнит процесс установки. После завершения вы сможете использовать команду `qwen` в любом терминале.
+
+```bash
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat --source website
+```
+
+### Проверка установки
+
+После завершения установки выполните следующую команду в терминале, чтобы проверить, что Qwen Code установлен правильно. Если отображается номер версии, установка прошла успешно.
+
+```bash
+qwen --version
+```
+
+</Steps>
+
+<Callout type="info">
+Если вы предпочитаете использовать npm, вы также можете установить глобально с помощью `npm install -g @qwen-code/qwen-code`. После установки введите `qwen` для запуска. Если есть проблемы с правами доступа, используйте `sudo npm install -g @qwen-code/qwen-code` и введите пароль для установки.
+</Callout>
+
+<ShowcaseDetailCta />

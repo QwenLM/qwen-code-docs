@@ -1,0 +1,57 @@
+---
+title: "Modo Bailian Coding Plan"
+description: "Configure para usar Bailian Coding Plan, múltiplas seleções de modelo, melhorar a qualidade de conclusão de tarefas complexas."
+category: "Guia de Início"
+features:
+  - "Plan Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png"
+videoUrl: "https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+O modo Bailian Coding Plan é um recurso avançado do Qwen Code, projetado especificamente para tarefas de programação complexas. Através da colaboração inteligente de múltiplos modelos, ele pode decompor grandes tarefas em etapas executáveis e planejar automaticamente o caminho de execução ideal. Seja refatorando grandes bases de código ou implementando funcionalidades complexas, o Coding Plan pode melhorar significativamente a qualidade e a eficiência de conclusão de tarefas.
+
+<ShowcaseDetailMeta category="Guia de Início" features={["Plan Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4" poster="https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Entrar na interface de configurações
+
+Inicie Qwen Code e digite o comando `/auth`.
+
+### Selecionar Coding Plan
+
+Habilite o modo Bailian Coding Plan nas configurações, digite sua chave API, e Qwen Code configurará automaticamente os modelos suportados pelo Coding Plan para você.
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01cDz8AJ1Cq30rXjuXS_!!6000000000131-2-tps-1696-952.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### Selecionar modelo
+
+Digite diretamente o comando `/model` para selecionar o modelo desejado.
+
+### Iniciar tarefa complexa
+
+Descreva sua tarefa de programação, e o Coding Plan planejará automaticamente as etapas de execução. Você pode explicar em detalhes os objetivos, restrições e resultados esperados da tarefa. A IA analisará os requisitos da tarefa e gerará um plano de execução estruturado, incluindo operações específicas e resultados esperados para cada etapa.
+
+```bash
+Preciso refatorar a camada de dados deste projeto, migrar o banco de dados de MySQL para PostgreSQL mantendo a interface API inalterada
+```
+
+</Steps>
+
+<Callout type="info">
+O modo Coding Plan é especialmente adequado para tarefas complexas que exigem colaboração de múltiplas etapas, como refatoração de arquitetura, migração de funcionalidades, etc.
+</Callout>
+
+<ShowcaseDetailCta />

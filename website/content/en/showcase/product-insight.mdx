@@ -1,0 +1,53 @@
+---
+title: "Insight Data Insights"
+description: "View personal AI usage report. Understand programming efficiency and collaboration data. Use data-driven habit optimization."
+category: "Daily Tasks"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000006496/O1CN01KNUXtG1xrDy75PPA5_!!6000000006496-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/a5X9O6PsdDdmXVqtHdhlzZ97mRNPrqroKO5cf4V71XM.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Insight is Qwen Code's personal usage data analysis panel, providing you with comprehensive AI programming efficiency insights. It tracks key metrics such as your conversation count, code generation volume, frequently used features, and programming language preferences, generating visualized data reports. Through this data, you can clearly understand your programming habits, AI assistance effectiveness, and collaboration patterns. Insight not only helps you discover room for efficiency improvement but also lets you see which areas you are most skilled at using AI, allowing you to better leverage AI's value. Data-driven insights make every use more meaningful.
+
+<ShowcaseDetailMeta category="Daily Tasks" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/a5X9O6PsdDdmXVqtHdhlzZ97mRNPrqroKO5cf4V71XM.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000006496/O1CN01KNUXtG1xrDy75PPA5_!!6000000006496-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Open Insight Panel
+
+Enter the `/insight` command in the conversation to open the Insight data insights panel. The panel will display your usage overview, including core metrics such as total conversation count, code generation lines, and estimated time saved. This data is presented in intuitive chart form, giving you a clear understanding of your AI usage at a glance.
+
+```bash
+/insight
+```
+
+### Analyze Usage Report
+
+View detailed usage reports in depth, including dimensions such as daily conversation trends, frequently used feature distribution, programming language preferences, and code type analysis. Insight will provide personalized insights and suggestions based on your usage patterns, helping you discover potential improvement space. You can filter data by time range and compare usage efficiency across different periods.
+
+### Optimize Usage Habits
+
+Based on data insights, adjust your AI usage strategy. For example, if you find you use a certain feature frequently but with low efficiency, you can try learning more efficient usage methods. If you find AI assistance is more effective for certain programming languages or task types, you can use AI more in similar scenarios. Continuously track data changes and verify optimization effects.
+
+Want to know how we use the insight feature? You can check our [How to Let AI Tell Us How to Better Use AI](../blog/how-to-use-qwencode-insight.mdx)
+
+</Steps>
+
+<Callout type="info">
+Insight data is stored locally only and will not be uploaded to the cloud, ensuring your usage privacy and data security. Regularly view reports and develop data-driven usage habits.
+</Callout>
+
+<ShowcaseDetailCta />

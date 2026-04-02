@@ -1,0 +1,67 @@
+---
+title: "Read Papers"
+description: "Directly read and analyze academic papers. AI helps you understand complex research content and generates learning cards."
+category: "Learning & Research"
+features:
+  - "Web Search"
+thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01616oQD1d9RnY1XuLt_!!6000000003693-2-videocover-1696-956.png"
+videoUrl: "https://cloud.video.taobao.com/vod/is3SsCe3w-U5Y0ZxL-z6reSbw8NBhnzCtQfjH26lLFE.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Academic papers are often obscure and difficult to understand, requiring a lot of time to read and comprehend. Qwen Code can help you directly read and analyze papers, extract core points, explain complex concepts, and summarize research methods. AI will deeply understand paper content and explain it in easy-to-understand language, generating structured learning cards for your review and sharing. Whether learning new technologies or researching cutting-edge fields, it can greatly improve your learning efficiency.
+
+<ShowcaseDetailMeta category="Learning & Research" features={["Web Search"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/is3SsCe3w-U5Y0ZxL-z6reSbw8NBhnzCtQfjH26lLFE.mp4" poster="https://img.alicdn.com/imgextra/i4/O1CN01616oQD1d9RnY1XuLt_!!6000000003693-2-videocover-1696-956.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Provide Paper Information
+
+Tell Qwen Code the paper you want to read. You can provide the paper title, PDF file path, or arXiv link. AI will automatically obtain and analyze the paper content.
+
+```
+Help me download and analyze this paper: attention is all you need https://arxiv.org/abs/1706.03762
+```
+
+### Read Paper
+
+Install PDF related skills to let Qwen Code analyze paper content and generate structured learning cards. You can view paper abstracts, core points, key concepts, and important conclusions.
+
+```
+Check if I have find skills, if not, help me install it directly: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, then help me install Anthropic pdf and other office skills to qwen code skills.
+```
+
+### Deep Learning and Questions
+
+During reading, you can ask Qwen Code questions at any time, such as "explain the self-attention mechanism" or "how is this formula derived". AI will answer in detail, helping you understand deeply.
+
+```
+Please explain the core idea of Transformer architecture
+```
+
+### Generate Learning Cards
+
+After learning, let Qwen Code generate learning cards summarizing the paper's core points, key concepts, and important conclusions. These cards can facilitate your review and sharing with the team.
+
+```bash
+Help me generate learning cards for this paper
+```
+
+</Steps>
+
+<Callout type="info">
+Qwen Code supports multiple paper formats, including PDF, arXiv links, etc. For mathematical formulas and charts, AI will explain their meanings in detail, helping you fully understand paper content.
+</Callout>
+
+<ShowcaseDetailCta />

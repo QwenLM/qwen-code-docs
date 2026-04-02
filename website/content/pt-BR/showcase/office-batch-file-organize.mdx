@@ -1,0 +1,60 @@
+---
+title: "Organização em Lote de Arquivos"
+description: "Use o recurso Cowork do Qwen Code para organizar arquivos de desktop espalhados com um clique, classificando automaticamente por tipo e colocando-os nas pastas correspondentes."
+category: "Tarefas Diárias"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+Seus arquivos de desktop estão espalhados? Com o recurso Cowork do Qwen Code, você pode organizar arquivos em lote com um clique, identificando automaticamente o tipo de arquivo e classificando-os nas pastas correspondentes. Seja documentos, imagens, vídeos ou outros tipos de arquivos, tudo pode ser identificado e arquivado de forma inteligente, mantendo seu ambiente de trabalho organizado e melhorando sua eficiência.
+
+<ShowcaseDetailMeta category="Tarefas Diárias" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4" poster="https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Iniciar a Conversa
+
+Abra o terminal ou linha de comando e digite `qwen` para iniciar o Qwen Code. Certifique-se de estar no diretório que precisa ser organizado ou informe claramente à IA qual diretório deve ser organizado. O Qwen Code está pronto para aceitar suas instruções de organização.
+
+```bash
+cd ~/Desktop
+qwen
+```
+
+### Fornecer Instruções de Organização
+
+Informe ao Qwen Code que você deseja organizar os arquivos do desktop. A IA identificará automaticamente os tipos de arquivos e criará pastas de classificação. Você pode especificar o diretório a ser organizado, as regras de classificação e a estrutura de pastas desejada. A IA criará um plano de organização com base em suas necessidades.
+
+```bash
+Organize os arquivos do desktop. Classifique-os em pastas diferentes por tipo: documentos, imagens, vídeos, arquivos compactados, etc.
+```
+
+### Revisar o Plano de Execução
+
+O Qwen Code listará primeiro o plano de operações que serão executadas. Após verificar que não há problemas, você pode permitir a execução. Esta etapa é muito importante - você pode revisar o plano de organização para garantir que a IA entendeu suas necessidades e evitar operações incorretas.
+
+### Concluir a Organização
+
+A IA executará automaticamente as operações de movimentação de arquivos e exibirá um relatório de organização após a conclusão, informando quais arquivos foram movidos para onde. Todo o processo é rápido e eficiente, sem necessidade de operação manual, economizando muito tempo.
+
+</Steps>
+
+<Callout type="info">
+O recurso Cowork suporta regras de classificação personalizadas. Você pode especificar o mapeamento entre tipos de arquivos e pastas de destino conforme necessário.
+</Callout>
+
+<ShowcaseDetailCta />

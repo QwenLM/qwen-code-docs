@@ -1,0 +1,63 @@
+---
+title: "PR Review"
+description: "Use Qwen Code to perform intelligent code review on Pull Requests, automatically discovering potential issues."
+category: "Programming"
+features:
+  - "GitHub"
+thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png"
+videoUrl: "https://cloud.video.taobao.com/vod/Eu3Gyad-mLiz_FZqrXp76EZWYz4fuV6Ogb2wOvb8bBg.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Code review is a critical step in ensuring code quality, but it's often time-consuming and prone to missing issues. Qwen Code can help you perform intelligent code review on Pull Requests, automatically analyzing code changes, finding potential bugs, checking code standards, and providing detailed review reports. The AI deeply understands code logic, identifies possible issues and improvement suggestions, making code review more comprehensive and efficient while reducing the burden on developers.
+
+<ShowcaseDetailMeta category="Programming" features={["GitHub"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/Eu3Gyad-mLiz_FZqrXp76EZWYz4fuV6Ogb2wOvb8bBg.mp4" poster="https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Specify the PR to Review
+
+Tell Qwen Code which Pull Request you want to review by providing the PR number or link. The AI will automatically fetch the PR's details and code changes.
+
+<Callout type="tip">
+You can use the pr review skill to help you analyze PRs. For skill installation, see: [Install Skills](./guide-skill-install.mdx).
+</Callout>
+
+```bash
+/skill pr-review Help me review this PR: <pr link or number>
+```
+
+### Run Tests and Checks
+
+Qwen Code will analyze the code changes, identify test cases that need to run, and execute relevant tests to verify code correctness.
+
+```bash
+Run tests to check if this PR passes all test cases
+```
+
+### View the Review Report
+
+After the review is complete, Qwen Code generates a detailed review report including discovered issues, potential risks, and improvement suggestions. You can decide whether to approve the PR based on the report.
+
+```bash
+View the review report and list all discovered issues
+```
+
+</Steps>
+
+<Callout type="info">
+Qwen Code's code review not only focuses on syntax and standards, but also deeply analyzes code logic to identify potential performance issues, security vulnerabilities, and design flaws, providing more comprehensive review feedback.
+</Callout>
+
+<ShowcaseDetailCta />

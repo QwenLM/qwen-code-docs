@@ -1,0 +1,60 @@
+---
+title: "Batch Process Files, Organize Desktop"
+description: "Use Qwen Code's Cowork feature to batch organize messy desktop files with one click, automatically categorizing them into corresponding folders by type."
+category: "Daily Tasks"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Desktop files in disarray? Qwen Code's Cowork feature can help you batch organize files with one click, automatically identifying file types and categorizing them into corresponding folders. Whether it's documents, images, videos, or other types of files, they can all be intelligently identified and archived, making your work environment orderly and improving work efficiency.
+
+<ShowcaseDetailMeta category="Daily Tasks" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4" poster="https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Start Conversation
+
+Open terminal or command line, enter `qwen` to start Qwen Code. Ensure you are in the directory you need to organize, or clearly tell AI which directory's files you want to organize. Qwen Code will be ready to receive your organization instructions.
+
+```bash
+cd ~/Desktop
+qwen
+```
+
+### Issue Organization Instructions
+
+Tell Qwen Code you want to organize desktop files. AI will automatically identify file types and create categorized folders. You can specify the directory to organize, classification rules, and target folder structure. AI will develop an organization plan based on your needs.
+
+```bash
+Help me organize the desktop files, categorize them into different folders by type: documents, images, videos, compressed packages, etc.
+```
+
+### Confirm Execution Plan
+
+Qwen Code will first list the operation plan to be executed. After confirming there are no issues, allow execution. This step is very important. You can review the organization plan to ensure AI understands your needs and avoid misoperations.
+
+### Complete Organization
+
+AI automatically executes file move operations and displays an organization report after completion, telling you which files were moved where. The entire process is fast and efficient, requiring no manual operation, saving a lot of time.
+
+</Steps>
+
+<Callout type="info">
+The Cowork feature supports custom classification rules. You can specify the mapping relationship between file types and target folders as needed.
+</Callout>
+
+<ShowcaseDetailCta />

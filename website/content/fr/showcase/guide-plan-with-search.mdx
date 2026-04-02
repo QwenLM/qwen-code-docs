@@ -1,0 +1,59 @@
+---
+title: "Mode Plan + Recherche Web"
+description: "Combinez la recherche Web en mode Plan pour rechercher d'abord les dernières informations puis formuler un plan d'exécution, améliorant considérablement la précision des tâches complexes."
+category: "Guide de démarrage"
+features:
+  - "Plan Mode"
+  - "Web Search"
+thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Vue d'ensemble
+
+Le mode Plan est la capacité de planification intelligente de Qwen Code, capable de décomposer des tâches complexes en étapes exécutables. Lorsqu'il est combiné avec la recherche Web, il recherchera d'abord de manière proactive les dernières documentations techniques, les meilleures pratiques et les solutions, puis formulera des plans d'exécution plus précis basés sur ces informations en temps réel. Cette combinaison est particulièrement adaptée au traitement de tâches de développement impliquant de nouveaux frameworks, de nouvelles API ou nécessitant de respecter les dernières spécifications, ce qui peut améliorer considérablement la qualité du code et l'efficacité d'achèvement des tâches. Qu'il s'agisse de migrer des projets, d'intégrer de nouvelles fonctionnalités ou de résoudre des problèmes techniques complexes, Plan + Recherche Web peut vous fournir les solutions les plus à jour.
+
+<ShowcaseDetailMeta category="Guide de démarrage" features={["Plan Mode", "Web Search"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png" alt="Mode Plan + Recherche Web" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Activer le mode Plan
+
+Entrez la commande `/approval-mode plan` dans la conversation pour activer le mode Plan. À ce moment, Qwen Code entrera dans l'état de planification, prêt à recevoir votre description de tâche et à commencer à réfléchir. Le mode Plan analysera automatiquement la complexité de la tâche et déterminera s'il est nécessaire de rechercher des informations externes pour compléter la base de connaissances.
+
+```bash
+/approval-mode plan
+```
+
+### Demander la recherche des dernières informations
+
+Décrivez vos exigences de tâche, et Qwen Code identifiera automatiquement les mots-clés qui doivent être recherchés. Il lancera de manière proactive des demandes de recherche Web pour obtenir les dernières documentations techniques, références API, meilleures pratiques et solutions. Les résultats de recherche seront intégrés dans la base de connaissances, fournissant une base d'informations précise pour la planification ultérieure.
+
+```
+Aidez-moi à rechercher les dernières nouvelles dans le domaine de l'IA et à les organiser en un rapport pour moi
+```
+
+### Voir le plan d'exécution
+
+Basé sur les informations recherchées, Qwen Code générera un plan d'exécution détaillé pour vous. Le plan inclura des descriptions d'étapes claires, des points techniques à surveiller, des pièges potentiels et des solutions. Vous pouvez examiner ce plan, fournir des suggestions de modification ou confirmer pour commencer l'exécution.
+
+### Exécuter le plan étape par étape
+
+Après avoir confirmé le plan, Qwen Code l'exécutera étape par étape. À chaque point clé, il vous rapportera les progrès et les résultats, garantissant que vous avez un contrôle complet sur l'ensemble du processus. Si des problèmes surviennent, il fournira des solutions basées sur les dernières informations de recherche plutôt que de s'appuyer sur des connaissances obsolètes.
+
+</Steps>
+
+<Callout type="info">
+La recherche Web identifiera automatiquement les mots-clés techniques dans la tâche, pas besoin de spécifier manuellement le contenu de recherche. Pour les frameworks et bibliothèques à itération rapide, il est recommandé d'activer la recherche Web en mode Plan pour obtenir les dernières informations.
+</Callout>
+
+<ShowcaseDetailCta />

@@ -7,23 +7,25 @@ features:
 thumbnail: "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg"
 videoUrl: "https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4"
 model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
 ---
 import { Steps, Callout } from 'nextra/components'
 import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
 import Link from 'next/link'
 
-
 ## 概述
 
 Qwen Code 支持通过一行脚本命令快速安装，无需手动配置环境变量或下载依赖。脚本会自动检测你的操作系统类型，下载对应的安装包并完成配置。整个过程只需几秒钟，支持 **Linux**、**macOS** 和 **Windows** 三大平台。
 
-<ShowcaseDetailMeta category="入门指南" features={["安装"]} model="qwen3.5-plus" />
+<ShowcaseDetailMeta category="入门指南" features={["安装"]} model="qwen3.5-plus" author="Qwen Code Team" />
 
 <video src="https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
 
 ## 操作步骤
 
 <Steps>
+
 ### Linux / macOS 安装
 
 打开终端，运行以下命令。脚本会自动检测你的系统架构（x86_64 / ARM），下载对应版本并完成安装配置。
@@ -47,16 +49,11 @@ curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.a
 ```bash
 qwen --version
 ```
+
 </Steps>
 
 <Callout type="info">
 如果你更习惯使用 npm，也可以通过 `npm install -g @qwen-code/qwen-code` 全局安装。安装完成后输入 `qwen` 即可启动。遇到权限问题可使用`sudo npm install -g @qwen-code/qwen-code`，输入密码后安装。
 </Callout>
-
-## 相关推荐
-
-- [开始第一次对话](./guide-first-conversation.mdx) — 安装完成后，发起你与 Qwen Code 的第一次 AI 对话
-- [API 设置](./guide-api-setup.mdx) — 配置 API Key 和模型参数，自定义你的 AI 编程体验
-- [VS Code 集成界面](./guide-vscode-integration.mdx) — 在 VS Code 中使用 Qwen Code 的完整功能
 
 <ShowcaseDetailCta />

@@ -1,0 +1,50 @@
+---
+title: "Ctrl+Y クイックリトライ"
+description: "AIの回答に満足できませんか？ショートカットキーでワンクリックリトライし、より良い結果を素早く取得します。"
+category: "入門ガイド"
+features:
+  - "Terminal"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01YtZAzm1ShNMbf8YTt_!!6000000002278-2-tps-1694-956.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+AIの回答に満足できませんか？Ctrl+Y（Windows/Linux）またはCmd+Y（macOS）ショートカットキーでワンクリックリトライし、より良い結果を素早く取得します。この機能により、質問を再入力することなくAIに回答を再生成させることができ、時間を節約し効率を向上させます。満足のいく回答が得られるまで何度でもリトライできます。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["Terminal"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01YtZAzm1ShNMbf8YTt_!!6000000002278-2-tps-1694-956.png" alt="Ctrl+Y クイックリトライ" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### 満足できない回答を発見
+
+AIの回答が期待に応えない場合、がっかりしないでください。AIの回答はコンテキストの理解やランダム性により異なる場合があり、リトライすることでより良い結果を得ることができます。
+
+### リトライをトリガー
+
+Ctrl+Y（Windows/Linux）またはCmd+Y（macOS）ショートカットキーを押すと、AIが回答を再生成します。リトライプロセスは高速でスムーズであり、ワークフローを中断しません。
+
+```bash
+Ctrl+Y / Cmd+Y
+```
+
+### 補足説明
+
+リトライ後も満足できない場合は、ニーズに対して補足説明を追加し、AIが意図をより正確に理解できるようにすることができます。より多くの詳細を追加し、質問の表現方法を変更したり、より多くのコンテキスト情報を提供したりできます。
+
+</Steps>
+
+<Callout type="info">
+リトライ機能は元の質問を保持しますが、異なるランダムシードを使用して回答を生成し、結果の多様性を確保します。
+</Callout>
+
+<ShowcaseDetailCta />

@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowLeft, Play, Clock, BookOpen, Zap, Layers, Code, ExternalLink } from "lucide-react";
 import {
   featureCategories,
@@ -9,12 +10,22 @@ import {
   type VideoShowcaseItem,
 } from "../showcase-videos-data";
 
+const SUPPORTED_LOCALES = ["zh", "en", "de", "fr", "ja", "pt-BR", "ru"];
+
+function useLocale(): string {
+  const pathname = usePathname();
+  if (!pathname) return "zh";
+  const firstSegment = pathname.split("/").filter(Boolean)[0];
+  return firstSegment && SUPPORTED_LOCALES.includes(firstSegment) ? firstSegment : "zh";
+}
+
 interface VideoShowcaseDetailProps {
   video: VideoShowcaseItem;
   relatedVideos?: VideoShowcaseItem[];
 }
 
 export function VideoShowcaseDetail({ video, relatedVideos = [] }: VideoShowcaseDetailProps) {
+  const locale = useLocale();
   const difficultyConfig = difficultyLevels.find((d) => d.id === video.difficulty);
   const categoryConfig = featureCategories.find((c) => c.id === video.category);
 
@@ -22,7 +33,7 @@ export function VideoShowcaseDetail({ video, relatedVideos = [] }: VideoShowcase
     <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Back Link */}
       <Link
-        href="/zh/showcase"
+        href={`/${locale}/showcase`}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -134,7 +145,7 @@ export function VideoShowcaseDetail({ video, relatedVideos = [] }: VideoShowcase
             {relatedVideos.map((related) => (
               <Link
                 key={related.id}
-                href={`/zh/showcase/${related.id}`}
+                href={`/${locale}/showcase/${related.id}`}
                 className="group block border border-border rounded-xl overflow-hidden hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-lg transition-all"
               >
                 <div className="aspect-video relative overflow-hidden">
@@ -184,7 +195,7 @@ export function VideoShowcaseDetail({ video, relatedVideos = [] }: VideoShowcase
             GitHub 仓库
           </a>
           <Link
-            href="/zh/docs/getting-started/installation"
+            href={`/${locale}/docs/getting-started/installation`}
             className="inline-flex items-center gap-2 px-6 py-3 bg-foreground hover:bg-foreground/90 text-background rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
           >
             <BookOpen className="w-4 h-4" />

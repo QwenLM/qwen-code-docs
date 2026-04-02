@@ -1,6 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const SUPPORTED_LOCALES = ["zh", "en", "de", "fr", "ja", "pt-BR", "ru"];
+
+function useLocale(): string {
+  const pathname = usePathname();
+  if (!pathname) return "zh";
+  const firstSegment = pathname.split("/").filter(Boolean)[0];
+  return firstSegment && SUPPORTED_LOCALES.includes(firstSegment) ? firstSegment : "zh";
+}
 
 interface RelatedCase {
   title: string;
@@ -165,6 +175,7 @@ function ShowcaseDetailFooter({
   relatedCases = [],
   ctaText,
 }: ShowcaseDetailFooterProps) {
+  const locale = useLocale();
   return (
     <div className="max-w-4xl mx-auto px-4 pb-8">
       {/* Related Cases */}
@@ -199,7 +210,7 @@ function ShowcaseDetailFooter({
         <div className="text-center py-8 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl">
           <p className="text-lg font-medium mb-4 text-foreground">{ctaText}</p>
           <Link
-            href="/zh/docs/getting-started/installation"
+            href={`/${locale}/docs/getting-started/installation`}
             className="inline-block px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
           >
             开始使用 Qwen Code

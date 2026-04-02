@@ -1,0 +1,1601 @@
+{
+  "code-lsp-intelligence": {
+    "title": "LSP IntelliSense",
+    "description": "En intégrant LSP (Language Server Protocol), Qwen Code offre une complétion de code et une navigation de niveau professionnel avec des diagnostics en temps réel.",
+    "category": "Programmation",
+    "features": [
+      "LSP"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "LSP (Language Server Protocol) IntelliSense permet à Qwen Code de fournir une complétion de code et une navigation comparables aux IDE professionnels. En intégrant des serveurs de langage, Qwen Code peut comprendre précisément la structure du code, les informations de type et les relations contextuelles pour fournir des suggestions de code de haute qualité. Que ce soit pour les signatures de fonctions, les indices de paramètres, la complétion de noms de variables, la navigation vers les définitions, la recherche de références ou les opérations de refactoring, LSP IntelliSense les gère tous de manière fluide.",
+    "steps": [
+      {
+        "title": "Détection automatique",
+        "content": "Qwen Code détecte automatiquement les configurations de serveur de langage dans votre projet. Pour les langages de programmation et frameworks courants, il reconnaît et démarre automatiquement le service LSP correspondant. Aucune configuration manuelle requise."
+      },
+      {
+        "title": "Profiter de l'IntelliSense",
+        "content": "Lors du codage, LSP IntelliSense s'active automatiquement. En tapant, il fournit des suggestions de complétion précises basées sur le contexte, incluant les noms de fonctions, les noms de variables et les annotations de type. Appuyez sur Tab pour accepter rapidement une suggestion."
+      },
+      {
+        "title": "Diagnostics d'erreurs",
+        "content": "Les diagnostics en temps réel LSP analysent continuellement votre code, détectant les problèmes potentiels. Les erreurs et avertissements sont affichés de manière intuitive avec l'emplacement du problème, le type d'erreur et les suggestions de correction."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Prend en charge les langages courants comme TypeScript, Python, Java, Go, Rust ainsi que les frameworks frontend comme React, Vue et Angular."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "code-pr-review": {
+    "title": "Revue de PR",
+    "description": "Utilisez Qwen Code pour effectuer des revues de code intelligentes sur les Pull Requests et découvrir automatiquement les problèmes potentiels.",
+    "category": "Programmation",
+    "features": [
+      "GitHub"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/Eu3Gyad-mLiz_FZqrXp76EZWYz4fuV6Ogb2wOvb8bBg.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "La revue de code est une étape cruciale pour garantir la qualité du code, mais elle est souvent chronophage. Qwen Code peut vous aider à effectuer des revues de code intelligentes sur les Pull Requests, analyser automatiquement les changements de code, trouver les bugs potentiels, vérifier les standards de code et fournir des rapports de revue détaillés.",
+    "steps": [
+      {
+        "title": "Spécifier la PR à réviser",
+        "content": "Indiquez à Qwen Code quelle Pull Request vous souhaitez réviser en fournissant le numéro ou le lien de la PR.\n\n:::callout{type=\"tip\"}\nVous pouvez utiliser le skill pr-review pour analyser les PRs. Pour l'installation du skill, voir : [Installer des Skills](./guide-skill-install.mdx).\n:::\n\n```bash\n/skill pr-review Aide-moi à réviser cette PR : <lien ou numéro de PR>\n```"
+      },
+      {
+        "title": "Exécuter les tests et vérifications",
+        "content": "Qwen Code analysera les changements de code, identifiera les cas de test pertinents et exécutera les tests pour vérifier la correction du code.\n\n```bash\nExécuter les tests pour vérifier si cette PR passe tous les cas de test\n```"
+      },
+      {
+        "title": "Consulter le rapport de revue",
+        "content": "Après la revue, Qwen Code génère un rapport détaillé incluant les problèmes découverts, les risques potentiels et les suggestions d'amélioration.\n\n```bash\nAfficher le rapport de revue et lister tous les problèmes découverts\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "La revue de code de Qwen Code analyse non seulement la syntaxe et les standards, mais aussi la logique du code pour identifier les problèmes de performance potentiels, les failles de sécurité et les défauts de conception."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "code-solve-issue": {
+    "title": "Résoudre des issues",
+    "description": "Utilisez Qwen Code pour analyser et résoudre des issues de projets open source, avec un suivi complet du processus de la compréhension à la soumission du code.",
+    "category": "Programmation",
+    "features": [
+      "GitHub"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Résoudre des issues pour des projets open source est un moyen important d'améliorer les compétences en programmation et de construire une influence technique. Qwen Code peut vous aider à localiser rapidement les problèmes, comprendre le code associé, formuler des plans de correction et implémenter les changements de code.",
+    "steps": [
+      {
+        "title": "Choisir une issue",
+        "content": "Trouvez une issue intéressante ou appropriée sur GitHub. Priorisez les issues avec des descriptions claires, des étapes de reproduction et des résultats attendus. Les labels comme `good first issue` ou `help wanted` conviennent bien aux débutants."
+      },
+      {
+        "title": "Cloner le projet et localiser le problème",
+        "content": "Téléchargez le code du projet et laissez l'IA localiser le problème. Utilisez `@file` pour référencer les fichiers pertinents.\n\n```bash\nAide-moi à analyser où se trouve le problème décrit dans cette issue, lien de l'issue : <lien de l'issue>\n```"
+      },
+      {
+        "title": "Comprendre le code associé",
+        "content": "Demandez à l'IA d'expliquer la logique du code et les dépendances associées."
+      },
+      {
+        "title": "Formuler un plan de correction",
+        "content": "Discutez des solutions possibles avec l'IA et choisissez la meilleure."
+      },
+      {
+        "title": "Implémenter les changements de code",
+        "content": "Modifiez le code progressivement avec l'aide de l'IA et testez-le.\n\n```bash\nAide-moi à modifier ce code pour résoudre ce problème\n```"
+      },
+      {
+        "title": "Soumettre une PR",
+        "content": "Après avoir terminé les modifications, soumettez une PR et attendez la révision du mainteneur du projet.\n\n```bash\nAide-moi à soumettre une PR pour résoudre ce problème\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Résoudre des issues open source améliore non seulement les compétences techniques, mais construit aussi une influence technique et favorise le développement de carrière."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "creator-oss-promo-video": {
+    "title": "Créer une vidéo promotionnelle pour votre projet open source",
+    "description": "Fournissez une URL de dépôt et l'IA génère une belle vidéo de démonstration du projet pour vous.",
+    "category": "Outils créatifs",
+    "features": [
+      "Skills",
+      "Remotion"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN01KKPAv51ZL7QcgguxA_!!6000000003177-2-tps-2880-1622.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/TwRRLlr4EHfv-8kvb0J-w7zj70zxoGY7wiaPewqm4l0.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Vous souhaitez créer une vidéo promotionnelle pour votre projet open source mais manquez d'expérience en production vidéo ? Qwen Code peut générer automatiquement de belles vidéos de démonstration de projet. Fournissez simplement l'URL du dépôt GitHub, et l'IA analysera la structure du projet, extraira les fonctionnalités clés, générera des scripts d'animation et rendra une vidéo professionnelle avec Remotion.",
+    "steps": [
+      {
+        "title": "Préparer le dépôt",
+        "content": "Assurez-vous que votre dépôt GitHub contient des informations complètes sur le projet et de la documentation, incluant README, captures d'écran et descriptions des fonctionnalités."
+      },
+      {
+        "title": "Générer la vidéo promotionnelle",
+        "content": "Indiquez à Qwen Code le style et le focus de la vidéo souhaitée, et l'IA analysera automatiquement le projet et générera la vidéo.\n\n```bash\nBasé sur ce skill https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md, aide-moi à générer une vidéo de démonstration pour le dépôt open source : <URL du dépôt>\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Les vidéos générées prennent en charge plusieurs résolutions et formats, et peuvent être directement téléchargées sur YouTube et d'autres plateformes vidéo."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "creator-remotion-video": {
+    "title": "Création vidéo Remotion",
+    "description": "Décrivez vos idées créatives en langage naturel et utilisez le Skill Remotion pour générer du contenu vidéo par code.",
+    "category": "Outils créatifs",
+    "features": [
+      "Skills",
+      "Remotion"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Vous souhaitez créer des vidéos mais ne savez pas coder ? En décrivant vos idées créatives en langage naturel, Qwen Code peut utiliser le Skill Remotion pour générer du code vidéo. L'IA comprend votre description créative et génère automatiquement le code du projet Remotion, incluant la configuration des scènes, les effets d'animation et la mise en page du texte.",
+    "steps": [
+      {
+        "title": "Installer le Skill Remotion",
+        "content": "Installez d'abord le Skill Remotion, qui contient les meilleures pratiques et modèles pour la création vidéo.\n\n```bash\nVérifie si j'ai find skills, sinon installe-le directement : npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, puis aide-moi à installer remotion-best-practice.\n```"
+      },
+      {
+        "title": "Décrire votre idée créative",
+        "content": "Décrivez en langage naturel le contenu vidéo que vous souhaitez créer, incluant le thème, le style, la durée et les scènes clés.\n\n```bash\n@file Basé sur le document, crée une vidéo promotionnelle de 30 secondes avec un style moderne et épuré.\n```"
+      },
+      {
+        "title": "Prévisualiser et ajuster",
+        "content": "Qwen Code générera le code du projet Remotion basé sur votre description. Démarrez le serveur de développement pour prévisualiser.\n\n```bash\nnpm run dev\n```"
+      },
+      {
+        "title": "Rendre et exporter",
+        "content": "Quand vous êtes satisfait, utilisez la commande build pour rendre la vidéo finale.\n\n```bash\nAide-moi à rendre et exporter la vidéo directement.\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "L'approche basée sur les prompts est idéale pour le prototypage rapide et l'exploration créative. Le code généré peut être édité manuellement pour implémenter des fonctionnalités plus complexes."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "creator-resume-site-quick": {
+    "title": "Créer un site web de CV personnel",
+    "description": "Créez un site web de CV personnel en une phrase – intégrez vos expériences pour générer une page de présentation avec export PDF.",
+    "category": "Outils créatifs",
+    "features": [
+      "Skills"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Un site web de CV personnel est un outil important pour la recherche d'emploi et la présentation de soi. Qwen Code peut rapidement générer une page de présentation professionnelle basée sur le contenu de votre CV, avec support d'export PDF pour faciliter les candidatures.",
+    "steps": [
+      {
+        "title": "Fournir vos expériences personnelles",
+        "content": "Indiquez à l'IA votre parcours éducatif, expérience professionnelle, expérience de projet et compétences.\n\n```bash\nJe suis développeur frontend, diplômé de l'université XX, avec 3 ans d'expérience, spécialisé en React et TypeScript...\n```"
+      },
+      {
+        "title": "Installer le Skill de design web",
+        "content": "Installez le Skill de design web qui fournit des modèles de design de CV.\n\n```bash\nVérifie si j'ai find skills, sinon installe-le directement : npx skills add https://github.com/vercel-labs/skills --skill find-skills, puis aide-moi à installer web-component-design.\n```"
+      },
+      {
+        "title": "Choisir un style de design",
+        "content": "Décrivez le style de CV que vous préférez, comme minimaliste, professionnel ou créatif.\n\n```bash\n/skills web-component-design Aide-moi à concevoir un site web de CV minimaliste et professionnel\n```"
+      },
+      {
+        "title": "Générer le site web de CV",
+        "content": "L'IA créera un projet de site web de CV complet avec mise en page responsive et styles d'impression.\n\n```bash\nnpm run dev\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Votre site web de CV devrait mettre en valeur vos forces et réalisations principales, en utilisant des données et exemples spécifiques pour étayer vos descriptions."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "creator-website-clone": {
+    "title": "Répliquer votre site web préféré en une phrase",
+    "description": "Donnez une capture d'écran à Qwen Code et l'IA analyse la structure de la page pour générer du code frontend complet.",
+    "category": "Outils créatifs",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Vous avez trouvé un design de site web que vous aimez et souhaitez le répliquer rapidement ? Donnez simplement une capture d'écran à Qwen Code et l'IA peut analyser la structure de la page et générer du code frontend complet. Qwen Code reconnaîtra la mise en page, le schéma de couleurs et la structure des composants, puis générera du code exécutable avec des technologies frontend modernes.",
+    "steps": [
+      {
+        "title": "Préparer une capture d'écran du site web",
+        "content": "Prenez une capture d'écran de l'interface du site web que vous souhaitez répliquer, en vous assurant qu'elle est claire et complète."
+      },
+      {
+        "title": "Installer le Skill correspondant",
+        "content": "Installez le Skill de reconnaissance d'images et de génération de code frontend.\n\n```bash\nVérifie si j'ai find skills, sinon installe-le directement : npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, puis aide-moi à installer web-component-design.\n```"
+      },
+      {
+        "title": "Coller la capture d'écran et décrire les besoins",
+        "content": "Collez la capture d'écran dans la conversation et indiquez à Qwen Code vos besoins spécifiques.\n\n```bash\n/skills web-component-design Basé sur ce skill, réplique une page web HTML basée sur @website.png, en veillant à ce que les références d'images soient valides.\n```\n\nExemple de capture d'écran :\n\n<img src=\"https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />"
+      },
+      {
+        "title": "Exécuter et prévisualiser",
+        "content": "Ouvrez la page web correspondante pour vérifier le résultat. Si vous devez ajuster le design ou les fonctionnalités, continuez à interagir avec l'IA."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Le code généré suit les meilleures pratiques frontend modernes avec une bonne structure et maintenabilité. Vous pouvez le personnaliser et l'étendre davantage."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "creator-youtube-to-blog": {
+    "title": "Convertir des vidéos YouTube en articles de blog",
+    "description": "Utilisez Qwen Code pour convertir automatiquement des vidéos YouTube en articles de blog structurés.",
+    "category": "Outils créatifs",
+    "features": [
+      "Skills",
+      "Web Search"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Vous avez trouvé une excellente vidéo YouTube et souhaitez la convertir en article de blog ? Qwen Code peut automatiquement extraire le contenu vidéo et générer des articles de blog bien structurés et riches en contenu. L'IA récupère la transcription de la vidéo, comprend les points clés et organise le contenu au format standard d'article de blog.",
+    "steps": [
+      {
+        "title": "Fournir le lien de la vidéo",
+        "content": "Indiquez à Qwen Code le lien de la vidéo YouTube que vous souhaitez convertir.\n\n```\nBasé sur ce skill : https://github.com/QwenLM/qwen-code-examples/tree/main/skills/youtube-transcript-extractor, aide-moi à écrire cette vidéo comme un article de blog : https://www.youtube.com/watch?v=fJSLnxi1i64\n```"
+      },
+      {
+        "title": "Générer l'article de blog et modifier",
+        "content": "L'IA analysera la transcription et générera un article avec titre, introduction, corps et conclusion.\n\n```\nAide-moi à ajuster le style de langage de cet article pour qu'il soit plus adapté à un blog technique\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Les articles générés prennent en charge le format Markdown et peuvent être directement publiés sur des plateformes de blog ou GitHub Pages."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-agents-config": {
+    "title": "Fichier de configuration Agents",
+    "description": "Personnalisez le comportement de l'IA via le fichier MD Agents pour adapter l'IA à vos spécifications de projet et votre style de codage.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "Le fichier de configuration Agents vous permet de personnaliser le comportement de l'IA via des fichiers Markdown, permettant à l'IA de s'adapter à vos spécifications de projet et votre style de codage. Vous pouvez définir le style de code, les conventions de nommage, les exigences de commentaires, etc., et l'IA générera du code conforme aux normes du projet en fonction de ces configurations. Cette fonctionnalité est particulièrement adaptée à la collaboration en équipe, garantissant que les styles de code générés par tous les membres sont cohérents.",
+    "steps": [
+      {
+        "title": "Créer le fichier de configuration",
+        "content": "Créez un dossier `.qwen` dans le répertoire racine du projet et créez un fichier `AGENTS.md` dedans. Ce fichier stockera votre configuration de comportement de l'IA.\n\n```bash\nmkdir -p .qwen && touch .qwen/AGENTS.md\n```"
+      },
+      {
+        "title": "Écrire la configuration",
+        "content": "Écrivez la configuration au format Markdown, décrivant les spécifications du projet en langage naturel. Vous pouvez définir le style de code, les conventions de nommage, les exigences de commentaires, les préférences de framework, etc., et l'IA ajustera son comportement en fonction de ces configurations.\n\n```markdown\n# Spécifications du projet"
+      },
+      {
+        "title": "Style de code",
+        "content": "- Utiliser TypeScript\n- Utiliser la programmation fonctionnelle\n- Ajouter des commentaires détaillés"
+      },
+      {
+        "title": "Conventions de nommage",
+        "content": "- Utiliser camelCase pour les variables\n- Utiliser UPPER_SNAKE_CASE pour les constantes\n- Utiliser PascalCase pour les noms de classes\n```"
+      },
+      {
+        "title": "Appliquer la configuration",
+        "content": "Après avoir enregistré le fichier de configuration, l'IA le lira automatiquement et l'appliquera. Dans la conversation suivante, l'IA générera du code conforme aux normes du projet en fonction de la configuration, sans avoir à répéter les spécifications."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Prend en charge le format Markdown, décrivez les spécifications du projet en langage naturel."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-api-setup": {
+    "title": "Guide de configuration de l'API",
+    "description": "Configurez la clé API et les paramètres du modèle pour personnaliser votre expérience de programmation IA, prenant en charge plusieurs sélections de modèles.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "La configuration d'une clé API est une étape importante pour utiliser Qwen Code, car elle débloque toutes les fonctionnalités et vous permet d'accéder à des modèles IA puissants. Via la plateforme Alibaba Cloud Bailian, vous pouvez facilement obtenir une clé API et choisir le modèle le plus adapté pour différents scénarios. Que ce soit pour le développement quotidien ou des tâches complexes, la bonne configuration du modèle peut améliorer considérablement votre efficacité de travail.",
+    "steps": [
+      {
+        "title": "Obtenir la clé API",
+        "content": "Visitez la [plateforme Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key), trouvez la page de gestion des clés API dans le centre personnel. Cliquez pour créer une nouvelle clé API, et le système générera une clé unique. Cette clé est votre justificatif d'accès aux services Qwen Code, veuillez donc la conserver en sécurité.\n\n<img src=\"https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />\n\n:::callout{type=\"warning\"}\nVeuillez conserver votre clé API en sécurité et ne la divulguez pas à d'autres personnes ou ne la commitez pas dans le dépôt de code.\n:::"
+      },
+      {
+        "title": "Configurer la clé API dans Qwen Code",
+        "content": "**1. Laisser Qwen Code configurer automatiquement**\n\nOuvrez le terminal, démarrez Qwen Code directement dans le répertoire racine, copiez le code suivant et indiquez votre CLÉ-API, la configuration sera réussie. Redémarrez Qwen Code et entrez `/model` pour basculer vers le modèle configuré.\n\n```json\nAidez-moi à configurer `settings.json` pour le modèle Bailian selon le contenu suivant :\n{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<nom du modèle>\",\n            \"name\": \"[Bailian] <nom du modèle>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<remplacer par la CLÉ de l'utilisateur>\"\n    },\n}\nPour la saisie du nom du modèle, veuillez vous référer à : https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all\nMa CLÉ-API est :\n```\n\nEnsuite, collez votre CLÉ-API dans la zone de saisie, indiquez le nom du modèle dont vous avez besoin, comme `qwen3.5-plus`, et envoyez-la pour terminer la configuration.\n\n<img src=\"https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />\n\n**2. Configuration manuelle**\n\nConfigurez manuellement le fichier settings.json. L'emplacement du fichier se trouve dans le répertoire `<répertoire racine utilisateur>/.qwen`. Vous pouvez directement copier le contenu suivant et modifier votre CLÉ-API et le nom du modèle.\n\n```json\n{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<nom du modèle>\",\n            \"name\": \"[Bailian] <nom du modèle>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<remplacer par la CLÉ de l'utilisateur>\"\n    },\n}\n```"
+      },
+      {
+        "title": "Sélectionner le modèle",
+        "content": "Choisissez le modèle approprié en fonction de vos besoins, en équilibrant la vitesse et les performances. Différents modèles conviennent à différents scénarios. Vous pouvez choisir en fonction de la complexité de la tâche et des exigences de temps de réponse. Utilisez la commande `/model` pour basculer rapidement entre les modèles.\n\nOptions de modèles courants :\n- `qwen3.5-plus` : Puissant, adapté aux tâches complexes\n- `qwen3.5-flash` : Rapide, adapté aux tâches simples\n- `qwen-max` : Modèle le plus puissant, adapté aux tâches de haute difficulté"
+      },
+      {
+        "title": "Tester la connexion",
+        "content": "Envoyez un message de test pour confirmer que la configuration de l'API est correcte. Si la configuration réussit, Qwen Code vous répondra immédiatement, ce qui signifie que vous êtes prêt à commencer à utiliser la programmation assistée par l'IA. Si vous rencontrez des problèmes, veuillez vérifier si la clé API est correctement configurée.\n\n```bash\nHello, can you help me with coding?\n```"
+      }
+    ],
+    "callouts": [],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-arena-mode": {
+    "title": "Agent Arena : Plusieurs modèles résolvant des problèmes simultanément",
+    "description": "Utilisez la commande /arena pour faire traiter la même tâche par plusieurs modèles IA simultanément, comparer les résultats et choisir la meilleure solution.",
+    "category": "Programmation",
+    "features": [
+      "Arena"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Pour du code important, vous demanderiez à un collègue de le relire. Maintenant, vous pouvez faire traiter la même tâche par plusieurs modèles IA simultanément. L'Agent Arena vous permet de comparer les capacités de différents modèles — appelez simplement `/arena`, sélectionnez les modèles, entrez votre tâche et choisissez le meilleur résultat.",
+    "steps": [
+      {
+        "title": "Entrer la commande /arena",
+        "content": "Dans le chat Qwen Code, tapez `/arena` et sélectionnez `start` pour entrer en mode arène.\n\n```bash\n/arena start\n```"
+      },
+      {
+        "title": "Sélectionner les modèles participants",
+        "content": "Dans la liste des modèles disponibles, sélectionnez ceux que vous souhaitez comparer. Appuyez sur `space` pour sélectionner 2 modèles ou plus."
+      },
+      {
+        "title": "Entrer la description de la tâche",
+        "content": "Entrez la tâche que vous souhaitez faire traiter par chaque modèle, par exemple :\n\n```\nRefactorise cette fonction pour améliorer la lisibilité et les performances\n```"
+      },
+      {
+        "title": "Comparer les résultats et choisir le meilleur",
+        "content": "Tous les modèles traiteront la tâche simultanément. Une fois terminé, vous pouvez comparer leurs solutions et appliquer le meilleur résultat à votre code.\n\n```bash\n/arena select\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Le mode arène est particulièrement adapté aux décisions de code importantes, permettant à plusieurs modèles IA de fournir différentes perspectives de solutions."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-authentication": {
+    "title": "Authentification et connexion",
+    "description": "Comprendre le processus d'authentification de Qwen Code, compléter rapidement la connexion au compte et débloquer toutes les fonctionnalités.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "L'authentification et la connexion sont la première étape pour utiliser Qwen Code. Grâce à un processus d'authentification simple, vous pouvez rapidement débloquer toutes les fonctionnalités. Le processus d'authentification est sûr et fiable, prend en charge plusieurs méthodes de connexion et garantit la sécurité de votre compte et de vos données. Après avoir terminé l'authentification, vous pouvez profiter d'une expérience de programmation IA personnalisée, y compris la configuration personnalisée du modèle, la sauvegarde de l'historique, etc.",
+    "steps": [
+      {
+        "title": "Déclencher l'authentification",
+        "content": "Après avoir démarré Qwen Code, entrez la commande `/auth`, et le système démarrera automatiquement le processus d'authentification. La commande d'authentification peut être utilisée dans la ligne de commande ou l'extension VS Code, et la méthode d'opération est cohérente. Le système détectera l'état d'authentification actuel, et si vous n'êtes pas connecté, il vous guidera pour terminer la connexion.\n\n```bash\n/auth\n```"
+      },
+      {
+        "title": "Connexion via navigateur",
+        "content": "Le système ouvrira automatiquement le navigateur et redirigera vers la page d'authentification. Sur la page d'authentification, vous pouvez choisir d'utiliser un compte Alibaba Cloud ou d'autres méthodes de connexion prises en charge. Le processus de connexion est rapide et pratique, ne prenant que quelques secondes."
+      },
+      {
+        "title": "Confirmer la connexion",
+        "content": "Après une connexion réussie, le navigateur se fermera automatiquement ou affichera un message de succès. En revenant à l'interface Qwen Code, vous verrez le message de succès de l'authentification, indiquant que vous vous êtes connecté avec succès et débloqué toutes les fonctionnalités. Les informations d'authentification seront automatiquement sauvegardées, il n'est donc pas nécessaire de se reconnecter à chaque fois."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Les informations d'authentification sont stockées en toute sécurité localement, pas besoin de se reconnecter à chaque fois."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-bailian-coding-plan": {
+    "title": "Mode Bailian Coding Plan",
+    "description": "Configurez l'utilisation de Bailian Coding Plan, sélection multiple de modèles, améliorer la qualité d'achèvement des tâches complexes.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Plan Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Le mode Bailian Coding Plan est une fonctionnalité avancée de Qwen Code, conçue spécifiquement pour les tâches de programmation complexes. Grâce à la collaboration intelligente multi-modèles, il peut décomposer de grandes tâches en étapes exécutables et planifier automatiquement le chemin d'exécution optimal. Qu'il s'agisse de refactoriser de grandes bases de code ou d'implémenter des fonctionnalités complexes, Coding Plan peut améliorer considérablement la qualité et l'efficacité d'achèvement des tâches.",
+    "steps": [
+      {
+        "title": "Accéder à l'interface des paramètres",
+        "content": "Démarrez Qwen Code et entrez la commande `/auth`."
+      },
+      {
+        "title": "Sélectionner Coding Plan",
+        "content": "Activez le mode Bailian Coding Plan dans les paramètres, entrez votre clé API, et Qwen Code configurera automatiquement les modèles pris en charge par Coding Plan pour vous.\n\n<img src=\"https://gw.alicdn.com/imgextra/i1/O1CN01cDz8AJ1Cq30rXjuXS_!!6000000000131-2-tps-1696-952.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />"
+      },
+      {
+        "title": "Sélectionner le modèle",
+        "content": "Entrez directement la commande `/model` pour sélectionner le modèle souhaité."
+      },
+      {
+        "title": "Commencer une tâche complexe",
+        "content": "Décrivez votre tâche de programmation, et Coding Plan planifiera automatiquement les étapes d'exécution. Vous pouvez expliquer en détail les objectifs, les contraintes et les résultats attendus de la tâche. L'IA analysera les exigences de la tâche et générera un plan d'exécution structuré, incluant les opérations spécifiques et les résultats attendus pour chaque étape.\n\n```bash\nJe dois refactoriser la couche de données de ce projet, migrer la base de données de MySQL vers PostgreSQL tout en gardant l'interface API inchangée\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Le mode Coding Plan est particulièrement adapté aux tâches complexes nécessitant une collaboration multi-étapes, comme la refactorisation d'architecture, la migration de fonctionnalités, etc."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-btw-sidebar": {
+    "title": "/btw Barre latérale : Poser une question rapide en codant",
+    "description": "Insérez une question indépendante dans la conversation en cours. L'IA y répond et revient automatiquement au contexte précédent, sans polluer la conversation principale.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "Vous codez et soudain vous ne vous souvenez plus de l'ordre des paramètres d'une API. Avant, il fallait ouvrir une nouvelle conversation pour vérifier, puis revenir — tout le contexte était perdu. Maintenant, tapez simplement `/btw` pour insérer une question annexe directement dans la conversation en cours. Qwen Code y répond et revient automatiquement au contexte précédent, comme si rien ne s'était passé.",
+    "steps": [
+      {
+        "title": "Vous êtes au milieu d'une conversation principale",
+        "content": "Vous discutez d'une tâche avec Qwen Code, comme le refactoring d'un composant."
+      },
+      {
+        "title": "Tapez /btw suivi de votre question",
+        "content": "Besoin de vérifier quelque chose ? Tapez simplement `/btw` suivi de votre question :\n\n```bash\n/btw La méthode JavaScript Array.prototype.at() supporte-t-elle les indices négatifs ?\n```"
+      },
+      {
+        "title": "L'IA répond et restaure automatiquement le contexte",
+        "content": "Après que Qwen Code a répondu à votre question annexe, il revient automatiquement au contexte de la conversation principale. Vous pouvez continuer votre tâche précédente comme si rien ne s'était passé."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Les réponses `/btw` ne polluent pas le contexte de la conversation principale. L'IA ne traitera pas votre question annexe comme faisant partie de la tâche en cours."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-copy-optimization": {
+    "title": "Optimisation de la copie de caractères",
+    "description": "Expérience de copie de code optimisée, sélection précise et copie d'extraits de code, préservation du format complet.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i3/O1CN01rFSm7o1hoRiIy0xrP_!!6000000004324-1-tps-1280-720.gif",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "L'expérience de copie de code optimisée vous permet de sélectionner et de copier précisément des extraits de code tout en préservant le formatage complet et l'indentation. Qu'il s'agisse de blocs de code entiers ou de lignes partielles, vous pouvez facilement les copier et les coller dans votre projet. La fonction de copie prend en charge plusieurs méthodes, y compris la copie en un clic, la copie par sélection et la copie par raccourci clavier, répondant aux besoins de différents scénarios.",
+    "steps": [
+      {
+        "title": "Sélectionner le bloc de code",
+        "content": "Cliquez sur le bouton de copie dans le coin supérieur droit du bloc de code pour copier l'intégralité du bloc en un clic. Le bouton de copie est clairement visible et l'opération est simple et rapide. Le contenu copié conservera le format d'origine, y compris l'indentation, la coloration syntaxique, etc."
+      },
+      {
+        "title": "Coller et utiliser",
+        "content": "Collez le code copié dans votre éditeur, et le format sera automatiquement maintenu. Vous pouvez l'utiliser directement sans avoir à ajuster manuellement l'indentation ou le formatage. Le code collé est entièrement cohérent avec le code d'origine, garantissant la correction du code."
+      },
+      {
+        "title": "Sélection précise",
+        "content": "Si vous n'avez besoin de copier qu'une partie du code, vous pouvez utiliser la souris pour sélectionner le contenu nécessaire, puis utiliser le raccourci clavier pour copier. Prend en charge la sélection multi-lignes, vous permettant de copier précisément les extraits de code dont vous avez besoin."
+      }
+    ],
+    "callouts": [],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-explore-agent": {
+    "title": "Explore Agent : Laisser l'IA faire des recherches avant d'agir",
+    "description": "Utilisez Explore Agent pour comprendre la structure du code, les dépendances et les points d'entrée clés avant de modifier le code, rendant le développement ultérieur plus précis.",
+    "category": "Programmation",
+    "features": [
+      "Explore"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "Avant de modifier du code, laissez Explore Agent vous aider à comprendre la structure du code, les dépendances et les points d'entrée clés. Recherchez d'abord, puis laissez l'Agent principal agir — une direction plus précise, moins de retravail dû à des modifications aveugles.",
+    "steps": [
+      {
+        "title": "Passer à Explore Agent",
+        "content": "Dans Qwen Code, passez en mode Explore Agent pour vous concentrer sur la recherche de code plutôt que sur la modification."
+      },
+      {
+        "title": "Décrire votre objectif de recherche",
+        "content": "Dites à Explore Agent ce que vous voulez comprendre, par exemple :\n\n```\nAnalyse le module d'authentification de ce projet, trouve tous les fichiers et dépendances associés\n```"
+      },
+      {
+        "title": "Obtenir le rapport de recherche",
+        "content": "Explore Agent analysera la structure du code et produira un rapport de recherche détaillé, incluant les listes de fichiers, les graphes de dépendances, les points d'entrée clés, etc."
+      },
+      {
+        "title": "Revenir à l'Agent principal pour commencer le développement",
+        "content": "Une fois la recherche terminée, revenez à l'Agent principal et commencez les modifications de code réelles basées sur les résultats de la recherche. Le rapport de recherche sera transmis comme contexte à l'Agent principal."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Explore Agent ne fait que de la recherche — il ne modifiera aucun code. Sa sortie peut être directement utilisée comme entrée pour l'Agent principal, formant un workflow efficace « rechercher d'abord, développer ensuite »."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-first-conversation": {
+    "title": "Commencer la première conversation",
+    "description": "Après l'installation, initiez votre première conversation IA avec Qwen Code pour comprendre ses capacités principales et ses méthodes d'interaction.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Après avoir terminé l'installation de Qwen Code, vous aurez votre première conversation avec lui. C'est une excellente occasion de comprendre les capacités principales et les méthodes d'interaction de Qwen Code. Vous pouvez commencer par une simple salutation et explorer progressivement ses puissantes fonctionnalités en matière de génération de code, de résolution de problèmes, de compréhension de documents, etc. Grâce à une pratique réelle, vous ressentirez comment Qwen Code devient votre assistant capable sur votre parcours de programmation.",
+    "steps": [
+      {
+        "title": "Démarrer Qwen Code",
+        "content": "Entrez la commande `qwen` dans le terminal pour démarrer l'application. Au premier démarrage, le système effectuera une configuration d'initialisation, ce qui ne prend que quelques secondes. Après le démarrage, vous verrez une interface de ligne de commande conviviale, prête à commencer la conversation avec l'IA.\n\n```bash\nqwen\n```"
+      },
+      {
+        "title": "Initier la conversation",
+        "content": "Entrez votre question dans la zone de saisie pour commencer à communiquer avec l'IA. Vous pouvez commencer par une simple présentation, comme demander ce qu'est Qwen Code ou ce qu'il peut faire pour vous. L'IA répondra à vos questions dans un langage clair et facile à comprendre et vous guidera pour explorer plus de fonctionnalités.\n\n```bash\nwhat is qwen code?\n```"
+      },
+      {
+        "title": "Explorer les capacités",
+        "content": "Essayez de demander à l'IA de vous aider à accomplir quelques tâches simples, comme expliquer du code, générer des fonctions, répondre à des questions techniques, etc. Grâce à une pratique réelle, vous vous familiariserez progressivement avec les différentes capacités de Qwen Code et découvrirez sa valeur d'application dans différents scénarios.\n\n```bash\nAidez-moi à écrire une fonction Python pour calculer la suite de Fibonacci\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Qwen Code prend en charge les conversations multi-tours. Vous pouvez continuer à poser des questions basées sur les réponses précédentes pour explorer en profondeur les sujets qui vous intéressent."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-headless-mode": {
+    "title": "Mode Headless",
+    "description": "Utiliser Qwen Code dans des environnements sans interface graphique, adapté aux serveurs distants, pipelines CI/CD et scénarios de scripts d'automatisation.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "Le mode Headless vous permet d'utiliser Qwen Code dans des environnements sans interface graphique, particulièrement adapté aux serveurs distants, pipelines CI/CD et scénarios de scripts d'automatisation. Grâce aux paramètres de ligne de commande et à l'entrée par pipeline, vous pouvez intégrer de manière transparente Qwen Code dans vos workflows existants, réalisant une programmation assistée par l'IA automatisée.",
+    "steps": [
+      {
+        "title": "Utiliser le mode prompt",
+        "content": "Utilisez le paramètre `--p` pour passer directement des invites dans la ligne de commande. Qwen Code retournera la réponse et quittera automatiquement. Cette méthode convient aux requêtes ponctuelles et peut être facilement intégrée dans des scripts.\n\n```bash\nqwen --p 'what is qwen code?'\n```"
+      },
+      {
+        "title": "Entrée par pipeline",
+        "content": "Passez la sortie d'autres commandes à Qwen Code via des pipelines pour réaliser un traitement automatisé. Vous pouvez envoyer directement des fichiers de journal, des messages d'erreur, etc. à l'IA pour analyse.\n\n```bash\ncat error.log | qwen --p 'analyser les erreurs'\n```"
+      },
+      {
+        "title": "Intégration de script",
+        "content": "Intégrez Qwen Code dans des scripts Shell pour réaliser des workflows automatisés complexes. Vous pouvez effectuer différentes opérations en fonction des résultats de retour de l'IA, créant des scripts automatisés intelligents.\n\n```bash\n#!/bin/bash\nresult=$(qwen --p 'vérifier s'il y a des problèmes avec le code')\nif [[ $result == *\"a des problèmes\"* ]]; then\n  echo \"Problèmes de code trouvés\"\nfi\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Le mode Headless prend en charge toutes les fonctionnalités de Qwen Code, y compris la génération de code, la résolution de problèmes, les opérations de fichiers, etc."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-hooks-auto-test": {
+    "title": "Hooks : Exécuter automatiquement les scripts de test avant le commit",
+    "description": "Attachez des scripts personnalisés aux points clés de Qwen Code pour automatiser les workflows comme l'exécution de tests avant les commits et le formatage automatique après la génération de code.",
+    "category": "Programmation",
+    "features": [
+      "Hooks"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "L'IA a généré du code mais le formatage n'est pas bon, et vous devez exécuter prettier manuellement à chaque fois ? Ou vous avez oublié de lancer les tests avant le commit, et la CI a échoué ? Le système Hooks résout ces problèmes. Vous pouvez attacher vos propres scripts à 10 points clés dans Qwen Code, les laissant s'exécuter automatiquement à des moments spécifiques.",
+    "steps": [
+      {
+        "title": "Créer le répertoire hooks",
+        "content": "Créez un répertoire `.agents/hooks` à la racine de votre projet pour stocker les scripts hook :\n\n```bash\nmkdir -p .agents/hooks\n```"
+      },
+      {
+        "title": "Écrire un script hook",
+        "content": "Créez un script hook, par exemple, formatage automatique après modification de code :\n\n```bash\n#!/bin/bash\n# post-edit-format.sh\n# Exécuter automatiquement le formatage prettier après modification de code\n\nINPUT=$(cat)\nTOOL_NAME=$(echo \"$INPUT\" | jq -r '.tool_name // empty')\n\ncase \"$TOOL_NAME\" in\n  write_file|edit) ;;\n  *) exit 0 ;;\nesac\n\nFILE_PATH=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty')\n[ -z \"$FILE_PATH\" ] && exit 0\n\n# Exécuter le formatage prettier\nnpx prettier --write \"$FILE_PATH\" 2>/dev/null\n\necho '{\"decision\": \"allow\", \"reason\": \"File formatted\"}'\nexit 0\n```\n\nAccorder les permissions d'exécution :\n\n```bash\nchmod +x .agents/hooks/post-edit-format.sh\n```"
+      },
+      {
+        "title": "Configurer les hooks",
+        "content": "Ajoutez la configuration des hooks dans `~/.qwen/settings.json` :\n\n```json\n{\n  \"hooksConfig\": {\n    \"enabled\": true\n  },\n  \"hooks\": {\n    \"PostToolUse\": [\n      {\n        \"matcher\": \"(write_file|edit)\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \".agents/hooks/post-edit-format.sh\",\n            \"name\": \"auto-format\",\n            \"description\": \"Formatage automatique après modification de code\",\n            \"timeout\": 30000\n          }\n        ]\n      }\n    ]\n  }\n}\n```"
+      },
+      {
+        "title": "Vérifier l'effet",
+        "content": "Lancez Qwen Code, faites modifier un fichier de code par l'IA et observez si le hook déclenche automatiquement le formatage."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Les Hooks supportent 10 points clés : PreToolUse, PostToolUse, SessionStart, SessionEnd, et plus encore. La configuration est simple — placez simplement les fichiers de script sous `.agents/hooks` à la racine de votre projet."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-language-switch": {
+    "title": "Changement de langue",
+    "description": "Changement flexible de la langue de l'interface utilisateur et de la langue de sortie de l'IA, prenant en charge l'interaction multilingue.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Qwen Code prend en charge le changement de langue flexible. Vous pouvez définir indépendamment la langue de l'interface utilisateur et la langue de sortie de l'IA. Qu'il s'agisse de chinois, d'anglais ou d'autres langues, vous pouvez trouver des paramètres appropriés. La prise en charge multilingue vous permet de travailler dans un environnement linguistique familier, améliorant l'efficacité de communication et le confort.",
+    "steps": [
+      {
+        "title": "Changer la langue de l'interface",
+        "content": "Utilisez la commande `/language ui` pour changer la langue de l'interface, prenant en charge le chinois, l'anglais et d'autres langues. Après avoir changé la langue de l'interface, les menus, les messages d'invite, la documentation d'aide, etc. seront tous affichés dans la langue que vous avez choisie.\n\n```bash\n/language ui zh-CN\n```"
+      },
+      {
+        "title": "Changer la langue de sortie",
+        "content": "Utilisez la commande `/language output` pour changer la langue de sortie de l'IA. L'IA utilisera la langue que vous avez spécifiée pour répondre aux questions, générer des commentaires de code, fournir des explications, etc., rendant la communication plus naturelle et fluide.\n\n```bash\n/language output zh-CN\n```"
+      },
+      {
+        "title": "Utilisation mixte des langues",
+        "content": "Vous pouvez également définir différentes langues pour l'interface et la sortie pour réaliser une utilisation mixte des langues. Par exemple, utiliser le chinois pour l'interface et l'anglais pour la sortie de l'IA, adapté aux scénarios où vous devez lire de la documentation technique en anglais."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Les paramètres de langue sont automatiquement sauvegardés et utiliseront la langue que vous avez choisie la dernière fois au prochain démarrage."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-plan-with-search": {
+    "title": "Mode Plan + Recherche Web",
+    "description": "Combinez la recherche Web en mode Plan pour rechercher d'abord les dernières informations puis formuler un plan d'exécution, améliorant considérablement la précision des tâches complexes.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Plan Mode",
+      "Web Search"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "Le mode Plan est la capacité de planification intelligente de Qwen Code, capable de décomposer des tâches complexes en étapes exécutables. Lorsqu'il est combiné avec la recherche Web, il recherchera d'abord de manière proactive les dernières documentations techniques, les meilleures pratiques et les solutions, puis formulera des plans d'exécution plus précis basés sur ces informations en temps réel. Cette combinaison est particulièrement adaptée au traitement de tâches de développement impliquant de nouveaux frameworks, de nouvelles API ou nécessitant de respecter les dernières spécifications, ce qui peut améliorer considérablement la qualité du code et l'efficacité d'achèvement des tâches. Qu'il s'agisse de migrer des projets, d'intégrer de nouvelles fonctionnalités ou de résoudre des problèmes techniques complexes, Plan + Recherche Web peut vous fournir les solutions les plus à jour.",
+    "steps": [
+      {
+        "title": "Activer le mode Plan",
+        "content": "Entrez la commande `/approval-mode plan` dans la conversation pour activer le mode Plan. À ce moment, Qwen Code entrera dans l'état de planification, prêt à recevoir votre description de tâche et à commencer à réfléchir. Le mode Plan analysera automatiquement la complexité de la tâche et déterminera s'il est nécessaire de rechercher des informations externes pour compléter la base de connaissances.\n\n```bash\n/approval-mode plan\n```"
+      },
+      {
+        "title": "Demander la recherche des dernières informations",
+        "content": "Décrivez vos exigences de tâche, et Qwen Code identifiera automatiquement les mots-clés qui doivent être recherchés. Il lancera de manière proactive des demandes de recherche Web pour obtenir les dernières documentations techniques, références API, meilleures pratiques et solutions. Les résultats de recherche seront intégrés dans la base de connaissances, fournissant une base d'informations précise pour la planification ultérieure.\n\n```\nAidez-moi à rechercher les dernières nouvelles dans le domaine de l'IA et à les organiser en un rapport pour moi\n```"
+      },
+      {
+        "title": "Voir le plan d'exécution",
+        "content": "Basé sur les informations recherchées, Qwen Code générera un plan d'exécution détaillé pour vous. Le plan inclura des descriptions d'étapes claires, des points techniques à surveiller, des pièges potentiels et des solutions. Vous pouvez examiner ce plan, fournir des suggestions de modification ou confirmer pour commencer l'exécution."
+      },
+      {
+        "title": "Exécuter le plan étape par étape",
+        "content": "Après avoir confirmé le plan, Qwen Code l'exécutera étape par étape. À chaque point clé, il vous rapportera les progrès et les résultats, garantissant que vous avez un contrôle complet sur l'ensemble du processus. Si des problèmes surviennent, il fournira des solutions basées sur les dernières informations de recherche plutôt que de s'appuyer sur des connaissances obsolètes."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "La recherche Web identifiera automatiquement les mots-clés techniques dans la tâche, pas besoin de spécifier manuellement le contenu de recherche. Pour les frameworks et bibliothèques à itération rapide, il est recommandé d'activer la recherche Web en mode Plan pour obtenir les dernières informations."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-resume-session": {
+    "title": "Reprise de session Resume",
+    "description": "Les conversations interrompues peuvent être reprises à tout moment sans perdre de contexte ni de progrès.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "La fonction de reprise de session Resume vous permet d'interrompre des conversations à tout moment et de les reprendre si nécessaire, sans perdre de contexte ni de progrès. Que vous ayez quelque chose à faire temporairement ou que vous gériez plusieurs tâches en parallèle, vous pouvez mettre en pause la conversation en toute sécurité et la reprendre plus tard de manière transparente. Cette fonction améliore considérablement la flexibilité du travail, vous permettant de gérer le temps et les tâches plus efficacement.",
+    "steps": [
+      {
+        "title": "Voir la liste des sessions",
+        "content": "Utilisez la commande `qwen --resume` pour voir toutes les sessions historiques. Le système affichera l'heure, le sujet et les informations brèves de chaque session, vous aidant à trouver rapidement la conversation que vous devez reprendre.\n\n```bash\nqwen --resume\n```"
+      },
+      {
+        "title": "Reprendre la session",
+        "content": "Utilisez la commande `qwen --resume` pour reprendre une session spécifiée. Vous pouvez sélectionner la conversation à reprendre via l'ID de session ou le numéro, et le système chargera l'historique complet du contexte.\n\n```bash\nqwen --resume\n```"
+      },
+      {
+        "title": "Continuer le travail",
+        "content": "Après avoir repris la session, vous pouvez continuer la conversation comme si elle n'avait jamais été interrompue. Tout le contexte, l'historique et les progrès seront entièrement conservés, et l'IA pourra comprendre avec précision le contenu de la discussion précédente."
+      },
+      {
+        "title": "Changer de sessions après avoir démarré Qwen Code",
+        "content": "Après avoir démarré Qwen Code, vous pouvez utiliser la commande `/resume` pour basculer vers une session précédente.\n\n```bash\n/resume\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "L'historique des sessions est automatiquement sauvegardé et prend en charge la synchronisation multi-appareils. Vous pouvez reprendre la même session sur différents appareils."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-retry-shortcut": {
+    "title": "Ctrl+Y Réessai rapide",
+    "description": "Pas satisfait de la réponse de l'IA ? Utilisez le raccourci clavier pour réessayer en un clic et obtenir rapidement de meilleurs résultats.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i1/O1CN01YtZAzm1ShNMbf8YTt_!!6000000002278-2-tps-1694-956.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "Pas satisfait de la réponse de l'IA ? Utilisez le raccourci clavier Ctrl+Y (Windows/Linux) ou Cmd+Y (macOS) pour réessayer en un clic et obtenir rapidement de meilleurs résultats. Cette fonctionnalité vous permet de laisser l'IA régénérer la réponse sans avoir à ressaisir la question, économisant du temps et améliorant l'efficacité. Vous pouvez réessayer plusieurs fois jusqu'à obtenir une réponse satisfaisante.",
+    "steps": [
+      {
+        "title": "Découvrir des réponses insatisfaisantes",
+        "content": "Lorsque la réponse de l'IA ne répond pas à vos attentes, ne vous découragez pas. Les réponses de l'IA peuvent varier en raison de la compréhension du contexte ou du hasard, et vous pouvez obtenir de meilleurs résultats en réessayant."
+      },
+      {
+        "title": "Déclencher le réessai",
+        "content": "Appuyez sur le raccourci clavier Ctrl+Y (Windows/Linux) ou Cmd+Y (macOS), et l'IA régénérera la réponse. Le processus de réessai est rapide et fluide et n'interrompra pas votre flux de travail.\n\n```bash\nCtrl+Y / Cmd+Y\n```"
+      },
+      {
+        "title": "Explication supplémentaire",
+        "content": "Si vous êtes toujours insatisfait après avoir réessayé, vous pouvez ajouter des explications supplémentaires à vos besoins pour que l'IA puisse mieux comprendre vos intentions. Vous pouvez ajouter plus de détails, modifier la façon dont la question est formulée, ou fournir plus d'informations contextuelles."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "La fonction de réessai conservera la question originale mais utilisera différentes graines aléatoires pour générer des réponses, garantissant la diversité des résultats."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-review-command": {
+    "title": "/review : Revue de code assistée par IA",
+    "description": "Utilisez la commande /review avant le commit pour faire vérifier la qualité du code par l'IA, trouver les problèmes potentiels et suggérer des améliorations — comme un collègue expérimenté qui révise votre code.",
+    "category": "Programmation",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Vous voulez que quelqu'un relise votre code avant le commit, mais vos collègues sont trop occupés ? Utilisez simplement `/review` — l'IA vérifiera la qualité du code, trouvera les problèmes potentiels et suggérera des améliorations. Ce n'est pas une simple vérification lint, mais une revue approfondie de votre logique, nommage et gestion des cas limites, comme un collègue expérimenté.",
+    "steps": [
+      {
+        "title": "Ouvrir le fichier à réviser",
+        "content": "Dans Qwen Code, ouvrez le fichier de code ou le répertoire du projet que vous souhaitez réviser. Assurez-vous que votre code est sauvegardé."
+      },
+      {
+        "title": "Entrer la commande /review",
+        "content": "Tapez `/review` dans le chat. Qwen Code analysera automatiquement le fichier actuel ou les modifications de code récentes.\n\n```bash\n/review\n```"
+      },
+      {
+        "title": "Consulter les résultats de la revue",
+        "content": "L'IA fournira des retours de revue sur plusieurs dimensions : qualité du code, exactitude logique, conventions de nommage et gestion des cas limites, accompagnés de suggestions d'amélioration spécifiques."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "`/review` est différent des simples vérifications lint — il comprend en profondeur la logique du code, identifiant les bugs potentiels, les problèmes de performance et les défauts de conception."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-script-install": {
+    "title": "Installation en un clic avec script",
+    "description": "Installez rapidement Qwen Code via une commande de script. Terminez la configuration de l'environnement en quelques secondes. Prend en charge les systèmes Linux, macOS et Windows.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Qwen Code prend en charge l'installation rapide via une seule commande de script. Aucune configuration manuelle des variables d'environnement ou téléchargement de dépendances requis. Le script détecte automatiquement votre type de système d'exploitation, télécharge le package d'installation approprié et termine la configuration. L'ensemble du processus ne prend que quelques secondes et prend en charge trois plateformes principales : **Linux**, **macOS** et **Windows**.",
+    "steps": [
+      {
+        "title": "Installation Linux / macOS",
+        "content": "Ouvrez votre terminal et exécutez la commande suivante. Le script détectera automatiquement votre architecture système (x86_64 / ARM), téléchargera la version correspondante et terminera la configuration de l'installation.\n\n```bash\nbash -c \"$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)\" -s --source website\n```"
+      },
+      {
+        "title": "Installation Windows",
+        "content": "Exécutez la commande suivante dans PowerShell. Le script téléchargera un fichier batch et exécutera automatiquement le processus d'installation. Une fois terminé, vous pourrez utiliser la commande `qwen` dans n'importe quel terminal.\n\n```bash\ncurl -fsSL -o %TEMP%\\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\\install-qwen.bat --source website\n```"
+      },
+      {
+        "title": "Vérifier l'installation",
+        "content": "Une fois l'installation terminée, exécutez la commande suivante dans votre terminal pour confirmer que Qwen Code a été correctement installé. Si vous voyez le numéro de version, l'installation a réussi.\n\n```bash\nqwen --version\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Si vous préférez utiliser npm, vous pouvez également installer globalement via `npm install -g @qwen-code/qwen-code`. Après l'installation, entrez simplement `qwen` pour démarrer. Si vous rencontrez des problèmes d'autorisation, utilisez `sudo npm install -g @qwen-code/qwen-code` et entrez votre mot de passe pour installer."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-skill-install": {
+    "title": "Installer des Skills",
+    "description": "Plusieurs façons d'installer des extensions de Skill, y compris l'installation en ligne de commande et l'installation par dossier, répondant à différents besoins de scénario.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Skills"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Qwen Code prend en charge plusieurs méthodes d'installation de Skills. Vous pouvez choisir la méthode la mieux adaptée à votre scénario réel. L'installation en ligne de commande convient aux environnements en ligne et est rapide et pratique ; l'installation par dossier convient aux environnements hors ligne ou aux Skills personnalisés, offrant flexibilité et contrôle.",
+    "steps": [
+      {
+        "title": "Vérifier et installer le Skill find-skills",
+        "content": "Décrivez vos besoins directement dans Qwen Code et laissez-le vous aider à vérifier et installer le Skill requis :\n\n```\nVérifiez si j'ai find-skills, sinon aidez-moi à l'installer directement : npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code\n```"
+      },
+      {
+        "title": "Installez le Skill dont vous avez besoin, par exemple installer web-component-design :",
+        "content": "```\n/skills find-skills install web-component-design -y -a qwen-code\n```\n\nQwen Code exécutera automatiquement la commande d'installation, téléchargera et installera le Skill depuis le dépôt spécifié. Vous pouvez également installer en une phrase :\n\n```\nVérifiez si j'ai find-skills, sinon aidez-moi à l'installer directement : npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, puis aidez-moi à installer [Nom du Skill] dans le répertoire qwen code skills actuel.\n```"
+      },
+      {
+        "title": "Vérifier l'installation",
+        "content": "Une fois l'installation terminée, vérifiez que le Skill a été chargé avec succès :\n\n```bash\n/skills\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "L'installation en ligne de commande nécessite une connexion réseau. Le paramètre `-y` indique une confirmation automatique, et `-a qwen-code` spécifie l'installation sur Qwen Code."
+      },
+      {
+        "type": "info",
+        "content": "**Exigences de structure de répertoire Skill**\n\nChaque dossier Skill doit inclure un fichier `skill.md` qui définit le nom, la description et les règles de déclenchement du Skill :\n\n```\n~/.qwen/skills/\n├── my-skill/\n│   ├── SKILL.md      # Requis : fichier de configuration Skill\n│   └── scripts/      # Optionnel : fichiers de script\n└── another-skill/\n    └── SKILL.md\n```"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-skills-panel": {
+    "title": "Panneau Skills",
+    "description": "Parcourez, installez et gérez les extensions de Skills existantes via le panneau Skills. Gestion en un clic de votre bibliothèque de capacités IA.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Skills"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i1/O1CN01xkzvoE1fomm8znzBG_!!6000000004054-2-tps-1694-952.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "Le panneau Skills est votre centre de contrôle pour gérer les capacités d'extension de Qwen Code. Grâce à cette interface intuitive, vous pouvez parcourir divers Skills fournis par les sources officielles et communautaires, comprendre la fonctionnalité et le but de chaque Skill, et installer ou désinstaller des extensions en un clic. Que vous souhaitiez découvrir de nouvelles capacités IA ou gérer les Skills installés, le panneau Skills offre une expérience d'opération pratique, vous permettant de construire facilement une boîte à outils IA personnalisée.",
+    "steps": [
+      {
+        "title": "Ouvrir le panneau Skills",
+        "content": "Entrez la commande dans la conversation Qwen Code pour ouvrir le panneau Skills. Cette commande affichera une liste de tous les Skills disponibles, y compris les extensions installées et non installées.\n\n```bash\n/skills\n```"
+      },
+      {
+        "title": "Parcourir et rechercher des Skills",
+        "content": "Parcourez les différentes extensions de Skills dans le panneau. Chaque Skill a des descriptions détaillées et des explications de fonctionnalité. Vous pouvez utiliser la fonction de recherche pour trouver rapidement le Skill spécifique dont vous avez besoin, ou parcourir différents types d'extensions par catégorie."
+      },
+      {
+        "title": "Installer ou désinstaller des Skills",
+        "content": "Après avoir trouvé un Skill qui vous intéresse, cliquez sur le bouton d'installation pour l'ajouter à votre Qwen Code en un clic. De même, vous pouvez désinstaller à tout moment les Skills dont vous n'avez plus besoin, gardant votre bibliothèque de capacités IA propre et efficace."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Le panneau Skills est mis à jour régulièrement pour présenter les dernières extensions de Skills publiées. Nous vous recommandons de vérifier régulièrement le panneau pour découvrir plus de capacités IA puissantes pour améliorer votre efficacité de travail."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-system-prompt": {
+    "title": "Prompts système personnalisés : Faire répondre l'IA selon votre style",
+    "description": "Configurez des prompts système personnalisés via SDK et CLI pour contrôler le style de réponse et le comportement de l'IA, en vous assurant qu'elle suit toujours les conventions de votre équipe.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Configurez des prompts système personnalisés via SDK et CLI pour contrôler le style de réponse et le comportement de l'IA. Par exemple, faites-la toujours répondre en chinois, écrire les commentaires de code en anglais, ou suivre les conventions de nommage de votre équipe. Plus besoin de répéter « veuillez répondre en chinois » à chaque conversation.",
+    "steps": [
+      {
+        "title": "Créer un fichier de prompt système",
+        "content": "Créez un fichier `AGENTS.md` (anciennement `QWEN.md`) à la racine de votre projet avec votre prompt système personnalisé :\n\n```markdown\n# Conventions du projet\n\n- Toujours répondre en chinois\n- Commentaires de code en anglais\n- Utiliser camelCase pour le nommage des variables\n- Utiliser les composants fonctionnels + Hooks pour React\n- Préférer TypeScript\n```"
+      },
+      {
+        "title": "Configurer les prompts système globaux",
+        "content": "Pour appliquer des conventions à tous les projets, configurez les prompts système globaux dans `~/.qwen/AGENTS.md`.\n\nVous pouvez aussi utiliser :\n\n```bash\nqwen --system-prompt \"Quand je pose une question en chinois, réponds en chinois ; quand je pose une question en anglais, réponds en anglais.\"\n```"
+      },
+      {
+        "title": "Vérifier l'effet",
+        "content": "Lancez Qwen Code, commencez une conversation et observez si l'IA répond selon vos conventions de prompt système."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Le fichier `AGENTS.md` au niveau du projet remplace la configuration globale. Vous pouvez définir des conventions différentes pour différents projets, et les membres de l'équipe peuvent partager le même fichier de configuration pour rester cohérents."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-vscode-integration": {
+    "title": "Interface d'intégration VS Code",
+    "description": "Affichage complet de l'interface de Qwen Code dans VS Code. Comprenez la mise en page et l'utilisation de chaque zone fonctionnelle.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "VS Code est l'un des éditeurs de code les plus populaires, et Qwen Code fournit une extension VS Code profondément intégrée. Grâce à cette extension, vous pouvez communiquer directement avec l'IA dans l'environnement d'éditeur familier et profiter d'une expérience de programmation transparente. L'extension fournit une mise en page d'interface intuitive, vous permettant d'accéder facilement à toutes les fonctionnalités. Qu'il s'agisse de complétion de code, de résolution de problèmes ou d'opérations de fichiers, tout peut être effectué efficacement.",
+    "steps": [
+      {
+        "title": "Installer l'extension VS Code",
+        "content": "Recherchez \"Qwen Code\" dans le marketplace d'extensions VS Code et cliquez sur installer. Le processus d'installation est simple et rapide, terminé en quelques secondes. Après l'installation, une icône Qwen Code apparaîtra dans la barre latérale VS Code, indiquant que l'extension a été chargée avec succès."
+      },
+      {
+        "title": "Se connecter à votre compte",
+        "content": "Utilisez la commande `/auth` pour déclencher le processus d'authentification. Le système ouvrira automatiquement un navigateur pour la connexion. Le processus de connexion est sécurisé et pratique, prenant en charge plusieurs méthodes d'authentification. Après une connexion réussie, vos informations de compte seront automatiquement synchronisées avec l'extension VS Code, débloquant toutes les fonctionnalités.\n\n```bash\n/auth\n```"
+      },
+      {
+        "title": "Commencer à utiliser",
+        "content": "Ouvrez le panneau Qwen Code dans la barre latérale et commencez à communiquer avec l'IA. Vous pouvez entrer directement des questions, référencer des fichiers, exécuter des commandes — toutes les opérations sont effectuées dans VS Code. L'extension prend en charge les onglets multiples, l'historique, les raccourcis clavier et autres fonctionnalités, offrant une expérience complète d'assistance à la programmation."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "L'extension VS Code a des fonctionnalités identiques à la version en ligne de commande. Vous pouvez choisir librement selon votre scénario d'utilisation."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-web-search": {
+    "title": "Recherche Web",
+    "description": "Laissez Qwen Code rechercher du contenu Web pour obtenir des informations en temps réel pour aider à la programmation et à la résolution de problèmes.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Web Search"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/FVVvz922HnDIY_STwpKaBGBb1u2JXOCdUCOL36A8WW4.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "La fonction de recherche Web permet à Qwen Code de rechercher du contenu Web en temps réel pour obtenir les dernières documentations techniques, mises à jour de framework et solutions. Lorsque vous rencontrez des problèmes lors du développement ou que vous devez comprendre les dernières évolutions d'une nouvelle technologie, cette fonction sera très utile. L'IA recherchera intelligemment des informations pertinentes et les organisera dans un format facile à comprendre pour vous les renvoyer.",
+    "steps": [
+      {
+        "title": "Activer la fonction de recherche",
+        "content": "Dites clairement à l'IA dans la conversation que vous devez rechercher les dernières informations. Vous pouvez poser directement des questions contenant la dernière technologie, les versions de framework ou les données en temps réel. Qwen Code reconnaîtra automatiquement vos besoins et lancera la fonction de recherche Web pour obtenir les informations les plus précises.\n\n```bash\nAidez-moi à rechercher les nouvelles fonctionnalités de React 19\n```"
+      },
+      {
+        "title": "Voir les résultats de recherche",
+        "content": "L'IA renverra les informations recherchées et les organisera dans un format facile à comprendre. Les résultats de recherche contiennent généralement des résumés d'informations clés, des liens sources et des détails techniques pertinents. Vous pouvez parcourir rapidement ces informations pour comprendre les dernières tendances technologiques ou trouver des solutions aux problèmes."
+      },
+      {
+        "title": "Poser des questions basées sur les résultats de recherche",
+        "content": "Vous pouvez poser d'autres questions basées sur les résultats de recherche pour obtenir des explications plus approfondies. Si vous avez des questions sur un détail technique spécifique ou si vous voulez savoir comment appliquer les résultats de recherche à votre projet, vous pouvez continuer à poser des questions directement. L'IA fournira des conseils plus spécifiques basés sur les informations recherchées.\n\n```bash\nQuel impact ces nouvelles fonctionnalités ont-elles sur mon projet\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "La fonction de recherche Web est particulièrement adaptée pour interroger les dernières modifications d'API, les mises à jour de versions de framework et les tendances technologiques en temps réel."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-batch-file-organize": {
+    "title": "Traitement de fichiers en lot, organiser le bureau",
+    "description": "Utilisez la fonction Cowork de Qwen Code pour organiser en un clic les fichiers de bureau en désordre, en les classant automatiquement par type dans les dossiers correspondants.",
+    "category": "Tâches quotidiennes",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Fichiers de bureau en désordre ? La fonction Cowork de Qwen Code peut vous aider à organiser les fichiers en lot en un clic, en identifiant automatiquement les types de fichiers et en les classant dans les dossiers correspondants. Qu'il s'agisse de documents, d'images, de vidéos ou d'autres types de fichiers, ils peuvent tous être identifiés intelligemment et archivés, rendant votre environnement de travail ordonné et améliorant l'efficacité du travail.",
+    "steps": [
+      {
+        "title": "Démarrer la conversation",
+        "content": "Ouvrez le terminal ou la ligne de commande, entrez `qwen` pour démarrer Qwen Code. Assurez-vous que vous êtes dans le répertoire que vous devez organiser, ou dites clairement à l'IA quels fichiers dans quel répertoire doivent être organisés. Qwen Code est prêt à recevoir vos instructions d'organisation.\n\n```bash\ncd ~/Desktop\nqwen\n```"
+      },
+      {
+        "title": "Donner des instructions d'organisation",
+        "content": "Dites à Qwen Code que vous souhaitez organiser les fichiers de bureau. L'IA identifiera automatiquement les types de fichiers et créera des dossiers classés. Vous pouvez spécifier le répertoire à organiser, les règles de classification et la structure des dossiers cibles. L'IA élaborera un plan d'organisation basé sur vos besoins.\n\n```bash\nAidez-moi à organiser les fichiers du bureau, en les classant dans différents dossiers par type : documents, images, vidéos, fichiers compressés, etc.\n```"
+      },
+      {
+        "title": "Confirmer le plan d'exécution",
+        "content": "Qwen Code listera d'abord le plan d'opérations à exécuter. Après avoir confirmé qu'il n'y a pas de problèmes, autorisez l'exécution. Cette étape est très importante. Vous pouvez vérifier le plan d'organisation pour vous assurer que l'IA comprend vos besoins et éviter les erreurs d'opération."
+      },
+      {
+        "title": "Terminer l'organisation",
+        "content": "L'IA exécute automatiquement les opérations de déplacement de fichiers et affiche un rapport d'organisation après avoir terminé, vous disant quels fichiers ont été déplacés où. L'ensemble du processus est rapide et efficace, ne nécessitant pas de manipulation manuelle, économisant beaucoup de temps."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "La fonction Cowork prend en charge des règles de classification personnalisées. Vous pouvez spécifier la relation de mappage entre les types de fichiers et les dossiers cibles selon vos besoins."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-clipboard-paste": {
+    "title": "Coller une image du presse-papiers",
+    "description": "Collez directement des captures d'écran du presse-papiers dans la fenêtre de conversation. L'IA comprend instantanément le contenu de l'image et offre de l'aide.",
+    "category": "Tâches quotidiennes",
+    "features": [
+      "Image Recognition"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "La fonction de collage d'images du presse-papiers vous permet de coller n'importe quelle capture d'écran directement dans la fenêtre de conversation de Qwen Code, sans avoir à enregistrer le fichier d'abord puis à le télécharger. Qu'il s'agisse de captures d'erreur, de maquettes de conception UI, de captures de code ou d'autres images, Qwen Code peut comprendre instantanément leur contenu et offrir de l'aide basée sur vos besoins. Cette méthode d'interaction pratique améliore considérablement l'efficacité de la communication, vous permettant d'obtenir rapidement des analyses et des suggestions de l'IA lorsque vous rencontrez des problèmes.",
+    "steps": [
+      {
+        "title": "Copier l'image dans le presse-papiers",
+        "content": "Utilisez l'outil de capture d'écran du système (macOS : `Cmd+Shift+4`, Windows : `Win+Shift+S`) pour capturer le contenu de l'écran, ou copiez des images depuis des navigateurs ou des gestionnaires de fichiers. Les captures d'écran sont automatiquement enregistrées dans le presse-papiers sans opération supplémentaire."
+      },
+      {
+        "title": "Coller dans la fenêtre de conversation",
+        "content": "Utilisez `Cmd+V` (macOS) ou `Ctrl+V` (Windows) dans la zone de saisie de la conversation Qwen Code pour coller l'image. L'image s'affichera automatiquement dans la zone de saisie, et vous pourrez saisir du texte décrivant votre question ou vos besoins en même temps."
+      },
+      {
+        "title": "Obtenir les résultats de l'analyse de l'IA",
+        "content": "Après avoir envoyé le message, Qwen Code analysera le contenu de l'image et donnera une réponse. Il peut identifier des erreurs dans les captures de code, analyser la disposition des maquettes de conception UI, interpréter les données de graphiques, etc. Vous pouvez continuer à poser des questions et discuter en détail de tous les détails de l'image."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Prend en charge les formats d'image courants tels que PNG, JPEG, GIF. La taille de l'image ne doit pas dépasser 10 MB pour garantir le meilleur effet de reconnaissance. Pour les captures de code, l'utilisation d'une haute résolution est recommandée pour améliorer la précision de la reconnaissance de texte."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-export-conversation": {
+    "title": "Exporter l'historique des conversations",
+    "description": "Exportez l'historique des conversations au format Markdown, HTML ou JSON pour faciliter l'archivage et le partage.",
+    "category": "Tâches quotidiennes",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Fonction d'exportation de l'historique des conversations",
+    "steps": [
+      {
+        "title": "Voir la liste des sessions",
+        "content": "Utilisez la commande `/resume` pour voir toutes les sessions historiques. La liste affichera des informations telles que l'heure de création et le résumé du sujet pour chaque session, vous aidant à trouver rapidement la conversation que vous devez exporter. Vous pouvez utiliser la recherche par mots-clés ou trier par heure pour localiser précisément la session cible.\n\n```bash\n/resume\n```"
+      },
+      {
+        "title": "Sélectionner le format d'export",
+        "content": "Après avoir déterminé la session à exporter, utilisez la commande `/export` et spécifiez le format et l'ID de session. Trois formats sont pris en charge : `markdown`, `html` et `json`. Le format Markdown convient à une utilisation dans les outils de documentation, le format HTML peut être ouvert directement dans un navigateur pour visualisation, et le format JSON convient au traitement programmatique.\n\n```bash\n# Si aucun paramètre <session-id>, exporte la session actuelle par défaut\n/export html <session-id> # Exporter au format HTML\n/export markdown <session-id> # Exporter au format Markdown\n/export json <session-id> # Exporter au format JSON\n```"
+      },
+      {
+        "title": "Partager et archiver",
+        "content": "Les fichiers exportés seront enregistrés dans le répertoire spécifié. Les fichiers Markdown et HTML peuvent être partagés directement avec des collègues ou utilisés dans la documentation d'équipe. Les fichiers JSON peuvent être importés dans d'autres outils pour traitement secondaire. Nous recommandons d'archiver régulièrement les conversations importantes pour construire une base de connaissances d'équipe. Les fichiers exportés peuvent également servir de sauvegardes pour éviter la perte d'informations importantes."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Le format HTML exporté inclut des styles complets et peut être ouvert directement dans n'importe quel navigateur. Le format JSON conserve toutes les métadonnées et convient à l'analyse et au traitement des données."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-file-reference": {
+    "title": "Fonction de référence @file",
+    "description": "Référencez les fichiers du projet dans la conversation avec @file pour permettre à l'IA de comprendre précisément votre contexte de code.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "La fonction de référence @file vous permet de référencer directement des fichiers de projet dans la conversation, permettant à l'IA de comprendre précisément votre contexte de code. Qu'il s'agisse d'un seul fichier ou de plusieurs fichiers, l'IA lira et analysera le contenu du code pour fournir des suggestions et des réponses plus précises. Cette fonction est particulièrement adaptée aux scénarios tels que la revue de code, le dépannage et le refactoring de code.",
+    "steps": [
+      {
+        "title": "Référencer un seul fichier",
+        "content": "Utilisez la commande `@file` suivie du chemin du fichier pour référencer un seul fichier. L'IA lira le contenu du fichier, comprendra la structure et la logique du code, puis fournira des réponses ciblées basées sur vos questions.\n\n```bash\n@file ./src/main.py\nExpliquez ce que fait cette fonction\n```\n\nVous pouvez également référencer des fichiers de référence et demander à Qwen Code de les organiser et de les écrire comme un nouveau document. Cela évite largement que l'IA ne comprenne mal vos besoins et ne génère du contenu qui n'est pas dans les matériaux de référence :\n\n```bash\n@file Aidez-moi à écrire un article de compte public basé sur ce fichier\n```"
+      },
+      {
+        "title": "Décrire les besoins",
+        "content": "Après avoir référencé le fichier, décrivez clairement vos besoins ou vos questions. L'IA analysera basé sur le contenu du fichier et fournira des réponses ou des suggestions précises. Vous pouvez poser des questions sur la logique du code, trouver des problèmes, demander des optimisations, etc."
+      },
+      {
+        "title": "Référencer plusieurs fichiers",
+        "content": "En utilisant la commande `@file` plusieurs fois, vous pouvez référencer plusieurs fichiers simultanément. L'IA analysera de manière exhaustive tous les fichiers référencés, comprendra leurs relations et contenus, et fournira des réponses plus complètes.\n\n```bash\n@file1 @file2 Basé sur les matériaux dans ces deux fichiers, aidez-moi à organiser un document d'apprentissage adapté aux débutants\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "@file prend en charge les chemins relatifs et absolus, ainsi que la correspondance de caractères génériques pour plusieurs fichiers."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-image-recognition": {
+    "title": "Reconnaissance d'images",
+    "description": "Qwen Code peut lire et comprendre le contenu des images, qu'il s'agisse de maquettes de conception UI, de captures d'erreur ou de diagrammes d'architecture.",
+    "category": "Tâches quotidiennes",
+    "features": [
+      "Image Recognition"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i1/O1CN01JahZiH1yV4QoVXcEV_!!6000000006583-2-tps-1700-958.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/j0eaRLacpjRbMBDAerJ1tP9qJ9qbvUHFyyR-VdZBwIg.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Qwen Code possède de puissantes capacités de reconnaissance d'images et peut lire et comprendre divers types de contenu d'images. Qu'il s'agisse de maquettes de conception UI, de captures d'erreur, de diagrammes d'architecture, de diagrammes de flux ou de notes manuscrites, Qwen Code peut les identifier avec précision et fournir des analyses précieuses. Cette capacité vous permet d'intégrer directement des informations visuelles dans votre flux de travail de programmation, améliorant considérablement l'efficacité de la communication et la vitesse de résolution de problèmes.",
+    "steps": [
+      {
+        "title": "Télécharger l'image",
+        "content": "Faites glisser l'image dans la fenêtre de conversation ou utilisez le collage du presse-papiers (`Cmd+V` / `Ctrl+V`). Prend en charge les formats courants tels que PNG, JPEG, GIF, WebP, etc.\n\nRéférence : [Coller une image du presse-papiers](./office-clipboard-paste.mdx) montre comment coller rapidement des captures d'écran dans la conversation."
+      },
+      {
+        "title": "Décrire vos besoins",
+        "content": "Dans la zone de saisie, décrivez ce que vous voulez que l'IA fasse avec l'image. Par exemple :\n\n```\nBasé sur le contenu de l'image, aidez-moi à générer un fichier HTML simple\n```"
+      },
+      {
+        "title": "Obtenir les résultats de l'analyse",
+        "content": "Qwen Code analysera le contenu de l'image et donnera une réponse détaillée. Vous pouvez continuer à poser des questions, discuter en détail de tous les détails de l'image, ou demander à l'IA de générer du code basé sur le contenu de l'image."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "La fonction de reconnaissance d'images prend en charge plusieurs scénarios : analyse de captures de code, conversion de maquettes de conception UI en code, interprétation d'informations d'erreur, compréhension de diagrammes d'architecture, extraction de données de graphiques, etc. Il est recommandé d'utiliser des images haute résolution claires pour le meilleur effet de reconnaissance."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-mcp-image-gen": {
+    "title": "Génération d'images MCP",
+    "description": "Intégrez des services de génération d'images via MCP. Pilotez l'IA avec des descriptions en langage naturel pour créer des images de haute qualité.",
+    "category": "Tâches quotidiennes",
+    "features": [
+      "MCP"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/6000000008040/O1CN01S2cxYL29GNUmrvmzH_!!6000000008040-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/gQg8C_5f5MGoZE9YKCyKmHlWAgXZSTMbN8WSoN7crbc.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "La fonction de génération d'images MCP (Model Context Protocol) vous permet de piloter l'IA directement dans Qwen Code à travers des descriptions en langage naturel pour créer des images de haute qualité. Pas besoin de basculer vers des outils de génération d'images spécialisés — décrivez simplement vos besoins dans la conversation, et Qwen Code appellera les services de génération d'images intégrés pour générer des images qui répondent à vos exigences. Qu'il s'agisse de conception de prototypes UI, de création d'icônes, de dessin d'illustrations ou de production de diagrammes conceptuels, la génération d'images MCP offre un support puissant. Ce flux de travail intégré de manière transparente améliore considérablement l'efficacité de la conception et du développement, rendant la réalisation créative plus pratique.",
+    "steps": [
+      {
+        "title": "Configurer le service MCP",
+        "content": "Vous devez d'abord configurer le service de génération d'images MCP. Ajoutez la clé API et les informations de point de terminaison du service de génération d'images au fichier de configuration. Qwen Code prend en charge plusieurs services de génération d'images主流. Vous pouvez choisir le service approprié en fonction de vos besoins et de votre budget. Après la configuration, redémarrez Qwen Code pour que les modifications prennent effet."
+      },
+      {
+        "title": "Décrire les exigences d'image",
+        "content": "Dans la conversation, décrivez en détail en langage naturel l'image que vous souhaitez générer. Incluez des éléments tels que le thème, le style, la couleur, la composition et les détails de l'image. Plus la description est spécifique, plus l'image générée correspondra à vos attentes. Vous pouvez référencer des styles artistiques, des artistes spécifiques ou télécharger des images de référence pour aider l'IA à mieux comprendre vos besoins."
+      },
+      {
+        "title": "Voir et enregistrer les résultats",
+        "content": "Qwen Code générera plusieurs images parmi lesquelles choisir. Vous pouvez prévisualiser chaque image et sélectionner celle qui répond le mieux à vos exigences. Si des ajustements sont nécessaires, vous pouvez continuer à décrire des suggestions de modification, et Qwen Code régénérera basé sur les commentaires. Lorsque vous êtes satisfait, vous pouvez enregistrer l'image directement localement ou copier le lien de l'image pour l'utiliser ailleurs."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "La génération d'images MCP prend en charge plusieurs styles et tailles, qui peuvent être ajustés de manière flexible selon les besoins du projet. La propriété du droit d'auteur des images générées dépend du service utilisé. Veuillez consulter les conditions d'utilisation."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-organize-desktop": {
+    "title": "Organiser les fichiers de bureau",
+    "description": "Laissez Qwen Code organiser automatiquement les fichiers de bureau en une phrase, en les classant intelligemment par type.",
+    "category": "Tâches quotidiennes",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Fichiers de bureau empilés comme une montagne, ne trouvez pas les fichiers dont vous avez besoin ? Laissez Qwen Code organiser automatiquement les fichiers de bureau en une phrase. L'IA identifiera intelligemment les types de fichiers et les classera automatiquement par images, documents, code, fichiers compressés, etc., créant une structure de dossiers claire. L'ensemble du processus est sûr et contrôlable. L'IA listera d'abord le plan d'opérations pour confirmation, garantissant que les fichiers importants ne sont pas déplacés par erreur. Rendez votre bureau instantanément ordonné et propre, améliorant l'efficacité du travail.",
+    "steps": [
+      {
+        "title": "Décrire les besoins d'organisation",
+        "content": "Allez dans le répertoire du bureau, démarrez Qwen Code et dites à Qwen Code comment vous souhaitez organiser les fichiers de bureau, par exemple classer par type, grouper par date, etc.\n\n```bash\ncd ~/Desktop\nAidez-moi à organiser les fichiers sur mon bureau par type\n```"
+      },
+      {
+        "title": "Confirmer le plan d'opérations",
+        "content": "Qwen Code analysera les fichiers de bureau et listera un plan d'organisation détaillé, y compris quels fichiers seront déplacés vers quels dossiers. Vous pouvez vérifier le plan pour vous assurer qu'il n'y a pas de problèmes.\n\n```bash\nConfirmez l'exécution de ce plan d'organisation\n```"
+      },
+      {
+        "title": "Exécuter l'organisation et voir les résultats",
+        "content": "Après confirmation, Qwen Code exécutera les opérations d'organisation selon le plan. Une fois terminé, vous pouvez voir le bureau organisé, et les fichiers sont déjà disposés de manière ordonnée par type."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "warning",
+        "content": "L'IA listera d'abord le plan d'opérations pour confirmation, garantissant que les fichiers importants ne sont pas déplacés par erreur. Si vous avez des questions sur la classification de certains fichiers, vous pouvez dire à Qwen Code d'ajuster les règles avant l'exécution."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-ppt-presentation": {
+    "title": "Présentation : Créer un PPT",
+    "description": "Créez des présentations basées sur des captures d'écran de produit. Fournissez des captures d'écran et des descriptions, et l'IA génère de belles diapositives de présentation.",
+    "category": "Tâches quotidiennes",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/O1CN01ZlnCqO1HtmJhfhZSm_!!6000000000816-2-videocover-2546-1388.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/08IfFcYkp4OkyvbSDklR11rrL69fTNuc8Rkz_2ikqOg.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Besoin de créer une présentation PPT mais ne voulez pas commencer de zéro ? Fournissez simplement des captures d'écran de produit et des descriptions simples, et Qwen Code peut vous aider à générer des diapositives de présentation bien structurées et magnifiquement conçues. L'IA analysera le contenu des captures d'écran, comprendra les caractéristiques du produit, organisera automatiquement la structure des diapositives et ajoutera le texte et la mise en page appropriés. Qu'il s'agisse de lancements de produit, de présentations d'équipe ou de présentations client, vous pouvez obtenir rapidement des PPT professionnels, économisant beaucoup de temps et d'énergie.",
+    "steps": [
+      {
+        "title": "Préparer les captures d'écran de produit",
+        "content": "Rassemblez les captures d'écran de l'interface produit qui doivent être affichées, y compris les pages de fonctionnalités principales, les démonstrations de fonctionnalités, etc. Les captures d'écran doivent être claires et montrer pleinement la valeur et les caractéristiques du produit. Placez-les dans un dossier, par exemple : qwen-code-images"
+      },
+      {
+        "title": "Installer les Skills connexes",
+        "content": "Installez les Skills liés à la génération PPT. Ces Skills incluent des capacités pour analyser le contenu des captures d'écran et générer des diapositives de présentation.\n\n```\nVérifiez si j'ai find-skills, sinon aidez-moi à l'installer directement : npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, puis aidez-moi à installer zarazhangrui/frontend-slides dans qwen code skills.\n```"
+      },
+      {
+        "title": "Générer la présentation",
+        "content": "Référencez le fichier correspondant et dites à Qwen Code vos besoins, comme le but de la présentation, le public cible, le contenu principal, etc. L'IA générera le PPT basé sur ces informations.\n\n```\n@qwen-code-images Créez une présentation PPT de produit basée sur ces captures d'écran,面向 l'équipe technique, en mettant l'accent sur la présentation des nouvelles fonctionnalités\n```"
+      },
+      {
+        "title": "Ajuster et exporter",
+        "content": "Voyez le PPT généré. Si des ajustements sont nécessaires, vous pouvez dire à Qwen Code, comme \"ajouter une page présentant l'architecture\" ou \"ajuster le texte sur cette page\". Lorsque vous êtes satisfait, exportez vers un format modifiable.\n\n```\nAidez-moi à ajuster le texte de la page 3 pour le rendre plus concis\n```"
+      }
+    ],
+    "callouts": [],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-terminal-theme": {
+    "title": "Changer le thème du terminal",
+    "description": "Changez le thème du terminal en une phrase. Décrivez le style en langage naturel, et l'IA l'applique automatiquement.",
+    "category": "Tâches quotidiennes",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/O1CN01AsDV5C1aSHEa8IY3M_!!6000000003328-0-videocover-3163-1800.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/zxYwfE9B3STo2bLnbTBwePKBTtWPbqt6pS2BCZMJpTM.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Fatigué du thème de terminal par défaut ? Décrivez le style que vous voulez en langage naturel, et Qwen Code peut vous aider à trouver et à appliquer un thème approprié. Qu'il s'agisse d'un style tech sombre, d'un style frais et simple ou d'un style rétro classique — avec une seule phrase, l'IA comprendra vos préférences esthétiques et configurera automatiquement le schéma de couleurs et le style du terminal. Dites adieu à la configuration manuelle fastidieuse et rendez votre environnement de travail instantanément comme neuf.",
+    "steps": [
+      {
+        "title": "Décrire le style de thème souhaité",
+        "content": "Dans la conversation, décrivez en langage naturel le style que vous aimez. Par exemple \"changez le thème du terminal en style tech sombre\" ou \"je veux un thème clair frais et simple\". Qwen Code comprendra vos besoins.\n\n```\nChangez le thème du terminal en style tech sombre\n```"
+      },
+      {
+        "title": "Confirmer et appliquer le thème",
+        "content": "Qwen Code recommandera plusieurs options de thème qui correspondent à votre description et montrera les effets de prévisualisation. Choisissez votre thème préféré, et après confirmation, l'IA appliquera automatiquement la configuration.\n\n```\nÇa a l'air bien, appliquez le thème directement\n```"
+      },
+      {
+        "title": "Ajustements fins et personnalisation",
+        "content": "Si d'autres ajustements sont nécessaires, vous pouvez continuer à dire à Qwen Code vos pensées, comme \"rendre la couleur de fond un peu plus sombre\" ou \"ajuster la taille de la police\". L'IA vous aidera à ajuster finement."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Le changement de thème modifiera votre fichier de configuration de terminal. Si vous utilisez une application de terminal spécifique (comme iTerm2, Terminal.app), Qwen Code identifiera et configurera automatiquement les fichiers de thème correspondants."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-web-search-detail": {
+    "title": "Recherche Web",
+    "description": "Laissez Qwen Code rechercher du contenu Web pour obtenir des informations en temps réel pour aider à la programmation. Apprenez les dernières tendances technologiques et documentations.",
+    "category": "Guide de démarrage",
+    "features": [
+      "Web Search"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/FVVvz922HnDIY_STwpKaBGBb1u2JXOCdUCOL36A8WW4.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "La fonction de recherche Web permet à Qwen Code de rechercher sur Internet en temps réel les dernières informations, vous aidant à obtenir les dernières documentations techniques, références API, meilleures pratiques et solutions. Lorsque vous rencontrez des piles technologiques inconnues, devez comprendre les changements dans les dernières versions ou souhaitez trouver des solutions à des problèmes spécifiques, la recherche Web permet à l'IA de fournir des réponses précises basées sur les dernières informations Web.",
+    "steps": [
+      {
+        "title": "Initier une requête de recherche",
+        "content": "Décrivez directement dans la conversation ce que vous souhaitez rechercher. Par exemple : \"rechercher les nouvelles fonctionnalités de React 19\", \"trouver les meilleures pratiques pour Next.js App Router\". Qwen Code déterminera automatiquement si une recherche réseau est nécessaire."
+      },
+      {
+        "title": "Voir les résultats intégrés",
+        "content": "L'IA recherchera plusieurs sources Web, intégrera les résultats de recherche et fournira une réponse structurée. La réponse inclura des liens source pour les informations clés, ce qui est pratique pour une compréhension plus approfondie."
+      },
+      {
+        "title": "Continuer basé sur les résultats",
+        "content": "Vous pouvez continuer à poser des questions basées sur les résultats de recherche et demander à l'IA d'appliquer les informations recherchées à des tâches de programmation réelles. Par exemple, après avoir recherché de nouvelles utilisations d'API, vous pouvez demander directement à l'IA de vous aider à refactoriser le code."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "La recherche Web est particulièrement adaptée aux scénarios suivants : comprendre les changements dans les dernières versions de framework, trouver des solutions à des erreurs spécifiques, obtenir les dernières documentations API, comprendre les meilleures pratiques de l'industrie, etc. Les résultats de recherche sont mis à jour en temps réel pour garantir que vous obtenez les dernières informations."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-weekly-report": {
+    "title": "Générer automatiquement un rapport hebdomadaire",
+    "description": "Personnalisez les Skills. Crawl automatiquement les mises à jour de la semaine avec une commande et écrivez des rapports hebdomadaires de mise à jour de produit selon des modèles.",
+    "category": "Tâches quotidiennes",
+    "features": [
+      "Skills"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/BrL3c4NkeIqLiT3MAAWUSp26QgM0hjN67ukuKQmgE4M.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Écrire des rapports hebdomadaires de mise à jour de produit chaque semaine est une tâche répétitive et chronophage. Avec les Skills personnalisés de Qwen Code, vous pouvez laisser l'IA crawler automatiquement les informations de mise à jour de produit de la semaine et générer des rapports hebdomadaires structurés selon des modèles standard. Avec une seule commande, l'IA collectera des données, analysera le contenu et l'organisera en un document, améliorant considérablement votre efficacité de travail. Vous pouvez vous concentrer sur le produit lui-même et laisser l'IA gérer le travail de documentation fastidieux.",
+    "steps": [
+      {
+        "title": "Installer le Skill skills-creator",
+        "content": "Installez d'abord le Skill pour que l'IA comprenne quelles informations de quelles sources de données vous devez collecter.\n\n```\nVérifiez si j'ai find-skills, sinon aidez-moi à l'installer directement : npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, puis aidez-moi à installer skills-creator dans qwen code skills.\n```"
+      },
+      {
+        "title": "Créer un Skill de rapport hebdomadaire",
+        "content": "Utilisez la fonction de création de Skill pour dire à l'IA que vous avez besoin d'un Skill de génération de rapport hebdomadaire personnalisé. Décrivez les types de données que vous devez collecter et la structure du rapport hebdomadaire. L'IA générera un nouveau Skill basé sur vos besoins.\n\n```\nJe dois créer des rapports hebdomadaires pour le projet open source : https://github.com/QwenLM/qwen-code, incluant principalement les issues soumises cette semaine, les bugs résolus, les nouvelles versions et fonctionnalités, ainsi que les examens et réflexions. La langue doit être centrée sur l'utilisateur, altruiste et sensible. Créez un Skill.\n```"
+      },
+      {
+        "title": "Générer le contenu du rapport hebdomadaire",
+        "content": "Une fois la configuration terminée, entrez la commande de génération. Qwen Code crawlera automatiquement les informations de mise à jour de la semaine et les organisera selon le modèle de rapport hebdomadaire de produit en un document structuré.\n\n```\nGénérer le rapport hebdomadaire de mise à jour de produit qwen-code de cette semaine\n```"
+      },
+      {
+        "title": "Ouvrir le rapport hebdomadaire, éditer et ajuster",
+        "content": "Le rapport hebdomadaire généré peut être ouvert et ajusté pour une édition ultérieure ou un partage avec l'équipe. Vous pouvez également demander à l'IA d'aider à ajuster le format et le focus du contenu.\n\n```\nRendez le langage du rapport hebdomadaire plus vivant\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Lors de la première utilisation, vous devez configurer les sources de données. Après une configuration, elle peut être réutilisée. Vous pouvez configurer des tâches planifiées pour laisser Qwen Code générer automatiquement des rapports hebdomadaires chaque semaine, libérant complètement vos mains."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-write-file": {
+    "title": "Écrire un fichier en une phrase",
+    "description": "Dites à Qwen Code quel fichier vous souhaitez créer, et l'IA générera automatiquement le contenu et l'écrira.",
+    "category": "Tâches quotidiennes",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000003593/O1CN0139ueiV1cPeBczAQyA_!!6000000003593-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/ToffPMLiVnt3c_HDiisOPcfaWGYmYVsH3hIuj3YWBVg.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Besoin de créer un nouveau fichier mais ne voulez pas commencer à écrire le contenu de zéro ? Dites à Qwen Code quel fichier vous souhaitez créer, et l'IA générera automatiquement le contenu approprié et l'écrira dans le fichier. Qu'il s'agisse de README, de fichiers de configuration, de fichiers de code ou de documentation, Qwen Code peut générer du contenu de haute qualité basé sur vos besoins. Vous devez seulement décrire le but et les exigences de base du fichier, et l'IA gérera le reste, améliorant considérablement votre efficacité de création de fichiers.",
+    "steps": [
+      {
+        "title": "Décrire le contenu et le but du fichier",
+        "content": "Dites à Qwen Code quel type de fichier vous souhaitez créer, ainsi que le contenu principal et le but du fichier.\n\n```bash\nAidez-moi à créer un README.md incluant la présentation du projet et les instructions d'installation\n```"
+      },
+      {
+        "title": "Confirmer le contenu généré",
+        "content": "Qwen Code générera le contenu du fichier basé sur votre description et l'affichera pour confirmation. Vous pouvez voir le contenu pour vous assurer qu'il répond à vos besoins.\n\n```bash\nÇa a l'air bien, continuez à créer le fichier\n```"
+      },
+      {
+        "title": "Modifier et améliorer",
+        "content": "Si des ajustements sont nécessaires, vous pouvez dire à Qwen Code des exigences de modification spécifiques, comme \"ajouter des exemples d'utilisation\" ou \"ajuster le format\".\n\n```bash\nAidez-moi à ajouter quelques exemples de code\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Qwen Code prend en charge divers types de fichiers, y compris les fichiers texte, les fichiers de code, les fichiers de configuration, etc. Les fichiers générés sont automatiquement enregistrés dans le répertoire spécifié, et vous pouvez les modifier davantage dans l'éditeur."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "product-insight": {
+    "title": "Insights de données Insight",
+    "description": "Voir le rapport d'utilisation IA personnel. Comprendre les données de programmation et de collaboration. Utiliser l'optimisation des habitudes basée sur les données.",
+    "category": "Tâches quotidiennes",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000006496/O1CN01KNUXtG1xrDy75PPA5_!!6000000006496-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/a5X9O6PsdDdmXVqtHdhlzZ97mRNPrqroKO5cf4V71XM.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Insight est le panneau d'analyse de données d'utilisation personnel de Qwen Code, vous offrant des insights complets sur l'efficacité de la programmation IA. Il suit des indicateurs clés tels que votre nombre de conversations, volume de génération de code, fonctionnalités fréquemment utilisées et préférences de langage de programmation, générant des rapports de données visualisés. Grâce à ces données, vous pouvez comprendre clairement vos habitudes de programmation, l'efficacité de l'assistance IA et les modèles de collaboration. Insight vous aide non seulement à découvrir de l'espace pour améliorer l'efficacité, mais vous montre également dans quels domaines vous êtes le plus compétent pour utiliser l'IA, vous permettant de mieux tirer parti de la valeur de l'IA. Les insights basés sur les données rendent chaque utilisation plus significative.",
+    "steps": [
+      {
+        "title": "Ouvrir le panneau Insight",
+        "content": "Entrez la commande `/insight` dans la conversation pour ouvrir le panneau d'insights de données Insight. Le panneau affichera votre aperçu d'utilisation, y compris les indicateurs clés tels que le nombre total de conversations, les lignes de génération de code et le temps estimé économisé. Ces données sont présentées sous forme de graphiques intuitifs, vous permettant de comprendre votre utilisation de l'IA d'un coup d'œil.\n\n```bash\n/insight\n```"
+      },
+      {
+        "title": "Analyser le rapport d'utilisation",
+        "content": "Consultez en détail les rapports d'utilisation détaillés, y compris des dimensions telles que les tendances quotidiennes de conversation, la distribution des fonctionnalités fréquemment utilisées, les préférences de langage de programmation et l'analyse des types de code. Insight fournira des insights et des suggestions personnalisés basés sur vos modèles d'utilisation, vous aidant à découvrir un espace d'amélioration potentiel. Vous pouvez filtrer les données par plage de temps et comparer l'efficacité d'utilisation de différentes périodes."
+      },
+      {
+        "title": "Optimiser les habitudes d'utilisation",
+        "content": "Basé sur les insights de données, ajustez votre stratégie d'utilisation de l'IA. Par exemple, si vous constatez que vous utilisez une certaine fonctionnalité fréquemment mais avec une faible efficacité, vous pouvez essayer d'apprendre des méthodes d'utilisation plus efficaces. Si vous constatez que l'assistance IA est plus efficace pour certains langages de programmation ou types de tâches, vous pouvez utiliser l'IA plus fréquemment dans des scénarios similaires. Suivez continuellement les changements de données et vérifiez les effets d'optimisation.\n\nVous voulez savoir comment nous utilisons la fonctionnalité Insight ? Vous pouvez consulter notre [Comment laisser l'IA nous dire comment mieux utiliser l'IA](../blog/how-to-use-qwencode-insight.mdx)"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Les données Insight sont stockées uniquement localement et ne sont pas téléchargées vers le cloud, garantissant votre confidentialité d'utilisation et la sécurité des données. Consultez régulièrement les rapports et développez des habitudes d'utilisation basées sur les données."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "study-learning": {
+    "title": "Apprentissage du code",
+    "description": "Cloner des dépôts open source et apprendre à comprendre le code. Laissez Qwen Code vous guider sur la façon de contribuer aux projets open source.",
+    "category": "Apprentissage & Recherche",
+    "features": [
+      "Web Search"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Apprendre du code open source excellent est un excellent moyen d'améliorer les compétences de programmation. Qwen Code peut vous aider à comprendre en profondeur les architectures de projet complexes et les détails de mise en œuvre, trouver des points de contribution appropriés et vous guider à travers les modifications de code. Que vous souhaitiez apprendre de nouvelles piles technologiques ou contribuer à la communauté open source, Qwen Code est votre mentor de programmation idéal.",
+    "steps": [
+      {
+        "title": "Cloner le dépôt",
+        "content": "Utilisez git clone pour télécharger le projet open source localement. Choisissez un projet qui vous intéresse et clonez-le dans votre environnement de développement. Assurez-vous que le projet a une bonne documentation et une communauté active, afin que le processus d'apprentissage se déroule plus facilement.\n\n```bash\ngit clone https://github.com/QwenLM/qwen-code.git && cd qwen-code\n```"
+      },
+      {
+        "title": "Démarrer Qwen Code",
+        "content": "Démarrez Qwen Code dans le répertoire du projet. De cette façon, l'IA pourra accéder à tous les fichiers du projet et fournir des explications et des suggestions de code pertinentes pour le contexte. Qwen Code analysera automatiquement la structure du projet et identifiera les modules principaux et les dépendances.\n\n```bash\nqwen\n```"
+      },
+      {
+        "title": "Demander une explication du code",
+        "content": "Dites à l'IA quelle partie ou quelle fonctionnalité du projet vous souhaitez comprendre. Vous pouvez demander sur l'architecture globale, la logique de mise en œuvre de modules spécifiques ou les idées de conception de certaines fonctionnalités. L'IA expliquera le code en langage clair et fournira des connaissances de contexte pertinentes.\n\n```bash\nAidez-moi à expliquer l'architecture globale et les modules principaux de ce projet\n```"
+      },
+      {
+        "title": "Trouver des points de contribution",
+        "content": "Laissez l'IA vous aider à trouver des issues ou des fonctionnalités appropriées pour les débutants à participer. L'IA analysera la liste des issues du projet et recommandera des contributions appropriées basées sur la difficulté, les étiquettes et les descriptions. C'est un bon moyen de commencer à contribuer à l'open source.\n\n```bash\nQuelles issues ouvertes sont appropriées pour les débutants à participer ?\n```"
+      },
+      {
+        "title": "Implémenter les modifications",
+        "content": "Implémentez progressivement les modifications de code basées sur les conseils de l'IA. L'IA vous aidera à analyser les problèmes, à concevoir des solutions, à écrire du code et à garantir que les modifications respectent les normes de code du projet. Une fois les modifications terminées, vous pouvez soumettre un PR et contribuer au projet open source."
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "En participant à des projets open source, vous pouvez non seulement améliorer vos compétences de programmation, mais aussi construire une influence technique et rencontrer des développeurs partageant les mêmes idées."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "study-read-paper": {
+    "title": "Lire des articles",
+    "description": "Lire et analyser directement des articles académiques. L'IA vous aide à comprendre le contenu de recherche complexe et génère des cartes d'apprentissage.",
+    "category": "Apprentissage & Recherche",
+    "features": [
+      "Web Search"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01616oQD1d9RnY1XuLt_!!6000000003693-2-videocover-1696-956.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/is3SsCe3w-U5Y0ZxL-z6reSbw8NBhnzCtQfjH26lLFE.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Les articles académiques sont souvent obscurs et difficiles à comprendre, nécessitant beaucoup de temps pour lire et comprendre. Qwen Code peut vous aider à lire et analyser directement des articles, extraire des points clés, expliquer des concepts complexes et résumer les méthodes de recherche. L'IA comprendra en profondeur le contenu de l'article et l'expliquera en langage facile à comprendre, générant des cartes d'apprentissage structurées pour votre révision et votre partage. Qu'il s'agisse d'apprendre de nouvelles technologies ou de rechercher des domaines de pointe, cela peut améliorer considérablement votre efficacité d'apprentissage.",
+    "steps": [
+      {
+        "title": "Fournir des informations sur l'article",
+        "content": "Dites à Qwen Code l'article que vous souhaitez lire. Vous pouvez fournir le titre de l'article, le chemin du fichier PDF ou le lien arXiv. L'IA obtiendra et analysera automatiquement le contenu de l'article.\n\n```\nAidez-moi à télécharger et analyser cet article : attention is all you need https://arxiv.org/abs/1706.03762\n```"
+      },
+      {
+        "title": "Lire l'article",
+        "content": "Installez les Skills liés au PDF pour permettre à Qwen Code d'analyser le contenu de l'article et de générer des cartes d'apprentissage structurées. Vous pouvez voir le résumé de l'article, les points clés, les concepts clés et les conclusions importantes.\n\n```\nVérifiez si j'ai find-skills, sinon aidez-moi à l'installer directement : npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, puis aidez-moi à installer Anthropic pdf et d'autres Skills de bureau dans qwen code skills.\n```"
+      },
+      {
+        "title": "Apprentissage approfondi et questions",
+        "content": "Pendant la lecture, vous pouvez poser des questions à Qwen Code à tout moment, comme \"expliquer le mécanisme d'auto-attention\" ou \"comment cette formule est dérivée\". L'IA répondra en détail et vous aidera à comprendre en profondeur.\n\n```\nVeuillez expliquer l'idée centrale de l'architecture Transformer\n```"
+      },
+      {
+        "title": "Générer des cartes d'apprentissage",
+        "content": "Après l'apprentissage, laissez Qwen Code générer des cartes d'apprentissage résumant les points clés, les concepts clés et les conclusions importantes de l'article. Ces cartes faciliteront votre révision et votre partage avec l'équipe.\n\n```bash\nAidez-moi à générer des cartes d'apprentissage pour cet article\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Qwen Code prend en charge plusieurs formats d'articles, y compris PDF, liens arXiv, etc. Pour les formules mathématiques et les graphiques, l'IA expliquera leur signification en détail, vous aidant à comprendre complètement le contenu de l'article."
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  }
+}

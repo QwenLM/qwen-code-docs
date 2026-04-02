@@ -1,0 +1,67 @@
+---
+title: "Créer un site web de CV personnel"
+description: "Créez un site web de CV personnel en une phrase – intégrez vos expériences pour générer une page de présentation avec export PDF."
+category: "Outils créatifs"
+features:
+  - "Skills"
+thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+videoUrl: "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Vue d'ensemble
+
+Un site web de CV personnel est un outil important pour la recherche d'emploi et la présentation de soi. Qwen Code peut rapidement générer une page de présentation professionnelle basée sur le contenu de votre CV, avec support d'export PDF pour faciliter les candidatures.
+
+<ShowcaseDetailMeta category="Outils créatifs" features={["Skills"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4" poster="https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Fournir vos expériences personnelles
+
+Indiquez à l'IA votre parcours éducatif, expérience professionnelle, expérience de projet et compétences.
+
+```bash
+Je suis développeur frontend, diplômé de l'université XX, avec 3 ans d'expérience, spécialisé en React et TypeScript...
+```
+
+### Installer le Skill de design web
+
+Installez le Skill de design web qui fournit des modèles de design de CV.
+
+```bash
+Vérifie si j'ai find skills, sinon installe-le directement : npx skills add https://github.com/vercel-labs/skills --skill find-skills, puis aide-moi à installer web-component-design.
+```
+
+### Choisir un style de design
+
+Décrivez le style de CV que vous préférez, comme minimaliste, professionnel ou créatif.
+
+```bash
+/skills web-component-design Aide-moi à concevoir un site web de CV minimaliste et professionnel
+```
+
+### Générer le site web de CV
+
+L'IA créera un projet de site web de CV complet avec mise en page responsive et styles d'impression.
+
+```bash
+npm run dev
+```
+
+</Steps>
+
+<Callout type="info">
+Votre site web de CV devrait mettre en valeur vos forces et réalisations principales, en utilisant des données et exemples spécifiques pour étayer vos descriptions.
+</Callout>
+
+<ShowcaseDetailCta />

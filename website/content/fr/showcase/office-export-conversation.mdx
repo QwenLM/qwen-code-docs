@@ -1,0 +1,58 @@
+---
+title: "Exporter l'historique des conversations"
+description: "Exportez l'historique des conversations au format Markdown, HTML ou JSON pour faciliter l'archivage et le partage."
+category: "Tâches quotidiennes"
+features:
+  - "Terminal"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Vue d'ensemble
+
+Fonction d'exportation de l'historique des conversations
+
+<ShowcaseDetailMeta category="Tâches quotidiennes" features={["Terminal"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Voir la liste des sessions
+
+Utilisez la commande `/resume` pour voir toutes les sessions historiques. La liste affichera des informations telles que l'heure de création et le résumé du sujet pour chaque session, vous aidant à trouver rapidement la conversation que vous devez exporter. Vous pouvez utiliser la recherche par mots-clés ou trier par heure pour localiser précisément la session cible.
+
+```bash
+/resume
+```
+
+### Sélectionner le format d'export
+
+Après avoir déterminé la session à exporter, utilisez la commande `/export` et spécifiez le format et l'ID de session. Trois formats sont pris en charge : `markdown`, `html` et `json`. Le format Markdown convient à une utilisation dans les outils de documentation, le format HTML peut être ouvert directement dans un navigateur pour visualisation, et le format JSON convient au traitement programmatique.
+
+```bash
+# Si aucun paramètre <session-id>, exporte la session actuelle par défaut
+/export html <session-id> # Exporter au format HTML
+/export markdown <session-id> # Exporter au format Markdown
+/export json <session-id> # Exporter au format JSON
+```
+
+### Partager et archiver
+
+Les fichiers exportés seront enregistrés dans le répertoire spécifié. Les fichiers Markdown et HTML peuvent être partagés directement avec des collègues ou utilisés dans la documentation d'équipe. Les fichiers JSON peuvent être importés dans d'autres outils pour traitement secondaire. Nous recommandons d'archiver régulièrement les conversations importantes pour construire une base de connaissances d'équipe. Les fichiers exportés peuvent également servir de sauvegardes pour éviter la perte d'informations importantes.
+
+</Steps>
+
+<Callout type="info">
+Le format HTML exporté inclut des styles complets et peut être ouvert directement dans n'importe quel navigateur. Le format JSON conserve toutes les métadonnées et convient à l'analyse et au traitement des données.
+</Callout>
+
+<ShowcaseDetailCta />

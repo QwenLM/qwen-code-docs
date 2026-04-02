@@ -85,10 +85,12 @@ function generateShowcaseData() {
       thumbnail: frontmatter.thumbnail || "",
       videoUrl: frontmatter.videoUrl || null,
       model: frontmatter.model || "qwen3.5-plus",
+      author: frontmatter.author || "Qwen Code Team",
+      date: frontmatter.date || null,
     });
   }
 
-  // Sort by category order, then by id
+  // Sort by date (newest first), then by category order, then by id
   const categoryOrder = {
     "入门指南": 1,
     "编程开发": 2,
@@ -98,6 +100,13 @@ function generateShowcaseData() {
   };
 
   items.sort((a, b) => {
+    // Primary sort: date descending (newest first)
+    const dateA = a.date || "1970-01-01";
+    const dateB = b.date || "1970-01-01";
+    if (dateA !== dateB) {
+      return dateB.localeCompare(dateA);
+    }
+    // Secondary sort: category order
     const orderA = categoryOrder[a.category] || 99;
     const orderB = categoryOrder[b.category] || 99;
     if (orderA !== orderB) {

@@ -1,0 +1,46 @@
+---
+title: "Colar Imagem da Área de Transferência"
+description: "Cole capturas de tela da área de transferência diretamente na janela de conversa. A IA entende instantaneamente o conteúdo da imagem e oferece assistência."
+category: "Tarefas Diárias"
+features:
+  - "Image Recognition"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+O recurso de colar imagem da área de transferência permite colar qualquer captura de tela diretamente na janela de conversa do Qwen Code, sem precisar salvar o arquivo e depois fazer upload. Seja capturas de tela de erro, mockups de design de UI, capturas de tela de trechos de código ou outras imagens, o Qwen Code pode entender instantaneamente o conteúdo e oferecer assistência com base em suas necessidades. Este método de conversa conveniente melhora significativamente a eficiência da comunicação, permitindo obter rapidamente a análise e sugestões da IA ao encontrar problemas.
+
+<ShowcaseDetailMeta category="Tarefas Diárias" features={["Image Recognition"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png" alt="Colar Imagem da Área de Transferência" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Copiar Imagem para a Área de Transferência
+
+Use a ferramenta de captura de tela do sistema (macOS: `Cmd+Shift+4`, Windows: `Win+Shift+S`) para capturar o conteúdo da tela ou copie uma imagem de um navegador ou gerenciador de arquivos. A captura de tela é salva automaticamente na área de transferência, sem necessidade de operações adicionais.
+
+### Colar na Janela de Conversa
+
+Na caixa de entrada de conversa do Qwen Code, use `Cmd+V` (macOS) ou `Ctrl+V` (Windows) para colar a imagem. A imagem aparecerá automaticamente na caixa de entrada, e você pode digitar texto para suas perguntas ou necessidades ao mesmo tempo.
+
+### Obter Resultados da Análise da IA
+
+Após enviar a mensagem, o Qwen Code analisará o conteúdo da imagem e responderá. Pode identificar erros em capturas de tela de código, analisar layouts de mockups de design de UI, interpretar dados de gráficos e muito mais. Você pode fazer mais perguntas para discutir detalhes da imagem em profundidade.
+
+</Steps>
+
+<Callout type="info">
+Suporta formatos de imagem comuns como PNG, JPEG, GIF, etc. Recomenda-se que o tamanho da imagem seja inferior a 10MB para garantir o melhor efeito de reconhecimento. Para capturas de tela de código, recomenda-se usar alta resolução para melhorar a precisão do reconhecimento de texto.
+</Callout>
+
+<ShowcaseDetailCta />

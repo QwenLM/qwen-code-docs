@@ -1,0 +1,57 @@
+---
+title: "Bailian Coding Plan Mode"
+description: "Configure to use Bailian Coding Plan, multiple model selection, improve the completion quality of complex tasks."
+category: "Getting Started"
+features:
+  - "Plan Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png"
+videoUrl: "https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Bailian Coding Plan mode is an advanced feature of Qwen Code, designed specifically for complex programming tasks. Through intelligent multi-model collaboration, it can break down large tasks into executable steps and automatically plan the optimal execution path. Whether refactoring large codebases or implementing complex features, Coding Plan can significantly improve task completion quality and efficiency.
+
+<ShowcaseDetailMeta category="Getting Started" features={["Plan Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4" poster="https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Enter Settings Interface
+
+Start Qwen Code and enter the `/auth` command.
+
+### Select Coding Plan
+
+Enable Bailian Coding Plan mode in settings, enter your API Key, and Qwen Code will automatically configure the models supported by Coding Plan for you.
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01cDz8AJ1Cq30rXjuXS_!!6000000000131-2-tps-1696-952.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### Select Model
+
+Directly enter the `/model` command to select the model you want.
+
+### Start Complex Task
+
+Describe your programming task, and Coding Plan will automatically plan the execution steps. You can explain the task's goals, constraints, and expected results in detail. AI will analyze the task requirements and generate a structured execution plan, including specific operations and expected outputs for each step.
+
+```bash
+I need to refactor this project's data layer, migrate the database from MySQL to PostgreSQL while keeping the API interface unchanged
+```
+
+</Steps>
+
+<Callout type="info">
+Coding Plan mode is especially suitable for complex tasks that require multi-step collaboration, such as architecture refactoring, feature migration, etc.
+</Callout>
+
+<ShowcaseDetailCta />

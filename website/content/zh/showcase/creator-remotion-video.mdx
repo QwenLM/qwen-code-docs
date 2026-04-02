@@ -8,17 +8,18 @@ features:
 thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg"
 videoUrl: "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4"
 model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
 ---
 import { Steps, Callout } from 'nextra/components'
 import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
 import Link from 'next/link'
 
-
 ## 概述
 
 想要创作视频但不会写代码？通过自然语言描述你的创意，Qwen Code 就能使用 Remotion Skill 生成视频代码。AI 会理解你的创意描述，自动生成 Remotion 项目代码，包括场景设置、动画效果、文字排版等。无论是产品宣传、社交媒体内容还是教学视频，都能快速生成专业的视频内容。
 
-<ShowcaseDetailMeta category="设计创作" features={["Skills", "Remotion"]} model="qwen3.5-plus" />
+<ShowcaseDetailMeta category="设计创作" features={["Skills", "Remotion"]} model="qwen3.5-plus" author="Qwen Code Team" />
 
 <video src="https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
 
@@ -63,11 +64,5 @@ npm run dev
 <Callout type="info">
 提示词方式适合快速原型和创意探索。你可以不断调整描述，让 AI 优化视频效果。生成的代码可以进一步手动编辑，实现更复杂的功能。
 </Callout>
-
-## 相关推荐
-
-- [Remotion 视频创作（提示词方式）](./creator-remotion-video.mdx) — 通过自然语言描述创意生成视频
-
----
 
 <ShowcaseDetailCta />

@@ -1,0 +1,68 @@
+---
+title: "Создание видео с Remotion"
+description: "Опишите свои творческие идеи на естественном языке и используйте скилл Remotion для создания видеоконтента с помощью кода."
+category: "Инструменты для творчества"
+features:
+  - "Skills"
+  - "Remotion"
+thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+Хотите создавать видео, но не умеете программировать? Описывая свои творческие идеи на естественном языке, Qwen Code может использовать скилл Remotion для генерации видеокода. ИИ понимает ваше творческое описание и автоматически генерирует код проекта Remotion, включая настройку сцен, анимационные эффекты и расположение текста.
+
+<ShowcaseDetailMeta category="Инструменты для творчества" features={["Skills", "Remotion"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+<Steps>
+
+### Установить скилл Remotion
+
+Сначала установите скилл Remotion, содержащий лучшие практики и шаблоны для создания видео.
+
+```bash
+Проверьте, есть ли у меня find skills, если нет, установите напрямую: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, затем помогите мне установить remotion-best-practice.
+```
+
+### Описать творческую идею
+
+Подробно опишите на естественном языке видеоконтент, который хотите создать, включая тему, стиль, продолжительность и ключевые сцены.
+
+```bash
+@file На основе документа создайте 30-секундное промо-видео продукта в современном минималистичном стиле.
+```
+
+### Предварительный просмотр и настройка
+
+Qwen Code создаст код проекта Remotion на основе вашего описания. Запустите сервер разработки для предварительного просмотра.
+
+```bash
+npm run dev
+```
+
+### Рендеринг и экспорт
+
+Когда будете довольны результатом, используйте команду build для рендеринга финального видео.
+
+```bash
+Помогите мне отрендерить и экспортировать видео напрямую.
+```
+
+</Steps>
+
+<Callout type="info">
+Подход на основе промптов идеально подходит для быстрого прототипирования и творческого исследования. Сгенерированный код можно дополнительно редактировать вручную.
+</Callout>
+
+<ShowcaseDetailCta />

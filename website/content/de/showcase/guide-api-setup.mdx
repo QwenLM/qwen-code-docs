@@ -1,0 +1,111 @@
+---
+title: "API-Konfigurationsanleitung"
+description: "Konfigurieren Sie API-Schlüssel und Modellparameter, um Ihre KI-Programmiererfahrung anzupassen. Unterstützt mehrere Modellauswahlen."
+category: "Erste Schritte"
+features:
+  - "Agent Mode"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+videoUrl: "https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Die Konfiguration eines API-Schlüssels ist ein wichtiger Schritt bei der Verwendung von Qwen Code, da sie alle Funktionen freischaltet und den Zugriff auf leistungsstarke KI-Modelle ermöglicht. Über die Alibaba Cloud Bailian-Plattform können Sie einfach einen API-Schlüssel erhalten und das für verschiedene Szenarien am besten geeignete Modell auswählen. Ob für die tägliche Entwicklung oder komplexe Aufgaben - die richtige Modellkonfiguration kann Ihre Arbeitseffizienz erheblich verbessern.
+
+<ShowcaseDetailMeta category="Erste Schritte" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4" poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+
+### API-Schlüssel abrufen
+
+Besuchen Sie die [Alibaba Cloud Bailian-Plattform](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key), finden Sie die API-Schlüssel-Verwaltungsseite im persönlichen Center. Klicken Sie auf "Neuen API-Schlüssel erstellen", und das System generiert einen eindeutigen Schlüssel. Dieser Schlüssel ist Ihre Berechtigung für den Zugriff auf Qwen Code-Dienste. Bitte bewahren Sie ihn sicher auf.
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+<Callout type="warning">
+Bitte bewahren Sie Ihren API-Schlüssel sicher auf und geben Sie ihn nicht an andere weiter oder committen Sie ihn in das Code-Repository.
+</Callout>
+
+### API-Schlüssel in Qwen Code konfigurieren
+
+**1. Qwen Code automatisch konfigurieren lassen**
+
+Öffnen Sie das Terminal, starten Sie Qwen Code direkt im Stammverzeichnis, kopieren Sie den folgenden Code und teilen Sie Ihren API-SCHLÜSSEL mit. Die Konfiguration ist erfolgreich. Starten Sie Qwen Code neu und geben Sie `/model` ein, um zum konfigurierten Modell zu wechseln.
+
+```json
+Helfen Sie mir, `settings.json` für Bailians Modell gemäß dem folgenden Inhalt zu konfigurieren:
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<Modellname>",
+            "name": "[Bailian] <Modellname>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<durch SCHLÜSSEL des Benutzers ersetzen>"
+    },
+}
+Für die Eingabe des Modellnamens beachten Sie bitte: https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all
+Mein API-SCHLÜSSEL ist:
+```
+
+Fügen Sie dann Ihren API-SCHLÜSSEL in das Eingabefeld ein, teilen Sie ihm den gewünschten Modellnamen mit, z. B. `qwen3.5-plus`, und senden Sie ihn, um die Konfiguration abzuschließen.
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+**2. Manuelle Konfiguration**
+
+Konfigurieren Sie die Datei settings.json manuell. Der Dateipfad befindet sich im Verzeichnis `<Benutzerstammverzeichnis>/.qwen`. Sie können den folgenden Inhalt direkt kopieren und Ihren API-SCHLÜSSEL und Modellnamen ändern.
+
+```json
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<Modellname>",
+            "name": "[Bailian] <Modellname>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<durch SCHLÜSSEL des Benutzers ersetzen>"
+    },
+}
+```
+
+### Modell auswählen
+
+Wählen Sie das geeignete Modell entsprechend Ihren Anforderungen und balancieren Sie Geschwindigkeit und Leistung. Verschiedene Modelle sind für verschiedene Szenarien geeignet. Sie können basierend auf der Komplexität der Aufgabe und den Anforderungen an die Antwortzeit wählen. Verwenden Sie den Befehl `/model`, um schnell zwischen Modellen zu wechseln.
+
+Häufige Modelloptionen:
+- `qwen3.5-plus`: Leistungsstark, geeignet für komplexe Aufgaben
+- `qwen3.5-flash`: Schnell, geeignet für einfache Aufgaben
+- `qwen-max`: Stärkstes Modell, geeignet für Aufgaben mit hoher Schwierigkeit
+
+### Verbindung testen
+
+Senden Sie eine Testnachricht, um zu bestätigen, dass die API-Konfiguration korrekt ist. Wenn die Konfiguration erfolgreich ist, antwortet Qwen Code Ihnen sofort, was bedeutet, dass Sie bereit sind, mit der KI-unterstützten Programmierung zu beginnen. Wenn Sie Probleme haben, überprüfen Sie bitte, ob der API-Schlüssel korrekt eingestellt ist.
+
+```bash
+Hello, can you help me with coding?
+```
+
+</Steps>
+
+<ShowcaseDetailCta />

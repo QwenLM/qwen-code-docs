@@ -1,0 +1,78 @@
+---
+title: "Установка Skills"
+description: "Установите расширения Skills различными способами, включая установку через командную строку и папку, для удовлетворения потребностей различных сценариев."
+category: "Руководство по началу работы"
+features:
+  - "Skills"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+Qwen Code поддерживает несколько методов установки Skills. Вы можете выбрать наиболее подходящий метод в зависимости от вашей реальной ситуации. Установка через командную строку подходит для онлайн-среды, она быстрая и удобная. Установка через папку подходит для офлайн-среды или пользовательских Skills, она гибкая и управляемая.
+
+<ShowcaseDetailMeta category="Руководство по началу работы" features={["Skills"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+<Steps>
+
+### Проверка и установка Skill find-skills
+
+В Qwen Code прямо опишите свои потребности и позвольте Qwen Code помочь вам найти и установить необходимую Skill:
+
+```
+Проверьте, существует ли find skills, если нет, установите напрямую: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code
+```
+
+### Установка необходимых Skills, например web-component-design:
+
+```
+/skills find-skills install web-component-design -y -a qwen-code
+```
+
+Qwen Code автоматически выполнит команду установки, загрузит и установит Skill из указанного репозитория. Вы также можете установить одной фразой:
+
+```
+Проверьте, существует ли find skills, если нет, установите напрямую: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, и установите [имя skill] в текущий каталог qwen code skills.
+```
+
+### Проверка установки
+
+После завершения установки проверьте, что Skill загружена правильно:
+
+```bash
+/skills
+```
+
+</Steps>
+
+<Callout type="info">
+Установка через командную строку требует подключения к интернету. Параметр `-y` означает автоматическое подтверждение, а `-a qwen-code` указывает установку в Qwen Code.
+</Callout>
+
+<Callout type="info">
+**Требования к структуре каталога Skills**
+
+Каждая папка Skill должна содержать файл `skill.md`, который определяет имя, описание и правила активации Skill:
+
+```
+~/.qwen/skills/
+├── my-skill/
+│   ├── SKILL.md      # Обязательно: файл конфигурации Skill
+│   └── scripts/      # Опционально: файлы скриптов
+└── another-skill/
+    └── SKILL.md
+```
+</Callout>
+
+<ShowcaseDetailCta />

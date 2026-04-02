@@ -1,0 +1,66 @@
+---
+title: "Agents-Konfigurationsdatei"
+description: "Passen Sie das KI-Verhalten über die Agents-MD-Datei an, damit sich die KI an Ihre Projektspezifikationen und Ihren Codierungsstil anpasst."
+category: "Erste Schritte"
+features:
+  - "Agent Mode"
+thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Die Agents-Konfigurationsdatei ermöglicht es Ihnen, das KI-Verhalten über Markdown-Dateien anzupassen, damit sich die KI an Ihre Projektspezifikationen und Ihren Codierungsstil anpasst. Sie können Codierungsstil, Benennungskonventionen, Kommentar-Anforderungen usw. definieren, und die KI generiert basierend auf diesen Konfigurationen Code, der den Projektstandards entspricht. Diese Funktion ist besonders für die Teamzusammenarbeit geeignet und stellt sicher, dass die von allen Mitgliedern generierten Codierungsstile konsistent sind.
+
+<ShowcaseDetailMeta category="Erste Schritte" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png" alt="Agents-Konfigurationsdatei" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+
+### Konfigurationsdatei erstellen
+
+Erstellen Sie im Projektstammverzeichnis einen `.qwen`-Ordner und erstellen Sie darin eine `AGENTS.md`-Datei. Diese Datei speichert Ihre KI-Verhaltenskonfiguration.
+
+```bash
+mkdir -p .qwen && touch .qwen/AGENTS.md
+```
+
+### Konfiguration schreiben
+
+Schreiben Sie die Konfiguration im Markdown-Format und beschreiben Sie Projektspezifikationen in natürlicher Sprache. Sie können Codierungsstil, Benennungskonventionen, Kommentar-Anforderungen, Framework-Präferenzen usw. definieren, und die KI passt ihr Verhalten basierend auf diesen Konfigurationen an.
+
+```markdown
+# Projektspezifikationen
+
+### Codierungsstil
+
+- TypeScript verwenden
+- Funktionale Programmierung verwenden
+- Detaillierte Kommentare hinzufügen
+
+### Benennungskonventionen
+
+- camelCase für Variablen verwenden
+- UPPER_SNAKE_CASE für Konstanten verwenden
+- PascalCase für Klassennamen verwenden
+```
+
+### Konfiguration anwenden
+
+Nach dem Speichern der Konfigurationsdatei liest die KI diese automatisch und wendet sie an. Im nächsten Gespräch generiert die KI basierend auf der Konfiguration Code, der den Projektstandards entspricht, ohne dass die Spezifikationen wiederholt werden müssen.
+
+</Steps>
+
+<Callout type="info">
+Unterstützt Markdown-Format, beschreiben Sie Projektspezifikationen in natürlicher Sprache.
+</Callout>
+
+<ShowcaseDetailCta />

@@ -1,0 +1,59 @@
+---
+title: "Installation en un clic avec script"
+description: "Installez rapidement Qwen Code via une commande de script. Terminez la configuration de l'environnement en quelques secondes. Prend en charge les systèmes Linux, macOS et Windows."
+category: "Guide de démarrage"
+features:
+  - "Terminal"
+thumbnail: "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Vue d'ensemble
+
+Qwen Code prend en charge l'installation rapide via une seule commande de script. Aucune configuration manuelle des variables d'environnement ou téléchargement de dépendances requis. Le script détecte automatiquement votre type de système d'exploitation, télécharge le package d'installation approprié et termine la configuration. L'ensemble du processus ne prend que quelques secondes et prend en charge trois plateformes principales : **Linux**, **macOS** et **Windows**.
+
+<ShowcaseDetailMeta category="Guide de démarrage" features={["Terminal"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Installation Linux / macOS
+
+Ouvrez votre terminal et exécutez la commande suivante. Le script détectera automatiquement votre architecture système (x86_64 / ARM), téléchargera la version correspondante et terminera la configuration de l'installation.
+
+```bash
+bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source website
+```
+
+### Installation Windows
+
+Exécutez la commande suivante dans PowerShell. Le script téléchargera un fichier batch et exécutera automatiquement le processus d'installation. Une fois terminé, vous pourrez utiliser la commande `qwen` dans n'importe quel terminal.
+
+```bash
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat --source website
+```
+
+### Vérifier l'installation
+
+Une fois l'installation terminée, exécutez la commande suivante dans votre terminal pour confirmer que Qwen Code a été correctement installé. Si vous voyez le numéro de version, l'installation a réussi.
+
+```bash
+qwen --version
+```
+
+</Steps>
+
+<Callout type="info">
+Si vous préférez utiliser npm, vous pouvez également installer globalement via `npm install -g @qwen-code/qwen-code`. Après l'installation, entrez simplement `qwen` pour démarrer. Si vous rencontrez des problèmes d'autorisation, utilisez `sudo npm install -g @qwen-code/qwen-code` et entrez votre mot de passe pour installer.
+</Callout>
+
+<ShowcaseDetailCta />

@@ -1,0 +1,52 @@
+---
+title: "Converter Vídeos do YouTube em Artigos de Blog"
+description: "Use o Qwen Code para converter automaticamente vídeos do YouTube em artigos de blog estruturados."
+category: "Ferramentas de Criação"
+features:
+  - "Skills"
+  - "Web Search"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+Encontrou um ótimo vídeo no YouTube e quer convertê-lo em um artigo de blog? O Qwen Code pode extrair automaticamente o conteúdo do vídeo e gerar artigos de blog bem estruturados e ricos em conteúdo. A IA obtém a transcrição do vídeo, entende os pontos-chave e organiza o conteúdo no formato padrão de artigo de blog.
+
+<ShowcaseDetailMeta category="Ferramentas de Criação" features={["Skills", "Web Search"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Fornecer o Link do Vídeo
+
+Informe ao Qwen Code o link do vídeo do YouTube que deseja converter.
+
+```
+Com base neste skill: https://github.com/QwenLM/qwen-code-examples/tree/main/skills/youtube-transcript-extractor, me ajude a escrever este vídeo como um blog: https://www.youtube.com/watch?v=fJSLnxi1i64
+```
+
+### Gerar e Editar o Artigo de Blog
+
+A IA analisará a transcrição e gerará um artigo com título, introdução, corpo e conclusão.
+
+```
+Me ajude a ajustar o estilo de linguagem deste artigo para ser mais adequado a um blog técnico
+```
+
+</Steps>
+
+<Callout type="info">
+Os artigos gerados suportam o formato Markdown e podem ser publicados diretamente em plataformas de blog ou GitHub Pages.
+</Callout>
+
+<ShowcaseDetailCta />

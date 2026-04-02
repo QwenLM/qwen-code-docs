@@ -1,0 +1,50 @@
+---
+title: "Authentication Login"
+description: "Understand Qwen Code's authentication process, quickly complete account login, and unlock all features."
+category: "Getting Started"
+features:
+  - "Terminal"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Authentication login is the first step in using Qwen Code. Through a simple authentication process, you can quickly unlock all features. The authentication process is safe and reliable, supports multiple login methods, and ensures your account and data security. After completing authentication, you can enjoy a personalized AI programming experience, including custom model configuration, history saving, and other features.
+
+<ShowcaseDetailMeta category="Getting Started" features={["Terminal"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png" alt="Authentication Login" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Trigger Authentication
+
+After starting Qwen Code, enter the `/auth` command, and the system will automatically start the authentication process. The authentication command can be used in the command line or VS Code extension, and the operation method is consistent. The system will detect the current authentication status, and if not logged in, it will guide you to complete the login.
+
+```bash
+/auth
+```
+
+### Browser Login
+
+The system will automatically open the browser and jump to the authentication page. On the authentication page, you can choose to use an Alibaba Cloud account or other supported login methods. The login process is fast and convenient, taking only a few seconds to complete.
+
+### Confirm Login
+
+After successful login, the browser will automatically close or display a success message. Returning to the Qwen Code interface, you will see the authentication success message, indicating that you have successfully logged in and unlocked all features. Authentication information will be automatically saved, so there is no need to log in repeatedly.
+
+</Steps>
+
+<Callout type="info">
+Authentication information is securely stored locally, no need to log in again each time.
+</Callout>
+
+<ShowcaseDetailCta />

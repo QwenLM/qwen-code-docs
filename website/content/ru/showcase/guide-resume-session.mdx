@@ -1,0 +1,63 @@
+---
+title: "Возобновление сессии Resume"
+description: "Прерванные разговоры могут быть возобновлены в любое время без потери контекста и прогресса."
+category: "Руководство по началу работы"
+features:
+  - "Terminal"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+Функция возобновления сессии Resume позволяет прерывать разговоры в любое время и возобновлять их при необходимости без потери контекста и прогресса. Будь то временные дела или многозадачность в параллели, вы можете безопасно приостановить разговор и продолжить позже бесшовно. Эта функция значительно повышает гибкость работы, позволяя вам более эффективно управлять временем и задачами.
+
+<ShowcaseDetailMeta category="Руководство по началу работы" features={["Terminal"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+<Steps>
+
+### Просмотреть список сессий
+
+Используйте команду `qwen --resume` для просмотра всех исторических сессий. Система отобразит время, тему и краткую информацию каждой сессии, помогая вам быстро найти разговор, который нужно возобновить.
+
+```bash
+qwen --resume
+```
+
+### Возобновить сессию
+
+Используйте команду `qwen --resume` для возобновления указанной сессии. Вы можете выбрать разговор для возобновления через ID сессии или номер, и система загрузит полную историю контекста.
+
+```bash
+qwen --resume
+```
+
+### Продолжить работу
+
+После возобновления сессии вы можете продолжать разговор так, будто он никогда не прерывался. Весь контекст, история и прогресс будут полностью сохранены, и ИИ сможет точно понять предыдущее содержание обсуждения.
+
+### Переключать сессии после запуска Qwen Code
+
+После запуска Qwen Code вы можете использовать команду `/resume` для переключения на предыдущую сессию.
+
+```bash
+/resume
+```
+
+</Steps>
+
+<Callout type="info">
+История сессий автоматически сохраняется и поддерживает синхронизацию между устройствами. Вы можете возобновить ту же сессию на разных устройствах.
+</Callout>
+
+<ShowcaseDetailCta />

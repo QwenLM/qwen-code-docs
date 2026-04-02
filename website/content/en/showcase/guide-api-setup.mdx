@@ -1,0 +1,111 @@
+---
+title: "API Configuration Guide"
+description: "Configure API Key and model parameters to customize your AI programming experience, supporting multiple model selections."
+category: "Getting Started"
+features:
+  - "Agent Mode"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+videoUrl: "https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+Configuring an API Key is an important step in using Qwen Code, as it unlocks all features and allows you to access powerful AI models. Through the Alibaba Cloud Bailian platform, you can easily obtain an API Key and choose the most suitable model for different scenarios. Whether for daily development or complex tasks, the right model configuration can significantly improve your work efficiency.
+
+<ShowcaseDetailMeta category="Getting Started" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4" poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Get API Key
+
+Visit the [Alibaba Cloud Bailian Platform](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key), find the API Key management page in the personal center. Click to create a new API Key, and the system will generate a unique key. This key is your credential for accessing Qwen Code services, so please keep it safe.
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+<Callout type="warning">
+Please keep your API Key safe and do not disclose it to others or commit it to the code repository.
+</Callout>
+
+### Configure API Key in Qwen Code
+
+**1. Let Qwen Code configure automatically**
+
+Open the terminal, start Qwen Code directly in the root directory, copy the following code and tell your API-KEY, and the configuration will be successful. Restart Qwen Code and enter `/model` to switch to the configured model.
+
+```json
+Help me configure `settings.json` for Bailian's model according to the following content:
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<model name>",
+            "name": "[Bailian] <model name>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<replace with user's KEY>"
+    },
+}
+For model name input, please refer to: https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all
+My API-KEY is:
+```
+
+Then paste your API-KEY into the input box, tell it the model name you need, such as `qwen3.5-plus`, and send it to complete the configuration.
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+**2. Manual Configuration**
+
+Manually configure the settings.json file. The file location is in the `<user root directory>/.qwen` directory. You can directly copy the following content and modify your API-KEY and model name.
+
+```json
+{
+    "modelProviders": {
+        "openai": [
+          {
+            "id": "<model name>",
+            "name": "[Bailian] <model name>",
+            "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "envKey": "BAILIAN_API_KEY",
+            }
+        ]
+    },
+    "env": {
+        "BAILIAN_API_KEY": "<replace with user's KEY>"
+    },
+}
+```
+
+### Select Model
+
+Choose the appropriate model according to your needs, balancing speed and performance. Different models are suitable for different scenarios. You can choose based on the complexity of the task and response time requirements. Use the `/model` command to quickly switch models.
+
+Common model options:
+- `qwen3.5-plus`: Powerful, suitable for complex tasks
+- `qwen3.5-flash`: Fast, suitable for simple tasks
+- `qwen-max`: Strongest model, suitable for high-difficulty tasks
+
+### Test Connection
+
+Send a test message to confirm the API configuration is correct. If the configuration is successful, Qwen Code will reply to you immediately, which means you are ready to start using AI-assisted programming. If you encounter problems, please check if the API Key is set correctly.
+
+```bash
+Hello, can you help me with coding?
+```
+
+</Steps>
+
+<ShowcaseDetailCta />

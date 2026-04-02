@@ -1,0 +1,46 @@
+---
+title: "LSP IntelliSense"
+description: "By integrating LSP (Language Server Protocol), Qwen Code provides professional-grade code completion and navigation, with real-time code diagnostics."
+category: "Programming"
+features:
+  - "LSP"
+thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+LSP (Language Server Protocol) IntelliSense enables Qwen Code to provide code completion and navigation on par with professional IDEs. By integrating language servers, Qwen Code can precisely understand code structure, type information, and contextual relationships to deliver high-quality code suggestions. Whether it's function signatures, parameter hints, variable name completion, definition jumping, reference finding, or refactoring operations, LSP IntelliSense handles them all smoothly. The real-time diagnostics feature instantly detects syntax errors, type issues, and potential bugs as you code, allowing you to fix them quickly and improve code quality.
+
+<ShowcaseDetailMeta category="Programming" features={["LSP"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png" alt="LSP IntelliSense" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Auto Detection
+
+Qwen Code automatically detects language server configurations in your project. For mainstream programming languages and frameworks, it automatically recognizes and starts the corresponding LSP service. No manual configuration needed—works out of the box. If your project uses a custom language server, you can also specify the LSP path and parameters via a configuration file.
+
+### Enjoy IntelliSense
+
+When you start coding, LSP IntelliSense activates automatically. As you type, it provides precise completion suggestions based on context, including function names, variable names, type annotations, and more. Completion suggestions display type information and documentation, helping you quickly select the correct code. Press Tab to quickly accept a suggestion, or use arrow keys to browse more options.
+
+### Error Diagnostics
+
+LSP real-time diagnostics continuously analyzes your code as you write, detecting potential issues. Errors and warnings are displayed intuitively, including problem location, error type, and fix suggestions. Click on an issue to jump directly to the corresponding location, or use keyboard shortcuts to navigate to the next issue. This instant feedback mechanism lets you detect and fix problems as early as possible.
+
+</Steps>
+
+<Callout type="info">
+Supports mainstream languages including TypeScript, Python, Java, Go, Rust, and frontend frameworks like React, Vue, and Angular. LSP service performance depends on the language server implementation; large projects may require a few seconds of initialization time.
+</Callout>
+
+<ShowcaseDetailCta />

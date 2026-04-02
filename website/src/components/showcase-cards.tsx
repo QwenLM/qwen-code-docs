@@ -3,7 +3,21 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { ArrowRight, Search, Zap, Book, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { featuredItems, texts, learningPaths } from "../showcase-data";
+
+const SUPPORTED_LOCALES = ["zh", "en", "de", "fr", "ja", "pt-BR", "ru"];
+
+function useLocale(): string {
+  const pathname = usePathname();
+  if (!pathname) return "zh";
+  const firstSegment = pathname.split("/").filter(Boolean)[0];
+  return firstSegment && SUPPORTED_LOCALES.includes(firstSegment) ? firstSegment : "zh";
+}
+
+function localizeLink(link: string, locale: string): string {
+  return link.replace(/^\/zh\//, `/${locale}/`);
+}
 
 /* ─── Type Definitions ─── */
 
@@ -82,10 +96,12 @@ const getCategoryGroups = (cards: ShowcaseCard[]): CategoryGroup[] => {
 
 const ShowcaseCardItem = ({
   card,
+  locale,
 }: {
   card: ShowcaseCard;
+  locale: string;
 }) => (
-  <Link href={card.link} className="group text-left w-full h-full block">
+  <Link href={localizeLink(card.link, locale)} className="group text-left w-full h-full block">
     <div
       className="cursor-pointer text-left w-full h-full flex flex-col overflow-hidden rounded-2xl border border-border bg-card hover:border-violet-300 dark:hover:border-violet-700 transition-all duration-300 hover:shadow-lg dark:hover:shadow-xl active:scale-[0.98]"
     >
@@ -205,7 +221,7 @@ const CategoryFilter = ({
 
 /* ─── Learning Path Card Component ─── */
 
-const LearningPathCard = ({ path }: { path: LearningPath }) => {
+const LearningPathCard = ({ path, locale }: { path: LearningPath; locale: string }) => {
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
     zap: Zap,
     book: Book,
@@ -250,7 +266,7 @@ const LearningPathCard = ({ path }: { path: LearningPath }) => {
               </span>
               {'link' in item ? (
                 <a 
-                  href={item.link}
+                  href={localizeLink(item.link, locale)}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors line-clamp-1"
                 >
                   {item.title}
@@ -276,6 +292,7 @@ export const ShowcaseCards = ({
   learningPaths: propLearningPaths,
   texts: propTexts,
 }: ShowcaseCardsProps) => {
+  const locale = useLocale();
   // Use props if provided, otherwise fall back to imported data
   const cards = useMemo(() => {
     if (propCards && propCards.length > 0) return propCards;
@@ -386,6 +403,7 @@ export const ShowcaseCards = ({
                 <ShowcaseCardItem
                   key={card.id}
                   card={card}
+                  locale={locale}
                 />
               ))}
             </div>
@@ -418,7 +436,7 @@ export const ShowcaseCards = ({
           {/* Learning Paths Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {learningPathData.map((path) => (
-              <LearningPathCard key={path.id} path={path} />
+              <LearningPathCard key={path.id} path={path} locale={locale} />
             ))}
           </div>
         </div>

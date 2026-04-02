@@ -1,0 +1,57 @@
+---
+title: "百煉Coding Planモード"
+description: "百煉Coding Planを設定して使用し、複数のモデル選択で複雑なタスクの完了品質を向上させます。"
+category: "入門ガイド"
+features:
+  - "Plan Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png"
+videoUrl: "https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+百煉Coding PlanモードはQwen Codeの高度な機能であり、複雑なプログラミングタスクのために特別に設計されています。インテリジェントなマルチモデル連携により、大規模なタスクを実行可能なステップに分解し、最適な実行パスを自動的に計画できます。大規模なコードベースのリファクタリングから複雑な機能の実装まで、Coding Planはタスク完了の品質と効率を大幅に向上させることができます。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["Plan Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4" poster="https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### 設定インターフェースに入る
+
+Qwen Codeを起動して`/auth`コマンドを入力します。
+
+### Coding Planを選択
+
+設定で百煉Coding Planモードを有効にし、APIキーを入力すると、Qwen Codeが自動的にCoding Planでサポートされているモデルを設定します。
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01cDz8AJ1Cq30rXjuXS_!!6000000000131-2-tps-1696-952.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### モデルを選択
+
+直接`/model`コマンドを入力して、希望のモデルを選択します。
+
+### 複雑なタスクを開始
+
+プログラミングタスクを記述すると、Coding Planが自動的に実行ステップを計画します。タスクの目標、制約条件、期待される結果を詳細に説明できます。AIはタスク要件を分析し、各ステップの具体的な操作と期待される出力を含む構造化された実行計画を生成します。
+
+```bash
+このプロジェクトのデータ層をリファクタリングし、データベースをMySQLからPostgreSQLに移行する必要がありますが、APIインターフェースは変更しません
+```
+
+</Steps>
+
+<Callout type="info">
+Coding Planモードは、アーキテクチャリファクタリング、機能移行など、マルチステップ連携が必要な複雑なタスクに特に適しています。
+</Callout>
+
+<ShowcaseDetailCta />

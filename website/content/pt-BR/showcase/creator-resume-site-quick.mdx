@@ -1,0 +1,67 @@
+---
+title: "Criar Site de Currículo Pessoal"
+description: "Crie um site de currículo pessoal com uma frase – integre suas experiências para gerar uma página de apresentação com exportação em PDF."
+category: "Ferramentas de Criação"
+features:
+  - "Skills"
+thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+videoUrl: "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+Um site de currículo pessoal é uma ferramenta importante para busca de emprego e autopresentação. O Qwen Code pode gerar rapidamente uma página de apresentação profissional com base no conteúdo do seu currículo, com suporte a exportação em PDF para facilitar candidaturas.
+
+<ShowcaseDetailMeta category="Ferramentas de Criação" features={["Skills"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4" poster="https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Fornecer Experiências Pessoais
+
+Informe à IA sua formação educacional, experiência profissional, experiência em projetos e habilidades.
+
+```bash
+Sou desenvolvedor frontend, formado pela universidade XX, com 3 anos de experiência, especializado em React e TypeScript...
+```
+
+### Instalar o Skill de Design Web
+
+Instale o Skill de design web que fornece templates de design de currículo.
+
+```bash
+Verifique se tenho find skills, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills, depois me ajude a instalar web-component-design.
+```
+
+### Escolher Estilo de Design
+
+Descreva o estilo de currículo que prefere, como minimalista, profissional ou criativo.
+
+```bash
+/skills web-component-design Me ajude a criar um site de currículo com estilo minimalista e profissional
+```
+
+### Gerar o Site de Currículo
+
+A IA criará um projeto completo de site de currículo com layout responsivo e estilos de impressão.
+
+```bash
+npm run dev
+```
+
+</Steps>
+
+<Callout type="info">
+Seu site de currículo deve destacar seus pontos fortes e realizações principais, usando dados e exemplos específicos para embasar as descrições.
+</Callout>
+
+<ShowcaseDetailCta />

@@ -1,0 +1,63 @@
+---
+title: "PR レビュー"
+description: "Qwen Code を使用して Pull Request のインテリジェントなコードレビューを実行し、潜在的な問題を自動的に発見します。"
+category: "プログラミング"
+features:
+  - "GitHub"
+thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png"
+videoUrl: "https://cloud.video.taobao.com/vod/Eu3Gyad-mLiz_FZqrXp76EZWYz4fuV6Ogb2wOvb8bBg.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+コードレビューはコード品質を確保する重要なステップですが、時間がかかり問題を見落としがちです。Qwen Code は Pull Request のインテリジェントなコードレビューを支援し、コード変更を自動的に分析し、潜在的なバグを発見し、コード標準を確認し、詳細なレビューレポートを提供します。
+
+<ShowcaseDetailMeta category="プログラミング" features={["GitHub"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/Eu3Gyad-mLiz_FZqrXp76EZWYz4fuV6Ogb2wOvb8bBg.mp4" poster="https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### レビューする PR を指定
+
+PR 番号またはリンクを提供して、レビューしたい Pull Request を Qwen Code に伝えます。
+
+<Callout type="tip">
+PR レビュースキルを使用して PR を分析できます。スキルのインストールについては：[スキルをインストール](./guide-skill-install.mdx)。
+</Callout>
+
+```bash
+/skill pr-review この PR をレビューしてください：<PR リンクまたは番号>
+```
+
+### テストと確認を実行
+
+Qwen Code はコード変更を分析し、関連するテストケースを特定し、コードの正確性を検証するためにテストを実行します。
+
+```bash
+テストを実行して、この PR がすべてのテストケースに合格するか確認してください
+```
+
+### レビューレポートを確認
+
+レビュー完了後、Qwen Code は発見された問題、潜在的なリスク、改善提案を含む詳細なレポートを生成します。
+
+```bash
+レビューレポートを表示し、発見されたすべての問題を一覧表示してください
+```
+
+</Steps>
+
+<Callout type="info">
+Qwen Code のコードレビューは構文と標準だけでなく、コードロジックを深く分析して潜在的なパフォーマンス問題、セキュリティ脆弱性、設計上の欠陥を特定します。
+</Callout>
+
+<ShowcaseDetailCta />

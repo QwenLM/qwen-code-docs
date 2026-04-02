@@ -1,0 +1,68 @@
+---
+title: "Criação de Vídeo Remotion"
+description: "Descreva suas ideias criativas em linguagem natural e use o Skill Remotion para criar conteúdo de vídeo gerado por código."
+category: "Ferramentas de Criação"
+features:
+  - "Skills"
+  - "Remotion"
+thumbnail: "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+Quer criar vídeos mas não sabe programar? Ao descrever suas ideias criativas em linguagem natural, o Qwen Code pode usar o Skill Remotion para gerar código de vídeo. A IA entende sua descrição criativa e gera automaticamente o código do projeto Remotion, incluindo configuração de cenas, efeitos de animação e layout de texto.
+
+<ShowcaseDetailMeta category="Ferramentas de Criação" features={["Skills", "Remotion"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4" poster="https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Instalar o Skill Remotion
+
+Primeiro, instale o Skill Remotion, que contém melhores práticas e templates para criação de vídeo.
+
+```bash
+Verifique se tenho find skills, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, depois me ajude a instalar remotion-best-practice.
+```
+
+### Descrever Sua Ideia Criativa
+
+Descreva em linguagem natural o conteúdo de vídeo que deseja criar, incluindo tema, estilo, duração e cenas-chave.
+
+```bash
+@file Com base no documento, crie um vídeo promocional de produto de 30 segundos com estilo moderno e minimalista.
+```
+
+### Visualizar e Ajustar
+
+O Qwen Code gerará o código do projeto Remotion com base na sua descrição. Inicie o servidor de desenvolvimento para visualizar.
+
+```bash
+npm run dev
+```
+
+### Renderizar e Exportar
+
+Quando estiver satisfeito, use o comando build para renderizar o vídeo final.
+
+```bash
+Me ajude a renderizar e exportar o vídeo diretamente.
+```
+
+</Steps>
+
+<Callout type="info">
+A abordagem baseada em prompts é ideal para prototipagem rápida e exploração criativa. O código gerado pode ser editado manualmente para implementar funcionalidades mais complexas.
+</Callout>
+
+<ShowcaseDetailCta />

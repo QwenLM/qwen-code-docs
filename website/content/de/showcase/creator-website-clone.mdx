@@ -1,0 +1,63 @@
+---
+title: "Ihre Lieblingswebsite mit einem Satz nachbilden"
+description: "Geben Sie einen Screenshot an Qwen Code und die KI analysiert die Seitenstruktur und generiert vollständigen Frontend-Code."
+category: "Kreativ-Tools"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Haben Sie ein Website-Design entdeckt, das Sie schnell nachbilden möchten? Geben Sie einfach einen Screenshot an Qwen Code und die KI analysiert die Seitenstruktur und generiert vollständigen Frontend-Code. Qwen Code erkennt das Seitenlayout, Farbschema und die Komponentenstruktur und generiert ausführbaren Code mit modernen Frontend-Technologien.
+
+<ShowcaseDetailMeta category="Kreativ-Tools" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+
+### Website-Screenshot vorbereiten
+
+Machen Sie einen Screenshot der Website-Oberfläche, die Sie nachbilden möchten, und stellen Sie sicher, dass er klar und vollständig ist.
+
+### Entsprechenden Skill installieren
+
+Installieren Sie den Skill für Bilderkennung und Frontend-Code-Generierung.
+
+```bash
+Prüfe, ob ich find skills habe, falls nicht, installiere es direkt: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, dann hilf mir, web-component-design zu installieren.
+```
+
+### Screenshot einfügen und Anforderungen beschreiben
+
+Fügen Sie den Screenshot in das Gespräch ein und teilen Sie Qwen Code Ihre spezifischen Anforderungen mit.
+
+```bash
+/skills web-component-design Basierend auf diesem Skill, bilde eine Webseite HTML basierend auf @website.png nach, achte darauf, dass Bildreferenzen gültig sind.
+```
+
+Beispiel-Screenshot:
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### Ausführen und Vorschau
+
+Öffnen Sie die entsprechende Webseite zur Überprüfung. Bei Bedarf können Sie weiter mit der KI interagieren, um den Code anzupassen.
+
+</Steps>
+
+<Callout type="info">
+Der generierte Code folgt modernen Frontend-Best-Practices mit guter Struktur und Wartbarkeit. Sie können ihn weiter anpassen und erweitern.
+</Callout>
+
+<ShowcaseDetailCta />

@@ -1,0 +1,63 @@
+---
+title: "Replicate Your Favorite Website with One Sentence"
+description: "Give a screenshot to Qwen Code and AI analyzes the page structure to generate complete frontend code."
+category: "Creator Tools"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+See a website design you love and want to quickly replicate it? Just give a screenshot to Qwen Code and the AI can analyze the page structure and generate complete frontend code. Qwen Code will recognize the page layout, color scheme, and component structure, then generate runnable code using modern frontend technology stacks. Whether for learning design, rapid prototyping, or project reference, this greatly improves your development efficiency, letting you obtain high-quality code in minutes.
+
+<ShowcaseDetailMeta category="Creator Tools" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Prepare a Website Screenshot
+
+Take a screenshot of the website interface you want to replicate, making sure it's clear and complete, including the main layout and design elements.
+
+### Install the Corresponding Skill
+
+Install the image recognition and frontend code generation Skill, which contains the ability to analyze web designs and generate code.
+
+```bash
+Check if I have find skills, if not install it directly: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, then help me install web-component-design to the current directory qwen code skills.
+```
+
+### Paste the Screenshot and Describe Your Requirements
+
+Paste the screenshot into the conversation and tell Qwen Code your specific requirements, such as which technology stack to use and what features are needed.
+
+```bash
+/skills web-component-design Based on this skill, replicate a webpage HTML based on @website.png, making sure image references are valid.
+```
+
+Example screenshot:
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### Run and Preview
+
+Open the corresponding webpage to check the result. If you need to adjust the design or functionality, continue interacting with the AI to modify the code until you're satisfied.
+
+</Steps>
+
+<Callout type="info">
+The generated code follows modern frontend best practices with good structure and maintainability. You can further customize and extend it, adding interactive features and backend integration.
+</Callout>
+
+<ShowcaseDetailCta />

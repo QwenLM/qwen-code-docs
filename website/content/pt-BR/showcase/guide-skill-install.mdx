@@ -1,0 +1,78 @@
+---
+title: "Instalar Skills"
+description: "Instale extensões de Skills de várias maneiras, incluindo instalação por linha de comando e por pasta, para atender às necessidades de diferentes cenários."
+category: "Guia de Início"
+features:
+  - "Skills"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Visão geral
+
+O Qwen Code suporta vários métodos de instalação de Skills. Você pode escolher o método mais adequado com base em seu cenário real. A instalação por linha de comando é adequada para ambientes online, sendo rápida e conveniente. A instalação por pasta é adequada para ambientes offline ou Skills personalizados, sendo flexível e controlável.
+
+<ShowcaseDetailMeta category="Guia de Início" features={["Skills"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Passos
+
+<Steps>
+
+### Verificar e Instalar Skill find-skills
+
+No Qwen Code, descreva suas necessidades diretamente e deixe o Qwen Code ajudá-lo a encontrar e instalar a Skill necessária:
+
+```
+Verifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code
+```
+
+### Instalar Skills Necessárias, por exemplo web-component-design:
+
+```
+/skills find-skills install web-component-design -y -a qwen-code
+```
+
+O Qwen Code executará automaticamente o comando de instalação, baixando e instalando a Skill do repositório especificado. Você também pode instalar em uma frase:
+
+```
+Verifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale [nome da skill] no diretório atual de skills do qwen code.
+```
+
+### Verificar a Instalação
+
+Após a conclusão da instalação, verifique se a Skill foi carregada corretamente:
+
+```bash
+/skills
+```
+
+</Steps>
+
+<Callout type="info">
+A instalação por linha de comando requer conexão com a internet. O parâmetro `-y` significa confirmação automática, e `-a qwen-code` especifica a instalação no Qwen Code.
+</Callout>
+
+<Callout type="info">
+**Requisitos de Estrutura do Diretório de Skills**
+
+Cada pasta de Skill deve conter um arquivo `skill.md`, que define o nome, descrição e regras de acionamento da Skill:
+
+```
+~/.qwen/skills/
+├── my-skill/
+│   ├── SKILL.md      # Obrigatório: arquivo de configuração da Skill
+│   └── scripts/      # Opcional: arquivos de script
+└── another-skill/
+    └── SKILL.md
+```
+</Callout>
+
+<ShowcaseDetailCta />

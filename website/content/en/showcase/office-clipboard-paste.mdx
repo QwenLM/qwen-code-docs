@@ -1,0 +1,46 @@
+---
+title: "Clipboard Image Paste"
+description: "Paste screenshots directly from the clipboard into the conversation window. AI instantly understands the image content and provides help."
+category: "Daily Tasks"
+features:
+  - "Image Recognition"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+The clipboard image paste feature allows you to paste any screenshot directly into Qwen Code's conversation window without needing to save the file first and then upload it. Whether it's an error screenshot, UI design mockup, code snippet screenshot, or any other image, Qwen Code can instantly understand its content and provide help based on your needs. This convenient interaction method greatly improves communication efficiency, allowing you to quickly get AI's analysis and suggestions when encountering problems.
+
+<ShowcaseDetailMeta category="Daily Tasks" features={["Image Recognition"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png" alt="Clipboard Image Paste" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Copy Image to Clipboard
+
+Use the system screenshot tool (macOS: `Cmd+Shift+4`, Windows: `Win+Shift+S`) to capture screen content, or copy images from browsers or file managers. Screenshots are automatically saved to the clipboard without additional operations.
+
+### Paste into Conversation Window
+
+In Qwen Code's conversation input box, use `Cmd+V` (macOS) or `Ctrl+V` (Windows) to paste the image. The image will automatically display in the input box, and you can simultaneously enter text describing your question or needs.
+
+### Get AI Analysis Results
+
+After sending the message, Qwen Code will analyze the image content and give a reply. It can identify errors in code screenshots, analyze the layout of UI design mockups, interpret chart data, etc. You can continue to ask questions and discuss any details in the image in depth.
+
+</Steps>
+
+<Callout type="info">
+Supports common image formats such as PNG, JPEG, GIF. Image size is recommended not to exceed 10MB to ensure the best recognition effect. For code screenshots, it is recommended to use high resolution to improve text recognition accuracy.
+</Callout>
+
+<ShowcaseDetailCta />

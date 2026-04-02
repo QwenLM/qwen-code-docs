@@ -1,0 +1,61 @@
+---
+title: "@file-Referenzfunktion"
+description: "Verweisen Sie im Gespräch mit @file auf Projektdateien, damit AI Ihren Code-Kontext präzise versteht."
+category: "Erste Schritte"
+features:
+  - "Agent Mode"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Die @file-Referenzfunktion ermöglicht es Ihnen, im Gespräch direkt auf Projektdateien zu verweisen, damit AI Ihren Code-Kontext präzise versteht. Ob es sich um eine einzelne Datei oder mehrere Dateien handelt – AI wird den Codeinhalt lesen und analysieren, um genauere Vorschläge und Antworten zu geben. Diese Funktion eignet sich besonders für Szenarien wie Code-Review, Fehlerbehebung und Code-Refactoring.
+
+<ShowcaseDetailMeta category="Erste Schritte" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png" alt="@file-Referenzfunktion" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+
+### Einzelne Datei referenzieren
+
+Verwenden Sie den `@file`-Befehl gefolgt vom Dateipfad, um auf eine einzelne Datei zu verweisen. AI wird den Dateiinhalt lesen, die Codestruktur und -logik verstehen und dann basierend auf Ihren Fragen gezielte Antworten geben.
+
+```bash
+@file ./src/main.py
+Erklären Sie, was diese Funktion tut
+```
+
+Sie können auch Referenzdateien referenzieren und Qwen Code bitten, sie als neues Dokument zu organisieren und zu schreiben. Dies vermeidet weitgehend, dass AI Ihre Bedürfnisse missversteht und Inhalte generiert, die nicht in den Referenzmaterialien enthalten sind:
+
+```bash
+@file Helfen Sie mir, basierend auf dieser Datei einen öffentlichen Account-Artikel zu schreiben
+```
+
+### Anforderungen beschreiben
+
+Nachdem Sie die Datei referenziert haben, beschreiben Sie Ihre Bedürfnisse oder Fragen klar. AI wird basierend auf dem Dateiinhalt analysieren und genaue Antworten oder Vorschläge geben. Sie können nach Codelogik fragen, Probleme finden, Optimierungen anfordern usw.
+
+### Mehrere Dateien referenzieren
+
+Durch mehrmalige Verwendung des `@file`-Befehls können Sie gleichzeitig auf mehrere Dateien verweisen. AI wird alle referenzierten Dateien umfassend analysieren, ihre Beziehungen und Inhalte verstehen und umfassendere Antworten geben.
+
+```bash
+@file1 @file2 Basierend auf den Materialien in diesen beiden Dateien helfen Sie mir, ein Lern-Dokument für Anfänger zu organisieren
+```
+
+</Steps>
+
+<Callout type="info">
+@file unterstützt relative und absolute Pfade sowie Platzhalterabgleich für mehrere Dateien.
+</Callout>
+
+<ShowcaseDetailCta />

@@ -6,17 +6,18 @@ features:
   - "Agent 模式"
 thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png"
 model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
 ---
 import { Steps, Callout } from 'nextra/components'
 import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
 import Link from 'next/link'
 
-
 ## 概述
 
 Agents 配置文件让你能够通过 Markdown 文件自定义 AI 行为，让 AI 适配你的项目规范和编码风格。你可以定义代码风格、命名规范、注释要求等，AI 会根据这些配置生成符合项目标准的代码。这个功能特别适合团队协作，确保所有成员生成的代码风格一致。
 
-<ShowcaseDetailMeta category="入门指南" features={["Agent 模式"]} model="qwen3.5-plus" />
+<ShowcaseDetailMeta category="入门指南" features={["Agent 模式"]} model="qwen3.5-plus" author="Qwen Code Team" />
 
 <img src="https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png" alt="Agents 配置文件" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
 
@@ -39,12 +40,14 @@ mkdir -p .qwen && touch .qwen/AGENTS.md
 ```markdown
 # 项目规范
 
-## 代码风格
+### 代码风格
+
 - 使用 TypeScript
 - 使用函数式编程
 - 添加详细的注释
 
-## 命名规范
+### 命名规范
+
 - 变量使用 camelCase
 - 常量使用 UPPER_SNAKE_CASE
 - 类名使用 PascalCase
@@ -59,10 +62,5 @@ mkdir -p .qwen && touch .qwen/AGENTS.md
 <Callout type="info">
 支持 Markdown 格式，用自然语言描述项目规范。
 </Callout>
-
-## 相关推荐
-
-- [Headless 模式](./guide-headless-mode) — 在无 GUI 环境下使用 Qwen Code
-- [API 设置](./guide-api-setup.mdx) — 配置 API Key 和模型参数，自定义你的 AI 编程体验
 
 <ShowcaseDetailCta />

@@ -1,0 +1,1601 @@
+{
+  "code-lsp-intelligence": {
+    "title": "LSP インテリセンス",
+    "description": "LSP（Language Server Protocol）を統合することで、Qwen Code はプロフェッショナルレベルのコード補完とナビゲーション、リアルタイム診断を提供します。",
+    "category": "プログラミング",
+    "features": [
+      "LSP"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i1/O1CN01kxCAnu1c0SPDCZsUt_!!6000000003538-2-tps-1694-948.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "LSP（Language Server Protocol）インテリセンスにより、Qwen Code はプロフェッショナルな IDE に匹敵するコード補完とナビゲーション体験を提供できます。言語サーバーを統合することで、コード構造、型情報、コンテキスト関係を正確に理解し、高品質なコード提案を提供します。関数シグネチャ、パラメータヒント、変数名補完、定義ジャンプ、参照検索、リファクタリング操作など、LSP インテリセンスがすべてをスムーズにサポートします。",
+    "steps": [
+      {
+        "title": "自動検出",
+        "content": "Qwen Code はプロジェクト内の言語サーバー設定を自動的に検出します。主流のプログラミング言語とフレームワークに対して、対応する LSP サービスを自動的に認識・起動します。手動設定不要、すぐに使えます。"
+      },
+      {
+        "title": "インテリセンスを楽しむ",
+        "content": "コーディング開始時、LSP インテリセンスが自動的に有効になります。入力中にコンテキストに基づいた正確な補完候補（関数名、変数名、型注釈など）を提供します。Tab キーで候補を素早く受け入れられます。"
+      },
+      {
+        "title": "エラー診断",
+        "content": "LSP リアルタイム診断がコーディング中にコードを継続的に分析し、潜在的な問題を検出します。エラーと警告は問題の場所、エラータイプ、修正提案とともに直感的に表示されます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "TypeScript、Python、Java、Go、Rust などの主流言語、および React、Vue、Angular などのフロントエンドフレームワークをサポートしています。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "code-pr-review": {
+    "title": "PR レビュー",
+    "description": "Qwen Code を使用して Pull Request のインテリジェントなコードレビューを実行し、潜在的な問題を自動的に発見します。",
+    "category": "プログラミング",
+    "features": [
+      "GitHub"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/O1CN01bPIGqq27gp8F86nXp_!!6000000007827-2-videocover-1700-952.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/Eu3Gyad-mLiz_FZqrXp76EZWYz4fuV6Ogb2wOvb8bBg.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "コードレビューはコード品質を確保する重要なステップですが、時間がかかり問題を見落としがちです。Qwen Code は Pull Request のインテリジェントなコードレビューを支援し、コード変更を自動的に分析し、潜在的なバグを発見し、コード標準を確認し、詳細なレビューレポートを提供します。",
+    "steps": [
+      {
+        "title": "レビューする PR を指定",
+        "content": "PR 番号またはリンクを提供して、レビューしたい Pull Request を Qwen Code に伝えます。\n\n:::callout{type=\"tip\"}\nPR レビュースキルを使用して PR を分析できます。スキルのインストールについては：[スキルをインストール](./guide-skill-install.mdx)。\n:::\n\n```bash\n/skill pr-review この PR をレビューしてください：<PR リンクまたは番号>\n```"
+      },
+      {
+        "title": "テストと確認を実行",
+        "content": "Qwen Code はコード変更を分析し、関連するテストケースを特定し、コードの正確性を検証するためにテストを実行します。\n\n```bash\nテストを実行して、この PR がすべてのテストケースに合格するか確認してください\n```"
+      },
+      {
+        "title": "レビューレポートを確認",
+        "content": "レビュー完了後、Qwen Code は発見された問題、潜在的なリスク、改善提案を含む詳細なレポートを生成します。\n\n```bash\nレビューレポートを表示し、発見されたすべての問題を一覧表示してください\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Qwen Code のコードレビューは構文と標準だけでなく、コードロジックを深く分析して潜在的なパフォーマンス問題、セキュリティ脆弱性、設計上の欠陥を特定します。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "code-solve-issue": {
+    "title": "issue を解決",
+    "description": "Qwen Code を使用してオープンソースプロジェクトの issue を分析・解決し、理解からコード提出まで全プロセスを追跡します。",
+    "category": "プログラミング",
+    "features": [
+      "GitHub"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01NVsgsm28t1IKZxoN3_!!6000000007989-2-videocover-1700-952.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/HV0QgHEac8zu3tL7gJqqMZlZDtHaFeNNoJ412hgkKYI.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "オープンソースプロジェクトの issue を解決することは、プログラミングスキルを向上させ、技術的な影響力を構築する重要な方法です。Qwen Code は問題を素早く特定し、関連コードを理解し、修正計画を立て、コード変更を実装するのを支援します。",
+    "steps": [
+      {
+        "title": "issue を選択",
+        "content": "GitHub で興味深いまたは適切な issue を見つけます。明確な説明、再現手順、期待される結果がある issue を優先してください。`good first issue` や `help wanted` などのラベルは初心者向けのタスクを示します。"
+      },
+      {
+        "title": "プロジェクトをクローンして問題を特定",
+        "content": "プロジェクトコードをダウンロードし、AI に問題を特定させます。`@file` を使用して関連ファイルを参照します。\n\n```bash\nこの issue に記述されている問題がどこにあるか分析してください、issue リンク：<issue リンク>\n```"
+      },
+      {
+        "title": "関連コードを理解",
+        "content": "AI に関連するコードロジックと依存関係を説明させます。"
+      },
+      {
+        "title": "修正計画を立てる",
+        "content": "AI と可能な解決策を議論し、最善のものを選択します。"
+      },
+      {
+        "title": "コード変更を実装",
+        "content": "AI のガイダンスに従ってコードを段階的に変更し、テストします。\n\n```bash\nこの問題を解決するためにこのコードを変更してください\n```"
+      },
+      {
+        "title": "PR を提出",
+        "content": "変更完了後、PR を提出してプロジェクトメンテナーのレビューを待ちます。\n\n```bash\nこの問題を解決するための PR を提出してください\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "オープンソースの issue を解決することは技術スキルを向上させるだけでなく、技術的な影響力を構築し、キャリア発展に貢献します。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "creator-oss-promo-video": {
+    "title": "オープンソースプロジェクトのプロモーション動画を作成",
+    "description": "リポジトリ URL を提供するだけで、AI が美しいプロジェクトデモ動画を生成します。",
+    "category": "クリエイターツール",
+    "features": [
+      "Skills",
+      "Remotion"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN01KKPAv51ZL7QcgguxA_!!6000000003177-2-tps-2880-1622.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/TwRRLlr4EHfv-8kvb0J-w7zj70zxoGY7wiaPewqm4l0.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "オープンソースプロジェクトのプロモーション動画を作りたいけど動画制作の経験がない？Qwen Code が自動的に美しいプロジェクトデモ動画を生成します。GitHub リポジトリ URL を提供するだけで、AI がプロジェクト構造を分析し、主要機能を抽出し、アニメーションスクリプトを生成し、Remotion を使用してプロフェッショナルな動画をレンダリングします。",
+    "steps": [
+      {
+        "title": "リポジトリを準備",
+        "content": "GitHub リポジトリに README、スクリーンショット、機能説明などの完全なプロジェクト情報とドキュメントが含まれていることを確認します。"
+      },
+      {
+        "title": "プロモーション動画を生成",
+        "content": "希望する動画スタイルとフォーカスを Qwen Code に伝えると、AI が自動的にプロジェクトを分析して動画を生成します。\n\n```bash\nこのスキルに基づいて https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md、オープンソースリポジトリのデモ動画を生成してください：<リポジトリ URL>\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "生成された動画は複数の解像度とフォーマットをサポートし、YouTube などの動画プラットフォームに直接アップロードできます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "creator-remotion-video": {
+    "title": "Remotion 動画制作",
+    "description": "自然言語でアイデアを説明し、Remotion スキルを使用してコード生成の動画コンテンツを作成します。",
+    "category": "クリエイターツール",
+    "features": [
+      "Skills",
+      "Remotion"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/6000000003932/O1CN01LtxRdA1euuSRJidi5_!!6000000003932-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/gIcfxkuLepTPXRLia5V-NCOFOwwJy-V2j2iXx6ifZms.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "動画を作りたいけどコードが書けない？自然言語でアイデアを説明するだけで、Qwen Code が Remotion スキルを使用して動画コードを生成します。AI があなたのクリエイティブな説明を理解し、シーン設定、アニメーション効果、テキストレイアウトを含む Remotion プロジェクトコードを自動生成します。",
+    "steps": [
+      {
+        "title": "Remotion スキルをインストール",
+        "content": "まず、動画制作のベストプラクティスとテンプレートを含む Remotion スキルをインストールします。\n\n```bash\nfind skills があるか確認し、なければ直接インストール：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code、その後 remotion-best-practice をインストールしてください。\n```"
+      },
+      {
+        "title": "アイデアを説明",
+        "content": "作りたい動画コンテンツをテーマ、スタイル、長さ、主要シーンを含めて自然言語で詳しく説明します。\n\n```bash\n@file ドキュメントに基づいて、モダンでシンプルなスタイルの 30 秒の製品プロモーション動画を作成してください。\n```"
+      },
+      {
+        "title": "プレビューと調整",
+        "content": "Qwen Code があなたの説明に基づいて Remotion プロジェクトコードを生成します。開発サーバーを起動してプレビューします。\n\n```bash\nnpm run dev\n```"
+      },
+      {
+        "title": "レンダリングとエクスポート",
+        "content": "満足したら、ビルドコマンドを使用して最終動画をレンダリングします。\n\n```bash\n動画を直接レンダリングしてエクスポートしてください。\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "プロンプトベースのアプローチは素早いプロトタイピングとクリエイティブな探索に最適です。生成されたコードはさらに手動で編集できます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "creator-resume-site-quick": {
+    "title": "個人履歴書サイトを作成",
+    "description": "一言で個人履歴書サイトを作成—経験を統合してショーケースページを生成し、PDF エクスポートで簡単に提出できます。",
+    "category": "クリエイターツール",
+    "features": [
+      "Skills"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "個人履歴書サイトは就職活動と自己アピールの重要なツールです。Qwen Code は履歴書の内容に基づいてプロフェッショナルなショーケースページを素早く生成し、PDF エクスポートをサポートして提出を簡単にします。",
+    "steps": [
+      {
+        "title": "個人経験を提供",
+        "content": "学歴、職歴、プロジェクト経験、スキルセットなどの情報を AI に伝えます。\n\n```bash\n私はフロントエンドエンジニアで、XX 大学を卒業し、3 年の経験があり、React と TypeScript が得意です...\n```"
+      },
+      {
+        "title": "ウェブデザインスキルをインストール",
+        "content": "履歴書デザインテンプレートを提供するウェブデザインスキルをインストールします。\n\n```bash\nfind skills があるか確認し、なければ直接インストール：npx skills add https://github.com/vercel-labs/skills --skill find-skills、その後 web-component-design をインストールしてください。\n```"
+      },
+      {
+        "title": "デザインスタイルを選択",
+        "content": "ミニマリスト、プロフェッショナル、クリエイティブなど、好みの履歴書スタイルを説明します。\n\n```bash\n/skills web-component-design ミニマリストでプロフェッショナルなスタイルの履歴書サイトをデザインしてください\n```"
+      },
+      {
+        "title": "履歴書サイトを生成",
+        "content": "AI がレスポンシブレイアウトと印刷スタイルを含む完全な履歴書サイトプロジェクトを作成します。\n\n```bash\nnpm run dev\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "履歴書サイトはあなたのコアな強みと実績を強調し、具体的なデータと事例で説明を裏付けるべきです。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "creator-website-clone": {
+    "title": "好きなウェブサイトを一言で再現",
+    "description": "Qwen Code にスクリーンショットを渡すと、AI がページ構造を分析して完全なフロントエンドコードを生成します。",
+    "category": "クリエイターツール",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "気に入ったウェブサイトのデザインを素早く再現したい？Qwen Code にスクリーンショットを渡すだけで、AI がページ構造を分析して完全なフロントエンドコードを生成します。Qwen Code はページレイアウト、カラースキーム、コンポーネント構造を認識し、モダンなフロントエンド技術スタックを使用して実行可能なコードを生成します。",
+    "steps": [
+      {
+        "title": "ウェブサイトのスクリーンショットを準備",
+        "content": "再現したいウェブサイトのインターフェースをスクリーンショットし、主要なレイアウトとデザイン要素を含む明確で完全なものにします。"
+      },
+      {
+        "title": "対応するスキルをインストール",
+        "content": "画像認識とフロントエンドコード生成スキルをインストールします。\n\n```bash\nfind skills があるか確認し、なければ直接インストール：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code、その後 web-component-design をインストールしてください。\n```"
+      },
+      {
+        "title": "スクリーンショットを貼り付けて要件を説明",
+        "content": "スクリーンショットを会話に貼り付け、使用する技術スタックや必要な機能など具体的な要件を Qwen Code に伝えます。\n\n```bash\n/skills web-component-design このスキルに基づいて、@website.png を元にウェブページ HTML を再現してください。画像参照が有効であることに注意してください。\n```\n\nサンプルスクリーンショット：\n\n<img src=\"https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />"
+      },
+      {
+        "title": "実行とプレビュー",
+        "content": "対応するウェブページを開いて確認します。デザインや機能を調整する必要がある場合は、AI との対話を続けてコードを修正します。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "生成されたコードはモダンなフロントエンドのベストプラクティスに従い、良好な構造と保守性を持ちます。さらにカスタマイズして拡張できます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "creator-youtube-to-blog": {
+    "title": "YouTube 動画をブログ記事に変換",
+    "description": "Qwen Code を使用して YouTube 動画を構造化されたブログ記事に自動変換します。",
+    "category": "クリエイターツール",
+    "features": [
+      "Skills",
+      "Web Search"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000000040/O1CN0173NMvF1CAMxpe5nTJ_!!6000000000040-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/P9CitZbzQunRT0QIkeZcEbhN5bSLiR95LftYE_t5BpY.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "素晴らしい YouTube 動画を見つけてブログ記事に変換したい？Qwen Code が自動的に動画コンテンツを抽出し、構造が明確で内容豊富なブログ記事を生成します。AI が動画の文字起こしを取得し、要点を理解し、標準的なブログ記事形式でコンテンツを整理します。",
+    "steps": [
+      {
+        "title": "動画リンクを提供",
+        "content": "変換したい YouTube 動画のリンクを Qwen Code に伝えます。\n\n```\nこのスキルに基づいて：https://github.com/QwenLM/qwen-code-examples/tree/main/skills/youtube-transcript-extractor、この動画をブログとして書いてください：https://www.youtube.com/watch?v=fJSLnxi1i64\n```"
+      },
+      {
+        "title": "ブログ記事を生成して編集",
+        "content": "AI が文字起こしを分析し、タイトル、導入、本文、まとめを含む記事を生成します。\n\n```\nこの記事の言語スタイルを技術ブログに適したものに調整してください\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "生成された記事は Markdown 形式をサポートし、ブログプラットフォームや GitHub Pages に直接公開できます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-agents-config": {
+    "title": "Agents設定ファイル",
+    "description": "Agents MDファイルでAIの動作をカスタマイズし、AIをプロジェクト仕様とコーディングスタイルに適応させます。",
+    "category": "入門ガイド",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "Agents設定ファイルを使用すると、MarkdownファイルでAIの動作をカスタマイズし、AIをプロジェクト仕様とコーディングスタイルに適応させることができます。コードスタイル、命名規則、コメント要件などを定義でき、AIはこれらの設定に基づいてプロジェクト標準に準拠したコードを生成します。この機能は特にチームコラボレーションに適しており、すべてのメンバーが生成するコードスタイルの一貫性を確保します。",
+    "steps": [
+      {
+        "title": "設定ファイルを作成",
+        "content": "プロジェクトルートディレクトリに`.qwen`フォルダを作成し、その中に`AGENTS.md`ファイルを作成します。このファイルはAIの動作設定を保存します。\n\n```bash\nmkdir -p .qwen && touch .qwen/AGENTS.md\n```"
+      },
+      {
+        "title": "設定を記述",
+        "content": "Markdown形式で設定を記述し、自然言語でプロジェクト仕様を記述します。コードスタイル、命名規則、コメント要件、フレームワークの好みなどを定義でき、AIはこれらの設定に基づいて動作を調整します。\n\n```markdown\n# プロジェクト仕様"
+      },
+      {
+        "title": "コードスタイル",
+        "content": "- TypeScriptを使用\n- 関数型プログラミングを使用\n- 詳細なコメントを追加"
+      },
+      {
+        "title": "命名規則",
+        "content": "- 変数はcamelCaseを使用\n- 定数はUPPER_SNAKE_CASEを使用\n- クラス名はPascalCaseを使用\n```"
+      },
+      {
+        "title": "設定を適用",
+        "content": "設定ファイルを保存すると、AIは自動的にこれらの設定を読み込んで適用します。次回の対話で、AIは設定に基づいてプロジェクト標準に準拠したコードを生成し、仕様を繰り返し説明する必要がありません。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Markdown形式をサポートし、自然言語でプロジェクト仕様を記述します。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-api-setup": {
+    "title": "API設定ガイド",
+    "description": "APIキーとモデルパラメータを設定してAIプログラミング体験をカスタマイズし、複数のモデル選択をサポートします。",
+    "category": "入門ガイド",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "APIキーの設定はQwen Codeを使用する上で重要なステップであり、すべての機能をアンロックし、強力なAIモデルにアクセスできるようにします。Alibaba Cloud百煉プラットフォームを通じて、APIキーを簡単に取得し、さまざまなシナリオに最適なモデルを選択できます。日常的な開発から複雑なタスクまで、適切なモデル設定は作業効率を大幅に向上させることができます。",
+    "steps": [
+      {
+        "title": "APIキーを取得",
+        "content": "[Alibaba Cloud百煉プラットフォーム](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key)にアクセスし、パーソナルセンターでAPIキー管理ページを見つけます。新しいAPIキーを作成をクリックすると、システムが一意のキーを生成します。このキーはQwen Codeサービスにアクセスするための認証情報ですので、必ず安全に保管してください。\n\n<img src=\"https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />\n\n:::callout{type=\"warning\"}\nAPIキーは安全に保管し、他人に漏らしたりコードリポジトリにコミットしたりしないでください。\n:::"
+      },
+      {
+        "title": "Qwen CodeでAPIキーを設定",
+        "content": "**1. Qwen Codeに自動設定させる**\n\nターミナルを開き、ルートディレクトリでQwen Codeを直接起動し、以下のコードをコピーしてAPIキーを伝えると、設定が成功します。Qwen Codeを再起動して`/model`を入力すると、設定したモデルに切り替えることができます。\n\n```json\n以下の内容に従って百煉のモデルの`settings.json`を設定してください：\n{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<モデル名>\",\n            \"name\": \"[Bailian] <モデル名>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<ユーザーのKEYに置換>\"\n    },\n}\nモデル名の入力については、以下を参照してください：https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all\n私のAPIキーは：\n```\n\nその後、APIキーを入力ボックスに貼り付け、必要なモデル名（例：`qwen3.5-plus`）を伝え、送信すると設定が完了します。\n\n<img src=\"https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />\n\n**2. 手動設定**\n\nsettings.jsonファイルを手動で設定します。ファイルの場所は`<ユーザールートディレクトリ>/.qwen`ディレクトリにあります。以下の内容をコピーして、APIキーとモデル名を変更してください。\n\n```json\n{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<モデル名>\",\n            \"name\": \"[Bailian] <モデル名>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<ユーザーのKEYに置換>\"\n    },\n}\n```"
+      },
+      {
+        "title": "モデルを選択",
+        "content": "ニーズに応じて適切なモデルを選択し、速度とパフォーマンスのバランスを取ります。異なるモデルは異なるシナリオに適しています。タスクの複雑さと応答時間の要件に基づいて選択できます。`/model`コマンドを使用すると、モデルを素早く切り替えることができます。\n\n一般的なモデルオプション：\n- `qwen3.5-plus`: 強力で、複雑なタスクに適している\n- `qwen3.5-flash`: 高速で、単純なタスクに適している\n- `qwen-max`: 最強のモデルで、高難易度のタスクに適している"
+      },
+      {
+        "title": "接続をテスト",
+        "content": "テストメッセージを送信して、API設定が正しいことを確認します。設定が成功すると、Qwen Codeはすぐに返信し、AI支援プログラミングを開始する準備ができていることを意味します。問題が発生した場合は、APIキーが正しく設定されているかどうかを確認してください。\n\n```bash\nHello, can you help me with coding?\n```"
+      }
+    ],
+    "callouts": [],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-arena-mode": {
+    "title": "Agent Arena：複数のモデルが同時に問題を解決",
+    "description": "/arenaコマンドを使って複数のAIモデルに同じタスクを同時に処理させ、結果を比較して最適なソリューションを選択します。",
+    "category": "プログラミング",
+    "features": [
+      "Arena"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "重要なコードは同僚にレビューを頼みますよね。今では複数のAIモデルに同じタスクを同時に処理させることができます。Agent Arenaでは異なるモデルの能力を比較できます — `/arena` を呼び出し、モデルを選択し、タスクを入力して、最良の結果を選びましょう。",
+    "steps": [
+      {
+        "title": "/arenaコマンドを入力",
+        "content": "Qwen Codeのチャットで `/arena` と入力し、`start` を選択してアリーナモードに入ります。\n\n```bash\n/arena start\n```"
+      },
+      {
+        "title": "参加するモデルを選択",
+        "content": "利用可能なモデルリストから比較したいモデルを選択します。`space` を押して2つ以上のモデルを選択できます。"
+      },
+      {
+        "title": "タスクの説明を入力",
+        "content": "各モデルに処理させたいタスクを入力します。例えば：\n\n```\nこの関数をリファクタリングして、可読性とパフォーマンスを向上させてください\n```"
+      },
+      {
+        "title": "結果を比較して最良のものを選ぶ",
+        "content": "すべてのモデルが同時にタスクを処理します。完了後、それぞれのソリューションを比較し、最良の結果をコードに適用できます。\n\n```bash\n/arena select\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "アリーナモードは重要なコード決定に特に適しており、複数のAIモデルが異なる視点のソリューションを提供します。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-authentication": {
+    "title": "認証ログイン",
+    "description": "Qwen Codeの認証プロセスを理解し、アカウントログインを素早く完了して、すべての機能をアンロックします。",
+    "category": "入門ガイド",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "認証ログインはQwen Codeを使用する最初のステップであり、シンプルな認証プロセスですべての機能を素早くアンロックできます。認証プロセスは安全で信頼性が高く、複数のログイン方法をサポートし、アカウントとデータのセキュリティを確保します。認証を完了すると、カスタムモデル設定、履歴の保存などの機能を含むパーソナライズされたAIプログラミング体験を楽しむことができます。",
+    "steps": [
+      {
+        "title": "認証をトリガー",
+        "content": "Qwen Codeを起動した後、`/auth`コマンドを入力すると、システムが自動的に認証プロセスを開始します。認証コマンドはコマンドラインまたはVS Code拡張機能で使用でき、操作方法は一貫しています。システムは現在の認証ステータスを検出し、ログインしていない場合はログインをガイドします。\n\n```bash\n/auth\n```"
+      },
+      {
+        "title": "ブラウザログイン",
+        "content": "システムが自動的にブラウザを開き、認証ページにリダイレクトします。認証ページでは、Alibaba Cloudアカウントまたはその他のサポートされているログイン方法を選択できます。ログインプロセスは高速で便利で、数秒で完了します。"
+      },
+      {
+        "title": "ログインを確認",
+        "content": "ログインが成功すると、ブラウザが自動的に閉じるか、成功メッセージが表示されます。Qwen Codeインターフェースに戻ると、認証成功メッセージが表示され、正常にログインしてすべての機能がアンロックされたことが示されます。認証情報は自動的に保存されるため、毎回再ログインする必要はありません。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "認証情報は安全にローカルに保存され、毎回再ログインする必要はありません。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-bailian-coding-plan": {
+    "title": "百煉Coding Planモード",
+    "description": "百煉Coding Planを設定して使用し、複数のモデル選択で複雑なタスクの完了品質を向上させます。",
+    "category": "入門ガイド",
+    "features": [
+      "Plan Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "百煉Coding PlanモードはQwen Codeの高度な機能であり、複雑なプログラミングタスクのために特別に設計されています。インテリジェントなマルチモデル連携により、大規模なタスクを実行可能なステップに分解し、最適な実行パスを自動的に計画できます。大規模なコードベースのリファクタリングから複雑な機能の実装まで、Coding Planはタスク完了の品質と効率を大幅に向上させることができます。",
+    "steps": [
+      {
+        "title": "設定インターフェースに入る",
+        "content": "Qwen Codeを起動して`/auth`コマンドを入力します。"
+      },
+      {
+        "title": "Coding Planを選択",
+        "content": "設定で百煉Coding Planモードを有効にし、APIキーを入力すると、Qwen Codeが自動的にCoding Planでサポートされているモデルを設定します。\n\n<img src=\"https://gw.alicdn.com/imgextra/i1/O1CN01cDz8AJ1Cq30rXjuXS_!!6000000000131-2-tps-1696-952.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />"
+      },
+      {
+        "title": "モデルを選択",
+        "content": "直接`/model`コマンドを入力して、希望のモデルを選択します。"
+      },
+      {
+        "title": "複雑なタスクを開始",
+        "content": "プログラミングタスクを記述すると、Coding Planが自動的に実行ステップを計画します。タスクの目標、制約条件、期待される結果を詳細に説明できます。AIはタスク要件を分析し、各ステップの具体的な操作と期待される出力を含む構造化された実行計画を生成します。\n\n```bash\nこのプロジェクトのデータ層をリファクタリングし、データベースをMySQLからPostgreSQLに移行する必要がありますが、APIインターフェースは変更しません\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Coding Planモードは、アーキテクチャリファクタリング、機能移行など、マルチステップ連携が必要な複雑なタスクに特に適しています。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-btw-sidebar": {
+    "title": "/btw サイドバー：コーディング中にサッと質問する",
+    "description": "現在の会話に関係のない質問を挿入します。AIが回答した後、自動的に以前のコンテキストに戻り、メインの会話が汚染されません。",
+    "category": "入門ガイド",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "コードを書いている最中に、突然あるAPIのパラメータの順番が思い出せなくなることがあります。以前は新しい会話を開いて調べてから戻る必要があり、コンテキストが完全に途切れていました。今は `/btw` と入力するだけで、現在の会話にサイドクエスチョンを挿入できます。Qwen Codeが回答した後、自動的に以前のコンテキストに戻ります。まるで何も起きなかったかのように。",
+    "steps": [
+      {
+        "title": "メインの会話中",
+        "content": "Qwen Codeとタスクについて話し合っています。例えばコンポーネントのリファクタリングなど。"
+      },
+      {
+        "title": "/btw に続けて質問を入力",
+        "content": "何か調べたいことがある？ `/btw` に続けて質問を入力するだけ：\n\n```bash\n/btw JavaScriptのArray.prototype.at()メソッドは負のインデックスをサポートしていますか？\n```"
+      },
+      {
+        "title": "AIが回答し、自動的にコンテキストを復元",
+        "content": "Qwen Codeがサイドクエスチョンに回答した後、自動的にメインの会話コンテキストに戻ります。何も起きなかったかのように、以前のタスクを続けることができます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "`/btw` の回答はメインの会話コンテキストを汚染しません。AIはあなたのサイドクエスチョンを現在のタスクの一部として扱いません。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-copy-optimization": {
+    "title": "コピーキャラクター最適化",
+    "description": "最適化されたコピーエクスペリエンス、コードスニペットを正確に選択してコピーし、完全なフォーマットを保持します。",
+    "category": "入門ガイド",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i3/O1CN01rFSm7o1hoRiIy0xrP_!!6000000004324-1-tps-1280-720.gif",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "最適化されたコピーエクスペリエンスにより、コードスニペットを正確に選択してコピーし、完全なフォーマットとインデントを保持できます。コードブロック全体でも部分的な行でも、簡単にコピーしてプロジェクトに貼り付けることができます。コピ機能はワンクリックコピー、選択コピー、ショートカットキーコピーなど複数の方法をサポートし、異なるシナリオのニーズを満たします。",
+    "steps": [
+      {
+        "title": "コードブロックを選択",
+        "content": "コードブロックの右上にあるコピーボタンをクリックして、コードブロック全体をワンクリックでコピーします。コピーボタンは明確に表示され、操作はシンプルで高速です。コピーされた内容はインデント、シンタックスハイライトなど、元のフォーマットを保持します。"
+      },
+      {
+        "title": "貼り付けて使用",
+        "content": "コピーしたコードをエディタに貼り付けると、フォーマットが自動的に維持されます。手動でインデントやフォーマットを調整する必要はなく、直接使用できます。貼り付けられたコードは元のコードと完全に一貫しており、コードの正確性を保証します。"
+      },
+      {
+        "title": "正確な選択",
+        "content": "コードの一部のみをコピーする必要がある場合は、マウスで必要な内容を選択してから、ショートカットキーを使用してコピーできます。複数行の選択をサポートし、必要なコードスニペットを正確にコピーできます。"
+      }
+    ],
+    "callouts": [],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-explore-agent": {
+    "title": "Explore Agent：AIに先に調査させてから行動する",
+    "description": "Explore Agentを使って、コードを変更する前にコード構造、依存関係、主要なエントリーポイントを理解し、その後の開発をより正確にします。",
+    "category": "プログラミング",
+    "features": [
+      "Explore"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "コードを変更する前に、Explore Agentにコード構造の把握、依存関係の理解、主要なエントリーポイントの特定を手伝ってもらいましょう。先に調査してからメインAgentに作業させることで、より正確な方向性が得られ、盲目的な変更による手戻りを減らせます。",
+    "steps": [
+      {
+        "title": "Explore Agentに切り替え",
+        "content": "Qwen CodeでExplore Agentモードに切り替え、コードの変更ではなく調査に集中します。"
+      },
+      {
+        "title": "調査目標を説明",
+        "content": "Explore Agentに何を理解したいか伝えます。例えば：\n\n```\nこのプロジェクトの認証モジュールを分析して、関連するすべてのファイルと依存関係を見つけてください\n```"
+      },
+      {
+        "title": "調査レポートを取得",
+        "content": "Explore Agentがコード構造を分析し、ファイルリスト、依存関係グラフ、主要なエントリーポイントなどを含む詳細な調査レポートを出力します。"
+      },
+      {
+        "title": "メインAgentに戻って開発を開始",
+        "content": "調査が完了したら、メインAgentに戻り、調査結果に基づいて実際のコード変更を開始します。調査レポートはコンテキストとしてメインAgentに渡されます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Explore Agentは調査のみを行い、コードを変更しません。その出力はメインAgentの入力として直接使用でき、「先に調査、後で開発」という効率的なワークフローを形成します。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-first-conversation": {
+    "title": "最初の会話を開始",
+    "description": "インストール後、Qwen Codeとの最初のAI会話を開始し、そのコア能力と対話方法を理解します。",
+    "category": "入門ガイド",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Qwen Codeのインストールを完了すると、Qwen Codeとの最初の会話を迎えます。これはQwen Codeのコア能力と対話方法を理解する絶好の機会です。シンプルな挨拶から始めて、コード生成、問題解決、ドキュメント理解など、その強力な機能を段階的に探索できます。実際の操作を通じて、Qwen Codeがプログラミングの旅であなたの頼れるアシスタントになることを感じるでしょう。",
+    "steps": [
+      {
+        "title": "Qwen Codeを起動",
+        "content": "ターミナルで`qwen`コマンドを入力してアプリケーションを起動します。初回起動時、システムは初期化設定を行い、これには数秒しかかかりません。起動後、友好的なコマンドラインインターフェースが表示され、AIとの対話を開始する準備が整います。\n\n```bash\nqwen\n```"
+      },
+      {
+        "title": "会話を開始",
+        "content": "入力ボックスに質問を入力して、AIとのコミュニケーションを開始します。シンプルな自己紹介から始めることができます。例えば、Qwen Codeとは何か、あるいは何を手伝ってくれるかを尋ねることができます。AIは明確でわかりやすい言葉で質問に答え、より多くの機能を探索するようにガイドします。\n\n```bash\nwhat is qwen code?\n```"
+      },
+      {
+        "title": "能力を探索",
+        "content": "AIにいくつかの単純なタスクを手伝ってもらうように依頼してみてください。例えば、コードを説明する、関数を生成する、技術的な質問に答えるなどです。実際の操作を通じて、Qwen Codeのさまざまな能力に徐々に慣れ、異なるシナリオでの応用価値を発見します。\n\n```bash\nフィボナッチ数列を計算するPython関数を書いてください\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Qwen Codeはマルチターン対話をサポートしています。以前の回答に基づいて質問を続け、興味のあるトピックを深く探求できます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-headless-mode": {
+    "title": "ヘッドレスモード",
+    "description": "GUIのない環境でQwen Codeを使用し、リモートサーバー、CI/CDパイプライン、自動化スクリプトシナリオに適しています。",
+    "category": "入門ガイド",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i3/O1CN01qbxpC21KcK4K7lzGt_!!6000000001184-1-tps-1280-720.gif",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "ヘッドレスモードを使用すると、GUIのない環境でQwen Codeを使用でき、特にリモートサーバー、CI/CDパイプライン、自動化スクリプトシナリオに適しています。コマンドラインパラメータとパイプライン入力を通じて、Qwen Codeを既存のワークフローにシームレスに統合し、自動化されたAI支援プログラミングを実現できます。",
+    "steps": [
+      {
+        "title": "プロンプトモードを使用",
+        "content": "`--p`パラメータを使用して、コマンドラインで直接プロンプトを渡します。Qwen Codeは回答を返して自動的に終了します。この方法はワンタイムクエリに適しており、スクリプトに簡単に統合できます。\n\n```bash\nqwen --p 'what is qwen code?'\n```"
+      },
+      {
+        "title": "パイプライン入力",
+        "content": "パイプを通じて他のコマンドの出力をQwen Codeに渡し、自動化処理を実現します。ログファイル、エラーメッセージなどを直接AIに送信して分析できます。\n\n```bash\ncat error.log | qwen --p 'エラーを分析'\n```"
+      },
+      {
+        "title": "スクリプト統合",
+        "content": "シェルスクリプトにQwen Codeを統合し、複雑な自動化ワークフローを実現します。AIの戻り結果に基づいて異なる操作を実行し、インテリジェントな自動化スクリプトを構築できます。\n\n```bash\n#!/bin/bash\nresult=$(qwen --p 'コードに問題があるか確認')\nif [[ $result == *\"問題がある\"* ]]; then\n  echo \"コードの問題が見つかりました\"\nfi\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "ヘッドレスモードはコード生成、問題解決、ファイル操作など、Qwen Codeのすべての機能をサポートします。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-hooks-auto-test": {
+    "title": "Hooks：コミット前にテストスクリプトを自動実行",
+    "description": "Qwen Codeの主要なポイントにカスタムスクリプトを設定し、コミット前のテスト自動実行やコード生成後の自動フォーマットなどの自動化ワークフローを実現します。",
+    "category": "プログラミング",
+    "features": [
+      "Hooks"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "AIがコードを生成したけどフォーマットがおかしくて、毎回手動でprettierを実行している？コミット前にテストを実行し忘れてCIが失敗した？Hooksシステムはこれらの問題を解決します。Qwen Codeの10の主要なポイントに独自のスクリプトを設定し、特定のタイミングで自動実行させることができます。",
+    "steps": [
+      {
+        "title": "hooksディレクトリを作成",
+        "content": "プロジェクトルートに `.agents/hooks` ディレクトリを作成し、hookスクリプトを格納します：\n\n```bash\nmkdir -p .agents/hooks\n```"
+      },
+      {
+        "title": "hookスクリプトを作成",
+        "content": "hookスクリプトを作成します。例えば、コード変更後の自動フォーマット：\n\n```bash\n#!/bin/bash\n# post-edit-format.sh\n# コード変更後にprettierフォーマットを自動実行\n\nINPUT=$(cat)\nTOOL_NAME=$(echo \"$INPUT\" | jq -r '.tool_name // empty')\n\ncase \"$TOOL_NAME\" in\n  write_file|edit) ;;\n  *) exit 0 ;;\nesac\n\nFILE_PATH=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty')\n[ -z \"$FILE_PATH\" ] && exit 0\n\n# prettierフォーマットを実行\nnpx prettier --write \"$FILE_PATH\" 2>/dev/null\n\necho '{\"decision\": \"allow\", \"reason\": \"File formatted\"}'\nexit 0\n```\n\n実行権限を付与：\n\n```bash\nchmod +x .agents/hooks/post-edit-format.sh\n```"
+      },
+      {
+        "title": "hooksを設定",
+        "content": "`~/.qwen/settings.json` にhooks設定を追加します：\n\n```json\n{\n  \"hooksConfig\": {\n    \"enabled\": true\n  },\n  \"hooks\": {\n    \"PostToolUse\": [\n      {\n        \"matcher\": \"(write_file|edit)\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \".agents/hooks/post-edit-format.sh\",\n            \"name\": \"auto-format\",\n            \"description\": \"コード変更後の自動フォーマット\",\n            \"timeout\": 30000\n          }\n        ]\n      }\n    ]\n  }\n}\n```"
+      },
+      {
+        "title": "効果を確認",
+        "content": "Qwen Codeを起動し、AIにコードファイルを変更させて、hookが自動的にフォーマットをトリガーするか確認します。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Hooksは10の主要なポイントをサポート：PreToolUse、PostToolUse、SessionStart、SessionEndなど。設定は簡単 — プロジェクトルートの `.agents/hooks` にスクリプトファイルを配置するだけです。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-language-switch": {
+    "title": "言語切り替え",
+    "description": "UIインターフェース言語とAI出力言語を柔軟に切り替え、多言語対話をサポートします。",
+    "category": "入門ガイド",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Qwen Codeは柔軟な言語切り替えをサポートしており、UIインターフェース言語とAI出力言語を独立して設定できます。中国語、英語、その他の言語など、適切な設定を見つけることができます。多言語サポートにより、馴染みのある言語環境で作業でき、コミュニケーション効率と快適性が向上します。",
+    "steps": [
+      {
+        "title": "UI言語を切り替え",
+        "content": "`/language ui`コマンドを使用してインターフェース言語を切り替えます。中国語、英語など複数の言語をサポートします。UI言語を切り替えると、メニュー、プロンプトメッセージ、ヘルプドキュメントなどがすべて選択した言語で表示されます。\n\n```bash\n/language ui zh-CN\n```"
+      },
+      {
+        "title": "出力言語を切り替え",
+        "content": "`/language output`コマンドを使用してAIの出力言語を切り替えます。AIは指定した言語を使用して質問に答え、コードコメントを生成し、説明を提供するなど、コミュニケーションをより自然でスムーズにします。\n\n```bash\n/language output zh-CN\n```"
+      },
+      {
+        "title": "混合言語使用",
+        "content": "UIと出力に異なる言語を設定して、混合言語使用を実現することもできます。例えば、UIは中国語、AI出力は英語など、英語の技術ドキュメントを読む必要があるシナリオに適しています。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "言語設定は自動的に保存され、次回起動時に前回選択した言語が使用されます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-plan-with-search": {
+    "title": "プランモード + Web検索",
+    "description": "プランモードでWeb検索と組み合わせて、最初に最新情報を検索してから実行計画を策定し、複雑なタスクの精度を大幅に向上させます。",
+    "category": "入門ガイド",
+    "features": [
+      "Plan Mode",
+      "Web Search"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "プランモードはQwen Codeのインテリジェントな計画能力であり、複雑なタスクを実行可能なステップに分解できます。Web検索と組み合わせて使用すると、最初に最新の技術ドキュメント、ベストプラクティス、ソリューションを能動的に検索し、その後、これらのリアルタイム情報に基づいてより正確な実行計画を策定します。この組み合わせは、新しいフレームワーク、新しいAPI、または最新の仕様に従う必要がある開発タスクを処理するのに特に適しており、コード品質とタスク完了効率を大幅に向上させることができます。プロジェクトの移行、新機能の統合、複雑な技術的問題の解決など、プラン + Web検索が最も先進的なソリューションを提供します。",
+    "steps": [
+      {
+        "title": "プランモードを有効にする",
+        "content": "会話で`/approval-mode plan`コマンドを入力してプランモードを有効にします。この時点で、Qwen Codeは計画状態に入り、タスク説明を受け取り、思考を開始する準備が整います。プランモードはタスクの複雑さを自動的に分析し、ナレッジベースを補充するために外部情報を検索する必要があるかどうかを判断します。\n\n```bash\n/approval-mode plan\n```"
+      },
+      {
+        "title": "最新情報の検索をリクエスト",
+        "content": "タスク要件を記述すると、Qwen Codeが検索が必要なキーワードを自動的に識別します。最新の技術ドキュメント、APIリファレンス、ベストプラクティス、ソリューションを取得するために能動的にWeb検索リクエストを開始します。検索結果はナレッジベースに統合され、後続の計画のための正確な情報基盤を提供します。\n\n```\nAI分野の最新ニュースを検索して、私にレポートとしてまとめてください\n```"
+      },
+      {
+        "title": "実行計画を表示",
+        "content": "検索された情報に基づいて、Qwen Codeが詳細な実行計画を生成します。計画には明確なステップ説明、注意すべき技術的要点、潜在的な落とし穴とソリューションが含まれます。この計画を確認し、変更提案を行うか、実行を開始することを確認できます。"
+      },
+      {
+        "title": "計画を段階的に実行",
+        "content": "計画を確認すると、Qwen Codeがステップごとに実行します。各重要なノードで、進捗と結果を報告し、プロセス全体を完全に制御できるようにします。問題が発生した場合、古い知識に頼るのではなく、最新の検索情報に基づいてソリューションを提供します。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Web検索はタスク内の技術キーワードを自動的に識別し、検索内容を手動で指定する必要はありません。急速に反復するフレームワークとライブラリの場合は、最新情報を取得するためにプランモードでWeb検索を有効にすることをお勧めします。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-resume-session": {
+    "title": "Resumeセッション回復",
+    "description": "中断された会話はいつでも再開でき、コンテキストと進捗を失うことはありません。",
+    "category": "入門ガイド",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Resumeセッション回復機能により、会話をいつでも中断し、必要に応じて再開でき、コンテキストと進捗を失うことはありません。一時的に用事がある場合でも、マルチタスクを並行して処理する場合でも、会話を安全に一時停止し、後でシームレスに続けることができます。この機能は作業の柔軟性を大幅に向上させ、時間とタスクをより効率的に管理できます。",
+    "steps": [
+      {
+        "title": "セッションリストを表示",
+        "content": "`qwen --resume`コマンドを使用してすべての履歴セッションを表示します。システムは各セッションの時間、トピック、簡単な情報を表示し、再開する必要がある会話を素早く見つけるのに役立ちます。\n\n```bash\nqwen --resume\n```"
+      },
+      {
+        "title": "セッションを再開",
+        "content": "`qwen --resume`コマンドを使用して指定されたセッションを再開します。セッションIDまたは番号で再開する会話を選択でき、システムが完全なコンテキスト履歴をロードします。\n\n```bash\nqwen --resume\n```"
+      },
+      {
+        "title": "作業を続行",
+        "content": "セッションを再開すると、中断されなかったかのように会話を続けることができます。すべてのコンテキスト、履歴、進捗が完全に保持され、AIは以前のディスカッション内容を正確に理解できます。"
+      },
+      {
+        "title": "Qwen Codeを起動した後にセッションを切り替え",
+        "content": "Qwen Codeを起動した後、`/resume`コマンドを使用して以前のセッションに切り替えることができます。\n\n```bash\n/resume\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "セッション履歴は自動的に保存され、クロスデバイス同期をサポートしており、異なるデバイスで同じセッションを再開できます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-retry-shortcut": {
+    "title": "Ctrl+Y クイックリトライ",
+    "description": "AIの回答に満足できませんか？ショートカットキーでワンクリックリトライし、より良い結果を素早く取得します。",
+    "category": "入門ガイド",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i1/O1CN01YtZAzm1ShNMbf8YTt_!!6000000002278-2-tps-1694-956.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "AIの回答に満足できませんか？Ctrl+Y（Windows/Linux）またはCmd+Y（macOS）ショートカットキーでワンクリックリトライし、より良い結果を素早く取得します。この機能により、質問を再入力することなくAIに回答を再生成させることができ、時間を節約し効率を向上させます。満足のいく回答が得られるまで何度でもリトライできます。",
+    "steps": [
+      {
+        "title": "満足できない回答を発見",
+        "content": "AIの回答が期待に応えない場合、がっかりしないでください。AIの回答はコンテキストの理解やランダム性により異なる場合があり、リトライすることでより良い結果を得ることができます。"
+      },
+      {
+        "title": "リトライをトリガー",
+        "content": "Ctrl+Y（Windows/Linux）またはCmd+Y（macOS）ショートカットキーを押すと、AIが回答を再生成します。リトライプロセスは高速でスムーズであり、ワークフローを中断しません。\n\n```bash\nCtrl+Y / Cmd+Y\n```"
+      },
+      {
+        "title": "補足説明",
+        "content": "リトライ後も満足できない場合は、ニーズに対して補足説明を追加し、AIが意図をより正確に理解できるようにすることができます。より多くの詳細を追加し、質問の表現方法を変更したり、より多くのコンテキスト情報を提供したりできます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "リトライ機能は元の質問を保持しますが、異なるランダムシードを使用して回答を生成し、結果の多様性を確保します。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-review-command": {
+    "title": "/review：AI搭載コードレビュー",
+    "description": "コミット前に/reviewコマンドを使ってAIにコード品質のチェック、潜在的な問題の発見、改善提案をさせましょう — 経験豊富な同僚がコードをレビューしてくれるように。",
+    "category": "プログラミング",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "コミット前に誰かにコードを見てもらいたいけど、同僚は忙しくて手が空かない？`/review` を使うだけ — AIがコード品質をチェックし、潜在的な問題を見つけ、改善を提案します。単純なlintチェックではなく、経験豊富な同僚のように、ロジック、命名、エッジケースの処理を徹底的にレビューします。",
+    "steps": [
+      {
+        "title": "レビューするファイルを開く",
+        "content": "Qwen Codeでレビューしたいコードファイルまたはプロジェクトディレクトリを開きます。コードが保存されていることを確認してください。"
+      },
+      {
+        "title": "/reviewコマンドを入力",
+        "content": "チャットで `/review` と入力します。Qwen Codeが自動的に現在のファイルまたは最近のコード変更を分析します。\n\n```bash\n/review\n```"
+      },
+      {
+        "title": "レビュー結果を確認",
+        "content": "AIがコード品質、ロジックの正確性、命名規約、エッジケースの処理など、複数の観点からレビューフィードバックを提供し、具体的な改善提案を添えます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "`/review` は単純なlintチェックとは異なります — コードロジックを深く理解し、潜在的なバグ、パフォーマンスの問題、設計上の欠陥を特定します。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-script-install": {
+    "title": "スクリプトワンクリックインストール",
+    "description": "スクリプトコマンドでQwen Codeを素早くインストール。数秒で環境設定を完了。Linux、macOS、Windowsシステムに対応。",
+    "category": "入門ガイド",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/6000000002905/O1CN01wI6zQD1XKXhKNpQXZ_!!6000000002905-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/x4lFbaS9OgyXBNMytr2sR32ttE90q4pTkRD6EHSjQro.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Qwen Codeは、1行のスクリプトコマンドによる高速インストールをサポートしています。環境変数の手動設定や依存関係のダウンロードは不要です。スクリプトはOSタイプを自動検出し、対応するインストールパッケージをダウンロードして設定を完了します。全体のプロセスは数秒で完了し、**Linux**、**macOS**、**Windows**の3つの主要プラットフォームに対応しています。",
+    "steps": [
+      {
+        "title": "Linux / macOS インストール",
+        "content": "ターミナルを開き、以下のコマンドを実行します。スクリプトはシステムアーキテクチャ（x86_64 / ARM）を自動検出し、対応するバージョンをダウンロードしてインストール設定を完了します。\n\n```bash\nbash -c \"$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)\" -s --source website\n```"
+      },
+      {
+        "title": "Windows インストール",
+        "content": "PowerShellで以下のコマンドを実行します。スクリプトはバッチファイルをダウンロードし、インストールプロセスを自動実行します。完了後、任意のターミナルで`qwen`コマンドを使用できます。\n\n```bash\ncurl -fsSL -o %TEMP%\\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\\install-qwen.bat --source website\n```"
+      },
+      {
+        "title": "インストールの確認",
+        "content": "インストール完了後、ターミナルで以下のコマンドを実行してQwen Codeが正しくインストールされたことを確認します。バージョン番号が表示されれば、インストール成功です。\n\n```bash\nqwen --version\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "npmをご希望の場合、`npm install -g @qwen-code/qwen-code`でグローバルインストールも可能です。インストール後、`qwen`と入力して起動します。権限の問題がある場合は、`sudo npm install -g @qwen-code/qwen-code`を使用し、パスワードを入力してインストールしてください。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-skill-install": {
+    "title": "Skillsをインストール",
+    "description": "コマンドラインインストールやフォルダインストールなど、複数の方法でSkill拡張をインストールし、様々なシーンのニーズに対応します。",
+    "category": "入門ガイド",
+    "features": [
+      "Skills"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Qwen Codeは複数のSkillインストール方法をサポートしています。実際のシーンに合わせて最適な方法を選択できます。コマンドラインインストールはオンライン環境に適しており、高速で便利です。フォルダインストールはオフライン環境やカスタムSkillに適しており、柔軟で制御可能です。",
+    "steps": [
+      {
+        "title": "find-skills Skillを確認してインストール",
+        "content": "Qwen Codeでニーズを直接記述し、必要なSkillの確認とインストールを手伝ってもらいます：\n\n```\nfind skillsがあるか確認し、なければ直接インストールしてください：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code\n```"
+      },
+      {
+        "title": "必要なSkillをインストール、例えばweb-component-designをインストール：",
+        "content": "```\n/skills find-skills install web-component-design -y -a qwen-code\n```\n\nQwen Codeがインストールコマンドを自動実行し、指定されたリポジトリからSkillをダウンロードしてインストールします。1文でインストールすることもできます：\n\n```\nfind skillsがあるか確認し、なければ直接インストールしてください：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code、そして【スキル名】を現在のqwen code skillsディレクトリにインストールしてください。\n```"
+      },
+      {
+        "title": "インストールの確認",
+        "content": "インストール完了後、Skillが正常に読み込まれたことを確認します：\n\n```bash\n/skills\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "コマンドラインインストールにはネットワーク接続が必要です。`-y`パラメータは自動確認を意味し、`-a qwen-code`はQwen Codeへのインストールを指定します。"
+      },
+      {
+        "type": "info",
+        "content": "**Skillディレクトリ構造要件**\n\n各Skillフォルダには`skill.md`ファイルを含める必要があり、Skillの名前、説明、トリガールールを定義します：\n\n```\n~/.qwen/skills/\n├── my-skill/\n│   ├── SKILL.md      # 必須：Skill設定ファイル\n│   └── scripts/      # オプション：スクリプトファイル\n└── another-skill/\n    └── SKILL.md\n```"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-skills-panel": {
+    "title": "Skillsパネル",
+    "description": "Skillsパネルを通じて既存のSkill拡張を閲覧・インストール・管理し、AI機能ライブラリをワンストップで管理します。",
+    "category": "入門ガイド",
+    "features": [
+      "Skills"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i1/O1CN01xkzvoE1fomm8znzBG_!!6000000004054-2-tps-1694-952.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "Skillsパネルは、Qwen Codeの拡張機能を管理するためのコントロールセンターです。この直感的なインターフェースを通じて、公式およびコミュニティが提供する様々なSkillを閲覧し、各Skillの機能と用途を理解し、ワンクリックで拡張機能をインストールまたはアンインストールできます。新しいAI機能を発見したい場合でも、インストール済みのSkillを管理したい場合でも、Skillsパネルは便利な操作体験を提供し、パーソナライズされたAIツールボックスを簡単に構築できます。",
+    "steps": [
+      {
+        "title": "Skillsパネルを開く",
+        "content": "Qwen Code会話でコマンドを入力してSkillsパネルを開きます。このコマンドは、インストール済みおよび未インストールの拡張機能を含む、利用可能なすべてのSkillのリストを表示します。\n\n```bash\n/skills\n```"
+      },
+      {
+        "title": "Skillsを閲覧・検索",
+        "content": "パネルで様々なSkill拡張を閲覧します。各Skillには詳細な説明と機能説明があります。検索機能を使用して必要な特定のSkillを素早く見つけたり、カテゴリ別に様々なタイプの拡張機能を閲覧したりできます。"
+      },
+      {
+        "title": "Skillをインストールまたはアンインストール",
+        "content": "興味のあるSkillを見つけたら、インストールボタンをクリックしてQwen Codeにワンクリックで追加します。同様に、不要なSkillはいつでもアンインストールでき、AI機能ライブラリを整理・効率化できます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Skillsパネルは定期的に更新され、最新リリースのSkill拡張を表示します。定期的にパネルを確認して、作業効率を向上させる強力なAI機能を発見することをお勧めします。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-system-prompt": {
+    "title": "カスタムシステムプロンプト：AIをあなたのスタイルで回答させる",
+    "description": "SDKとCLIでカスタムシステムプロンプトを設定し、AIの回答スタイルと動作を制御して、常にチームの規約に従うようにします。",
+    "category": "入門ガイド",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "SDKとCLIでカスタムシステムプロンプトを設定し、AIの回答スタイルと動作を制御します。例えば、常に中国語で回答させる、コードコメントは英語で書かせる、チームの命名規約に従わせるなど。毎回の会話で「中国語で回答してください」と繰り返す必要はありません。",
+    "steps": [
+      {
+        "title": "システムプロンプトファイルを作成",
+        "content": "プロジェクトルートに `AGENTS.md` ファイル（旧 `QWEN.md`）を作成し、カスタムシステムプロンプトを記述します：\n\n```markdown\n# プロジェクト規約\n\n- 常に中国語で回答する\n- コードコメントは英語で\n- 変数名はcamelCaseを使用\n- Reactは関数コンポーネント + Hooksを使用\n- TypeScriptを優先\n```"
+      },
+      {
+        "title": "グローバルシステムプロンプトを設定",
+        "content": "すべてのプロジェクトに規約を適用するには、`~/.qwen/AGENTS.md` でグローバルシステムプロンプトを設定します。\n\n以下のコマンドも使用できます：\n\n```bash\nqwen --system-prompt \"中国語で質問されたら中国語で回答し、英語で質問されたら英語で回答してください。\"\n```"
+      },
+      {
+        "title": "効果を確認",
+        "content": "Qwen Codeを起動し、会話を始めて、AIがシステムプロンプトの規約に従って回答するか確認します。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "プロジェクトレベルの `AGENTS.md` はグローバル設定を上書きします。プロジェクトごとに異なる規約を設定でき、チームメンバーは同じ設定ファイルを共有して一貫性を保てます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-vscode-integration": {
+    "title": "VS Code統合インターフェース",
+    "description": "VS CodeでのQwen Codeの完全なインターフェース表示。各機能エリアのレイアウトと使用方法を理解します。",
+    "category": "入門ガイド",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "VS Codeは最も人気のあるコードエディタの一つであり、Qwen Codeは深く統合されたVS Code拡張機能を提供しています。この拡張機能を通じて、馴染みのあるエディタ環境でAIと直接会話し、シームレスなプログラミング体験を享受できます。拡張機能は直感的なインターフェースレイアウトを提供し、すべての機能に簡単にアクセスできます。コード補完、問題解決、ファイル操作など、すべてを効率的に完了できます。",
+    "steps": [
+      {
+        "title": "VS Code拡張機能をインストール",
+        "content": "VS Code拡張機能マーケットプレースで「Qwen Code」を検索し、インストールをクリックします。インストールプロセスはシンプルで高速で、数秒で完了します。インストール後、VS CodeサイドバーにQwen Codeのアイコンが表示され、拡張機能が正常に読み込まれたことを示します。"
+      },
+      {
+        "title": "アカウントにログイン",
+        "content": "`/auth`コマンドを使用して認証プロセスをトリガーします。システムが自動的にブラウザを開いてログインします。ログインプロセスは安全で便利で、複数の認証方法をサポートしています。ログイン成功後、アカウント情報がVS Code拡張機能に自動的に同期され、すべての機能がアンロックされます。\n\n```bash\n/auth\n```"
+      },
+      {
+        "title": "使用を開始",
+        "content": "サイドバーでQwen Codeパネルを開き、AIとの会話を開始します。質問を直接入力したり、ファイルを参照したり、コマンドを実行したりできます。すべての操作がVS Codeで完了します。拡張機能はマルチタブ、履歴、ショートカットキーなどの機能をサポートし、完全なプログラミングアシスタンス体験を提供します。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "VS Code拡張機能はコマンドラインバージョンと完全に同じ機能です。使用シーンに合わせて自由に選択できます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "guide-web-search": {
+    "title": "Web検索",
+    "description": "Qwen CodeにWebコンテンツを検索させ、リアルタイム情報を取得してプログラミングと問題解決を支援します。",
+    "category": "入門ガイド",
+    "features": [
+      "Web Search"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/FVVvz922HnDIY_STwpKaBGBb1u2JXOCdUCOL36A8WW4.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Web検索機能により、Qwen CodeはWebコンテンツをリアルタイムで検索し、最新の技術ドキュメント、フレームワークの更新、ソリューションを取得できます。開発中に問題に遭遇したり、新しい技術の最新動向を理解したりする必要がある場合、この機能が非常に役立ちます。AIは関連情報をインテリジェントに検索し、理解しやすい形式に整理して返します。",
+    "steps": [
+      {
+        "title": "検索機能を有効にする",
+        "content": "会話でAIに最新情報を検索する必要があることを明確に伝えます。最新技術、フレームワークバージョン、リアルタイムデータを含む質問を直接行えます。Qwen Codeはニーズを自動的に認識し、Web検索機能を開始して最も正確な情報を取得します。\n\n```bash\nReact 19の新機能を検索してください\n```"
+      },
+      {
+        "title": "検索結果を表示",
+        "content": "AIは検索した情報を返し、理解しやすい形式に整理します。検索結果には通常、重要情報の要約、ソースリンク、関連する技術詳細が含まれます。これらの情報を素早く閲覧して、最新の技術動向を理解したり、問題の解決策を見つけたりできます。"
+      },
+      {
+        "title": "検索結果に基づいて質問",
+        "content": "検索結果に基づいてさらに質問を行い、より深い説明を得ることができます。特定の技術詳細について疑問がある場合や、検索結果をプロジェクトに適用する方法を知りたい場合、直接質問を続けることができます。AIは検索した情報に基づいてより具体的なガイダンスを提供します。\n\n```bash\nこれらの新機能は私のプロジェクトにどのような影響がありますか\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Web検索機能は、最新のAPI変更、フレームワークバージョン更新、リアルタイム技術動向のクエリに特に適しています。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-batch-file-organize": {
+    "title": "ファイルの一括処理、デスクトップ整理",
+    "description": "Qwen CodeのCowork機能を使用して、散らかったデスクトップファイルをワンクリックで一括整理し、タイプ別に自動分類して対応するフォルダに配置します。",
+    "category": "日常タスク",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "デスクトップファイルが散らかっていますか？Qwen CodeのCowork機能を使用すると、ワンクリックでファイルを一括整理でき、ファイルタイプを自動識別して対応するフォルダに分類できます。ドキュメント、画像、動画、その他のファイルタイプに関わらず、すべてインテリジェントに識別してアーカイブでき、作業環境を整理し、作業効率を向上させることができます。",
+    "steps": [
+      {
+        "title": "会話を開始",
+        "content": "ターミナルまたはコマンドラインを開き、`qwen`と入力してQwen Codeを起動します。整理が必要なディレクトリにいるか、どのディレクトリのファイルを整理するかをAIに明確に伝えます。Qwen Codeは整理指示を受け入れる準備ができています。\n\n```bash\ncd ~/Desktop\nqwen\n```"
+      },
+      {
+        "title": "整理指示を出す",
+        "content": "Qwen Codeにデスクトップファイルを整理したいと伝えます。AIはファイルタイプを自動識別し、分類フォルダを作成します。整理するディレクトリ、分類ルール、ターゲットフォルダ構造を指定できます。AIはニーズに基づいて整理計画を作成します。\n\n```bash\nデスクトップのファイルを整理してください。ドキュメント、画像、動画、圧縮ファイルなどタイプ別に異なるフォルダに分類します\n```"
+      },
+      {
+        "title": "実行計画を確認",
+        "content": "Qwen Codeはまず実行される操作計画をリストアップします。問題がないことを確認した後、実行を許可します。このステップは非常に重要です。整理計画を確認して、AIがニーズを理解していることを確認し、誤操作を回避できます。"
+      },
+      {
+        "title": "整理を完了",
+        "content": "AIがファイル移動操作を自動実行し、完了後に整理レポートを表示し、どのファイルがどこに移動されたかを伝えます。全体のプロセスは高速で効率的で、手動操作は不要で、大幅な時間を節約できます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Cowork機能はカスタム分類ルールをサポートしています。必要に応じてファイルタイプとターゲットフォルダのマッピング関係を指定できます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-clipboard-paste": {
+    "title": "クリップボード画像貼り付け",
+    "description": "クリップボードのスクリーンショットを会話ウィンドウに直接貼り付けます。AIは画像コンテンツを即座に理解し、支援を提供します。",
+    "category": "日常タスク",
+    "features": [
+      "Image Recognition"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "クリップボード画像貼り付け機能により、任意のスクリーンショットをQwen Codeの会話ウィンドウに直接貼り付けることができ、ファイルを保存してからアップロードする必要がありません。エラースクリーンショット、UIデザインモックアップ、コードスニペットスクリーンショット、その他の画像に関わらず、Qwen Codeはコンテンツを即座に理解し、ニーズに基づいて支援を提供できます。この便利な対話方法はコミュニケーション効率を大幅に向上させ、問題に遭遇した際にAIの分析と提案を迅速に取得できます。",
+    "steps": [
+      {
+        "title": "画像をクリップボードにコピー",
+        "content": "システムスクリーンショットツール（macOS: `Cmd+Shift+4`、Windows: `Win+Shift+S`）を使用して画面コンテンツをキャプチャするか、ブラウザやファイルマネージャから画像をコピーします。スクリーンショットは自動的にクリップボードに保存され、追加の操作は不要です。"
+      },
+      {
+        "title": "会話ウィンドウに貼り付け",
+        "content": "Qwen Code会話入力ボックスで、`Cmd+V`（macOS）または`Ctrl+V`（Windows）を使用して画像を貼り付けます。画像が入力ボックスに自動的に表示され、質問やニーズを記述するテキストを同時に入力できます。"
+      },
+      {
+        "title": "AI分析結果を取得",
+        "content": "メッセージを送信後、Qwen Codeは画像コンテンツを分析して返信します。コードスクリーンショットのエラーを識別し、UIデザインモックアップのレイアウトを分析し、チャートデータを解釈できます。さらに質問して、画像の詳細を深く議論できます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "PNG、JPEG、GIFなどの一般的な画像フォーマットをサポートしています。画像サイズは10MB以下を推奨し、最適な認識効果を確保します。コードスクリーンショットの場合、テキスト認識精度を向上させるために高解像度を使用することをお勧めします。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-export-conversation": {
+    "title": "会話履歴をエクスポート",
+    "description": "会話履歴をMarkdown、HTML、またはJSON形式でエクスポートし、アーカイブや共有を容易にします。",
+    "category": "日常タスク",
+    "features": [
+      "Terminal"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000003561/O1CN01KmYvSF1cAzW7C9CHz_!!6000000003561-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/a4-IZVgzaAhKLdzRYhsG2dB-PPo8wG1gKlwq09gR01U.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "会話履歴エクスポート機能",
+    "steps": [
+      {
+        "title": "セッションリストを表示",
+        "content": "`/resume`コマンドを使用してすべての履歴セッションを表示します。リストは各セッションの作成時間、トピック要約などの情報を表示し、エクスポートが必要な会話を素早く見つけるのに役立ちます。キーワード検索や時間による並べ替えを使用して、ターゲットセッションを正確に特定できます。\n\n```bash\n/resume\n```"
+      },
+      {
+        "title": "エクスポート形式を選択",
+        "content": "エクスポートするセッションを決定した後、`/export`コマンドを使用して形式とセッションIDを指定します。3つの形式がサポートされています：`markdown`、`html`、`json`。Markdown形式はドキュメントツールでの使用に適しており、HTML形式はブラウザで直接開いて表示でき、JSON形式はプログラムによる処理に適しています。\n\n```bash\n# <session-id>パラメータがない場合、デフォルトで現在のセッションをエクスポート\n/export html <session-id> # HTML形式でエクスポート\n/export markdown <session-id> # Markdown形式でエクスポート\n/export json <session-id> # JSON形式でエクスポート\n```"
+      },
+      {
+        "title": "共有とアーカイブ",
+        "content": "エクスポートされたファイルは指定されたディレクトリに保存されます。MarkdownおよびHTMLファイルは同僚と直接共有したり、チームドキュメントで使用したりできます。JSONファイルは他のツールにインポートして二次処理できます。重要な会話を定期的にアーカイブしてチームナレッジベースを構築することをお勧めします。エクスポートされたファイルはバックアップとしても使用でき、重要な情報の損失を防ぐことができます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "エクスポートされたHTML形式には完全なスタイルが含まれており、任意のブラウザで直接開いて表示できます。JSON形式はすべてのメタデータを保持し、データ分析と処理に適しています。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-file-reference": {
+    "title": "@file参照機能",
+    "description": "会話で@fileを使用してプロジェクトファイルを参照し、AIにコードコンテキストを正確に理解させます。",
+    "category": "入門ガイド",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png",
+    "videoUrl": "",
+    "model": "qwen3.5-plus",
+    "overview": "@file参照機能により、会話でプロジェクトファイルを直接参照でき、AIにコードコンテキストを正確に理解させることができます。単一ファイルでも複数ファイルでも、AIはコードコンテンツを読み取り・分析し、より正確な提案と回答を提供します。この機能はコードレビュー、問題トラブルシューティング、コードリファクタリングなどのシーンに特に適しています。",
+    "steps": [
+      {
+        "title": "単一ファイルを参照",
+        "content": "`@file`コマンドの後にファイルパスを続けて使用し、単一ファイルを参照します。AIはファイルコンテンツを読み取り、コード構造とロジックを理解し、質問に基づいて的確な回答を提供します。\n\n```bash\n@file ./src/main.py\nこの関数の役割を説明してください\n```\n\n参照ファイルを参照し、Qwen Codeに新しいドキュメントとして整理・作成させることもできます。これにより、AIがニーズを誤解して参照資料に含まれないコンテンツを生成することを大幅に回避できます：\n\n```bash\n@file このファイルに基づいて公式アカウントの記事を書いてください\n```"
+      },
+      {
+        "title": "ニーズを記述",
+        "content": "ファイルを参照した後、ニーズや質問を明確に記述します。AIはファイルコンテンツに基づいて分析し、正確な回答や提案を提供します。コードロジック、問題検索、最適化要求などを尋ねることができます。"
+      },
+      {
+        "title": "複数ファイルを参照",
+        "content": "`@file`コマンドを複数回使用することで、複数のファイルを同時に参照できます。AIは参照されたすべてのファイルを包括的に分析し、それらの関係とコンテンツを理解し、より包括的な回答を提供します。\n\n```bash\n@file1 @file2 これら2つのファイルの資料に基づいて、初心者向けの学習ドキュメントを整理してください\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "@fileは相対パスと絶対パスをサポートし、複数ファイルのワイルドカードマッチもサポートしています。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-image-recognition": {
+    "title": "画像認識",
+    "description": "Qwen Codeは画像コンテンツを読み取り・理解できます。UIデザインモックアップ、エラースクリーンショット、アーキテクチャ図など。",
+    "category": "日常タスク",
+    "features": [
+      "Image Recognition"
+    ],
+    "thumbnail": "https://gw.alicdn.com/imgextra/i1/O1CN01JahZiH1yV4QoVXcEV_!!6000000006583-2-tps-1700-958.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/j0eaRLacpjRbMBDAerJ1tP9qJ9qbvUHFyyR-VdZBwIg.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Qwen Codeは強力な画像認識機能を備えており、様々なタイプの画像コンテンツを読み取り・理解できます。UIデザインモックアップ、エラースクリーンショット、アーキテクチャ図、フローチャート、手書きメモなどに関わらず、Qwen Codeは正確に識別し、価値ある分析を提供できます。この能力により、視覚情報をプログラミングワークフローに直接統合でき、コミュニケーション効率と問題解決速度を大幅に向上させることができます。",
+    "steps": [
+      {
+        "title": "画像をアップロード",
+        "content": "画像を会話ウィンドウにドラッグ＆ドロップするか、クリップボード貼り付け（`Cmd+V` / `Ctrl+V`）を使用します。PNG、JPEG、GIF、WebPなどの一般的なフォーマットをサポートしています。\n\n参考：[クリップボード画像貼り付け](./office-clipboard-paste.mdx)は、スクリーンショットを会話に素早く貼り付ける方法を示しています。"
+      },
+      {
+        "title": "ニーズを記述",
+        "content": "入力ボックスで、AIに画像に対して何を望むかを記述します。例えば：\n\n```\n画像コンテンツに基づいて、シンプルなhtmlファイルを生成してください\n```"
+      },
+      {
+        "title": "分析結果を取得",
+        "content": "Qwen Codeは画像コンテンツを分析して詳細な返信を提供します。さらに質問して、画像の詳細を深く議論したり、AIに画像コンテンツに基づいてコードを生成させたりできます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "画像認識機能は複数のシーンをサポートしています：コードスクリーンショット分析、UIデザインモックアップからコードへの変換、エラー情報の解釈、アーキテクチャ図の理解、チャートデータの抽出など。最適な認識効果を得るために、明確な高解像度画像を使用することをお勧めします。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-mcp-image-gen": {
+    "title": "MCP画像生成",
+    "description": "MCPを通じて画像生成サービスを統合します。自然言語の記述でAIを駆動し、高品質な画像を作成します。",
+    "category": "日常タスク",
+    "features": [
+      "MCP"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/6000000008040/O1CN01S2cxYL29GNUmrvmzH_!!6000000008040-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/gQg8C_5f5MGoZE9YKCyKmHlWAgXZSTMbN8WSoN7crbc.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "MCP（Model Context Protocol）画像生成機能により、自然言語の記述を通じてQwen CodeでAIを直接駆動し、高品質な画像を作成できます。専用の画像生成ツールに切り替える必要はなく、会話でニーズを記述するだけで、Qwen Codeが統合された画像生成サービスを呼び出し、要件を満たす画像を生成します。UIプロトタイプデザイン、アイコン作成、イラスト描画、コンセプト図制作に関わらず、MCP画像生成は強力なサポートを提供します。このシームレスに統合されたワークフローはデザインと開発の効率を大幅に向上させ、クリエイティブの実現をより便利にします。",
+    "steps": [
+      {
+        "title": "MCPサービスを設定",
+        "content": "まず、MCP画像生成サービスを設定する必要があります。設定ファイルに画像生成サービスのAPIキーとエンドポイント情報を追加します。Qwen Codeは複数の主流画像生成サービスをサポートしており、ニーズと予算に応じて適切なサービスを選択できます。設定完了後、Qwen Codeを再起動して有効にします。"
+      },
+      {
+        "title": "画像要件を記述",
+        "content": "会話で自然言語で生成したい画像を詳細に記述します。画像のテーマ、スタイル、色、構成、詳細などの要素を含めます。記述が具体的であるほど、生成された画像は期待に近づきます。アートスタイル、特定のアーティストを参照したり、参照画像をアップロードしてAIがニーズをより良く理解するのを助けることができます。"
+      },
+      {
+        "title": "結果を表示・保存",
+        "content": "Qwen Codeは複数の画像を生成し、選択できるようにします。各画像をプレビューし、要件に最も適した画像を選択できます。調整が必要な場合は、修正意見を引き続き記述し、Qwen Codeはフィードバックに基づいて再生成します。満足したら、画像を直接ローカルに保存するか、画像リンクをコピーして他の場所で使用できます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "MCP画像生成は複数のスタイルとサイズをサポートし、プロジェクトニーズに応じて柔軟に調整できます。生成された画像の著作権は使用されるサービスによって異なります。利用規約を確認してください。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-organize-desktop": {
+    "title": "デスクトップファイルを整理",
+    "description": "1文でQwen Codeにデスクトップファイルを自動整理させ、タイプ別にインテリジェントに分類します。",
+    "category": "日常タスク",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000007569/O1CN01biAMzk25mewsNAHie_!!6000000007569-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/yWnCuZwvlYmYhhq-NuQ9AwNpg5b_KUKZNV8AFJTBMzw.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "デスクトップファイルが山積みしていて、必要なファイルが見つかりませんか？1文でQwen Codeにデスクトップファイルを自動整理させます。AIはファイルタイプをインテリジェントに識別し、画像、ドキュメント、コード、圧縮ファイルなどで自動的に分類し、明確なフォルダ構造を作成します。全体のプロセスは安全で制御可能です。AIはまず操作計画をリストアップして確認させ、重要なファイルが誤って移動されるのを防ぎます。デスクトップを瞬時に整理整頓し、作業効率を向上させます。",
+    "steps": [
+      {
+        "title": "整理ニーズを記述",
+        "content": "デスクトップディレクトリに移動し、Qwen Codeを起動して、デスクトップファイルをどのように整理したいかをQwen Codeに伝えます。例えば、タイプ別、日付別など。\n\n```bash\ncd ~/Desktop\nデスクトップのファイルをタイプ別に整理してください\n```"
+      },
+      {
+        "title": "操作計画を確認",
+        "content": "Qwen Codeはデスクトップファイルを分析し、詳細な整理計画をリストアップします。どのファイルがどのフォルダに移動されるかが含まれます。計画を確認して問題がないことを確認できます。\n\n```bash\nこの整理計画を実行してください\n```"
+      },
+      {
+        "title": "整理を実行して結果を表示",
+        "content": "確認後、Qwen Codeは計画通りに整理操作を実行します。完了後、整理されたデスクトップを表示でき、ファイルはすでにタイプ別に整然と配置されています。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "warning",
+        "content": "AIはまず操作計画をリストアップして確認させ、重要なファイルが誤って移動されるのを防ぎます。特定のファイルの分類に疑問がある場合は、実行前にQwen Codeにルールを調整するよう伝えることができます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-ppt-presentation": {
+    "title": "プレゼンテーション：PPT作成",
+    "description": "製品スクリーンショットに基づいてプレゼンテーションを作成します。スクリーンショットと説明を提供し、AIが美しいプレゼンテーションスライドを生成します。",
+    "category": "日常タスク",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/O1CN01ZlnCqO1HtmJhfhZSm_!!6000000000816-2-videocover-2546-1388.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/08IfFcYkp4OkyvbSDklR11rrL69fTNuc8Rkz_2ikqOg.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "製品プレゼンテーションPPTを作成する必要がありますが、ゼロから始めたくありませんか？製品スクリーンショットと簡単な説明を提供するだけで、Qwen Codeが構造化された美しくデザインされたプレゼンテーションスライドを生成できます。AIはスクリーンショットコンテンツを分析し、製品の特徴を理解し、スライド構造を自動的に整理し、適切なコピーとレイアウトを追加します。製品リリース、チームプレゼンテーション、クライアントプレゼンテーションに関わらず、プロフェッショナルなPPTを素早く取得でき、大幅な時間とエネルギーを節約できます。",
+    "steps": [
+      {
+        "title": "製品スクリーンショットを準備",
+        "content": "表示する製品インターフェースのスクリーンショットを収集します。主要機能ページ、特徴機能のデモなどが含まれます。スクリーンショットは明確で、製品の価値と特徴を十分に表示する必要があります。フォルダに配置します。例：qwen-code-images"
+      },
+      {
+        "title": "関連Skillsをインストール",
+        "content": "PPT生成関連のSkillsをインストールします。これらのSkillsにはスクリーンショットコンテンツを分析し、プレゼンテーションスライドを生成する機能が含まれています。\n\n```\nfind skillsがあるか確認し、なければ直接インストールしてください：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code、そしてzarazhangrui/frontend-slidesをqwen code skillsにインストールしてください。\n```"
+      },
+      {
+        "title": "プレゼンテーションを生成",
+        "content": "対応するファイルを参照し、Qwen Codeにニーズを伝えます。プレゼンテーションの目的、ターゲット、重点コンテンツなど。AIはこれらの情報に基づいてPPTを生成します。\n\n```\n@qwen-code-images これらのスクリーンショットに基づいて製品プレゼンテーションPPTを作成してください。技術チーム向けで、新機能に焦点を当てます\n```"
+      },
+      {
+        "title": "調整とエクスポート",
+        "content": "生成されたPPTを表示します。調整が必要な場合はQwen Codeに伝えることができます。例：「アーキテクチャ紹介ページを追加」「このページのコピーを調整」。満足したら、編集可能な形式でエクスポートします。\n\n```\n3ページ目のコピーを調整して、より簡潔にしてください\n```"
+      }
+    ],
+    "callouts": [],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-terminal-theme": {
+    "title": "ターミナルテーマ切り替え",
+    "description": "1文でターミナルテーマを切り替えます。自然言語でスタイルを記述し、AIが自動的に適用します。",
+    "category": "日常タスク",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i3/O1CN01AsDV5C1aSHEa8IY3M_!!6000000003328-0-videocover-3163-1800.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/zxYwfE9B3STo2bLnbTBwePKBTtWPbqt6pS2BCZMJpTM.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "デフォルトのターミナルテーマに飽きていませんか？自然言語で望むスタイルを記述すると、Qwen Codeが適切なテーマを見つけて適用します。ダークテックスタイル、フレッシュでシンプルなスタイル、レトロクラシックスタイルに関わらず、1文でAIが美的嗜好を理解し、ターミナルのカラースキームとスタイルを自動的に設定します。面倒な手動設定に別れを告げ、作業環境を瞬時に新しくします。",
+    "steps": [
+      {
+        "title": "望むテーマスタイルを記述",
+        "content": "会話で自然言語で好きなスタイルを記述します。例：「ターミナルテーマをダークテックスタイルに変更」「フレッシュでシンプルなライトテーマが欲しい」。Qwen Codeがニーズを理解します。\n\n```\nターミナルテーマをダークテックスタイルに変更してください\n```"
+      },
+      {
+        "title": "テーマを確認して適用",
+        "content": "Qwen Codeは記述に一致する複数のテーマオプションを推奨し、プレビュー効果を表示します。お気に入りのテーマを選択し、確認後、AIが自動的に設定を適用します。\n\n```\n良さそう、テーマを直接適用してください\n```"
+      },
+      {
+        "title": "微調整とパーソナライズ",
+        "content": "さらに調整が必要な場合は、引き続きQwen Codeに考えを伝えることができます。例：「背景色をもう少し暗く」「フォントサイズを調整」。AIが微調整を支援します。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "テーマ切り替えはターミナル設定ファイルを変更します。特定のターミナルアプリ（iTerm2、Terminal.appなど）を使用している場合、Qwen Codeが自動的に識別し、対応するテーマファイルを設定します。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-web-search-detail": {
+    "title": "Web検索",
+    "description": "Qwen CodeにWebコンテンツを検索させ、リアルタイム情報を取得してプログラミングを支援します。最新の技術動向とドキュメントを理解します。",
+    "category": "入門ガイド",
+    "features": [
+      "Web Search"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/6000000002711/O1CN01hgoJib1VtgrRAkjQc_!!6000000002711-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/FVVvz922HnDIY_STwpKaBGBb1u2JXOCdUCOL36A8WW4.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "Web検索機能により、Qwen Codeはインターネット上の最新情報をリアルタイムで検索し、最新の技術ドキュメント、APIリファレンス、ベストプラクティス、ソリューションを取得できます。馴染みのない技術スタックに遭遇したり、最新バージョンの変更を理解したり、特定の問題の解決策を見つけたりする必要がある場合、Web検索によりAIが最新のWeb情報に基づいて正確な回答を提供できます。",
+    "steps": [
+      {
+        "title": "検索リクエストを開始",
+        "content": "会話で検索したい内容を直接記述します。例：「React 19の新機能を検索」「Next.js App Routerのベストプラクティスを見つける」。Qwen Codeはネットワーク検索が必要かどうかを自動的に判断します。"
+      },
+      {
+        "title": "統合結果を表示",
+        "content": "AIは複数のWebソースを検索し、検索結果を統合して構造化された回答を提供します。回答には重要情報のソースリンクが含まれ、さらに深く理解するのに便利です。"
+      },
+      {
+        "title": "結果に基づいて継続",
+        "content": "検索結果に基づいてさらに質問でき、AIに検索した情報を実際のプログラミングタスクに適用させるよう依頼できます。例えば、新しいAPI使用法を検索した後、AIにコードのリファクタリングを手伝ってもらうことができます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Web検索は以下のシーンに特に適しています：最新のフレームワークバージョンの変更を理解する、特定のエラーの解決策を見つける、最新のAPIドキュメントを取得する、業界のベストプラクティスを理解するなど。検索結果はリアルタイムで更新され、最新情報を取得できます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-weekly-report": {
+    "title": "週報を自動生成",
+    "description": "Skillsをカスタマイズします。1コマンドで今週の更新を自動クロールし、テンプレートに従って製品更新週報を作成します。",
+    "category": "日常タスク",
+    "features": [
+      "Skills"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/O1CN01pGIjz425ghngaMvYX_!!6000000007556-2-videocover-1696-948.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/BrL3c4NkeIqLiT3MAAWUSp26QgM0hjN67ukuKQmgE4M.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "毎週製品更新週報を作成するのは反復的で時間のかかる作業です。Qwen CodeのカスタムSkillsを使用すると、AIに今週の製品更新情報を自動クロールさせ、標準テンプレートに従って構造化された週報を生成させることができます。1コマンドで、AIがデータを収集し、コンテンツを分析し、ドキュメントに整理し、作業効率を大幅に向上させます。製品自体に集中でき、AIに面倒なドキュメント作業を任せることができます。",
+    "steps": [
+      {
+        "title": "skills-creator Skillをインストール",
+        "content": "まず、SkillをインストールしてAIにどのデータソースの情報を収集する必要があるかを理解させます。\n\n```\nfind skillsがあるか確認し、なければ直接インストールしてください：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code、そしてskills-creatorをqwen code skillsにインストールしてください。\n```"
+      },
+      {
+        "title": "週報Skillを作成",
+        "content": "Skill作成機能を使用して、カスタム週報生成Skillが必要であることをAIに伝えます。収集する必要があるデータタイプと週報構造を記述します。AIはニーズに基づいて新しいSkillを生成します。\n\n```\nオープンソースプロジェクト：https://github.com/QwenLM/qwen-code の週報を作成する必要があります。主に今週提出されたissue、解決されたbug、新しいバージョンとfeature、および振り返りと反省を含みます。言語はユーザー中心で、利他的で、感知可能である必要があります。Skillを作成してください。\n```"
+      },
+      {
+        "title": "週報コンテンツを生成",
+        "content": "設定完了後、生成コマンドを入力します。Qwen Codeが今週の更新情報を自動クロールし、製品週報テンプレートに従って構造化されたドキュメントに整理します。\n\n```\n今週のqwen-code製品更新週報を生成してください\n```"
+      },
+      {
+        "title": "週報を開き、編集・調整",
+        "content": "生成された週報は開いて調整でき、さらに編集したりチームと共有したりできます。AIにフォーマットとコンテンツの重点を調整させることもできます。\n\n```\n週報の言語をより活発にしてください\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "初回使用時はデータソースを設定する必要があります。一度設定すると再利用できます。スケジュールタスクを設定して、Qwen Codeに毎週自動的に週報を生成させ、完全に手を解放することもできます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "office-write-file": {
+    "title": "1文でファイルを書き込む",
+    "description": "Qwen Codeにどのファイルを作成したいかを伝え、AIが自動的にコンテンツを生成して書き込みます。",
+    "category": "日常タスク",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i2/6000000003593/O1CN0139ueiV1cPeBczAQyA_!!6000000003593-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/ToffPMLiVnt3c_HDiisOPcfaWGYmYVsH3hIuj3YWBVg.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "新しいファイルを作成する必要がありますが、ゼロからコンテンツを書き始めたくありませんか？Qwen Codeにどのファイルを作成したいかを伝えると、AIが適切なコンテンツを自動生成してファイルに書き込みます。README、設定ファイル、コードファイル、ドキュメントに関わらず、Qwen Codeはニーズに基づいて高品質なコンテンツを生成できます。ファイルの用途と基本要件を記述するだけで、AIが残りを処理し、ファイル作成効率を大幅に向上させます。",
+    "steps": [
+      {
+        "title": "ファイルコンテンツと用途を記述",
+        "content": "Qwen Codeにどのタイプのファイルを作成したいか、およびファイルの主なコンテンツと用途を伝えます。\n\n```bash\nREADME.mdを作成してください。プロジェクト紹介とインストール手順を含めます\n```"
+      },
+      {
+        "title": "生成されたコンテンツを確認",
+        "content": "Qwen Codeが記述に基づいてファイルコンテンツを生成し、確認のために表示します。コンテンツを表示してニーズに合っていることを確認できます。\n\n```bash\n良さそう、ファイル作成を続けてください\n```"
+      },
+      {
+        "title": "修正と改善",
+        "content": "調整が必要な場合は、Qwen Codeに具体的な修正要件を伝えることができます。例：「使用例を追加」「フォーマットを調整」。\n\n```bash\nいくつかのコード例を追加してください\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Qwen Codeはテキストファイル、コードファイル、設定ファイルなど様々なファイルタイプをサポートしています。生成されたファイルは指定されたディレクトリに自動的に保存され、エディタでさらに修正できます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "product-insight": {
+    "title": "Insightデータインサイト",
+    "description": "個人AI使用レポートを表示します。プログラミング効率とコラボレーションデータを理解します。データ駆動の習慣最適化を使用します。",
+    "category": "日常タスク",
+    "features": [
+      "Agent Mode"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i1/6000000006496/O1CN01KNUXtG1xrDy75PPA5_!!6000000006496-0-tbvideo.jpg",
+    "videoUrl": "https://cloud.video.taobao.com/vod/a5X9O6PsdDdmXVqtHdhlzZ97mRNPrqroKO5cf4V71XM.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "InsightはQwen Codeの個人使用データ分析パネルであり、包括的なAIプログラミング効率インサイトを提供します。会話回数、コード生成量、頻繁に使用される機能、プログラミング言語の好みなどの主要指標を追跡し、視覚化されたデータレポートを生成します。これらのデータを通じて、プログラミング習慣、AI支援効果、コラボレーションパターンを明確に理解できます。Insightは効率改善の余地を発見するだけでなく、どの分野でAIを最も効果的に使用しているかを示し、AIの価値をより良く発揮できるようにします。データ駆動のインサイトにより、すべての使用がより意味のあるものになります。",
+    "steps": [
+      {
+        "title": "Insightパネルを開く",
+        "content": "会話で`/insight`コマンドを入力してInsightデータインサイトパネルを開きます。パネルは使用概要を表示し、総会話回数、コード生成行数、推定節約時間などの主要指標が含まれます。これらのデータは直感的なチャート形式で表示され、AI使用状況を一目で理解できます。\n\n```bash\n/insight\n```"
+      },
+      {
+        "title": "使用レポートを分析",
+        "content": "詳細な使用レポートを深く表示します。日次会話トレンド、頻繁に使用される機能分布、プログラミング言語の好み、コードタイプ分析などの次元が含まれます。Insightは使用パターンに基づいてパーソナライズされたインサイトと提案を提供し、潜在的な改善空間を発見するのに役立ちます。時間範囲でデータをフィルタリングし、異なる期間の使用効率を比較できます。"
+      },
+      {
+        "title": "使用習慣を最適化",
+        "content": "データインサイトに基づいて、AI使用戦略を調整します。例えば、特定の機能を頻繁に使用しているが効率が低いことに気づいた場合、より効率的な使用方法を学習できます。特定のプログラミング言語やタスクタイプでAI支援がより効果的であることに気づいた場合、同様のシーンでAIをより頻繁に使用できます。データの変化を継続的に追跡し、最適化効果を検証します。\n\nInsight機能の使用方法を知りたいですか？私たちの[AIにAIをより良く使用する方法を教えてもらう](../blog/how-to-use-qwencode-insight.mdx)を確認できます"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Insightデータはローカルのみに保存され、クラウドにアップロードされないため、使用プライバシーとデータセキュリティが保証されます。定期的にレポートを確認し、データ駆動の使用習慣を身につけてください。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "study-learning": {
+    "title": "コード学習",
+    "description": "オープンソースリポジトリをクローンしてコードを学習・理解します。Qwen Codeがオープンソースプロジェクトへの貢献方法をガイドします。",
+    "category": "学習・研究",
+    "features": [
+      "Web Search"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01sarW5120qFytaxHSU_!!6000000006900-2-videocover-1696-956.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/M44s6lya5s2ni7h3SR4AdAjDvOe1r6o8Ryq9X6MgmUA.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "優れたオープンソースコードを学習することは、プログラミング能力を向上させる素晴らしい方法です。Qwen Codeは複雑なプロジェクトのアーキテクチャと実装の詳細を深く理解し、適切な貢献ポイントを見つけ、コード修正をガイドするのを助けることができます。新しい技術スタックを学習したい場合でも、オープンソースコミュニティに貢献したい場合でも、Qwen Codeは理想的なプログラミングメンターです。",
+    "steps": [
+      {
+        "title": "リポジトリをクローン",
+        "content": "git cloneを使用してオープンソースプロジェクトをローカルにダウンロードします。興味のあるプロジェクトを選択し、開発環境にクローンします。プロジェクトが良好なドキュメントとアクティブなコミュニティを持っていることを確認すると、学習プロセスがよりスムーズになります。\n\n```bash\ngit clone https://github.com/QwenLM/qwen-code.git && cd qwen-code\n```"
+      },
+      {
+        "title": "Qwen Codeを起動",
+        "content": "プロジェクトディレクトリでQwen Codeを起動します。これにより、AIがすべてのプロジェクトファイルにアクセスし、コンテキスト関連のコード説明と提案を提供できます。Qwen Codeはプロジェクト構造を自動的に分析し、主要なモジュールと依存関係を識別します。\n\n```bash\nqwen\n```"
+      },
+      {
+        "title": "コード説明をリクエスト",
+        "content": "AIにプロジェクトのどの部分や機能を理解したいかを伝えます。全体アーキテクチャ、特定のモジュールの実装ロジック、特定の機能のデザインアイデアを尋ねることができます。AIは明確な言語でコードを説明し、関連する背景知識を提供します。\n\n```bash\nこのプロジェクトの全体アーキテクチャと主要モジュールを説明してください\n```"
+      },
+      {
+        "title": "貢献ポイントを見つける",
+        "content": "AIに初心者が参加できる適切なissueや機能を見つけるのを手伝ってもらいます。AIはプロジェクトのissueリストを分析し、難易度、タグ、説明に基づいて適切な貢献ポイントを推奨します。これはオープンソース貢献を始める良い方法です。\n\n```bash\n初心者が参加できるオープンissueはありますか？\n```"
+      },
+      {
+        "title": "修正を実装",
+        "content": "AIのガイダンスに従ってコード修正を段階的に実装します。AIは問題の分析、ソリューションの設計、コードの記述を支援し、修正がプロジェクトのコード標準に準拠していることを保証します。修正完了後、PRを提出してオープンソースプロジェクトに貢献できます。"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "オープンソースプロジェクトに参加することで、プログラミングスキルを向上させるだけでなく、技術的影響力を構築し、志を同じくする開発者と出会うことができます。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  },
+  "study-read-paper": {
+    "title": "論文を読む",
+    "description": "学術論文を直接読み取り・分析します。AIが複雑な研究コンテンツを理解し、学習カードを生成します。",
+    "category": "学習・研究",
+    "features": [
+      "Web Search"
+    ],
+    "thumbnail": "https://img.alicdn.com/imgextra/i4/O1CN01616oQD1d9RnY1XuLt_!!6000000003693-2-videocover-1696-956.png",
+    "videoUrl": "https://cloud.video.taobao.com/vod/is3SsCe3w-U5Y0ZxL-z6reSbw8NBhnzCtQfjH26lLFE.mp4",
+    "model": "qwen3.5-plus",
+    "overview": "学術論文は難解で理解するのに多くの時間を要することがよくあります。Qwen Codeは論文を直接読み取り・分析し、主要なポイントを抽出し、複雑な概念を説明し、研究方法を要約するのを助けることができます。AIは論文コンテンツを深く理解し、理解しやすい言語で説明し、構造化された学習カードを生成して復習や共有を容易にします。新しい技術を学習する場合でも、最先端分野を研究する場合でも、学習効率を大幅に向上させることができます。",
+    "steps": [
+      {
+        "title": "論文情報を提供",
+        "content": "Qwen Codeに読みたい論文を伝えます。論文タイトル、PDFファイルパス、arXivリンクを提供できます。AIが論文コンテンツを自動的に取得・分析します。\n\n```\nこの論文をダウンロード・分析してください：attention is all you need https://arxiv.org/abs/1706.03762\n```"
+      },
+      {
+        "title": "論文を読む",
+        "content": "PDF関連のSkillsをインストールして、Qwen Codeに論文コンテンツを分析させ、構造化された学習カードを生成させます。論文要約、主要ポイント、主要概念、重要な結論を表示できます。\n\n```\nfind skillsがあるか確認し、なければ直接インストールしてください：npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code、そしてAnthropic pdfなどのオフィスSkillsをqwen code skillsにインストールしてください。\n```"
+      },
+      {
+        "title": "深い学習と質問",
+        "content": "読書中、いつでもQwen Codeに質問できます。例：「自己注意メカニズムを説明してください」「この式はどのように導出されたか」。AIが詳細に回答し、深く理解するのを支援します。\n\n```\nTransformerアーキテクチャの主要なアイデアを説明してください\n```"
+      },
+      {
+        "title": "学習カードを生成",
+        "content": "学習完了後、Qwen Codeに学習カードを生成させ、論文の主要ポイント、主要概念、重要な結論を要約させます。これらのカードは復習やチームとの共有を容易にします。\n\n```bash\nこの論文の学習カードを生成してください\n```"
+      }
+    ],
+    "callouts": [
+      {
+        "type": "info",
+        "content": "Qwen CodeはPDF、arXivリンクなど複数の論文フォーマットをサポートしています。数式とチャートの場合、AIがその意味を詳細に説明し、論文コンテンツを完全に理解するのを支援します。"
+      }
+    ],
+    "author": "Qwen Code Team",
+    "date": "2025-06-01"
+  }
+}

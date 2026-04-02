@@ -1,0 +1,61 @@
+---
+title: "@file Reference Feature"
+description: "Reference project files in conversations using @file to let AI precisely understand your code context."
+category: "Getting Started"
+features:
+  - "Agent Mode"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Overview
+
+The @file reference feature allows you to directly reference project files in conversations, letting AI precisely understand your code context. Whether it's a single file or multiple files, AI will read and analyze the code content to provide more accurate suggestions and answers. This feature is particularly suitable for scenarios such as code review, problem troubleshooting, and code refactoring.
+
+<ShowcaseDetailMeta category="Getting Started" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01Aaya6r1jMctBU7ajg_!!6000000004534-2-tps-1694-952.png" alt="@file Reference Feature" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Steps
+
+<Steps>
+
+### Reference Single File
+
+Use the `@file` command followed by the file path to reference a single file. AI will read the file content, understand the code structure and logic, and then provide targeted answers based on your questions.
+
+```bash
+@file ./src/main.py
+Explain what this function does
+```
+
+You can also reference reference files and let Qwen Code organize and write them as new documents. This greatly avoids AI misunderstanding your needs and generating content not in the reference materials:
+
+```bash
+@file Help me write a public account article based on this file
+```
+
+### Describe Requirements
+
+After referencing the file, clearly describe your needs or questions. AI will analyze based on the file content and provide accurate answers or suggestions. You can ask about code logic, find problems, request optimizations, etc.
+
+### Reference Multiple Files
+
+By using the `@file` command multiple times, you can reference multiple files simultaneously. AI will comprehensively analyze all referenced files, understand their relationships and content, and provide more comprehensive answers.
+
+```bash
+@file1 @file2 Based on the materials in these two files, help me organize a learning document suitable for beginners
+```
+
+</Steps>
+
+<Callout type="info">
+@file supports relative paths and absolute paths, and also supports wildcard matching of multiple files.
+</Callout>
+
+<ShowcaseDetailCta />

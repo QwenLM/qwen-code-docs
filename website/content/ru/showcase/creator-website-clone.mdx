@@ -1,0 +1,63 @@
+---
+title: "Воссоздать любимый сайт одной фразой"
+description: "Дайте Qwen Code скриншот, и ИИ проанализирует структуру страницы для создания полного фронтенд-кода."
+category: "Инструменты для творчества"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+Нашли понравившийся дизайн сайта и хотите быстро его воссоздать? Просто дайте Qwen Code скриншот, и ИИ может проанализировать структуру страницы и создать полный фронтенд-код. Qwen Code распознает макет страницы, цветовую схему и структуру компонентов, затем создаст исполняемый код с использованием современных фронтенд-технологий.
+
+<ShowcaseDetailMeta category="Инструменты для творчества" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/corQwW7xwjNzdBg3gRnrbMX-nzXh2z0N0pSIECERpPc.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004217/O1CN01N9wncm1h1RKqs79Cs_!!6000000004217-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+<Steps>
+
+### Подготовить скриншот сайта
+
+Сделайте скриншот интерфейса сайта, который хотите воссоздать, убедившись, что он чёткий и полный.
+
+### Установить соответствующий скилл
+
+Установите скилл распознавания изображений и генерации фронтенд-кода.
+
+```bash
+Проверьте, есть ли у меня find skills, если нет, установите напрямую: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, затем помогите мне установить web-component-design.
+```
+
+### Вставить скриншот и описать требования
+
+Вставьте скриншот в разговор и сообщите Qwen Code ваши конкретные требования.
+
+```bash
+/skills web-component-design На основе этого скилла воссоздайте HTML-страницу на основе @website.png, убедившись, что ссылки на изображения действительны.
+```
+
+Пример скриншота:
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### Запустить и просмотреть
+
+Откройте соответствующую веб-страницу для проверки. Если нужно скорректировать дизайн или функциональность, продолжайте взаимодействовать с ИИ для изменения кода.
+
+</Steps>
+
+<Callout type="info">
+Сгенерированный код следует современным лучшим практикам фронтенда с хорошей структурой и поддерживаемостью. Вы можете дополнительно настраивать и расширять его.
+</Callout>
+
+<ShowcaseDetailCta />

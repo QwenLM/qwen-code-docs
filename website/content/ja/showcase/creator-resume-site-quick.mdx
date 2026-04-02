@@ -1,0 +1,67 @@
+---
+title: "個人履歴書サイトを作成"
+description: "一言で個人履歴書サイトを作成—経験を統合してショーケースページを生成し、PDF エクスポートで簡単に提出できます。"
+category: "クリエイターツール"
+features:
+  - "Skills"
+thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
+videoUrl: "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+個人履歴書サイトは就職活動と自己アピールの重要なツールです。Qwen Code は履歴書の内容に基づいてプロフェッショナルなショーケースページを素早く生成し、PDF エクスポートをサポートして提出を簡単にします。
+
+<ShowcaseDetailMeta category="クリエイターツール" features={["Skills"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4" poster="https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### 個人経験を提供
+
+学歴、職歴、プロジェクト経験、スキルセットなどの情報を AI に伝えます。
+
+```bash
+私はフロントエンドエンジニアで、XX 大学を卒業し、3 年の経験があり、React と TypeScript が得意です...
+```
+
+### ウェブデザインスキルをインストール
+
+履歴書デザインテンプレートを提供するウェブデザインスキルをインストールします。
+
+```bash
+find skills があるか確認し、なければ直接インストール：npx skills add https://github.com/vercel-labs/skills --skill find-skills、その後 web-component-design をインストールしてください。
+```
+
+### デザインスタイルを選択
+
+ミニマリスト、プロフェッショナル、クリエイティブなど、好みの履歴書スタイルを説明します。
+
+```bash
+/skills web-component-design ミニマリストでプロフェッショナルなスタイルの履歴書サイトをデザインしてください
+```
+
+### 履歴書サイトを生成
+
+AI がレスポンシブレイアウトと印刷スタイルを含む完全な履歴書サイトプロジェクトを作成します。
+
+```bash
+npm run dev
+```
+
+</Steps>
+
+<Callout type="info">
+履歴書サイトはあなたのコアな強みと実績を強調し、具体的なデータと事例で説明を裏付けるべきです。
+</Callout>
+
+<ShowcaseDetailCta />

@@ -1,0 +1,53 @@
+---
+title: "Insightデータインサイト"
+description: "個人AI使用レポートを表示します。プログラミング効率とコラボレーションデータを理解します。データ駆動の習慣最適化を使用します。"
+category: "日常タスク"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000006496/O1CN01KNUXtG1xrDy75PPA5_!!6000000006496-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/a5X9O6PsdDdmXVqtHdhlzZ97mRNPrqroKO5cf4V71XM.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+InsightはQwen Codeの個人使用データ分析パネルであり、包括的なAIプログラミング効率インサイトを提供します。会話回数、コード生成量、頻繁に使用される機能、プログラミング言語の好みなどの主要指標を追跡し、視覚化されたデータレポートを生成します。これらのデータを通じて、プログラミング習慣、AI支援効果、コラボレーションパターンを明確に理解できます。Insightは効率改善の余地を発見するだけでなく、どの分野でAIを最も効果的に使用しているかを示し、AIの価値をより良く発揮できるようにします。データ駆動のインサイトにより、すべての使用がより意味のあるものになります。
+
+<ShowcaseDetailMeta category="日常タスク" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/a5X9O6PsdDdmXVqtHdhlzZ97mRNPrqroKO5cf4V71XM.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000006496/O1CN01KNUXtG1xrDy75PPA5_!!6000000006496-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### Insightパネルを開く
+
+会話で`/insight`コマンドを入力してInsightデータインサイトパネルを開きます。パネルは使用概要を表示し、総会話回数、コード生成行数、推定節約時間などの主要指標が含まれます。これらのデータは直感的なチャート形式で表示され、AI使用状況を一目で理解できます。
+
+```bash
+/insight
+```
+
+### 使用レポートを分析
+
+詳細な使用レポートを深く表示します。日次会話トレンド、頻繁に使用される機能分布、プログラミング言語の好み、コードタイプ分析などの次元が含まれます。Insightは使用パターンに基づいてパーソナライズされたインサイトと提案を提供し、潜在的な改善空間を発見するのに役立ちます。時間範囲でデータをフィルタリングし、異なる期間の使用効率を比較できます。
+
+### 使用習慣を最適化
+
+データインサイトに基づいて、AI使用戦略を調整します。例えば、特定の機能を頻繁に使用しているが効率が低いことに気づいた場合、より効率的な使用方法を学習できます。特定のプログラミング言語やタスクタイプでAI支援がより効果的であることに気づいた場合、同様のシーンでAIをより頻繁に使用できます。データの変化を継続的に追跡し、最適化効果を検証します。
+
+Insight機能の使用方法を知りたいですか？私たちの[AIにAIをより良く使用する方法を教えてもらう](../blog/how-to-use-qwencode-insight.mdx)を確認できます
+
+</Steps>
+
+<Callout type="info">
+Insightデータはローカルのみに保存され、クラウドにアップロードされないため、使用プライバシーとデータセキュリティが保証されます。定期的にレポートを確認し、データ駆動の使用習慣を身につけてください。
+</Callout>
+
+<ShowcaseDetailCta />

@@ -8,27 +8,26 @@ features:
 thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
 videoUrl: "https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
 model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
 ---
 import { Steps, Callout } from 'nextra/components'
 import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
 import Link from 'next/link'
 
-
 ## 概述
 
 配置 API Key 是使用 Qwen Code 的重要步骤，它将解锁全部功能并让你能够访问强大的 AI 模型。通过阿里云百炼平台，你可以轻松获取 API Key，并根据不同场景选择最适合的模型。无论是日常开发还是复杂任务，合适的模型配置都能显著提升你的工作效率。
 
-<ShowcaseDetailMeta category="入门指南" features={["设置", "API"]} model="qwen3.5-plus" />
+<ShowcaseDetailMeta category="入门指南" features={["设置", "API"]} model="qwen3.5-plus" author="Qwen Code Team" />
 
 <video src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4" poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
 
 ## 操作步骤
 
-如果是百炼 Coding Plan 模式的用户，请参考 [百炼 Coding Plan API 配置指南](./guide-bailian-coding-plan.mdx) 来获取 API Key 和配置模型。
-
 <Steps>
 
-## 获取 API Key
+### 获取 API Key
 
 访问 [阿里云百炼平台](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key)，在个人中心找到 API Key 管理页面。点击创建新的 API Key，系统会生成一个唯一的密钥。这个密钥是你访问 Qwen Code 服务的凭证，请务必妥善保管。
 
@@ -38,7 +37,7 @@ import Link from 'next/link'
 请妥善保管你的 API Key，不要泄露给他人或在代码仓库中提交。
 </Callout>
 
-## 在 Qwen Code 中配置 API Key
+### 在 Qwen Code 中配置 API Key
 
 **1. 让 Qwen Code 自动配置**
 
@@ -91,7 +90,7 @@ import Link from 'next/link'
 }
 ```
 
-## 选择模型
+### 选择模型
 
 根据需要选择合适的模型，平衡速度和性能。不同的模型适用于不同的场景，你可以根据任务的复杂程度和响应时间要求来选择。使用 `/model` 命令可以快速切换模型。
 
@@ -100,7 +99,7 @@ import Link from 'next/link'
 - `qwen3.5-flash`: 速度快，适合简单任务
 - `qwen-max`: 最强模型，适合高难度任务
 
-## 测试连接
+### 测试连接
 
 发送一条测试消息确认 API 配置正确。如果配置成功，Qwen Code 会立即回复你，这意味着你已经准备好开始使用 AI 辅助编程了。如果遇到问题，请检查 API Key 是否正确设置。
 
@@ -109,10 +108,5 @@ Hello, can you help me with coding?
 ```
 
 </Steps>
-
-## 相关推荐
-
-- [开始第一次对话](./guide-first-conversation.mdx) — 安装完成后，发起你与 Qwen Code 的第一次 AI 对话
-- [百炼 Coding Plan 模式](./guide-bailian-coding-plan.mdx) — 配置使用百炼 Coding Plan，多模型选择，提升复杂任务的完成质量
 
 <ShowcaseDetailCta />

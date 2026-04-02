@@ -1,0 +1,59 @@
+---
+title: "プランモード + Web検索"
+description: "プランモードでWeb検索と組み合わせて、最初に最新情報を検索してから実行計画を策定し、複雑なタスクの精度を大幅に向上させます。"
+category: "入門ガイド"
+features:
+  - "Plan Mode"
+  - "Web Search"
+thumbnail: "https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+プランモードはQwen Codeのインテリジェントな計画能力であり、複雑なタスクを実行可能なステップに分解できます。Web検索と組み合わせて使用すると、最初に最新の技術ドキュメント、ベストプラクティス、ソリューションを能動的に検索し、その後、これらのリアルタイム情報に基づいてより正確な実行計画を策定します。この組み合わせは、新しいフレームワーク、新しいAPI、または最新の仕様に従う必要がある開発タスクを処理するのに特に適しており、コード品質とタスク完了効率を大幅に向上させることができます。プロジェクトの移行、新機能の統合、複雑な技術的問題の解決など、プラン + Web検索が最も先進的なソリューションを提供します。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["Plan Mode", "Web Search"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN016eKNFf1CtFmYQHGsd_!!6000000000138-2-tps-1694-952.png" alt="プランモード + Web検索" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### プランモードを有効にする
+
+会話で`/approval-mode plan`コマンドを入力してプランモードを有効にします。この時点で、Qwen Codeは計画状態に入り、タスク説明を受け取り、思考を開始する準備が整います。プランモードはタスクの複雑さを自動的に分析し、ナレッジベースを補充するために外部情報を検索する必要があるかどうかを判断します。
+
+```bash
+/approval-mode plan
+```
+
+### 最新情報の検索をリクエスト
+
+タスク要件を記述すると、Qwen Codeが検索が必要なキーワードを自動的に識別します。最新の技術ドキュメント、APIリファレンス、ベストプラクティス、ソリューションを取得するために能動的にWeb検索リクエストを開始します。検索結果はナレッジベースに統合され、後続の計画のための正確な情報基盤を提供します。
+
+```
+AI分野の最新ニュースを検索して、私にレポートとしてまとめてください
+```
+
+### 実行計画を表示
+
+検索された情報に基づいて、Qwen Codeが詳細な実行計画を生成します。計画には明確なステップ説明、注意すべき技術的要点、潜在的な落とし穴とソリューションが含まれます。この計画を確認し、変更提案を行うか、実行を開始することを確認できます。
+
+### 計画を段階的に実行
+
+計画を確認すると、Qwen Codeがステップごとに実行します。各重要なノードで、進捗と結果を報告し、プロセス全体を完全に制御できるようにします。問題が発生した場合、古い知識に頼るのではなく、最新の検索情報に基づいてソリューションを提供します。
+
+</Steps>
+
+<Callout type="info">
+Web検索はタスク内の技術キーワードを自動的に識別し、検索内容を手動で指定する必要はありません。急速に反復するフレームワークとライブラリの場合は、最新情報を取得するためにプランモードでWeb検索を有効にすることをお勧めします。
+</Callout>
+
+<ShowcaseDetailCta />

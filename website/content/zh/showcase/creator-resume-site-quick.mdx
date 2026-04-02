@@ -7,17 +7,18 @@ features:
 thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png"
 videoUrl: "https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4"
 model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
 ---
 import { Steps, Callout } from 'nextra/components'
 import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
 import Link from 'next/link'
 
-
 ## 概述
 
 个人简历网站是求职和自我展示的重要工具。Qwen Code 能够根据你的简历内容快速生成专业的展示页面，支持导出 PDF 格式，方便投递。无论是求职应聘还是个人品牌建设，一个精美的简历网站都能让你脱颖而出。
 
-<ShowcaseDetailMeta category="编程开发" features={["Skills"]} model="qwen3.5-plus" />
+<ShowcaseDetailMeta category="编程开发" features={["Skills"]} model="qwen3.5-plus" author="Qwen Code Team" />
 
 <video src="https://cloud.video.taobao.com/vod/XSaE8Uzz45gLXvG-PaKVdFTnQpUM2QJ3qRg3R0SPnrs.mp4" poster="https://gw.alicdn.com/imgextra/i4/O1CN018tZPON1f8BwaGqauX_!!6000000003961-2-tps-2880-1622.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
 
@@ -62,13 +63,5 @@ npm run dev
 <Callout type="info">
 简历网站应该突出你的核心优势和成就，使用具体的数据和案例来支撑你的描述。
 </Callout>
-
-## 相关推荐
-
-- [一句话复刻你喜欢的网站](./creator-website-clone.mdx) — 截图给 Qwen Code，告诉它你想复刻的网站
-- [一句话写入文件](./office-write-file.mdx) — 告诉 Qwen Code 要写什么内容，它会帮你创建和写入文件
-- [Remotion 视频创作](./creator-remotion-video.mdx) — 通过自然语言描述，使用 Remotion Skill 驱动代码生成视频内容
-
----
 
 <ShowcaseDetailCta />

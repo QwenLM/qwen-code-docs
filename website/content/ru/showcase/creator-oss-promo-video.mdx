@@ -1,0 +1,48 @@
+---
+title: "Создание промо-видео для вашего open source проекта"
+description: "Укажите URL репозитория, и ИИ создаст красивое демо-видео проекта для вас."
+category: "Инструменты для творчества"
+features:
+  - "Skills"
+  - "Remotion"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01KKPAv51ZL7QcgguxA_!!6000000003177-2-tps-2880-1622.png"
+videoUrl: "https://cloud.video.taobao.com/vod/TwRRLlr4EHfv-8kvb0J-w7zj70zxoGY7wiaPewqm4l0.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+Хотите создать промо-видео для своего open source проекта, но не имеете опыта в видеопроизводстве? Qwen Code может автоматически генерировать красивые демо-видео проекта. Просто укажите URL репозитория GitHub, и ИИ проанализирует структуру проекта, извлечёт ключевые функции, создаст анимационные скрипты и отрендерит профессиональное видео с помощью Remotion.
+
+<ShowcaseDetailMeta category="Инструменты для творчества" features={["Skills", "Remotion"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/TwRRLlr4EHfv-8kvb0J-w7zj70zxoGY7wiaPewqm4l0.mp4" poster="https://gw.alicdn.com/imgextra/i2/O1CN01KKPAv51ZL7QcgguxA_!!6000000003177-2-tps-2880-1622.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+<Steps>
+
+### Подготовить репозиторий
+
+Убедитесь, что ваш репозиторий GitHub содержит полную информацию о проекте и документацию, включая README, скриншоты и описания функций.
+
+### Создать промо-видео
+
+Сообщите Qwen Code желаемый стиль и фокус видео, и ИИ автоматически проанализирует проект и создаст видео.
+
+```bash
+На основе этого скилла https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md, помогите мне создать демо-видео для open source репозитория: <URL репозитория>
+```
+
+</Steps>
+
+<Callout type="info">
+Созданные видео поддерживают несколько разрешений и форматов, и могут быть напрямую загружены на YouTube и другие видеоплатформы.
+</Callout>
+
+<ShowcaseDetailCta />

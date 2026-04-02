@@ -1,0 +1,57 @@
+---
+title: "Режим Bailian Coding Plan"
+description: "Настройте для использования Bailian Coding Plan, множественный выбор моделей, улучшение качества выполнения сложных задач."
+category: "Руководство по началу работы"
+features:
+  - "Plan Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png"
+videoUrl: "https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+Режим Bailian Coding Plan — это расширенная функция Qwen Code, специально разработанная для сложных задач программирования. Благодаря интеллектуальному мультимодельному сотрудничеству он может разлагать большие задачи на выполняемые этапы и автоматически планировать оптимальный путь выполнения. Будь то рефакторинг больших баз кода или реализация сложных функций, Coding Plan может значительно повысить качество и эффективность выполнения задач.
+
+<ShowcaseDetailMeta category="Руководство по началу работы" features={["Plan Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/QrKbdt1ujUuWY7zc4Jg22cY_kg539ZRPJVHC1_blEnY.mp4" poster="https://img.alicdn.com/imgextra/i3/O1CN01Sksw211SlxK91PdUg_!!6000000002288-2-videocover-1696-954.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+<Steps>
+
+### Войти в интерфейс настроек
+
+Запустите Qwen Code и введите команду `/auth`.
+
+### Выбрать Coding Plan
+
+Включите режим Bailian Coding Plan в настройках, введите ваш ключ API, и Qwen Code автоматически настроит поддерживаемые Coding Plan модели для вас.
+
+<img src="https://gw.alicdn.com/imgextra/i1/O1CN01cDz8AJ1Cq30rXjuXS_!!6000000000131-2-tps-1696-952.png" alt="" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+### Выбрать модель
+
+Прямо введите команду `/model`, чтобы выбрать нужную модель.
+
+### Начать сложную задачу
+
+Опишите вашу задачу программирования, и Coding Plan автоматически спланирует этапы выполнения. Вы можете подробно объяснить цели, ограничения и ожидаемые результаты задачи. ИИ проанализирует требования задачи и сгенерирует структурированный план выполнения, включая конкретные операции и ожидаемые результаты для каждого этапа.
+
+```bash
+Мне нужно рефакторизировать слой данных этого проекта, перенести базу данных из MySQL в PostgreSQL, сохраняя интерфейс API неизменным
+```
+
+</Steps>
+
+<Callout type="info">
+Режим Coding Plan особенно подходит для сложных задач, требующих многоэтапного сотрудничества, таких как рефакторинг архитектуры, миграция функций и т.д.
+</Callout>
+
+<ShowcaseDetailCta />

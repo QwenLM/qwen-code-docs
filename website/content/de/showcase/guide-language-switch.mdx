@@ -1,0 +1,55 @@
+---
+title: "Sprachwechsel"
+description: "Flexibler Wechsel der UI-Oberflächensprache und KI-Ausgabesprache, unterstützt mehrsprachige Interaktion."
+category: "Erste Schritte"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Übersicht
+
+Qwen Code unterstützt flexiblen Sprachwechsel. Sie können die UI-Oberflächensprache und die KI-Ausgabesprache unabhängig voneinander einstellen. Ob Chinesisch, Englisch oder andere Sprachen - Sie können geeignete Einstellungen finden. Die mehrsprachige Unterstützung ermöglicht es Ihnen, in einer vertrauten Sprachumgebung zu arbeiten, was die Kommunikationffizienz und den Komfort verbessert.
+
+<ShowcaseDetailMeta category="Erste Schritte" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/3shVUlMOckkpLxiic7uHHYVb8B1bdN5Pe0Up0HhOCuk.mp4" poster="https://img.alicdn.com/imgextra/i1/6000000005337/O1CN01dGymbF1pIOvPoDCpT_!!6000000005337-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Schritte
+
+<Steps>
+
+### UI-Sprache wechseln
+
+Verwenden Sie den Befehl `/language ui`, um die Oberflächensprache zu wechseln. Unterstützt Chinesisch, Englisch und andere Sprachen. Nach dem Wechseln der UI-Sprache werden Menüs, Eingabeaufforderungen, Hilfedokumente usw. alle in der von Ihnen ausgewählten Sprache angezeigt.
+
+```bash
+/language ui zh-CN
+```
+
+### Ausgabesprache wechseln
+
+Verwenden Sie den Befehl `/language output`, um die KI-Ausgabesprache zu wechseln. Die KI wird die von Ihnen angegebene Sprache verwenden, um Fragen zu beantworten, Codekommentare zu generieren, Erklärungen bereitzustellen usw., wodurch die Kommunikation natürlicher und reibungsloser wird.
+
+```bash
+/language output zh-CN
+```
+
+### Gemischte Sprachverwendung
+
+Sie können auch für UI und Ausgabe unterschiedliche Sprachen einstellen, um eine gemischte Sprachverwendung zu erreichen. Beispielsweise Chinesisch für UI und Englisch für KI-Ausgabe, geeignet für Szenarien, in denen Sie englische technische Dokumentation lesen müssen.
+
+</Steps>
+
+<Callout type="info">
+Spracheinstellungen werden automatisch gespeichert und verwenden beim nächsten Start die von Ihnen zuletzt ausgewählte Sprache.
+</Callout>
+
+<ShowcaseDetailCta />

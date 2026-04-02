@@ -1,0 +1,50 @@
+---
+title: "認証ログイン"
+description: "Qwen Codeの認証プロセスを理解し、アカウントログインを素早く完了して、すべての機能をアンロックします。"
+category: "入門ガイド"
+features:
+  - "Terminal"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+認証ログインはQwen Codeを使用する最初のステップであり、シンプルな認証プロセスですべての機能を素早くアンロックできます。認証プロセスは安全で信頼性が高く、複数のログイン方法をサポートし、アカウントとデータのセキュリティを確保します。認証を完了すると、カスタムモデル設定、履歴の保存などの機能を含むパーソナライズされたAIプログラミング体験を楽しむことができます。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["Terminal"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN011eGoRs1Pf8a4hXQ0K_!!6000000001867-2-tps-1700-952.png" alt="認証ログイン" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### 認証をトリガー
+
+Qwen Codeを起動した後、`/auth`コマンドを入力すると、システムが自動的に認証プロセスを開始します。認証コマンドはコマンドラインまたはVS Code拡張機能で使用でき、操作方法は一貫しています。システムは現在の認証ステータスを検出し、ログインしていない場合はログインをガイドします。
+
+```bash
+/auth
+```
+
+### ブラウザログイン
+
+システムが自動的にブラウザを開き、認証ページにリダイレクトします。認証ページでは、Alibaba Cloudアカウントまたはその他のサポートされているログイン方法を選択できます。ログインプロセスは高速で便利で、数秒で完了します。
+
+### ログインを確認
+
+ログインが成功すると、ブラウザが自動的に閉じるか、成功メッセージが表示されます。Qwen Codeインターフェースに戻ると、認証成功メッセージが表示され、正常にログインしてすべての機能がアンロックされたことが示されます。認証情報は自動的に保存されるため、毎回再ログインする必要はありません。
+
+</Steps>
+
+<Callout type="info">
+認証情報は安全にローカルに保存され、毎回再ログインする必要はありません。
+</Callout>
+
+<ShowcaseDetailCta />

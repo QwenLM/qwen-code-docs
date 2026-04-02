@@ -1,0 +1,51 @@
+---
+title: "Интерфейс интеграции VS Code"
+description: "Полное отображение интерфейса Qwen Code в VS Code. Понимайте макет и использование каждой функциональной области."
+category: "Руководство по началу работы"
+features:
+  - "Agent Mode"
+thumbnail: "https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Обзор
+
+VS Code — один из самых популярных редакторов кода, и Qwen Code предлагает глубокую интеграцию с VS Code. Через это расширение вы можете напрямую общаться с ИИ в знакомой среде редактора, наслаждаясь бесшовным опытом программирования. Расширение предоставляет интуитивный интерфейс, позволяющий легко получить доступ ко всем функциям. Автодополнение кода, решение проблем, операции с файлами — всё можно сделать эффективно.
+
+<ShowcaseDetailMeta category="Руководство по началу работы" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4" poster="https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Шаги
+
+<Steps>
+
+### Установка расширения VS Code
+
+Поищите "Qwen Code" в marketplace расширений VS Code и нажмите установить. Процесс установки прост и быстр, завершается за несколько секунд. После установки значок Qwen Code появится на боковой панели VS Code, указывая, что расширение успешно загружено.
+
+### Вход в аккаунт
+
+Используйте команду `/auth` для запуска процесса аутентификации. Система автоматически откроет браузер для входа. Процесс входа безопасен и удобен, поддерживает несколько методов аутентификации. После успешного входа информация об аккаунте автоматически синхронизируется с расширением VS Code, разблокируя все функции.
+
+```bash
+/auth
+```
+
+### Начало использования
+
+Откройте панель Qwen Code на боковой панели и начните разговор с ИИ. Вы можете напрямую вводить вопросы, ссылаться на файлы или выполнять команды. Все операции выполняются в VS Code. Расширение поддерживает функции, такие как несколько вкладок, история и горячие клавиши, предоставляя полный опыт помощника программирования.
+
+</Steps>
+
+<Callout type="info">
+Расширение VS Code имеет те же функции, что и версия командной строки. Вы можете свободно выбирать в зависимости от вашего сценария использования.
+</Callout>
+
+<ShowcaseDetailCta />

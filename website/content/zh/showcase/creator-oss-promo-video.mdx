@@ -8,17 +8,18 @@ features:
 thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01KKPAv51ZL7QcgguxA_!!6000000003177-2-tps-2880-1622.png"
 videoUrl: "https://cloud.video.taobao.com/vod/TwRRLlr4EHfv-8kvb0J-w7zj70zxoGY7wiaPewqm4l0.mp4"
 model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
 ---
 import { Steps, Callout } from 'nextra/components'
 import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
 import Link from 'next/link'
 
-
 ## 概述
 
 想要为你的开源项目制作宣传视频但缺乏视频制作经验？Qwen Code 可以帮你自动生成精美的项目演示视频。只需提供 GitHub 仓库地址，AI 就会分析项目结构、提取关键功能、生成动画脚本，并使用 Remotion 渲染成专业的视频。无论是项目发布、技术分享还是社区推广，都能快速获得高质量的宣传素材。
 
-<ShowcaseDetailMeta category="编程开发" features={["Skills", "Remotion"]} model="qwen3.5-plus" />
+<ShowcaseDetailMeta category="设计创作" features={["Skills", "Remotion"]} model="qwen3.5-plus" author="Qwen Code Team" />
 
 <video src="https://cloud.video.taobao.com/vod/TwRRLlr4EHfv-8kvb0J-w7zj70zxoGY7wiaPewqm4l0.mp4" poster="https://gw.alicdn.com/imgextra/i2/O1CN01KKPAv51ZL7QcgguxA_!!6000000003177-2-tps-2880-1622.png" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
 
@@ -29,7 +30,6 @@ import Link from 'next/link'
 ### 准备项目仓库
 
 确保你的 GitHub 仓库包含完整的项目信息和文档，包括 README、截图、功能说明等。这些信息将帮助 AI 更好地理解项目特点。
-
 
 ### 生成宣传视频
 
@@ -44,11 +44,5 @@ import Link from 'next/link'
 <Callout type="info">
 生成的视频支持多种分辨率和格式，可以直接上传到 YouTube、B 站等视频平台。你也可以进一步编辑视频，添加背景音乐和字幕。
 </Callout>
-
-## 相关推荐
-
-- [Remotion 视频创作](./creator-remotion-video.mdx) — 通过自然语言描述创意生成视频
-
----
 
 <ShowcaseDetailCta />

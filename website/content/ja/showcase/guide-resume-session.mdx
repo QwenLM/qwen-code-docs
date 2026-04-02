@@ -1,0 +1,63 @@
+---
+title: "Resumeセッション回復"
+description: "中断された会話はいつでも再開でき、コンテキストと進捗を失うことはありません。"
+category: "入門ガイド"
+features:
+  - "Terminal"
+thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg"
+videoUrl: "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## 概要
+
+Resumeセッション回復機能により、会話をいつでも中断し、必要に応じて再開でき、コンテキストと進捗を失うことはありません。一時的に用事がある場合でも、マルチタスクを並行して処理する場合でも、会話を安全に一時停止し、後でシームレスに続けることができます。この機能は作業の柔軟性を大幅に向上させ、時間とタスクをより効率的に管理できます。
+
+<ShowcaseDetailMeta category="入門ガイド" features={["Terminal"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<video src="https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## 操作手順
+
+<Steps>
+
+### セッションリストを表示
+
+`qwen --resume`コマンドを使用してすべての履歴セッションを表示します。システムは各セッションの時間、トピック、簡単な情報を表示し、再開する必要がある会話を素早く見つけるのに役立ちます。
+
+```bash
+qwen --resume
+```
+
+### セッションを再開
+
+`qwen --resume`コマンドを使用して指定されたセッションを再開します。セッションIDまたは番号で再開する会話を選択でき、システムが完全なコンテキスト履歴をロードします。
+
+```bash
+qwen --resume
+```
+
+### 作業を続行
+
+セッションを再開すると、中断されなかったかのように会話を続けることができます。すべてのコンテキスト、履歴、進捗が完全に保持され、AIは以前のディスカッション内容を正確に理解できます。
+
+### Qwen Codeを起動した後にセッションを切り替え
+
+Qwen Codeを起動した後、`/resume`コマンドを使用して以前のセッションに切り替えることができます。
+
+```bash
+/resume
+```
+
+</Steps>
+
+<Callout type="info">
+セッション履歴は自動的に保存され、クロスデバイス同期をサポートしており、異なるデバイスで同じセッションを再開できます。
+</Callout>
+
+<ShowcaseDetailCta />

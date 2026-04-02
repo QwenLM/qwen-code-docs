@@ -7,17 +7,18 @@ features:
 thumbnail: "https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg"
 videoUrl: "https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4"
 model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
 ---
 import { Steps, Callout } from 'nextra/components'
 import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
 import Link from 'next/link'
 
-
 ## 概述
 
 Resume 会话恢复功能让你能够随时中断对话，并在需要时恢复继续，不丢失任何上下文和进度。无论是临时有事还是多任务并行，你都可以放心地暂停对话，稍后无缝继续。这个功能大大提升了工作灵活性，让你能够更高效地管理时间和任务。
 
-<ShowcaseDetailMeta category="入门指南" features={["终端操作"]} model="qwen3.5-plus" />
+<ShowcaseDetailMeta category="入门指南" features={["终端操作"]} model="qwen3.5-plus" author="Qwen Code Team" />
 
 <video src="https://cloud.video.taobao.com/vod/2oGLaR2xoX1-RcWElW2yS5QMKXe03ab_Kcd01_wTOr8.mp4" poster="https://img.alicdn.com/imgextra/i2/6000000004411/O1CN01KJRiqA1iSIAmOCkIP_!!6000000004411-0-tbvideo.jpg" controls style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
 
@@ -58,12 +59,5 @@ Qwen Code 启动后，你可以使用 `/resume` 命令切换到之前会话。
 <Callout type="info">
 会话历史会自动保存，支持跨设备同步，你可以在不同设备上恢复同一个会话。
 </Callout>
-
-## 相关推荐
-
-- [开始第一次对话](./guide-first-conversation.mdx) — 安装完成后，发起你与 Qwen Code 的第一次 AI 对话
-- [导出对话记录](./office-export-conversation.mdx) — 导出对话记录，方便保存和分享
-
----
 
 <ShowcaseDetailCta />

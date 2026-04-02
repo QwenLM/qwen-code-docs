@@ -1,0 +1,46 @@
+---
+title: "Coller une image du presse-papiers"
+description: "Collez directement des captures d'écran du presse-papiers dans la fenêtre de conversation. L'IA comprend instantanément le contenu de l'image et offre de l'aide."
+category: "Tâches quotidiennes"
+features:
+  - "Image Recognition"
+thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Vue d'ensemble
+
+La fonction de collage d'images du presse-papiers vous permet de coller n'importe quelle capture d'écran directement dans la fenêtre de conversation de Qwen Code, sans avoir à enregistrer le fichier d'abord puis à le télécharger. Qu'il s'agisse de captures d'erreur, de maquettes de conception UI, de captures de code ou d'autres images, Qwen Code peut comprendre instantanément leur contenu et offrir de l'aide basée sur vos besoins. Cette méthode d'interaction pratique améliore considérablement l'efficacité de la communication, vous permettant d'obtenir rapidement des analyses et des suggestions de l'IA lorsque vous rencontrez des problèmes.
+
+<ShowcaseDetailMeta category="Tâches quotidiennes" features={["Image Recognition"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i2/O1CN01OsEDov1z4nJto1CfQ_!!6000000006661-2-tps-1694-956.png" alt="Coller une image du presse-papiers" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Copier l'image dans le presse-papiers
+
+Utilisez l'outil de capture d'écran du système (macOS : `Cmd+Shift+4`, Windows : `Win+Shift+S`) pour capturer le contenu de l'écran, ou copiez des images depuis des navigateurs ou des gestionnaires de fichiers. Les captures d'écran sont automatiquement enregistrées dans le presse-papiers sans opération supplémentaire.
+
+### Coller dans la fenêtre de conversation
+
+Utilisez `Cmd+V` (macOS) ou `Ctrl+V` (Windows) dans la zone de saisie de la conversation Qwen Code pour coller l'image. L'image s'affichera automatiquement dans la zone de saisie, et vous pourrez saisir du texte décrivant votre question ou vos besoins en même temps.
+
+### Obtenir les résultats de l'analyse de l'IA
+
+Après avoir envoyé le message, Qwen Code analysera le contenu de l'image et donnera une réponse. Il peut identifier des erreurs dans les captures de code, analyser la disposition des maquettes de conception UI, interpréter les données de graphiques, etc. Vous pouvez continuer à poser des questions et discuter en détail de tous les détails de l'image.
+
+</Steps>
+
+<Callout type="info">
+Prend en charge les formats d'image courants tels que PNG, JPEG, GIF. La taille de l'image ne doit pas dépasser 10 MB pour garantir le meilleur effet de reconnaissance. Pour les captures de code, l'utilisation d'une haute résolution est recommandée pour améliorer la précision de la reconnaissance de texte.
+</Callout>
+
+<ShowcaseDetailCta />

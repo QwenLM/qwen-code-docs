@@ -1,0 +1,66 @@
+---
+title: "Fichier de configuration Agents"
+description: "Personnalisez le comportement de l'IA via le fichier MD Agents pour adapter l'IA à vos spécifications de projet et votre style de codage."
+category: "Guide de démarrage"
+features:
+  - "Agent Mode"
+thumbnail: "https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png"
+model: "qwen3.5-plus"
+author: "Qwen Code Team"
+date: "2025-06-01"
+---
+import { Steps, Callout } from 'nextra/components'
+import { ShowcaseDetailMeta, ShowcaseDetailCta } from '@/components/showcase-detail-meta'
+import Link from 'next/link'
+
+## Vue d'ensemble
+
+Le fichier de configuration Agents vous permet de personnaliser le comportement de l'IA via des fichiers Markdown, permettant à l'IA de s'adapter à vos spécifications de projet et votre style de codage. Vous pouvez définir le style de code, les conventions de nommage, les exigences de commentaires, etc., et l'IA générera du code conforme aux normes du projet en fonction de ces configurations. Cette fonctionnalité est particulièrement adaptée à la collaboration en équipe, garantissant que les styles de code générés par tous les membres sont cohérents.
+
+<ShowcaseDetailMeta category="Guide de démarrage" features={["Agent Mode"]} model="qwen3.5-plus" author="Qwen Code Team" />
+
+<img src="https://gw.alicdn.com/imgextra/i4/O1CN01qjVpRJ1twwS25UK0D_!!6000000005967-2-tps-1902-1144.png" alt="Fichier de configuration Agents" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />
+
+## Étapes
+
+<Steps>
+
+### Créer le fichier de configuration
+
+Créez un dossier `.qwen` dans le répertoire racine du projet et créez un fichier `AGENTS.md` dedans. Ce fichier stockera votre configuration de comportement de l'IA.
+
+```bash
+mkdir -p .qwen && touch .qwen/AGENTS.md
+```
+
+### Écrire la configuration
+
+Écrivez la configuration au format Markdown, décrivant les spécifications du projet en langage naturel. Vous pouvez définir le style de code, les conventions de nommage, les exigences de commentaires, les préférences de framework, etc., et l'IA ajustera son comportement en fonction de ces configurations.
+
+```markdown
+# Spécifications du projet
+
+### Style de code
+
+- Utiliser TypeScript
+- Utiliser la programmation fonctionnelle
+- Ajouter des commentaires détaillés
+
+### Conventions de nommage
+
+- Utiliser camelCase pour les variables
+- Utiliser UPPER_SNAKE_CASE pour les constantes
+- Utiliser PascalCase pour les noms de classes
+```
+
+### Appliquer la configuration
+
+Après avoir enregistré le fichier de configuration, l'IA le lira automatiquement et l'appliquera. Dans la conversation suivante, l'IA générera du code conforme aux normes du projet en fonction de la configuration, sans avoir à répéter les spécifications.
+
+</Steps>
+
+<Callout type="info">
+Prend en charge le format Markdown, décrivez les spécifications du projet en langage naturel.
+</Callout>
+
+<ShowcaseDetailCta />

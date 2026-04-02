@@ -2,7 +2,17 @@
 
 import React, { useState, useCallback } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowLeft, PenLine, Tag, Cpu, Layers, Share2, Check } from "lucide-react";
+
+const SUPPORTED_LOCALES = ["zh", "en", "de", "fr", "ja", "pt-BR", "ru"];
+
+function useLocale(): string {
+  const pathname = usePathname();
+  if (!pathname) return "zh";
+  const firstSegment = pathname.split("/").filter(Boolean)[0];
+  return firstSegment && SUPPORTED_LOCALES.includes(firstSegment) ? firstSegment : "zh";
+}
 
 interface ShowcaseDetailMetaProps {
   category?: string;
@@ -103,21 +113,34 @@ export function ShowcaseDetailMeta({
   );
 }
 
+const CTA_TEXTS: Record<string, { startUsing: string; backToAll: string }> = {
+  zh: { startUsing: "立即开始使用 Qwen Code", backToAll: "返回全部案例" },
+  en: { startUsing: "Start Using Qwen Code", backToAll: "Back to all showcases" },
+  de: { startUsing: "Qwen Code jetzt nutzen", backToAll: "Zurück zu allen Showcases" },
+  fr: { startUsing: "Commencer à utiliser Qwen Code", backToAll: "Retour à tous les showcases" },
+  ja: { startUsing: "Qwen Code を使い始める", backToAll: "すべてのショーケースに戻る" },
+  "pt-BR": { startUsing: "Comece a usar o Qwen Code", backToAll: "Voltar para todos os showcases" },
+  ru: { startUsing: "Начать использовать Qwen Code", backToAll: "Вернуться ко всем витринам" },
+};
+
 export function ShowcaseDetailCta() {
+  const locale = useLocale();
+  const texts = CTA_TEXTS[locale] || CTA_TEXTS.zh;
+
   return (
     <div className="mt-16 mb-4 flex flex-col items-center gap-4">
       <Link
-        href="/zh/users/overview"
+        href={`/${locale}/users/overview`}
         className="inline-flex items-center justify-center px-8 py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg font-semibold no-underline text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors active:scale-[0.98]"
       >
-        立即开始使用 Qwen Code
+        {texts.startUsing}
       </Link>
       <Link
-        href="/zh/showcase"
+        href={`/${locale}/showcase`}
         className="inline-flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 no-underline transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
-        返回全部案例
+        {texts.backToAll}
       </Link>
     </div>
   );
