@@ -66,11 +66,19 @@ next build                 →  Next.js 构建
     "steps": [
       {
         "title": "第一步标题",
-        "content": "描述第一步的操作，支持 Markdown 格式。\n\n可以包含代码块：\n\n```bash\nqwen-code --version\n```"
+        "blocks": [
+          { "type": "text", "value": "描述第一步的操作，支持 Markdown 格式。" },
+          { "type": "code", "lang": "bash", "value": "qwen-code --version" },
+          { "type": "text", "value": "执行完成后你会看到版本号输出。" }
+        ]
       },
       {
         "title": "第二步标题",
-        "content": "描述第二步的操作。"
+        "blocks": [
+          { "type": "text", "value": "描述第二步的操作。" },
+          { "type": "image", "src": "https://img.alicdn.com/imgextra/xxx.png", "alt": "操作截图" },
+          { "type": "callout", "calloutType": "info", "value": "这是一条提示信息。" }
+        ]
       }
     ],
     "callouts": [
@@ -97,7 +105,7 @@ next build                 →  Next.js 构建
 | `author` | ❌ | 作者名称，默认 `Qwen Code Team` |
 | `date` | ❌ | 发布日期（`YYYY-MM-DD` 格式），用于排序（最新在前） |
 | `overview` | ✅ | 概述文本，支持 Markdown 格式 |
-| `steps` | ✅ | 操作步骤数组，每个元素包含 `title`（步骤标题）和 `content`（步骤内容，支持 Markdown） |
+| `steps` | ✅ | 操作步骤数组，每个元素包含 `title`（步骤标题）和 `blocks`（内容块数组，见下方说明） |
 | `callouts` | ❌ | 提示信息数组，每个元素包含 `type`（`info`/`warning`/`tip`）和 `content`（提示文本） |
 | `relatedLinks` | ❌ | 相关推荐数组，每个元素包含 `title` 和 `href` |
 
@@ -109,17 +117,32 @@ next build                 →  Next.js 构建
 - **ShowcaseDetailCta 按钮**：自动添加在页面底部
 - **import 语句**：自动添加
 
-#### 步骤内容中嵌入 Callout
+#### Steps 的 blocks 格式
 
-如果某个提示信息需要放在特定步骤内部（而非 Steps 之后），可以在 step 的 `content` 中使用特殊标记：
+每个 step 的 `blocks` 是一个数组，每个元素是一个内容块，支持 4 种类型：
 
+| Block 类型 | 字段 | 说明 |
+|-----------|------|------|
+| `text` | `value` | 纯文本/Markdown 段落 |
+| `code` | `lang`, `value` | 代码块，`lang` 为语言标识（如 `bash`、`json`），`value` 为代码内容 |
+| `image` | `src`, `alt` | 图片，`src` 为图片 URL，`alt` 为替代文本 |
+| `callout` | `calloutType`, `value` | 提示信息，`calloutType` 为 `info`/`warning`/`tip`，`value` 为提示文本 |
+
+示例：
+
+```json
+{
+  "title": "获取 API Key",
+  "blocks": [
+    { "type": "text", "value": "访问阿里云百炼平台，找到 API Key 管理页面。" },
+    { "type": "image", "src": "https://img.alicdn.com/imgextra/xxx.png", "alt": "API Key 页面" },
+    { "type": "callout", "calloutType": "warning", "value": "请妥善保管你的 API Key，不要泄露给他人。" },
+    { "type": "code", "lang": "bash", "value": "export API_KEY=your-key-here" }
+  ]
+}
 ```
-:::callout{type="warning"}
-请妥善保管你的 API Key，不要泄露给他人。
-:::
-```
 
-生成脚本会自动将其转换为 `<Callout>` 组件。
+> **优点**：配置者不需要记 Markdown 语法，代码块不需要写 ` ``` ` 标记，图片不需要写 `<img>` 标签。翻译时只需翻译 `text` 和 `callout` 类型的 blocks，`code` 和 `image` 跳过。
 
 ### 步骤 2：添加其他语言的翻译
 
@@ -215,6 +238,29 @@ node scripts/generate-showcase-mdx.js en ja
 ### `scripts/generate-showcase-data.js`
 
 从 zh 的 MDX 文件生成索引页数据（`src/generated/showcase-data.json`）。构建时自动运行。
+
+### `scripts/watch-showcase.js`
+
+Watch 模式：监听 `showcase-i18n/*.json` 的变化，自动重新生成 MDX 文件。
+
+```bash
+# 在另一个终端窗口中运行
+npm run watch-showcase
+```
+
+配合 `npm run dev` 使用，修改 JSON 后无需手动跑脚本，MDX 会自动更新，Next.js 热更新会立即生效。
+
+**开发时推荐的工作流**：
+
+```bash
+# 终端 1：启动 dev server
+npm run dev
+
+# 终端 2：启动 watch 模式
+npm run watch-showcase
+
+# 然后修改 showcase-i18n/*.json，页面会自动更新
+```
 
 ---
 

@@ -61,6 +61,53 @@ function renderInlineCallouts(content) {
   );
 }
 
+// ── Render blocks array to MDX string ───────────────────────────────
+
+const IMAGE_STYLE = `style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}}`;
+
+function renderBlocks(blocks) {
+  const parts = [];
+
+  for (const block of blocks) {
+    switch (block.type) {
+      case "text":
+        parts.push(block.value);
+        break;
+      case "code":
+        parts.push(`\`\`\`${block.lang || ""}\n${block.value}\n\`\`\``);
+        break;
+      case "image":
+        parts.push(
+          `<img src="${block.src}" alt="${block.alt || ""}" ${IMAGE_STYLE} />`
+        );
+        break;
+      case "callout":
+        parts.push(
+          `<Callout type="${block.calloutType}">\n${block.value}\n</Callout>`
+        );
+        break;
+      default:
+        // Unknown block type, output value as-is
+        if (block.value) parts.push(block.value);
+        break;
+    }
+  }
+
+  return parts.join("\n\n");
+}
+
+// ── Render step content (blocks or legacy content) ──────────────────
+
+function renderStepContent(step) {
+  if (step.blocks && Array.isArray(step.blocks) && step.blocks.length > 0) {
+    return renderBlocks(step.blocks);
+  }
+  if (step.content) {
+    return renderInlineCallouts(step.content);
+  }
+  return "";
+}
+
 // ── Build the media block (video or image) ──────────────────────────
 
 function buildMediaBlock(item) {
@@ -143,8 +190,9 @@ function generateMDX(item, lang) {
         sections.push(`### ${step.title}`);
         sections.push("");
       }
-      if (step.content) {
-        sections.push(renderInlineCallouts(step.content));
+      const stepBody = renderStepContent(step);
+      if (stepBody) {
+        sections.push(stepBody);
         sections.push("");
       }
     }

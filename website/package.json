@@ -6,7 +6,8 @@
     "clean": "rm -rf .next",
     "generate-showcase": "node scripts/generate-showcase-data.js",
     "generate-showcase-mdx": "node scripts/generate-showcase-mdx.js",
-    "dev": "npm run generate-showcase && npm run generate-showcase-mdx && npm run clean && next dev",
+    "watch-showcase": "node scripts/watch-showcase.js",
+    "dev": "npm run generate-showcase-mdx && npm run generate-showcase && npm run clean && next dev",
     "build": "npm run generate-showcase && npm run generate-showcase-mdx && npm run clean && next build",
     "postbuild": "node scripts/set-html-lang.js && pagefind --site out --output-path out/_pagefind --exclude-selectors 'noscript,script,style,pre,code,.nextra-code-block,.nextra-toc,.nextra-sidebar,.nextra-breadcrumb,.nextra-banner'",
     "preview": "node scripts/preview.js"

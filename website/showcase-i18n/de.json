@@ -13,15 +13,30 @@
     "steps": [
       {
         "title": "Automatische Erkennung",
-        "content": "Qwen Code erkennt automatisch Sprachserver-Konfigurationen in Ihrem Projekt. Für gängige Programmiersprachen und Frameworks erkennt und startet es den entsprechenden LSP-Dienst automatisch. Keine manuelle Konfiguration erforderlich – sofort einsatzbereit."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Qwen Code erkennt automatisch Sprachserver-Konfigurationen in Ihrem Projekt. Für gängige Programmiersprachen und Frameworks erkennt und startet es den entsprechenden LSP-Dienst automatisch. Keine manuelle Konfiguration erforderlich – sofort einsatzbereit."
+          }
+        ]
       },
       {
         "title": "IntelliSense genießen",
-        "content": "Beim Codieren aktiviert sich LSP IntelliSense automatisch. Während Sie tippen, liefert es präzise Vervollständigungsvorschläge basierend auf dem Kontext, einschließlich Funktionsnamen, Variablennamen und Typannotationen. Drücken Sie Tab, um einen Vorschlag schnell anzunehmen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Beim Codieren aktiviert sich LSP IntelliSense automatisch. Während Sie tippen, liefert es präzise Vervollständigungsvorschläge basierend auf dem Kontext, einschließlich Funktionsnamen, Variablennamen und Typannotationen. Drücken Sie Tab, um einen Vorschlag schnell anzunehmen."
+          }
+        ]
       },
       {
         "title": "Fehlerdiagnose",
-        "content": "Die LSP-Echtzeit-Diagnose analysiert Ihren Code kontinuierlich und erkennt potenzielle Probleme. Fehler und Warnungen werden intuitiv angezeigt, einschließlich Problemort, Fehlertyp und Korrekturvorschlägen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Die LSP-Echtzeit-Diagnose analysiert Ihren Code kontinuierlich und erkennt potenzielle Probleme. Fehler und Warnungen werden intuitiv angezeigt, einschließlich Problemort, Fehlertyp und Korrekturvorschlägen."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -47,15 +62,50 @@
     "steps": [
       {
         "title": "PR zum Review angeben",
-        "content": "Teilen Sie Qwen Code mit, welchen Pull Request Sie reviewen möchten, indem Sie die PR-Nummer oder den Link angeben.\n\n:::callout{type=\"tip\"}\nSie können den pr-review Skill verwenden, um PRs zu analysieren. Zur Skill-Installation siehe: [Skills installieren](./guide-skill-install.mdx).\n:::\n\n```bash\n/skill pr-review Bitte reviewe diesen PR: <PR-Link oder Nummer>\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Teilen Sie Qwen Code mit, welchen Pull Request Sie reviewen möchten, indem Sie die PR-Nummer oder den Link angeben."
+          },
+          {
+            "type": "callout",
+            "calloutType": "tip",
+            "value": "Sie können den pr-review Skill verwenden, um PRs zu analysieren. Zur Skill-Installation siehe: [Skills installieren](./guide-skill-install.mdx)."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/skill pr-review Bitte reviewe diesen PR: <PR-Link oder Nummer>"
+          }
+        ]
       },
       {
         "title": "Tests ausführen und prüfen",
-        "content": "Qwen Code analysiert die Code-Änderungen, identifiziert relevante Testfälle und führt Tests durch, um die Korrektheit des Codes zu überprüfen.\n\n```bash\nTests ausführen und prüfen, ob dieser PR alle Testfälle besteht\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Qwen Code analysiert die Code-Änderungen, identifiziert relevante Testfälle und führt Tests durch, um die Korrektheit des Codes zu überprüfen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Tests ausführen und prüfen, ob dieser PR alle Testfälle besteht"
+          }
+        ]
       },
       {
         "title": "Review-Bericht ansehen",
-        "content": "Nach dem Review erstellt Qwen Code einen detaillierten Bericht mit gefundenen Problemen, potenziellen Risiken und Verbesserungsvorschlägen.\n\n```bash\nReview-Bericht anzeigen und alle gefundenen Probleme auflisten\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach dem Review erstellt Qwen Code einen detaillierten Bericht mit gefundenen Problemen, potenziellen Risiken und Verbesserungsvorschlägen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Review-Bericht anzeigen und alle gefundenen Probleme auflisten"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -81,27 +131,72 @@
     "steps": [
       {
         "title": "Issue auswählen",
-        "content": "Finden Sie ein interessantes oder geeignetes Issue auf GitHub. Priorisieren Sie Issues mit klaren Beschreibungen, Reproduktionsschritten und erwarteten Ergebnissen. Labels wie `good first issue` oder `help wanted` eignen sich gut für Einsteiger."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Finden Sie ein interessantes oder geeignetes Issue auf GitHub. Priorisieren Sie Issues mit klaren Beschreibungen, Reproduktionsschritten und erwarteten Ergebnissen. Labels wie `good first issue` oder `help wanted` eignen sich gut für Einsteiger."
+          }
+        ]
       },
       {
         "title": "Projekt klonen und Problem lokalisieren",
-        "content": "Laden Sie den Projektcode herunter und lassen Sie die KI das Problem lokalisieren. Verwenden Sie `@file`, um relevante Dateien zu referenzieren.\n\n```bash\nHilf mir zu analysieren, wo das in diesem Issue beschriebene Problem auftritt, Issue-Link: <Issue-Link>\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Laden Sie den Projektcode herunter und lassen Sie die KI das Problem lokalisieren. Verwenden Sie `@file`, um relevante Dateien zu referenzieren."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Hilf mir zu analysieren, wo das in diesem Issue beschriebene Problem auftritt, Issue-Link: <Issue-Link>"
+          }
+        ]
       },
       {
         "title": "Relevanten Code verstehen",
-        "content": "Lassen Sie die KI die relevante Code-Logik und Abhängigkeiten erklären."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Lassen Sie die KI die relevante Code-Logik und Abhängigkeiten erklären."
+          }
+        ]
       },
       {
         "title": "Lösungsplan entwickeln",
-        "content": "Besprechen Sie mögliche Lösungen mit der KI und wählen Sie die beste aus."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Besprechen Sie mögliche Lösungen mit der KI und wählen Sie die beste aus."
+          }
+        ]
       },
       {
         "title": "Code-Änderungen implementieren",
-        "content": "Ändern Sie den Code schrittweise mit KI-Unterstützung und testen Sie ihn.\n\n```bash\nHilf mir, diesen Code zu ändern, um das Problem zu lösen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Ändern Sie den Code schrittweise mit KI-Unterstützung und testen Sie ihn."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Hilf mir, diesen Code zu ändern, um das Problem zu lösen"
+          }
+        ]
       },
       {
         "title": "PR einreichen",
-        "content": "Nach Abschluss der Änderungen einen PR einreichen und auf die Überprüfung durch den Projektbetreuer warten.\n\n```bash\nHilf mir, einen PR einzureichen, um dieses Problem zu lösen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach Abschluss der Änderungen einen PR einreichen und auf die Überprüfung durch den Projektbetreuer warten."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Hilf mir, einen PR einzureichen, um dieses Problem zu lösen"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -128,11 +223,26 @@
     "steps": [
       {
         "title": "Repository vorbereiten",
-        "content": "Stellen Sie sicher, dass Ihr GitHub-Repository vollständige Projektinformationen und Dokumentation enthält, einschließlich README, Screenshots und Funktionsbeschreibungen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Stellen Sie sicher, dass Ihr GitHub-Repository vollständige Projektinformationen und Dokumentation enthält, einschließlich README, Screenshots und Funktionsbeschreibungen."
+          }
+        ]
       },
       {
         "title": "Werbevideo generieren",
-        "content": "Teilen Sie Qwen Code den gewünschten Videostil und Fokus mit, und die KI analysiert das Projekt automatisch und generiert das Video.\n\n```bash\nBasierend auf diesem Skill https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md, hilf mir, ein Demo-Video für das Open-Source-Repository zu generieren: <Repository-URL>\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Teilen Sie Qwen Code den gewünschten Videostil und Fokus mit, und die KI analysiert das Projekt automatisch und generiert das Video."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Basierend auf diesem Skill https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md, hilf mir, ein Demo-Video für das Open-Source-Repository zu generieren: <Repository-URL>"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -159,19 +269,59 @@
     "steps": [
       {
         "title": "Remotion Skill installieren",
-        "content": "Installieren Sie zunächst den Remotion-Skill, der Best Practices und Vorlagen für die Videoerstellung enthält.\n\n```bash\nPrüfe, ob ich find skills habe, falls nicht, installiere es direkt: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, dann hilf mir, remotion-best-practice zu installieren.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Installieren Sie zunächst den Remotion-Skill, der Best Practices und Vorlagen für die Videoerstellung enthält."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Prüfe, ob ich find skills habe, falls nicht, installiere es direkt: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, dann hilf mir, remotion-best-practice zu installieren."
+          }
+        ]
       },
       {
         "title": "Ihre Idee beschreiben",
-        "content": "Beschreiben Sie in natürlicher Sprache den Videoinhalt, den Sie erstellen möchten, einschließlich Thema, Stil, Dauer und Schlüsselszenen.\n\n```bash\n@file Erstelle basierend auf dem Dokument ein 30-sekündiges Produktwerbevideo im modernen Stil.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Beschreiben Sie in natürlicher Sprache den Videoinhalt, den Sie erstellen möchten, einschließlich Thema, Stil, Dauer und Schlüsselszenen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "@file Erstelle basierend auf dem Dokument ein 30-sekündiges Produktwerbevideo im modernen Stil."
+          }
+        ]
       },
       {
         "title": "Vorschau und Anpassung",
-        "content": "Qwen Code generiert Remotion-Projektcode basierend auf Ihrer Beschreibung. Starten Sie den Entwicklungsserver zur Vorschau.\n\n```bash\nnpm run dev\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Qwen Code generiert Remotion-Projektcode basierend auf Ihrer Beschreibung. Starten Sie den Entwicklungsserver zur Vorschau."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "npm run dev"
+          }
+        ]
       },
       {
         "title": "Rendern und Exportieren",
-        "content": "Wenn Sie zufrieden sind, verwenden Sie den Build-Befehl, um das endgültige Video zu rendern.\n\n```bash\nHilf mir, das Video direkt zu rendern und zu exportieren.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Wenn Sie zufrieden sind, verwenden Sie den Build-Befehl, um das endgültige Video zu rendern."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Hilf mir, das Video direkt zu rendern und zu exportieren."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -197,19 +347,59 @@
     "steps": [
       {
         "title": "Persönliche Erfahrungen angeben",
-        "content": "Teilen Sie der KI Ihren Bildungshintergrund, Berufserfahrung, Projekterfahrung und Fähigkeiten mit.\n\n```bash\nIch bin Frontend-Entwickler, habe an der XX-Universität studiert, 3 Jahre Erfahrung, spezialisiert auf React und TypeScript...\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Teilen Sie der KI Ihren Bildungshintergrund, Berufserfahrung, Projekterfahrung und Fähigkeiten mit."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Ich bin Frontend-Entwickler, habe an der XX-Universität studiert, 3 Jahre Erfahrung, spezialisiert auf React und TypeScript..."
+          }
+        ]
       },
       {
         "title": "Web-Design Skill installieren",
-        "content": "Installieren Sie den Web-Design Skill, der Lebenslauf-Design-Vorlagen bereitstellt.\n\n```bash\nPrüfe, ob ich find skills habe, falls nicht, installiere es direkt: npx skills add https://github.com/vercel-labs/skills --skill find-skills, dann hilf mir, web-component-design zu installieren.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Installieren Sie den Web-Design Skill, der Lebenslauf-Design-Vorlagen bereitstellt."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Prüfe, ob ich find skills habe, falls nicht, installiere es direkt: npx skills add https://github.com/vercel-labs/skills --skill find-skills, dann hilf mir, web-component-design zu installieren."
+          }
+        ]
       },
       {
         "title": "Designstil wählen",
-        "content": "Beschreiben Sie Ihren bevorzugten Lebenslaufstil, z.B. minimalistisch, professionell oder kreativ.\n\n```bash\n/skills web-component-design Hilf mir, eine minimalistische professionelle Lebenslauf-Website zu gestalten\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Beschreiben Sie Ihren bevorzugten Lebenslaufstil, z.B. minimalistisch, professionell oder kreativ."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/skills web-component-design Hilf mir, eine minimalistische professionelle Lebenslauf-Website zu gestalten"
+          }
+        ]
       },
       {
         "title": "Lebenslauf-Website generieren",
-        "content": "Die KI erstellt ein vollständiges Lebenslauf-Website-Projekt mit responsivem Layout und Druckstilen.\n\n```bash\nnpm run dev\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Die KI erstellt ein vollständiges Lebenslauf-Website-Projekt mit responsivem Layout und Druckstilen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "npm run dev"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -235,19 +425,58 @@
     "steps": [
       {
         "title": "Website-Screenshot vorbereiten",
-        "content": "Machen Sie einen Screenshot der Website-Oberfläche, die Sie nachbilden möchten, und stellen Sie sicher, dass er klar und vollständig ist."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Machen Sie einen Screenshot der Website-Oberfläche, die Sie nachbilden möchten, und stellen Sie sicher, dass er klar und vollständig ist."
+          }
+        ]
       },
       {
         "title": "Entsprechenden Skill installieren",
-        "content": "Installieren Sie den Skill für Bilderkennung und Frontend-Code-Generierung.\n\n```bash\nPrüfe, ob ich find skills habe, falls nicht, installiere es direkt: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, dann hilf mir, web-component-design zu installieren.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Installieren Sie den Skill für Bilderkennung und Frontend-Code-Generierung."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Prüfe, ob ich find skills habe, falls nicht, installiere es direkt: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, dann hilf mir, web-component-design zu installieren."
+          }
+        ]
       },
       {
         "title": "Screenshot einfügen und Anforderungen beschreiben",
-        "content": "Fügen Sie den Screenshot in das Gespräch ein und teilen Sie Qwen Code Ihre spezifischen Anforderungen mit.\n\n```bash\n/skills web-component-design Basierend auf diesem Skill, bilde eine Webseite HTML basierend auf @website.png nach, achte darauf, dass Bildreferenzen gültig sind.\n```\n\nBeispiel-Screenshot:\n\n<img src=\"https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Fügen Sie den Screenshot in das Gespräch ein und teilen Sie Qwen Code Ihre spezifischen Anforderungen mit."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/skills web-component-design Basierend auf diesem Skill, bilde eine Webseite HTML basierend auf @website.png nach, achte darauf, dass Bildreferenzen gültig sind."
+          },
+          {
+            "type": "text",
+            "value": "Beispiel-Screenshot:"
+          },
+          {
+            "type": "image",
+            "src": "https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png",
+            "alt": ""
+          }
+        ]
       },
       {
         "title": "Ausführen und Vorschau",
-        "content": "Öffnen Sie die entsprechende Webseite zur Überprüfung. Bei Bedarf können Sie weiter mit der KI interagieren, um den Code anzupassen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Öffnen Sie die entsprechende Webseite zur Überprüfung. Bei Bedarf können Sie weiter mit der KI interagieren, um den Code anzupassen."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -274,11 +503,31 @@
     "steps": [
       {
         "title": "Video-Link angeben",
-        "content": "Teilen Sie Qwen Code den YouTube-Video-Link mit, den Sie umwandeln möchten.\n\n```\nBasierend auf diesem Skill: https://github.com/QwenLM/qwen-code-examples/tree/main/skills/youtube-transcript-extractor, hilf mir, dieses Video als Blog zu schreiben: https://www.youtube.com/watch?v=fJSLnxi1i64\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Teilen Sie Qwen Code den YouTube-Video-Link mit, den Sie umwandeln möchten."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Basierend auf diesem Skill: https://github.com/QwenLM/qwen-code-examples/tree/main/skills/youtube-transcript-extractor, hilf mir, dieses Video als Blog zu schreiben: https://www.youtube.com/watch?v=fJSLnxi1i64"
+          }
+        ]
       },
       {
         "title": "Blog-Beitrag generieren und bearbeiten",
-        "content": "Die KI analysiert das Transkript und generiert einen Artikel mit Titel, Einleitung, Hauptteil und Fazit.\n\n```\nHilf mir, den Sprachstil dieses Artikels für einen technischen Blog anzupassen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Die KI analysiert das Transkript und generiert einen Artikel mit Titel, Einleitung, Hauptteil und Fazit."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Hilf mir, den Sprachstil dieses Artikels für einen technischen Blog anzupassen"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -304,23 +553,53 @@
     "steps": [
       {
         "title": "Konfigurationsdatei erstellen",
-        "content": "Erstellen Sie im Projektstammverzeichnis einen `.qwen`-Ordner und erstellen Sie darin eine `AGENTS.md`-Datei. Diese Datei speichert Ihre KI-Verhaltenskonfiguration.\n\n```bash\nmkdir -p .qwen && touch .qwen/AGENTS.md\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Erstellen Sie im Projektstammverzeichnis einen `.qwen`-Ordner und erstellen Sie darin eine `AGENTS.md`-Datei. Diese Datei speichert Ihre KI-Verhaltenskonfiguration."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "mkdir -p .qwen && touch .qwen/AGENTS.md"
+          }
+        ]
       },
       {
         "title": "Konfiguration schreiben",
-        "content": "Schreiben Sie die Konfiguration im Markdown-Format und beschreiben Sie Projektspezifikationen in natürlicher Sprache. Sie können Codierungsstil, Benennungskonventionen, Kommentar-Anforderungen, Framework-Präferenzen usw. definieren, und die KI passt ihr Verhalten basierend auf diesen Konfigurationen an.\n\n```markdown\n# Projektspezifikationen"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Schreiben Sie die Konfiguration im Markdown-Format und beschreiben Sie Projektspezifikationen in natürlicher Sprache. Sie können Codierungsstil, Benennungskonventionen, Kommentar-Anforderungen, Framework-Präferenzen usw. definieren, und die KI passt ihr Verhalten basierend auf diesen Konfigurationen an.\n\n```markdown\n# Projektspezifikationen"
+          }
+        ]
       },
       {
         "title": "Codierungsstil",
-        "content": "- TypeScript verwenden\n- Funktionale Programmierung verwenden\n- Detaillierte Kommentare hinzufügen"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "- TypeScript verwenden\n- Funktionale Programmierung verwenden\n- Detaillierte Kommentare hinzufügen"
+          }
+        ]
       },
       {
         "title": "Benennungskonventionen",
-        "content": "- camelCase für Variablen verwenden\n- UPPER_SNAKE_CASE für Konstanten verwenden\n- PascalCase für Klassennamen verwenden\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "- camelCase für Variablen verwenden\n- UPPER_SNAKE_CASE für Konstanten verwenden\n- PascalCase für Klassennamen verwenden\n```"
+          }
+        ]
       },
       {
         "title": "Konfiguration anwenden",
-        "content": "Nach dem Speichern der Konfigurationsdatei liest die KI diese automatisch und wendet sie an. Im nächsten Gespräch generiert die KI basierend auf der Konfiguration Code, der den Projektstandards entspricht, ohne dass die Spezifikationen wiederholt werden müssen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach dem Speichern der Konfigurationsdatei liest die KI diese automatisch und wendet sie an. Im nächsten Gespräch generiert die KI basierend auf der Konfiguration Code, der den Projektstandards entspricht, ohne dass die Spezifikationen wiederholt werden müssen."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -346,19 +625,77 @@
     "steps": [
       {
         "title": "API-Schlüssel abrufen",
-        "content": "Besuchen Sie die [Alibaba Cloud Bailian-Plattform](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key), finden Sie die API-Schlüssel-Verwaltungsseite im persönlichen Center. Klicken Sie auf \"Neuen API-Schlüssel erstellen\", und das System generiert einen eindeutigen Schlüssel. Dieser Schlüssel ist Ihre Berechtigung für den Zugriff auf Qwen Code-Dienste. Bitte bewahren Sie ihn sicher auf.\n\n<img src=\"https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />\n\n:::callout{type=\"warning\"}\nBitte bewahren Sie Ihren API-Schlüssel sicher auf und geben Sie ihn nicht an andere weiter oder committen Sie ihn in das Code-Repository.\n:::"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Besuchen Sie die [Alibaba Cloud Bailian-Plattform](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key), finden Sie die API-Schlüssel-Verwaltungsseite im persönlichen Center. Klicken Sie auf \"Neuen API-Schlüssel erstellen\", und das System generiert einen eindeutigen Schlüssel. Dieser Schlüssel ist Ihre Berechtigung für den Zugriff auf Qwen Code-Dienste. Bitte bewahren Sie ihn sicher auf."
+          },
+          {
+            "type": "image",
+            "src": "https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png",
+            "alt": ""
+          },
+          {
+            "type": "callout",
+            "calloutType": "warning",
+            "value": "Bitte bewahren Sie Ihren API-Schlüssel sicher auf und geben Sie ihn nicht an andere weiter oder committen Sie ihn in das Code-Repository."
+          }
+        ]
       },
       {
         "title": "API-Schlüssel in Qwen Code konfigurieren",
-        "content": "**1. Qwen Code automatisch konfigurieren lassen**\n\nÖffnen Sie das Terminal, starten Sie Qwen Code direkt im Stammverzeichnis, kopieren Sie den folgenden Code und teilen Sie Ihren API-SCHLÜSSEL mit. Die Konfiguration ist erfolgreich. Starten Sie Qwen Code neu und geben Sie `/model` ein, um zum konfigurierten Modell zu wechseln.\n\n```json\nHelfen Sie mir, `settings.json` für Bailians Modell gemäß dem folgenden Inhalt zu konfigurieren:\n{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<Modellname>\",\n            \"name\": \"[Bailian] <Modellname>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<durch SCHLÜSSEL des Benutzers ersetzen>\"\n    },\n}\nFür die Eingabe des Modellnamens beachten Sie bitte: https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all\nMein API-SCHLÜSSEL ist:\n```\n\nFügen Sie dann Ihren API-SCHLÜSSEL in das Eingabefeld ein, teilen Sie ihm den gewünschten Modellnamen mit, z. B. `qwen3.5-plus`, und senden Sie ihn, um die Konfiguration abzuschließen.\n\n<img src=\"https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />\n\n**2. Manuelle Konfiguration**\n\nKonfigurieren Sie die Datei settings.json manuell. Der Dateipfad befindet sich im Verzeichnis `<Benutzerstammverzeichnis>/.qwen`. Sie können den folgenden Inhalt direkt kopieren und Ihren API-SCHLÜSSEL und Modellnamen ändern.\n\n```json\n{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<Modellname>\",\n            \"name\": \"[Bailian] <Modellname>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<durch SCHLÜSSEL des Benutzers ersetzen>\"\n    },\n}\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "**1. Qwen Code automatisch konfigurieren lassen**\n\nÖffnen Sie das Terminal, starten Sie Qwen Code direkt im Stammverzeichnis, kopieren Sie den folgenden Code und teilen Sie Ihren API-SCHLÜSSEL mit. Die Konfiguration ist erfolgreich. Starten Sie Qwen Code neu und geben Sie `/model` ein, um zum konfigurierten Modell zu wechseln."
+          },
+          {
+            "type": "code",
+            "lang": "json",
+            "value": "Helfen Sie mir, `settings.json` für Bailians Modell gemäß dem folgenden Inhalt zu konfigurieren:\n{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<Modellname>\",\n            \"name\": \"[Bailian] <Modellname>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<durch SCHLÜSSEL des Benutzers ersetzen>\"\n    },\n}\nFür die Eingabe des Modellnamens beachten Sie bitte: https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all\nMein API-SCHLÜSSEL ist:"
+          },
+          {
+            "type": "text",
+            "value": "Fügen Sie dann Ihren API-SCHLÜSSEL in das Eingabefeld ein, teilen Sie ihm den gewünschten Modellnamen mit, z. B. `qwen3.5-plus`, und senden Sie ihn, um die Konfiguration abzuschließen."
+          },
+          {
+            "type": "image",
+            "src": "https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png",
+            "alt": ""
+          },
+          {
+            "type": "text",
+            "value": "**2. Manuelle Konfiguration**\n\nKonfigurieren Sie die Datei settings.json manuell. Der Dateipfad befindet sich im Verzeichnis `<Benutzerstammverzeichnis>/.qwen`. Sie können den folgenden Inhalt direkt kopieren und Ihren API-SCHLÜSSEL und Modellnamen ändern."
+          },
+          {
+            "type": "code",
+            "lang": "json",
+            "value": "{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<Modellname>\",\n            \"name\": \"[Bailian] <Modellname>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<durch SCHLÜSSEL des Benutzers ersetzen>\"\n    },\n}"
+          }
+        ]
       },
       {
         "title": "Modell auswählen",
-        "content": "Wählen Sie das geeignete Modell entsprechend Ihren Anforderungen und balancieren Sie Geschwindigkeit und Leistung. Verschiedene Modelle sind für verschiedene Szenarien geeignet. Sie können basierend auf der Komplexität der Aufgabe und den Anforderungen an die Antwortzeit wählen. Verwenden Sie den Befehl `/model`, um schnell zwischen Modellen zu wechseln.\n\nHäufige Modelloptionen:\n- `qwen3.5-plus`: Leistungsstark, geeignet für komplexe Aufgaben\n- `qwen3.5-flash`: Schnell, geeignet für einfache Aufgaben\n- `qwen-max`: Stärkstes Modell, geeignet für Aufgaben mit hoher Schwierigkeit"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Wählen Sie das geeignete Modell entsprechend Ihren Anforderungen und balancieren Sie Geschwindigkeit und Leistung. Verschiedene Modelle sind für verschiedene Szenarien geeignet. Sie können basierend auf der Komplexität der Aufgabe und den Anforderungen an die Antwortzeit wählen. Verwenden Sie den Befehl `/model`, um schnell zwischen Modellen zu wechseln.\n\nHäufige Modelloptionen:\n- `qwen3.5-plus`: Leistungsstark, geeignet für komplexe Aufgaben\n- `qwen3.5-flash`: Schnell, geeignet für einfache Aufgaben\n- `qwen-max`: Stärkstes Modell, geeignet für Aufgaben mit hoher Schwierigkeit"
+          }
+        ]
       },
       {
         "title": "Verbindung testen",
-        "content": "Senden Sie eine Testnachricht, um zu bestätigen, dass die API-Konfiguration korrekt ist. Wenn die Konfiguration erfolgreich ist, antwortet Qwen Code Ihnen sofort, was bedeutet, dass Sie bereit sind, mit der KI-unterstützten Programmierung zu beginnen. Wenn Sie Probleme haben, überprüfen Sie bitte, ob der API-Schlüssel korrekt eingestellt ist.\n\n```bash\nHello, can you help me with coding?\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Senden Sie eine Testnachricht, um zu bestätigen, dass die API-Konfiguration korrekt ist. Wenn die Konfiguration erfolgreich ist, antwortet Qwen Code Ihnen sofort, was bedeutet, dass Sie bereit sind, mit der KI-unterstützten Programmierung zu beginnen. Wenn Sie Probleme haben, überprüfen Sie bitte, ob der API-Schlüssel korrekt eingestellt ist."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Hello, can you help me with coding?"
+          }
+        ]
       }
     ],
     "callouts": [],
@@ -379,19 +716,54 @@
     "steps": [
       {
         "title": "/arena-Befehl eingeben",
-        "content": "Geben Sie im Qwen Code Chat `/arena` ein und wählen Sie `start`, um den Arena-Modus zu betreten.\n\n```bash\n/arena start\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Geben Sie im Qwen Code Chat `/arena` ein und wählen Sie `start`, um den Arena-Modus zu betreten."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/arena start"
+          }
+        ]
       },
       {
         "title": "Teilnehmende Modelle auswählen",
-        "content": "Wählen Sie aus der verfügbaren Modellliste die Modelle aus, die Sie vergleichen möchten. Drücken Sie `space`, um 2 oder mehr Modelle auszuwählen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Wählen Sie aus der verfügbaren Modellliste die Modelle aus, die Sie vergleichen möchten. Drücken Sie `space`, um 2 oder mehr Modelle auszuwählen."
+          }
+        ]
       },
       {
         "title": "Aufgabenbeschreibung eingeben",
-        "content": "Geben Sie die Aufgabe ein, die jedes Modell bearbeiten soll, zum Beispiel:\n\n```\nRefaktorisiere diese Funktion, um Lesbarkeit und Leistung zu verbessern\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Geben Sie die Aufgabe ein, die jedes Modell bearbeiten soll, zum Beispiel:"
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Refaktorisiere diese Funktion, um Lesbarkeit und Leistung zu verbessern"
+          }
+        ]
       },
       {
         "title": "Ergebnisse vergleichen und das beste auswählen",
-        "content": "Alle Modelle bearbeiten die Aufgabe gleichzeitig. Nach Abschluss können Sie ihre Lösungen vergleichen und das beste Ergebnis auf Ihren Code anwenden.\n\n```bash\n/arena select\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Alle Modelle bearbeiten die Aufgabe gleichzeitig. Nach Abschluss können Sie ihre Lösungen vergleichen und das beste Ergebnis auf Ihren Code anwenden."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/arena select"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -417,15 +789,35 @@
     "steps": [
       {
         "title": "Authentifizierung auslösen",
-        "content": "Geben Sie nach dem Start von Qwen Code den Befehl `/auth` ein, und das System startet automatisch den Authentifizierungsprozess. Der Authentifizierungsbefehl kann in der Befehlszeile oder der VS Code-Erweiterung verwendet werden, und die Vorgehensweise ist konsistent. Das System erkennt den aktuellen Authentifizierungsstatus. Wenn Sie nicht angemeldet sind, führt es Sie durch die Anmeldung.\n\n```bash\n/auth\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Geben Sie nach dem Start von Qwen Code den Befehl `/auth` ein, und das System startet automatisch den Authentifizierungsprozess. Der Authentifizierungsbefehl kann in der Befehlszeile oder der VS Code-Erweiterung verwendet werden, und die Vorgehensweise ist konsistent. Das System erkennt den aktuellen Authentifizierungsstatus. Wenn Sie nicht angemeldet sind, führt es Sie durch die Anmeldung."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/auth"
+          }
+        ]
       },
       {
         "title": "Browser-Anmeldung",
-        "content": "Das System öffnet automatisch den Browser und leitet zur Authentifizierungsseite weiter. Auf der Authentifizierungsseite können Sie wählen, ob Sie ein Alibaba Cloud-Konto oder andere unterstützte Anmeldemethoden verwenden möchten. Der Anmeldeprozess ist schnell und bequem und dauert nur wenige Sekunden."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Das System öffnet automatisch den Browser und leitet zur Authentifizierungsseite weiter. Auf der Authentifizierungsseite können Sie wählen, ob Sie ein Alibaba Cloud-Konto oder andere unterstützte Anmeldemethoden verwenden möchten. Der Anmeldeprozess ist schnell und bequem und dauert nur wenige Sekunden."
+          }
+        ]
       },
       {
         "title": "Anmeldung bestätigen",
-        "content": "Nach erfolgreicher Anmeldung schließt sich der Browser automatisch oder zeigt eine Erfolgsmeldung. Wenn Sie zur Qwen Code-Oberfläche zurückkehren, sehen Sie die Erfolgsmeldung zur Authentifizierung, die anzeigt, dass Sie sich erfolgreich angemeldet und alle Funktionen freigeschaltet haben. Authentifizierungsinformationen werden automatisch gespeichert, sodass Sie sich nicht erneut anmelden müssen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach erfolgreicher Anmeldung schließt sich der Browser automatisch oder zeigt eine Erfolgsmeldung. Wenn Sie zur Qwen Code-Oberfläche zurückkehren, sehen Sie die Erfolgsmeldung zur Authentifizierung, die anzeigt, dass Sie sich erfolgreich angemeldet und alle Funktionen freigeschaltet haben. Authentifizierungsinformationen werden automatisch gespeichert, sodass Sie sich nicht erneut anmelden müssen."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -451,19 +843,49 @@
     "steps": [
       {
         "title": "Einstellungsoberfläche aufrufen",
-        "content": "Starten Sie Qwen Code und geben Sie den Befehl `/auth` ein."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Starten Sie Qwen Code und geben Sie den Befehl `/auth` ein."
+          }
+        ]
       },
       {
         "title": "Coding Plan auswählen",
-        "content": "Aktivieren Sie den Bailian Coding Plan-Modus in den Einstellungen, geben Sie Ihren API-Schlüssel ein, und Qwen Code konfiguriert automatisch die von Coding Plan unterstützten Modelle für Sie.\n\n<img src=\"https://gw.alicdn.com/imgextra/i1/O1CN01cDz8AJ1Cq30rXjuXS_!!6000000000131-2-tps-1696-952.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Aktivieren Sie den Bailian Coding Plan-Modus in den Einstellungen, geben Sie Ihren API-Schlüssel ein, und Qwen Code konfiguriert automatisch die von Coding Plan unterstützten Modelle für Sie."
+          },
+          {
+            "type": "image",
+            "src": "https://gw.alicdn.com/imgextra/i1/O1CN01cDz8AJ1Cq30rXjuXS_!!6000000000131-2-tps-1696-952.png",
+            "alt": ""
+          }
+        ]
       },
       {
         "title": "Modell auswählen",
-        "content": "Geben Sie direkt den Befehl `/model` ein, um das gewünschte Modell auszuwählen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Geben Sie direkt den Befehl `/model` ein, um das gewünschte Modell auszuwählen."
+          }
+        ]
       },
       {
         "title": "Komplexe Aufgabe starten",
-        "content": "Beschreiben Sie Ihre Programmiertask, und Coding Plan plant automatisch die Ausführungsschritte. Sie können die Ziele, Einschränkungen und erwarteten Ergebnisse der Aufgabe detailliert erklären. Die KI analysiert die Aufgabenanforderungen und generiert einen strukturierten Ausführungsplan, einschließlich spezifischer Operationen und erwarteter Ergebnisse für jeden Schritt.\n\n```bash\nIch muss die Datenschicht dieses Projekts refaktorieren, die Datenbank von MySQL zu PostgreSQL migrieren und dabei die API-Schnittstelle unverändert lassen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Beschreiben Sie Ihre Programmiertask, und Coding Plan plant automatisch die Ausführungsschritte. Sie können die Ziele, Einschränkungen und erwarteten Ergebnisse der Aufgabe detailliert erklären. Die KI analysiert die Aufgabenanforderungen und generiert einen strukturierten Ausführungsplan, einschließlich spezifischer Operationen und erwarteter Ergebnisse für jeden Schritt."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Ich muss die Datenschicht dieses Projekts refaktorieren, die Datenbank von MySQL zu PostgreSQL migrieren und dabei die API-Schnittstelle unverändert lassen"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -489,15 +911,35 @@
     "steps": [
       {
         "title": "Sie befinden sich mitten in einem Hauptgespräch",
-        "content": "Sie besprechen eine Aufgabe mit Qwen Code, zum Beispiel das Refactoring einer Komponente."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Sie besprechen eine Aufgabe mit Qwen Code, zum Beispiel das Refactoring einer Komponente."
+          }
+        ]
       },
       {
         "title": "Geben Sie /btw gefolgt von Ihrer Frage ein",
-        "content": "Müssen Sie etwas nachschlagen? Geben Sie einfach `/btw` gefolgt von Ihrer Frage ein:\n\n```bash\n/btw Unterstützt die JavaScript Array.prototype.at()-Methode negative Indizes?\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Müssen Sie etwas nachschlagen? Geben Sie einfach `/btw` gefolgt von Ihrer Frage ein:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/btw Unterstützt die JavaScript Array.prototype.at()-Methode negative Indizes?"
+          }
+        ]
       },
       {
         "title": "KI antwortet und stellt den Kontext automatisch wieder her",
-        "content": "Nachdem Qwen Code Ihre Nebenfrage beantwortet hat, kehrt es automatisch zum Kontext des Hauptgesprächs zurück. Sie können Ihre vorherige Aufgabe fortsetzen, als wäre nichts passiert."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nachdem Qwen Code Ihre Nebenfrage beantwortet hat, kehrt es automatisch zum Kontext des Hauptgesprächs zurück. Sie können Ihre vorherige Aufgabe fortsetzen, als wäre nichts passiert."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -523,15 +965,30 @@
     "steps": [
       {
         "title": "Codeblock auswählen",
-        "content": "Klicken Sie auf die Kopier-Schaltfläche in der oberen rechten Ecke des Codeblocks, um den gesamten Codeblock mit einem Klick zu kopieren. Die Kopier-Schaltfläche ist klar sichtbar und der Vorgang ist einfach und schnell. Der kopierte Inhalt behält das ursprüngliche Format bei, einschließlich Einrückung, Syntaxhervorhebung usw."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Klicken Sie auf die Kopier-Schaltfläche in der oberen rechten Ecke des Codeblocks, um den gesamten Codeblock mit einem Klick zu kopieren. Die Kopier-Schaltfläche ist klar sichtbar und der Vorgang ist einfach und schnell. Der kopierte Inhalt behält das ursprüngliche Format bei, einschließlich Einrückung, Syntaxhervorhebung usw."
+          }
+        ]
       },
       {
         "title": "Einfügen und verwenden",
-        "content": "Fügen Sie den kopierten Code in Ihren Editor ein, und das Format wird automatisch beibehalten. Sie können ihn direkt verwenden, ohne Einrückungen oder Formatierungen manuell anpassen zu müssen. Der eingefügte Code ist vollständig mit dem ursprünglichen Code konsistent und stellt die Korrektheit des Codes sicher."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Fügen Sie den kopierten Code in Ihren Editor ein, und das Format wird automatisch beibehalten. Sie können ihn direkt verwenden, ohne Einrückungen oder Formatierungen manuell anpassen zu müssen. Der eingefügte Code ist vollständig mit dem ursprünglichen Code konsistent und stellt die Korrektheit des Codes sicher."
+          }
+        ]
       },
       {
         "title": "Präzise Auswahl",
-        "content": "Wenn Sie nur einen Teil des Codes kopieren müssen, können Sie mit der Maus den gewünschten Inhalt auswählen und dann mit dem Tastenkürzel kopieren. Unterstützt die Auswahl mehrerer Zeilen, sodass Sie die benötigten Code-Snippets präzise kopieren können."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Wenn Sie nur einen Teil des Codes kopieren müssen, können Sie mit der Maus den gewünschten Inhalt auswählen und dann mit dem Tastenkürzel kopieren. Unterstützt die Auswahl mehrerer Zeilen, sodass Sie die benötigten Code-Snippets präzise kopieren können."
+          }
+        ]
       }
     ],
     "callouts": [],
@@ -552,19 +1009,44 @@
     "steps": [
       {
         "title": "Zum Explore Agent wechseln",
-        "content": "Wechseln Sie in Qwen Code zum Explore-Agent-Modus, um sich auf Code-Recherche statt auf Änderungen zu konzentrieren."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Wechseln Sie in Qwen Code zum Explore-Agent-Modus, um sich auf Code-Recherche statt auf Änderungen zu konzentrieren."
+          }
+        ]
       },
       {
         "title": "Rechercheziel beschreiben",
-        "content": "Teilen Sie dem Explore Agent mit, was Sie verstehen möchten, zum Beispiel:\n\n```\nAnalysiere das Authentifizierungsmodul dieses Projekts, finde alle zugehörigen Dateien und Abhängigkeiten\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Teilen Sie dem Explore Agent mit, was Sie verstehen möchten, zum Beispiel:"
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Analysiere das Authentifizierungsmodul dieses Projekts, finde alle zugehörigen Dateien und Abhängigkeiten"
+          }
+        ]
       },
       {
         "title": "Recherchebericht erhalten",
-        "content": "Der Explore Agent analysiert die Codestruktur und gibt einen detaillierten Recherchebericht aus, einschließlich Dateilisten, Abhängigkeitsgraphen, wichtiger Einstiegspunkte usw."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Der Explore Agent analysiert die Codestruktur und gibt einen detaillierten Recherchebericht aus, einschließlich Dateilisten, Abhängigkeitsgraphen, wichtiger Einstiegspunkte usw."
+          }
+        ]
       },
       {
         "title": "Zum Haupt-Agent zurückwechseln und mit der Entwicklung beginnen",
-        "content": "Nach Abschluss der Recherche wechseln Sie zum Haupt-Agent zurück und beginnen mit den eigentlichen Codeänderungen basierend auf den Rechercheergebnissen. Der Recherchebericht wird als Kontext an den Haupt-Agent übergeben."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach Abschluss der Recherche wechseln Sie zum Haupt-Agent zurück und beginnen mit den eigentlichen Codeänderungen basierend auf den Rechercheergebnissen. Der Recherchebericht wird als Kontext an den Haupt-Agent übergeben."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -590,15 +1072,45 @@
     "steps": [
       {
         "title": "Qwen Code starten",
-        "content": "Geben Sie den Befehl `qwen` im Terminal ein, um die Anwendung zu starten. Beim ersten Start führt das System eine Initialisierungskonfiguration durch, die nur wenige Sekunden dauert. Nach dem Start sehen Sie eine freundliche Befehlszeilenoberfläche, bereit für den Beginn des Gesprächs mit der KI.\n\n```bash\nqwen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Geben Sie den Befehl `qwen` im Terminal ein, um die Anwendung zu starten. Beim ersten Start führt das System eine Initialisierungskonfiguration durch, die nur wenige Sekunden dauert. Nach dem Start sehen Sie eine freundliche Befehlszeilenoberfläche, bereit für den Beginn des Gesprächs mit der KI."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen"
+          }
+        ]
       },
       {
         "title": "Gespräch initiieren",
-        "content": "Geben Sie Ihre Frage in das Eingabefeld ein, um die Kommunikation mit der KI zu beginnen. Sie können mit einer einfachen Selbstvorstellung beginnen, z. B. fragen, was Qwen Code ist oder was es Ihnen helfen kann. Die KI wird Ihre Fragen in klarer und verständlicher Sprache beantworten und Sie dazu anleiten, mehr Funktionen zu erkunden.\n\n```bash\nwhat is qwen code?\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Geben Sie Ihre Frage in das Eingabefeld ein, um die Kommunikation mit der KI zu beginnen. Sie können mit einer einfachen Selbstvorstellung beginnen, z. B. fragen, was Qwen Code ist oder was es Ihnen helfen kann. Die KI wird Ihre Fragen in klarer und verständlicher Sprache beantworten und Sie dazu anleiten, mehr Funktionen zu erkunden."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "what is qwen code?"
+          }
+        ]
       },
       {
         "title": "Fähigkeiten erkunden",
-        "content": "Versuchen Sie, die KI zu bitten, Ihnen bei einigen einfachen Aufgaben zu helfen, z. B. Code zu erklären, Funktionen zu generieren, technische Fragen zu beantworten usw. Durch die praktische Anwendung werden Sie sich allmählich mit den verschiedenen Fähigkeiten von Qwen Code vertraut machen und ihren Anwendungswert in verschiedenen Szenarien entdecken.\n\n```bash\nHelfen Sie mir, eine Python-Funktion zu schreiben, um die Fibonacci-Folge zu berechnen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Versuchen Sie, die KI zu bitten, Ihnen bei einigen einfachen Aufgaben zu helfen, z. B. Code zu erklären, Funktionen zu generieren, technische Fragen zu beantworten usw. Durch die praktische Anwendung werden Sie sich allmählich mit den verschiedenen Fähigkeiten von Qwen Code vertraut machen und ihren Anwendungswert in verschiedenen Szenarien entdecken."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Helfen Sie mir, eine Python-Funktion zu schreiben, um die Fibonacci-Folge zu berechnen"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -624,15 +1136,45 @@
     "steps": [
       {
         "title": "Prompt-Modus verwenden",
-        "content": "Verwenden Sie den Parameter `--p`, um Prompts direkt in der Befehlszeile zu übergeben. Qwen Code gibt die Antwort zurück und beendet sich automatisch. Diese Methode eignet sich für einmalige Abfragen und kann einfach in Skripte integriert werden.\n\n```bash\nqwen --p 'what is qwen code?'\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie den Parameter `--p`, um Prompts direkt in der Befehlszeile zu übergeben. Qwen Code gibt die Antwort zurück und beendet sich automatisch. Diese Methode eignet sich für einmalige Abfragen und kann einfach in Skripte integriert werden."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen --p 'what is qwen code?'"
+          }
+        ]
       },
       {
         "title": "Pipeline-Eingabe",
-        "content": "Übergeben Sie die Ausgabe anderer Befehle über Pipelines an Qwen Code, um automatisierte Verarbeitung zu erreichen. Sie können Protokolldateien, Fehlermeldungen usw. direkt an die KI zur Analyse senden.\n\n```bash\ncat error.log | qwen --p 'Fehler analysieren'\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Übergeben Sie die Ausgabe anderer Befehle über Pipelines an Qwen Code, um automatisierte Verarbeitung zu erreichen. Sie können Protokolldateien, Fehlermeldungen usw. direkt an die KI zur Analyse senden."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "cat error.log | qwen --p 'Fehler analysieren'"
+          }
+        ]
       },
       {
         "title": "Skript-Integration",
-        "content": "Integrieren Sie Qwen Code in Shell-Skripte, um komplexe automatisierte Workflows zu erreichen. Sie können basierend auf den Rückgabeergebnissen der KI verschiedene Operationen ausführen und intelligente automatisierte Skripte erstellen.\n\n```bash\n#!/bin/bash\nresult=$(qwen --p 'prüfen, ob es Probleme mit dem Code gibt')\nif [[ $result == *\"hat Probleme\"* ]]; then\n  echo \"Code-Probleme gefunden\"\nfi\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Integrieren Sie Qwen Code in Shell-Skripte, um komplexe automatisierte Workflows zu erreichen. Sie können basierend auf den Rückgabeergebnissen der KI verschiedene Operationen ausführen und intelligente automatisierte Skripte erstellen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "#!/bin/bash\nresult=$(qwen --p 'prüfen, ob es Probleme mit dem Code gibt')\nif [[ $result == *\"hat Probleme\"* ]]; then\n  echo \"Code-Probleme gefunden\"\nfi"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -658,19 +1200,63 @@
     "steps": [
       {
         "title": "Hooks-Verzeichnis erstellen",
-        "content": "Erstellen Sie ein `.agents/hooks`-Verzeichnis im Projektstammverzeichnis für Hook-Skripte:\n\n```bash\nmkdir -p .agents/hooks\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Erstellen Sie ein `.agents/hooks`-Verzeichnis im Projektstammverzeichnis für Hook-Skripte:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "mkdir -p .agents/hooks"
+          }
+        ]
       },
       {
         "title": "Hook-Skript schreiben",
-        "content": "Erstellen Sie ein Hook-Skript, zum Beispiel automatische Formatierung nach Codeänderung:\n\n```bash\n#!/bin/bash\n# post-edit-format.sh\n# Prettier-Formatierung nach Codeänderung automatisch ausführen\n\nINPUT=$(cat)\nTOOL_NAME=$(echo \"$INPUT\" | jq -r '.tool_name // empty')\n\ncase \"$TOOL_NAME\" in\n  write_file|edit) ;;\n  *) exit 0 ;;\nesac\n\nFILE_PATH=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty')\n[ -z \"$FILE_PATH\" ] && exit 0\n\n# Prettier-Formatierung ausführen\nnpx prettier --write \"$FILE_PATH\" 2>/dev/null\n\necho '{\"decision\": \"allow\", \"reason\": \"File formatted\"}'\nexit 0\n```\n\nAusführungsrechte erteilen:\n\n```bash\nchmod +x .agents/hooks/post-edit-format.sh\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Erstellen Sie ein Hook-Skript, zum Beispiel automatische Formatierung nach Codeänderung:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "#!/bin/bash\n# post-edit-format.sh\n# Prettier-Formatierung nach Codeänderung automatisch ausführen\n\nINPUT=$(cat)\nTOOL_NAME=$(echo \"$INPUT\" | jq -r '.tool_name // empty')\n\ncase \"$TOOL_NAME\" in\n  write_file|edit) ;;\n  *) exit 0 ;;\nesac\n\nFILE_PATH=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty')\n[ -z \"$FILE_PATH\" ] && exit 0\n\n# Prettier-Formatierung ausführen\nnpx prettier --write \"$FILE_PATH\" 2>/dev/null\n\necho '{\"decision\": \"allow\", \"reason\": \"File formatted\"}'\nexit 0"
+          },
+          {
+            "type": "text",
+            "value": "Ausführungsrechte erteilen:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "chmod +x .agents/hooks/post-edit-format.sh"
+          }
+        ]
       },
       {
         "title": "Hooks konfigurieren",
-        "content": "Fügen Sie die Hooks-Konfiguration in `~/.qwen/settings.json` hinzu:\n\n```json\n{\n  \"hooksConfig\": {\n    \"enabled\": true\n  },\n  \"hooks\": {\n    \"PostToolUse\": [\n      {\n        \"matcher\": \"(write_file|edit)\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \".agents/hooks/post-edit-format.sh\",\n            \"name\": \"auto-format\",\n            \"description\": \"Automatische Formatierung nach Codeänderung\",\n            \"timeout\": 30000\n          }\n        ]\n      }\n    ]\n  }\n}\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Fügen Sie die Hooks-Konfiguration in `~/.qwen/settings.json` hinzu:"
+          },
+          {
+            "type": "code",
+            "lang": "json",
+            "value": "{\n  \"hooksConfig\": {\n    \"enabled\": true\n  },\n  \"hooks\": {\n    \"PostToolUse\": [\n      {\n        \"matcher\": \"(write_file|edit)\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \".agents/hooks/post-edit-format.sh\",\n            \"name\": \"auto-format\",\n            \"description\": \"Automatische Formatierung nach Codeänderung\",\n            \"timeout\": 30000\n          }\n        ]\n      }\n    ]\n  }\n}"
+          }
+        ]
       },
       {
         "title": "Wirkung überprüfen",
-        "content": "Starten Sie Qwen Code, lassen Sie die KI eine Codedatei ändern und beobachten Sie, ob der Hook die Formatierung automatisch auslöst."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Starten Sie Qwen Code, lassen Sie die KI eine Codedatei ändern und beobachten Sie, ob der Hook die Formatierung automatisch auslöst."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -696,15 +1282,40 @@
     "steps": [
       {
         "title": "UI-Sprache wechseln",
-        "content": "Verwenden Sie den Befehl `/language ui`, um die Oberflächensprache zu wechseln. Unterstützt Chinesisch, Englisch und andere Sprachen. Nach dem Wechseln der UI-Sprache werden Menüs, Eingabeaufforderungen, Hilfedokumente usw. alle in der von Ihnen ausgewählten Sprache angezeigt.\n\n```bash\n/language ui zh-CN\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie den Befehl `/language ui`, um die Oberflächensprache zu wechseln. Unterstützt Chinesisch, Englisch und andere Sprachen. Nach dem Wechseln der UI-Sprache werden Menüs, Eingabeaufforderungen, Hilfedokumente usw. alle in der von Ihnen ausgewählten Sprache angezeigt."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/language ui zh-CN"
+          }
+        ]
       },
       {
         "title": "Ausgabesprache wechseln",
-        "content": "Verwenden Sie den Befehl `/language output`, um die KI-Ausgabesprache zu wechseln. Die KI wird die von Ihnen angegebene Sprache verwenden, um Fragen zu beantworten, Codekommentare zu generieren, Erklärungen bereitzustellen usw., wodurch die Kommunikation natürlicher und reibungsloser wird.\n\n```bash\n/language output zh-CN\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie den Befehl `/language output`, um die KI-Ausgabesprache zu wechseln. Die KI wird die von Ihnen angegebene Sprache verwenden, um Fragen zu beantworten, Codekommentare zu generieren, Erklärungen bereitzustellen usw., wodurch die Kommunikation natürlicher und reibungsloser wird."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/language output zh-CN"
+          }
+        ]
       },
       {
         "title": "Gemischte Sprachverwendung",
-        "content": "Sie können auch für UI und Ausgabe unterschiedliche Sprachen einstellen, um eine gemischte Sprachverwendung zu erreichen. Beispielsweise Chinesisch für UI und Englisch für KI-Ausgabe, geeignet für Szenarien, in denen Sie englische technische Dokumentation lesen müssen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Sie können auch für UI und Ausgabe unterschiedliche Sprachen einstellen, um eine gemischte Sprachverwendung zu erreichen. Beispielsweise Chinesisch für UI und Englisch für KI-Ausgabe, geeignet für Szenarien, in denen Sie englische technische Dokumentation lesen müssen."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -731,19 +1342,49 @@
     "steps": [
       {
         "title": "Plan-Modus aktivieren",
-        "content": "Geben Sie den Befehl `/approval-mode plan` im Gespräch ein, um den Plan-Modus zu aktivieren. Zu diesem Zeitpunkt geht Qwen Code in den Planungsstatus, bereit, Ihre Aufgabenbeschreibung zu empfangen und mit dem Denken zu beginnen. Der Plan-Modus analysiert automatisch die Komplexität der Aufgabe und bestimmt, ob externe Informationen durchsucht werden müssen, um die Wissensdatenbank zu ergänzen.\n\n```bash\n/approval-mode plan\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Geben Sie den Befehl `/approval-mode plan` im Gespräch ein, um den Plan-Modus zu aktivieren. Zu diesem Zeitpunkt geht Qwen Code in den Planungsstatus, bereit, Ihre Aufgabenbeschreibung zu empfangen und mit dem Denken zu beginnen. Der Plan-Modus analysiert automatisch die Komplexität der Aufgabe und bestimmt, ob externe Informationen durchsucht werden müssen, um die Wissensdatenbank zu ergänzen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/approval-mode plan"
+          }
+        ]
       },
       {
         "title": "Suche nach neuesten Informationen anfordern",
-        "content": "Beschreiben Sie Ihre Aufgabenanforderungen, und Qwen Code identifiziert automatisch Schlüsselwörter, die durchsucht werden müssen. Es initiiert proaktiv Web-Suche-Anfragen, um die neuesten technischen Dokumentationen, API-Referenzen, Best Practices und Lösungen zu erhalten. Suchergebnisse werden in die Wissensdatenbank integriert und bieten eine präzise Informationsgrundlage für die nachfolgende Planung.\n\n```\nHelfen Sie mir, die neuesten Nachrichten im KI-Bereich zu suchen und sie mir als Bericht zusammenzustellen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Beschreiben Sie Ihre Aufgabenanforderungen, und Qwen Code identifiziert automatisch Schlüsselwörter, die durchsucht werden müssen. Es initiiert proaktiv Web-Suche-Anfragen, um die neuesten technischen Dokumentationen, API-Referenzen, Best Practices und Lösungen zu erhalten. Suchergebnisse werden in die Wissensdatenbank integriert und bieten eine präzise Informationsgrundlage für die nachfolgende Planung."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Helfen Sie mir, die neuesten Nachrichten im KI-Bereich zu suchen und sie mir als Bericht zusammenzustellen"
+          }
+        ]
       },
       {
         "title": "Ausführungsplan anzeigen",
-        "content": "Basierend auf den durchsuchten Informationen generiert Qwen Code einen detaillierten Ausführungsplan für Sie. Der Plan enthält klare Schrittbeschreibungen, zu beachtende technische Punkte, potenzielle Fallstricke und Lösungen. Sie können diesen Plan überprüfen, Änderungsvorschläge machen oder den Beginn der Ausführung bestätigen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Basierend auf den durchsuchten Informationen generiert Qwen Code einen detaillierten Ausführungsplan für Sie. Der Plan enthält klare Schrittbeschreibungen, zu beachtende technische Punkte, potenzielle Fallstricke und Lösungen. Sie können diesen Plan überprüfen, Änderungsvorschläge machen oder den Beginn der Ausführung bestätigen."
+          }
+        ]
       },
       {
         "title": "Plan schrittweise ausführen",
-        "content": "Nach Bestätigung des Plans führt Qwen Code ihn schrittweise aus. An jedem wichtigen Knotenpunkt berichtet es Ihnen über Fortschritt und Ergebnisse und stellt sicher, dass Sie die vollständige Kontrolle über den gesamten Prozess haben. Wenn Probleme auftreten, bietet es Lösungen basierend auf den neuesten Suchinformationen an, anstatt sich auf veraltetes Wissen zu verlassen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach Bestätigung des Plans führt Qwen Code ihn schrittweise aus. An jedem wichtigen Knotenpunkt berichtet es Ihnen über Fortschritt und Ergebnisse und stellt sicher, dass Sie die vollständige Kontrolle über den gesamten Prozess haben. Wenn Probleme auftreten, bietet es Lösungen basierend auf den neuesten Suchinformationen an, anstatt sich auf veraltetes Wissen zu verlassen."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -769,19 +1410,54 @@
     "steps": [
       {
         "title": "Sitzungsliste anzeigen",
-        "content": "Verwenden Sie den Befehl `qwen --resume`, um alle historischen Sitzungen anzuzeigen. Das System zeigt die Zeit, das Thema und kurze Informationen jeder Sitzung an und hilft Ihnen, das Gespräch zu finden, das Sie fortsetzen müssen.\n\n```bash\nqwen --resume\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie den Befehl `qwen --resume`, um alle historischen Sitzungen anzuzeigen. Das System zeigt die Zeit, das Thema und kurze Informationen jeder Sitzung an und hilft Ihnen, das Gespräch zu finden, das Sie fortsetzen müssen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen --resume"
+          }
+        ]
       },
       {
         "title": "Sitzung fortsetzen",
-        "content": "Verwenden Sie den Befehl `qwen --resume`, um eine angegebene Sitzung fortzusetzen. Sie können das fortzusetzende Gespräch über die Sitzungs-ID oder die Nummer auswählen, und das System lädt den vollständigen Kontextverlauf.\n\n```bash\nqwen --resume\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie den Befehl `qwen --resume`, um eine angegebene Sitzung fortzusetzen. Sie können das fortzusetzende Gespräch über die Sitzungs-ID oder die Nummer auswählen, und das System lädt den vollständigen Kontextverlauf."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen --resume"
+          }
+        ]
       },
       {
         "title": "Arbeit fortsetzen",
-        "content": "Nach dem Fortsetzen der Sitzung können Sie das Gespräch so fortsetzen, als wäre es nie unterbrochen worden. Der gesamte Kontext, der Verlauf und der Fortschritt werden vollständig beibehalten, und die KI kann den vorherigen Diskussionsinhalt genau verstehen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach dem Fortsetzen der Sitzung können Sie das Gespräch so fortsetzen, als wäre es nie unterbrochen worden. Der gesamte Kontext, der Verlauf und der Fortschritt werden vollständig beibehalten, und die KI kann den vorherigen Diskussionsinhalt genau verstehen."
+          }
+        ]
       },
       {
         "title": "Sitzungen nach dem Start von Qwen Code wechseln",
-        "content": "Nach dem Start von Qwen Code können Sie den Befehl `/resume` verwenden, um zu einer vorherigen Sitzung zu wechseln.\n\n```bash\n/resume\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach dem Start von Qwen Code können Sie den Befehl `/resume` verwenden, um zu einer vorherigen Sitzung zu wechseln."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/resume"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -807,15 +1483,35 @@
     "steps": [
       {
         "title": "Unzufriedene Antworten entdecken",
-        "content": "Wenn die KI-Antwort nicht Ihren Erwartungen entspricht, geben Sie nicht auf. Die KI-Antworten können aufgrund des Kontextverständnisses oder der Zufälligkeit variieren, und Sie können durch Wiederholung bessere Ergebnisse erhalten."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Wenn die KI-Antwort nicht Ihren Erwartungen entspricht, geben Sie nicht auf. Die KI-Antworten können aufgrund des Kontextverständnisses oder der Zufälligkeit variieren, und Sie können durch Wiederholung bessere Ergebnisse erhalten."
+          }
+        ]
       },
       {
         "title": "Wiederholung auslösen",
-        "content": "Drücken Sie die Tastenkombination Ctrl+Y (Windows/Linux) oder Cmd+Y (macOS), und die KI generiert die Antwort neu. Der Wiederholungsprozess ist schnell und reibungslos und unterbricht Ihren Arbeitsablauf nicht.\n\n```bash\nCtrl+Y / Cmd+Y\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Drücken Sie die Tastenkombination Ctrl+Y (Windows/Linux) oder Cmd+Y (macOS), und die KI generiert die Antwort neu. Der Wiederholungsprozess ist schnell und reibungslos und unterbricht Ihren Arbeitsablauf nicht."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Ctrl+Y / Cmd+Y"
+          }
+        ]
       },
       {
         "title": "Ergänzende Erklärung",
-        "content": "Wenn Sie nach der Wiederholung immer noch nicht zufrieden sind, können Sie ergänzende Erklärungen zu Ihren Anforderungen hinzufügen, damit die KI Ihre Absichten genauer verstehen kann. Sie können mehr Details hinzufügen, die Art und Weise ändern, wie die Frage formuliert ist, oder mehr Kontextinformationen bereitstellen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Wenn Sie nach der Wiederholung immer noch nicht zufrieden sind, können Sie ergänzende Erklärungen zu Ihren Anforderungen hinzufügen, damit die KI Ihre Absichten genauer verstehen kann. Sie können mehr Details hinzufügen, die Art und Weise ändern, wie die Frage formuliert ist, oder mehr Kontextinformationen bereitstellen."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -841,15 +1537,35 @@
     "steps": [
       {
         "title": "Zu überprüfende Datei öffnen",
-        "content": "Öffnen Sie in Qwen Code die Codedatei oder das Projektverzeichnis, das Sie überprüfen möchten. Stellen Sie sicher, dass Ihr Code gespeichert ist."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Öffnen Sie in Qwen Code die Codedatei oder das Projektverzeichnis, das Sie überprüfen möchten. Stellen Sie sicher, dass Ihr Code gespeichert ist."
+          }
+        ]
       },
       {
         "title": "/review-Befehl eingeben",
-        "content": "Geben Sie `/review` im Chat ein. Qwen Code analysiert automatisch die aktuelle Datei oder die letzten Codeänderungen.\n\n```bash\n/review\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Geben Sie `/review` im Chat ein. Qwen Code analysiert automatisch die aktuelle Datei oder die letzten Codeänderungen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/review"
+          }
+        ]
       },
       {
         "title": "Überprüfungsergebnisse ansehen",
-        "content": "Die KI gibt Feedback aus mehreren Dimensionen: Codequalität, logische Korrektheit, Namenskonventionen und Grenzfallbehandlung, zusammen mit konkreten Verbesserungsvorschlägen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Die KI gibt Feedback aus mehreren Dimensionen: Codequalität, logische Korrektheit, Namenskonventionen und Grenzfallbehandlung, zusammen mit konkreten Verbesserungsvorschlägen."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -875,15 +1591,45 @@
     "steps": [
       {
         "title": "Linux / macOS Installation",
-        "content": "Öffnen Sie Ihr Terminal und führen Sie den folgenden Befehl aus. Das Skript erkennt automatisch Ihre Systemarchitektur (x86_64 / ARM), lädt die entsprechende Version herunter und schließt die Installationskonfiguration ab.\n\n```bash\nbash -c \"$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)\" -s --source website\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Öffnen Sie Ihr Terminal und führen Sie den folgenden Befehl aus. Das Skript erkennt automatisch Ihre Systemarchitektur (x86_64 / ARM), lädt die entsprechende Version herunter und schließt die Installationskonfiguration ab."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "bash -c \"$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)\" -s --source website"
+          }
+        ]
       },
       {
         "title": "Windows Installation",
-        "content": "Führen Sie den folgenden Befehl in PowerShell aus. Das Skript lädt eine Batch-Datei herunter und führt den Installationsvorgang automatisch aus. Nach Abschluss können Sie den `qwen`-Befehl in jedem Terminal verwenden.\n\n```bash\ncurl -fsSL -o %TEMP%\\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\\install-qwen.bat --source website\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Führen Sie den folgenden Befehl in PowerShell aus. Das Skript lädt eine Batch-Datei herunter und führt den Installationsvorgang automatisch aus. Nach Abschluss können Sie den `qwen`-Befehl in jedem Terminal verwenden."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "curl -fsSL -o %TEMP%\\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\\install-qwen.bat --source website"
+          }
+        ]
       },
       {
         "title": "Installation überprüfen",
-        "content": "Nach Abschluss der Installation führen Sie den folgenden Befehl in Ihrem Terminal aus, um zu bestätigen, dass Qwen Code korrekt installiert wurde. Wenn Sie die Versionsnummer sehen, war die Installation erfolgreich.\n\n```bash\nqwen --version\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach Abschluss der Installation führen Sie den folgenden Befehl in Ihrem Terminal aus, um zu bestätigen, dass Qwen Code korrekt installiert wurde. Wenn Sie die Versionsnummer sehen, war die Installation erfolgreich."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen --version"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -909,15 +1655,50 @@
     "steps": [
       {
         "title": "find-skills Skill überprüfen und installieren",
-        "content": "Beschreiben Sie Ihre Bedürfnisse direkt in Qwen Code und lassen Sie es Ihnen helfen, den erforderlichen Skill zu überprüfen und zu installieren:\n\n```\nÜberprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Beschreiben Sie Ihre Bedürfnisse direkt in Qwen Code und lassen Sie es Ihnen helfen, den erforderlichen Skill zu überprüfen und zu installieren:"
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Überprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code"
+          }
+        ]
       },
       {
         "title": "Installieren Sie den Skill, den Sie benötigen, zum Beispiel web-component-design installieren:",
-        "content": "```\n/skills find-skills install web-component-design -y -a qwen-code\n```\n\nQwen Code führt den Installationsbefehl automatisch aus, lädt den Skill aus dem angegebenen Repository herunter und installiert ihn. Sie können auch mit einem Satz installieren:\n\n```\nÜberprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, und helfen Sie mir dann, [Skill-Name] im aktuellen qwen code skills-Verzeichnis zu installieren.\n```"
+        "blocks": [
+          {
+            "type": "code",
+            "lang": "",
+            "value": "/skills find-skills install web-component-design -y -a qwen-code"
+          },
+          {
+            "type": "text",
+            "value": "Qwen Code führt den Installationsbefehl automatisch aus, lädt den Skill aus dem angegebenen Repository herunter und installiert ihn. Sie können auch mit einem Satz installieren:"
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Überprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, und helfen Sie mir dann, [Skill-Name] im aktuellen qwen code skills-Verzeichnis zu installieren."
+          }
+        ]
       },
       {
         "title": "Installation überprüfen",
-        "content": "Nach Abschluss der Installation überprüfen Sie, ob der Skill erfolgreich geladen wurde:\n\n```bash\n/skills\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach Abschluss der Installation überprüfen Sie, ob der Skill erfolgreich geladen wurde:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/skills"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -947,15 +1728,35 @@
     "steps": [
       {
         "title": "Skills-Panel öffnen",
-        "content": "Geben Sie den Befehl im Qwen Code-Gespräch ein, um das Skills-Panel zu öffnen. Dieser Befehl zeigt eine Liste aller verfügbaren Skills an, einschließlich installierter und nicht installierter Erweiterungen.\n\n```bash\n/skills\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Geben Sie den Befehl im Qwen Code-Gespräch ein, um das Skills-Panel zu öffnen. Dieser Befehl zeigt eine Liste aller verfügbaren Skills an, einschließlich installierter und nicht installierter Erweiterungen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/skills"
+          }
+        ]
       },
       {
         "title": "Skills durchsuchen und suchen",
-        "content": "Durchsuchen Sie verschiedene Skill-Erweiterungen im Panel. Jeder Skill hat detaillierte Beschreibungen und Funktionalitätserklärungen. Sie können die Suchfunktion verwenden, um schnell den spezifischen Skill zu finden, den Sie benötigen, oder verschiedene Arten von Erweiterungen nach Kategorie durchsuchen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Durchsuchen Sie verschiedene Skill-Erweiterungen im Panel. Jeder Skill hat detaillierte Beschreibungen und Funktionalitätserklärungen. Sie können die Suchfunktion verwenden, um schnell den spezifischen Skill zu finden, den Sie benötigen, oder verschiedene Arten von Erweiterungen nach Kategorie durchsuchen."
+          }
+        ]
       },
       {
         "title": "Skills installieren oder deinstallieren",
-        "content": "Nachdem Sie einen Skill gefunden haben, der Sie interessiert, klicken Sie auf die Installations-Schaltfläche, um ihn mit einem Klick zu Ihrem Qwen Code hinzuzufügen. Ebenso können Sie Skills, die Sie nicht mehr benötigen, jederzeit deinstallieren, um Ihre AI-Fähigkeitsbibliothek sauber und effizient zu halten."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nachdem Sie einen Skill gefunden haben, der Sie interessiert, klicken Sie auf die Installations-Schaltfläche, um ihn mit einem Klick zu Ihrem Qwen Code hinzuzufügen. Ebenso können Sie Skills, die Sie nicht mehr benötigen, jederzeit deinstallieren, um Ihre AI-Fähigkeitsbibliothek sauber und effizient zu halten."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -981,15 +1782,40 @@
     "steps": [
       {
         "title": "System-Prompt-Datei erstellen",
-        "content": "Erstellen Sie eine `AGENTS.md`-Datei (ehemals `QWEN.md`) im Projektstammverzeichnis mit Ihrem benutzerdefinierten System-Prompt:\n\n```markdown\n# Projektkonventionen\n\n- Immer auf Chinesisch antworten\n- Code-Kommentare auf Englisch\n- camelCase für Variablennamen verwenden\n- Funktionale Komponenten + Hooks für React\n- TypeScript bevorzugen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Erstellen Sie eine `AGENTS.md`-Datei (ehemals `QWEN.md`) im Projektstammverzeichnis mit Ihrem benutzerdefinierten System-Prompt:"
+          },
+          {
+            "type": "code",
+            "lang": "markdown",
+            "value": "# Projektkonventionen\n\n- Immer auf Chinesisch antworten\n- Code-Kommentare auf Englisch\n- camelCase für Variablennamen verwenden\n- Funktionale Komponenten + Hooks für React\n- TypeScript bevorzugen"
+          }
+        ]
       },
       {
         "title": "Globale System-Prompts konfigurieren",
-        "content": "Um Konventionen projektübergreifend anzuwenden, konfigurieren Sie globale System-Prompts in `~/.qwen/AGENTS.md`.\n\nSie können auch verwenden:\n\n```bash\nqwen --system-prompt \"Wenn ich auf Chinesisch frage, antworte auf Chinesisch; wenn ich auf Englisch frage, antworte auf Englisch.\"\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Um Konventionen projektübergreifend anzuwenden, konfigurieren Sie globale System-Prompts in `~/.qwen/AGENTS.md`.\n\nSie können auch verwenden:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen --system-prompt \"Wenn ich auf Chinesisch frage, antworte auf Chinesisch; wenn ich auf Englisch frage, antworte auf Englisch.\""
+          }
+        ]
       },
       {
         "title": "Wirkung überprüfen",
-        "content": "Starten Sie Qwen Code, beginnen Sie ein Gespräch und beobachten Sie, ob die KI gemäß Ihren System-Prompt-Konventionen antwortet."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Starten Sie Qwen Code, beginnen Sie ein Gespräch und beobachten Sie, ob die KI gemäß Ihren System-Prompt-Konventionen antwortet."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1015,15 +1841,35 @@
     "steps": [
       {
         "title": "VS Code-Erweiterung installieren",
-        "content": "Suchen Sie im VS Code-Erweiterungsmarktplatz nach \"Qwen Code\" und klicken Sie auf installieren. Der Installationsvorgang ist einfach und schnell und in nur wenigen Sekunden abgeschlossen. Nach der Installation erscheint ein Qwen Code-Symbol in der VS Code-Seitenleiste, was anzeigt, dass die Erweiterung erfolgreich geladen wurde."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Suchen Sie im VS Code-Erweiterungsmarktplatz nach \"Qwen Code\" und klicken Sie auf installieren. Der Installationsvorgang ist einfach und schnell und in nur wenigen Sekunden abgeschlossen. Nach der Installation erscheint ein Qwen Code-Symbol in der VS Code-Seitenleiste, was anzeigt, dass die Erweiterung erfolgreich geladen wurde."
+          }
+        ]
       },
       {
         "title": "In Ihr Konto einloggen",
-        "content": "Verwenden Sie den `/auth`-Befehl, um den Authentifizierungsprozess auszulösen. Das System öffnet automatisch einen Browser für die Anmeldung. Der Anmeldeprozess ist sicher und praktisch und unterstützt mehrere Authentifizierungsmethoden. Nach erfolgreicher Anmeldung werden Ihre Kontoinformationen automatisch mit der VS Code-Erweiterung synchronisiert und alle Funktionen freigeschaltet.\n\n```bash\n/auth\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie den `/auth`-Befehl, um den Authentifizierungsprozess auszulösen. Das System öffnet automatisch einen Browser für die Anmeldung. Der Anmeldeprozess ist sicher und praktisch und unterstützt mehrere Authentifizierungsmethoden. Nach erfolgreicher Anmeldung werden Ihre Kontoinformationen automatisch mit der VS Code-Erweiterung synchronisiert und alle Funktionen freigeschaltet."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/auth"
+          }
+        ]
       },
       {
         "title": "Starten",
-        "content": "Öffnen Sie das Qwen Code-Panel in der Seitenleiste und beginnen Sie mit der Kommunikation mit AI. Sie können direkt Fragen eingeben, Dateien referenzieren, Befehle ausführen – alle Operationen werden in VS Code abgeschlossen. Die Erweiterung unterstützt mehrere Registerkarten, Verlauf, Tastenkürzel und andere Funktionen und bietet ein vollständiges Programmierunterstützungs-Erlebnis."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Öffnen Sie das Qwen Code-Panel in der Seitenleiste und beginnen Sie mit der Kommunikation mit AI. Sie können direkt Fragen eingeben, Dateien referenzieren, Befehle ausführen – alle Operationen werden in VS Code abgeschlossen. Die Erweiterung unterstützt mehrere Registerkarten, Verlauf, Tastenkürzel und andere Funktionen und bietet ein vollständiges Programmierunterstützungs-Erlebnis."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1049,15 +1895,40 @@
     "steps": [
       {
         "title": "Suchfunktion aktivieren",
-        "content": "Sagen Sie AI im Gespräch deutlich, dass Sie die neuesten Informationen durchsuchen müssen. Sie können direkt Fragen stellen, die die neueste Technologie, Framework-Versionen oder Echtzeitdaten enthalten. Qwen Code erkennt Ihre Bedürfnisse automatisch und initiiert die Web-Suche-Funktion, um die genauesten Informationen zu erhalten.\n\n```bash\nHelfen Sie mir, die neuen Funktionen von React 19 zu suchen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Sagen Sie AI im Gespräch deutlich, dass Sie die neuesten Informationen durchsuchen müssen. Sie können direkt Fragen stellen, die die neueste Technologie, Framework-Versionen oder Echtzeitdaten enthalten. Qwen Code erkennt Ihre Bedürfnisse automatisch und initiiert die Web-Suche-Funktion, um die genauesten Informationen zu erhalten."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Helfen Sie mir, die neuen Funktionen von React 19 zu suchen"
+          }
+        ]
       },
       {
         "title": "Suchergebnisse anzeigen",
-        "content": "AI gibt die durchsuchten Informationen zurück und organisiert sie in ein leicht verständliches Format. Suchergebnisse enthalten normalerweise Zusammenfassungen der wichtigsten Informationen, Quelllinks und relevante technische Details. Sie können diese Informationen schnell durchsuchen, um die neuesten technologischen Trends zu verstehen oder Lösungen für Probleme zu finden."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "AI gibt die durchsuchten Informationen zurück und organisiert sie in ein leicht verständliches Format. Suchergebnisse enthalten normalerweise Zusammenfassungen der wichtigsten Informationen, Quelllinks und relevante technische Details. Sie können diese Informationen schnell durchsuchen, um die neuesten technologischen Trends zu verstehen oder Lösungen für Probleme zu finden."
+          }
+        ]
       },
       {
         "title": "Fragen basierend auf Suchergebnissen stellen",
-        "content": "Sie können basierend auf den Suchergebnissen weitere Fragen stellen, um tiefere Erklärungen zu erhalten. Wenn Sie Fragen zu einem bestimmten technischen Detail haben oder wissen möchten, wie Sie die Suchergebnisse in Ihrem Projekt anwenden können, können Sie direkt weiterfragen. AI wird basierend auf den durchsuchten Informationen spezifischere Anleitungen geben.\n\n```bash\nWelche Auswirkungen haben diese neuen Funktionen auf mein Projekt\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Sie können basierend auf den Suchergebnissen weitere Fragen stellen, um tiefere Erklärungen zu erhalten. Wenn Sie Fragen zu einem bestimmten technischen Detail haben oder wissen möchten, wie Sie die Suchergebnisse in Ihrem Projekt anwenden können, können Sie direkt weiterfragen. AI wird basierend auf den durchsuchten Informationen spezifischere Anleitungen geben."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Welche Auswirkungen haben diese neuen Funktionen auf mein Projekt"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1083,19 +1954,49 @@
     "steps": [
       {
         "title": "Gespräch starten",
-        "content": "Öffnen Sie das Terminal oder die Befehlszeile, geben Sie `qwen` ein, um Qwen Code zu starten. Stellen Sie sicher, dass Sie sich in dem Verzeichnis befinden, das Sie organisieren müssen, oder sagen Sie AI deutlich, welche Dateien in welchem Verzeichnis organisiert werden sollen. Qwen Code ist bereit, Ihre Organisationsanweisungen zu empfangen.\n\n```bash\ncd ~/Desktop\nqwen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Öffnen Sie das Terminal oder die Befehlszeile, geben Sie `qwen` ein, um Qwen Code zu starten. Stellen Sie sicher, dass Sie sich in dem Verzeichnis befinden, das Sie organisieren müssen, oder sagen Sie AI deutlich, welche Dateien in welchem Verzeichnis organisiert werden sollen. Qwen Code ist bereit, Ihre Organisationsanweisungen zu empfangen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "cd ~/Desktop\nqwen"
+          }
+        ]
       },
       {
         "title": "Organisationsanweisungen geben",
-        "content": "Sagen Sie Qwen Code, dass Sie Desktop-Dateien organisieren möchten. AI wird Dateitypen automatisch identifizieren und kategorisierte Ordner erstellen. Sie können das zu organisierende Verzeichnis, Klassifizierungsregeln und die Zielordnerstruktur angeben. AI wird einen Organisationsplan basierend auf Ihren Bedürfnissen erstellen.\n\n```bash\nHelfen Sie mir, die Desktop-Dateien zu organisieren und sie nach Typen in verschiedene Ordner zu kategorisieren: Dokumente, Bilder, Videos, komprimierte Pakete usw.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Sagen Sie Qwen Code, dass Sie Desktop-Dateien organisieren möchten. AI wird Dateitypen automatisch identifizieren und kategorisierte Ordner erstellen. Sie können das zu organisierende Verzeichnis, Klassifizierungsregeln und die Zielordnerstruktur angeben. AI wird einen Organisationsplan basierend auf Ihren Bedürfnissen erstellen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Helfen Sie mir, die Desktop-Dateien zu organisieren und sie nach Typen in verschiedene Ordner zu kategorisieren: Dokumente, Bilder, Videos, komprimierte Pakete usw."
+          }
+        ]
       },
       {
         "title": "Ausführungsplan bestätigen",
-        "content": "Qwen Code listet zunächst den auszuführenden Operationsplan auf. Nachdem bestätigt wurde, dass keine Probleme vorliegen, erlauben Sie die Ausführung. Dieser Schritt ist sehr wichtig. Sie können den Organisationsplan überprüfen, um sicherzustellen, dass AI Ihre Bedürfnisse versteht und Fehlbedienungen vermeidet."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Qwen Code listet zunächst den auszuführenden Operationsplan auf. Nachdem bestätigt wurde, dass keine Probleme vorliegen, erlauben Sie die Ausführung. Dieser Schritt ist sehr wichtig. Sie können den Organisationsplan überprüfen, um sicherzustellen, dass AI Ihre Bedürfnisse versteht und Fehlbedienungen vermeidet."
+          }
+        ]
       },
       {
         "title": "Organisation abschließen",
-        "content": "AI führt Dateiverschiebeoperationen automatisch aus und zeigt nach Abschluss einen Organisationsbericht an, der Ihnen sagt, welche Dateien wohin verschoben wurden. Der gesamte Vorgang ist schnell und effizient, erfordert keine manuelle Bedienung und spart viel Zeit."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "AI führt Dateiverschiebeoperationen automatisch aus und zeigt nach Abschluss einen Organisationsbericht an, der Ihnen sagt, welche Dateien wohin verschoben wurden. Der gesamte Vorgang ist schnell und effizient, erfordert keine manuelle Bedienung und spart viel Zeit."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1121,15 +2022,30 @@
     "steps": [
       {
         "title": "Bild in die Zwischenablage kopieren",
-        "content": "Verwenden Sie das System-Screenshot-Tool (macOS: `Cmd+Shift+4`, Windows: `Win+Shift+S`), um Bildschirminhalte aufzunehmen, oder kopieren Sie Bilder aus Browsern oder Dateimanagern. Screenshots werden automatisch in der Zwischenablage gespeichert, ohne zusätzliche Operationen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie das System-Screenshot-Tool (macOS: `Cmd+Shift+4`, Windows: `Win+Shift+S`), um Bildschirminhalte aufzunehmen, oder kopieren Sie Bilder aus Browsern oder Dateimanagern. Screenshots werden automatisch in der Zwischenablage gespeichert, ohne zusätzliche Operationen."
+          }
+        ]
       },
       {
         "title": "In das Gesprächsfenster einfügen",
-        "content": "Verwenden Sie im Eingabefeld des Qwen Code-Gesprächs `Cmd+V` (macOS) oder `Ctrl+V` (Windows), um das Bild einzufügen. Das Bild wird automatisch im Eingabefeld angezeigt, und Sie können gleichzeitig Text eingeben, der Ihre Frage oder Bedürfnisse beschreibt."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie im Eingabefeld des Qwen Code-Gesprächs `Cmd+V` (macOS) oder `Ctrl+V` (Windows), um das Bild einzufügen. Das Bild wird automatisch im Eingabefeld angezeigt, und Sie können gleichzeitig Text eingeben, der Ihre Frage oder Bedürfnisse beschreibt."
+          }
+        ]
       },
       {
         "title": "AI-Analyseergebnisse erhalten",
-        "content": "Nach dem Senden der Nachricht analysiert Qwen Code den Bildinhalt und gibt eine Antwort. Es kann Fehler in Code-Screenshots identifizieren, das Layout von UI-Design-Mockups analysieren, Diagrammdaten interpretieren usw. Sie können weiter Fragen stellen und alle Details im Bild ausführlich diskutieren."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach dem Senden der Nachricht analysiert Qwen Code den Bildinhalt und gibt eine Antwort. Es kann Fehler in Code-Screenshots identifizieren, das Layout von UI-Design-Mockups analysieren, Diagrammdaten interpretieren usw. Sie können weiter Fragen stellen und alle Details im Bild ausführlich diskutieren."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1155,15 +2071,40 @@
     "steps": [
       {
         "title": "Sitzungsliste anzeigen",
-        "content": "Verwenden Sie den `/resume`-Befehl, um alle historischen Sitzungen anzuzeigen. Die Liste zeigt Informationen wie Erstellungszeit und Themenzusammenfassung für jede Sitzung an, was Ihnen hilft, das Gespräch zu finden, das Sie exportieren müssen. Sie können Schlüsselwortsuche verwenden oder nach Zeit sortieren, um die Zielsitzung präzise zu lokalisieren.\n\n```bash\n/resume\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie den `/resume`-Befehl, um alle historischen Sitzungen anzuzeigen. Die Liste zeigt Informationen wie Erstellungszeit und Themenzusammenfassung für jede Sitzung an, was Ihnen hilft, das Gespräch zu finden, das Sie exportieren müssen. Sie können Schlüsselwortsuche verwenden oder nach Zeit sortieren, um die Zielsitzung präzise zu lokalisieren."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/resume"
+          }
+        ]
       },
       {
         "title": "Exportformat auswählen",
-        "content": "Nachdem Sie die zu exportierende Sitzung bestimmt haben, verwenden Sie den `/export`-Befehl und geben Sie Format und Sitzungs-ID an. Drei Formate werden unterstützt: `markdown`, `html` und `json`. Markdown-Format eignet sich für die Verwendung in Dokumentations-Tools, HTML-Format kann direkt im Browser zum Anzeigen geöffnet werden, und JSON-Format eignet sich für die programmatische Verarbeitung.\n\n```bash\n# Wenn kein <session-id>-Parameter vorhanden, wird standardmäßig die aktuelle Sitzung exportiert\n/export html <session-id> # Als HTML-Format exportieren\n/export markdown <session-id> # Als Markdown-Format exportieren\n/export json <session-id> # Als JSON-Format exportieren\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nachdem Sie die zu exportierende Sitzung bestimmt haben, verwenden Sie den `/export`-Befehl und geben Sie Format und Sitzungs-ID an. Drei Formate werden unterstützt: `markdown`, `html` und `json`. Markdown-Format eignet sich für die Verwendung in Dokumentations-Tools, HTML-Format kann direkt im Browser zum Anzeigen geöffnet werden, und JSON-Format eignet sich für die programmatische Verarbeitung."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "# Wenn kein <session-id>-Parameter vorhanden, wird standardmäßig die aktuelle Sitzung exportiert\n/export html <session-id> # Als HTML-Format exportieren\n/export markdown <session-id> # Als Markdown-Format exportieren\n/export json <session-id> # Als JSON-Format exportieren"
+          }
+        ]
       },
       {
         "title": "Teilen und archivieren",
-        "content": "Exportierte Dateien werden im angegebenen Verzeichnis gespeichert. Markdown- und HTML-Dateien können direkt mit Kollegen geteilt oder in Teamdokumentationen verwendet werden. JSON-Dateien können in andere Tools für die sekundäre Verarbeitung importiert werden. Wir empfehlen, wichtige Gespräche regelmäßig zu archivieren, um ein Team-Wissensrepository aufzubauen. Exportierte Dateien können auch als Sicherungen dienen, um den Verlust wichtiger Informationen zu verhindern."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Exportierte Dateien werden im angegebenen Verzeichnis gespeichert. Markdown- und HTML-Dateien können direkt mit Kollegen geteilt oder in Teamdokumentationen verwendet werden. JSON-Dateien können in andere Tools für die sekundäre Verarbeitung importiert werden. Wir empfehlen, wichtige Gespräche regelmäßig zu archivieren, um ein Team-Wissensrepository aufzubauen. Exportierte Dateien können auch als Sicherungen dienen, um den Verlust wichtiger Informationen zu verhindern."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1189,15 +2130,49 @@
     "steps": [
       {
         "title": "Einzelne Datei referenzieren",
-        "content": "Verwenden Sie den `@file`-Befehl gefolgt vom Dateipfad, um auf eine einzelne Datei zu verweisen. AI wird den Dateiinhalt lesen, die Codestruktur und -logik verstehen und dann basierend auf Ihren Fragen gezielte Antworten geben.\n\n```bash\n@file ./src/main.py\nErklären Sie, was diese Funktion tut\n```\n\nSie können auch Referenzdateien referenzieren und Qwen Code bitten, sie als neues Dokument zu organisieren und zu schreiben. Dies vermeidet weitgehend, dass AI Ihre Bedürfnisse missversteht und Inhalte generiert, die nicht in den Referenzmaterialien enthalten sind:\n\n```bash\n@file Helfen Sie mir, basierend auf dieser Datei einen öffentlichen Account-Artikel zu schreiben\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie den `@file`-Befehl gefolgt vom Dateipfad, um auf eine einzelne Datei zu verweisen. AI wird den Dateiinhalt lesen, die Codestruktur und -logik verstehen und dann basierend auf Ihren Fragen gezielte Antworten geben."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "@file ./src/main.py\nErklären Sie, was diese Funktion tut"
+          },
+          {
+            "type": "text",
+            "value": "Sie können auch Referenzdateien referenzieren und Qwen Code bitten, sie als neues Dokument zu organisieren und zu schreiben. Dies vermeidet weitgehend, dass AI Ihre Bedürfnisse missversteht und Inhalte generiert, die nicht in den Referenzmaterialien enthalten sind:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "@file Helfen Sie mir, basierend auf dieser Datei einen öffentlichen Account-Artikel zu schreiben"
+          }
+        ]
       },
       {
         "title": "Anforderungen beschreiben",
-        "content": "Nachdem Sie die Datei referenziert haben, beschreiben Sie Ihre Bedürfnisse oder Fragen klar. AI wird basierend auf dem Dateiinhalt analysieren und genaue Antworten oder Vorschläge geben. Sie können nach Codelogik fragen, Probleme finden, Optimierungen anfordern usw."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nachdem Sie die Datei referenziert haben, beschreiben Sie Ihre Bedürfnisse oder Fragen klar. AI wird basierend auf dem Dateiinhalt analysieren und genaue Antworten oder Vorschläge geben. Sie können nach Codelogik fragen, Probleme finden, Optimierungen anfordern usw."
+          }
+        ]
       },
       {
         "title": "Mehrere Dateien referenzieren",
-        "content": "Durch mehrmalige Verwendung des `@file`-Befehls können Sie gleichzeitig auf mehrere Dateien verweisen. AI wird alle referenzierten Dateien umfassend analysieren, ihre Beziehungen und Inhalte verstehen und umfassendere Antworten geben.\n\n```bash\n@file1 @file2 Basierend auf den Materialien in diesen beiden Dateien helfen Sie mir, ein Lern-Dokument für Anfänger zu organisieren\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Durch mehrmalige Verwendung des `@file`-Befehls können Sie gleichzeitig auf mehrere Dateien verweisen. AI wird alle referenzierten Dateien umfassend analysieren, ihre Beziehungen und Inhalte verstehen und umfassendere Antworten geben."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "@file1 @file2 Basierend auf den Materialien in diesen beiden Dateien helfen Sie mir, ein Lern-Dokument für Anfänger zu organisieren"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1223,15 +2198,35 @@
     "steps": [
       {
         "title": "Bild hochladen",
-        "content": "Ziehen Sie das Bild in das Gesprächsfenster oder verwenden Sie das Einfügen aus der Zwischenablage (`Cmd+V` / `Ctrl+V`). Unterstützt gängige Formate wie PNG, JPEG, GIF, WebP usw.\n\nReferenz: [Clipboard-Bild einfügen](./office-clipboard-paste.mdx) zeigt, wie Sie Screenshots schnell in das Gespräch einfügen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Ziehen Sie das Bild in das Gesprächsfenster oder verwenden Sie das Einfügen aus der Zwischenablage (`Cmd+V` / `Ctrl+V`). Unterstützt gängige Formate wie PNG, JPEG, GIF, WebP usw.\n\nReferenz: [Clipboard-Bild einfügen](./office-clipboard-paste.mdx) zeigt, wie Sie Screenshots schnell in das Gespräch einfügen."
+          }
+        ]
       },
       {
         "title": "Ihre Bedürfnisse beschreiben",
-        "content": "Beschreiben Sie im Eingabefeld, was AI mit dem Bild tun soll. Zum Beispiel:\n\n```\nBasierend auf dem Bildinhalt helfen Sie mir, eine einfache HTML-Datei zu generieren\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Beschreiben Sie im Eingabefeld, was AI mit dem Bild tun soll. Zum Beispiel:"
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Basierend auf dem Bildinhalt helfen Sie mir, eine einfache HTML-Datei zu generieren"
+          }
+        ]
       },
       {
         "title": "Analyseergebnisse erhalten",
-        "content": "Qwen Code analysiert den Bildinhalt und gibt eine detaillierte Antwort. Sie können weiter Fragen stellen, alle Details im Bild ausführlich diskutieren oder AI bitten, basierend auf dem Bildinhalt Code zu generieren."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Qwen Code analysiert den Bildinhalt und gibt eine detaillierte Antwort. Sie können weiter Fragen stellen, alle Details im Bild ausführlich diskutieren oder AI bitten, basierend auf dem Bildinhalt Code zu generieren."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1257,15 +2252,30 @@
     "steps": [
       {
         "title": "MCP-Dienst konfigurieren",
-        "content": "Zuerst müssen Sie den MCP-Bildgenerierungsdienst konfigurieren. Fügen Sie den API-Schlüssel und die Endpunktinformationen des Bildgenerierungsdienstes zur Konfigurationsdatei hinzu. Qwen Code unterstützt mehrere gängige Bildgenerierungsdienste. Sie können den entsprechenden Dienst basierend auf Ihren Bedürfnissen und Ihrem Budget auswählen. Nach der Konfiguration starten Sie Qwen Code neu, damit die Änderungen wirksam werden."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Zuerst müssen Sie den MCP-Bildgenerierungsdienst konfigurieren. Fügen Sie den API-Schlüssel und die Endpunktinformationen des Bildgenerierungsdienstes zur Konfigurationsdatei hinzu. Qwen Code unterstützt mehrere gängige Bildgenerierungsdienste. Sie können den entsprechenden Dienst basierend auf Ihren Bedürfnissen und Ihrem Budget auswählen. Nach der Konfiguration starten Sie Qwen Code neu, damit die Änderungen wirksam werden."
+          }
+        ]
       },
       {
         "title": "Bildanforderungen beschreiben",
-        "content": "Beschreiben Sie im Gespräch das Bild, das Sie generieren möchten, ausführlich in natürlicher Sprache. Fügen Sie Elemente wie Thema, Stil, Farbe, Komposition und Details des Bildes ein. Je spezifischer die Beschreibung, desto mehr entspricht das generierte Bild Ihren Erwartungen. Sie können auf Kunststile, bestimmte Künstler verweisen oder Referenzbilder hochladen, um AI zu helfen, Ihre Bedürfnisse besser zu verstehen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Beschreiben Sie im Gespräch das Bild, das Sie generieren möchten, ausführlich in natürlicher Sprache. Fügen Sie Elemente wie Thema, Stil, Farbe, Komposition und Details des Bildes ein. Je spezifischer die Beschreibung, desto mehr entspricht das generierte Bild Ihren Erwartungen. Sie können auf Kunststile, bestimmte Künstler verweisen oder Referenzbilder hochladen, um AI zu helfen, Ihre Bedürfnisse besser zu verstehen."
+          }
+        ]
       },
       {
         "title": "Ergebnisse anzeigen und speichern",
-        "content": "Qwen Code generiert mehrere Bilder zur Auswahl. Sie können jedes Bild in der Vorschau anzeigen und das Bild auswählen, das Ihren Anforderungen am besten entspricht. Wenn Anpassungen erforderlich sind, können Sie weiterhin Änderungsvorschläge beschreiben, und Qwen Code wird basierend auf dem Feedback neu generieren. Wenn Sie zufrieden sind, können Sie das Bild direkt lokal speichern oder den Bildlink kopieren, um es an anderer Stelle zu verwenden."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Qwen Code generiert mehrere Bilder zur Auswahl. Sie können jedes Bild in der Vorschau anzeigen und das Bild auswählen, das Ihren Anforderungen am besten entspricht. Wenn Anpassungen erforderlich sind, können Sie weiterhin Änderungsvorschläge beschreiben, und Qwen Code wird basierend auf dem Feedback neu generieren. Wenn Sie zufrieden sind, können Sie das Bild direkt lokal speichern oder den Bildlink kopieren, um es an anderer Stelle zu verwenden."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1291,15 +2301,40 @@
     "steps": [
       {
         "title": "Organisationsbedürfnisse beschreiben",
-        "content": "Gehen Sie in das Desktop-Verzeichnis, starten Sie Qwen Code und sagen Sie Qwen Code, wie Sie Desktop-Dateien organisieren möchten, z. B. nach Typ kategorisieren, nach Datum gruppieren usw.\n\n```bash\ncd ~/Desktop\nHelfen Sie mir, die Dateien auf meinem Desktop nach Typ zu organisieren\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Gehen Sie in das Desktop-Verzeichnis, starten Sie Qwen Code und sagen Sie Qwen Code, wie Sie Desktop-Dateien organisieren möchten, z. B. nach Typ kategorisieren, nach Datum gruppieren usw."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "cd ~/Desktop\nHelfen Sie mir, die Dateien auf meinem Desktop nach Typ zu organisieren"
+          }
+        ]
       },
       {
         "title": "Operationsplan bestätigen",
-        "content": "Qwen Code analysiert Desktop-Dateien und listet einen detaillierten Organisationsplan auf, einschließlich welcher Dateien in welche Ordner verschoben werden. Sie können den Plan überprüfen, um sicherzustellen, dass keine Probleme vorliegen.\n\n```bash\nBestätigen Sie die Ausführung dieses Organisationsplans\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Qwen Code analysiert Desktop-Dateien und listet einen detaillierten Organisationsplan auf, einschließlich welcher Dateien in welche Ordner verschoben werden. Sie können den Plan überprüfen, um sicherzustellen, dass keine Probleme vorliegen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Bestätigen Sie die Ausführung dieses Organisationsplans"
+          }
+        ]
       },
       {
         "title": "Organisation ausführen und Ergebnisse anzeigen",
-        "content": "Nach der Bestätigung führt Qwen Code Organisationsoperationen gemäß dem Plan aus. Nach Abschluss können Sie den organisierten Desktop anzeigen, und die Dateien sind bereits ordentlich nach Typ angeordnet."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach der Bestätigung führt Qwen Code Organisationsoperationen gemäß dem Plan aus. Nach Abschluss können Sie den organisierten Desktop anzeigen, und die Dateien sind bereits ordentlich nach Typ angeordnet."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1325,19 +2360,54 @@
     "steps": [
       {
         "title": "Produkt-Screenshots vorbereiten",
-        "content": "Sammeln Sie Produktoberflächen-Screenshots, die angezeigt werden müssen, einschließlich Hauptfunktionsseiten, Funktionsdemonstrationen usw. Screenshots sollten klar sein und den Wert und die Merkmale des Produkts vollständig anzeigen. Platzieren Sie sie in einem Ordner, zum Beispiel: qwen-code-images"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Sammeln Sie Produktoberflächen-Screenshots, die angezeigt werden müssen, einschließlich Hauptfunktionsseiten, Funktionsdemonstrationen usw. Screenshots sollten klar sein und den Wert und die Merkmale des Produkts vollständig anzeigen. Platzieren Sie sie in einem Ordner, zum Beispiel: qwen-code-images"
+          }
+        ]
       },
       {
         "title": "Verwandte Skills installieren",
-        "content": "Installieren Sie PPT-Generierungs-bezogene Skills. Diese Skills enthalten Fähigkeiten zur Analyse von Screenshot-Inhalten und Generierung von Präsentationsfolien.\n\n```\nÜberprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, und helfen Sie mir dann, zarazhangrui/frontend-slides in qwen code skills zu installieren.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Installieren Sie PPT-Generierungs-bezogene Skills. Diese Skills enthalten Fähigkeiten zur Analyse von Screenshot-Inhalten und Generierung von Präsentationsfolien."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Überprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, und helfen Sie mir dann, zarazhangrui/frontend-slides in qwen code skills zu installieren."
+          }
+        ]
       },
       {
         "title": "Präsentation generieren",
-        "content": "Referenzieren Sie die entsprechende Datei und sagen Sie Qwen Code Ihre Bedürfnisse, wie Zweck der Präsentation, Zielgruppe, Hauptinhalt usw. AI generiert die PPT basierend auf diesen Informationen.\n\n```\n@qwen-code-images Erstellen Sie eine Produktpräsentation-PPT basierend auf diesen Screenshots,面向 technisches Team, mit Fokus auf die Vorstellung neuer Funktionen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Referenzieren Sie die entsprechende Datei und sagen Sie Qwen Code Ihre Bedürfnisse, wie Zweck der Präsentation, Zielgruppe, Hauptinhalt usw. AI generiert die PPT basierend auf diesen Informationen."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "@qwen-code-images Erstellen Sie eine Produktpräsentation-PPT basierend auf diesen Screenshots,面向 technisches Team, mit Fokus auf die Vorstellung neuer Funktionen"
+          }
+        ]
       },
       {
         "title": "Anpassen und exportieren",
-        "content": "Zeigen Sie die generierte PPT an. Wenn Anpassungen erforderlich sind, können Sie Qwen Code sagen, wie z. B. \"eine Seite zur Architektur-Vorstellung hinzufügen\" oder \"den Text auf dieser Seite anpassen\". Wenn Sie zufrieden sind, exportieren Sie in ein bearbeitbares Format.\n\n```\nHelfen Sie mir, den Text auf Seite 3 anzupassen, um ihn prägnanter zu machen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Zeigen Sie die generierte PPT an. Wenn Anpassungen erforderlich sind, können Sie Qwen Code sagen, wie z. B. \"eine Seite zur Architektur-Vorstellung hinzufügen\" oder \"den Text auf dieser Seite anpassen\". Wenn Sie zufrieden sind, exportieren Sie in ein bearbeitbares Format."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Helfen Sie mir, den Text auf Seite 3 anzupassen, um ihn prägnanter zu machen"
+          }
+        ]
       }
     ],
     "callouts": [],
@@ -1358,15 +2428,40 @@
     "steps": [
       {
         "title": "Den gewünschten Theme-Stil beschreiben",
-        "content": "Beschreiben Sie im Gespräch den Stil, den Sie mögen, in natürlicher Sprache. Zum Beispiel \"ändern Sie das Terminal-Theme in dunklen Tech-Stil\" oder \"ich möchte ein frisches und einfaches helles Theme\". Qwen Code wird Ihre Bedürfnisse verstehen.\n\n```\nÄndern Sie das Terminal-Theme in dunklen Tech-Stil\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Beschreiben Sie im Gespräch den Stil, den Sie mögen, in natürlicher Sprache. Zum Beispiel \"ändern Sie das Terminal-Theme in dunklen Tech-Stil\" oder \"ich möchte ein frisches und einfaches helles Theme\". Qwen Code wird Ihre Bedürfnisse verstehen."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Ändern Sie das Terminal-Theme in dunklen Tech-Stil"
+          }
+        ]
       },
       {
         "title": "Theme bestätigen und anwenden",
-        "content": "Qwen Code wird mehrere Theme-Optionen empfehlen, die Ihrer Beschreibung entsprechen, und Vorschau-Effekte anzeigen. Wählen Sie Ihr Lieblingstheme, und nach der Bestätigung wendet AI die Konfiguration automatisch an.\n\n```\nSieht gut aus, wenden Sie das Theme direkt an\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Qwen Code wird mehrere Theme-Optionen empfehlen, die Ihrer Beschreibung entsprechen, und Vorschau-Effekte anzeigen. Wählen Sie Ihr Lieblingstheme, und nach der Bestätigung wendet AI die Konfiguration automatisch an."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Sieht gut aus, wenden Sie das Theme direkt an"
+          }
+        ]
       },
       {
         "title": "Feinabstimmung und Personalisierung",
-        "content": "Wenn weitere Anpassungen erforderlich sind, können Sie Qwen Code weiterhin Ihre Gedanken mitteilen, wie z. B. \"machen Sie die Hintergrundfarbe etwas dunkler\" oder \"passen Sie die Schriftgröße an\". AI wird Ihnen helfen, fein abzustimmen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Wenn weitere Anpassungen erforderlich sind, können Sie Qwen Code weiterhin Ihre Gedanken mitteilen, wie z. B. \"machen Sie die Hintergrundfarbe etwas dunkler\" oder \"passen Sie die Schriftgröße an\". AI wird Ihnen helfen, fein abzustimmen."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1392,15 +2487,30 @@
     "steps": [
       {
         "title": "Suchanfrage initiieren",
-        "content": "Beschreiben Sie direkt im Gespräch, wonach Sie suchen möchten. Zum Beispiel: \"suchen Sie nach den neuen Funktionen von React 19\", \"finden Sie Best Practices für Next.js App Router\". Qwen Code bestimmt automatisch, ob eine Netzwerksuche erforderlich ist."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Beschreiben Sie direkt im Gespräch, wonach Sie suchen möchten. Zum Beispiel: \"suchen Sie nach den neuen Funktionen von React 19\", \"finden Sie Best Practices für Next.js App Router\". Qwen Code bestimmt automatisch, ob eine Netzwerksuche erforderlich ist."
+          }
+        ]
       },
       {
         "title": "Integrierte Ergebnisse anzeigen",
-        "content": "AI durchsucht mehrere Web-Quellen, integriert Suchergebnisse und gibt eine strukturierte Antwort. Die Antwort enthält Quelllinks für Schlüsselinformationen, was es bequem macht, sie weiter ausführlich zu verstehen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "AI durchsucht mehrere Web-Quellen, integriert Suchergebnisse und gibt eine strukturierte Antwort. Die Antwort enthält Quelllinks für Schlüsselinformationen, was es bequem macht, sie weiter ausführlich zu verstehen."
+          }
+        ]
       },
       {
         "title": "Basierend auf Ergebnissen fortfahren",
-        "content": "Sie können basierend auf den Suchergebnissen weiter Fragen stellen und AI bitten, die durchsuchten Informationen auf tatsächliche Programmieraufgaben anzuwenden. Zum Beispiel, nachdem Sie nach neuen API-Verwendungen gesucht haben, können Sie AI direkt bitten, Ihnen beim Refactoring von Code zu helfen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Sie können basierend auf den Suchergebnissen weiter Fragen stellen und AI bitten, die durchsuchten Informationen auf tatsächliche Programmieraufgaben anzuwenden. Zum Beispiel, nachdem Sie nach neuen API-Verwendungen gesucht haben, können Sie AI direkt bitten, Ihnen beim Refactoring von Code zu helfen."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1426,19 +2536,59 @@
     "steps": [
       {
         "title": "skills-creator Skill installieren",
-        "content": "Installieren Sie zuerst den Skill, damit AI versteht, welche Informationen aus welchen Datenquellen Sie sammeln müssen.\n\n```\nÜberprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, und helfen Sie mir dann, skills-creator in qwen code skills zu installieren.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Installieren Sie zuerst den Skill, damit AI versteht, welche Informationen aus welchen Datenquellen Sie sammeln müssen."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Überprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, und helfen Sie mir dann, skills-creator in qwen code skills zu installieren."
+          }
+        ]
       },
       {
         "title": "Wochenbericht-Skill erstellen",
-        "content": "Verwenden Sie die Skill-Erstellungsfunktion, um AI zu sagen, dass Sie einen angepassten Wochenbericht-Generierungs-Skill benötigen. Beschreiben Sie die Datentypen, die Sie sammeln müssen, und die Wochenbericht-Struktur. AI generiert einen neuen Skill basierend auf Ihren Bedürfnissen.\n\n```\nIch muss wöchentliche Berichte für das Open-Source-Projekt erstellen: https://github.com/QwenLM/qwen-code, hauptsächlich einschließlich Issues, die diese Woche eingereicht wurden, behobene Bugs, neue Versionen und Features, sowie Überprüfungen und Reflexionen. Die Sprache sollte benutzerzentriert, altruistisch und wahrnehmend sein. Erstellen Sie einen Skill.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie die Skill-Erstellungsfunktion, um AI zu sagen, dass Sie einen angepassten Wochenbericht-Generierungs-Skill benötigen. Beschreiben Sie die Datentypen, die Sie sammeln müssen, und die Wochenbericht-Struktur. AI generiert einen neuen Skill basierend auf Ihren Bedürfnissen."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Ich muss wöchentliche Berichte für das Open-Source-Projekt erstellen: https://github.com/QwenLM/qwen-code, hauptsächlich einschließlich Issues, die diese Woche eingereicht wurden, behobene Bugs, neue Versionen und Features, sowie Überprüfungen und Reflexionen. Die Sprache sollte benutzerzentriert, altruistisch und wahrnehmend sein. Erstellen Sie einen Skill."
+          }
+        ]
       },
       {
         "title": "Wochenbericht-Inhalt generieren",
-        "content": "Nach Abschluss der Konfiguration geben Sie den Generierungsbefehl ein. Qwen Code crawlt automatisch die Update-Informationen dieser Woche und organisiert sie gemäß der Produkt-Wochenbericht-Vorlage in ein strukturiertes Dokument.\n\n```\nGenerieren Sie den qwen-code Produktupdate-Wochenbericht dieser Woche\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach Abschluss der Konfiguration geben Sie den Generierungsbefehl ein. Qwen Code crawlt automatisch die Update-Informationen dieser Woche und organisiert sie gemäß der Produkt-Wochenbericht-Vorlage in ein strukturiertes Dokument."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Generieren Sie den qwen-code Produktupdate-Wochenbericht dieser Woche"
+          }
+        ]
       },
       {
         "title": "Wochenbericht öffnen, bearbeiten und anpassen",
-        "content": "Der generierte Wochenbericht kann geöffnet und angepasst werden, um weiter bearbeitet oder mit dem Team geteilt zu werden. Sie können AI auch bitten, Format und Inhaltsfokus anzupassen.\n\n```\nMachen Sie die Sprache des Wochenberichts lebendiger\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Der generierte Wochenbericht kann geöffnet und angepasst werden, um weiter bearbeitet oder mit dem Team geteilt zu werden. Sie können AI auch bitten, Format und Inhaltsfokus anzupassen."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Machen Sie die Sprache des Wochenberichts lebendiger"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1464,15 +2614,45 @@
     "steps": [
       {
         "title": "Dateiinhalt und -zweck beschreiben",
-        "content": "Sagen Sie Qwen Code, welche Art von Datei Sie erstellen möchten, sowie den Hauptinhalt und Zweck der Datei.\n\n```bash\nHelfen Sie mir, eine README.md zu erstellen, einschließlich Projektvorstellung und Installationsanweisungen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Sagen Sie Qwen Code, welche Art von Datei Sie erstellen möchten, sowie den Hauptinhalt und Zweck der Datei."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Helfen Sie mir, eine README.md zu erstellen, einschließlich Projektvorstellung und Installationsanweisungen"
+          }
+        ]
       },
       {
         "title": "Generierten Inhalt bestätigen",
-        "content": "Qwen Code generiert Dateiinhalt basierend auf Ihrer Beschreibung und zeigt ihn zur Bestätigung an. Sie können den Inhalt anzeigen, um sicherzustellen, dass er Ihren Bedürfnissen entspricht.\n\n```bash\nSieht gut aus, erstellen Sie die Datei weiter\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Qwen Code generiert Dateiinhalt basierend auf Ihrer Beschreibung und zeigt ihn zur Bestätigung an. Sie können den Inhalt anzeigen, um sicherzustellen, dass er Ihren Bedürfnissen entspricht."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Sieht gut aus, erstellen Sie die Datei weiter"
+          }
+        ]
       },
       {
         "title": "Ändern und verbessern",
-        "content": "Wenn Anpassungen erforderlich sind, können Sie Qwen Code spezifische Änderungsanforderungen mitteilen, wie z. B. \"Verwendungsbeispiele hinzufügen\" oder \"Format anpassen\".\n\n```bash\nHelfen Sie mir, einige Codebeispiele hinzuzufügen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Wenn Anpassungen erforderlich sind, können Sie Qwen Code spezifische Änderungsanforderungen mitteilen, wie z. B. \"Verwendungsbeispiele hinzufügen\" oder \"Format anpassen\"."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Helfen Sie mir, einige Codebeispiele hinzuzufügen"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1498,15 +2678,35 @@
     "steps": [
       {
         "title": "Insight-Panel öffnen",
-        "content": "Geben Sie den `/insight`-Befehl im Gespräch ein, um das Insight-Dateneinblicke-Panel zu öffnen. Das Panel zeigt Ihre Nutzungsübersicht an, einschließlich Kernkennzahlen wie Gesamtgesprächsanzahl, Code-Generierungszeilen und geschätzte eingesparte Zeit. Diese Daten werden in intuitiver Diagrammform präsentiert, sodass Sie Ihre AI-Nutzung auf einen Blick verstehen können.\n\n```bash\n/insight\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Geben Sie den `/insight`-Befehl im Gespräch ein, um das Insight-Dateneinblicke-Panel zu öffnen. Das Panel zeigt Ihre Nutzungsübersicht an, einschließlich Kernkennzahlen wie Gesamtgesprächsanzahl, Code-Generierungszeilen und geschätzte eingesparte Zeit. Diese Daten werden in intuitiver Diagrammform präsentiert, sodass Sie Ihre AI-Nutzung auf einen Blick verstehen können."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/insight"
+          }
+        ]
       },
       {
         "title": "Nutzungsbericht analysieren",
-        "content": "Zeigen Sie detaillierte Nutzungsberichte ausführlich an, einschließlich Dimensionen wie tägliche Gesprächstrends, häufig verwendete Funktionsverteilung, Programmiersprachen-Präferenzen und Codetyp-Analyse. Insight bietet personalisierte Einblicke und Vorschläge basierend auf Ihren Nutzungsmustern und hilft Ihnen, potenziellen Verbesserungsraum zu entdecken. Sie können Daten nach Zeitbereich filtern und die Nutzungseffizienz verschiedener Zeiträume vergleichen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Zeigen Sie detaillierte Nutzungsberichte ausführlich an, einschließlich Dimensionen wie tägliche Gesprächstrends, häufig verwendete Funktionsverteilung, Programmiersprachen-Präferenzen und Codetyp-Analyse. Insight bietet personalisierte Einblicke und Vorschläge basierend auf Ihren Nutzungsmustern und hilft Ihnen, potenziellen Verbesserungsraum zu entdecken. Sie können Daten nach Zeitbereich filtern und die Nutzungseffizienz verschiedener Zeiträume vergleichen."
+          }
+        ]
       },
       {
         "title": "Nutzungsgewohnheiten optimieren",
-        "content": "Basierend auf Dateneinblicken passen Sie Ihre AI-Nutzungsstrategie an. Wenn Sie beispielsweise feststellen, dass Sie eine bestimmte Funktion häufig mit geringer Effizienz verwenden, können Sie versuchen, effizientere Nutzungsmethoden zu lernen. Wenn Sie feststellen, dass AI-Unterstützung für bestimmte Programmiersprachen oder Aufgabentypen effektiver ist, können Sie AI in ähnlichen Szenarien häufiger einsetzen. Verfolgen Sie kontinuierlich Datenänderungen und verifizieren Sie Optimierungseffekte.\n\nMöchten Sie wissen, wie wir die Insight-Funktion verwenden? Sie können unseren [Wie AI uns sagen kann, wie wir AI besser nutzen](../blog/how-to-use-qwencode-insight.mdx) überprüfen"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Basierend auf Dateneinblicken passen Sie Ihre AI-Nutzungsstrategie an. Wenn Sie beispielsweise feststellen, dass Sie eine bestimmte Funktion häufig mit geringer Effizienz verwenden, können Sie versuchen, effizientere Nutzungsmethoden zu lernen. Wenn Sie feststellen, dass AI-Unterstützung für bestimmte Programmiersprachen oder Aufgabentypen effektiver ist, können Sie AI in ähnlichen Szenarien häufiger einsetzen. Verfolgen Sie kontinuierlich Datenänderungen und verifizieren Sie Optimierungseffekte.\n\nMöchten Sie wissen, wie wir die Insight-Funktion verwenden? Sie können unseren [Wie AI uns sagen kann, wie wir AI besser nutzen](../blog/how-to-use-qwencode-insight.mdx) überprüfen"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1532,23 +2732,68 @@
     "steps": [
       {
         "title": "Repository klonen",
-        "content": "Verwenden Sie git clone, um das Open-Source-Projekt lokal herunterzuladen. Wählen Sie ein Projekt, das Sie interessiert, und klonen Sie es in Ihre Entwicklungsumgebung. Stellen Sie sicher, dass das Projekt gute Dokumentation und eine aktive Community hat, damit der Lernprozess reibungsloser verläuft.\n\n```bash\ngit clone https://github.com/QwenLM/qwen-code.git && cd qwen-code\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Verwenden Sie git clone, um das Open-Source-Projekt lokal herunterzuladen. Wählen Sie ein Projekt, das Sie interessiert, und klonen Sie es in Ihre Entwicklungsumgebung. Stellen Sie sicher, dass das Projekt gute Dokumentation und eine aktive Community hat, damit der Lernprozess reibungsloser verläuft."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "git clone https://github.com/QwenLM/qwen-code.git && cd qwen-code"
+          }
+        ]
       },
       {
         "title": "Qwen Code starten",
-        "content": "Starten Sie Qwen Code im Projektverzeichnis. Auf diese Weise kann AI auf alle Projektdateien zugreifen und kontextrelevante Codeerklärungen und -vorschläge geben. Qwen Code analysiert automatisch die Projektstruktur und identifiziert Hauptmodule und Abhängigkeiten.\n\n```bash\nqwen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Starten Sie Qwen Code im Projektverzeichnis. Auf diese Weise kann AI auf alle Projektdateien zugreifen und kontextrelevante Codeerklärungen und -vorschläge geben. Qwen Code analysiert automatisch die Projektstruktur und identifiziert Hauptmodule und Abhängigkeiten."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen"
+          }
+        ]
       },
       {
         "title": "Codeerklärung anfordern",
-        "content": "Sagen Sie AI, welchen Teil oder welche Funktionalität des Projekts Sie verstehen möchten. Sie können nach der Gesamtarchitektur, der Implementierungslogik bestimmter Module oder den Designideen bestimmter Funktionen fragen. AI erklärt den Code in klarer Sprache und bietet relevantes Hintergrundwissen.\n\n```bash\nHelfen Sie mir, die Gesamtarchitektur und Hauptmodule dieses Projekts zu erklären\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Sagen Sie AI, welchen Teil oder welche Funktionalität des Projekts Sie verstehen möchten. Sie können nach der Gesamtarchitektur, der Implementierungslogik bestimmter Module oder den Designideen bestimmter Funktionen fragen. AI erklärt den Code in klarer Sprache und bietet relevantes Hintergrundwissen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Helfen Sie mir, die Gesamtarchitektur und Hauptmodule dieses Projekts zu erklären"
+          }
+        ]
       },
       {
         "title": "Beiträge finden",
-        "content": "Lassen Sie AI Ihnen helfen, Issues oder Funktionen zu finden, die für Anfänger geeignet sind, daran teilzunehmen. AI analysiert die Issues-Liste des Projekts und empfiehlt geeignete Beiträge basierend auf Schwierigkeit, Tags und Beschreibungen. Dies ist ein guter Weg, um mit Open-Source-Beiträgen zu beginnen.\n\n```bash\nWelche offenen Issues sind für Anfänger geeignet, daran teilzunehmen?\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Lassen Sie AI Ihnen helfen, Issues oder Funktionen zu finden, die für Anfänger geeignet sind, daran teilzunehmen. AI analysiert die Issues-Liste des Projekts und empfiehlt geeignete Beiträge basierend auf Schwierigkeit, Tags und Beschreibungen. Dies ist ein guter Weg, um mit Open-Source-Beiträgen zu beginnen."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Welche offenen Issues sind für Anfänger geeignet, daran teilzunehmen?"
+          }
+        ]
       },
       {
         "title": "Modifikationen implementieren",
-        "content": "Implementieren Sie Codemodifikationen schrittweise basierend auf der Anleitung von AI. AI hilft Ihnen, Probleme zu analysieren, Lösungen zu entwerfen, Code zu schreiben und sicherzustellen, dass Modifikationen den Projekt-Codestandards entsprechen. Nach Abschluss der Modifikationen können Sie einen PR einreichen und zum Open-Source-Projekt beitragen."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Implementieren Sie Codemodifikationen schrittweise basierend auf der Anleitung von AI. AI hilft Ihnen, Probleme zu analysieren, Lösungen zu entwerfen, Code zu schreiben und sicherzustellen, dass Modifikationen den Projekt-Codestandards entsprechen. Nach Abschluss der Modifikationen können Sie einen PR einreichen und zum Open-Source-Projekt beitragen."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1574,19 +2819,59 @@
     "steps": [
       {
         "title": "Paper-Informationen bereitstellen",
-        "content": "Sagen Sie Qwen Code das Paper, das Sie lesen möchten. Sie können den Paper-Titel, den PDF-Dateipfad oder den arXiv-Link bereitstellen. AI erhält und analysiert den Paper-Inhalt automatisch.\n\n```\nHelfen Sie mir, dieses Paper herunterzuladen und zu analysieren: attention is all you need https://arxiv.org/abs/1706.03762\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Sagen Sie Qwen Code das Paper, das Sie lesen möchten. Sie können den Paper-Titel, den PDF-Dateipfad oder den arXiv-Link bereitstellen. AI erhält und analysiert den Paper-Inhalt automatisch."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Helfen Sie mir, dieses Paper herunterzuladen und zu analysieren: attention is all you need https://arxiv.org/abs/1706.03762"
+          }
+        ]
       },
       {
         "title": "Paper lesen",
-        "content": "Installieren Sie PDF-bezogene Skills, damit Qwen Code den Paper-Inhalt analysieren und strukturierte Lernkarten generieren kann. Sie können Paper-Abstracts, Kernpunkte, Schlüsselkonzepte und wichtige Schlussfolgerungen anzeigen.\n\n```\nÜberprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, und helfen Sie mir dann, Anthropic pdf und andere Office-Skills in qwen code skills zu installieren.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Installieren Sie PDF-bezogene Skills, damit Qwen Code den Paper-Inhalt analysieren und strukturierte Lernkarten generieren kann. Sie können Paper-Abstracts, Kernpunkte, Schlüsselkonzepte und wichtige Schlussfolgerungen anzeigen."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Überprüfen Sie, ob ich find-skills habe. Wenn nicht, helfen Sie mir, es direkt zu installieren: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, und helfen Sie mir dann, Anthropic pdf und andere Office-Skills in qwen code skills zu installieren."
+          }
+        ]
       },
       {
         "title": "Tiefes Lernen und Fragen",
-        "content": "Während des Lesens können Sie Qwen Code jederzeit Fragen stellen, wie z. B. \"erklären Sie den Self-Attention-Mechanismus\" oder \"wie ist diese Formel abgeleitet\". AI antwortet ausführlich und hilft Ihnen, tief zu verstehen.\n\n```\nBitte erklären Sie den Kerngedanken der Transformer-Architektur\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Während des Lesens können Sie Qwen Code jederzeit Fragen stellen, wie z. B. \"erklären Sie den Self-Attention-Mechanismus\" oder \"wie ist diese Formel abgeleitet\". AI antwortet ausführlich und hilft Ihnen, tief zu verstehen."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Bitte erklären Sie den Kerngedanken der Transformer-Architektur"
+          }
+        ]
       },
       {
         "title": "Lernkarten generieren",
-        "content": "Nach dem Lernen lassen Sie Qwen Code Lernkarten generieren, die die Kernpunkte, Schlüsselkonzepte und wichtigen Schlussfolgerungen des Papers zusammenfassen. Diese Karten erleichtern Ihre Wiederholung und Weitergabe an das Team.\n\n```bash\nHelfen Sie mir, Lernkarten für dieses Paper zu generieren\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Nach dem Lernen lassen Sie Qwen Code Lernkarten generieren, die die Kernpunkte, Schlüsselkonzepte und wichtigen Schlussfolgerungen des Papers zusammenfassen. Diese Karten erleichtern Ihre Wiederholung und Weitergabe an das Team."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Helfen Sie mir, Lernkarten für dieses Paper zu generieren"
+          }
+        ]
       }
     ],
     "callouts": [

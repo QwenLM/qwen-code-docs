@@ -13,15 +13,30 @@
     "steps": [
       {
         "title": "Detecção Automática",
-        "content": "O Qwen Code detecta automaticamente as configurações do servidor de linguagem no seu projeto. Para linguagens de programação e frameworks comuns, ele reconhece e inicia automaticamente o serviço LSP correspondente. Sem configuração manual necessária, pronto para usar imediatamente."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O Qwen Code detecta automaticamente as configurações do servidor de linguagem no seu projeto. Para linguagens de programação e frameworks comuns, ele reconhece e inicia automaticamente o serviço LSP correspondente. Sem configuração manual necessária, pronto para usar imediatamente."
+          }
+        ]
       },
       {
         "title": "Aproveitar o IntelliSense",
-        "content": "Ao codificar, o LSP IntelliSense é ativado automaticamente. Enquanto você digita, ele fornece sugestões de conclusão precisas baseadas no contexto, incluindo nomes de funções, nomes de variáveis e anotações de tipo. Pressione Tab para aceitar rapidamente uma sugestão."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Ao codificar, o LSP IntelliSense é ativado automaticamente. Enquanto você digita, ele fornece sugestões de conclusão precisas baseadas no contexto, incluindo nomes de funções, nomes de variáveis e anotações de tipo. Pressione Tab para aceitar rapidamente uma sugestão."
+          }
+        ]
       },
       {
         "title": "Diagnóstico de Erros",
-        "content": "O diagnóstico em tempo real do LSP analisa continuamente seu código durante a codificação, detectando problemas potenciais. Erros e avisos são exibidos intuitivamente com localização do problema, tipo de erro e sugestões de correção."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O diagnóstico em tempo real do LSP analisa continuamente seu código durante a codificação, detectando problemas potenciais. Erros e avisos são exibidos intuitivamente com localização do problema, tipo de erro e sugestões de correção."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -47,15 +62,50 @@
     "steps": [
       {
         "title": "Especificar a PR para Revisão",
-        "content": "Informe ao Qwen Code qual Pull Request você deseja revisar fornecendo o número ou link da PR.\n\n:::callout{type=\"tip\"}\nVocê pode usar o skill pr-review para analisar PRs. Para instalação do skill, veja: [Instalar Skills](./guide-skill-install.mdx).\n:::\n\n```bash\n/skill pr-review Por favor, revise esta PR: <link ou número da PR>\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Informe ao Qwen Code qual Pull Request você deseja revisar fornecendo o número ou link da PR."
+          },
+          {
+            "type": "callout",
+            "calloutType": "tip",
+            "value": "Você pode usar o skill pr-review para analisar PRs. Para instalação do skill, veja: [Instalar Skills](./guide-skill-install.mdx)."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/skill pr-review Por favor, revise esta PR: <link ou número da PR>"
+          }
+        ]
       },
       {
         "title": "Executar Testes e Verificações",
-        "content": "O Qwen Code analisará as alterações de código, identificará casos de teste relevantes e executará testes para verificar a correção do código.\n\n```bash\nExecutar testes para verificar se esta PR passa em todos os casos de teste\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O Qwen Code analisará as alterações de código, identificará casos de teste relevantes e executará testes para verificar a correção do código."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Executar testes para verificar se esta PR passa em todos os casos de teste"
+          }
+        ]
       },
       {
         "title": "Ver o Relatório de Revisão",
-        "content": "Após a revisão, o Qwen Code gera um relatório detalhado incluindo problemas descobertos, riscos potenciais e sugestões de melhoria.\n\n```bash\nExibir o relatório de revisão e listar todos os problemas descobertos\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após a revisão, o Qwen Code gera um relatório detalhado incluindo problemas descobertos, riscos potenciais e sugestões de melhoria."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Exibir o relatório de revisão e listar todos os problemas descobertos"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -81,27 +131,72 @@
     "steps": [
       {
         "title": "Escolher uma Issue",
-        "content": "Encontre uma issue interessante ou adequada no GitHub. Priorize issues com descrições claras, etapas de reprodução e resultados esperados. Labels como `good first issue` ou `help wanted` são boas para iniciantes."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Encontre uma issue interessante ou adequada no GitHub. Priorize issues com descrições claras, etapas de reprodução e resultados esperados. Labels como `good first issue` ou `help wanted` são boas para iniciantes."
+          }
+        ]
       },
       {
         "title": "Clonar o Projeto e Localizar o Problema",
-        "content": "Baixe o código do projeto e deixe a IA localizar o problema. Use `@file` para referenciar arquivos relevantes.\n\n```bash\nMe ajude a analisar onde está o problema descrito nesta issue, link da issue: <link da issue>\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Baixe o código do projeto e deixe a IA localizar o problema. Use `@file` para referenciar arquivos relevantes."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Me ajude a analisar onde está o problema descrito nesta issue, link da issue: <link da issue>"
+          }
+        ]
       },
       {
         "title": "Entender o Código Relacionado",
-        "content": "Peça à IA para explicar a lógica do código relacionado e as dependências."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Peça à IA para explicar a lógica do código relacionado e as dependências."
+          }
+        ]
       },
       {
         "title": "Formular um Plano de Correção",
-        "content": "Discuta soluções possíveis com a IA e escolha a melhor."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Discuta soluções possíveis com a IA e escolha a melhor."
+          }
+        ]
       },
       {
         "title": "Implementar Alterações de Código",
-        "content": "Modifique o código gradualmente com orientação da IA e teste-o.\n\n```bash\nMe ajude a modificar este código para resolver o problema\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Modifique o código gradualmente com orientação da IA e teste-o."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Me ajude a modificar este código para resolver o problema"
+          }
+        ]
       },
       {
         "title": "Submeter uma PR",
-        "content": "Após concluir as alterações, submeta uma PR e aguarde a revisão do mantenedor do projeto.\n\n```bash\nMe ajude a submeter uma PR para resolver este problema\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após concluir as alterações, submeta uma PR e aguarde a revisão do mantenedor do projeto."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Me ajude a submeter uma PR para resolver este problema"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -128,11 +223,26 @@
     "steps": [
       {
         "title": "Preparar o Repositório",
-        "content": "Certifique-se de que seu repositório GitHub contém informações completas do projeto e documentação, incluindo README, capturas de tela e descrições de funcionalidades."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Certifique-se de que seu repositório GitHub contém informações completas do projeto e documentação, incluindo README, capturas de tela e descrições de funcionalidades."
+          }
+        ]
       },
       {
         "title": "Gerar o Vídeo Promocional",
-        "content": "Informe ao Qwen Code o estilo e foco do vídeo desejado, e a IA analisará automaticamente o projeto e gerará o vídeo.\n\n```bash\nCom base neste skill https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md, me ajude a gerar um vídeo de demonstração para o repositório open source: <URL do repositório>\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Informe ao Qwen Code o estilo e foco do vídeo desejado, e a IA analisará automaticamente o projeto e gerará o vídeo."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Com base neste skill https://github.com/QwenLM/qwen-code-examples/blob/main/skills/oss-styles/SKILL.md, me ajude a gerar um vídeo de demonstração para o repositório open source: <URL do repositório>"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -159,19 +269,59 @@
     "steps": [
       {
         "title": "Instalar o Skill Remotion",
-        "content": "Primeiro, instale o Skill Remotion, que contém melhores práticas e templates para criação de vídeo.\n\n```bash\nVerifique se tenho find skills, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, depois me ajude a instalar remotion-best-practice.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Primeiro, instale o Skill Remotion, que contém melhores práticas e templates para criação de vídeo."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Verifique se tenho find skills, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, depois me ajude a instalar remotion-best-practice."
+          }
+        ]
       },
       {
         "title": "Descrever Sua Ideia Criativa",
-        "content": "Descreva em linguagem natural o conteúdo de vídeo que deseja criar, incluindo tema, estilo, duração e cenas-chave.\n\n```bash\n@file Com base no documento, crie um vídeo promocional de produto de 30 segundos com estilo moderno e minimalista.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Descreva em linguagem natural o conteúdo de vídeo que deseja criar, incluindo tema, estilo, duração e cenas-chave."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "@file Com base no documento, crie um vídeo promocional de produto de 30 segundos com estilo moderno e minimalista."
+          }
+        ]
       },
       {
         "title": "Visualizar e Ajustar",
-        "content": "O Qwen Code gerará o código do projeto Remotion com base na sua descrição. Inicie o servidor de desenvolvimento para visualizar.\n\n```bash\nnpm run dev\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O Qwen Code gerará o código do projeto Remotion com base na sua descrição. Inicie o servidor de desenvolvimento para visualizar."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "npm run dev"
+          }
+        ]
       },
       {
         "title": "Renderizar e Exportar",
-        "content": "Quando estiver satisfeito, use o comando build para renderizar o vídeo final.\n\n```bash\nMe ajude a renderizar e exportar o vídeo diretamente.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Quando estiver satisfeito, use o comando build para renderizar o vídeo final."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Me ajude a renderizar e exportar o vídeo diretamente."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -197,19 +347,59 @@
     "steps": [
       {
         "title": "Fornecer Experiências Pessoais",
-        "content": "Informe à IA sua formação educacional, experiência profissional, experiência em projetos e habilidades.\n\n```bash\nSou desenvolvedor frontend, formado pela universidade XX, com 3 anos de experiência, especializado em React e TypeScript...\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Informe à IA sua formação educacional, experiência profissional, experiência em projetos e habilidades."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Sou desenvolvedor frontend, formado pela universidade XX, com 3 anos de experiência, especializado em React e TypeScript..."
+          }
+        ]
       },
       {
         "title": "Instalar o Skill de Design Web",
-        "content": "Instale o Skill de design web que fornece templates de design de currículo.\n\n```bash\nVerifique se tenho find skills, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills, depois me ajude a instalar web-component-design.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Instale o Skill de design web que fornece templates de design de currículo."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Verifique se tenho find skills, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills, depois me ajude a instalar web-component-design."
+          }
+        ]
       },
       {
         "title": "Escolher Estilo de Design",
-        "content": "Descreva o estilo de currículo que prefere, como minimalista, profissional ou criativo.\n\n```bash\n/skills web-component-design Me ajude a criar um site de currículo com estilo minimalista e profissional\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Descreva o estilo de currículo que prefere, como minimalista, profissional ou criativo."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/skills web-component-design Me ajude a criar um site de currículo com estilo minimalista e profissional"
+          }
+        ]
       },
       {
         "title": "Gerar o Site de Currículo",
-        "content": "A IA criará um projeto completo de site de currículo com layout responsivo e estilos de impressão.\n\n```bash\nnpm run dev\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "A IA criará um projeto completo de site de currículo com layout responsivo e estilos de impressão."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "npm run dev"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -235,19 +425,58 @@
     "steps": [
       {
         "title": "Preparar Captura de Tela do Site",
-        "content": "Faça uma captura de tela da interface do site que deseja replicar, garantindo que seja clara e completa."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Faça uma captura de tela da interface do site que deseja replicar, garantindo que seja clara e completa."
+          }
+        ]
       },
       {
         "title": "Instalar o Skill Correspondente",
-        "content": "Instale o Skill de reconhecimento de imagens e geração de código frontend.\n\n```bash\nVerifique se tenho find skills, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, depois me ajude a instalar web-component-design.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Instale o Skill de reconhecimento de imagens e geração de código frontend."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Verifique se tenho find skills, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, depois me ajude a instalar web-component-design."
+          }
+        ]
       },
       {
         "title": "Colar a Captura de Tela e Descrever os Requisitos",
-        "content": "Cole a captura de tela na conversa e informe ao Qwen Code seus requisitos específicos.\n\n```bash\n/skills web-component-design Com base neste skill, replique uma página web HTML baseada em @website.png, garantindo que as referências de imagens sejam válidas.\n```\n\nExemplo de captura de tela:\n\n<img src=\"https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Cole a captura de tela na conversa e informe ao Qwen Code seus requisitos específicos."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/skills web-component-design Com base neste skill, replique uma página web HTML baseada em @website.png, garantindo que as referências de imagens sejam válidas."
+          },
+          {
+            "type": "text",
+            "value": "Exemplo de captura de tela:"
+          },
+          {
+            "type": "image",
+            "src": "https://gw.alicdn.com/imgextra/i4/O1CN01FUQtA51YIzygQQhLT_!!6000000003037-2-tps-2768-1552.png",
+            "alt": ""
+          }
+        ]
       },
       {
         "title": "Executar e Visualizar",
-        "content": "Abra a página web correspondente para verificar. Se precisar ajustar o design ou funcionalidades, continue interagindo com a IA para modificar o código."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Abra a página web correspondente para verificar. Se precisar ajustar o design ou funcionalidades, continue interagindo com a IA para modificar o código."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -274,11 +503,31 @@
     "steps": [
       {
         "title": "Fornecer o Link do Vídeo",
-        "content": "Informe ao Qwen Code o link do vídeo do YouTube que deseja converter.\n\n```\nCom base neste skill: https://github.com/QwenLM/qwen-code-examples/tree/main/skills/youtube-transcript-extractor, me ajude a escrever este vídeo como um blog: https://www.youtube.com/watch?v=fJSLnxi1i64\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Informe ao Qwen Code o link do vídeo do YouTube que deseja converter."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Com base neste skill: https://github.com/QwenLM/qwen-code-examples/tree/main/skills/youtube-transcript-extractor, me ajude a escrever este vídeo como um blog: https://www.youtube.com/watch?v=fJSLnxi1i64"
+          }
+        ]
       },
       {
         "title": "Gerar e Editar o Artigo de Blog",
-        "content": "A IA analisará a transcrição e gerará um artigo com título, introdução, corpo e conclusão.\n\n```\nMe ajude a ajustar o estilo de linguagem deste artigo para ser mais adequado a um blog técnico\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "A IA analisará a transcrição e gerará um artigo com título, introdução, corpo e conclusão."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Me ajude a ajustar o estilo de linguagem deste artigo para ser mais adequado a um blog técnico"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -304,23 +553,53 @@
     "steps": [
       {
         "title": "Criar arquivo de configuração",
-        "content": "Crie uma pasta `.qwen` no diretório raiz do projeto e crie um arquivo `AGENTS.md` dentro dela. Este arquivo armazenará sua configuração de comportamento da IA.\n\n```bash\nmkdir -p .qwen && touch .qwen/AGENTS.md\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Crie uma pasta `.qwen` no diretório raiz do projeto e crie um arquivo `AGENTS.md` dentro dela. Este arquivo armazenará sua configuração de comportamento da IA."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "mkdir -p .qwen && touch .qwen/AGENTS.md"
+          }
+        ]
       },
       {
         "title": "Escrever configuração",
-        "content": "Escreva a configuração no formato Markdown, descrevendo as especificações do projeto em linguagem natural. Você pode definir estilo de código, convenções de nomenclatura, requisitos de comentários, preferências de framework, etc., e a IA ajustará seu comportamento com base nessas configurações.\n\n```markdown\n# Especificações do projeto"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Escreva a configuração no formato Markdown, descrevendo as especificações do projeto em linguagem natural. Você pode definir estilo de código, convenções de nomenclatura, requisitos de comentários, preferências de framework, etc., e a IA ajustará seu comportamento com base nessas configurações.\n\n```markdown\n# Especificações do projeto"
+          }
+        ]
       },
       {
         "title": "Estilo de código",
-        "content": "- Usar TypeScript\n- Usar programação funcional\n- Adicionar comentários detalhados"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "- Usar TypeScript\n- Usar programação funcional\n- Adicionar comentários detalhados"
+          }
+        ]
       },
       {
         "title": "Convenções de nomenclatura",
-        "content": "- Usar camelCase para variáveis\n- Usar UPPER_SNAKE_CASE para constantes\n- Usar PascalCase para nomes de classes\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "- Usar camelCase para variáveis\n- Usar UPPER_SNAKE_CASE para constantes\n- Usar PascalCase para nomes de classes\n```"
+          }
+        ]
       },
       {
         "title": "Aplicar configuração",
-        "content": "Após salvar o arquivo de configuração, a IA o lerá automaticamente e o aplicará. Na próxima conversa, a IA gerará código que atende aos padrões do projeto com base na configuração, sem necessidade de repetir as especificações."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após salvar o arquivo de configuração, a IA o lerá automaticamente e o aplicará. Na próxima conversa, a IA gerará código que atende aos padrões do projeto com base na configuração, sem necessidade de repetir as especificações."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -346,19 +625,77 @@
     "steps": [
       {
         "title": "Obter chave API",
-        "content": "Visite a [plataforma Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key), encontre a página de gerenciamento de chaves API no centro pessoal. Clique para criar uma nova chave API, e o sistema gerará uma chave única. Esta chave é sua credencial para acessar os serviços Qwen Code, por favor, mantenha-a em segurança.\n\n<img src=\"https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />\n\n:::callout{type=\"warning\"}\nPor favor, mantenha sua chave API segura e não a divulgue para outras pessoas ou a commit no repositório de código.\n:::"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Visite a [plataforma Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key), encontre a página de gerenciamento de chaves API no centro pessoal. Clique para criar uma nova chave API, e o sistema gerará uma chave única. Esta chave é sua credencial para acessar os serviços Qwen Code, por favor, mantenha-a em segurança."
+          },
+          {
+            "type": "image",
+            "src": "https://gw.alicdn.com/imgextra/i4/O1CN01oHcWmQ1zN7AQGsHzf_!!6000000006701-2-tps-2776-1538.png",
+            "alt": ""
+          },
+          {
+            "type": "callout",
+            "calloutType": "warning",
+            "value": "Por favor, mantenha sua chave API segura e não a divulgue para outras pessoas ou a commit no repositório de código."
+          }
+        ]
       },
       {
         "title": "Configurar chave API no Qwen Code",
-        "content": "**1. Deixar Qwen Code configurar automaticamente**\n\nAbra o terminal, inicie Qwen Code diretamente no diretório raiz, copie o seguinte código e informe sua CHAVE-API, a configuração será bem-sucedida. Reinicie Qwen Code e digite `/model` para alternar para o modelo configurado.\n\n```json\nAjude-me a configurar `settings.json` para o modelo Bailian de acordo com o seguinte conteúdo:\n{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<nome do modelo>\",\n            \"name\": \"[Bailian] <nome do modelo>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<substituir pela CHAVE do usuário>\"\n    },\n}\nPara entrada do nome do modelo, consulte: https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all\nMinha CHAVE-API é:\n```\n\nEm seguida, cole sua CHAVE-API na caixa de entrada, informe o nome do modelo necessário, como `qwen3.5-plus`, e envie para concluir a configuração.\n\n<img src=\"https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />\n\n**2. Configuração manual**\n\nConfigure manualmente o arquivo settings.json. O local do arquivo está no diretório `<diretório raiz do usuário>/.qwen`. Você pode copiar o seguinte conteúdo e modificar sua CHAVE-API e nome do modelo.\n\n```json\n{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<nome do modelo>\",\n            \"name\": \"[Bailian] <nome do modelo>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<substituir pela CHAVE do usuário>\"\n    },\n}\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "**1. Deixar Qwen Code configurar automaticamente**\n\nAbra o terminal, inicie Qwen Code diretamente no diretório raiz, copie o seguinte código e informe sua CHAVE-API, a configuração será bem-sucedida. Reinicie Qwen Code e digite `/model` para alternar para o modelo configurado."
+          },
+          {
+            "type": "code",
+            "lang": "json",
+            "value": "Ajude-me a configurar `settings.json` para o modelo Bailian de acordo com o seguinte conteúdo:\n{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<nome do modelo>\",\n            \"name\": \"[Bailian] <nome do modelo>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<substituir pela CHAVE do usuário>\"\n    },\n}\nPara entrada do nome do modelo, consulte: https://bailian.console.aliyun.com/cn-beijing/?tab=model#/model-market/all\nMinha CHAVE-API é:"
+          },
+          {
+            "type": "text",
+            "value": "Em seguida, cole sua CHAVE-API na caixa de entrada, informe o nome do modelo necessário, como `qwen3.5-plus`, e envie para concluir a configuração."
+          },
+          {
+            "type": "image",
+            "src": "https://gw.alicdn.com/imgextra/i2/O1CN01MRati01egFmqe2eXe_!!6000000003900-2-tps-2180-1088.png",
+            "alt": ""
+          },
+          {
+            "type": "text",
+            "value": "**2. Configuração manual**\n\nConfigure manualmente o arquivo settings.json. O local do arquivo está no diretório `<diretório raiz do usuário>/.qwen`. Você pode copiar o seguinte conteúdo e modificar sua CHAVE-API e nome do modelo."
+          },
+          {
+            "type": "code",
+            "lang": "json",
+            "value": "{\n    \"modelProviders\": {\n        \"openai\": [\n          {\n            \"id\": \"<nome do modelo>\",\n            \"name\": \"[Bailian] <nome do modelo>\",\n            \"baseUrl\": \"https://dashscope.aliyuncs.com/compatible-mode/v1\",\n            \"envKey\": \"BAILIAN_API_KEY\",\n            }\n        ]\n    },\n    \"env\": {\n        \"BAILIAN_API_KEY\": \"<substituir pela CHAVE do usuário>\"\n    },\n}"
+          }
+        ]
       },
       {
         "title": "Selecionar modelo",
-        "content": "Escolha o modelo apropriado de acordo com suas necessidades, equilibrando velocidade e desempenho. Diferentes modelos são adequados para diferentes cenários. Você pode escolher com base na complexidade da tarefa e requisitos de tempo de resposta. Use o comando `/model` para alternar rapidamente entre modelos.\n\nOpções comuns de modelo:\n- `qwen3.5-plus`: Poderoso, adequado para tarefas complexas\n- `qwen3.5-flash`: Rápido, adequado para tarefas simples\n- `qwen-max`: Modelo mais poderoso, adequado para tarefas de alta dificuldade"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Escolha o modelo apropriado de acordo com suas necessidades, equilibrando velocidade e desempenho. Diferentes modelos são adequados para diferentes cenários. Você pode escolher com base na complexidade da tarefa e requisitos de tempo de resposta. Use o comando `/model` para alternar rapidamente entre modelos.\n\nOpções comuns de modelo:\n- `qwen3.5-plus`: Poderoso, adequado para tarefas complexas\n- `qwen3.5-flash`: Rápido, adequado para tarefas simples\n- `qwen-max`: Modelo mais poderoso, adequado para tarefas de alta dificuldade"
+          }
+        ]
       },
       {
         "title": "Testar conexão",
-        "content": "Envie uma mensagem de teste para confirmar que a configuração da API está correta. Se a configuração for bem-sucedida, Qwen Code responderá imediatamente, o que significa que você está pronto para começar a usar a programação assistida por IA. Se encontrar problemas, verifique se a chave API está configurada corretamente.\n\n```bash\nHello, can you help me with coding?\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Envie uma mensagem de teste para confirmar que a configuração da API está correta. Se a configuração for bem-sucedida, Qwen Code responderá imediatamente, o que significa que você está pronto para começar a usar a programação assistida por IA. Se encontrar problemas, verifique se a chave API está configurada corretamente."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Hello, can you help me with coding?"
+          }
+        ]
       }
     ],
     "callouts": [],
@@ -379,19 +716,54 @@
     "steps": [
       {
         "title": "Inserir o comando /arena",
-        "content": "No chat do Qwen Code, digite `/arena` e selecione `start` para entrar no modo arena.\n\n```bash\n/arena start\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "No chat do Qwen Code, digite `/arena` e selecione `start` para entrar no modo arena."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/arena start"
+          }
+        ]
       },
       {
         "title": "Selecionar os modelos participantes",
-        "content": "Na lista de modelos disponíveis, selecione os modelos que deseja comparar. Pressione `space` para selecionar 2 ou mais modelos."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Na lista de modelos disponíveis, selecione os modelos que deseja comparar. Pressione `space` para selecionar 2 ou mais modelos."
+          }
+        ]
       },
       {
         "title": "Inserir a descrição da tarefa",
-        "content": "Insira a tarefa que deseja que cada modelo processe, por exemplo:\n\n```\nRefatore esta função para melhorar a legibilidade e o desempenho\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Insira a tarefa que deseja que cada modelo processe, por exemplo:"
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Refatore esta função para melhorar a legibilidade e o desempenho"
+          }
+        ]
       },
       {
         "title": "Comparar resultados e escolher o melhor",
-        "content": "Todos os modelos processarão a tarefa simultaneamente. Após a conclusão, você pode comparar suas soluções e aplicar o melhor resultado ao seu código.\n\n```bash\n/arena select\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Todos os modelos processarão a tarefa simultaneamente. Após a conclusão, você pode comparar suas soluções e aplicar o melhor resultado ao seu código."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/arena select"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -417,15 +789,35 @@
     "steps": [
       {
         "title": "Acionar autenticação",
-        "content": "Após iniciar o Qwen Code, digite o comando `/auth`, e o sistema iniciará automaticamente o processo de autenticação. O comando de autenticação pode ser usado na linha de comando ou na extensão VS Code, e o método de operação é consistente. O sistema detectará o status de autenticação atual e, se não estiver conectado, guiará você para completar o login.\n\n```bash\n/auth\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após iniciar o Qwen Code, digite o comando `/auth`, e o sistema iniciará automaticamente o processo de autenticação. O comando de autenticação pode ser usado na linha de comando ou na extensão VS Code, e o método de operação é consistente. O sistema detectará o status de autenticação atual e, se não estiver conectado, guiará você para completar o login."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/auth"
+          }
+        ]
       },
       {
         "title": "Login via navegador",
-        "content": "O sistema abrirá automaticamente o navegador e redirecionará para a página de autenticação. Na página de autenticação, você pode escolher usar uma conta Alibaba Cloud ou outros métodos de login suportados. O processo de login é rápido e conveniente, levando apenas alguns segundos."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O sistema abrirá automaticamente o navegador e redirecionará para a página de autenticação. Na página de autenticação, você pode escolher usar uma conta Alibaba Cloud ou outros métodos de login suportados. O processo de login é rápido e conveniente, levando apenas alguns segundos."
+          }
+        ]
       },
       {
         "title": "Confirmar login",
-        "content": "Após um login bem-sucedido, o navegador fechará automaticamente ou exibirá uma mensagem de sucesso. Ao retornar à interface Qwen Code, você verá a mensagem de sucesso da autenticação, indicando que você fez login com sucesso e desbloqueou todos os recursos. As informações de autenticação serão salvas automaticamente, então não há necessidade de fazer login novamente."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após um login bem-sucedido, o navegador fechará automaticamente ou exibirá uma mensagem de sucesso. Ao retornar à interface Qwen Code, você verá a mensagem de sucesso da autenticação, indicando que você fez login com sucesso e desbloqueou todos os recursos. As informações de autenticação serão salvas automaticamente, então não há necessidade de fazer login novamente."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -451,19 +843,49 @@
     "steps": [
       {
         "title": "Entrar na interface de configurações",
-        "content": "Inicie Qwen Code e digite o comando `/auth`."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Inicie Qwen Code e digite o comando `/auth`."
+          }
+        ]
       },
       {
         "title": "Selecionar Coding Plan",
-        "content": "Habilite o modo Bailian Coding Plan nas configurações, digite sua chave API, e Qwen Code configurará automaticamente os modelos suportados pelo Coding Plan para você.\n\n<img src=\"https://gw.alicdn.com/imgextra/i1/O1CN01cDz8AJ1Cq30rXjuXS_!!6000000000131-2-tps-1696-952.png\" alt=\"\" style={{width: '70%', borderRadius: '12px', marginTop: '32px', marginBottom: '32px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}} />"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Habilite o modo Bailian Coding Plan nas configurações, digite sua chave API, e Qwen Code configurará automaticamente os modelos suportados pelo Coding Plan para você."
+          },
+          {
+            "type": "image",
+            "src": "https://gw.alicdn.com/imgextra/i1/O1CN01cDz8AJ1Cq30rXjuXS_!!6000000000131-2-tps-1696-952.png",
+            "alt": ""
+          }
+        ]
       },
       {
         "title": "Selecionar modelo",
-        "content": "Digite diretamente o comando `/model` para selecionar o modelo desejado."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Digite diretamente o comando `/model` para selecionar o modelo desejado."
+          }
+        ]
       },
       {
         "title": "Iniciar tarefa complexa",
-        "content": "Descreva sua tarefa de programação, e o Coding Plan planejará automaticamente as etapas de execução. Você pode explicar em detalhes os objetivos, restrições e resultados esperados da tarefa. A IA analisará os requisitos da tarefa e gerará um plano de execução estruturado, incluindo operações específicas e resultados esperados para cada etapa.\n\n```bash\nPreciso refatorar a camada de dados deste projeto, migrar o banco de dados de MySQL para PostgreSQL mantendo a interface API inalterada\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Descreva sua tarefa de programação, e o Coding Plan planejará automaticamente as etapas de execução. Você pode explicar em detalhes os objetivos, restrições e resultados esperados da tarefa. A IA analisará os requisitos da tarefa e gerará um plano de execução estruturado, incluindo operações específicas e resultados esperados para cada etapa."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Preciso refatorar a camada de dados deste projeto, migrar o banco de dados de MySQL para PostgreSQL mantendo a interface API inalterada"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -489,15 +911,35 @@
     "steps": [
       {
         "title": "Você está no meio de uma conversa principal",
-        "content": "Você está discutindo uma tarefa com o Qwen Code, como refatorar um componente."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Você está discutindo uma tarefa com o Qwen Code, como refatorar um componente."
+          }
+        ]
       },
       {
         "title": "Digite /btw seguido da sua pergunta",
-        "content": "Precisa verificar algo? Basta digitar `/btw` seguido da sua pergunta:\n\n```bash\n/btw O método JavaScript Array.prototype.at() suporta índices negativos?\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Precisa verificar algo? Basta digitar `/btw` seguido da sua pergunta:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/btw O método JavaScript Array.prototype.at() suporta índices negativos?"
+          }
+        ]
       },
       {
         "title": "A IA responde e restaura automaticamente o contexto",
-        "content": "Depois que o Qwen Code responde sua pergunta lateral, ele retorna automaticamente ao contexto da conversa principal. Você pode continuar sua tarefa anterior como se nada tivesse acontecido."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Depois que o Qwen Code responde sua pergunta lateral, ele retorna automaticamente ao contexto da conversa principal. Você pode continuar sua tarefa anterior como se nada tivesse acontecido."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -523,15 +965,30 @@
     "steps": [
       {
         "title": "Selecionar bloco de código",
-        "content": "Clique no botão de cópia no canto superior direito do bloco de código para copiar todo o bloco com um clique. O botão de cópia é claramente visível e a operação é simples e rápida. O conteúdo copiado manterá o formato original, incluindo recuo, destaque de sintaxe, etc."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Clique no botão de cópia no canto superior direito do bloco de código para copiar todo o bloco com um clique. O botão de cópia é claramente visível e a operação é simples e rápida. O conteúdo copiado manterá o formato original, incluindo recuo, destaque de sintaxe, etc."
+          }
+        ]
       },
       {
         "title": "Colar e usar",
-        "content": "Cole o código copiado em seu editor, e o formato será mantido automaticamente. Você pode usá-lo diretamente sem precisar ajustar manualmente o recuo ou formatação. O código colado é totalmente consistente com o código original, garantindo a correção do código."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Cole o código copiado em seu editor, e o formato será mantido automaticamente. Você pode usá-lo diretamente sem precisar ajustar manualmente o recuo ou formatação. O código colado é totalmente consistente com o código original, garantindo a correção do código."
+          }
+        ]
       },
       {
         "title": "Seleção precisa",
-        "content": "Se você só precisa copiar parte do código, pode usar o mouse para selecionar o conteúdo necessário e, em seguida, usar o atalho de teclado para copiar. Suporta seleção de múltiplas linhas, permitindo copiar com precisão os trechos de código necessários."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Se você só precisa copiar parte do código, pode usar o mouse para selecionar o conteúdo necessário e, em seguida, usar o atalho de teclado para copiar. Suporta seleção de múltiplas linhas, permitindo copiar com precisão os trechos de código necessários."
+          }
+        ]
       }
     ],
     "callouts": [],
@@ -552,19 +1009,44 @@
     "steps": [
       {
         "title": "Mudar para o Explore Agent",
-        "content": "No Qwen Code, mude para o modo Explore Agent para focar na pesquisa de código em vez de modificação."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "No Qwen Code, mude para o modo Explore Agent para focar na pesquisa de código em vez de modificação."
+          }
+        ]
       },
       {
         "title": "Descrever seu objetivo de pesquisa",
-        "content": "Diga ao Explore Agent o que você quer entender, por exemplo:\n\n```\nAnalise o módulo de autenticação deste projeto, encontre todos os arquivos e dependências relacionados\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Diga ao Explore Agent o que você quer entender, por exemplo:"
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Analise o módulo de autenticação deste projeto, encontre todos os arquivos e dependências relacionados"
+          }
+        ]
       },
       {
         "title": "Obter o relatório de pesquisa",
-        "content": "O Explore Agent analisará a estrutura do código e produzirá um relatório de pesquisa detalhado, incluindo listas de arquivos, grafos de dependências, pontos de entrada principais, etc."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O Explore Agent analisará a estrutura do código e produzirá um relatório de pesquisa detalhado, incluindo listas de arquivos, grafos de dependências, pontos de entrada principais, etc."
+          }
+        ]
       },
       {
         "title": "Voltar ao Agent principal para iniciar o desenvolvimento",
-        "content": "Após a pesquisa ser concluída, volte ao Agent principal e comece as modificações reais de código baseadas nos resultados da pesquisa. O relatório de pesquisa será passado como contexto para o Agent principal."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após a pesquisa ser concluída, volte ao Agent principal e comece as modificações reais de código baseadas nos resultados da pesquisa. O relatório de pesquisa será passado como contexto para o Agent principal."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -590,15 +1072,45 @@
     "steps": [
       {
         "title": "Iniciar Qwen Code",
-        "content": "Digite o comando `qwen` no terminal para iniciar o aplicativo. Na primeira inicialização, o sistema realizará a configuração de inicialização, que leva apenas alguns segundos. Após a inicialização, você verá uma interface de linha de comando amigável, pronta para começar a conversa com a IA.\n\n```bash\nqwen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Digite o comando `qwen` no terminal para iniciar o aplicativo. Na primeira inicialização, o sistema realizará a configuração de inicialização, que leva apenas alguns segundos. Após a inicialização, você verá uma interface de linha de comando amigável, pronta para começar a conversa com a IA."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen"
+          }
+        ]
       },
       {
         "title": "Iniciar conversa",
-        "content": "Digite sua pergunta na caixa de entrada para começar a se comunicar com a IA. Você pode começar com uma simples apresentação, como perguntar o que é Qwen Code ou o que ele pode fazer por você. A IA responderá às suas perguntas em linguagem clara e fácil de entender e o guiará para explorar mais recursos.\n\n```bash\nwhat is qwen code?\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Digite sua pergunta na caixa de entrada para começar a se comunicar com a IA. Você pode começar com uma simples apresentação, como perguntar o que é Qwen Code ou o que ele pode fazer por você. A IA responderá às suas perguntas em linguagem clara e fácil de entender e o guiará para explorar mais recursos."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "what is qwen code?"
+          }
+        ]
       },
       {
         "title": "Explorar capacidades",
-        "content": "Tente pedir à IA para ajudá-lo a completar algumas tarefas simples, como explicar código, gerar funções, responder perguntas técnicas, etc. Através da prática real, você gradualmente se familiarizará com as várias capacidades do Qwen Code e descobrirá seu valor de aplicação em diferentes cenários.\n\n```bash\nAjude-me a escrever uma função Python para calcular a sequência de Fibonacci\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Tente pedir à IA para ajudá-lo a completar algumas tarefas simples, como explicar código, gerar funções, responder perguntas técnicas, etc. Através da prática real, você gradualmente se familiarizará com as várias capacidades do Qwen Code e descobrirá seu valor de aplicação em diferentes cenários."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Ajude-me a escrever uma função Python para calcular a sequência de Fibonacci"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -624,15 +1136,45 @@
     "steps": [
       {
         "title": "Usar modo prompt",
-        "content": "Use o parâmetro `--p` para passar prompts diretamente na linha de comando. Qwen Code retornará a resposta e sairá automaticamente. Este método é adequado para consultas únicas e pode ser facilmente integrado em scripts.\n\n```bash\nqwen --p 'what is qwen code?'\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Use o parâmetro `--p` para passar prompts diretamente na linha de comando. Qwen Code retornará a resposta e sairá automaticamente. Este método é adequado para consultas únicas e pode ser facilmente integrado em scripts."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen --p 'what is qwen code?'"
+          }
+        ]
       },
       {
         "title": "Entrada de pipeline",
-        "content": "Passe a saída de outros comandos para Qwen Code através de pipelines para alcançar processamento automatizado. Você pode enviar arquivos de log, mensagens de erro, etc. diretamente para a IA para análise.\n\n```bash\ncat error.log | qwen --p 'analisar erros'\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Passe a saída de outros comandos para Qwen Code através de pipelines para alcançar processamento automatizado. Você pode enviar arquivos de log, mensagens de erro, etc. diretamente para a IA para análise."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "cat error.log | qwen --p 'analisar erros'"
+          }
+        ]
       },
       {
         "title": "Integração de script",
-        "content": "Integre Qwen Code em scripts Shell para alcançar fluxos de trabalho automatizados complexos. Você pode executar diferentes operações com base nos resultados de retorno da IA, criando scripts automatizados inteligentes.\n\n```bash\n#!/bin/bash\nresult=$(qwen --p 'verificar se há problemas com o código')\nif [[ $result == *\"tem problemas\"* ]]; then\n  echo \"Problemas de código encontrados\"\nfi\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Integre Qwen Code em scripts Shell para alcançar fluxos de trabalho automatizados complexos. Você pode executar diferentes operações com base nos resultados de retorno da IA, criando scripts automatizados inteligentes."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "#!/bin/bash\nresult=$(qwen --p 'verificar se há problemas com o código')\nif [[ $result == *\"tem problemas\"* ]]; then\n  echo \"Problemas de código encontrados\"\nfi"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -658,19 +1200,63 @@
     "steps": [
       {
         "title": "Criar o diretório hooks",
-        "content": "Crie um diretório `.agents/hooks` na raiz do seu projeto para armazenar scripts hook:\n\n```bash\nmkdir -p .agents/hooks\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Crie um diretório `.agents/hooks` na raiz do seu projeto para armazenar scripts hook:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "mkdir -p .agents/hooks"
+          }
+        ]
       },
       {
         "title": "Escrever um script hook",
-        "content": "Crie um script hook, por exemplo, formatação automática após modificação de código:\n\n```bash\n#!/bin/bash\n# post-edit-format.sh\n# Executar automaticamente a formatação prettier após modificação de código\n\nINPUT=$(cat)\nTOOL_NAME=$(echo \"$INPUT\" | jq -r '.tool_name // empty')\n\ncase \"$TOOL_NAME\" in\n  write_file|edit) ;;\n  *) exit 0 ;;\nesac\n\nFILE_PATH=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty')\n[ -z \"$FILE_PATH\" ] && exit 0\n\n# Executar formatação prettier\nnpx prettier --write \"$FILE_PATH\" 2>/dev/null\n\necho '{\"decision\": \"allow\", \"reason\": \"File formatted\"}'\nexit 0\n```\n\nConceder permissão de execução:\n\n```bash\nchmod +x .agents/hooks/post-edit-format.sh\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Crie um script hook, por exemplo, formatação automática após modificação de código:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "#!/bin/bash\n# post-edit-format.sh\n# Executar automaticamente a formatação prettier após modificação de código\n\nINPUT=$(cat)\nTOOL_NAME=$(echo \"$INPUT\" | jq -r '.tool_name // empty')\n\ncase \"$TOOL_NAME\" in\n  write_file|edit) ;;\n  *) exit 0 ;;\nesac\n\nFILE_PATH=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty')\n[ -z \"$FILE_PATH\" ] && exit 0\n\n# Executar formatação prettier\nnpx prettier --write \"$FILE_PATH\" 2>/dev/null\n\necho '{\"decision\": \"allow\", \"reason\": \"File formatted\"}'\nexit 0"
+          },
+          {
+            "type": "text",
+            "value": "Conceder permissão de execução:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "chmod +x .agents/hooks/post-edit-format.sh"
+          }
+        ]
       },
       {
         "title": "Configurar hooks",
-        "content": "Adicione a configuração de hooks em `~/.qwen/settings.json`:\n\n```json\n{\n  \"hooksConfig\": {\n    \"enabled\": true\n  },\n  \"hooks\": {\n    \"PostToolUse\": [\n      {\n        \"matcher\": \"(write_file|edit)\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \".agents/hooks/post-edit-format.sh\",\n            \"name\": \"auto-format\",\n            \"description\": \"Formatação automática após modificação de código\",\n            \"timeout\": 30000\n          }\n        ]\n      }\n    ]\n  }\n}\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Adicione a configuração de hooks em `~/.qwen/settings.json`:"
+          },
+          {
+            "type": "code",
+            "lang": "json",
+            "value": "{\n  \"hooksConfig\": {\n    \"enabled\": true\n  },\n  \"hooks\": {\n    \"PostToolUse\": [\n      {\n        \"matcher\": \"(write_file|edit)\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \".agents/hooks/post-edit-format.sh\",\n            \"name\": \"auto-format\",\n            \"description\": \"Formatação automática após modificação de código\",\n            \"timeout\": 30000\n          }\n        ]\n      }\n    ]\n  }\n}"
+          }
+        ]
       },
       {
         "title": "Verificar o efeito",
-        "content": "Inicie o Qwen Code, faça a IA modificar um arquivo de código e observe se o hook aciona automaticamente a formatação."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Inicie o Qwen Code, faça a IA modificar um arquivo de código e observe se o hook aciona automaticamente a formatação."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -696,15 +1282,40 @@
     "steps": [
       {
         "title": "Trocar idioma da UI",
-        "content": "Use o comando `/language ui` para trocar o idioma da interface, suportando chinês, inglês e outros idiomas. Após trocar o idioma da UI, menus, mensagens de prompt, documentação de ajuda, etc. serão exibidos no idioma escolhido.\n\n```bash\n/language ui zh-CN\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Use o comando `/language ui` para trocar o idioma da interface, suportando chinês, inglês e outros idiomas. Após trocar o idioma da UI, menus, mensagens de prompt, documentação de ajuda, etc. serão exibidos no idioma escolhido."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/language ui zh-CN"
+          }
+        ]
       },
       {
         "title": "Trocar idioma de saída",
-        "content": "Use o comando `/language output` para trocar o idioma de saída da IA. A IA usará o idioma especificado para responder perguntas, gerar comentários de código, fornecer explicações, etc., tornando a comunicação mais natural e suave.\n\n```bash\n/language output zh-CN\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Use o comando `/language output` para trocar o idioma de saída da IA. A IA usará o idioma especificado para responder perguntas, gerar comentários de código, fornecer explicações, etc., tornando a comunicação mais natural e suave."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/language output zh-CN"
+          }
+        ]
       },
       {
         "title": "Uso misto de idiomas",
-        "content": "Você também pode definir diferentes idiomas para UI e saída para alcançar uso misto de idiomas. Por exemplo, usar chinês para UI e inglês para saída da IA, adequado para cenários onde você precisa ler documentação técnica em inglês."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Você também pode definir diferentes idiomas para UI e saída para alcançar uso misto de idiomas. Por exemplo, usar chinês para UI e inglês para saída da IA, adequado para cenários onde você precisa ler documentação técnica em inglês."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -731,19 +1342,49 @@
     "steps": [
       {
         "title": "Habilitar modo Plan",
-        "content": "Digite o comando `/approval-mode plan` na conversa para ativar o modo Plan. Neste ponto, Qwen Code entrará no estado de planejamento, pronto para receber sua descrição de tarefa e começar a pensar. O modo Plan analisará automaticamente a complexidade da tarefa e determinará se é necessário pesquisar informações externas para complementar a base de conhecimento.\n\n```bash\n/approval-mode plan\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Digite o comando `/approval-mode plan` na conversa para ativar o modo Plan. Neste ponto, Qwen Code entrará no estado de planejamento, pronto para receber sua descrição de tarefa e começar a pensar. O modo Plan analisará automaticamente a complexidade da tarefa e determinará se é necessário pesquisar informações externas para complementar a base de conhecimento."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/approval-mode plan"
+          }
+        ]
       },
       {
         "title": "Solicitar pesquisa das últimas informações",
-        "content": "Descreva seus requisitos de tarefa, e Qwen Code identificará automaticamente as palavras-chave que precisam ser pesquisadas. Ele iniciará proativamente solicitações de Pesquisa Web para obter as últimas documentações técnicas, referências de API, melhores práticas e soluções. Os resultados da pesquisa serão integrados na base de conhecimento, fornecendo uma base de informações precisa para o planejamento subsequente.\n\n```\nAjude-me a pesquisar as últimas notícias no campo de IA e organizá-las em um relatório para mim\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Descreva seus requisitos de tarefa, e Qwen Code identificará automaticamente as palavras-chave que precisam ser pesquisadas. Ele iniciará proativamente solicitações de Pesquisa Web para obter as últimas documentações técnicas, referências de API, melhores práticas e soluções. Os resultados da pesquisa serão integrados na base de conhecimento, fornecendo uma base de informações precisa para o planejamento subsequente."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Ajude-me a pesquisar as últimas notícias no campo de IA e organizá-las em um relatório para mim"
+          }
+        ]
       },
       {
         "title": "Ver plano de execução",
-        "content": "Com base nas informações pesquisadas, Qwen Code gerará um plano de execução detalhado para você. O plano incluirá descrições claras de etapas, pontos técnicos a serem observados, armadilhas potenciais e soluções. Você pode revisar este plano, fornecer sugestões de modificação ou confirmar para começar a execução."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Com base nas informações pesquisadas, Qwen Code gerará um plano de execução detalhado para você. O plano incluirá descrições claras de etapas, pontos técnicos a serem observados, armadilhas potenciais e soluções. Você pode revisar este plano, fornecer sugestões de modificação ou confirmar para começar a execução."
+          }
+        ]
       },
       {
         "title": "Executar plano passo a passo",
-        "content": "Após confirmar o plano, Qwen Code o executará passo a passo. Em cada ponto chave, ele relatará o progresso e os resultados, garantindo que você tenha controle completo sobre todo o processo. Se surgirem problemas, ele fornecerá soluções com base nas últimas informações pesquisadas, em vez de depender de conhecimento desatualizado."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após confirmar o plano, Qwen Code o executará passo a passo. Em cada ponto chave, ele relatará o progresso e os resultados, garantindo que você tenha controle completo sobre todo o processo. Se surgirem problemas, ele fornecerá soluções com base nas últimas informações pesquisadas, em vez de depender de conhecimento desatualizado."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -769,19 +1410,54 @@
     "steps": [
       {
         "title": "Ver lista de sessões",
-        "content": "Use o comando `qwen --resume` para ver todas as sessões históricas. O sistema exibirá o tempo, tópico e informações breves de cada sessão, ajudando você a encontrar rapidamente a conversa que precisa retomar.\n\n```bash\nqwen --resume\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Use o comando `qwen --resume` para ver todas as sessões históricas. O sistema exibirá o tempo, tópico e informações breves de cada sessão, ajudando você a encontrar rapidamente a conversa que precisa retomar."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen --resume"
+          }
+        ]
       },
       {
         "title": "Retomar sessão",
-        "content": "Use o comando `qwen --resume` para retomar uma sessão especificada. Você pode selecionar a conversa a retomar pelo ID da sessão ou número, e o sistema carregará o histórico completo do contexto.\n\n```bash\nqwen --resume\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Use o comando `qwen --resume` para retomar uma sessão especificada. Você pode selecionar a conversa a retomar pelo ID da sessão ou número, e o sistema carregará o histórico completo do contexto."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen --resume"
+          }
+        ]
       },
       {
         "title": "Continuar trabalhando",
-        "content": "Após retomar a sessão, você pode continuar a conversa como se nunca tivesse sido interrompida. Todo o contexto, histórico e progresso serão totalmente preservados, e a IA poderá entender com precisão o conteúdo da discussão anterior."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após retomar a sessão, você pode continuar a conversa como se nunca tivesse sido interrompida. Todo o contexto, histórico e progresso serão totalmente preservados, e a IA poderá entender com precisão o conteúdo da discussão anterior."
+          }
+        ]
       },
       {
         "title": "Trocar sessões após iniciar Qwen Code",
-        "content": "Após iniciar Qwen Code, você pode usar o comando `/resume` para alternar para uma sessão anterior.\n\n```bash\n/resume\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após iniciar Qwen Code, você pode usar o comando `/resume` para alternar para uma sessão anterior."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/resume"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -807,15 +1483,35 @@
     "steps": [
       {
         "title": "Descobrir respostas insatisfatórias",
-        "content": "Quando a resposta da IA não atende às suas expectativas, não desanime. As respostas da IA podem variar devido à compreensão do contexto ou aleatoriedade, e você pode obter melhores resultados tentando novamente."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Quando a resposta da IA não atende às suas expectativas, não desanime. As respostas da IA podem variar devido à compreensão do contexto ou aleatoriedade, e você pode obter melhores resultados tentando novamente."
+          }
+        ]
       },
       {
         "title": "Acionar nova tentativa",
-        "content": "Pressione o atalho Ctrl+Y (Windows/Linux) ou Cmd+Y (macOS), e a IA regerará a resposta. O processo de nova tentativa é rápido e suave e não interromperá seu fluxo de trabalho.\n\n```bash\nCtrl+Y / Cmd+Y\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Pressione o atalho Ctrl+Y (Windows/Linux) ou Cmd+Y (macOS), e a IA regerará a resposta. O processo de nova tentativa é rápido e suave e não interromperá seu fluxo de trabalho."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Ctrl+Y / Cmd+Y"
+          }
+        ]
       },
       {
         "title": "Explicação suplementar",
-        "content": "Se ainda não estiver satisfeito após tentar novamente, você pode adicionar explicações suplementares às suas necessidades para que a IA possa entender melhor suas intenções. Você pode adicionar mais detalhes, modificar a forma como a pergunta é expressa, ou fornecer mais informações de contexto."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Se ainda não estiver satisfeito após tentar novamente, você pode adicionar explicações suplementares às suas necessidades para que a IA possa entender melhor suas intenções. Você pode adicionar mais detalhes, modificar a forma como a pergunta é expressa, ou fornecer mais informações de contexto."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -841,15 +1537,35 @@
     "steps": [
       {
         "title": "Abrir o arquivo para revisão",
-        "content": "No Qwen Code, abra o arquivo de código ou diretório do projeto que deseja revisar. Certifique-se de que seu código está salvo."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "No Qwen Code, abra o arquivo de código ou diretório do projeto que deseja revisar. Certifique-se de que seu código está salvo."
+          }
+        ]
       },
       {
         "title": "Inserir o comando /review",
-        "content": "Digite `/review` no chat. O Qwen Code analisará automaticamente o arquivo atual ou as alterações de código recentes.\n\n```bash\n/review\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Digite `/review` no chat. O Qwen Code analisará automaticamente o arquivo atual ou as alterações de código recentes."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/review"
+          }
+        ]
       },
       {
         "title": "Ver os resultados da revisão",
-        "content": "A IA fornecerá feedback de revisão em múltiplas dimensões, incluindo qualidade do código, correção lógica, convenções de nomenclatura e tratamento de casos extremos, junto com sugestões específicas de melhoria."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "A IA fornecerá feedback de revisão em múltiplas dimensões, incluindo qualidade do código, correção lógica, convenções de nomenclatura e tratamento de casos extremos, junto com sugestões específicas de melhoria."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -875,15 +1591,45 @@
     "steps": [
       {
         "title": "Instalação no Linux / macOS",
-        "content": "Abra o terminal e execute o seguinte comando. O script detectará automaticamente a arquitetura do sistema (x86_64 / ARM) e baixará a versão correspondente para concluir a instalação.\n\n```bash\nbash -c \"$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)\" -s --source website\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Abra o terminal e execute o seguinte comando. O script detectará automaticamente a arquitetura do sistema (x86_64 / ARM) e baixará a versão correspondente para concluir a instalação."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "bash -c \"$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)\" -s --source website"
+          }
+        ]
       },
       {
         "title": "Instalação no Windows",
-        "content": "Execute o seguinte comando no PowerShell. O script baixará um arquivo em lote e executará automaticamente o processo de instalação. Após a conclusão, você poderá usar o comando `qwen` em qualquer terminal.\n\n```bash\ncurl -fsSL -o %TEMP%\\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\\install-qwen.bat --source website\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Execute o seguinte comando no PowerShell. O script baixará um arquivo em lote e executará automaticamente o processo de instalação. Após a conclusão, você poderá usar o comando `qwen` em qualquer terminal."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "curl -fsSL -o %TEMP%\\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\\install-qwen.bat --source website"
+          }
+        ]
       },
       {
         "title": "Verificar a Instalação",
-        "content": "Após a conclusão da instalação, execute o seguinte comando no terminal para verificar se o Qwen Code foi instalado corretamente. Se o número da versão for exibido, a instalação foi bem-sucedida.\n\n```bash\nqwen --version\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após a conclusão da instalação, execute o seguinte comando no terminal para verificar se o Qwen Code foi instalado corretamente. Se o número da versão for exibido, a instalação foi bem-sucedida."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen --version"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -909,15 +1655,50 @@
     "steps": [
       {
         "title": "Verificar e Instalar Skill find-skills",
-        "content": "No Qwen Code, descreva suas necessidades diretamente e deixe o Qwen Code ajudá-lo a encontrar e instalar a Skill necessária:\n\n```\nVerifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "No Qwen Code, descreva suas necessidades diretamente e deixe o Qwen Code ajudá-lo a encontrar e instalar a Skill necessária:"
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Verifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code"
+          }
+        ]
       },
       {
         "title": "Instalar Skills Necessárias, por exemplo web-component-design:",
-        "content": "```\n/skills find-skills install web-component-design -y -a qwen-code\n```\n\nO Qwen Code executará automaticamente o comando de instalação, baixando e instalando a Skill do repositório especificado. Você também pode instalar em uma frase:\n\n```\nVerifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale [nome da skill] no diretório atual de skills do qwen code.\n```"
+        "blocks": [
+          {
+            "type": "code",
+            "lang": "",
+            "value": "/skills find-skills install web-component-design -y -a qwen-code"
+          },
+          {
+            "type": "text",
+            "value": "O Qwen Code executará automaticamente o comando de instalação, baixando e instalando a Skill do repositório especificado. Você também pode instalar em uma frase:"
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Verifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale [nome da skill] no diretório atual de skills do qwen code."
+          }
+        ]
       },
       {
         "title": "Verificar a Instalação",
-        "content": "Após a conclusão da instalação, verifique se a Skill foi carregada corretamente:\n\n```bash\n/skills\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após a conclusão da instalação, verifique se a Skill foi carregada corretamente:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/skills"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -947,15 +1728,35 @@
     "steps": [
       {
         "title": "Abrir o Painel de Skills",
-        "content": "Digite um comando na conversa do Qwen Code para abrir o Painel de Skills. Este comando exibirá uma lista de todas as Skills disponíveis, incluindo extensões instaladas e não instaladas.\n\n```bash\n/skills\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Digite um comando na conversa do Qwen Code para abrir o Painel de Skills. Este comando exibirá uma lista de todas as Skills disponíveis, incluindo extensões instaladas e não instaladas."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/skills"
+          }
+        ]
       },
       {
         "title": "Navegar e Pesquisar Skills",
-        "content": "Navegue pelas diversas extensões de Skills no painel. Cada Skill tem descrições detalhadas e explicações de funcionalidades. Você pode usar a função de pesquisa para encontrar rapidamente Skills específicas ou navegar por diferentes tipos de extensões por categoria."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Navegue pelas diversas extensões de Skills no painel. Cada Skill tem descrições detalhadas e explicações de funcionalidades. Você pode usar a função de pesquisa para encontrar rapidamente Skills específicas ou navegar por diferentes tipos de extensões por categoria."
+          }
+        ]
       },
       {
         "title": "Instalar ou Desinstalar Skills",
-        "content": "Ao encontrar uma Skill de seu interesse, clique no botão de instalação para adicioná-la ao Qwen Code com um clique. Da mesma forma, você pode desinstalar Skills indesejadas a qualquer momento, mantendo sua biblioteca de recursos de IA organizada e eficiente."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Ao encontrar uma Skill de seu interesse, clique no botão de instalação para adicioná-la ao Qwen Code com um clique. Da mesma forma, você pode desinstalar Skills indesejadas a qualquer momento, mantendo sua biblioteca de recursos de IA organizada e eficiente."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -981,15 +1782,40 @@
     "steps": [
       {
         "title": "Criar um arquivo de prompt de sistema",
-        "content": "Crie um arquivo `AGENTS.md` (anteriormente `QWEN.md`) na raiz do seu projeto com seu prompt de sistema personalizado:\n\n```markdown\n# Convenções do Projeto\n\n- Sempre responder em chinês\n- Comentários de código em inglês\n- Usar camelCase para nomenclatura de variáveis\n- Usar componentes funcionais + Hooks para React\n- Preferir TypeScript\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Crie um arquivo `AGENTS.md` (anteriormente `QWEN.md`) na raiz do seu projeto com seu prompt de sistema personalizado:"
+          },
+          {
+            "type": "code",
+            "lang": "markdown",
+            "value": "# Convenções do Projeto\n\n- Sempre responder em chinês\n- Comentários de código em inglês\n- Usar camelCase para nomenclatura de variáveis\n- Usar componentes funcionais + Hooks para React\n- Preferir TypeScript"
+          }
+        ]
       },
       {
         "title": "Configurar prompts de sistema globais",
-        "content": "Para aplicar convenções em todos os projetos, configure prompts de sistema globais em `~/.qwen/AGENTS.md`.\n\nVocê também pode usar:\n\n```bash\nqwen --system-prompt \"Quando eu perguntar em chinês, responda em chinês; quando eu perguntar em inglês, responda em inglês.\"\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Para aplicar convenções em todos os projetos, configure prompts de sistema globais em `~/.qwen/AGENTS.md`.\n\nVocê também pode usar:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen --system-prompt \"Quando eu perguntar em chinês, responda em chinês; quando eu perguntar em inglês, responda em inglês.\""
+          }
+        ]
       },
       {
         "title": "Verificar o efeito",
-        "content": "Inicie o Qwen Code, comece uma conversa e observe se a IA responde de acordo com as convenções do seu prompt de sistema."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Inicie o Qwen Code, comece uma conversa e observe se a IA responde de acordo com as convenções do seu prompt de sistema."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1015,15 +1841,35 @@
     "steps": [
       {
         "title": "Instalar a Extensão VS Code",
-        "content": "Procure por \"Qwen Code\" no marketplace de extensões do VS Code e clique em instalar. O processo de instalação é simples e rápido, concluindo em segundos. Após a instalação, o ícone do Qwen Code aparecerá na barra lateral do VS Code, indicando que a extensão foi carregada com sucesso."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Procure por \"Qwen Code\" no marketplace de extensões do VS Code e clique em instalar. O processo de instalação é simples e rápido, concluindo em segundos. Após a instalação, o ícone do Qwen Code aparecerá na barra lateral do VS Code, indicando que a extensão foi carregada com sucesso."
+          }
+        ]
       },
       {
         "title": "Fazer Login na Conta",
-        "content": "Use o comando `/auth` para acionar o processo de autenticação. O sistema abrirá automaticamente o navegador para fazer login. O processo de login é seguro e conveniente, suportando múltiplos métodos de autenticação. Após o login bem-sucedido, as informações da conta são sincronizadas automaticamente com a extensão do VS Code, desbloqueando todas as funcionalidades.\n\n```bash\n/auth\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Use o comando `/auth` para acionar o processo de autenticação. O sistema abrirá automaticamente o navegador para fazer login. O processo de login é seguro e conveniente, suportando múltiplos métodos de autenticação. Após o login bem-sucedido, as informações da conta são sincronizadas automaticamente com a extensão do VS Code, desbloqueando todas as funcionalidades."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/auth"
+          }
+        ]
       },
       {
         "title": "Começar a Usar",
-        "content": "Abra o painel do Qwen Code na barra lateral e inicie a conversa com a IA. Você pode digitar perguntas diretamente, referenciar arquivos ou executar comandos. Todas as operações são concluídas no VS Code. A extensão suporta recursos como múltiplas abas, histórico e atalhos, fornecendo uma experiência completa de assistente de programação."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Abra o painel do Qwen Code na barra lateral e inicie a conversa com a IA. Você pode digitar perguntas diretamente, referenciar arquivos ou executar comandos. Todas as operações são concluídas no VS Code. A extensão suporta recursos como múltiplas abas, histórico e atalhos, fornecendo uma experiência completa de assistente de programação."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1049,15 +1895,40 @@
     "steps": [
       {
         "title": "Habilitar Recurso de Pesquisa",
-        "content": "Deixe claro na conversa que a IA precisa pesquisar as informações mais recentes. Você pode fazer perguntas diretamente sobre as mais recentes tecnologias, versões de frameworks ou dados em tempo real. O Qwen Code reconhecerá automaticamente suas necessidades e iniciará o recurso de pesquisa web para obter as informações mais precisas.\n\n```bash\nPesquise os novos recursos do React 19\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Deixe claro na conversa que a IA precisa pesquisar as informações mais recentes. Você pode fazer perguntas diretamente sobre as mais recentes tecnologias, versões de frameworks ou dados em tempo real. O Qwen Code reconhecerá automaticamente suas necessidades e iniciará o recurso de pesquisa web para obter as informações mais precisas."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Pesquise os novos recursos do React 19"
+          }
+        ]
       },
       {
         "title": "Exibir Resultados da Pesquisa",
-        "content": "A IA retornará as informações pesquisadas e as organizará em um formato fácil de entender. Os resultados da pesquisa geralmente incluem um resumo das informações importantes, links de origem e detalhes técnicos relevantes. Você pode visualizar rapidamente essas informações para entender as tendências tecnológicas mais recentes ou encontrar soluções para problemas."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "A IA retornará as informações pesquisadas e as organizará em um formato fácil de entender. Os resultados da pesquisa geralmente incluem um resumo das informações importantes, links de origem e detalhes técnicos relevantes. Você pode visualizar rapidamente essas informações para entender as tendências tecnológicas mais recentes ou encontrar soluções para problemas."
+          }
+        ]
       },
       {
         "title": "Fazer Perguntas com Base nos Resultados",
-        "content": "Você pode fazer mais perguntas com base nos resultados da pesquisa para obter explicações mais detalhadas. Se tiver dúvidas sobre detalhes técnicos específicos ou quiser saber como aplicar os resultados da pesquisa ao seu projeto, pode continuar perguntando diretamente. A IA fornecerá orientações mais específicas com base nas informações pesquisadas.\n\n```bash\nComo esses novos recursos afetam meu projeto\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Você pode fazer mais perguntas com base nos resultados da pesquisa para obter explicações mais detalhadas. Se tiver dúvidas sobre detalhes técnicos específicos ou quiser saber como aplicar os resultados da pesquisa ao seu projeto, pode continuar perguntando diretamente. A IA fornecerá orientações mais específicas com base nas informações pesquisadas."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Como esses novos recursos afetam meu projeto"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1083,19 +1954,49 @@
     "steps": [
       {
         "title": "Iniciar a Conversa",
-        "content": "Abra o terminal ou linha de comando e digite `qwen` para iniciar o Qwen Code. Certifique-se de estar no diretório que precisa ser organizado ou informe claramente à IA qual diretório deve ser organizado. O Qwen Code está pronto para aceitar suas instruções de organização.\n\n```bash\ncd ~/Desktop\nqwen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Abra o terminal ou linha de comando e digite `qwen` para iniciar o Qwen Code. Certifique-se de estar no diretório que precisa ser organizado ou informe claramente à IA qual diretório deve ser organizado. O Qwen Code está pronto para aceitar suas instruções de organização."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "cd ~/Desktop\nqwen"
+          }
+        ]
       },
       {
         "title": "Fornecer Instruções de Organização",
-        "content": "Informe ao Qwen Code que você deseja organizar os arquivos do desktop. A IA identificará automaticamente os tipos de arquivos e criará pastas de classificação. Você pode especificar o diretório a ser organizado, as regras de classificação e a estrutura de pastas desejada. A IA criará um plano de organização com base em suas necessidades.\n\n```bash\nOrganize os arquivos do desktop. Classifique-os em pastas diferentes por tipo: documentos, imagens, vídeos, arquivos compactados, etc.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Informe ao Qwen Code que você deseja organizar os arquivos do desktop. A IA identificará automaticamente os tipos de arquivos e criará pastas de classificação. Você pode especificar o diretório a ser organizado, as regras de classificação e a estrutura de pastas desejada. A IA criará um plano de organização com base em suas necessidades."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Organize os arquivos do desktop. Classifique-os em pastas diferentes por tipo: documentos, imagens, vídeos, arquivos compactados, etc."
+          }
+        ]
       },
       {
         "title": "Revisar o Plano de Execução",
-        "content": "O Qwen Code listará primeiro o plano de operações que serão executadas. Após verificar que não há problemas, você pode permitir a execução. Esta etapa é muito importante - você pode revisar o plano de organização para garantir que a IA entendeu suas necessidades e evitar operações incorretas."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O Qwen Code listará primeiro o plano de operações que serão executadas. Após verificar que não há problemas, você pode permitir a execução. Esta etapa é muito importante - você pode revisar o plano de organização para garantir que a IA entendeu suas necessidades e evitar operações incorretas."
+          }
+        ]
       },
       {
         "title": "Concluir a Organização",
-        "content": "A IA executará automaticamente as operações de movimentação de arquivos e exibirá um relatório de organização após a conclusão, informando quais arquivos foram movidos para onde. Todo o processo é rápido e eficiente, sem necessidade de operação manual, economizando muito tempo."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "A IA executará automaticamente as operações de movimentação de arquivos e exibirá um relatório de organização após a conclusão, informando quais arquivos foram movidos para onde. Todo o processo é rápido e eficiente, sem necessidade de operação manual, economizando muito tempo."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1121,15 +2022,30 @@
     "steps": [
       {
         "title": "Copiar Imagem para a Área de Transferência",
-        "content": "Use a ferramenta de captura de tela do sistema (macOS: `Cmd+Shift+4`, Windows: `Win+Shift+S`) para capturar o conteúdo da tela ou copie uma imagem de um navegador ou gerenciador de arquivos. A captura de tela é salva automaticamente na área de transferência, sem necessidade de operações adicionais."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Use a ferramenta de captura de tela do sistema (macOS: `Cmd+Shift+4`, Windows: `Win+Shift+S`) para capturar o conteúdo da tela ou copie uma imagem de um navegador ou gerenciador de arquivos. A captura de tela é salva automaticamente na área de transferência, sem necessidade de operações adicionais."
+          }
+        ]
       },
       {
         "title": "Colar na Janela de Conversa",
-        "content": "Na caixa de entrada de conversa do Qwen Code, use `Cmd+V` (macOS) ou `Ctrl+V` (Windows) para colar a imagem. A imagem aparecerá automaticamente na caixa de entrada, e você pode digitar texto para suas perguntas ou necessidades ao mesmo tempo."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Na caixa de entrada de conversa do Qwen Code, use `Cmd+V` (macOS) ou `Ctrl+V` (Windows) para colar a imagem. A imagem aparecerá automaticamente na caixa de entrada, e você pode digitar texto para suas perguntas ou necessidades ao mesmo tempo."
+          }
+        ]
       },
       {
         "title": "Obter Resultados da Análise da IA",
-        "content": "Após enviar a mensagem, o Qwen Code analisará o conteúdo da imagem e responderá. Pode identificar erros em capturas de tela de código, analisar layouts de mockups de design de UI, interpretar dados de gráficos e muito mais. Você pode fazer mais perguntas para discutir detalhes da imagem em profundidade."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após enviar a mensagem, o Qwen Code analisará o conteúdo da imagem e responderá. Pode identificar erros em capturas de tela de código, analisar layouts de mockups de design de UI, interpretar dados de gráficos e muito mais. Você pode fazer mais perguntas para discutir detalhes da imagem em profundidade."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1155,15 +2071,40 @@
     "steps": [
       {
         "title": "Exibir Lista de Sessões",
-        "content": "Use o comando `/resume` para exibir todas as sessões de histórico. A lista exibe informações como hora de criação e resumo do tópico de cada sessão, ajudando você a encontrar rapidamente a conversa que deseja exportar. Você pode usar pesquisa por palavra-chave ou classificação por tempo para localizar com precisão a sessão desejada.\n\n```bash\n/resume\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Use o comando `/resume` para exibir todas as sessões de histórico. A lista exibe informações como hora de criação e resumo do tópico de cada sessão, ajudando você a encontrar rapidamente a conversa que deseja exportar. Você pode usar pesquisa por palavra-chave ou classificação por tempo para localizar com precisão a sessão desejada."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/resume"
+          }
+        ]
       },
       {
         "title": "Escolher Formato de Exportação",
-        "content": "Após decidir qual sessão exportar, use o comando `/export` para especificar o formato e o ID da sessão. Três formatos são suportados: `markdown`, `html`, `json`. O formato Markdown é adequado para uso em ferramentas de documentação, o formato HTML pode ser aberto e visualizado diretamente em um navegador, e o formato JSON é adequado para processamento programático.\n\n```bash\n# Se não houver parâmetro <session-id>, exporta a sessão atual por padrão\n/export html <session-id> # Exportar em formato HTML\n/export markdown <session-id> # Exportar em formato Markdown\n/export json <session-id> # Exportar em formato JSON\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após decidir qual sessão exportar, use o comando `/export` para especificar o formato e o ID da sessão. Três formatos são suportados: `markdown`, `html`, `json`. O formato Markdown é adequado para uso em ferramentas de documentação, o formato HTML pode ser aberto e visualizado diretamente em um navegador, e o formato JSON é adequado para processamento programático."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "# Se não houver parâmetro <session-id>, exporta a sessão atual por padrão\n/export html <session-id> # Exportar em formato HTML\n/export markdown <session-id> # Exportar em formato Markdown\n/export json <session-id> # Exportar em formato JSON"
+          }
+        ]
       },
       {
         "title": "Compartilhar e Arquivar",
-        "content": "O arquivo exportado é salvo no diretório especificado. Os arquivos Markdown e HTML podem ser compartilhados diretamente com colegas ou usados em documentação da equipe. Os arquivos JSON podem ser importados para outras ferramentas para processamento secundário. Recomendamos arquivar regularmente conversas importantes para construir uma base de conhecimento da equipe. Os arquivos exportados também podem servir como backup, prevenindo a perda de informações importantes."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O arquivo exportado é salvo no diretório especificado. Os arquivos Markdown e HTML podem ser compartilhados diretamente com colegas ou usados em documentação da equipe. Os arquivos JSON podem ser importados para outras ferramentas para processamento secundário. Recomendamos arquivar regularmente conversas importantes para construir uma base de conhecimento da equipe. Os arquivos exportados também podem servir como backup, prevenindo a perda de informações importantes."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1189,15 +2130,49 @@
     "steps": [
       {
         "title": "Referenciar Arquivo Único",
-        "content": "Use o comando `@file` seguido do caminho do arquivo para referenciar um único arquivo. A IA lerá o conteúdo do arquivo, entenderá a estrutura e lógica do código, e fornecerá respostas direcionadas com base em suas perguntas.\n\n```bash\n@file ./src/main.py\nExplique o papel desta função\n```\n\nVocê também pode referenciar um arquivo e pedir ao Qwen Code para organizar e criar um novo documento com base nele. Isso evita muito que a IA entenda mal suas necessidades e gere conteúdo que não está incluído no material de referência:\n\n```bash\n@file Escreva um artigo para conta oficial com base neste arquivo\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Use o comando `@file` seguido do caminho do arquivo para referenciar um único arquivo. A IA lerá o conteúdo do arquivo, entenderá a estrutura e lógica do código, e fornecerá respostas direcionadas com base em suas perguntas."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "@file ./src/main.py\nExplique o papel desta função"
+          },
+          {
+            "type": "text",
+            "value": "Você também pode referenciar um arquivo e pedir ao Qwen Code para organizar e criar um novo documento com base nele. Isso evita muito que a IA entenda mal suas necessidades e gere conteúdo que não está incluído no material de referência:"
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "@file Escreva um artigo para conta oficial com base neste arquivo"
+          }
+        ]
       },
       {
         "title": "Descrever Necessidades",
-        "content": "Após referenciar o arquivo, descreva claramente suas necessidades ou perguntas. A IA analisará com base no conteúdo do arquivo e fornecerá respostas ou sugestões precisas. Você pode perguntar sobre lógica de código, buscar problemas, solicitar otimizações, etc."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após referenciar o arquivo, descreva claramente suas necessidades ou perguntas. A IA analisará com base no conteúdo do arquivo e fornecerá respostas ou sugestões precisas. Você pode perguntar sobre lógica de código, buscar problemas, solicitar otimizações, etc."
+          }
+        ]
       },
       {
         "title": "Referenciar Múltiplos Arquivos",
-        "content": "Você pode referenciar múltiplos arquivos simultaneamente usando o comando `@file` várias vezes. A IA analisará de forma abrangente todos os arquivos referenciados, entenderá suas relações e conteúdo, e fornecerá respostas mais abrangentes.\n\n```bash\n@file1 @file2 Organize um documento de aprendizagem para iniciantes com base nos materiais destes dois arquivos\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Você pode referenciar múltiplos arquivos simultaneamente usando o comando `@file` várias vezes. A IA analisará de forma abrangente todos os arquivos referenciados, entenderá suas relações e conteúdo, e fornecerá respostas mais abrangentes."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "@file1 @file2 Organize um documento de aprendizagem para iniciantes com base nos materiais destes dois arquivos"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1223,15 +2198,35 @@
     "steps": [
       {
         "title": "Carregar Imagem",
-        "content": "Arraste e solte a imagem na janela de conversa ou use colagem da área de transferência (`Cmd+V` / `Ctrl+V`). Suporta formatos comuns como PNG, JPEG, GIF, WebP, etc.\n\nReferência: [Colar Imagem da Área de Transferência](./office-clipboard-paste.mdx) mostra como colar rapidamente capturas de tela na conversa."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Arraste e solte a imagem na janela de conversa ou use colagem da área de transferência (`Cmd+V` / `Ctrl+V`). Suporta formatos comuns como PNG, JPEG, GIF, WebP, etc.\n\nReferência: [Colar Imagem da Área de Transferência](./office-clipboard-paste.mdx) mostra como colar rapidamente capturas de tela na conversa."
+          }
+        ]
       },
       {
         "title": "Descrever Necessidades",
-        "content": "Na caixa de entrada, descreva o que deseja que a IA faça com a imagem. Por exemplo:\n\n```\nCom base no conteúdo da imagem, gere um arquivo html simples\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Na caixa de entrada, descreva o que deseja que a IA faça com a imagem. Por exemplo:"
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Com base no conteúdo da imagem, gere um arquivo html simples"
+          }
+        ]
       },
       {
         "title": "Obter Resultados da Análise",
-        "content": "O Qwen Code analisará o conteúdo da imagem e fornecerá uma resposta detalhada. Você pode fazer mais perguntas para discutir detalhes da imagem em profundidade ou pedir ao Qwen Code para gerar código com base no conteúdo da imagem."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O Qwen Code analisará o conteúdo da imagem e fornecerá uma resposta detalhada. Você pode fazer mais perguntas para discutir detalhes da imagem em profundidade ou pedir ao Qwen Code para gerar código com base no conteúdo da imagem."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1257,15 +2252,30 @@
     "steps": [
       {
         "title": "Configurar Serviço MCP",
-        "content": "Primeiro, você precisa configurar o serviço de geração de imagem MCP. Adicione informações de chave de API e endpoint do serviço de geração de imagem ao arquivo de configuração. O Qwen Code suporta vários serviços de geração de imagem mainstream, e você pode escolher o serviço apropriado com base em suas necessidades e orçamento. Após a configuração, reinicie o Qwen Code para ativar."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Primeiro, você precisa configurar o serviço de geração de imagem MCP. Adicione informações de chave de API e endpoint do serviço de geração de imagem ao arquivo de configuração. O Qwen Code suporta vários serviços de geração de imagem mainstream, e você pode escolher o serviço apropriado com base em suas necessidades e orçamento. Após a configuração, reinicie o Qwen Code para ativar."
+          }
+        ]
       },
       {
         "title": "Descrever Requisitos de Imagem",
-        "content": "Na conversa, descreva em linguagem natural a imagem que deseja gerar em detalhes. Inclua elementos como tema, estilo, cores, composição e detalhes da imagem. Quanto mais específica a descrição, mais próxima a imagem gerada será de suas expectativas. Você pode especificar estilos artísticos, referenciar artistas específicos, ou carregar uma imagem de referência para ajudar a IA a entender melhor suas necessidades."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Na conversa, descreva em linguagem natural a imagem que deseja gerar em detalhes. Inclua elementos como tema, estilo, cores, composição e detalhes da imagem. Quanto mais específica a descrição, mais próxima a imagem gerada será de suas expectativas. Você pode especificar estilos artísticos, referenciar artistas específicos, ou carregar uma imagem de referência para ajudar a IA a entender melhor suas necessidades."
+          }
+        ]
       },
       {
         "title": "Visualizar e Salvar Resultados",
-        "content": "O Qwen Code gerará múltiplas imagens para você escolher. Você pode visualizar cada imagem e selecionar a que melhor atende aos seus requisitos. Se precisar de ajustes, pode continuar descrevendo opiniões de modificação, e o Qwen Code regenerará com base no feedback. Quando estiver satisfeito, pode salvar a imagem localmente ou copiar o link da imagem para uso em outros lugares."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O Qwen Code gerará múltiplas imagens para você escolher. Você pode visualizar cada imagem e selecionar a que melhor atende aos seus requisitos. Se precisar de ajustes, pode continuar descrevendo opiniões de modificação, e o Qwen Code regenerará com base no feedback. Quando estiver satisfeito, pode salvar a imagem localmente ou copiar o link da imagem para uso em outros lugares."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1291,15 +2301,40 @@
     "steps": [
       {
         "title": "Descrever Necessidades de Organização",
-        "content": "Navegue até o diretório do desktop, inicie o Qwen Code e informe como deseja organizar os arquivos do desktop. Por exemplo, por tipo, por data, etc.\n\n```bash\ncd ~/Desktop\nOrganize os arquivos do desktop por tipo\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Navegue até o diretório do desktop, inicie o Qwen Code e informe como deseja organizar os arquivos do desktop. Por exemplo, por tipo, por data, etc."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "cd ~/Desktop\nOrganize os arquivos do desktop por tipo"
+          }
+        ]
       },
       {
         "title": "Revisar Plano de Operações",
-        "content": "O Qwen Code analisará os arquivos do desktop e listará um plano de organização detalhado, incluindo quais arquivos serão movidos para quais pastas. Você pode revisar o plano para garantir que não há problemas.\n\n```bash\nExecute este plano de organização\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O Qwen Code analisará os arquivos do desktop e listará um plano de organização detalhado, incluindo quais arquivos serão movidos para quais pastas. Você pode revisar o plano para garantir que não há problemas."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Execute este plano de organização"
+          }
+        ]
       },
       {
         "title": "Executar Organização e Exibir Resultados",
-        "content": "Após confirmação, o Qwen Code executará as operações de organização conforme o plano. Após a conclusão, você pode visualizar o desktop organizado, com arquivos já organizados de forma ordenada por tipo."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após confirmação, o Qwen Code executará as operações de organização conforme o plano. Após a conclusão, você pode visualizar o desktop organizado, com arquivos já organizados de forma ordenada por tipo."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1325,19 +2360,54 @@
     "steps": [
       {
         "title": "Preparar Capturas de Tela do Produto",
-        "content": "Colete capturas de tela das interfaces do produto que deseja exibir. Inclui páginas principais de funcionalidades, demonstrações de recursos importantes, etc. As capturas de tela devem ser claras e mostrar plenamente o valor e os recursos do produto. Coloque-as em uma pasta. Por exemplo: qwen-code-images"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Colete capturas de tela das interfaces do produto que deseja exibir. Inclui páginas principais de funcionalidades, demonstrações de recursos importantes, etc. As capturas de tela devem ser claras e mostrar plenamente o valor e os recursos do produto. Coloque-as em uma pasta. Por exemplo: qwen-code-images"
+          }
+        ]
       },
       {
         "title": "Instalar Skills Relacionados",
-        "content": "Instale Skills relacionadas à geração de PPT. Essas Skills incluem funcionalidades para analisar conteúdo de capturas de tela e gerar slides de apresentação.\n\n```\nVerifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale zarazhangrui/frontend-slides no qwen code skills.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Instale Skills relacionadas à geração de PPT. Essas Skills incluem funcionalidades para analisar conteúdo de capturas de tela e gerar slides de apresentação."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Verifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale zarazhangrui/frontend-slides no qwen code skills."
+          }
+        ]
       },
       {
         "title": "Gerar Apresentação",
-        "content": "Referencie os arquivos correspondentes e informe ao Qwen Code suas necessidades. Inclua o propósito da apresentação, público-alvo, conteúdo principal, etc. A IA gerará o PPT com base nessas informações.\n\n```\n@qwen-code-images Crie uma apresentação PPT do produto com base nessas capturas de tela. Para a equipe técnica, focando nos novos recursos\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Referencie os arquivos correspondentes e informe ao Qwen Code suas necessidades. Inclua o propósito da apresentação, público-alvo, conteúdo principal, etc. A IA gerará o PPT com base nessas informações."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "@qwen-code-images Crie uma apresentação PPT do produto com base nessas capturas de tela. Para a equipe técnica, focando nos novos recursos"
+          }
+        ]
       },
       {
         "title": "Ajustar e Exportar",
-        "content": "Visualize o PPT gerado. Se precisar de ajustes, pode informar o Qwen Code. Por exemplo: \"Adicionar página de introdução de arquitetura\", \"Ajustar o texto desta página\". Quando estiver satisfeito, exporte em um formato editável.\n\n```\nAjuste o texto da terceira página para ser mais conciso\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Visualize o PPT gerado. Se precisar de ajustes, pode informar o Qwen Code. Por exemplo: \"Adicionar página de introdução de arquitetura\", \"Ajustar o texto desta página\". Quando estiver satisfeito, exporte em um formato editável."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Ajuste o texto da terceira página para ser mais conciso"
+          }
+        ]
       }
     ],
     "callouts": [],
@@ -1358,15 +2428,40 @@
     "steps": [
       {
         "title": "Descrever Estilo de Tema Desejado",
-        "content": "Na conversa, descreva o estilo que gosta em linguagem natural. Por exemplo: \"Altere o tema do terminal para estilo de tecnologia escura\", \"Quero um tema claro fresco e simples\". O Qwen Code entenderá suas necessidades.\n\n```\nAltere o tema do terminal para estilo de tecnologia escura\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Na conversa, descreva o estilo que gosta em linguagem natural. Por exemplo: \"Altere o tema do terminal para estilo de tecnologia escura\", \"Quero um tema claro fresco e simples\". O Qwen Code entenderá suas necessidades."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Altere o tema do terminal para estilo de tecnologia escura"
+          }
+        ]
       },
       {
         "title": "Revisar e Aplicar Tema",
-        "content": "O Qwen Code recomendará múltiplas opções de tema que correspondem à sua descrição e exibirá o efeito de visualização. Selecione o tema de sua preferência e, após confirmação, a IA aplicará automaticamente as configurações.\n\n```\nParece bom, aplique o tema diretamente\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O Qwen Code recomendará múltiplas opções de tema que correspondem à sua descrição e exibirá o efeito de visualização. Selecione o tema de sua preferência e, após confirmação, a IA aplicará automaticamente as configurações."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Parece bom, aplique o tema diretamente"
+          }
+        ]
       },
       {
         "title": "Ajustes Finais e Personalização",
-        "content": "Se precisar de mais ajustes, pode continuar informando o Qwen Code sobre seus pensamentos. Por exemplo: \"Deixe a cor de fundo um pouco mais escura\", \"Ajuste o tamanho da fonte\". A IA ajudará com ajustes finos."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Se precisar de mais ajustes, pode continuar informando o Qwen Code sobre seus pensamentos. Por exemplo: \"Deixe a cor de fundo um pouco mais escura\", \"Ajuste o tamanho da fonte\". A IA ajudará com ajustes finos."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1392,15 +2487,30 @@
     "steps": [
       {
         "title": "Iniciar Solicitação de Pesquisa",
-        "content": "Na conversa, descreva diretamente o conteúdo que deseja pesquisar. Por exemplo: \"Pesquise os novos recursos do React 19\", \"Encontre as melhores práticas do Next.js App Router\". O Qwen Code determinará automaticamente se é necessária uma pesquisa na rede."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Na conversa, descreva diretamente o conteúdo que deseja pesquisar. Por exemplo: \"Pesquise os novos recursos do React 19\", \"Encontre as melhores práticas do Next.js App Router\". O Qwen Code determinará automaticamente se é necessária uma pesquisa na rede."
+          }
+        ]
       },
       {
         "title": "Exibir Resultados Integrados",
-        "content": "A IA pesquisa múltiplas fontes da web e fornece uma resposta estruturada integrando os resultados da pesquisa. A resposta inclui links de origem para informações importantes, facilitando a compreensão mais profunda."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "A IA pesquisa múltiplas fontes da web e fornece uma resposta estruturada integrando os resultados da pesquisa. A resposta inclui links de origem para informações importantes, facilitando a compreensão mais profunda."
+          }
+        ]
       },
       {
         "title": "Continuar com Base nos Resultados",
-        "content": "Você pode fazer mais perguntas com base nos resultados da pesquisa e pedir à IA para aplicar as informações pesquisadas a tarefas de programação reais. Por exemplo, após pesquisar o uso de uma nova API, pode pedir à IA para ajudar na refatoração de código."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Você pode fazer mais perguntas com base nos resultados da pesquisa e pedir à IA para aplicar as informações pesquisadas a tarefas de programação reais. Por exemplo, após pesquisar o uso de uma nova API, pode pedir à IA para ajudar na refatoração de código."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1426,19 +2536,59 @@
     "steps": [
       {
         "title": "Instalar Skill skills-creator",
-        "content": "Primeiro, instale a Skill para que a IA entenda quais fontes de dados precisam coletar informações.\n\n```\nVerifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale skills-creator no qwen code skills.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Primeiro, instale a Skill para que a IA entenda quais fontes de dados precisam coletar informações."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Verifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale skills-creator no qwen code skills."
+          }
+        ]
       },
       {
         "title": "Criar Skill de Relatório Semanal",
-        "content": "Use o recurso de criação de Skills para informar à IA que você precisa de uma Skill personalizada de geração de relatórios semanais. Descreva os tipos de dados que precisam ser coletados e a estrutura do relatório. A IA gerará uma nova Skill com base em suas necessidades.\n\n```\nPreciso criar um relatório semanal para o projeto de código aberto: https://github.com/QwenLM/qwen-code. Inclui principalmente issues enviadas esta semana, bugs resolvidos, novas versões e recursos, e reflexões e revisões. A linguagem deve ser centrada no usuário, altruísta e perceptível. Crie a Skill.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Use o recurso de criação de Skills para informar à IA que você precisa de uma Skill personalizada de geração de relatórios semanais. Descreva os tipos de dados que precisam ser coletados e a estrutura do relatório. A IA gerará uma nova Skill com base em suas necessidades."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Preciso criar um relatório semanal para o projeto de código aberto: https://github.com/QwenLM/qwen-code. Inclui principalmente issues enviadas esta semana, bugs resolvidos, novas versões e recursos, e reflexões e revisões. A linguagem deve ser centrada no usuário, altruísta e perceptível. Crie a Skill."
+          }
+        ]
       },
       {
         "title": "Gerar Conteúdo do Relatório Semanal",
-        "content": "Após a configuração, digite o comando de geração. O Qwen Code rastreará automaticamente as informações de atualização desta semana e as organizará em um documento estruturado seguindo o modelo de relatório semanal do produto.\n\n```\nGere o relatório semanal de atualizações do produto qwen-code desta semana\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após a configuração, digite o comando de geração. O Qwen Code rastreará automaticamente as informações de atualização desta semana e as organizará em um documento estruturado seguindo o modelo de relatório semanal do produto."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Gere o relatório semanal de atualizações do produto qwen-code desta semana"
+          }
+        ]
       },
       {
         "title": "Abrir e Editar/ajustar Relatório",
-        "content": "O relatório semanal gerado pode ser aberto para ajustes, e você pode editá-lo mais ou compartilhá-lo com a equipe. Você também pode pedir ao Qwen Code para ajustar o formato e o foco do conteúdo.\n\n```\nTorne a linguagem do relatório semanal mais vívida\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O relatório semanal gerado pode ser aberto para ajustes, e você pode editá-lo mais ou compartilhá-lo com a equipe. Você também pode pedir ao Qwen Code para ajustar o formato e o foco do conteúdo."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Torne a linguagem do relatório semanal mais vívida"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1464,15 +2614,45 @@
     "steps": [
       {
         "title": "Descrever Conteúdo e Propósito do Arquivo",
-        "content": "Informe ao Qwen Code que tipo de arquivo deseja criar, bem como o conteúdo principal e o propósito do arquivo.\n\n```bash\nCrie um README.md. Inclua introdução do projeto e instruções de instalação\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Informe ao Qwen Code que tipo de arquivo deseja criar, bem como o conteúdo principal e o propósito do arquivo."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Crie um README.md. Inclua introdução do projeto e instruções de instalação"
+          }
+        ]
       },
       {
         "title": "Revisar Conteúdo Gerado",
-        "content": "O Qwen Code gerará o conteúdo do arquivo com base em sua descrição e o exibirá para revisão. Você pode visualizar o conteúdo para garantir que atende às suas necessidades.\n\n```bash\nParece bom, continue criando o arquivo\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "O Qwen Code gerará o conteúdo do arquivo com base em sua descrição e o exibirá para revisão. Você pode visualizar o conteúdo para garantir que atende às suas necessidades."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Parece bom, continue criando o arquivo"
+          }
+        ]
       },
       {
         "title": "Correções e Melhorias",
-        "content": "Se precisar de ajustes, pode informar ao Qwen Code os requisitos específicos de correção. Por exemplo: \"Adicionar exemplos de uso\", \"Ajustar formato\".\n\n```bash\nAdicione alguns exemplos de código\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Se precisar de ajustes, pode informar ao Qwen Code os requisitos específicos de correção. Por exemplo: \"Adicionar exemplos de uso\", \"Ajustar formato\"."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Adicione alguns exemplos de código"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1498,15 +2678,35 @@
     "steps": [
       {
         "title": "Abrir Painel Insight",
-        "content": "Digite o comando `/insight` na conversa para abrir o painel de insights de dados Insight. O painel exibe uma visão geral do uso, incluindo métricas principais como número total de conversas, linhas de código geradas e tempo estimado economizado. Esses dados são exibidos em formato de gráfico intuitivo, permitindo entender seu uso de IA de um relance.\n\n```bash\n/insight\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Digite o comando `/insight` na conversa para abrir o painel de insights de dados Insight. O painel exibe uma visão geral do uso, incluindo métricas principais como número total de conversas, linhas de código geradas e tempo estimado economizado. Esses dados são exibidos em formato de gráfico intuitivo, permitindo entender seu uso de IA de um relance."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "/insight"
+          }
+        ]
       },
       {
         "title": "Analisar Relatório de Uso",
-        "content": "Explore o relatório de uso detalhado. Inclui dimensões como tendências de conversa diária, distribuição de recursos usados frequentemente, preferências de linguagem de programação, análise de tipos de código, etc. O Insight fornece insights e sugestões personalizadas com base em seus padrões de uso, ajudando você a descobrir espaço potencial de melhoria. Você pode filtrar dados por intervalo de tempo e comparar a eficiência de uso em diferentes períodos."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Explore o relatório de uso detalhado. Inclui dimensões como tendências de conversa diária, distribuição de recursos usados frequentemente, preferências de linguagem de programação, análise de tipos de código, etc. O Insight fornece insights e sugestões personalizadas com base em seus padrões de uso, ajudando você a descobrir espaço potencial de melhoria. Você pode filtrar dados por intervalo de tempo e comparar a eficiência de uso em diferentes períodos."
+          }
+        ]
       },
       {
         "title": "Otimizar Hábitos de Uso",
-        "content": "Ajuste sua estratégia de uso de IA com base nos insights de dados. Por exemplo, se perceber que usa um recurso específico com frequência mas com baixa eficiência, pode aprender a usá-lo de forma mais eficaz. Se perceber que o suporte da IA é mais eficaz para certas linguagens de programação ou tipos de tarefas, pode usar a IA com mais frequência em cenários semelhantes. Continue rastreando as mudanças nos dados e verificando os efeitos da otimização.\n\nQuer saber como usar o recurso Insight? Confira nosso [Deixe a IA nos ensinar a usar melhor a IA](../blog/how-to-use-qwencode-insight.mdx)"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Ajuste sua estratégia de uso de IA com base nos insights de dados. Por exemplo, se perceber que usa um recurso específico com frequência mas com baixa eficiência, pode aprender a usá-lo de forma mais eficaz. Se perceber que o suporte da IA é mais eficaz para certas linguagens de programação ou tipos de tarefas, pode usar a IA com mais frequência em cenários semelhantes. Continue rastreando as mudanças nos dados e verificando os efeitos da otimização.\n\nQuer saber como usar o recurso Insight? Confira nosso [Deixe a IA nos ensinar a usar melhor a IA](../blog/how-to-use-qwencode-insight.mdx)"
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1532,23 +2732,68 @@
     "steps": [
       {
         "title": "Clonar Repositório",
-        "content": "Use git clone para baixar o projeto de código aberto localmente. Escolha um projeto de seu interesse e clone-o em seu ambiente de desenvolvimento. Certifique-se de que o projeto tenha boa documentação e uma comunidade ativa, o que tornará o processo de aprendizagem mais suave.\n\n```bash\ngit clone https://github.com/QwenLM/qwen-code.git && cd qwen-code\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Use git clone para baixar o projeto de código aberto localmente. Escolha um projeto de seu interesse e clone-o em seu ambiente de desenvolvimento. Certifique-se de que o projeto tenha boa documentação e uma comunidade ativa, o que tornará o processo de aprendizagem mais suave."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "git clone https://github.com/QwenLM/qwen-code.git && cd qwen-code"
+          }
+        ]
       },
       {
         "title": "Iniciar Qwen Code",
-        "content": "Inicie o Qwen Code no diretório do projeto. Isso permite que a IA acesse todos os arquivos do projeto e forneça explicações de código contextualmente relevantes. O Qwen Code analisará automaticamente a estrutura do projeto e identificará os principais módulos e dependências.\n\n```bash\nqwen\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Inicie o Qwen Code no diretório do projeto. Isso permite que a IA acesse todos os arquivos do projeto e forneça explicações de código contextualmente relevantes. O Qwen Code analisará automaticamente a estrutura do projeto e identificará os principais módulos e dependências."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "qwen"
+          }
+        ]
       },
       {
         "title": "Solicitar Explicação de Código",
-        "content": "Informe à IA qual parte ou funcionalidade do projeto você deseja entender. Você pode perguntar sobre a arquitetura geral, lógica de implementação de módulos específicos ou ideias de design de funcionalidades específicas. A IA explicará o código em linguagem clara e fornecerá conhecimento de fundo relevante.\n\n```bash\nExplique a arquitetura geral e os principais módulos deste projeto\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Informe à IA qual parte ou funcionalidade do projeto você deseja entender. Você pode perguntar sobre a arquitetura geral, lógica de implementação de módulos específicos ou ideias de design de funcionalidades específicas. A IA explicará o código em linguagem clara e fornecerá conhecimento de fundo relevante."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Explique a arquitetura geral e os principais módulos deste projeto"
+          }
+        ]
       },
       {
         "title": "Encontrar Pontos de Contribuição",
-        "content": "Peça à IA para ajudá-lo a encontrar issues ou recursos apropriados para iniciantes participarem. A IA analisará a lista de issues do projeto e recomendará pontos de contribuição apropriados com base em dificuldade, tags e descrição. Esta é uma ótima maneira de começar a contribuir com código aberto.\n\n```bash\nHá issues abertas que iniciantes podem participar?\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Peça à IA para ajudá-lo a encontrar issues ou recursos apropriados para iniciantes participarem. A IA analisará a lista de issues do projeto e recomendará pontos de contribuição apropriados com base em dificuldade, tags e descrição. Esta é uma ótima maneira de começar a contribuir com código aberto."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Há issues abertas que iniciantes podem participar?"
+          }
+        ]
       },
       {
         "title": "Implementar Correção",
-        "content": "Implemente a correção de código passo a passo seguindo a orientação da IA. A IA ajudará a analisar o problema, projetar a solução e escrever o código, garantindo que a correção esteja em conformidade com os padrões de código do projeto. Após a conclusão, você pode enviar um PR para contribuir com o projeto de código aberto."
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Implemente a correção de código passo a passo seguindo a orientação da IA. A IA ajudará a analisar o problema, projetar a solução e escrever o código, garantindo que a correção esteja em conformidade com os padrões de código do projeto. Após a conclusão, você pode enviar um PR para contribuir com o projeto de código aberto."
+          }
+        ]
       }
     ],
     "callouts": [
@@ -1574,19 +2819,59 @@
     "steps": [
       {
         "title": "Fornecer Informações do Artigo",
-        "content": "Informe ao Qwen Code qual artigo deseja ler. Você pode fornecer o título do artigo, caminho do arquivo PDF ou link do arXiv. A IA obterá e analisará automaticamente o conteúdo do artigo.\n\n```\nBaixe e analise este artigo: attention is all you need https://arxiv.org/abs/1706.03762\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Informe ao Qwen Code qual artigo deseja ler. Você pode fornecer o título do artigo, caminho do arquivo PDF ou link do arXiv. A IA obterá e analisará automaticamente o conteúdo do artigo."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Baixe e analise este artigo: attention is all you need https://arxiv.org/abs/1706.03762"
+          }
+        ]
       },
       {
         "title": "Ler o Artigo",
-        "content": "Instale Skills relacionadas a PDF para que o Qwen Code analise o conteúdo do artigo e gere cartões de aprendizagem estruturados. Você pode ver resumos do artigo, pontos principais, conceitos principais, conclusões importantes, etc.\n\n```\nVerifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale Skills de escritório como Anthropic pdf no qwen code skills.\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Instale Skills relacionadas a PDF para que o Qwen Code analise o conteúdo do artigo e gere cartões de aprendizagem estruturados. Você pode ver resumos do artigo, pontos principais, conceitos principais, conclusões importantes, etc."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Verifique se o find skills existe, se não, instale diretamente: npx skills add https://github.com/vercel-labs/skills --skill find-skills -y -a qwen-code, e instale Skills de escritório como Anthropic pdf no qwen code skills."
+          }
+        ]
       },
       {
         "title": "Aprendizagem Profunda e Perguntas",
-        "content": "Durante a leitura, você pode perguntar ao Qwen Code a qualquer momento. Por exemplo: \"Explique o mecanismo de auto-atenção\", \"Como esta fórmula foi derivada\". A IA responderá em detalhes, ajudando você a entender profundamente.\n\n```\nExplique as principais ideias da arquitetura Transformer\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Durante a leitura, você pode perguntar ao Qwen Code a qualquer momento. Por exemplo: \"Explique o mecanismo de auto-atenção\", \"Como esta fórmula foi derivada\". A IA responderá em detalhes, ajudando você a entender profundamente."
+          },
+          {
+            "type": "code",
+            "lang": "",
+            "value": "Explique as principais ideias da arquitetura Transformer"
+          }
+        ]
       },
       {
         "title": "Gerar Cartão de Aprendizagem",
-        "content": "Após concluir o aprendizado, peça ao Qwen Code para gerar um cartão de aprendizagem, resumindo os pontos principais, conceitos principais e conclusões importantes do artigo. Esses cartões facilitam a revisão e o compartilhamento com a equipe.\n\n```bash\nGere um cartão de aprendizagem para este artigo\n```"
+        "blocks": [
+          {
+            "type": "text",
+            "value": "Após concluir o aprendizado, peça ao Qwen Code para gerar um cartão de aprendizagem, resumindo os pontos principais, conceitos principais e conclusões importantes do artigo. Esses cartões facilitam a revisão e o compartilhamento com a equipe."
+          },
+          {
+            "type": "code",
+            "lang": "bash",
+            "value": "Gere um cartão de aprendizagem para este artigo"
+          }
+        ]
       }
     ],
     "callouts": [
