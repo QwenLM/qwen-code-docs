@@ -1,0 +1,157 @@
+---
+title: "Qwen Code 周报：在微信/Telegram/钉钉里接入 Qwen Code、执行前先让 AI 出计划、一键切换 AI 输出详细程度"
+date: "2026-04-09"
+description: "本周发布 v0.14.2 和 3 个 bugfix 版本，微信/Telegram/钉钉直接能用，/plan 先出计划再执行，Ctrl+O 切换详细/简洁模式，Subagent 支持跨模型提供商，会话内还能设定时任务。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：在微信/Telegram/钉钉里接入 Qwen Code、执行前先让 AI 出计划、一键切换 AI 输出详细程度"
+  date="2026-04-09"
+  author="Qwen Team"
+/>
+
+
+本周发布 **v0.14.2** 和 3 个 bugfix 版本。
+
+这轮更新让 Qwen Code 的协作方式更灵活、接入场景也更多了：微信/Telegram/钉钉都能直接用了；`/plan` 让 AI 先出计划再动手；Ctrl+O 一键切换详细/简洁输出；Subagent 支持跨提供商选模型；会话内还能设定时任务让 AI 自动检查进度。
+
+## ✨ 新增特性
+
+### 多平台接入：把 Qwen Code 接入到微信/Telegram/钉钉
+
+不再局限于终端和 VS Code，可以把 Qwen Code 接到微信/Telegram/钉钉这些通讯平台。在每个平台作为独立插件运行，需要用户配置和认证。
+
+**你能用它做什么：**
+
+- 在微信里直接问代码问题，不用打开终端
+- 把 Telegram 当远程开发助手，手机上随时发指令
+- 在钉钉里集成 AI 编码助手
+
+详见 PR [#2628](https://github.com/QwenLM/qwen-code/pull/2628)
+
+<img src="https://img.alicdn.com/imgextra/i3/O1CN01F5IFsE1DqnHMReKfd_!!6000000000268-0-tps-4032-2565.jpg" alt="多平台接入演示" class="max-w-4xl h-auto rounded-lg" />
+
+### /plan 规划模式：先规划再执行
+
+新增 `/plan` 命令。执行前先让 AI 理清思路、制定方案、列出步骤。规划完再进入执行模式，方向更清晰。
+
+**你能用它做什么：**
+
+- 大需求先用 `/plan` 让 AI 自己拆解任务，想清楚每一步再执行，不盲目上手
+- 改 bug 前先让 AI 分析可能的原因和排查路径，不盲目试错
+- 重构前先出完整方案，等你点头再动手改代码，不怕 AI 乱改
+
+详见 PR [#2921](https://github.com/QwenLM/qwen-code/pull/2921)
+
+<video src="https://cloud.video.taobao.com/vod/nXJZLtcg6lcxjm5HsSzoMZnQRCkNk2TGNPKyAZTUZHQ.mp4" controls class="max-w-4xl h-auto rounded-lg" />
+
+### Subagent 支持跨提供商选模型
+
+之前 Subagent 只能跟主会话用同一个模型和同一个 API 提供商。现在可以为每个 Subagent 单独指定模型和提供商，比如主会话用 Qwen，Subagent 用 GPT-4o，或者反过来。
+
+**你能用它做什么：**
+
+- 主会话用 Qwen 处理复杂推理，Subagent 用便宜的模型做文件搜索、格式转换等简单任务，省 token
+- 某个 API 限流或出问题时，Subagent 切到备用提供商继续干活，不中断
+- 对比不同模型在同一任务上的效果，选最优的那个
+
+详见 PR [#2698](https://github.com/QwenLM/qwen-code/pull/2698)
+
+<video src="https://cloud.video.taobao.com/vod/28mD0EPBjsGSq3CI6fxuVP86QknwjjqTYW7uwk00Iog.mp4" controls class="max-w-4xl h-auto rounded-lg" />
+
+### Ctrl+O 切换详细/简洁模式
+
+按 Ctrl+O 可以在详细模式和简洁模式之间快速切换，控制 AI 输出的详细程度。
+
+**你能用它做什么：**
+
+- 调试时切到详细模式，看 AI 的完整思考过程和工具调用
+- 赶时间时切到简洁模式，只看结果不看中间过程
+- 同一个会话里按需切换，不用重新配置
+
+详见 PR [#2770](https://github.com/QwenLM/qwen-code/pull/2770)
+
+<img src="https://img.alicdn.com/imgextra/i1/O1CN01Zod5j61YlOXUboPiH_!!6000000003099-1-tps-1251-884.gif" alt="Ctrl+O 切换详细/简洁模式" class="max-w-4xl h-auto rounded-lg" />
+
+### 会话内定时任务：让 AI 定时自动检查
+
+新增 `/loop` 命令，可以在当前会话里设一个定时任务。比如输入 `/loop 5m check the build`，AI 就会每隔 5 分钟自动检查一下构建状态，不用你反复问"部署完了没"。
+
+**你能用它做什么：**
+
+- 启动耗时任务后设个定时检查，部署/构建/数据迁移自动追踪进度
+- 每隔一段时间检查一下 PR 有没有新反馈
+- 任务只活在当前会话里，关掉就没了，不占资源
+
+详见 PR [#2731](https://github.com/QwenLM/qwen-code/pull/2731)
+
+> 注：此功能为实验性，需在配置文件中添加 `experimental.cron: true`，或设置环境变量 `QWEN_CODE_ENABLE_CRON=1` 后使用。
+
+<video src="https://cloud.video.taobao.com/vod/Gm-5FlXjUCJs4CVKCMdugQYw8wzVggtzMtI7heCpPvY.mp4" controls class="max-w-4xl h-auto rounded-lg" />
+
+## 📊 优化改进
+
+- **/review 增强**：审查结果支持验证和误报控制，还能直接生成 PR 评论格式（[#2687](https://github.com/QwenLM/qwen-code/pull/2687)）
+- **/btw 侧问增强**：支持 Ctrl+C/D 取消、提示词改进，侧问打断更方便（[#2776](https://github.com/QwenLM/qwen-code/pull/2776)）
+- **Follow-up 建议默认禁用**：不再每次回答完都弹建议，按需手动开启（[#2954](https://github.com/QwenLM/qwen-code/pull/2954)）
+- **权限判断更准确**：非核心工具能正确绕过白名单，权限弹窗不再误拦截（[#2843](https://github.com/QwenLM/qwen-code/pull/2843)）
+- **VS Code 新建标签页继承模型选择**：新建聊天标签页时自动沿用之前选的模型（[#2802](https://github.com/QwenLM/qwen-code/pull/2802)）
+- **SSH 高延迟下终端响应不丢失**：远程连接时 AI 回答不再漏字或截断（[#2718](https://github.com/QwenLM/qwen-code/pull/2718)）
+- **文件编辑保留原始换行符**：CRLF/LF 格式不再被强制转换，Git diff 不乱（[#2707](https://github.com/QwenLM/qwen-code/pull/2707)）
+- **输入拖拽检测修复**：解决鼠标拖拽选中文字时的输入延迟问题（[#2837](https://github.com/QwenLM/qwen-code/pull/2837)）
+- **output-language.md 启动时不再被覆盖**：自定义输出语言配置不会丢失（[#2842](https://github.com/QwenLM/qwen-code/pull/2842)）
+- **Ctrl+Y 跳过限流重试**：遇到 API 限流时不再干等，按 Ctrl+Y 直接跳过（[#2420](https://github.com/QwenLM/qwen-code/pull/2420)）
+- **MCP 自动重连**：连接断开后自动重连，不用手动重启（[#2428](https://github.com/QwenLM/qwen-code/pull/2428)）
+- **Hooks 移除 experimental 标志**：Hooks 系统正式可用，不再有"实验性"提示（[#2781](https://github.com/QwenLM/qwen-code/pull/2781)）
+- **扩展安装支持 NPM 注册表**：装扩展不仅支持 GitHub，还能直接从 npm 安装，跟装 npm 包一样简单（[#2719](https://github.com/QwenLM/qwen-code/pull/2719)）
+
+## 🔧 重要修复
+
+| PR | 版本 | 修复内容 | 对你的影响 |
+|----|------|----------|-----------|
+| [#2959](https://github.com/QwenLM/qwen-code/pull/2959) | v0.14.2 | VS Code webview 空白屏 | VS Code 界面正常显示 |
+| [#2976](https://github.com/QwenLM/qwen-code/pull/2976) | v0.14.2 | Hooks 信号 kill 后 exit code 保留 | 异常退出状态判断更准确 |
+| [#2995](https://github.com/QwenLM/qwen-code/pull/2995) | v0.14.2 | Linux/Wayland csiUPrefix 错误 | Linux Wayland 不再报错 |
+| [#2804](https://github.com/QwenLM/qwen-code/pull/2804) | v0.14.1 | ACP 连接 spawn 重试和自动重连 | VS Code 连接更稳定 |
+| [#2841](https://github.com/QwenLM/qwen-code/pull/2841) | v0.14.1 | Hooks 清理 abort listener | 不再内存泄漏 |
+| [#2890](https://github.com/QwenLM/qwen-code/pull/2890) | v0.14.1 | MCP OAuth 回调超时清理 | OAuth 认证不再卡住 |
+| [#2455](https://github.com/QwenLM/qwen-code/pull/2455) | v0.14.1 | 运行时添加的模型保存不丢失 | 重启后模型还在 |
+| [#2769](https://github.com/QwenLM/qwen-code/pull/2769) | v0.14.0 | 扩展安装时 .qwen 路径替换 | 文档链接不再被错误替换 |
+| [#2777](https://github.com/QwenLM/qwen-code/pull/2777) | v0.14.0 | macOS PTY FD 泄露 | 长时间运行不再占用过多文件描述符 |
+| [#2662](https://github.com/QwenLM/qwen-code/pull/2662) | v0.14.0 | 关闭标签页时清理 ACP/MCP 进程 | 不再残留僵尸进程 |
+| [#2765](https://github.com/QwenLM/qwen-code/pull/2765) | v0.14.0 | 子模型遥测覆盖主模型页脚 | 状态栏信息正确 |
+| [#2656](https://github.com/QwenLM/qwen-code/pull/2656) | v0.13.2 | /clear 和 ESC 延迟 | 清屏和退出不再卡顿 |
+
+### Windows 平台专项修复
+
+| PR | 修复内容 | 对你的影响 |
+|----|----------|-----------|
+| [#2733](https://github.com/QwenLM/qwen-code/pull/2733) | Windows 上 Git Bash node-pty 路径解析 | Windows 上使用 Git Bash 终端时 Qwen Code 正常工作 |
+
+## 🎈 其他改进
+
+- 新增 Qwen3.6-Plus 模型支持（[#2820](https://github.com/QwenLM/qwen-code/pull/2820)）
+- 思考块跨轮次保留（[#2897](https://github.com/QwenLM/qwen-code/pull/2897)）
+- 微信通道增加缺失的请求头（[#2943](https://github.com/QwenLM/qwen-code/pull/2943)）
+
+## 👋 欢迎新贡献者
+
+- [**@chinesepowered**](https://github.com/chinesepowered) — Hooks 错误处理修复（[#2841](https://github.com/QwenLM/qwen-code/pull/2841)）
+- [**@pic4xiu**](https://github.com/pic4xiu) — Hooks 系统消息提交顺序（[#2848](https://github.com/QwenLM/qwen-code/pull/2848)）
+- [**@YingchaoX**](https://github.com/YingchaoX) — Vim ? 快捷键恢复（[#2884](https://github.com/QwenLM/qwen-code/pull/2884)）
+- [**@euxaristia**](https://github.com/euxaristia) — 输入拖拽检测修复（[#2837](https://github.com/QwenLM/qwen-code/pull/2837)）
+- [**@kulikrch**](https://github.com/kulikrch) — 主题切换恢复逻辑（[#2834](https://github.com/QwenLM/qwen-code/pull/2834)）
+- [**@nsalvacao**](https://github.com/nsalvacao) — YOLO 模式计划退出（[#2586](https://github.com/QwenLM/qwen-code/pull/2586)）
+- [**@mj4444ru**](https://github.com/mj4444ru) — Markdown 表格渲染（[#2463](https://github.com/QwenLM/qwen-code/pull/2463)）
+- [**@chiga0**](https://github.com/chiga0) — Ctrl+O 模式切换（[#2770](https://github.com/QwenLM/qwen-code/pull/2770)）
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
