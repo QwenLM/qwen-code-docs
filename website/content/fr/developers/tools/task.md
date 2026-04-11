@@ -1,146 +1,145 @@
-# Outil de tâche (`task`)
+# Outil Task (`task`)
 
-Ce document décrit l’outil `task` pour Qwen Code.
+Ce document décrit l'outil `task` pour Qwen Code.
 
 ## Description
 
-Utilisez `task` pour lancer un sous-agent spécialisé chargé de traiter de manière autonome des tâches complexes et comportant plusieurs étapes. L’outil de tâche délègue le travail à des agents spécialisés capables de fonctionner de façon indépendante, avec accès à leur propre jeu d’outils, ce qui permet une exécution parallèle des tâches et une expertise spécialisée.
+Utilisez `task` pour lancer un sous-agent spécialisé afin de gérer de manière autonome des tâches complexes en plusieurs étapes. L'outil Task délègue le travail à des agents spécialisés capables de travailler indépendamment avec leur propre ensemble d'outils, permettant ainsi une exécution parallèle des tâches et une expertise ciblée.
 
 ### Arguments
 
 `task` accepte les arguments suivants :
 
-- `description` (chaîne de caractères, obligatoire) : Une brève description de la tâche (3 à 5 mots), destinée à la visibilité utilisateur et au suivi.
-- `prompt` (chaîne de caractères, obligatoire) : Le prompt détaillé de la tâche, destiné à l’exécution par le sous-agent. Doit contenir des instructions complètes permettant une exécution autonome.
-- `subagent_type` (chaîne de caractères, obligatoire) : Le type d’agent spécialisé à utiliser pour cette tâche. Doit correspondre à l’un des sous-agents configurés disponibles.
+- `description` (string, obligatoire) : Une brève description (3 à 5 mots) de la tâche, destinée à la visibilité et au suivi par l'utilisateur.
+- `prompt` (string, obligatoire) : Le prompt détaillé de la tâche à exécuter par le sous-agent. Il doit contenir des instructions complètes pour une exécution autonome.
+- `subagent_type` (string, obligatoire) : Le type d'agent spécialisé à utiliser pour cette tâche. Doit correspondre à l'un des sous-agents configurés et disponibles.
 
 ## Comment utiliser `task` avec Qwen Code
 
-L’outil Task charge dynamiquement les sous-agents disponibles à partir de votre configuration et leur délègue des tâches. Chaque sous-agent s’exécute de façon indépendante et peut utiliser son propre ensemble d’outils, ce qui permet une expertise spécialisée et une exécution parallèle.
+L'outil Task charge dynamiquement les sous-agents disponibles depuis votre configuration et leur délègue les tâches. Chaque sous-agent s'exécute de manière indépendante et peut utiliser son propre ensemble d'outils, ce qui permet une expertise spécialisée et une exécution parallèle.
 
-Lorsque vous utilisez l’outil Task, le sous-agent :
+Lorsque vous utilisez l'outil Task, le sous-agent va :
 
-1. Reçoit l’instruction de la tâche avec une autonomie complète  
-2. Exécute la tâche à l’aide des outils dont il dispose  
-3. Renvoie un message contenant le résultat final  
-4. Se termine (les sous-agents sont sans état et utilisés une seule fois)
+1. Recevoir le prompt de la tâche en toute autonomie
+2. Exécuter la tâche à l'aide de ses outils disponibles
+3. Retourner un message de résultat final
+4. Se terminer (les sous-agents sont sans état et à usage unique)
 
 Utilisation :
 
 ```
-task(description="Brève description de la tâche", prompt="Instructions détaillées de la tâche destinées au sous-agent", subagent_type="nom_du_sous_agent")
+task(description="Brief task description", prompt="Detailed task instructions for the subagent", subagent_type="agent_name")
 ```
 
 ## Sous-agents disponibles
 
-Les sous-agents disponibles dépendent de votre configuration. Les types de sous-agents courants peuvent inclure :
+Les sous-agents disponibles dépendent de votre configuration. Les types courants peuvent inclure :
 
-- **à usage général** : pour les tâches complexes en plusieurs étapes nécessitant divers outils  
-- **réviseur de code** : pour examiner et analyser la qualité du code  
-- **exécuteur de tests** : pour exécuter des tests et analyser leurs résultats  
-- **rédacteur de documentation** : pour créer et mettre à jour la documentation  
+- **general-purpose** : Pour les tâches complexes en plusieurs étapes nécessitant divers outils
+- **code-reviewer** : Pour examiner et analyser la qualité du code
+- **test-runner** : Pour exécuter des tests et analyser les résultats
+- **documentation-writer** : Pour créer et mettre à jour la documentation
 
-Vous pouvez consulter la liste des sous-agents disponibles en utilisant la commande `/agents` dans Qwen Code.
+Vous pouvez consulter les sous-agents disponibles en utilisant la commande `/agents` dans Qwen Code.
 
-## Fonctionnalités de l’outil Tâche
+## Fonctionnalités de l'outil Task
 
-### Mises à jour en temps réel de la progression
+### Mises à jour de la progression en temps réel
 
-L’outil Tâche fournit des mises à jour en direct indiquant :
+L'outil Task fournit des mises à jour en direct affichant :
 
-- L’état d’exécution des sous-agents  
-- Les appels d’outils individuels effectués par le sous-agent  
-- Les résultats des appels d’outils ainsi que toute erreur éventuelle  
-- La progression globale de la tâche et son statut d’achèvement  
+- L'état d'exécution du sous-agent
+- Les appels d'outils individuels effectués par le sous-agent
+- Les résultats des appels d'outils et les éventuelles erreurs
+- La progression globale de la tâche et son état d'achèvement
 
 ### Exécution parallèle
 
-Vous pouvez lancer plusieurs sous-agents simultanément en appelant l’outil Tâche plusieurs fois dans un seul message, ce qui permet une exécution parallèle des tâches et améliore l’efficacité.
+Vous pouvez lancer plusieurs sous-agents simultanément en appelant l'outil Task plusieurs fois dans un seul message, ce qui permet une exécution parallèle des tâches et une meilleure efficacité.
 
 ### Expertise spécialisée
 
-Chaque sous-agent peut être configuré avec les éléments suivants :
+Chaque sous-agent peut être configuré avec :
 
-- Des autorisations d’accès spécifiques aux outils
-- Des invites système et des instructions spécialisées
-- Des configurations de modèle personnalisées
-- Des connaissances et des fonctionnalités propres à un domaine donné
+- Des autorisations d'accès spécifiques aux outils
+- Des prompts système et des instructions spécialisés
+- Des configurations de modèles personnalisées
+- Des connaissances et des capacités spécifiques à un domaine
 
-## Exemples de `task`
+## Exemples d'utilisation de `task`
 
-### Délégation à un agent généraliste
+### Délégation à un agent `general-purpose`
 
 ```
 task(
-  description="Refactoring du code",
-  prompt="Veuillez refactoriser le module d’authentification situé dans `src/auth/` afin d’utiliser les motifs modernes `async`/`await` au lieu des fonctions de rappel (callbacks). Assurez-vous que tous les tests passent toujours et mettez à jour toute documentation associée.",
+  description="Code refactoring",
+  prompt="Please refactor the authentication module in src/auth/ to use modern async/await patterns instead of callbacks. Ensure all tests still pass and update any related documentation.",
   subagent_type="general-purpose"
 )
 ```
 
-### Exécution de tâches en parallèle
+### Exécution de tâches parallèles
 
 ```
-
-# Lancer l’analyse de code et l’exécution des tests en parallèle
+# Launch code review and test execution in parallel
 task(
-  description="Analyse de code",
-  prompt="Examiner les modifications récentes apportées au module de gestion des utilisateurs afin d’évaluer la qualité du code, détecter les problèmes de sécurité et vérifier le respect des bonnes pratiques.",
+  description="Code review",
+  prompt="Review the recent changes in the user management module for code quality, security issues, and best practices compliance.",
   subagent_type="code-reviewer"
 )
 
 task(
-  description="Exécuter les tests",
-  prompt="Lancer l’ensemble complet des tests et analyser les échecs éventuels. Fournir un résumé de la couverture des tests ainsi que des recommandations pour son amélioration.",
+  description="Run tests",
+  prompt="Execute the full test suite and analyze any failures. Provide a summary of test coverage and recommendations for improvement.",
   subagent_type="test-runner"
 )
 ```
 
-### Génération de la documentation
+### Génération de documentation
 
 ```
 task(
-  description="Mettre à jour la documentation",
-  prompt="Générer une documentation API complète pour les nouvelles ressources REST implémentées dans le module des commandes. Inclure des exemples de requêtes/réponses ainsi que les codes d’erreur.",
+  description="Update docs",
+  prompt="Generate comprehensive API documentation for the newly implemented REST endpoints in the orders module. Include request/response examples and error codes.",
   subagent_type="documentation-writer"
 )
 ```
 
-## Quand utiliser l’outil Task
+## Quand utiliser l'outil Task
 
-Utilisez l’outil Task dans les cas suivants :
+Utilisez l'outil Task lorsque :
 
-1. **Tâches complexes en plusieurs étapes** — Tâches nécessitant plusieurs opérations pouvant être exécutées de façon autonome  
-2. **Expertise spécialisée** — Tâches bénéficiant de connaissances ou d’outils spécifiques à un domaine  
-3. **Exécution parallèle** — Lorsque vous disposez de plusieurs tâches indépendantes pouvant s’exécuter simultanément  
-4. **Nécessité de délégation** — Lorsque vous souhaitez confier une tâche complète plutôt que de superviser chaque étape individuellement  
-5. **Opérations gourmandes en ressources** — Tâches susceptibles de prendre beaucoup de temps ou de consommer des ressources computationnelles importantes  
+1. **Tâches complexes en plusieurs étapes** - Tâches nécessitant plusieurs opérations pouvant être gérées de manière autonome
+2. **Expertise spécialisée** - Tâches tirant parti de connaissances ou d'outils spécifiques à un domaine
+3. **Exécution parallèle** - Lorsque vous disposez de plusieurs tâches indépendantes pouvant s'exécuter simultanément
+4. **Besoins de délégation** - Lorsque vous souhaitez confier une tâche complète plutôt que de micro-gérer les étapes
+5. **Opérations gourmandes en ressources** - Tâches susceptibles de prendre beaucoup de temps ou de ressources de calcul
 
-## Quand NE PAS utiliser l’outil Task
+## Quand NE PAS utiliser l'outil Task
 
-N’utilisez pas l’outil Task pour :
+N'utilisez pas l'outil Task pour :
 
-- **Opérations simples en une seule étape** — Utilisez plutôt des outils directs comme Read, Edit, etc.  
-- **Tâches interactives** — Tâches nécessitant une communication itérative aller-retour  
-- **Lecture de fichiers spécifiques** — Utilisez directement l’outil Read pour de meilleures performances  
-- **Recherches simples** — Utilisez directement les outils Grep ou Glob
+- **Opérations simples en une seule étape** - Utilisez des outils directs comme Read, Edit, etc.
+- **Tâches interactives** - Tâches nécessitant des échanges interactifs
+- **Lecture de fichiers spécifiques** - Utilisez directement l'outil Read pour de meilleures performances
+- **Recherches simples** - Utilisez directement les outils Grep ou Glob
 
-## Remarques importantes
+## Notes importantes
 
-- **Exécution sans état** : Chaque invocation d’un sous-agent est indépendante et ne conserve aucune mémoire des exécutions précédentes.  
-- **Communication unique** : Les sous-agents fournissent un seul message final contenant le résultat — aucune communication continue n’est possible.  
-- **Instructions complètes** : Votre prompt doit contenir tout le contexte et toutes les instructions nécessaires à une exécution autonome.  
-- **Accès aux outils** : Les sous-agents n’ont accès qu’aux outils configurés spécifiquement pour eux.  
-- **Capacité parallèle** : Plusieurs sous-agents peuvent s’exécuter simultanément afin d’améliorer l’efficacité.  
-- **Configuration déterminante** : Les types de sous-agents disponibles dépendent de la configuration de votre système.
+- **Exécution sans état** : Chaque invocation de sous-agent est indépendante et ne conserve aucune mémoire des exécutions précédentes
+- **Communication unique** : Les sous-agents fournissent un seul message de résultat final, sans communication continue
+- **Prompts complets** : Votre prompt doit contenir tout le contexte et les instructions nécessaires pour une exécution autonome
+- **Accès aux outils** : Les sous-agents n'ont accès qu'aux outils configurés dans leur configuration spécifique
+- **Capacité parallèle** : Plusieurs sous-agents peuvent s'exécuter simultanément pour améliorer l'efficacité
+- **Dépendance à la configuration** : Les types de sous-agents disponibles dépendent de la configuration de votre système
 
 ## Configuration
 
 Les sous-agents sont configurés via le système de configuration des agents de Qwen Code. Utilisez la commande `/agents` pour :
 
-- Afficher les sous-agents disponibles ;  
-- Créer de nouvelles configurations de sous-agents ;  
-- Modifier les paramètres existants des sous-agents ;  
-- Définir les autorisations et les fonctionnalités liées aux outils.
+- Consulter les sous-agents disponibles
+- Créer de nouvelles configurations de sous-agents
+- Modifier les paramètres des sous-agents existants
+- Définir les autorisations et les capacités des outils
 
-Pour plus d’informations sur la configuration des sous-agents, consultez la documentation dédiée.
+Pour plus d'informations sur la configuration des sous-agents, consultez la documentation sur les sous-agents.

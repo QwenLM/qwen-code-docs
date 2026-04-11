@@ -1,55 +1,55 @@
 # Dateien ignorieren
 
-Dieses Dokument bietet einen Überblick über die Qwen-Ignore-Funktion (`.qwenignore`) von Qwen Code.
+Dieses Dokument bietet einen Überblick über die Qwen Ignore-Funktion (`.qwenignore`) von Qwen Code.
 
-Qwen Code unterstützt das automatische Ignorieren von Dateien – ähnlich wie `.gitignore` (das von Git verwendet wird). Wenn Sie Pfade in Ihre `.qwenignore`-Datei eintragen, werden diese von Tools, die diese Funktion unterstützen, ausgeschlossen. Andere Dienste (z. B. Git) zeigen diese Dateien jedoch weiterhin an.
+Qwen Code bietet die Möglichkeit, Dateien automatisch zu ignorieren, ähnlich wie `.gitignore` (von Git verwendet). Wenn du Pfade zu deiner `.qwenignore`-Datei hinzufügst, werden sie von Tools, die diese Funktion unterstützen, ausgeschlossen. Für andere Dienste (wie Git) bleiben sie jedoch weiterhin sichtbar.
 
-## So funktioniert es
+## Funktionsweise
 
-Wenn Sie einen Pfad zu Ihrer `.qwenignore`-Datei hinzufügen, ignorieren Tools, die diese Datei berücksichtigen, übereinstimmende Dateien und Verzeichnisse bei ihren Operationen. Wenn Sie beispielsweise den Befehl [`read_many_files`](../../developers/tools/multi-file) verwenden, werden alle in Ihrer `.qwenignore`-Datei angegebenen Pfade automatisch ausgeschlossen.
+Wenn du einen Pfad zu deiner `.qwenignore`-Datei hinzufügst, schließen Tools, die diese Datei beachten, passende Dateien und Verzeichnisse von ihren Operationen aus. Wenn du beispielsweise den Befehl [`read_many_files`](../../developers/tools/multi-file) verwendest, werden alle Pfade in deiner `.qwenignore`-Datei automatisch ausgeschlossen.
 
-Im Großen und Ganzen folgt `.qwenignore` den Konventionen von `.gitignore`-Dateien:
+Grundsätzlich folgt `.qwenignore` den Konventionen von `.gitignore`-Dateien:
 
 - Leerzeilen und Zeilen, die mit `#` beginnen, werden ignoriert.
-- Standard-Glob-Muster werden unterstützt (z. B. `*`, `?` und `[]`).
-- Ein `/` am Ende eines Musters passt nur auf Verzeichnisse.
-- Ein `/` am Anfang eines Musters legt den Pfad relativ zur `.qwenignore`-Datei fest.
-- `!` kehrt ein Muster um („negiert“ es).
+- Standard-Glob-Patterns werden unterstützt (z. B. `*`, `?` und `[]`).
+- Ein `/` am Ende passt nur auf Verzeichnisse.
+- Ein `/` am Anfang verankert den Pfad relativ zur `.qwenignore`-Datei.
+- `!` negiert ein Pattern.
 
-Sie können Ihre `.qwenignore`-Datei jederzeit aktualisieren. Um die Änderungen wirksam zu machen, müssen Sie Ihre Qwen Code-Sitzung neu starten.
+Du kannst deine `.qwenignore`-Datei jederzeit aktualisieren. Um die Änderungen anzuwenden, musst du deine Qwen Code-Sitzung neu starten.
 
-## So verwenden Sie `.qwenignore`
+## Verwendung von `.qwenignore`
 
-| Schritt                 | Beschreibung                                                                                     |
-| ----------------------- | -------------------------------------------------------------------------------------------------- |
-| **`.qwenignore` aktivieren** | Erstellen Sie eine Datei mit dem Namen `.qwenignore` im Stammverzeichnis Ihres Projekts             |
-| **Ignorierungsregeln hinzufügen** | Öffnen Sie die Datei `.qwenignore` und fügen Sie Pfade hinzu, die ignoriert werden sollen, z. B.: `/archive/` oder `apikeys.txt` |
+| Schritt                | Beschreibung                                                                           |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| **`.qwenignore` aktivieren** | Erstelle eine Datei namens `.qwenignore` im Stammverzeichnis deines Projekts       |
+| **Ignorierregeln hinzufügen** | Öffne die `.qwenignore`-Datei und füge die zu ignorierenden Pfade hinzu, z. B. `/archive/` oder `apikeys.txt` |
 
 ### Beispiele für `.qwenignore`
 
-Sie können `.qwenignore`, um Verzeichnisse und Dateien zu ignorieren:
+Du kannst `.qwenignore` verwenden, um Verzeichnisse und Dateien zu ignorieren:
 
 ```
-# Ignoriert das Verzeichnis `/packages/` und alle Unterverzeichnisse
+# Exclude your /packages/ directory and all subdirectories
 /packages/
 
-# Ignoriert die Datei `apikeys.txt`
+# Exclude your apikeys.txt file
 apikeys.txt
 ```
 
-Sie können Platzhalter (`*`) in Ihrer `.qwenignore`-Datei verwenden:
+Du kannst in deiner `.qwenignore`-Datei Platzhalter mit `*` verwenden:
 
 ```
-# Ignoriert alle `.md`-Dateien
+# Exclude all .md files
 *.md
 ```
 
-Schließlich können Sie Dateien und Verzeichnisse von der Ignorierung mit `!` wieder ausschließen:
+Schließlich kannst du Dateien und Verzeichnisse mit `!` von der Ignorierung ausnehmen:
 
 ```
-# Alle `.md`-Dateien ausschließen, außer `README.md`
+# Exclude all .md files except README.md
 *.md
 !README.md
 ```
 
-Um Pfade aus Ihrer `.qwenignore`-Datei zu entfernen, löschen Sie die entsprechenden Zeilen.
+Um Pfade aus deiner `.qwenignore`-Datei zu entfernen, lösche die entsprechenden Zeilen.

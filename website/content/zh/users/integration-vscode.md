@@ -1,22 +1,22 @@
 # Visual Studio Code
 
-> VS Code 扩展（Beta 版）通过原生图形界面，将 Qwen 的更改实时呈现在你的 IDE 中，让你更便捷地访问和与 Qwen Code 交互。
+> 该 VS Code 扩展（Beta 版）通过直接集成到 IDE 中的原生图形界面，让你实时查看 Qwen 的代码更改，从而更便捷地访问和与 Qwen Code 交互。
 
 <br/>
 
 <video src="https://cloud.video.taobao.com/vod/IKKwfM-kqNI3OJjM_U8uMCSMAoeEcJhs6VNCQmZxUfk.mp4" controls width="800">
-  您的浏览器不支持 video 标签。
+  你的浏览器不支持 video 标签。
 </video>
 
-### 功能特性
+### 功能
 
-- **原生 IDE 体验**：点击 Qwen 图标即可打开专属的 Qwen Code 侧边栏面板
-- **自动接受编辑模式**：Qwen 所做的更改将自动应用
-- **文件管理**：使用 `@` 提及文件，或通过系统文件选择器附加文件和图片
-- **对话历史记录**：可随时查看过往对话
-- **多会话支持**：可同时运行多个 Qwen Code 会话
+- **原生 IDE 体验**：通过 Qwen 图标访问专属的 Qwen Code 侧边栏面板
+- **自动接受编辑模式**：自动应用 Qwen 生成的代码更改
+- **文件管理**：通过系统文件选择器 @提及 文件，或附加文件与图片
+- **对话历史**：查看历史对话记录
+- **多会话支持**：同时运行多个 Qwen Code 会话
 
-### 系统要求
+### 环境要求
 
 - VS Code 1.85.0 或更高版本
 
@@ -28,12 +28,12 @@
 
 ### 扩展无法安装
 
-- 确保你已安装 VS Code 1.85.0 或更高版本  
-- 检查 VS Code 是否具有安装扩展的权限  
-- 尝试直接从 Marketplace 网站安装  
+- 确保你的 VS Code 版本为 1.85.0 或更高
+- 检查 VS Code 是否具备安装扩展的权限
+- 尝试直接从扩展市场网站进行安装
 
 ### Qwen Code 无响应
 
-- 检查你的网络连接  
-- 启动一个新对话，确认问题是否仍然存在  
-- 若问题持续，请在 [GitHub 上提交 Issue](https://github.com/qwenlm/qwen-code/issues)
+- 检查网络连接
+- 开启新对话，查看问题是否依然存在
+- 若问题仍未解决，请 [在 GitHub 上提交 Issue](https://github.com/qwenlm/qwen-code/issues)

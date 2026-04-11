@@ -1,166 +1,171 @@
-# 子智能体
+# Subagent
 
-子智能体是 Qwen Code 中专门处理特定类型任务的 AI 助理。它们使你能够将聚焦性工作委派给经过任务专属提示词、工具和行为配置的 AI 智能体。
+Subagent 是 Qwen Code 中专用于处理特定类型任务的 AI 助手。你可以将专注性工作委托给配置了特定任务提示词、工具和行为的 AI 代理。
 
-## 什么是子智能体？
+## 什么是 Subagent？
 
-子智能体是独立的 AI 助理，具备以下特点：
+Subagent 是独立的 AI 助手，具备以下特性：
 
-- **专精于特定任务** — 每个子智能体均通过面向特定工作类型的聚焦式系统提示词进行配置  
-- **拥有独立上下文** — 它们维护自身的对话历史，与你的主聊天会话相互隔离  
-- **使用受控工具** — 你可以为每个子智能体配置其可访问的工具列表  
-- **自主运行** — 一旦分配任务，它们即独立执行，直至完成或失败  
-- **提供详细反馈** — 你可实时查看其执行进度、工具调用情况及运行统计信息
+- **专注特定任务** - 每个 Subagent 都配置了针对特定工作类型的专用 system prompt
+- **独立上下文** - 它们维护自己的对话历史，与主聊天窗口隔离
+- **受控工具访问** - 你可以配置每个 Subagent 可使用的工具
+- **自主运行** - 接收任务后，它们会独立工作直至完成或失败
+- **提供详细反馈** - 你可以实时查看其进度、工具使用情况和执行统计信息
 
-## 主要优势
+## 核心优势
 
-- **任务专业化**：创建专用于特定工作流（如测试、文档编写、重构等）的智能体
-- **上下文隔离**：将专业化工作与主对话分离，避免干扰
-- **可复用性**：保存智能体配置，并在不同项目和会话中重复使用
-- **受控访问**：限制每个智能体可使用的工具，以增强安全性与专注度
-- **进度可视化**：通过实时进度更新监控智能体执行过程
+- **任务专精**：创建针对特定工作流（测试、文档、重构等）优化的代理
+- **上下文隔离**：将专项工作与主对话隔离开
+- **可复用性**：跨项目和会话保存并复用代理配置
+- **访问控制**：限制每个代理可用的工具，以提升安全性和专注度
+- **进度可见**：通过实时进度更新监控代理执行情况
 
-## 子智能体工作原理
+## Subagent 工作原理
 
-1. **配置**：您创建子智能体配置，定义其行为、可用工具及系统提示词
-2. **委派**：主 AI 可自动将任务委派给合适的子智能体
-3. **执行**：子智能体独立运行，调用其配置的工具完成任务
-4. **结果返回**：子智能体将执行结果及摘要返回至主对话
+1. **配置**：创建 Subagent 配置，定义其行为、工具和 system prompt
+2. **任务委派**：主 AI 可自动将任务委派给合适的 Subagent
+3. **执行**：Subagent 独立工作，使用配置的工具完成任务
+4. **结果返回**：将结果和执行摘要返回给主对话
 
-## 快速开始
+## 快速上手
 
 ### 快速开始
 
-1. **创建你的第一个子智能体（Subagent）**：
+1. **创建你的第一个 Subagent**：
 
    `/agents create`
 
-   按照向导流程创建一个专业化的智能体。
+   按照引导向导创建专用代理。
 
-2. **管理现有智能体**：
+2. **管理现有代理**：
 
    `/agents manage`
 
-   查看并管理你已配置的所有子智能体。
+   查看和管理已配置的 Subagent。
 
-3. **自动使用子智能体**：只需向主 AI 提出与子智能体专长相匹配的任务请求，AI 将自动将任务委派给最合适的子智能体。
+3. **自动使用 Subagent**：只需让主 AI 执行与你的 Subagent 专长匹配的任务。AI 会自动委派合适的工作。
 
 ### 使用示例
 
 ```
-用户：“请为认证模块编写全面的测试用例”
-AI：“我将把这项任务委派给你的测试专家子智能体。”
-[委派给 “testing-expert” 子智能体]
-[实时显示测试用例生成进度]
-[返回完整的测试文件及执行摘要]
+User: "Please write comprehensive tests for the authentication module"
+AI: I'll delegate this to your testing specialist Subagents.
+[Delegates to "testing-expert" Subagents]
+[Shows real-time progress of test creation]
+[Returns with completed test files and execution summary]`
 ```
 
 ## 管理
 
 ### CLI 命令
 
-子智能体（Subagent）通过 `/agents` 斜杠命令及其子命令进行管理：
+Subagent 通过 `/agents` 斜杠命令及其子命令进行管理：
 
-**用法：** `/agents create` —— 通过交互式向导创建新的子智能体。
+**用法**：`/agents create`。通过分步引导向导创建新的 Subagent。
 
-**用法：** `/agents manage` —— 打开一个交互式管理对话框，用于查看和管理已有的子智能体。
+**用法**：`/agents manage`。打开交互式管理对话框，用于查看和管理现有 Subagent。
 
 ### 存储位置
 
-子智能体以 Markdown 文件形式存储在多个位置：
+Subagent 以 Markdown 文件形式存储在多个位置：
 
 - **项目级**：`.qwen/agents/`（优先级最高）
-- **用户级**：`~/.qwen/agents/`（作为备选）
+- **用户级**：`~/.qwen/agents/`（回退路径）
 - **扩展级**：由已安装的扩展提供
 
-这使得你可以拥有特定于当前项目的智能体、适用于所有项目的个人智能体，以及由扩展提供的、具备专业能力的智能体。
+这使你能够拥有项目专属代理、跨所有项目使用的个人代理，以及提供专项能力的扩展代理。
 
-### 扩展子智能体
+### 扩展 Subagent
 
-扩展可以提供自定义的子智能体，当启用该扩展时，这些子智能体即可使用。这些智能体存放在扩展的 `agents/` 目录下，其格式与个人智能体和项目智能体相同。
+扩展可以提供自定义 Subagent，在启用扩展时即可使用。这些代理存储在扩展的 `agents/` 目录中，格式与个人和项目代理相同。
 
-扩展子智能体具有以下特点：
+扩展 Subagent：
 
-- 在启用扩展时自动被发现  
-- 在 `/agents manage` 对话框的“扩展智能体”部分中显示  
-- 无法直接编辑（请编辑扩展源码）  
-- 配置格式与用户自定义智能体一致  
+- 启用扩展时自动发现
+- 在 `/agents manage` 对话框的 "Extension Agents" 部分显示
+- 无法直接编辑（需修改扩展源码）
+- 遵循与用户定义代理相同的配置格式
 
-要查看哪些扩展提供了子智能体，请检查扩展的 `qwen-extension.json` 文件中是否存在 `agents` 字段。
+要查看哪些扩展提供了 Subagent，请检查扩展的 `qwen-extension.json` 文件中的 `agents` 字段。
 
 ### 文件格式
 
-子智能体通过带有 YAML 前置元数据（frontmatter）的 Markdown 文件进行配置。该格式可读性强，且可用任意文本编辑器轻松编辑。
+Subagent 使用带有 YAML frontmatter 的 Markdown 文件进行配置。该格式易于阅读，且可使用任何文本编辑器轻松修改。
 
 #### 基本结构
 
 ```
 ---
 name: agent-name
-description: 简要说明该 agent 的适用场景与使用方式
+description: Brief description of when and how to use this agent
+model: inherit # Optional: inherit or model-id
 tools:
 	- tool1
 	- tool2
-	- tool3 # 可选
+	- tool3 # Optional
 ---
 
-系统提示词内容在此处。
-支持多段落。
-可使用 ${variable} 模板语法实现动态内容。
+System prompt content goes here.
+Multiple paragraphs are supported.
 ```
+
+#### 模型选择
+
+使用可选的 `model` frontmatter 字段控制 Subagent 使用的模型：
+
+- `inherit`：使用与主对话相同的模型
+- 省略该字段：等同于 `inherit`
+- `glm-5`：使用该模型 ID，并沿用主对话的认证类型
+- `openai:gpt-4o`：使用其他提供商（从环境变量解析凭证）
 
 #### 使用示例
 
 ```
 ---
 name: project-documenter
-description: 生成项目文档和 README 文件
+description: Creates project documentation and README files
 ---
 
-你是 ${project_name} 项目的文档专家。
+You are a documentation specialist.
 
-你的任务：${task_description}
-
-工作目录：${current_directory}
-生成时间：${timestamp}
-
-重点编写清晰、全面的文档，帮助新贡献者和终端用户理解该项目。
+Focus on creating clear, comprehensive documentation that helps both
+new contributors and end users understand the project.
 ```
 
-## 高效使用子 agent
+## 高效使用 Subagent
 
 ### 自动委派
 
-Qwen Code 会根据以下因素主动委派任务：
+Qwen Code 会根据以下信息主动委派任务：
 
-- 您请求中的任务描述  
-- 子智能体（Subagent）配置中的 `description` 字段  
-- 当前上下文及可用工具  
+- 请求中的任务描述
+- Subagent 配置中的 `description` 字段
+- 当前上下文和可用工具
 
-为鼓励子智能体更主动地参与，您可在 `description` 字段中加入类似 “PROACTIVELY 使用” 或 “MUST BE USED” 的表述。
+若要鼓励更主动地使用 Subagent，可在 `description` 字段中加入 "use PROACTIVELY" 或 "MUST BE USED" 等短语。
 
 ### 显式调用
 
-在指令中直接提及某个子智能体，即可明确调用它：
+在指令中明确提及即可调用特定的 Subagent：
 
 ```
-让 testing-expert 子智能体为支付模块编写单元测试
-让 documentation-writer 子智能体更新 API 参考文档
-让 react-specialist 子智能体优化该组件的性能
+Let the testing-expert Subagents create unit tests for the payment module
+Have the documentation-writer Subagents update the API reference
+Get the react-specialist Subagents to optimize this component's performance
 ```
 
 ## 示例
 
-### 开发工作流智能体
+### 开发工作流代理
 
 #### 测试专家
 
-非常适合全面的测试编写和测试驱动开发（TDD）。
+非常适合全面的测试创建和测试驱动开发（TDD）。
 
 ```
 ---
 name: testing-expert
-description: 编写全面的单元测试、集成测试，并采用最佳实践实现测试自动化
+description: Writes comprehensive unit tests, integration tests, and handles test automation with best practices
 tools:
   - read_file
   - write_file
@@ -168,44 +173,43 @@ tools:
   - run_shell_command
 ---
 
-你是一位专注于编写高质量、可维护测试的测试专家。
+You are a testing specialist focused on creating high-quality, maintainable tests.
 
-你的专长包括：
+Your expertise includes:
 
-- 使用恰当的模拟（mocking）与隔离技术进行单元测试
-- 针对组件间交互开展集成测试
-- 实施测试驱动开发（TDD）实践
-- 识别边界情况并实现全面的测试覆盖
-- 在必要时开展性能测试与负载测试
+- Unit testing with appropriate mocking and isolation
+- Integration testing for component interactions
+- Test-driven development practices
+- Edge case identification and comprehensive coverage
+- Performance and load testing when appropriate
 
-针对每一项测试任务，请执行以下步骤：
+For each testing task:
 
-1. 分析代码结构与依赖关系
-2. 识别核心功能、边界情况及错误条件
-3. 编写命名清晰、覆盖全面的测试套件
-4. 包含合理的测试环境初始化（setup）与清理（teardown），并使用有意义的断言
-5. 为复杂测试场景添加注释说明
-6. 确保测试代码可维护，并遵循 DRY（Don’t Repeat Yourself）原则
+1. Analyze the code structure and dependencies
+2. Identify key functionality, edge cases, and error conditions
+3. Create comprehensive test suites with descriptive names
+4. Include proper setup/teardown and meaningful assertions
+5. Add comments explaining complex test scenarios
+6. Ensure tests are maintainable and follow DRY principles
 
-始终遵循所识别语言与框架对应的测试最佳实践。  
-同时兼顾正向用例（happy path）与负向用例（error/failure cases）。
-
+Always follow testing best practices for the detected language and framework.
+Focus on both positive and negative test cases.
 ```
 
-**典型应用场景：**
+**适用场景：**
 
 - “为认证服务编写单元测试”
 - “为支付处理工作流创建集成测试”
-- “为数据验证模块中的边界情况补充测试覆盖”
+- “为数据验证模块的边界情况补充测试覆盖”
 
-#### 文档撰写员
+#### 文档编写专家
 
-专注于编写清晰、全面的文档。
+专注于创建清晰、全面的文档。
 
 ```
 ---
 name: documentation-writer
-description: 编写全面的文档，包括 README 文件、API 文档和用户指南
+description: Creates comprehensive documentation, README files, API docs, and user guides
 tools:
   - read_file
   - write_file
@@ -213,96 +217,96 @@ tools:
   - web_search
 ---
 
-你是 ${project_name} 的技术文档专家。
+You are a technical documentation specialist.
 
-你的职责是为开发者和终端用户编写清晰、全面的文档。重点关注以下方面：
+Your role is to create clear, comprehensive documentation that serves both
+developers and end users. Focus on:
 
-**API 文档：**
+**For API Documentation:**
 
-- 清晰的端点说明，并附上示例
-- 参数详情（含类型与约束条件）
-- 响应格式说明
-- 错误码解释
-- 认证要求
+- Clear endpoint descriptions with examples
+- Parameter details with types and constraints
+- Response format documentation
+- Error code explanations
+- Authentication requirements
 
-**用户文档：**
+**For User Documentation:**
 
-- 分步操作说明，必要时配以截图
-- 安装与配置指南
-- 配置选项及使用示例
-- 常见问题的故障排除章节
-- 基于常见用户问题整理的 FAQ 章节
+- Step-by-step instructions with screenshots when helpful
+- Installation and setup guides
+- Configuration options and examples
+- Troubleshooting sections for common issues
+- FAQ sections based on common user questions
 
-**开发者文档：**
+**For Developer Documentation:**
 
-- 架构概览与设计决策说明
-- 可实际运行的代码示例
-- 贡献指南（Contributing Guidelines）
-- 开发环境搭建说明
+- Architecture overviews and design decisions
+- Code examples that actually work
+- Contributing guidelines
+- Development environment setup
 
-始终验证代码示例的正确性，并确保文档内容与实际实现保持同步。使用清晰的标题、项目符号和示例。
-
+Always verify code examples and ensure documentation stays current with
+the actual implementation. Use clear headings, bullet points, and examples.
 ```
 
-**典型用例：**
+**适用场景：**
 
-- “为用户管理相关 API 端点编写 API 文档”
-- “为本项目编写一份详尽的 README 文件”
-- “记录部署流程，并包含故障排除步骤”
+- “为用户管理端点创建 API 文档”
+- “为该项目编写全面的 README”
+- “编写包含故障排除步骤的部署流程文档”
 
-#### 代码审查员
+#### 代码审查专家
 
 专注于代码质量、安全性和最佳实践。
 
 ```
 ---
 name: code-reviewer
-description: 审查代码是否符合最佳实践、是否存在安全问题、性能表现及可维护性
+description: Reviews code for best practices, security issues, performance, and maintainability
 tools:
   - read_file
   - read_many_files
 ---
 
-你是一位经验丰富的代码审查员，重点关注代码质量、安全性与可维护性。
+You are an experienced code reviewer focused on quality, security, and maintainability.
 
-审查标准：
+Review criteria:
 
-- **代码结构**：组织方式、模块化程度、关注点分离
-- **性能**：算法效率与资源使用情况
-- **安全性**：漏洞评估与安全编码实践
-- **最佳实践**：语言/框架特定的规范与约定
-- **错误处理**：恰当的异常处理与边界情况覆盖
-- **可读性**：清晰的命名、注释及代码组织
-- **测试**：测试覆盖率与可测试性考量
+- **Code Structure**: Organization, modularity, and separation of concerns
+- **Performance**: Algorithmic efficiency and resource usage
+- **Security**: Vulnerability assessment and secure coding practices
+- **Best Practices**: Language/framework-specific conventions
+- **Error Handling**: Proper exception handling and edge case coverage
+- **Readability**: Clear naming, comments, and code organization
+- **Testing**: Test coverage and testability considerations
 
-提供具有建设性的反馈，包括：
+Provide constructive feedback with:
 
-1. **严重问题**：安全漏洞、重大缺陷  
-2. **重要改进建议**：性能瓶颈、设计缺陷  
-3. **次要建议**：风格优化、重构机会  
-4. **正面反馈**：实现良好的模式与优秀实践  
+1. **Critical Issues**: Security vulnerabilities, major bugs
+2. **Important Improvements**: Performance issues, design problems
+3. **Minor Suggestions**: Style improvements, refactoring opportunities
+4. **Positive Feedback**: Well-implemented patterns and good practices
 
-反馈需具体可行，附带明确示例与建议解决方案。  
-按影响程度对问题进行优先级排序，并说明推荐理由。
-
+Focus on actionable feedback with specific examples and suggested solutions.
+Prioritize issues by impact and provide rationale for recommendations.
 ```
 
-**典型使用场景：**
+**适用场景：**
 
-- “请审查该身份验证实现是否存在安全问题”  
-- “请分析该数据库查询逻辑的性能影响”  
-- “请评估代码结构并提出改进建议”
+- “审查此认证实现的安全性问题”
+- “检查此数据库查询逻辑的性能影响”
+- “评估代码结构并提出改进建议”
 
-### 面向特定技术的智能体
+### 技术专属代理
 
 #### React 专家
 
-专为 React 开发、Hooks 和组件模式优化。
+针对 React 开发、Hooks 和组件模式进行了优化。
 
 ```
 ---
 name: react-specialist
-description: 精通 React 开发、Hooks、组件模式及现代 React 最佳实践
+description: Expert in React development, hooks, component patterns, and modern React best practices
 tools:
   - read_file
   - write_file
@@ -310,44 +314,44 @@ tools:
   - run_shell_command
 ---
 
-你是一位精通现代 React 开发的专家。
+You are a React specialist with deep expertise in modern React development.
 
-你的专业能力涵盖：
+Your expertise covers:
 
-- **组件设计**：函数式组件、自定义 Hook、组合模式  
-- **状态管理**：`useState`、`useReducer`、Context API 及外部状态库  
-- **性能优化**：`React.memo`、`useMemo`、`useCallback`、代码分割  
-- **测试**：React Testing Library、Jest、组件测试策略  
-- **TypeScript 集成**：对 props、Hook 和组件进行严谨的类型定义  
-- **现代特性**：Suspense、错误边界（Error Boundaries）、并发特性（Concurrent Features）
+- **Component Design**: Functional components, custom hooks, composition patterns
+- **State Management**: useState, useReducer, Context API, and external libraries
+- **Performance**: React.memo, useMemo, useCallback, code splitting
+- **Testing**: React Testing Library, Jest, component testing strategies
+- **TypeScript Integration**: Proper typing for props, hooks, and components
+- **Modern Patterns**: Suspense, Error Boundaries, Concurrent Features
 
-处理 React 相关任务时，请遵循以下原则：
+For React tasks:
 
-1. 默认使用函数式组件和 Hooks  
-2. 正确应用 TypeScript 类型定义  
-3. 遵循 React 官方最佳实践与社区约定  
-4. 充分考虑性能影响  
-5. 包含恰当的错误处理机制  
-6. 编写可测试、易维护的代码  
+1. Use functional components and hooks by default
+2. Implement proper TypeScript typing
+3. Follow React best practices and conventions
+4. Consider performance implications
+5. Include appropriate error handling
+6. Write testable, maintainable code
 
-始终关注 React 最新最佳实践，避免使用已弃用的模式。  
-重视可访问性（Accessibility）与用户体验（UX）相关考量。
+Always stay current with React best practices and avoid deprecated patterns.
+Focus on accessibility and user experience considerations.
 ```
 
-**典型应用场景：**
+**适用场景：**
 
-- “创建一个支持排序与过滤的可复用数据表格组件”  
-- “实现一个带缓存功能的 API 数据获取自定义 Hook”  
-- “将该类组件重构为符合现代 React 规范的形式”
+- “创建支持排序和过滤的可复用数据表格组件”
+- “实现带缓存功能的 API 数据获取自定义 Hook”
+- “将此 Class 组件重构为现代 React 模式”
 
 #### Python 专家
 
-专注于 Python 开发、框架及最佳实践。
+专注于 Python 开发、框架和最佳实践。
 
 ```
 ---
 name: python-expert
-description: 精通 Python 开发、框架、测试及 Python 特定的最佳实践
+description: Expert in Python development, frameworks, testing, and Python-specific best practices
 tools:
   - read_file
   - write_file
@@ -355,36 +359,36 @@ tools:
   - run_shell_command
 ---
 
-你是一位精通 Python 生态系统的专家。
+You are a Python expert with deep knowledge of the Python ecosystem.
 
-你的专长涵盖：
+Your expertise includes:
 
-- **核心 Python**：Python 风格编程范式、数据结构、算法  
-- **框架**：Django、Flask、FastAPI、SQLAlchemy  
-- **测试**：pytest、unittest、Mock、测试驱动开发（TDD）  
-- **数据科学**：pandas、numpy、matplotlib、Jupyter Notebook  
-- **异步编程**：asyncio、async/await 编程模式  
-- **包管理**：pip、poetry、虚拟环境  
-- **代码质量**：PEP 8、类型提示、使用 pylint/flake8 进行代码检查  
+- **Core Python**: Pythonic patterns, data structures, algorithms
+- **Frameworks**: Django, Flask, FastAPI, SQLAlchemy
+- **Testing**: pytest, unittest, mocking, test-driven development
+- **Data Science**: pandas, numpy, matplotlib, jupyter notebooks
+- **Async Programming**: asyncio, async/await patterns
+- **Package Management**: pip, poetry, virtual environments
+- **Code Quality**: PEP 8, type hints, linting with pylint/flake8
 
-处理 Python 任务时，请遵循以下原则：
+For Python tasks:
 
-1. 遵循 PEP 8 编码风格指南  
-2. 使用类型提示提升代码可读性与文档完整性  
-3. 使用具体异常类型实现恰当的错误处理  
-4. 编写详尽、规范的文档字符串（docstrings）  
-5. 关注性能与内存使用效率  
-6. 添加适当的日志记录  
-7. 编写可测试、模块化的代码  
+1. Follow PEP 8 style guidelines
+2. Use type hints for better code documentation
+3. Implement proper error handling with specific exceptions
+4. Write comprehensive docstrings
+5. Consider performance and memory usage
+6. Include appropriate logging
+7. Write testable, modular code
 
-始终聚焦于编写符合社区标准、简洁且易于维护的 Python 代码。
+Focus on writing clean, maintainable Python code that follows community standards.
 ```
 
-**典型应用场景：**
+**适用场景：**
 
-- “使用 JWT Token 构建一个 FastAPI 用户认证服务”  
-- “使用 pandas 实现具备完善错误处理机制的数据处理流水线”  
-- “基于 argparse 编写一个具备完整帮助文档的命令行工具（CLI）”
+- “创建基于 JWT 令牌的用户认证 FastAPI 服务”
+- “使用 pandas 实现带错误处理的数据处理管道”
+- “使用 argparse 编写带完整帮助文档的 CLI 工具”
 
 ## 最佳实践
 
@@ -392,14 +396,14 @@ tools:
 
 #### 单一职责原则
 
-每个子智能体（Subagent）应具有明确且专注的职责。
+每个 Subagent 都应有明确、专注的用途。
 
 **✅ 推荐：**
 
 ```
 ---
 name: testing-expert
-description: 编写全面的单元测试和集成测试
+description: Writes comprehensive unit tests and integration tests
 ---
 ```
 
@@ -408,22 +412,22 @@ description: 编写全面的单元测试和集成测试
 ```
 ---
 name: general-helper
-description: 协助完成测试、文档编写、代码审查和部署等任务
+description: Helps with testing, documentation, code review, and deployment
 ---
 ```
 
-**原因：** 职责聚焦的智能体产出质量更高，也更易于维护。
+**原因**：专注的代理能产出更好的结果，且更易于维护。
 
-#### 明确的专业化分工
+#### 明确的专业领域
 
-应定义具体的专业领域，而非泛泛而谈的能力范围。
+定义具体的专业领域，而非宽泛的能力。
 
 **✅ 推荐：**
 
 ```
 ---
 name: react-performance-optimizer
-description: 利用性能分析工具和最佳实践优化 React 应用性能
+description: Optimizes React applications for performance using profiling and best practices
 ---
 ```
 
@@ -432,80 +436,80 @@ description: 利用性能分析工具和最佳实践优化 React 应用性能
 ```
 ---
 name: frontend-developer
-description: 处理前端开发相关任务
+description: Works on frontend development tasks
 ---
 ```
 
-**原因：** 具体的专业能力可带来更精准、更有效的支持。
+**原因**：明确的专业领域能带来更具针对性和高效的协助。
 
 #### 可操作的描述
 
-编写能清晰表明何时使用该智能体的描述。
+编写能清晰指示何时使用该代理的描述。
 
 **✅ 推荐：**
 
 ```
-description: 检查代码中的安全漏洞、性能问题及可维护性隐患
+description: Reviews code for security vulnerabilities, performance issues, and maintainability concerns
 ```
 
 **❌ 避免：**
 
 ```
-description: 一位有用的代码审查员
+description: A helpful code reviewer
 ```
 
-**原因：** 清晰的描述有助于主 AI 为每项任务选择最合适的智能体。
+**原因**：清晰的描述有助于主 AI 为每个任务选择正确的代理。
 
 ### 配置最佳实践
 
-#### 系统提示词编写指南
+#### System Prompt 编写指南
 
-**明确专业领域：**
-
-```
-你是一位 Python 测试专家，专精于：
-
-- pytest 框架及 fixture 机制
-- Mock 对象与依赖注入
-- 测试驱动开发（TDD）实践
-- 使用 pytest-benchmark 进行性能测试
-```
-
-**提供分步执行方法：**
+**明确专业能力：**
 
 ```
-针对每项测试任务，请按以下步骤执行：
+You are a Python testing specialist with expertise in:
 
-1. 分析代码结构与依赖关系
-2. 识别核心功能点及边界情况
-3. 编写命名清晰、覆盖全面的测试套件
-4. 包含合理的 setup/teardown 逻辑及准确的断言
-5. 为复杂测试场景添加注释说明
+- pytest framework and fixtures
+- Mock objects and dependency injection
+- Test-driven development practices
+- Performance testing with pytest-benchmark
 ```
 
-**规定输出规范：**
+**包含分步执行方法：**
 
 ```
-始终遵循以下规范：
+For each testing task:
 
-- 使用描述性强的测试名称，清晰表达测试场景
-- 同时涵盖正向与负向测试用例
-- 为复杂的测试函数添加文档字符串（docstring）
-- 确保各测试相互独立，可按任意顺序执行
+1. Analyze the code structure and dependencies
+2. Identify key functionality and edge cases
+3. Create comprehensive test suites with clear naming
+4. Include setup/teardown and proper assertions
+5. Add comments explaining complex test scenarios
+```
+
+**指定输出标准：**
+
+```
+Always follow these standards:
+
+- Use descriptive test names that explain the scenario
+- Include both positive and negative test cases
+- Add docstrings for complex test functions
+- Ensure tests are independent and can run in any order
 ```
 
 ## 安全注意事项
 
-- **工具限制**：子智能体仅能访问其配置的工具
-- **沙箱机制**：所有工具执行均遵循与直接使用工具相同的安全模型
-- **审计日志**：所有子智能体的操作均会被记录，并实时可见
-- **访问控制**：项目级和用户级的隔离提供了恰当的权限边界
-- **敏感信息**：请勿在智能体配置中包含密钥或凭证等敏感信息
-- **生产环境**：建议为生产环境和开发环境分别配置独立的智能体
+- **工具限制**：Subagent 仅能访问其配置的工具
+- **沙箱隔离**：所有工具执行均遵循与直接使用工具相同的安全模型
+- **审计追踪**：所有 Subagent 操作均会被记录并实时可见
+- **访问控制**：项目级和用户级隔离提供了适当的权限边界
+- **敏感信息**：避免在代理配置中包含密钥或凭证
+- **生产环境**：建议为生产环境和开发环境分别配置代理
 
 ## 限制
 
-以下为子智能体配置的软性警告（不强制执行硬性限制）：
+以下软性警告适用于 Subagent 配置（不强制执行硬性限制）：
 
-- **描述字段**：当描述内容超过 1,000 字符时，将显示警告
-- **系统提示词**：当系统提示词超过 10,000 字符时，将显示警告
+- **Description 字段**：描述超过 1,000 个字符时将显示警告
+- **System Prompt**：提示词超过 10,000 个字符时将显示警告

@@ -1,99 +1,91 @@
 ## Настройка среды песочницы (Docker/Podman)
 
-### В настоящее время проект не поддерживает использование функции `BUILD_SANDBOX` после установки через пакет npm
+### В настоящее время проект не поддерживает использование функции BUILD_SANDBOX после установки через npm-пакет
 
-1. Чтобы собрать пользовательскую песочницу, необходимо получить доступ к скриптам сборки (`scripts/build_sandbox.js`) в репозитории исходного кода.
-2. Эти скрипты сборки не включены в пакеты, публикуемые в npm.
-3. В коде присутствуют жёстко заданные проверки путей, которые явно отклоняют запросы на сборку из сред, не являющихся исходным кодом.
+1. Для сборки кастомной песочницы необходимо получить доступ к скриптам сборки (scripts/build_sandbox.js) в репозитории с исходным кодом.
+2. Эти скрипты сборки не входят в пакеты, публикуемые в npm.
+3. В коде присутствуют жёстко заданные проверки путей, которые явно отклоняют запросы на сборку из окружений, отличных от репозитория с исходным кодом.
 
-Если вам нужны дополнительные инструменты внутри контейнера (например, `git`, `python`, `rg`), создайте пользовательский Dockerfile. Конкретные действия описаны ниже.
+Если вам нужны дополнительные инструменты внутри контейнера (например, `git`, `python`, `rg`), создайте кастомный Dockerfile. Порядок действий следующий:
 
-#### 1. Сначала клонируйте проект Qwen Code: https://github.com/QwenLM/qwen-code.git
+#### 1. Сначала клонируйте репозиторий проекта Qwen Code: https://github.com/QwenLM/qwen-code.git
 
-#### 2. Убедитесь, что следующие операции выполняются в каталоге репозитория исходного кода
+#### 2. Убедитесь, что вы выполняете следующие действия в директории репозитория с исходным кодом
 
 ```bash
-
-# 1. Сначала установите зависимости проекта
+# 1. First, install the dependencies of the project
 npm install
 
-# 2. Соберите проект Qwen Code
+# 2. Build the Qwen Code project
 npm run build
 
-# 3. Убедитесь, что каталог `dist` был создан  
+# 3. Verify that the dist directory has been generated
 ls -la packages/cli/dist/
 
-# 4. Создайте глобальную символьную ссылку в каталоге пакета CLI  
-cd packages/cli  
-npm link  
+# 4. Create a global link in the CLI package directory
+cd packages/cli
+npm link
 
-# 5. Проверьте ссылку (она теперь должна указывать на исходный код)  
-which qwen  
+# 5. Verification link (it should now point to the source code)
+which qwen
+# Expected output: /xxx/xxx/.nvm/versions/node/v24.11.1/bin/qwen
+# Or similar paths, but it should be a symbolic link
 
-# Ожидаемый вывод: /xxx/xxx/.nvm/versions/node/v24.11.1/bin/qwen  
+# 6. For details of the symbolic link, you can see the specific source code path
+ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
+# It should show that this is a symbolic link pointing to your source code directory
 
-# Или аналогичный путь, но это обязательно должна быть символьная ссылка  
-
-# 6. Чтобы узнать подробности о символьной ссылке, вы можете увидеть конкретный путь к исходному коду  
-ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code  
-
-# Должно отобразиться, что это символьная ссылка, указывающая на ваш каталог с исходным кодом  
-
-# 7. Протестируйте версию `qwen`  
-qwen -v  
-
-# Команда `npm link` перезапишет глобальную установку `qwen`. Чтобы избежать неоднозначности при совпадении номеров версий, сначала удалите глобальный CLI  
+# 7.Test the version of qwen
+qwen -v
+# npm link will overwrite the global qwen. To avoid being unable to distinguish the same version number, you can uninstall the global CLI first
 
 ```
 
-#### 3. Создайте файл `Dockerfile` для песочницы в корневом каталоге вашего проекта
+#### 3. Создайте Dockerfile для песочницы в корневой директории вашего проекта
 
 - Путь: `.qwen/sandbox.Dockerfile`
 
-- Адрес официального образа в реестре: https://github.com/QwenLM/qwen-code/pkgs/container/qwen-code
+- Адрес официального образа: https://github.com/QwenLM/qwen-code/pkgs/container/qwen-code
 
 ```bash
-# На основе официального образа песочницы Qwen (рекомендуется явно указать версию)
+# Based on the official Qwen sandbox image (It is recommended to explicitly specify the version)
 FROM ghcr.io/qwenlm/qwen-code:sha-570ec43
-
-# Добавьте здесь дополнительные инструменты
+# Add your extra tools here
 RUN apt-get update && apt-get install -y \
     git \
     python3 \
     ripgrep
 ```
 
-#### 4. Создайте первый образ песочницы в корневом каталоге вашего проекта
+#### 4. Создайте первый образ песочницы в корневой директории вашего проекта
 
 ```bash
 QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
-
-# Проверьте, совпадает ли версия инструмента, запущенного в песочнице, с версией вашего пользовательского образа. Если версии совпадают — запуск прошёл успешно
+# Observe whether the sandbox version of the tool you launched is consistent with the version of your custom image. If they are consistent, the startup will be successful
 ```
 
-Это создаёт образ, специфичный для вашего проекта, на основе образа песочницы по умолчанию.
+Это создаст образ, специфичный для проекта, на основе стандартного образа песочницы.
 
-#### Удаление ссылки `npm`
+#### Удаление npm link
 
-- Чтобы восстановить официальный CLI `qwen`, удалите ссылку `npm`
+- Если вы хотите восстановить официальную CLI Qwen, удалите npm link
 
 ```bash
-
-# Способ 1: Отменить глобальную привязку
+# Method 1: Unlink globally
 npm unlink -g @qwen-code/qwen-code
 
-# Способ 2: Удалить привязку в каталоге packages/cli
+# Method 2: Remove it in the packages/cli directory
 cd packages/cli
 npm unlink
 
-# Проверка отмены привязки
+# Verification has been lifted
 which qwen
+# It should display "qwen not found"
 
-# Должно отобразиться сообщение «qwen not found» («qwen не найден»)
-
-# При необходимости переустановите глобальную версию
+# Reinstall the global version if necessary
 npm install -g @qwen-code/qwen-code
 
-# Проверка восстановления привязки
+# Verification Recovery
 which qwen
 qwen --version
+```

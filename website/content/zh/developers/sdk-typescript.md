@@ -2,9 +2,9 @@
 
 ## @qwen-code/sdk
 
-一个最小化的实验性 TypeScript SDK，用于以编程方式访问 Qwen Code。
+一个极简的实验性 TypeScript SDK，用于以编程方式访问 Qwen Code。
 
-欢迎提交功能请求、问题或 PR。
+欢迎提交功能请求、Issue 或 PR。
 
 ## 安装
 
@@ -12,32 +12,32 @@
 npm install @qwen-code/sdk
 ```
 
-## 系统要求
+## 环境要求
 
 - Node.js >= 20.0.0
-- 已安装并可从 PATH 访问 [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0（稳定版）
+- [Qwen Code](https://github.com/QwenLM/qwen-code) >= 0.4.0（稳定版）已安装且可在 PATH 中访问
 
-> **nvm 用户注意**：如果你使用 nvm 管理 Node.js 版本，SDK 可能无法自动检测到 Qwen Code 可执行文件。此时应显式设置 `pathToQwenExecutable` 选项为 `qwen` 二进制文件的完整路径。
+> **nvm 用户注意**：如果你使用 nvm 管理 Node.js 版本，SDK 可能无法自动检测到 Qwen Code 可执行文件。你需要显式将 `pathToQwenExecutable` 选项设置为 `qwen` 二进制的完整路径。
 
 ## 快速开始
 
 ```typescript
 import { query } from '@qwen-code/sdk';
 
-// 单轮查询
+// Single-turn query
 const result = query({
-  prompt: '当前目录下有哪些文件？',
+  prompt: 'What files are in the current directory?',
   options: {
     cwd: '/path/to/project',
   },
 });
 
-// 遍历消息流
+// Iterate over messages
 for await (const message of result) {
   if (message.type === 'assistant') {
-    console.log('助手:', message.message.content);
+    console.log('Assistant:', message.message.content);
   } else if (message.type === 'result') {
-    console.log('结果:', message.result);
+    console.log('Result:', message.result);
   }
 }
 ```
@@ -46,61 +46,62 @@ for await (const message of result) {
 
 ### `query(config)`
 
-创建一个与 Qwen Code 的新查询会话。
+创建一个新的 Qwen Code 查询会话。
 
 #### 参数
 
-- `prompt`: `string | AsyncIterable<SDKUserMessage>` —— 要发送的提示词。单轮查询使用字符串；多轮对话则使用异步可迭代对象。
-- `options`: `QueryOptions` —— 查询会话的配置选项。
+- `prompt`: `string | AsyncIterable<SDKUserMessage>` - 要发送的提示词。单轮查询使用字符串，多轮对话使用异步可迭代对象。
+- `options`: `QueryOptions` - 查询会话的配置选项。
 
 #### QueryOptions
 
-| 选项                   | 类型                                           | 默认值           | 描述                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ---------------------- | ---------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `cwd`                  | `string`                                       | `process.cwd()`  | 查询会话的工作目录。决定文件操作和命令执行的上下文环境。                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `model`                | `string`                                       | —                | 要使用的 AI 模型（例如 `'qwen-max'`、`'qwen-plus'`、`'qwen-turbo'`）。优先级高于 `OPENAI_MODEL` 和 `QWEN_MODEL` 环境变量。                                                                                                                                                                                                                                                                                                                                                     |
-| `pathToQwenExecutable` | `string`                                       | 自动检测         | Qwen Code 可执行文件的路径。支持多种格式：`'qwen'`（从 PATH 查找原生二进制文件）、`'/path/to/qwen'`（显式路径）、`'/path/to/cli.js'`（Node.js 打包文件）、`'node:/path/to/cli.js'`（强制使用 Node.js 运行时）、`'bun:/path/to/cli.js'`（强制使用 Bun 运行时）。若未提供，则按以下顺序自动检测：`QWEN_CODE_CLI_PATH` 环境变量、`~/.volta/bin/qwen`、`~/.npm-global/bin/qwen`、`/usr/local/bin/qwen`、`~/.local/bin/qwen`、`~/node_modules/.bin/qwen`、`~/.yarn/bin/qwen`。 |
-| `permissionMode`       | `'default' \| 'plan' \| 'auto-edit' \| 'yolo'` | `'default'`      | 控制工具执行权限的模式。详见 [权限模式](#permission-modes)。                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `canUseTool`           | `CanUseTool`                                   | —                | 自定义工具执行权限处理器。当工具需要用户确认时被调用。必须在 60 秒内响应，否则请求将被自动拒绝。详见 [自定义权限处理器](#custom-permission-handler)。                                                                                                                                                                                                                                                                                                                      |
-| `env`                  | `Record<string, string>`                       | —                | 传递给 Qwen Code 进程的环境变量。与当前进程环境变量合并。                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `mcpServers`           | `Record<string, McpServerConfig>`              | —                | 要连接的 MCP（Model Context Protocol）服务器。支持外部服务器（stdio/SSE/HTTP）和 SDK 内嵌服务器。外部服务器通过 `command`、`args`、`url`、`httpUrl` 等传输选项配置；SDK 服务器使用 `{ type: 'sdk', name: string, instance: Server }` 格式。                                                                                                                                                                                                                              |
-| `abortController`      | `AbortController`                              | —                | 用于取消查询会话的控制器。调用 `abortController.abort()` 即可终止会话并清理资源。                                                                                                                                                                                                                                                                                                                                                                                              |
-| `debug`                | `boolean`                                      | `false`          | 启用调试模式，使 CLI 进程输出详细日志。                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `maxSessionTurns`      | `number`                                       | `-1`（无限制）   | 会话自动终止前允许的最大对话轮数。一轮包含一条用户消息和一条助手响应。                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `coreTools`            | `string[]`                                     | —                | 等效于 `settings.json` 中的 `tool.core`。若指定，则仅这些工具对 AI 可用。示例：`['read_file', 'write_file', 'run_terminal_cmd']`。                                                                                                                                                                                                                                                                                                                                            |
-| `excludeTools`         | `string[]`                                     | —                | 等效于 `settings.json` 中的 `tool.exclude`。被排除的工具将立即返回权限错误。该设置拥有最高优先级，覆盖所有其他权限配置。支持模式匹配：工具名（如 `'write_file'`）、工具类（如 `'ShellTool'`）、或 Shell 命令前缀（如 `'ShellTool(rm )'`）。                                                                                                                                                                                                                                          |
-| `allowedTools`         | `string[]`                                     | —                | 等效于 `settings.json` 中的 `tool.allowed`。匹配的工具将绕过 `canUseTool` 回调，直接自动执行。仅对需要确认的工具生效。支持与 `excludeTools` 相同的模式匹配方式。                                                                                                                                                                                                                                                                                                            |
-| `authType`             | `'openai' \| 'qwen-oauth'`                     | `'openai'`       | AI 服务的身份验证类型。在 SDK 中使用 `'qwen-oauth'` 不推荐，因为凭据存储在 `~/.qwen` 中，可能需要定期刷新。                                                                                                                                                                                                                                                                                                                                                                    |
-| `agents`               | `SubagentConfig[]`                             | —                | 会话期间可调用的子代理（subagent）配置。子代理是针对特定任务或领域定制的专用 AI 代理。                                                                                                                                                                                                                                                                                                                                                                                         |
-| `includePartialMessages` | `boolean`                                    | `false`          | 若为 `true`，SDK 将在 AI 响应生成过程中实时发出不完整的消息，实现响应流式传输。                                                                                                                                                                                                                                                                                                                                                                                                |
+| Option                   | Type                                           | Default          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------ | ---------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cwd`                    | `string`                                       | `process.cwd()`  | 查询会话的工作目录。决定文件操作和命令执行的上下文。                                                                                                                                                                                                                                                                                                                                                               |
+| `model`                  | `string`                                       | -                | 要使用的 AI 模型（例如 `'qwen-max'`、`'qwen-plus'`、`'qwen-turbo'`）。优先级高于 `OPENAI_MODEL` 和 `QWEN_MODEL` 环境变量。                                                                                                                                                                                                                                                                                                                                 |
+| `pathToQwenExecutable`   | `string`                                       | Auto-detected    | Qwen Code 可执行文件的路径。支持多种格式：`'qwen'`（PATH 中的原生二进制文件）、`'/path/to/qwen'`（显式路径）、`'/path/to/cli.js'`（Node.js 打包文件）、`'node:/path/to/cli.js'`（强制 Node.js 运行时）、`'bun:/path/to/cli.js'`（强制 Bun 运行时）。如果未提供，将按以下顺序自动检测：`QWEN_CODE_CLI_PATH` 环境变量、`~/.volta/bin/qwen`、`~/.npm-global/bin/qwen`、`/usr/local/bin/qwen`、`~/.local/bin/qwen`、`~/node_modules/.bin/qwen`、`~/.yarn/bin/qwen`。 |
+| `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'yolo'` | `'default'`      | 控制工具执行审批的权限模式。详见 [权限模式](#permission-modes)。                                                                                                                                                                                                                                                                                                                                                                           |
+| `canUseTool`             | `CanUseTool`                                   | -                | 用于工具执行审批的自定义权限处理器。当工具需要确认时调用。必须在 60 秒内响应，否则请求将被自动拒绝。详见 [自定义权限处理器](#custom-permission-handler)。                                                                                                                                                                                                                                                     |
+| `env`                    | `Record<string, string>`                       | -                | 传递给 Qwen Code 进程的环境变量。将与当前进程的环境变量合并。                                                                                                                                                                                                                                                                                                                                                                                  |
+| `systemPrompt`           | `string \| QuerySystemPromptPreset`            | -                | 主会话的系统提示词配置。使用字符串可完全覆盖内置的 Qwen Code 系统提示词，或使用预设对象以保留内置提示词并追加额外指令。                                                                                                                                                                                                                                                                                  |
+| `mcpServers`             | `Record<string, McpServerConfig>`              | -                | 要连接的 MCP（Model Context Protocol）服务器。支持外部服务器（stdio/SSE/HTTP）和 SDK 内置服务器。外部服务器通过 `command`、`args`、`url`、`httpUrl` 等传输选项进行配置。SDK 服务器使用 `{ type: 'sdk', name: string, instance: Server }`。                                                                                                                                                                                        |
+| `abortController`        | `AbortController`                              | -                | 用于取消查询会话的控制器。调用 `abortController.abort()` 可终止会话并清理资源。                                                                                                                                                                                                                                                                                                                                                                |
+| `debug`                  | `boolean`                                      | `false`          | 启用调试模式，输出 CLI 进程的详细日志。                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `maxSessionTurns`        | `number`                                       | `-1` (unlimited) | 会话自动终止前的最大对话轮数。一轮包含一条用户消息和一条助手响应。                                                                                                                                                                                                                                                                                                                                        |
+| `coreTools`              | `string[]`                                     | -                | 等同于 settings.json 中的 `tool.core`。如果指定，AI 将仅可使用这些工具。示例：`['read_file', 'write_file', 'run_terminal_cmd']`。                                                                                                                                                                                                                                                                                                                   |
+| `excludeTools`           | `string[]`                                     | -                | 等同于 settings.json 中的 `tool.exclude`。被排除的工具将立即返回权限错误。优先级高于所有其他权限设置。支持模式匹配：工具名称（`'write_file'`）、工具类（`'ShellTool'`）或 Shell 命令前缀（`'ShellTool(rm )'`）。                                                                                                                                                                                      |
+| `allowedTools`           | `string[]`                                     | -                | 等同于 settings.json 中的 `tool.allowed`。匹配的工具将跳过 `canUseTool` 回调并自动执行。仅在工具需要确认时生效。支持与 `excludeTools` 相同的模式匹配。                                                                                                                                                                                                                                                                 |
+| `authType`               | `'openai' \| 'qwen-oauth'`                     | `'openai'`       | AI 服务的认证类型。不建议在 SDK 中使用 `'qwen-oauth'`，因为凭据存储在 `~/.qwen` 中且可能需要定期刷新。                                                                                                                                                                                                                                                                                                                          |
+| `agents`                 | `SubagentConfig[]`                             | -                | 可在会话期间调用的子代理（subagent）配置。子代理是用于特定任务或领域的专用 AI 代理。                                                                                                                                                                                                                                                                                                                                                |
+| `includePartialMessages` | `boolean`                                      | `false`          | 当设置为 `true` 时，SDK 会在消息生成过程中发出不完整的消息，从而实现 AI 响应的实时流式传输。                                                                                                                                                                                                                                                                                                                                                        |
 
 ### 超时设置
 
-SDK 强制执行以下默认超时时间：
+SDK 强制执行以下默认超时设置：
 
-| 超时类型         | 默认值   | 说明                                                                                                                                 |
-| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `canUseTool`     | 1 分钟   | `canUseTool` 回调函数响应的最大耗时。若超时，工具请求将被自动拒绝。                                                                 |
-| `mcpRequest`     | 1 分钟   | SDK MCP 工具调用完成的最大耗时。                                                                                                     |
-| `controlRequest` | 1 分钟   | 控制类操作（如 `initialize()`、`setModel()`、`setPermissionMode()` 和 `interrupt()`）完成的最大耗时。                                 |
-| `streamClose`    | 1 分钟   | 在多轮对话模式下，与 SDK MCP 服务端交互时，等待初始化完成并关闭 CLI 标准输入前的最大等待时间。                                       |
+| Timeout          | Default  | Description                                                                                                                  |
+| ---------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `canUseTool`     | 1 minute | `canUseTool` 回调响应的最长时间。如果超时，工具请求将被自动拒绝。                             |
+| `mcpRequest`     | 1 minute | SDK MCP 工具调用完成的最长时间。                                                                             |
+| `controlRequest` | 1 minute | 控制操作（如 `initialize()`、`setModel()`、`setPermissionMode()` 和 `interrupt()`）完成的最长时间。 |
+| `streamClose`    | 1 minute | 在使用 SDK MCP 服务器的多轮模式下，关闭 CLI stdin 前等待初始化完成的最长时间。        |
 
-您可通过 `timeout` 选项自定义这些超时值：
+你可以通过 `timeout` 选项自定义这些超时时间：
 
 ```typescript
-const query = qwen.query('您的提示词', {
+const query = qwen.query('Your prompt', {
   timeout: {
-    canUseTool: 60000, // 权限回调超时：60 秒
-    mcpRequest: 600000, // MCP 工具调用超时：10 分钟
-    controlRequest: 60000, // 控制请求超时：60 秒
-    streamClose: 15000, // 流关闭等待超时：15 秒
+    canUseTool: 60000, // 60 seconds for permission callback
+    mcpRequest: 600000, // 10 minutes for MCP tool calls
+    controlRequest: 60000, // 60 seconds for control requests
+    streamClose: 15000, // 15 seconds for stream close wait
   },
 });
 ```
 
 ### 消息类型
 
-SDK 提供了类型守卫（type guards），用于识别不同类型的消息：
+SDK 提供了类型守卫（type guards）用于识别不同的消息类型：
 
 ```typescript
 import {
@@ -113,56 +114,56 @@ import {
 
 for await (const message of result) {
   if (isSDKAssistantMessage(message)) {
-    // 处理助手消息
+    // Handle assistant message
   } else if (isSDKResultMessage(message)) {
-    // 处理结果消息
+    // Handle result message
   }
 }
 ```
 
-### 查询实例方法
+### Query 实例方法
 
-`query()` 返回的 `Query` 实例提供了若干方法：
+`query()` 返回的 `Query` 实例提供了以下方法：
 
 ```typescript
 const q = query({ prompt: 'Hello', options: {} });
 
-// 获取会话 ID
+// Get session ID
 const sessionId = q.getSessionId();
 
-// 检查是否已关闭
+// Check if closed
 const closed = q.isClosed();
 
-// 中断当前操作
+// Interrupt the current operation
 await q.interrupt();
 
-// 在会话中途更改权限模式
+// Change permission mode mid-session
 await q.setPermissionMode('yolo');
 
-// 在会话中途切换模型
+// Change model mid-session
 await q.setModel('qwen-max');
 
-// 关闭会话
+// Close the session
 await q.close();
 ```
 
 ## 权限模式
 
-SDK 支持多种权限模式，用于控制工具的执行：
+SDK 支持不同的权限模式来控制工具执行：
 
-- **`default`**：写入类工具默认被拒绝，除非通过 `canUseTool` 回调函数显式批准，或在 `allowedTools` 列表中声明；只读类工具无需确认即可执行。
-- **`plan`**：阻止所有写入类工具，要求 AI 首先输出执行计划。
-- **`auto-edit`**：自动批准编辑类工具（如 `edit`、`write_file`），其余工具仍需用户确认。
-- **`yolo`**：所有工具均自动执行，无需任何确认。
+- **`default`**：除非通过 `canUseTool` 回调或 `allowedTools` 批准，否则拒绝写入工具。只读工具无需确认即可执行。
+- **`plan`**：阻止所有写入工具，指示 AI 先提供计划。
+- **`auto-edit`**：自动批准编辑工具（edit、write_file），其他工具需要确认。
+- **`yolo`**：所有工具自动执行，无需确认。
 
 ### 权限优先级链
 
-1. `excludeTools` —— 完全禁用指定工具  
-2. `permissionMode: 'plan'` —— 禁用非只读类工具  
-3. `permissionMode: 'yolo'` —— 自动批准所有工具  
-4. `allowedTools` —— 自动批准列表中匹配的工具  
-5. `canUseTool` 回调函数 —— 自定义审批逻辑  
-6. 默认行为 —— 在 SDK 模式下默认拒绝未明确允许的工具  
+1. `excludeTools` - 完全阻止工具
+2. `permissionMode: 'plan'` - 阻止非只读工具
+3. `permissionMode: 'yolo'` - 自动批准所有工具
+4. `allowedTools` - 自动批准匹配的工具
+5. `canUseTool` 回调 - 自定义审批逻辑
+6. 默认行为 - SDK 模式下自动拒绝
 
 ## 示例
 
@@ -175,15 +176,15 @@ async function* generateMessages(): AsyncIterable<SDKUserMessage> {
   yield {
     type: 'user',
     session_id: 'my-session',
-    message: { role: 'user', content: '创建一个 hello.txt 文件' },
+    message: { role: 'user', content: 'Create a hello.txt file' },
     parent_tool_use_id: null,
   };
 
-  // 等待某个条件满足或用户输入
+  // Wait for some condition or user input
   yield {
     type: 'user',
     session_id: 'my-session',
-    message: { role: 'user', content: '现在将该文件内容读取出来' },
+    message: { role: 'user', content: 'Now read the file back' },
     parent_tool_use_id: null,
   };
 }
@@ -206,23 +207,23 @@ for await (const message of result) {
 import { query, type CanUseTool } from '@qwen-code/sdk';
 
 const canUseTool: CanUseTool = async (toolName, input, { signal }) => {
-  // 允许所有读取操作
+  // Allow all read operations
   if (toolName.startsWith('read_')) {
     return { behavior: 'allow', updatedInput: input };
   }
 
-  // 对写入操作向用户发起确认（在实际应用中）
-  const userApproved = await promptUser(`是否允许执行 ${toolName}？`);
+  // Prompt user for write operations (in a real app)
+  const userApproved = await promptUser(`Allow ${toolName}?`);
 
   if (userApproved) {
     return { behavior: 'allow', updatedInput: input };
   }
 
-  return { behavior: 'deny', message: '用户拒绝了该操作' };
+  return { behavior: 'deny', message: 'User denied the operation' };
 };
 
 const result = query({
-  prompt: '创建一个新文件',
+  prompt: 'Create a new file',
   options: {
     canUseTool,
   },
@@ -235,7 +236,7 @@ const result = query({
 import { query } from '@qwen-code/sdk';
 
 const result = query({
-  prompt: '使用我 MCP 服务器中的自定义工具',
+  prompt: 'Use the custom tool from my MCP server',
   options: {
     mcpServers: {
       'my-server': {
@@ -248,22 +249,52 @@ const result = query({
 });
 ```
 
-### 使用 SDK 内嵌的 MCP 服务器
+### 覆盖系统提示词
 
-SDK 提供了 `tool` 和 `createSdkMcpServer`，用于创建与 SDK 应用运行在同一进程内的 MCP 服务器。当你希望向 AI 暴露自定义工具，而又不想启动独立的服务器进程时，这种方式非常有用。
+```typescript
+import { query } from '@qwen-code/sdk';
+
+const result = query({
+  prompt: 'Say hello in one sentence.',
+  options: {
+    systemPrompt: 'You are a terse assistant. Answer in exactly one sentence.',
+  },
+});
+```
+
+### 追加到内置系统提示词
+
+```typescript
+import { query } from '@qwen-code/sdk';
+
+const result = query({
+  prompt: 'Review the current directory.',
+  options: {
+    systemPrompt: {
+      type: 'preset',
+      preset: 'qwen_code',
+      append: 'Be terse and focus on concrete findings.',
+    },
+  },
+});
+```
+
+### 使用 SDK 内置 MCP 服务器
+
+SDK 提供了 `tool` 和 `createSdkMcpServer`，用于创建与你的 SDK 应用运行在同一进程中的 MCP 服务器。当你希望向 AI 暴露自定义工具而无需运行单独的服务器进程时，这非常有用。
 
 #### `tool(name, description, inputSchema, handler)`
 
-使用 Zod 模式进行类型推断，创建一个工具定义。
+使用 Zod schema 类型推断创建工具定义。
 
-| 参数          | 类型                               | 描述                                                                     |
+| Parameter     | Type                               | Description                                                              |
 | ------------- | ---------------------------------- | ------------------------------------------------------------------------ |
-| `name`        | `string`                           | 工具名称（1–64 个字符，必须以字母开头，仅允许字母、数字和下划线）       |
-| `description` | `string`                           | 对该工具功能的可读性描述                                                 |
-| `inputSchema` | `ZodRawShape`                      | 定义工具输入参数的 Zod 模式对象                                          |
-| `handler`     | `(args, extra) => Promise<Result>` | 异步函数，用于执行工具并返回 MCP 内容块                                 |
+| `name`        | `string`                           | 工具名称（1-64 个字符，以字母开头，仅包含字母、数字和下划线） |
+| `description` | `string`                           | 工具功能的人类可读描述                         |
+| `inputSchema` | `ZodRawShape`                      | 定义工具输入参数的 Zod schema 对象                   |
+| `handler`     | `(args, extra) => Promise<Result>` | 执行工具并返回 MCP 内容块的异步函数     |
 
-`handler` 必须返回一个 `CallToolResult` 对象，其结构如下：
+处理器必须返回具有以下结构的 `CallToolResult` 对象：
 
 ```typescript
 {
@@ -278,15 +309,15 @@ SDK 提供了 `tool` 和 `createSdkMcpServer`，用于创建与 SDK 应用运行
 
 #### `createSdkMcpServer(options)`
 
-创建一个嵌入 SDK 的 MCP 服务器实例。
+创建 SDK 内置的 MCP 服务器实例。
 
-| 选项      | 类型                     | 默认值    | 描述                                 |
+| Option    | Type                     | Default   | Description                          |
 | --------- | ------------------------ | --------- | ------------------------------------ |
-| `name`    | `string`                 | 必填      | MCP 服务器的唯一名称                 |
-| `version` | `string`                 | `'1.0.0'` | 服务器版本                           |
-| `tools`   | `SdkMcpToolDefinition[]` | -         | 使用 `tool()` 创建的工具数组         |
+| `name`    | `string`                 | Required  | MCP 服务器的唯一名称       |
+| `version` | `string`                 | `'1.0.0'` | 服务器版本                       |
+| `tools`   | `SdkMcpToolDefinition[]` | -         | 通过 `tool()` 创建的工具数组 |
 
-返回一个 `McpSdkServerConfigWithInstance` 对象，可直接传入 `mcpServers` 配置项。
+返回一个 `McpSdkServerConfigWithInstance` 对象，可直接传递给 `mcpServers` 选项。
 
 #### 示例
 
@@ -294,25 +325,25 @@ SDK 提供了 `tool` 和 `createSdkMcpServer`，用于创建与 SDK 应用运行
 import { z } from 'zod';
 import { query, tool, createSdkMcpServer } from '@qwen-code/sdk';
 
-// 使用 Zod Schema 定义一个工具
+// Define a tool with Zod schema
 const calculatorTool = tool(
   'calculate_sum',
-  '将两个数字相加',
+  'Add two numbers',
   { a: z.number(), b: z.number() },
   async (args) => ({
     content: [{ type: 'text', text: String(args.a + args.b) }],
   }),
 );
 
-// 创建 MCP 服务器
+// Create the MCP server
 const server = createSdkMcpServer({
   name: 'calculator',
   tools: [calculatorTool],
 });
 
-// 在查询中使用该服务器
+// Use the server in a query
 const result = query({
-  prompt: '42 加 17 等于多少？',
+  prompt: 'What is 42 + 17?',
   options: {
     permissionMode: 'yolo',
     mcpServers: {
@@ -334,13 +365,13 @@ import { query, isAbortError } from '@qwen-code/sdk';
 const abortController = new AbortController();
 
 const result = query({
-  prompt: '长时间运行的任务...',
+  prompt: 'Long running task...',
   options: {
     abortController,
   },
 });
 
-// 5 秒后中止
+// Abort after 5 seconds
 setTimeout(() => abortController.abort(), 5000);
 
 try {
@@ -349,7 +380,7 @@ try {
   }
 } catch (error) {
   if (isAbortError(error)) {
-    console.log('查询已被中止');
+    console.log('Query was aborted');
   } else {
     throw error;
   }
@@ -358,18 +389,18 @@ try {
 
 ## 错误处理
 
-SDK 提供了 `AbortError` 类用于处理被中止的查询：
+SDK 提供了 `AbortError` 类用于处理已中止的查询：
 
 ```typescript
 import { AbortError, isAbortError } from '@qwen-code/sdk';
 
 try {
-  // ... 查询操作
+  // ... query operations
 } catch (error) {
   if (isAbortError(error)) {
-    // 处理中止情况
+    // Handle abort
   } else {
-    // 处理其他错误
+    // Handle other errors
   }
 }
 ```

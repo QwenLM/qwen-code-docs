@@ -1,17 +1,17 @@
 # ヘッドレスモード
 
-ヘッドレスモードでは、インタラクティブな UI を一切使用せずに、コマンドラインスクリプトや自動化ツールから Qwen Code をプログラム的に実行できます。これは、スクリプト作成、自動化、CI/CD パイプライン、および AI 搭載ツールの構築に最適です。
+ヘッドレスモードを使用すると、インタラクティブな UI なしで、コマンドラインスクリプトや自動化ツールからプログラム的に Qwen Code を実行できます。スクリプティング、自動化、CI/CD パイプライン、AI 駆動ツールの構築に最適です。
 
 ## 概要
 
-ヘッドレスモードは、Qwen Code に対するヘッドレスなインターフェースを提供します。具体的には以下の機能を備えています：
+ヘッドレスモードは、以下の機能を持つ Qwen Code のヘッドレスインターフェースを提供します：
 
-- コマンドライン引数または標準入力（stdin）経由でプロンプトを受け付けます
-- 構造化された出力（テキストまたは JSON）を返します
-- ファイルのリダイレクトおよびパイプ処理をサポートします
-- 自動化およびスクリプトによるワークフローを可能にします
-- エラー処理のための一貫した終了コードを提供します
-- マルチステップの自動化に対応し、現在のプロジェクトにスコープを限定した以前のセッションを再開できます
+- コマンドライン引数または stdin 経由でプロンプトを受け付ける
+- 構造化された出力（テキストまたは JSON）を返す
+- ファイルのリダイレクトとパイプ処理をサポートする
+- 自動化およびスクリプティングワークフローを可能にする
+- エラー処理のために一貫した終了コードを提供する
+- 複数ステップの自動化のために、現在のプロジェクトにスコープされた以前のセッションを再開できる
 
 ## 基本的な使い方
 
@@ -20,71 +20,104 @@
 ヘッドレスモードで実行するには、`--prompt`（または `-p`）フラグを使用します：
 
 ```bash
-qwen --prompt "機械学習とは何ですか？"
+qwen --prompt "What is machine learning?"
 ```
 
-### 標準入力（stdin）からの入力
+### Stdin 入力
 
-ターミナルから Qwen Code へ入力をパイプで渡します：
+ターミナルから Qwen Code に入力をパイプします：
 
 ```bash
-echo "このコードを説明してください" | qwen
+echo "Explain this code" | qwen
 ```
 
 ### ファイル入力との組み合わせ
 
-ファイルから読み込んで Qwen Code で処理します：
+ファイルから読み取り、Qwen Code で処理します：
 
 ```bash
-cat README.md | qwen --prompt "このドキュメントを要約してください"
+cat README.md | qwen --prompt "Summarize this documentation"
 ```
 
 ### 以前のセッションの再開（ヘッドレス）
 
-ヘッドレススクリプト内で、現在のプロジェクトの会話コンテキストを再利用します：
+ヘッドレススクリプトで、現在のプロジェクトの会話コンテキストを再利用します：
 
 ```bash
+# Continue the most recent session for this project and run a new prompt
+qwen --continue -p "Run the tests again and summarize failures"
 
-# このプロジェクトの最新のセッションを継続し、新しいプロンプトを実行
-qwen --continue -p "テストを再度実行し、失敗した項目を要約してください"
-
-# 特定のセッション ID を直接再開（UI なし）
-qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "後続のリファクタリングを適用してください"
+# Resume a specific session ID directly (no UI)
+qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refactor"
 ```
 
 > [!note]
 >
-> - セッションデータは、`~/.qwen/projects/<正規化されたカレントワーキングディレクトリ>/chats` 下のプロジェクト単位の JSONL 形式で保存されます。
-> - 新しいプロンプトを送信する前に、会話履歴、ツール出力、およびチャット圧縮のチェックポイントを復元します。
+> - セッションデータは、`~/.qwen/projects/<sanitized-cwd>/chats` 配下のプロジェクトスコープの JSONL として保存されます。
+> - 新しいプロンプトを送信する前に、会話履歴、ツール出力、チャット圧縮チェックポイントを復元します。
 
-## 出力形式
+## メインセッションプロンプトのカスタマイズ
 
-Qwen Code は、さまざまなユースケースに対応する複数の出力形式をサポートしています：
+共有メモリファイルを編集することなく、単一の CLI 実行に対してメインセッションのシステムプロンプトを変更できます。
+
+### 組み込みシステムプロンプトの上書き
+
+`--system-prompt` を使用して、現在の実行における Qwen Code の組み込みメインセッションプロンプトを置き換えます：
+
+```bash
+qwen -p "Review this patch" --system-prompt "You are a terse release reviewer. Report only blocking issues."
+```
+
+### 追加指示の付加
+
+`--append-system-prompt` を使用して、組み込みプロンプトを維持したまま、この実行用の追加指示を付加します：
+
+```bash
+qwen -p "Review this patch" --append-system-prompt "Be terse and focus on concrete findings."
+```
+
+カスタムベースプロンプトと実行固有の追加指示の両方を使用したい場合は、両方のフラグを組み合わせることができます：
+
+```bash
+qwen -p "Summarize this repository" \
+  --system-prompt "You are a migration planner." \
+  --append-system-prompt "Return exactly three bullets."
+```
+
+> [!note]
+>
+> - `--system-prompt` は、現在の実行のメインセッションにのみ適用されます。
+> - `QWEN.md` などの読み込まれたメモリおよびコンテキストファイルは、`--system-prompt` の後に引き続き追加されます。
+> - `--append-system-prompt` は組み込みプロンプトおよび読み込まれたメモリの後に適用され、`--system-prompt` と組み合わせて使用できます。
+
+## 出力フォーマット
+
+Qwen Code は、さまざまなユースケースに対応する複数の出力フォーマットをサポートしています：
 
 ### テキスト出力（デフォルト）
 
-標準の、人間が読み取れる出力形式：
+標準の人間が読める形式の出力：
 
 ```bash
-qwen -p "フランスの首都はどこですか？"
+qwen -p "What is the capital of France?"
 ```
 
-応答形式：
+レスポンスフォーマット：
 
 ```
-フランスの首都はパリです。
+The capital of France is Paris.
 ```
 
 ### JSON 出力
 
-構造化されたデータを JSON 配列として返します。すべてのメッセージはバッファリングされ、セッション完了時にまとめて出力されます。この形式は、プログラムによる処理や自動化スクリプトに最適です。
+構造化データを JSON 配列として返します。すべてのメッセージはバッファリングされ、セッション完了時にまとめて出力されます。このフォーマットは、プログラムによる処理や自動化スクリプトに最適です。
 
-JSON 出力は、メッセージオブジェクトの配列です。出力には、システムメッセージ（セッション初期化時）、アシスタントメッセージ（AI の応答）、および結果メッセージ（実行の要約）の複数種類のメッセージが含まれます。
+JSON 出力はメッセージオブジェクトの配列です。出力には複数のメッセージタイプが含まれます：システムメッセージ（セッション初期化）、アシスタントメッセージ（AI レスポンス）、結果メッセージ（実行サマリー）。
 
 #### 使用例
 
 ```bash
-qwen -p "フランスの首都は何ですか？" --output-format json
+qwen -p "What is the capital of France?" --output-format json
 ```
 
 出力（実行終了時）：
@@ -111,7 +144,7 @@ qwen -p "フランスの首都は何ですか？" --output-format json
       "content": [
         {
           "type": "text",
-          "text": "フランスの首都はパリです。"
+          "text": "The capital of France is Paris."
         }
       ],
       "usage": {...}
@@ -125,7 +158,7 @@ qwen -p "フランスの首都は何ですか？" --output-format json
     "session_id": "...",
     "is_error": false,
     "duration_ms": 1234,
-    "result": "フランスの首都はパリです。",
+    "result": "The capital of France is Paris.",
     "usage": {...}
   }
 ]
@@ -133,13 +166,13 @@ qwen -p "フランスの首都は何ですか？" --output-format json
 
 ### Stream-JSON 出力
 
-Stream-JSON 形式では、実行中に発生した JSON メッセージを即座に出力します。これにより、リアルタイムでの監視が可能になります。この形式では、各行が完全な JSON オブジェクトである行区切り JSON（line-delimited JSON）が使用されます。
+Stream-JSON フォーマットは、実行中に発生した JSON メッセージを即座に出力し、リアルタイムモニタリングを可能にします。このフォーマットは、各行が完全な JSON オブジェクトである行区切り JSON を使用します。
 
 ```bash
-qwen -p "TypeScript を説明してください" --output-format stream-json
+qwen -p "Explain TypeScript" --output-format stream-json
 ```
 
-出力（イベント発生に応じてストリーミング）：
+出力（イベント発生時のストリーミング）：
 
 ```json
 {"type":"system","subtype":"session_start","uuid":"...","session_id":"..."}
@@ -147,82 +180,84 @@ qwen -p "TypeScript を説明してください" --output-format stream-json
 {"type":"result","subtype":"success","uuid":"...","session_id":"..."}
 ```
 
-`--include-partial-messages` オプションと組み合わせると、リアルタイムの UI 更新に対応するため、追加のストリームイベント（`message_start`、`content_block_delta` など）がリアルタイムで出力されます。
+`--include-partial-messages` と組み合わせると、リアルタイム UI 更新のために追加のストリームイベント（`message_start`、`content_block_delta` など）がリアルタイムで出力されます。
 
 ```bash
-qwen -p "Python スクリプトを書いてください" --output-format stream-json --include-partial-messages
+qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
 ```
 
 ### 入力フォーマット
 
-`--input-format` パラメーターは、Qwen Code が標準入力（stdin）から入力をどのように読み取るかを制御します。
+`--input-format` パラメータは、Qwen Code が標準入力から入力をどのように消費するかを制御します：
 
-- **`text`**（デフォルト）：標準入力（stdin）またはコマンドライン引数からの通常のテキスト入力  
-- **`stream-json`**：双方向通信のための、標準入力（stdin）経由の JSON メッセージプロトコル  
+- **`text`**（デフォルト）：stdin またはコマンドライン引数からの標準テキスト入力
+- **`stream-json`**：双方向通信のための stdin 経由の JSON メッセージプロトコル
 
-> **注意:** `stream-json` 入力モードは現在開発中であり、SDK 統合を目的としています。このモードを使用するには、`--output-format stream-json` も併せて指定する必要があります。
+> **注記:** Stream-json 入力モードは現在構築中であり、SDK 統合を目的としています。`--output-format stream-json` の設定が必要です。
 
-### ファイルへのリダイレクト
+### ファイルリダイレクト
 
-出力をファイルに保存したり、他のコマンドにパイプで渡したりできます。
+出力をファイルに保存するか、他のコマンドにパイプします：
 
 ```bash
+# Save to file
+qwen -p "Explain Docker" > docker-explanation.txt
+qwen -p "Explain Docker" --output-format json > docker-explanation.json
 
-# ファイルに保存
-qwen -p "Docker を説明してください" > docker-explanation.txt
-qwen -p "Docker を説明してください" --output-format json > docker-explanation.json
+# Append to file
+qwen -p "Add more details" >> docker-explanation.txt
 
-# ファイルに追記
-qwen -p "さらに詳細を追加してください" >> docker-explanation.txt
+# Pipe to other tools
+qwen -p "What is Kubernetes?" --output-format json | jq '.response'
+qwen -p "Explain microservices" | wc -w
+qwen -p "List programming languages" | grep -i "python"
 
-# 他のツールにパイプ
-qwen -p "Kubernetes とは何ですか？" --output-format json | jq '.response'
-qwen -p "マイクロサービスについて説明してください" | wc -w
-qwen -p "プログラミング言語の一覧を表示してください" | grep -i "python"
-
-# リアルタイム処理向けの Stream-JSON 出力
-qwen -p "Docker を説明してください" --output-format stream-json | jq '.type'
-qwen -p "コードを書いてください" --output-format stream-json --include-partial-messages | jq '.event.type'
+# Stream-JSON output for real-time processing
+qwen -p "Explain Docker" --output-format stream-json | jq '.type'
+qwen -p "Write code" --output-format stream-json --include-partial-messages | jq '.event.type'
+```
 
 ## 設定オプション
 
-ヘッドレス使用時の主なコマンドラインオプション：
+ヘッドレス使用のための主要なコマンドラインオプション：
 
-| オプション                       | 説明                                                 | 例                                                                          |
-| -------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------- |
-| `--prompt`, `-p`                 | ヘッドレスモードで実行                               | `qwen -p "クエリ"`                                                          |
-| `--output-format`, `-o`          | 出力形式を指定（text、json、stream-json）             | `qwen -p "クエリ" --output-format json`                                     |
-| `--input-format`                 | 入力形式を指定（text、stream-json）                  | `qwen --input-format text --output-format stream-json`                     |
-| `--include-partial-messages`     | stream-json 出力に部分的なメッセージを含める         | `qwen -p "クエリ" --output-format stream-json --include-partial-messages`   |
-| `--debug`, `-d`                  | デバッグモードを有効化                               | `qwen -p "クエリ" --debug`                                                  |
-| `--all-files`, `-a`              | コンテキストにすべてのファイルを含める               | `qwen -p "クエリ" --all-files`                                              |
-| `--include-directories`          | 追加のディレクトリを含める                           | `qwen -p "クエリ" --include-directories src,docs`                           |
-| `--yolo`, `-y`                   | すべての操作を自動承認                               | `qwen -p "クエリ" --yolo`                                                   |
-| `--approval-mode`                | 承認モードを設定                                     | `qwen -p "クエリ" --approval-mode auto_edit`                                |
-| `--continue`                     | このプロジェクトの直近のセッションを再開           | `qwen --continue -p "中断したところから再開"`                               |
-| `--resume [sessionId]`           | 特定のセッションを再開（または対話的に選択）         | `qwen --resume 123e... -p "リファクタリングを完了"`                         |
+| Option                       | Description                                                              | Example                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `--prompt`, `-p`             | ヘッドレスモードで実行                                                   | `qwen -p "query"`                                                        |
+| `--output-format`, `-o`      | 出力フォーマットを指定（text, json, stream-json）                        | `qwen -p "query" --output-format json`                                   |
+| `--input-format`             | 入力フォーマットを指定（text, stream-json）                              | `qwen --input-format text --output-format stream-json`                   |
+| `--include-partial-messages` | stream-json 出力に部分的なメッセージを含める                             | `qwen -p "query" --output-format stream-json --include-partial-messages` |
+| `--system-prompt`            | この実行のメインセッションシステムプロンプトを上書き                     | `qwen -p "query" --system-prompt "You are a terse reviewer."`            |
+| `--append-system-prompt`     | この実行のメインセッションシステムプロンプトに追加指示を付加             | `qwen -p "query" --append-system-prompt "Focus on concrete findings."`   |
+| `--debug`, `-d`              | デバッグモードを有効化                                                   | `qwen -p "query" --debug`                                                |
+| `--all-files`, `-a`          | コンテキストにすべてのファイルを含める                                   | `qwen -p "query" --all-files`                                            |
+| `--include-directories`      | 追加のディレクトリを含める                                               | `qwen -p "query" --include-directories src,docs`                         |
+| `--yolo`, `-y`               | すべてのアクションを自動承認                                             | `qwen -p "query" --yolo`                                                 |
+| `--approval-mode`            | 承認モードを設定                                                         | `qwen -p "query" --approval-mode auto_edit`                              |
+| `--continue`                 | このプロジェクトの最新のセッションを再開                                 | `qwen --continue -p "Pick up where we left off"`                         |
+| `--resume [sessionId]`       | 特定のセッションを再開（または対話的に選択）                             | `qwen --resume 123e... -p "Finish the refactor"`                         |
 
 利用可能なすべての設定オプション、設定ファイル、環境変数の詳細については、[設定ガイド](../configuration/settings) を参照してください。
 
-## 例
+## 使用例
 
 ### コードレビュー
 
 ```bash
-cat src/auth.py | qwen -p "この認証コードをセキュリティ上の問題についてレビューしてください" > security-review.txt
+cat src/auth.py | qwen -p "Review this authentication code for security issues" > security-review.txt
 ```
 
 ### コミットメッセージの生成
 
 ```bash
-result=$(git diff --cached | qwen -p "これらの変更に対する簡潔なコミットメッセージを作成してください" --output-format json)
+result=$(git diff --cached | qwen -p "Write a concise commit message for these changes" --output-format json)
 echo "$result" | jq -r '.response'
 ```
 
 ### API ドキュメント
 
 ```bash
-result=$(cat api/routes.js | qwen -p "これらのルートに対する OpenAPI スペックを生成してください" --output-format json)
+result=$(cat api/routes.js | qwen -p "Generate OpenAPI spec for these routes" --output-format json)
 echo "$result" | jq -r '.response' > openapi.json
 ```
 
@@ -230,52 +265,52 @@ echo "$result" | jq -r '.response' > openapi.json
 
 ```bash
 for file in src/*.py; do
-    echo "$file を分析中..."
-    result=$(cat "$file" | qwen -p "潜在的なバグを特定し、改善策を提案してください" --output-format json)
+    echo "Analyzing $file..."
+    result=$(cat "$file" | qwen -p "Find potential bugs and suggest improvements" --output-format json)
     echo "$result" | jq -r '.response' > "reports/$(basename "$file").analysis"
-    echo "$(basename "$file") の分析が完了しました" >> reports/progress.log
+    echo "Completed analysis for $(basename "$file")" >> reports/progress.log
 done
 ```
 
-### PR のコードレビュー
+### PR コードレビュー
 
 ```bash
-result=$(git diff origin/main...HEAD | qwen -p "これらの変更をバグ、セキュリティ問題、およびコード品質の観点からレビューしてください" --output-format json)
+result=$(git diff origin/main...HEAD | qwen -p "Review these changes for bugs, security issues, and code quality" --output-format json)
 echo "$result" | jq -r '.response' > pr-review.json
 ```
 
 ### ログ分析
 
 ```bash
-grep "ERROR" /var/log/app.log | tail -20 | qwen -p "これらのエラーを分析し、根本原因と修正方法を提案してください" > error-analysis.txt
+grep "ERROR" /var/log/app.log | tail -20 | qwen -p "Analyze these errors and suggest root cause and fixes" > error-analysis.txt
 ```
 
 ### リリースノートの生成
 
 ```bash
-result=$(git log --oneline v1.0.0..HEAD | qwen -p "これらのコミットからリリースノートを生成してください" --output-format json)
+result=$(git log --oneline v1.0.0..HEAD | qwen -p "Generate release notes from these commits" --output-format json)
 response=$(echo "$result" | jq -r '.response')
 echo "$response"
 echo "$response" >> CHANGELOG.md
 ```
 
-### モデルおよびツールの使用状況の追跡
+### モデルおよびツール使用状況の追跡
 
 ```bash
-result=$(qwen -p "このデータベーススキーマを説明してください" --include-directories db --output-format json)
+result=$(qwen -p "Explain this database schema" --include-directories db --output-format json)
 total_tokens=$(echo "$result" | jq -r '.stats.models // {} | to_entries | map(.value.tokens.total) | add // 0')
 models_used=$(echo "$result" | jq -r '.stats.models // {} | keys | join(", ") | if . == "" then "none" else . end')
 tool_calls=$(echo "$result" | jq -r '.stats.tools.totalCalls // 0')
 tools_used=$(echo "$result" | jq -r '.stats.tools.byName // {} | keys | join(", ") | if . == "" then "none" else . end')
-echo "$(date): $total_tokens トークン、$tool_calls 回のツール呼び出し ($tools_used)、使用モデル: $models_used" >> usage.log
+echo "$(date): $total_tokens tokens, $tool_calls tool calls ($tools_used) used with models: $models_used" >> usage.log
 echo "$result" | jq -r '.response' > schema-docs.md
-echo "最近の使用傾向:"
+echo "Recent usage trends:"
 tail -5 usage.log
 ```
 
 ## リソース
 
-- [CLI の設定](../configuration/settings#command-line-arguments) — 設定の完全ガイド
-- [認証](../configuration/settings#environment-variables-for-api-access) — 認証のセットアップ
-- [コマンド](../features/commands) — 対話型コマンドのリファレンス
-- [チュートリアル](../quickstart) — ステップ・バイ・ステップの自動化ガイド
+- [CLI 設定](../configuration/settings#command-line-arguments) - 完全な設定ガイド
+- [認証](../configuration/settings#environment-variables-for-api-access) - 認証の設定
+- [コマンド](../features/commands) - インタラクティブコマンドリファレンス
+- [チュートリアル](../quickstart) - ステップバイステップの自動化ガイド

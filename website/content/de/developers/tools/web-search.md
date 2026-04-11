@@ -1,30 +1,30 @@
-# Web-Suchtool (`web_search`)
+# Web-Such-Tool (`web_search`)
 
-Dieses Dokument beschreibt das Tool `web_search` zum Durchführen von Websuchen über mehrere Anbieter.
+Dieses Dokument beschreibt das `web_search`-Tool zum Durchführen von Websuchen mit mehreren Anbietern.
 
 ## Beschreibung
 
-Verwenden Sie `web_search`, um eine Websuche durchzuführen und Informationen aus dem Internet abzurufen. Das Tool unterstützt mehrere Suchanbieter und liefert – falls verfügbar – eine prägnante Antwort mit Quellenangaben.
+Verwende `web_search`, um eine Websuche durchzuführen und Informationen aus dem Internet abzurufen. Das Tool unterstützt mehrere Suchanbieter und gibt bei Verfügbarkeit eine präzise Antwort mit Quellenangaben zurück.
 
 ### Unterstützte Anbieter
 
-1. **DashScope** (offiziell, kostenlos) – Automatisch für Qwen-OAuth-Nutzer verfügbar (200 Anfragen/Minute, 1000 Anfragen/Tag)
-2. **Tavily** – Hochwertige Such-API mit integrierter Antwortgenerierung
+1. **DashScope** (Offiziell, Kostenlos) – Automatisch verfügbar für Qwen OAuth-Nutzer (200 Anfragen/Minute, 1000 Anfragen/Tag)
+2. **Tavily** – Hochwertige Search-API mit integrierter Antwortgenerierung
 3. **Google Custom Search** – Googles Custom Search JSON API
 
 ### Argumente
 
 `web_search` akzeptiert zwei Argumente:
 
-- `query` (Zeichenkette, erforderlich): Die Suchanfrage
-- `provider` (Zeichenkette, optional): Der zu verwendende spezifische Anbieter (`"dashscope"`, `"tavily"`, `"google"`)
+- `query` (string, erforderlich): Die Suchanfrage
+- `provider` (string, optional): Spezifischer zu verwendender Anbieter ("dashscope", "tavily", "google")
   - Falls nicht angegeben, wird der Standardanbieter aus der Konfiguration verwendet
 
 ## Konfiguration
 
-### Methode 1: Einstellungsdatei (empfohlen)
+### Methode 1: Einstellungsdatei (Empfohlen)
 
-Fügen Sie Ihrer `settings.json` folgenden Inhalt hinzu:
+Füge Folgendes zu deiner `settings.json` hinzu:
 
 ```json
 {
@@ -45,58 +45,56 @@ Fügen Sie Ihrer `settings.json` folgenden Inhalt hinzu:
 
 **Hinweise:**
 
-- DashScope benötigt keinen API-Schlüssel (offizieller, kostenloser Dienst).
-- **Qwen-OAuth-Benutzer:** DashScope wird automatisch zu Ihrer Anbieterliste hinzugefügt, auch wenn es nicht explizit konfiguriert ist.
-- Konfigurieren Sie zusätzliche Anbieter (Tavily, Google), falls Sie diese neben DashScope nutzen möchten.
-- Legen Sie `default` fest, um anzugeben, welcher Anbieter standardmäßig verwendet werden soll (wenn nicht festgelegt, gilt die Prioritätsreihenfolge: Tavily > Google > DashScope).
+- DashScope erfordert keinen API-Key (offizieller, kostenloser Service)
+- **Qwen OAuth-Nutzer:** DashScope wird automatisch zu deiner Anbieterliste hinzugefügt, auch wenn es nicht explizit konfiguriert ist
+- Konfiguriere zusätzliche Anbieter (Tavily, Google), wenn du sie parallel zu DashScope nutzen möchtest
+- Lege `default` fest, um den standardmäßig zu verwendenden Anbieter anzugeben (falls nicht gesetzt, gilt folgende Prioritätsreihenfolge: Tavily > Google > DashScope)
 
 ### Methode 2: Umgebungsvariablen
 
-Legen Sie die Umgebungsvariablen in Ihrer Shell oder in der Datei `.env` fest:
+Lege Umgebungsvariablen in deiner Shell oder `.env`-Datei fest:
 
 ```bash
-
 # Tavily
 export TAVILY_API_KEY="tvly-xxxxx"
 
 # Google
-export GOOGLE_API_KEY="Ihr-API-Schlüssel"
-export GOOGLE_SEARCH_ENGINE_ID="Ihre-Engine-ID"
+export GOOGLE_API_KEY="your-api-key"
+export GOOGLE_SEARCH_ENGINE_ID="your-engine-id"
 ```
 
 ### Methode 3: Befehlszeilenargumente
 
-Übergeben Sie API-Schlüssel beim Ausführen von Qwen Code:
+Übergib API-Keys beim Starten von Qwen Code:
 
 ```bash
-
 # Tavily
 qwen --tavily-api-key tvly-xxxxx
 
 # Google
-qwen --google-api-key Ihr-Schlüssel --google-search-engine-id Ihre-ID
+qwen --google-api-key your-key --google-search-engine-id your-id
 
-# Standardanbieter festlegen
+# Specify default provider
 qwen --web-search-default tavily
 ```
 
-### Abwärtskompatibilität (veraltet)
+### Abwärtskompatibilität (Veraltet)
 
-⚠️ **VERALTET:** Die veraltete Konfiguration `tavilyApiKey` wird aus Gründen der Abwärtskompatibilität weiterhin unterstützt, ist jedoch als veraltet gekennzeichnet:
+⚠️ **VERALTET:** Die Legacy-Konfiguration `tavilyApiKey` wird aus Gründen der Abwärtskompatibilität noch unterstützt, ist jedoch veraltet:
 
 ```json
 {
   "advanced": {
-    "tavilyApiKey": "tvly-xxxxx" // ⚠️ Veraltet
+    "tavilyApiKey": "tvly-xxxxx" // ⚠️ Deprecated
   }
 }
 ```
 
-**Wichtig:** Diese Konfiguration ist veraltet und wird in einer zukünftigen Version entfernt. Bitte migrieren Sie zur neuen `webSearch`-Konfigurationsstruktur, wie oben gezeigt. Die alte Konfiguration konfiguriert automatisch Tavily als Anbieter, wir empfehlen jedoch dringend, Ihre Konfiguration zu aktualisieren.
+**Wichtig:** Diese Konfiguration ist veraltet und wird in einer zukünftigen Version entfernt. Bitte migriere zum neuen `webSearch`-Konfigurationsformat, das oben gezeigt wird. Die alte Konfiguration richtet Tavily automatisch als Anbieter ein, wir empfehlen jedoch dringend, deine Konfiguration zu aktualisieren.
 
 ## Deaktivieren der Websuche
 
-Wenn Sie die Websuchfunktion deaktivieren möchten, können Sie das Tool `web_search` in Ihrer Datei `settings.json` ausschließen:
+Wenn du die Websuchfunktion deaktivieren möchtest, kannst du das `web_search`-Tool in deiner `settings.json` ausschließen:
 
 ```json
 {
@@ -106,83 +104,83 @@ Wenn Sie die Websuchfunktion deaktivieren möchten, können Sie das Tool `web_se
 }
 ```
 
-**Hinweis:** Diese Einstellung erfordert einen Neustart von Qwen Code, um wirksam zu werden. Sobald sie deaktiviert ist, steht das Tool `web_search` dem Modell nicht mehr zur Verfügung – selbst dann nicht, wenn Web-Suchanbieter konfiguriert sind.
+**Hinweis:** Diese Einstellung erfordert einen Neustart von Qwen Code, um wirksam zu werden. Nach der Deaktivierung steht das `web_search`-Tool dem Modell nicht mehr zur Verfügung, selbst wenn Websuchanbieter konfiguriert sind.
 
-## Verwendungsbeispiele
+## Anwendungsbeispiele
 
-### Grundlegende Suche (mit Standardanbieter)
-
-```
-web_search(query="neueste Fortschritte in der KI")
-```
-
-### Suche mit einem bestimmten Anbieter
+### Grundlegende Suche (unter Verwendung des Standardanbieters)
 
 ```
-web_search(query="neueste Fortschritte in der KI", provider="tavily")
+web_search(query="latest advancements in AI")
+```
+
+### Suche mit spezifischem Anbieter
+
+```
+web_search(query="latest advancements in AI", provider="tavily")
 ```
 
 ### Praxisbeispiele
 
 ```
-web_search(query="Wetter in San Francisco heute")
-web_search(query="neueste Node.js-LTS-Version", provider="google")
-web_search(query="Best Practices für React 19", provider="dashscope")
+web_search(query="weather in San Francisco today")
+web_search(query="latest Node.js LTS version", provider="google")
+web_search(query="best practices for React 19", provider="dashscope")
 ```
 
-## Details zu den Anbietern
+## Anbieterdetails
 
-### DashScope (offiziell)
+### DashScope (Offiziell)
 
-- **Kosten:** Kostenlos  
-- **Authentifizierung:** Automatisch verfügbar, wenn Sie die Qwen-OAuth-Authentifizierung verwenden  
-- **Konfiguration:** Kein API-Schlüssel erforderlich; wird automatisch zur Anbieterliste für Qwen-OAuth-Nutzer hinzugefügt  
-- **Kontingent:** 200 Anfragen/Minute, 1000 Anfragen/Tag  
-- **Ideal für:** Allgemeine Abfragen; immer als Fallback für Qwen-OAuth-Nutzer verfügbar  
-- **Automatische Registrierung:** Wenn Sie Qwen OAuth verwenden, wird DashScope automatisch zu Ihrer Anbieterliste hinzugefügt – auch ohne explizite Konfiguration  
+- **Kosten:** Kostenlos
+- **Authentifizierung:** Automatisch verfügbar bei Verwendung der Qwen OAuth-Authentifizierung
+- **Konfiguration:** Kein API-Key erforderlich, wird automatisch zur Anbieterliste für Qwen OAuth-Nutzer hinzugefügt
+- **Kontingent:** 200 Anfragen/Minute, 1000 Anfragen/Tag
+- **Am besten geeignet für:** Allgemeine Anfragen, immer als Fallback für Qwen OAuth-Nutzer verfügbar
+- **Automatische Registrierung:** Wenn du Qwen OAuth verwendest, wird DashScope automatisch zu deiner Anbieterliste hinzugefügt, auch wenn du es nicht explizit konfigurierst
 
 ### Tavily
 
-- **Kosten:** Erfordert einen API-Schlüssel (kostenpflichtiger Dienst mit kostenlosem Basis-Tarif)  
-- **Registrierung:** https://tavily.com  
-- **Funktionen:** Hochwertige Ergebnisse mit von KI generierten Antworten  
-- **Ideal für:** Recherchen, umfassende Antworten mit Quellenangaben
+- **Kosten:** Erfordert API-Key (kostenpflichtiger Service mit kostenlosem Kontingent)
+- **Registrierung:** https://tavily.com
+- **Funktionen:** Hochwertige Ergebnisse mit KI-generierter Antwort
+- **Am besten geeignet für:** Recherche, umfassende Antworten mit Quellenangaben
 
 ### Google Custom Search
 
-- **Kosten:** Kostenlose Stufe verfügbar (100 Abfragen/Tag)
+- **Kosten:** Kostenloses Kontingent verfügbar (100 Anfragen/Tag)
 - **Einrichtung:**
-  1. Aktivieren Sie die Custom Search-API in der Google Cloud Console.
-  2. Erstellen Sie eine Custom Search Engine unter https://programmablesearchengine.google.com.
-- **Funktionen:** Die Suchqualität von Google
-- **Am besten geeignet für:** Spezifische, sachliche Abfragen
+  1. Aktiviere die Custom Search API in der Google Cloud Console
+  2. Erstelle eine Custom Search Engine unter https://programmablesearchengine.google.com
+- **Funktionen:** Googles Suchqualität
+- **Am besten geeignet für:** Spezifische, faktenbasierte Anfragen
 
 ## Wichtige Hinweise
 
-- **Antwortformat:** Gibt eine prägnante Antwort mit nummerierten Quellenangaben zurück.
-- **Quellenangaben:** Quelllinks werden als nummerierte Liste angehängt: [1], [2] usw.
-- **Mehrere Anbieter:** Falls ein Anbieter fehlschlägt, geben Sie manuell einen anderen über den Parameter `provider` an.
-- **DashScope-Verfügbarkeit:** Für Qwen-OAuth-Benutzer automatisch verfügbar – keine Konfiguration erforderlich.
-- **Auswahl des Standardanbieters:** Das System wählt automatisch einen Standardanbieter basierend auf Verfügbarkeit aus:
-  1. Ihre explizite `default`-Konfiguration (höchste Priorität)
+- **Antwortformat:** Gibt eine präzise Antwort mit nummerierten Quellenangaben zurück
+- **Quellenangaben:** Quell-Links werden als nummerierte Liste angehängt: [1], [2] usw.
+- **Mehrere Anbieter:** Falls ein Anbieter fehlschlägt, gib manuell einen anderen über den `provider`-Parameter an
+- **DashScope-Verfügbarkeit:** Automatisch verfügbar für Qwen OAuth-Nutzer, keine Konfiguration erforderlich
+- **Auswahl des Standardanbieters:** Das System wählt automatisch einen Standardanbieter basierend auf der Verfügbarkeit aus:
+  1. Deine explizite `default`-Konfiguration (höchste Priorität)
   2. CLI-Argument `--web-search-default`
-  3. Erster verfügbare Anbieter nach Priorität: Tavily > Google > DashScope
+  3. Erster verfügbarer Anbieter nach Priorität: Tavily > Google > DashScope
 
-## Problembehandlung
+## Fehlerbehebung
 
 **Tool nicht verfügbar?**
 
-- **Für Qwen-OAuth-Benutzer:** Das Tool wird automatisch beim DashScope-Anbieter registriert; keine Konfiguration erforderlich.
-- **Für andere Authentifizierungstypen:** Stellen Sie sicher, dass mindestens ein Anbieter (Tavily oder Google) konfiguriert ist.
-- Für Tavily/Google: Überprüfen Sie, ob Ihre API-Schlüssel korrekt sind.
+- **Für Qwen OAuth-Nutzer:** Das Tool wird automatisch mit dem DashScope-Anbieter registriert, keine Konfiguration erforderlich
+- **Für andere Authentifizierungstypen:** Stelle sicher, dass mindestens ein Anbieter (Tavily oder Google) konfiguriert ist
+- Für Tavily/Google: Überprüfe, ob deine API-Keys korrekt sind
 
 **Anbieterspezifische Fehler?**
 
-- Verwenden Sie den Parameter `provider`, um einen anderen Suchanbieter auszuprobieren.
-- Prüfen Sie Ihre API-Kontingente und Rate-Limits.
-- Stellen Sie sicher, dass die API-Schlüssel ordnungsgemäß in der Konfiguration gesetzt sind.
+- Verwende den `provider`-Parameter, um einen anderen Suchanbieter zu testen
+- Überprüfe deine API-Kontingente und Ratenlimits
+- Stelle sicher, dass die API-Keys korrekt in der Konfiguration hinterlegt sind
 
-**Brauchen Sie Hilfe?**
+**Brauchst du Hilfe?**
 
-- Überprüfen Sie Ihre Konfiguration: Führen Sie `qwen` aus und verwenden Sie den Einstellungsdialog.
-- Zeigen Sie Ihre aktuellen Einstellungen in `~/.qwen-code/settings.json` (macOS/Linux) oder `%USERPROFILE%\.qwen-code\settings.json` (Windows) an.
+- Überprüfe deine Konfiguration: Führe `qwen` aus und verwende den Einstellungsdialog
+- Zeige deine aktuellen Einstellungen in `~/.qwen-code/settings.json` (macOS/Linux) oder `%USERPROFILE%\.qwen-code\settings.json` (Windows) an

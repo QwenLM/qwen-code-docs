@@ -1,20 +1,20 @@
-# 快速入门
+# 快速开始
 
 > 👏 欢迎使用 Qwen Code！
 
-本快速入门指南将帮助你在几分钟内开始使用 AI 驱动的编程辅助功能。完成本指南后，你将掌握如何在常见开发任务中使用 Qwen Code。
+本快速入门指南将帮助你在几分钟内上手 AI 编程辅助功能。阅读完毕后，你将了解如何使用 Qwen Code 完成常见的开发任务。
 
-## 开始前准备
+## 开始之前
 
 请确保你已具备以下条件：
 
-- 已打开一个**终端**或命令提示符
-- 有一个可供操作的代码项目
-- 拥有一个 [Qwen Code](https://chat.qwen.ai/auth?mode=register) 账户
+- 已打开**终端**或命令提示符
+- 一个可供操作的代码项目
+- 一个 [Qwen Code](https://chat.qwen.ai/auth?mode=register) 账号
 
 ## 步骤 1：安装 Qwen Code
 
-可通过以下任一方式安装 Qwen Code：
+请使用以下任一方法安装 Qwen Code：
 
 ### 快速安装（推荐）
 
@@ -32,13 +32,13 @@ curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.a
 
 > [!note]
 >
-> 建议安装完成后重启终端，以确保环境变量生效。
+> 安装完成后建议重启终端，以确保环境变量生效。
 
 ### 手动安装
 
-**前提条件**
+**前置条件**
 
-请确保已安装 Node.js 20 或更高版本。可从 [nodejs.org](https://nodejs.org/zh-cn/download/) 下载。
+请确保已安装 Node.js 20 或更高版本。可从 [nodejs.org](https://nodejs.org/en/download) 下载。
 
 **NPM**
 
@@ -46,225 +46,228 @@ curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.a
 npm install -g @qwen-code/qwen-code@latest
 ```
 
-**Homebrew（macOS、Linux）**
+**Homebrew（macOS, Linux）**
 
 ```bash
 brew install qwen-code
 ```
 
-## 第二步：登录你的账号
+## 步骤 2：登录账号
 
-Qwen Code 需要账号才能使用。首次运行 `qwen` 命令启动交互式会话时，系统将提示你登录：
+使用 Qwen Code 需要登录账号。当你使用 `qwen` 命令启动交互式会话时，系统会提示你登录：
 
 ```bash
-
-# 首次使用时会提示登录
+# You'll be prompted to log in on first use
 qwen
 ```
 
-# 按照提示使用您的账户登录  
+```bash
+# Follow the prompts to log in with your account
+/auth
+```
 
- `/auth`，选择 `Qwen OAuth`，登录您的账户并按提示完成确认。登录成功后，您的凭据将被保存，后续无需重复登录。
+选择 `Qwen OAuth`，登录你的账号并按提示确认。登录成功后，凭证将被保存，后续无需重复登录。
 
 > [!note]
 >
-> 首次使用 Qwen Code 通过 Qwen 账户完成身份验证时，系统会自动为您创建一个名为 `.qwen` 的工作区。该工作区可集中跟踪和管理您所在组织内所有 Qwen Code 的使用成本。
+> 首次使用 Qwen 账号对 Qwen Code 进行身份验证时，系统会自动为你创建一个名为 `.qwen` 的工作区。该工作区为你的组织提供所有 Qwen Code 使用情况的集中成本跟踪与管理。
 
 > [!tip]
 >
-> 如需重新登录或切换账户，请在 Qwen Code 中执行 `/auth` 命令。
+> 你也可以在不启动会话的情况下，直接在终端运行 `qwen auth` 来配置身份验证。随时使用 `qwen auth status` 检查当前配置。详情请参阅[身份验证](./configuration/auth)页面。
 
-## 第三步：启动您的首个会话  
+## 步骤 3：开始首次会话
 
-在任意项目目录中打开终端，并启动 Qwen Code：
+在任意项目目录中打开终端并启动 Qwen Code：
 
 ```bash
-# （可选）进入项目目录
+# optiona
 cd /path/to/your/project
-
-# 启动 Qwen
+# start qwen
 qwen
 ```
 
-您将看到 Qwen Code 的欢迎界面，其中包含当前会话信息、最近的对话记录以及最新更新。输入 `/help` 可查看所有可用命令。
+你将看到 Qwen Code 欢迎界面，其中包含会话信息、近期对话和最新更新。输入 `/help` 查看可用命令。
 
-## 与 Qwen Code 聊天
+## 与 Qwen Code 对话
 
 ### 提出你的第一个问题
 
-Qwen Code 将分析你的文件并提供摘要。你也可以提出更具体的问题：
+Qwen Code 会分析你的文件并提供摘要。你也可以提出更具体的问题：
 
 ```
-解释该文件夹的结构
+explain the folder structure
 ```
 
-你还可以向 Qwen Code 询问其自身能力：
+你还可以询问 Qwen Code 关于其自身能力的问题：
 
 ```
-Qwen Code 能做什么？
+what can Qwen Code do?
 ```
 
 > [!note]
 >
-> Qwen Code 仅在需要时读取你的文件——你无需手动添加上下文。此外，Qwen Code 可访问其自身文档，因此能回答有关其功能和能力的问题。
+> Qwen Code 会按需读取你的文件，无需手动添加上下文。Qwen Code 还可以访问其自身文档，能够回答关于其功能和能力的问题。
 
-### 进行你的首次代码修改
+### 进行首次代码修改
 
-现在让我们让 Qwen Code 真正编写一些代码。尝试一个简单任务：
+现在让 Qwen Code 进行实际的编码工作。尝试一个简单的任务：
 
 ```
-在主文件中添加一个 hello world 函数
+add a hello world function to the main file
 ```
 
-Qwen Code 将执行以下操作：
+Qwen Code 将会：
 
-1. 找到合适的文件  
-2. 向你展示拟议的更改  
-3. 请求你的批准  
-4. 执行编辑  
+1. 找到合适的文件
+2. 向你展示建议的修改
+3. 请求你的批准
+4. 执行修改
 
 > [!note]
 >
-> Qwen Code 在修改任何文件前总会请求你的许可。你可以逐项批准更改，或在当前会话中启用“全部接受”模式。
+> Qwen Code 在修改文件前始终会请求许可。你可以逐个批准修改，或在会话中启用“全部接受”模式。
 
-### 使用 Git 与 Qwen Code 协作
+### 结合 Qwen Code 使用 Git
 
-Qwen Code 让 Git 操作变得像对话一样自然：
-
-```
-我修改了哪些文件？
-```
+Qwen Code 让 Git 操作可以通过对话完成：
 
 ```
-用一条描述性消息提交我的更改
-```
-
-你还可以提示执行更复杂的 Git 操作：
-
-```
-创建一个名为 feature/quickstart 的新分支
+what files have I changed?
 ```
 
 ```
-显示最近的 5 次提交记录
+commit my changes with a descriptive message
+```
+
+你也可以提示它执行更复杂的 Git 操作：
+
+```
+create a new branch called feature/quickstart
 ```
 
 ```
-帮我解决合并冲突
+show me the last 5 commits
+```
+
+```
+help me resolve merge conflicts
 ```
 
 ### 修复 Bug 或添加功能
 
-Qwen Code 擅长调试和实现新功能。
+Qwen Code 擅长调试和功能实现。
 
-用自然语言描述你的需求：
+使用自然语言描述你的需求：
 
 ```
-为用户注册表单添加输入验证
+add input validation to the user registration form
 ```
 
 或修复现有问题：
 
 ```
-当前存在一个 Bug：用户可以提交空表单——请修复它
+there's a bug where users can submit empty forms - fix it
 ```
 
 Qwen Code 将会：
 
-- 定位相关代码  
-- 理解上下文  
-- 实现解决方案  
-- 如有可用测试，则运行测试
+- 定位相关代码
+- 理解上下文
+- 实现解决方案
+- 运行可用测试
 
 ### 尝试其他常见工作流
 
-使用 Qwen Code 有多种方式：
+你可以通过多种方式与 Qwen Code 协作：
 
 **重构代码**
 
 ```
-将认证模块重构为使用 async/await，而非回调函数
+refactor the authentication module to use async/await instead of callbacks
 ```
 
 **编写测试**
 
 ```
-为计算器函数编写单元测试
+write unit tests for the calculator functions
 ```
 
 **更新文档**
 
 ```
-在 README 中添加安装说明
+update the README with installation instructions
 ```
 
 **代码审查**
 
 ```
-审查我的修改并提出改进建议
+review my changes and suggest improvements
 ```
 
 > [!tip]
 >
-> **请记住**：Qwen Code 是你的 AI 结对编程伙伴。像与一位乐于助人的同事交流一样与它对话——描述你希望达成的目标，它会助你实现。
+> **记住**：Qwen Code 是你的 AI 结对编程伙伴。像与乐于助人的同事交流那样与它对话——描述你想要实现的目标，它会协助你达成。
 
-## 必备命令
+## 常用命令
 
-以下是日常使用中最重要的一些命令：
+以下是日常使用中最常用的命令：
 
-| 命令                 | 功能说明                                         | 示例                           |
+| 命令 | 功能说明 | 示例 |
 | --------------------- | ------------------------------------------------ | ----------------------------- |
-| `qwen`                | 启动 Qwen Code                                   | `qwen`                        |
-| `/auth`               | 更改认证方式                                     | `/auth`                       |
-| `/help`               | 显示可用命令的帮助信息                           | `/help` 或 `/?`               |
-| `/compress`           | 用摘要替换聊天历史以节省 Token                   | `/compress`                   |
-| `/clear`              | 清空终端屏幕内容                                 | `/clear`（快捷键：`Ctrl+L`）  |
-| `/theme`              | 更改 Qwen Code 的视觉主题                        | `/theme`                      |
-| `/language`           | 查看或更改语言设置                               | `/language`                   |
-| → `ui [language]`     | 设置用户界面语言                                 | `/language ui zh-CN`          |
-| → `output [language]` | 设置大语言模型（LLM）输出语言                    | `/language output Chinese`    |
-| `/quit`               | 立即退出 Qwen Code                               | `/quit` 或 `/exit`            |
+| `qwen` | 启动 Qwen Code | `qwen` |
+| `/auth` | 更改身份验证方式（会话内） | `/auth` |
+| `qwen auth` | 从终端配置身份验证 | `qwen auth` |
+| `qwen auth status` | 检查当前身份验证状态 | `qwen auth status` |
+| `/help` | 显示可用命令的帮助信息 | `/help` 或 `/?` |
+| `/compress` | 用摘要替换聊天记录以节省 Token | `/compress` |
+| `/clear` | 清除终端屏幕内容 | `/clear`（快捷键：`Ctrl+L`） |
+| `/theme` | 更改 Qwen Code 视觉主题 | `/theme` |
+| `/language` | 查看或更改语言设置 | `/language` |
+| → `ui [language]` | 设置 UI 界面语言 | `/language ui zh-CN` |
+| → `output [language]` | 设置 LLM 输出语言 | `/language output Chinese` |
+| `/quit` | 立即退出 Qwen Code | `/quit` 或 `/exit` |
 
-完整命令列表请参阅 [CLI 参考文档](./features/commands)。
+完整命令列表请参阅 [CLI 参考](./features/commands)。
 
-## 新手实用技巧
+## 新手进阶技巧
 
-**请求要具体明确**
+**请求尽量具体明确**
 
-- 不要这样写：“修复这个 bug”
-- 而应这样写：“修复登录功能的 bug：用户输入错误凭据后显示空白页面”
+- 不要说：“修复 bug”
+- 尝试说：“修复登录 bug，该 bug 会导致用户在输入错误凭证后看到空白屏幕”
 
 **使用分步指令**
 
-- 将复杂任务拆解为多个步骤：
+- 将复杂任务拆分为步骤：
 
 ```
-1. 为用户档案创建一张新的数据库表
-2. 创建一个用于获取和更新用户档案的 API 接口
-3. 构建一个网页，允许用户查看并编辑自己的信息
+1. create a new database table for user profiles
+2. create an API endpoint to get and update user profiles
+3. build a webpage that allows users to see and edit their information
 ```
 
-**先让 Qwen Code 自主探索**
+**让 Qwen Code 先探索代码**
 
-- 在做出修改前，先让 Qwen Code 理解你的代码：
-
-```
-分析数据库结构
-```
+- 在修改前，先让 Qwen Code 理解你的代码：
 
 ```
-构建一个仪表板，展示被英国客户退货最频繁的商品
+analyze the database schema
+```
+
+```
+build a dashboard showing products that are most frequently returned by our UK customers
 ```
 
 **使用快捷键节省时间**
 
-- 按 `?` 键查看所有可用的键盘快捷键
+- 按 `?` 查看所有可用键盘快捷键
 - 使用 Tab 键自动补全命令
-- 按 ↑ 键调出历史命令
+- 按 ↑ 键查看命令历史
 - 输入 `/` 查看所有斜杠命令
 
 ## 获取帮助
 
-- **在 Qwen Code 中**：输入 `/help` 或提问“我该如何……”
-- **文档**：您当前就在文档中！请浏览其他指南
-- **社区**：加入我们的 [GitHub 讨论区](https://github.com/QwenLM/qwen-code/discussions)，获取使用技巧与支持
+- **在 Qwen Code 中**：输入 `/help` 或询问“如何...”
+- **文档**：你正在阅读！浏览其他指南
+- **社区**：加入我们的 [GitHub Discussion](https://github.com/QwenLM/qwen-code/discussions) 获取技巧与支持

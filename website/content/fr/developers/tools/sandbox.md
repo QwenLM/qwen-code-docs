@@ -1,97 +1,91 @@
-## Personnalisation de l’environnement sandbox (Docker/Podman)
+## Personnalisation de l'environnement sandbox (Docker/Podman)
 
-### Actuellement, le projet ne prend pas en charge l’utilisation de la fonction `BUILD_SANDBOX` après l’installation via le package npm
+### Actuellement, le projet ne prend pas en charge l'utilisation de la fonction `BUILD_SANDBOX` après une installation via le package npm
 
-1. Pour construire un environnement sandbox personnalisé, vous devez accéder aux scripts de construction (`scripts/build_sandbox.js`) dans le dépôt source.
-2. Ces scripts de construction ne sont pas inclus dans les packages publiés sur npm.
-3. Le code contient des vérifications de chemin codées en dur qui rejettent explicitement les demandes de construction provenant d’environnements autres que l’environnement source.
+1. Pour construire un sandbox personnalisé, vous devez accéder aux scripts de build (`scripts/build_sandbox.js`) dans le dépôt du code source.
+2. Ces scripts de build ne sont pas inclus dans les packages publiés sur npm.
+3. Le code contient des vérifications de chemins en dur qui rejettent explicitement les requêtes de build provenant d'environnements autres que le code source.
 
-Si vous avez besoin d’outils supplémentaires à l’intérieur du conteneur (par exemple `git`, `python`, `rg`), créez un fichier Dockerfile personnalisé. L’opération spécifique est la suivante :
+Si vous avez besoin d'outils supplémentaires dans le conteneur (par ex. `git`, `python`, `rg`), créez un Dockerfile personnalisé. La procédure est la suivante :
 
-#### 1. Clonez d’abord le projet Qwen Code à l’adresse https://github.com/QwenLM/qwen-code.git
+#### 1. Clonez d'abord le projet qwen-code : https://github.com/QwenLM/qwen-code.git
 
-#### 2. Assurez-vous d’exécuter les opérations suivantes depuis le répertoire racine du dépôt source
+#### 2. Assurez-vous d'exécuter les opérations suivantes dans le répertoire du dépôt du code source
 
 ```bash
-
-# 1. Installez d’abord les dépendances du projet
+# 1. First, install the dependencies of the project
 npm install
 
-# 2. Construisez le projet Qwen Code
+# 2. Build the Qwen Code project
 npm run build
 
-# 3. Vérifiez que le répertoire `dist` a bien été généré  
+# 3. Verify that the dist directory has been generated
 ls -la packages/cli/dist/
 
-# 4. Créez un lien global depuis le répertoire du package CLI  
-cd packages/cli  
-npm link  
+# 4. Create a global link in the CLI package directory
+cd packages/cli
+npm link
 
-# 5. Vérifiez le lien (il doit désormais pointer vers le code source)  
-which qwen  
+# 5. Verification link (it should now point to the source code)
+which qwen
+# Expected output: /xxx/xxx/.nvm/versions/node/v24.11.1/bin/qwen
+# Or similar paths, but it should be a symbolic link
 
-# Résultat attendu : `/xxx/xxx/.nvm/versions/node/v24.11.1/bin/qwen`  
+# 6. For details of the symbolic link, you can see the specific source code path
+ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code
+# It should show that this is a symbolic link pointing to your source code directory
 
-# Ou un chemin similaire, mais il doit s’agir d’un lien symbolique  
+# 7.Test the version of qwen
+qwen -v
+# npm link will overwrite the global qwen. To avoid being unable to distinguish the same version number, you can uninstall the global CLI first
 
-# 6. Pour plus de détails sur le lien symbolique, affichez le chemin exact du code source  
-ls -la $(dirname $(which qwen))/../lib/node_modules/@qwen-code/qwen-code  
+```
 
-# Cela doit indiquer qu’il s’agit d’un lien symbolique pointant vers votre répertoire source  
-
-# 7. Testez la version de `qwen`  
-qwen -v  
-
-# `npm link` écrasera la version globale de `qwen`. Pour éviter toute confusion avec un numéro de version identique, vous pouvez désinstaller au préalable la CLI globale
-
-#### 3. Créez votre fichier Dockerfile pour le bac à sable dans le répertoire racine de votre projet
+#### 3. Créez votre Dockerfile sandbox dans le répertoire racine de votre projet
 
 - Chemin : `.qwen/sandbox.Dockerfile`
 
-- Adresse de l’image officielle sur le registre : https://github.com/QwenLM/qwen-code/pkgs/container/qwen-code
+- Adresse de l'image officielle : https://github.com/QwenLM/qwen-code/pkgs/container/qwen-code
 
 ```bash
-# Basé sur l’image officielle du bac à sable Qwen (il est recommandé de spécifier explicitement la version)
+# Based on the official Qwen sandbox image (It is recommended to explicitly specify the version)
 FROM ghcr.io/qwenlm/qwen-code:sha-570ec43
-
-# Ajoutez ici vos outils supplémentaires
+# Add your extra tools here
 RUN apt-get update && apt-get install -y \
     git \
     python3 \
     ripgrep
 ```
 
-#### 4. Créez la première image de bac à sable dans le répertoire racine de votre projet
+#### 4. Créez la première image sandbox dans le répertoire racine de votre projet
 
 ```bash
 QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
-
-# Vérifiez si la version de l’outil lancé en mode bac à sable correspond bien à celle de votre image personnalisée. Si les versions concordent, le démarrage réussit.
+# Observe whether the sandbox version of the tool you launched is consistent with the version of your custom image. If they are consistent, the startup will be successful
 ```
 
-Cette commande crée une image spécifique au projet, basée sur l’image par défaut du bac à sable.
+Cela génère une image spécifique au projet basée sur l'image sandbox par défaut.
 
 #### Supprimer le lien npm
 
-- Si vous souhaitez restaurer l’interface CLI officielle de `qwen`, supprimez le lien npm.  
+- Si vous souhaitez restaurer le CLI officiel de qwen, supprimez le lien npm
 
 ```bash
+# Method 1: Unlink globally
+npm unlink -g @qwen-code/qwen-code
 
-# Méthode 1 : Désassocier globalement  
-npm unlink -g @qwen-code/qwen-code  
+# Method 2: Remove it in the packages/cli directory
+cd packages/cli
+npm unlink
 
-# Méthode 2 : Supprimer l’association depuis le répertoire `packages/cli`  
-cd packages/cli  
-npm unlink  
+# Verification has been lifted
+which qwen
+# It should display "qwen not found"
 
-# Vérification que la désassociation a bien eu lieu  
-which qwen  
+# Reinstall the global version if necessary
+npm install -g @qwen-code/qwen-code
 
-# Doit afficher « qwen introuvable »  
-
-# Réinstaller la version globale si nécessaire  
-npm install -g @qwen-code/qwen-code  
-
-# Vérification de la restauration  
-which qwen  
+# Verification Recovery
+which qwen
 qwen --version
+```

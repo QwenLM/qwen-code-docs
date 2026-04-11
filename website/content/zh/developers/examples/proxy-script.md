@@ -1,6 +1,6 @@
-# 示例代理脚本
+# 代理脚本示例
 
-以下是一个代理脚本示例，可用于 `QWEN_SANDBOX_PROXY_COMMAND` 环境变量。该脚本仅允许对 `example.com:443` 的 HTTPS 连接，拒绝所有其他请求。
+以下是一个可与 `QWEN_SANDBOX_PROXY_COMMAND` 环境变量配合使用的代理脚本示例。该脚本仅允许与 `example.com:443` 建立 `HTTPS` 连接，并拒绝所有其他请求。
 
 ```javascript
 #!/usr/bin/env node
@@ -11,9 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// 示例代理服务器，监听 :::8877，且仅允许对 example.com 的 HTTPS 连接。
-// 设置 `QWEN_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js` 可在沙箱旁运行该代理。
-// 在沙箱内（shell 模式下或通过 shell 工具）执行 `curl https://example.com` 进行测试。
+// Example proxy server that listens on :::8877 and only allows HTTPS connections to example.com.
+// Set `QWEN_SANDBOX_PROXY_COMMAND=scripts/example-proxy.js` to run proxy alongside sandbox
+// Test via `curl https://example.com` inside sandbox (in shell mode or via shell tool)
 
 import http from 'node:http';
 import net from 'node:net';
@@ -25,57 +25,57 @@ const ALLOWED_DOMAINS = ['example.com', 'googleapis.com'];
 const ALLOWED_PORT = '443';
 
 const server = http.createServer((req, res) => {
-  // 拒绝除 CONNECT 方法外的所有请求（仅 CONNECT 用于 HTTPS）
+  // Deny all requests other than CONNECT for HTTPS
   console.log(
-    `[PROXY] 拒绝非 CONNECT 请求：${req.method} ${req.url}`,
+    `[PROXY] Denying non-CONNECT request for: ${req.method} ${req.url}`,
   );
   res.writeHead(405, { 'Content-Type': 'text/plain' });
-  res.end('方法不被允许');
+  res.end('Method Not Allowed');
 });
 
 server.on('connect', (req, clientSocket, head) => {
-  // 对于 CONNECT 请求，req.url 格式为 "hostname:port"。
+  // req.url will be in the format "hostname:port" for a CONNECT request.
   const { port, hostname } = new URL(`http://${req.url}`);
 
-  console.log(`[PROXY] 拦截到 CONNECT 请求：${hostname}:${port}`);
+  console.log(`[PROXY] Intercepted CONNECT request for: ${hostname}:${port}`);
 
   if (
     ALLOWED_DOMAINS.some(
-      (domain) => hostname === domain || hostname.endsWith(`.${domain}`),
+      (domain) => hostname == domain || hostname.endsWith(`.${domain}`),
     ) &&
     port === ALLOWED_PORT
   ) {
-    console.log(`[PROXY] 允许连接至 ${hostname}:${port}`);
+    console.log(`[PROXY] Allowing connection to ${hostname}:${port}`);
 
-    // 建立到原始目标的 TCP 连接。
+    // Establish a TCP connection to the original destination.
     const serverSocket = net.connect(port, hostname, () => {
       clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-      // 通过在客户端与目标服务器之间双向管道传输数据，建立隧道。
+      // Create a tunnel by piping data between the client and the destination server.
       serverSocket.write(head);
       serverSocket.pipe(clientSocket);
       clientSocket.pipe(serverSocket);
     });
 
     serverSocket.on('error', (err) => {
-      console.error(`[PROXY] 连接到目标时出错：${err.message}`);
+      console.error(`[PROXY] Error connecting to destination: ${err.message}`);
       clientSocket.end(`HTTP/1.1 502 Bad Gateway\r\n\r\n`);
     });
   } else {
-    console.log(`[PROXY] 拒绝连接至 ${hostname}:${port}`);
+    console.log(`[PROXY] Denying connection to ${hostname}:${port}`);
     clientSocket.end('HTTP/1.1 403 Forbidden\r\n\r\n');
   }
 
   clientSocket.on('error', (err) => {
-    // 客户端意外断开连接时可能发生此情况。
-    console.error(`[PROXY] 客户端套接字错误：${err.message}`);
+    // This can happen if the client hangs up.
+    console.error(`[PROXY] Client socket error: ${err.message}`);
   });
 });
 
 server.listen(PROXY_PORT, () => {
   const address = server.address();
-  console.log(`[PROXY] 代理正在监听 ${address.address}:${address.port}`);
+  console.log(`[PROXY] Proxy listening on ${address.address}:${address.port}`);
   console.log(
-    `[PROXY] 允许对以下域名的 HTTPS 连接：${ALLOWED_DOMAINS.join(', ')}`,
+    `[PROXY] Allowing HTTPS connections to domains: ${ALLOWED_DOMAINS.join(', ')}`,
   );
 });
 ```

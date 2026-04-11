@@ -1,149 +1,149 @@
-# 退出计划模式工具（`exit_plan_mode`）
+# 退出计划模式工具 (`exit_plan_mode`)
 
-本文档介绍 Qwen Code 中的 `exit_plan_mode` 工具。
+本文档介绍了 Qwen Code 的 `exit_plan_mode` 工具。
 
 ## 描述
 
-当你处于计划模式且已完成实施计划的陈述时，请使用 `exit_plan_mode`。该工具会提示用户批准或拒绝该计划，并将当前模式从计划模式切换至实施模式。
+当处于计划模式且已完成实现方案的展示时，请使用 `exit_plan_mode`。该工具会提示用户批准或拒绝方案，并从计划模式切换到实现模式。
 
-该工具专为需要在编写代码前规划实施步骤的任务而设计。**不应用于**研究类或信息搜集类任务。
+该工具专为需要在编写代码前规划实现步骤的任务而设计。不应将其用于研究或信息收集任务。
 
 ### 参数
 
 `exit_plan_mode` 接受一个参数：
 
-- `plan`（字符串，必需）：你希望向用户提交以供批准的实施计划。该计划应简洁明了，并采用 Markdown 格式，清晰描述各项实施步骤。
+- `plan`（字符串，必填）：你希望提交给用户审批的实现方案。这应是一份简洁的、采用 Markdown 格式的方案，用于描述具体的实现步骤。
 
 ## 如何在 Qwen Code 中使用 `exit_plan_mode`
 
-退出计划模式（Exit Plan Mode）工具是 Qwen Code 规划工作流的一部分。当你处于计划模式时（通常是在探索代码库并设计好实现方案之后），可使用该工具来：
+退出计划模式工具是 Qwen Code 规划工作流的一部分。当你处于计划模式时（通常在探索代码库并设计实现方案之后），你可以使用此工具来：
 
-1. 向用户展示你的实现方案  
-2. 请求用户批准以开始实施  
-3. 根据用户的响应，从计划模式切换至实施模式  
+1. 向用户展示你的实现方案
+2. 请求批准以继续实现
+3. 根据用户的响应，从计划模式切换到实现模式
 
-该工具会向用户呈现你的方案，并提供以下选项：
+该工具会向用户展示你的方案，并提供以下选项：
 
-- **仅本次执行**：仅批准本次会话中的方案  
-- **始终执行**：批准当前方案，并为后续所有编辑操作启用自动批准  
-- **取消**：拒绝该方案，继续停留在计划模式  
+- **Proceed Once**：仅批准当前会话的方案
+- **Proceed Always**：批准方案并为后续的编辑操作启用自动批准
+- **Cancel**：拒绝方案并保持在计划模式
 
 用法：
 
 ```
-exit_plan_mode(plan="在此填写你的详细实现方案...")
+exit_plan_mode(plan="Your detailed implementation plan here...")
 ```
 
 ## 何时使用此工具
 
 在以下情况下使用 `exit_plan_mode`：
 
-1. **实现任务**：你正在为编码任务规划具体实施步骤  
-2. **计划完成**：你已完成对实现方案的探索与设计  
-3. **需用户确认**：在执行代码变更前需要获得用户确认  
-4. **代码编写任务**：该任务涉及编写、修改或重构代码  
+1. **实现任务**：你正在为编码任务规划实现步骤
+2. **方案完成**：你已完成探索并设计好实现方案
+3. **需要用户批准**：在进行代码更改前需要用户确认
+4. **代码编写任务**：任务涉及编写、修改或重构代码
 
 ### 适用场景示例：
 
-- “帮我实现用户认证功能” → 在规划完认证系统的实现方案后使用  
-- “为用户管理添加一个新的 API 端点” → 在设计完端点结构后使用  
+- “帮我实现用户认证” → 在规划完认证系统实现后使用
+- “为用户管理添加新的 API 端点” → 在设计完端点结构后使用
 - “将数据库层重构为使用 TypeORM” → 在规划完重构方案后使用
 
-## 何时**不应**使用此工具
+## 何时不应使用此工具
 
-请**不要**对以下场景使用 `exit_plan_mode`：
+请勿在以下情况下使用 `exit_plan_mode`：
 
-1. **研究类任务**：专注于理解或探索现有代码的任务  
-2. **信息收集类任务**：仅进行搜索、阅读或分析，而无需实现任何变更  
-3. **文档类任务**：仅编写文档，不涉及代码修改  
-4. **分析类任务**：仅提供解释或评审，不涉及具体实现  
+1. **研究任务**：专注于理解或探索现有代码的任务
+2. **信息收集**：当你进行搜索、阅读或分析，且不涉及实现时
+3. **文档任务**：在不更改代码的情况下创建文档时
+4. **分析任务**：在不涉及实现的情况下提供解释或审查时
 
-### 不恰当使用的示例：
+### 不适用场景示例：
 
-- “在代码库中搜索并理解 vim 模式的实现” → **勿使用**（属于研究类任务）  
-- “解释认证系统的工作原理” → **勿使用**（属于分析类任务）  
-- “查找项目中所有 TODO 注释” → **勿使用**（属于信息收集类任务）  
+- “搜索并理解代码库中 vim 模式的实现” → 请勿使用（研究任务）
+- “解释认证系统的工作原理” → 请勿使用（分析任务）
+- “查找项目中所有的 TODO 注释” → 请勿使用（信息收集）
 
-## `exit_plan_mode` 使用示例
+## `exit_plan_mode` 示例
 
 ### 实现规划示例
 
 ```
-exit_plan_mode(plan="## 用户仪表板实现计划
+exit_plan_mode(plan="## Implementation Plan for User Dashboard
 
-### 1. 创建仪表板组件  
-- 创建 `UserDashboard.tsx`，包含主仪表板布局  
-- 添加 `DashboardStats.tsx`，用于展示用户统计信息  
-- 实现 `ActivityFeed.tsx`，用于展示用户的最新活动  
+### 1. Create Dashboard Components
+- Create `UserDashboard.tsx` with main dashboard layout
+- Add `DashboardStats.tsx` for displaying user statistics
+- Implement `ActivityFeed.tsx` for recent user activities
 
-### 2. 添加 API 集成  
-- 创建 `dashboardApi.ts`，用于获取仪表板数据  
-- 添加获取用户统计信息和活动数据的接口端点  
-- 实现错误处理和加载状态  
+### 2. Add API Integration
+- Create `dashboardApi.ts` for dashboard data fetching
+- Add endpoints for user stats and activity data
+- Implement error handling and loading states
 
-### 3. 更新路由配置  
-- 在 `App.tsx` 中添加仪表板路由  
-- 更新导航组件，加入仪表板链接  
-- 为已认证用户添加路由保护  
+### 3. Update Routing
+- Add dashboard route in `App.tsx`
+- Update navigation component with dashboard link
+- Add route protection for authenticated users
 
-### 4. 测试与文档  
-- 为仪表板组件编写单元测试  
-- 为 API 调用编写集成测试  
-- 更新用户文档，补充仪表板功能说明  
+### 4. Testing and Documentation
+- Write unit tests for dashboard components
+- Add integration tests for API calls
+- Update user documentation with dashboard features
 
-该实现预计耗时约 4–6 小时，需修改 8–10 个文件。  
-
+This implementation will take approximately 4-6 hours and requires changes to 8-10 files.")
 ```
 
-### 重构计划示例  
+### 重构方案示例
 
-```  
-exit_plan_mode(plan="## 数据库层重构计划
+```
+exit_plan_mode(plan="## Database Layer Refactoring Plan
 
-### 第一阶段：设置与配置
-- 安装并配置 TypeORM 依赖项
-- 创建数据库连接配置
-- 为现有模型定义实体
+### Phase 1: Setup and Configuration
+- Install and configure TypeORM dependencies
+- Create database connection configuration
+- Set up entity definitions for existing models
 
-### 第二阶段：迁移
-- 为现有数据创建迁移脚本
-- 使用 TypeORM 实现新的仓库（Repository）模式
-- 将原始 SQL 查询替换为 TypeORM 查询构建器
+### Phase 2: Migration
+- Create migration scripts for existing data
+- Implement new repository pattern using TypeORM
+- Replace raw SQL queries with TypeORM query builder
 
-### 第三阶段：测试与验证
-- 更新所有数据库测试以使用 TypeORM
-- 迁移后验证数据完整性
-- 性能测试，确保无性能退化
+### Phase 3: Testing and Validation
+- Update all database tests to use TypeORM
+- Validate data integrity after migration
+- Performance testing to ensure no regressions
 
-此次重构将在保持向后兼容性的同时，使我们的数据库层现代化。
+This refactoring will modernize our database layer while maintaining backward compatibility.")
+```
 
 ## 用户响应处理
 
-调用 `exit_plan_mode` 后，用户可通过以下几种方式响应：
+调用 `exit_plan_mode` 后，用户可以通过以下几种方式响应：
 
-- **仅执行一次**：使用默认确认设置，立即批准并执行该计划  
-- **始终执行**：批准该计划，并为后续编辑操作启用自动批准  
-- **取消**：拒绝该计划，系统保持在规划模式，以便进一步规划  
+- **Proceed Once**：方案获得批准，将使用默认确认设置立即开始实现
+- **Proceed Always**：方案获得批准，并为后续的编辑操作启用自动批准
+- **Cancel**：方案被拒绝，系统将保持在计划模式以进行进一步规划
 
-该工具会根据用户的选择自动调整批准模式，从而按照用户偏好简化执行流程。
+该工具会根据用户的选择自动调整批准模式，从而根据用户偏好简化实现流程。
 
 ## 重要注意事项
 
-- **仅限计划模式**：此工具仅在您处于计划模式时使用  
-- **聚焦实现**：仅用于涉及编写或修改代码的任务  
-- **简洁计划**：保持计划聚焦且简洁——以清晰明了为首要目标，而非面面俱到  
-- **支持 Markdown**：计划内容支持 Markdown 格式，以提升可读性  
-- **单次使用**：每次计划会话中，仅在准备就绪、即将执行时使用该工具一次  
-- **用户掌控**：是否继续执行的最终决定权始终在用户手中
+- **仅限计划模式**：仅当你当前处于计划模式时才应使用此工具
+- **聚焦实现**：仅用于涉及编写或修改代码的任务
+- **方案简洁**：保持方案聚焦且简洁——追求清晰明了，而非事无巨细
+- **支持 Markdown**：方案支持 Markdown 格式，以提升可读性
+- **单次使用**：在准备继续时，每个规划会话中应仅使用一次该工具
+- **用户控制**：是否继续的最终决定权始终在用户手中
 
 ## 与规划工作流的集成
 
-“退出计划模式”（Exit Plan Mode）工具是更大型规划工作流的一部分：
+退出计划模式工具是更大规模规划工作流的一部分：
 
-1. **进入计划模式**：用户发起请求，或系统判定需要进行规划
+1. **进入计划模式**：用户请求或系统判定需要进行规划
 2. **探索阶段**：分析代码库、理解需求、探索可行方案
-3. **计划设计**：基于探索结果制定实施策略
-4. **计划呈现**：调用 `exit_plan_mode` 将计划呈现给用户
-5. **实施阶段**：获得用户批准后，按既定计划执行实施
+3. **方案设计**：基于探索结果制定实现策略
+4. **方案展示**：使用 `exit_plan_mode` 向用户展示方案
+5. **实现阶段**：获得批准后，按计划进行实现
 
-该工作流确保采用审慎的实施方式，并赋予用户对重大代码变更的控制权。
+该工作流确保了深思熟虑的实现方案，并让用户对重大代码更改拥有控制权。

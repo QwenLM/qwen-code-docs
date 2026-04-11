@@ -1,148 +1,149 @@
-# Werkzeug „Exit Plan Mode“ (`exit_plan_mode`)
+# Exit Plan Mode Tool (`exit_plan_mode`)
 
-Dieses Dokument beschreibt das Werkzeug `exit_plan_mode` für Qwen Code.
+Dieses Dokument beschreibt das `exit_plan_mode`-Tool für Qwen Code.
 
 ## Beschreibung
 
-Verwenden Sie `exit_plan_mode`, wenn Sie sich im Planungsmodus befinden und Ihren Implementierungsplan vorgestellt haben. Dieses Werkzeug fordert den Benutzer zur Genehmigung oder Ablehnung des Plans auf und wechselt vom Planungsmodus in den Implementierungsmodus.
+Verwende `exit_plan_mode`, wenn du dich im Plan-Modus befindest und die Vorstellung deines Implementierungsplans abgeschlossen hast. Dieses Tool fordert den Benutzer auf, den Plan zu genehmigen oder abzulehnen, und wechselt vom Planungs- in den Implementierungsmodus.
 
-Das Werkzeug ist speziell für Aufgaben konzipiert, bei denen vor dem Schreiben von Code eine Planung der Implementierungsschritte erforderlich ist. Es darf NICHT für Recherche- oder Informationsbeschaffungsaufgaben verwendet werden.
+Das Tool ist speziell für Aufgaben konzipiert, bei denen Implementierungsschritte vor dem Schreiben von Code geplant werden müssen. Es sollte NICHT für Recherche- oder Informationsbeschaffungsaufgaben verwendet werden.
 
 ### Argumente
 
-`exit_plan_mode` akzeptiert ein Argument:
+`exit_plan_mode` erwartet ein Argument:
 
-- `plan` (Zeichenkette, erforderlich): Der Implementierungsplan, den Sie dem Benutzer zur Genehmigung vorlegen möchten. Dieser sollte ein prägnanter, in Markdown formatierter Plan sein, der die Implementierungsschritte beschreibt.
+- `plan` (string, erforderlich): Der Implementierungsplan, den du dem Benutzer zur Genehmigung vorlegen möchtest. Dies sollte ein prägnanter, im Markdown-Format gehaltener Plan sein, der die Implementierungsschritte beschreibt.
 
-## So verwenden Sie `exit_plan_mode` mit Qwen Code
+## Verwendung von `exit_plan_mode` mit Qwen Code
 
-Das Tool „Exit Plan Mode“ ist Teil des Planungs-Workflows von Qwen Code. Wenn Sie sich im Planungsmodus befinden (typischerweise nach der Exploration einer Codebasis und der Ausarbeitung eines Implementierungsansatzes), verwenden Sie dieses Tool, um:
+Das Exit Plan Mode Tool ist Teil des Planungs-Workflows von Qwen Code. Wenn du dich im Plan-Modus befindest (typischerweise nach dem Erkunden einer Codebasis und dem Entwerfen eines Implementierungsansatzes), verwendest du dieses Tool, um:
 
-1. Ihren Implementierungsplan dem Benutzer vorzustellen  
-2. die Zustimmung des Benutzers zur Durchführung der Implementierung einzuholen  
-3. basierend auf der Antwort des Benutzers vom Planungsmodus in den Implementierungsmodus zu wechseln  
+1. deinen Implementierungsplan dem Benutzer vorzustellen
+2. die Genehmigung zur Fortsetzung der Implementierung anzufordern
+3. basierend auf der Benutzerantwort vom Plan- in den Implementierungsmodus zu wechseln
 
-Das Tool zeigt dem Benutzer Ihren Plan an und bietet folgende Auswahlmöglichkeiten:
+Das Tool zeigt dem Benutzer deinen Plan an und bietet folgende Optionen:
 
-- **Einmal ausführen**: Der Plan wird nur für diese Sitzung genehmigt.  
-- **Immer ausführen**: Der Plan wird genehmigt, und zukünftige Bearbeitungsoperationen werden automatisch zugelassen.  
-- **Abbrechen**: Der Plan wird abgelehnt, und Sie verbleiben im Planungsmodus.  
+- **Proceed Once**: Genehmigt den Plan nur für diese Sitzung
+- **Proceed Always**: Genehmigt den Plan und aktiviert die automatische Genehmigung für zukünftige Bearbeitungsvorgänge
+- **Cancel**: Lehnt den Plan ab und verbleibt im Planungsmodus
 
 Verwendung:
 
 ```
-exit_plan_mode(plan="Ihr detaillierter Implementierungsplan hier...")
+exit_plan_mode(plan="Your detailed implementation plan here...")
 ```
 
-## Wann dieses Tool verwenden
+## Wann dieses Tool verwendet werden sollte
 
-Verwenden Sie `exit_plan_mode`, wenn:
+Verwende `exit_plan_mode`, wenn:
 
-1. **Implementierungsaufgaben**: Sie planen die Implementierungsschritte für eine Programmieraufgabe.
-2. **Planabschluss**: Sie haben die Erkundung und Gestaltung Ihres Implementierungsansatzes abgeschlossen.
-3. **Benutzerfreigabe erforderlich**: Sie benötigen die Bestätigung des Benutzers, bevor Sie mit den Codeänderungen fortfahren.
-4. **Code-Schreibaufgaben**: Die Aufgabe umfasst das Schreiben, Ändern oder Refaktorisieren von Code.
+1. **Implementierungsaufgaben**: Du die Implementierungsschritte für eine Programmieraufgabe planst
+2. **Planungsabschluss**: Du das Erkunden und Entwerfen deines Implementierungsansatzes abgeschlossen hast
+3. **Benutzergenehmigung erforderlich**: Du vor der Durchführung von Codeänderungen die Bestätigung des Benutzers benötigst
+4. **Code-Schreibaufgaben**: Die Aufgabe das Schreiben, Ändern oder Refactoring von Code beinhaltet
 
-### Beispiele für die richtige Verwendung:
+### Beispiele für die angemessene Verwendung:
 
-- „Helfen Sie mir bei der Implementierung der Benutzerauthentifizierung“ → Verwenden Sie das Tool nach der Planung der Authentifizierungssystem-Implementierung.
-- „Fügen Sie einen neuen API-Endpunkt für das Benutzermanagement hinzu“ → Verwenden Sie das Tool nach der Gestaltung der Endpunktstruktur.
-- „Refaktorieren Sie die Datenbank-Schicht, um TypeORM zu verwenden“ → Verwenden Sie das Tool nach der Planung des Refaktorisierungsansatzes.
+- „Help me implement user authentication" → Verwenden, nachdem die Implementierung des Auth-Systems geplant wurde
+- „Add a new API endpoint for user management" → Verwenden, nachdem die Endpunkt-Struktur entworfen wurde
+- „Refactor the database layer to use TypeORM" → Verwenden, nachdem der Refactoring-Ansatz geplant wurde
 
 ## Wann dieses Tool NICHT verwendet werden sollte
 
-Verwenden Sie `exit_plan_mode` NICHT für:
+Verwende `exit_plan_mode` NICHT für:
 
-1. **Rechercheaufgaben**: Aufgaben, die darauf abzielen, bestehenden Code zu verstehen oder zu erforschen  
-2. **Informationsbeschaffung**: Wenn Sie suchen, lesen oder analysieren, ohne etwas umzusetzen  
-3. **Dokumentationsaufgaben**: Wenn Sie Dokumentation erstellen, ohne den Code zu ändern  
-4. **Analyseaufgaben**: Wenn Sie Erklärungen oder Überprüfungen liefern, ohne etwas umzusetzen  
+1. **Rechercheaufgaben**: Aufgaben, die sich auf das Verstehen oder Erkunden von bestehendem Code konzentrieren
+2. **Informationssammlung**: Wenn du suchst, liest oder analysierst, ohne zu implementieren
+3. **Dokumentationsaufgaben**: Wenn du Dokumentation erstellst, ohne Code zu ändern
+4. **Analyseaufgaben**: Wenn du Erklärungen oder Reviews ohne Implementierung lieferst
 
-### Beispiele für eine unangemessene Verwendung:
+### Beispiele für unangemessene Verwendung:
 
-- „Suchen und Verstehen der Implementierung des Vim-Modus im Code“ → Nicht verwenden (Rechercheaufgabe)  
-- „Erklären, wie das Authentifizierungssystem funktioniert“ → Nicht verwenden (Analyseaufgabe)  
-- „Alle TODO-Kommentare im Projekt finden“ → Nicht verwenden (Informationsbeschaffung)  
+- „Search for and understand the implementation of vim mode in the codebase" → Nicht verwenden (Rechercheaufgabe)
+- „Explain how the authentication system works" → Nicht verwenden (Analyseaufgabe)
+- „Find all TODO comments in the project" → Nicht verwenden (Informationssammlung)
 
-## Beispiele für `exit_plan_mode`
+## `exit_plan_mode`-Beispiele
 
-### Beispiel für eine Implementierungsplanung
+### Beispiel für die Implementierungsplanung
 
 ```
-exit_plan_mode(plan="## Implementierungsplan für das Benutzer-Dashboard
+exit_plan_mode(plan="## Implementation Plan for User Dashboard
 
-### 1. Erstellen von Dashboard-Komponenten  
-- Erstellen Sie `UserDashboard.tsx` mit dem Haupt-Dashboard-Layout.  
-- Fügen Sie `DashboardStats.tsx` hinzu, um Benutzerstatistiken anzuzeigen.  
-- Implementieren Sie `ActivityFeed.tsx`, um die jüngsten Aktivitäten des Benutzers anzuzeigen.  
+### 1. Create Dashboard Components
+- Create `UserDashboard.tsx` with main dashboard layout
+- Add `DashboardStats.tsx` for displaying user statistics
+- Implement `ActivityFeed.tsx` for recent user activities
 
-### 2. Hinzufügen der API-Integration  
-- Erstellen Sie `dashboardApi.ts` zum Abrufen von Dashboard-Daten.  
-- Fügen Sie Endpunkte für Benutzerstatistiken und Aktivitätsdaten hinzu.  
-- Implementieren Sie Fehlerbehandlung sowie Ladezustände.  
+### 2. Add API Integration
+- Create `dashboardApi.ts` for dashboard data fetching
+- Add endpoints for user stats and activity data
+- Implement error handling and loading states
 
-### 3. Aktualisierung der Routing-Konfiguration  
-- Fügen Sie die Dashboard-Route in `App.tsx` hinzu.  
-- Aktualisieren Sie die Navigationskomponente mit einem Link zum Dashboard.  
-- Fügen Sie eine Routensicherung für authentifizierte Benutzer hinzu.  
+### 3. Update Routing
+- Add dashboard route in `App.tsx`
+- Update navigation component with dashboard link
+- Add route protection for authenticated users
 
-### 4. Tests und Dokumentation  
-- Schreiben Sie Unit-Tests für die Dashboard-Komponenten.  
-- Fügen Sie Integrationstests für die API-Aufrufe hinzu.  
-- Aktualisieren Sie die Benutzerdokumentation mit den neuen Dashboard-Funktionen.  
+### 4. Testing and Documentation
+- Write unit tests for dashboard components
+- Add integration tests for API calls
+- Update user documentation with dashboard features
 
-Diese Implementierung wird etwa 4–6 Stunden dauern und Änderungen an 8–10 Dateien erfordern.  
-```  
+This implementation will take approximately 4-6 hours and requires changes to 8-10 files.")
+```
 
-### Beispiel für einen Refaktorierungsplan  
+### Beispiel für einen Refactoring-Plan
 
-```  
-exit_plan_mode(plan="## Refaktorierungsplan: Datenbankschicht
+```
+exit_plan_mode(plan="## Database Layer Refactoring Plan
 
-### Phase 1: Einrichtung und Konfiguration
-- Installieren und konfigurieren Sie die TypeORM-Abhängigkeiten.
-- Erstellen Sie die Konfiguration für die Datenbankverbindung.
-- Richten Sie Entitätsdefinitionen für bestehende Modelle ein.
+### Phase 1: Setup and Configuration
+- Install and configure TypeORM dependencies
+- Create database connection configuration
+- Set up entity definitions for existing models
 
 ### Phase 2: Migration
-- Erstellen Sie Migrationsskripts für vorhandene Daten.
-- Implementieren Sie das neue Repository-Muster mithilfe von TypeORM.
-- Ersetzen Sie direkte SQL-Abfragen durch den TypeORM-Query-Builder.
+- Create migration scripts for existing data
+- Implement new repository pattern using TypeORM
+- Replace raw SQL queries with TypeORM query builder
 
-### Phase 3: Testen und Validierung
-- Aktualisieren Sie alle Datenbanktests, sodass sie TypeORM verwenden.
-- Überprüfen Sie die Datenintegrität nach der Migration.
-- Führen Sie Leistungstests durch, um sicherzustellen, dass keine Regressionen auftreten.
+### Phase 3: Testing and Validation
+- Update all database tests to use TypeORM
+- Validate data integrity after migration
+- Performance testing to ensure no regressions
 
-Durch diese Refaktorisierung wird unsere Datenbankschicht modernisiert, wobei die Abwärtskompatibilität erhalten bleibt.
+This refactoring will modernize our database layer while maintaining backward compatibility.")
+```
 
-## Behandlung der Benutzerantwort
+## Verarbeitung der Benutzerantwort
 
-Nach dem Aufruf von `exit_plan_mode` kann der Benutzer auf verschiedene Weisen reagieren:
+Nach dem Aufruf von `exit_plan_mode` kann der Benutzer auf verschiedene Weise antworten:
 
-- **Einmal ausführen**: Der Plan wird zur sofortigen Umsetzung mit den standardmäßigen Bestätigungseinstellungen genehmigt.  
-- **Immer ausführen**: Der Plan wird genehmigt, und die automatische Genehmigung wird für nachfolgende Bearbeitungsvorgänge aktiviert.  
-- **Abbrechen**: Der Plan wird abgelehnt, und das System verbleibt im Planungsmodus für weitere Planungsschritte.
+- **Proceed Once**: Der Plan wird für die sofortige Implementierung mit den Standardbestätigungseinstellungen genehmigt
+- **Proceed Always**: Der Plan wird genehmigt und die automatische Genehmigung für nachfolgende Bearbeitungsvorgänge aktiviert
+- **Cancel**: Der Plan wird abgelehnt und das System verbleibt für weitere Planungen im Plan-Modus
 
-Das Tool passt den Genehmigungsmodus automatisch an die Auswahl des Benutzers an und optimiert so den Umsetzungsprozess entsprechend den Benutzervorgaben.
+Das Tool passt den Genehmigungsmodus automatisch basierend auf der Auswahl des Benutzers an und optimiert den Implementierungsprozess entsprechend den Benutzereinstellungen.
 
 ## Wichtige Hinweise
 
-- **Nur im Planungsmodus**: Dieses Tool darf nur verwendet werden, wenn Sie sich aktuell im Planungsmodus befinden.
-- **Implementierungsfokus**: Verwenden Sie es ausschließlich für Aufgaben, die das Schreiben oder Ändern von Code beinhalten.
-- **Prägnante Pläne**: Halten Sie Ihre Pläne fokussiert und prägnant – legen Sie Wert auf Klarheit statt auf erschöpfende Detailtiefe.
-- **Markdown-Unterstützung**: Pläne unterstützen Markdown-Formatierung zur besseren Lesbarkeit.
-- **Einmalige Nutzung**: Das Tool sollte pro Planungssitzung nur einmal verwendet werden – und zwar dann, wenn Sie bereit sind, fortzufahren.
-- **Benutzerkontrolle**: Die endgültige Entscheidung, fortzufahren, liegt stets beim Benutzer.
+- **Nur im Plan-Modus**: Dieses Tool sollte nur verwendet werden, wenn du dich aktuell im Plan-Modus befindest
+- **Fokus auf Implementierung**: Nur für Aufgaben verwenden, die das Schreiben oder Ändern von Code beinhalten
+- **Prägnante Pläne**: Halte Pläne fokussiert und prägnant – strebe Klarheit vor erschöpfenden Details an
+- **Markdown-Unterstützung**: Pläne unterstützen Markdown-Formatierung für bessere Lesbarkeit
+- **Einmalige Verwendung**: Das Tool sollte pro Planungssitzung einmal verwendet werden, wenn du bereit bist, fortzufahren
+- **Benutzerkontrolle**: Die endgültige Entscheidung zur Fortsetzung liegt immer beim Benutzer
 
-## Integration in den Planungsworkflow
+## Integration in den Planungs-Workflow
 
-Das Tool „Exit Plan Mode“ ist Teil eines umfassenderen Planungsworkflows:
+Das Exit Plan Mode Tool ist Teil eines umfassenderen Planungs-Workflows:
 
-1. **Planungsmodus aktivieren**: Der Benutzer fordert den Planungsmodus an oder das System ermittelt, dass eine Planung erforderlich ist.
-2. **Erkundungsphase**: Analyse des Codebases, Verständnis der Anforderungen und Untersuchung möglicher Lösungsansätze
-3. **Planentwurf**: Erstellung einer Implementierungsstrategie basierend auf den Erkenntnissen aus der Erkundungsphase
-4. **Planpräsentation**: Verwendung von `exit_plan_mode`, um den Plan dem Benutzer zu präsentieren
-5. **Implementierungsphase**: Nach Genehmigung durch den Benutzer wird die geplante Implementierung ausgeführt
+1. **Plan-Modus starten**: Benutzeranfrage oder System erkennt, dass Planung erforderlich ist
+2. **Explorationsphase**: Codebasis analysieren, Anforderungen verstehen, Optionen erkunden
+3. **Planentwurf**: Implementierungsstrategie basierend auf der Exploration erstellen
+4. **Planvorstellung**: `exit_plan_mode` verwenden, um den Plan dem Benutzer vorzustellen
+5. **Implementierungsphase**: Nach Genehmigung mit der geplanten Implementierung fortfahren
 
-Dieser Workflow stellt sicher, dass Implementierungsansätze sorgfältig durchdacht werden, und gibt Benutzern die Kontrolle über umfangreiche Codeänderungen.
+Dieser Workflow stellt durchdachte Implementierungsansätze sicher und gibt Benutzern die Kontrolle über bedeutende Codeänderungen.

@@ -1,84 +1,85 @@
-# 拡張機能のリリース
+# エクステンションのリリース
 
-拡張機能をユーザーにリリースする主な方法は以下の2つです。
+ユーザーにエクステンションをリリースする主な方法は次の 3 つです：
 
-- [Git リポジトリ](#git-リポジトリを通じたリリース)
-- [GitHub Releases](#github-releasesを通じたリリース)
+- [Git リポジトリ](#releasing-through-a-git-repository)
+- [GitHub Releases](#releasing-through-github-releases)
+- [npm Registry](#releasing-through-npm-registry)
 
-Git リポジトリによるリリースは、最もシンプルで柔軟性の高いアプローチである一方、GitHub Releases は初期インストール時により効率的です。これは、GitHub Releases が個々のファイルを別々にダウンロードする git clone を行わずに、単一のアーカイブとして配布されるためです。また、プラットフォーム固有のバイナリファイルを配布する必要がある場合、GitHub Releases にはプラットフォーム固有のアーカイブを含めることもできます。
+Git リポジトリ経由のリリースは最もシンプルで柔軟な方法です。一方、GitHub Releases は単一のアーカイブとして配布されるため、ファイルを個別にダウンロードする git clone が不要になり、初回インストール時の効率が向上します。プラットフォーム固有のバイナリファイルを提供する必要がある場合、GitHub Releases にはプラットフォーム固有のアーカイブを含めることもできます。npm Registry 経由のリリースは、特にプライベートレジストリを利用している場合など、すでにパッケージ配布に npm を使用しているチームに最適です。
 
-## Git リポジトリを通じたリリース
+## Git リポジトリ経由でのリリース
 
-これは最も柔軟でシンプルなオプションです。必要な作業は、公開可能な Git リポジトリ（例：パブリックな GitHub リポジトリ）を作成し、ユーザーが `qwen extensions install <your-repo-uri>` コマンドで拡張機能をインストールできるようにすることだけです。GitHub リポジトリの場合は、簡略化された形式 `qwen extensions install <org>/<repo>` を使用できます。また、オプションで `--ref=<some-ref>` 引数を指定して、特定のリファレンス（ブランチ／タグ／コミット）に依存させることも可能です。この引数を省略した場合、デフォルトブランチが使用されます。
+これは最も柔軟でシンプルなオプションです。公開可能な Git リポジトリ（公開 GitHub リポジトリなど）を作成するだけで、ユーザーは `qwen extensions install <your-repo-uri>` を使用してエクステンションをインストールできます。GitHub リポジトリの場合は、簡略化された `qwen extensions install <org>/<repo>` 形式も利用できます。`--ref=<some-ref>` 引数を使用すると、特定の ref（ブランチ/タグ/コミット）に依存させることも可能で、デフォルトではデフォルトブランチが使用されます。
 
-ユーザーが依存しているリファレンスにコミットがプッシュされるたびに、拡張機能の更新が提案されます。なお、この仕組みによりロールバックも容易になります。`qwen-extension.json` ファイルに記載された実際のバージョンに関わらず、HEAD コミットは常に最新バージョンとして扱われます。
+ユーザーが依存している ref にコミットがプッシュされると、エクステンションの更新が促されます。なお、これによりロールバックも容易になります。`qwen-extension.json` ファイル内の実際のバージョンに関係なく、HEAD コミットが常に最新バージョンとして扱われます。
 
-### Git リポジトリを用いたリリースチャネルの管理
+### Git リポジトリを使用したリリースチャネルの管理
 
-ユーザーは、ブランチやタグなど、Git リポジトリ内の任意のリファレンス（ref）に依存できます。これにより、複数のリリースチャネルを柔軟に管理できます。
+ユーザーはブランチやタグなど、Git リポジトリ内の任意の ref に依存できるため、複数のリリースチャネルを管理できます。
 
-たとえば、`stable` ブランチを維持し、ユーザーが `qwen extensions install <your-repo-uri> --ref=stable` のようにインストールできるようにできます。あるいは、デフォルトブランチを安定版リリースブランチとして扱い、開発は別のブランチ（例：`dev`）で行うことで、これをデフォルト動作にすることも可能です。必要に応じて、任意の数のブランチやタグを維持でき、開発者およびユーザー双方にとって最大限の柔軟性を提供します。
+例えば、`stable` ブランチを維持し、ユーザーに `qwen extensions install <your-repo-uri> --ref=stable` でインストールさせることができます。または、デフォルトブランチを安定版リリースブランチとして扱い、別のブランチ（例：`dev`）で開発を行うことで、これをデフォルトにすることもできます。ブランチやタグは好きなだけ維持でき、開発者とユーザーの両方に最大限の柔軟性を提供します。
 
-これらの `ref` 引数には、タグ、ブランチ、あるいは特定のコミットハッシュを指定できます。これにより、ユーザーは拡張機能の特定バージョンに依存することが可能になります。タグやブランチの管理方法は、開発者自身の判断に委ねられます。
+これらの `ref` 引数にはタグ、ブランチ、または特定のコミットを指定できるため、ユーザーはエクステンションの特定のバージョンに依存できます。タグやブランチの管理方法は開発者次第です。
 
 ### Git リポジトリを使用したリリースフローの例
 
-Git フローを用いたリリース管理にはさまざまな方法がありますが、デフォルトブランチを「安定版（stable）」リリースブランチとして扱うことを推奨します。つまり、`qwen extensions install <your-repo-uri>` を実行した際のデフォルト動作は、この安定版リリースブランチから拡張機能をインストールすることになります。
+Git フローを使用したリリース管理には多くの選択肢がありますが、デフォルトブランチを「stable」リリースブランチとして扱うことを推奨します。これにより、`qwen extensions install <your-repo-uri>` のデフォルトの動作は安定版リリースブランチを参照するようになります。
 
-たとえば、`stable`、`preview`、`dev` の 3 つの標準的なリリースチャネルを維持したいとします。通常の開発作業はすべて `dev` ブランチで行います。プレビュー版リリースの準備が整ったら、そのブランチを `preview` ブランチにマージします。さらに、プレビュー版を安定版へ昇格させる準備が整ったら、`preview` ブランチを `stable` ブランチ（これはデフォルトブランチである場合も、別のブランチである場合もあります）にマージします。
+例えば、`stable`、`preview`、`dev` の 3 つの標準リリースチャネルを維持するとします。通常の開発はすべて `dev` ブランチで行います。プレビュー版をリリースする準備ができたら、そのブランチを `preview` ブランチにマージします。プレビュー版を安定版に昇格させる準備ができたら、`preview` を安定版ブランチ（デフォルトブランチまたは別のブランチ）にマージします。
 
-また、`git cherry-pick` を使用して、あるブランチから特定の変更を別のブランチへ選択的に取り込むこともできます。ただし、この方法では各ブランチの履歴がわずかに分岐してしまうことに注意してください。履歴をクリーンな状態に戻すためには、各リリース時にブランチへ強制プッシュ（force push）を行う必要がありますが、リポジトリの設定によってはデフォルトブランチへの強制プッシュが不可能な場合もあります。そのため、`cherry-pick` を多用する予定がある場合は、デフォルトブランチを安定版ブランチとしないことを検討した方がよいでしょう。これは、一般に避けるべきであるデフォルトブランチへの強制プッシュを回避するためです。
+`git cherry-pick` を使用して変更をあるブランチから別のブランチにチェリーピックすることもできますが、これを行うとブランチ間の履歴がわずかに分岐することに注意してください。各リリース時にブランチへ force push を行って履歴をクリーンな状態に戻さない限り分岐したままになります（リポジトリの設定によっては、デフォルトブランチではこれが不可能な場合があります）。チェリーピックを行う予定がある場合は、一般的に避けるべきデフォルトブランチへの force push を回避するため、デフォルトブランチを安定版ブランチにしないことを検討してください。
 
-## GitHub Releases を使用したリリース
+## GitHub Releases 経由でのリリース
 
-Qwen Code 拡張機能は、[GitHub Releases](https://docs.github.com/ja/repositories/releasing-projects-on-github/about-releases) を通じて配布できます。これにより、ユーザーがリポジトリをクローンする必要がなくなるため、より高速かつ信頼性の高い初期インストール体験を提供できます。
+Qwen Code エクステンションは [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) を介して配布できます。リポジトリの clone が不要になるため、ユーザーにとってより高速で信頼性の高い初回インストール体験を提供できます。
 
-各リリースには、少なくとも 1 つのアーカイブファイルが含まれており、そのアーカイブには、該当リリースが関連付けられたタグにおけるリポジトリの完全な内容が格納されます。また、拡張機能にビルド手順が必要な場合や、プラットフォーム固有のバイナリが添付される場合は、[事前ビルド済みアーカイブ](#custom-pre-built-archives) も含めることができます。
+各リリースには、リンクされたタグ時点のリポジトリの全内容を含むアーカイブファイルが少なくとも 1 つ含まれます。エクステンションにビルドステップが必要な場合やプラットフォーム固有のバイナリが含まれる場合は、[ビルド済みアーカイブ](#custom-pre-built-archives) をリリースに含めることもできます。
 
-更新の確認時、qwen code は GitHub 上の最新リリース（リリース作成時に「Latest release」に明示的にマークする必要があります）のみを検索します。ただし、ユーザーが `--ref=<some-release-tag>` オプションを指定して特定のリリースを明示的にインストールした場合はこの限りではありません。現時点では、プレリリース版への自動更新対応や Semantic Versioning (semver) によるバージョン管理はサポートしていません。
+更新を確認する際、ユーザーが `--ref=<some-release-tag>` を渡して特定のリリースをインストールしていない限り、qwen code は GitHub 上の最新リリースを検索します（リリース作成時に最新としてマークする必要があります）。現時点では、プレリリースや semver へのオプトインはサポートしていません。
 
-### カスタム事前構築アーカイブ
+### カスタムビルド済みアーカイブ
 
-カスタムアーカイブは、GitHub リリースにアセットとして直接添付する必要があり、完全に自己完結している必要があります。つまり、拡張機能全体を含む必要があります（[アーカイブの構造](#archive-structure) を参照してください）。
+カスタムアーカイブは GitHub リリースにアセットとして直接添付する必要があり、完全に自己完結型である必要があります。つまり、エクステンション全体を含める必要があります（[アーカイブ構造](#archive-structure) を参照）。
 
-拡張機能がプラットフォーム非依存である場合、単一の汎用アセットを提供できます。この場合、リリースには 1 つのアセットのみを添付する必要があります。
+エクステンションがプラットフォーム非依存の場合は、単一の汎用アセットを提供できます。この場合、リリースに添付されるアセットは 1 つのみである必要があります。
 
-また、拡張機能をより大規模なリポジトリ内で開発したい場合にもカスタムアーカイブを使用できます。この場合、リポジトリ自体とは異なるレイアウトを持つアーカイブ（たとえば、拡張機能を含むサブディレクトリのみのアーカイブなど）をビルドできます。
+より大きなリポジトリ内でエクステンションを開発する場合にもカスタムアーカイブを使用できます。リポジトリ自体とは異なるレイアウトのアーカイブをビルドできます（例えば、エクステンションを含むサブディレクトリのみのアーカイブなど）。
 
 #### プラットフォーム固有のアーカイブ
 
-Qwen Code が各プラットフォームに適したリリースアセットを自動的に検出できるようにするため、以下の命名規則に従う必要があります。CLI は、以下の順序でアセットを検索します：
+Qwen Code が各プラットフォームに正しいリリースアセットを自動的に検出できるようにするには、次の命名規則に従う必要があります。CLI は以下の順序でアセットを検索します：
 
 1.  **プラットフォームおよびアーキテクチャ固有:** `{platform}.{arch}.{name}.{extension}`
 2.  **プラットフォーム固有:** `{platform}.{name}.{extension}`
-3.  **汎用:** アセットが 1 つだけ提供されている場合、そのアセットが汎用フォールバックとして使用されます。
+3.  **汎用:** アセットが 1 つのみ提供されている場合、汎用のフォールバックとして使用されます。
 
-- `{name}`: 拡張機能の名前。
-- `{platform}`: オペレーティングシステム。サポートされる値は以下のとおりです：
-  - `darwin`（macOS）
+- `{name}`: エクステンションの名前。
+- `{platform}`: オペレーティングシステム。サポートされる値は次のとおりです：
+  - `darwin` (macOS)
   - `linux`
-  - `win32`（Windows）
-- `{arch}`: アーキテクチャ。サポートされる値は以下のとおりです：
+  - `win32` (Windows)
+- `{arch}`: アーキテクチャ。サポートされる値は次のとおりです：
   - `x64`
   - `arm64`
-- `{extension}`: アーカイブのファイル拡張子（例：`.tar.gz` や `.zip`）。
+- `{extension}`: アーカイブのファイル拡張子（例：`.tar.gz` または `.zip`）。
 
 **例:**
 
-- `darwin.arm64.my-tool.tar.gz`（Apple Silicon Mac 向け）
-- `darwin.my-tool.tar.gz`（すべての Mac 向け）
+- `darwin.arm64.my-tool.tar.gz` (Apple Silicon Mac 固有)
+- `darwin.my-tool.tar.gz` (すべての Mac 用)
 - `linux.x64.my-tool.tar.gz`
 - `win32.my-tool.zip`
 
-#### アーカイブの構造
+#### アーカイブ構造
 
-アーカイブは、完全に自己完結した拡張機能でなければならず、すべての標準要件を満たす必要があります。特に、`qwen-extension.json` ファイルはアーカイブのルートディレクトリに配置する必要があります。
+アーカイブは完全に自己完結型のエクステンションである必要があり、すべての標準要件を満たしている必要があります。具体的には、`qwen-extension.json` ファイルがアーカイブのルートに配置されている必要があります。
 
-その他のディレクトリ構成は、通常の拡張機能とまったく同じである必要があります。詳しくは [extensions.md](extension.md) を参照してください。
+残りのレイアウトは通常のエクステンションと完全に同じである必要があります。詳細は [extensions.md](extension.md) を参照してください。
 
 #### GitHub Actions ワークフローの例
 
-以下は、複数のプラットフォーム向けに Qwen Code 拡張機能をビルド・リリースする GitHub Actions ワークフローの例です。
+以下は、複数のプラットフォーム向けに Qwen Code エクステンションをビルドおよびリリースする GitHub Actions ワークフローの例です：
 
 ```yaml
 name: Release Extension
@@ -94,24 +95,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Node.js のセットアップ
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: 依存関係のインストール
+      - name: Install dependencies
         run: npm ci
 
-      - name: 拡張機能のビルド
+      - name: Build extension
         run: npm run build
 
-      - name: リリース用アセットの作成
+      - name: Create release assets
         run: |
           npm run package -- --platform=darwin --arch=arm64
           npm run package -- --platform=linux --arch=x64
           npm run package -- --platform=win32 --arch=x64
 
-      - name: GitHub Release の作成
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
@@ -119,3 +120,85 @@ jobs:
             release/linux.arm64.my-tool.tar.gz
             release/win32.arm64.my-tool.zip
 ```
+
+## npm Registry 経由でのリリース
+
+Qwen Code エクステンションはスコープ付き npm パッケージ（例：`@your-org/my-extension`）として公開できます。次のような場合に適しています：
+
+- チームがすでにパッケージ配布に npm を使用している
+- 既存の認証インフラストラクチャでプライベートレジストリのサポートが必要な場合
+- バージョン解決とアクセス制御を npm に任せたい場合
+
+### パッケージの要件
+
+npm パッケージには、パッケージのルートに `qwen-extension.json` ファイルを含める必要があります。これはすべての Qwen Code エクステンションで使用されるのと同じ設定ファイルであり、npm tarball は単なる別の配信メカニズムにすぎません。
+
+最小限のパッケージ構造は次のようになります：
+
+```
+my-extension/
+├── package.json
+├── qwen-extension.json
+├── QWEN.md              # optional context file
+├── commands/             # optional custom commands
+├── skills/               # optional custom skills
+└── agents/               # optional custom subagents
+```
+
+公開するパッケージに `qwen-extension.json` が含まれていることを確認してください（つまり、`.npmignore` や `package.json` の `files` フィールドで除外されていないこと）。
+
+### 公開
+
+標準的な npm 公開ツールを使用します：
+
+```bash
+# Publish to the default registry
+npm publish
+
+# Publish to a private/custom registry
+npm publish --registry https://your-registry.com
+```
+
+### インストール
+
+ユーザーはスコープ付きパッケージ名を使用してエクステンションをインストールします：
+
+```bash
+# Install latest version
+qwen extensions install @your-org/my-extension
+
+# Install a specific version
+qwen extensions install @your-org/my-extension@1.2.0
+
+# Install from a custom registry
+qwen extensions install @your-org/my-extension --registry https://your-registry.com
+```
+
+### 更新の動作
+
+- バージョン固定なしでインストールされたエクステンション（例：`@scope/pkg`）は `latest` dist-tag を追跡します。
+- dist-tag 付きでインストールされたエクステンション（例：`@scope/pkg@beta`）はその特定のタグを追跡します。
+- 特定のバージョンに固定されたエクステンション（例：`@scope/pkg@1.2.0`）は常に最新とみなされ、更新は促されません。
+
+### プライベートレジストリの認証
+
+Qwen Code は npm 認証情報を自動的に読み取ります：
+
+1. **`NPM_TOKEN` 環境変数** — 最優先
+2. **`.npmrc` ファイル** — ホストレベルとパススコープの `_authToken` エントリの両方をサポートします（例：`//your-registry.com/:_authToken=TOKEN` または `//pkgs.dev.azure.com/org/_packaging/feed/npm/registry/:_authToken=TOKEN`）
+
+`.npmrc` ファイルは、カレントディレクトリとユーザーのホームディレクトリから読み取られます。
+
+### リリースチャネルの管理
+
+npm dist-tags を使用してリリースチャネルを管理できます：
+
+```bash
+# Publish a beta release
+npm publish --tag beta
+
+# Users install beta channel
+qwen extensions install @your-org/my-extension@beta
+```
+
+これは Git ブランチベースのリリースチャネルと同様に機能しますが、npm のネイティブな dist-tag メカニズムを使用します。

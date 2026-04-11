@@ -1,51 +1,51 @@
-# Verbinden Sie Qwen Code mit Tools über MCP
+# Connect Qwen Code to tools via MCP
 
-Qwen Code kann über das [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) mit externen Tools und Datenquellen verbunden werden. MCP-Server gewähren Qwen Code Zugriff auf Ihre Tools, Datenbanken und APIs.
+Qwen Code kann über das [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) mit externen Tools und Datenquellen verbunden werden. MCP-Server gewähren Qwen Code Zugriff auf deine Tools, Datenbanken und APIs.
 
-## Was Sie mit MCP tun können
+## What you can do with MCP
 
-Wenn MCP-Server verbunden sind, können Sie Qwen Code auffordern, Folgendes zu tun:
+Mit verbundenen MCP-Servern kannst du Qwen Code bitten:
 
-- Mit Dateien und Repositories zu arbeiten (Lesen/Suchen/Schreiben – je nach den aktivierten Tools)
-- Datenbanken abzufragen (Schema-Inspektion, Abfragen, Berichte)
-- Interne Dienste einzubinden (Ihre APIs als MCP-Tools kapseln)
-- Workflows zu automatisieren (wiederholbare Aufgaben als Tools oder Prompts bereitstellen)
+- Mit Dateien und Repos zu arbeiten (lesen/suchen/schreiben, abhängig von den aktivierten Tools)
+- Datenbanken abzufragen (Schema-Inspektion, Queries, Reporting)
+- Interne Dienste zu integrieren (deine APIs als MCP-Tools kapseln)
+- Workflows zu automatisieren (wiederkehrende Aufgaben als Tools/Prompts bereitstellen)
 
 > [!tip]
 >
-> Wenn Sie nach dem „einen Befehl zum Einstieg“ suchen, springen Sie direkt zu [Schnellstart](#schnellstart).
+> Wenn du den „einen Befehl für den Einstieg“ suchst, springe direkt zu [Schnellstart](#quick-start).
 
-## Schnellstart
+## Quick start
 
-Qwen Code lädt MCP-Server aus dem Eintrag `mcpServers` in Ihrer `settings.json`. Sie können Server auf zwei Arten konfigurieren:
+Qwen Code lädt MCP-Server aus `mcpServers` in deiner `settings.json`. Du kannst Server auf zwei Arten konfigurieren:
 
-- Durch direktes Bearbeiten der `settings.json`
-- Mithilfe der `qwen mcp`-Befehle (siehe [CLI-Referenz](#qwen-mcp-cli))
+- Durch direktes Bearbeiten von `settings.json`
+- Durch Verwendung von `qwen mcp`-Befehlen (siehe [CLI-Referenz](#qwen-mcp-cli))
 
-### Fügen Sie Ihren ersten Server hinzu
+### Add your first server
 
-1. Fügen Sie einen Server hinzu (Beispiel: entfernter HTTP-MCP-Server):
+1. Füge einen Server hinzu (Beispiel: entfernter HTTP-MCP-Server):
 
 ```bash
 qwen mcp add --transport http my-server http://localhost:3000/mcp
 ```
 
-2. Öffnen Sie den MCP-Verwaltungsdialog, um Server anzuzeigen und zu verwalten:
+2. Öffne den MCP-Verwaltungsdialog, um Server anzuzeigen und zu verwalten:
 
 ```bash
 qwen mcp
 ```
 
-3. Starten Sie Qwen Code im selben Projekt neu (oder starten Sie es, falls es noch nicht läuft), und fordern Sie das Modell dann auf, Tools von diesem Server zu nutzen.
+3. Starte Qwen Code im selben Projekt neu (oder starte es, falls es noch nicht läuft) und fordere das Modell dann auf, Tools von diesem Server zu verwenden.
 
-## Speicherort der Konfiguration (Geltungsbereiche)
+## Where configuration is stored (scopes)
 
-Die meisten Benutzer benötigen nur diese beiden Geltungsbereiche:
+Die meisten Nutzer benötigen nur diese beiden Scopes:
 
-- **Projekt-Geltungsbereich (Standard)**: `.qwen/settings.json` im Stammverzeichnis Ihres Projekts  
-- **Benutzer-Geltungsbereich**: `~/.qwen/settings.json` für alle Projekte auf Ihrem Rechner
+- **Projekt-Scope (Standard)**: `.qwen/settings.json` im Projektstammverzeichnis
+- **User-Scope**: `~/.qwen/settings.json` für alle Projekte auf deinem Rechner
 
-Schreiben Sie in den Benutzer-Geltungsbereich:
+In den User-Scope schreiben:
 
 ```bash
 qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
@@ -53,27 +53,27 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 
 > [!tip]
 >
-> Für fortgeschrittene Konfigurationsebenen (Systemstandards/Systemeinstellungen und Prioritätsregeln) siehe [Einstellungen](../configuration/settings).
+> Für erweiterte Konfigurationsebenen (System-Standards/Systemeinstellungen und Vorrangregeln) siehe [Einstellungen](../configuration/settings).
 
-## Konfigurieren Sie Server
+## Configure servers
 
-### Wählen Sie ein Transportprotokoll
+### Choose a transport
 
-| Transport | Wann zu verwenden                                                                 | JSON-Feld(er)                               |
-| --------- | --------------------------------------------------------------------------------- | ------------------------------------------- |
-| `http`    | Empfohlen für Remote-Dienste; funktioniert gut mit Cloud-MCP-Servern              | `httpUrl` (+ optional `headers`)            |
-| `sse`     | Veraltete/veraltete Server, die ausschließlich Server-Sent Events unterstützen    | `url` (+ optional `headers`)                |
-| `stdio`   | Lokaler Prozess (Skripte, CLIs, Docker) auf Ihrem Rechner                         | `command`, `args` (+ optional `cwd`, `env`) |
+| Transport | Wann verwenden | JSON-Feld(er) |
+| --------- | ----------------------------------------------------------------- | ------------------------------------------- |
+| `http`    | Empfohlen für entfernte Dienste; funktioniert gut für Cloud-MCP-Server | `httpUrl` (+ optional `headers`)            |
+| `sse`     | Legacy-/veraltete Server, die nur Server-Sent Events unterstützen    | `url` (+ optional `headers`)                |
+| `stdio`   | Lokaler Prozess (Skripte, CLIs, Docker) auf deinem Rechner             | `command`, `args` (+ optional `cwd`, `env`) |
 
 > [!note]
 >
-> Falls ein Server beide Protokolle unterstützt, bevorzugen Sie **HTTP** gegenüber **SSE**.
+> Wenn ein Server beides unterstützt, bevorzuge **HTTP** gegenüber **SSE**.
 
-### Konfiguration über `settings.json` oder `qwen mcp add`
+### Configure via `settings.json` vs `qwen mcp add`
 
-Beide Ansätze erzeugen dieselben Einträge in `mcpServers` in Ihrer `settings.json` – verwenden Sie die Methode, die Ihnen besser gefällt.
+Beide Ansätze erzeugen dieselben `mcpServers`-Einträge in deiner `settings.json` – verwende die Methode, die dir besser gefällt.
 
-#### Stdio-Server (lokaler Prozess)
+#### Stdio server (local process)
 
 JSON (`.qwen/settings.json`):
 
@@ -94,14 +94,14 @@ JSON (`.qwen/settings.json`):
 }
 ```
 
-CLI (schreibt standardmäßig im Projektkontext):
+CLI (schreibt standardmäßig in den Projekt-Scope):
 
 ```bash
 qwen mcp add pythonTools -e DATABASE_URL=$DB_CONNECTION_STRING -e API_KEY=$EXTERNAL_API_KEY \
   --timeout 15000 python -m my_mcp_server --port 8080
 ```
 
-#### HTTP-Server (streamfähiger Remote-HTTP-Server)
+#### HTTP server (remote streamable HTTP)
 
 JSON:
 
@@ -111,7 +111,7 @@ JSON:
     "httpServerWithAuth": {
       "httpUrl": "http://localhost:3000/mcp",
       "headers": {
-        "Authorization": "Bearer Ihr-API-Token"
+        "Authorization": "Bearer your-api-token"
       },
       "timeout": 5000
     }
@@ -123,10 +123,10 @@ CLI:
 
 ```bash
 qwen mcp add --transport http httpServerWithAuth http://localhost:3000/mcp \
-  --header "Authorization: Bearer Ihr-API-Token" --timeout 5000
+  --header "Authorization: Bearer your-api-token" --timeout 5000
 ```
 
-#### SSE-Server (Remote-Server-Sent-Events)
+#### SSE server (remote Server-Sent Events)
 
 JSON:
 
@@ -147,17 +147,17 @@ CLI:
 qwen mcp add --transport sse sseServer http://localhost:8080/sse --timeout 30000
 ```
 
-## Sicherheit und Kontrolle
+## Safety and control
 
-### Vertrauen (Bestätigungen überspringen)
+### Trust (skip confirmations)
 
-- **Serververtrauen** (`trust: true`): Umgeht Bestätigungsabfragen für diesen Server (nur sparsam verwenden).
+- **Server-Vertrauen** (`trust: true`): Umgeht Bestätigungsabfragen für diesen Server (sparsam verwenden).
 
-### Filtern von Tools (Zulassen/Verweigern von Tools pro Server)
+### Tool filtering (allow/deny tools per server)
 
-Verwenden Sie `includeTools` bzw. `excludeTools`, um die von einem Server bereitgestellten Tools einzuschränken (aus Sicht von Qwen Code).
+Verwende `includeTools` / `excludeTools`, um die von einem Server bereitgestellten Tools einzuschränken (aus Sicht von Qwen Code).
 
-Beispiel: Nur einige Tools zulassen:
+Beispiel: Nur wenige Tools einbeziehen:
 
 ```json
 {
@@ -172,12 +172,12 @@ Beispiel: Nur einige Tools zulassen:
 }
 ```
 
-### Globale Zulassen-/Verweigern-Listen
+### Global allow/deny lists
 
-Das Objekt `mcp` in Ihrer Datei `settings.json` definiert globale Regeln für alle MCP-Server:
+Das `mcp`-Objekt in deiner `settings.json` definiert globale Regeln für alle MCP-Server:
 
-- `mcp.allowed`: Liste der zulässigen MCP-Servernamen (Schlüssel in `mcpServers`)
-- `mcp.excluded`: Liste der ausgeschlossenen MCP-Servernamen
+- `mcp.allowed`: Allow-Liste von MCP-Servernamen (Schlüssel in `mcpServers`)
+- `mcp.excluded`: Deny-Liste von MCP-Servernamen
 
 Beispiel:
 
@@ -190,31 +190,31 @@ Beispiel:
 }
 ```
 
-## Problembehandlung
+## Troubleshooting
 
-- **Server zeigt „Getrennt“ in `qwen mcp list` an**: Überprüfen Sie, ob die URL bzw. der Befehl korrekt ist, und erhöhen Sie anschließend den Wert für `timeout`.
-- **Stdio-Server startet nicht**: Verwenden Sie einen absoluten Pfad für `command` und überprüfen Sie `cwd`/`env` erneut.
-- **Umgebungsvariablen in JSON werden nicht aufgelöst**: Stellen Sie sicher, dass sie in der Umgebung vorhanden sind, in der Qwen Code ausgeführt wird (Shell- und GUI-Anwendungsumgebungen können sich unterscheiden).
+- **Server zeigt „Disconnected“ in `qwen mcp list` an**: Überprüfe, ob die URL/der Befehl korrekt ist, und erhöhe dann `timeout`.
+- **Stdio-Server startet nicht**: Verwende einen absoluten `command`-Pfad und überprüfe `cwd`/`env` erneut.
+- **Umgebungsvariablen in JSON werden nicht aufgelöst**: Stelle sicher, dass sie in der Umgebung existieren, in der Qwen Code ausgeführt wird (Shell- und GUI-App-Umgebungen können sich unterscheiden).
 
-## Referenz
+## Reference
 
-### Struktur von `settings.json`
+### `settings.json` structure
 
-#### Server-spezifische Konfiguration (`mcpServers`)
+#### Server-specific configuration (`mcpServers`)
 
-Fügen Sie ein `mcpServers`-Objekt zu Ihrer Datei `settings.json` hinzu:
+Füge deiner `settings.json`-Datei ein `mcpServers`-Objekt hinzu:
 
 ```json
-// ... die Datei enthält andere Konfigurationsobjekte
+// ... file contains other config objects
 {
   "mcpServers": {
     "serverName": {
-      "command": "Pfad/zum/Server",
+      "command": "path/to/server",
       "args": ["--arg1", "value1"],
       "env": {
         "API_KEY": "$MY_API_TOKEN"
       },
-      "cwd": "./server-verzeichnis",
+      "cwd": "./server-directory",
       "timeout": 30000,
       "trust": false
     }
@@ -226,55 +226,55 @@ Konfigurationseigenschaften:
 
 Erforderlich (eine der folgenden):
 
-| Eigenschaft | Beschreibung                                              |
-| ----------- | --------------------------------------------------------- |
-| `command`   | Pfad zur ausführbaren Datei für die Stdio-Übertragung     |
-| `url`       | SSE-Endpunkt-URL (z. B. `"http://localhost:8080/sse"`)     |
-| `httpUrl`   | HTTP-Streaming-Endpunkt-URL                               |
+| Eigenschaft  | Beschreibung                                            |
+| --------- | ------------------------------------------------------ |
+| `command` | Pfad zur ausführbaren Datei für den Stdio-Transport             |
+| `url`     | SSE-Endpunkt-URL (z. B. `"http://localhost:8080/sse"`) |
+| `httpUrl` | HTTP-Streaming-Endpunkt-URL                            |
 
 Optional:
 
-| Eigenschaft               | Typ/Standardwert              | Beschreibung                                                                                                                                                                                                                                                       |
-| ------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `args`                    | Array                         | Befehlszeilenargumente für die Stdio-Übertragung                                                                                                                                                                                                                  |
-| `headers`                 | Objekt                        | Benutzerdefinierte HTTP-Header bei Verwendung von `url` oder `httpUrl`                                                                                                                                                                                            |
-| `env`                     | Objekt                        | Umgebungsvariablen für den Serverprozess. Werte können auf Umgebungsvariablen mittels der Syntax `$VAR_NAME` oder `${VAR_NAME}` verweisen.                                                                                                                        |
-| `cwd`                     | Zeichenkette                  | Arbeitsverzeichnis für die Stdio-Übertragung                                                                                                                                                                                                                      |
-| `timeout`                 | Zahl<br>(Standard: 600 000)  | Anfragetimeout in Millisekunden (Standard: 600 000 ms = 10 Minuten)                                                                                                                                                                                               |
-| `trust`                   | Boolean<br>(Standard: `false`)| Wenn `true`, werden alle Bestätigungen für Tool-Aufrufe für diesen Server umgangen (Standard: `false`).                                                                                                                                                            |
-| `includeTools`            | Array                         | Liste der Tool-Namen, die von diesem MCP-Server eingeschlossen werden sollen. Wenn angegeben, sind ausschließlich die hier aufgeführten Tools über diesen Server verfügbar („Allowlist“-Verhalten). Falls nicht angegeben, sind standardmäßig alle vom Server bereitgestellten Tools aktiviert. |
-| `excludeTools`            | Array                         | Liste der Tool-Namen, die von diesem MCP-Server ausgeschlossen werden sollen. Tools, die hier aufgelistet sind, stehen dem Modell nicht zur Verfügung, selbst wenn sie vom Server bereitgestellt werden.<br>Hinweis: `excludeTools` hat Vorrang vor `includeTools` – ist ein Tool in beiden Listen enthalten, wird es ausgeschlossen. |
-| `targetAudience`          | Zeichenkette                  | Die OAuth-Client-ID, die für die IAP-geschützte Anwendung, auf die Sie zugreifen möchten, freigegeben ist. Wird zusammen mit `authProviderType: 'service_account_impersonation'` verwendet.                                                                         |
-| `targetServiceAccount`    | Zeichenkette                  | Die E-Mail-Adresse des Google Cloud-Dienstkonto, das imitiert werden soll. Wird zusammen mit `authProviderType: 'service_account_impersonation'` verwendet.                                                                                                        |
+| Eigenschaft               | Typ/Standardwert                 | Beschreibung                                                                                                                                                                                                                                                       |
+| ---------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `args`                 | array                        | Befehlszeilenargumente für den Stdio-Transport                                                                                                                                                                                                                        |
+| `headers`              | object                       | Benutzerdefinierte HTTP-Header bei Verwendung von `url` oder `httpUrl`                                                                                                                                                                                                                 |
+| `env`                  | object                       | Umgebungsvariablen für den Serverprozess. Werte können Umgebungsvariablen mit der Syntax `$VAR_NAME` oder `${VAR_NAME}` referenzieren                                                                                                                                |
+| `cwd`                  | string                       | Arbeitsverzeichnis für den Stdio-Transport                                                                                                                                                                                                                             |
+| `timeout`              | number<br>(Standard: 600.000) | Request-Timeout in Millisekunden (Standard: 600.000 ms = 10 Minuten)                                                                                                                                                                                                 |
+| `trust`                | boolean<br>(Standard: false)  | Wenn `true`, werden alle Tool-Aufruf-Bestätigungen für diesen Server umgangen (Standard: `false`)                                                                                                                                                                              |
+| `includeTools`         | array                        | Liste der Tool-Namen, die von diesem MCP-Server einbezogen werden sollen. Wenn angegeben, sind nur die hier aufgeführten Tools von diesem Server verfügbar (Allowlist-Verhalten). Wenn nicht angegeben, sind standardmäßig alle Tools des Servers aktiviert.                                       |
+| `excludeTools`         | array                        | Liste der Tool-Namen, die von diesem MCP-Server ausgeschlossen werden sollen. Die hier aufgeführten Tools stehen dem Modell nicht zur Verfügung, auch wenn sie vom Server bereitgestellt werden.<br>Hinweis: `excludeTools` hat Vorrang vor `includeTools` – wenn ein Tool in beiden Listen steht, wird es ausgeschlossen. |
+| `targetAudience`       | string                       | Die OAuth-Client-ID, die auf der IAP-geschützten Anwendung, auf die du zugreifen möchtest, auf der Allowlist steht. Wird mit `authProviderType: 'service_account_impersonation'` verwendet.                                                                                                         |
+| `targetServiceAccount` | string                       | Die E-Mail-Adresse des Google Cloud Service Accounts, der imitiert werden soll. Wird mit `authProviderType: 'service_account_impersonation'` verwendet.                                                                                                                              |
 
 <a id="qwen-mcp-cli"></a>
 
-### MCP-Server mit `qwen mcp` verwalten
+### Manage MCP servers with `qwen mcp`
 
-Sie können MCP-Server stets manuell durch Bearbeiten der Datei `settings.json` konfigurieren, doch die CLI ist in der Regel schneller.
+Du kannst MCP-Server immer durch manuelles Bearbeiten von `settings.json` konfigurieren, aber die CLI ist in der Regel schneller.
 
-#### Einen Server hinzufügen (`qwen mcp add`)
+#### Adding a server (`qwen mcp add`)
 
 ```bash
-qwen mcp add [Optionen] <Name> <BefehlOderUrl> [Argumente...]
+qwen mcp add [options] <name> <commandOrUrl> [args...]
 ```
 
-| Argument/Option     | Beschreibung                                                                 | Standardwert       | Beispiel                                   |
-| ------------------- | ---------------------------------------------------------------------------- | ------------------ | ------------------------------------------ |
-| `<Name>`            | Ein eindeutiger Name für den Server.                                         | —                  | `example-server`                           |
-| `<BefehlOderUrl>`   | Der auszuführende Befehl (für `stdio`) oder die URL (für `http`/`sse`).      | —                  | `/usr/bin/python` oder `http://localhost:8` |
-| `[Argumente...]`    | Optionale Argumente für einen `stdio`-Befehl.                                | —                  | `--port 5000`                              |
-| `-s`, `--scope`     | Konfigurationsbereich (Benutzer oder Projekt).                               | `project`          | `-s user`                                  |
-| `-t`, `--transport` | Transporttyp (`stdio`, `sse`, `http`).                                       | `stdio`            | `-t sse`                                   |
-| `-e`, `--env`       | Umgebungsvariablen festlegen.                                                | —                  | `-e KEY=value`                             |
-| `-H`, `--header`    | HTTP-Header für SSE- und HTTP-Transports festlegen.                          | —                  | `-H "X-Api-Key: abc123"`                   |
-| `--timeout`         | Verbindungszeitüberschreitung in Millisekunden festlegen.                    | —                  | `--timeout 30000`                          |
-| `--trust`           | Server vertrauen (alle Bestätigungsaufforderungen für Tool-Aufrufe umgehen). | — (`false`)        | `--trust`                                  |
-| `--description`     | Beschreibung für den Server festlegen.                                       | —                  | `--description "Lokale Tools"`             |
-| `--include-tools`   | Durch Kommas getrennte Liste der einzuschließenden Tools.                    | alle Tools werden eingebunden | `--include-tools mytool,othertool`        |
-| `--exclude-tools`   | Durch Kommas getrennte Liste der auszuschließenden Tools.                    | keine              | `--exclude-tools mytool`                   |
+| Argument/Option     | Beschreibung                                                         | Standard            | Beispiel                                   |
+| ------------------- | ------------------------------------------------------------------- | ------------------ | ----------------------------------------- |
+| `<name>`            | Ein eindeutiger Name für den Server.                                       | —                  | `example-server`                          |
+| `<commandOrUrl>`    | Der auszuführende Befehl (für `stdio`) oder die URL (für `http`/`sse`). | —                  | `/usr/bin/python` oder `http://localhost:8` |
+| `[args...]`         | Optionale Argumente für einen `stdio`-Befehl.                           | —                  | `--port 5000`                             |
+| `-s`, `--scope`     | Konfigurations-Scope (user oder project).                              | `project`          | `-s user`                                 |
+| `-t`, `--transport` | Transporttyp (`stdio`, `sse`, `http`).                            | `stdio`            | `-t sse`                                  |
+| `-e`, `--env`       | Umgebungsvariablen festlegen.                                          | —                  | `-e KEY=value`                            |
+| `-H`, `--header`    | HTTP-Header für SSE- und HTTP-Transporte festlegen.                       | —                  | `-H "X-Api-Key: abc123"`                  |
+| `--timeout`         | Verbindungs-Timeout in Millisekunden festlegen.                             | —                  | `--timeout 30000`                         |
+| `--trust`           | Dem Server vertrauen (alle Tool-Aufruf-Bestätigungsabfragen umgehen).       | — (`false`)        | `--trust`                                 |
+| `--description`     | Beschreibung für den Server festlegen.                                 | —                  | `--description "Local tools"`             |
+| `--include-tools`   | Eine durch Kommas getrennte Liste der einzubeziehenden Tools.                         | alle Tools einbezogen | `--include-tools mytool,othertool`        |
+| `--exclude-tools`   | Eine durch Kommas getrennte Liste der auszuschließenden Tools.                         | keine               | `--exclude-tools mytool`                  |
 
-#### Entfernen eines Servers (`qwen mcp remove`)
+#### Removing a server (`qwen mcp remove`)
 
 ```bash
 qwen mcp remove <name>

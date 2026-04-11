@@ -1,79 +1,87 @@
 # Genehmigungsmodus
 
-Qwen Code bietet drei verschiedene Berechtigungsmodi, mit denen Sie flexibel steuern können, wie die KI mit Ihrem Code und Ihrem System interagiert – abhängig von der Komplexität der Aufgabe und dem Risikograd.
+Qwen Code bietet vier verschiedene Berechtigungsmodi, mit denen du flexibel steuern kannst, wie die KI mit deinem Code und System interagiert – abhängig von der Komplexität der Aufgabe und dem Risikolevel.
 
-## Berechtigungsmodi im Vergleich
+## Vergleich der Berechtigungsmodi
 
-| Modus         | Dateibearbeitung               | Shell-Befehle                  | Geeignet für                                                                                           | Risikostufe |
-| -------------- | ------------------------------ | -------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------- |
-| **Plan**       | ❌ Nur lesezugriffsbasierte Analyse | ❌ Wird nicht ausgeführt         | • Code-Exploration <br>• Planung komplexer Änderungen <br>• Sichere Code-Reviews                     | Niedrigst   |
-| **Standard**   | ✅ Manuelle Genehmigung erforderlich | ✅ Manuelle Genehmigung erforderlich | • Neue oder unbekannte Codebasen <br>• Kritische Systeme <br>• Teamzusammenarbeit <br>• Lernen und Lehren | Niedrig     |
-| **Auto-Edit**  | ✅ Automatisch genehmigt       | ❌ Manuelle Genehmigung erforderlich | • Tägliche Entwicklungsarbeiten <br>• Refactoring und Code-Verbesserungen <br>• Sichere Automatisierung | Mittel      |
-| **YOLO**       | ✅ Automatisch genehmigt       | ✅ Automatisch genehmigt       | • Vertrauenswürdige persönliche Projekte <br>• Automatisierte Skripte/CI/CD <br>• Stapelverarbeitungsaufgaben | Höchst      |
+| Modus           | Dateibearbeitung                | Shell-Befehle              | Ideal für                                                                                               | Risikolevel |
+| -------------- | --------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------ | ---------- |
+| **Plan**​      | ❌ Nur Lesezugriff/Analyse  | ❌ Nicht ausgeführt             | • Code-Exploration <br>• Planung komplexer Änderungen <br>• Sicheres Code-Review                               | Niedrigstes     |
+| **Default**​   | ✅ Manuelle Bestätigung erforderlich | ✅ Manuelle Bestätigung erforderlich | • Neue/unbekannte Codebasen <br>• Kritische Systeme <br>• Teamzusammenarbeit <br>• Lernen und Lehren | Niedrig        |
+| **Auto-Edit**​ | ✅ Automatisch bestätigt            | ❌ Manuelle Bestätigung erforderlich | • Tägliche Entwicklungsaufgaben <br>• Refactoring und Code-Verbesserungen <br>• Sichere Automatisierung                | Mittel     |
+| **YOLO**​      | ✅ Automatisch bestätigt            | ✅ Automatisch bestätigt            | • Vertrauenswürdige persönliche Projekte <br>• Automatisierte Skripte/CI/CD <br>• Batch-Verarbeitungsaufgaben                 | Höchstes    |
 
-### Kurzreferenz
+### Kurzübersicht
 
-- **Beginnen Sie im Planungsmodus**: Ideal, um den Code zunächst zu verstehen, bevor Sie Änderungen vornehmen  
-- **Arbeiten Sie im Standardmodus**: Die ausgewogene Wahl für die meisten Entwicklungsarbeiten  
-- **Wechseln Sie in den Automatischen Bearbeitungsmodus**: Wenn Sie viele sichere Codeänderungen vornehmen  
-- **Verwenden Sie YOLO sparsam**: Nur für vertrauenswürdige Automatisierung in kontrollierten Umgebungen  
+- **Starte im Plan-Modus**: Ideal, um den Code zu verstehen, bevor Änderungen vorgenommen werden
+- **Arbeite im Default-Modus**: Die ausgewogene Wahl für die meisten Entwicklungsaufgaben
+- **Wechsle zu Auto-Edit**: Wenn du viele sichere Code-Änderungen vornimmst
+- **Nutze YOLO sparsam**: Nur für vertrauenswürdige Automatisierung in kontrollierten Umgebungen
 
-> [!tip]  
->  
-> Sie können während einer Sitzung mithilfe von **Umschalt+Tab** (bzw. **Tab** unter Windows) schnell zwischen den Modi wechseln. Die Statusleiste des Terminals zeigt Ihren aktuellen Modus an, sodass Sie stets wissen, welche Berechtigungen Qwen Code besitzt.  
+> [!tip]
+>
+> Du kannst während einer Sitzung schnell zwischen den Modi wechseln, indem du **Shift+Tab** (oder **Tab** unter Windows) drückst. Die Statusleiste des Terminals zeigt deinen aktuellen Modus an, sodass du immer weißt, welche Berechtigungen Qwen Code hat.
 
-## 1. Verwenden Sie den Planungsmodus für eine sichere Codeanalyse  
+## 1. Nutze den Plan-Modus für sichere Code-Analysen
 
-Der Planungsmodus weist Qwen Code an, einen Plan zu erstellen, indem die Codebasis ausschließlich mit **schreibgeschützten** Operationen analysiert wird. Dies ist ideal, um Codebasen zu erkunden, komplexe Änderungen zu planen oder Code sicher zu überprüfen.
+Der Plan-Modus weist Qwen Code an, einen Plan zu erstellen, indem die Codebase mit **Lesezugriff** analysiert wird. Ideal zum Erkunden von Codebasen, Planen komplexer Änderungen oder sicheren Code-Reviews.
 
-### Wann Plan-Modus verwenden?
+### Wann du den Plan-Modus nutzen solltest
 
-- **Mehrschrittige Implementierung**: Wenn Ihre Funktion Änderungen an vielen Dateien erfordert  
-- **Code-Erkundung**: Wenn Sie die Codebasis gründlich erforschen möchten, bevor Sie etwas ändern  
-- **Interaktive Entwicklung**: Wenn Sie gemeinsam mit Qwen Code schrittweise die Richtung Ihrer Arbeit verfeinern möchten
+- **Mehrstufige Implementierung**: Wenn dein Feature Änderungen an vielen Dateien erfordert
+- **Code-Exploration**: Wenn du die Codebase gründlich erforschen möchtest, bevor du etwas änderst
+- **Interaktive Entwicklung**: Wenn du die Richtung gemeinsam mit Qwen Code iterativ anpassen möchtest
 
-### So verwenden Sie den Plan-Modus
+### So nutzt du den Plan-Modus
 
-**Aktivieren Sie den Plan-Modus während einer Sitzung**
+**Aktiviere den Plan-Modus während einer Sitzung**
 
-Sie können während einer Sitzung in den Plan-Modus wechseln, indem Sie **Umschalt+Tab** (oder **Tab** unter Windows) drücken, um die Berechtigungsmodi zu durchlaufen.
+Du kannst während einer Sitzung mit **Shift+Tab** (oder **Tab** unter Windows) durch die Berechtigungsmodi wechseln und so in den Plan-Modus gelangen.
 
-Befinden Sie sich im Normalmodus, wechselt **Umschalt+Tab** (oder **Tab** unter Windows) zunächst in den `auto-edits`-Modus, der am unteren Rand des Terminals mit `⏵⏵ Änderungen automatisch akzeptieren` angezeigt wird. Ein weiterer Tastendruck auf **Umschalt+Tab** (oder **Tab** unter Windows) aktiviert den Plan-Modus, der am unteren Rand des Terminals mit `⏸ Plan-Modus` gekennzeichnet ist.
+Befindest du dich im Normalmodus, wechselt **Shift+Tab** (oder **Tab** unter Windows) zunächst in den `auto-edits`-Modus, erkennbar an `⏵⏵ accept edits on` am unteren Rand des Terminals. Ein erneutes Drücken von **Shift+Tab** (oder **Tab** unter Windows) wechselt in den Plan-Modus, angezeigt durch `⏸ plan mode`.
 
-**Starten Sie eine neue Sitzung im Plan-Modus**
+**Verwende den `/plan`-Befehl**
 
-Um eine neue Sitzung direkt im Plan-Modus zu starten, geben Sie `/approval-mode` ein und wählen dann `plan` aus:
+Der `/plan`-Befehl bietet eine schnelle Möglichkeit, den Plan-Modus zu aktivieren und zu verlassen:
+
+```bash
+/plan                          # Enter plan mode
+/plan refactor the auth module # Enter plan mode and start planning
+/plan exit                     # Exit plan mode, restore previous mode
+```
+
+Wenn du den Plan-Modus mit `/plan exit` verlässt, wird dein vorheriger Genehmigungsmodus automatisch wiederhergestellt (z. B. kehrst du zu Auto-Edit zurück, wenn du dich vor dem Plan-Modus in diesem Modus befunden hast).
+
+**Starte eine neue Sitzung im Plan-Modus**
+
+Um eine neue Sitzung im Plan-Modus zu starten, verwende `/approval-mode` und wähle anschließend `plan` aus.
 
 ```bash
 /approval-mode
 ```
 
-**Führen Sie „headless“-Abfragen im Plan-Modus aus**
+**Führe „headless“-Abfragen im Plan-Modus aus**
 
-Sie können eine Abfrage auch direkt im Plan-Modus mit der Option `-p` oder `--prompt` ausführen:
-
-```bash
-qwen --prompt "Was ist maschinelles Lernen?"
-```
-
-### Beispiel: Planung einer komplexen Refaktorisierung
+Du kannst eine Abfrage im Plan-Modus auch direkt mit `-p` oder `prompt` ausführen:
 
 ```bash
-/approval-mode plan
+qwen --prompt "What is machine learning?"
 ```
 
-```
-Ich muss unser Authentifizierungssystem so umgestalten, dass es OAuth2 verwendet. Erstelle einen detaillierten Migrationsplan.
+### Beispiel: Planung eines komplexen Refactorings
+
+```bash
+/plan I need to refactor our authentication system to use OAuth2. Create a detailed migration plan.
 ```
 
-Qwen Code analysiert die aktuelle Implementierung und erstellt einen umfassenden Plan. Verfeinern Sie diesen mit anschließenden Fragen:
+Qwen Code wechselt in den Plan-Modus und analysiert die aktuelle Implementierung, um einen umfassenden Plan zu erstellen. Verfeinere ihn mit Folgefragen:
 
 ```
-Wie sieht es mit der Abwärtskompatibilität aus?
-Wie sollen wir die Datenbankmigration durchführen?
+What about backward compatibility?
+How should we handle database migration?
 ```
 
-### Plan-Modus als Standardmodus konfigurieren
+### Konfiguriere den Plan-Modus als Standard
 
 ```json
 // .qwen/settings.json
@@ -84,186 +92,180 @@ Wie sollen wir die Datenbankmigration durchführen?
 }
 ```
 
-## 2. Standardmodus für kontrollierte Interaktion verwenden
+## 2. Nutze den Default-Modus für kontrollierte Interaktion
 
-Der Standardmodus ist die übliche Arbeitsweise mit Qwen Code. In diesem Modus behalten Sie die volle Kontrolle über alle potenziell riskanten Operationen – Qwen Code fordert vor jeder Dateiänderung oder Ausführung von Shell-Befehlen Ihre ausdrückliche Zustimmung an.
+Der Default-Modus ist die Standardarbeitsweise mit Qwen Code. In diesem Modus behältst du die volle Kontrolle über alle potenziell riskanten Operationen – Qwen Code fragt vor jeder Dateiänderung oder Ausführung von Shell-Befehlen nach deiner Bestätigung.
 
-### Wann Sie den Standardmodus verwenden sollten
+### Wann du den Default-Modus nutzen solltest
 
-- **Neu in einem Codebasen**: Wenn Sie ein unbekanntes Projekt erkunden und besonders vorsichtig sein möchten  
-- **Kritische Systeme**: Wenn Sie an Produktionscode, Infrastruktur oder sensiblen Daten arbeiten  
-- **Lernen und Lehren**: Wenn Sie jeden Schritt nachvollziehen möchten, den Qwen Code ausführt  
-- **Teamzusammenarbeit**: Wenn mehrere Personen an derselben Codebasis arbeiten  
+- **Neu in einer Codebase**: Wenn du ein unbekanntes Projekt erkundest und besonders vorsichtig sein möchtest
+- **Kritische Systeme**: Wenn du an Produktionscode, Infrastruktur oder sensiblen Daten arbeitest
+- **Lernen und Lehren**: Wenn du jeden Schritt nachvollziehen möchtest, den Qwen Code unternimmt
+- **Teamzusammenarbeit**: Wenn mehrere Personen an derselben Codebase arbeiten
 - **Komplexe Operationen**: Wenn die Änderungen mehrere Dateien oder komplexe Logik betreffen
 
-### So verwenden Sie den Standardmodus
+### So nutzt du den Default-Modus
 
-**Aktivieren Sie den Standardmodus während einer Sitzung**
+**Aktiviere den Default-Modus während einer Sitzung**
 
-Sie können während einer Sitzung mit **Umschalt+Tab** (oder **Tab** unter Windows) zwischen den Berechtigungsmodi wechseln. Befinden Sie sich in einem anderen Modus, führt das wiederholte Drücken von **Umschalt+Tab** (bzw. **Tab** unter Windows) schließlich wieder zum Standardmodus zurück – dieser ist daran zu erkennen, dass am unteren Rand des Terminals kein Modus-Indikator angezeigt wird.
+Du kannst während einer Sitzung mit **Shift+Tab** (oder **Tab** unter Windows) durch die Berechtigungsmodi wechseln und so in den Default-Modus gelangen. Befindest du dich in einem anderen Modus, führt wiederholtes Drücken von **Shift+Tab** (oder **Tab** unter Windows) schließlich zurück zum Default-Modus, erkennbar daran, dass am unteren Rand des Terminals kein Modus-Indikator angezeigt wird.
 
-**Starten Sie eine neue Sitzung im Standardmodus**
+**Starte eine neue Sitzung im Default-Modus**
 
-Der Standardmodus ist der anfängliche Modus beim Start von Qwen Code. Falls Sie den Modus geändert haben und zum Standardmodus zurückkehren möchten, verwenden Sie:
-
-```
-/approval-mode default
-```
-
-**Führen Sie „headless“-Abfragen im Standardmodus aus**
-
-Bei der Ausführung von „headless“-Befehlen ist der Standardmodus das Standardverhalten. Sie können ihn explizit wie folgt angeben:
-
-```
-qwen --prompt "Analysiere diesen Code auf potenzielle Fehler"
-```
-
-### Beispiel: Sichere Implementierung einer Funktion
+Der Default-Modus ist der Startmodus beim Öffnen von Qwen Code. Wenn du den Modus gewechselt hast und zum Default-Modus zurückkehren möchtest, verwende:
 
 ```
 /approval-mode default
 ```
 
+**Führe „headless“-Abfragen im Default-Modus aus**
+
+Bei der Ausführung von Headless-Befehlen ist der Default-Modus das Standardverhalten. Du kannst ihn explizit angeben mit:
+
 ```
-Ich muss Profilbilder für Benutzer zu unserer Anwendung hinzufügen. Die Bilder sollen in einem S3-Bucket gespeichert und die URLs in der Datenbank abgelegt werden.
+qwen --prompt "Analyze this code for potential bugs"
 ```
 
-Qwen Code analysiert Ihren Codebestand und schlägt einen Plan vor. Vor der Ausführung führt Qwen Code dann eine Genehmigungsanfrage durch für:
+### Beispiel: Sichere Implementierung eines Features
 
-1. Das Erstellen neuer Dateien (Controller, Modelle, Migrationen)
-2. Das Ändern bestehender Dateien (Hinzufügen neuer Spalten, Aktualisieren von APIs)
-3. Das Ausführen beliebiger Shell-Befehle (Datenbankmigrationen, Installation von Abhängigkeiten)
+```
+/approval-mode default
+```
 
-Sie können jede vorgeschlagene Änderung einzeln prüfen und separat genehmigen oder ablehnen.
+```
+I need to add user profile pictures to our application. The pictures should be stored in an S3 bucket and the URLs saved in the database.
+```
 
-### Standardmodus als Vorgabe konfigurieren
+Qwen Code analysiert deine Codebase und schlägt einen Plan vor. Anschließend fragt er vor folgenden Schritten um Bestätigung:
+
+1. Erstellen neuer Dateien (Controller, Modelle, Migrationen)
+2. Ändern bestehender Dateien (Hinzufügen neuer Spalten, Aktualisieren von APIs)
+3. Ausführen von Shell-Befehlen (Datenbank-Migrationen, Installation von Abhängigkeiten)
+
+Du kannst jede vorgeschlagene Änderung prüfen und einzeln genehmigen oder ablehnen.
+
+### Konfiguriere den Default-Modus als Standard
 
 ```bash
 // .qwen/settings.json
 {
   "permissions": {
-    "defaultMode": "default"
+"defaultMode": "default"
   }
 }
 ```
 
-## 3. Automatische-Bearbeitungen-Modus
+## 3. Auto-Edit-Modus
 
-Der Automatische-Bearbeitungen-Modus weist Qwen Code an, Dateiänderungen automatisch zu genehmigen, während für Shell-Befehle weiterhin eine manuelle Genehmigung erforderlich ist. Dieser Modus eignet sich ideal, um Entwicklungsworkflows zu beschleunigen, ohne die Systemsicherheit zu beeinträchtigen.
+Der Auto-Edit-Modus weist Qwen Code an, Dateiänderungen automatisch zu bestätigen, während Shell-Befehle weiterhin manuell genehmigt werden müssen. Ideal, um Entwicklungs-Workflows zu beschleunigen und gleichzeitig die Systemsicherheit zu wahren.
 
-### Wann Sie den Modus „Automatische Annahme von Änderungen“ verwenden sollten
+### Wann du den Auto-Edit-Modus nutzen solltest
 
-- **Tägliche Entwicklung**: Ideal für die meisten Programmieraufgaben  
-- **Sichere Automatisierung**: Ermöglicht es der KI, Code zu ändern, verhindert jedoch versehentliche Ausführung gefährlicher Befehle  
-- **Teamzusammenarbeit**: Verwenden Sie diesen Modus in gemeinsamen Projekten, um unbeabsichtigte Auswirkungen auf andere Teammitglieder zu vermeiden  
+- **Tägliche Entwicklung**: Ideal für die meisten Coding-Aufgaben
+- **Sichere Automatisierung**: Ermöglicht der KI, Code zu ändern, während die versehentliche Ausführung gefährlicher Befehle verhindert wird
+- **Teamzusammenarbeit**: Nutze ihn in gemeinsamen Projekten, um unbeabsichtigte Auswirkungen auf andere zu vermeiden
 
-### So wechseln Sie in diesen Modus
+### So wechselst du in diesen Modus
 
 ```
-
-# Wechseln über Befehl
+# Switch via command
 /approval-mode auto-edit
 
-# Oder verwenden Sie die Tastenkombination
-Shift+Tab (bzw. Tab unter Windows) # Wechseln von anderen Modi aus
+# Or use keyboard shortcut
+Shift+Tab (or Tab on Windows) # Switch from other modes
 ```
 
-### Beispielablauf
+### Workflow-Beispiel
 
-1. Sie bitten Qwen Code, eine Funktion umzustrukturieren  
-2. Die KI analysiert den Code und schlägt Änderungen vor  
-3. **Automatisch** werden alle Dateiänderungen ohne Bestätigung angewendet  
-4. Falls Tests ausgeführt werden müssen, fordert die KI **ausdrücklich die Zustimmung** zur Ausführung von `npm test` an  
+1. Du bittest Qwen Code, eine Funktion zu refactoren
+2. Die KI analysiert den Code und schlägt Änderungen vor
+3. **Automatische** Anwendung aller Dateiänderungen ohne Bestätigung
+4. Falls Tests ausgeführt werden müssen, **fordert sie eine Bestätigung** zur Ausführung von `npm test` an
 
-## 4. YOLO-Modus – Vollständige Automatisierung  
+## 4. YOLO-Modus – Vollautomatisierung
 
-Der YOLO-Modus gewährt Qwen Code die höchsten Berechtigungen und genehmigt automatisch alle Tool-Aufrufe – einschließlich Dateibearbeitung und Shell-Befehlen.
+Der YOLO-Modus gewährt Qwen Code die höchsten Berechtigungen und bestätigt alle Tool-Aufrufe automatisch, einschließlich Dateiänderungen und Shell-Befehlen.
 
-### Wann YOLO-Modus verwenden
+### Wann du den YOLO-Modus nutzen solltest
 
-- **Automatisierte Skripte**: Ausführung vordefinierter automatisierter Aufgaben  
-- **CI/CD-Pipelines**: Automatisierte Ausführung in kontrollierten Umgebungen  
-- **Persönliche Projekte**: Schnelle Iteration in vollständig vertrauenswürdigen Umgebungen  
-- **Batch-Verarbeitung**: Aufgaben, die mehrstufige Befehlsketten erfordern  
+- **Automatisierte Skripte**: Ausführung vordefinierter automatisierter Aufgaben
+- **CI/CD-Pipelines**: Automatisierte Ausführung in kontrollierten Umgebungen
+- **Persönliche Projekte**: Schnelle Iteration in vollständig vertrauenswürdigen Umgebungen
+- **Batch-Verarbeitung**: Aufgaben, die mehrstufige Befehlsketten erfordern
 
-> [!warning]  
->   
-> **Verwenden Sie den YOLO-Modus mit Vorsicht**: Die KI kann jeden Befehl mit Ihren Terminalberechtigungen ausführen. Stellen Sie daher sicher:  
->   
-> 1. Sie vertrauen dem aktuellen Codebasis  
-> 2. Sie verstehen alle Aktionen, die die KI durchführen wird  
-> 3. Wichtige Dateien sind gesichert oder in der Versionskontrolle commited  
+> [!warning]
+>
+> **Nutze den YOLO-Modus mit Vorsicht**: Die KI kann jeden Befehl mit den Berechtigungen deines Terminals ausführen. Stelle sicher:
+>
+> 1. Du vertraust der aktuellen Codebase
+> 2. Du verstehst alle Aktionen, die die KI ausführen wird
+> 3. Wichtige Dateien gesichert oder in die Versionskontrolle eingecheckt sind
 
-### So aktivieren Sie den YOLO-Modus  
-
-```  
-
-# Temporäre Aktivierung (nur für die aktuelle Sitzung)  
-/approval-mode yolo  
-
-# Als Projektstandard festlegen  
-/approval-mode yolo --project  
-
-# Als globaler Benutzerstandard festlegen  
-/approval-mode yolo --user  
-```  
-
-### Konfigurationsbeispiel  
-
-```bash  
-// .qwen/settings.json  
-{  
-  "permissions": {  
-    "defaultMode": "yolo",  
-    "confirmShellCommands": false,  
-    "confirmFileEdits": false  
-  }  
-}  
-```  
-
-### Beispiel für einen automatisierten Workflow  
+### So aktivierst du den YOLO-Modus
 
 ```
+# Temporarily enable (current session only)
+/approval-mode yolo
 
-# Vollautomatisierte Refactoring-Aufgabe  
-qwen --prompt „Führe die Testsuite aus, behebe alle fehlschlagenden Tests und übermittle die Änderungen“
+# Set as project default
+/approval-mode yolo --project
 
-# Ohne menschliches Eingreifen führt die KI folgende Schritte aus:
-
-# 1. Ausführen der Testbefehle (automatisch genehmigt)
-
-# 2. Beheben fehlschlagender Testfälle (automatische Dateibearbeitung)
-
-# 3. Ausführen des Git-Commits (automatisch genehmigt)  
+# Set as user global default
+/approval-mode yolo --user
 ```
 
-## Moduswechsel und Konfiguration
+### Konfigurationsbeispiel
 
-### Tastenkürzel für den Moduswechsel
+```bash
+// .qwen/settings.json
+{
+  "permissions": {
+"defaultMode": "yolo",
+"confirmShellCommands": false,
+"confirmFileEdits": false
+  }
+}
+```
 
-Während einer Qwen Code-Sitzung können Sie mit **Umschalt+Tab** (bzw. **Tab** unter Windows) schnell zwischen den drei Modi wechseln:
+### Beispiel für einen automatisierten Workflow
+
+```bash
+# Fully automated refactoring task
+qwen --prompt "Run the test suite, fix all failing tests, then commit changes"
+
+# Without human intervention, AI will:
+# 1. Run test commands (auto-approved)
+# 2. Fix failed test cases (auto-edit files)
+# 3. Execute git commit (auto-approved)
+```
+
+## Moduswechsel & Konfiguration
+
+### Wechsel per Tastenkürzel
+
+Während einer Qwen Code-Sitzung kannst du mit **Shift+Tab** (oder **Tab** unter Windows) schnell durch die vier Modi wechseln:
 
 ```
-Standardmodus → Automatische-Bearbeitung-Modus → YOLO-Modus → Planungsmodus → Standardmodus
+Default Mode → Auto-Edit Mode → YOLO Mode → Plan Mode → Default Mode
 ```
 
-### Dauerhafte Konfiguration
+### Persistente Konfiguration
 
 ```
-// Projektspezifisch: ./.qwen/settings.json  
-// Benutzerspezifisch: ~/.qwen/settings.json  
-{  
-  "permissions": {  
-    "defaultMode": "auto-edit",  // oder "plan" oder "yolo"  
-    "confirmShellCommands": true,  
-    "confirmFileEdits": true  
-  }  
+// Project-level: ./.qwen/settings.json
+// User-level: ~/.qwen/settings.json
+{
+  "permissions": {
+"defaultMode": "auto-edit",  // or "plan" or "yolo"
+"confirmShellCommands": true,
+"confirmFileEdits": true
+  }
 }
 ```
 
 ### Empfehlungen zur Modusnutzung
 
-1. **Neu im Codebase**: Beginnen Sie mit dem **Plan-Modus**, um sicher zu erkunden  
-2. **Tägliche Entwicklungsarbeiten**: Verwenden Sie **Auto-Accept-Edits** (Standardmodus) – effizient und sicher  
-3. **Automatisierte Skripte**: Verwenden Sie den **YOLO-Modus** in kontrollierten Umgebungen für vollständige Automatisierung  
-4. **Komplexe Refactorings**: Nutzen Sie zunächst den **Plan-Modus**, um detailliert zu planen, und wechseln Sie dann in den geeigneten Modus zur Ausführung
+1. **Neu in der Codebase**: Starte mit dem **Plan-Modus** für eine sichere Exploration
+2. **Tägliche Entwicklungsaufgaben**: Nutze **Auto-Edit** (Standardmodus), effizient und sicher
+3. **Automatisierte Skripte**: Nutze den **YOLO-Modus** in kontrollierten Umgebungen für Vollautomatisierung
+4. **Komplexes Refactoring**: Nutze zuerst den **Plan-Modus** für eine detaillierte Planung und wechsle dann für die Ausführung in den passenden Modus

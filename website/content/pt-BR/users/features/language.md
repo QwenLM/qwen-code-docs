@@ -1,22 +1,22 @@
 # Internacionalização (i18n) e Idioma
 
-O Qwen Code foi criado para fluxos de trabalho multilíngues: ele oferece localização da interface do usuário (i18n/l10n) na CLI, permite escolher o idioma da saída do assistente e suporta pacotes personalizados de idioma para a interface do usuário.
+O Qwen Code foi desenvolvido para fluxos de trabalho multilíngues: ele oferece suporte à localização da interface (i18n/l10n) na CLI, permite escolher o idioma de saída do assistente e possibilita o uso de pacotes de idioma personalizados para a UI.
 
 ## Visão geral
 
 Do ponto de vista do usuário, a “internacionalização” do Qwen Code abrange várias camadas:
 
-| Capacidade / Configuração | O que controla                                                                 | Onde é armazenada                 |
-| -------------------------- | ------------------------------------------------------------------------------ | --------------------------------- |
-| `/language ui`             | Texto da interface do usuário no terminal (menus, mensagens do sistema, prompts) | `~/.qwen/settings.json`          |
-| `/language output`         | Idioma em que a IA responde (uma preferência de saída, não uma tradução da IU)   | `~/.qwen/output-language.md`     |
-| Pacotes personalizados de idioma para a IU | Substitui ou estende as traduções internas da interface do usuário              | `~/.qwen/locales/*.js`           |
+| Recurso / Configuração     | O que controla                                                       | Onde é armazenado                 |
+| ------------------------ | ---------------------------------------------------------------------- | ---------------------------- |
+| `/language ui`           | Texto da UI do terminal (menus, mensagens do sistema, prompts)                     | `~/.qwen/settings.json`      |
+| `/language output`       | Idioma em que a IA responde (uma preferência de saída, não tradução da UI) | `~/.qwen/output-language.md` |
+| Pacotes de idioma personalizados para a UI | Substitui/estende as traduções de UI integradas                             | `~/.qwen/locales/*.js`       |
 
-## Idioma da Interface do Usuário
+## Idioma da UI
 
-Esta é a camada de localização (i18n/l10n) da interface de linha de comando (CLI): ela controla o idioma dos menus, mensagens de prompt e mensagens do sistema.
+Esta é a camada de localização da UI da CLI (i18n/l10n): ela controla o idioma dos menus, prompts e mensagens do sistema.
 
-### Definindo o Idioma da Interface do Usuário
+### Definindo o idioma da UI
 
 Use o comando `/language ui`:
 
@@ -38,53 +38,53 @@ Aliases também são suportados:
 /language ui ja       # Japonês
 ```
 
-### Detecção Automática
+### Detecção automática
 
-Na primeira inicialização, o Qwen Code detecta sua localidade do sistema e define automaticamente o idioma da interface do usuário.
+Na primeira inicialização, o Qwen Code detecta o locale do seu sistema e define o idioma da UI automaticamente.
 
-Ordem de prioridade para detecção:
+Prioridade de detecção:
 
 1. Variável de ambiente `QWEN_CODE_LANG`
 2. Variável de ambiente `LANG`
-3. Localidade do sistema via API JavaScript Intl
+3. Locale do sistema via API Intl do JavaScript
 4. Padrão: Inglês
 
-## Idioma da Saída do LLM
+## Idioma de saída do LLM
 
-O idioma da saída do LLM controla em qual idioma o assistente de IA responde, independentemente do idioma em que você digita suas perguntas.
+O idioma de saída do LLM controla em qual idioma o assistente de IA responde, independentemente do idioma em que você digita suas perguntas.
 
-### Como Funciona
+### Como funciona
 
-O idioma da saída do modelo de linguagem grande (LLM) é controlado por um arquivo de regra em `~/.qwen/output-language.md`. Esse arquivo é automaticamente incluído no contexto do LLM durante a inicialização, instruindo-o a responder no idioma especificado.
+O idioma de saída do LLM é controlado por um arquivo de regras em `~/.qwen/output-language.md`. Esse arquivo é incluído automaticamente no contexto do LLM durante a inicialização, instruindo-o a responder no idioma especificado.
 
-### Detecção Automática
+### Detecção automática
 
-Na primeira inicialização, caso o arquivo `output-language.md` não exista, o Qwen Code cria um automaticamente com base na localidade do seu sistema. Por exemplo:
+Na primeira inicialização, se nenhum arquivo `output-language.md` existir, o Qwen Code criará um automaticamente com base no locale do seu sistema. Por exemplo:
 
-- Localidade do sistema `zh` cria uma regra para respostas em chinês  
-- Localidade do sistema `en` cria uma regra para respostas em inglês  
-- Localidade do sistema `ru` cria uma regra para respostas em russo  
-- Localidade do sistema `de` cria uma regra para respostas em alemão  
-- Localidade do sistema `ja` cria uma regra para respostas em japonês
+- Locale do sistema `zh` cria uma regra para respostas em chinês
+- Locale do sistema `en` cria uma regra para respostas em inglês
+- Locale do sistema `ru` cria uma regra para respostas em russo
+- Locale do sistema `de` cria uma regra para respostas em alemão
+- Locale do sistema `ja` cria uma regra para respostas em japonês
 
-### Configuração Manual
+### Configuração manual
 
-Use `/language output <idioma>` para alterar:
+Use `/language output <language>` para alterar:
 
 ```bash
-/language output Chinês
-/language output Inglês
-/language output Japonês
-/language output Alemão
+/language output Chinese
+/language output English
+/language output Japanese
+/language output German
 ```
 
-Qualquer nome de idioma funciona. O modelo de linguagem grande (LLM) será instruído a responder nesse idioma.
+Qualquer nome de idioma funciona. O LLM será instruído a responder nesse idioma.
 
 > [!note]
 >
-> Após alterar o idioma de saída, reinicie o Qwen Code para que a alteração entre em vigor.
+> Após alterar o idioma de saída, reinicie o Qwen Code para que a alteração tenha efeito.
 
-### Localização do Arquivo
+### Localização do arquivo
 
 ```
 ~/.qwen/output-language.md
@@ -92,48 +92,48 @@ Qualquer nome de idioma funciona. O modelo de linguagem grande (LLM) será instr
 
 ## Configuração
 
-### Via Diálogo de Configurações
+### Pela caixa de diálogo de configurações
 
 1. Execute `/settings`
-2. Encontre "Idioma" em Geral
-3. Selecione seu idioma preferido para a interface do usuário
+2. Encontre "Language" em General
+3. Selecione seu idioma de UI preferido
 
-### Via Variável de Ambiente
+### Por variável de ambiente
 
 ```bash
 export QWEN_CODE_LANG=zh
 ```
 
-Isso influencia a detecção automática na inicialização inicial (se você ainda não definiu um idioma para a interface do usuário e o arquivo `output-language.md` ainda não existe).
+Isso influencia a detecção automática na primeira inicialização (se você ainda não definiu um idioma de UI e nenhum arquivo `output-language.md` existe).
 
-## Pacotes de Idioma Personalizados
+## Pacotes de idioma personalizados
 
-Para traduções da interface do usuário, você pode criar pacotes de idioma personalizados em `~/.qwen/locales/`:
+Para traduções da UI, você pode criar pacotes de idioma personalizados em `~/.qwen/locales/`:
 
-- Exemplo: `~/.qwen/locales/es.js` para o espanhol  
-- Exemplo: `~/.qwen/locales/fr.js` para o francês
+- Exemplo: `~/.qwen/locales/es.js` para espanhol
+- Exemplo: `~/.qwen/locales/fr.js` para francês
 
-O diretório do usuário tem precedência sobre as traduções embutidas.
+O diretório do usuário tem precedência sobre as traduções integradas.
 
 > [!tip]
 >
-> Contribuições são bem-vindas! Se você quiser melhorar as traduções embutidas ou adicionar novos idiomas.  
-> Para um exemplo concreto, veja [PR #1238: feat(i18n): adicionar suporte ao idioma russo](https://github.com/QwenLM/qwen-code/pull/1238).
+> Contribuições são bem-vindas! Se você quiser melhorar as traduções integradas ou adicionar novos idiomas.
+> Para um exemplo concreto, consulte [PR #1238: feat(i18n): add Russian language support](https://github.com/QwenLM/qwen-code/pull/1238).
 
-### Formato do Pacote de Idioma
+### Formato do pacote de idioma
 
 ```javascript
 // ~/.qwen/locales/es.js
 export default {
-  Hello: 'Olá',
-  Settings: 'Configurações',
-  // ... mais traduções
+  Hello: 'Hola',
+  Settings: 'Configuracion',
+  // ... more translations
 };
 ```
 
-## Comandos Relacionados
+## Comandos relacionados
 
-- `/language` — Mostra as configurações atuais de idioma  
-- `/language ui [lang]` — Define o idioma da interface do usuário  
-- `/language output <language>` — Define o idioma de saída do modelo LLM  
-- `/settings` — Abre o diálogo de configurações
+- `/language` - Exibe as configurações de idioma atuais
+- `/language ui [lang]` - Define o idioma da UI
+- `/language output <language>` - Define o idioma de saída do LLM
+- `/settings` - Abre a caixa de diálogo de configurações
