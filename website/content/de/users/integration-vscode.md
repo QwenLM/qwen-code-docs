@@ -1,20 +1,20 @@
 # Visual Studio Code
 
-> Die VS Code-Erweiterung (Beta) ermöglicht es Ihnen, Änderungen von Qwen in Echtzeit über eine native grafische Benutzeroberfläche zu verfolgen, die direkt in Ihre IDE integriert ist. Dadurch wird der Zugriff auf Qwen Code und die Interaktion damit vereinfacht.
+> Die VS Code-Erweiterung (Beta) zeigt dir Änderungen von Qwen in Echtzeit über eine native grafische Oberfläche, die direkt in deine IDE integriert ist. So kannst du einfacher auf Qwen Code zugreifen und damit interagieren.
 
 <br/>
 
 <video src="https://cloud.video.taobao.com/vod/IKKwfM-kqNI3OJjM_U8uMCSMAoeEcJhs6VNCQmZxUfk.mp4" controls width="800">
-  Ihr Browser unterstützt das Video-Element nicht.
+  Dein Browser unterstützt das Video-Tag nicht.
 </video>
 
 ### Funktionen
 
-- **Native IDE-Erfahrung**: Dediziertes Seitenleistenfeld für Qwen Code, das über das Qwen-Symbol geöffnet wird
-- **Automatische Übernahme von Änderungen**: Qwens Änderungen werden automatisch angewendet, sobald sie vorgenommen werden
-- **Dateiverwaltung**: Dateien per @-Mention einbinden oder Dateien und Bilder mithilfe des systemeigenen Dateiauswahldialogs anhängen
-- **Verlauf der Unterhaltungen**: Zugriff auf frühere Konversationen
-- **Mehrere Sitzungen**: Gleichzeitiges Ausführen mehrerer Qwen-Code-Sitzungen
+- **Native IDE-Erfahrung**: Dediziertes Qwen Code-Seitenleisten-Panel, das über das Qwen-Symbol aufgerufen wird
+- **Auto-accept edits mode**: Wendet Änderungen von Qwen automatisch an, sobald sie vorgenommen werden
+- **Dateiverwaltung**: Verwende @-Mentions für Dateien oder hänge Dateien und Bilder über den System-Dateidialog an
+- **Konversationsverlauf**: Zugriff auf frühere Konversationen
+- **Mehrere Sessions**: Führe mehrere Qwen Code-Sessions gleichzeitig aus
 
 ### Voraussetzungen
 
@@ -22,18 +22,18 @@
 
 ### Installation
 
-Laden Sie die Erweiterung über den [Visual Studio Code-Erweiterungsmarktplatz](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion) herunter und installieren Sie sie.
+Lade die Erweiterung aus dem [Visual Studio Code Extension Marketplace](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion) herunter und installiere sie.
 
-## Problembehandlung
+## Fehlerbehebung
 
-### Erweiterung wird nicht installiert
+### Erweiterung lässt sich nicht installieren
 
-- Stellen Sie sicher, dass Sie VS Code 1.85.0 oder höher verwenden.
-- Prüfen Sie, ob VS Code die Berechtigung zum Installieren von Erweiterungen besitzt.
-- Versuchen Sie, die Erweiterung direkt über die Website des Marktplatzes zu installieren.
+- Stelle sicher, dass du VS Code 1.85.0 oder höher verwendest
+- Überprüfe, ob VS Code die Berechtigung zum Installieren von Erweiterungen hat
+- Versuche, die Erweiterung direkt über die Marketplace-Website zu installieren
 
 ### Qwen Code reagiert nicht
 
-- Überprüfen Sie Ihre Internetverbindung.
-- Starten Sie ein neues Gespräch, um zu prüfen, ob das Problem weiterhin besteht.
-- [Melden Sie ein Problem auf GitHub](https://github.com/qwenlm/qwen-code/issues), falls das Problem fortbesteht.
+- Überprüfe deine Internetverbindung
+- Starte eine neue Konversation, um zu prüfen, ob das Problem weiterhin besteht
+- [Erstelle ein Issue auf GitHub](https://github.com/qwenlm/qwen-code/issues), falls das Problem weiterhin besteht

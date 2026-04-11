@@ -1,10 +1,10 @@
-# Dossiers approuvés
+# Dossiers de confiance
 
-La fonctionnalité « Dossiers approuvés » est un paramètre de sécurité qui vous permet de contrôler quels projets peuvent utiliser l’intégralité des fonctionnalités de Qwen Code. Elle empêche l’exécution de code potentiellement malveillant en vous demandant d’approuver un dossier avant que l’interface en ligne de commande (CLI) n’en charge les configurations spécifiques au projet.
+La fonctionnalité Dossiers de confiance est un paramètre de sécurité qui vous permet de contrôler quels projets peuvent utiliser toutes les capacités de Qwen Code. Elle empêche l'exécution de code potentiellement malveillant en vous demandant d'approuver un dossier avant que le CLI ne charge les configurations spécifiques au projet qu'il contient.
 
 ## Activation de la fonctionnalité
 
-La fonctionnalité « Dossiers approuvés » est **désactivée par défaut**. Pour l’utiliser, vous devez d’abord l’activer dans vos paramètres.
+La fonctionnalité Dossiers de confiance est **désactivée par défaut**. Pour l'utiliser, vous devez d'abord l'activer dans vos paramètres.
 
 Ajoutez ce qui suit à votre fichier `settings.json` utilisateur :
 
@@ -18,44 +18,44 @@ Ajoutez ce qui suit à votre fichier `settings.json` utilisateur :
 }
 ```
 
-## Fonctionnement : la boîte de dialogue de confiance
+## Fonctionnement : La boîte de dialogue de confiance
 
-Une fois la fonctionnalité activée, la première fois que vous exécutez Qwen Code depuis un dossier, une boîte de dialogue apparaît automatiquement pour vous demander de faire un choix :
+Une fois la fonctionnalité activée, la première fois que vous lancez Qwen Code depuis un dossier, une boîte de dialogue s'affiche automatiquement pour vous inviter à faire un choix :
 
-- **Faire confiance au dossier** : accorde une confiance totale au dossier actuel (par exemple `my-project`).
-- **Faire confiance au dossier parent** : accorde la confiance au répertoire parent (par exemple `safe-projects`), ce qui accorde automatiquement la confiance à tous ses sous-répertoires. Cette option est utile si vous stockez tous vos projets fiables au même endroit.
-- **Ne pas faire confiance** : marque le dossier comme non fiable. L’interface en ligne de commande (CLI) fonctionne alors en mode « sécurisé » restreint.
+- **Faire confiance au dossier** : Accorde une confiance totale au dossier actuel (par ex. `my-project`).
+- **Faire confiance au dossier parent** : Accorde la confiance au répertoire parent (par ex. `safe-projects`), ce qui approuve automatiquement tous ses sous-répertoires. Cela est utile si vous regroupez tous vos projets sûrs au même endroit.
+- **Ne pas faire confiance** : Marque le dossier comme non approuvé. Le CLI fonctionnera en « mode sécurisé » restreint.
 
-Votre choix est enregistré dans un fichier central (`~/.qwen/trustedFolders.json`), aussi ne serez-vous interrogé qu’une seule fois par dossier.
+Votre choix est enregistré dans un fichier central (`~/.qwen/trustedFolders.json`), vous ne serez donc interrogé qu'une seule fois par dossier.
 
-## Pourquoi la confiance est essentielle : impact d’un espace de travail non fiable
+## Importance de la confiance : Impact d'un espace de travail non approuvé
 
-Lorsqu’un dossier est **non fiable**, Qwen Code s’exécute en mode restreint, appelé « mode sécurisé », afin de vous protéger. Dans ce mode, les fonctionnalités suivantes sont désactivées :
+Lorsqu'un dossier est **non approuvé**, Qwen Code s'exécute en « mode sécurisé » restreint pour vous protéger. Dans ce mode, les fonctionnalités suivantes sont désactivées :
 
-1.  **Les paramètres de l’espace de travail sont ignorés** : L’interface CLI **ne chargera pas** le fichier `.qwen/settings.json` du projet. Cela empêche le chargement d’outils personnalisés et d’autres configurations potentiellement dangereuses.
+1.  **Les paramètres de l'espace de travail sont ignorés** : Le CLI **ne chargera pas** le fichier `.qwen/settings.json` du projet. Cela empêche le chargement d'outils personnalisés et d'autres configurations potentiellement dangereuses.
 
-2.  **Les variables d’environnement sont ignorées** : L’interface CLI **ne chargera aucun** fichier `.env` du projet.
+2.  **Les variables d'environnement sont ignorées** : Le CLI **ne chargera aucun** fichier `.env` du projet.
 
-3.  **La gestion des extensions est restreinte** : Vous **ne pouvez ni installer, ni mettre à jour, ni désinstaller** d’extensions.
+3.  **La gestion des extensions est restreinte** : Vous **ne pouvez pas installer, mettre à jour ou désinstaller** d'extensions.
 
-4.  **L’acceptation automatique des outils est désactivée** : Vous serez systématiquement invité avant l’exécution de tout outil, même si l’acceptation automatique est activée globalement.
+4.  **L'acceptation automatique des outils est désactivée** : Vous serez toujours invité à confirmer avant l'exécution de tout outil, même si l'acceptation automatique est activée globalement.
 
-5.  **Le chargement automatique de mémoire est désactivé** : L’interface CLI ne chargera pas automatiquement de fichiers dans le contexte à partir des répertoires spécifiés dans les paramètres locaux.
+5.  **Le chargement automatique de la mémoire est désactivé** : Le CLI ne chargera pas automatiquement les fichiers dans le contexte depuis les répertoires spécifiés dans les paramètres locaux.
 
-Accorder votre confiance à un dossier débloque l’intégralité des fonctionnalités de Qwen Code pour cet espace de travail.
+L'approbation d'un dossier débloque toutes les fonctionnalités de Qwen Code pour cet espace de travail.
 
 ## Gestion de vos paramètres de confiance
 
-Si vous devez modifier une décision ou consulter l’ensemble de vos paramètres, plusieurs options s’offrent à vous :
+Si vous devez modifier une décision ou consulter tous vos paramètres, plusieurs options s'offrent à vous :
 
-- **Modifier la confiance du dossier actuel** : exécutez la commande `/permissions` depuis l’interface CLI. Une boîte de dialogue interactive identique s’affichera, vous permettant de modifier le niveau de confiance du dossier courant.
+- **Modifier la confiance du dossier actuel** : Exécutez la commande `/permissions` depuis le CLI. Cela ouvrira la même boîte de dialogue interactive, vous permettant de modifier le niveau de confiance pour le dossier actuel.
 
-- **Afficher toutes les règles de confiance** : pour obtenir la liste complète de tous vos dossiers approuvés et non approuvés, examinez le contenu du fichier `~/.qwen/trustedFolders.json` situé dans votre répertoire personnel.
+- **Afficher toutes les règles de confiance** : Pour consulter la liste complète de vos règles de dossiers approuvés et non approuvés, vous pouvez inspecter le contenu du fichier `~/.qwen/trustedFolders.json` dans votre répertoire personnel.
 
-## Processus de vérification de la confiance (avancé)
+## Processus de vérification de la confiance (Avancé)
 
-Pour les utilisateurs avancés, il peut être utile de connaître précisément l’ordre des opérations utilisé pour déterminer la confiance :
+Pour les utilisateurs avancés, il est utile de connaître l'ordre exact des opérations permettant de déterminer la confiance :
 
-1.  **Signal de confiance fourni par l’IDE** : si vous utilisez l’[intégration avec un IDE](../ide-integration/ide-integration), la CLI interroge d’abord l’IDE afin de savoir si l’espace de travail est fiable. La réponse de l’IDE a la priorité absolue.
+1.  **Signal de confiance de l'IDE** : Si vous utilisez l'[intégration IDE](../ide-integration/ide-integration), le CLI demande d'abord à l'IDE si l'espace de travail est approuvé. La réponse de l'IDE est prioritaire.
 
-2.  **Fichier local de confiance** : si l’IDE n’est pas connecté, la CLI consulte le fichier central `~/.qwen/trustedFolders.json`.
+2.  **Fichier de confiance local** : Si l'IDE n'est pas connecté, le CLI vérifie le fichier central `~/.qwen/trustedFolders.json`.

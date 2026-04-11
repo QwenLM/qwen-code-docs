@@ -1,6 +1,9 @@
 export default {
   commands: 'Команды',
+  'code-review': 'Проверка кода',
+  'followup-suggestions': 'Последующие предложения',
   'sub-agents': 'Подагенты',
+  arena: 'Арена агентов',
   skills: 'Навыки',
   headless: 'Безголовый режим',
   checkpointing: {
@@ -12,4 +15,8 @@ export default {
   'token-caching': 'Кэширование токенов',
   sandbox: 'Песочница',
   language: 'i18n',
+  channels: 'Каналы',
+  hooks: 'Хуки',
+  'status-line': 'Строка состояния',
+  'scheduled-tasks': 'Запланированные задачи',
 };

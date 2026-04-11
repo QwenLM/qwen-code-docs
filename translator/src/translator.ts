@@ -5,9 +5,7 @@ import chalk from "chalk";
 import { createEnvLoader } from "./utils/env";
 import {
   parseMarkdown,
-  reconstructDocument,
   type ParsedContent,
-  type DocumentSection,
 } from "./utils/markdown-parser";
 
 interface TranslatorConfig {
@@ -19,11 +17,7 @@ interface TranslatorConfig {
 interface TranslationOptions {
   model?: string;
   maxTokens?: number;
-  projectRoot?: string; // 新增：项目根目录
-}
-
-interface TranslationChunk extends DocumentSection {
-  index?: number;
+  projectRoot?: string;
 }
 
 export class DocumentTranslator {
@@ -74,28 +68,20 @@ export class DocumentTranslator {
       const content = await fs.readFile(filePath, "utf-8");
       const parsedContent = parseMarkdown(content);
 
-      // Segment for translation
-      const chunks = this.segmentContent(parsedContent);
-      console.log(chalk.blue(`  ✓ Segmented into ${chunks.length} chunks`));
-
-      // Merge small chunks to reduce API calls
-      const mergedChunks = this.mergeSmallChunks(chunks);
-      console.log(chalk.blue(`  ✓ Merged into ${mergedChunks.length} blocks`));
-
-      // Parallel translation processing
-      const translations = await Promise.all(
-        mergedChunks.map((chunk, index) =>
-          this.translateChunk(chunk, targetLang, index)
+      // Full document translation (leverage large context models like qwen3.6-plus)
+      console.log(
+        chalk.blue(
+          `  ✓ Translating full document (${content.length} characters)`
         )
       );
 
-      const translatedDocument = reconstructDocument(
-        translations,
-        parsedContent.structure
+      const translatedContent = await this.translateContent(
+        parsedContent.originalContent,
+        targetLang
       );
 
       console.log(chalk.green(`✓ Completed ${path.basename(filePath)}`));
-      return translatedDocument;
+      return translatedContent;
     } catch (error: any) {
       console.error(chalk.red(`✗ Translation failed: ${error.message}`));
       throw error;
@@ -103,32 +89,22 @@ export class DocumentTranslator {
   }
 
   /**
-   * Translate single text chunk
+   * Translate text content
    */
-  async translateChunk(
-    chunk: TranslationChunk,
-    targetLang: string,
-    index: number
-  ): Promise<TranslationChunk> {
-    // Skip code blocks and links (all code blocks are skipped, including markdown)
-    if (chunk.type === "code" || chunk.type === "link") {
-      // Add special logging for markdown code blocks
-      if (chunk.type === "code" && chunk.metadata?.language === "markdown") {
-        console.log(chalk.gray(`    ✓ Skipped markdown code block`));
-      }
-      return chunk;
-    }
-
-    const cacheKey = `${chunk.content}-${targetLang}`;
+  async translateContent(
+    content: string,
+    targetLang: string
+  ): Promise<string> {
+    const cacheKey = `${content}-${targetLang}`;
     if (this.translationCache.has(cacheKey)) {
-      console.log(chalk.gray(`    ✓ Cached chunk ${index + 1}`));
-      return { ...chunk, content: this.translationCache.get(cacheKey)! };
+      console.log(chalk.gray(`    ✓ Cached translation`));
+      return this.translationCache.get(cacheKey)!;
     }
 
     try {
-      console.log(chalk.cyan(`    → Chunk ${index + 1} (${targetLang})`));
+      console.log(chalk.cyan(`    → Translating content (${targetLang})`));
 
-      const prompt = this.buildTranslationPrompt(chunk.content, targetLang);
+      const prompt = this.buildTranslationPrompt(content, targetLang);
       const translatedContent = await this.callTranslationAPI(
         prompt,
         targetLang
@@ -137,12 +113,10 @@ export class DocumentTranslator {
       // Cache translation result
       this.translationCache.set(cacheKey, translatedContent);
 
-      return { ...chunk, content: translatedContent };
+      return translatedContent;
     } catch (error: any) {
-      console.error(
-        chalk.red(`    ✗ Chunk ${index + 1} failed: ${error.message}`)
-      );
-      return chunk; // Return original content as fallback
+      console.error(chalk.red(`    ✗ Translation failed: ${error.message}`));
+      throw error;
     }
   }
 
@@ -297,57 +271,6 @@ ${content}`;
         throw new Error(`Request configuration error: ${error.message}`);
       }
     }
-  }
-
-  /**
-   * Segment document content into translatable chunks - by heading strategy
-   */
-  segmentContent(parsedContent: ParsedContent): TranslationChunk[] {
-    const content = parsedContent.originalContent;
-
-    // Split by headings (match # ## ### etc.)
-    const chunks = content
-      .split(/(?=^#{1,6}\s)/m)
-      .filter((chunk) => chunk.trim());
-
-    return chunks.map((chunk, index) => ({
-      type: "paragraph" as const,
-      content: chunk.trim(),
-      metadata: { chunkIndex: index },
-      startLine: 0,
-      endLine: 0,
-    }));
-  }
-
-  /**
-   * Merge small chunks to reduce API call count
-   */
-  private mergeSmallChunks(chunks: TranslationChunk[]): TranslationChunk[] {
-    const maxMergedSize = 1000; // Maximum size after merging
-    const merged: TranslationChunk[] = [];
-    let currentMerged: TranslationChunk | null = null;
-
-    for (const chunk of chunks) {
-      if (!currentMerged) {
-        currentMerged = { ...chunk };
-      } else if (
-        currentMerged.content.length + chunk.content.length <
-        maxMergedSize
-      ) {
-        // Merge into current chunk
-        currentMerged.content += "\n\n" + chunk.content;
-      } else {
-        // Current chunk is full, save and start new chunk
-        merged.push(currentMerged);
-        currentMerged = { ...chunk };
-      }
-    }
-
-    if (currentMerged) {
-      merged.push(currentMerged);
-    }
-
-    return merged;
   }
 
   /**

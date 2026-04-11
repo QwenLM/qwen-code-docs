@@ -251,23 +251,14 @@ ${sourceContent}
     };
 
     try {
-      // 创建一个简单的文档结构来使用现有的翻译器
-      const mockDocument = {
-        type: "paragraph" as const,
-        content: sourceContent,
-        metadata: {},
-        startLine: 1,
-        endLine: 1,
-      };
-
-      const translatedChunk = await this.translator.translateChunk(
-        mockDocument,
-        targetLanguage,
-        0
+      // 直接翻译全文内容
+      const translatedContent = await this.translator.translateContent(
+        sourceContent,
+        targetLanguage
       );
 
       // 清理可能存在的代码块标记
-      let content = translatedChunk.content;
+      let content = translatedContent;
 
       // 移除开头的代码块标记
       content = content.replace(

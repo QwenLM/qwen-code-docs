@@ -1,44 +1,44 @@
-# Speicher-Tool (`save_memory`)
+# Memory-Tool (`save_memory`)
 
 Dieses Dokument beschreibt das `save_memory`-Tool für Qwen Code.
 
 ## Beschreibung
 
-Verwenden Sie `save_memory`, um Informationen über Ihre Qwen-Code-Sitzungen hinweg zu speichern und abzurufen. Mit `save_memory` können Sie die CLI anweisen, wichtige Details über mehrere Sitzungen hinweg zu merken, wodurch eine personalisierte und zielgerichtete Unterstützung ermöglicht wird.
+Verwende `save_memory`, um Informationen über deine Qwen Code-Sitzungen hinweg zu speichern und abzurufen. Mit `save_memory` kannst du die CLI anweisen, wichtige Details sitzungsübergreifend zu speichern, um personalisierte und gezielte Unterstützung zu bieten.
 
 ### Argumente
 
-`save_memory` akzeptiert ein Argument:
+`save_memory` erwartet ein Argument:
 
-- `fact` (Zeichenkette, erforderlich): Die konkrete Tatsache oder Information, die gespeichert werden soll. Dies sollte eine klare, in sich geschlossene Aussage in natürlicher Sprache sein.
+- `fact` (string, erforderlich): Die spezifische Tatsache oder Information, die gespeichert werden soll. Dies sollte eine klare, in sich geschlossene Aussage in natürlicher Sprache sein.
 
 ## Verwendung von `save_memory` mit Qwen Code
 
-Das Tool fügt die angegebene `fact` der Kontextdatei des Benutzers im Home-Verzeichnis an (standardmäßig `~/.qwen/QWEN.md`). Der Dateiname kann über `contextFileName` konfiguriert werden.
+Das Tool hängt die angegebene `fact` an deine Kontextdatei im Home-Verzeichnis des Benutzers an (standardmäßig `~/.qwen/QWEN.md`). Dieser Dateiname kann über `contextFileName` konfiguriert werden.
 
-Sobald hinzugefügt, werden die Fakten im Abschnitt `## Qwen Added Memories` gespeichert. Diese Datei wird in nachfolgenden Sitzungen als Kontext geladen, sodass die CLI die gespeicherten Informationen abrufen kann.
+Nach dem Hinzufügen werden die Fakten unter einem `## Qwen Added Memories`-Abschnitt gespeichert. Diese Datei wird in nachfolgenden Sitzungen als Kontext geladen, sodass die CLI die gespeicherten Informationen abrufen kann.
 
 Verwendung:
 
 ```
-save_memory(fact="Ihre Tatsache hier.")
+save_memory(fact="Your fact here.")
 ```
 
 ### `save_memory`-Beispiele
 
-Eine Benutzervoreinstellung merken:
+Speichern einer Benutzereinstellung:
 
 ```
-save_memory(fact="Meine bevorzugte Programmiersprache ist Python.")
+save_memory(fact="My preferred programming language is Python.")
 ```
 
-Ein projektspezifisches Detail speichern:
+Speichern eines projektspezifischen Details:
 
 ```
-save_memory(fact="Das Projekt, an dem ich derzeit arbeite, heißt 'qwen-code'.")
+save_memory(fact="The project I'm currently working on is called 'qwen-code'.")
 ```
 
 ## Wichtige Hinweise
 
-- **Allgemeine Verwendung:** Dieses Tool sollte für prägnante, wichtige Fakten verwendet werden. Es ist nicht dafür gedacht, große Datenmengen oder den gesamten Gesprächsverlauf zu speichern.
-- **Speicherdatei:** Die Speicherdatei ist eine einfache Textdatei im Markdown-Format, sodass Sie sie bei Bedarf manuell anzeigen und bearbeiten können.
+- **Allgemeine Verwendung:** Dieses Tool sollte für prägnante, wichtige Fakten verwendet werden. Es ist nicht für die Speicherung großer Datenmengen oder des Gesprächsverlaufs gedacht.
+- **Memory-Datei:** Die Memory-Datei ist eine reine Markdown-Textdatei. Du kannst sie bei Bedarf also manuell anzeigen und bearbeiten.

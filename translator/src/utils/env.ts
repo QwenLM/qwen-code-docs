@@ -58,7 +58,8 @@ export class EnvLoader {
           `请在项目根目录创建.env文件或设置系统环境变量:\n` +
           `OPENAI_API_KEY=your_api_key_here\n` +
           `OPENAI_BASE_URL=https://api.qwen.ai/v1 (可选)\n` +
-          `QWEN_MODEL=qwen3.5-plus (可选)`
+          `QWEN_MODEL=qwen3.6-plus (可选)\n` +
+          `QWEN_MAX_TOKENS=32000 (可选)`
       );
     }
   }
@@ -82,8 +83,8 @@ export class EnvLoader {
     return {
       apiKey,
       baseURL: this.getEnvVar("OPENAI_BASE_URL", "https://api.qwen.ai/v1")!,
-      model: this.getEnvVar("QWEN_MODEL", "qwen3.5-plus")!,
-      maxTokens: parseInt(this.getEnvVar("QWEN_MAX_TOKENS", "4000")!),
+      model: this.getEnvVar("QWEN_MODEL", "qwen3.6-plus")!,
+      maxTokens: parseInt(this.getEnvVar("QWEN_MAX_TOKENS", "32000")!),
     };
   }
 }

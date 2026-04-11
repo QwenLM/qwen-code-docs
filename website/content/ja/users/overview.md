@@ -1,11 +1,11 @@
 # Qwen Code の概要
 
-[![@qwen-code/qwen-code のダウンロード数](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
-[![@qwen-code/qwen-code のバージョン](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
+[![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
+[![@qwen-code/qwen-code version](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
 
-> Qwen Code について学びましょう。Qwen のエージェント型コーディングツールで、ターミナル内で動作し、アイデアをこれまで以上に素早くコードに変換するのを支援します。
+> Qwen Code は、ターミナルで動作する Qwen のエージェント型コーディングツールです。アイデアをこれまで以上に高速にコードへ変換します。
 
-## 30 秒で始めましょう
+## 30秒で始める
 
 ### Qwen Code のインストール:
 
@@ -23,42 +23,43 @@ curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.a
 
 > [!note]
 >
-> インストール後にターミナルを再起動することを推奨します。これにより、環境変数が正しく適用されます。インストールに失敗した場合は、クイックスタートガイドの「[手動インストール](./quickstart#manual-installation)」を参照してください。
+> インストール後は環境変数を反映させるため、ターミナルを再起動することを推奨します。インストールに失敗した場合は、クイックスタートガイドの [手動インストール](./quickstart#manual-installation) を参照してください。
 
-### Qwen Code の使用を開始する：
+### Qwen Code の利用開始:
 
 ```bash
 cd your-project
 qwen
 ```
 
-認証方法として **Qwen OAuth（無料）** を選択し、ログインのためのプロンプトに従ってください。その後、コードベースの理解から始めましょう。以下のコマンドのいずれかを試してみてください：
+**Qwen OAuth (Free)** 認証を選択し、プロンプトに従ってログインしてください。次に、コードベースの理解から始めましょう。以下のコマンドのいずれかを試してみてください：
 
 ```
-このプロジェクトは何をするものですか？
+what does this project do?
 ```
 
 ![](https://cloud.video.taobao.com/vod/j7-QtQScn8UEAaEdiv619fSkk5p-t17orpDbSqKVL5A.mp4)
 
-初回起動時にはログインが求められます。以上です！[クイックスタート（5分）へ進む →](./quickstart)
+初回使用時にログインが求められます。これで完了です！[クイックスタートに進む（5分） →](./quickstart)
 
 > [!tip]
 >
-> 問題が発生した場合は、[トラブルシューティング](./support/troubleshooting) を参照してください。
+> 問題が発生した場合は [トラブルシューティング](./support/troubleshooting) を参照してください。
 
 > [!note]
 >
-> **新しい VS Code 拡張機能（ベータ版）**: グラフィカルなインターフェースを好む場合、新しい **VS Code 拡張機能** をご利用ください。これは、ターミナル操作に慣れていない方でも簡単に使えるネイティブ IDE 環境を提供します。マーケットプレイスからインストールするだけで、サイドバーからすぐに Qwen Code を使ってコーディングを始められます。今すぐ [Qwen Code Companion](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion) をダウンロード・インストールしてください。
+> **新しい VS Code 拡張機能（ベータ版）**：GUI をご利用になりたいですか？新しい **VS Code 拡張機能** は、ターミナルの操作に慣れていなくても使いやすいネイティブ IDE 体験を提供します。マーケットプレイスからインストールするだけで、サイドバーで直接 Qwen Code を使ったコーディングを開始できます。今すぐ [Qwen Code Companion](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion) をダウンロードしてインストールしてください。
 
-## Qwen Code があなたのために行うこと
+## Qwen Code でできること
 
-- **記述から機能を構築**: Qwen Code に、平易な言葉で何を作りたいかを伝えます。Qwen Code は計画を立て、コードを書き、その動作を保証します。
-- **デバッグと問題の修正**: バグの内容を説明するか、エラーメッセージを貼り付けてください。Qwen Code はあなたのコードベースを分析し、問題を特定して修正を実装します。
-- **あらゆるコードベースをナビゲート**: チームのコードベースについて何でも質問できます。Qwen Code はプロジェクト全体の構造を把握しており、最新の情報をウェブから取得できます。また、[MCP](./features/mcp) を用いることで、Google Drive、Figma、Slack などの外部データソースからも情報を取得できます。
-- **単調なタスクを自動化**: リントに関する細かい問題の修正、マージコンフリクトの解決、リリースノートの作成などを行います。これらはすべて、開発者マシンから単一のコマンドで実行可能であり、CI においても自動的に実行できます。
+- **自然言語からの機能構築**: 作りたい機能を自然言語で Qwen Code に伝えるだけです。計画の立案、コードの記述、動作確認まで自動で行います。
+- **デバッグと問題修正**: バグの説明やエラーメッセージを貼り付けるだけです。Qwen Code がコードベースを分析して問題を特定し、修正を適用します。
+- **あらゆるコードベースのナビゲーション**: チームのコードベースについて何でも質問すれば、的確な回答が得られます。Qwen Code はプロジェクト全体の構造を把握しており、Web から最新情報を検索できるほか、[MCP](./features/mcp) を介して Google Drive、Figma、Slack などの外部データソースから情報を取得できます。
+- **煩雑なタスクの自動化**: 細かい lint 問題の修正、マージコンフリクトの解決、リリースノートの作成など。開発マシンから単一コマンドで実行したり、CI で自動化したりできます。
+- **[フォローアップ提案](./features/followup-suggestions)**: Qwen Code が入力したい次の内容を予測し、ゴーストテキストとして表示します。Tab キーで確定するか、そのまま入力を続けて無視できます。
 
-## 開発者が Qwen Code を愛する理由
+## 開発者に選ばれる理由
 
-- **ターミナルで動作**: また別のチャットウィンドウでも、また別の IDE でもありません。Qwen Code は、あなたがすでに作業している場所、そしてすでに愛用しているツールの上で動作します。
-- **実行可能な操作**: Qwen Code はファイルを直接編集したり、コマンドを実行したり、コミットを作成したりできます。さらに機能が必要ですか？[MCP](./features/mcp) を使うと、Qwen Code が Google Drive 上の設計ドキュメントを読み取ったり、Jira のチケットを更新したり、あるいは _あなたの_ カスタム開発者ツールを活用したりできます。
-- **Unix の哲学に則る**: Qwen Code は組み合わせ可能で、スクリプト化可能です。`tail -f app.log | qwen -p "このログストリームに異常が現れたら Slack で通知してください"` というコマンドが _そのまま動作します_。CI では `qwen -p "新しいテキスト文字列があれば、それらをフランス語に翻訳し、@lang-fr-team がレビューできるよう PR を作成してください"` を実行できます。
+- **ターミナルで動作**: 新たなチャットウィンドウも、新たな IDE も不要です。Qwen Code は、あなたが普段使い慣れたツールとワークフローの中で動作します。
+- **アクションを実行**: Qwen Code はファイルの直接編集、コマンドの実行、コミットの作成が可能です。さらに拡張したい場合？[MCP](./features/mcp) を使えば、Google Drive の設計ドキュメントの参照、Jira チケットの更新、または _あなた専用の_ 開発ツールの利用も可能です。
+- **Unix 哲学**: Qwen Code は組み合わせ可能でスクリプト化可能です。`tail -f app.log | qwen -p "Slack me if you see any anomalies appear in this log stream"` _そのまま動作します_。CI で `qwen -p "If there are new text strings, translate them into French and raise a PR for @lang-fr-team to review"` を実行することもできます。

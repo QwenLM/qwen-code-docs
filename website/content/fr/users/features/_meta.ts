@@ -1,15 +1,22 @@
 export default {
   commands: 'Commandes',
+  'code-review': 'Révision de code',
+  'followup-suggestions': 'Suggestions de suivi',
   'sub-agents': 'Sous-agents',
+  arena: 'Arène des agents',
   skills: 'Compétences',
   headless: 'Mode sans interface graphique',
   checkpointing: {
     display: 'hidden',
   },
-  'approval-mode': 'Mode d’approbation',
+  'approval-mode': 'Mode d\'approbation',
   mcp: 'MCP',
   lsp: 'LSP (Language Server Protocol)',
   'token-caching': 'Mise en cache des jetons',
   sandbox: 'Bac à sable',
   language: 'i18n',
+  channels: 'Canaux',
+  hooks: 'Hooks',
+  'status-line': 'Ligne d\'état',
+  'scheduled-tasks': 'Tâches planifiées',
 };

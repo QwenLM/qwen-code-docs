@@ -1,84 +1,84 @@
 # Automatisierungs- und Triage-Prozesse
 
-Dieses Dokument bietet eine detaillierte Übersicht über die automatisierten Prozesse, die wir zur Verwaltung und Priorisierung von Issues und Pull Requests verwenden. Unser Ziel ist es, zeitnahe Rückmeldungen zu geben und sicherzustellen, dass Beiträge effizient geprüft und integriert werden. Ein Verständnis dieser Automatisierung hilft Ihnen als Beitragender dabei, zu wissen, was Sie erwarten können, und wie Sie am besten mit unseren Repository-Bots interagieren.
+Dieses Dokument bietet einen detaillierten Überblick über die automatisierten Prozesse, die wir zur Verwaltung und Triage von Issues und Pull Requests verwenden. Unser Ziel ist es, schnelles Feedback zu geben und sicherzustellen, dass Beiträge effizient geprüft und integriert werden. Das Verständnis dieser Automatisierung hilft dir als Contributor, zu wissen, was dich erwartet und wie du am besten mit unseren Repository-Bots interagierst.
 
-## Leitprinzip: Issues und Pull Requests
+## Grundprinzip: Issues und Pull Requests
 
-Vor allem sollte nahezu jeder Pull Request (PR) mit einem entsprechenden Issue verknüpft sein. Das Issue beschreibt das „Was“ und das „Warum“ (den Fehler oder das neue Feature), während der PR das „Wie“ (die Implementierung) darstellt. Diese Trennung hilft uns dabei, die Arbeit nachzuverfolgen, Features zu priorisieren und einen klaren historischen Kontext zu bewahren. Unsere Automatisierung basiert auf diesem Prinzip.
+Zunächst einmal sollte fast jeder Pull Request (PR) mit einem entsprechenden Issue verknüpft sein. Das Issue beschreibt das „Was“ und „Warum“ (der Bug oder das Feature), während der PR das „Wie“ (die Implementierung) darstellt. Diese Trennung hilft uns, den Arbeitsfortschritt zu verfolgen, Features zu priorisieren und einen klaren historischen Kontext zu bewahren. Unsere Automatisierung baut auf diesem Prinzip auf.
 
 ---
 
 ## Detaillierte Automatisierungs-Workflows
 
-Im Folgenden finden Sie eine Aufschlüsselung der spezifischen Automatisierungs-Workflows, die in unserem Repository ausgeführt werden.
+Im Folgenden findest du eine Aufschlüsselung der spezifischen Automatisierungs-Workflows, die in unserem Repository ausgeführt werden.
 
-### 1. Wenn Sie ein Issue öffnen: „Automatisierte Issue-Triage“
+### 1. Wenn du ein Issue erstellst: `Automated Issue Triage`
 
-Dies ist der erste Bot, mit dem Sie interagieren, sobald Sie ein Issue erstellen. Seine Aufgabe besteht darin, eine erste Analyse durchzuführen und die richtigen Labels zuzuweisen.
+Dies ist der erste Bot, mit dem du bei der Erstellung eines Issues interagierst. Seine Aufgabe ist es, eine erste Analyse durchzuführen und die korrekten Labels zuzuweisen.
 
 - **Workflow-Datei**: `.github/workflows/qwen-automated-issue-triage.yml`
-- **Wann es ausgeführt wird**: Unmittelbar nachdem ein Issue erstellt oder erneut geöffnet wurde.
-- **Was es tut**:
-  - Es nutzt ein Qwen-Modell, um Titel und Beschreibung des Issues anhand eines detaillierten Regelwerks zu analysieren.
-  - **Weist ein `area/*`-Label zu**: Kategorisiert das Issue einem funktionalen Bereich des Projekts zu (z. B. `area/ux`, `area/models`, `area/platform`).
-  - **Weist ein `kind/*`-Label zu**: Identifiziert die Art des Issues (z. B. `kind/bug`, `kind/enhancement`, `kind/question`).
-  - **Weist ein `priority/*`-Label zu**: Weist eine Priorität von P0 (kritisch) bis P3 (niedrig) basierend auf der beschriebenen Auswirkung zu.
-  - **Kann ggf. `status/need-information` zuweisen**: Falls dem Issue kritische Details fehlen (z. B. Logs oder Schritte zur Reproduktion), wird es als „Information erforderlich“ markiert.
-  - **Kann ggf. `status/need-retesting` zuweisen**: Falls im Issue auf eine CLI-Version verwiesen wird, die älter als sechs Versionen ist, wird das Issue zur erneuten Prüfung mit einer aktuellen Version markiert.
-- **Was Sie tun sollten**:
-  - Füllen Sie die Issue-Vorlage so vollständig wie möglich aus. Je mehr Details Sie bereitstellen, desto genauer wird die Triage sein.
-  - Falls das Label `status/need-information` hinzugefügt wird, geben Sie bitte die angeforderten Informationen in einem Kommentar an.
+- **Ausführungszeitpunkt**: Unmittelbar nach der Erstellung oder Wiedereröffnung eines Issues.
+- **Funktionsweise**:
+  - Es verwendet ein Qwen-Modell, um Titel und Inhalt des Issues anhand eines detaillierten Regelwerks zu analysieren.
+  - **Weist ein `area/*`-Label zu**: Kategorisiert das Issue in einen funktionalen Bereich des Projekts (z. B. `area/ux`, `area/models`, `area/platform`).
+  - **Weist ein `kind/*`-Label zu**: Identifiziert die Art des Issues (z. B. `kind/bug`, `kind/enhancement`, `kind/question`).
+  - **Weist ein `priority/*`-Label zu**: Ordnet basierend auf der beschriebenen Auswirkung eine Priorität von P0 (kritisch) bis P3 (niedrig) zu.
+  - **Kann `status/need-information` zuweisen**: Wenn dem Issue wichtige Details fehlen (z. B. Logs oder Reproduktionsschritte), wird es für weitere Informationen markiert.
+  - **Kann `status/need-retesting` zuweisen**: Wenn das Issue auf eine CLI-Version verweist, die mehr als sechs Versionen alt ist, wird es zum erneuten Testen mit einer aktuellen Version markiert.
+- **Was du tun solltest**:
+  - Fülle die Issue-Vorlage so vollständig wie möglich aus. Je mehr Details du angibst, desto genauer fällt die Triage aus.
+  - Wenn das Label `status/need-information` hinzugefügt wird, liefere die angeforderten Details bitte in einem Kommentar.
 
-### 2. Wenn Sie einen Pull Request öffnen: „Continuous Integration (CI)“
+### 2. Wenn du einen Pull Request erstellst: `Continuous Integration (CI)`
 
-Dieser Workflow stellt sicher, dass alle Änderungen unsere Qualitätsstandards erfüllen, bevor sie zusammengeführt werden können.
+Dieser Workflow stellt sicher, dass alle Änderungen unseren Qualitätsstandards entsprechen, bevor sie gemerged werden können.
 
 - **Workflow-Datei**: `.github/workflows/ci.yml`
 - **Ausführungszeitpunkt**: Bei jedem Push in einen Pull Request.
-- **Funktionen**:
-  - **Linting**: Überprüft, ob Ihr Code unseren Projekt-Richtlinien für Formatierung und Stil entspricht.
-  - **Tests**: Führt unsere vollständige Suite automatisierter Tests unter macOS, Windows und Linux sowie mit mehreren Node.js-Versionen aus. Dies ist der zeitaufwändigste Teil des CI-Prozesses.
-  - **Kommentar zur Testabdeckung**: Sobald alle Tests erfolgreich durchgelaufen sind, postet ein Bot einen Kommentar zu Ihrem Pull Request. Darin wird zusammengefasst, wie gut Ihre Änderungen durch Tests abgedeckt sind.
-- **Was Sie tun sollten**:
-  - Stellen Sie sicher, dass alle CI-Prüfungen bestanden werden. Ein grünes Häkchen ✅ erscheint neben Ihrem Commit, sobald alle Prüfungen erfolgreich abgeschlossen sind.
-  - Falls eine Prüfung fehlschlägt (rotes „X“ ❌), klicken Sie auf den Link „Details“ neben der fehlgeschlagenen Prüfung, um die Protokolle einzusehen, das Problem zu identifizieren und eine Korrektur per Push bereitzustellen.
+- **Funktionsweise**:
+  - **Lint**: Prüft, ob dein Code den Formatierungs- und Stilregeln unseres Projekts entspricht.
+  - **Test**: Führt unsere vollständige Suite automatisierter Tests unter macOS, Windows und Linux sowie auf mehreren Node.js-Versionen aus. Dies ist der zeitaufwendigste Teil des CI-Prozesses.
+  - **Post Coverage Comment**: Nachdem alle Tests erfolgreich durchgelaufen sind, hinterlässt ein Bot einen Kommentar in deinem PR. Dieser Kommentar fasst zusammen, wie gut deine Änderungen durch Tests abgedeckt sind.
+- **Was du tun solltest**:
+  - Stelle sicher, dass alle CI-Checks erfolgreich sind. Ein grünes Häkchen ✅ erscheint neben deinem Commit, wenn alles erfolgreich war.
+  - Wenn ein Check fehlschlägt (ein rotes „X“ ❌), klicke auf den Link „Details“ neben dem fehlgeschlagenen Check, um die Logs einzusehen, das Problem zu identifizieren und einen Fix zu pushen.
 
-### 3. Fortlaufende Prüfung von Pull Requests: „PR-Prüfung und Label-Synchronisierung“
+### 3. Laufende Triage für Pull Requests: `PR Auditing and Label Sync`
 
-Dieser Workflow wird regelmäßig ausgeführt, um sicherzustellen, dass alle offenen Pull Requests korrekt mit Issues verknüpft sind und konsistente Labels tragen.
+Dieser Workflow wird regelmäßig ausgeführt, um sicherzustellen, dass alle offenen PRs korrekt mit Issues verknüpft sind und konsistente Labels tragen.
 
 - **Workflow-Datei**: `.github/workflows/qwen-scheduled-pr-triage.yml`
 - **Ausführungszeitpunkt**: Alle 15 Minuten für alle offenen Pull Requests.
-- **Funktionen**:
-  - **Überprüfung auf verknüpftes Issue**: Der Bot durchsucht die Beschreibung Ihres Pull Requests nach einem Schlüsselwort, das ihn mit einem Issue verknüpft (z. B. `Fixes #123`, `Closes #456`).
-  - **Hinzufügen des Labels `status/need-issue`**: Falls kein verknüpftes Issue gefunden wird, fügt der Bot das Label `status/need-issue` zu Ihrem Pull Request hinzu. Dies ist ein deutliches Signal dafür, dass ein Issue erstellt und verknüpft werden muss.
-  - **Synchronisierung der Labels**: Falls ein Issue _verknüpft_ ist, stellt der Bot sicher, dass die Labels des Pull Requests exakt mit den Labels des Issues übereinstimmen. Er fügt fehlende Labels hinzu, entfernt nicht passende Labels und löscht das Label `status/need-issue`, falls es vorhanden war.
-- **Was Sie tun sollten**:
-  - **Verknüpfen Sie Ihren Pull Request stets mit einem Issue.** Dies ist der wichtigste Schritt. Fügen Sie Ihrer Pull-Request-Beschreibung eine Zeile wie `Resolves #<Issue-Nummer>` hinzu.
-  - Dadurch wird sichergestellt, dass Ihr Pull Request korrekt kategorisiert wird und reibungslos durch den Review-Prozess läuft.
+- **Funktionsweise**:
+  - **Prüft auf verknüpftes Issue**: Der Bot durchsucht deine PR-Beschreibung nach einem Schlüsselwort, das es mit einem Issue verknüpft (z. B. `Fixes #123`, `Closes #456`).
+  - **Fügt `status/need-issue` hinzu**: Wenn kein verknüpftes Issue gefunden wird, fügt der Bot das Label `status/need-issue` zu deinem PR hinzu. Dies ist ein klares Signal, dass ein Issue erstellt und verknüpft werden muss.
+  - **Synchronisiert Labels**: Wenn ein Issue _ist_ verknüpft, stellt der Bot sicher, dass die Labels des PRs exakt mit denen des Issues übereinstimmen. Fehlende Labels werden hinzugefügt, nicht zugehörige entfernt und das Label `status/need-issue` wird gegebenenfalls entfernt.
+- **Was du tun solltest**:
+  - **Verknüpfe deinen PR immer mit einem Issue.** Dies ist der wichtigste Schritt. Füge eine Zeile wie `Resolves #<issue-number>` zu deiner PR-Beschreibung hinzu.
+  - Dadurch wird sichergestellt, dass dein PR korrekt kategorisiert wird und reibungslos durch den Review-Prozess läuft.
 
-### 4. Fortlaufende Problembearbeitung: „Geplante Problembearbeitung“
+### 4. Laufende Triage für Issues: `Scheduled Issue Triage`
 
-Dies ist ein alternativer Workflow, der sicherstellt, dass kein Problem bei der Bearbeitung übersehen wird.
+Dies ist ein Fallback-Workflow, um sicherzustellen, dass kein Issue im Triage-Prozess übersehen wird.
 
 - **Workflow-Datei**: `.github/workflows/qwen-scheduled-issue-triage.yml`
-- **Ausführungszeitpunkt**: Stündlich für alle offenen Probleme.
-- **Funktion**:
-  - Der Workflow sucht aktiv nach Problemen, die entweder gar keine Labels besitzen oder weiterhin das Label `status/need-triage` tragen.
-  - Anschließend löst er dieselbe leistungsstarke, auf QwenCode basierende Analyse aus wie der ursprüngliche Bearbeitungsbot, um die korrekten Labels zuzuweisen.
-- **Ihre Aufgabe**:
-  - In der Regel müssen Sie nichts tun. Dieser Workflow dient als Sicherheitsnetz, um sicherzustellen, dass jedes Problem letztendlich kategorisiert wird – selbst wenn die erste Bearbeitung fehlschlägt.
+- **Ausführungszeitpunkt**: Stündlich für alle offenen Issues.
+- **Funktionsweise**:
+  - Es sucht aktiv nach Issues, die entweder gar keine Labels oder noch das Label `status/need-triage` tragen.
+  - Anschließend löst es dieselbe leistungsstarke, auf Qwen Code basierende Analyse aus wie der initiale Triage-Bot, um die korrekten Labels zuzuweisen.
+- **Was du tun solltest**:
+  - Normalerweise musst du nichts tun. Dieser Workflow dient als Sicherheitsnetz, um sicherzustellen, dass jedes Issue letztendlich kategorisiert wird, selbst wenn die initiale Triage fehlschlägt.
 
-### 5. Automatisierung der Veröffentlichung
+### 5. Release-Automatisierung
 
-Dieser Workflow verwaltet den Prozess des Paketierens und Veröffentlichen neuer Versionen von Qwen Code.
+Dieser Workflow übernimmt das Verpacken und Veröffentlichen neuer Versionen von Qwen Code.
 
 - **Workflow-Datei**: `.github/workflows/release.yml`
-- **Ausführungszeitpunkt**: Nach einem täglichen Zeitplan für „Nightly“-Veröffentlichungen sowie manuell für offizielle Patch- oder Minor-Veröffentlichungen.
-- **Funktionen**:
-  - Erstellt automatisch das Projekt, erhöht die Versionsnummern und veröffentlicht die Pakete auf npm.
-  - Erstellt eine entsprechende GitHub-Veröffentlichung mit generierten Versionshinweisen.
-- **Ihre Aufgabe als Contributor**:
-  - Als Contributor müssen Sie für diesen Prozess nichts tun. Sobald Ihr Pull Request in den `main`-Branch integriert wurde, können Sie sicher sein, dass Ihre Änderungen in der nächsten Nightly-Veröffentlichung enthalten sein werden.
+- **Ausführungszeitpunkt**: Täglich nach Zeitplan für „Nightly“-Releases und manuell für offizielle Patch-/Minor-Releases.
+- **Funktionsweise**:
+  - Baut das Projekt automatisch, erhöht die Versionsnummern und veröffentlicht die Pakete auf npm.
+  - Erstellt ein entsprechendes Release auf GitHub mit generierten Release Notes.
+- **Was du tun solltest**:
+  - Als Contributor musst du für diesen Prozess nichts tun. Du kannst dir sicher sein, dass deine Änderungen im nächsten Nightly-Release enthalten sind, sobald dein PR in den `main`-Branch gemerged wurde.
 
-Wir hoffen, dass dieser detaillierte Überblick hilfreich war. Falls Sie Fragen zu unserer Automatisierung oder unseren Prozessen haben, zögern Sie bitte nicht, diese zu stellen!
+Wir hoffen, dieser detaillierte Überblick ist hilfreich. Wenn du Fragen zu unserer Automatisierung oder den Prozessen hast, zögere bitte nicht, sie zu stellen!

@@ -1,16 +1,16 @@
 # Exécution et déploiement de Qwen Code
 
-Ce document explique comment exécuter Qwen Code et décrit l’architecture de déploiement utilisée par Qwen Code.
+Ce document explique comment exécuter Qwen Code et décrit l'architecture de déploiement utilisée.
 
 ## Exécution de Qwen Code
 
-Il existe plusieurs façons d’exécuter Qwen Code. Le choix dépend de votre usage prévu.
+Plusieurs méthodes permettent d'exécuter Qwen Code. Le choix dépend de votre cas d'utilisation.
 
 ---
 
-### 1. Installation standard (recommandée pour les utilisateurs classiques)
+### 1. Installation standard (Recommandée pour les utilisateurs classiques)
 
-Il s’agit de la méthode recommandée pour les utilisateurs finaux afin d’installer Qwen Code. Elle consiste à télécharger le package Qwen Code depuis le registre NPM.
+Il s'agit de la méthode recommandée pour les utilisateurs finaux. Elle consiste à télécharger le package Qwen Code depuis le registre NPM.
 
 - **Installation globale :**
 
@@ -18,7 +18,7 @@ Il s’agit de la méthode recommandée pour les utilisateurs finaux afin d’in
   npm install -g @qwen-code/qwen-code
   ```
 
-  Ensuite, exécutez l’interface en ligne de commande (CLI) depuis n’importe quel répertoire :
+  Ensuite, exécutez la CLI depuis n'importe où :
 
   ```bash
   qwen
@@ -27,44 +27,48 @@ Il s’agit de la méthode recommandée pour les utilisateurs finaux afin d’in
 - **Exécution via NPX :**
 
   ```bash
-  # Exécute la dernière version disponible sur NPM sans installation globale
+  # Exécute la dernière version depuis NPM sans installation globale
   npx @qwen-code/qwen-code
   ```
 
-### 2. Exécution dans un environnement isolé (Docker/Podman)
+---
 
-Pour des raisons de sécurité et d’isolation, Qwen Code peut être exécuté à l’intérieur d’un conteneur. Il s’agit du mode par défaut utilisé par l’interface en ligne de commande (CLI) pour exécuter des outils susceptibles d’avoir des effets secondaires.
+### 2. Exécution dans un sandbox (Docker/Podman)
 
-- **Directement depuis le registre :**  
-  Vous pouvez exécuter directement l’image publiée de l’environnement isolé. Cette méthode est utile dans les environnements où seul Docker est disponible et où vous souhaitez exécuter la CLI.  
+Pour des raisons de sécurité et d'isolation, Qwen Code peut s'exécuter dans un conteneur. C'est la méthode par défaut utilisée par la CLI pour exécuter des outils susceptibles d'avoir des effets secondaires.
+
+- **Directement depuis le registre :**
+  Vous pouvez exécuter directement l'image sandbox publiée. Cette approche est utile dans les environnements où seul Docker est disponible et où vous souhaitez exécuter la CLI.
   ```bash
-  # Exécuter l’image publiée de l’environnement isolé
+  # Exécute l'image sandbox publiée
   docker run --rm -it ghcr.io/qwenlm/qwen-code:0.0.11
   ```
-- **À l’aide de l’option `--sandbox` :**  
-  Si Qwen Code est installé localement (via l’installation standard décrite ci-dessus), vous pouvez lui demander de s’exécuter à l’intérieur du conteneur d’environnement isolé.  
+- **Utilisation du flag `--sandbox` :**
+  Si Qwen Code est installé localement (via l'installation standard décrite ci-dessus), vous pouvez lui demander de s'exécuter dans le conteneur sandbox.
   ```bash
-  qwen --sandbox -y -p "votre invite ici"
+  qwen --sandbox -y -p "your prompt here"
   ```
 
-### 3. Exécution à partir des sources (recommandé pour les contributeurs à Qwen Code)
+---
 
-Les contributeurs au projet souhaiteront exécuter l’interface en ligne de commande (CLI) directement à partir du code source.
+### 3. Exécution depuis les sources (Recommandée pour les contributeurs à Qwen Code)
 
-- **Mode développement :**  
-  Cette méthode fournit un rechargement dynamique (hot-reloading) et est utile pendant le développement actif.  
+Les contributeurs au projet souhaiteront exécuter la CLI directement depuis le code source.
+
+- **Mode développement :**
+  Cette méthode offre le hot-reloading et est utile pour le développement actif.
   ```bash
   # Depuis la racine du dépôt
   npm run start
   ```
-- **Mode « production » (paquet lié) :**  
-  Cette méthode simule une installation globale en liant votre paquet local. Elle est utile pour tester une version locale dans un flux de travail de production.
+- **Mode similaire à la production (Package lié) :**
+  Cette méthode simule une installation globale en liant votre package local. Elle est utile pour tester une build locale dans un workflow de production.
 
   ```bash
-  # Liez le paquet CLI local à votre répertoire global node_modules
+  # Lie le package cli local à vos node_modules globaux
   npm link packages/cli
 
-  # Vous pouvez désormais exécuter votre version locale à l’aide de la commande `qwen`
+  # Vous pouvez désormais exécuter votre version locale avec la commande `qwen`
   qwen
   ```
 
@@ -72,42 +76,42 @@ Les contributeurs au projet souhaiteront exécuter l’interface en ligne de com
 
 ### 4. Exécution du dernier commit Qwen Code depuis GitHub
 
-Vous pouvez exécuter directement depuis le dépôt GitHub la version correspondant au dernier commit de Qwen Code. Cela est utile pour tester des fonctionnalités encore en cours de développement.
+Vous pouvez exécuter la version la plus récente de Qwen Code directement depuis le dépôt GitHub. Cette méthode est utile pour tester des fonctionnalités encore en développement.
 
 ```bash
-
-# Exécuter l’interface CLI directement depuis la branche principale sur GitHub
+# Exécute la CLI directement depuis la branche main sur GitHub
 npx https://github.com/QwenLM/qwen-code
+```
 
 ## Architecture de déploiement
 
-Les méthodes d’exécution décrites ci-dessus reposent sur les composants architecturaux et les processus suivants :
+Les méthodes d'exécution décrites ci-dessus reposent sur les composants et processus architecturaux suivants :
 
 **Packages NPM**
 
-Le projet Qwen Code est un monorepo qui publie ses packages principaux sur le registre NPM :
+Le projet Qwen Code est un monorepo qui publie des packages core sur le registre NPM :
 
-- `@qwen-code/qwen-code-core` : Le backend, chargé de la logique métier et de l’exécution des outils.
-- `@qwen-code/qwen-code` : L’interface utilisateur (frontend).
+- `@qwen-code/qwen-code-core` : Le backend, qui gère la logique et l'exécution des outils.
+- `@qwen-code/qwen-code` : Le frontend destiné aux utilisateurs.
 
-Ces packages sont utilisés lors de l’installation standard ainsi que lors de l’exécution de Qwen Code à partir des sources.
+Ces packages sont utilisés lors de l'installation standard et lors de l'exécution de Qwen Code depuis les sources.
 
-**Processus de compilation et d’empaquetage**
+**Processus de build et de packaging**
 
-Deux processus de compilation distincts sont utilisés, selon le canal de distribution :
+Deux processus de build distincts sont utilisés, selon le canal de distribution :
 
-- **Publication sur NPM** : Pour la publication sur le registre NPM, le code source TypeScript de `@qwen-code/qwen-code-core` et de `@qwen-code/qwen-code` est transpilé en JavaScript standard à l’aide du compilateur TypeScript (`tsc`). Le répertoire `dist/` résultant est ce qui est publié dans le package NPM. Il s’agit d’une approche standard pour les bibliothèques TypeScript.
+- **Publication NPM :** Pour la publication sur le registre NPM, le code source TypeScript de `@qwen-code/qwen-code-core` et `@qwen-code/qwen-code` est transpilé en JavaScript standard à l'aide du compilateur TypeScript (`tsc`). Le répertoire `dist/` résultant est celui publié dans le package NPM. Il s'agit d'une approche standard pour les bibliothèques TypeScript.
 
-- **Exécution GitHub via `npx`** : Lorsque la dernière version de Qwen Code est exécutée directement depuis GitHub, un processus différent est déclenché par le script `prepare` défini dans le fichier `package.json`. Ce script utilise `esbuild` pour regrouper l’ensemble de l’application et de ses dépendances en un seul fichier JavaScript autonome. Ce bundle est généré dynamiquement sur la machine de l’utilisateur et n’est pas intégré au référentiel.
+- **Exécution GitHub via `npx` :** Lors de l'exécution de la dernière version de Qwen Code directement depuis GitHub, un processus différent est déclenché par le script `prepare` dans `package.json`. Ce script utilise `esbuild` pour bundler l'ensemble de l'application et ses dépendances dans un seul fichier JavaScript autonome. Ce bundle est généré à la volée sur la machine de l'utilisateur et n'est pas commité dans le dépôt.
 
-**Image Docker « sandbox »**
+**Image Docker sandbox**
 
-La méthode d’exécution basée sur Docker repose sur l’image conteneur `qwen-code-sandbox`. Cette image est publiée sur un registre de conteneurs et contient une version globale préinstallée de Qwen Code.
+La méthode d'exécution basée sur Docker s'appuie sur l'image conteneur `qwen-code-sandbox`. Cette image est publiée sur un registre de conteneurs et contient une version globale préinstallée de Qwen Code.
 
-## Processus de publication
+## Processus de release
 
-Le processus de publication est automatisé via GitHub Actions. Le workflow de publication effectue les actions suivantes :
+Le processus de release est automatisé via GitHub Actions. Le workflow de release effectue les actions suivantes :
 
-1.  Génère les packages NPM à l’aide de `tsc`.
-2.  Publie les packages NPM dans le registre d’artefacts.
-3.  Crée des versions GitHub accompagnées des ressources groupées.
+1.  Build des packages NPM à l'aide de `tsc`.
+2.  Publication des packages NPM sur le registre d'artefacts.
+3.  Création des releases GitHub avec les assets bundlés.

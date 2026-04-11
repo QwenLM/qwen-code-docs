@@ -1,6 +1,9 @@
 export default {
   commands: 'コマンド',
+  'code-review': 'コードレビュー',
+  'followup-suggestions': 'フォローアップの提案',
   'sub-agents': 'サブエージェント',
+  arena: 'エージェントアリーナ',
   skills: 'スキル',
   headless: 'ヘッドレスモード',
   checkpointing: {
@@ -12,4 +15,8 @@ export default {
   'token-caching': 'トークンキャッシュ',
   sandbox: 'サンドボックス',
   language: 'i18n',
+  channels: 'チャンネル',
+  hooks: 'フック',
+  'status-line': 'ステータスライン',
+  'scheduled-tasks': 'スケジュールタスク',
 };

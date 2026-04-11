@@ -1,123 +1,123 @@
-# Problembehandlung
+# Fehlerbehebung
 
-Dieser Leitfaden enthält Lösungen für häufig auftretende Probleme sowie Tipps zur Fehlersuche, darunter folgende Themen:
+Dieser Leitfaden bietet Lösungen für häufige Probleme und Debugging-Tipps, unter anderem zu folgenden Themen:
 
 - Authentifizierungs- oder Anmeldefehler
-- Häufig gestellte Fragen (FAQ)
-- Tipps zur Fehlersuche
-- Vorhandene GitHub-Probleme, die Ihrem Problem ähneln, oder das Erstellen neuer Probleme
+- Häufig gestellte Fragen (FAQs)
+- Debugging-Tipps
+- Bestehende GitHub Issues, die deinem Problem ähneln, oder Erstellen neuer Issues
 
 ## Authentifizierungs- oder Anmeldefehler
 
-- **Fehler: `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE` oder `unable to get local issuer certificate`**
-  - **Ursache:** Möglicherweise befinden Sie sich in einem Unternehmensnetzwerk mit einer Firewall, die den SSL/TLS-Verkehr abfängt und überprüft. Dies erfordert häufig, dass ein benutzerdefiniertes Stamm-CA-Zertifikat von Node.js als vertrauenswürdig eingestuft wird.
-  - **Lösung:** Legen Sie die Umgebungsvariable `NODE_EXTRA_CA_CERTS` auf den absoluten Pfad Ihrer Unternehmens-Stamm-CA-Zertifikatsdatei fest.
-    - Beispiel: `export NODE_EXTRA_CA_CERTS=/pfad/zu/ihrem/unternehmens-ca.crt`
+- **Error: `UNABLE_TO_GET_ISSUER_CERT_LOCALLY`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, or `unable to get local issuer certificate`**
+  - **Ursache:** Du befindest dich möglicherweise in einem Unternehmensnetzwerk mit einer Firewall, die SSL/TLS-Traffic abfängt und inspiziert. Dies erfordert oft, dass ein benutzerdefiniertes Root-CA-Zertifikat von Node.js als vertrauenswürdig eingestuft wird.
+  - **Lösung:** Setze die Umgebungsvariable `NODE_EXTRA_CA_CERTS` auf den absoluten Pfad zu deiner Root-CA-Zertifikatsdatei des Unternehmens.
+    - Beispiel: `export NODE_EXTRA_CA_CERTS=/path/to/your/corporate-ca.crt`
 
-- **Fehler: `Device authorization flow failed: fetch failed`**
-  - **Ursache:** Node.js konnte keine Verbindung zu den Qwen-OAuth-Endpunkten herstellen (häufig ein Proxy- oder SSL/TLS-Vertrauensproblem). Falls verfügbar, gibt Qwen Code außerdem die zugrundeliegende Fehlerursache aus (z. B. `UNABLE_TO_VERIFY_LEAF_SIGNATURE`).
+- **Error: `Device authorization flow failed: fetch failed`**
+  - **Ursache:** Node.js konnte die Qwen OAuth-Endpunkte nicht erreichen (oft ein Proxy- oder SSL/TLS-Vertrauensproblem). Falls verfügbar, gibt Qwen Code auch die zugrunde liegende Fehlerursache aus (z. B. `UNABLE_TO_VERIFY_LEAF_SIGNATURE`).
   - **Lösung:**
-    - Stellen Sie sicher, dass Sie von derselben Maschine bzw. demselben Netzwerk aus auf `https://chat.qwen.ai` zugreifen können.
-    - Falls Sie sich hinter einem Proxy befinden, konfigurieren Sie diesen über `qwen --proxy <url>` (oder über die Einstellung `proxy` in `settings.json`).
-    - Falls Ihr Netzwerk eine Unternehmens-TLS-Inspektions-CA verwendet, setzen Sie `NODE_EXTRA_CA_CERTS` wie oben beschrieben.
+    - Stelle sicher, dass du `https://chat.qwen.ai` vom selben Rechner/Netzwerk aus aufrufen kannst.
+    - Wenn du hinter einem Proxy arbeitest, konfiguriere ihn über `qwen --proxy <url>` (oder die `proxy`-Einstellung in `settings.json`).
+    - Wenn dein Netzwerk eine TLS-Inspection-CA des Unternehmens verwendet, setze `NODE_EXTRA_CA_CERTS` wie oben beschrieben.
 
-- **Problem: UI lässt sich nach einem Authentifizierungsfehler nicht anzeigen**
-  - **Ursache:** Wenn die Authentifizierung nach der Auswahl einer Authentifizierungsmethode fehlschlägt, wird möglicherweise die Einstellung `security.auth.selectedType` in `settings.json` gespeichert. Beim Neustart versucht die CLI dann erneut, sich mit der fehlgeschlagenen Methode zu authentifizieren, bleibt hängen und zeigt die Benutzeroberfläche nicht an.
-  - **Lösung:** Löschen Sie den Konfigurationseintrag `security.auth.selectedType` aus Ihrer Datei `settings.json`:
-    - Öffnen Sie `~/.qwen/settings.json` (bzw. `./.qwen/settings.json` für projektspezifische Einstellungen)
-    - Entfernen Sie das Feld `security.auth.selectedType`
-    - Starten Sie die CLI neu, damit sie erneut zur Authentifizierung auffordern kann
+- **Issue: Unable to display UI after authentication failure**
+  - **Ursache:** Wenn die Authentifizierung nach der Auswahl eines Authentifizierungstyps fehlschlägt, wird die Einstellung `security.auth.selectedType` möglicherweise in `settings.json` gespeichert. Beim Neustart bleibt die CLI möglicherweise hängen, weil sie versucht, sich mit dem fehlgeschlagenen Authentifizierungstyp anzumelden, und kann die UI nicht anzeigen.
+  - **Lösung:** Entferne den Konfigurationseintrag `security.auth.selectedType` in deiner `settings.json`-Datei:
+    - Öffne `~/.qwen/settings.json` (oder `./.qwen/settings.json` für projektspezifische Einstellungen)
+    - Entferne das Feld `security.auth.selectedType`
+    - Starte die CLI neu, damit sie dich erneut zur Authentifizierung auffordert
 
-## Häufig gestellte Fragen (FAQ)
+## Häufig gestellte Fragen (FAQs)
 
 - **F: Wie aktualisiere ich Qwen Code auf die neueste Version?**
-  - A: Falls Sie Qwen Code global über `npm` installiert haben, aktualisieren Sie es mit dem Befehl `npm install -g @qwen-code/qwen-code@latest`. Falls Sie es aus dem Quellcode kompiliert haben, ziehen Sie die neuesten Änderungen aus dem Repository und erstellen Sie es anschließend neu mit dem Befehl `npm run build`.
+  - A: Wenn du es global über `npm` installiert hast, aktualisiere es mit dem Befehl `npm install -g @qwen-code/qwen-code@latest`. Wenn du es aus dem Quellcode kompiliert hast, ziehe die neuesten Änderungen aus dem Repository und baue es anschließend mit dem Befehl `npm run build` neu.
 
 - **F: Wo werden die Konfigurations- oder Einstellungsdateien von Qwen Code gespeichert?**
-  - A: Die Qwen-Code-Konfiguration wird in zwei Dateien namens `settings.json` gespeichert:
-    1. Im Home-Verzeichnis: `~/.qwen/settings.json`.
-    2. Im Stammverzeichnis Ihres Projekts: `./.qwen/settings.json`.
+  - A: Die Qwen Code-Konfiguration wird in zwei `settings.json`-Dateien gespeichert:
+    1. In deinem Home-Verzeichnis: `~/.qwen/settings.json`.
+    2. Im Stammverzeichnis deines Projekts: `./.qwen/settings.json`.
 
-    Weitere Details finden Sie unter [Qwen Code-Konfiguration](../configuration/settings).
+    Weitere Details findest du unter [Qwen Code Configuration](../configuration/settings).
 
-- **F: Warum werden zwischengespeicherte Tokenzahlen in meiner Statistik-Ausgabe nicht angezeigt?**
-  - A: Zwischengespeicherte Tokeninformationen werden nur angezeigt, wenn tatsächlich zwischengespeicherte Tokens verwendet werden. Diese Funktion steht Nutzern mit API-Schlüsseln (Qwen-API-Schlüssel oder Google Cloud Vertex AI) zur Verfügung, jedoch nicht Nutzern mit OAuth-Anmeldung (z. B. Google-Personal- oder Google-Enterprise-Konten wie Google Gmail bzw. Google Workspace). Der Grund hierfür ist, dass die Qwen Code Assist-API keine Erstellung zwischengespeicherter Inhalte unterstützt. Sie können Ihre gesamte Token-Nutzung dennoch über den Befehl `/stats` einsehen.
+- **F: Warum sehe ich keine zwischengespeicherten Token-Anzahlen in meiner Statistik-Ausgabe?**
+  - A: Informationen zu zwischengespeicherten Tokens werden nur angezeigt, wenn auch tatsächlich zwischengespeicherte Tokens verwendet werden. Diese Funktion steht Nutzern mit API-Key (Qwen API-Key oder Google Cloud Vertex AI) zur Verfügung, nicht jedoch OAuth-Nutzern (z. B. Google Personal-/Enterprise-Konten wie Google Gmail oder Google Workspace). Der Grund dafür ist, dass die Qwen Code Assist API die Erstellung zwischengespeicherter Inhalte nicht unterstützt. Du kannst deine gesamte Token-Nutzung jedoch weiterhin über den Befehl `/stats` einsehen.
 
 ## Häufige Fehlermeldungen und Lösungen
 
-- **Fehler: `EADDRINUSE` (Adresse bereits in Verwendung) beim Starten eines MCP-Servers.**
+- **Error: `EADDRINUSE` (Address already in use) when starting an MCP server.**
   - **Ursache:** Ein anderer Prozess verwendet bereits den Port, an den sich der MCP-Server binden möchte.
   - **Lösung:**
-    Beenden Sie entweder den anderen Prozess, der den Port belegt, oder konfigurieren Sie den MCP-Server so, dass er einen anderen Port verwendet.
+    Beende entweder den anderen Prozess, der den Port verwendet, oder konfiguriere den MCP-Server so, dass er einen anderen Port nutzt.
 
-- **Fehler: Befehl nicht gefunden (beim Versuch, Qwen Code mit `qwen` auszuführen).**
-  - **Ursache:** Die CLI ist nicht korrekt installiert oder befindet sich nicht im `PATH` Ihres Systems.
+- **Error: Command not found (when attempting to run Qwen Code with `qwen`).**
+  - **Ursache:** Die CLI ist nicht korrekt installiert oder befindet sich nicht im `PATH` deines Systems.
   - **Lösung:**
-    Das Update hängt davon ab, wie Sie Qwen Code installiert haben:
-    - Falls Sie `qwen` global installiert haben, stellen Sie sicher, dass das globale Binärverzeichnis von `npm` im `PATH` enthalten ist. Aktualisieren Sie mit dem Befehl `npm install -g @qwen-code/qwen-code@latest`.
-    - Falls Sie `qwen` aus dem Quellcode ausführen, stellen Sie sicher, dass Sie den richtigen Befehl zur Ausführung verwenden (z. B. `node packages/cli/dist/index.js ...`). Um zu aktualisieren, ziehen Sie die neuesten Änderungen aus dem Repository und erstellen Sie das Projekt neu mit dem Befehl `npm run build`.
+    Das Vorgehen zur Aktualisierung hängt davon ab, wie du Qwen Code installiert hast:
+    - Wenn du `qwen` global installiert hast, prüfe, ob das globale `npm`-Binary-Verzeichnis in deinem `PATH` enthalten ist. Du kannst es mit dem Befehl `npm install -g @qwen-code/qwen-code@latest` aktualisieren.
+    - Wenn du `qwen` aus dem Quellcode ausführst, stelle sicher, dass du den korrekten Befehl zum Aufrufen verwendest (z. B. `node packages/cli/dist/index.js ...`). Zum Aktualisieren ziehst du die neuesten Änderungen aus dem Repository und baust es anschließend mit `npm run build` neu.
 
-- **Fehler: `MODULE_NOT_FOUND` oder Importfehler.**
-  - **Ursache:** Abhängigkeiten sind nicht korrekt installiert oder das Projekt wurde noch nicht gebaut.
+- **Error: `MODULE_NOT_FOUND` or import errors.**
+  - **Ursache:** Abhängigkeiten sind nicht korrekt installiert oder das Projekt wurde nicht gebaut.
   - **Lösung:**
-    1.  Führen Sie `npm install` aus, um sicherzustellen, dass alle Abhängigkeiten vorhanden sind.
-    2.  Führen Sie `npm run build` aus, um das Projekt zu kompilieren.
-    3.  Überprüfen Sie mit `npm run start`, ob der Build erfolgreich abgeschlossen wurde.
+    1. Führe `npm install` aus, um sicherzustellen, dass alle Abhängigkeiten vorhanden sind.
+    2. Führe `npm run build` aus, um das Projekt zu kompilieren.
+    3. Überprüfe mit `npm run start`, ob der Build erfolgreich abgeschlossen wurde.
 
-- **Fehler: „Operation not permitted“, „Permission denied“ oder ähnlich.**
-  - **Ursache:** Wenn die Sandbox-Funktion aktiviert ist, versucht Qwen Code möglicherweise Operationen, die durch Ihre Sandbox-Konfiguration eingeschränkt sind – z. B. das Schreiben außerhalb des Projektverzeichnisses oder des temporären Systemverzeichnisses.
-  - **Lösung:** Weitere Informationen, einschließlich Anleitungen zur Anpassung Ihrer Sandbox-Konfiguration, finden Sie in der Dokumentation unter [Konfiguration: Sandboxing](../features/sandbox).
+- **Error: "Operation not permitted", "Permission denied", or similar.**
+  - **Ursache:** Wenn Sandboxing aktiviert ist, versucht Qwen Code möglicherweise Operationen, die durch deine Sandbox-Konfiguration eingeschränkt sind, z. B. das Schreiben außerhalb des Projektverzeichnisses oder des System-Temp-Verzeichnisses.
+  - **Lösung:** Weitere Informationen, einschließlich der Anpassung deiner Sandbox-Konfiguration, findest du in der Dokumentation unter [Configuration: Sandboxing](../features/sandbox).
 
-- **Qwen Code wird in „CI“-Umgebungen nicht im interaktiven Modus ausgeführt**
-  - **Problem:** Qwen Code wechselt nicht in den interaktiven Modus (keine Eingabeaufforderung erscheint), wenn eine Umgebungsvariable mit dem Präfix `CI_` (z. B. `CI_TOKEN`) gesetzt ist. Dies liegt daran, dass das Paket `is-in-ci`, das vom zugrundeliegenden UI-Framework verwendet wird, solche Variablen erkennt und annimmt, dass es sich um eine nicht-interaktive CI-Umgebung handelt.
-  - **Ursache:** Das Paket `is-in-ci` prüft auf das Vorhandensein der Variablen `CI`, `CONTINUOUS_INTEGRATION` oder einer beliebigen Umgebungsvariablen mit dem Präfix `CI_`. Wird eine dieser Variablen gefunden, wird angenommen, dass die Umgebung nicht interaktiv ist, wodurch der CLI-Start im interaktiven Modus verhindert wird.
-  - **Lösung:** Falls die Umgebungsvariable mit dem Präfix `CI_` für die Funktionsfähigkeit der CLI nicht erforderlich ist, können Sie sie vorübergehend für diesen Befehl deaktivieren, z. B. mit `env -u CI_TOKEN qwen`.
+- **Qwen Code is not running in interactive mode in "CI" environments**
+  - **Issue:** Qwen Code wechselt nicht in den interaktiven Modus (es erscheint keine Eingabeaufforderung), wenn eine Umgebungsvariable gesetzt ist, die mit `CI_` beginnt (z. B. `CI_TOKEN`). Das liegt daran, dass das vom zugrunde liegenden UI-Framework genutzte Paket `is-in-ci` diese Variablen erkennt und von einer nicht-interaktiven CI-Umgebung ausgeht.
+  - **Cause:** Das Paket `is-in-ci` prüft auf das Vorhandensein von `CI`, `CONTINUOUS_INTEGRATION` oder beliebigen Umgebungsvariablen mit dem Präfix `CI_`. Wird eine davon gefunden, signalisiert es, dass die Umgebung nicht-interaktiv ist, was den Start der CLI im interaktiven Modus verhindert.
+  - **Solution:** Wenn die Variable mit dem `CI_`-Präfix für die Funktion der CLI nicht benötigt wird, kannst du sie vorübergehend für den Befehl deaktivieren. Z. B. `env -u CI_TOKEN qwen`
 
-- **DEBUG-Modus funktioniert nicht über die Projekt-`.env`-Datei**
-  - **Problem:** Die Festlegung von `DEBUG=true` in der `.env`-Datei eines Projekts aktiviert den Debug-Modus für die CLI nicht.
-  - **Ursache:** Die Variablen `DEBUG` und `DEBUG_MODE` werden automatisch aus Projekt-`.env`-Dateien ausgeschlossen, um Interferenzen mit dem Verhalten der CLI zu vermeiden.
-  - **Lösung:** Verwenden Sie stattdessen eine `.qwen/.env`-Datei oder passen Sie die Einstellung `advanced.excludedEnvVars` in Ihrer `settings.json` so an, dass weniger Variablen ausgeschlossen werden.
+- **DEBUG mode not working from project .env file**
+  - **Issue:** Das Setzen von `DEBUG=true` in der `.env`-Datei eines Projekts aktiviert den Debug-Modus für die CLI nicht.
+  - **Cause:** Die Variablen `DEBUG` und `DEBUG_MODE` werden automatisch aus den `.env`-Dateien von Projekten ausgeschlossen, um Interferenzen mit dem CLI-Verhalten zu vermeiden.
+  - **Solution:** Verwende stattdessen eine `.qwen/.env`-Datei oder konfiguriere die Einstellung `advanced.excludedEnvVars` in deiner `settings.json`, um weniger Variablen auszuschließen.
 
-## IDE-Companion verbindet nicht
+## IDE Companion stellt keine Verbindung her
 
-- Stellen Sie sicher, dass in VS Code genau ein Arbeitsbereichsordner geöffnet ist.
-- Starten Sie das integrierte Terminal nach der Installation der Erweiterung neu, damit es folgende Umgebungsvariablen übernimmt:
+- Stelle sicher, dass in VS Code nur ein einzelner Workspace-Ordner geöffnet ist.
+- Starte das integrierte Terminal nach der Installation der Erweiterung neu, damit es folgende Variablen übernimmt:
   - `QWEN_CODE_IDE_WORKSPACE_PATH`
   - `QWEN_CODE_IDE_SERVER_PORT`
-- Falls die Anwendung in einem Container ausgeführt wird, prüfen Sie, ob `host.docker.internal` auflösbar ist. Andernfalls müssen Sie den Host entsprechend mappen.
-- Installieren Sie den Companion erneut mit `/ide install` und verwenden Sie „Qwen Code: Run“ in der Befehlspalette, um zu überprüfen, ob er gestartet wird.
+- Wenn du in einem Container arbeitest, prüfe, ob `host.docker.internal` aufgelöst wird. Andernfalls mappe den Host entsprechend.
+- Installiere den Companion mit `/ide install` neu und verwende „Qwen Code: Run“ in der Befehlspalette, um den Start zu überprüfen.
 
 ## Exit-Codes
 
-Qwen Code verwendet spezifische Exit-Codes, um den Grund für das Beenden des Programms anzugeben. Dies ist insbesondere bei Skripten und Automatisierung hilfreich.
+Qwen Code verwendet spezifische Exit-Codes, um den Grund für die Beendigung anzugeben. Dies ist besonders nützlich für Skripte und Automatisierung.
 
-| Exit-Code | Fehlerart                     | Beschreibung                                                                                         |
-| --------- | ----------------------------- | ---------------------------------------------------------------------------------------------------- |
-| 41        | `FatalAuthenticationError`    | Während des Authentifizierungsprozesses ist ein Fehler aufgetreten.                                 |
-| 42        | `FatalInputError`             | Es wurden ungültige oder fehlende Eingaben an die CLI übergeben. (Nur im nicht-interaktiven Modus)   |
-| 44        | `FatalSandboxError`           | Ein Fehler ist in der Sandbox-Umgebung aufgetreten (z. B. Docker, Podman oder Seatbelt).            |
-| 52        | `FatalConfigError`            | Die Konfigurationsdatei (`settings.json`) ist ungültig oder enthält Fehler.                          |
-| 53        | `FatalTurnLimitedError`       | Die maximale Anzahl an Gesprächswechseln für die Sitzung wurde erreicht. (Nur im nicht-interaktiven Modus) |
+| Exit-Code | Error Type                 | Beschreibung                                                                                         |
+| --------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
+| 41        | `FatalAuthenticationError` | Während des Authentifizierungsprozesses ist ein Fehler aufgetreten.                                                |
+| 42        | `FatalInputError`          | Der CLI wurde eine ungültige oder fehlende Eingabe übergeben. (nur im nicht-interaktiven Modus)                       |
+| 44        | `FatalSandboxError`        | In der Sandbox-Umgebung ist ein Fehler aufgetreten (z. B. Docker, Podman oder Seatbelt).               |
+| 52        | `FatalConfigError`         | Eine Konfigurationsdatei (`settings.json`) ist ungültig oder enthält Fehler.                               |
+| 53        | `FatalTurnLimitedError`    | Die maximale Anzahl an Konversationsrunden für die Sitzung wurde erreicht. (nur im nicht-interaktiven Modus) |
 
-## Tipps zur Fehlerbehebung
+## Debugging-Tipps
 
-- **Fehlerbehebung über die CLI:**
-  - Verwenden Sie das Flag `--verbose` (sofern verfügbar) mit CLI-Befehlen, um detailliertere Ausgaben zu erhalten.
-  - Überprüfen Sie die CLI-Protokolle, die sich häufig in einem benutzerspezifischen Konfigurations- oder Cache-Verzeichnis befinden.
+- **CLI-Debugging:**
+  - Verwende das `--verbose`-Flag (falls verfügbar) bei CLI-Befehlen für eine detailliertere Ausgabe.
+  - Prüfe die CLI-Logs, die sich häufig in einem benutzerspezifischen Konfigurations- oder Cache-Verzeichnis befinden.
 
-- **Fehlerbehebung im Kern:**
-  - Prüfen Sie die Server-Konsole auf Fehlermeldungen oder Stack-Traces.
-  - Erhöhen Sie die Protokollausführlichkeit, falls dies konfigurierbar ist.
-  - Nutzen Sie Node.js-Debugging-Tools (z. B. `node --inspect`), wenn Sie den serverseitigen Code schrittweise durchlaufen müssen.
+- **Core-Debugging:**
+  - Prüfe die Konsolenausgabe des Servers auf Fehlermeldungen oder Stack Traces.
+  - Erhöhe die Log-Verbosität, falls konfigurierbar.
+  - Verwende Node.js-Debugging-Tools (z. B. `node --inspect`), wenn du serverseitigen Code schrittweise durchgehen musst.
 
-- **Probleme mit Tools:**
-  - Falls ein bestimmtes Tool fehlschlägt, versuchen Sie, das Problem einzugrenzen, indem Sie die einfachste mögliche Version des Befehls oder der Operation ausführen, die das Tool durchführt.
-  - Bei `run_shell_command` prüfen Sie zunächst, ob der Befehl direkt in Ihrer Shell funktioniert.
-  - Bei _Dateisystem-Tools_ überprüfen Sie, ob die Pfade korrekt sind, und stellen Sie sicher, dass die erforderlichen Berechtigungen vorliegen.
+- **Tool-Probleme:**
+  - Wenn ein bestimmtes Tool fehlschlägt, versuche, das Problem zu isolieren, indem du die einfachste mögliche Version des Befehls oder der Operation ausführst, die das Tool ausführt.
+  - Prüfe bei `run_shell_command` zuerst, ob der Befehl direkt in deiner Shell funktioniert.
+  - Überprüfe bei _Dateisystem-Tools_, ob die Pfade korrekt sind, und prüfe die Berechtigungen.
 
-- **Vorab-Prüfungen (Pre-flight checks):**
-  - Führen Sie stets `npm run preflight` aus, bevor Sie Code committen. Dadurch werden viele gängige Probleme im Zusammenhang mit Formatierung, Linting und Typfehlern erkannt.
+- **Pre-flight-Checks:**
+  - Führe immer `npm run preflight` aus, bevor du Code committest. Damit lassen sich viele häufige Probleme im Zusammenhang mit Formatierung, Linting und Typfehlern frühzeitig erkennen.
 
-## Vorhandene GitHub-Issues, die Ihrem Problem ähneln, oder neue Issues erstellen
+## Bestehende GitHub Issues, die deinem Problem ähneln, oder Erstellen neuer Issues
 
-Falls Sie ein Problem feststellen, das hier in dieser _Anleitung zur Fehlerbehebung_ nicht behandelt wird, suchen Sie bitte im [Issue-Tracker von Qwen Code auf GitHub](https://github.com/QwenLM/qwen-code/issues). Falls Sie kein Issue finden, das Ihrem Problem ähnelt, erstellen Sie bitte ein neues GitHub-Issue mit einer detaillierten Beschreibung. Pull Requests sind ebenfalls willkommen!
+Wenn du auf ein Problem stößt, das in diesem _Leitfaden zur Fehlerbehebung_ nicht behandelt wird, durchsuche zunächst den [Issue-Tracker von Qwen Code auf GitHub](https://github.com/QwenLM/qwen-code/issues). Falls du kein ähnliches Issue findest, erwäge, ein neues GitHub Issue mit einer detaillierten Beschreibung zu erstellen. Pull Requests sind ebenfalls willkommen!

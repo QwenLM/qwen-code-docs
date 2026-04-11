@@ -4,15 +4,14 @@
 
 ## Способ 1: Использование npx
 
-npx запускает пакеты из временного кеша без постоянной установки. Чтобы «удалить» CLI, необходимо очистить этот кеш — в результате будут удалены `qwen-code` и любые другие пакеты, ранее запущенные через npx.
+npx запускает пакеты из временного кеша без их постоянной установки. Чтобы «удалить» CLI, необходимо очистить этот кеш. Это удалит qwen-code и все остальные пакеты, которые ранее запускались через npx.
 
-Кеш npx — это каталог с именем `_npx`, расположенный внутри основного каталога кеша npm. Путь к кешу npm можно узнать, выполнив команду `npm config get cache`.
+Кеш npx — это директория `_npx`, расположенная внутри основной папки кеша npm. Узнать путь к кешу npm можно, выполнив команду `npm config get cache`.
 
 **Для macOS / Linux**
 
 ```bash
-
-# Путь обычно выглядит так: ~/.npm/_npx
+# Путь обычно ~/.npm/_npx
 rm -rf "$(npm config get cache)/_npx"
 ```
 
@@ -21,24 +20,23 @@ rm -rf "$(npm config get cache)/_npx"
 _Командная строка_
 
 ```cmd
-:: Путь обычно выглядит так: %LocalAppData%\npm-cache\_npx
+:: Путь обычно %LocalAppData%\npm-cache\_npx
 rmdir /s /q "%LocalAppData%\npm-cache\_npx"
 ```
 
 _PowerShell_
 
 ```powershell
-
-# Путь обычно выглядит так: $env:LocalAppData\npm-cache\_npx
+# Путь обычно $env:LocalAppData\npm-cache\_npx
 Remove-Item -Path (Join-Path $env:LocalAppData "npm-cache\_npx") -Recurse -Force
 ```
 
 ## Способ 2: Использование npm (глобальная установка)
 
-Если вы установили CLI глобально (например, `npm install -g @qwen-code/qwen-code`), используйте команду `npm uninstall` с флагом `-g`, чтобы удалить её.
+Если вы установили CLI глобально (например, `npm install -g @qwen-code/qwen-code`), используйте команду `npm uninstall` с флагом `-g` для его удаления.
 
 ```bash
 npm uninstall -g @qwen-code/qwen-code
 ```
 
-Эта команда полностью удаляет пакет из вашей системы.
+Эта команда полностью удалит пакет из вашей системы.

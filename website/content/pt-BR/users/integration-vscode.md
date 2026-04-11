@@ -1,6 +1,6 @@
 # Visual Studio Code
 
-> A extensão do VS Code (Beta) permite visualizar as alterações do Qwen em tempo real por meio de uma interface gráfica nativa integrada diretamente ao seu IDE, facilitando o acesso e a interação com o Qwen Code.
+> A extensão do VS Code (Beta) permite que você veja as alterações do Qwen em tempo real por meio de uma interface gráfica nativa integrada diretamente à sua IDE, facilitando o acesso e a interação com o Qwen Code.
 
 <br/>
 
@@ -10,10 +10,10 @@
 
 ### Recursos
 
-- **Experiência nativa no IDE**: Painel lateral dedicado do Qwen Code acessível pelo ícone do Qwen
-- **Modo de aceitação automática de edições**: Aplica automaticamente as alterações do Qwen à medida que são feitas
+- **Experiência nativa na IDE**: Painel lateral dedicado do Qwen Code acessado pelo ícone do Qwen
+- **Modo de aceitação automática de edições**: Aplique automaticamente as alterações do Qwen conforme são feitas
 - **Gerenciamento de arquivos**: Mencione arquivos com `@` ou anexe arquivos e imagens usando o seletor de arquivos do sistema
-- **Histórico de conversas**: Acesso às conversas anteriores
+- **Histórico de conversas**: Acesso a conversas anteriores
 - **Múltiplas sessões**: Execute várias sessões do Qwen Code simultaneamente
 
 ### Requisitos
@@ -22,18 +22,18 @@
 
 ### Instalação
 
-Baixe e instale a extensão na [Visual Studio Code Extension Marketplace](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion).
+Baixe e instale a extensão no [Visual Studio Code Extension Marketplace](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion).
 
 ## Solução de problemas
 
-### A extensão não está sendo instalada
+### Extensão não instala
 
-- Certifique-se de que você tem o VS Code 1.85.0 ou superior
+- Verifique se você está usando o VS Code 1.85.0 ou superior
 - Verifique se o VS Code tem permissão para instalar extensões
-- Tente instalar diretamente pelo site da Marketplace
+- Tente instalar diretamente pelo site do Marketplace
 
-### O Qwen Code não está respondendo
+### Qwen Code não responde
 
 - Verifique sua conexão com a internet
-- Inicie uma nova conversa para verificar se o problema persiste
-- [Abra um problema no GitHub](https://github.com/qwenlm/qwen-code/issues) se o problema continuar
+- Inicie uma nova conversa para ver se o problema persiste
+- [Abra uma issue no GitHub](https://github.com/qwenlm/qwen-code/issues) se o problema continuar

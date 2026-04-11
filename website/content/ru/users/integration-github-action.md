@@ -2,51 +2,50 @@
 
 ## Обзор
 
-`qwen-code-action` — это действие GitHub, интегрирующее [Qwen Code] в ваш рабочий процесс разработки через [Qwen Code CLI]. Оно выступает как автономный агент для выполнения критически важных рутинных задач программирования, а также как сотрудник по требованию, которому можно быстро делегировать работу.
+`qwen-code-action` — это GitHub Action, который интегрирует [Qwen Code] в ваш процесс разработки через [Qwen Code CLI]. Он работает как автономный агент для выполнения важных рутинных задач по написанию кода, а также как помощник по запросу, которому можно быстро делегировать работу.
 
-Используйте его для проведения рецензирования запросов на слияние (pull request) в GitHub, первичного анализа и классификации проблем (issue triage), анализа и модификации кода и других задач с помощью [Qwen Code] в диалоговом режиме (например, `@qwencoder исправь эту проблему`) непосредственно внутри ваших репозиториев GitHub.
+Используйте его для ревью pull request'ов в GitHub, сортировки и обработки issues, анализа и модификации кода и многого другого, взаимодействуя с [Qwen Code] в диалоговом режиме (например, `@qwencoder fix this issue`) прямо внутри ваших репозиториев GitHub.
 
 ## Возможности
 
-- **Автоматизация**: Запуск рабочих процессов по событиям (например, при открытии задачи) или по расписанию (например, еженощно).
-- **Совместная работа по запросу**: Запуск рабочих процессов из комментариев к задачам и запросам на слияние с помощью упоминания [Qwen Code CLI](./features/commands) (например, `@qwencoder /review`).
-- **Расширяемость с помощью инструментов**: Использование возможностей вызова инструментов моделей [Qwen Code](../developers/tools/introduction.md) для взаимодействия с другими CLI, такими как [GitHub CLI] (`gh`).
-- **Настройка под проект**: Используйте файл `QWEN.md` в своём репозитории, чтобы предоставить проектные инструкции и контекст для [Qwen Code CLI](./features/commands).
+- **Автоматизация**: Запуск workflow на основе событий (например, создание issue) или по расписанию (например, по ночному расписанию).
+- **Совместная работа по запросу**: Запуск workflow через комментарии к issue и pull request с упоминанием [Qwen Code CLI](./features/commands) (например, `@qwencoder /review`).
+- **Расширяемость с помощью инструментов**: Используйте возможности вызова инструментов (tool-calling) моделей [Qwen Code](../developers/tools/introduction.md) для взаимодействия с другими CLI, такими как [GitHub CLI] (`gh`).
+- **Настраиваемость**: Создайте файл `QWEN.md` в вашем репозитории, чтобы передать [Qwen Code CLI](./features/commands) специфичные для проекта инструкции и контекст.
 
 ## Быстрый старт
 
-Начните использовать Qwen Code CLI в своём репозитории всего за несколько минут:
+Начните использовать Qwen Code CLI в вашем репозитории всего за несколько минут:
 
-### 1. Получите ключ API Qwen
+### 1. Получите Qwen API Key
 
-Получите свой ключ API на [DashScope](https://help.aliyun.com/zh/model-studio/qwen-code) (платформа искусственного интеллекта Alibaba Cloud).
+Получите API key на платформе [DashScope](https://help.aliyun.com/zh/model-studio/qwen-code) (AI-платформа Alibaba Cloud)
 
-### 2. Добавьте ключ в виде секрета GitHub
+### 2. Добавьте его как GitHub Secret
 
-Сохраните свой API-ключ как секрет с именем `QWEN_API_KEY` в репозитории:
+Сохраните ваш API key как секрет с именем `QWEN_API_KEY` в вашем репозитории:
 
-- Перейдите в раздел **Settings > Secrets and variables > Actions** вашего репозитория.
-- Нажмите **New repository secret**.
-- Укажите имя: `QWEN_API_KEY`, значение — ваш API-ключ.
+- Перейдите в **Settings > Secrets and variables > Actions** вашего репозитория
+- Нажмите **New repository secret**
+- Name: `QWEN_API_KEY`, Value: ваш API key
 
-### 3. Обновите файл `.gitignore`
+### 3. Обновите ваш .gitignore
 
 Добавьте следующие строки в файл `.gitignore`:
 
 ```gitignore
-
-# Настройки qwen-code-cli
+# qwen-code-cli settings
 .qwen/
 
-# Учётные данные GitHub App
+# GitHub App credentials
 gha-creds-*.json
 ```
 
-### 4. Выберите рабочий процесс
+### 4. Выберите workflow
 
-У вас есть два варианта настройки рабочего процесса:
+У вас есть два варианта настройки workflow:
 
-**Вариант А: Использовать команду установки (рекомендуется)**
+**Вариант A: Использовать команду настройки (Рекомендуется)**
 
 1. Запустите Qwen Code CLI в терминале:
 
@@ -60,127 +59,126 @@ gha-creds-*.json
    /setup-github
    ```
 
-**Вариант Б: Скопируйте рабочие процессы вручную**
+**Вариант B: Вручную скопировать workflow**
 
-1. Скопируйте готовые рабочие процессы из каталога [`examples/workflows`](./common-workflow) в каталог `.github/workflows` вашего репозитория.  
-   Примечание: также необходимо скопировать рабочий процесс `qwen-dispatch.yml`, который запускает остальные рабочие процессы.
+1. Скопируйте готовые workflow из директории [`examples/workflows`](./common-workflow) в директорию `.github/workflows` вашего репозитория. Примечание: необходимо также скопировать workflow `qwen-dispatch.yml`, который запускает выполнение остальных workflow.
 
-### 5. Попробуйте в действии
+### 5. Проверьте работу
 
-**Проверка запросов на слияние (Pull Request Review):**
+**Ревью Pull Request:**
 
-- Откройте запрос на слияние в своём репозитории и дождитесь автоматической проверки  
-- Добавьте комментарий `@qwencoder /review` к существующему запросу на слияние, чтобы вручную запустить проверку  
+- Создайте pull request в вашем репозитории и дождитесь автоматического ревью
+- Оставьте комментарий `@qwencoder /review` в существующем pull request, чтобы запустить ревью вручную
 
-**Классификация задач (Issue Triage):**
+**Сортировка Issues:**
 
-- Откройте задачу и дождитесь автоматической классификации  
-- Добавьте комментарий `@qwencoder /triage` к существующей задаче, чтобы вручную запустить классификацию  
+- Создайте issue и дождитесь автоматической сортировки
+- Оставьте комментарий `@qwencoder /triage` в существующих issues, чтобы запустить сортировку вручную
 
-**Общая помощь ИИ:**
+**Общая AI-помощь:**
 
-- В любой задаче или запросе на слияние упомяните `@qwencoder`, а затем сформулируйте свой запрос  
-- Примеры:  
-  - `@qwencoder объясни это изменение кода`  
-  - `@qwencoder предложи улучшения для этой функции`  
-  - `@qwencoder помоги отладить эту ошибку`  
-  - `@qwencoder напиши модульные тесты для этого компонента`  
+- В любом issue или pull request упомяните `@qwencoder` и укажите ваш запрос
+- Примеры:
+  - `@qwencoder explain this code change`
+  - `@qwencoder suggest improvements for this function`
+  - `@qwencoder help me debug this error`
+  - `@qwencoder write unit tests for this component`
 
-## Рабочие процессы
+## Workflow
 
-Это действие предоставляет несколько готовых рабочих процессов для различных сценариев использования. Каждый рабочий процесс предназначен для копирования в каталог `.github/workflows` вашего репозитория и последующей настройки по мере необходимости.
+Это действие предоставляет несколько готовых workflow для различных сценариев использования. Каждый workflow предназначен для копирования в директорию `.github/workflows` вашего репозитория и последующей настройки по необходимости.
 
-### Диспетчеризация Qwen Code
+### Qwen Code Dispatch
 
-Этот рабочий процесс выступает в роли центрального диспетчера для CLI Qwen Code, перенаправляя запросы в соответствующий рабочий процесс в зависимости от события-инициатора и команды, указанной в комментарии. Подробное руководство по настройке рабочего процесса диспетчеризации см. в [документации по рабочему процессу Qwen Code Dispatch](./common-workflow).
+Этот workflow выступает в роли центрального диспетчера для Qwen Code CLI, направляя запросы в соответствующий workflow на основе события-триггера и команды, указанной в комментарии. Подробное руководство по настройке dispatch workflow см. в [документации по Qwen Code Dispatch workflow](./common-workflow).
 
-### Триаж задач
+### Issue Triage
 
-Это действие можно использовать для автоматического триажа задач GitHub или по расписанию. Подробное руководство по настройке системы триажа задач см. в [документации по рабочему процессу триажа задач GitHub](./examples/workflows/issue-triage).
+Это действие позволяет автоматически или по расписанию сортировать GitHub Issues. Подробное руководство по настройке системы сортировки issues см. в [документации по GitHub Issue Triage workflow](./examples/workflows/issue-triage).
 
-### Проверка запросов на слияние
+### Pull Request Review
 
-Это действие можно использовать для автоматической проверки запросов на слияние при их создании. Подробное руководство по настройке системы проверки запросов на слияние см. в [документации по рабочему процессу проверки запросов на слияние GitHub](./common-workflow).
+Это действие можно использовать для автоматического ревью pull request'ов при их создании. Подробное руководство по настройке системы ревью pull request'ов см. в [документации по GitHub PR Review workflow](./common-workflow).
 
-### CLI-ассистент Qwen Code
+### Qwen Code CLI Assistant
 
-Этот тип действия можно использовать для вызова универсального диалогового ИИ-ассистента Qwen Code в рамках pull request и задач для выполнения широкого спектра задач. Подробное руководство по настройке универсального рабочего процесса Qwen Code CLI см. в [документации по рабочему процессу Qwen Code Assistant](./common-workflow).
+Этот тип действия позволяет вызывать универсального диалогового AI-ассистента Qwen Code внутри pull request'ов и issues для выполнения широкого спектра задач. Подробное руководство по настройке универсального workflow Qwen Code CLI см. в [документации по Qwen Code Assistant workflow](./common-workflow).
 
 ## Конфигурация
 
-### Входные параметры
+### Inputs
 
 <!-- BEGIN_AUTOGEN_INPUTS -->
 
-- <a name="__input_qwen_api_key"></a><a href="#user-content-__input_qwen_api_key"><code>qwen*api_key</code></a>: *(Необязательно)* Ключ API для Qwen API.
+- <a name="__input_qwen_api_key"></a><a href="#user-content-__input_qwen_api_key"><code>qwen*api_key</code></a>: *(Необязательно)\_ API key для Qwen API.
 
-- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(Необязательно, по умолчанию: `latest`)* Версия Qwen Code CLI, которую необходимо установить. Может быть значением `latest`, `preview`, `nightly`, конкретным номером версии или именем ветки, тега или коммита в Git. Дополнительную информацию см. в разделе [релизы Qwen Code CLI](https://github.com/QwenLM/qwen-code-action/blob/main/docs/releases.md).
+- <a name="__input_qwen_cli_version"></a><a href="#user-content-__input_qwen_cli_version"><code>qwen*cli_version</code></a>: *(Необязательно, по умолчанию: `latest`)\_ Версия Qwen Code CLI для установки. Может быть "latest", "preview", "nightly", конкретным номером версии или git-веткой, тегом или коммитом. Подробнее см. [релизы Qwen Code CLI](https://github.com/QwenLM/qwen-code-action/blob/main/docs/releases.md).
 
-- <a name="__input_qwen_debug"></a><a href="#user-content-__input_qwen_debug"><code>qwen*debug</code></a>: *(Необязательно)* Включить отладочное логирование и потоковую передачу вывода.
+- <a name="__input_qwen_debug"></a><a href="#user-content-__input_qwen_debug"><code>qwen*debug</code></a>: *(Необязательно)\_ Включает debug-логирование и потоковый вывод.
 
-- <a name="__input_qwen_model"></a><a href="#user-content-__input_qwen_model"><code>qwen*model</code></a>: *(Необязательно)* Модель, используемая с Qwen Code.
+- <a name="__input_qwen_model"></a><a href="#user-content-__input_qwen_model"><code>qwen*model</code></a>: *(Необязательно)\_ Модель, используемая с Qwen Code.
 
-- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: *(Необязательно, по умолчанию: `You are a helpful assistant.`)* Строка, передаваемая в аргумент [`--prompt`](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#command-line-arguments) Qwen Code CLI.
+- <a name="__input_prompt"></a><a href="#user-content-__input_prompt"><code>prompt</code></a>: _(Необязательно, по умолчанию: `You are a helpful assistant.`)_ Строка, передаваемая в аргумент [`--prompt`](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#command-line-arguments) Qwen Code CLI.
 
-- <a name="__input_settings"></a><a href="#user-content-__input_settings"><code>settings</code></a>: *(Необязательно)* JSON-строка, записываемая в файл `.qwen/settings.json` для настройки _проектных_ параметров CLI.  
-  Подробнее см. в документации по [файлам настроек](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#settings-files).
+- <a name="__input_settings"></a><a href="#user-content-__input_settings"><code>settings</code></a>: _(Необязательно)_ JSON-строка, записываемая в `.qwen/settings.json` для настройки _проектных_ параметров CLI.
+  Подробнее см. документацию по [файлам настроек](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#settings-files).
 
-- <a name="__input_use_qwen_code_assist"></a><a href="#user-content-__input_use_qwen_code_assist"><code>use*qwen_code_assist</code></a>: *(Необязательно, по умолчанию: `false`)* Использовать ли Code Assist для доступа к модели Qwen Code вместо ключа API Qwen Code по умолчанию.  
-  Дополнительную информацию см. в [документации Qwen Code CLI](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md).
+- <a name="__input_use_qwen_code_assist"></a><a href="#user-content-__input_use_qwen_code_assist"><code>use*qwen_code_assist</code></a>: *(Необязательно, по умолчанию: `false`)\_ Определяет, использовать ли Code Assist для доступа к моделям Qwen Code вместо стандартного Qwen Code API key.
+  Подробнее см. [документацию Qwen Code CLI](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md).
 
-- <a name="__input_use_vertex_ai"></a><a href="#user-content-__input_use_vertex_ai"><code>use*vertex_ai</code></a>: *(Необязательно, по умолчанию: `false`)* Использовать ли Vertex AI для доступа к модели Qwen Code вместо ключа API Qwen Code по умолчанию.  
-  Дополнительную информацию см. в [документации Qwen Code CLI](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md).
+- <a name="__input_use_vertex_ai"></a><a href="#user-content-__input_use_vertex_ai"><code>use*vertex_ai</code></a>: *(Необязательно, по умолчанию: `false`)\_ Определяет, использовать ли Vertex AI для доступа к моделям Qwen Code вместо стандартного Qwen Code API key.
+  Подробнее см. [документацию Qwen Code CLI](https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/authentication.md).
 
-- <a name="__input_extensions"></a><a href="#user-content-__input_extensions"><code>extensions</code></a>: *(Необязательно)* Список расширений Qwen Code CLI, которые необходимо установить.
+- <a name="__input_extensions"></a><a href="#user-content-__input_extensions"><code>extensions</code></a>: _(Необязательно)_ Список расширений Qwen Code CLI для установки.
 
-- <a name="__input_upload_artifacts"></a><a href="#user-content-__input_upload_artifacts"><code>upload*artifacts</code></a>: *(Необязательно, по умолчанию: `false`)* Загружать ли артефакты в действие GitHub.
+- <a name="__input_upload_artifacts"></a><a href="#user-content-__input_upload_artifacts"><code>upload*artifacts</code></a>: *(Необязательно, по умолчанию: `false`)\_ Определяет, загружать ли артефакты в GitHub Action.
 
-- <a name="__input_use_pnpm"></a><a href="#user-content-__input_use_pnpm"><code>use*pnpm</code></a>: *(Необязательно, по умолчанию: `false`)* Использовать ли pnpm вместо npm для установки qwen-code-cli.
+- <a name="__input_use_pnpm"></a><a href="#user-content-__input_use_pnpm"><code>use*pnpm</code></a>: *(Необязательно, по умолчанию: `false`)\_ Определяет, использовать ли pnpm вместо npm для установки qwen-code-cli
 
-- <a name="__input_workflow_name"></a><a href="#user-content-__input_workflow_name"><code>workflow*name</code></a>: *(Необязательно, по умолчанию: `${{ github.workflow }}`)* Имя рабочего процесса GitHub, используемое в целях телеметрии.
+- <a name="__input_workflow_name"></a><a href="#user-content-__input_workflow_name"><code>workflow*name</code></a>: *(Необязательно, по умолчанию: `${{ github.workflow }}`)\_ Имя GitHub workflow, используется для телеметрии.
 
 <!-- END_AUTOGEN_INPUTS -->
 
-### Выходные данные
+### Outputs
 
 <!-- BEGIN_AUTOGEN_OUTPUTS -->
 
-- <a name="__output_summary"></a><a href="#user-content-__output_summary"><code>summary</code></a>: Сводный результат выполнения CLI Qwen Code.
+- <a name="__output_summary"></a><a href="#user-content-__output_summary"><code>summary</code></a>: Суммарный вывод после выполнения Qwen Code CLI.
 
-- <a name="__output_error"></a><a href="#user-content-__output_error"><code>error</code></a>: Сообщение об ошибке при выполнении CLI Qwen Code, если таковая возникла.
+- <a name="__output_error"></a><a href="#user-content-__output_error"><code>error</code></a>: Вывод ошибок при выполнении Qwen Code CLI (если есть).
 
 <!-- END_AUTOGEN_OUTPUTS -->
 
 ### Переменные репозитория
 
-Мы рекомендуем задать следующие значения как переменные репозитория, чтобы их можно было повторно использовать во всех рабочих процессах. Альтернативно, вы можете задать их непосредственно в качестве входных данных действия в отдельных рабочих процессах или для переопределения значений на уровне репозитория.
+Рекомендуем задать следующие значения как переменные репозитория, чтобы их можно было переиспользовать во всех workflow. В качестве альтернативы вы можете указать их inline как inputs действия в отдельных workflow или для переопределения значений на уровне репозитория.
 
-| Имя                | Описание                                                    | Тип      | Обязательно | Когда требуется             |
-| ------------------ | ----------------------------------------------------------- | -------- | ----------- | --------------------------- |
-| `DEBUG`            | Включает отладочное логирование для CLI Qwen Code.          | Переменная | Нет         | Никогда                     |
-| `QWEN_CLI_VERSION` | Управляет версией CLI Qwen Code, которая будет установлена. | Переменная | Нет         | Фиксация версии CLI         |
-| `APP_ID`           | Идентификатор приложения GitHub для пользовательской аутентификации. | Переменная | Нет         | При использовании пользовательского приложения GitHub |
+| Имя               | Описание                                               | Тип     | Обязательно | Когда требуется             |
+| ------------------ | --------------------------------------------------------- | -------- | -------- | ------------------------- |
+| `DEBUG`            | Включает debug-логирование для Qwen Code CLI.              | Variable | Нет       | Никогда                     |
+| `QWEN_CLI_VERSION` | Управляет версией устанавливаемого Qwen Code CLI. | Variable | Нет       | Фиксация версии CLI   |
+| `APP_ID`           | ID GitHub App для кастомной аутентификации.                  | Variable | Нет       | Использование кастомного GitHub App |
 
 Чтобы добавить переменную репозитория:
 
-1. Перейдите в раздел **Settings > Secrets and variables > Actions > New variable** вашего репозитория.
+1. Перейдите в **Settings > Secrets and variables > Actions > New variable** вашего репозитория.
 2. Введите имя и значение переменной.
-3. Сохраните изменения.
+3. Сохраните.
 
-Дополнительные сведения о переменных репозитория см. в [документации GitHub по переменным][variables].
+Подробности о переменных репозитория см. в [документации GitHub по переменным][variables].
 
-### Секреты
+### Secrets
 
-Вы можете задать следующие секреты в своём репозитории:
+Вы можете задать следующие секреты в вашем репозитории:
 
-| Имя               | Описание                                                    | Обязательно | Когда требуется                                      |
-| ----------------- | ----------------------------------------------------------- | ----------- | ---------------------------------------------------- |
-| `QWEN_API_KEY`    | Ваш ключ API Qwen из DashScope.                             | Да          | Обязателен для всех рабочих процессов, вызывающих Qwen. |
-| `APP_PRIVATE_KEY` | Закрытый ключ вашего приложения GitHub (в формате PEM).     | Нет         | При использовании пользовательского приложения GitHub. |
+| Имя              | Описание                                   | Обязательно | Когда требуется                              |
+| ----------------- | --------------------------------------------- | -------- | ------------------------------------------ |
+| `QWEN_API_KEY`    | Ваш Qwen API key из DashScope.             | Да      | Требуется для всех workflow, вызывающих Qwen. |
+| `APP_PRIVATE_KEY` | Приватный ключ вашего GitHub App (формат PEM). | Нет       | Использование кастомного GitHub App.                 |
 
 Чтобы добавить секрет:
 
-1. Перейдите в раздел **Settings > Secrets and variables > Actions > New repository secret** вашего репозитория.
+1. Перейдите в **Settings > Secrets and variables > Actions > New repository secret** вашего репозитория.
 2. Введите имя и значение секрета.
 3. Сохраните.
 
@@ -188,49 +186,46 @@ gha-creds-*.json
 
 ## Аутентификация
 
-Это действие требует аутентификации в GitHub API и, опционально, в сервисах Qwen Code.
+Для работы этого действия требуется аутентификация в GitHub API и, опционально, в сервисах Qwen Code.
 
 ### Аутентификация в GitHub
 
-Вы можете пройти аутентификацию в GitHub двумя способами:
+Аутентифицироваться в GitHub можно двумя способами:
 
-1. **Токен по умолчанию `GITHUB_TOKEN`:** Для простых сценариев использования действие может использовать токен `GITHUB_TOKEN`, предоставляемый рабочим процессом по умолчанию.
-2. **Пользовательское приложение GitHub (рекомендуется):** Для наиболее безопасной и гибкой аутентификации рекомендуется создать пользовательское приложение GitHub.
+1. **Стандартный `GITHUB_TOKEN`:** Для простых сценариев действие может использовать стандартный `GITHUB_TOKEN`, предоставляемый workflow.
+2. **Кастомный GitHub App (Рекомендуется):** Для максимальной безопасности и гибкости аутентификации рекомендуем создать кастомный GitHub App.
 
-Подробные инструкции по настройке аутентификации как для Qwen, так и для GitHub см. в разделе  
-[**Документация по аутентификации**](./configuration/auth).
+Подробные инструкции по настройке аутентификации для Qwen и GitHub см. в [**документации по аутентификации**](./configuration/auth).
 
 ## Расширения
 
-CLI Qwen Code можно расширить дополнительными возможностями с помощью расширений.  
-Эти расширения устанавливаются из исходного кода их репозиториев на GitHub.
+Функциональность Qwen Code CLI можно расширить с помощью расширений. Эти расширения устанавливаются из исходного кода их репозиториев на GitHub.
 
-Подробные инструкции по настройке и конфигурации расширений см. в разделе  
-[Документация по расширениям](../developers/extensions/extension).
+Подробные инструкции по настройке и конфигурации расширений см. в [документации по расширениям](../developers/extensions/extension).
 
-## Рекомендации по использованию
+## Лучшие практики
 
-Чтобы обеспечить безопасность, надёжность и эффективность ваших автоматизированных рабочих процессов, настоятельно рекомендуем следовать нашим рекомендациям. Эти руководства охватывают ключевые области: безопасность репозитория, настройку рабочих процессов и мониторинг.
+Для обеспечения безопасности, надежности и эффективности ваших автоматизированных workflow настоятельно рекомендуем следовать нашим лучшим практикам. Эти рекомендации охватывают ключевые аспекты: безопасность репозитория, конфигурацию workflow и мониторинг.
 
-Основные рекомендации:
+Ключевые рекомендации включают:
 
-- **Обеспечение безопасности репозитория:** Настройка защиты веток и тегов, а также ограничение круга лиц, уполномоченных одобрять pull request’ы.
-- **Мониторинг и аудит:** Регулярный анализ журналов действий и включение OpenTelemetry для получения более глубоких сведений о производительности и поведении.
+- **Защита репозитория:** Настройка защиты веток и тегов, а также ограничение круга лиц, утверждающих pull request'ы.
+- **Мониторинг и аудит:** Регулярный просмотр логов действий и включение OpenTelemetry для глубокого анализа производительности и поведения.
 
-Полное руководство по обеспечению безопасности репозитория и рабочих процессов см. в нашей [**документации с рекомендациями по использованию**](./common-workflow).
+Полное руководство по защите вашего репозитория и workflow см. в нашей [**документации по лучшим практикам**](./common-workflow).
 
-## Настройка
+## Кастомизация
 
-Создайте файл `QWEN.md` в корне вашего репозитория, чтобы предоставить контекст проекта и инструкции для [Qwen Code CLI](./common-workflow). Это полезно для определения соглашений по написанию кода, архитектурных шаблонов или других правил, которым модель должна следовать при работе с данным репозиторием.
+Создайте файл `QWEN.md` в корне вашего репозитория, чтобы передать [Qwen Code CLI](./common-workflow) специфичный для проекта контекст и инструкции. Это полезно для определения соглашений по написанию кода, архитектурных паттернов или других правил, которым модель должна следовать в данном репозитории.
 
 ## Участие в разработке
 
-Приветствуются любые вклады! Подробнее о том, как начать, см. в **Руководстве по внесению вклада** в Qwen Code CLI.
+Мы приветствуем вклад в проект! Ознакомьтесь с **руководством по участию в разработке** Qwen Code CLI, чтобы узнать, как начать.
 
-[secrets]: https://docs.github.com/ru/actions/security-guides/using-secrets-in-github-actions  
-[Qwen Code]: https://github.com/QwenLM/qwen-code  
-[DashScope]: https://dashscope.console.aliyun.com/apiKey  
-[Qwen Code CLI]: https://github.com/QwenLM/qwen-code-action/  
-[variables]: https://docs.github.com/ru/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#creating-configuration-variables-for-a-repository  
-[GitHub CLI]: https://docs.github.com/ru/github-cli/github-cli  
+[secrets]: https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions
+[Qwen Code]: https://github.com/QwenLM/qwen-code
+[DashScope]: https://dashscope.console.aliyun.com/apiKey
+[Qwen Code CLI]: https://github.com/QwenLM/qwen-code-action/
+[variables]: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-variables#creating-configuration-variables-for-a-repository
+[GitHub CLI]: https://docs.github.com/en/github-cli/github-cli
 [QWEN.md]: https://github.com/QwenLM/qwen-code-action/blob/main/docs/cli/configuration.md#context-files-hierarchical-instructional-context

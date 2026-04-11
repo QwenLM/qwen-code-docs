@@ -1,6 +1,9 @@
 export default {
   commands: 'Befehle',
+  'code-review': 'Code-Überprüfung',
+  'followup-suggestions': 'Follow-up-Vorschläge',
   'sub-agents': 'Subagents',
+  arena: 'Agent-Arena',
   skills: 'Fähigkeiten',
   headless: 'Headless-Modus',
   checkpointing: {
@@ -12,4 +15,8 @@ export default {
   'token-caching': 'Token-Caching',
   sandbox: 'Sandboxing',
   language: 'i18n',
+  channels: 'Kanäle',
+  hooks: 'Hooks',
+  'status-line': 'Statuszeile',
+  'scheduled-tasks': 'Geplante Aufgaben',
 };
