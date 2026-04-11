@@ -1,6 +1,9 @@
 export default {
   commands: 'Comandos',
+  'code-review': 'Revisão de código',
+  'followup-suggestions': 'Sugestões de acompanhamento',
   'sub-agents': 'Subagentes',
+  arena: 'Arena de agentes',
   skills: 'Habilidades',
   headless: 'Modo sem interface gráfica',
   checkpointing: {
@@ -12,4 +15,8 @@ export default {
   'token-caching': 'Armazenamento em cache de tokens',
   sandbox: 'Sandbox',
   language: 'i18n',
+  channels: 'Canais',
+  hooks: 'Hooks',
+  'status-line': 'Linha de status',
+  'scheduled-tasks': 'Tarefas agendadas',
 };

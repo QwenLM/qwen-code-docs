@@ -11,6 +11,10 @@ export default {
     type: 'page',
     title: 'デベロッパーガイド',
   },
+  design: {
+    type: 'page',
+    title: 'デザイン',
+  },
   showcase: {
     type: 'page',
     title: 'ショーケース',

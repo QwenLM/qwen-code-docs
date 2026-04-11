@@ -1,6 +1,9 @@
 export default {
   commands: '命令',
+  'code-review': '代码审查',
+  'followup-suggestions': '后续建议',
   'sub-agents': '子智能体',
+  arena: '智能体竞技场',
   skills: '技能',
   headless: '无头模式',
   checkpointing: {
@@ -12,4 +15,8 @@ export default {
   'token-caching': 'Token 缓存',
   sandbox: '沙箱',
   language: '国际化 (i18n)',
+  channels: '频道',
+  hooks: '钩子',
+  'status-line': '状态行',
+  'scheduled-tasks': '定时任务',
 };

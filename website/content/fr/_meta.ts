@@ -11,6 +11,10 @@ export default {
     type: 'page',
     title: 'Guide développeur',
   },
+  design: {
+    type: 'page',
+    title: 'Design',
+  },
   showcase: {
     type: 'page',
     title: 'Vitrine',
