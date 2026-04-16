@@ -1,0 +1,258 @@
+---
+title: "Qwen Code Semanal: Profiler de Inicialização, Fork de Sub-Agentes, Visualização de Uso de Contexto"
+date: "2026-04-16"
+description: "Esta semana: lançamento das versões v0.14.3, v0.14.4 e v0.14.5. Novidades: profiler de inicialização, fork de sub-agentes, exposição de dados de uso de contexto, otimização da experiência do modo compact e correções de múltiplos problemas de plataforma."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Semanal: Profiler de Inicialização, Fork de Sub-Agentes, Visualização de Uso de Contexto"
+  date="2026-04-16"
+  author="Qwen Team"
+/>
+
+Esta semana lançamos três versões **v0.14.3**, **v0.14.4** e **v0.14.5**.
+
+- v0.14.3 é uma versão de otimização da experiência principal: O comando `/review` foi completamente reescrito com análise determinística, correção automática e reforço de segurança; o comando `/statusline` suporta exibição personalizável da barra de status; o diálogo `/settings` adiciona seletor de modelo e descrições de configurações; a otimização de entrada CJK suporta movimentação de cursor por palavra; a localização French entra em produção.
+- v0.14.4 traz funcionalidades de peso incluindo profiler de inicialização, fork de sub-agentes, exposição de dados de uso de contexto, middleware de reescrita de mensagens ACP, além de exibição de conta na extensão VSCode e outras melhorias de experiência.
+- v0.14.5 foca em correções de estabilidade: resolução de mais de 20 problemas incluindo detecção de limite de taxa da API, overflow de abas de sessão VSCode, baseUrl personalizada do Gemini e detecção de erros de limite de taxa.
+
+<Callout type="info">
+	Agradecemos aos novos contribuidores desta semana [**@pic4xiu**](https://github.com/pic4xiu), [**@qys177**](https://github.com/qys177), [**@tanzhenxing1987**](https://github.com/tanzhenxing1987), [**@zhangxy-zju**](https://github.com/zhangxy-zju), [**@zeusdream7**](https://github.com/zeusdream7) 🎉
+</Callout>
+
+## ✨ Novos Recursos
+
+### /review Revisão de Código: Análise Determinística + Correção Automática + Reforço de Segurança
+
+O comando `/review` foi completamente reescrito com suporte para análise determinística, sugestões de correção automática e detecção de vulnerabilidades de segurança.
+
+**O que você pode fazer:**
+
+- Executar revisões de código estruturadas nas alterações atuais, identificando automaticamente bugs potenciais
+- Gerar sugestões de correção com um clique, aplicando-as diretamente aos PRs
+- Escanear riscos de segurança comuns (chaves hardcoded, riscos de injeção, etc.)
+
+Veja PR [#2932](https://github.com/QwenLM/qwen-code/pull/2932)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000008055/O1CN015vMexX29NFRbpMTA7_!!6000000008055-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/K3xtn5O3mNeSt9Sqb5UVBAQIrKT5iYFHHHQWAP3Rv60.mp4" controls></video>
+
+### Barra de Status Personalizável: Comando /statusline para Exibição Flexível
+
+O comando `/statusline` permite personalizar o conteúdo da barra de status do terminal, suportando nome do modelo, uso de tokens, status do sandbox e mais.
+
+**O que você pode fazer:**
+
+- Ver o modelo atual e o consumo de tokens em tempo real
+- Exibir status do sandbox, modo de permissões e outras informações importantes
+- Simplificar ou expandir o conteúdo exibido conforme preferência pessoal
+
+Veja PR [#2923](https://github.com/QwenLM/qwen-code/pull/2923)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000006271/O1CN01EtOQIq1wCArZEdpzB_!!6000000006271-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/P_FStxrsiku_KJvaUdKM3QTIk7SiqGG-tvC09ngmkWs.mp4" controls></video>
+
+### Interface /settings: Seletor Fast Model + Descrições de Configurações
+
+O Fast Model no diálogo `/settings` foi alterado de um campo de texto para um seletor dropdown; cada configuração ativa agora exibe uma descrição abaixo.
+
+**O que você pode fazer:**
+
+- Selecionar o Fast Model diretamente de uma lista dropdown sem digitar manualmente o nome do modelo
+- Ver a finalidade de cada configuração para reduzir confusão
+
+Veja PR [#3120](https://github.com/QwenLM/qwen-code/pull/3120)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000005437/O1CN015bGbNi1q2CXnujqPW_!!6000000005437-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/75UAdzE3VNy2Ty8qwyfGA4p2Kof04kyKGC50Zqa4A7U.mp4" controls></video>
+
+### Otimização de Entrada: Segmentação CJK + Navegação Ctrl+Setas
+
+Experiência de entrada no terminal otimizada para usuários chineses, japoneses e coreanos com movimentação de cursor por palavra e navegação Ctrl+Setas.
+
+**O que você pode fazer:**
+
+- Mover o cursor por palavra (não caractere por caractere), tornando a edição de frases longas mais eficiente
+- Usar Ctrl+Setas para navegar rapidamente na caixa de entrada, reduzindo teclas
+
+Veja PR [#2942](https://github.com/QwenLM/qwen-code/pull/2942)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000003184/O1CN01FY2hf61ZOKCwyRZux_!!6000000003184-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/z6hnrYH8f-F0rxuKHlqXbba5rGnfvTBE-VHWqsg0ZT4.mp4" controls></video>
+
+### Multilíngue: Suporte de Localização French (fr-FR)
+
+Adicionadas traduções em francês com localização completa dos elementos de interface (menus, prompts, mensagens de erro, etc.).  
+Veja PR [#3126](https://github.com/QwenLM/qwen-code/pull/3126). 
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000006243/O1CN01jCHwZu1vzLm1Dflq4_!!6000000006243-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/6HzTUklT9o2ZOHKdAL-RM-cglx_ea4vKceNu2LRLZc8.mp4" controls></video>
+
+### Edição da Fila de Entrada: ↑ para Editar Mensagens Pendentes
+
+Mensagens na fila de entrada podem ser extraídas para edição usando ↑ ou ESC, sem necessidade de redigitar.
+
+**O que você pode fazer:**
+
+- Encontrou um erro antes de enviar? Pressione ↑ para editar diretamente a mensagem na fila
+- Quando várias mensagens estão na fila, extrair e editar uma por uma para melhor eficiência
+
+Veja PR [#2871](https://github.com/QwenLM/qwen-code/pull/2871)
+
+<video class="mt-5" poster="https://cloud.video.taobao.com/vod/Ql1knBEzYRUxrbtYTNN0rQcS-nExcnE86w3pl_LSCDQ.mp4" src="https://cloud.video.taobao.com/vod/Ql1knBEzYRUxrbtYTNN0rQcS-nExcnE86w3pl_LSCDQ.mp4" controls></video>
+
+### Saída do Modo Plan: Restauração com Um Clique do Modo Anterior
+
+Uma nova opção "Yes, restore previous mode" ao sair do modo Plan permite restaurar o estado de trabalho anterior à entrada no modo Plan.  
+Veja PR [#3008](https://github.com/QwenLM/qwen-code/pull/3008)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000004736/O1CN014Iqojo1kr8tzYKaKs_!!6000000004736-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/g7TelL6zn4d3-aXWfoJ4QPQwjDnG8U3-NupMiiMlORA.mp4" controls></video>. 
+
+### Subcomando /context detail: Ver Detalhes do Contexto
+
+O comando `/context` agora possui um subcomando `detail` para visualizar informações detalhadas do contexto.  
+Veja PR [#3042](https://github.com/QwenLM/qwen-code/pull/3042). 
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000000970/O1CN01kNbo051J2JJiZVeh7_!!6000000000970-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/Rq9W4st84SMGI8cZIMqTooYSgJ9kIvQAC5MEId3Lsok.mp4" controls></video>
+
+### Profiler de Inicialização
+
+Nova ferramenta de profiling de inicialização para identificar e otimizar gargalos de performance durante a inicialização do CLI.
+
+**O que você pode fazer:**
+
+- Analisar o tempo de carregamento de cada módulo
+- Identificar plugins e dependências de carregamento lento
+- Otimizar configurações personalizadas para reduzir o atraso de inicialização
+
+Veja PR [#3232](https://github.com/QwenLM/qwen-code/pull/3232)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000001199/O1CN012ypcQX1KjC18FmgoV_!!6000000001199-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/Dh8_a93n3ugt2XwzqCGbUoewnMJI3G4h05th0o0jwRY.mp4" controls></video>
+
+### Exposição de Dados de Uso de Contexto
+
+Expõe dados de uso `/context` no modo não interativo e na API SDK.
+
+**O que você pode fazer:**
+
+- Ver o consumo de tokens em tempo real
+- Monitorar o uso de contexto no SDK
+- Otimizar prompts para reduzir desperdício de tokens
+
+Veja PR [#2916](https://github.com/QwenLM/qwen-code/pull/2916)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005642/O1CN01JHAPMl1rY5jncNATK_!!6000000005642-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/RJa0hQmJQq8UtbMwndd85p2rd-CjBAyva0To2TcC4yg.mp4" controls></video>
+
+### Exibição de Conta na Extensão VSCode
+
+Adicionado comando `/account` na extensão VSCode para exibir informações da conta atual.
+
+**O que você pode fazer:**
+
+- Verificar rapidamente o status de login
+- Confirmar a conta atualmente ativa
+- Alternar entre diferentes contas
+
+Veja PR [#2984](https://github.com/QwenLM/qwen-code/pull/2984)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000007991/O1CN01rjx5MQ28tw61McW3S_!!6000000007991-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/3yCR6c08YFKQoutvGpbITelbB8zOFhgmbKr95veulOs.mp4" controls></video>
+
+### Fork de Sub-Agentes
+
+Implementação da funcionalidade de fork de sub-agentes com contexto compartilhado para processamento de subtarefas.
+
+**O que você pode fazer:**
+
+- Derivar subtarefas da tarefa principal para processar módulos independentes
+- Sub-agentes herdam o contexto da tarefa principal sem transmissão redundante de informações
+- Processar múltiplas tarefas relacionadas em paralelo para eficiência aprimorada em cenários complexos
+
+Veja PR [#2936](https://github.com/QwenLM/qwen-code/pull/2936)
+
+### Middleware de Reescrita de Mensagens ACP
+
+Adicionado middleware de reescrita de mensagens ACP baseado em LLM com suporte a prompts personalizados.
+
+**O que você pode fazer:**
+
+- Personalizar estilo e formato de mensagens
+- Adaptar-se a padrões de comunicação de diferentes cenários de colaboração
+- Automatizar otimização e polimento de mensagens
+
+Veja PR [#3191](https://github.com/QwenLM/qwen-code/pull/3191)
+
+## 📊 Otimizações e Melhorias
+
+- **Paralelismo Inteligente de Ferramentas**: Implementação de processamento em lote baseado em Kind e detecção de shell somente leitura ([#2864](https://github.com/QwenLM/qwen-code/pull/2864))
+- **Prompts Contextuais**: Adicionado sistema de prompts contextuais pós-resposta ([#2904](https://github.com/QwenLM/qwen-code/pull/2904))
+- **Micro-Compactação**: Adicionada funcionalidade de micro-compactação para limpeza de contexto ocioso ([#3006](https://github.com/QwenLM/qwen-code/pull/3006))
+- **Renderização de Tabelas Markdown**: Melhorada a exibição de tabelas Markdown no terminal ([#2914](https://github.com/QwenLM/qwen-code/pull/2914))
+
+## 🔧 Correções Importantes
+
+| PR | Versão | Problema | Impacto |
+|----|--------|----------|---------|
+| [#3246](https://github.com/QwenLM/qwen-code/pull/3246) | v0.14.5 | Detectar erros de limite de taxa de frames SSE em streaming | Corrigida incapacidade de identificar corretamente limitação de taxa da API |
+| [#3249](https://github.com/QwenLM/qwen-code/pull/3249) | v0.14.5 | Overflow do título da aba de sessão VSCode | Corrigidos problemas de exibição da barra de abas |
+| [#3212](https://github.com/QwenLM/qwen-code/pull/3212) | v0.14.5 | baseUrl personalizada do Gemini sem efeito | Corrigidos problemas de conexão com endpoints personalizados |
+| [#3251](https://github.com/QwenLM/qwen-code/pull/3251) | v0.14.5 | Validação de stream GeminiChat rejeitando respostas apenas de pensamento | Corrigidas respostas interceptadas incorretamente em alguns cenários |
+| [#3257](https://github.com/QwenLM/qwen-code/pull/3257) | v0.14.5 | Comando `/bug` difícil de usar em terminais sem suporte a hyperlinks | Corrigida experiência de feedback em terminais sem hyperlinks |
+| [#3270](https://github.com/QwenLM/qwen-code/pull/3270) | v0.14.5 | BaseTextInput ignorando Tab literal como entrada | Corrigida falha na entrada de caractere Tab |
+| [#3299](https://github.com/QwenLM/qwen-code/pull/3299) | v0.14.5 | Permitindo seleção de modelos Qwen OAuth desativados | Corrigido seletor de modelos mostrando modelos desativados |
+| [#3208](https://github.com/QwenLM/qwen-code/pull/3208) | v0.14.4 | Entrada preenchida com prompt anterior após cancelamento | Corrigido comportamento de rollback do histórico de entrada |
+| [#3197](https://github.com/QwenLM/qwen-code/pull/3197) | v0.14.4 | Caminho de injeção `@file` não respeitando configuração respectGitIgnore | Corrigidas referências de arquivo não seguindo regras Git ignore |
+| [#3194](https://github.com/QwenLM/qwen-code/pull/3194) | v0.14.4 | Nomes de Agent não suportando caracteres Unicode | Corrigidos erros com nomes de Agent em caracteres chineses e especiais |
+| [#3192](https://github.com/QwenLM/qwen-code/pull/3192) | v0.14.4 | Mensagem de erro pouco clara quando cwd do servidor MCP não existe | Corrigida dificuldade em localizar erros de configuração |
+| [#3187](https://github.com/QwenLM/qwen-code/pull/3187) | v0.14.4 | Modo não interativo não respeitando `--openai-api-key` | Corrigido parâmetro de chave API CLI não funcionando |
+| [#3181](https://github.com/QwenLM/qwen-code/pull/3181) | v0.14.4 | Modo de colagem entre colchetes congela e Ctrl+C não consegue sair | Corrigida anomalia do modo de entrada do terminal impedindo interrupção |
+| [#3151](https://github.com/QwenLM/qwen-code/pull/3151) | v0.14.4 | Sugestões de acompanhamento não funcionando em provedores compatíveis com OpenAI | Corrigidas sugestões de acompanhamento ausentes com APIs de terceiros |
+| [#3138](https://github.com/QwenLM/qwen-code/pull/3138) | v0.14.4 | Crawler de arquivos recursivo sem limite causando OOM | Corrigido crash por overflow de memória em projetos grandes |
+| [#3136](https://github.com/QwenLM/qwen-code/pull/3136) | v0.14.4 | Comando de lançamento do canal não aplicando configurações de proxy | Corrigidos canais não iniciando em ambientes proxy |
+| [#3134](https://github.com/QwenLM/qwen-code/pull/3134) | v0.14.4 | Carregamento lazy do plugin de canal eliminando aviso DEP0040 | Corrigidos avisos de depreciação Node.js na inicialização |
+| [#3123](https://github.com/QwenLM/qwen-code/pull/3123) | v0.14.4 | Corpo de resposta de refresh OAuth vazio | Corrigido crash durante atualização de autorização |
+| [#3109](https://github.com/QwenLM/qwen-code/pull/3109) | v0.14.3 | Usando checkpoint de compactação expirado na restauração | Corrigida contagem de tokens imprecisa |
+| [#3094](https://github.com/QwenLM/qwen-code/pull/3094) | v0.14.3 | Ordem NEWLINE e SUBMIT errada no modo multilinha TextInput | Corrigido conflito de comportamento de quebra de linha e envio |
+| [#3069](https://github.com/QwenLM/qwen-code/pull/3069) | v0.14.3 | Resultado de permissão ProceedAlways não persistido no modo compact | Corrigida necessidade de reconfirmar toda vez |
+| [#3060](https://github.com/QwenLM/qwen-code/pull/3060) | v0.14.3 | Shift+Tab aceitando sugestões de placeholder | Corrigida aceitação acidental de autocompletar |
+| [#3045](https://github.com/QwenLM/qwen-code/pull/3045) | v0.14.3 | Caracteres Tab em conteúdo colado sendo convertidos | Corrigida perda de indentação de código |
+| [#3044](https://github.com/QwenLM/qwen-code/pull/3044) | v0.14.3 | Login QR do canal WeChat faltando header iLink | Corrigida falha de login WeChat |
+| [#3041](https://github.com/QwenLM/qwen-code/pull/3041) | v0.14.3 | Falha na inicialização de checkpoint em diretórios não-repositório | Corrigidos problemas de uso no modo standalone |
+| [#3038](https://github.com/QwenLM/qwen-code/pull/3038) | v0.14.3 | Barra de rolagem de entrada do chat da extensão VSCode não arrastável | Corrigido problema de interação UI |
+| [#2930](https://github.com/QwenLM/qwen-code/pull/2930) | v0.14.3 | Concorrência de foco de confirmação de sub-agentes causando conflitos de entrada | Corrigidas anomalias de entrada durante confirmações simultâneas de múltiplos agentes |
+| [#2872](https://github.com/QwenLM/qwen-code/pull/2872) | v0.14.3 | Vazamentos de UI de chamadas de ferramentas e race do buffer de aceitação Enter | Corrigidos resíduos de UI após execução de ferramentas |
+| [#2850](https://github.com/QwenLM/qwen-code/pull/2850) | v0.14.3 | Comandos shell com prefixo de variável de ambiente não correspondendo a regras de permissão salvas | Corrigidos popups de confirmação de permissão repetidos |
+
+### Correções Específicas da Plataforma Windows
+
+Nenhuma nova correção específica para Windows esta semana.
+
+## 🎈 Outras Melhorias
+
+- **Otimização do Processo de Release**: Paralelização do pipeline de validação de release ([#3132](https://github.com/QwenLM/qwen-code/pull/3132))
+- **Consolidação de Test Utils**: Pacote test-utils mesclado no core ([#3200](https://github.com/QwenLM/qwen-code/pull/3200))
+- **Limpeza de Diretórios Legacy**: Removidos diretórios obsoletos `.gcp`, `.aoneci`, `hello`, `.allstar` ([#3199](https://github.com/QwenLM/qwen-code/pull/3199))
+- **Atualização do Modelo Padrão**: Coding Plan agora usa o modelo qwen3.5-plus por padrão ([#3193](https://github.com/QwenLM/qwen-code/pull/3193))
+- **Override de Modelo Skill**: Suporte a override de configuração de modelo via frontmatter Skill ([#2949](https://github.com/QwenLM/qwen-code/pull/2949))
+- **Restrições de Ferramentas de Sub-Agentes**: Adicionado campo `disallowedTools` nas definições de Agent ([#3064](https://github.com/QwenLM/qwen-code/pull/3064))
+- **Propagação do Modo de Aprovação de Sub-Agentes**: Modo de aprovação propaga automaticamente para sub-agentes ([#3066](https://github.com/QwenLM/qwen-code/pull/3066))
+- **Otimização do Canal DingTalk**: Priorização do senderStaffId para matching de allowedUsers ([#3294](https://github.com/QwenLM/qwen-code/pull/3294))
+- **Atualização de Documentação**: Atualizadas alternativas de excesso de cota para OpenRouter e Fireworks ([#3217](https://github.com/QwenLM/qwen-code/pull/3217))
+- **Encerramento do Nível Gratuito OAuth**: Nível gratuito Qwen OAuth desativado a partir de 2026-04-15 ([#3291](https://github.com/QwenLM/qwen-code/pull/3291))
+- **Otimização de Bundle**: tree-sitter WASM inlined para eliminar avisos de inicialização ([#2985](https://github.com/QwenLM/qwen-code/pull/2985))
+- **Refatoração do Core Tool Scheduler**: Interações IDE diff centralizadas no CoreToolScheduler ([#2728](https://github.com/QwenLM/qwen-code/pull/2728))
+- **Reforço de Cobertura de Testes**: Adicionados testes para confirmation-bus, prompt-registry e outros módulos ([#2272](https://github.com/QwenLM/qwen-code/pull/2272))
+- **Limpeza de Skills Obsoletos**: Removido skill pr-review obsoleto ([#3028](https://github.com/QwenLM/qwen-code/pull/3028))
+- **Limpeza de Código Morto UI**: Removidos estado dirs não utilizado e parâmetros de hook do InputPrompt ([#2891](https://github.com/QwenLM/qwen-code/pull/2891))
+- **Comando Clear Local VSCode**: Suporte ao comando slash clear local ([#3111](https://github.com/QwenLM/qwen-code/pull/3111))
+- **Limites de Contexto VSCode**: Preservação da configuração explícita de limite de contexto null ([#3098](https://github.com/QwenLM/qwen-code/pull/3098))
+- **Atualização de Sessão ACP**: Ação de nova sessão força atualização da sessão ACP ([#2874](https://github.com/QwenLM/qwen-code/pull/2874))
+- **Proteção do Script de Linha de Status**: Previne scripts de linha de status de corromper settings.json ([#3091](https://github.com/QwenLM/qwen-code/pull/3091))
+- **Atualização de Dependências**: Atualizado normalize-package-data para 7.0.1 para eliminar aviso DEP0169 ([#2865](https://github.com/QwenLM/qwen-code/pull/2865))
+- **Plugin Companheiro IDE**: Suporte a configurações de imagem sandbox, avisos de override de workspace, validação de cwd do servidor MCP ([#3146](https://github.com/QwenLM/qwen-code/pull/3146), [#3148](https://github.com/QwenLM/qwen-code/pull/3148), [#3192](https://github.com/QwenLM/qwen-code/pull/3192))
+- **Hooks de Completion ACP**: Adicionado suporte a complete hooks para integração ACP ([#3248](https://github.com/QwenLM/qwen-code/pull/3248))
+- **Ferramentas de Permissão RipGrep**: Adicionado suporte a getDefaultPermission e allowExternalPaths ([#2948](https://github.com/QwenLM/qwen-code/pull/2948))
+
+<Callout type="info">
+  **Como atualizar**: Execute `npm i @qwen-code/qwen-code@latest -g` para atualizar para a versão mais recente.
+</Callout>
+
+Se tiver dúvidas ou sugestões, fique à vontade para enviar feedback em [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
