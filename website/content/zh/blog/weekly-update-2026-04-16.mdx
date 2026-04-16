@@ -1,7 +1,7 @@
 ---
-title: "Qwen Code 周报：/review 全面重写、启动性能分析器、可定制状态栏"
+title: "Qwen Code 周报：智能工具并行、Fork 子代理共享上下文、CJK 分词导航优化"
 date: "2026-04-16"
-description: "本周发布 v0.14.3、v0.14.4、v0.14.5 版本，/review 命令支持确定性分析和自动修复，新增启动性能分析器、Fork 子智能体、可定制状态栏等功能，优化 CJK 输入体验并上线 French 多语言支持。"
+description: "本周发布 v0.14.3、v0.14.4、v0.14.5 三个版本。新增智能工具并行执行、Fork 子代理上下文共享、CJK 分词导航优化、LLM 消息改写中间件、Skill 模型覆盖等功能。"
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 ---
@@ -10,246 +10,198 @@ import { BlogPostHeader } from '@/components/blog-post-header'
 import { Callout } from 'nextra/components'
 
 <BlogPostHeader
-  title="Qwen Code 周报：/review 全面重写、启动性能分析器、可定制状态栏"
+  title="Qwen Code 周报：智能工具并行、Fork 子代理共享上下文、CJK 分词导航优化"
   date="2026-04-16"
   author="Qwen Team"
 />
 
 本周发布 **v0.14.3**、**v0.14.4**、**v0.14.5** 三个功能版本。
 
-- v0.14.3 是核心体验优化版本：`/review` 命令全面重写，支持确定性分析、自动修复和安全加固；`/statusline` 命令支持自定义状态栏显示；`/settings` 对话框新增模型选择器和设置描述；CJK 输入优化支持按词粒度移动光标；French 多语言支持上线。
+v0.14.3 上线后收到了不少社区反馈，这周重点处理了输入体验和子代理相关的问题。新功能方面，v0.14.4 带来了智能工具并行执行——只读工具自动批量并行，多工具场景下响应速度明显提升；CJK 分词让中日韩用户的光标导航终于正常了。v0.14.5 新增 Fork 子代理，子任务可以共享父代理的上下文。另外，Qwen OAuth 免费额度已于 4 月 15 日停止提供，推荐迁移到 OpenRouter 或 Fireworks。
 
 <Callout type="info">
-	感谢本周的新贡献者 [**@pic4xiu**](https://github.com/pic4xiu)、[**@qys177**](https://github.com/qys177)、[**@tanzhenxing1987**](https://github.com/tanzhenxing1987)、[**@zhangxy-zju**](https://github.com/zhangxy-zju)、[**@zeusdream7**](https://github.com/zeusdream7) 🎉
+	感谢本周的新贡献者 [**@doudouOUC**](https://github.com/doudouOUC)、[**@BZ-D**](https://github.com/BZ-D)、[**@YuchenLiang00**](https://github.com/YuchenLiang00)、[**@Apophis3158**](https://github.com/Apophis3158)、[**@sibylassana95**](https://github.com/sibylassana95)、[**@evan70**](https://github.com/evan70)、[**@B-A-M-N**](https://github.com/B-A-M-N)、[**@feyclaw**](https://github.com/feyclaw)、[**@dreamWB**](https://github.com/dreamWB)、[**@reidliu41**](https://github.com/reidliu41)、[**@Shenean**](https://github.com/Shenean) 🎉
 </Callout>
 
 ## ✨ 新增特性
 
-### /review 代码审查：确定性分析 + 自动修复 + 安全加固
+### 智能工具并行执行
 
-`/review` 命令经过全面重写，支持确定性分析、自动修复建议和安全漏洞检测。
-
-**你能用它做什么：**
-
-- 对当前改动执行结构化代码审查，自动识别潜在 bug
-- 一键生成修复建议，直接应用到 PR 中
-- 扫描常见安全风险（如硬编码密钥、注入风险）
-
-详见 PR [#2932](https://github.com/QwenLM/qwen-code/pull/2932)
-
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000008055/O1CN015vMexX29NFRbpMTA7_!!6000000008055-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/K3xtn5O3mNeSt9Sqb5UVBAQIrKT5iYFHHHQWAP3Rv60.mp4" controls></video>
-
-### 可定制状态栏：/statusline 命令自由组合信息
-
-通过 `/statusline` 命令可以自定义终端状态栏显示内容，支持显示模型名称、Token 用量、沙箱状态等。
+Qwen Code 现在会根据工具类型自动判断能不能并行：搜索、读文件这类只读操作自动批量并行执行，shell 写入操作保持串行，确保安全。多工具场景下等待时间明显缩短。详见 PR [#2864](https://github.com/QwenLM/qwen-code/pull/2864)
 
 **你能用它做什么：**
+- 同时搜索多个文件、读取多段代码，不用逐个排队等
+- Agent 自动识别哪些工具调用可以并行，你不需要做任何配置
+- 写入操作仍然串行执行，不用担心文件冲突
 
-- 实时查看当前使用的模型和 Token 消耗
-- 显示沙箱开关状态、权限模式等关键信息
-- 按个人偏好精简或扩展显示内容
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000003845/O1CN012ABPOm1eH40RohFDf_!!6000000003845-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/_f_P3QbHVgGG2jAXF-hQOrVpLMmWLldy-LoADiIhCmE.mp4" controls></video>
 
-详见 PR [#2923](https://github.com/QwenLM/qwen-code/pull/2923)
+### Fork 子代理共享上下文
 
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000006271/O1CN01EtOQIq1wCArZEdpzB_!!6000000006271-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/P_FStxrsiku_KJvaUdKM3QTIk7SiqGG-tvC09ngmkWs.mp4" controls></video>
-
-### /settings 界面：Fast Model 模型选择器 + 设置描述展示
-
-`/settings` 对话框中的 Fast Model 从文本输入框改为下拉模型选择器；同时每个活跃设置项下方会显示说明文字。
+新增 Fork 子代理机制。拆分子任务时，子代理自动继承父代理的上下文，不用重复传递背景信息。适合把一个大任务拆成几个小任务分头执行的场景。详见 PR [#2936](https://github.com/QwenLM/qwen-code/pull/2936)
 
 **你能用它做什么：**
+- 把"重构整个模块"拆成多个子代理分别处理不同文件，每个子代理都知道整体背景
+- 减少重复的上下文传递，省 Token
+- 子代理之间互不干扰，结果汇总到父代理
 
-- 直接在下拉列表中选择 Fast Model，无需手动输入模型名
-- 查看每个设置项的作用说明，减少配置困惑
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000005639/O1CN01nyeVOz1rWiY8QH8AI_!!6000000005639-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/aXllYK3Qh7DwrtGuT-_1Z2dvH552w90PL-7yYvxgt50.mp4" controls></video>
 
-详见 PR [#3120](https://github.com/QwenLM/qwen-code/pull/3120)
+### CJK 分词与 Ctrl+方向键导航
 
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000005437/O1CN015bGbNi1q2CXnujqPW_!!6000000005437-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/75UAdzE3VNy2Ty8qwyfGA4p2Kof04kyKGC50Zqa4A7U.mp4" controls></video>
-
-### 输入法优化：CJK 分词 + Ctrl+ 方向键跳转
-
-为中文、日文、韩文用户优化了终端输入体验，支持按词粒度移动光标，配合 Ctrl+ 方向键可以快速跳转。
+终端输入支持中日韩文字的分词识别。按 Ctrl+左/右方向键时，光标按词组跳转，不再一个字符一个字符地挪。混合中英文输入时体验提升明显。详见 PR [#2942](https://github.com/QwenLM/qwen-code/pull/2942)
 
 **你能用它做什么：**
-
-- 按词（而非逐字符）移动光标，编辑长句更高效
-- 用 Ctrl+ 方向键在输入框中快速跳转，减少按键次数
-
-详见 PR [#2942](https://github.com/QwenLM/qwen-code/pull/2942)
+- 输入中文提示词时，Ctrl+方向键按词组跳转，快速定位到要修改的位置
+- 中英文混合输入时光标导航符合直觉
+- 日文、韩文用户同样受益
 
 <video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000003184/O1CN01FY2hf61ZOKCwyRZux_!!6000000003184-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/z6hnrYH8f-F0rxuKHlqXbba5rGnfvTBE-VHWqsg0ZT4.mp4" controls></video>
 
-### 多语言：French (fr-FR) 本地化支持
+### LLM 消息改写中间件
 
-新增法语翻译，界面元素（菜单、提示、错误信息等）已全面本地化。  
-详见 PR [#3126](https://github.com/QwenLM/qwen-code/pull/3126). 
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000006243/O1CN01jCHwZu1vzLm1Dflq4_!!6000000006243-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/6HzTUklT9o2ZOHKdAL-RM-cglx_ea4vKceNu2LRLZc8.mp4" controls></video>
-
-### 输入队列编辑：↑ 弹出待发送消息编辑
-
-输入队列中的消息可以通过 ↑ 或 ESC 键弹出编辑，不再需要重新输入。
+ACP 协议新增基于 LLM 的消息改写中间件，可以用自定义 prompt 对用户消息做预处理。比如自动补充上下文、统一格式、翻译等。详见 PR [#3191](https://github.com/QwenLM/qwen-code/pull/3191)
 
 **你能用它做什么：**
+- 自动为简短的用户消息补充项目上下文
+- 团队场景中统一消息格式和规范
+- 自定义改写规则适配不同业务需求
 
-- 发送前发现错误，按 ↑ 直接修改队列中的消息
-- 多条消息排队时，逐条弹出修改，提升编辑效率
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005378/O1CN01JAKr1H1pbBAzhUkyz_!!6000000005378-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/RzzDJlhSp8quYE89V55QJWZt0j5d3TLCPufu_QesqVw.mp4" controls></video>
 
-详见 PR [#2871](https://github.com/QwenLM/qwen-code/pull/2871)
+### Skill 支持指定模型
 
-<video class="mt-5" poster="https://cloud.video.taobao.com/vod/Ql1knBEzYRUxrbtYTNN0rQcS-nExcnE86w3pl_LSCDQ.mp4" src="https://cloud.video.taobao.com/vod/Ql1knBEzYRUxrbtYTNN0rQcS-nExcnE86w3pl_LSCDQ.mp4" controls></video>
-
-### Plan 模式退出：一键恢复之前的工作模式
-
-退出 Plan 模式时新增 "Yes, restore previous mode" 选项，点击后可恢复到进入 Plan 模式之前的工作状态。  
-详见 PR [#3008](https://github.com/QwenLM/qwen-code/pull/3008)
-
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000004736/O1CN014Iqojo1kr8tzYKaKs_!!6000000004736-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/g7TelL6zn4d3-aXWfoJ4QPQwjDnG8U3-NupMiiMlORA.mp4" controls></video>. 
-
-### /context detail 子命令：查看上下文详细信息
-
-`/context` 命令新增 `detail` 子命令，可以查看上下文的详细信息。  
-详见 PR [#3042](https://github.com/QwenLM/qwen-code/pull/3042). 
-
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000000970/O1CN01kNbo051J2JJiZVeh7_!!6000000000970-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/Rq9W4st84SMGI8cZIMqTooYSgJ9kIvQAC5MEId3Lsok.mp4" controls></video>
-
-### 启动性能分析器
-
-新增启动性能分析工具，帮助识别和优化 CLI 启动过程中的性能瓶颈。
+Skill 文件的 frontmatter 中可以配置模型覆盖，不同 Skill 用不同的模型执行。代码审查用推理能力强的模型，简单任务用快速模型，各取所需。详见 PR [#2949](https://github.com/QwenLM/qwen-code/pull/2949)
 
 **你能用它做什么：**
+- 给代码审查 Skill 指定推理更强的模型，提高审查质量
+- 给简单任务 Skill 指定更快的模型，省钱省时间
+- 每个 Skill 独立配置，互不影响
 
-- 分析各模块加载耗时
-- 识别启动慢的插件和依赖
-- 优化自定义配置减少启动延迟
+### 上下文感知提示
 
-详见 PR [#3232](https://github.com/QwenLM/qwen-code/pull/3232)
-
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000001199/O1CN012ypcQX1KjC18FmgoV_!!6000000001199-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/Dh8_a93n3ugt2XwzqCGbUoewnMJI3G4h05th0o0jwRY.mp4" controls></video>
-
-### 上下文用量数据暴露
-
-在非交互模式和 SDK API 中暴露 `/context` 用量数据。
+对话结束后，根据当前上下文自动推荐下一步操作。比如改完代码后提示"要不要跑一下测试"，帮你发现更多可用功能。详见 PR [#2904](https://github.com/QwenLM/qwen-code/pull/2904)
 
 **你能用它做什么：**
+- 完成代码修改后，自动提示相关的后续操作
+- 新用户更容易发现和学习功能
+- 根据对话内容推荐相关的斜杠命令
 
-- 实时查看 Token 消耗量
-- 在 SDK 中监控上下文使用情况
-- 优化提示词减少 Token 浪费
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005710/O1CN01Idqagj1s3EfcOQ74v_!!6000000005710-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/95Tmeuj5ojBFs_JwHczIRvnPiX1rtRTzY8qy237gbzU.mp4" controls></video>
 
-详见 PR [#2916](https://github.com/QwenLM/qwen-code/pull/2916)
+### /review 增强：确定性分析与自动修复
 
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005642/O1CN01JHAPMl1rY5jncNATK_!!6000000005642-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/RJa0hQmJQq8UtbMwndd85p2rd-CjBAyva0To2TcC4yg.mp4" controls></video>
-
-### VSCode 插件账号显示
-
-在 VSCode 插件中新增 `/account` 命令，显示当前账号信息。
+`/review` 代码审查现在支持确定性分析（不依赖 LLM 的静态检查）、自动修复建议和安全加固检查。审查结果更可靠，还能直接给出修复方案。详见 PR [#2932](https://github.com/QwenLM/qwen-code/pull/2932)
 
 **你能用它做什么：**
+- 代码审查结果更稳定，同样的代码每次审查结论一致
+- 发现问题后直接给出修复建议，不用自己想怎么改
+- 自动检查常见安全漏洞
 
-- 快速查看登录状态
-- 确认当前使用的账号
-- 切换不同账号
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000008055/O1CN015vMexX29NFRbpMTA7_!!6000000008055-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/K3xtn5O3mNeSt9Sqb5UVBAQIrKT5iYFHHHQWAP3Rv60.mp4" controls></video>
 
-详见 PR [#2984](https://github.com/QwenLM/qwen-code/pull/2984)
+### 空闲上下文微压缩
 
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000007991/O1CN01rjx5MQ28tw61McW3S_!!6000000007991-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/3yCR6c08YFKQoutvGpbITelbB8zOFhgmbKr95veulOs.mp4" controls></video>
-
-### Fork 子智能体
-
-实现 Fork 子智能体功能，支持上下文共享的子任务处理。
+对话空闲时自动清理冗余上下文信息，减少 Token 消耗。长对话场景下效果明显，不用手动管理上下文窗口。详见 PR [#3006](https://github.com/QwenLM/qwen-code/pull/3006)
 
 **你能用它做什么：**
+- 长对话不再那么快撞到上下文窗口限制
+- 自动清理不再需要的中间结果，省 Token
+- 不需要手动操作，后台自动完成
 
-- 在主任务中派生子任务处理独立模块
-- 子智能体继承主任务上下文，无需重复传递信息
-- 并行处理多个相关任务，提升复杂场景效率
+### 更多新功能
 
-详见 PR [#2936](https://github.com/QwenLM/qwen-code/pull/2936)
-
-
-### ACP 消息重写中间件
-
-新增基于 LLM 的 ACP 消息重写中间件，支持自定义提示词。
-
-**你能用它做什么：**
-
-- 自定义消息风格和格式
-- 适配不同协作场景的沟通规范
-- 自动化消息优化和润色
-
-详见 PR [#3191](https://github.com/QwenLM/qwen-code/pull/3191)
-
+- **自定义状态栏**：`/statusline` 命令自定义终端底部状态栏显示内容（[#2923](https://github.com/QwenLM/qwen-code/pull/2923)）
+- **/context detail 子命令**：查看上下文的详细使用情况（[#3042](https://github.com/QwenLM/qwen-code/pull/3042)）
+- **SDK 暴露上下文用量数据**：非交互模式和 SDK API 中获取 `/context` 用量数据，方便集成监控（[#2916](https://github.com/QwenLM/qwen-code/pull/2916)）
+- **子代理继承审批模式**：子代理自动继承父代理的审批设置，不用重复配置（[#3066](https://github.com/QwenLM/qwen-code/pull/3066)）
+- **子代理禁用工具配置**：Agent 定义中新增 `disallowedTools` 字段，限制子代理使用特定工具（[#3064](https://github.com/QwenLM/qwen-code/pull/3064)）
+- **Agent 名称支持 Unicode**：Agent 名称可以用中文等 Unicode 字符了（[#3194](https://github.com/QwenLM/qwen-code/pull/3194)）
+- **Telegram 语音消息支持**：TelegramAdapter 新增语音消息收发（[#3150](https://github.com/QwenLM/qwen-code/pull/3150)）
+- **法语本地化**：新增法语（fr-FR）语言支持（[#3126](https://github.com/QwenLM/qwen-code/pull/3126)）
+- **StopFailure 和 PostCompact Hook 事件**：新增两个 Hook 事件点，扩展自动化能力（[#2825](https://github.com/QwenLM/qwen-code/pull/2825)）
+- **启动性能分析器**：`--profile` 参数定位启动耗时瓶颈（[#3232](https://github.com/QwenLM/qwen-code/pull/3232)）
+- **sandbox 镜像配置**：settings 中支持 `tools.sandboxImage` 自定义沙箱镜像（[#3146](https://github.com/QwenLM/qwen-code/pull/3146)）
+- **工作区配置覆盖提醒**：工作区配置覆盖全局 modelProviders 时给出警告（[#3148](https://github.com/QwenLM/qwen-code/pull/3148)）
+- **VSCode /account 命令**：在 VSCode 插件中查看账号信息（[#2984](https://github.com/QwenLM/qwen-code/pull/2984)）
+- **直接输入 exit/quit 退出 CLI**：不用再输 `/exit`，直接打 `exit` 就行（[#3201](https://github.com/QwenLM/qwen-code/pull/3201)）
 
 ## 📊 优化改进
 
-- **智能工具并行**：实现基于 Kind 的批处理和 shell 只读检测（[#2864](https://github.com/QwenLM/qwen-code/pull/2864)）
-- **上下文感知提示**：新增响应后上下文感知提示系统（[#2904](https://github.com/QwenLM/qwen-code/pull/2904)）
-- **微压缩机制**：新增空闲上下文清理的微压缩功能（[#3006](https://github.com/QwenLM/qwen-code/pull/3006)）
-- **Markdown 表格渲染**：改进终端中 Markdown 表格的显示效果（[#2914](https://github.com/QwenLM/qwen-code/pull/2914)）
+| PR | 版本 | 优化内容 | 对你的影响 |
+|----|------|----------|-----------|
+| [#3120](https://github.com/QwenLM/qwen-code/pull/3120) | v0.14.4 | Fast Model 设置从文本输入改为模型选择器 | 选模型不用手打名字了，从列表里选就行 |
+| [#3116](https://github.com/QwenLM/qwen-code/pull/3116) | v0.14.4 | /settings 选中设置项时显示详细描述 | 不用猜每个设置是干什么的 |
+| [#2871](https://github.com/QwenLM/qwen-code/pull/2871) | v0.14.4 | 通过 ↑/ESC 键弹出排队中的消息进行编辑 | 发错消息可以快速捞回来改 |
+| [#3008](https://github.com/QwenLM/qwen-code/pull/3008) | v0.14.3 | 退出 Plan 模式时新增"恢复之前模式"选项 | 退出 Plan 模式后不用手动切回之前的模式 |
+| [#3075](https://github.com/QwenLM/qwen-code/pull/3075) | v0.14.3 | verboseMode 重命名为 compactMode | 设置名称更直观，compact = 精简显示 |
+| [#2728](https://github.com/QwenLM/qwen-code/pull/2728) | v0.14.3 | IDE diff 交互逻辑集中到 CoreToolScheduler | 代码编辑的 diff 展示更稳定 |
+| [#2914](https://github.com/QwenLM/qwen-code/pull/2914) | v0.14.4 | 终端 Markdown 表格渲染优化 | 表格在终端里显示更整齐 |
+| [#3193](https://github.com/QwenLM/qwen-code/pull/3193) | v0.14.4 | Coding Plan 默认模型设为 qwen3.5-plus | Coding Plan 开箱即用，默认模型更强 |
 
 ## 🔧 重要修复
 
-| PR | 版本 | 问题 | 对你的影响 |
-|----|------|------|-----------|
-| [#3246](https://github.com/QwenLM/qwen-code/pull/3246) | v0.14.5 | 从流式 SSE 帧中检测速率限制错误 | 修复无法正确识别 API 限流的问题 |
-| [#3249](https://github.com/QwenLM/qwen-code/pull/3249) | v0.14.5 | VSCode 会话标签标题过长导致溢出 | 修复标签栏显示异常 |
-| [#3212](https://github.com/QwenLM/qwen-code/pull/3212) | v0.14.5 | 自定义 Gemini baseUrl 不生效 | 修复使用自定义端点时的连接问题 |
-| [#3251](https://github.com/QwenLM/qwen-code/pull/3251) | v0.14.5 | GeminiChat 流验证不允许纯思考响应 | 修复某些场景下响应被错误拦截 |
-| [#3257](https://github.com/QwenLM/qwen-code/pull/3257) | v0.14.5 | `/bug` 命令在不支持超链接的终端难以使用 | 修复无超链接终端的反馈体验 |
-| [#3270](https://github.com/QwenLM/qwen-code/pull/3270) | v0.14.5 | BaseTextInput 将字面 Tab 当作输入忽略 | 修复 Tab 字符输入失效 |
-| [#3299](https://github.com/QwenLM/qwen-code/pull/3299) | v0.14.5 | 允许选择已停用的 Qwen OAuth 模型 | 修复模型选择器显示已停用模型 |
-| [#3208](https://github.com/QwenLM/qwen-code/pull/3208) | v0.14.4 | 取消后输入被之前的提示填充 | 修复输入历史回退行为异常 |
-| [#3197](https://github.com/QwenLM/qwen-code/pull/3197) | v0.14.4 | `@file` 注入路径未遵守 respectGitIgnore 设置 | 修复文件引用不符合 Git 忽略规则 |
-| [#3194](https://github.com/QwenLM/qwen-code/pull/3194) | v0.14.4 | Agent 名称不支持 Unicode 字符 | 修复中文等特殊字符 Agent 名称报错 |
-| [#3192](https://github.com/QwenLM/qwen-code/pull/3192) | v0.14.4 | MCP 服务器 cwd 不存在时错误提示不清晰 | 修复配置错误时难以定位问题 |
-| [#3187](https://github.com/QwenLM/qwen-code/pull/3187) | v0.14.4 | 非交互模式未尊重 `--openai-api-key` | 修复命令行 API Key 参数失效 |
-| [#3181](https://github.com/QwenLM/qwen-code/pull/3181) | v0.14.4 | 括号粘贴模式卡死且 Ctrl+C 无法退出 | 修复终端输入模式异常导致无法中断 |
-| [#3151](https://github.com/QwenLM/qwen-code/pull/3151) | v0.14.4 | 后续建议在 OpenAI 兼容提供商上不工作 | 修复使用第三方 API 时无后续建议 |
-| [#3138](https://github.com/QwenLM/qwen-code/pull/3138) | v0.14.4 | 递归文件爬虫无限制导致 OOM | 修复大项目内存溢出崩溃 |
-| [#3136](https://github.com/QwenLM/qwen-code/pull/3136) | v0.14.4 | 频道启动命令未应用代理设置 | 修复代理环境下频道无法启动 |
-| [#3134](https://github.com/QwenLM/qwen-code/pull/3134) | v0.14.4 | 频道插件懒加载消除 DEP0040 警告 | 修复启动时的 Node.js 弃用警告 |
-| [#3123](https://github.com/QwenLM/qwen-code/pull/3123) | v0.14.4 | OAuth 刷新响应体为空时处理异常 | 修复授权刷新时的崩溃 |
-| [#3109](https://github.com/QwenLM/qwen-code/pull/3109) | v0.14.3 | 恢复时使用过期的压缩检查点 | 修复 Token 计数不准确 |
-| [#3094](https://github.com/QwenLM/qwen-code/pull/3094) | v0.14.3 | TextInput 多行模式下 NEWLINE 和 SUBMIT 顺序错误 | 修复换行和提交行为冲突 |
-| [#3069](https://github.com/QwenLM/qwen-code/pull/3069) | v0.14.3 | Compact 模式下 ProceedAlways 权限结果未持久化 | 修复每次都需要重新确认 |
-| [#3060](https://github.com/QwenLM/qwen-code/pull/3060) | v0.14.3 | Shift+Tab 接受占位符建议 | 修复意外接受自动补全 |
-| [#3045](https://github.com/QwenLM/qwen-code/pull/3045) | v0.14.3 | 粘贴内容中的 Tab 字符被转换 | 修复代码缩进丢失 |
-| [#3044](https://github.com/QwenLM/qwen-code/pull/3044) | v0.14.3 | 微信频道二维码登录流程缺少 iLink 头 | 修复微信登录失败 |
-| [#3041](https://github.com/QwenLM/qwen-code/pull/3041) | v0.14.3 | 非仓库目录初始化检查点失败 | 修复 standalone 模式使用异常 |
-| [#3038](https://github.com/QwenLM/qwen-code/pull/3038) | v0.14.3 | VSCode 插件聊天输入滚动条不可拖动 | 修复 UI 交互问题 |
-| [#2930](https://github.com/QwenLM/qwen-code/pull/2930) | v0.14.3 | 子智能体确认焦点并发导致输入冲突 | 修复多智能体同时确认时的输入异常 |
-| [#2872](https://github.com/QwenLM/qwen-code/pull/2872) | v0.14.3 | 工具调用 UI 泄漏和 Enter 接受缓冲区竞争 | 修复工具执行后 UI 残留 |
-| [#2850](https://github.com/QwenLM/qwen-code/pull/2850) | v0.14.3 | 环境变量前缀的 shell 命令未匹配保存的权限规则 | 修复权限确认重复弹出 |
+| PR | 版本 | 修复内容 | 对你的影响 |
+|----|------|----------|-----------|
+| [#3138](https://github.com/QwenLM/qwen-code/pull/3138) | v0.14.4 | 递归文件爬取无上限导致内存溢出 | 大型项目不再因文件过多而崩溃（上限 100k） |
+| [#3246](https://github.com/QwenLM/qwen-code/pull/3246) | v0.14.5 | SSE 流中的限流错误未被正确检测 | 限流时能正确提示，不再静默失败 |
+| [#3251](https://github.com/QwenLM/qwen-code/pull/3251) | v0.14.5 | Gemini 纯思考响应被流验证拒绝 | 用 Gemini 模型时思考过程正常展示 |
+| [#3212](https://github.com/QwenLM/qwen-code/pull/3212) | v0.14.5 | 自定义 Gemini baseUrl 未生效 | 自定义 Gemini 端点配置正常工作了 |
+| [#2872](https://github.com/QwenLM/qwen-code/pull/2872) | v0.14.3 | Follow-up 工具调用 UI 泄漏和 Enter 接受缓冲区竞态 | Follow-up 交互不再偶尔卡住或显示异常 |
+| [#3151](https://github.com/QwenLM/qwen-code/pull/3151) | v0.14.4 | OpenAI 兼容 Provider 的 Follow-up 建议不工作 | 用第三方 Provider 时 Follow-up 功能恢复正常 |
+| [#2985](https://github.com/QwenLM/qwen-code/pull/2985) | v0.14.3 | 打包安装时 tree-sitter WASM 未内联 | 离线/打包安装场景下代码解析正常工作 |
+| [#2930](https://github.com/QwenLM/qwen-code/pull/2930) | v0.14.3 | 子代理确认焦点并发冲突 | 多个子代理同时请求确认时不再混乱 |
+| [#2850](https://github.com/QwenLM/qwen-code/pull/2850) | v0.14.3 | 带环境变量前缀的 shell 命令无法匹配已保存的权限规则 | `ENV=val command` 格式的命令权限记忆正常了 |
+| [#3069](https://github.com/QwenLM/qwen-code/pull/3069) | v0.14.3 | Compact 模式下 ProceedAlways 权限未持久化 | 选了"始终允许"后不再重复询问 |
+| [#3109](https://github.com/QwenLM/qwen-code/pull/3109) | v0.14.4 | 恢复对话时使用过期的压缩检查点 Token 计数 | 恢复对话后 Token 计数准确 |
+| [#3038](https://github.com/QwenLM/qwen-code/pull/3038) | v0.14.3 | VSCode 插件中聊天输入框滚动条无法拖动 | 长文本输入时滚动条可正常拖动 |
+| [#3249](https://github.com/QwenLM/qwen-code/pull/3249) | v0.14.5 | VSCode 会话标签标题过长导致标签栏溢出 | 标签标题自动截断，标签栏布局正常 |
+| [#3181](https://github.com/QwenLM/qwen-code/pull/3181) | v0.14.4 | 粘贴模式卡死后 Ctrl+C 不可用 | 终端粘贴异常时仍可通过 Ctrl+C 恢复 |
+| [#3136](https://github.com/QwenLM/qwen-code/pull/3136) | v0.14.4 | Channel 启动命令未应用代理设置 | 在代理环境下 Channel 正常启动 |
+| [#3031](https://github.com/QwenLM/qwen-code/pull/3031) | v0.14.4 | IDE diff 打开失败时无回退方案 | IDE diff 失败时自动回退到 CLI 确认 |
+| [#3123](https://github.com/QwenLM/qwen-code/pull/3123) | v0.14.4 | OAuth 刷新响应体为空时崩溃 | OAuth Token 刷新异常时不再崩溃 |
+| [#3197](https://github.com/QwenLM/qwen-code/pull/3197) | v0.14.4 | @file 注入路径未遵守 respectGitIgnore 设置 | @file 引用文件时正确忽略 .gitignore 中的文件 |
+| [#3192](https://github.com/QwenLM/qwen-code/pull/3192) | v0.14.4 | MCP Server cwd 不存在时无明确错误提示 | MCP 配置路径错误时给出清晰提示 |
 
-### Windows 平台专项修复
+## 📢 重要公告：Qwen OAuth 免费额度停止提供
 
-无新增 Windows 专项修复。
+自 2026 年 4 月 15 日起，Qwen OAuth 免费额度已停止提供。已有用户可继续使用至额度耗尽。推荐迁移到 [OpenRouter](https://openrouter.ai/) 或 [Fireworks](https://fireworks.ai/) 等第三方 Provider。详见 PR [#3291](https://github.com/QwenLM/qwen-code/pull/3291)、[#3299](https://github.com/QwenLM/qwen-code/pull/3299)、[#3207](https://github.com/QwenLM/qwen-code/pull/3207)
 
 ## 🎈 其他改进
 
-- **发布流程优化**：并行化发布验证流程（[#3132](https://github.com/QwenLM/qwen-code/pull/3132)）
-- **测试工具整合**：将 test-utils 包合并到 core（[#3200](https://github.com/QwenLM/qwen-code/pull/3200)）
-- **遗留目录清理**：移除 `.gcp`、`.aoneci`、`hello`、`.allstar` 等废弃目录（[#3199](https://github.com/QwenLM/qwen-code/pull/3199)）
-- **默认模型调整**：Coding Plan 默认使用 qwen3.5-plus 模型（[#3193](https://github.com/QwenLM/qwen-code/pull/3193)）
-- **Skill 模型覆盖**：支持通过 Skill frontmatter 覆盖模型配置（[#2949](https://github.com/QwenLM/qwen-code/pull/2949)）
-- **子智能体工具限制**：在 Agent 定义中新增 `disallowedTools` 字段（[#3064](https://github.com/QwenLM/qwen-code/pull/3064)）
-- **子智能体审批模式传播**：审批模式自动传递给子智能体（[#3066](https://github.com/QwenLM/qwen-code/pull/3066)）
-- **钉钉频道优化**：优先使用 senderStaffId 匹配 allowedUsers（[#3294](https://github.com/QwenLM/qwen-code/pull/3294)）
-- **文档更新**：更新配额超限替代方案为 OpenRouter 和 Fireworks（[#3217](https://github.com/QwenLM/qwen-code/pull/3217)）
-- **OAuth 免费层停用**：2026-04-15 起停用 Qwen OAuth 免费层（[#3291](https://github.com/QwenLM/qwen-code/pull/3291)）
-- **Bundle 优化**：内联 tree-sitter WASM 消除启动警告（[#2985](https://github.com/QwenLM/qwen-code/pull/2985)）
-- **核心工具调度重构**：将 IDE diff 交互集中到 CoreToolScheduler（[#2728](https://github.com/QwenLM/qwen-code/pull/2728)）
-- **测试覆盖增强**：新增 confirmation-bus、prompt-registry 等模块测试（[#2272](https://github.com/QwenLM/qwen-code/pull/2272)）
-- **过期 Skill 清理**：移除过时的 pr-review skill（[#3028](https://github.com/QwenLM/qwen-code/pull/3028)）
-- **UI 死代码清理**：移除 InputPrompt 中未使用的 dirs 状态和钩子参数（[#2891](https://github.com/QwenLM/qwen-code/pull/2891)）
-- **VSCode 本地清理命令**：支持本地 clear slash 命令（[#3111](https://github.com/QwenLM/qwen-code/pull/3111)）
-- **VSCode 上下文限制**：保留显式 null 上下文限制配置（[#3098](https://github.com/QwenLM/qwen-code/pull/3098)）
-- **ACP 会话刷新**：新会话动作强制刷新 ACP 会话（[#2874](https://github.com/QwenLM/qwen-code/pull/2874)）
-- **状态行脚本保护**：防止状态行脚本损坏 settings.json（[#3091](https://github.com/QwenLM/qwen-code/pull/3091)）
-- **依赖升级**：升级 normalize-package-data 到 7.0.1 消除 DEP0169 警告（[#2865](https://github.com/QwenLM/qwen-code/pull/2865)）
-- **IDE 伴侣插件完善**：支持沙箱镜像设置、工作区覆盖警告、MCP 服务器 cwd 校验（[#3146](https://github.com/QwenLM/qwen-code/pull/3146)、[#3148](https://github.com/QwenLM/qwen-code/pull/3148)、[#3192](https://github.com/QwenLM/qwen-code/pull/3192)）
-- **ACP 补全钩子**：新增 ACP 集成的 complete hooks 支持（[#3248](https://github.com/QwenLM/qwen-code/pull/3248)）
-- **RipGrep 权限工具**：添加 getDefaultPermission 和 allowExternalPaths 支持（[#2948](https://github.com/QwenLM/qwen-code/pull/2948)）
+| PR | 改进内容 | 对你的影响 |
+|----|----------|-----------|
+| [#3187](https://github.com/QwenLM/qwen-code/pull/3187) | 非交互模式下 `--openai-api-key` 参数验证修复 | CI/CD 中使用 API Key 认证不再报错 |
+| [#3257](https://github.com/QwenLM/qwen-code/pull/3257) | `/bug` 命令在不支持超链接的终端中更易使用 | 任何终端都能方便地提交 Bug 报告 |
+| [#3270](https://github.com/QwenLM/qwen-code/pull/3270) | 忽略输入框中的 Tab 字面量输入 | Tab 键不再在输入框中插入制表符 |
+| [#3060](https://github.com/QwenLM/qwen-code/pull/3060) | Shift+Tab 不再接受 placeholder 建议 | 只有 Tab 才接受建议，Shift+Tab 行为正常 |
+| [#3045](https://github.com/QwenLM/qwen-code/pull/3045) | 粘贴内容中的 Tab 字符正确保留 | 粘贴代码时缩进不会丢失 |
+| [#3104](https://github.com/QwenLM/qwen-code/pull/3104) | 斜杠命令补全优先级提升 | 输入 `/` 后命令补全更快出现 |
+| [#3077](https://github.com/QwenLM/qwen-code/pull/3077) | `/model --fast` 描述文案优化 | 更容易理解 `--fast` 参数的作用 |
+| [#3041](https://github.com/QwenLM/qwen-code/pull/3041) | 非仓库目录下 checkpointing 初始化修复 | 在非 Git 仓库目录中使用不再报错 |
+| [#3091](https://github.com/QwenLM/qwen-code/pull/3091) | statusline 脚本不再意外修改 settings.json | 自定义状态栏不会弄乱你的配置文件 |
+| [#3208](https://github.com/QwenLM/qwen-code/pull/3208) | 取消输入时不再自动填充上一条 prompt | 按 Esc 取消后输入框是干净的 |
+| [#2865](https://github.com/QwenLM/qwen-code/pull/2865) | 升级 normalize-package-data 修复 DEP0169 警告 | 启动时不再看到 deprecation 警告 |
+| [#3134](https://github.com/QwenLM/qwen-code/pull/3134) | 延迟加载 Channel 插件消除 DEP0040 启动警告 | 启动日志更干净 |
+| [#3294](https://github.com/QwenLM/qwen-code/pull/3294) | 钉钉 Channel 优先使用 senderStaffId 匹配用户 | 钉钉 Channel 用户识别更准确 |
+| [#3044](https://github.com/QwenLM/qwen-code/pull/3044) | 微信登录 QR 码流程补充缺失的 iLink 请求头 | 微信扫码登录更稳定 |
+| [#2948](https://github.com/QwenLM/qwen-code/pull/2948) | ripGrep 工具补充默认权限和外部路径支持 | ripGrep 搜索可以访问工作区外的文件了 |
+| [#3094](https://github.com/QwenLM/qwen-code/pull/3094) | 多行输入模式下换行与提交判断修复 | 多行输入时 Enter 和 Ctrl+Enter 行为正确 |
+| [#2891](https://github.com/QwenLM/qwen-code/pull/2891) | 清理输入组件中的无用状态和参数 | 输入组件更轻量，响应更快 |
+
+## 👋 欢迎新贡献者
+
+- [**@doudouOUC**](https://github.com/doudouOUC) — 修复非仓库目录下 checkpointing 初始化、新增 sandbox 镜像配置和工作区配置覆盖提醒
+- [**@BZ-D**](https://github.com/BZ-D) — 修复 Shift+Tab 误接受 placeholder 建议
+- [**@YuchenLiang00**](https://github.com/YuchenLiang00) — 新增 `/context detail` 子命令
+- [**@Apophis3158**](https://github.com/Apophis3158) — 实现 CJK 分词与 Ctrl+方向键导航优化
+- [**@sibylassana95**](https://github.com/sibylassana95) — 新增法语本地化支持
+- [**@evan70**](https://github.com/evan70) — 升级 normalize-package-data 修复 DEP0169 警告
+- [**@B-A-M-N**](https://github.com/B-A-M-N) — 修复 OAuth 刷新响应体为空时的崩溃
+- [**@feyclaw**](https://github.com/feyclaw) — 新增 Telegram 语音消息支持
+- [**@dreamWB**](https://github.com/dreamWB) — 修复 VSCode 会话标签标题溢出
+- [**@reidliu41**](https://github.com/reidliu41) — 优化 `/bug` 命令在无超链接终端中的体验
+- [**@Shenean**](https://github.com/Shenean) — 修复输入框中 Tab 字面量输入问题
 
 <Callout type="info">
   **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
