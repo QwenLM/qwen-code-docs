@@ -1,7 +1,7 @@
 ---
-title: "Qwen Code 週報：/review 全面書き直し、起動プロファイラー、カスタマイズ可能なステータスバー"
+title: "Qwen Code 週報：スマートツール並列実行、Forkサブエージェントコンテキスト共有、CJK分かち書き"
 date: "2026-04-16"
-description: "今週は v0.14.3、v0.14.4、v0.14.5 の3バージョンをリリース。/review コマンドが決定論的分析と自動修正をサポート。起動プロファイラー、Fork サブエージェント、カスタマイズ可能なステータスバーなどの新機能を追加し、CJK 入力体験を最適化、French 多言語対応をリリース。"
+description: "今週は v0.14.3、v0.14.4、v0.14.5 をリリース。スマートツール並列実行、Forkサブエージェントコンテキスト共有、CJK分かち書きナビゲーション、LLMメッセージ書き換えミドルウェア、Skillモデルオーバーライドなどの新機能を追加。"
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 ---
@@ -10,246 +10,206 @@ import { BlogPostHeader } from '@/components/blog-post-header'
 import { Callout } from 'nextra/components'
 
 <BlogPostHeader
-  title="Qwen Code 週報：/review 全面書き直し、起動プロファイラー、カスタマイズ可能なステータスバー"
+  title="Qwen Code 週報：スマートツール並列実行、Forkサブエージェントコンテキスト共有、CJK分かち書き"
   date="2026-04-16"
   author="Qwen Team"
 />
 
-今週は **v0.14.3**、**v0.14.4**、**v0.14.5** の3バージョンをリリースしました。
+今週は **v0.14.3**、**v0.14.4**、**v0.14.5** の3つの機能バージョンをリリースしました。
 
-- v0.14.3 はコア体験最適化バージョン：`/review` コマンドを全面的に書き直し、決定論的分析、自動修正、セキュリティ強化をサポート；`/statusline` コマンドでカスタマイズ可能なステータスバー表示；`/settings` ダイアログにモデルセレクターと設定説明を追加；CJK 入力最適化で単語単位のカーソル移動をサポート；French 多言語対応がリリース。
-- v0.14.4 では起動プロファイラー、Fork サブエージェント、コンテキスト使用量データの公開、ACP メッセージ書き換えミドルウェアなどの重量級機能に加え、VSCode 拡張機能のアカウント表示などの体験改善を実施。
-- v0.14.5 は安定性修正に注力：API レート制限検出、VSCode セッションタブのオーバーフロー、カスタム Gemini baseUrl、レート制限エラー検出など 20 以上の問題を修正。
+v0.14.3 リリース後、多くのコミュニティフィードバックを受け、今週は入力体験とサブエージェント関連の問題に注力しました。新機能として、v0.14.4 ではスマートツール並列実行を導入 — 読み取り専用ツールが自動的にバッチ並列実行され、マルチツールシナリオでの応答速度が大幅に向上。CJK分かち書きにより、中国語・日本語・韓国語ユーザーのカーソルナビゲーションがようやく正常に動作するようになりました。v0.14.5 ではForkサブエージェントを追加し、サブタスクが親エージェントのコンテキストを共有できるようになりました。また、Qwen OAuth無料枠は4月15日をもって終了しました — Alibaba Cloud百炼、OpenRouter、またはFireworksへの移行をお勧めします。
 
 <Callout type="info">
-	今週の新しいコントリビューターに感謝します [**@pic4xiu**](https://github.com/pic4xiu)、[**@qys177**](https://github.com/qys177)、[**@tanzhenxing1987**](https://github.com/tanzhenxing1987)、[**@zhangxy-zju**](https://github.com/zhangxy-zju)、[**@zeusdream7**](https://github.com/zeusdream7) 🎉
+	今週の新しいコントリビューターに感謝します [**@doudouOUC**](https://github.com/doudouOUC)、[**@BZ-D**](https://github.com/BZ-D)、[**@YuchenLiang00**](https://github.com/YuchenLiang00)、[**@Apophis3158**](https://github.com/Apophis3158)、[**@sibylassana95**](https://github.com/sibylassana95)、[**@evan70**](https://github.com/evan70)、[**@B-A-M-N**](https://github.com/B-A-M-N)、[**@feyclaw**](https://github.com/feyclaw)、[**@dreamWB**](https://github.com/dreamWB)、[**@reidliu41**](https://github.com/reidliu41)、[**@Shenean**](https://github.com/Shenean) 🎉
 </Callout>
 
 ## ✨ 新機能
 
-### /review コードレビュー：決定論的分析 + 自動修正 + セキュリティ強化
+### スマートツール並列実行
 
-`/review` コマンドが全面的に書き直され、決定論的分析、自動修正提案、セキュリティ脆弱性検出をサポートします。
+Qwen Code はツールの種類に基づいて自動的に並列実行可能かどうかを判断します：検索やファイル読み取りなどの読み取り専用操作は自動的にバッチ並列実行され、シェル書き込み操作は安全のためシリアル実行を維持します。マルチツールシナリオでの待ち時間が大幅に短縮されます。PR [#2864](https://github.com/QwenLM/qwen-code/pull/2864) を参照
 
-**こんなことができます：**
+**これで何ができるか：**
+- 複数のファイルを同時に検索し、複数のコードセグメントを同時に読み取り — キューで待つ必要なし
+- エージェントがどのツール呼び出しを並列化できるか自動的に識別 — 設定不要
+- 書き込み操作は引き続きシリアル実行されるため、ファイル競合の心配なし
 
-- 現在の変更に対して構造化されたコードレビューを実行し、潜在的なバグを自動識別
-- ワンクリックで修正提案を生成し、PR に直接適用
-- 一般的なセキュリティリスク（ハードコードされたキー、インジェクションリスクなど）をスキャン
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000003845/O1CN012ABPOm1eH40RohFDf_!!6000000003845-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/_f_P3QbHVgGG2jAXF-hQOrVpLMmWLldy-LoADiIhCmE.mp4" controls></video>
 
-PR [#2932](https://github.com/QwenLM/qwen-code/pull/2932) を参照
+### Forkサブエージェント共有コンテキスト
 
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000008055/O1CN015vMexX29NFRbpMTA7_!!6000000008055-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/K3xtn5O3mNeSt9Sqb5UVBAQIrKT5iYFHHHQWAP3Rv60.mp4" controls></video>
+Forkサブエージェントにより、親エージェントの完全なコンテキストを継承する子エージェントを生成できます。サブエージェントは独立してサブタスクを完了し、結果を親に返します。複数の関連タスクの並列処理が必要なシナリオに最適です。PR [#2936](https://github.com/QwenLM/qwen-code/pull/2936) を参照
 
-### カスタマイズ可能なステータスバー：/statusline コマンドで情報を自由に組み合わせ
+**これで何ができるか：**
+- メインタスクからサブタスクを生成して独立したモジュールを処理
+- サブエージェントが親の完全なコンテキストを継承 — 冗長な情報伝達不要
+- 複数の関連タスクを並列処理して効率を向上
 
-`/statusline` コマンドでターミナルのステータスバー表示内容をカスタマイズでき、モデル名、トークン使用量、サンドボックス状態などの表示をサポートします。
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000005639/O1CN01nyeVOz1rWiY8QH8AI_!!6000000005639-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/aXllYK3Qh7DwrtGuT-_1Z2dvH552w90PL-7yYvxgt50.mp4" controls></video>
 
-**こんなことができます：**
+### CJK分かち書き + Ctrl+矢印キーナビゲーション
 
-- 現在使用中のモデルとトークン消費量をリアルタイムで確認
-- サンドボックスのオン/オフ状態、権限モードなどの重要情報を表示
-- 個人の好みに合わせて表示内容を簡潔にまたは拡張
+中国語・日本語・韓国語ユーザー向けのターミナル入力を最適化。カーソルが文字単位ではなく単語境界で移動し、Ctrl+矢印キーナビゲーションが正常に動作します。PR [#2942](https://github.com/QwenLM/qwen-code/pull/2942) を参照
 
-PR [#2923](https://github.com/QwenLM/qwen-code/pull/2923) を参照
+**これで何ができるか：**
+- 単語単位でカーソル移動 — 長い文の編集がより効率的に
+- Ctrl+左/右で単語間をすばやくジャンプ
+- Backspaceで単語単位の削除 — 1文字ずつ削除する必要なし
 
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000006271/O1CN01EtOQIq1wCArZEdpzB_!!6000000006271-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/P_FStxrsiku_KJvaUdKM3QTIk7SiqGG-tvC09ngmkWs.mp4" controls></video>
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000001020/O1CN01fYeEQ61JPD7bQcAae_!!6000000001020-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/FsFUEuTzbYcF5U-FTiCJLfDHqvBharvJ_MmLIACzAsE.mp4"  controls></video>
 
-### /settings 画面：Fast Model セレクター + 設定説明の表示
+### ACPメッセージ書き換えミドルウェア
 
-`/settings` ダイアログの Fast Model がテキスト入力からドロップダウンモデルセレクターに変更され、各アクティブな設定項目の下に説明文が表示されるようになりました。
+LLMベースのメッセージ書き換えミドルウェアで、2回目のLLMパスを通じてモデル出力を再フォーマットします。カスタムプロンプトを設定して、レスポンスを好みのフォーマットに自動的に再構成できます。PR [#3191](https://github.com/QwenLM/qwen-code/pull/3191) を参照
 
-**こんなことができます：**
-
-- ドロップダウンリストから Fast Model を直接選択、モデル名を手動入力する必要なし
-- 各設定項目の説明を確認し、設定の混乱を軽減
-
-PR [#3120](https://github.com/QwenLM/qwen-code/pull/3120) を参照
-
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000005437/O1CN015bGbNi1q2CXnujqPW_!!6000000005437-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/75UAdzE3VNy2Ty8qwyfGA4p2Kof04kyKGC50Zqa4A7U.mp4" controls></video>
-
-### 入力メソッド最適化：CJK 分かち書き + Ctrl+矢印キーナビゲーション
-
-中国語、日本語、韓国語ユーザー向けにターミナル入力体験を最適化し、単語単位のカーソル移動と Ctrl+矢印キーによる高速ナビゲーションをサポートします。
-
-**こんなことができます：**
-
-- 文字単位ではなく単語単位でカーソルを移動し、長文の編集がより効率的に
-- Ctrl+矢印キーで入力ボックス内を素早くジャンプし、キーストロークを削減
-
-PR [#2942](https://github.com/QwenLM/qwen-code/pull/2942) を参照
+**これで何ができるか：**
+- AIレスポンスを構造化フォーマット（要約 + 変更テーブル + リスク評価）に自動書き換え
+- シナリオに応じた書き換えプロンプトのカスタマイズ
+- ACPミドルウェアとして動作 — ユーザーに対して透過的
 
 <video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000003184/O1CN01FY2hf61ZOKCwyRZux_!!6000000003184-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/z6hnrYH8f-F0rxuKHlqXbba5rGnfvTBE-VHWqsg0ZT4.mp4" controls></video>
 
-### 多言語対応：French (fr-FR) ローカライゼーションサポート
+### Skillモデルオーバーライド
 
-フランス語翻訳を追加し、UI 要素（メニュー、プロンプト、エラーメッセージなど）を全面的にローカライズしました。  
-PR [#3126](https://github.com/QwenLM/qwen-code/pull/3126) を参照. 
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000006243/O1CN01jCHwZu1vzLm1Dflq4_!!6000000006243-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/6HzTUklT9o2ZOHKdAL-RM-cglx_ea4vKceNu2LRLZc8.mp4" controls></video>
+Skillのfrontmatterの `model` フィールドで使用するモデルを指定できるようになりました。異なるSkillで異なるモデルを使用できます。PR [#2949](https://github.com/QwenLM/qwen-code/pull/2949) を参照
 
-### 入力キュー編集：↑ で送信待ちメッセージを編集
+**これで何ができるか：**
+- 各Skillに最適なモデルを個別に設定
+- コードレビューには強力なモデル、簡単なタスクには高速モデル — 品質とコストのバランス
+- 手動でモデルを切り替える必要なし — Skillが自動的に適切なモデルを選択
 
-入力キュー内のメッセージを ↑ または ESC キーでポップアウトして編集でき、再入力の必要がありません。
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005378/O1CN01JAKr1H1pbBAzhUkyz_!!6000000005378-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/RzzDJlhSp8quYE89V55QJWZt0j5d3TLCPufu_QesqVw.mp4" controls></video>
 
-**こんなことができます：**
+### コンテキスト対応ヒント
 
-- 送信前にエラーを発見したら、↑ を押してキュー内のメッセージを直接修正
-- 複数のメッセージがキューにある場合、1つずつポップアウトして修正し、編集効率を向上
+会話終了後、現在のコンテキストに基づいて次のステップを自動的に推奨します。例えば、コード修正後に「テストを実行しますか？」と提案します。PR [#2904](https://github.com/QwenLM/qwen-code/pull/2904) を参照
 
-PR [#2871](https://github.com/QwenLM/qwen-code/pull/2871) を参照
+**これで何ができるか：**
+- コード変更完了後、関連するフォローアップアクションの提案を自動取得
+- 新規ユーザーが機能をより簡単に発見・学習
+- 会話内容に基づいて関連するスラッシュコマンドを推奨
 
-<video class="mt-5" poster="https://cloud.video.taobao.com/vod/Ql1knBEzYRUxrbtYTNN0rQcS-nExcnE86w3pl_LSCDQ.mp4" src="https://cloud.video.taobao.com/vod/Ql1knBEzYRUxrbtYTNN0rQcS-nExcnE86w3pl_LSCDQ.mp4" controls></video>
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005710/O1CN01Idqagj1s3EfcOQ74v_!!6000000005710-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/95Tmeuj5ojBFs_JwHczIRvnPiX1rtRTzY8qy237gbzU.mp4" controls></video>
 
-### Plan モード終了：ワンクリックで以前の作業モードを復元
+### /review 強化：確定的分析と自動修正
 
-Plan モード終了時に「Yes, restore previous mode」オプションが追加され、Plan モードに入る前の作業状態に復元できます。  
-PR [#3008](https://github.com/QwenLM/qwen-code/pull/3008) を参照
+`/review` コードレビューが確定的分析（LLMに依存しない静的チェック）、自動修正提案、セキュリティ強化チェックをサポート。レビュー結果がより信頼性が高く、修正提案が直接提供されます。PR [#2932](https://github.com/QwenLM/qwen-code/pull/2932) を参照
 
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000004736/O1CN014Iqojo1kr8tzYKaKs_!!6000000004736-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/g7TelL6zn4d3-aXWfoJ4QPQwjDnG8U3-NupMiiMlORA.mp4" controls></video>. 
+**これで何ができるか：**
+- コードレビュー結果がより安定 — 同じコードで毎回一貫した結論
+- 発見された問題に修正提案が付属 — 自分で修正方法を考える必要なし
+- 一般的なセキュリティ脆弱性を自動チェック
 
-### /context detail サブコマンド：コンテキストの詳細情報を表示
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000008055/O1CN015vMexX29NFRbpMTA7_!!6000000008055-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/K3xtn5O3mNeSt9Sqb5UVBAQIrKT5iYFHHHQWAP3Rv60.mp4" controls></video>
 
-`/context` コマンドに `detail` サブコマンドが追加され、コンテキストの詳細情報を確認できます。  
-PR [#3042](https://github.com/QwenLM/qwen-code/pull/3042) を参照. 
+### アイドルコンテキスト微圧縮
 
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000000970/O1CN01kNbo051J2JJiZVeh7_!!6000000000970-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/Rq9W4st84SMGI8cZIMqTooYSgJ9kIvQAC5MEId3Lsok.mp4" controls></video>
+会話のアイドル時間中に冗長なコンテキスト情報を自動的にクリーンアップし、トークン消費を削減します。長い会話シナリオで特に効果的です。PR [#3006](https://github.com/QwenLM/qwen-code/pull/3006) を参照
 
-### 起動プロファイラー
+**これで何ができるか：**
+- 長い会話でコンテキストウィンドウの制限にすぐに達しなくなる
+- 不要になった中間結果を自動クリーンアップしてトークンを節約
+- 手動操作不要 — バックグラウンドで自動実行
 
-CLI 起動プロセスのパフォーマンスボトルネックを特定し最適化するための新しい起動プロファイリングツールを追加しました。
+### その他の新機能
 
-**こんなことができます：**
+- **カスタマイズ可能なステータスバー**：`/statusline` コマンドでターミナル下部のステータスバー表示をカスタマイズ（[#2923](https://github.com/QwenLM/qwen-code/pull/2923)）
+- **/context detail サブコマンド**：コンテキスト使用状況の詳細を表示（[#3042](https://github.com/QwenLM/qwen-code/pull/3042)）
+- **SDKコンテキスト使用量データ公開**：非対話モードとSDK APIで `/context` 使用量データにアクセス（[#2916](https://github.com/QwenLM/qwen-code/pull/2916)）
+- **サブエージェント承認継承**：サブエージェントが親エージェントの承認設定を自動継承（[#3066](https://github.com/QwenLM/qwen-code/pull/3066)）
+- **サブエージェントツール制限**：Agent定義に新しい `disallowedTools` フィールド（[#3064](https://github.com/QwenLM/qwen-code/pull/3064)）
+- **Unicodeエージェント名**：エージェント名に中国語やその他のUnicode文字を使用可能（[#3194](https://github.com/QwenLM/qwen-code/pull/3194)）
+- **Telegram音声メッセージ**：TelegramAdapterが音声メッセージの送受信をサポート（[#3150](https://github.com/QwenLM/qwen-code/pull/3150)）
+- **フランス語ローカライゼーション**：フランス語（fr-FR）言語サポートを追加（[#3126](https://github.com/QwenLM/qwen-code/pull/3126)）
+- **StopFailureとPostCompact Hookイベント**：自動化拡張のための2つの新しいHookイベントポイント（[#2825](https://github.com/QwenLM/qwen-code/pull/2825)）
+- **起動プロファイラー**：`--profile` パラメータで起動パフォーマンスのボトルネックを特定（[#3232](https://github.com/QwenLM/qwen-code/pull/3232)）
+- **サンドボックスイメージ設定**：`tools.sandboxImage` でカスタムサンドボックスイメージを設定（[#3146](https://github.com/QwenLM/qwen-code/pull/3146)）
+- **ワークスペース設定オーバーライド警告**：ワークスペース設定がグローバルmodelProvidersをオーバーライドする際に警告（[#3148](https://github.com/QwenLM/qwen-code/pull/3148)）
+- **VSCode /account コマンド**：VSCode拡張機能でアカウント情報を表示（[#2984](https://github.com/QwenLM/qwen-code/pull/2984)）
+- **exit/quitで直接CLI終了**：`/exit` を入力する必要なし、`exit` と入力するだけ（[#3201](https://github.com/QwenLM/qwen-code/pull/3201)）
 
-- 各モジュールのロード時間を分析
-- 起動が遅いプラグインや依存関係を特定
-- カスタム設定を最適化して起動遅延を削減
+## 📊 改善
 
-PR [#3232](https://github.com/QwenLM/qwen-code/pull/3232) を参照
-
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000001199/O1CN012ypcQX1KjC18FmgoV_!!6000000001199-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/Dh8_a93n3ugt2XwzqCGbUoewnMJI3G4h05th0o0jwRY.mp4" controls></video>
-
-### コンテキスト使用量データの公開
-
-非対話モードと SDK API で `/context` 使用量データを公開します。
-
-**こんなことができます：**
-
-- トークン消費量をリアルタイムで確認
-- SDK でコンテキスト使用状況を監視
-- プロンプトを最適化してトークンの無駄を削減
-
-PR [#2916](https://github.com/QwenLM/qwen-code/pull/2916) を参照
-
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005642/O1CN01JHAPMl1rY5jncNATK_!!6000000005642-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/RJa0hQmJQq8UtbMwndd85p2rd-CjBAyva0To2TcC4yg.mp4" controls></video>
-
-### VSCode 拡張機能アカウント表示
-
-VSCode 拡張機能に `/account` コマンドを追加し、現在のアカウント情報を表示します。
-
-**こんなことができます：**
-
-- ログイン状態を素早く確認
-- 現在使用中のアカウントを確認
-- 異なるアカウント間の切り替え
-
-PR [#2984](https://github.com/QwenLM/qwen-code/pull/2984) を参照
-
-<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000007991/O1CN01rjx5MQ28tw61McW3S_!!6000000007991-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/3yCR6c08YFKQoutvGpbITelbB8zOFhgmbKr95veulOs.mp4" controls></video>
-
-### Fork サブエージェント
-
-コンテキスト共有によるサブタスク処理をサポートする Fork サブエージェント機能を実装しました。
-
-**こんなことができます：**
-
-- メインタスクからサブタスクを派生させて独立モジュールを処理
-- サブエージェントがメインタスクのコンテキストを継承し、情報の重複伝達が不要
-- 複数の関連タスクを並行処理し、複雑なシナリオでの効率を向上
-
-PR [#2936](https://github.com/QwenLM/qwen-code/pull/2936) を参照
-
-### ACP メッセージ書き換えミドルウェア
-
-カスタムプロンプトをサポートする LLM ベースの ACP メッセージ書き換えミドルウェアを追加しました。
-
-**こんなことができます：**
-
-- メッセージのスタイルとフォーマットをカスタマイズ
-- 異なるコラボレーションシナリオのコミュニケーション規範に適応
-- メッセージの最適化と推敲を自動化
-
-PR [#3191](https://github.com/QwenLM/qwen-code/pull/3191) を参照
-
-## 📊 最適化と改善
-
-- **スマートツール並列処理**：Kind ベースのバッチ処理とシェル読み取り専用検出を実装（[#2864](https://github.com/QwenLM/qwen-code/pull/2864)）
-- **コンテキスト対応プロンプト**：レスポンス後のコンテキスト対応プロンプトシステムを追加（[#2904](https://github.com/QwenLM/qwen-code/pull/2904)）
-- **マイクロコンパクション**：アイドル時のコンテキストクリーンアップ用マイクロコンパクション機能を追加（[#3006](https://github.com/QwenLM/qwen-code/pull/3006)）
-- **Markdown テーブルレンダリング**：ターミナルでの Markdown テーブル表示を改善（[#2914](https://github.com/QwenLM/qwen-code/pull/2914)）
+| PR | バージョン | 改善内容 | 影響 |
+|----|-----------|----------|------|
+| [#3120](https://github.com/QwenLM/qwen-code/pull/3120) | v0.14.4 | Fast Model設定がテキスト入力からモデルセレクターに変更 | 名前を入力する代わりにドロップダウンからモデルを選択 |
+| [#3116](https://github.com/QwenLM/qwen-code/pull/3116) | v0.14.4 | /settings で設定選択時に詳細な説明を表示 | 各設定の目的を推測する必要なし |
+| [#2871](https://github.com/QwenLM/qwen-code/pull/2871) | v0.14.4 | ↑/ESCキーでキューに入ったメッセージを編集用にポップ | 送信済みメッセージをすばやく取得して編集 |
+| [#3008](https://github.com/QwenLM/qwen-code/pull/3008) | v0.14.3 | Planモード終了時に「前のモードを復元」オプションを追加 | Planモード終了後に手動で切り替える必要なし |
+| [#3075](https://github.com/QwenLM/qwen-code/pull/3075) | v0.14.3 | verboseModeをcompactModeに名称変更 | より直感的な設定名 |
+| [#2728](https://github.com/QwenLM/qwen-code/pull/2728) | v0.14.3 | IDE diff操作をCoreToolSchedulerに集約 | コード編集のdiff表示がより安定 |
+| [#2914](https://github.com/QwenLM/qwen-code/pull/2914) | v0.14.4 | ターミナルMarkdownテーブルレンダリング最適化 | ターミナルでテーブルがより整然と表示 |
+| [#3193](https://github.com/QwenLM/qwen-code/pull/3193) | v0.14.4 | Coding Planデフォルトモデルをqwen3.5-plusに設定 | Coding Planがより強力なデフォルトモデルですぐに使える |
 
 ## 🔧 重要な修正
 
-| PR | バージョン | 問題 | 影響 |
-|----|-----------|------|------|
-| [#3246](https://github.com/QwenLM/qwen-code/pull/3246) | v0.14.5 | ストリーミング SSE フレームからレート制限エラーを検出 | API レート制限を正しく識別できない問題を修正 |
-| [#3249](https://github.com/QwenLM/qwen-code/pull/3249) | v0.14.5 | VSCode セッションタブタイトルのオーバーフロー | タブバーの表示異常を修正 |
-| [#3212](https://github.com/QwenLM/qwen-code/pull/3212) | v0.14.5 | カスタム Gemini baseUrl が反映されない | カスタムエンドポイント使用時の接続問題を修正 |
-| [#3251](https://github.com/QwenLM/qwen-code/pull/3251) | v0.14.5 | GeminiChat ストリーム検証が思考のみのレスポンスを拒否 | 一部シナリオでレスポンスが誤ってインターセプトされる問題を修正 |
-| [#3257](https://github.com/QwenLM/qwen-code/pull/3257) | v0.14.5 | ハイパーリンク非対応ターミナルで `/bug` コマンドが使いにくい | ハイパーリンク非対応ターミナルでのフィードバック体験を修正 |
-| [#3270](https://github.com/QwenLM/qwen-code/pull/3270) | v0.14.5 | BaseTextInput がリテラル Tab を入力として無視 | Tab 文字入力の失敗を修正 |
-| [#3299](https://github.com/QwenLM/qwen-code/pull/3299) | v0.14.5 | 停止された Qwen OAuth モデルの選択を許可 | モデルセレクターに停止済みモデルが表示される問題を修正 |
-| [#3208](https://github.com/QwenLM/qwen-code/pull/3208) | v0.14.4 | キャンセル後に入力が以前のプロンプトで埋められる | 入力履歴のロールバック動作の異常を修正 |
-| [#3197](https://github.com/QwenLM/qwen-code/pull/3197) | v0.14.4 | `@file` インジェクションパスが respectGitIgnore 設定に従わない | ファイル参照が Git ignore ルールに従わない問題を修正 |
-| [#3194](https://github.com/QwenLM/qwen-code/pull/3194) | v0.14.4 | Agent 名が Unicode 文字をサポートしない | 中国語などの特殊文字 Agent 名のエラーを修正 |
-| [#3192](https://github.com/QwenLM/qwen-code/pull/3192) | v0.14.4 | MCP サーバー cwd が存在しない場合のエラーメッセージが不明確 | 設定エラー時の問題特定の困難さを修正 |
-| [#3187](https://github.com/QwenLM/qwen-code/pull/3187) | v0.14.4 | 非対話モードが `--openai-api-key` を尊重しない | CLI API キーパラメータが機能しない問題を修正 |
-| [#3181](https://github.com/QwenLM/qwen-code/pull/3181) | v0.14.4 | 括弧ペーストモードのフリーズと Ctrl+C で終了できない | ターミナル入力モードの異常による中断不能を修正 |
-| [#3151](https://github.com/QwenLM/qwen-code/pull/3151) | v0.14.4 | OpenAI 互換プロバイダーでフォローアップ提案が機能しない | サードパーティ API 使用時のフォローアップ提案欠如を修正 |
-| [#3138](https://github.com/QwenLM/qwen-code/pull/3138) | v0.14.4 | 再帰ファイルクローラーの無制限による OOM | 大規模プロジェクトでのメモリオーバーフロークラッシュを修正 |
-| [#3136](https://github.com/QwenLM/qwen-code/pull/3136) | v0.14.4 | チャンネル起動コマンドがプロキシ設定を適用しない | プロキシ環境でチャンネルが起動できない問題を修正 |
-| [#3134](https://github.com/QwenLM/qwen-code/pull/3134) | v0.14.4 | チャンネルプラグインの遅延読み込みで DEP0040 警告を解消 | 起動時の Node.js 非推奨警告を修正 |
-| [#3123](https://github.com/QwenLM/qwen-code/pull/3123) | v0.14.4 | OAuth リフレッシュレスポンスボディが空の場合の処理異常 | 認証リフレッシュ時のクラッシュを修正 |
-| [#3109](https://github.com/QwenLM/qwen-code/pull/3109) | v0.14.3 | 復元時に期限切れのコンパクションチェックポイントを使用 | トークンカウントの不正確さを修正 |
-| [#3094](https://github.com/QwenLM/qwen-code/pull/3094) | v0.14.3 | TextInput マルチラインモードでの NEWLINE と SUBMIT の順序エラー | 改行と送信の動作競合を修正 |
-| [#3069](https://github.com/QwenLM/qwen-code/pull/3069) | v0.14.3 | Compact モードで ProceedAlways 権限結果が永続化されない | 毎回再確認が必要な問題を修正 |
-| [#3060](https://github.com/QwenLM/qwen-code/pull/3060) | v0.14.3 | Shift+Tab がプレースホルダー提案を受け入れる | 意図しないオートコンプリートの受け入れを修正 |
-| [#3045](https://github.com/QwenLM/qwen-code/pull/3045) | v0.14.3 | ペースト内容の Tab 文字が変換される | コードインデントの喪失を修正 |
-| [#3044](https://github.com/QwenLM/qwen-code/pull/3044) | v0.14.3 | WeChat チャンネル QR ログインに iLink ヘッダーが欠落 | WeChat ログイン失敗を修正 |
-| [#3041](https://github.com/QwenLM/qwen-code/pull/3041) | v0.14.3 | 非リポジトリディレクトリでのチェックポイント初期化失敗 | スタンドアロンモードの使用問題を修正 |
-| [#3038](https://github.com/QwenLM/qwen-code/pull/3038) | v0.14.3 | VSCode 拡張機能チャット入力のスクロールバーがドラッグ不可 | UI インタラクション問題を修正 |
-| [#2930](https://github.com/QwenLM/qwen-code/pull/2930) | v0.14.3 | サブエージェント確認フォーカスの並行性による入力競合 | 複数エージェント同時確認時の入力異常を修正 |
-| [#2872](https://github.com/QwenLM/qwen-code/pull/2872) | v0.14.3 | ツール呼び出し UI リークと Enter 受け入れバッファ競合 | ツール実行後の UI 残留を修正 |
-| [#2850](https://github.com/QwenLM/qwen-code/pull/2850) | v0.14.3 | 環境変数プレフィックス付きシェルコマンドが保存済み権限ルールに一致しない | 権限確認の繰り返しポップアップを修正 |
+| PR | バージョン | 修正内容 | 影響 |
+|----|-----------|----------|------|
+| [#3138](https://github.com/QwenLM/qwen-code/pull/3138) | v0.14.4 | 制限なしの再帰ファイルクロールによるメモリオーバーフロー | 大規模プロジェクトがファイル過多でクラッシュしなくなった（上限100k） |
+| [#3246](https://github.com/QwenLM/qwen-code/pull/3246) | v0.14.5 | SSEストリームでのレート制限エラーが正しく検出されない | レート制限時にサイレント失敗ではなく正しいプロンプトを表示 |
+| [#3251](https://github.com/QwenLM/qwen-code/pull/3251) | v0.14.5 | Geminiの思考のみのレスポンスがストリーム検証で拒否される | Geminiモデルで思考プロセスが正常に表示 |
+| [#3212](https://github.com/QwenLM/qwen-code/pull/3212) | v0.14.5 | カスタムGemini baseUrlが有効にならない | カスタムGeminiエンドポイント設定が正常に動作 |
+| [#2872](https://github.com/QwenLM/qwen-code/pull/2872) | v0.14.3 | フォローアップツール呼び出しUIリークとEnter受け入れバッファ競合 | フォローアップ操作が時々フリーズしなくなった |
+| [#3151](https://github.com/QwenLM/qwen-code/pull/3151) | v0.14.4 | OpenAI互換プロバイダーでフォローアップ提案が動作しない | サードパーティプロバイダーでフォローアップ機能が復活 |
+| [#2985](https://github.com/QwenLM/qwen-code/pull/2985) | v0.14.3 | バンドルインストールでtree-sitter WASMがインライン化されない | オフライン/バンドルインストールでコード解析が正常動作 |
+| [#2930](https://github.com/QwenLM/qwen-code/pull/2930) | v0.14.3 | サブエージェント確認フォーカスの並行性競合 | 複数のサブエージェントが同時に確認を要求しても混乱しない |
+| [#2850](https://github.com/QwenLM/qwen-code/pull/2850) | v0.14.3 | 環境変数プレフィックス付きシェルコマンドが保存された権限ルールと一致しない | `ENV=val command` 形式の権限記憶が正常動作 |
+| [#3069](https://github.com/QwenLM/qwen-code/pull/3069) | v0.14.3 | Compactモードで ProceedAlways権限が永続化されない | 「常に許可」で繰り返し確認が不要に |
+| [#3109](https://github.com/QwenLM/qwen-code/pull/3109) | v0.14.4 | セッション復元時に古い圧縮チェックポイントのトークンカウント | 会話復元後のトークンカウントが正確に |
+| [#3038](https://github.com/QwenLM/qwen-code/pull/3038) | v0.14.3 | VSCode拡張機能のチャット入力スクロールバーがドラッグできない | 長いテキスト入力時にスクロールバーが正常動作 |
+| [#3249](https://github.com/QwenLM/qwen-code/pull/3249) | v0.14.5 | VSCodeセッションタブタイトルが長すぎてタブバーがオーバーフロー | タブタイトルが自動切り詰め、タブバーレイアウトが正常 |
+| [#3181](https://github.com/QwenLM/qwen-code/pull/3181) | v0.14.4 | ペーストモードフリーズ後にCtrl+Cが使用不可 | ターミナルペースト異常時もCtrl+Cで回復可能 |
+| [#3136](https://github.com/QwenLM/qwen-code/pull/3136) | v0.14.4 | Channel起動コマンドがプロキシ設定を適用しない | プロキシ環境でChannelが正常起動 |
+| [#3031](https://github.com/QwenLM/qwen-code/pull/3031) | v0.14.4 | IDE diffオープン失敗時にフォールバックなし | IDE diff失敗時にCLI確認に自動フォールバック |
+| [#3123](https://github.com/QwenLM/qwen-code/pull/3123) | v0.14.4 | OAuthリフレッシュレスポンスボディが空の時にクラッシュ | OAuthトークンリフレッシュ異常時にクラッシュしなくなった |
+| [#3197](https://github.com/QwenLM/qwen-code/pull/3197) | v0.14.4 | @fileインジェクションパスがrespectGitIgnore設定を尊重しない | @file参照が.gitignoreのファイルを正しく無視 |
+| [#3192](https://github.com/QwenLM/qwen-code/pull/3192) | v0.14.4 | MCP Server cwdが存在しない時に明確なエラーなし | MCP設定パスが間違っている時に明確なプロンプト |
 
-### Windows プラットフォーム専用修正
+## 📢 重要なお知らせ：Qwen OAuth無料枠の終了
 
-今週の Windows 専用修正はありません。
+2026年4月15日より、Qwen OAuth無料枠は終了しました。既存ユーザーは残りの枠を使い切るまで継続利用できます。以下のチャネルへの移行をお勧めします：
+
+- **[Alibaba Cloud百炼](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091)**（推奨）：qwen3-coder-plus、qwen3.6-plusなどの最新モデルをサポート、従量課金。設定方法は[百炼ドキュメント](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=2974721)を参照
+- **[OpenRouter](https://openrouter.ai/)**：複数のモデルプロバイダーを集約、様々な支払いオプション
+- **[Fireworks](https://fireworks.ai/)**：高性能推論プラットフォーム
+
+PR [#3291](https://github.com/QwenLM/qwen-code/pull/3291)、[#3299](https://github.com/QwenLM/qwen-code/pull/3299)、[#3207](https://github.com/QwenLM/qwen-code/pull/3207) を参照
 
 ## 🎈 その他の改善
 
-- **リリースプロセス最適化**：リリース検証パイプラインの並列化（[#3132](https://github.com/QwenLM/qwen-code/pull/3132)）
-- **テストユーティリティ統合**：test-utils パッケージを core に統合（[#3200](https://github.com/QwenLM/qwen-code/pull/3200)）
-- **レガシーディレクトリクリーンアップ**：廃止された `.gcp`、`.aoneci`、`hello`、`.allstar` ディレクトリを削除（[#3199](https://github.com/QwenLM/qwen-code/pull/3199)）
-- **デフォルトモデル変更**：Coding Plan のデフォルトを qwen3.5-plus モデルに変更（[#3193](https://github.com/QwenLM/qwen-code/pull/3193)）
-- **Skill モデルオーバーライド**：Skill frontmatter によるモデル設定のオーバーライドをサポート（[#2949](https://github.com/QwenLM/qwen-code/pull/2949)）
-- **サブエージェントツール制限**：Agent 定義に `disallowedTools` フィールドを追加（[#3064](https://github.com/QwenLM/qwen-code/pull/3064)）
-- **サブエージェント承認モード伝播**：承認モードがサブエージェントに自動伝播（[#3066](https://github.com/QwenLM/qwen-code/pull/3066)）
-- **DingTalk チャンネル最適化**：allowedUsers マッチングで senderStaffId を優先使用（[#3294](https://github.com/QwenLM/qwen-code/pull/3294)）
-- **ドキュメント更新**：クォータ超過時の代替案を OpenRouter と Fireworks に更新（[#3217](https://github.com/QwenLM/qwen-code/pull/3217)）
-- **OAuth 無料層の停止**：2026-04-15 より Qwen OAuth 無料層を停止（[#3291](https://github.com/QwenLM/qwen-code/pull/3291)）
-- **バンドル最適化**：tree-sitter WASM をインライン化して起動警告を解消（[#2985](https://github.com/QwenLM/qwen-code/pull/2985)）
-- **コアツールスケジューラーリファクタリング**：IDE diff インタラクションを CoreToolScheduler に集約（[#2728](https://github.com/QwenLM/qwen-code/pull/2728)）
-- **テストカバレッジ強化**：confirmation-bus、prompt-registry などのモジュールテストを追加（[#2272](https://github.com/QwenLM/qwen-code/pull/2272)）
-- **廃止 Skill クリーンアップ**：古い pr-review skill を削除（[#3028](https://github.com/QwenLM/qwen-code/pull/3028)）
-- **UI デッドコードクリーンアップ**：InputPrompt の未使用 dirs ステートとフックパラメータを削除（[#2891](https://github.com/QwenLM/qwen-code/pull/2891)）
-- **VSCode ローカルクリアコマンド**：ローカル clear スラッシュコマンドをサポート（[#3111](https://github.com/QwenLM/qwen-code/pull/3111)）
-- **VSCode コンテキスト制限**：明示的な null コンテキスト制限設定を保持（[#3098](https://github.com/QwenLM/qwen-code/pull/3098)）
-- **ACP セッションリフレッシュ**：新しいセッションアクションで ACP セッションを強制リフレッシュ（[#2874](https://github.com/QwenLM/qwen-code/pull/2874)）
-- **ステータスラインスクリプト保護**：ステータスラインスクリプトによる settings.json の破損を防止（[#3091](https://github.com/QwenLM/qwen-code/pull/3091)）
-- **依存関係アップグレード**：normalize-package-data を 7.0.1 にアップグレードして DEP0169 警告を解消（[#2865](https://github.com/QwenLM/qwen-code/pull/2865)）
-- **IDE コンパニオンプラグイン**：サンドボックスイメージ設定、ワークスペースオーバーライド警告、MCP サーバー cwd 検証をサポート（[#3146](https://github.com/QwenLM/qwen-code/pull/3146)、[#3148](https://github.com/QwenLM/qwen-code/pull/3148)、[#3192](https://github.com/QwenLM/qwen-code/pull/3192)）
-- **ACP 補完フック**：ACP 統合の complete hooks サポートを追加（[#3248](https://github.com/QwenLM/qwen-code/pull/3248)）
-- **RipGrep 権限ツール**：getDefaultPermission と allowExternalPaths サポートを追加（[#2948](https://github.com/QwenLM/qwen-code/pull/2948)）
+| PR | 改善内容 | 影響 |
+|----|----------|------|
+| [#3187](https://github.com/QwenLM/qwen-code/pull/3187) | 非対話モード `--openai-api-key` パラメータ検証修正 | CI/CDでのAPI Key認証がエラーにならない |
+| [#3257](https://github.com/QwenLM/qwen-code/pull/3257) | ハイパーリンク非対応ターミナルで `/bug` コマンドが使いやすく | どのターミナルでもバグ報告が便利に |
+| [#3270](https://github.com/QwenLM/qwen-code/pull/3270) | 入力ボックスでのリテラルTab入力を無視 | Tabキーが入力ボックスにタブ文字を挿入しなくなった |
+| [#3060](https://github.com/QwenLM/qwen-code/pull/3060) | Shift+Tabがプレースホルダー提案を受け入れなくなった | Tabのみが提案を受け入れ、Shift+Tabの動作が正常 |
+| [#3045](https://github.com/QwenLM/qwen-code/pull/3045) | ペースト内容のTab文字が正しく保持 | ペースト時にコードのインデントが失われない |
+| [#3104](https://github.com/QwenLM/qwen-code/pull/3104) | スラッシュコマンド補完の優先度向上 | `/` 入力後にコマンド補完がより速く表示 |
+| [#3077](https://github.com/QwenLM/qwen-code/pull/3077) | `/model --fast` 説明テキスト最適化 | `--fast` の機能がより理解しやすく |
+| [#3041](https://github.com/QwenLM/qwen-code/pull/3041) | 非リポジトリディレクトリでのcheckpointing初期化修正 | 非Gitリポジトリディレクトリでエラーなし |
+| [#3091](https://github.com/QwenLM/qwen-code/pull/3091) | statuslineスクリプトがsettings.jsonを予期せず変更しなくなった | カスタムステータスバーが設定ファイルを壊さない |
+| [#3208](https://github.com/QwenLM/qwen-code/pull/3208) | 入力キャンセル時に前のプロンプトが自動入力されなくなった | Escキャンセル後に入力ボックスがクリーン |
+| [#2865](https://github.com/QwenLM/qwen-code/pull/2865) | normalize-package-dataをアップグレードしてDEP0169警告を修正 | 起動時にdeprecation警告なし |
+| [#3134](https://github.com/QwenLM/qwen-code/pull/3134) | Channelプラグインの遅延読み込みでDEP0040起動警告を排除 | よりクリーンな起動ログ |
+| [#3294](https://github.com/QwenLM/qwen-code/pull/3294) | DingTalk ChannelがsenderStaffIdでのユーザーマッチングを優先 | DingTalk Channelでのユーザー識別がより正確 |
+| [#3044](https://github.com/QwenLM/qwen-code/pull/3044) | WeChatログインQRコードフローに欠落したiLinkリクエストヘッダーを追加 | WeChatQRコードログインがより安定 |
+| [#2948](https://github.com/QwenLM/qwen-code/pull/2948) | ripGrepツールにデフォルト権限と外部パスサポートを追加 | ripGrep検索がワークスペース外のファイルにアクセス可能 |
+| [#3094](https://github.com/QwenLM/qwen-code/pull/3094) | マルチライン入力モードでの改行と送信判定修正 | マルチライン入力でEnterとCtrl+Enterの動作が正確 |
+| [#2891](https://github.com/QwenLM/qwen-code/pull/2891) | 入力コンポーネントの未使用状態とパラメータをクリーンアップ | 入力コンポーネントがより軽量でレスポンシブ |
+
+## 👋 新しいコントリビューターを歓迎
+
+- [**@doudouOUC**](https://github.com/doudouOUC) — 非リポジトリディレクトリでのcheckpointing初期化修正、サンドボックスイメージ設定とワークスペース設定オーバーライド警告を追加
+- [**@BZ-D**](https://github.com/BZ-D) — Shift+Tabがプレースホルダー提案を誤って受け入れる問題を修正
+- [**@YuchenLiang00**](https://github.com/YuchenLiang00) — `/context detail` サブコマンドを追加
+- [**@Apophis3158**](https://github.com/Apophis3158) — CJK分かち書きとCtrl+矢印キーナビゲーション最適化を実装
+- [**@sibylassana95**](https://github.com/sibylassana95) — フランス語ローカライゼーションサポートを追加
+- [**@evan70**](https://github.com/evan70) — normalize-package-dataをアップグレードしてDEP0169警告を修正
+- [**@B-A-M-N**](https://github.com/B-A-M-N) — OAuthリフレッシュレスポンスボディが空の時のクラッシュを修正
+- [**@feyclaw**](https://github.com/feyclaw) — Telegram音声メッセージサポートを追加
+- [**@dreamWB**](https://github.com/dreamWB) — VSCodeセッションタブタイトルオーバーフローを修正
+- [**@reidliu41**](https://github.com/reidliu41) — ハイパーリンク非対応ターミナルでの `/bug` コマンド体験を改善
+- [**@Shenean**](https://github.com/Shenean) — 入力ボックスでのリテラルTab入力問題を修正
 
 <Callout type="info">
   **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行して最新バージョンにアップグレードしてください。
