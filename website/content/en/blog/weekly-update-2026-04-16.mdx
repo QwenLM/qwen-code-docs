@@ -1,0 +1,218 @@
+---
+title: "Qwen Code Weekly: Smart Tool Parallelism, Fork Sub-Agent Context Sharing, CJK Word Segmentation"
+date: "2026-04-16"
+description: "This week we released v0.14.3, v0.14.4, and v0.14.5. New features include smart tool parallel execution, fork sub-agent context sharing, CJK word segmentation, LLM message rewrite middleware, and Skill model override."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Weekly: Smart Tool Parallelism, Fork Sub-Agent Context Sharing, CJK Word Segmentation"
+  date="2026-04-16"
+  author="Qwen Team"
+/>
+
+This week we released three feature versions: **v0.14.3**, **v0.14.4**, and **v0.14.5**.
+
+After v0.14.3 went live, we received plenty of community feedback and focused on input experience and sub-agent issues this week. v0.14.4 brings smart tool parallel execution — read-only tools are automatically batched in parallel, significantly improving response speed in multi-tool scenarios. CJK word segmentation finally makes cursor navigation work properly for Chinese, Japanese, and Korean users. v0.14.5 adds fork sub-agents, allowing subtasks to share the parent agent's context. Additionally, Qwen OAuth free tier has been discontinued as of April 15 — we recommend migrating to Alibaba Cloud Bailian, OpenRouter, or Fireworks.
+
+<Callout type="info">
+	Thanks to this week's new contributors [**@doudouOUC**](https://github.com/doudouOUC), [**@BZ-D**](https://github.com/BZ-D), [**@YuchenLiang00**](https://github.com/YuchenLiang00), [**@Apophis3158**](https://github.com/Apophis3158), [**@sibylassana95**](https://github.com/sibylassana95), [**@evan70**](https://github.com/evan70), [**@B-A-M-N**](https://github.com/B-A-M-N), [**@feyclaw**](https://github.com/feyclaw), [**@dreamWB**](https://github.com/dreamWB), [**@reidliu41**](https://github.com/reidliu41), [**@Shenean**](https://github.com/Shenean) 🎉
+</Callout>
+
+## ✨ New Features
+
+### Smart Tool Parallel Execution
+
+Qwen Code now automatically determines which tools can run in parallel based on tool type: read-only operations like search and file reading are automatically batched in parallel, while shell write operations remain serial for safety. Wait times are significantly reduced in multi-tool scenarios. See PR [#2864](https://github.com/QwenLM/qwen-code/pull/2864)
+
+**What you can do with it:**
+- Search multiple files and read multiple code segments simultaneously — no more waiting in queue
+- The agent automatically identifies which tool calls can be parallelized — no configuration needed
+- Write operations still execute serially, so no need to worry about file conflicts
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000003845/O1CN012ABPOm1eH40RohFDf_!!6000000003845-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/_f_P3QbHVgGG2jAXF-hQOrVpLMmWLldy-LoADiIhCmE.mp4" controls></video>
+
+### Fork Sub-Agent Shared Context
+
+Fork sub-agents allow you to spawn child agents that inherit the parent agent's full context. Sub-agents can independently complete subtasks and return results to the parent. Ideal for scenarios requiring parallel processing of multiple related tasks. See PR [#2936](https://github.com/QwenLM/qwen-code/pull/2936)
+
+**What you can do with it:**
+- Spawn subtasks from the main task to handle independent modules
+- Sub-agents inherit the parent's full context without redundant information passing
+- Process multiple related tasks in parallel for improved efficiency
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000005639/O1CN01nyeVOz1rWiY8QH8AI_!!6000000005639-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/aXllYK3Qh7DwrtGuT-_1Z2dvH552w90PL-7yYvxgt50.mp4" controls></video>
+
+### CJK Word Segmentation + Ctrl+Arrow Navigation
+
+Optimized terminal input for Chinese, Japanese, and Korean users. Cursor now moves by word boundaries instead of character-by-character, and Ctrl+Arrow key navigation works properly. See PR [#2942](https://github.com/QwenLM/qwen-code/pull/2942)
+
+**What you can do with it:**
+- Move cursor by word, making long sentence editing more efficient
+- Use Ctrl+Left/Right to quickly jump between words
+- Backspace deletes by word, no more deleting one character at a time
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000001020/O1CN01fYeEQ61JPD7bQcAae_!!6000000001020-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/FsFUEuTzbYcF5U-FTiCJLfDHqvBharvJ_MmLIACzAsE.mp4"  controls></video>
+
+### ACP Message Rewrite Middleware
+
+LLM-based message rewrite middleware that reformats model output through a second LLM pass. Configure a custom prompt to automatically restructure responses into your preferred format. See PR [#3191](https://github.com/QwenLM/qwen-code/pull/3191)
+
+**What you can do with it:**
+- Automatically rewrite AI responses into structured formats (summary + change table + risk assessment)
+- Customize rewrite prompts for different scenarios
+- Works as ACP middleware, transparent to the user
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000003184/O1CN01FY2hf61ZOKCwyRZux_!!6000000003184-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/z6hnrYH8f-F0rxuKHlqXbba5rGnfvTBE-VHWqsg0ZT4.mp4" controls></video>
+
+### Skill Model Override
+
+Skills can now specify which model to use via the `model` field in Skill frontmatter. Different Skills can use different models. See PR [#2949](https://github.com/QwenLM/qwen-code/pull/2949)
+
+**What you can do with it:**
+- Configure the optimal model for each Skill independently
+- Code review uses a strong model, simple tasks use a fast model — balancing quality and cost
+- No need to manually switch models — the Skill automatically selects the right one
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005378/O1CN01JAKr1H1pbBAzhUkyz_!!6000000005378-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/RzzDJlhSp8quYE89V55QJWZt0j5d3TLCPufu_QesqVw.mp4" controls></video>
+
+### Context-Aware Tips
+
+After a conversation ends, the system automatically recommends next steps based on the current context. For example, after modifying code it might suggest "want to run the tests?". See PR [#2904](https://github.com/QwenLM/qwen-code/pull/2904)
+
+**What you can do with it:**
+- After completing code changes, automatically get suggestions for related follow-up actions
+- New users can more easily discover and learn features
+- Relevant slash commands are recommended based on conversation content
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005710/O1CN01Idqagj1s3EfcOQ74v_!!6000000005710-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/95Tmeuj5ojBFs_JwHczIRvnPiX1rtRTzY8qy237gbzU.mp4" controls></video>
+
+### /review Enhancement: Deterministic Analysis & Auto-Fix
+
+`/review` now supports deterministic analysis (static checks independent of LLM), auto-fix suggestions, and security hardening checks. Review results are more reliable with direct fix suggestions. See PR [#2932](https://github.com/QwenLM/qwen-code/pull/2932)
+
+**What you can do with it:**
+- Code review results are more stable — same code produces consistent conclusions every time
+- Issues found come with fix suggestions — no need to figure out the fix yourself
+- Automatically checks for common security vulnerabilities
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000008055/O1CN015vMexX29NFRbpMTA7_!!6000000008055-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/K3xtn5O3mNeSt9Sqb5UVBAQIrKT5iYFHHHQWAP3Rv60.mp4" controls></video>
+
+### Idle Context Micro-Compaction
+
+Automatically cleans up redundant context during conversation idle time, reducing token consumption. Particularly effective in long conversations. See PR [#3006](https://github.com/QwenLM/qwen-code/pull/3006)
+
+**What you can do with it:**
+- Long conversations no longer hit context window limits as quickly
+- Automatically cleans up intermediate results no longer needed, saving tokens
+- No manual action required — runs automatically in the background
+
+### More New Features
+
+- **Customizable Status Bar**: `/statusline` command to customize terminal bottom status bar ([#2923](https://github.com/QwenLM/qwen-code/pull/2923))
+- **/context detail Subcommand**: View detailed context usage information ([#3042](https://github.com/QwenLM/qwen-code/pull/3042))
+- **SDK Context Usage Data Exposure**: Access `/context` usage data in non-interactive mode and SDK API ([#2916](https://github.com/QwenLM/qwen-code/pull/2916))
+- **Sub-Agent Approval Inheritance**: Sub-agents automatically inherit parent's approval settings ([#3066](https://github.com/QwenLM/qwen-code/pull/3066))
+- **Sub-Agent Tool Restrictions**: New `disallowedTools` field in Agent definitions ([#3064](https://github.com/QwenLM/qwen-code/pull/3064))
+- **Unicode Agent Names**: Agent names can now use Chinese and other Unicode characters ([#3194](https://github.com/QwenLM/qwen-code/pull/3194))
+- **Telegram Voice Messages**: TelegramAdapter now supports voice message send/receive ([#3150](https://github.com/QwenLM/qwen-code/pull/3150))
+- **French Localization**: Added French (fr-FR) language support ([#3126](https://github.com/QwenLM/qwen-code/pull/3126))
+- **StopFailure and PostCompact Hook Events**: Two new Hook event points for extended automation ([#2825](https://github.com/QwenLM/qwen-code/pull/2825))
+- **Startup Profiler**: `--profile` parameter to identify startup performance bottlenecks ([#3232](https://github.com/QwenLM/qwen-code/pull/3232))
+- **Sandbox Image Configuration**: `tools.sandboxImage` setting for custom sandbox images ([#3146](https://github.com/QwenLM/qwen-code/pull/3146))
+- **Workspace Config Override Warning**: Warning when workspace config overrides global modelProviders ([#3148](https://github.com/QwenLM/qwen-code/pull/3148))
+- **VSCode /account Command**: View account information in the VSCode extension ([#2984](https://github.com/QwenLM/qwen-code/pull/2984))
+- **Direct exit/quit to Exit CLI**: No need to type `/exit` anymore, just type `exit` ([#3201](https://github.com/QwenLM/qwen-code/pull/3201))
+
+## 📊 Improvements
+
+| PR | Version | Improvement | Impact |
+|----|---------|-------------|--------|
+| [#3120](https://github.com/QwenLM/qwen-code/pull/3120) | v0.14.4 | Fast Model setting changed from text input to model selector | Select models from a dropdown instead of typing names |
+| [#3116](https://github.com/QwenLM/qwen-code/pull/3116) | v0.14.4 | /settings shows detailed description when selecting a setting | No more guessing what each setting does |
+| [#2871](https://github.com/QwenLM/qwen-code/pull/2871) | v0.14.4 | Pop queued messages for editing via ↑/ESC keys | Quickly retrieve and edit sent messages |
+| [#3008](https://github.com/QwenLM/qwen-code/pull/3008) | v0.14.3 | New "restore previous mode" option when exiting Plan mode | No need to manually switch back after exiting Plan mode |
+| [#3075](https://github.com/QwenLM/qwen-code/pull/3075) | v0.14.3 | verboseMode renamed to compactMode | More intuitive setting name |
+| [#2728](https://github.com/QwenLM/qwen-code/pull/2728) | v0.14.3 | IDE diff interaction centralized to CoreToolScheduler | More stable diff display for code editing |
+| [#2914](https://github.com/QwenLM/qwen-code/pull/2914) | v0.14.4 | Terminal Markdown table rendering optimization | Tables display more neatly in the terminal |
+| [#3193](https://github.com/QwenLM/qwen-code/pull/3193) | v0.14.4 | Coding Plan default model set to qwen3.5-plus | Coding Plan works out of the box with a stronger default model |
+
+## 🔧 Important Fixes
+
+| PR | Version | Fix | Impact |
+|----|---------|-----|--------|
+| [#3138](https://github.com/QwenLM/qwen-code/pull/3138) | v0.14.4 | Recursive file crawl without limit causing memory overflow | Large projects no longer crash due to too many files (limit 100k) |
+| [#3246](https://github.com/QwenLM/qwen-code/pull/3246) | v0.14.5 | Rate limit errors in SSE stream not properly detected | Rate limiting now shows correct prompts instead of silent failure |
+| [#3251](https://github.com/QwenLM/qwen-code/pull/3251) | v0.14.5 | Gemini think-only responses rejected by stream validation | Thinking process displays normally with Gemini models |
+| [#3212](https://github.com/QwenLM/qwen-code/pull/3212) | v0.14.5 | Custom Gemini baseUrl not taking effect | Custom Gemini endpoint configuration works properly now |
+| [#2872](https://github.com/QwenLM/qwen-code/pull/2872) | v0.14.3 | Follow-up tool call UI leaks and Enter accept buffer race | Follow-up interactions no longer occasionally freeze |
+| [#3151](https://github.com/QwenLM/qwen-code/pull/3151) | v0.14.4 | Follow-up suggestions not working on OpenAI-compatible providers | Follow-up feature works again with third-party providers |
+| [#2985](https://github.com/QwenLM/qwen-code/pull/2985) | v0.14.3 | tree-sitter WASM not inlined in bundled install | Code parsing works in offline/bundled install scenarios |
+| [#2930](https://github.com/QwenLM/qwen-code/pull/2930) | v0.14.3 | Sub-agent confirmation focus concurrency conflict | Multiple sub-agents requesting confirmation no longer cause confusion |
+| [#2850](https://github.com/QwenLM/qwen-code/pull/2850) | v0.14.3 | Shell commands with env prefix not matching saved permission rules | `ENV=val command` permission memory works properly now |
+| [#3069](https://github.com/QwenLM/qwen-code/pull/3069) | v0.14.3 | ProceedAlways permission not persisted in Compact mode | "Always allow" no longer needs repeated confirmation |
+| [#3109](https://github.com/QwenLM/qwen-code/pull/3109) | v0.14.4 | Stale compaction checkpoint token count on session restore | Token count is accurate after restoring a conversation |
+| [#3038](https://github.com/QwenLM/qwen-code/pull/3038) | v0.14.3 | VSCode extension chat input scrollbar not draggable | Scrollbar works properly for long text input |
+| [#3249](https://github.com/QwenLM/qwen-code/pull/3249) | v0.14.5 | VSCode session tab title too long causing tab bar overflow | Tab titles auto-truncate, tab bar layout is normal |
+| [#3181](https://github.com/QwenLM/qwen-code/pull/3181) | v0.14.4 | Ctrl+C unavailable after paste mode freeze | Terminal paste anomaly can still be recovered via Ctrl+C |
+| [#3136](https://github.com/QwenLM/qwen-code/pull/3136) | v0.14.4 | Channel launch command not applying proxy settings | Channel starts normally in proxy environments |
+| [#3031](https://github.com/QwenLM/qwen-code/pull/3031) | v0.14.4 | No fallback when IDE diff open fails | IDE diff failure automatically falls back to CLI confirmation |
+| [#3123](https://github.com/QwenLM/qwen-code/pull/3123) | v0.14.4 | Crash when OAuth refresh response body is empty | OAuth token refresh anomaly no longer crashes |
+| [#3197](https://github.com/QwenLM/qwen-code/pull/3197) | v0.14.4 | @file injection path not respecting respectGitIgnore | @file references correctly ignore files in .gitignore |
+| [#3192](https://github.com/QwenLM/qwen-code/pull/3192) | v0.14.4 | No clear error when MCP Server cwd doesn't exist | Clear prompt when MCP config path is wrong |
+
+## 📢 Important Announcement: Qwen OAuth Free Tier Discontinued
+
+Starting April 15, 2026, the Qwen OAuth free tier has been discontinued. Existing users can continue using their remaining quota. We recommend migrating to the following channels:
+
+- **[Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091)** (Recommended): Supports latest models including qwen3-coder-plus and qwen3.6-plus, pay-as-you-go. See [Bailian documentation](https://bailian.console.aliyun.com/cn-beijing?tab=doc#/doc/?type=model&url=2974721) for configuration
+- **[OpenRouter](https://openrouter.ai/)**: Aggregates multiple model providers with various payment options
+- **[Fireworks](https://fireworks.ai/)**: High-performance inference platform
+
+See PR [#3291](https://github.com/QwenLM/qwen-code/pull/3291), [#3299](https://github.com/QwenLM/qwen-code/pull/3299), [#3207](https://github.com/QwenLM/qwen-code/pull/3207)
+
+## 🎈 Other Improvements
+
+| PR | Improvement | Impact |
+|----|-------------|--------|
+| [#3187](https://github.com/QwenLM/qwen-code/pull/3187) | Non-interactive mode `--openai-api-key` parameter validation fix | API Key authentication in CI/CD no longer errors |
+| [#3257](https://github.com/QwenLM/qwen-code/pull/3257) | `/bug` command easier to use in terminals without hyperlink support | Any terminal can conveniently submit bug reports |
+| [#3270](https://github.com/QwenLM/qwen-code/pull/3270) | Ignore literal Tab input in input box | Tab key no longer inserts tab characters in the input box |
+| [#3060](https://github.com/QwenLM/qwen-code/pull/3060) | Shift+Tab no longer accepts placeholder suggestions | Only Tab accepts suggestions, Shift+Tab behavior is normal |
+| [#3045](https://github.com/QwenLM/qwen-code/pull/3045) | Tab characters in pasted content correctly preserved | Code indentation is not lost when pasting |
+| [#3104](https://github.com/QwenLM/qwen-code/pull/3104) | Slash command completion priority increased | Command completion appears faster after typing `/` |
+| [#3077](https://github.com/QwenLM/qwen-code/pull/3077) | `/model --fast` description text optimization | Easier to understand what `--fast` does |
+| [#3041](https://github.com/QwenLM/qwen-code/pull/3041) | Checkpointing initialization fix in non-repo directories | No more errors in non-Git repo directories |
+| [#3091](https://github.com/QwenLM/qwen-code/pull/3091) | Statusline script no longer unexpectedly modifies settings.json | Custom status bar won't mess up your config |
+| [#3208](https://github.com/QwenLM/qwen-code/pull/3208) | Previous prompt no longer auto-filled when canceling input | Input box is clean after pressing Esc |
+| [#2865](https://github.com/QwenLM/qwen-code/pull/2865) | Upgraded normalize-package-data to fix DEP0169 warning | No more deprecation warnings on startup |
+| [#3134](https://github.com/QwenLM/qwen-code/pull/3134) | Lazy-load Channel plugin to eliminate DEP0040 startup warning | Cleaner startup logs |
+| [#3294](https://github.com/QwenLM/qwen-code/pull/3294) | DingTalk Channel prioritizes senderStaffId for user matching | More accurate user identification in DingTalk Channel |
+| [#3044](https://github.com/QwenLM/qwen-code/pull/3044) | WeChat login QR code flow adds missing iLink request header | More stable WeChat QR code login |
+| [#2948](https://github.com/QwenLM/qwen-code/pull/2948) | ripGrep tool adds default permissions and external path support | ripGrep search can access files outside the workspace |
+| [#3094](https://github.com/QwenLM/qwen-code/pull/3094) | Newline and submit judgment fix in multi-line input mode | Enter and Ctrl+Enter behavior is correct in multi-line input |
+| [#2891](https://github.com/QwenLM/qwen-code/pull/2891) | Clean up unused state and parameters in input component | Input component is lighter and more responsive |
+
+## 👋 Welcome New Contributors
+
+- [**@doudouOUC**](https://github.com/doudouOUC) — Fixed checkpointing initialization in non-repo directories, added sandbox image configuration and workspace config override warning
+- [**@BZ-D**](https://github.com/BZ-D) — Fixed Shift+Tab incorrectly accepting placeholder suggestions
+- [**@YuchenLiang00**](https://github.com/YuchenLiang00) — Added `/context detail` subcommand
+- [**@Apophis3158**](https://github.com/Apophis3158) — Implemented CJK word segmentation and Ctrl+Arrow navigation optimization
+- [**@sibylassana95**](https://github.com/sibylassana95) — Added French localization support
+- [**@evan70**](https://github.com/evan70) — Upgraded normalize-package-data to fix DEP0169 warning
+- [**@B-A-M-N**](https://github.com/B-A-M-N) — Fixed crash when OAuth refresh response body is empty
+- [**@feyclaw**](https://github.com/feyclaw) — Added Telegram voice message support
+- [**@dreamWB**](https://github.com/dreamWB) — Fixed VSCode session tab title overflow
+- [**@reidliu41**](https://github.com/reidliu41) — Improved `/bug` command experience in terminals without hyperlink support
+- [**@Shenean**](https://github.com/Shenean) — Fixed literal Tab input issue in input box
+
+<Callout type="info">
+  **How to upgrade**: Run `npm i @qwen-code/qwen-code@latest -g` to upgrade to the latest version.
+</Callout>
+
+If you have questions or suggestions, feel free to provide feedback on [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
