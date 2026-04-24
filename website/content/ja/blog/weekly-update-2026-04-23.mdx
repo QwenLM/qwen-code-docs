@@ -1,0 +1,236 @@
+---
+title: "Qwen Code 週報：AI がセッションをまたいで記憶、チャット自動タイトル、/batch 一括ファイル処理"
+date: "2026-04-23"
+description: "v0.15.0 リリース：クロスセッション記憶、スマートなチャット管理、/batch コマンド、Hook 拡張、subagent バックグラウンド実行。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：AI がセッションをまたいで記憶、チャット自動タイトル、/batch 一括ファイル処理"
+  date="2026-04-23"
+  author="Qwen Team"
+/>
+
+
+**v0.15.0** をリリースしました。
+
+今回のアップデートでは、Qwen Code のコンテキスト理解とワークフローがさらにスマートになりました。AI がセッションをまたいであなたが伝えたことを覚え、古い記憶を自動クリーンアップ。チャットセッションには自動生成されるタイトルがあり、名前変更や削除も自由自在。`/batch` コマンドで複数ファイルの修正を一度に並列実行。Hook 拡張と subagent のバックグラウンド実行により、自動化とエンタープライズ統合がより柔軟に。
+
+## ✨ 新機能
+
+### AI がセッションをまたいで記憶
+
+これまで記憶機能は手動でのメンテナンスが必要でした。現在 Qwen Code には自動記憶（auto-memory）と自動整理（auto-dream）システムが導入され、AI が会話中に重要な情報を記憶に抽出し、定期的に整理・最適化を行います。本棚を定期的に整理するように、セッション間のコンテキスト体験がよりスムーズになります。
+
+**こんなことができます：**
+
+- 繰り返し不要：技術スタック、コーディングスタイル、プロジェクト構造 — 次回セッションで AI が自動で覚えてくれています
+- 自動整理・結合：バックグラウンドで記憶をスキャンし、重複を結合、古い記憶を更新、インデックスを定期的にメンテナンス
+- 手動メンテナンスの削減：今まで `QWEN.md` やルールファイルに手動で書いていた内容を、AI が自動で処理
+
+PR [#3087](https://github.com/QwenLM/qwen-code/pull/3087) を参照
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/NMVf6gqpAAlP97UP_5LW75qUqYW-IgeoxDcTNc_QMZ4.mp4" type="video/mp4" />
+</video>
+
+### チャットの自動タイトル、名前変更と削除もサポート
+
+これまでのセッションタイトルはユーザーの最初の質問そのもので、長く見つけにくいものでした。現在、AI が会話内容に基づいて意味のあるタイトルを自動生成。いつでもカスタムタイトルへの変更や不要なセッションの削除が可能です。
+
+**こんなことができます：**
+
+- AI が自動でタイトル生成：手動での命名不要、AI が会話内容に基づいて自動生成
+- プロジェクトごとに名前変更：AI のつけたタイトルがしっくりこなければ、いつでも手動で変更
+- 無効なセッションを整理：テストや無意味な会話を削除し、リストには価値のあるセッションだけを残す
+
+PR [#3093](https://github.com/QwenLM/qwen-code/pull/3093) を参照
+
+![セッション管理デモ](https://img.alicdn.com/imgextra/i3/O1CN01URX9kK1HE6HZbESsM_!!6000000000725-1-tps-2890-1950.gif)
+
+### /batch — 複数ファイルを一括処理
+
+これまで複数ファイルのコード修正はタスクを一つずつ実行する必要がありましたが、現在 `/batch` コマンド一つで並列処理が可能。lint エラーの一括修正、複数ドキュメントの更新、コードリファクタリングなどのシーンに最適です。
+
+**こんなことができます：**
+
+- 一括 lint 修正：複数のファイルにある同じ lint エラーを同時に修正、一つずつ処理不要
+- 複数ドキュメント同期更新：複数のドキュメントファイルに同じセクションを追加したりバージョン番号を更新したり、コマンド一つで完了
+- 一括コードリファクタリング：複数のファイルの変数名変更や関数抽出を、一度に並列で完了
+
+PR [#3079](https://github.com/QwenLM/qwen-code/pull/3079) を参照
+
+![batch 一括処理デモ](https://img.alicdn.com/imgextra/i3/O1CN01Bw4sIy1kCq38yp3RE_!!6000000004648-2-tps-3670-1798.png)
+
+### Hook 拡張：AI 実行中に自動で追加アクションをトリガー
+
+これまで Qwen Code は指示に従って単一のタスクを実行するだけでしたが、現在 Hook を使って「自動トリガーアクション」を設定できます。3 つの新しい Hook タイプ：HTTP Hook は外部サービス（Feishu や DingTalk など）へ自動通知；Function Hook は自分で書いたコードを自動実行；Async Hook は時間のかかるタスクをバックグラウンドで実行し、現在の会話をブロックしません。VSCode プラグインでも Hook の設定が可能です。
+
+**こんなことができます：**
+
+- チーム协作通知：AI が重要ファイルを修正した後、Feishu や DingTalk へ自動でメッセージ送信、同僚を手動で @ する必要なし
+- 企業コンプライアンス監査：AI の操作内容を自動で会社の監査システムに記録、コンプライアンス要件を手動で登録する必要なし
+- 独自ツールとの深い統合：SDK で自分のコードを登録、会話中にイベントが発生すると自動実行、新しいウィンドウを開いて手動実行する必要なし
+
+PR [#2827](https://github.com/QwenLM/qwen-code/pull/2827) + [#3248](https://github.com/QwenLM/qwen-code/pull/3248) を参照
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/rwdx5Ep2Y0loGbPbNzhQRZIn0Sg2gew5eIOZZ7XroZY.mp4" type="video/mp4" />
+</video>
+
+### subagent のバックグラウンド実行
+
+これまで subagent はフロントエンドインターフェースで実行する必要がありましたが、現在 headless バックグラウンド実行をサポート。SDK も完全に対応し、CI/CD パイプラインや自動化スクリプトへの統合に最適です。
+
+**こんなことができます：**
+
+- バックグラウンド並列処理：複数の subagent を同時に起動して異なるタスクを処理、メインインターフェースに影響を与えずに作業を継続
+- SDK を独自ツールに統合：SDK API を通じて subagent の機能を呼び出し、自分の開発ツールチェーンに統合
+- CI/CD 自動化レビュー：PR パイプラインで subagent を起動して自動コードレビュー、ターミナルを開く必要なし
+
+PR [#3076](https://github.com/QwenLM/qwen-code/pull/3076) を参照
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/HWrYG5WwyiT_QUV8eYwj7VoJqekCwasaXmlEG-hkoeI.mp4" type="video/mp4" />
+</video>
+
+### ディレクトリごとに自動で異なるルールを適用
+
+これまですべてのディレクトリが同じルールを共有していましたが、現在ファイルパスに基づいて特定のコンテキストルールを自動注入可能。`.qwen/rules/` ディレクトリから読み込み、ディレクトリごとの AI 動作をより正確にします。
+
+**こんなことができます：**
+
+- モジュールごとに異なる規範：フロントエンドディレクトリは React 規範、バックエンドディレクトリは Node.js 規範を自動で識別
+- プロジェクトレベルのカスタムルール：特定のサブディレクトリに特別なコードスタイル要件がある場合、`.qwen/rules/` に置くだけで自動反映
+- 手動設定の削減：会話のたびにルールを指定する必要なし、パスマッチ後に自動適用
+
+PR [#3339](https://github.com/QwenLM/qwen-code/pull/3339) を参照
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/MbM3-mryIk1692zUrOzuU_gM4SvPLAxjNe492_Rdv_c.mp4" type="video/mp4" />
+</video>
+
+### /doctor — ワンクリックで環境問題を診断
+
+これまで問題が発生すると各種設定や環境を手動で確認する必要がありましたが、現在 `/doctor` を実行するだけで、環境、設定、ネットワーク接続などの一般的な問題を自動検出し、修復提案を提示します。
+
+**こんなことができます：**
+
+- 環境問題を素早く排查：MCP サーバーに接続できない、モデルの読み込みに失敗した場合、ワンクリックで診断
+- 設定が正しいか確認：設定ファイルの構文や API Key の有効性を自動検証
+- 自動化シーンに友好：非インタラクティブな JSON 出力をサポート、スクリプトや CI/CD パイプラインに統合可能
+
+PR [#3404](https://github.com/QwenLM/qwen-code/pull/3404) を参照
+
+![doctor 環境診断デモ](https://img.alicdn.com/imgextra/i3/O1CN01YsDS5o1l9SkKCxqTC_!!6000000004776-2-tps-2272-1474.png)
+
+### PDF を直接読み取り、Jupyter Notebook を分析
+
+これまでテキストモデルで PDF を読み取ると直接エラーになっていましたが、現在システムツールを自動呼び出してプレーンテキストを抽出。ページ範囲の指定読み取りもサポート。Jupyter Notebook ファイルも生の JSON を返すのではなく、セルごとに構造化してコードと出力結果を表示します。
+
+**こんなことができます：**
+
+- PDF ドキュメントを分析：AI に PDF レポート、論文、技術ドキュメントを直接読み取らせる、手動でテキストに変換する必要なし
+- ページ単位で精読：ページ範囲を指定してコンテンツを読み込み、巨大なファイル全体を読み込む必要なし
+- Notebook をレビュー：AI に `.ipynb` ファイルを分析させ、コードと出力が明確に並べられ、ネストされた JSON の山ではなくなる
+
+PR [#3160](https://github.com/QwenLM/qwen-code/pull/3160) を参照
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/VTrAzU1s3IE90mDGyEqz-M7GMUNESqg6hSxQMsD9uS4.mp4" type="video/mp4" />
+</video>
+
+## 📊 改善点
+
+- **リアルタイム Token 消費量表示**：入力出力フェーズで現在の Token 消費量をリアルタイム表示、会話の使用量をいつでも把握（[#3329](https://github.com/QwenLM/qwen-code/pull/3329)、[#2742](https://github.com/QwenLM/qwen-code/pull/2742)）
+- **セッションレビュー /recap**：セッションに戻ると以前の要約を自動表示、手動で `/recap` を実行して素早くレビュー可能（[#3434](https://github.com/QwenLM/qwen-code/pull/3434)）
+- **ツール実行の進行状況が見える**：ツール実行中に進行状況情報を表示、カーソルをじっと待つ必要なし（[#3155](https://github.com/QwenLM/qwen-code/pull/3155)）
+- **ループ検出の強化**：ツール検証の再試行ループ検出と停滞検出を追加、AI が無効なループに陥るのを回避（[#3178](https://github.com/QwenLM/qwen-code/pull/3178)、[#3236](https://github.com/QwenLM/qwen-code/pull/3236)）
+- **コンテキスト使用量が 100% を超えると ">100%" を表示**：コンテキストウィンドウ超過時に ">100%" を表示、隠さなくなった（[#2766](https://github.com/QwenLM/qwen-code/pull/2766)）
+- **/btw がリアルタイム会話コンテキストを使用**：`/btw` が現在の会話コンテキストに基づくようになり、背景を再説明する必要なし（[#3429](https://github.com/QwenLM/qwen-code/pull/3429)）
+- **Compact Mode の体験最適化**：ショートカットキーのサポート、設定の同期、セキュリティ保護を追加、compact mode での操作がより便利に（[#3100](https://github.com/QwenLM/qwen-code/pull/3100)）
+- **shell 出力幅の制約**：shell 出力ボックスの幅を制限、長い行が UI を破壊するのを防止（[#2857](https://github.com/QwenLM/qwen-code/pull/2857)）
+- **インライン shell 出力制限**：shell コマンドの出力行数上限を設定可能、長すぎる出力で画面が埋まるのを回避（[#3508](https://github.com/QwenLM/qwen-code/pull/3508)）
+- **ターミナルテーマの自動検出**：ターミナルテーマに応じて UI カラーを自動調整、手動設定の必要なし（[#3460](https://github.com/QwenLM/qwen-code/pull/3460)）
+- **ステータスラインの複数行出力**：status line が複数行表示をサポート、より多くの情報を表示可能（[#3311](https://github.com/QwenLM/qwen-code/pull/3311)）
+- **ステータスラインの定期リフレッシュ**：status line が refreshInterval 設定をサポート、自動で表示を更新（[#3383](https://github.com/QwenLM/qwen-code/pull/3383)）
+- **M-d キーバインド**：入力ボックスに `M-d` ショートカット（Emacs スタイル）をバインド、次の単語を削除（[#3358](https://github.com/QwenLM/qwen-code/pull/3358)）
+- **早期入力キャプチャ**：起動時にキー入力を提前キャプチャ、起動中のキー入力消失を防止（[#3319](https://github.com/QwenLM/qwen-code/pull/3319)）
+- **MCP OAuth URL がクリック可能**：OAuth 認証 URL がクリック可能になり、手動コピーの必要なし（[#3489](https://github.com/QwenLM/qwen-code/pull/3489)）
+- **OSC 52 コピーショートカット**：OAuth 認証 URL が OSC 52 コピーショートカットをサポート（[#3393](https://github.com/QwenLM/qwen-code/pull/3393)）
+- **VSCode の長い会話での入力遅延を修正**：長い会話時に入力がもたつかなくなった（[#2550](https://github.com/QwenLM/qwen-code/pull/2550)）
+- **VSCode Plan Mode のトグルと承認 UI**：VSCode Companion が Plan Mode 切替と承認 UI をサポート（[#2551](https://github.com/QwenLM/qwen-code/pull/2551)）
+- **VSCode /insight コマンドのサポート**：VSCode で `/insight` コマンドが使用可能に（[#2593](https://github.com/QwenLM/qwen-code/pull/2593)）
+- **VSCode agent 実行表示**：VSCode に agent 実行ステータス表示を追加（[#2590](https://github.com/QwenLM/qwen-code/pull/2590)）
+- **WebUI が markdown 出力をレンダリング**：WebUI でツール出力と WebFetch 結果が markdown 形式でレンダリング（[#3469](https://github.com/QwenLM/qwen-code/pull/3469)）
+- **二重出力サイドカーモード**：TUI が dual-output sidecar モードをサポート、2 つの出力ストリームを同時に閲覧可能（[#3352](https://github.com/QwenLM/qwen-code/pull/3352)）
+- **/stats の行数を subagent に帰属**：`/stats` が各 subagent の消費行数を正しく表示（[#3229](https://github.com/QwenLM/qwen-code/pull/3229)）
+- **WebFetch ツールが Markdown for Agents をサポート**：Web コンテンツ取得時に Agent シーン向けにより最適化（[#2734](https://github.com/QwenLM/qwen-code/pull/2734)）
+- **ACP メッセージ書き換えタイムアウトが設定可能**：ACP メッセージ書き換えのタイムアウト時間をカスタマイズ可能、長時間の待ち時間を回避（[#3475](https://github.com/QwenLM/qwen-code/pull/3475)）
+- **slashCommands.disabled 設定**：設定を通じて特定の slash コマンドを無効化可能（[#3445](https://github.com/QwenLM/qwen-code/pull/3445)）
+- **Slash Command マルチモード拡張（Phase 2）**：slash command の ACP 修正と UX 改善（[#3377](https://github.com/QwenLM/qwen-code/pull/3377)）
+- **OAuth 設定フラグが mcp add をサポート**：`mcp add` コマンドが OAuth 設定パラメータをサポート（[#3442](https://github.com/QwenLM/qwen-code/pull/3442)）
+- **SDK API が /context 使用データを公開**：SDK で /context の使用データを取得可能（[#2916](https://github.com/QwenLM/qwen-code/pull/2916)）
+- **ベア起動モード**：新しい bare startup mode、起動時にデフォルト設定を読み込まず、軽量シーンに最適（[#3448](https://github.com/QwenLM/qwen-code/pull/3448)）
+- **CLI 起動パフォーマンスアナライザー**：新しい起動パフォーマンス分析、起動が遅い原因を排查（[#3232](https://github.com/QwenLM/qwen-code/pull/3232)）
+
+## 🔧 重要な修正
+
+| PR | バージョン | 修正内容 | あなたへの影響 |
+|----|------|----------|-----------|
+| [#3310](https://github.com/QwenLM/qwen-code/pull/3310) | v0.15.0 | statusline spawn EBADF による CLI クラッシュを修正 | ステータスラインエラーで CLI がクラッシュしなくなった |
+| [#3295](https://github.com/QwenLM/qwen-code/pull/3295) | v0.15.0 | ProcessTransport の process exit listeners リークを修正 | 長時間実行時にリスナーの蓄積によるパフォーマンス低下が発生しなくなった |
+| [#3321](https://github.com/QwenLM/qwen-code/pull/3321) | v0.15.0 | 更新通知をモデル応答完了後に遅延 | AI が回答中に更新ポップアップが表示されて思考を中断されなくなった |
+| [#3320](https://github.com/QwenLM/qwen-code/pull/3320) | v0.15.0 | skill watcher の深さ制限でファイルディスクリプタ枯渇を防止 | 大規模プロジェクトでファイルが多すぎてシステムリソースが枯渇しなくなった |
+| [#3315](https://github.com/QwenLM/qwen-code/pull/3315) | v0.15.0 | モデル切り替え時に履歴から thinking blocks を削除 | モデル切り替え後に履歴に異常な思考プロセスが表示されなくなった |
+| [#3327](https://github.com/QwenLM/qwen-code/pull/3327) | v0.15.0 | shell パラメータの引用符ガイダンス、特殊文字エラーを防止 | shell コマンドに特殊文字が含まれていてもエラーが起きにくくなった |
+| [#3431](https://github.com/QwenLM/qwen-code/pull/3431) | v0.15.0 | `/clear` で `/btw` ダイアログを解除 | `/clear` 実行後に未完了の `/btw` ダイアログを正常に閉じられるようになった |
+| [#3436](https://github.com/QwenLM/qwen-code/pull/3436) | v0.15.0 | 旧バージョン Git の初期化をサポート | 古い Git 環境でプロジェクト初期化が失敗しなくなった |
+| [#3450](https://github.com/QwenLM/qwen-code/pull/3450) | v0.15.0 | VSCode IDE の分割ストリームメッセージ順序を修正 | VSCode でメッセージ表示順序がずれなくなった |
+| [#3313](https://github.com/QwenLM/qwen-code/pull/3313) | v0.15.0 | 切り捨てられた tool calls の自動回復（多輪継続） | AI 出力が切り捨てられても自動で継続、最初からやり直す必要なし |
+| [#3505](https://github.com/QwenLM/qwen-code/pull/3505) | v0.15.0 | 切り捨てられた subagent write_file 呼び出しを拒否 | subagent の不完全な書き込みによるデータ損傷を防止 |
+
+### Windows プラットフォーム専用修正
+
+| PR | 修正内容 | あなたへの影響 |
+|----|----------|-----------|
+| [#3451](https://github.com/QwenLM/qwen-code/pull/3451) | MCP stdio サーバーの Windows PATH 正規化 | Windows ユーザーがパスフォーマットの問題で MCP サーバーに接続失敗しなくなった |
+
+## 🎈 その他の改善
+
+- Windows インストールコマンドを修正、CMD と PowerShell に対応（[#3252](https://github.com/QwenLM/qwen-code/pull/3252)）
+- 認証方法ドキュメントを更新、OAuth 廃止を反映（[#3325](https://github.com/QwenLM/qwen-code/pull/3325)）
+- CI に新しい stale 戦略を追加、PR が 60 日間非アクティブなら stale マーク、さらに 30 日後にクローズ（[#3375](https://github.com/QwenLM/qwen-code/pull/3375)）
+- ビルドスクリプトを最適化、npx 経由ではなく tsx を直接呼び出すように（[#3237](https://github.com/QwenLM/qwen-code/pull/3237)）
+- ツール登録の遅延ファクトリ、inflight 並列重複排除をサポート（[#3297](https://github.com/QwenLM/qwen-code/pull/3297)）
+- DingTalk チャンネルの複数の修正：継続メッセージサフィックス、@mention 空テキスト保持、reaction コンテキストリーク（[#2977](https://github.com/QwenLM/qwen-code/pull/2977)、[#2978](https://github.com/QwenLM/qwen-code/pull/2978)、[#2979](https://github.com/QwenLM/qwen-code/pull/2979)）
+- サンドボックスイメージタグを latest にフォールバック（[#2962](https://github.com/QwenLM/qwen-code/pull/2962)）
+- 統合テスト stdinDoesNotEnd オプションの修正（[#2966](https://github.com/QwenLM/qwen-code/pull/2966)）
+- JSON schema 生成の修正、enum 設定に説明がない場合に "undefined Options" が表示されなくなった（[#2963](https://github.com/QwenLM/qwen-code/pull/2963)）
+- AskUserQuestionDialog で数字キー押下時に自動送信（[#3407](https://github.com/QwenLM/qwen-code/pull/3407)）
+- /recap を入力ボックスの上に固定し、fastModel デフォルト値に揃えた（[#3478](https://github.com/QwenLM/qwen-code/pull/3478)）
+- ACP に plan/subagent/arena システムリマインダーを注入（[#3479](https://github.com/QwenLM/qwen-code/pull/3479)）
+- xdg-open がない場合にエレガントに処理してクラッシュを防止（[#1675](https://github.com/QwenLM/qwen-code/pull/1675)）
+- reasoning-only アシスタントコンテンツに null ではなく空文字列を使用（[#3499](https://github.com/QwenLM/qwen-code/pull/3499)）
+
+## 👋 新しいコントリビューターを歓迎
+
+- [**@Skyline-9**](https://github.com/Skyline-9) — Windows インストールコマンドの互換性を修正（[#3252](https://github.com/QwenLM/qwen-code/pull/3252)）
+- [**@pedrormjunior**](https://github.com/pedrormjunior) — M-d ショートカットキーをバインド（[#3358](https://github.com/QwenLM/qwen-code/pull/3358)）
+- [**@szepeviktor**](https://github.com/szepeviktor) — クラス名のタイプミスを修正（[#2189](https://github.com/QwenLM/qwen-code/pull/2189)）
+- [**@sharziki**](https://github.com/sharziki) — /clear で /btw ダイアログを解除する修正（[#3431](https://github.com/QwenLM/qwen-code/pull/3431)）
+- [**@gin-lsl**](https://github.com/gin-lsl) — WebFetch ツールが Markdown for Agents をサポート（[#2734](https://github.com/QwenLM/qwen-code/pull/2734)）
+- [**@ihubanov**](https://github.com/ihubanov) — slashCommands.disabled 設定を追加（[#3445](https://github.com/QwenLM/qwen-code/pull/3445)）
+- [**@gy1016**](https://github.com/gy1016) — macOS 上の Zed.app を検出（[#3303](https://github.com/QwenLM/qwen-code/pull/3303)）
+- [**@yeelam-gordon**](https://github.com/yeelam-gordon) — OpenAI samplingParams の受け渡しを修正（[#3458](https://github.com/QwenLM/qwen-code/pull/3458)）
+- [**@Ojhaharsh**](https://github.com/Ojhaharsh) — xdg-open がない場合のエレガントな処理（[#1675](https://github.com/QwenLM/qwen-code/pull/1675)）
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行して最新バージョンにアップグレードしてください。
+</Callout>
+
+ご質問やご提案は、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues) でお気軽にフィードバックください！

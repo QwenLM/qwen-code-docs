@@ -1,0 +1,236 @@
+---
+title: "Qwen Code Weekly: KI merkt sich Dinge über Sitzungen hinweg, automatische Chat-Titel, Batch-Dateiverarbeitung"
+date: "2026-04-23"
+description: "v0.15.0 ist da: sitzungsübergreifendes Gedächtnis, smartere Chat-Verwaltung, /batch-Befehl, Hook-Erweiterung und Subagent-Hintergrundausführung."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Weekly: KI merkt sich Dinge über Sitzungen hinweg, automatische Chat-Titel, Batch-Dateiverarbeitung"
+  date="2026-04-23"
+  author="Qwen Team"
+/>
+
+
+**v0.15.0** ist da.
+
+Dieses Update macht Qwen Code schlauer im Umgang mit Kontext und Arbeitsabläufen: Die KI merkt sich, was du ihr über Sitzungen hinweg erzählt hast, und räumt veraltetes Gedächtnis auf; Chats bekommen automatisch generierte Titel, die du umbenennen oder löschen kannst; `/batch` verarbeitet mehrere Dateien auf einmal; und die Hook-Erweiterung sowie die Subagent-Hintergrundausführung machen Automatisierung und Enterprise-Integrationen flexibler.
+
+## ✨ Neue Funktionen
+
+### KI merkt sich Dinge über Sitzungen hinweg
+
+Gedächtnis war bisher Handarbeit. Jetzt gibt es Auto-Memory und Auto-Dream: Die KI extrahiert wichtige Informationen aus deinen Gesprächen ins Gedächtnis und organisiert sie regelmäßig neu — wie das Aufräumen eines Bücherregals — damit Kontext nahtlos zwischen Sitzungen fließt.
+
+**Was du damit machen kannst:**
+
+- Nichts doppelt sagen: Tech-Stack, Code-Stil, Projektstruktur — die KI merkt es sich für die nächste Sitzung
+- Auto-Organisation: Hintergrund-ScanDuplikate zusammenführen, veraltete Einträge aktualisieren, Index regelmäßig pflegen
+- Weniger Handarbeit: Was du früher in `QWEN.md` schreiben musstest, erledigt die KI jetzt automatisch
+
+Siehe PR [#3087](https://github.com/QwenLM/qwen-code/pull/3087)
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/NMVf6gqpAAlP97UP_5LW75qUqYW-IgeoxDcTNc_QMZ4.mp4" type="video/mp4" />
+</video>
+
+### Automatische Chat-Titel, mit Umbenennen und Löschen
+
+Sitzungstitel waren bisher deine erste Nachricht — lang und schwer zu finden. Jetzt generiert die KI automatisch aussagekräftige Titel, und du kannst Sitzungen jederzeit umbenennen oder löschen.
+
+**Was du damit machen kannst:**
+
+- KI generiert Titel automatisch: kein manuelles Benennen nötig
+- Nach Projekt umbenennen: passe KI-generierte Titel an deinen Workflow an
+- Aufräumen: lösche Test- oder unwichtige Sitzungen, behalte nur Wertvolles
+
+Siehe PR [#3093](https://github.com/QwenLM/qwen-code/pull/3093)
+
+![Sitzungsverwaltung Demo](https://img.alicdn.com/imgextra/i3/O1CN01URX9kK1HE6HZbESsM_!!6000000000725-1-tps-2890-1950.gif)
+
+### /batch — Mehrere Dateien in einem Befehl verarbeiten
+
+Mehrere Dateien bearbeiten hieß bisher: Aufgaben nacheinander ausführen. Jetzt verarbeitet ein einziger `/batch`-Befehl alles parallel — ideal für Bulk-Lint-Fixes, Multi-Dokument-Updates oder Refactoring.
+
+**Was du damit machen kannst:**
+
+- Bulk-Lint-Fixes: denselben Fehler in vielen Dateien auf einmal beheben
+- Multi-Dokument-Sync: selben Abschnitt hinzufügen oder Versionen in mehreren Dateien mit einem Befehl aktualisieren
+- Batch-Refactoring: Variablen umbenennen oder Funktionen über mehrere Dateien hinweg gleichzeitig extrahieren
+
+Siehe PR [#3079](https://github.com/QwenLM/qwen-code/pull/3079)
+
+![Batch-Verarbeitung Demo](https://img.alicdn.com/imgextra/i3/O1CN01Bw4sIy1kCq38yp3RE_!!6000000004648-2-tps-3670-1798.png)
+
+### Hook-Erweiterung: Aktionen automatisch während der KI-Ausführung auslösen
+
+Bisher konnte Qwen Code nur einzelne Aufgaben auf Abruf ausführen. Jetzt kannst du über Hooks "Auto-Trigger"-Aktionen einrichten. Drei neue Hook-Typen: HTTP-Hooks senden Benachrichtigungen an externe Dienste (z. B. Feishu oder DingTalk); Funktions-Hooks führen deinen eigenen Code aus; Async-Hooks führen lange Aufgaben im Hintergrund aus, ohne deine aktuelle Konversation zu blockieren. Die VSCode-Erweiterung unterstützt Hooks ebenfalls.
+
+**Was du damit machen kannst:**
+
+- Team-Benachrichtigungen: Die KI pingt Feishu oder DingTalk automatisch an, wenn sie Schlüsseldateien ändert
+- Compliance-Audit: Jede KI-Aktion wird automatisch im Audit-System deines Unternehmens protokolliert
+- Tiefe Toolchain-Integration: Registriere eigenen Code über das SDK — er wird automatisch ausgeführt, wenn Ereignisse eintreten
+
+Siehe PR [#2827](https://github.com/QwenLM/qwen-code/pull/2827) + [#3248](https://github.com/QwenLM/qwen-code/pull/3248)
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/rwdx5Ep2Y0loGbPbNzhQRZIn0Sg2gew5eIOZZ7XroZY.mp4" type="video/mp4" />
+</video>
+
+### Subagent-Hintergrundausführung
+
+Subagenten mussten bisher im Vordergrund laufen und die Oberfläche blockieren. Jetzt unterstützen sie headless Hintergrundausführung, und das SDK bietet volle Unterstützung — perfekt für CI/CD-Pipelines und Automatisierungsskripte.
+
+**Was du damit machen kannst:**
+
+- Hintergrund-Parallelität: Mehrere Subagenten für verschiedene Aufgaben starten, ohne die Hauptoberfläche zu blockieren
+- SDK-Integration: Subagenten-Fähigkeiten über die SDK-API aufrufen und in deine eigene Toolchain einbetten
+- CI/CD-Code-Review: Subagent-basiertes Code-Review in PR-Pipelines auslösen, ohne ein Terminal zu öffnen
+
+Siehe PR [#3076](https://github.com/QwenLM/qwen-code/pull/3076)
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/HWrYG5WwyiT_QUV8eYwj7VoJqekCwasaXmlEG-hkoeI.mp4" type="video/mp4" />
+</video>
+
+### Verzeichnis-spezifische Regeln
+
+Bisher teilten sich alle Verzeichnisse dieselben Regeln. Jetzt werden Kontextregeln automatisch basierend auf dem Dateipfad injiziert, gelesen aus `.qwen/rules/`, was das KI-Verhalten pro Verzeichnis präziser macht.
+
+**Was du damit machen kannst:**
+
+- Modul-spezifische Konventionen: React-Regeln für Frontend, Node.js-Regeln für Backend — automatisch angewendet
+- Projektweite Anpassung: Spezielle Stilregeln in `.qwen/rules/` ablegen und sie treten automatisch in Kraft
+- Weniger manuelle Konfiguration: Regeln müssen nicht in jeder Konversation angegeben werden — Pfad-Matching erledigt es
+
+Siehe PR [#3339](https://github.com/QwenLM/qwen-code/pull/3339)
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/MbM3-mryIk1692zUrOzuU_gM4SvPLAxjNe492_Rdv_c.mp4" type="video/mp4" />
+</video>
+
+### /doctor — Ein-Klick-Umgebungsdiagnose
+
+Fehlersuche hieß bisher: Configs und Verbindungen manuell prüfen. Jetzt erkennt `/doctor` automatisch Umgebungsprobleme, Config-Fehler, Netzwerkprobleme und mehr — mit Reparaturvorschlägen.
+
+**Was du damit machen kannst:**
+
+- Schnelle Diagnose: MCP-Server down? Modell lädt nicht? Ein Befehl prüft alles
+- Config-Validierung: Konfigurationsdatei-Syntax und API-Key-Gültigkeit automatisch verifiziert
+- Automatisierungsfreundlich: Nicht-interaktive JSON-Ausgabe für Skripte und CI/CD-Pipelines
+
+Siehe PR [#3404](https://github.com/QwenLM/qwen-code/pull/3404)
+
+![Doctor Umgebungsdiagnose Demo](https://img.alicdn.com/imgextra/i3/O1CN01YsDS5o1l9SkKCxqTC_!!6000000004776-2-tps-2272-1474.png)
+
+### PDFs direkt lesen und Jupyter Notebooks analysieren
+
+Text-Modelle hatten bei PDFs bisher Fehler geworfen. Jetzt extrahieren System-Tools automatisch Klartext, mit Seitenbereichs-Unterstützung. Jupyter Notebooks liefern keinen rohen JSON mehr — Code und Ausgaben werden Zelle für Zelle angezeigt.
+
+**Was du damit machen kannst:**
+
+- PDFs analysieren: KI liest PDF-Berichte, Papers oder Tech-Docs direkt — keine manuelle Konvertierung
+- Seitenbereich lesen: Bestimmte Seitenbereiche laden, ohne die gesamte Datei zu öffnen
+- Notebooks prüfen: KI analysiert `.ipynb`-Dateien mit klar angeordnetem Code und Ausgaben
+
+Siehe PR [#3160](https://github.com/QwenLM/qwen-code/pull/3160)
+
+<video width="100%" controls>
+  <source src="https://cloud.video.taobao.com/vod/VTrAzU1s3IE90mDGyEqz-M7GMUNESqg6hSxQMsD9uS4.mp4" type="video/mp4" />
+</video>
+
+## 📊 Verbesserungen
+
+- **Echtzeit-Token-Anzeige**: Token-Verbrauch wird während Eingabe und Ausgabe angezeigt, damit du deinen Sitzungsverbrauch immer kennst ([#3329](https://github.com/QwenLM/qwen-code/pull/3329), [#2742](https://github.com/QwenLM/qwen-code/pull/2742))
+- **Sitzungsrückblick /recap**: Beim Zurückkehren zu einer Sitzung wird automatisch eine Zusammenfassung angezeigt, oder führe `/recap` manuell für eine schnelle Übersicht aus ([#3434](https://github.com/QwenLM/qwen-code/pull/3434))
+- **Tool-Ausführungsfortschritt sichtbar**: Fortschrittsinfo während der Tool-Ausführung — kein Starren auf den blinkenden Cursor mehr ([#3155](https://github.com/QwenLM/qwen-code/pull/3155))
+- **Schleifenerkennung verbessert**: Retry-Schleifen- und Stagnationserkennung verhindern, dass die KI in ineffektiven Schleifen feststeckt ([#3178](https://github.com/QwenLM/qwen-code/pull/3178), [#3236](https://github.com/QwenLM/qwen-code/pull/3236))
+- **Kontext >100% Anzeige**: Zeigt ">100%" an, wenn das Kontextfenster überschritten wird, statt es zu verbergen ([#2766](https://github.com/QwenLM/qwen-code/pull/2766))
+- **/btw verwendet Live-Konversationskontext**: `/btw` arbeitet jetzt mit aktuellem Kontext — Hintergrund muss nicht neu erklärt werden ([#3429](https://github.com/QwenLM/qwen-code/pull/3429))
+- **Compact Mode UX**: Tastaturkürzel, Einstellungen-Sync und Sicherheitsvorkehrungen für reibungslosere Compact-Mode-Bedienung ([#3100](https://github.com/QwenLM/qwen-code/pull/3100))
+- **Shell-Ausgabe-Breitenbeschränkung**: Ausgabebox-Breite begrenzt, um zu verhindern, dass lange Zeilen die UI sprengen ([#2857](https://github.com/QwenLM/qwen-code/pull/2857))
+- **Inline-Shell-Ausgabelimits**: Konfigurierbare Zeilenbegrenzung für Shell-Ausgabe zur Vermeidung von Überflutung ([#3508](https://github.com/QwenLM/qwen-code/pull/3508))
+- **Terminal-Theme-Auto-Erkennung**: UI-Farben passen sich automatisch deinem Terminal-Theme an ([#3460](https://github.com/QwenLM/qwen-code/pull/3460))
+- **Mehrzeilige Statuszeile**: Statuszeile unterstützt mehrzeilige Anzeige für mehr Informationen ([#3311](https://github.com/QwenLM/qwen-code/pull/3311))
+- **Periodische Statuszeilen-Aktualisierung**: `refreshInterval`-Konfiguration für auto-aktualisierende Statuszeile ([#3383](https://github.com/QwenLM/qwen-code/pull/3383))
+- **M-d Tastenbindung**: `M-d`-Kürzel (Emacs-Stil) löscht das nächste Wort im Eingabefeld ([#3358](https://github.com/QwenLM/qwen-code/pull/3358))
+- **Frühe Eingabe-Erfassung**: Tastenanschläge werden beim Start erfasst, um verpasste Eingaben während des Starts zu vermeiden ([#3319](https://github.com/QwenLM/qwen-code/pull/3319))
+- **Klickbare MCP OAuth URL**: OAuth-Autorisierungs-URLs sind jetzt klickbar — kein manuelles Kopieren nötig ([#3489](https://github.com/QwenLM/qwen-code/pull/3489))
+- **OSC 52 Copy-Kürzel**: OAuth-URLs unterstützen OSC 52 Copy-Kürzel ([#3393](https://github.com/QwenLM/qwen-code/pull/3393))
+- **VSCode Long-Conversation-Input-Lag behoben**: Tippen ruckelt nicht mehr bei langen Konversationen ([#2550](https://github.com/QwenLM/qwen-code/pull/2550))
+- **VSCode Plan Mode Toggle und Approval UI**: VSCode Companion unterstützt Plan-Mode-Wechsel und Approval-UI ([#2551](https://github.com/QwenLM/qwen-code/pull/2551))
+- **VSCode /insight Befehl**: `/insight` jetzt in VSCode verfügbar ([#2593](https://github.com/QwenLM/qwen-code/pull/2593))
+- **VSCode Agent-Ausführungsanzeige**: Agent-Ausführungsstatus jetzt in VSCode sichtbar ([#2590](https://github.com/QwenLM/qwen-code/pull/2590))
+- **WebUI Markdown-Rendering**: Tool-Ausgabe und WebFetch-Ergebnisse werden in der WebUI als Markdown gerendert ([#3469](https://github.com/QwenLM/qwen-code/pull/3469))
+- **Dual-Output-Sidecar-Modus**: TUI unterstützt Dual-Output-Sidecar-Modus zur gleichzeitigen Ansicht zweier Ausgabeströme ([#3352](https://github.com/QwenLM/qwen-code/pull/3352))
+- **/stats Zeilen dem Subagenten zugeordnet**: `/stats` zeigt jetzt korrekt die von jedem Subagenten verbrauchten Zeilen an ([#3229](https://github.com/QwenLM/qwen-code/pull/3229))
+- **WebFetch unterstützt Markdown for Agents**: Webinhalt-Abruf ist besser für Agent-Szenarien optimiert ([#2734](https://github.com/QwenLM/qwen-code/pull/2734))
+- **ACP Message-Rewrite-Timeout konfigurierbar**: ACP Message-Rewrite-Timeout anpassbar, um lange Wartezeiten zu vermeiden ([#3475](https://github.com/QwenLM/qwen-code/pull/3475))
+- **slashCommands.disabled Einstellung**: Bestimmte Slash-Befehle über Konfiguration deaktivierbar ([#3445](https://github.com/QwenLM/qwen-code/pull/3445))
+- **Slash Command Multi-Mode-Erweiterung (Phase 2)**: ACP-Fixes und UX-Verbesserungen für Slash-Befehle ([#3377](https://github.com/QwenLM/qwen-code/pull/3377))
+- **OAuth-Flags von mcp add unterstützt**: `mcp add` akzeptiert jetzt OAuth-Konfigurationsparameter ([#3442](https://github.com/QwenLM/qwen-code/pull/3442))
+- **SDK API gibt /context-Nutzungsdaten frei**: `/context`-Nutzungsdaten über SDK zugänglich ([#2916](https://github.com/QwenLM/qwen-code/pull/2916))
+- **Bare-Startmodus**: Neuer Bare-Startmodus überspringt das Laden der Standardkonfiguration für leichte Szenarien ([#3448](https://github.com/QwenLM/qwen-code/pull/3448))
+- **CLI-Start-Profiler**: Neues Start-Profiling zur Diagnose langsamer Startzeiten ([#3232](https://github.com/QwenLM/qwen-code/pull/3232))
+
+## 🔧 Wichtige Fixes
+
+| PR | Version | Was wurde gefixt | Auswirkung auf dich |
+|----|---------|------------------|---------------------|
+| [#3310](https://github.com/QwenLM/qwen-code/pull/3310) | v0.15.0 | Statusline-Spawn-EBADF-Crash behoben | CLI stürzt nicht mehr durch Statuszeilen-Fehler ab |
+| [#3295](https://github.com/QwenLM/qwen-code/pull/3295) | v0.15.0 | ProcessTransport-Leak von Process-Exit-Listeners behoben | Lange laufende Sitzungen degradieren nicht mehr durch Listener-Aufbau |
+| [#3321](https://github.com/QwenLM/qwen-code/pull/3321) | v0.15.0 | Update-Benachrichtigungen verzögert bis Modellantwort abgeschlossen | Keine Update-Popups mehr mitten in der Antwort |
+| [#3320](https://github.com/QwenLM/qwen-code/pull/3320) | v0.15.0 | Skill-Watcher-Tiefenlimit verhindert File-Descriptor-Erschöpfung | Große Projekte verbrauchen nicht mehr Systemressourcen durch zu viele überwachte Dateien |
+| [#3315](https://github.com/QwenLM/qwen-code/pull/3315) | v0.15.0 | Thinking-Blöcke beim Modellwechsel aus Historie entfernt | Historie zeigt nach Modellwechsel keinen abnormalen Denkprozess mehr |
+| [#3327](https://github.com/QwenLM/qwen-code/pull/3327) | v0.15.0 | Shell-Parameter-Quoting-Hinweise für Sonderzeichen | Sonderzeichen in Shell-Befehlen verursachen seltener Fehler |
+| [#3431](https://github.com/QwenLM/qwen-code/pull/3431) | v0.15.0 | `/clear` schließt `/btw`-Dialog | `/btw`-Dialoge schließen sich nach `/clear` ordnungsgemäß |
+| [#3436](https://github.com/QwenLM/qwen-code/pull/3436) | v0.15.0 | Unterstützung älterer Git-Versionen bei Init | Projekt-Init schlägt bei älteren Git-Versionen nicht mehr fehl |
+| [#3450](https://github.com/QwenLM/qwen-code/pull/3450) | v0.15.0 | VSCode-IDE-Split-Stream-Nachrichtenreihenfolge behoben | Nachrichten erscheinen in VSCode nicht mehr in falscher Reihenfolge |
+| [#3313](https://github.com/QwenLM/qwen-code/pull/3313) | v0.15.0 | Auto-Wiederherstellung bei abgeschnittenen Tool-Calls (Multi-Turn-Fortsetzung) | KI kann bei abgeschnittener Ausgabe automatisch fortfahren |
+| [#3505](https://github.com/QwenLM/qwen-code/pull/3505) | v0.15.0 | Lehnt abgeschnittene Subagent-write_file-Aufrufe ab | Verhindert Datenkorruption durch unvollständige Subagent-Schreibvorgänge |
+
+### Windows-Plattform-Fixes
+
+| PR | Was wurde gefixt | Auswirkung auf dich |
+|----|------------------|---------------------|
+| [#3451](https://github.com/QwenLM/qwen-code/pull/3451) | MCP-stdio-Server-Windows-PATH-Normalisierung | Windows-Benutzer verbinden sich nicht mehr fehlerhaft mit MCP-Servern wegen Pfadformat-Problemen |
+
+## 🎈 Weitere Verbesserungen
+
+- Windows-Installationsbefehl für CMD- und PowerShell-Kompatibilität gefixt ([#3252](https://github.com/QwenLM/qwen-code/pull/3252))
+- Auth-Methoden-Docs aktualisiert, um OAuth-Deprecation widerzuspiegeln ([#3325](https://github.com/QwenLM/qwen-code/pull/3325))
+- Neue CI-Stale-Richtlinie: PRs mit 60 Tagen Inaktivität als stale markiert, nach 30 weiteren Tagen geschlossen ([#3375](https://github.com/QwenLM/qwen-code/pull/3375))
+- Build-Skript optimiert: tsx direkt statt über npx aufrufen ([#3237](https://github.com/QwenLM/qwen-code/pull/3237))
+- Tool-Registrierung Lazy-Factory unterstützt Inflight-Concurrency-Deduplizierung ([#3297](https://github.com/QwenLM/qwen-code/pull/3297))
+- DingTalk-Kanal-Fixes: Fortsetzungsnachrichten-Suffix, leere @mention-Text-Erhaltung, Reaction-Kontext-Leak ([#2977](https://github.com/QwenLM/qwen-code/pull/2977), [#2978](https://github.com/QwenLM/qwen-code/pull/2978), [#2979](https://github.com/QwenLM/qwen-code/pull/2979))
+- Sandbox-Image-Tag-Fallback auf latest ([#2962](https://github.com/QwenLM/qwen-code/pull/2962))
+- Integrationstest stdinDoesNotEnd-Option-Fix ([#2966](https://github.com/QwenLM/qwen-code/pull/2966))
+- JSON-Schema-Generierung-Fix: kein "undefined Options" mehr bei Enum-Einstellungen ohne Beschreibung ([#2963](https://github.com/QwenLM/qwen-code/pull/2963))
+- AskUserQuestionDialog sendet bei numerischer Tasteneingabe automatisch ab ([#3407](https://github.com/QwenLM/qwen-code/pull/3407))
+- /recap über Eingabefeld gepinnt, mit fastModel-Standard abgeglichen ([#3478](https://github.com/QwenLM/qwen-code/pull/3478))
+- Plan/Subagent/Arena-System-Reminders in ACP injiziert ([#3479](https://github.com/QwenLM/qwen-code/pull/3479))
+- Graceful Handling bei fehlendem xdg-open zur Crash-Vermeidung ([#1675](https://github.com/QwenLM/qwen-code/pull/1675))
+- Reasoning-only-Assistant-Content verwendet leeren String statt null ([#3499](https://github.com/QwenLM/qwen-code/pull/3499))
+
+## 👋 Willkommen, neue Contributors
+
+- [**@Skyline-9**](https://github.com/Skyline-9) — Windows-Installationsbefehl-Kompatibilität gefixt ([#3252](https://github.com/QwenLM/qwen-code/pull/3252))
+- [**@pedrormjunior**](https://github.com/pedrormjunior) — M-d-Tastenbindung ([#3358](https://github.com/QwenLM/qwen-code/pull/3358))
+- [**@szepeviktor**](https://github.com/szepeviktor) — Klassennamen-Tippfehler gefixt ([#2189](https://github.com/QwenLM/qwen-code/pull/2189))
+- [**@sharziki**](https://github.com/sharziki) — /clear schließt /btw-Dialog ([#3431](https://github.com/QwenLM/qwen-code/pull/3431))
+- [**@gin-lsl**](https://github.com/gin-lsl) — WebFetch unterstützt Markdown for Agents ([#2734](https://github.com/QwenLM/qwen-code/pull/2734))
+- [**@ihubanov**](https://github.com/ihubanov) — slashCommands.disabled-Einstellung hinzugefügt ([#3445](https://github.com/QwenLM/qwen-code/pull/3445))
+- [**@gy1016**](https://github.com/gy1016) — Zed.app-Erkennung auf macOS ([#3303](https://github.com/QwenLM/qwen-code/pull/3303))
+- [**@yeelam-gordon**](https://github.com/yeelam-gordon) — OpenAI-samplingParams-Übergabe gefixt ([#3458](https://github.com/QwenLM/qwen-code/pull/3458))
+- [**@Ojhaharsh**](https://github.com/Ojhaharsh) — Graceful Handling für fehlendes xdg-open ([#1675](https://github.com/QwenLM/qwen-code/pull/1675))
+
+<Callout type="info">
+  **Upgrade**: Führe `npm i @qwen-code/qwen-code@latest -g` aus, um auf die neueste Version zu aktualisieren.
+</Callout>
+
+Fragen oder Vorschläge? Eröffne gerne ein [Issue auf GitHub](https://github.com/QwenLM/qwen-code/issues)!
