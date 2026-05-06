@@ -7,20 +7,20 @@ O Qwen Code pode se conectar a ferramentas e fontes de dados externas por meio d
 Com servidores MCP conectados, você pode pedir ao Qwen Code para:
 
 - Trabalhar com arquivos e repositórios (ler/pesquisar/escrever, dependendo das ferramentas que você habilitar)
-- Consultar bancos de dados (inspeção de schema, consultas, relatórios)
-- Integrar serviços internos (encapsular suas APIs como ferramentas MCP)
+- Consultar bancos de dados (inspeção de schema, queries, relatórios)
+- Integrar serviços internos (expor suas APIs como ferramentas MCP)
 - Automatizar fluxos de trabalho (tarefas repetitivas expostas como ferramentas/prompts)
 
 > [!tip]
 >
-> Se você está procurando o “comando único para começar”, vá direto para [Início rápido](#quick-start).
+> Se você está procurando o "comando único para começar", vá direto para [Início rápido](#quick-start).
 
 ## Início rápido
 
 O Qwen Code carrega os servidores MCP a partir de `mcpServers` no seu `settings.json`. Você pode configurar os servidores de duas formas:
 
 - Editando o `settings.json` diretamente
-- Usando os comandos `qwen mcp` (consulte [Referência da CLI](#qwen-mcp-cli))
+- Usando os comandos `qwen mcp` (consulte a [referência da CLI](#qwen-mcp-cli))
 
 ### Adicione seu primeiro servidor
 
@@ -61,7 +61,7 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 
 | Transporte | Quando usar | Campo(s) JSON |
 | --------- | ----------------------------------------------------------------- | ------------------------------------------- |
-| `http`    | Recomendado para serviços remotos; funciona bem para servidores MCP na nuvem | `httpUrl` (+ `headers` opcional)            |
+| `http`    | Recomendado para serviços remotos; funciona bem para servidores MCP em nuvem | `httpUrl` (+ `headers` opcional)            |
 | `sse`     | Servidores legados/descontinuados que suportam apenas Server-Sent Events    | `url` (+ `headers` opcional)                |
 | `stdio`   | Processo local (scripts, CLIs, Docker) na sua máquina             | `command`, `args` (+ `cwd`, `env` opcionais) |
 
@@ -153,6 +153,84 @@ qwen mcp add --transport sse sseServer http://localhost:8080/sse --timeout 30000
 
 - **Confiança no servidor** (`trust: true`): ignora os prompts de confirmação para esse servidor (use com moderação).
 
+### Autenticação OAuth
+
+O Qwen Code suporta autenticação OAuth 2.0 para servidores MCP. Isso é útil ao acessar servidores remotos que exigem autenticação.
+
+#### Uso básico
+
+Quando você adiciona um servidor MCP com credenciais OAuth, o Qwen Code gerencia automaticamente o fluxo de autenticação:
+
+```bash
+qwen mcp add --transport sse oauth-server https://api.example.com/sse/ \
+  --oauth-client-id your-client-id \
+  --oauth-redirect-uri https://your-server.com/oauth/callback \
+  --oauth-authorization-url https://provider.example.com/authorize \
+  --oauth-token-url https://provider.example.com/token
+```
+
+#### Importante: Configuração do redirect URI
+
+O fluxo OAuth exige um redirect URI para onde o provedor de autorização envia o código de autenticação.
+
+- **Desenvolvimento local**: Por padrão, o Qwen Code usa `http://localhost:7777/oauth/callback`. Isso funciona ao executar o Qwen Code na sua máquina local com um navegador local.
+
+- **Implantações remotas/em nuvem**: Ao executar o Qwen Code em servidores remotos, IDEs em nuvem ou terminais web, o redirecionamento `localhost` padrão NÃO funcionará. Você DEVE configurar `--oauth-redirect-uri` para apontar para uma URL publicamente acessível que possa receber o callback OAuth.
+
+Exemplo para servidores remotos:
+
+```bash
+qwen mcp add --transport sse remote-server https://api.example.com/sse/ \
+  --oauth-redirect-uri https://your-remote-server.example.com/oauth/callback
+```
+
+#### Configuração manual via settings.json
+
+Você também pode configurar o OAuth editando o `settings.json` diretamente:
+
+```json
+{
+  "mcpServers": {
+    "oauthServer": {
+      "url": "https://api.example.com/sse/",
+      "oauth": {
+        "enabled": true,
+        "clientId": "your-client-id",
+        "clientSecret": "your-client-secret",
+        "authorizationUrl": "https://provider.example.com/authorize",
+        "tokenUrl": "https://provider.example.com/token",
+        "redirectUri": "https://your-server.com/oauth/callback",
+        "scopes": ["read", "write"]
+      }
+    }
+  }
+}
+```
+
+Propriedades de configuração do OAuth:
+
+| Propriedade | Descrição |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `enabled`          | Habilita o OAuth para este servidor (booleano)                                                                                |
+| `clientId`         | Identificador do cliente OAuth (string, opcional com registro dinâmico)                                                  |
+| `clientSecret`     | Segredo do cliente OAuth (string, opcional para clientes públicos)                                                             |
+| `authorizationUrl` | Endpoint de autorização OAuth (string, descoberto automaticamente se omitido)                                                     |
+| `tokenUrl`         | Endpoint de token OAuth (string, descoberto automaticamente se omitido)                                                             |
+| `scopes`           | Scopes OAuth obrigatórios (array de strings)                                                                              |
+| `redirectUri`      | Redirect URI personalizado (string). **Crítico para implantações remotas**. Padrão: `http://localhost:7777/oauth/callback` |
+| `tokenParamName`   | Nome do parâmetro de query para tokens em URLs SSE (string)                                                                  |
+| `audiences`        | Audiências para as quais o token é válido (array de strings)                                                                   |
+
+#### Gerenciamento de tokens
+
+Os tokens OAuth são automaticamente:
+
+- **Armazenados com segurança** em `~/.qwen/mcp-oauth-tokens.json`
+- **Atualizados** quando expiram (se refresh tokens estiverem disponíveis)
+- **Validados** antes de cada tentativa de conexão
+
+Use o comando `/mcp auth` dentro do Qwen Code para gerenciar a autenticação OAuth de forma interativa.
+
 ### Filtragem de ferramentas (permitir/negar ferramentas por servidor)
 
 Use `includeTools` / `excludeTools` para restringir as ferramentas expostas por um servidor (da perspectiva do Qwen Code).
@@ -193,7 +271,7 @@ Exemplo:
 ## Solução de problemas
 
 - **O servidor mostra “Disconnected” em `qwen mcp list`**: verifique se a URL/comando está correto e aumente o `timeout`.
-- **O servidor Stdio falha ao iniciar**: use um caminho absoluto para `command` e verifique novamente `cwd`/`env`.
+- **Falha ao iniciar o servidor Stdio**: use um caminho absoluto para `command` e verifique novamente `cwd`/`env`.
 - **Variáveis de ambiente no JSON não são resolvidas**: certifique-se de que elas existam no ambiente onde o Qwen Code é executado (ambientes de shell vs aplicativos GUI podem diferir).
 
 ## Referência
@@ -226,26 +304,26 @@ Propriedades de configuração:
 
 Obrigatório (um dos seguintes):
 
-| Propriedade  | Descrição                                            |
+| Propriedade | Descrição |
 | --------- | ------------------------------------------------------ |
-| `command` | Caminho para o executável do transporte Stdio             |
+| `command` | Caminho para o executável do transporte Stdio |
 | `url`     | URL do endpoint SSE (ex.: `"http://localhost:8080/sse"`) |
-| `httpUrl` | URL do endpoint de streaming HTTP                            |
+| `httpUrl` | URL do endpoint de streaming HTTP |
 
 Opcional:
 
-| Propriedade               | Tipo/Padrão                 | Descrição                                                                                                                                                                                                                                                       |
+| Propriedade | Tipo/Padrão | Descrição |
 | ---------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `args`                 | array                        | Argumentos de linha de comando para o transporte Stdio                                                                                                                                                                                                                        |
-| `headers`              | object                       | Cabeçalhos HTTP personalizados ao usar `url` ou `httpUrl`                                                                                                                                                                                                                 |
-| `env`                  | object                       | Variáveis de ambiente para o processo do servidor. Os valores podem referenciar variáveis de ambiente usando a sintaxe `$VAR_NAME` ou `${VAR_NAME}`                                                                                                                                |
-| `cwd`                  | string                       | Diretório de trabalho para o transporte Stdio                                                                                                                                                                                                                             |
-| `timeout`              | number<br>(padrão: 600.000) | Tempo limite da solicitação em milissegundos (padrão: 600.000 ms = 10 minutos)                                                                                                                                                                                                 |
-| `trust`                | boolean<br>(padrão: false)  | Quando `true`, ignora todas as confirmações de chamada de ferramenta para este servidor (padrão: `false`)                                                                                                                                                                              |
-| `includeTools`         | array                        | Lista de nomes de ferramentas a incluir deste servidor MCP. Quando especificado, apenas as ferramentas listadas aqui estarão disponíveis neste servidor (comportamento de lista de permissão). Se não especificado, todas as ferramentas do servidor são habilitadas por padrão.                                       |
+| `args`                 | array                        | Argumentos de linha de comando para o transporte Stdio |
+| `headers`              | object                       | Headers HTTP personalizados ao usar `url` ou `httpUrl` |
+| `env`                  | object                       | Variáveis de ambiente para o processo do servidor. Os valores podem referenciar variáveis de ambiente usando a sintaxe `$VAR_NAME` ou `${VAR_NAME}` |
+| `cwd`                  | string                       | Diretório de trabalho para o transporte Stdio |
+| `timeout`              | number<br>(padrão: 600.000) | Timeout da solicitação em milissegundos (padrão: 600.000ms = 10 minutos) |
+| `trust`                | boolean<br>(padrão: false)  | Quando `true`, ignora todas as confirmações de chamada de ferramenta para este servidor (padrão: `false`) |
+| `includeTools`         | array                        | Lista de nomes de ferramentas a incluir deste servidor MCP. Quando especificado, apenas as ferramentas listadas aqui estarão disponíveis neste servidor (comportamento de allowlist). Se não especificado, todas as ferramentas do servidor são habilitadas por padrão. |
 | `excludeTools`         | array                        | Lista de nomes de ferramentas a excluir deste servidor MCP. As ferramentas listadas aqui não estarão disponíveis para o modelo, mesmo que sejam expostas pelo servidor.<br>Nota: `excludeTools` tem precedência sobre `includeTools` - se uma ferramenta estiver em ambas as listas, ela será excluída. |
-| `targetAudience`       | string                       | O ID do cliente OAuth na lista de permissão do aplicativo protegido por IAP que você está tentando acessar. Usado com `authProviderType: 'service_account_impersonation'`.                                                                                                         |
-| `targetServiceAccount` | string                       | O endereço de e-mail da Conta de Serviço do Google Cloud a ser personificada. Usado com `authProviderType: 'service_account_impersonation'`.                                                                                                                              |
+| `targetAudience`       | string                       | O Client ID OAuth na allowlist do aplicativo protegido por IAP que você está tentando acessar. Usado com `authProviderType: 'service_account_impersonation'`. |
+| `targetServiceAccount` | string                       | O endereço de e-mail da Conta de Serviço do Google Cloud a ser personificada. Usado com `authProviderType: 'service_account_impersonation'`. |
 
 <a id="qwen-mcp-cli"></a>
 
@@ -259,20 +337,28 @@ Você sempre pode configurar servidores MCP editando manualmente o `settings.jso
 qwen mcp add [options] <name> <commandOrUrl> [args...]
 ```
 
-| Argumento/Opção     | Descrição                                                         | Padrão            | Exemplo                                   |
-| ------------------- | ------------------------------------------------------------------- | ------------------ | ----------------------------------------- |
-| `<name>`            | Um nome exclusivo para o servidor.                                       | —                  | `example-server`                          |
-| `<commandOrUrl>`    | O comando a executar (para `stdio`) ou a URL (para `http`/`sse`). | —                  | `/usr/bin/python` ou `http://localhost:8` |
-| `[args...]`         | Argumentos opcionais para um comando `stdio`.                           | —                  | `--port 5000`                             |
-| `-s`, `--scope`     | Escopo de configuração (usuário ou projeto).                              | `project`          | `-s user`                                 |
-| `-t`, `--transport` | Tipo de transporte (`stdio`, `sse`, `http`).                            | `stdio`            | `-t sse`                                  |
-| `-e`, `--env`       | Define variáveis de ambiente.                                          | —                  | `-e KEY=value`                            |
-| `-H`, `--header`    | Define cabeçalhos HTTP para transportes SSE e HTTP.                       | —                  | `-H "X-Api-Key: abc123"`                  |
-| `--timeout`         | Define o tempo limite da conexão em milissegundos.                             | —                  | `--timeout 30000`                         |
-| `--trust`           | Confia no servidor (ignora todos os prompts de confirmação de chamada de ferramenta).       | — (`false`)        | `--trust`                                 |
-| `--description`     | Define a descrição do servidor.                                 | —                  | `--description "Local tools"`             |
-| `--include-tools`   | Uma lista separada por vírgulas de ferramentas a incluir.                         | todas as ferramentas incluídas | `--include-tools mytool,othertool`        |
-| `--exclude-tools`   | Uma lista separada por vírgulas de ferramentas a excluir.                         | nenhuma               | `--exclude-tools mytool`                  |
+| Argumento/Opção | Descrição | Padrão | Exemplo |
+| --------------------------- | ------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------ |
+| `<name>`                    | Um nome exclusivo para o servidor. | — | `example-server` |
+| `<commandOrUrl>`            | O comando a executar (para `stdio`) ou a URL (para `http`/`sse`). | — | `/usr/bin/python` ou `http://localhost:8` |
+| `[args...]`                 | Argumentos opcionais para um comando `stdio`. | — | `--port 5000` |
+| `-s`, `--scope`             | Escopo da configuração (usuário ou projeto). | `project` | `-s user` |
+| `-t`, `--transport`         | Tipo de transporte (`stdio`, `sse`, `http`). | `stdio` | `-t sse` |
+| `-e`, `--env`               | Define variáveis de ambiente. | — | `-e KEY=value` |
+| `-H`, `--header`            | Define headers HTTP para transportes SSE e HTTP. | — | `-H "X-Api-Key: abc123"` |
+| `--timeout`                 | Define o timeout da conexão em milissegundos. | — | `--timeout 30000` |
+| `--trust`                   | Confia no servidor (ignora todos os prompts de confirmação de chamada de ferramenta). | — (`false`) | `--trust` |
+| `--description`             | Define a descrição do servidor. | — | `--description "Local tools"` |
+| `--include-tools`           | Uma lista separada por vírgulas de ferramentas a incluir. | todas as ferramentas incluídas | `--include-tools mytool,othertool` |
+| `--exclude-tools`           | Uma lista separada por vírgulas de ferramentas a excluir. | nenhuma | `--exclude-tools mytool` |
+| `--oauth-client-id`         | Client ID OAuth para autenticação do servidor MCP. | — | `--oauth-client-id your-client-id` |
+| `--oauth-client-secret`     | Client secret OAuth para autenticação do servidor MCP. | — | `--oauth-client-secret your-client-secret` |
+| `--oauth-redirect-uri`      | Redirect URI OAuth para callback de autenticação. | `http://localhost:7777/oauth/callback` | `--oauth-redirect-uri https://your-server.com/oauth/callback` |
+| `--oauth-authorization-url` | URL de autorização OAuth. | — | `--oauth-authorization-url https://provider.example.com/authorize` |
+| `--oauth-token-url`         | URL de token OAuth. | — | `--oauth-token-url https://provider.example.com/token` |
+| `--oauth-scopes`            | Scopes OAuth (separados por vírgula). | — | `--oauth-scopes scope1,scope2` |
+
+> As flags `--oauth-*` aplicam-se apenas a `--transport sse` e `--transport http`. Combiná-las com `--transport stdio` resultará em erro.
 
 #### Remover um servidor (`qwen mcp remove`)
 

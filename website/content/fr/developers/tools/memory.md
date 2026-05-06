@@ -1,10 +1,10 @@
-# Outil de mémoire (`save_memory`)
+# Outil Memory (`save_memory`)
 
 Ce document décrit l'outil `save_memory` pour Qwen Code.
 
 ## Description
 
-Utilisez `save_memory` pour enregistrer et rappeler des informations entre vos sessions Qwen Code. Avec `save_memory`, vous pouvez demander au CLI de mémoriser des détails clés d'une session à l'autre, afin de bénéficier d'une assistance personnalisée et ciblée.
+Utilisez `save_memory` pour enregistrer et récupérer des informations entre vos sessions Qwen Code. Grâce à `save_memory`, vous pouvez indiquer au CLI de conserver des détails clés d'une session à l'autre, ce qui permet une assistance personnalisée et ciblée.
 
 ### Arguments
 
@@ -16,7 +16,7 @@ Utilisez `save_memory` pour enregistrer et rappeler des informations entre vos s
 
 L'outil ajoute le `fact` fourni à votre fichier de contexte dans le répertoire personnel de l'utilisateur (`~/.qwen/QWEN.md` par défaut). Ce nom de fichier peut être configuré via `contextFileName`.
 
-Une fois ajoutés, les faits sont stockés sous une section `## Qwen Added Memories`. Ce fichier est chargé comme contexte lors des sessions suivantes, permettant au CLI de rappeler les informations enregistrées.
+Une fois ajoutés, les faits sont stockés dans une section `## Qwen Added Memories`. Ce fichier est chargé en tant que contexte lors des sessions suivantes, ce qui permet au CLI de récupérer les informations sauvegardées.
 
 Utilisation :
 
@@ -40,5 +40,5 @@ save_memory(fact="The project I'm currently working on is called 'qwen-code'.")
 
 ## Notes importantes
 
-- **Utilisation générale :** Cet outil doit être utilisé pour des faits importants et concis. Il n'est pas conçu pour stocker de grandes quantités de données ou l'historique des conversations.
-- **Fichier de mémoire :** Le fichier de mémoire est un fichier Markdown en texte brut, vous pouvez donc le consulter et le modifier manuellement si nécessaire.
+- **Utilisation générale :** Cet outil doit être utilisé pour des faits concis et importants. Il n'est pas conçu pour stocker de grandes quantités de données ou l'historique des conversations.
+- **Fichier de mémoire :** Le fichier de mémoire est un fichier Markdown en texte brut. Vous pouvez donc le consulter et le modifier manuellement si nécessaire.

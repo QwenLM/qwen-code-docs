@@ -6,10 +6,9 @@ Erfahre, wie du OpenTelemetry für Qwen Code aktivierst und einrichtest.
   - [Wichtige Vorteile](#key-benefits)
   - [OpenTelemetry-Integration](#opentelemetry-integration)
   - [Konfiguration](#configuration)
-  - [Aliyun Telemetry](#aliyun-telemetry)
-    - [Voraussetzungen](#prerequisites)
-    - [Direkter Export (Empfohlen)](#direct-export-recommended)
-  - [Lokale Telemetry](#local-telemetry)
+  - [Aliyun-Telemetrie](#aliyun-telemetry)
+    - [Manueller OTLP-Export](#manual-otlp-export)
+  - [Lokale Telemetrie](#local-telemetry)
     - [Dateibasierte Ausgabe (Empfohlen)](#file-based-output-recommended)
     - [Collector-basierter Export (Fortgeschritten)](#collector-based-export-advanced)
   - [Logs und Metriken](#logs-and-metrics)
@@ -26,25 +25,27 @@ Erfahre, wie du OpenTelemetry für Qwen Code aktivierst und einrichtest.
   sobald sie auftreten
 - **📊 Workflow-Optimierung**: Triff fundierte Entscheidungen zur Verbesserung
   von Konfigurationen und Prozessen
-- **🏢 Enterprise-Governance**: Überwache die Nutzung über Teams hinweg, verfolge
-  Kosten, stelle Compliance sicher und integriere dich in bestehende
-  Monitoring-Infrastruktur
+- **🏢 Enterprise-Governance**: Überwache die Nutzung über Teams hinweg, verfolge Kosten, stelle Compliance sicher und integriere dich in bestehende Monitoring-Infrastruktur
 
 ## OpenTelemetry-Integration
 
-Aufbauend auf **[OpenTelemetry]** — dem herstellerneutralen, branchenüblichen
-Observability-Framework — bietet das Observability-System von Qwen Code:
+Basierend auf **[OpenTelemetry]** – dem herstellerneutralen, branchenüblichen
+Observability-Framework – bietet das Observability-System von Qwen Code:
 
 - **Universelle Kompatibilität**: Export zu jedem OpenTelemetry-Backend (Aliyun,
   Jaeger, Prometheus, Datadog usw.)
 - **Standardisierte Daten**: Nutze konsistente Formate und Sammlungsmethoden in
   deiner Toolchain
-- **Zukunftssichere Integration**: Verbinde dich mit bestehender und zukünftiger
-  Observability-Infrastruktur
-- **Kein Vendor Lock-in**: Wechsle zwischen Backends, ohne deine Instrumentierung
-  ändern zu müssen
+- **Zukunftssichere Integration**: Verbinde dich mit bestehender und zukünftiger Observability-Infrastruktur
+- **Kein Vendor Lock-in**: Wechsle zwischen Backends, ohne deine
+  Instrumentierung zu ändern
 
 [OpenTelemetry]: https://opentelemetry.io/
+[aliyun-opentelemetry-overview]: https://www.alibabacloud.com/help/en/arms/tracing-analysis/product-overview/what-is-tracing-analysis
+[aliyun-opentelemetry-get-started]: https://www.alibabacloud.com/help/en/arms/tracing-analysis/before-you-begin
+[aliyun-opentelemetry-console-cn]: https://trace.console.aliyun.com
+[aliyun-opentelemetry-console-cn-legacy]: https://tracing.console.aliyun.com
+[aliyun-opentelemetry-console-intl]: https://arms.console.alibabacloud.com
 
 ## Konfiguration
 
@@ -52,51 +53,118 @@ Observability-Framework — bietet das Observability-System von Qwen Code:
 >
 > **⚠️ Wichtiger Hinweis: Dieses Feature erfordert entsprechende Code-Änderungen. Diese Dokumentation wird vorab bereitgestellt; bitte beziehe dich für die tatsächliche Funktionalität auf zukünftige Code-Updates.**
 
-Das gesamte Telemetry-Verhalten wird über deine `.qwen/settings.json`-Datei gesteuert.
+Das gesamte Telemetrie-Verhalten wird über deine `.qwen/settings.json`-Datei gesteuert.
 Diese Einstellungen können durch Umgebungsvariablen oder CLI-Flags überschrieben werden.
 
-| Einstellung        | Umgebungsvariable           | CLI-Flag                                                 | Beschreibung                                       | Werte             | Standardwert                 |
-| -------------- | ------------------------------ | -------------------------------------------------------- | ------------------------------------------------- | ------------------ | ----------------------- |
-| `enabled`      | `QWEN_TELEMETRY_ENABLED`       | `--telemetry` / `--no-telemetry`                         | Telemetry aktivieren oder deaktivieren                       | `true`/`false`     | `false`                 |
-| `target`       | `QWEN_TELEMETRY_TARGET`        | `--telemetry-target <local\|qwen>`                       | Wohin Telemetry-Daten gesendet werden                      | `"qwen"`/`"local"` | `"local"`               |
-| `otlpEndpoint` | `QWEN_TELEMETRY_OTLP_ENDPOINT` | `--telemetry-otlp-endpoint <URL>`                        | OTLP-Collector-Endpunkt                           | URL string         | `http://localhost:4317` |
-| `otlpProtocol` | `QWEN_TELEMETRY_OTLP_PROTOCOL` | `--telemetry-otlp-protocol <grpc\|http>`                 | OTLP-Transportprotokoll                           | `"grpc"`/`"http"`  | `"grpc"`                |
-| `outfile`      | `QWEN_TELEMETRY_OUTFILE`       | `--telemetry-outfile <path>`                             | Telemetry in Datei speichern (überschreibt `otlpEndpoint`) | file path          | -                       |
-| `logPrompts`   | `QWEN_TELEMETRY_LOG_PROMPTS`   | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Prompts in Telemetry-Logs einschließen                 | `true`/`false`     | `true`                  |
-| `useCollector` | `QWEN_TELEMETRY_USE_COLLECTOR` | -                                                        | Externen OTLP-Collector verwenden (fortgeschritten)            | `true`/`false`     | `false`                 |
+| Einstellung             | Umgebungsvariable                        | CLI-Flag                                                 | Beschreibung                                           | Werte             | Standardwert              |
+| ----------------------- | ---------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------ | ----------------- | ------------------------- |
+| `enabled`               | `QWEN_TELEMETRY_ENABLED`                 | `--telemetry` / `--no-telemetry`                         | Telemetrie aktivieren oder deaktivieren                | `true`/`false`    | `false`                   |
+| `target`                | `QWEN_TELEMETRY_TARGET`                  | `--telemetry-target <local\|gcp>`                        | Ziel für Telemetriedaten                               | `"gcp"`/`"local"` | `"local"`                 |
+| `otlpEndpoint`          | `QWEN_TELEMETRY_OTLP_ENDPOINT`           | `--telemetry-otlp-endpoint <URL>`                        | Endpunkt des OTLP-Collectors                           | URL-String        | `http://localhost:4317`   |
+| `otlpProtocol`          | `QWEN_TELEMETRY_OTLP_PROTOCOL`           | `--telemetry-otlp-protocol <grpc\|http>`                 | Transportprotokoll für OTLP                            | `"grpc"`/`"http"` | `"grpc"`                  |
+| `otlpTracesEndpoint`    | `QWEN_TELEMETRY_OTLP_TRACES_ENDPOINT`    | -                                                        | Signal-spezifischer Endpunkt-Override für Traces (nur HTTP)  | URL-String        | -                         |
+| `otlpLogsEndpoint`      | `QWEN_TELEMETRY_OTLP_LOGS_ENDPOINT`      | -                                                        | Signal-spezifischer Endpunkt-Override für Logs (nur HTTP)    | URL-String        | -                         |
+| `otlpMetricsEndpoint`   | `QWEN_TELEMETRY_OTLP_METRICS_ENDPOINT`   | -                                                        | Signal-spezifischer Endpunkt-Override für Metriken (nur HTTP) | URL-String        | -                         |
+| `outfile`               | `QWEN_TELEMETRY_OUTFILE`                 | `--telemetry-outfile <path>`                             | Telemetrie in Datei speichern (überschreibt `otlpEndpoint`)    | Dateipfad         | -                         |
+| `logPrompts`            | `QWEN_TELEMETRY_LOG_PROMPTS`             | `--telemetry-log-prompts` / `--no-telemetry-log-prompts` | Prompts in Telemetrie-Logs einschließen                | `true`/`false`    | `true`                    |
+| `useCollector`          | `QWEN_TELEMETRY_USE_COLLECTOR`           | -                                                        | Externen OTLP-Collector verwenden (fortgeschritten)    | `true`/`false`    | `false`                   |
 
 **Hinweis zu booleschen Umgebungsvariablen:** Für die booleschen Einstellungen (`enabled`,
 `logPrompts`, `useCollector`) aktiviert das Setzen der entsprechenden Umgebungsvariable auf
 `true` oder `1` das Feature. Jeder andere Wert deaktiviert es.
 
+**HTTP-OTLP-Signal-Routing:** Bei Verwendung des HTTP-Protokolls (`otlpProtocol: "http"`)
+hängt Qwen Code automatisch signal-spezifische Pfade (`/v1/traces`, `/v1/logs`,
+`/v1/metrics`) an den Basis-`otlpEndpoint` an. Beispielsweise wird `http://collector:4318`
+für Traces zu `http://collector:4318/v1/traces`. Wenn die URL bereits mit einem Signalpfad endet, wird sie unverändert verwendet. Signal-spezifische Endpunkt-Overrides
+(`otlpTracesEndpoint` usw.) haben Vorrang vor dem Basis-Endpunkt und werden wortwörtlich übernommen. Das gRPC-Protokoll verwendet servicebasiertes Routing und hängt keine Pfade an.
+
+Die signal-spezifischen Endpunkt-Umgebungsvariablen akzeptieren auch die standardmäßigen
+OpenTelemetry-Namen: `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`,
+`OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`, `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`.
+Die `QWEN_TELEMETRY_OTLP_*`-Varianten haben Vorrang vor den `OTEL_*`-Varianten.
+
 Detaillierte Informationen zu allen Konfigurationsoptionen findest du im
 [Konfigurationsleitfaden](./cli/configuration.md).
 
-## Aliyun Telemetry
+## Aliyun-Telemetrie
 
-### Direkter Export (Empfohlen)
+### Manueller OTLP-Export
 
-Sendet Telemetry-Daten direkt an Aliyun-Services. Kein Collector erforderlich.
+Um die Qwen Code-Telemetrie im Alibaba Cloud Managed Service for
+OpenTelemetry anzuzeigen, konfiguriere Qwen Code so, dass es zum von ARMS bereitgestellten OTLP-Endpunkt exportiert.
 
-1. Aktiviere Telemetry in deiner `.qwen/settings.json`:
+Das alleinige Setzen von `"target": "gcp"` konfiguriert nicht das Exportziel. Wenn `otlpEndpoint` nicht gesetzt ist, verwendet Qwen Code standardmäßig weiterhin
+`http://localhost:4317`. Wenn `outfile` gesetzt ist, überschreibt es
+`otlpEndpoint` und die Telemetrie wird in die Datei geschrieben, anstatt an Alibaba Cloud gesendet zu werden.
+
+1. Aktiviere die Telemetrie in deiner `.qwen/settings.json` und setze den OTLP-Endpunkt:
+
+   **Option A: gRPC-Protokoll** (standardmäßiger OTLP-Endpunkt):
+
    ```json
    {
      "telemetry": {
        "enabled": true,
-       "target": "qwen"
+       "target": "gcp",
+       "otlpEndpoint": "https://<your-otlp-endpoint>",
+       "otlpProtocol": "grpc"
      }
    }
    ```
-2. Starte Qwen Code und sende Prompts.
-3. Zeige Logs und Metriken in der Aliyun Console an.
 
-## Lokale Telemetry
+   **Option B: HTTP-Protokoll mit signal-spezifischen Endpunkten** (für Backends,
+   die nicht-standardmäßige Pfade verwenden, z. B. `/api/otlp/traces` statt `/v1/traces`):
 
-Für die lokale Entwicklung und das Debugging kannst du Telemetry-Daten lokal erfassen:
+   ```json
+   {
+     "telemetry": {
+       "enabled": true,
+       "otlpProtocol": "http",
+       "otlpTracesEndpoint": "http://<host>/<token>/api/otlp/traces",
+       "otlpLogsEndpoint": "http://<host>/<token>/api/otlp/logs",
+       "otlpMetricsEndpoint": "http://<host>/<token>/api/otlp/metrics"
+     }
+   }
+   ```
+
+   > **Hinweis:** Bei Verwendung des HTTP-Protokolls mit nur `otlpEndpoint` (ohne
+   > signal-spezifische Overrides) hängt Qwen Code standardmäßige OTLP-Pfade
+   > (`/v1/traces`, `/v1/logs`, `/v1/metrics`) an die Basis-URL an. Wenn dein
+   > Backend andere Pfade verwendet, nutze signal-spezifische Endpunkt-Overrides wie
+   > in Option B gezeigt.
+
+2. Wenn dein Alibaba Cloud-Endpunkt Authentifizierung erfordert, übergib OTLP-Header über standardmäßige OpenTelemetry-Umgebungsvariablen wie
+   `OTEL_EXPORTER_OTLP_HEADERS` (oder die signal-spezifischen Varianten). Qwen
+   Code macht OTLP-Auth-Header derzeit nicht direkt in
+   `.qwen/settings.json` verfügbar.
+3. Starte Qwen Code und sende Prompts.
+4. Zeige die Telemetrie im Managed Service for OpenTelemetry an:
+   - Produktübersicht:
+     [What is Managed Service for OpenTelemetry?][aliyun-opentelemetry-overview]
+   - Erste Schritte:
+     [Get started with Managed Service for OpenTelemetry][aliyun-opentelemetry-get-started]
+   - Konsoleneinstiegspunkte:
+     - China (Festland):
+       [trace.console.aliyun.com][aliyun-opentelemetry-console-cn]
+       (Legacy-Konsole:
+       [tracing.console.aliyun.com][aliyun-opentelemetry-console-cn-legacy])
+     - International:
+       [arms.console.alibabacloud.com][aliyun-opentelemetry-console-intl]
+   - Verwende in der Konsole `Applications`, um Traces und die Service-Topologie zu inspizieren.
+   - So findest du den OTLP-Endpunkt und die Zugriffsinformationen:
+     - **Neue Konsole** (`trace.console.aliyun.com` oder international):
+       navigiere zu `Integration Center`.
+     - **Legacy-Konsole** (`tracing.console.aliyun.com`): navigiere zu
+       `Cluster Configurations` → `Access point information`.
+
+## Lokale Telemetrie
+
+Für die lokale Entwicklung und das Debugging kannst du Telemetriedaten lokal erfassen:
 
 ### Dateibasierte Ausgabe (Empfohlen)
 
-1. Aktiviere Telemetry in deiner `.qwen/settings.json`:
+1. Aktiviere die Telemetrie in deiner `.qwen/settings.json`:
    ```json
    {
      "telemetry": {
@@ -112,16 +180,16 @@ Für die lokale Entwicklung und das Debugging kannst du Telemetry-Daten lokal er
 
 ### Collector-basierter Export (Fortgeschritten)
 
-1. Führe das Automatisierungsskript aus:
+1. Führe das Automationsskript aus:
    ```bash
    npm run telemetry -- --target=local
    ```
    Dies führt Folgendes aus:
-   - Lädt Jaeger und den OTEL-Collector herunter und startet sie
-   - Konfiguriert deinen Workspace für lokale Telemetry
-   - Stellt eine Jaeger-UI unter http://localhost:16686 bereit
-   - Speichert Logs/Metriken in `~/.qwen/tmp/<projectHash>/otel/collector.log`
-   - Stoppt den Collector beim Beenden (z. B. `Ctrl+C`)
+   - Download und Start von Jaeger und OTEL-Collector
+   - Konfiguration deines Workspaces für lokale Telemetrie
+   - Bereitstellung einer Jaeger-UI unter http://localhost:16686
+   - Speichern von Logs/Metriken in `~/.qwen/tmp/<projectHash>/otel/collector.log`
+   - Stoppen des Collectors beim Beenden (z. B. `Ctrl+C`)
 2. Starte Qwen Code und sende Prompts.
 3. Zeige Traces unter http://localhost:16686 und Logs/Metriken in der Collector-Logdatei an.
 
@@ -129,11 +197,11 @@ Für die lokale Entwicklung und das Debugging kannst du Telemetry-Daten lokal er
 
 Der folgende Abschnitt beschreibt die Struktur der für Qwen Code generierten Logs und Metriken.
 
-- Eine `sessionId` wird als gemeinsames Attribut in allen Logs und Metriken enthalten.
+- Ein `sessionId` wird als gemeinsames Attribut in allen Logs und Metriken enthalten.
 
 ### Logs
 
-Logs sind zeitgestempelte Aufzeichnungen spezifischer Ereignisse. Die folgenden Ereignisse werden für Qwen Code protokolliert:
+Logs sind zeitgestempelte Aufzeichnungen spezifischer Ereignisse. Für Qwen Code werden folgende Ereignisse geloggt:
 
 - `qwen-code.config`: Dieses Ereignis tritt einmal beim Start mit der CLI-Konfiguration auf.
   - **Attribute**:
@@ -178,13 +246,13 @@ Logs sind zeitgestempelte Aufzeichnungen spezifischer Ereignisse. Die folgenden 
     - `mimetype` (string, falls zutreffend)
     - `extension` (string, falls zutreffend)
     - `programming_language` (string, falls zutreffend)
-    - `diff_stat` (json string, falls zutreffend): Ein JSON-String mit folgenden Mitgliedern:
+    - `diff_stat` (JSON-String, falls zutreffend): Ein JSON-String mit folgenden Mitgliedern:
       - `ai_added_lines` (int)
       - `ai_removed_lines` (int)
       - `user_added_lines` (int)
       - `user_removed_lines` (int)
 
-- `qwen-code.api_request`: Dieses Ereignis tritt auf, wenn eine Anfrage an die Qwen API gestellt wird.
+- `qwen-code.api_request`: Dieses Ereignis tritt beim Senden einer Anfrage an die Qwen API auf.
   - **Attribute**:
     - `model`
     - `request_text` (falls zutreffend)
@@ -208,7 +276,6 @@ Logs sind zeitgestempelte Aufzeichnungen spezifischer Ereignisse. Die folgenden 
     - `output_token_count`
     - `cached_content_token_count`
     - `thoughts_token_count`
-    - `tool_token_count`
     - `response_text` (falls zutreffend)
     - `auth_type`
 
@@ -245,7 +312,7 @@ Logs sind zeitgestempelte Aufzeichnungen spezifischer Ereignisse. Die folgenden 
 
 ### Metriken
 
-Metriken sind numerische Messwerte des Verhaltens über die Zeit. Die folgenden Metriken werden für Qwen Code erfasst (Metriknamen bleiben aus Kompatibilitätsgründen `qwen-code.*`):
+Metriken sind numerische Messwerte des Verhaltens über die Zeit. Für Qwen Code werden folgende Metriken erfasst (Metriknamen bleiben aus Kompatibilitätsgründen `qwen-code.*`):
 
 - `qwen-code.session.count` (Counter, Int): Wird einmal pro CLI-Start inkrementiert.
 
@@ -274,7 +341,7 @@ Metriken sind numerische Messwerte des Verhaltens über die Zeit. Die folgenden 
 - `qwen-code.token.usage` (Counter, Int): Zählt die Anzahl der verwendeten Tokens.
   - **Attribute**:
     - `model`
-    - `type` (string: "input", "output", "thought", "cache" oder "tool")
+    - `type` (string: "input", "output", "thought" oder "cache")
 
 - `qwen-code.file.operation.count` (Counter, Int): Zählt Dateioperationen.
   - **Attribute**:
@@ -284,8 +351,8 @@ Metriken sind numerische Messwerte des Verhaltens über die Zeit. Die folgenden 
     - `extension` (string, falls zutreffend): Dateierweiterung der Datei.
     - `model_added_lines` (Int, falls zutreffend): Anzahl der vom Modell hinzugefügten/geänderten Zeilen.
     - `model_removed_lines` (Int, falls zutreffend): Anzahl der vom Modell entfernten/geänderten Zeilen.
-    - `user_added_lines` (Int, falls zutreffend): Anzahl der vom Benutzer hinzugefügten/geänderten Zeilen in den vom KI vorgeschlagenen Änderungen.
-    - `user_removed_lines` (Int, falls zutreffend): Anzahl der vom Benutzer entfernten/geänderten Zeilen in den vom KI vorgeschlagenen Änderungen.
+    - `user_added_lines` (Int, falls zutreffend): Anzahl der vom Benutzer in KI-vorgeschlagenen Änderungen hinzugefügten/geänderten Zeilen.
+    - `user_removed_lines` (Int, falls zutreffend): Anzahl der vom Benutzer in KI-vorgeschlagenen Änderungen entfernten/geänderten Zeilen.
     - `programming_language` (string, falls zutreffend): Die Programmiersprache der Datei.
 
 - `qwen-code.chat_compression` (Counter, Int): Zählt Chat-Komprimierungsvorgänge

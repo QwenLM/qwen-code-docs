@@ -4,13 +4,13 @@
 
 本快速入门指南将帮助你在几分钟内上手 AI 编程辅助功能。阅读完毕后，你将了解如何使用 Qwen Code 完成常见的开发任务。
 
-## 开始之前
+## 准备工作
 
 请确保你已具备以下条件：
 
 - 已打开**终端**或命令提示符
-- 一个可供操作的代码项目
-- 一个 [Qwen Code](https://chat.qwen.ai/auth?mode=register) 账号
+- 一个用于练习的代码项目
+- 阿里云百炼平台的 API Key（[中国站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)），或已订阅阿里云 Coding Plan（[中国站](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [国际站](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）
 
 ## 步骤 1：安装 Qwen Code
 
@@ -24,10 +24,10 @@
 curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
 ```
 
-**Windows（以管理员身份运行 CMD）**
+**Windows（以管理员身份运行）**
 
-```sh
-curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat
+```cmd
+powershell -Command "Invoke-WebRequest 'https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat' -OutFile (Join-Path $env:TEMP 'install-qwen.bat'); & (Join-Path $env:TEMP 'install-qwen.bat')"
 ```
 
 > [!note]
@@ -52,46 +52,51 @@ npm install -g @qwen-code/qwen-code@latest
 brew install qwen-code
 ```
 
-## 步骤 2：登录账号
+## 步骤 2：配置身份验证
 
-使用 Qwen Code 需要登录账号。当你使用 `qwen` 命令启动交互式会话时，系统会提示你登录：
+使用 `qwen` 命令启动交互式会话时，系统会提示你配置身份验证：
 
 ```bash
-# You'll be prompted to log in on first use
+# 首次使用时会提示配置身份验证
 qwen
 ```
 
 ```bash
-# Follow the prompts to log in with your account
+# 或随时运行 /auth 更改身份验证方式
 /auth
 ```
 
-选择 `Qwen OAuth`，登录你的账号并按提示确认。登录成功后，凭证将被保存，后续无需重复登录。
+选择你偏好的身份验证方式：
+
+- **阿里云 Coding Plan**：选择 `Alibaba Cloud Coding Plan`，享受固定月费及丰富的模型选择。请参阅 [Coding Plan 指南](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)（[国际站](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)）获取设置说明。
+- **API Key**：选择 `API Key`，然后输入来自阿里云百炼平台的 API Key（[中国站](https://bailian.console.aliyun.com/) / [国际站](https://modelstudio.console.alibabacloud.com/)）。详情请参阅 API 设置指南（[中国站](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [国际站](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)）。
+
+> ⚠️ **注意**：Qwen OAuth 已于 2026 年 4 月 15 日停止服务。如果你之前使用的是 Qwen OAuth，请切换至上述任一方式。
 
 > [!note]
 >
-> 首次使用 Qwen 账号对 Qwen Code 进行身份验证时，系统会自动为你创建一个名为 `.qwen` 的工作区。该工作区为你的组织提供所有 Qwen Code 使用情况的集中成本跟踪与管理。
+> 首次使用 Qwen 账号验证 Qwen Code 时，系统会自动为你创建一个名为 ".qwen" 的工作区。该工作区为你的组织提供 Qwen Code 使用情况的集中成本跟踪与管理功能。
 
 > [!tip]
 >
-> 你也可以在不启动会话的情况下，直接在终端运行 `qwen auth` 来配置身份验证。随时使用 `qwen auth status` 检查当前配置。详情请参阅[身份验证](./configuration/auth)页面。
+> 你也可以在不启动会话的情况下，直接在终端中运行 `qwen auth` 来配置身份验证。随时运行 `qwen auth status` 可查看当前配置。详情请参阅 [身份验证](./configuration/auth) 页面。
 
-## 步骤 3：开始首次会话
+## 步骤 3：开启首次会话
 
 在任意项目目录中打开终端并启动 Qwen Code：
 
 ```bash
-# optiona
+# 可选
 cd /path/to/your/project
-# start qwen
+# 启动 qwen
 qwen
 ```
 
-你将看到 Qwen Code 欢迎界面，其中包含会话信息、近期对话和最新更新。输入 `/help` 查看可用命令。
+你将看到 Qwen Code 欢迎界面，其中包含会话信息、近期对话和最新更新。输入 `/help` 可查看可用命令。
 
 ## 与 Qwen Code 对话
 
-### 提出你的第一个问题
+### 提出第一个问题
 
 Qwen Code 会分析你的文件并提供摘要。你也可以提出更具体的问题：
 
@@ -107,7 +112,7 @@ what can Qwen Code do?
 
 > [!note]
 >
-> Qwen Code 会按需读取你的文件，无需手动添加上下文。Qwen Code 还可以访问其自身文档，能够回答关于其功能和能力的问题。
+> Qwen Code 会按需读取你的文件，无需手动添加上下文。Qwen Code 还可以访问其自身文档，并能回答关于其功能和特性的问题。
 
 ### 进行首次代码修改
 
@@ -117,16 +122,16 @@ what can Qwen Code do?
 add a hello world function to the main file
 ```
 
-Qwen Code 将会：
+Qwen Code 将执行以下操作：
 
 1. 找到合适的文件
 2. 向你展示建议的修改
 3. 请求你的批准
-4. 执行修改
+4. 执行编辑
 
 > [!note]
 >
-> Qwen Code 在修改文件前始终会请求许可。你可以逐个批准修改，或在会话中启用“全部接受”模式。
+> Qwen Code 在修改文件前始终会请求你的许可。你可以逐个批准更改，或在会话中启用“全部接受”模式。
 
 ### 结合 Qwen Code 使用 Git
 
@@ -170,7 +175,7 @@ add input validation to the user registration form
 there's a bug where users can submit empty forms - fix it
 ```
 
-Qwen Code 将会：
+Qwen Code 将：
 
 - 定位相关代码
 - 理解上下文
@@ -211,22 +216,23 @@ review my changes and suggest improvements
 
 ## 常用命令
 
-以下是日常使用中最常用的命令：
+以下是日常开发中最常用的命令：
 
-| 命令 | 功能说明 | 示例 |
+| 命令               | 功能说明                                     | 示例                       |
 | --------------------- | ------------------------------------------------ | ----------------------------- |
-| `qwen` | 启动 Qwen Code | `qwen` |
-| `/auth` | 更改身份验证方式（会话内） | `/auth` |
-| `qwen auth` | 从终端配置身份验证 | `qwen auth` |
-| `qwen auth status` | 检查当前身份验证状态 | `qwen auth status` |
-| `/help` | 显示可用命令的帮助信息 | `/help` 或 `/?` |
-| `/compress` | 用摘要替换聊天记录以节省 Token | `/compress` |
-| `/clear` | 清除终端屏幕内容 | `/clear`（快捷键：`Ctrl+L`） |
-| `/theme` | 更改 Qwen Code 视觉主题 | `/theme` |
-| `/language` | 查看或更改语言设置 | `/language` |
-| → `ui [language]` | 设置 UI 界面语言 | `/language ui zh-CN` |
-| → `output [language]` | 设置 LLM 输出语言 | `/language output Chinese` |
-| `/quit` | 立即退出 Qwen Code | `/quit` 或 `/exit` |
+| `qwen`                | 启动 Qwen Code                                  | `qwen`                        |
+| `/auth`               | 更改身份验证方式（会话内）        | `/auth`                       |
+| `qwen auth`           | 从终端配置身份验证       | `qwen auth`                   |
+| `qwen auth api-key`   | 配置 API Key 身份验证                 | `qwen auth api-key`           |
+| `qwen auth status`    | 查看当前身份验证状态              | `qwen auth status`            |
+| `/help`               | 显示可用命令的帮助信息  | `/help` 或 `/?`               |
+| `/compress`           | 用摘要替换聊天记录以节省 Token | `/compress`                   |
+| `/clear`              | 清屏                    | `/clear`（快捷键：`Ctrl+L`） |
+| `/theme`              | 更改 Qwen Code 视觉主题                    | `/theme`                      |
+| `/language`           | 查看或更改语言设置                 | `/language`                   |
+| → `ui [language]`     | 设置 UI 界面语言                        | `/language ui zh-CN`          |
+| → `output [language]` | 设置 LLM 输出语言                          | `/language output Chinese`    |
+| `/quit`               | 立即退出 Qwen Code                       | `/quit` 或 `/exit`            |
 
 完整命令列表请参阅 [CLI 参考](./features/commands)。
 
@@ -234,8 +240,8 @@ review my changes and suggest improvements
 
 **请求尽量具体明确**
 
-- 不要说：“修复 bug”
-- 尝试说：“修复登录 bug，该 bug 会导致用户在输入错误凭证后看到空白屏幕”
+- 避免：“修复 bug”
+- 尝试：“修复登录 bug，即用户输入错误凭证后看到空白屏幕的问题”
 
 **使用分步指令**
 
@@ -269,5 +275,5 @@ build a dashboard showing products that are most frequently returned by our UK c
 ## 获取帮助
 
 - **在 Qwen Code 中**：输入 `/help` 或询问“如何...”
-- **文档**：你正在阅读！浏览其他指南
+- **文档**：你正在阅读！可浏览其他指南
 - **社区**：加入我们的 [GitHub Discussion](https://github.com/QwenLM/qwen-code/discussions) 获取技巧与支持

@@ -12,11 +12,11 @@ Utilisez `modelProviders` pour déclarer des listes de modèles prédéfinies pa
 
 > [!warning]
 >
-> **IDs de modèles dupliqués au sein du même `authType` :** Définir plusieurs modèles avec le même `id` sous un seul `authType` (par exemple, deux entrées avec `"id": "gpt-4o"` dans `openai`) n'est actuellement pas pris en charge. En cas de doublons, **la première occurrence est retenue** et les suivantes sont ignorées avec un avertissement. Notez que le champ `id` est utilisé à la fois comme identifiant de configuration et comme nom réel du modèle envoyé à l'API. Utiliser des IDs uniques (ex. `gpt-4o-creative`, `gpt-4o-balanced`) n'est donc pas une solution de contournement viable. Il s'agit d'une limitation connue que nous prévoyons de corriger dans une prochaine version.
+> **IDs de modèles dupliqués au sein du même `authType` :** Définir plusieurs modèles avec le même `id` sous un seul `authType` (par ex. deux entrées avec `"id": "gpt-4o"` dans `openai`) n'est actuellement pas pris en charge. En cas de doublons, **la première occurrence est retenue** et les suivantes sont ignorées avec un avertissement. Notez que le champ `id` sert à la fois d'identifiant de configuration et de nom de modèle réel envoyé à l'API. Utiliser des IDs uniques (ex. `gpt-4o-creative`, `gpt-4o-balanced`) n'est donc pas une solution viable. Il s'agit d'une limitation connue que nous prévoyons de corriger dans une prochaine version.
 
 ## Exemples de configuration par type d'authentification
 
-Vous trouverez ci-dessous des exemples de configuration complets pour différents types d'authentification, illustrant les paramètres disponibles et leurs combinaisons.
+Voici des exemples de configuration complets pour différents types d'authentification, illustrant les paramètres disponibles et leurs combinaisons.
 
 ### Types d'authentification pris en charge
 
@@ -27,10 +27,10 @@ Les clés de l'objet `modelProviders` doivent être des valeurs `authType` valid
 | `openai`     | APIs compatibles OpenAI (OpenAI, Azure OpenAI, serveurs d'inférence locaux comme vLLM/Ollama) |
 | `anthropic`  | API Anthropic Claude                                                                    |
 | `gemini`     | API Google Gemini                                                                       |
-| `qwen-oauth` | Qwen OAuth (codé en dur, ne peut pas être remplacé dans `modelProviders`)               |
+| `qwen-oauth` | Qwen OAuth (codé en dur, ne peut pas être remplacé dans `modelProviders`)                       |
 
 > [!warning]
-> Si une clé de type d'authentification invalide est utilisée (par exemple, une faute de frappe comme `"openai-custom"`), la configuration sera **ignorée silencieusement** et les modèles n'apparaîtront pas dans le sélecteur `/model`. Utilisez toujours l'une des valeurs de type d'authentification prises en charge listées ci-dessus.
+> Si une clé de type d'authentification invalide est utilisée (ex. une faute de frappe comme `"openai-custom"`), la configuration sera **ignorée silencieusement** et les modèles n'apparaîtront pas dans le sélecteur `/model`. Utilisez toujours l'une des valeurs de type d'authentification prises en charge listées ci-dessus.
 
 ### SDK utilisés pour les requêtes API
 
@@ -47,7 +47,7 @@ Cela signifie que le `baseUrl` que vous configurez doit être compatible avec le
 
 ### Fournisseurs compatibles OpenAI (`openai`)
 
-Ce type d'authentification prend en charge non seulement l'API officielle d'OpenAI, mais également tout point de terminaison compatible OpenAI, y compris les fournisseurs de modèles agrégés comme OpenRouter.
+Ce type d'authentification prend en charge non seulement l'API officielle d'OpenAI, mais aussi tout point de terminaison compatible OpenAI, y compris les fournisseurs de modèles agrégés comme OpenRouter.
 
 ```json
 {
@@ -259,10 +259,10 @@ La plupart des serveurs d'inférence locaux (vLLM, Ollama, LM Studio, etc.) four
 Pour les serveurs locaux ne nécessitant pas d'authentification, vous pouvez utiliser n'importe quelle valeur fictive pour la clé API :
 
 ```bash
-# For Ollama (no auth required)
+# Pour Ollama (aucune authentification requise)
 export OLLAMA_API_KEY="ollama"
 
-# For vLLM (if no auth is configured)
+# Pour vLLM (si aucune authentification n'est configurée)
 export VLLM_API_KEY="not-needed"
 ```
 
@@ -272,14 +272,14 @@ export VLLM_API_KEY="not-needed"
 
 > [!note]
 >
-> **À propos de `envKey`** : Le champ `envKey` spécifie le **nom d'une variable d'environnement**, et non la valeur réelle de la clé API. Pour que la configuration fonctionne, vous devez vous assurer que la variable d'environnement correspondante est définie avec votre clé API réelle. Il existe deux méthodes pour ce faire :
+> **À propos de `envKey`** : Le champ `envKey` spécifie le **nom d'une variable d'environnement**, et non la valeur réelle de la clé API. Pour que la configuration fonctionne, vous devez vous assurer que la variable d'environnement correspondante est définie avec votre clé API réelle. Il existe deux méthodes pour procéder :
 >
 > - **Option 1 : Utiliser un fichier `.env`** (recommandé pour la sécurité) :
 >   ```bash
 >   # ~/.qwen/.env (ou racine du projet)
 >   OPENAI_API_KEY=sk-your-actual-key-here
 >   ```
->   Pensez à ajouter `.env` à votre `.gitignore` pour éviter de committer accidentellement des secrets.
+>   Pensez à ajouter `.env` à votre `.gitignore` pour éviter de commiter accidentellement des secrets.
 > - **Option 2 : Utiliser le champ `env` dans `settings.json`** (comme illustré dans les exemples ci-dessus) :
 >   ```json
 >   {
@@ -293,17 +293,17 @@ export VLLM_API_KEY="not-needed"
 
 ## Alibaba Cloud Coding Plan
 
-Alibaba Cloud Coding Plan fournit un ensemble préconfiguré de modèles Qwen optimisés pour les tâches de développement. Cette fonctionnalité est disponible pour les utilisateurs disposant d'un accès API Alibaba Cloud Coding Plan et offre une expérience de configuration simplifiée avec des mises à jour automatiques des modèles.
+Alibaba Cloud Coding Plan fournit un ensemble préconfiguré de modèles Qwen optimisés pour les tâches de développement. Cette fonctionnalité est disponible pour les utilisateurs disposant d'un accès API Alibaba Cloud Coding Plan et offre une expérience de configuration simplifiée avec des mises à jour automatiques de la configuration des modèles.
 
-### Vue d'ensemble
+### Présentation
 
 Lorsque vous vous authentifiez avec une clé API Alibaba Cloud Coding Plan via la commande `/auth`, Qwen Code configure automatiquement les modèles suivants :
 
 | Model ID               | Name                 | Description                            |
 | ---------------------- | -------------------- | -------------------------------------- |
-| `qwen3.5-plus`         | qwen3.5-plus         | Modèle avancé avec le mode réflexion activé   |
+| `qwen3.5-plus`         | qwen3.5-plus         | Modèle avancé avec raisonnement activé   |
 | `qwen3-coder-plus`     | qwen3-coder-plus     | Optimisé pour les tâches de développement             |
-| `qwen3-max-2026-01-23` | qwen3-max-2026-01-23 | Dernier modèle max avec le mode réflexion activé |
+| `qwen3-max-2026-01-23` | qwen3-max-2026-01-23 | Dernier modèle max avec raisonnement activé |
 
 ### Configuration
 
@@ -313,7 +313,7 @@ Lorsque vous vous authentifiez avec une clé API Alibaba Cloud Coding Plan via l
 2. Exécutez la commande `/auth` dans Qwen Code
 3. Sélectionnez **Alibaba Cloud Coding Plan**
 4. Sélectionnez votre région
-5. Saisissez votre clé API lorsque vous y êtes invité
+5. Saisissez votre clé API lorsqu'elle vous est demandée
 
 Les modèles seront automatiquement configurés et ajoutés à votre sélecteur `/model`.
 
@@ -334,7 +334,7 @@ Lorsque vous configurez Coding Plan via la commande `/auth`, la clé API est sto
 
 > [!warning]
 >
-> **Recommandation de sécurité** : Pour une meilleure sécurité, il est recommandé de déplacer la clé API de `settings.json` vers un fichier `.env` distinct et de la charger en tant que variable d'environnement. Par exemple :
+> **Recommandation de sécurité** : Pour une meilleure sécurité, il est recommandé de déplacer la clé API de `settings.json` vers un fichier `.env` séparé et de la charger comme variable d'environnement. Par exemple :
 >
 > ```bash
 > # ~/.qwen/.env
@@ -345,13 +345,13 @@ Lorsque vous configurez Coding Plan via la commande `/auth`, la clé API est sto
 
 ### Mises à jour automatiques
 
-Les configurations des modèles Coding Plan sont versionnées. Lorsque Qwen Code détecte une version plus récente du modèle de configuration, vous serez invité à effectuer la mise à jour. Accepter la mise à jour entraînera :
+Les configurations des modèles Coding Plan sont versionnées. Lorsque Qwen Code détecte une version plus récente du modèle de configuration, vous serez invité à effectuer une mise à jour. Accepter la mise à jour aura pour effet de :
 
-- Le remplacement des configurations existantes des modèles Coding Plan par les dernières versions
-- La conservation de toutes les configurations de modèles personnalisées que vous avez ajoutées manuellement
-- Le basculement automatique vers le premier modèle de la configuration mise à jour
+- Remplacer les configurations existantes des modèles Coding Plan par les dernières versions
+- Préserver toutes les configurations de modèles personnalisées que vous avez ajoutées manuellement
+- Basculer automatiquement vers le premier modèle de la configuration mise à jour
 
-Ce processus garantit que vous disposez toujours des dernières configurations et fonctionnalités des modèles sans intervention manuelle.
+Le processus de mise à jour garantit que vous disposez toujours des dernières configurations et fonctionnalités des modèles sans intervention manuelle.
 
 ### Configuration manuelle (Avancé)
 
@@ -387,16 +387,16 @@ Si vous préférez configurer manuellement les modèles Coding Plan, vous pouvez
 
 ## Couches de résolution et atomicité
 
-Les valeurs effectives d'authentification/modèle/identifiants sont choisies par champ selon la précédence suivante (la première présente gagne). Vous pouvez combiner `--auth-type` avec `--model` pour pointer directement vers une entrée de fournisseur ; ces flags CLI s'exécutent avant les autres couches.
+Les valeurs effectives d'authentification/modèle/identifiants sont choisies par champ selon la précédence suivante (la première présente l'emporte). Vous pouvez combiner `--auth-type` avec `--model` pour pointer directement vers une entrée de fournisseur ; ces flags CLI s'exécutent avant les autres couches.
 
 | Layer (highest → lowest)   | authType                            | model                                           | apiKey                                              | baseUrl                                              | apiKeyEnvKey           | proxy                             |
 | -------------------------- | ----------------------------------- | ----------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------- | ---------------------- | --------------------------------- |
-| Remplacements programmatiques     | `/auth`                             | entrée `/auth`                                   | entrée `/auth`                                       | entrée `/auth`                                        | —                      | —                                 |
-| Sélection du fournisseur de modèles   | —                                   | `modelProvider.id`                              | `env[modelProvider.envKey]`                         | `modelProvider.baseUrl`                              | `modelProvider.envKey` | —                                 |
-| Arguments CLI              | `--auth-type`                       | `--model`                                       | `--openaiApiKey` (ou équivalents spécifiques au fournisseur) | `--openaiBaseUrl` (ou équivalents spécifiques au fournisseur) | —                      | —                                 |
-| Variables d'environnement      | —                                   | Mapping spécifique au fournisseur (ex. `OPENAI_MODEL`) | Mapping spécifique au fournisseur (ex. `OPENAI_API_KEY`)   | Mapping spécifique au fournisseur (ex. `OPENAI_BASE_URL`)   | —                      | —                                 |
-| Paramètres (`settings.json`) | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                              | `security.auth.baseUrl`                              | —                      | —                                 |
-| Valeur par défaut / calculée         | Retour à `AuthType.QWEN_OAUTH` | Valeur par défaut intégrée (OpenAI ⇒ `qwen3-coder-plus`)  | —                                                   | —                                                    | —                      | `Config.getProxy()` si configuré |
+| Programmatic overrides     | `/auth`                             | `/auth` input                                   | `/auth` input                                       | `/auth` input                                        | —                      | —                                 |
+| Model provider selection   | —                                   | `modelProvider.id`                              | `env[modelProvider.envKey]`                         | `modelProvider.baseUrl`                              | `modelProvider.envKey` | —                                 |
+| CLI arguments              | `--auth-type`                       | `--model`                                       | `--openaiApiKey` (or provider-specific equivalents) | `--openaiBaseUrl` (or provider-specific equivalents) | —                      | —                                 |
+| Environment variables      | —                                   | Provider-specific mapping (e.g. `OPENAI_MODEL`) | Provider-specific mapping (e.g. `OPENAI_API_KEY`)   | Provider-specific mapping (e.g. `OPENAI_BASE_URL`)   | —                      | —                                 |
+| Settings (`settings.json`) | `security.auth.selectedType`        | `model.name`                                    | `security.auth.apiKey`                              | `security.auth.baseUrl`                              | —                      | —                                 |
+| Default / computed         | Falls back to `AuthType.QWEN_OAUTH` | Built-in default (OpenAI ⇒ `qwen3-coder-plus`)  | —                                                   | —                                                    | —                      | `Config.getProxy()` if configured |
 
 \*Lorsqu'ils sont présents, les flags d'authentification CLI remplacent les paramètres. Sinon, `security.auth.selectedType` ou la valeur par défaut implicite détermine le type d'authentification. Qwen OAuth et OpenAI sont les seuls types d'authentification exposés sans configuration supplémentaire.
 
@@ -404,20 +404,20 @@ Les valeurs effectives d'authentification/modèle/identifiants sont choisies par
 >
 > **Dépréciation de `security.auth.apiKey` et `security.auth.baseUrl` :** La configuration directe des identifiants API via `security.auth.apiKey` et `security.auth.baseUrl` dans `settings.json` est dépréciée. Ces paramètres étaient utilisés dans les versions historiques pour les identifiants saisis via l'interface, mais le flux de saisie des identifiants a été supprimé dans la version 0.10.1. Ces champs seront entièrement supprimés dans une prochaine version. **Il est fortement recommandé de migrer vers `modelProviders`** pour toutes les configurations de modèles et d'identifiants. Utilisez `envKey` dans `modelProviders` pour référencer des variables d'environnement afin de gérer les identifiants de manière sécurisée, plutôt que de les coder en dur dans les fichiers de paramètres.
 
-## Empilement de la configuration de génération : La couche étanche du fournisseur
+## Superposition de la configuration de génération : La couche fournisseur imperméable
 
-La résolution de la configuration suit un modèle d'empilement strict avec une règle cruciale : **la couche `modelProvider` est étanche**.
+La résolution de la configuration suit un modèle de superposition strict avec une règle cruciale : **la couche `modelProvider` est imperméable**.
 
 ### Fonctionnement
 
-1. **Lorsqu'un modèle `modelProvider` EST sélectionné** (par ex., via la commande `/model` choisissant un modèle configuré par fournisseur) :
+1. **Lorsqu'un modèle `modelProvider` EST sélectionné** (ex. via la commande `/model` choisissant un modèle configuré par fournisseur) :
    - L'intégralité du `generationConfig` du fournisseur est appliquée **atomiquement**
-   - **La couche fournisseur est complètement étanche** — les couches inférieures (CLI, env, paramètres) ne participent pas du tout à la résolution de `generationConfig`
+   - **La couche fournisseur est complètement imperméable** — les couches inférieures (CLI, env, paramètres) ne participent pas du tout à la résolution de `generationConfig`
    - Tous les champs définis dans `modelProviders[].generationConfig` utilisent les valeurs du fournisseur
    - Tous les champs **non définis** par le fournisseur sont définis sur `undefined` (et non hérités des paramètres)
-   - Cela garantit que les configurations des fournisseurs agissent comme un "package scellé" complet et autonome
+   - Cela garantit que les configurations de fournisseur agissent comme un "paquet scellé" complet et autonome
 
-2. **Lorsqu'AUCUN modèle `modelProvider` n'est sélectionné** (par ex., en utilisant `--model` avec un ID de modèle brut, ou en utilisant directement CLI/env/paramètres) :
+2. **Lorsqu'AUCUN modèle `modelProvider` n'est sélectionné** (ex. utilisation de `--model` avec un ID de modèle brut, ou utilisation directe de CLI/env/paramètres) :
    - La résolution passe aux couches inférieures
    - Les champs sont renseignés depuis CLI → env → paramètres → valeurs par défaut
    - Cela crée un **Modèle Runtime** (voir section suivante)
@@ -426,14 +426,14 @@ La résolution de la configuration suit un modèle d'empilement strict avec une 
 
 | Priority | Source                                        | Behavior                                                                                                 |
 | -------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 1        | Remplacements programmatiques                        | Modifications runtime `/model`, `/auth`                                                                        |
-| 2        | `modelProviders[authType][].generationConfig` | **Couche étanche** - remplace complètement tous les champs `generationConfig` ; les couches inférieures ne participent pas |
+| 1        | Programmatic overrides                        | Modifications runtime `/model`, `/auth`                                                                        |
+| 2        | `modelProviders[authType][].generationConfig` | **Couche imperméable** - remplace complètement tous les champs `generationConfig` ; les couches inférieures ne participent pas |
 | 3        | `settings.model.generationConfig`             | Utilisé uniquement pour les **Modèles Runtime** (lorsqu'aucun modèle fournisseur n'est sélectionné)                                    |
-| 4        | Valeurs par défaut du générateur de contenu                    | Valeurs par défaut spécifiques au fournisseur (ex. OpenAI vs Gemini) - uniquement pour les Modèles Runtime                            |
+| 4        | Content-generator defaults                    | Valeurs par défaut spécifiques au fournisseur (ex. OpenAI vs Gemini) - uniquement pour les Modèles Runtime                            |
 
 ### Traitement atomique des champs
 
-Les champs suivants sont traités comme des objets atomiques : les valeurs du fournisseur remplacent entièrement l'objet, aucune fusion n'a lieu :
+Les champs suivants sont traités comme des objets atomiques : les valeurs du fournisseur remplacent complètement l'objet entier, aucune fusion n'a lieu :
 
 - `samplingParams` - Température, top_p, max_tokens, etc.
 - `customHeaders` - En-têtes HTTP personnalisés
@@ -471,7 +471,7 @@ Lorsque `gpt-4o` est sélectionné depuis `modelProviders` :
 
 - `timeout` = 60000 (depuis le fournisseur, remplace les paramètres)
 - `samplingParams.temperature` = 0.2 (depuis le fournisseur, remplace complètement l'objet des paramètres)
-- `samplingParams.max_tokens` = **undefined** (non défini dans le fournisseur, et la couche fournisseur n'hérite pas des paramètres — les champs sont explicitement définis sur undefined s'ils ne sont pas fournis)
+- `samplingParams.max_tokens` = **undefined** (non défini dans le fournisseur, et la couche fournisseur n'hérite pas des paramètres — les champs sont explicitement définis sur `undefined` s'ils ne sont pas fournis)
 
 Lors de l'utilisation d'un modèle brut via `--model gpt-4` (non issu de `modelProviders`, crée un Modèle Runtime) :
 
@@ -479,7 +479,70 @@ Lors de l'utilisation d'un modèle brut via `--model gpt-4` (non issu de `modelP
 - `samplingParams.temperature` = 0.5 (depuis les paramètres)
 - `samplingParams.max_tokens` = 1000 (depuis les paramètres)
 
-La stratégie de fusion pour `modelProviders` elle-même est REMPLACER : l'intégralité du `modelProviders` des paramètres du projet remplacera la section correspondante dans les paramètres utilisateur, au lieu de fusionner les deux.
+La stratégie de fusion pour `modelProviders` lui-même est REPLACE : l'intégralité de `modelProviders` des paramètres du projet remplacera la section correspondante dans les paramètres utilisateur, au lieu de fusionner les deux.
+
+## Configuration du raisonnement / réflexion
+
+Le champ optionnel `reasoning` sous `generationConfig` contrôle l'intensité du raisonnement du modèle avant de répondre. Les convertisseurs Anthropic et Gemini le respectent toujours. Le pipeline compatible OpenAI le respecte **sauf si** `generationConfig.samplingParams` est défini — voir la mise en garde "Interaction avec `samplingParams`" ci-dessous.
+
+```jsonc
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "deepseek-v4-pro",
+        "name": "DeepSeek V4 Pro",
+        "baseUrl": "https://api.deepseek.com/v1",
+        "envKey": "DEEPSEEK_API_KEY",
+        "generationConfig": {
+          // The four-tier scale:
+          //   'low'    | 'medium' — server-mapped to 'high' on DeepSeek
+          //   'high'   — default reasoning intensity
+          //   'max'    — DeepSeek-specific extra-strong tier
+          // Or set `false` to disable reasoning entirely.
+          "reasoning": { "effort": "max" },
+        },
+      },
+    ],
+  },
+}
+```
+
+### Comportement par fournisseur
+
+| Protocol / provider                          | Wire shape                                                           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **OpenAI / DeepSeek** (`api.deepseek.com`)   | Flat `reasoning_effort: <effort>` body parameter                     | Lorsque `reasoning.effort` est défini dans la forme de configuration imbriquée, il est réécrit en `reasoning_effort` plat et `'low'`/`'medium'` sont normalisés en `'high'`, `'xhigh'` en `'max'` — reflétant la [compatibilité descendante côté serveur](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion) de DeepSeek. Les remplacements `samplingParams.reasoning_effort` ou `extra_body.reasoning_effort` de niveau supérieur ignorent cette normalisation et sont envoyés tels quels. |
+| **OpenAI** (other compatible servers)        | `reasoning: { effort, ... }` passed through verbatim                 | Défini via `samplingParams` (ex. `samplingParams.reasoning_effort` pour GPT-5/série o) lorsque le fournisseur attend une forme différente.                                                                                                                                                                                                                                                                                                |
+| **Anthropic** (real `api.anthropic.com`)     | `output_config: { effort }` plus the `effort-2025-11-24` beta header | Anthropic réel n'accepte que `'low'`/`'medium'`/`'high'`. `'max'` est **limité à `'high'`** avec une ligne `debugLogger.warn` (une fois par générateur) ; si vous souhaitez une intensité maximale, basculez le `baseUrl` vers un point de terminaison compatible DeepSeek qui le prend en charge.                                                                                                                                                                                  |
+| **Anthropic** (`api.deepseek.com/anthropic`) | Same `output_config: { effort }` + beta header                       | `'max'` est transmis inchangé.                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Gemini** (`@google/genai`)                 | `thinkingConfig: { includeThoughts: true, thinkingLevel }`           | `'low'` → `LOW`, `'high'`/`'max'` → `HIGH`, autres → `THINKING_LEVEL_UNSPECIFIED` (Gemini ne possède pas de niveau `MAX`).                                                                                                                                                                                                                                                                                                                    |
+
+### `reasoning: false`
+
+Définir `reasoning: false` (le booléen littéral) désactive explicitement la réflexion sur tous les fournisseurs — utile pour les requêtes secondaires peu coûteuses qui ne bénéficient pas du raisonnement. Ceci est également respecté au niveau de la requête via `request.config.thinkingConfig.includeThoughts: false` pour les appels ponctuels (ex. génération de suggestions).
+
+Sur un `baseUrl` `api.deepseek.com`, le pipeline OpenAI émet le champ explicite `thinking: { type: 'disabled' }` requis par DeepSeek V4+ — la valeur par défaut côté serveur est `'enabled'`, donc omettre simplement `reasoning_effort` entraînerait tout de même une latence/coût de réflexion. Les backends DeepSeek auto-hébergés (sglang/vllm) et les autres serveurs compatibles OpenAI ne reçoivent **pas** ce champ ; si vous devez désactiver la réflexion sur ceux-ci, injectez `thinking: { type: 'disabled' }` (ou tout autre paramètre exposé par votre framework d'inférence) via `samplingParams`/`extra_body`.
+
+### Interaction avec `samplingParams` (uniquement compatible OpenAI)
+
+> [!warning]
+>
+> Lorsque `generationConfig.samplingParams` est défini sur un fournisseur compatible OpenAI, le pipeline envoie ces clés sur le réseau **telles quelles** et ignore complètement l'injection séparée de `reasoning`. Ainsi, une configuration comme `{ samplingParams: { temperature: 0.5 }, reasoning: { effort: 'max' } }` ignorera silencieusement le champ de raisonnement sur les requêtes OpenAI/DeepSeek.
+>
+> Si vous définissez `samplingParams`, incluez le paramètre de raisonnement directement dedans — pour DeepSeek, il s'agit de `samplingParams.reasoning_effort`, pour GPT-5/série o, c'est `samplingParams.reasoning_effort` (leur champ plat) ou `samplingParams.reasoning` (l'objet imbriqué). Pour OpenRouter et d'autres fournisseurs, le nom du champ varie ; consultez la documentation du fournisseur.
+>
+> Les convertisseurs Anthropic et Gemini ne sont pas affectés — ils lisent toujours `reasoning.effort` directement, indépendamment de `samplingParams`.
+
+### `budget_tokens`
+
+Vous pouvez définir un budget exact de tokens de réflexion en incluant `budget_tokens` aux côtés de `effort` :
+
+```jsonc
+"reasoning": { "effort": "high", "budget_tokens": 50000 }
+```
+
+Pour Anthropic, cela devient `thinking.budget_tokens`. Pour OpenAI/DeepSeek, le champ est conservé mais actuellement ignoré par le serveur — `reasoning_effort` est le paramètre déterminant.
 
 ## Modèles fournisseur vs Modèles Runtime
 
@@ -489,7 +552,7 @@ Qwen Code distingue deux types de configurations de modèles :
 
 - Défini dans la configuration `modelProviders`
 - Dispose d'un package de configuration complet et atomique
-- Lorsqu'il est sélectionné, sa configuration est appliquée comme une couche étanche
+- Lorsqu'il est sélectionné, sa configuration est appliquée comme une couche imperméable
 - Apparaît dans la liste de la commande `/model` avec des métadonnées complètes (nom, description, capacités)
 - Recommandé pour les workflows multi-modèles et la cohérence d'équipe
 
@@ -512,22 +575,22 @@ qwen --auth-type openai --model my-custom-model --openaiApiKey $KEY --openaiBase
 
 Le snapshot :
 
-- Capture l'ID du modèle, la clé API, l'URL de base et la configuration de génération
-- Persiste entre les sessions (stocké en mémoire pendant le runtime)
+- Capture l'ID du modèle, la clé API, le `baseUrl` et la configuration de génération
+- Persiste entre les sessions (stocké en mémoire pendant l'exécution)
 - Apparaît dans la liste de la commande `/model` comme une option runtime
 - Peut être activé via `/model $runtime|openai|my-custom-model`
 
 ### Différences clés
 
-| Aspect                  | Modèle fournisseur                    | Modèle Runtime                              |
+| Aspect                  | Provider Model                    | Runtime Model                              |
 | ----------------------- | --------------------------------- | ------------------------------------------ |
-| Source de configuration    | `modelProviders` dans les paramètres      | Couches CLI, env, paramètres                  |
-| Atomicité de la configuration | Package complet et étanche     | Empilé, chaque champ résolu indépendamment |
-| Réutilisabilité             | Toujours disponible dans la liste `/model` | Capturé en snapshot, apparaît si complet  |
-| Partage d'équipe            | Oui (via paramètres commités)      | Non (local à l'utilisateur)                            |
-| Stockage des identifiants      | Référence via `envKey` uniquement       | Peut capturer la clé réelle dans le snapshot         |
+| Configuration source    | `modelProviders` in settings      | CLI, env, settings layers                  |
+| Configuration atomicity | Complete, impermeable package     | Layered, each field resolved independently |
+| Reusability             | Always available in `/model` list | Captured as snapshot, appears if complete  |
+| Team sharing            | Yes (via committed settings)      | No (user-local)                            |
+| Credential storage      | Reference via `envKey` only       | May capture actual key in snapshot         |
 
-### Quand utiliser chacun
+### Quand utiliser chaque type
 
 - **Utilisez les Modèles fournisseur** lorsque : Vous disposez de modèles standards partagés au sein d'une équipe, avez besoin de configurations cohérentes ou souhaitez empêcher les remplacements accidentels
 - **Utilisez les Modèles Runtime** lorsque : Vous testez rapidement un nouveau modèle, utilisez des identifiants temporaires ou travaillez avec des points de terminaison ad hoc
@@ -536,7 +599,7 @@ Le snapshot :
 
 > [!important]
 >
-> Définissez `modelProviders` dans le fichier `~/.qwen/settings.json` (portée utilisateur) dans la mesure du possible et évitez de persister des remplacements d'identifiants dans n'importe quelle portée. Conserver le catalogue de fournisseurs dans les paramètres utilisateur évite les conflits de fusion/remplacement entre les portées projet et utilisateur, et garantit que les mises à jour `/auth` et `/model` réécrivent toujours dans une portée cohérente.
+> Définissez `modelProviders` dans le fichier `~/.qwen/settings.json` au niveau utilisateur dans la mesure du possible, et évitez de persister des remplacements d'identifiants dans tout autre scope. Conserver le catalogue de fournisseurs dans les paramètres utilisateur empêche les conflits de fusion/remplacement entre les scopes projet et utilisateur, et garantit que les mises à jour `/auth` et `/model` sont toujours réécrites dans un scope cohérent.
 
-- `/model` et `/auth` persistent `model.name` (le cas échéant) et `security.auth.selectedType` dans la portée accessible en écriture la plus proche qui définit déjà `modelProviders` ; sinon, ils retombent sur la portée utilisateur. Cela maintient la synchronisation des fichiers workspace/utilisateur avec le catalogue de fournisseurs actif.
-- Sans `modelProviders`, le résolveur mélange les couches CLI/env/paramètres, créant des Modèles Runtime. Cela convient pour les configurations à fournisseur unique, mais devient fastidieux lors de changements fréquents. Définissez des catalogues de fournisseurs dès que les workflows multi-modèles sont courants, afin que les basculements restent atomiques, attribuables à une source et débogables.
+- `/model` et `/auth` persistent `model.name` (le cas échéant) et `security.auth.selectedType` dans le scope inscriptible le plus proche qui définit déjà `modelProviders` ; sinon, ils basculent vers le scope utilisateur. Cela maintient la synchronisation des fichiers workspace/utilisateur avec le catalogue de fournisseurs actif.
+- Sans `modelProviders`, le résolveur mélange les couches CLI/env/paramètres, créant des Modèles Runtime. Cela convient pour les configurations à fournisseur unique, mais devient fastidieux lors de changements fréquents. Définissez des catalogues de fournisseurs dès que les workflows multi-modèles sont courants, afin que les changements restent atomiques, attribuables à leur source et débogables.

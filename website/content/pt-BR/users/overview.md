@@ -3,7 +3,7 @@
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
 [![@qwen-code/qwen-code version](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
 
-> Conheça o Qwen Code, a ferramenta de codificação com agentes da Qwen que roda no seu terminal e ajuda você a transformar ideias em código mais rápido do que nunca.
+> Conheça o Qwen Code, a ferramenta de codificação com agente da Qwen que roda no seu terminal e ajuda você a transformar ideias em código mais rápido do que nunca.
 
 ## Comece a usar em 30 segundos
 
@@ -15,10 +15,10 @@
 curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
 ```
 
-**Windows (Execute o CMD como Administrador)**
+**Windows (Execute como Administrador)**
 
-```sh
-curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat
+```cmd
+powershell -Command "Invoke-WebRequest 'https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat' -OutFile (Join-Path $env:TEMP 'install-qwen.bat'); & (Join-Path $env:TEMP 'install-qwen.bat')"
 ```
 
 > [!note]
@@ -32,7 +32,7 @@ cd your-project
 qwen
 ```
 
-Selecione a autenticação **Qwen OAuth (Free)** e siga as instruções para fazer login. Em seguida, vamos começar entendendo sua base de código. Experimente um destes comandos:
+Escolha seu método de autenticação — **API Key** ou **[Alibaba Cloud Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)** ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) — e siga as instruções na tela para configurar. Consulte o guia de configuração da API ([Pequim](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) para instruções passo a passo. Em seguida, vamos começar entendendo sua base de código. Experimente um destes comandos:
 
 ```
 what does this project do?
@@ -44,7 +44,7 @@ Você será solicitado a fazer login no primeiro uso. É só isso! [Continue com
 
 > [!tip]
 >
-> Consulte [solução de problemas](./support/troubleshooting) se encontrar algum problema.
+> Consulte [solução de problemas](./support/troubleshooting) se encontrar dificuldades.
 
 > [!note]
 >
@@ -52,11 +52,11 @@ Você será solicitado a fazer login no primeiro uso. É só isso! [Continue com
 
 ## O que o Qwen Code faz por você
 
-- **Crie funcionalidades a partir de descrições**: Diga ao Qwen Code o que você quer construir em linguagem natural. Ele criará um plano, escreverá o código e garantirá que funcione.
+- **Crie funcionalidades a partir de descrições**: Diga ao Qwen Code o que você quer construir em linguagem simples. Ele criará um plano, escreverá o código e garantirá que funcione.
 - **Depure e corrija problemas**: Descreva um bug ou cole uma mensagem de erro. O Qwen Code analisará sua base de código, identificará o problema e implementará uma correção.
-- **Navegue por qualquer base de código**: Faça qualquer pergunta sobre a base de código da sua equipe e receba uma resposta detalhada. O Qwen Code mantém o conhecimento de toda a estrutura do seu projeto, pode buscar informações atualizadas na web e, com o [MCP](./features/mcp), pode extrair dados de fontes externas como Google Drive, Figma e Slack.
-- **Automatize tarefas tediosas**: Corrija problemas de lint complicados, resolva conflitos de merge e escreva notas de lançamento. Faça tudo isso com um único comando nas suas máquinas de desenvolvimento ou automaticamente no CI.
-- **[Sugestões de acompanhamento](./features/followup-suggestions)**: O Qwen Code prevê o que você quer digitar a seguir e exibe como texto fantasma. Pressione Tab para aceitar ou continue digitando para descartar.
+- **Navegue por qualquer base de código**: Faça qualquer pergunta sobre a base de código da sua equipe e receba uma resposta detalhada. O Qwen Code mantém o contexto de toda a estrutura do seu projeto, pode buscar informações atualizadas na web e, com o [MCP](./features/mcp), pode extrair dados de fontes externas como Google Drive, Figma e Slack.
+- **Automatize tarefas tediosas**: Corrija problemas de lint, resolva conflitos de merge e escreva notas de versão. Faça tudo isso com um único comando nas suas máquinas de desenvolvimento ou automaticamente no CI.
+- **[Sugestões de continuação](./features/followup-suggestions)**: O Qwen Code prevê o que você quer digitar a seguir e mostra como texto fantasma (ghost text). Pressione Tab para aceitar ou continue digitando para descartar.
 
 ## Por que os desenvolvedores adoram o Qwen Code
 

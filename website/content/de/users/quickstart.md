@@ -2,15 +2,15 @@
 
 > 👏 Willkommen bei Qwen Code!
 
-Dieser Schnellstart-Guide zeigt dir, wie du in wenigen Minuten mit KI-gestützter Code-Unterstützung arbeitest. Am Ende weißt du, wie du Qwen Code für gängige Entwicklungsaufgaben nutzt.
+Dieser Schnellstart-Leitfaden führt dich in wenigen Minuten in die KI-gestützte Code-Unterstützung ein. Am Ende weißt du, wie du Qwen Code für gängige Entwicklungsaufgaben nutzt.
 
 ## Bevor du beginnst
 
-Stelle sicher, dass du:
+Stelle sicher, dass du Folgendes hast:
 
-- ein geöffnetes **Terminal** oder eine Eingabeaufforderung hast
-- ein Code-Projekt hast, mit dem du arbeiten kannst
-- ein [Qwen Code](https://chat.qwen.ai/auth?mode=register) Konto besitzt
+- Ein geöffnetes **Terminal** oder eine Eingabeaufforderung
+- Ein Code-Projekt, mit dem du arbeiten kannst
+- Einen API-Key von Alibaba Cloud Model Studio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)) oder ein Abonnement für den Alibaba Cloud Coding Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))
 
 ## Schritt 1: Qwen Code installieren
 
@@ -24,10 +24,10 @@ Um Qwen Code zu installieren, verwende eine der folgenden Methoden:
 curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
 ```
 
-**Windows (Als Administrator in CMD ausführen)**
+**Windows (Als Administrator ausführen)**
 
-```sh
-curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat
+```cmd
+powershell -Command "Invoke-WebRequest 'https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat' -OutFile (Join-Path $env:TEMP 'install-qwen.bat'); & (Join-Path $env:TEMP 'install-qwen.bat')"
 ```
 
 > [!note]
@@ -52,31 +52,36 @@ npm install -g @qwen-code/qwen-code@latest
 brew install qwen-code
 ```
 
-## Schritt 2: Bei deinem Konto anmelden
+## Schritt 2: Authentifizierung einrichten
 
-Für die Nutzung von Qwen Code ist ein Konto erforderlich. Wenn du eine interaktive Session mit dem Befehl `qwen` startest, wirst du zur Anmeldung aufgefordert:
+Wenn du eine interaktive Sitzung mit dem Befehl `qwen` startest, wirst du aufgefordert, die Authentifizierung zu konfigurieren:
 
 ```bash
-# You'll be prompted to log in on first use
+# You'll be prompted to set up authentication on first use
 qwen
 ```
 
 ```bash
-# Follow the prompts to log in with your account
+# Or run /auth anytime to change authentication method
 /auth
 ```
 
-Wähle `Qwen OAuth`, melde dich bei deinem Konto an und folge den Anweisungen zur Bestätigung. Nach der Anmeldung werden deine Zugangsdaten gespeichert und du musst dich nicht erneut anmelden.
+Wähle deine bevorzugte Authentifizierungsmethode:
+
+- **Alibaba Cloud Coding Plan**: Wähle `Alibaba Cloud Coding Plan` für eine feste monatliche Gebühr mit verschiedenen Modelloptionen. Die Einrichtungsanleitung findest du im [Coding Plan Guide](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)).
+- **API Key**: Wähle `API Key` und gib dann deinen API-Key von Alibaba Cloud Model Studio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)) ein. Details findest du im API-Einrichtungsleitfaden ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)).
+
+> ⚠️ **Hinweis**: Qwen OAuth wurde am 15. April 2026 eingestellt. Wenn du Qwen OAuth bisher genutzt hast, wechsle bitte zu einer der oben genannten Methoden.
 
 > [!note]
 >
-> Wenn du Qwen Code zum ersten Mal mit deinem Qwen Konto authentifizierst, wird automatisch ein Workspace namens `.qwen` für dich erstellt. Dieser Workspace bietet eine zentrale Kostenverfolgung und Verwaltung für die gesamte Qwen Code-Nutzung in deinem Unternehmen.
+> Wenn du Qwen Code zum ersten Mal mit deinem Qwen-Account authentifizierst, wird automatisch ein Workspace namens „.qwen“ für dich erstellt. Dieser Workspace bietet eine zentrale Kostenverfolgung und Verwaltung für die gesamte Qwen Code-Nutzung in deinem Unternehmen.
 
 > [!tip]
 >
-> Du kannst die Authentifizierung auch direkt über das Terminal konfigurieren, ohne eine Session zu starten, indem du `qwen auth` ausführst. Verwende `qwen auth status`, um jederzeit deine aktuelle Konfiguration zu überprüfen. Weitere Details findest du auf der Seite [Authentifizierung](./configuration/auth).
+> Du kannst die Authentifizierung auch direkt über das Terminal konfigurieren, ohne eine Sitzung zu starten, indem du `qwen auth` ausführst. Verwende `qwen auth status`, um jederzeit deine aktuelle Konfiguration zu überprüfen. Details findest du auf der Seite [Authentifizierung](./configuration/auth).
 
-## Schritt 3: Deine erste Session starten
+## Schritt 3: Deine erste Sitzung starten
 
 Öffne dein Terminal in einem beliebigen Projektverzeichnis und starte Qwen Code:
 
@@ -87,9 +92,9 @@ cd /path/to/your/project
 qwen
 ```
 
-Du siehst den Qwen Code Willkommensbildschirm mit deinen Session-Informationen, den letzten Gesprächen und den neuesten Updates. Gib `/help` ein, um verfügbare Befehle anzuzeigen.
+Du siehst den Qwen Code-Willkommensbildschirm mit deinen Sitzungsinformationen, den letzten Gesprächen und den neuesten Updates. Gib `/help` ein, um verfügbare Befehle anzuzeigen.
 
-## Chatte mit Qwen Code
+## Chat mit Qwen Code
 
 ### Stelle deine erste Frage
 
@@ -107,11 +112,11 @@ what can Qwen Code do?
 
 > [!note]
 >
-> Qwen Code liest deine Dateien bei Bedarf – du musst den Kontext nicht manuell hinzufügen. Qwen Code hat außerdem Zugriff auf die eigene Dokumentation und kann Fragen zu seinen Funktionen und Fähigkeiten beantworten.
+> Qwen Code liest deine Dateien bei Bedarf – du musst den Kontext nicht manuell hinzufügen. Qwen Code hat außerdem Zugriff auf seine eigene Dokumentation und kann Fragen zu seinen Funktionen und Möglichkeiten beantworten.
 
 ### Nimm deine erste Code-Änderung vor
 
-Lass uns Qwen Code nun tatsächlich Code schreiben lassen. Probiere eine einfache Aufgabe aus:
+Lass uns Qwen Code nun tatsächlich Code schreiben lassen. Versuche eine einfache Aufgabe:
 
 ```
 add a hello world function to the main file
@@ -126,7 +131,7 @@ Qwen Code wird:
 
 > [!note]
 >
-> Qwen Code fragt immer um Erlaubnis, bevor Dateien geändert werden. Du kannst einzelne Änderungen bestätigen oder für eine Session den Modus „Alle akzeptieren“ aktivieren.
+> Qwen Code fragt immer um Erlaubnis, bevor Dateien geändert werden. Du kannst einzelne Änderungen genehmigen oder den Modus „Alle akzeptieren“ für eine Sitzung aktivieren.
 
 ### Git mit Qwen Code nutzen
 
@@ -158,7 +163,7 @@ help me resolve merge conflicts
 
 Qwen Code ist versiert im Debugging und bei der Implementierung von Features.
 
-Beschreibe dein Anliegen in natürlicher Sprache:
+Beschreibe, was du möchtest, in natürlicher Sprache:
 
 ```
 add input validation to the user registration form
@@ -199,7 +204,7 @@ write unit tests for the calculator functions
 update the README with installation instructions
 ```
 
-**Code Review**
+**Code-Review**
 
 ```
 review my changes and suggest improvements
@@ -207,37 +212,38 @@ review my changes and suggest improvements
 
 > [!tip]
 >
-> **Denk daran**: Qwen Code ist dein KI-Pair-Programmierer. Sprich mit ihm wie mit einem hilfsbereiten Kollegen – beschreibe, was du erreichen möchtest, und er hilft dir dabei.
+> **Merke**: Qwen Code ist dein KI-Pair-Programmierer. Sprich mit ihm wie mit einem hilfreichen Kollegen – beschreibe, was du erreichen möchtest, und er wird dir dabei helfen.
 
 ## Wichtige Befehle
 
 Hier sind die wichtigsten Befehle für den täglichen Gebrauch:
 
-| Befehl                | Funktion                                                 | Beispiel                      |
-| --------------------- | -------------------------------------------------------- | ----------------------------- |
-| `qwen`                | Qwen Code starten                                        | `qwen`                        |
-| `/auth`               | Authentifizierungsmethode ändern (in Session)            | `/auth`                       |
-| `qwen auth`           | Authentifizierung über das Terminal konfigurieren        | `qwen auth`                   |
-| `qwen auth status`    | Aktuellen Authentifizierungsstatus prüfen                | `qwen auth status`            |
-| `/help`               | Hilfeinformationen für verfügbare Befehle anzeigen       | `/help` oder `/?`             |
+| Befehl               | Funktion                                     | Beispiel                       |
+| --------------------- | ------------------------------------------------ | ----------------------------- |
+| `qwen`                | Qwen Code starten                                  | `qwen`                        |
+| `/auth`               | Authentifizierungsmethode ändern (in der Sitzung)        | `/auth`                       |
+| `qwen auth`           | Authentifizierung über das Terminal konfigurieren       | `qwen auth`                   |
+| `qwen auth api-key`   | API-Key-Authentifizierung konfigurieren                 | `qwen auth api-key`           |
+| `qwen auth status`    | Aktuellen Authentifizierungsstatus prüfen              | `qwen auth status`            |
+| `/help`               | Hilfeinformationen für verfügbare Befehle anzeigen  | `/help` oder `/?`               |
 | `/compress`           | Chatverlauf durch Zusammenfassung ersetzen, um Tokens zu sparen | `/compress`                   |
-| `/clear`              | Terminalbildschirm leeren                                | `/clear` (Tastenkürzel: `Ctrl+L`) |
-| `/theme`              | Visuelles Theme von Qwen Code ändern                     | `/theme`                      |
+| `/clear`              | Terminalbildschirm leeren                    | `/clear` (Tastenkürzel: `Ctrl+L`) |
+| `/theme`              | Visuelles Theme von Qwen Code ändern                    | `/theme`                      |
 | `/language`           | Spracheinstellungen anzeigen oder ändern                 | `/language`                   |
-| → `ui [language]`     | UI-Sprache festlegen                                     | `/language ui zh-CN`          |
-| → `output [language]` | Ausgabesprache des LLM festlegen                         | `/language output Chinese`    |
-| `/quit`               | Qwen Code sofort beenden                                 | `/quit` oder `/exit`          |
+| → `ui [language]`     | UI-Sprache festlegen                        | `/language ui zh-CN`          |
+| → `output [language]` | Ausgabesprache des LLM festlegen                          | `/language output Chinese`    |
+| `/quit`               | Qwen Code sofort beenden                       | `/quit` oder `/exit`            |
 
 Eine vollständige Liste der Befehle findest du in der [CLI-Referenz](./features/commands).
 
 ## Profi-Tipps für Einsteiger
 
-**Sei präzise bei deinen Anfragen**
+**Sei bei deinen Anfragen präzise**
 
 - Statt: „fix the bug“
 - Besser: „fix the login bug where users see a blank screen after entering wrong credentials“
 
-**Nutze Schritt-für-Schritt-Anweisungen**
+**Nutze schrittweise Anweisungen**
 
 - Teile komplexe Aufgaben in Schritte auf:
 
@@ -262,12 +268,12 @@ build a dashboard showing products that are most frequently returned by our UK c
 **Spare Zeit mit Tastenkürzeln**
 
 - Drücke `?`, um alle verfügbaren Tastenkürzel anzuzeigen
-- Nutze `Tab` für die Befehlsvervollständigung
-- Drücke `↑` für den Befehlsverlauf
+- Nutze Tab für die Befehlsvervollständigung
+- Drücke ↑ für den Befehlsverlauf
 - Gib `/` ein, um alle Slash-Befehle anzuzeigen
 
 ## Hilfe erhalten
 
 - **In Qwen Code**: Gib `/help` ein oder frage „how do I...“
-- **Dokumentation**: Du bist hier! Stöbere in weiteren Guides
+- **Dokumentation**: Du bist hier! Stöbere in anderen Leitfäden
 - **Community**: Tritt unserer [GitHub Discussion](https://github.com/QwenLM/qwen-code/discussions) bei, um Tipps und Support zu erhalten

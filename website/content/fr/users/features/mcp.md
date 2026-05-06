@@ -6,8 +6,8 @@ Qwen Code peut se connecter à des outils et des sources de données externes vi
 
 Avec des serveurs MCP connectés, vous pouvez demander à Qwen Code de :
 
-- Travailler avec des fichiers et des dépôts (lecture/recherche/écriture, selon les outils que vous activez)
-- Interroger des bases de données (inspection de schéma, requêtes, rapports)
+- Travailler avec des fichiers et des repos (lecture/recherche/écriture, selon les outils que vous activez)
+- Interroger des bases de données (inspection du schéma, requêtes, rapports)
 - Intégrer des services internes (exposer vos API sous forme d'outils MCP)
 - Automatiser des workflows (tâches répétitives exposées sous forme d'outils/prompts)
 
@@ -38,14 +38,14 @@ qwen mcp
 
 3. Redémarrez Qwen Code dans le même projet (ou lancez-le s'il n'était pas encore en cours d'exécution), puis demandez au modèle d'utiliser les outils de ce serveur.
 
-## Où la configuration est stockée (portées)
+## Où la configuration est stockée (scopes)
 
-La plupart des utilisateurs n'ont besoin que de ces deux portées :
+La plupart des utilisateurs n'ont besoin que de ces deux scopes :
 
-- **Portée projet (par défaut)** : `.qwen/settings.json` à la racine de votre projet
-- **Portée utilisateur** : `~/.qwen/settings.json` pour tous les projets sur votre machine
+- **Scope projet (par défaut)** : `.qwen/settings.json` à la racine de votre projet
+- **Scope utilisateur** : `~/.qwen/settings.json` pour tous les projets sur votre machine
 
-Écrire dans la portée utilisateur :
+Écrire dans le scope utilisateur :
 
 ```bash
 qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
@@ -53,17 +53,17 @@ qwen mcp add --scope user --transport http my-server http://localhost:3000/mcp
 
 > [!tip]
 >
-> Pour les couches de configuration avancées (paramètres système par défaut et règles de priorité), consultez [Paramètres](../configuration/settings).
+> Pour les couches de configuration avancées (paramètres système par défaut et règles de priorité), consultez [Settings](../configuration/settings).
 
 ## Configurer les serveurs
 
 ### Choisir un transport
 
-| Transport | Quand l'utiliser | Champ(s) JSON |
-| --------- | ----------------------------------------------------------------- | ------------------------------------------- |
+| Transport | Quand l'utiliser                                                       | Champ(s) JSON                               |
+| --------- | ---------------------------------------------------------------------- | ------------------------------------------- |
 | `http`    | Recommandé pour les services distants ; fonctionne bien pour les serveurs MCP cloud | `httpUrl` (+ `headers` optionnel)            |
 | `sse`     | Serveurs hérités/dépréciés qui ne prennent en charge que les Server-Sent Events    | `url` (+ `headers` optionnel)                |
-| `stdio`   | Processus local (scripts, CLI, Docker) sur votre machine             | `command`, `args` (+ `cwd`, `env` optionnels) |
+| `stdio`   | Processus local (scripts, CLIs, Docker) sur votre machine             | `command`, `args` (+ `cwd`, `env` optionnels) |
 
 > [!note]
 >
@@ -94,7 +94,7 @@ JSON (`.qwen/settings.json`) :
 }
 ```
 
-CLI (écrit dans la portée projet par défaut) :
+CLI (écrit dans le scope projet par défaut) :
 
 ```bash
 qwen mcp add pythonTools -e DATABASE_URL=$DB_CONNECTION_STRING -e API_KEY=$EXTERNAL_API_KEY \
@@ -153,6 +153,84 @@ qwen mcp add --transport sse sseServer http://localhost:8080/sse --timeout 30000
 
 - **Confiance serveur** (`trust: true`) : ignore les invites de confirmation pour ce serveur (à utiliser avec parcimonie).
 
+### Authentification OAuth
+
+Qwen Code prend en charge l'authentification OAuth 2.0 pour les serveurs MCP. Cela est utile lors de l'accès à des serveurs distants nécessitant une authentification.
+
+#### Utilisation de base
+
+Lorsque vous ajoutez un serveur MCP avec des identifiants OAuth, Qwen Code gère automatiquement le flux d'authentification :
+
+```bash
+qwen mcp add --transport sse oauth-server https://api.example.com/sse/ \
+  --oauth-client-id your-client-id \
+  --oauth-redirect-uri https://your-server.com/oauth/callback \
+  --oauth-authorization-url https://provider.example.com/authorize \
+  --oauth-token-url https://provider.example.com/token
+```
+
+#### Important : Configuration de l'URI de redirection
+
+Le flux OAuth nécessite une URI de redirection vers laquelle le fournisseur d'autorisation envoie le code d'authentification.
+
+- **Développement local** : Par défaut, Qwen Code utilise `http://localhost:7777/oauth/callback`. Cela fonctionne lorsque vous exécutez Qwen Code sur votre machine locale avec un navigateur local.
+
+- **Déploiements distants/cloud** : Lorsque vous exécutez Qwen Code sur des serveurs distants, des IDE cloud ou des terminaux web, la redirection `localhost` par défaut ne fonctionnera PAS. Vous DEVEZ configurer `--oauth-redirect-uri` pour pointer vers une URL accessible publiquement capable de recevoir le callback OAuth.
+
+Exemple pour les serveurs distants :
+
+```bash
+qwen mcp add --transport sse remote-server https://api.example.com/sse/ \
+  --oauth-redirect-uri https://your-remote-server.example.com/oauth/callback
+```
+
+#### Configuration manuelle via settings.json
+
+Vous pouvez également configurer OAuth en modifiant directement `settings.json` :
+
+```json
+{
+  "mcpServers": {
+    "oauthServer": {
+      "url": "https://api.example.com/sse/",
+      "oauth": {
+        "enabled": true,
+        "clientId": "your-client-id",
+        "clientSecret": "your-client-secret",
+        "authorizationUrl": "https://provider.example.com/authorize",
+        "tokenUrl": "https://provider.example.com/token",
+        "redirectUri": "https://your-server.com/oauth/callback",
+        "scopes": ["read", "write"]
+      }
+    }
+  }
+}
+```
+
+Propriétés de configuration OAuth :
+
+| Propriété           | Description                                                                                                           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `enabled`          | Active OAuth pour ce serveur (booléen)                                                                                |
+| `clientId`         | Identifiant client OAuth (chaîne, optionnel avec l'enregistrement dynamique)                                                  |
+| `clientSecret`     | Secret client OAuth (chaîne, optionnel pour les clients publics)                                                             |
+| `authorizationUrl` | Point de terminaison d'autorisation OAuth (chaîne, détecté automatiquement si omis)                                                     |
+| `tokenUrl`         | Point de terminaison de token OAuth (chaîne, détecté automatiquement si omis)                                                             |
+| `scopes`           | Scopes OAuth requis (tableau de chaînes)                                                                              |
+| `redirectUri`      | URI de redirection personnalisée (chaîne). **Critique pour les déploiements distants**. Par défaut : `http://localhost:7777/oauth/callback` |
+| `tokenParamName`   | Nom du paramètre de requête pour les tokens dans les URL SSE (chaîne)                                                                  |
+| `audiences`        | Audiences pour lesquelles le token est valide (tableau de chaînes)                                                                   |
+
+#### Gestion des tokens
+
+Les tokens OAuth sont automatiquement :
+
+- **Stockés de manière sécurisée** dans `~/.qwen/mcp-oauth-tokens.json`
+- **Actualisés** à leur expiration (si des refresh tokens sont disponibles)
+- **Validés** avant chaque tentative de connexion
+
+Utilisez la commande `/mcp auth` dans Qwen Code pour gérer l'authentification OAuth de manière interactive.
+
 ### Filtrage des outils (autoriser/refuser des outils par serveur)
 
 Utilisez `includeTools` / `excludeTools` pour restreindre les outils exposés par un serveur (du point de vue de Qwen Code).
@@ -192,9 +270,9 @@ Exemple :
 
 ## Dépannage
 
-- **Le serveur affiche « Disconnected » dans `qwen mcp list`** : vérifiez que l'URL/commande est correcte, puis augmentez `timeout`.
-- **Le serveur Stdio ne démarre pas** : utilisez un chemin `command` absolu et vérifiez `cwd`/`env`.
-- **Les variables d'environnement dans le JSON ne sont pas résolues** : assurez-vous qu'elles existent dans l'environnement où Qwen Code s'exécute (les environnements shell et application GUI peuvent différer).
+- **Le serveur affiche “Disconnected” dans `qwen mcp list`** : vérifiez que l'URL/commande est correcte, puis augmentez `timeout`.
+- **Le serveur Stdio ne parvient pas à démarrer** : utilisez un chemin `command` absolu et vérifiez `cwd`/`env`.
+- **Les variables d'environnement dans le JSON ne sont pas résolues** : assurez-vous qu'elles existent dans l'environnement où Qwen Code s'exécute (les environnements shell et les applications GUI peuvent différer).
 
 ## Référence
 
@@ -234,7 +312,7 @@ Obligatoire (l'un des suivants) :
 
 Optionnel :
 
-| Propriété               | Type/Valeur par défaut                 | Description                                                                                                                                                                                                                                                       |
+| Propriété               | Type/Par défaut                 | Description                                                                                                                                                                                                                                                       |
 | ---------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `args`                 | array                        | Arguments de ligne de commande pour le transport Stdio                                                                                                                                                                                                                        |
 | `headers`              | object                       | En-têtes HTTP personnalisés lors de l'utilisation de `url` ou `httpUrl`                                                                                                                                                                                                                 |
@@ -259,20 +337,28 @@ Vous pouvez toujours configurer les serveurs MCP en modifiant manuellement `sett
 qwen mcp add [options] <name> <commandOrUrl> [args...]
 ```
 
-| Argument/Option     | Description                                                         | Par défaut            | Exemple                                   |
-| ------------------- | ------------------------------------------------------------------- | ------------------ | ----------------------------------------- |
-| `<name>`            | Nom unique pour le serveur.                                       | —                  | `example-server`                          |
-| `<commandOrUrl>`    | Commande à exécuter (pour `stdio`) ou URL (pour `http`/`sse`). | —                  | `/usr/bin/python` ou `http://localhost:8` |
-| `[args...]`         | Arguments optionnels pour une commande `stdio`.                           | —                  | `--port 5000`                             |
-| `-s`, `--scope`     | Portée de configuration (utilisateur ou projet).                              | `project`          | `-s user`                                 |
-| `-t`, `--transport` | Type de transport (`stdio`, `sse`, `http`).                            | `stdio`            | `-t sse`                                  |
-| `-e`, `--env`       | Définir des variables d'environnement.                                          | —                  | `-e KEY=value`                            |
-| `-H`, `--header`    | Définir des en-têtes HTTP pour les transports SSE et HTTP.                       | —                  | `-H "X-Api-Key: abc123"`                  |
-| `--timeout`         | Définir le délai d'expiration de la connexion en millisecondes.                             | —                  | `--timeout 30000`                         |
-| `--trust`           | Faire confiance au serveur (ignorer toutes les invites de confirmation d'appel d'outil).       | — (`false`)        | `--trust`                                 |
-| `--description`     | Définir la description du serveur.                                 | —                  | `--description "Local tools"`             |
-| `--include-tools`   | Liste d'outils à inclure, séparés par des virgules.                         | tous les outils inclus | `--include-tools mytool,othertool`        |
-| `--exclude-tools`   | Liste d'outils à exclure, séparés par des virgules.                         | aucun               | `--exclude-tools mytool`                  |
+| Argument/Option             | Description                                                         | Par défaut                                | Exemple                                                            |
+| --------------------------- | ------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------ |
+| `<name>`                    | Un nom unique pour le serveur.                                       | —                                      | `example-server`                                                   |
+| `<commandOrUrl>`            | La commande à exécuter (pour `stdio`) ou l'URL (pour `http`/`sse`). | —                                      | `/usr/bin/python` ou `http://localhost:8`                          |
+| `[args...]`                 | Arguments optionnels pour une commande `stdio`.                           | —                                      | `--port 5000`                                                      |
+| `-s`, `--scope`             | Scope de configuration (utilisateur ou projet).                              | `project`                              | `-s user`                                                          |
+| `-t`, `--transport`         | Type de transport (`stdio`, `sse`, `http`).                            | `stdio`                                | `-t sse`                                                           |
+| `-e`, `--env`               | Définir des variables d'environnement.                                          | —                                      | `-e KEY=value`                                                     |
+| `-H`, `--header`            | Définir des en-têtes HTTP pour les transports SSE et HTTP.                       | —                                      | `-H "X-Api-Key: abc123"`                                           |
+| `--timeout`                 | Définir le délai d'expiration de la connexion en millisecondes.                             | —                                      | `--timeout 30000`                                                  |
+| `--trust`                   | Faire confiance au serveur (ignorer toutes les invites de confirmation d'appel d'outil).       | — (`false`)                            | `--trust`                                                          |
+| `--description`             | Définir la description du serveur.                                 | —                                      | `--description "Local tools"`                                      |
+| `--include-tools`           | Une liste d'outils à inclure, séparés par des virgules.                         | tous les outils inclus                     | `--include-tools mytool,othertool`                                 |
+| `--exclude-tools`           | Une liste d'outils à exclure, séparés par des virgules.                         | aucun                                   | `--exclude-tools mytool`                                           |
+| `--oauth-client-id`         | ID client OAuth pour l'authentification du serveur MCP.                      | —                                      | `--oauth-client-id your-client-id`                                 |
+| `--oauth-client-secret`     | Secret client OAuth pour l'authentification du serveur MCP.                  | —                                      | `--oauth-client-secret your-client-secret`                         |
+| `--oauth-redirect-uri`      | URI de redirection OAuth pour le callback d'authentification.                     | `http://localhost:7777/oauth/callback` | `--oauth-redirect-uri https://your-server.com/oauth/callback`      |
+| `--oauth-authorization-url` | URL d'autorisation OAuth.                                            | —                                      | `--oauth-authorization-url https://provider.example.com/authorize` |
+| `--oauth-token-url`         | URL de token OAuth.                                                    | —                                      | `--oauth-token-url https://provider.example.com/token`             |
+| `--oauth-scopes`            | Scopes OAuth (séparés par des virgules).                                     | —                                      | `--oauth-scopes scope1,scope2`                                     |
+
+> Les indicateurs `--oauth-*` s'appliquent uniquement à `--transport sse` et `--transport http`. Leur combinaison avec `--transport stdio` est refusée.
 
 #### Supprimer un serveur (`qwen mcp remove`)
 

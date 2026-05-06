@@ -10,7 +10,7 @@ Un serveur MCP permet au CLI de :
 
 - **Découvrir des outils :** Lister les outils disponibles, leurs descriptions et leurs paramètres via des définitions de schéma standardisées.
 - **Exécuter des outils :** Appeler des outils spécifiques avec des arguments définis et recevoir des réponses structurées.
-- **Accéder à des ressources :** Lire des données à partir de ressources spécifiques (bien que le CLI se concentre principalement sur l'exécution des outils).
+- **Accéder à des ressources :** Lire des données depuis des ressources spécifiques (bien que le CLI se concentre principalement sur l'exécution d'outils).
 
 Avec un serveur MCP, vous pouvez étendre les capacités du CLI pour effectuer des actions au-delà de ses fonctionnalités intégrées, comme interagir avec des bases de données, des API, des scripts personnalisés ou des workflows spécialisés.
 
@@ -22,7 +22,7 @@ Qwen Code s'intègre aux serveurs MCP via un système sophistiqué de découvert
 
 Le processus de découverte est orchestré par `discoverMcpTools()`, qui :
 
-1. **Parcourt les serveurs configurés** à partir de votre configuration `mcpServers` dans `settings.json`
+1. **Parcourt les serveurs configurés** depuis votre configuration `mcpServers` dans `settings.json`
 2. **Établit des connexions** en utilisant les mécanismes de transport appropriés (Stdio, SSE ou Streamable HTTP)
 3. **Récupère les définitions d'outils** de chaque serveur via le protocole MCP
 4. **Nettoie et valide** les schémas d'outils pour assurer la compatibilité avec l'API Qwen
@@ -58,8 +58,8 @@ Vous pouvez configurer les serveurs MCP dans votre fichier `settings.json` de de
 L'objet `mcp` dans votre `settings.json` vous permet de définir des règles globales pour tous les serveurs MCP.
 
 - **`mcp.serverCommand`** (string) : Une commande globale pour démarrer un serveur MCP.
-- **`mcp.allowed`** (tableau de strings) : Une liste de noms de serveurs MCP à autoriser. Si défini, seuls les serveurs de cette liste (correspondant aux clés de l'objet `mcpServers`) seront connectés.
-- **`mcp.excluded`** (tableau de strings) : Une liste de noms de serveurs MCP à exclure. Les serveurs de cette liste ne seront pas connectés.
+- **`mcp.allowed`** (array of strings) : Une liste de noms de serveurs MCP à autoriser. Si défini, seuls les serveurs de cette liste (correspondant aux clés de l'objet `mcpServers`) seront connectés.
+- **`mcp.excluded`** (array of strings) : Une liste de noms de serveurs MCP à exclure. Les serveurs de cette liste ne seront pas connectés.
 
 **Exemple :**
 
@@ -104,7 +104,7 @@ Chaque configuration de serveur prend en charge les propriétés suivantes :
 #### Requis (l'un des suivants)
 
 - **`command`** (string) : Chemin vers l'exécutable pour le transport Stdio
-- **`url`** (string) : URL du point de terminaison SSE (ex. `"http://localhost:8080/sse"`)
+- **`url`** (string) : URL du point de terminaison SSE (ex. : `"http://localhost:8080/sse"`)
 - **`httpUrl`** (string) : URL du point de terminaison de streaming HTTP
 
 #### Facultatif
@@ -115,8 +115,8 @@ Chaque configuration de serveur prend en charge les propriétés suivantes :
 - **`cwd`** (string) : Répertoire de travail pour le transport Stdio
 - **`timeout`** (number) : Délai d'expiration de la requête en millisecondes (par défaut : 600 000 ms = 10 minutes)
 - **`trust`** (boolean) : Lorsque `true`, ignore toutes les confirmations d'appel d'outil pour ce serveur (par défaut : `false`)
-- **`includeTools`** (string[]) : Liste des noms d'outils à inclure depuis ce serveur MCP. Lorsqu'elle est spécifiée, seuls les outils listés ici seront disponibles pour ce serveur (comportement de liste d'autorisation). Si non spécifiée, tous les outils du serveur sont activés par défaut.
-- **`excludeTools`** (string[]) : Liste des noms d'outils à exclure de ce serveur MCP. Les outils listés ici ne seront pas disponibles pour le modèle, même s'ils sont exposés par le serveur. **Remarque :** `excludeTools` est prioritaire sur `includeTools` - si un outil figure dans les deux listes, il sera exclu.
+- **`includeTools`** (string[]) : Liste des noms d'outils à inclure depuis ce serveur MCP. Lorsqu'elle est spécifiée, seuls les outils listés ici seront disponibles depuis ce serveur (comportement de liste d'autorisation). Si non spécifiée, tous les outils du serveur sont activés par défaut.
+- **`excludeTools`** (string[]) : Liste des noms d'outils à exclure de ce serveur MCP. Les outils listés ici ne seront pas disponibles pour le modèle, même s'ils sont exposés par le serveur. **Remarque :** `excludeTools` a priorité sur `includeTools` - si un outil figure dans les deux listes, il sera exclu.
 - **`targetAudience`** (string) : L'ID client OAuth autorisé sur l'application protégée par IAP que vous essayez d'accéder. Utilisé avec `authProviderType: 'service_account_impersonation'`.
 - **`targetServiceAccount`** (string) : L'adresse e-mail du compte de service Google Cloud à usurper. Utilisé avec `authProviderType: 'service_account_impersonation'`.
 
@@ -138,49 +138,61 @@ Pour les serveurs prenant en charge la découverte OAuth, vous pouvez omettre la
 }
 ```
 
-Le CLI effectuera automatiquement les opérations suivantes :
+Le CLI effectuera automatiquement :
 
 - Détecter quand un serveur nécessite une authentification OAuth (réponses 401)
-- Découvrir les points de terminaison OAuth à partir des métadonnées du serveur
-- Effectuer un enregistrement dynamique du client si pris en charge
-- Gérer le flux OAuth et la gestion des jetons
+- Découvrir les points de terminaison OAuth depuis les métadonnées du serveur
+- Effectuer l'enregistrement dynamique du client si pris en charge
+- Gérer le flux OAuth et la gestion des tokens
 
 #### Flux d'authentification
 
 Lors de la connexion à un serveur activé pour OAuth :
 
 1. **La tentative de connexion initiale** échoue avec une erreur 401 Unauthorized
-2. **La découverte OAuth** trouve les points de terminaison d'autorisation et de jeton
+2. **La découverte OAuth** trouve les points de terminaison d'autorisation et de token
 3. **Le navigateur s'ouvre** pour l'authentification de l'utilisateur (nécessite un accès local au navigateur)
-4. **Le code d'autorisation** est échangé contre des jetons d'accès
-5. **Les jetons sont stockés** de manière sécurisée pour une utilisation future
-6. **La nouvelle tentative de connexion** réussit avec des jetons valides
+4. **Le code d'autorisation** est échangé contre des tokens d'accès
+5. **Les tokens sont stockés** de manière sécurisée pour une utilisation future
+6. **La nouvelle tentative de connexion** réussit avec des tokens valides
 
 #### Exigences de redirection du navigateur
 
-**Important :** L'authentification OAuth nécessite que votre machine locale puisse :
+**Important :** L'authentification OAuth nécessite que l'URI de redirection soit accessible :
 
-- Ouvrir un navigateur web pour l'authentification
-- Recevoir les redirections sur `http://localhost:7777/oauth/callback`
+- **Comportement par défaut** : Redirige vers `http://localhost:7777/oauth/callback` (fonctionne pour les configurations locales)
+- **URI de redirection personnalisé** : Utilisez `--oauth-redirect-uri` ou configurez `redirectUri` dans settings.json pour spécifier une autre URL
 
-Cette fonctionnalité ne fonctionnera pas dans :
+Pour les **déploiements de serveurs distants/cloud** (ex. : terminaux web, sessions SSH, IDE cloud) :
+
+- La redirection `localhost` par défaut NE FONCTIONNERA PAS
+- Vous DEVEZ configurer un `redirectUri` personnalisé pointant vers une URL accessible publiquement
+- Le navigateur de l'utilisateur doit pouvoir atteindre cette URL et rediriger vers le serveur
+
+Exemple pour les serveurs distants :
+
+```bash
+qwen mcp add --transport sse remote-server https://api.example.com/sse/ \
+  --oauth-redirect-uri https://your-remote-server.example.com/oauth/callback
+```
+
+OAuth ne fonctionnera pas dans :
 
 - Les environnements headless sans accès au navigateur
-- Les sessions SSH distantes sans redirection X11
-- Les environnements conteneurisés sans prise en charge du navigateur
+- Les environnements où le `redirectUri` configuré est inaccessible depuis le navigateur de l'utilisateur
 
 #### Gestion de l'authentification OAuth
 
 Utilisez la commande `/mcp auth` pour gérer l'authentification OAuth :
 
 ```bash
-# Lister les serveurs nécessitant une authentification
+# List servers requiring authentication
 /mcp auth
 
-# S'authentifier avec un serveur spécifique
+# Authenticate with a specific server
 /mcp auth serverName
 
-# Se réauthentifier si les jetons expirent
+# Re-authenticate if tokens expire
 /mcp auth serverName
 ```
 
@@ -190,28 +202,28 @@ Utilisez la commande `/mcp auth` pour gérer l'authentification OAuth :
 - **`clientId`** (string) : Identifiant client OAuth (facultatif avec l'enregistrement dynamique)
 - **`clientSecret`** (string) : Secret client OAuth (facultatif pour les clients publics)
 - **`authorizationUrl`** (string) : Point de terminaison d'autorisation OAuth (découvert automatiquement si omis)
-- **`tokenUrl`** (string) : Point de terminaison de jeton OAuth (découvert automatiquement si omis)
-- **`scopes`** (string[]) : Portées OAuth requises
-- **`redirectUri`** (string) : URI de redirection personnalisée (par défaut `http://localhost:7777/oauth/callback`)
-- **`tokenParamName`** (string) : Nom du paramètre de requête pour les jetons dans les URL SSE
-- **`audiences`** (string[]) : Audiences pour lesquelles le jeton est valide
+- **`tokenUrl`** (string) : Point de terminaison de token OAuth (découvert automatiquement si omis)
+- **`scopes`** (string[]) : Scopes OAuth requis
+- **`redirectUri`** (string) : URI de redirection personnalisé. **Critique pour les déploiements distants** : Par défaut `http://localhost:7777/oauth/callback`. Lors de l'exécution de Qwen Code sur des serveurs distants/cloud, définissez-le sur une URL accessible publiquement (ex. : `https://your-server.com/oauth/callback`). Peut être configuré via `qwen mcp add --oauth-redirect-uri` ou directement dans settings.json.
+- **`tokenParamName`** (string) : Nom du paramètre de requête pour les tokens dans les URL SSE
+- **`audiences`** (string[]) : Audiences pour lesquelles le token est valide
 
-#### Gestion des jetons
+#### Gestion des tokens
 
-Les jetons OAuth sont automatiquement :
+Les tokens OAuth sont automatiquement :
 
 - **Stockés de manière sécurisée** dans `~/.qwen/mcp-oauth-tokens.json`
-- **Actualisés** à l'expiration (si des jetons d'actualisation sont disponibles)
+- **Actualisés** à l'expiration (si des tokens d'actualisation sont disponibles)
 - **Validés** avant chaque tentative de connexion
 - **Nettoyés** lorsqu'ils sont invalides ou expirés
 
 #### Type de fournisseur d'authentification
 
-Vous pouvez spécifier le type de fournisseur d'authentification à l'aide de la propriété `authProviderType` :
+Vous pouvez spécifier le type de fournisseur d'authentification en utilisant la propriété `authProviderType` :
 
 - **`authProviderType`** (string) : Spécifie le fournisseur d'authentification. Peut être l'un des suivants :
   - **`dynamic_discovery`** (par défaut) : Le CLI découvrira automatiquement la configuration OAuth depuis le serveur.
-  - **`google_credentials`** : Le CLI utilisera les Google Application Default Credentials (ADC) pour s'authentifier auprès du serveur. Lors de l'utilisation de ce fournisseur, vous devez spécifier les portées requises.
+  - **`google_credentials`** : Le CLI utilisera les Google Application Default Credentials (ADC) pour s'authentifier auprès du serveur. Lors de l'utilisation de ce fournisseur, vous devez spécifier les scopes requis.
   - **`service_account_impersonation`** : Le CLI usurpera l'identité d'un compte de service Google Cloud pour s'authentifier auprès du serveur. Cela est utile pour accéder aux services protégés par IAP (conçu spécifiquement pour les services Cloud Run).
 
 #### Identifiants Google
@@ -237,14 +249,14 @@ Pour vous authentifier auprès d'un serveur en utilisant l'usurpation d'identit�
 - **`targetAudience`** (string) : L'ID client OAuth autorisé sur l'application protégée par IAP que vous essayez d'accéder.
 - **`targetServiceAccount`** (string) : L'adresse e-mail du compte de service Google Cloud à usurper.
 
-Le CLI utilisera vos Application Default Credentials (ADC) locaux pour générer un jeton d'identité OIDC pour le compte de service et l'audience spécifiés. Ce jeton sera ensuite utilisé pour s'authentifier auprès du serveur MCP.
+Le CLI utilisera vos Application Default Credentials (ADC) locaux pour générer un token d'identité OIDC pour le compte de service et l'audience spécifiés. Ce token sera ensuite utilisé pour s'authentifier auprès du serveur MCP.
 
 #### Instructions de configuration
 
 1. **[Créez](https://cloud.google.com/iap/docs/oauth-client-creation) ou utilisez un ID client OAuth 2.0 existant.** Pour utiliser un ID client OAuth 2.0 existant, suivez les étapes de [Comment partager des clients OAuth](https://cloud.google.com/iap/docs/sharing-oauth-clients).
-2. **Ajoutez l'ID OAuth à la liste d'autorisation pour l'[accès programmatique](https://cloud.google.com/iap/docs/sharing-oauth-clients#programmatic_access) de l'application.** Cloud Run n'étant pas encore un type de ressource pris en charge dans `gcloud iap`, vous devez autoriser l'ID client au niveau du projet.
+2. **Ajoutez l'ID OAuth à la liste d'autorisation pour [l'accès programmatique](https://cloud.google.com/iap/docs/sharing-oauth-clients#programmatic_access) de l'application.** Cloud Run n'étant pas encore un type de ressource pris en charge dans `gcloud iap`, vous devez autoriser l'ID client au niveau du projet.
 3. **Créez un compte de service.** [Documentation](https://cloud.google.com/iam/docs/service-accounts-create#creating), [Lien Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts)
-4. **Ajoutez le compte de service et les utilisateurs à la stratégie IAP** dans l'onglet "Security" du service Cloud Run lui-même ou via gcloud.
+4. **Ajoutez le compte de service et les utilisateurs à la politique IAP** dans l'onglet "Security" du service Cloud Run lui-même ou via gcloud.
 5. **Accordez à tous les utilisateurs et groupes** qui accéderont au serveur MCP les autorisations nécessaires pour [usurper l'identité du compte de service](https://cloud.google.com/docs/authentication/use-service-account-impersonation) (c.-à-d. `roles/iam.serviceAccountTokenCreator`).
 6. **[Activez](https://console.cloud.google.com/apis/library/iamcredentials.googleapis.com) l'API IAM Credentials** pour votre projet.
 
@@ -356,7 +368,7 @@ Le CLI utilisera vos Application Default Credentials (ADC) locaux pour générer
 }
 ```
 
-### Serveur MCP SSE avec usurpation d'identité de compte de service
+### Serveur MCP SSE avec usurpation de compte de service
 
 ```json
 {
@@ -373,7 +385,7 @@ Le CLI utilisera vos Application Default Credentials (ADC) locaux pour générer
 
 ## Analyse approfondie du processus de découverte
 
-Au démarrage de Qwen Code, il effectue la découverte des serveurs MCP via le processus détaillé suivant :
+Lorsque Qwen Code démarre, il effectue la découverte des serveurs MCP via le processus détaillé suivant :
 
 ### 1. Itération et connexion des serveurs
 
@@ -404,11 +416,11 @@ Lorsque plusieurs serveurs exposent des outils portant le même nom :
 
 1. **Le premier enregistrement gagne :** Le premier serveur à enregistrer un nom d'outil obtient le nom sans préfixe
 2. **Préfixage automatique :** Les serveurs suivants obtiennent des noms préfixés : `serverName__toolName`
-3. **Suivi du registre :** Le registre d'outils conserve les correspondances entre les noms de serveurs et leurs outils
+3. **Suivi du registre :** Le registre d'outils maintient les correspondances entre les noms de serveurs et leurs outils
 
 ### 4. Traitement des schémas
 
-Les schémas de paramètres des outils subissent un nettoyage pour la compatibilité avec l'API :
+Les schémas de paramètres d'outils subissent un nettoyage pour la compatibilité avec l'API :
 
 - **Les propriétés `$schema`** sont supprimées
 - **`additionalProperties`** est supprimé
@@ -419,7 +431,7 @@ Les schémas de paramètres des outils subissent un nettoyage pour la compatibil
 
 Après la découverte :
 
-- **Connexions persistantes :** Les serveurs qui enregistrent avec succès des outils maintiennent leurs connexions
+- **Connexions persistantes :** Les serveurs qui enregistrent des outils avec succès maintiennent leurs connexions
 - **Nettoyage :** Les serveurs qui ne fournissent aucun outil utilisable voient leurs connexions fermées
 - **Mises à jour d'état :** Les états finaux des serveurs sont définis sur `CONNECTED` ou `DISCONNECTED`
 
@@ -438,7 +450,7 @@ Le modèle génère un `FunctionCall` avec :
 
 Chaque `DiscoveredMCPTool` implémente une logique de confirmation sophistiquée :
 
-#### Contournement basé sur la confiance
+#### Bypass basé sur la confiance
 
 ```typescript
 if (this.trust) {
@@ -457,14 +469,14 @@ Le système maintient des listes d'autorisation internes pour :
 
 Lorsqu'une confirmation est requise, les utilisateurs peuvent choisir :
 
-- **Exécuter une fois :** Exécuter uniquement cette fois
+- **Continuer une fois :** Exécuter uniquement cette fois
 - **Toujours autoriser cet outil :** Ajouter à la liste d'autorisation au niveau de l'outil
 - **Toujours autoriser ce serveur :** Ajouter à la liste d'autorisation au niveau du serveur
 - **Annuler :** Abandonner l'exécution
 
 ### 3. Exécution
 
-Après confirmation (ou contournement par confiance) :
+Après confirmation (ou bypass de confiance) :
 
 1. **Préparation des paramètres :** Les arguments sont validés par rapport au schéma de l'outil
 2. **Appel MCP :** Le `CallableTool` sous-jacent invoque le serveur avec :
@@ -478,14 +490,14 @@ Après confirmation (ou contournement par confiance) :
    ];
    ```
 
-3. **Traitement de la réponse :** Les résultats sont formatés pour le contexte du LLM et l'affichage utilisateur
+3. **Traitement des réponses :** Les résultats sont formatés pour le contexte du LLM et l'affichage utilisateur
 
-### 4. Gestion de la réponse
+### 4. Gestion des réponses
 
 Le résultat d'exécution contient :
 
 - **`llmContent`:** Parties de réponse brutes pour le contexte du modèle de langage
-- **`returnDisplay`:** Sortie formatée pour l'affichage utilisateur (souvent du JSON dans des blocs de code Markdown)
+- **`returnDisplay`:** Sortie formatée pour l'affichage utilisateur (souvent du JSON dans des blocs de code markdown)
 
 ## Comment interagir avec votre serveur MCP
 
@@ -501,7 +513,7 @@ Cela affiche :
 
 - **Liste des serveurs :** Tous les serveurs MCP configurés
 - **État de la connexion :** `CONNECTED`, `CONNECTING` ou `DISCONNECTED`
-- **Détails du serveur :** Résumé de la configuration (à l'exclusion des données sensibles)
+- **Détails du serveur :** Résumé de la configuration (hors données sensibles)
 - **Outils disponibles :** Liste des outils de chaque serveur avec descriptions
 - **État de la découverte :** État global du processus de découverte
 
@@ -529,7 +541,7 @@ Discovery State: COMPLETED
 
 ### Utilisation des outils
 
-Une fois découverts, les outils MCP sont disponibles pour le modèle Qwen comme des outils intégrés. Le modèle effectuera automatiquement les opérations suivantes :
+Une fois découverts, les outils MCP sont disponibles pour le modèle Qwen comme des outils intégrés. Le modèle effectuera automatiquement :
 
 1. **Sélectionner les outils appropriés** en fonction de vos demandes
 2. **Présenter des boîtes de dialogue de confirmation** (sauf si le serveur est fiable)
@@ -548,7 +560,7 @@ L'intégration MCP suit plusieurs états :
 - **`CONNECTING`:** Tentative de connexion en cours
 - **`CONNECTED`:** Le serveur est connecté et prêt
 
-#### État de la découverte (`MCPDiscoveryState`)
+#### État de découverte (`MCPDiscoveryState`)
 
 - **`NOT_STARTED`:** La découverte n'a pas commencé
 - **`IN_PROGRESS`:** Découverte des serveurs en cours
@@ -562,11 +574,11 @@ L'intégration MCP suit plusieurs états :
 
 **Dépannage :**
 
-1. **Vérifier la configuration :** Assurez-vous que `command`, `args` et `cwd` sont corrects
-2. **Tester manuellement :** Exécutez directement la commande du serveur pour vérifier qu'elle fonctionne
-3. **Vérifier les dépendances :** Assurez-vous que tous les packages requis sont installés
-4. **Consulter les journaux :** Recherchez les messages d'erreur dans la sortie du CLI
-5. **Vérifier les permissions :** Assurez-vous que le CLI peut exécuter la commande du serveur
+1. **Vérifiez la configuration :** Assurez-vous que `command`, `args` et `cwd` sont corrects
+2. **Testez manuellement :** Exécutez directement la commande du serveur pour vérifier qu'elle fonctionne
+3. **Vérifiez les dépendances :** Assurez-vous que tous les packages requis sont installés
+4. **Consultez les journaux :** Recherchez les messages d'erreur dans la sortie du CLI
+5. **Vérifiez les permissions :** Assurez-vous que le CLI peut exécuter la commande du serveur
 
 #### Aucun outil découvert
 
@@ -574,10 +586,10 @@ L'intégration MCP suit plusieurs états :
 
 **Dépannage :**
 
-1. **Vérifier l'enregistrement des outils :** Assurez-vous que votre serveur enregistre bien des outils
-2. **Vérifier le protocole MCP :** Confirmez que votre serveur implémente correctement la liste d'outils MCP
-3. **Consulter les journaux du serveur :** Vérifiez la sortie stderr pour les erreurs côté serveur
-4. **Tester la liste d'outils :** Testez manuellement le point de terminaison de découverte d'outils de votre serveur
+1. **Vérifiez l'enregistrement des outils :** Assurez-vous que votre serveur enregistre bien des outils
+2. **Vérifiez le protocole MCP :** Confirmez que votre serveur implémente correctement la liste d'outils MCP
+3. **Consultez les journaux du serveur :** Vérifiez la sortie stderr pour les erreurs côté serveur
+4. **Testez la liste d'outils :** Testez manuellement le point de terminaison de découverte d'outils de votre serveur
 
 #### Les outils ne s'exécutent pas
 
@@ -590,37 +602,37 @@ L'intégration MCP suit plusieurs états :
 3. **Gestion des erreurs :** Vérifiez si votre outil lève des exceptions non gérées
 4. **Problèmes de délai d'expiration :** Envisagez d'augmenter le paramètre `timeout`
 
-#### Compatibilité avec la sandbox
+#### Compatibilité avec le sandbox
 
-**Symptômes :** Les serveurs MCP échouent lorsque la sandbox est activée
+**Symptômes :** Les serveurs MCP échouent lorsque le sandboxing est activé
 
 **Solutions :**
 
 1. **Serveurs basés sur Docker :** Utilisez des conteneurs Docker incluant toutes les dépendances
-2. **Accessibilité des chemins :** Assurez-vous que les exécutables du serveur sont disponibles dans la sandbox
-3. **Accès réseau :** Configurez la sandbox pour autoriser les connexions réseau nécessaires
+2. **Accessibilité des chemins :** Assurez-vous que les exécutables du serveur sont disponibles dans le sandbox
+3. **Accès réseau :** Configurez le sandbox pour autoriser les connexions réseau nécessaires
 4. **Variables d'environnement :** Vérifiez que les variables d'environnement requises sont transmises
 
 ### Conseils de débogage
 
-1. **Activer le mode debug :** Exécutez le CLI avec `--debug` pour une sortie détaillée
-2. **Vérifier stderr :** La stderr du serveur MCP est capturée et journalisée (messages INFO filtrés)
-3. **Tester en isolation :** Testez votre serveur MCP indépendamment avant de l'intégrer
+1. **Activez le mode debug :** Exécutez le CLI avec `--debug` pour une sortie détaillée
+2. **Vérifiez stderr :** Le stderr du serveur MCP est capturé et journalisé (messages INFO filtrés)
+3. **Testez en isolation :** Testez votre serveur MCP indépendamment avant de l'intégrer
 4. **Configuration progressive :** Commencez par des outils simples avant d'ajouter des fonctionnalités complexes
-5. **Utiliser `/mcp` fréquemment :** Surveillez l'état du serveur pendant le développement
+5. **Utilisez `/mcp` fréquemment :** Surveillez l'état du serveur pendant le développement
 
 ## Remarques importantes
 
 ### Considérations de sécurité
 
 - **Paramètres de confiance :** L'option `trust` ignore toutes les boîtes de dialogue de confirmation. Utilisez-la avec prudence et uniquement pour les serveurs que vous contrôlez entièrement
-- **Jetons d'accès :** Faites preuve de vigilance en matière de sécurité lors de la configuration des variables d'environnement contenant des clés API ou des jetons
-- **Compatibilité sandbox :** Lors de l'utilisation de la sandbox, assurez-vous que les serveurs MCP sont disponibles dans l'environnement sandbox
-- **Données privées :** L'utilisation de jetons d'accès personnels à large portée peut entraîner des fuites d'informations entre les dépôts
+- **Tokens d'accès :** Soyez vigilant sur le plan de la sécurité lors de la configuration de variables d'environnement contenant des clés API ou des tokens
+- **Compatibilité sandbox :** Lors de l'utilisation du sandboxing, assurez-vous que les serveurs MCP sont disponibles dans l'environnement sandbox
+- **Données privées :** L'utilisation de tokens d'accès personnels à large portée peut entraîner des fuites d'informations entre les repositories
 
 ### Gestion des performances et des ressources
 
-- **Persistance des connexions :** Le CLI maintient des connexions persistantes vers les serveurs qui enregistrent avec succès des outils
+- **Persistance des connexions :** Le CLI maintient des connexions persistantes avec les serveurs qui enregistrent des outils avec succès
 - **Nettoyage automatique :** Les connexions aux serveurs ne fournissant aucun outil sont automatiquement fermées
 - **Gestion des délais d'expiration :** Configurez des délais d'expiration appropriés en fonction des caractéristiques de réponse de votre serveur
 - **Surveillance des ressources :** Les serveurs MCP s'exécutent en tant que processus distincts et consomment des ressources système
@@ -629,8 +641,8 @@ L'intégration MCP suit plusieurs états :
 
 - **Mode de conformité des schémas :** Par défaut (`schemaCompliance: "auto"`), les schémas d'outils sont transmis tels quels. Définissez `"model": { "generationConfig": { "schemaCompliance": "openapi_30" } }` dans votre `settings.json` pour convertir les modèles au format Strict OpenAPI 3.0.
 - **Transformations OpenAPI 3.0 :** Lorsque le mode `openapi_30` est activé, le système gère :
-  - Types nullables : `["string", "null"]` -> `type: "string", nullable: true`
-  - Valeurs constantes : `const: "foo"` -> `enum: ["foo"]`
+  - Types nullable : `["string", "null"]` -> `type: "string", nullable: true`
+  - Valeurs const : `const: "foo"` -> `enum: ["foo"]`
   - Limites exclusives : `exclusiveMinimum` numérique -> forme booléenne avec `minimum`
   - Suppression de mots-clés : `$schema`, `$id`, `dependencies`, `patternProperties`
 - **Nettoyage des noms :** Les noms d'outils sont automatiquement nettoyés pour répondre aux exigences de l'API
@@ -638,17 +650,17 @@ L'intégration MCP suit plusieurs états :
 
 Cette intégration complète fait des serveurs MCP un moyen puissant d'étendre les capacités du CLI tout en maintenant la sécurité, la fiabilité et la facilité d'utilisation.
 
-## Retour de contenu riche depuis les outils
+## Retourner du contenu riche depuis les outils
 
-Les outils MCP ne se limitent pas au retour de texte simple. Vous pouvez retourner du contenu riche et multiparts, incluant du texte, des images, de l'audio et d'autres données binaires dans une seule réponse d'outil. Cela vous permet de créer des outils puissants capables de fournir des informations diversifiées au modèle en un seul tour.
+Les outils MCP ne se limitent pas au retour de texte simple. Vous pouvez retourner du contenu riche et multi-parties, incluant du texte, des images, de l'audio et d'autres données binaires dans une seule réponse d'outil. Cela vous permet de créer des outils puissants capables de fournir des informations diverses au modèle en un seul tour.
 
-Toutes les données renvoyées par l'outil sont traitées et envoyées au modèle comme contexte pour sa prochaine génération, lui permettant de raisonner sur les informations fournies ou de les résumer.
+Toutes les données retournées par l'outil sont traitées et envoyées au modèle comme contexte pour sa prochaine génération, lui permettant de raisonner sur ou de résumer les informations fournies.
 
-### Fonctionnement
+### Comment ça fonctionne
 
 Pour retourner du contenu riche, la réponse de votre outil doit respecter la spécification MCP pour un [`CallToolResult`](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#tool-result). Le champ `content` du résultat doit être un tableau d'objets `ContentBlock`. Le CLI traitera correctement ce tableau, en séparant le texte des données binaires et en les conditionnant pour le modèle.
 
-Vous pouvez combiner différents types de blocs de contenu dans le tableau `content`. Les types de blocs pris en charge incluent :
+Vous pouvez mélanger différents types de blocs de contenu dans le tableau `content`. Les types de blocs pris en charge incluent :
 
 - `text`
 - `image`
@@ -683,18 +695,18 @@ Voici un exemple de réponse JSON valide d'un outil MCP qui retourne à la fois 
 Lorsque Qwen Code reçoit cette réponse, il :
 
 1.  Extrait tout le texte et le combine en une seule partie `functionResponse` pour le modèle.
-2.  Présente les données de l'image sous forme d'une partie `inlineData` distincte.
+2.  Présente les données de l'image comme une partie `inlineData` distincte.
 3.  Fournit un résumé clair et convivial dans le CLI, indiquant que du texte et une image ont été reçus.
 
 Cela vous permet de créer des outils sophistiqués capables de fournir un contexte riche et multimodal au modèle Qwen.
 
-## Invites MCP en tant que commandes slash
+## Prompts MCP en tant que commandes slash
 
-En plus des outils, les serveurs MCP peuvent exposer des invites prédéfinies qui peuvent être exécutées en tant que commandes slash dans Qwen Code. Cela vous permet de créer des raccourcis pour des requêtes courantes ou complexes qui peuvent être facilement invoquées par leur nom.
+En plus des outils, les serveurs MCP peuvent exposer des prompts prédéfinis qui peuvent être exécutés en tant que commandes slash dans Qwen Code. Cela vous permet de créer des raccourcis pour des requêtes courantes ou complexes qui peuvent être facilement invoquées par leur nom.
 
-### Définition des invites sur le serveur
+### Définir des prompts sur le serveur
 
-Voici un petit exemple de serveur MCP stdio qui définit des invites :
+Voici un petit exemple de serveur MCP stdio qui définit des prompts :
 
 ```ts
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -743,9 +755,9 @@ Cela peut être inclus dans `settings.json` sous `mcpServers` avec :
 }
 ```
 
-### Invocation des invites
+### Invoquer des prompts
 
-Une fois une invite découverte, vous pouvez l'invoquer en utilisant son nom comme commande slash. Le CLI gérera automatiquement l'analyse des arguments.
+Une fois un prompt découvert, vous pouvez l'invoquer en utilisant son nom comme commande slash. Le CLI gérera automatiquement l'analyse des arguments.
 
 ```bash
 /poem-writer --title="Qwen Code" --mood="reverent"
@@ -757,15 +769,15 @@ ou, en utilisant des arguments positionnels :
 /poem-writer "Qwen Code" reverent
 ```
 
-Lorsque vous exécutez cette commande, le CLI exécute la méthode `prompts/get` sur le serveur MCP avec les arguments fournis. Le serveur est responsable de la substitution des arguments dans le modèle d'invite et du retour du texte final de l'invite. Le CLI envoie ensuite cette invite au modèle pour exécution. Cela offre un moyen pratique d'automatiser et de partager des workflows courants.
+Lorsque vous exécutez cette commande, le CLI exécute la méthode `prompts/get` sur le serveur MCP avec les arguments fournis. Le serveur est responsable de la substitution des arguments dans le modèle de prompt et du retour du texte final du prompt. Le CLI envoie ensuite ce prompt au modèle pour exécution. Cela offre un moyen pratique d'automatiser et de partager des workflows courants.
 
-## Gestion des serveurs MCP avec `qwen mcp`
+## Gérer les serveurs MCP avec `qwen mcp`
 
-Bien que vous puissiez toujours configurer les serveurs MCP en modifiant manuellement votre fichier `settings.json`, le CLI fournit un ensemble pratique de commandes pour gérer vos configurations de serveur par programmation. Ces commandes simplifient le processus d'ajout, de liste et de suppression de serveurs MCP sans avoir à modifier directement des fichiers JSON.
+Bien que vous puissiez toujours configurer les serveurs MCP en modifiant manuellement votre fichier `settings.json`, le CLI fournit un ensemble pratique de commandes pour gérer vos configurations de serveur par programmation. Ces commandes simplifient le processus d'ajout, de liste et de suppression de serveurs MCP sans avoir besoin de modifier directement des fichiers JSON.
 
-### Ajout d'un serveur (`qwen mcp add`)
+### Ajouter un serveur (`qwen mcp add`)
 
-La commande `add` configure un nouveau serveur MCP dans votre `settings.json`. En fonction de la portée (`-s, --scope`), il sera ajouté soit au fichier de configuration utilisateur `~/.qwen/settings.json`, soit au fichier de configuration projet `.qwen/settings.json`.
+La commande `add` configure un nouveau serveur MCP dans votre `settings.json`. En fonction du scope (`-s, --scope`), il sera ajouté soit à la configuration utilisateur `~/.qwen/settings.json`, soit à la configuration projet `.qwen/settings.json`.
 
 **Commande :**
 
@@ -775,11 +787,11 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 
 - `<name>` : Un nom unique pour le serveur.
 - `<commandOrUrl>` : La commande à exécuter (pour `stdio`) ou l'URL (pour `http`/`sse`).
-- `[args...]` : Arguments facultatifs pour une commande `stdio`.
+- `[args...]` : Arguments optionnels pour une commande `stdio`.
 
 **Options (Flags) :**
 
-- `-s, --scope` : Portée de la configuration (utilisateur ou projet). [par défaut : "project"]
+- `-s, --scope` : Scope de configuration (user ou project). [par défaut : "project"]
 - `-t, --transport` : Type de transport (stdio, sse, http). [par défaut : "stdio"]
 - `-e, --env` : Définir des variables d'environnement (ex. -e KEY=value).
 - `-H, --header` : Définir des en-têtes HTTP pour les transports SSE et HTTP (ex. -H "X-Api-Key: abc123" -H "Authorization: Bearer abc123").
@@ -788,60 +800,73 @@ qwen mcp add [options] <name> <commandOrUrl> [args...]
 - `--description` : Définir la description du serveur.
 - `--include-tools` : Une liste d'outils à inclure, séparée par des virgules.
 - `--exclude-tools` : Une liste d'outils à exclure, séparée par des virgules.
+- `--oauth-client-id` : ID client OAuth pour l'authentification du serveur MCP.
+- `--oauth-client-secret` : Secret client OAuth pour l'authentification du serveur MCP.
+- `--oauth-redirect-uri` : URI de redirection OAuth (ex. `https://your-server.com/oauth/callback`). Par défaut `http://localhost:7777/oauth/callback` pour les configurations locales. **Important pour les déploiements distants** : Lors de l'exécution de Qwen Code sur des serveurs distants/cloud, définissez-le sur une URL accessible publiquement.
+- `--oauth-authorization-url` : URL d'autorisation OAuth.
+- `--oauth-token-url` : URL de token OAuth.
+- `--oauth-scopes` : Scopes OAuth (séparés par des virgules).
 
-#### Ajout d'un serveur stdio
+#### Ajouter un serveur stdio
 
 Il s'agit du transport par défaut pour l'exécution de serveurs locaux.
 
 ```bash
-# Syntaxe de base
+# Basic syntax
 qwen mcp add <name> <command> [args...]
 
-# Exemple : Ajout d'un serveur local
+# Example: Adding a local server
 qwen mcp add my-stdio-server -e API_KEY=123 /path/to/server arg1 arg2 arg3
 
-# Exemple : Ajout d'un serveur python local
+# Example: Adding a local python server
 qwen mcp add python-server python server.py --port 8080
 ```
 
-#### Ajout d'un serveur HTTP
+#### Ajouter un serveur HTTP
 
 Ce transport est destiné aux serveurs utilisant le transport HTTP streamable.
 
 ```bash
-# Syntaxe de base
+# Basic syntax
 qwen mcp add --transport http <name> <url>
 
-# Exemple : Ajout d'un serveur HTTP
+# Example: Adding an HTTP server
 qwen mcp add --transport http http-server https://api.example.com/mcp/
 
-# Exemple : Ajout d'un serveur HTTP avec un en-tête d'authentification
+# Example: Adding an HTTP server with an authentication header
 qwen mcp add --transport http secure-http https://api.example.com/mcp/ --header "Authorization: Bearer abc123"
 ```
 
-#### Ajout d'un serveur SSE
+#### Ajouter un serveur SSE
 
 Ce transport est destiné aux serveurs utilisant les Server-Sent Events (SSE).
 
 ```bash
-# Syntaxe de base
+# Basic syntax
 qwen mcp add --transport sse <name> <url>
 
-# Exemple : Ajout d'un serveur SSE
+# Example: Adding an SSE server
 qwen mcp add --transport sse sse-server https://api.example.com/sse/
 
-# Exemple : Ajout d'un serveur SSE avec un en-tête d'authentification
+# Example: Adding an SSE server with an authentication header
 qwen mcp add --transport sse secure-sse https://api.example.com/sse/ --header "Authorization: Bearer abc123"
+
+# Example: Adding an OAuth-enabled SSE server
+qwen mcp add --transport sse oauth-server https://api.example.com/sse/ \
+  --oauth-client-id your-client-id \
+  --oauth-redirect-uri https://your-server.com/oauth/callback \
+  --oauth-authorization-url https://provider.example.com/authorize \
+  --oauth-token-url https://provider.example.com/token
 ```
 
-### Gestion des serveurs (`qwen mcp`)
+### Gérer les serveurs (`qwen mcp`)
 
 Pour afficher et gérer tous les serveurs MCP actuellement configurés, utilisez la commande `manage` ou simplement `qwen mcp`. Cela ouvre une boîte de dialogue TUI interactive où vous pouvez :
 
 - Afficher tous les serveurs MCP avec leur état de connexion
 - Activer/désactiver des serveurs
 - Se reconnecter aux serveurs déconnectés
-- Afficher les outils et invites fournis par chaque serveur
+- Afficher les outils et prompts fournis par chaque serveur
 - Afficher les journaux du serveur
 
 **Commande :**
@@ -852,9 +877,9 @@ qwen mcp
 qwen mcp manage
 ```
 
-La boîte de dialogue de gestion fournit une interface visuelle affichant le nom de chaque serveur, les détails de configuration, l'état de connexion et les outils/invites disponibles.
+La boîte de dialogue de gestion fournit une interface visuelle affichant le nom de chaque serveur, les détails de configuration, l'état de connexion et les outils/prompts disponibles.
 
-### Suppression d'un serveur (`qwen mcp remove`)
+### Supprimer un serveur (`qwen mcp remove`)
 
 Pour supprimer un serveur de votre configuration, utilisez la commande `remove` avec le nom du serveur.
 
@@ -870,4 +895,4 @@ qwen mcp remove <name>
 qwen mcp remove my-server
 ```
 
-Cela trouvera et supprimera l'entrée "my-server" de l'objet `mcpServers` dans le fichier `settings.json` approprié en fonction de la portée (`-s, --scope`).
+Cela trouvera et supprimera l'entrée "my-server" de l'objet `mcpServers` dans le fichier `settings.json` approprié en fonction du scope (`-s, --scope`).

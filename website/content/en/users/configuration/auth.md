@@ -2,18 +2,20 @@
 
 Qwen Code supports three authentication methods. Pick the one that matches how you want to run the CLI:
 
-- **Qwen OAuth**: sign in with your `qwen.ai` account in a browser. Free with a daily quota.
+- **Qwen OAuth**: sign in with your `qwen.ai` account in a browser. **Free tier discontinued on 2026-04-15** — switch to another method.
 - **Alibaba Cloud Coding Plan**: use an API key from Alibaba Cloud. Paid subscription with diverse model options and higher quotas.
 - **API Key**: bring your own API key. Flexible to your own needs — supports OpenAI, Anthropic, Gemini, and other compatible endpoints.
 
-## Option 1: Qwen OAuth (Free)
+## Option 1: Qwen OAuth (Discontinued)
 
-Use this if you want the simplest setup and you're using Qwen models.
+> [!warning]
+>
+> The Qwen OAuth free tier was discontinued on 2026-04-15. Existing cached tokens may continue working briefly, but new requests will be rejected. Please switch to Alibaba Cloud Coding Plan, [OpenRouter](https://openrouter.ai), [Fireworks AI](https://app.fireworks.ai), or another provider. Run `qwen auth` to configure.
 
 - **How it works**: on first start, Qwen Code opens a browser login page. After you finish, credentials are cached locally so you usually won't need to log in again.
 - **Requirements**: a `qwen.ai` account + internet access (at least for the first login).
 - **Benefits**: no API key management, automatic credential refresh.
-- **Cost & quota**: free, with a quota of **60 requests/minute** and **1,000 requests/day**.
+- **Cost & quota**: the free tier has been discontinued as of 2026-04-15.
 
 Start the CLI and follow the browser flow:
 
@@ -327,8 +329,9 @@ You'll see a selector with arrow-key navigation:
 ```
 Select authentication method:
 
-> Qwen OAuth - Free · Up to 1,000 requests/day · Qwen latest models
   Alibaba Cloud Coding Plan - Paid · Up to 6,000 requests/5 hrs · All Alibaba Cloud Coding Plan Models
+  API Key - Bring your own API key
+  Qwen OAuth - Discontinued — switch to Coding Plan or API Key
 
 (Use ↑ ↓ arrows to navigate, Enter to select, Ctrl+C to exit)
 ```
@@ -338,9 +341,10 @@ Select authentication method:
 | Command                                              | Description                                       |
 | ---------------------------------------------------- | ------------------------------------------------- |
 | `qwen auth`                                          | Interactive authentication setup                  |
-| `qwen auth qwen-oauth`                               | Authenticate with Qwen OAuth                      |
 | `qwen auth coding-plan`                              | Authenticate with Alibaba Cloud Coding Plan       |
 | `qwen auth coding-plan --region china --key sk-sp-…` | Non-interactive Coding Plan setup (for scripting) |
+| `qwen auth api-key`                                  | Authenticate with an API key                      |
+| `qwen auth qwen-oauth`                               | Authenticate with Qwen OAuth (discontinued)       |
 | `qwen auth status`                                   | Show current authentication status                |
 
 **Examples:**
@@ -354,6 +358,9 @@ qwen auth coding-plan
 
 # Set up Coding Plan non-interactively (useful for CI/scripting)
 qwen auth coding-plan --region china --key sk-sp-xxxxxxxxx
+
+# Set up API key (ModelStudio Standard or custom provider)
+qwen auth api-key
 
 # Check your current auth configuration
 qwen auth status

@@ -1,4 +1,4 @@
-# Documentação dos Hooks do Qwen Code
+# Hooks do Qwen Code
 
 ## Visão Geral
 
@@ -26,48 +26,206 @@ Hooks são scripts ou programas definidos pelo usuário que são executados auto
 - Injetar contexto adicional nas conversas
 - Personalizar o comportamento do aplicativo com base em eventos
 - Integrar com sistemas e serviços externos
-- Modificar entradas ou respostas de ferramentas de forma programática
+- Modificar entradas ou respostas de ferramentas programaticamente
 
-## Arquitetura dos Hooks
+## Tipos de Hook
 
-O sistema de hooks do Qwen Code consiste em vários componentes principais:
+O Qwen Code suporta três tipos de executor de hook:
 
-1. **Hook Registry**: Armazena e gerencia todos os hooks configurados
-2. **Hook Planner**: Determina quais hooks devem ser executados para cada evento
-3. **Hook Runner**: Executa hooks individuais com o contexto adequado
-4. **Hook Aggregator**: Combina os resultados de vários hooks
-5. **Hook Event Handler**: Coordena o disparo dos hooks para os eventos
+| Type       | Description                                                                                    |
+| :--------- | :--------------------------------------------------------------------------------------------- |
+| `command`  | Executa um comando de shell. Recebe JSON via `stdin`, retorna resultados via `stdout`.              |
+| `http`     | Envia JSON como corpo de uma requisição `POST` para uma URL especificada. Retorna resultados via corpo da resposta HTTP. |
+| `function` | Chama diretamente uma função JavaScript registrada (apenas para hooks de nível de sessão).                     |
+
+### Hooks de Comando
+
+Hooks de comando executam comandos por meio de processos filhos. O JSON de entrada é passado via stdin e a saída é retornada via stdout.
+
+**Configuração:**
+
+| Field           | Type                     | Required | Description                                 |
+| :-------------- | :----------------------- | :------- | :------------------------------------------ |
+| `type`          | `"command"`              | Yes      | Tipo de hook                                   |
+| `command`       | `string`                 | Yes      | Comando a ser executado                          |
+| `name`          | `string`                 | No       | Nome do hook (para logs)                     |
+| `description`   | `string`                 | No       | Descrição do hook                            |
+| `timeout`       | `number`                 | No       | Timeout em milissegundos, padrão 60000      |
+| `async`         | `boolean`                | No       | Se deve ser executado de forma assíncrona em segundo plano |
+| `env`           | `Record<string, string>` | No       | Variáveis de ambiente                       |
+| `shell`         | `"bash" \| "powershell"` | No       | Shell a ser usado                                |
+| `statusMessage` | `string`                 | No       | Mensagem de status exibida durante a execução   |
+
+**Exemplo:**
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "WriteFile",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$QWEN_PROJECT_DIR/.qwen/hooks/security-check.sh",
+            "name": "security-check",
+            "timeout": 10000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Hooks HTTP
+
+Hooks HTTP enviam a entrada do hook como requisições POST para URLs especificadas. Eles suportam listas de permissão de URL, proteção SSRF em nível de DNS, interpolação de variáveis de ambiente e outros recursos de segurança.
+
+**Configuração:**
+
+| Field            | Type                     | Required | Description                                               |
+| :--------------- | :----------------------- | :------- | :-------------------------------------------------------- |
+| `type`           | `"http"`                 | Yes      | Tipo de hook                                                 |
+| `url`            | `string`                 | Yes      | URL de destino                                                |
+| `headers`        | `Record<string, string>` | No       | Headers da requisição (suporta interpolação de variáveis de ambiente)          |
+| `allowedEnvVars` | `string[]`               | No       | Lista de permissão de variáveis de ambiente permitidas na URL/headers |
+| `timeout`        | `number`                 | No       | Timeout em segundos, padrão 600                           |
+| `name`           | `string`                 | No       | Nome do hook (para logs)                                   |
+| `statusMessage`  | `string`                 | No       | Mensagem de status exibida durante a execução                 |
+| `once`           | `boolean`                | No       | Executar apenas uma vez por evento por sessão (apenas hooks HTTP) |
+
+**Recursos de Segurança:**
+
+- **Lista de Permissão de URL**: Configure padrões de URL permitidos via `allowedUrls`
+- **Proteção SSRF**: Bloqueia IPs privados (10.x.x.x, 172.16-31.x.x, 192.168.x.x, etc.) mas permite endereços de loopback (127.0.0.1, ::1)
+- **Validação de DNS**: Valida a resolução de domínio antes das requisições para evitar ataques de DNS rebinding
+- **Interpolação de Variáveis de Ambiente**: Sintaxe `${VAR}`, permite apenas variáveis na lista de permissão `allowedEnvVars`
+
+**Exemplo:**
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://127.0.0.1:8080/hooks/pre-tool-use",
+            "headers": {
+              "Authorization": "Bearer ${HOOK_API_KEY}"
+            },
+            "allowedEnvVars": ["HOOK_API_KEY"],
+            "timeout": 10,
+            "name": "remote-security-check"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Hooks de Função
+
+Hooks de função chamam diretamente funções JavaScript/TypeScript registradas. Eles são usados internamente pelo sistema de Skills e atualmente não são expostos como uma API pública para usuários finais.
+
+**Nota**: Para a maioria dos casos de uso, utilize **hooks de comando** ou **hooks HTTP**, que podem ser configurados em arquivos de settings.
 
 ## Eventos de Hook
 
-Os hooks são disparados em pontos específicos durante uma sessão do Qwen Code. Quando um evento é disparado e um matcher corresponde, o Qwen Code passa o contexto JSON sobre o evento para o seu handler de hook. Para hooks de comando, a entrada chega via stdin. Seu handler pode inspecionar a entrada, executar uma ação e, opcionalmente, retornar uma decisão. Alguns eventos são disparados uma vez por sessão, enquanto outros são disparados repetidamente dentro do loop agêntico.
+Os hooks são disparados em pontos específicos durante uma sessão do Qwen Code. Diferentes eventos suportam diferentes matchers para filtrar as condições de disparo.
 
-<div align="center">
-<img src="https://img.alicdn.com/imgextra/i4/O1CN01sYWUTh1RDJl7Lz2ne_!!6000000002077-2-tps-812-1212.png" alt="Hook Lifecycle Diagram" width="400"/>
-</div>
+| Event                | Triggered When                            | Matcher Target                                            |
+| :------------------- | :---------------------------------------- | :-------------------------------------------------------- |
+| `PreToolUse`         | Antes da execução da ferramenta                     | Nome da ferramenta (`WriteFile`, `ReadFile`, `Bash`, etc.)         |
+| `PostToolUse`        | Após a execução bem-sucedida da ferramenta           | Nome da ferramenta                                                 |
+| `PostToolUseFailure` | Após falha na execução da ferramenta                | Nome da ferramenta                                                 |
+| `UserPromptSubmit`   | Após o usuário enviar o prompt                 | Nenhum (sempre dispara)                                       |
+| `SessionStart`       | Quando a sessão inicia ou é retomada            | Origem (`startup`, `resume`, `clear`, `compact`)          |
+| `SessionEnd`         | Quando a sessão termina                         | Motivo (`clear`, `logout`, `prompt_input_exit`, etc.)     |
+| `Stop`               | Quando o modelo se prepara para concluir a resposta | Nenhum (sempre dispara)                                       |
+| `SubagentStart`      | Quando o subagente inicia                      | Tipo de agente (`Bash`, `Explorer`, `Plan`, etc.)             |
+| `SubagentStop`       | Quando o subagente para                       | Tipo de agente                                                |
+| `PreCompact`         | Antes da compactação da conversa            | Gatilho (`manual`, `auto`)                                |
+| `Notification`       | Quando notificações são enviadas               | Tipo (`permission_prompt`, `idle_prompt`, `auth_success`) |
+| `PermissionRequest`  | Quando o diálogo de permissão é exibido           | Nome da ferramenta                                                 |
 
-A tabela a seguir lista todos os eventos de hook disponíveis no Qwen Code:
+### Padrões de Matcher
 
-| Nome do Evento       | Descrição                                 | Caso de Uso                                        |
-| -------------------- | ------------------------------------------- | ----------------------------------------------- |
-| `PreToolUse`         | Disparado antes da execução da ferramenta                 | Verificação de permissão, validação de entrada, logging  |
-| `PostToolUse`        | Disparado após a execução bem-sucedida da ferramenta       | Logging, processamento de saída, monitoramento          |
-| `PostToolUseFailure` | Disparado quando a execução da ferramenta falha             | Tratamento de erros, alertas, correção           |
-| `Notification`       | Disparado quando notificações são enviadas           | Personalização de notificações, logging             |
-| `UserPromptSubmit`   | Disparado quando o usuário envia um prompt            | Processamento de entrada, validação, injeção de contexto |
-| `SessionStart`       | Disparado quando uma nova sessão é iniciada             | Inicialização, configuração de contexto                   |
-| `Stop`               | Disparado antes do Qwen concluir sua resposta    | Finalização, limpeza                           |
-| `SubagentStart`      | Disparado quando um subagente é iniciado                | Inicialização do subagente                         |
-| `SubagentStop`       | Disparado quando um subagente é interrompido                 | Finalização do subagente                           |
-| `PreCompact`         | Disparado antes da compactação da conversa        | Processamento pré-compactação                       |
-| `SessionEnd`         | Disparado quando uma sessão é encerrada                   | Limpeza, geração de relatórios                              |
-| `PermissionRequest`  | Disparado quando diálogos de permissão são exibidos | Automação de permissões, aplicação de políticas       |
+O `matcher` é uma expressão regular usada para filtrar as condições de disparo.
+
+| Event Type          | Events                                                                 | Matcher Support | Matcher Target                                           |
+| :------------------ | :--------------------------------------------------------------------- | :-------------- | :------------------------------------------------------- |
+| Tool Events         | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest` | ✅ Regex        | Nome da ferramenta: `WriteFile`, `ReadFile`, `Bash`, etc.         |
+| Subagent Events     | `SubagentStart`, `SubagentStop`                                        | ✅ Regex        | Tipo de agente: `Bash`, `Explorer`, etc.                     |
+| Session Events      | `SessionStart`                                                         | ✅ Regex        | Origem: `startup`, `resume`, `clear`, `compact`          |
+| Session Events      | `SessionEnd`                                                           | ✅ Regex        | Motivo: `clear`, `logout`, `prompt_input_exit`, etc.     |
+| Notification Events | `Notification`                                                         | ✅ Exact match  | Tipo: `permission_prompt`, `idle_prompt`, `auth_success` |
+| Compact Events      | `PreCompact`                                                           | ✅ Exact match  | Gatilho: `manual`, `auto`                                |
+| Prompt Events       | `UserPromptSubmit`                                                     | ❌ No           | N/A                                                      |
+| Stop Events         | `Stop`                                                                 | ❌ No           | N/A                                                      |
+
+**Sintaxe do Matcher:**
+
+- String vazia `""` ou `"*"` corresponde a todos os eventos desse tipo
+- Sintaxe padrão de regex suportada (e.g., `^Bash$`, `Read.*`, `(WriteFile|Edit)`)
+
+**Exemplos:**
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'bash check' >> /tmp/hooks.log"
+          }
+        ]
+      },
+      {
+        "matcher": "Write.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'write check' >> /tmp/hooks.log"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "echo 'all tools' >> /tmp/hooks.log" }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "^(Bash|Explorer)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'subagent check' >> /tmp/hooks.log"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
 
 ## Regras de Entrada/Saída
 
 ### Estrutura de Entrada do Hook
 
-Todos os hooks recebem entrada padronizada no formato JSON via stdin. Campos comuns incluídos em todos os eventos de hook:
+Todos os hooks recebem entrada padronizada no formato JSON via stdin (comando) ou corpo POST (http).
+
+**Campos Comuns:**
 
 ```json
 {
@@ -79,9 +237,41 @@ Todos os hooks recebem entrada padronizada no formato JSON via stdin. Campos com
 }
 ```
 
-Campos específicos do evento são adicionados com base no tipo de hook. Abaixo estão os campos específicos para cada evento de hook:
+Campos específicos do evento são adicionados com base no tipo de hook. Ao executar em um subagente, `agent_id` e `agent_type` são incluídos adicionalmente.
 
-### Detalhes Individuais dos Eventos de Hook
+### Estrutura de Saída do Hook
+
+A saída do hook é retornada via `stdout` (comando) ou corpo da resposta HTTP (http) como JSON.
+
+**Comportamento do Exit Code (Hooks de Comando):**
+
+| Exit Code | Behavior                                                                              |
+| :-------- | :------------------------------------------------------------------------------------ |
+| `0`       | Sucesso. Analise o JSON no `stdout` para controlar o comportamento.                                  |
+| `2`       | **Erro bloqueante**. Ignora o `stdout`, passa o `stderr` como feedback de erro para o modelo. |
+| Other     | Erro não bloqueante. `stderr` exibido apenas no modo debug, a execução continua.           |
+
+**Estrutura de Saída:**
+
+A saída do hook suporta três categorias de campos:
+
+1. **Campos Comuns**: `continue`, `stopReason`, `suppressOutput`, `systemMessage`
+2. **Decisão de Nível Superior**: `decision`, `reason` (usado por alguns eventos)
+3. **Controle Específico do Evento**: `hookSpecificOutput` (deve incluir `hookEventName`)
+
+```json
+{
+  "continue": true,
+  "decision": "allow",
+  "reason": "Operation approved",
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "additionalContext": "Additional context information"
+  }
+}
+```
+
+### Detalhes de Eventos Individuais de Hook
 
 #### PreToolUse
 
@@ -105,7 +295,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 - `hookSpecificOutput.updatedInput`: parâmetros de entrada da ferramenta modificados para usar no lugar do original
 - `hookSpecificOutput.additionalContext`: informações de contexto adicionais
 
-**Nota**: Embora campos padrão de saída de hook como `decision` e `reason` sejam tecnicamente suportados pela classe subjacente, a interface oficial espera o `hookSpecificOutput` com `permissionDecision` e `permissionDecisionReason`.
+**Nota**: Embora campos padrão de saída do hook como `decision` e `reason` sejam tecnicamente suportados pela classe subjacente, a interface oficial espera o `hookSpecificOutput` com `permissionDecision` e `permissionDecisionReason`.
 
 **Exemplo de Saída**:
 
@@ -113,11 +303,8 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 {
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
-    "permissionDecision": "allow",
-    "permissionDecisionReason": "My reason here",
-    "updatedInput": {
-      "field_to_modify": "new value"
-    },
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "Security policy blocks database writes",
     "additionalContext": "Current environment: production. Proceed with caution."
   }
 }
@@ -141,8 +328,8 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 
 **Opções de Saída**:
 
-- `decision`: "allow", "deny" ou "block" (padrão para "allow" se não especificado)
-- `reason`: motivo para a decisão
+- `decision`: "allow", "deny", "block" (padrão "allow" se não especificado)
+- `reason`: motivo da decisão
 - `hookSpecificOutput.additionalContext`: informações adicionais a serem incluídas
 
 **Exemplo de Saída**:
@@ -159,7 +346,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 
 #### PostToolUseFailure
 
-**Propósito**: Executado quando a execução de uma ferramenta falha para tratar erros, enviar alertas ou registrar falhas.
+**Propósito**: Executado quando a execução de uma ferramenta falha para lidar com erros, enviar alertas ou registrar falhas.
 
 **Campos específicos do evento**:
 
@@ -177,7 +364,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 **Opções de Saída**:
 
 - `hookSpecificOutput.additionalContext`: informações de tratamento de erro
-- Campos padrão de saída de hook
+- Campos padrão de saída do hook
 
 **Exemplo de Saída**:
 
@@ -204,7 +391,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 **Opções de Saída**:
 
 - `decision`: "allow", "deny", "block" ou "ask"
-- `reason`: explicação legível por humanos para a decisão
+- `reason`: explicação legível para humanos sobre a decisão
 - `hookSpecificOutput.additionalContext`: contexto adicional para anexar ao prompt (opcional)
 
 **Nota**: Como `UserPromptSubmitOutput` estende `HookOutput`, todos os campos padrão estão disponíveis, mas apenas `additionalContext` em `hookSpecificOutput` é especificamente definido para este evento.
@@ -223,7 +410,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 
 #### SessionStart
 
-**Propósito**: Executado quando uma nova sessão é iniciada para realizar tarefas de inicialização.
+**Propósito**: Executado quando uma nova sessão inicia para realizar tarefas de inicialização.
 
 **Campos específicos do evento**:
 
@@ -239,7 +426,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 **Opções de Saída**:
 
 - `hookSpecificOutput.additionalContext`: contexto a ser disponibilizado na sessão
-- Campos padrão de saída de hook
+- Campos padrão de saída do hook
 
 **Exemplo de Saída**:
 
@@ -253,7 +440,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 
 #### SessionEnd
 
-**Propósito**: Executado quando uma sessão é encerrada para realizar tarefas de limpeza.
+**Propósito**: Executado quando uma sessão termina para realizar tarefas de limpeza.
 
 **Campos específicos do evento**:
 
@@ -265,11 +452,11 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 
 **Opções de Saída**:
 
-- Campos padrão de saída de hook (geralmente não usados para bloqueio)
+- Campos padrão de saída do hook (geralmente não usados para bloqueio)
 
 #### Stop
 
-**Propósito**: Executado antes do Qwen concluir sua resposta para fornecer feedback final ou resumos.
+**Propósito**: Executado antes do Qwen Code concluir sua resposta para fornecer feedback final ou resumos.
 
 **Campos específicos do evento**:
 
@@ -283,9 +470,9 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 **Opções de Saída**:
 
 - `decision`: "allow", "deny", "block" ou "ask"
-- `reason`: explicação legível por humanos para a decisão
-- `stopReason`: feedback a ser incluído na resposta de parada
-- `continue`: defina como false para interromper a execução
+- `reason`: explicação legível para humanos sobre a decisão
+- `stopReason`: feedback a ser incluído na resposta de stop
+- `continue`: defina como false para parar a execução
 - `hookSpecificOutput.additionalContext`: informações de contexto adicionais
 
 **Nota**: Como `StopOutput` estende `HookOutput`, todos os campos padrão estão disponíveis, mas o campo `stopReason` é particularmente relevante para este evento.
@@ -298,6 +485,60 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
   "reason": "Must be provided when Qwen Code is blocked from stopping"
 }
 ```
+
+#### StopFailure
+
+**Propósito**: Executado quando a vez termina devido a um erro de API (em vez de Stop). Este é um evento **fire-and-forget** - a saída do hook e os exit codes são ignorados.
+
+**Campos específicos do evento**:
+
+```json
+{
+  "error": "rate_limit | authentication_failed | billing_error | invalid_request | server_error | max_output_tokens | unknown",
+  "error_details": "detailed error message (optional)",
+  "last_assistant_message": "the last message from the assistant before the error (optional)"
+}
+```
+
+**Matcher**: Corresponde ao campo `error`. Por exemplo, `"matcher": "rate_limit"` só será disparado para erros de rate limit.
+
+**Opções de Saída**:
+
+- **Nenhum** - StopFailure é fire-and-forget. Toda a saída do hook e exit codes são ignorados.
+
+**Tratamento de Exit Code**:
+
+| Exit Code | Behavior                  |
+| --------- | ------------------------- |
+| Any       | Ignorado (fire-and-forget) |
+
+**Exemplo de Configuração**:
+
+```json
+{
+  "hooks": {
+    "StopFailure": [
+      {
+        "matcher": "rate_limit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/path/to/rate-limit-alert.sh",
+            "name": "rate-limit-alerter"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Casos de Uso**:
+
+- Monitoramento e alerta de rate limit
+- Registro de falhas de autenticação
+- Notificações de erro de cobrança
+- Coleta de estatísticas de erro
 
 #### SubagentStart
 
@@ -316,7 +557,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 **Opções de Saída**:
 
 - `hookSpecificOutput.additionalContext`: contexto inicial para o subagente
-- Campos padrão de saída de hook
+- Campos padrão de saída do hook
 
 **Exemplo de Saída**:
 
@@ -330,7 +571,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 
 #### SubagentStop
 
-**Propósito**: Executado quando um subagente finaliza para realizar tarefas de finalização.
+**Propósito**: Executado quando um subagente termina para realizar tarefas de finalização.
 
 **Campos específicos do evento**:
 
@@ -348,7 +589,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 **Opções de Saída**:
 
 - `decision`: "allow", "deny", "block" ou "ask"
-- `reason`: explicação legível por humanos para a decisão
+- `reason`: explicação legível para humanos sobre a decisão
 
 **Exemplo de Saída**:
 
@@ -375,7 +616,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 **Opções de Saída**:
 
 - `hookSpecificOutput.additionalContext`: contexto a ser incluído antes da compactação
-- Campos padrão de saída de hook
+- Campos padrão de saída do hook
 
 **Exemplo de Saída**:
 
@@ -386,6 +627,63 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
   }
 }
 ```
+
+#### PostCompact
+
+**Propósito**: Executado após a conclusão da compactação da conversa para arquivar resumos ou rastrear o uso.
+
+**Campos específicos do evento**:
+
+```json
+{
+  "trigger": "manual | auto",
+  "compact_summary": "the summary generated by the compaction process"
+}
+```
+
+**Matcher**: Corresponde ao campo `trigger`. Por exemplo, `"matcher": "manual"` só será disparado para compactação manual via comando `/compact`.
+
+**Opções de Saída**:
+
+- `hookSpecificOutput.additionalContext`: contexto adicional (apenas para logs)
+- Campos padrão de saída do hook (apenas para logs)
+
+**Nota**: PostCompact **não** está na lista oficial de eventos suportados pelo modo de decisão. O campo `decision` e outros campos de controle não produzem efeitos de controle - eles são usados apenas para fins de log.
+
+**Tratamento de Exit Code**:
+
+| Exit Code | Behavior                                                  |
+| --------- | --------------------------------------------------------- |
+| 0         | Sucesso - stdout exibido ao usuário no modo verbose            |
+| Other     | Erro não bloqueante - stderr exibido ao usuário no modo verbose |
+
+**Exemplo de Configuração**:
+
+```json
+{
+  "hooks": {
+    "PostCompact": [
+      {
+        "matcher": "manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/path/to/save-compact-summary.sh",
+            "name": "save-summary"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Casos de Uso**:
+
+- Arquivamento de resumos em arquivos ou bancos de dados
+- Rastreamento de estatísticas de uso
+- Monitoramento de mudanças de contexto
+- Log de auditoria para operações de compactação
 
 #### Notification
 
@@ -406,7 +704,7 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 **Opções de Saída**:
 
 - `hookSpecificOutput.additionalContext`: informações adicionais a serem incluídas
-- Campos padrão de saída de hook
+- Campos padrão de saída do hook
 
 **Exemplo de Saída**:
 
@@ -456,21 +754,21 @@ Campos específicos do evento são adicionados com base no tipo de hook. Abaixo 
 }
 ```
 
-## Configuração dos Hooks
+## Configuração de Hooks
 
-Os hooks são configurados nas configurações do Qwen Code, geralmente em `.qwen/settings.json` ou em arquivos de configuração do usuário:
+Os hooks são configurados nas settings do Qwen Code, geralmente em `.qwen/settings.json` ou arquivos de configuração do usuário:
 
 ```json
 {
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "^bash$", // Regex to match tool names
-        "sequential": false, // Whether to run hooks sequentially
+        "matcher": "^Bash$",
+        "sequential": false,
         "hooks": [
           {
             "type": "command",
-            "command": "/path/to/script.sh",
+            "command": "/path/to/security-check.sh",
             "name": "security-check",
             "description": "Run security checks before tool execution",
             "timeout": 30000
@@ -493,63 +791,7 @@ Os hooks são configurados nas configurações do Qwen Code, geralmente em `.qwe
 }
 ```
 
-### Padrões de Matcher
-
-Os matchers permitem filtrar hooks com base no contexto. Nem todos os eventos de hook suportam matchers:
-
-| Tipo de Evento          | Eventos                                                                 | Suporte a Matcher | Alvo do Matcher (Valores)                                                                |
-| ------------------- | ---------------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------- |
-| Eventos de Ferramenta         | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest` | ✅ Sim (regex)  | Nome da ferramenta: `bash`, `read_file`, `write_file`, `edit`, `glob`, `grep_search`, etc.      |
-| Eventos de Subagente     | `SubagentStart`, `SubagentStop`                                        | ✅ Sim (regex)  | Tipo de agente: `Bash`, `Explorer`, etc.                                                   |
-| Eventos de Sessão      | `SessionStart`                                                         | ✅ Sim (regex)  | Origem: `startup`, `resume`, `clear`, `compact`                                        |
-| Eventos de Sessão      | `SessionEnd`                                                           | ✅ Sim (regex)  | Motivo: `clear`, `logout`, `prompt_input_exit`, `bypass_permissions_disabled`, `other` |
-| Eventos de Notificação | `Notification`                                                         | ✅ Sim (exato)  | Tipo: `permission_prompt`, `idle_prompt`, `auth_success`                               |
-| Eventos de Compactação      | `PreCompact`                                                           | ✅ Sim (exato)  | Gatilho: `manual`, `auto`                                                              |
-| Eventos de Prompt       | `UserPromptSubmit`                                                     | ❌ Não           | N/A                                                                                    |
-| Eventos de Parada         | `Stop`                                                                 | ❌ Não           | N/A                                                                                    |
-
-**Sintaxe do Matcher**:
-
-- Padrão regex correspondido ao campo alvo
-- String vazia `""` ou `"*"` corresponde a todos os eventos desse tipo
-- Sintaxe regex padrão suportada (ex.: `^bash$`, `read.*`, `(bash|run_shell_command)`)
-
-**Exemplos**:
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "^bash$",           // Only match bash tool
-        "hooks": [...]
-      },
-      {
-        "matcher": "read.*",           // Match read_file, read_multiple_files, etc.
-        "hooks": [...]
-      },
-      {
-        "matcher": "",                 // Match all tools (same as "*" or omitting matcher)
-        "hooks": [...]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "matcher": "^(Bash|Explorer)$", // Only match Bash and Explorer agents
-        "hooks": [...]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "^(startup|resume)$", // Only match startup and resume sources
-        "hooks": [...]
-      }
-    ]
-  }
-}
-```
-
-## Execução dos Hooks
+## Execução de Hooks
 
 ### Execução Paralela vs Sequencial
 
@@ -557,43 +799,62 @@ Os matchers permitem filtrar hooks com base no contexto. Nem todos os eventos de
 - Use `sequential: true` na definição do hook para impor execução dependente de ordem
 - Hooks sequenciais podem modificar a entrada para hooks subsequentes na cadeia
 
+### Hooks Assíncronos
+
+Apenas o tipo `command` suporta execução assíncrona. Definir `"async": true` executa o hook em segundo plano sem bloquear o fluxo principal.
+
+**Recursos:**
+
+- Não pode retornar controle de decisão (a operação já ocorreu)
+- Os resultados são injetados na próxima vez da conversa via `systemMessage` ou `additionalContext`
+- Adequado para auditoria, logging, testes em segundo plano, etc.
+
+**Exemplo:**
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "WriteFile|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$QWEN_PROJECT_DIR/.qwen/hooks/run-tests-async.sh",
+            "async": true,
+            "timeout": 300000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+```bash
+#!/bin/bash
+INPUT=$(cat)
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+if [[ "$FILE_PATH" != *.ts && "$FILE_PATH" != *.js ]]; then exit 0; fi
+RESULT=$(npm test 2>&1)
+if [ $? -eq 0 ]; then
+  echo "{\"systemMessage\": \"Tests passed after editing $FILE_PATH\"}"
+else
+  echo "{\"systemMessage\": \"Tests failed: $RESULT\"}"
+fi
+```
+
 ### Modelo de Segurança
 
 - Os hooks são executados no ambiente do usuário com privilégios de usuário
 - Hooks em nível de projeto exigem status de pasta confiável
 - Timeouts previnem hooks travados (padrão: 60 segundos)
 
-### Códigos de Saída
-
-Os scripts de hook comunicam seu resultado por meio de códigos de saída:
-
-| Código de Saída | Significado            | Comportamento                                        |
-| --------- | ------------------ | ----------------------------------------------- |
-| `0`       | Sucesso            | stdout/stderr não são exibidos                         |
-| `2`       | Erro de bloqueio     | Exibe stderr para o modelo e bloqueia a chamada da ferramenta        |
-| Outro     | Erro não bloqueante | Exibe stderr apenas para o usuário, mas continua a chamada da ferramenta |
-
-**Exemplos**:
-
-```bash
-#!/bin/bash
-
-# Success (exit 0 is default, can be omitted)
-echo '{"decision": "allow"}'
-exit 0
-
-# Blocking error - prevents operation
-echo "Dangerous operation blocked by security policy" >&2
-exit 2
-```
-
-> **Nota**: Se nenhum código de saída for especificado, o script assume o padrão `0` (sucesso).
-
 ## Boas Práticas
 
 ### Exemplo 1: Hook de Validação de Segurança
 
-Um hook `PreToolUse` que registra e potencialmente bloqueia comandos perigosos:
+Um hook PreToolUse que registra e potencialmente bloqueia comandos perigosos:
 
 **security_check.sh**
 
@@ -610,24 +871,20 @@ TOOL_INPUT=$(echo "$INPUT" | jq -r '.tool_input')
 # Check for potentially dangerous operations
 if echo "$TOOL_INPUT" | grep -qiE "(rm.*-rf|mv.*\/|chmod.*777)"; then
   echo '{
-    "decision": "deny",
-    "reason": "Potentially dangerous operation detected",
     "hookSpecificOutput": {
       "hookEventName": "PreToolUse",
       "permissionDecision": "deny",
-      "permissionDecisionReason": "Dangerous command blocked by security policy"
+      "permissionDecisionReason": "Security policy blocks dangerous command"
     }
   }'
   exit 2  # Blocking error
 fi
 
-# Allow the operation with a log
+# Log the operation
 echo "INFO: Tool $TOOL_NAME executed safely at $(date)" >> /var/log/qwen-security.log
 
 # Allow with additional context
 echo '{
-  "decision": "allow",
-  "reason": "Operation approved by security checker",
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "allow",
@@ -660,9 +917,38 @@ Configure em `.qwen/settings.json`:
 }
 ```
 
-### Exemplo 2: Hook de Validação de Prompt do Usuário
+### Exemplo 2: Hook de Auditoria HTTP
 
-Um hook `UserPromptSubmit` que valida prompts do usuário em busca de informações confidenciais e fornece contexto para prompts longos:
+Um hook HTTP PostToolUse que envia todos os registros de execução de ferramentas para um serviço de auditoria remoto:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "http",
+            "url": "https://audit.example.com/api/tool-execution",
+            "headers": {
+              "Authorization": "Bearer ${AUDIT_API_TOKEN}",
+              "Content-Type": "application/json"
+            },
+            "allowedEnvVars": ["AUDIT_API_TOKEN"],
+            "timeout": 10,
+            "name": "audit-logger"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Exemplo 3: Hook de Validação de Prompt do Usuário
+
+Um hook UserPromptSubmit que valida prompts do usuário em busca de informações sensíveis e fornece contexto para prompts longos:
 
 **prompt_validator.py**
 
@@ -714,7 +1000,9 @@ exit(0)
 
 ## Solução de Problemas
 
-- Verifique os logs do aplicativo para obter detalhes da execução do hook
+- Verifique os logs do aplicativo para detalhes da execução do hook
 - Verifique as permissões e a capacidade de execução do script do hook
 - Garanta a formatação JSON adequada nas saídas do hook
-- Use padrões de matcher específicos para evitar a execução não intencional de hooks
+- Use padrões de matcher específicos para evitar a execução não intencional do hook
+- Use o modo `--debug` para ver informações detalhadas de correspondência e execução do hook
+- Desative temporariamente todos os hooks: adicione `"disableAllHooks": true` nas settings
