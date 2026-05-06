@@ -18,7 +18,7 @@ qwen --version
 
 ## Visão geral do sandbox
 
-O sandbox isola operações potencialmente perigosas (como comandos de shell ou modificações de arquivos) do seu sistema host, fornecendo uma barreira de segurança entre a CLI e seu ambiente.
+O sandbox isola operações potencialmente perigosas (como comandos de shell ou modificações em arquivos) do seu sistema host, fornecendo uma barreira de segurança entre a CLI e seu ambiente.
 
 Os benefícios do uso de sandbox incluem:
 
@@ -37,41 +37,41 @@ O método ideal de sandbox pode variar dependendo da sua plataforma e da sua sol
 
 ### 1. macOS Seatbelt (somente macOS)
 
-Sandbox leve e nativo usando `sandbox-exec`.
+Sandbox leve e nativo que usa `sandbox-exec`.
 
 **Perfil padrão**: `permissive-open` - restringe gravações fora do diretório do projeto, mas permite a maioria das outras operações e acesso de rede de saída.
 
-**Ideal para**: Rapidez, não requer Docker, oferece proteções robustas para gravação de arquivos.
+**Ideal para**: Execução rápida, sem necessidade de Docker, com proteções robustas para gravação de arquivos.
 
 ### 2. Baseado em contêiner (Docker/Podman)
 
 Sandbox multiplataforma com isolamento completo de processos.
 
-Por padrão, o Qwen Code usa uma imagem de sandbox publicada (configurada no pacote da CLI) e fará o pull conforme necessário.
+Por padrão, o Qwen Code usa uma imagem de sandbox publicada (configurada no pacote da CLI) e fará o pull dela conforme necessário.
 
 O sandbox em contêiner monta seu workspace e o diretório `~/.qwen` dentro do contêiner para que a autenticação e as configurações persistam entre as execuções.
 
-**Ideal para**: Isolamento forte em qualquer SO, ferramentas consistentes dentro de uma imagem conhecida.
+**Ideal para**: Isolamento forte em qualquer SO, com ferramentas consistentes dentro de uma imagem conhecida.
 
 ### Escolhendo um método
 
 - **No macOS**:
   - Use o Seatbelt quando quiser um sandbox leve (recomendado para a maioria dos usuários).
-  - Use Docker/Podman quando precisar de um userland Linux completo (ex.: ferramentas que exigem binários Linux).
+  - Use Docker/Podman quando precisar de um userland Linux completo (por exemplo, ferramentas que exigem binários Linux).
 - **No Linux/Windows**:
   - Use Docker ou Podman.
 
 ## Início rápido
 
 ```bash
-# Habilitar sandbox com flag de comando
+# Enable sandboxing with command flag
 qwen -s -p "analyze the code structure"
 
-# Ou habilitar sandbox para sua sessão de shell (recomendado para CI / scripts)
-export QWEN_SANDBOX=true   # true seleciona automaticamente um provider (veja as notas abaixo)
+# Or enable sandboxing for your shell session (recommended for CI / scripts)
+export QWEN_SANDBOX=true   # true auto-picks a provider (see notes below)
 qwen -p "run the test suite"
 
-# Configurar em settings.json
+# Configure in settings.json
 {
   "tools": {
     "sandbox": true
@@ -81,11 +81,11 @@ qwen -p "run the test suite"
 
 > [!tip]
 >
-> **Notas sobre seleção de provider:**
+> **Notas sobre seleção de provedor:**
 >
 > - No **macOS**, `QWEN_SANDBOX=true` geralmente seleciona `sandbox-exec` (Seatbelt), se disponível.
-> - No **Linux/Windows**, `QWEN_SANDBOX=true` requer que `docker` ou `podman` estejam instalados.
-> - Para forçar um provider, defina `QWEN_SANDBOX=docker|podman|sandbox-exec`.
+> - No **Linux/Windows**, `QWEN_SANDBOX=true` exige que o `docker` ou `podman` esteja instalado.
+> - Para forçar um provedor, defina `QWEN_SANDBOX=docker|podman|sandbox-exec`.
 
 ## Configuração
 
@@ -93,7 +93,7 @@ qwen -p "run the test suite"
 
 1. **Variável de ambiente**: `QWEN_SANDBOX=true|false|docker|podman|sandbox-exec`
 2. **Flag/argumento de comando**: `-s`, `--sandbox` ou `--sandbox=<provider>`
-3. **Arquivo de configurações**: `tools.sandbox` no seu `settings.json` (ex.: `{"tools": {"sandbox": true}}`).
+3. **Arquivo de configurações**: `tools.sandbox` no seu `settings.json` (por exemplo, `{"tools": {"sandbox": true}}`).
 
 > [!important]
 >
@@ -103,12 +103,20 @@ qwen -p "run the test suite"
 
 - **Flag da CLI**: `--sandbox-image <image>`
 - **Variável de ambiente**: `QWEN_SANDBOX_IMAGE=<image>`
+- **Arquivo de configurações**: `tools.sandboxImage` no seu `settings.json` (por exemplo, `{"tools": {"sandboxImage": "ghcr.io/qwenlm/qwen-code:0.14.1"}}`)
 
-Se você não definir nenhuma delas, o Qwen Code usará a imagem padrão configurada no pacote da CLI (por exemplo, `ghcr.io/qwenlm/qwen-code:<version>`).
+Ordem de prioridade (da mais alta para a mais baixa):
+
+1. `--sandbox-image`
+2. `QWEN_SANDBOX_IMAGE`
+3. `tools.sandboxImage`
+4. Imagem padrão integrada ao pacote da CLI (por exemplo, `ghcr.io/qwenlm/qwen-code:<version>`)
+
+`settings.env.QWEN_SANDBOX_IMAGE` também funciona como um mecanismo genérico de injeção de variáveis de ambiente, mas `tools.sandboxImage` é a configuração persistente preferida.
 
 ### Perfis do macOS Seatbelt
 
-Perfis nativos (definidos via variável de ambiente `SEATBELT_PROFILE`):
+Perfis integrados (definidos pela variável de ambiente `SEATBELT_PROFILE`):
 
 - `permissive-open` (padrão): Restrições de gravação, rede permitida
 - `permissive-closed`: Restrições de gravação, sem rede
@@ -119,7 +127,7 @@ Perfis nativos (definidos via variável de ambiente `SEATBELT_PROFILE`):
 
 > [!tip]
 >
-> Comece com `permissive-open` e, se seu fluxo de trabalho ainda funcionar, restrinja para `restrictive-closed`.
+> Comece com `permissive-open` e, se o seu fluxo de trabalho continuar funcionando, restrinja para `restrictive-closed`.
 
 ### Perfis personalizados do Seatbelt (macOS)
 
@@ -128,9 +136,9 @@ Para usar um perfil personalizado do Seatbelt:
 1. Crie um arquivo chamado `.qwen/sandbox-macos-<profile_name>.sb` no seu projeto.
 2. Defina `SEATBELT_PROFILE=<profile_name>`.
 
-### Flags personalizadas de sandbox
+### Flags personalizadas do sandbox
 
-Para sandbox baseado em contêiner, você pode injetar flags personalizadas no comando `docker` ou `podman` usando a variável de ambiente `SANDBOX_FLAGS`. Isso é útil para configurações avançadas, como desativar recursos de segurança para casos de uso específicos.
+Para sandboxes baseados em contêiner, você pode injetar flags personalizadas no comando `docker` ou `podman` usando a variável de ambiente `SANDBOX_FLAGS`. Isso é útil para configurações avançadas, como desativar recursos de segurança para casos de uso específicos.
 
 **Exemplo (Podman)**:
 
@@ -151,19 +159,19 @@ export SANDBOX_FLAGS="--flag1 --flag2=value"
 Se quiser restringir o acesso de rede de saída a uma allowlist, você pode executar um proxy local junto com o sandbox:
 
 - Defina `QWEN_SANDBOX_PROXY_COMMAND=<command>`
-- O comando deve iniciar um servidor proxy que escuta em `:::8877`
+- O comando deve iniciar um servidor proxy que escute em `:::8877`
 
 Isso é especialmente útil com os perfis Seatbelt `*-proxied`.
 
 Para um exemplo funcional de proxy estilo allowlist, consulte: [Example Proxy Script](/developers/examples/proxy-script).
 
-## Gerenciamento de UID/GID no Linux
+## Tratamento de UID/GID no Linux
 
 No Linux, o Qwen Code habilita por padrão o mapeamento de UID/GID para que o sandbox seja executado como seu usuário (e reutilize o `~/.qwen` montado). Substitua com:
 
 ```bash
-export SANDBOX_SET_UID_GID=true   # Força UID/GID do host
-export SANDBOX_SET_UID_GID=false  # Desativa mapeamento de UID/GID
+export SANDBOX_SET_UID_GID=true   # Force host UID/GID
+export SANDBOX_SET_UID_GID=false  # Disable UID/GID mapping
 ```
 
 ## Solução de problemas
@@ -172,9 +180,9 @@ export SANDBOX_SET_UID_GID=false  # Desativa mapeamento de UID/GID
 
 **"Operation not permitted"**
 
-- A operação requer acesso fora do sandbox.
+- A operação exige acesso fora do sandbox.
 - No macOS Seatbelt: tente um `SEATBELT_PROFILE` mais permissivo.
-- No Docker/Podman: verifique se o workspace está montado e se seu comando não requer acesso fora do diretório do projeto.
+- No Docker/Podman: verifique se o workspace está montado e se o seu comando não exige acesso fora do diretório do projeto.
 
 **Comandos ausentes**
 
@@ -183,9 +191,9 @@ export SANDBOX_SET_UID_GID=false  # Desativa mapeamento de UID/GID
 
 **Java não disponível no sandbox Docker**
 
-A imagem Docker oficial do Qwen Code é intencionalmente mínima para manter a imagem pequena, segura e rápida para pull. Diferentes usuários exigem diferentes runtimes de linguagem (Java, Python, Node.js, etc.), e empacotar todos os ambientes em uma única imagem não é prático. Portanto, o Java **não está incluído por padrão** no sandbox Docker.
+A imagem Docker oficial do Qwen Code é intencionalmente mínima para manter a imagem pequena, segura e rápida para fazer pull. Diferentes usuários exigem diferentes runtimes de linguagem (Java, Python, Node.js, etc.), e empacotar todos os ambientes em uma única imagem não é prático. Portanto, o Java **não está incluído por padrão** no sandbox Docker.
 
-Se seu fluxo de trabalho requer Java, você pode estender a imagem base criando um `.qwen/sandbox.Dockerfile` no seu projeto:
+Se o seu fluxo de trabalho exigir Java, você pode estender a imagem base criando um `.qwen/sandbox.Dockerfile` no seu projeto:
 
 ```dockerfile
 FROM ghcr.io/qwenlm/qwen-code:latest
@@ -206,31 +214,31 @@ Para mais detalhes sobre como personalizar o sandbox, consulte [Customizing the 
 
 **Problemas de rede**
 
-- Verifique se o perfil do sandbox permite rede.
+- Verifique se o perfil do sandbox permite acesso à rede.
 - Verifique a configuração do proxy.
 
-### Modo de debug
+### Modo de depuração
 
 ```bash
 DEBUG=1 qwen -s -p "debug command"
 ```
 
-**Nota:** Se você tiver `DEBUG=true` no arquivo `.env` de um projeto, ele não afetará a CLI devido à exclusão automática. Use arquivos `.qwen/.env` para configurações de debug específicas do Qwen Code.
+**Nota:** Se você tiver `DEBUG=true` no arquivo `.env` de um projeto, ele não afetará a CLI devido à exclusão automática. Use arquivos `.qwen/.env` para configurações de depuração específicas do Qwen Code.
 
 ### Inspecionar o sandbox
 
 ```bash
-# Verificar ambiente
+# Check environment
 qwen -s -p "run shell command: env | grep SANDBOX"
 
-# Listar montagens
+# List mounts
 qwen -s -p "run shell command: mount | grep workspace"
 ```
 
 ## Notas de segurança
 
 - O sandbox reduz, mas não elimina todos os riscos.
-- Use o perfil mais restritivo que ainda permita seu trabalho.
+- Use o perfil mais restritivo que ainda permita o seu trabalho.
 - O overhead do contêiner é mínimo após o primeiro pull/build.
 - Aplicações GUI podem não funcionar em sandboxes.
 

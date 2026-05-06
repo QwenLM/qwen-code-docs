@@ -1,10 +1,10 @@
-# TypeScript SDK
+# Typescript SDK
 
 ## @qwen-code/sdk
 
-Ein minimales, experimentelles TypeScript SDK für den programmatischen Zugriff auf Qwen Code.
+Ein minimales experimentelles TypeScript SDK für den programmatischen Zugriff auf Qwen Code.
 
-Feature Requests, Issues und PRs sind jederzeit willkommen.
+Feature Requests, Issues und PRs sind willkommen.
 
 ## Installation
 
@@ -55,36 +55,36 @@ Erstellt eine neue Query-Session mit Qwen Code.
 
 #### QueryOptions
 
-| Option                   | Typ                                            | Standardwert     | Beschreibung                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Option                   | Type                                           | Default          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------------ | ---------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cwd`                    | `string`                                       | `process.cwd()`  | Das Arbeitsverzeichnis für die Query-Session. Bestimmt den Kontext, in dem Dateioperationen und Befehle ausgeführt werden.                                                                                                                                                                                                                                                                                                                                                               |
 | `model`                  | `string`                                       | -                | Das zu verwendende KI-Modell (z. B. `'qwen-max'`, `'qwen-plus'`, `'qwen-turbo'`). Hat Vorrang vor den Umgebungsvariablen `OPENAI_MODEL` und `QWEN_MODEL`.                                                                                                                                                                                                                                                                                                                                 |
-| `pathToQwenExecutable`   | `string`                                       | Automatisch erkannt | Pfad zur Qwen Code-Executable. Unterstützt mehrere Formate: `'qwen'` (native Binary aus PATH), `'/path/to/qwen'` (expliziter Pfad), `'/path/to/cli.js'` (Node.js-Bundle), `'node:/path/to/cli.js'` (erzwingt Node.js-Runtime), `'bun:/path/to/cli.js'` (erzwingt Bun-Runtime). Falls nicht angegeben, wird automatisch erkannt aus: `QWEN_CODE_CLI_PATH`-Umgebungsvariable, `~/.volta/bin/qwen`, `~/.npm-global/bin/qwen`, `/usr/local/bin/qwen`, `~/.local/bin/qwen`, `~/node_modules/.bin/qwen`, `~/.yarn/bin/qwen`. |
+| `pathToQwenExecutable`   | `string`                                       | Auto-detected    | Pfad zur Qwen Code-Executable. Unterstützt mehrere Formate: `'qwen'` (native Binary aus PATH), `'/path/to/qwen'` (expliziter Pfad), `'/path/to/cli.js'` (Node.js-Bundle), `'node:/path/to/cli.js'` (erzwingt Node.js-Runtime), `'bun:/path/to/cli.js'` (erzwingt Bun-Runtime). Wenn nicht angegeben, wird automatisch erkannt aus: `QWEN_CODE_CLI_PATH`-Env-Var, `~/.volta/bin/qwen`, `~/.npm-global/bin/qwen`, `/usr/local/bin/qwen`, `~/.local/bin/qwen`, `~/node_modules/.bin/qwen`, `~/.yarn/bin/qwen`. |
 | `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'yolo'` | `'default'`      | Berechtigungsmodus zur Steuerung der Tool-Ausführungsfreigabe. Siehe [Berechtigungsmodi](#permission-modes) für Details.                                                                                                                                                                                                                                                                                                                                                                           |
-| `canUseTool`             | `CanUseTool`                                   | -                | Benutzerdefinierter Permission-Handler für die Tool-Ausführungsfreigabe. Wird aufgerufen, wenn ein Tool eine Bestätigung erfordert. Muss innerhalb von 60 Sekunden antworten, andernfalls wird die Anfrage automatisch abgelehnt. Siehe [Benutzerdefinierter Permission-Handler](#custom-permission-handler).                                                                                                                                                                                                                                                     |
+| `canUseTool`             | `CanUseTool`                                   | -                | Benutzerdefinierter Berechtigungshandler für die Tool-Freigabe. Wird aufgerufen, wenn ein Tool eine Bestätigung erfordert. Muss innerhalb von 60 Sekunden antworten, andernfalls wird die Anfrage automatisch abgelehnt. Siehe [Benutzerdefinierter Berechtigungshandler](#custom-permission-handler).                                                                                                                                                                                                                                                     |
 | `env`                    | `Record<string, string>`                       | -                | Umgebungsvariablen, die an den Qwen Code-Prozess übergeben werden. Werden mit der aktuellen Prozessumgebung zusammengeführt.                                                                                                                                                                                                                                                                                                                                                                                  |
-| `systemPrompt`           | `string \| QuerySystemPromptPreset`            | -                | Konfiguration des Systemprompts für die Haupt-Session. Verwende einen String, um den integrierten Qwen Code-Systemprompt vollständig zu überschreiben, oder ein Preset-Objekt, um den integrierten Prompt beizubehalten und zusätzliche Anweisungen anzuhängen.                                                                                                                                                                                                                                                                                  |
+| `systemPrompt`           | `string \| QuerySystemPromptPreset`            | -                | Konfiguration des Systemprompts für die Hauptsession. Verwende einen String, um den integrierten Qwen Code-Systemprompt vollständig zu überschreiben, oder ein Preset-Objekt, um den integrierten Prompt beizubehalten und zusätzliche Anweisungen anzuhängen.                                                                                                                                                                                                                                                                                  |
 | `mcpServers`             | `Record<string, McpServerConfig>`              | -                | MCP-Server (Model Context Protocol), mit denen eine Verbindung hergestellt werden soll. Unterstützt externe Server (stdio/SSE/HTTP) und SDK-eingebettete Server. Externe Server werden mit Transportoptionen wie `command`, `args`, `url`, `httpUrl` usw. konfiguriert. SDK-Server verwenden `{ type: 'sdk', name: string, instance: Server }`.                                                                                                                                                                                        |
 | `abortController`        | `AbortController`                              | -                | Controller zum Abbrechen der Query-Session. Rufe `abortController.abort()` auf, um die Session zu beenden und Ressourcen freizugeben.                                                                                                                                                                                                                                                                                                                                                                |
 | `debug`                  | `boolean`                                      | `false`          | Aktiviert den Debug-Modus für ausführliches Logging des CLI-Prozesses.                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `maxSessionTurns`        | `number`                                       | `-1` (unbegrenzt) | Maximale Anzahl an Konversationsrunden, bevor die Session automatisch beendet wird. Eine Runde besteht aus einer Benutzer- und einer Assistenten-Nachricht.                                                                                                                                                                                                                                                                                                                                        |
-| `coreTools`              | `string[]`                                     | -                | Entspricht `tool.core` in settings.json. Falls angegeben, stehen der KI nur diese Tools zur Verfügung. Beispiel: `['read_file', 'write_file', 'run_terminal_cmd']`.                                                                                                                                                                                                                                                                                                                   |
-| `excludeTools`           | `string[]`                                     | -                | Entspricht `tool.exclude` in settings.json. Ausgeschlossene Tools geben sofort einen Berechtigungsfehler zurück. Hat die höchste Priorität gegenüber allen anderen Berechtigungseinstellungen. Unterstützt Pattern-Matching: Tool-Name (`'write_file'`), Tool-Klasse (`'ShellTool'`) oder Shell-Befehlspräfix (`'ShellTool(rm )'`).                                                                                                                                                                                      |
-| `allowedTools`           | `string[]`                                     | -                | Entspricht `tool.allowed` in settings.json. Passende Tools umgehen den `canUseTool`-Callback und werden automatisch ausgeführt. Gilt nur, wenn ein Tool eine Bestätigung erfordert. Unterstützt dasselbe Pattern-Matching wie `excludeTools`.                                                                                                                                                                                                                                                                 |
+| `maxSessionTurns`        | `number`                                       | `-1` (unlimited) | Maximale Anzahl an Konversationsrunden, bevor die Session automatisch beendet wird. Eine Runde besteht aus einer User-Nachricht und einer Assistant-Antwort.                                                                                                                                                                                                                                                                                                                                        |
+| `coreTools`              | `string[]`                                     | -                | Entspricht `tool.core` in `settings.json`. Wenn angegeben, sind nur diese Tools für die KI verfügbar. Beispiel: `['read_file', 'write_file', 'run_terminal_cmd']`.                                                                                                                                                                                                                                                                                                                   |
+| `excludeTools`           | `string[]`                                     | -                | Entspricht `tool.exclude` in `settings.json`. Ausgeschlossene Tools geben sofort einen Berechtigungsfehler zurück. Hat die höchste Priorität gegenüber allen anderen Berechtigungseinstellungen. Unterstützt Pattern Matching: Tool-Name (`'write_file'`), Tool-Klasse (`'ShellTool'`) oder Shell-Befehlspräfix (`'ShellTool(rm )'`).                                                                                                                                                                                      |
+| `allowedTools`           | `string[]`                                     | -                | Entspricht `tool.allowed` in `settings.json`. Passende Tools umgehen den `canUseTool`-Callback und werden automatisch ausgeführt. Gilt nur, wenn ein Tool eine Bestätigung erfordert. Unterstützt dasselbe Pattern Matching wie `excludeTools`.                                                                                                                                                                                                                                                                 |
 | `authType`               | `'openai' \| 'qwen-oauth'`                     | `'openai'`       | Authentifizierungstyp für den KI-Service. Die Verwendung von `'qwen-oauth'` im SDK wird nicht empfohlen, da die Anmeldedaten in `~/.qwen` gespeichert werden und möglicherweise regelmäßig aktualisiert werden müssen.                                                                                                                                                                                                                                                                                                                          |
 | `agents`                 | `SubagentConfig[]`                             | -                | Konfiguration für Subagenten, die während der Session aufgerufen werden können. Subagenten sind spezialisierte KI-Agenten für bestimmte Aufgaben oder Domänen.                                                                                                                                                                                                                                                                                                                                                |
-| `includePartialMessages` | `boolean`                                      | `false`          | Wenn `true`, gibt das SDK unvollständige Nachrichten bereits während der Generierung aus, was ein Echtzeit-Streaming der KI-Antwort ermöglicht.                                                                                                                                                                                                                                                                                                                                                        |
+| `includePartialMessages` | `boolean`                                      | `false`          | Wenn `true`, gibt das SDK unvollständige Nachrichten während der Generierung aus, was ein Echtzeit-Streaming der KI-Antwort ermöglicht.                                                                                                                                                                                                                                                                                                                                                        |
 
 ### Timeouts
 
 Das SDK erzwingt die folgenden Standard-Timeouts:
 
-| Timeout          | Standardwert | Beschreibung                                                                                                                  |
-| ---------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `canUseTool`     | 1 Minute | Maximale Zeit für die Antwort des `canUseTool`-Callbacks. Bei Überschreitung wird die Tool-Anfrage automatisch abgelehnt.                             |
-| `mcpRequest`     | 1 Minute | Maximale Zeit für den Abschluss von SDK-MCP-Tool-Aufrufen.                                                                             |
-| `controlRequest` | 1 Minute | Maximale Zeit für den Abschluss von Steuerungsvorgängen wie `initialize()`, `setModel()`, `setPermissionMode()` und `interrupt()`. |
-| `streamClose`    | 1 Minute | Maximale Wartezeit für den Abschluss der Initialisierung, bevor die CLI-stdin im Multi-Turn-Modus mit SDK-MCP-Servern geschlossen wird.        |
+| Timeout          | Default  | Description                                                                                                                                       |
+| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `canUseTool`     | 1 minute | Maximale Zeit für die Antwort des `canUseTool`-Callbacks. Bei Überschreitung wird die Tool-Anfrage automatisch abgelehnt.                                                  |
+| `mcpRequest`     | 1 minute | Maximale Zeit für den Abschluss von SDK-MCP-Tool-Aufrufen.                                                                                                  |
+| `controlRequest` | 1 minute | Maximale Zeit für den Abschluss von Steuerungsoperationen wie `initialize()`, `setModel()`, `setPermissionMode()`, `getContextUsage()` und `interrupt()`. |
+| `streamClose`    | 1 minute | Maximale Wartezeit für den Abschluss der Initialisierung, bevor CLI stdin im Multi-Turn-Modus mit SDK-MCP-Servern geschlossen wird.                             |
 
 Du kannst diese Timeouts über die `timeout`-Option anpassen:
 
@@ -101,7 +101,7 @@ const query = qwen.query('Your prompt', {
 
 ### Nachrichtentypen
 
-Das SDK stellt Type Guards bereit, um verschiedene Nachrichtentypen zu identifizieren:
+Das SDK bietet Type Guards zur Identifizierung verschiedener Nachrichtentypen:
 
 ```typescript
 import {
@@ -143,6 +143,11 @@ await q.setPermissionMode('yolo');
 // Change model mid-session
 await q.setModel('qwen-max');
 
+// Get context window usage breakdown (token counts per category)
+const usage = await q.getContextUsage();
+// Pass true to hint that per-item details should be displayed
+const detail = await q.getContextUsage(true);
+
 // Close the session
 await q.close();
 ```
@@ -151,19 +156,19 @@ await q.close();
 
 Das SDK unterstützt verschiedene Berechtigungsmodi zur Steuerung der Tool-Ausführung:
 
-- **`default`**: Schreib-Tools werden abgelehnt, es sei denn, sie werden über den `canUseTool`-Callback oder in `allowedTools` freigegeben. Nur-Lese-Tools werden ohne Bestätigung ausgeführt.
-- **`plan`**: Blockiert alle Schreib-Tools und weist die KI an, zunächst einen Plan vorzulegen.
-- **`auto-edit`**: Bearbeitungs-Tools (`edit`, `write_file`) werden automatisch freigegeben, während andere Tools eine Bestätigung erfordern.
+- **`default`**: Write-Tools werden abgelehnt, es sei denn, sie werden über den `canUseTool`-Callback oder in `allowedTools` freigegeben. Read-only-Tools werden ohne Bestätigung ausgeführt.
+- **`plan`**: Blockiert alle Write-Tools und weist die KI an, zuerst einen Plan vorzulegen.
+- **`auto-edit`**: Automatische Freigabe von Edit-Tools (`edit`, `write_file`), während andere Tools eine Bestätigung erfordern.
 - **`yolo`**: Alle Tools werden automatisch ohne Bestätigung ausgeführt.
 
 ### Prioritätskette für Berechtigungen
 
-1. `excludeTools` – Blockiert Tools vollständig
-2. `permissionMode: 'plan'` – Blockiert nicht-nur-Lese-Tools
-3. `permissionMode: 'yolo'` – Genehmigt alle Tools automatisch
-4. `allowedTools` – Genehmigt passende Tools automatisch
-5. `canUseTool`-Callback – Benutzerdefinierte Genehmigungslogik
-6. Standardverhalten – Automatische Ablehnung im SDK-Modus
+1. `excludeTools` - Blockiert Tools vollständig
+2. `permissionMode: 'plan'` - Blockiert nicht-read-only-Tools
+3. `permissionMode: 'yolo'` - Genehmigt alle Tools automatisch
+4. `allowedTools` - Genehmigt passende Tools automatisch
+5. `canUseTool`-Callback - Benutzerdefinierte Freigabelogik
+6. Default behavior - Automatische Ablehnung im SDK-Modus
 
 ## Beispiele
 
@@ -201,7 +206,7 @@ for await (const message of result) {
 }
 ```
 
-### Benutzerdefinierter Permission-Handler
+### Benutzerdefinierter Berechtigungshandler
 
 ```typescript
 import { query, type CanUseTool } from '@qwen-code/sdk';
@@ -281,20 +286,20 @@ const result = query({
 
 ### Mit SDK-eingebetteten MCP-Servern
 
-Das SDK stellt `tool` und `createSdkMcpServer` bereit, um MCP-Server zu erstellen, die im selben Prozess wie deine SDK-Anwendung laufen. Dies ist nützlich, wenn du der KI benutzerdefinierte Tools bereitstellen möchtest, ohne einen separaten Serverprozess zu starten.
+Das SDK bietet `tool` und `createSdkMcpServer`, um MCP-Server zu erstellen, die im selben Prozess wie deine SDK-Anwendung laufen. Dies ist nützlich, wenn du der KI benutzerdefinierte Tools bereitstellen möchtest, ohne einen separaten Serverprozess zu starten.
 
 #### `tool(name, description, inputSchema, handler)`
 
 Erstellt eine Tool-Definition mit Zod-Schema-Typinferenz.
 
-| Parameter     | Typ                                | Beschreibung                                                              |
+| Parameter     | Type                               | Description                                                              |
 | ------------- | ---------------------------------- | ------------------------------------------------------------------------ |
 | `name`        | `string`                           | Tool-Name (1–64 Zeichen, beginnt mit einem Buchstaben, alphanumerisch und Unterstriche) |
-| `description` | `string`                           | Menschenlesbare Beschreibung der Tool-Funktion                         |
+| `description` | `string`                           | Menschenlesbare Beschreibung der Tool-Funktionalität                         |
 | `inputSchema` | `ZodRawShape`                      | Zod-Schema-Objekt, das die Eingabeparameter des Tools definiert                   |
-| `handler`     | `(args, extra) => Promise<Result>` | Asynchrone Funktion, die das Tool ausführt und MCP-Inhaltsblöcke zurückgibt     |
+| `handler`     | `(args, extra) => Promise<Result>` | Asynchrone Funktion, die das Tool ausführt und MCP-Content-Blöcke zurückgibt     |
 
-Der Handler muss ein `CallToolResult`-Objekt mit folgender Struktur zurückgeben:
+Der Handler muss ein `CallToolResult`-Objekt mit der folgenden Struktur zurückgeben:
 
 ```typescript
 {
@@ -311,11 +316,11 @@ Der Handler muss ein `CallToolResult`-Objekt mit folgender Struktur zurückgeben
 
 Erstellt eine SDK-eingebettete MCP-Server-Instanz.
 
-| Option    | Typ                      | Standardwert   | Beschreibung                          |
+| Option    | Type                     | Default   | Description                          |
 | --------- | ------------------------ | --------- | ------------------------------------ |
-| `name`    | `string`                 | Erforderlich  | Eindeutiger Name für den MCP-Server       |
-| `version` | `string`                 | `'1.0.0'` | Server-Version                       |
-| `tools`   | `SdkMcpToolDefinition[]` | -         | Array von Tools, die mit `tool()` erstellt wurden |
+| `name`    | `string`                 | Required  | Eindeutiger Name für den MCP-Server       |
+| `version` | `string`                 | `'1.0.0'` | Serverversion                       |
+| `tools`   | `SdkMcpToolDefinition[]` | -         | Array von Tools, erstellt mit `tool()` |
 
 Gibt ein `McpSdkServerConfigWithInstance`-Objekt zurück, das direkt an die `mcpServers`-Option übergeben werden kann.
 
@@ -389,7 +394,7 @@ try {
 
 ## Fehlerbehandlung
 
-Das SDK stellt eine `AbortError`-Klasse zur Behandlung abgebrochener Queries bereit:
+Das SDK bietet eine `AbortError`-Klasse zur Behandlung abgebrochener Queries:
 
 ```typescript
 import { AbortError, isAbortError } from '@qwen-code/sdk';

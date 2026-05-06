@@ -1,1 +1,1 @@
-<!-- Conteúdo não fornecido. Por favor, insira o texto Markdown para tradução. -->
+<!-- Por favor, forneça o conteúdo Markdown para tradução. -->

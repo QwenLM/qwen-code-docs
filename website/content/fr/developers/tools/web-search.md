@@ -1,186 +1,215 @@
-# Outil de recherche Web (`web_search`)
+# Recherche Web
 
-Ce document décrit l'outil `web_search` permettant d'effectuer des recherches sur le Web via plusieurs fournisseurs.
+Qwen Code prend en charge la recherche Web via des intégrations **MCP (Model Context Protocol)**. Plutôt qu'un outil de recherche intégré, la recherche Web est fournie en se connectant à des serveurs MCP externes, ce qui vous offre une flexibilité totale pour choisir le service de recherche le mieux adapté à vos besoins.
 
-## Description
+## ⚠️ Changement majeur : suppression de l'outil intégré `web_search`
 
-Utilisez `web_search` pour effectuer une recherche sur le Web et obtenir des informations depuis Internet. L'outil prend en charge plusieurs fournisseurs de recherche et renvoie une réponse concise avec des citations de sources lorsque celles-ci sont disponibles.
+> **Versions concernées :** `V0.0.7+` jusqu'à la dernière version prenant en charge la recherche Web intégrée.
 
-### Fournisseurs pris en charge
+L'outil intégré `web_search` et toute sa configuration associée ont été **supprimés**. Si vous utilisiez l'un des éléments suivants, vous devez migrer vers l'approche basée sur MCP décrite dans ce document :
 
-1. **DashScope** (Officiel, Gratuit) - Disponible automatiquement pour les utilisateurs Qwen OAuth (200 requêtes/minute, 1000 requêtes/jour)
-2. **Tavily** - API de recherche haute qualité avec génération de réponses intégrée
-3. **Google Custom Search** - API JSON Custom Search de Google
+| Élément supprimé                                                       | Action à effectuer                                                                          |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Bloc `webSearch` dans `settings.json`                                  | Configurez plutôt un serveur MCP dans `mcpServers` (voir ci-dessous)                        |
+| `advanced.tavilyApiKey` dans `settings.json`                           | Utilisez le [serveur MCP Tavily](#tavily-websearch)                                         |
+| Variable d'environnement `TAVILY_API_KEY`                              | Utilisez le [serveur MCP Tavily](#tavily-websearch)                                         |
+| `DASHSCOPE_API_KEY` pour la recherche Web                              | Utilisez le [MCP Alibaba Cloud Bailian WebSearch](#alibaba-cloud-bailian-websearch-recommended) |
+| `GLM_API_KEY` pour la recherche Web                                    | Utilisez le [MCP GLM WebSearch Prime](#glm-websearch-prime-zhipuai)                         |
+| Flags CLI `--tavily-api-key` / `--glm-api-key` / `--dashscope-api-key` | Configurez via `mcpServers` dans `settings.json`                                            |
 
-### Arguments
+### Exemples de migration
 
-`web_search` accepte deux arguments :
-
-- `query` (string, obligatoire) : La requête de recherche
-- `provider` (string, facultatif) : Fournisseur spécifique à utiliser ("dashscope", "tavily", "google")
-  - Si non spécifié, utilise le fournisseur par défaut défini dans la configuration
-
-## Configuration
-
-### Méthode 1 : Fichier de paramètres (Recommandé)
-
-Ajoutez à votre `settings.json` :
+**Avant (Tavily via l'outil intégré) :**
 
 ```json
 {
   "webSearch": {
-    "provider": [
-      { "type": "dashscope" },
-      { "type": "tavily", "apiKey": "tvly-xxxxx" },
-      {
-        "type": "google",
-        "apiKey": "your-google-api-key",
-        "searchEngineId": "your-search-engine-id"
-      }
-    ],
+    "provider": [{ "type": "tavily", "apiKey": "tvly-xxx" }],
+    "default": "tavily"
+  }
+}
+```
+
+**Après (Tavily via MCP) :**
+
+```json
+{
+  "mcpServers": {
+    "tavily": {
+      "httpUrl": "https://mcp.tavily.com/mcp/?tavilyApiKey=tvly-xxx"
+    }
+  }
+}
+```
+
+---
+
+**Avant (DashScope via l'outil intégré) :**
+
+```json
+{
+  "webSearch": {
+    "provider": [{ "type": "dashscope", "apiKey": "sk-xxx" }],
     "default": "dashscope"
   }
 }
 ```
 
-**Remarques :**
-
-- DashScope ne nécessite pas de clé API (service officiel et gratuit)
-- **Utilisateurs Qwen OAuth :** DashScope est automatiquement ajouté à votre liste de fournisseurs, même sans configuration explicite
-- Configurez des fournisseurs supplémentaires (Tavily, Google) si vous souhaitez les utiliser en parallèle de DashScope
-- Définissez `default` pour spécifier le fournisseur à utiliser par défaut (si non défini, l'ordre de priorité est : Tavily > Google > DashScope)
-
-### Méthode 2 : Variables d'environnement
-
-Définissez les variables d'environnement dans votre shell ou votre fichier `.env` :
-
-```bash
-# Tavily
-export TAVILY_API_KEY="tvly-xxxxx"
-
-# Google
-export GOOGLE_API_KEY="your-api-key"
-export GOOGLE_SEARCH_ENGINE_ID="your-engine-id"
-```
-
-### Méthode 3 : Arguments en ligne de commande
-
-Transmettez les clés API lors de l'exécution de Qwen Code :
-
-```bash
-# Tavily
-qwen --tavily-api-key tvly-xxxxx
-
-# Google
-qwen --google-api-key your-key --google-search-engine-id your-id
-
-# Specify default provider
-qwen --web-search-default tavily
-```
-
-### Rétrocompatibilité (Obsolète)
-
-⚠️ **OBSOLÈTE :** L'ancienne configuration `tavilyApiKey` est toujours prise en charge pour des raisons de rétrocompatibilité, mais elle est obsolète :
+**Après (Alibaba Cloud Bailian WebSearch via MCP) :**
 
 ```json
 {
-  "advanced": {
-    "tavilyApiKey": "tvly-xxxxx" // ⚠️ Deprecated
+  "mcpServers": {
+    "WebSearch": {
+      "httpUrl": "https://dashscope.aliyuncs.com/api/v1/mcps/WebSearch/mcp",
+      "headers": {
+        "Authorization": "Bearer sk-xxx"
+      }
+    }
   }
 }
 ```
 
-**Important :** Cette configuration est obsolète et sera supprimée dans une version future. Veuillez migrer vers le nouveau format de configuration `webSearch` présenté ci-dessus. L'ancienne configuration configurera automatiquement Tavily comme fournisseur, mais nous vous recommandons vivement de mettre à jour votre configuration.
+---
 
-## Désactivation de la recherche Web
+## Services de recherche Web MCP pris en charge
 
-Si vous souhaitez désactiver la fonctionnalité de recherche Web, vous pouvez exclure l'outil `web_search` dans votre `settings.json` :
+### Alibaba Cloud Bailian WebSearch (Recommandé)
+
+Le service MCP officiel de recherche Web fourni par la plateforme Alibaba Cloud Bailian, propulsé par DashScope.
+
+- **Marketplace MCP :** https://bailian.console.aliyun.com/cn-beijing?tab=mcp#/mcp-market/detail/WebSearch
+- **Coût :** Payant (facturé via Alibaba Cloud DashScope)
+- **Obtenir une clé API :** https://help.aliyun.com/zh/model-studio/get-api-key
+- **Idéal pour :** les requêtes en chinois, l'accès au contenu Web chinois, l'intégration avec l'écosystème Alibaba Cloud
+
+#### Configuration
+
+**Méthode 1 : commande CLI**
+
+```bash
+qwen mcp add WebSearch \
+  -t http \
+  "https://dashscope.aliyuncs.com/api/v1/mcps/WebSearch/mcp" \
+  -H "Authorization: Bearer ${DASHSCOPE_API_KEY}"
+```
+
+**Méthode 2 : `settings.json`**
 
 ```json
 {
-  "tools": {
-    "exclude": ["web_search"]
+  "mcpServers": {
+    "WebSearch": {
+      "httpUrl": "https://dashscope.aliyuncs.com/api/v1/mcps/WebSearch/mcp",
+      "headers": {
+        "Authorization": "Bearer ${DASHSCOPE_API_KEY}"
+      }
+    }
   }
 }
 ```
 
-**Remarque :** Ce paramètre nécessite un redémarrage de Qwen Code pour prendre effet. Une fois désactivé, l'outil `web_search` ne sera plus disponible pour le modèle, même si des fournisseurs de recherche Web sont configurés.
+Remplacez `${DASHSCOPE_API_KEY}` par votre clé API réelle, ou définissez-la comme variable d'environnement pour que Qwen Code la détecte automatiquement.
 
-## Exemples d'utilisation
+---
 
-### Recherche de base (utilisation du fournisseur par défaut)
+### Tavily WebSearch
 
+Un serveur MCP prêt pour la production offrant des capacités de recherche Web en temps réel, d'extraction, de cartographie et de crawl.
+
+- **Dépôt :** https://github.com/tavily-ai/tavily-mcp
+- **Coût :** Payant (offre gratuite disponible)
+- **Obtenir une clé API :** https://app.tavily.com/home
+- **Idéal pour :** la recherche Web généraliste avec des réponses de haute qualité générées par IA
+
+#### Outils disponibles
+
+- `tavily_search` — Recherche Web en temps réel
+- `tavily_extract` — Extraction intelligente de données depuis des pages Web
+- `tavily_map` — Création d'une carte structurée d'un site Web
+- `tavily_crawl` — Exploration systématique de sites Web
+
+#### Configuration
+
+**Méthode 1 : commande CLI (MCP distant)**
+
+```bash
+qwen mcp add tavily \
+  -t http \
+  "https://mcp.tavily.com/mcp/?tavilyApiKey=${TAVILY_API_KEY}"
 ```
-web_search(query="latest advancements in AI")
+
+**Méthode 2 : `settings.json` (MCP distant)**
+
+```json
+{
+  "mcpServers": {
+    "tavily": {
+      "httpUrl": "https://mcp.tavily.com/mcp/?tavilyApiKey=${TAVILY_API_KEY}"
+    }
+  }
+}
 ```
 
-### Recherche avec un fournisseur spécifique
+Remplacez `${TAVILY_API_KEY}` par votre clé API réelle, ou définissez-la comme variable d'environnement.
 
+**Méthode 3 : `settings.json` (NPX local)**
+
+```json
+{
+  "mcpServers": {
+    "tavily-mcp": {
+      "command": "npx",
+      "args": ["-y", "tavily-mcp@latest"],
+      "env": {
+        "TAVILY_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
 ```
-web_search(query="latest advancements in AI", provider="tavily")
+
+---
+
+### GLM WebSearch Prime (ZhipuAI)
+
+Le service Remote MCP officiel de recherche Web fourni par ZhipuAI (智谱AI), conçu pour les utilisateurs du GLM Coding Plan. Il propose une recherche Web en temps réel incluant les actualités, les cours boursiers, la météo, et plus encore.
+
+- **Documentation :** https://docs.bigmodel.cn/cn/coding-plan/mcp/search-mcp-server
+- **Coût :** Inclus dans l'abonnement GLM Coding Plan (Lite : 100 appels/mois, Pro : 1 000/mois, Max : 4 000/mois)
+- **Obtenir une clé API :** https://open.bigmodel.cn/apikey/platform
+- **Idéal pour :** les requêtes en chinois, la récupération d'informations en temps réel
+
+#### Outils disponibles
+
+- `webSearchPrime` — Recherche Web renvoyant le titre de la page, l'URL, le résumé, le nom du site et le favicon
+
+#### Configuration
+
+**Méthode 1 : commande CLI**
+
+```bash
+qwen mcp add web-search-prime \
+  -t http \
+  "https://open.bigmodel.cn/api/mcp/web_search_prime/mcp" \
+  -H "Authorization: Bearer ${GLM_API_KEY}"
 ```
 
-### Exemples concrets
+**Méthode 2 : `settings.json`**
 
+```json
+{
+  "mcpServers": {
+    "web-search-prime": {
+      "httpUrl": "https://open.bigmodel.cn/api/mcp/web_search_prime/mcp",
+      "headers": {
+        "Authorization": "Bearer ${GLM_API_KEY}"
+      }
+    }
+  }
+}
 ```
-web_search(query="weather in San Francisco today")
-web_search(query="latest Node.js LTS version", provider="google")
-web_search(query="best practices for React 19", provider="dashscope")
-```
 
-## Détails des fournisseurs
+Remplacez `${GLM_API_KEY}` par votre clé API ZhipuAI réelle, ou définissez-la comme variable d'environnement.
 
-### DashScope (Officiel)
-
-- **Coût :** Gratuit
-- **Authentification :** Disponible automatiquement lors de l'utilisation de l'authentification Qwen OAuth
-- **Configuration :** Aucune clé API requise, ajouté automatiquement à la liste des fournisseurs pour les utilisateurs Qwen OAuth
-- **Quota :** 200 requêtes/minute, 1000 requêtes/jour
-- **Idéal pour :** Les requêtes générales, toujours disponible comme solution de secours pour les utilisateurs Qwen OAuth
-- **Enregistrement automatique :** Si vous utilisez Qwen OAuth, DashScope est automatiquement ajouté à votre liste de fournisseurs, même sans configuration explicite
-
-### Tavily
-
-- **Coût :** Nécessite une clé API (service payant avec offre gratuite)
-- **Inscription :** https://tavily.com
-- **Fonctionnalités :** Résultats de haute qualité avec réponse générée par IA
-- **Idéal pour :** La recherche, les réponses complètes avec citations
-
-### Google Custom Search
-
-- **Coût :** Offre gratuite disponible (100 requêtes/jour)
-- **Configuration :**
-  1. Activez l'API Custom Search dans Google Cloud Console
-  2. Créez un moteur de recherche personnalisé sur https://programmablesearchengine.google.com
-- **Fonctionnalités :** Qualité de recherche Google
-- **Idéal pour :** Les requêtes spécifiques et factuelles
-
-## Remarques importantes
-
-- **Format de réponse :** Renvoie une réponse concise avec des citations de sources numérotées
-- **Citations :** Les liens vers les sources sont ajoutés sous forme de liste numérotée : [1], [2], etc.
-- **Fournisseurs multiples :** Si un fournisseur échoue, spécifiez-en manuellement un autre à l'aide du paramètre `provider`
-- **Disponibilité de DashScope :** Disponible automatiquement pour les utilisateurs Qwen OAuth, aucune configuration requise
-- **Sélection du fournisseur par défaut :** Le système sélectionne automatiquement un fournisseur par défaut en fonction de la disponibilité :
-  1. Votre configuration `default` explicite (priorité la plus élevée)
-  2. Argument CLI `--web-search-default`
-  3. Premier fournisseur disponible par ordre de priorité : Tavily > Google > DashScope
-
-## Dépannage
-
-**L'outil n'est pas disponible ?**
-
-- **Pour les utilisateurs Qwen OAuth :** L'outil est automatiquement enregistré avec le fournisseur DashScope, aucune configuration requise
-- **Pour les autres types d'authentification :** Assurez-vous qu'au moins un fournisseur (Tavily ou Google) est configuré
-- Pour Tavily/Google : Vérifiez que vos clés API sont correctes
-
-**Erreurs spécifiques à un fournisseur ?**
-
-- Utilisez le paramètre `provider` pour essayer un autre fournisseur de recherche
-- Vérifiez vos quotas API et vos limites de requêtes
-- Vérifiez que les clés API sont correctement définies dans la configuration
-
-**Besoin d'aide ?**
-
-- Vérifiez votre configuration : Exécutez `qwen` et utilisez la fenêtre des paramètres
-- Consultez vos paramètres actuels dans `~/.qwen-code/settings.json` (macOS/Linux) ou `%USERPROFILE%\.qwen-code\settings.json` (Windows)
+---

@@ -4,7 +4,7 @@ Le mode headless vous permet d'exécuter Qwen Code de manière programmatique de
 
 ## Vue d'ensemble
 
-Le mode headless fournit une interface headless pour Qwen Code qui :
+Le mode headless fournit une interface à Qwen Code qui :
 
 - Accepte les prompts via des arguments en ligne de commande ou stdin
 - Retourne une sortie structurée (texte ou JSON)
@@ -23,15 +23,15 @@ Utilisez l'option `--prompt` (ou `-p`) pour exécuter en mode headless :
 qwen --prompt "What is machine learning?"
 ```
 
-### Entrée via stdin
+### Saisie via stdin
 
-Transmettez l'entrée à Qwen Code depuis votre terminal :
+Transmettez des données à Qwen Code depuis votre terminal via un pipe :
 
 ```bash
 echo "Explain this code" | qwen
 ```
 
-### Combinaison avec une entrée fichier
+### Combinaison avec une saisie par fichier
 
 Lisez des fichiers et traitez-les avec Qwen Code :
 
@@ -53,8 +53,8 @@ qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refac
 
 > [!note]
 >
-> - Les données de session sont au format JSONL, limitées au projet et stockées sous `~/.qwen/projects/<sanitized-cwd>/chats`.
-> - Restaure l'historique des conversations, les sorties des outils et les points de contrôle de compression de chat avant d'envoyer le nouveau prompt.
+> - Les données de session sont stockées au format JSONL, limitées au projet, sous `~/.qwen/projects/<sanitized-cwd>/chats`.
+> - Restaure l'historique des conversations, les sorties des outils et les points de contrôle de compression du chat avant d'envoyer le nouveau prompt.
 
 ## Personnaliser le prompt principal de la session
 
@@ -62,7 +62,7 @@ Vous pouvez modifier le prompt système principal de la session pour une seule e
 
 ### Remplacer le prompt système intégré
 
-Utilisez `--system-prompt` pour remplacer le prompt principal de session intégré de Qwen Code pour l'exécution actuelle :
+Utilisez `--system-prompt` pour remplacer le prompt principal de session intégré à Qwen Code pour l'exécution actuelle :
 
 ```bash
 qwen -p "Review this patch" --system-prompt "You are a terse release reviewer. Report only blocking issues."
@@ -102,7 +102,7 @@ Sortie standard lisible par un humain :
 qwen -p "What is the capital of France?"
 ```
 
-Format de la réponse :
+Format de réponse :
 
 ```
 The capital of France is Paris.
@@ -112,7 +112,7 @@ The capital of France is Paris.
 
 Retourne des données structurées sous forme de tableau JSON. Tous les messages sont mis en mémoire tampon et affichés ensemble à la fin de la session. Ce format est idéal pour le traitement programmatique et les scripts d'automatisation.
 
-La sortie JSON est un tableau d'objets message. Elle inclut plusieurs types de messages : les messages système (initialisation de session), les messages assistant (réponses IA) et les messages de résultat (résumé d'exécution).
+La sortie JSON est un tableau d'objets message. Elle inclut plusieurs types de messages : les messages système (initialisation de la session), les messages assistant (réponses de l'IA) et les messages de résultat (résumé de l'exécution).
 
 #### Exemple d'utilisation
 
@@ -166,7 +166,7 @@ Sortie (à la fin de l'exécution) :
 
 ### Sortie Stream-JSON
 
-Le format Stream-JSON émet les messages JSON immédiatement au fur et à mesure de leur génération pendant l'exécution, permettant une surveillance en temps réel. Ce format utilise du JSON délimité par des lignes, où chaque message est un objet JSON complet sur une seule ligne.
+Le format Stream-JSON émet les messages JSON immédiatement au fur et à mesure de leur génération pendant l'exécution, permettant un suivi en temps réel. Ce format utilise du JSON délimité par des lignes, où chaque message est un objet JSON complet sur une seule ligne.
 
 ```bash
 qwen -p "Explain TypeScript" --output-format stream-json
@@ -180,7 +180,7 @@ Sortie (streaming au fil des événements) :
 {"type":"result","subtype":"success","uuid":"...","session_id":"..."}
 ```
 
-Lorsqu'il est combiné avec `--include-partial-messages`, des événements de stream supplémentaires sont émis en temps réel (`message_start`, `content_block_delta`, etc.) pour les mises à jour d'interface en temps réel.
+Lorsqu'il est combiné avec `--include-partial-messages`, des événements de flux supplémentaires sont émis en temps réel (`message_start`, `content_block_delta`, etc.) pour les mises à jour d'interface en temps réel.
 
 ```bash
 qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
@@ -188,16 +188,16 @@ qwen -p "Write a Python script" --output-format stream-json --include-partial-me
 
 ### Format d'entrée
 
-Le paramètre `--input-format` contrôle la manière dont Qwen Code consomme l'entrée depuis l'entrée standard :
+Le paramètre `--input-format` contrôle la manière dont Qwen Code consomme les données depuis l'entrée standard :
 
-- **`text`** (par défaut) : Entrée texte standard depuis stdin ou les arguments en ligne de commande
+- **`text`** (par défaut) : Saisie de texte standard depuis stdin ou des arguments en ligne de commande
 - **`stream-json`** : Protocole de messages JSON via stdin pour une communication bidirectionnelle
 
-> **Remarque :** Le mode d'entrée stream-json est actuellement en cours de développement et est destiné à l'intégration SDK. Il nécessite que `--output-format stream-json` soit défini.
+> **Remarque :** Le mode d'entrée Stream-json est actuellement en cours de développement et est destiné à l'intégration SDK. Il nécessite que `--output-format stream-json` soit défini.
 
 ### Redirection de fichiers
 
-Enregistrez la sortie dans des fichiers ou transmettez-la à d'autres commandes :
+Enregistrez la sortie dans des fichiers ou transmettez-la à d'autres commandes via un pipe :
 
 ```bash
 # Save to file
@@ -254,7 +254,7 @@ result=$(git diff --cached | qwen -p "Write a concise commit message for these c
 echo "$result" | jq -r '.response'
 ```
 
-### Documentation API
+### Documentation d'API
 
 ```bash
 result=$(cat api/routes.js | qwen -p "Generate OpenAPI spec for these routes" --output-format json)
@@ -308,9 +308,70 @@ echo "Recent usage trends:"
 tail -5 usage.log
 ```
 
+## Mode de retry persistant
+
+Lorsque Qwen Code s'exécute dans des pipelines CI/CD ou en tant que démon en arrière-plan, une brève indisponibilité de l'API (limitation de débit ou surcharge) ne devrait pas interrompre une tâche de plusieurs heures. Le **mode de retry persistant** permet à Qwen Code de retenter indéfiniment les erreurs API transitoires jusqu'à la récupération du service.
+
+### Fonctionnement
+
+- **Erreurs transitoires uniquement** : Les erreurs HTTP 429 (Rate Limit) et 529 (Overloaded) sont retentées indéfiniment. Les autres erreurs (400, 500, etc.) échouent normalement.
+- **Backoff exponentiel avec plafond** : Les délais de retry augmentent de manière exponentielle mais sont plafonnés à **5 minutes** par tentative.
+- **Keepalive par heartbeat** : Pendant les longues attentes, une ligne d'état est affichée sur stderr toutes les **30 secondes** pour empêcher les runners CI de tuer le processus en raison d'une inactivité.
+- **Dégradation gracieuse** : Les erreurs non transitoires et le mode interactif restent complètement inchangés.
+
+### Activation
+
+Définissez la variable d'environnement `QWEN_CODE_UNATTENDED_RETRY` sur `true` ou `1` (correspondance stricte, sensible à la casse) :
+
+```bash
+export QWEN_CODE_UNATTENDED_RETRY=1
+```
+
+> [!important]
+> Le mode de retry persistant nécessite une **activation explicite**. `CI=true` seul ne l'active **pas** — transformer silencieusement un job CI à échec rapide en une attente infinie serait dangereux. Définissez toujours `QWEN_CODE_UNATTENDED_RETRY` explicitement dans la configuration de votre pipeline.
+
+### Exemples
+
+#### GitHub Actions
+
+```yaml
+- name: Automated code review
+  env:
+    QWEN_CODE_UNATTENDED_RETRY: '1'
+  run: |
+    qwen -p "Review all files in src/ for security issues" \
+      --output-format json \
+      --yolo > review.json
+```
+
+#### Traitement par lots nocturne
+
+```bash
+export QWEN_CODE_UNATTENDED_RETRY=1
+qwen -p "Migrate all callback-style functions to async/await in src/" --yolo
+```
+
+#### Démon en arrière-plan
+
+```bash
+QWEN_CODE_UNATTENDED_RETRY=1 nohup qwen -p "Audit all dependencies for known CVEs" \
+  --output-format json > audit.json 2> audit.log &
+```
+
+### Surveillance
+
+Pendant le retry persistant, les messages heartbeat sont affichés sur **stderr** :
+
+```
+[qwen-code] Waiting for API capacity... attempt 3, retry in 45s
+[qwen-code] Waiting for API capacity... attempt 3, retry in 15s
+```
+
+Ces messages maintiennent les runners CI actifs et vous permettent de suivre la progression. Ils n'apparaissent pas sur stdout, ce qui garantit que la sortie JSON transmise à d'autres outils reste propre.
+
 ## Ressources
 
 - [Configuration CLI](../configuration/settings#command-line-arguments) - Guide de configuration complet
-- [Authentification](../configuration/settings#environment-variables-for-api-access) - Configurer l'authentification
+- [Authentification](../configuration/settings#environment-variables-for-api-access) - Configuration de l'authentification
 - [Commandes](../features/commands) - Référence des commandes interactives
 - [Tutoriels](../quickstart) - Guides d'automatisation étape par étape

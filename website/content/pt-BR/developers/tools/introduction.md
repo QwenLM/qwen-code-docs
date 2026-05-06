@@ -32,9 +32,9 @@ Normalmente, você verá mensagens na CLI indicando quando uma ferramenta está 
 
 ## Segurança e confirmação
 
-Muitas ferramentas, especialmente aquelas que podem modificar seu sistema de arquivos ou executar comandos (`write_file`, `edit`, `run_shell_command`), são projetadas com foco em segurança. O Qwen Code normalmente:
+Muitas ferramentas, especialmente aquelas que podem modificar seu sistema de arquivos ou executar comandos (`write_file`, `edit`, `run_shell_command`), são projetadas com a segurança em mente. O Qwen Code normalmente:
 
-- **Exigir confirmação:** Exibir um prompt antes de executar operações potencialmente sensíveis, mostrando qual ação está prestes a ser realizada.
+- **Exigir confirmação:** Solicitar sua aprovação antes de executar operações potencialmente sensíveis, mostrando qual ação está prestes a ser realizada.
 - **Utilizar sandboxing:** Todas as ferramentas estão sujeitas a restrições impostas pelo sandboxing (consulte [Sandboxing no Qwen Code](../sandbox.md)). Isso significa que, ao operar em um sandbox, quaisquer ferramentas (incluindo servidores MCP) que você desejar usar devem estar disponíveis _dentro_ do ambiente do sandbox. Por exemplo, para executar um servidor MCP por meio do `npx`, o executável `npx` deve estar instalado na imagem Docker do sandbox ou estar disponível no ambiente `sandbox-exec`.
 
 É importante sempre revisar os prompts de confirmação com atenção antes de permitir que uma ferramenta prossiga.
@@ -46,10 +46,9 @@ As ferramentas integradas do Qwen Code podem ser amplamente categorizadas da seg
 - **[Ferramentas do Sistema de Arquivos](./file-system.md):** Para interagir com arquivos e diretórios (ler, escrever, listar, pesquisar, etc.).
 - **[Ferramenta de Shell](./shell.md) (`run_shell_command`):** Para executar comandos de shell.
 - **[Ferramenta de Busca na Web](./web-fetch.md) (`web_fetch`):** Para recuperar conteúdo de URLs.
-- **[Ferramenta de Pesquisa na Web](./web-search.md) (`web_search`):** Para pesquisar na web.
 - **[Ferramenta de Leitura de Múltiplos Arquivos](./multi-file.md) (`read_many_files`):** Uma ferramenta especializada para ler conteúdo de vários arquivos ou diretórios, frequentemente usada pelo comando `@`.
 - **[Ferramenta de Memória](./memory.md) (`save_memory`):** Para salvar e recuperar informações entre sessões.
-- **[Ferramenta de Escrita de Todo](./todo-write.md) (`todo_write`):** Para criar e gerenciar listas de tarefas estruturadas durante sessões de codificação.
+- **[Ferramenta de Escrita de Tarefas](./todo-write.md) (`todo_write`):** Para criar e gerenciar listas de tarefas estruturadas durante sessões de codificação.
 - **[Ferramenta de Tarefa](./task.md) (`task`):** Para delegar tarefas complexas a subagentes especializados.
 - **[Ferramenta de Saída do Modo de Planejamento](./exit-plan-mode.md) (`exit_plan_mode`):** Para sair do modo de planejamento e prosseguir com a implementação.
 
@@ -58,5 +57,6 @@ Além disso, essas ferramentas incorporam:
 - **[Servidores MCP](./mcp-server.md)**: Os servidores MCP atuam como uma ponte entre o modelo e seu ambiente local ou outros serviços, como APIs.
   - **[Guia de Início Rápido do MCP](../mcp-quick-start.md)**: Comece a usar o MCP em 5 minutos com exemplos práticos
   - **[Configurações de Exemplo do MCP](../mcp-example-configs.md)**: Configurações prontas para uso em cenários comuns
+  - **[Pesquisa na Web via MCP](./web-search.md)**: Conecte-se a serviços de pesquisa na web (Bailian, Tavily, GLM) por meio do MCP
   - **[Teste e Validação do MCP](../mcp-testing-validation.md)**: Teste e valide suas configurações de servidor MCP
 - **[Sandboxing](../sandbox.md)**: O sandboxing isola o modelo e suas alterações do seu ambiente para reduzir riscos potenciais.

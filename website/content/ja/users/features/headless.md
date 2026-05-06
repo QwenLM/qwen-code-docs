@@ -4,7 +4,7 @@
 
 ## 概要
 
-ヘッドレスモードは、以下の機能を持つ Qwen Code のヘッドレスインターフェースを提供します：
+ヘッドレスモードは、以下の機能を提供する Qwen Code のヘッドレスインターフェースです：
 
 - コマンドライン引数または stdin 経由でプロンプトを受け付ける
 - 構造化された出力（テキストまたは JSON）を返す
@@ -62,7 +62,7 @@ qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refac
 
 ### 組み込みシステムプロンプトの上書き
 
-`--system-prompt` を使用して、現在の実行における Qwen Code の組み込みメインセッションプロンプトを置き換えます：
+現在の実行で Qwen Code の組み込みメインセッションプロンプトを置き換えるには、`--system-prompt` を使用します：
 
 ```bash
 qwen -p "Review this patch" --system-prompt "You are a terse release reviewer. Report only blocking issues."
@@ -70,13 +70,13 @@ qwen -p "Review this patch" --system-prompt "You are a terse release reviewer. R
 
 ### 追加指示の付加
 
-`--append-system-prompt` を使用して、組み込みプロンプトを維持したまま、この実行用の追加指示を付加します：
+組み込みプロンプトを維持したまま、この実行用の追加指示を付加するには、`--append-system-prompt` を使用します：
 
 ```bash
 qwen -p "Review this patch" --append-system-prompt "Be terse and focus on concrete findings."
 ```
 
-カスタムベースプロンプトと実行固有の追加指示の両方を使用したい場合は、両方のフラグを組み合わせることができます：
+カスタムベースプロンプトと実行固有の追加指示の両方を組み合わせたい場合は、両方のフラグを組み合わせることができます：
 
 ```bash
 qwen -p "Summarize this repository" \
@@ -112,7 +112,7 @@ The capital of France is Paris.
 
 構造化データを JSON 配列として返します。すべてのメッセージはバッファリングされ、セッション完了時にまとめて出力されます。このフォーマットは、プログラムによる処理や自動化スクリプトに最適です。
 
-JSON 出力はメッセージオブジェクトの配列です。出力には複数のメッセージタイプが含まれます：システムメッセージ（セッション初期化）、アシスタントメッセージ（AI レスポンス）、結果メッセージ（実行サマリー）。
+JSON 出力はメッセージオブジェクトの配列です。出力には複数のメッセージタイプが含まれます：システムメッセージ（セッション初期化）、アシスタントメッセージ（AI レスポンス）、および結果メッセージ（実行サマリー）。
 
 #### 使用例
 
@@ -166,7 +166,7 @@ qwen -p "What is the capital of France?" --output-format json
 
 ### Stream-JSON 出力
 
-Stream-JSON フォーマットは、実行中に発生した JSON メッセージを即座に出力し、リアルタイムモニタリングを可能にします。このフォーマットは、各行が完全な JSON オブジェクトである行区切り JSON を使用します。
+Stream-JSON フォーマットは、実行中に発生した JSON メッセージを即座に出力し、リアルタイムモニタリングを可能にします。このフォーマットは行区切りの JSON を使用し、各メッセージが単一行の完全な JSON オブジェクトとなります。
 
 ```bash
 qwen -p "Explain TypeScript" --output-format stream-json
@@ -193,7 +193,7 @@ qwen -p "Write a Python script" --output-format stream-json --include-partial-me
 - **`text`**（デフォルト）：stdin またはコマンドライン引数からの標準テキスト入力
 - **`stream-json`**：双方向通信のための stdin 経由の JSON メッセージプロトコル
 
-> **注記:** Stream-json 入力モードは現在構築中であり、SDK 統合を目的としています。`--output-format stream-json` の設定が必要です。
+> **注：** Stream-json 入力モードは現在構築中であり、SDK 統合を目的としています。`--output-format stream-json` の設定が必要です。
 
 ### ファイルリダイレクト
 
@@ -221,21 +221,21 @@ qwen -p "Write code" --output-format stream-json --include-partial-messages | jq
 
 ヘッドレス使用のための主要なコマンドラインオプション：
 
-| Option                       | Description                                                              | Example                                                                  |
+| オプション                       | 説明                                                              | 例                                                                  |
 | ---------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `--prompt`, `-p`             | ヘッドレスモードで実行                                                   | `qwen -p "query"`                                                        |
-| `--output-format`, `-o`      | 出力フォーマットを指定（text, json, stream-json）                        | `qwen -p "query" --output-format json`                                   |
-| `--input-format`             | 入力フォーマットを指定（text, stream-json）                              | `qwen --input-format text --output-format stream-json`                   |
-| `--include-partial-messages` | stream-json 出力に部分的なメッセージを含める                             | `qwen -p "query" --output-format stream-json --include-partial-messages` |
-| `--system-prompt`            | この実行のメインセッションシステムプロンプトを上書き                     | `qwen -p "query" --system-prompt "You are a terse reviewer."`            |
-| `--append-system-prompt`     | この実行のメインセッションシステムプロンプトに追加指示を付加             | `qwen -p "query" --append-system-prompt "Focus on concrete findings."`   |
-| `--debug`, `-d`              | デバッグモードを有効化                                                   | `qwen -p "query" --debug`                                                |
-| `--all-files`, `-a`          | コンテキストにすべてのファイルを含める                                   | `qwen -p "query" --all-files`                                            |
-| `--include-directories`      | 追加のディレクトリを含める                                               | `qwen -p "query" --include-directories src,docs`                         |
-| `--yolo`, `-y`               | すべてのアクションを自動承認                                             | `qwen -p "query" --yolo`                                                 |
-| `--approval-mode`            | 承認モードを設定                                                         | `qwen -p "query" --approval-mode auto_edit`                              |
-| `--continue`                 | このプロジェクトの最新のセッションを再開                                 | `qwen --continue -p "Pick up where we left off"`                         |
-| `--resume [sessionId]`       | 特定のセッションを再開（または対話的に選択）                             | `qwen --resume 123e... -p "Finish the refactor"`                         |
+| `--prompt`, `-p`             | ヘッドレスモードで実行する                                                     | `qwen -p "query"`                                                        |
+| `--output-format`, `-o`      | 出力フォーマットを指定する（text, json, stream-json）                          | `qwen -p "query" --output-format json`                                   |
+| `--input-format`             | 入力フォーマットを指定する（text, stream-json）                                 | `qwen --input-format text --output-format stream-json`                   |
+| `--include-partial-messages` | stream-json 出力に部分的なメッセージを含める                           | `qwen -p "query" --output-format stream-json --include-partial-messages` |
+| `--system-prompt`            | この実行のメインセッションシステムプロンプトを上書きする                     | `qwen -p "query" --system-prompt "You are a terse reviewer."`            |
+| `--append-system-prompt`     | この実行のメインセッションシステムプロンプトに追加指示を付加する | `qwen -p "query" --append-system-prompt "Focus on concrete findings."`   |
+| `--debug`, `-d`              | デバッグモードを有効にする                                                        | `qwen -p "query" --debug`                                                |
+| `--all-files`, `-a`          | コンテキストにすべてのファイルを含める                                             | `qwen -p "query" --all-files`                                            |
+| `--include-directories`      | 追加のディレクトリを含める                                           | `qwen -p "query" --include-directories src,docs`                         |
+| `--yolo`, `-y`               | すべてのアクションを自動承認する                                                 | `qwen -p "query" --yolo`                                                 |
+| `--approval-mode`            | 承認モードを設定する                                                        | `qwen -p "query" --approval-mode auto_edit`                              |
+| `--continue`                 | このプロジェクトの最新のセッションを再開する                          | `qwen --continue -p "Pick up where we left off"`                         |
+| `--resume [sessionId]`       | 特定のセッションを再開する（または対話的に選択）                      | `qwen --resume 123e... -p "Finish the refactor"`                         |
 
 利用可能なすべての設定オプション、設定ファイル、環境変数の詳細については、[設定ガイド](../configuration/settings) を参照してください。
 
@@ -294,7 +294,7 @@ echo "$response"
 echo "$response" >> CHANGELOG.md
 ```
 
-### モデルおよびツール使用状況の追跡
+### モデルおよびツールの使用状況追跡
 
 ```bash
 result=$(qwen -p "Explain this database schema" --include-directories db --output-format json)
@@ -307,6 +307,67 @@ echo "$result" | jq -r '.response' > schema-docs.md
 echo "Recent usage trends:"
 tail -5 usage.log
 ```
+
+## 永続リトライモード
+
+Qwen Code が CI/CD パイプラインやバックグラウンドデーモンとして実行されている場合、一時的な API 停止（レート制限または過負荷）によって数時間かかるタスクが中断されるべきではありません。**永続リトライモード**を使用すると、サービスが回復するまで、Qwen Code が一時的な API エラーを無期限にリトライします。
+
+### 動作原理
+
+- **一時的なエラーのみ**: HTTP 429（レート制限）および 529（過負荷）は無期限にリトライされます。その他のエラー（400、500 など）は通常通り失敗します。
+- **上限付き指数バックオフ**: リトライ遅延は指数関数的に増加しますが、リトライごとに **5 分** で上限が設定されます。
+- **ハートビートキープアライブ**: 長時間の待機中、非アクティブによる CI ランナーのプロセス強制終了を防ぐため、ステータス行が **30 秒** ごとに stderr に出力されます。
+- **グレースフルデグラデーション**: 一時的でないエラーおよびインタラクティブモードは完全に影響を受けません。
+
+### 有効化
+
+`QWEN_CODE_UNATTENDED_RETRY` 環境変数を `true` または `1` に設定します（厳密な一致、大文字小文字を区別）：
+
+```bash
+export QWEN_CODE_UNATTENDED_RETRY=1
+```
+
+> [!important]
+> 永続リトライには**明示的なオプトイン**が必要です。`CI=true` だけでは有効化され**ません**——高速失敗する CI ジョブを無限待機ジョブに静かに変換するのは危険です。パイプライン設定では常に `QWEN_CODE_UNATTENDED_RETRY` を明示的に設定してください。
+
+### 使用例
+
+#### GitHub Actions
+
+```yaml
+- name: Automated code review
+  env:
+    QWEN_CODE_UNATTENDED_RETRY: '1'
+  run: |
+    qwen -p "Review all files in src/ for security issues" \
+      --output-format json \
+      --yolo > review.json
+```
+
+#### 夜間バッチ処理
+
+```bash
+export QWEN_CODE_UNATTENDED_RETRY=1
+qwen -p "Migrate all callback-style functions to async/await in src/" --yolo
+```
+
+#### バックグラウンドデーモン
+
+```bash
+QWEN_CODE_UNATTENDED_RETRY=1 nohup qwen -p "Audit all dependencies for known CVEs" \
+  --output-format json > audit.json 2> audit.log &
+```
+
+### モニタリング
+
+永続リトライ中、ハートビートメッセージが **stderr** に出力されます：
+
+```
+[qwen-code] Waiting for API capacity... attempt 3, retry in 45s
+[qwen-code] Waiting for API capacity... attempt 3, retry in 15s
+```
+
+これらのメッセージは CI ランナーを維持し、進捗をモニタリングできるようにします。stdout には表示されないため、他のツールにパイプされる JSON 出力はクリーンなままです。
 
 ## リソース
 

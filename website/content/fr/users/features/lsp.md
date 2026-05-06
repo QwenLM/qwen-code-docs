@@ -1,6 +1,6 @@
 # Prise en charge du Language Server Protocol (LSP)
 
-Qwen Code propose une prise en charge native du Language Server Protocol (LSP), activant des fonctionnalités avancées d'intelligence du code telles que l'accès à la définition, la recherche de références, les diagnostics et les actions de code. Cette intégration permet à l'agent IA de mieux comprendre votre code et de fournir une assistance plus précise.
+Qwen Code prend en charge nativement le Language Server Protocol (LSP), ce qui permet d'activer des fonctionnalités avancées d'intelligence du code telles que l'accès à la définition, la recherche de références, les diagnostics et les actions de code. Cette intégration permet à l'agent IA de mieux comprendre votre code et de fournir une assistance plus précise.
 
 ## Présentation
 
@@ -40,7 +40,7 @@ Vous devez avoir installé le serveur de langage correspondant à votre langage 
 
 ### Fichier `.lsp.json`
 
-Vous pouvez configurer les serveurs de langage à l'aide d'un fichier `.lsp.json` à la racine de votre projet. Ce fichier utilise le format utilisant le langage comme clé décrit dans la [référence de configuration LSP pour les plugins Claude Code](https://code.claude.com/docs/en/plugins-reference#lsp-servers).
+Vous pouvez configurer les serveurs de langage à l'aide d'un fichier `.lsp.json` à la racine de votre projet. Chaque clé de premier niveau est un identifiant de langage, et sa valeur est l'objet de configuration du serveur.
 
 **Format de base :**
 
@@ -63,7 +63,7 @@ Vous pouvez configurer les serveurs de langage à l'aide d'un fichier `.lsp.json
 
 Dépendances :
 
-- clangd (LLVM) doit être installé et disponible dans le PATH.
+- clangd (LLVM) doit être installé et disponible dans le `PATH`.
 - Une base de données de compilation (`compile_commands.json`) ou un fichier `compile_flags.txt` est requis pour obtenir des résultats précis.
 
 Exemple :
@@ -86,8 +86,8 @@ Exemple :
 
 Dépendances :
 
-- JDK installé et disponible dans le PATH (`java`).
-- JDTLS installé et disponible dans le PATH (`jdtls`).
+- JDK installé et disponible dans le `PATH` (`java`).
+- JDTLS installé et disponible dans le `PATH` (`jdtls`).
 
 Exemple :
 
@@ -104,26 +104,26 @@ Exemple :
 
 #### Champs obligatoires
 
-| Option    | Type   | Description                                              |
-| --------- | ------ | -------------------------------------------------------- |
-| `command` | string | Commande pour démarrer le serveur LSP (doit être dans le PATH) |
+| Option    | Type   | Description                                                                                                                                       |
+| --------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `command` | string | Commande pour démarrer le serveur LSP. Prend en charge les noms de commande simples résolus via `PATH` (ex. `clangd`) et les chemins absolus (ex. `/opt/llvm/bin/clangd`) |
 
 #### Champs facultatifs
 
-| Option                  | Type     | Valeur par défaut | Description                                                     |
-| ----------------------- | -------- | ----------------- | --------------------------------------------------------------- |
-| `args`                  | string[] | `[]`              | Arguments de ligne de commande                                  |
-| `transport`             | string   | `"stdio"`         | Type de transport : `stdio`, `tcp` ou `socket`                  |
-| `env`                   | object   | -                 | Variables d'environnement                                       |
-| `initializationOptions` | object   | -                 | Options d'initialisation LSP                                    |
-| `settings`              | object   | -                 | Paramètres du serveur via `workspace/didChangeConfiguration`    |
-| `extensionToLanguage`   | object   | -                 | Associe les extensions de fichiers aux identifiants de langage  |
-| `workspaceFolder`       | string   | -                 | Remplace le dossier de l'espace de travail (doit se trouver dans la racine du projet) |
-| `startupTimeout`        | number   | `10000`           | Délai d'expiration au démarrage en millisecondes                |
-| `shutdownTimeout`       | number   | `5000`            | Délai d'expiration à l'arrêt en millisecondes                   |
-| `restartOnCrash`        | boolean  | `false`           | Redémarrage automatique en cas de plantage                      |
-| `maxRestarts`           | number   | `3`               | Nombre maximal de tentatives de redémarrage                     |
-| `trustRequired`         | boolean  | `true`            | Exige un espace de travail approuvé                             |
+| Option                  | Type     | Default   | Description                                             |
+| ----------------------- | -------- | --------- | ------------------------------------------------------- |
+| `args`                  | string[] | `[]`      | Arguments de ligne de commande                          |
+| `transport`             | string   | `"stdio"` | Type de transport : `stdio`, `tcp` ou `socket`          |
+| `env`                   | object   | -         | Variables d'environnement                               |
+| `initializationOptions` | object   | -         | Options d'initialisation LSP                            |
+| `settings`              | object   | -         | Paramètres du serveur via `workspace/didChangeConfiguration` |
+| `extensionToLanguage`   | object   | -         | Associe les extensions de fichiers aux identifiants de langage |
+| `workspaceFolder`       | string   | -         | Remplace le dossier de l'espace de travail (doit se trouver dans la racine du projet) |
+| `startupTimeout`        | number   | `10000`   | Délai d'expiration au démarrage en millisecondes        |
+| `shutdownTimeout`       | number   | `5000`    | Délai d'expiration à l'arrêt en millisecondes           |
+| `restartOnCrash`        | boolean  | `false`   | Redémarrage automatique en cas de plantage              |
+| `maxRestarts`           | number   | `3`       | Nombre maximal de tentatives de redémarrage             |
+| `trustRequired`         | boolean  | `true`    | Exige un espace de travail approuvé                     |
 
 ### Transport TCP/Socket
 
@@ -148,6 +148,8 @@ Pour les serveurs utilisant un transport TCP ou socket Unix :
 
 Qwen Code expose les fonctionnalités LSP via l'outil unifié `lsp`. Voici les opérations disponibles :
 
+Les opérations basées sur l'emplacement (`goToDefinition`, `findReferences`, `hover`, `goToImplementation` et `prepareCallHierarchy`) nécessitent une position exacte `filePath` + `line` + `character`. Si vous ne connaissez pas la position exacte, utilisez d'abord `workspaceSymbol` ou `documentSymbol` pour localiser le symbole.
+
 ### Navigation dans le code
 
 #### Accéder à la définition
@@ -162,7 +164,7 @@ Parameters:
   - character: Column number (1-based)
 ```
 
-#### Rechercher des références
+#### Rechercher les références
 
 Trouve toutes les références à un symbole.
 
@@ -308,14 +310,14 @@ Types d'actions de code :
 
 ## Sécurité
 
-Par défaut, les serveurs LSP ne sont démarrés que dans les espaces de travail approuvés. En effet, les serveurs de langage s'exécutent avec vos permissions utilisateur et peuvent exécuter du code.
+Les serveurs LSP ne sont démarrés par défaut que dans les espaces de travail approuvés. En effet, les serveurs de langage s'exécutent avec vos permissions utilisateur et peuvent exécuter du code.
 
 ### Contrôles d'approbation
 
 - **Espace de travail approuvé** : Les serveurs LSP démarrent s'ils sont configurés
-- **Espace de travail non approuvé** : Les serveurs LSP ne démarrent pas, sauf si `trustRequired: false` est défini dans la configuration du serveur
+- **Espace de travail non approuvé** : Les serveurs LSP ne démarrent pas sauf si `trustRequired: false` est défini dans la configuration du serveur
 
-Pour marquer un espace de travail comme approuvé, utilisez la commande `/trust` ou configurez les dossiers approuvés dans les paramètres.
+Pour marquer un espace de travail comme approuvé, utilisez la commande `/trust`.
 
 ### Remplacement de l'approbation par serveur
 
@@ -338,67 +340,61 @@ Vous pouvez remplacer les exigences d'approbation pour des serveurs spécifiques
 
 ### Le serveur ne démarre pas
 
-1. **Vérifiez si le serveur est installé** : Exécutez la commande manuellement pour vérifier
-2. **Vérifiez le PATH** : Assurez-vous que le binaire du serveur se trouve dans le PATH de votre système
-3. **Vérifiez l'approbation de l'espace de travail** : L'espace de travail doit être approuvé pour le LSP
-4. **Consultez les journaux** : Recherchez les messages d'erreur dans la sortie de la console
-5. **Vérifiez l'indicateur --experimental-lsp** : Assurez-vous d'utiliser cet indicateur au démarrage de Qwen Code
+1. **Vérifiez l'indicateur `--experimental-lsp`** : Assurez-vous d'utiliser cet indicateur lors du démarrage de Qwen Code
+2. **Vérifiez si le serveur est installé** : Exécutez la commande manuellement (ex. `clangd --version`) pour vérifier
+3. **Vérifiez la commande** : Le binaire du serveur doit se trouver dans le `PATH` de votre système, ou être spécifié comme un chemin absolu (ex. `/opt/llvm/bin/clangd`). Les chemins relatifs qui sortent de l'espace de travail sont bloqués
+4. **Vérifiez l'approbation de l'espace de travail** : L'espace de travail doit être approuvé pour le LSP (utilisez `/trust`)
+5. **Vérifiez les journaux** : Recherchez les entrées `[LSP]` dans le journal de débogage (voir la section Débogage ci-dessous)
+6. **Vérifiez le processus** : Exécutez `ps aux | grep <server-name>` pour vérifier que le processus du serveur est en cours d'exécution
 
 ### Performances lentes
 
-1. **Projets volumineux** : Envisagez d'exclure `node_modules` et les autres répertoires volumineux
+1. **Projets volumineux** : Pensez à exclure `node_modules` et les autres répertoires volumineux
 2. **Délai d'expiration du serveur** : Augmentez `startupTimeout` dans la configuration du serveur pour les serveurs lents
 
 ### Aucun résultat
 
-1. **Serveur non prêt** : Le serveur est peut-être encore en cours d'indexation
+1. **Serveur non prêt** : Le serveur est peut-être encore en cours d'indexation. Pour les projets C/C++ avec clangd, assurez-vous que `--background-index` est présent dans les arguments et qu'un fichier `compile_commands.json` (ou `compile_flags.txt`) existe à la racine du projet ou dans un répertoire parent. Utilisez `--compile-commands-dir=<path>` s'il se trouve dans un sous-répertoire de build
 2. **Fichier non enregistré** : Enregistrez votre fichier pour que le serveur prenne en compte les modifications
 3. **Langage incorrect** : Vérifiez si le serveur correct est en cours d'exécution pour votre langage
+4. **Vérifiez le processus** : Exécutez `ps aux | grep <server-name>` pour vérifier que le serveur est bien en cours d'exécution
 
 ### Débogage
 
-Activez la journalisation de débogage pour voir la communication LSP :
+Les journaux de débogage LSP sont automatiquement écrits dans les fichiers de journal de session dans `~/.qwen/debug/`. Pour vérifier les entrées liées au LSP :
 
 ```bash
-DEBUG=lsp* qwen --experimental-lsp
+# View the latest session log
+grep '\[LSP\]' ~/.qwen/debug/latest
+
+# Common error messages to look for:
+#   "command path is unsafe"  → relative path escapes workspace, use absolute path or add to PATH
+#   "command not found"       → server binary not installed or not in PATH
+#   "requires trusted workspace" → run /trust first
 ```
 
-Ou consultez le guide de débogage LSP dans `packages/cli/LSP_DEBUGGING_GUIDE.md`.
+Vous pouvez également vérifier que le processus du serveur est en cours d'exécution :
 
-## Compatibilité avec Claude Code
-
-Qwen Code prend en charge les fichiers de configuration `.lsp.json` au style Claude Code, dans le format utilisant le langage comme clé défini dans la [référence des plugins Claude Code](https://code.claude.com/docs/en/plugins-reference#lsp-servers). Si vous migrez depuis Claude Code, utilisez la disposition avec le langage comme clé dans votre configuration.
-
-### Format de configuration
-
-Le format recommandé suit la spécification de Claude Code :
-
-```json
-{
-  "go": {
-    "command": "gopls",
-    "args": ["serve"],
-    "extensionToLanguage": {
-      ".go": "go"
-    }
-  }
-}
+```bash
+ps aux | grep clangd   # or typescript-language-server, jdtls, etc.
 ```
 
-Les plugins LSP Claude Code peuvent également fournir `lspServers` dans `plugin.json` (ou un `.lsp.json` référencé). Qwen Code charge ces configurations lorsque l'extension est activée, et elles doivent utiliser le même format utilisant le langage comme clé.
+## Configuration LSP des extensions
+
+Les extensions peuvent fournir des configurations de serveurs LSP via le champ `lspServers` dans leur `plugin.json`. Il peut s'agir d'un objet inline ou d'un chemin vers un fichier `.lsp.json`. Qwen Code charge ces configurations lorsque l'extension est activée. Le format reprend la même structure indexée par langage que celle utilisée dans les fichiers `.lsp.json` du projet.
 
 ## Bonnes pratiques
 
 1. **Installez les serveurs de langage globalement** : Cela garantit qu'ils sont disponibles dans tous les projets
 2. **Utilisez des paramètres spécifiques au projet** : Configurez les options du serveur par projet si nécessaire via `.lsp.json`
 3. **Maintenez les serveurs à jour** : Mettez régulièrement à jour vos serveurs de langage pour de meilleurs résultats
-4. **Accordez votre confiance avec discernement** : N'approuvez que les espaces de travail provenant de sources fiables
+4. **Approuvez avec prudence** : N'approuvez que les espaces de travail provenant de sources fiables
 
 ## FAQ
 
 ### Q : Comment activer le LSP ?
 
-Utilisez l'indicateur `--experimental-lsp` au démarrage de Qwen Code :
+Utilisez l'indicateur `--experimental-lsp` lors du démarrage de Qwen Code :
 
 ```bash
 qwen --experimental-lsp
@@ -406,11 +402,11 @@ qwen --experimental-lsp
 
 ### Q : Comment savoir quels serveurs de langage sont en cours d'exécution ?
 
-Utilisez la commande `/lsp status` pour voir tous les serveurs de langage configurés et en cours d'exécution.
+Vérifiez les entrées `[LSP]` dans le journal de débogage (`grep '\[LSP\]' ~/.qwen/debug/latest`), ou vérifiez directement le processus avec `ps aux | grep <server-name>`.
 
 ### Q : Puis-je utiliser plusieurs serveurs de langage pour le même type de fichier ?
 
-Oui, mais un seul sera utilisé pour chaque opération. Le premier serveur qui renvoie des résultats est retenu.
+Oui, mais un seul sera utilisé pour chaque opération. Le premier serveur qui renvoie des résultats l'emporte.
 
 ### Q : Le LSP fonctionne-t-il en mode sandbox ?
 

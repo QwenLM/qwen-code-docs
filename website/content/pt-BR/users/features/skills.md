@@ -7,7 +7,7 @@ Este guia mostra como criar, usar e gerenciar Agent Skills no **Qwen Code**. Ski
 ## Pré-requisitos
 
 - Qwen Code (versão recente)
-- Familiaridade básica com o Qwen Code ([Quickstart](../quickstart.md))
+- Familiaridade básica com o Qwen Code ([Início rápido](../quickstart.md))
 
 ## O que são Agent Skills?
 
@@ -15,7 +15,7 @@ Agent Skills empacotam expertise em capacidades descobríveis. Cada Skill consis
 
 ### Como as Skills são invocadas
 
-Skills são **invocadas pelo modelo** — o modelo decide autonomamente quando usá-las com base na sua solicitação e na descrição da Skill. Isso é diferente dos slash commands, que são **invocados pelo usuário** (você digita explicitamente `/command`).
+Skills são **invocadas pelo modelo** — o modelo decide autonomamente quando usá-las com base na sua solicitação e na descrição da Skill. Isso é diferente dos slash commands, que são **invocados pelo usuário** (você digita explicitamente `/comando`).
 
 Se quiser invocar uma Skill explicitamente, use o slash command `/skills`:
 
@@ -64,7 +64,7 @@ Use Skills de Projeto para:
 - Expertise específica do projeto
 - Utilitários e scripts compartilhados
 
-Skills de Projeto podem ser commitadas no git e ficam automaticamente disponíveis para os membros da equipe.
+Skills de Projeto podem ser commitadas no git e ficam automaticamente disponíveis para os colegas de equipe.
 
 ## Escrever `SKILL.md`
 
@@ -89,13 +89,34 @@ Show concrete examples of using this Skill.
 
 O Qwen Code atualmente valida que:
 
-- `name` é uma string não vazia
+- `name` é uma string não vazia que corresponde a `/^[\p{L}\p{N}_:.-]+$/u` — letras e dígitos Unicode (CJK / cirílico / latim acentuado são aceitos), além de `_`, `:`, `.`, `-`. Espaços em branco, barras, colchetes e outros caracteres estruturalmente inseguros são rejeitados no momento do parse.
 - `description` é uma string não vazia
 
-Convenções recomendadas (ainda não aplicadas rigorosamente):
+Convenções recomendadas:
 
-- Use letras minúsculas, números e hífens em `name`
+- Prefira ASCII em minúsculas com hífens para nomes compartilháveis (ex.: `tsx-helper`)
 - Torne `description` específico: inclua tanto **o que** a Skill faz quanto **quando** usá-la (palavras-chave que os usuários mencionarão naturalmente)
+
+### Opcional: restringir uma Skill a caminhos de arquivo (`paths:`)
+
+Para Skills que só são relevantes para partes específicas de uma base de código, adicione uma lista `paths:` com padrões glob. A Skill fica fora da lista de skills disponíveis do modelo até que uma chamada de ferramenta acesse um arquivo correspondente:
+
+```yaml
+---
+name: tsx-helper
+description: React TSX component helper
+paths:
+  - 'src/**/*.tsx'
+  - 'packages/*/src/**/*.tsx'
+---
+```
+
+Notas:
+
+- Os globs são correspondidos em relação à raiz do projeto com [picomatch](https://github.com/micromatch/picomatch); arquivos fora da raiz do projeto nunca disparam a ativação.
+- Uma Skill restrita por caminho **permanece ativada pelo resto da sessão** assim que um arquivo correspondente é acessado. Uma nova sessão, ou um `refreshCache` acionado pela edição de qualquer arquivo de Skill, redefine as ativações.
+- `paths:` restringe apenas a descoberta pelo **modelo**, e apenas no nível de listagem do SkillTool. Você sempre pode invocar uma Skill restrita por caminho manualmente via `/<skill-name>` ou no seletor `/skills` — esse caminho do usuário executa o corpo da Skill independentemente do estado de ativação. No lado do modelo, porém, a restrição permanece até que um arquivo correspondente seja acessado: uma invocação por slash **não** desbloqueia a ativação no lado do modelo, então, se quiser que o modelo encadeie a partir da sua invocação (chame `Skill { skill: ... }` por conta própria), acesse primeiro um arquivo que corresponda ao `paths:` da skill.
+- Combinar `paths:` com `disable-model-invocation: true` é permitido, mas a restrição não tem efeito — a Skill fica oculta do modelo de qualquer forma, então a ativação por caminho nunca a anuncia.
 
 ## Adicionar arquivos de suporte
 
@@ -146,6 +167,14 @@ Para visualizar as Skills disponíveis, pergunte diretamente ao Qwen Code:
 What Skills are available?
 ```
 
+> **Atenção — visão do modelo vs. visão do usuário.** Perguntar ao modelo só exibe as Skills que ele consegue ver no momento. Se uma Skill usar `paths:` (veja "Opcional: restringir uma Skill a caminhos de arquivo" acima), ela fica fora dessa lista até que um arquivo correspondente seja acessado. O conjunto completo está sempre visível para você via slash command `/skills` e no disco.
+
+Ou navegue pela lista completa com o slash command (sempre mostra todas as Skills, incluindo as restritas por caminho que ainda não foram ativadas):
+
+```text
+/skills
+```
+
 Ou inspecione o sistema de arquivos:
 
 ```bash
@@ -177,19 +206,19 @@ Se o Qwen Code não usar sua Skill, verifique estes problemas comuns:
 
 ### Torne a descrição específica
 
-Muito vago:
+Muito vaga:
 
 ```yaml
 description: Helps with documents
 ```
 
-Específico:
+Específica:
 
 ```yaml
 description: Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDFs, forms, or document extraction.
 ```
 
-### Verificar o caminho do arquivo
+### Verifique o caminho do arquivo
 
 - Skills Pessoais: `~/.qwen/skills/<skill-name>/SKILL.md`
 - Skills de Projeto: `.qwen/skills/<skill-name>/SKILL.md`
@@ -202,7 +231,7 @@ ls ~/.qwen/skills/my-skill/SKILL.md
 ls .qwen/skills/my-skill/SKILL.md
 ```
 
-### Verificar a sintaxe YAML
+### Verifique a sintaxe YAML
 
 YAML inválido impede que os metadados da Skill sejam carregados corretamente.
 
@@ -230,7 +259,7 @@ Você pode compartilhar Skills por meio de repositórios de projeto:
 
 1. Adicione a Skill em `.qwen/skills/`
 2. Faça commit e push
-3. Os membros da equipe fazem pull das alterações
+3. Colegas de equipe fazem pull das alterações
 
 ```bash
 git add .qwen/skills/
@@ -240,7 +269,7 @@ git push
 
 ## Atualizar uma Skill
 
-Edite o `SKILL.md` diretamente:
+Edite `SKILL.md` diretamente:
 
 ```bash
 # Personal Skill
@@ -271,8 +300,8 @@ git commit -m "Remove unused Skill"
 
 Uma Skill deve abordar uma única capacidade:
 
-- Focado: "PDF form filling", "Excel analysis", "Git commit messages"
-- Muito amplo: "Document processing" (divida em Skills menores)
+- Focada: "PDF form filling", "Excel analysis", "Git commit messages"
+- Muito ampla: "Document processing" (divida em Skills menores)
 
 ### Escreva descrições claras
 

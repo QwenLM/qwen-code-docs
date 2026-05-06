@@ -2,15 +2,15 @@
 
 > 👏 Добро пожаловать в Qwen Code!
 
-Это руководство поможет вам начать использовать ИИ-ассистента для программирования всего за несколько минут. К концу вы поймёте, как применять Qwen Code для решения типичных задач разработки.
+Это руководство поможет вам начать использовать AI-ассистента для программирования всего за несколько минут. К концу вы узнаете, как применять Qwen Code для решения типичных задач разработки.
 
 ## Перед началом работы
 
 Убедитесь, что у вас есть:
 
 - Открытый **терминал** или командная строка
-- Кодовый проект для работы
-- [Учётная запись Qwen Code](https://chat.qwen.ai/auth?mode=register)
+- Проект с кодом для работы
+- API-ключ от Alibaba Cloud Model Studio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)) или подписка на Alibaba Cloud Coding Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))
 
 ## Шаг 1: Установка Qwen Code
 
@@ -24,21 +24,21 @@
 curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
 ```
 
-**Windows (запустите CMD от имени администратора)**
+**Windows (запуск от имени администратора)**
 
-```sh
-curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat
+```cmd
+powershell -Command "Invoke-WebRequest 'https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat' -OutFile (Join-Path $env:TEMP 'install-qwen.bat'); & (Join-Path $env:TEMP 'install-qwen.bat')"
 ```
 
 > [!note]
 >
-> После установки рекомендуется перезапустить терминал, чтобы изменения переменных окружения вступили в силу.
+> Рекомендуется перезапустить терминал после установки, чтобы переменные окружения применились.
 
 ### Ручная установка
 
 **Требования**
 
-Убедитесь, что у вас установлен Node.js версии 20 или новее. Скачать его можно на [nodejs.org](https://nodejs.org/en/download).
+Убедитесь, что установлен Node.js версии 20 или выше. Скачать его можно на [nodejs.org](https://nodejs.org/en/download).
 
 **NPM**
 
@@ -52,38 +52,43 @@ npm install -g @qwen-code/qwen-code@latest
 brew install qwen-code
 ```
 
-## Шаг 2: Вход в учётную запись
+## Шаг 2: Настройка аутентификации
 
-Для работы с Qwen Code требуется учётная запись. При запуске интерактивной сессии командой `qwen` вам будет предложено войти в систему:
+При запуске интерактивной сессии командой `qwen` вам будет предложено настроить аутентификацию:
 
 ```bash
-# You'll be prompted to log in on first use
+# Вам будет предложено настроить аутентификацию при первом запуске
 qwen
 ```
 
 ```bash
-# Follow the prompts to log in with your account
+# Или выполните /auth в любой момент, чтобы сменить метод аутентификации
 /auth
 ```
 
-Выберите `Qwen OAuth`, войдите в свою учётную запись и следуйте инструкциям для подтверждения. После входа ваши учётные данные будут сохранены, и повторный вход не потребуется.
+Выберите предпочтительный способ аутентификации:
+
+- **Alibaba Cloud Coding Plan**: выберите `Alibaba Cloud Coding Plan` для оплаты по фиксированной ежемесячной ставке с доступом к различным моделям. Инструкции по настройке см. в [руководстве по Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)).
+- **API Key**: выберите `API Key`, затем введите ваш API-ключ от Alibaba Cloud Model Studio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Подробную информацию см. в руководстве по настройке API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)).
+
+> ⚠️ **Примечание**: поддержка Qwen OAuth прекращена 15 апреля 2026 года. Если вы ранее использовали Qwen OAuth, переключитесь на один из указанных выше способов.
 
 > [!note]
 >
-> При первой аутентификации Qwen Code через вашу учётную запись Qwen автоматически создаётся рабочее пространство ".qwen". Оно обеспечивает централизованный учёт затрат и управление использованием Qwen Code в вашей организации.
+> При первой аутентификации Qwen Code через ваш аккаунт Qwen автоматически создается рабочее пространство `.qwen`. Оно обеспечивает централизованный учет затрат и управление использованием Qwen Code в вашей организации.
 
 > [!tip]
 >
-> Вы также можете настроить аутентификацию напрямую из терминала, не запуская сессию, с помощью команды `qwen auth`. В любой момент проверить текущую конфигурацию можно командой `qwen auth status`. Подробнее см. на странице [Аутентификация](./configuration/auth).
+> Вы также можете настроить аутентификацию напрямую из терминала без запуска сессии, выполнив команду `qwen auth`. В любой момент проверить текущую конфигурацию можно с помощью `qwen auth status`. Подробнее см. на странице [Аутентификация](./configuration/auth).
 
 ## Шаг 3: Запуск первой сессии
 
 Откройте терминал в директории любого проекта и запустите Qwen Code:
 
 ```bash
-# optiona
+# опционально
 cd /path/to/your/project
-# start qwen
+# запуск qwen
 qwen
 ```
 
@@ -109,9 +114,9 @@ what can Qwen Code do?
 >
 > Qwen Code читает файлы по мере необходимости — вам не нужно вручную добавлять контекст. У Qwen Code также есть доступ к собственной документации, и он может отвечать на вопросы о своих функциях и возможностях.
 
-### Внесите первые изменения в код
+### Внесите первое изменение в код
 
-Теперь заставим Qwen Code написать немного кода. Попробуйте простую задачу:
+Теперь заставим Qwen Code написать код. Попробуйте выполнить простую задачу:
 
 ```
 add a hello world function to the main file
@@ -119,10 +124,10 @@ add a hello world function to the main file
 
 Qwen Code выполнит следующие действия:
 
-1. Найдёт подходящий файл
+1. Найдет подходящий файл
 2. Покажет предлагаемые изменения
 3. Запросит ваше подтверждение
-4. Внесёт правки
+4. Внесет правки
 
 > [!note]
 >
@@ -130,7 +135,7 @@ Qwen Code выполнит следующие действия:
 
 ### Работа с Git в Qwen Code
 
-Qwen Code позволяет управлять Git через обычные команды:
+Qwen Code позволяет управлять Git через диалог:
 
 ```
 what files have I changed?
@@ -154,7 +159,7 @@ show me the last 5 commits
 help me resolve merge conflicts
 ```
 
-### Исправление ошибок и добавление функций
+### Исправление багов и добавление функций
 
 Qwen Code отлично справляется с отладкой и реализацией новых функций.
 
@@ -170,12 +175,12 @@ add input validation to the user registration form
 there's a bug where users can submit empty forms - fix it
 ```
 
-Qwen Code:
+Qwen Code выполнит следующее:
 
-- Найдёт соответствующий код
+- Найдет соответствующий код
 - Проанализирует контекст
 - Реализует решение
-- Запустит тесты, если они есть
+- Запустит тесты (если они есть)
 
 ### Попробуйте другие типичные сценарии
 
@@ -199,7 +204,7 @@ write unit tests for the calculator functions
 update the README with installation instructions
 ```
 
-**Ревью кода**
+**Код-ревью**
 
 ```
 review my changes and suggest improvements
@@ -207,25 +212,26 @@ review my changes and suggest improvements
 
 > [!tip]
 >
-> **Помните**: Qwen Code — ваш ИИ-напарник по программированию. Общайтесь с ним так же, как с полезным коллегой: опишите, чего хотите достичь, и он поможет вам этого добиться.
+> **Помните**: Qwen Code — ваш AI-напарник по программированию. Общайтесь с ним как с полезным коллегой: опишите, чего хотите достичь, и он поможет вам этого добиться.
 
 ## Основные команды
 
-Вот самые важные команды для ежедневного использования:
+Ниже приведены самые важные команды для ежедневного использования:
 
 | Команда               | Описание                                           | Пример                        |
 | --------------------- | -------------------------------------------------- | ----------------------------- |
 | `qwen`                | Запуск Qwen Code                                   | `qwen`                        |
 | `/auth`               | Смена метода аутентификации (в сессии)             | `/auth`                       |
 | `qwen auth`           | Настройка аутентификации из терминала              | `qwen auth`                   |
+| `qwen auth api-key`   | Настройка аутентификации по API-ключу              | `qwen auth api-key`           |
 | `qwen auth status`    | Проверка текущего статуса аутентификации           | `qwen auth status`            |
-| `/help`               | Отображение справки по доступным командам          | `/help` или `/?`              |
-| `/compress`           | Замена истории чата на сводку для экономии токенов | `/compress`                   |
+| `/help`               | Вывод справки по доступным командам                | `/help` или `/?`              |
+| `/compress`           | Замена истории чата на сводку для экономии Tokens  | `/compress`                   |
 | `/clear`              | Очистка экрана терминала                           | `/clear` (горячая клавиша: `Ctrl+L`) |
 | `/theme`              | Смена визуальной темы Qwen Code                    | `/theme`                      |
-| `/language`           | Просмотр или изменение языковых настроек           | `/language`                   |
-| → `ui [язык]`         | Установка языка интерфейса                         | `/language ui zh-CN`          |
-| → `output [язык]`     | Установка языка вывода LLM                         | `/language output Chinese`    |
+| `/language`           | Просмотр или изменение настроек языка              | `/language`                   |
+| → `ui [language]`     | Установка языка интерфейса                         | `/language ui zh-CN`          |
+| → `output [language]` | Установка языка вывода LLM                         | `/language output Chinese`    |
 | `/quit`               | Немедленный выход из Qwen Code                     | `/quit` или `/exit`           |
 
 Полный список команд см. в [справочнике по CLI](./features/commands).
@@ -234,8 +240,8 @@ review my changes and suggest improvements
 
 **Формулируйте запросы конкретно**
 
-- Вместо: "исправь ошибку"
-- Попробуйте: "исправь ошибку входа, из-за которой пользователи видят пустой экран после ввода неверных учётных данных"
+- Вместо: "исправь баг"
+- Попробуйте: "исправь баг авторизации, из-за которого пользователи видят пустой экран после ввода неверных учетных данных"
 
 **Используйте пошаговые инструкции**
 
@@ -264,10 +270,10 @@ build a dashboard showing products that are most frequently returned by our UK c
 - Нажмите `?`, чтобы увидеть все доступные горячие клавиши
 - Используйте Tab для автодополнения команд
 - Нажмите ↑ для просмотра истории команд
-- Введите `/`, чтобы увидеть все слэш-команды
+- Введите `/`, чтобы увидеть все slash-команды
 
 ## Получение помощи
 
-- **В Qwen Code**: Введите `/help` или спросите "как мне..."
-- **Документация**: Вы уже здесь! Изучите другие руководства
-- **Сообщество**: Присоединяйтесь к нашему [обсуждению на GitHub](https://github.com/QwenLM/qwen-code/discussions) для получения советов и поддержки
+- **В Qwen Code**: введите `/help` или спросите "как мне..."
+- **Документация**: вы уже здесь! Изучите другие руководства
+- **Сообщество**: присоединяйтесь к нашему [GitHub Discussion](https://github.com/QwenLM/qwen-code/discussions) для обмена советами и получения поддержки

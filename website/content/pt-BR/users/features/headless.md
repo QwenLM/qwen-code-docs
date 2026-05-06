@@ -1,17 +1,17 @@
 # Modo Headless
 
-O modo headless permite executar o Qwen Code de forma programática por meio de scripts de linha de comando e ferramentas de automação, sem nenhuma interface interativa. Isso é ideal para scripting, automação, pipelines de CI/CD e criação de ferramentas com IA.
+O modo headless permite executar o Qwen Code de forma programática a partir de scripts de linha de comando e ferramentas de automação, sem nenhuma interface interativa. Isso é ideal para scripting, automação, pipelines de CI/CD e criação de ferramentas com IA.
 
 ## Visão Geral
 
-O modo headless fornece uma interface sem UI para o Qwen Code que:
+O modo headless fornece uma interface para o Qwen Code que:
 
-- Aceita prompts por meio de argumentos de linha de comando ou stdin
+- Aceita prompts via argumentos de linha de comando ou stdin
 - Retorna saída estruturada (texto ou JSON)
 - Suporta redirecionamento de arquivos e piping
 - Permite fluxos de trabalho de automação e scripting
 - Fornece códigos de saída consistentes para tratamento de erros
-- Pode retomar sessões anteriores com escopo no projeto atual para automação em várias etapas
+- Pode retomar sessões anteriores com escopo no projeto atual para automação em múltiplas etapas
 
 ## Uso Básico
 
@@ -33,7 +33,7 @@ echo "Explain this code" | qwen
 
 ### Combinando com Entrada de Arquivo
 
-Leia de arquivos e processe com o Qwen Code:
+Leia arquivos e processe com o Qwen Code:
 
 ```bash
 cat README.md | qwen --prompt "Summarize this documentation"
@@ -56,13 +56,13 @@ qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refac
 > - Os dados da sessão são JSONL com escopo de projeto em `~/.qwen/projects/<sanitized-cwd>/chats`.
 > - Restaura o histórico de conversas, saídas de ferramentas e checkpoints de compressão de chat antes de enviar o novo prompt.
 
-## Personalizar o Prompt da Sessão Principal
+## Personalizar o Prompt Principal da Sessão
 
-Você pode alterar o system prompt da sessão principal para uma única execução da CLI sem editar arquivos de memória compartilhada.
+Você pode alterar o prompt de sistema da sessão principal para uma única execução via CLI sem editar arquivos de memória compartilhada.
 
-### Substituir o System Prompt Integrado
+### Substituir o Prompt de Sistema Integrado
 
-Use `--system-prompt` para substituir o prompt da sessão principal integrado do Qwen Code na execução atual:
+Use `--system-prompt` para substituir o prompt de sessão principal integrado do Qwen Code na execução atual:
 
 ```bash
 qwen -p "Review this patch" --system-prompt "You are a terse release reviewer. Report only blocking issues."
@@ -92,7 +92,7 @@ qwen -p "Summarize this repository" \
 
 ## Formatos de Saída
 
-O Qwen Code suporta vários formatos de saída para diferentes casos de uso:
+O Qwen Code suporta múltiplos formatos de saída para diferentes casos de uso:
 
 ### Saída em Texto (Padrão)
 
@@ -180,7 +180,7 @@ Saída (streaming conforme os eventos ocorrem):
 {"type":"result","subtype":"success","uuid":"...","session_id":"..."}
 ```
 
-Quando combinado com `--include-partial-messages`, eventos de stream adicionais são emitidos em tempo real (message_start, content_block_delta, etc.) para atualizações de UI em tempo real.
+Quando combinado com `--include-partial-messages`, eventos de stream adicionais são emitidos em tempo real (`message_start`, `content_block_delta`, etc.) para atualizações de UI em tempo real.
 
 ```bash
 qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
@@ -188,12 +188,12 @@ qwen -p "Write a Python script" --output-format stream-json --include-partial-me
 
 ### Formato de Entrada
 
-O parâmetro `--input-format` controla como o Qwen Code consome a entrada do standard input:
+O parâmetro `--input-format` controla como o Qwen Code consome a entrada da entrada padrão:
 
 - **`text`** (padrão): Entrada de texto padrão via stdin ou argumentos de linha de comando
 - **`stream-json`**: Protocolo de mensagens JSON via stdin para comunicação bidirecional
 
-> **Nota:** O modo de entrada stream-json está atualmente em construção e destina-se à integração com SDK. É necessário definir `--output-format stream-json`.
+> **Nota:** O modo de entrada stream-json está atualmente em desenvolvimento e destina-se à integração com SDK. É necessário definir `--output-format stream-json`.
 
 ### Redirecionamento de Arquivo
 
@@ -227,8 +227,8 @@ Principais opções de linha de comando para uso headless:
 | `--output-format`, `-o`      | Especifica o formato de saída (text, json, stream-json)                  | `qwen -p "query" --output-format json`                                   |
 | `--input-format`             | Especifica o formato de entrada (text, stream-json)                      | `qwen --input-format text --output-format stream-json`                   |
 | `--include-partial-messages` | Inclui mensagens parciais na saída stream-json                           | `qwen -p "query" --output-format stream-json --include-partial-messages` |
-| `--system-prompt`            | Substitui o system prompt da sessão principal para esta execução         | `qwen -p "query" --system-prompt "You are a terse reviewer."`            |
-| `--append-system-prompt`     | Anexa instruções extras ao system prompt da sessão principal para esta execução | `qwen -p "query" --append-system-prompt "Focus on concrete findings."`   |
+| `--system-prompt`            | Substitui o prompt de sistema da sessão principal para esta execução     | `qwen -p "query" --system-prompt "You are a terse reviewer."`            |
+| `--append-system-prompt`     | Anexa instruções extras ao prompt de sistema da sessão principal para esta execução | `qwen -p "query" --append-system-prompt "Focus on concrete findings."`   |
 | `--debug`, `-d`              | Ativa o modo debug                                                       | `qwen -p "query" --debug`                                                |
 | `--all-files`, `-a`          | Inclui todos os arquivos no contexto                                     | `qwen -p "query" --all-files`                                            |
 | `--include-directories`      | Inclui diretórios adicionais                                             | `qwen -p "query" --include-directories src,docs`                         |
@@ -307,6 +307,67 @@ echo "$result" | jq -r '.response' > schema-docs.md
 echo "Recent usage trends:"
 tail -5 usage.log
 ```
+
+## Modo de Retentativa Persistente
+
+Quando o Qwen Code é executado em pipelines de CI/CD ou como um daemon em segundo plano, uma breve indisponibilidade da API (limitação de taxa ou sobrecarga) não deve interromper uma tarefa de várias horas. O **modo de retentativa persistente** faz com que o Qwen Code retente erros transitórios da API indefinidamente até que o serviço se recupere.
+
+### Como funciona
+
+- **Apenas erros transitórios**: HTTP 429 (Rate Limit) e 529 (Overloaded) são retentados indefinidamente. Outros erros (400, 500, etc.) ainda falham normalmente.
+- **Backoff exponencial com limite**: Os atrasos de retentativa crescem exponencialmente, mas são limitados a **5 minutos** por retentativa.
+- **Keepalive de heartbeat**: Durante esperas longas, uma linha de status é impressa no stderr a cada **30 segundos** para evitar que os runners de CI encerrem o processo por inatividade.
+- **Degradação graciosa**: Erros não transitórios e o modo interativo permanecem completamente inalterados.
+
+### Ativação
+
+Defina a variável de ambiente `QWEN_CODE_UNATTENDED_RETRY` como `true` ou `1` (correspondência estrita, case-sensitive):
+
+```bash
+export QWEN_CODE_UNATTENDED_RETRY=1
+```
+
+> [!important]
+> A retentativa persistente requer um **opt-in explícito**. `CI=true` sozinho **não** a ativa — transformar silenciosamente um job de CI com falha rápida em um job de espera infinita seria perigoso. Sempre defina `QWEN_CODE_UNATTENDED_RETRY` explicitamente na configuração do seu pipeline.
+
+### Exemplos
+
+#### GitHub Actions
+
+```yaml
+- name: Automated code review
+  env:
+    QWEN_CODE_UNATTENDED_RETRY: '1'
+  run: |
+    qwen -p "Review all files in src/ for security issues" \
+      --output-format json \
+      --yolo > review.json
+```
+
+#### Processamento em lote noturno
+
+```bash
+export QWEN_CODE_UNATTENDED_RETRY=1
+qwen -p "Migrate all callback-style functions to async/await in src/" --yolo
+```
+
+#### Daemon em segundo plano
+
+```bash
+QWEN_CODE_UNATTENDED_RETRY=1 nohup qwen -p "Audit all dependencies for known CVEs" \
+  --output-format json > audit.json 2> audit.log &
+```
+
+### Monitoramento
+
+Durante a retentativa persistente, mensagens de heartbeat são impressas no **stderr**:
+
+```
+[qwen-code] Waiting for API capacity... attempt 3, retry in 45s
+[qwen-code] Waiting for API capacity... attempt 3, retry in 15s
+```
+
+Essas mensagens mantêm os runners de CI ativos e permitem monitorar o progresso. Elas não aparecem no stdout, então a saída JSON enviada para outras ferramentas permanece limpa.
 
 ## Recursos
 

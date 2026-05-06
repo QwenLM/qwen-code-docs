@@ -2,26 +2,28 @@
 
 Qwen Code prend en charge trois méthodes d'authentification. Choisissez celle qui correspond à votre façon d'utiliser la CLI :
 
-- **Qwen OAuth** : connectez-vous avec votre compte `qwen.ai` dans un navigateur. Gratuit avec un quota quotidien.
-- **Alibaba Cloud Coding Plan** : utilisez une clé API d'Alibaba Cloud. Abonnement payant avec un large choix de modèles et des quotas plus élevés.
+- **Qwen OAuth** : connectez-vous avec votre compte `qwen.ai` dans un navigateur. **L'offre gratuite a été interrompue le 2026-04-15** — passez à une autre méthode.
+- **Alibaba Cloud Coding Plan** : utilisez une clé API Alibaba Cloud. Abonnement payant offrant une large sélection de modèles et des quotas plus élevés.
 - **API Key** : utilisez votre propre clé API. Flexible selon vos besoins — prend en charge OpenAI, Anthropic, Gemini et d'autres endpoints compatibles.
 
-## Option 1 : Qwen OAuth (Gratuit)
+## Option 1 : Qwen OAuth (Interrompu)
 
-Choisissez cette option si vous souhaitez la configuration la plus simple et que vous utilisez des modèles Qwen.
+> [!warning]
+>
+> L'offre gratuite Qwen OAuth a été interrompue le 2026-04-15. Les tokens mis en cache existants peuvent continuer à fonctionner brièvement, mais les nouvelles requêtes seront rejetées. Veuillez passer à Alibaba Cloud Coding Plan, [OpenRouter](https://openrouter.ai), [Fireworks AI](https://app.fireworks.ai) ou un autre fournisseur. Exécutez `qwen auth` pour configurer.
 
-- **Fonctionnement** : au premier démarrage, Qwen Code ouvre une page de connexion dans le navigateur. Une fois l'opération terminée, les identifiants sont mis en cache localement, ce qui évite généralement de devoir se reconnecter.
-- **Prérequis** : un compte `qwen.ai` + un accès Internet (au moins pour la première connexion).
-- **Avantages** : aucune gestion de clé API, rafraîchissement automatique des identifiants.
-- **Coût et quota** : gratuit, avec un quota de **60 requêtes/minute** et **1 000 requêtes/jour**.
+- **Fonctionnement** : au premier lancement, Qwen Code ouvre une page de connexion dans le navigateur. Une fois terminé, les identifiants sont mis en cache localement, ce qui évite généralement de devoir se reconnecter.
+- **Prérequis** : un compte `qwen.ai` + un accès internet (au moins pour la première connexion).
+- **Avantages** : aucune gestion de clé API, actualisation automatique des identifiants.
+- **Coût et quota** : l'offre gratuite a été interrompue depuis le 2026-04-15.
 
-Démarrez la CLI et suivez le flux dans le navigateur :
+Lancez la CLI et suivez le flux dans le navigateur :
 
 ```bash
 qwen
 ```
 
-Ou authentifiez-vous directement sans démarrer de session :
+Ou authentifiez-vous directement sans lancer de session :
 
 ```bash
 qwen auth qwen-oauth
@@ -29,19 +31,19 @@ qwen auth qwen-oauth
 
 > [!note]
 >
-> Dans les environnements non interactifs ou sans interface graphique (ex. CI, SSH, conteneurs), vous ne pouvez généralement **pas** terminer le flux de connexion OAuth via le navigateur.  
+> Dans les environnements non interactifs ou headless (ex. : CI, SSH, conteneurs), vous ne pouvez généralement **pas** terminer le flux de connexion OAuth via navigateur.  
 > Dans ces cas, veuillez utiliser la méthode d'authentification Alibaba Cloud Coding Plan ou API Key.
 
 ## 💳 Option 2 : Alibaba Cloud Coding Plan
 
-Choisissez cette option si vous souhaitez des coûts prévisibles, un large choix de modèles et des quotas d'utilisation plus élevés.
+Choisissez cette option si vous souhaitez des coûts prévisibles, une large sélection de modèles et des quotas d'utilisation plus élevés.
 
 - **Fonctionnement** : abonnez-vous au Coding Plan avec un tarif mensuel fixe, puis configurez Qwen Code pour utiliser l'endpoint dédié et votre clé API d'abonnement.
-- **Prérequis** : obtenez un abonnement Coding Plan actif depuis [Alibaba Cloud ModelStudio(Beijing)](https://bailian.console.aliyun.com/cn-beijing?tab=coding-plan#/efm/coding-plan-index) ou [Alibaba Cloud ModelStudio(intl)](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index), selon la région de votre compte.
-- **Avantages** : large choix de modèles, quotas d'utilisation plus élevés, coûts mensuels prévisibles, accès à une vaste gamme de modèles (Qwen, GLM, Kimi, Minimax et autres).
-- **Coût et quota** : consultez la documentation du Coding Plan Aliyun ModelStudio [Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3005961) [intl](https://modelstudio.console.alibabacloud.com/?tab=doc#/doc/?type=model&url=2840914).
+- **Prérequis** : souscrivez à un abonnement Coding Plan actif via [Alibaba Cloud ModelStudio(Beijing)](https://bailian.console.aliyun.com/cn-beijing?tab=coding-plan#/efm/coding-plan-index) ou [Alibaba Cloud ModelStudio(intl)](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index), selon la région de votre compte.
+- **Avantages** : large sélection de modèles, quotas d'utilisation plus élevés, coûts mensuels prévisibles, accès à une vaste gamme de modèles (Qwen, GLM, Kimi, Minimax, etc.).
+- **Coût et quota** : consultez la documentation du Coding Plan Aliyun ModelStudio[Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3005961)[intl](https://modelstudio.console.alibabacloud.com/?tab=doc#/doc/?type=model&url=2840914).
 
-Le Alibaba Cloud Coding Plan est disponible dans deux régions :
+Alibaba Cloud Coding Plan est disponible dans deux régions :
 
 | Région                       | URL de la console                                                                  |
 | ---------------------------- | ---------------------------------------------------------------------------- |
@@ -66,9 +68,9 @@ qwen auth coding-plan --region china --key sk-sp-xxxxxxxxx
 
 Saisissez `qwen` dans le terminal pour lancer Qwen Code, puis exécutez la commande `/auth` et sélectionnez **Alibaba Cloud Coding Plan**. Choisissez votre région, puis saisissez votre clé `sk-sp-xxxxxxxxx`.
 
-Après l'authentification, utilisez la commande `/model` pour basculer entre tous les modèles pris en charge par le Alibaba Cloud Coding Plan (y compris qwen3.5-plus, qwen3-coder-plus, qwen3-coder-next, qwen3-max, glm-4.7 et kimi-k2.5).
+Après l'authentification, utilisez la commande `/model` pour basculer entre tous les modèles pris en charge par Alibaba Cloud Coding Plan (dont qwen3.5-plus, qwen3-coder-plus, qwen3-coder-next, qwen3-max, glm-4.7 et kimi-k2.5).
 
-### Alternative : configurer via `settings.json`
+### Alternative : configuration via `settings.json`
 
 Si vous préférez ignorer le flux interactif `/auth`, ajoutez ce qui suit à `~/.qwen/settings.json` :
 
@@ -103,7 +105,7 @@ Si vous préférez ignorer le flux interactif `/auth`, ajoutez ce qui suit à `~
 >
 > Le Coding Plan utilise un endpoint dédié (`https://coding.dashscope.aliyuncs.com/v1`) différent de l'endpoint Dashscope standard. Assurez-vous d'utiliser le bon `baseUrl`.
 
-## 🚀 Option 3 : API Key (Flexible)
+## 🚀 Option 3 : API Key (flexible)
 
 Choisissez cette option si vous souhaitez vous connecter à des fournisseurs tiers tels qu'OpenAI, Anthropic, Google, Azure OpenAI, OpenRouter, ModelScope ou un endpoint auto-hébergé. Prend en charge plusieurs protocoles et fournisseurs.
 
@@ -138,14 +140,14 @@ La méthode la plus simple pour commencer avec l'authentification par clé API e
 }
 ```
 
-Rôle de chaque champ :
+Description de chaque champ :
 
 | Champ                        | Description                                                                                                                                     |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `modelProviders`             | Déclare les modèles disponibles et comment s'y connecter. Les clés (`openai`, `anthropic`, `gemini`) représentent le protocole API.              |
 | `env`                        | Stocke les clés API directement dans `settings.json` comme solution de secours (priorité la plus basse — les `export` shell et les fichiers `.env` sont prioritaires).                  |
 | `security.auth.selectedType` | Indique à Qwen Code quel protocole utiliser au démarrage (ex. `openai`, `anthropic`, `gemini`). Sans cela, vous devrez exécuter `/auth` de manière interactive. |
-| `model.name`                 | Le modèle par défaut à activer au démarrage de Qwen Code. Doit correspondre à l'une des valeurs `id` de votre `modelProviders`.                                |
+| `model.name`                 | Le modèle par défaut à activer au démarrage de Qwen Code. Doit correspondre à l'une des valeurs `id` de vos `modelProviders`.                                |
 
 Après avoir enregistré le fichier, exécutez simplement `qwen` — aucune configuration interactive `/auth` n'est nécessaire.
 
@@ -159,7 +161,7 @@ Le concept clé est celui des **Model Providers** (`modelProviders`) : Qwen Code
 
 | Protocole          | Clé `modelProviders` | Variables d'environnement                                        | Fournisseurs                                                                                   |
 | ----------------- | -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| Compatible OpenAI | `openai`             | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`          | OpenAI, Azure OpenAI, OpenRouter, ModelScope, Alibaba Cloud, tout endpoint compatible OpenAI |
+| OpenAI-compatible | `openai`             | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`          | OpenAI, Azure OpenAI, OpenRouter, ModelScope, Alibaba Cloud, tout endpoint compatible OpenAI |
 | Anthropic         | `anthropic`          | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL` | Anthropic Claude                                                                            |
 | Google GenAI      | `gemini`             | `GEMINI_API_KEY`, `GEMINI_MODEL`                             | Google Gemini                                                                               |
 
@@ -169,9 +171,9 @@ Définissez les modèles disponibles pour chaque protocole. Chaque entrée de mo
 
 > [!important]
 >
-> Il est recommandé de définir `modelProviders` dans le fichier `~/.qwen/settings.json` (portée utilisateur) pour éviter les conflits de fusion entre les paramètres du projet et ceux de l'utilisateur.
+> Il est recommandé de définir `modelProviders` dans le fichier `~/.qwen/settings.json` (scope utilisateur) pour éviter les conflits de fusion entre les paramètres du projet et ceux de l'utilisateur.
 
-Modifiez `~/.qwen/settings.json` (créez-le s'il n'existe pas). Vous pouvez combiner plusieurs protocoles dans un seul fichier — voici un exemple multi-fournisseurs montrant uniquement la section `modelProviders` :
+Modifiez `~/.qwen/settings.json` (créez-le s'il n'existe pas). Vous pouvez mélanger plusieurs protocoles dans un seul fichier — voici un exemple multi-fournisseurs affichant uniquement la section `modelProviders` :
 
 ```json
 {
@@ -204,29 +206,29 @@ Modifiez `~/.qwen/settings.json` (créez-le s'il n'existe pas). Vous pouvez comb
 
 > [!tip]
 >
-> N'oubliez pas de définir également `env`, `security.auth.selectedType` et `model.name` aux côtés de `modelProviders` — consultez l'[exemple complet ci-dessus](#recommended-one-file-setup-via-settingsjson) pour référence.
+> N'oubliez pas de définir également `env`, `security.auth.selectedType` et `model.name` en plus de `modelProviders` — consultez l'[exemple complet ci-dessus](#recommended-one-file-setup-via-settingsjson) pour référence.
 
 **Champs `ModelConfig` (chaque entrée dans `modelProviders`) :**
 
 | Champ              | Obligatoire | Description                                                          |
 | ------------------ | -------- | -------------------------------------------------------------------- |
 | `id`               | Oui      | ID du modèle envoyé à l'API (ex. `gpt-4o`, `claude-sonnet-4-20250514`) |
-| `name`             | Non       | Nom affiché dans le sélecteur `/model` (par défaut `id`)               |
+| `name`             | Non       | Nom d'affichage dans le sélecteur `/model` (par défaut `id`)               |
 | `envKey`           | Oui      | Nom de la variable d'environnement pour la clé API (ex. `OPENAI_API_KEY`)    |
 | `baseUrl`          | Non       | Remplacement de l'endpoint API (utile pour les proxies ou endpoints personnalisés)       |
 | `generationConfig` | Non       | Ajustement fin de `timeout`, `maxRetries`, `samplingParams`, etc.            |
 
 > [!note]
 >
-> Lorsque vous utilisez le champ `env` dans `settings.json`, les identifiants sont stockés en texte brut. Pour une meilleure sécurité, privilégiez les fichiers `.env` ou les `export` shell — voir [Étape 2](#step-2-set-environment-variables).
+> Lors de l'utilisation du champ `env` dans `settings.json`, les identifiants sont stockés en texte clair. Pour une meilleure sécurité, privilégiez les fichiers `.env` ou les `export` shell — consultez l'[Étape 2](#step-2-set-environment-variables).
 
 Pour le schéma complet `modelProviders` et les options avancées comme `generationConfig`, `customHeaders` et `extra_body`, consultez la [Référence des Model Providers](model-providers.md).
 
 #### Étape 2 : Définir les variables d'environnement
 
-Qwen Code lit les clés API depuis les variables d'environnement (spécifiées par `envKey` dans votre configuration de modèle). Il existe plusieurs façons de les fournir, listées ci-dessous de la **priorité la plus élevée à la plus basse** :
+Qwen Code lit les clés API depuis les variables d'environnement (spécifiées par `envKey` dans votre configuration de modèle). Il existe plusieurs façons de les fournir, listées ci-dessous de la **priorité la plus haute à la plus basse** :
 
-**1. Environnement shell / `export` (priorité la plus élevée)**
+**1. Environnement shell / `export` (priorité la plus haute)**
 
 Définissez-les directement dans votre profil shell (`~/.zshrc`, `~/.bashrc`, etc.) ou en ligne avant le lancement :
 
@@ -254,7 +256,7 @@ Ordre de recherche (depuis le répertoire courant, en remontant vers `/`) :
 1. `.qwen/.env` (recommandé — isole les variables Qwen Code des autres outils)
 2. `.env`
 
-Si aucun fichier n'est trouvé, il se rabat sur votre **répertoire personnel** :
+Si rien n'est trouvé, il utilise par défaut votre **répertoire personnel** :
 
 3. `~/.qwen/.env`
 4. `~/.env`
@@ -265,7 +267,7 @@ Si aucun fichier n'est trouvé, il se rabat sur votre **répertoire personnel** 
 
 **3. Champ `env` dans `settings.json` (priorité la plus basse)**
 
-Vous pouvez également définir les clés API directement dans `~/.qwen/settings.json` sous la clé `env`. Elles sont chargées comme **solution de secours de priorité la plus basse** — appliquées uniquement si la variable n'est pas déjà définie par l'environnement système ou les fichiers `.env`.
+Vous pouvez également définir les clés API directement dans `~/.qwen/settings.json` sous la clé `env`. Elles sont chargées comme **fallback de priorité la plus basse** — appliquées uniquement si la variable n'est pas déjà définie par l'environnement système ou les fichiers `.env`.
 
 ```json
 {
@@ -283,12 +285,12 @@ C'est l'approche utilisée dans l'[exemple de configuration en un seul fichier](
 
 | Priorité    | Source                         | Comportement de remplacement                            |
 | ----------- | ------------------------------ | -------------------------------------------- |
-| 1 (la plus élevée) | Options CLI (`--openai-api-key`) | Toujours prioritaire                                  |
+| 1 (la plus haute) | Flags CLI (`--openai-api-key`) | Toujours prioritaire                                  |
 | 2           | Env système (`export`, en ligne)  | Remplace `.env` et `settings.json` → `env` |
-| 3           | Fichier `.env`                    | Définit uniquement si absent de l'env système               |
-| 4 (la plus basse)  | `settings.json` → `env`        | Définit uniquement si absent de l'env système ou `.env`     |
+| 3           | Fichier `.env`                    | Défini uniquement si absent de l'env système               |
+| 4 (la plus basse)  | `settings.json` → `env`        | Défini uniquement si absent de l'env système ou `.env`     |
 
-#### Étape 3 : Changer de modèle avec `/model`
+#### Étape 3 : Basculer entre les modèles avec `/model`
 
 Après avoir lancé Qwen Code, utilisez la commande `/model` pour basculer entre tous les modèles configurés. Les modèles sont regroupés par protocole :
 
@@ -298,7 +300,7 @@ Après avoir lancé Qwen Code, utilisez la commande `/model` pour basculer entre
 
 Le sélecteur affichera tous les modèles de votre configuration `modelProviders`, regroupés par protocole (ex. `openai`, `anthropic`, `gemini`). Votre sélection est conservée entre les sessions.
 
-Vous pouvez également changer de modèle directement via un argument en ligne de commande, ce qui est pratique lorsque vous travaillez sur plusieurs terminaux.
+Vous pouvez également basculer directement de modèle via un argument en ligne de commande, ce qui est pratique lorsque vous travaillez sur plusieurs terminaux.
 
 ```bash
 # In one terminal
@@ -312,7 +314,7 @@ qwen --model "qwen3.5-plus"
 
 ## Commande CLI `qwen auth`
 
-En plus de la commande slash `/auth` en session, Qwen Code propose la commande CLI autonome `qwen auth` pour gérer l'authentification directement depuis le terminal — sans avoir à démarrer une session interactive au préalable.
+En plus de la commande slash `/auth` en session, Qwen Code propose la commande CLI autonome `qwen auth` pour gérer l'authentification directement depuis le terminal — sans avoir à lancer une session interactive au préalable.
 
 ### Mode interactif
 
@@ -322,13 +324,14 @@ Exécutez `qwen auth` sans arguments pour afficher un menu interactif :
 qwen auth
 ```
 
-Un sélecteur avec navigation par flèches s'affiche :
+Un sélecteur avec navigation aux flèches s'affiche :
 
 ```
 Select authentication method:
 
-> Qwen OAuth - Free · Up to 1,000 requests/day · Qwen latest models
   Alibaba Cloud Coding Plan - Paid · Up to 6,000 requests/5 hrs · All Alibaba Cloud Coding Plan Models
+  API Key - Bring your own API key
+  Qwen OAuth - Discontinued — switch to Coding Plan or API Key
 
 (Use ↑ ↓ arrows to navigate, Enter to select, Ctrl+C to exit)
 ```
@@ -338,10 +341,11 @@ Select authentication method:
 | Commande                                              | Description                                       |
 | ---------------------------------------------------- | ------------------------------------------------- |
 | `qwen auth`                                          | Configuration interactive de l'authentification                  |
-| `qwen auth qwen-oauth`                               | Authentification avec Qwen OAuth                      |
 | `qwen auth coding-plan`                              | Authentification avec Alibaba Cloud Coding Plan       |
 | `qwen auth coding-plan --region china --key sk-sp-…` | Configuration non interactive du Coding Plan (pour les scripts) |
-| `qwen auth status`                                   | Affiche l'état actuel de l'authentification                |
+| `qwen auth api-key`                                  | Authentification avec une clé API                      |
+| `qwen auth qwen-oauth`                               | Authentification avec Qwen OAuth (interrompu)       |
+| `qwen auth status`                                   | Afficher l'état actuel de l'authentification                |
 
 **Exemples :**
 
@@ -354,6 +358,9 @@ qwen auth coding-plan
 
 # Set up Coding Plan non-interactively (useful for CI/scripting)
 qwen auth coding-plan --region china --key sk-sp-xxxxxxxxx
+
+# Set up API key (ModelStudio Standard or custom provider)
+qwen auth api-key
 
 # Check your current auth configuration
 qwen auth status

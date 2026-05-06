@@ -8,15 +8,15 @@ Use `save_memory` para salvar e recuperar informações entre suas sessões do Q
 
 ### Argumentos
 
-O `save_memory` aceita um argumento:
+`save_memory` aceita um argumento:
 
-- `fact` (string, obrigatório): O fato ou informação específica a ser lembrada. Deve ser uma declaração clara e independente, escrita em linguagem natural.
+- `fact` (string, obrigatório): O fato ou informação específica a ser lembrada. Deve ser uma declaração clara e autocontida, escrita em linguagem natural.
 
 ## Como usar `save_memory` com o Qwen Code
 
 A ferramenta adiciona o `fact` fornecido ao seu arquivo de contexto no diretório home do usuário (`~/.qwen/QWEN.md` por padrão). Esse nome de arquivo pode ser configurado por meio de `contextFileName`.
 
-Após a adição, os fatos são armazenados em uma seção `## Qwen Added Memories`. Esse arquivo é carregado como contexto nas sessões seguintes, permitindo que a CLI recupere as informações salvas.
+Após a adição, os fatos são armazenados em uma seção `## Qwen Added Memories`. Esse arquivo é carregado como contexto nas sessões subsequentes, permitindo que a CLI recupere as informações salvas.
 
 Uso:
 

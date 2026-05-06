@@ -1,30 +1,66 @@
 # Sous-agents
 
-Les sous-agents sont des assistants IA spécialisés qui gèrent des types de tâches spécifiques au sein de Qwen Code. Ils vous permettent de déléguer un travail ciblé à des agents IA configurés avec des prompts, des outils et des comportements adaptés à chaque tâche.
+Les sous-agents sont des assistants IA spécialisés qui gèrent des types de tâches spécifiques au sein de Qwen Code. Ils vous permettent de déléguer un travail ciblé à des agents IA configurés avec des prompts, des outils et des comportements adaptés à la tâche.
 
 ## Qu'est-ce qu'un sous-agent ?
 
 Les sous-agents sont des assistants IA indépendants qui :
 
-- **Se spécialisent dans des tâches précises** - Chaque sous-agent est configuré avec un prompt système ciblé pour des types de travaux particuliers
-- **Disposent d'un contexte isolé** - Ils conservent leur propre historique de conversation, séparé de votre chat principal
-- **Utilisent des outils contrôlés** - Vous pouvez configurer les outils auxquels chaque sous-agent a accès
-- **Travaillent de manière autonome** - Une fois une tâche assignée, ils travaillent indépendamment jusqu'à son achèvement ou son échec
-- **Fournissent un retour détaillé** - Vous pouvez suivre leur progression, l'utilisation des outils et les statistiques d'exécution en temps réel
+- **Spécialisés dans des tâches précises** - Chaque sous-agent est configuré avec un prompt système ciblé pour des types de travaux particuliers
+- **Contexte isolé** - Ils conservent leur propre historique de conversation, séparé de votre chat principal
+- **Outils contrôlés** - Vous pouvez configurer les outils auxquels chaque sous-agent a accès
+- **Fonctionnement autonome** - Une fois une tâche assignée, ils travaillent de manière indépendante jusqu'à son achèvement ou son échec
+- **Retours détaillés** - Vous pouvez suivre leur progression, l'utilisation des outils et les statistiques d'exécution en temps réel
+
+## Sous-agent Fork (Fork implicite)
+
+En plus des sous-agents nommés, Qwen Code prend en charge le **fork implicite** : lorsque l'IA omet le paramètre `subagent_type`, elle déclenche un fork qui hérite du contexte de conversation complet du parent.
+
+### Différences entre le Fork et les sous-agents nommés
+
+|               | Sous-agent nommé                    | Sous-agent Fork                                         |
+| ------------- | --------------------------------- | ----------------------------------------------------- |
+| Contexte       | Repart de zéro, sans historique parent   | Hérite de l'historique complet de la conversation parente           |
+| Prompt système | Utilise son propre prompt configuré    | Utilise le prompt système exact du parent (pour le partage de cache) |
+| Exécution     | Bloque le parent jusqu'à la fin      | S'exécute en arrière-plan, le parent continue immédiatement      |
+| Cas d'utilisation      | Tâches spécialisées (tests, docs) | Tâches parallèles nécessitant le contexte actuel          |
+
+### Quand le Fork est utilisé
+
+L'IA utilise automatiquement le fork lorsqu'elle doit :
+
+- Exécuter plusieurs tâches de recherche en parallèle (ex. : "analyser les modules A, B et C")
+- Effectuer un travail en arrière-plan tout en poursuivant la conversation principale
+- Déléguer des tâches nécessitant la compréhension du contexte de conversation actuel
+
+### Partage du cache de prompt
+
+Tous les forks partagent le préfixe exact de la requête API du parent (prompt système, outils, historique de conversation), ce qui permet d'atteindre le cache de prompt DashScope. Lorsque 3 forks s'exécutent en parallèle, le préfixe partagé est mis en cache une seule fois et réutilisé, ce qui permet d'économiser plus de 80 % de tokens par rapport à des sous-agents indépendants.
+
+### Prévention des forks récursifs
+
+Les enfants d'un fork ne peuvent pas créer de nouveaux forks. Cette règle est appliquée à l'exécution : si un fork tente d'en engendrer un autre, il reçoit une erreur lui demandant d'exécuter les tâches directement.
+
+### Limitations actuelles
+
+- **Aucun retour de résultat** : Les résultats des forks sont affichés dans l'interface de progression, mais ne sont pas automatiquement réinjectés dans la conversation principale. L'IA parente voit un message placeholder et ne peut pas agir sur la sortie du fork.
+- **Aucune isolation de worktree** : Les forks partagent le répertoire de travail du parent. Des modifications de fichiers concurrentes provenant de plusieurs forks peuvent entrer en conflit.
 
 ## Principaux avantages
 
 - **Spécialisation des tâches** : Créez des agents optimisés pour des workflows spécifiques (tests, documentation, refactoring, etc.)
 - **Isolation du contexte** : Gardez le travail spécialisé séparé de votre conversation principale
+- **Héritage du contexte** : Les sous-agents Fork héritent de la conversation complète pour les tâches parallèles lourdes en contexte
+- **Partage du cache de prompt** : Les sous-agents Fork partagent le préfixe de cache du parent, réduisant le coût en tokens
 - **Réutilisabilité** : Enregistrez et réutilisez les configurations d'agents entre les projets et les sessions
-- **Accès contrôlé** : Limitez les outils utilisables par chaque agent pour des raisons de sécurité et de concentration
-- **Visibilité de la progression** : Surveillez l'exécution des agents grâce à des mises à jour en temps réel
+- **Accès contrôlé** : Limitez les outils que chaque agent peut utiliser pour la sécurité et la concentration
+- **Visibilité de la progression** : Suivez l'exécution des agents avec des mises à jour de progression en temps réel
 
 ## Fonctionnement des sous-agents
 
 1. **Configuration** : Vous créez des configurations de sous-agents qui définissent leur comportement, leurs outils et leurs prompts système
-2. **Délégation** : L'IA principale peut automatiquement déléguer des tâches aux sous-agents appropriés
-3. **Exécution** : Les sous-agents travaillent indépendamment en utilisant leurs outils configurés pour accomplir les tâches
+2. **Délégation** : L'IA principale peut automatiquement déléguer des tâches aux sous-agents appropriés — ou implicitement fork lorsqu'aucun type de sous-agent spécifique n'est nécessaire
+3. **Exécution** : Les sous-agents travaillent de manière indépendante, en utilisant leurs outils configurés pour accomplir les tâches
 4. **Résultats** : Ils renvoient les résultats et les résumés d'exécution à la conversation principale
 
 ## Prise en main
@@ -41,7 +77,7 @@ Les sous-agents sont des assistants IA indépendants qui :
 
    `/agents manage`
 
-   Consultez et gérez vos sous-agents configurés.
+   Affichez et gérez vos sous-agents configurés.
 
 3. **Utilisez les sous-agents automatiquement** : Demandez simplement à l'IA principale d'effectuer des tâches correspondant aux spécialisations de vos sous-agents. L'IA déléguera automatiquement le travail approprié.
 
@@ -63,30 +99,30 @@ Les sous-agents sont gérés via la commande slash `/agents` et ses sous-command
 
 **Utilisation :** `/agents create`. Crée un nouveau sous-agent via un assistant guidé étape par étape.
 
-**Utilisation :** `/agents manage`. Ouvre une boîte de dialogue interactive pour consulter et gérer les sous-agents existants.
+**Utilisation :** `/agents manage`. Ouvre une boîte de dialogue interactive pour afficher et gérer les sous-agents existants.
 
 ### Emplacements de stockage
 
 Les sous-agents sont stockés sous forme de fichiers Markdown à plusieurs emplacements :
 
-- **Niveau projet** : `.qwen/agents/` (priorité la plus élevée)
-- **Niveau utilisateur** : `~/.qwen/agents/` (solution de repli)
+- **Niveau projet** : `.qwen/agents/` (priorité la plus haute)
+- **Niveau utilisateur** : `~/.qwen/agents/` (secours)
 - **Niveau extension** : Fournis par les extensions installées
 
-Cela vous permet de disposer d'agents spécifiques au projet, d'agents personnels fonctionnant sur tous les projets, et d'agents fournis par les extensions qui ajoutent des capacités spécialisées.
+Cela vous permet d'avoir des agents spécifiques au projet, des agents personnels fonctionnant sur tous les projets, et des agents fournis par les extensions qui ajoutent des capacités spécialisées.
 
 ### Sous-agents d'extensions
 
 Les extensions peuvent fournir des sous-agents personnalisés qui deviennent disponibles lorsque l'extension est activée. Ces agents sont stockés dans le répertoire `agents/` de l'extension et suivent le même format que les agents personnels et de projet.
 
-Les sous-agents d'extensions :
+Sous-agents d'extensions :
 
-- Sont découverts automatiquement lorsque l'extension est activée
+- Sont automatiquement détectés lorsque l'extension est activée
 - Apparaissent dans la boîte de dialogue `/agents manage` sous la section "Extension Agents"
 - Ne peuvent pas être modifiés directement (modifiez plutôt la source de l'extension)
 - Suivent le même format de configuration que les agents définis par l'utilisateur
 
-Pour voir quelles extensions fournissent des sous-agents, vérifiez la présence d'un champ `agents` dans le fichier `qwen-extension.json` de l'extension.
+Pour voir quelles extensions fournissent des sous-agents, vérifiez le champ `agents` dans le fichier `qwen-extension.json` de l'extension.
 
 ### Format de fichier
 
@@ -99,10 +135,12 @@ Les sous-agents sont configurés à l'aide de fichiers Markdown avec un frontmat
 name: agent-name
 description: Brief description of when and how to use this agent
 model: inherit # Optional: inherit or model-id
-tools:
-	- tool1
-	- tool2
-	- tool3 # Optional
+approvalMode: auto-edit # Optional: default, plan, auto-edit, yolo
+tools:         # Optional: allowlist of tools
+  - tool1
+  - tool2
+disallowedTools: # Optional: blocklist of tools
+  - tool3
 ---
 
 System prompt content goes here.
@@ -111,12 +149,93 @@ Multiple paragraphs are supported.
 
 #### Sélection du modèle
 
-Utilisez le champ frontmatter optionnel `model` pour contrôler le modèle utilisé par un sous-agent :
+Utilisez le champ frontmatter `model` (optionnel) pour contrôler le modèle utilisé par un sous-agent :
 
 - `inherit` : Utilise le même modèle que la conversation principale
 - Omettre le champ : Identique à `inherit`
 - `glm-5` : Utilise cet ID de modèle avec le type d'authentification de la conversation principale
-- `openai:gpt-4o` : Utilise un autre fournisseur (résout les identifiants depuis les variables d'environnement)
+- `openai:gpt-4o` : Utilise un fournisseur différent (résout les identifiants depuis les variables d'environnement)
+
+#### Mode de permission
+
+Utilisez le champ frontmatter `approvalMode` (optionnel) pour contrôler la validation des appels d'outils d'un sous-agent. Valeurs valides :
+
+- `default` : Les outils nécessitent une validation interactive (identique au paramètre par défaut de la session principale)
+- `plan` : Mode analyse seule — l'agent planifie mais n'exécute pas les modifications
+- `auto-edit` : Les outils sont automatiquement validés sans invite (recommandé pour la plupart des agents)
+- `yolo` : Tous les outils sont automatiquement validés, y compris ceux potentiellement destructeurs
+
+Si vous omettez ce champ, le mode de permission du sous-agent est déterminé automatiquement :
+
+- Si la session parente est en mode **yolo** ou **auto-edit**, le sous-agent hérite de ce mode. Un parent permissif reste permissif.
+- Si la session parente est en mode **plan**, le sous-agent reste en mode plan. Une session en analyse seule ne peut pas modifier de fichiers via un agent délégué.
+- Si la session parente est en mode **default** (dans un dossier de confiance), le sous-agent obtient **auto-edit** afin de pouvoir travailler de manière autonome.
+
+Lorsque vous définissez `approvalMode`, les modes permissifs du parent restent prioritaires. Par exemple, si le parent est en mode yolo, un sous-agent avec `approvalMode: plan` s'exécutera toujours en mode yolo.
+
+```
+---
+name: cautious-reviewer
+description: Reviews code without making changes
+approvalMode: plan
+tools:
+  - read_file
+  - grep_search
+  - glob
+---
+
+You are a code reviewer. Analyze the code and report findings.
+Do not modify any files.
+```
+
+#### Configuration des outils
+
+Utilisez `tools` et `disallowedTools` pour contrôler les outils auxquels un sous-agent peut accéder.
+
+**`tools` (liste d'autorisation) :** Lorsqu'elle est spécifiée, le sous-agent ne peut utiliser que les outils listés. Lorsqu'elle est omise, le sous-agent hérite de tous les outils disponibles de la session parente.
+
+```
+---
+name: reader
+description: Read-only agent for code exploration
+tools:
+  - read_file
+  - grep_search
+  - glob
+  - list_directory
+---
+```
+
+**`disallowedTools` (liste d'exclusion) :** Lorsqu'elle est spécifiée, les outils listés sont retirés du pool d'outils du sous-agent. Cela est utile lorsque vous souhaitez "tout sauf X" sans lister chaque outil autorisé.
+
+```
+---
+name: safe-worker
+description: Agent that cannot modify files
+disallowedTools:
+  - write_file
+  - edit
+  - run_shell_command
+---
+```
+
+Si `tools` et `disallowedTools` sont tous deux définis, la liste d'autorisation est appliquée d'abord, puis la liste d'exclusion retire des éléments de cet ensemble.
+
+**Les outils MCP** suivent les mêmes règles. Si un sous-agent n'a pas de liste `tools`, il hérite de tous les outils MCP de la session parente. Si un sous-agent possède une liste `tools` explicite, il n'obtient que les outils MCP explicitement nommés dans cette liste.
+
+Le champ `disallowedTools` prend en charge les motifs au niveau du serveur MCP :
+
+- `mcp__server__tool_name` — bloque un outil MCP spécifique
+- `mcp__server` — bloque tous les outils de ce serveur MCP
+
+```
+---
+name: no-slack
+description: Agent without Slack access
+disallowedTools:
+  - mcp__slack
+---
+```
 
 #### Exemple d'utilisation
 
@@ -139,10 +258,10 @@ new contributors and end users understand the project.
 Qwen Code délègue proactivement les tâches en fonction de :
 
 - La description de la tâche dans votre requête
-- Le champ de description dans les configurations des sous-agents
+- Le champ description dans les configurations des sous-agents
 - Le contexte actuel et les outils disponibles
 
-Pour encourager une utilisation plus proactive des sous-agents, incluez des phrases comme "use PROACTIVELY" ou "MUST BE USED" dans votre champ de description.
+Pour encourager une utilisation plus proactive des sous-agents, incluez des phrases comme "use PROACTIVELY" ou "MUST BE USED" dans votre champ description.
 
 ### Invocation explicite
 
@@ -156,11 +275,11 @@ Get the react-specialist Subagents to optimize this component's performance
 
 ## Exemples
 
-### Agents de workflow de développement
+### Agents pour les workflows de développement
 
 #### Spécialiste des tests
 
-Idéal pour la création complète de tests et le développement piloté par les tests (TDD).
+Idéal pour la création complète de tests et le développement piloté par les tests.
 
 ```
 ---
@@ -198,13 +317,13 @@ Focus on both positive and negative test cases.
 
 **Cas d'utilisation :**
 
-- « Rédigez des tests unitaires pour le service d'authentification »
-- « Créez des tests d'intégration pour le workflow de traitement des paiements »
-- « Ajoutez une couverture de tests pour les cas limites dans le module de validation des données »
+- "Write unit tests for the authentication service"
+- "Create integration tests for the payment processing workflow"
+- "Add test coverage for edge cases in the data validation module"
 
 #### Rédacteur de documentation
 
-Spécialisé dans la création d'une documentation claire et complète.
+Spécialisé dans la création de documentation claire et complète.
 
 ```
 ---
@@ -214,7 +333,6 @@ tools:
   - read_file
   - write_file
   - read_many_files
-  - web_search
 ---
 
 You are a technical documentation specialist.
@@ -251,11 +369,11 @@ the actual implementation. Use clear headings, bullet points, and examples.
 
 **Cas d'utilisation :**
 
-- « Créez la documentation API pour les endpoints de gestion des utilisateurs »
-- « Rédigez un README complet pour ce projet »
-- « Documentez le processus de déploiement avec des étapes de dépannage »
+- "Create API documentation for the user management endpoints"
+- "Write a comprehensive README for this project"
+- "Document the deployment process with troubleshooting steps"
 
-#### Réviseur de code
+#### Relecteur de code
 
 Axé sur la qualité du code, la sécurité et les bonnes pratiques.
 
@@ -293,15 +411,15 @@ Prioritize issues by impact and provide rationale for recommendations.
 
 **Cas d'utilisation :**
 
-- « Révisez cette implémentation d'authentification pour détecter les problèmes de sécurité »
-- « Vérifiez les implications en termes de performances de cette logique de requête de base de données »
-- « Évaluez la structure du code et suggérez des améliorations »
+- "Review this authentication implementation for security issues"
+- "Check the performance implications of this database query logic"
+- "Evaluate the code structure and suggest improvements"
 
 ### Agents spécifiques à une technologie
 
 #### Spécialiste React
 
-Optimisé pour le développement React, les hooks et les patterns de composants.
+Optimisé pour le développement React, les hooks et les modèles de composants.
 
 ```
 ---
@@ -340,9 +458,9 @@ Focus on accessibility and user experience considerations.
 
 **Cas d'utilisation :**
 
-- « Créez un composant de tableau de données réutilisable avec tri et filtrage »
-- « Implémentez un hook personnalisé pour la récupération de données API avec mise en cache »
-- « Refactorisez ce composant de classe pour utiliser les patterns React modernes »
+- "Create a reusable data table component with sorting and filtering"
+- "Implement a custom hook for API data fetching with caching"
+- "Refactor this class component to use modern React patterns"
 
 #### Expert Python
 
@@ -386,9 +504,9 @@ Focus on writing clean, maintainable Python code that follows community standard
 
 **Cas d'utilisation :**
 
-- « Créez un service FastAPI pour l'authentification des utilisateurs avec des jetons JWT »
-- « Implémentez un pipeline de traitement de données avec pandas et une gestion des erreurs »
-- « Rédigez un outil CLI utilisant argparse avec une documentation d'aide complète »
+- "Create a FastAPI service for user authentication with JWT tokens"
+- "Implement a data processing pipeline with pandas and error handling"
+- "Write a CLI tool using argparse with comprehensive help documentation"
 
 ## Bonnes pratiques
 
@@ -462,7 +580,7 @@ description: A helpful code reviewer
 
 ### Bonnes pratiques de configuration
 
-#### Directives pour les prompts système
+#### Recommandations pour le prompt système
 
 **Soyez précis sur l'expertise :**
 
@@ -500,16 +618,17 @@ Always follow these standards:
 
 ## Considérations de sécurité
 
-- **Restrictions d'outils** : Les sous-agents n'ont accès qu'à leurs outils configurés
-- **Isolation (Sandboxing)** : Toutes les exécutions d'outils suivent le même modèle de sécurité que l'utilisation directe des outils
-- **Piste d'audit** : Toutes les actions des sous-agents sont journalisées et visibles en temps réel
+- **Restrictions d'outils** : Utilisez `tools` pour limiter les outils accessibles à un sous-agent, ou `disallowedTools` pour bloquer des outils spécifiques tout en héritant du reste
+- **Mode de permission** : Les sous-agents héritent du mode de permission de leur parent par défaut. Les sessions en mode plan ne peuvent pas passer en auto-edit via des agents délégués. Les modes privilégiés (auto-edit, yolo) sont bloqués dans les dossiers non fiables.
+- **Isolation (Sandboxing)** : Toute exécution d'outil suit le même modèle de sécurité que l'utilisation directe d'outils
+- **Traçabilité** : Toutes les actions des sous-agents sont journalisées et visibles en temps réel
 - **Contrôle d'accès** : La séparation au niveau projet et utilisateur fournit des limites appropriées
 - **Informations sensibles** : Évitez d'inclure des secrets ou des identifiants dans les configurations d'agents
-- **Environnements de production** : Envisagez des agents distincts pour les environnements de production et de développement
+- **Environnements de production** : Pensez à utiliser des agents distincts pour les environnements de production et de développement
 
 ## Limites
 
-Les avertissements souples suivants s'appliquent aux configurations des sous-agents (aucune limite stricte n'est appliquée) :
+Les avertissements souples suivants s'appliquent aux configurations de sous-agents (aucune limite stricte n'est appliquée) :
 
-- **Champ de description** : Un avertissement s'affiche pour les descriptions dépassant 1 000 caractères
-- **Prompt système** : Un avertissement s'affiche pour les prompts système dépassant 10 000 caractères
+- **Champ Description** : Un avertissement est affiché pour les descriptions dépassant 1 000 caractères
+- **Prompt Système** : Un avertissement est affiché pour les prompts système dépassant 10 000 caractères
