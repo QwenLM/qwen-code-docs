@@ -1,0 +1,216 @@
+---
+title: "Qwen Code Wochenupdate: DeepSeek V4 mit Millionen-Kontext, einheitliche Hintergrundaufgaben und rückspulbare Gespräche"
+date: "2026-05-07"
+description: "Diese Woche haben wir v0.15.7 und sechs kleinere Folgeversionen veröffentlicht: DeepSeek V4 mit 1M-Kontext, ein Task-Panel für Hintergrundaufgaben, Gesprächs-Rewind, ein verbessertes Code-Review, Task-Benachrichtigungen, Kostenschätzungen und schnelleren Modellwechsel mit `/model`."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Wochenupdate: DeepSeek V4 mit Millionen-Kontext, einheitliche Hintergrundaufgaben und rückspulbare Gespräche"
+  date="2026-05-07"
+  author="Qwen Team"
+/>
+
+
+Diese Woche haben wir v0.15.7 als Hauptversion mit neuen Funktionen sowie sechs kleinere Folgeversionen veröffentlicht (v0.15.1-v0.15.6).
+
+DeepSeek V4 war diese Woche eines der meistdiskutierten Themen in der AI-Community. Während auf HN antirez' lokale Inference-Engine die Runde machte und Provider ihre Unterstützung ausbauten, haben wir Qwen Code ebenfalls angepasst: 1M Kontextfenster, 384K Ausgabelimit, reasoning effort "max" und Korrekturen für thinking blocks.
+
+Agent-Multitasking wird bei Entwicklerwerkzeugen immer wichtiger, unter anderem bei OpenAI Codex und Google AlphaEvolve. In Qwen Code ist daraus jetzt ein echtes Task-Panel geworden: Hintergrundaufgaben lassen sich zentral einsehen, bei Bedarf abbrechen und nach einer Unterbrechung wiederaufnehmen. GitHub hat außerdem gerade Leitlinien für agentbasierte PR-Reviews veröffentlicht; passend dazu haben wir `qwen review` um weitere Subcommands und Agents erweitert, damit PR-Reviews direkt im Terminal durchlaufen können.
+
+Auch im Alltag gibt es weniger Reibung: Läuft ein Gespräch in die falsche Richtung, bringt dich zweimal Esc zu einem früheren Turn zurück. Wenn ein langer Task fertig ist oder eine Freigabe braucht, melden sich Terminal und VS Code. `/stats` kann nach hinterlegten Preisen Kosten schätzen, und Modelle lassen sich jetzt mit einem Befehl wechseln.
+
+## ✨ Neue Funktionen
+
+### DeepSeek V4 tief integriert
+
+Nach dem Release von DeepSeek V4 hat Qwen Code direkt die nötige Unterstützung ergänzt. Das Kontextfenster liegt bei 1M, das Ausgabelimit bei 384K. Damit kann ein Agent große Codebasen in einem Durchlauf lesen und lange Ausgaben erzeugen. Zusätzlich wird reasoning effort "max" unterstützt, damit DeepSeek bei komplexen Aufgaben mehr Rechenaufwand investieren kann. Mehrere Probleme rund um thinking blocks wurden ebenfalls behoben, sodass DeepSeeks Denkprozess in verschiedenen Szenarien korrekt angezeigt wird.
+
+**Was du damit machen kannst:**
+
+- Große Dateien und komplette Repositories mit DeepSeek V4 bearbeiten, ohne schnell an Kontextgrenzen zu stoßen
+- Reasoning effort auf "max" setzen, wenn Architekturentscheidungen oder lange Schlussfolgerungsketten mehr Tiefe brauchen
+- DeepSeek-Reasoning nach Session-Wiederherstellung, Gesprächs-Rewind und Kontextkomprimierung behalten
+- Thinking blocks auch im anthropic-kompatiblen Modus und bei Drittanbieter-Deployments wie sglang oder vllm korrekt nutzen
+
+Siehe PR [#3693](https://github.com/QwenLM/qwen-code/pull/3693), [#3800](https://github.com/QwenLM/qwen-code/pull/3800), [#3788](https://github.com/QwenLM/qwen-code/pull/3788), [#3747](https://github.com/QwenLM/qwen-code/pull/3747), [#3729](https://github.com/QwenLM/qwen-code/pull/3729)
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN01hhbIm11HcpfrtpQSR_!!6000000000779-2-tps-1694-952.png" alt="Demo zur DeepSeek V4 Integration" class="mt-5 w-full h-auto rounded-lg" />
+
+### Hintergrundaufgaben zentral anzeigen, abbrechen und fortsetzen
+
+Bisher wurden Shell-Befehle nur in den Hintergrund verschoben. Es war schwer zu sehen, ob sie noch laufen, wo die Ausgabe landet oder wie man sie stoppt. Jetzt erscheinen background agents und Hintergrund-Shells in einer gemeinsamen Task-Ansicht mit Status, Ausgabe und Details. Wird eine Hintergrundaufgabe unterbrochen, pausiert sie automatisch und kann fortgesetzt oder abgebrochen werden.
+
+**Was du damit machen kannst:**
+
+- Lange Tasks ausführen, ohne das Gespräch zu blockieren: `npm run dev`, Tests, File-Watcher und ähnliche Befehle können im Hintergrund laufen
+- Task-Status jederzeit prüfen und steuern: Über `/tasks` oder das Task-Panel siehst du Status und Ausgabe von background shell und background agent und kannst Tasks abbrechen, die du nicht mehr brauchst
+- Nach Unterbrechungen sicher weitermachen: Ein unterbrochener Task geht nicht verloren, sondern kann fortgesetzt oder verworfen werden
+
+Siehe PR [#3642](https://github.com/QwenLM/qwen-code/pull/3642), [#3739](https://github.com/QwenLM/qwen-code/pull/3739)
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/MU8Y9nLOKak1fNUchLGZn2DDywhTssdIWwfmABy9kZw.mp4" controls />
+
+### Gespräche auf einen früheren Punkt zurücksetzen
+
+Wenn ein Gespräch früher in die falsche Richtung lief, musste man meist weiter korrigieren oder eine neue Session starten. Jetzt kannst du zweimal `Esc` drücken oder `/rewind` ausführen, einen früheren User-Turn auswählen und die Gesprächshistorie bis dorthin zurücksetzen.
+
+**Was du damit machen kannst:**
+
+- Eine falsche Richtung zurücknehmen: Zur entscheidenden Frage zurückkehren und mit einer anderen Anweisung neu starten
+- Den Kontext behalten und erneut probieren: Keine neue Session und kein Kopieren alter Hintergrundinfos nötig
+- Exploratives Entwickeln sauberer machen: Bei mehreren Implementierungswegen zum Verzweigungspunkt zurückkehren und anders weitermachen
+
+Siehe PR [#3441](https://github.com/QwenLM/qwen-code/pull/3441)
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/tVzSatcos7JspI6CGoSwRwK7XS20MayNIyPPxC_W5e4.mp4" controls />
+
+### `/review` Code-Review-Flow verbessert
+
+`/review` wurde umfassend überarbeitet. Statt 5 Agents laufen jetzt 9 Agents. Die Review-Schritte, die bisher im Prompt verteilt waren, liegen nun in 6 plattformübergreifenden CLI-Subcommands, und die Ausgabe ist strukturiertes JSON. Ein `/review <PR-Link oder Nummer>` reicht, damit die AI Code holt, Projektregeln lädt, Lint ausführt, parallel reviewt, Duplikate entfernt, CI-Status prüft und Inline-Kommentare veröffentlicht.
+
+**Was du damit machen kannst:**
+
+- PRs mit einem Befehl prüfen: `/review https://github.com/xxx/pull/123` startet den gesamten Ablauf
+- Aus 9 Rollen gleichzeitig prüfen: Neben Korrektheit und Sicherheit kommen die Perspektiven "Angreifer", "3-Uhr-Bereitschaft" und "Maintainer" dazu
+- Keine Freigabe bei roter CI: CI-Status und Self-PRs werden erkannt; bei Bedarf wird ein Approve zu einem Comment herabgestuft
+- Unsichere Hinweise bleiben aus PR-Kommentaren heraus: Low-Confidence-Funde werden nur im Terminal angezeigt
+- Doppelte Kommentare vermeiden: Bereits vorhandene Qwen-Kommentare werden erkannt
+
+Siehe PR [#3754](https://github.com/QwenLM/qwen-code/pull/3754)
+
+<img src="https://img.alicdn.com/imgextra/i1/O1CN018UR9Mw25iXOeO6fZv_!!6000000007560-2-tps-3836-2160.png" alt="Demo des verbesserten Code-Review-Flows" class="mt-5 w-full h-auto rounded-lg" />
+
+### Benachrichtigung, wenn ein Task fertig ist oder Bestätigung braucht
+
+Bisher hing die Erinnerung im Terminal vor allem am leicht zu überhörenden terminal bell. Auch in der VS-Code-Erweiterung waren Statushinweise nicht auffällig genug. Jetzt können iTerm2, Kitty und Ghostty Desktop-Benachrichtigungen anzeigen, wenn ein Task fertig ist; VS Code nutzt Tab-Punkte, Benachrichtigungen und Ton.
+
+**Was du damit machen kannst:**
+
+- Lange Tasks laufen lassen, ohne aufs Terminal zu starren
+- Berechtigungsfragen schneller bemerken, wenn die AI Tool-Freigaben oder Antworten braucht
+- In VS Code keine Chat-Nachrichten verpassen, auch wenn du gerade in anderen Dateien arbeitest
+
+Siehe PR [#3562](https://github.com/QwenLM/qwen-code/pull/3562), [#3661](https://github.com/QwenLM/qwen-code/pull/3661)
+
+<img src="https://img.alicdn.com/imgextra/i2/O1CN01sRPskV26veLq3asRx_!!6000000007724-0-tps-4288-2372.jpg" alt="Demo für Task-Benachrichtigungen" class="mt-5 w-full h-auto rounded-lg" />
+
+### `/stats` zeigt geschätzte Modellkosten
+
+Der Befehl `/stats` kann jetzt Kosten schätzen. Trage in `settings.json` unter `modelPricing` die Eingabe- und Ausgabepreise pro Million Tokens ein, und `/stats` berechnet daraus die ungefähren Kosten anhand des Token-Verbrauchs. Ohne Preis-Konfiguration werden wie bisher nur Token-Zahlen angezeigt.
+
+**Was du damit machen kannst:**
+
+- Preise für häufig genutzte Modelle einmal konfigurieren und danach automatisch Kosten sehen
+- Nach einem Modellwechsel Kosten vergleichen und das passende Modell für den Job wählen
+- Lang laufende Automatisierungen im Blick behalten und Budget-Ausreißer vermeiden
+
+Siehe PR [#3780](https://github.com/QwenLM/qwen-code/pull/3780)
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/VUZZijMaJM3sTv2CuJUF6WPJsXnUW9xeAc1sM4cBlSQ.mp4" controls />
+
+### Modelle schneller mit `/model` wechseln
+
+Bisher musste man für einen Modellwechsel den `/model`-Selector öffnen und in der Liste suchen. Jetzt reicht `/model Modellname`.
+
+**Was du damit machen kannst:**
+
+- Den Selector überspringen: zum Beispiel mit `/model qwen3.6-plus` direkt wechseln
+- Modelle schnell vergleichen: einmal mit `/model A` fragen, dann zu `/model B` wechseln und erneut fragen
+- Upstream-Modelle direkt nutzen, sobald die base URL eingerichtet ist
+
+Siehe PR [#3783](https://github.com/QwenLM/qwen-code/pull/3783)
+
+<img src="https://img.alicdn.com/imgextra/i3/O1CN01lv7QgD1wauFue1d4b_!!6000000006325-2-tps-3840-2160.png" alt="Demo zum schnellen Modellwechsel mit /model" class="mt-5 w-full h-auto rounded-lg" />
+
+## 📊 Verbesserungen
+
+- **OpenRouter nutzt jetzt Browser-Autorisierung**: Statt API-Key und Modellliste von Hand zu pflegen, startest du `/auth`, autorisierst im Browser, und Qwen Code speichert den Key sowie den Modellkatalog automatisch; `/manage-models` unterstützt Suche, Filter und Aktivierung ([#3576](https://github.com/QwenLM/qwen-code/pull/3576))
+- **Die Todo-Liste bleibt angepinnt**: Die aktuelle Aufgabenliste bleibt über dem Eingabefeld sichtbar und aktualisiert sich bei Statusänderungen, sodass du nicht im Verlauf nach dem Fortschritt suchen musst ([#3507](https://github.com/QwenLM/qwen-code/pull/3507), [#3647](https://github.com/QwenLM/qwen-code/pull/3647))
+- **Dateien werden schneller und seltener doppelt gelesen**: FileReadCache vermeidet erneutes Lesen gleicher Inhalte und stabilisiert Mehrfachrunden und Tool-Aufrufe ([#3717](https://github.com/QwenLM/qwen-code/pull/3717))
+- **Websuche läuft über MCP**: Der eingebaute `web_search` provider wurde auf MCP umgestellt; Dienste wie Bailian, Tavily oder GLM WebSearch Prime lassen sich nach Bedarf konfigurieren ([#3502](https://github.com/QwenLM/qwen-code/pull/3502))
+- **Erste Modellanfrage schneller**: Beim Start wird die Standard-API vorverbunden, sodass TCP- und TLS-Aufbau bei der ersten Anfrage teilweise wegfallen ([#3318](https://github.com/QwenLM/qwen-code/pull/3318))
+- **Parallele Tool-Aufrufe sind leichter zu erfassen**: Mehrere parallele Tools erhalten kurze semantische Labels statt nur einer Tool-Anzahl, damit schneller klar ist, was die AI gerade ausführt ([#3538](https://github.com/QwenLM/qwen-code/pull/3538))
+- **Tool-Aufrufe sind auf dem Hotpath schneller**: Weniger synchrone I/O sorgt dafür, dass lange Tasks und Tool-Ketten stabiler laufen ([#3581](https://github.com/QwenLM/qwen-code/pull/3581))
+- **Session-Titel lassen sich neu generieren**: `/rename --auto` kann unpassende automatische Titel neu erzeugen ([#3540](https://github.com/QwenLM/qwen-code/pull/3540))
+- **Foreground-Subagents erscheinen im Task-Panel**: Sie werden jetzt zusammen mit Hintergrundaufgaben in `/tasks` verwaltet ([#3768](https://github.com/QwenLM/qwen-code/pull/3768))
+- **Skills laden schneller und können pfadbasiert aktivieren**: Paralleles Laden beschleunigt den Start; Verzeichnisbedingungen können Skills automatisch aktivieren ([#3604](https://github.com/QwenLM/qwen-code/pull/3604))
+- **MCP-Serverstatus in der Statusleiste**: Du siehst sofort, ob ein MCP server online ist; Verbindungsprobleme lassen sich dadurch schneller eingrenzen ([#3741](https://github.com/QwenLM/qwen-code/pull/3741))
+- **Shell-Laufzeit klarer angezeigt**: Shell-Status zeigt Laufzeit und Timeout-Informationen ([#3512](https://github.com/QwenLM/qwen-code/pull/3512))
+- **Lange Befehle können in den Hintergrund verschoben werden**: Die AI kann bei langen Befehlen einen Hintergrundlauf vorschlagen ([#3809](https://github.com/QwenLM/qwen-code/pull/3809))
+- **VS Code unterstützt `/skills` und `/export`**: Skills-Auswahl und Session-Export sind im Companion leichter zugänglich ([#2548](https://github.com/QwenLM/qwen-code/pull/2548), [#2592](https://github.com/QwenLM/qwen-code/pull/2592))
+- **MCP-Konfiguration per CLI-Flag**: SDK- und Skript-Szenarien können MCP server config direkt übergeben, ohne Konfigurationsdateien manuell zu bearbeiten ([#1279](https://github.com/QwenLM/qwen-code/pull/1279))
+- **MCP-Discovery geht intelligenter mit Duplikaten um**: Wiederholte Discovery-Anfragen werden zusammengeführt und reduzieren Netzwerkaufwand beim Start ([#3818](https://github.com/QwenLM/qwen-code/pull/3818))
+- **Slash Commands zeigen Parameterhinweise**: Nach Completion erscheinen graue Hinweise für erwartete Parameter ([#3593](https://github.com/QwenLM/qwen-code/pull/3593))
+- **Traditionelles Chinesisch als UI-Sprache**: Wechsel über `/language ui zh-TW` ([#3569](https://github.com/QwenLM/qwen-code/pull/3569))
+- **Kopieren im VS Code Webview ist bequemer**: Der Chat-Webview unterstützt natives Rechtsklick-Kopieren ([#3477](https://github.com/QwenLM/qwen-code/pull/3477))
+- **MCP-Tool-Aufrufe in ACP vollständiger**: ACP Agent unterstützt SSE/HTTP MCP server und parallele Tool-Aufrufe ([#3574](https://github.com/QwenLM/qwen-code/pull/3574), [#3463](https://github.com/QwenLM/qwen-code/pull/3463))
+
+## 🔧 Wichtige Fixes
+
+| PR | Version | Fix | Auswirkung |
+|----|------|-----|------------|
+| [#3645](https://github.com/QwenLM/qwen-code/pull/3645) | v0.15.6 | Modellpriorität auf argv > settings > auth env vars korrigiert | Per CLI gesetzte Modelle überschreiben Konfiguration wie erwartet |
+| [#3820](https://github.com/QwenLM/qwen-code/pull/3820) | v0.15.7 | Lesen und Schreiben von Pfaden mit Sonderzeichen repariert | Dateien mit Leerzeichen oder Sonderzeichen funktionieren wieder |
+| [#3525](https://github.com/QwenLM/qwen-code/pull/3525) | v0.15.1 | Geteilten Zustand im Streaming-Tool-Parser behoben | Streaming-Ausgaben und Tool-Aufrufe geraten nicht mehr durcheinander |
+| [#3533](https://github.com/QwenLM/qwen-code/pull/3533) | v0.15.1 | Render-Schleife bei Slash Completion behoben | Slash-Eingaben frieren nicht mehr ein |
+| [#3753](https://github.com/QwenLM/qwen-code/pull/3753) | v0.15.7 | Proxy-Einstellungen wurden nicht angewendet | Proxy-Konfiguration funktioniert in Unternehmens- und Intranet-Umgebungen |
+| [#3656](https://github.com/QwenLM/qwen-code/pull/3656) | v0.15.4 | Wiederherstellung zusammengeklebter session JSONL records verbessert | Beschädigte Sitzungsprotokolle lassen sich zuverlässiger retten, ohne direkt Kontext zu verlieren |
+| [#3547](https://github.com/QwenLM/qwen-code/pull/3547) | v0.15.3 | Unnötige Rerender der History-Komponente behoben | Verlauf lässt sich flüssiger ansehen |
+| [#3600](https://github.com/QwenLM/qwen-code/pull/3600) | v0.15.4 | Parsing mehrzeiliger Shell-Befehle repariert | Mehrzeilige Befehle werden seltener falsch getrennt |
+| [#3531](https://github.com/QwenLM/qwen-code/pull/3531) | v0.15.2 | Reihenfolge erneut gesendeter historischer Prompts korrigiert | Erneut gesendete Prompts stehen wieder an der neuesten Position, sodass der weitere Kontext passt |
+| [#3544](https://github.com/QwenLM/qwen-code/pull/3544) | v0.15.2 | Kitty-Tastaturprotokoll nach SIGINT bereinigt | Nach Abbruch bleiben keine störenden Zeichen im Terminal |
+| [#3617](https://github.com/QwenLM/qwen-code/pull/3617) | v0.15.4 | Multimedia-Tool-Ergebnisformat im strikten OpenAI-kompatiblen Modus repariert | Provider mit OpenAI-Kompatibilität laufen stabiler |
+| [#3691](https://github.com/QwenLM/qwen-code/pull/3691) | v0.15.4 | Fehlende Beschreibung bei reasoning fragments mit subject behoben | Reasoning-Inhalte werden vollständiger angezeigt |
+| [#3559](https://github.com/QwenLM/qwen-code/pull/3559) | v0.15.2 | Leere `pages`-Parameter in ReadFile korrekt behandelt | Datei-Lesevorgänge schlagen nicht mehr wegen leerer Seitenparameter fehl |
+| [#3677](https://github.com/QwenLM/qwen-code/pull/3677) | v0.15.7 | MiniMax thinking tags korrekt geparst | Denkprozess wird bei MiniMax-Modellen korrekt angezeigt |
+| [#3615](https://github.com/QwenLM/qwen-code/pull/3615) | v0.15.6 | LSP-Doku, Pfadsicherheitsgrenzen und Tool-Call-Rate korrigiert | Code-Intelligence-Tools funktionieren zuverlässiger |
+| [#3618](https://github.com/QwenLM/qwen-code/pull/3618) | v0.15.6 | Slash Command Enter in VS Code füllt nur noch das Eingabefeld | Parameter können ergänzt werden, ohne versehentlich abzusenden |
+| [#3752](https://github.com/QwenLM/qwen-code/pull/3752) | v0.15.6 | Persistenz hinzugefügter Verzeichnisse repariert | Arbeitsverzeichnisse bleiben für spätere Nutzung gespeichert |
+
+## 🎈 Weitere Änderungen
+
+- Auto-memory dream tasks können manuell abgebrochen werden; Hintergrundarbeit an Memories hängt dadurch nicht mehr fest ([#3836](https://github.com/QwenLM/qwen-code/pull/3836))
+- Auto-memory rollback blockiert die Hauptanfrage nicht mehr, sodass Gespräche während der Hintergrundverarbeitung flüssiger bleiben ([#3814](https://github.com/QwenLM/qwen-code/pull/3814))
+- Doppelte API-Fehlermeldungen im non-interactive mode entfernt; Fehlermeldungen sind dadurch sauberer ([#3749](https://github.com/QwenLM/qwen-code/pull/3749))
+- VS Code: Slash command completion nach dem Absenden einer Nachricht repariert ([#3609](https://github.com/QwenLM/qwen-code/pull/3609))
+- `qwen auth` Menü enthält jetzt eine API-Key-Option ([#3624](https://github.com/QwenLM/qwen-code/pull/3624))
+- Fehler im Dispatch-Pfad der Slash-Command-Queue behoben ([#3523](https://github.com/QwenLM/qwen-code/pull/3523))
+- i18n-Key-Unterschiede zwischen chinesischen und englischen Sprachdateien korrigiert ([#3534](https://github.com/QwenLM/qwen-code/pull/3534))
+- OAuth2-Fehlerbehandlung verbessert, um uncaught error events zu vermeiden ([#3481](https://github.com/QwenLM/qwen-code/pull/3481))
+- Lokales `/review` respektiert jetzt `/language` Ausgabe-Einstellungen ([#3611](https://github.com/QwenLM/qwen-code/pull/3611))
+- OpenAI converter ist zustandsloser geworden und reduziert Restzustände ([#3550](https://github.com/QwenLM/qwen-code/pull/3550))
+- Telemetry-Export nutzt sichere JSON-Serialisierung ([#3630](https://github.com/QwenLM/qwen-code/pull/3630))
+- Java SDK kann beim Start des CLI-Prozesses eigene Umgebungsvariablen übergeben ([#3543](https://github.com/QwenLM/qwen-code/pull/3543))
+- TypeScript SDK v0.1.7 mit CLI v0.15.3 veröffentlicht ([#3688](https://github.com/QwenLM/qwen-code/pull/3688))
+- `.gitignore` enthält jetzt `.codex`, um lokale Konfiguration nicht versehentlich zu committen ([#3665](https://github.com/QwenLM/qwen-code/pull/3665))
+- Tool Token Usage Tracking entfernt, um störende interne Nutzungsmetriken zu reduzieren ([#3727](https://github.com/QwenLM/qwen-code/pull/3727))
+- Qwen-Code-Entwicklungsdoku ergänzt skills, agents und AGENTS.md Workflows ([#3575](https://github.com/QwenLM/qwen-code/pull/3575))
+- Release workflow erstellt stabile merge-back PRs ([#3764](https://github.com/QwenLM/qwen-code/pull/3764))
+- SDK release auto-merge nutzt squash merge für klarere Historie ([#3690](https://github.com/QwenLM/qwen-code/pull/3690))
+- PR-Template-Hinweise zur Validierung aktualisiert ([#3522](https://github.com/QwenLM/qwen-code/pull/3522))
+- Telemetry-Dokumentation ergänzt Alibaba Cloud Console Einstieg ([#3498](https://github.com/QwenLM/qwen-code/pull/3498))
+
+## 👋 Neue Contributors
+
+- [**@alex-musick**](https://github.com/alex-musick) — schneller Modellwechsel mit `/model` ([#3783](https://github.com/QwenLM/qwen-code/pull/3783))
+- [**@qiuqiuwen25**](https://github.com/qiuqiuwen25) — Lesen und Schreiben von Pfaden mit Sonderzeichen repariert ([#3820](https://github.com/QwenLM/qwen-code/pull/3820))
+- [**@umut-polat**](https://github.com/umut-polat) — doppelte API-Fehlerausgabe im non-interactive mode behoben ([#3749](https://github.com/QwenLM/qwen-code/pull/3749))
+- [**@cyphercodes**](https://github.com/cyphercodes) — Persistenz hinzugefügter Verzeichnisse repariert ([#3752](https://github.com/QwenLM/qwen-code/pull/3752))
+- [**@eliird**](https://github.com/eliird) — MCP-Server-Konfiguration per CLI unterstützt ([#1279](https://github.com/QwenLM/qwen-code/pull/1279))
+- [**@jordimas**](https://github.com/jordimas) — Katalanische Sprache hinzugefügt ([#3643](https://github.com/QwenLM/qwen-code/pull/3643))
+- [**@mohitsoni48**](https://github.com/mohitsoni48) — Tool-Ergebnisformat im strikten OpenAI-kompatiblen Modus repariert ([#3617](https://github.com/QwenLM/qwen-code/pull/3617))
+- [**@Jerry2003826**](https://github.com/Jerry2003826) — Parsing mehrzeiliger Shell-Befehle repariert ([#3600](https://github.com/QwenLM/qwen-code/pull/3600))
+- [**@MikeWang0316tw**](https://github.com/MikeWang0316tw) — Traditionelles Chinesisch als UI-Sprache hinzugefügt ([#3569](https://github.com/QwenLM/qwen-code/pull/3569))
+- [**@lawrence3699**](https://github.com/lawrence3699) — Java SDK unterstützt eigene Umgebungsvariablen ([#3543](https://github.com/QwenLM/qwen-code/pull/3543))
+- [**@fyc09**](https://github.com/fyc09) — DeepSeek reasoning content bei Session-Wiederherstellung erhalten ([#3590](https://github.com/QwenLM/qwen-code/pull/3590), [#3737](https://github.com/QwenLM/qwen-code/pull/3737))
+
+<Callout type="info">
+  **Upgrade**: Führe `npm i @qwen-code/qwen-code@latest -g` aus, um auf die neueste Version zu aktualisieren.
+</Callout>
+
+Bei Fragen oder Vorschlägen nutze gerne [GitHub Issues](https://github.com/QwenLM/qwen-code/issues).
