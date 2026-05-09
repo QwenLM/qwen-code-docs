@@ -1,7 +1,7 @@
 ---
-title: "Qwen Code 周报：后台任务统一查看取消、对话可随时回退、任务完成主动提醒"
+title: "Qwen Code 周报：DeepSeek V4 支持百万上下文、后台任务统一管理、对话可随时回退"
 date: "2026-05-07"
-description: "本周发布 v0.15.1 ~ v0.15.6 六个正式版本，新增后台任务面板、对话回退、系统通知、OpenRouter OAuth、MCP 命令行管理、Python SDK 等能力。"
+description: "本周发布 v0.15.7 和 5 个迭代版本，新增 DeepSeek V4 百万上下文、后台任务面板、对话回退、代码审查升级、任务通知、费用预估和一条命令切换模型等能力。"
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 ---
@@ -10,31 +10,50 @@ import { BlogPostHeader } from '@/components/blog-post-header'
 import { Callout } from 'nextra/components'
 
 <BlogPostHeader
-  title="Qwen Code 周报：后台任务统一查看取消、对话可随时回退、任务完成主动提醒"
+  title="Qwen Code 周报：DeepSeek V4 支持百万上下文、后台任务统一管理、对话可随时回退"
   date="2026-05-07"
   author="Qwen Team"
 />
 
 
-最近两周我们发布了 **v0.15.1** ~ **v0.15.6** 六个正式版本。
+本周我们发布了 v0.15.7 主要功能版本和 5 个迭代版本（v0.15.2–v0.15.6）。
 
-这次更新，主要解决了几个使用中容易打断节奏的问题：后台任务跑起来后，可以在统一面板里看查状态和随时取消；想换一种实现方案时，可以回到前面的节点重新开始，不用重开会话；任务跑完或需要确认时，终端和 VS Code 也会主动提醒你。除此之外，我们还增加了 OpenRouter 浏览器授权、MCP 命令行配置管理和 Python SDK，让模型接入、工具配置和自动化集成都更顺手。
+DeepSeek V4 是本周 AI 社区最热的话题之一——从 HN 上 antirez 的本地推理引擎到各家竞速适配，我们第一时间完成了全面支持：1M 上下文窗口、384K 输出上限、reasoning effort "max" 等级，thinking blocks 兼容问题也已修复。
+
+Agent 多任务是整个行业的共识方向（OpenAI Codex、Google AlphaEvolve 都在往这个方向走），我们把后台 Agent 系统从基础设施搭到了完整的任务面板——后台任务可以统一查看状态，随时取消；中断后自动暂停，也可以恢复继续。GitHub 刚发布了 Agent PR 审查指南，`qwen review` 同步新增了多个子命令和 agent，直接在终端里做代码审查。
+
+另外，我们还围绕对话交互、效率提升继续完善：对话方向走偏时，双击 Esc 就能回到前面轮次重来；长任务跑完或需要确认权限时，终端和 VS Code 会主动提醒你；`/stats` 在配置价格后可以直接估算费用；模型切换方式也更简单了。
 
 ## ✨ 新增特性
 
-### 后台任务可以统一查看和取消
+### DeepSeek V4 深度支持
 
-之前后台 shell 命令只是被系统放到后台运行，用户很难知道它是否还在跑、输出在哪里、该怎么停止。现在 background agent 和后台 shell 都会进入统一的后台任务视图，可以查看状态、输出和详情，也可以直接取消。
+DeepSeek V4 发布后，Qwen Code 第一时间完成了全面适配。上下文窗口设为 1M，输出上限 384K——这意味着 Agent 可以一次性读取大型代码库并生成超长输出。同时支持 reasoning effort "max" 等级，让 DeepSeek 在复杂推理任务上全力以赴。多个 thinking blocks 兼容问题也已修复，确保 DeepSeek 的思维过程在各种使用场景下完整显示。
 
 **你能用它做什么：**
 
-- 跑长任务不用卡住对话：`npm run dev`、测试、文件监听等命令可以后台运行，当前对话继续推进
-- 随时查看任务状态：通过 `/tasks` 或任务面板查看后台 shell、background agent 的运行状态和输出路径
-- 让 AI 正确停止后台任务：AI 可以用 `task_stop` 停止后台 shell，不用再找进程号或手动终止
+- 用 DeepSeek V4 处理超大文件和整个代码仓库，1M 上下文不再担心截断
+- 设置 reasoning effort "max"，让 DeepSeek 对复杂架构设计、长链推理全力思考
+- 恢复会话、对话回退、上下文压缩后 DeepSeek 的思维链依然完整保留
+- anthropic 兼容模式下 thinking blocks 正确注入，第三方部署（sglang/vllm）也能正常使用
 
-详见 PR [#3642](https://github.com/QwenLM/qwen-code/pull/3642)、[#3720](https://github.com/QwenLM/qwen-code/pull/3720)
+详见 PR [#3693](https://github.com/QwenLM/qwen-code/pull/3693)、[#3800](https://github.com/QwenLM/qwen-code/pull/3800)、[#3788](https://github.com/QwenLM/qwen-code/pull/3788)、[#3747](https://github.com/QwenLM/qwen-code/pull/3747)、[#3729](https://github.com/QwenLM/qwen-code/pull/3729)
 
-{/* 添加后台任务面板演示 */}
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN01hhbIm11HcpfrtpQSR_!!6000000000779-2-tps-1694-952.png" alt="DeepSeek V4 深度支持演示" class="mt-5 w-full h-auto rounded-lg" />
+
+### 后台任务统一查看、取消和恢复
+
+之前后台 shell 命令只是被系统放到后台运行，用户很难知道它是否还在跑、输出在哪里、该怎么停止。现在 background agent 和后台 shell 都会进入统一的后台任务视图，可以查看状态、输出和详情。后台任务被中断后会自动暂停，用户可以恢复或取消。
+
+**你能用它做什么：**
+
+- 跑长任务不卡对话：`npm run dev`、测试、文件监听等命令可以后台运行，当前对话继续推进
+- 随时查看任务状态并控制：通过 `/tasks` 或任务面板查看后台 shell、background agent 的运行状态和输出路径，也可以取消正在运行的任务
+- 中断任务安全恢复：后台任务意外中断后不会丢失，可以恢复继续或放弃
+
+详见 PR [#3642](https://github.com/QwenLM/qwen-code/pull/3642)、[#3739](https://github.com/QwenLM/qwen-code/pull/3739)
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/MU8Y9nLOKak1fNUchLGZn2DDywhTssdIWwfmABy9kZw.mp4" controls />
 
 ### 对话可以回退到前面重新开始
 
@@ -48,7 +67,23 @@ import { Callout } from 'nextra/components'
 
 详见 PR [#3441](https://github.com/QwenLM/qwen-code/pull/3441)
 
-{/* 添加对话回退演示 */}
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/tVzSatcos7JspI6CGoSwRwK7XS20MayNIyPPxC_W5e4.mp4" controls />
+
+### `/review` 代码审查流程升级
+
+`/review` 这次做了一轮完整升级：从 5 个 agent 扩展到 9 个 agent，并把原来分散在 prompt 里的审查步骤收进 6 个跨平台 CLI 子命令，输出也改成结构化 JSON。用户只需要输入 `/review <PR 链接或编号>`，AI 自动完成拉代码、加载项目规则、跑 lint、9 角色并行审查、自动去重、检查 CI 状态、发布内联评论全流程。
+
+**你能用它做什么：**
+
+- 一键审查 PR：输入 `/review https://github.com/xxx/pull/123`，自动完成从拉代码到写评论的全流程
+- 9 角色同时审查：在正确性和安全性之外，新增“攻击者、深夜值班、维护者”等视角，不漏盲区
+- CI 不通过不会 approve：自动检测 CI 状态和是否自 PR，不通过时自动降级为 comment
+- 不确定的建议不在 PR 评论：低置信度问题只在终端提示，不在 PR 里留言
+- 已有评论自动去重：识别已有 Qwen 评论，不重复提交相同建议
+
+详见 PR [#3754](https://github.com/QwenLM/qwen-code/pull/3754)
+
+<img src="https://img.alicdn.com/imgextra/i1/O1CN018UR9Mw25iXOeO6fZv_!!6000000007560-2-tps-3836-2160.png" alt="代码审查流程升级演示" class="mt-5 w-full h-auto rounded-lg" />
 
 ### 任务完成或需要确认时主动提醒你
 
@@ -56,81 +91,92 @@ import { Callout } from 'nextra/components'
 
 **你能用它做什么：**
 
-- 长任务完成后不用一直盯着终端：任务跑完会通过系统通知提醒你回来处理结果
+- 长任务不用一直盯着终端：可以先去处理其它事情，任务跑完系统会通知和提醒你
 - 等待权限确认时及时发现：AI 需要你批准工具调用或回答问题时，更容易被看到
 - 在 VS Code 多标签工作时不漏消息：切到其他文件后，聊天标签页会显示状态提示
 
 详见 PR [#3562](https://github.com/QwenLM/qwen-code/pull/3562)、[#3661](https://github.com/QwenLM/qwen-code/pull/3661)
 
-{/* 添加任务通知演示 */}
+<img src="https://img.alicdn.com/imgextra/i2/O1CN01sRPskV26veLq3asRx_!!6000000007724-0-tps-4288-2372.jpg" alt="任务完成或需要确认时主动提醒演示" class="mt-5 w-full h-auto rounded-lg" />
 
-### 用 OpenRouter 登录并选择模型
+### `/stats` 显示模型费用预估
 
-之前使用 OpenRouter 需要手动配置 API Key 和模型列表，现在可以在 `/auth` 中走浏览器授权流程，授权后自动保存 API Key，并通过 `/manage-models` 搜索、筛选和启用 OpenRouter 模型。
-
-**你能用它做什么：**
-
-- 快速接入更多模型：不用手动复制 Key 和写配置，按浏览器授权流程完成接入
-- 只保留常用模型：在模型目录里搜索、筛选免费或视觉模型，保存自己要用的模型集合
-- 降低配置出错概率：授权、模型拉取、默认模型选择都在交互流程里完成
-
-详见 PR [#3576](https://github.com/QwenLM/qwen-code/pull/3576)
-
-{/* 添加 OpenRouter 授权和模型管理演示 */}
-
-### 用 Python SDK 把 Qwen Code 接进脚本和服务
-
-之前 SDK 主要面向 TypeScript 场景，现在新增 Python SDK，实现了异步和同步调用、进程传输、控制请求和权限处理，适合 Python 项目把 Qwen Code 接入自动化流程。
+现在 `/stats` 命令新增了费用预估功能。你只需要在 `settings.json` 里配置 `modelPricing`（给模型设好输入/输出每百万 Token 的价格），`/stats` 就会自动根据 Token 消耗计算出大概费用，不用自己去算。不配置的话和之前一样只显示 Token 数。
 
 **你能用它做什么：**
 
-- 在 Python 脚本里调用 Qwen Code：用 `query` 或 `query_sync` 发起任务，不必从命令行拼接流程
-- 接入已有自动化系统：在测试、检查、内部工具里复用 Qwen Code 的 agent 能力
-- 处理权限与控制请求：SDK 层支持权限处理和控制通道，便于做更完整的集成
+- 配置常用模型价格：在 `settings.json` 里配置好价格，之后 `/stats` 自动算费用
+- 对比不同模型开销：切换模型后看费用差异，找到性价比最高的方案
+- 控制长期运行成本：自动化流程里定期检查费用，防止超支
 
-详见 PR [#3494](https://github.com/QwenLM/qwen-code/pull/3494)
+详见 PR [#3780](https://github.com/QwenLM/qwen-code/pull/3780)
 
-{/* 添加 Python SDK 调用演示 */}
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/VUZZijMaJM3sTv2CuJUF6WPJsXnUW9xeAc1sM4cBlSQ.mp4" controls />
+
+### 对话里一条命令直接切换模型
+
+之前切模型要先 `/model` 打开选择器再翻找，现在直接输入 `/model 模型名` 就切好了。
+
+**你能用它做什么：**
+
+- 不用翻选择器：输入模型名，如 `/model qwen3.6-plus` 直接切，省掉在选择器翻找的步骤
+- 快速对比模型：`/model A` 问一次，再 `/model B` 重新问，多个模型对比效果
+- 上游模型即时用：base URL 配好了但没在本地注册的模型也能直接切过去
+
+详见 PR [#3783](https://github.com/QwenLM/qwen-code/pull/3783)
+
+<img src="https://img.alicdn.com/imgextra/i3/O1CN01lv7QgD1wauFue1d4b_!!6000000006325-2-tps-3840-2160.png" alt="一条命令切换模型演示" class="mt-5 w-full h-auto rounded-lg" />
 
 ## 📊 优化改进
 
+- **OpenRouter 接入改为浏览器一键授权**：之前需要手动配置 API Key 和模型列表，现在走 `/auth` 浏览器授权流程，自动保存 Key 并拉取模型目录；新增 `/manage-models` 支持搜索、筛选和启用模型（[#3576](https://github.com/QwenLM/qwen-code/pull/3576)）
 - **Todo 列表固定显示**：最新任务列表会固定在输入框上方，任务状态变化时同步更新，不用向上翻历史记录找进度（[#3507](https://github.com/QwenLM/qwen-code/pull/3507)、[#3647](https://github.com/QwenLM/qwen-code/pull/3647)）
+- **文件读取更快来回不重复读**：新增文件读取缓存（FileReadCache），相同内容不再重复读取，多轮对话和工具调用响应更稳定（[#3717](https://github.com/QwenLM/qwen-code/pull/3717)）
 - **网页搜索改为通过 MCP 接入**：内置 `web_search` provider 已迁移为 MCP-based 方案，你可以按需要配置 Bailian、Tavily、GLM WebSearch Prime 等搜索服务（[#3502](https://github.com/QwenLM/qwen-code/pull/3502)）
-- **会话标题可手动重新生成**：自动标题能力增加 `/rename --auto`，标题不准确时可以让 fast model 重新生成（[#3540](https://github.com/QwenLM/qwen-code/pull/3540)）
 - **首次模型请求更快**：启动时提前预连接默认 API 端点，首个请求可减少一部分 TCP 和 TLS 建连耗时（[#3318](https://github.com/QwenLM/qwen-code/pull/3318)）
 - **工具批量调用更容易读懂**：多个工具并行执行后会生成简短语义标签，不只显示机械的工具数量，方便快速理解 AI 这一批操作在做什么（[#3538](https://github.com/QwenLM/qwen-code/pull/3538)）
 - **工具调用热路径更快**：运行时同步 I/O 减少，工具调用链路更轻，长任务和多工具调用时响应更稳定（[#3581](https://github.com/QwenLM/qwen-code/pull/3581)）
-- **VS Code 支持 `/skills` 和 `/export`**：在 VS Code Companion 中可以更方便地打开 skills 选择器，也可以导出当前会话（[#2548](https://github.com/QwenLM/qwen-code/pull/2548)、[#2592](https://github.com/QwenLM/qwen-code/pull/2592)）
+- **会话标题可手动重新生成**：自动标题能力增加 `/rename --auto`，标题不准确时可以让 fast model 重新生成（[#3540](https://github.com/QwenLM/qwen-code/pull/3540)）
+- **前台 Subagent 也进入统一任务面板**：之前只有后台任务可见，现在前台 subagent 也在 /tasks 面板里统一管理（[#3768](https://github.com/QwenLM/qwen-code/pull/3768)）
+- **Skill 加载更快、支持路径条件激活**：多个 skill 并行加载，启动更快；支持按目录条件自动激活，不用每次都手动指定（[#3604](https://github.com/QwenLM/qwen-code/pull/3604)）
+- **底部状态栏显示 MCP 服务健康状态**：一眼看出 MCP server 是否在线，连接异常时更容易排查（[#3741](https://github.com/QwenLM/qwen-code/pull/3741)）
 - **Shell 执行时间显示更清楚**：shell 状态同时展示已运行时间和超时信息，长命令执行时更容易判断进度（[#3512](https://github.com/QwenLM/qwen-code/pull/3512)）
-- **ACP 模式下 MCP 工具调用更完整**：ACP Agent 支持 SSE/HTTP MCP server，并能并发执行工具调用，外部工具接入更稳（[#3574](https://github.com/QwenLM/qwen-code/pull/3574)、[#3463](https://github.com/QwenLM/qwen-code/pull/3463)）
+- **长命令运行提示可转后台**：AI 检测到耗时命令时会主动建议转后台运行，避免卡住当前对话（[#3809](https://github.com/QwenLM/qwen-code/pull/3809)）
+- **VS Code 支持 `/skills` 和 `/export`**：在 VS Code Companion 中可以更方便地打开 skills 选择器，也可以导出当前会话（[#2548](https://github.com/QwenLM/qwen-code/pull/2548)、[#2592](https://github.com/QwenLM/qwen-code/pull/2592)）
 - **MCP 配置支持命令行传入**：SDK 和脚本化场景可以通过 CLI flag 传入 MCP server 配置，不用再手动编辑配置文件（[#1279](https://github.com/QwenLM/qwen-code/pull/1279)）
+- **MCP 服务重复探测更智能**：合并重复的 MCP server 发现请求，减少启动时的网络开销（[#3818](https://github.com/QwenLM/qwen-code/pull/3818)）
 - **Slash 命令显示参数提示**：命令补全后会用灰色提示展示参数格式，写自定义命令或 skill 时更容易告诉用户下一步该输入什么（[#3593](https://github.com/QwenLM/qwen-code/pull/3593)）
 - **新增繁体中文界面语言**：现在可以通过 `/language ui zh-TW` 选择繁体中文界面（[#3569](https://github.com/QwenLM/qwen-code/pull/3569)）
 - **VS Code Webview 复制更顺手**：聊天 Webview 增加原生右键复制操作，不用绕到其他方式复制内容（[#3477](https://github.com/QwenLM/qwen-code/pull/3477)）
+- **ACP 模式下 MCP 工具调用更完整**：ACP Agent 支持 SSE/HTTP MCP server，并能并发执行工具调用，外部工具接入更稳（[#3574](https://github.com/QwenLM/qwen-code/pull/3574)、[#3463](https://github.com/QwenLM/qwen-code/pull/3463)）
 
 ## 🔧 重要修复
 
 | PR | 版本 | 修复内容 | 对你的影响 |
 |----|------|----------|-----------|
 | [#3645](https://github.com/QwenLM/qwen-code/pull/3645) | v0.15.6 | 修正模型选择优先级为 argv > settings > auth env vars | 命令行指定模型时会按预期覆盖配置，不会被环境变量意外覆盖 |
+| [#3820](https://github.com/QwenLM/qwen-code/pull/3820) | v0.15.7 | 修复含特殊字符文件路径的读写 | 路径带空格或特殊符号的文件不再报错 |
 | [#3525](https://github.com/QwenLM/qwen-code/pull/3525) | v0.15.1 | 修复流式工具调用解析器跨流共享状态 | 多轮流式输出和工具调用不再因为状态串扰而混乱 |
 | [#3533](https://github.com/QwenLM/qwen-code/pull/3533) | v0.15.1 | 修复 slash completion 渲染循环 | 输入 slash 命令时不再因为补全循环导致界面卡住 |
-| [#3547](https://github.com/QwenLM/qwen-code/pull/3547) | v0.15.3 | 修复历史记录组件不必要的重复渲染 | 回看历史对话时更流畅，不容易卡顿 |
-| [#3544](https://github.com/QwenLM/qwen-code/pull/3544) | v0.15.2 | 修复 Kitty 键盘协议在 SIGINT 后残留乱码 | 中断命令后终端不再出现异常按键字符 |
+| [#3753](https://github.com/QwenLM/qwen-code/pull/3753) | v0.15.7 | 修复代理设置不生效 | 企业或内网环境下代理配置能正常工作 |
 | [#3656](https://github.com/QwenLM/qwen-code/pull/3656) | v0.15.4 | 修复 session JSONL 中粘连记录的恢复 | 会话记录出现异常拼接时更容易恢复，不会直接丢失上下文 |
-| [#3747](https://github.com/QwenLM/qwen-code/pull/3747) | v0.15.6 | 修复 DeepSeek reasoning 内容在所有助手回合中的回放 | DeepSeek 模型的推理内容显示更完整 |
-| [#3737](https://github.com/QwenLM/qwen-code/pull/3737) | v0.15.6 | 保留 DeepSeek reasoning 内容的回退、压缩和合并路径 | 使用 DeepSeek 时，会话回退和压缩后不再丢失推理内容 |
+| [#3547](https://github.com/QwenLM/qwen-code/pull/3547) | v0.15.3 | 修复历史记录组件不必要的重复渲染 | 回看历史对话时更流畅，不容易卡顿 |
 | [#3600](https://github.com/QwenLM/qwen-code/pull/3600) | v0.15.4 | 修复 shell 命令换行续写解析 | 多行 shell 命令更不容易被错误拆分 |
-| [#3691](https://github.com/QwenLM/qwen-code/pull/3691) | v0.15.4 | 修复带 subject 的思考片段描述丢失 | 可以看到更完整的 reasoning 内容 |
 | [#3531](https://github.com/QwenLM/qwen-code/pull/3531) | v0.15.2 | 修复重新提交的历史提示词排序问题 | 重新发送的提示词会出现在最新位置，后续上下文更符合预期 |
+| [#3544](https://github.com/QwenLM/qwen-code/pull/3544) | v0.15.2 | 修复 Kitty 键盘协议在 SIGINT 后残留乱码 | 中断命令后终端不再出现异常按键字符 |
 | [#3617](https://github.com/QwenLM/qwen-code/pull/3617) | v0.15.4 | 修复严格 OpenAI 兼容模式下多媒体工具结果格式 | 使用 OpenAI 兼容 provider 时，包含媒体的工具结果更稳定 |
+| [#3691](https://github.com/QwenLM/qwen-code/pull/3691) | v0.15.4 | 修复带 subject 的思考片段描述丢失 | 可以看到更完整的 reasoning 内容 |
 | [#3559](https://github.com/QwenLM/qwen-code/pull/3559) | v0.15.2 | 修复 ReadFile `pages` 参数为空时的处理 | 读取文件时不会因为空页码参数误判失败 |
+| [#3677](https://github.com/QwenLM/qwen-code/pull/3677) | v0.15.7 | 修复 MiniMax 思考标签解析 | 使用 MiniMax 模型时思考过程正常显示 |
 | [#3615](https://github.com/QwenLM/qwen-code/pull/3615) | v0.15.6 | 修复 LSP 文档、路径安全限制和工具调用率 | 代码智能相关工具更容易在安全路径下正常工作 |
 | [#3618](https://github.com/QwenLM/qwen-code/pull/3618) | v0.15.6 | VS Code 中 slash command 回车只填入输入框，不再自动提交 | 选中命令后还能继续补参数，不会误发空命令 |
 | [#3752](https://github.com/QwenLM/qwen-code/pull/3752) | v0.15.6 | 修复目录添加记录持久化 | 添加过的工作目录会被正确保存，下次使用不用重新添加 |
 
 ## 🎈 其他改进
 
+- Auto-memory dream 任务支持手动取消，后台整理记忆不再无法中断（[#3836](https://github.com/QwenLM/qwen-code/pull/3836)）
+- 自动记忆回退不再阻塞主请求，后台整理记忆时对话更流畅（[#3814](https://github.com/QwenLM/qwen-code/pull/3814)）
+- 修复非交互模式下 API 报错信息重复打印，报错内容更干净（[#3749](https://github.com/QwenLM/qwen-code/pull/3749)）
 - VS Code 修复 slash command completion 在消息提交后不触发的问题（[#3609](https://github.com/QwenLM/qwen-code/pull/3609)）
 - `qwen auth` 交互菜单补充 API Key 选项（[#3624](https://github.com/QwenLM/qwen-code/pull/3624)）
 - 修复斜杠命令队列分发路径错误（[#3523](https://github.com/QwenLM/qwen-code/pull/3523)）
@@ -138,7 +184,6 @@ import { Callout } from 'nextra/components'
 - 修复 OAuth2 错误处理，防止未捕获的 error 事件（[#3481](https://github.com/QwenLM/qwen-code/pull/3481)）
 - `/review` 本地审查现在尊重 `/language` 输出设置（[#3611](https://github.com/QwenLM/qwen-code/pull/3611)）
 - OpenAI 转换器无状态化，减少状态残留风险（[#3550](https://github.com/QwenLM/qwen-code/pull/3550)）
-- 更新 DeepSeek V4 上下文和输出 Token 限制设置（[#3693](https://github.com/QwenLM/qwen-code/pull/3693)）
 - Telemetry 导出使用安全 JSON 序列化，避免循环引用崩溃（[#3630](https://github.com/QwenLM/qwen-code/pull/3630)）
 - Java SDK 启动 CLI 进程时支持传入自定义环境变量（[#3543](https://github.com/QwenLM/qwen-code/pull/3543)）
 - TypeScript SDK 发布 v0.1.7，绑定 CLI v0.15.3（[#3688](https://github.com/QwenLM/qwen-code/pull/3688)）
@@ -152,6 +197,9 @@ import { Callout } from 'nextra/components'
 
 ## 👋 欢迎新贡献者
 
+- [**@alex-musick**](https://github.com/alex-musick) — 对话里一条命令直接切换模型（[#3783](https://github.com/QwenLM/qwen-code/pull/3783)）
+- [**@qiuqiuwen25**](https://github.com/qiuqiuwen25) — 修复含特殊字符文件路径的读写（[#3820](https://github.com/QwenLM/qwen-code/pull/3820)）
+- [**@umut-polat**](https://github.com/umut-polat) — 修复非交互模式下 API 报错重复打印（[#3749](https://github.com/QwenLM/qwen-code/pull/3749)）
 - [**@cyphercodes**](https://github.com/cyphercodes) — 修复目录添加记录持久化（[#3752](https://github.com/QwenLM/qwen-code/pull/3752)）
 - [**@eliird**](https://github.com/eliird) — 支持通过 CLI 传入 MCP server 配置（[#1279](https://github.com/QwenLM/qwen-code/pull/1279)）
 - [**@jordimas**](https://github.com/jordimas) — 新增加泰罗尼亚语支持（[#3643](https://github.com/QwenLM/qwen-code/pull/3643)）
