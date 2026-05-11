@@ -1,0 +1,216 @@
+---
+title: "Qwen Code 週報：DeepSeek V4 の 100 万コンテキスト対応、バックグラウンドタスクの一元管理、会話の巻き戻し"
+date: "2026-05-07"
+description: "今週は v0.15.7 と 6 つの更新版をリリースしました。DeepSeek V4 の 100 万コンテキスト、バックグラウンドタスクパネル、会話の巻き戻し、コードレビュー改善、タスク通知、費用見積もり、`/model` による素早いモデル切り替えを追加しています。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：DeepSeek V4 の 100 万コンテキスト対応、バックグラウンドタスクの一元管理、会話の巻き戻し"
+  date="2026-05-07"
+  author="Qwen Team"
+/>
+
+
+今週は、主要機能版の v0.15.7 に加えて、6 つの更新版（v0.15.1-v0.15.6）をリリースしました。
+
+DeepSeek V4 は今週、AI コミュニティで大きな話題になりました。HN では antirez のローカル推論エンジンが注目され、各社も対応を急いでいます。Qwen Code でも、1M コンテキストウィンドウ、384K 出力上限、reasoning effort "max"、thinking blocks の互換性修正をまとめて追加しました。
+
+Agent のマルチタスク化は、OpenAI Codex や Google AlphaEvolve でも見られるように、開発者ツール全体の流れになりつつあります。Qwen Code では、バックグラウンド Agent の仕組みをタスクパネルとして使える形にしました。実行中のタスクを一覧で確認し、不要ならキャンセルでき、中断されたタスクは後から再開できます。GitHub も Agent による PR review のガイドを公開したばかりです。Qwen Code でも `qwen review` のサブコマンドと agent を増やし、PR レビューをターミナルだけで一通り進められるようにしています。
+
+日常的な操作も少しずつ軽くしています。会話が意図しない方向へ進んだら、Esc を 2 回押して前のターンに戻れます。長いタスクが終わったときや権限確認が必要なときは、Terminal と VS Code が通知します。`/stats` は価格設定後に費用を見積もれるようになり、モデル切り替えも 1 コマンドで済むようになりました。
+
+## ✨ 新機能
+
+### DeepSeek V4 を本格サポート
+
+DeepSeek V4 のリリース後、Qwen Code はすぐに全面対応しました。コンテキストウィンドウは 1M、出力上限は 384K です。これにより、Agent は大きなコードベースを一度に読み込み、長い出力を生成できます。reasoning effort "max" もサポートし、複雑な推論タスクで DeepSeek により多くの計算を使わせることができます。複数の thinking blocks 互換性問題も修正され、DeepSeek の思考過程がさまざまな場面で正しく表示されます。
+
+**できること：**
+
+- DeepSeek V4 で巨大ファイルやリポジトリ全体を扱い、コンテキスト不足による切り捨てを避けやすくする
+- reasoning effort を "max" にして、設計や長い推論が必要なタスクに使う
+- セッション復元、会話の巻き戻し、コンテキスト圧縮の後も DeepSeek の reasoning を保持する
+- anthropic 互換モードや sglang/vllm などのサードパーティデプロイでも thinking blocks を正しく扱う
+
+詳しくは PR [#3693](https://github.com/QwenLM/qwen-code/pull/3693)、[#3800](https://github.com/QwenLM/qwen-code/pull/3800)、[#3788](https://github.com/QwenLM/qwen-code/pull/3788)、[#3747](https://github.com/QwenLM/qwen-code/pull/3747)、[#3729](https://github.com/QwenLM/qwen-code/pull/3729)
+
+<img src="https://gw.alicdn.com/imgextra/i3/O1CN01hhbIm11HcpfrtpQSR_!!6000000000779-2-tps-1694-952.png" alt="DeepSeek V4 サポートのデモ" class="mt-5 w-full h-auto rounded-lg" />
+
+### バックグラウンドタスクを一元表示、キャンセル、再開
+
+これまでバックグラウンド shell コマンドは裏で実行されるだけで、まだ動いているのか、出力がどこにあるのか、どう止めるのかが分かりにくい状態でした。今は background agent と background shell が共通のタスクビューに入り、状態、出力、詳細を確認できます。中断されたバックグラウンドタスクは自動的に一時停止し、再開またはキャンセルできます。
+
+**できること：**
+
+- `npm run dev`、テスト、ファイル監視などの長いタスクをバックグラウンドで走らせ、会話を続ける
+- `/tasks` またはタスクパネルで background shell / background agent の状態や出力パスを確認し、不要になったタスクをキャンセルする
+- 中断されたタスクを失わず、続きから再開するか破棄する
+
+詳しくは PR [#3642](https://github.com/QwenLM/qwen-code/pull/3642)、[#3739](https://github.com/QwenLM/qwen-code/pull/3739)
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/MU8Y9nLOKak1fNUchLGZn2DDywhTssdIWwfmABy9kZw.mp4" controls />
+
+### 会話を前の地点に戻してやり直す
+
+以前は会話がずれた場合、そのまま修正し続けるか新しいセッションを開く必要がありました。今は `Esc` を 2 回押すか `/rewind` を実行し、前のユーザーターンを選ぶことで、その時点まで会話履歴を戻して続けられます。
+
+**できること：**
+
+- AI が違う方向に進んだとき、重要な質問まで戻って別の指示で再実行する
+- 新しいセッションを開かず、前提情報をコピーし直さずにやり直す
+- 複数の実装案を試すとき、分岐点に戻って別ルートを進める
+
+詳しくは PR [#3441](https://github.com/QwenLM/qwen-code/pull/3441)
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/tVzSatcos7JspI6CGoSwRwK7XS20MayNIyPPxC_W5e4.mp4" controls />
+
+### `/review` のコードレビューフローを改善
+
+`/review` は大きくアップグレードされました。5 つの agent から 9 つの agent に拡張し、これまで prompt の中に分散していたレビューステップを 6 つのクロスプラットフォーム CLI サブコマンドに移しました。出力も構造化 JSON になっています。`/review <PR リンクまたは番号>` を入力するだけで、コード取得、プロジェクトルールの読み込み、lint、並列レビュー、重複排除、CI 状態確認、inline コメント投稿まで自動で行います。
+
+**できること：**
+
+- `/review https://github.com/xxx/pull/123` だけで PR レビューを実行する
+- 正しさとセキュリティに加え、「攻撃者」「深夜オンコール」「メンテナー」の視点から盲点を減らす
+- CI が落ちているときに誤って approve しないよう、自動で comment に落とす
+- 確信度の低い指摘は PR コメントに出さず、ターミナルだけに表示する
+- 既存の Qwen コメントを識別し、同じ指摘を重複投稿しない
+
+詳しくは PR [#3754](https://github.com/QwenLM/qwen-code/pull/3754)
+
+<img src="https://img.alicdn.com/imgextra/i1/O1CN018UR9Mw25iXOeO6fZv_!!6000000007560-2-tps-3836-2160.png" alt="コードレビューフロー改善のデモ" class="mt-5 w-full h-auto rounded-lg" />
+
+### タスク完了時や確認が必要なときに通知
+
+これまではターミナルの通知が目立たない terminal bell に頼りがちでした。VS Code 拡張でも、状態変化に気づきにくいことがありました。今は iTerm2、Kitty、Ghostty でタスク完了時にデスクトップ通知を出せます。VS Code でもタブのドット、通知バブル、サウンドで知らせます。
+
+**できること：**
+
+- 長いタスク中にターミナルを見続けず、完了したら通知を受け取る
+- AI がツール実行の許可や回答を必要としていることに気づきやすくする
+- VS Code で別ファイルを見ていても、チャットタブの状態表示で見逃しにくくする
+
+詳しくは PR [#3562](https://github.com/QwenLM/qwen-code/pull/3562)、[#3661](https://github.com/QwenLM/qwen-code/pull/3661)
+
+<img src="https://img.alicdn.com/imgextra/i2/O1CN01sRPskV26veLq3asRx_!!6000000007724-0-tps-4288-2372.jpg" alt="タスク通知のデモ" class="mt-5 w-full h-auto rounded-lg" />
+
+### `/stats` でモデル費用を見積もり
+
+`/stats` コマンドに費用見積もりが追加されました。`settings.json` の `modelPricing` に、モデルごとの入力/出力 100 万 Token あたりの価格を設定すると、`/stats` が Token 使用量から概算費用を計算します。未設定の場合は、これまで通り Token 数だけを表示します。
+
+**できること：**
+
+- よく使うモデルの価格を一度設定し、以後 `/stats` で自動計算する
+- モデルを切り替えたあとに費用差を見て、用途に合うモデルを選ぶ
+- 長時間の自動化で費用を定期的に確認する
+
+詳しくは PR [#3780](https://github.com/QwenLM/qwen-code/pull/3780)
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/VUZZijMaJM3sTv2CuJUF6WPJsXnUW9xeAc1sM4cBlSQ.mp4" controls />
+
+### `/model` で素早くモデルを切り替え
+
+以前は `/model` でセレクターを開き、リストから探す必要がありました。今は `/model モデル名` を直接入力するだけで切り替えられます。
+
+**できること：**
+
+- `/model qwen3.6-plus` のように入力して、セレクターを開かず切り替える
+- `/model A` で一度質問し、`/model B` に切り替えて結果を比較する
+- base URL が設定済みなら、ローカル未登録の upstream モデルも直接指定する
+
+詳しくは PR [#3783](https://github.com/QwenLM/qwen-code/pull/3783)
+
+<img src="https://img.alicdn.com/imgextra/i3/O1CN01lv7QgD1wauFue1d4b_!!6000000006325-2-tps-3840-2160.png" alt="/model で素早くモデルを切り替えるデモ" class="mt-5 w-full h-auto rounded-lg" />
+
+## 📊 改善
+
+- **OpenRouter がブラウザ認可に対応**：API Key やモデル一覧を手作業で設定しなくても、`/auth` からブラウザ認可を進めれば Key の保存とモデルカタログ取得まで自動で行えます。`/manage-models` では検索、フィルタ、有効化にも対応しました（[#3576](https://github.com/QwenLM/qwen-code/pull/3576)）
+- **Todo リストを固定表示**：最新のタスクリストが入力欄の上に固定され、状態変化に合わせて更新されます。進捗確認のために会話履歴をさかのぼる必要がありません（[#3507](https://github.com/QwenLM/qwen-code/pull/3507)、[#3647](https://github.com/QwenLM/qwen-code/pull/3647)）
+- **ファイル読み込みを高速化し、重複読み込みを削減**：FileReadCache により同じ内容の再読み込みを避け、多ターンの会話やツール呼び出しをより安定させます（[#3717](https://github.com/QwenLM/qwen-code/pull/3717)）
+- **Web 検索を MCP 経由に移行**：内蔵 `web_search` provider は MCP ベースになり、Bailian、Tavily、GLM WebSearch Prime などを設定できます（[#3502](https://github.com/QwenLM/qwen-code/pull/3502)）
+- **最初のモデルリクエストを高速化**：起動時にデフォルト API endpoint へ事前接続します（[#3318](https://github.com/QwenLM/qwen-code/pull/3318)）
+- **並列ツール呼び出しが読みやすく**：複数のツールを並列実行したとき、単なるツール数ではなく短い意味ラベルを表示し、AI が何をしているかを把握しやすくします（[#3538](https://github.com/QwenLM/qwen-code/pull/3538)）
+- **ツール呼び出しのホットパスを高速化**：ランタイム内の同期 I/O を減らし、長いタスクや複数ツールの処理をより安定させます（[#3581](https://github.com/QwenLM/qwen-code/pull/3581)）
+- **セッションタイトルを手動で再生成**：`/rename --auto` で不正確な自動タイトルを作り直せます（[#3540](https://github.com/QwenLM/qwen-code/pull/3540)）
+- **前景 Subagent もタスクパネルに表示**：`/tasks` で統一管理できます（[#3768](https://github.com/QwenLM/qwen-code/pull/3768)）
+- **Skill の読み込みを高速化し、パス条件で自動有効化**（[#3604](https://github.com/QwenLM/qwen-code/pull/3604)）
+- **ステータスバーに MCP サーバーの状態を表示**：MCP server がオンラインかどうかをすぐ確認でき、接続トラブルの切り分けがしやすくなります（[#3741](https://github.com/QwenLM/qwen-code/pull/3741)）
+- **Shell 実行時間表示を改善**：経過時間と timeout 情報を表示します（[#3512](https://github.com/QwenLM/qwen-code/pull/3512)）
+- **長いコマンドをバックグラウンド実行に提案**（[#3809](https://github.com/QwenLM/qwen-code/pull/3809)）
+- **VS Code で `/skills` と `/export` に対応**（[#2548](https://github.com/QwenLM/qwen-code/pull/2548)、[#2592](https://github.com/QwenLM/qwen-code/pull/2592)）
+- **MCP 設定を CLI flag で渡せるように**：SDK やスクリプトから MCP server 設定を直接渡せるため、設定ファイルを手で編集する必要が減ります（[#1279](https://github.com/QwenLM/qwen-code/pull/1279)）
+- **MCP サーバー検出を重複排除**：重複した MCP server discovery request をまとめ、起動時のネットワーク負荷を抑えます（[#3818](https://github.com/QwenLM/qwen-code/pull/3818)）
+- **Slash command にパラメータヒントを表示**（[#3593](https://github.com/QwenLM/qwen-code/pull/3593)）
+- **繁体字中国語 UI を追加**：`/language ui zh-TW` で切り替えられます（[#3569](https://github.com/QwenLM/qwen-code/pull/3569)）
+- **VS Code Webview のコピー操作を改善**（[#3477](https://github.com/QwenLM/qwen-code/pull/3477)）
+- **ACP モードでの MCP ツール呼び出しを強化**：SSE/HTTP MCP server と並列ツール呼び出しに対応しました（[#3574](https://github.com/QwenLM/qwen-code/pull/3574)、[#3463](https://github.com/QwenLM/qwen-code/pull/3463)）
+
+## 🔧 重要な修正
+
+| PR | バージョン | 修正内容 | 影響 |
+|----|------|----------|------|
+| [#3645](https://github.com/QwenLM/qwen-code/pull/3645) | v0.15.6 | モデル選択優先度を argv > settings > auth env vars に修正 | CLI 指定モデルが期待通り優先されます |
+| [#3820](https://github.com/QwenLM/qwen-code/pull/3820) | v0.15.7 | 特殊文字を含むパスの読み書きを修正 | 空白や特殊文字を含むファイルパスで失敗しにくくなりました |
+| [#3525](https://github.com/QwenLM/qwen-code/pull/3525) | v0.15.1 | ストリーミング tool call parser の状態共有を修正 | 複数ターンの出力が混ざりにくくなりました |
+| [#3533](https://github.com/QwenLM/qwen-code/pull/3533) | v0.15.1 | slash completion のレンダリングループを修正 | slash 入力時に UI が固まりにくくなりました |
+| [#3753](https://github.com/QwenLM/qwen-code/pull/3753) | v0.15.7 | proxy 設定が効かない問題を修正 | 企業・社内ネットワークで接続しやすくなりました |
+| [#3656](https://github.com/QwenLM/qwen-code/pull/3656) | v0.15.4 | session JSONL の結合レコード復元を修正 | 異常につながった会話ログを、文脈を失わずに復元しやすくなりました |
+| [#3547](https://github.com/QwenLM/qwen-code/pull/3547) | v0.15.3 | 履歴コンポーネントの不要な再描画を修正 | 履歴表示がよりスムーズです |
+| [#3600](https://github.com/QwenLM/qwen-code/pull/3600) | v0.15.4 | 複数行 shell コマンドの解析を修正 | コマンドが誤って分割されにくくなりました |
+| [#3531](https://github.com/QwenLM/qwen-code/pull/3531) | v0.15.2 | 再送信した履歴プロンプトの順序を修正 | 再送信したプロンプトが最新位置に入り、以後の文脈が自然につながります |
+| [#3544](https://github.com/QwenLM/qwen-code/pull/3544) | v0.15.2 | SIGINT 後の Kitty キーボードプロトコル残留を修正 | 中断後に余計な文字が出にくくなりました |
+| [#3617](https://github.com/QwenLM/qwen-code/pull/3617) | v0.15.4 | 厳格な OpenAI 互換モードでのマルチメディア tool result を修正 | OpenAI 互換 provider がより安定します |
+| [#3691](https://github.com/QwenLM/qwen-code/pull/3691) | v0.15.4 | subject 付き reasoning fragment の説明欠落を修正 | reasoning 表示がより完全になります |
+| [#3559](https://github.com/QwenLM/qwen-code/pull/3559) | v0.15.2 | ReadFile の空 `pages` を修正 | 空のページ指定で読み込みが失敗しにくくなりました |
+| [#3677](https://github.com/QwenLM/qwen-code/pull/3677) | v0.15.7 | MiniMax thinking tag 解析を修正 | MiniMax の思考過程が正しく表示されます |
+| [#3615](https://github.com/QwenLM/qwen-code/pull/3615) | v0.15.6 | LSP ドキュメント、パス制限、tool call rate を修正 | コードインテリジェンス系ツールが安定します |
+| [#3618](https://github.com/QwenLM/qwen-code/pull/3618) | v0.15.6 | VS Code で slash command の Enter が即送信しないよう修正 | パラメータを追加入力できます |
+| [#3752](https://github.com/QwenLM/qwen-code/pull/3752) | v0.15.6 | 追加ディレクトリの保存を修正 | 作業ディレクトリが次回も保持されます |
+
+## 🎈 その他の変更
+
+- Auto-memory dream タスクを手動キャンセル可能にし、バックグラウンドの記憶整理が止められない状態を避けられるようにしました（[#3836](https://github.com/QwenLM/qwen-code/pull/3836)）
+- Auto-memory rollback がメインリクエストをブロックしないようになり、バックグラウンドで記憶を整理している間も会話が進めやすくなりました（[#3814](https://github.com/QwenLM/qwen-code/pull/3814)）
+- 非対話モードで API エラーが重複表示される問題を修正し、エラー出力を見やすくしました（[#3749](https://github.com/QwenLM/qwen-code/pull/3749)）
+- VS Code の slash command completion がメッセージ送信後に動かない問題を修正しました（[#3609](https://github.com/QwenLM/qwen-code/pull/3609)）
+- `qwen auth` に API Key オプションを追加しました（[#3624](https://github.com/QwenLM/qwen-code/pull/3624)）
+- slash command queue の dispatch path を修正しました（[#3523](https://github.com/QwenLM/qwen-code/pull/3523)）
+- i18n の中国語・英語キー不一致を修正しました（[#3534](https://github.com/QwenLM/qwen-code/pull/3534)）
+- OAuth2 エラー処理を改善しました（[#3481](https://github.com/QwenLM/qwen-code/pull/3481)）
+- ローカル `/review` が `/language` の出力設定を尊重するようになりました（[#3611](https://github.com/QwenLM/qwen-code/pull/3611)）
+- OpenAI converter をステートレス化しました（[#3550](https://github.com/QwenLM/qwen-code/pull/3550)）
+- Telemetry export に安全な JSON serialization を使うようにしました（[#3630](https://github.com/QwenLM/qwen-code/pull/3630)）
+- Java SDK で CLI 起動時にカスタム環境変数を渡せるようになりました（[#3543](https://github.com/QwenLM/qwen-code/pull/3543)）
+- TypeScript SDK v0.1.7 を CLI v0.15.3 とともに公開しました（[#3688](https://github.com/QwenLM/qwen-code/pull/3688)）
+- `.gitignore` に `.codex` を追加しました（[#3665](https://github.com/QwenLM/qwen-code/pull/3665)）
+- ツール Token 使用量トラッキングを削除し、内部利用メトリクスのノイズを減らしました（[#3727](https://github.com/QwenLM/qwen-code/pull/3727)）
+- Qwen Code 開発ドキュメントに skills、agents、AGENTS.md のワークフロー説明を追加しました（[#3575](https://github.com/QwenLM/qwen-code/pull/3575)）
+- release workflow に stable merge-back PR を追加しました（[#3764](https://github.com/QwenLM/qwen-code/pull/3764)）
+- SDK release の自動マージを squash merge に変更しました（[#3690](https://github.com/QwenLM/qwen-code/pull/3690)）
+- PR テンプレートの検証説明を更新しました（[#3522](https://github.com/QwenLM/qwen-code/pull/3522)）
+- Telemetry ドキュメントに Alibaba Cloud コンソール入口の説明を追加しました（[#3498](https://github.com/QwenLM/qwen-code/pull/3498)）
+
+## 👋 新しいコントリビューター
+
+- [**@alex-musick**](https://github.com/alex-musick) — `/model` による素早いモデル切り替え（[#3783](https://github.com/QwenLM/qwen-code/pull/3783)）
+- [**@qiuqiuwen25**](https://github.com/qiuqiuwen25) — 特殊文字を含むパスの読み書き修正（[#3820](https://github.com/QwenLM/qwen-code/pull/3820)）
+- [**@umut-polat**](https://github.com/umut-polat) — 非対話モードの API エラー重複表示修正（[#3749](https://github.com/QwenLM/qwen-code/pull/3749)）
+- [**@cyphercodes**](https://github.com/cyphercodes) — ディレクトリ追加記録の永続化修正（[#3752](https://github.com/QwenLM/qwen-code/pull/3752)）
+- [**@eliird**](https://github.com/eliird) — CLI から MCP server 設定を渡す対応（[#1279](https://github.com/QwenLM/qwen-code/pull/1279)）
+- [**@jordimas**](https://github.com/jordimas) — カタルーニャ語対応追加（[#3643](https://github.com/QwenLM/qwen-code/pull/3643)）
+- [**@mohitsoni48**](https://github.com/mohitsoni48) — 厳格な OpenAI 互換モードでの tool result format 修正（[#3617](https://github.com/QwenLM/qwen-code/pull/3617)）
+- [**@Jerry2003826**](https://github.com/Jerry2003826) — 複数行 shell コマンド解析修正（[#3600](https://github.com/QwenLM/qwen-code/pull/3600)）
+- [**@MikeWang0316tw**](https://github.com/MikeWang0316tw) — 繁体字中国語 UI 追加（[#3569](https://github.com/QwenLM/qwen-code/pull/3569)）
+- [**@lawrence3699**](https://github.com/lawrence3699) — Java SDK のカスタム環境変数対応（[#3543](https://github.com/QwenLM/qwen-code/pull/3543)）
+- [**@fyc09**](https://github.com/fyc09) — セッション復元時の DeepSeek reasoning 保持修正（[#3590](https://github.com/QwenLM/qwen-code/pull/3590)、[#3737](https://github.com/QwenLM/qwen-code/pull/3737)）
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行すると最新版に更新できます。
+</Callout>
+
+質問や提案があれば、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues) でお知らせください。
