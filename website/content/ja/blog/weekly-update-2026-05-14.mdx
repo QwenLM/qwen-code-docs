@@ -1,0 +1,197 @@
+---
+title: "Qwen Code 週報：VSCode メッセージ巻き戻し、/export ライト/ダークテーマ切替、ToolSearch でトークン節約"
+date: "2026-05-14"
+description: "Claude Code が /goal をリリース——エージェントを最後まで走らせる。でも方向がずれたら？今週4バージョン：メッセージ編集巻き戻し、サブエージェント可視化、ToolSearch トークン節約、/branch で並行探索。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：VSCode メッセージ巻き戻し、/export ライト/ダークテーマ切替、ToolSearch でトークン節約"
+  date="2026-05-14"
+  author="Qwen Team"
+/>
+
+Claude Code が今週 `/goal` をリリース——目標を設定してエージェントを最後まで走らせる。でも方向がずれたら？[Cursor が全く新しい Agent 体験を発表](https://www.cursor.com/blog/agents)。Anthropic の B2B 採用率が初めて OpenAI を上回った。コーディングエージェント競争が白熱化している。
+
+Qwen Code は今週4バージョン（v0.15.8〜v0.15.11）をリリース。2つの軸：**インタラクション制御**——サブエージェント実行の完全透明化、`/branch` でマルチスレッド探索；**トークン管理**——ToolSearch オンデマンド読み込み、レスポンシブ圧縮でオーバーフローをカバー。
+
+## ✨ 新機能
+
+### サブエージェント可視化：LiveAgentPanel + ステータス Pill
+
+エージェントがサブエージェントを呼び出すとき、以前はカーソルが点滅するのを見つめるだけ——何をしている？どのくらい時間がかかった？トークンはいくら使った？完全にブラックボックス。
+
+今は下部に常駐するステータスパネルがサブエージェントのリアルタイム状態、経過時間、トークン消費を表示。フォアグラウンドのサブエージェントは Pill として表示——展開すると推論とツール呼び出しの全プロセスが見える。
+
+**これで何ができるか：**
+- 各サブエージェントの実行時間とトークン消費が一目瞭然
+- Pill を展開して推論プロセスを確認、方向がずれたら早期中断
+- 複数のサブエージェントが並行実行時、それぞれ独立したステータス表示
+
+PR [#3909](https://github.com/QwenLM/qwen-code/pull/3909)、[#3768](https://github.com/QwenLM/qwen-code/pull/3768) を参照
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01fB0hiS1D0a8PqNlyx_!!6000000000154-2-tps-1696-948.png)
+
+### ToolSearch：オンデマンドでツールを読み込み、トークン節約
+
+[Karpathy が指摘](https://x.com/berryxia/status/2054339265103065156)：AI コーディングの請求の大部分は不要なコンテキストの送信に浪費されている——ファイルの過剰読み込み、全ツール定義のデフォルト含有。
+
+ToolSearch は低頻度ツール（ApplyDiff、NotebookEdit、CreateDirectory など）を初期プロンプトから除外。エージェントが必要な時にオンデマンドで検索・読み込み。プロンプトサイズ縮小により prefix caching ヒット率が向上し、初回応答が高速化。
+
+**これで何ができるか：**
+- デフォルト有効、設定不要。エージェントが必要な時に自動検索・読み込み
+- Claude など prefix caching 対応モデルで、会話あたり数万トークン節約
+- `tools.toolSearch.enabled` で無効化可能
+
+PR [#3589](https://github.com/QwenLM/qwen-code/pull/3589)、[#4022](https://github.com/QwenLM/qwen-code/pull/4022)、[#4069](https://github.com/QwenLM/qwen-code/pull/4069) を参照
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN010y0B0G1vWxDv64i2H_!!6000000006181-2-tps-1696-944.png)
+
+### /export HTML ライトテーマ
+
+会話を同僚にエクスポートしたら、相手がライトテーマ使用——ダークな HTML は明るい背景では読みにくい。
+
+`/export html` にテーマ切替が内蔵された。右上のトグルでライト/ダークを切替。選択は localStorage に永続化。
+
+**これで何ができるか：**
+- ライトテーマの同僚に共有しても、すぐ読める
+- テーマ設定は永続化、毎回切り替え不要
+- `/export` はデフォルト HTML 形式、コマンド一発
+
+PR [#3908](https://github.com/QwenLM/qwen-code/pull/3908) を参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01wzcxSe1Ha5Ibg6flg_!!6000000000773-2-tps-1700-948.png)
+
+### /branch：会話フォーク
+
+会話の途中で別のアプローチを試したいが、現在の進捗を失いたくない——以前は最初から新しいセッションを始めるしかなかった。
+
+`/branch` は現在の会話を完全なコンテキスト付きで新しいセッションにフォーク。2つのパスを並行探索、互いに干渉なし。戻りたい時は `/resume` で元のセッションを見つけて続行。
+
+**これで何ができるか：**
+
+- リファクタリング中に別のアーキテクチャを試したい → `/branch` でフォーク、両方試す
+- フォークされたセッションはそれぞれ独立した履歴で保存
+- `/resume` と組み合わせてフォーク間を素早く切替
+
+PR [#3539](https://github.com/QwenLM/qwen-code/pull/3539) を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000004471/O1CN01owL3ZI1itlwz42npN_!!6000000004471-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/P_ZHfe5HDAB5PCiOEWxC02lNG2nuFirxfl6pxNrqJVo.mp4" controls></video>
+
+### /diff：セッション変更統計
+
+長い会話でエージェントが多くのファイルを変更した後、素早く概要を把握したい——ターミナルを出て `git diff --stat` を実行する必要はない。
+
+`/diff` と入力すると、現在のセッションの全ファイル変更の git diff 統計がターミナルに直接表示。どのファイルが追加・変更され、何行変わったか一目瞭然。
+
+**これで何ができるか：**
+
+- 大規模リファクタリング後に影響範囲を素早く確認
+- エージェントが触るべきでないファイルを変更した場合に早期発見
+- 各フォークで別々に `/diff` して、アプローチ間の変更量を比較
+
+PR [#3491](https://github.com/QwenLM/qwen-code/pull/3491) を参照
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01XCPvNv1CsL0OHrW0x_!!6000000000136-2-tps-1700-948.png)
+
+### 検索可能な /resume
+
+セッションが増えると `/resume` リストが壁になる。特に `/branch` と併用すると——フォークが増えるほどリストが長くなる。
+
+`/resume` がリアルタイム検索フィルタリングに対応。キーワードを入力すると、マッチするセッションのみ表示。検索とブランチフィルターは組み合わせ可能。
+
+**これで何ができるか：**
+
+- 数十の履歴セッションからキーワードで即座に目標を特定
+- `/branch` と併用——名前でフォーク間を素早く切替
+- 検索 + ブランチフィルターの組み合わせで正確なコンテキスト復元
+
+PR [#3880](https://github.com/QwenLM/qwen-code/pull/3880) を参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01R7xO7b1jJsWgE6fyQ_!!6000000004528-1-tps-1280-720.gif)
+
+<Callout type="tips">
+
+    `/branch`、`/diff`、`/resume` それぞれにユースケースがあるが、真の威力は組み合わせにある：
+
+    エージェントで大規模リファクタリング中、途中でより良いアプローチがありそうだと気づく。`/branch` でフォークして両方のパスを続行。各パスが完了したら `/diff` で変更統計を比較——どちらのアプローチが変更ファイル数が少ないか？フォークが多くなったら `/resume` でキーワード検索、検索とブランチフィルターも組み合わせ可能。
+
+    ワークフロー全体がひとつのターミナルで完結——`git stash` も新しいウィンドウも不要。会話コンテキストは全行程保持。AI コーディングセッションに Git ブランチの能力を追加したようなもの。
+</Callout>
+
+### レスポンシブコンテキスト圧縮
+
+会話がコンテキストウィンドウを超過すると、以前はエラーで中断していた。今は自動圧縮——最近の操作とキーコンテキストを保持、初期の冗長部分をクリアし、会話が続行。サブエージェントも同様の恩恵——長い会話でオーバーフローによるクラッシュがなくなった。
+
+**これで何ができるか：**
+- 長い会話がトークンオーバーフローで中断しない——手動 `/compact` 不要
+- 圧縮は透過的——会話は自然に続く
+- 複雑なマルチステップタスク（大規模リファクタリング）の完了率が向上
+
+PR [#3879](https://github.com/QwenLM/qwen-code/pull/3879)、[#3985](https://github.com/QwenLM/qwen-code/pull/3985) を参照
+
+### その他の新機能
+
+| 機能 | PR | 影響 |
+|------|-----|------|
+| **codegraph skill**：PR レビューリスク分析の組み込みスキル | [#3910](https://github.com/QwenLM/qwen-code/pull/3910) | PR レビュー時に高リスク変更と潜在的競合を自動識別 |
+| **autoSkill**：プロジェクトの技術スタックと規約を自動抽出してスキル化 | [#3673](https://github.com/QwenLM/qwen-code/pull/3673) | 新プロジェクトでコンテキストを繰り返し説明不要——エージェントが技術スタックとコーディングスタイルを自動学習 |
+| **Idealab Provider**：新しいモデルプロバイダー | [#3955](https://github.com/QwenLM/qwen-code/pull/3955) | モデルの選択肢が増え、ベンダーロックインなし |
+| **Skills 自動リフレッシュ**：skill ファイル変更時に自動リロード | [#3923](https://github.com/QwenLM/qwen-code/pull/3923) | skill 編集後に再起動不要、即座に反映 |
+| **Auto-memory dream タスク管理**：`/tasks` でバックグラウンドメモリタスクを表示 | [#3836](https://github.com/QwenLM/qwen-code/pull/3836) | バックグラウンドで何が動いているか把握、不要なタスクはいつでもキャンセル |
+| **i18n コアカバレッジ**：CLI 国際化が更に多くの UI テキストをカバー | [#3871](https://github.com/QwenLM/qwen-code/pull/3871) | 英語以外のユーザーに母国語インターフェースを拡充 |
+| **--json-schema 構造化出力**：ヘッドレスモードで出力フォーマットを制約 | [#3598](https://github.com/QwenLM/qwen-code/pull/3598) | CI/CD パイプラインでエージェント出力を確実にパース |
+| **git ls-files が fdir を置換**：ファイルクロールの高速化 | [#3214](https://github.com/QwenLM/qwen-code/pull/3214) | 大規模リポジトリでのファイル列挙が高速化、.gitignore を自動適用 |
+| **Anthropic prompt cache グローバルスコープ** | [#4020](https://github.com/QwenLM/qwen-code/pull/4020) | プロキシ経由で Claude を使用時も prompt cache が動作 |
+| **DashScope プロキシ prompt cache** | [#3991](https://github.com/QwenLM/qwen-code/pull/3991) | エンタープライズゲートウェイシナリオでも prompt cache 高速化を享受 |
+| **ask_user_question 常時表示** | [#4041](https://github.com/QwenLM/qwen-code/pull/4041) | エージェントが不確かな時は推測せず質問 |
+| **スラッシュコマンド発見の改善**：よりスマートな補完とマッチング | [#3736](https://github.com/QwenLM/qwen-code/pull/3736) | `/` 入力後にコマンドをより早く発見 |
+| **`qwen serve` daemon**（実験的）：HTTP デーモンモード | [#3889](https://github.com/QwenLM/qwen-code/pull/3889) | HTTP + SSE で Qwen Code をリモート制御——Web UI / IDE プラグイン / IM bot 接続可能 |
+| **OSC 8 ターミナルハイパーリンク**：長い URL が折り返し後もクリック可能 | [#4037](https://github.com/QwenLM/qwen-code/pull/4037) | エージェント出力のリンクがターミナル折り返しで壊れない |
+
+## 📊 改善
+
+| PR | バージョン | 改善内容 | 影響 |
+|----|-----------|----------|------|
+| [#3903](https://github.com/QwenLM/qwen-code/pull/3903) | v0.15.8 | tmux-safe ドットスピナーで再描画圧力を軽減 | tmux 環境で UI がよりスムーズ |
+| [#3897](https://github.com/QwenLM/qwen-code/pull/3897) | v0.15.11 | session-list メタデータ読み取りを 64KB に制限 + プール化バッファ | セッションリストの読み込みが高速化、特に 100+ セッション時 |
+| [#3902](https://github.com/QwenLM/qwen-code/pull/3902) | v0.15.10 | Shell tool リアルタイムテキスト更新のスロットリング | 大量出力時にターミナルが遅延しない |
+| [#3967](https://github.com/QwenLM/qwen-code/pull/3967) | v0.15.10 | リサイズ時に targeted repaint で clearTerminal を置換 | ターミナルサイズ変更時にフルスクリーンフラッシュなし |
+| [#4022](https://github.com/QwenLM/qwen-code/pull/4022) | v0.15.11 | 低頻度組み込みツールの遅延読み込み、初期プロンプト縮小 | 初回リクエストが高速化、prompt cache がより安定 |
+| [#3775](https://github.com/QwenLM/qwen-code/pull/3775) | v0.15.11 | side-query LLM 呼び出しを runSideQuery ノードに統一 | サイドクエリがより制御可能、メインリクエストを圧迫しない |
+| [#3968](https://github.com/QwenLM/qwen-code/pull/3968) | v0.15.11 | 狭いターミナルのレンダリング改善 | 小画面/分割画面でレイアウトが崩れない |
+| [#3994](https://github.com/QwenLM/qwen-code/pull/3994) | v0.15.11 | Progressive MCP：検出をバックグラウンド非同期に移行 | MCP ユーザーの起動速度が最大 95% 向上（TTI 10.5s → 490ms） |
+
+## 🔧 重要な修正
+
+| PR | バージョン | 修正内容 | 影響 |
+|----|-----------|----------|------|
+| [#3921](https://github.com/QwenLM/qwen-code/pull/3921) | v0.15.8 | フォアグラウンドエージェント完了後にステータスバーエントリが残留 | タスク完了後に UI がクリーン |
+| [#3922](https://github.com/QwenLM/qwen-code/pull/3922) | v0.15.8 | バックグラウンドタスクダイアログで ESC が実行中のリクエストを誤キャンセル | ダイアログを閉じてもタスクを殺さない |
+| [#3932](https://github.com/QwenLM/qwen-code/pull/3932) | v0.15.9 | prior-read enforcement が部分読み取りを受け入れ | 大きなファイルの部分読み取り後も正常に編集可能 |
+| [#3882](https://github.com/QwenLM/qwen-code/pull/3882) | v0.15.10 | Mistral の reasoning content がリクエスト境界で漏洩 | Mistral モデルで不要な推論コンテンツが表示されない |
+| [#3861](https://github.com/QwenLM/qwen-code/pull/3861) | v0.15.10 | settings.json マイグレーション書き戻し時にコメントとフォーマットが消失 | アップグレード後も設定ファイルのコメントとフォーマットが保持 |
+| [#3916](https://github.com/QwenLM/qwen-code/pull/3916) | v0.15.10 | 無効化された MCP サーバーがヘルスステータスに表示され続ける | ヘルスパネルの情報が正確に |
+| [#3905](https://github.com/QwenLM/qwen-code/pull/3905) | v0.15.10 | 長い会話で Ctrl+O コンパクトモード切替がフリーズ | 長い会話でのコンパクトモード切替が復旧 |
+| [#4002](https://github.com/QwenLM/qwen-code/pull/4002) | v0.15.10 | Edit/WriteFile prior-read を Claude Code と整合 | 編集前読み取りチェックが厳格化、誤上書きを低減 |
+| [#3963](https://github.com/QwenLM/qwen-code/pull/3963) | v0.15.10 | /model コマンドパラメータバリデーション | 無効なモデル名に対して明確なエラーメッセージ |
+| [#4083](https://github.com/QwenLM/qwen-code/pull/4083) | v0.15.11 | ink 7 による Static-remount TUI 回帰 | UI レンダリング安定性が復旧 |
+| [#4050](https://github.com/QwenLM/qwen-code/pull/4050) | v0.15.11 | テーブル ANSI カラーが改行で消失 | ターミナルテーブルのカラーが行をまたいで一貫性を保持 |
+| [#4045](https://github.com/QwenLM/qwen-code/pull/4045) | v0.15.11 | channel cwd 設定で ~ が展開されない | 設定でチルダパスが正常に動作 |
+
+## 👋 新しいコントリビューターを歓迎
+
+- [**@BingqingLyu**](https://github.com/BingqingLyu) — codegraph skill PR レビューリスク分析（[#3910](https://github.com/QwenLM/qwen-code/pull/3910)）
+- [**@scrollDynasty**](https://github.com/scrollDynasty) — git ls-files が fdir を置換してファイルクロール（[#3214](https://github.com/QwenLM/qwen-code/pull/3214)）
+- [**@HeZiGang**](https://github.com/HeZiGang) — DashScope プロキシ prompt cache サポート（[#3991](https://github.com/QwenLM/qwen-code/pull/3991)）
+- [**@salmanmkc**](https://github.com/salmanmkc) — GitHub Actions Node 24 互換性アップグレード（[#1876](https://github.com/QwenLM/qwen-code/pull/1876)）
+
+<Callout type="info">
+  **アップグレード**：`npm i @qwen-code/qwen-code@latest -g` を実行して最新バージョンを取得してください。
+</Callout>
+
+ご質問やご提案は [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) でお知らせください！

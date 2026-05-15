@@ -1,0 +1,197 @@
+---
+title: "Qwen Code Semanal: Retrocesso de mensagens no VSCode, alternância claro/escuro no /export, ToolSearch economiza tokens sob demanda"
+date: "2026-05-14"
+description: "Claude Code lança /goal para manter agents rodando até o fim — mas e se desviarem? Esta semana: 4 versões com retrocesso de edição de mensagens, visualização de sub-agents, economia de tokens com ToolSearch e /branch para exploração paralela."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Semanal: Retrocesso de mensagens no VSCode, alternância claro/escuro no /export, ToolSearch economiza tokens sob demanda"
+  date="2026-05-14"
+  author="Qwen Team"
+/>
+
+Claude Code lançou `/goal` esta semana — defina um objetivo e deixe o agent rodar até o fim. Mas e se ele desviar? [Cursor lançou uma experiência Agent totalmente nova](https://www.cursor.com/blog/agents). A adoção B2B da Anthropic ultrapassou a da OpenAI pela primeira vez. A corrida dos agents de codificação está cada vez mais acirrada.
+
+Qwen Code lançou 4 versões esta semana (v0.15.8–v0.15.11), focando em dois eixos: **controle de interação** — execução de sub-agents totalmente transparente, `/branch` para exploração multi-thread; **gerenciamento de tokens** — ToolSearch com carregamento sob demanda, compressão responsiva como rede de segurança.
+
+## ✨ Novos Recursos
+
+### Visualização de Sub-Agents: LiveAgentPanel + Pill de Status
+
+Quando o agent chamava um sub-agent, antes você só podia ficar olhando o cursor piscando — o que está fazendo? Há quanto tempo está rodando? Quantos tokens gastou? Caixa-preta total.
+
+Agora um painel de status permanente na parte inferior mostra o estado em tempo real do sub-agent, tempo decorrido e consumo de tokens. Sub-agents em primeiro plano aparecem como pills — expanda para ver o processo completo de raciocínio e chamadas de ferramentas.
+
+**O que você pode fazer com isso:**
+- Ver de relance quanto tempo cada sub-agent está rodando e quantos tokens está consumindo
+- Expandir o pill para ver o processo de raciocínio; interromper cedo se estiver desviando
+- Múltiplos sub-agents rodando em paralelo têm seus próprios indicadores de status
+
+Veja PR [#3909](https://github.com/QwenLM/qwen-code/pull/3909), [#3768](https://github.com/QwenLM/qwen-code/pull/3768)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01fB0hiS1D0a8PqNlyx_!!6000000000154-2-tps-1696-948.png)
+
+### ToolSearch: Carregar Ferramentas Sob Demanda, Economizar Tokens
+
+[Karpathy apontou](https://x.com/berryxia/status/2054339265103065156) que a maior parte da conta de AI-coding é desperdiçada enviando contexto desnecessário — carregamento excessivo de arquivos, incluindo todas as definições de ferramentas por padrão.
+
+ToolSearch remove ferramentas de baixa frequência (ApplyDiff, NotebookEdit, CreateDirectory, etc.) do prompt inicial. O agent busca e carrega sob demanda quando necessário. Prompt menor significa maior taxa de acerto do prefix caching e respostas iniciais mais rápidas.
+
+**O que você pode fazer com isso:**
+- Habilitado por padrão, sem configuração necessária. O agent busca e carrega ferramentas automaticamente quando precisa
+- Com Claude ou outros modelos com prefix caching, economize dezenas de milhares de tokens por conversa
+- Desativável via `tools.toolSearch.enabled`
+
+Veja PR [#3589](https://github.com/QwenLM/qwen-code/pull/3589), [#4022](https://github.com/QwenLM/qwen-code/pull/4022), [#4069](https://github.com/QwenLM/qwen-code/pull/4069)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN010y0B0G1vWxDv64i2H_!!6000000006181-2-tps-1696-944.png)
+
+### Tema Claro HTML para /export
+
+Você exporta uma conversa para um colega, mas ele usa tema claro — o HTML escuro é difícil de ler com fundo claro.
+
+`/export html` agora inclui alternância de tema integrada. Um clique no canto superior direito alterna entre claro e escuro. A escolha persiste no localStorage.
+
+**O que você pode fazer com isso:**
+- Compartilhar com colegas que usam temas claros — legível imediatamente
+- Preferência de tema persiste, sem necessidade de alternar toda vez
+- `/export` usa formato HTML por padrão, um comando e pronto
+
+Veja PR [#3908](https://github.com/QwenLM/qwen-code/pull/3908)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01wzcxSe1Ha5Ibg6flg_!!6000000000773-2-tps-1700-948.png)
+
+### /branch: Bifurcação de Conversa
+
+No meio de uma conversa você quer tentar outra abordagem, mas não quer perder o progresso atual — antes tinha que iniciar uma nova sessão do zero.
+
+`/branch` bifurca a conversa atual em uma nova sessão com contexto completo preservado. Explore dois caminhos em paralelo sem interferência. Quer voltar? `/resume` para encontrar e continuar a sessão original.
+
+**O que você pode fazer com isso:**
+
+- No meio de um refactoring quer tentar outra arquitetura → `/branch` para bifurcar, tente ambos
+- Sessões bifurcadas são salvas independentemente com histórico próprio
+- Combine com `/resume` para alternar rapidamente entre bifurcações
+
+Veja PR [#3539](https://github.com/QwenLM/qwen-code/pull/3539)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000004471/O1CN01owL3ZI1itlwz42npN_!!6000000004471-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/P_ZHfe5HDAB5PCiOEWxC02lNG2nuFirxfl6pxNrqJVo.mp4" controls></video>
+
+### /diff: Estatísticas de Alterações da Sessão
+
+Após uma conversa longa onde o agent modificou muitos arquivos, você quer uma visão rápida — sem precisar sair e executar `git diff --stat`.
+
+Digite `/diff` e obtenha um resumo git diff de todas as alterações de arquivos da sessão atual direto no terminal. Quais arquivos foram adicionados, quais modificados, quantas linhas mudaram — tudo de relance.
+
+**O que você pode fazer com isso:**
+
+- Confirmar rapidamente o raio de impacto após um grande refactoring
+- Detectar arquivos que o agent não deveria ter tocado
+- `/diff` em cada bifurcação separadamente para comparar volume de alterações entre abordagens
+
+Veja PR [#3491](https://github.com/QwenLM/qwen-code/pull/3491)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01XCPvNv1CsL0OHrW0x_!!6000000000136-2-tps-1700-948.png)
+
+### /resume com Busca
+
+Quando você tem muitas sessões, a lista do `/resume` vira um muro. Especialmente com `/branch` — mais bifurcações, lista mais longa.
+
+Agora `/resume` suporta filtro de busca em tempo real. Digite palavras-chave e a lista mostra apenas sessões correspondentes. Busca e filtro de branch se combinam.
+
+**O que você pode fazer com isso:**
+
+- Localizar instantaneamente um alvo entre dezenas de sessões históricas com palavras-chave
+- Com `/branch` — alternar entre bifurcações por nome
+- Busca + filtro de branch combinados para recuperação precisa de contexto
+
+Veja PR [#3880](https://github.com/QwenLM/qwen-code/pull/3880)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01R7xO7b1jJsWgE6fyQ_!!6000000004528-1-tps-1280-720.gif)
+
+<Callout type="tips">
+
+    `/branch`, `/diff` e `/resume` cada um tem seus casos de uso, mas o verdadeiro poder está na combinação:
+
+    Você está fazendo um grande refactoring com o agent e no meio percebe que pode haver uma abordagem melhor. `/branch` para bifurcar, continue ambos os caminhos. Quando cada caminho terminar, `/diff` para comparar estatísticas de alterações. Com muitas bifurcações, `/resume` com palavras-chave para localizar a certa, busca e filtro de branch se combinam.
+
+    Todo o workflow fica em um terminal — sem `git stash`, sem novas janelas. Contexto completo da conversa preservado o tempo todo. É como branches Git para suas sessões de codificação com IA.
+</Callout>
+
+### Compressão de Contexto Responsiva
+
+Quando uma conversa excede a janela de contexto, antes simplesmente dava erro. Agora comprime automaticamente — mantém operações recentes e contexto-chave, limpa redundâncias iniciais, e a conversa continua. Sub-agents também se beneficiam — sem mais crashes por overflow em conversas longas.
+
+**O que você pode fazer com isso:**
+- Conversas longas não quebram mais por overflow de tokens — sem necessidade de `/compact` manual
+- Compressão é invisível — a conversa simplesmente continua naturalmente
+- Tarefas complexas multi-etapas (grandes refactorings) têm taxas de conclusão mais altas
+
+Veja PR [#3879](https://github.com/QwenLM/qwen-code/pull/3879), [#3985](https://github.com/QwenLM/qwen-code/pull/3985)
+
+### Mais Novos Recursos
+
+| Recurso | PR | Impacto |
+|---------|-----|---------|
+| **codegraph skill**: Análise de risco integrada para review de PR | [#3910](https://github.com/QwenLM/qwen-code/pull/3910) | Identificação automática de alterações de alto risco e conflitos potenciais durante review |
+| **autoSkill**: Extração automática de stack técnico e convenções como skills | [#3673](https://github.com/QwenLM/qwen-code/pull/3673) | Sem necessidade de explicar contexto repetidamente para novos projetos — agent aprende automaticamente |
+| **Idealab Provider**: Novo provedor de modelo | [#3955](https://github.com/QwenLM/qwen-code/pull/3955) | Mais uma opção de modelo, sem vendor lock-in |
+| **Skills auto-refresh**: Recarregamento automático quando arquivos skill mudam | [#3923](https://github.com/QwenLM/qwen-code/pull/3923) | Editar skills sem reiniciar — efeito imediato |
+| **Gerenciamento de tarefas auto-memory dream**: `/tasks` mostra tarefas de memória em segundo plano | [#3836](https://github.com/QwenLM/qwen-code/pull/3836) | Ver o que está rodando em segundo plano, cancelar tarefas indesejadas |
+| **Cobertura i18n do core**: i18n da CLI cobre mais texto de interface | [#3871](https://github.com/QwenLM/qwen-code/pull/3871) | Mais interface em idioma nativo para usuários não-anglófonos |
+| **--json-schema saída estruturada**: Restringir formato de saída em modo headless | [#3598](https://github.com/QwenLM/qwen-code/pull/3598) | Parse confiável da saída do agent em pipelines CI/CD |
+| **git ls-files substitui fdir**: Crawling de arquivos mais rápido | [#3214](https://github.com/QwenLM/qwen-code/pull/3214) | Listagem de arquivos mais rápida em repos grandes, respeita .gitignore automaticamente |
+| **Anthropic prompt cache escopo global** | [#4020](https://github.com/QwenLM/qwen-code/pull/4020) | Prompt cache funciona ao usar Claude via proxy |
+| **DashScope proxy prompt cache** | [#3991](https://github.com/QwenLM/qwen-code/pull/3991) | Cenários de gateway empresarial também ganham aceleração de prompt cache |
+| **ask_user_question sempre visível** | [#4041](https://github.com/QwenLM/qwen-code/pull/4041) | Agent pergunta quando não tem certeza em vez de adivinhar |
+| **Descoberta melhorada de comandos slash**: Complementação e matching mais inteligentes | [#3736](https://github.com/QwenLM/qwen-code/pull/3736) | Encontrar comandos mais rápido após digitar `/` |
+| **`qwen serve` daemon** (experimental): Modo daemon HTTP | [#3889](https://github.com/QwenLM/qwen-code/pull/3889) | Controlar Qwen Code remotamente via HTTP + SSE — Web UI / plugins IDE / bots IM podem se conectar |
+| **Hyperlinks terminais OSC 8**: URLs longas permanecem clicáveis após quebra de linha | [#4037](https://github.com/QwenLM/qwen-code/pull/4037) | Links na saída do agent não quebram com wrap do terminal |
+
+## 📊 Melhorias
+
+| PR | Versão | Melhoria | Impacto |
+|----|--------|----------|---------|
+| [#3903](https://github.com/QwenLM/qwen-code/pull/3903) | v0.15.8 | Spinner dots tmux-safe reduz pressão de redesenho | UI mais fluida no tmux |
+| [#3897](https://github.com/QwenLM/qwen-code/pull/3897) | v0.15.11 | Leitura de metadados session-list limitada a 64KB + buffer poolado | Carregamento mais rápido da lista de sessões, especialmente com 100+ sessões |
+| [#3902](https://github.com/QwenLM/qwen-code/pull/3902) | v0.15.10 | Throttling de atualização de texto em tempo real do Shell tool | Sem lag no terminal durante saída pesada |
+| [#3967](https://github.com/QwenLM/qwen-code/pull/3967) | v0.15.10 | Repaint direcionado no resize substitui clearTerminal | Sem flash de tela cheia ao redimensionar terminal |
+| [#4022](https://github.com/QwenLM/qwen-code/pull/4022) | v0.15.11 | Ferramentas built-in de baixa frequência com lazy-load, prompt inicial menor | Primeira requisição mais rápida, prompt cache mais estável |
+| [#3775](https://github.com/QwenLM/qwen-code/pull/3775) | v0.15.11 | Chamadas LLM de side-query unificadas via nó runSideQuery | Side-queries mais controladas, não mais preemptam requisições principais |
+| [#3968](https://github.com/QwenLM/qwen-code/pull/3968) | v0.15.11 | Melhorias de renderização em terminal estreito | Layout não quebra mais em tela pequena/dividida |
+| [#3994](https://github.com/QwenLM/qwen-code/pull/3994) | v0.15.11 | Progressive MCP: descoberta movida para background assíncrono | Startup até 95% mais rápido para usuários MCP (TTI de 10.5s → 490ms) |
+
+## 🔧 Correções Importantes
+
+| PR | Versão | Correção | Impacto |
+|----|--------|----------|---------|
+| [#3921](https://github.com/QwenLM/qwen-code/pull/3921) | v0.15.8 | Entradas da barra de status do agent em primeiro plano persistindo após conclusão | UI limpa após conclusão da tarefa |
+| [#3922](https://github.com/QwenLM/qwen-code/pull/3922) | v0.15.8 | ESC no diálogo de tarefa em segundo plano cancela acidentalmente requisições em execução | Fechar diálogos não mata mais tarefas |
+| [#3932](https://github.com/QwenLM/qwen-code/pull/3932) | v0.15.9 | Enforcement de prior-read aceita leituras parciais | Arquivos grandes com leitura parcial podem ser editados normalmente |
+| [#3882](https://github.com/QwenLM/qwen-code/pull/3882) | v0.15.10 | Conteúdo de reasoning do Mistral vaza nos limites de requisição | Sem mais conteúdo de reasoning espúrio com modelos Mistral |
+| [#3861](https://github.com/QwenLM/qwen-code/pull/3861) | v0.15.10 | Migração do settings.json perde comentários e formatação na reescrita | Comentários e formatação do arquivo de config preservados após upgrades |
+| [#3916](https://github.com/QwenLM/qwen-code/pull/3916) | v0.15.10 | Servidores MCP desabilitados ainda aparecem no status de saúde | Painel de saúde mostra informações precisas |
+| [#3905](https://github.com/QwenLM/qwen-code/pull/3905) | v0.15.10 | Toggle Ctrl+O compact-mode trava em conversas longas | Toggle de modo compacto funciona novamente em conversas longas |
+| [#4002](https://github.com/QwenLM/qwen-code/pull/4002) | v0.15.10 | Edit/WriteFile prior-read alinhado com Claude Code | Verificações de leitura-antes-de-editar mais rigorosas, menos sobrescritas acidentais |
+| [#3963](https://github.com/QwenLM/qwen-code/pull/3963) | v0.15.10 | Validação de parâmetros do comando /model | Mensagem de erro clara para nomes de modelo inválidos |
+| [#4083](https://github.com/QwenLM/qwen-code/pull/4083) | v0.15.11 | ink 7 causa regressão Static-remount TUI | Estabilidade de renderização da UI restaurada |
+| [#4050](https://github.com/QwenLM/qwen-code/pull/4050) | v0.15.11 | Cores ANSI de tabela perdidas nas quebras de linha | Cores de tabelas no terminal consistentes entre linhas |
+| [#4045](https://github.com/QwenLM/qwen-code/pull/4045) | v0.15.11 | ~ não expandido na config cwd do channel | Caminhos com til na config agora funcionam corretamente |
+
+## 👋 Boas-vindas a Novos Contribuidores
+
+- [**@BingqingLyu**](https://github.com/BingqingLyu) — codegraph skill análise de risco em PR review ([#3910](https://github.com/QwenLM/qwen-code/pull/3910))
+- [**@scrollDynasty**](https://github.com/scrollDynasty) — git ls-files substitui fdir para crawling de arquivos ([#3214](https://github.com/QwenLM/qwen-code/pull/3214))
+- [**@HeZiGang**](https://github.com/HeZiGang) — Suporte a DashScope proxy prompt cache ([#3991](https://github.com/QwenLM/qwen-code/pull/3991))
+- [**@salmanmkc**](https://github.com/salmanmkc) — Upgrade de compatibilidade GitHub Actions Node 24 ([#1876](https://github.com/QwenLM/qwen-code/pull/1876))
+
+<Callout type="info">
+  **Atualização**: Execute `npm i @qwen-code/qwen-code@latest -g` para obter a versão mais recente.
+</Callout>
+
+Dúvidas ou sugestões? Nos avise no [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!

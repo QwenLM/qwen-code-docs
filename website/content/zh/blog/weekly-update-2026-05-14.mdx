@@ -1,0 +1,205 @@
+---
+title: "Qwen Code 周报：子 Agent 不再黑盒、ToolSearch 省 Token、/branch 多线程探索"
+date: "2026-05-14"
+description: "Karpathy 说 90% 的人在浪费 Token 发送不必要的上下文。本周 4 个版本：子 Agent 执行过程全透明、ToolSearch 按需加载省钱、/branch 会话多线程探索。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：子 Agent 不再黑盒、ToolSearch 省 Token、/branch 多线程探索"
+  date="2026-05-14"
+  author="Qwen Team"
+
+/>
+
+Claude Code 推了 `/goal`——设定目标让 Agent 跑到底。[Cursor 发布全新 Agent 体验](https://www.cursor.com/blog/agents)。[Karpathy 说](https://x.com/berryxia/status/2054339265103065156) 90% 的人在浪费 Token 发送不必要的上下文。编码 Agent 赛道这周格外热闹。
+
+Qwen Code 本周 4 个版本（v0.15.8 ~ v0.15.11），两条线：**交互控制**——子 Agent 执行过程全透明、`/branch` 多线程探索；**Token 管理**——ToolSearch 按需加载、响应式压缩兜底溢出。
+
+## ✨ 新增特性
+
+### 子 Agent 可视化：LiveAgentPanel + 状态 Pill
+
+Agent 调用子 Agent 时，以前你只能盯着光标闪烁——它在干嘛？跑了多久？花了多少 Token？全是黑盒。
+
+现在底部常驻状态面板，实时展示子 Agent 的运行状态、耗时和 Token 消耗。前台子 Agent 以 pill 形式弹出，展开就能看到完整的思考和工具调用过程。
+
+**你能用它做什么：**
+- 子 Agent 跑了多久、花了多少 Token，一眼可见
+- 展开 pill 查看推理过程，发现跑偏时及时中断
+- 多个子 Agent 并行时，各自状态独立展示
+
+详见 PR [#3909](https://github.com/QwenLM/qwen-code/pull/3909)、[#3768](https://github.com/QwenLM/qwen-code/pull/3768)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01fB0hiS1D0a8PqNlyx_!!6000000000154-2-tps-1696-948.png)
+
+### ToolSearch：按需加载工具，省 Token
+
+[Karpathy 指出](https://x.com/berryxia/status/2054339265103065156)，AI 编程的大部分账单浪费在发送不必要的上下文上——过度加载文件、默认带上所有工具定义。
+
+ToolSearch 把低频工具（ApplyDiff、NotebookEdit、CreateDirectory 等）从初始 prompt 中移除，Agent 需要时按需搜索加载。prompt 体积减小，prefix caching 命中率更高，首次响应更快。
+
+**你能用它做什么：**
+- 默认启用，无需配置。Agent 需要工具时自动搜索加载
+- 用 Claude 等支持 prefix caching 的模型时，每次对话少花几十 K Token
+- `tools.toolSearch.enabled` 可关闭
+
+详见 PR [#3589](https://github.com/QwenLM/qwen-code/pull/3589)、[#4022](https://github.com/QwenLM/qwen-code/pull/4022)、[#4069](https://github.com/QwenLM/qwen-code/pull/4069)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN010y0B0G1vWxDv64i2H_!!6000000006181-2-tps-1696-944.png)
+
+### /export HTML 亮色主题
+
+把对话导出给同事看，结果对方用浅色系统主题——深色 HTML 在亮色环境下刺眼难读。
+
+`/export html` 现在内置主题切换。右上角一个 toggle，亮暗随意切，选择持久化到 localStorage。
+
+**你能用它做什么：**
+- 分享给用浅色主题的同事，阅读体验正常
+- 主题偏好持久化，无需每次切换
+- `/export` 默认 HTML 格式，一条命令搞定
+
+详见 PR [#3908](https://github.com/QwenLM/qwen-code/pull/3908)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01wzcxSe1Ha5Ibg6flg_!!6000000000773-2-tps-1700-948.png)
+
+### /branch：会话分叉
+
+对话进行到一半想试另一种方案，以前只能新开会话从头来。
+
+`/branch` 从当前对话分叉出新会话，保留完整上下文。两条路线并行探索，互不影响。想回到原来的路线，`/resume` 找到原会话继续。
+
+**你能用它做什么：**
+
+- 重构走到一半想换方案 → `/branch` 分叉，两边都试
+- 分叉后的会话独立保存，各自有独立历史记录
+- 配合 `/resume` 快速在多个分叉之间切换
+
+详见 PR [#3539](https://github.com/QwenLM/qwen-code/pull/3539)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000004471/O1CN01owL3ZI1itlwz42npN_!!6000000004471-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/P_ZHfe5HDAB5PCiOEWxC02lNG2nuFirxfl6pxNrqJVo.mp4" controls></video>
+
+### /diff：会话变更统计
+
+一个长对话做完，Agent 改了一堆文件，你想快速了解改了什么——不用退出去跑 `git diff --stat`。
+
+输入 `/diff`，当前会话中所有文件变更的统计直接在终端展示。哪些文件新增、哪些被修改、增删了多少行，一目了然。
+
+**你能用它做什么：**
+
+- 大规模重构后快速确认影响范围
+- 发现 Agent 改了不该改的文件时及时发现
+- 不同分叉各自 `/diff`，对比两种方案的改动量
+
+详见 PR [#3491](https://github.com/QwenLM/qwen-code/pull/3491)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01XCPvNv1CsL0OHrW0x_!!6000000000136-2-tps-1700-948.png)
+
+### 可搜索的 /resume
+
+会话多了之后，`/resume` 列表变成一堵墙。尤其配合 `/branch` 使用后，分叉越多、列表越长。
+
+现在 `/resume` 支持实时搜索过滤。输入关键词，列表只展示匹配的会话。搜索与分支过滤可叠加。
+
+**你能用它做什么：**
+
+- 几十个历史会话中输入关键词即时定位
+- 配合 `/branch`——多个分叉之间按名称快速切换
+- 搜索 + 分支过滤叠加，精准找到想恢复的上下文
+
+详见 PR [#3880](https://github.com/QwenLM/qwen-code/pull/3880)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01R7xO7b1jJsWgE6fyQ_!!6000000004528-1-tps-1280-720.gif)
+
+<Callout type="tips">
+
+    单独用 `/branch`、`/diff`、`/resume` 各有各的场景，但真正的威力在组合使用：
+
+    你正在用 Agent 做一个大重构，跑到一半发现可能有更好的方案。
+
+    1.`/branch` 分叉出新路线，两边各自继续。每条路线跑完后 
+
+    2.`/diff` 看改动统计——哪个方案改得少、影响范围小，一目了然。分叉多了不知道哪个是哪个
+    
+    3.`/resume` 输入关键词搜索定位，搜索和分支过滤还能叠加。
+
+    整个过程不需要新开终端、不需要手动 `git stash`，对话上下文全程保留。相当于给你的 AI 编程会话加了 Git 分支的能力。
+</Callout>
+
+### 响应式上下文压缩
+
+对话超出 context window 时，以前直接报错中断。现在自动压缩——保留最近操作和关键上下文，清理早期冗余，对话继续。子 Agent 同样受益，长对话中不再因溢出崩溃。
+
+**你能用它做什么：**
+- 长对话不再因 token 溢出中断，不用手动 `/compact`
+- 压缩过程无感知，对话自然继续
+- 复杂多步任务（大规模重构）完成率更高
+
+详见 PR [#3879](https://github.com/QwenLM/qwen-code/pull/3879)、[#3985](https://github.com/QwenLM/qwen-code/pull/3985)
+
+### 更多新功能
+
+| 功能 | PR | 对你的影响 |
+|------|-----|-----------|
+| **codegraph skill**：内置 PR review 风险分析技能 | [#3910](https://github.com/QwenLM/qwen-code/pull/3910) | PR review 时自动识别高风险变更和潜在冲突 |
+| **autoSkill**：后台自动提取项目技术栈和约定为 skill | [#3673](https://github.com/QwenLM/qwen-code/pull/3673) | 新项目不用重复解释上下文，Agent 自动了解技术栈和编码风格 |
+| **Idealab Provider**：新增 Idealab 模型提供商 | [#3955](https://github.com/QwenLM/qwen-code/pull/3955) | 又多一个模型选择，不绑定单一厂商 |
+| **Skills 变更自动刷新**：skill 文件变化时自动重载命令 | [#3923](https://github.com/QwenLM/qwen-code/pull/3923) | 编辑 skill 后不用重启，立即生效 |
+| **Auto-memory dream 任务管理**：`/tasks` 显示后台 memory 任务 | [#3836](https://github.com/QwenLM/qwen-code/pull/3836) | 清楚后台在做什么，不想要的任务随时取消 |
+| **i18n 核心覆盖**：CLI 国际化覆盖更多界面文本 | [#3871](https://github.com/QwenLM/qwen-code/pull/3871) | 中文用户看到更多母语界面 |
+| **--json-schema 结构化输出**：headless 模式约束输出格式 | [#3598](https://github.com/QwenLM/qwen-code/pull/3598) | CI/CD 管线中可靠解析 Agent 输出 |
+| **git ls-files 替代 fdir**：文件爬取速度提升 | [#3214](https://github.com/QwenLM/qwen-code/pull/3214) | 大仓库中文件列举更快，自动忽略 .gitignore |
+| **Anthropic prompt cache 全局作用域** | [#4020](https://github.com/QwenLM/qwen-code/pull/4020) | 通过代理使用 Claude 时 prompt cache 正常工作 |
+| **DashScope 代理 prompt cache** | [#3991](https://github.com/QwenLM/qwen-code/pull/3991) | 企业网关场景下也能享受 prompt cache 加速 |
+| **ask_user_question 始终可见** | [#4041](https://github.com/QwenLM/qwen-code/pull/4041) | Agent 不确定时会问你，而不是瞎猜 |
+| **斜杠命令发现改进**：更智能的补全和匹配 | [#3736](https://github.com/QwenLM/qwen-code/pull/3736) | 输入 `/` 后找到命令更快 |
+| **`qwen serve` daemon**（实验性）：HTTP daemon 模式 | [#3889](https://github.com/QwenLM/qwen-code/pull/3889) | 通过 HTTP + SSE 远程控制 Qwen Code，Web UI / IDE 插件 / IM bot 可接入 |
+| **OSC 8 终端超链接**：长 URL 换行后仍可点击 | [#4037](https://github.com/QwenLM/qwen-code/pull/4037) | Agent 输出的链接不会因终端换行而断裂，点击即开 |
+
+## 📊 优化改进
+
+| PR | 版本 | 优化内容 | 对你的影响 |
+|----|------|----------|-----------|
+| [#3903](https://github.com/QwenLM/qwen-code/pull/3903) | v0.15.8 | tmux-safe dots spinner 减少重绘压力 | tmux 环境下 UI 更流畅 |
+| [#3897](https://github.com/QwenLM/qwen-code/pull/3897) | v0.15.11 | session-list 元数据读取限制 64KB + 池化 buffer | 会话列表加载更快，尤其上百个会话时 |
+| [#3902](https://github.com/QwenLM/qwen-code/pull/3902) | v0.15.10 | Shell tool 实时文本更新节流 | 大量输出时终端不卡顿 |
+| [#3967](https://github.com/QwenLM/qwen-code/pull/3967) | v0.15.10 | resize 时用 targeted repaint 替换 clearTerminal | 调整终端大小时不再全屏闪烁 |
+| [#4022](https://github.com/QwenLM/qwen-code/pull/4022) | v0.15.11 | 低频内置工具延迟加载，减小初始 prompt | 首次请求更快，prompt cache 更稳定 |
+| [#3775](https://github.com/QwenLM/qwen-code/pull/3775) | v0.15.11 | side-query LLM 调用统一走 runSideQuery 节点 | 侧查询更可控，不再抢占主请求资源 |
+| [#3968](https://github.com/QwenLM/qwen-code/pull/3968) | v0.15.11 | 窄终端渲染改进 | 小屏/分屏场景布局不再错乱 |
+| [#3994](https://github.com/QwenLM/qwen-code/pull/3994) | v0.15.11 | Progressive MCP：MCP 发现改为后台异步，不再阻塞首次输入 | 配了 MCP 的用户启动速度提升最高 95%（TTI 从 10.5s → 490ms） |
+
+## 🔧 重要修复
+
+| PR | 版本 | 修复内容 | 对你的影响 |
+|----|------|----------|-----------|
+| [#3921](https://github.com/QwenLM/qwen-code/pull/3921) | v0.15.8 | 前台 Agent 完成后状态栏条目残留 | 任务完成后 UI 干净 |
+| [#3922](https://github.com/QwenLM/qwen-code/pull/3922) | v0.15.8 | ESC 在后台任务 dialog 中误取消正在运行的请求 | 关闭弹窗不再误杀任务 |
+| [#3932](https://github.com/QwenLM/qwen-code/pull/3932) | v0.15.9 | prior-read enforcement 接受部分读取 | 大文件只读取了部分也可正常编辑 |
+| [#3882](https://github.com/QwenLM/qwen-code/pull/3882) | v0.15.10 | Mistral reasoning content 在请求边界泄漏 | 使用 Mistral 模型时不再出现多余推理内容 |
+| [#3861](https://github.com/QwenLM/qwen-code/pull/3861) | v0.15.10 | settings.json 迁移写回时丢失注释和格式 | 升级后配置文件的注释和排版保持不变 |
+| [#3916](https://github.com/QwenLM/qwen-code/pull/3916) | v0.15.10 | 禁用的 MCP server 仍出现在健康状态中 | 健康面板信息更准确 |
+| [#3905](https://github.com/QwenLM/qwen-code/pull/3905) | v0.15.10 | 长对话时 Ctrl+O compact-mode 切换卡死 | 长对话中切换紧凑模式恢复正常 |
+| [#4002](https://github.com/QwenLM/qwen-code/pull/4002) | v0.15.10 | Edit/WriteFile prior-read 与 Claude Code 对齐 | 文件编辑前读取检查更严格，减少误覆盖 |
+| [#3963](https://github.com/QwenLM/qwen-code/pull/3963) | v0.15.10 | /model 命令参数校验 | 输入错误模型名时给出清晰提示 |
+| [#4083](https://github.com/QwenLM/qwen-code/pull/4083) | v0.15.11 | ink 7 导致 Static-remount TUI 回退 | 界面渲染稳定性恢复 |
+| [#4050](https://github.com/QwenLM/qwen-code/pull/4050) | v0.15.11 | 表格 ANSI 颜色在换行处丢失 | 终端表格跨行颜色保持一致 |
+| [#4045](https://github.com/QwenLM/qwen-code/pull/4045) | v0.15.11 | channel cwd 配置中 ~ 未展开 | 配置中使用 ~ 路径正常工作 |
+
+## 👋 欢迎新贡献者
+
+- [**@BingqingLyu**](https://github.com/BingqingLyu) — codegraph skill PR 审查风险分析（[#3910](https://github.com/QwenLM/qwen-code/pull/3910)）
+- [**@scrollDynasty**](https://github.com/scrollDynasty) — git ls-files 替代 fdir 文件爬取（[#3214](https://github.com/QwenLM/qwen-code/pull/3214)）
+- [**@HeZiGang**](https://github.com/HeZiGang) — DashScope 代理 prompt cache 支持（[#3991](https://github.com/QwenLM/qwen-code/pull/3991)）
+- [**@salmanmkc**](https://github.com/salmanmkc) — GitHub Actions Node 24 兼容升级（[#1876](https://github.com/QwenLM/qwen-code/pull/1876)）
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
