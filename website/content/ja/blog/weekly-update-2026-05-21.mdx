@@ -1,0 +1,246 @@
+---
+title: "Qwen Code 週報：/goal 自律コーディング、Auto Approval 確認不要、Worktree 分離"
+date: "2026-05-21"
+description: "Claude Code と Codex が共に /goal をリリース。Qwen Code v0.16.0 も追随——さらに独立 judge モデルと達成不可能な目標の検出機能付き。もう一つの大きな更新：Auto Approval が LLM 分類器で人間の確認が必要かを自動判断。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+
+  title="Qwen Code 週報：/goal 自律コーディング、Auto Approval 確認不要、Worktree 分離"
+
+  date="2026-05-21"
+
+  author="Qwen Team"
+
+/>
+
+コーディング Agent 業界から今週明確なシグナル：みんな Agent を監視なしで最後まで走らせたい。Claude Code が [/goal をリリース](https://medium.com/data-science-collective/how-to-build-a-claude-code-goal-better-than-99-of-people-5a4490095cf4)し、Codex も[追随](https://www.knightli.com/en/2026/05/14/codex-goal-vs-claude-code-goal/)、OpenAI は [Symphony オーケストレーション](https://openai.com/index/open-source-codex-orchestration-symphony/)を公開してバックグラウンドで Agent を稼働させる仕組みを提供。「目標を設定 → 手放す → 結果を確認」が新しい主流インタラクションパターンになりつつある。
+
+Qwen Code は今週 **v0.16.0** をリリースし、同じ方向に3つのステップを踏み出した：
+
+- **自律実行** — /goal + 独立 judge モデルによる完了判定、達成不可能な目標を検出した際の自動中止；
+- **中断を減らす** — Auto Approval が LLM 分類器で操作リスクを評価、低リスク操作は確認なしで実行；
+- **安全に実行** — Worktree 分離が Phase C に到達、セッション永続化 + 3つの復元モード。
+
+## ✨ 新機能
+
+### /goal：目標を設定し、Agent が完了まで自律実行
+
+Claude Code が /goal をリリースしたばかりだが、Qwen Code も追随——さらに一層追加：独立した judge モデルが各操作ラウンド後に「目標は達成されたか？」を評価する。実行モデル自身に判断させるのではなく。
+
+`/goal "すべてのテストを Jest から Vitest に移行"` と入力すると、Agent が自律的にコーディングを開始。各操作ラウンド後、judge モデルが目標状態をチェック。完了条件を満たしたら自動停止、満たしていなければ次のラウンドへ。judge が現在のコンテキストで目標が不可能と判断した場合（依存関係の欠如、権限不足など）、積極的に中止して理由を説明——トークンを浪費する無限ループなし。
+
+**これで何ができるか：**
+
+- 大規模マイグレーション、リファクタリングなどのマルチステップタスク——目標を設定して Agent を走らせ、毎ラウンド手動確認不要
+- judge は実行モデルから独立しており、「自分で完了を宣言する」バイアスを回避
+- 不可能な目標は自動中止、空回りによるトークン浪費なし
+- 非対話モードとストリーミングイベント出力をサポート、CI/CD パイプラインに統合可能
+
+PR [#4123](https://github.com/QwenLM/qwen-code/pull/4123)、[#4230](https://github.com/QwenLM/qwen-code/pull/4230)、[#4273](https://github.com/QwenLM/qwen-code/pull/4273) 参照
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/x2urc1XLrgUy-WpiLiRtyoWB6jD0zqPg8QfZfw0ztQo.mp4"  controls></video>
+
+### Auto Approval：LLM 分類器が低リスク操作を自動承認
+
+Agent 使用で最もイライラすること：すべてのファイル書き込み、すべてのシェルコマンドで Y を押して確認が必要。安全だが、中断感が強い——特に Agent が `/goal` を自律実行中で、あなたがデスクにいないとき。
+
+Auto Approval モードは LLM 分類器を使って各操作のリスクレベルを評価。低リスクアクション（ファイル読み取り、テスト実行、既存ファイルへの小さな変更）は自動承認、高リスクアクション（ファイル削除、不明なスクリプトの実行、設定変更）は引き続き確認を要求。ポリシーを設定すれば、Agent が自律実行中にブロックされない。
+
+**これで何ができるか：**
+
+- 有効にすると低リスク操作が自動的に通過——一つ一つ Y を押す必要なし
+- `/goal` と組み合わせ——長い自律タスク中に確認待ちで Agent が止まらない
+- リスク分類は調整可能、企業シナリオではポリシーを厳格化可能
+
+PR [#4151](https://github.com/QwenLM/qwen-code/pull/4151) 参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01mz3mOg1yA0Dxh3apu_!!6000000006537-2-tps-1696-950.png)
+
+### Worktree 分離：Agent が独立ワークツリーで操作
+
+先週 `/branch` をリリース——会話レベルの分離で、セッション内で複数の探索パスを分岐可能。今週はもう一層深く：**ファイルレベルの分離**。
+
+Agent がコードを変更するとき最も恐れることは？メインブランチを壊すこと。特に複雑なリファクタリング——Agent が大量の変更をした後に方向が間違っていたと気づき、ファイルごとに revert する必要がある。`/branch` は「会話コンテキストをどう分離するか」を解決、Worktree は「コード変更をどう分離するか」を解決。
+
+**Worktree サポートにより Agent は Git worktree 内で分離して操作可能。** worktree に入ると、すべてのファイル変更とコマンド実行がその独立ワークツリー内に限定——メインブランチは影響なし。満足したらマージ、不満なら破棄。
+
+今週は直接 Phase C に推進：worktree セッション永続化、hooksPath 自動設定、下部ステータスバーに現在の worktree 情報表示、終了時に確認ダイアログ。`/resume` は3つの復元モード——会話+コード復元、会話のみ、コードのみ。
+
+**これで何ができるか：**
+
+- Agent が実験的な変更をしてもメインブランチを汚染しない
+- `/goal` + Auto Approval と組み合わせ——分離環境で Agent に大きな目標を完全自律で完了させる
+- Worktree セッションは永続化、終了後に `/resume` で復元して作業継続
+- 下部バーに現在どの worktree にいるか常時表示——混乱なし
+
+PR [#4073](https://github.com/QwenLM/qwen-code/pull/4073)、[#4174](https://github.com/QwenLM/qwen-code/pull/4174) 参照
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/Ed26-rlnh6VC4UJJ6HLSha2VIvbUqoF0XybzN74zl8o.mp4"  controls></video>
+
+### /rewind ファイル復元
+
+`/rewind` は既に会話の巻き戻しが可能だったが、今回ファイルも復元可能に。特定の操作ポイントに巻き戻すと、ファイル内容もその時点の状態に復元。巻き戻し時に3つの選択肢：「コードと会話を復元」「会話のみ」「コードのみ」、`+N -N in M files` の変更統計で判断を支援。
+
+**これで何ができるか：**
+
+- Agent が5つのファイルを変更した後にステップ3で方向がずれたと気づいた——`/rewind` でステップ3の前に戻り、ファイルも復元
+- `git checkout` で一つずつ手動復元不要——1コマンドですべて完了
+- `git stash` より精密——特定の会話ターンの正確な状態に復元
+- IDE モードで `/rewind` が無効な場合、理由を明確に説明、無音の失敗なし
+
+PR [#4064](https://github.com/QwenLM/qwen-code/pull/4064)、[#4122](https://github.com/QwenLM/qwen-code/pull/4122) 参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN013GFf6W1zqsvHisBkC_!!6000000006766-2-tps-1696-956.png)
+
+### VSCode 拡張機能：送信済みメッセージの編集
+
+不正確な説明で質問を送信した？`/rewind` + 再入力不要。送信済みメッセージを直接編集すれば、Agent が新しいプロンプトから再実行。ローカルスナップショットが失われてもエラーにならず、サーバーサイドの復元に自動フォールバック。
+
+**これで何ができるか：**
+
+- プロンプトが不正確だと気づいたら、メッセージを直接編集、Agent が新しいプロンプトから再生成
+- 「質問を編集 → 再生成」が1アクションで完了——手動 `/rewind` 不要
+- ローカルスナップショット紛失時もエラーなし——サーバー復元に自動フォールバック
+
+PR [#4147](https://github.com/QwenLM/qwen-code/pull/4147) 参照
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/kQfAnwx60qGbl-KG1Sl8d0aZoUdC6BMvzYCKJ97g15w.mp4"  controls></video>
+
+### Hooks 強化：Todo ライフサイクル + Prompt Hook
+
+Hooks システムに今週2つの新イベントタイプを追加：
+
+**TodoCreated / TodoCompleted**：Agent が todo アイテムを作成または完了した時にトリガー。todo 完了時に自動通知、ログ書き込み、CI トリガーが可能。
+
+**Prompt Hook**：新しい `type: "prompt"` hook タイプ。LLM を使って hook 入力を評価し決定を返す。`$ARGUMENTS` プレースホルダーでコンテキスト注入をサポート、任意の hook イベントで使用可能。
+
+**これで何ができるか：**
+
+- Todo 完了時に Slack / DingTalk に自動通知
+- ファイル削除前に強制再確認、誰が操作を実行したかをログに記録
+- Prompt Hook でエンタープライズグレードの入力監査——非準拠の指示はモデルに到達する前にブロック
+
+PR [#3378](https://github.com/QwenLM/qwen-code/pull/3378)、[#3388](https://github.com/QwenLM/qwen-code/pull/3388) 参照
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/fvPpako_gbPIUyCQMExnqGQCXfulhGmAFvJP4eY47JY.mp4"  controls></video>
+
+### ModelScope 内蔵統合
+
+中国の開発者にワンクリックで使えるモデルソースが1つ追加。ModelScope が内蔵サードパーティ API プロバイダーとして提供——`/auth` で直接選択・設定可能。
+
+**これで何ができるか：**
+
+- エンドポイントの手動設定不要——`/auth` メニューで直接 ModelScope を選択
+- 中国国内の直接接続、低レイテンシ
+- ModelScope プラットフォーム上の全互換モデルが利用可能
+
+PR [#4150](https://github.com/QwenLM/qwen-code/pull/4150) 参照
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01VpuRuW1iJ8Gbhi2We_!!6000000004391-2-tps-1696-956.png)
+
+### ステータスバープリセットテーマ：ワンクリックでターミナル美化
+
+ターミナルツールは白黒だけである必要はない。Qwen Code に複数のステータスラインスタイルプリセットが内蔵、インタラクティブダイアログで切り替え——情報密度、配色スキーム、表示内容がそれぞれ異なる。
+
+**これで何ができるか：**
+
+- インタラクティブダイアログでステータスバーテーマをプレビューして切り替え
+- 情報密度調整可能：ミニマルモードはモデル名のみ表示、詳細モードはトークン数と時間付き
+- 選択は設定に永続化——毎回再設定不要
+
+PR [#4120](https://github.com/QwenLM/qwen-code/pull/4120) 参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01sIFVDE1HBoJESiU5x_!!6000000000720-2-tps-1696-946.png)
+
+### /stuck + /doctor：内蔵診断ツールキット
+
+Agent が応答しなくなった——レート制限？MCP がダウン？コンテキストオーバーフロー？メモリを長く使っていて何が記憶されているか不確か？以前は推測するしかなかった。今は2つの内蔵診断コマンドが異なるレイヤーをカバー：
+
+**`/stuck`** — セッションレベル診断。セッションが無応答になった時、レート制限、MCP 接続、メモリ圧力を自動検出し修正提案を提供。
+
+**`/doctor`** — メモリレベル診断。メモリファイル数、サイズ、健康状態を表示、異常に大きなメモリファイルを特定してクリーンアップ、Agent メモリの不正確さを診断。
+
+**これで何ができるか：**
+
+- `/stuck`：セッションフリーズ時にワンコマンドでトラブルシューティング——ログ探し不要
+- `/doctor`：定期的なメモリヘルスチェックでメモリ肥大化が応答品質に影響するのを防止
+- 組み合わせて使用——`/stuck` はリアルタイム問題、`/doctor` は慢性問題
+
+PR [#4133](https://github.com/QwenLM/qwen-code/pull/4133)、[#4180](https://github.com/QwenLM/qwen-code/pull/4180) 参照
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01tharik1yCkbHUbB9Y_!!6000000006543-2-tps-1696-956.png)
+
+### その他の新機能
+
+| 機能 | PR | 影響 |
+|------|-----|------|
+| **NotebookEdit ツール**：ネイティブ Jupyter notebook 編集サポート | [#3900](https://github.com/QwenLM/qwen-code/pull/3900) | Agent が .ipynb ファイルを直接編集可能——データサイエンスワークフローとシームレスに連携 |
+| **per-turn /diff**：ターンごとのインタラクティブ diff | [#4277](https://github.com/QwenLM/qwen-code/pull/4277) | 各操作後の変更をターン単位で確認 |
+| **Git status をシステムプロンプトに注入** | [#4110](https://github.com/QwenLM/qwen-code/pull/4110) | Agent が現在のブランチと未コミット変更を自動検知してより正確な判断 |
+| **Ctrl+P/N 履歴ナビゲーション**：readline スタイルショートカット | [#4082](https://github.com/QwenLM/qwen-code/pull/4082) | Emacs/zsh ユーザーの習慣がシームレスに移行 |
+| **/delete 一括削除**：複数セッションを選択して一括クリーンアップ | [#3733](https://github.com/QwenLM/qwen-code/pull/3733) | セッションを1つずつ削除する必要なし |
+| **/export カスタム出力ディレクトリ** | [#4193](https://github.com/QwenLM/qwen-code/pull/4193) | エクスポートファイルを好きな場所に配置 |
+| **Qwen3.6-35B-A3B 画像/動画サポート** | [#4106](https://github.com/QwenLM/qwen-code/pull/4106) | ローカル量子化モデルでマルチモーダル入力を処理 |
+| **Daemon モード改善**：権限ルーティング、ハートビート、クライアント認証、デバッグページ | [#4232](https://github.com/QwenLM/qwen-code/pull/4232)、[#4235](https://github.com/QwenLM/qwen-code/pull/4235)、[#4132](https://github.com/QwenLM/qwen-code/pull/4132) | HTTP daemon が本番対応へ、Web UI / IM bot が安全に接続可能 |
+| **Ctrl+X が /editor 設定を尊重** | [#4310](https://github.com/QwenLM/qwen-code/pull/4310) | 外部エディタが `/editor` 設定で開く |
+| **Skill priority ソート** | [#4155](https://github.com/QwenLM/qwen-code/pull/4155) | SKILL.md の priority フィールドで表示順を制御 |
+| **スタンドアロンインストール** | [#3828](https://github.com/QwenLM/qwen-code/pull/3828) | Node.js 環境不要——ワンクリックでインストール即使用 |
+| **atomicWriteFile**：Write/Edit ツールの原子書き込み | [#4096](https://github.com/QwenLM/qwen-code/pull/4096) | 書き込み中断で半端なファイルが生成されない——データが安全に |
+| **/auth 統一リファクタ**：Connect a Provider フロー | [#4287](https://github.com/QwenLM/qwen-code/pull/4287) | 認証設定がより明確に——すべてのモデルプロバイダーを一箇所で管理 |
+
+## 📊 パフォーマンス改善
+
+| PR | 改善内容 | 影響 |
+|----|----------|------|
+| [#4070](https://github.com/QwenLM/qwen-code/pull/4070) | lowlight をコード分割、起動時の V8 パースオーバーヘッドを削減 | 起動が高速化 |
+| [#4101](https://github.com/QwenLM/qwen-code/pull/4101) | 圧縮サマリー前にインラインメディアを除去 | 圧縮品質向上——画像 base64 にトークンを浪費しない |
+| [#4086](https://github.com/QwenLM/qwen-code/pull/4086) | Explore サブ Agent が fastModel を使用 | 探索的サブタスクに小さいモデルを使用——品質を落とさずコスト削減 |
+| [#4186](https://github.com/QwenLM/qwen-code/pull/4186) | ヒープメモリ圧力による自動圧縮セーフティネット | 極端に長い会話で OOM クラッシュしなくなった |
+| [#4172](https://github.com/QwenLM/qwen-code/pull/4172) | auto-memory recall をメインリクエストパスからデカップリング | メモリ呼び出しが初回レスポンスを遅くしなくなった |
+| [#4125](https://github.com/QwenLM/qwen-code/pull/4125) | バックグラウンドタスク結果の切り詰め + 最新優先表示 | バックグラウンドタスクパネルがクリーンに——最新結果が上に |
+| [#4153](https://github.com/QwenLM/qwen-code/pull/4153) | cross-auth fast models をサブ Agent に拡張 | サブ Agent も fastModel でコスト削減可能 |
+
+## 🔧 重要な修正
+
+| PR | 修正内容 | 影響 |
+|----|----------|------|
+| [#4143](https://github.com/QwenLM/qwen-code/pull/4143) | `/language` 切り替えが再起動なしで即座に反映 | 言語切り替えにセッション再起動不要 |
+| [#4147](https://github.com/QwenLM/qwen-code/pull/4147) | VSCode 思考状態の永続化 + 編集スナップショット復元 | VSCode で Agent の思考プロセスが消えなくなった |
+| [#4059](https://github.com/QwenLM/qwen-code/pull/4059) | MinTTY Ctrl+Backspace が前の単語削除として正しく処理 | Windows MinTTY ターミナルショートカットが正常動作 |
+| [#4130](https://github.com/QwenLM/qwen-code/pull/4130) | VSCode diff が既存エディタグループを再利用 | diff を開いても新しいカラムを強制しない |
+| [#4166](https://github.com/QwenLM/qwen-code/pull/4166) | progressive MCP ツールがモデルの systemInstruction にリフレッシュ | バックグラウンドで発見された MCP ツールをモデルが正しく呼び出せる |
+| [#3980](https://github.com/QwenLM/qwen-code/pull/3980) | IDE コンテキストがユーザープロンプトに正しくマージ | IDE モードで Agent が開いているファイルを認識 |
+| [#4023](https://github.com/QwenLM/qwen-code/pull/4023) | キャンセル後のプロンプト自動復元 + キュー保持 | Ctrl+C で既に入力した内容が失われない |
+| [#4121](https://github.com/QwenLM/qwen-code/pull/4121) | Anthropic tool_result ブロックが cache_control を許可 | Claude モデルのプロンプトキャッシュがより安定 |
+| [#4157](https://github.com/QwenLM/qwen-code/pull/4157) | DashScope プロバイダー認識がより多くの hostname ルールに拡張 | 企業自社ホスト DashScope ゲートウェイが正しく認識 |
+| [#4129](https://github.com/QwenLM/qwen-code/pull/4129) | 繁体中国語翻訳を伝統的中国語の慣例に修正 | zh-TW ユーザーインターフェースがより自然に |
+| [#3896](https://github.com/QwenLM/qwen-code/pull/3896) | OpenAI stream deltas の累積正規化 | OpenAI モデルでのストリーミング出力がより安定 |
+| [#4286](https://github.com/QwenLM/qwen-code/pull/4286) | structuredClone を浅いコピーに置換して長セッション OOM を防止 | 長い会話でディープコピーによる OOM が発生しなくなった |
+| [#4294](https://github.com/QwenLM/qwen-code/pull/4294) | Qwen3 reasoning が送信履歴に正しくミラーリング | Qwen3 モデルで思考チェーンが完全に保持 |
+| [#4243](https://github.com/QwenLM/qwen-code/pull/4243) | idle microcompaction が read-before-write 状態を保持 | アイドル圧縮がファイル編集チェックを壊さなくなった |
+| [#4213](https://github.com/QwenLM/qwen-code/pull/4213) | ツール名マイグレーションが dispatch 時に適用 | レガシーツール名が新しい名前に自動マッピング、エラーなし |
+
+## 👋 新しいコントリビューターを歓迎
+
+- [**@ZevGit**](https://github.com/ZevGit) — ランタイム fetch options エラーハンドリングの改善（[#3997](https://github.com/QwenLM/qwen-code/pull/3997)）
+- [**@Col0ring**](https://github.com/Col0ring) — ModelScope 内蔵サードパーティ API プロバイダー（[#4150](https://github.com/QwenLM/qwen-code/pull/4150)）
+- [**@Dinsmoor**](https://github.com/Dinsmoor) — Qwen3.6-35B-A3B 量子化バリアント画像/動画サポート（[#4106](https://github.com/QwenLM/qwen-code/pull/4106)）
+- [**@xmillogx-cmd**](https://github.com/xmillogx-cmd) — ビルド/テスト時キャッシュ制限で OOM 防止（[#4188](https://github.com/QwenLM/qwen-code/pull/4188)）
+- [**@shenyankm**](https://github.com/shenyankm) — Plan Mode 設定可能な出力ディレクトリ（[#4062](https://github.com/QwenLM/qwen-code/pull/4062)）
+- [**@jifeng**](https://github.com/jifeng) — Daemon /demo デバッグページ（[#4132](https://github.com/QwenLM/qwen-code/pull/4132)）
+- [**@Alexxigang**](https://github.com/Alexxigang) — Qwen3 reasoning 送信履歴ミラー修正（[#4294](https://github.com/QwenLM/qwen-code/pull/4294)）
+- [**@ideal**](https://github.com/ideal) — Pin fetch to bundled undici 互換性修正（[#4238](https://github.com/QwenLM/qwen-code/pull/4238)）
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行して最新バージョンにアップグレードしてください。
+</Callout>
+
+ご質問やご提案がありましたら、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues) でフィードバックをお寄せください！
+ENDOFFILE; __aone_exit=$?; pwd -P > '/var/folders/4g/f3hnbx7j1ms5kmnl66xz5f540000gn/T/aone-copilot-cwd-1779429968619-ia3qudjbxk9.txt' 2>/dev/null; exit $__aone_exit

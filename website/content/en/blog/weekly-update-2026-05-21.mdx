@@ -1,0 +1,246 @@
+---
+title: "Qwen Code Weekly: /goal autonomous coding, Auto Approval hands-free, Worktree isolation"
+date: "2026-05-21"
+description: "Both Claude Code and Codex shipped /goal. Qwen Code v0.16.0 follows suit—plus an independent judge model and impossible-goal detection. The other big update: Auto Approval uses an LLM classifier to decide whether human confirmation is needed, so routine operations stop interrupting you."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+
+  title="Qwen Code Weekly: /goal autonomous coding, Auto Approval hands-free, Worktree isolation"
+
+  date="2026-05-21"
+
+  author="Qwen Team"
+
+/>
+
+One clear signal from the coding-agent space this week: everyone wants the agent to run to completion without babysitting. Claude Code [shipped /goal](https://medium.com/data-science-collective/how-to-build-a-claude-code-goal-better-than-99-of-people-5a4490095cf4), Codex [followed](https://www.knightli.com/en/2026/05/14/codex-goal-vs-claude-code-goal/), and OpenAI released [Symphony orchestration](https://openai.com/index/open-source-codex-orchestration-symphony/) to keep agents running in the background. "Set a goal → let go → review the result" is becoming the new mainstream interaction pattern.
+
+Qwen Code ships **v0.16.0** this week, taking three steps in the same direction:
+
+- **Run autonomously**—/goal + an independent judge model to determine completion, with automatic abandonment when it detects an impossible goal;
+- **Fewer interruptions**—Auto Approval uses an LLM classifier to assess operation risk; low-risk operations proceed without confirmation prompts;
+- **Run safely**—Worktree isolation reaches Phase C with session persistence + three recovery modes.
+
+## ✨ New Features
+
+### /goal: Set a Target, Let the Agent Run to Completion
+
+Claude Code just shipped /goal, and Qwen Code follows suit—but adds an extra layer: an independent judge model evaluates "is the goal achieved?" after each operation round, rather than letting the execution model judge itself.
+
+Enter `/goal "migrate all tests from Jest to Vitest"`, and the agent starts coding autonomously. After each round of operations, the judge model checks goal status. When completion conditions are met, it stops automatically; if not, it continues to the next round. If the judge determines the goal is impossible in the current context (e.g., missing dependencies, insufficient permissions), it abandons proactively and tells you why—no infinite loops burning tokens.
+
+**What you can do with it:**
+
+- Large-scale migrations, refactoring, and other multi-step tasks—set the goal and let the agent run without manual confirmation each round
+- Judge is independent from the execution model, avoiding "declaring itself done" bias
+- Impossible goals are abandoned automatically, no token waste from spinning
+- Supports non-interactive mode and streaming event output for CI/CD pipeline integration
+
+See PR [#4123](https://github.com/QwenLM/qwen-code/pull/4123), [#4230](https://github.com/QwenLM/qwen-code/pull/4230), [#4273](https://github.com/QwenLM/qwen-code/pull/4273)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/x2urc1XLrgUy-WpiLiRtyoWB6jD0zqPg8QfZfw0ztQo.mp4"  controls></video>
+
+### Auto Approval: LLM Classifier Auto-Approves Low-Risk Operations
+
+The most annoying thing about using an agent: every file write, every shell command requires you to press Y to confirm. Secure, but the interruption friction is intense—especially when the agent is autonomously running `/goal` and you're not even at your desk.
+
+Auto Approval mode uses an LLM classifier to assess each operation's risk level. Low-risk actions (reading files, running tests, small edits to existing files) are auto-approved; high-risk actions (deleting files, executing unknown scripts, modifying configuration) still prompt for confirmation. Set your policy, and the agent won't get stuck waiting while running autonomously.
+
+**What you can do with it:**
+
+- Once enabled, low-risk operations pass automatically—no more pressing Y one by one
+- Pair with `/goal`—the agent won't stall waiting for confirmation during long autonomous tasks
+- Risk classification is adjustable; enterprise scenarios can tighten the policy
+
+See PR [#4151](https://github.com/QwenLM/qwen-code/pull/4151)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01mz3mOg1yA0Dxh3apu_!!6000000006537-2-tps-1696-950.png)
+
+### Worktree Isolation: Agent Operates in an Independent Work Tree
+
+Last week we shipped `/branch`—conversation-level isolation that lets you fork multiple exploration paths within a session without interference. This week we go one layer deeper: **file-level isolation**.
+
+What do you fear most when an agent modifies code? Breaking the main branch. Especially during complex refactoring—the agent makes a bunch of changes and you realize the direction is wrong, then you have to revert file by file. `/branch` solves "how to isolate conversation context"; Worktree solves "how to isolate code changes."
+
+**Worktree support lets the agent operate in a Git worktree in isolation.** Once inside a worktree, all file modifications and command executions are confined to that independent work tree—the main branch stays untouched. Happy with the result? Merge it. Not happy? Discard it.
+
+This week pushes directly to Phase C: worktree session persistence, automatic hooksPath configuration, bottom status bar showing current worktree info, and a confirmation dialog on exit. `/resume` offers three recovery modes—restore conversation + code, conversation only, or code only.
+
+**What you can do with it:**
+
+- Agent makes experimental changes without polluting the main branch
+- Pair with `/goal` + Auto Approval—let the agent fully autonomously complete a major goal in an isolated environment
+- Worktree sessions persist; `/resume` to restore and continue after exiting
+- Bottom bar shows which worktree you're in at all times—no confusion
+
+See PR [#4073](https://github.com/QwenLM/qwen-code/pull/4073), [#4174](https://github.com/QwenLM/qwen-code/pull/4174)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/Ed26-rlnh6VC4UJJ6HLSha2VIvbUqoF0XybzN74zl8o.mp4"  controls></video>
+
+### /rewind File Recovery
+
+`/rewind` could already rewind conversations; now it can also recover files. When you rewind to a certain operation point, file contents are restored to their state at that moment. Three options on rewind: "restore code and conversation," "conversation only," or "code only," with `+N -N in M files` change statistics to help you decide.
+
+**What you can do with it:**
+
+- Agent modified 5 files and you realize step 3 went off track—`/rewind` back to before step 3, files recover too
+- No manual `git checkout` file by file—one command handles everything
+- More precise than `git stash`—restore to the exact state of a specific conversation turn
+- In IDE mode, `/rewind` clearly explains why it's disabled instead of failing silently
+
+See PR [#4064](https://github.com/QwenLM/qwen-code/pull/4064), [#4122](https://github.com/QwenLM/qwen-code/pull/4122)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN013GFf6W1zqsvHisBkC_!!6000000006766-2-tps-1696-956.png)
+
+### VSCode Extension: Edit Sent Messages
+
+Sent a question with an imprecise description? No need for `/rewind` + retype. Just edit that sent message directly, and the agent re-runs from the new prompt. No more errors when local snapshots are lost—automatic fallback to server-side recovery.
+
+**What you can do with it:**
+
+- Realize your prompt wasn't precise enough—edit that message directly, agent regenerates from the new prompt
+- One action to "edit question → regenerate"—no manual `/rewind` needed
+- Lost local snapshots don't cause errors—automatic fallback to server recovery
+
+See PR [#4147](https://github.com/QwenLM/qwen-code/pull/4147)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/kQfAnwx60qGbl-KG1Sl8d0aZoUdC6BMvzYCKJ97g15w.mp4"  controls></video>
+
+### Hooks Enhancement: Todo Lifecycle + Prompt Hook
+
+The hooks system adds two new event types this week:
+
+**TodoCreated / TodoCompleted**: Triggered when the agent creates or completes a todo item. You can auto-notify, write logs, or trigger CI when a todo is completed.
+
+**Prompt Hook**: New `type: "prompt"` hook type that uses an LLM to evaluate hook input and return a decision. Supports `$ARGUMENTS` placeholder for context injection, usable with any hook event.
+
+**What you can do with it:**
+
+- Auto-notify Slack / DingTalk when a todo is completed
+- Force re-confirmation before file deletion, log who executed the operation
+- Prompt Hook enables enterprise-grade input auditing—non-compliant instructions are blocked before reaching the model
+
+See PR [#3378](https://github.com/QwenLM/qwen-code/pull/3378), [#3388](https://github.com/QwenLM/qwen-code/pull/3388)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/fvPpako_gbPIUyCQMExnqGQCXfulhGmAFvJP4eY47JY.mp4"  controls></video>
+
+### ModelScope Built-in Integration
+
+Chinese developers get another one-click model source. ModelScope is now a built-in third-party API provider—select and configure it directly in `/auth`.
+
+**What you can do with it:**
+
+- No manual endpoint configuration—select ModelScope directly from the `/auth` menu
+- Direct connection within China, lower latency
+- All compatible models on the ModelScope platform are available
+
+See PR [#4150](https://github.com/QwenLM/qwen-code/pull/4150)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01VpuRuW1iJ8Gbhi2We_!!6000000004391-2-tps-1696-956.png)
+
+### Status Bar Preset Themes: One-Click Terminal Beautification
+
+Terminal tools don't have to be black-on-white. Qwen Code includes multiple status line style presets, switchable via an interactive dialog—varying in information density, color schemes, and displayed content.
+
+**What you can do with it:**
+
+- Interactive dialog to preview and switch between status bar themes
+- Adjustable information density: minimal mode shows only model name, detailed mode includes token count and timing
+- Selection persists to config—no need to re-set each time
+
+See PR [#4120](https://github.com/QwenLM/qwen-code/pull/4120)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01sIFVDE1HBoJESiU5x_!!6000000000720-2-tps-1696-946.png)
+
+### /stuck + /doctor: Built-in Diagnostic Toolkit
+
+Agent stops responding—is it rate limiting? MCP down? Context overflow? Used memory for a while and unsure what it remembers or if something's wrong? Before you could only guess. Now two built-in diagnostic commands cover different layers:
+
+**`/stuck`**—session-level diagnostics. When the session becomes unresponsive, it auto-detects rate limiting, MCP connectivity, memory pressure, and provides fix suggestions.
+
+**`/doctor`**—memory-level diagnostics. Shows memory file count, size, health status; identifies abnormally large memory files for cleanup; troubleshoots inaccurate agent memory.
+
+**What you can do with it:**
+
+- `/stuck`: One-command troubleshooting when a session freezes—no log diving
+- `/doctor`: Periodic memory health checks to prevent memory bloat from affecting response quality
+- Use together—`/stuck` for real-time issues, `/doctor` for chronic issues
+
+See PR [#4133](https://github.com/QwenLM/qwen-code/pull/4133), [#4180](https://github.com/QwenLM/qwen-code/pull/4180)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01tharik1yCkbHUbB9Y_!!6000000006543-2-tps-1696-956.png)
+
+### More New Features
+
+| Feature | PR | Impact |
+|---------|-----|--------|
+| **NotebookEdit tool**: Native Jupyter notebook editing support | [#3900](https://github.com/QwenLM/qwen-code/pull/3900) | Agent can directly edit .ipynb files—seamless data science workflow |
+| **per-turn /diff**: Interactive diff per turn | [#4277](https://github.com/QwenLM/qwen-code/pull/4277) | View changes after each operation, precise to the turn |
+| **Git status injected into system prompt** | [#4110](https://github.com/QwenLM/qwen-code/pull/4110) | Agent auto-senses current branch and uncommitted changes for better decisions |
+| **Ctrl+P/N history navigation**: readline-style shortcuts for input history | [#4082](https://github.com/QwenLM/qwen-code/pull/4082) | Emacs/zsh habits transfer seamlessly |
+| **/delete batch deletion**: Select multiple sessions for bulk cleanup | [#3733](https://github.com/QwenLM/qwen-code/pull/3733) | No more deleting sessions one by one |
+| **/export custom output directory** | [#4193](https://github.com/QwenLM/qwen-code/pull/4193) | Export files to wherever you want |
+| **Qwen3.6-35B-A3B image/video support** | [#4106](https://github.com/QwenLM/qwen-code/pull/4106) | Local quantized models can handle multimodal input |
+| **Daemon mode improvements**: Permission routing, heartbeat, client auth, debug page | [#4232](https://github.com/QwenLM/qwen-code/pull/4232), [#4235](https://github.com/QwenLM/qwen-code/pull/4235), [#4132](https://github.com/QwenLM/qwen-code/pull/4132) | HTTP daemon moving toward production-ready; Web UI / IM bot can connect securely |
+| **Ctrl+X respects /editor preference** | [#4310](https://github.com/QwenLM/qwen-code/pull/4310) | External editor opens with your `/editor` preference |
+| **Skill priority sorting** | [#4155](https://github.com/QwenLM/qwen-code/pull/4155) | SKILL.md priority field controls display order |
+| **Standalone installation** | [#3828](https://github.com/QwenLM/qwen-code/pull/3828) | No Node.js environment needed—one-click install and run |
+| **atomicWriteFile**: Atomic writes for Write/Edit tools | [#4096](https://github.com/QwenLM/qwen-code/pull/4096) | Interrupted writes won't produce half-written files—safer data |
+| **/auth unified refactor**: Connect a Provider flow | [#4287](https://github.com/QwenLM/qwen-code/pull/4287) | Clearer auth config—manage all model providers in one place |
+
+## 📊 Performance Improvements
+
+| PR | Improvement | Impact |
+|----|-------------|--------|
+| [#4070](https://github.com/QwenLM/qwen-code/pull/4070) | Code-split lowlight, reduced V8 parse overhead at startup | Faster startup |
+| [#4101](https://github.com/QwenLM/qwen-code/pull/4101) | Strip inline media before compression summary | Higher compression quality—no tokens wasted on image base64 |
+| [#4086](https://github.com/QwenLM/qwen-code/pull/4086) | Explore sub-agent uses fastModel | Exploratory sub-tasks use smaller model—saves money without quality loss |
+| [#4186](https://github.com/QwenLM/qwen-code/pull/4186) | Heap memory pressure auto-compression safety net | Extreme long conversations no longer OOM crash |
+| [#4172](https://github.com/QwenLM/qwen-code/pull/4172) | Auto-memory recall decoupled from main request path | Memory recall no longer slows down first response |
+| [#4125](https://github.com/QwenLM/qwen-code/pull/4125) | Background task results truncated + newest first | Background task panel cleaner—latest results on top |
+| [#4153](https://github.com/QwenLM/qwen-code/pull/4153) | Cross-auth fast models extended to sub-agents | Sub-agents can also use fastModel to save money |
+
+## 🔧 Important Fixes
+
+| PR | Fix | Impact |
+|----|-----|--------|
+| [#4143](https://github.com/QwenLM/qwen-code/pull/4143) | `/language` switch takes effect immediately without restart | No restart needed when switching languages |
+| [#4147](https://github.com/QwenLM/qwen-code/pull/4147) | VSCode thinking state persistence + edit snapshot recovery | Agent thinking process no longer lost in VSCode |
+| [#4059](https://github.com/QwenLM/qwen-code/pull/4059) | MinTTY Ctrl+Backspace correctly handled as delete-previous-word | Windows MinTTY terminal shortcuts work properly |
+| [#4130](https://github.com/QwenLM/qwen-code/pull/4130) | VSCode diff reuses existing editor group | Opening diff no longer forces a new column |
+| [#4166](https://github.com/QwenLM/qwen-code/pull/4166) | Progressive MCP tools refreshed to model systemInstruction | MCP tools discovered in background can be correctly called by model |
+| [#3980](https://github.com/QwenLM/qwen-code/pull/3980) | IDE context correctly merged into user prompt | Agent can see your open files in IDE mode |
+| [#4023](https://github.com/QwenLM/qwen-code/pull/4023) | Auto-restore prompt + preserve queue after cancel | Ctrl+C no longer loses already-typed content |
+| [#4121](https://github.com/QwenLM/qwen-code/pull/4121) | Anthropic tool_result blocks allow cache_control | Claude model prompt cache more stable |
+| [#4157](https://github.com/QwenLM/qwen-code/pull/4157) | DashScope provider recognition extended with more hostname rules | Enterprise self-hosted DashScope gateways correctly identified |
+| [#4129](https://github.com/QwenLM/qwen-code/pull/4129) | Traditional Chinese translation corrections follow conventions | zh-TW user interface feels more natural |
+| [#3896](https://github.com/QwenLM/qwen-code/pull/3896) | OpenAI stream deltas cumulative normalization | More stable streaming output with OpenAI models |
+| [#4286](https://github.com/QwenLM/qwen-code/pull/4286) | structuredClone replaced with shallow copy to prevent long-session OOM | Long conversations no longer OOM from deep-copy overhead |
+| [#4294](https://github.com/QwenLM/qwen-code/pull/4294) | Qwen3 reasoning correctly mirrored to outbound history | Full chain-of-thought preserved with Qwen3 models |
+| [#4243](https://github.com/QwenLM/qwen-code/pull/4243) | Idle microcompaction preserves read-before-write state | Idle compression no longer breaks file edit checks |
+| [#4213](https://github.com/QwenLM/qwen-code/pull/4213) | Tool name migrations applied at dispatch time | Legacy tool names auto-mapped to new names without errors |
+
+## 👋 Welcome New Contributors
+
+- [**@ZevGit**](https://github.com/ZevGit) — Improved runtime fetch options error handling ([#3997](https://github.com/QwenLM/qwen-code/pull/3997))
+- [**@Col0ring**](https://github.com/Col0ring) — ModelScope built-in third-party API provider ([#4150](https://github.com/QwenLM/qwen-code/pull/4150))
+- [**@Dinsmoor**](https://github.com/Dinsmoor) — Qwen3.6-35B-A3B quantized variant image/video support ([#4106](https://github.com/QwenLM/qwen-code/pull/4106))
+- [**@xmillogx-cmd**](https://github.com/xmillogx-cmd) — Build/test cache limits to prevent OOM ([#4188](https://github.com/QwenLM/qwen-code/pull/4188))
+- [**@shenyankm**](https://github.com/shenyankm) — Plan Mode configurable output directory ([#4062](https://github.com/QwenLM/qwen-code/pull/4062))
+- [**@jifeng**](https://github.com/jifeng) — Daemon /demo debug page ([#4132](https://github.com/QwenLM/qwen-code/pull/4132))
+- [**@Alexxigang**](https://github.com/Alexxigang) — Qwen3 reasoning outbound history mirror fix ([#4294](https://github.com/QwenLM/qwen-code/pull/4294))
+- [**@ideal**](https://github.com/ideal) — Pin fetch to bundled undici compatibility fix ([#4238](https://github.com/QwenLM/qwen-code/pull/4238))
+
+<Callout type="info">
+  **How to upgrade**: Run `npm i @qwen-code/qwen-code@latest -g` to upgrade to the latest version.
+</Callout>
+
+For questions or suggestions, feel free to provide feedback on [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
+ENDOFFILE; __aone_exit=$?; pwd -P > '/var/folders/4g/f3hnbx7j1ms5kmnl66xz5f540000gn/T/aone-copilot-cwd-1779429447648-h8gf8yx65pp.txt' 2>/dev/null; exit $__aone_exit
