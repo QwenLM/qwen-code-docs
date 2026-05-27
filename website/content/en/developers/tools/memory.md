@@ -1,3 +1,7 @@
+---
+description: "Qwen Code save_memory tool reference. Learn how the AI agent persists knowledge across sessions for smarter contextual assistance."
+---
+
 # Memory Tool (`save_memory`)
 
 This document describes the `save_memory` tool for Qwen Code.
