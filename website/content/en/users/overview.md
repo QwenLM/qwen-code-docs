@@ -38,9 +38,7 @@ Choose your authentication method — **API Key** or **[Alibaba Cloud Coding Pla
 what does this project do?
 ```
 
-<video src="https://cloud.video.taobao.com/vod/j7-QtQScn8UEAaEdiv619fSkk5p-t17orpDbSqKVL5A.mp4" controls width="800">
-  Your browser does not support the video tag.
-</video>
+<video src="https://cloud.video.taobao.com/vod/j7-QtQScn8UEAaEdiv619fSkk5p-t17orpDbSqKVL5A.mp4" controls width="800" aria-label="Qwen Code demo: ask the AI agent to understand your codebase" style="margin-top: 1.5em"></video>
 
 You'll be prompted to log in on first use. That's it! [Continue with Quickstart (5 mins) →](./quickstart)
 
