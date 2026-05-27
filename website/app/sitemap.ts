@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 
 const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"] as const;
 
@@ -63,6 +64,20 @@ function safeExists(p: string): boolean {
   }
 }
 
+function getGitLastModified(filePath: string): Date {
+  try {
+    const repoRoot = path.resolve(process.cwd(), "..");
+    const relativePath = path.relative(repoRoot, filePath);
+    const gitDate = execSync(
+      `git log -1 --format=%ai "${relativePath}"`,
+      { cwd: repoRoot, encoding: "utf-8" }
+    ).trim();
+    return new Date(gitDate);
+  } catch {
+    return new Date();
+  }
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = getSiteUrl();
   const now = new Date();
@@ -85,7 +100,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       const docPath = toDocPath(locale, f);
       items.push({
         url: `${siteUrl}${docPath}`,
-        lastModified: now,
+        lastModified: getGitLastModified(f),
         changeFrequency: "weekly",
         priority: docPath === `/${locale}/` ? 0.8 : 0.6,
       });
