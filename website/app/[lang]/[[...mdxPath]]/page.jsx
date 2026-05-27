@@ -14,17 +14,34 @@ export const generateStaticParams = async () => {
   });
 };
 
+const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"];
+
 // 移除 TS 类型，仅用 JS 语法
 export async function generateMetadata(props) {
   const params = await props.params;
   const { metadata } = await importPage(params.mdxPath, params.lang);
-  
+
+  const mdxPath = Array.isArray(params.mdxPath) ? params.mdxPath.join("/") : (params.mdxPath || "");
+  const pagePath = mdxPath ? `/${mdxPath}/` : "/";
+
+  // 动态生成 hreflang，指向当前页面的各语言版本
+  const languages = {};
+  for (const locale of LOCALES) {
+    languages[locale] = `/${locale}${pagePath}`;
+  }
+  // 无匹配语言时默认展示英文版本
+  languages["x-default"] = `/en${pagePath}`;
+
   // 覆盖 title、openGraph 和 twitter，让分享时显示正确的标题和图片
   return {
     ...metadata,
     title: {
       default: metadata.title,
       template: '%s', // 不添加后缀
+    },
+    alternates: {
+      canonical: `/${params.lang}${pagePath}`,
+      languages,
     },
     openGraph: {
       title: metadata.title,
