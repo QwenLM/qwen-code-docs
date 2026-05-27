@@ -14,25 +14,6 @@ const DEFAULT_TITLE = "Qwen Code: AI Coding Agent Documentation";
 const DESCRIPTION =
   "Multilingual documentation for Qwen Code: an open-source AI coding agent. Learn installation, IDE integration, MCP servers, workflows, automation, and best practices.";
 
-const KEYWORDS = [
-  "Qwen Code",
-  "Qwen",
-  "AI coding agent",
-  "AI developer tools",
-  "documentation",
-  "open source",
-  "Next.js",
-  "Nextra",
-  "MCP",
-  "Model Context Protocol",
-  "IDE integration",
-  "workflow automation",
-  "Alibaba",
-  "阿里巴巴",
-  "通义千问",
-  "千问",
-  "大模型",
-];
 
 function getSiteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL;
@@ -54,7 +35,6 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description: DESCRIPTION,
-  keywords: KEYWORDS,
   metadataBase: new URL(getSiteUrl()),
   alternates: {
     canonical: "/",
