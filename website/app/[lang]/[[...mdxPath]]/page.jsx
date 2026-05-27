@@ -16,6 +16,31 @@ export const generateStaticParams = async () => {
 
 const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"];
 
+// OG 图片映射
+const OG_IMAGE_MAP = {
+  blog: "/assets/og-blog.svg",
+  showcase: "/assets/og-showcase.svg",
+};
+
+const DEFAULT_OG_DIRS = ["users", "developers", "design", "plans"];
+const DEFAULT_OG_IMAGE = "/assets/og-default.svg";
+
+function getOgImage(mdxPath) {
+  const path = Array.isArray(mdxPath) ? mdxPath.join("/") : (mdxPath || "");
+  
+  // 优先匹配特定目录的图片
+  for (const [dir, image] of Object.entries(OG_IMAGE_MAP)) {
+    if (path.startsWith(dir)) return image;
+  }
+  
+  // 默认目录使用默认图片，其他目录使用品牌兜底图
+  if (DEFAULT_OG_DIRS.some((dir) => path.startsWith(dir))) {
+    return DEFAULT_OG_IMAGE;
+  }
+  
+  return "/assets/og-fallback-brand.png";
+}
+
 // 移除 TS 类型，仅用 JS 语法
 export async function generateMetadata(props) {
   const params = await props.params;
@@ -32,6 +57,9 @@ export async function generateMetadata(props) {
   // 无匹配语言时默认展示英文版本
   languages["x-default"] = `/en${pagePath}`;
 
+  // 获取 OG 图片（优先使用页面自定义图片，否则根据目录映射）
+  const ogImage = metadata.image || getOgImage(mdxPath) || undefined;
+
   // 覆盖 title、openGraph 和 twitter，让分享时显示正确的标题和图片
   return {
     ...metadata,
@@ -46,12 +74,12 @@ export async function generateMetadata(props) {
     openGraph: {
       title: metadata.title,
       description: metadata.description,
-      ...(metadata.image ? { images: [{ url: metadata.image }] } : {}),
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
     },
     twitter: {
       title: metadata.title,
       description: metadata.description,
-      ...(metadata.image ? { images: [metadata.image] } : {}),
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
   };
 }
