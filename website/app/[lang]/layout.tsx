@@ -21,7 +21,6 @@ type LayoutProps = Readonly<{
 
 const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   const { lang } = await params;
-  console.log("Language Layout - lang:", lang);
 
   let sourcePageMap = await getPageMap(`/${lang}`);
   //@ts-ignore
