@@ -1,3 +1,7 @@
+---
+description: "学习 Qwen Code settings.json 配置，掌握模型、审批模式、主题和高级选项设置，用清晰优先级解决团队与个人工作流差异。"
+---
+
 # Qwen Code 配置
 
 > [!tip]

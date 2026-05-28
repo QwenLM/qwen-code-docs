@@ -1,3 +1,7 @@
+---
+description: "了解 Qwen Code 的核心能力、30 秒安装入口和常见使用场景，快速判断它如何在终端中帮你理解代码、修改文件并完成 AI 编程任务。"
+---
+
 # Qwen Code 概览
 
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
