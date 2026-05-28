@@ -1,5 +1,7 @@
 import { generateStaticParamsFor, importPage } from "nextra/pages";
 import { useMDXComponents as getMDXComponents } from "../../../mdx-components";
+import fs from "node:fs";
+import path from "node:path";
 import "./index.css";
 
 export const generateStaticParams = async () => {
@@ -24,6 +26,7 @@ const OG_IMAGE_MAP = {
 
 const DEFAULT_OG_DIRS = ["users", "developers", "design", "plans"];
 const DEFAULT_OG_IMAGE = "/assets/og-default.svg";
+const EXCERPT_MAX_LENGTH = 160;
 
 function getOgImage(mdxPath) {
   const path = Array.isArray(mdxPath) ? mdxPath.join("/") : (mdxPath || "");
@@ -39,6 +42,104 @@ function getOgImage(mdxPath) {
   }
   
   return "/assets/og-fallback-brand.png";
+}
+
+function getContentFile(lang, mdxPath) {
+  const segments = Array.isArray(mdxPath) ? mdxPath : mdxPath ? [mdxPath] : [];
+  const relativePath = segments.length > 0 ? path.join(...segments) : "index";
+  const contentRoot = path.join(process.cwd(), "content", lang);
+
+  for (const extension of [".mdx", ".md"]) {
+    const filePath = path.join(contentRoot, `${relativePath}${extension}`);
+    if (fs.existsSync(filePath)) return filePath;
+  }
+
+  return null;
+}
+
+function stripFrontmatter(source) {
+  if (!source.startsWith("---")) return source;
+  const end = source.indexOf("\n---", 3);
+  return end === -1 ? source : source.slice(end + 4);
+}
+
+function cleanMarkdownText(text) {
+  return text
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/[*_~]/g, "")
+    .replace(/^#+\s*/g, "")
+    .replace(/^[-*+]\s+/g, "")
+    .replace(/^\d+\.\s+/g, "")
+    .replace(/^>\s*/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function truncateExcerpt(text) {
+  if ([...text].length <= EXCERPT_MAX_LENGTH) return text;
+
+  const truncated = [...text].slice(0, EXCERPT_MAX_LENGTH).join("");
+  const sentenceEnd = Math.max(
+    truncated.lastIndexOf("."),
+    truncated.lastIndexOf("。"),
+    truncated.lastIndexOf("!"),
+    truncated.lastIndexOf("！"),
+    truncated.lastIndexOf("?"),
+    truncated.lastIndexOf("？")
+  );
+
+  if (sentenceEnd >= 80) return truncated.slice(0, sentenceEnd + 1);
+  return `${truncated.replace(/[,.，。;；:：!?！？\s]+$/u, "")}...`;
+}
+
+function getExcerptFromContent(lang, mdxPath) {
+  const filePath = getContentFile(lang, mdxPath);
+  if (!filePath) return undefined;
+
+  const source = stripFrontmatter(fs.readFileSync(filePath, "utf8"))
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/~~~[\s\S]*?~~~/g, "");
+
+  const paragraphs = [];
+  let current = [];
+
+  for (const rawLine of source.split(/\r?\n/)) {
+    const line = rawLine.trim();
+
+    if (!line) {
+      if (current.length > 0) {
+        paragraphs.push(current.join(" "));
+        current = [];
+      }
+      continue;
+    }
+
+    if (
+      line.startsWith("#") ||
+      line.startsWith("import ") ||
+      line.startsWith("export ") ||
+      line.startsWith("<") ||
+      line.startsWith("|") ||
+      line.startsWith("{") ||
+      line === "---"
+    ) {
+      continue;
+    }
+
+    current.push(line);
+  }
+
+  if (current.length > 0) paragraphs.push(current.join(" "));
+
+  for (const paragraph of paragraphs) {
+    const cleaned = cleanMarkdownText(paragraph);
+    if ([...cleaned].length >= 40) return truncateExcerpt(cleaned);
+  }
+
+  const fallback = paragraphs.map(cleanMarkdownText).find(Boolean);
+  return fallback ? truncateExcerpt(fallback) : undefined;
 }
 
 // 移除 TS 类型，仅用 JS 语法
@@ -59,10 +160,13 @@ export async function generateMetadata(props) {
 
   // 获取 OG 图片（优先使用页面自定义图片，否则根据目录映射）
   const ogImage = metadata.image || getOgImage(mdxPath) || undefined;
+  const description =
+    metadata.description || getExcerptFromContent(params.lang, params.mdxPath);
 
   // 覆盖 title、openGraph 和 twitter，让分享时显示正确的标题和图片
   return {
     ...metadata,
+    ...(description ? { description } : {}),
     title: {
       default: metadata.title,
       template: '%s', // 不添加后缀
@@ -73,12 +177,12 @@ export async function generateMetadata(props) {
     },
     openGraph: {
       title: metadata.title,
-      description: metadata.description,
+      description,
       ...(ogImage ? { images: [{ url: ogImage }] } : {}),
     },
     twitter: {
       title: metadata.title,
-      description: metadata.description,
+      description,
       ...(ogImage ? { images: [ogImage] } : {}),
     },
   };
