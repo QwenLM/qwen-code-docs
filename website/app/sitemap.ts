@@ -5,6 +5,10 @@ import { execSync } from "node:child_process";
 
 const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"] as const;
 
+export function generateStaticParams() {
+  return [{ __metadata_id__: [] }];
+}
+
 function getSiteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL;
   if (explicit) return explicit.replace(/\/$/, "");
