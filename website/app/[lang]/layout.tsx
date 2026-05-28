@@ -8,6 +8,7 @@ import { LanguageDropdown } from "../../src/components/language-dropdown";
 import { ThemeToggle } from "../../src/components/theme-toggle";
 import { GitHubStarLink } from "../../src/components/github-star-link";
 import { Search } from "../../src/components/search";
+import { withBasePath } from "../../src/lib/utils";
 import NextLink from "next/link";
 import type { FC, ReactNode } from "react";
 
@@ -42,7 +43,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
             title={`Qwen Code: AI Coding Agent`}
           >
             <img
-              src='/favicon.png'
+              src={withBasePath("/favicon.png")}
               alt='Qwen Code'
               width={32}
               height={32}

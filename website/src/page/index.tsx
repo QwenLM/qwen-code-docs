@@ -5,6 +5,7 @@ import { ComparisonSection } from "@/components/comparison-section";
 import { UsageExamples } from "@/components/usage-examples";
 import { CTASection } from "@/components/cta-section";
 import { CustomNavbar } from "@/components/custom-navbar";
+import { withBasePath } from "@/lib/utils";
 
 const Index = () => {
   return (
@@ -17,7 +18,7 @@ const Index = () => {
               title={`Qwen Code: AI Coding Agent`}
             >
               <img
-                src='/favicon.png'
+                src={withBasePath("/favicon.png")}
                 alt='Qwen Code'
                 width={32}
                 height={32}

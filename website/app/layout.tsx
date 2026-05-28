@@ -8,6 +8,7 @@ import "nextra-theme-docs/style.css";
 import "../src/styles/globals.css";
 import { FontLoader } from "../src/components/font-loader";
 import { ThemeProvider } from "../src/components/theme-provider";
+import { withBasePath } from "../src/lib/utils";
 
 const SITE_NAME = "Qwen Code Docs";
 const DEFAULT_TITLE = "Qwen Code: AI Coding Agent Documentation";
@@ -71,11 +72,11 @@ export const metadata: Metadata = {
     title: "Qwen Code",
   },
   icons: {
-    icon: [{ url: "/favicon.png", type: "image/png" }],
-    shortcut: ["/favicon.png"],
-    apple: [{ url: "/favicon.png", type: "image/png" }],
+    icon: [{ url: withBasePath("/favicon.png"), type: "image/png" }],
+    shortcut: [withBasePath("/favicon.png")],
+    apple: [{ url: withBasePath("/favicon.png"), type: "image/png" }],
   },
-  manifest: "/site.webmanifest",
+  manifest: withBasePath("/site.webmanifest"),
   other: {
     "msapplication-TileColor": "#fff",
   },
