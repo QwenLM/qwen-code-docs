@@ -36,18 +36,6 @@ export const metadata: Metadata = {
   },
   description: DESCRIPTION,
   metadataBase: new URL(getSiteUrl()),
-  alternates: {
-    canonical: "/",
-    languages: {
-      en: "/en/",
-      zh: "/zh/",
-      de: "/de/",
-      fr: "/fr/",
-      ru: "/ru/",
-      ja: "/ja/",
-      "pt-BR": "/pt-BR/",
-    },
-  },
   robots: {
     index: true,
     follow: true,

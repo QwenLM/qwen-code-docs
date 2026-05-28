@@ -32,7 +32,7 @@ function walkDir(dir: string): string[] {
     }
 
     if (!entry.isFile()) continue;
-    if (!entry.name.toLowerCase().endsWith(".md")) continue;
+    if (!/\.(md|mdx)$/i.test(entry.name)) continue;
 
     results.push(full);
   }
@@ -45,7 +45,7 @@ function toDocPath(locale: string, markdownFile: string): string {
   const rel = path
     .relative(localeRoot, markdownFile)
     .replace(/\\/g, "/")
-    .replace(/\.md$/i, "");
+    .replace(/\.(md|mdx)$/i, "");
 
   // index.md maps to directory root
   if (rel === "index") return `/${locale}/`;
@@ -80,16 +80,7 @@ function getGitLastModified(filePath: string): Date {
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = getSiteUrl();
-  const now = new Date();
-
-  const items: MetadataRoute.Sitemap = [
-    {
-      url: `${siteUrl}/`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-  ];
+  const items: MetadataRoute.Sitemap = [];
 
   for (const locale of LOCALES) {
     const localeDir = path.join(process.cwd(), "content", locale);

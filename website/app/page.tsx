@@ -1,10 +1,17 @@
+import type { Metadata } from "next";
+
 const REDIRECT_URL = "https://qwen.ai/qwencode";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: REDIRECT_URL,
+  },
+};
 
 export default function RedirectToQwenCode() {
   return (
     <>
       <meta httpEquiv="refresh" content={`0;url=${REDIRECT_URL}`} />
-      <link rel="canonical" href={REDIRECT_URL} />
       <script
         dangerouslySetInnerHTML={{
           __html: `window.location.replace("${REDIRECT_URL}");`,
