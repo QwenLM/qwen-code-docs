@@ -93,6 +93,7 @@ const TabContent = ({
                   loop
                   muted
                   playsInline
+                  aria-label={title}
                   className="w-full h-full object-cover"
                 />
               ) : (
