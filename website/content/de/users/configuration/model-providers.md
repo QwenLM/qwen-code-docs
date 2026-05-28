@@ -1,3 +1,7 @@
+---
+description: "Konfigurieren Sie Qwen Code modelProviders für OpenAI, Anthropic, Gemini und weitere Modelle, um API Keys, Modellwechsel und Team-Governance zu steuern."
+---
+
 # Modellanbieter
 
 Qwen Code ermöglicht es dir, mehrere Modellanbieter über die `modelProviders`-Einstellung in deiner `settings.json` zu konfigurieren. Dadurch kannst du mit dem `/model`-Befehl zwischen verschiedenen KI-Modellen und Anbietern wechseln.

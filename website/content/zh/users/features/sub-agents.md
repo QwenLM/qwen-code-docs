@@ -1,3 +1,7 @@
+---
+description: "配置 Qwen Code Sub Agents，为测试、文档、重构和审查等任务分配专用 AI 角色，提升复杂项目中的执行准确性。"
+---
+
 # Subagent
 
 Subagent 是 Qwen Code 中专门处理特定类型任务的 AI 助手。你可以将专注性工作委托给配置了特定任务提示词、工具和行为的 AI 代理。

@@ -1,3 +1,7 @@
+---
+description: "Aprenda Qwen Code Checkpointing para salvar e restaurar estados importantes em refatorações, experimentos e longas sessões de programação com IA."
+---
+
 # Checkpointing
 
 O Qwen Code inclui um recurso de Checkpointing que salva automaticamente um snapshot do estado do seu projeto antes que qualquer modificação de arquivo seja feita por ferramentas com IA. Isso permite que você experimente e aplique alterações de código com segurança, sabendo que pode reverter instantaneamente para o estado anterior à execução da ferramenta.

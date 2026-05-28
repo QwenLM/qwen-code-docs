@@ -1,3 +1,7 @@
+---
+description: "Personnalisez les thèmes et couleurs Qwen Code pour améliorer la lisibilité du terminal, les longues sessions de coding IA et les démos d’équipe."
+---
+
 # Thèmes
 
 Qwen Code prend en charge une variété de thèmes pour personnaliser sa palette de couleurs et son apparence. Vous pouvez modifier le thème selon vos préférences via la commande `/theme` ou le paramètre de configuration `"theme":`.

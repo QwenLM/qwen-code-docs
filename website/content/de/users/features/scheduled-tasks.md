@@ -1,3 +1,7 @@
+---
+description: "Planen Sie Qwen Code Scheduled Tasks für Code Checks, Reports und wiederkehrende Automationen, damit Entwicklungsabläufe zuverlässig ohne manuelle Starts laufen."
+---
+
 # Prompts zeitgesteuert ausführen
 
 > Verwende `/loop` und die Cron-Scheduling-Tools, um Prompts wiederholt auszuführen, den Status abzufragen oder einmalige Erinnerungen innerhalb einer Qwen Code-Sitzung festzulegen.

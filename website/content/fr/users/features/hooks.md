@@ -1,3 +1,7 @@
+---
+description: "Utilisez les Qwen Code Hooks pour lancer scripts, contrôles et notifications avant ou après les outils, et intégrer sécurité et workflow d’équipe."
+---
+
 # Qwen Code Hooks
 
 ## Présentation
