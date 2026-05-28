@@ -1,3 +1,7 @@
+---
+description: "Leia o guia de contribuição do Qwen Code para configurar ambiente, seguir regras de commit, rodar testes e enviar PRs com mais segurança."
+---
+
 # Como Contribuir
 
 Adoraríamos aceitar seus patches e contribuições para este projeto.

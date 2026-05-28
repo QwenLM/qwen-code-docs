@@ -1,3 +1,7 @@
+---
+description: "Créez un MCP Server pour Qwen Code afin d’exposer outils, sources de données et workflows via Model Context Protocol dans vos systèmes d’équipe."
+---
+
 # Serveurs MCP avec Qwen Code
 
 Ce document fournit un guide pour configurer et utiliser les serveurs Model Context Protocol (MCP) avec Qwen Code.

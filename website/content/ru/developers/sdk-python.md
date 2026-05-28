@@ -1,3 +1,7 @@
+---
+description: "Интегрируйте AI-coding через Qwen Code Python SDK: установка, аутентификация, примеры вызовов и agent workflows для Python-проектов."
+---
+
 # Python SDK
 
 ## `qwen-code-sdk`

@@ -1,3 +1,7 @@
+---
+description: "Comprenez l’architecture Qwen Code : modules clés, flux de données et limites d’extension pour contribuer, diagnostiquer les bugs et concevoir des features."
+---
+
 # Vue d'ensemble de l'architecture de Qwen Code
 
 Ce document présente une vue d'ensemble de l'architecture de Qwen Code.

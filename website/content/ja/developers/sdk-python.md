@@ -1,3 +1,7 @@
+---
+description: "Qwen Code Python SDK で AI コーディング機能を統合し、インストール、認証、呼び出し例、agent workflow を Python プロジェクトに導入できます。"
+---
+
 # Python SDK
 
 ## `qwen-code-sdk`

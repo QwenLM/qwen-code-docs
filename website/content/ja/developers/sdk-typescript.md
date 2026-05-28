@@ -1,3 +1,7 @@
+---
+description: "Qwen Code TypeScript SDK で AI コーディング統合を構築し、インストール、認証、型、Web・Node.js・ツール開発向け例を確認できます。"
+---
+
 # Typescript SDK
 
 ## @qwen-code/sdk

@@ -1,3 +1,7 @@
+---
+description: "Entenda a arquitetura do Qwen Code com módulos principais, fluxo de dados e limites de extensão para contribuir, depurar problemas e planejar features."
+---
+
 # Visão geral da arquitetura do Qwen Code
 
 Este documento fornece uma visão geral de alto nível da arquitetura do Qwen Code.

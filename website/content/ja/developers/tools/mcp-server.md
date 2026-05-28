@@ -1,3 +1,7 @@
+---
+description: "Qwen Code 向け MCP Server を構築し、独自ツール、データソース、ワークフローを Model Context Protocol 経由で AI コーディングに接続します。"
+---
+
 # Qwen Code での MCP サーバー
 
 このドキュメントでは、Qwen Code で Model Context Protocol (MCP) サーバーを構成および使用する方法について説明します。
