@@ -1,3 +1,7 @@
+---
+description: "Verbinden Sie Qwen Code in Minuten mit VS Code. Nutzen Sie Workspace-Kontext, native Diff-Prüfung und IDE-Befehle für kontrolliertes KI-Coding."
+---
+
 # IDE-Integration
 
 Qwen Code lässt sich in deine IDE integrieren, um ein nahtloseres und kontextbewussteres Erlebnis zu bieten. Diese Integration ermöglicht es der CLI, deinen Workspace besser zu verstehen und leistungsstarke Funktionen wie natives Diffing direkt im Editor zu aktivieren.

@@ -1,3 +1,7 @@
+---
+description: "Starten Sie mit Qwen Code in 5 Minuten: Installation, Authentifizierung und erste KI-Coding-Befehle, damit Sie ohne Konfigurationsfrust im Terminal loslegen."
+---
+
 # Schnellstart
 
 > 👏 Willkommen bei Qwen Code!

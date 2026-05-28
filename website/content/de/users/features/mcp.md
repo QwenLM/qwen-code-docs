@@ -1,3 +1,7 @@
+---
+description: "Verbinden Sie Qwen Code per MCP mit Datenbanken, APIs, Google Drive, Jira, Figma und weiteren Tools, um Kontext und Automatisierung gezielt zu erweitern."
+---
+
 # Qwen Code über MCP mit Tools verbinden
 
 Qwen Code kann über das [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) mit externen Tools und Datenquellen verbunden werden. MCP-Server gewähren Qwen Code Zugriff auf deine Tools, Datenbanken und APIs.

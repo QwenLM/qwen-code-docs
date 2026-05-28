@@ -1,3 +1,7 @@
+---
+description: "Créez, gérez et partagez des Qwen Code Agent Skills pour transformer vos processus récurrents en capacités modulaires et améliorer l’efficacité du coding IA."
+---
+
 # Agent Skills
 
 > Créez, gérez et partagez des Skills pour étendre les capacités de Qwen Code.

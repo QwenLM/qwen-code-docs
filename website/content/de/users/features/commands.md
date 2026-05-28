@@ -1,3 +1,7 @@
+---
+description: "Meistern Sie Qwen Code Befehle: Slash Commands, At Commands und Shell Commands für Sitzungen, Dateikontext und produktivere KI-Coding-Abläufe."
+---
+
 # Befehle
 
 Dieses Dokument beschreibt alle von Qwen Code unterstützten Befehle und hilft dir, Sitzungen effizient zu verwalten, die Oberfläche anzupassen und das Verhalten zu steuern.
