@@ -1,5 +1,10 @@
 import { generateStaticParamsFor, importPage } from "nextra/pages";
 import { useMDXComponents as getMDXComponents } from "../../../mdx-components";
+import {
+  getBlogPostingStructuredData,
+  getBreadcrumbStructuredData,
+  stringifyJsonLd,
+} from "../../../src/lib/structured-data";
 import fs from "node:fs";
 import path from "node:path";
 import "./index.css";
@@ -27,6 +32,19 @@ const OG_IMAGE_MAP = {
 const DEFAULT_OG_DIRS = ["users", "developers", "design", "plans"];
 const DEFAULT_OG_IMAGE = "/assets/og-default.svg";
 const EXCERPT_MAX_LENGTH = 160;
+
+function getSiteUrl() {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
+  if (explicit) return explicit.replace(/\/$/, "");
+
+  const ghRepo = process.env.GITHUB_REPOSITORY;
+  if (ghRepo && ghRepo.includes("/")) {
+    const [owner, repo] = ghRepo.split("/");
+    if (owner && repo) return `https://${owner}.github.io/${repo}`;
+  }
+
+  return "https://qwenlm.github.io/qwen-code-docs";
+}
 
 function getOgImage(mdxPath) {
   const path = Array.isArray(mdxPath) ? mdxPath.join("/") : (mdxPath || "");
@@ -195,9 +213,46 @@ const Page = async (props) => {
   const params = await props.params;
   const result = await importPage(params.mdxPath, params.lang);
   const { default: MDXContent, toc, metadata, sourceCode } = result;
+  const mdxPath = Array.isArray(params.mdxPath) ? params.mdxPath : [];
+  const siteUrl = getSiteUrl();
+  const description =
+    metadata.description || getExcerptFromContent(params.lang, params.mdxPath);
+  const breadcrumbStructuredData = getBreadcrumbStructuredData(
+    siteUrl,
+    params.lang,
+    mdxPath,
+    metadata.title
+  );
+  const isBlogPost = mdxPath[0] === "blog" && mdxPath.length > 1;
+  const blogPostingStructuredData = isBlogPost
+    ? getBlogPostingStructuredData({
+        siteUrl,
+        lang: params.lang,
+        mdxPath,
+        title: metadata.title,
+        description,
+        date: metadata.date,
+        author: metadata.author,
+        image: metadata.image,
+      })
+    : null;
 
   return (
     <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: stringifyJsonLd(breadcrumbStructuredData),
+        }}
+      />
+      {blogPostingStructuredData ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: stringifyJsonLd(blogPostingStructuredData),
+          }}
+        />
+      ) : null}
       <MDXContent {...props} params={params} />
     </Wrapper>
   );

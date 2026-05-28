@@ -8,6 +8,7 @@ import "nextra-theme-docs/style.css";
 import "../src/styles/globals.css";
 import { FontLoader } from "../src/components/font-loader";
 import { ThemeProvider } from "../src/components/theme-provider";
+import { getSiteStructuredData, stringifyJsonLd } from "../src/lib/structured-data";
 import { withBasePath } from "../src/lib/utils";
 
 const SITE_NAME = "Qwen Code Docs";
@@ -87,6 +88,8 @@ type LayoutProps = Readonly<{
 }>;
 
 const RootLayout: FC<LayoutProps> = ({ children }) => {
+  const siteUrl = getSiteUrl();
+
   return (
     <html suppressHydrationWarning>
       <Head
@@ -114,6 +117,14 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
             gtag('config', 'G-RVBGJ3Q97S');
           `}
         </Script>
+        <Script
+          id='site-structured-data'
+          type='application/ld+json'
+          strategy='beforeInteractive'
+          dangerouslySetInnerHTML={{
+            __html: stringifyJsonLd(getSiteStructuredData(siteUrl)),
+          }}
+        />
         <FontLoader />
         <ThemeProvider
           attribute="class"
