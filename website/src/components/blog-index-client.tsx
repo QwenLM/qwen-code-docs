@@ -176,9 +176,9 @@ export const BlogIndexClient = ({ posts, lang }: BlogIndexClientProps) => {
                     {formatDate(post.date)}
                   </span>
                 </div>
-                <h3 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors leading-snug">
+                <h2 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors leading-snug">
                   {post.title}
-                </h3>
+                </h2>
                 <p className="text-muted-foreground text-sm line-clamp-1">
                   {post.description}
                 </p>

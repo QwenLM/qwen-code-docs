@@ -75,6 +75,27 @@ function getContentFile(lang, mdxPath) {
   return null;
 }
 
+function hasContentPage(lang, mdxPath) {
+  const filePath = getContentFile(lang, mdxPath);
+  if (!filePath) return false;
+
+  const source = stripFrontmatter(fs.readFileSync(filePath, "utf8"))
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/~~~[\s\S]*?~~~/g, "")
+    .trim();
+
+  return source.length > 0;
+}
+
+function getAlternatePath(lang, pagePath, mdxPath) {
+  if (pagePath === "/") {
+    const overviewPath = ["users", "overview"];
+    return hasContentPage(lang, overviewPath) ? `/${lang}/users/overview/` : null;
+  }
+
+  return hasContentPage(lang, mdxPath) ? `/${lang}${pagePath}` : null;
+}
+
 function stripFrontmatter(source) {
   if (!source.startsWith("---")) return source;
   const end = source.indexOf("\n---", 3);
@@ -165,7 +186,12 @@ export async function generateMetadata(props) {
   const params = await props.params;
   const { metadata } = await importPage(params.mdxPath, params.lang);
 
-  const mdxPath = Array.isArray(params.mdxPath) ? params.mdxPath.join("/") : (params.mdxPath || "");
+  const mdxPathSegments = Array.isArray(params.mdxPath)
+    ? params.mdxPath
+    : params.mdxPath
+      ? [params.mdxPath]
+      : [];
+  const mdxPath = mdxPathSegments.join("/");
   const pagePath = mdxPath ? `/${mdxPath}/` : "/";
   const canonicalPath =
     pagePath === "/" ? `/${params.lang}/users/overview/` : `/${params.lang}${pagePath}`;
@@ -173,11 +199,13 @@ export async function generateMetadata(props) {
   // 动态生成 hreflang，指向当前页面的各语言版本
   const languages = {};
   for (const locale of LOCALES) {
-    languages[locale] =
-      pagePath === "/" ? `/${locale}/users/overview/` : `/${locale}${pagePath}`;
+    const alternatePath = getAlternatePath(locale, pagePath, mdxPathSegments);
+    if (alternatePath) languages[locale] = alternatePath;
   }
-  // 无匹配语言时默认展示英文版本
-  languages["x-default"] = pagePath === "/" ? "/en/users/overview/" : `/en${pagePath}`;
+
+  if (languages.en) {
+    languages["x-default"] = languages.en;
+  }
 
   // 获取 OG 图片（优先使用页面自定义图片，否则根据目录映射）
   const ogImage = metadata.image || getOgImage(mdxPath) || undefined;

@@ -68,22 +68,67 @@ function safeExists(p: string): boolean {
   }
 }
 
-function getGitLastModified(filePath: string): Date {
+function buildGitLastModifiedMap(
+  repoRoot: string,
+  contentRoot: string
+): Map<string, Date> {
+  const map = new Map<string, Date>();
   try {
-    const repoRoot = path.resolve(process.cwd(), "..");
-    const relativePath = path.relative(repoRoot, filePath);
-    const gitDate = execSync(
-      `git log -1 --format=%ai "${relativePath}"`,
-      { cwd: repoRoot, encoding: "utf-8" }
-    ).trim();
-    return new Date(gitDate);
+    const contentPath = path
+      .relative(repoRoot, contentRoot)
+      .replace(/\\/g, "/");
+    const output = execSync(
+      `git log --format="%ai" --name-only -- "${contentPath}/"`,
+      { cwd: repoRoot, encoding: "utf-8", maxBuffer: 50 * 1024 * 1024 }
+    );
+
+    const lines = output.split("\n");
+    let currentDate: Date | null = null;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+
+      // 日期行格式：2026-05-28 10:30:00 +0800
+      if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+        currentDate = new Date(trimmed);
+        continue;
+      }
+
+      // 文件名行
+      if (currentDate) {
+        const fullPath = path.resolve(repoRoot, trimmed);
+        if (!map.has(fullPath)) {
+          map.set(fullPath, currentDate);
+        }
+      }
+    }
   } catch {
-    return new Date();
+    // 非 git 环境或命令失败，返回空 Map，调用方会 fallback
+  }
+
+  return map;
+}
+
+function getGitLastModified(
+  filePath: string,
+  gitMap: Map<string, Date>
+): Date {
+  const gitDate = gitMap.get(filePath);
+  if (gitDate) return gitDate;
+
+  try {
+    return fs.statSync(filePath).mtime;
+  } catch {
+    return new Date(0);
   }
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = getSiteUrl();
+  const repoRoot = path.resolve(process.cwd(), "..");
+  const contentRoot = path.join(process.cwd(), "content");
+  const gitMap = buildGitLastModifiedMap(repoRoot, contentRoot);
   const items: MetadataRoute.Sitemap = [];
 
   for (const locale of LOCALES) {
@@ -95,7 +140,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       const docPath = toDocPath(locale, f);
       items.push({
         url: `${siteUrl}${docPath}`,
-        lastModified: getGitLastModified(f),
+        lastModified: getGitLastModified(f, gitMap),
         changeFrequency: "weekly",
         priority: docPath === `/${locale}/` ? 0.8 : 0.6,
       });
