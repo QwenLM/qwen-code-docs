@@ -1,0 +1,60 @@
+# Qwen Code
+
+> Qwen Code is an open-source AI coding agent by Alibaba. It integrates with VS Code, JetBrains, Zed, and GitHub Actions to help developers write, review, and refactor code using large language models.
+
+## Documentation
+
+- [Overview](https://qwenlm.github.io/qwen-code-docs/en/users/overview/): What Qwen Code is, core capabilities, and supported platforms
+- [Quick Start](https://qwenlm.github.io/qwen-code-docs/en/users/quickstart/): Installation and first-run guide
+- [Common Workflows](https://qwenlm.github.io/qwen-code-docs/en/users/common-workflow/): Everyday usage patterns and best practices
+
+## IDE Integration
+
+- [VS Code](https://qwenlm.github.io/qwen-code-docs/en/users/integration-vscode/): Setup and usage in Visual Studio Code
+- [JetBrains](https://qwenlm.github.io/qwen-code-docs/en/users/integration-jetbrains/): Setup and usage in IntelliJ, WebStorm, PyCharm, etc.
+- [Zed](https://qwenlm.github.io/qwen-code-docs/en/users/integration-zed/): Setup and usage in Zed editor
+- [GitHub Actions](https://qwenlm.github.io/qwen-code-docs/en/users/integration-github-action/): CI/CD automation with Qwen Code
+
+## Features
+
+- [MCP Servers](https://qwenlm.github.io/qwen-code-docs/en/users/features/mcp/): Model Context Protocol server integration
+- [Memory System](https://qwenlm.github.io/qwen-code-docs/en/users/features/memory/): Persistent memory across sessions
+- [Skills](https://qwenlm.github.io/qwen-code-docs/en/users/features/skills/): Custom skill definitions for specialized tasks
+- [Sub-Agents](https://qwenlm.github.io/qwen-code-docs/en/users/features/sub-agents/): Parallel task execution with forked agents
+- [Sandbox](https://qwenlm.github.io/qwen-code-docs/en/users/features/sandbox/): Isolated code execution environment
+- [Code Review](https://qwenlm.github.io/qwen-code-docs/en/users/features/code-review/): AI-assisted code review
+- [Headless Mode](https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/): Run without UI for automation
+- [Scheduled Tasks](https://qwenlm.github.io/qwen-code-docs/en/users/features/scheduled-tasks/): Timer-based automated workflows
+- [Channels](https://qwenlm.github.io/qwen-code-docs/en/users/features/channels/overview/): DingTalk, Telegram, WeChat integrations
+- [Approval Mode](https://qwenlm.github.io/qwen-code-docs/en/users/features/approval-mode/): Human-in-the-loop confirmation
+- [Checkpointing](https://qwenlm.github.io/qwen-code-docs/en/users/features/checkpointing/): Git-based session checkpoints
+- [Commands](https://qwenlm.github.io/qwen-code-docs/en/users/features/commands/): Slash commands reference
+- [Token Caching](https://qwenlm.github.io/qwen-code-docs/en/users/features/token-caching/): Prompt caching for cost reduction
+
+## Configuration
+
+- [Model Providers](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/model-providers/): Configure LLM providers and API keys
+- [Authentication](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/auth/): Auth setup and token management
+- [Settings](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/settings/): All configuration options
+- [Themes](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/themes/): UI theme customization
+- [QwenIgnore](https://qwenlm.github.io/qwen-code-docs/en/users/configuration/qwen-ignore/): File exclusion rules
+
+## Developer Guide
+
+- [Architecture](https://qwenlm.github.io/qwen-code-docs/en/developers/architecture/): System architecture and design
+- [Contributing](https://qwenlm.github.io/qwen-code-docs/en/developers/contributing/): How to contribute
+- [Roadmap](https://qwenlm.github.io/qwen-code-docs/en/developers/roadmap/): Development roadmap
+- [Tools Reference](https://qwenlm.github.io/qwen-code-docs/en/developers/tools/introduction/): Built-in tool system documentation
+- [Extensions](https://qwenlm.github.io/qwen-code-docs/en/developers/extensions/extension/): Extension development guide
+- [SDK - Python](https://qwenlm.github.io/qwen-code-docs/en/developers/sdk-python/): Python SDK
+- [SDK - TypeScript](https://qwenlm.github.io/qwen-code-docs/en/developers/sdk-typescript/): TypeScript SDK
+- [SDK - Java](https://qwenlm.github.io/qwen-code-docs/en/developers/sdk-java/): Java SDK
+
+## Blog
+
+- [Blog Index](https://qwenlm.github.io/qwen-code-docs/en/blog/): Release announcements, tutorials, and weekly updates
+
+## Support
+
+- [Troubleshooting](https://qwenlm.github.io/qwen-code-docs/en/users/support/troubleshooting/): Common issues and solutions
+- [Terms & Privacy](https://qwenlm.github.io/qwen-code-docs/en/users/support/tos-privacy/): Legal information
