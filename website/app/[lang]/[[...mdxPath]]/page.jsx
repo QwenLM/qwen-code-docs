@@ -167,14 +167,17 @@ export async function generateMetadata(props) {
 
   const mdxPath = Array.isArray(params.mdxPath) ? params.mdxPath.join("/") : (params.mdxPath || "");
   const pagePath = mdxPath ? `/${mdxPath}/` : "/";
+  const canonicalPath =
+    pagePath === "/" ? `/${params.lang}/users/overview/` : `/${params.lang}${pagePath}`;
 
   // 动态生成 hreflang，指向当前页面的各语言版本
   const languages = {};
   for (const locale of LOCALES) {
-    languages[locale] = `/${locale}${pagePath}`;
+    languages[locale] =
+      pagePath === "/" ? `/${locale}/users/overview/` : `/${locale}${pagePath}`;
   }
   // 无匹配语言时默认展示英文版本
-  languages["x-default"] = `/en${pagePath}`;
+  languages["x-default"] = pagePath === "/" ? "/en/users/overview/" : `/en${pagePath}`;
 
   // 获取 OG 图片（优先使用页面自定义图片，否则根据目录映射）
   const ogImage = metadata.image || getOgImage(mdxPath) || undefined;
@@ -190,7 +193,7 @@ export async function generateMetadata(props) {
       template: '%s', // 不添加后缀
     },
     alternates: {
-      canonical: `/${params.lang}${pagePath}`,
+      canonical: canonicalPath,
       languages,
     },
     openGraph: {
@@ -214,15 +217,32 @@ const Page = async (props) => {
   const result = await importPage(params.mdxPath, params.lang);
   const { default: MDXContent, toc, metadata, sourceCode } = result;
   const mdxPath = Array.isArray(params.mdxPath) ? params.mdxPath : [];
+  const isLanguageIndex = mdxPath.length === 0;
   const siteUrl = getSiteUrl();
   const description =
     metadata.description || getExcerptFromContent(params.lang, params.mdxPath);
+
+  if (isLanguageIndex) {
+    return (
+      <>
+        <meta httpEquiv="refresh" content="0;url=./users/overview/" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: 'window.location.replace("./users/overview/");',
+          }}
+        />
+        <a href="./users/overview/">Continue to Qwen Code documentation</a>
+      </>
+    );
+  }
+
   const breadcrumbStructuredData = getBreadcrumbStructuredData(
     siteUrl,
     params.lang,
     mdxPath,
     metadata.title
   );
+  const isBlogIndex = mdxPath[0] === "blog" && mdxPath.length === 1;
   const isBlogPost = mdxPath[0] === "blog" && mdxPath.length > 1;
   const blogPostingStructuredData = isBlogPost
     ? getBlogPostingStructuredData({
@@ -238,23 +258,25 @@ const Page = async (props) => {
     : null;
 
   return (
-    <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: stringifyJsonLd(breadcrumbStructuredData),
-        }}
-      />
-      {blogPostingStructuredData ? (
+    <div className={isBlogIndex ? "blog-index-page" : undefined}>
+      <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: stringifyJsonLd(blogPostingStructuredData),
+            __html: stringifyJsonLd(breadcrumbStructuredData),
           }}
         />
-      ) : null}
-      <MDXContent {...props} params={params} />
-    </Wrapper>
+        {blogPostingStructuredData ? (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: stringifyJsonLd(blogPostingStructuredData),
+            }}
+          />
+        ) : null}
+        <MDXContent {...props} params={params} />
+      </Wrapper>
+    </div>
   );
 };
 

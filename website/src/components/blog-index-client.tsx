@@ -21,15 +21,46 @@ interface BlogIndexClientProps {
   lang: string;
 }
 
+const BLOG_COPY: Record<string, { title: string; description: string }> = {
+  en: {
+    title: "Qwen Code Blog",
+    description: "AI coding updates, product releases, workflows, and practical guides for developers.",
+  },
+  zh: {
+    title: "Qwen Code 博客",
+    description: "获取产品更新、AI 编程实践、功能发布和真实案例。",
+  },
+  de: {
+    title: "Qwen Code Blog",
+    description: "KI-Coding-Updates, Produktneuheiten, Workflows und praxisnahe Leitfäden für Entwickler.",
+  },
+  fr: {
+    title: "Blog Qwen Code",
+    description: "Actualités du coding IA, sorties produit, workflows et guides pratiques pour les développeurs.",
+  },
+  ru: {
+    title: "Блог Qwen Code",
+    description: "Обновления AI-coding, релизы продукта, рабочие процессы и практические гайды для разработчиков.",
+  },
+  ja: {
+    title: "Qwen Code ブログ",
+    description: "AI コーディングの更新、製品リリース、ワークフロー、開発者向け実践ガイド。",
+  },
+  "pt-BR": {
+    title: "Blog Qwen Code",
+    description: "Atualizações de programação com IA, lançamentos, fluxos de trabalho e guias práticos para desenvolvedores.",
+  },
+};
+
 export const BlogIndexClient = ({ posts, lang }: BlogIndexClientProps) => {
   const isZh = lang === "zh";
+  const copy = BLOG_COPY[lang] || BLOG_COPY.en;
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   
   const t = {
-    badge: isZh ? "Qwen Code 博客" : "Qwen Code Blog",
-    title: "Blog",
-    description: isZh ? "团队笔记、洞察、故事和公告。" : "Team notes, insights, stories and announcements.",
+    title: copy.title,
+    description: copy.description,
     allPosts: isZh ? "全部文章" : "All Posts",
     productUpdates: isZh ? "产品更新" : "Product Updates",
     tutorials: isZh ? "教程" : "Tutorials",
@@ -76,6 +107,15 @@ export const BlogIndexClient = ({ posts, lang }: BlogIndexClientProps) => {
   return (
     <div className="min-h-screen pt-4 pb-20">
       <div className="max-w-[90rem] mx-auto px-6 md:px-8">
+        <header className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+            {t.title}
+          </h1>
+          <p className="mt-3 max-w-2xl text-muted-foreground">
+            {t.description}
+          </p>
+        </header>
+
         {/* Categories/Search Bar */}
         <div className="flex flex-wrap items-center justify-between gap-6 mb-6 py-2 border-b border-border/40">
           <div className="flex flex-wrap gap-2">
