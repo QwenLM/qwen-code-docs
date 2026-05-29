@@ -1,3 +1,7 @@
+---
+description: "Use o Qwen Code TypeScript SDK para criar integrações de programação com IA, com instalação, autenticação, tipos e exemplos para Web, Node.js e tools."
+---
+
 # SDK TypeScript
 
 ## @qwen-code/sdk

@@ -1,3 +1,7 @@
+---
+description: "Integrieren Sie KI-Coding mit dem Qwen Code Python SDK. Lernen Sie Installation, Authentifizierung, Beispiele und Agent Workflows für Python-Projekte."
+---
+
 # Python SDK
 
 ## `qwen-code-sdk`

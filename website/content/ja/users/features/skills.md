@@ -1,3 +1,7 @@
+---
+description: "Qwen Code Agent Skills の作成、管理、共有を学び、よく使う手順を再利用可能な能力としてまとめ、AI コーディングの精度を高めます。"
+---
+
 # Agent Skills
 
 > Qwen Code の機能を拡張するために、スキルを作成、管理、共有します。

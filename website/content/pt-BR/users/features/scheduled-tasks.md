@@ -1,3 +1,7 @@
+---
+description: "Agende Qwen Code Scheduled Tasks para checks de código, relatórios e automações recorrentes, reduzindo acionamentos manuais no workflow."
+---
+
 # Executar Prompts Agendados
 
 > Use `/loop` e as ferramentas de agendamento cron para executar prompts repetidamente, verificar status ou definir lembretes únicos dentro de uma sessão do Qwen Code.

@@ -1,3 +1,7 @@
+---
+description: "Integre programação com IA usando o Qwen Code Python SDK: instalação, autenticação, exemplos de chamada e agent workflows para projetos Python."
+---
+
 # Python SDK
 
 ## `qwen-code-sdk`

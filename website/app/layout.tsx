@@ -8,31 +8,14 @@ import "nextra-theme-docs/style.css";
 import "../src/styles/globals.css";
 import { FontLoader } from "../src/components/font-loader";
 import { ThemeProvider } from "../src/components/theme-provider";
+import { getSiteStructuredData, stringifyJsonLd } from "../src/lib/structured-data";
+import { withBasePath } from "../src/lib/utils";
 
 const SITE_NAME = "Qwen Code Docs";
 const DEFAULT_TITLE = "Qwen Code: AI Coding Agent Documentation";
 const DESCRIPTION =
   "Multilingual documentation for Qwen Code: an open-source AI coding agent. Learn installation, IDE integration, MCP servers, workflows, automation, and best practices.";
 
-const KEYWORDS = [
-  "Qwen Code",
-  "Qwen",
-  "AI coding agent",
-  "AI developer tools",
-  "documentation",
-  "open source",
-  "Next.js",
-  "Nextra",
-  "MCP",
-  "Model Context Protocol",
-  "IDE integration",
-  "workflow automation",
-  "Alibaba",
-  "阿里巴巴",
-  "通义千问",
-  "千问",
-  "大模型",
-];
 
 function getSiteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL;
@@ -54,20 +37,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description: DESCRIPTION,
-  keywords: KEYWORDS,
   metadataBase: new URL(getSiteUrl()),
-  alternates: {
-    canonical: "/",
-    languages: {
-      en: "/en/",
-      zh: "/zh/",
-      de: "/de/",
-      fr: "/fr/",
-      ru: "/ru/",
-      ja: "/ja/",
-      "pt-BR": "/pt-BR/",
-    },
-  },
   robots: {
     index: true,
     follow: true,
@@ -103,11 +73,11 @@ export const metadata: Metadata = {
     title: "Qwen Code",
   },
   icons: {
-    icon: [{ url: "/favicon.png", type: "image/png" }],
-    shortcut: ["/favicon.png"],
-    apple: [{ url: "/favicon.png", type: "image/png" }],
+    icon: [{ url: withBasePath("/favicon.png"), type: "image/png" }],
+    shortcut: [withBasePath("/favicon.png")],
+    apple: [{ url: withBasePath("/favicon.png"), type: "image/png" }],
   },
-  manifest: "/site.webmanifest",
+  manifest: withBasePath("/site.webmanifest"),
   other: {
     "msapplication-TileColor": "#fff",
   },
@@ -118,6 +88,8 @@ type LayoutProps = Readonly<{
 }>;
 
 const RootLayout: FC<LayoutProps> = ({ children }) => {
+  const siteUrl = getSiteUrl();
+
   return (
     <html suppressHydrationWarning>
       <Head
@@ -145,6 +117,14 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
             gtag('config', 'G-RVBGJ3Q97S');
           `}
         </Script>
+        <Script
+          id='site-structured-data'
+          type='application/ld+json'
+          strategy='beforeInteractive'
+          dangerouslySetInnerHTML={{
+            __html: stringifyJsonLd(getSiteStructuredData(siteUrl)),
+          }}
+        />
         <FontLoader />
         <ThemeProvider
           attribute="class"

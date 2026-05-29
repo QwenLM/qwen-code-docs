@@ -1,3 +1,7 @@
+---
+description: "Maîtrisez les commandes Qwen Code : slash commands, commandes At et Shell pour gérer les sessions, injecter du contexte fichier et coder plus vite."
+---
+
 # Commandes
 
 Ce document détaille toutes les commandes prises en charge par Qwen Code, vous aidant à gérer efficacement les sessions, personnaliser l'interface et contrôler son comportement.

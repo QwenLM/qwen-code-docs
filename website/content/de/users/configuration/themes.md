@@ -1,3 +1,7 @@
+---
+description: "Passen Sie Qwen Code Themes und Farben an, um Terminal-Lesbarkeit, lange AI-Coding-Sessions und Team-Demos klarer und angenehmer zu gestalten."
+---
+
 # Themes
 
 Qwen Code unterstützt verschiedene Themes, um das Farbschema und die Darstellung anzupassen. Du kannst das Theme über den `/theme`-Befehl oder die Konfigurationseinstellung `"theme":` nach deinen Vorlieben ändern.

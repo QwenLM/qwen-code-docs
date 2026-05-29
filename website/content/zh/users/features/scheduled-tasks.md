@@ -1,3 +1,7 @@
+---
+description: "使用 Qwen Code Scheduled Tasks 定时运行代码检查、报告生成和自动化任务，让重复开发流程按计划执行，减少手动触发。"
+---
+
 # 定时运行 Prompt
 
 > 使用 `/loop` 和 cron 调度工具，在 Qwen Code 会话中重复运行 prompt、轮询状态或设置一次性提醒。

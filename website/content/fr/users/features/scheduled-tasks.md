@@ -1,3 +1,7 @@
+---
+description: "Planifiez des Qwen Code Scheduled Tasks pour contrôles de code, rapports et automatisations récurrentes, sans déclenchement manuel à chaque fois."
+---
+
 # Planifier l'exécution de prompts
 
 > Utilisez `/loop` et les outils de planification cron pour exécuter des prompts de manière répétée, interroger un statut ou définir des rappels ponctuels dans une session Qwen Code.

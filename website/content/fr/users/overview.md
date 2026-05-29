@@ -1,3 +1,7 @@
+---
+description: "Découvrez Qwen Code, ses fonctions clés, le démarrage en 30 secondes et les usages courants pour comprendre, modifier et automatiser du code en terminal."
+---
+
 # Présentation de Qwen Code
 
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)

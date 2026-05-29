@@ -1,3 +1,7 @@
+---
+description: "学习 Qwen Code Hooks，在工具调用前后自动执行脚本、检查和通知，把代码审查、安全校验与团队流程嵌入 AI 编程工作流。"
+---
+
 # Qwen Code Hooks
 
 ## 概述

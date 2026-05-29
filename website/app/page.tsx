@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
+
 const REDIRECT_URL = "https://qwen.ai/qwencode";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: REDIRECT_URL,
+  },
+};
 
 export default function RedirectToQwenCode() {
   return (

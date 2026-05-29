@@ -63,6 +63,7 @@ export function VideoShowcaseDetail({ video, relatedVideos = [] }: VideoShowcase
             src={video.videoUrl}
             poster={video.thumbnail}
             controls
+            aria-label={video.title}
             className="w-full max-h-[600px] object-cover"
           />
         </div>

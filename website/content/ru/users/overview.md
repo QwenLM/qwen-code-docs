@@ -1,3 +1,7 @@
+---
+description: "Познакомьтесь с Qwen Code: ключевые возможности, старт за 30 секунд и сценарии, где терминальный AI-агент помогает понимать и менять код."
+---
+
 # Обзор Qwen Code
 
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)

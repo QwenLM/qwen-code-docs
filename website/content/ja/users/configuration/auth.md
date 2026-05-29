@@ -1,3 +1,7 @@
+---
+description: "Qwen Code の 3 つの認証方式、API Key、Alibaba Cloud Coding Plan、OAuth を比較し、ログイン・クォータ・モデル接続の悩みを解決します。"
+---
+
 # 認証
 
 Qwen Code は 3 つの認証方法をサポートしています。CLI の実行方法に合わせて選択してください：

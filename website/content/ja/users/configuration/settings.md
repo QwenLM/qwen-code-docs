@@ -1,3 +1,7 @@
+---
+description: "Qwen Code の settings.json を学び、モデル、承認モード、テーマ、高度な設定を調整して個人やチームの開発ワークフローに合わせます。"
+---
+
 # Qwen Code の設定
 
 > [!tip]

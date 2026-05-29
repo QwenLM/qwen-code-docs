@@ -1,3 +1,7 @@
+---
+description: "Erstellen, verwalten und teilen Sie Qwen Code Agent Skills, um wiederkehrende Abläufe als modulare Fähigkeiten nutzbar zu machen und Trefferquoten zu erhöhen."
+---
+
 # Agent Skills
 
 > Erstelle, verwalte und teile Skills, um die Funktionen von Qwen Code zu erweitern.

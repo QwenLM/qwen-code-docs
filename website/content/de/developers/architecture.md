@@ -1,3 +1,7 @@
+---
+description: "Verstehen Sie die Qwen Code Architektur mit Kernmodulen, Datenfluss und Erweiterungsgrenzen, um schneller beizutragen, Bugs zu finden und Features zu planen."
+---
+
 # Architekturübersicht von Qwen Code
 
 Dieses Dokument bietet eine allgemeine Übersicht über die Architektur von Qwen Code.

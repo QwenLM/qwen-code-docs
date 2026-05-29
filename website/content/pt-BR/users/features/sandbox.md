@@ -1,3 +1,7 @@
+---
+description: "Entenda a sandbox do Qwen Code para limitar comandos e ações de arquivo arriscadas, executando tarefas de programação com IA com limites seguros."
+---
+
 # Sandbox
 
 Este documento explica como executar o Qwen Code dentro de um sandbox para reduzir riscos quando as ferramentas executam comandos de shell ou modificam arquivos.

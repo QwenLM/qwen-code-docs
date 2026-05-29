@@ -40,7 +40,32 @@ export const generateStaticParams = async () => {
 export async function generateMetadata(props) {
   const params = await props.params;
   const { metadata } = await importPage(params.mdxPath, params.lang);
-  return metadata;
+
+  const mdxPath = Array.isArray(params.mdxPath)
+    ? params.mdxPath.join("/")
+    : params.mdxPath || "";
+  const pagePath = mdxPath ? `/${mdxPath}/` : "/";
+  const languages = {};
+
+  for (const locale of locales) {
+    languages[locale] = `/${locale}${pagePath}`;
+  }
+
+  if (languages.en) {
+    languages["x-default"] = languages.en;
+  }
+
+  return {
+    ...metadata,
+    alternates: {
+      ...metadata.alternates,
+      canonical: `/${params.lang}${pagePath}`,
+      languages: {
+        ...(metadata.alternates?.languages || {}),
+        ...languages,
+      },
+    },
+  };
 }
 
 // 不再声明TS类型

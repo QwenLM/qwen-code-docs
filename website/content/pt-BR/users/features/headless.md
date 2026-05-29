@@ -1,3 +1,7 @@
+---
+description: "Execute Qwen Code em modo headless para tarefas não interativas de programação com IA, ideal para CI/CD, scripts, análises em lote e automação."
+---
+
 # Modo Headless
 
 O modo headless permite executar o Qwen Code de forma programática a partir de scripts de linha de comando e ferramentas de automação, sem nenhuma interface interativa. Isso é ideal para scripting, automação, pipelines de CI/CD e criação de ferramentas com IA.

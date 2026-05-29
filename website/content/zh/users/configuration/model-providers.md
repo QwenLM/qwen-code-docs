@@ -1,3 +1,7 @@
+---
+description: "配置 Qwen Code modelProviders，管理 OpenAI、Anthropic、Gemini 等模型入口，解决多模型切换、API Key 和团队模型治理问题。"
+---
+
 # 模型提供商
 
 Qwen Code 允许你通过 `settings.json` 中的 `modelProviders` 设置配置多个模型提供商。这使你能够使用 `/model` 命令在不同的 AI 模型和提供商之间切换。
