@@ -25,12 +25,12 @@ const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"];
 
 // OG 图片映射
 const OG_IMAGE_MAP = {
-  blog: "/assets/og-blog.svg",
-  showcase: "/assets/og-showcase.svg",
+  blog: "/assets/og-blog.png",
+  showcase: "/assets/og-showcase.png",
 };
 
 const DEFAULT_OG_DIRS = ["users", "developers", "design", "plans"];
-const DEFAULT_OG_IMAGE = "/assets/og-default.svg";
+const DEFAULT_OG_IMAGE = "/assets/og-default.png";
 const EXCERPT_MAX_LENGTH = 160;
 
 function getSiteUrl() {

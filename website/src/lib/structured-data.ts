@@ -22,7 +22,7 @@ export function getSiteStructuredData(siteUrl: string) {
       "@type": "WebSite",
       "@id": websiteId,
       name: "Qwen Code Docs",
-      url: "https://qwenlm.github.io/qwen-code-docs/en/users/overview/",
+      url: `${siteUrl}/en/users/overview/`,
       description:
         "Multilingual documentation for Qwen Code: an open-source AI coding agent.",
       publisher: {
