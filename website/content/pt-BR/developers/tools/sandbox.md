@@ -1,6 +1,10 @@
-## Personalizando o ambiente de sandbox (Docker/Podman)
+---
+description: "Personalize o ambiente de sandbox do Qwen Code. Crie contêineres Docker ou Podman seguros para isolar execução de código por IA, alterações de arquivos e ferramentas do projeto."
+---
 
-### Atualmente, o projeto não oferece suporte ao uso de `BUILD_SANDBOX` após a instalação via pacote npm
+# Personalizando o ambiente de sandbox (Docker/Podman)
+
+## Atualmente, o projeto não oferece suporte ao uso de `BUILD_SANDBOX` após a instalação via pacote npm
 
 1. Para criar uma sandbox personalizada, você precisa acessar os scripts de build (`scripts/build_sandbox.js`) no repositório do código-fonte.
 2. Esses scripts de build não estão incluídos nos pacotes distribuídos pelo npm.
@@ -8,9 +12,9 @@
 
 Se você precisar de ferramentas adicionais dentro do container (por exemplo, `git`, `python`, `rg`), crie um Dockerfile personalizado. O procedimento específico é o seguinte:
 
-#### 1. Clone o projeto Qwen Code primeiro: https://github.com/QwenLM/qwen-code.git
+### 1. Clone o projeto Qwen Code primeiro: https://github.com/QwenLM/qwen-code.git
 
-#### 2. Certifique-se de executar as operações a seguir no diretório do repositório do código-fonte
+### 2. Certifique-se de executar as operações a seguir no diretório do repositório do código-fonte
 
 ```bash
 # 1. First, install the dependencies of the project
@@ -41,7 +45,7 @@ qwen -v
 
 ```
 
-#### 3. Crie o Dockerfile da sua sandbox no diretório raiz do seu projeto
+### 3. Crie o Dockerfile da sua sandbox no diretório raiz do seu projeto
 
 - Caminho: `.qwen/sandbox.Dockerfile`
 
@@ -57,7 +61,7 @@ RUN apt-get update && apt-get install -y \
     ripgrep
 ```
 
-#### 4. Crie a primeira imagem da sandbox no diretório raiz do seu projeto
+### 4. Crie a primeira imagem da sandbox no diretório raiz do seu projeto
 
 ```bash
 QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
@@ -66,7 +70,7 @@ QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
 
 Isso cria uma imagem específica do projeto com base na imagem padrão da sandbox.
 
-#### Remover o npm link
+### Remover o npm link
 
 - Se quiser restaurar a CLI oficial do Qwen Code, remova o npm link
 

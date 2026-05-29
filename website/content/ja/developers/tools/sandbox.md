@@ -1,6 +1,10 @@
-## サンドボックス環境のカスタマイズ（Docker/Podman）
+---
+description: "Qwen Code のサンドボックス環境をカスタマイズします。Docker または Podman コンテナを構築し、AI によるコード実行、ファイル変更、プロジェクト固有のツールを安全に分離します。"
+---
 
-### 現在、npm パッケージ経由でインストールした場合、`BUILD_SANDBOX` 機能の使用はサポートされていません
+# サンドボックス環境のカスタマイズ（Docker/Podman）
+
+## 現在、npm パッケージ経由でインストールした場合、`BUILD_SANDBOX` 機能の使用はサポートされていません
 
 1. カスタムサンドボックスをビルドするには、ソースコードリポジトリ内のビルドスクリプト（`scripts/build_sandbox.js`）にアクセスする必要があります。
 2. これらのビルドスクリプトは、npm でリリースされるパッケージには含まれていません。
@@ -8,9 +12,9 @@
 
 コンテナ内に追加のツール（例: `git`、`python`、`rg`）が必要な場合は、カスタム Dockerfile を作成してください。具体的な手順は以下の通りです。
 
-#### 1. Qwen Code プロジェクトをクローンします: https://github.com/QwenLM/qwen-code.git
+### 1. Qwen Code プロジェクトをクローンします: https://github.com/QwenLM/qwen-code.git
 
-#### 2. 以下の操作は必ずソースコードリポジトリのディレクトリ内で実行してください
+### 2. 以下の操作は必ずソースコードリポジトリのディレクトリ内で実行してください
 
 ```bash
 # 1. プロジェクトの依存関係をインストールします
@@ -41,7 +45,7 @@ qwen -v
 
 ```
 
-#### 3. プロジェクトのルートディレクトリにサンドボックス用の Dockerfile を作成します
+### 3. プロジェクトのルートディレクトリにサンドボックス用の Dockerfile を作成します
 
 - パス: `.qwen/sandbox.Dockerfile`
 
@@ -57,7 +61,7 @@ RUN apt-get update && apt-get install -y \
     ripgrep
 ```
 
-#### 4. プロジェクトのルートディレクトリで最初のサンドボックスイメージを作成します
+### 4. プロジェクトのルートディレクトリで最初のサンドボックスイメージを作成します
 
 ```bash
 QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
@@ -66,7 +70,7 @@ QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
 
 これにより、デフォルトのサンドボックスイメージをベースに、プロジェクト固有のイメージがビルドされます。
 
-#### npm link の解除
+### npm link の解除
 
 - qwen の公式 CLI に戻す場合は、npm link を解除してください
 

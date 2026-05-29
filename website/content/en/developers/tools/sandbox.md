@@ -2,9 +2,9 @@
 description: "Customize Qwen Code sandbox environment. Build Docker/Podman containers for secure AI code execution and file modification isolation."
 ---
 
-## Customizing the sandbox environment (Docker/Podman)
+# Customizing the sandbox environment (Docker/Podman)
 
-### Currently, the project does not support the use of the BUILD_SANDBOX function after installation through the npm package
+## Currently, the project does not support the use of the BUILD_SANDBOX function after installation through the npm package
 
 1. To build a custom sandbox, you need to access the build scripts (scripts/build_sandbox.js) in the source code repository.
 2. These build scripts are not included in the packages released by npm.
@@ -12,9 +12,9 @@ description: "Customize Qwen Code sandbox environment. Build Docker/Podman conta
 
 If you need extra tools inside the container (e.g., `git`, `python`, `rg`), create a custom Dockerfile, The specific operation is as follows
 
-#### 1、Clone qwen code project first, https://github.com/QwenLM/qwen-code.git
+### 1、Clone qwen code project first, https://github.com/QwenLM/qwen-code.git
 
-#### 2、Make sure you perform the following operation in the source code repository directory
+### 2、Make sure you perform the following operation in the source code repository directory
 
 ```bash
 # 1. First, install the dependencies of the project
@@ -45,7 +45,7 @@ qwen -v
 
 ```
 
-#### 3、Create your sandbox Dockerfile under the root directory of your own project
+### 3、Create your sandbox Dockerfile under the root directory of your own project
 
 - Path: `.qwen/sandbox.Dockerfile`
 
@@ -61,7 +61,7 @@ RUN apt-get update && apt-get install -y \
     ripgrep
 ```
 
-#### 4、Create the first sandbox image under the root directory of your project
+### 4、Create the first sandbox image under the root directory of your project
 
 ```bash
 QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
@@ -70,7 +70,7 @@ QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
 
 This builds a project-specific image based on the default sandbox image.
 
-#### Remove npm link
+### Remove npm link
 
 - If you want to restore the official CLI of qwen, please remove the npm link
 
