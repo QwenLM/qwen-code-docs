@@ -1,0 +1,214 @@
+---
+title: "Qwen Code Hebdo : Panneau Agent Parallèle, Auto-Memory Activé par Défaut, Worktree Phase D"
+date: "2026-05-28"
+description: "Cognition valorisé à 26 milliards $, Simon Willison dit que les agents de codage ont trouvé le PMF. Qwen Code v0.16.2 répond : les agents parallèles ont un panneau visuel avec navigation clavier, le système de mémoire est activé par défaut sans configuration, et l'isolation Worktree atteint la Phase D avec des paramètres de lancement directs."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Hebdo : Panneau Agent Parallèle, Auto-Memory Activé par Défaut, Worktree Phase D"
+  date="2026-05-28"
+  author="Qwen Team"
+/>
+
+L'espace des agents de codage a encore monté d'un cran cette semaine. Cognition [a annoncé plus d'1 milliard $ de financement pour une valorisation de 26 milliards $](https://x.com/swyx/status/2059717021944926238), et Simon Willison [a déclaré qu'Anthropic et OpenAI ont trouvé le PMF via les agents de codage](https://simonwillison.net/2026/May/27/product-market-fit)—au prix de dépenses entreprise nettement plus élevées. En parallèle, NVIDIA a open-sourcé [Polar, un framework de reinforcement learning](https://www.ithome.com/0/956/293.htm), utilisant Qwen Code comme sujet de test—faisant passer les scores SWE-Bench de 3,8% à 26,4% basé sur Qwen3.5-4B.
+
+Qwen Code a livré **v0.16.2** cette semaine avec plus de 30 PRs fusionnées, couvrant trois directions que les utilisateurs ressentent le plus directement :
+
+**Les agents parallèles sont enfin visibles.** Avant, quand plusieurs agents tournaient simultanément, vous ne pouviez que regarder les logs défiler. Maintenant il y a un panneau compact—une ligne par sous-agent, navigation clavier, progression en temps réel. C'est la première interface d'interaction vraiment utilisable pour « les agents évoluant d'assistants mono-thread à des équipes multi-threads. »
+
+**La mémoire ne nécessite aucune configuration.** auto-dream et auto-skill sont maintenant activés par défaut. L'agent apprend vos préférences et conventions de projet en l'utilisant, persistant entre les sessions. Nouvelle commande `/memory` pour consulter et basculer à tout moment. Comparé à Claude Code qui nécessite encore la maintenance manuelle de CLAUDE.md, c'est un écart UX significatif.
+
+**Environnement isolé en un paramètre.** Worktree est passé de la Phase C de la semaine dernière (persistance de session) à la Phase D—`qwen-code --worktree` lance directement dans un arbre de travail indépendant, `--worktree=#<N>` récupère le code PR distant. La config optionnelle `worktree.symlinkDirectories` crée des liens symboliques des répertoires lourds comme node_modules vers le repo principal, évitant les installations redondantes. Combiné avec `/goal` + Auto Approval, l'agent exécute une tâche complète en autonomie dans l'isolation tandis que la branche principale reste propre.
+
+De plus, le débordement des longues conversations a connu de vrais progrès cette semaine : la compression automatique a été repensée d'un seuil unique à une échelle à trois niveaux warn / auto / hard, réduisant l'espace gaspillé pour les modèles à grande fenêtre de 30% à un overhead fixe de 33K. Le mode headless a gagné `--max-wall-time` et `--max-tool-calls` comme budgets d'exécution—enfin une limite dure pour les agents en CI.
+
+## ✨ Nouvelles Fonctionnalités
+
+### Panneau Agent Parallèle : Tous les Agents Visibles d'un Coup d'Œil
+
+Si vous suivez les tendances des agents de codage, « parallèle » est le mot-clé le plus mentionné. La valorisation de 26 milliards $ de Cognition vend l'histoire de plusieurs agents travaillant simultanément. Mais quand plusieurs agents tournent, comment savoir qui fait quoi et où il en est ?
+
+L'approche de Qwen Code : quand 2 agents ou plus s'exécutent en parallèle, un panneau inline compact (`InlineParallelAgentsDisplay`) s'affiche automatiquement. Chaque sous-agent obtient une ligne montrant le statut, le nom, l'opération en cours, le temps écoulé et la consommation de tokens. Clavier ↑↓ pour changer le focus, Enter pour déplier les détails, Esc pour revenir à la saisie, et la frappe annule automatiquement le focus—entièrement sans souris.
+
+**Ce que vous pouvez en faire :**
+
+- Quand `/review` et commandes similaires lancent plusieurs sous-agents, voir toute la progression d'un coup d'œil (statut/nom/opération/temps/tokens)
+- Navigation clavier : ↑↓ pour sélectionner, Enter pour les détails, Esc pour revenir à la saisie—la frappe annule auto le focus
+- Le panneau se met à jour en temps réel pendant la phase live, puis se fige comme historique déroulable
+
+Voir PR [#4477](https://github.com/QwenLM/qwen-code/pull/4477)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01thMYS121ymzXkJHai_!!6000000007054-2-tps-1692-948.png)
+
+### Auto-Memory Activé par Défaut + Bascule /memory
+
+Claude Code pousse fort l'auto-mémoire—les utilisateurs doivent créer manuellement CLAUDE.md et y écrire des règles pour que l'agent se souvienne. Le problème : beaucoup ne savent même pas que ce fichier existe, encore moins comment le maintenir.
+
+Qwen Code a activé auto-dream et auto-skill par défaut cette semaine. Cela signifie : ce que l'agent apprend en conversation (vos préférences, conventions de projet, patterns fréquents) est automatiquement écrit en mémoire et chargé à la session suivante. Pas de configuration, pas de création de fichier, ça marche directement.
+
+Pour un contrôle manuel, le dialogue `/memory` inclut maintenant une ligne toggle `Auto-skill` aux côtés des `Auto-memory` et `Auto-dream` existants—trois bascules navigables avec les touches fléchées, Enter pour basculer, paramètres persistés dans `.qwen/settings.json` du workspace.
+
+**Ce que vous pouvez en faire :**
+
+- Aucune configuration nécessaire—les trois sous-systèmes de mémoire gérée (mémoire résumée, consolidation par étapes, extraction de skills) sont tous activés par défaut
+- Préférences et conventions de projet persistent entre sessions sans vous répéter
+- Le dialogue `/memory` fournit trois lignes toggle pour activer/désactiver n'importe quel sous-système à tout moment
+- Les paramètres explicites existants ne sont pas affectés—les nouvelles valeurs par défaut n'écrasent pas vos choix précédents
+
+Voir PR [#4547](https://github.com/QwenLM/qwen-code/pull/4547)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01p6ctD51X5t2ZfHgnf_!!6000000002873-2-tps-1688-950.png)
+
+### Worktree Phase D : Lancer Directement en Isolation
+
+La semaine dernière Worktree a atteint la Phase C—persistance de session + affichage barre de statut. Cette semaine saute directement à la Phase D : ajoutez `--worktree` au lancement et Qwen Code crée automatiquement et entre dans un arbre de travail indépendant. Avec les refs PR, vous pouvez tirer le code d'un PR dans un environnement isolé pour review ou développement continu sans toucher la branche principale.
+
+Une autre config pratique : les paramètres `worktree.symlinkDirectories` supportent la création de liens symboliques des répertoires lourds comme node_modules et .venv dans le worktree vers le repo principal. C'est opt-in—configurez la liste de chemins dans `.qwen/settings.json`, et tous les worktrees suivants (`--worktree`, outil `enter_worktree`, isolation Agent) l'appliquent automatiquement. La traversée de chemins, les chemins absolus, les répertoires `.git` et `.qwen` sont rejetés en toute sécurité.
+
+**Ce que vous pouvez en faire :**
+
+- `qwen --worktree` entre en isolation avec un paramètre—pas de `git worktree add` manuel
+- `--worktree=#<N>` ou URL PR GitHub : récupère le PR distant via `git fetch origin pull/<N>/head` dans un worktree
+- Configurer `worktree.symlinkDirectories` pour partager les gros répertoires via symlinks sans réinstallation
+- Forme une boucle complète avec la persistance de session + `/resume` de la semaine dernière
+
+Voir PR [#4381](https://github.com/QwenLM/qwen-code/pull/4381)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN018n4A7L1YeWbuNaPBb_!!6000000003084-1-tps-1276-720.gif)
+
+### Protection Headless : Budgets d'Exécution pour le Mode Non-Interactif
+
+Anthropic a publié cette semaine un [Framework de Sécurité Zero Trust pour AI Agent](https://claude.com/blog/zero-trust-for-ai-agents), notant qu'un risque majeur des agents autonomes est de « s'emballer sans personne pour les arrêter. » Baoyu ([@dotey](https://x.com/dotey/status/2059773942500298934)) dit la même chose : la clé pour bien utiliser les agents de codage se trouve aux deux extrémités—la planification au début et la revue à la fin.
+
+Qwen Code a ajouté deux paramètres de budget d'exécution : `--max-wall-time` (durée maximale, supportant les formats `90`, `30s`, `5m`, `1h`) et `--max-tool-calls` (nombre maximal d'appels d'outils). Quand le budget est épuisé, il termine avec le code de sortie 55, distinct de l'annulation utilisateur (130) et des limites de tours (53)—les scripts CI peuvent identifier précisément la raison de terminaison.
+
+De plus, en utilisant `--yolo` (auto-approbation complète) sans sandbox en mode headless, un avertissement de sécurité est affiché sur stderr au démarrage, suppressible avec `QWEN_CODE_SUPPRESS_YOLO_WARNING=1`.
+
+**Ce que vous pouvez en faire :**
+
+- `qwen -p "refactorer module" --max-wall-time 5m --max-tool-calls 50`—limites dures pour les agents en CI
+- Arrêt auto sur épuisement du budget, code de sortie 55, les scripts CI distinguent « budget épuisé » de « terminé normalement »
+- Tous les budgets par défaut à `-1` (illimité), utilisation existante non affectée
+- Avertissement de démarrage `--yolo` sans sandbox aide à découvrir les configurations non sécurisées
+
+Voir PR [#4502](https://github.com/QwenLM/qwen-code/pull/4502)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN018s7klB1n4XjMlU8P3_!!6000000005036-2-tps-1692-416.png)
+
+### Compression Auto Trois Niveaux : Plus de Débordement de Longue Conversation
+
+Simon Willison dit que les agents de codage augmentent significativement les coûts entreprise. Une raison principale : le contexte des longues conversations ne cesse de croître, et quand il approche la fenêtre de contexte du modèle il crashe ou perd des informations critiques.
+
+**Qwen Code a repensé la compression auto d'un seuil unique (déclenché à 70% de la fenêtre) à une échelle à trois niveaux**, utilisant à la fois le ratio d'occupation et le nombre absolu d'octets :
+
+- **Niveau warn** (≈60% fenêtre ou 20K du niveau auto) : alerte l'utilisateur que le contexte approche les limites—un avertissement précoce UX
+- **Niveau auto** (≈70% fenêtre ou 13K du bord de fenêtre) : déclenche proactivement la compression, coût faible, qualité de conversation quasi sans perte
+- **Niveau hard** (3K du bord de fenêtre) : compression forcée—le dernier filet de sécurité avant que l'API rejette un prompt surdimensionné
+
+Les modèles à petite fenêtre (32K/64K) utilisent la branche ratio, les modèles à grande fenêtre la branche octets absolus—l'espace gaspillé passe de 30% de la fenêtre à environ 33K d'overhead fixe.
+
+**Ce que vous pouvez en faire :**
+
+- Les longues conversations ne crashent plus par débordement de contexte—le niveau hard force la compression avant le rejet API
+- Pas de configuration manuelle nécessaire, le système calcule automatiquement les seuils trois niveaux selon la taille de fenêtre du modèle
+- L'ancienne config `chatCompression.contextPercentageThreshold` est dépréciée, affiche un avertissement de dépréciation au démarrage
+
+Voir PR [#4345](https://github.com/QwenLM/qwen-code/pull/4345)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01YlZeqn1Px02qY1qo3_!!6000000001906-2-tps-1688-950.png)
+
+### La Substitution de Commande N'est Plus Rejetée : Confirmation + ⚠️ Avertissement
+
+Le [Framework de Sécurité Zero Trust](https://claude.com/blog/zero-trust-for-ai-agents) d'Anthropic note que les frontières de sécurité des agents doivent équilibrer « utilisable » et « sécurisé. » Qwen Code était auparavant trop strict : si les commandes shell générées par l'agent contenaient `$()`, backticks, `<()` ou autre syntaxe de substitution de commande, l'exécution était refusée catégoriquement—même le mode YOLO ne pouvait pas contourner.
+
+Maintenant il montre un dialogue de confirmation avec un avertissement ⚠️ « Contains command substitution ». Vous voyez l'avertissement et choisissez d'autoriser ou refuser—la décision vous appartient, plus de rejets systématiques. Le mode YOLO exécute normalement avec un enregistrement d'audit dans les logs DEBUG pour revue a posteriori.
+
+**Ce que vous pouvez en faire :**
+
+- Les scénarios légitimes comme `$(git rev-parse HEAD)` pour obtenir le hash de commit ne sont plus bloqués
+- Le dialogue de confirmation montre ⚠️ pour identifier immédiatement la syntaxe de substitution
+- Le mode YOLO exécute normalement, les logs DEBUG conservent les enregistrements d'audit
+- L'outil Monitor corrige le même problème de rejet trop strict
+
+Voir PR [#4386](https://github.com/QwenLM/qwen-code/pull/4386)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01xzaMe31MzLDrPDfXe_!!6000000001505-2-tps-1688-950.png)
+
+### Plus de Nouvelles Fonctionnalités
+
+| Fonctionnalité | PR | Impact |
+|----------------|-----|--------|
+| **Token Plan Cache Control** : le cache prompt économise la facturation répétée | [#4495](https://github.com/QwenLM/qwen-code/pull/4495) | Les utilisateurs Token Plan obtiennent des system prompts auto-cachés dans les conversations consécutives |
+| **Skill memory-leak-debug** : diagnostic de fuite mémoire intégré | [#4468](https://github.com/QwenLM/qwen-code/pull/4468) | L'agent a un workflow systématique d'analyse de heap snapshot pour les fuites mémoire |
+| **Complétion de répertoire sans espace final** | [#4288](https://github.com/QwenLM/qwen-code/pull/4288) | La complétion Tab des répertoires permet de continuer à taper des sous-chemins |
+| **Suppressions de serveur MCP persistées** | [#4535](https://github.com/QwenLM/qwen-code/pull/4535) | Les serveurs MCP supprimés restent supprimés après redémarrage |
+| **Déclencheur @ nécessite un espace précédent** | [#4487](https://github.com/QwenLM/qwen-code/pull/4487) | Les adresses email et autre texte contenant @ ne déclenchent plus faussement la complétion de fichiers |
+| **Coller plusieurs chemins ajoute auto @** | [#4544](https://github.com/QwenLM/qwen-code/pull/4544) | Coller plusieurs chemins depuis le terminal les convertit automatiquement en références @ |
+| **Contexte local projet .qwen/QWEN.local.md** | [#4394](https://github.com/QwenLM/qwen-code/pull/4394) | Créer `.qwen/QWEN.local.md` à la racine du projet pour des règles locales personnelles |
+| **Prompt new app migré vers skills** | [#4567](https://github.com/QwenLM/qwen-code/pull/4567) | Les prompts de guidage nouvelle app sont plus flexibles et personnalisables |
+| **ACP Streamable HTTP transport** | [#4472](https://github.com/QwenLM/qwen-code/pull/4472) | Le Daemon ajoute un endpoint protocole ACP standard pour l'intégration UI tierce |
+| **Daemon push followup_suggestion** | [#4507](https://github.com/QwenLM/qwen-code/pull/4507) | Web UI pousse automatiquement des suggestions d'étapes suivantes après fin de session |
+| **Limite de concurrence agent en arrière-plan** | [#4324](https://github.com/QwenLM/qwen-code/pull/4324) | Les agents en arrière-plan n'épuisent pas les ressources en tournant trop simultanément |
+| **Propagation W3C traceparent** | [#4390](https://github.com/QwenLM/qwen-code/pull/4390) | Les entreprises peuvent tracer les chaînes d'appels complètes pour les requêtes agent |
+| **Daemon CORS allowlist** | [#4527](https://github.com/QwenLM/qwen-code/pull/4527) | `--allow-origin` contrôle précisément quels frontends peuvent accéder au Daemon |
+| **Changement de modèle en session Daemon** | [#4546](https://github.com/QwenLM/qwen-code/pull/4546) | Changer de modèle en cours de conversation sans quitter |
+| **Daemon logging fichier** | [#4559](https://github.com/QwenLM/qwen-code/pull/4559) | Les logs d'exécution du Daemon écrits dans un fichier pour un débogage plus facile |
+| **Serve prompt deadline + SSE idle timeout** | [#4530](https://github.com/QwenLM/qwen-code/pull/4530) | Les requêtes longtemps sans réponse s'arrêtent automatiquement |
+| **Serve POST /session/:id/recap** | [#4504](https://github.com/QwenLM/qwen-code/pull/4504) | Obtenir des résumés de session pour les aperçus d'historique Web UI |
+
+## 🔧 Corrections Importantes
+
+| PR | Correction | Impact |
+|----|-----------|--------|
+| [#4366](https://github.com/QwenLM/qwen-code/pull/4366) | Fix fuite de listeners AbortSignal en longue session (MaxListenersExceededWarning) | Les longues conversations n'émettent plus d'avertissements de débordement de listeners |
+| [#4489](https://github.com/QwenLM/qwen-code/pull/4489) | auto-skill n'écrase plus les fichiers skill existants | Les skills écrits manuellement ne sont pas écrasés par ceux créés automatiquement |
+| [#4407](https://github.com/QwenLM/qwen-code/pull/4407) | safeJsonStringify préserve les références d'objets répétés | Les structures de données complexes ne perdent plus d'information lors de la sérialisation |
+| [#4426](https://github.com/QwenLM/qwen-code/pull/4426) | Masquage des credentials dans les infos de diagnostic source | Les messages d'erreur ne divulguent plus de clés/tokens |
+| [#4371](https://github.com/QwenLM/qwen-code/pull/4371) | Plus de règles d'interpréteur dangereuses supprimées | Les frontières de permissions de l'agent sont plus strictes |
+| [#4478](https://github.com/QwenLM/qwen-code/pull/4478) | Valeurs par défaut des modèles Token Plan alignées avec ModelStudio | Les utilisateurs Token Plan voient des listes de modèles cohérentes avec la plateforme |
+| [#4512](https://github.com/QwenLM/qwen-code/pull/4512) | Stats token /context alignées avec les requêtes API réelles | `/context` montre enfin des comptages de tokens précis |
+| [#4465](https://github.com/QwenLM/qwen-code/pull/4465) | L'intégration WeChat autorise les chemins d'images workspace Windows | Les utilisateurs Windows n'ont plus d'erreurs de chemin en envoyant des images via WeChat |
+| [#4464](https://github.com/QwenLM/qwen-code/pull/4464) | L'intégration WeChat envoie des payloads d'images déchiffrables | Les images envoyées via WeChat sont maintenant visibles par les destinataires |
+| [#4517](https://github.com/QwenLM/qwen-code/pull/4517) | Rafraîchissement des valeurs dérivées du modèle brut | Les configs de paramètres se mettent à jour correctement après changement de modèle |
+| [#4461](https://github.com/QwenLM/qwen-code/pull/4461) | Afficher les avertissements de démarrage dans stderr avant le rendu TUI | Les problèmes de démarrage ne sont plus avalés par l'interface TUI |
+| [#4470](https://github.com/QwenLM/qwen-code/pull/4470) | Fix race condition de closure périmée dans le handler de commit du buffer texte | Les soumissions d'entrée rapides ne perdent plus occasionnellement du contenu |
+| [#4510](https://github.com/QwenLM/qwen-code/pull/4510) | Suivis sync cross-client Daemon (epoch-reset, sérialisation approval-mode) | Les connexions multi-clients au même Daemon ont une synchronisation d'état plus stable |
+| [#4497](https://github.com/QwenLM/qwen-code/pull/4497) | Claude marketplace remplit correctement les resources quand pointant vers un dossier | Le chargement de ressources n'est plus vide avec les plugins Claude marketplace |
+| [#4491](https://github.com/QwenLM/qwen-code/pull/4491) | Timeout canUseTool SDK honoré dans les requêtes de contrôle CLI | Les timeouts d'appel d'outil ne sont plus ignorés dans les intégrations SDK |
+| [#4453](https://github.com/QwenLM/qwen-code/pull/4453) | Nettoyer les sorties périmées avant build empêche TS5055 | Les développeurs construisant depuis les sources n'ont plus d'erreurs de build incrémental TypeScript |
+
+## 🙏 Contributeurs
+
+Merci à tous les contributeurs de cette semaine :
+
+| Contributeur | Contributions Principales |
+|--------------|--------------------------|
+| [@LaZzyMan](https://github.com/LaZzyMan) | Worktree Phase D, compression auto trois niveaux, auto-memory par défaut, fix écrasement auto-skill, fix permission substitution de commande |
+| [@wenshao](https://github.com/wenshao) | Panneau Agent parallèle, fix déclencheur @ |
+| [@DragonnZhang](https://github.com/DragonnZhang) | Token Plan cache control, fix SDK, docs monitor |
+| [@doudouOUC](https://github.com/doudouOUC) | Propagation W3C traceparent, Serve deadline/recap, fix fuite AbortSignal, télémétrie |
+| [@chiga0](https://github.com/chiga0) | Changement de modèle en session Daemon, fix sync cross-client |
+| [@huww98](https://github.com/huww98) | Skill memory-leak-debug, fix stale closure |
+| [@yiliang114](https://github.com/yiliang114) | Fixes intégration WeChat, OSS sync CI |
+| [@BZ-D](https://github.com/BZ-D) | Protection headless |
+| [@dykebo](https://github.com/dykebo) | Optimisation complétion de répertoire |
+| [@kkhomej33-netizen](https://github.com/kkhomej33-netizen) | Limite concurrence agent en arrière-plan |
+| [@pomelo-nwu](https://github.com/pomelo-nwu) | Fix alignement /context, refactor template PR |
+| [@qqqys](https://github.com/qqqys) | Masquage credentials, durcissement sécurité règles interpréteur |
+| [@Jerry2003826](https://github.com/Jerry2003826) | Persistance suppressions MCP, fix valeurs par défaut modèle |
+| [@MikeWang0316tw](https://github.com/MikeWang0316tw) | Collage multi-fichiers ajoute auto @ |
+| [@DennisYu07](https://github.com/DennisYu07) | Migration prompt new app |
+| [@YingchaoX](https://github.com/YingchaoX) | Alignement valeurs par défaut Token Plan |
+| [@ihubanov](https://github.com/ihubanov) | Fix safeJsonStringify |
+| [@kagura-agent](https://github.com/kagura-agent) | Affichage avertissement de démarrage (première contribution 🎉) |
+
+<Callout type="info">
+  **Comment mettre à jour** : Exécutez `npm i @qwen-code/qwen-code@latest -g` pour obtenir la dernière version.
+</Callout>
+
+Pour questions ou suggestions, n'hésitez pas à ouvrir un issue sur [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) !
