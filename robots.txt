@@ -1,4 +1,29 @@
 User-Agent: *
 Allow: /
 
+User-Agent: GPTBot
+Allow: /
+
+User-Agent: ChatGPT-User
+Allow: /
+
+User-Agent: ClaudeBot
+Allow: /
+
+User-Agent: PerplexityBot
+Allow: /
+
+User-Agent: Google-Extended
+Allow: /
+
+User-Agent: Bytespider
+Allow: /
+
+User-Agent: Applebot-Extended
+Allow: /
+
+User-Agent: cohere-ai
+Allow: /
+
+Host: https://QwenLM.github.io/qwen-code-docs
 Sitemap: https://QwenLM.github.io/qwen-code-docs/sitemap.xml
