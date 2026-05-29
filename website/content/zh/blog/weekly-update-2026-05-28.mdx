@@ -1,0 +1,214 @@
+---
+title: "Qwen Code 周报：并行 Agent 面板、Auto-Memory 默认开启、Worktree Phase D"
+date: "2026-05-28"
+description: "Cognition 估值 260 亿，Simon Willison 说编码 Agent 已找到 PMF。Qwen Code v0.16.2 本周的回应：并行 Agent 有了可视化面板和键盘导航，记忆系统默认开启不再需要手动配置，Worktree 隔离推进到 Phase D 支持启动参数直接进入。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：并行 Agent 面板、Auto-Memory 默认开启、Worktree Phase D"
+  date="2026-05-28"
+  author="Qwen Team"
+/>
+
+编码 Agent 赛道这周又热了一格。Cognition [宣布融资超 10 亿美元、估值 260 亿](https://x.com/swyx/status/2059717021944926238)，Simon Willison [直言 Anthropic 和 OpenAI 通过编码 Agent 找到了 PMF](https://simonwillison.net/2026/May/27/product-market-fit)——代价是企业客户成本显著上升。与此同时，英伟达开源了 [Polar 强化学习框架](https://www.ithome.com/0/956/293.htm)，直接用 Qwen Code 做实验对象，基于 Qwen3.5-4B 把 SWE-Bench 跑分从 3.8% 拉到 26.4%。
+
+Qwen Code 本周发布 **v0.16.2**，30+ 个 PR 合入，覆盖三个用户体感最明显的方向：
+
+**并行 Agent 终于可视了。** 之前多路 Agent 同时跑，你只能盯着日志滚。现在有一个紧凑面板，每个子 Agent 一行，键盘导航，实时看进度。这是 "Agent 从单线程助手变成多线程团队 " 的第一个真正可用的交互界面。
+
+**记忆不用配了。** auto-dream 和 auto-skill 默认开启，Agent 用着用着就记住了你的偏好和项目约定。跨会话保留，下次开聊不用重复交代。新增 `/memory` 命令随时查看和开关。对比 Claude Code 还要你手动维护 CLAUDE.md，这一步的体验差距很大。
+
+**隔离环境一个参数进去。** Worktree 从上周的 Phase C（会话持久化）推进到 Phase D——`qwen-code --worktree` 启动即进入独立工作树，`--worktree=#<N>` 直接拉远端 PR 代码。可选配置 `worktree.symlinkDirectories` 把 node_modules 等重型目录符号链接到主仓库，避免重复安装。配合 `/goal` + Auto Approval，Agent 在隔离环境里全自主跑完一个大任务，主分支始终干净。
+
+另外，长对话溢出问题这周有实质进展：自动压缩从单一阈值重新设计为 warn / auto / hard 三级阶梯，大窗口模型的预留浪费从 30% 降到固定 33K。headless 模式新增 `--max-wall-time` 和 `--max-tool-calls` 运行预算——CI 里跑 Agent 终于有了硬上限。
+
+## ✨ 新增特性
+
+### 并行 Agent 面板：多路 Agent 一屏可见
+
+如果你最近关注 Coding Agent 的趋势，" 并行 " 是被提到最多的关键词。Cognition 估值 260 亿背后卖的就是多 Agent 同时干活的故事。但多个 Agent 跑起来，你怎么知道谁在干什么、到哪了？
+
+Qwen Code 的做法：当 2 个或以上 Agent 并行执行时，自动渲染一个紧凑的内联面板（`InlineParallelAgentsDisplay`）。每个子 Agent 一行，实时显示状态、名称、当前操作、耗时和 token 消耗。键盘 ↑↓ 切换焦点，Enter 展开详情查看完整输出，Esc 回到输入框，打字字符自动取消焦点回到输入——全程不用鼠标。
+
+**你能用它做什么：**
+
+- `/review` 等命令并行启动多个子 Agent 时，一屏看到所有进展（状态/名称/操作/耗时/token）
+- 键盘导航：↑↓ 选中、Enter 展开详情、Esc 回输入框——打字自动取消焦点
+- 面板在 live 阶段实时更新，完成后固化为可回滚的历史记录
+
+详见 PR [#4477](https://github.com/QwenLM/qwen-code/pull/4477)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01thMYS121ymzXkJHai_!!6000000007054-2-tps-1692-948.png)
+
+### Auto-Memory 默认开启 + /memory 切换
+
+Claude Code 在大力推自动记忆——用户要手动创建 CLAUDE.md，然后在里面写规则让 Agent 记住。问题是很多人根本不知道有这个文件，更不知道怎么维护。
+
+Qwen Code 这周把 auto-dream 和 auto-skill 默认打开了。意思是：Agent 在对话中学到的东西（你的偏好、项目约定、常用模式），自动写入记忆，下次会话自动加载。不用配置，不用创建文件，开箱即用。
+
+如果你想手动控制，`/memory` dialog 现在新增了 `Auto-skill` toggle 行，与已有的 `Auto-memory` 和 `Auto-dream` 并列——三个开关用方向键导航、Enter 切换，设置持久化到 workspace 的 `.qwen/settings.json`。
+
+**你能用它做什么：**
+
+- 不用做任何配置，三个 managed-memory 子系统（摘要记忆、阶段整理、技能提取）全部默认开启
+- 跨会话保留你的偏好和项目约定，不用每次重复说明
+- `/memory` dialog 提供三行 toggle，随时开关任意子系统
+- 已有显式设置的用户不受影响——新默认值不覆盖你之前的选择
+
+详见 PR [#4547](https://github.com/QwenLM/qwen-code/pull/4547)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01p6ctD51X5t2ZfHgnf_!!6000000002873-2-tps-1688-950.png)
+
+### Worktree Phase D：启动即进入隔离环境
+
+上周 Worktree 推到 Phase C——会话持久化 + 底栏显示。这周直接到 Phase D：启动时加 `--worktree` 参数，Qwen Code 自动创建并进入独立工作树。配合 PR refs，你可以把某个 PR 的代码拉到隔离环境中 review 或继续开发，完全不影响主分支。
+
+另一个实用配置：`worktree.symlinkDirectories` settings 支持把 node_modules、.venv 这类重型目录在 worktree 里用符号链接指向主仓库，避免重复安装依赖。这是 opt-in 的——在 `.qwen/settings.json` 中配好路径列表，后续所有 worktree（`--worktree`、`enter_worktree` 工具、Agent isolation）都自动生效。路径遍历、绝对路径、`.git` 和 `.qwen` 目录会被安全拒绝。
+
+**你能用它做什么：**
+
+- `qwen --worktree` 一个参数进入隔离环境，不用手动 `git worktree add`
+- `--worktree=#<N>` 或 GitHub PR URL：用 `git fetch origin pull/<N>/head` 拉取远端 PR 到 worktree 中 review 或继续开发
+- 配置 `worktree.symlinkDirectories` 后，node_modules 等大目录用符号链接共享，不重复安装
+- 与上周的会话持久化 + `/resume` 形成完整闭环
+
+详见 PR [#4381](https://github.com/QwenLM/qwen-code/pull/4381)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN018n4A7L1YeWbuNaPBb_!!6000000003084-1-tps-1276-720.gif)
+
+### Headless 保护：非交互模式的运行预算
+
+Anthropic 本周发了 [零信任 AI Agent 安全框架](https://claude.com/blog/zero-trust-for-ai-agents)，指出自主 Agent 的一大风险是 " 跑飞了没人拦 "。宝玉（[@dotey](https://x.com/dotey/status/2059773942500298934)）也在说同一件事：用好 Coding Agent 的关键在两头——开头的规划和结尾的审核。
+
+Qwen Code 新增两个运行预算参数：`--max-wall-time`（最大运行时长，支持 `90`、`30s`、`5m`、`1h` 等格式）和 `--max-tool-calls`（最大工具调用次数）。到达预算上限时以 exit code 55 终止，与用户主动取消（130）和轮次限制（53）区分开——CI 脚本可以精确判断终止原因。
+
+另外，在 headless 模式下用 `--yolo`（全自动审批）但没有沙箱时，启动时会在 stderr 输出安全警告，可用 `QWEN_CODE_SUPPRESS_YOLO_WARNING=1` 抑制。
+
+**你能用它做什么：**
+
+- `qwen -p "重构模块" --max-wall-time 5m --max-tool-calls 50`——CI 里跑 Agent 有了硬上限
+- 到达预算自动停止，exit code 55，CI 脚本可区分 " 预算耗尽 " 和 " 正常完成 "
+- 所有预算默认 `-1`（无限制），现有用法不受影响
+- `--yolo` 无沙箱时的启动警告帮你发现不安全配置
+
+详见 PR [#4502](https://github.com/QwenLM/qwen-code/pull/4502)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN018s7klB1n4XjMlU8P3_!!6000000005036-2-tps-1692-416.png)
+
+### 三级自动压缩：长对话不再溢出崩溃
+
+Simon Willison 说编码 Agent 让企业客户成本显著上升。一个核心原因：长对话的上下文越滚越大，逼近模型上下文窗口时要么崩溃要么丢失关键信息。
+
+**Qwen Code 把自动压缩从单一阈值（70% 窗口触发）重新设计为三级阶梯**，按占用比例和绝对字节数双重判断：
+
+- **warn 级**（≈60% 窗口或距 auto 级 20K）：提示用户上下文接近上限，UX 层面的预警
+- **auto 级**（≈70% 窗口或距窗口边缘 13K）：主动触发压缩，成本低、对话质量几乎无损
+- **hard 级**（距窗口边缘 3K）：强制压缩，在 API 拒绝超大 prompt 之前的最后一道安全网
+
+小窗口模型（32K/64K）走比例分支，大窗口模型走绝对字节分支——浪费的预留空间从之前的 30% 窗口降到约 33K 固定开销。
+
+**你能用它做什么：**
+
+- 长对话不再因上下文溢出而崩溃——hard 级在 API 拒绝前强制压缩
+- 不需要手动配置，系统根据模型窗口大小自动计算三级阈值
+- 旧的 `chatCompression.contextPercentageThreshold` 配置已废弃，会在启动时输出 deprecation 警告
+
+详见 PR [#4345](https://github.com/QwenLM/qwen-code/pull/4345)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01YlZeqn1Px02qY1qo3_!!6000000001906-2-tps-1688-950.png)
+
+### 命令替换不再直接拒绝：改为弹确认 + ⚠️ 警告
+
+Anthropic 的 [零信任安全框架](https://claude.com/blog/zero-trust-for-ai-agents) 提到，Agent 的安全边界需要在 " 可用 " 和 " 安全 " 之间找平衡。Qwen Code 之前走了过严的一端：Agent 生成的 shell 命令里如果包含 `$()`、反引号、`<()` 等命令替换语法，直接拒绝执行——连 YOLO 模式都绕不过去。
+
+现在改为弹确认对话框，并在确认界面显示 ⚠️ "Contains command substitution" 警告。你看到警告后可以选择允许或拒绝——决定权交给你，不再一刀切。YOLO 模式下会在 DEBUG 日志中留下审计记录，方便事后排查。
+
+**你能用它做什么：**
+
+- Agent 用 `$(git rev-parse HEAD)` 获取 commit hash 等合理场景不再被卡住
+- 确认对话框显示 ⚠️ 警告，你一眼就知道这条命令包含替换语法
+- YOLO 模式正常执行，DEBUG 日志保留审计记录
+- Monitor 工具同步修复了相同的过严拒绝问题
+
+详见 PR [#4386](https://github.com/QwenLM/qwen-code/pull/4386)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01xzaMe31MzLDrPDfXe_!!6000000001505-2-tps-1688-950.png)
+
+### 更多新功能
+
+| 功能 | PR | 对你的影响 |
+|------|-----|-----------|
+| **Token Plan Cache Control**：prompt cache 省重复计费 | [#4495](https://github.com/QwenLM/qwen-code/pull/4495) | Token Plan 用户连续对话中 system prompt 自动缓存，配合三级压缩省更多 |
+| **memory-leak-debug skill**：内置内存泄漏诊断技能 | [#4468](https://github.com/QwenLM/qwen-code/pull/4468) | 遇到内存泄漏时 Agent 有系统化的 heap snapshot 分析流程 |
+| **目录补全不追加空格**：输入路径时目录后不再加空格 | [#4288](https://github.com/QwenLM/qwen-code/pull/4288) | Tab 补全目录后可以继续输入子路径，不用删空格 |
+| **MCP server removals 持久化** | [#4535](https://github.com/QwenLM/qwen-code/pull/4535) | 删除 MCP server 后重启不会再冒出来 |
+| **@ 触发需前置空格** | [#4487](https://github.com/QwenLM/qwen-code/pull/4487) | 邮箱地址等含 @ 的文本不再误触发文件补全 |
+| **粘贴多文件路径自动加 @** | [#4544](https://github.com/QwenLM/qwen-code/pull/4544) | 从终端粘贴多个路径时自动变成 @ 引用 |
+| **项目本地上下文 .qwen/QWEN.local.md**| [#4394](https://github.com/QwenLM/qwen-code/pull/4394) | 项目根目录创建 `.qwen/QWEN.local.md` 写个人本地规则，Agent 自动加载 |
+| **new app prompt 迁移到 skills** | [#4567](https://github.com/QwenLM/qwen-code/pull/4567) | 新建应用的引导提示更灵活，可自定义 |
+| **ACP Streamable HTTP transport** | [#4472](https://github.com/QwenLM/qwen-code/pull/4472) | Daemon 新增标准 ACP 协议端点，第三方 UI 可标准化接入 |
+| **Daemon followup_suggestion 推送** | [#4507](https://github.com/QwenLM/qwen-code/pull/4507) | Web UI 会话结束后自动推送下一步建议 |
+| **Background agent 并发限制** | [#4324](https://github.com/QwenLM/qwen-code/pull/4324) | 后台 Agent 不会同时跑太多导致资源耗尽 |
+| **W3C traceparent 传播** | [#4390](https://github.com/QwenLM/qwen-code/pull/4390) | 企业可追踪 Agent 请求的完整调用链 |
+| **Daemon CORS allowlist** | [#4527](https://github.com/QwenLM/qwen-code/pull/4527) | `--allow-origin` 精确控制哪些前端可访问 Daemon |
+| **Daemon 会话内切换模型** | [#4546](https://github.com/QwenLM/qwen-code/pull/4546) | 对话中途切换模型，不用退出重进 |
+| **Daemon 文件日志** | [#4559](https://github.com/QwenLM/qwen-code/pull/4559) | Daemon 运行日志写文件，排查问题更方便 |
+| **Serve prompt deadline + SSE idle timeout** | [#4530](https://github.com/QwenLM/qwen-code/pull/4530) | 长时间无响应的请求自动超时，不卡住资源 |
+| **Serve POST /session/:id/recap** | [#4504](https://github.com/QwenLM/qwen-code/pull/4504) | 获取会话摘要，Web UI 可展示历史对话概览 |
+
+## 🔧 重要修复
+
+| PR | 修复内容 | 对你的影响 |
+|----|----------|-----------|
+| [#4366](https://github.com/QwenLM/qwen-code/pull/4366) | 修复长会话 AbortSignal 监听器泄漏（MaxListenersExceededWarning） | 长对话不再报 listener 溢出警告 |
+| [#4489](https://github.com/QwenLM/qwen-code/pull/4489) | auto-skill 不再覆盖已有 skill 文件 | 手动写的 skill 不会被自动创建的覆盖 |
+| [#4407](https://github.com/QwenLM/qwen-code/pull/4407) | safeJsonStringify 保留重复对象引用 | 复杂数据结构序列化不再丢失信息 |
+| [#4426](https://github.com/QwenLM/qwen-code/pull/4426) | 脱敏带凭证的源码诊断信息 | 错误信息中不再泄露密钥/token |
+| [#4371](https://github.com/QwenLM/qwen-code/pull/4371) | 剥离更多危险解释器规则 | Agent 权限边界更严格 |
+| [#4478](https://github.com/QwenLM/qwen-code/pull/4478) | Token Plan 模型默认值与 ModelStudio 对齐 | Token Plan 用户看到的模型列表和配置与平台一致 |
+| [#4512](https://github.com/QwenLM/qwen-code/pull/4512) | /context token 统计与实际 API 请求对齐 | `/context` 显示的 token 数终于准了 |
+| [#4465](https://github.com/QwenLM/qwen-code/pull/4465) | 微信集成允许 Windows 工作区图片路径 | Windows 用户微信集成发图不再报路径错误 |
+| [#4464](https://github.com/QwenLM/qwen-code/pull/4464) | 微信集成发送可解密图片 payload | 微信集成发图对方能正常查看 |
+| [#4517](https://github.com/QwenLM/qwen-code/pull/4517) | 刷新原始模型派生默认值 | 切换模型后参数配置正确更新 |
+| [#4461](https://github.com/QwenLM/qwen-code/pull/4461) | TUI 渲染前在 stderr 显示启动警告 | 启动问题不再被 TUI 界面吞掉 |
+| [#4470](https://github.com/QwenLM/qwen-code/pull/4470) | 修复文本缓冲区提交处理器的过期闭包竞态 | 快速输入提交不再偶发丢失内容 |
+| [#4510](https://github.com/QwenLM/qwen-code/pull/4510) | Daemon 跨客户端同步后续修复（epoch-reset、approval-mode 序列化） | 多客户端连接同一 Daemon 时状态同步更稳定 |
+| [#4497](https://github.com/QwenLM/qwen-code/pull/4497) | Claude marketplace 指向整个文件夹时正确填充 resources | 使用 Claude 市场插件时资源加载不再为空 |
+| [#4491](https://github.com/QwenLM/qwen-code/pull/4491) | SDK canUseTool timeout 在 CLI 控制请求中生效 | SDK 集成时工具调用超时不再被忽略 |
+| [#4453](https://github.com/QwenLM/qwen-code/pull/4453) | 构建前清理过期输出防止 TS5055 | 开发者从源码构建不再报 TypeScript 增量构建错误 |
+
+## 🙏 贡献者
+
+感谢本周所有贡献者：
+
+| 贡献者 | 主要贡献 |
+|--------|----------|
+| [@LaZzyMan](https://github.com/LaZzyMan) | Worktree Phase D、三级自动压缩、auto-memory 默认开启、auto-skill 覆盖修复、命令替换权限修复 |
+| [@wenshao](https://github.com/wenshao) | 并行 Agent 面板、@ 触发修复 |
+| [@DragonnZhang](https://github.com/DragonnZhang) | Token Plan cache control、SDK 修复、monitor 文档 |
+| [@doudouOUC](https://github.com/doudouOUC) | W3C traceparent 传播、Serve deadline/recap、AbortSignal 泄漏修复、telemetry |
+| [@chiga0](https://github.com/chiga0) | Daemon 会话内模型切换、跨客户端同步修复 |
+| [@huww98](https://github.com/huww98) | memory-leak-debug skill、stale closure 修复 |
+| [@yiliang114](https://github.com/yiliang114) | 微信集成修复、OSS 同步 CI |
+| [@BZ-D](https://github.com/BZ-D) | Headless 保护 |
+| [@dykebo](https://github.com/dykebo) | 目录补全优化 |
+| [@kkhomej33-netizen](https://github.com/kkhomej33-netizen) | Background agent 并发限制 |
+| [@pomelo-nwu](https://github.com/pomelo-nwu) | /context 对齐修复、PR template 重构 |
+| [@qqqys](https://github.com/qqqys) | 凭证脱敏、解释器规则安全加固 |
+| [@Jerry2003826](https://github.com/Jerry2003826) | MCP removals 持久化、模型默认值修复 |
+| [@MikeWang0316tw](https://github.com/MikeWang0316tw) | 多文件粘贴自动加 @ |
+| [@DennisYu07](https://github.com/DennisYu07) | new app prompt 迁移 |
+| [@YingchaoX](https://github.com/YingchaoX) | Token Plan 默认值对齐 |
+| [@ihubanov](https://github.com/ihubanov) | safeJsonStringify 修复 |
+| [@kagura-agent](https://github.com/kagura-agent) | 启动警告显示（首次贡献 🎉） |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
