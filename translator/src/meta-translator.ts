@@ -28,6 +28,7 @@ export class MetaTranslator {
       "fr",
       "ru",
       "pt-BR",
+      "es",
     ];
     this.outputDir = options.outputDir || "content";
     this.translator = new DocumentTranslator({
