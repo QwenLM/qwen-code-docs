@@ -56,6 +56,12 @@ export const showcaseItems = [
     thumbnail: "https://gw.alicdn.com/imgextra/i1/O1CN01gTHYPR1NgqpnQaf0y_!!6000000001600-1-tps-944-660.gif",
     videoUrl: null,
     model: "qwen3.5-plus",
+    overview: "写代码写到一半，突然想不起来某个 API 的参数顺序？以前你得开个新对话去查，查完再切回来，上下文全断了。现在输入 `/btw`，直接在当前对话里插一句题外话。Qwen Code 会把侧问作为单独的 API 调用发送，响应显示在输入框上方，主对话完全不受影响——不会被阻塞，侧问的回答也不会进入主对话历史。就像写代码时扭头问旁边同事一句话，问完继续干活。",
+    steps: [
+      { title: "在对话中输入 /btw 加上问题", description: "当你正在和 AI 讨论一个编码任务时，直接输入 `/btw` 加上你的问题。侧问会作为单独的 API 调用发送，响应显示在 Composer 上方，主对话不会被阻塞——你可以在等待侧问回答时继续输入。", command: "/btw JavaScript 的 Promise.allSettled 和 Promise.all 有什么区别？" },
+      { title: "查看回答并关闭", description: "侧问回答会显示在 Composer 上方的浮层中，支持完整的 Markdown 渲染（代码块、列表、表格等）。按 `Space`、`Enter` 或 `Escape` 关闭回答，回到主对话。侧问的回答不会成为主对话历史的一部分。" },
+      { title: "适用场景", description: "适合在编码过程中随时查阅：\n- 写 React 组件时随手查个 Hook 的用法，查完继续写\n- 调试到一半临时确认一个配置项的含义，不用开新窗口\n- 想到一个不相关的问题，问完就忘，不影响当前工作\n\n也可以使用 `?btw` 作为替代语法。" },
+    ],
   },
   {
     id: "guide-system-prompt",
@@ -66,6 +72,13 @@ export const showcaseItems = [
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000007824/O1CN01hCE0Ve27fRwwQtxTE_!!6000000007824-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/tdIxQgfQZPgWjPeBIp6-bUB4dGDc54wpKQdsH46LK-o.mp4",
     model: "qwen3.5-plus",
+    overview: "每个团队都有自己的编码规范和沟通风格，而 AI 默认的回答方式未必符合你的习惯。Qwen Code 支持通过 `QWEN.md` 上下文文件和 CLI 参数自定义系统提示词，让 AI 始终按照你期望的方式工作——比如回答必须用中文、遵循特定的命名规范、优先使用某个框架等。个人配置放在 `~/.qwen/QWEN.md`，项目配置放在项目根目录的 `QWEN.md`，两者可以叠加使用。设置一次，后续所有对话都会自动遵循这些规则。",
+    steps: [
+      { title: "用 /init 自动生成 QWEN.md", description: "最快的方式是运行 `/init` 命令，Qwen Code 会分析你的代码库，自动生成一个包含构建命令、测试说明和代码规范的初始 `QWEN.md` 文件。如果文件已存在，它会建议添加内容而不是直接覆盖。", command: "/init" },
+      { title: "手动创建个人/项目配置", description: "你也可以手动创建 `QWEN.md` 文件。个人配置放在 `~/.qwen/QWEN.md`，对所有项目生效；项目配置放在项目根目录的 `QWEN.md`，建议提交到版本控制系统让团队共享。两者可以同时使用，Qwen Code 启动时会加载它找到的所有 `QWEN.md`。", command: "mkdir -p ~/.qwen && touch ~/.qwen/QWEN.md" },
+      { title: "编写自定义规则", description: "用自然语言编写你的规则，像写给同事的备忘录一样就好。可以定义回答语言、代码风格、框架偏好、注释规范等。`QWEN.md` 越简短具体效果越好——内容越长，AI 遵循指令的可靠性越低。如果你的仓库中已经有 `AGENTS.md` 文件，Qwen Code 也会自动读取，无需重复编写。" },
+      { title: "通过 CLI 参数覆盖系统提示", description: "对于一次性的场景，可以通过 CLI 参数覆盖系统提示词，不影响 `QWEN.md` 的配置。`--system-prompt` 替换内置提示，`--append-system-prompt` 在内置提示后追加额外指令。", command: "qwen --append-system-prompt \"回答使用中文，代码注释使用英文\"" },
+    ],
   },
   {
     id: "guide-arena-mode",
@@ -76,6 +89,12 @@ export const showcaseItems = [
     thumbnail: "https://img.alicdn.com/imgextra/i2/6000000000599/O1CN01EiacyZ1GIONIePrKv_!!6000000000599-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/FB9dQJgQ_Rd57oKQSegUd_YJo3q1RAAWh0EkpAS0z2U.mp4",
     model: "qwen3.5-plus",
+    overview: "重要的代码你会让同事帮忙 review，现在你也可以让多个 AI 模型同时处理同一个任务。Arena 竞技场会为每个模型创建独立的 Git worktree，模型之间的文件操作互不干扰。所有 agent 完成后，你可以对比执行指标（耗时、token 用量、工具调用次数）和代码 diff，选择最优方案合并回主工作区。适合模型基准测试、N 选优、探索不同解题思路。",
+    steps: [
+      { title: "用 /arena 启动竞技场", description: "使用 `/arena` 命令指定参与竞争的模型和任务。如果省略 `--models` 参数，会弹出交互式模型选择对话框。每个模型会在独立的 Git worktree 中作为完全独立的 agent 运行。", command: "/arena --models qwen3.5-plus,glm-5,kimi-k2.5 \"重构认证模块，使用 JWT tokens\"" },
+      { title: "在 agent 之间切换查看", description: "所有 agent 在同一终端中异步运行，底部标签栏显示各 agent 状态。用方向键 `←` `→` 切换 agent 视图，可以向单个 agent 发送额外指令或批准工具调用。标签栏会用 `●`（运行中）、`✓`（完成）、`✗`（失败）标记状态。" },
+      { title: "对比结果选择优胜者", description: "所有 agent 完成后进入结果对比阶段，展示执行指标（耗时、推理轮数、token 用量、工具调用次数）和 Arena 对比摘要。按 `p` 预览某个 agent 的变更，按 `d` 查看详细 diff，然后选择一个优胜者将其更改应用到主工作区。" },
+    ],
   },
   {
     id: "guide-explore-agent",
@@ -86,6 +105,13 @@ export const showcaseItems = [
     thumbnail: "https://gw.alicdn.com/imgextra/i2/O1CN017nnR8X1nEA2GZlZ5Z_!!6000000005057-2-tps-1698-952.png",
     videoUrl: null,
     model: "qwen3.5-plus",
+    overview: "接手一个陌生的代码仓库，面对成千上万行代码不知从何下手？你可以先用 Plan 模式让 AI 进行只读分析——它只会读取和搜索代码，不会做任何修改，你可以放心让它自由探索。AI 会帮你系统地调研代码结构、梳理模块依赖、定位关键入口文件，在最短时间内建立起对项目的全局认知，避免盲目修改导致的连锁问题。",
+    steps: [
+      { title: "进入 Plan 模式", description: "使用 `/plan` 命令进入只读分析模式，AI 只会通过读取文件来制定计划，不会进行任何代码修改。你也可以按 `Shift+Tab`（Windows 上为 `Tab`）循环切换权限模式来进入 Plan 模式。", command: "/plan" },
+      { title: "提出调研问题", description: "告诉 AI 你想了解什么。可以是整体架构、某个功能的实现逻辑、模块间的依赖关系等。AI 会自动搜索、阅读相关文件，帮你整理出清晰的分析报告。你可以通过后续提问持续细化。", command: "/plan 帮我梳理一下这个项目的整体架构，重点分析数据流是怎么走的" },
+      { title: "深入特定模块", description: "在了解全局之后，你可以针对具体模块继续深入探索。比如某个函数的调用链、某个配置文件的作用、某个中间件的执行流程等。Plan 模式下所有的探索都是安全的只读操作。" },
+      { title: "退出 Plan 模式开始修改", description: "调研完毕后，使用 `/plan exit` 退出 Plan 模式，系统会自动恢复你之前的审批模式。之前调研的上下文会保留，AI 能基于这些理解给出更精准的修改方案。", command: "/plan exit" },
+    ],
   },
   {
     id: "guide-hooks-auto-test",
@@ -96,6 +122,13 @@ export const showcaseItems = [
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000003073/O1CN019sCyMD1YZUF13PhMD_!!6000000003073-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/IZNbQ8iy56UZYVmxWv5TsKMlOJPAxM7lNk162RC6JaY.mp4",
     model: "qwen3.5-plus",
+    overview: "AI 生成的代码靠谱吗？与其每次手动检查，不如让 Hooks 帮你自动把关。Hooks 允许你在 Qwen Code 的关键节点——比如工具执行前后、会话开始/结束时——挂上自定义脚本，自动执行质量保障任务。例如，AI 每次写入文件后自动跑一遍安全检查、自动执行 lint、自动格式化代码。Hooks 在 `.qwen/settings.json` 中以 JSON 格式配置，支持 command（shell 命令）、http（HTTP 请求）和 function（JS 函数）三种执行器类型。",
+    steps: [
+      { title: "在 settings.json 中配置 Hooks", description: "Hooks 在项目的 `.qwen/settings.json` 文件中配置。在 `hooks` 字段下定义你想要的 Hook 事件类型（如 `PreToolUse`、`PostToolUse`），并指定匹配的工具名和要执行的脚本。", command: "mkdir -p .qwen && touch .qwen/settings.json" },
+      { title: "编写 Hook 脚本", description: "在 `.qwen/hooks/` 目录下创建你的 Hook 脚本。例如创建一个安全检查脚本，在每次 AI 写入文件前自动执行。Hook 通过 `stdin` 接收 JSON 输入，通过 `stdout` 返回结果。" },
+      { title: "配置示例：文件写入后自动检查", description: "在 `settings.json` 中添加 Hooks 配置，让 Qwen Code 在每次写入文件时自动执行安全检查脚本。`matcher` 指定要拦截的工具名（如 `WriteFile`），`timeout` 设置超时时间。", command: "{\n  \"hooks\": {\n    \"PreToolUse\": [\n      {\n        \"matcher\": \"WriteFile\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"$QWEN_PROJECT_DIR/.qwen/hooks/security-check.sh\",\n            \"name\": \"security-check\",\n            \"timeout\": 10000\n          }\n        ]\n      }\n    ]\n  }\n}" },
+      { title: "验证和管理 Hooks", description: "让 AI 修改一段代码，观察 Hook 是否自动触发。Hooks 默认处于启用状态，你可以在 `settings.json` 中设置 `\"disableAllHooks\": true` 来临时禁用所有 Hooks 而不删除配置。" },
+    ],
   },
   {
     id: "guide-review-command",
@@ -106,6 +139,13 @@ export const showcaseItems = [
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000005221/O1CN01UxKttk1oRGzRA3yzH_!!6000000005221-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/LAfDzQoPY0KUMvKPOETNBKL0d3y696SoGSQl2QHf8To.mp4",
     model: "qwen3.5-plus",
+    overview: "提交代码前总想找人帮忙看一眼，但同事不一定有空？`/review` 会运行一个多阶段审查流水线：先自动执行项目的 linter 和类型检查（零 LLM 成本），再启动 7 个并行审查 Agent 分别从正确性、安全性、代码质量、性能、测试覆盖等维度进行检查，最后去重验证并生成结构化报告。支持审查本地未提交改动、PR、或指定文件，还能自动修复发现的问题。",
+    steps: [
+      { title: "审查本地未提交改动", description: "在你完成代码修改后，直接输入 `/review` 即可。如果没有未提交的变更，命令会提示你并停止。审查过程会先运行确定性分析（linter、typecheck），再启动 7 个并行 Agent 进行深度审查。", command: "/review" },
+      { title: "审查 Pull Request", description: "你也可以直接审查一个 PR，支持 PR 编号或完整 URL。加上 `--comment` 参数还能将审查意见以行内评论的形式发布到 PR 上。", command: "/review 123 --comment" },
+      { title: "查看审查报告并自动修复", description: "审查报告按严重级别分为三类：\n- **Critical**：合并前必须修复（Bug、安全漏洞、数据丢失）\n- **Suggestion**：建议改进\n- **Nice to have**：可选优化（仅终端显示，不发布为 PR 评论）\n\n展示发现结果后，`/review` 会提供自动修复选项，针对有明确解决方案的问题一键修复。" },
+      { title: "审查特定文件", description: "除了审查改动和 PR，你还可以指定审查某个文件，适合对遗留代码进行质量检查。", command: "/review src/utils/auth.ts" },
+    ],
   },
   {
     id: "guide-api-setup",
