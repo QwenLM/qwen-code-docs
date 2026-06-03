@@ -1,0 +1,132 @@
+---
+title: "Un prompt pour générer des couvertures : j'ai créé un Skill IA avec 4 styles pour les comptes officiels WeChat"
+date: "2026-05-29"
+description: "Le plus pénible après avoir écrit un article, c'est de trouver une image de couverture. J'ai créé un Skill qui choisit automatiquement le style, génère les prompts et appelle Model Studio CLI pour créer des images. Voici les 4 styles et comment l'utiliser."
+author: "joeytoday"
+tags: ["Tutorials", "Skills", "Model Studio"]
+image: https://gw.alicdn.com/imgextra/i1/O1CN01YZsI6q1vvgc6PA07X_!!6000000006235-2-videocover-2844-1224.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Un prompt pour générer des couvertures : j'ai créé un Skill IA avec 4 styles pour les comptes officiels WeChat"
+  date="2026-05-29"
+  author="joeytoday"
+/>
+
+Le plus pénible quand on écrit pour les comptes officiels WeChat, ce n'est pas le contenu — c'est trouver l'image de couverture après.
+
+Chaque fois que je termine un article et que je veux publier, je me torture avec la couverture. Avant l'IA, je cherchais sur Unsplash (qui charge affreusement lentement maintenant). J'ai même essayé de faire des couvertures dans Keynote, comme celle-ci :
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01B7V0w21BvFuqOBDiX_!!6000000000007-2-tps-2350-1000.png)
+
+C'est en fait simple — une image spécifique combinée avec du texte de titre. Puisque c'est le cas, l'IA peut tout à fait gérer ça maintenant. Mais quand on demande à l'IA de générer directement, on obtient souvent des résultats « techniquement corrects mais bizarres ». Mes styles de contenu varient beaucoup — certains sont des essais, d'autres sont orientés outils. Pour certains thèmes je veux des tons sombres, pour les outils techniques un style abstrait minimaliste, pour la critique culturelle cette touche éditoriale de magazine. Chaque fois il faut repenser la composition, la palette de couleurs et les prompts. Assez fastidieux.
+
+Alors j'ai simplement **créé un Skill pour que Qwen Code + Model Studio CLI fasse le travail à ma place**.
+
+## Ce qu'il fait
+
+**Donnez-lui un titre d'article ou un sujet, et il analyse automatiquement le ton, choisit le style, affine le titre, construit les prompts et appelle Model Studio pour générer les images.**
+
+Quatre styles couvrant mes principaux scénarios WeChat. Jetez un œil — il y a encore beaucoup à améliorer, et j'itère continuellement :
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01AXTaRR1O9hnhEBLKc_!!6000000001663-2-tps-2848-1214.png)
+
+- **01 Affiche Bold** : Fond cinématique sombre + dégradé latéral gauche + grand texte blanc avec un mot-clé souligné en rouge. Idéal pour les commentaires approfondis, les sujets historiques, les observations sociales.
+- **02 Magazine** : Texte à gauche, image encadrée à droite en mise en page sur deux colonnes avec texture papier. Idéal pour la critique culturelle, les notes de lecture, les portraits.
+- **03 Minimaliste Abstrait** : Illustration pleine page + superposition monochrome pour une immersion en ton unique. Idéal pour les blogs tech, les présentations de produits, les explications de concepts.
+- **04 Pixel Art** : Pixel art 16-bit + superposition violet foncé + texte pixel doré. Idéal pour les tests d'outils, le contenu léger, les sujets nostalgiques.
+
+## La stack : Qwen Code + Model Studio CLI
+
+La génération d'images est assurée par **l'outil en ligne de commande d'Alibaba Cloud Model Studio**. Model Studio CLI est une boîte à outils IA multimodale dans votre terminal — chat, génération d'images, génération de vidéos, synthèse vocale, recherche de connaissances, tout en ligne de commande. Ici on utilise principalement `image generate`.
+
+Pourquoi l'utiliser :
+
+- **Qwen Code l'appelle directement** — le Skill a des modèles de commandes, l'IA remplit les paramètres et exécute, je n'ai rien à gérer
+- **Quota gratuit disponible** — qwen-image-2.0 a un quota d'utilisation gratuit, activez « arrêter à épuisement » pour éviter les frais
+- **Contrôle précis de la taille** — `--size '1344*572'` produit un ratio 2.35:1 grand écran, rendu Playwright @2x exporte en PNG HD 2688×1144
+
+Après avoir installé mon skill, un seul prompt suffit :
+
+```
+/open1v-mpcover-gen Génère une couverture WeChat basée sur @ton-article.md, <optionnellement spécifier le style, utiliser le style magazine>
+```
+
+Voici une démonstration du processus complet — vous pouvez aussi générer tous les styles d'un coup :
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/k93w-JhfUqjj99B_cwPhd9RvlxFmzfTMVugdovEhj5w.mp4" controls></video>
+
+## Comment utiliser
+
+❶ Installer Qwen Code, voir https://qwenlm.github.io/qwen-code-docs/en/users/quickstart/
+
+```
+npm install -g @qwen-code/qwen-code@latest
+```
+
+❷ Obtenir une clé API Model Studio : https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key
+
+<Callout type="warning">
+Rendez-vous sur la page d'utilisation du modèle et activez « Arrêter quand le quota gratuit est épuisé » pour éviter les frais inattendus : https://bailian.console.aliyun.com/cn-beijing?tab=model#/model-usage
+</Callout>
+
+❸ Installer le skill de couverture. Lancez Qwen Code et tapez :
+
+```
+Help me install this skill: https://github.com/joeytoday/open1v-mpcover-gen
+```
+
+❹ Commencer à utiliser : Après l'installation, dites simplement à Qwen Code :
+
+> Fais-moi une couverture WeChat. Le titre de l'article est « Qwen Code × Model Studio CLI Guide de génération de couvertures »
+
+L'IA analysera le ton du contenu, demandera quel style vous préférez (ou choisira automatiquement), affinera le titre, construira des prompts en anglais, appellera Model Studio pour générer les images et produira deux alternatives.
+
+## Plus d'exemples d'utilisation
+
+Spécifier un style directement :
+
+> Fais une couverture minimaliste, le thème est la sécurité API
+
+Donner plus de contexte :
+
+> J'ai écrit un article sur la philosophie légaliste, fais-moi une couverture style magazine
+
+Génération par lots :
+
+> J'ai écrit trois articles cette semaine, les titres sont xxx / yyy / zzz, fais une couverture pour chacun
+
+## Pour qui
+
+- Vous écrivez pour les comptes officiels WeChat et bloquez toujours à l'étape de la couverture
+- Vous avez des exigences esthétiques et ne voulez pas de modèles génériques
+- Vous êtes à l'aise dans le terminal, ou prêt à essayer
+- Model Studio a un quota gratuit, zéro coût pour commencer
+
+❌ Pas adapté pour : Ceux qui ont besoin d'une typographie chinoise précise (utilisez Figma/Canva), ceux qui ont besoin de vraies photos, ou ceux qui ont besoin de couvertures plus élaborées.
+
+## Philosophie de design
+
+Pourquoi ne pas simplement faire générer par l'IA une image avec le texte du titre ? Parce que les caractères chinois générés par l'IA sont essentiellement du charabia. Donc c'est divisé en deux étapes : **Model Studio génère l'arrière-plan → HTML superpose le texte → capture d'écran Playwright exporte en PNG**. L'image gère l'atmosphère ; le texte est contrôlé précisément par CSS.
+
+L'avantage est un coût d'itération extrêmement bas — changer un titre ne nécessite que de modifier le texte HTML et re-rendre (2 secondes), pas besoin de régénérer l'image (30 secondes). Superposition trop lourde ou légère, couleurs incorrectes — c'est juste une ligne de CSS à changer.
+
+Les quatre styles n'ont pas été décidés au hasard — ils sont catégorisés selon **le ressenti des lecteurs dans leur fil** :
+
+- « A de l'attitude » → Fond sombre avec texte gras, impact visuel
+- « A du goût » → Colonnes divisées avec espaces blancs, esthétique éditoriale
+- « Très clair » → Ton unique, charge cognitive minimale
+- « Amusant » → Le pixel art casse les conventions
+
+Chaque style correspond à un **modèle de distribution texte-image** — superposition complète, colonne divisée, superposition colorée — garantissant que le texte reste lisible quel que soit l'arrière-plan.
+
+Le Skill est open source sur GitHub et en itération continue. Si vous utilisez Qwen Code + Model Studio, essayez-le. Si ça vous plaît, un star ⭐️ serait apprécié.
+
+🔗 https://github.com/joeytoday/open1v-mpcover-gen
+
+<Callout type="info">
+Ce contenu a été rédigé par l'auteur avec **l'aide de l'IA pour l'édition et l'optimisation**. Les opinions centrales et les expériences personnelles sont celles de l'auteur et ne représentent que les vues personnelles du créateur.
+</Callout>

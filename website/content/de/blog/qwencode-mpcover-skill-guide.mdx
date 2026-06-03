@@ -1,0 +1,132 @@
+---
+title: "Ein Prompt für Cover: Ich habe einen KI-Cover-Generator mit 4 Stilen für WeChat Official Accounts gebaut"
+date: "2026-05-29"
+description: "Das Nervigste nach dem Schreiben ist die Suche nach einem Titelbild. Ich habe einen Skill gebaut, der automatisch den Stil wählt, Prompts generiert und Model Studio CLI aufruft, um Bilder basierend auf dem Artikelinhalt zu erstellen. Hier sind die 4 Stile und die Anleitung."
+author: "joeytoday"
+tags: ["Tutorials", "Skills", "Model Studio"]
+image: https://gw.alicdn.com/imgextra/i1/O1CN01YZsI6q1vvgc6PA07X_!!6000000006235-2-videocover-2844-1224.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Ein Prompt für Cover: Ich habe einen KI-Cover-Generator mit 4 Stilen für WeChat Official Accounts gebaut"
+  date="2026-05-29"
+  author="joeytoday"
+/>
+
+Das Nervigste beim Schreiben für WeChat Official Accounts ist nicht der Inhalt selbst – es ist das Titelbild danach.
+
+Jedes Mal, wenn ich einen Artikel fertig habe und veröffentlichen möchte, quäle ich mich mit dem Cover. Vor der KI-Ära habe ich auf Unsplash gesucht (das jetzt unerträglich langsam lädt). Ich habe sogar versucht, Cover in Keynote zu erstellen, wie dieses hier:
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01B7V0w21BvFuqOBDiX_!!6000000000007-2-tps-2350-1000.png)
+
+Es ist eigentlich einfach – ein bestimmtes Bild kombiniert mit Titeltext. Da das so ist, kann KI das jetzt problemlos übernehmen. Aber wenn man KI direkt generieren lässt, kommt oft etwas heraus, das „technisch korrekt, aber seltsam" ist. Meine Inhalte haben sehr unterschiedliche Stile – manche sind Essays, manche sind werkzeugorientiert. Für bestimmte Themen möchte ich dunkle Töne, für technische Tools einen minimalistischen abstrakten Stil, für Kulturkritik dieses redaktionelle Magazin-Gefühl. Jedes Mal muss man Komposition, Farbschema und Prompts neu überlegen. Ziemlich mühsam.
+
+Also habe ich kurzerhand **einen Skill gebaut, der Qwen Code + Model Studio CLI die Arbeit erledigen lässt**.
+
+## Was er kann
+
+**Gib ihm einen Artikeltitel oder ein Thema, und er analysiert automatisch den Ton, wählt den Stil, verfeinert den Titel, erstellt Prompts und ruft Model Studio zur Bildgenerierung auf.**
+
+Vier Stile, die meine wichtigsten WeChat-Szenarien abdecken. Schau mal rein – es gibt noch viel zu verbessern, und ich iteriere kontinuierlich:
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01AXTaRR1O9hnhEBLKc_!!6000000001663-2-tps-2848-1214.png)
+
+- **01 Plakat**: Dunkler filmischer Hintergrund + linker Verlaufs-Overlay + großer weißer Text mit einem rot hervorgehobenen Schlüsselwort. Ideal für tiefgründige Kommentare, historische Themen, gesellschaftliche Beobachtungen.
+- **02 Magazin**: Links Text, rechts gerahmtes Bild in Spalten-Layout mit Papierstruktur. Ideal für Kulturkritik, Buchrezensionen, Personenporträts.
+- **03 Minimalistisch Abstrakt**: Vollflächige Illustration + monochromer Farb-Overlay für immersives Einzelton-Gefühl. Ideal für Tech-Blogs, Produktvorstellungen, Konzepterklärungen.
+- **04 Pixel-Art**: 16-Bit-Pixelkunst + dunkelvioletter Overlay + goldener Pixeltext. Ideal für Tool-Reviews, lockere Inhalte, nostalgische Themen.
+
+## Der Stack: Qwen Code + Model Studio CLI
+
+Die Bildgenerierung wird von **Alibaba Cloud Model Studios Kommandozeilen-Tool** angetrieben. Model Studio CLI ist eine multimodale KI-Toolbox in Ihrem Terminal – Chat, Bildgenerierung, Videogenerierung, Sprachsynthese, Wissensabfrage, alles über die Kommandozeile. Hier verwenden wir hauptsächlich `image generate`.
+
+Warum es verwenden:
+
+- **Qwen Code ruft es direkt auf** – der Skill hat Befehlsvorlagen, KI füllt Parameter aus und führt aus, ich muss mich um nichts kümmern
+- **Kostenloses Kontingent verfügbar** – qwen-image-2.0 hat kostenloses Nutzungskontingent, „Bei Erschöpfung stoppen" aktivieren verhindert Kosten
+- **Präzise Größenkontrolle** – `--size '1344*572'` gibt 2.35:1 Breitbildformat aus, Playwright @2x-Rendering exportiert 2688×1144 HD PNG
+
+Nach Installation meines Skills reicht ein Prompt:
+
+```
+/open1v-mpcover-gen Generiere ein WeChat-Cover basierend auf @dein-artikel.md, <optional Stil angeben, Magazin-Stil verwenden>
+```
+
+Hier ist eine Demonstration des gesamten Prozesses – Sie können auch alle Stile auf einmal generieren:
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/k93w-JhfUqjj99B_cwPhd9RvlxFmzfTMVugdovEhj5w.mp4" controls></video>
+
+## Anleitung
+
+❶ Qwen Code installieren, siehe https://qwenlm.github.io/qwen-code-docs/en/users/quickstart/
+
+```
+npm install -g @qwen-code/qwen-code@latest
+```
+
+❷ Model Studio API Key erhalten: https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key
+
+<Callout type="warning">
+Gehen Sie zur Modellnutzungsseite und aktivieren Sie „Bei Erschöpfung des kostenlosen Kontingents stoppen", um unerwartete Kosten zu vermeiden: https://bailian.console.aliyun.com/cn-beijing?tab=model#/model-usage
+</Callout>
+
+❸ Cover-Skill installieren. Starten Sie Qwen Code und geben Sie ein:
+
+```
+Help me install this skill: https://github.com/joeytoday/open1v-mpcover-gen
+```
+
+❹ Loslegen: Nach der Installation sagen Sie einfach zu Qwen Code:
+
+> Erstelle mir ein WeChat-Cover. Der Artikeltitel ist „Qwen Code × Model Studio CLI Cover-Generierungsanleitung"
+
+Die KI analysiert den Inhaltston, fragt welchen Stil Sie bevorzugen (oder wählt automatisch), verfeinert den Titel, erstellt englische Prompts, ruft Model Studio zur Bildgenerierung auf und gibt zwei Alternativen aus.
+
+## Weitere Verwendungsmöglichkeiten
+
+Stil direkt angeben:
+
+> Erstelle ein minimalistisches Cover, Thema ist API-Sicherheit
+
+Mehr Kontext geben:
+
+> Ich habe einen Artikel über legalistische Philosophie geschrieben, erstelle mir ein Magazin-Cover
+
+Batch-Generierung:
+
+> Ich habe diese Woche drei Artikel geschrieben, Titel sind xxx / yyy / zzz, erstelle jeweils ein Cover
+
+## Für wen ist das
+
+- Sie schreiben für WeChat Official Accounts und bleiben immer beim Cover-Schritt hängen
+- Sie haben ästhetische Ansprüche und möchten keine generischen Vorlagen
+- Sie arbeiten gerne im Terminal oder sind bereit, es auszuprobieren
+- Model Studio hat kostenloses Kontingent, null Kosten zum Einstieg
+
+❌ Nicht geeignet für: Wer präzise chinesische Typografie braucht (Figma/Canva verwenden), wer echte Fotos braucht, oder wer aufwändigere Cover benötigt.
+
+## Design-Philosophie
+
+Warum nicht einfach KI ein Bild mit Titeltext generieren lassen? Weil KI-generierte chinesische Zeichen im Grunde Kauderwelsch sind. Deshalb wird es in zwei Schritte aufgeteilt: **Model Studio generiert Hintergrund → HTML überlagert Text → Playwright-Screenshot exportiert PNG**. Das Bild sorgt für Atmosphäre; Text wird präzise durch CSS kontrolliert.
+
+Der Vorteil sind extrem niedrige Iterationskosten – einen Titel ändern erfordert nur das Bearbeiten des HTML-Textes und Neu-Rendern (2 Sekunden), keine Neugeneration des Bildes (30 Sekunden). Overlay zu stark oder schwach, Farben falsch – alles nur eine CSS-Zeile.
+
+Die vier Stile wurden nicht willkürlich festgelegt – sie sind nach dem **Gefühl der Leser im Feed** kategorisiert:
+
+- „Hat Haltung" → Dunkler Hintergrund mit fettem Text, visueller Impact
+- „Hat Geschmack" → Geteilte Spalten mit Weißraum, redaktionelle Ästhetik
+- „Sehr klar" → Einzelton, minimale kognitive Belastung
+- „Spaßig" → Pixel-Art bricht Konventionen
+
+Jeder Stil entspricht einem **Text-Bild-Verteilungsmuster** – Voll-Overlay, geteilte Spalte, Farb-Overlay – damit Text unabhängig vom Hintergrundbild lesbar bleibt.
+
+Der Skill ist Open Source auf GitHub und wird kontinuierlich weiterentwickelt. Wenn Sie Qwen Code + Model Studio nutzen, probieren Sie es aus. Wenn es Ihnen gefällt, würde ich mich über einen Star ⭐️ freuen.
+
+🔗 https://github.com/joeytoday/open1v-mpcover-gen
+
+<Callout type="info">
+Dieser Inhalt wurde vom Autor verfasst mit **KI-unterstützter Bearbeitung und Optimierung**. Kernaussagen und persönliche Erfahrungen stammen vom Autor selbst und repräsentieren nur die persönlichen Ansichten des Erstellers.
+</Callout>
