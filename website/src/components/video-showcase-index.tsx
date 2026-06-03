@@ -1,11 +1,16 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Search, ArrowRight, BookOpen, Zap, GraduationCap, LayoutGrid, List } from "lucide-react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { Search, ArrowRight, ArrowLeft, BookOpen, Zap, GraduationCap, LayoutGrid, List, Copy, Check } from "lucide-react";
 import Link from "next/link";
-import showcaseItems from "../generated/showcase-data.json";
 
-interface ShowcaseItem {
+export interface Step {
+  title: string;
+  description: string;
+  command?: string;
+}
+
+export interface ShowcaseItem {
   id: string;
   title: string;
   description: string;
@@ -14,47 +19,140 @@ interface ShowcaseItem {
   thumbnail: string;
   videoUrl: string | null;
   model: string;
+  author?: string;
+  date?: string;
+  overview?: string;
+  steps?: Step[];
 }
 
-const LEARNING_PATHS = [
-  {
-    level: "入门",
-    description: "快速上手 Qwen Code 核心功能，10 分钟完成你的第一个 AI 编程任务",
-    icon: <BookOpen className="w-5 h-5" />,
-    cases: [
-      { id: "guide-script-install", label: "脚本一键安装" },
-      { id: "guide-first-conversation", label: "开始第一次对话" },
-      { id: "guide-api-setup", label: "API 配置指南" },
-      { id: "guide-skill-install", label: "安装 Skills" },
-    ],
-  },
-  {
-    level: "进阶",
-    description: "深入学习高级功能和编程场景，掌握智能搜索和开源协作技巧",
-    icon: <Zap className="w-5 h-5" />,
-    cases: [
-      { id: "guide-bailian-coding-plan", label: "百炼 Coding Plan 模式" },
-      { id: "guide-web-search", label: "Web Search 网络搜索" },
-      { id: "guide-plan-with-search", label: "Plan 模式 + Web Search" },
-      { id: "code-lsp-intelligence", label: "LSP 智能感知" },
-    ],
-  },
-  {
-    level: "高级实战",
-    description: "复杂项目开发和真实业务场景应用，参与开源贡献和代码审查",
-    icon: <GraduationCap className="w-5 h-5" />,
-    cases: [
-      { id: "study-learning", label: "代码学习" },
-      { id: "code-solve-issue", label: "解决 issue" },
-      { id: "code-pr-review", label: "PR Review" },
-      { id: "study-read-paper", label: "读论文" },
-    ],
-  },
-];
+export interface LearningPathCase {
+  id: string;
+  label: string;
+}
 
-function ShowcaseCard({ item }: { item: ShowcaseItem }) {
+export interface LearningPath {
+  level: string;
+  description: string;
+  iconType: "beginner" | "intermediate" | "advanced";
+  cases: LearningPathCase[];
+}
+
+interface VideoShowcaseIndexProps {
+  items: ShowcaseItem[];
+  learningPaths: LearningPath[];
+  viewLabel?: string;
+  backLabel?: string;
+  stepsLabel?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+}
+
+function CommandBlock({ command }: { command: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(command).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [command]);
+
   return (
-    <Link href={`/zh/showcase/${item.id}`} target="_blank" rel="noopener noreferrer" className="group block">
+    <div className="relative mt-3 group">
+      <pre className="px-4 py-3 pr-12 rounded-lg bg-[#EBEBEB] dark:bg-zinc-900 text-[13px] font-mono text-zinc-700 dark:text-zinc-300 overflow-x-auto whitespace-pre-wrap break-all">
+        <code>{command}</code>
+      </pre>
+      <button
+        onClick={handleCopy}
+        className="absolute top-2.5 right-2.5 p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+        title="复制"
+      >
+        {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+      </button>
+    </div>
+  );
+}
+
+const ICON_MAP = {
+  beginner: <BookOpen className="w-5 h-5" />,
+  intermediate: <Zap className="w-5 h-5" />,
+  advanced: <GraduationCap className="w-5 h-5" />,
+};
+
+function renderMarkdownText(text: string): React.ReactNode {
+  let preprocessed = text;
+  preprocessed = preprocessed.replace(/(?<!\n)\s+\*\*(\d+)\.\s/g, "\n**$1. ");
+  preprocessed = preprocessed.replace(/(?<!\n)\s+- /g, "\n- ");
+  preprocessed = preprocessed.replace(/(?<!\n)\s+(\d+)\.\s+/g, "\n$1. ");
+
+  const lines = preprocessed.split(/\n/);
+  const result: React.ReactNode[] = [];
+  let currentList: { type: "ul" | "ol"; items: React.ReactNode[] } | null = null;
+
+  const flushList = () => {
+    if (!currentList) return;
+    if (currentList.type === "ul") {
+      result.push(<ul key={`list-${result.length}`} className="ml-4 list-disc space-y-1 my-1">{currentList.items}</ul>);
+    } else {
+      result.push(<ol key={`list-${result.length}`} className="ml-4 list-decimal space-y-1 my-1">{currentList.items}</ol>);
+    }
+    currentList = null;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    const unorderedMatch = trimmed.match(/^- (.+)/);
+    const orderedMatch = trimmed.match(/^(\d+)\.\s+(.+)/);
+
+    if (unorderedMatch) {
+      if (currentList?.type !== "ul") { flushList(); currentList = { type: "ul", items: [] }; }
+      currentList.items.push(<li key={i}>{renderInlineMarkdown(unorderedMatch[1])}</li>);
+    } else if (orderedMatch) {
+      if (currentList?.type !== "ol") { flushList(); currentList = { type: "ol", items: [] }; }
+      currentList.items.push(<li key={i}>{renderInlineMarkdown(orderedMatch[2])}</li>);
+    } else {
+      flushList();
+      if (trimmed === "") {
+        result.push(<br key={i} />);
+      } else {
+        if (result.length > 0) result.push(<br key={`br-${i}`} />);
+        result.push(<React.Fragment key={i}>{renderInlineMarkdown(trimmed)}</React.Fragment>);
+      }
+    }
+  }
+  flushList();
+  return <>{result}</>;
+}
+
+function renderInlineMarkdown(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  const regex = /(\*\*(.+?)\*\*|`(.+?)`|\[(.+?)\]\((.+?)\))/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    if (match[2]) {
+      parts.push(<strong key={match.index} className="font-semibold text-zinc-800 dark:text-zinc-200">{match[2]}</strong>);
+    } else if (match[3]) {
+      parts.push(<code key={match.index} className="px-1 py-0.5 rounded bg-[#EBEBEB] dark:bg-zinc-700 text-[#D46461] text-xs font-mono">{match[3]}</code>);
+    } else if (match[4] && match[5]) {
+      parts.push(<a key={match.index} href={match[5]} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline underline-offset-2">{match[4]}</a>);
+    }
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return <>{parts}</>;
+}
+
+function ShowcaseCard({ item, onSelect, viewLabel }: { item: ShowcaseItem; onSelect: (id: string) => void; viewLabel: string }) {
+  return (
+    <button onClick={() => onSelect(item.id)} className="group block text-left w-full cursor-pointer">
       <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-300 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.4)] active:scale-[0.98]">
         <div className="relative aspect-video overflow-hidden bg-zinc-100 dark:bg-zinc-900">
           <img
@@ -91,22 +189,20 @@ function ShowcaseCard({ item }: { item: ShowcaseItem }) {
           </p>
 
           <span className="inline-flex items-center gap-1 text-sm font-medium text-zinc-900 dark:text-zinc-100 group-hover:gap-2 transition-all">
-            查看教程
+            {viewLabel}
             <ArrowRight className="w-3.5 h-3.5" />
           </span>
         </div>
       </div>
-    </Link>
+    </button>
   );
 }
 
-function ShowcaseListItem({ item }: { item: ShowcaseItem }) {
+function ShowcaseListItem({ item, onSelect }: { item: ShowcaseItem; onSelect: (id: string) => void }) {
   return (
-    <Link
-      href={`/zh/showcase/${item.id}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex items-center gap-6 py-4 px-4 -mx-4 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
+    <button
+      onClick={() => onSelect(item.id)}
+      className="group flex items-center gap-6 py-4 px-4 -mx-4 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors w-full text-left cursor-pointer"
     >
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
@@ -137,19 +233,63 @@ function ShowcaseListItem({ item }: { item: ShowcaseItem }) {
 
         <ArrowRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
       </div>
-    </Link>
+    </button>
   );
 }
 
-export function VideoShowcaseIndex() {
+export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看教程", backLabel = "返回全部案例", stepsLabel = "操作步骤", ctaLabel = "立即开始使用 Qwen Code", ctaHref = "/zh/users/overview" }: VideoShowcaseIndexProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(9);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
-  const allItems = useMemo(() => showcaseItems as ShowcaseItem[], []);
+  const allItems = useMemo(() => items, [items]);
   const allItemIds = useMemo(() => new Set(allItems.map((item) => item.id)), [allItems]);
+
+  const basePath = typeof window !== "undefined"
+    ? window.location.pathname.replace(/\/$/, "")
+    : "";
+
+  // Read selected item from URL query parameter on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const query = window.location.search.replace(/^\?/, "").split("&")[0].split("=")[0];
+    if (query && allItems.some((item) => item.id === query)) {
+      setSelectedItemId(query);
+    }
+  }, [allItems]);
+
+  const handleSelectItem = useCallback((itemId: string) => {
+    setSelectedItemId(itemId);
+    window.history.pushState(null, "", `${basePath}?${itemId}`);
+    window.scrollTo({ top: 0 });
+  }, [basePath]);
+
+  const handleCloseDetail = useCallback(() => {
+    setSelectedItemId(null);
+    window.history.pushState(null, "", basePath || window.location.pathname);
+  }, [basePath]);
+
+  // Handle browser back button
+  useEffect(() => {
+    const handlePopState = () => {
+      const query = window.location.search.replace(/^\?/, "").split("&")[0].split("=")[0];
+      if (query && allItems.some((item) => item.id === query)) {
+        setSelectedItemId(query);
+      } else {
+        setSelectedItemId(null);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [allItems]);
+
+  const selectedItem = useMemo(
+    () => (selectedItemId ? allItems.find((item) => item.id === selectedItemId) ?? null : null),
+    [selectedItemId, allItems]
+  );
 
   const categoryTags = useMemo(() => {
     const categories = new Set<string>();
@@ -228,6 +368,137 @@ export function VideoShowcaseIndex() {
     setVisibleCount((prev) => prev + 9);
   };
 
+  if (selectedItem) {
+    return (
+      <div className="w-full min-h-[80vh]">
+        {/* Back Navigation */}
+        <div className="w-full px-4 md:px-8 pt-8">
+          <div className="max-w-4xl mx-auto">
+            <button
+              onClick={handleCloseDetail}
+              className="inline-flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer group"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+              {backLabel}
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 md:px-8">
+          {/* Title + Meta Header */}
+          <div className="pt-10 pb-6">
+            <h1 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight mb-5 leading-tight">
+              {selectedItem.title}
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {selectedItem.category && (
+                <span className="px-3 py-1 rounded-full bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 text-xs font-medium border border-violet-200/60 dark:border-violet-800/40">
+                  {selectedItem.category}
+                </span>
+              )}
+              {selectedItem.model && (
+                <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs font-medium font-mono border border-purple-200/60 dark:border-purple-800/40">
+                  {selectedItem.model}
+                </span>
+              )}
+              {selectedItem.features?.map((feature) => (
+                <span
+                  key={feature}
+                  className="px-2.5 py-1 rounded-full bg-zinc-50 dark:bg-zinc-800/60 text-zinc-500 dark:text-zinc-400 text-xs font-medium border border-zinc-200/60 dark:border-zinc-700/40"
+                >
+                  {feature}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Video / Thumbnail */}
+          <div className="pb-8">
+            <div className="relative bg-zinc-950 w-full aspect-video rounded-xl overflow-hidden ring-1 ring-zinc-200 dark:ring-zinc-800">
+              {selectedItem.videoUrl ? (
+                <video
+                  src={selectedItem.videoUrl}
+                  poster={selectedItem.thumbnail}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain"
+                />
+              ) : selectedItem.thumbnail ? (
+                <img
+                  src={selectedItem.thumbnail}
+                  alt={selectedItem.title}
+                  className="w-full h-full object-contain"
+                />
+              ) : null}
+            </div>
+          </div>
+
+          {/* Overview */}
+          {selectedItem.overview && (
+            <div className="pb-8">
+              <div className="text-[15px] text-zinc-600 dark:text-zinc-300 leading-[1.8]">
+                {renderMarkdownText(selectedItem.overview)}
+              </div>
+            </div>
+          )}
+
+          {/* Steps */}
+          {selectedItem.steps && selectedItem.steps.length > 0 && (
+            <div className="pb-10">
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-8 mb-6">
+                <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
+                  {stepsLabel}
+                </h2>
+              </div>
+              <div className="space-y-8">
+                {selectedItem.steps.map((step, index) => (
+                  <div key={index} className="flex gap-5">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center text-xs font-bold text-white dark:text-zinc-900 mt-0.5">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0 pt-1">
+                      <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+                        {step.title}
+                      </h3>
+                      {step.description && (
+                        <div className="text-sm text-zinc-500 dark:text-zinc-400 leading-[1.8]">
+                          {renderMarkdownText(step.description)}
+                        </div>
+                      )}
+                      {step.command && (
+                        <CommandBlock command={step.command} />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CTA */}
+          <div className="border-t border-zinc-200 dark:border-zinc-800 py-12">
+            <div className="flex flex-col items-center gap-4">
+              <Link
+                href={ctaHref}
+                className="inline-flex items-center justify-center px-8 py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg font-semibold no-underline text-sm hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors active:scale-[0.98]"
+              >
+                {ctaLabel}
+              </Link>
+              <button
+                onClick={handleCloseDetail}
+                className="inline-flex items-center gap-1.5 text-sm text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                {backLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {/* Hero — left-aligned */}
@@ -253,14 +524,14 @@ export function VideoShowcaseIndex() {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-200 dark:bg-zinc-800 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
-            {LEARNING_PATHS.map((path) => (
+            {learningPaths.map((path) => (
               <div
                 key={path.level}
                 className="bg-background p-6 md:p-8"
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600 dark:text-zinc-400">
-                    {path.icon}
+                    {ICON_MAP[path.iconType]}
                   </div>
                   <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
                     {path.level}
@@ -275,10 +546,10 @@ export function VideoShowcaseIndex() {
                   {path.cases
                     .filter((caseItem) => allItemIds.has(caseItem.id))
                     .map((caseItem, index) => (
-                    <Link
+                    <button
                       key={caseItem.id}
-                      href={`/zh/showcase/${caseItem.id}`}
-                      className="flex items-center gap-3 py-2.5 px-3 -mx-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors group"
+                      onClick={() => handleSelectItem(caseItem.id)}
+                      className="flex items-center gap-3 py-2.5 px-3 -mx-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors group w-full text-left cursor-pointer"
                     >
                       <span className="flex-shrink-0 text-xs font-mono text-zinc-400 dark:text-zinc-600 tabular-nums w-5">
                         {String(index + 1).padStart(2, "0")}
@@ -286,7 +557,7 @@ export function VideoShowcaseIndex() {
                       <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
                         {caseItem.label}
                       </span>
-                    </Link>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -412,7 +683,7 @@ export function VideoShowcaseIndex() {
               {viewMode === "grid" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                   {displayedItems.map((item) => (
-                    <ShowcaseCard key={item.id} item={item} />
+                    <ShowcaseCard key={item.id} item={item} onSelect={handleSelectItem} viewLabel={viewLabel} />
                   ))}
                 </div>
               ) : (
@@ -428,7 +699,7 @@ export function VideoShowcaseIndex() {
                   </div>
                   {/* List Items */}
                   {displayedItems.map((item) => (
-                    <ShowcaseListItem key={item.id} item={item} />
+                    <ShowcaseListItem key={item.id} item={item} onSelect={handleSelectItem} />
                   ))}
                 </div>
               )}
@@ -453,6 +724,7 @@ export function VideoShowcaseIndex() {
           )}
         </div>
       </section>
+
     </div>
   );
 }
