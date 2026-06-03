@@ -260,7 +260,7 @@ export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看�
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
-  const allItems = useMemo(() => items, [items]);
+  const allItems = useMemo(() => [...items].reverse(), [items]);
   const allItemIds = useMemo(() => new Set(allItems.map((item) => item.id)), [allItems]);
 
   const basePath = typeof window !== "undefined"
