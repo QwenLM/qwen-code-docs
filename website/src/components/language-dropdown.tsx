@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ChevronDownIcon, GlobeIcon } from "lucide-react";
 
 // 语言配置
@@ -27,6 +27,7 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // 客户端渲染标记
   useEffect(() => {
@@ -75,7 +76,8 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({
     }
 
     const newPath = "/" + pathSegments.join("/");
-    router.push(newPath);
+    const queryString = searchParams.toString();
+    router.push(queryString ? `${newPath}?${queryString}` : newPath);
     setIsOpen(false);
   };
 
