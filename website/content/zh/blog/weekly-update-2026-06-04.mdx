@@ -158,7 +158,7 @@ Qwen Code 换了个思路：通过 `addLayoutListener`（在 yoga `calculateLayo
 | [#4580](https://github.com/QwenLM/qwen-code/pull/4580) | 修复 rewind 在 mid-turn 消息存在时误报 "compressed turn" 错误 | 对话回退不再在压缩过的会话中误报错误 |
 | [#4505](https://github.com/QwenLM/qwen-code/pull/4505) | DashScope 关闭推理时正确发送 enable_thinking | DashScope 用户关闭 thinking 后不再看到推理输出 |
 | [#4540](https://github.com/QwenLM/qwen-code/pull/4540) | 暴露 Anthropic 空流 provider 错误 | Anthropic provider 返回空流时有明确错误信息，不再静默挂起 |
-| [#4474](https://github.com/QwenLM/qwen-code/pull/4474) | 在 settings ${VAR} 解析前先加载 ~/.env 变量 | settings.json 里的 `${MY_KEY}` 终于能正确解析 ~/.env 里定义的变量 |
+| [#4474](https://github.com/QwenLM/qwen-code/pull/4474) | 在 settings 变量解析前先加载 ~/.env 变量 | settings.json 里的环境变量引用终于能正确解析 ~/.env 里定义的变量 |
 | [#4431](https://github.com/QwenLM/qwen-code/pull/4431) | atomicWriteFile 保留文件 uid，避免破坏共享写入文件 | 多进程场景下原子写入不再改变文件所有者 |
 | [#4689](https://github.com/QwenLM/qwen-code/pull/4689) | Daemon 隔离并行 subAgent 文本流 | 并行 subAgent 的输出不再在 transcript 里互相串 |
 | [#4701](https://github.com/QwenLM/qwen-code/pull/4701) | Arena 模型选择对话框 Space 键修复 | Arena 模式选模型时 Space 键终于能用了 |
