@@ -1,0 +1,188 @@
+---
+title: "Qwen Code 周报：Computer Use 零配置内置、飞书接入、压缩引擎重写不丢上下文"
+date: "2026-06-04"
+description: "Qwen Code v0.17.1 本周的动作：Computer Use 变成零配置内置能力，飞书 Channel 上线支持中国区团队直接在群里用 Agent，压缩引擎重写解决了长任务丢上下文的致命问题。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：Computer Use 零配置内置、飞书接入、压缩引擎重写不丢上下文"
+  date="2026-06-04"
+  author="Qwen Team"
+/>
+
+编码 Agent 赛道这周两件大事。Anthropic 发布 [Claude Opus 4.8](https://www.anthropic.com/news/claude-opus-4-8)，Computer Use 能力继续强化，fast mode 成本降到之前的三分之一，但 Opus 级别的定价门槛依然在那。另一边，Google 宣布 [Gemini CLI 将于 6 月 18 日关闭免费版](https://news.ycombinator.com/item?id=48196867)，被 Antigravity CLI 替代——去年开源拿了 5 万 Star、接受了 6000+ 社区贡献，现在收回给企业用户，社区反应很大。
+
+Qwen Code 本周发布 **v0.17.0** 和 **v0.17.1**，60+ 个 PR 合入，覆盖四个方向：
+
+**Computer Use 变成内置能力了。** 之前要装 extension、配 MCP、授权限、重启——大多数人走不完这套流程。现在 9 个桌面自动化工具注册为 deferred 内置，模型首次调用时弹一次确认，剩下的（binary 下载、macOS 权限引导、server 生命周期）全自动。Anthropic 在 Opus 4.8 里继续强化 Computer Use 但绑定自家模型，Qwen Code 用你自己选的模型跑，成本你说了算。
+
+**飞书也能用了。** Qwen Code 已经支持微信集成，这周把飞书也接上了。WebSocket 和 Webhook 两种接入方式，Agent 的回复用飞书交互卡片流式输出，实时更新，带停止按钮。对中国区团队来说，在飞书群里 @ 一下就能用 Agent，不用切工具。
+
+**长任务压缩不再丢上下文了。** 旧的压缩模型按字符数切 70/30，单 turn 长任务（典型的 computer-use 工作流）只有一条用户消息，切分逻辑找不到 split point 就把所有截图和用户原始 prompt 全丢了。新引擎改成全历史 summary + 选择性恢复：9 段结构化摘要保留叙事连续性，最近 5 个文件 + 最近 3 张图片恢复状态连续性。Computer Use 跑着跑着压缩一下，Agent 不再变 " 瞎子 "。
+
+**CJK 用户终于不用忍了。** 中日韩输入法的候选框一直跑到终端左下角，离你实际打字的地方十万八千里。这周通过 yoga 树遍历把物理光标移到视觉光标位置，候选框终于跟着走了。
+
+## ✨ 新增特性
+
+### Computer Use 零配置内置：桌面自动化一次确认即用
+
+Anthropic 在 Claude Opus 4.8 里继续强化 Computer Use，fast mode 成本降了三分之二，但绑定 Claude 模型。Google 的 Gemini CLI 6 月 18 日关闭免费版——开源编码工具说关就关，选择权还是得在自己手里。
+
+Qwen Code 的做法不一样：把 Computer Use 做成零配置的内置能力。`computer_use__list_apps`、`computer_use__get_app_state`、`computer_use__click` 等 9 个工具注册为 deferred 内置工具。模型首次调用任何一个时，弹标准的 tool-permission 对话框，你点一次 Approve，后续全自动——`npx -y open-computer-use mcp` 拉取上游 binary（约 50MB），macOS 自动引导 Accessibility 和 Screen Recording 权限，MCP server 生命周期自动管理。
+
+默认开启（`tools.computerUse.enabled: true`），不想要的话一个配置关掉。用你自己选的模型跑，不绑定任何特定 provider。
+
+**你能用它做什么：**
+
+- 问 Agent " 打开 Stocks 应用，点击第一只股票 "——Agent 看到截图、识别 UI 元素、自动点击
+- 首次使用只需一次确认，后续调用直接通过
+- 模型发送 `select:computer_use__list_apps,computer_use__get_app_state,computer_use__click` 批量加载 schema，一次加载多个工具
+- macOS 权限引导全自动：Accessibility → Screen Recording → 重启后自动重连
+- 用 `tools.computerUse.enabled: false` 关闭，或 `QWEN_COMPUTER_USE_PACKAGE` 覆盖上游 binary 版本
+
+详见 PR [#4590](https://github.com/QwenLM/qwen-code/pull/4590)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/kS1Np3LUgPSg07OQ27_z63TWIU_G4nQHBJDA4wynUmk.mp4" controls></video>
+
+### 飞书 Channel：在飞书里直接用 Qwen Code
+
+Qwen Code 已经支持微信集成，这周把飞书也接上了。新增 Feishu（Lark）channel adapter，支持 WebSocket 和 Webhook 两种接入方式。Agent 的回复用飞书的交互卡片流式输出，实时更新，带停止按钮。引用/回复的上下文也能正确获取——不管是文本消息还是卡片消息。
+
+每条消息独立状态隔离，多人同时用不会串。
+
+**你能用它做什么：**
+
+- 在飞书私聊或群聊中 @ Qwen Code，直接提问或下达任务
+- 流式卡片实时看到 Agent 的思考和输出过程，点停止按钮随时打断
+- 引用某条消息提问，Agent 能看到被引用的原文
+- 支持图片和文件附件
+
+详见 PR [#4379](https://github.com/QwenLM/qwen-code/pull/4379)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN018Bb7lu1tFQqKT9S0E_!!6000000005872-2-tps-1698-944.png)
+
+### 压缩重构：长任务不再丢上下文
+
+上周我们把自动压缩设计成了三级阶梯。这周往下走一层：压缩引擎本身重写了。
+
+旧模型按字符数把历史切成前 70%（压成 summary）和后 30%（逐字保留）。问题出在 computer-use 这类单 turn 长任务——用户只说了一句 " 打开 Safari，点搜索结果，截图 "，然后 Agent 跑了几十轮工具调用。切分逻辑要求至少两条用户消息才能找到 split point，单 turn 永远找不到，fallback 就把**所有截图和用户原始 prompt 都替换成一段文本摘要**。Agent 恢复后变 " 瞎子 "——没有视觉上下文，没有 verbatim 的用户意图。
+
+新引擎改成 summary + selective restoration：
+
+- **9 段结构化 summary**：其中第 6 段强制 verbatim 引用每一条用户消息，确保用户意图在压缩后存活
+- **最近 5 个文件恢复**：按大小自适应——小文件嵌入从磁盘新读的完整内容，大文件只放路径引用
+- **最近 3 张图片恢复**：每张图带 metadata header（turn index + 源工具名 + args），模型能把视觉状态和产生它的动作对应起来
+
+**你能用它做什么：**
+
+- Computer Use 长任务压缩后，Agent 仍然能看到最近的截图和你的原始指令
+- `/compress` 新增 focus 指令：`/compress focus on the auth bug`——引导摘要聚焦你关心的点（最多 2000 字符）
+- Plan mode 和后台 subagent 状态在压缩后自动恢复，不会静默丢失
+
+详见 PR [#4599](https://github.com/QwenLM/qwen-code/pull/4599)、[#4688](https://github.com/QwenLM/qwen-code/pull/4688)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/HuKJfjUsuluiTa9XOxu38MgdKeWZYl_pr18b6MEr11k.mp4" controls></video>
+
+### 审批模式重命名：Default → Ask Permissions
+
+之前审批模式的默认档叫 "Default"——这个名字只告诉你 " 这是默认值 "，没说这个模式实际授予什么权限。其它模式（Plan、Auto-Edit、Auto、YOLO）都直接描述行为，唯独 Default 是个例外。
+
+改名为 **Ask Permissions**，直接回答 " 这个模式下 Agent 会问我吗？" 这个问题。同时对齐了 Claude Code 同类模式的命名，降低跨工具的认知成本。
+
+内部枚举值 `ApprovalMode.DEFAULT`、settings.json 里的 `"default"` 、CLI 命令 `/approval-mode default` 全部不变，老配置零迁移。9 个 locale 的翻译同步更新。
+
+**你能用它做什么：**
+
+- Settings dialog 里 `Tool Approval Mode` 行显示 `Ask permissions` ——一眼知道这个模式会征求你的同意
+- `/approval-mode` 选择器里看到的是行为描述，不是一个无意义的 "Default"
+- 已有的 settings.json 和 CLI 命令完全兼容，不用改任何东西
+
+详见 PR [#4674](https://github.com/QwenLM/qwen-code/pull/4674)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN0139bSlv1qQTXuZC7QV_!!6000000005490-2-tps-1698-944.png)
+
+### IME 候选框定位：CJK 输入法终于能用了
+
+Qwen Code 用反色字符渲染视觉光标，物理光标被隐藏并默认在终端左下角。中日韩输入法用户的候选框一直跟着物理光标——离你实际打字的位置差了整个屏幕。Hermes 和 OpenClaude 都有同样的问题，它们的解法是 fork Ink 源码。
+
+Qwen Code 换了个思路：通过 `addLayoutListener`（在 yoga `calculateLayout()` 之后触发，零抖动）遍历 yoga 树获取输入组件的绝对位置，把物理光标移到视觉光标处。用 `patch-package` 暴露 `ink/dom` 和 `ink/components/CursorContext` 两个内部模块，不用 fork 整个 Ink。
+
+**你能用它做什么：**
+
+- 切换到搜狗/苹果拼音等 CJK 输入法，候选框出现在光标旁边，不再跑到左下角
+- 方向键移动光标时，候选框跟着走
+- 普通对话、多行输入、历史滚动不受影响
+
+详见 PR [#4652](https://github.com/QwenLM/qwen-code/pull/4652)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01XkfPi51cxzujZ4c9X_!!6000000003668-2-tps-1698-940.png)
+
+### 更多新功能
+
+| 功能 | PR | 对你的影响 |
+|------|-----|-----------|
+| **虚拟视口**：opt-in 虚拟化历史渲染（`ui.useTerminalBuffer: true`），只渲染可见区域，键盘/鼠标滚动，解决长对话闪烁卡顿 | [#4146](https://github.com/QwenLM/qwen-code/pull/4146) | 1000 轮对话不再闪烁/卡顿/滚动风暴，直接修复 #3702 #2950 #3118 #2972 |
+| **Fork SubAgent 门控 + prompt 纪律**：非交互模式禁用 fork，交互模式注入 "Don't peek / Don't race" 约束 | [#4574](https://github.com/QwenLM/qwen-code/pull/4574) | CI/headless 里 fork 不再意外触发；交互模式下 Agent 不会偷看 fork 中间结果或编造完成状态 |
+| **内存压力监控**：cgroup 感知的 RSS + V8 堆监控，自动清理 FileReadCache | [#4403](https://github.com/QwenLM/qwen-code/pull/4403) | 长会话内存压力时自动释放缓存，避免 OOM |
+| **OOM 前自动 dump 诊断**：hard/critical 压力时写入诊断 JSON 到磁盘 | [#4654](https://github.com/QwenLM/qwen-code/pull/4654) | 进程崩溃后诊断数据仍在，可直接附到 bug report |
+| **后台 Shell 完成通知**：后台任务完成/失败/取消时发终端通知 | [#4355](https://github.com/QwenLM/qwen-code/pull/4355) | 不用手动问 Agent 后台任务跑完没有 |
+| **原子写入 Phase 2**：凭证/记忆/配置/JSONL 全部原子写入 | [#4333](https://github.com/QwenLM/qwen-code/pull/4333) | kill -9 / OOM / 断电不再导致凭证文件损坏或 JSONL 记录粘连 |
+| **CPU profiling**：`/doctor cpu-profile` 或 `QWEN_CODE_CPU_PROFILE=1` 或 `SIGUSR1` 信号触发 | [#4620](https://github.com/QwenLM/qwen-code/pull/4620) | 三种方式生成 `.cpuprofile`，Chrome DevTools 直接加载分析 |
+| **Settings JSON 损坏警告**：配置文件语法错误时弹 warning dialog | [#4560](https://github.com/QwenLM/qwen-code/pull/4560) | 手动编辑 settings.json 出错不再静默吞掉 |
+| **Statusline 自定义**：`respectUserColors` + `hideContextIndicator` 选项 | [#4670](https://github.com/QwenLM/qwen-code/pull/4670) | 状态栏颜色和上下文指示器可按偏好调整 |
+| **MiniMax-M3 模型**：新增 MiniMax-M3 模型配置 | [#4668](https://github.com/QwenLM/qwen-code/pull/4668) | `/model` 直接选择 MiniMax-M3 |
+| **Web Shell /delete**：批量删除会话 | [#4603](https://github.com/QwenLM/qwen-code/pull/4603) | Web UI 里批量清理旧会话 |
+| **Runtime MCP add/remove**：运行时动态添加/移除 MCP server | [#4552](https://github.com/QwenLM/qwen-code/pull/4552) | 不用重启就能管理 MCP server |
+| **Triage skill**：内置 issue/PR 分类技能 | [#4577](https://github.com/QwenLM/qwen-code/pull/4577) | Agent 可以帮你做 issue 和 PR 的初步分类 |
+| **Simplify skill**：内置代码简化技能 | [#3570](https://github.com/QwenLM/qwen-code/pull/3570) | Agent 有系统化的代码简化流程 |
+| **Agent reproduction workflows**：Agent 问题复现工作流 | [#4118](https://github.com/QwenLM/qwen-code/pull/4118) | 标准化的 Agent 行为问题复现和调试流程 |
+| **Shell 子进程注入 context env vars**：session/agent/prompt ID 注入到 shell 环境变量 | [#4649](https://github.com/QwenLM/qwen-code/pull/4649) | 自定义脚本可以拿到当前会话上下文 |
+| **AUTO denial observability + caps**：AUTO 模式拒绝的可观测性和上限 | [#4476](https://github.com/QwenLM/qwen-code/pull/4476) | AUTO 模式拒绝了什么、为什么拒绝，现在有数据了 |
+| **Web Shell inline terminal**：Web UI 内联终端命令界面 | [#4710](https://github.com/QwenLM/qwen-code/pull/4710) | Web UI 里直接看到命令执行过程 |
+| **Computer Use 签名包**：使用签名 + notarized 的 @qwen-code/open-computer-use fork | [#4726](https://github.com/QwenLM/qwen-code/pull/4726) | macOS Gatekeeper 不再阻拦 Computer Use binary |
+| **Desktop 多品牌支持** | [#4581](https://github.com/QwenLM/qwen-code/pull/4581) | Desktop 应用支持多品牌构建 |
+| **Daemon 非阻塞 prompt** | [#4585](https://github.com/QwenLM/qwen-code/pull/4585) | POST /prompt 立即返回 202 + promptId，不阻塞 |
+
+## 🔧 重要修复
+
+| PR | 修复内容 | 对你的影响 |
+|----|----------|-----------|
+| [#4644](https://github.com/QwenLM/qwen-code/pull/4644) | 用浅拷贝/尾部变体替代 resume 时的 structuredClone，防止 OOM | 恢复长会话不再因深拷贝全量历史而内存溢出 |
+| [#4650](https://github.com/QwenLM/qwen-code/pull/4650) | /memory toggle 状态在 dialog 重开后正确持久化 | /memory 开关不再重开后丢失设置 |
+| [#4605](https://github.com/QwenLM/qwen-code/pull/4605) | 禁用 undici 300s bodyTimeout（no-proxy Node.js 路径） | 长时间模型调用不再因 300 秒超时被中断 |
+| [#4580](https://github.com/QwenLM/qwen-code/pull/4580) | 修复 rewind 在 mid-turn 消息存在时误报 "compressed turn" 错误 | 对话回退不再在压缩过的会话中误报错误 |
+| [#4505](https://github.com/QwenLM/qwen-code/pull/4505) | DashScope 关闭推理时正确发送 enable_thinking | DashScope 用户关闭 thinking 后不再看到推理输出 |
+| [#4540](https://github.com/QwenLM/qwen-code/pull/4540) | 暴露 Anthropic 空流 provider 错误 | Anthropic provider 返回空流时有明确错误信息，不再静默挂起 |
+| [#4474](https://github.com/QwenLM/qwen-code/pull/4474) | 在 settings ${VAR} 解析前先加载 ~/.env 变量 | settings.json 里的 `${MY_KEY}` 终于能正确解析 ~/.env 里定义的变量 |
+| [#4431](https://github.com/QwenLM/qwen-code/pull/4431) | atomicWriteFile 保留文件 uid，避免破坏共享写入文件 | 多进程场景下原子写入不再改变文件所有者 |
+| [#4689](https://github.com/QwenLM/qwen-code/pull/4689) | Daemon 隔离并行 subAgent 文本流 | 并行 subAgent 的输出不再在 transcript 里互相串 |
+| [#4701](https://github.com/QwenLM/qwen-code/pull/4701) | Arena 模型选择对话框 Space 键修复 | Arena 模式选模型时 Space 键终于能用了 |
+| [#4558](https://github.com/QwenLM/qwen-code/pull/4558) | 历史恢复文本编辑前抑制补全菜单 | 按 ↑ 恢复历史输入后不再立刻弹出补全菜单 |
+| [#4623](https://github.com/QwenLM/qwen-code/pull/4623) | 截图触发的压缩在 auto-compact 通知中正确标注 | 压缩通知不再把截图触发的压缩说成是常规压缩 |
+| [#4531](https://github.com/QwenLM/qwen-code/pull/4531) | 保护过大的恢复历史发送 | 恢复超长会话时不再因 payload 过大而请求失败 |
+| [#4439](https://github.com/QwenLM/qwen-code/pull/4439) | 修正敌意 provider 的 usage token 计数 | 某些 provider 返回异常 token 计数时不再显示错误数据 |
+
+## 🎉 新贡献者
+
+感谢以下首次贡献者：
+
+| 贡献者 | 贡献内容 |
+|--------|----------|
+| [@kagura-agent](https://github.com/kagura-agent) | TUI 渲染前在 stderr 显示启动警告 [#4461](https://github.com/QwenLM/qwen-code/pull/4461) |
+| [@yuanyuanAli](https://github.com/yuanyuanAli) | 飞书（Lark）channel adapter [#4379](https://github.com/QwenLM/qwen-code/pull/4379) |
+| [@he-yufeng](https://github.com/he-yufeng) | IDE 代理请求使用 undici fetch [#4607](https://github.com/QwenLM/qwen-code/pull/4607)、隐藏已完成 sticky todos [#4635](https://github.com/QwenLM/qwen-code/pull/4635)、honor list extensions flag [#4673](https://github.com/QwenLM/qwen-code/pull/4673) 等多项修复 |
+| [@zzhenyao](https://github.com/zzhenyao) | Settings JSON 损坏警告 dialog [#4560](https://github.com/QwenLM/qwen-code/pull/4560)、IME 输入法候选框定位 [#4652](https://github.com/QwenLM/qwen-code/pull/4652)、Statusline 自定义选项 [#4670](https://github.com/QwenLM/qwen-code/pull/4670) |
+| [@Pepograminger](https://github.com/Pepograminger) | 禁用 undici 300s bodyTimeout [#4605](https://github.com/QwenLM/qwen-code/pull/4605) |
+| [@InfiniteUselessness](https://github.com/InfiniteUselessness) | 更新 @google/genai 依赖至 2.6.0 [#4485](https://github.com/QwenLM/qwen-code/pull/4485) |
+| [@ZijianZhang989](https://github.com/ZijianZhang989) | Arena 模型选择 Space 键修复 [#4701](https://github.com/QwenLM/qwen-code/pull/4701) |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
