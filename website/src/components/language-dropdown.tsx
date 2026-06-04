@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ChevronDownIcon, GlobeIcon } from "lucide-react";
 
@@ -19,7 +19,22 @@ interface LanguageDropdownProps {
   currentLang: string;
 }
 
-export const LanguageDropdown: React.FC<LanguageDropdownProps> = ({
+export const LanguageDropdown: React.FC<LanguageDropdownProps> = (props) => {
+  return (
+    <Suspense
+      fallback={
+        <div className='flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground bg-secondary/50 rounded-md border border-border'>
+          <GlobeIcon className='w-4 h-4' />
+          <span>{languages.find((l) => l.locale === props.currentLang)?.name || props.currentLang}</span>
+        </div>
+      }
+    >
+      <LanguageDropdownInner {...props} />
+    </Suspense>
+  );
+};
+
+const LanguageDropdownInner: React.FC<LanguageDropdownProps> = ({
   currentLang,
 }) => {
   const [isOpen, setIsOpen] = useState(false);

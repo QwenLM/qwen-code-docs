@@ -1,0 +1,132 @@
+---
+title: "Um prompt para gerar capas: Criei um Skill de IA com 4 estilos para contas oficiais do WeChat"
+date: "2026-05-29"
+description: "A parte mais chata depois de escrever um artigo é encontrar a imagem de capa. Criei um Skill que escolhe automaticamente o estilo, gera prompts e chama o Model Studio CLI para criar imagens baseadas no conteúdo do artigo. Aqui estão os 4 estilos e como usar."
+author: "joeytoday"
+tags: ["Tutorials", "Skills", "Model Studio"]
+image: https://gw.alicdn.com/imgextra/i1/O1CN01YZsI6q1vvgc6PA07X_!!6000000006235-2-videocover-2844-1224.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Um prompt para gerar capas: Criei um Skill de IA com 4 estilos para contas oficiais do WeChat"
+  date="2026-05-29"
+  author="joeytoday"
+/>
+
+A coisa mais irritante ao escrever para contas oficiais do WeChat não é o conteúdo em si — é encontrar a imagem de capa depois.
+
+Toda vez que termino um artigo e preciso publicar, fico agonizando com a capa. Antes da IA, eu procurava no Unsplash (que agora carrega dolorosamente devagar). Até tentei fazer capas no Keynote, assim:
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01B7V0w21BvFuqOBDiX_!!6000000000007-2-tps-2350-1000.png)
+
+Na verdade é simples — apenas uma imagem específica combinada com texto de título. Sendo assim, a IA pode totalmente lidar com isso agora. Mas quando se pede à IA para gerar diretamente, muitas vezes sai algo "tecnicamente correto mas estranho". Meus estilos de conteúdo variam muito — alguns são ensaios, outros focados em ferramentas. Para certos temas quero tons escuros, para ferramentas técnicas quero estilo abstrato minimalista, para crítica cultural quero aquele toque editorial de revista. Cada vez é preciso repensar composição, paleta de cores e prompts. Bastante tedioso.
+
+Então simplesmente **criei um Skill para deixar o Qwen Code + Model Studio CLI fazer isso por mim**.
+
+## O que ele faz
+
+**Dê um título de artigo ou tema, e ele automaticamente analisa o tom, escolhe o estilo, refina o título, constrói prompts e chama o Model Studio para gerar imagens.**
+
+Quatro estilos cobrindo meus principais cenários de conta oficial WeChat. Dê uma olhada — ainda há muito a melhorar, e estou iterando continuamente:
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01AXTaRR1O9hnhEBLKc_!!6000000001663-2-tps-2848-1214.png)
+
+- **01 Pôster Bold**: Fundo cinematográfico escuro + sobreposição de gradiente à esquerda + texto branco grande com uma palavra-chave destacada em vermelho. Ótimo para comentários aprofundados, temas históricos, observações sociais.
+- **02 Revista**: Texto à esquerda, imagem emoldurada à direita em layout de duas colunas com textura de papel. Ótimo para crítica cultural, notas de leitura, narrativas de personagens.
+- **03 Minimalista Abstrato**: Ilustração em bleed total + sobreposição monocromática para sensação imersiva de tom único. Ótimo para blogs de tecnologia, apresentações de produtos, explicações de conceitos.
+- **04 Pixel Art**: Pixel art 16-bit + sobreposição roxa escura + texto pixel dourado. Ótimo para reviews de ferramentas, conteúdo casual, temas nostálgicos.
+
+## A stack: Qwen Code + Model Studio CLI
+
+A geração de imagens é alimentada pela **ferramenta de linha de comando do Alibaba Cloud Model Studio**. Model Studio CLI é uma caixa de ferramentas de IA multimodal no seu terminal — chat, geração de imagens, geração de vídeo, síntese de voz, recuperação de conhecimento, tudo na linha de comando. Aqui usamos principalmente `image generate`.
+
+Por que usar:
+
+- **Qwen Code chama diretamente** — o Skill tem templates de comandos, a IA preenche parâmetros e executa, eu não preciso me preocupar
+- **Cota gratuita disponível** — qwen-image-2.0 tem cota de uso gratuita, ative "parar quando esgotado" para evitar cobranças
+- **Controle preciso de tamanho** — `--size '1344*572'` produz ratio 2.35:1 widescreen, renderização Playwright @2x exporta PNG HD 2688×1144
+
+Após instalar meu skill, apenas um prompt:
+
+```
+/open1v-mpcover-gen Gere uma capa WeChat baseada em @seu-artigo.md, <opcionalmente especificar estilo, usar estilo revista>
+```
+
+Aqui está uma demonstração do processo completo — você também pode gerar todos os estilos de uma vez:
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/k93w-JhfUqjj99B_cwPhd9RvlxFmzfTMVugdovEhj5w.mp4" controls></video>
+
+## Como usar
+
+❶ Instalar Qwen Code, veja https://qwenlm.github.io/qwen-code-docs/en/users/quickstart/
+
+```
+npm install -g @qwen-code/qwen-code@latest
+```
+
+❷ Obter uma API Key do Model Studio: https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key
+
+<Callout type="warning">
+Vá para a página de uso do modelo e ative "Parar quando a cota gratuita estiver esgotada" para evitar cobranças inesperadas: https://bailian.console.aliyun.com/cn-beijing?tab=model#/model-usage
+</Callout>
+
+❸ Instalar o skill de capa. Inicie o Qwen Code e digite:
+
+```
+Help me install this skill: https://github.com/joeytoday/open1v-mpcover-gen
+```
+
+❹ Começar a usar: Após a instalação, basta dizer ao Qwen Code:
+
+> Faça uma capa WeChat para mim. O título do artigo é "Qwen Code × Model Studio CLI Guia de Geração de Capas"
+
+A IA analisará o tom do conteúdo, perguntará qual estilo você prefere (ou selecionará automaticamente), refinará o título, construirá prompts em inglês, chamará o Model Studio para gerar imagens e produzirá duas alternativas.
+
+## Mais exemplos de uso
+
+Especificar um estilo diretamente:
+
+> Faça uma capa minimalista, tema é Segurança de API
+
+Fornecer mais contexto:
+
+> Escrevi um artigo sobre filosofia legalista, faça uma capa estilo revista
+
+Geração em lote:
+
+> Escrevi três artigos esta semana, títulos são xxx / yyy / zzz, faça uma capa para cada
+
+## Para quem é
+
+- Você escreve para contas oficiais WeChat e sempre trava na etapa da capa
+- Você tem padrões estéticos e não quer templates genéricos
+- Você está confortável trabalhando no terminal, ou disposto a tentar
+- Model Studio tem cota gratuita, custo zero para começar
+
+❌ Não adequado para: Quem precisa de tipografia chinesa precisa (use Figma/Canva), quem precisa de fotos reais, ou quem precisa de capas mais elaboradas.
+
+## Filosofia de design
+
+Por que não simplesmente pedir à IA para gerar uma imagem com texto de título? Porque caracteres chineses gerados por IA são basicamente ilegíveis. Então é dividido em duas etapas: **Model Studio gera fundo → HTML sobrepõe texto → screenshot do Playwright exporta PNG**. A imagem cuida da atmosfera; o texto é controlado precisamente pelo CSS.
+
+A vantagem é custo de iteração extremamente baixo — mudar um título requer apenas editar o texto HTML e re-renderizar (2 segundos), sem necessidade de regenerar a imagem (30 segundos). Sobreposição muito pesada ou leve, cores erradas — tudo é apenas mudar uma linha de CSS.
+
+Os quatro estilos não foram decididos arbitrariamente — são categorizados por **como os leitores se sentem no feed**:
+
+- "Tem atitude" → Fundo escuro com texto bold, impacto visual
+- "Tem bom gosto" → Colunas divididas com espaço em branco, estética editorial
+- "Muito claro" → Tom único, carga cognitiva mínima
+- "Divertido" → Pixel art quebra convenções
+
+Cada estilo corresponde a um **padrão de distribuição texto-imagem** — sobreposição total, coluna dividida, sobreposição colorida — garantindo que o texto permaneça legível independentemente da imagem de fundo.
+
+O Skill é open source no GitHub e está em iteração contínua. Se você usa Qwen Code + Model Studio, experimente. Se gostar, um star ⭐️ seria apreciado.
+
+🔗 https://github.com/joeytoday/open1v-mpcover-gen
+
+<Callout type="info">
+Este conteúdo foi escrito pelo autor com **edição e otimização assistidas por IA**. Opiniões centrais e experiências pessoais são do próprio autor e representam apenas as visões pessoais do criador.
+</Callout>

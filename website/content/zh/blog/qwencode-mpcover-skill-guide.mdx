@@ -1,0 +1,132 @@
+---
+title: "一句话生成封面：我给公众号做了4种风格的AI封面生成技能"
+date: "2026-05-29"
+description: "每次写完文章最头疼的就是找封面图。我做了一个 Skill，根据文章内容自动选风格、出提示词、调百炼 CLI 生图。附4种风格效果和使用方法。"
+author: "joeytoday"
+tags: ["Tutorials", "Skills", "Model Studio"]
+image: https://gw.alicdn.com/imgextra/i1/O1CN01YZsI6q1vvgc6PA07X_!!6000000006235-2-videocover-2844-1224.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="一句话生成封面：我给公众号做了4种风格的AI封面生成技能"
+  date="2026-05-29"
+  author="joeytoday"
+/>
+
+写公众号最烦的一件事不是写正文，是写完之后找封面图。
+
+每次文章写完，需要发布的时候都很纠结这个封面怎么办，AI 发展之前我会去 Unsplash 搜，现在加载实在是慢得可以，还尝试用 keynote 做过，比如下面这种：
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01B7V0w21BvFuqOBDiX_!!6000000000007-2-tps-2350-1000.png)
+
+其实很简单，一般就是特定的图片，组合上标题文字，既然如此，现在完全可以让 AI 帮忙生成了，但让 AI 直接生又容易出来一堆「正确但奇怪」的东西。我的内容的风格差异比较大，有些是随笔类的、有些是工具类的，——写某个主题类的内容想要暗调，写技术工具想要极简抽象的风格，写文化评论想要杂志封面的编辑感。每种都得重新想构图、配色、提示词，怪麻烦的。
+
+所以我干脆**做了一个 Skill，让 Qwen Code + 百炼 CLI 帮我干这事**。
+
+## 它能做什么
+
+**给文章标题或主题，自动分析调性、选风格、精简标题、构建提示词、调百炼生图。**
+
+四种风格，覆盖我日常公众号的主要场景。可以简单看一下，还有很多不太完善的地方，还在持续迭代中：
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01YZsI6q1vvgc6PA07X_!!6000000006235-2-videocover-2844-1224.png)
+
+- **01 大字报**：深色电影感背景 + 左侧渐变遮罩 + 大白字，一个关键词红色高亮。适合深度评论、历史话题、社会观察。
+- **02 杂志风**：左文字右方框图片的分栏布局，纸纹底色。适合文化评论、读书笔记、人物叙事。
+- **03 极简抽象**：全幅插画铺满 + 同色系彩色遮罩，单色调沉浸感。适合技术博客、产品介绍、概念解释。
+- **04 像素风**：16-bit 像素画铺满 + 暗紫遮罩 + 金色像素字。适合工具评测、轻松向内容、怀旧话题。
+
+## 工具链：Qwen Code + 百炼 CLI
+
+生图能力靠**阿里云百炼（Model Studio）的命令行工具**。百炼 CLI 是终端里的多模态 AI 工具箱——聊天、生图、生视频、语音合成、知识检索，全在命令行完成。这里主要用 `image generate`。
+
+为什么用它：
+
+- **Qwen Code 直接调**——Skill 写好命令模板，AI 填参数跑，不需要我操心
+- **有免费额度**——qwen-image-2.0 有免费调用量，开启「用完即停」不怕欠费
+- **尺寸精确可控**——`--size '1344*572'` 出 2.35:1 宽幅比例，Playwright @2x 渲染导出 2688×1144 高清 PNG
+
+直接安装我的技能之后，一句话提示词即可：
+
+```
+/open1v-mpcover-gen 帮我根据 @你的文章.md 生成一个公众号封面，<可指定风格，使用杂志风格>
+```
+
+整个过程也可以给大家参考一下，也可以把其他的风格都一次性生成：
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/k93w-JhfUqjj99B_cwPhd9RvlxFmzfTMVugdovEhj5w.mp4" controls></video>
+
+## 如何使用
+
+❶ 安装 Qwen Code，参考 https://qwenlm.github.io/qwen-code-docs/zh/users/quickstart/
+
+```
+npm install -g @qwen-code/qwen-code@latest
+```
+
+ ❷ 获取百炼 API Key： https://bailian.console.aliyun.com/cn-beijing?tab=model#/api-key
+
+<Callout type="warning">
+前往模型用量页开启「免费额度用完即停」，防止欠费：https://bailian.console.aliyun.com/cn-beijing?tab=model#/model-usage
+</Callout>
+
+❸ 安装封面技能，启动 Qwen Code，直接输入：
+
+```
+帮我安装这个技能：https://github.com/joeytoday/open1v-mpcover-gen
+```
+
+ ❹ 开始使用：安装完之后，直接对 Qwen Code 说：
+
+> 帮我做个公众号封面，文章标题是「Qwen Code × 百炼 CLI 公众号封面生成指南」
+
+AI 会分析内容调性，问你想用哪种风格（或自动帮你选），精简标题、构建英文提示词、调百炼生图、输出两张备选。
+
+## 更多用法
+
+直接指定风格：
+
+> 做个极简风格的封面，主题是 API 安全
+
+给更多上下文：
+
+> 我写了一篇关于法家哲学的文章，帮我做个杂志风封面
+
+批量生成：
+
+> 我这周写了三篇文章，标题分别是 xxx / yyy / zzz，帮我各做一张封面
+
+## 适合谁
+
+- 写公众号，每次到封面环节就卡住
+- 对封面有点审美洁癖，不想用千篇一律的模板
+- 习惯在终端工作，或者愿意试试
+- 百炼有免费额度，零成本上手
+
+❌ 不适合：需要精确中文字体排版的（用 Figma/Canva 更合适）、需要真人照片的、需要更精细封面图的。
+
+## 设计思路
+
+为什么不直接让 AI 生一张带标题文字的图？因为 AI 生图写中文字基本是乱码。所以拆成两步：**百炼生背景图 → HTML 叠文字 → Playwright 截图导出 PNG**。图片只负责氛围，文字由 CSS 精确控制。
+
+这样做的好处是迭代成本极低——改标题只需要改 HTML 里的文字重新渲染（2 秒），不需要重新生图（30 秒）。遮罩太重太轻、配色不对，都是改一行 CSS 的事。
+
+四种风格不是拍脑袋定的，是按**读者在信息流里的感受**分的：
+
+- 「有态度」→ 暗底大字，视觉冲击
+- 「有品位」→ 分栏留白，编辑美学
+- 「很清晰」→ 单色调，认知负荷最低
+- 「有趣」→ 像素画打破常规
+
+每种风格对应一种**文图分布模式**——全幅遮罩、分栏、彩色遮罩，确保不管什么图片都能保证文字可读。
+
+Skill 在 GitHub 开源，持续迭代中。在用 Qwen Code + 百炼的话，欢迎试试，喜欢的话，也欢迎给我一个 star ⭐️。
+
+🔗 https://github.com/joeytoday/open1v-mpcover-gen
+
+<Callout type="info">
+本内容由作者撰写，**AI 辅助整理和优化**，核心观点和个人体验均为作者本人，内容仅代表创作者个人观点。
+</Callout>
