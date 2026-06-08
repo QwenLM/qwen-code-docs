@@ -1,0 +1,188 @@
+---
+title: "Qwen Code 週報：Computer Use ゼロ設定ビルトイン、Feishu 連携、圧縮エンジン書き直し"
+date: "2026-06-04"
+description: "Qwen Code v0.17.1 今週の動き：Computer Use がゼロ設定のビルトイン機能に、Feishu Channel でグループチャットから直接 Agent を利用可能に、圧縮エンジンの書き直しで長時間タスクのコンテキスト喪失問題を解決。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：Computer Use ゼロ設定ビルトイン、Feishu 連携、圧縮エンジン書き直し"
+  date="2026-06-04"
+  author="Qwen Team"
+/>
+
+コーディング Agent 分野で今週 2 つの大きな出来事がありました。Anthropic が [Claude Opus 4.8](https://www.anthropic.com/news/claude-opus-4-8) をリリースし、Computer Use 機能をさらに強化。fast mode のコストが 3 分の 1 に低下しましたが、Opus レベルの価格ハードルは依然として存在します。一方、Google は [Gemini CLI の無料版を 6 月 18 日に終了する](https://news.ycombinator.com/item?id=48196867)と発表。Antigravity CLI に置き換えられます。昨年オープンソース化して 5 万 Star を獲得し 6000 以上のコミュニティ貢献を受け入れましたが、今はエンタープライズユーザー向けに回収され、コミュニティから大きな反応がありました。
+
+Qwen Code は今週 **v0.17.0** と **v0.17.1** をリリース、60 以上の PR がマージされ、4 つの方向をカバーしています：
+
+**Computer Use がビルトイン機能になりました。** これまでは Extension のインストール、MCP の設定、権限の付与、再起動が必要で、ほとんどの人がこのワークフローを完遂できませんでした。今では 9 個のデスクトップ自動化ツールが deferred ビルトインとして登録されています。モデルが初回呼び出し時に一度だけ確認を求め、残り（バイナリダウンロード、macOS 権限ガイダンス、サーバーライフサイクル）は全自動です。Anthropic は Opus 4.8 で Computer Use を強化し続けていますが自社モデルに縛られています。Qwen Code はあなたが選んだモデルで動作し、コストはあなたがコントロールできます。
+
+**Feishu 連携が開始しました。** Qwen Code は既に WeChat 連携をサポートしており、今週 Feishu も追加されました。WebSocket と Webhook の 2 つの接続方式、Agent の返答は Feishu のインタラクティブカードでリアルタイムにストリーミング出力され、停止ボタン付き。Feishu のグループチャットで @ するだけで Agent が使えます。ツールの切り替えは不要です。
+
+**長時間タスクの圧縮でコンテキストが失われなくなりました。** 旧圧縮モデルは文字数で 70/30 に分割していました。シングルターンの長時間タスク（典型的な computer-use ワークフロー）はユーザーメッセージが 1 つしかなく、分割ロジックが split point を見つけられず、すべてのスクリーンショットとユーザーの元のプロンプトを破棄していました。新エンジンは全履歴サマリー + 選択的復元に変更：9 セクションの構造化サマリーがナラティブの連続性を保持し、最新 5 ファイル + 3 画像が状態の連続性を復元します。Computer Use の実行中に圧縮しても、Agent は「盲目」にならなくなりました。
+
+**CJK ユーザーがようやく解放されました。** 中日韓入力メソッドの候補ウィンドウが常にターミナルの左下隅に飛んでいき、実際にタイピングしている場所から遥か遠くにありました。今週、yoga ツリーを走査して物理カーソルをビジュアルカーソルの位置に移動させ、候補ウィンドウがようやく追従するようになりました。
+
+## ✨ 新機能
+
+### Computer Use ゼロ設定ビルトイン：デスクトップ自動化を一回の確認で
+
+Anthropic は Claude Opus 4.8 で Computer Use を引き続き強化し、fast mode のコストを 3 分の 2 削減しましたが、Claude モデルに縛られています。Google の Gemini CLI は 6 月 18 日に無料版を終了します。オープンソースのコーディングツールはいつでも停止される可能性があり、選択権はあなたの手にあるべきです。
+
+Qwen Code は異なるアプローチを取ります：Computer Use をゼロ設定のビルトイン機能にしました。`computer_use__list_apps`、`computer_use__get_app_state`、`computer_use__click` などの 9 個のツールが deferred ビルトインツールとして登録されています。モデルが初めていずれかを呼び出すと、標準の tool-permission ダイアログが表示され、一度 Approve をクリックすれば、その後はすべて自動です。`npx -y open-computer-use mcp` で上流バイナリ（約 50MB）を取得、macOS が自動的に Accessibility と Screen Recording の権限をガイド、MCP サーバーのライフサイクルは自動管理されます。
+
+デフォルトで有効（`tools.computerUse.enabled: true`）。不要な場合は設定一つで無効化できます。あなたが選んだモデルで動作し、特定のプロバイダーに縛られません。
+
+**これで何ができるか：**
+
+- Agent に「Stocks アプリを開いて、最初の株をクリック」と依頼——Agent がスクリーンショットを見て、UI 要素を識別し、自動的にクリック
+- 初回使用は一度の確認のみ、その後の呼び出しは直接通過
+- モデルが `select:computer_use__list_apps,computer_use__get_app_state,computer_use__click` を送信してスキーマをバッチロード、一度に複数ツールを読み込み
+- macOS 権限ガイダンスは完全自動：Accessibility → Screen Recording → 再起動後自動再接続
+- `tools.computerUse.enabled: false` で無効化、または `QWEN_COMPUTER_USE_PACKAGE` で上流バイナリバージョンをオーバーライド
+
+詳細は PR [#4590](https://github.com/QwenLM/qwen-code/pull/4590)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/kS1Np3LUgPSg07OQ27_z63TWIU_G4nQHBJDA4wynUmk.mp4" controls></video>
+
+### Feishu Channel：Feishu で直接 Qwen Code を使う
+
+Qwen Code は既に WeChat 連携をサポートしており、今週 Feishu が追加されました。新しい Feishu（Lark）チャンネルアダプターは WebSocket と Webhook の両方の接続方式をサポートします。Agent の返答は Feishu のインタラクティブカードでリアルタイムにストリーミング出力され、停止ボタン付き。引用/返信のコンテキストも正しく取得されます——テキストメッセージでもカードメッセージでも。
+
+各メッセージは独立した状態分離を持ち、複数ユーザーが同時に使用しても干渉しません。
+
+**これで何ができるか：**
+
+- Feishu のプライベートチャットやグループチャットで Qwen Code を @ して、直接質問やタスク割り当て
+- ストリーミングカードで Agent の思考と出力プロセスをリアルタイムに確認、停止ボタンでいつでも中断
+- メッセージを引用して質問すると、Agent は引用された元のテキストを見ることができる
+- 画像とファイルの添付をサポート
+
+詳細は PR [#4379](https://github.com/QwenLM/qwen-code/pull/4379)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN018Bb7lu1tFQqKT9S0E_!!6000000005872-2-tps-1698-944.png)
+
+### 圧縮リファクタリング：長時間タスクでコンテキストが失われなくなった
+
+先週、自動圧縮を 3 段階のはしごとして設計しました。今週はもう一段深く：圧縮エンジン自体を書き直しました。
+
+旧モデルは文字数で履歴を前半 70%（サマリーに圧縮）と後半 30%（そのまま保持）に分割していました。問題は computer-use のようなシングルターン長時間タスクで発生しました——ユーザーは「Safari を開いて、検索結果をクリックして、スクリーンショットを撮って」とだけ言い、その後 Agent は数十回のツールコールを実行します。分割ロジックは split point を見つけるために少なくとも 2 つのユーザーメッセージを必要とします。シングルターンでは見つけられず、フォールバックが**すべてのスクリーンショットとユーザーの元のプロンプトをテキストサマリーに置き換え**ました。復元後、Agent は「盲目」になります——視覚的コンテキストなし、ユーザーの意図のバーバティムなし。
+
+新エンジンは summary + 選択的復元を使用：
+
+- **9 セクション構造化 summary**：セクション 6 がすべてのユーザーメッセージの逐語引用を強制し、圧縮後もユーザーの意図が生き残ることを保証
+- **最新 5 ファイル復元**：サイズに応じて適応——小さなファイルはディスクから新しく読んだ完全な内容を埋め込み、大きなファイルはパス参照のみ
+- **最新 3 画像復元**：各画像にメタデータヘッダー（ターンインデックス + ソースツール名 + args）が付き、モデルが視覚状態とそれを生成したアクションを対応付けられる
+
+**これで何ができるか：**
+
+- Computer Use の長時間タスク圧縮後、Agent は最新のスクリーンショットとあなたの元の指示をまだ見ることができる
+- `/compress` に focus ディレクティブが追加：`/compress focus on the auth bug`——サマリーをあなたが気にする点に集中させる（最大 2000 文字）
+- Plan mode とバックグラウンド subagent の状態は圧縮後に自動復元、静かに失われることはない
+
+詳細は PR [#4599](https://github.com/QwenLM/qwen-code/pull/4599)、[#4688](https://github.com/QwenLM/qwen-code/pull/4688)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/HuKJfjUsuluiTa9XOxu38MgdKeWZYl_pr18b6MEr11k.mp4" controls></video>
+
+### 承認モードのリネーム：Default → Ask Permissions
+
+以前の承認モードのデフォルト設定は「Default」と呼ばれていました——この名前は「これがデフォルトです」としか言わず、このモードが実際にどの権限を付与するかを示していませんでした。他のモード（Plan、Auto-Edit、Auto、YOLO）はすべて直接的に動作を記述しており、Default だけが例外でした。
+
+**Ask Permissions** にリネームされ、「このモードで Agent は私に聞きますか？」という質問に直接答えます。同時に Claude Code の同等モードの命名に合わせ、ツール間の認知コストを削減しました。
+
+内部 enum 値 `ApprovalMode.DEFAULT`、settings.json の `"default"`、CLI コマンド `/approval-mode default` はすべて変更なし——既存設定のマイグレーションはゼロ。9 ロケールの翻訳を同時更新。
+
+**これで何ができるか：**
+
+- Settings ダイアログの `Tool Approval Mode` 行に `Ask permissions` と表示——このモードがあなたの同意を求めることが一目瞭然
+- `/approval-mode` セレクターに動作の説明が表示され、意味のない「Default」ではない
+- 既存の settings.json と CLI コマンドは完全互換、何も変更不要
+
+詳細は PR [#4674](https://github.com/QwenLM/qwen-code/pull/4674)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN0139bSlv1qQTXuZC7QV_!!6000000005490-2-tps-1698-944.png)
+
+### IME 候補ウィンドウ位置修正：CJK 入力メソッドがようやく使えるように
+
+Qwen Code は反転文字でビジュアルカーソルをレンダリングし、物理カーソルは非表示でデフォルトではターミナルの左下隅にあります。CJK 入力メソッドユーザーの候補ウィンドウは常に物理カーソルに追従していました——実際にタイピングしている場所から画面全体分離れています。Hermes と OpenClaude も同じ問題を抱えており、それらの解決策は Ink のソースコードをフォークすることでした。
+
+Qwen Code は異なるアプローチを取ります：`addLayoutListener`（yoga の `calculateLayout()` の後にトリガーされ、ジッターゼロ）を使用して yoga ツリーを走査し、入力コンポーネントの絶対位置を取得してから、物理カーソルをビジュアルカーソルの位置に移動させます。`patch-package` で `ink/dom` と `ink/components/CursorContext` の 2 つの内部モジュールを公開し、Ink 全体をフォークする必要はありません。
+
+**これで何ができるか：**
+
+- Sogou/Apple Pinyin などの CJK 入力メソッドに切り替えると、候補ウィンドウが左下隅に飛ぶのではなくカーソルの横に表示される
+- 矢印キーでカーソルを移動すると候補ウィンドウも追従
+- 通常の会話、複数行入力、履歴スクロールには影響なし
+
+詳細は PR [#4652](https://github.com/QwenLM/qwen-code/pull/4652)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01XkfPi51cxzujZ4c9X_!!6000000003668-2-tps-1698-940.png)
+
+### その他の新機能
+
+| 機能 | PR | 影響 |
+|------|-----|------|
+| **Virtual Viewport**：opt-in 仮想化履歴レンダリング（`ui.useTerminalBuffer: true`）、可視領域のみレンダリング、キーボード/マウススクロール、長い会話のちらつきとラグを修正 | [#4146](https://github.com/QwenLM/qwen-code/pull/4146) | 1000 ターンの会話でちらつき/ラグ/スクロールストームが発生しなくなり、#3702 #2950 #3118 #2972 を直接修正 |
+| **Fork SubAgent ゲーティング + Prompt 規律**：非インタラクティブモードで fork を無効化、インタラクティブモードで「Don't peek / Don't race」制約を注入 | [#4574](https://github.com/QwenLM/qwen-code/pull/4574) | CI/headless で fork が誤って起動しなくなり、インタラクティブモードで Agent が fork の中間結果を覗き見たり完了ステータスを捏造しなくなる |
+| **メモリ圧力監視**：cgroup 対応の RSS + V8 ヒープ監視、FileReadCache 自動クリア | [#4403](https://github.com/QwenLM/qwen-code/pull/4403) | 長いセッションでメモリ圧力時にキャッシュを自動解放、OOM を回避 |
+| **OOM 前自動診断ダンプ**：hard/critical 圧力時にディスクに診断 JSON を書き込み | [#4654](https://github.com/QwenLM/qwen-code/pull/4654) | プロセスクラッシュ後も診断データが残り、バグレポートに直接添付可能 |
+| **バックグラウンド Shell 完了通知**：バックグラウンドタスクの完了/失敗/キャンセル時にターミナル通知 | [#4355](https://github.com/QwenLM/qwen-code/pull/4355) | バックグラウンドタスクが完了したかどうか Agent に手動で確認する必要がなくなる |
+| **原子書き込み Phase 2**：credentials/memory/config/JSONL すべて原子書き込み | [#4333](https://github.com/QwenLM/qwen-code/pull/4333) | kill -9 / OOM / 停電でクレデンシャルファイルの破損や JSONL レコードの粘着が発生しなくなる |
+| **CPU プロファイリング**：`/doctor cpu-profile` または `QWEN_CODE_CPU_PROFILE=1` または `SIGUSR1` シグナルトリガー | [#4620](https://github.com/QwenLM/qwen-code/pull/4620) | 3 つの方法で `.cpuprofile` を生成、Chrome DevTools で直接読み込み分析 |
+| **Settings JSON 破損警告**：設定ファイルに構文エラーがある場合に警告ダイアログ | [#4560](https://github.com/QwenLM/qwen-code/pull/4560) | settings.json の手動編集エラーが静かに飲み込まれなくなる |
+| **Statusline カスタマイズ**：`respectUserColors` + `hideContextIndicator` オプション | [#4670](https://github.com/QwenLM/qwen-code/pull/4670) | ステータスバーの色とコンテキストインジケーターを好みに応じて調整可能 |
+| **MiniMax-M3 モデル**：MiniMax-M3 モデル設定を追加 | [#4668](https://github.com/QwenLM/qwen-code/pull/4668) | `/model` から直接 MiniMax-M3 を選択 |
+| **Web Shell /delete**：セッションの一括削除 | [#4603](https://github.com/QwenLM/qwen-code/pull/4603) | Web UI で古いセッションを一括クリーンアップ |
+| **Runtime MCP add/remove**：実行時に MCP サーバーを動的に追加/削除 | [#4552](https://github.com/QwenLM/qwen-code/pull/4552) | 再起動なしで MCP サーバーを管理 |
+| **Triage スキル**：ビルトイン issue/PR 分類スキル | [#4577](https://github.com/QwenLM/qwen-code/pull/4577) | Agent が issue と PR の初期分類を代行 |
+| **Simplify スキル**：ビルトインコード簡素化スキル | [#3570](https://github.com/QwenLM/qwen-code/pull/3570) | Agent に体系的なコード簡素化ワークフローがある |
+| **Agent Reproduction Workflows**：Agent 問題再現ワークフロー | [#4118](https://github.com/QwenLM/qwen-code/pull/4118) | 標準化された Agent 動作問題の再現とデバッグワークフロー |
+| **Shell サブプロセス Context Env Vars**：session/agent/prompt ID をシェル環境変数に注入 | [#4649](https://github.com/QwenLM/qwen-code/pull/4649) | カスタムスクリプトが現在のセッションコンテキストにアクセス可能 |
+| **AUTO 拒否の観測性 + 上限**：AUTO モード拒否の観測性と上限 | [#4476](https://github.com/QwenLM/qwen-code/pull/4476) | AUTO モードが何を拒否したか、なぜ拒否したか——データが得られるように |
+| **Web Shell インラインターミナル**：Web UI のインラインターミナルコマンドインターフェース | [#4710](https://github.com/QwenLM/qwen-code/pull/4710) | Web UI でコマンド実行を直接確認 |
+| **Computer Use 署名パッケージ**：署名 + 公証済みの @qwen-code/open-computer-use fork を使用 | [#4726](https://github.com/QwenLM/qwen-code/pull/4726) | macOS Gatekeeper が Computer Use バイナリをブロックしなくなる |
+| **Desktop マルチブランドサポート** | [#4581](https://github.com/QwenLM/qwen-code/pull/4581) | Desktop アプリがマルチブランドビルドをサポート |
+| **Daemon ノンブロッキング Prompt** | [#4585](https://github.com/QwenLM/qwen-code/pull/4585) | POST /prompt が即座に 202 + promptId を返し、ブロックしない |
+
+## 🔧 重要な修正
+
+| PR | 修正内容 | 影響 |
+|----|----------|------|
+| [#4644](https://github.com/QwenLM/qwen-code/pull/4644) | resume 時の structuredClone を浅いコピー/テール変体に置き換え、OOM を防止 | 長いセッションの再開が全履歴のディープコピーによるメモリオーバーフローを起こさなくなる |
+| [#4650](https://github.com/QwenLM/qwen-code/pull/4650) | /memory トグル状態がダイアログ再開後に正しく永続化 | /memory スイッチが再開後に設定を失わなくなる |
+| [#4605](https://github.com/QwenLM/qwen-code/pull/4605) | undici 300s bodyTimeout を無効化（no-proxy Node.js パス） | 長時間のモデル呼び出しが 300 秒タイムアウトで中断されなくなる |
+| [#4580](https://github.com/QwenLM/qwen-code/pull/4580) | mid-turn メッセージ存在時の rewind「compressed turn」誤報を修正 | 圧縮されたセッションでの会話巻き戻しが誤ってエラーを報告しなくなる |
+| [#4505](https://github.com/QwenLM/qwen-code/pull/4505) | DashScope が推論無効時に enable_thinking を正しく送信 | DashScope ユーザーが thinking 無効後に推論出力を見なくなる |
+| [#4540](https://github.com/QwenLM/qwen-code/pull/4540) | Anthropic 空ストリーム provider エラーを公開 | Anthropic provider が空ストリームを返す場合に明確なエラーメッセージ、静かにハングしなくなる |
+| [#4474](https://github.com/QwenLM/qwen-code/pull/4474) | settings 変数解決前に ~/.env 変数を読み込み | settings.json の環境変数参照が ~/.env で定義された変数を正しく解決できるように |
+| [#4431](https://github.com/QwenLM/qwen-code/pull/4431) | atomicWriteFile がファイル uid を保持し、共有書き込みファイルの破壊を回避 | マルチプロセスシナリオでの原子書き込みがファイル所有者を変更しなくなる |
+| [#4689](https://github.com/QwenLM/qwen-code/pull/4689) | Daemon が並列 subAgent テキストストリームを分離 | 並列 subAgent の出力がトランスクリプトで混在しなくなる |
+| [#4701](https://github.com/QwenLM/qwen-code/pull/4701) | Arena モデル選択ダイアログの Space キー修正 | Arena モードでモデル選択時に Space キーがようやく使える |
+| [#4558](https://github.com/QwenLM/qwen-code/pull/4558) | 履歴復元テキスト編集前に補完メニューを抑制 | ↑ キーで履歴入力を復元後に補完メニューが即座に表示されなくなる |
+| [#4623](https://github.com/QwenLM/qwen-code/pull/4623) | スクリーンショットトリガーの圧縮が auto-compact 通知で正しくラベル付け | 圧縮通知がスクリーンショットトリガーの圧縮を通常の圧縮と誤ってラベル付けしなくなる |
+| [#4531](https://github.com/QwenLM/qwen-code/pull/4531) | 過大な resume 履歴送信を保護 | 超長セッションの再開がペイロード過大で失敗しなくなる |
+| [#4439](https://github.com/QwenLM/qwen-code/pull/4439) | 敵対的 provider の usage token カウントを修正 | 特定の provider からの異常なトークンカウントが不正確なデータを表示しなくなる |
+
+## 🎉 新しいコントリビューター
+
+以下の初回コントリビューターに感謝します：
+
+| コントリビューター | 貢献内容 |
+|-------------------|----------|
+| [@kagura-agent](https://github.com/kagura-agent) | TUI レンダリング前に stderr にスタートアップ警告を表示 [#4461](https://github.com/QwenLM/qwen-code/pull/4461) |
+| [@yuanyuanAli](https://github.com/yuanyuanAli) | Feishu（Lark）チャンネルアダプター [#4379](https://github.com/QwenLM/qwen-code/pull/4379) |
+| [@he-yufeng](https://github.com/he-yufeng) | IDE プロキシリクエストが undici fetch を使用 [#4607](https://github.com/QwenLM/qwen-code/pull/4607)、完了した sticky todos を非表示 [#4635](https://github.com/QwenLM/qwen-code/pull/4635)、list extensions flag の遵守 [#4673](https://github.com/QwenLM/qwen-code/pull/4673) など |
+| [@zzhenyao](https://github.com/zzhenyao) | Settings JSON 破損警告ダイアログ [#4560](https://github.com/QwenLM/qwen-code/pull/4560)、IME 候補ウィンドウ位置修正 [#4652](https://github.com/QwenLM/qwen-code/pull/4652)、Statusline カスタマイズオプション [#4670](https://github.com/QwenLM/qwen-code/pull/4670) |
+| [@Pepograminger](https://github.com/Pepograminger) | undici 300s bodyTimeout 無効化 [#4605](https://github.com/QwenLM/qwen-code/pull/4605) |
+| [@InfiniteUselessness](https://github.com/InfiniteUselessness) | @google/genai 依存を 2.6.0 に更新 [#4485](https://github.com/QwenLM/qwen-code/pull/4485) |
+| [@ZijianZhang989](https://github.com/ZijianZhang989) | Arena モデル選択 Space キー修正 [#4701](https://github.com/QwenLM/qwen-code/pull/4701) |
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行して最新版にアップグレードしてください。
+</Callout>
+
+ご質問やご提案がありましたら、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues) でフィードバックをお寄せください！

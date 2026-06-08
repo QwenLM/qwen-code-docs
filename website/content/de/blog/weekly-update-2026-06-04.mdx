@@ -1,0 +1,188 @@
+---
+title: "Qwen Code Wochenupdate: Computer Use als Zero-Config-Builtin, Feishu-Integration, Neufassung der Komprimierungs-Engine"
+date: "2026-06-04"
+description: "Qwen Code v0.17.1 diese Woche: Computer Use wird zur Zero-Config-Builtin-Fähigkeit, Feishu Channel ermöglicht Teams die direkte Nutzung des Agents in Gruppenchats, und die Neufassung der Komprimierungs-Engine löst das kritische Problem des Kontextverlusts bei langen Aufgaben."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Wochenupdate: Computer Use als Zero-Config-Builtin, Feishu-Integration, Neufassung der Komprimierungs-Engine"
+  date="2026-06-04"
+  author="Qwen Team"
+/>
+
+Zwei große Ereignisse im Bereich der Coding-Agents diese Woche. Anthropic veröffentlichte [Claude Opus 4.8](https://www.anthropic.com/news/claude-opus-4-8) mit weiter verstärkten Computer-Use-Fähigkeiten – der Fast-Mode kostet jetzt nur noch ein Drittel, aber die Preisschwelle auf Opus-Niveau bleibt bestehen. Auf der anderen Seite kündigte Google an, dass [Gemini CLI seine kostenlose Stufe am 18. Juni einstellt](https://news.ycombinator.com/item?id=48196867), ersetzt durch Antigravity CLI – letztes Jahr Open Source mit 50.000 Stars und 6.000+ Community-Beiträgen, jetzt zurückgezogen für Enterprise-Kunden, was erhebliche Community-Reaktionen auslöste.
+
+Qwen Code veröffentlichte diese Woche **v0.17.0** und **v0.17.1** mit über 60 zusammengeführten PRs in vier Richtungen:
+
+**Computer Use ist jetzt eine eingebaute Fähigkeit.** Früher musste man Extensions installieren, MCP konfigurieren, Berechtigungen erteilen, neu starten – die meisten Leute schaffen diesen Workflow nicht. Jetzt sind 9 Desktop-Automatisierungstools als Deferred-Builtins registriert. Das Modell fordert bei der ersten Auslösung eine einmalige Bestätigung an, und alles andere (Binary-Download, macOS-Berechtigungsführung, Server-Lifecycle) läuft vollautomatisch. Während Anthropic Computer Use in Opus 4.8 weiter verstärkt, aber an ihr eigenes Modell bindet, läuft Qwen Code mit dem Modell Ihrer Wahl – Sie kontrollieren die Kosten.
+
+**Feishu-Integration ist live.** Qwen Code unterstützt bereits WeChat-Integration, und diese Woche kam Feishu hinzu. WebSocket- und Webhook-Verbindungsmodi, Agent-Antworten werden über interaktive Feishu-Karten in Echtzeit gestreamt, mit Stop-Button. Einfach den Bot in einem Feishu-Gruppenchat @-erwähnen, um den Agent zu nutzen – kein Tool-Wechsel nötig.
+
+**Komprimierung langer Aufgaben verliert keinen Kontext mehr.** Das alte Komprimierungsmodell teilte nach Zeichenanzahl bei 70/30. Single-Turn-Langaufgaben (typische Computer-Use-Workflows) haben nur eine Benutzernachricht, und die Teilungslogik konnte keinen Split-Point finden, sodass alle Screenshots und der ursprüngliche Benutzer-Prompt verworfen wurden. Die neue Engine verwendet vollständige History-Summary + selektive Wiederherstellung: 9-teilige strukturierte Zusammenfassungen bewahren die narrative Kontinuität, und die letzten 5 Dateien + 3 Bilder stellen die Zustandskontinuität wieder her. Wenn Computer Use während des Laufs komprimiert, wird der Agent nicht mehr „blind".
+
+**CJK-Benutzer müssen nicht mehr leiden.** Das IME-Kandidatenfenster für chinesische/japanische/koreanische Eingabemethoden sprang immer in die untere linke Ecke des Terminals, meilenweit von der tatsächlichen Eingabeposition entfernt. Diese Woche wurde durch Traversierung des Yoga-Baums der physische Cursor zur Position des visuellen Cursors bewegt, und das Kandidatenfenster folgt endlich.
+
+## ✨ Neue Features
+
+### Zero-Config-Builtin Computer Use: Desktop-Automatisierung mit einer Bestätigung
+
+Anthropic verstärkt Computer Use in Claude Opus 4.8 weiter, mit Fast-Mode-Kosten um zwei Drittel reduziert, aber an Claude-Modelle gebunden. Googles Gemini CLI stellt seine kostenlose Stufe am 18. Juni ein – Open-Source-Coding-Tools können jederzeit eingestellt werden, die Wahl sollte in Ihren Händen bleiben.
+
+Qwen Code geht einen anderen Weg: Computer Use wird zur Zero-Config-Builtin-Fähigkeit. 9 Tools einschließlich `computer_use__list_apps`, `computer_use__get_app_state`, `computer_use__click` sind als Deferred-Builtin-Tools registriert. Beim ersten Aufruf durch das Modell erscheint ein Standard-Tool-Permission-Dialog – Sie klicken einmal auf Approve, und alles danach ist automatisch – `npx -y open-computer-use mcp` zieht das Upstream-Binary (~50MB), macOS führt automatisch durch Accessibility- und Screen-Recording-Berechtigungen, und der MCP-Server-Lifecycle wird automatisch verwaltet.
+
+Standardmäßig aktiviert (`tools.computerUse.enabled: true`). Mit einer Konfigurationsänderung deaktivierbar. Läuft mit Ihrem gewählten Modell, nicht an einen bestimmten Provider gebunden.
+
+**Was Sie damit tun können:**
+
+- Fragen Sie den Agent „Öffne die Stocks-App, klicke auf die erste Aktie" – der Agent sieht den Screenshot, erkennt UI-Elemente und klickt automatisch
+- Erstmalige Nutzung erfordert nur eine Bestätigung, nachfolgende Aufrufe gehen direkt durch
+- Das Modell sendet `select:computer_use__list_apps,computer_use__get_app_state,computer_use__click` zum Batch-Laden von Schemas, mehrere Tools auf einmal
+- macOS-Berechtigungsführung ist vollautomatisch: Accessibility → Screen Recording → automatische Wiederverbindung nach Neustart
+- Deaktivieren mit `tools.computerUse.enabled: false`, oder Upstream-Binary-Version mit `QWEN_COMPUTER_USE_PACKAGE` überschreiben
+
+Siehe PR [#4590](https://github.com/QwenLM/qwen-code/pull/4590)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/kS1Np3LUgPSg07OQ27_z63TWIU_G4nQHBJDA4wynUmk.mp4" controls></video>
+
+### Feishu Channel: Qwen Code direkt in Feishu nutzen
+
+Qwen Code unterstützt bereits WeChat-Integration, und diese Woche kam Feishu hinzu. Der neue Feishu (Lark) Channel-Adapter unterstützt sowohl WebSocket- als auch Webhook-Verbindungsmodi. Agent-Antworten werden über interaktive Feishu-Karten in Echtzeit gestreamt, mit Stop-Button. Zitierter/beantworteter Kontext wird korrekt erfasst – egal ob Text- oder Kartennachricht.
+
+Jede Nachricht hat unabhängige Zustandsisolation, sodass mehrere Benutzer sich nicht gegenseitig stören.
+
+**Was Sie damit tun können:**
+
+- @-Erwähnung von Qwen Code in einem Feishu-Privat- oder Gruppenchat, um direkt Fragen zu stellen oder Aufgaben zuzuweisen
+- Den Denk- und Ausgabeprozess des Agents in Echtzeit über Streaming-Karten verfolgen, jederzeit mit dem Stop-Button unterbrechen
+- Eine Nachricht zitieren und eine Frage stellen – der Agent sieht den zitierten Originaltext
+- Unterstützt Bild- und Dateianhänge
+
+Siehe PR [#4379](https://github.com/QwenLM/qwen-code/pull/4379)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN018Bb7lu1tFQqKT9S0E_!!6000000005872-2-tps-1698-944.png)
+
+### Komprimierungs-Neufassung: Lange Aufgaben verlieren keinen Kontext mehr
+
+Letzte Woche haben wir die Auto-Komprimierung als dreistufige Leiter entworfen. Diese Woche gingen wir eine Ebene tiefer: Die Komprimierungs-Engine selbst wurde neu geschrieben.
+
+Das alte Modell teilte die History nach Zeichenanzahl in die ersten 70% (zu einer Zusammenfassung komprimiert) und die letzten 30% (wörtlich beibehalten). Das Problem trat bei Single-Turn-Langaufgaben wie Computer-Use auf – der Benutzer sagt nur eine Sache wie „Öffne Safari, klicke auf das Suchergebnis, mache einen Screenshot", dann führt der Agent dutzende Tool-Call-Runden aus. Die Teilungslogik erfordert mindestens zwei Benutzernachrichten, um einen Split-Point zu finden; Single-Turn findet nie einen, und der Fallback **ersetzt alle Screenshots und den ursprünglichen Benutzer-Prompt durch eine Textzusammenfassung**. Nach der Wiederherstellung wird der Agent „blind" – kein visueller Kontext, keine wörtliche Benutzerabsicht.
+
+Die neue Engine verwendet Summary + selektive Wiederherstellung:
+
+- **9-teilige strukturierte Summary**: Abschnitt 6 erzwingt wörtliches Zitieren jeder Benutzernachricht, damit die Benutzerabsicht die Komprimierung überlebt
+- **Letzte 5 Dateien wiederhergestellt**: Größenadaptiv – kleine Dateien betten frisch gelesenen vollständigen Inhalt von der Festplatte ein, große Dateien bekommen nur Pfadverweise
+- **Letzte 3 Bilder wiederhergestellt**: Jedes Bild trägt einen Metadata-Header (Turn-Index + Quell-Toolname + Args), damit das Modell den visuellen Zustand mit der Aktion korrelieren kann, die ihn erzeugt hat
+
+**Was Sie damit tun können:**
+
+- Nach Komprimierung während einer langen Computer-Use-Aufgabe kann der Agent immer noch aktuelle Screenshots und Ihre ursprünglichen Anweisungen sehen
+- `/compress` fügt eine Focus-Direktive hinzu: `/compress focus on the auth bug` – lenkt die Zusammenfassung auf das, was Sie interessiert (max. 2000 Zeichen)
+- Plan-Modus und Hintergrund-Subagent-Zustand werden nach Komprimierung automatisch wiederhergestellt, kein stiller Verlust
+
+Siehe PR [#4599](https://github.com/QwenLM/qwen-code/pull/4599), [#4688](https://github.com/QwenLM/qwen-code/pull/4688)
+
+<video class="mt-5" poster="" src="https://cloud.video.taobao.com/vod/HuKJfjUsuluiTa9XOxu38MgdKeWZYl_pr18b6MEr11k.mp4" controls></video>
+
+### Genehmigungsmodus umbenannt: Default → Ask Permissions
+
+Der Standard-Genehmigungsmodus hieß zuvor „Default" – ein Name, der nur sagt „das ist die Voreinstellung", nicht welche Berechtigungen der Modus tatsächlich gewährt. Andere Modi (Plan, Auto-Edit, Auto, YOLO) beschreiben alle direkt das Verhalten; Default war die einzige Ausnahme.
+
+Umbenannt in **Ask Permissions**, beantwortet direkt die Frage „Wird der Agent mich in diesem Modus fragen?" Gleichzeitig an Claude Codes Benennung für den äquivalenten Modus angeglichen, um kognitive Kosten über Tools hinweg zu reduzieren.
+
+Interner Enum-Wert `ApprovalMode.DEFAULT`, `"default"` in settings.json und CLI-Befehl `/approval-mode default` bleiben alle unverändert – null Migration für bestehende Konfigurationen. Übersetzungen für 9 Locales gleichzeitig aktualisiert.
+
+**Was Sie damit tun können:**
+
+- Der Settings-Dialog zeigt `Ask permissions` in der Zeile `Tool Approval Mode` – sofort klar, dass dieser Modus um Ihre Zustimmung bittet
+- Der `/approval-mode`-Selektor zeigt Verhaltensbeschreibungen, nicht ein bedeutungsloses „Default"
+- Bestehende settings.json und CLI-Befehle sind voll kompatibel, keine Änderungen nötig
+
+Siehe PR [#4674](https://github.com/QwenLM/qwen-code/pull/4674)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN0139bSlv1qQTXuZC7QV_!!6000000005490-2-tps-1698-944.png)
+
+### IME-Kandidatenpositionierung: CJK-Eingabemethoden funktionieren endlich
+
+Qwen Code rendert den visuellen Cursor mit invertierten Zeichen, während der physische Cursor versteckt ist und standardmäßig in der unteren linken Ecke des Terminals steht. Das Kandidatenfenster von CJK-Eingabemethoden folgt immer dem physischen Cursor – einen ganzen Bildschirm entfernt von der tatsächlichen Eingabeposition. Hermes und OpenClaude haben dasselbe Problem; ihre Lösung ist ein Fork des Ink-Quellcodes.
+
+Qwen Code geht einen anderen Weg: Über `addLayoutListener` (ausgelöst nach Yogas `calculateLayout()`, null Jitter) wird der Yoga-Baum traversiert, um die absolute Position der Eingabekomponente zu ermitteln, und dann wird der physische Cursor zur Position des visuellen Cursors bewegt. Verwendet `patch-package`, um `ink/dom` und `ink/components/CursorContext` als interne Module freizulegen, ohne ganz Ink zu forken.
+
+**Was Sie damit tun können:**
+
+- Wechseln Sie zu Sogou/Apple Pinyin oder anderen CJK-Eingabemethoden, und das Kandidatenfenster erscheint neben dem Cursor statt in der unteren linken Ecke
+- Das Kandidatenfenster folgt, wenn Sie den Cursor mit Pfeiltasten bewegen
+- Normale Gespräche, mehrzeilige Eingabe und History-Scrolling sind nicht betroffen
+
+Siehe PR [#4652](https://github.com/QwenLM/qwen-code/pull/4652)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01XkfPi51cxzujZ4c9X_!!6000000003668-2-tps-1698-940.png)
+
+### Weitere neue Features
+
+| Feature | PR | Auswirkung |
+|---------|-----|-----------|
+| **Virtual Viewport**: Opt-in virtualisiertes History-Rendering (`ui.useTerminalBuffer: true`), rendert nur sichtbaren Bereich, Tastatur-/Maus-Scrolling, behebt Flackern und Lag bei langen Gesprächen | [#4146](https://github.com/QwenLM/qwen-code/pull/4146) | 1000-Runden-Gespräche flackern/laggen nicht mehr, behebt direkt #3702 #2950 #3118 #2972 |
+| **Fork SubAgent Gating + Prompt-Disziplin**: Deaktiviert Fork im nicht-interaktiven Modus, injiziert „Don't peek / Don't race"-Constraints im interaktiven Modus | [#4574](https://github.com/QwenLM/qwen-code/pull/4574) | Fork löst in CI/Headless nicht mehr versehentlich aus; im interaktiven Modus späht der Agent nicht in Fork-Zwischenergebnisse oder erfindet Abschlussstatus |
+| **Speicherdrucküberwachung**: Cgroup-bewusstes RSS + V8-Heap-Monitoring, auto-leert FileReadCache | [#4403](https://github.com/QwenLM/qwen-code/pull/4403) | Gibt Cache bei Speicherdruck in langen Sitzungen automatisch frei, vermeidet OOM |
+| **Pre-OOM Auto-Diagnose-Dump**: Schreibt diagnostisches JSON auf Festplatte bei Hard/Critical-Druck | [#4654](https://github.com/QwenLM/qwen-code/pull/4654) | Diagnosedaten bleiben nach Prozessabsturz erhalten, können direkt an Bug-Reports angehängt werden |
+| **Hintergrund-Shell-Abschlussbenachrichtigungen**: Terminal-Benachrichtigungen wenn Hintergrundaufgaben fertig/fehlgeschlagen/abgebrochen | [#4355](https://github.com/QwenLM/qwen-code/pull/4355) | Kein manuelles Nachfragen ob Hintergrundaufgaben fertig sind |
+| **Atomic Write Phase 2**: Credentials/Memory/Config/JSONL alle mit atomaren Schreibvorgängen | [#4333](https://github.com/QwenLM/qwen-code/pull/4333) | kill -9 / OOM / Stromausfall beschädigt keine Credential-Dateien mehr oder verursacht JSONL-Datensatz-Verklebung |
+| **CPU Profiling**: `/doctor cpu-profile` oder `QWEN_CODE_CPU_PROFILE=1` oder `SIGUSR1`-Signal-Auslöser | [#4620](https://github.com/QwenLM/qwen-code/pull/4620) | Drei Wege zur `.cpuprofile`-Generierung, direkt in Chrome DevTools laden |
+| **Settings JSON Korruptionswarnung**: Warndialog bei Syntaxfehlern in der Konfigurationsdatei | [#4560](https://github.com/QwenLM/qwen-code/pull/4560) | Manuelle settings.json-Bearbeitungsfehler werden nicht mehr still verschluckt |
+| **Statusline-Anpassung**: `respectUserColors` + `hideContextIndicator` Optionen | [#4670](https://github.com/QwenLM/qwen-code/pull/4670) | Statusleisten-Farben und Kontextindikator nach Präferenz anpassbar |
+| **MiniMax-M3 Modell**: MiniMax-M3 Modellkonfiguration hinzugefügt | [#4668](https://github.com/QwenLM/qwen-code/pull/4668) | MiniMax-M3 direkt über `/model` auswählen |
+| **Web Shell /delete**: Sitzungen stapelweise löschen | [#4603](https://github.com/QwenLM/qwen-code/pull/4603) | Alte Sitzungen im Web UI stapelweise bereinigen |
+| **Runtime MCP add/remove**: MCP-Server zur Laufzeit dynamisch hinzufügen/entfernen | [#4552](https://github.com/QwenLM/qwen-code/pull/4552) | MCP-Server ohne Neustart verwalten |
+| **Triage Skill**: Eingebaute Issue/PR-Klassifizierungsfähigkeit | [#4577](https://github.com/QwenLM/qwen-code/pull/4577) | Agent kann erste Issue- und PR-Klassifizierung für Sie übernehmen |
+| **Simplify Skill**: Eingebaute Code-Vereinfachungsfähigkeit | [#3570](https://github.com/QwenLM/qwen-code/pull/3570) | Agent hat einen systematischen Code-Vereinfachungsworkflow |
+| **Agent Reproduction Workflows**: Agent-Problem-Reproduktionsworkflows | [#4118](https://github.com/QwenLM/qwen-code/pull/4118) | Standardisierter Agent-Verhaltens-Reproduktions- und Debugging-Workflow |
+| **Shell-Subprozess Kontext-Env-Vars**: Session/Agent/Prompt-ID in Shell-Umgebungsvariablen injiziert | [#4649](https://github.com/QwenLM/qwen-code/pull/4649) | Benutzerdefinierte Skripte können auf den aktuellen Sitzungskontext zugreifen |
+| **AUTO Denial Observability + Caps**: Beobachtbarkeit und Obergrenzen für AUTO-Modus-Ablehnungen | [#4476](https://github.com/QwenLM/qwen-code/pull/4476) | Was der AUTO-Modus abgelehnt hat und warum – jetzt gibt es Daten |
+| **Web Shell Inline Terminal**: Inline-Terminal-Befehlsoberfläche im Web UI | [#4710](https://github.com/QwenLM/qwen-code/pull/4710) | Befehlsausführung direkt im Web UI sehen |
+| **Computer Use Signiertes Paket**: Verwendet signiertes + notarisiertes @qwen-code/open-computer-use Fork | [#4726](https://github.com/QwenLM/qwen-code/pull/4726) | macOS Gatekeeper blockiert Computer Use Binary nicht mehr |
+| **Desktop Multi-Brand-Unterstützung** | [#4581](https://github.com/QwenLM/qwen-code/pull/4581) | Desktop-App unterstützt Multi-Brand-Builds |
+| **Daemon Non-Blocking Prompt** | [#4585](https://github.com/QwenLM/qwen-code/pull/4585) | POST /prompt gibt sofort 202 + promptId zurück, nicht-blockierend |
+
+## 🔧 Wichtige Fehlerbehebungen
+
+| PR | Behebung | Auswirkung |
+|----|----------|-----------|
+| [#4644](https://github.com/QwenLM/qwen-code/pull/4644) | structuredClone durch Shallow Copy/Tail-Variante beim Resume ersetzen, OOM verhindern | Fortsetzen langer Sitzungen verursacht keinen Speicherüberlauf mehr durch Deep-Copy der gesamten History |
+| [#4650](https://github.com/QwenLM/qwen-code/pull/4650) | /memory Toggle-Status wird nach Dialog-Wiedereröffnung korrekt persistiert | /memory-Schalter verliert nach Wiedereröffnung keine Einstellungen mehr |
+| [#4605](https://github.com/QwenLM/qwen-code/pull/4605) | undici 300s bodyTimeout deaktivieren (No-Proxy Node.js-Pfad) | Lange Modellaufrufe werden nicht mehr durch 300-Sekunden-Timeout unterbrochen |
+| [#4580](https://github.com/QwenLM/qwen-code/pull/4580) | Rewind-Fehlmeldung „compressed turn" bei Mid-Turn-Nachrichten beheben | Gesprächs-Rewind meldet in komprimierten Sitzungen keine falschen Fehler mehr |
+| [#4505](https://github.com/QwenLM/qwen-code/pull/4505) | DashScope sendet enable_thinking korrekt wenn Reasoning deaktiviert | DashScope-Benutzer sehen nach Deaktivierung von Thinking keine Reasoning-Ausgabe mehr |
+| [#4540](https://github.com/QwenLM/qwen-code/pull/4540) | Anthropic-Leerstream-Provider-Fehler offenlegen | Klare Fehlermeldung wenn Anthropic-Provider leeren Stream zurückgibt, hängt nicht mehr still |
+| [#4474](https://github.com/QwenLM/qwen-code/pull/4474) | ~/.env-Variablen vor Settings-Variablenauflösung laden | Umgebungsvariablen-Referenzen in settings.json können endlich korrekt in ~/.env definierte Variablen auflösen |
+| [#4431](https://github.com/QwenLM/qwen-code/pull/4431) | atomicWriteFile bewahrt Datei-UID, vermeidet Beschädigung geteilter Schreibdateien | Atomare Schreibvorgänge in Multi-Prozess-Szenarien ändern nicht mehr den Dateieigentümer |
+| [#4689](https://github.com/QwenLM/qwen-code/pull/4689) | Daemon isoliert parallele SubAgent-Textströme | Parallele SubAgent-Ausgaben verschachteln sich nicht mehr in Transkripten |
+| [#4701](https://github.com/QwenLM/qwen-code/pull/4701) | Arena-Modellauswahl-Dialog Space-Taste-Fix | Space-Taste funktioniert endlich bei der Modellauswahl im Arena-Modus |
+| [#4558](https://github.com/QwenLM/qwen-code/pull/4558) | Vervollständigungsmenü vor History-Restore-Textbearbeitung unterdrücken | Drücken von ↑ zur History-Wiederherstellung löst nicht mehr sofort das Vervollständigungsmenü aus |
+| [#4623](https://github.com/QwenLM/qwen-code/pull/4623) | Screenshot-ausgelöste Komprimierung korrekt in Auto-Compact-Benachrichtigung gekennzeichnet | Komprimierungsbenachrichtigungen kennzeichnen screenshot-ausgelöste Komprimierung nicht mehr fälschlich als reguläre Komprimierung |
+| [#4531](https://github.com/QwenLM/qwen-code/pull/4531) | Überdimensionierte Resume-History-Sends absichern | Fortsetzen ultralanger Sitzungen scheitert nicht mehr an zu großem Payload |
+| [#4439](https://github.com/QwenLM/qwen-code/pull/4439) | Token-Zählung feindseliger Provider korrigieren | Abnormale Token-Counts von bestimmten Providern zeigen keine falschen Daten mehr an |
+
+## 🎉 Neue Mitwirkende
+
+Dank an die folgenden Erstmitwirkenden:
+
+| Mitwirkender | Beitrag |
+|--------------|---------|
+| [@kagura-agent](https://github.com/kagura-agent) | Startwarnungen auf stderr vor TUI-Rendering anzeigen [#4461](https://github.com/QwenLM/qwen-code/pull/4461) |
+| [@yuanyuanAli](https://github.com/yuanyuanAli) | Feishu (Lark) Channel-Adapter [#4379](https://github.com/QwenLM/qwen-code/pull/4379) |
+| [@he-yufeng](https://github.com/he-yufeng) | IDE-Proxy-Requests verwenden undici fetch [#4607](https://github.com/QwenLM/qwen-code/pull/4607), abgeschlossene Sticky Todos ausblenden [#4635](https://github.com/QwenLM/qwen-code/pull/4635), List Extensions Flag beachten [#4673](https://github.com/QwenLM/qwen-code/pull/4673) und mehr |
+| [@zzhenyao](https://github.com/zzhenyao) | Settings JSON Korruptionswarnung-Dialog [#4560](https://github.com/QwenLM/qwen-code/pull/4560), IME-Kandidatenpositionierung [#4652](https://github.com/QwenLM/qwen-code/pull/4652), Statusline-Anpassungsoptionen [#4670](https://github.com/QwenLM/qwen-code/pull/4670) |
+| [@Pepograminger](https://github.com/Pepograminger) | undici 300s bodyTimeout deaktivieren [#4605](https://github.com/QwenLM/qwen-code/pull/4605) |
+| [@InfiniteUselessness](https://github.com/InfiniteUselessness) | @google/genai-Abhängigkeit auf 2.6.0 aktualisieren [#4485](https://github.com/QwenLM/qwen-code/pull/4485) |
+| [@ZijianZhang989](https://github.com/ZijianZhang989) | Arena-Modellauswahl Space-Taste-Fix [#4701](https://github.com/QwenLM/qwen-code/pull/4701) |
+
+<Callout type="info">
+  **So upgraden Sie**: Führen Sie `npm i @qwen-code/qwen-code@latest -g` aus, um auf die neueste Version zu aktualisieren.
+</Callout>
+
+Bei Fragen oder Anregungen freuen wir uns über Feedback auf [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
