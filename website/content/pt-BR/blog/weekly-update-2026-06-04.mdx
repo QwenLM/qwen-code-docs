@@ -15,8 +15,6 @@ import { Callout } from 'nextra/components'
   author="Qwen Team"
 />
 
-Dois grandes eventos no espaço dos Agents de codificação esta semana. A Anthropic lançou o [Claude Opus 4.8](https://www.anthropic.com/news/claude-opus-4-8), fortalecendo ainda mais as capacidades do Computer Use com custos no modo rápido reduzidos para um terço, embora o limiar de preço do nível Opus permaneça. Do outro lado, o Google anunciou que o [Gemini CLI encerrará sua versão gratuita em 18 de junho](https://news.ycombinator.com/item?id=48196867), substituído pelo Antigravity CLI — no ano passado foi open source, ganhou 50 mil Stars e aceitou mais de 6.000 contribuições da comunidade, agora recolhido para usuários empresariais, causando uma reação significativa da comunidade.
-
 O Qwen Code lançou **v0.17.0** e **v0.17.1** esta semana, com mais de 60 PRs mescladas em quatro direções:
 
 **Computer Use agora é uma capacidade integrada.** Antes era necessário instalar extensões, configurar MCP, conceder permissões, reiniciar — a maioria das pessoas não conseguia completar esse fluxo. Agora, 9 ferramentas de automação de desktop estão registradas como builtins diferidos. O modelo solicita uma confirmação única na primeira invocação, e todo o resto (download do binário, orientação de permissões do macOS, ciclo de vida do servidor) é totalmente automático. Enquanto a Anthropic continua fortalecendo o Computer Use no Opus 4.8 mas o vincula ao seu próprio modelo, o Qwen Code funciona com o modelo que você escolher — você controla o custo.
@@ -31,9 +29,7 @@ O Qwen Code lançou **v0.17.0** e **v0.17.1** esta semana, com mais de 60 PRs me
 
 ### Computer Use Integrado sem Configuração: Automação de Desktop com Uma Confirmação
 
-A Anthropic continua fortalecendo o Computer Use no Claude Opus 4.8, com custos no modo rápido reduzidos em dois terços, mas vinculado aos modelos Claude. O Gemini CLI do Google está encerrando sua versão gratuita em 18 de junho — ferramentas de codificação open source podem ser retiradas a qualquer momento, a escolha deve permanecer em suas mãos.
-
-O Qwen Code adota uma abordagem diferente: tornando o Computer Use uma capacidade integrada sem configuração. 9 ferramentas incluindo `computer_use__list_apps`, `computer_use__get_app_state`, `computer_use__click` estão registradas como ferramentas builtin diferidas. Quando o modelo invoca qualquer uma delas pela primeira vez, um diálogo padrão de permissão de ferramenta aparece — você clica em Approve uma vez, e tudo depois é automático — `npx -y open-computer-use mcp` baixa o binário upstream (~50MB), o macOS guia automaticamente as permissões de Accessibility e Screen Recording, e o ciclo de vida do servidor MCP é gerenciado automaticamente.
+O Qwen Code faz do Computer Use uma capacidade integrada sem configuração. 9 ferramentas incluindo `computer_use__list_apps`, `computer_use__get_app_state`, `computer_use__click` estão registradas como ferramentas builtin diferidas. Quando o modelo invoca qualquer uma delas pela primeira vez, um diálogo padrão de permissão de ferramenta aparece — você clica em Approve uma vez, e tudo depois é automático — `npx -y open-computer-use mcp` baixa o binário upstream (~50MB), o macOS guia automaticamente as permissões de Accessibility e Screen Recording, e o ciclo de vida do servidor MCP é gerenciado automaticamente.
 
 Habilitado por padrão (`tools.computerUse.enabled: true`). Desative com uma mudança de configuração se não quiser. Funciona com o modelo escolhido por você, não vinculado a nenhum provider específico.
 
