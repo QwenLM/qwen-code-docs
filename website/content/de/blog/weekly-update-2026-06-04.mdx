@@ -15,8 +15,6 @@ import { Callout } from 'nextra/components'
   author="Qwen Team"
 />
 
-Zwei große Ereignisse im Bereich der Coding-Agents diese Woche. Anthropic veröffentlichte [Claude Opus 4.8](https://www.anthropic.com/news/claude-opus-4-8) mit weiter verstärkten Computer-Use-Fähigkeiten – der Fast-Mode kostet jetzt nur noch ein Drittel, aber die Preisschwelle auf Opus-Niveau bleibt bestehen. Auf der anderen Seite kündigte Google an, dass [Gemini CLI seine kostenlose Stufe am 18. Juni einstellt](https://news.ycombinator.com/item?id=48196867), ersetzt durch Antigravity CLI – letztes Jahr Open Source mit 50.000 Stars und 6.000+ Community-Beiträgen, jetzt zurückgezogen für Enterprise-Kunden, was erhebliche Community-Reaktionen auslöste.
-
 Qwen Code veröffentlichte diese Woche **v0.17.0** und **v0.17.1** mit über 60 zusammengeführten PRs in vier Richtungen:
 
 **Computer Use ist jetzt eine eingebaute Fähigkeit.** Früher musste man Extensions installieren, MCP konfigurieren, Berechtigungen erteilen, neu starten – die meisten Leute schaffen diesen Workflow nicht. Jetzt sind 9 Desktop-Automatisierungstools als Deferred-Builtins registriert. Das Modell fordert bei der ersten Auslösung eine einmalige Bestätigung an, und alles andere (Binary-Download, macOS-Berechtigungsführung, Server-Lifecycle) läuft vollautomatisch. Während Anthropic Computer Use in Opus 4.8 weiter verstärkt, aber an ihr eigenes Modell bindet, läuft Qwen Code mit dem Modell Ihrer Wahl – Sie kontrollieren die Kosten.
@@ -31,9 +29,7 @@ Qwen Code veröffentlichte diese Woche **v0.17.0** und **v0.17.1** mit über 60 
 
 ### Zero-Config-Builtin Computer Use: Desktop-Automatisierung mit einer Bestätigung
 
-Anthropic verstärkt Computer Use in Claude Opus 4.8 weiter, mit Fast-Mode-Kosten um zwei Drittel reduziert, aber an Claude-Modelle gebunden. Googles Gemini CLI stellt seine kostenlose Stufe am 18. Juni ein – Open-Source-Coding-Tools können jederzeit eingestellt werden, die Wahl sollte in Ihren Händen bleiben.
-
-Qwen Code geht einen anderen Weg: Computer Use wird zur Zero-Config-Builtin-Fähigkeit. 9 Tools einschließlich `computer_use__list_apps`, `computer_use__get_app_state`, `computer_use__click` sind als Deferred-Builtin-Tools registriert. Beim ersten Aufruf durch das Modell erscheint ein Standard-Tool-Permission-Dialog – Sie klicken einmal auf Approve, und alles danach ist automatisch – `npx -y open-computer-use mcp` zieht das Upstream-Binary (~50MB), macOS führt automatisch durch Accessibility- und Screen-Recording-Berechtigungen, und der MCP-Server-Lifecycle wird automatisch verwaltet.
+Qwen Code macht Computer Use zur Zero-Config-Builtin-Fähigkeit. 9 Tools einschließlich `computer_use__list_apps`, `computer_use__get_app_state`, `computer_use__click` sind als Deferred-Builtin-Tools registriert. Beim ersten Aufruf durch das Modell erscheint ein Standard-Tool-Permission-Dialog – Sie klicken einmal auf Approve, und alles danach ist automatisch – `npx -y open-computer-use mcp` zieht das Upstream-Binary (~50MB), macOS führt automatisch durch Accessibility- und Screen-Recording-Berechtigungen, und der MCP-Server-Lifecycle wird automatisch verwaltet.
 
 Standardmäßig aktiviert (`tools.computerUse.enabled: true`). Mit einer Konfigurationsänderung deaktivierbar. Läuft mit Ihrem gewählten Modell, nicht an einen bestimmten Provider gebunden.
 

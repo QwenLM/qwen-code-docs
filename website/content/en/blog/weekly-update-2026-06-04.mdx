@@ -15,8 +15,6 @@ import { Callout } from 'nextra/components'
   author="Qwen Team"
 />
 
-Two big things happened in the coding Agent space this week. Anthropic released [Claude Opus 4.8](https://www.anthropic.com/news/claude-opus-4-8), further enhancing Computer Use capabilities with fast mode costs reduced to one-third, though the Opus-level pricing threshold remains. On the other side, Google announced [Gemini CLI will shut down its free tier on June 18](https://news.ycombinator.com/item?id=48196867), replaced by Antigravity CLI—last year it went open source, gained 50k Stars and accepted 6000+ community contributions, now pulled back for enterprise users, causing significant community backlash.
-
 Qwen Code released **v0.17.0** and **v0.17.1** this week, with 60+ PRs merged across four directions:
 
 **Computer Use is now a built-in capability.** Previously you had to install extensions, configure MCP, grant permissions, restart—most people couldn't complete this workflow. Now 9 desktop automation tools are registered as deferred built-ins. The model prompts a one-time confirmation on first invocation, and everything else (binary download, macOS permission guidance, server lifecycle) is fully automatic. While Anthropic continues enhancing Computer Use in Opus 4.8 but locks it to their own model, Qwen Code runs with whatever model you choose—you control the cost.
@@ -31,9 +29,7 @@ Qwen Code released **v0.17.0** and **v0.17.1** this week, with 60+ PRs merged ac
 
 ### Zero-Config Built-in Computer Use: Desktop Automation with One Confirmation
 
-Anthropic continues strengthening Computer Use in Claude Opus 4.8, with fast mode costs reduced by two-thirds, but locked to Claude models. Google's Gemini CLI is shutting down its free tier on June 18—open-source coding tools can be pulled at any time, so the choice should remain in your hands.
-
-Qwen Code takes a different approach: making Computer Use a zero-config built-in capability. 9 tools including `computer_use__list_apps`, `computer_use__get_app_state`, `computer_use__click` are registered as deferred built-in tools. When the model first invokes any of them, a standard tool-permission dialog appears—you click Approve once, and everything after is automatic—`npx -y open-computer-use mcp` pulls the upstream binary (~50MB), macOS automatically guides Accessibility and Screen Recording permissions, and MCP server lifecycle is auto-managed.
+Qwen Code makes Computer Use a zero-config built-in capability. 9 tools including `computer_use__list_apps`, `computer_use__get_app_state`, `computer_use__click` are registered as deferred built-in tools. When the model first invokes any of them, a standard tool-permission dialog appears—you click Approve once, and everything after is automatic—`npx -y open-computer-use mcp` pulls the upstream binary (~50MB), macOS automatically guides Accessibility and Screen Recording permissions, and MCP server lifecycle is auto-managed.
 
 Enabled by default (`tools.computerUse.enabled: true`). Disable it with one config change if you don't want it. Runs with your chosen model, not locked to any specific provider.
 

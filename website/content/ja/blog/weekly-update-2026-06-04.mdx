@@ -15,8 +15,6 @@ import { Callout } from 'nextra/components'
   author="Qwen Team"
 />
 
-コーディング Agent 分野で今週 2 つの大きな出来事がありました。Anthropic が [Claude Opus 4.8](https://www.anthropic.com/news/claude-opus-4-8) をリリースし、Computer Use 機能をさらに強化。fast mode のコストが 3 分の 1 に低下しましたが、Opus レベルの価格ハードルは依然として存在します。一方、Google は [Gemini CLI の無料版を 6 月 18 日に終了する](https://news.ycombinator.com/item?id=48196867)と発表。Antigravity CLI に置き換えられます。昨年オープンソース化して 5 万 Star を獲得し 6000 以上のコミュニティ貢献を受け入れましたが、今はエンタープライズユーザー向けに回収され、コミュニティから大きな反応がありました。
-
 Qwen Code は今週 **v0.17.0** と **v0.17.1** をリリース、60 以上の PR がマージされ、4 つの方向をカバーしています：
 
 **Computer Use がビルトイン機能になりました。** これまでは Extension のインストール、MCP の設定、権限の付与、再起動が必要で、ほとんどの人がこのワークフローを完遂できませんでした。今では 9 個のデスクトップ自動化ツールが deferred ビルトインとして登録されています。モデルが初回呼び出し時に一度だけ確認を求め、残り（バイナリダウンロード、macOS 権限ガイダンス、サーバーライフサイクル）は全自動です。Anthropic は Opus 4.8 で Computer Use を強化し続けていますが自社モデルに縛られています。Qwen Code はあなたが選んだモデルで動作し、コストはあなたがコントロールできます。
@@ -31,9 +29,7 @@ Qwen Code は今週 **v0.17.0** と **v0.17.1** をリリース、60 以上の P
 
 ### Computer Use ゼロ設定ビルトイン：デスクトップ自動化を一回の確認で
 
-Anthropic は Claude Opus 4.8 で Computer Use を引き続き強化し、fast mode のコストを 3 分の 2 削減しましたが、Claude モデルに縛られています。Google の Gemini CLI は 6 月 18 日に無料版を終了します。オープンソースのコーディングツールはいつでも停止される可能性があり、選択権はあなたの手にあるべきです。
-
-Qwen Code は異なるアプローチを取ります：Computer Use をゼロ設定のビルトイン機能にしました。`computer_use__list_apps`、`computer_use__get_app_state`、`computer_use__click` などの 9 個のツールが deferred ビルトインツールとして登録されています。モデルが初めていずれかを呼び出すと、標準の tool-permission ダイアログが表示され、一度 Approve をクリックすれば、その後はすべて自動です。`npx -y open-computer-use mcp` で上流バイナリ（約 50MB）を取得、macOS が自動的に Accessibility と Screen Recording の権限をガイド、MCP サーバーのライフサイクルは自動管理されます。
+Qwen Code は Computer Use をゼロ設定のビルトイン機能にしました。`computer_use__list_apps`、`computer_use__get_app_state`、`computer_use__click` などの 9 個のツールが deferred ビルトインツールとして登録されています。モデルが初めていずれかを呼び出すと、標準の tool-permission ダイアログが表示され、一度 Approve をクリックすれば、その後はすべて自動です。`npx -y open-computer-use mcp` で上流バイナリ（約 50MB）を取得、macOS が自動的に Accessibility と Screen Recording の権限をガイド、MCP サーバーのライフサイクルは自動管理されます。
 
 デフォルトで有効（`tools.computerUse.enabled: true`）。不要な場合は設定一つで無効化できます。あなたが選んだモデルで動作し、特定のプロバイダーに縛られません。
 
