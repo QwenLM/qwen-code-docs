@@ -1470,6 +1470,39 @@ export const showcaseItems = [
       { title: "Utiliser le Hook PreCompact (usage avancé)", description: "Enregistrez un hook `PreCompact` dans `.qwen/settings.json` pour exécuter automatiquement des commandes avant chaque compression." },
     ],
   },
+  {
+    id: "guide-cli-quick-start",
+    title: "Qwen Code CLI — Démarrage rapide",
+    description: "Installez Qwen Code à partir de zéro, connectez un fournisseur de modèles et réalisez votre première tâche de programmation IA.",
+    category: "Premiers pas",
+    features: ["Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN018hvHb520nVciwBJvD_!!6000000006894-0-videocover-854-480.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/Qfp3c6cgBDUXLJ1HU9iN7aBC9aPCjiP4utCPAckfkv4.mp4",
+    model: "qwen3.6-plus",
+    overview: "Nouveau sur Qwen Code ? Suivez ce guide pour configurer Qwen Code à partir de zéro — installer le CLI, connecter un fournisseur de modèles, le lancer dans un dossier de projet et essayer quelques tâches simples comme organiser des fichiers et générer une page web en langage naturel.",
+    steps: [
+      { title: "Installer Qwen Code", description: "Rendez-vous sur le [site officiel](https://qwen.ai/qwencode) pour obtenir la commande d'installation. Les utilisateurs Windows l'exécutent dans l'invite de commande ; les utilisateurs macOS/Linux exécutent la commande bash dans le terminal — une seule commande et c'est fait." },
+      { title: "Connecter un fournisseur de modèles", description: "Après l'installation, Qwen Code vous guide pour connecter un fournisseur de modèles. Nous recommandons Alibaba ModelStudio — rendez-vous sur [Alibaba Cloud Model Studio](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=plan#/efm/subscription/overview), choisissez votre méthode de connexion préférée (Coding Plan, Token Plan ou clé API standard), sélectionnez votre région, collez votre clé API et choisissez un modèle." },
+      { title: "Lancer dans votre projet", description: "Exécutez Qwen Code dans votre dossier de projet pour qu'il puisse comprendre les fichiers en contexte. Utilisez `/model` pour vérifier ou changer le modèle actuel à tout moment.", command: "cd your-project && qwen" },
+      { title: "Essayer quelques tâches simples", description: "Mettez Qwen Code au travail : demandez-lui d'organiser un dossier en désordre par type de fichier, d'annuler la modification pour restaurer l'état original, ou de générer une page web simple. Décrivez simplement ce que vous voulez et Qwen Code s'occupe du reste.", command: "Organise les fichiers de ce dossier par type dans des dossiers séparés" },
+    ],
+  },
+  {
+    id: "guide-spreadsheet-dashboard",
+    title: "Transformer un tableau de 10 000 lignes en tableau de bord en quelques minutes",
+    description: "Confiez vos fichiers CSV/Excel à Qwen Code et obtenez un tableau de bord interactif avec filtres et insights métier — sans code.",
+    category: "Productivité",
+    features: ["Mode Agent", "Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN011vgRUB1HzH5YJWDAF_!!6000000000828-0-videocover-1924-1080.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/cAjn7x9gNUKNE9xmdLc4UgPQTrZhs0lIj43CyjK-1z4.mp4",
+    model: "qwen3.7-max",
+    overview: "Un jeu de données de 10 000 lignes qui prendrait normalement un après-midi à transformer en graphiques ? Qwen Code le convertit en tableau de bord complet en quelques minutes. Pointez vos données, décrivez ce que vous voulez, et il lit les données, choisit les bonnes visualisations et construit tout — indicateurs clés, graphiques multidimensionnels, filtres et insights métier auto-générés. Fonctionne aussi avec plusieurs fichiers tableur.",
+    steps: [
+      { title: "Générer un tableau de bord à partir d'un seul fichier", description: "Pointez Qwen Code vers votre fichier CSV ou Excel et décrivez la visualisation souhaitée. Il lit les données, sélectionne les types de diagrammes appropriés et génère un tableau de bord complet avec indicateurs clés, graphiques multidimensionnels et filtres.", command: "@example.csv Génère un tableau de bord interactif avec indicateurs clés, graphiques multidimensionnels, filtrable par dimensions pertinentes et 3 insights métier auto-générés" },
+      { title: "Explorer de manière interactive", description: "Le tableau de bord généré permet de filtrer par année, région, catégorie et plus. Survolez n'importe quel graphique pour voir les chiffres exacts. En bas, vous trouverez des insights métier automatiquement générés à partir des données." },
+      { title: "Fusionner plusieurs fichiers en un seul tableau de bord", description: "Vous avez tout un dossier de tableurs — commandes, clients, produits, retours ? Demandez à Qwen Code de les combiner en un tableau de bord unifié. Pas de fusion manuelle, pas de navigation entre onglets — un tableau de bord complet à partir d'un dossier de données brutes.", command: "Combine tous les fichiers tableur de ce dossier en un tableau de bord unifié" },
+    ],
+  },
 ];
 
 
