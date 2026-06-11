@@ -4,9 +4,9 @@
 @source "../**/*.{ts,tsx}";
 
 /* Terminal/Monospace Fonts */
+/* JetBrains Mono / Fira Code from Google Fonts — used by .terminal-text, .code-font */
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Fira+Code:wght@300..700&display=swap");
-
-/* Fonts are now loaded dynamically via JavaScript in FontLoader component */
+/* Monoton / Orbitron are loaded dynamically via FontLoader component */
 
 /* Terminal cursor animation */
 @keyframes cursor-blink {
@@ -24,10 +24,8 @@
   animation: cursor-blink 1s infinite;
 }
 
-.terminal-text {
-  font-family: "JetBrains Mono", "Fira Code", "Consolas", "Monaco", monospace;
-}
-
+/* Shared monospace font stack — used by .terminal-text and .code-font */
+.terminal-text,
 .code-font {
   font-family: "JetBrains Mono", "Fira Code", "Consolas", "Monaco", monospace;
 }
@@ -200,7 +198,6 @@
 }
 
 .qwen-docs-navbar .nextra-search input[type="search"] {
-  -webkit-appearance: none;
   appearance: none;
   padding-left: 2.25rem !important;
   padding-right: 0.75rem !important;
@@ -222,18 +219,21 @@
     gap: 0.5rem;
   }
 
-  .qwen-docs-navbar > a {
+  /* Logo: always first */
+  .qwen-docs-navbar > a:first-of-type {
     flex-shrink: 0;
     order: 1;
   }
 
+  /* Search: icon-only when collapsed */
   .qwen-docs-navbar .nextra-search {
     order: 2;
     width: 2.25rem !important;
     flex: 0 0 2.25rem !important;
   }
 
-  .qwen-docs-navbar > a[href*="github.com"] {
+  /* GitHub link: between search and hamburger */
+  .qwen-docs-navbar > .github-star-link {
     order: 3;
     display: inline-flex !important;
     align-items: center !important;
@@ -243,10 +243,12 @@
     flex: 0 0 2.25rem !important;
   }
 
+  /* Theme toggle: hidden on mobile (available in hamburger menu) */
   .qwen-docs-navbar > button[aria-label="Toggle theme"] {
     display: none !important;
   }
 
+  /* Hamburger menu: always last */
   .qwen-docs-navbar > .nextra-hamburger {
     order: 4;
     display: inline-flex !important;
@@ -262,9 +264,8 @@
     display: block;
   }
 
+  /* Search input: collapsed state */
   .qwen-docs-navbar .nextra-search input[type="search"] {
-    width: 2.25rem !important;
-    height: 2.25rem !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
     color: transparent !important;
@@ -274,6 +275,7 @@
     color: transparent !important;
   }
 
+  /* Search input: expanded state (focus) */
   .qwen-docs-navbar .nextra-search input[type="search"]:focus {
     position: fixed !important;
     top: 0.75rem !important;
@@ -306,10 +308,6 @@
     gap: 0.5rem;
   }
 
-  .qwen-docs-navbar > a {
-    flex-shrink: 0;
-  }
-
   .qwen-docs-navbar > div:first-of-type {
     min-width: 0;
     flex: 1 1 auto;
@@ -320,36 +318,6 @@
   .qwen-docs-navbar > div:first-of-type a {
     white-space: nowrap;
     font-size: 0.8125rem;
-  }
-}
-
-.x\:lg\:-translate-y-1\/2,
-.x\:lg\:after\:content-\[\"–\"\],
-.x\:lg\:border-b,
-.x\:lg\:right-full,
-.x\:lg\:top-1\/2,
-.x\:max-md\:break-all,
-.x\:max-md\:h-full,
-.x\:max-md\:hidden,
-.x\:max-md\:me-auto,
-.x\:max-md\:overflow-hidden,
-.x\:max-md\:sticky,
-.x\:max-sm\:hidden,
-.x\:md\:-mx-8,
-.x\:md\:hidden,
-.x\:md\:justify-start,
-.x\:md\:max-h-\[min\(calc\(100vh-5rem\)\,400px\)\]\!,
-.x\:md\:min-h-28,
-.x\:md\:px-12,
-.x\:md\:text-lg,
-.x\:md\:text-sm,
-.x\:md\:w-64,
-.x\:md\:w-\[576px\] {
-  @media (width >= 64rem) {
-    &:after {
-      --tw-content: "";
-      content: var(--tw-content);
-    }
   }
 }
 
@@ -377,14 +345,6 @@
   --color-ring: var(--ring);
 }
 
-/* :root {
-  --primary: #615ced;
-}
-
-.dark {
-  --primary: #615ced;
-} */
-
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -405,19 +365,6 @@
   --border: oklch(0.85 0 0);
   --input: oklch(0.85 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
@@ -439,17 +386,4 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.439 0 0);
 }

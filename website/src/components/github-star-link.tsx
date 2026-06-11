@@ -55,6 +55,7 @@ export const GitHubStarLink: React.FC<GitHubStarLinkProps> = ({
         "text-sm contrast-more:text-foreground whitespace-nowrap",
         "text-muted-foreground hover:text-foreground",
         "ring-inset transition-colors flex items-center gap-1.5",
+        "github-star-link",
         className
       )}
       aria-label='Project repository'
