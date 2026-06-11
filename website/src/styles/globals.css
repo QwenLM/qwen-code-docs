@@ -297,7 +297,7 @@
 
 @media (min-width: 768px) and (max-width: 1180px) {
   .qwen-docs-navbar {
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .qwen-docs-navbar > a {
@@ -307,19 +307,23 @@
   .qwen-docs-navbar > div:first-of-type {
     min-width: 0;
     flex: 1 1 auto;
-    gap: 0.75rem;
-    overflow: hidden;
+    gap: 0.5rem;
+    overflow: visible;
   }
 
-  .qwen-docs-navbar > div:first-of-type > :nth-child(3),
-  .qwen-docs-navbar > div:first-of-type > :nth-child(5) {
-    display: none;
+  .qwen-docs-navbar > div:first-of-type a {
+    white-space: nowrap;
+    font-size: 0.8125rem;
+  }
+
+  .qwen-docs-navbar .nextra-search input[type="search"] {
+    width: 10.5rem !important;
   }
 }
 
-@media (min-width: 768px) and (max-width: 980px) {
-  .qwen-docs-navbar > div:first-of-type > :nth-child(2) {
-    display: none;
+@media (min-width: 1024px) and (max-width: 1180px) {
+  .qwen-docs-navbar .nextra-search input[type="search"] {
+    width: 12rem !important;
   }
 }
 

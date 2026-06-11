@@ -46,13 +46,13 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
               alt='Qwen Code'
               width={32}
               height={32}
-              className='inline-block align-middle mr-2 '
+              className='inline-block align-middle mr-2'
               style={{ verticalAlign: "middle" }}
             />
-            <span className='text-[1.3rem]  font-normal align-middle mr-1 max-lg:hidden'>
+            <span className='text-[1.3rem]  font-normal align-middle mr-1 max-xl:hidden'>
               Qwen
             </span>
-            <span className='text-[1.3rem] font-normal align-middle max-lg:hidden'>
+            <span className='text-[1.3rem] font-normal align-middle max-xl:hidden'>
               Code
             </span>
           </span>
