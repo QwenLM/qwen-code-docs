@@ -195,6 +195,27 @@
 }
 
 /* Keep the docs navbar usable on phone and tablet widths. */
+.qwen-docs-navbar .nextra-search {
+  position: relative;
+}
+
+.qwen-docs-navbar .nextra-search input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-left: 2.25rem !important;
+  padding-right: 0.75rem !important;
+}
+
+.qwen-docs-navbar .nextra-search input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+@media (min-width: 1280px) {
+  .qwen-docs-navbar .nextra-search input[type="search"] {
+    padding-right: 3rem !important;
+  }
+}
+
 @media (max-width: 767px) {
   .qwen-docs-navbar {
     gap: 0.5rem;
@@ -257,7 +278,12 @@
     padding-left: 2.25rem !important;
     padding-right: 0.75rem !important;
     color: inherit !important;
+    background: rgb(var(--nextra-bg)) !important;
     box-shadow: 0 10px 30px rgb(0 0 0 / 12%);
+  }
+
+  .qwen-docs-navbar .nextra-search:focus-within input[type="search"] {
+    padding-left: 2.5rem !important;
   }
 
   .qwen-docs-navbar .nextra-search input[type="search"]:focus::placeholder {

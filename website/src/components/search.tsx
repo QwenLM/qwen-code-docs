@@ -319,8 +319,8 @@ export function Search({
           className={cn(
             "pointer-events-none absolute z-10 h-4 w-4 text-gray-500 dark:text-gray-400",
             focused
-              ? "left-3 top-1/2 -translate-y-1/2"
-              : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:left-3 md:translate-x-0"
+              ? "left-3 top-1/2 -translate-y-1/2 max-md:!fixed max-md:!left-7 max-md:!top-[30px] max-md:!z-[51] max-md:!-translate-y-1/2"
+              : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:left-3 md:translate-x-0 max-md:!left-1/2 max-md:!top-1/2 max-md:!-translate-x-1/2 max-md:!-translate-y-1/2"
           )}
         />
         <ComboboxInput
@@ -336,7 +336,7 @@ export function Search({
           className={cn(
             "x:rounded-lg x:py-2 x:transition-all",
             "x:pl-9 x:pr-3",
-            "x:w-full x:md:w-44 x:lg:w-52 x:xl:w-64",
+            "x:w-full x:md:w-56 x:lg:w-64 x:xl:w-72",
             "max-md:!h-9 max-md:!w-9 max-md:!px-0",
             focused && "max-md:!fixed max-md:!left-4 max-md:!right-4 max-md:!top-3 max-md:!z-50 max-md:!w-[calc(100vw-2rem)] max-md:!pl-9 max-md:!pr-3 max-md:!shadow-lg",
             "x:text-base x:leading-tight x:md:text-sm",
@@ -344,6 +344,7 @@ export function Search({
             "x:placeholder:text-gray-600 x:dark:placeholder:text-gray-400",
             !focused && "max-md:!text-transparent max-md:!placeholder:text-transparent",
             "x:contrast-more:border x:contrast-more:border-current",
+            "x:appearance-none",
             "x:[&::-webkit-search-cancel-button]:appearance-none"
           )}
           spellCheck={false}
@@ -356,7 +357,7 @@ export function Search({
             "x:border nextra-border",
             "x:contrast-more:text-current",
             "x:items-center x:gap-1 x:flex",
-            "x:max-sm:hidden not-prose",
+            "x:max-xl:hidden not-prose",
             (!mounted || focused) && "x:invisible x:opacity-0"
           )}
         >
