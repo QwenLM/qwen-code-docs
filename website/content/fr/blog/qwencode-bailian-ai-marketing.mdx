@@ -1,0 +1,265 @@
+---
+title: "Générer des images en une phrase, photos produit depuis le téléphone, rédaction IA publiée sur WeChat — Le marketing e-commerce avec Qwen Code"
+date: "2026-06-11"
+description: "Qwen Code + Bailian CLI en 3 scénarios : générer des images marketing en une phrase, créer automatiquement des photos produit et vidéos depuis Feishu, rédiger des textes multi-canaux et publier sur WeChat en un clic"
+author: "joeytoday"
+tags: ["Tutorials", "Skills", "Model Studio"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Générer des images en une phrase, photos produit depuis le téléphone, rédaction IA publiée sur WeChat — Le marketing e-commerce avec Qwen Code"
+  date="2026-06-11"
+  author="joeytoday"
+/>
+
+## Encore des nuits blanches pour créer des supports marketing ?
+
+Vous avez sûrement vécu ça :
+
+Un nouveau produit va être lancé. L'équipe marketing a besoin d'un écran de démarrage mobile, de trois bannières publicitaires, d'images pour la page détail produit, d'une vidéo de présentation de 15 secondes, plus des textes pour les réseaux sociaux et un article WeChat — **à livrer après-demain**.
+
+Vous ouvrez Photoshop, attendez 30 secondes le chargement, et réalisez que le designer est en congé. Vous ouvrez un éditeur vidéo, passez une demi-heure à déplacer des clips, et exportez dans la mauvaise résolution. Vous ouvrez un document pour rédiger, écrivez deux lignes et restez à fixer l'écran.
+
+**Vous travaillez jusqu'à 2h du matin. Les assets sont enfin prêts. Prochain lancement, on recommence.**
+
+Et si je vous disais que ça pourrait fonctionner comme ça :
+
+- Taper une phrase dans le terminal, **générer un écran de démarrage mobile en 10 secondes**
+- Prendre une photo du produit avec votre téléphone, l'envoyer dans un groupe Feishu @bot, **recevoir une image produit professionnelle en 1 minute**
+- Dire à l'IA « écris-moi un texte de promotion pour cette batterie externe », **brouillon prêt en 30 secondes**
+
+N'est-ce pas la façon dont on devrait travailler en 2026 ?
+
+Dans cet article, je vous montre à travers 3 scénarios réels comment utiliser **Qwen Code + Bailian CLI** pour gérer l'intégralité du workflow, de la génération d'images à la retouche photo en passant par la rédaction. Chaque scénario inclut des instructions pas à pas que vous pouvez suivre immédiatement.
+
+## D'abord, les outils : que sont Qwen Code et Bailian CLI ?
+
+En termes simples :
+
+- **Qwen Code** est un assistant de programmation IA, mais il fait bien plus qu'écrire du code — c'est un Agent IA polyvalent qui comprend le langage naturel et vous aide à invoquer divers outils pour accomplir des tâches
+- **Bailian CLI** (la commande `bl`) est l'outil en ligne de commande de la plateforme Model Studio d'Alibaba Cloud, intégrant le texte-vers-image, image-vers-image, texte-vers-vidéo, image-vers-vidéo, et plus encore
+
+Combinés, vous obtenez une **chaîne de production de supports marketing qui comprend le langage courant**.
+
+### Ce dont vous aurez besoin
+
+- Installer Qwen Code CLI : [Présentation de Qwen Code \| Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/zh/users/overview/)
+- Installer Bailian CLI : [Alibaba Cloud Bailian CLI \| Toutes les capacités IA en une commande](https://bailian.console.aliyun.com/cli?source_channel=cn-beijing-cli&&utm_content=se_1023346373)
+- Une clé API Alibaba Cloud Model Studio (à demander sur la [Console Model Studio](https://bailian.console.aliyun.com))
+
+Prêt ? C'est parti.
+
+## Scénario 1 : Générer des images marketing en une phrase 🎨
+
+À chaque promotion ou lancement de produit, il faut demander au designer de créer des images principales, des visuels de page détail et des bannières promo. Le planning du designer est chargé, même les petites modifications prennent une demi-journée. **Quand c'est urgent, impossible d'attendre.**
+
+Maintenant, il suffit de décrire ce que vous voulez en une phrase, et l'IA le génère. Images principales sur fond blanc, photos d'ambiance, visuels promo, images style tech — tout est possible.
+
+Vous avez un produit ? Commencez par générer des images produit :
+
+```
+帮我生成 3 张充电宝的电商白底主图，要求：淡米色背景、专业棚拍风格、柔和灯光、底部轻微阴影、构图居中干净，3:4 尺寸
+```
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/YkD7Pj3sPLHmMng2g2qT8ri2nDMPXm_5tfibTjTVBFk.mp4" controls></video>
+
+Satisfait des images produit ? Voulez-vous ajouter du texte avec les arguments de vente ? Ajoutez simplement une ligne :
+
+```
+已经生成了商品图，现在给这些图片加上宣传语，以及卖点内容。
+```
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/jepzY16ry-ep9h6Arp_iKjY1_zqMGQR8Pp_xNSJhXMc.mp4" controls></video>
+
+Pas satisfait ? Affinez
+
+Une image est à 80% mais a besoin de retouches ? Dites simplement à Qwen Code :
+
+```
+把第一张图的背景换成紫红渐变，加金色点缀，更适合双 11 氛围
+```
+
+Vous voulez changer le texte ? Pas besoin de tout recommencer. Itérez sur l'image existante — plus vous affinez, plus c'est précis. Comme le design HTML gère le texte séparément, changer le texte ne nécessite pas de régénérer l'image, ce qui économise des Token. Dites simplement à Qwen Code :
+
+```
+把 20000mAh，修改为10000mAh
+```
+
+### Types d'images supportés
+
+| Type | Taille | Cas d'utilisation |
+| --- | --- | --- |
+| Image principale e-commerce | 1024×1024 (Carré 1:1) | Images principales produit Taobao/JD, images promo |
+| Page détail produit | 1024×1366 (Portrait 3:4) | Affichage plein écran page détail |
+| Écran de démarrage mobile | 1080×1920 (Portrait 9:16) | Publicité de lancement d'app |
+| Bannière publicitaire | 1344×756 (Paysage 16:9) | Bannière PC |
+
+Toutes les tailles supportent les **images produit avec texte marketing** — l'IA génère d'abord une image de base purement visuelle, puis utilise le HTML pour superposer précisément les arguments de vente, slogans, prix et autres textes, exportant finalement un PNG complet. Le texte reste net sans déformation, et changer le texte ne prend que 2 secondes de re-rendu sans régénérer l'image.
+
+## Scénario 2 : Prendre une photo dans Feishu, générer automatiquement images produit et vidéos 📸
+
+La photographie de produits e-commerce coûte cher — louer un studio, engager un photographe, post-traitement, l'ensemble commence à plusieurs milliers de yuans avec un délai d'une à deux semaines. Les petites équipes ne peuvent tout simplement pas se le permettre. Et maintenant toutes les plateformes poussent les vidéos courtes, donc les vidéos produit sont une dépense supplémentaire.
+
+La meilleure approche maintenant : **Prenez une photo avec votre téléphone, envoyez-la dans un groupe Feishu @bot, et l'IA identifie automatiquement votre produit, puis génère des images produit sur fond blanc, des images marketing avec texte, et une vidéo de présentation de 5 secondes — le tout en une seule fois.**
+
+Pas besoin d'ordinateur pour tout le processus.
+
+**Étape 1 : Prendre une photo et l'envoyer dans le groupe**
+
+Prenez une photo rapide du produit avec votre téléphone (n'importe quel fond — sur le bureau, sur le canapé, peu importe), envoyez-la dans le groupe Feishu et @Qwen Code :
+
+```
+使用 open1v-product-visual 技能帮我生成2张商品图
+```
+
+Le bot fait automatiquement 3 choses :
+
+1. **Identifier le produit** — déterminer automatiquement ce qui a été photographié
+2. **Générer des images produit standard** — créer des images basées sur le produit identifié, enregistrées dans le dossier du projet
+3. **Retourner les résultats** — retourner directement les liens des images dans le cloud
+
+**Étape 2 : Choisir une image, ajouter du texte marketing**
+
+Choisissez une image sur fond blanc satisfaisante, puis dites :
+
+```
+现在我需要加上营销文字，小红书3:4尺寸，布局你可以自选，我要白底的。
+```
+
+Le bot extrait le texte marketing basé sur les informations du produit identifié et le superpose sur l'image : titre principal, sous-titre, étiquettes de fonctionnalités, données de spécifications — l'image terminée est prête à être mise en ligne.
+
+Changer le texte ou la mise en page ? Dites simplement :
+
+```
+把图片整体向右侧移动一点，产品主体居中，文字和排版不变
+```
+
+Changer le texte ne nécessite pas de régénérer l'image — **2 secondes** de re-rendu et c'est fait.
+
+**Étape 3 : Obtenir les liens des assets finaux**
+
+```
+现在我需要你生成图片的链接，上传到云空间并返回给我链接，只需要终稿版本
+```
+
+Vidéo du workflow complet 👇
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/8xPF4YK1fyeNJpAOCjsGCSBRpAZ5_aGQTof1KpSO-5w.mp4" controls></video>
+
+### Ce que vous obtenez est un dossier de projet complet
+
+```
+product-charger-0610/
+├── raw/          ← Vos photos originales
+├── product/      ← Images produit standard générées (fond blanc, ambiance)
+├── index.html    ← Fichier source de mise en page texte (modifier le texte manuellement, ré-exporter en 2 secondes)
+├── final/        ← Images finales avec texte (prêtes à publier)
+└── video/        ← Vidéo de présentation de 5 secondes
+```
+
+De la photo à l'ensemble complet d'assets, **moins de 10 minutes**. Avant, il fallait un photographe + un designer pendant une semaine entière.
+
+> Pas de Feishu ? Ça fonctionne exactement pareil dans le terminal Qwen Code — envoyez simplement le chemin de la photo.
+
+## Scénario 3 : L'IA rédige vos textes marketing ✍️
+
+Rédiger des textes est l'une des tâches les plus chronophages. Les articles WeChat nécessitent du storytelling long, les réseaux sociaux des posts courts et percutants, les pages détail des textes sur les fonctionnalités — **même produit, trois canaux, trois styles d'écriture différents**. Repartir de zéro à chaque fois, finir par manquer d'inspiration, recycler les mêmes phrases encore et encore.
+
+Maintenant, il suffit de donner à l'IA les informations produit et les canaux de distribution. WeChat reçoit du storytelling, les réseaux sociaux des posts lifestyle, les pages détail des highlights de fonctionnalités — une entrée, sortie multi-canaux.
+
+**Exemple : Générer des textes pour une batterie externe portable sur 3 canaux**
+
+Dans Qwen Code, entrez :
+
+```
+帮我写一篇充电宝的推广文案。
+产品名：PowerMax 迷你充电宝
+卖点：1. 仅重 120g，比一颗鸡蛋还轻  2. 10000mAh 大容量  3. 支持 65W 快充，30 分钟充满 iPhone
+目标人群：经常出差的商务人士
+渠道：公众号、小红书、详情页
+```
+
+L'IA produit trois versions distinctes. Voir la vidéo de démonstration :
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/0OKVKAiPWo15llYvsWaQN1mX4RzwTeSVzROK-IzVo3c.mp4" controls></video>
+
+### Pas satisfait ? Continuez la conversation et publiez directement sur WeChat
+
+Pas satisfait du contenu ? Dites simplement à Qwen Code ce qu'il faut ajuster, par exemple :
+
+```
+公众号版本内容再轻松一些，直接帮我发不到公众号后台
+```
+
+Donnez à Qwen Code l'AppID et l'AppSecret de votre compte officiel WeChat, ajoutez votre IP à la liste blanche sur la plateforme développeur WeChat, et après une configuration unique, vous pouvez publier directement dans le brouillon — fini les problèmes de mise en forme :
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/FMxYmHLotZoojvNZNojwpMFPg6vJgg7bWpJw09w1MvY.mp4" controls></video>
+
+> PS : Vous pouvez aussi combiner ceci avec le skill d'image de couverture que j'ai créé précédemment pour gérer les couvertures d'articles WeChat.
+>
+> Référence : [Générer des couvertures en une phrase : 4 styles de couvertures IA pour WeChat \| Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/zh/blog/qwencode-mpcover-skill-guide/)
+
+## Enchaîner les trois scénarios pour un pipeline complet de lancement produit
+
+Revenons au scénario d'ouverture — un nouveau produit est lancé et vous avez besoin d'un ensemble complet de supports marketing.
+
+Le workflow ressemble maintenant à ceci :
+
+```
+Prendre une photo rapide du produit
+    ↓
+Scénario 1 : Générer écrans de démarrage, bannières, affiches  → 10 minutes pour toutes les images marketing
+    ↓
+Scénario 2 : Retoucher les photos produit + générer des vidéos → 20 minutes pour les images et vidéos produit
+    ↓
+Scénario 3 : Générer les textes WeChat/réseaux/page détail    → 10 minutes pour tous les textes multi-canaux
+```
+
+**40 minutes, une personne, ensemble d'assets complet.** Avant, il fallait un designer + un photographe + un rédacteur collaborant pendant une semaine.
+
+## Comment commencer ?
+
+### Préparation de l'environnement
+
+1. **Installer Qwen Code** : Suivre la [documentation officielle](https://qwenlm.github.io/qwen-code-docs/zh/users/overview/)
+2. **Installer Bailian CLI** : Suivre la [documentation Bailian CLI](https://bailian.console.aliyun.com/cli)
+3. **Lancer Qwen Code** : Donner à Qwen Code votre clé API et vos besoins
+
+### Installer le pack de skills
+
+Ouvrir Qwen Code et dire :
+
+```
+帮我安装 open1v-skills 技能包：git clone https://github.com/joeytoday/open1v-skills.git ~/.agents/skills/open1v-skills，然后安装依赖
+```
+
+Après l'installation, une phrase déclenche le workflow complet :
+
+- **Générer des images produit** : `帮我生成一张充电宝的白底主图`
+- **Rédiger des textes marketing** : `帮我写一篇充电宝的推广文案，渠道：公众号、小红书、详情页`
+- **Publier sur WeChat** : `把公众号文案发布到草稿箱`
+
+Vous pouvez aussi personnaliser ces skills pour mieux correspondre à vos produits.
+
+### Connecter Feishu (optionnel)
+
+Vous voulez utiliser @bot dans un groupe Feishu pour faire tout cela ? Demandez à Qwen Code :
+
+```
+帮我配置飞书频道，我想在飞书群里 @机器人 生成商品图和文案，并一步步告诉我步骤
+```
+
+Qwen Code vous guide dans la configuration — 5 minutes et c'est fait.
+
+## Pour conclure
+
+L'IA n'est pas là pour remplacer les designers et les rédacteurs. Elle est là pour **donner à chacun la capacité de « sortir une première version ».**
+
+Avec un brouillon généré par l'IA, les designers peuvent affiner de 80 à 95 au lieu de repartir de zéro à chaque fois. Les rédacteurs peuvent se concentrer sur la formule parfaite et la résonance émotionnelle au lieu de lutter avec la structure de base.
+
+C'est la bonne façon d'utiliser les outils IA — **pas le remplacement, mais l'accélération**.
+
+**Essayez.** La première fois pourrait vous surprendre : ces choses peuvent vraiment être faites aussi vite.
