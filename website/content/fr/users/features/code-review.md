@@ -1,7 +1,3 @@
----
-description: "Faites une AI code review avec Qwen Code pour repérer bugs, problèmes de style et risques de sécurité avant le commit, et améliorer la qualité des PR."
----
-
 # Revue de code
 
 > Analysez les modifications de code pour vérifier leur exactitude, leur sécurité, leurs performances et leur qualité à l'aide de `/review`.

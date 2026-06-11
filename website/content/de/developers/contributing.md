@@ -1,7 +1,3 @@
----
-description: "Lesen Sie den Qwen Code Contribution Guide zu Entwicklungsumgebung, Commit-Regeln, Tests und PR-Prozess, um Open-Source-Beiträge sicher einzureichen."
----
-
 # So kannst du beitragen
 
 Wir freuen uns über deine Patches und Beiträge zu diesem Projekt.

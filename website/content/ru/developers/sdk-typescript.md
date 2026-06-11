@@ -1,7 +1,3 @@
----
-description: "Используйте Qwen Code TypeScript SDK для AI-coding интеграций: установка, аутентификация, типы и примеры для Web, Node.js и tooling."
----
-
 # Typescript SDK
 
 ## @qwen-code/sdk

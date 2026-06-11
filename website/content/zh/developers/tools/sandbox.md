@@ -1,10 +1,6 @@
----
-description: "自定义 Qwen Code 沙箱环境。使用 Docker 或 Podman 构建安全容器，隔离 AI 代码执行、文件修改和项目专属工具。"
----
+## 自定义沙箱环境（Docker/Podman）
 
-# 自定义沙箱环境（Docker/Podman）
-
-## 当前通过 npm 包安装后，暂不支持使用 BUILD_SANDBOX 功能
+### 当前通过 npm 包安装后，暂不支持使用 BUILD_SANDBOX 功能
 
 1. 要构建自定义沙箱，你需要访问源代码仓库中的构建脚本（`scripts/build_sandbox.js`）。
 2. 这些构建脚本未包含在 npm 发布的包中。
@@ -12,9 +8,9 @@ description: "自定义 Qwen Code 沙箱环境。使用 Docker 或 Podman 构建
 
 如果你需要在容器内使用额外的工具（例如 `git`、`python`、`rg`），请创建自定义 Dockerfile。具体操作如下：
 
-### 1、首先克隆 Qwen Code 项目：https://github.com/QwenLM/qwen-code.git
+#### 1、首先克隆 Qwen Code 项目：https://github.com/QwenLM/qwen-code.git
 
-### 2、确保在源代码仓库目录下执行以下操作
+#### 2、确保在源代码仓库目录下执行以下操作
 
 ```bash
 # 1. First, install the dependencies of the project
@@ -45,7 +41,7 @@ qwen -v
 
 ```
 
-### 3、在你自己项目的根目录下创建沙箱 Dockerfile
+#### 3、在你自己项目的根目录下创建沙箱 Dockerfile
 
 - 路径：`.qwen/sandbox.Dockerfile`
 
@@ -61,7 +57,7 @@ RUN apt-get update && apt-get install -y \
     ripgrep
 ```
 
-### 4、在你项目的根目录下构建首个沙箱镜像
+#### 4、在你项目的根目录下构建首个沙箱镜像
 
 ```bash
 QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
@@ -70,7 +66,7 @@ QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
 
 这将基于默认沙箱镜像构建一个项目专属的镜像。
 
-### 移除 npm link
+#### 移除 npm link
 
 - 如果你想恢复 Qwen 的官方 CLI，请移除 npm link
 

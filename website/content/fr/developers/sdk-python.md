@@ -1,7 +1,3 @@
----
-description: "Intégrez le coding IA avec le SDK Python Qwen Code : installation, authentification, exemples d’appel et patterns d’agent workflow pour projets Python."
----
-
 # SDK Python
 
 ## `qwen-code-sdk`

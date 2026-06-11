@@ -1,7 +1,3 @@
----
-description: "学习 Qwen Code Agent Skills 的创建、管理和共享方法，把常用流程封装成可复用能力，提升 AI 编程助手在项目中的命中率和执行效果。"
----
-
 # Agent Skills
 
 > 创建、管理和共享 Skills，以扩展 Qwen Code 的功能。

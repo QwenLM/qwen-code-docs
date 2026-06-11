@@ -1,7 +1,3 @@
----
-description: "通过 MCP 将 Qwen Code 连接数据库、API、Google Drive、Jira、Figma 等外部工具，快速扩展 AI 编程助手的上下文和自动化能力。"
----
-
 # 通过 MCP 将 Qwen Code 连接到工具
 
 Qwen Code 可以通过 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) 连接到外部工具和数据源。MCP 服务器使 Qwen Code 能够访问你的工具、数据库和 API。

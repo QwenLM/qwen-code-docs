@@ -1,7 +1,3 @@
----
-description: "Use Qwen Code Hooks para executar scripts, verificações e notificações antes ou depois das ferramentas, integrando segurança e workflow da equipe."
----
-
 # Hooks do Qwen Code
 
 ## Visão Geral

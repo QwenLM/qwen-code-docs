@@ -1,7 +1,3 @@
----
-description: "Konfigurieren Sie Qwen Code Sub Agents für Tests, Dokumentation, Refactoring und Reviews, damit komplexe Aufgaben mit spezialisierten AI-Rollen präziser laufen."
----
-
 # Subagents
 
 Subagents sind spezialisierte KI-Assistenten, die bestimmte Arten von Aufgaben innerhalb von Qwen Code übernehmen. Sie ermöglichen es dir, fokussierte Arbeiten an KI-Agenten zu delegieren, die mit aufgabenbezogenen Prompts, Tools und Verhaltensweisen konfiguriert sind.

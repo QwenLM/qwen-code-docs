@@ -1,7 +1,3 @@
----
-description: "Настройте Qwen Code через settings.json: модели, режимы approval, темы и расширенные опции для личных и командных AI-coding workflows."
----
-
 # Конфигурация Qwen Code
 
 > [!tip]

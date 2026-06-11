@@ -1,8 +1,3 @@
----
-title: "Qwen Code overview"
-description: "Learn what Qwen Code does, how to install it, start your first AI coding session, and use it for code understanding, debugging, automation, and IDE workflows."
----
-
 # Qwen Code overview
 
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
@@ -43,7 +38,7 @@ Choose your authentication method — **API Key** or **[Alibaba Cloud Coding Pla
 what does this project do?
 ```
 
-<video src="https://cloud.video.taobao.com/vod/j7-QtQScn8UEAaEdiv619fSkk5p-t17orpDbSqKVL5A.mp4" controls width="800" aria-label="Qwen Code demo: ask the AI agent to understand your codebase" style="margin-top: 1.5em"></video>
+![](https://cloud.video.taobao.com/vod/j7-QtQScn8UEAaEdiv619fSkk5p-t17orpDbSqKVL5A.mp4)
 
 You'll be prompted to log in on first use. That's it! [Continue with Quickstart (5 mins) →](./quickstart)
 

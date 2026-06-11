@@ -1,7 +1,3 @@
----
-description: "Führen Sie Qwen Code im Headless-Modus für nicht interaktive KI-Coding-Aufgaben aus, ideal für CI/CD, Skripte, Batch-Analysen und Automation."
----
-
 # Headless-Modus
 
 Der Headless-Modus ermöglicht die programmatische Ausführung von Qwen Code über Befehlszeilenskripte und Automatisierungstools ohne interaktive Benutzeroberfläche. Dies ist ideal für Skripting, Automatisierung, CI/CD-Pipelines und die Entwicklung KI-gestützter Tools.

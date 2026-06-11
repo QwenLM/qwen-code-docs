@@ -1,7 +1,3 @@
----
-description: "Automate your GitHub workflow with Qwen Code. Use qwen-code-action for PR reviews, issue triage, and code analysis directly in your repositories."
----
-
 # Github Actions：qwen-code-action
 
 ## Overview

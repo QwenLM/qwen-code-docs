@@ -1,7 +1,3 @@
----
-description: "Lernen Sie Qwen Code Checkpointing kennen, um wichtige Zustände zu speichern und bei Refactorings, Experimenten oder langen KI-Sessions sicher zurückzukehren."
----
-
 # Checkpointing
 
 Qwen Code verfügt über eine Checkpointing-Funktion, die automatisch einen Snapshot des Projektzustands erstellt, bevor KI-gestützte Tools Dateien ändern. So kannst du Codeänderungen sicher testen und anwenden, da du jederzeit sofort zum Zustand vor der Tool-Ausführung zurückkehren kannst.

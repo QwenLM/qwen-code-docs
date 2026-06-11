@@ -1,7 +1,3 @@
----
-description: "Starten Sie mit Qwen Code Extensions: Struktur, Konfiguration, Prüfungen und Beispiele, um wiederverwendbare Fähigkeiten für Teams oder Communitys zu bauen."
----
-
 # Erste Schritte mit Qwen Code-Erweiterungen
 
 Diese Anleitung führt dich durch die Erstellung deiner ersten Qwen Code-Erweiterung. Du wirst erfahren, wie du eine neue Erweiterung einrichtest, ein benutzerdefiniertes Tool über einen MCP-Server hinzufügst, einen benutzerdefinierten Befehl erstellst und dem Modell mithilfe einer `QWEN.md`-Datei Kontext bereitstellst.

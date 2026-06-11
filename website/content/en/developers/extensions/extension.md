@@ -1,7 +1,3 @@
----
-description: "Qwen Code extensions for developers. Package prompts, MCP servers, and custom commands into shareable extensions for the AI coding ecosystem."
----
-
 # Qwen Code Extensions
 
 Qwen Code extensions package prompts, MCP servers, and custom commands into a familiar and user-friendly format. With extensions, you can expand the capabilities of Qwen Code and share those capabilities with others. They are designed to be easily installable and shareable.

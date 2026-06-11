@@ -1,7 +1,3 @@
----
-description: "使用 Qwen Code TypeScript SDK 构建 AI 编程集成，掌握安装、认证、类型接口和调用示例，适合 Web、Node.js 与工具链开发。"
----
-
 # TypeScript SDK
 
 ## @qwen-code/sdk

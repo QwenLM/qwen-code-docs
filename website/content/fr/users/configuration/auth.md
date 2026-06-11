@@ -1,7 +1,3 @@
----
-description: "Comparez les 3 méthodes d’authentification Qwen Code : API Key, Alibaba Cloud Coding Plan et OAuth. Choisissez vite l’accès adapté à vos quotas."
----
-
 # Authentification
 
 Qwen Code prend en charge trois méthodes d'authentification. Choisissez celle qui correspond à votre façon d'utiliser la CLI :

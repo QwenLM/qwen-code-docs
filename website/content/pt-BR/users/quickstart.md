@@ -1,7 +1,3 @@
----
-description: "Comece com Qwen Code em 5 minutos: instalação, autenticação e primeiros comandos de programação com IA para evitar bloqueios de configuração."
----
-
 # Início rápido
 
 > 👏 Bem-vindo ao Qwen Code!

@@ -1,7 +1,3 @@
----
-description: "Run Qwen Code without a UI using Headless Mode. Build AI-powered scripts, CI/CD pipelines, and automation tools — no terminal required."
----
-
 # Headless Mode
 
 Headless mode allows you to run Qwen Code programmatically from command line

@@ -1,7 +1,3 @@
----
-description: "使用 Qwen Code Python SDK 集成 AI 编程能力，了解安装、认证、调用示例和常见模式，快速把 agent workflow 接入 Python 项目。"
----
-
 # Python SDK
 
 ## `qwen-code-sdk`

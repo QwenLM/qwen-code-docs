@@ -1,7 +1,3 @@
----
-description: "了解 Qwen Code 的 3 种认证方式：API Key、Alibaba Cloud Coding Plan 和 OAuth，快速选择合适方案，解决登录、配额和模型接入问题。"
----
-
 # 身份验证
 
 Qwen Code 支持三种身份验证方法。请根据你运行 CLI 的方式选择合适的一种：

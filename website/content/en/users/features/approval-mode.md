@@ -1,7 +1,3 @@
----
-description: "Control how Qwen Code interacts with your code. Choose from 4 approval modes — auto, suggest, plan, or bypass — to match your risk tolerance."
----
-
 # Approval Mode
 
 Qwen Code offers four distinct permission modes that allow you to flexibly control how AI interacts with your code and system based on task complexity and risk level.

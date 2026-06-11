@@ -1,7 +1,3 @@
----
-description: "Qwen Code Followup Suggestions (NES) design. Predict user input with AI ghost text for faster coding — learn the architecture and UX decisions."
----
-
 # Prompt Suggestion (NES) Design
 
 > Predicts what the user would naturally type next after the AI completes a response, showing it as ghost text in the input prompt.

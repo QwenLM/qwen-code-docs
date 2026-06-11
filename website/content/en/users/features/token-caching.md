@@ -1,7 +1,3 @@
----
-description: "Reduce API costs with Qwen Code's Token Caching. Automatically cache system prompts and conversation history for faster, cheaper responses."
----
-
 # Token Caching and Cost Optimization
 
 Qwen Code automatically optimizes API costs through token caching when using API key authentication. This feature stores frequently used content like system instructions and conversation history to reduce the number of tokens processed in subsequent requests.

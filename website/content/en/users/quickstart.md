@@ -1,7 +1,3 @@
----
-description: "Get started with Qwen Code in 5 minutes. Step-by-step guide covering installation, authentication, and your first AI-powered coding commands."
----
-
 # Quickstart
 
 > 👏 Welcome to Qwen Code!

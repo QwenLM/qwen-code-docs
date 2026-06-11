@@ -1,7 +1,3 @@
----
-description: "Qwen Code run_shell_command tool reference. Execute shell commands safely with the AI coding agent's controlled command execution."
----
-
 # Shell Tool (`run_shell_command`)
 
 This document describes the `run_shell_command` tool for Qwen Code.

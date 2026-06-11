@@ -1,7 +1,3 @@
----
-description: "Conheça o Qwen Code: recursos principais, início em 30 segundos e usos comuns para entender, editar e automatizar código diretamente no terminal."
----
-
 # Visão geral do Qwen Code
 
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)

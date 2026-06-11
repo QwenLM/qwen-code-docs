@@ -1,7 +1,3 @@
----
-description: "Démarrez avec Qwen Code en 5 minutes : installation, authentification et premières commandes de codage IA pour éviter les blocages de configuration."
----
-
 # Guide de démarrage rapide
 
 > 👏 Bienvenue dans Qwen Code !

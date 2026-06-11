@@ -1,7 +1,3 @@
----
-description: "Connectez Qwen Code à VS Code en quelques minutes. Utilisez le contexte workspace, la revue diff native et les commandes IDE pour coder avec contrôle."
----
-
 # Intégration IDE
 
 Qwen Code peut s'intégrer à votre IDE pour offrir une expérience plus fluide et consciente du contexte. Cette intégration permet au CLI de mieux comprendre votre espace de travail et active des fonctionnalités puissantes comme la comparaison native (diff) directement dans l'éditeur.

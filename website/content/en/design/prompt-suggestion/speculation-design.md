@@ -1,7 +1,3 @@
----
-description: "Qwen Code Speculation Engine design. Pre-execute accepted suggestions with copy-on-write isolation for instant response on Tab."
----
-
 # Speculation Engine Design
 
 > Speculatively executes the accepted suggestion before the user confirms, using copy-on-write file isolation. Results appear instantly when the user presses Tab.

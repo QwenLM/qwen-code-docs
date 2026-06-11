@@ -1,7 +1,3 @@
----
-description: "Verstehen Sie die Qwen Code Sandbox, begrenzen Sie riskante Befehle und Dateiaktionen und führen Sie KI-Coding-Aufgaben mit klaren Sicherheitsgrenzen aus."
----
-
 # Sandbox
 
 Dieses Dokument erklärt, wie du Qwen Code in einer Sandbox ausführst, um Risiken zu minimieren, wenn Tools Shell-Befehle ausführen oder Dateien ändern.

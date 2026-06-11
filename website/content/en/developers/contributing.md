@@ -1,7 +1,3 @@
----
-description: "Contribute to Qwen Code. Learn the contribution process, coding standards, and how to submit patches to the open-source AI coding agent."
----
-
 # How to Contribute
 
 We would love to accept your patches and contributions to this project.

@@ -1,7 +1,3 @@
----
-description: "Entdecken Sie die Qwen Code Dokumentation zu Installation, IDE-Integration, MCP-Servern, Workflows und Automatisierung. Starten Sie schneller mit klaren KI-Coding-Guides."
----
-
 # Qwen Code Dokumentation
 
 Willkommen in der Qwen Code Dokumentation. Qwen Code ist ein agentisches Coding-Tool, das in deinem Terminal läuft und dir hilft, Ideen schneller als je zuvor in Code umzusetzen.

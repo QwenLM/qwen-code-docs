@@ -1,7 +1,3 @@
----
-description: "Build with Qwen Code Python SDK. Integrate AI coding features into Python apps with qwen-code-sdk for programmatic agent access."
----
-
 # Python SDK
 
 ## `qwen-code-sdk`

@@ -1,7 +1,3 @@
----
-description: "了解 Qwen Code Checkpointing，保存和恢复关键修改状态，让复杂重构、实验性改动和多轮 AI 编程流程更容易回退。"
----
-
 # Checkpointing
 
 Qwen Code 内置了 Checkpointing 功能，可在 AI 工具修改任何文件之前，自动保存项目状态的快照。这让你可以安全地尝试和应用代码更改，因为你知道可以随时一键还原到工具运行前的状态。

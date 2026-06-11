@@ -1,7 +1,3 @@
----
-description: "Domine os comandos do Qwen Code: slash commands, comandos At e Shell para gerenciar sessões, injetar contexto de arquivos e codar com mais rapidez."
----
-
 # Comandos
 
 Este documento detalha todos os comandos suportados pelo Qwen Code, ajudando você a gerenciar sessões, personalizar a interface e controlar seu comportamento de forma eficiente.

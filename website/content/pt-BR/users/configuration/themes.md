@@ -1,7 +1,3 @@
----
-description: "Personalize temas e cores do Qwen Code para melhorar a leitura no terminal, longas sessões de programação com IA e demonstrações para a equipe."
----
-
 # Temas
 
 O Qwen Code oferece uma variedade de temas para personalizar seu esquema de cores e aparência. Você pode alterar o tema de acordo com suas preferências usando o comando `/theme` ou a configuração `"theme":`.

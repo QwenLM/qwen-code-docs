@@ -1,7 +1,3 @@
----
-description: "Nutzen Sie Qwen Code Hooks, um Skripte, Checks und Benachrichtigungen vor oder nach Tool-Aufrufen auszuführen und Team-Workflows zu automatisieren."
----
-
 # Qwen Code Hooks
 
 ## Übersicht

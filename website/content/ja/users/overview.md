@@ -1,7 +1,3 @@
----
-description: "Qwen Code の主要機能、30 秒セットアップ、代表的な使い方を把握し、ターミナルでコード理解・修正・自動化を進める方法を確認できます。"
----
-
 # Qwen Code の概要
 
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)

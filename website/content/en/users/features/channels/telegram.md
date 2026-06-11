@@ -1,7 +1,3 @@
----
-description: "Set up a Qwen Code channel on Telegram. Get AI coding assistance through Telegram bot messages from your phone or desktop."
----
-
 # Telegram
 
 This guide covers setting up a Qwen Code channel on Telegram.

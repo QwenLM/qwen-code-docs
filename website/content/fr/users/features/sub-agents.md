@@ -1,7 +1,3 @@
----
-description: "Configurez les Qwen Code Sub Agents pour tests, documentation, refactoring et reviews, avec des rôles IA spécialisés pour les tâches complexes."
----
-
 # Sous-agents
 
 Les sous-agents sont des assistants IA spécialisés qui gèrent des types de tâches spécifiques au sein de Qwen Code. Ils vous permettent de déléguer un travail ciblé à des agents IA configurés avec des prompts, des outils et des comportements adaptés à la tâche.

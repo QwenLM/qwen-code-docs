@@ -1,7 +1,3 @@
----
-description: "Lernen Sie Qwen Code kennen: Kernfunktionen, 30-Sekunden-Start und typische Workflows, um Code im Terminal schneller zu verstehen, zu ändern und zu automatisieren."
----
-
 # Qwen Code – Übersicht
 
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)

@@ -1,7 +1,3 @@
----
-description: "Extend Qwen Code with custom Hooks. Run scripts before/after tool execution, at session start/end, and automate your development workflow."
----
-
 # Qwen Code Hooks
 
 ## Overview

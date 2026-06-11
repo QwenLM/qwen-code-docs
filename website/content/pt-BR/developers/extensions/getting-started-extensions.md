@@ -1,7 +1,3 @@
----
-description: "Comece com Qwen Code Extensions: estrutura, configuração, checks e exemplos para criar capacidades reutilizáveis para equipes ou comunidade."
----
-
 # Primeiros Passos com Extensões do Qwen Code
 
 Este guia irá te acompanhar na criação da sua primeira extensão do Qwen Code. Você aprenderá como configurar uma nova extensão, adicionar uma ferramenta personalizada através de um servidor MCP, criar um comando personalizado e fornecer contexto ao modelo com um arquivo `QWEN.md`.

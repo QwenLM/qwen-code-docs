@@ -1,7 +1,3 @@
----
-description: "Konfigurieren Sie Qwen Code mit settings.json: Modelle, Approval-Modi, Themes und erweiterte Optionen für klare Team- und persönliche Coding-Workflows."
----
-
 # Qwen Code-Konfiguration
 
 > [!tip]

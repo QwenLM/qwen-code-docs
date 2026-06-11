@@ -1,7 +1,3 @@
----
-description: "Extend Qwen Code with Extensions. Add MCP servers, subagents, custom commands, and skills — or install from the community ecosystem."
----
-
 # Qwen Code Extensions
 
 Qwen Code extensions package prompts, MCP servers, subagents, skills and custom commands into a familiar and user-friendly format. With extensions, you can expand the capabilities of Qwen Code and share those capabilities with others. They are designed to be easily installable and shareable.

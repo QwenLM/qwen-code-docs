@@ -1,7 +1,3 @@
----
-description: "学习为 Qwen Code 构建 MCP Server，暴露自定义工具、数据源和工作流，让团队系统通过 Model Context Protocol 接入 AI 编程。"
----
-
 # 使用 Qwen Code 配置 MCP 服务器
 
 本文档提供了在 Qwen Code 中配置和使用 Model Context Protocol (MCP) 服务器的指南。
