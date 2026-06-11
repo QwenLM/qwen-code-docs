@@ -69,8 +69,8 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
     lang === "pt-BR" ? "Pesquisar documentação..." :
     "Search documentation..."
   } lang={lang} className='shrink-0' />
+      <GitHubStarLink projectLink='https://github.com/QwenLM/qwen-code' className='shrink-0' />
       <LanguageDropdown currentLang={lang} compactOnTablet className='max-md:hidden shrink-0' />
-      <GitHubStarLink projectLink='https://github.com/QwenLM/qwen-code' className='max-md:hidden shrink-0' />
       <ThemeToggle />
     </Navbar>
   );

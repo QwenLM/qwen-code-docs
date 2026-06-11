@@ -218,12 +218,12 @@
 
 @media (max-width: 767px) {
   .qwen-docs-navbar {
+    justify-content: space-between !important;
     gap: 0.5rem;
   }
 
   .qwen-docs-navbar > a {
     flex-shrink: 0;
-    margin-right: auto !important;
     order: 1;
   }
 
@@ -233,12 +233,18 @@
     flex: 0 0 2.25rem !important;
   }
 
-  .qwen-docs-navbar > button[aria-label="Toggle theme"] {
+  .qwen-docs-navbar > a[href*="github.com"] {
     order: 3;
     display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     width: 2.25rem !important;
     height: 2.25rem !important;
     flex: 0 0 2.25rem !important;
+  }
+
+  .qwen-docs-navbar > button[aria-label="Toggle theme"] {
+    display: none !important;
   }
 
   .qwen-docs-navbar > .nextra-hamburger {
