@@ -91,7 +91,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
         { locale: "pt-BR", name: "Português (BR)" },
       ]}
       search={false}
-      sidebar={{ defaultMenuCollapseLevel: 9999 }}
+      sidebar={{ defaultMenuCollapseLevel: 1 }}
       pageMap={sourcePageMap}
       nextThemes={{ defaultTheme: "light" }}
     >
