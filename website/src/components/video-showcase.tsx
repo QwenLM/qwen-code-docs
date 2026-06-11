@@ -193,6 +193,7 @@ const HeroSection = ({
                     muted
                     loop
                     playsInline
+                    aria-label={video.title}
                     className="w-full h-full object-cover"
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
@@ -776,6 +777,7 @@ export const VideoShowcase = ({
                   src={selectedVideo.videoUrl}
                   controls
                   autoPlay
+                  aria-label={selectedVideo.title}
                   className="w-full h-full object-contain"
                   poster={selectedVideo.thumbnail}
                 >
