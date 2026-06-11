@@ -61,7 +61,7 @@ export const GitHubStarLink: React.FC<GitHubStarLinkProps> = ({
     >
       <GitHubIcon height='24' />
       {stars !== null && (
-        <div className='flex items-center gap-1 text-xs font-medium'>
+        <div className='hidden items-center gap-1 text-xs font-medium xl:flex'>
           <span>{stars.toLocaleString()}</span>
         </div>
       )}

@@ -38,7 +38,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
       logo={
         <>
           <span
-            className='ms-2 select-none font-extrabold flex items-center'
+            className='ms-2 select-none font-extrabold flex shrink-0 items-center whitespace-nowrap'
             title={`Qwen Code: AI Coding Agent`}
           >
             <img
@@ -49,15 +49,16 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
               className='inline-block align-middle mr-2 '
               style={{ verticalAlign: "middle" }}
             />
-            <span className='text-[1.3rem]  font-normal align-middle mr-1 max-md:hidden'>
+            <span className='text-[1.3rem]  font-normal align-middle mr-1 max-lg:hidden'>
               Qwen
             </span>
-            <span className='text-[1.3rem] font-normal align-middle max-md:hidden'>
+            <span className='text-[1.3rem] font-normal align-middle max-lg:hidden'>
               Code
             </span>
           </span>
         </>
       }
+      className='qwen-docs-navbar'
     >
       <Search placeholder={
     lang === "zh" ? "搜索文档..." :
@@ -67,9 +68,9 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
     lang === "ru" ? "Поиск в документации..." :
     lang === "pt-BR" ? "Pesquisar documentação..." :
     "Search documentation..."
-  } lang={lang} />
-      <LanguageDropdown currentLang={lang} />
-      <GitHubStarLink projectLink='https://github.com/QwenLM/qwen-code' />
+  } lang={lang} className='shrink-0' />
+      <LanguageDropdown currentLang={lang} compactOnTablet className='max-md:hidden shrink-0' />
+      <GitHubStarLink projectLink='https://github.com/QwenLM/qwen-code' className='max-md:hidden shrink-0' />
       <ThemeToggle />
     </Navbar>
   );
