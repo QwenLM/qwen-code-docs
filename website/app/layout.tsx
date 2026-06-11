@@ -2,12 +2,19 @@
 
 import type { Metadata } from "next";
 import Script from "next/script";
+import { JetBrains_Mono } from "next/font/google";
 import { Head } from "nextra/components";
 import type { FC, ReactNode } from "react";
 import "nextra-theme-docs/style.css";
 import "../src/styles/globals.css";
 import { FontLoader } from "../src/components/font-loader";
 import { ThemeProvider } from "../src/components/theme-provider";
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
 
 const SITE_NAME = "Qwen Code Docs";
 const DEFAULT_TITLE = "Qwen Code: AI Coding Agent Documentation";
@@ -130,7 +137,7 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
           saturation: { dark: 74, light: 74 },
         }}
       />
-      <body>
+      <body className={jetbrainsMono.variable}>
         {/* Google Analytics */}
         <Script
           src='https://www.googletagmanager.com/gtag/js?id=G-RVBGJ3Q97S'

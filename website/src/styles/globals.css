@@ -4,9 +4,7 @@
 @source "../**/*.{ts,tsx}";
 
 /* Terminal/Monospace Fonts */
-/* JetBrains Mono / Fira Code from Google Fonts — used by .terminal-text, .code-font */
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Fira+Code:wght@300..700&display=swap");
-/* Monoton / Orbitron are loaded dynamically via FontLoader component */
+/* JetBrains Mono loaded via next/font in layout.tsx; Monoton/Orbitron via FontLoader component */
 
 /* Terminal cursor animation */
 @keyframes cursor-blink {
@@ -27,7 +25,7 @@
 /* Shared monospace font stack — used by .terminal-text and .code-font */
 .terminal-text,
 .code-font {
-  font-family: "JetBrains Mono", "Fira Code", "Consolas", "Monaco", monospace;
+  font-family: var(--font-jetbrains), "Consolas", "Monaco", monospace;
 }
 
 .monoton-font {
@@ -192,134 +190,7 @@
   z-index: 1;
 }
 
-/* Keep the docs navbar usable on phone and tablet widths. */
-.qwen-docs-navbar .nextra-search {
-  position: relative;
-}
-
-.qwen-docs-navbar .nextra-search input[type="search"] {
-  appearance: none;
-  padding-left: 2.25rem !important;
-  padding-right: 0.75rem !important;
-}
-
-.qwen-docs-navbar .nextra-search input[type="search"]::-webkit-search-decoration {
-  -webkit-appearance: none;
-}
-
-@media (min-width: 1280px) {
-  .qwen-docs-navbar .nextra-search input[type="search"] {
-    padding-right: 3rem !important;
-  }
-}
-
-@media (max-width: 767px) {
-  .qwen-docs-navbar {
-    justify-content: space-between !important;
-    gap: 0.5rem;
-  }
-
-  /* Logo: always first */
-  .qwen-docs-navbar > a:first-of-type {
-    flex-shrink: 0;
-    order: 1;
-  }
-
-  /* Search: icon-only when collapsed */
-  .qwen-docs-navbar .nextra-search {
-    order: 2;
-    width: 2.25rem !important;
-    flex: 0 0 2.25rem !important;
-  }
-
-  /* GitHub link: between search and hamburger */
-  .qwen-docs-navbar > .github-star-link {
-    order: 3;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 2.25rem !important;
-    height: 2.25rem !important;
-    flex: 0 0 2.25rem !important;
-  }
-
-  /* Theme toggle: hidden on mobile (available in hamburger menu) */
-  .qwen-docs-navbar > button[aria-label="Toggle theme"] {
-    display: none !important;
-  }
-
-  /* Hamburger menu: always last */
-  .qwen-docs-navbar > .nextra-hamburger {
-    order: 4;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 2.25rem !important;
-    height: 2.25rem !important;
-    padding: 0 !important;
-    flex: 0 0 2.25rem !important;
-  }
-
-  .qwen-docs-navbar > .nextra-hamburger svg {
-    display: block;
-  }
-
-  /* Search input: collapsed state */
-  .qwen-docs-navbar .nextra-search input[type="search"] {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    color: transparent !important;
-  }
-
-  .qwen-docs-navbar .nextra-search input[type="search"]::placeholder {
-    color: transparent !important;
-  }
-
-  /* Search input: expanded state (focus) */
-  .qwen-docs-navbar .nextra-search input[type="search"]:focus {
-    position: fixed !important;
-    top: 0.75rem !important;
-    left: 1rem !important;
-    right: 1rem !important;
-    z-index: 50 !important;
-    width: calc(100vw - 2rem) !important;
-    padding-left: 2.25rem !important;
-    padding-right: 0.75rem !important;
-    color: inherit !important;
-    background: rgb(var(--nextra-bg)) !important;
-    box-shadow: 0 10px 30px rgb(0 0 0 / 12%);
-  }
-
-  .qwen-docs-navbar .nextra-search:focus-within input[type="search"] {
-    padding-left: 2.5rem !important;
-  }
-
-  .qwen-docs-navbar .nextra-search input[type="search"]:focus::placeholder {
-    color: rgb(75 85 99) !important;
-  }
-
-  html.dark .qwen-docs-navbar .nextra-search input[type="search"]:focus::placeholder {
-    color: rgb(156 163 175) !important;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1180px) {
-  .qwen-docs-navbar {
-    gap: 0.5rem;
-  }
-
-  .qwen-docs-navbar > div:first-of-type {
-    min-width: 0;
-    flex: 1 1 auto;
-    gap: 0.5rem;
-    overflow: visible;
-  }
-
-  .qwen-docs-navbar > div:first-of-type a {
-    white-space: nowrap;
-    font-size: 0.8125rem;
-  }
-}
+@import "./navbar-mobile.css";
 
 @variant dark (&:where(.dark, .dark *));
 
