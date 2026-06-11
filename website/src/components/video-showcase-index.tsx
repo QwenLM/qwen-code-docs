@@ -538,11 +538,11 @@ export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看�
             {learningPathsDescription}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-200 [html.dark_&]:bg-zinc-800 rounded-xl overflow-hidden border border-zinc-200 [html.dark_&]:border-zinc-800">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-200/70 [html.dark_&]:bg-zinc-800 rounded-xl overflow-hidden border border-zinc-200/70 [html.dark_&]:border-zinc-800">
             {learningPaths.map((path) => (
               <div
                 key={path.level}
-                className="bg-transparent p-6 md:p-8"
+                className="bg-zinc-100/50 p-6 md:p-8 [html.dark_&]:bg-transparent"
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-9 h-9 rounded-lg bg-zinc-100 [html.dark_&]:bg-zinc-900 flex items-center justify-center text-zinc-600 [html.dark_&]:text-zinc-400">
