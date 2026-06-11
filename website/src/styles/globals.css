@@ -315,16 +315,6 @@
     white-space: nowrap;
     font-size: 0.8125rem;
   }
-
-  .qwen-docs-navbar .nextra-search input[type="search"] {
-    width: 10.5rem !important;
-  }
-}
-
-@media (min-width: 1024px) and (max-width: 1180px) {
-  .qwen-docs-navbar .nextra-search input[type="search"] {
-    width: 12rem !important;
-  }
 }
 
 .x\:lg\:-translate-y-1\/2,
