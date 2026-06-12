@@ -1,0 +1,230 @@
+---
+title: "Qwen Code 周报：/fork 后台派活不等待、/skills 技能管理面板、跨项目记忆自动积累"
+date: "2026-06-11"
+description: "Qwen Code v0.18.0-preview 本周上线 /fork 后台 Agent、/skills 可视化技能管理、用户级跨项目记忆，同时 Vim 模式大修、独立安装支持自动更新。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：/fork 后台派活不等待、/skills 技能管理面板、跨项目记忆自动积累"
+  date="2026-06-11"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 **v0.18.0-preview**（preview.0 / preview.1 / preview.2），50+ 个 PR 合入，覆盖三个方向：
+
+**Agent 终于能并行干活了。** `/fork` 命令让你在对话中途派一个后台 Agent 去干别的事——继承完整上下文、工具、模型配置，你在主对话里继续工作，fork 跑完通过后台任务面板通知你。
+
+**技能管理有面板了。** 之前 Qwen Code 的 skill 系统没有统一入口——你得记住每个技能的名字才能用。`/skills` 现在打开一个 picker dialog，浏览、搜索、启用/禁用、一键执行，还能按工作区维度管理哪些技能对模型可见。
+
+**记忆跨项目了。** 之前 auto-memory 只在当前项目目录下积累，换个仓库 Agent 就失忆。这周加了 `~/.qwen/memories/` 用户级记忆目录，偏好、工作风格、跨项目的反馈自动路由到用户级，项目级的 deadline 和事件留在项目目录。用 Qwen Code 已有的四类记忆分类做路由，不需要新配置。
+
+## ✨ 新增特性
+
+### /fork：对话中途派后台 Agent，主线不等待
+
+`/fork` 让你在一个会话里同时跑多件事，不需要开新终端、不需要切会话。
+
+输入 `/fork <指令>`，一个后台 Agent 立刻启动，继承当前对话的完整上下文（system prompt、历史、工具、模型、prompt cache），在后台独立执行你的指令。主对话不阻塞，你继续干别的。fork 跑完后通过后台任务面板通知，结果写入 JSONL transcript。
+
+这和 `/branch` 的定位不同：`/branch` 是把当前对话拷贝到新会话探索不同方向，`/fork` 是在当前会话里派一个后台工人。
+
+**你能用它做什么：**
+
+- 写代码写到一半，`/fork 帮我把这个模块的测试补上`——测试在后台跑，你继续写下一个模块
+- 后台任务面板实时看到 fork 的进度（`main` / `○ fork: …`），完成后收到终端通知
+- 多个 fork 可以并行跑，受并发上限约束
+- 空指令、缺配置、正在流式输出时都有明确的错误提示，不会静默失败
+
+详见 PR [#4780](https://github.com/QwenLM/qwen-code/pull/4780)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01yA16EU24E1OlX7QBZ_!!6000000007358-2-tps-3839-2160.png)
+
+### /skills：技能管理终于有面板了
+
+之前用 Qwen Code 的 skill，你得记住技能名字直接敲 `/<技能名>`——没有浏览、没有搜索、没有开关。想关掉一个吵闹的技能？手动改 settings.json。
+
+现在输入 `/skills` 打开一个 picker dialog。所有已注册的技能一目了然：名称、描述、来源（项目级 / 用户级 / 内置）。键盘搜索快速定位，Space 键切换启用/禁用，Enter 直接把选中的技能命令填入输入框。禁用状态写入工作区级 `skills.disabled` 配置，当前会话立刻生效——模型的 `<available_skills>` 列表和斜杠补全都同步更新，不用重启。
+
+跨 scope 的配置也处理了：如果某个技能在用户级 settings 里被禁用，工作区级的 picker 里会显示 `[locked: User]`，不能在工作区级覆盖。
+
+**你能用它做什么：**
+
+- `/skills` 打开面板，浏览所有可用技能和描述
+- 键盘输入关键词搜索技能
+- Space 启用/禁用技能，Esc 保存退出
+- Enter 选中技能直接填入输入框执行
+- 禁用的技能不再出现在模型可用技能列表和斜杠补全中
+
+详见 PR [#4533](https://github.com/QwenLM/qwen-code/pull/4533)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01sG12rO1iCij5tMGbP_!!6000000004377-2-tps-1684-946.png)
+
+### 用户级跨项目记忆：换仓库不再失忆
+
+之前 auto-memory 只在当前项目目录下积累，换个仓库 Agent 就失忆。这周加了 `~/.qwen/memories/` 用户级记忆目录，用已有的四类记忆分类（user / feedback / project / reference）做路由，不需要新配置项。
+
+新增 `~/.qwen/memories/` 目录，和项目级 `.qwen/memories/` 并列。路由规则在记忆提取 Agent 的 prompt 里决定，不是硬编码：
+
+- **user 类型**：永远路由到用户级（它本来就是关于你这个人的）
+- **feedback 类型**：默认用户级（大多数反馈是个人风格），但如果明确是项目级的约定（测试策略、构建规范）就路由到项目级
+- **project 类型**：永远项目级（deadline、事件、在进行的工作）
+- **reference 类型**：默认项目级（这个项目的 Linear、Grafana），但公司级的通用资源路由到用户级
+
+System prompt 里两个 scope 的索引都会渲染——用户级在前（背景信息），项目级在后（更具体，自然覆盖）。即使用户级 `MEMORY.md` 为空也会渲染占位符，确保 Agent 知道这个目录存在，可以往里写东西。
+
+**你能用它做什么：**
+
+- Agent 学到你的偏好（" 我喜欢用 pnpm"、" 测试用 vitest 不用 jest"）后，切到任何新项目都记得
+- 不用在每个仓库的 `.qwen/QWEN.md` 里重复写个人偏好
+- `memory.enableManagedAutoMemory` 开关复用已有配置，不需要额外设置
+
+详见 PR [#4764](https://github.com/QwenLM/qwen-code/pull/4764)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01WZFaYK1vUCqvAfafI_!!6000000006175-2-tps-3839-2160.png)
+
+### /stats 交互式统计面板：用了多少 Token 一目了然
+
+之前 `/stats` 只显示当前会话的 token 计数，一段纯文本，看完就忘。现在变成了交互式三 tab 面板：**Session**（当前会话实时指标）、**Activity**（跨会话使用趋势）、**Efficiency**（性能和工具分析）。
+
+用法数据自动持久化到 `~/.qwen/usage_record.jsonl`，会话退出和 `/clear` 时写入。Tab / Shift+Tab 切换标签页，`r` 切换时间范围（All → Month → Week → Today），方向键翻页月度趋势图。
+
+Activity tab 展示 GitHub 风格的贡献热力图、braille 折线图的 token 趋势、top-5 项目排名。Efficiency tab 展示缓存命中率、工具成功率、平均延迟、模型对比表。
+
+**你能用它做什么：**
+
+- `/stats` 打开面板，一眼看到当前会话的 token 用量和成本
+- 切到 Activity tab 看跨会话的使用趋势和编码热力图
+- 切到 Efficiency tab 看哪些工具成功率低、哪个模型延迟高
+- 按时间范围筛选，对比不同阶段的使用模式
+
+详见 PR [#4779](https://github.com/QwenLM/qwen-code/pull/4779)
+
+
+| before                                                                                            | after                                                                                              |
+| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| ![](https://gw.alicdn.com/imgextra/i4/O1CN01Z4RJhS1FgNW6UG0zq_!!6000000000516-2-tps-1660-724.png) | ![](https://gw.alicdn.com/imgextra/i2/O1CN01yuxjPw26ClXncdIgN_!!6000000007626-1-tps-1000-1040.gif) |
+|                                                                                                   | ![](https://gw.alicdn.com/imgextra/i4/O1CN01Ud3bss1Dt5Gyc7NGh_!!6000000000273-2-tps-1702-1294.png) |
+
+
+### 防系统休眠：长任务跑着跑着不会断了
+
+长时间跑 prompt 或工具执行时，系统可能自动休眠，把正在进行的任务打断。这周加了运行时睡眠抑制器：模型流式响应或工具执行期间，自动阻止系统休眠。macOS 用 `caffeinate`，Linux 用 `systemd-inhibit`，Windows 用 `SetThreadExecutionState`。
+
+默认开启（`general.preventSystemSleep: true`），不想要的话一个配置关掉。引用计数管理，多个并行任务共享一个抑制锁，全部完成后自动释放。ACP 会话也覆盖。
+
+**你能用它做什么：**
+
+- 长时间 Agent 任务（computer-use、大规模重构）不再因系统休眠而中断
+- 默认开启，无需配置
+- `general.preventSystemSleep: false` 关闭
+
+详见 PR [#4434](https://github.com/QwenLM/qwen-code/pull/4434)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01D74c3A27TXfSnR6xs_!!6000000007798-2-tps-3855-2160.png)
+
+### Vim 模式大修：Esc 不再闹、Enter 能发、命令补全
+
+Vim 用户在 Qwen Code 里一直忍着三个问题：INSERT 模式按 Esc 会触发 AppContainer 的 handler，弹出 "Press Esc again to clear" 提示甚至清空输入缓冲区；NORMAL 模式按 Enter 什么都不发生；模式切换时底部指示器有明显的渲染延迟。
+
+这周一次修了。Esc 在 INSERT 模式只做模式切换，不再泄漏到其他 handler。NORMAL 模式 Enter 正常提交消息。VimModeContext 拆成 State 和 Actions 两个 context 配合 `useMemo`，6 个 consumer 不再因为模式切换全部重渲染。底部新增 `-- NORMAL --` 指示器，切换即时更新。
+
+同时补全了一批 NORMAL 模式命令：undo、replace、大小写切换、行合并、缩进/反缩进、WORD motions、find/till motions、yank/paste（系统剪贴板）、operator-pending 组合。
+
+**你能用它做什么：**
+
+- INSERT → NORMAL（Esc）不再清空输入、不再打断模型流式输出
+- NORMAL 模式 Enter 提交消息，和非 vim 模式行为一致
+- `-- NORMAL --` / `-- INSERT --` 指示器即时切换，无延迟
+- `u`（undo）、`r`（replace）、`~`（大小写切换）、`J`（join）等标准命令可用
+
+详见 PR [#4677](https://github.com/QwenLM/qwen-code/pull/4677)
+
+<style>{`
+  .vim-compare-table { width: 100%; }
+  .vim-compare-table th:nth-child(1) { width: 50%; }
+  .vim-compare-table th:nth-child(2) { width: 50%; }
+`}</style>
+
+<div class="vim-compare-table">
+
+| before                                                                                            | after                                                                                             |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| ![](https://gw.alicdn.com/imgextra/i4/O1CN01SdSHQr1vejxjpiiDM_!!6000000006198-1-tps-1113-288.gif) | ![](https://gw.alicdn.com/imgextra/i2/O1CN01LVNFNE1yV4RnicL2X_!!6000000006583-1-tps-1119-285.gif) |
+| ![](https://gw.alicdn.com/imgextra/i2/O1CN01GINT6U1kjMBGps8H1_!!6000000004719-1-tps-1116-329.gif) | ![](https://gw.alicdn.com/imgextra/i3/O1CN01oroMvC21HjlRnsTBH_!!6000000006960-1-tps-1129-348.gif) |
+| ![](https://gw.alicdn.com/imgextra/i2/O1CN01vLQHxM1ena8kHNGW4_!!6000000003916-2-tps-2226-498.png) | ![](https://gw.alicdn.com/imgextra/i4/O1CN01bHNsWm1IvtmkoIDtE_!!6000000000956-1-tps-1114-307.gif) |
+
+</div>
+
+### 独立安装自动更新：不用 npm 也能一键升级
+
+之前通过独立安装脚本（`curl ... | bash`）安装的 Qwen Code，更新时会走 npm global install 的 fallback——要么 EACCES 报错（npm prefix 需要 root），要么装到别的位置和独立 binary 不一致。
+
+这周给独立安装加了原生的自动更新。整个过程不需要 sudo、不需要任何包管理器。
+
+**你能用它做什么：**
+
+- 独立安装用户看到更新提示后，自动下载、校验、替换，重启即生效
+- 更新失败自动回滚到上一个版本
+- 多终端同时启动不会打架（lock 文件保护）
+- `~/.local/bin` 自动写入 shell rc 文件，确保 PATH 优先级
+
+详见 PR [#4629](https://github.com/QwenLM/qwen-code/pull/4629)
+
+
+### 更多新功能
+
+| 功能                                                                            | PR                                                     | 对你的影响                                              |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------- |
+| **/copy N**：`/copy 2` 复制倒数第二条 AI 消息，`/copy 3 code python` 提取倒数第三条的 Python 代码块 | [#4761](https://github.com/QwenLM/qwen-code/pull/4761) | Agent 最后一条是 "done!" 时，不用翻滚就能复制之前的实际输出              |
+| **Skill allowedTools 生效**：技能声明的 `allowedTools` 自动授权，技能运行时不再弹权限确认              | [#4704](https://github.com/QwenLM/qwen-code/pull/4704) | 内置技能（如 `/review`）和自定义技能的工具调用不再频繁打断                 |
+| **Auto 模式自修改防护**：配置、指令、hooks、skills、MCP 配置的写入不再能绕过分类器                         | [#4572](https://github.com/QwenLM/qwen-code/pull/4572) | Auto 模式更安全——Agent 不能通过 shell 间接修改自己的配置             |
+| **PR 审查 CI 工作流**：`@qwen-code /review` 触发 Agent 代码审查，结果以 inline comment 发回 PR  | [#4549](https://github.com/QwenLM/qwen-code/pull/4549) | org 成员的 PR 自动审查，Draft PR 等 ready 后触发               |
+| **Workflow tool P1**：模型编写 JS 脚本在 node:vm 沙箱中编排多个 subagent（opt-in，默认关闭）        | [#4732](https://github.com/QwenLM/qwen-code/pull/4732) | `QWEN_CODE_ENABLE_WORKFLOWS=1` 启用，模型可以用 JS 编排复杂工作流 |
+| **Prompt 扩展 hooks**：斜杠命令展开为 prompt 时触发独立的 hook 事件                             | [#4377](https://github.com/QwenLM/qwen-code/pull/4377) | Hook 作者可以拦截特定命令的 prompt 展开，做预处理或阻止提交               |
+| **VSCode ACP 后台通知**：后台 Agent 完成时在 VSCode 聊天面板推送通知和模型跟进                        | [#4358](https://github.com/QwenLM/qwen-code/pull/4358) | VSCode 用户不再错过后台任务的完成通知                             |
+| **Desktop Qwen 集成**：ACP 支持 Desktop 版 Qwen 集成                                  | [#4728](https://github.com/QwenLM/qwen-code/pull/4728) | Desktop 应用可以通过 ACP 接入 Qwen Code                    |
+| **InstructionsLoaded hook**：指令文件加载时触发 hook                                    | [#4665](https://github.com/QwenLM/qwen-code/pull/4665) | Hook 作者可以在指令加载后注入自定义逻辑                             |
+| **Release 资产校验 + standalone docs 入口**                                         | [#3855](https://github.com/QwenLM/qwen-code/pull/3855) | 独立安装的文档入口和发布资产签名验证                                 |
+
+## 🔧 重要修复
+
+| PR | 修复内容 | 对你的影响 |
+|----|----------|-----------|
+| [#4824](https://github.com/QwenLM/qwen-code/pull/4824) | 内存压力时自动压缩 API 历史、UI 历史，Hook 消息也参与微压缩 | 长会话不再 OOM——Goal 模式循环和 Computer Use 长任务的工具输出会被自动清理 |
+| [#4756](https://github.com/QwenLM/qwen-code/pull/4756) | Computer Use 工具在 Auto 模式下正确自动授权 | Auto 模式跑 Computer Use 不再每次弹确认 |
+| [#4741](https://github.com/QwenLM/qwen-code/pull/4741) | 状态栏显示模型名称而非内部 ID | 状态栏终于显示你能认出来的模型名了 |
+| [#4753](https://github.com/QwenLM/qwen-code/pull/4753) | 改进审批模式显示文本 | 审批模式的 UI 文本更清晰 |
+| [#4647](https://github.com/QwenLM/qwen-code/pull/4647) | Linux 图片粘贴使用平台原生工具 | Linux 用户粘贴图片终于正常了 |
+| [#4803](https://github.com/QwenLM/qwen-code/pull/4803) | qwen3.7-plus 多模态支持 | qwen3.7-plus 模型可以处理图片输入 |
+| [#4596](https://github.com/QwenLM/qwen-code/pull/4596) | git 仓库爬取时递归进入 submodule | Agent 不再忽略 submodule 里的文件 |
+| [#4795](https://github.com/QwenLM/qwen-code/pull/4795) | 跳过跨组工具合并以消除屏幕闪烁 | 工具结果渲染不再闪屏 |
+| [#4755](https://github.com/QwenLM/qwen-code/pull/4755) | 修复选择对话框闪烁 | 选择对话框不再闪烁 |
+
+## 🎉 新贡献者
+
+感谢以下贡献者本周的贡献：
+
+| 贡献者 | 贡献内容 |
+|--------|----------|
+| [@qqqys](https://github.com/qqqys) | /fork 后台 Agent 命令 [#4780](https://github.com/QwenLM/qwen-code/pull/4780)、Auto 模式自修改防护 [#4572](https://github.com/QwenLM/qwen-code/pull/4572)、Prompt 扩展 hooks [#4377](https://github.com/QwenLM/qwen-code/pull/4377)、InstructionsLoaded hook [#4665](https://github.com/QwenLM/qwen-code/pull/4665) |
+| [@callmeYe](https://github.com/callmeYe) | /skills picker dialog [#4533](https://github.com/QwenLM/qwen-code/pull/4533) |
+| [@LaZzyMan](https://github.com/LaZzyMan) | 用户级跨项目记忆 [#4764](https://github.com/QwenLM/qwen-code/pull/4764)、/copy N [#4761](https://github.com/QwenLM/qwen-code/pull/4761)、Workflow tool P1 [#4732](https://github.com/QwenLM/qwen-code/pull/4732) |
+| [@zzhenyao](https://github.com/zzhenyao) | Vim 模式大修 [#4677](https://github.com/QwenLM/qwen-code/pull/4677)、状态栏显示模型名称 [#4741](https://github.com/QwenLM/qwen-code/pull/4741)、OOM 防护压缩 [#4824](https://github.com/QwenLM/qwen-code/pull/4824)、屏幕闪烁修复 [#4795](https://github.com/QwenLM/qwen-code/pull/4795) |
+| [@yiliang114](https://github.com/yiliang114) | 独立安装自动更新 [#4629](https://github.com/QwenLM/qwen-code/pull/4629)、PR 审查 CI [#4549](https://github.com/QwenLM/qwen-code/pull/4549)、Release 资产校验 [#3855](https://github.com/QwenLM/qwen-code/pull/3855) |
+| [@DragonnZhang](https://github.com/DragonnZhang) | 防系统休眠 [#4434](https://github.com/QwenLM/qwen-code/pull/4434)、VSCode ACP 后台通知 [#4358](https://github.com/QwenLM/qwen-code/pull/4358)、Desktop Qwen 集成 [#4728](https://github.com/QwenLM/qwen-code/pull/4728) |
+| [@tanzhenxin](https://github.com/tanzhenxin) | Skill allowedTools 自动授权 [#4704](https://github.com/QwenLM/qwen-code/pull/4704) |
+| [@BenGuanRan](https://github.com/BenGuanRan) | /stats 交互式统计面板 [#4779](https://github.com/QwenLM/qwen-code/pull/4779) |
+| [@CNCSMonster](https://github.com/CNCSMonster) | Linux 图片粘贴修复 [#4647](https://github.com/QwenLM/qwen-code/pull/4647) |
+| [@he-yufeng](https://github.com/he-yufeng) | submodule 文件爬取 [#4596](https://github.com/QwenLM/qwen-code/pull/4596) |
+| [@BZ-D](https://github.com/BZ-D) | 审批模式文本改进 [#4753](https://github.com/QwenLM/qwen-code/pull/4753) |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
