@@ -1,0 +1,227 @@
+---
+title: "Qwen Code Wochenbericht: /fork Hintergrund-Agenten, /skills Verwaltungspanel, projektübergreifender Speicher"
+date: "2026-06-11"
+description: "Qwen Code v0.18.0-preview bringt /fork Hintergrund-Agenten, /skills visuelle Skill-Verwaltung, benutzerweiten projektübergreifenden Speicher sowie Vim-Modus-Überarbeitung und Standalone-Installer-Auto-Update."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Wochenbericht: /fork Hintergrund-Agenten, /skills Verwaltungspanel, projektübergreifender Speicher"
+  date="2026-06-11"
+  author="Qwen Team"
+/>
+
+Qwen Code veröffentlicht diese Woche **v0.18.0-preview** (preview.0 / preview.1 / preview.2) mit 50+ PRs, die drei Hauptbereiche abdecken:
+
+**Agenten können endlich parallel arbeiten.** Der `/fork`-Befehl ermöglicht es, mitten im Gespräch einen Hintergrund-Agenten zu entsenden — erbt vollständigen Kontext, Tools und Modellkonfiguration, während Sie im Hauptgespräch weiterarbeiten. Fork benachrichtigt Sie über das Hintergrundaufgaben-Panel, wenn fertig.
+
+**Skill-Verwaltung hat ein Panel.** Bisher hatte Qwen Codes Skill-System keinen einheitlichen Einstieg — man musste jeden Skill-Namen kennen, um ihn zu nutzen. `/skills` öffnet jetzt einen Picker-Dialog zum Durchsuchen, Suchen, Aktivieren/Deaktivieren, Ein-Klick-Ausführung und Workspace-Level-Sichtbarkeitsverwaltung.
+
+**Speicher wird projektübergreifend.** Bisher sammelte Auto-Memory nur im aktuellen Projektverzeichnis — beim Wechsel des Repos vergaß der Agent alles. Diese Woche kommt `~/.qwen/memories/` benutzerweites Speicherverzeichnis. Präferenzen, Arbeitsstil und projektübergreifendes Feedback werden automatisch auf Benutzerebene geroutet, während projektbezogene Deadlines und Ereignisse im Projektverzeichnis bleiben. Verwendet Qwen Codes bestehende vier Speicherkategorien für Routing, keine neue Konfiguration nötig.
+
+## ✨ Neue Funktionen
+
+### /fork: Hintergrund-Agenten mitten im Gespräch entsenden, ohne zu warten
+
+`/fork` ermöglicht es, mehrere Dinge gleichzeitig in einer Sitzung auszuführen — kein neues Terminal öffnen, keine Sitzungen wechseln.
+
+Geben Sie `/fork <Anweisung>` ein und ein Hintergrund-Agent startet sofort, erbt den vollständigen Kontext des aktuellen Gesprächs (System-Prompt, Verlauf, Tools, Modell, Prompt-Cache), führt Ihre Anweisung unabhängig im Hintergrund aus. Das Hauptgespräch wird nicht blockiert — Sie arbeiten an anderen Dingen weiter. Wenn der Fork abgeschlossen ist, erhalten Sie eine Benachrichtigung über das Hintergrundaufgaben-Panel, Ergebnisse werden in ein JSONL-Transkript geschrieben.
+
+Dies unterscheidet sich von `/branch`: `/branch` kopiert das aktuelle Gespräch in eine neue Sitzung, um verschiedene Richtungen zu erkunden, während `/fork` einen Hintergrundarbeiter innerhalb der aktuellen Sitzung entsendet.
+
+**Was Sie damit tun können:**
+
+- Mitten beim Coden, `/fork hilf mir, Tests für dieses Modul hinzuzufügen` — Tests laufen im Hintergrund, während Sie das nächste Modul schreiben
+- Echtzeit-Fork-Fortschritt im Hintergrundaufgaben-Panel sichtbar (`main` / `○ fork: …`), Terminal-Benachrichtigung bei Abschluss
+- Mehrere Forks können parallel laufen, durch Parallelitätsgrenzen begrenzt
+- Klare Fehlermeldungen für leere Anweisungen, fehlende Konfiguration oder Streaming-Ausgabe — keine stillen Fehler
+
+Siehe PR [#4780](https://github.com/QwenLM/qwen-code/pull/4780)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01yA16EU24E1OlX7QBZ_!!6000000007358-2-tps-3839-2160.png)
+
+### /skills: Skill-Verwaltung hat endlich ein Panel
+
+Bisher erforderte die Nutzung von Qwen Code Skills, sich Skill-Namen zu merken und direkt `/<Skill-Name>` einzutippen — kein Durchsuchen, keine Suche, keine Schalter. Einen lauten Skill deaktivieren? settings.json manuell bearbeiten.
+
+Tippen Sie jetzt `/skills`, um einen Picker-Dialog zu öffnen. Alle registrierten Skills auf einen Blick: Name, Beschreibung, Quelle (Projektebene / Benutzerebene / eingebaut). Tastatursuche zur schnellen Navigation, Leertaste zum Umschalten von Aktivieren/Deaktivieren, Enter zum Ausfüllen des ausgewählten Skill-Befehls in das Eingabefeld. Deaktivierter Zustand schreibt in workspace-level `skills.disabled` Konfiguration, wirkt sofort in der aktuellen Sitzung — die `<available_skills>`-Liste des Modells und Slash-Vervollständigungen synchronisieren sofort, kein Neustart nötig.
+
+Cross-Scope-Konfiguration wird behandelt: Wenn ein Skill in Benutzerebene-Einstellungen deaktiviert ist, zeigt der Workspace-Level-Picker `[locked: User]` und kann nicht auf Workspace-Ebene überschrieben werden.
+
+**Was Sie damit tun können:**
+
+- `/skills` öffnet das Panel, alle verfügbaren Skills und Beschreibungen durchsuchen
+- Schlüsselwörter eingeben, um Skills zu suchen
+- Leertaste zum Aktivieren/Deaktivieren von Skills, Esc zum Speichern und Beenden
+- Enter zum Auswählen eines Skills und Einfügen in das Eingabefeld zur Ausführung
+- Deaktivierte Skills erscheinen nicht mehr in der verfügbaren Skills-Liste des Modells oder Slash-Vervollständigungen
+
+Siehe PR [#4533](https://github.com/QwenLM/qwen-code/pull/4533)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01sG12rO1iCij5tMGbP_!!6000000004377-2-tps-1684-946.png)
+
+### Benutzerweiter projektübergreifender Speicher: Kein Gedächtnisverlust mehr beim Repo-Wechsel
+
+Bisher sammelte Auto-Memory nur im aktuellen Projektverzeichnis — beim Repo-Wechsel vergaß der Agent alles. Diese Woche kommt `~/.qwen/memories/` benutzerweites Speicherverzeichnis, verwendet bestehende vier Speicherkategorien (user / feedback / project / reference) für Routing, keine neuen Konfigurationsoptionen nötig.
+
+Neues `~/.qwen/memories/`-Verzeichnis neben projektbezogenem `.qwen/memories/`. Routing-Regeln werden im Prompt des Speicherextraktions-Agenten entschieden, nicht hartcodiert:
+
+- **user-Typ**: Routet immer auf Benutzerebene (es geht um Sie als Person)
+- **feedback-Typ**: Standardmäßig Benutzerebene (die meisten Feedbacks sind persönlicher Stil), aber explizit projektspezifische Konventionen (Teststrategie, Build-Spezifikationen) routen auf Projektebene
+- **project-Typ**: Immer Projektebene (Deadlines, Ereignisse, laufende Arbeiten)
+- **reference-Typ**: Standardmäßig Projektebene (dieses Projekts Linear, Grafana), aber unternehmensweite gemeinsame Ressourcen routen auf Benutzerebene
+
+Beide Scope-Indizes werden im System-Prompt gerendert — Benutzerebene zuerst (Hintergrundinformationen), Projektebene danach (spezifischer, überschreibt natürlich). Auch wenn Benutzerebene `MEMORY.md` leer ist, wird ein Platzhalter gerendert, um sicherzustellen, dass der Agent weiß, dass das Verzeichnis existiert und hineingeschrieben werden kann.
+
+**Was Sie damit tun können:**
+
+- Nachdem der Agent Ihre Präferenzen gelernt hat ("Ich bevorzuge pnpm", "verwende vitest statt jest für Tests"), merkt er sie sich in jedem neuen Projekt
+- Keine Notwendigkeit, persönliche Präferenzen in jedem Repo `.qwen/QWEN.md` zu wiederholen
+- `memory.enableManagedAutoMemory` Toggle verwendet bestehende Konfiguration, keine zusätzliche Einrichtung nötig
+
+Siehe PR [#4764](https://github.com/QwenLM/qwen-code/pull/4764)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01WZFaYK1vUCqvAfafI_!!6000000006175-2-tps-3839-2160.png)
+
+### /stats Interaktives Statistik-Panel: Token-Nutzung auf einen Blick
+
+Bisher zeigte `/stats` nur aktuelle Sitzungs-Tokenzahlen als reinen Text, nach dem Ansehen vergessen. Jetzt ist es ein interaktives Drei-Tab-Panel: **Session** (Echtzeit-Metriken für aktuelle Sitzung), **Activity** (sitzungsübergreifende Nutzungstrends), **Efficiency** (Leistungs- und Tool-Analyse).
+
+Nutzungsdaten werden automatisch in `~/.qwen/usage_record.jsonl` persistiert, beim Sitzungsbeenden und `/clear` geschrieben. Tab / Shift+Tab zum Wechseln der Tabs, `r` zum Wechseln des Zeitbereichs (All → Month → Week → Today), Pfeiltasten zum Blättern durch monatliche Trenddiagramme.
+
+Activity-Tab zeigt GitHub-artige Beitrags-Heatmap, Braille-Liniendiagramm der Token-Trends, Top-5-Projektrangliste. Efficiency-Tab zeigt Cache-Trefferrate, Tool-Erfolgsrate, durchschnittliche Latenz, Modellvergleichstabelle.
+
+**Was Sie damit tun können:**
+
+- `/stats` öffnet das Panel, Token-Nutzung und Kosten der aktuellen Sitzung auf einen Blick sehen
+- Zu Activity-Tab wechseln für sitzungsübergreifende Nutzungstrends und Coding-Heatmap
+- Zu Efficiency-Tab wechseln, um zu sehen, welche Tools niedrige Erfolgsraten haben, welche Modelle hohe Latenz haben
+- Nach Zeitbereich filtern, Nutzungsmuster über verschiedene Zeiträume vergleichen
+
+Siehe PR [#4779](https://github.com/QwenLM/qwen-code/pull/4779)
+
+| before                                                                                            | after                                                                                              |
+| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| ![](https://gw.alicdn.com/imgextra/i4/O1CN01Z4RJhS1FgNW6UG0zq_!!6000000000516-2-tps-1660-724.png) | ![](https://gw.alicdn.com/imgextra/i2/O1CN01yuxjPw26ClXncdIgN_!!6000000007626-1-tps-1000-1040.gif) |
+|                                                                                                   | ![](https://gw.alicdn.com/imgextra/i4/O1CN01Ud3bss1Dt5Gyc7NGh_!!6000000000273-2-tps-1702-1294.png) |
+
+### System-Ruhezustand verhindern: Lange Aufgaben werden nicht unterbrochen
+
+Während lang laufender Prompts oder Tool-Ausführungen kann das System automatisch in den Ruhezustand gehen und laufende Aufgaben unterbrechen. Diese Woche wird ein Runtime-Schlafinhibitor hinzugefügt: verhindert automatisch System-Ruhezustand während Modell-Streaming-Antworten oder Tool-Ausführung. macOS verwendet `caffeinate`, Linux verwendet `systemd-inhibit`, Windows verwendet `SetThreadExecutionState`.
+
+Standardmäßig aktiviert (`general.preventSystemSleep: true`), bei Bedarf mit einer Konfiguration deaktivieren. Referenzzählung verwaltet mehrere parallele Aufgaben, die sich einen Inhibitionslock teilen, automatisch freigegeben, wenn alle abgeschlossen sind. ACP-Sitzungen ebenfalls abgedeckt.
+
+**Was Sie damit tun können:**
+
+- Lang laufende Agent-Aufgaben (Computer-Use, großflächiges Refactoring) werden nicht mehr durch System-Ruhezustand unterbrochen
+- Standardmäßig aktiviert, keine Konfiguration nötig
+- `general.preventSystemSleep: false` zum Deaktivieren
+
+Siehe PR [#4434](https://github.com/QwenLM/qwen-code/pull/4434)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01D74c3A27TXfSnR6xs_!!6000000007798-2-tps-3855-2160.png)
+
+### Vim-Modus-Überarbeitung: Esc verhält sich nicht mehr falsch, Enter sendet, Befehlsvervollständigung
+
+Vim-Benutzer in Qwen Code haben drei Probleme toleriert: Drücken von Esc im INSERT-Modus löst AppContainers Handler aus, zeigt "Press Esc again to clear" oder löscht sogar den Eingabepuffer; Drücken von Enter im NORMAL-Modus bewirkt nichts; merkliche Renderverzögerung im unteren Indikator beim Moduswechsel.
+
+Diese Woche alles auf einmal behoben. Esc im INSERT-Modus wechselt nur Modi, leckt nicht mehr zu anderen Handlern. Enter im NORMAL-Modus sendet Nachrichten normal. VimModeContext in State- und Actions-Kontexte mit `useMemo` aufgeteilt, 6 Consumer rendern nicht mehr alle beim Moduswechsel neu. Unterer Indikator fügt `-- NORMAL --` hinzu, aktualisiert sofort beim Wechsel.
+
+Außerdem wurde ein Batch von NORMAL-Modus-Befehlen vervollständigt: Undo, Replace, Groß-/Kleinschreibung umschalten, Zeilen verbinden, Einrücken/Ausrücken, WORD-Motions, Find/Till-Motions, Yank/Paste (System-Zwischenablage), Operator-Pending-Kombinationen.
+
+**Was Sie damit tun können:**
+
+- INSERT → NORMAL (Esc) löscht nicht mehr die Eingabe oder unterbricht Modell-Streaming
+- Enter im NORMAL-Modus sendet Nachrichten, konsistent mit Nicht-Vim-Modus-Verhalten
+- `-- NORMAL --` / `-- INSERT --` Indikatoren wechseln sofort, keine Verzögerung
+- Standardbefehle wie `u` (Undo), `r` (Replace), `~` (Groß-/Kleinschreibung), `J` (Join) verfügbar
+
+Siehe PR [#4677](https://github.com/QwenLM/qwen-code/pull/4677)
+
+<style>{`
+  .vim-compare-table { width: 100%; }
+  .vim-compare-table th:nth-child(1) { width: 50%; }
+  .vim-compare-table th:nth-child(2) { width: 50%; }
+`}</style>
+
+<div class="vim-compare-table">
+
+| before                                                                                            | after                                                                                             |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| ![](https://gw.alicdn.com/imgextra/i4/O1CN01SdSHQr1vejxjpiiDM_!!6000000006198-1-tps-1113-288.gif) | ![](https://gw.alicdn.com/imgextra/i2/O1CN01LVNFNE1yV4RnicL2X_!!6000000006583-1-tps-1119-285.gif) |
+| ![](https://gw.alicdn.com/imgextra/i2/O1CN01GINT6U1kjMBGps8H1_!!6000000004719-1-tps-1116-329.gif) | ![](https://gw.alicdn.com/imgextra/i3/O1CN01oroMvC21HjlRnsTBH_!!6000000006960-1-tps-1129-348.gif) |
+| ![](https://gw.alicdn.com/imgextra/i2/O1CN01vLQHxM1ena8kHNGW4_!!6000000003916-2-tps-2226-498.png) | ![](https://gw.alicdn.com/imgextra/i4/O1CN01bHNsWm1IvtmkoIDtE_!!6000000000956-1-tps-1114-307.gif) |
+
+</div>
+
+### Standalone-Installer-Auto-Update: Upgrade ohne npm
+
+Bisher würde Qwen Code, das über das Standalone-Installationsskript (`curl ... | bash`) installiert wurde, beim Update auf npm Global Install zurückfallen — entweder EACCES-Fehler (npm Prefix benötigt Root) oder Installation an einem anderen Ort, inkonsistent mit der Standalone-Binary.
+
+Diese Woche wird natives Auto-Update für Standalone-Installationen hinzugefügt. Kein sudo, keine Paketmanager nötig.
+
+**Was Sie damit tun können:**
+
+- Standalone-Installationsbenutzer sehen Update-Prompts, automatischer Download, Verifizierung, Ersetzung, wirksam beim Neustart
+- Automatisches Rollback auf vorherige Version bei Update-Fehler
+- Mehrere Terminals, die gleichzeitig starten, konkurrieren nicht (Lock-Datei-Schutz)
+- `~/.local/bin` wird automatisch in Shell-RC-Dateien geschrieben, stellt PATH-Priorität sicher
+
+Siehe PR [#4629](https://github.com/QwenLM/qwen-code/pull/4629)
+
+### Weitere neue Funktionen
+
+| Funktion | PR | Auswirkung auf Sie |
+| --- | --- | --- |
+| **/copy N**: `/copy 2` kopiert die vorletzte AI-Nachricht, `/copy 3 code python` extrahiert Python-Codeblock aus der drittletzten | [#4761](https://github.com/QwenLM/qwen-code/pull/4761) | Wenn die letzte Nachricht des Agents "done!" ist, tatsächliche Ausgabe ohne Scrollen kopieren |
+| **Skill allowedTools wirkt**: Deklarierte `allowedTools` von Skills autorisieren automatisch, keine Berechtigungs-Prompts während der Skill-Ausführung | [#4704](https://github.com/QwenLM/qwen-code/pull/4704) | Eingebaute Skills (wie `/review`) und benutzerdefinierte Skills unterbrechen nicht mehr häufig mit Berechtigungs-Prompts |
+| **Auto-Modus-Selbständerungsschutz**: Schreibvorgänge in Konfiguration, Anweisungen, Hooks, Skills, MCP-Konfiguration können den Klassifikator nicht mehr umgehen | [#4572](https://github.com/QwenLM/qwen-code/pull/4572) | Auto-Modus sicherer — Agents können ihre eigene Konfiguration nicht indirekt über Shell ändern |
+| **PR-Review-CI-Workflow**: `@qwen-code /review` löst Agent-Code-Review aus, Ergebnisse als Inline-Kommentare an PR zurückgesendet | [#4549](https://github.com/QwenLM/qwen-code/pull/4549) | Org-Mitglied-PRs automatisch überprüft, Draft-PRs lösen aus, wenn bereit |
+| **Workflow-Tool P1**: Modell schreibt JS-Skripte in node:vm-Sandbox, um mehrere Subagenten zu orchestrieren (opt-in, standardmäßig aus) | [#4732](https://github.com/QwenLM/qwen-code/pull/4732) | Mit `QWEN_CODE_ENABLE_WORKFLOWS=1` aktivieren, Modell kann komplexe Workflows mit JS orchestrieren |
+| **Prompt-Erweiterungs-Hooks**: Unabhängige Hook-Ereignisse ausgelöst, wenn Slash-Befehle zu Prompts erweitert werden | [#4377](https://github.com/QwenLM/qwen-code/pull/4377) | Hook-Autoren können bestimmte Befehle Prompt-Erweiterung abfangen, zur Vorverarbeitung oder Blockierung der Übermittlung |
+| **VSCode ACP-Hintergrundbenachrichtigungen**: Hintergrund-Agent-Abschluss pusht Benachrichtigungen und Modell-Follow-up im VSCode-Chat-Panel | [#4358](https://github.com/QwenLM/qwen-code/pull/4358) | VSCode-Benutzer verpassen keine Hintergrundaufgaben-Abschlussbenachrichtigungen mehr |
+| **Desktop Qwen-Integration**: ACP unterstützt Desktop Qwen-Integration | [#4728](https://github.com/QwenLM/qwen-code/pull/4728) | Desktop-Apps können Qwen Code über ACP integrieren |
+| **InstructionsLoaded-Hook**: Hook ausgelöst, wenn Anweisungsdateien laden | [#4665](https://github.com/QwenLM/qwen-code/pull/4665) | Hook-Autoren können benutzerdefinierte Logik nach Anweisungsladung injizieren |
+| **Release-Asset-Verifizierung + Standalone-Docs-Einstieg** | [#3855](https://github.com/QwenLM/qwen-code/pull/3855) | Standalone-Installations-Doc-Einstieg und Release-Asset-Signaturverifizierung |
+
+## 🔧 Wichtige Fixes
+
+| PR | Fix | Auswirkung auf Sie |
+|----|----------|-----------|
+| [#4824](https://github.com/QwenLM/qwen-code/pull/4824) | API-Verlauf, UI-Verlauf bei Speicherdruck automatisch komprimieren, Hook-Nachrichten nehmen an Mikrokompression teil | Lange Sitzungen verursachen kein OOM mehr — Goal-Modus-Schleifen und Computer-Use-Langzeitaufgaben-Tool-Ausgaben automatisch bereinigt |
+| [#4756](https://github.com/QwenLM/qwen-code/pull/4756) | Computer-Use-Tool im Auto-Modus korrekt automatisch autorisiert | Auto-Modus, der Computer-Use ausführt, fragt nicht mehr jedes Mal nach Bestätigung |
+| [#4741](https://github.com/QwenLM/qwen-code/pull/4741) | Statusleiste zeigt Modellnamen statt interner ID | Statusleiste zeigt endlich erkennbare Modellnamen |
+| [#4753](https://github.com/QwenLM/qwen-code/pull/4753) | Verbesserter Genehmigungsmodus-Anzeigetext | Genehmigungsmodus-UI-Text klarer |
+| [#4647](https://github.com/QwenLM/qwen-code/pull/4647) | Linux-Bildeinfügen verwendet plattformnative Tools | Linux-Benutzer können endlich Bilder normal einfügen |
+| [#4803](https://github.com/QwenLM/qwen-code/pull/4803) | qwen3.7-plus multimodale Unterstützung | qwen3.7-plus-Modell kann Bildeingaben verarbeiten |
+| [#4596](https://github.com/QwenLM/qwen-code/pull/4596) | Git-Repo-Crawling rekursiv in Submodule eintreten | Agent ignoriert Dateien in Submodulen nicht mehr |
+| [#4795](https://github.com/QwenLM/qwen-code/pull/4795) | Cross-Group-Tool-Merging überspringen, um Bildschirmflackern zu eliminieren | Tool-Ergebnis-Rendering flackert nicht mehr |
+| [#4755](https://github.com/QwenLM/qwen-code/pull/4755) | Auswahl-Dialog-Flackern behoben | Auswahl-Dialog flackert nicht mehr |
+
+## 🎉 Neue Mitwirkende
+
+Danke an die Mitwirkenden dieser Woche:
+
+| Mitwirkender | Beiträge |
+|--------|----------|
+| [@qqqys](https://github.com/qqqys) | /fork Hintergrund-Agent-Befehl [#4780](https://github.com/QwenLM/qwen-code/pull/4780), Auto-Modus-Selbständerungsschutz [#4572](https://github.com/QwenLM/qwen-code/pull/4572), Prompt-Erweiterungs-Hooks [#4377](https://github.com/QwenLM/qwen-code/pull/4377), InstructionsLoaded-Hook [#4665](https://github.com/QwenLM/qwen-code/pull/4665) |
+| [@callmeYe](https://github.com/callmeYe) | /skills Picker-Dialog [#4533](https://github.com/QwenLM/qwen-code/pull/4533) |
+| [@LaZzyMan](https://github.com/LaZzyMan) | Benutzerweiter projektübergreifender Speicher [#4764](https://github.com/QwenLM/qwen-code/pull/4764), /copy N [#4761](https://github.com/QwenLM/qwen-code/pull/4761), Workflow-Tool P1 [#4732](https://github.com/QwenLM/qwen-code/pull/4732) |
+| [@zzhenyao](https://github.com/zzhenyao) | Vim-Modus-Überarbeitung [#4677](https://github.com/QwenLM/qwen-code/pull/4677), Statusleiste zeigt Modellnamen [#4741](https://github.com/QwenLM/qwen-code/pull/4741), OOM-Schutz-Kompression [#4824](https://github.com/QwenLM/qwen-code/pull/4824), Bildschirmflackern-Fix [#4795](https://github.com/QwenLM/qwen-code/pull/4795) |
+| [@yiliang114](https://github.com/yiliang114) | Standalone-Installer-Auto-Update [#4629](https://github.com/QwenLM/qwen-code/pull/4629), PR-Review-CI [#4549](https://github.com/QwenLM/qwen-code/pull/4549), Release-Asset-Verifizierung [#3855](https://github.com/QwenLM/qwen-code/pull/3855) |
+| [@DragonnZhang](https://github.com/DragonnZhang) | System-Ruhezustand verhindern [#4434](https://github.com/QwenLM/qwen-code/pull/4434), VSCode ACP-Hintergrundbenachrichtigungen [#4358](https://github.com/QwenLM/qwen-code/pull/4358), Desktop Qwen-Integration [#4728](https://github.com/QwenLM/qwen-code/pull/4728) |
+| [@tanzhenxin](https://github.com/tanzhenxin) | Skill allowedTools Auto-Autorisierung [#4704](https://github.com/QwenLM/qwen-code/pull/4704) |
+| [@BenGuanRan](https://github.com/BenGuanRan) | /stats interaktives Statistik-Panel [#4779](https://github.com/QwenLM/qwen-code/pull/4779) |
+| [@CNCSMonster](https://github.com/CNCSMonster) | Linux-Bildeinfügen-Fix [#4647](https://github.com/QwenLM/qwen-code/pull/4647) |
+| [@he-yufeng](https://github.com/he-yufeng) | Submodul-Datei-Crawling [#4596](https://github.com/QwenLM/qwen-code/pull/4596) |
+| [@BZ-D](https://github.com/BZ-D) | Genehmigungsmodus-Textverbesserung [#4753](https://github.com/QwenLM/qwen-code/pull/4753) |
+
+<Callout type="info">
+  **Upgrade-Methode**: Führen Sie `npm i @qwen-code/qwen-code@latest -g` aus, um auf die neueste Version zu upgraden.
+</Callout>
+
+Bei Fragen oder Vorschlägen gerne auf [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) melden!
