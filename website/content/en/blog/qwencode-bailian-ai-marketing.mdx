@@ -1,0 +1,265 @@
+---
+title: "Generate Images with One Prompt, Product Photos from Your Phone, AI Copywriting Published to WeChat — E-commerce Marketing with Qwen Code"
+date: "2026-06-11"
+description: "Qwen Code + Bailian CLI in 3 scenarios: generate marketing images with one prompt, auto-create product photos and videos from phone shots in Feishu, and write multi-channel copy with one-click WeChat publishing"
+author: "joeytoday"
+tags: ["Tutorials", "Skills", "Model Studio"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Generate Images with One Prompt, Product Photos from Your Phone, AI Copywriting Published to WeChat — E-commerce Marketing with Qwen Code"
+  date="2026-06-11"
+  author="joeytoday"
+/>
+
+## Still Pulling All-Nighters Making Marketing Assets?
+
+You've probably been through this:
+
+A new product is launching. The marketing team needs a mobile splash screen, three banner ads, a set of product detail page images, a 15-second product showcase video, plus social media copy and a WeChat article — **due the day after tomorrow**.
+
+You open Photoshop, wait 30 seconds for it to load, and realize the designer is on leave. You open a video editor, spend half an hour dragging clips around, and export at the wrong resolution. You open a doc to write copy, get two lines in, and stare blankly at the screen.
+
+**You work until 2 AM. Assets are finally done. Next product launch, repeat.**
+
+What if I told you it could work like this instead:
+
+- Type one sentence in the terminal, **generate a mobile splash screen in 10 seconds**
+- Take a photo of your product with your phone, send it to a Feishu group @bot, **get a polished product image back in 1 minute**
+- Tell the AI "write me a product review post for this power bank," **draft ready in 30 seconds**
+
+Doesn't that feel like how work should be in 2026?
+
+In this post, I'll walk through 3 real scenarios showing how to use **Qwen Code + Bailian CLI** to handle everything from image generation and photo retouching to copywriting. Each scenario includes step-by-step instructions you can follow right away.
+
+## First, the Tools: What Are Qwen Code and Bailian CLI?
+
+In simple terms:
+
+- **Qwen Code** is an AI coding assistant, but it does more than write code — it's a general-purpose AI Agent that understands natural language instructions and helps you invoke various tools to complete tasks
+- **Bailian CLI** (the `bl` command) is a command-line tool for Alibaba Cloud's Model Studio platform, integrating text-to-image, image-to-image, text-to-video, image-to-video, and more
+
+Put them together, and you have a **marketing asset production line that understands plain language**.
+
+### What You'll Need
+
+- Install Qwen Code CLI: [Qwen Code Overview \| Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/zh/users/overview/)
+- Install Bailian CLI: [Alibaba Cloud Bailian CLI \| One Command for All AI Capabilities](https://bailian.console.aliyun.com/cli?source_channel=cn-beijing-cli&&utm_content=se_1023346373)
+- An Alibaba Cloud Model Studio API Key (apply at the [Model Studio Console](https://bailian.console.aliyun.com))
+
+Ready? Let's go.
+
+## Scenario 1: Generate Marketing Images with One Prompt 🎨
+
+Every sale season or product launch, you need the designer to make hero images, detail page graphics, and promo banners. The designer's schedule is packed, and even small tweaks take half a day. **When you need it urgently, you simply can't wait.**
+
+Now you just describe what you want in one sentence, and the AI generates it. White-background hero images, lifestyle shots, promotional atmosphere images, tech-style images — all available.
+
+Got a product? Start by generating product images:
+
+```
+帮我生成 3 张充电宝的电商白底主图，要求：淡米色背景、专业棚拍风格、柔和灯光、底部轻微阴影、构图居中干净，3:4 尺寸
+```
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/YkD7Pj3sPLHmMng2g2qT8ri2nDMPXm_5tfibTjTVBFk.mp4" controls></video>
+
+Happy with the product images? Want to add text with selling points? Just add one more line:
+
+```
+已经生成了商品图，现在给这些图片加上宣传语，以及卖点内容。
+```
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/jepzY16ry-ep9h6Arp_iKjY1_zqMGQR8Pp_xNSJhXMc.mp4" controls></video>
+
+Not satisfied? Fine-tune it
+
+Think an image is 80% there but needs tweaking? Just tell Qwen Code:
+
+```
+把第一张图的背景换成紫红渐变，加金色点缀，更适合双 11 氛围
+```
+
+Want to change the text? No need to start over. Iterate on the existing image — the more you refine, the more precise it gets. Since the HTML design handles text separately, changing copy doesn't require regenerating the image, saving tokens. Just tell Qwen Code:
+
+```
+把 20000mAh，修改为10000mAh
+```
+
+### Supported Image Types
+
+| Type | Size | Use Case |
+| --- | --- | --- |
+| E-commerce Hero | 1024×1024 (Square 1:1) | Taobao/JD product hero images, promo images |
+| Product Detail Page | 1024×1366 (Portrait 3:4) | Detail page single-screen display |
+| Mobile Splash Screen | 1080×1920 (Portrait 9:16) | App launch ads |
+| Banner Ad | 1344×756 (Landscape 16:9) | PC Banner |
+
+All sizes support **product images with marketing text** — the AI first generates a pure visual product base image, then uses HTML to precisely overlay selling points, slogans, prices, and other text, finally exporting as a complete PNG. Text stays crisp without distortion, and changing copy only takes 2 seconds to re-render without regenerating the image.
+
+## Scenario 2: Snap a Photo in Feishu, Auto-Generate Product Images and Videos 📸
+
+E-commerce product photography is expensive — renting a studio, hiring a photographer, post-processing, the whole package starts at several thousand yuan with a one-to-two-week turnaround. Small teams simply can't afford it. And now every platform is pushing short videos, so product videos are another expense.
+
+The best approach now: **Take a photo with your phone, send it to a Feishu group @bot, and the AI automatically identifies your product, then generates white-background product images, marketing images with text, and a 5-second showcase video — all in one go.**
+
+No computer needed for the entire process.
+
+**Step 1: Take a Photo and Send It to the Group**
+
+Snap a casual photo of the product with your phone (any background — on your desk, on the couch, anywhere), send it to the Feishu group, and @Qwen Code:
+
+```
+使用 open1v-product-visual 技能帮我生成2张商品图
+```
+
+The bot automatically does 3 things:
+
+1. **Identifies the product** — automatically determines what you photographed
+2. **Generates standard product images** — creates images based on the identified product, saved to the project folder
+3. **Returns results** — can return cloud storage image links directly
+
+**Step 2: Pick an Image, Add Marketing Text**
+
+Choose a satisfactory white-background image, then say:
+
+```
+现在我需要加上营销文字，小红书3:4尺寸，布局你可以自选，我要白底的。
+```
+
+The bot extracts marketing copy based on the identified product info and overlays it on the image: main title, subtitle, feature tags, spec data — the finished image is ready to list.
+
+Want to change the text or layout? Just say:
+
+```
+把图片整体向右侧移动一点，产品主体居中，文字和排版不变
+```
+
+Changing text doesn't require regenerating the image — **2 seconds** to re-render and it's done.
+
+**Step 3: Get the Final Asset Links**
+
+```
+现在我需要你生成图片的链接，上传到云空间并返回给我链接，只需要终稿版本
+```
+
+Full workflow video 👇
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/8xPF4YK1fyeNJpAOCjsGCSBRpAZ5_aGQTof1KpSO-5w.mp4" controls></video>
+
+### What You Get Is a Complete Project Folder
+
+```
+product-charger-0610/
+├── raw/          ← Your original photos
+├── product/      ← Generated standard product images (white-background, lifestyle)
+├── index.html    ← Text layout source file (edit text manually, re-export in 2 seconds)
+├── final/        ← Finished images with text (ready to list)
+└── video/        ← 5-second showcase video
+```
+
+From photo to complete asset set, **under 10 minutes**. Previously this took a photographer + designer a whole week.
+
+> Don't use Feishu? Works exactly the same in the Qwen Code terminal — just send the photo path.
+
+## Scenario 3: AI Writes Your Marketing Copy ✍️
+
+Writing copy is one of the most time-consuming tasks. WeChat articles need long-form storytelling, social media needs short punchy posts, detail pages need feature copy — **same product, three channels, three different writing styles**. Starting from scratch every time, eventually running out of things to say, recycling the same phrases over and over.
+
+Now just tell the AI the product info and distribution channels. WeChat gets storytelling, social media gets lifestyle posts, detail pages get feature highlights — one input, multi-channel output.
+
+**Example: Generate copy for a portable power bank across 3 channels**
+
+In Qwen Code, enter:
+
+```
+帮我写一篇充电宝的推广文案。
+产品名：PowerMax 迷你充电宝
+卖点：1. 仅重 120g，比一颗鸡蛋还轻  2. 10000mAh 大容量  3. 支持 65W 快充，30 分钟充满 iPhone
+目标人群：经常出差的商务人士
+渠道：公众号、小红书、详情页
+```
+
+The AI outputs three separate versions. See the demo video:
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/0OKVKAiPWo15llYvsWaQN1mX4RzwTeSVzROK-IzVo3c.mp4" controls></video>
+
+### Not Happy? Keep Chatting, and Publish Directly to WeChat
+
+Not satisfied with the content? Just tell Qwen Code what to adjust, for example:
+
+```
+公众号版本内容再轻松一些，直接帮我发不到公众号后台
+```
+
+Tell Qwen Code your WeChat Official Account AppID and AppSecret, add your IP to the whitelist on the WeChat developer platform, and after a one-time setup, you can publish directly to the draft box — no more formatting hassles:
+
+<video class="mt-5" src="https://cloud.video.taobao.com/vod/FMxYmHLotZoojvNZNojwpMFPg6vJgg7bWpJw09w1MvY.mp4" controls></video>
+
+> PS: You can also combine this with the cover image skill I built earlier to handle WeChat article covers.
+>
+> Reference: [Generate Covers with One Prompt: 4 AI Cover Styles for WeChat Articles \| Qwen Code Docs](https://qwenlm.github.io/qwen-code-docs/zh/blog/qwencode-mpcover-skill-guide/)
+
+## Chain All Three Scenarios for a Complete Product Launch Pipeline
+
+Back to the opening scenario — a new product is launching and you need a complete set of marketing assets.
+
+The workflow now looks like this:
+
+```
+Take a casual product photo
+    ↓
+Scenario 1: Generate splash screens, banners, posters  → 10 minutes for all marketing images
+    ↓
+Scenario 2: Polish product photos + generate videos    → 20 minutes for product images and videos
+    ↓
+Scenario 3: Generate WeChat/social/detail page copy    → 10 minutes for all channel copy
+```
+
+**40 minutes, one person, complete asset set.** Previously required a designer + photographer + copywriter collaborating for a week.
+
+## How to Get Started
+
+### Environment Setup
+
+1. **Install Qwen Code**: Follow the [official documentation](https://qwenlm.github.io/qwen-code-docs/zh/users/overview/)
+2. **Install Bailian CLI**: Follow the [Bailian CLI documentation](https://bailian.console.aliyun.com/cli)
+3. **Launch Qwen Code**: Tell Qwen Code your API Key and what you need
+
+### Install the Skill Pack
+
+Open Qwen Code and say:
+
+```
+帮我安装 open1v-skills 技能包：git clone https://github.com/joeytoday/open1v-skills.git ~/.agents/skills/open1v-skills，然后安装依赖
+```
+
+After installation, one sentence triggers the full workflow:
+
+- **Generate product images**: `帮我生成一张充电宝的白底主图`
+- **Write marketing copy**: `帮我写一篇充电宝的推广文案，渠道：公众号、小红书、详情页`
+- **Publish to WeChat**: `把公众号文案发布到草稿箱`
+
+You can also customize these skills to better fit your products.
+
+### Connect to Feishu (Optional)
+
+Want to @bot in a Feishu group to do all of the above? Ask Qwen Code:
+
+```
+帮我配置飞书频道，我想在飞书群里 @机器人 生成商品图和文案，并一步步告诉我步骤
+```
+
+Qwen Code will guide you through the setup — 5 minutes and you're done.
+
+## Final Thoughts
+
+AI isn't here to replace designers and copywriters. It's here to **give everyone the ability to "get a first draft out."**
+
+With an AI-generated draft, designers can refine from 80 to 95 instead of starting from zero every time. Copywriters can focus on crafting the perfect hook and emotional resonance instead of struggling with the basic structure.
+
+That's the right way to use AI tools — **not replacement, but acceleration**.
+
+**Give it a try.** The first time might surprise you: these things really can be done this fast.
