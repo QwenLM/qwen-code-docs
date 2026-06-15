@@ -159,6 +159,7 @@ ${terminologyContent}
       ru: "Russian",
       ja: "Japanese",
       "pt-BR": "Portuguese (Brazil)",
+      es: "Spanish",
     };
 
     const targetLanguageName = languageNames[targetLang] || targetLang;
@@ -212,6 +213,7 @@ ${terminology}
       ru: "Russian",
       ja: "Japanese",
       "pt-BR": "Portuguese (Brazil)",
+      es: "Spanish",
     };
 
     const targetLanguageName = languageNames[targetLang] || targetLang;

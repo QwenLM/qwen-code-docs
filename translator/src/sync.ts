@@ -102,6 +102,7 @@ export class SyncManager {
       "fr",
       "ru",
       "pt-BR",
+      "es",
     ];
     this.branch = options.branch || "main"; // 默认使用 main 分支
 
