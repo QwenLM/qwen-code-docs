@@ -46,9 +46,11 @@ interface SearchProps {
 // 初始化 Pagefind 并设置语言
 let _pagefindInitialized = false;
 let _currentLang: string | null = null;
+const PAGEFIND_ENABLED = process.env.NODE_ENV === "production";
 
 async function importPagefind() {
   if (typeof window === "undefined") return;
+  if (!PAGEFIND_ENABLED) return;
 
   try {
     // @ts-ignore
@@ -65,6 +67,7 @@ async function importPagefind() {
 // 初始化 Pagefind 并设置语言
 async function initPagefind(lang: string) {
   if (typeof window === "undefined") return;
+  if (!PAGEFIND_ENABLED) return;
 
   // 重要！！！动态路由切换时，需要手动同步 html 的 lang 属性
   // 因为 pagefind 强依赖 document.querySelector("html").getAttribute("lang") 来决定加载哪个语言的索引

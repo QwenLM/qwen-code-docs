@@ -119,6 +119,7 @@ function ShowcaseDetailHeader({
               src={videoUrl}
               poster={thumbnail}
               controls
+              aria-label={title}
               className="w-full max-h-[500px] object-cover"
             />
           ) : thumbnail ? (
