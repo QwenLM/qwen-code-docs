@@ -1,0 +1,227 @@
+---
+title: "Qwen Code 週報：/fork バックグラウンドエージェント、/skills 管理パネル、クロスプロジェクトメモリ"
+date: "2026-06-11"
+description: "Qwen Code v0.18.0-preview は /fork バックグラウンドエージェント、/skills 可視化スキル管理、ユーザーレベルのクロスプロジェクトメモリ、Vim モード大修繕、スタンドアロンインストーラー自動更新を搭載。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：/fork バックグラウンドエージェント、/skills 管理パネル、クロスプロジェクトメモリ"
+  date="2026-06-11"
+  author="Qwen Team"
+/>
+
+Qwen Code は今週 **v0.18.0-preview**（preview.0 / preview.1 / preview.2）をリリースし、50+ の PR がマージされ、3つの主要な方向性をカバー：
+
+**エージェントがついに並列作業可能に。** `/fork` コマンドで会話の途中でバックグラウンドエージェントを派遣できます——完全なコンテキスト、ツール、モデル設定を継承しながら、メインスレッドで作業を続行。フォークが完了するとバックグラウンドタスクパネルで通知。
+
+**スキル管理にパネルが登場。** 以前は Qwen Code のスキルシステムに統一されたエントリーポイントがなく、各スキル名を覚えて使用する必要がありました。`/skills` でピッカーダイアログを開き、閲覧、検索、有効/無効切り替え、ワンクリック実行、ワークスペースレベルの可視性管理が可能に。
+
+**メモリがクロスプロジェクトに。** 以前は auto-memory が現在のプロジェクトディレクトリでのみ蓄積され、リポジトリを切り替えるとエージェントがすべて忘れていました。今週は `~/.qwen/memories/` ユーザーレベルのメモリディレクトリを追加。好み、作業スタイル、クロスプロジェクトのフィードバックは自動的にユーザーレベルにルーティングされ、プロジェクトレベルのデッドラインやイベントはプロジェクトディレクトリに残ります。Qwen Code の既存の4つのメモリカテゴリを使用してルーティング、新しい設定不要。
+
+## ✨ 新機能
+
+### /fork：会話の途中でバックグラウンドエージェントを派遣、待たずに済む
+
+`/fork` で1つのセッションで複数のことを同時に実行可能——新しいターミナルを開いたり、セッションを切り替えたりする必要はありません。
+
+`/fork <指示>` と入力すると、バックグラウンドエージェントが即座に起動し、現在の会話の完全なコンテキスト（システムプロンプト、履歴、ツール、モデル、プロンプトキャッシュ）を継承して、バックグラウンドで独立して指示を実行。メイン会話はブロックされず、他の作業を続行できます。フォークが完了すると、バックグラウンドタスクパネルで通知され、結果は JSONL トランスクリプトに書き込まれます。
+
+これは `/branch` とは異なります：`/branch` は現在の会話を新しいセッションにコピーして異なる方向を探求しますが、`/fork` は現在のセッション内でバックグラウンドワーカーを派遣します。
+
+**これでできること：**
+
+- コーディングの途中で、`/fork このモジュールのテストを追加して` — テストがバックグラウンドで実行されている間に、次のモジュールを書き続ける
+- バックグラウンドタスクパネルでフォークの進行状況をリアルタイムで確認（`main` / `○ fork: …`）、完了時にターミナル通知
+- 複数のフォークを並列で実行可能、同時実行数制限により制約
+- 空の指示、設定不足、ストリーミング出力時の明確なエラーメッセージ—サイレント失敗なし
+
+PR [#4780](https://github.com/QwenLM/qwen-code/pull/4780) を参照
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01yA16EU24E1OlX7QBZ_!!6000000007358-2-tps-3839-2160.png)
+
+### /skills：スキル管理についにパネルが
+
+以前は Qwen Code のスキルを使用するには、スキル名を覚えて直接 `/<スキル名>` と入力する必要がありました—閲覧、検索、トグルなし。うるさいスキルを無効化したい？settings.json を手動で編集。
+
+今は `/skills` と入力してピッカーダイアログを開きます。登録されたすべてのスキルが一覧表示：名前、説明、ソース（プロジェクトレベル / ユーザーレベル / 組み込み）。キーボード検索で素早くナビゲーション、Space キーで有効/無効を切り替え、Enter で選択したスキルコマンドを入力ボックスに入力。無効状態はワークスペースレベルの `skills.disabled` 設定に書き込まれ、現在のセッションで即座に有効—モデルの `<available_skills>` リストとスラッシュ補完が即座に同期、再起動不要。
+
+クロススコープの設定も処理されます：ユーザーレベル設定でスキルが無効になっている場合、ワークスペースレベルのピッカーには `[locked: User]` と表示され、ワークスペースレベルで上書きできません。
+
+**これでできること：**
+
+- `/skills` でパネルを開き、利用可能なすべてのスキルと説明を閲覧
+- キーワードを入力してスキルを検索
+- Space でスキルの有効/無効を切り替え、Esc で保存して終了
+- Enter でスキルを選択し、入力ボックスに入力して実行
+- 無効にしたスキルは、モデルの利用可能スキルリストやスラッシュ補完に表示されなくなる
+
+PR [#4533](https://github.com/QwenLM/qwen-code/pull/4533) を参照
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01sG12rO1iCij5tMGbP_!!6000000004377-2-tps-1684-946.png)
+
+### ユーザーレベルのクロスプロジェクトメモリ：リポジトリ切り替えでも忘れない
+
+以前は auto-memory が現在のプロジェクトディレクトリでのみ蓄積され、リポジトリを切り替えるとエージェントがすべて忘れていました。今週は `~/.qwen/memories/` ユーザーレベルのメモリディレクトリを追加し、既存の4つのメモリカテゴリ（user / feedback / project / reference）を使用してルーティング、新しい設定オプション不要。
+
+プロジェクトレベルの `.qwen/memories/` と並んで新しい `~/.qwen/memories/` ディレクトリ。ルーティングルールはメモリ抽出エージェントのプロンプトで決定され、ハードコードされていません：
+
+- **user タイプ**：常にユーザーレベルにルーティング（あなた個人に関するもの）
+- **feedback タイプ**：デフォルトでユーザーレベル（ほとんどのフィードバックは個人のスタイル）、ただし明示的にプロジェクトレベルの規約（テスト戦略、ビルド仕様）はプロジェクトレベルにルーティング
+- **project タイプ**：常にプロジェクトレベル（デッドライン、イベント、進行中の作業）
+- **reference タイプ**：デフォルトでプロジェクトレベル（このプロジェクトの Linear、Grafana）、ただし会社全体の共通リソースはユーザーレベルにルーティング
+
+システムプロンプトには両方のスコープのインデックスがレンダリングされます—ユーザーレベルが先（背景情報）、プロジェクトレベルが後（より具体的、自然に上書き）。ユーザーレベルの `MEMORY.md` が空の場合でもプレースホルダーがレンダリングされ、エージェントがディレクトリの存在を知り、書き込めることを保証。
+
+**これでできること：**
+
+- エージェントがあなたの好みを学習した後（「pnpm を優先」「テストには jest ではなく vitest を使用」）、新しいプロジェクトでも記憶
+- 各リポジトリの `.qwen/QWEN.md` に個人の好みを繰り返して書く必要なし
+- `memory.enableManagedAutoMemory` トグルは既存の設定を再利用、追加設定不要
+
+PR [#4764](https://github.com/QwenLM/qwen-code/pull/4764) を参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01WZFaYK1vUCqvAfafI_!!6000000006175-2-tps-3839-2160.png)
+
+### /stats インタラクティブ統計パネル：Token 使用量が一目でわかる
+
+以前は `/stats` が現在のセッションのトークン数をプレーンテキストで表示するだけで、見た後に忘れていました。今はインタラクティブな3タブパネルに：**Session**（現在のセッションのリアルタイム指標）、**Activity**（クロスセッションの使用傾向）、**Efficiency**（パフォーマンスとツール分析）。
+
+使用データは `~/.qwen/usage_record.jsonl` に自動的に永続化され、セッション終了時と `/clear` 時に書き込まれます。Tab / Shift+Tab でタブを切り替え、`r` で時間範囲を切り替え（All → Month → Week → Today）、矢印キーで月次トレンドチャートをページング。
+
+Activity タブは GitHub スタイルの貢献ヒートマップ、トークントレンドのブレイル折れ線グラフ、トップ5プロジェクトランキングを表示。Efficiency タブはキャッシュヒット率、ツール成功率、平均レイテンシ、モデル比較テーブルを表示。
+
+**これでできること：**
+
+- `/stats` でパネルを開き、現在のセッションのトークン使用量とコストを一目で確認
+- Activity タブに切り替えてクロスセッションの使用傾向とコーディングヒートマップを確認
+- Efficiency タブに切り替えて、どのツールの成功率が低いか、どのモデルのレイテンシが高いかを確認
+- 時間範囲でフィルタリングし、異なる期間の使用パターンを比較
+
+PR [#4779](https://github.com/QwenLM/qwen-code/pull/4779) を参照
+
+| before                                                                                            | after                                                                                              |
+| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| ![](https://gw.alicdn.com/imgextra/i4/O1CN01Z4RJhS1FgNW6UG0zq_!!6000000000516-2-tps-1660-724.png) | ![](https://gw.alicdn.com/imgextra/i2/O1CN01yuxjPw26ClXncdIgN_!!6000000007626-1-tps-1000-1040.gif) |
+|                                                                                                   | ![](https://gw.alicdn.com/imgextra/i4/O1CN01Ud3bss1Dt5Gyc7NGh_!!6000000000273-2-tps-1702-1294.png) |
+
+### システムスリープ防止：長時間タスクが中断されない
+
+長時間実行されるプロンプトやツール実行中、システムが自動的にスリープし、進行中のタスクを中断することがありました。今週はランタイムスリープ抑制器を追加：モデルストリーミング応答やツール実行中にシステムスリープを自動的に防止。macOS は `caffeinate`、Linux は `systemd-inhibit`、Windows は `SetThreadExecutionState` を使用。
+
+デフォルトで有効（`general.preventSystemSleep: true`）、不要な場合は1つの設定で無効化。参照カウント管理により、複数の並列タスクが1つの抑制ロックを共有し、すべて完了すると自動的に解放。ACP セッションもカバー。
+
+**これでできること：**
+
+- 長時間のエージェントタスク（computer-use、大規模リファクタリング）がシステムスリープによって中断されなくなる
+- デフォルトで有効、設定不要
+- `general.preventSystemSleep: false` で無効化
+
+PR [#4434](https://github.com/QwenLM/qwen-code/pull/4434) を参照
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01D74c3A27TXfSnR6xs_!!6000000007798-2-tps-3855-2160.png)
+
+### Vim モード大修繕：Esc が暴れない、Enter で送信、コマンド補完
+
+Qwen Code の Vim ユーザーは3つの問題に耐えていました：INSERT モードで Esc を押すと AppContainer のハンドラーがトリガーされ、「Press Esc again to clear」と表示されるか、入力バッファがクリアされる；NORMAL モードで Enter を押しても何も起こらない；モード切り替え時に下部インジケーターのレンダリング遅延が目立つ。
+
+今週一度にすべて修正。INSERT モードの Esc はモード切り替えのみを行い、他のハンドラーに漏れなくなりました。NORMAL モードの Enter は正常にメッセージを送信。VimModeContext を State と Actions の2つのコンテキストに分割し、`useMemo` を使用、6つのコンシューマーがモード切り替えですべて再レンダリングされなくなりました。下部に `-- NORMAL --` インジケーターを追加、切り替え時に即座に更新。
+
+また、NORMAL モードのコマンドを一括補完：undo、replace、大文字小文字切り替え、行結合、インデント/アンインデント、WORD motions、find/till motions、yank/paste（システムクリップボード）、operator-pending 組み合わせ。
+
+**これでできること：**
+
+- INSERT → NORMAL（Esc）が入力をクリアしたり、モデルストリーミングを中断したりしなくなる
+- NORMAL モードの Enter がメッセージを送信、非 vim モードの動作と一致
+- `-- NORMAL --` / `-- INSERT --` インジケーターが即座に切り替わり、遅延なし
+- `u`（undo）、`r`（replace）、`~`（大文字小文字切り替え）、`J`（join）などの標準コマンドが使用可能
+
+PR [#4677](https://github.com/QwenLM/qwen-code/pull/4677) を参照
+
+<style>{`
+  .vim-compare-table { width: 100%; }
+  .vim-compare-table th:nth-child(1) { width: 50%; }
+  .vim-compare-table th:nth-child(2) { width: 50%; }
+`}</style>
+
+<div class="vim-compare-table">
+
+| before                                                                                            | after                                                                                             |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| ![](https://gw.alicdn.com/imgextra/i4/O1CN01SdSHQr1vejxjpiiDM_!!6000000006198-1-tps-1113-288.gif) | ![](https://gw.alicdn.com/imgextra/i2/O1CN01LVNFNE1yV4RnicL2X_!!6000000006583-1-tps-1119-285.gif) |
+| ![](https://gw.alicdn.com/imgextra/i2/O1CN01GINT6U1kjMBGps8H1_!!6000000004719-1-tps-1116-329.gif) | ![](https://gw.alicdn.com/imgextra/i3/O1CN01oroMvC21HjlRnsTBH_!!6000000006960-1-tps-1129-348.gif) |
+| ![](https://gw.alicdn.com/imgextra/i2/O1CN01vLQHxM1ena8kHNGW4_!!6000000003916-2-tps-2226-498.png) | ![](https://gw.alicdn.com/imgextra/i4/O1CN01bHNsWm1IvtmkoIDtE_!!6000000000956-1-tps-1114-307.gif) |
+
+</div>
+
+### スタンドアロンインストーラー自動更新：npm なしでアップグレード
+
+以前はスタンドアロンインストールスクリプト（`curl ... | bash`）でインストールされた Qwen Code は、更新時に npm グローバルインストールにフォールバックしていました—EACCES エラー（npm prefix に root が必要）またはスタンドアロンバイナリと不一致の別の場所にインストール。
+
+今週はスタンドアロンインストールにネイティブの自動更新を追加。sudo もパッケージマネージャーも不要。
+
+**これでできること：**
+
+- スタンドアロンインストールユーザーは更新プロンプトを表示し、自動ダウンロード、検証、置き換え、再起動で有効
+- 更新失敗時に前のバージョンに自動ロールバック
+- 複数のターミナルが同時に起動しても競合しない（ロックファイル保護）
+- `~/.local/bin` がシェル rc ファイルに自動的に書き込まれ、PATH 優先度を確保
+
+PR [#4629](https://github.com/QwenLM/qwen-code/pull/4629) を参照
+
+### その他の新機能
+
+| 機能 | PR | あなたへの影響 |
+| --- | --- | --- |
+| **/copy N**：`/copy 2` で最後から2番目の AI メッセージをコピー、`/copy 3 code python` で最後から3番目の Python コードブロックを抽出 | [#4761](https://github.com/QwenLM/qwen-code/pull/4761) | エージェントの最後のメッセージが「done!」の場合、スクロールせずに実際の出力をコピー |
+| **Skill allowedTools が有効**：スキルが宣言した `allowedTools` が自動的に承認され、スキル実行中に権限確認ポップアップが表示されない | [#4704](https://github.com/QwenLM/qwen-code/pull/4704) | 組み込みスキル（`/review` など）とカスタムスキルのツール呼び出しが頻繁に中断されなくなる |
+| **Auto モード自己変更保護**：設定、指示、hooks、skills、MCP 設定への書き込みが分類器をバイパスできなくなる | [#4572](https://github.com/QwenLM/qwen-code/pull/4572) | Auto モードがより安全に—エージェントが shell を介して間接的に自分の設定を変更できなくなる |
+| **PR レビュー CI ワークフロー**：`@qwen-code /review` がエージェントコードレビューをトリガー、結果が inline comment として PR に送信 | [#4549](https://github.com/QwenLM/qwen-code/pull/4549) | org メンバーの PR が自動レビュー、Draft PR は ready 後にトリガー |
+| **Workflow tool P1**：モデルが node:vm サンドボックスで JS スクリプトを書いて複数の subagent をオーケストレーション（opt-in、デフォルトオフ） | [#4732](https://github.com/QwenLM/qwen-code/pull/4732) | `QWEN_CODE_ENABLE_WORKFLOWS=1` で有効化、モデルが JS で複雑なワークフローをオーケストレーション可能 |
+| **Prompt 展開 hooks**：スラッシュコマンドが prompt に展開される際に独立した hook イベントをトリガー | [#4377](https://github.com/QwenLM/qwen-code/pull/4377) | Hook 作成者が特定のコマンドの prompt 展開をインターセプトして前処理や送信阻止が可能 |
+| **VSCode ACP バックグラウンド通知**：バックグラウンドエージェント完了時に VSCode チャットパネルに通知とモデルフォローアップをプッシュ | [#4358](https://github.com/QwenLM/qwen-code/pull/4358) | VSCode ユーザーがバックグラウンドタスク完了通知を見逃さなくなる |
+| **Desktop Qwen 統合**：ACP が Desktop 版 Qwen 統合をサポート | [#4728](https://github.com/QwenLM/qwen-code/pull/4728) | Desktop アプリが ACP を介して Qwen Code を統合可能 |
+| **InstructionsLoaded hook**：指示ファイル読み込み時に hook をトリガー | [#4665](https://github.com/QwenLM/qwen-code/pull/4665) | Hook 作成者が指示読み込み後にカスタムロジックを注入可能 |
+| **Release アセット検証 + standalone docs エントリー** | [#3855](https://github.com/QwenLM/qwen-code/pull/3855) | スタンドアロンインストールのドキュメントエントリーとリリースアセット署名検証 |
+
+## 🔧 重要な修正
+
+| PR | 修正内容 | あなたへの影響 |
+|----|----------|-----------|
+| [#4824](https://github.com/QwenLM/qwen-code/pull/4824) | メモリ圧迫時に API 履歴、UI 履歴を自動圧縮、Hook メッセージもマイクロ圧縮に参加 | 長いセッションが OOM にならなくなる—Goal モードループと Computer Use 長期間タスクのツール出力が自動クリーンアップ |
+| [#4756](https://github.com/QwenLM/qwen-code/pull/4756) | Auto モードで Computer Use ツールが正しく自動承認 | Auto モードで Computer Use を実行する際に毎回確認ポップアップが表示されなくなる |
+| [#4741](https://github.com/QwenLM/qwen-code/pull/4741) | ステータスバーに内部 ID ではなくモデル名を表示 | ステータスバーがついに認識可能なモデル名を表示 |
+| [#4753](https://github.com/QwenLM/qwen-code/pull/4753) | 承認モード表示テキストを改善 | 承認モードの UI テキストがより明確に |
+| [#4647](https://github.com/QwenLM/qwen-code/pull/4647) | Linux 画像貼り付けにプラットフォームネイティブツールを使用 | Linux ユーザーがついに画像を正常に貼り付け可能 |
+| [#4803](https://github.com/QwenLM/qwen-code/pull/4803) | qwen3.7-plus マルチモーダルサポート | qwen3.7-plus モデルが画像入力を処理可能 |
+| [#4596](https://github.com/QwenLM/qwen-code/pull/4596) | git リポジトリクロール時に submodule に再帰的に入る | エージェントが submodule 内のファイルを無視しなくなる |
+| [#4795](https://github.com/QwenLM/qwen-code/pull/4795) | 画面ちらつきを消除するためにクロスグループツールマージをスキップ | ツール結果レンダリングがちらつかなくなる |
+| [#4755](https://github.com/QwenLM/qwen-code/pull/4755) | 選択ダイアログのちらつきを修正 | 選択ダイアログがちらつかなくなる |
+
+## 🎉 新規コントリビューター
+
+今週のコントリビューターに感謝：
+
+| コントリビューター | 貢献内容 |
+|--------|----------|
+| [@qqqys](https://github.com/qqqys) | /fork バックグラウンドエージェントコマンド [#4780](https://github.com/QwenLM/qwen-code/pull/4780)、Auto モード自己変更保護 [#4572](https://github.com/QwenLM/qwen-code/pull/4572)、Prompt 展開 hooks [#4377](https://github.com/QwenLM/qwen-code/pull/4377)、InstructionsLoaded hook [#4665](https://github.com/QwenLM/qwen-code/pull/4665) |
+| [@callmeYe](https://github.com/callmeYe) | /skills ピッカーダイアログ [#4533](https://github.com/QwenLM/qwen-code/pull/4533) |
+| [@LaZzyMan](https://github.com/LaZzyMan) | ユーザーレベルのクロスプロジェクトメモリ [#4764](https://github.com/QwenLM/qwen-code/pull/4764)、/copy N [#4761](https://github.com/QwenLM/qwen-code/pull/4761)、Workflow tool P1 [#4732](https://github.com/QwenLM/qwen-code/pull/4732) |
+| [@zzhenyao](https://github.com/zzhenyao) | Vim モード大修繕 [#4677](https://github.com/QwenLM/qwen-code/pull/4677)、ステータスバーにモデル名を表示 [#4741](https://github.com/QwenLM/qwen-code/pull/4741)、OOM 保護圧縮 [#4824](https://github.com/QwenLM/qwen-code/pull/4824)、画面ちらつき修正 [#4795](https://github.com/QwenLM/qwen-code/pull/4795) |
+| [@yiliang114](https://github.com/yiliang114) | スタンドアロンインストーラー自動更新 [#4629](https://github.com/QwenLM/qwen-code/pull/4629)、PR レビュー CI [#4549](https://github.com/QwenLM/qwen-code/pull/4549)、Release アセット検証 [#3855](https://github.com/QwenLM/qwen-code/pull/3855) |
+| [@DragonnZhang](https://github.com/DragonnZhang) | システムスリープ防止 [#4434](https://github.com/QwenLM/qwen-code/pull/4434)、VSCode ACP バックグラウンド通知 [#4358](https://github.com/QwenLM/qwen-code/pull/4358)、Desktop Qwen 統合 [#4728](https://github.com/QwenLM/qwen-code/pull/4728) |
+| [@tanzhenxin](https://github.com/tanzhenxin) | Skill allowedTools 自動承認 [#4704](https://github.com/QwenLM/qwen-code/pull/4704) |
+| [@BenGuanRan](https://github.com/BenGuanRan) | /stats インタラクティブ統計パネル [#4779](https://github.com/QwenLM/qwen-code/pull/4779) |
+| [@CNCSMonster](https://github.com/CNCSMonster) | Linux 画像貼り付け修正 [#4647](https://github.com/QwenLM/qwen-code/pull/4647) |
+| [@he-yufeng](https://github.com/he-yufeng) | submodule ファイルクロール [#4596](https://github.com/QwenLM/qwen-code/pull/4596) |
+| [@BZ-D](https://github.com/BZ-D) | 承認モードテキスト改善 [#4753](https://github.com/QwenLM/qwen-code/pull/4753) |
+
+<Callout type="info">
+  **アップグレード方法**：最新バージョンにアップグレードするには `npm i @qwen-code/qwen-code@latest -g` を実行してください。
+</Callout>
+
+質問や提案がある場合は、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues) でお気軽に報告してください！
