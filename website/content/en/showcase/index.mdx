@@ -1470,6 +1470,39 @@ export const showcaseItems = [
       { title: "Use PreCompact Hook (advanced usage)", description: "If you want to automatically perform certain operations before each compression (e.g., saving current work drafts to a file), you can register a `PreCompact` hook in `.qwen/settings.json` hooks configuration. This hook is called before the compression summary side-query is sent, and you can run any shell command in it." },
     ],
   },
+  {
+    id: "guide-cli-quick-start",
+    title: "Qwen Code CLI Quick Start",
+    description: "Install Qwen Code from scratch, connect a model provider, and complete your first AI coding task.",
+    category: "Getting Started",
+    features: ["Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN018hvHb520nVciwBJvD_!!6000000006894-0-videocover-854-480.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/Qfp3c6cgBDUXLJ1HU9iN7aBC9aPCjiP4utCPAckfkv4.mp4",
+    model: "qwen3.6-plus",
+    overview: "New to Qwen Code? Follow along as we set up Qwen Code from scratch — install the CLI, connect a model provider, launch it inside a project folder, and try a few simple tasks like organizing files and generating a webpage using natural language.",
+    steps: [
+      { title: "Install Qwen Code", description: "Head over to the [official website](https://qwen.ai/qwencode) to get the install command. Windows users run it in Command Prompt; macOS/Linux users run the bash command in the terminal — one command and you're done." },
+      { title: "Connect a Model Provider", description: "After installation, Qwen Code walks you through connecting a model provider. We recommend Alibaba ModelStudio — head to [Alibaba Cloud Model Studio](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=plan#/efm/subscription/overview) to complete setup, pick your preferred connection method (Coding Plan, Token Plan, or standard API Key), select your region, paste your API Key, and choose a model." },
+      { title: "Launch Inside Your Project", description: "Run Qwen Code inside your project folder so it can understand the files in context. Use `/model` to check or switch the current model at any time.", command: "cd your-project && qwen" },
+      { title: "Try a Few Simple Tasks", description: "Put Qwen Code to work: ask it to organize a messy folder by file type, roll it back to restore the original state, or generate a simple webpage. Just describe what you want and Qwen Code handles the rest.", command: "Organize the files in this folder by file type into separate folders" },
+    ],
+  },
+  {
+    id: "guide-spreadsheet-dashboard",
+    title: "Turn a 10,000-Row Spreadsheet into a Dashboard in Minutes",
+    description: "Hand Qwen Code your CSV/Excel files and get an interactive dashboard with filters and business insights — no code required.",
+    category: "Productivity",
+    features: ["Agent Mode", "Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i3/O1CN011vgRUB1HzH5YJWDAF_!!6000000000828-0-videocover-1924-1080.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/cAjn7x9gNUKNE9xmdLc4UgPQTrZhs0lIj43CyjK-1z4.mp4",
+    model: "qwen3.7-max",
+    overview: "A 10,000-row sales dataset that would normally take an afternoon to chart? Qwen Code turns it into a full dashboard in minutes. Point it at your data, describe what you want, and it reads the data, picks the right visualizations, and builds everything — key metrics, multi-dimensional charts, filters, and auto-generated business insights. Works with multiple spreadsheet files too.",
+    steps: [
+      { title: "Generate a Dashboard from a Single File", description: "Point Qwen Code at your CSV or Excel file and describe the visualization you want. It reads the data, selects appropriate chart types, and generates a complete dashboard with key metrics, multi-dimensional charts, and filters.", command: "@example.csv Generate an interactive dashboard with key metrics, multi-dimensional charts, filterable by relevant dimensions, and 3 auto-generated business insights" },
+      { title: "Explore Interactively", description: "The generated dashboard supports filtering by year, region, category, and more. Hover over any chart to see exact numbers. At the bottom, you'll find business insights automatically generated from the data." },
+      { title: "Merge Multiple Files into One Dashboard", description: "Got a whole folder of spreadsheets — orders, customers, products, returns? Ask Qwen Code to combine them all into one unified dashboard. No manual merging, no juggling between tabs — one complete dashboard from a folder of raw data.", command: "Turn all spreadsheet files in this folder into one unified dashboard" },
+    ],
+  },
 ];
 
 
