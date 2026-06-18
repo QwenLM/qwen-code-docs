@@ -14,7 +14,7 @@ export interface VideoShowcaseItem {
     command?: string;
   }[];
   hasDetailPage?: boolean; // 标记是否有独立的 MDX 详情页
-  showcaseCategory?: string; // 分类标签：入门指南、编程开发、设计创作、产品构思、日常任务
+  showcaseCategory?: string; // 分类标签：入门指南、编程开发、设计创作、办公提效、日常任务
   showcaseFeatures?: string[]; // 功能标签数组：Agent 模式、Cowork、Skills、Web Search、MCP、Plan 模式、GitHub 集成、图片识别、Remotion 等
 }
 
@@ -435,7 +435,7 @@ export const featureVideos: VideoShowcaseItem[] = [
     thumbnail: "https://img.alicdn.com/imgextra/i1/6000000006496/O1CN01KNUXtG1xrDy75PPA5_!!6000000006496-0-tbvideo.jpg",
     videoUrl: "https://cloud.video.taobao.com/vod/a5X9O6PsdDdmXVqtHdhlzZ97mRNPrqroKO5cf4V71XM.mp4",
     category: "Features",
-    showcaseCategory: "产品构思",
+    showcaseCategory: "编程开发",
     showcaseFeatures: ["Agent 模式"],
     link: "../blog/how-to-use-qwencode-insight",
     command: "/insight",

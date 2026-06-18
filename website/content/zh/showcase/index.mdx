@@ -1503,6 +1503,22 @@ export const showcaseItems = [
       { title: "多文件合并看板", description: "如果有一个文件夹包含多个表格文件（订单、客户、产品、退货等），直接让 Qwen Code 把所有文件合并成一个统一的看板。无需手动合并文件，无需在不同标签页之间切换，一个完整的看板一次搞定。", command: "把这个文件夹里所有的表格文件合并成一个看板" },
     ],
   },
+  {
+    id: "code-requirements-to-prototype",
+    title: "从模糊需求到可交互原型",
+    description: "把一个模糊的想法告诉 Qwen Code，它会主动问你细节、帮你梳理需求文档，然后直接把产品原型开发出来。",
+    category: "编程开发",
+    features: ["Agent 模式"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01db5Tho1Xeh95OTYfP_!!6000000002949-0-videocover-1920-1080.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/cW5Zjsai4Lq-TBJIV4LQO0u8xaeNReyALue5L-HtwtQ.mp4",
+    model: "qwen3.7-max",
+    overview: "脑子里有个想法，但还没想清楚细节？直接告诉 Qwen Code 你想做什么，它不会急着写代码，而是先像产品经理一样跟你聊——核心功能有哪些、交互方式怎么定、技术实现方式等。等你和 AI 都对需求满意了，它再动手把整个工具开发出来。从一句话到一个能跑的产品原型，全程不用你自己写一行代码。",
+    steps: [
+      { title: "打磨需求", description: "把你的想法告诉 Qwen Code，哪怕只是一句模糊的描述。AI 会主动问你一系列问题来补全细节——核心功能、交互方式、技术实现等，最后帮你生成一份完整的需求文档。" },
+      { title: "确认需求方案", description: "AI 生成需求方案后，你可以逐条检查，看看有没有要改的或者要加的。确认没问题了，再进入下一步。" },
+      { title: "进入开发", description: "需求方案确认好了，直接让 Qwen Code 开始开发。它会按照需求文档一步步把整个工具搭建出来，全程自动完成。" },
+    ],
+  },
 ];
 
 
