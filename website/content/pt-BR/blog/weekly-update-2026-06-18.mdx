@@ -1,0 +1,230 @@
+---
+title: "Qwen Code Atualização Semanal: Agent Team Colaboração Paralela, Durable /loop Sobrevive ao Reinício, /cd Trocar Diretório"
+date: "2026-06-18"
+description: "Qwen Code v0.18.0~v0.18.3 esta semana: Agent Team colaboração paralela, Durable /loop tarefas agendadas sobrevivem ao reinício, /cd trocar diretório na sessão, Thinking recolhível, MCP approval gate, permission bubbling, /compress-fast compressão instantânea."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Atualização Semanal: Agent Team Colaboração Paralela, Durable /loop Sobrevive ao Reinício, /cd Trocar Diretório"
+  date="2026-06-18"
+  author="Qwen Team"
+/>
+
+Qwen Code lançou quatro versões oficiais v0.18.0~v0.18.3 esta semana, com mais de 100 PRs merged, cobrindo quatro direções:
+
+**Colaboração multi-Agent paralela.** Antes `/fork` rodava Agents de background, mas cada Agent operava isoladamente sem comunicação, e você tinha que montar os resultados manualmente. O modo Agent Team permite ao modelo criar equipes nomeadas, spawnar múltiplos companheiros para trabalhar em paralelo, trocar mensagens, compartilhar listas de tarefas, e finalmente o leader consolida um relatório único. Companheiros são persistentes — após completar uma tarefa podem esperar pela próxima, não são subagents one-shot que desaparecem após finalizar.
+
+**Tarefas agendadas sobrevivendo ao reinício.** Antes tarefas `/loop` pereciam com a sessão — desaparecendo silenciosamente após reinício. Durable /loop persiste tarefas agendadas em arquivos, recuperando automaticamente no próximo lançamento, com tarefas periódicas perdidas executando um ciclo de compensação.
+
+**Troca de diretório na sessão, sem reinício.** `/cd <path>` troca o diretório de trabalho da sessão atual sem sair do CLI, arquivos de sessão migram automaticamente para o novo workspace, contexto system/directory se atualiza automaticamente. Antes você tinha que reiniciar para trocar diretórios de projeto.
+
+## ✨ Novas Funcionalidades
+
+### Agent Team: Múltiplos Agents Colaborando em Paralelo, Trocando Mensagens, Compartilhando Tarefas
+
+Antes o `/fork` de Qwen Code podia rodar Agents de background, mas cada Agent era isolado — você安排 três Agents para revisar código em paralelo, eles não tinham canal de comunicação, e você tinha que juntar os três resultados manualmente.
+
+Esta semana adicionou o modo Agent Team (experimental, opt-in). Após ativado, o modelo pode criar equipes nomeadas e spawnar múltiplos "companheiros" para trabalhar em paralelo. Companheiros e o leader podem trocar mensagens e compartilhar listas de tarefas, com o leader consolidando um relatório unificado. Companheiros são persistentes, não subagents one-shot — podem completar uma tarefa e esperar pela próxima, em vez de desaparecer após execução.
+
+Desativado por padrão (ativar via setting `experimental.agentTeam` ou variável de ambiente `QWEN_CODE_ENABLE_AGENT_TEAM=1`). Após ativado, o modelo ganha ferramentas de colaboração de equipe (criar/deletar equipes, enviar mensagens a companheiros, criar/atualizar/listar tarefas compartilhadas), e a ferramenta Agent adiciona parâmetro `name` para spawnar companheiros nomeados persistentes em vez de subagents disposable.
+
+**O que você pode fazer:**
+
+- Ter três reviewers revisando código em paralelo (um para tratamento de erros, um para condições de corrida, um para edge cases), e receber um relatório consolidado
+- Coordenar uma equipe para construir um pequeno app de favoritos
+- Companheiros reportam automaticamente ao leader após conclusão, o leader dá um resumo unificado
+
+Ver PR [#4844](https://github.com/QwenLM/qwen-code/pull/4844)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN01BLEA6v1tGo2AyHluY_!!6000000005875-2-videocover-3839-2160.png" src="https://cloud.video.taobao.com/vod/eH6VlX-12-ccgaNludBfEUEQxCnGQvMWAWju2VsSUAA.mp4" controls></video>
+
+### Durable /loop: Tarefas Agendadas Sobrevivendo ao Reinício
+
+Antes todas as tarefas `/loop` pereciam com a sessão — agendar "verificar meu PR cada 30 minutos" desaparecia silenciosamente após reiniciar Qwen Code. Esta semana tarefas `/loop` podem sobreviver a reinícios.
+
+Quando uma requisição implica persistência ("verificar meu PR cada hora"), a tarefa é salva por projeto em `~/.qwen/tmp/<hash-projeto>/scheduled_tasks.json` (não no workspace, não aparece em `git status`), e recuperada automaticamente no próximo lançamento. Default permanece session-only, lembretes temporários não escrevem arquivos.
+
+Lembretes one-shot que expiraram durante indisponibilidade: ao reiniciar o modelo confirma antes de executar, nunca roda silenciosamente. Tarefas periódicas perdidas executam um ciclo de compensação após startup e retornam ao ritmo normal. Quando múltiplas sessões existem para o mesmo projeto, apenas uma dispara tarefas persistentes; se o holder crashar, outra assume em segundos. Tarefas periódicas auto-expiram após 7 dias (deletadas após último trigger).
+
+**O que você pode fazer:**
+
+- "Verificar meu PR cada hora" → continua rodando após reinício, sem necessidade de reagendar
+- Tarefas periódicas perdidas são automaticamente compensadas uma vez após reinício
+- Lembretes temporários `/loop 5m remind me` ainda perecem com a sessão, não escrevem arquivos
+
+Ver PR [#5004](https://github.com/QwenLM/qwen-code/pull/5004)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000007295/O1CN01pHhIOx23lARnrlW2v_!!6000000007295-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/jw2swzG-Lv9LgLLci-ccebiJpxzCesQLJzI8zIdcOvw.mp4" controls></video>
+
+### /cd: Trocar Diretório Sem Reiniciar CLI
+
+Antes, se você queria o Agent trabalhando de outro diretório de projeto, tinha que sair e reiniciar. Trocar entre múltiplos repos ou workspaces parent/child era inconveniente, sem forma de mover o active tool context dentro de uma sessão.
+
+Esta semana adicionou `/cd <path>` slash command. Ele valida o diretório target, gerencia confirmação de trust, atualiza workspace roots e cwd service, migra os arquivos transcript/runtime/worktree da sessão atual para o novo diretório de sessão workspace, e atualiza system/directory context. Path completion ainda funciona.
+
+**O que você pode fazer:**
+
+- `/cd ../another-project` trocar para projeto adjacente, arquivos de sessão migram automaticamente
+- `/cd /path/to/parent-repo` navegar dentro da sessão, sem reinício necessário
+- Paths não trusted disparam confirmação, consistente com o fluxo de trust no primeiro startup
+
+Ver PR [#4890](https://github.com/QwenLM/qwen-code/pull/4890)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01xM0SE01L08gWkvtsP_!!6000000001236-2-tps-3839-2160.png)
+
+### Thinking Recolhível: Processo de Raciocínio Não Domina a Tela
+
+Antes blocos thinking do modelo sempre exibiam o texto de raciocínio completo, ocupando enorme espaço na tela. Esta semana mudou para exibição de três estados:
+
+- **Fase streaming**: janela scrolling de 4 linhas fixas mostrando conteúdo de raciocínio em tempo real + timer ("∴ Thinking… 8s")
+- **Recolhido após conclusão** (default): uma linha mostrando duração total ("∴ Thought for 15s")
+- **Expandir para ver**: shortcut key dedicado para blocos thinking será atribuído posteriormente; atualmente Ctrl+O dispara compactMode toggle, compartilhando a mesma tecla com expandir thinking, shortcuts independentes expandir/recolher serão desacoplados em PR subsequente
+
+Setting `thinkingDisplayMode` foi removido, substituído por modo recolhível único. Blocos thinking são UI history only, não enviados à API, comportamento session resume inalterado.
+
+**O que você pode fazer:**
+
+- Raciocínio complexo recolhe para uma linha, não clutter a view
+- Ctrl+O para expandir e ver o processo de raciocínio completo do modelo a qualquer momento
+- Fase streaming tem timer, mostrando quanto tempo o modelo pensou
+
+Ver PR [#4598](https://github.com/QwenLM/qwen-code/pull/4598)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01C9tyat1QWiwTSlmt1_!!6000000001984-1-tps-1433-883.gif)
+
+### MCP Approval Gate: Config MCP de Nível Projeto Não Conecta Automaticamente
+
+Antes MCP servers declarados em `.mcp.json` do projeto ou `.qwen/settings.json` do workspace conectavam automaticamente — abrir um repo contendo `.mcp.json` malicioso podia iniciar o server antes de você revisá-lo.
+
+Esta semana adicionou approval gate. Project `.mcp.json` e workspace scope MCP servers devem ser aprovados antes de conectar. Decisões de aprovação são persistidas em `<QWEN_HOME>/mcpApprovals.json`, indexadas por project root + server name, e bound a config hash. Modificar command/args/URL/environment/headers de um server muda o hash, revertendo-o para pending — não herda silenciosamente aprovações antigas.
+
+Modelo de prioridade MCP server: user/default settings < project `.mcp.json` < workspace/system settings < session (ACP/IDE) < `--mcp-config`. Config de projeto pode override config de user mas não config de system enterprise.
+
+**O que você pode fazer:**
+
+- Abrir novo repo, MCP servers de nível projeto mostram como "Pending approval", sem auto-connect
+- `qwen mcp approve <name>` ou `qwen mcp approve --all` para aprovação batch
+- Modificar config de server auto-requer nova aprovação (hash binding)
+- `qwen mcp list` para ver status de aprovação de todos os servers
+
+Ver PR [#4713](https://github.com/QwenLM/qwen-code/pull/4713)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01RlFlWG1fl7d70PPz8_!!6000000004046-2-tps-1686-946.png)
+
+### Permission Bubbling de Background Agent: Tarefas de Background Não Auto-Negam Confirmações
+
+Antes Background Agents requerendo confirmação de permissão para tool calls (como `git push`, `rm`) eram auto-negados com "background agents cannot prompt for confirmation", então a sessão pai re-executava em foreground — essencialmente o run de background foi wasted, voltando para fila de foreground.
+
+Esta semana adicionou `approvalMode: bubble`. Quando uma config subagent define `approvalMode: bubble`, Background Agents encountering tool calls needing confirmation bubble a requisição para o UI Background tasks da sessão pai. Você pode abrir detalhes do footer pill para aprovar. Após aprovação o Agent continua execução; após negação ele sai normalmente. `bubble` é um valor approvalMode subagent-only, não uma opção session-level. Em contextos headless/ACP/SDK ainda auto-nega (sem UI para responder).
+
+**O que você pode fazer:**
+
+- Subagent custom declara `approvalMode: bubble`, tarefas de background não auto-negam
+- Footer pill mostra "⚠ needs approval", press ↓ para abrir detalhes e aprovar (autorização única apenas, sem opção "always allow")
+- Após aprovação Agent continua e retorna resultados, sem necessidade de re-executar em foreground
+
+Ver PR [#4955](https://github.com/QwenLM/qwen-code/pull/4955)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01uj6V8w27gp9dl6Lvi_!!6000000007827-2-tps-1686-946.png)
+
+### /compress-fast: Sem LLM Call, Compressão de Contexto Instantânea
+
+Antes `/compress` dependia de LLM side query para gerar resumo (~2-5 segundos, consumindo ~30K tokens). Muito lento para deployments de modelos locais ou usuários que só queriam recuperar espaço rapidamente.
+
+Esta semana adicionou `/compress-fast`, puramente rule-driven: força microcompaction para limpar resultados de tools antigos e conteúdo de mídia (mantendo os N mais recentes), então strip todas partes thinking das respostas do modelo. Zero API calls, zero token overhead, resposta instantânea. Escreve checkpoint `chat_compression` em JSONL, comportamento `--resume` idêntico ao `/compress`.
+
+**O que você pode fazer:**
+
+- `/compress-fast` imediatamente reclaim milhares de tokens, sem delay sem custo
+- Ideal para sessões longas após muitas tool calls quando você quer recuperar espaço rapidamente
+- `/compress` ainda disponível — use quando precisa de qualidade de resumo semântico
+- Duas `/compress-fast` consecutivas, a segunda mostra "No compression needed"
+
+Ver PR [#4893](https://github.com/QwenLM/qwen-code/pull/4893)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN013JV14o27sH3XdvRyK_!!6000000007852-2-tps-1686-946.png)
+
+### Mais Novas Funcionalidades
+
+| Funcionalidade | PR | Impacto |
+|----------------|-----|---------|
+| **Workflow P2: parallel() + pipeline()** fan-out concorrente | [#4947](https://github.com/QwenLM/qwen-code/pull/4947) | Workflows podem executar múltiplos subagents concorrentemente; contrato errors-as-data previne que falhas parciais crashem todo o batch (opt-in, `QWEN_CODE_ENABLE_WORKFLOWS=1`) |
+| **Workflow P3: schema + agentType + model + isolation** | [#5034](https://github.com/QwenLM/qwen-code/pull/5034) | `agent({schema})` saída estruturada, `agent({agentType:'Explore'})` tipo de subagent, `agent({isolation:'worktree'})` isola modificações de arquivos |
+| **Declarative Agent frontmatter v1** | [#4842](https://github.com/QwenLM/qwen-code/pull/4842) | `.qwen/agents/*.md` suporta `permissionMode`, `maxTurns`, `color` — três campos de alinhamento CC 2.1.168 |
+| **Declarative Agent mcpServers + hooks** | [#4996](https://github.com/QwenLM/qwen-code/pull/4996) | MCP servers per-agent e hooks ativam quando subagents executam, comportamento consistente com CC |
+| **Truncagem escalonada de output de Tool** | [#4880](https://github.com/QwenLM/qwen-code/pull/4880) | Shell 30k, grep 20k, agent 32k budgets per-tool; output oversized salvo em arquivos temporários |
+| **/rewind restauração cross-session** | [#4897](https://github.com/QwenLM/qwen-code/pull/4897) | `/rewind` funciona após resume de session — chain de snapshots antes era in-memory |
+| **Plan Approval Gate** | [#4853](https://github.com/QwenLM/qwen-code/pull/4853) | AUTO/YOLO exiting plan mode executa agent de design review; modelo novo `enter_plan_mode` |
+| **Surfaces A2UI over MCP** | [#4961](https://github.com/QwenLM/qwen-code/pull/4961) | Web client do Daemon pode renderizar interfaces A2UI interativas de MCP tools |
+| **Fusão do modo Daemon** | [#4490](https://github.com/QwenLM/qwen-code/pull/4490) | 386 arquivos, +115K LOC batch Daemon merged |
+| **/sessions list para histórico** | [#5187](https://github.com/QwenLM/qwen-code/pull/5187) | Novo CLI command, `qwen sessions list` lista todas as sessions históricas |
+| **/import-config migração Claude MCP** | [#5095](https://github.com/QwenLM/qwen-code/pull/5095) | Import one-click de configs MCP de Claude Code / Claude Desktop |
+| **Loop/Cron habilitados por padrão** | [#4950](https://github.com/QwenLM/qwen-code/pull/4950) | Tools `/loop` e `cron` disponíveis por padrão; desabilitar com `QWEN_CODE_DISABLE_CRON=1` |
+| **Computer Use migração cua-driver** | [#5051](https://github.com/QwenLM/qwen-code/pull/5051) | Migrado de ocu npm backend para cua-driver-rs Rust binary |
+| **Web shell shortcut de quebra de linha** | [#5005](https://github.com/QwenLM/qwen-code/pull/5005) | Option+Enter / Cmd+Enter para quebra de linha no Web shell |
+| **Desktop exibição de git branch** | [#5082](https://github.com/QwenLM/qwen-code/pull/5082) | Badge de workspace do app Desktop exibe git branch atual |
+| **FileSearch AsyncFzf worker thread** | [#4621](https://github.com/QwenLM/qwen-code/pull/4621) | Construção de índice de busca de arquivos em worker thread |
+| **Daemon status API** | [#5174](https://github.com/QwenLM/qwen-code/pull/5174) | `qwen serve` novo endpoint de status de Daemon |
+| **Workflow P4: meta + /workflows + phase-tree** | [#5094](https://github.com/QwenLM/qwen-code/pull/5094) | Command `/workflows` e progress phase-tree |
+| **Convenção de prefixo auto-skill** | [#4839](https://github.com/QwenLM/qwen-code/pull/4839) | Skills auto-gerados forçam prefixo `auto-skill-` |
+| **Upgrade do parser YAML do Skill frontmatter** | [#4870](https://github.com/QwenLM/qwen-code/pull/4870) | Skill frontmatter usa parser YAML completo |
+| **Skill frontmatter user-invocable** | [#5037](https://github.com/QwenLM/qwen-code/pull/5037) | Skills podem declarar entry points de comandos invocáveis pelo usuário |
+| **CHANGELOG.md auto-sync** | [#4881](https://github.com/QwenLM/qwen-code/pull/4881) | Auto-geração e sync de CHANGELOG.md em releases |
+
+## 🔧 Correções Importantes
+
+| PR | Correção | Impacto |
+|----|----------|---------|
+| [#4982](https://github.com/QwenLM/qwen-code/pull/4982) | OOM por acumulação de `debugResponses` eliminado | Debug mode não mais explode memória |
+| [#4914](https://github.com/QwenLM/qwen-code/pull/4914) | Compaction idempotente + GC explícito + defaults de debug log | Proteção OOM fortalecida, compaction mais estável |
+| [#4929](https://github.com/QwenLM/qwen-code/pull/4929) | Fallback clipboard OSC 52 em ambiente SSH | Paste em sessão SSH remota funciona finalmente |
+| [#4852](https://github.com/QwenLM/qwen-code/pull/4852) | Cursor preso em boundary de linha hard-wrapped | Movimento do cursor não mais preso em wrap boundaries |
+| [#4963](https://github.com/QwenLM/qwen-code/pull/4963) | Fork subagent habilitado por padrão | `/fork` background Agent não precisa mais de ativação manual |
+| [#5012](https://github.com/QwenLM/qwen-code/pull/5012) | Comando printf ausente no startup do Windows | Usuários Windows não mais encontram erro de startup |
+| [#4967](https://github.com/QwenLM/qwen-code/pull/4967) | SchemaValidator coercion de strings numéricos para tools MCP | Chamadas de tools MCP de LLMs self-hosted não mais falham em type mismatch |
+| [#5111](https://github.com/QwenLM/qwen-code/pull/5111) | Bound active tool result history | Tool result history não mais cresce sem limite |
+| [#5036](https://github.com/QwenLM/qwen-code/pull/5036) | Hard-stop repeated identical tool calls | Modelo não mais repete infinitamente o mesmo tool call |
+| [#4793](https://github.com/QwenLM/qwen-code/pull/4793) | Coerce non-string tool params para LLMs self-hosted | Compatibilidade de tipos de parâmetros de tools de modelos self-hosted |
+| [#4969](https://github.com/QwenLM/qwen-code/pull/4969) | Correção de settings keys desatualizados, defaults errados e comandos ausentes em docs | Docs mais precisos |
+| [#5073](https://github.com/QwenLM/qwen-code/pull/5073) | QWEN.md/AGENTS.md acima de 15% da context window triggers warning | Context instructions oversized não mais squeeze silently modelo context |
+| [#5165](https://github.com/QwenLM/qwen-code/pull/5165) | Batch processing de notificações Monitor + expired event filtering | Monitor stdout não mais triggers um full LLM roundtrip por linha, consumo de tokens significativamente reduzido |
+| [#5196](https://github.com/QwenLM/qwen-code/pull/5196) | /dev/tcp, /dev/udp redirection não mais misclassificado como file I/O | Sistema de permissões não mais misclassifica network socket operations como file read/write |
+| [#5171](https://github.com/QwenLM/qwen-code/pull/5171) | Auto-retry transport errors antes do first chunk | Streaming calls não falham diretamente em network jitter, retry uma vez |
+| [#5155](https://github.com/QwenLM/qwen-code/pull/5155) | Fork explícito: omitir subagent_type não mais se torna fire-and-forget acidentalmente | Resultados de chamadas de agents parciais flow back corretamente para parent turn |
+
+## 🎉 Contribuidores
+
+Agradecimentos aos contribuidores desta semana:
+
+| Contribuidor | Contribuições |
+|-------------|---------------|
+| [@qqqys](https://github.com/qqqys) | Agent Team [#4844](https://github.com/QwenLM/qwen-code/pull/4844), Permission bubbling background Agent [#4955](https://github.com/QwenLM/qwen-code/pull/4955), A2UI over MCP [#4961](https://github.com/QwenLM/qwen-code/pull/4961), Guarda auto-modificação modo Auto [#4572](https://github.com/QwenLM/qwen-code/pull/4572), Prompt Hooks [#4377](https://github.com/QwenLM/qwen-code/pull/4377), autofix workflow [#4989](https://github.com/QwenLM/qwen-code/pull/4989) |
+| [@LaZzyMan](https://github.com/LaZzyMan) | Workflow P2 [#4947](https://github.com/QwenLM/qwen-code/pull/4947), Workflow P3 [#5034](https://github.com/QwenLM/qwen-code/pull/5034), Workflow P4 [#5094](https://github.com/QwenLM/qwen-code/pull/5094), Declarative Agent frontmatter [#4842](https://github.com/QwenLM/qwen-code/pull/4842), Declarative Agent mcpServers+hooks [#4996](https://github.com/QwenLM/qwen-code/pull/4996), Tool output truncation [#4880](https://github.com/QwenLM/qwen-code/pull/4880), Computer Use cua-driver [#5051](https://github.com/QwenLM/qwen-code/pull/5051), Mac code-signing [#5013](https://github.com/QwenLM/qwen-code/pull/5013) |
+| [@callmeYe](https://github.com/callmeYe) | Plan Approval Gate [#4853](https://github.com/QwenLM/qwen-code/pull/4853), Skill frontmatter YAML parser [#4870](https://github.com/QwenLM/qwen-code/pull/4870), Skill .toml commands [#5017](https://github.com/QwenLM/qwen-code/pull/5017), prompt-cache prefix [#4896](https://github.com/QwenLM/qwen-code/pull/4896) |
+| [@tanzhenxin](https://github.com/tanzhenxin) | Durable /loop [#5004](https://github.com/QwenLM/qwen-code/pull/5004), Loop/Cron habilitados por padrão [#4950](https://github.com/QwenLM/qwen-code/pull/4950), Skill allowedTools [#4704](https://github.com/QwenLM/qwen-code/pull/4704), Agent Team messaging harden [#4988](https://github.com/QwenLM/qwen-code/pull/4988) |
+| [@doudouOUC](https://github.com/doudouOUC) | Fusão do modo Daemon [#4490](https://github.com/QwenLM/qwen-code/pull/4490), /rewind cross-session [#4897](https://github.com/QwenLM/qwen-code/pull/4897), Persistência resultados de Tool oversized [#5042](https://github.com/QwenLM/qwen-code/pull/5042), Daemon status API [#5174](https://github.com/QwenLM/qwen-code/pull/5174), Monitor batch processing [#5165](https://github.com/QwenLM/qwen-code/pull/5165) |
+| [@DragonnZhang](https://github.com/DragonnZhang) | MCP approval gate [#4713](https://github.com/QwenLM/qwen-code/pull/4713), Desktop git branch [#5082](https://github.com/QwenLM/qwen-code/pull/5082), Desktop app [#3778](https://github.com/QwenLM/qwen-code/pull/3778), VSCode ACP notification [#4358](https://github.com/QwenLM/qwen-code/pull/4358), CLI shortcut de quebra de linha [#5005](https://github.com/QwenLM/qwen-code/pull/5005) |
+| [@zzhenyao](https://github.com/zzhenyao) | Eliminação OOM [#4982](https://github.com/QwenLM/qwen-code/pull/4982), Fortalecimento OOM [#4914](https://github.com/QwenLM/qwen-code/pull/4914), Clipboard SSH [#4929](https://github.com/QwenLM/qwen-code/pull/4929), printf Windows [#5012](https://github.com/QwenLM/qwen-code/pull/5012) |
+| [@he-yufeng](https://github.com/he-yufeng) | Comando /cd [#4890](https://github.com/QwenLM/qwen-code/pull/4890), Fork habilitado por padrão [#4963](https://github.com/QwenLM/qwen-code/pull/4963), Background Agent preserve launch flags [#5061](https://github.com/QwenLM/qwen-code/pull/5061), Warning de context oversized [#5073](https://github.com/QwenLM/qwen-code/pull/5073) |
+| [@chiga0](https://github.com/chiga0) | Thinking collapse [#4598](https://github.com/QwenLM/qwen-code/pull/4598), DaemonTransport abstraction [#5040](https://github.com/QwenLM/qwen-code/pull/5040), TUI spacing [#4595](https://github.com/QwenLM/qwen-code/pull/4595) |
+| [@BenGuanRan](https://github.com/BenGuanRan) | /stats dedup [#4995](https://github.com/QwenLM/qwen-code/pull/4995) |
+| [@yiliang114](https://github.com/yiliang114) | Auto-update standalone install [#4629](https://github.com/QwenLM/qwen-code/pull/4629), PR review CI [#4549](https://github.com/QwenLM/qwen-code/pull/4549), Release asset verification [#3855](https://github.com/QwenLM/qwen-code/pull/3855), Telemetry memory/CPU [#4868](https://github.com/QwenLM/qwen-code/pull/4868), Transport error auto-retry [#5171](https://github.com/QwenLM/qwen-code/pull/5171) |
+| [@wenshao](https://github.com/wenshao) | Web shell improvements [#5069](https://github.com/QwenLM/qwen-code/pull/5069), [#5109](https://github.com/QwenLM/qwen-code/pull/5109), [#5125](https://github.com/QwenLM/qwen-code/pull/5125), [#5088](https://github.com/QwenLM/qwen-code/pull/5088), [#5096](https://github.com/QwenLM/qwen-code/pull/5096) |
+| [@ytahdn](https://github.com/ytahdn) | Web shell token/settings [#5066](https://github.com/QwenLM/qwen-code/pull/5066), Transcript events [#5193](https://github.com/QwenLM/qwen-code/pull/5193), Custom footer [#5166](https://github.com/QwenLM/qwen-code/pull/5166) |
+| [@ZijianZhang989](https://github.com/ZijianZhang989) | /compress-fast [#4893](https://github.com/QwenLM/qwen-code/pull/4893), /sessions list [#5187](https://github.com/QwenLM/qwen-code/pull/5187), qwen3.7-plus model list [#4953](https://github.com/QwenLM/qwen-code/pull/4953) |
+| [@tt-a1i](https://github.com/tt-a1i) | /import-config Claude MCP [#5095](https://github.com/QwenLM/qwen-code/pull/5095), Desktop git branch [#5082](https://github.com/QwenLM/qwen-code/pull/5082) |
+| [@pomelo-nwu](https://github.com/pomelo-nwu) | qwen3.7-plus multimodal [#4803](https://github.com/QwenLM/qwen-code/pull/4803), SchemaValidator coerce [#4967](https://github.com/QwenLM/qwen-code/pull/4967) |
+| [@Jerry2003826](https://github.com/Jerry2003826) | Bound hard rescue retries [#4526](https://github.com/QwenLM/qwen-code/pull/4526), Bound foreground shell output [#4524](https://github.com/QwenLM/qwen-code/pull/4524) |
+| [@warmjademe](https://github.com/warmjademe) | /dev/tcp/udp permission fix [#5196](https://github.com/QwenLM/qwen-code/pull/5196) |
+| [@huww98](https://github.com/huww98) | /copy argument hint [#5110](https://github.com/QwenLM/qwen-code/pull/5110) |
+
+<Callout type="info">
+  **Como atualizar**: Execute `npm i @qwen-code/qwen-code@latest -g` para a versão mais recente.
+</Callout>
+
+Para perguntas ou sugestões, compartilhe feedback em [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
