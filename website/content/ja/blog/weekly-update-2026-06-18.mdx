@@ -1,0 +1,230 @@
+---
+title: "Qwen Code 週報：Agent Team 並列協働、Durable /loop 再起動後も存活、/cd ディレクトリ切替"
+date: "2026-06-18"
+description: "Qwen Code v0.18.0～v0.18.3 今週：Agent Team 並列協働、Durable /loop 定時タスク再起動後も存活、/cd セッション内ディレクトリ切替、Thinking 折りたたみ、MCP 承認ゲート、権限バブリング、/compress-fast 秒級圧縮。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週報：Agent Team 並列協働、Durable /loop 再起動後も存活、/cd ディレクトリ切替"
+  date="2026-06-18"
+  author="Qwen Team"
+/>
+
+Qwen Code 今週は v0.18.0～v0.18.3 の4つの正式版をリリース、100以上のPRが合入、4つの方向をカバー：
+
+**マルチAgent並列協働。** 以前 `/fork` はBackground Agentを走らせたが、各Agentは孤立して通信なし、結果を自分で組み合わせる必要があった。Agent Teamモードにより、モデルが名前付きチームを作成し、複数のチームメイトを並列にspawnし、メッセージ交換、タスクリスト共有、最後にleaderが一つのレポートを統合。チームメイトは永続的 — 一つのタスク完了後次のを待機、one-shot subagentのように完了後消滅しない。
+
+**定時タスク再起動後も存活。** 以前 `/loop` の定時タスクはセッションと共に消滅 — 再起動後に音もなく消失。Durable /loop は定時タスクをファイルに永続化、次回起動時に自動回復、失われた周期タスクは1回補走。
+
+**セッション内ディレクトリ切替、再起動不要。** `/cd <path>` はCLIを退出せずに現在セッションの作業ディレクトリを切替、セッションファイルは自動で新workspaceに移行、system/directory contextは自動更新。以前はプロジェクトディレクトリ切替には再起動が必要だった。
+
+## ✨ 新機能
+
+### Agent Team：複数Agent並列協働、メッセージ交換、タスク共有
+
+以前Qwen Codeの `/fork` はBackground Agentを走らせたが、各Agentは孤立 — 3つのAgentを並列でコードレビューに配置しても、通信チャネルがなく、3つの結果を自分で組み合わせる必要があった。
+
+今週Agent Teamモードが追加（実験的、opt-in）。有効化後、モデルが名前付きチームを作成し、複数の「チームメイト」を並列にspawn。チームメイトとleader間でメッセージ交換、タスクリスト共有、leaderが最後に統一レポートを統合。チームメイトは永続的、one-shot subagentではない — 一つのタスク完了後次のを待機、完了後消滅しない。
+
+デフォルト無効（`experimental.agentTeam`設定または `QWEN_CODE_ENABLE_AGENT_TEAM=1`環境変数で有効化）。有効化後モデルはチーム協働ツールを獲得（チーム作成/削除、チームメイトにメッセージ送信、共有タスク作成/更新/一覧）、Agentツールに `name`パラメータが追加、長寿命の名前付きチームメイトをspawn而非一次性subagent。
+
+**何ができるか：**
+
+- 3つのreviewerが並列でコードをレビュー（一つはエラー処理、一つは競合状態、一つはエッジケース）、統合レポートを受け取る
+- チームを調整して小さなブックマークアプリを構築
+- チームメイト完了後自動的にleaderに報告、leaderから統一サマリーを受け取る
+
+PR [#4844](https://github.com/QwenLM/qwen-code/pull/4844) を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/O1CN01BLEA6v1tGo2AyHluY_!!6000000005875-2-videocover-3839-2160.png" src="https://cloud.video.taobao.com/vod/eH6VlX-12-ccgaNludBfEUEQxCnGQvMWAWju2VsSUAA.mp4" controls></video>
+
+### Durable /loop：定時タスク再起動後も存活
+
+以前すべての `/loop` タスクはセッションと共に消滅 — 「30分毎に私のPRをチェック」とスケジュールしても、Qwen Code再起動後にサイクルが音もなく消失。今週 `/loop` タスクは再起動後も存活。
+
+リクエストが永続性を暗示する場合（「毎時間私のPRをチェック」）、タスクはプロジェクトごとに `~/.qwen/tmp/<プロジェクトハッシュ>/scheduled_tasks.json` に保存（workspace外、`git status` に出現しない）、次回起動時に自動回復。デフォルトはsession-only、一時的なリマインダーはファイルに書き込まない。
+
+停止期間中に期限切れになった一度限りのリマインダー：再起動時にモデルが確認後実行、静寂に実行しない。失われた周期タスクは起動後1回補走後正常サイクルに復帰。同一プロジェクトで複数セッションがある場合、一つだけが永続タスクをトリガー；ホルダーがクラッシュした場合、別のセッションが数秒内に接管。周期タスクは7日後に自動期限切れ（最後トリガー後削除）。
+
+**何ができるか：**
+
+- 「毎時間私のPRをチェック」→ 再起動後も継続実行、再スケジュール不要
+- 失われた周期タスクは再起動後自動的に1回補走
+- 一時リマインダー `/loop 5m remind me` はセッションと共に消滅、ファイルに書き込まない
+
+PR [#5004](https://github.com/QwenLM/qwen-code/pull/5004) を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000007295/O1CN01pHhIOx23lARnrlW2v_!!6000000007295-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/jw2swzG-Lv9LgLLci-ccebiJpxzCesQLJzI8zIdcOvw.mp4" controls></video>
+
+### /cd：CLI再起動せずにディレクトリ切替
+
+以前Agentを別のプロジェクトディレクトリから作業させたい場合、退出して再起動する必要があった。複数リポや親子workspace間の切替が不便、セッション内でactive tool contextを移動する方法もなかった。
+
+今週 `/cd <path>` スラッシュコマンドが追加。対象ディレクトリを検証、信頼確認を処理、workspace rootsとcwdサービスを更新、現在セッションのtranscript/runtime/worktreeファイルを新workspaceセッションディレクトリに移行、system/directory contextを更新。パス補完も機能する。
+
+**何ができるか：**
+
+- `/cd ../another-project` 隣接プロジェクトに切替、セッションファイル自動移行
+- `/cd /path/to/parent-repo` セッション内で上下ナビゲーション、再起動不要
+- 信頼されていないパスは確認ダイアログ、初回起動時の信頼フローと一致
+
+PR [#4890](https://github.com/QwenLM/qwen-code/pull/4890) を参照
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01xM0SE01L08gWkvtsP_!!6000000001236-2-tps-3839-2160.png)
+
+### Thinking 折りたたみ：推理プロセスが画面を占有しない
+
+以前モデルのthinkingブロックは常に完全な推理テキストを表示、大量の画面スペースを占有。今週3状態表示に変更：
+
+- **Streaming段階**：4行固定高さスクロールウィンドウで推理内容をリアルタイム表示 + タイマー（「∴ Thinking… 8s」）
+- **完了後折りたたみ**（デフォルト）：1行で合計時間を表示（「∴ Thought for 15s」）
+- **展開表示**：thinkingブロック用の専用ショートカットキーは後で割り当て；現在 Ctrl+O はcompactModeトグルをトリガー、thinking展開と同じキーを共用、独立した展開/折りたたみショートカットは後続PRで分離
+
+`thinkingDisplayMode`設定は削除、単一の折りたたみモードに置き換え。thinkingブロックはUI historyのみ、APIに送信されない、session resume動作は変更なし。
+
+**何ができるか：**
+
+- 複雑な推理は1行に折りたたみ、邪魔にならない
+- Ctrl+O でいつでもモデルの完全な推理プロセスを展開表示
+- Streaming段階にタイマー、モデルの思考時間を把握
+
+PR [#4598](https://github.com/QwenLM/qwen-code/pull/4598) を参照
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01C9tyat1QWiwTSlmt1_!!6000000001984-1-tps-1433-883.gif)
+
+### MCP承認ゲート：プロジェクトレベルMCP設定が自動接続しない
+
+以前プロジェクト `.mcp.json` またはworkspace `.qwen/settings.json` で宣言されたMCP serverは自動接続 — 悪意のある `.mcp.json` を含むリポを開くと、レビュー前にserverが起動する可能性があった。
+
+今週承認ゲートが追加。プロジェクト `.mcp.json` とworkspaceスコープMCP serverは接続前に承認が必要。承認決定は `<QWEN_HOME>/mcpApprovals.json` に永続化、プロジェクトroot + server名でインデックス、config hashにバインド。serverのcommand/args/URL/environment/headersを変更するとhashが変更、pendingに戻る — 古い承認を静寂に継承しない。
+
+MCP server優先度モデル：user/default settings < プロジェクト `.mcp.json` < workspace/system settings < session (ACP/IDE) < `--mcp-config`。プロジェクト設定はuser設定をoverrideできるが、enterprise system設定はoverrideできない。
+
+**何ができるか：**
+
+- 新しいリポを開く時、プロジェクトレベルMCP serverは「Pending approval」表示、自動接続しない
+- `qwen mcp approve <name>` または `qwen mcp approve --all` でバッチ承認
+- server設定変更後自動的に再承認要求（hashバインド）
+- `qwen mcp list` で全serverの承認状態を表示
+
+PR [#4713](https://github.com/QwenLM/qwen-code/pull/4713) を参照
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01RlFlWG1fl7d70PPz8_!!6000000004046-2-tps-1686-946.png)
+
+### Background Agent権限バブリング：Backgroundタスクが確認を自動拒否しない
+
+以前Background Agentが権限確認が必要なTool呼び出し（`git push`、`rm`等）に遭遇すると「background agents cannot prompt for confirmation」で自動拒否、親セッションがforegroundで再実行 — Background実行が無駄になり、foregroundに戻って並び待ち。
+
+今週 `approvalMode: bubble` が追加。Subagent設定で `approvalMode: bubble` を設定すると、Background Agentが確認が必要なTool呼び出しに遭遇した場合、要求が親セッションのBackground tasks UIにバブリング。Footer pillから詳細を開いて承認可能。承認後Agentは実行継続；拒否後は正常終了。`bubble` はSubagent-onlyのapprovalMode値、sessionレベルのオプションではない。Headless/ACP/SDKコンテキストでは依然自動拒否（回答できるUIがない）。
+
+**何ができるか：**
+
+- Custom subagentが `approvalMode: bubble` を宣言、Backgroundタスクが自動拒否しない
+- Footer pillが「⚠ needs approval」を表示、↓で詳細を開いて承認（一回限り承認のみ、「always allow」オプションなし）
+- 承認後Agentは継続実行して結果を返却、foregroundで再実行不要
+
+PR [#4955](https://github.com/QwenLM/qwen-code/pull/4955) を参照
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01uj6V8w27gp9dl6Lvi_!!6000000007827-2-tps-1686-946.png)
+
+### /compress-fast：LLM呼び出しなし、秒級コンテキスト圧縮
+
+以前 `/compress` はLLMサイドクエリで要約生成に依存（約2-5秒、約30K token消費）。ローカルモデルデプロイやスペースをすぐ解放したいユーザーには遅すぎた。
+
+今週 `/compress-fast` が追加、純ルール駆動：microcompactionを強制して古いTool結果とメディアコンテンツをクリーン（最新N個を保持）、モデル返信のthinking部分をすべて削除。ゼロAPI呼び出し、ゼロtokenオーバーヘッド、即時応答。`chat_compression` checkpointをJSONLに書き込み、`--resume`動作は `/compress` と完全に同じ。
+
+**何ができるか：**
+
+- `/compress-fast` で即座に数千token解放、遅延なしコストなし
+- Tool呼び出し多数の長セッション後にすぐスペース回収したい場合に最適
+- `/compress` は依然利用可能 — 意味的要約品質が必要な場合に使用
+- 連続2回 `/compress-fast` 実行、2回目は「No compression needed」を表示
+
+PR [#4893](https://github.com/QwenLM/qwen-code/pull/4893) を参照
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN013JV14o27sH3XdvRyK_!!6000000007852-2-tps-1686-946.png)
+
+### その他の新機能
+
+| 機能 | PR | 影響 |
+|------|-----|------|
+| **Workflow P2：parallel() + pipeline()** 並列ファンアウト | [#4947](https://github.com/QwenLM/qwen-code/pull/4947) | Workflowが複数Subagentを並列実行可能；errors-as-data契約で部分失敗が全体Batchをクラッシュさせない（opt-in、`QWEN_CODE_ENABLE_WORKFLOWS=1`） |
+| **Workflow P3：schema + agentType + model + isolation** | [#5034](https://github.com/QwenLM/qwen-code/pull/5034) | `agent({schema})`構造化出力、`agent({agentType:'Explore'})`Subagentタイプ選択、`agent({isolation:'worktree'})`ファイル変更隔離 |
+| **Declarative Agent frontmatter v1** | [#4842](https://github.com/QwenLM/qwen-code/pull/4842) | `.qwen/agents/*.md`が`permissionMode`、`maxTurns`、`color`をサポート — CC 2.1.168アライメント3フィールド |
+| **Declarative Agent mcpServers + hooks** | [#4996](https://github.com/QwenLM/qwen-code/pull/4996) | Per-Agent MCP serverとhooksがSubagent実行時に有効化、CC一致動作 |
+| **Tool出力段階的切り詰め** | [#4880](https://github.com/QwenLM/qwen-code/pull/4880) | shell 30k、grep 20k、agent 32kのPer-Toolバudget；oversized出力を一時ファイルに保存 |
+| **/rewind クロスセッション復元** | [#4897](https://github.com/QwenLM/qwen-code/pull/4897) | `/rewind`がセッションresume後動作 — スナップショットチェーン以前はin-memory |
+| **Plan Approval Gate** | [#4853](https://github.com/QwenLM/qwen-code/pull/4853) | AUTO/YOYOがplan mode退出時に設計review Agent実行；モデル新`enter_plan_mode` |
+| **A2UI surfaces over MCP** | [#4961](https://github.com/QwenLM/qwen-code/pull/4961) | DaemonのWeb ClientがMCP Toolから返されるインタラクティブA2UIインターフェースをレンダリング |
+| **Daemon mode merge** | [#4490](https://github.com/QwenLM/qwen-code/pull/4490) | 386ファイル、+115K LOC Daemon batch合入 |
+| **/sessions list 履歴表示** | [#5187](https://github.com/QwenLM/qwen-code/pull/5187) | 新CLIコマンド、`qwen sessions list`全履歴セッション一覧 |
+| **/import-config Claude MCP移行** | [#5095](https://github.com/QwenLM/qwen-code/pull/5095) | Claude Code / Claude Desktop MCP設定を一クリックインポート |
+| **Loop/Cronデフォルト有効化** | [#4950](https://github.com/QwenLM/qwen-code/pull/4950) | `/loop`と`cron`ツールデフォルト利用可能；`QWEN_CODE_DISABLE_CRON=1`で無効化 |
+| **Computer Use cua-driver移行** | [#5051](https://github.com/QwenLM/qwen-code/pull/5051) | ocu npmバックエンドからcua-driver-rs Rustバイナリに移行 |
+| **Web shell改行ショートカット** | [#5005](https://github.com/QwenLM/qwen-code/pull/5005) | Option+Enter / Cmd+EnterでWeb shell改行 |
+| **Desktop git branch表示** | [#5082](https://github.com/QwenLM/qwen-code/pull/5082) | Desktopアプリワークスペースバッジが現在git branchを表示 |
+| **FileSearch AsyncFzf worker thread** | [#4621](https://github.com/QwenLM/qwen-code/pull/4621) | ファイル検索インデックス構築をworker threadに移動 |
+| **Daemon status API** | [#5174](https://github.com/QwenLM/qwen-code/pull/5174) | `qwen serve`にDaemonステータス照会エンドポイント追加 |
+| **Workflow P4：meta + /workflows + phase-tree** | [#5094](https://github.com/QwenLM/qwen-code/pull/5094) | `/workflows`コマンドとphase-tree進捗表示 |
+| **auto-skill prefix規約** | [#4839](https://github.com/QwenLM/qwen-code/pull/4839) | 自動生成Skillに`auto-skill-` prefixを強制 |
+| **Skill frontmatter YAML parserアップグレード** | [#4870](https://github.com/QwenLM/qwen-code/pull/4870) | Skill frontmatterが完全YAML parserを使用 |
+| **Skill user-invocable frontmatter** | [#5037](https://github.com/QwenLM/qwen-code/pull/5037) | Skillがユーザー直接呼び出し可能コマンドエントリポイントを宣言 |
+| **CHANGELOG.md自動同期** | [#4881](https://github.com/QwenLM/qwen-code/pull/4881) | リリース時にCHANGELOG.mdを自動生成・同期 |
+
+## 🔧 重要な修正
+
+| PR | 修正内容 | 影響 |
+|----|----------|------|
+| [#4982](https://github.com/QwenLM/qwen-code/pull/4982) | `debugResponses`蓄積によるOOMを排除 | デバッグモードでメモリ爆発しない |
+| [#4914](https://github.com/QwenLM/qwen-code/pull/4914) | idempotent compaction + explicit GC + debug log defaults | OOM保護強化、圧縮が安定 |
+| [#4929](https://github.com/QwenLM/qwen-code/pull/4929) | SSH環境OSC 52 clipboard fallback | SSHリモートセッションのペーストが正常動作 |
+| [#4852](https://github.com/QwenLM/qwen-code/pull/4852) | hard-wrapped行境界でのカーソル左移動停止 | カーソルが改行境界で停止しない |
+| [#4963](https://github.com/QwenLM/qwen-code/pull/4963) | Fork Subagentデフォルト有効化 | `/fork` Background Agentの有効化が不要 |
+| [#5012](https://github.com/QwenLM/qwen-code/pull/5012) | Windows起動時printfコマンド欠落エラー | Windowsユーザーが起動エラーに遭遇しない |
+| [#4967](https://github.com/QwenLM/qwen-code/pull/4967) | MCP Tool SchemaValidator数値文字列強制変換 | Self-hosted LLMのMCP Tool呼び出しが型不一致で失敗しない |
+| [#5111](https://github.com/QwenLM/qwen-code/pull/5111) | Bound active tool result history | Tool結果履歴が無限増大しない |
+| [#5036](https://github.com/QwenLM/qwen-code/pull/5036) | Hard-stop repeated identical tool calls | モデルが同一Tool呼び出しを無限繰り返ししない |
+| [#4793](https://github.com/QwenLM/qwen-code/pull/4793) | Coerce non-string tool params for self-hosted LLMs | Self-hostedモデルのToolパラメータ型互換性 |
+| [#4969](https://github.com/QwenLM/qwen-code/pull/4969) | Docsの期限切れsettings keys、誤ったデフォルト、欠落コマンド修正 | Docsがより正確 |
+| [#5073](https://github.com/QwenLM/qwen-code/pull/5073) | QWEN.md/AGENTS.mdが15%以上コンテキストウィンドウを超えると警告 | oversized context instructionsがモデルコンテキストを静かに圧迫しない |
+| [#5165](https://github.com/QwenLM/qwen-code/pull/5165) | Monitor通知バッチ処理 + 期限切れイベントフィルタリング | Monitor stdoutが1行につき1回のfull LLM roundtripをトリガーしない、token消費大幅削減 |
+| [#5196](https://github.com/QwenLM/qwen-code/pull/5196) | /dev/tcp、/dev/udpリダイレクトがファイルI/Oとして誤分類されない | 権限システムがネットワークソケット操作をファイル読み書きに誤分類しない |
+| [#5171](https://github.com/QwenLM/qwen-code/pull/5171) | 最初のチャンク前の転送エラー自動再試行 | ストリーミング呼び出しがネットワークジッターで直接失敗しない |
+| [#5155](https://github.com/QwenLM/qwen-code/pull/5155) | Fork明示化：subagent_type省略が意図せずfire-and-forgetにならない | 並列Agent呼び出し結果が親turnに正しく回流 |
+
+## 🎉 コントリビューター
+
+今週のコントリビューターに感謝：
+
+| コントリビューター | 貢献内容 |
+|------------------|----------|
+| [@qqqys](https://github.com/qqqys) | Agent Team [#4844](https://github.com/QwenLM/qwen-code/pull/4844)、Background Agent権限バブリング [#4955](https://github.com/QwenLM/qwen-code/pull/4955)、A2UI over MCP [#4961](https://github.com/QwenLM/qwen-code/pull/4961)、Auto mode自変更防止 [#4572](https://github.com/QwenLM/qwen-code/pull/4572)、Prompt Hooks [#4377](https://github.com/QwenLM/qwen-code/pull/4377)、autofix workflow [#4989](https://github.com/QwenLM/qwen-code/pull/4989) |
+| [@LaZzyMan](https://github.com/LaZzyMan) | Workflow P2 [#4947](https://github.com/QwenLM/qwen-code/pull/4947)、Workflow P3 [#5034](https://github.com/QwenLM/qwen-code/pull/5034)、Workflow P4 [#5094](https://github.com/QwenLM/qwen-code/pull/5094)、Declarative Agent frontmatter [#4842](https://github.com/QwenLM/qwen-code/pull/4842)、Declarative Agent mcpServers+hooks [#4996](https://github.com/QwenLM/qwen-code/pull/4996)、Tool出力切り詰め [#4880](https://github.com/QwenLM/qwen-code/pull/4880)、Computer Use cua-driver [#5051](https://github.com/QwenLM/qwen-code/pull/5051)、Mac code-signing [#5013](https://github.com/QwenLM/qwen-code/pull/5013) |
+| [@callmeYe](https://github.com/callmeYe) | Plan Approval Gate [#4853](https://github.com/QwenLM/qwen-code/pull/4853)、Skill frontmatter YAML parser [#4870](https://github.com/QwenLM/qwen-code/pull/4870)、Skill .toml commands [#5017](https://github.com/QwenLM/qwen-code/pull/5017)、prompt-cache prefix [#4896](https://github.com/QwenLM/qwen-code/pull/4896) |
+| [@tanzhenxin](https://github.com/tanzhenxin) | Durable /loop [#5004](https://github.com/QwenLM/qwen-code/pull/5004)、Loop/Cronデフォルト有効化 [#4950](https://github.com/QwenLM/qwen-code/pull/4950)、Skill allowedTools [#4704](https://github.com/QwenLM/qwen-code/pull/4704)、Agent Team messaging harden [#4988](https://github.com/QwenLM/qwen-code/pull/4988) |
+| [@doudouOUC](https://github.com/doudouOUC) | Daemon mode merge [#4490](https://github.com/QwenLM/qwen-code/pull/4490)、/rewindクロスセッション [#4897](https://github.com/QwenLM/qwen-code/pull/4897)、Oversized tool results永続化 [#5042](https://github.com/QwenLM/qwen-code/pull/5042)、Daemon status API [#5174](https://github.com/QwenLM/qwen-code/pull/5174)、Monitor通知バッチ処理 [#5165](https://github.com/QwenLM/qwen-code/pull/5165) |
+| [@DragonnZhang](https://github.com/DragonnZhang) | MCP承認ゲート [#4713](https://github.com/QwenLM/qwen-code/pull/4713)、Desktop git branch [#5082](https://github.com/QwenLM/qwen-code/pull/5082)、Desktop app [#3778](https://github.com/QwenLM/qwen-code/pull/3778)、VSCode ACP通知 [#4358](https://github.com/QwenLM/qwen-code/pull/4358)、CLI改行ショートカット [#5005](https://github.com/QwenLM/qwen-code/pull/5005) |
+| [@zzhenyao](https://github.com/zzhenyao) | OOM排除 [#4982](https://github.com/QwenLM/qwen-code/pull/4982)、OOM強化 [#4914](https://github.com/QwenLM/qwen-code/pull/4914)、SSH clipboard [#4929](https://github.com/QwenLM/qwen-code/pull/4929)、Windows printf [#5012](https://github.com/QwenLM/qwen-code/pull/5012) |
+| [@he-yufeng](https://github.com/he-yufeng) | /cdコマンド [#4890](https://github.com/QwenLM/qwen-code/pull/4890)、Forkデフォルト有効化 [#4963](https://github.com/QwenLM/qwen-code/pull/4963)、Background Agent preserve launch flags [#5061](https://github.com/QwenLM/qwen-code/pull/5061)、oversized context警告 [#5073](https://github.com/QwenLM/qwen-code/pull/5073) |
+| [@chiga0](https://github.com/chiga0) | Thinking collapse [#4598](https://github.com/QwenLM/qwen-code/pull/4598)、DaemonTransport abstraction [#5040](https://github.com/QwenLM/qwen-code/pull/5040)、TUI spacing [#4595](https://github.com/QwenLM/qwen-code/pull/4595) |
+| [@BenGuanRan](https://github.com/BenGuanRan) | /stats dedup [#4995](https://github.com/QwenLM/qwen-code/pull/4995) |
+| [@yiliang114](https://github.com/yiliang114) | Standalone install auto-update [#4629](https://github.com/QwenLM/qwen-code/pull/4629)、PR review CI [#4549](https://github.com/QwenLM/qwen-code/pull/4549)、Release asset verification [#3855](https://github.com/QwenLM/qwen-code/pull/3855)、Telemetry memory/CPU [#4868](https://github.com/QwenLM/qwen-code/pull/4868)、Transport error auto-retry [#5171](https://github.com/QwenLM/qwen-code/pull/5171) |
+| [@wenshao](https://github.com/wenshao) | Web shell improvements [#5069](https://github.com/QwenLM/qwen-code/pull/5069)、[#5109](https://github.com/QwenLM/qwen-code/pull/5109)、[#5125](https://github.com/QwenLM/qwen-code/pull/5125)、[#5088](https://github.com/QwenLM/qwen-code/pull/5088)、[#5096](https://github.com/QwenLM/qwen-code/pull/5096) |
+| [@ytahdn](https://github.com/ytahdn) | Web shell token/settings [#5066](https://github.com/QwenLM/qwen-code/pull/5066)、Transcript events [#5193](https://github.com/QwenLM/qwen-code/pull/5193)、Custom footer [#5166](https://github.com/QwenLM/qwen-code/pull/5166) |
+| [@ZijianZhang989](https://github.com/ZijianZhang989) | /compress-fast [#4893](https://github.com/QwenLM/qwen-code/pull/4893)、/sessions list [#5187](https://github.com/QwenLM/qwen-code/pull/5187)、qwen3.7-plus model list [#4953](https://github.com/QwenLM/qwen-code/pull/4953) |
+| [@tt-a1i](https://github.com/tt-a1i) | /import-config Claude MCP [#5095](https://github.com/QwenLM/qwen-code/pull/5095)、Desktop git branch [#5082](https://github.com/QwenLM/qwen-code/pull/5082) |
+| [@pomelo-nwu](https://github.com/pomelo-nwu) | qwen3.7-plus multimodal [#4803](https://github.com/QwenLM/qwen-code/pull/4803)、SchemaValidator coerce [#4967](https://github.com/QwenLM/qwen-code/pull/4967) |
+| [@Jerry2003826](https://github.com/Jerry2003826) | Bound hard rescue retries [#4526](https://github.com/QwenLM/qwen-code/pull/4526)、Bound foreground shell output [#4524](https://github.com/QwenLM/qwen-code/pull/4524) |
+| [@warmjademe](https://github.com/warmjademe) | /dev/tcp/udp permission fix [#5196](https://github.com/QwenLM/qwen-code/pull/5196) |
+| [@huww98](https://github.com/huww98) | /copy argument hint [#5110](https://github.com/QwenLM/qwen-code/pull/5110) |
+
+<Callout type="info">
+  **アップグレード方法**：`npm i @qwen-code/qwen-code@latest -g` を実行して最新バージョンにアップグレード。
+</Callout>
+
+質問や提案がある場合は、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues) でフィードバックをお願いします！
