@@ -339,7 +339,8 @@ class TranslationCLI {
    */
   async syncDocuments(
     force: boolean = false,
-    detectOnly: boolean = false
+    detectOnly: boolean = false,
+    sourceOnly: boolean = false
   ): Promise<void> {
     const projectConfig = await this.loadProjectConfig();
     if (!projectConfig) {
@@ -364,13 +365,18 @@ class TranslationCLI {
     });
 
     try {
-      const result = await syncManager.syncDocuments(force, { detectOnly });
+      const result = await syncManager.syncDocuments(force, {
+        detectOnly,
+        sourceOnly,
+      });
 
       if (result.success) {
         console.log(
           chalk.green(
             detectOnly
               ? `✅ Detection completed! Changed files: ${result.changes}`
+              : sourceOnly
+              ? `✅ Source docs updated (no translation)! Changed files: ${result.changes}`
               : `✅ Sync completed! Changed files: ${result.changes}`
           )
         );
@@ -732,8 +738,16 @@ async function main() {
       "-d, --detect-only",
       "Only detect & list changed files; skip translation (no API key required)"
     )
+    .option(
+      "-s, --source-only",
+      "Detect changes and write source-language docs, but skip translation; does not advance last-sync.json (no API key required)"
+    )
     .action(async (options) => {
-      await cli.syncDocuments(options.force, options.detectOnly);
+      await cli.syncDocuments(
+        options.force,
+        options.detectOnly,
+        options.sourceOnly
+      );
     });
 
   // markdown command

@@ -148,7 +148,7 @@ export class SyncManager {
    */
   async syncDocuments(
     forceSync: boolean = false,
-    options: { detectOnly?: boolean } = {}
+    options: { detectOnly?: boolean; sourceOnly?: boolean } = {}
   ): Promise<SyncResult> {
     try {
       console.log(chalk.yellow("🔍 检测文档变更..."));
@@ -162,6 +162,13 @@ export class SyncManager {
         if (forceSync) {
           console.log(
             chalk.yellow("⚠️  detect-only 模式下 --force 无效，已忽略")
+          );
+        }
+        if (options.sourceOnly) {
+          console.log(
+            chalk.yellow(
+              "⚠️  已同时指定 --source-only，被 --detect-only 覆盖（不写入任何文件）"
+            )
           );
         }
         if (changes.isFirstSync && changes.files.length > 0) {
@@ -192,6 +199,24 @@ export class SyncManager {
       }
 
       console.log(chalk.blue(`📝 检测到 ${changes.files.length} 个文件变更`));
+
+      // source-only：把上游源文档写入 content/<sourceLanguage> 与 .source-docs，
+      // 但不翻译、不更新 last-sync.json / changelog，也不构造翻译器（无需 key）。
+      // 刻意不推进同步基线：目标语言译文此时会落后于源文档，待配置 key 后再次运行
+      // sync 即可补齐翻译（届时仍会检测到这些文件，可自愈）。
+      if (options.sourceOnly) {
+        await this.updateBaseDocs();
+        console.log(
+          chalk.green(
+            "✅ 已更新源文档（source-only：未翻译；未推进 last-sync.json，配置 key 后再次 sync 可补齐翻译）"
+          )
+        );
+        return {
+          success: true,
+          changes: changes.files.length,
+          files: changes.files,
+        };
+      }
 
       // 正常 sync：在写入任何文件之前先构造翻译器以校验 OPENAI_API_KEY，
       // 恢复“缺 key 立即失败、不产生半写状态”的行为（懒加载后默认会等到翻译阶段
