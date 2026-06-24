@@ -74,7 +74,7 @@ export class SyncManager {
   private branch: string; // 新增：源仓库分支
   private lastSyncFile: string;
   private changelogFile: string;
-  private translator: DocumentTranslator;
+  private translator: DocumentTranslator | null = null; // 懒加载：仅在需要翻译时构造
   private projectRoot: string; // 新增：项目根目录
   private outputDir: string; // 新增：输出目录
 
@@ -115,9 +115,9 @@ export class SyncManager {
       this.projectRoot,
       "translation-changelog.json"
     );
-    this.translator = new DocumentTranslator({
-      projectRoot: this.projectRoot,
-    });
+    // 翻译器改为懒加载（见 getTranslator）：构造期不再创建 DocumentTranslator，
+    // 因此不会在此触发 OPENAI_API_KEY 校验。detect-only / 零变更等无需翻译的
+    // 场景下，全程都不会构造翻译器，也就不需要配置 key。
 
     console.log(chalk.blue("🔄 同步管理器已初始化"));
     console.log(chalk.gray(`  项目根目录: ${this.projectRoot}`));
@@ -131,13 +131,67 @@ export class SyncManager {
   }
 
   /**
+   * 懒加载翻译器
+   * 仅在真正需要翻译时才构造 DocumentTranslator（构造时会校验 OPENAI_API_KEY）。
+   */
+  private getTranslator(): DocumentTranslator {
+    if (!this.translator) {
+      this.translator = new DocumentTranslator({
+        projectRoot: this.projectRoot,
+      });
+    }
+    return this.translator;
+  }
+
+  /**
    * 检测并同步文档变更
    */
-  async syncDocuments(forceSync: boolean = false): Promise<SyncResult> {
+  async syncDocuments(
+    forceSync: boolean = false,
+    options: { detectOnly?: boolean; sourceOnly?: boolean } = {}
+  ): Promise<SyncResult> {
     try {
       console.log(chalk.yellow("🔍 检测文档变更..."));
 
       const changes = await this.detectChanges();
+
+      // detect-only：只检测并返回变更文件清单。不复制源文档、不翻译、不更新
+      // last-sync.json / changelog，也不构造翻译器，因此无需配置 OPENAI_API_KEY。
+      // 注意：检测本身仍需克隆/更新源仓库（.temp-source-repo）用于比对。
+      if (options.detectOnly) {
+        if (forceSync) {
+          console.log(
+            chalk.yellow("⚠️  detect-only 模式下 --force 无效，已忽略")
+          );
+        }
+        if (options.sourceOnly) {
+          console.log(
+            chalk.yellow(
+              "⚠️  已同时指定 --source-only，被 --detect-only 覆盖（不写入任何文件）"
+            )
+          );
+        }
+        if (changes.isFirstSync && changes.files.length > 0) {
+          console.log(
+            chalk.blue(
+              `📝 首次检测（缺少同步基线 last-sync.json）：列出全部 ${changes.files.length} 个文档`
+            )
+          );
+        } else if (changes.files.length === 0) {
+          console.log(chalk.green("✅ 没有检测到文档变更"));
+        } else {
+          console.log(
+            chalk.blue(
+              `📝 检测到 ${changes.files.length} 个文件变更（detect-only：不翻译、不更新 content/ 与同步记录）`
+            )
+          );
+        }
+        return {
+          success: true,
+          changes: changes.files.length,
+          files: changes.files,
+        };
+      }
 
       if (!forceSync && changes.files.length === 0) {
         console.log(chalk.green("✅ 没有检测到文档变更"));
@@ -145,6 +199,33 @@ export class SyncManager {
       }
 
       console.log(chalk.blue(`📝 检测到 ${changes.files.length} 个文件变更`));
+
+      // source-only：把上游源文档写入 content/<sourceLanguage> 与 .source-docs，
+      // 但不翻译、不更新 last-sync.json / changelog，也不构造翻译器（无需 key）。
+      // 刻意不推进同步基线：目标语言译文此时会落后于源文档，待配置 key 后再次运行
+      // sync 即可补齐翻译（届时仍会检测到这些文件，可自愈）。
+      if (options.sourceOnly) {
+        await this.updateBaseDocs();
+        console.log(
+          chalk.green(
+            "✅ 已更新源文档（source-only：未翻译；未推进 last-sync.json，配置 key 后再次 sync 可补齐翻译）"
+          )
+        );
+        return {
+          success: true,
+          changes: changes.files.length,
+          files: changes.files,
+        };
+      }
+
+      // 正常 sync：在写入任何文件之前先构造翻译器以校验 OPENAI_API_KEY，
+      // 恢复“缺 key 立即失败、不产生半写状态”的行为（懒加载后默认会等到翻译阶段
+      // 才校验，导致 content/ 已被覆写后才报错）。
+      // 作用域说明：detect-only 已在上方返回；未指定 --force 的零变更也已在上方
+      // 返回——这两类无需 key。但 --force 会绕过零变更早返回，届时即使没有变更也会
+      // 走到这里并要求 key（属 --force 的既有语义，不在本次改动范围）。
+      // 此处丢弃返回值仅为提前校验；实例已被缓存，翻译阶段会复用同一实例。
+      this.getTranslator();
 
       // 更新基础文档
       await this.updateBaseDocs();
@@ -340,6 +421,9 @@ export class SyncManager {
       chalk.yellow(`🌍 开始并行翻译 ${this.targetLanguages.length} 种语言...`)
     );
 
+    // 在并行翻译前构造翻译器（此处会校验 OPENAI_API_KEY，缺失则尽早抛错）
+    const translator = this.getTranslator();
+
     // 并行翻译所有语言
     const languagePromises = this.targetLanguages.map(async (language) => {
       const result: TranslationResult = {
@@ -377,7 +461,7 @@ export class SyncManager {
           }
 
           // 翻译文件
-          const translatedContent = await this.translator.translateDocument(
+          const translatedContent = await translator.translateDocument(
             sourcePath,
             language
           );

@@ -337,7 +337,11 @@ class TranslationCLI {
   /**
    * Sync source repository documents
    */
-  async syncDocuments(force: boolean = false): Promise<void> {
+  async syncDocuments(
+    force: boolean = false,
+    detectOnly: boolean = false,
+    sourceOnly: boolean = false
+  ): Promise<void> {
     const projectConfig = await this.loadProjectConfig();
     if (!projectConfig) {
       console.error(
@@ -361,11 +365,20 @@ class TranslationCLI {
     });
 
     try {
-      const result = await syncManager.syncDocuments(force);
+      const result = await syncManager.syncDocuments(force, {
+        detectOnly,
+        sourceOnly,
+      });
 
       if (result.success) {
         console.log(
-          chalk.green(`✅ Sync completed! Changed files: ${result.changes}`)
+          chalk.green(
+            detectOnly
+              ? `✅ Detection completed! Changed files: ${result.changes}`
+              : sourceOnly
+              ? `✅ Source docs updated (no translation)! Changed files: ${result.changes}`
+              : `✅ Sync completed! Changed files: ${result.changes}`
+          )
         );
 
         if (result.files.length > 0) {
@@ -721,8 +734,20 @@ async function main() {
     .command("sync")
     .description("Sync source repository documents")
     .option("-f, --force", "Force sync all documents")
+    .option(
+      "-d, --detect-only",
+      "Only detect & list changed files; skip translation (no API key required)"
+    )
+    .option(
+      "-s, --source-only",
+      "Detect changes and write source-language docs, but skip translation; does not advance last-sync.json (no API key required)"
+    )
     .action(async (options) => {
-      await cli.syncDocuments(options.force);
+      await cli.syncDocuments(
+        options.force,
+        options.detectOnly,
+        options.sourceOnly
+      );
     });
 
   // markdown command
