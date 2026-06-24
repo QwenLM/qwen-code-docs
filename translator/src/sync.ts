@@ -74,7 +74,7 @@ export class SyncManager {
   private branch: string; // 新增：源仓库分支
   private lastSyncFile: string;
   private changelogFile: string;
-  private translator: DocumentTranslator;
+  private translator: DocumentTranslator | null = null; // 懒加载：仅在需要翻译时构造
   private projectRoot: string; // 新增：项目根目录
   private outputDir: string; // 新增：输出目录
 
@@ -115,9 +115,9 @@ export class SyncManager {
       this.projectRoot,
       "translation-changelog.json"
     );
-    this.translator = new DocumentTranslator({
-      projectRoot: this.projectRoot,
-    });
+    // 翻译器改为懒加载（见 getTranslator）：构造期不再创建 DocumentTranslator，
+    // 因此不会在此触发 OPENAI_API_KEY 校验。detect-only / 零变更等无需翻译的
+    // 场景下，全程都不会构造翻译器，也就不需要配置 key。
 
     console.log(chalk.blue("🔄 同步管理器已初始化"));
     console.log(chalk.gray(`  项目根目录: ${this.projectRoot}`));
@@ -131,13 +131,44 @@ export class SyncManager {
   }
 
   /**
+   * 懒加载翻译器
+   * 仅在真正需要翻译时才构造 DocumentTranslator（构造时会校验 OPENAI_API_KEY）。
+   */
+  private getTranslator(): DocumentTranslator {
+    if (!this.translator) {
+      this.translator = new DocumentTranslator({
+        projectRoot: this.projectRoot,
+      });
+    }
+    return this.translator;
+  }
+
+  /**
    * 检测并同步文档变更
    */
-  async syncDocuments(forceSync: boolean = false): Promise<SyncResult> {
+  async syncDocuments(
+    forceSync: boolean = false,
+    options: { detectOnly?: boolean } = {}
+  ): Promise<SyncResult> {
     try {
       console.log(chalk.yellow("🔍 检测文档变更..."));
 
       const changes = await this.detectChanges();
+
+      // detect-only：只检测并返回变更文件清单，不复制源文档、不翻译、不更新同步记录，
+      // 全程不构造翻译器，因此无需配置 OPENAI_API_KEY。
+      if (options.detectOnly) {
+        console.log(
+          chalk.blue(
+            `📝 检测到 ${changes.files.length} 个文件变更（detect-only：不翻译、不写入任何文件）`
+          )
+        );
+        return {
+          success: true,
+          changes: changes.files.length,
+          files: changes.files,
+        };
+      }
 
       if (!forceSync && changes.files.length === 0) {
         console.log(chalk.green("✅ 没有检测到文档变更"));
@@ -340,6 +371,9 @@ export class SyncManager {
       chalk.yellow(`🌍 开始并行翻译 ${this.targetLanguages.length} 种语言...`)
     );
 
+    // 在并行翻译前构造翻译器（此处会校验 OPENAI_API_KEY，缺失则尽早抛错）
+    const translator = this.getTranslator();
+
     // 并行翻译所有语言
     const languagePromises = this.targetLanguages.map(async (language) => {
       const result: TranslationResult = {
@@ -377,7 +411,7 @@ export class SyncManager {
           }
 
           // 翻译文件
-          const translatedContent = await this.translator.translateDocument(
+          const translatedContent = await translator.translateDocument(
             sourcePath,
             language
           );
