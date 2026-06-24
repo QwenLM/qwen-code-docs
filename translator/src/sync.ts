@@ -155,14 +155,30 @@ export class SyncManager {
 
       const changes = await this.detectChanges();
 
-      // detect-only：只检测并返回变更文件清单，不复制源文档、不翻译、不更新同步记录，
-      // 全程不构造翻译器，因此无需配置 OPENAI_API_KEY。
+      // detect-only：只检测并返回变更文件清单。不复制源文档、不翻译、不更新
+      // last-sync.json / changelog，也不构造翻译器，因此无需配置 OPENAI_API_KEY。
+      // 注意：检测本身仍需克隆/更新源仓库（.temp-source-repo）用于比对。
       if (options.detectOnly) {
-        console.log(
-          chalk.blue(
-            `📝 检测到 ${changes.files.length} 个文件变更（detect-only：不翻译、不写入任何文件）`
-          )
-        );
+        if (forceSync) {
+          console.log(
+            chalk.yellow("⚠️  detect-only 模式下 --force 无效，已忽略")
+          );
+        }
+        if (changes.isFirstSync && changes.files.length > 0) {
+          console.log(
+            chalk.blue(
+              `📝 首次检测（缺少同步基线 last-sync.json）：列出全部 ${changes.files.length} 个文档`
+            )
+          );
+        } else if (changes.files.length === 0) {
+          console.log(chalk.green("✅ 没有检测到文档变更"));
+        } else {
+          console.log(
+            chalk.blue(
+              `📝 检测到 ${changes.files.length} 个文件变更（detect-only：不翻译、不更新 content/ 与同步记录）`
+            )
+          );
+        }
         return {
           success: true,
           changes: changes.files.length,
@@ -176,6 +192,15 @@ export class SyncManager {
       }
 
       console.log(chalk.blue(`📝 检测到 ${changes.files.length} 个文件变更`));
+
+      // 正常 sync：在写入任何文件之前先构造翻译器以校验 OPENAI_API_KEY，
+      // 恢复“缺 key 立即失败、不产生半写状态”的行为（懒加载后默认会等到翻译阶段
+      // 才校验，导致 content/ 已被覆写后才报错）。
+      // 作用域说明：detect-only 已在上方返回；未指定 --force 的零变更也已在上方
+      // 返回——这两类无需 key。但 --force 会绕过零变更早返回，届时即使没有变更也会
+      // 走到这里并要求 key（属 --force 的既有语义，不在本次改动范围）。
+      // 此处丢弃返回值仅为提前校验；实例已被缓存，翻译阶段会复用同一实例。
+      this.getTranslator();
 
       // 更新基础文档
       await this.updateBaseDocs();
