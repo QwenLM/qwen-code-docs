@@ -11,3 +11,6 @@ _pagefind/
 src/generated/
 
 node_modules/
+
+# stray editor/agent backups
+*.bak
