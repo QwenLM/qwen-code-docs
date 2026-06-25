@@ -31,6 +31,10 @@ jobs:
       - name: Build website
         run: npm run build
         working-directory: ./website
+        env:
+          # Docs set grew large (multi-locale + synced source docs); raise the
+          # V8 heap so `next build` doesn't OOM at the default ~4GB old-space cap.
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
