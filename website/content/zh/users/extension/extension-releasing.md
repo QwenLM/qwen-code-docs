@@ -75,7 +75,7 @@ Qwen Code 扩展可以通过 [GitHub Releases](https://docs.github.com/en/reposi
 
 归档必须是完全自包含的扩展，并满足所有标准要求——特别是 `qwen-extension.json` 文件必须位于归档的根目录。
 
-其余布局应与典型扩展完全一致，请参阅 [extensions.md](extension.md)。
+其余布局应与典型扩展完全一致，请参阅 [introduction.md](./introduction.md)。
 
 #### GitHub Actions 工作流示例
 
@@ -98,7 +98,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install dependencies
         run: npm ci

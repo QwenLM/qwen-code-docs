@@ -37,7 +37,7 @@
 ## 常见问题解答 (FAQ)
 
 - **问：如何将 Qwen Code 更新到最新版本？**
-  - **答：** 如果你通过 `npm` 全局安装，请使用命令 `npm install -g @qwen-code/qwen-code@latest` 进行更新。如果你是从源码编译的，请从仓库拉取最新更改，然后使用命令 `npm run build` 重新构建。
+  - **答：** 如果你使用独立安装程序安装了 Qwen Code，请重新运行独立安装命令。如果你通过 `npm` 全局安装，请使用命令 `npm install -g @qwen-code/qwen-code@latest` 进行更新。如果你是从源码编译的，请从仓库拉取最新更改，然后使用命令 `npm run build` 重新构建。
 
 - **问：Qwen Code 的配置或设置文件存储在哪里？**
   - **答：** Qwen Code 的配置存储在两个 `settings.json` 文件中：
@@ -60,6 +60,7 @@
   - **原因：** CLI 未正确安装，或未添加到系统的 `PATH` 环境变量中。
   - **解决方案：**
     更新方法取决于你安装 Qwen Code 的方式：
+    - 如果你使用独立安装程序安装了 `qwen`，请重新运行独立安装命令，然后打开新终端。
     - 如果你全局安装了 `qwen`，请检查 `npm` 全局二进制目录是否已加入 `PATH`。你可以使用命令 `npm install -g @qwen-code/qwen-code@latest` 进行更新。
     - 如果你从源码运行 `qwen`，请确保使用正确的命令调用它（例如 `node packages/cli/dist/index.js ...`）。如需更新，请从仓库拉取最新更改，然后使用命令 `npm run build` 重新构建。
 
@@ -84,6 +85,11 @@
   - **原因：** 为防止干扰 CLI 行为，`DEBUG` 和 `DEBUG_MODE` 变量会自动从项目 `.env` 文件中排除。
   - **解决方案：** 改用 `.qwen/.env` 文件，或在 `settings.json` 中配置 `advanced.excludedEnvVars` 设置以减少排除的变量。
 
+- **问题：在 tmux 中触控板滚动改变提示历史记录而非滚动对话**
+  - **现象：** 在 tmux 会话中，触控板或滚轮滚动可能会循环遍历之前的提示，类似于按 `Up Arrow` 或 `Down Arrow`。
+  - **原因：** tmux 可以将滚轮手势转换为普通方向键序列。这些序列在 qwen-code 收到时与真实方向键按键无法区分。
+  - **解决方案：** 启用 `ui.useTerminalBuffer`；然后使用 `Shift+Up` / `Shift+Down`，或在 tmux 将滚轮事件转发给应用时使用鼠标滚轮。如果你偏好宿主回滚，请调整 tmux 中滚轮事件的鼠标绑定。
+
 ## IDE Companion 无法连接
 
 - 确保 VS Code 仅打开了一个工作区文件夹。
@@ -97,13 +103,13 @@
 
 Qwen Code 使用特定的退出码来指示终止原因。这在编写脚本和自动化任务时非常有用。
 
-| Exit Code | Error Type                 | Description                                                                                         |
-| --------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
-| 41        | `FatalAuthenticationError` | 身份验证过程中发生错误。                                                |
-| 42        | `FatalInputError`          | 向 CLI 提供了无效或缺失的输入。（仅限非交互模式）                       |
-| 44        | `FatalSandboxError`        | 沙箱环境发生错误（例如 Docker、Podman 或 Seatbelt）。               |
-| 52        | `FatalConfigError`         | 配置文件（`settings.json`）无效或包含错误。                               |
-| 53        | `FatalTurnLimitedError`    | 已达到会话的最大对话轮数限制。（仅限非交互模式） |
+| 退出码 | 错误类型                   | 描述                                                                      |
+| ------ | -------------------------- | ------------------------------------------------------------------------- |
+| 41     | `FatalAuthenticationError` | 身份验证过程中发生错误。                                                  |
+| 42     | `FatalInputError`          | 向 CLI 提供了无效或缺失的输入。（仅限非交互模式）                        |
+| 44     | `FatalSandboxError`        | 沙箱环境发生错误（例如 Docker、Podman 或 Seatbelt）。                    |
+| 52     | `FatalConfigError`         | 配置文件（`settings.json`）无效或包含错误。                               |
+| 53     | `FatalTurnLimitedError`    | 已达到会话的最大对话轮数限制。（仅限非交互模式）                         |
 
 ## 调试技巧
 

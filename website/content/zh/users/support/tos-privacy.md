@@ -15,7 +15,7 @@ Qwen Code 支持三种身份验证方法来访问 AI 模型。你的身份验证
 | 身份验证方法              | 服务提供商        | 服务条款                                                           | 隐私声明                                                           |
 | :------------------------ | :---------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------- |
 | Qwen OAuth                | Qwen AI           | [Qwen 服务条款](https://qwen.ai/termsservice)              | [Qwen 隐私政策](https://qwen.ai/privacypolicy)               |
-| Alibaba Cloud Coding Plan | 阿里云            | 详见[下方说明](#2-if-you-are-using-alibaba-cloud-coding-plan) | 详见[下方说明](#2-if-you-are-using-alibaba-cloud-coding-plan) |
+| Alibaba Cloud Coding Plan | 阿里云            | 详见[下方说明](#2-如果你使用-alibaba-cloud-coding-plan) | 详见[下方说明](#2-如果你使用-alibaba-cloud-coding-plan) |
 | API Key                   | 多家提供商        | 取决于你选择的 API 提供商（OpenAI、Anthropic 等）                  | 取决于你选择的 API 提供商                                          |
 
 ## 1. 如果你使用 Qwen OAuth 身份验证
@@ -109,4 +109,4 @@ Qwen Code 可能会收集匿名使用统计数据和 [遥测](../../developers/d
 2. **在 CLI 中**：使用 `/auth` 命令重新配置你的身份验证方法
 3. **环境变量**：配置 `.env` 文件以实现 API key 自动身份验证
 
-有关详细说明，请参阅 [身份验证设置](../configuration/settings#environment-variables-for-api-access) 文档。
+有关详细说明，请参阅[身份验证设置](../configuration/auth.md)文档。

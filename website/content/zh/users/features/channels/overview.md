@@ -1,29 +1,29 @@
-# 频道
+# Channels
 
-频道允许你通过 Telegram、微信或钉钉等消息平台与 Qwen Code Agent 进行交互，而无需使用终端。你只需在手机或桌面聊天应用中发送消息，Agent 就会像在 CLI 中一样进行回复。
+Channels 让你可以从 Telegram、微信、QQ 或钉钉等消息平台与 Qwen Code agent 交互，而无需使用终端。你在手机或桌面聊天应用中发送消息，agent 的响应方式与 CLI 中完全相同。
 
 ## 工作原理
 
-运行 `qwen channel start` 时，Qwen Code 会：
+当你运行 `qwen channel start` 时，Qwen Code 会：
 
-1. 从你的 `settings.json` 读取频道配置
-2. 使用 [Agent Client Protocol (ACP)](../../developers/architecture) 生成单个 Agent 进程
-3. 连接到各个消息平台并开始监听消息
-4. 将收到的消息路由给 Agent，并将响应发送回对应的聊天窗口
+1. 从 `settings.json` 中读取 channel 配置
+2. 使用 [Agent Client Protocol (ACP)](../../../developers/architecture.md) 启动一个 agent 进程
+3. 连接到各消息平台并开始监听消息
+4. 将收到的消息路由到 agent，并将响应发送回对应的聊天会话
 
-所有频道共享同一个 Agent 进程，但每个用户的会话是相互隔离的。每个频道可以拥有独立的工作目录、模型和指令。
+所有 channel 共享一个 agent 进程，每个用户拥有独立的会话。每个 channel 可以有自己的工作目录、模型和指令。
 
 ## 快速开始
 
-1. 在消息平台上创建机器人（参见各频道专属指南：[Telegram](./telegram)、[WeChat](./weixin)、[DingTalk](./dingtalk)）
-2. 将频道配置添加到 `~/.qwen/settings.json`
-3. 运行 `qwen channel start` 启动所有频道，或运行 `qwen channel start <name>` 启动单个频道
+1. 在消息平台上设置 bot（参见各平台指南：[Telegram](./telegram)、[WeChat](./weixin)、[QQ Bot](./qqbot)、[DingTalk](./dingtalk)）
+2. 在 `~/.qwen/settings.json` 中添加 channel 配置
+3. 运行 `qwen channel start` 启动所有 channel，或 `qwen channel start <name>` 启动单个 channel
 
-想要连接未内置的平台？请参阅 [Plugins](./plugins) 以扩展形式添加自定义适配器。
+想接入未内置的平台？参见 [Plugins](./plugins) 了解如何以扩展形式添加自定义适配器。
 
 ## 配置
 
-频道在 `settings.json` 的 `channels` 键下进行配置。每个频道包含一个名称和一组选项：
+Channel 在 `settings.json` 的 `channels` 键下配置。每个 channel 有一个名称和一组选项：
 
 ```json
 {
@@ -47,44 +47,44 @@
 
 ### 选项
 
-| Option                   | Required | Description                                                                                                                                    |
+| 选项                     | 是否必填  | 描述                                                                                                                                           |
 | ------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                   | Yes      | 频道类型：`telegram`、`weixin`、`dingtalk`，或来自扩展的自定义类型（参见 [Plugins](./plugins)）                                  |
-| `token`                  | Telegram | 机器人 Token。支持 `$ENV_VAR` 语法从环境变量读取。微信或钉钉无需此项                                    |
-| `clientId`               | DingTalk | 钉钉 AppKey。支持 `$ENV_VAR` 语法                                                                                                    |
-| `clientSecret`           | DingTalk | 钉钉 AppSecret。支持 `$ENV_VAR` 语法                                                                                                 |
-| `model`                  | No       | 该频道使用的模型（例如 `qwen3.5-plus`）。会覆盖默认模型。适用于支持图像输入的多模态模型       |
-| `senderPolicy`           | No       | 允许谁与机器人对话：`allowlist`（默认）、`open` 或 `pairing`                                                                           |
-| `allowedUsers`           | No       | 允许使用机器人的用户 ID 列表（由 `allowlist` 和 `pairing` 策略使用）                                                           |
-| `sessionScope`           | No       | 会话作用域：`user`（默认）、`thread` 或 `single`                                                                               |
-| `cwd`                    | No       | Agent 的工作目录。默认为当前目录                                                                             |
-| `instructions`           | No       | 自定义指令，会追加到每个会话的首条消息前                                                                             |
-| `groupPolicy`            | No       | 群聊访问权限：`disabled`（默认）、`allowlist` 或 `open`。参见 [Group Chats](#group-chats)                                               |
-| `groups`                 | No       | 按群聊配置的设置。键为群聊 ID 或 `"*"`（表示默认值）。参见 [Group Chats](#group-chats)                                             |
-| `dispatchMode`           | No       | 当机器人仍在处理上一条消息时发送新消息的处理方式：`steer`（默认）、`collect` 或 `followup`。参见 [Dispatch Modes](#dispatch-modes) |
-| `blockStreaming`         | No       | 渐进式响应输出：`on` 或 `off`（默认）。参见 [Block Streaming](#block-streaming)                                                |
-| `blockStreamingChunk`    | No       | 分块大小限制：`{ "minChars": 400, "maxChars": 1000 }`。参见 [Block Streaming](#block-streaming)                                            |
-| `blockStreamingCoalesce` | No       | 空闲刷新：`{ "idleMs": 1500 }`。参见 [Block Streaming](#block-streaming)                                                                      |
+| `type`                   | 是       | Channel 类型：`telegram`、`weixin`、`qq`、`dingtalk`、`feishu`，或扩展中的自定义类型（参见 [Plugins](./plugins)）                              |
+| `token`                  | Telegram | Bot token。支持 `$ENV_VAR` 语法从环境变量读取。WeChat 或 DingTalk 不需要此项                                                                   |
+| `clientId`               | DingTalk | DingTalk AppKey。支持 `$ENV_VAR` 语法                                                                                                          |
+| `clientSecret`           | DingTalk | DingTalk AppSecret。支持 `$ENV_VAR` 语法                                                                                                       |
+| `model`                  | 否       | 该 channel 使用的模型（如 `qwen3.5-plus`）。覆盖默认模型。适用于支持图片输入的多模态模型                                                        |
+| `senderPolicy`           | 否       | 可与 bot 交互的用户范围：`allowlist`（默认）、`open` 或 `pairing`                                                                              |
+| `allowedUsers`           | 否       | 允许使用 bot 的用户 ID 列表（由 `allowlist` 和 `pairing` 策略使用）                                                                            |
+| `sessionScope`           | 否       | 会话作用域：`user`（默认）、`thread` 或 `single`                                                                                               |
+| `cwd`                    | 否       | agent 的工作目录。默认为当前目录                                                                                                                |
+| `instructions`           | 否       | 自定义指令，会在每个会话的第一条消息前插入                                                                                                      |
+| `groupPolicy`            | 否       | 群聊访问策略：`disabled`（默认）、`allowlist` 或 `open`。参见 [群聊](#group-chats)                                                             |
+| `groups`                 | 否       | 每个群的设置。键为群聊 ID 或 `"*"` 表示默认值。参见 [群聊](#group-chats)                                                                       |
+| `dispatchMode`           | 否       | bot 繁忙时发送新消息的处理方式：`steer`（默认）、`collect` 或 `followup`。参见 [Dispatch Modes](#dispatch-modes)                               |
+| `blockStreaming`         | 否       | 渐进式响应投递：`on` 或 `off`（默认）。参见 [Block Streaming](#block-streaming)                                                                |
+| `blockStreamingChunk`    | 否       | 分块大小限制：`{ "minChars": 400, "maxChars": 1000 }`。参见 [Block Streaming](#block-streaming)                                                |
+| `blockStreamingCoalesce` | 否       | 空闲刷新：`{ "idleMs": 1500 }`。参见 [Block Streaming](#block-streaming)                                                                       |
 
-### 发送者策略 (Sender Policy)
+### Sender Policy
 
-控制谁可以与机器人交互：
+控制谁可以与 bot 交互：
 
-- **`allowlist`**（默认）— 仅 `allowedUsers` 列表中的用户可以发送消息。其他用户的消息将被静默忽略。
-- **`pairing`** — 未知发送者将收到一个配对码。机器人操作员通过 CLI 批准后，他们会被加入持久化的白名单。`allowedUsers` 中的用户完全跳过配对流程。参见下方的 [DM Pairing](#dm-pairing)。
-- **`open`** — 任何人都可以发送消息。请谨慎使用。
+- **`allowlist`**（默认）—— 只有 `allowedUsers` 中列出的用户可以发送消息。其他用户会被静默忽略。
+- **`pairing`** —— 未知发送者会收到一个配对码。bot 运营者通过 CLI 审批后，该用户会被加入持久化白名单。在 `allowedUsers` 中列出的用户会直接跳过配对流程。参见下方 [DM Pairing](#dm-pairing)。
+- **`open`** —— 任何人都可以发送消息。请谨慎使用。
 
-### 会话作用域 (Session Scope)
+### Session Scope
 
-控制对话会话的管理方式：
+控制会话的管理方式：
 
-- **`user`**（默认）— 每个用户一个会话。同一用户的所有消息共享同一个对话。
-- **`thread`** — 每个线程/话题一个会话。适用于支持线程的群聊。
-- **`single`** — 所有用户共享一个会话。所有人共用同一个对话。
+- **`user`**（默认）—— 每个用户一个会话。同一用户的所有消息共享一个对话。
+- **`thread`** —— 每个 thread/话题一个会话。适用于有话题功能的群聊。
+- **`single`** —— 所有用户共享一个会话。所有人共用同一个对话。
 
 ### Token 安全
 
-机器人 Token 不应直接存储在 `settings.json` 中。请改用环境变量引用：
+Bot token 不应直接存储在 `settings.json` 中。请使用环境变量引用：
 
 ```json
 {
@@ -92,56 +92,56 @@
 }
 ```
 
-将实际的 Token 设置在 Shell 环境变量中，或放在运行频道前加载的 `.env` 文件里。
+在 shell 环境中或在运行 channel 前加载的 `.env` 文件中设置实际 token。
 
-## DM 配对 (DM Pairing)
+## DM Pairing
 
-当 `senderPolicy` 设置为 `"pairing"` 时，未知发送者将进入审批流程：
+当 `senderPolicy` 设置为 `"pairing"` 时，未知发送者需经过审批流程：
 
-1. 未知用户向机器人发送消息
-2. 机器人回复一个 8 位配对码（例如 `VEQDDWXJ`）
-3. 用户将该配对码分享给你（机器人操作员）
-4. 你通过 CLI 批准他们：
+1. 未知用户向 bot 发送消息
+2. Bot 回复一个 8 位配对码（例如 `VEQDDWXJ`）
+3. 用户将配对码分享给 bot 运营者（即你）
+4. 通过 CLI 审批：
 
 ```bash
 qwen channel pairing approve my-channel VEQDDWXJ
 ```
 
-批准后，该用户的 ID 将保存至 `~/.qwen/channels/<name>-allowlist.json`，后续所有消息将正常处理。
+审批通过后，该用户的 ID 会保存到 `~/.qwen/channels/<name>-allowlist.json`，后续消息将正常处理。
 
-### 配对 CLI 命令
+### Pairing CLI 命令
 
 ```bash
-# 列出待处理的配对请求
+# 列出待审批的配对请求
 qwen channel pairing list my-channel
 
-# 通过配对码批准请求
+# 通过配对码审批请求
 qwen channel pairing approve my-channel <CODE>
 ```
 
-### 配对规则
+### Pairing 规则
 
-- 配对码为 8 位大写字母，使用无歧义字符集（不含 `0`/`O`/`1`/`I`）
+- 配对码为 8 位大写字母，使用无歧义字母表（不含 `0`/`O`/`1`/`I`）
 - 配对码 1 小时后过期
-- 每个频道同时最多处理 3 个待处理请求——在某个请求过期或被批准前，额外的请求将被忽略
-- `settings.json` 中 `allowedUsers` 列表内的用户始终跳过配对流程
-- 已批准的用户存储在 `~/.qwen/channels/<name>-allowlist.json` 中——请将该文件视为敏感信息妥善保管
+- 每个 channel 最多同时有 3 个待审批请求——超出的请求会被忽略，直到有请求过期或被审批
+- 在 `settings.json` 的 `allowedUsers` 中列出的用户始终跳过配对
+- 已审批用户存储在 `~/.qwen/channels/<name>-allowlist.json` 中——请将此文件视为敏感信息
 
-## 群聊 (Group Chats)
+## 群聊 {#group-chats}
 
-默认情况下，机器人仅在私聊中工作。要启用群聊支持，请将 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`。
+默认情况下，bot 只在私信中工作。要启用群聊支持，请将 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`。
 
-### 群聊策略 (Group Policy)
+### Group Policy
 
-控制机器人是否参与群聊：
+控制 bot 是否参与群聊：
 
-- **`disabled`**（默认）— 机器人忽略所有群消息。最安全的选项。
-- **`allowlist`** — 机器人仅响应 `groups` 中通过聊天 ID 明确列出的群聊。`"*"` 键仅提供默认设置，**不**作为通配符放行。
-- **`open`** — 机器人响应其加入的所有群聊。请谨慎使用。
+- **`disabled`**（默认）—— Bot 忽略所有群消息。最安全的选项。
+- **`allowlist`** —— Bot 只在 `groups` 中通过群聊 ID 明确列出的群中响应。`"*"` 键提供默认设置，但**不**作为通配符白名单。
+- **`open`** —— Bot 在被添加到的所有群中响应。请谨慎使用。
 
-### @提及限制 (Mention Gating)
+### Mention Gating
 
-在群聊中，默认情况下机器人需要被 `@提及` 或回复其某条消息才会响应。这可以防止机器人回复群聊中的每条消息。
+在群聊中，bot 默认需要 `@mention` 或回复其消息才会响应。这可以防止 bot 回复群聊中的每一条消息。
 
 通过 `groups` 设置按群配置：
 
@@ -154,48 +154,48 @@ qwen channel pairing approve my-channel <CODE>
 }
 ```
 
-- **`"*"`** — 所有群的默认设置。仅设置配置默认值，不作为白名单条目。
-- **群聊 ID** — 覆盖特定群的设置。会覆盖 `"*"` 的默认值。
-- **`requireMention`**（默认：`true`）— 为 `true` 时，机器人仅响应 @提及它或回复其消息的内容。为 `false` 时，机器人响应所有消息（适用于专属任务群）。
+- **`"*"`** —— 所有群的默认设置。仅设置配置默认值，不作为白名单条目。
+- **群聊 ID** —— 覆盖特定群的设置。会覆盖 `"*"` 的默认值。
+- **`requireMention`**（默认：`true`）—— 为 `true` 时，bot 只响应 @mention 它或回复其消息的消息。为 `false` 时，bot 响应所有消息（适用于专用任务群）。
 
-### 群消息评估流程
+### 群消息的处理流程
 
 ```
-1. groupPolicy — 是否允许该群？           (否 → 忽略)
-2. requireMention — 是否 @提及/回复了机器人？ (否 → 忽略)
-3. senderPolicy — 发送者是否已获批准？         (否 → 进入配对流程)
+1. groupPolicy —— 该群是否被允许？           （否 → 忽略）
+2. requireMention —— bot 是否被 mention/回复？ （否 → 忽略）
+3. senderPolicy —— 该发送者是否已审批？         （否 → 进入配对流程）
 4. 路由到会话
 ```
 
 ### Telegram 群聊设置
 
-1. 将机器人添加到群聊
-2. 在 BotFather 中**关闭隐私模式**（`/mybots` → Bot Settings → Group Privacy → Turn Off）— 否则机器人将无法看到非命令消息
-3. 更改隐私模式后，**将机器人移出群聊并重新添加**（Telegram 会缓存此设置）
+1. 将 bot 添加到群聊
+2. 在 BotFather 中**关闭隐私模式**（`/mybots` → Bot Settings → Group Privacy → Turn Off）——否则 bot 无法看到非命令消息
+3. 修改隐私模式后**将 bot 从群中移除并重新添加**（Telegram 会缓存此设置）
 
-### 获取群聊 ID
+### 查找群聊 ID
 
-要获取用于 `groups` 白名单的群聊 ID：
+要获取群聊 ID 用于 `groups` 白名单：
 
-1. 如果机器人正在运行，请先停止它
-2. 在群聊中发送一条 @提及机器人的消息
-3. 使用 Telegram Bot API 检查排队的更新：
+1. 如果 bot 正在运行，先停止它
+2. 在群中发送一条 mention bot 的消息
+3. 使用 Telegram Bot API 查看队列中的更新：
 
 ```bash
 curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3 -m json.tool
 ```
 
-在响应中查找 `message.chat.id` — 群聊 ID 为负数（例如 `-5170296765`）。
+在响应中查找 `message.chat.id`——群 ID 为负数（如 `-5170296765`）。
 
 ## 媒体支持
 
-频道支持向 Agent 发送图片和文件，而不仅仅是文本。
+Channel 支持向 agent 发送图片和文件，而不仅仅是文本。
 
 ### 图片
 
-向机器人发送照片，Agent 即可看到——非常适合分享截图、报错信息或图表。图片会作为视觉输入直接发送给模型。
+向 bot 发送照片，agent 即可看到——适用于分享截图、错误信息或图表。图片会作为视觉输入直接发送给模型。
 
-要使用图片支持，请为频道配置多模态模型：
+要使用图片支持，请为 channel 配置多模态模型：
 
 ```json
 {
@@ -211,25 +211,25 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 
 ### 文件
 
-向机器人发送文档（PDF、代码文件、文本文件等）。文件会被下载并保存到临时目录，Agent 会收到文件路径，以便使用其文件读取工具读取内容。
+向 bot 发送文档（PDF、代码文件、文本文件等）。文件会被下载并保存到临时目录，agent 会收到文件路径，可以使用其文件读取工具读取内容。
 
-文件功能适用于任何模型——无需多模态支持。
+文件功能适用于任何模型——不需要多模态支持。
 
 ### 平台差异
 
-| Feature  | Telegram                                     | WeChat                           | DingTalk                                      |
+| 功能     | Telegram                                     | WeChat                           | DingTalk                                      |
 | -------- | -------------------------------------------- | -------------------------------- | --------------------------------------------- |
-| Images   | 通过 Bot API 直接下载                  | CDN 下载并 AES 解密 | downloadCode API（两步）                   |
-| Files    | 通过 Bot API 直接下载（20MB 限制）     | CDN 下载并 AES 解密 | downloadCode API（两步）                   |
-| Captions | 图片/文件说明文字作为消息文本包含在内 | 不适用                   | 富文本：单条消息混合文本与图片 |
+| 图片     | 通过 Bot API 直接下载                         | CDN 下载（AES 解密）              | downloadCode API（两步）                       |
+| 文件     | 通过 Bot API 直接下载（20MB 限制）            | CDN 下载（AES 解密）              | downloadCode API（两步）                       |
+| 说明文字 | 照片/文件说明文字作为消息文本包含             | 不适用                            | 富文本：文本与图片混排在同一消息中              |
 
-## 调度模式 (Dispatch Modes)
+## Dispatch Modes
 
-控制当机器人仍在处理上一条消息时，你发送新消息会发生什么。
+控制在 bot 仍在处理上一条消息时发送新消息的行为。
 
-- **`steer`**（默认）— 机器人取消当前请求，开始处理你的新消息。最适合日常聊天，因为后续消息通常意味着你想纠正或重定向机器人。
-- **`collect`** — 你的新消息会被缓存。当前请求完成后，所有缓存的消息会合并为一条后续提示词。适用于希望排队输入想法的异步工作流。
-- **`followup`** — 每条消息都会按顺序入队，并作为独立的轮次依次处理。适用于每条消息相互独立的批处理工作流。
+- **`steer`**（默认）—— Bot 取消当前请求，开始处理新消息。适用于普通聊天场景，因为后续消息通常意味着你想纠正或重定向 bot。
+- **`collect`** —— 新消息会被缓冲。当前请求完成后，所有缓冲消息会合并为一条后续提示。适用于希望排队发送想法的异步工作流。
+- **`followup`** —— 每条消息都会入队并作为独立的轮次按顺序处理。适用于每条消息相互独立的批量工作流。
 
 ```json
 {
@@ -243,7 +243,7 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 }
 ```
 
-你也可以按群设置调度模式，覆盖频道默认值：
+也可以按群设置 dispatch mode，覆盖 channel 的默认值：
 
 ```json
 {
@@ -254,9 +254,9 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 }
 ```
 
-## 分块流式输出 (Block Streaming)
+## Block Streaming
 
-默认情况下，Agent 会工作一段时间后发送一条完整的长回复。启用分块流式输出后，响应会在 Agent 仍在处理时以多条较短的消息陆续到达——类似于 ChatGPT 或 Claude 的渐进式输出效果。
+默认情况下，agent 工作完成后会发送一条完整的响应。启用 block streaming 后，响应会在 agent 仍在工作时以多条较短的消息形式逐步发送——类似于 ChatGPT 或 Claude 显示渐进输出的方式。
 
 ```json
 {
@@ -274,63 +274,63 @@ curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3
 
 ### 工作原理
 
-- Agent 的回复会在段落边界处拆分为多个块，并作为独立消息发送
-- `minChars`（默认 400）— 块长度未达到此值前不发送，避免频繁发送极短消息
-- `maxChars`（默认 1000）— 如果块达到此长度仍未遇到自然分段，则强制发送
-- `idleMs`（默认 1500）— 如果 Agent 暂停（例如正在运行工具），则发送当前已缓存的内容
+- Agent 的响应在段落边界处分割成块，作为独立消息发送
+- `minChars`（默认 400）—— 块达到此长度前不发送，避免发送过多小消息
+- `maxChars`（默认 1000）—— 块达到此长度且没有自然分割点时强制发送
+- `idleMs`（默认 1500）—— agent 暂停时（如执行工具），将已缓冲的内容发送出去
 - Agent 完成后，剩余文本会立即发送
 
-仅需配置 `blockStreaming`。分块和合并设置均为可选，且已提供合理的默认值。
+只有 `blockStreaming` 是必填项。分块和合并设置是可选的，已有合理的默认值。
 
-## 斜杠命令 (Slash Commands)
+## Slash 命令
 
-频道支持斜杠命令。这些命令在本地处理（无需与 Agent 往返通信）：
+Channel 支持 slash 命令。这些命令在本地处理（无需 agent 往返）：
 
-- `/help` — 列出可用命令
-- `/clear` — 清除当前会话并重新开始（别名：`/reset`、`/new`）
-- `/status` — 显示会话信息和访问策略
+- `/help` —— 列出可用命令
+- `/clear` —— 清除会话并重新开始（别名：`/reset`、`/new`）
+- `/status` —— 显示会话信息和访问策略
 
-所有其他斜杠命令（例如 `/compress`、`/summary`）将转发给 Agent。
+其他所有 slash 命令（如 `/compress`、`/summary`）会转发给 agent。
 
-这些命令适用于所有频道类型（Telegram、微信、钉钉）。
+这些命令适用于所有 channel 类型（Telegram、WeChat、QQ、DingTalk）。
 
 ## 运行
 
 ```bash
-# 启动所有已配置的频道（共享 Agent 进程）
+# 启动所有已配置的 channel（共享 agent 进程）
 qwen channel start
 
-# 启动单个频道
+# 启动单个 channel
 qwen channel start my-channel
 
-# 检查服务是否正在运行
+# 检查服务是否在运行
 qwen channel status
 
-# 停止运行中的服务
+# 停止正在运行的服务
 qwen channel stop
 ```
 
-机器人以前台模式运行。按 `Ctrl+C` 停止，或在另一个终端中使用 `qwen channel stop`。
+Bot 在前台运行。按 `Ctrl+C` 停止，或从另一个终端使用 `qwen channel stop`。
 
-### 多频道模式
+### 多 Channel 模式
 
-运行不带名称的 `qwen channel start` 时，`settings.json` 中定义的所有频道将同时启动，并共享同一个 Agent 进程。每个频道维护独立的会话——即使共享同一个 Agent，Telegram 用户和微信用户也会拥有独立的对话。
+当运行 `qwen channel start` 而不指定名称时，`settings.json` 中定义的所有 channel 会共享一个 agent 进程一起启动。每个 channel 维护自己的会话——Telegram 用户和微信用户会有独立的对话，即使它们共享同一个 agent。
 
-每个频道使用其配置中指定的 `cwd`，因此不同频道可以同时处理不同的项目。
+每个 channel 使用其配置中的 `cwd`，因此不同 channel 可以同时在不同项目上工作。
 
 ### 服务管理
 
-频道服务使用 PID 文件（`~/.qwen/channels/service.pid`）来跟踪运行中的实例：
+Channel 服务使用 PID 文件（`~/.qwen/channels/service.pid`）跟踪运行实例：
 
-- **防重复启动**：服务已在运行时再次执行 `qwen channel start` 会显示错误，而不会启动第二个实例
-- **`qwen channel stop`**：从另一个终端优雅地停止运行中的服务
-- **`qwen channel status`**：显示服务是否正在运行、运行时长以及各频道的会话数量
+- **防止重复启动**：在服务已运行时再次运行 `qwen channel start` 会显示错误，而不是启动第二个实例
+- **`qwen channel stop`**：从另一个终端优雅地停止正在运行的服务
+- **`qwen channel status`**：显示服务是否在运行、运行时长以及每个 channel 的会话数
 
 ### 崩溃恢复
 
-如果 Agent 进程意外崩溃，频道服务会自动重启它并尝试恢复所有活跃会话。用户可以继续对话，无需从头开始。
+如果 agent 进程意外崩溃，channel 服务会自动重启并尝试恢复所有活跃会话。用户无需重新开始即可继续对话。
 
-- 服务运行期间，会话会持久化到 `~/.qwen/channels/sessions.json`
-- 崩溃时：Agent 会在 3 秒内重启并重新加载已保存的会话
-- 连续崩溃 3 次后，服务将报错退出
-- 正常关闭时（`Ctrl+C` 或 `qwen channel stop`）：会话数据会被清除——下次启动始终为全新状态
+- 服务运行期间，会话持久化到 `~/.qwen/channels/sessions.json`
+- 崩溃后：agent 在 3 秒内重启并重新加载已保存的会话
+- 连续崩溃 3 次后，服务会报错退出
+- 正常关闭（Ctrl+C 或 `qwen channel stop`）时：会话数据会被清除——下次启动始终是全新开始
