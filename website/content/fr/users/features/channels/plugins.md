@@ -1,27 +1,27 @@
 # Plugins de canal personnalisés
 
-Vous pouvez étendre le système de canaux avec des adaptateurs de plateforme personnalisés empaquetés sous forme d'[extensions](../../extension/introduction). Cela vous permet de connecter Qwen Code à n'importe quelle plateforme de messagerie, webhook ou transport personnalisé.
+Vous pouvez étendre le système de canaux avec des adaptateurs de plateforme personnalisés packagés en tant qu'[extensions](../../extension/introduction). Cela vous permet de connecter Qwen Code à n'importe quelle plateforme de messagerie, webhook ou transport personnalisé.
 
-## Fonctionnement
+## Comment ça fonctionne
 
 Les plugins de canal sont chargés au démarrage à partir des extensions actives. Lorsque `qwen channel start` s'exécute, il :
 
-1. Recherche les entrées `channels` dans le fichier `qwen-extension.json` de toutes les extensions activées
+1. Scanne toutes les extensions activées pour les entrées `channels` dans leur `qwen-extension.json`
 2. Importe dynamiquement le point d'entrée de chaque canal
 3. Enregistre le type de canal afin qu'il puisse être référencé dans `settings.json`
-4. Crée les instances de canal à l'aide de la fonction factory du plugin
+4. Crée des instances de canal à l'aide de la fonction d'usine du plugin
 
-Votre canal personnalisé bénéficie automatiquement du pipeline partagé complet : filtrage des expéditeurs, politiques de groupe, routage des sessions, commandes slash, récupération après plantage et pont ACP vers l'agent.
+Votre canal personnalisé bénéficie gratuitement de l'ensemble du pipeline partagé : contrôle d'accès par expéditeur, politiques de groupe, routage de session, commandes slash, récupération après panne et le pont ACP vers l'agent.
 
 ## Installation d'un canal personnalisé
 
 Installez une extension qui fournit un plugin de canal :
 
 ```bash
-# À partir d'un chemin local (pour le développement ou les plugins privés)
+# From a local path (for development or private plugins)
 qwen extensions install /path/to/my-channel-extension
 
-# Ou liez-le pour le développement (les modifications sont prises en compte immédiatement)
+# Or link it for development (changes are reflected immediately)
 qwen extensions link /path/to/my-channel-extension
 ```
 
@@ -42,46 +42,46 @@ Ajoutez une entrée de canal dans `~/.qwen/settings.json` en utilisant le type p
 }
 ```
 
-La valeur `type` doit correspondre à un type de canal enregistré par une extension installée. Consultez la documentation de l'extension pour connaître les champs spécifiques au plugin requis (par ex. `apiKey`, `webhookUrl`).
+Le `type` doit correspondre à un type de canal enregistré par une extension installée. Consultez la documentation de l'extension pour savoir quels champs spécifiques au plugin sont requis (par exemple, `apiKey`, `webhookUrl`).
 
-Toutes les options standard de canal fonctionnent avec les canaux personnalisés :
+Toutes les options de canal standard fonctionnent avec les canaux personnalisés :
 
 | Option         | Description                                    |
 | -------------- | ---------------------------------------------- |
 | `senderPolicy` | `allowlist`, `pairing` ou `open`               |
-| `allowedUsers` | Liste statique d'IDs d'expéditeurs autorisés   |
+| `allowedUsers` | Liste blanche statique des ID d'expéditeurs    |
 | `sessionScope` | `user`, `thread` ou `single`                   |
 | `cwd`          | Répertoire de travail pour l'agent             |
-| `instructions` | Ajouté au début du premier message de chaque session |
-| `model`        | Remplacement du modèle pour le canal           |
+| `instructions` | Préfixé au premier message de chaque session   |
+| `model`        | Surcharge de modèle pour le canal              |
 | `groupPolicy`  | `disabled`, `allowlist` ou `open`              |
 | `groups`       | Paramètres par groupe                          |
 
-Consultez [Vue d'ensemble](./overview) pour plus de détails sur chaque option.
+Voir [Aperçu](./overview) pour les détails de chaque option.
 
 ## Démarrage du canal
 
 ```bash
-# Démarre tous les canaux, y compris les personnalisés
+# Start all channels including custom ones
 qwen channel start
 
-# Démarre uniquement votre canal personnalisé
+# Start just your custom channel
 qwen channel start my-bot
 ```
 
-## Fonctionnalités incluses par défaut
+## Ce que vous obtenez gratuitement
 
-Les canaux personnalisés prennent automatiquement en charge toutes les fonctionnalités des canaux intégrés :
+Les canaux personnalisés prennent automatiquement en charge tout ce que les canaux intégrés font :
 
-- **Politiques d'expéditeur** — Contrôle d'accès `allowlist`, `pairing` et `open`
-- **Politiques de groupe** — Paramètres par groupe avec filtrage optionnel via @mention
-- **Routage des sessions** — Sessions par utilisateur, par thread ou session unique partagée
-- **Appairage en MP** — Flux complet de code d'appairage pour les utilisateurs inconnus
-- **Commandes slash** — `/help`, `/clear`, `/status` fonctionnent nativement
-- **Instructions personnalisées** — Ajoutées au début du premier message de chaque session
-- **Récupération après plantage** — Redémarrage automatique avec préservation de la session
-- **Sérialisation par session** — Les messages sont mis en file d'attente pour éviter les conditions de concurrence
+- **Politiques d'expéditeur** — contrôle d'accès `allowlist`, `pairing` et `open`
+- **Politiques de groupe** — paramètres par groupe avec filtrage optionnel par @mention
+- **Routage de session** — sessions partagées par utilisateur, par fil ou unique
+- **Appairage DM** — flux complet de code d'appairage pour les utilisateurs inconnus
+- **Commandes slash** — `/help`, `/clear`, `/status` fonctionnent dès l'installation
+- **Instructions personnalisées** — préfixées au premier message de chaque session
+- **Récupération après panne** — redémarrage automatique avec préservation de la session
+- **Sérialisation par session** — les messages sont mis en file d'attente pour éviter les conditions de concurrence
 
-## Création de votre propre plugin de canal
+## Créer votre propre plugin de canal
 
-Vous souhaitez créer un plugin de canal pour une nouvelle plateforme ? Consultez le [Guide de développement de plugins de canal](/developers/channel-plugins) pour découvrir l'interface `ChannelPlugin`, le format `Envelope` et les points d'extension.
+Vous voulez créer un plugin de canal pour une nouvelle plateforme ? Consultez le [Guide du développeur de plugins de canal](../../../developers/channel-plugins.md) pour l'interface `ChannelPlugin`, le format `Envelope` et les points d'extension.

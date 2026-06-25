@@ -3,36 +3,38 @@
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
 [![@qwen-code/qwen-code version](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
 
-> Узнайте больше о Qwen Code — агентном инструменте для разработки от Qwen, который работает прямо в вашем терминале и помогает превращать идеи в код быстрее, чем когда-либо.
+> Узнайте о Qwen Code — агентивном инструменте для написания кода от Qwen, который работает в вашем терминале и помогает воплощать идеи в код быстрее, чем когда-либо.
 
-## Начните работу за 30 секунд
+## Начало работы за 30 секунд
 
 ### Установка Qwen Code:
+
+Рекомендуемый установщик использует автономный архив, если он доступен для вашей платформы. Если же он использует npm, Node.js 22 или более поздней версии с npm должен быть доступен в PATH.
 
 **Linux / macOS**
 
 ```sh
-curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
+curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen-standalone.sh | bash
 ```
 
-**Windows (запуск от имени администратора)**
+**Windows**
 
-```cmd
-powershell -Command "Invoke-WebRequest 'https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat' -OutFile (Join-Path $env:TEMP 'install-qwen.bat'); & (Join-Path $env:TEMP 'install-qwen.bat')"
+```powershell
+irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen-standalone.ps1 | iex
 ```
 
 > [!note]
 >
-> Рекомендуется перезапустить терминал после установки, чтобы переменные окружения вступили в силу. Если установка завершилась ошибкой, обратитесь к разделу [Ручная установка](./quickstart#manual-installation) в руководстве по быстрому старту.
+> Рекомендуется перезапустить терминал после установки, если `qwen` не сразу доступен в PATH. Если установка не удалась, обратитесь к разделу [Ручная установка](./quickstart#manual-installation) в руководстве Быстрый старт. Для автономной установки загрузите архив релиза и запустите установщик с флагом `--archive PATH`; поместите `SHA256SUMS` рядом с архивом.
 
-### Начало работы с Qwen Code:
+### Начать использование Qwen Code:
 
 ```bash
 cd your-project
 qwen
 ```
 
-Выберите метод аутентификации — **API Key** или **[Alibaba Cloud Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)** ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) — и следуйте инструкциям для настройки. Пошаговые инструкции см. в руководстве по настройке API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)). Затем начнем с анализа вашей кодовой базы. Попробуйте одну из этих команд:
+При первом запуске вам будет предложено подключить провайдера моделей. Меню предлагает **Alibaba ModelStudio** (Coding Plan, Token Plan или Standard API Key), **Сторонние провайдеры** (встроенные провайдеры, такие как DeepSeek, MiniMax, Z.AI и OpenRouter, подключаемые через API-ключ) и **Пользовательский провайдер** (локальный сервер, прокси или неподдерживаемый провайдер). Для [Alibaba Cloud Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([международная версия](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) выберите **Alibaba ModelStudio → Coding Plan**; чтобы использовать API-ключ ModelStudio, выберите **Alibaba ModelStudio → Standard API Key** и следуйте руководству по настройке API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [международная версия](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)). Затем давайте начнём с понимания вашей кодовой базы. Попробуйте одну из этих команд:
 
 ```
 what does this project do?
@@ -40,26 +42,26 @@ what does this project do?
 
 ![](https://cloud.video.taobao.com/vod/j7-QtQScn8UEAaEdiv619fSkk5p-t17orpDbSqKVL5A.mp4)
 
-При первом использовании вам будет предложено войти в систему. Готово! [Продолжить с руководством по быстрому старту (5 мин) →](./quickstart)
+При первом использовании вам будет предложено войти в систему. Вот и всё! [Продолжить с Быстрым стартом (5 мин) →](./quickstart)
 
 > [!tip]
 >
-> Если возникнут проблемы, см. раздел [устранение неполадок](./support/troubleshooting).
+> См. [устранение неполадок](./support/troubleshooting), если возникли проблемы.
 
 > [!note]
 >
-> **Новое расширение для VS Code (бета)**: Предпочитаете графический интерфейс? Наше новое **расширение для VS Code** предоставляет удобный нативный опыт работы в IDE без необходимости привыкать к терминалу. Просто установите его из маркетплейса и начните программировать с Qwen Code прямо в боковой панели. Скачайте и установите [Qwen Code Companion](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion) прямо сейчас.
+> **Новое расширение для VS Code (Бета-версия)**: Предпочитаете графический интерфейс? Наше новое **расширение для VS Code** предоставляет простой в использовании нативный интерфейс IDE, не требующий знакомства с терминалом. Просто установите из маркетплейса и начните писать код с Qwen Code прямо в боковой панели. Скачайте и установите [Qwen Code Companion](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion) сейчас.
 
-## Что умеет Qwen Code
+## Что Qwen Code делает для вас
 
-- **Создание функций по описанию**: Опишите Qwen Code, что вы хотите создать, простым языком. Он составит план, напишет код и убедится, что всё работает.
-- **Отладка и исправление ошибок**: Опишите баг или вставьте текст ошибки. Qwen Code проанализирует кодовую базу, выявит проблему и применит исправление.
-- **Навигация по любой кодовой базе**: Задайте любой вопрос по кодовой базе вашей команды и получите развернутый ответ. Qwen Code понимает структуру всего вашего проекта, может находить актуальную информацию в интернете, а с помощью [MCP](./features/mcp) — получать данные из внешних источников, таких как Google Drive, Figma и Slack.
-- **Автоматизация рутинных задач**: Исправляйте мелкие предупреждения линтера, разрешайте конфликты слияния и пишите примечания к релизам. Делайте всё это одной командой с вашей рабочей машины или автоматически в CI.
-- **[Подсказки продолжения](./features/followup-suggestions)**: Qwen Code предугадывает, что вы хотите ввести дальше, и показывает это в виде полупрозрачного текста. Нажмите Tab для принятия или просто продолжайте печатать, чтобы отклонить.
+- **Создаёт функции по описанию**: Расскажите Qwen Code на простом языке, что вы хотите создать. Он составит план, напишет код и убедится, что он работает.
+- **Отладка и исправление ошибок**: Опишите ошибку или вставьте сообщение об ошибке. Qwen Code проанализирует вашу кодовую базу, определит проблему и внедрит исправление.
+- **Навигация по любой кодовой базе**: Спросите что угодно о кодовой базе вашей команды и получите продуманный ответ. Qwen Code сохраняет осведомлённость о всей структуре вашего проекта, может находить актуальную информацию в интернете и с помощью [MCP](./features/mcp) извлекать данные из внешних источников, таких как Google Drive, Figma и Slack.
+- **Автоматизация рутинных задач**: Исправляйте мелочные проблемы линтинга, разрешайте конфликты слияния и пишите примечания к релизам. Выполняйте всё это одной командой с вашего компьютера разработчика или автоматически в CI.
+- **[Рекомендации продолжения](./features/followup-suggestions)**: Qwen Code предсказывает, что вы хотите ввести далее, и показывает это в виде призрачного текста. Нажмите Tab, чтобы принять, или просто продолжайте печатать, чтобы отклонить.
 
 ## Почему разработчики любят Qwen Code
 
-- **Работает в вашем терминале**: Никаких новых окон чата. Никаких новых IDE. Qwen Code работает там, где вы уже находитесь, с инструментами, которые вы уже любите.
-- **Переходит к действиям**: Qwen Code может напрямую редактировать файлы, запускать команды и создавать коммиты. Нужно больше? [MCP](./features/mcp) позволяет Qwen Code читать документацию по дизайну в Google Drive, обновлять задачи в Jira или использовать _ваши_ собственные инструменты разработки.
-- **Философия Unix**: Qwen Code легко комбинируется и поддерживает автоматизацию. Команда `tail -f app.log | qwen -p "Slack me if you see any anomalies appear in this log stream"` _работает_. Ваш CI может выполнить `qwen -p "If there are new text strings, translate them into French and raise a PR for @lang-fr-team to review"`.
+- **Работает в вашем терминале**: Не очередное окно чата. Не очередная IDE. Qwen Code встречает вас там, где вы уже работаете, с инструментами, которые вы уже любите.
+- **Принимает меры**: Qwen Code может напрямую редактировать файлы, выполнять команды и создавать коммиты. Нужно больше? [MCP](./features/mcp) позволяет Qwen Code читать ваши проектные документы в Google Drive, обновлять тикеты в Jira или использовать _ваши_ собственные инструменты разработчика.
+- **Философия Unix**: Qwen Code является компонуемым и скриптуемым. `tail -f app.log | qwen -p "Slack me if you see any anomalies appear in this log stream"` _работает_. Ваш CI может выполнить `qwen -p "If there are new text strings, translate them into French and raise a PR for @lang-fr-team to review"`.

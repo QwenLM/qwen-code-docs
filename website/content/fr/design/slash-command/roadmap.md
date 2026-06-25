@@ -1,40 +1,40 @@
-# Feuille de route de refactoring des `slash command`
+# Feuille de route de refactorisation des commandes slash
 
 ## Objectif général
 
-Livrer une plateforme de commandes alignée à 95 % sur l'expérience utilisateur de Claude Code, en adoptant le style d'architecture interne de Qwen, tout en résolvant trois problèmes majeurs : la fragmentation des trois modes, l'unicité des sources de commandes et l'impossibilité pour le modèle d'appeler les `prompt command`.
+Utiliser le style architectural interne de Qwen pour livrer une plateforme de commandes alignée à 95 % sur l'expérience externe de Claude Code, tout en résolvant les trois problèmes fondamentaux : la fragmentation des trois modes, la source unique des commandes, et l'impossibilité pour le modèle d'appeler les commandes `prompt`.
 
 ---
 
-## Principes de conception clés
+## Principes de conception fondamentaux
 
-1. **Chaque Phase peut être livrée indépendamment** : une fois terminée, son comportement est autonome et ne dépend pas des phases futures pour fonctionner
-2. **La Phase 1 est purement infrastructurelle** : hormis la correction de l'interception erronée de `MCP_PROMPT`, elle ne modifie aucun ensemble de commandes existant
-3. **Séparation des changements comportementaux et architecturaux** : la Phase 1 gère l'architecture, la Phase 2 gère l'extension des fonctionnalités
-4. **Pas de copie de l'architecture interne de Claude Code** : alignement uniquement sur les capacités perceptibles par l'utilisateur
+1. **Chaque phase peut être livrée indépendamment** : le comportement après une phase est cohérent, aucune phase future n'est nécessaire pour l'exécution.
+2. **La phase 1 est une infrastructure pure** : à l'exception de la correction de l'interception erronée de `MCP_PROMPT`, elle ne modifie aucun ensemble de commandes existant.
+3. **Séparation des changements de comportement et des changements d'architecture** : la phase 1 traite l'architecture, la phase 2 l'extension des capacités.
+4. **Ne pas copier l'architecture interne de Claude Code** : mais s'aligner sur les capacités perceptibles par l'utilisateur.
 
 ---
 
-## Phase 1 : Reconstruction de l'infrastructure (architecture pure, aucun changement comportemental)
+## Phase 1 : Reconstruction de l'infrastructure (architecture pure, zéro changement de comportement)
 
 ### Objectif
 
-Mettre en place un modèle unifié de métadonnées de commandes et un mécanisme de gestion inter-modes pour servir de socle à toutes les phases suivantes.
+Établir un modèle de métadonnées unifié pour les commandes et un mécanisme de gestion inter-modes, fournissant le socle sous-jacent pour toutes les phases ultérieures.
 
-### Fonctionnalités
+### Points fonctionnels
 
 #### 1.1 Extension du modèle de métadonnées `SlashCommand`
 
-Ajouter les champs suivants à l'interface `SlashCommand` existante :
+Ajouter les nouveaux champs suivants à l'interface `SlashCommand` existante :
 
 **Champs de source**
 
 - `source: CommandSource` : énumération de la source de la commande (`builtin-command` / `bundled-skill` / `skill-dir-command` / `plugin-command` / `mcp-prompt`, etc.)
-- `sourceLabel?: string` : étiquette de source pour l'affichage (ex. `"Built-in"` / `"MCP: github-server"`)
+- `sourceLabel?: string` : étiquette de source à afficher (par ex. `"Built-in"` / `"MCP: github-server"`)
 
-**Champs de capacité par mode**
+**Champs de capacité de mode**
 
-- `supportedModes: ExecutionMode[]` : déclare les modes d'exécution dans lesquels la commande est disponible (`interactive` / `non_interactive` / `acp`)
+- `supportedModes: ExecutionMode[]` : déclare dans quels modes d'exécution la commande est disponible (`interactive` / `non_interactive` / `acp`)
 
 **Champs de type d'exécution**
 
@@ -42,213 +42,212 @@ Ajouter les champs suivants à l'interface `SlashCommand` existante :
 
 **Champs de visibilité**
 
-- `userInvocable: boolean` : indique si l'utilisateur peut appeler la commande via un `slash command` (par défaut `true`)
-- `modelInvocable: boolean` : indique si le modèle peut appeler la commande via un `tool call` (par défaut `false`)
+- `userInvocable: boolean` : l'utilisateur peut-il invoquer la commande via une commande slash (par défaut `true`)
+- `modelInvocable: boolean` : le modèle peut-il invoquer la commande via un appel d'outil (par défaut `false`)
 
-**Champs de métadonnées auxiliaires** (réservés pour la Phase 3, définis mais non utilisés en Phase 1)
+**Champs de métadonnées auxiliaires** (réservés pour la phase 3, définis mais non utilisés en phase 1)
 
-- `argumentHint?: string` : indice sur les arguments, ex. `"<model-id>"` / `"show|list|set"`
-- `whenToUse?: string` : description du contexte d'utilisation de la commande (pour le modèle)
+- `argumentHint?: string` : indication d'argument, par ex. `"<model-id>"` / `"show|list|set"`
+- `whenToUse?: string` : description du moment où invoquer cette commande (à l'usage du modèle)
 - `examples?: string[]` : exemples d'utilisation
 
-#### 1.2 Remplissage des champs `source`/`commandType` par les Loaders
+#### 1.2 Les chargeurs remplissent les champs `source`/`commandType`
 
-Chaque `Loader` doit renseigner `source` et `commandType` lors de la construction d'un `SlashCommand` :
+Chaque chargeur doit remplir les champs `source` et `commandType` lors de la construction d'un `SlashCommand` :
 
-| Loader                           | source              | commandType                           |
-| -------------------------------- | ------------------- | ------------------------------------- |
-| `BuiltinCommandLoader`           | `builtin-command`   | Déclaré par chaque commande (`local` / `local-jsx`) |
-| `BundledSkillLoader`             | `bundled-skill`     | `prompt`                              |
-| `FileCommandLoader`（用户/项目） | `skill-dir-command` | `prompt`                              |
-| `FileCommandLoader`（插件）      | `plugin-command`    | `prompt`                              |
-| `McpPromptLoader`                | `mcp-prompt`        | `prompt`                              |
+| Chargeur                          | source              | commandType                            |
+| --------------------------------- | ------------------- | -------------------------------------- |
+| `BuiltinCommandLoader`            | `builtin-command`   | déclaré par chaque commande (`local` / `local-jsx`) |
+| `BundledSkillLoader`              | `bundled-skill`     | `prompt`                               |
+| `FileCommandLoader` (utilisateur/projet) | `skill-dir-command` | `prompt`                               |
+| `FileCommandLoader` (plugin)      | `plugin-command`    | `prompt`                               |
+| `McpPromptLoader`                 | `mcp-prompt`        | `prompt`                               |
 
-#### 1.3 Déclaration de `supportedModes` et `commandType` pour les commandes intégrées
+#### 1.3 Les commandes intégrées déclarent `supportedModes` et `commandType`
 
-Déclarer explicitement pour toutes les commandes `built-in` :
+Pour toutes les commandes intégrées, déclarer explicitement :
 
-- `commandType` : `local` (sans dépendance UI) ou `local-jsx` (dépend de `dialog`/React)
+- `commandType` : `local` (sans dépendance UI) ou `local-jsx` (dépendant de dialog/React)
 - `supportedModes` : les commandes de type `local` déclarent `['interactive', 'non_interactive', 'acp']` ; les commandes de type `local-jsx` déclarent `['interactive']`
 
-#### 1.4 Remplacement de la liste blanche codée en dur par un filtrage basé sur les capacités
+#### 1.4 Remplacer la liste blanche codée en dur par un filtrage basé sur les capacités
 
 - Supprimer la constante `ALLOWED_BUILTIN_COMMANDS_NON_INTERACTIVE`
 - Supprimer la fonction `filterCommandsForNonInteractive`
-- Ajouter la fonction `filterCommandsForMode(commands, mode)` pour filtrer selon le champ `supportedModes`
-- Ajouter la fonction utilitaire `getEffectiveSupportedModes(cmd)` (prend en compte la stratégie par défaut de `CommandKind`)
-- Modifier les signatures des fonctions `handleSlashCommand` / `getAvailableCommands` pour supprimer le paramètre `allowedBuiltinCommandNames`
+- Ajouter une fonction `filterCommandsForMode(commands, mode)` qui filtre en fonction du champ `supportedModes`
+- Ajouter une fonction utilitaire `getEffectiveSupportedModes(cmd)` (prenant en compte la stratégie par défaut de `CommandKind`)
+- Modifier les signatures de `handleSlashCommand` / `getAvailableCommands` en supprimant le paramètre `allowedBuiltinCommandNames`
 
-#### 1.5 Mise à niveau de `CommandService` en Registry unifié
+#### 1.5 `CommandService` devient un registre unifié
 
 - Ajouter la méthode `getCommandsForMode(mode: ExecutionMode)`
-- Ajouter la méthode `getModelInvocableCommands()` (utilisée en Phases 2/3, interface fournie en Phase 1)
-- Conserver `getCommands()` tel quel (utilisé en mode `interactive`)
+- Ajouter la méthode `getModelInvocableCommands()` (utilisée en phases 2/3, l'interface est fournie en phase 1)
+- La méthode existante `getCommands()` reste inchangée (utilisée en mode interactif)
 
 ### Critères d'acceptation
 
-- [ ] L'interface `SlashCommand` contient tous les nouveaux champs et la compilation TypeScript réussit
-- [ ] Tous les `Loader` renseignent les champs `source` et `commandType`
-- [ ] Toutes les commandes `built-in` déclarent `commandType` et `supportedModes`
-- [ ] `ALLOWED_BUILTIN_COMMANDS_NON_INTERACTIVE` est supprimé et remplacé par le filtre basé sur les capacités
-- [ ] **L'ensemble des commandes disponibles en mode `non-interactive` est strictement identique à celui d'avant le refactoring** (les tests existants ne cassent pas)
-- [ ] Les `MCP prompt command` s'exécutent correctement en modes `non-interactive`/`acp` (correction des restrictions erronées existantes)
+- [ ] L'interface `SlashCommand` inclut tous les nouveaux champs, la compilation TypeScript réussit
+- [ ] Tous les chargeurs remplissent les champs `source` et `commandType`
+- [ ] Toutes les commandes intégrées déclarent `commandType` et `supportedModes`
+- [ ] `ALLOWED_BUILTIN_COMMANDS_NON_INTERACTIVE` a été supprimé, remplacé par un filtre de capacité
+- [ ] **L'ensemble des commandes disponibles en mode non interactif est strictement identique à avant la refactorisation** (les tests existants ne cassent pas)
+- [ ] Les commandes MCP prompt s'exécutent correctement en modes non interactif et ACP (correction de la restriction erronée précédente)
 - [ ] `CommandService.getCommandsForMode('non_interactive')` retourne le bon ensemble de commandes
-- [ ] Tous les tests existants passent
+- [ ] Tous les tests existants sont réussis
 
 ---
 
-## Phase 2 : Extension des capacités (organisation des commandes et appel des `prompt command` par le modèle)
+## Phase 2 : Extension des capacités (réorganisation des commandes et appel des commandes `prompt` par le modèle)
 
 ### Objectif
 
-S'appuyer sur les métadonnées de la Phase 1 pour étendre la disponibilité des commandes dans les trois modes et ouvrir le canal d'appel des `prompt command` par le modèle.
+Sur la base des métadonnées de la phase 1, étendre la disponibilité des commandes dans les trois modes et ouvrir la voie à l'appel des commandes `prompt` par le modèle.
 
-### Fonctionnalités
+### Points fonctionnels
 
-#### 2.1 Extension de l'ensemble des commandes disponibles en `non-interactive` / `acp`
+#### 2.1 Étendre l'ensemble des commandes disponibles en modes non interactif / ACP
 
 **Principes de conception sémantique pour l'ACP**
 
-Avant d'étendre les commandes aux modes ACP/`non-interactive`, respecter les principes suivants :
+Avant d'étendre les commandes aux modes ACP/non interactif, respecter les principes de conception suivants :
 
-1. **Destinataire différent** : en mode ACP, le destinataire des messages est l'IDE (extension Zed/VS Code), et non l'utilisateur final. Le contenu doit être en texte brut ou Markdown, sans styles ANSI spécifiques au terminal.
-2. **Stratégie d'implémentation par branchement, non par remplacement** : la bonne approche consiste à ajouter une vérification du mode dans l'`action` de la commande. Le chemin `interactive` conserve la logique de rendu UI existante, tandis que le chemin `non_interactive`/`acp` retourne un `message` ou `submit_prompt` adapté à la consommation machine. Les deux chemins coexistent dans la même fonction `action`.
-3. **Clarification sémantique des opérations avec état** : lors d'une invocation non interactive unique (ex. paramètre CLI `-p`), les modifications apportées par les commandes avec état comme `/model set` ou `/language set` ne sont valables que pour la session en cours. Cela doit être indiqué dans le texte de réponse.
-4. **Lecture seule vs effets de bord** : les commandes en lecture seule (ex. `/about`, `/stats`) retournent directement le texte d'état actuel ; les commandes avec effets de bord (ex. `/model set`, `/language set`) doivent confirmer le résultat de l'opération dans la réponse.
-5. **Éviter les effets de bord liés à l'environnement** : les opérations dépendant d'un environnement graphique comme l'ouverture d'un navigateur (`/docs`, `/insight`) ou la manipulation du presse-papiers (`/copy`) doivent être ignorées dans les chemins `non_interactive`/`acp`, et remplacées par le retour de l'URL ou du contenu directement dans le texte de réponse.
+1. **Destinataire différent** : en mode ACP, le destinataire des messages est l'IDE (plugin Zed/VS Code), et non l'utilisateur du terminal. Le contenu du message doit être en texte brut ou Markdown, sans inclure de styles ANSI propres au terminal.
+2. **Stratégie d'implémentation : ajouter des branches de mode, ne pas remplacer** : la bonne approche consiste à ajouter une vérification de mode à l'intérieur de l'`action` de la commande – le chemin interactif conserve la logique de rendu UI existante, les chemins non interactif/ACP retournent un `message` ou `submit_prompt` adapté à la consommation machine. Les deux chemins coexistent dans la même fonction `action`.
+3. **Les opérations avec état doivent expliquer leur sémantique** : lors d'un appel non interactif unique (par ex. paramètre `-p` en CLI), les modifications des commandes avec état comme `/model set`, `/language set` ne sont valables que pour la session en cours ; cela doit être mentionné dans le texte de réponse.
+4. **Lecture seule vs avec effet de bord** : les commandes en lecture seule (par ex. `/about`, `/stats`) retournent directement l'état actuel sous forme de texte ; les commandes avec effets de bord (par ex. `/model set`, `/language set`) doivent confirmer le résultat de l'opération dans la réponse.
+5. **Éviter les effets de bord dépendants de l'environnement** : les opérations nécessitant un environnement graphique (ouverture de navigateur – `/docs`, `/insight` ; manipulation du presse‑papiers – `/copy`) doivent être sautées dans les chemins non interactif/ACP, et retourner l'URL ou le contenu pertinent dans le texte de réponse.
 
 **Vue d'ensemble des commandes à étendre**
 
-> Note : `btw`, `bug`, `compress`, `context`, `init`, `summary` ont déjà été étendus à tous les modes en Phase 1 et ne figurent pas dans cette liste.
+> Remarque : `btw`, `bug`, `compress`, `context`, `init`, `summary` ont déjà été étendus à tous les modes en phase 1 et ne figurent pas dans cette liste.
 
-Les 13 commandes suivantes seront étendues aux modes `non_interactive` et `acp` en Phase 2 :
+Les 13 commandes suivantes seront étendues aux modes `non_interactive` et `acp` en phase 2 :
 
-**Catégorie A : l'`action` retourne déjà `message` ou `submit_prompt`, il suffit d'étendre `supportedModes` et de concevoir le contenu du message ACP**
+**Classe A : l'action retourne déjà `message` ou `submit_prompt`, il suffit d'étendre `supportedModes` et de concevoir le contenu du message ACP**
 
-| Commande      | Type de retour  | Points de traitement ACP/`non-interactive`               |
-| ------------- | --------------- | -------------------------------------------------------- |
-| `/copy`       | `message`       | Pas de presse-papiers en ACP, retourner le contenu ou une indication dans le texte de réponse |
-| `/export`     | `message`       | Retourner le chemin complet du fichier exporté           |
-| `/plan`       | `submit_prompt` | Aucune modification, étendre simplement le mode          |
-| `/restore`    | `message`       | Retourner la description du résultat de l'opération de restauration |
-| `/language`   | `message`       | Retourner le paramètre de langue actuel ou le texte de confirmation de modification |
-| `/statusline` | `submit_prompt` | Aucune modification, étendre simplement le mode          |
+| Commande       | Type de retour   | Points de traitement ACP/non interactif                       |
+| -------------- | ---------------- | -------------------------------------------------------------- |
+| `/copy`        | `message`        | En ACP pas de presse-papiers ; retourner le contenu lui-même ou une indication dans le texte de réponse |
+| `/export`      | `message`        | Retourner le chemin complet du fichier exporté                 |
+| `/plan`        | `submit_prompt`  | Aucune modification nécessaire, étendre le mode directement    |
+| `/restore`     | `message`        | Retourner la description du résultat de la restauration        |
+| `/language`    | `message`        | Retourner le réglage actuel de la langue ou un texte de confirmation de changement |
+| `/statusline`  | `submit_prompt`  | Aucune modification nécessaire, étendre le mode directement    |
 
-**Catégorie A' : exécution normale avec arguments, déclenchement d'un `dialog` sans arguments (nécessite l'ajout d'un traitement `non-interactive` pour le chemin sans arguments)**
+**Classe A' : s'exécute normalement avec paramètres, déclenche un dialog sans paramètres (nécessite un traitement non interactif pour le chemin sans paramètres)**
+| Commande          | Comportement sans argument (interactive) | Comportement sans argument (non_interactive/acp) |
+| ---------------- | ---------------------------------------- | ------------------------------------------------ |
+| `/model`         | Ouvre un dialogue de sélection de modèle | Retourne le nom du modèle actuel et le texte de description |
+| `/approval-mode` | Ouvre le dialogue du mode d'approbation  | Retourne le mode d'approbation actuel et le texte de description |
 
-| Commande         | Comportement `interactive` sans arguments | Comportement `non_interactive`/`acp` sans arguments |
-| ---------------- | ----------------------------------------- | --------------------------------------------------- |
-| `/model`         | Ouvre le `dialog` de sélection de modèle  | Retourne le nom du modèle actuel et un texte explicatif |
-| `/approval-mode` | Ouvre le `dialog` du mode d'approbation   | Retourne le mode d'approbation actuel et un texte explicatif |
+**Catégorie B : Utilisation interne de `context.ui.addItem()` pour rendre un composant React, doit ajouter une branche de mode pour renvoyer du texte brut**
 
-**Catégorie B : l'`action` utilise `context.ui.addItem()` pour rendre un composant React, nécessite un branchement par mode pour retourner du texte brut**
+| Commande    | Comportement interactif                   | Contenu retourné en non_interactive/acp                          |
+| ----------- | ----------------------------------------- | ---------------------------------------------------------------- |
+| `/about`    | Affiche un composant React de version/configuration | Résumé textuel brut du numéro de version, du modèle actuel et de la configuration clé |
+| `/stats`    | Affiche un composant de statistiques token/coûts | Format texte brut des statistiques de session                    |
+| `/insight`  | Affiche un composant d'analyse + ouvre le navigateur | `non_interactive` : génère et retourne le chemin du fichier de manière synchrone ; `acp` : pousse la progression et les résultats via `stream_messages` |
+| `/docs`     | Affiche une entrée de documentation + ouvre le navigateur | Retourne l'URL de la documentation, n'ouvre pas le navigateur |
 
-| Commande   | Comportement `interactive`          | Contenu retourné en `non_interactive`/`acp`                                                        |
-| ---------- | ----------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `/about`   | Rend le composant React version/config | Résumé texte brut de la version, du modèle actuel et des configurations clés                       |
-| `/stats`   | Rend le composant statistiques token/coût | Format texte brut des statistiques de session                                                      |
-| `/insight` | Rend le composant d'analyse + ouvre le navigateur | `non_interactive` : génère de manière synchrone et retourne le chemin du fichier ; `acp` : pousse la progression et les résultats via `stream_messages` |
-| `/docs`    | Rend le point d'entrée docs + ouvre le navigateur | Retourne l'URL de la documentation, n'ouvre pas le navigateur                                      |
+**Catégorie C : Traitement spécial**
 
-**Catégorie C : traitement spécial**
+| Commande     | Comportement interactif                                  | Comportement non_interactive/acp                                                        |
+| ------------ | -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `/clear`     | Appelle `context.ui.clear()` pour effacer l'affichage du terminal | Retourne un message de marqueur de limite de contexte, contenu : `"Context cleared. Previous messages are no longer in context."` |
 
-| Commande | Comportement `interactive`                       | Comportement `non_interactive`/`acp`                                                                            |
-| -------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `/clear` | Appelle `context.ui.clear()` pour vider l'affichage du terminal | Retourne un message de délimitation de contexte avec le contenu `"Context cleared. Previous messages are no longer in context."` |
+#### 2.2 Intégration de l'appel de modèle pour les commandes prompt
 
-#### 2.2 Ouverture du canal d'appel des `prompt command` par le modèle
+- Implémenter `getModelInvocableCommands()` dans `CommandService` (ou `CommandRegistry`), qui retourne toutes les commandes avec `modelInvocable: true`
+- Marquer les commandes chargées par `BundledSkillLoader`, `FileCommandLoader` (commandes utilisateur/projet) comme `modelInvocable: true`
+- **Ne pas marquer les prompts MCP comme `modelInvocable`** : les prompts MCP sont appelés par le modèle via le mécanisme indépendant d'appel d'outil MCP, sans passer par `SkillTool`
+- Modifier `SkillTool` : passer de l'utilisation exclusive de `SkillManager.listSkills()` à l'utilisation conjointe de `CommandService.getModelInvocableCommands()`
+- Construire une description uniforme des commandes invocables par le modèle et l'injecter dans la description de `SkillTool`
 
-- Implémenter `getModelInvocableCommands()` dans `CommandService` (ou `CommandRegistry`) pour retourner toutes les commandes avec `modelInvocable: true`
-- Marquer les commandes chargées par `BundledSkillLoader` et `FileCommandLoader` (commandes utilisateur/projet) avec `modelInvocable: true`
-- **Les `MCP prompt` ne sont pas marqués `modelInvocable`** : ils sont appelés par le modèle via un mécanisme dédié de `MCP tool call`, sans passer par `SkillTool`
-- Adapter `SkillTool` : au lieu de consommer uniquement `SkillManager.listSkills()`, il consomme également `CommandService.getModelInvocableCommands()`
-- Construire une description unifiée des commandes appelables par le modèle et l'injecter dans la `description` de `SkillTool`
+#### 2.3 Détection de commande slash en milieu de saisie (version de base)
 
-#### 2.3 Détection des `slash command` en milieu de saisie (version de base)
-
-- Détecter le token slash près du curseur dans `InputPrompt` (pas uniquement en début de ligne)
-- Après détection, suggérer le nom de la commande la plus pertinente via un `inline ghost text` (acceptation avec Tab)
-- **N'inclut pas** le menu déroulant d'autocomplétion, les `argument hints`, les `source badge`, etc. (prévu en Phase 3)
-- Le jeu de candidats pour le `ghost text` se limite aux commandes avec `modelInvocable: true` (skill / file command)
+- Détecter le token slash près du curseur dans `InputPrompt` (pas seulement en début de ligne)
+- Après détection du token slash, afficher le nom de la commande correspondant le mieux via un texte fantôme en ligne (accepté par Tab)
+- **Ne pas** inclure de menu déroulant de complétion, d'indications d'arguments, de badge de source, etc. (fait dans la Phase 3)
+- L'ensemble des candidats pour le texte fantôme se limite aux commandes avec `modelInvocable: true` (commande skill/file)
 
 ### Critères d'acceptation
 
 **2.1 Extension des commandes**
 
-- [ ] Catégorie A : `/copy`, `/export`, `/plan`, `/restore`, `/language`, `/statusline` s'exécutent correctement en modes `non-interactive` et `acp` et retournent une sortie texte pertinente
-- [ ] Catégorie A' : `/model`, `/approval-mode` retournent le texte d'état actuel en modes `non-interactive`/`acp` sans arguments (pas de `dialog`) ; avec arguments, appliquent la modification et retournent un texte de confirmation
-- [ ] Catégorie B : `/about`, `/stats`, `/docs` retournent du texte brut en modes `non-interactive`/`acp`, `/docs` n'ouvre pas le navigateur ; `/insight` génère de manière synchrone et retourne un message avec le chemin du fichier en `non_interactive`, et pousse la progression via `stream_messages` en `acp`
-- [ ] Catégorie C : `/clear` retourne un message de délimitation de contexte en modes `non-interactive`/`acp`, sans appeler `context.ui.clear()`
-- [ ] Toutes les commandes étendues conservent un comportement strictement identique en mode `interactive` par rapport à avant le refactoring (aucune régression)
+- [ ] Catégorie A : `/copy`, `/export`, `/plan`, `/restore`, `/language`, `/statusline` s'exécutent correctement en mode non-interactive et acp et retournent une sortie textuelle significative
+- [ ] Catégorie A' : `/model`, `/approval-mode` sans argument retournent le texte d'état actuel en non-interactive/acp (sans ouvrir de dialogue) ; avec argument, effectuent la modification et retournent un texte de confirmation
+- [ ] Catégorie B : `/about`, `/stats`, `/docs` retournent du texte brut en non-interactive/acp, `/docs` n'ouvre pas le navigateur ; `/insight` en `non_interactive` génère et retourne un message avec le chemin du fichier de manière synchrone, en `acp` pousse la progression via `stream_messages`
+- [ ] Catégorie C : `/clear` en non-interactive/acp retourne un message de marqueur de limite de contexte, n'appelle pas `context.ui.clear()`
+- [ ] Toutes les commandes étendues ont un comportement en mode interactif identique à avant la refactorisation (aucune régression)
 
-**2.2 Appel par le modèle**
+**2.2 Appel de modèle**
 
-- [ ] Le modèle peut appeler les `bundled skill` et `file command` (utilisateur/projet) via `SkillTool` pendant la conversation
-- [ ] Les `MCP prompt` ne passent pas par `SkillTool` et sont appelés nativement par le modèle via le mécanisme `MCP tool call`
-- [ ] Le modèle ne peut pas appeler les `built-in commands` (`userInvocable: true`, `modelInvocable: false`)
-- [ ] La `description` de `SkillTool` inclut les descriptions de toutes les commandes `modelInvocable`
+- [ ] Le modèle peut, en cours de conversation, appeler des skills groupés et des commandes de fichier (utilisateur/projet) via `SkillTool`
+- [ ] Les prompts MCP ne passent pas par `SkillTool`, ils sont appelés nativement par le modèle via le mécanisme d'appel d'outil MCP
+- [ ] Le modèle ne peut pas appeler les commandes intégrées (`userInvocable: true`, `modelInvocable: false`)
+- [ ] La description de `SkillTool` contient les descriptions de toutes les commandes `modelInvocable`
 
-**2.3 `slash command` en milieu de saisie**
+**2.3 Saisie de slash en milieu de ligne**
 
-- [ ] `slash command` en milieu de saisie : après saisie de `/` dans le corps du texte, suggestion de la commande la plus pertinente via `inline ghost text` (acceptation avec Tab)
+- [ ] Saisie de slash en milieu de ligne : après avoir saisi `/` dans le texte, afficher la commande la mieux correspondante via un texte fantôme en ligne (accepté par Tab)
 
 ---
 
-## Phase 3 : Alignement de l'expérience (amélioration de l'autocomplétion + ajout des commandes manquantes de Claude Code)
+## Phase 3 : Alignement de l'expérience (amélioration de la complétion + ajout des commandes de Claude Code)
 
 ### Objectif
 
-S'appuyer sur les métadonnées et capacités des Phases 1/2 pour finaliser l'expérience d'autocomplétion et ajouter les commandes présentes dans Claude Code mais absentes de Qwen Code.
+Sur la base des métadonnées et des capacités de commandes des Phases 1/2, compléter l'expérience de complétion et ajouter les commandes présentes dans Claude Code mais manquantes dans Qwen Code.
 
-### Fonctionnalités
+### Points fonctionnels
 
-#### 3.1 Amélioration de l'expérience d'autocomplétion
+#### 3.1 Amélioration de l'expérience de complétion
 
-**`source badge`**
+**Badge de source**
 
-- Afficher l'étiquette de source de la commande dans le menu d'autocomplétion (`[MCP]` existe déjà, étendu à `[Skill]`, `[Custom]`, etc.)
-- Rendu via les champs `source` / `sourceLabel`
+- Afficher dans le menu de complétion une étiquette de source de commande (`[MCP]` existe déjà, étendre à `[Skill]`, `[Custom]`, etc.)
+- Utiliser les champs `source` / `sourceLabel` pour le rendu
 
-**`argument hint`**
+**Indication d'argument**
 
-- Afficher `argumentHint` après le nom de la commande dans le menu d'autocomplétion (ex. `set <model-id>`)
-- `argumentHint` fourni par le champ de métadonnées de la Phase 1
+- Afficher `argumentHint` après le nom de la commande dans le menu de complétion (ex. `set <model-id>`)
+- `argumentHint` est fourni par les champs de métadonnées de la Phase 1
 
 **Tri par utilisation récente**
 
-- Enregistrer les commandes récemment utilisées par l'utilisateur (niveau session, sans persistance)
-- Pondérer les commandes récentes dans le tri de l'autocomplétion
+- Enregistrer les commandes récemment utilisées par l'utilisateur (niveau session, pas besoin de persistance)
+- Pondérer les commandes récemment utilisées dans le tri de complétion
 
-**Mise en évidence des correspondances d'alias**
+**Mise en évidence des alias**
 
-- Indiquer explicitement lorsque l'autocomplétion correspond à `altNames` plutôt qu'au nom principal (ex. `help (alias: ?)`)
+- Lorsque la complétion correspond à `altNames` plutôt qu'au nom principal, l'indiquer lors de l'affichage (ex. `help (alias: ?)`)
 
-**Alignement de la stratégie de résolution des conflits**
+**Alignement de la stratégie de conflit**
 
-- Définir la priorité : `built-in` > `bundled`/`skill-dir` > `plugin` > `mcp`
-- En cas de conflit, renommer la commande de priorité inférieure (ex. `pluginName.commandName`)
+- Clarifier la priorité : intégré > groupé/répertoire de skills > plugin > mcp
+- En cas de conflit, renommer la commande de moindre priorité (ex. `pluginName.commandName`)
 
-#### 3.2 Version complète des `slash command` en milieu de saisie
+#### 3.2 Version complète de la commande slash en milieu de saisie
 
-- Ajouter l'affichage des `argument hints` et `source badge` à la version de base de la Phase 2
-- Suggestion `ghost text` (affichage en gris de `/help` lors de la saisie de `/he`)
-- Mise en surbrillance des tokens de commande valides (les commandes slash correspondantes s'affichent dans une couleur différente)
+- Ajouter l'affichage des indications d'arguments et des badges de source par rapport à la version de base de la Phase 2
+- Indication par texte fantôme (afficher `/help` en grisé lors de la saisie de `/he`)
+- Mise en évidence des tokens de commande valides (la commande slash correspondant est affichée dans une couleur différente)
 
-#### 3.3 Refactorisation du répertoire `/help`
+#### 3.3 Restructuration de l'aide
 
-Transformer `/help` d'une liste plate en un répertoire groupé :
+Passer `/help` d'une liste plate à un répertoire groupé :
 
-- **Built-in Commands** (`local` + `local-jsx`, avec indication du mode)
+- **Built-in Commands** (local + local-jsx, indiquer le mode)
 - **Bundled Skills**
-- **Custom Commands** (commandes `file` utilisateur/projet)
+- **Custom Commands** (commandes de fichier utilisateur/projet)
 - **Plugin Commands**
 - **MCP Commands**
 
-Pour chaque commande : afficher le nom, `argumentHint`, `description`, `source`, et l'indicateur `supportedModes`
+Chaque commande affiche : nom, argumentHint, description, source, indicateur supportedModes
 
-#### 3.4 Amélioration des métadonnées des commandes disponibles pour l'ACP
+#### 3.4 Renforcement des métadonnées des commandes disponibles ACP
 
-Exposer davantage de métadonnées au client ACP dans `sendAvailableCommandsUpdate()` :
+Exposer davantage de métadonnées aux clients ACP dans `sendAvailableCommandsUpdate()` :
 
 - `argumentHint`
 - `source`
@@ -258,31 +257,21 @@ Exposer davantage de métadonnées au client ACP dans `sendAvailableCommandsUpda
 
 #### 3.5 Ajout des commandes manquantes de Claude Code
 
-Ajouter les commandes courantes présentes dans Claude Code mais absentes de Qwen Code :
+Confirmer et réintroduire la commande `/doctor` existante dans Qwen Code ; `/release-notes` n'est pas inclus dans cette phase pour éviter d'introduire une commande intégrée sans besoin produit clair.
 
-| Commande         | Type    | Description                                     |
-| ---------------- | ------- | ----------------------------------------------- |
-| `/doctor`        | `local` | Auto-diagnostic de l'environnement, sortie du diagnostic de configuration/connexion/outils |
-| `/release-notes` | `local` | Affiche les notes de version de la version actuelle |
-| `/cost`          | `local` | Affiche la consommation de tokens et l'estimation des coûts pour la session en cours |
+| Commande   | Type    | Description                                                                 |
+| ---------- | ------- | --------------------------------------------------------------------------- |
+| `/doctor`  | `local` | Auto-diagnostic de l'environnement, affiche l'état de la configuration, de la connexion et des outils |
 
-> Note : les commandes de type tâche comme `/review`, `/commit` sont fournies sous forme de `bundled skill` et ne font pas partie de cette liste.
+> Note : Les commandes de type tâche comme `/review`, `/commit` sont fournies sous forme de skills groupés, et ne sont pas incluses ici.
 
 ### Critères d'acceptation
 
-- [ ] Le menu d'autocomplétion affiche les `source badge` (`[MCP]`, `[Skill]`, `[Custom]`)
-- [ ] Le menu d'autocomplétion affiche `argumentHint` (ex. `set <model-id>`)
-- [ ] Les commandes récemment utilisées apparaissent en priorité dans la liste d'autocomplétion
-- [ ] Le nom original est indiqué dans l'élément d'autocomplétion en cas de correspondance d'alias
-- [ ] `slash command` en milieu de saisie : le `ghost text` s'affiche correctement
-- [ ] La sortie de `/help` est groupée par source, chaque commande affiche l'indicateur des modes pris en charge
-- [ ] Les commandes disponibles pour l'ACP incluent les champs `argumentHint`, `source`, `subcommands`
-- [ ] Les trois commandes `/doctor`, `/release-notes`, `/cost` sont fonctionnelles
-- [ ] `/doctor` s'exécute en mode `non-interactive` (retourne un `message`)
-
+- [ ] Le menu de complétion affiche les badges de source (`[MCP]`, `[Skill]`, `[Custom]`)
+- [ ] Le menu de complétion aff
 ---
 
-## Dépendances entre les Phases
+## Dépendances des Phases
 
 ```
 Phase 1（元数据 + 统一过滤）
@@ -299,4 +288,4 @@ Phase 1（元数据 + 统一过滤）
              └──► Help 分组（需要 Phase 1 source 字段）
 ```
 
-Les Phases 2 et 3 ne dépendent pas l'une de l'autre et peuvent être menées en parallèle (ou certains sous-éléments peuvent être réorganisés selon les priorités).
+Les Phases 2 et 3 n'ont pas de dépendances entre elles, elles peuvent être avancées en parallèle (ou certains sous-éléments peuvent être réorganisés selon les priorités).

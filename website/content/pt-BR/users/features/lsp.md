@@ -1,17 +1,17 @@
-# Suporte ao Language Server Protocol (LSP)
+# Suporte ao Protocolo de Servidor de Linguagem (LSP)
 
-O Qwen Code oferece suporte nativo ao Language Server Protocol (LSP), permitindo recursos avançados de inteligência de código, como ir para a definição, encontrar referências, diagnósticos e ações de código. Essa integração permite que o agente de IA compreenda seu código de forma mais profunda e forneça assistência mais precisa.
+O Qwen Code oferece suporte nativo ao Protocolo de Servidor de Linguagem (LSP), permitindo recursos avançados de inteligência de código como ir para definição, encontrar referências, diagnósticos e ações de código. Essa integração permite que o agente de IA entenda seu código mais profundamente e forneça assistência mais precisa.
 
 ## Visão Geral
 
-O suporte a LSP no Qwen Code funciona conectando-se a language servers que compreendem seu código. Após configurar os servidores via `.lsp.json` (ou extensões), o Qwen Code pode iniciá-los e usá-los para:
+O suporte a LSP no Qwen Code funciona conectando-se a servidores de linguagem que entendem seu código. Depois de configurar os servidores via `.lsp.json` (ou extensões), o Qwen Code pode iniciá-los e usá-los para:
 
 - Navegar para definições de símbolos
 - Encontrar todas as referências a um símbolo
 - Obter informações ao passar o mouse (documentação, informações de tipo)
 - Visualizar mensagens de diagnóstico (erros, avisos)
 - Acessar ações de código (correções rápidas, refatorações)
-- Analisar hierarquias de chamadas
+- Analisar hierarquias de chamada
 
 ## Início Rápido
 
@@ -21,26 +21,26 @@ O LSP é um recurso experimental no Qwen Code. Para ativá-lo, use a flag de lin
 qwen --experimental-lsp
 ```
 
-Os servidores LSP são baseados em configuração. Você deve defini-los no `.lsp.json` (ou via extensões) para que o Qwen Code os inicie.
+Os servidores LSP são orientados por configuração. Você deve defini-los em `.lsp.json` (ou por meio de extensões) para que o Qwen Code os inicie.
 
 ### Pré-requisitos
 
-Você precisa ter o language server da sua linguagem de programação instalado:
+Você precisa ter o servidor de linguagem para sua linguagem de programação instalado:
 
-| Linguagem             | Language Server            | Comando de Instalação                                                              |
-| --------------------- | -------------------------- | ---------------------------------------------------------------------------------- |
+| Linguagem           | Servidor de Linguagem   | Comando de Instalação                                                              |
+| ------------------- | ----------------------- | ---------------------------------------------------------------------------------- |
 | TypeScript/JavaScript | typescript-language-server | `npm install -g typescript-language-server typescript`                             |
-| Python                | pylsp                      | `pip install python-lsp-server`                                                    |
-| Go                    | gopls                      | `go install golang.org/x/tools/gopls@latest`                                       |
-| Rust                  | rust-analyzer              | [Guia de instalação](https://rust-analyzer.github.io/manual.html#installation)     |
-| C/C++                 | clangd                     | Instale o LLVM/clangd via seu gerenciador de pacotes                               |
-| Java                  | jdtls                      | Instale o JDTLS e um JDK                                                           |
+| Python              | pylsp                   | `pip install python-lsp-server`                                                    |
+| Go                  | gopls                   | `go install golang.org/x/tools/gopls@latest`                                       |
+| Rust                | rust-analyzer           | [Guia de instalação](https://rust-analyzer.github.io/manual.html#installation)     |
+| C/C++               | clangd                  | Instale o LLVM/clangd através do seu gerenciador de pacotes                        |
+| Java                | jdtls                   | Instale o JDTLS e um JDK                                                           |
 
 ## Configuração
 
 ### Arquivo .lsp.json
 
-Você pode configurar language servers usando um arquivo `.lsp.json` na raiz do seu projeto. Cada chave de nível superior é um identificador de linguagem, e seu valor é o objeto de configuração do servidor.
+Você pode configurar servidores de linguagem usando um arquivo `.lsp.json` na raiz do seu projeto. Cada chave de nível superior é um identificador de linguagem, e seu valor é o objeto de configuração do servidor.
 
 **Formato básico:**
 
@@ -59,11 +59,11 @@ Você pode configurar language servers usando um arquivo `.lsp.json` na raiz do 
 }
 ```
 
-### Configuração para C/C++ (clangd)
+### Configuração de C/C++ (clangd)
 
 Dependências:
 
-- O clangd (LLVM) deve estar instalado e disponível no PATH.
+- clangd (LLVM) deve estar instalado e disponível no PATH.
 - Um banco de dados de compilação (`compile_commands.json`) ou `compile_flags.txt` é necessário para resultados precisos.
 
 Exemplo:
@@ -82,7 +82,7 @@ Exemplo:
 }
 ```
 
-### Configuração para Java (jdtls)
+### Configuração de Java (jdtls)
 
 Dependências:
 
@@ -104,30 +104,29 @@ Exemplo:
 
 #### Campos Obrigatórios
 
-| Opção     | Tipo   | Descrição                                                                                                                                       |
-| --------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Opção    | Tipo   | Descrição                                                                                                                                       |
+| -------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `command` | string | Comando para iniciar o servidor LSP. Suporta nomes de comando simples resolvidos via `PATH` (ex.: `clangd`) e caminhos absolutos (ex.: `/opt/llvm/bin/clangd`) |
 
 #### Campos Opcionais
 
-| Opção                   | Tipo     | Padrão    | Descrição                                             |
-| ----------------------- | -------- | --------- | ------------------------------------------------------- |
-| `args`                  | string[] | `[]`      | Argumentos de linha de comando                                  |
-| `transport`             | string   | `"stdio"` | Tipo de transporte: `stdio`, `tcp` ou `socket`             |
-| `env`                   | object   | -         | Variáveis de ambiente                                   |
-| `initializationOptions` | object   | -         | Opções de inicialização do LSP                              |
-| `settings`              | object   | -         | Configurações do servidor via `workspace/didChangeConfiguration`  |
-| `extensionToLanguage`   | object   | -         | Mapeia extensões de arquivo para identificadores de linguagem            |
-| `workspaceFolder`       | string   | -         | Substitui a pasta do workspace (deve estar dentro da raiz do projeto) |
-| `startupTimeout`        | number   | `10000`   | Tempo limite de inicialização em milissegundos                         |
-| `shutdownTimeout`       | number   | `5000`    | Tempo limite de desligamento em milissegundos                        |
-| `restartOnCrash`        | boolean  | `false`   | Reinicia automaticamente em caso de falha                                   |
-| `maxRestarts`           | number   | `3`       | Número máximo de tentativas de reinicialização                                |
-| `trustRequired`         | boolean  | `true`    | Exige workspace confiável                               |
-
+| Opção                  | Tipo     | Padrão   | Descrição                                                                                      |
+| ---------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `args`                 | string[] | `[]`     | Argumentos de linha de comando                                                                 |
+| `transport`            | string   | `"stdio"`| Tipo de transporte: `stdio`, `tcp` ou `socket`                                                  |
+| `env`                  | object   | -        | Variáveis de ambiente                                                                          |
+| `initializationOptions`| object   | -        | Opções de inicialização do LSP                                                                 |
+| `settings`             | object   | -        | Configurações do servidor via `workspace/didChangeConfiguration`                               |
+| `extensionToLanguage`  | object   | -        | Mapeia extensões de arquivo para identificadores de linguagem                                  |
+| `workspaceFolder`      | string   | -        | Sobrescrever pasta do workspace (deve estar dentro da raiz do projeto)                         |
+| `startupTimeout`       | number   | `10000`  | Tempo limite de inicialização em milissegundos                                                  |
+| `shutdownTimeout`      | number   | `5000`   | Tempo limite de desligamento em milissegundos                                                   |
+| `restartOnCrash`       | boolean  | `false`  | Reiniciar automaticamente em caso de falha                                                     |
+| `maxRestarts`          | number   | `3`      | Número máximo de tentativas de reinicialização                                                 |
+| `trustRequired`        | boolean  | `true`   | Exigir workspace confiável                                                                     |
 ### Transporte TCP/Socket
 
-Para servidores que usam transporte TCP ou socket Unix:
+Para servidores que utilizam transporte TCP ou socket Unix:
 
 ```json
 {
@@ -146,22 +145,22 @@ Para servidores que usam transporte TCP ou socket Unix:
 
 ## Operações LSP Disponíveis
 
-O Qwen Code expõe a funcionalidade LSP por meio da ferramenta unificada `lsp`. Aqui estão as operações disponíveis:
+O Qwen Code expõe a funcionalidade LSP através da ferramenta unificada `lsp`. Aqui estão as operações disponíveis:
 
-Operações baseadas em localização (`goToDefinition`, `findReferences`, `hover`, `goToImplementation` e `prepareCallHierarchy`) exigem uma posição exata de `filePath` + `line` + `character`. Se você não souber a posição exata, use `workspaceSymbol` ou `documentSymbol` primeiro para localizar o símbolo.
+Operações baseadas em localização (`goToDefinition`, `findReferences`, `hover`, `goToImplementation` e `prepareCallHierarchy`) exigem uma posição exata com `filePath` + `line` + `character`. Se você não souber a posição exata, use `workspaceSymbol` ou `documentSymbol` primeiro para localizar o símbolo.
 
 ### Navegação de Código
 
-#### Ir para a Definição
+#### Ir para Definição
 
-Encontra onde um símbolo está definido.
+Encontra onde um símbolo é definido.
 
 ```
 Operation: goToDefinition
 Parameters:
-  - filePath: Path to the file
-  - line: Line number (1-based)
-  - character: Column number (1-based)
+  - filePath: Caminho para o arquivo
+  - line: Número da linha (base 1)
+  - character: Número da coluna (base 1)
 ```
 
 #### Encontrar Referências
@@ -171,36 +170,36 @@ Encontra todas as referências a um símbolo.
 ```
 Operation: findReferences
 Parameters:
-  - filePath: Path to the file
-  - line: Line number (1-based)
-  - character: Column number (1-based)
-  - includeDeclaration: Include the declaration itself (optional)
+  - filePath: Caminho para o arquivo
+  - line: Número da linha (base 1)
+  - character: Número da coluna (base 1)
+  - includeDeclaration: Incluir a própria declaração (opcional)
 ```
 
-#### Ir para a Implementação
+#### Ir para Implementação
 
 Encontra implementações de uma interface ou método abstrato.
 
 ```
 Operation: goToImplementation
 Parameters:
-  - filePath: Path to the file
-  - line: Line number (1-based)
-  - character: Column number (1-based)
+  - filePath: Caminho para o arquivo
+  - line: Número da linha (base 1)
+  - character: Número da coluna (base 1)
 ```
 
-### Informações de Símbolo
+### Informações sobre Símbolos
 
-#### Hover
+#### Hover (Suspenso)
 
 Obtém documentação e informações de tipo para um símbolo.
 
 ```
 Operation: hover
 Parameters:
-  - filePath: Path to the file
-  - line: Line number (1-based)
-  - character: Column number (1-based)
+  - filePath: Caminho para o arquivo
+  - line: Número da linha (base 1)
+  - character: Número da coluna (base 1)
 ```
 
 #### Símbolos do Documento
@@ -210,7 +209,7 @@ Obtém todos os símbolos em um documento.
 ```
 Operation: documentSymbol
 Parameters:
-  - filePath: Path to the file
+  - filePath: Caminho para o arquivo
 ```
 
 #### Pesquisa de Símbolos no Workspace
@@ -220,42 +219,42 @@ Pesquisa símbolos em todo o workspace.
 ```
 Operation: workspaceSymbol
 Parameters:
-  - query: Search query string
-  - limit: Maximum results (optional)
+  - query: String de consulta de pesquisa
+  - limit: Resultados máximos (opcional)
 ```
 
 ### Hierarquia de Chamadas
 
 #### Preparar Hierarquia de Chamadas
 
-Obtém o item da hierarquia de chamadas em uma posição.
+Obtém o item de hierarquia de chamadas em uma posição.
 
 ```
 Operation: prepareCallHierarchy
 Parameters:
-  - filePath: Path to the file
-  - line: Line number (1-based)
-  - character: Column number (1-based)
+  - filePath: Caminho para o arquivo
+  - line: Número da linha (base 1)
+  - character: Número da coluna (base 1)
 ```
 
-#### Chamadas de Entrada
+#### Chamadas Recebidas
 
 Encontra todas as funções que chamam a função fornecida.
 
 ```
 Operation: incomingCalls
 Parameters:
-  - callHierarchyItem: Item from prepareCallHierarchy
+  - callHierarchyItem: Item de prepareCallHierarchy
 ```
 
-#### Chamadas de Saída
+#### Chamadas Enviadas
 
 Encontra todas as funções chamadas pela função fornecida.
 
 ```
 Operation: outgoingCalls
 Parameters:
-  - callHierarchyItem: Item from prepareCallHierarchy
+  - callHierarchyItem: Item de prepareCallHierarchy
 ```
 
 ### Diagnósticos
@@ -267,7 +266,7 @@ Obtém mensagens de diagnóstico (erros, avisos) para um arquivo.
 ```
 Operation: diagnostics
 Parameters:
-  - filePath: Path to the file
+  - filePath: Caminho para o arquivo
 ```
 
 #### Diagnósticos do Workspace
@@ -277,7 +276,7 @@ Obtém todas as mensagens de diagnóstico em todo o workspace.
 ```
 Operation: workspaceDiagnostics
 Parameters:
-  - limit: Maximum results (optional)
+  - limit: Resultados máximos (opcional)
 ```
 
 ### Ações de Código
@@ -289,39 +288,39 @@ Obtém ações de código disponíveis (correções rápidas, refatorações) em
 ```
 Operation: codeActions
 Parameters:
-  - filePath: Path to the file
-  - line: Start line number (1-based)
-  - character: Start column number (1-based)
-  - endLine: End line number (optional, defaults to line)
-  - endCharacter: End column (optional, defaults to character)
-  - diagnostics: Diagnostics to get actions for (optional)
-  - codeActionKinds: Filter by action kind (optional)
+  - filePath: Caminho para o arquivo
+  - line: Número da linha inicial (base 1)
+  - character: Número da coluna inicial (base 1)
+  - endLine: Número da linha final (opcional, padrão é line)
+  - endCharacter: Coluna final (opcional, padrão é character)
+  - diagnostics: Diagnósticos para obter ações (opcional)
+  - codeActionKinds: Filtrar por tipo de ação (opcional)
 ```
 
 Tipos de ação de código:
 
-- `quickfix` - Correções rápidas para erros/avisos
-- `refactor` - Operações de refatoração
-- `refactor.extract` - Extrair para função/variável
-- `refactor.inline` - Inline de função/variável
-- `source` - Ações de código-fonte
-- `source.organizeImports` - Organizar imports
-- `source.fixAll` - Corrigir todos os problemas corrigíveis automaticamente
+- `quickfix` – Correções rápidas para erros/avisos
+- `refactor` – Operações de refatoração
+- `refactor.extract` – Extrair para função/variável
+- `refactor.inline` – Inline de função/variável
+- `source` – Ações de código fonte
+- `source.organizeImports` – Organizar imports
+- `source.fixAll` – Corrigir todos os problemas corrigíveis automaticamente
 
 ## Segurança
 
-Por padrão, os servidores LSP são iniciados apenas em workspaces confiáveis. Isso ocorre porque os language servers são executados com as permissões do seu usuário e podem executar código.
+Servidores LSP são iniciados apenas em workspaces confiáveis por padrão. Isso porque os servidores de linguagem são executados com suas permissões de usuário e podem executar código.
 
 ### Controles de Confiança
 
-- **Workspace Confiável**: Os servidores LSP são iniciados se configurados
-- **Workspace Não Confiável**: Os servidores LSP não serão iniciados, a menos que `trustRequired: false` esteja definido na configuração do servidor
+- **Workspace Confiável**: Servidores LSP iniciam se configurados
+- **Workspace Não Confiável**: Servidores LSP não iniciam a menos que `trustRequired: false` seja definido na configuração do servidor
 
 Para marcar um workspace como confiável, use o comando `/trust`.
 
-### Substituição de Confiança por Servidor
+### Sobrescrita de Confiança por Servidor
 
-Você pode substituir os requisitos de confiança para servidores específicos em suas configurações:
+Você pode sobrescrever os requisitos de confiança para servidores específicos em sua configuração:
 
 ```json
 {
@@ -340,59 +339,117 @@ Você pode substituir os requisitos de confiança para servidores específicos e
 
 ### Servidor Não Inicia
 
-1. **Verifique a flag `--experimental-lsp`**: Certifique-se de usar a flag ao iniciar o Qwen Code
+1. **Verifique a flag `--experimental-lsp`**: Certifique-se de estar usando a flag ao iniciar o Qwen Code
 2. **Verifique se o servidor está instalado**: Execute o comando manualmente (ex.: `clangd --version`) para confirmar
-3. **Verifique o comando**: O binário do servidor deve estar no `PATH` do seu sistema ou especificado como um caminho absoluto (ex.: `/opt/llvm/bin/clangd`). Caminhos relativos que saem do workspace são bloqueados
-4. **Verifique a confiança do workspace**: O workspace deve ser confiável para o LSP (use `/trust`)
-5. **Verifique os logs**: Procure por entradas `[LSP]` no log de depuração (consulte a seção Depuração abaixo)
-6. **Verifique o processo**: Execute `ps aux | grep <server-name>` para confirmar se o processo do servidor está em execução
-
+3. **Verifique o comando**: O binário do servidor deve estar no `PATH` do sistema, ou especificado como caminho absoluto (ex.: `/opt/llvm/bin/clangd`). Caminhos relativos que escapam do workspace são bloqueados
+4. **Verifique a confiança do workspace**: O workspace deve ser confiável para LSP (use `/trust`)
+5. **Verifique os logs**: Inicie o Qwen Code com `--debug` e procure por entradas relacionadas a LSP no log de depuração (veja a seção Depuração abaixo)
+6. **Verifique o processo**: Execute `ps aux | grep <nome-do-servidor>` para confirmar que o processo do servidor está rodando
 ### Desempenho Lento
 
 1. **Projetos grandes**: Considere excluir `node_modules` e outros diretórios grandes
-2. **Tempo limite do servidor**: Aumente `startupTimeout` na configuração do servidor para servidores lentos
+2. **Timeout do servidor**: Aumente `startupTimeout` na configuração do servidor para servidores lentos
 
 ### Nenhum Resultado
 
-1. **Servidor não está pronto**: O servidor ainda pode estar indexando. Para projetos C/C++ com clangd, certifique-se de que `--background-index` esteja nos args e que um `compile_commands.json` (ou `compile_flags.txt`) exista na raiz do projeto ou em um diretório pai. Use `--compile-commands-dir=<path>` se estiver em um subdiretório de build
+1. **Servidor não pronto**: O servidor pode ainda estar indexando. Para projetos C/C++ com clangd, certifique-se de que `--background-index` esteja nos argumentos e que um `compile_commands.json` (ou `compile_flags.txt`) exista na raiz do projeto ou em um diretório pai. Use `--compile-commands-dir=<caminho>` se ele estiver em um subdiretório de build
 2. **Arquivo não salvo**: Salve seu arquivo para que o servidor detecte as alterações
-3. **Linguagem incorreta**: Verifique se o servidor correto está em execução para sua linguagem
-4. **Verifique o processo**: Execute `ps aux | grep <server-name>` para confirmar se o servidor está realmente em execução
+3. **Linguagem errada**: Verifique se o servidor correto está em execução para sua linguagem
+4. **Verifique o processo**: Execute `ps aux | grep <nome-do-servidor>` para confirmar se o servidor está realmente rodando
 
 ### Depuração
 
-Os logs de depuração do LSP são gravados automaticamente em arquivos de log de sessão em `~/.qwen/debug/`. Para verificar entradas relacionadas ao LSP:
+O LSP não possui uma flag separada de depuração. Use o modo de depuração normal do Qwen Code junto com a flag de funcionalidade LSP:
 
 ```bash
-# View the latest session log
-grep '\[LSP\]' ~/.qwen/debug/latest
-
-# Common error messages to look for:
-#   "command path is unsafe"  → relative path escapes workspace, use absolute path or add to PATH
-#   "command not found"       → server binary not installed or not in PATH
-#   "requires trusted workspace" → run /trust first
+qwen --experimental-lsp --debug
 ```
 
-Você também pode verificar se o processo do servidor está em execução:
+Os logs de depuração são gravados no diretório de log de depuração da sessão. Para verificar entradas relacionadas ao LSP:
 
 ```bash
-ps aux | grep clangd   # or typescript-language-server, jdtls, etc.
+# Diretório de tempo de execução padrão
+rg "LSP|Native LSP|clangd|connection closed" ~/.qwen/debug/latest
+# Ou, sem ripgrep:
+grep -E "LSP|Native LSP|clangd|connection closed" ~/.qwen/debug/latest
+
+# Se QWEN_RUNTIME_DIR estiver configurado
+rg "LSP|Native LSP|clangd|connection closed" "$QWEN_RUNTIME_DIR/debug/latest"
 ```
 
-## Configuração LSP de Extensões
+Entradas úteis incluem:
 
-As extensões podem fornecer configurações de servidor LSP por meio do campo `lspServers` em seu `plugin.json`. Isso pode ser um objeto inline ou um caminho para um arquivo `.lsp.json`. O Qwen Code carrega essas configurações quando a extensão é ativada. O formato é o mesmo layout baseado em chaves de linguagem usado nos arquivos `.lsp.json` do projeto.
+- `[LSP] ...`: Logs emitidos pelo serviço LSP nativo e pelo gerenciador de servidores.
+- `[CONFIG] Native LSP status after discovery: ...`: Configuração do servidor LSP descoberta para a sessão.
+- `[CONFIG] Native LSP status after startup: ...`: Resultado da inicialização do servidor, incluindo contagens de prontos/falhas.
+- `[STATUS] LSP status snapshot for /status: ...`: Instantâneo do status impresso ao executar `/status` no modo de depuração.
+
+Você também pode executar `/status` no CLI para ver um resumo curto do LSP:
+
+```text
+LSP: disabled
+LSP: enabled, 1/1 ready
+LSP: enabled, 0/1 ready (1 failed)
+LSP: enabled, no servers configured
+LSP: enabled, status unavailable
+```
+
+Para detalhes por servidor, execute `/lsp`:
+
+```text
+**LSP Server Status**
+
+| Server | Command | Languages | Status |
+|--------|---------|-----------|--------|
+| clangd | `clangd` | c, cpp | READY |
+| pyright | `pyright-langserver` | python | FAILED - startup failed |
+```
+
+Mensagens de erro comuns a serem procuradas:
+
+```text
+command path is unsafe        -> o caminho relativo escapa do workspace, use caminho absoluto ou adicione ao PATH
+command not found             -> binário do servidor não instalado ou não está no PATH
+requires trusted workspace    -> execute /trust primeiro
+LSP connection closed         -> servidor iniciou mas saiu ou fechou stdio antes de responder ao initialize
+```
+
+Para falhas de inicialização do clangd, verifique o servidor diretamente a partir da raiz do projeto:
+
+```bash
+clangd --version
+clangd --check=/caminho/para/arquivo.cpp --log=verbose
+```
+
+Projetos C/C++ geralmente devem fornecer um `compile_commands.json` ou `compile_flags.txt`. Se o banco de dados de compilação estiver em um diretório de build, passe-o para o clangd:
+
+```json
+{
+  "cpp": {
+    "command": "clangd",
+    "args": ["--background-index", "--compile-commands-dir=build"]
+  }
+}
+```
+
+```bash
+ps aux | grep clangd   # ou typescript-language-server, jdtls, etc.
+```
+
+## Configuração LSP para Extensões
+
+Extensões podem fornecer configurações de servidor LSP através do campo `lspServers` em seu `plugin.json`. Pode ser um objeto inline ou um caminho para um arquivo `.lsp.json`. O Qwen Code carrega essas configurações quando a extensão está habilitada. O formato é o mesmo layout baseado em linguagem usado em arquivos `.lsp.json` de projetos.
 
 ## Melhores Práticas
 
-1. **Instale language servers globalmente**: Isso garante que estejam disponíveis em todos os projetos
-2. **Use configurações específicas do projeto**: Configure as opções do servidor por projeto quando necessário via `.lsp.json`
-3. **Mantenha os servidores atualizados**: Atualize seus language servers regularmente para obter os melhores resultados
+1. **Instale servidores de linguagem globalmente**: Isso garante que eles estejam disponíveis em todos os projetos
+2. **Use configurações específicas do projeto**: Configure opções do servidor por projeto quando necessário via `.lsp.json`
+3. **Mantenha os servidores atualizados**: Atualize seus servidores de linguagem regularmente para melhores resultados
 4. **Confie com sabedoria**: Confie apenas em workspaces de fontes confiáveis
 
-## Perguntas Frequentes
+## FAQ
 
-### P: Como ativo o LSP?
+### P: Como habilito o LSP?
 
 Use a flag `--experimental-lsp` ao iniciar o Qwen Code:
 
@@ -400,14 +457,32 @@ Use a flag `--experimental-lsp` ao iniciar o Qwen Code:
 qwen --experimental-lsp
 ```
 
-### P: Como sei quais language servers estão em execução?
+### P: Como saber quais servidores de linguagem estão rodando?
 
-Verifique o log de depuração por entradas `[LSP]` (`grep '\[LSP\]' ~/.qwen/debug/latest`) ou verifique o processo diretamente com `ps aux | grep <server-name>`.
+Inicie o Qwen Code com LSP e modo de depuração habilitados:
 
-### P: Posso usar múltiplos language servers para o mesmo tipo de arquivo?
+```bash
+qwen --experimental-lsp --debug
+```
 
-Sim, mas apenas um será usado para cada operação. O primeiro servidor que retornar resultados será o utilizado.
+Em seguida, execute `/status` para um resumo curto, `/lsp` para status por servidor, ou inspecione o log de depuração:
+
+```bash
+# Diretório de tempo de execução padrão
+rg "LSP|Native LSP|<nome-do-servidor>" ~/.qwen/debug/latest
+# Ou:
+grep -E "LSP|Native LSP|<nome-do-servidor>" ~/.qwen/debug/latest
+
+# Se QWEN_RUNTIME_DIR estiver configurado
+rg "LSP|Native LSP|<nome-do-servidor>" "$QWEN_RUNTIME_DIR/debug/latest"
+```
+
+O LSP usa o modo `--debug` normal do Qwen Code; não há uma flag separada de depuração para o LSP.
+
+### P: Posso usar múltiplos servidores de linguagem para o mesmo tipo de arquivo?
+
+Sim, mas apenas um será usado para cada operação. O primeiro servidor que retornar resultados vence.
 
 ### P: O LSP funciona no modo sandbox?
 
-Os servidores LSP são executados fora do sandbox para acessar seu código. Eles estão sujeitos aos controles de confiança do workspace.
+Servidores LSP rodam fora do sandbox para acessar seu código. Eles estão sujeitos aos controles de confiança do workspace.

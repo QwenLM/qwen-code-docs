@@ -1,88 +1,66 @@
 # Design de Autenticação e Gerenciamento de Modelos do OpenRouter
 
-Este documento descreve a intenção de design por trás do fluxo de autenticação do OpenRouter e das
-alterações no gerenciamento de modelos introduzidas com ele. O foco é intencionalmente nas escolhas
-de produto e arquitetura, e não no histórico de implementação.
+Este documento captura a intenção de design por trás do fluxo de autenticação do OpenRouter e das
+mudanças no gerenciamento de modelos introduzidas com ele. Ele se concentra intencionalmente nas
+escolhas de produto e arquitetura, não no histórico de implementação.
 
 ## Objetivos
 
-- Permitir que os usuários se autentiquem com o OpenRouter tanto pela CLI quanto por `/auth`.
-- Reutilizar o caminho de provedor compatível com OpenAI existente, em vez de adicionar um novo tipo
-  de autenticação para o OpenRouter.
-- Tornar a experiência de primeira execução utilizável, sem exigir que os usuários gerenciem centenas de
-  modelos imediatamente.
-- Manter um caminho claro para um gerenciamento de modelos mais robusto via `/manage-models`.
+- Permitir que os usuários autentiquem com o OpenRouter a partir da CLI e de `/auth`.
+- Reutilizar o caminho existente de provedor compatível com OpenAI em vez de adicionar um novo tipo de autenticação para o OpenRouter.
+- Tornar a experiência da primeira execução utilizável sem exigir que os usuários gerenciem centenas de modelos imediatamente.
+- Manter um caminho claro para um gerenciamento de modelos mais rico via `/manage-models`.
 
-## Autenticação do OpenRouter
+## Autenticação OpenRouter
 
 O OpenRouter é integrado como um provedor compatível com OpenAI:
 
 - tipo de autenticação: `AuthType.USE_OPENAI`
 - configurações do provedor: `modelProviders.openai`
-- variável de ambiente da API key: `OPENROUTER_API_KEY`
+- variável de ambiente da chave da API: `OPENROUTER_API_KEY`
 - URL base: `https://openrouter.ai/api/v1`
 
-Isso evita a introdução de um `AuthType` específico para o OpenRouter, já que o caminho do provedor de modelos
-em tempo de execução já é compatível com OpenAI. Mantém o status de autenticação, a resolução de modelos,
-a seleção de provedor e o esquema de configurações alinhados com a abstração de provedor existente.
+Isso evita introduzir um `AuthType` específico do OpenRouter quando o caminho do provedor de modelos em tempo de execução já é compatível com OpenAI. Mantém o status de autenticação, resolução de modelos, seleção de provedores e esquema de configurações alinhados com a abstração de provedor existente.
 
 Os fluxos voltados ao usuário são:
 
-- `qwen auth openrouter --key <key>` para automação ou configuração direta da API key.
-- `qwen auth openrouter` para OAuth baseado em navegador.
-- `/auth` → API Key → OpenRouter para o fluxo da TUI.
+- `/auth` → OpenRouter para o fluxo TUI interativo.
+- Variáveis de ambiente para automação ou configuração direta da chave da API:
+  `OPENROUTER_API_KEY` mais `OPENAI_BASE_URL=https://openrouter.ai/api/v1`.
+- `~/.qwen/settings.json` para configuração por script que precisa de entradas explícitas de provedores de modelos.
 
-O OAuth no navegador utiliza o fluxo PKCE do OpenRouter e grava a API key obtida nas
-configurações antes de atualizar a autenticação como `AuthType.USE_OPENAI`.
+O OAuth do navegador usa o fluxo PKCE do OpenRouter e escreve a chave da API trocada nas configurações antes de atualizar a autenticação como `AuthType.USE_OPENAI`.
 
 ## Gerenciamento de Modelos
 
-O OpenRouter expõe um catálogo de modelos dinâmico e extenso. Gravar todos os modelos descobertos
-em `modelProviders.openai` deixaria `/model` poluído e transformaria um campo de configurações de longo prazo
-em um cache de um catálogo remoto.
+O OpenRouter expõe um catálogo de modelos grande e dinâmico. Escrever cada modelo descoberto em `modelProviders.openai` tornaria `/model` confuso e transformaria um campo de configurações de longo prazo em um cache de um catálogo remoto.
 
-A divisão principal do design é:
+A divisão chave do design é:
 
-- **Catálogo**: o conjunto completo de modelos descobertos a partir de uma fonte como
-  o OpenRouter.
-- **Conjunto habilitado**: o subconjunto menor de modelos que deve aparecer em `/model` e
-  ser persistido nas configurações do usuário.
+- **Catálogo**: o conjunto completo de modelos descobertos a partir de uma fonte como o OpenRouter.
+- **Conjunto habilitado**: o conjunto menor de modelos que devem aparecer em `/model` e ser persistidos nas configurações do usuário.
 
-Para o fluxo inicial do OpenRouter, a autenticação deve finalizar com um conjunto habilitado padrão
-útil, em vez de interromper o usuário com um seletor extenso. O conjunto recomendado
-deve ser pequeno, estável e priorizar modelos que permitam aos usuários testar o produto
-com sucesso, incluindo modelos gratuitos quando disponíveis.
+Para o fluxo inicial do OpenRouter, a autenticação deve terminar com um conjunto habilitado padrão útil, em vez de interromper o usuário com um seletor grande. O conjunto recomendado deve ser pequeno, estável e inclinado para modelos que permitam aos usuários experimentar o produto com sucesso, incluindo modelos gratuitos quando disponíveis.
 
-`/model` continua sendo um alternador rápido de modelos. Não deve se tornar o local onde
-os usuários navegam e curam o catálogo completo de um provedor.
+`/model` continua sendo um trocador rápido de modelos. Não deve se tornar o local onde os usuários navegam e curam um catálogo completo de provedores.
 
 ## `/manage-models`
 
-Um gerenciamento de modelos mais robusto deve ficar em um ponto de entrada separado, `/manage-models`. Esse
-fluxo deve permitir que os usuários:
+O gerenciamento mais rico de modelos pertence a um ponto de entrada separado `/manage-models`. Esse fluxo deve permitir que os usuários:
 
 - naveguem pelos modelos descobertos;
-- pesquisem por id, nome de exibição, prefixo do provedor e tags derivadas, como `free` ou
-  `vision`;
-- vejam quais modelos estão habilitados no momento;
+- pesquisem por id, nome de exibição, prefixo do provedor e tags derivadas como `free` ou `vision`;
+- vejam quais modelos estão atualmente habilitados;
 - habilitem ou desabilitem modelos em lote.
 
-A dimensão de origem deve permanecer parte deste design. O OpenRouter é apenas a
-primeira fonte de catálogo dinâmico; fontes futuras, como ModelScope e ModelStudio,
-devem se encaixar na mesma estrutura. A complexidade da UI pode ser reduzida, mas a abstração
-de origem subjacente deve permanecer disponível como ponto de extensão.
+A dimensão da fonte deve permanecer parte deste design. O OpenRouter é apenas a primeira fonte de catálogo dinâmico; fontes futuras como ModelScope e ModelStudio devem se encaixar no mesmo formato. A complexidade da UI pode ser reduzida, mas a abstração da fonte subjacente deve permanecer disponível como ponto de extensão.
 
-## Limites Atuais
+## Limite Atual
 
-Esta alteração deve fazer o mínimo necessário para tornar a autenticação e a configuração de modelos do OpenRouter
-agradáveis:
+Esta mudança deve fazer o mínimo necessário para tornar a autenticação e configuração de modelos do OpenRouter agradáveis:
 
-- A autenticação via OAuth ou por API key configura o OpenRouter por meio do caminho
-  de provedor compatível com OpenAI existente.
-- O conjunto inicial de modelos habilitados é curado, em vez de despejar o catálogo completo
-  nas configurações.
-- O armazenamento, navegação, filtragem e gerenciamento em lote do catálogo completo são reservados para
-  `/manage-models`.
+- Autenticação OAuth ou baseada em chave configura o OpenRouter através do caminho de provedor compatível com OpenAI existente.
+- O conjunto inicial de modelos habilitados é curado, em vez de despejar o catálogo completo nas configurações.
+- Armazenamento completo do catálogo, navegação, filtragem e gerenciamento em lote são adiados para `/manage-models`.
 
-O princípio de design é simples: a autenticação deve levar os usuários a um estado funcional
-rapidamente, enquanto a curadoria de modelos deve ficar em um fluxo de gerenciamento dedicado.
+O princípio de design é simples: a autenticação deve levar os usuários rapidamente a um estado funcional, enquanto a curadoria de modelos deve residir em um fluxo de gerenciamento dedicado.

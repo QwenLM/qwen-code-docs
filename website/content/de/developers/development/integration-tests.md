@@ -1,34 +1,34 @@
 # Integrationstests
 
-Dieses Dokument enthält Informationen über das in diesem Projekt verwendete Framework für Integrationstests.
+Dieses Dokument enthält Informationen über das Integrationstest-Framework, das in diesem Projekt verwendet wird.
 
 ## Übersicht
 
-Die Integrationstests dienen dazu, die End-to-End-Funktionalität von Qwen Code zu validieren. Sie führen die kompilierte Binary in einer kontrollierten Umgebung aus und überprüfen, ob sie sich bei der Interaktion mit dem Dateisystem wie erwartet verhält.
+Die Integrationstests sind dazu gedacht, die End-to-End-Funktionalität von Qwen Code zu validieren. Sie führen die erstellte Binärdatei in einer kontrollierten Umgebung aus und überprüfen, ob sie sich wie erwartet verhält, wenn sie mit dem Dateisystem interagiert.
 
-Diese Tests befinden sich im Verzeichnis `integration-tests` und werden mit einem eigenen Test-Runner ausgeführt.
+Diese Tests befinden sich im Verzeichnis `integration-tests` und werden mit einem benutzerdefinierten Test-Runner ausgeführt.
 
-## Tests ausführen
+## Ausführen der Tests
 
-Die Integrationstests werden nicht standardmäßig über den Befehl `npm run test` ausgeführt. Sie müssen explizit über das Skript `npm run test:integration:all` gestartet werden.
+Die Integrationstests werden nicht als Teil des standardmäßigen `npm run test`-Befehls ausgeführt. Sie müssen explizit mit dem Skript `npm run test:integration:all` ausgeführt werden.
 
-Die Integrationstests können auch über folgenden Shortcut ausgeführt werden:
+Die Integrationstests können auch mit der folgenden Abkürzung ausgeführt werden:
 
 ```bash
 npm run test:e2e
 ```
 
-## Bestimmte Tests ausführen
+## Ausführen einer bestimmten Gruppe von Tests
 
-Um eine Teilmenge von Testdateien auszuführen, kannst du `npm run <integration test command> <file_name1> ...` verwenden. Dabei ist `<integration test command>` entweder `test:e2e` oder `test:integration*` und `<file_name>` eine beliebige `.test.js`-Datei im Verzeichnis `integration-tests/`. Der folgende Befehl führt beispielsweise `list_directory.test.js` und `write_file.test.js` aus:
+Um eine Teilmenge der Testdateien auszuführen, können Sie `npm run <Integrationstest-Befehl> <Dateiname1> ....` verwenden, wobei &lt;Integrationstest-Befehl&gt; entweder `test:e2e` oder `test:integration*` ist und `<Dateiname>` eine der `.test.ts`-Dateien im Verzeichnis `integration-tests/` ist. Das folgende Beispiel führt `list_directory.test.ts` und `write_file.test.ts` aus:
 
 ```bash
 npm run test:e2e list_directory write_file
 ```
 
-### Einzelnen Test nach Namen ausführen
+### Ausführen eines einzelnen Tests nach Namen
 
-Um einen einzelnen Test anhand seines Namens auszuführen, verwende das Flag `--test-name-pattern`:
+Um einen einzelnen Test nach seinem Namen auszuführen, verwenden Sie das Flag `--test-name-pattern`:
 
 ```bash
 npm run test:e2e -- --test-name-pattern "reads a file"
@@ -36,7 +36,7 @@ npm run test:e2e -- --test-name-pattern "reads a file"
 
 ### Alle Tests ausführen
 
-Um die gesamte Suite der Integrationstests auszuführen, verwende folgenden Befehl:
+Um die gesamte Suite von Integrationstests auszuführen, verwenden Sie den folgenden Befehl:
 
 ```bash
 npm run test:integration:all
@@ -44,7 +44,7 @@ npm run test:integration:all
 
 ### Sandbox-Matrix
 
-Der `all`-Befehl führt Tests für `no sandboxing`, `docker` und `podman` aus.
+Der Befehl `all` führt Tests für `keine Sandbox`, `docker` und `podman` aus.
 Jeder einzelne Typ kann mit den folgenden Befehlen ausgeführt werden:
 
 ```bash
@@ -61,29 +61,29 @@ npm run test:integration:sandbox:podman
 
 ## Diagnose
 
-Der Integrationstest-Runner bietet verschiedene Diagnoseoptionen, um Testfehler einzugrenzen.
+Der Integrationstest-Runner bietet mehrere Diagnoseoptionen, um die Fehlersuche bei Testfehlern zu erleichtern.
 
-### Testausgabe beibehalten
+### Behalten der Testausgabe
 
-Du kannst die während eines Testlaufs erstellten temporären Dateien zur Überprüfung aufbewahren. Dies ist nützlich, um Probleme bei Dateisystemoperationen zu debuggen.
+Sie können die während eines Testlaufs erstellten temporären Dateien zur Überprüfung aufbewahren. Dies ist nützlich, um Probleme bei Dateisystemoperationen zu debuggen.
 
-Um die Testausgabe beizubehalten, setze die Umgebungsvariable `KEEP_OUTPUT` auf `true`.
+Um die Testausgabe zu behalten, setzen Sie die Umgebungsvariable `KEEP_OUTPUT` auf `true`.
 
 ```bash
 KEEP_OUTPUT=true npm run test:integration:sandbox:none
 ```
 
-Wenn die Ausgabe beibehalten wird, gibt der Test-Runner den Pfad zum eindeutigen Verzeichnis für den Testlauf aus.
+Wenn die Ausgabe behalten wird, gibt der Test-Runner den Pfad zum eindeutigen Verzeichnis des Testlaufs aus.
 
 ### Ausführliche Ausgabe
 
-Für ein detaillierteres Debugging setze die Umgebungsvariable `VERBOSE` auf `true`.
+Für ein detaillierteres Debugging setzen Sie die Umgebungsvariable `VERBOSE` auf `true`.
 
 ```bash
 VERBOSE=true npm run test:integration:sandbox:none
 ```
 
-Wenn `VERBOSE=true` und `KEEP_OUTPUT=true` im selben Befehl verwendet werden, wird die Ausgabe an die Konsole gestreamt und zusätzlich in einer Logdatei im temporären Verzeichnis des Tests gespeichert.
+Wenn `VERBOSE=true` und `KEEP_OUTPUT=true` im selben Befehl verwendet werden, wird die Ausgabe an die Konsole gestreamt und auch in einer Log-Datei im temporären Verzeichnis des Tests gespeichert.
 
 Die ausführliche Ausgabe ist so formatiert, dass die Quelle der Logs klar erkennbar ist:
 
@@ -95,17 +95,17 @@ Die ausführliche Ausgabe ist so formatiert, dass die Quelle der Logs klar erken
 
 ## Linting und Formatierung
 
-Um Codequalität und Konsistenz sicherzustellen, werden die Integrationstest-Dateien im Rahmen des Haupt-Build-Prozesses gelintet. Du kannst den Linter und den Auto-Fixer auch manuell ausführen.
+Um Codequalität und Konsistenz zu gewährleisten, werden die Integrationstest-Dateien im Rahmen des Hauptbuild-Prozesses gelintet. Sie können den Linter und die Auto-Fix-Funktion auch manuell ausführen.
 
-### Linter ausführen
+### Ausführen des Linters
 
-Um auf Linting-Fehler zu prüfen, führe folgenden Befehl aus:
+Um nach Linting-Fehlern zu suchen, führen Sie den folgenden Befehl aus:
 
 ```bash
 npm run lint
 ```
 
-Du kannst das `:fix`-Flag zum Befehl hinzufügen, um behebbare Linting-Fehler automatisch zu korrigieren:
+Sie können das Flag `:fix` in den Befehl einfügen, um automatisch alle behebbaren Linting-Fehler zu korrigieren:
 
 ```bash
 npm run lint:fix
@@ -113,25 +113,25 @@ npm run lint:fix
 
 ## Verzeichnisstruktur
 
-Die Integrationstests erstellen für jeden Testlauf ein eigenes Verzeichnis innerhalb des `.integration-tests`-Verzeichnisses. Innerhalb dieses Verzeichnisses wird für jede Testdatei ein Unterverzeichnis erstellt, und darin wiederum ein Unterverzeichnis für jeden einzelnen Testfall.
+Die Integrationstests erstellen für jeden Testlauf ein eindeutiges Verzeichnis im Verzeichnis `.integration-tests`. In diesem Verzeichnis wird für jede Testdatei ein Unterverzeichnis erstellt, und darin wiederum ein Unterverzeichnis für jeden einzelnen Testfall.
 
-Diese Struktur erleichtert das Auffinden der Artefakte für einen bestimmten Testlauf, eine Datei oder einen Fall.
+Diese Struktur erleichtert das Auffinden der Artefakte für einen bestimmten Testlauf, eine bestimmte Datei oder einen bestimmten Testfall.
 
 ```
 .integration-tests/
 └── <run-id>/
-    └── <test-file-name>.test.js/
+    └── <test-file-name>.test.ts/
         └── <test-case-name>/
             ├── output.log
             └── ...other test artifacts...
 ```
 
-## Continuous Integration
+## Kontinuierliche Integration
 
-Um sicherzustellen, dass die Integrationstests immer ausgeführt werden, ist ein GitHub Actions Workflow in `.github/workflows/e2e.yml` definiert. Dieser Workflow führt die Integrationstests automatisch für Pull Requests gegen den `main`-Branch aus oder wenn ein Pull Request zu einer Merge Queue hinzugefügt wird.
+Um sicherzustellen, dass die Integrationstests immer ausgeführt werden, ist ein GitHub Actions-Workflow in `.github/workflows/e2e.yml` definiert. Dieser Workflow führt die Integrationstests automatisch für Pull-Requests gegen den `main`-Branch aus oder wenn ein Pull-Request zu einer Merge-Warteschlange hinzugefügt wird.
 
 Der Workflow führt die Tests in verschiedenen Sandbox-Umgebungen aus, um sicherzustellen, dass Qwen Code in jeder Umgebung getestet wird:
 
-- `sandbox:none`: Führt die Tests ohne Sandbox aus.
+- `sandbox:none`: Führt die Tests ohne Sandboxing aus.
 - `sandbox:docker`: Führt die Tests in einem Docker-Container aus.
 - `sandbox:podman`: Führt die Tests in einem Podman-Container aus.

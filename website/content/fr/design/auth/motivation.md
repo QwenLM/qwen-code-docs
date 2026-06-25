@@ -1,0 +1,79 @@
+# Motivation du registre des fournisseurs d'authentification
+
+Le module d'authentification modélisait auparavant chaque chemin de configuration comme un flux séparé : clé API, OAuth, plans d'abonnement et fournisseurs personnalisés. En pratique, tous ces chemins produisent le même type de résultat : des mises à jour de la configuration du fournisseur de l'utilisateur dans `~/.qwen/settings.json`.
+
+Cette refactorisation fait de la configuration du fournisseur l'abstraction partagée. Un fournisseur décrit comment il est affiché, comment les identifiants sont collectés, quels modèles il installe et quel correctif de paramètres doit être appliqué. Les clés API, OAuth, les plans de codage, les plans de jetons et les assistants personnalisés sont des méthodes de configuration pour un fournisseur, et non des architectures d'authentification distinctes.
+
+## Objectifs
+
+- Garder les flux orientés utilisateur de `/auth` faciles à comprendre :
+  - Alibaba ModelStudio pour la configuration Qwen propriétaire.
+  - Fournisseurs tiers pour les intégrations intégrées courantes telles que DeepSeek, MiniMax et Z.AI.
+  - Fournisseurs OAuth tels que OpenRouter.
+  - Fournisseurs personnalisés pour les serveurs locaux, les proxys ou les fournisseurs non intégrés.
+- Déplacer les données spécifiques au fournisseur dans de petites configurations déclaratives de fournisseur.
+- Simplifier les contributions de fournisseurs tiers : ajouter un fournisseur courant devrait généralement signifier ajouter une configuration de fournisseur plus des tests.
+- Centraliser les écritures de paramètres via `ProviderInstallPlan` et `applyProviderInstallPlan`.
+- Garder le regroupement de l'interface utilisateur séparé du comportement d'installation. Les groupes aident les utilisateurs à naviguer dans `/auth` ; ils ne doivent pas piloter la logique des paramètres.
+- Préserver un chemin pour la propriété de la liste des modèles et les métadonnées du fournisseur afin que les mises à jour des modèles du fournisseur puissent être détectées et appliquées en toute sécurité.
+
+## Architecture
+
+La nouvelle structure sépare les définitions des fournisseurs, la logique d'installation et l'état de l'interface utilisateur :
+
+```text
+packages/cli/src/auth/
+├── allProviders.ts
+├── providerConfig.ts
+├── types.ts
+├── install/
+│   └── applyProviderInstallPlan.ts
+└── providers/
+    ├── alibaba/
+    ├── custom/
+    ├── oauth/
+    └── thirdParty/
+```
+
+`ProviderConfig` est le contrat déclaratif pour les fournisseurs intégrés. Il contient le libellé du fournisseur, le protocole, les options d'URL de base, la clé d'environnement, la liste des modèles, les métadonnées des modèles, le regroupement dans l'interface utilisateur et le comportement de configuration.
+
+`buildInstallPlan` convertit une configuration de fournisseur et les entrées de configuration collectées en un `ProviderInstallPlan`. Le plan d'installation est le seul objet que le module d'écriture des paramètres doit comprendre.
+
+`applyProviderInstallPlan` applique ce plan en mettant à jour les paramètres d'environnement, `modelProviders`, le type d'authentification sélectionné, la sélection optionnelle des modèles et les métadonnées du fournisseur. Cela maintient la persistance des paramètres indépendante du flux d'interface utilisateur qui a collecté les entrées.
+
+## Flux utilisateur
+
+`/auth` peut toujours présenter différents points d'entrée, mais ils doivent tous converger vers le même chemin d'installation du fournisseur :
+
+1. **Alibaba ModelStudio**
+   - Plan de codage
+   - Plan de jetons
+   - Clé API standard
+
+2. **Fournisseurs tiers**
+   - Fournisseurs courants avec des valeurs par défaut intégrées.
+   - Chaque fournisseur doit posséder son URL de base, sa clé d'environnement, ses modèles par défaut et ses métadonnées de modèle.
+   - Z.AI doit utiliser l'URL de base spécifique à la configuration :
+     - Plan de codage : `https://api.z.ai/api/coding/paas/v4`
+     - Clé API standard : `https://api.z.ai/api/paas/v4`
+
+3. **OAuth**
+   - Autorisation basée sur le navigateur pour les plateformes de routage telles que OpenRouter.
+   - Les mécanismes spécifiques à OAuth peuvent résider dans l'implémentation du fournisseur, mais le résultat final doit toujours être un plan d'installation du fournisseur.
+
+4. **Fournisseur personnalisé**
+   - Configuration manuelle pour les serveurs locaux, les proxys ou les fournisseurs non pris en charge.
+   - L'assistant collecte le protocole, l'URL de base, la clé API, les identifiants de modèles et les options avancées des modèles telles que la réflexion, l'entrée multimodale, la fenêtre de contexte et le nombre maximal de jetons.
+
+## Propriété des modèles et mises à jour
+
+Les fournisseurs intégrés statiques peuvent conserver les métadonnées du fournisseur sous `providerMetadata.<providerId>`, y compris la version de la liste des modèles et l'URL de base. Cela permet à Qwen Code de détecter quand la liste des modèles intégrés d'un fournisseur change et d'inviter l'utilisateur à mettre à jour les modèles possédés sans écraser les modèles personnalisés non liés.
+
+Les fournisseurs personnalisés sont différents : leur liste de modèles est créée par l'utilisateur et ne doit pas être traitée comme une liste de modèles intégrés pouvant être mise à jour automatiquement.
+
+## Non-objectifs
+
+- Ne pas faire de la clé API, d'OAuth, du plan de codage ou du plan de jetons l'architecture de haut niveau des paramètres.
+- Ne pas coupler les écritures de paramètres aux composants React ou aux gestionnaires de commandes CLI.
+- Ne pas faire des groupes d'interface utilisateur un axe de logique métier.
+- Ne pas exiger des contributeurs qu'ils comprennent l'ensemble de l'interface utilisateur d'authentification pour ajouter un fournisseur tiers simple.

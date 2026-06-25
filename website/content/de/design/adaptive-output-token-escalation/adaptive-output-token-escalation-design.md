@@ -1,188 +1,190 @@
-# Design zur adaptiven Eskalation von Output-Tokens
+# Adaptive Ausgabe-Token-Eskalation – Entwurf
 
-> Reduziert die Überreservierung von GPU-Slots um das ~4-fache durch eine „niedriger Standardwert + Eskalation bei Trunkierung“-Strategie für Output-Tokens, mit Multi-Turn-Wiederherstellung für Antworten, die selbst das eskalierte Limit überschreiten.
+> Reduziert die Überreservierung von GPU-Slots um etwa das 4-fache durch eine „niedriger Standardwert + Eskalation bei Kürzung“-Strategie für Ausgabe-Token, mit mehrfacher Wiederaufnahme für Antworten, die selbst den eskalierten Grenzwert überschreiten.
 
 ## Problem
 
-Jede API-Anfrage reserviert einen festen GPU-Slot, der proportional zu `max_tokens` ist. Der bisherige Standardwert von 32K Tokens bedeutet, dass jede Anfrage einen 32K-Output-Slot reserviert, obwohl 99 % der Antworten unter 5K Tokens liegen. Dies reserviert die GPU-Kapazität um das 4- bis 6-fache über, was die Server-Konkurrenz einschränkt und die Kosten erhöht.
+Jede API-Anfrage reserviert einen festen GPU-Slot proportional zu `max_tokens`. Der bisherige Standardwert von 32K Token bedeutet, dass jede Anfrage einen 32K-Ausgabe-Slot reserviert, aber 99% der Antworten unter 5K Token liegen. Dies überreserviert die GPU-Kapazität um das 4- bis 6-fache, schränkt die Server-Konkurrenz ein und erhöht die Kosten.
 
 ## Lösung
 
-Verwende einen begrenzten Standardwert von **8K** Output-Tokens. Wenn eine Antwort trunkiert wird (das Modell erreicht `max_tokens`):
+Verwenden Sie einen begrenzten Standardwert von **8K** Ausgabe-Token. Wenn eine Antwort abgeschnitten wird (das Modell erreicht `max_tokens`):
 
-1. **Eskaliere** auf das volle Output-Limit des Modells (mit 64K als Mindestwert für unbekannte Modelle)
-2. Falls sie immer noch trunkiert ist, **stelle sie wieder her**, indem du die Teilantwort im Verlauf behältst und bis zu 3-mal eine Fortsetzungsnachricht einfügst
-3. Wenn die Wiederherstellung ausgeschöpft ist, greife auf die Trunkierungsanleitung des Tool-Schedulers zurück
+1. **Eskalieren** Sie auf das volle Ausgabelimit des Modells (mit 64K als unterer Schranke für unbekannte Modelle)
+2. Falls weiterhin abgeschnitten, **Wiederholen** Sie die Anfrage, indem Sie die partielle Antwort im Verlauf behalten und eine Fortsetzungsnachricht einfügen, bis zu 3 Mal
+3. Falls alle Wiederholungen ausgeschöpft sind, greifen Sie auf die Kürzungsanleitung des Tool-Schedulers zurück
 
-Da <1 % der Anfragen tatsächlich trunkiert werden, reduziert dies die durchschnittliche Slot-Reservierung erheblich, während die Output-Qualität für lange Antworten erhalten bleibt.
+Da weniger als 1% der Anfragen tatsächlich abgeschnitten werden, reduziert dies die durchschnittliche Slot-Reservierung erheblich, während die Ausgabequalität für lange Antworten erhalten bleibt.
 
 ## Architektur
 
 ```
-Request (max_tokens = 8K)
+Anfrage (max_tokens = 8K)
 │
 ▼
-┌─────────────────────────┐
-│  Response truncated?     │──── No ──▶ Done ✓
-│  (MAX_TOKENS)            │
-└───────────┬──────────────┘
-            │ Yes
+┌─────────────────────────────────┐
+│  Antwort abgeschnitten?         │──── Nein ──▶ Erledigt ✓
+│  (MAX_TOKENS)                   │
+└───────────┬─────────────────────┘
+            │ Ja
             ▼
-┌──────────────────────────────────────────────────┐
-│  Layer 1: Escalate to model output limit         │
-│  ┌────────────────────────────────────────────┐  │
-│  │ Pop partial response from history          │  │
-│  │ RETRY (isContinuation: false → reset UI)   │  │
-│  │ Re-send at max(64K, model output limit)    │  │
-│  └────────────────────────────────────────────┘  │
-└───────────┬──────────────────────────────────────┘
-            │
+┌─────────────────────────────────────────────────────┐
+│  Ebene 1: Auf Modell-Ausgabelimit eskalieren        │
+│  ┌───────────────────────────────────────────────┐  │
+│  │ Partielle Antwort aus Verlauf entfernen       │  │
+│  │ ERNEUT (isContinuation: false → UI zurücks.)  │  │
+│  │ Erneut senden mit max(64K, Modell-Ausgabelim.)│  │
+│  └───────────────────┬───────────────────────────┘  │
+└───────────────────────┬─────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────┐
+│  Noch abgeschnitten?            │──── Nein ──▶ Erledigt ✓
+│  (MAX_TOKENS)                   │
+└───────────┬─────────────────────┘
+            │ Ja
             ▼
-┌─────────────────────────┐
-│  Still truncated?        │──── No ──▶ Done ✓
-│  (MAX_TOKENS)            │
-└───────────┬──────────────┘
-            │ Yes
-            ▼
-┌──────────────────────────────────────────────────┐
-│  Layer 2: Multi-turn recovery (up to 3×)         │
-│  ┌────────────────────────────────────────────┐  │
-│  │ Keep partial response in history           │  │
-│  │ Push user message: "Resume directly..."    │  │
-│  │ RETRY (isContinuation: true → keep UI buf) │  │
-│  │ Re-send with updated history               │  │
-│  │ Model continues from where it left off     │  │
-│  └──────────────┬─────────────────────────────┘  │
-│                 │                                 │
-│          ┌──────┴──────┐                          │
-│          │ Succeeded?  │── Yes ──▶ Done ✓         │
-│          └──────┬──────┘                          │
-│                 │ No (still truncated)            │
-│                 ▼                                 │
-│          attempt < 3? ── Yes ──▶ loop back ↑      │
-└───────────┬──────────────────────────────────────┘
-            │ No (exhausted)
-            ▼
-┌──────────────────────────────────────────────────┐
-│  Layer 3: Tool scheduler fallback                │
-│  ┌────────────────────────────────────────────┐  │
-│  │ Reject truncated Edit/Write tool calls     │  │
-│  │ Return guidance: "You MUST split into      │  │
-│  │ smaller parts — write skeleton first,      │  │
-│  │ then edit incrementally."                  │  │
-│  └────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│  Ebene 2: Mehrfache Wiederaufnahme (bis zu 3×)      │
+│  ┌───────────────────────────────────────────────┐  │
+│  │ Partielle Antwort im Verlauf behalten         │  │
+│  │ Benutzernachricht einfügen: "Fahren Sie       │  │
+│  │ direkt fort..."                               │  │
+│  │ ERNEUT (isContinuation: true → UI-Puffer     │  │
+│  │ beibehalten)                                  │  │
+│  │ Erneut senden mit aktualisiertem Verlauf      │  │
+│  │ Modell fährt dort fort, wo es aufhörte        │  │
+│  └──────────────────┬────────────────────────────┘  │
+│                     │                                │
+│          ┌──────────┴──────────┐                     │
+│          │ Erfolgreich?        │── Ja ──▶ Erledigt ✓ │
+│          └──────────┬──────────┘                     │
+│                     │ Nein (weiter abgeschnitten)     │
+│                     ▼                                │
+│          Versuch < 3? ── Ja ──▶ zurückschleifen ↑    │
+└───────────────────────┬──────────────────────────────┘
+                        │ Nein (ausgeschöpft)
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│  Ebene 3: Tool-Scheduler-Fallback                   │
+│  ┌───────────────────────────────────────────────┐  │
+│  │ Abgeschnittene Edit/Schreiben-Tool-Aufrufe    │  │
+│  │ ablehnen                                      │  │
+│  │ Anleitung zurückgeben: "Sie MÜSSEN in         │  │
+│  │ kleinere Teile aufteilen – schreiben Sie      │  │
+│  │ zuerst das Gerüst, dann bearbeiten Sie        │  │
+│  │ inkrementell."                                │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## Bestimmung des Token-Limits
 
-Das effektive `max_tokens` wird in folgender Prioritätsreihenfolge aufgelöst:
+Das effektive `max_tokens` wird in der folgenden Prioritätsreihenfolge ermittelt:
 
-| Priorität   | Quelle                                               | Wert (bekanntes Modell)        | Wert (unbekanntes Modell) | Eskalationsverhalten                            |
-| ----------- | ---------------------------------------------------- | ---------------------------- | --------------------- | ----------------------------------------------- |
-| 1 (höchste) | Benutzerkonfiguration (`samplingParams.max_tokens`)  | `min(userValue, modelLimit)` | `userValue`           | Keine Eskalation                                |
-| 2           | Umgebungsvariable (`QWEN_CODE_MAX_OUTPUT_TOKENS`)    | `min(envValue, modelLimit)`  | `envValue`            | Keine Eskalation                                |
-| 3 (niedrigste) | Begrenzter Standardwert                            | `min(modelLimit, 8K)`        | `min(32K, 8K)` = 8K   | Eskaliert auf Modell-Limit (64K Mindestwert) + Wiederherstellung |
+| Priorität    | Quelle                                             | Wert (bekanntes Modell)          | Wert (unbekanntes Modell) | Eskalationsverhalten                            |
+| ------------ | -------------------------------------------------- | -------------------------------- | ------------------------- | ----------------------------------------------- |
+| 1 (höchste)  | Benutzerkonfiguration (`samplingParams.max_tokens`) | `min(userValue, modelLimit)`     | `userValue`               | Keine Eskalation                                |
+| 2            | Umgebungsvariable (`QWEN_CODE_MAX_OUTPUT_TOKENS`)  | `min(envValue, modelLimit)`      | `envValue`                | Keine Eskalation                                |
+| 3 (niedrige) | Begrenzter Standardwert                            | `min(modelLimit, 8K)`            | `min(32K, 8K)` = 8K       | Eskaliert auf Modell-Limit (64K Untergrenze) + Wiederaufnahme |
 
-Ein „bekanntes Modell“ ist eines, das einen expliziten Eintrag in `OUTPUT_PATTERNS` hat (geprüft über `hasExplicitOutputLimit()`). Für bekannte Modelle wird der effektive Wert immer auf das deklarierte Output-Limit des Modells begrenzt, um API-Fehler zu vermeiden. Unbekannte Modelle (Custom Deployments, selbst gehostete Endpunkte) leiten den Benutzerwert direkt weiter, da das Backend möglicherweise größere Limits unterstützt.
+Ein „bekanntes Modell“ ist eines, das einen expliziten Eintrag in `OUTPUT_PATTERNS` hat (geprüft über `hasExplicitOutputLimit()`). Bei bekannten Modellen wird der effektive Wert immer auf das deklarierte Ausgabelimit des Modells begrenzt, um API-Fehler zu vermeiden. Unbekannte Modelle (benutzerdefinierte Bereitstellungen, selbst gehostete Endpunkte) geben den Benutzerwert direkt weiter, da das Backend möglicherweise größere Limits unterstützt.
 
-Diese Logik ist in drei Content-Generatoren implementiert:
+Diese Logik ist in drei Inhaltsgeneratoren implementiert:
 
-- `DefaultOpenAICompatibleProvider.applyOutputTokenLimit()` — OpenAI-kompatible Provider
-- `DashScopeProvider` — erbt `applyOutputTokenLimit()` vom Standard-Provider
-- `AnthropicContentGenerator.buildSamplingParameters()` — Anthropic-Provider
-
+- `DefaultOpenAICompatibleProvider.applyOutputTokenLimit()` – OpenAI-kompatible Anbieter
+- `DashScopeProvider` – erbt `applyOutputTokenLimit()` vom Standard-Anbieter
+- `AnthropicContentGenerator.buildSamplingParameters()` – Anthropic-Anbieter
 ## Eskalationsmechanismus
 
-Die Eskalationslogik befindet sich in `geminiChat.ts` und liegt **außerhalb** der Hauptschleife für Wiederholungsversuche. Dies ist beabsichtigt:
+Die Eskalationslogik befindet sich in `geminiChat.ts`, **außerhalb** der Haupt-Wiederholungsschleife. Dies ist beabsichtigt:
 
-1. Die Wiederholungsschleife behandelt vorübergehende Fehler (Rate Limits, ungültige Streams, Content-Validierung)
-2. Trunkierung ist kein Fehler – es ist eine erfolgreiche Antwort, die abgeschnitten wurde
-3. Fehler aus dem eskalierten Stream sollten direkt an den Aufrufer weitergeleitet werden, anstatt von der Wiederholungslogik abgefangen zu werden
+1. Die Wiederholungsschleife behandelt vorübergehende Fehler (Ratenbegrenzungen, ungültige Streams, Inhaltsvalidierung)
+2. Eine Kürzung (Truncation) ist kein Fehler – es ist eine erfolgreiche Antwort, die vorzeitig abgeschnitten wurde
+3. Fehler aus dem eskalierten Stream sollten direkt an den Aufrufer weitergegeben werden, nicht von der Wiederholungslogik abgefangen werden
 
 ### Eskalationsschritte (geminiChat.ts)
 
 ```
-1. Stream completes successfully (lastError === null)
-2. Last chunk has finishReason === MAX_TOKENS
-3. Guard checks pass:
-   - maxTokensEscalated === false (prevent infinite escalation)
-   - hasUserMaxTokensOverride === false (respect user intent)
-4. Compute escalated limit: max(ESCALATED_MAX_TOKENS, tokenLimit(model, 'output'))
-5. Pop the partial model response from chat history
-6. Yield RETRY event (isContinuation: false) → UI discards partial output and resets buffers
-7. Re-send the same request with maxOutputTokens: escalatedLimit
+1. Stream wird erfolgreich abgeschlossen (lastError === null)
+2. Letzter Chunk hat finishReason === MAX_TOKENS
+3. Guards bestehen die Prüfungen:
+   - maxTokensEscalated === false (verhindert Endlos-Eskalation)
+   - hasUserMaxTokensOverride === false (respektiert Benutzerabsicht)
+4. Berechne eskalierten Grenzwert: max(ESCALATED_MAX_TOKENS, tokenLimit(model, 'output'))
+5. Entferne die partielle Modellantwort aus dem Chat-Verlauf (pop)
+6. Sende RETRY-Ereignis (isContinuation: false) → UI verwirft die partielle Ausgabe und setzt Puffer zurück
+7. Sende dieselbe Anfrage erneut mit maxOutputTokens: escalatedLimit
 ```
 
 ### Wiederherstellungsschritte (geminiChat.ts)
 
-Wenn die eskalierte Antwort ebenfalls trunkiert ist (finishReason === MAX_TOKENS), wird die Wiederherstellungsschleife bis zu `MAX_OUTPUT_RECOVERY_ATTEMPTS` (3) Mal ausgeführt:
+Falls die eskalierte Antwort ebenfalls gekürzt wurde (finishReason === MAX_TOKENS), läuft die Wiederherstellungsschleife bis zu `MAX_OUTPUT_RECOVERY_ATTEMPTS` (3) Mal:
 
 ```
-1. Partial model response is already in history (pushed by processStreamResponse)
-2. Push a recovery user message: OUTPUT_RECOVERY_MESSAGE
-3. Yield RETRY event (isContinuation: true) → UI keeps text buffer for continuation
-4. Re-send with updated history (model sees its partial output + recovery instruction)
-5. If still truncated and attempts remain, loop back to step 1
-6. If recovery attempt throws (empty response, network error):
-   - Pop the dangling recovery message from history
-   - Break out of recovery loop
+1. Die partielle Modellantwort befindet sich bereits im Verlauf (von processStreamResponse eingefügt)
+2. Füge eine Wiederherstellungs-Benutzernachricht ein: OUTPUT_RECOVERY_MESSAGE
+3. Sende RETRY-Ereignis (isContinuation: true) → UI behält den Textpuffer für die Fortsetzung
+4. Sende erneut mit aktualisiertem Verlauf (Modell sieht seine partielle Ausgabe + Wiederherstellungsanweisung)
+5. Falls immer noch gekürzt und Versuche übrig, gehe zurück zu Schritt 1
+6. Falls der Wiederherstellungsversuch fehlschlägt (leere Antwort, Netzwerkfehler):
+   - Entferne die nicht abgeschlossene Wiederherstellungsnachricht aus dem Verlauf (pop)
+   - Verlasse die Wiederherstellungsschleife
 ```
 
-### State-Bereinigung bei RETRY (turn.ts)
+### Zustandsbereinigung bei RETRY (turn.ts)
 
-Wenn die `Turn`-Klasse ein RETRY-Event erhält, löscht sie den angesammelten State, um Inkonsistenzen zu vermeiden:
+Wenn die `Turn`-Klasse ein RETRY-Ereignis empfängt, löscht sie den angesammelten Zustand, um Inkonsistenzen zu vermeiden:
 
-- `pendingToolCalls` — wird gelöscht, um doppelte Tool-Aufrufe zu vermeiden, falls die erste trunkierte Antwort bereits abgeschlossene Tool-Aufrufe enthielt, die in der eskalierten Antwort wiederholt werden
-- `pendingCitations` — wird gelöscht, um doppelte Zitate zu vermeiden
-- `debugResponses` — wird gelöscht, um veraltete Debug-Daten zu vermeiden
-- `finishReason` — wird auf `undefined` zurückgesetzt, damit der Finish-Reason der neuen Antwort verwendet wird
+- `pendingToolCalls` – gelöscht, um doppelte Tool-Aufrufe zu vermeiden, falls die erste gekürzte Antwort abgeschlossene Tool-Aufrufe enthielt, die in der eskalierten Antwort wiederholt werden
+- `pendingCitations` – gelöscht, um doppelte Zitationen zu vermeiden
+- `finishReason` – zurückgesetzt auf `undefined`, sodass der Grund für den Abschluss der neuen Antwort verwendet wird
 
-Das `isContinuation`-Flag wird an die UI weitergereicht, damit diese entscheiden kann, ob Textpuffer zurückgesetzt (Eskalation) oder beibehalten (Wiederherstellung) werden sollen.
+Das `isContinuation`-Flag wird an die UI weitergegeben, damit diese entscheiden kann, ob die Textpuffer zurückgesetzt (Eskalation) oder behalten (Wiederherstellung) werden sollen.
 
 ## Konstanten
 
 Definiert in `geminiChat.ts` und `tokenLimits.ts`:
 
-| Konstante                      | Wert   | Zweck                                                   |
-| ------------------------------ | ------ | ------------------------------------------------------- |
-| `CAPPED_DEFAULT_MAX_TOKENS`    | 8.000  | Standard-Output-Token-Limit, wenn kein Benutzer-Override gesetzt ist |
-| `ESCALATED_MAX_TOKENS`         | 64.000 | Mindestwert für Eskalation (wird verwendet, wenn das Modell-Limit unbekannt ist) |
-| `MAX_OUTPUT_RECOVERY_ATTEMPTS` | 3      | Maximale Anzahl an Multi-Turn-Wiederherstellungsversuchen nach Eskalation |
+| Konstante                       | Wert   | Zweck                                                 |
+| ------------------------------- | ------ | ----------------------------------------------------- |
+| `CAPPED_DEFAULT_MAX_TOKENS`     | 8.000  | Standard-Ausgabe-Token-Limit ohne benutzerseitige Überschreibung |
+| `ESCALATED_MAX_TOKENS`          | 64.000 | Untergrenze für Eskalation (wenn Modell-Limit unbekannt)       |
+| `MAX_OUTPUT_RECOVERY_ATTEMPTS`  | 3      | Maximale Anzahl mehrfacher Wiederherstellungsversuche nach Eskalation |
 
 Das effektive eskalierte Limit ist `max(ESCALATED_MAX_TOKENS, tokenLimit(model, 'output'))`:
 
-| Modell           | Eskaliertes Limit |
-| ---------------- | ----------------- |
-| Claude Opus 4.6  | 131.072 (128K)    |
-| GPT-5 / o-series | 131.072 (128K)    |
-| Qwen3.x          | 65.536 (64K)      |
-| Unbekannte Modelle | 64.000 (Mindestwert) |
+| Modell             | Eskaliertes Limit |
+| ------------------ | ----------------- |
+| Claude Opus 4.6    | 131.072 (128K)    |
+| GPT-5 / o-Serie    | 131.072 (128K)    |
+| Qwen3.x            | 65.536 (64K)      |
+| Unbekannte Modelle | 64.000 (Untergrenze) |
 
 ## Designentscheidungen
 
-### Warum 8K als Standardwert?
+### Warum 8K Standard?
 
-- 99 % der Antworten liegen unter 5K Tokens
-- 8K bietet einen angemessenen Spielraum für etwas längere Antworten, ohne unnötige Wiederholungsversuche auszulösen
+- 99% der Antworten liegen unter 5K Token
+- 8K bietet ausreichend Spielraum für etwas längere Antworten, ohne unnötige Wiederholungsversuche auszulösen
 - Reduziert die durchschnittliche Slot-Reservierung von 32K auf 8K (4-fache Verbesserung)
 
-### Warum auf das Modell-Limit eskalieren statt auf feste 64K?
+### Warum auf Modell-Limit eskalieren statt auf feste 64K?
 
-- Modelle mit höheren Output-Limits (Claude Opus 128K, GPT-5 128K) wurden unnötigerweise auf 64K begrenzt
-- Die Verwendung des tatsächlichen Modell-Limits deckt die überwiegende Mehrheit langer Outputs ab, ohne einen zweiten Wiederholungsversuch
-- `ESCALATED_MAX_TOKENS` (64K) dient als Mindestwert für unbekannte Modelle, bei denen `tokenLimit()` den Standardwert 32K zurückgibt
+- Modelle mit höheren Ausgabelimits (Claude Opus 128K, GPT-5 128K) wurden unnötigerweise auf 64K begrenzt
+- Die Verwendung des tatsächlichen Modell-Limits erfasst die überwiegende Mehrheit langer Ausgaben ohne einen zweiten Wiederholungsversuch
+- `ESCALATED_MAX_TOKENS` (64K) dient als Untergrenze für unbekannte Modelle, bei denen `tokenLimit()` den Standardwert 32K zurückgibt
 
-### Warum Multi-Turn-Wiederherstellung statt progressiver Eskalation?
+### Warum mehrfache Wiederherstellung statt progressiver Eskalation?
 
-- Progressive Eskalation (8K → 16K → 32K → 64K) erfordert jedes Mal die Neugenerierung der vollständigen Antwort
-- Multi-Turn-Wiederherstellung behält die Teilantwort bei und lässt das Modell fortfahren, was Tokens und Latenz spart
-- Wiederherstellungsnachrichten sind kostengünstig (~40 Tokens pro Nachricht) im Vergleich zur Neugenerierung großer Antworten
-- Das Limit von 3 Versuchen verhindert Endlosschleifen und deckt gleichzeitig die meisten praktischen Fälle ab
+- Progressive Eskalation (8K → 16K → 32K → 64K) erfordert jedes Mal die vollständige Neugenerierung der Antwort
+- Mehrfache Wiederherstellung behält die partielle Antwort und lässt das Modell fortfahren, spart Token und Latenz
+- Wiederherstellungsnachrichten sind günstig (~40 Token pro Stück) im Vergleich zur Neugenerierung großer Antworten
+- Das 3-Versuche-Limit verhindert Endlosschleifen und deckt gleichzeitig die meisten praktischen Fälle ab
 
 ### Warum liegt die Eskalation außerhalb der Wiederholungsschleife?
 
-- Trunkierung ist ein Erfolgsfall, kein Fehler
-- Fehler aus dem eskalierten Stream (Rate Limits, Netzwerkausfälle) sollten direkt weitergeleitet werden, anstatt stillschweigend mit falschen Parametern wiederholt zu werden
-- Hält die Wiederholungsschleife auf ihren ursprünglichen Zweck fokussiert (Wiederherstellung bei vorübergehenden Fehlern)
-- Wiederherstellungsfehler werden separat abgefangen, um ein Abbrechen der gesamten Konversation zu vermeiden
+- Kürzung ist ein Erfolgsfall, kein Fehler
+- Fehler aus dem eskalierten Stream (Ratenbegrenzungen, Netzwerkfehler) sollten direkt weitergegeben werden, anstatt mit falschen Parametern stillschweigend wiederholt zu werden
+- Hält die Wiederholungsschleife auf ihren ursprünglichen Zweck fokussiert (Behandlung vorübergehender Fehler)
+- Wiederherstellungsfehler werden separat abgefangen, um ein vorzeitiges Abbrechen der gesamten Unterhaltung zu vermeiden

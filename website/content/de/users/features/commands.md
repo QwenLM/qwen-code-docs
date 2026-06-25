@@ -1,123 +1,148 @@
 # Befehle
 
-Dieses Dokument beschreibt alle von Qwen Code unterstützten Befehle und hilft dir, Sitzungen effizient zu verwalten, die Oberfläche anzupassen und das Verhalten zu steuern.
+Dieses Dokument beschreibt alle von Qwen Code unterstützten Befehle und hilft Ihnen, Sitzungen effizient zu verwalten, die Oberfläche anzupassen und das Verhalten zu steuern.
 
 Qwen Code-Befehle werden durch bestimmte Präfixe ausgelöst und fallen in drei Kategorien:
 
-| Präfix-Typ                 | Funktionsbeschreibung                                 | Typischer Anwendungsfall                                           |
-| -------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------ |
-| Slash-Befehle (`/`)        | Steuerung von Qwen Code auf Meta-Ebene                | Sitzungen verwalten, Einstellungen ändern, Hilfe erhalten          |
-| At-Befehle (`@`)           | Lokalen Dateiinhalt schnell in die Konversation einfügen | Ermöglicht der KI, angegebene Dateien oder Code in Verzeichnissen zu analysieren |
-| Ausrufezeichen-Befehle (`!`) | Direkte Interaktion mit der System-Shell              | Ausführen von Systembefehlen wie `git status`, `ls` usw.           |
+| Präfix-Typ                | Funktionsbeschreibung                                | Typischer Anwendungsfall                                         |
+| ------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
+| Slash-Befehle (`/`)       | Meta-Steuerung von Qwen Code selbst                  | Sitzungen verwalten, Einstellungen ändern, Hilfe erhalten        |
+| At-Befehle (`@`)          | Lokalen Dateiinhalt schnell in die Konversation einfügen | Ermöglicht der KI, angegebene Dateien oder Code in Verzeichnissen zu analysieren |
+| Ausrufezeichen-Befehle (`!`) | Direkte Interaktion mit der System-Shell             | Ausführen von Systembefehlen wie `git status`, `ls` usw.         |
 
 ## 1. Slash-Befehle (`/`)
 
-Slash-Befehle dienen zur Verwaltung von Qwen Code-Sitzungen, der Oberfläche und des Grundverhaltens.
+Slash-Befehle werden verwendet, um Qwen Code-Sitzungen, die Oberfläche und das grundlegende Verhalten zu verwalten.
 
 ### 1.1 Sitzungs- und Projektverwaltung
 
-Diese Befehle helfen dir, Arbeitsfortschritte zu speichern, wiederherzustellen und zusammenzufassen.
+Diese Befehle helfen Ihnen, Arbeitsfortschritte zu speichern, wiederherzustellen und zusammenzufassen.
 
-| Befehl      | Beschreibung                                                | Anwendungsbeispiele                    |
-| ----------- | ----------------------------------------------------------- | -------------------------------------- |
-| `/init`     | Aktuelles Verzeichnis analysieren und initiale Kontextdatei erstellen | `/init`                                |
-| `/summary`  | Projektzusammenfassung basierend auf dem Konversationsverlauf generieren | `/summary`                             |
-| `/compress` | Chatverlauf durch Zusammenfassung ersetzen, um Tokens zu sparen | `/compress`                            |
-| `/resume`   | Vorherige Konversationssitzung fortsetzen                   | `/resume`                              |
-| `/recap`    | Jetzt eine einzeilige Sitzungszusammenfassung generieren    | `/recap`                               |
-| `/restore`  | Dateien auf den Zustand vor der Tool-Ausführung zurücksetzen | `/restore` (Liste) oder `/restore <ID>` |
+| Befehl          | Beschreibung                                                              | Anwendungsbeispiele                                             |
+| --------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `/init`         | Aktuelles Verzeichnis analysieren und initiale Kontextdatei erstellen     | `/init`                                                         |
+| `/summary`      | Projektzusammenfassung basierend auf Konversationsverlauf generieren      | `/summary`                                                      |
+| `/compress`     | Chatverlauf durch Zusammenfassung ersetzen, um Tokens zu sparen           | `/compress`                                                     |
+| `/compress-fast`| Schnelle Komprimierung ohne KI – entfernt alte Tool-Ausgaben und Denkteile | `/compress-fast`                                                |
+| `/resume`       | Eine vorherige Konversationssitzung fortsetzen                            | `/resume`                                                       |
+| `/recap`        | Jetzt ein einzeiliges Sitzungs-Recap erstellen                            | `/recap`                                                        |
+| `/restore`      | Projektdateien auf den Prüfpunkt vor der Ausführung eines Tool-Aufrufs zurücksetzen | `/restore` (Liste) oder `/restore <ID>`                  |
+| `/delete`       | Eine vorherige Sitzung löschen                                            | `/delete`                                                       |
+| `/branch`       | Die aktuelle Konversation in eine neue Sitzung abzweigen                  | `/branch`                                                       |
+| `/fork`         | Einen Hintergrundagenten erzeugen, der die gesamte Konversation erbt      | `/fork <Anweisung>`                                             |
+| `/rewind`       | Konversation zu einer vorherigen Runde zurückspulen                       | `/rewind` oder `/rollback`                                      |
+| `/export`       | Sitzungsverlauf in Datei exportieren                                      | `/export html`, `/export md`, `/export json`, `/export jsonl`   |
+| `/rename`       | Aktuelle Sitzung umbenennen oder markieren                                | `/rename My Feature` oder `/tag`                                |
 
-### 1.2 Oberflächen- und Workspace-Steuerung
+### 1.2 Oberflächen- und Arbeitsbereichssteuerung
 
-Befehle zum Anpassen der Oberflächendarstellung und der Arbeitsumgebung.
+Befehle zum Anpassen des Oberflächenerscheinungsbilds und der Arbeitsumgebung.
 
-| Befehl       | Beschreibung                               | Anwendungsbeispiele             |
-| ------------ | ------------------------------------------ | ------------------------------- |
-| `/clear`     | Terminalbildschirm leeren                  | `/clear` (Shortcut: `Strg+L`)   |
-| `/context`   | Aufschlüsselung der Kontextfensternutzung anzeigen | `/context`                      |
-| → `detail`   | Aufschlüsselung der Kontextnutzung pro Element anzeigen | `/context detail`               |
-| `/theme`     | Visuelles Qwen Code-Theme ändern           | `/theme`                        |
-| `/vim`       | Vim-Bearbeitungsmodus im Eingabebereich ein-/ausschalten | `/vim`                          |
-| `/directory` | Workspace für Multi-Directory-Unterstützung verwalten | `/dir add ./src,./tests`        |
-| `/editor`    | Dialog zur Auswahl eines unterstützten Editors öffnen | `/editor`                       |
-
+| Befehl                 | Beschreibung                                                                                                                                                                       | Anwendungsbeispiele                                                                 |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `/clear`               | Terminalbildschirminhalt löschen                                                                                                                                                    | `/clear` (Shortcut: `Strg+L`)                                                      |
+| `/context`             | Aufschlüsselung der Context-Window-Nutzung anzeigen                                                                                                                                 | `/context`                                                                         |
+| → `detail`             | Aufschlüsselung der Context-Nutzung pro Element anzeigen                                                                                                                            | `/context detail`                                                                  |
+| `/history`             | Einstellungen zur Anzeige des Verlaufs und Sichtbarkeit steuern                                                                                                                     | `/history collapse-on-resume`, `/history expand-on-resume`, `/history expand-now`  |
+| `/diff`                | Einen interaktiven Diff-Viewer öffnen, der unbestätigte Änderungen und rundenbezogene Diffs anzeigt. Verwenden Sie ←/→, um zwischen aktuellem Git-Diff und einzelnen Konversationsrunden zu wechseln, ↑/↓ zum Durchblättern von Dateien | `/diff`                                                                            |
+| `/theme`               | Visuelles Theme von Qwen Code ändern                                                                                                                                               | `/theme`                                                                           |
+| `/vim`                 | Vim-Bearbeitungsmodus im Eingabebereich ein-/ausschalten                                                                                                                            | `/vim`                                                                             |
+| `/voice`               | Sprachdiktateingabe umschalten                                                                                                                                                      | `/voice`, `/voice status`                                                          |
+| `/directory`           | Arbeitsbereich mit Unterstützung für mehrere Verzeichnisse verwalten                                                                                                                | `/dir add ./src,./tests`                                                           |
+| `/cd`                  | Diese Sitzung in ein neues Arbeitsverzeichnis verschieben                                                                                                                           | `/cd ../other-project`                                                             |
+| `/editor`              | Dialog zum Auswählen eines unterstützten Editors öffnen                                                                                                                             | `/editor`                                                                          |
+| `/statusline`          | Interaktiven Dialog für Statuszeilen-Voreinstellungen öffnen                                                                                                                        | `/statusline`                                                                      |
+| `/statusline <text>`   | Eine Statuszeile im Befehlsmodus über den Agenten generieren                                                                                                                        | `/statusline show model and git branch`                                            |
+| `/terminal-setup`      | Terminal-Tastenkombinationen für mehrzeilige Eingabe konfigurieren | `/terminal-setup`    | Terminal-Tastenkombinationen für mehrzeilige Eingabe konfigurieren                                                                                                                                | `/terminal-setup`    | Terminal-Tastenkombinationen für mehrzeilige Eingabe konfigurieren                                                                                                                                | `/terminal-setup`    | Terminal-Tastenkombinationen für mehrzeilige Eingabe konfigurieren
 ### 1.3 Spracheinstellungen
 
 Befehle speziell zur Steuerung der Oberflächen- und Ausgabesprache.
 
-| Befehl                | Beschreibung                       | Anwendungsbeispiele          |
-| --------------------- | ---------------------------------- | ---------------------------- |
-| `/language`           | Spracheinstellungen anzeigen oder ändern | `/language`                  |
-| → `ui [Sprache]`      | Sprache der UI-Oberfläche festlegen | `/language ui zh-CN`         |
-| → `output [Sprache]`  | Ausgabesprache des LLM festlegen   | `/language output Chinese`   |
+| Befehl              | Beschreibung                          | Beispiele                      |
+| ------------------- | ------------------------------------- | ------------------------------ |
+| `/language`         | Spracheinstellungen anzeigen oder ändern | `/language`                    |
+| → `ui [Sprache]`    | UI-Oberflächensprache festlegen       | `/language ui de-DE`           |
+| → `output [Sprache]`| LLM-Ausgabesprache festlegen          | `/language output Deutsch`     |
 
-- Verfügbare integrierte UI-Sprachen: `zh-CN` (Vereinfachtes Chinesisch), `en-US` (Englisch), `ru-RU` (Russisch), `de-DE` (Deutsch)
-- Beispiele für Ausgabesprachen: `Chinese`, `English`, `Japanese` usw.
+- Verfügbare integrierte UI-Sprachen: `zh-CN` (Vereinfachtes Chinesisch), `en-US` (Englisch), `ru-RU` (Russisch), `de-DE` (Deutsch), `ja-JP` (Japanisch), `pt-BR` (Portugiesisch – Brasilien), `fr-FR` (Französisch), `ca-ES` (Katalanisch)
+- Beispiele für Ausgabesprachen: `Chinesisch`, `Englisch`, `Japanisch` usw.
 
 ### 1.4 Tool- und Modellverwaltung
 
-Befehle zur Verwaltung von KI-Tools und Modellen.
+Befehle zur Verwaltung von KI-Tools und -Modellen.
 
-| Befehl           | Beschreibung                                    | Anwendungsbeispiele                             |
-| ---------------- | ----------------------------------------------- | ----------------------------------------------- |
-| `/mcp`           | Konfigurierte MCP-Server und Tools auflisten    | `/mcp`, `/mcp desc`                             |
-| `/tools`         | Aktuell verfügbare Tool-Liste anzeigen          | `/tools`, `/tools desc`                         |
-| `/skills`        | Verfügbare Skills auflisten und ausführen       | `/skills`, `/skills <name>`                     |
-| `/plan`          | In den Plan-Modus wechseln oder diesen beenden  | `/plan`, `/plan <task>`, `/plan exit`           |
-| `/approval-mode` | Genehmigungsmodus für die Tool-Nutzung ändern   | `/approval-mode <mode (auto-edit)> --project`   |
-| →`plan`          | Nur Analyse, keine Ausführung                   | Sichere Überprüfung                             |
-| →`default`       | Genehmigung für Änderungen erforderlich         | Tägliche Nutzung                                |
-| →`auto-edit`     | Änderungen automatisch genehmigen               | Vertrauenswürdige Umgebung                      |
-| →`yolo`          | Alles automatisch genehmigen                    | Schnelles Prototyping                           |
-| `/model`         | In der aktuellen Sitzung verwendetes Modell wechseln | `/model`                                      |
-| `/model --fast`  | Ein leichteres Modell für Prompt-Vorschläge festlegen | `/model --fast qwen3-coder-flash`             |
-| `/extensions`    | Alle aktiven Erweiterungen in der aktuellen Sitzung auflisten | `/extensions`                                 |
-| `/memory`        | Memory-Manager-Dialog öffnen                    | `/memory`                                       |
-| `/remember`      | Ein dauerhaftes Memory speichern                | `/remember Prefer terse responses`              |
-| `/forget`        | Passende Einträge aus dem Auto-Memory entfernen | `/forget <query>`                               |
-| `/dream`         | Auto-Memory-Konsolidierung manuell ausführen    | `/dream`                                        |
+| Befehl            | Beschreibung                                        | Beispiele                                                                        |
+| ----------------- | --------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `/mcp`            | Konfigurierte MCP-Server und -Tools auflisten       | `/mcp`, `/mcp desc`                                                              |
+| `/import-config`  | MCP-Server aus Claude-Konfigurationen importieren   | `/import-config claude-code`, `/import-config claude-desktop --scope project`    |
+| `/tools`          | Derzeit verfügbare Tool-Liste anzeigen              | `/tools`, `/tools desc`                                                          |
+| `/skills`         | Verfügbare Skills auflisten und ausführen           | `/skills`, `/skills <Name>`                                                      |
+| `/plan`           | In den Planmodus wechseln oder Planmodus verlassen  | `/plan`, `/plan <Aufgabe>`, `/plan exit`                                         |
+| `/approval-mode`  | Genehmigungsmodus für die Tool-Nutzung ändern       | `/approval-mode <Modus (auto-edit)> --project`                                   |
+| →`plan`           | Nur Analyse, keine Ausführung                       | Sichere Überprüfung                                                              |
+| →`default`        | Genehmigung für Bearbeitungen erforderlich          | Tägliche Nutzung                                                                 |
+| →`auto-edit`      | Bearbeitungen automatisch genehmigen                | Vertrauenswürdige Umgebung                                                        |
+| →`auto`           | Klassifizierungsgesteuerte Genehmigung              | Autonome Sitzungen mit Sicherheitsvorkehrungen                                   |
+| →`yolo`           | Alle automatisch genehmigen                         | Schnelles Prototyping                                                             |
+| `/model`          | In aktueller Sitzung verwendetes Modell wechseln    | `/model`, `/model <Modell-ID>` (sofortiger Wechsel)                              |
+| `/model --fast`   | Ein leichteres Modell für Eingabehilfe-Vorschläge   | `/model --fast qwen3-coder-flash`                                                |
+| `/model --voice`  | Das für Spracherkennung verwendete Modell setzen    | `/model --voice <Modell-ID>`                                                     |
+| `/extensions`     | Alle aktiven Erweiterungen in der aktuellen Sitzung auflisten | `/extensions`                                                         |
+| `/memory`         | Den Memory-Manager-Dialog öffnen                    | `/memory`                                                                        |
+| `/remember`       | Einen dauerhaften Memory speichern                  | `/remember Bevorzuge knappe Antworten`                                           |
+| `/forget`         | Passende Einträge aus dem automatischen Memory entfernen | `/forget <Suchbegriff>`                                                    |
+| `/dream`          | Automatische Memory-Konsolidierung manuell ausführen | `/dream`                                                                         |
+| `/hooks`          | Qwen Code Hooks verwalten                           | `/hooks`, `/hooks list`                                                          |
+| `/permissions`    | Berechtigungsregeln verwalten                       | `/permissions`                                                                   |
+| `/agents`         | Unteragenten verwalten                              | `/agents manage`, `/agents create`                                               |
+| `/arena`          | Arena-Sitzungen verwalten                           | `/arena start`, `/arena status`                                                  |
+| `/goal`           | Ein Ziel setzen – weiterarbeiten, bis Bedingung erfüllt ist | `/goal <Bedingung>`, `/goal clear`                                        |
+| `/tasks`          | Hintergrundaufgaben auflisten                       | `/tasks`                                                                         |
+| `/workflows`      | Workflow-Ausführungen einsehen                      | `/workflows`, `/workflows <Ausführungs-ID>`                                      |
+| `/lsp`            | LSP-Serverstatus anzeigen                           | `/lsp`                                                                           |
+| `/trust`          | Ordnervertrauenseinstellungen verwalten             | `/trust`                                                                         |
+### 1.5 Integrierte Fähigkeiten
 
-### 1.5 Integrierte Skills
+Diese Befehle rufen gebündelte Fähigkeiten auf, die spezialisierte Arbeitsabläufe bereitstellen.
 
-Diese Befehle rufen gebündelte Skills auf, die spezialisierte Workflows bereitstellen.
+| Befehl        | Beschreibung                                                         | Beispiele zur Verwendung                      |
+| ------------- | -------------------------------------------------------------------- | --------------------------------------------- |
+| `/review`     | Code-Änderungen mit 5 parallelen Agents + deterministischer Analyse prüfen | `/review`, `/review 123`, `/review 123 --comment` |
+| `/loop`       | Eine Aufforderung in einem wiederkehrenden Zeitplan ausführen        | `/loop 5m check the build`                    |
+| `/simplify`   | Kürzliche Änderungen prüfen und sichere Bereinigungen direkt anwenden | `/simplify`, `/simplify focus on duplication` |
+| `/qc-helper`  | Fragen zur Verwendung und Konfiguration von Qwen Code beantworten    | `/qc-helper how do I configure MCP?`          |
 
-| Befehl       | Beschreibung                                                          | Anwendungsbeispiele                                   |
-| ------------ | --------------------------------------------------------------------- | ----------------------------------------------------- |
-| `/review`    | Code-Änderungen mit 5 parallelen Agents + deterministischer Analyse prüfen | `/review`, `/review 123`, `/review 123 --comment`     |
-| `/loop`      | Einen Prompt nach einem wiederkehrenden Zeitplan ausführen            | `/loop 5m check the build`                            |
-| `/qc-helper` | Fragen zur Nutzung und Konfiguration von Qwen Code beantworten        | `/qc-helper how do I configure MCP?`                  |
+Siehe [Code Review](./code-review.md) für die vollständige `/review`-Dokumentation.
 
-Die vollständige Dokumentation zu `/review` findest du unter [Code Review](./code-review.md).
+### 1.6 Seitenfrage (`/btw`)
 
-### 1.6 Nebenfrage (`/btw`)
+Der Befehl `/btw` ermöglicht es Ihnen, schnelle Nebenfragen zu stellen, ohne den Hauptgesprächsfluss zu unterbrechen oder zu beeinflussen.
 
-Der Befehl `/btw` ermöglicht es dir, schnelle Nebenfragen zu stellen, ohne den Hauptkonversationsfluss zu unterbrechen oder zu beeinflussen.
+| Befehl                   | Beschreibung                           |
+| ------------------------ | -------------------------------------- |
+| `/btw <Ihre Frage>`      | Eine schnelle Nebenfrage stellen       |
+| `?btw <Ihre Frage>`      | Alternative Syntax für Nebenfragen     |
 
-| Befehl                 | Beschreibung                          |
-| ---------------------- | ------------------------------------- |
-| `/btw <deine Frage>`   | Eine schnelle Nebenfrage stellen      |
-| `?btw <deine Frage>`   | Alternative Syntax für Nebenfragen    |
+**So funktioniert es:**
 
-**Funktionsweise:**
+- Die Nebenfrage wird als separater API-Aufruf mit dem aktuellen Gesprächskontext (bis zu den letzten 20 Nachrichten) gesendet
+- Die Antwort wird oberhalb des Composer angezeigt — Sie können während des Wartens weiter tippen
+- Das Hauptgespräch wird **nicht blockiert** — es läuft unabhängig weiter
+- Die Antwort der Nebenfrage wird **nicht** Teil des Hauptgesprächsverlaufs
+- Antworten werden mit vollständiger Markdown-Unterstützung dargestellt (Codeblöcke, Listen, Tabellen etc.)
 
-- Die Nebenfrage wird als separater API-Aufruf mit dem aktuellen Konversationskontext (bis zu den letzten 20 Nachrichten) gesendet
-- Die Antwort wird oberhalb des Composers angezeigt – du kannst während des Wartens weiter tippen
-- Die Hauptkonversation wird **nicht blockiert** – sie läuft unabhängig weiter
-- Die Antwort auf die Nebenfrage wird **nicht** Teil des Hauptkonversationsverlaufs
-- Antworten werden mit voller Markdown-Unterstützung gerendert (Code-Blöcke, Listen, Tabellen usw.)
+**Tastaturkürzel (Interaktiver Modus):**
 
-**Tastenkürzel (Interaktiver Modus):**
-
-| Tastenkürzel           | Aktion                                              |
-| ---------------------- | --------------------------------------------------- |
-| `Escape`               | Abbrechen (während des Ladens) oder schließen (nach Abschluss) |
-| `Leertaste` oder `Enter` | Antwort schließen (wenn die Eingabe leer ist)       |
-| `Strg+C` oder `Strg+D` | Eine laufende Nebenfrage abbrechen                  |
+| Kürzel               | Aktion                                              |
+| -------------------- | --------------------------------------------------- |
+| `Escape`             | Abbrechen (während des Ladens) oder schließen (nach Fertigstellung) |
+| `Space` oder `Enter` | Antwort schließen (wenn das Eingabefeld leer ist)   |
+| `Ctrl+C` oder `Ctrl+D` | Eine laufende Nebenfrage abbrechen                  |
 
 **Beispiel:**
 
 ```
-(While the main conversation is about refactoring code)
+(Während das Hauptgespräch über das Refactoring von Code läuft)
 
 > /btw What's the difference between let and var in JavaScript?
 
@@ -125,56 +150,69 @@ Der Befehl `/btw` ermöglicht es dir, schnelle Nebenfragen zu stellen, ohne den 
   │ /btw What's the difference between let   │
   │     and var in JavaScript?               │
   │                                          │
-  │ + Answering...                           │
-  │ Press Escape, Ctrl+C, or Ctrl+D to cancel│
+  │ + Antwort wird...                           │
+  │ Drücken Sie Escape, Ctrl+C oder Ctrl+D zum   │
+  │ Abbrechen                                      │
   ╰──────────────────────────────────────────╯
-  > (Composer remains active — keep typing)
+  > (Composer bleibt aktiv — weiter tippen)
 
-(After the answer arrives)
+(Nachdem die Antwort eingetroffen ist)
 
   ╭──────────────────────────────────────────╮
   │ /btw What's the difference between let   │
   │     and var in JavaScript?               │
   │                                          │
-  │ `let` is block-scoped, while `var` is    │
-  │ function-scoped. `let` was introduced    │
-  │ in ES6 and doesn't hoist the same way.   │
+  │ `let` ist blockbezogen, während `var`    │
+  │ funktionsbezogen ist. `let` wurde       │
+  │ in ES6 eingeführt und hoisted nicht auf │
+  │ dieselbe Weise.                         │
   │                                          │
-  │ Press Space, Enter, or Escape to dismiss │
+  │ Drücken Sie Space, Enter oder Escape zum │
+  │ Schließen                                │
   ╰──────────────────────────────────────────╯
-  > (Composer still active)
+  > (Composer noch aktiv)
 ```
 
 **Unterstützte Ausführungsmodi:**
 
-| Modus                  | Verhalten                                      |
-| ---------------------- | ---------------------------------------------- |
-| Interaktiv             | Zeigt oberhalb des Composers mit Markdown-Rendering |
-| Nicht-interaktiv       | Gibt Textergebnis zurück: `btw> question\nanswer` |
-| ACP (Agent Protocol)   | Gibt `stream_messages` async generator zurück  |
+| Modus                | Verhalten                                     |
+| -------------------- | --------------------------------------------- |
+| Interaktiv           | Wird oberhalb des Composer mit Markdown-Rendering angezeigt |
+| Nicht interaktiv     | Gibt Text-Ergebnis zurück: `btw> frage\nantwort` |
+| ACP (Agent Protocol) | Gibt `stream_messages` asynchronen Generator zurück |
 
 > [!tip]
 >
-> Verwende `/btw`, wenn du eine schnelle Antwort benötigst, ohne von deiner Hauptaufgabe abzukommen. Es ist besonders nützlich, um Konzepte zu klären, Fakten zu prüfen oder schnelle Erklärungen zu erhalten, während du dich auf deinen primären Workflow konzentrierst.
+> Verwenden Sie `/btw`, wenn Sie eine schnelle Antwort benötigen, ohne Ihre Hauptaufgabe zu unterbrechen. Dies ist besonders nützlich, um Konzepte zu klären, Fakten zu überprüfen oder schnelle Erklärungen zu erhalten, während Sie sich auf Ihren primären Arbeitsablauf konzentrieren.
 
 ### 1.7 Sitzungszusammenfassung (`/recap`)
 
-Der Befehl `/recap` generiert eine kurze Zusammenfassung des aktuellen Stands („wo du aufgehört hast“) der aktuellen Sitzung, sodass du eine alte Konversation fortsetzen kannst, ohne seitenweise im Verlauf zurückscrollen zu müssen.
+Der Befehl `/recap` erstellt eine kurze Zusammenfassung „Wo Sie aufgehört haben"
+der aktuellen Sitzung, damit Sie ein altes Gespräch wieder aufnehmen können,
+ohne durch Seiten voller Verlauf scrollen zu müssen.
 
-| Befehl   | Beschreibung                                 |
-| -------- | -------------------------------------------- |
-| `/recap` | Einzeilige Sitzungszusammenfassung generieren und anzeigen |
+| Befehl    | Beschreibung                                    |
+| --------- | ----------------------------------------------- |
+| `/recap`  | Einzeilige Sitzungszusammenfassung erstellen und anzeigen |
 
-**Funktionsweise:**
+**So funktioniert es:**
 
-- Verwendet das konfigurierte schnelle Modell (`fastModel`-Einstellung), falls verfügbar, und fällt andernfalls auf das Hauptsitzungsmodell zurück. Ein kleines, günstiges Modell reicht für eine Zusammenfassung aus.
-- Die aktuelle Konversation (bis zu 30 Nachrichten, nur Text – Tool-Aufrufe und Tool-Antworten werden herausgefiltert) wird mit einem strengen System-Prompt an das Modell gesendet.
-- Die Zusammenfassung wird in abgedunkelter Farbe mit einem `❯`-Präfix gerendert, um sie von echten Assistant-Antworten abzugrenzen.
-- Verweigert die Ausführung mit einem Inline-Fehler, wenn ein Modell-Turn läuft oder ein anderer Befehl verarbeitet wird. Wenn es keine nutzbare Konversation gibt oder die zugrunde liegende Generierung fehlschlägt, zeigt `/recap` stattdessen eine kurze Info-Meldung an – der manuelle Befehl antwortet immer mit etwas.
+- Verwendet das konfigurierte schnelle Modell (`fastModel`-Einstellung), falls
+  verfügbar, andernfalls das Hauptsitzungsmodell. Ein kleines, günstiges Modell
+  reicht für eine Zusammenfassung aus.
+- Der aktuelle Gesprächsverlauf (bis zu 30 Nachrichten, nur Text — Tool-Aufrufe
+  und Tool-Antworten werden herausgefiltert) wird zusammen mit einem knappen
+  System-Prompt an das Modell gesendet.
+- Die Zusammenfassung wird in gedämpfter Farbe mit einem `❯`-Präfix dargestellt,
+  sodass sie sich von echten Assistentenantworten abhebt.
+- Verweigert mit einem Inline-Fehler, wenn eine Modellrunde läuft oder ein
+  anderer Befehl verarbeitet wird. Wenn kein brauchbarer Gesprächsverlauf
+  vorhanden ist oder die zugrundeliegende Generierung fehlschlägt, zeigt
+  `/recap` stattdessen eine kurze Info-Nachricht an — der manuelle Befehl
+  antwortet immer mit etwas.
+**Automatischer Trigger bei Rückkehr aus Abwesenheit:**
 
-**Automatischer Trigger bei Rückkehr nach Abwesenheit:**
-
-Wenn das Terminal für **5+ Minuten** unscharf ist und wieder fokussiert wird, wird automatisch eine Zusammenfassung generiert und angezeigt (nur wenn keine Modellantwort läuft; andernfalls wartet es, bis der aktuelle Turn abgeschlossen ist, und feuert dann). Im Gegensatz zum manuellen Befehl ist der Auto-Trigger bei Fehlern vollständig stumm: Wenn Generierungsfehler auftreten oder nichts zusammenzufassen ist, wird keine Nachricht zum Verlauf hinzugefügt. Gesteuert durch die `general.showSessionRecap`-Einstellung (Standard: `true`); der manuelle `/recap`-Befehl funktioniert unabhängig von dieser Einstellung immer.
+Wenn das Terminal für **5+ Minuten** in den Hintergrund gerückt ist und wieder fokussiert wird, wird automatisch eine Zusammenfassung erstellt und angezeigt (nur wenn keine Modellantwort läuft; sonst wird gewartet, bis die aktuelle Runde beendet ist, und dann ausgelöst). Anders als der manuelle Befehl ist der automatische Trigger bei Fehlern völlig still: Wenn die Generierung fehlschlägt oder es nichts zusammenzufassen gibt, wird keine Nachricht zum Verlauf hinzugefügt. Gesteuert durch die Einstellung `general.showSessionRecap` (Standard: `false`); der manuelle Befehl `/recap` funktioniert immer unabhängig von dieser Einstellung.
 
 **Beispiel:**
 
@@ -188,246 +226,348 @@ Wenn das Terminal für **5+ Minuten** unscharf ist und wieder fokussiert wird, w
 
 > [!tip]
 >
-> Konfiguriere ein schnelles Modell über `/model --fast <Modell>` (z. B. `qwen3-coder-flash`), um `/recap` schnell und kostengünstig zu machen. Setze `general.showSessionRecap` auf `false`, um den Auto-Trigger zu deaktivieren, während der manuelle Befehl verfügbar bleibt.
+> Konfiguriere ein schnelles Modell via `/model --fast <model>` (z.B. `qwen3-coder-flash`), um `/recap` schnell und günstig zu machen. Setze `general.showSessionRecap` auf `true`, um den automatischen Trigger zu aktivieren; der manuelle Befehl `/recap` funktioniert immer unabhängig von dieser Einstellung.
 
-### 1.8 Informationen, Einstellungen und Hilfe
+### 1.8 Diff Viewer (`/diff`)
 
-Befehle zum Abrufen von Informationen und Durchführen von Systemeinstellungen.
+Der Befehl `/diff` öffnet einen interaktiven Diff-Viewer, der uncommittete Änderungen und Änderungen pro Runde anzeigt. Verwende ←/→ zum Wechseln zwischen dem aktuellen Git-Diff und einzelnen Konversationsrunden, ↑/↓ zum Durchblättern der Dateien und Enter zum Anzeigen von Inline-Diffs.
 
-| Befehl      | Beschreibung                                      | Anwendungsbeispiele                |
-| ----------- | ------------------------------------------------- | ---------------------------------- |
-| `/help`     | Hilfeinformationen für verfügbare Befehle anzeigen | `/help` oder `/?`                  |
-| `/about`    | Versionsinformationen anzeigen                    | `/about`                           |
-| `/stats`    | Detaillierte Statistiken für die aktuelle Sitzung anzeigen | `/stats`                           |
-| `/settings` | Einstellungseditor öffnen                         | `/settings`                        |
-| `/auth`     | Authentifizierungsmethode ändern                  | `/auth`                            |
-| `/bug`      | Problem bezüglich Qwen Code melden                | `/bug Button click unresponsive`   |
-| `/copy`     | Inhalt der letzten Ausgabe in die Zwischenablage kopieren | `/copy`                            |
-| `/quit`     | Qwen Code sofort beenden                          | `/quit` oder `/exit`               |
+**Funktionsweise:**
 
-### 1.9 Häufige Tastenkürzel
+Im interaktiven Modus öffnet `/diff` einen Dialog mit einer **Quellenauswahl** oben:
 
-| Tastenkürzel         | Funktion                  | Hinweis                  |
-| -------------------- | ------------------------- | ------------------------ |
-| `Strg/Cmd+L`         | Bildschirm leeren         | Entspricht `/clear`      |
-| `Strg/Cmd+T`         | Tool-Beschreibung ein-/ausblenden | MCP-Tool-Verwaltung      |
-| `Strg/Cmd+C`×2       | Beenden bestätigen        | Sicherer Beendigungsmechanismus |
-| `Strg/Cmd+Z`         | Eingabe rückgängig machen | Textbearbeitung          |
-| `Strg/Cmd+Shift+Z`   | Eingabe wiederherstellen  | Textbearbeitung          |
+- **Current** — Arbeitsbaum vs HEAD (`git diff HEAD`). Zeigt alle uncommitteten Änderungen an, einschließlich gestagter, ungestagter und nicht verfolgter Dateien.
+- **T1, T2, T3, …** — Änderungen pro Runde, ein Tab pro Modellrunde, die Dateien geändert hat. Die letzten Runden erscheinen zuerst. Jeder Tab zeigt eine Vorschau des ursprünglichen Prompts als Kontext.
 
-### 1.10 CLI-Auth-Subcommands
+Die Dateiliste zeigt dateispezifische Statistiken (hinzugefügte/entfernte Zeilen) mit Tags für besondere Status (`new`, `deleted`, `untracked`, `binary`, `truncated`, `oversized`). Drücke Enter auf einer Datei, um deren Inline-Diff mit syntax-hervorgehobenen Hunks anzuzeigen.
 
-Zusätzlich zum `/auth`-Slash-Befehl innerhalb der Sitzung bietet Qwen Code eigenständige CLI-Subcommands zur Verwaltung der Authentifizierung direkt über das Terminal:
+Änderungen pro Runde erfordern, dass Datei-Checkpointing aktiviert ist (standardmäßig im interaktiven Modus eingeschaltet). Wenn Datei-Checkpointing deaktiviert ist, ist nur die Quelle „Current“ verfügbar.
 
-| Befehl                                               | Beschreibung                                                  |
-| ---------------------------------------------------- | ------------------------------------------------------------- |
-| `qwen auth`                                          | Interaktives Authentifizierungs-Setup                         |
-| `qwen auth coding-plan`                              | Authentifizierung mit Alibaba Cloud Coding Plan               |
-| `qwen auth coding-plan --region china --key sk-sp-…` | Nicht-interaktives Coding-Plan-Setup (für Skripte)            |
-| `qwen auth api-key`                                  | Authentifizierung mit einem API-Key                           |
-| `qwen auth qwen-oauth`                               | ~~Authentifizierung mit Qwen OAuth~~ (eingestellt am 2026-04-15) |
-| `qwen auth status`                                   | Aktuellen Authentifizierungsstatus anzeigen                   |
+**Tastaturkürzel:**
 
-> [!tip]
+| Taste       | Aktion                                                |
+| ----------- | ----------------------------------------------------- |
+| `←` / `→`   | Zwischen Quellen wechseln (Current / T1 / T2…)        |
+| `↑` / `↓`   | Dateiliste navigieren                                 |
+| `j` / `k`   | Dateiliste navigieren (vim-Stil)                      |
+| Enter       | Inline-Diff für ausgewählte Datei anzeigen            |
+| `←` / Esc   | Zurück zur Dateiliste aus der Inline-Diff-Ansicht     |
+| Esc         | Dialog schließen                                      |
+
+**Beispiel:**
+
+```
+┌ /diff · Turn 3 "refactor the auth middleware" ──── 3 files +45 -12 ┐
+│                                                                     │
+│ ◀ Current · T3 · T2 · T1 ▶                                         │
+│                                                                     │
+│ › src/utils/parser.ts                              +30 -8           │
+│   src/utils/parser.test.ts                         +12 -2           │
+│   README.md                                        +3 -2            │
+│                                                                     │
+│ ←/→ source · ↑/↓ file · Enter view · Esc close                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Nicht-interaktiver Modus:**
+
+In headless (`--prompt`) oder nicht-interaktiven Kontexten gibt `/diff` eine Klartext-Zusammenfassung des Arbeitsbaums gegenüber HEAD aus. Die Navigation pro Runde ist nicht verfügbar.
+
+```
+3 files changed, +45 / -12
+  +30  -8  src/utils/parser.ts
+  +12  -2  src/utils/parser.test.ts
+   +3  -2  README.md
+```
+
+### 1.9 Informationen, Einstellungen und Hilfe
+
+Befehle zum Abrufen von Informationen und zur Vornahme von Systemeinstellungen.
+
+| Befehl          | Beschreibung                                                                                                                                                                                                                                                                                      | Anwendungsbeispiele            |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `/help`         | Hilfeinformationen für verfügbare Befehle anzeigen                                                                                                                                                                                                                                                 | `/help` oder `/?`              |
+| `/status`       | Versionsinformationen anzeigen                                                                                                                                                                                                                                                                    | `/status` oder `/about`        |
+| `/status paths` | Aktuelle Sitzungsdatei- und Log-Pfade anzeigen                                                                                                                                                                                                                                                    | `/status paths`                |
+| `/stats`        | Interaktives Nutzungsstatistik-Dashboard öffnen mit drei Tabs: Session (Live-Metriken), Activity (Heatmap, Token-Trend, Projekt-Ranking) und Efficiency (Cache-Rate, Tool-Rangliste, Modellvergleich). Verwende Tab zum Wechseln der Tabs, r zum Durchlaufen der Zeiträume, ←→ zum Blättern durch Monate, Esc zum Schließen. | `/stats`                       |
+| `/stats model`  | Pro-Modell-Token-Aufschlüsselung und geschätzte Kosten anzeigen                                                                                                                                                                                                                                   | `/stats model`                 |
+| `/stats tools`  | Anzahl der Tool-Aufrufe pro Tool anzeigen                                                                                                                                                                                                                                                         | `/stats tools`                 |
+| `/stats skills` | Anzahl der Skill-Aufrufe pro Skill für die aktive Live-Sitzung anzeigen. Dies beinhaltet keine sitzungsübergreifende tägliche/monatliche Aktivität.                                                                                                                                                | `/stats skills`                |
+| `/settings`     | Einstellungseditor öffnen                                                                                                                                                                                                                                                                         | `/settings`                    |
+| `/auth`         | Authentifizierungsmethode ändern                                                                                                                                                                                                                                                                  | `/auth`                        |
+| `/doctor`       | Installations- und Umgebungsdiagnose ausführen                                                                                                                                                                                                                                                    | `/doctor`, `/doctor memory`    |
+| `/docs`         | Vollständige Qwen Code-Dokumentation im Browser öffnen                                                                                                                                                                                                                                            | `/docs`                        |
+| `/ide`          | IDE-Integration verwalten                                                                                                                                                                                                                                                                         | `/ide status`, `/ide install`  |
+| `/insight`      | Programmiereinblicke aus dem Chatverlauf generieren                                                                                                                                                                                                                                               | `/insight`                     |
+| `/setup-github` | GitHub Actions einrichten                                                                                                                                                                                                                                                                         | `/setup-github`                |
+| `/bug`          | Problem zu Qwen Code einreichen                                                                                                                                                                                                                                                                   | `/bug Button click unresponsive` |
+| `/copy`         | KI-Ausgabe in die Zwischenablage kopieren (`/copy N` = n.-letzte KI-Nachricht)                                                                                                                                                                                                                    | `/copy` oder `/copy 2`         |
+| `/quit`         | Qwen Code sofort beenden                                                                                                                                                                                                                                                                          | `/quit` oder `/exit`           |
+### 1.10 Häufige Tastenkürzel
+
+| Tastenkürzel        | Funktion                    | Hinweis                          |
+| ------------------- | --------------------------- | -------------------------------- |
+| `Ctrl/cmd+L`        | Bildschirm leeren           | Entspricht `/clear`              |
+| `Ctrl/cmd+T`        | Tool-Beschreibung umschalten | MCP-Toolverwaltung               |
+| `Ctrl/cmd+C`×2      | Bestätigung zum Beenden     | Sicherer Beendigungsmechanismus  |
+| `Ctrl/cmd+Z`        | Eingabe rückgängig machen   | Textbearbeitung                  |
+| `Ctrl/cmd+Shift+Z`  | Eingabe wiederherstellen    | Textbearbeitung                  |
+
+### 1.11 Authentifizierungsbefehle
+
+Verwenden Sie `/auth` in einer Qwen Code-Sitzung, um die Authentifizierung zu konfigurieren. Verwenden Sie `/doctor`, um den aktuellen Authentifizierungs- und Umgebungsstatus zu überprüfen.
+
+| Befehl     | Beschreibung                                |
+| ---------- | ------------------------------------------- |
+| `/auth`    | Authentifizierung interaktiv konfigurieren  |
+| `/doctor`  | Authentifizierungs- und Umgebungsprüfungen anzeigen |
+
+> [!note]
 >
-> Diese Befehle werden außerhalb einer Qwen Code-Sitzung ausgeführt. Verwende sie, um die Authentifizierung vor dem Start einer Sitzung oder in Skripten und CI-Umgebungen zu konfigurieren. Vollständige Details findest du auf der Seite [Authentication](../configuration/auth).
+> Der eigenständige CLI-Befehl `qwen auth` wurde entfernt. Alte Aufrufe wie `qwen auth status` geben eine Entfernungsmeldung mit Migrationshinweisen aus. Weitere Informationen finden Sie auf der Seite [Authentifizierung](../configuration/auth).
 
 ## 2. @-Befehle (Dateien einfügen)
 
-@-Befehle werden verwendet, um schnell lokalen Datei- oder Verzeichnisinhalt zur Konversation hinzuzufügen.
+@-Befehle werden verwendet, um schnell lokale Datei- oder Verzeichnisinhalte in die Konversation einzufügen.
 
-| Befehlsformat       | Beschreibung                                   | Beispiele                                        |
-| ------------------- | ---------------------------------------------- | ------------------------------------------------ |
-| `@<Dateipfad>`      | Inhalt der angegebenen Datei einfügen          | `@src/main.py Please explain this code`          |
-| `@<Verzeichnispfad>` | Alle Textdateien im Verzeichnis rekursiv lesen | `@docs/ Summarize content of this document`      |
-| Eigenständiges `@`  | Wird verwendet, wenn das `@`-Symbol selbst diskutiert wird | `@ What is this symbol used for in programming?` |
+| Befehlsformat         | Beschreibung                                        | Beispiele                                                  |
+| --------------------- | --------------------------------------------------- | ---------------------------------------------------------- |
+| `@<Dateipfad>`        | Inhalt der angegebenen Datei einfügen               | `@src/main.py Bitte erklären Sie diesen Code`              |
+| `@<Verzeichnispfad>`  | Alle Textdateien im Verzeichnis rekursiv einlesen   | `@docs/ Fassen Sie den Inhalt dieses Dokuments zusammen`   |
+| Eigenständiges `@`    | Wird verwendet, wenn das `@`-Symbol selbst besprochen wird | `@ Wofür wird dieses Symbol in der Programmierung verwendet?` |
 
-Hinweis: Leerzeichen in Pfaden müssen mit einem Backslash escaped werden (z. B. `@My\ Documents/file.txt`)
+Hinweis: Leerzeichen in Pfaden müssen mit Backslash maskiert werden (z. B. `@My\ Documents/file.txt`).
 
-## 3. Ausrufezeichen-Befehle (`!`) - Shell-Befehlsausführung
+## 3. Ausrufezeichen-Befehle (`!`) – Shell-Befehlsausführung
 
-Ausrufezeichen-Befehle ermöglichen es dir, Systembefehle direkt innerhalb von Qwen Code auszuführen.
+Ausrufezeichen-Befehle ermöglichen die direkte Ausführung von Systembefehlen in Qwen Code.
 
-| Befehlsformat      | Beschreibung                                                         | Beispiele                              |
-| ------------------ | -------------------------------------------------------------------- | -------------------------------------- |
-| `!<Shell-Befehl>`  | Befehl in einer Sub-Shell ausführen                                  | `!ls -la`, `!git status`               |
-| Eigenständiges `!` | Shell-Modus wechseln, jede Eingabe wird direkt als Shell-Befehl ausgeführt | `!`(Enter) → Befehl eingeben → `!`(Beenden) |
+| Befehlsformat         | Beschreibung                                                           | Beispiele                      |
+| --------------------- | ---------------------------------------------------------------------- | ------------------------------ |
+| `!<Shell-Befehl>`     | Befehl in einer Sub-Shell ausführen                                    | `!ls -la`, `!git status`       |
+| Eigenständiges `!`    | In den Shell-Modus wechseln; jede Eingabe wird direkt als Shell-Befehl ausgeführt | `!` (Eingabe) → Befehl eingeben → `!` (beenden) |
 
 Umgebungsvariablen: Über `!` ausgeführte Befehle setzen die Umgebungsvariable `QWEN_CODE=1`.
 
 ## 4. Benutzerdefinierte Befehle
 
-Speichere häufig verwendete Prompts als Shortcut-Befehle, um die Arbeitseffizienz zu steigern und Konsistenz zu gewährleisten.
+Speichern Sie häufig verwendete Prompts als Kurzbefehle, um die Arbeitseffizienz zu verbessern und Konsistenz zu gewährleisten.
 
 > [!note]
 >
-> Benutzerdefinierte Befehle verwenden jetzt das Markdown-Format mit optionalem YAML-Frontmatter. Das TOML-Format ist veraltet, wird aber aus Gründen der Abwärtskompatibilität weiterhin unterstützt. Wenn TOML-Dateien erkannt werden, wird ein automatischer Migrationshinweis angezeigt.
+> Benutzerdefinierte Befehle verwenden jetzt das Markdown-Format mit optionalem YAML-Frontmatter. Das TOML-Format ist veraltet, wird aber aus Gründen der Abwärtskompatibilität weiterhin unterstützt. Wenn TOML-Dateien erkannt werden, wird eine automatische Migrationsaufforderung angezeigt.
 
-### Schneller Überblick
+### Kurzer Überblick
 
-| Funktion         | Beschreibung                                 | Vorteile                               | Priorität | Anwendungsszenarien                                |
-| ---------------- | -------------------------------------------- | -------------------------------------- | --------- | -------------------------------------------------- |
-| Namespace        | Unterverzeichnis erstellt Befehle mit Doppelpunkt-Namen | Bessere Befehlsorganisation            |           |                                                    |
-| Globale Befehle  | `~/.qwen/commands/`                          | In allen Projekten verfügbar           | Niedrig   | Persönliche, häufig genutzte Befehle, projektübergreifende Nutzung |
-| Projektbefehle   | `<Projekt-Root-Verzeichnis>/.qwen/commands/` | Projektspezifisch, versionierbar       | Hoch      | Team-Sharing, projektspezifische Befehle           |
+| Funktion            | Beschreibung                                      | Vorteile                        | Priorität | Anwendungsszenarien                                    |
+| ------------------- | ------------------------------------------------- | ------------------------------- | --------- | ------------------------------------------------------ |
+| Namespace           | Unterverzeichnis erstellt durch Doppelpunkt getrennte Befehle | Bessere Befehlsorganisation      |           |                                                        |
+| Globale Befehle     | `~/.qwen/commands/`                               | In allen Projekten verfügbar    | Niedrig   | Persönliche häufig verwendete Befehle, projektübergreifende Nutzung |
+| Projektbefehle      | `<Projektstammverzeichnis>/.qwen/commands/`        | Projektspezifisch, versionierbar | Hoch      | Teilen im Team, projektspezifische Befehle             |
 
-Prioritätsregeln: Projektbefehle > Benutzerbefehle (bei gleichen Namen wird der Projektbefehl verwendet)
+Prioritätsregeln: Projektbefehle > Benutzerbefehle (Projektbefehl wird verwendet, wenn Namen gleich sind)
 
 ### Befehlsbenennungsregeln
 
-#### Zuordnungstabelle: Dateipfad zu Befehlsname
+#### Zuordnungstabelle Dateipfad zu Befehlsname
 
-| Dateispeicherort                         | Generierter Befehl | Beispielaufruf        |
-| ---------------------------------------- | ------------------ | --------------------- |
-| `~/.qwen/commands/test.md`               | `/test`            | `/test Parameter`     |
-| `<project>/.qwen/commands/git/commit.md` | `/git:commit`      | `/git:commit Message` |
+| Dateispeicherort                                 | Generierter Befehl | Beispielaufruf          |
+| ------------------------------------------------ | ------------------ | ----------------------- |
+| `~/.qwen/commands/test.md`                       | `/test`            | `/test Parameter`       |
+| `<Projekt>/.qwen/commands/git/commit.md`         | `/git:commit`      | `/git:commit Message`   |
 
-Benennungsregeln: Pfadtrennzeichen (`/` oder `\`) wird in einen Doppelpunkt (`:`) umgewandelt
+Benennungsregeln: Pfadseparator (`/` oder `\`) wird in Doppelpunkt (`:`) umgewandelt.
 
-### Markdown-Dateiformat-Spezifikation (Empfohlen)
+### Markdown-Dateiformatspezifikation (empfohlen)
 
 Benutzerdefinierte Befehle verwenden Markdown-Dateien mit optionalem YAML-Frontmatter:
 
 ```markdown
 ---
-description: Optional description (displayed in /help)
+description: Optionale Beschreibung (wird in /help angezeigt)
 ---
 
-Your prompt content here.
-Use {{args}} for parameter injection.
+Ihr Prompt-Inhalt hier.
+Verwenden Sie {{args}} für die Parametereinfügung.
 ```
 
-| Feld          | Erforderlich | Beschreibung                               | Beispiel                                     |
-| ------------- | ------------ | ------------------------------------------ | -------------------------------------------- |
-| `description` | Optional     | Befehlsbeschreibung (wird in /help angezeigt) | `description: Code analysis tool`            |
-| Prompt-Body   | Erforderlich | An das Modell gesendeter Prompt-Inhalt     | Beliebiger Markdown-Inhalt nach dem Frontmatter |
-
-### TOML-Dateiformat (Veraltet)
+| Feld         | Erforderlich | Beschreibung                                     | Beispiel                               |
+| ------------ | ------------ | ------------------------------------------------ | -------------------------------------- |
+| `description`| Optional     | Befehlsbeschreibung (wird in /help angezeigt)    | `description: Code-Analyse-Tool`       |
+| Prompt-Text  | Erforderlich | An das Modell gesendeter Prompt-Inhalt           | Beliebiger Markdown-Inhalt nach dem Frontmatter |
+### TOML-Dateiformat (veraltet)
 
 > [!warning]
 >
-> **Veraltet:** Das TOML-Format wird weiterhin unterstützt, aber in einer zukünftigen Version entfernt. Bitte migriere zum Markdown-Format.
+> **Veraltet:** Das TOML-Format wird weiterhin unterstützt, aber in einer zukünftigen Version entfernt. Bitte migrieren Sie zum Markdown-Format.
 
-| Feld          | Erforderlich | Beschreibung                               | Beispiel                                     |
-| ------------- | ------------ | ------------------------------------------ | -------------------------------------------- |
-| `prompt`      | Erforderlich | An das Modell gesendeter Prompt-Inhalt     | `prompt = "Please analyze code: {{args}}"`   |
-| `description` | Optional     | Befehlsbeschreibung (wird in /help angezeigt) | `description = "Code analysis tool"`         |
+| Feld          | Erforderlich | Beschreibung                               | Beispiel                                    |
+| ------------- | ------------ | ------------------------------------------ | ------------------------------------------- |
+| `prompt`      | Erforderlich | An das Modell gesendeter Prompt-Inhalt     | `prompt = "Bitte analysieren Sie Code: {{args}}"` |
+| `description` | Optional     | Befehlsbeschreibung (angezeigt in /help)   | `description = "Code-Analyse-Tool"`       |
 
 ### Parameterverarbeitungsmechanismus
 
-| Verarbeitungsmethode       | Syntax             | Anwendbare Szenarien                 | Sicherheitsmerkmale                    |
-| -------------------------- | ------------------ | ------------------------------------ | -------------------------------------- |
-| Kontextbewusste Injektion  | `{{args}}`         | Präzise Parametersteuerung erforderlich | Automatisches Shell-Escaping           |
-| Standard-Parameterverarbeitung | Keine spezielle Markierung | Einfache Befehle, Parameter-Anhängen | Wird unverändert angehängt             |
-| Shell-Befehlsinjektion     | `!{command}`       | Dynamischer Inhalt erforderlich      | Erfordert Bestätigung vor Ausführung   |
+| Verarbeitungsmethode            | Syntax             | Anwendungsszenarien                  | Sicherheitsfunktionen                      |
+| ------------------------------ | ------------------ | ------------------------------------ | ------------------------------------------ |
+| Kontextbewusste Injektion      | `{{args}}`         | Benötigt präzise Parametersteuerung | Automatisches Shell-Escaping               |
+| Standard-Parameterverarbeitung | Keine spezielle Markierung | Einfache Befehle, Parameter anhängen | Wie angegeben anhängen                    |
+| Shell-Befehlsinjektion         | `!{command}`       | Benötigt dynamische Inhalte          | Ausführungsbestätigung vorab erforderlich |
 
 #### 1. Kontextbewusste Injektion (`{{args}}`)
 
-| Szenario         | TOML-Konfiguration                      | Aufrufmethode           | Tatsächlicher Effekt       |
-| ---------------- | --------------------------------------- | ----------------------- | -------------------------- |
-| Roh-Injektion    | `prompt = "Fix: {{args}}"`              | `/fix "Button issue"`   | `Fix: "Button issue"`      |
-| In Shell-Befehl  | `prompt = "Search: !{grep {{args}} .}"` | `/search "hello"`       | Führt `grep "hello" .` aus |
+| Szenario            | TOML-Konfiguration                      | Aufrufmethode         | Tatsächliche Wirkung          |
+| ------------------- | ---------------------------------------- | --------------------- | ----------------------------- |
+| Rohe Injektion      | `prompt = "Beheben: {{args}}"`              | `/beheben "Button-Problem"` | `Beheben: "Button-Problem"`    |
+| In Shell-Befehl     | `prompt = "Suchen: !{grep {{args}} .}"` | `/suchen "hello"`     | Führe `grep "hello" ."` aus |
 
 #### 2. Standard-Parameterverarbeitung
 
-| Eingabesituation | Verarbeitungsmethode                                     | Beispiel                                       |
-| ---------------- | -------------------------------------------------------- | ---------------------------------------------- |
-| Hat Parameter    | An das Ende des Prompts anhängen (getrennt durch zwei Zeilenumbrüche) | `/cmd parameter` → Originaler Prompt + Parameter |
-| Keine Parameter  | Prompt unverändert senden                                | `/cmd` → Originaler Prompt                     |
+| Eingabesituation   | Verarbeitungsmethode                                      | Beispiel                                        |
+| ------------------ | -------------------------------------------------------- | ----------------------------------------------- |
+| Mit Parametern     | An das Ende des Prompts anhängen (durch zwei Zeilenumbrüche getrennt) | `/befehl parameter` → Ursprünglicher Prompt + Parameter |
+| Keine Parameter    | Prompt wie gesendet                                      | `/befehl` → Ursprünglicher Prompt                        |
 
-🚀 Dynamische Inhaltsinjektion
+🚀 Dynamische Injektion
 
-| Injektionstyp         | Syntax         | Verarbeitungsreihenfolge | Zweck                          |
-| --------------------- | -------------- | ------------------------ | ------------------------------ |
-| Dateiinhalt           | `@{Dateipfad}` | Wird zuerst verarbeitet  | Statische Referenzdateien injizieren |
-| Shell-Befehle         | `!{command}`   | Wird in der Mitte verarbeitet | Dynamische Ausführungsergebnisse injizieren |
-| Parameterersetzung    | `{{args}}`     | Wird zuletzt verarbeitet | Benutzerparameter injizieren   |
+| Injektionstyp          | Syntax         | Verarbeitungsreihenfolge | Zweck                             |
+| ---------------------- | -------------- | ------------------------ | --------------------------------- |
+| Dateiinhalt            | `@{dateipfad}` | Zuerst verarbeitet       | Statische Referenzdateien injizieren |
+| Shell-Befehle          | `!{befehl}`    | In der Mitte verarbeitet | Dynamische Ausführungsergebnisse injizieren |
+| Parameterersetzung     | `{{args}}`     | Zuletzt verarbeitet      | Benutzerparameter injizieren          |
 
 #### 3. Shell-Befehlsausführung (`!{...}`)
 
-| Vorgang                       | Benutzerinteraktion  |
-| ----------------------------- | -------------------- |
-| 1. Befehl und Parameter parsen | -                    |
-| 2. Automatisches Shell-Escaping | -                    |
+| Vorgang                       | Benutzerinteraktion     |
+| ----------------------------- | ----------------------- |
+| 1. Befehl und Parameter parsen | -                       |
+| 2. Automatisches Shell-Escaping | -                       |
 | 3. Bestätigungsdialog anzeigen | ✅ Benutzerbestätigung |
-| 4. Befehl ausführen           | -                    |
-| 5. Ausgabe in Prompt injizieren | -                    |
+| 4. Befehl ausführen            | -                       |
+| 5. Ausgabe in Prompt injizieren | -                       |
 
-Beispiel: Git-Commit-Message-Generierung
+Beispiel: Generierung von Git-Commit-Nachrichten
 
 ````markdown
 ---
-description: Generate Commit message based on staged changes
+description: Generiere Commit-Nachricht basierend auf gestagten Änderungen
 ---
 
-Please generate a Commit message based on the following diff:
+Bitte generieren Sie eine Commit-Nachricht basierend auf folgendem Diff:
 
 ```diff
 !{git diff --staged}
 ```
 ````
 
-#### 4. Dateiinhalt-Injektion (`@{...}`)
+#### 4. Dateiinhaltsinjektion (`@{...}`)
 
-| Dateityp     | Support-Status         | Verarbeitungsmethode        |
-| ------------ | ---------------------- | --------------------------- |
-| Textdateien  | ✅ Voll unterstützt    | Inhalt direkt injizieren    |
-| Bilder/PDF   | ✅ Multi-Modal unterstützt | Kodieren und injizieren     |
-| Binärdateien | ⚠️ Eingeschränkt unterstützt | Kann übersprungen oder gekürzt werden |
-| Verzeichnis  | ✅ Rekursive Injektion | Folgt .gitignore-Regeln     |
+| Dateityp     | Unterstützungsstatus     | Verarbeitungsmethode       |
+| ------------ | ------------------------ | -------------------------- |
+| Textdateien  | ✅ Vollständig unterstützt | Inhalt direkt einfügen     |
+| Bilder/PDFs  | ✅ Multimodal unterstützt | Kodieren und einfügen      |
+| Binärdateien | ⚠️ Eingeschränkt unterstützt | Kann übersprungen oder abgeschnitten werden |
+| Verzeichnis  | ✅ Rekursive Injektion    | .gitignore-Regeln befolgen |
 
 Beispiel: Code-Review-Befehl
 
 ```markdown
 ---
-description: Code review based on best practices
+description: Code-Review basierend auf Best Practices
 ---
 
-Review {{args}}, reference standards:
+Überprüfen Sie {{args}}, Referenzstandards:
 
 @{docs/code-standards.md}
 ```
 
-### Praktisches Erstellungbeispiel
+### Praktisches Erstellungsbeispiel
 
-#### Tabelle: Erstellungsschritte für den Befehl „Pure Function Refactoring“
+#### Schritte zur Erstellung des Befehls "Reine Funktion umgestalten"
 
-| Vorgang                     | Befehl/Code                               |
-| --------------------------- | ----------------------------------------- |
-| 1. Verzeichnisstruktur erstellen | `mkdir -p ~/.qwen/commands/refactor`      |
-| 2. Befehlsdatei erstellen   | `touch ~/.qwen/commands/refactor/pure.md` |
-| 3. Befehlsinhalt bearbeiten | Siehe vollständigen Code unten.           |
-| 4. Befehl testen            | `@file.js` → `/refactor:pure`             |
+| Vorgang                       | Befehl/Code                              |
+| ----------------------------- | ---------------------------------------- |
+| 1. Verzeichnisstruktur erstellen | `mkdir -p ~/.qwen/commands/refactor`     |
+| 2. Befehlsdatei erstellen     | `touch ~/.qwen/commands/refactor/pure.md` |
+| 3. Befehlsinhalt bearbeiten   | Siehe vollständigen Code unten.          |
+| 4. Befehl testen              | `@file.js` → `/refactor:pure`            |
 
 ```markdown
 ---
-description: Refactor code to pure function
+description: Code zu reiner Funktion umgestalten
 ---
 
-Please analyze code in current context, refactor to pure function.
-Requirements:
+Bitte analysieren Sie den Code im aktuellen Kontext und gestalten Sie ihn zu einer reinen Funktion um.
+Anforderungen:
 
-1. Provide refactored code
-2. Explain key changes and pure function characteristic implementation
-3. Maintain function unchanged
+1. Refaktorisierten Code bereitstellen
+2. Wesentliche Änderungen und Umsetzung der reinen Funktion erklären
+3. Funktion unverändert lassen
+```
+### Zusammenfassung Best Practices für benutzerdefinierte Befehle
+
+#### Tabelle mit Empfehlungen zum Befehlsdesign
+
+| Praxis-Punkte         | Empfohlener Ansatz                | Zu vermeiden                              |
+| --------------------- | -------------------------------- | ----------------------------------------- |
+| Befehlsbenennung      | Namespaces zur Organisation nutzen | Zu allgemeine Namen vermeiden             |
+| Parameterverarbeitung | `{{args}}` deutlich verwenden    | Auf Standard-Anhängen verlassen (leicht zu verwechseln) |
+| Fehlerbehandlung      | Shell-Fehlerausgabe nutzen       | Ausführungsfehler ignorieren              |
+| Dateiorganisation     | Funktionale Ordnerstruktur       | Alle Befehle im Wurzelverzeichnis         |
+| Beschreibungsfeld     | Klare Beschreibung angeben       | Auf automatisch generierte Beschreibung verlassen |
+
+#### Tabelle zur Erinnerung an Sicherheitsfunktionen
+
+| Sicherheitsmechanismus | Schutzwirkung                 | Benutzeraktion            |
+| ---------------------- | ----------------------------- | ------------------------- |
+| Shell-Escaping         | Verhindert Befehlsinjektion   | Automatische Verarbeitung |
+| Ausführungsbestätigung | Vermeidet versehentliche Ausführung | Dialogbestätigung    |
+| Fehlerberichterstattung | Hilft bei der Diagnose        | Fehlerinformationen anzeigen |
+
+## 5. CLI-Unterbefehle
+
+Diese Befehle werden in der Shell als `qwen <unterbefehl>` ausgeführt, bevor eine interaktive Sitzung gestartet wird.
+
+### Sitzungsverwaltung
+
+| Befehl                | Beschreibung                            | Anwendungsbeispiele                                      |
+| --------------------- | --------------------------------------- | -------------------------------------------------------- |
+| `qwen sessions list` | Listet aktuelle Chat-Sitzungen auf      | `qwen sessions list`, `qwen sessions list --json --limit 50` |
+
+#### `qwen sessions list`
+
+Listet Ihre letzten Qwen Code-Sitzungen mit Metadaten auf.
+
+**Flags:**
+
+| Flag      | Typ    | Standard | Beschreibung                                             |
+| --------- | ------ | -------- | -------------------------------------------------------- |
+| `--json`  | boolesch | `false` | Ausgabe als JSON Lines (ein JSON-Objekt pro Zeile)        |
+| `--limit` | Zahl   | `20`     | Maximale Anzahl der anzuzeigenden Sitzungen               |
+
+**Menschenlesbare Ausgabe (Standard):**
+
+Eine Tabelle mit den Spalten: SITZUNGS-ID, GESTARTET (UTC-Zeitstempel), TITEL, BRANCH, PROMPT.
+
+**JSON-Ausgabe (`--json`):**
+
+Gibt JSON Lines auf stdout aus. Jede Zeile ist ein JSON-Objekt mit den Feldern:
+
+```
+sessionId, startTime, mtime, prompt, gitBranch, customTitle, titleSource, filePath, cwd
 ```
 
-### Zusammenfassung der Best Practices für benutzerdefinierte Befehle
+Der Hinweis „has more sessions“ wird via stderr ausgegeben, sodass das Piping an `jq` sicher bleibt.
 
-#### Tabelle: Empfehlungen zum Befehlsdesign
+**Beispiele:**
 
-| Praxispunkte         | Empfohlener Ansatz                | Vermeiden                                   |
-| -------------------- | --------------------------------- | ------------------------------------------- |
-| Befehlsbenennung     | Namespaces zur Organisation verwenden | Zu generische Namen vermeiden               |
-| Parameterverarbeitung | Explizit `{{args}}` verwenden     | Auf Standard-Anhängen verlassen (verwirrend) |
-| Fehlerbehandlung     | Shell-Fehlerausgabe nutzen        | Ausführungsfehler ignorieren                |
-| Dateiorganisation    | Nach Funktion in Verzeichnissen organisieren | Alle Befehle im Root-Verzeichnis            |
-| Beschreibungsfeld    | Immer eine klare Beschreibung angeben | Auf automatisch generierte Beschreibung verlassen |
+```bash
+# Letzte 20 Sitzungen anzeigen (Standard)
+qwen sessions list
 
-#### Tabelle: Erinnerung an Sicherheitsmerkmale
+# Letzte 50 Sitzungen anzeigen
+qwen sessions list --limit 50
 
-| Sicherheitsmechanismus | Schutzwirkung          | Benutzeraktion         |
-| ---------------------- | ---------------------- | ---------------------- |
-| Shell-Escaping         | Verhindert Command Injection | Automatische Verarbeitung |
-| Ausführungsbestätigung | Vermeidet unbeabsichtigte Ausführung | Dialogbestätigung      |
-| Fehlerberichterstattung | Hilft bei der Diagnose von Problemen | Fehlerinformationen anzeigen |
+# Ausgabe als JSON für Skripte
+qwen sessions list --json | jq .
+```

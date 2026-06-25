@@ -1,72 +1,72 @@
-# Système de gestion de la mémoire
+# Memory - Système de gestion de la mémoire
 
-> Ce document détaille le mécanisme de gestion de la mémoire, les conditions de déclenchement et les détails d'implémentation de **Managed Auto-Memory** (mémoire automatique managée) dans Qwen Code.
+> Cet article présente le mécanisme de gestion de la mémoire **Managed Auto-Memory** (mémoire automatique gérée) de Qwen Code, ses déclencheurs et ses détails d'implémentation.
 
 ---
 
 ## Table des matières
 
-1. [Vue d'ensemble](#概述)
-2. [Structure de stockage](#存储结构)
-3. [Types de mémoire](#记忆类型)
-4. [Format des entrées de mémoire](#记忆条目格式)
-5. [Cycle de vie principal](#核心生命周期)
-6. [Extract — Extraction](#extract--提取)
-7. [Dream — Consolidation](#dream--整合)
-8. [Recall — Rappel](#recall--召回)
-9. [Forget — Oubli](#forget--遗忘)
-10. [Reconstruction de l'index](#索引重建)
-11. [Télémétrie](#遥测埋点)
+1. [Vue d'ensemble](#vue-densemble)
+2. [Structure de stockage](#structure-de-stockage)
+3. [Types de mémoire](#types-de-mémoire)
+4. [Format des entrées mémoire](#format-des-entrées-mémoire)
+5. [Cycle de vie principal](#cycle-de-vie-principal)
+6. [Extract — Extraction](#extract--extraction)
+7. [Dream — Intégration](#dream--intégration)
+8. [Recall — Rappel](#recall--rappel)
+9. [Forget — Oubli](#forget--oubli)
+10. [Reconstruction de l'index](#reconstruction-de-lindex)
+11. [Télémétrie](#télémétrie)
 
 ---
 
 ## Vue d'ensemble
 
-Managed Auto-Memory est un système de mémoire persistante qui accumule, consolide et récupère **automatiquement** les connaissances liées à l'utilisateur pendant les sessions IA. Il maintient le cycle de vie de la mémoire via quatre opérations principales :
+Managed Auto-Memory est un système de mémoire persistante qui **accumule**, intègre et récupère automatiquement les connaissances pertinentes de l'utilisateur au cours des sessions de dialogue avec l'IA. Il maintient le cycle de vie de la mémoire via quatre opérations principales :
 
-| Opération | Terme anglais | Déclenchement | Rôle |
-| ---- | ------- | -------------------------- | -------------------------------------- |
-| Extraction | Extract | Automatique (après chaque tour de conversation) | Extrait les nouvelles connaissances des échanges et les écrit dans les fichiers de mémoire |
-| Consolidation | Dream | Automatique (tâche de fond périodique) | Déduplique et fusionne les fichiers de mémoire pour les garder propres |
-| Rappel | Recall | Automatique (avant chaque tour de conversation) | Récupère les mémoires pertinentes pour la requête actuelle et les injecte dans le prompt système |
-| Oubli | Forget | Manuel (commande utilisateur `/forget`) | Supprime précisément les entrées de mémoire spécifiées |
+| Opération | Anglais | Déclencheur                   | Rôle                                   |
+| --------- | ------- | ----------------------------- | -------------------------------------- |
+| Extraction| Extract | Automatique (après chaque tour)| Distille de nouvelles connaissances depuis l'historique de dialogue pour écrire dans les fichiers mémoire |
+| Intégration| Dream  | Automatique (tâche de fond périodique) | Déduplication et fusion des fichiers mémoire pour rester propre |
+| Rappel    | Recall  | Automatique (avant chaque tour)| Récupère les mémoires pertinentes pour la requête en cours et les injecte dans le prompt système |
+| Oubli     | Forget  | Manuel (commande `/forget`) | Supprime précisément les entrées mémoire spécifiées |
 
 ---
 
 ## Structure de stockage
 
-### Arborescence des répertoires
+### Disposition des répertoires
 
 ```
 ~/.qwen/                                      ← Répertoire de base global (par défaut)
 └── projects/
-    └── <sanitized-git-root>/                 ← Identifiant du projet (basé sur le chemin racine Git)
-        ├── meta.json                         ← Métadonnées (horodatages extraction/consolidation, état)
-        ├── extract-cursor.json               ← Curseur d'extraction (offset des conversations traitées)
-        ├── consolidation.lock                ← Mutex pour le processus Dream
+    └── <sanitized-git-root>/                 ← Identifiant du projet (basé sur la racine Git)
+        ├── meta.json                         ← Métadonnées (horodatages d'extraction/intégration, état)
+        ├── extract-cursor.json               ← Curseur d'extraction (décalage de dialogue déjà traité)
+        ├── consolidation.lock                ← Verrou d'exclusion mutuelle pour le processus Dream
         └── memory/                           ← Répertoire principal de la mémoire
-            ├── MEMORY.md                     ← Fichier d'index (généré automatiquement, résume toutes les entrées)
+            ├── MEMORY.md                     ← Fichier d'index (généré automatiquement, récapitule toutes les entrées)
             ├── user.md                       ← Mémoire des préférences utilisateur (exemple)
             ├── feedback.md                   ← Mémoire des règles de feedback (exemple)
             ├── project/
-            │   └── milestone.md              ← Mémoire du projet (sous-répertoires pris en charge)
+            │   └── milestone.md              ← Mémoire de projet (supporte les sous-répertoires)
             └── reference/
-                └── grafana.md                ← Mémoire des ressources externes
+                └── grafana.md                ← Mémoire de ressources externes
 ```
 
-> **Remplacement par variable d'environnement** :
+> **Variables d'environnement pour surcharge** :
 >
 > - `QWEN_CODE_MEMORY_BASE_DIR` : remplace le répertoire de base global
-> - `QWEN_CODE_MEMORY_LOCAL=1` : utilise le chemin relatif au projet `.qwen/memory/`
+> - `QWEN_CODE_MEMORY_LOCAL=1` : utilise le chemin local `.qwen/memory/` dans le projet
 
 ### Description des fichiers clés
 
-| Fichier | Description |
-| --------------------- | ---------------------------------------------------------------------- |
-| `meta.json` | Enregistre l'heure, l'ID de session, les types de mémoire concernés et l'état d'exécution du dernier Extract / Dream |
-| `extract-cursor.json` | Enregistre l'offset de l'historique de conversation déjà traité pour éviter les extractions en double |
-| `consolidation.lock` | Fichier de verrou pendant l'exécution de Dream, contient le PID du détenteur, expire automatiquement après 1 heure |
-| `MEMORY.md` | Index de tous les fichiers thématiques, reconstruit après chaque Extract/Dream, formaté en liste Markdown |
+| Fichier                | Description                                                                   |
+| ---------------------- | ----------------------------------------------------------------------------- |
+| `meta.json`            | Enregistre le dernier horodatage d'Extract/Dream, l'ID de session, les types de mémoire concernés, l'état d'exécution |
+| `extract-cursor.json`  | Enregistre jusqu'où l'historique de dialogue a été traité pour la session en cours, évite les extractions redondantes |
+| `consolidation.lock`   | Verrou fichier lors de l'exécution de Dream, contient le PID du détenteur, expire automatiquement après 1 heure |
+| `MEMORY.md`            | Index de tous les fichiers thématiques, reconstruit après chaque Extract/Dream, formaté en liste Markdown |
 
 ---
 
@@ -74,35 +74,35 @@ Managed Auto-Memory est un système de mémoire persistante qui accumule, consol
 
 Le système prend en charge quatre types de mémoire intégrés, chacun correspondant à une dimension d'information différente :
 
-| Type | Contenu stocké | Écriture | Lecture |
-| ----------- | ----------------------------------------------------- | ---------------------------------------- | ---------------------------- |
-| `user` | Rôle, compétences, habitudes de travail de l'utilisateur | Lorsque le rôle/les préférences/le contexte de l'utilisateur sont identifiés | Lorsque la réponse doit être adaptée au contexte de l'utilisateur |
-| `feedback` | Directives de l'utilisateur sur le comportement de l'IA : quoi éviter, quoi continuer | Lorsque l'utilisateur corrige l'IA ou valide une approche non évidente | Lorsque cela influence la manière dont l'IA doit se comporter |
-| `project` | Avancement, objectifs, décisions, échéances, suivi de bugs du projet | Lorsque l'on sait qui fait quoi, pourquoi et pour quand | Pour aider l'IA à comprendre le contexte et les motivations du travail |
-| `reference` | Pointeurs vers des ressources externes (Dashboard, système de tickets, canal Slack, etc.) | Lorsqu'une ressource externe et son utilité sont identifiées | Lorsque l'utilisateur mentionne un système externe ou des informations connexes |
+| Type         | Contenu stocké                                             | Quand écrire                                 | Quand lire                        |
+| ------------ | ---------------------------------------------------------- | -------------------------------------------- | --------------------------------- |
+| `user`       | Rôle, compétences, habitudes de travail de l'utilisateur   | Lorsque l'on apprend le rôle/préférence/contexte de connaissances de l'utilisateur | Lorsque la réponse doit être adaptée au contexte utilisateur |
+| `feedback`   | Directives de l'utilisateur sur le comportement de l'IA : quoi éviter, quoi continuer | Lorsque l'utilisateur corrige l'IA ou confirme une action non évidente | Lorsque le comportement de l'IA doit être influencé |
+| `project`    | Avancement, objectifs, décisions, échéances, suivi de bugs | Lorsque l'on apprend qui fait quoi, pourquoi, et jusqu'à quand | Lorsque l'IA doit comprendre le contexte et les motivations du travail |
+| `reference`  | Pointeurs vers des ressources externes (Dashboard, système de tickets, canal Slack, etc.) | Lorsque l'on découvre une ressource externe et son usage | Lorsque l'utilisateur mentionne un système externe ou une information associée |
 
-**Contenu à ne pas stocker en mémoire** : conventions/modes de code, historique Git, stratégies de débogage, états de tâches temporaires, contenu déjà documenté dans `QWEN.md`/`AGENTS.md`.
+**Ce qui ne doit pas être stocké en mémoire** : conventions de code, historique Git, solutions de débogage, état de tâches temporaires, contenus déjà présents dans QWEN.md/AGENTS.md.
 
 ---
 
-## Format des entrées de mémoire
+## Format des entrées mémoire
 
-Chaque fichier thématique utilise le format **YAML frontmatter + corps Markdown** :
+Chaque fichier thématique utilise le format **YAML frontmatter + Markdown body** :
 
 ```markdown
 ---
 name: Nom de la mémoire
-description: Description en une phrase (utilisée pour évaluer la pertinence du rappel, doit être précise)
+description: Description en une phrase (pour juger de la pertinence lors du rappel, être précis)
 type: user|feedback|project|reference
 ---
 
-Contenu principal de la mémoire (ligne summary)
+Contenu principal de la mémoire (ligne de résumé)
 
-Why: Raison sous-jacente (permet à l'IA de comprendre les cas limites au lieu de suivre aveuglément les règles)
-How to apply: Contextes d'application et méthode d'utilisation
+Why: Raison sous-jacente (permet à l'IA de comprendre les cas limites sans appliquer aveuglément la règle)
+How to apply: Scénarios d'application et mode d'emploi
 ```
 
-Pour les types `feedback` et `project`, il est fortement recommandé de remplir `Why` et `How to apply` afin que la mémoire reste applicable même dans des cas limites.
+Pour les types `feedback` et `project`, il est fortement recommandé de renseigner `Why` et `How to apply` afin que la mémoire soit correctement appliquée même dans les cas limites.
 
 ---
 
@@ -113,21 +113,21 @@ flowchart TD
     A([L'utilisateur envoie une requête]) --> B
 
     subgraph "Rappel (Recall)"
-        B[Analyse de tous les fichiers thématiques] --> C{Le nombre de documents et\nle contenu de la requête sont-ils valides ?}
-        C -- Non --> D[Renvoie un prompt vide\nstrategy: none]
-        C -- Oui --> E{Une configuration est-elle définie ?}
-        E -- Oui --> F[Sélection pilotée par le modèle\nside query]
-        F --> G{Documents pertinents sélectionnés ?}
+        B[Scanne tous les fichiers thématiques] --> C{Le nombre de documents et\nle contenu de la requête sont-ils valides ?}
+        C -- Non --> D[Retourne un prompt vide\nstrategy: none]
+        C -- Oui --> E{Un Config est-il configuré ?}
+        E -- Oui --> F[Sélection pilotée par modèle\nside query]
+        F --> G{Des documents pertinents\nsélectionnés ?}
         G -- Oui --> H[strategy: model]
         G -- Non --> I[strategy: none]
         E -- Non --> J[Scoring heuristique par mots-clés]
         F -- Échec --> J
-        J --> K{Documents avec score > 0 ?}
+        J --> K{Document(s) avec score > 0 ?}
         K -- Oui --> L[strategy: heuristic]
         K -- Non --> I
-        H --> M[Construction du prompt Relevant Memory\nInjection dans le prompt système]
+        H --> M[Construction du prompt Relevant Memory\ninjection dans le prompt système]
         L --> M
-        I --> N[Aucune mémoire injectée]
+        I --> N[Aucune injection de mémoire]
     end
 
     M --> O([L'IA traite la requête])
@@ -136,243 +136,242 @@ flowchart TD
 
     O --> P([L'IA renvoie la réponse])
 
-    subgraph "Extraction (Extract) (arrière-plan)"
-        P --> Q{L'IA a-t-elle directement\nécrit des fichiers mémoire ce tour ?}
-        Q -- Oui --> R[Ignoré\nmemory_tool]
-        Q -- Non --> S{La tâche d'extraction\nest-elle en cours ?}
-        S -- Oui --> T[Mis en file d'attente ou ignoré\nalready_running / queued]
-        S -- Non --> U[Chargement du segment de conversation non traité\nbasé sur extract cursor]
+    subgraph "Extraction (Extract) – arrière-plan"
+        P --> Q{L'IA a-t-elle directement\nécrit un fichier mémoire\nlors de ce tour ?}
+        Q -- Oui --> R[Ignorer\nmemory_tool]
+        Q -- Non --> S{Une tâche d'extraction\nest-elle en cours ?}
+        S -- Oui --> T[Mise en file d'attente ou ignorée\nalready_running / queued]
+        S -- Non --> U[Chargement des tranches de dialogue non traitées\nbasé sur le curseur d'extraction]
         U --> V[Appel de l'agent d'extraction\nrunAutoMemoryExtractionByAgent]
         V --> W[Déduplication et normalisation des patches]
-        W --> X{Sujets modifiés (touched topics) ?}
-        X -- Oui --> Y[Mise à jour de meta.json\nReconstruction de l'index MEMORY.md]
-        X -- Non --> Z[Mise à jour uniquement du extract cursor]
+        W --> X{Des sujets touchés ?}
+        X -- Oui --> Y[Mise à jour de meta.json\nreconstruction de l'index MEMORY.md]
+        X -- Non --> Z[Mise à jour du curseur d'extraction uniquement]
         Y --> Z
     end
 
-    subgraph "Consolidation Dream (arrière-plan, périodique)"
-        P --> AA{Vérification des garde-fous du planificateur Dream}
+    subgraph "Intégration (Dream) – arrière-plan, périodique"
+        P --> AA{Vérification du déclencheur Dream}
         AA --> AB{Même session ?}
-        AB -- Oui --> AC[Ignoré\nsame_session]
-        AB -- Non --> AD{Dernier Dream\n≥ 24h ?}
-        AD -- Non --> AE[Ignoré\nmin_hours]
-        AD -- Oui --> AF{Nouvelles sessions depuis le dernier Dream\n≥ 5 ?}
-        AF -- Non --> AG[Ignoré\nmin_sessions]
+        AB -- Oui --> AC[Ignorer\nsame_session]
+        AB -- Non --> AD{Dernier Dream\n≥ 24 heures ?}
+        AD -- Non --> AE[Ignorer\nmin_hours]
+        AD -- Oui --> AF{Nombre de nouvelles sessions\naprès dernier Dream ≥ 5 ?}
+        AF -- Non --> AG[Ignorer\nmin_sessions]
         AF -- Oui --> AH{consolidation.lock\nexiste-t-il ?}
-        AH -- Oui --> AI[Ignoré\nlocked]
-        AH -- Non --> AJ[Acquisition du lock\nÉcriture du PID]
-        AJ --> AK{Une configuration est-elle définie ?}
-        AK -- Oui --> AL[Chemin Agent\nplanManagedAutoMemoryDreamByAgent]
-        AL --> AM{L'agent a-t-il modifié des fichiers ?}
-        AM -- Oui --> AN[Enregistrement des sujets modifiés]
-        AM -- "Non/Échec" --> AO
+        AH -- Oui --> AI[Ignorer\nlocked]
+        AH -- Non --> AJ[Acquisition du verrou\nécriture du PID]
+        AJ --> AK{Un Config est-il configuré ?}
+        AK -- Oui --> AL[Chemin piloté par l'agent\nplanManagedAutoMemoryDreamByAgent]
+        AL --> AM{L'agent a-t-il touché des fichiers ?}
+        AM -- Oui --> AN[Enregistrement des sujets touchés]
+        AM -- Non/Échec --> AO
         AK -- Non --> AO[Chemin de déduplication mécanique\nAnalyse + déduplication + tri alphabétique]
-        AO --> AP[Écriture des fichiers thématiques mis à jour]
-        AN --> AQ[Reconstruction de l'index MEMORY.md\nMise à jour de meta.json]
+        AO --> AP[Réécriture des fichiers thématiques mis à jour]
+        AN --> AQ[Reconstruction de l'index MEMORY.md\nmise à jour de meta.json]
         AP --> AQ
-        AQ --> AR[Libération du lock]
+        AQ --> AR[Libération du verrou]
     end
 ```
-
 ---
 
 ## Extract — Extraction
 
-### Conditions de déclenchement
+### Déclenchement
 
-Déclenché automatiquement (arrière-plan non bloquant) par `scheduleAutoMemoryExtract` après chaque réponse de l'IA.
+Chaque fois que l'IA termine un tour de réponse, déclenché automatiquement par `scheduleAutoMemoryExtract` (non bloquant en arrière-plan).
 
-### Logique de planification (`extractScheduler.ts`)
+### Logique d'ordonnancement (`extractScheduler.ts`)
 
 ```mermaid
 flowchart TD
-    A[scheduleAutoMemoryExtract appelé] --> B{L'historique de ce tour contient-il\nun appel d'outil écrivant des fichiers mémoire ?}
-    B -- Oui --> C[Enregistrement tâche skipped\nRaison: memory_tool]
-    B -- Non --> D{isExtractRunning?}
-    D -- Oui --> E{Une requête queued existe-t-elle déjà ?}
-    E -- Oui --> F[Mise à jour du paramètre\nhistory de la requête queued]
-    E -- Non --> G[Enregistrement tâche pending\nAjout à la queue]
-    D -- Non --> H[Enregistrement tâche running\nAppel de runTask]
+    A[scheduleAutoMemoryExtract 被调用] --> B{本轮历史记录中\n是否有写记忆文件的工具调用?}
+    B -- 是 --> C[登记 skipped 任务\n原因: memory_tool]
+    B -- 否 --> D{isExtractRunning?}
+    D -- 是 --> E{是否已有 queued 请求?}
+    E -- 是 --> F[更新 queued 请求的\nhistory 参数]
+    E -- 否 --> G[注册 pending 任务\n放入 queue]
+    D -- 否 --> H[注册 running 任务\n调用 runTask]
     H --> I[markExtractRunning\nsetCurrentTaskId]
     I --> J[runAutoMemoryExtract]
-    J --> K[Tâche terminée]
-    K --> L[clearExtractRunning\nVérification queue → startQueuedIfNeeded]
-    F --> M[Renvoie skipped: queued]
+    J --> K[任务完成]
+    K --> L[clearExtractRunning\n检查 queue → startQueuedIfNeeded]
+    F --> M[返回 skipped: queued]
     G --> M
-    C --> N[Renvoie skipped: memory_tool]
+    C --> N[返回 skipped: memory_tool]
 ```
 
-**Explication des raisons d'ignorage** :
+**Explication des raisons de saut** :
 
-| Raison | Signification |
-| ----------------- | ----------------------------------------------- |
-| `memory_tool` | L'agent principal a déjà écrit directement des fichiers mémoire ce tour, ignoré pour éviter les conflits |
-| `already_running` | L'extraction est en cours et ne peut pas être mise en file d'attente |
-| `queued` | Une extraction est déjà en cours, cette requête a été mise en file d'attente |
+| Raison             | Signification                                                                 |
+| ------------------ | ----------------------------------------------------------------------------- |
+| `memory_tool`      | L'agent principal a déjà écrit directement un fichier mémoire dans cette itération, saut pour éviter les conflits. |
+| `already_running`  | L'extraction est en cours et ne peut pas être mise en file d'attente.          |
+| `queued`           | Une extraction est déjà en cours, cette demande a été mise en file d'attente. |
 
-### Flux d'extraction principal (`extract.ts`)
+### Processus d'extraction principal (`extract.ts`)
 
 ```mermaid
 flowchart TD
-    A[runAutoMemoryExtract] --> B[ensureAutoMemoryScaffold\nInitialisation des répertoires et fichiers]
-    B --> C[buildTranscriptMessages\nConversion de Content[] en liste de messages avec offset]
-    C --> D[readExtractCursor\nLecture de la dernière position traitée]
-    D --> E[loadUnprocessedTranscriptSlice\nExtraction du segment de messages non traité]
-    E --> F{Le slice est-il vide ?}
-    F -- Oui --> G[Renvoie un résultat sans patches]
-    F -- Non --> H[runAutoMemoryExtractionByAgent\nAppel de l'agent forké pour extraire les patches]
-    H --> I[dedupeExtractPatches\nDéduplication + normalisation]
-    I --> J{Sujets modifiés (touched topics) ?}
-    J -- Oui --> K[bumpMetadata\nMise à jour de meta.json]
-    K --> L[rebuildManagedAutoMemoryIndex\nReconstruction de MEMORY.md]
-    L --> M[writeExtractCursor\nEnregistrement du dernier offset]
-    J -- Non --> M
-    M --> N[Renvoie AutoMemoryExtractResult]
+    A[runAutoMemoryExtract] --> B[ensureAutoMemoryScaffold\n初始化目录和文件]
+    B --> C[readExtractCursor\n读取上次处理到的位置]
+    C --> D[history.slice startOffset\n只取未处理的消息切片]
+    D --> E{slice 有新的 user 消息?}
+    E -- 否 --> F[更新 cursor\n返回无 patches 结果]
+    E -- 是 --> G[runAutoMemoryExtractionByAgent\n调用 forked agent 提取]
+    G --> H{有 touched topics?}
+    H -- 是 --> I[bumpMetadata\n更新 meta.json]
+    I --> J[rebuildManagedAutoMemoryIndex\n重建 MEMORY.md]
+    J --> K[writeExtractCursor\n记录最新 offset = history.length]
+    H -- 否 --> K
+    K --> L[返回 AutoMemoryExtractResult]
 ```
 
-**Curseur d'extraction (Cursor)** :
+> **Note :** La porte `isUnderMemoryPressure` se trouve dans `MemoryManager.runExtract()`, pas dans ce flux. Lorsque le moniteur signale une pression hard/critique, `MemoryManager` saute l'appel d'extraction et n'avance pas le curseur.
 
-- Champs : `{ sessionId, processedOffset, updatedAt }`
-- `processedOffset` est mis à jour avec la longueur actuelle de l'historique après chaque extraction
-- Lors de la prochaine extraction, seuls les messages avec `offset >= processedOffset` sont traités
-- En cas de changement de session (`sessionId` modifié), le traitement reprend à l'offset 0
+**Curseur d'extraction** :
+
+- Champ : `{ sessionId, processedOffset, updatedAt }`
+- Avant l'extraction, lire la progression actuelle via `readExtractCursor`, puis utiliser `history.slice(processedOffset)` pour ne traiter que la partie non lue.
+- Après chaque extraction, mettre à jour `processedOffset` avec la longueur actuelle de l'historique (`params.history.length`).
+- Lors du changement de session (`sessionId` différent), reprendre à l'offset 0.
+- Note : On ne construit plus le texte de transcription via `buildTranscriptMessages` / `loadUnprocessedTranscriptSlice` – `hasNewUserMessages` est déterminé par `history.slice(startOffset).some(m => m.role === 'user' && partToString(m.parts).trim().length > 0)`, en ne traitant que la tranche non lue légèrement, l'historique complet n'est plus traité.
 
 **Règles de filtrage des patches** :
 
-- Résumé de moins de 12 caractères → ignoré
-- Résumé se terminant par `?` → ignoré (phrase interrogative)
-- Contient des mots-clés temporaires (today/now/currently/temporary, etc.) → ignoré
-- Combinaison `topic:summary` identique → dédupliqué
+- Longueur du résumé < 12 caractères → abandon
+- Résumé se terminant par `?` → abandon (phrase interrogative)
+- Contient des mots-clés temporaires (today/now/currently/temporary etc.) → abandon
+- Même combinaison `topic:summary` → dédoublonnage
 
 ---
 
-## Dream — Consolidation
+## Dream — Intégration
 
-### Conditions de déclenchement
+### Déclenchement
 
-Déclenché automatiquement (arrière-plan non bloquant) par `scheduleManagedAutoMemoryDream` après chaque réponse de l'IA. Protégé par plusieurs garde-fous, il est ignoré dans la plupart des cas.
+Chaque fois que l'IA termine un tour de réponse, déclenché automatiquement par `scheduleManagedAutoMemoryDream` (non bloquant en arrière-plan). Mais protégé par plusieurs conditions de contrôle, il est généralement ignoré.
 
-### Garde-fous de planification (`dreamScheduler.ts`)
+### Contrôle d'ordonnancement (`dreamScheduler.ts`)
 
 ```mermaid
 flowchart TD
-    A[scheduleManagedAutoMemoryDream appelé] --> B{La fonctionnalité Dream est-elle activée ?}
-    B -- Non --> C[Ignoré: disabled]
-    B -- Oui --> D[ensureAutoMemoryScaffold\nLecture de lastDreamSessionId]
-    D --> E{sessionId actuel\n== lastDreamSessionId ?}
-    E -- Oui --> F[Ignoré: same_session]
-    E -- Non --> G{elapsedHours ≥ 24h\nou jamais de dream ?}
-    G -- Non --> H[Ignoré: min_hours]
-    G -- Oui --> I{Dernier scan de session\n< 10 min ?}
-    I -- Oui --> J[Ignoré: min_sessions\nAttente de la prochaine fenêtre de scan]
-    I -- Non --> K[Scan des mtime de chats/*.jsonl\nComptage des nouvelles sessions depuis le dernier Dream]
-    K --> L{Nouvelles sessions ≥ 5 ?}
-    L -- Non --> M[Ignoré: min_sessions]
-    L -- Oui --> N{lockExists ?\nVérification PID + expiration}
-    N -- Oui --> O[Ignoré: locked]
-    N -- Non --> P{Un dedupeKey existe-t-il déjà\npour une tâche Dream sur ce projet ?}
-    P -- Oui --> Q[Ignoré: running\nRenvoie le taskId existant]
-    P -- Non --> R[Planification tâche arrière-plan\nBgTaskScheduler]
-    R --> S[acquireDreamLock\nÉcriture du PID dans consolidation.lock]
+    A[scheduleManagedAutoMemoryDream 被调用] --> B{Dream 功能是否启用?}
+    B -- 否 --> C[跳过: disabled]
+    B -- 是 --> D[ensureAutoMemoryScaffold\n读取 lastDreamSessionId]
+    D --> E{当前 sessionId\n== lastDreamSessionId?}
+    E -- 是 --> F[跳过: same_session]
+    E -- 否 --> G{elapsedHours ≥ 24h\n或从未 dream?}
+    G -- 否 --> H[跳过: min_hours]
+    G -- 是 --> I{距上次 session scan\n< 10 分钟?}
+    I -- 是 --> J[跳过: min_sessions\n等待下次扫描窗口]
+    I -- 否 --> K[扫描 chats/*.jsonl mtime\n统计上次 Dream 后的新会话数]
+    K --> L{新会话数 ≥ 5?}
+    L -- 否 --> M[跳过: min_sessions]
+    L -- 是 --> N{lockExists?\nPID 检查 + 过期检查}
+    N -- 是 --> O[跳过: locked]
+    N -- 否 --> P{dedupeKey 是否已有\n同项目 Dream 任务?}
+    P -- 是 --> Q[跳过: running\n返回已有 taskId]
+    P -- 否 --> R[调度后台任务\nBgTaskScheduler]
+    R --> S[acquireDreamLock\n写入 PID 到 consolidation.lock]
     S --> T[runManagedAutoMemoryDream]
-    T --> U[Mise à jour de meta.json\nLibération du lock]
+    T --> U[更新 meta.json\n释放锁]
 ```
 
-**Paramètres des garde-fous** :
+**Paramètres de contrôle** :
 
-| Paramètre | Valeur par défaut | Description |
-| -------------------------- | -------- | ----------------------------- |
-| `minHoursBetweenDreams` | 24 heures | Intervalle minimum entre deux Dream |
-| `minSessionsBetweenDreams` | 5 sessions | Nombre minimum de nouvelles sessions requis pour déclencher un Dream |
-| `SESSION_SCAN_INTERVAL_MS` | 10 minutes | Intervalle de throttling pour le scan des fichiers de session |
-| `DREAM_LOCK_STALE_MS` | 1 heure | Seuil d'expiration du fichier lock |
+| Paramètre                  | Valeur par défaut | Description                                                                 |
+| -------------------------- | ----------------- | --------------------------------------------------------------------------- |
+| `minHoursBetweenDreams`    | 24 heures         | Intervalle minimum entre deux rêves (Dream)                                  |
+| `minSessionsBetweenDreams` | 5 sessions        | Nombre minimum de nouvelles sessions nécessaires pour déclencher un Dream     |
+| `SESSION_SCAN_INTERVAL_MS` | 10 minutes        | Intervalle de limitation de l'analyse des fichiers de session                |
+| `DREAM_LOCK_STALE_MS`      | 1 heure           | Seuil de temps à partir duquel le fichier lock est considéré comme obsolète   |
 
-**Mécanisme de verrouillage** :
+**Mécanisme de verrou** :
 
-- Le fichier lock se trouve dans `<project-state-dir>/consolidation.lock`
-- Contient le PID du processus détenteur
-- Vérification : si le processus PID n'existe plus (`kill(pid, 0)` échoue) ou si le lock a plus d'1 heure → considéré comme expiré, supprimé automatiquement
+- Le fichier lock se trouve à `<project-state-dir>/consolidation.lock`
+- Le contenu est le PID du processus qui le détient.
+- Lors de la vérification : si le processus PID n'existe plus (échec de `kill(pid, 0)`) ou si le lock est vieux de plus d'1 heure → considéré comme obsolète, effacé automatiquement.
 
-### Flux d'exécution de la consolidation (`dream.ts`)
+### Processus d'exécution de l'intégration (`dream.ts`)
 
 ```mermaid
 flowchart TD
-    A[runManagedAutoMemoryDream] --> B{Une configuration est-elle définie ?}
-    B -- Oui --> C[Chemin Agent\nplanManagedAutoMemoryDreamByAgent]
-    C --> D{L'agent a-t-il modifié des fichiers ?}
-    D -- Oui --> E[Inférence des touched topics depuis les chemins de fichiers]
-    E --> F[bumpMetadata\nReconstruction de l'index MEMORY.md]
+    A[runManagedAutoMemoryDream] --> B{是否配置了 Config?}
+    B -- 是 --> C[Agent 路径\nplanManagedAutoMemoryDreamByAgent]
+    C --> D{Agent 是否修改了文件?}
+    D -- 是 --> E[从文件路径推断 touched topics]
+    E --> F[bumpMetadata\n重建 MEMORY.md 索引]
     F --> G[updateDreamMetadataResult]
-    G --> H[Enregistrement de l'événement de télémétrie]
-    H --> I[Renvoi du résultat]
-    B -- Non --> J[Chemin de déduplication mécanique]
-    C -- Exception --> J
-    D -- Non --> J
+    G --> H[记录遥测事件]
+    H --> I[返回结果]
+    B -- 否 --> J[机械去重路径]
+    C -- 抛出异常 --> J
+    D -- 否 --> J
 
-    J --> K[scanAutoMemoryTopicDocuments\nLecture de tous les fichiers thématiques]
-    K --> L[Exécution de buildDreamedBody pour chaque fichier]
-    L --> M[Analyse des entries → déduplication par summary\nTri alphabétique ascendant → nouveau rendu]
-    M --> N{Le body a-t-il changé ?}
-    N -- Oui --> O[Écriture dans le fichier]
-    O --> P[Enregistrement du sujet modifié]
-    N --> Q[Vérification des doublons inter-fichiers\ndedupeKey = type:summary]
-    Q --> R{Fichiers en double détectés ?}
-    R -- Oui --> S[Merge des entries dans le fichier canonical\nSuppression des fichiers en double]
+    J --> K[scanAutoMemoryTopicDocuments\n读取所有主题文件]
+    K --> L[对每个文件执行 buildDreamedBody]
+    L --> M[解析 entries → 按 summary 去重\n按字母升序排序 → 重新渲染]
+    M --> N{body 有变化?}
+    N -- 是 --> O[写回文件]
+    O --> P[记录 touched topic]
+    N --> Q[检查跨文件重复\ndedupeKey = type:summary]
+    Q --> R{发现重复文件?}
+    R -- 是 --> S[合并 entries 到 canonical 文件\n删除重复文件]
     S --> P
-    R -- Non --> T{Sujets modifiés (touched topics) ?}
+    R -- 否 --> T{有 touched topics?}
     P --> T
-    T -- Oui --> U[bumpMetadata\nReconstruction de l'index MEMORY.md]
-    U --> V[updateDreamMetadataResult\nEnregistrement télémétrie → renvoi résultat]
-    T -- Non --> V
+    T -- 是 --> U[bumpMetadata\n重建 MEMORY.md 索引]
+    U --> V[updateDreamMetadataResult\n记录遥测 → 返回结果]
+    T -- 否 --> V
 ```
 
-**Logique de déduplication mécanique** :
+**Logique de dédoublonnage mécanique** :
 
-1. Pour chaque fichier thématique : déduplication par `summary.toLowerCase()`, fusion des champs `why`/`howToApply`
-2. Retri par ordre alphabétique des summaries
-3. Inter-fichiers : les entries avec le même `type:summary` sont fusionnées dans le premier fichier détecté, les fichiers en double sont supprimés
-
+1. Pour chaque fichier de sujet : dédoublonner par `summary.toLowerCase()`, fusionner les champs `why`/`howToApply`
+2. Réordonner par ordre alphabétique de summary
+3. Entre fichiers : les entrées avec la même combinaison `type:summary` sont fusionnées dans le premier fichier découvert, supprimer les fichiers dupliqués.
 ---
 
 ## Recall — Rappel
 
-### Conditions de déclenchement
+### Déclenchement
 
-Déclenché automatiquement par `resolveRelevantAutoMemoryPromptForQuery` avant que l'IA ne traite la requête de l'utilisateur, pour injecter les mémoires pertinentes dans le prompt système.
+Avant chaque tour de traitement de la requête utilisateur par l’IA, `resolveRelevantAutoMemoryPromptForQuery` est automatiquement déclenché pour injecter les souvenirs pertinents dans le prompt système.
 
-### Flux de rappel (`recall.ts`)
+### Processus de rappel (`recall.ts`)
 
 ```mermaid
 flowchart TD
-    A[resolveRelevantAutoMemoryPromptForQuery] --> B[scanAutoMemoryTopicDocuments\nAnalyse de tous les fichiers thématiques]
-    B --> C[filterExcludedAutoMemoryDocuments\nFiltrage des fichiers écrits ce tour]
-    C --> D{query vide\nou docs vides\nou limit <= 0 ?}
-    D -- Oui --> E[Renvoi prompt vide\nstrategy: none]
-    D -- Non --> F{Une configuration est-elle définie ?}
-    F -- Oui --> G[selectRelevantAutoMemoryDocumentsByModel\nEnvoi d'une side query pour sélection par modèle]
-    G --> H{Le modèle renvoie-t-il des résultats ?}
-    H -- Documents --> I[strategy: model]
-    H -- Aucun document --> J[strategy: none\nRenvoi vide malgré tout]
-    G -- Échec/Exception --> K[Repli sur sélection heuristique]
+    A[resolveRelevantAutoMemoryPromptForQuery] --> B[scanAutoMemoryTopicDocuments\n扫瞄 tous les fichiers thématiques]
+    B --> C[filterExcludedAutoMemoryDocuments\nfiltre les fichiers déjà écrits dans ce tour]
+    C --> D{query est vide\nou docs est vide\nou limit <= 0 ?}
+    D -- Oui --> E[retourne un prompt vide\nstrategy: none]
+    D -- Non --> F{un Config est-il configuré ?}
+    F -- Oui --> G[selectRelevantAutoMemoryDocumentsByModel\nenvoie une side query pour la sélection par modèle]
+    G --> H{le modèle retourne-t-il des résultats ?}
+    H -- documents --> I[strategy: model]
+    H -- aucun document --> J[strategy: none\nretourne vide]
+    G -- "échec/exception" --> K[fallback vers sélection heuristique]
     F -- Non --> K
-    K --> L[Tokenisation de la query\nExtraction des tokens ≥ 3 caractères]
-    L --> M[Scoring scoreDocument\nMatch mot-clé +2 / Mot-clé type +1 / Contenu présent +1]
-    M --> N[Filtrage des docs score=0\nTri décroissant par score, Top 5]
-    N --> O{Documents avec score ?}
+    K --> L[tokeniser la query\nextraire les tokens d'au moins 3 caractères]
+    L --> M[scoreDocument note\ncorrespondance de mots-clés +2 / mot-clé de type +1 / contenu non vide +1]
+    M --> N[filtre les documents de score=0\ntrie par score décroissant, prend Top 5]
+    N --> O{des documents notés ?}
     O -- Oui --> P[strategy: heuristic]
     O -- Non --> J
-    I --> Q[buildRelevantAutoMemoryPrompt\nConstruction du bloc Relevant Memory]
+    I --> Q[buildRelevantAutoMemoryPrompt\nconstruit le bloc Relevant Memory]
     P --> Q
-    Q --> R[Renvoi du fragment de prompt injecté dans le prompt système principal]
+    Q --> R[retourne le fragment de prompt à injecter dans le prompt principal]
 ```
 
-**Règles de scoring (heuristique)** :
+**Règles de notation (heuristique)** :
 
-| Condition | Points |
-| -------------------------------- | ---------------- |
-| Token de la query présent dans le contenu du document | +2 (par token) |
-| Token de la query est un mot-clé caractéristique du type | +1 (par token) |
-| Body du document non vide | +1 |
+| Condition                                             | Bonus             |
+| ---------------------------------------------------- | ----------------- |
+| Un token de la query apparaît dans le contenu du document | +2 (par token)   |
+| Un token de la query est un mot-clé caractéristique du type | +1 (par token)   |
+| Le corps du document n’est pas vide                   | +1               |
 
 **Mots-clés caractéristiques par type** :
 
@@ -381,129 +380,129 @@ flowchart TD
 - `project` : project, goal, incident, deadline, release
 - `reference` : reference, dashboard, ticket, docs, link
 
-**Règles de construction du Prompt** :
+**Règles de construction du prompt** :
 
-- Maximum 5 documents injectés (`MAX_RELEVANT_DOCS`)
-- Body de chaque document tronqué à 1200 caractères (`MAX_DOC_BODY_CHARS`)
-- En cas de troncature, ajout de la mention : "NOTE: Relevant memory truncated for prompt budget."
-- Inclut les informations de fraîcheur du document (basées sur le mtime du fichier)
+- Au maximum 5 documents injectés (`MAX_RELEVANT_DOCS`)
+- Chaque corps de document est tronqué à 1200 caractères (`MAX_DOC_BODY_CHARS`)
+- En cas de troncature, un message est ajouté : "NOTE: Relevant memory truncated for prompt budget."
+- Inclut l’information de fraîcheur du document (basée sur mtime du fichier)
 
 ---
 
 ## Forget — Oubli
 
-### Conditions de déclenchement
+### Déclenchement
 
-Déclenché manuellement par l'utilisateur via la commande `/forget <query>`.
+Déclenché par la commande manuelle `/forget <query>` de l’utilisateur.
 
-### Flux d'oubli (`forget.ts`)
+### Processus d’oubli (`forget.ts`)
 
 ```mermaid
 flowchart TD
     A[forgetManagedAutoMemoryEntries\nquery + config] --> B[ensureAutoMemoryScaffold]
-    B --> C[listIndexedForgetCandidates\nScan de toutes les entries de tous les fichiers]
-    C --> D[Génération d'un ID stable pour chaque entry\nFichier single entry: relativePath\nFichier multi-entry: relativePath:index]
-    D --> E{Une configuration est-elle définie ?}
-    E -- Oui --> F[selectByModel\nConstruction du prompt de sélection\nEnvoi side query temperature=0]
-    F --> G{Sélection par modèle réussie ?}
+    B --> C[listIndexedForgetCandidates\nscanne toutes les entrées de tous les fichiers]
+    C --> D[génère un ID stable pour chaque entrée\nfichier à entrée unique: relativePath\nfichier à entrées multiples: relativePath:index]
+    D --> E{un Config est-il configuré ?}
+    E -- Oui --> F[selectByModel\nconstruit un prompt de sélection\nenvoie une side query temperature=0]
+    F --> G{la sélection par modèle réussit ?}
     G -- Oui --> H[strategy: model]
-    G -- Échec --> I[selectByHeuristic\nMatch par mots-clés]
+    G -- Échec --> I[selectByHeuristic\ncorrespondance par mots-clés]
     E -- Non --> I
     I --> J[strategy: heuristic]
-    H --> K[Parcours des candidates sélectionnées]
+    H --> K[parcourt les candidats sélectionnés]
     J --> K
-    K --> L{entries.length == 1?}
-    L -- Oui --> M[Suppression du fichier entier\nfs.unlink]
-    L -- Non --> N[Analyse de toutes les entries du fichier\nSuppression de l'entry cible\nNouveau rendu et réécriture]
-    M --> O[Enregistrement des removedEntries]
+    K --> L{entries.length == 1 ?}
+    L -- Oui --> M[supprime tout le fichier\nfs.unlink]
+    L -- Non --> N[parse toutes les entrées du fichier\nsupprime l’entrée cible\nréaffiche et réécrit]
+    M --> O[enregistre removedEntries]
     N --> O
-    O --> P{Sujets modifiés (touched topics) ?}
-    P -- Oui --> Q[bumpMetadata\nReconstruction de l'index MEMORY.md]
-    P --> R[Renvoi de AutoMemoryForgetResult]
+    O --> P{y a-t-il des topics touchés ?}
+    P -- Oui --> Q[bumpMetadata\nreconstruit l’index MEMORY.md]
+    P --> R[retourne AutoMemoryForgetResult]
     Q --> R
 ```
 
-**Conception des Entry ID** :
+**Conception des ID d’entrée** :
 
 - Fichier à entrée unique (cas courant) : `relativePath` (ex. `feedback/no-summary.md`)
 - Fichier à entrées multiples : `relativePath:index` (ex. `feedback/style.md:2`)
-- L'utilisation d'ID stables permet au modèle de cibler précisément une entrée sans affecter les autres entrées du même fichier
+- Utilisation d’ID stables pour permettre au modèle de localiser précisément une entrée sans affecter les autres entrées du même fichier.
 
 ---
 
-## Reconstruction de l'index
+## Reconstruire l’index
 
-`MEMORY.md` est l'index de navigation de tous les fichiers thématiques. Il est reconstruit après chaque Extract ou Dream via `rebuildManagedAutoMemoryIndex` :
+`MEMORY.md` est l’index de navigation de tous les fichiers thématiques. Il est reconstruit après chaque Extract ou Dream via `rebuildManagedAutoMemoryIndex` :
 
 ```
-- [Préférences utilisateur](user/preferences.md) — L'utilisateur est un ingénieur Go senior, découvre React
-- [Règles de feedback](feedback/style.md) — Garder les réponses concises, pas de résumé en fin de message
-- [Jalons du projet](project/milestone.md) — Fenêtre de gel avant merge pour la release mobile
+- [User Preferences](user/preferences.md) — L’utilisateur est un ingénieur Go senior, découvre React pour la première fois
+- [Feedback Rules](feedback/style.md) — Garder les réponses concises, pas de résumé final
+- [Project Milestone](project/milestone.md) — Fenêtre de gel avant la ramification pour la release mobile
 ```
 
-**Limites de l'index** :
+**Limites de l’index** :
 
 - Maximum 150 caractères par ligne (tronqué avec `…` si dépassé)
 - Maximum 200 lignes
-- Taille totale ne dépassant pas 25 000 octets
+- Taille totale maximale 25 000 octets
 
 ---
 
-## Télémétrie
+## Télémétrie intégrée
 
-Le système intègre trois types d'événements de télémétrie pour surveiller les performances et l'efficacité des opérations de mémoire :
+Le système intègre trois catégories d’événements de télémétrie pour surveiller les performances et l’efficacité des opérations mémoire :
 
 ### Télémétrie Extract
 
-| Champ | Type | Description |
-| ---------------- | --------------------------- | ----------------------- |
-| `trigger` | `'auto'` | Mode de déclenchement (actuellement uniquement automatique) |
-| `status` | `'completed'` \| `'failed'` | Résultat de l'exécution |
-| `patches_count` | number | Nombre de patches valides extraits |
-| `touched_topics` | string[] | Liste des types de mémoire modifiés |
-| `duration_ms` | number | Durée totale (millisecondes) |
+| Champ            | Type                          | Description                              |
+| ---------------- | ----------------------------- | ---------------------------------------- |
+| `trigger`        | `'auto'`                      | Mode de déclenchement (actuellement uniquement auto) |
+| `status`         | `'completed'` \| `'failed'`   | Résultat de l’exécution                  |
+| `patches_count`  | number                        | Nombre de correctifs extraits valides     |
+| `touched_topics` | string[]                      | Liste des types de mémoire écrits        |
+| `duration_ms`    | number                        | Durée totale en millisecondes            |
 
 ### Télémétrie Dream
 
-| Champ | Type | Description |
-| ----------------- | ------------------------------------- | ---------------------- |
-| `trigger` | `'auto'` | Mode de déclenchement |
-| `status` | `'updated'` \| `'noop'` \| `'failed'` | Résultat de l'exécution |
-| `deduped_entries` | number | Nombre d'entrées dédupliquées (chemin mécanique) |
-| `touched_topics` | string[] | Liste des types de mémoire modifiés |
-| `duration_ms` | number | Durée totale (millisecondes) |
+| Champ              | Type                                    | Description                              |
+| ------------------ | --------------------------------------- | ---------------------------------------- |
+| `trigger`          | `'auto'`                                | Mode de déclenchement                    |
+| `status`           | `'updated'` \| `'noop'` \| `'failed'`   | Résultat de l’exécution                  |
+| `deduped_entries`  | number                                  | Nombre d’entrées dédupliquées mécaniquement |
+| `touched_topics`   | string[]                                | Liste des types de mémoire modifiés      |
+| `duration_ms`      | number                                  | Durée totale en millisecondes            |
 
 ### Télémétrie Recall
 
-| Champ | Type | Description |
-| --------------- | -------------------------------------- | ---------------- |
-| `query_length` | number | Longueur de la chaîne de requête |
-| `docs_scanned` | number | Nombre total de documents analysés |
-| `docs_selected` | number | Nombre final de documents injectés |
-| `strategy` | `'none'` \| `'heuristic'` \| `'model'` | Stratégie de sélection |
-| `duration_ms` | number | Durée totale (millisecondes) |
+| Champ            | Type                                     | Description                              |
+| ---------------- | ---------------------------------------- | ---------------------------------------- |
+| `query_length`   | number                                   | Longueur de la chaîne de requête         |
+| `docs_scanned`   | number                                   | Nombre total de documents scannés        |
+| `docs_selected`  | number                                   | Nombre de documents finalement injectés  |
+| `strategy`       | `'none'` \| `'heuristic'` \| `'model'`   | Stratégie de sélection                   |
+| `duration_ms`    | number                                   | Durée totale en millisecondes            |
 
 ---
 
 ## Index des fichiers sources
 
-| Fichier | Responsabilité |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `packages/core/src/memory/types.ts` | Définitions de types : `AutoMemoryType`, `AutoMemoryMetadata`, `AutoMemoryExtractCursor` |
-| `packages/core/src/memory/paths.ts` | Calcul de chemins : `getAutoMemoryRoot`, `isAutoMemPath`, helpers pour divers chemins de fichiers |
-| `packages/core/src/memory/store.ts` | Initialisation du scaffolding : `ensureAutoMemoryScaffold`, lecture/écriture index/métadonnées |
-| `packages/core/src/memory/scan.ts` | Scan des fichiers thématiques : `scanAutoMemoryTopicDocuments`, analyse du frontmatter |
-| `packages/core/src/memory/entries.ts` | Analyse et rendu des entrées : `parseAutoMemoryEntries`, `renderAutoMemoryBody` |
-| `packages/core/src/memory/extract.ts` | Logique principale d'extraction : `runAutoMemoryExtract`, gestion du curseur, déduplication des patches |
-| `packages/core/src/memory/extractScheduler.ts` | Planificateur d'extraction : `ManagedAutoMemoryExtractRuntime`, file d'attente/machine d'états d'exécution |
-| `packages/core/src/memory/extractionAgentPlanner.ts` | Agent d'extraction : `runAutoMemoryExtractionByAgent` |
-| `packages/core/src/memory/dream.ts` | Logique principale de consolidation : `runManagedAutoMemoryDream`, chemin Agent + déduplication mécanique |
-| `packages/core/src/memory/dreamScheduler.ts` | Planificateur de consolidation : `ManagedAutoMemoryDreamRuntime`, vérification des garde-fous, gestion des locks |
-| `packages/core/src/memory/dreamAgentPlanner.ts` | Agent de consolidation : `planManagedAutoMemoryDreamByAgent` |
-| `packages/core/src/memory/recall.ts` | Logique de rappel : `resolveRelevantAutoMemoryPromptForQuery`, double chemin heuristique + modèle |
-| `packages/core/src/memory/forget.ts` | Logique d'oubli : `forgetManagedAutoMemoryEntries`, génération de candidats + suppression précise |
-| `packages/core/src/memory/indexer.ts` | Reconstruction d'index : `rebuildManagedAutoMemoryIndex`, `buildManagedAutoMemoryIndex` |
-| `packages/core/src/memory/prompt.ts` | Templates de prompt système : description des types de mémoire, exemples de format, règles d'utilisation |
-| `packages/core/src/memory/governance.ts` | Types de suggestions de gouvernance : `AutoMemoryGovernanceSuggestionType` |
-| `packages/core/src/memory/state.ts` | État d'exécution de l'extraction : `isExtractRunning`, `markExtractRunning`, `clearExtractRunning` |
-| `packages/core/src/memory/memoryAge.ts` | Description de la fraîcheur : `memoryAge`, `memoryFreshnessText` |
+| Fichier                                               | Responsabilité                                                                 |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `packages/core/src/memory/types.ts`                  | Définitions de types : `AutoMemoryType`, `AutoMemoryMetadata`, `AutoMemoryExtractCursor` |
+| `packages/core/src/memory/paths.ts`                  | Calcul de chemins : `getAutoMemoryRoot`, `isAutoMemPath`, helpers de chemins divers |
+| `packages/core/src/memory/store.ts`                  | Initialisation du scaffold : `ensureAutoMemoryScaffold`, lecture/écriture d’index/métadonnées |
+| `packages/core/src/memory/scan.ts`                   | Scan des fichiers thématiques : `scanAutoMemoryTopicDocuments`, parsing du frontmatter |
+| `packages/core/src/memory/entries.ts`                | Analyse et rendu des entrées : `parseAutoMemoryEntries`, `renderAutoMemoryBody` |
+| `packages/core/src/memory/extract.ts`                | Logique centrale d’extraction : `runAutoMemoryExtract`, gestion du curseur, déduplication de correctifs |
+| `packages/core/src/memory/extractScheduler.ts`       | Ordonnanceur d’extraction : `ManagedAutoMemoryExtractRuntime`, file/machine à états d’exécution |
+| `packages/core/src/memory/extractionAgentPlanner.ts` | Agent d’extraction : `runAutoMemoryExtractionByAgent`                          |
+| `packages/core/src/memory/dream.ts`                  | Logique centrale d’intégration : `runManagedAutoMemoryDream`, chemin Agent + déduplication mécanique |
+| `packages/core/src/memory/dreamScheduler.ts`         | Ordonnanceur d’intégration : `ManagedAutoMemoryDreamRuntime`, vérifications de garde, gestion de verrou |
+| `packages/core/src/memory/dreamAgentPlanner.ts`      | Agent d’intégration : `planManagedAutoMemoryDreamByAgent`                      |
+| `packages/core/src/memory/recall.ts`                 | Logique de rappel : `resolveRelevantAutoMemoryPromptForQuery`, double chemin heuristique + modèle |
+| `packages/core/src/memory/forget.ts`                 | Logique d’oubli : `forgetManagedAutoMemoryEntries`, génération de candidats + suppression précise |
+| `packages/core/src/memory/indexer.ts`                | Reconstruction de l’index : `rebuildManagedAutoMemoryIndex`, `buildManagedAutoMemoryIndex` |
+| `packages/core/src/memory/prompt.ts`                 | Template de prompt système : description des types mémoire, exemples de format, bonnes pratiques |
+| `packages/core/src/memory/governance.ts`             | Types de suggestions de gouvernance : `AutoMemoryGovernanceSuggestionType`      |
+| `packages/core/src/memory/state.ts`                  | État d’exécution de l’extraction : `isExtractRunning`, `markExtractRunning`, `clearExtractRunning` |
+| `packages/core/src/memory/memoryAge.ts`              | Description de fraîcheur : `memoryAge`, `memoryFreshnessText`                  |
