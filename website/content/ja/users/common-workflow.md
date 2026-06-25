@@ -347,10 +347,10 @@ qwen --continue
 **2. 非インタラクティブモードで継続する**
 
 ```bash
-qwen --continue --p "Continue with my task"
+qwen --continue -p "Continue with my task"
 ```
 
-`--print` と `--continue` を組み合わせて使用すると、スクリプトや自動化に最適な非インタラクティブモードで最新の会話が再開されます。
+`-p`（または `--prompt`）と `--continue` を組み合わせると、最新の会話を非インタラクティブモードで再開できます。スクリプトや自動化に最適です。
 
 **3. 会話選択ツールを表示する**
 
@@ -387,13 +387,13 @@ qwen --resume
 > qwen --continue
 >
 > # Continue most recent conversation with a specific prompt
-> qwen --continue --p "Show me our progress"
+> qwen --continue -p "Show me our progress"
 >
 > # Show conversation picker
 > qwen --resume
 >
 > # Continue most recent conversation in non-interactive mode
-> qwen --continue --p "Run the tests again"
+> qwen --continue -p "Run the tests again"
 > ```
 
 ## Git worktrees を使用して Qwen Code セッションを並列実行する

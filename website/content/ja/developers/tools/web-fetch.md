@@ -1,33 +1,33 @@
 # Web Fetch ツール (`web_fetch`)
 
-このドキュメントでは、Qwen Code 用の `web_fetch` ツールについて説明します。
+このドキュメントでは、Qwen Code の `web_fetch` ツールについて説明します。
 
 ## 概要
 
-指定された URL からコンテンツを取得し、AI モデルで処理するには `web_fetch` を使用します。このツールは URL とプロンプトを入力として受け取り、URL のコンテンツを取得した後、軽量で高速なモデルを使用してプロンプトに基づいてコンテンツを処理します。
+`web_fetch` は、指定した URL からコンテンツを取得し、AI モデルで処理するツールです。URL とプロンプトを入力として受け取り、URL のコンテンツを取得した後、小型で高速なモデルを使用してプロンプトに基づいてコンテンツを処理します。
 
 ### 引数
 
-`web_fetch` は次の 3 つの引数を受け取ります：
+`web_fetch` は以下の 3 つの引数を受け取ります：
 
-- `url` (string, 必須): コンテンツを取得する URL。`http://` または `https://` で始まる、完全に構成された有効な URL である必要があります。
-- `prompt` (string, 必須): ページのコンテンツから抽出したい情報を説明するプロンプト。
-- `format` (string, オプション): サーバーに送信される `Accept` ヘッダーのみを制御し、コンテンツの優先順位を示します。指定された形式に関係なく、**取得されたすべてのコンテンツは LLM 処理用にプレーンテキストに正規化されます**。指定しない場合のデフォルトは `"auto"` です。
-  - `"auto"` (デフォルト): コンテンツネゴシエーションを通じて Markdown を優先し (`Accept: text/markdown, text/html`)、フォールバックとして HTML を受け入れます。Markdown をサポートするサーバーではトークン使用量を最大 80% 削減できるため、**ほとんどのユースケースで推奨されます**。
-  - `"markdown"`: `Accept: text/markdown` を送信します。明示的に Markdown コンテンツが必要な場合に使用します。
-  - `"html"`: `Accept: text/html` を送信します。サーバーが Accept ヘッダーに HTML を要求する場合に使用します。コンテンツは引き続き LLM 処理用にプレーンテキストに変換されます。
-  - `"text"`: `Accept: text/plain` を送信します。明示的にプレーンテキストコンテンツが必要な場合に使用します。
+- `url`（文字列、必須）: コンテンツを取得する URL。`http://` または `https://` で始まる有効な完全形式の URL を指定してください。
+- `prompt`（文字列、必須）: ページコンテンツから抽出したい情報を説明するプロンプト。
+- `format`（文字列、省略可能）: サーバーに送信する `Accept` ヘッダーのみを制御し、コンテンツの優先形式を指定します。**取得したコンテンツは、指定した形式に関わらず、LLM 処理のためにプレーンテキストに正規化されます**。省略した場合のデフォルトは `"auto"` です。
+  - `"auto"`（デフォルト）: コンテンツネゴシエーション（`Accept: text/markdown, text/html;q=0.9, text/plain;q=0.8, */*;q=0.1`）により markdown を優先し、HTML、プレーンテキスト、その他のコンテンツタイプにフォールバックします。**ほとんどのユースケースで推奨**されます。markdown をサポートするサーバーではトークン使用量を最大 80% 削減でき、JSON のみの API にも対応しています。
+  - `"markdown"`: `Accept: text/markdown, */*;q=0.1` を優先します。明示的に markdown コンテンツが必要な場合に使用してください。
+  - `"html"`: `Accept: text/html, */*;q=0.1` を優先します。サーバーが Accept ヘッダーに HTML を必要とする場合に使用してください。コンテンツは LLM 処理のためにプレーンテキストに変換されます。
+  - `"text"`: `Accept: text/plain, */*;q=0.1` を優先します。プレーンテキストコンテンツが特に必要な場合に使用してください。
 
-## Qwen Code での `web_fetch` の使用方法
+## Qwen Code で `web_fetch` を使用する方法
 
-Qwen Code で `web_fetch` を使用するには、URL と、その URL から抽出したい内容を説明するプロンプトを指定します。ツールは URL を取得する前に確認を求めます。確認が完了すると、ツールはコンテンツを直接取得し、AI モデルを使用して処理します。
+Qwen Code で `web_fetch` を使用するには、URL と、その URL から抽出したい内容を説明するプロンプトを指定します。ツールは URL を取得する前に確認を求めます。確認後、ツールはコンテンツを直接取得し、AI モデルを使用して処理します。
 
-このツールは自動的に次の処理を行います：
+ツールは以下を自動的に行います：
 
 - 必要に応じて HTML をテキストに変換
-- GitHub blob URL の処理（raw URL への変換）
-- セキュリティ向上のため HTTP URL を HTTPS にアップグレード
-- Markdown のコンテンツネゴシエーションをサポート（トークン使用量を大幅に削減）
+- GitHub の blob URL を raw URL に変換
+- セキュリティのために HTTP URL を HTTPS にアップグレード
+- markdown 向けのコンテンツネゴシエーションをサポート（トークン使用量を大幅に削減）
 
 使用例：
 
@@ -43,7 +43,7 @@ web_fetch(url="https://example.com", prompt="Get the raw content", format="markd
 
 ## `web_fetch` の使用例
 
-単一の記事を要約する：
+記事を要約する：
 
 ```
 web_fetch(url="https://example.com/news/latest", prompt="Can you summarize the main points of this article?")
@@ -61,7 +61,7 @@ GitHub ドキュメントを分析する：
 web_fetch(url="https://github.com/QwenLM/Qwen/blob/main/README.md", prompt="What are the installation steps and main features?")
 ```
 
-Markdown コンテンツを取得する（Markdown for Agents をサポートするサーバー向け）：
+markdown コンテンツを取得する（Markdown for Agents をサポートするサーバー向け）：
 
 ```
 web_fetch(url="https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/", prompt="Extract the key information", format="markdown")
@@ -69,37 +69,37 @@ web_fetch(url="https://developers.cloudflare.com/fundamentals/reference/markdown
 
 ## 重要な注意事項
 
-- **単一 URL の処理:** `web_fetch` は一度に 1 つの URL しか処理しません。複数の URL を分析する場合は、ツールを個別に呼び出してください。
-- **URL 形式:** ツールは HTTP URL を自動的に HTTPS にアップグレードし、コンテンツへのアクセスを改善するため GitHub blob URL を raw 形式に変換します。
-- **コンテンツネゴシエーション:** ツールは「Markdown for Agents」のコンテンツネゴシエーションをサポートしています。`format="auto"`（デフォルト）を使用すると、`Accept: text/markdown, text/html` ヘッダーが送信され、Markdown をサポートするサーバーは HTML の代わりに Markdown を直接返すことができます。これにより、トークン使用量を最大 80% 削減できます。
-- **コンテンツ処理:** ツールはコンテンツを直接取得し、AI モデルで処理します。サーバーが HTML を返す場合、読みやすいテキスト形式に変換されます。サーバーが Markdown またはプレーンテキストを返す場合、コンテンツはそのまま使用されます。
-- **出力品質:** 出力の品質は、プロンプト内の指示の明確さに依存します。
-- **MCP ツール:** MCP 提供の Web 取得ツール（`mcp__` で始まる）が利用可能な場合は、制限が少ない可能性があるため、そちらの使用を推奨します。
+- **単一 URL の処理:** `web_fetch` は一度に 1 つの URL を処理します。複数の URL を分析するには、ツールを個別に呼び出してください。
+- **URL 形式:** ツールは HTTP URL を自動的に HTTPS にアップグレードし、GitHub の blob URL をコンテンツに適切にアクセスできるよう raw 形式に変換します。
+- **コンテンツネゴシエーション:** ツールは「Markdown for Agents」コンテンツネゴシエーションをサポートしています。`format="auto"`（デフォルト）を使用すると、`Accept: text/markdown, text/html;q=0.9, text/plain;q=0.8, */*;q=0.1` を送信し、markdown をサポートするサーバーが HTML の代わりに markdown を直接返せるようになります。低優先度の `*/*` フォールバックにより、JSON のみの API やその他のテキスト以外のエンドポイントにも対応できます。これにより、トークン使用量を最大 80% 削減できます。
+- **コンテンツ処理:** ツールはコンテンツを直接取得し、AI モデルで処理します。サーバーが HTML を返した場合は読み取り可能なテキスト形式に変換します。サーバーが markdown、プレーンテキスト、または JSON などのフォールバックコンテンツタイプを返した場合は、そのまま使用します。
+- **出力品質:** 出力の品質はプロンプトの指示の明確さに依存します。
+- **MCP ツール:** MCP が提供する web fetch ツール（"mcp\_\_" で始まるもの）が利用可能な場合は、制限が少ない可能性があるためそちらを優先して使用してください。
 
-## Markdown for Agents のサポート
+## Markdown for Agents サポート
 
-Qwen Code の `web_fetch` ツールは、[Cloudflare の Markdown for Agents](https://blog.cloudflare.com/markdown-for-agents/) 仕様をサポートしています。この機能により、Web サイトは AI エージェントに対して Markdown コンテンツを直接提供できるようになり、HTML を解析する場合と比較してトークン使用量を大幅に削減できます。
+Qwen Code の `web_fetch` ツールは、[Cloudflare の Markdown for Agents](https://blog.cloudflare.com/markdown-for-agents/) 仕様のサポートを実装しています。この機能により、ウェブサイトが AI エージェントに直接 markdown コンテンツを提供できるようになり、HTML を解析する場合と比較してトークン使用量を大幅に削減できます。
 
-### 動作原理
+### 仕組み
 
-1. `format` パラメータはサーバーに送信される `Accept` ヘッダー**のみ**を制御します（出力形式には影響しません）：
-   - `format="auto"`: `Accept: text/markdown, text/html` を送信
-   - `format="markdown"`: `Accept: text/markdown` を送信
-   - `format="html"`: `Accept: text/html` を送信
-   - `format="text"`: `Accept: text/plain` を送信
-2. サーバーが Markdown をサポートしている場合、`Content-Type: text/markdown` を返します
-3. ツールは変換を行わず、Markdown またはプレーンテキストのコンテンツを直接使用します
-4. サーバーが HTML を返す場合、LLM 処理用に読みやすいテキスト形式に変換します
-5. すべてのコンテンツは AI モデルで処理される前にテキストに正規化されます
+1. `format` パラメータはサーバーに送信する `Accept` ヘッダー**のみ**を制御します（出力形式には影響しません）：
+   - `format="auto"`: `Accept: text/markdown, text/html;q=0.9, text/plain;q=0.8, */*;q=0.1` を送信
+   - `format="markdown"`: `Accept: text/markdown, */*;q=0.1` を送信
+   - `format="html"`: `Accept: text/html, */*;q=0.1` を送信
+   - `format="text"`: `Accept: text/plain, */*;q=0.1` を送信
+2. サーバーが markdown をサポートしている場合、`Content-Type: text/markdown` を返します
+3. ツールは markdown またはプレーンテキストのコンテンツを変換せずにそのまま使用します
+4. サーバーが HTML を返した場合、LLM 処理のために読み取り可能なテキスト形式に変換します。markdown、プレーンテキスト、JSON などのフォールバックコンテンツタイプはそのまま使用します
+5. すべてのコンテンツは AI モデルによる処理前にテキストに正規化されます
 
 ### メリット
 
-- **トークン効率:** Markdown コンテンツは、同等の HTML と比較して通常 80% 少ないトークンで済みます
-- **構造の保持:** Markdown は意味構造（見出し、リストなど）を保持します
-- **後方互換性:** すべての Web サイトで動作し、対応サーバーではより優れた体験を提供します
+- **トークン効率:** markdown コンテンツは同等の HTML と比較して通常 80% 少ないトークン数で済みます
+- **より良い構造:** markdown は意味的な構造（見出し、リストなど）を保持します
+- **後方互換性:** すべてのウェブサイトで動作し、サポートするサーバーではより優れたエクスペリエンスを提供します
 
-### Markdown をサポートするサーバーの例
+### markdown をサポートするサーバーの例
 
-- Cloudflare 開発者ドキュメント
-- Cloudflare ブログ
-- Cloudflare の「Markdown for Agents」機能を使用しているすべての Web サイト
+- Cloudflare Developer Documentation
+- Cloudflare Blog
+- Cloudflare の「Markdown for Agents」機能を使用するすべてのウェブサイト

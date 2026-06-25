@@ -1,27 +1,39 @@
-# セッション Recap の設計
+# セッションリキャップ設計
 
-> ユーザーがアイドル状態のセッションに戻った際、オンデマンド（`/recap`）またはターミナルが 5 分以上フォーカスを失った（blurred）後に、作業の続きを把握するための簡潔な要約（1〜2 文）を表示する機能。
+> ユーザーがアイドル状態のセッションに戻ったとき、「どこまでやったか」を
+> 簡潔（1〜2文）に要約して表示します。オンデマンド（`/recap`）か、
+> ターミナルが 5 分以上非アクティブになった後のフォーカス復帰時に動作します。
 
 ## 概要
 
-ユーザーが数日ぶりに古いセッションを `/resume` した際、何をやっていたか、次は何をすべきかを思い出すために長い履歴をスクロールするのは大きな摩擦ポイントとなる。単にメッセージを再読み込みするだけでは、この UX 上の課題は解決できない。
+ユーザーが数日後に古いセッションを `/resume` で再開するとき、
+**何をしていたか・次に何をすべきか**を思い出すために大量の履歴をスクロールするのは
+大きな摩擦ポイントです。メッセージを再読み込みするだけではこの UX 問題は解決しません。
 
-ユーザーが戻ってきた際に、簡潔な 1〜2 文の要約を積極的に表示することを目的とする：
+ユーザーが戻ってきたときに、簡潔な 1〜2 文のリキャップをプロアクティブに表示することが目標です:
 
-- **高レベルのタスク**（何をしているか）→ **次のステップ**（次に何をすべきか）。
-- アシスタントの実際の返信とは視覚的に区別し、新しいモデル出力と誤認されないようにする。
-- **ベストエフォート型**：失敗時は静かに処理し、メインのフローを絶対に中断させない。
+- **高レベルのタスク**（何をしているか）→ **次のステップ**（次に何をするか）
+- 実際のアシスタントの返答と視覚的に区別され、新しいモデル出力と混同されない
+- **ベストエフォート**: 失敗はサイレントで、メインフローを決して妨げない
 
 ## トリガー
 
-| トリガー | 条件 | 実装 |
-| ---------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| **手動** | ユーザーが `/recap` を実行 | `recapCommand.ts` が同じ基盤サービスを呼び出す |
-| **自動** | ターミナルがフォーカスを失った状態（DECSET 1004 フォーカスプロトコル）が ≥ 5 分継続 + フォーカスが復帰 + ストリームが `Idle` | `useAwaySummary.ts` — 5 分のブラータイマー + `useFocus` イベントリスナー |
+| トリガー         | 条件                                                                                   | 実装                                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **手動**      | ユーザーが `/recap` を実行                                                           | `recapCommand.ts` が同じ基底サービスを呼び出す                                                                                                |
+| **自動**        | ターミナルが非アクティブ（DECSET 1004 フォーカスプロトコル）5 分以上 + フォーカス復帰 + ストリームが `Idle` | `useAwaySummary.ts` — 5 分の非アクティブタイマー + `useFocus` イベントリスナー                                                                  |
+| **Daemon HTTP** | リモートクライアントが `POST /session/:id/recap` を呼び出す                                                | `server.ts` ルート → `bridge.generateSessionRecap`（ext-method ラウンドトリップ）→ `acpAgent.ts` が `generateSessionRecap(session.getConfig(), signal)` を呼び出す |
 
-両方のパスは単一の関数 `generateSessionRecap()` に集約され、同一の動作を保証する。自動トリガーは `general.showSessionRecap` 設定によって制御される（デフォルト: 無効 — 明示的なオプトインが必要。これにより、待機中の LLM 呼び出しがユーザーの請求に静かに追加されることを防ぐ）。手動コマンドはこの設定を無視する。
+3 つのパスはすべて `core/services/sessionRecap.ts` の同一の `generateSessionRecap()` 関数に集約され、動作の一貫性を保証します。
+自動トリガーは `general.showSessionRecap`（デフォルト: オフ — 明示的なオプトインが必要で、アンビエントな LLM 呼び出しがユーザーの請求に黙って追加されることはない）でゲートされます。手動コマンドと Daemon HTTP ルートはこの設定を無視します（呼び出し元が明示的にリクエストしているため）。
 
-## Architecture
+### Daemon アクセスパス
+
+Daemon ルートは非厳格ゲート（`/session/:id/prompt` と同じ方針 — リキャップはトークンを消費するが状態を変更しない）。ケイパビリティタグ `session_recap` が `/capabilities.features` でルートをアドバタイズします。SDK ヘルパー: `DaemonClient.recapSession(sessionId, opts)` および `DaemonSessionClient.recap(opts)`。ワイヤーコントラクトとエラーエンベロープは `docs/developers/qwen-serve-protocol.md` § `POST /session/:id/recap` を参照してください。
+
+キャンセルは **v1 では未実装**です。ルートは HTTP クライアントの切断を監視せず、`AbortSignal` は `bridge.generateSessionRecap` に渡されず、ACP チャイルドハンドラーはキャンセルされない `AbortController().signal` をコアヘルパーに渡します（クロスプロセスのアボートプランビングはまだありません）。唯一の上限はブリッジの 60 秒 `SESSION_RECAP_TIMEOUT_MS` バックストップと、ACP チャネル終了に対するトランスポートクローズのレースです。HTTP 側に AbortController を単独で組み込んでも見た目だけ — チャイルド側の LLM 呼び出しは完了まで実行されるため、クロスプロセスのアボートなしに e2e キャンセルは実現できません。リキャップは短い（シングルアテンプトのサイドクエリ、`maxOutputTokens: 300`、通常 1〜5 秒）ため、v1 ではこれで十分です。将来的にリクエスト ID ベースのキャンセル ext-method で完全なエンドツーエンドキャンセルを実装することは、帯域コストが正当化される場合に検討できます。
+
+## アーキテクチャ
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -56,142 +68,142 @@
 
 ### ファイル
 
-| ファイル | 役割 |
+| ファイル                                                         | 責務                                                                   |
 | ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| `packages/core/src/services/sessionRecap.ts` | 1 回の LLM 呼び出し + 履歴フィルタリング + タグ抽出 |
-| `packages/cli/src/ui/hooks/useAwaySummary.ts` | 自動トリガー用 React フック |
-| `packages/cli/src/ui/commands/recapCommand.ts` | `/recap` 手動実行のエントリポイント |
-| `packages/cli/src/ui/components/messages/StatusMessages.tsx` | `AwayRecapMessage` レンダラー（`※` + 太字 `recap:` + イタリック本文、すべて薄暗表示） |
-| `packages/cli/src/ui/types.ts` | `HistoryItemAwayRecap` 型定義 |
-| `packages/cli/src/ui/components/HistoryItemDisplay.tsx` | `away_recap` 履歴アイテムをレンダラーにディスパッチ |
-| `packages/cli/src/config/settingsSchema.ts` | `general.showSessionRecap` および `general.sessionRecapAwayThresholdMinutes` 設定 |
+| `packages/core/src/services/sessionRecap.ts`                 | ワンショット LLM 呼び出し + 履歴フィルタリング + タグ抽出                              |
+| `packages/cli/src/ui/hooks/useAwaySummary.ts`                | 自動トリガー React フック                                                          |
+| `packages/cli/src/ui/commands/recapCommand.ts`               | `/recap` 手動エントリポイント                                                      |
+| `packages/cli/src/ui/components/messages/StatusMessages.tsx` | `AwayRecapMessage` レンダラー（`※` + ボールド `recap:` + イタリック内容、全体ディム） |
+| `packages/cli/src/ui/types.ts`                               | `HistoryItemAwayRecap` 型                                                        |
+| `packages/cli/src/ui/components/HistoryItemDisplay.tsx`      | `away_recap` 履歴アイテムをレンダラーへディスパッチ                                  |
+| `packages/cli/src/config/settingsSchema.ts`                  | `general.showSessionRecap` + `general.sessionRecapAwayThresholdMinutes` 設定      |
 
 ## プロンプト設計
 
 ### システムプロンプト
 
-`generationConfig.systemInstruction` がこの 1 回の呼び出しでメインエージェントのシステムプロンプトを上書きするため、モデルはコーディングアシスタントではなく要約ジェネレーターとしてのみ動作する。
+`generationConfig.systemInstruction` がこの単一の呼び出しに対してメインエージェントのシステムプロンプトを置き換えるため、モデルはリキャップジェネレーターとしてのみ動作し、コーディングアシスタントとしては動作しません。
 
-なお、`GeminiClient.generateContent()` は内部的にプロンプトを `getCustomSystemPrompt()` に通し、ユーザーのメモリ（`QWEN.md` / 管理対象自動メモリ）をサフィックスとして追加する。最終的なシステムプロンプトは `要約用プロンプト + ユーザーメモリ` となり、要約にとって有用なプロジェクトコンテキストとなる（情報漏洩ではない）。
+`GeminiClient.generateContent()` は内部でプロンプトを `getCustomSystemPrompt()` に通し、ユーザーのメモリ（QWEN.md / 管理された自動メモリ）をサフィックスとして追加します。最終的なシステムプロンプトは `リキャッププロンプト + ユーザーメモリ` — リキャップに有用なプロジェクトコンテキストであり、漏洩ではありません。
 
-以下の箇条書きは `RECAP_SYSTEM_PROMPT` と 1:1 で対応している：
+以下の箇条書きは `RECAP_SYSTEM_PROMPT` と 1:1 対応しています:
 
-- 40 語以内、1〜2 文の平文（マークダウン / リスト / 見出しなし）。中国語の場合は、合計約 80 文字を上限とする。
-- 1 文目：高レベルのタスク。2 文目：具体的な次のステップ。
-- 明示的に禁止：実施内容の列挙、ツール呼び出しの羅列、ステータス報告。
+- 40 語以内、プレーンテキスト 1〜2 文（markdown / リスト / 見出し不可）。中国語の場合は合計約 80 文字を目安とする。
+- 最初の文: 高レベルのタスク。次に: 具体的な次のステップ。
+- 明示的に禁止: 実施内容のリストアップ、ツール呼び出しの列挙、ステータスレポート。
 - 会話の主要言語（英語または中国語）に合わせる。
-- 出力を `<recap>...</recap>` で囲む。タグの外に何も出力しない。
+- 出力を `<recap>...</recap>` で囲む。タグ外には何も出力しない。
 
 ### 構造化出力と抽出
 
-モデルには、回答を `<recap>...</recap>` で囲むよう指示する：
+モデルは回答を `<recap>...</recap>` で囲むよう指示されます:
 
 ```
 <recap>Refactoring loopDetectionService.ts to address long-session OOM. Next step is to implement option B.</recap>
 ```
 
-理由：一部のモデル（GLM ファミリー、推論モデル）は最終回答の前に「思考」段落を出力する。生のテキストをそのまま返すと、その推論過程が UI に漏れてしまう。
+理由: 一部のモデル（GLM ファミリー、推論モデル）は最終回答の前に「思考」段落を書きます。生テキストを返すと、その推論が UI に漏洩してしまいます。
 
-`extractRecap()` には 3 つのフォールバック階層がある：
+`extractRecap()` には 3 段階のフォールバックがあります:
 
-1. 両方のタグが存在する場合：`<recap>...</recap>` の間のテキストを取得（推奨）。
-2. 開始タグのみ存在する場合（例：`maxOutputTokens` により終了タグが切り捨てられた）：開始タグ以降のすべてを取得。
-3. タグが完全に欠落している場合：空文字列を返す → サービスが `null` を返す → UI は何もレンダリングしない。
+1. 両タグが存在する場合: `<recap>...</recap>` の間の内容を取得（推奨）。
+2. 開きタグのみの場合（例: `maxOutputTokens` で閉じタグが切り捨てられた場合）: 開きタグ以降のすべてを取得。
+3. タグが完全に欠落している場合: 空文字列を返す → サービスが `null` を返す → UI は何もレンダリングしない。
 
-第 3 階層は「間違ったものを表示するより、表示しない方がまし」という方針に基づいている。モデルの推論前置きを表面化させることは、要約を一切表示しないよりも悪影響が大きい。
+3 番目の段階は「間違ったものを表示するくらいならスキップ」— モデルの推論プリアンブルを表示することは、リキャップをまったく表示しないよりも悪いためです。
 
-### 呼び出しパラメータ
+### 呼び出しパラメーター
 
-| パラメータ | 値 | 理由 |
+| パラメーター         | 値                             | 理由                                                |
 | ------------------- | ------------------------------ | ----------------------------------------------------- |
-| `model` | `getFastModel() ?? getModel()` | 要約に最上位モデルは不要 |
-| `tools` | `[]` | 1 回のクエリ実行、ツール使用なし |
-| `maxOutputTokens` | `300` | 1〜2 文の短い文章 + タグ用の余裕 |
-| `temperature` | `0.3` | ほぼ決定論的だが、自然なバリエーションを許容 |
-| `systemInstruction` | 上記の要約専用プロンプト | メインエージェントの役割定義を上書き |
+| `model`             | `getFastModel() ?? getModel()` | リキャップにフロンティアモデルは不要                   |
+| `tools`             | `[]`                           | ワンショットクエリ、ツール使用なし                      |
+| `maxOutputTokens`   | `300`                          | 1〜2 短文 + タグのための余裕                          |
+| `temperature`       | `0.3`                          | ほぼ決定論的で、自然なバリエーションを少し含む          |
+| `systemInstruction` | 上記のリキャップ専用プロンプト    | メインエージェントのロール定義を置き換える              |
 
 ## 履歴フィルタリング
 
-`geminiClient.getChat().getHistory()` は以下の要素を含む `Content[]` を返す：
+`geminiClient.getChat().getHistory()` は以下を含む `Content[]` を返します:
 
-- `user` / `model` のテキストメッセージ
-- `model` の `functionCall` パート
-- `user` の `functionResponse` パート（ファイル全体の内容を含む場合あり）
-- `model` の思考パート（`part.thought` / `part.thoughtSignature`、モデルの隠れた推論）
+- `user` / `model` テキストメッセージ
+- `model` の `functionCall` パーツ
+- `user` の `functionResponse` パーツ（完全なファイル内容を含む場合がある）
+- `model` の思考パーツ（`part.thought` / `part.thoughtSignature`、モデルの内部推論）
 
-`filterToDialog()` は、**テキストが空でなく、かつ思考パートではない** `user` / `model` パートのみを保持する。理由は 2 つある：
+`filterToDialog()` は**テキストが空でなく、思考でない** `user` / `model` パーツのみを保持します。理由は 2 つあります:
 
-- **ツール呼び出し / 応答**：1 つの `functionResponse` が 10K トークンを超える場合がある。このようなメッセージが 30 件あると、要約用 LLM が無関係な詳細に埋もれ、トークンの無駄遣いになるだけでなく、「Y ファイルを読み取るために X ツールを呼び出した」といった実装ノイズに要約が偏ってしまう。
-- **思考パート**：モデルの内部推論を保持する。これを含めると、隠れた思考連鎖を対話として扱い、要約テキストに表面化させてしまうリスクがある。
+- **ツール呼び出し / レスポンス**: 単一の `functionResponse` が 10K+ トークンになる場合があります。30 件のメッセージがあると、リキャップ LLM を無関係な詳細で溺れさせ、トークンを浪費するだけでなく、「X ツールを呼び出して Y ファイルを読んだ」といった実装ノイズにリキャップがバイアスされます。
+- **思考パーツ**: モデルの内部推論を含みます。これを含めると、隠れたチェーン・オブ・ソートをダイアログとして扱い、リキャップテキストに露出するリスクがあります。
 
-空のメッセージを除外した後、`takeRecentDialog` は直近 30 メッセージにスライスし、未完了のモデル/ツール応答が境界に来る位置からスライスを開始することを拒否する。
+空のメッセージを除外した後、`takeRecentDialog` で最後の 30 メッセージにスライスし、ぶら下がった model/tool レスポンスでスライスが始まらないようにします。
 
-## 同時実行とエッジケース
+## 並行性とエッジケース
 
 ### 自動トリガーフックのステートマシン
 
-`useAwaySummary` は 3 つの ref を保持する：
+`useAwaySummary` は 3 つの ref を保持します:
 
-| Ref | 意味 |
+| Ref               | 意味                                           |
 | ----------------- | ------------------------------------------------- |
-| `blurredAtRef` | フォーカス喪失の開始時刻（フォーカス復帰までクリアされない） |
-| `recapPendingRef` | LLM 呼び出しが実行中かどうか |
-| `inFlightRef` | 現在実行中の `AbortController` |
+| `blurredAtRef`    | 非アクティブ開始時刻（フォーカスが戻るまでクリアされない） |
+| `recapPendingRef` | LLM 呼び出しが実行中かどうか                  |
+| `inFlightRef`     | 現在実行中の `AbortController`                |
 
-`useEffect` の依存配列：`[enabled, config, isFocused, isIdle, addItem, thresholdMs]`。
+`useEffect` の依存関係: `[enabled, config, isFocused, isIdle, addItem, thresholdMs]`。
 
-| イベント | アクション |
+| イベント                                                            | アクション                                                                                                                                 |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `!enabled \|\| !config` | 実行中の呼び出しを中止 + `inFlightRef` をクリア + `blurredAtRef` をクリア |
-| `!isFocused` かつ `blurredAtRef === null` | `blurredAtRef = Date.now()` を設定 |
-| `isFocused` かつ `blurredAtRef === null` | 早期リターン（処理すべきブラーサイクルなし — 初回レンダリング、または短いブラーリセット直後） |
-| `isFocused` かつブラー継続時間 < 5 分 | `blurredAtRef` をクリアし、次のブラーサイクルを待機 |
-| `isFocused` かつブラー ≥ 5 分 かつ `recapPendingRef` | リターン（重複排除） |
-| `isFocused` かつブラー ≥ 5 分 かつ `!isIdle` | `blurredAtRef` を保持し、ターンが完了するまで待機（`isIdle` が依存配列に含まれているため、ストリーミング完了時にエフェクトが再実行される） |
-| `isFocused` かつブラー ≥ 5 分 かつ `shouldFireRecap` が false を返す | `blurredAtRef` をクリアしてリターン — 前回の要約以降、会話の進展が不十分（ユーザーターン ≥ 2 回が必要。Claude Code に準拠） |
-| `isFocused` かつすべての条件を満たす | `blurredAtRef` をクリア、`recapPendingRef = true` を設定、`AbortController` を作成、LLM リクエストを送信 |
+| `!enabled \|\| !config`                                          | 実行中の呼び出しをアボート + `inFlightRef` をクリア + `blurredAtRef` をクリア                                                                      |
+| `!isFocused` かつ `blurredAtRef === null`                         | `blurredAtRef = Date.now()` をセット                                                                                                        |
+| `isFocused` かつ `blurredAtRef === null`                          | 早期リターン（処理する非アクティブサイクルなし — 初回レンダリングまたは短い非アクティブリセット直後）                                                |
+| `isFocused` かつ非アクティブ時間 < 5 分                            | `blurredAtRef` をクリアし、次の非アクティブサイクルを待機                                                                                         |
+| `isFocused` かつ非アクティブ ≥ 5 分 かつ `recapPendingRef`               | リターン（重複排除）                                                                                                                        |
+| `isFocused` かつ非アクティブ ≥ 5 分 かつ `!isIdle`                       | `blurredAtRef` を**保持**してターンの完了を待機（`isIdle` が deps にあるため、ストリーミング完了時にエフェクトが再発火する） |
+| `isFocused` かつ非アクティブ ≥ 5 分 かつ `shouldFireRecap` が false を返す | `blurredAtRef` をクリアしてリターン — 前回のリキャップ以降、会話が十分に進んでいない（ユーザーターン 2 回以上が必要、Claude Code と同様） |
+| `isFocused` かつすべての条件を満たす                               | `blurredAtRef` をクリア、`recapPendingRef = true` をセット、`AbortController` を作成、LLM リクエストを送信                                     |
 
-`.then` コールバック内で `isIdleRef.current` を**再チェック**する：LLM 実行中にユーザーが新しいターンを開始していた場合、遅れて到着した要約は破棄され、ターン途中への挿入を防ぐ。
+`.then` コールバックは `isIdleRef.current` を**再チェック**します: LLM 実行中にユーザーが新しいターンを開始した場合、遅れて届いたリキャップはターン途中への挿入を避けるためにドロップされます。
 
-`.finally` は `recapPendingRef` をクリアし、`inFlightRef.current === controller` の場合のみ `inFlightRef` をクリアする（これにより、新しいコントローラーを上書きしないようにする）。
+`.finally` は `recapPendingRef` をクリアし、`inFlightRef.current === controller` の場合のみ `inFlightRef` をクリアします（新しいコントローラーを上書きしないため）。
 
-2 つ目の `useEffect` は、アンマウント時に実行中のコントローラーを中止する。
+2 番目の `useEffect` がアンマウント時に実行中のコントローラーをアボートします。
 
-### `/recap` のゲート処理
+### `/recap` のゲート制御
 
-`CommandContext.ui.isIdleRef` は現在のストリーム状態を公開する（既存の `btwAbortControllerRef` パターンに準拠）。インタラクティブモードでは、`!isIdleRef.current` または `pendingItem !== null` の場合、`recapCommand` は実行を拒否する。`pendingItem` だけでは不十分である。通常のモデル返信は `streamingState === Responding` かつ `pendingItem` が `null` の状態で実行されるためである。
+`CommandContext.ui.isIdleRef` が現在のストリーム状態を公開します（既存の `btwAbortControllerRef` パターンを踏襲）。インタラクティブモードでは、`recapCommand` は `!isIdleRef.current` **または** `pendingItem !== null` のときに拒否します。`pendingItem` だけでは不十分です。通常のモデル返答は `streamingState === Responding` で `pendingItem` が null のまま実行されるためです。
 
 ## 設定とモデル選択
 
-### ユーザー向け設定項目
+### ユーザー向け設定
 
-| 設定 | デフォルト | 備考 |
+| 設定                                    | デフォルト | 備考                                                                               |
 | ------------------------------------------ | ------- | ----------------------------------------------------------------------------------- |
-| `general.showSessionRecap` | `false` | 自動トリガーのみ適用。手動 `/recap` はこれを無視する。 |
-| `general.sessionRecapAwayThresholdMinutes` | `5` | フォーカス復帰時に自動要約が発火するまでのブラー時間（分）。Claude Code のデフォルトに一致。 |
-| `fastModel` | 未設定 | 高速かつ低コストな要約に推奨（例：`qwen3-coder-flash`）。 |
+| `general.showSessionRecap`                 | `false` | 自動トリガーのみ。手動 `/recap` はこれを無視する。                                    |
+| `general.sessionRecapAwayThresholdMinutes` | `5`     | 自動リキャップが発火するまでの非アクティブ時間（分）。Claude Code のデフォルトと同じ。 |
+| `fastModel`                                | 未設定   | 高速・低コストのリキャップに推奨（例: `qwen3-coder-flash`）。                          |
 
-### モデルのフォールバック
+### モデルフォールバック
 
-`config.getFastModel() ?? config.getModel()` の動作：
+`config.getFastModel() ?? config.getModel()`:
 
-- ユーザーが `fastModel` を設定しており、現在の認証タイプで有効な場合 → `fastModel` を使用。
-- それ以外の場合 → メインセッションモデルにフォールバック（動作はするが、コストが高く速度も遅い）。
+- ユーザーが `fastModel` を設定していて、現在の認証タイプで有効な場合 → `fastModel` を使用。
+- それ以外の場合 → メインセッションモデルにフォールバック（動作するが、コストと速度の面で不利）。
 
-## 観測性（Observability）
+## オブザーバビリティ
 
-`createDebugLogger('SESSION_RECAP')` は以下を出力する：
+`createDebugLogger('SESSION_RECAP')` が以下を出力します:
 
-- 要約パスでキャッチされた例外（`debugLogger.warn`）。
+- リキャップパスからキャッチされた例外（`debugLogger.warn`）
 
-すべての失敗はユーザーに対して**完全に透過的**である。要約は補助機能であり、UI に例外をスローすることはない。開発者はデバッグログファイル内の `[SESSION_RECAP]` タグを `grep` できる：デフォルトでは `~/.qwen/debug/<sessionId>.txt` に書き込まれる（`latest.txt` は現在のセッションへのシンボリックリンク）。`QWEN_DEBUG_LOG_FILE=0` で無効化可能。
+すべての失敗は**ユーザーに対して完全に透明** — リキャップは補助機能であり、UI に例外をスローしません。開発者はデバッグログファイルで `[SESSION_RECAP]` タグを grep できます: デフォルトで `~/.qwen/debug/<sessionId>.txt` に書き込まれます（`latest.txt` は現在のセッションへのシンボリックリンク）。`QWEN_DEBUG_LOG_FILE=0` で無効化できます。
 
 ## スコープ外
 
-| 項目 | 除外理由 |
+| 項目                                             | 理由                                                                                                                                  |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `/recap` の進行状況 UI（スピナー / `pendingItem`） | 3〜5 秒の待機は許容範囲内であり、実装が複雑化する。 |
-| 自動テスト | サービスは小規模（約 150 行）であり、まずは手動でエンドツーエンドテストを実施。ユニットテストは別の PR で対応可能。 |
-| ローカライズされたプロンプト | システムプロンプトはモデル向けであり、英語が最も信頼性の高い基盤となる。出力言語はモデルが会話内容から自動的に選択する。 |
-| `QWEN_CODE_ENABLE_AWAY_SUMMARY` 環境変数 | Claude Code はテレメトリ無効化時に機能を維持するために使用しているが、Qwen Code の現在のテレメトリモデルでは不要。 |
-| `/resume` 完了時の自動要約 | 自然な拡張ではあるが、`useResumeCommand` へのフックポイントが必要であり、この PR のスコープ外。 |
+| `/recap` の進行状況 UI（スピナー / pendingItem） | 3〜5 秒の待機は許容範囲内で、複雑さを増すだけ。                                                                                           |
+| 自動テスト                                  | サービスは小さく（約 150 行）、最初は手動でエンドツーエンドテスト済み。ユニットテストは別 PR で追加できる。                                   |
+| ローカライズされたプロンプト                | システムプロンプトはモデル向けであり、英語が最も信頼性の高い基盤。モデルは会話から出力言語を選択する。 |
+| `QWEN_CODE_ENABLE_AWAY_SUMMARY` 環境変数          | Claude Code はテレメトリ無効時にこの機能を維持するために使用しているが、Qwen Code の現在のテレメトリモデルではこれは不要。            |
+| `/resume` 完了時の自動リキャップ               | 自然な後続機能だが `useResumeCommand` にフックポイントが必要であり、この PR のスコープ外。                                              |
