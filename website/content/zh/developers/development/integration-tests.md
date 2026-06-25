@@ -20,7 +20,7 @@ npm run test:e2e
 
 ## 运行特定测试集
 
-要运行部分测试文件，可以使用 `npm run <integration test command> <file_name1> ...`，其中 `<integration test command>` 为 `test:e2e` 或 `test:integration*`，`<file_name>` 是 `integration-tests/` 目录中的任意 `.test.js` 文件。例如，以下命令将运行 `list_directory.test.js` 和 `write_file.test.js`：
+要运行部分测试文件，可以使用 `npm run <integration test command> <file_name1> ....`，其中 &lt;integration test command&gt; 为 `test:e2e` 或 `test:integration*`，`<file_name>` 是 `integration-tests/` 目录中的任意 `.test.ts` 文件。例如，以下命令将运行 `list_directory.test.ts` 和 `write_file.test.ts`：
 
 ```bash
 npm run test:e2e list_directory write_file
@@ -120,7 +120,7 @@ npm run lint:fix
 ```
 .integration-tests/
 └── <run-id>/
-    └── <test-file-name>.test.js/
+    └── <test-file-name>.test.ts/
         └── <test-case-name>/
             ├── output.log
             └── ...other test artifacts...

@@ -1,6 +1,6 @@
-# 使用 Qwen Code 配置 MCP 服务器
+# 在 Qwen Code 中使用 MCP 服务器
 
-本文档提供了在 Qwen Code 中配置和使用 Model Context Protocol (MCP) 服务器的指南。
+本文档介绍如何在 Qwen Code 中配置和使用模型上下文协议（MCP）服务器。
 
 ## 什么是 MCP 服务器？
 
@@ -183,18 +183,7 @@ OAuth 在以下环境中将无法工作：
 
 #### 管理 OAuth 身份验证
 
-使用 `/mcp auth` 命令管理 OAuth 身份验证：
-
-```bash
-# List servers requiring authentication
-/mcp auth
-
-# Authenticate with a specific server
-/mcp auth serverName
-
-# Re-authenticate if tokens expire
-/mcp auth serverName
-```
+在交互式 Qwen Code 会话中使用 `/mcp` 对话框查看 MCP 服务器并管理 OAuth 身份验证。
 
 #### OAuth 配置属性
 
@@ -212,10 +201,13 @@ OAuth 在以下环境中将无法工作：
 
 OAuth 令牌将自动：
 
-- **安全存储** 在 `~/.qwen/mcp-oauth-tokens.json` 中
-- **刷新** 过期时（如果提供刷新令牌）
-- **验证** 每次连接尝试前
-- **清理** 无效或过期时
+- **存储**在 `~/.qwen/mcp-oauth-tokens.json`（明文，权限 0600）。若设置了 `QWEN_CODE_FORCE_ENCRYPTED_FILE_STORAGE=true`，Qwen Code 将在可用时使用 keychain 存储，或使用 AES-256-GCM 加密的 `~/.qwen/mcp-oauth-tokens-v2.json`。
+- **刷新**（若刷新 token 可用，在过期时自动刷新）
+- **验证**（每次连接尝试前验证）
+- **清理**（无效或过期时自动清理）
+
+> [!WARNING]
+> 默认情况下，OAuth 令牌以明文存储在磁盘上。在共享或多用户机器上，请设置 `QWEN_CODE_FORCE_ENCRYPTED_FILE_STORAGE=true` 以保护凭据。
 
 #### 身份验证提供程序类型
 
@@ -859,9 +851,9 @@ qwen mcp add --transport sse oauth-server https://api.example.com/sse/ \
   --oauth-token-url https://provider.example.com/token
 ```
 
-### 管理服务器（`qwen mcp`）
+### 管理服务器（`/mcp`）
 
-要查看和管理当前配置的所有 MCP 服务器，请使用 `manage` 命令或直接运行 `qwen mcp`。这将打开一个交互式 TUI 对话框，你可以在其中：
+要查看和管理当前配置的所有 MCP 服务器，在交互式 Qwen Code 会话中打开 `/mcp` 对话框。该对话框支持：
 
 - 查看所有 MCP 服务器及其连接状态
 - 启用/禁用服务器
@@ -872,12 +864,16 @@ qwen mcp add --transport sse oauth-server https://api.example.com/sse/ \
 **命令：**
 
 ```bash
-qwen mcp
-# or
-qwen mcp manage
+qwen
 ```
 
-管理对话框提供了一个可视化界面，显示每个服务器的名称、配置详情、连接状态以及可用的工具/提示词。
+然后输入：
+
+```text
+/mcp
+```
+
+管理对话框提供可视化界面，展示每台服务器的名称、配置详情、连接状态及可用工具/提示词。
 
 ### 删除服务器（`qwen mcp remove`）
 

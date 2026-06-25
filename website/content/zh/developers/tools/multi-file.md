@@ -1,8 +1,10 @@
-# 多文件读取工具 (`read_many_files`)
+# 多文件读取（`read_many_files`）
 
-本文档介绍了 Qwen Code 中的 `read_many_files` 工具。
+> [!note]
+>
+> `read_many_files` 之前作为独立工具对外暴露，后已重构为内部工具函数。模型不再直接调用它——`read_file`、`glob` 和 `grep_search` 工具已覆盖单文件和多文件读取场景。以下信息仅供参考。
 
-## 说明
+## 描述
 
 使用 `read_many_files` 读取由路径或 glob 模式指定的多个文件内容。该工具的行为取决于提供的文件类型：
 

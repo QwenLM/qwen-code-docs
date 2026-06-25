@@ -1,12 +1,12 @@
-# 定时运行 Prompt
+# 按计划运行提示词
 
-> 使用 `/loop` 和 cron 调度工具，在 Qwen Code 会话中重复运行 prompt、轮询状态或设置一次性提醒。
+> 使用 `/loop` 和 cron 调度工具，在 Qwen Code 会话中重复运行提示词、轮询状态或设置一次性提醒。
 
-定时任务允许 Qwen Code 按固定间隔自动重新运行 prompt。你可以用它来轮询部署状态、跟踪 PR 进度、检查长时间运行的构建，或者在会话中稍后提醒自己执行某项操作。
+计划任务让 Qwen Code 能够按照设定的时间间隔自动重新运行某个提示词。可用于轮询部署状态、持续跟踪 PR、检查长时间运行的构建，或在会话期间提醒自己稍后执行某项操作。
 
-任务的作用域限定在当前会话：它们存在于当前的 Qwen Code 进程中，退出会话后即消失。不会向磁盘写入任何内容。
+任务的生命周期与会话绑定：它们存在于当前 Qwen Code 进程中，退出后即消失，不会写入磁盘。
 
-> **注意：** 定时任务是一项实验性功能。请在你的 [settings](../configuration/settings.md) 中配置 `experimental.cron: true`，或在环境变量中设置 `QWEN_CODE_ENABLE_CRON=1` 来启用。
+> **Tip:** 计划任务默认启用。如需禁用，请在[设置](../configuration/settings.md)中将 `experimental.cron` 设为 `false`，或在环境变量中设置 `QWEN_CODE_DISABLE_CRON=1`。
 
 ## 使用 /loop 调度重复运行的 prompt
 

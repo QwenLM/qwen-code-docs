@@ -1,11 +1,11 @@
 # Qwen Code Java SDK
 
-Qwen Code Java SDK 是一个精简的实验性 SDK，用于以编程方式访问 Qwen Code 功能。它提供了与 Qwen Code CLI 交互的 Java 接口，使开发者能够将 Qwen Code 的能力集成到 Java 应用中。
+Qwen Code Java SDK 是一个最小化实验性 SDK，用于以编程方式访问 Qwen Code 功能。它提供了与 Qwen Code CLI 交互的 Java 接口，让开发者能够将 Qwen Code 能力集成到 Java 应用程序中。
 
 ## 环境要求
 
 - Java >= 1.8
-- Maven >= 3.6.0（用于从源码构建）
+- Maven >= 3.6.0（从源码构建时需要）
 - qwen-code >= 0.5.0
 
 ### 依赖项
@@ -17,7 +17,7 @@ Qwen Code Java SDK 是一个精简的实验性 SDK，用于以编程方式访问
 
 ## 安装
 
-将以下依赖添加到你的 Maven `pom.xml` 中：
+在 Maven `pom.xml` 中添加以下依赖：
 
 ```xml
 <dependency>
@@ -27,7 +27,7 @@ Qwen Code Java SDK 是一个精简的实验性 SDK，用于以编程方式访问
 </dependency>
 ```
 
-如果使用 Gradle，请将其添加到 `build.gradle` 中：
+如果使用 Gradle，在 `build.gradle` 中添加：
 
 ```gradle
 implementation 'com.alibaba:qwencode-sdk:{$version}'
@@ -53,7 +53,7 @@ mvn install
 
 ## 快速开始
 
-使用该 SDK 最简单的方式是通过 `QwenCodeCli.simpleQuery()` 方法：
+最简单的使用方式是通过 `QwenCodeCli.simpleQuery()` 方法：
 
 ```java
 public static void runSimpleExample() {
@@ -62,7 +62,7 @@ public static void runSimpleExample() {
 }
 ```
 
-如需更高级的用法并自定义传输选项：
+使用自定义 transport 选项的高级用法：
 
 ```java
 public static void runTransportOptionsExample() {
@@ -81,7 +81,7 @@ public static void runTransportOptionsExample() {
 }
 ```
 
-如需处理流式内容并使用自定义内容消费者：
+使用自定义内容消费者进行流式内容处理：
 
 ```java
 public static void runStreamingExample() {
@@ -126,39 +126,39 @@ public static void runStreamingExample() {
 
 更多示例请参见 src/test/java/com/alibaba/qwen/code/cli/example
 
-## 架构设计
+## 架构
 
-该 SDK 采用分层架构：
+SDK 采用分层架构：
 
-- **API 层**：通过 `QwenCodeCli` 类提供主要入口点，包含用于基础用法的简单静态方法
+- **API 层**：通过 `QwenCodeCli` 类提供主要入口，包含用于基本用法的简单静态方法
 - **Session 层**：通过 `Session` 类管理与 Qwen Code CLI 的通信会话
-- **Transport 层**：处理 SDK 与 CLI 进程之间的通信机制（当前通过 `ProcessTransport` 使用进程传输）
-- **Protocol 层**：基于 CLI 协议定义通信所需的数据结构
-- **Utils**：用于并发执行、超时处理和错误管理的通用工具类
+- **Transport 层**：处理 SDK 与 CLI 进程之间的通信机制（当前使用 `ProcessTransport` 实现进程传输）
+- **Protocol 层**：基于 CLI 协议定义通信数据结构
+- **Utils**：用于并发执行、超时处理和错误管理的通用工具
 
-## 核心特性
+## 核心功能
 
 ### 权限模式
 
-SDK 支持多种权限模式以控制工具的执行：
+SDK 支持不同的权限模式来控制工具执行：
 
-- **`default`**：默认拒绝写入工具，除非通过 `canUseTool` 回调批准或在 `allowedTools` 中配置。只读工具无需确认即可执行。
-- **`plan`**：阻止所有写入工具，指示 AI 先提供执行计划。
-- **`auto-edit`**：自动批准编辑工具（edit, write_file），其他工具仍需确认。
-- **`yolo`**：所有工具自动执行，无需确认。
+- **`default`**：写入工具默认被拒绝，除非通过 `canUseTool` 回调批准或在 `allowedTools` 中列出。只读工具无需确认即可执行。
+- **`plan`**：阻止所有写入工具，要求 AI 先呈现计划。
+- **`auto-edit`**：自动批准编辑工具（`edit`、`write_file`、`notebook_edit`），其他工具需要确认。
+- **`yolo`**：所有工具无需确认自动执行。
 
 ### Session 事件消费者与 Assistant 内容消费者
 
-SDK 提供了两个关键接口，用于处理来自 CLI 的事件和内容：
+SDK 提供两个关键接口，用于处理来自 CLI 的事件和内容：
 
 #### SessionEventConsumers 接口
 
-该接口为会话期间的不同类型消息提供回调：
+`SessionEventConsumers` 接口为会话期间不同类型的消息提供回调：
 
 - `onSystemMessage`：处理来自 CLI 的系统消息（接收 Session 和 SDKSystemMessage）
 - `onResultMessage`：处理来自 CLI 的结果消息（接收 Session 和 SDKResultMessage）
-- `onAssistantMessage`：处理助手消息（AI 响应）（接收 Session 和 SDKAssistantMessage）
-- `onPartialAssistantMessage`：处理流式传输中的部分助手消息（接收 Session 和 SDKPartialAssistantMessage）
+- `onAssistantMessage`：处理 assistant 消息（AI 响应）（接收 Session 和 SDKAssistantMessage）
+- `onPartialAssistantMessage`：处理流式传输期间的部分 assistant 消息（接收 Session 和 SDKPartialAssistantMessage）
 - `onUserMessage`：处理用户消息（接收 Session 和 SDKUserMessage）
 - `onOtherMessage`：处理其他类型的消息（接收 Session 和 String 消息）
 - `onControlResponse`：处理控制响应（接收 Session 和 CLIControlResponse）
@@ -167,11 +167,11 @@ SDK 提供了两个关键接口，用于处理来自 CLI 的事件和内容：
 
 #### AssistantContentConsumers 接口
 
-该接口处理助手消息内部的不同类型内容：
+`AssistantContentConsumers` 接口处理 assistant 消息中不同类型的内容：
 
 - `onText`：处理文本内容（接收 Session 和 TextAssistantContent）
 - `onThinking`：处理思考内容（接收 Session 和 ThinkingAssistantContent）
-- `onToolUse`：处理工具调用内容（接收 Session 和 ToolUseAssistantContent）
+- `onToolUse`：处理工具使用内容（接收 Session 和 ToolUseAssistantContent）
 - `onToolResult`：处理工具结果内容（接收 Session 和 ToolResultAssistantContent）
 - `onOtherContent`：处理其他内容类型（接收 Session 和 AssistantContent）
 - `onUsage`：处理用量信息（接收 Session 和 AssistantUsage）
@@ -180,24 +180,24 @@ SDK 提供了两个关键接口，用于处理来自 CLI 的事件和内容：
 
 #### 接口之间的关系
 
-**事件层级重要说明：**
+**事件层级说明：**
 
-- `SessionEventConsumers` 是**高层级**事件处理器，负责处理不同类型的消息（system、assistant、user 等）
-- `AssistantContentConsumers` 是**低层级**内容处理器，负责处理助手消息内部的不同类型内容（text、tools、thinking 等）
+- `SessionEventConsumers` 是**高层**事件处理器，处理不同类型的消息（系统消息、assistant 消息、用户消息等）
+- `AssistantContentConsumers` 是**底层**内容处理器，处理 assistant 消息中不同类型的内容（文本、工具、思考等）
 
 **处理器关系：**
 
-- `SessionEventConsumers` → `AssistantContentConsumers`（SessionEventConsumers 使用 AssistantContentConsumers 处理助手消息中的内容）
+- `SessionEventConsumers` → `AssistantContentConsumers`（SessionEventConsumers 使用 AssistantContentConsumers 处理 assistant 消息中的内容）
 
 **事件派生关系：**
 
-- `onAssistantMessage` → `onText`, `onThinking`, `onToolUse`, `onToolResult`, `onOtherContent`, `onUsage`
-- `onPartialAssistantMessage` → `onText`, `onThinking`, `onToolUse`, `onToolResult`, `onOtherContent`
-- `onControlRequest` → `onPermissionRequest`, `onOtherControlRequest`
+- `onAssistantMessage` → `onText`、`onThinking`、`onToolUse`、`onToolResult`、`onOtherContent`、`onUsage`
+- `onPartialAssistantMessage` → `onText`、`onThinking`、`onToolUse`、`onToolResult`、`onOtherContent`
+- `onControlRequest` → `onPermissionRequest`、`onOtherControlRequest`
 
 **事件超时关系：**
 
-每个事件处理方法都有对应的超时方法，允许你自定义该特定事件的超时行为：
+每个事件处理方法都有对应的超时方法，可自定义该特定事件的超时行为：
 
 - `onSystemMessage` ↔ `onSystemMessageTimeout`
 - `onResultMessage` ↔ `onResultMessageTimeout`
@@ -225,40 +225,40 @@ AssistantContentConsumers 的超时方法：
 
 **超时层级要求：**
 
-为确保正常运行，应维持以下超时关系：
+为确保正常运行，应维护以下超时关系：
 
 - `onAssistantMessageTimeout` 的返回值应大于 `onTextTimeout`、`onThinkingTimeout`、`onToolUseTimeout`、`onToolResultTimeout` 和 `onOtherContentTimeout` 的返回值
 - `onControlRequestTimeout` 的返回值应大于 `onPermissionRequestTimeout` 和 `onOtherControlRequestTimeout` 的返回值
 
-### 传输选项
+### Transport 选项
 
-通过 `TransportOptions` 类，你可以配置 SDK 与 Qwen Code CLI 的通信方式：
+`TransportOptions` 类用于配置 SDK 与 Qwen Code CLI 的通信方式：
 
 - `pathToQwenExecutable`：Qwen Code CLI 可执行文件的路径
 - `cwd`：CLI 进程的工作目录
 - `model`：会话使用的 AI 模型
 - `permissionMode`：控制工具执行的权限模式
 - `env`：传递给 CLI 进程的环境变量
-- `maxSessionTurns`：限制会话中的对话轮数
-- `coreTools`：应向 AI 开放的核心工具列表
-- `excludeTools`：禁止 AI 使用的工具列表
-- `allowedTools`：无需额外确认即可预批准使用的工具列表
+- `maxSessionTurns`：限制会话中的对话轮次数量
+- `coreTools`：AI 可用的核心工具列表
+- `excludeTools`：从 AI 可用工具中排除的工具列表
+- `allowedTools`：无需额外确认即可使用的预批准工具列表
 - `authType`：会话使用的认证类型
 - `includePartialMessages`：启用在流式响应期间接收部分消息
-- `turnTimeout`：完整一轮对话的超时时间
-- `messageTimeout`：单轮对话中单条消息的超时时间
-- `resumeSessionId`：要恢复的先前会话 ID
-- `otherOptions`：传递给 CLI 的额外命令行选项
+- `turnTimeout`：完整对话轮次的超时时间
+- `messageTimeout`：轮次内单条消息的超时时间
+- `resumeSessionId`：要恢复的上一个会话的 ID
+- `otherOptions`：传递给 CLI 的其他命令行选项
 
-### 会话控制功能
+### Session 控制功能
 
-- **会话创建**：使用 `QwenCodeCli.newSession()` 创建带有自定义选项的新会话
-- **会话管理**：`Session` 类提供发送提示词、处理响应和管理会话状态的方法
+- **创建会话**：使用 `QwenCodeCli.newSession()` 创建带有自定义选项的新会话
+- **会话管理**：`Session` 类提供发送提示、处理响应和管理会话状态的方法
 - **会话清理**：始终使用 `session.close()` 关闭会话，以正确终止 CLI 进程
-- **会话恢复**：在 `TransportOptions` 中使用 `setResumeSessionId()` 恢复先前的会话
-- **会话中断**：使用 `session.interrupt()` 中断当前正在运行的提示词
-- **动态模型切换**：使用 `session.setModel()` 在会话期间切换模型
-- **动态权限模式切换**：使用 `session.setPermissionMode()` 在会话期间切换权限模式
+- **会话恢复**：在 `TransportOptions` 中使用 `setResumeSessionId()` 恢复上一个会话
+- **会话中断**：使用 `session.interrupt()` 中断当前正在运行的提示
+- **动态切换模型**：使用 `session.setModel()` 在会话期间更改模型
+- **动态切换权限模式**：使用 `session.setPermissionMode()` 在会话期间更改权限模式
 
 ### 线程池配置
 
@@ -266,21 +266,21 @@ SDK 使用线程池管理并发操作，默认配置如下：
 
 - **核心线程数**：30
 - **最大线程数**：100
-- **空闲线程存活时间**：60 秒
+- **线程存活时间**：60 秒
 - **队列容量**：300 个任务（使用 LinkedBlockingQueue）
 - **线程命名**："qwen_code_cli-pool-{number}"
 - **守护线程**：false
-- **拒绝策略**：CallerRunsPolicy
+- **拒绝执行策略**：CallerRunsPolicy
 
 ## 错误处理
 
-SDK 为不同的错误场景提供了特定的异常类型：
+SDK 为不同错误场景提供了特定的异常类型：
 
-- `SessionControlException`：会话控制（创建、初始化等）出现问题时抛出
-- `SessionSendPromptException`：发送提示词或接收响应出现问题时抛出
-- `SessionClosedException`：尝试使用已关闭的会话时抛出
+- `SessionControlException`：当会话控制（创建、初始化等）出现问题时抛出
+- `SessionSendPromptException`：当发送提示或接收响应出现问题时抛出
+- `SessionClosedException`：当尝试使用已关闭的会话时抛出
 
-## 常见问题 / 故障排查
+## 常见问题
 
 ### Q：我需要单独安装 Qwen CLI 吗？
 
@@ -292,20 +292,20 @@ A：SDK 需要 Java 1.8 或更高版本。
 
 ### Q：如何处理长时间运行的请求？
 
-A：SDK 内置了超时工具。你可以通过 `TransportOptions` 中的 `Timeout` 类配置超时时间。
+A：SDK 内置超时工具。可以在 `TransportOptions` 中使用 `Timeout` 类配置超时时间。
 
 ### Q：为什么某些工具没有执行？
 
-A：这通常是由于权限模式设置导致的。请检查你的权限模式配置，并考虑使用 `allowedTools` 预批准特定工具。
+A：这可能是由于权限模式设置导致的。请检查权限模式设置，并考虑使用 `allowedTools` 预批准特定工具。
 
-### Q：如何恢复之前的会话？
+### Q：如何恢复上一个会话？
 
-A：在 `TransportOptions` 中使用 `setResumeSessionId()` 方法即可恢复之前的会话。
+A：在 `TransportOptions` 中使用 `setResumeSessionId()` 方法恢复上一个会话。
 
-### Q：我可以自定义 CLI 进程的运行环境吗？
+### Q：我可以为 CLI 进程自定义环境吗？
 
 A：可以，使用 `TransportOptions` 中的 `setEnv()` 方法向 CLI 进程传递环境变量。
 
 ## 许可证
 
-Apache-2.0 - 详情请参阅 [LICENSE](./LICENSE)。
+Apache-2.0 — 详情请参见 [LICENSE](../../LICENSE)。
