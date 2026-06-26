@@ -37,6 +37,23 @@ export const learningPaths = [
     iconType: "advanced",
     cases: [
       { id: "code-requirements-to-prototype", label: "From Vague Requirements to Interactive Prototype" },
+  {
+    id: "code-add-unit-tests",
+    title: "Add Unit Tests to Your Project",
+    description: "Let Qwen Code understand your project rules and auto-generate unit tests covering normal flows, edge cases, and invalid inputs — then run, fix, and improve coverage.",
+    category: "Development",
+    features: ["Agent Mode", "Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01TXbPPR1fvCLRfz00z_!!6000000004068-0-videocover-1920-1080.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/Q-SwXmgyuR7Hc-T0rMdbfhuc9Y6V5gNtvcAJR6P0Xg0.mp4",
+    model: "qwen3.7-max",
+    overview: "Let Qwen Code understand your project rules and auto-generate unit tests covering normal flows, edge cases, and invalid inputs — then run, fix, and improve coverage.",
+    steps: [
+      { title: "Understand the Project and Test Goals", description: "Qwen Code reads through the project files to understand business rules, core functions, and testing goals, then plans which test scenarios to prioritize." },
+      { title: "Generate Tests and Run Verification", description: "Based on business rules, Qwen Code generates unit tests for core functions — covering normal flows, edge cases, and invalid inputs — then runs them automatically." },
+      { title: "Fix Issues and Pass All Tests", description: "When tests fail, Qwen Code traces the root cause. If the source code doesn't match the business rules, it fixes the code and re-runs tests until everything passes." },
+      { title: "Improve Test Coverage", description: "Check the coverage report, analyze uncovered files and branches, and add meaningful test cases to strengthen critical logic." },
+    ],
+  },
       { id: "computer-use-builtin", label: "Computer Use" },
       { id: "bailian-ai-marketing", label: "AI-Powered E-commerce Marketing" },
       { id: "creator-resume-site-quick", label: "Build Personal Resume Website" },
