@@ -5,6 +5,14 @@ import chalk from "chalk";
 import { DocumentTranslator } from "./translator";
 
 /**
+ * 判断是否为 Nextra 导航文件（_meta.ts/js/json 等）。
+ * 这类文件属于本库各语言包自行维护的导航定制，不应被上游同步覆盖或翻译。
+ */
+function isMetaFile(filePath: string): boolean {
+  return /^_meta\.(ts|tsx|js|jsx|mjs|cjs|json)$/.test(path.basename(filePath));
+}
+
+/**
  * 版本同步管理器
  * 检测原仓库文档变更，自动同步和翻译更新
  */
@@ -404,9 +412,12 @@ export class SyncManager {
     }
 
     // 2. 复制到 content/{sourceLanguage} 目录
+    //    注意：排除上游的 _meta.* 导航文件，避免覆盖本库定制的导航
+    //    （本库各语言包的 _meta 由站点自行维护，不应被上游同步覆盖）。
     await fs.ensureDir(contentSourceDir);
     await fs.copy(sourceDocsTargetDir, contentSourceDir, {
       overwrite: true,
+      filter: (src) => !isMetaFile(src),
     });
     console.log(chalk.green(`✅ 源文档已复制到: ${contentSourceDir}`));
   }
@@ -437,6 +448,15 @@ export class SyncManager {
       for (const file of changedFiles) {
         try {
           const relativePath = file.replace(`${this.docsPath}/`, "");
+
+          // 跳过上游导航文件：本库各语言包的 _meta 由站点自行维护，
+          // 不应被上游同步翻译并覆盖。
+          if (isMetaFile(relativePath)) {
+            console.log(
+              chalk.gray(`  ↪ 跳过导航文件（不覆盖本地 _meta）: ${relativePath}`)
+            );
+            continue;
+          }
           const sourcePath = path.join(
             this.outputBasePath,
             "content",
