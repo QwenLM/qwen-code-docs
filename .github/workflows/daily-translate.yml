@@ -6,8 +6,8 @@ name: Daily Incremental Translation
 #
 # Prerequisites (set in repo Settings → Secrets and variables → Actions):
 #   - Secret  TRANSLATE_API_KEY : a PUBLIC, cloud-reachable model API key
-#                                 (DashScope / Bailian — github-hosted runners
-#                                 cannot reach the internal idealab endpoint).
+#                                 (Aliyun MaaS — github-hosted runners cannot
+#                                 reach the internal idealab endpoint).
 #   Model / base URL are set as plain env below; change them if you switch
 #   providers. The incremental baseline lives in website/last-sync.json
 #   (tracked in git), so each run only translates what changed upstream.
@@ -62,9 +62,11 @@ jobs:
         working-directory: ./website
         env:
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_API_KEY }}
-          OPENAI_BASE_URL: https://dashscope.aliyuncs.com/compatible-mode/v1
-          QWEN_MODEL: qwen-plus
-          QWEN_MAX_TOKENS: "8192"
+          OPENAI_BASE_URL: https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+          QWEN_MODEL: deepseek-v4-flash
+          # deepseek-v4-flash output cap is large (384K); 32K already exceeds any
+          # single doc's needs, and oversized files still auto-chunk under it.
+          QWEN_MAX_TOKENS: "32768"
         run: |
           set -o pipefail
           node ../translator/bin/qwen-translator sync 2>&1 | tee /tmp/sync.log

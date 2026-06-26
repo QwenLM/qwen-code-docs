@@ -57,9 +57,9 @@ export class EnvLoader {
         `缺少必要的环境变量: ${missingVars.join(", ")}\n` +
           `请在项目根目录创建.env文件或设置系统环境变量:\n` +
           `OPENAI_API_KEY=your_api_key_here\n` +
-          `OPENAI_BASE_URL=https://api.qwen.ai/v1 (可选)\n` +
-          `QWEN_MODEL=qwen3.6-plus (可选)\n` +
-          `QWEN_MAX_TOKENS=32000 (可选)`
+          `OPENAI_BASE_URL=https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1 (可选)\n` +
+          `QWEN_MODEL=deepseek-v4-flash (可选)\n` +
+          `QWEN_MAX_TOKENS=32768 (可选)`
       );
     }
   }
@@ -82,9 +82,12 @@ export class EnvLoader {
 
     return {
       apiKey,
-      baseURL: this.getEnvVar("OPENAI_BASE_URL", "https://api.qwen.ai/v1")!,
-      model: this.getEnvVar("QWEN_MODEL", "qwen3.6-plus")!,
-      maxTokens: parseInt(this.getEnvVar("QWEN_MAX_TOKENS", "32000")!),
+      baseURL: this.getEnvVar(
+        "OPENAI_BASE_URL",
+        "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+      )!,
+      model: this.getEnvVar("QWEN_MODEL", "deepseek-v4-flash")!,
+      maxTokens: parseInt(this.getEnvVar("QWEN_MAX_TOKENS", "32768")!),
     };
   }
 }
