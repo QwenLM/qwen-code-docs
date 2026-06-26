@@ -1,12 +1,12 @@
-# Plan d'implémentation de l'affichage des outils Agent
+# Plan d'implémentation de l'affichage des outils d'agent
 
-> **Pour Claude :** SOUS-COMPÉTENCE REQUISE : Utiliser `superpowers:executing-plans` pour implémenter ce plan tâche par tâche.
+> **Pour Claude :** COMPÉTENCE REQUISE : utilisez superpowers:executing-plans pour implémenter ce plan tâche par tâche.
 
-**Objectif :** Ajouter un affichage dédié dans l'interface VSCode/web pour les exécutions d'outils Agent, afin que la progression, les résumés et les échecs des sous-agents soient rendus à partir du `rawOutput` structuré au lieu de retomber sur la carte d'outil générique.
+**Objectif :** Ajouter un affichage dédié dans VSCode/l'interface web pour les exécutions d'outils d'agent, afin que les progressions, résumés et échecs des sous-agents soient rendus à partir du `rawOutput` structuré au lieu de recourir à la carte d'outil générique.
 
-**Architecture :** Préserver le `rawOutput` ACP à travers le pipeline de session/mise à jour VSCode vers `ToolCallData`, puis laisser le routeur partagé de l'interface web détecter les payloads `task_execution` et rendre un composant dédié `AgentToolCall`. Conserver la modification partagée dans `packages/webui` pour que VSCode et `ChatViewer` restent synchronisés.
+**Architecture :** Conserver le `rawOutput` de l'ACP tout au long du pipeline de session/mise à jour VSCode jusqu'à `ToolCallData`, puis laisser le routeur d'interface web partagé détecter les payloads `task_execution` et afficher un composant `AgentToolCall` dédié. Maintenir la modification partagée dans `packages/webui` afin que VSCode et `ChatViewer` restent alignés.
 
-**Stack technique :** TypeScript, React, Vitest, composants partagés d'appels d'outils `@qwen-code/webui`.
+**Stack technique :** TypeScript, React, Vitest, composants d'appels d'outils partagés `@qwen-code/webui`.
 
 ### Tâche 1 : Verrouiller le comportement défaillant du flux de données
 
@@ -15,35 +15,35 @@
 - Modifier : `packages/vscode-ide-companion/src/services/qwenSessionUpdateHandler.test.ts`
 - Créer : `packages/vscode-ide-companion/src/webview/hooks/useToolCalls.test.tsx`
 
-**Étape 1 : Rédiger les tests en échec**
+**Étape 1 : Écrire les tests en échec**
 
-- Ajouter un test au gestionnaire de session vérifiant que `tool_call_update` transmet `rawOutput` lorsque l'ACP envoie un payload `task_execution`.
-- Ajouter un test au hook vérifiant que `useToolCalls` stocke et met à jour `rawOutput` pour un appel d'outil agent.
+- Ajouter un test du gestionnaire de session qui vérifie que `tool_call_update` transmet `rawOutput` lorsque l'ACP envoie un payload `task_execution`.
+- Ajouter un test du hook qui vérifie que `useToolCalls` stocke et met à jour `rawOutput` pour un appel d'outil d'agent.
 
-**Étape 2 : Exécuter le test pour vérifier l'échec**
+**Étape 2 : Exécuter le test pour confirmer l'échec**
 
-Exécuter : `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
+Exécutez : `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
 
-Résultat attendu : échecs car `rawOutput` n'est pas préservé dans le pipeline actuel du gestionnaire/hook.
+Résultat attendu : échecs car `rawOutput` n'est pas conservé dans le pipeline gestionnaire/hook actuel.
 
-### Tâche 2 : Verrouiller le comportement défaillant du moteur de rendu
+### Tâche 2 : Verrouiller le comportement défaillant du rendu
 
 **Fichiers :**
 
 - Créer : `packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
-**Étape 1 : Rédiger le test en échec**
+**Étape 1 : Écrire le test en échec**
 
 - Rendre l'appel d'outil routé avec `kind: 'other'` et `rawOutput.type === 'task_execution'`.
-- Vérifier que la description de la tâche, l'outil enfant actif, le résumé et la raison de l'échec sont rendus via un affichage agent dédié au lieu d'une sortie texte générique.
+- Vérifier que la description de la tâche, l'outil enfant actif, le résumé et la raison de l'échec sont affichés via un affichage d'agent dédié, et non via une sortie textuelle générique.
 
-**Étape 2 : Exécuter le test pour vérifier l'échec**
+**Étape 2 : Exécuter le test pour confirmer l'échec**
 
-Exécuter : `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+Exécutez : `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
-Résultat attendu : échec car le routeur ne se base que sur `kind` et aucun composant agent dédié n'existe.
+Résultat attendu : échec car le routeur ne s'appuie que sur `kind` et qu'aucun composant d'agent dédié n'existe.
 
-### Tâche 3 : Préserver la sortie agent structurée de bout en bout
+### Tâche 3 : Conserver la sortie structurée de l'agent de bout en bout
 
 **Fichiers :**
 
@@ -54,18 +54,18 @@ Résultat attendu : échec car le routeur ne se base que sur `kind` et aucun com
 
 **Étape 1 : Implémenter les modifications minimales du modèle de données**
 
-- Ajouter `rawOutput` optionnel aux types d'appels d'outils de la session/webview VSCode.
+- Ajouter `rawOutput` optionnel aux types d'appels d'outils de session/webview VSCode.
 - Transmettre `rawOutput` dans `QwenSessionUpdateHandler`.
-- Stocker/merger `rawOutput` dans `useToolCalls`.
-- Exposer `rawOutput` dans les types de données d'appels d'outils partagés de l'interface web.
+- Stocker/fusionner `rawOutput` dans `useToolCalls`.
+- Exposer `rawOutput` dans les types de données d'appels d'outils de l'interface web partagée.
 
 **Étape 2 : Exécuter les tests ciblés**
 
-Exécuter : `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
+Exécutez : `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
 
 Résultat attendu : succès.
 
-### Tâche 4 : Ajouter l'interface partagée pour les appels d'outils Agent
+### Tâche 4 : Ajouter l'interface utilisateur partagée de l'appel d'outil d'agent
 
 **Fichiers :**
 
@@ -74,16 +74,16 @@ Résultat attendu : succès.
 - Modifier : `packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.tsx`
 - Modifier : `packages/webui/src/components/ChatViewer/ChatViewer.tsx`
 
-**Étape 1 : Implémenter le moteur de rendu minimal**
+**Étape 1 : Implémenter le rendu minimal**
 
-- Ajouter une condition de garde pour `rawOutput.type === 'task_execution'`.
-- Rendre la description de la tâche comme en-tête.
-- Afficher le nom + le statut de l'agent, les outils enfants en cours d'exécution, le résumé de fin d'exécution et la raison de l'échec ou de l'annulation.
-- Conserver une mise en page compatible avec plusieurs cartes agent parallèles en rendant chaque appel d'outil de manière indépendante.
+- Ajouter une vérification pour `rawOutput.type === 'task_execution'`.
+- Afficher la description de la tâche comme en-tête.
+- Afficher le nom et le statut de l'agent, les outils enfants en cours d'exécution, le résumé de fin et la raison d'échec/annulation.
+- Garder la mise en page compatible avec plusieurs cartes d'agent parallèles en rendant chaque appel d'outil indépendamment.
 
-**Étape 2 : Exécuter le test ciblé du moteur de rendu**
+**Étape 2 : Exécuter le test de rendu ciblé**
 
-Exécuter : `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+Exécutez : `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
 Résultat attendu : succès.
 
@@ -95,12 +95,12 @@ Résultat attendu : succès.
 
 **Étape 1 : Exporter le nouveau composant partagé si nécessaire**
 
-- Réexporter tout nouveau composant/type requis par VSCode ou `ChatViewer`.
+- Ré-exporter tout nouveau composant/type requis par VSCode ou `ChatViewer`.
 
 **Étape 2 : Exécuter la vérification du package**
 
-Exécuter : `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
-Exécuter : `npm run check-types --workspace=packages/vscode-ide-companion`
-Exécuter : `npm run typecheck --workspace=packages/webui`
+Exécutez : `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+Exécutez : `npm run check-types --workspace=packages/vscode-ide-companion`
+Exécutez : `npm run typecheck --workspace=packages/webui`
 
-Résultat attendu : tous les tests ciblés et vérifications de type réussissent.
+Résultat attendu : tous les tests et vérifications de types ciblés passent.

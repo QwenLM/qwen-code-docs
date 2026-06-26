@@ -1,15 +1,15 @@
 # Feishu (Lark)
 
-Este guia cobre a configuração de um canal Qwen Code no Feishu (飞书) / Lark.
+Este guia cobre a configuração de um canal do Qwen Code no Feishu (飞书) / Lark.
 
-## Pré‑requisitos
+## Pré-requisitos
 
-- Uma conta de organização no Feishu
-- Um aplicativo Feishu com App ID e App Secret (veja abaixo)
+- Uma conta de organização do Feishu
+- Um aplicativo do Feishu com App ID e App Secret (veja abaixo)
 
-## Criando um Aplicativo
+## Criando um aplicativo
 
-1. Acesse a [Feishu Open Platform](https://open.feishu.cn)
+1. Acesse a [Plataforma Aberta do Feishu](https://open.feishu.cn)
 2. Crie um novo aplicativo (ou use um existente)
 
 ![](https://gw.alicdn.com/imgextra/i4/O1CN01ORb10i1JM0MQfhnsV_!!6000000001013-2-tps-2219-931.png)
@@ -30,17 +30,17 @@ Este guia cobre a configuração de um canal Qwen Code no Feishu (飞书) / Lark
 
 ![](https://gw.alicdn.com/imgextra/i2/O1CN01ag1yBh1DxfEUb4xmE_!!6000000000283-2-tps-2219-1166.png)
 
-### Permissões Necessárias
+### Permissões necessárias
 
 Ative as seguintes permissões em **Permissions & Scopes** (权限管理):
 
 - `im:message` — Ler e enviar mensagens
 - `im:message:send_as_bot` — Enviar mensagens como bot
-- `im:resource` — Acessar recursos da mensagem (imagens, arquivos)
+- `im:resource` — Acessar recursos de mensagens (imagens, arquivos)
 
-### Publicar o Aplicativo
+### Publique o aplicativo
 
-Após configurar permissões e eventos, crie uma versão e publique‑a. O bot só funcionará depois que o aplicativo for publicado e aprovado.
+Após configurar as permissões e eventos, crie uma versão e publique-a. O bot não funcionará até que o aplicativo seja publicado e aprovado.
 
 ![](https://gw.alicdn.com/imgextra/i1/O1CN01GbNRcj1lVuACnkV6M_!!6000000004825-2-tps-2219-1090.png)
 
@@ -68,39 +68,39 @@ Adicione o canal ao arquivo `~/.qwen/settings.json`:
 }
 ```
 
-### Opções de Configuração
+### Opções de configuração
 
-| Opção                 | Descrição                                                                 |
-| --------------------- | ------------------------------------------------------------------------- |
-| `clientId`            | App ID do Feishu                                                          |
-| `clientSecret`        | App Secret do Feishu                                                      |
-| `collapsible`         | Colapsar respostas longas em seções expansíveis (padrão: `false`)         |
-| `collapsibleThreshold`| Limite de caracteres para colapso (padrão: `500`)                         |
-| `webhookPort`         | Se definido, usa o modo webhook HTTP em vez de WebSocket                  |
-| `verificationToken`   | Token de verificação para modo webhook                                    |
-| `encryptKey`          | Chave de criptografia para modo webhook                                   |
+| Opção                 | Descrição                                                                  |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `clientId`             | App ID do Feishu                                                           |
+| `clientSecret`         | App Secret do Feishu                                                       |
+| `collapsible`          | Recolher respostas longas em seções expansíveis (padrão: `false`)          |
+| `collapsibleThreshold` | Limite de caracteres para recolhimento (padrão: `500`)                     |
+| `webhookPort`          | Se definido, usa modo webhook HTTP em vez de WebSocket                     |
+| `verificationToken`    | Token de verificação para o modo webhook                                   |
+| `encryptKey`           | Chave de criptografia para o modo webhook                                  |
 
 ## Executando
 
 ```bash
-# Iniciar apenas o canal Feishu
+# Iniciar apenas o canal do Feishu
 qwen channel start my-feishu
 
 # Ou iniciar todos os canais configurados juntos
 qwen channel start
 ```
 
-Abra o Feishu e envie uma mensagem para o bot. Você verá um card interativo com transmissão contínua da resposta.
+Abra o Feishu e envie uma mensagem para o bot. Você verá um cartão interativo com streaming da resposta.
 
-## Modos de Conexão
+## Modos de conexão
 
 ### WebSocket (Padrão)
 
-O modo WebSocket usa uma conexão de longa duração de saída — nenhuma URL pública ou servidor é necessária. Esse é o modo recomendado para a maioria das implantações.
+O modo WebSocket usa uma conexão longa de saída — nenhuma URL pública ou servidor é necessário. Este é o modo recomendado para a maioria das implantações.
 
 ### Webhook
 
-Se precisar do modo webhook (por exemplo, para aplicações compartilhadas), defina `webhookPort` na sua configuração:
+Se você precisar do modo webhook (por exemplo, para aplicativos compartilhados), defina `webhookPort` na sua configuração:
 
 ```json
 {
@@ -115,56 +115,57 @@ Se precisar do modo webhook (por exemplo, para aplicações compartilhadas), def
 }
 ```
 
-Em seguida, defina a URL de requisição no Feishu Open Platform como `http://<your-server>:9321`.
+Em seguida, defina a URL de requisição na Plataforma Aberta do Feishu como `http://<your-server>:9321`.
 
-## Conversas em Grupo
+## Conversas em grupo
 
-Os bots do Feishu funcionam tanto em mensagens diretas quanto em conversas em grupo. Para ativar o suporte a grupos:
+Os bots do Feishu funcionam tanto em conversas individuais quanto em grupo. Para ativar o suporte a grupos:
 
 1. Defina `groupPolicy` como `"allowlist"` ou `"open"` na configuração do canal
 2. Adicione o bot a um grupo do Feishu
-3. Mencione o bot com @ no grupo para disparar uma resposta
+3. Mencione o bot com @ no grupo para acionar uma resposta
 
-Por padrão, o bot exige uma menção @ em conversas de grupo (`requireMention: true`). Defina `"requireMention": false` para um grupo específico se desejar que ele responda a todas as mensagens.
+Por padrão, o bot exige uma menção @ em conversas de grupo (`requireMention: true`). Defina `"requireMention": false` para um grupo específico para que ele responda a todas as mensagens.
 
 ## Funcionalidades
 
-### Transmissão de Cards Interativos
+### Streaming com cartão interativo
 
-As respostas são renderizadas como cards interativos do Feishu com atualizações em tempo real. O card exibe um indicador "gerando" enquanto a resposta está sendo produzida e um botão **Parar** para cancelar a geração.
+As respostas são renderizadas como cartões interativos do Feishu com atualizações em tempo real. O cartão mostra um indicador "gerando" enquanto a resposta é produzida e um botão **Stop** para cancelar a geração.
 
-### Contexto de Citação/Resposta
+### Contexto de citação/resposta
 
-Quando você responde (cita) a uma mensagem, o conteúdo citado é automaticamente incluído como contexto para o agente. Isso funciona para:
+Quando você responde (cita) a uma mensagem, o conteúdo citado é incluído automaticamente como contexto para o agente. Isso funciona para:
 
-- Mensagens de texto e rich‑text
-- Cards interativos (respostas anteriores do bot)
+- Mensagens de texto e rich-text
+- Cartões interativos (respostas anteriores do bot)
 
-### Imagens e Arquivos
+### Imagens e arquivos
 
 Você pode enviar fotos e documentos para o bot:
 
 - **Imagens:** Analisadas usando capacidades de visão multimodal
 - **Arquivos:** Baixados e salvos localmente para o agente ler
 
-### Mensagens Simultâneas
+### Mensagens concorrentes
 
-Vários usuários podem enviar mensagens simultaneamente no mesmo grupo. Cada mensagem recebe seu próprio card e resposta independentes — elas não interferem entre si.
-## Principais Diferenças do DingTalk
+Vários usuários podem enviar mensagens simultaneamente no mesmo grupo. Cada mensagem recebe seu próprio cartão e resposta independentes — elas não interferem umas nas outras.
 
-- **Formato de resposta:** Usa cartões interativos do Feishu (schema v2) com renderização nativa de markdown, incluindo tabelas
+## Principais diferenças do DingTalk
+
+- **Formato da resposta:** Usa cartões interativos do Feishu (esquema v2) com renderização nativa de markdown, incluindo tabelas
 - **Streaming:** O conteúdo do cartão é atualizado no local com requisições PATCH limitadas (intervalo de 1,5s)
-- **Conexão:** WebSocket via `@larksuiteoapi/node-sdk` — mesmo modelo de saída apenas, sem necessidade de URL pública
+- **Conexão:** WebSocket via `@larksuiteoapi/node-sdk` — mesmo modelo somente de saída, sem necessidade de URL pública
 - **Indicador de trabalho:** Uma reação emoji "OnIt" é adicionada enquanto processa
-- **Contexto de citação:** Suporte para citar tanto mensagens de texto quanto cartões interativos
+- **Contexto de citação:** Suporta citação tanto de mensagens de texto quanto de cartões interativos
 
-## Solução de Problemas
+## Solução de problemas
 
 ### O bot não conecta
 
-- Verifique se seu App ID e App Secret estão corretos
-- Certifique-se de que **Conexão Longa** está selecionada em Assinaturas de Eventos
-- Confirme que o evento `im.message.receive_v1` está assinado
+- Verifique se o App ID e o App Secret estão corretos
+- Certifique-se de que **Long Connection** está selecionado em Event Subscriptions
+- Confira se o evento `im.message.receive_v1` está inscrito
 - Verifique a saída do terminal para erros de conexão
 
 ### O bot não responde em grupos
@@ -173,13 +174,13 @@ Vários usuários podem enviar mensagens simultaneamente no mesmo grupo. Cada me
 - Certifique-se de mencionar o bot com @ na mensagem do grupo
 - Verifique se o bot foi adicionado ao grupo
 
-### Cartão permanece no estado "gerando"
+### O cartão permanece no estado "gerando"
 
 - Isso geralmente indica que a resposta foi concluída, mas a atualização final do cartão falhou
 - Verifique os logs do terminal para erros de API (limitação de taxa, limites de tamanho do cartão)
 - Respostas muito longas com muitas tabelas podem atingir os limites de elementos do cartão do Feishu
 
-### Citação não inclui conteúdo do cartão
+### A citação não inclui o conteúdo do cartão
 
 - O bot lê o conteúdo do cartão através do parâmetro de API `card_msg_content_type=user_card_content`
 - Garanta que o bot tenha a permissão `im:message` para ler mensagens

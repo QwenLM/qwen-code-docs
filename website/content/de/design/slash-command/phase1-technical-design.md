@@ -1,19 +1,19 @@
-# Phase 1 Technisches Design-Dokument: Infrastruktur-Neuaufbau
+# Phase 1 Technisches Design-Dokument: Infrastruktur-Neubau
 
-## 1. Designziele und Constraints
+## 1. Designziele & Randbedingungen
 
 ### 1.1 Ziele
 
-- Einheitliches Befehls-Metadatenmodell etablieren, das vier Dimensionen abdeckt: Quelle (`source`), Ausführungstyp (`commandType`), Modus-Fähigkeiten (`supportedModes`) und Sichtbarkeit (`userInvocable` / `modelInvocable`)
-- Hardcodierte Whitelist in `non-interactive`/`acp` durch Capability-basierte Filterung ersetzen
-- Stabile Low-Level-Schnittstelle für die Capability-Erweiterung in Phase 2/3 bereitstellen
+- Einheitliches Metadatenmodell für Befehle etablieren, das die vier Dimensionen Quelle (`source`), Ausführungstyp (`commandType`), Modusfähigkeit (`supportedModes`) und Sichtbarkeit (`userInvocable` / `modelInvocable`) abdeckt
+- Capability-basiertes Filtern ersetzt die hartcodierte Whitelist in `non-interactive` / `acp`
+- Stabile, zugrunde liegende Schnittstellen für Phase 2/3-Funktionserweiterungen bereitstellen
 
-### 1.2 Harte Constraints
+### 1.2 Harte Randbedingungen
 
-- **Keine Verhaltensänderung**: Die Menge der verfügbaren Befehle in den Modi `non-interactive` und `acp` bleibt unverändert (Ausnahme: Behebung des fälschlichen Abfangens von `MCP_PROMPT`, dies ist ein Bugfix)
-- **Abwärtskompatibilität**: Neue Felder im `SlashCommand`-Interface sind alle optional oder haben sinnvolle Standardwerte; bestehender Befehlscode muss nicht sofort angepasst werden
-- **Keine neuen Executer**: Keine Erstellung neuer Ausführungsarchitekturen wie `ModeAdapter` / `CommandExecutor`; nur Erweiterung der bestehenden `CommandService`- und Filterlogik
-- **Keine Änderung bestehender Befehlsfähigkeiten**: Keine neuen `local`-Subcommands für bestehende Befehle, keine Änderung der `action`-Implementierung irgendeines Befehls
+- **Null Verhaltensänderung**: Der verfügbare Befehlssatz in den Modi `non-interactive` und `acp` bleibt unverändert (Ausnahme: Fehlerbehebung, dass `MCP_PROMPT` fälschlicherweise blockiert wurde – Bugfix)
+- **Rückwärtskompatibilität**: Alle neuen Felder im `SlashCommand`-Interface sind optional oder haben sinnvolle Standardwerte; vorhandener Befehlscode muss nicht sofort geändert werden
+- **Keine neuen Executors**: Es werden keine neuen Ausführungsarchitekturen wie `ModeAdapter` / `CommandExecutor` erstellt; nur bestehende `CommandService`- und Filterlogik erweitert
+- **Keine Änderung bestehender Befehlsfunktionen**: Für keinen Befehl werden neue `local`-Unterbefehle hinzugefügt; keine `action`-Implementierung eines Befehls wird geändert
 
 ---
 
@@ -27,9 +27,9 @@ Alle neuen Typdefinitionen befinden sich in `packages/cli/src/ui/commands/types.
 
 ```typescript
 /**
- * Ausführungsmodus-Enumeration.
+ * Aufzählung der Ausführungsmodi.
  * - interactive: React/Ink UI-Modus (Terminal-Interaktion)
- * - non_interactive: Non-Interactive CLI-Modus (Text/JSON-Ausgabe)
+ * - non_interactive: Nicht-interaktiver CLI-Modus (Text/JSON-Ausgabe)
  * - acp: ACP/Zed-Integrationsmodus
  */
 export type ExecutionMode = 'interactive' | 'non_interactive' | 'acp';
@@ -39,21 +39,21 @@ export type ExecutionMode = 'interactive' | 'non_interactive' | 'acp';
 
 ```typescript
 /**
- * Befehlsquellen-Enumeration, verwendet für Help-Gruppierung, Completion-Badges und ACP available commands.
+ * Aufzählung der Befehlsquellen, für Hilfe-Gruppierung, Autovervollständigungs-Badge, ACP available commands.
  *
  * Unterschied zu CommandKind:
- * - CommandKind ist die interne Loader-Klassifizierung (4 Arten), die die Ladelogik beeinflusst
- * - CommandSource ist die benutzerorientierte Quellenklassifizierung (9 Arten), die die Darstellung und das mentale Modell beeinflusst
+ * - CommandKind ist eine interne Lader-Klassifizierung (4 Arten), beeinflusst die Ladelogik
+ * - CommandSource ist eine benutzerorientierte Quellenklassifizierung (9 Arten), beeinflusst Darstellung und mentales Modell
  *
- * Beide können sich überschneiden, haben aber unterschiedliche Verantwortlichkeiten und werden nicht zusammengeführt.
+ * Beide können sich überschneiden, haben aber unterschiedliche Aufgaben und werden nicht zusammengeführt.
  */
 export type CommandSource =
-  | 'builtin-command' // Eingebaute Befehle (BuiltinCommandLoader)
-  | 'bundled-skill' // Mit dem Paket verteilte Skills (BundledSkillLoader)
-  | 'skill-dir-command' // Datei-Befehle unter .qwen/commands/ des Users/Projekts (FileCommandLoader, kein Plugin)
-  | 'plugin-command' // Von Plugins bereitgestellte Befehle (FileCommandLoader, extensionName nicht leer)
-  | 'mcp-prompt'; // Vom MCP-Server bereitgestellter Prompt (McpPromptLoader)
-// Folgende Quellen sind reserviert, in Phase 1 nicht implementiert, aber Schema vordefiniert:
+  | 'builtin-command' // Integrierter Befehl (BuiltinCommandLoader)
+  | 'bundled-skill'   // Mitgeliefertes Skill (BundledSkillLoader)
+  | 'skill-dir-command' // Benutzer-/Projekt-Befehl unter .qwen/commands/ (FileCommandLoader, kein Plugin)
+  | 'plugin-command'  // Von einem Plugin bereitgestellter Befehl (FileCommandLoader, extensionName nicht leer)
+  | 'mcp-prompt';     // Von einem MCP-Server bereitgestellter Prompt (McpPromptLoader)
+// Folgende Quellen sind reserviert, werden in Phase 1 nicht implementiert, aber das Schema ist vorab definiert:
 // | 'workflow-command'
 // | 'plugin-skill'
 // | 'dynamic-skill'
@@ -67,23 +67,23 @@ export type CommandSource =
 /**
  * Befehlsausführungstyp, beschreibt "wie" der Befehl ausgeführt wird.
  *
- * - prompt: Erzeugt submit_prompt, übergibt Inhalt an das Modell. Geeignet für Skills, File Commands, MCP Prompts.
- *   Standard-supportedModes: alle Modi, Standard-modelInvocable: true.
+ * - prompt: Erzeugt submit_prompt, reicht den Inhalt an das Modell weiter. Geeignet für Skills, File-Commands, MCP-Prompts.
+ *   Standardmäßig sind alle Modi unterstützt, standardmäßig ist modelInvocable true.
  *
- * - local: Lokale Ausführungslogik, keine Abhängigkeit von React/Ink UI. Kann message, stream_messages,
- *   submit_prompt, tool etc. zurückgeben. Geeignet für Query-, Konfigurations- und Status-Built-in-Befehle.
- *   Standard-supportedModes: ['interactive'], muss explizit deklariert werden, um für andere Modi freigegeben zu werden.
- *   Dies entspricht der Semantik von supportsNonInteractive: true in Claude Code – Non-Interactive-Unterstützung muss explizit deklariert werden, nicht automatisch inferiert.
+ * - local: Führt Logik lokal aus, ohne Abhängigkeit von React/Ink UI. Kann message, stream_messages,
+ *   submit_prompt, tool usw. zurückgeben. Geeignet für integrierte Befehle zum Abfragen, Konfigurieren, Status.
+ *   Standardmäßig ist supportedModes ['interactive']; für nicht-interaktive Unterstützung muss supportedModes explizit deklariert werden.
+ *   Dies entspricht der Semantik von Claude Codes supportsNonInteractive: true – nicht-interaktive Unterstützung erfordert explizite Deklaration, keine automatische Ableitung.
  *
- * - local-jsx: Befehle, die von React/Ink UI abhängen (Dialog öffnen, JSX-Komponenten rendern etc.).
- *   Standard-supportedModes: nur ['interactive'].
+ * - local-jsx: Abhängig von React/Ink UI (Dialog öffnen, JSX-Komponenten rendern usw.)
+ *   Standardmäßig ist supportedModes nur ['interactive'].
  */
 export type CommandType = 'prompt' | 'local' | 'local-jsx';
 ```
 
 ### 2.5 Erweiterung des `SlashCommand`-Interfaces
 
-Neue Felder werden an das bestehende Interface angehängt, **alle optional** zur Wahrung der Abwärtskompatibilität:
+Neue Felder werden an das bestehende Interface angehängt, **alle optional** für Rückwärtskompatibilität:
 
 ```typescript
 export interface SlashCommand {
@@ -99,70 +99,70 @@ export interface SlashCommand {
   completion?: (...) => ...;
   subCommands?: SlashCommand[];
 
-  // ── Phase 1 neu: Quelle und Ausführungstyp ──────────────────────────────────────
+  // ── Phase 1 Neu: Quelle und Ausführungstyp ──────────────────────────────────────
   /**
-   * Befehlsquelle, verwendet für Help-Gruppierung, Completion-Badges und ACP available commands.
-   * Wird vom Loader befüllt, nicht vom Befehl selbst deklariert.
-   * Wenn CommandKind zukünftig deprecated wird, wird source die einzige Quellenkennung.
+   * Befehlsquelle, für Hilfe-Gruppierung, Autovervollständigungs-Badge, ACP available commands.
+   * Wird von jedem Loader gesetzt, nicht vom Befehl selbst.
+   * Wenn CommandKind in Zukunft entfernt wird, wird source der einzige Quellenbezeichner sein.
    */
   source?: CommandSource;
 
   /**
-   * Benutzerorientiertes Quellen-Label für die Anzeige.
+   * Anzeigelabel der Quelle, benutzerorientiert.
    * - builtin-command → "Built-in"
    * - bundled-skill → "Skill"
    * - skill-dir-command → "Custom"
    * - plugin-command → "Plugin: <extensionName>"
    * - mcp-prompt → "MCP: <serverName>"
-   * Wird vom Loader befüllt, kann vom Befehl selbst überschrieben werden.
+   * Wird von jedem Loader gesetzt, kann vom Befehl selbst überschrieben werden.
    */
   sourceLabel?: string;
 
   /**
    * Befehlsausführungstyp.
-   * - Loader befüllt Standardwerte (prompt/local-jsx)
-   * - Built-in-Befehle deklarieren ihn in der jeweiligen Befehlsdatei (local oder local-jsx)
+   * - Von Loadern werden Standardwerte gesetzt (prompt/local-jsx)
+   * - Integrierte Befehle werden von der jeweiligen Befehlsdatei selbst deklariert (local oder local-jsx)
    * Standardstrategie bei fehlender Deklaration siehe getEffectiveCommandType().
    */
   commandType?: CommandType;
 
-  // ── Phase 1 neu: Modus-Fähigkeiten ──────────────────────────────────────────
+  // ── Phase 1 Neu: Modusfähigkeit ──────────────────────────────────────────
   /**
    * In welchen Ausführungsmodi dieser Befehl verfügbar ist.
-   * Bei fehlender Deklaration wird der Standardwert basierend auf commandType inferiert (siehe getEffectiveSupportedModes()).
-   * Explizite Deklaration hat Vorrang vor dem inferierten Wert.
+   * Bei fehlender Deklaration wird basierend auf commandType ein Standardwert abgeleitet (siehe getEffectiveSupportedModes()).
+   * Explizite Deklaration hat Vorrang vor abgeleitetem Wert.
    */
   supportedModes?: ExecutionMode[];
 
-  // ── Phase 1 neu: Sichtbarkeit ──────────────────────────────────────────────
+  // ── Phase 1 Neu: Sichtbarkeit ──────────────────────────────────────────────
   /**
-   * Ob der Benutzer diesen Befehl über einen Slash-Command aufrufen kann.
-   * Standard: true (fast alle Befehle sind userInvocable).
+   * Kann der Benutzer diesen Befehl über den Slash-Command aufrufen?
+   * Standard true (fast alle Befehle sind userInvocable).
    */
   userInvocable?: boolean;
 
   /**
-   * Ob das Modell diesen Befehl über einen Tool-Call aufrufen kann.
-   * Standard: false. Befehle vom Typ prompt (Skills, File Commands, MCP Prompts) sollten auf true gesetzt werden.
-   * Built-in-Befehle dürfen nicht vom Modell aufgerufen werden (immer false).
+   * Kann das Modell diesen Befehl per Tool-Call aufrufen?
+   * Standard false. Befehle vom Typ prompt (Skills, File-Commands, MCP-Prompts) sollten true sein.
+   * Integrierte Befehle erlauben keinen Modellaufruf (immer false).
    */
   modelInvocable?: boolean;
 
-  // ── Phase 3 reserviert: Experience-Metadaten (Phase 1 nur definiert, nicht verwendet) ──────────────────
+  // ── Phase 3 reserviert: Erlebnis-Metadaten (Phase 1 nur Definition, keine Verwendung) ──────────────────
   /**
-   * Parameter-Hinweis, angezeigt nach dem Befehlsnamen im Completion-Menü.
+   * Parameterhinweis, angezeigt im Autovervollständigungsmenü nach dem Befehlsnamen.
    * Beispiel: "<model-id>" / "show|list|set <id>" / "[--fast] [<model-id>]"
    */
   argumentHint?: string;
 
   /**
-   * Beschreibung, wann das Modell diesen Befehl aufrufen soll.
-   * Wird in die description von modelInvocable-Befehlen injiziert.
+   * Erklärung für das Modell, wann dieser Befehl aufgerufen werden sollte.
+   * Wird in die Beschreibung von modelInvocable-Befehlen eingefügt.
    */
   whenToUse?: string;
 
   /**
-   * Verwendungsbeispiele für die Help-Dokumentation und Completion-Anzeige.
+   * Nutzungsbeispiele, für Hilfe-Inhalte und Autovervollständigung.
    */
   examples?: string[];
 }
@@ -170,29 +170,29 @@ export interface SlashCommand {
 
 ---
 
-## 3. Spezifikation zur Feldbefüllung der einzelnen Loader
+## 3. Feldbefüllungsrichtlinien für jeden Loader
 
 ### 3.1 Befüllungsprinzipien
 
-- `source` und `sourceLabel` werden vom Loader beim Erstellen des `SlashCommand` befüllt, der Befehl selbst deklariert sie nicht
-- `commandType`: Loader befüllt Standardwerte; Built-in-Befehle deklarieren ihn in der Befehlsdatei
-- `supportedModes`: Wird über `getEffectiveSupportedModes()` inferiert, keine explizite Befüllung nötig (außer zur Überschreibung des Standardwerts)
-- `modelInvocable`: Loader befüllt es, Built-in-Befehle sind immer `false`, Prompt-Typ-Befehle sind `true`
+- `source` und `sourceLabel` werden vom Loader beim Erstellen des `SlashCommand` gesetzt, nicht vom Befehl selbst
+- `commandType`: Loader setzen Standardwerte; integrierte Befehle werden von der Befehlsdatei selbst deklariert
+- `supportedModes`: Wird durch `getEffectiveSupportedModes()` abgeleitet, keine explizite Befüllung nötig (außer zum Überschreiben des Standardwerts)
+- `modelInvocable`: Loader setzt; integrierte Befehle sind immer `false`, Prompt-Typ-Befehle sind `true`
 
 ### 3.2 `BuiltinCommandLoader`
 
 ```typescript
-// source/sourceLabel/commandType nicht befüllen — wird von den Befehlsdateien selbst deklariert
-// Da der commandType von Built-in-Befehlen local oder local-jsx ist, muss er einzeln annotiert werden
+// Setzt source/sourceLabel/commandType nicht – wird von jeder Befehlsdatei selbst deklariert
+// Da integrierte Befehle vom Typ local oder local-jsx sind, müssen sie einzeln gekennzeichnet werden
 
-// source und sourceLabel injizieren:
+// Injiziert source und sourceLabel:
 for (const cmd of rawCommands) {
   enrichedCommands.push({
     ...cmd,
     source: 'builtin-command',
     sourceLabel: 'Built-in',
     userInvocable: cmd.userInvocable ?? true,
-    modelInvocable: false, // Built-in-Befehle dürfen nicht vom Modell aufgerufen werden
+    modelInvocable: false, // Integrierte Befehle erlauben keinen Modellaufruf
   });
 }
 ```
@@ -222,17 +222,17 @@ return {
   description,
   kind: CommandKind.FILE,
   extensionName,
-  // source wird basierend auf extensionName bestimmt:
+  // source hängt von extensionName ab:
   source: extensionName ? 'plugin-command' : 'skill-dir-command',
   sourceLabel: extensionName ? `Plugin: ${extensionName}` : 'Custom',
   commandType: 'prompt',
   userInvocable: true,
-  modelInvocable: !extensionName, // Plugin-Befehle vorerst nicht für Modell-Aufrufe, User/Projekt-Befehle erlaubt
+  modelInvocable: !extensionName, // Plugin-Befehle vorerst kein Modellaufruf; Benutzer-/Projektbefehle erlauben
   action: async (...) => { ... },
 };
 ```
 
-> **Hinweis**: Plugin-Befehle (`plugin-command`) werden vorerst nicht als `modelInvocable` markiert, um Sicherheitsrisiken zu vermeiden. In späteren Phasen kann dies bedarfsgesteuert freigegeben und durch Konfiguration kontrolliert werden.
+> **Hinweis**: Plugin-Befehle (`plugin-command`) werden vorerst nicht als `modelInvocable` markiert, um Sicherheitsrisiken zu vermeiden. In späteren Phasen kann dies bei Bedarf freigegeben werden, durch Benutzerkonfiguration gesteuert.
 
 ### 3.5 `McpPromptLoader`
 
@@ -252,86 +252,86 @@ const newPromptCommand: SlashCommand = {
 
 ---
 
-## 4. Deklarationsspezifikation für `commandType` bei Built-in-Befehlen
+## 4. `commandType`-Deklarationsrichtlinie für integrierte Befehle
 
 ### 4.1 Klassifizierungskriterien
 
-| commandType | Kriterium                                                                                                                                                                   |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `local`     | `action` verwendet nur `ui.addItem` (Text-Typen), gibt `message` / `stream_messages` / `submit_prompt` / `tool` zurück, keine Abhängigkeit von React-Komponenten-Rendering                                               |
-| `local-jsx` | `action` gibt `dialog` zurück, oder `action` ruft `ui.addItem` mit komplexen Typen auf, die JSX enthalten (z. B. `HistoryItemHelp`, `HistoryItemStats`), oder hängt von `confirm_action` / `load_history` / `quit` ab |
+| commandType | Kriterium                                                                                                                                                                                 |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `local`     | `action` verwendet nur `ui.addItem` (Texttyp), gibt `message` / `stream_messages` / `submit_prompt` / `tool` zurück, keine Abhängigkeit von React-Komponenten-Rendering                  |
+| `local-jsx` | `action` gibt `dialog` zurück, oder `action` ruft `ui.addItem` mit komplexen JSX-Typen auf (z. B. `HistoryItemHelp`, `HistoryItemStats`), oder hängt von `confirm_action` / `load_history` / `quit` ab |
 
-> **Hinweis**: `ui.addItem(message/error/info Typen)` ist `local`; `ui.addItem(help/stats/tools/about etc. komplexe UI-Typen)` ist `local-jsx`.
+> **Hinweis**: `ui.addItem(message/error/info-Typ)` ist `local`; `ui.addItem(help/stats/tools/about usw. komplexe UI-Typen)` ist `local-jsx`.
 
-### 4.2 Klassifizierungstabelle für Built-in-Befehle
+### 4.2 Klassifizierungstabelle integrierter Befehle
 
-**`local`-Klasse** (deklariert `commandType: 'local'`, `supportedModes` inferiert zu all modes):
+**`local`-Klasse** (Deklaration `commandType: 'local'`, `supportedModes` abgeleitet als alle Modi):
 
-| Befehlsdatei             | Befehlsname     | Beschreibung                                                    |
-| -------------------- | ---------- | ------------------------------------------------------- |
-| `btwCommand.ts`      | `btw`      | Gibt `submit_prompt` oder `stream_messages` zurück               |
-| `bugCommand.ts`      | `bug`      | Gibt `submit_prompt` oder `stream_messages` zurück               |
-| `compressCommand.ts` | `compress` | Bereits executionMode-angepasst, gibt `message`/`submit_prompt` zurück |
-| `contextCommand.ts`  | `context`  | Gibt `message` zurück (enthält UI-Rendering, aber textersetzbar)                |
-| `exportCommand.ts`   | `export`   | Datei-I/O, gibt `message` zurück                                |
-| `initCommand.ts`     | `init`     | Gibt `submit_prompt`/`message`/`confirm_action` zurück         |
-| `memoryCommand.ts`   | `memory`   | Subcommands geben `message` zurück (Datei-I/O)                        |
-| `planCommand.ts`     | `plan`     | Gibt `submit_prompt` zurück                                    |
-| `summaryCommand.ts`  | `summary`  | Bereits executionMode-angepasst, gibt `submit_prompt`/`message` zurück |
-| `insightCommand.ts`  | `insight`  | Gibt `stream_messages` zurück                                  |
+| Befehlsdatei            | Befehl      | Beschreibung                                                |
+| ----------------------- | ----------- | ----------------------------------------------------------- |
+| `btwCommand.ts`         | `btw`       | Gibt `submit_prompt` oder `stream_messages` zurück          |
+| `bugCommand.ts`         | `bug`       | Gibt `submit_prompt` oder `stream_messages` zurück          |
+| `compressCommand.ts`    | `compress`  | Hat bereits executionMode-Adaption, gibt `message`/`submit_prompt` zurück |
+| `contextCommand.ts`     | `context`   | Gibt `message` zurück (enthält UI-Rendering, aber Text-Ersatz möglich) |
+| `exportCommand.ts`      | `export`    | Datei-I/O, gibt `message` zurück                            |
+| `initCommand.ts`        | `init`      | Gibt `submit_prompt`/`message`/`confirm_action` zurück      |
+| `memoryCommand.ts`      | `memory`    | Unterbefehle geben `message` zurück (Datei-I/O)             |
+| `planCommand.ts`        | `plan`      | Gibt `submit_prompt` zurück                                 |
+| `summaryCommand.ts`     | `summary`   | Hat bereits executionMode-Adaption, gibt `submit_prompt`/`message` zurück |
+| `insightCommand.ts`     | `insight`   | Gibt `stream_messages` zurück                               |
 
-> **Hinweis**: `contextCommand` und `insightCommand` geben zwar aktuell `addItem`-Aufrufe zurück, sind aber inhaltlich Text und gehören daher zu `local`.
+> **Hinweis**: `contextCommand` und `insightCommand` geben zwar aktuell `addItem`-Aufrufe zurück, aber ihr Inhalt ist textuell, gehören zu `local`.
 
-**`local-jsx`-Klasse** (deklariert `commandType: 'local-jsx'`, `supportedModes` inferiert zu `['interactive']`):
+**`local-jsx`-Klasse** (Deklaration `commandType: 'local-jsx'`, `supportedModes` abgeleitet als `['interactive']`):
 
-| Befehlsdatei                  | Befehlsname           | Grund für fehlende Headless-Unterstützung                       |
-| ------------------------- | ---------------- | ------------------------------------------ |
-| `aboutCommand.ts`         | `about`          | `addItem(HistoryItemAbout)` — komplexe UI-Komponente |
-| `agentsCommand.ts`        | `agents`         | `dialog: subagent_create/subagent_list`    |
-| `approvalModeCommand.ts`  | `approval-mode`  | `dialog: approval-mode`                    |
-| `arenaCommand.ts`         | `arena`          | `dialog: arena_*`                          |
-| `authCommand.ts`          | `auth`           | `dialog: auth`                             |
-| `clearCommand.ts`         | `clear`          | `ui.clear()` manipuliert Terminal direkt                  |
-| `copyCommand.ts`          | `copy`           | Clipboard-Operation, kein Headless-Pfad               |
-| `directoryCommand.tsx`    | `directory`      | JSX-Komponente                                   |
-| `docsCommand.ts`          | `docs`           | Öffnet Browser                                 |
-| `editorCommand.ts`        | `editor`         | `dialog: editor`                           |
-| `extensionsCommand.ts`    | `extensions`     | `dialog: extensions_manage`                |
-| `helpCommand.ts`          | `help`           | `addItem(HistoryItemHelp)` — komplexe Help-UI  |
-| `hooksCommand.ts`         | `hooks`          | `dialog: hooks`                            |
-| `ideCommand.ts`           | `ide`            | IDE-Prozess-Erkennung und Interaktion                         |
-| `languageCommand.ts`      | `language`       | `dialog` + `reloadCommands`                |
-| `mcpCommand.ts`           | `mcp`            | `dialog: mcp`                              |
-| `modelCommand.ts`         | `model`          | `dialog: model/fast-model`                 |
-| `permissionsCommand.ts`   | `permissions`    | `dialog: permissions`                      |
-| `quitCommand.ts`          | `quit`           | `quit` Result-Typ                         |
-| `restoreCommand.ts`       | `restore`        | `load_history` Result-Typ                 |
-| `resumeCommand.ts`        | `resume`         | `dialog: resume`                           |
-| `settingsCommand.ts`      | `settings`       | `dialog: settings`                         |
-| `setupGithubCommand.ts`   | `setup-github`   | `confirm_shell_commands` + interaktive Operationen      |
-| `skillsCommand.ts`        | `skills`         | `addItem(HistoryItemSkillsList)` — komplexe UI |
-| `statsCommand.ts`         | `stats`          | `addItem(HistoryItemStats)` — komplexe UI      |
-| `statuslineCommand.ts`    | `statusline`     | UI-Statuskonfiguration                                |
-| `terminalSetupCommand.ts` | `terminal-setup` | Terminal-Konfigurationswizard                               |
-| `themeCommand.ts`         | `theme`          | `dialog: theme`                            |
-| `toolsCommand.ts`         | `tools`          | `addItem(HistoryItemTools)` — komplexe UI      |
-| `trustCommand.ts`         | `trust`          | `dialog: trust`                            |
-| `vimCommand.ts`           | `vim`            | `toggleVimEnabled()` — UI-Status             |
+| Befehlsdatei                 | Befehl           | Grund, warum nicht headless möglich                       |
+| ---------------------------- | ---------------- | --------------------------------------------------------- |
+| `aboutCommand.ts`            | `about`          | `addItem(HistoryItemAbout)` – Komplexe UI-Komponente      |
+| `agentsCommand.ts`           | `agents`         | `dialog: subagent_create/subagent_list`                   |
+| `approvalModeCommand.ts`     | `approval-mode`  | `dialog: approval-mode`                                   |
+| `arenaCommand.ts`            | `arena`          | `dialog: arena_*`                                         |
+| `authCommand.ts`             | `auth`           | `dialog: auth`                                            |
+| `clearCommand.ts`            | `clear`          | `ui.clear()` – Direkter Terminalzugriff                   |
+| `copyCommand.ts`             | `copy`           | Zwischenablage-Operation, kein headless-Pfad               |
+| `directoryCommand.tsx`       | `directory`      | JSX-Komponente                                            |
+| `docsCommand.ts`             | `docs`           | Öffnet Browser                                            |
+| `editorCommand.ts`           | `editor`         | `dialog: editor`                                          |
+| `extensionsCommand.ts`       | `extensions`     | `dialog: extensions_manage`                               |
+| `helpCommand.ts`             | `help`           | `addItem(HistoryItemHelp)` – Komplexe Hilfe-UI            |
+| `hooksCommand.ts`            | `hooks`          | `dialog: hooks`                                           |
+| `ideCommand.ts`              | `ide`            | IDE-Prozesserfassung und -Interaktion                     |
+| `languageCommand.ts`         | `language`       | `dialog` + `reloadCommands`                               |
+| `mcpCommand.ts`              | `mcp`            | `dialog: mcp`                                             |
+| `modelCommand.ts`            | `model`          | `dialog: model/fast-model`                                |
+| `permissionsCommand.ts`      | `permissions`    | `dialog: permissions`                                     |
+| `quitCommand.ts`             | `quit`           | Ergebnis-Typ `quit`                                       |
+| `restoreCommand.ts`          | `restore`        | Ergebnis-Typ `load_history`                               |
+| `resumeCommand.ts`           | `resume`         | `dialog: resume`                                          |
+| `settingsCommand.ts`         | `settings`       | `dialog: settings`                                        |
+| `setupGithubCommand.ts`      | `setup-github`   | `confirm_shell_commands` + interaktive Operationen        |
+| `skillsCommand.ts`           | `skills`         | `addItem(HistoryItemSkillsList)` – Komplexe UI            |
+| `statsCommand.ts`            | `stats`          | `addItem(HistoryItemStats)` – Komplexe UI                 |
+| `statuslineCommand.ts`       | `statusline`     | UI-Statuskonfiguration                                    |
+| `terminalSetupCommand.ts`    | `terminal-setup` | Terminal-Einrichtungsassistent                            |
+| `themeCommand.ts`            | `theme`          | `dialog: theme`                                           |
+| `toolsCommand.ts`            | `tools`          | `addItem(HistoryItemTools)` – Komplexe UI                 |
+| `trustCommand.ts`            | `trust`          | `dialog: trust`                                           |
+| `vimCommand.ts`              | `vim`            | `toggleVimEnabled()` – UI-Status                          |
 
 ---
 
-## 5. Inferenzregeln für `getEffectiveSupportedModes`
+## 5. `getEffectiveSupportedModes`-Ableitungsregeln
 
-Diese Funktion ist die Kernlogik von Phase 1, ersetzt die ursprüngliche Whitelist und wird von `filterCommandsForMode` aufgerufen.
+Diese Funktion ist die Kernlogik von Phase 1, ersetzt die bisherige Whitelist und wird von `filterCommandsForMode` aufgerufen.
 
 ```typescript
 /**
- * Ermittelt die tatsächlich unterstützten Modi eines Befehls.
+ * Ermittelt die tatsächliche Liste der unterstützten Modi für einen Befehl.
  *
- * Inferenzpriorität (von hoch nach niedrig):
- * 1. Explizit deklarierter supportedModes (höchste Priorität)
- * 2. Inferenz basierend auf commandType
- * 3. Fallback basierend auf CommandKind (Abwärtskompatibilität)
+ * Ableitungspriorität (höchste zu niedrigster):
+ * 1. Explizit deklariertes supportedModes des Befehls (höchste Priorität)
+ * 2. Ableitung basierend auf commandType
+ * 3. Fallback basierend auf CommandKind (Rückwärtskompatibilität)
  */
 export function getEffectiveSupportedModes(cmd: SlashCommand): ExecutionMode[] {
   // Priorität 1: Explizite Deklaration
@@ -339,32 +339,36 @@ export function getEffectiveSupportedModes(cmd: SlashCommand): ExecutionMode[] {
     return cmd.supportedModes;
   }
 
-  // Priorität 2: Inferenz basierend auf commandType
+  // Priorität 2: Ableitung basierend auf commandType
   if (cmd.commandType !== undefined) {
     switch (cmd.commandType) {
       case 'prompt':
-        // Prompt-Typ hat keine UI-Abhängigkeiten, standardmäßig in allen Modi verfügbar
+        // prompt-Typ hat keine UI-Abhängigkeit, von Haus aus in allen Modi verfügbar
         return ['interactive', 'non_interactive', 'acp'];
       case 'local':
-        // Local-Typ konservativer Standard: nur interactive.
-        // Befehle, die Non-Interactive-Unterstützung benötigen, müssen supportedModes explizit deklarieren (entspricht supportsNonInteractive: true in Claude Code).
-        // In Phase 2 einzeln validieren und freischalten, um zu verhindern, dass nicht angepasste Befehle Headless-Aufrufern ungewollt ausgesetzt werden.
+        // local-Typ konservativer Standard: nur interactive.
+        // Befehle, die nicht-interaktive Unterstützung benötigen, müssen supportedModes explizit deklarieren
+        // (entspricht Claude Codes supportsNonInteractive: true).
+        // In Phase 2 werden sie einzeln validiert und freigeschaltet, um zu vermeiden, dass unangepasste
+        // Befehle versehentlich headless-Aufrufern ausgesetzt werden.
         return ['interactive'];
       case 'local-jsx':
         return ['interactive'];
     }
   }
 
-  // Priorität 3: Fallback (basierend auf CommandKind, Abwärtskompatibilität für alten Code)
+  // Priorität 3: Fallback (basierend auf CommandKind, für Rückwärtskompatibilität mit altem Code)
   switch (cmd.kind) {
     case CommandKind.BUILT_IN:
-      // Built-in-Befehle ohne commandType-Deklaration: konservativer Standard (nur interactive)
-      // Dieser Branch sollte nach Abschluss von Phase 1 nicht mehr erreicht werden (alle Built-in-Befehle haben commandType)
+      // Integrierte Befehle ohne commandType-Deklaration: konservativer Standard (nur interactive)
+      // Dieser Zweig sollte nach Abschluss von Phase 1 nicht mehr erreicht werden
+      // (alle integrierten Befehle haben dann commandType)
       return ['interactive'];
     case CommandKind.FILE:
     case CommandKind.SKILL:
     case CommandKind.MCP_PROMPT:
-      // Diese drei Befehlstypen haben action-Implementierungen ohne UI-Abhängigkeiten, historisch in allen Modi verfügbar
+      // Diese drei Befehlstypen haben von Natur aus keine UI-Abhängigkeit;
+      // historisch auch in allen Modi verfügbar
       return ['interactive', 'non_interactive', 'acp'];
     default:
       return ['interactive'];
@@ -375,7 +379,7 @@ export function getEffectiveSupportedModes(cmd: SlashCommand): ExecutionMode[] {
 ```typescript
 /**
  * Filtert Befehle basierend auf supportedModes für den aktuellen Modus.
- * Ersetzt die ursprüngliche filterCommandsForNonInteractive-Funktion.
+ * Ersetzt die bisherige filterCommandsForNonInteractive-Funktion.
  */
 export function filterCommandsForMode(
   commands: readonly SlashCommand[],
@@ -391,20 +395,20 @@ export function filterCommandsForMode(
 
 ## 6. Erweiterung des `CommandService`-Interfaces
 
-Zwei neue Methoden in `packages/cli/src/services/CommandService.ts` hinzufügen:
+Zwei neue Methoden in `packages/cli/src/services/CommandService.ts`:
 
 ```typescript
 export class CommandService {
-  // ── Bestehende Methoden (unverändert)────────────────────────────────────────────────
+  // ── Bestehende Methode (unverändert) ────────────────────────────────────────────────
   getCommands(): readonly SlashCommand[] {
     return this.commands;
   }
 
-  // ── Phase 1 neue Methoden ──────────────────────────────────────────────────
+  // ── Phase 1 Neue Methoden ──────────────────────────────────────────────────
 
   /**
    * Gibt die Liste der im angegebenen Ausführungsmodus verfügbaren Befehle zurück.
-   * Ersetzt die Kombination aus Whitelist + filterCommandsForNonInteractive.
+   * Ersetzt die Kombination aus bisheriger Whitelist + filterCommandsForNonInteractive.
    *
    * @param mode Ziel-Ausführungsmodus
    * @returns Liste der für diesen Modus geeigneten Befehle (ohne hidden-Befehle)
@@ -418,7 +422,7 @@ export class CommandService {
 
   /**
    * Gibt alle Befehle zurück, bei denen modelInvocable true ist.
-   * SkillTool wird diese Methode in Phase 2 konsumieren; Phase 1 stellt nur das Interface bereit.
+   * In Phase 2 wird SkillTool diese Methode konsumieren; Phase 1 stellt nur die Schnittstelle bereit.
    *
    * @returns Liste der vom Modell aufrufbaren Befehle
    */
@@ -430,11 +434,11 @@ export class CommandService {
 }
 ```
 
-> **Hinweis**: `getEffectiveSupportedModes` und `filterCommandsForMode` sollten als interne Utility-Funktionen von `CommandService` verwendet oder in eine separate Datei `packages/cli/src/services/commandUtils.ts` extrahiert und exportiert werden, um Tests und Wiederverwendung zu ermöglichen.
+> **Hinweis**: `getEffectiveSupportedModes` und `filterCommandsForMode` sollten als interne Hilfsfunktionen des `CommandService` oder in eine separate Datei `packages/cli/src/services/commandUtils.ts` ausgelagert und exportiert werden, um Tests und Wiederverwendung zu erleichtern.
 
 ---
 
-## 7. Refactoring von `nonInteractiveCliCommands.ts`
+## 7. Refaktorisierung von `nonInteractiveCliCommands.ts`
 
 ### 7.1 Zu löschende Inhalte
 
@@ -454,11 +458,11 @@ function filterCommandsForNonInteractive(
 ### 7.2 Neue Inhalte
 
 ```typescript
-// ✅ Neu (oder aus commandUtils importieren)
+// ✅ Neu (oder Import aus commandUtils)
 import { filterCommandsForMode } from '../services/commandUtils.js';
 ```
 
-### 7.3 Änderung der Funktionssignatur von `handleSlashCommand`
+### 7.3 Änderung der Signatur von `handleSlashCommand`
 
 ```typescript
 // ❌ Alte Signatur
@@ -470,7 +474,7 @@ export const handleSlashCommand = async (
   allowedBuiltinCommandNames: string[] = [...ALLOWED_BUILTIN_COMMANDS_NON_INTERACTIVE],
 ): Promise<NonInteractiveSlashCommandResult>
 
-// ✅ Neue Signatur (allowedBuiltinCommandNames entfernt)
+// ✅ Neue Signatur (Entfernung von allowedBuiltinCommandNames)
 export const handleSlashCommand = async (
   rawQuery: string,
   abortController: AbortController,
@@ -479,7 +483,7 @@ export const handleSlashCommand = async (
 ): Promise<NonInteractiveSlashCommandResult>
 ```
 
-### 7.4 Änderungen in der internen Implementierung
+### 7.4 Interne Implementierungsänderungen
 
 ```typescript
 // Alt:
@@ -493,7 +497,7 @@ const executionMode = isAcpMode ? 'acp' : 'non_interactive';
 const filteredCommands = filterCommandsForMode(allCommands, executionMode);
 ```
 
-### 7.5 Änderung der Funktionssignatur von `getAvailableCommands`
+### 7.5 Änderung der Signatur von `getAvailableCommands`
 
 ```typescript
 // ❌ Alte Signatur
@@ -511,7 +515,7 @@ export const getAvailableCommands = async (
 ): Promise<SlashCommand[]>
 ```
 
-> Der neue `mode`-Parameter ersetzt den ursprünglichen Whitelist-Parameter. ACP-Sessions können explizit `'acp'` angeben, Non-Interactive-Aufrufe `'non_interactive'`.
+> Neuer `mode`-Parameter ersetzt den bisherigen Whitelist-Parameter. ACP-Session-Aufrufe können explizit `'acp'` angeben, non-interactive-Aufrufe `'non_interactive'`.
 
 ---
 
@@ -524,10 +528,10 @@ const slashCommandResult = await handleSlashCommand(
   abortController,
   this.config,
   this.settings,
-  // nicht übergeben, verwendet Standard-Whitelist
+  // Nicht übergeben – Standard-Whitelist wird verwendet
 );
 
-// ✅ Neuer Aufruf (keine Änderung, entfernter Default-Parameter existiert nicht mehr)
+// ✅ Neuer Aufruf (keine Änderung – nicht mehr vorhandener Standardparameter entfällt)
 const slashCommandResult = await handleSlashCommand(
   inputText,
   abortController,
@@ -543,7 +547,7 @@ const slashCommands = await getAvailableCommands(
   abortController.signal,
 );
 
-// ✅ Neuer Aufruf (Modus explizit angegeben)
+// ✅ Neuer Aufruf (expliziter mode)
 const slashCommands = await getAvailableCommands(
   this.config,
   abortController.signal,
@@ -553,213 +557,212 @@ const slashCommands = await getAvailableCommands(
 
 ---
 
-## 9. Übersicht der Dateiänderungen
+## 9. Dateiänderungen – Übersicht
 
 ### 9.1 Geänderte Dateien
 
-| Datei                                                                    | Änderung                                                                                         |
+| Datei                                                                   | Änderungsinhalt                                                                                  |
 | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `packages/cli/src/ui/commands/types.ts`                                 | Neue Typen `ExecutionMode`, `CommandSource`, `CommandType`; Erweiterung des `SlashCommand`-Interfaces              |
-| `packages/cli/src/services/CommandService.ts`                           | Neue Methoden `getCommandsForMode()`, `getModelInvocableCommands()`                                  |
-| `packages/cli/src/nonInteractiveCliCommands.ts`                         | Whitelist-Konstanten und alte Filterfunktion entfernt; Signaturen zweier Export-Funktionen aktualisiert; `filterCommandsForMode` eingebunden                 |
-| `packages/cli/src/acp-integration/session/Session.ts`                   | Aufrufe von `handleSlashCommand` und `getAvailableCommands` aktualisiert                                         |
-| `packages/cli/src/services/BuiltinCommandLoader.ts`                     | Injektion von `source: 'builtin-command'`, `sourceLabel: 'Built-in'`, `modelInvocable: false` beim Befehlsaufbau |
-| `packages/cli/src/services/BundledSkillLoader.ts`                       | Injektion von `source: 'bundled-skill'`, `commandType: 'prompt'`, `modelInvocable: true`                  |
-| `packages/cli/src/services/FileCommandLoader.ts` / `command-factory.ts` | Injektion von `source`, `commandType: 'prompt'`, `modelInvocable` (basierend auf extensionName)                   |
-| `packages/cli/src/services/McpPromptLoader.ts`                          | Injektion von `source: 'mcp-prompt'`, `commandType: 'prompt'`, `modelInvocable: true`                     |
-| **Einzelne Built-in-Befehlsdateien (10x local + 27x local-jsx)**               | Deklaration von `commandType: 'local'` oder `commandType: 'local-jsx'`                                        |
+| `packages/cli/src/ui/commands/types.ts`                                 | Neue Typen `ExecutionMode`, `CommandSource`, `CommandType`; Erweiterung des `SlashCommand`-Interfaces |
+| `packages/cli/src/services/CommandService.ts`                           | Neue Methoden `getCommandsForMode()`, `getModelInvocableCommands()`                              |
+| `packages/cli/src/nonInteractiveCliCommands.ts`                         | Löschung der Whitelist-Konstanten und alten Filterfunktion; Aktualisierung der Signaturen zweier Exportfunktionen; Einbindung von `filterCommandsForMode` |
+| `packages/cli/src/acp-integration/session/Session.ts`                   | Aktualisierte Aufrufe von `handleSlashCommand` und `getAvailableCommands`                       |
+| `packages/cli/src/services/BuiltinCommandLoader.ts`                     | Injiziert `source: 'builtin-command'`, `sourceLabel: 'Built-in'`, `modelInvocable: false` beim Befehlsbau |
+| `packages/cli/src/services/BundledSkillLoader.ts`                       | Injiziert `source: 'bundled-skill'`, `commandType: 'prompt'`, `modelInvocable: true`            |
+| `packages/cli/src/services/FileCommandLoader.ts` / `command-factory.ts` | Injiziert `source`, `commandType: 'prompt'`, `modelInvocable` (abhängig von extensionName)      |
+| `packages/cli/src/services/McpPromptLoader.ts`                          | Injiziert `source: 'mcp-prompt'`, `commandType: 'prompt'`, `modelInvocable: true`               |
+| **Jede integrierte Befehlsdatei (10 local + 27 local-jsx)**             | Deklaration von `commandType: 'local'` oder `commandType: 'local-jsx'`                          |
 
 ### 9.2 Neue Dateien
 
-| Datei                                        | Inhalt                                                                       |
-| ------------------------------------------- | -------------------------------------------------------------------------- |
-| `packages/cli/src/services/commandUtils.ts` | Utility-Funktionen `getEffectiveSupportedModes()`, `filterCommandsForMode()` und deren Export |
+| Datei                                       | Inhalt                                                                    |
+| ------------------------------------------- | ------------------------------------------------------------------------- |
+| `packages/cli/src/services/commandUtils.ts` | `getEffectiveSupportedModes()`, `filterCommandsForMode()` und deren Export|
 
 ### 9.3 Unveränderte Dateien
 
-- `packages/cli/src/utils/commands.ts` (`parseSlashCommand` benötigt keine Änderung)
-- `packages/cli/src/ui/hooks/slashCommandProcessor.ts` (Interactive-Pfad benötigt keine Änderung)
-- `packages/cli/src/ui/noninteractive/nonInteractiveUi.ts` (Stub-UI benötigt keine Änderung)
-- `action`-Implementierungen aller Befehle (Phase 1 ändert kein Befehlsverhalten)
+- `packages/cli/src/utils/commands.ts` (`parseSlashCommand` muss nicht geändert werden)
+- `packages/cli/src/ui/hooks/slashCommandProcessor.ts` (interaktiver Pfad muss nicht geändert werden)
+- `packages/cli/src/ui/noninteractive/nonInteractiveUi.ts` (Stub-UI muss nicht geändert werden)
+- Alle `action`-Implementierungen der Befehle (Phase 1 ändert kein Befehlsverhalten)
 
 ---
 
-## 10. Analyse der Verhaltensauswirkungen
+## 10. Auswirkungsanalyse des Verhaltens
 
 ### 10.1 Zusammenfassung der Änderungen
 
-| Szenario                                 | Altes Verhalten                       | Neues Verhalten                                                   | Art        |
-| ------------------------------------ | ---------------------------- | -------------------------------------------------------- | ----------- |
-| Ausführung von `/init` in non-interactive       | ✅ Erlaubt (Whitelist)            | ✅ Erlaubt (`commandType: local`)                          | Keine Änderung      |
-| Ausführung von `/summary` in non-interactive    | ✅ Erlaubt                      | ✅ Erlaubt                                                  | Keine Änderung      |
-| Ausführung von `/compress` in non-interactive   | ✅ Erlaubt                      | ✅ Erlaubt                                                  | Keine Änderung      |
-| Ausführung von `/btw` in non-interactive        | ✅ Erlaubt                      | ✅ Erlaubt                                                  | Keine Änderung      |
-| Ausführung von `/bug` in non-interactive        | ✅ Erlaubt                      | ✅ Erlaubt                                                  | Keine Änderung      |
-| Ausführung von `/context` in non-interactive    | ✅ Erlaubt                      | ✅ Erlaubt                                                  | Keine Änderung      |
-| Ausführung von `/model` in non-interactive      | ❌ unsupported               | ❌ unsupported (`commandType: local-jsx`)               | Keine Änderung      |
-| Ausführung von File Commands in non-interactive  | ✅ Erlaubt (CommandKind.FILE)  | ✅ Erlaubt (`commandType: prompt`)                         | Keine Änderung      |
-| Ausführung von Bundled Skills in non-interactive | ✅ Erlaubt (CommandKind.SKILL) | ✅ Erlaubt (`commandType: prompt`)                         | Keine Änderung      |
-| Ausführung von MCP Prompts in non-interactive    | ❌ Abfang durch CommandKind       | ✅ Erlaubt (`commandType: prompt`)                         | **Bugfix** |
-| Ausführung von `/export` in non-interactive     | ❌ Nicht in Whitelist                | ❌ Nicht erlaubt (`commandType: local`, Standard interactive only) | Keine Änderung      |
-| Ausführung von `/memory` in non-interactive     | ❌ Nicht in Whitelist                | ❌ Nicht erlaubt (`commandType: local`, Standard interactive only) | Keine Änderung      |
-| Ausführung von `/plan` in non-interactive       | ❌ Nicht in Whitelist                | ❌ Nicht erlaubt (`commandType: local`, Standard interactive only) | Keine Änderung      |
-
-> **Zur konservativen Standardstrategie für `local`-Befehle**: Der Standardwert für `supportedModes` bei `commandType: 'local'` ist `['interactive']`. Dies entspricht dem Design von Claude Code – `local`-Befehle müssen explizit `supportsNonInteractive: true` deklarieren, um im Non-Interactive-Modus zu laufen. In Phase 1 ersetzen die 6 Befehle der Whitelist (`init`, `summary`, `compress`, `btw`, `bug`, `context`) den ursprünglichen Whitelist-Effekt durch die explizite Deklaration von `supportedModes: ['interactive', 'non_interactive', 'acp']`. Befehle, die in Phase 2 erweitert werden sollen (z. B. `/export`, `/memory`, `/plan`), werden erst freigeschaltet, nachdem ihre `action`-Implementierung als headless-freundlich validiert wurde.
+| Szenario                               | Altes Verhalten                    | Neues Verhalten                                        | Art        |
+| -------------------------------------- | ---------------------------------- | ------------------------------------------------------ | ---------- |
+| `/init` im non-interactive Modus       | ✅ Erlaubt (Whitelist)             | ✅ Erlaubt (`commandType: local`)                      | Keine Änderung |
+| `/summary` im non-interactive Modus    | ✅ Erlaubt                         | ✅ Erlaubt                                             | Keine Änderung |
+| `/compress` im non-interactive Modus   | ✅ Erlaubt                         | ✅ Erlaubt                                             | Keine Änderung |
+| `/btw` im non-interactive Modus        | ✅ Erlaubt                         | ✅ Erlaubt                                             | Keine Änderung |
+| `/bug` im non-interactive Modus        | ✅ Erlaubt                         | ✅ Erlaubt                                             | Keine Änderung |
+| `/context` im non-interactive Modus    | ✅ Erlaubt                         | ✅ Erlaubt                                             | Keine Änderung |
+| `/model` im non-interactive Modus      | ❌ Nicht unterstützt               | ❌ Nicht unterstützt (`commandType: local-jsx`)        | Keine Änderung |
+| File-Command im non-interactive Modus  | ✅ Erlaubt (CommandKind.FILE)      | ✅ Erlaubt (`commandType: prompt`)                     | Keine Änderung |
+| Bundled Skill im non-interactive Modus | ✅ Erlaubt (CommandKind.SKILL)     | ✅ Erlaubt (`commandType: prompt`)                     | Keine Änderung |
+| MCP-Prompt im non-interactive Modus    | ❌ Von CommandKind blockiert       | ✅ Erlaubt (`commandType: prompt`)                     | **Bugfix** |
+| `/export` im non-interactive Modus     | ❌ Nicht in Whitelist              | ❌ Nicht erlaubt (`commandType: local`, Standard nur interactive) | Keine Änderung |
+| `/memory` im non-interactive Modus     | ❌ Nicht in Whitelist              | ❌ Nicht erlaubt (`commandType: local`, Standard nur interactive) | Keine Änderung |
+| `/plan` im non-interactive Modus       | ❌ Nicht in Whitelist              | ❌ Nicht erlaubt (`commandType: local`, Standard nur interactive) | Keine Änderung |
+> **Konservative Standardstrategie für den Befehl `local`**: Der Standardwert von `supportedModes` für `commandType: 'local'` ist `['interactive']`, was mit dem Design von Claude Code übereinstimmt – Befehle vom Typ `local` müssen explizit `supportsNonInteractive: true` deklarieren, um im nicht-interaktiven Modus ausgeführt zu werden. Die 6 Befehle auf der Whitelist in Phase 1 (`init`, `summary`, `compress`, `btw`, `bug`, `context`) ersetzen die ursprüngliche Whitelist-Wirkung äquivalent durch explizite Deklaration von `supportedModes: ['interactive', 'non_interactive', 'acp']`. Befehle, die in Phase 2 erweitert werden müssen (wie `/export`, `/memory`, `/plan`), werden nach der Überprüfung, dass die Action headless-friendly implementiert ist, einzeln freigeschaltet.
 
 ---
 
-## 10.2 Modus-spezifische Befehle in Phase 2: Dual-Registration-Pattern
+## 10.2 Befehle mit Modusunterschieden in Phase 2: Dual-Registrierungsmuster
 
-Für Befehle in Phase 2, die "UI im Interactive-Modus, Textausgabe im Non-Interactive-Modus" benötigen (z. B. `/model`), sollte das **Dual-Registration-Pattern** verwendet werden, anstatt innerhalb einer einzelnen `action` zu verzweigen.
+Für Befehle in Phase 2, die im interaktiven Modus eine UI und im nicht-interaktiven Modus eine Textausgabe benötigen (wie `/model`), sollte das **Dual-Registrierungsmuster** verwendet werden, anstatt innerhalb der `action` eines einzelnen Befehls zu verzweigen.
 
-Dies ist das Standardpattern von Claude Code, am Beispiel `/context` (siehe `src/commands/context/index.ts`): Zwei gleichnamige `Command`-Objekte, eines `local-jsx` nur für interactive, das andere `local` nur für non-interactive, gegenseitig ausgeschlossen über `isEnabled()`.
+Dies ist das Standardmuster von Claude Code, am Beispiel von `/context` (siehe `src/commands/context/index.ts`): Zwei gleichnamige `Command`-Objekte, eines vom Typ `local-jsx` nur für interaktiv, das andere vom Typ `local` nur für nicht-interaktiv, die sich über `isEnabled()` gegenseitig ausschließen.
 
-Qwen Code sollte in Phase 2 einen äquivalenten Ansatz verfolgen, wobei `supportedModes` anstelle von `isEnabled()` die gegenseitige Ausschließung implementiert:
+Qwen Code sollte in Phase 2 einen äquivalenten Ansatz verwenden und die gegenseitige Exklusivität mit `supportedModes` anstelle von `isEnabled()` umsetzen:
 
 ```typescript
-// ① Interactive-Version: local-jsx, nur interactive
+// ① 交互模式版：local-jsx，仅 interactive
 export const modelCommandInteractive: SlashCommand = {
   name: 'model',
   kind: CommandKind.BUILT_IN,
   commandType: 'local-jsx',
-  supportedModes: ['interactive'], // Explizit eingeschränkt
-  // action: Öffnet Dialog zur Model-Auswahl
+  supportedModes: ['interactive'], // 显式限定
+  // action: 打开 dialog 选择 model
 };
 
-// ② Non-Interactive/ACP-Version: local, explizit für Headless-Aufrufe freigegeben
+// ② 非交互/acp 版：local，显式开放给 headless 调用者
 export const modelCommandHeadless: SlashCommand = {
   name: 'model',
   kind: CommandKind.BUILT_IN,
   commandType: 'local',
-  supportedModes: ['non_interactive', 'acp'], // Explizit eingeschränkt
-  // action: Liest/setzt Model, gibt message zurück (reiner Text)
+  supportedModes: ['non_interactive', 'acp'], // 显式限定
+  // action: 读取/设置 model，返回 message（纯文本）
 };
 ```
 
-Beide Objekte sind gleichnamig, `supportedModes` sind gegenseitig ausschließend, `filterCommandsForMode` wählt automatisch die korrekte Version. Im Vergleich zur `isEnabled()`-Ausschließung von Claude Code ist die `supportedModes`-Filterung expliziter, einfacher zu testen und erfordert keine Runtime-Umgebungserkennung.
+Die beiden Objekte haben denselben Namen, `supportedModes` sind sich gegenseitig ausschließend, und `filterCommandsForMode` wählt automatisch die richtige Version aus. Im Vergleich zur gegenseitigen Exklusivität mit `isEnabled()` bei Claude Code ist die Filterung mit `supportedModes` expliziter, testbarer und benötigt keine Laufzeitumgebungsprüfung.
 
-**Phase 1 implementiert keine Dual-Registration-Befehle**, dieses Pattern dient hier ausschließlich als Implementierungsspezifikation für Phase 2.
+**Phase 1 implementiert keine Dual-Registrierungsbefehle**; dieses Muster ist nur als Implementierungsspezifikation für Phase 2 hier reserviert.
 
 ---
 
 ## 11. Teststrategie
 
-### 11.1 Tests für neue Utility-Funktionen
+### 11.1 Tests für neue Hilfsfunktionen
 
 In `packages/cli/src/services/commandUtils.test.ts` (neue Datei):
 
 ```typescript
 describe('getEffectiveSupportedModes', () => {
-  it('Explizite supportedModes haben Vorrang vor commandType-Inferenz', () => {
+  it('显式 supportedModes 优先于 commandType 推断', () => {
     const cmd: SlashCommand = {
       name: 'test', description: '', kind: CommandKind.BUILT_IN,
       commandType: 'local',
-      supportedModes: ['interactive'], // Explizit eingeschränkt
+      supportedModes: ['interactive'], // 显式限制
     };
     expect(getEffectiveSupportedModes(cmd)).toEqual(['interactive']);
   });
 
-  it('commandType: local inferiert zu all modes', () => {
+  it('commandType: local 推断为 all modes', () => {
     const cmd: SlashCommand = { name: 'test', description: '', kind: CommandKind.BUILT_IN, commandType: 'local' };
     expect(getEffectiveSupportedModes(cmd)).toEqual(['interactive', 'non_interactive', 'acp']);
   });
 
-  it('commandType: local-jsx inferiert zu interactive only', () => {
+  it('commandType: local-jsx 推断为 interactive only', () => {
     const cmd: SlashCommand = { name: 'test', description: '', kind: CommandKind.BUILT_IN, commandType: 'local-jsx' };
     expect(getEffectiveSupportedModes(cmd)).toEqual(['interactive']);
   });
 
-  it('commandType: prompt inferiert zu all modes', () => {
+  it('commandType: prompt 推断为 all modes', () => {
     const cmd: SlashCommand = { name: 'test', description: '', kind: CommandKind.SKILL, commandType: 'prompt' };
     expect(getEffectiveSupportedModes(cmd)).toEqual(['interactive', 'non_interactive', 'acp']);
   });
 
-  it('Fehlende commandType-Deklaration und CommandKind.BUILT_IN, Fallback zu interactive', () => {
+  it('未声明 commandType 且 CommandKind.BUILT_IN，兜底为 interactive', () => {
     const cmd: SlashCommand = { name: 'test', description: '', kind: CommandKind.BUILT_IN };
     expect(getEffectiveSupportedModes(cmd)).toEqual(['interactive']);
   });
 
-  it('Fehlende commandType-Deklaration und CommandKind.FILE, Fallback zu all modes', () => {
+  it('未声明 commandType 且 CommandKind.FILE，兜底为 all modes', () => {
     const cmd: SlashCommand = { name: 'test', description: '', kind: CommandKind.FILE };
     expect(getEffectiveSupportedModes(cmd)).toEqual(['interactive', 'non_interactive', 'acp']);
   });
 
-  it('Fehlende commandType-Deklaration und CommandKind.MCP_PROMPT, Fallback zu all modes (behebt ursprüngliche Einschränkung)', () => {
+  it('未声明 commandType 且 CommandKind.MCP_PROMPT，兜底为 all modes（修复原有限制）', () => {
     const cmd: SlashCommand = { name: 'test', description: '', kind: CommandKind.MCP_PROMPT };
     expect(getEffectiveSupportedModes(cmd)).toEqual(['interactive', 'non_interactive', 'acp']);
   });
 });
 
 describe('filterCommandsForMode', () => {
-  it('Filtert Befehle im non_interactive-Modus korrekt', () => { ... });
-  it('Filtert Befehle im acp-Modus korrekt', () => { ... });
-  it('Filtert hidden-Befehle nicht (filterCommandsForMode behandelt hidden nicht, CommandService übernimmt dies)', () => { ... });
+  it('正确过滤 non_interactive 模式下的命令', () => { ... });
+  it('正确过滤 acp 模式下的命令', () => { ... });
+  it('不过滤 hidden 命令（filterCommandsForMode 不处理 hidden，CommandService 处理）', () => { ... });
 });
 ```
 
 ### 11.2 Aktualisierung von `nonInteractiveCliCommands.test.ts`
 
-- Alle Referenzen auf `ALLOWED_BUILTIN_COMMANDS_NON_INTERACTIVE` entfernen
-- Testfälle für den `allowedBuiltinCommandNames`-Parameter entfernen
-- Neu: Validieren, dass `commandType: local`-Befehle in non-interactive durch den Filter gehen
-- Neu: Validieren, dass `commandType: local-jsx`-Befehle in non-interactive gefiltert werden
-- Beibehalten: Validieren, dass File Commands / Skill Commands in non-interactive durch den Filter gehen
+- Entfernen aller Verweise auf `ALLOWED_BUILTIN_COMMANDS_NON_INTERACTIVE`
+- Entfernen von Testfällen für den Parameter `allowedBuiltinCommandNames`
+- Neu: Überprüfen, dass Befehle mit `commandType: local` im non-interactive Modus durch den Filter gelangen
+- Neu: Überprüfen, dass Befehle mit `commandType: local-jsx` im non-interactive Modus herausgefiltert werden
+- Beibehalten: Überprüfen, dass file-Commands / skill-Commands im non-interactive Modus durch den Filter gelangen
 
 ### 11.3 Aktualisierung von `CommandService.test.ts`
 
-- Neue Testfälle für `getCommandsForMode` hinzufügen
-- Neue Testfälle für `getModelInvocableCommands` hinzufügen
+- Neue Testfälle für `getCommandsForMode`
+- Neue Testfälle für `getModelInvocableCommands`
 
-### 11.4 Tests für einzelne Loader
+### 11.4 Tests der einzelnen Loader
 
-- `BuiltinCommandLoader.test.ts`: Validieren, dass alle Befehle `source: 'builtin-command'` haben
-- `BundledSkillLoader.test.ts`: Validieren von `source: 'bundled-skill'` und `modelInvocable: true`
-- `FileCommandLoader.test.ts`: Validieren, dass User-Befehle `source: 'skill-dir-command'` und Plugin-Befehle `source: 'plugin-command'` haben
-- `McpPromptLoader.test.ts`: Validieren von `source: 'mcp-prompt'` und `modelInvocable: true`
+- `BuiltinCommandLoader.test.ts`: Überprüfen, dass alle Befehle `source: 'builtin-command'` haben
+- `BundledSkillLoader.test.ts`: Überprüfen von `source: 'bundled-skill'` und `modelInvocable: true`
+- `FileCommandLoader.test.ts`: Überprüfen, dass Benutzerbefehle `source: 'skill-dir-command'` haben und Plugin-Befehle `source: 'plugin-command'`
+- `McpPromptLoader.test.ts`: Überprüfen von `source: 'mcp-prompt'` und `modelInvocable: true`
 
 ---
 
 ## 12. Implementierungsreihenfolge
 
-Empfohlene Reihenfolge, jeder Schritt kann separat committet und reviewed werden:
+Es wird empfohlen, in der folgenden Reihenfolge zu implementieren, jeder Schritt kann unabhängig committet und reviewed werden:
 
-**Step 1** (~30min): `types.ts` anpassen, `ExecutionMode`, `CommandSource`, `CommandType` und neue `SlashCommand`-Felder hinzufügen
-→ Reine Typänderung, TypeScript-Compiler-Check
+**Step 1** (~30min): Ändern von `types.ts`, Hinzufügen der neuen Felder `ExecutionMode`, `CommandSource`, `CommandType` und `SlashCommand`
+→ Reine Typänderung, TypeScript-Compile-Prüfung
 
-**Step 2** (~1h): `commandUtils.ts` neu erstellen, `getEffectiveSupportedModes` und `filterCommandsForMode` implementieren, parallel `commandUtils.test.ts` erstellen
-→ Unit-Tests decken Kernlogik ab
+**Step 2** (~1h): Neuanlegen von `commandUtils.ts`, Implementieren von `getEffectiveSupportedModes` und `filterCommandsForMode`, gleichzeitiges Neuanlegen von `commandUtils.test.ts`
+→ Unit-Tests decken die Kernlogik ab
 
-**Step 3** (~1h): `nonInteractiveCliCommands.ts` refactoren, Whitelist entfernen, `filterCommandsForMode` einbinden, Funktionssignaturen aktualisieren
-→ Verhaltensäquivalenz (Phase 1 konservative Strategie: `local`-Befehle deklarieren explizit `supportedModes: ['interactive']`)
+**Step 3** (~1h): Refactoring von `nonInteractiveCliCommands.ts`, Entfernen der Whitelist, Einführen von `filterCommandsForMode`, Aktualisieren der Funktionssignatur
+→ Verhaltensäquivalenz (Phase 1 Konservative Strategie: local-Befehle schreiben explizit `supportedModes: ['interactive']`)
 
-**Step 4** (~30min): `CommandService.ts` aktualisieren, zwei neue Methoden hinzufügen
+**Step 4** (~30min): Aktualisieren von `CommandService.ts`, Hinzufügen der beiden neuen Methoden
 
-**Step 5** (~2h): `commandType`-Deklarationen für alle Built-in-Befehlsdateien hinzufügen
-→ Klassifizierung einzeln auf Korrektheit prüfen
+**Step 5** (~2h): Hinzufügen der `commandType`-Deklaration zu allen Built-in-Befehlsdateien
+→ Einzeln die korrekte Klassifizierung bestätigen
 
-**Step 6** (~1.5h): Alle Loader aktualisieren, `source`, `sourceLabel`, `commandType`, `modelInvocable` injizieren
+**Step 6** (~1.5h): Aktualisieren aller Loader, Einfügen von `source`, `sourceLabel`, `commandType`, `modelInvocable`
 
-**Step 7** (~30min): Aufrufsignaturen in `Session.ts` aktualisieren
+**Step 7** (~30min): Aktualisieren der Aufrufsignatur in `Session.ts`
 
-**Step 8** (~1h): Alle Tests ausführen, fehlgeschlagene Cases beheben, Snapshots aktualisieren
+**Step 8** (~1h): Ausführen aller Tests, Beheben fehlgeschlagener Fälle, Aktualisieren von Snapshots
 
-**Step 9** (~30min): CR-Selbstprüfung: Bestätigen, dass Whitelist vollständig entfernt wurde, keine verwaisten Aufrufe
+**Step 9** (~30min): Selbst-CR: Überprüfen, dass die Whitelist vollständig entfernt wurde, keine ausgelassenen Aufrufe vorhanden sind
 
 ---
 
 ## 13. Abnahme-Checkliste
 
-- [ ] TypeScript-Compilation fehlerfrei (`npm run typecheck`)
+- [ ] TypeScript-Kompilierung ohne Fehler (`npm run typecheck`)
 - [ ] `npm run lint` ohne neue Lint-Fehler
-- [ ] Alle bestehenden Tests erfolgreich (`cd packages/cli && npx vitest run`)
-- [ ] Neue Tests in `commandUtils.test.ts` alle erfolgreich
-- [ ] `getEffectiveSupportedModes` deckt alle 7 Cases ab
-- [ ] `filterCommandsForMode` deckt interactive / non_interactive / acp Modi ab
-- [ ] `ALLOWED_BUILTIN_COMMANDS_NON_INTERACTIVE` hat keine Referenzen mehr im gesamten Codebase (`grep`-Validierung)
-- [ ] `filterCommandsForNonInteractive`-Funktion hat keine Referenzen mehr im gesamten Codebase
-- [ ] Alle Built-in-Befehle besitzen `commandType`-Feld
-- [ ] Alle Loader-Ausgaben besitzen `source`- und `sourceLabel`-Felder
-- [ ] `BundledSkillLoader` / `FileCommandLoader` (User-Befehle) / `McpPromptLoader`-Ausgaben haben `modelInvocable: true`
-- [ ] `BuiltinCommandLoader`-Ausgaben haben `modelInvocable: false`
-- [ ] `CommandService.getCommandsForMode('non_interactive')` gibt äquivalente Befehlsmenge wie vor dem Refactoring zurück
-- [ ] MCP-Prompt-Befehle werden im non-interactive-Modus nicht mehr fälschlich abgefangen
+- [ ] Alle vorhandenen Tests bestehen (`cd packages/cli && npx vitest run`)
+- [ ] Neue Tests in `commandUtils.test.ts` bestehen alle
+- [ ] `getEffectiveSupportedModes` deckt alle 7 Fälle ab
+- [ ] `filterCommandsForMode` deckt die drei Modi interactive / non_interactive / acp ab
+- [ ] `ALLOWED_BUILTIN_COMMANDS_NON_INTERACTIVE` wird im gesamten Codebase nicht referenziert (Überprüfung mit `grep`)
+- [ ] Die Funktion `filterCommandsForNonInteractive` wird im gesamten Codebase nicht referenziert
+- [ ] Alle built-in Befehle haben das Feld `commandType`
+- [ ] Alle von Loadern ausgegebenen Befehle haben die Felder `source` und `sourceLabel`
+- [ ] Befehle, die von `BundledSkillLoader` / `FileCommandLoader` (Benutzerbefehle) / `McpPromptLoader` ausgegeben werden, haben `modelInvocable: true`
+- [ ] Befehle, die von `BuiltinCommandLoader` ausgegeben werden, haben `modelInvocable: false`
+- [ ] `CommandService.getCommandsForMode('non_interactive')` gibt eine zur vor dem Refactoring äquivalente Befehlsmenge zurück
+- [ ] MCP-prompt-Befehle werden im non-interactive Modus nicht mehr fälschlicherweise blockiert

@@ -1,71 +1,71 @@
 # `@qwen-code/sdk/daemon` v2 への移行
 
-PR #4328 で v1 daemon UI レイヤーが導入されました。PR #4353（本 PR）では、7 つの機能コミットを追加した v2 を提供します。このガイドでは、まず Web チャットおよび Web ターミナルアダプターの作成者向けの変更点について説明します。ネイティブのローカル TUI、チャンネル、IDE のメンテナーも後から同じプリミティブを再利用できますが、それらのデフォルトプロダクトパスは本 PR では移行対象外です。
+PR #4328 で v1 デーモン UI レイヤーがリリースされました。PR #4353（この PR）では、7 つの追加機能コミットを含む v2 がリリースされています。このガイドでは、最初に Web チャットおよび Web ターミナルアダプターの作成者向けの変更内容を説明します。ネイティブのローカル TUI、チャンネル、IDE のメンテナーは後で同じプリミティブを再利用できますが、これらのデフォルトのプロダクトパスはこの PR では移行されません。
 
-## 既存ユーザー向け TL;DR
+## 既存のコンシューマー向け TL;DR
 
-**破壊的変更はありません。** 本 PR のすべてのコミットは追加的なものです。
+**破壊的変更はありません。** この PR のすべてのコミットは追加的なものです：
 
 - v1 のフィールドは引き続き動作します（`createdAt` は `clientReceivedAt` の `@deprecated` エイリアスとして保持）
-- v1 のノーマライザーは同じ 13 種類のイベントタイプを同じように処理し続けます
-- v1 のリデューサーはチャットイベントに対して同じブロックを生成し続けます
-- 新しい API は追加パラメーターとヘルパーによるオプトイン方式です
+- v1 ノーマライザーは引き続き同じ 13 のイベントタイプを同じ方法でマッピングします
+- v1 リデューサーは引き続きチャットイベントに対して同じブロックを生成します
+- 新しい API は追加のパラメーターとヘルパーを通じてオプトイン方式です
 
-本 PR はコンシューマー側の変更なしに安全にマージできます。**新機能の採用は段階的に行えます。**
+この PR はコンシューマーの変更なしでマージしても安全です。**新機能の採用は段階的に行えます。**
 
-## 推奨採用順序
+## 推奨される採用順序
 
-各アダプターについて、労力対効果の比率の高い順に：
+各アダプターについて、労力/価値比の順に：
 
-### 1. 順序付け：ソートキーを `createdAt` から `eventId` へ切り替え
+### 1. 並び順：ソートキーを `createdAt` から `eventId` に変更
 
-**変更前：**
+**Before：**
 
 ```ts
 const ordered = [...state.blocks].sort((a, b) => a.createdAt - b.createdAt);
 ```
 
-**変更後：**
+**After：**
 
 ```ts
 import { selectTranscriptBlocksOrderedByEventId } from '@qwen-code/sdk/daemon';
 const ordered = selectTranscriptBlocksOrderedByEventId(state);
 ```
 
-**理由**: `eventId` は daemon の単調増加値のため、再接続後の SSE リプレイ時にも有効です。`createdAt` はクライアントクロックに依存しており、リプレイ時にずれが生じます。
+**理由**：`eventId` はデーモン内で単調増加し、SSE の再接続後のリプレイにも耐えます。`createdAt` はクライアント時刻であり、リプレイ時にずれます。
 
-### 2. 表示：`createdAt` を `serverTimestamp ?? clientReceivedAt` へ切り替え
+### 2. 表示：`createdAt` を `serverTimestamp ?? clientReceivedAt` に切り替え
 
-**変更前：**
+**Before：**
 
 ```tsx
 <TimeLabel ms={block.createdAt} />
 ```
 
-**変更後：**
+**After：**
 
 ```tsx
 import { formatBlockTimestamp } from '@qwen-code/sdk/daemon';
 <TimeLabel text={formatBlockTimestamp(block, { locale })} />;
 ```
 
-**理由**: 複数のクライアントが「X 分前」を一貫して表示するには、両者が daemon クロックを参照する必要があります。レンダラーと `formatBlockTimestamp` がタイムゾーンとロケールを処理します。
+**理由**：複数のクライアントが一貫した「X 分前」を表示するには、両方がデーモンクロックを参照する必要があります。`formatBlockTimestamp` とレンダラーがタイムゾーンとロケールを処理します。
 
-**注意**: daemon がエンベロープに `_meta.serverTimestamp` を付与することでこの機能が有効になります。SDK は前方互換に対応しており、それまでは `clientReceivedAt` にフォールバックします。
+**注**：これを有効にするには、デーモンがエンベロープに `_meta.serverTimestamp` をスタンプする必要があります。SDK は前方互換性があり、それまでは `clientReceivedAt` にフォールバックします。
 
-### 3. 新しいイベントタイプのリッスン — レンダリングするサブセットを選択
+### 3. 新しいイベントタイプをリッスン — レンダリングするサブセットを選択
 
-16 種類の新しいイベントタイプ（session-meta、workspace、auth）はトランスクリプトブロックをプッシュしません。これらはサイドチャネルの観測値です。各アダプターはどれを表示するかを選択します。
+16 の新しいイベントタイプ（session-meta、workspace、auth）はトランスクリプトブロックをプッシュしません。これらはサイドチャネル観測です。各アダプターはどのイベントを表示するかを選択します：
 
 ```ts
-// SSE コンシューマー内
+// あなたの SSE コンシューマー内
 const uiEvents = normalizeDaemonEvent(envelope, {
   clientId,
   suppressOwnUserEcho: true,
 });
 store.dispatch(uiEvents);
 
-// UI 側で
+// その後、UI 側で
 for (const event of uiEvents) {
   switch (event.type) {
     case 'session.approval_mode.changed':
@@ -83,23 +83,23 @@ for (const event of uiEvents) {
         expiresAt: event.expiresAt,
       });
       break;
-    // ... など、UI に必要なものをオプトイン
+    // ... など、UI が必要なものをオプトイン
   }
 }
 ```
 
-または、状態ミラーリングされたサイドチャネルにセレクターを使用します。
+または、ステートミラーリングされたサイドチャネル用のセレクターを使用します：
 
 ```ts
 import { selectApprovalMode, selectCurrentTool } from '@qwen-code/sdk/daemon';
 
-const mode = selectApprovalMode(state); // approval_mode.changed からミラー
-const currentTool = selectCurrentTool(state); // 現在実行中のツール
+const mode = selectApprovalMode(state); // approval_mode.changed からミラーリング
+const currentTool = selectCurrentTool(state); // 現在処理中のツール
 ```
 
 ### 4. レンダリング契約：`daemonBlockToMarkdown`（または HTML / plainText）を使用
 
-**変更前**（各アダプターが独自に変換処理を実装）：
+**Before**（各アダプターが独自のプロジェクションを行う）：
 
 ```ts
 function blockToString(block: DaemonTranscriptBlock): string {
@@ -115,7 +115,7 @@ function blockToString(block: DaemonTranscriptBlock): string {
 }
 ```
 
-**変更後**（SDK に委譲）：
+**After**（SDK に委譲）：
 
 ```ts
 import { daemonBlockToMarkdown } from '@qwen-code/sdk/daemon';
@@ -137,9 +137,9 @@ import { daemonBlockToPlainText } from '@qwen-code/sdk/daemon';
 const plain = daemonBlockToPlainText(block);
 ```
 
-### 5. 適合テスト
+### 5. 適合性テスト
 
-アダプターのテストスイートに追加します。
+アダプターのテストスイートに追加します：
 
 ```ts
 import { runAdapterConformanceSuite } from '@qwen-code/sdk/daemon';
@@ -153,18 +153,18 @@ it('adapter projects daemon UI corpus correctly', () => {
 });
 ```
 
-これにより、10 種類のフィクスチャシナリオに対してアダプターが検証され、ユーザーに届く前に変換のずれを検出できます。
+これにより、アダプターが 10 のフィクスチャシナリオに対してテストされ、ユーザーに届く前にプロジェクションのずれが表面化します。
 
-### 6. `provenance` によるツールアイコンのディスパッチ
+### 6. `provenance` によるツールアイコンの振り分け
 
-**変更前**（toolName の文字列マッチ）：
+**Before**（toolName の文字列マッチ）：
 
 ```tsx
 const isMcp = toolName?.startsWith('mcp__');
 const isBuiltin = ['Bash', 'Edit', 'Read'].includes(toolName);
 ```
 
-**変更後**（PR-A の型付き provenance を使用）：
+**After**（PR-A からの型付き provenance）：
 
 ```tsx
 import type { DaemonUiToolUpdateEvent } from '@qwen-code/sdk/daemon';
@@ -184,18 +184,18 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 }
 ```
 
-SDK には `mcp__<server>__<tool>` の命名規則によるヒューリスティックフォールバックがあり、daemon が明示的に provenance を付与していない現時点でも動作します。
+SDK には `mcp__<server>__<tool>` という命名ヒューリスティックのフォールバックがあり、デーモンが明示的に provenance をスタンプしなくても現在動作します。
 
-### 7. `errorKind` によるエラーの分類
+### 7. `errorKind` によるエラー分類
 
-**変更前**（テキストへの正規表現）：
+**Before**（テキストの正規表現）：
 
 ```ts
 if (error.text.includes('auth')) showAuthRetry();
 else if (error.text.includes('file not found')) showFilePicker();
 ```
 
-**変更後**（PR-A のクローズド enum）：
+**After**（PR-A からの閉じた列挙型）：
 
 ```ts
 import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
@@ -211,25 +211,25 @@ function errorAction(errorKind?: DaemonErrorKind): React.ReactNode {
 }
 ```
 
-**注意**: daemon が session_died / stream_error の `data.errorKind` に値を付与することでこのフィールドが設定されます。SDK はすでに読み取りに対応しています。
+**注**：これを設定するには、デーモンが session_died / stream_error に `data.errorKind` をスタンプする必要があります。SDK は既に読み取っています。
 
-### 8. キャンセル処理 — 自動化済み
+### 8. キャンセル処理 — すでに自動化
 
-v1 では、キャンセルされたプロンプトにより実行中のツールブロックが永遠にスピンし続けることがありました。v2（PR-E）では、`assistant.done.reason === 'cancelled'` 時に `propagateCancellationToInFlightTools` が自動的に実行されます。サブエージェントの子は親と一緒にキャンセルされます。
+v1 では、キャンセルされたプロンプトにより処理中のツールブロックが永久にスピンし続ける可能性がありました。v2（PR-E）では、`propagateCancellationToInFlightTools` が `assistant.done.reason === 'cancelled'` で自動的に実行されます。サブエージェントの子は親と一緒にキャンセルされます。
 
 **アダプターの変更は不要です** — スピナーは正しく解決されます。
 
-### 8a. サブエージェントのネスト — ネストレンダリングへのオプトイン（PR-K）
+### 8a. サブエージェントのネスト — ネストされたレンダリングをオプトイン（PR-K）
 
-サブエージェントの委譲内で呼び出されたツールブロックには、`parentToolCallId`、`subagentType`、（親が状態にある場合は）`parentBlockId` が付与されます。アダプターはネストレンダリングにオプトインできます。
+サブエージェント委譲内で呼び出されたツールブロックには、`parentToolCallId`、`subagentType`、および（親が state 内にある場合）`parentBlockId` が含まれるようになりました。アダプターはネストされたレンダリングをオプトインできます：
 
-**変更前**（フラットリスト、サブエージェントの呼び出しがトップレベルと視覚的に区別不可）：
+**Before**（フラットリスト、サブエージェント呼び出しがトップレベルと視覚的に区別不可）：
 
 ```tsx
 state.blocks.map((b) => <ToolBlock block={b} />);
 ```
 
-**変更後**（再帰的なネストレンダリング）：
+**After**（再帰的なネストレンダリング）：
 
 ```tsx
 import {
@@ -251,18 +251,18 @@ const topLevel = state.blocks.filter((b) => !isSubagentChildBlock(b));
 return topLevel.map(renderTool);
 ```
 
-**フラットビューを維持したい場合はアダプターの変更は不要です** — 新しいフィールドは追加的なもので、読み取らないコードからは無視されます。
+**フラットビューを希望する場合、アダプターの変更は不要です** — 新しいフィールドは追加的なものであり、読み取らないコードでは無視されます。
 
 ### 9. ツールプレビューの分類 — カスタムコンポーネントでレンダリングするサブセットを選択
 
-PR-D + PR-F では 13 種類のプレビューが提供されます。
+PR-D + PR-F により、13 のプレビュータイプが導入されました：
 
-- ファイル型（4 種）: `file_diff`、`file_read`、`web_fetch`、`mcp_invocation`
-- コンテンツ型（5 種）: `code_block`、`search`、`tabular`、`image_generation`、`subagent_delegation`
-- 制御型（2 種）: `ask_user_question`、`command`
-- 汎用型（2 種）: `key_value`、`generic`
+- 4 つのファイル型：`file_diff`、`file_read`、`web_fetch`、`mcp_invocation`
+- 5 つのコンテンツ型：`code_block`、`search`、`tabular`、`image_generation`、`subagent_delegation`
+- 2 つの制御型：`ask_user_question`、`command`
+- 2 つの汎用型：`key_value`、`generic`
 
-各アダプターは `preview.kind` でディスパッチします。
+各アダプターは `preview.kind` で振り分けます：
 
 ```tsx
 function ToolPreviewComponent({ preview }: { preview: DaemonToolPreview }) {
@@ -288,27 +288,27 @@ function ToolPreviewComponent({ preview }: { preview: DaemonToolPreview }) {
           prompt={preview.prompt}
         />
       );
-    // ... または以下にフォールバック：
+    // ... またはフォールバック：
     default:
       return <Markdown text={daemonToolPreviewToMarkdown(preview)} />;
   }
 }
 ```
 
-13 種類すべてにカスタムコンポーネントを持たないアダプターは、未対応の種類に対して SDK の `daemonToolPreviewToMarkdown` にフォールバックできます。
+13 種類すべてにカスタムコンポーネントがないアダプターは、処理されない種類に対して SDK の `daemonToolPreviewToMarkdown` にフォールバックできます。
 
-## 後方互換チェックリスト
+## 後方互換性チェックリスト
 
-| 確認事項 | ステータス |
+| 懸念事項                                               | 状態                                          |
 | ------------------------------------------------------ | --------------------------------------------- |
-| 既存の `block.createdAt` の読み取り | ✅ 引き続き動作（`clientReceivedAt` のエイリアス） |
-| 既存のリデューサーのイベント処理 | ✅ v1 イベントタイプは変更なし |
-| `daemonTranscriptToUnifiedMessages(blocks)` の呼び出し箇所 | ✅ 新しい options パラメーターはオプション |
-| 既存の `selectTranscriptBlocks` のコンシューマー | ✅ 変更なし |
-| v1 リデューサー内の新しいイベントタイプ | ✅ no-op、`lastEventId` は引き続き進行 |
+| 既存の `block.createdAt` の読み取り                    | ✅ 引き続き動作（`clientReceivedAt` のエイリアス） |
+| 既存のリデューサーのイベント処理                        | ✅ v1 イベントタイプでは変更なし              |
+| `daemonTranscriptToUnifiedMessages(blocks)` の呼び出し箇所 | ✅ 新しい options パラメーターはオプション   |
+| 既存の `selectTranscriptBlocks` コンシューマー          | ✅ 変更なし                                   |
+| v1 リデューサーでの新しいイベントタイプ                 | ✅ ノーオペレーション、`lastEventId` は引き続き進む |
 
-## 相互参照
+## 参考リンク
 
 - [PR #4353 SUMMARY](https://github.com/QwenLM/qwen-code/pull/4353)
 - [Daemon UI README](./README.md) — 完全な API リファレンス
-- [PR #4328](https://github.com/QwenLM/qwen-code/pull/4328) — 共有 UI トランスクリプトレイヤーを含むベース PR
+- [PR #4328](https://github.com/QwenLM/qwen-code/pull/4328) — ベース PR（共有 UI トランスクリプトレイヤー）

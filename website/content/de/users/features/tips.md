@@ -1,45 +1,45 @@
-# Kontextbezogene Tipps
+# Kontextuelle Tipps
 
-Qwen Code verfügt über ein System für kontextbezogene Tipps, das dir hilft, Funktionen zu entdecken und den Sitzungsstatus im Blick zu behalten.
+Qwen Code enthält ein System kontextueller Tipps, das Ihnen hilft, Funktionen zu entdecken und den Sitzungsstatus im Blick zu behalten.
 
-## Start-Tipps
+## Starttipps
 
-Bei jedem Start von Qwen Code wird ein Tipp im Header-Bereich angezeigt. Die Auswahl erfolgt zunächst nach Priorität. Anschließend werden Tipps gleicher Priorität über die Sitzungen hinweg nach dem LRU-Verfahren (Least Recently Used) rotiert, sodass du jedes Mal einen anderen Tipp siehst.
+Jedes Mal, wenn Sie Qwen Code starten, wird ein Tipp im Kopfbereich angezeigt. Tipps werden zuerst nach Priorität ausgewählt und dann mithilfe von LRU (am wenigsten kürzlich verwendet) über Sitzungen hinweg rotiert, sodass jedes Mal ein anderer Tipp erscheint.
 
-Neue Nutzer sehen während ihrer ersten Sitzungen Tipps mit Fokus auf das Onboarding:
+Neue Benutzer sehen während ihrer ersten Sitzungen onboarding-orientierte Tipps:
 
-| Sitzungen | Beispiel-Tipps                                       |
-| --------- | ---------------------------------------------------- |
-| < 5       | Slash-Befehle (`/`), Tab-Autovervollständigung       |
-| < 10      | `QWEN.md`-Projektkontext, `--continue` / `--resume`  |
-| < 15      | Shell-Befehle mit `!`-Präfix                         |
+| Sitzungen | Beispieltipps                                          |
+| --------- | ------------------------------------------------------ |
+| < 5       | Slash-Befehle (`/`), Tab-Autovervollständigung         |
+| < 10      | `QWEN.md`-Projektkontext, `--continue` / `--resume`    |
+| < 15      | Shell-Befehle mit `!`-Präfix                           |
 
 Danach rotieren die Tipps durch allgemeine Funktionen wie `/compress`, `/approval-mode`, `/insight`, `/btw` und weitere.
 
-## Tipps nach der Antwort
+## Tipps nach Antworten
 
-Während einer Konversation überwacht Qwen Code die Nutzung deines Context Windows und zeigt Tipps an, wenn eine Aktion erforderlich sein könnte:
+Während eines Gesprächs überwacht Qwen Code die Nutzung des Kontextfensters und zeigt Tipps an, wenn möglicherweise Maßnahmen erforderlich sind:
 
-| Kontextnutzung | Bedingung                      | Tipp                                              |
-| -------------- | ------------------------------ | ------------------------------------------------- |
-| 50-80%         | Nach einigen Prompts in der Sitzung | Empfiehlt `/compress`, um Kontext freizugeben |
-| 80-95%         | —                              | Warnt, dass der Kontext fast voll ist             |
-| >= 95%         | —                              | Dringend: Führe jetzt `/compress` aus oder starte mit `/new` neu, um fortzufahren |
+| Kontextnutzung | Bedingung                        | Tipp                                                    |
+| -------------- | -------------------------------- | ------------------------------------------------------- |
+| 50-80%         | Nach einigen Aufforderungen in der Sitzung | Schlägt `/compress` vor, um Kontext freizugeben        |
+| 80-95%         | —                                | Warnt, dass der Kontext voll wird                       |
+| >= 95%         | —                                | Dringend: jetzt `/compress` ausführen oder `/new` zum Fortfahren |
 
-Tipps nach der Antwort verfügen über individuelle Cooldowns pro Tipp, um Wiederholungen zu vermeiden.
+Tipps nach Antworten haben tippspezifische Abklingzeiten, um Wiederholungen zu vermeiden.
 
 ## Tipp-Verlauf
 
-Der Anzeigeverlauf der Tipps wird unter `~/.qwen/tip_history.json` gespeichert. Diese Datei erfasst:
+Der Anzeigeverlauf der Tipps wird in `~/.qwen/tip_history.json` gespeichert. Diese Datei verfolgt:
 
-- Anzahl der Sitzungen (wird zur Auswahl der Tipps für neue Nutzer verwendet)
-- Welche Tipps wann angezeigt wurden (wird für die LRU-Rotation und Cooldowns verwendet)
+- Sitzungsanzahl (wird für die Auswahl der Tipps für neue Benutzer verwendet)
+- Welche Tipps wann angezeigt wurden (wird für die LRU-Rotation und Abklingzeit verwendet)
 
-Du kannst diese Datei bedenkenlos löschen, um den Tipp-Verlauf zurückzusetzen.
+Sie können diese Datei bedenkenlos löschen, um den Tipp-Verlauf zurückzusetzen.
 
 ## Tipps deaktivieren
 
-Um alle Tipps (sowohl Start- als auch Post-Response-Tipps) auszublenden, setze `ui.hideTips` in `~/.qwen/settings.json` auf `true`:
+Um alle Tipps (sowohl Start- als auch Nach-Antwort-Tipps) auszublenden, setzen Sie `ui.hideTips` auf `true` in `~/.qwen/settings.json`:
 
 ```json
 {
@@ -49,6 +49,6 @@ Um alle Tipps (sowohl Start- als auch Post-Response-Tipps) auszublenden, setze `
 }
 ```
 
-Du kannst diese Einstellung auch über den `/settings`-Befehl im Einstellungsdialog umschalten.
+Sie können dies auch im Einstellungsdialog über den Befehl `/settings` umschalten.
 
-Tipps werden außerdem automatisch ausgeblendet, wenn der Screenreader-Modus aktiviert ist.
+Tipps werden auch automatisch ausgeblendet, wenn der Bildschirmlesemodus aktiviert ist.

@@ -1,34 +1,34 @@
-# テレメトリ：アウトバウンドトレースコンテキスト & セッションIDヘッダー伝播
+# テレメトリー：アウトバウンド Trace Context & Session ID ヘッダープロパゲーション
 
-> 配套 issue: [#4384](https://github.com/QwenLM/qwen-code/issues/4384)
-> 父 issue: [#3731](https://github.com/QwenLM/qwen-code/issues/3731) (P3 deeper observability)
-> 前置 PR: #4367 (resource attributes — merged 2026-05-21, commit `64401e1`)
-> 基于 2026-05-21 对 qwen-code main 分支 + 直接验证的 claude-code 源码
+> 対応 issue: [#4384](https://github.com/QwenLM/qwen-code/issues/4384)
+> 親 issue: [#3731](https://github.com/QwenLM/qwen-code/issues/3731) (P3 より深い可観測性)
+> 先行 PR: #4367 (resource attributes — 2026-05-21 マージ、commit `64401e1`)
+> 2026-05-21 時点の qwen-code main ブランチ + 直接検証した claude-code ソースコードに基づく
 
 ## 改訂履歴
 
-| 改訂 | 日付       | トリガー                                          | 概要                                                                                                                                                                                                                                                                              |
-| ---- | ---------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1   | 2026-05-21 | 初稿                                          | 全ブロードキャスト：すべてのアウトバウンド LLM リクエストに `X-Qwen-Code-Session-Id` + `traceparent` を付与                                                                                                                                                                                                            |
-| R2   | 2026-05-22 | wenshao R2/R3 review                          | 境界セキュリティ：URL normalize、port matching、quote 整合、staticCorrelationHeaders try/catch、host:port fallback strip                                                                                                                                                                  |
-| R3   | 2026-05-23 | LaZzyMan REQUEST_CHANGES                      | **重大なセマンティクス変更**：`X-Qwen-Code-Session-Id` のデフォルトスコープをファーストパーティ（Alibaba/DashScope）ホスト許可リストに限定。詳細は §11 参照                                                                                                                                                                 |
-| R4   | 2026-05-25 | LaZzyMan round-8 follow-up (scope conflation) | **PR スコープを大幅に縮小**：本 PR はクライアント HTTP span + OTLP ループガードのみを保持；`traceparent` はデフォルト off（NoopTextMapPropagator）；`outboundCorrelation.*` トップレベル namespace を新設してセキュリティ関連の toggle を配置；R3 で実装した `X-Qwen-Code-Session-Id` の仕組みを**本 PR から削除**し、独立した follow-up PR に移動。詳細は §12 参照 |
+| 改訂 | 日付       | トリガー                                    | 概要                                                                                                                                                                                                                                                                                                                                             |
+| ---- | ---------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| R1   | 2026-05-21 | 初稿                                        | 全ブロードキャスト：すべてのアウトバウンド LLM リクエストに `X-Qwen-Code-Session-Id` + `traceparent` を付与                                                                                                                                                                                                                                     |
+| R2   | 2026-05-22 | wenshao R2/R3 review                        | 境界セキュリティ：URL 正規化、port マッチング、quote 調整、staticCorrelationHeaders の try/catch、host:port フォールバックの strip                                                                                                                                                                                                               |
+| R3   | 2026-05-23 | LaZzyMan REQUEST_CHANGES                    | **重大な意味論的変更**：`X-Qwen-Code-Session-Id` のデフォルトスコープを first-party（Alibaba/DashScope）host ホワイトリストに絞り込み。詳細は §11                                                                                                                                                                                               |
+| R4   | 2026-05-25 | LaZzyMan round-8 follow-up (scope conflation) | **PR スコープを大幅に縮小**：本 PR は client HTTP span + OTLP loop guard のみを保持；`traceparent` はデフォルトでオフ（NoopTextMapPropagator）；新規 `outboundCorrelation.*` トップレベル namespace にセキュリティ関連トグルを追加；R3 で実装された一連の `X-Qwen-Code-Session-Id` 機構は**本 PR から削除**し、独立した follow-up PR に移動。詳細は §12 |
 
-**重要な注意**：§3.1（目標）/ §3.2（非目標）/ §4.3（Part B 設計）/ §4.4（設定スキーマへの影響）/ §5（変更ファイル一覧）/ §9（claude-code との比較）/ §10（将来の作業）/ §11（R3 ホスト許可リストスコーピング）を読む際は、必ず §12 も参照すること。**R4 の改訂により、R1-R3 が「本 PR で traceparent + session id header を同時に実装する」としていた主張はもはや成立しない**：本 PR は telemetry observability + 独立したアウトバウンドトレースコンテキスト toggle のみに限定し、アウトバウンド相関ヘッダーに関わる作業（R3 のホスト許可リストを含む）はすべて独立した follow-up PR に移動する。R3 のコード実装は無駄にはならず、follow-up PR でそのまま再利用できる。
+**特別注意**：§3.1（目標）/ §3.2（非目標）/ §4.3（Part B 設計）/ §4.4（設定スキーマ影響）/ §5（ファイル変更リスト）/ §9（claude-code との比較）/ §10（将来の作業）/ §11（R3 host-allowlist scoping）を読む際は、同時に §12 を参照してください —— **R4 改訂により、R1-R3 の「本 PR で traceparent + session id header を同時に実装する」という主張は成立しなくなりました**：本 PR は現在、テレメトリー可観測性 + 独立した outbound trace-context toggle のみであり、すべての outbound correlation header 作業（R3 の host allowlist を含む）は全体として独立した follow-up PR に移動しました。R3 の作業コード自体は無駄になっておらず、follow-up PR で再利用可能です。
 
 ## 1. 背景
 
-#4367 は **emitted テレメトリの attribute と cardinality**（オペレーターが span/log/metric に `user.id` / `tenant.id` などのタグを付与できる）を解決した。しかし、**アウトバウンド LLM リクエストの HTTP ヘッダー**には手をつけていない。現在、Qwen Code が DashScope / OpenAI / Gemini / Anthropic に送るリクエストには、W3C `traceparent` もセッション ID も**一切含まれていない**。
+#4367 は**発行されたテレメトリー上の attribute と cardinality**（オペレーターが span/log/metric に `user.id`/`tenant.id` などのタグを付与可能）を解決しました。しかし、触れなかったものがあります：**アウトバウンド LLM リクエストの HTTP header**。現在 qwen-code が DashScope / OpenAI / Gemini / Anthropic に送信するリクエストは**クロスプロセス correlation header をまったく持ちません**——W3C `traceparent` も session id もありません。
 
-その結果：
+結果：
 
-1. トレースコンテキストが Qwen Code のプロセス境界で途切れる。モデルサービス（例：ARMS Tracing と連携した DashScope）自体に OTel インストルメンテーションがある場合でも、そこで生成される span と Qwen Code のトレースは互いに独立しており、エンドツーエンドのトレースツリーが存在しない。
-2. ワイヤー上にセッション ID が存在しない。バックエンドで Qwen Code のメトリクス/ログとサーバーサイドログを関連付けるには、トレース ID やタイムスタンプのオフラインマッチングが必要で、ヘッダーを直接読み取る方法に比べてはるかに手間がかかる。
-3. ローカルトレースにクライアントサイド HTTP span が欠けている。現状では `api.generateContent` の合計所要時間しか見えず、ネットワーク TTFB / レスポンスボディサイズ / リトライ回数が把握できない。
+1. trace context が qwen-code プロセス境界で切れます。モデルサービス（ARMS Tracing が組み込まれた DashScope など）に OTel instrumentation があっても、そのサービスが生成する span は qwen-code の trace と独立しており、エンドツーエンドの trace tree は存在しません。
+2. ワイヤ上に session id がありません。バックエンドで qwen-code の metric/log をサーバー側ログと関連付けるには、オフラインで trace id やタイムスタンプを照合する必要があり、header を直接読むよりはるかに複雑です。
+3. ローカルトレースに client-side HTTP span がありません。現在は `api.generateContent` の総処理時間しか見えず、ネットワーク TTFB / レスポンスボディサイズ / リトライ回数は確認できません。
 
 ## 2. 現状
 
-### 2.1 `HttpInstrumentation` のみが有効
+### 2.1 `HttpInstrumentation` のみ有効
 
 `packages/core/src/telemetry/sdk.ts:330`：
 
@@ -36,55 +36,55 @@
 instrumentations: [new HttpInstrumentation()],
 ```
 
-`HttpInstrumentation` は Node 組み込みの `http`/`https` モジュールのみをフックし、`globalThis.fetch` / undici のパスは**カバーしない**。
+`HttpInstrumentation` は Node 組み込みの `http`/`https` モジュールのみをフックし、`globalThis.fetch` / undici パスは**カバーしません**。
 
-### 2.2 2 つの LLM SDK がどちらも fetch / undici を使用
+### 2.2 両 LLM SDK が fetch / undici を使用
 
-| SDK                                              | HTTP 実装                                                                                                                          | `HttpInstrumentation` がカバーするか |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `openai@5.11.0`                                  | `globalThis.fetch`（Node 18+ = undici）。根拠：`node_modules/openai/internal/shims.mjs` のエラー `'fetch' is not defined as a global` | ❌                             |
-| `@google/genai@1.30.0`                           | `globalThis.fetch` + `new Headers()`。根拠：`dist/node/index.mjs` 内の `new Headers()` 呼び出し                                        | ❌                             |
-| `@anthropic-ai/sdk`（anthropicContentGenerator） | 同様に fetch ベース                                                                                                                     | ❌                             |
+| SDK                                              | HTTP 実装                                                                                                                     | `HttpInstrumentation` のカバレッジ |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `openai@5.11.0`                                  | `globalThis.fetch`（Node 18+ では undici）。証拠：`node_modules/openai/internal/shims.mjs` で `'fetch' is not defined as a global` エラー | ❌                                 |
+| `@google/genai@1.30.0`                           | `globalThis.fetch` + `new Headers()`。証拠：`dist/node/index.mjs` 内の `new Headers()` 呼び出し                               | ❌                                 |
+| `@anthropic-ai/sdk`（anthropicContentGenerator） | 同様に fetch ベース                                                                                                           | ❌                                 |
 
-### 2.3 コードベースに手動 propagation が存在しない
+### 2.3 コードベースに手動伝播はゼロ
 
 ```
 grep -rn "propagation\.\|setGlobalPropagator\|W3CTraceContext\|traceparent" packages/core/src --include="*.ts" | grep -v "\.test\."
 ```
 
-→ 空。`propagation.inject()` の呼び出しも、traceparent の手動注入も、一切存在しない。
+→ 空。`propagation.inject()` 呼び出しも、手動による traceparent 注入もありません。
 
 ### 2.4 各プロバイダーの `defaultHeaders` の現状
 
-OpenAI ファミリー（`openai` SDK を使用）：
+OpenAI ファミリー（`openai` SDK 使用）：
 
-すべての OpenAI サブプロバイダーは `DefaultOpenAICompatibleProvider` を継承している。**`buildHeaders` のオーバーライド動作は 2 種類**（grep audit により確認済み）：
+すべての OpenAI サブプロバイダーは `DefaultOpenAICompatibleProvider` を `extends` しています。**buildHeaders のオーバーライド動作は2種類**（grep audit で確認済み）：
 
-| プロバイダー   | ファイル                   | `buildHeaders()` の動作                                                                   | 影響                                           |
-| ---------- | ---------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| 基底クラス       | `default.ts:63-74`     | `{ 'User-Agent' }` + customHeaders を提供                                                 | ここを変更                                         |
-| DashScope  | `dashscope.ts:110-124` | **`override` だが `super` を呼ばない**——`User-Agent` + `X-DashScope-*` を新規オブジェクトとして返す          | **個別に変更が必要**、そうしないと相関ヘッダーが欠落する |
-| OpenRouter | `openrouter.ts:20-30`  | `override` するが**先に `const baseHeaders = super.buildHeaders()` を呼ぶ**                          | 基底クラスの変更を自動継承 ✅                              |
-| DeepSeek   | `deepseek.ts`          | `buildHeaders` をオーバーライドしない（`buildRequest` / `getDefaultGenerationConfig` のみオーバーライド） | 基底クラスの変更を自動継承 ✅                              |
-| Minimax    | `minimax.ts`           | DeepSeek と同様                                                                             | 自動継承 ✅                                    |
-| Mistral    | `mistral.ts`           | DeepSeek と同様                                                                             | 自動継承 ✅                                    |
-| ModelScope | `modelscope.ts`        | DeepSeek と同様                                                                             | 自動継承 ✅                                    |
+| Provider   | ファイル                 | `buildHeaders()` の動作                                                                          | 影響                                         |
+| ---------- | ------------------------ | ------------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| 基底クラス | `default.ts:63-74`       | `{ 'User-Agent' }` + customHeaders を提供                                                        | ここを変更                                   |
+| DashScope  | `dashscope.ts:110-124`   | **`override` するが `super` を呼ばない**——`User-Agent` + `X-DashScope-*` を含む新しいオブジェクトを返す | **ここを個別に変更必須**、そうしないと correlation header が失われる |
+| OpenRouter | `openrouter.ts:20-30`    | `override` するが **`const baseHeaders = super.buildHeaders()` を先に実行**                       | 基底クラスの変更が自動継承 ✅               |
+| DeepSeek   | `deepseek.ts`            | `buildHeaders` をオーバーライドしない（`buildRequest` / `getDefaultGenerationConfig` のみ）       | 基底クラスの変更が自動継承 ✅               |
+| Minimax    | `minimax.ts`             | deepseek と同様                                                                                   | 自動継承 ✅                                  |
+| Mistral    | `mistral.ts`             | deepseek と同様                                                                                   | 自動継承 ✅                                  |
+| ModelScope | `modelscope.ts`          | deepseek と同様                                                                                   | 自動継承 ✅                                  |
 
-→ **OpenAI ファミリーは 2 つのファイルを変更する必要がある**：`default.ts` と `dashscope.ts`。残りの 5 つは自動継承。
+→ **OpenAI ファミリーは2ファイルに影響**：`default.ts` と `dashscope.ts`。残り5つは自動継承。
 
 Google Gemini：
 
-| プロバイダー | ファイル                           | ヘッダー注入パス                                                     |
-| -------- | ------------------------------ | -------------------------------------------------------------- |
-| Gemini   | `geminiContentGenerator.ts:59` | `new GoogleGenAI({ httpOptions: { headers } })` — SDK ネイティブサポート |
+| Provider | ファイル                         | ヘッダー注入パス                                                   |
+| -------- | -------------------------------- | ------------------------------------------------------------------ |
+| Gemini   | `geminiContentGenerator.ts:59`   | `new GoogleGenAI({ httpOptions: { headers } })` — SDK ネイティブ対応 |
 
 Anthropic：
 
-| プロバイダー  | ファイル                                                                                                   | ヘッダー注入パス       |
-| --------- | ------------------------------------------------------------------------------------------------------ | ---------------- |
+| Provider  | ファイル                                                                                               | ヘッダー注入パス       |
+| --------- | ------------------------------------------------------------------------------------------------------ | ---------------------- |
 | Anthropic | `anthropicContentGenerator.ts:177` (`buildHeaders`) + `:212` (`defaultHeaders` arg to `new Anthropic`) | `defaultHeaders` |
 
-**合計 4 つの SDK 構築ポイント**でセッション ID ヘッダーを注入する必要がある。すべての SDK は `defaultHeaders` / `httpOptions.headers` をすでにサポートしており、fetch wrapper は不要。
+**合計4つのSDK構築ポイント**に session id header を注入する必要があります。すべてのSDKはすでに `defaultHeaders` / `httpOptions.headers` をサポートしており、fetch wrapper は不要です。
 
 ### 2.5 既存の proxy と fetch 設定
 
@@ -97,73 +97,73 @@ const runtimeOptions = buildRuntimeFetchOptions(
 );
 ```
 
-`buildRuntimeFetchOptions` はユーザーが proxy を設定した場合に `{ fetch: customFetch }` などを返し、`setGlobalDispatcher(new ProxyAgent(...))` をトリガーする（`config.ts:1126-1128` 参照）。**undici のグローバル dispatcher モードは `UndiciInstrumentation` と互換性がある**——monkey-patch された `globalThis.fetch` と undici の channel diagnostics を組み合わせて動作し、特定の dispatcher には依存しない。
+`buildRuntimeFetchOptions` はユーザーが proxy を設定すると `{ fetch: customFetch }` などを返し、`setGlobalDispatcher(new ProxyAgent(...))` をトリガーします（`config.ts:1126-1128` 参照）。**undici のグローバル dispatcher モードは `UndiciInstrumentation` と互換性があります**——これは monkey-patch で `globalThis.fetch` と undici の channel diagnostics を連携させるため、特定の dispatcher に依存しません。
 
 ## 3. 目標 / 非目標
 
 ### 3.1 目標
 
-- すべてのアウトバウンド LLM リクエストに W3C `traceparent` ヘッダーを自動付与（OTel SDK デフォルトの `W3CTraceContextPropagator`）
-- ~~すべての~~ アウトバウンド LLM リクエストに `X-Qwen-Code-Session-Id` ヘッダーを付与（claude-code と同じ製品ネームスペース） — **R3 改訂**：デフォルトではファーストパーティ（Alibaba/DashScope）ホストへの注入のみ。サードパーティプロバイダーにはデフォルトで送信しない；§11 参照
-- OTLP exporter endpoint 自体のトレース（フィードバックループ）を自動的に回避
-- LLM リクエストに精確なクライアント span を追加（ネットワーク遅延とモデル遅延を分離）
-- 4 つのプロバイダー構築ポイントをカバー：OpenAI 基底クラス、DashScope オーバーライド、Gemini、Anthropic
-- ストリーミングリクエスト / proxy モード / リトライシナリオで退行しない
-- #4367 の設計哲学と一致：`defaultHeaders` などの SDK ネイティブオプションを使用 — **R1 改訂**：staleness 問題のため fetch wrapper に変更；**R3 改訂**：fetch wrapper 内にさらに host gate を追加
+- すべてのアウトバウンド LLM リクエストに自動で W3C `traceparent` header を付与（OTel SDK デフォルトの `W3CTraceContextPropagator`）
+- ~~すべての~~ アウトバウンド LLM リクエストに `X-Qwen-Code-Session-Id` header を付与（claude-code と同様の製品名前空間） — **R3 改訂**：デフォルトでは first-party (Alibaba/DashScope) host にのみ注入し、サードパーティプロバイダーにはデフォルトで送信しません；詳細は §11
+- OTLP exporter エンドポイント自身へのトレースを自動回避（フィードバックループ）
+- LLM リクエストに精密な client span を追加（ネットワーク時間とモデル時間の分離）
+- 4つのプロバイダー構築ポイントをカバー：OpenAI 基底クラス、DashScope override、Gemini、Anthropic
+- streaming リクエスト / proxy モード / リトライシナリオのすべてで非退化
+- #4367 の設計哲学と一貫：`defaultHeaders` のような SDK ネイティブなオプションを通じて — **R1 改訂**：stateness 問題のため fetch wrapper に変更；**R3 改訂**：fetch wrapper 内でさらに host gate を重ねる
 
 ### 3.2 非目標
 
-- **`baggage` ヘッダー**：標準 SDK はサポートしているが、Qwen Code は `propagation.setBaggage()` を呼ばないため、デフォルトでは送信されない。本設計では有効化しない。
-- **サブプロセスへの `TRACEPARENT` 環境変数の継承**：claude-code は Bash/PowerShell サブプロセスに `TRACEPARENT` を注入する。Qwen Code の `BashTool` は未対応。独立した follow-up サブ issue として扱う。
-- **受信 `TRACEPARENT` / `TRACESTATE` の読み取り**：claude-code の `-p` モードと Agent SDK は env から traceparent を読み取って親プロセスのトレースを継続する。Qwen Code は未対応。独立した follow-up として扱う。
-- **`X-Qwen-Code-Request-Id`**：claude-code には `x-client-request-id` があり、タイムアウトの相関に有用。今期は対応しない。次のサブ issue として検討可能。
-- **カスタム propagator（B3 / Jaeger / X-Ray）**：デフォルトの W3C で 99% のシナリオをカバーできる。将来の設定オプションとして検討可能。
-- ~~**per-endpoint 選択的注入**：claude-code はサードパーティ endpoint（Bedrock / Vertex）には traceparent を送信しない；Qwen Code はサードパーティ区別の必要がなく、一律送信で問題ない。~~ — **R3 改訂**：この主張は覆された。LaZzyMan のレビューで、Qwen Code は複数のサードパーティプロバイダー（OpenAI / Anthropic / OpenRouter / 等）に接続するオープンソース CLI であり、claude-code のファーストパーティ→ファーストパーティの類比は当てはまらないと指摘された。セッション ID ヘッダーはホストごとに区別する必要がある。§11 参照。`traceparent` は R1 設計どおり全送信を維持（W3C 標準ヘッダーであり、trace id は `sha256(sessionId)` のハッシュ値）。per-destination toggle は独立した follow-up として追加可能（`telemetry.propagateTraceContext`）。
+- **`baggage` header**：標準SDKは対応済みだが、qwen-code は `propagation.setBaggage()` を呼び出していないため、デフォルトでは送信されない。本設計では積極的に有効化しない。
+- **subprocess `TRACEPARENT` 環境変数の継承**：claude-code は Bash/PowerShell 子プロセスに `TRACEPARENT` を注入する。qwen-code の `BashTool` は未対応。独立した follow-up sub-issue。
+- **インバウンド `TRACEPARENT` / `TRACESTATE` の読み取り**：claude-code の `-p` モードと Agent SDK は、環境変数から traceparent を読み取り、親プロセスの trace を継続する。qwen-code は未対応。独立した follow-up。
+- **`X-Qwen-Code-Request-Id`**：claude-code には `x-client-request-id` があり、タイムアウト時のフォールトトレラントな相関付けに有用。今回は対象外。次のサブ issue として対応可能。
+- **カスタム propagator（B3 / Jaeger / X-Ray）**：デフォルトの W3C で 99% のシナリオをカバー。将来の config option として対応可能。
+- ~~**per-endpoint 選択的注入**：claude-code はサードパーティエンドポイント (Bedrock / Vertex) には traceparent を送信しない；qwen-code にはサードパーティの区別が必要ないため、一律に送信すれば良い。~~ — **R3 改訂**：この主張は覆されました。LaZzyMan review は、qwen-code は複数のサードパーティプロバイダー（OpenAI / Anthropic / OpenRouter / 等）に接続するオープンソース CLI であり、claude-code の first-party→first-party の類推は当てはまらないと指摘；session id header は host ごとに区別する必要があります。詳細は §11。`traceparent` は R1 設計通り全注入（OTel 標準ヘッダーであり、trace id は `sha256(sessionId)` ハッシュ値）、独立した follow-up で per-destination toggle（`telemetry.propagateTraceContext`）として追加可能。
 
 ## 4. 設計
 
-### 4.1 全体レイヤー構成
+### 4.1 全体のレイヤー
 
 ```
-┌─ qwen-code process ────────────────────────────────────────────┐
+┌─ qwen-code プロセス ───────────────────────────────────────────┐
 │                                                                │
 │  ┌─ session-tracing.ts ─┐                                     │
 │  │ active span ctx      │                                     │
 │  └──────┬───────────────┘                                     │
 │         │                                                      │
 │         ▼                                                      │
-│  ┌─ propagation.inject() (called by undici instrumentation) ─┐│
-│  │ writes `traceparent: 00-<traceId>-<spanId>-01` to headers ││
+│  ┌─ propagation.inject() (undici instrumentation から呼ばれる) ─┐│
+│  │ `traceparent: 00-<traceId>-<spanId>-01` をヘッダーに書き込む  │
 │  └─────────────────────────────────────────────────────────────┘│
 │         │                                                      │
 │  ┌──────▼──────────────────────────────────────────────────┐  │
-│  │   fetch() — undici, instrumented                        │  │
-│  │   creates HTTP client span                              │  │
-│  │   injects traceparent into request headers              │  │
-│  │   (skipped via ignoreRequestHook if endpoint is OTLP)   │  │
+│  │   fetch() — undici、インストルメント済み                │  │
+│  │   HTTP client span を作成                               │  │
+│  │   traceparent をリクエストヘッダーに注入                 │  │
+│  │   （エンドポイントが OTLP の場合は ignoreRequestHook でスキップ）│
 │  └─────────────────────────────────────────────────────────┘  │
 │         │                                                      │
-│         │   ┌─ defaultHeaders (per SDK constructor) ───────┐  │
-│         │   │ { 'X-Qwen-Code-Session-Id': sessionId, ... } │  │
+│         │   ┌─ defaultHeaders (SDK コンストラクタ毎) ─────────┐ │
+│         │   │ { 'X-Qwen-Code-Session-Id': sessionId, ... }   │ │
 │         └───┴────────────────────────────────────────────────┘ │
 │             │                                                  │
 └─────────────┼──────────────────────────────────────────────────┘
               │
-              ▼ outbound HTTP
+              ▼ アウトバウンド HTTP
    POST /v1/chat/completions
    traceparent: 00-...
    X-Qwen-Code-Session-Id: ...
-   ... (existing User-Agent, X-DashScope-*, etc.)
+   ... (既存の User-Agent, X-DashScope-*, etc.)
 ```
 
-2 つの注入パスは独立しており、互いに依存しない：
+2つの注入パスは独立しており、互いに依存しません：
 
-| レイヤー                    | 注入タイミング                              | 注入主体                                                      |
-| ------------------------ | ------------------------------------- | ------------------------------------------------------------- |
-| `traceparent`            | fetch 呼び出しのたびに                     | `UndiciInstrumentation` が自動注入（OTel SDK デフォルト propagator から） |
-| `X-Qwen-Code-Session-Id` | SDK 構築時に一度だけ `defaultHeaders` に書き込む | アプリケーションコード                                                      |
+| Layer                    | 注入タイミング                    | 注入元                                                          |
+| ------------------------ | --------------------------------- | --------------------------------------------------------------- |
+| `traceparent`            | fetch 呼び出し毎                  | `UndiciInstrumentation` 自動（OTel SDK デフォルト propagator より） |
+| `X-Qwen-Code-Session-Id` | SDK 構築時に一度だけ `defaultHeaders` に書き込み | アプリケーションコード                                            |
 
-### 4.2 Part A — undici instrumentation による `traceparent`
+### 4.2 Part A — `traceparent` via undici instrumentation
 
 **変更箇所**：`packages/core/src/telemetry/sdk.ts`
 
@@ -194,13 +194,13 @@ instrumentations: [
 
 #### `ignoreRequestHook` が必要な理由
 
-OTel SDK 自体が fetch を使ってデータを OTLP collector に POST する。スキップしないと、UndiciInstrumentation が「データ上報」リクエストにも span を作成する → その新しい span がさらに上報される → 無限ループ / 大量のノイズが発生する。この問題はすべての OTel プロジェクトで踏まれており、OTel ドキュメントでもこの hook を明示的に推奨している。
+OTel SDK 自身が fetch を使ってデータを OTLP collector に POST します。スキップしないと、UndiciInstrumentation が「報告データ」のリクエストにも span を作成し、その新しい span が再度報告される → 無限ループ / 膨大なノイズ。すべての OTel プロジェクトがこの落とし穴に陥っており、OTel ドキュメントでもこの hook の使用が推奨されています。
 
 #### デフォルト propagator
 
-OTel SDK の `NodeSDK` に `textMapPropagator` を渡さない場合、デフォルトは `CompositePropagator([W3CTraceContextPropagator, W3CBaggagePropagator])` になる。明示的な設定は不要。
+OTel SDK `NodeSDK` に `textMapPropagator` を渡さない場合、デフォルトは `CompositePropagator([W3CTraceContextPropagator, W3CBaggagePropagator])` です。明示的な設定は不要です。
 
-#### `traceparent` フォーマット
+#### `traceparent` の形式
 
 ```
 traceparent: 00-<32hex traceId>-<16hex spanId>-<01 sampled | 00 not sampled>
@@ -208,40 +208,40 @@ traceparent: 00-<32hex traceId>-<16hex spanId>-<01 sampled | 00 not sampled>
                version (固定 00)                            flags
 ```
 
-固定 55 バイト、パディングなし。
+固定 55 bytes、パディング無し。
 
 #### `tracestate` と `baggage`
 
-- `tracestate`：上流から渡された場合にのみ引き継ぐ。自身の inject では能動的に追加しない（OTel SDK の動作）。
-- `baggage`：`propagation.setBaggage(ctx, ...)` が呼ばれた場合のみ存在する。Qwen Code では呼ばないため送信されない。
+- `tracestate`: 上流から渡ってきた場合のみ継承；自身の inject では追加されない（OTel SDK の動作）。
+- `baggage`: `propagation.setBaggage(ctx, ...)` が呼ばれた場合のみ存在。qwen-code は呼ばないため、送信されない。
 
-### 4.3 Part B — fetch wrapper（OpenAI / Anthropic）+ static ヘッダー（Gemini）による `X-Qwen-Code-Session-Id`
+### 4.3 Part B — `X-Qwen-Code-Session-Id` via fetch wrapper（OpenAI / Anthropic）+ static headers（Gemini）
 
-> **R3 改訂**：以下の設計は fetch wrapper の staleness 解決と 4 つのプロバイダー統合ポイントを説明する——これらは保持される。ただし wrapper 内部にホスト許可リストゲートが追加され、`staticCorrelationHeaders` には `destinationUrl` パラメーターも追加された。ホストゲート付きの最新実装コードとデフォルト許可リストは §11 参照。
+> **R3 改訂**：以下の設計記述は、fetch wrapper の staleness 解決と4つのプロバイダー統合ポイントについてのものです——これらは保持されます。ただし、wrapper 内部に host allowlist gate が追加され、`staticCorrelationHeaders` にも `destinationUrl` パラメーターが追加されました。host gate を含む最新の実装コードとデフォルト allowlist は §11 を参照。
 
-#### 重要：staleness 問題と解決策の選択
+#### Critical：staleness 問題と方案選択
 
-単純なアプローチ（`defaultHeaders` に `getSessionId()` をそのまま bake-in する）には**真のバグ**がある：
+単純な方法（`defaultHeaders` に `getSessionId()` を直接焼き付ける）には**真のバグ**があります：
 
-1. `pipeline.ts:60` で contentGenerator 構築時に一度だけ `this.client = this.config.provider.buildClient()` が呼ばれ、SDK クライアントの `defaultHeaders` にその時点のセッション ID が固定される
-2. `config.ts:1850` のセッションリセット（ユーザーが `/clear` を実行したときにトリガー）は `this.sessionId` を更新して `refreshSessionContext()` を呼ぶが、**contentGenerator は再生成しない**
-3. 以降の LLM 呼び出しは古いクライアントを使い続ける → ワイヤー上のヘッダーは古いセッション ID のまま → バックエンドの相関がずれる
+1. `pipeline.ts:60` で contentGenerator 構築時に一度だけ `this.client = this.config.provider.buildClient()` が呼ばれ、SDK client の `defaultHeaders` はその時点の session id をキャプチャする
+2. `config.ts:1850` の session reset（ユーザーが `/clear` を実行したときに発動）は `this.sessionId` を更新し `refreshSessionContext()` を呼び出すが、**contentGenerator を再構築しない**
+3. 以降の LLM 呼び出しは古い client を使用 → ワイヤ上の header は古い session id → バックエンドでの相関付けがずれる
 
-→ セッション ID は**リクエストごとに**読み取る必要があり、構築時に固定してはならない。
+→ session id は **リクエスト毎**に読み取らなければならない。構築時に焼き付けてはいけない。
 
-#### 解決策
+#### 方案
 
 ```
-                   ┌─ fetch サポート ─┐  解決策
-OpenAI SDK          │     ✅       │  fetch wrapper (リクエストごとに sessionId を読み取る) ✅
+                   ┌─ fetch 対応 ─┐  方案
+OpenAI SDK          │     ✅       │  fetch wrapper (リクエスト毎に sessionId を読み取り) ✅
 Anthropic SDK       │     ✅       │  fetch wrapper ✅
-@google/genai SDK   │     ❌       │  static httpOptions.headers + staleness を許容
+@google/genai SDK   │     ❌       │  static httpOptions.headers +  stale 性を受け入れ
                    └──────────────┘
 ```
 
-`@google/genai` の `HttpOptions` インターフェースは `fetch` をサポートしていない（`node_modules/@google/genai/dist/genai.d.ts` を grep で確認済み：`baseUrl`/`apiVersion`/`headers`/`timeout`/`extraParams` のみ）。そのため Gemini は static ヘッダーを使用し、OpenAI/Anthropic とは異なる——これは **known limitation** であり、§8.6 参照。
+`@google/genai` の `HttpOptions` インターフェースは `fetch` をサポートしていません（`node_modules/@google/genai/dist/genai.d.ts` を grep で確認済み：`baseUrl`/`apiVersion`/`headers`/`timeout`/`extraParams` のみ）。そのため Gemini は static headers 経由となり、OpenAI/Anthropic とは非一貫——これは **known limitation** です（§8.6 参照）。
 
-#### 集中ヘルパー関数（リクエストごとの fetch wrapper）
+#### 集中補助関数（per-request fetch wrapper）
 
 新規ファイル `packages/core/src/telemetry/llm-correlation-fetch.ts`：
 
@@ -249,21 +249,21 @@ Anthropic SDK       │     ✅       │  fetch wrapper ✅
 import type { Config } from '../config/config.js';
 
 /**
- * Wrap a fetch implementation so every outbound request gets correlation
- * headers (`X-Qwen-Code-Session-Id`) populated from the **current** session
- * id, not the value captured when the SDK client was constructed.
+ * すべてのアウトバウンドリクエストに、SDK client 構築時にキャプチャされた値ではなく、
+ * **現在の** session id から取得したコリレーションヘッダー（`X-Qwen-Code-Session-Id`）が
+ * 設定されるように fetch 実装をラップします。
  *
- * Matches claude-code's pattern (src/services/api/client.ts:370-390 —
- * `buildFetch()`). Per-request injection is necessary because `/clear`
- * resets the session id mid-process; SDK clients (and their static
- * `defaultHeaders`) are NOT recreated on reset.
+ * claude-code のパターン（src/services/api/client.ts:370-390 — `buildFetch()`）に一致。
+ * `/clear` によりプロセスの途中で session id がリセットされる可能性があるため、
+ * リクエスト毎の注入が必要です。SDK client（およびその静的な `defaultHeaders`）は
+ * リセット時に再作成されません。
  *
- * Caller responsible for choosing the base fetch — usually
- * `runtimeOptions?.fetch ?? globalThis.fetch` so proxy-aware fetch is
- * preserved when ProxyAgent is in use.
+ * 呼び出し元は基本となる fetch を選択します。通常は
+ * `runtimeOptions?.fetch ?? globalThis.fetch` で、ProxyAgent 使用時は proxy 対応 fetch が
+ * 維持されるようにします。
  *
- * If telemetry is disabled, returns baseFetch unchanged (no correlation
- * header is added, matching the privacy stance of §3.1).
+ * テレメトリーが無効の場合、baseFetch をそのまま返します（§3.1 のプライバシー方針に従い、
+ * コリレーションヘッダーは追加されません）。
  */
 export function wrapFetchWithCorrelation(
   baseFetch: typeof fetch,
@@ -275,8 +275,8 @@ export function wrapFetchWithCorrelation(
     }
     const sid = config.getSessionId();
     if (!sid) {
-      // Defensive: empty header value is rejected by some HTTP middleware.
-      // Skip injection rather than send `X-Qwen-Code-Session-Id: `.
+      // 防御的：空のヘッダー値は一部の HTTP ミドルウェアで拒否される。
+      // 空の `X-Qwen-Code-Session-Id: ` を送信する代わりに注入をスキップ。
       return baseFetch(input, init);
     }
     const headers = new Headers(init?.headers);
@@ -286,14 +286,14 @@ export function wrapFetchWithCorrelation(
 }
 ```
 
-static ヘッダーしか渡せない SDK（Gemini）向けのコンパニオンヘルパー：
+静的ヘッダーしか取れない SDK（Gemini）向けのコンパニオンヘルパー：
 
 ```ts
 /**
- * Static correlation headers. Captures the session id at call time —
- * **subject to staleness** if the host SDK keeps these headers in a
- * captured-at-construction slot (e.g. `@google/genai`'s `httpOptions.headers`).
- * Prefer `wrapFetchWithCorrelation` whenever the SDK exposes a `fetch` hook.
+ * 静的なコリレーションヘッダー。呼び出し時に session id をキャプチャします。
+ * **stale 性の影響を受けます**。ホスト SDK がこれらのヘッダーを
+ * 構築時にキャプチャされたスロットに保持する場合（例：`@google/genai` の
+ * `httpOptions.headers`）に該当。可能な限り `wrapFetchWithCorrelation` を優先してください。
  */
 export function staticCorrelationHeaders(
   config: Config,
@@ -303,13 +303,13 @@ export function staticCorrelationHeaders(
 }
 ```
 
-#### 統合ポイント 1: `provider/default.ts`（OpenAI 基底クラス）
+#### 統合ポイント 1: `provider/default.ts` (OpenAI 基底クラス)
 
-`buildClient()` の変更——既存の `runtimeOptions.fetch`（proxy）と wrapper を合成する：
+`buildClient()` の変更——既存の `runtimeOptions.fetch`（proxy）と wrapper を合成：
 
 ```ts
 buildClient(): OpenAI {
-  // ... existing ...
+  // ... 既存 ...
   const runtimeOptions = buildRuntimeFetchOptions('openai', this.cliConfig.getProxy());
   const baseFetch =
     (runtimeOptions as { fetch?: typeof fetch } | undefined)?.fetch
@@ -321,8 +321,8 @@ buildClient(): OpenAI {
     maxRetries,
     defaultHeaders,
     ...(runtimeOptions || {}),
-    // After spread, override `fetch` so our correlation wrapper wraps the
-    // proxy-aware fetch (or globalThis.fetch when no proxy).
+    // スプレッド後、`fetch` を上書きしてコリレーション wrapper が
+    // proxy 対応 fetch（または proxy 未使用時は globalThis.fetch）をラップするようにする。
     fetch: wrapFetchWithCorrelation(baseFetch, this.cliConfig),
   });
 }
@@ -330,153 +330,152 @@ buildClient(): OpenAI {
 
 `buildHeaders()` 自体は変更なし。
 
-#### 統合ポイント 2: `provider/dashscope.ts`（オーバーライド）
+#### 統合ポイント 2: `provider/dashscope.ts` (override)
 
-`buildClient()` も同様の合成パターン（元々 buildClient をオーバーライドしている）。`buildHeaders()` は変更なし。
+`buildClient()` で同じ合成パターン（もともと buildClient をオーバーライド済み）。`buildHeaders()` は変更なし。
 
-#### 統合ポイント 3: `geminiContentGenerator/index.ts`（ファクトリー、コンストラクターではない）
+#### 統合ポイント 3: `geminiContentGenerator/index.ts` (factory、コンストラクタではない)
 
-**以前の設計で過剰に主張していた点を修正**：`geminiContentGenerator.ts` のコンストラクターは**シグネチャを変更する必要がない**。`index.ts:48` のファクトリー関数はすでに `gcConfig: Config` を受け取っている（line 33 で `gcConfig?.getUsageStatisticsEnabled()` を使用済み）。ファクトリー内で相関の static ヘッダーを `httpOptions.headers` にマージするだけでよい：
+**以前の設計での過剰な宣言を修正**：`geminiContentGenerator.ts` のコンストラクタシグネチャは**変更不要**です。`index.ts:48` の factory 関数はすでに `gcConfig: Config` を受け取っており（line 33 で `gcConfig?.getUsageStatisticsEnabled()` を利用済み）、factory 内で correlation 静的ヘッダーを `httpOptions.headers` にマージするだけです：
 
 ```ts
 // geminiContentGenerator/index.ts
 let headers: Record<string, string> = { ...baseHeaders };
 if (gcConfig?.getUsageStatisticsEnabled()) {
-  // ... existing x-gemini-api-privileged-user-id ...
+  // ... 既存の x-gemini-api-privileged-user-id ...
 }
-headers = { ...headers, ...staticCorrelationHeaders(gcConfig) }; // ← 新規追加
+headers = { ...headers, ...staticCorrelationHeaders(gcConfig) }; // ← 追加
 const httpOptions = config.baseUrl
   ? { headers, baseUrl: config.baseUrl }
   : { headers };
-// new GeminiContentGenerator(...) unchanged
+// new GeminiContentGenerator(...) は変更なし
 ```
 
-シグネチャ変更ゼロ。
+シグネチャへの変更はゼロ。
 
 #### 統合ポイント 4: `anthropicContentGenerator.ts`
 
-Anthropic SDK も同様にカスタム `fetch` を受け付ける（既に `buildRuntimeFetchOptions` を使用している）。`buildClient` のパスで fetch を wrap する。方法は OpenAI default.ts と同じ。`buildHeaders` は変更なし。
+Anthropic SDK もカスタム fetch を受け入れます（すでに `buildRuntimeFetchOptions` を使用）。`buildClient` パス内で fetch をラップし、OpenAI default.ts と同様の方法で行います。`buildHeaders` は変更なし。
 
-#### 優先度チェーン
+#### 優先順位チェーン
 
-変更なし：ユーザーの `customHeaders` は `defaultHeaders` のマージ内で依然として優先される（§8.2 の spoofing 議論参照）。fetch wrapper が注入する `X-Qwen-Code-Session-Id` は、SDK のヘッダーリストの**後**に最終 `Headers` オブジェクトに追加される——Node の `Headers.set()` のセマンティクスにより、以前の同名ヘッダー（ユーザーの customHeaders に書かれた同名ヘッダーを含む）を上書きする。
+変更なし：ユーザーの `customHeaders` は `defaultHeaders` マージ内で引き続き優先されます（§8.2 の spoofing 議論を参照）。fetch wrapper が注入する `X-Qwen-Code-Session-Id` は、SDK のヘッダーリストの**後**に最終的な `Headers` オブジェクトに追加されます——Node `Headers.set()` のセマンティクスにより、同一名の以前の値（ユーザーの customHeaders で書かれた同名ヘッダーも含む）を上書きします。
 
 **OpenAI/Anthropic（fetch wrapper パス）**：correlation > customHeaders > SDK デフォルト。
-**Gemini（static ヘッダーパス）**：customHeaders > correlation > SDK デフォルト（既存の spread 順序を踏襲）。
+**Gemini（static headers パス）**：customHeaders > correlation > SDK デフォルト（既存のスプレッド順を継承）。
 
-差異は、fetch wrapper パスでは spoofing ができなくなること（fetch wrapper が SDK ヘッダーの後に実行される）。これは**バグ修正の副産物**であり、意図的に制限を強化したわけではないが、よりセキュアである。§8.2 に明記する必要がある。
+違いは、fetch wrapper パスでは spoofing が不可能になったことです（fetch wrapper は SDK ヘッダーの後で動作）。これは**バグ修正の副産物**であり、意図的な制限強化ではありませんが、より安全です。§8.2 で明示する必要があります。
 
 ### 4.4 設定スキーマへの影響
 
-~~**ほぼゼロ**。本設計では新しい設定を導入しない~~ — **R3 改訂**：`telemetry.sessionIdHeaderHosts: string[]` という新しい設定を導入した。デフォルトのファーストパーティホスト許可リストを上書きするためのもの。スキーマ項目は `packages/cli/src/config/settingsSchema.ts` に追加済み。説明とオーバーライド構文（`["*"]` でブロードキャスト復元 / `[]` で全無効 / カスタム配列）は §11 参照。以下の元の説明は R3 以前のみ有効：
+~~**ほぼゼロ**。本設計は新たな設定を導入しません~~ — **R3 改訂**：新たな設定項目 `telemetry.sessionIdHeaderHosts: string[]` を導入。デフォルトの first-party host ホワイトリストを上書きするために使用します。スキーマ項目は `packages/cli/src/config/settingsSchema.ts` に追加済み。説明とオーバーライド構文（`["*"]` でブロードキャスト復元 / `[]` で完全無効 / カスタム配列）は §11 を参照。以下の記述は R3 以前にのみ適用されます。
+- `traceparent` 注入は telemetry enabled によってトリガーされます（既存の toggle）
+- `X-Qwen-Code-Session-Id` 注入も telemetry enabled によってトリガーされます
+- `ignoreRequestHook` の OTLP URL は既存の config から読み取られます
 
-- `traceparent` 注入は telemetry enabled によって制御（既存の toggle）
-- `X-Qwen-Code-Session-Id` 注入も telemetry enabled によって制御
-- `ignoreRequestHook` の OTLP URL は既存の設定から読み取り済み
+将来追加可能な設定（**スコープ外**）：
 
-将来追加できる設定（**スコープ外**）：
+- `telemetry.outboundCorrelationHeader`: カスタムヘッダー名（デフォルト `X-Qwen-Code-Session-Id`）
+- `telemetry.outboundPropagationDisabled`: グローバルに無効化（LLM サービスが未知のヘッダーに厳格な場合）
+- ~~宛先ごとのヘッダースコープ toggle~~ — **R3 で実装済み**、§11 参照
 
-- `telemetry.outboundCorrelationHeader`：カスタムヘッダー名（デフォルト `X-Qwen-Code-Session-Id`）
-- `telemetry.outboundPropagationDisabled`：グローバルに無効化（LLM サービスが未知のヘッダーに厳格な場合）
-- ~~per-destination ヘッダースコープ toggle~~ — **R3 で実装済み**、§11 参照
+## 5. ファイル変更一覧
 
-## 5. 変更ファイル一覧
-
-| ファイル                                                                            | 変更種別 | 説明                                                                                                                                                            |
-| ------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ファイル                                                                        | 変更タイプ | 説明                                                                                                                                                            |
+| ------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `packages/core/package.json`                                                    | 依存追加   | `@opentelemetry/instrumentation-undici`                                                                                                                         |
-| `packages/core/src/telemetry/sdk.ts`                                            | 変更     | `UndiciInstrumentation` + `ignoreRequestHook` を追加                                                                                                                  |
-| `packages/core/src/telemetry/llm-correlation-fetch.ts`                          | 新規ファイル   | `wrapFetchWithCorrelation()`（OpenAI/Anthropic）+ `staticCorrelationHeaders()`（Gemini フォールバック）                                                                |
-| `packages/core/src/core/openaiContentGenerator/provider/default.ts`             | 変更     | `buildClient()` 内の `new OpenAI({...})` に `fetch: wrapFetchWithCorrelation(baseFetch, cliConfig)` を追加                                                             |
-| `packages/core/src/core/openaiContentGenerator/provider/dashscope.ts`           | 変更     | 上記と同様（`buildClient` をオーバーライド）                                                                                                                                  |
-| `packages/core/src/core/geminiContentGenerator/index.ts`                        | 変更     | ファクトリー関数内で `staticCorrelationHeaders(gcConfig)` を `httpOptions.headers` にマージ（**呼び出し元に既に Config があるためシグネチャ変更ゼロ** — 以前の過剰な仕様を修正） |
-| `packages/core/src/core/anthropicContentGenerator/anthropicContentGenerator.ts` | 変更     | `buildClient` のパスで SDK の `fetch` option を `wrapFetchWithCorrelation` でラップ                                                                                      |
+| `packages/core/src/telemetry/sdk.ts`                                            | 変更       | +`UndiciInstrumentation` + `ignoreRequestHook`                                                                                                                  |
+| `packages/core/src/telemetry/llm-correlation-fetch.ts`                          | 新規ファイル | `wrapFetchWithCorrelation()` (OpenAI/Anthropic) + `staticCorrelationHeaders()` (Gemini fallback)                                                                |
+| `packages/core/src/core/openaiContentGenerator/provider/default.ts`             | 変更       | `buildClient()` 内で `new OpenAI({...})` に `fetch: wrapFetchWithCorrelation(baseFetch, cliConfig)` を追加                                                  |
+| `packages/core/src/core/openaiContentGenerator/provider/dashscope.ts`           | 変更       | 同上（`buildClient` をオーバーライド）                                                                                                                          |
+| `packages/core/src/core/geminiContentGenerator/index.ts`                        | 変更       | factory 関数内で `staticCorrelationHeaders(gcConfig)` を `httpOptions.headers` にマージ（**呼び出し元は既に Config を保持しており、シグネチャ変更ゼロ** — 以前の過剰仕様を修正） |
+| `packages/core/src/core/anthropicContentGenerator/anthropicContentGenerator.ts` | 変更       | `buildClient` パスで SDK の `fetch` option に `wrapFetchWithCorrelation` を適用                                                                                 |
 
-**明示的に audit 済みだが変更不要**（レビュアーがパスを見落としたと疑わないよう）：
+**明示的に監査済みだが変更不要**（レビュワーがパス漏れを懸念しないようにするため）：
 
-- `packages/core/src/qwen/qwenContentGenerator.ts` — `OpenAIContentGenerator` を継承し、`DashScopeOpenAICompatibleProvider` を使用。**dashscope.ts の buildClient 変更を自動継承する**。すべての Qwen OAuth フローも恩恵を受ける。
-- `packages/core/src/core/loggingContentGenerator/loggingContentGenerator.ts` — wrapper パターンで SDK クライアントを構築しない（telemetry logging 用に他の contentGenerator をラップする）。変更不要。
-- `packages/core/src/core/contentGenerator.ts` — ファクトリーエントリーポイント。クライアントを保持しない。
+- `packages/core/src/qwen/qwenContentGenerator.ts` — `extends OpenAIContentGenerator` で `DashScopeOpenAICompatibleProvider` を使用、**dashscope.ts の buildClient 変更を自動継承**。すべての Qwen OAuth フローも同様に恩恵を受けます。
+- `packages/core/src/core/loggingContentGenerator/loggingContentGenerator.ts` — wrapper パターンで SDK client を構築しない（他の contentGenerator をラップして telemetry logging を行う）、変更不要。
+- `packages/core/src/core/contentGenerator.ts` — factory エントリポイントで client を保持しない。
   | `packages/core/src/telemetry/sdk.test.ts` | 変更 | undici instrumentation の登録 + ignoreRequestHook のテストを追加 |
-  | `packages/core/src/telemetry/llm-correlation-fetch.test.ts` | 新規ファイル | telemetry on/off の動作の単体テスト + リクエストごとの sessionId 読み取り検証（重要：セッションリセット後、wrapped fetch が新しい ID を読み取ることを確認） |
-  | 各プロバイダーの `*.test.ts` | 変更 | SDK 構築時に `fetch` option がラップされたバージョンであることをアサート（OpenAI/Anthropic）；Gemini 構築時に `httpOptions.headers` に `X-Qwen-Code-Session-Id` が含まれることをアサート |
+  | `packages/core/src/telemetry/llm-correlation-fetch.test.ts` | 新規ファイル | telemetry on/off の動作単体テスト + リクエストごとの sessionId 読み取り確認（重要：session リセット後、wrapped fetch が新しい id を読み取る） |
+  | 各プロバイダーの `*.test.ts` | 変更 | SDK 構築時に `fetch` option が wrapped バージョンであることをアサート（OpenAI/Anthropic）；Gemini 構築時に `httpOptions.headers` に `X-Qwen-Code-Session-Id` が含まれることをアサート |
   | `docs/developers/development/telemetry.md` | 変更 | "Trace context & session correlation propagation" セクションを追加 |
   | `docs/design/telemetry-outbound-propagation-design.md` | 本ファイル | 設計ドキュメント |
 
-## 6. PR 分割方針
+## 6. PR 分割
 
-レビューのしやすさを考慮して 2 つの PR に分割（まとめることも可能、規模的には問題ない）：
+レビューのしやすさを考慮して 2 つの PR に分割（規模的に 1 つにまとめても可）：
 
-### PR 1 — `traceparent` 自動注入（構造的変更）
+### PR 1 — `traceparent` 自動注入（構造的）
 
-- `@opentelemetry/instrumentation-undici` 依存関係の追加
+- `@opentelemetry/instrumentation-undici` 依存を追加
 - `sdk.ts` に `UndiciInstrumentation` + `ignoreRequestHook` を追加
-- テスト：SDK 登録、OTLP endpoint がトレースされないことの確認
+- テスト：SDK 登録、OTLP endpoint がトレースされないこと
 - ドキュメント断片
 
-**リスク**：低。追加的変更。既存のクライアント span 構造は変わらず、ネット的にはプラス。
+**リスク**：低。追加のみ。既存の client span はネットの利得であり、既存のスパン構造は変更されません。
 
-### PR 2 — `X-Qwen-Code-Session-Id` ヘッダー（ヘルパー関数と合わせて）
+### PR 2 — `X-Qwen-Code-Session-Id` ヘッダー（ヘルパー関数と組み合わせ）
 
 - 新規ファイル `llm-correlation-headers.ts`
-- 4 つのプロバイダーへの統合
-- テスト：各プロバイダーでヘッダーが存在することをアサート；telemetry 無効時は送信されないことを確認
+- 4 つのプロバイダー統合
+- テスト：各プロバイダーでヘッダーが存在すること、telemetry-off 時には送信されないことをアサート
 - ドキュメント断片
 
-**リスク**：低〜中。`geminiContentGenerator` コンストラクターのシグネチャ拡張が呼び出し元に波及する可能性に注意。
+**リスク**：低〜中。`geminiContentGenerator` のコンストラクタシグネチャ拡張が呼び出し元に波及する可能性に注意。
 
-### PR 3（任意） — ドキュメント + E2E 検証
+### PR 3（任意） — Docs + E2E 検証
 
-- `telemetry.md` セクションの充実
-- E2E 検証スクリプトの追加（`/tmp/verify-telemetry-pr-4367.mjs` パターンを流用）：実際に fetch を実行してヘッダーをキャプチャ
+- `telemetry.md` の段落を充実
+- E2E 検証スクリプト追加（`/tmp/verify-telemetry-pr-4367.mjs` パターンを再利用）：実際に fetch を実行してヘッダーをキャプチャ
 
-PR 2 にまとめることも可能。
+PR 2 に統合することも可能。
 
-### 順序の優先度
+### 順序の優先順位
 
-PR 1 と PR 2 は技術的に**互いに独立している**——コードを共有しない。しかし**PR 1 を先にマージすることを推奨する**：
+PR 1 と PR 2 は技術的に**互いに独立**しています—コードを共有しません。しかし **PR 1 を先にマージすることを推奨**：
 
-- `traceparent` は OTel **標準**ヘッダーであり、任意の OTel 対応 collector / バックエンドが即座に認識する → ユーザーはすぐに恩恵を受けられる
-- `X-Qwen-Code-Session-Id` は**製品独自**のヘッダーであり、バックエンドが認識するよう設定されて初めて価値を持つ → 価値実現に時間がかかる
-- PR 2 のレビューサイクルが長引いても、PR 1 ですでにクロスプロセストレースが機能する
-- PR 1 は追加的構造変更（低リスク）であり、まず信頼を確立するのに適している
+- `traceparent` は OTel **標準**ヘッダーであり、OTel 対応のコレクター/バックエンドが即座に認識 → ユーザーがすぐに恩恵を受ける
+- `X-Qwen-Code-Session-Id` は**製品カスタム**ヘッダーであり、バックエンド側の設定認識が必要 → 価値が遅延する
+- 万一 PR 2 のレビュー期間が長くなっても、PR 1 で cross-process trace が動作する
+- PR 1 は追加的構造変更（低リスク）であり、先に信頼を築くのに適している
 
 ## 7. テスト計画
 
 ### 7.1 `sdk.ts` 単体テスト
 
-- ✅ `UndiciInstrumentation` が `NodeSDK` の `instrumentations` に存在する
-- ✅ `ignoreRequestHook` が `https://collector:4318/v1/traces` に対して true を返す
-- ✅ `ignoreRequestHook` が `https://dashscope.aliyuncs.com/...` に対して false を返す
-- ✅ 末尾スラッシュあり / なし の両方で正しくマッチする
+- ✅ `UndiciInstrumentation` が `NodeSDK` の `instrumentations` に存在すること
+- ✅ `ignoreRequestHook` が `https://collector:4318/v1/traces` に対して true を返すこと
+- ✅ `ignoreRequestHook` が `https://dashscope.aliyuncs.com/...` に対して false を返すこと
+- ✅ 末尾スラッシュあり・なしの両方で正しく一致すること
 
 ### 7.2 `llm-correlation-fetch.ts` 単体テスト
 
 **`wrapFetchWithCorrelation`**：
 
-| シナリオ                                                    | 期待値                                                                   |
-| ------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `getTelemetryEnabled() === false`                       | wrapped fetch = baseFetch（ヘッダーを追加しない）                           |
-| `getTelemetryEnabled() === true`, sessionId = "abc-123" | wrapped fetch が送信する init.headers に `X-Qwen-Code-Session-Id: abc-123` が含まれる |
-| `init.headers` に既に `X-Qwen-Code-Session-Id: spoof` がある     | wrapper が本物の sessionId で上書きする（fetch wrapper パスでは spoof を許可しない、§8.1）   |
-| **セッションリセット後に wrapped fetch が再度呼ばれる**           | **新しい sessionId を読み取る**（staleness 修正のリグレッションガード）             |
-| baseFetch が reject する                                        | wrapper は reject を透過させ、飲み込まない                                               |
+| シナリオ                                                 | 期待                                                                   |
+| -------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `getTelemetryEnabled() === false`                        | wrapped fetch = baseFetch（ヘッダー追加なし）                          |
+| `getTelemetryEnabled() === true`, sessionId = "abc-123"  | wrapped fetch が送信する init.headers に `X-Qwen-Code-Session-Id: abc-123` が含まれる |
+| `init.headers` に既に `X-Qwen-Code-Session-Id: spoof` が存在 | wrapper 後、真の sessionId で上書きされる（fetch wrapper パスでは spoof 不可、§8.1） |
+| **session リセット後、wrapped fetch が再度呼ばれる**       | **新しい sessionId を読み取る**（古い値を使い続ける問題の回帰ガード）  |
+| baseFetch が reject する                                  | wrapper は reject をそのまま透過し、飲み込まない                      |
 
 **`staticCorrelationHeaders`**（Gemini パス）：
 
-| シナリオ                                                    | 期待される戻り値                                                         |
-| ------------------------------------------------------- | ---------------------------------------------------------------- |
-| `getTelemetryEnabled() === false`                       | `{}`                                                             |
-| `getTelemetryEnabled() === true`, sessionId = "abc-123" | `{ 'X-Qwen-Code-Session-Id': 'abc-123' }`                        |
-| sessionId に Unicode が含まれる（`会話-1`）                      | そのまま返す——HTTP ヘッダー値のエンコードは SDK が担当                      |
-| sessionId が空文字列                                    | `{ 'X-Qwen-Code-Session-Id': '' }`——ビジネス不変条件であり、このレイヤーでは検証しない |
+| シナリオ                                                 | 期待される戻り値                                                   |
+| -------------------------------------------------------- | ------------------------------------------------------------------ |
+| `getTelemetryEnabled() === false`                        | `{}`                                                               |
+| `getTelemetryEnabled() === true`, sessionId = "abc-123"  | `{ 'X-Qwen-Code-Session-Id': 'abc-123' }`                          |
+| sessionId に unicode が含まれる（`會話-1`）              | そのまま返す——HTTP header value は SDK がエンコードを担当           |
+| sessionId が空文字列                                     | `{ 'X-Qwen-Code-Session-Id': '' }`——ビジネス不変条件、このレイヤーでは検証しない |
 
 ### 7.3 プロバイダーごとの統合テスト
 
-各プロバイダーの `buildHeaders()` / 構築テストに以下を追加：
+各プロバイダーの `buildHeaders()` / コンストラクタテストに以下を追加：
 
 ```ts
-it('includes X-Qwen-Code-Session-Id when telemetry enabled', () => {
+it('telemetry 有効時に X-Qwen-Code-Session-Id を含む', () => {
   const config = makeFakeConfig({
     sessionId: 'sess-xyz',
     telemetry: { enabled: true },
@@ -485,7 +484,7 @@ it('includes X-Qwen-Code-Session-Id when telemetry enabled', () => {
   expect(provider.buildHeaders()['X-Qwen-Code-Session-Id']).toBe('sess-xyz');
 });
 
-it('omits X-Qwen-Code-Session-Id when telemetry disabled', () => {
+it('telemetry 無効時に X-Qwen-Code-Session-Id を省略する', () => {
   const config = makeFakeConfig({ telemetry: { enabled: false } });
   const provider = new DefaultProvider(genConfig, config);
   expect(provider.buildHeaders()).not.toHaveProperty('X-Qwen-Code-Session-Id');
@@ -494,61 +493,61 @@ it('omits X-Qwen-Code-Session-Id when telemetry disabled', () => {
 
 ### 7.4 E2E 検証（tmux + ローカル HTTP サーバー）
 
-⚠️ ヘッダーをキャプチャするために `globalThis.fetch` を**モックしてはならない**：`UndiciInstrumentation` は undici の diagnostics channel hook を通じて機能するため、globalThis.fetch を monkey-patch すると instrumentation が完全にバイパスされる可能性があり（patch の順序次第）、`traceparent` の注入をテストできなくなる。**正しい方法はローカル HTTP サーバーを立ち上げること**。SDK に実際にリクエストを送信させ、サーバー側で受信したヘッダーを記録する。
+⚠️ ヘッダーをキャプチャするために `globalThis.fetch` をモック**しない**でください：`UndiciInstrumentation` は undici の diagnostics channel フックを通じて動作するため、`globalThis.fetch` をモンキーパッチすると（パッチの順序によっては）instrumentation を完全にバイパスし、`traceparent` 注入をテストできなくなります。**正しい方法はローカル HTTP サーバーを起動し**、SDK に実際にリクエストを送らせ、サーバー側で受け取ったヘッダーを記録することです。
 
-`/tmp/verify-telemetry-pr-4367.mjs` に倣ったスクリプトを作成する：
+`/tmp/verify-telemetry-pr-4367.mjs` と同様のスクリプトを作成：
 
 1. `http.createServer((req, res) => { capturedHeaders.push(req.headers); res.end('{}') })` でローカルサーバーを起動
-2. telemetry + outfile を有効化し、OpenAI SDK の `baseURL` を `http://127.0.0.1:<port>` に向ける（または mock プロバイダーを使って SDK に実際の fetch を送信させる）
-3. `client.chat.completions.create(...)` を 1 回実行（最小限の解析可能な mock レスポンスが必要。そうしないと SDK が解析エラーを起こす——ローカルサーバーは合法だが空の OpenAI レスポンスを返せばよい）
+2. telemetry + outfile を有効にし、OpenAI SDK の `baseURL` を `http://127.0.0.1:<port>` に設定（または mock provider を使用して SDK に実際に fetch を送らせる）
+3. `client.chat.completions.create(...)` を 1 回トリガー（解析可能な最小限の mock レスポンスが必要。ローカルサーバーは有効だが空の OpenAI レスポンスを返せば良い）
 4. `capturedHeaders[0]` に `traceparent: 00-...` と `X-Qwen-Code-Session-Id: <sessionId>` が含まれることをアサート
-5. 別ポートで OTLP collector mock を立ち上げ、そこへの OTLP レポートが `traceparent` 注入を**トリガーしない**ことを確認（`ignoreRequestHook` の検証）
-6. **追加：staleness 検証** — リクエスト 1 を送信 → `config.resetSession(...)` を呼び出す → リクエスト 2 を送信 → リクエスト 2 の `X-Qwen-Code-Session-Id` が新しいセッション ID であることをアサート（**これが #1 修正の重要なリグレッションテスト**）
+5. 別のポートで OTLP collector mock を起動し、それへの OTLP レポート送信が `traceparent` 注入を**トリガーしない**ことを検証（`ignoreRequestHook` の確認）
+6. **追加：古い値の検証** — request 1 を発行 → `config.resetSession(...)` を呼び出す → request 2 を発行 → request 2 の `X-Qwen-Code-Session-Id` が新しい session id であることをアサート（**#1 修正の重要な回帰テスト**）
 
-### 7.5 リグレッション保護
+### 7.5 回帰防御
 
-- ストリーミング chat completion の fetch（`stream: true` 付き）が正常に閉じられること——`UndiciInstrumentation` はストリーミングレスポンスに対する span ライフサイクルに過去バグがあったため、**実装時には実際にストリーミング completion をエンドツーエンドで実行し、クライアント span が正常に終了すること / span のリークがないこと / ストリームが切断されないことを確認する必要がある**。特定のバージョン番号で修正済みとは仮定しないこと
-- proxy モード（`ProxyAgent`）と instrumentation の同時有効化——`ignoreRequestHook` は endpoint 文字列マッチングで動作するため、proxy の影響を受けない
-- リトライ（`maxRetries`）時、各リトライが独立したクライアント span を持つが、いずれも同じ `traceparent` parent を共有する（理想的にはリトライが同一親 span 下の複数 child span になるが、これは SDK の動作に依存しており、本設計では強制しない）
+- streaming chat completion の fetch（`stream: true` を含む）は正常に終了すること——`UndiciInstrumentation` は過去に streaming レスポンスのスパンライフサイクルにバグがありました。**実装時には実際に streaming completion をエンドツーエンドで実行し、client span が正常に終了し、スパンのリークがなく、ストリームが途中で切れないことを確認してください**；特定のバージョンですでに修正済みとは仮定しないでください。
+- proxy モード (`ProxyAgent`) と instrumentation が同時に有効な場合——`ignoreRequestHook` は引き続き endpoint 文字列でマッチングされ、proxy は影響しません。
+- リトライ（`maxRetries`）時、リトライごとに独立した client span が作成されますが、すべて同じ `traceparent` 親を共有します（理想的にはリトライが同じ親スパンの下の複数の子スパンになるべき — これは SDK の動作に依存するため、本設計では強制しません）。
 
 ## 8. 境界 / エッジケース
 
-### 8.1 customHeaders のオーバーライドと spoofing の動作の不一致
+### 8.1 customHeaders の上書きと spoofing の不一致動作
 
-プロバイダーのパスによって spoofing の挙動が**異なる**（設計上の結果であり、意図的な制限強化ではない）：
+プロバイダーパスによって spoofing の挙動が**異なります**（設計上の結果であり、意図的な強化ではありません）：
 
-| プロバイダーパス                           | spoofing 可能? | 理由                                                                                                                |
-| --------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------- |
-| OpenAI / Anthropic (fetch wrapper パス) | ❌ 不可  | fetch wrapper が SDK ヘッダーリストの後に `headers.set('X-Qwen-Code-Session-Id', ...)` を実行し、ユーザーの customHeaders の同名ヘッダーを上書きする |
-| Gemini (static ヘッダーパス)            | ✅ 可能    | マージ順序 `{ ...baseHeaders, ...correlationHeaders, ...customHeaders }`——customHeaders が最後に勝つ                      |
+| Provider パス                               | spoofing 可能？ | 理由                                                                                                                  |
+| ------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------- |
+| OpenAI / Anthropic (fetch wrapper パス)     | ❌ spoof 不可    | fetch wrapper は SDK の headers リストの後に `headers.set('X-Qwen-Code-Session-Id', ...)` を行い、ユーザーの customHeaders の同名キーを上書きする |
+| Gemini (static headers パス)                | ✅ spoof 可能    | マージ順 `{ ...baseHeaders, ...correlationHeaders, ...customHeaders }`——customHeaders が最後に勝つ                    |
 
-claude-code も fetch wrapper パスを使用しており、OpenAI/Anthropic と同じ挙動（spoofing 不可）。これは staleness バグの修正の副産物であり、元々意図した変更ではない。
+claude-code も fetch wrapper パスを使用しており、OpenAI/Anthropic と同じ動作（spoofing 不可）です。これは古い値問題の修正の副産物であり、本来意図したものではありません。
 
-**2 つのパスを「揃える」つもりはない**——Gemini パスの挙動は SDK の制限（`fetch` hook がない）によるものであり、OpenAI も static に降格させるのは合理的でない。
+**二つのパスを「統一する」つもりはありません**——Gemini パスの動作は SDK の制限（`fetch` hook がない）によるもので、OpenAI 側を static にダウングレードするのは不合理です。
 
-セッション ID の spoofing は実際の脅威ではない（ユーザーがローカルを制御しており、ソースコードを直接変更できる）。ドキュメントにこの差異を明記し、レビュアーが fetch wrapper パスで spoof できないことを見て customHeaders の優先度に疑問を持たないようにする。
+Session id spoofing は現実的な脅威ではありません（ユーザーはローカルを制御しており、ソースコードを直接変更できます）。ドキュメントではこの違いを明示し、レビュワーが fetch wrapper パスで spoof できないのを見て customHeaders の優先順位に疑問を持たないようにする必要があります。
 
 ### 8.2 OTLP collector URL マッチングの 2 種類のエッジケース
 
 #### (a) URL 内の認証トークン
 
-ユーザーの OTLP endpoint が `https://collector/path?token=secret` のような形式の場合、`ignoreRequestHook` の `url.startsWith(e)` 比較にクエリ文字列が含まれる。しかし undici が渡す `request.path` はパスまでであり（クエリを含まない）、比較時の `e` もパス部分のみを使用する。安全のため、クエリを取り除く：
+ユーザーの OTLP endpoint が `https://collector/path?token=secret` のような形式の場合、`ignoreRequestHook` の `url.startsWith(e)` は比較時にクエリ文字列も含む可能性があります。しかし undici から渡される `request.path` はパスのみ（クエリなし）なので、比較時には `e` もパス部分のみ使用されます。安全のため、クエリを除去します：
 
 ```ts
 const otlpUrls = [...]
   .map((u) => u.replace(/\?.*$/, '').replace(/\/$/, ''));
 ```
 
-#### (b) startsWith によるホスト名境界を越えた理論上の false positive
+#### (b) startsWith がホスト名境界を超える理論上の false positive
 
-`e = "http://collector"`（ポートなし）の場合、対象 URL = `http://collector-fake/v1/traces` に startsWith が誤ってマッチする。
+`e = "http://collector"`（ポートなし）の場合、リクエスト URL が `http://collector-fake/v1/traces` だと startsWith が誤って一致する恐れがあります。
 
-**実際のトリガー確率は極めて低い**：
+**実際に発生する確率は極めて低い**：
 
-- OTLP endpoint はほぼ常にポートを含む（4317 gRPC / 4318 HTTP）。`http://collector:4318` の形式では `-fake` のような延長は不可能（ポートの後は `/` が続く）
-- ポートなしで endpoint を設定することは設定ミスであり、元々 SDK はデフォルトのフォールバックを使う
+- OTLP endpoint はほぼ常にポート番号（4317 gRPC / 4318 HTTP）を含み、`http://collector:4318` の形式では `-fake` のような拡張は不可能（ポートの後は `/` しか続かない）
+- ユーザーが endpoint をポートなしで設定するのは設定ミスであり、本来 SDK はデフォルトのフォールバックを行う
 
-**harden したい場合**：裸の startsWith を使わず、URL の origin と path を個別に比較する：
+**堅牢化したい場合**：URL の origin + path をそれぞれパースして比較し、裸の startsWith を使わない：
 
 ```ts
 const parsed = otlpUrls.map((u) => new URL(u));
@@ -558,112 +557,111 @@ return parsed.some(
 );
 ```
 
-今期は対応しない——コストが不要であり、false positive が実際にトリガーされることもない。
+今回は実施しません——オーバーヘッドの割にメリットが不必要であり、実際に false positive が発生することもありません。
 
 ### 8.3 Vertex AI モードの Gemini
 
-`@google/genai` は `vertexai: true` モードをサポートする（GCP クレデンシャルを使って generative ai endpoint ではなく Vertex endpoint を使用）。両モードとも fetch を使うため、instrumentation がカバーする。`httpOptions.headers` は両モードで有効。
+`@google/genai` は `vertexai: true` モード（GCP 認証情報を使用して Vertex endpoint にアクセス。generative ai endpoint ではない）をサポートしています。どちらのモードも fetch を使用するため、instrumentation はどちらもカバーします。`httpOptions.headers` はどちらのモードでも有効です。
 
-### 8.4 Anthropic SDK の既存 `defaultHeaders` ロジック
+### 8.4 Anthropic SDK の既存の `defaultHeaders` ロジック
 
-`anthropicContentGenerator.ts:177` はすでに `buildHeaders()` を呼び出してその結果を `new Anthropic({ defaultHeaders })` に渡している。しかし staleness は同様に適用される——本設計では `fetch` wrapper パスに変更する（OpenAI と統一）。
+`anthropicContentGenerator.ts:177` では既に `buildHeaders()` を呼び出し、その結果を `new Anthropic({ defaultHeaders })` に渡しています。しかし古い値問題も同様に適用されます——本設計では `fetch` wrapper パスを使用します（OpenAI と同様）。
 
-### 8.5 SDK と fetch の間の trailer ヘッダー
+### 8.5 SDK と fetch 間の trailer header
 
-`openai` SDK はストリーミング時に `Transfer-Encoding: chunked` や trailer ヘッダーを使う場合がある。これらはリクエスト時の `traceparent` / `X-Qwen-Code-Session-Id` の注入には影響しない——どちらもリクエストヘッダーであり、送信時に一度に書き込まれる。
+`openai` SDK は streaming 時に `Transfer-Encoding: chunked` と trailer headers を使用する可能性があります。これらはリクエスト時の `traceparent` / `X-Qwen-Code-Session-Id` 注入には影響しません——これらはリクエストヘッダーであり、送信時に一度だけ書き込まれます。
 
-### 8.6 ⚠️ Known limitation: Gemini のセッション ID が `/clear` 後に stale になる
+### 8.6 ⚠️ 既知の制限：Gemini の session id は `/clear` 後に古くなる
 
-`@google/genai` SDK が `fetch` hook をサポートしていない（`HttpOptions` インターフェースには `baseUrl`/`apiVersion`/`headers`/`timeout`/`extraParams` しかない）ため、Gemini プロバイダーは static な `httpOptions.headers` パスを使用する——セッション ID は SDK 構築時にキャプチャされ、**`/clear` でセッションリセットが発生しても更新されない**。
+`@google/genai` SDK は `fetch` hook をサポートしていないため（`HttpOptions` インターフェースには `baseUrl`/`apiVersion`/`headers`/`timeout`/`extraParams` のみ）、Gemini provider は static な `httpOptions.headers` パスを使用します——session id は SDK 構築時にキャプチャされ、**`/clear` による session リセット後は更新されません**。
 
 **実際の影響範囲**：
 
-- ユーザーが Qwen Code を起動 → `/clear` → Gemini モデルを使用 → ワイヤー上の `X-Qwen-Code-Session-Id` は古いセッション ID
-- バックエンドの相関がずれる（trace id とログはすでに新しいセッションに切り替わっているが、ワイヤーヘッダーは遅れる）
+- ユーザーが qwen-code を起動 → `/clear` → Gemini モデルを使用 → ワイヤー上の `X-Qwen-Code-Session-Id` は古い session id
+- バックエンドの correlation がずれる（trace id とログは新しい session に正しく切り替わっているが、ワイヤーヘッダーは古いまま）
 
-**今期修正しない理由**：
+**なぜ修正しないのか（今回）**：
 
-- OpenAI / Anthropic のパスにはこのバグが**ない**（fetch wrapper パスはリクエストごとにセッション ID を読み取る）
-- Gemini の修正パスには複数の選択肢があるが、いずれも今期のスコープを超えている（以下参照）
+- OpenAI / Anthropic パスには**このバグはありません**（fetch wrapper パスはリクエストごとに session id を読み取る）
+- Gemini 修正パスにはいくつかの選択肢があり、すべて今回のスコープを超えています（以下参照）
 
 **将来の修正パス選択肢**（推奨順）：
 
-| 選択肢                                          | 説明                                                                                 | コスト                                                                                      |
-| --------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| **A. Lazy invalidate** ★ 推奨                 | セッションリセット時に contentGenerator を dirty とマークし、次の LLM 呼び出し時に lazy recreate        | 小：`resetSession` + LLM 呼び出しエントリーポイントに約 10 行追加；同期 API で侵襲性低い                            |
-| B. Eager recreate                             | セッションリセット時に即座に `await createContentGenerator(...)` を呼び出し、`resetSession` の非同期化が必要 | 中：API 変更が連鎖的に波及                                                                      |
-| C. Proxy headers オブジェクト                       | `httpOptions.headers` に Proxy を wrap して getter を傍受                                        | リスク高：`@google/genai` 内部でリクエストごとにヘッダーを再読するかどうかが不明。サイレントに壊れる可能性がある |
-| D. `@google/genai` 上流に `fetch` option を追加するよう提案 | google-deepmind/generative-ai-js に PR を提出                                            | 長期；制御できない                                                                              |
+| 選択肢                                         | 説明                                                                                  | コスト                                                                                       |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **A. Lazy invalidate** ★ 推奨                    | session リセット時に contentGenerator を dirty マークし、次の LLM 呼び出し時に遅延再作成 | 小：~10 行を `resetSession` + LLM 呼び出しエントリに追加；同期 API、非侵襲                   |
+| B. Eager recreate                              | session リセット時に即座に `await createContentGenerator(...)`、`resetSession` の非同期化が必要 | 中：API 変更が複数箇所に波及                                                              |
+| C. Proxy headers object                        | `httpOptions.headers` に Proxy をラップして getter をインターセプト                     | リスク高：`@google/genai` 内部がリクエストごとにヘッダーを再読み取りするか不明、動作が静かに壊れる可能性 |
+| D. `@google/genai` 上流に `fetch` option を追加 | google-deepmind/generative-ai-js に PR を送る                                          | 長期間；制御不能                                                                             |
 
-**ドキュメントでユーザーに対して説明すること**：Gemini プロバイダーを使用する場合、`/clear` 直後に LLM 呼び出しがあると、その時点のワイヤー上のセッション ID は古い値になる。トレース相関で間接的に修正できる（span/log 上の session.id はすでに新しい値になっている）。
+**ドキュメントではユーザーに明示する必要があります**：Gemini provider を使用する場合、`/clear` 直後に LLM 呼び出しが行われると、ワイヤー上の session id はその時点で古いものになります。trace correlation によって間接的に修正可能（spans/logs 上の session.id は既に新しい）。
 
-選択肢 A を追跡するための独立した follow-up サブ issue を作成すること。
+フォローアップ sub-issue を別途作成し、選択肢 A を追跡する必要があります。
 
 ## 9. claude-code との比較
 
-| 次元                         | claude-code                                                                                                                                          | Qwen Code 本設計                                                                                                                                                              | 判断根拠                                                                                                                           |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| セッション ID ヘッダー名       | `X-Claude-Code-Session-Id`（製品プレフィックス）                                                                                                               | `X-Qwen-Code-Session-Id`（製品プレフィックス）                                                                                                                                          | ✅ 同じネームスペース戦略                                                                                                                |
-| セッション ID 注入機構          | SDK `defaultHeaders`（`client.ts:108`）+ カスタム `buildFetch()` wrapper（`client.ts:370-390`、リクエストごとに `randomUUID()` を注入して `x-client-request-id` を設定） | OpenAI/Anthropic は fetch wrapper（リクエストごとにセッション ID を読み取り、`/clear` の staleness を回避）；Gemini は static `httpOptions.headers`（SDK 制限）                                   | claude-code の fetch wrapper パターンに合わせる。claude-code も fetch wrapper を使うことでリクエストごとに `x-client-request-id` を追加できる                 |
-| セッション ID の永続性            | claude-code には `/clear` 式のセッションリセットがない；session = プロセス                                                                                        | `/clear` リセットがある → fetch wrapper パスは自動追従；static ヘッダーパスは stale になる（§8.6）                                                                                           | Qwen Code 固有の複雑さ                                                                                                             |
-| セッション ID のエンコード              | HTTP ヘッダー（baggage ではない）                                                                                                                                          | HTTP ヘッダー                                                                                                                                                                   | ✅ 同じ——バックエンドフレンドリー                                                                                                                |
-| `traceparent` 注入           | クローズドソース；公開ドキュメントには記載あり；オープンソースリポジトリに `propagation.inject` / `UndiciInstrumentation` の参照なし                                                           | `@opentelemetry/instrumentation-undici` で自動                                                                                                                                  | claude-code の実装は不可視。OTel 公式推奨パスを選択し、よりシンプル                                                                       |
-| `traceparent` の送信範囲       | Anthropic ファーストパーティ API のみ；Bedrock/Vertex/Foundry には送信しない                                                                                                  | すべてのアウトバウンド fetch に送信（W3C 標準；trace id は `sha256(sessionId)` のハッシュ）。**R3 改訂**：セッション ID ヘッダーはファーストパーティ（Alibaba/DashScope）許可リストのみに注入、サードパーティにはデフォルトで送信しない。§11 参照 | R3 以降、Qwen Code のセッションヘッダーは claude-code と同様のファーストパーティのみのセマンティクスを持つ；`traceparent` は per-destination toggle の follow-up で対応予定 |
-| `x-client-request-id`（ランダム） | あり、自動                                                                                                                                             | 今期は対応しない（独立した follow-up サブ issue として価値がより高い）                                                                                                                   | スコープ管理                                                                                                                           |
-| サブプロセスの `TRACEPARENT` 環境変数     | ドキュメントに記載あり（実装はクローズドソース）                                                                                                                             | 対応しない（独立した follow-up）                                                                                                                                                        | スコープ管理                                                                                                                           |
-| 受信 `TRACEPARENT` の読み取り      | ドキュメントに記載あり（`-p` / Agent SDK モード）                                                                                                                                | 対応しない（独立した follow-up）                                                                                                                                                        | スコープ管理                                                                                                                           |
+| 次元                          | claude-code                                                                                                                                          | qwen-code 本設計                                                                                                                                                            | 判断根拠                                                                                                                           |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Session id ヘッダー命名        | `X-Claude-Code-Session-Id`（製品プレフィックス）                                                                                                     | `X-Qwen-Code-Session-Id`（製品プレフィックス）                                                                                                                              | ✅ 同じ名前空間戦略                                                                                                                |
+| Session id 注入メカニズム       | SDK `defaultHeaders`（`client.ts:108`）+ カスタム `buildFetch()` wrapper（`client.ts:370-390`、リクエストごとの `randomUUID()` 注入 `x-client-request-id`） | OpenAI/Anthropic は fetch wrapper（リクエストごとに session id を読み取り、`/clear` の古さを回避）；Gemini は static `httpOptions.headers`（SDK 制限）                        | claude-code の fetch wrapper パターンに合わせる。claude-code も fetch wrapper を使用してリクエストごとに `x-client-request-id` を追加 |
+| Session id の持続性          | claude-code には `/clear` のような session リセットなし；session = process                                                                             | `/clear` リセットあり → fetch wrapper パスは自動追従；static headers パスは古くなる（§8.6）                                                                                | qwen-code 独自の複雑さ                                                                                                             |
+| Session id エンコーディング  | HTTP header（baggage ではない）                                                                                                                       | HTTP header                                                                                                                                                                 | ✅ 同じ——バックエンドに優しい                                                                                                       |
+| `traceparent` 注入            | クローズドソース；公開ドキュメントでは存在を説明；オープンソースリポジトリには `propagation.inject` / `UndiciInstrumentation` の参照なし                 | `@opentelemetry/instrumentation-undici` 自動                                                                                                                                | claude-code の実装は不明。OTel 公式推奨パスを選択、より軽量                                                                       |
+| `traceparent` 送信範囲         | 第一方 Anthropic API のみ；Bedrock/Vertex/Foundry には送信しない                                                                                      | すべてのアウトバウンド fetch に送信（W3C 標準；trace id は `sha256(sessionId)` ハッシュ）。**R3 改訂**：session id header は first-party (Alibaba/DashScope) ホワイトリストのみに注入、サードパーティにはデフォルトで送信しない。詳細は §11 | R3 後、qwen-code の session header は claude-code と同じ first-party-only セマンティクス；`traceparent` は per-destination toggle のフォローアップ未定 |
+| `x-client-request-id` (ランダム) | あり、自動                                                                                                                                           | 今回未実装（独立したフォローアップ sub-issue として価値が高い）                                                                                                              | スコープ管理                                                                                                                       |
+| 子プロセス `TRACEPARENT` env    | ドキュメントで存在を認めている（実装はクローズド）                                                                                                   | 未実装（独立したフォローアップ）                                                                                                                                            | スコープ管理                                                                                                                       |
+| 入站 `TRACEPARENT` 読み取り     | ドキュメントで存在を認めている（`-p` / Agent SDK モード）                                                                                               | 未実装（独立したフォローアップ）                                                                                                                                            | スコープ管理                                                                                                                       |
 
-**検証済み vs ドキュメント記載の注記**：
+**verified vs documented 注記**：
 
 | 主張                                           | 検証状態                                                                                                                                          |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `X-Claude-Code-Session-Id` via `defaultHeaders` | ✅ オープンソースの `src/services/api/client.ts:108` を確認済み                                                                                              |
-| `x-client-request-id` via fetch wrapper         | ✅ オープンソースの `src/services/api/client.ts:370-390` を確認済み                                                                                          |
-| `traceparent` 注入                              | ⚠️ docs.claude.com/docs/en/monitoring-usage.md のみ言及；オープンソースリポジトリで `grep -rn "propagation\.inject\|UndiciInstrumentation\|traceparent" src` を実行すると空 |
-
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `X-Claude-Code-Session-Id` via `defaultHeaders` | ✅ オープンソース `src/services/api/client.ts:108` を確認済み                                                                                     |
+| `x-client-request-id` via fetch wrapper         | ✅ オープンソース `src/services/api/client.ts:370-390` を確認済み                                                                                 |
+| `traceparent` 注入                              | ⚠️ docs.claude.com/docs/en/monitoring-usage.md のみで言及；オープンソースリポジトリ `grep -rn "propagation\.inject\|UndiciInstrumentation\|traceparent" src` は空 |
 ## 10. 将来の作業
 
-#3731 P3 に関連するが、本設計には**含まれない**：
+#3731 P3 にぶら下がっており、本設計には**含まれません**が、関連します：
 
-- **`X-Qwen-Code-Request-Id`** リクエストごとのランダム UUID（claude-code 相当：`x-client-request-id`）。タイムアウト / timeout error の相関に有用——タイムアウト時、サーバーサイドではまだリクエスト ID が割り当てられていない可能性があり、クライアントが事前に送った ID が唯一の関連手段になる。R3 改訂後、この提案はより重要になった：リクエストごとの UUID は「クロスリクエストの行動プロファイリング」リスクがなく、「すべての LLM プロバイダーに送るサポート/デバッグヘッダー」として機能できる。
-- **`traceparent` の per-destination スコープ toggle** — R3 はセッション ID ヘッダーのスコープのみを処理した；`traceparent` はすべてのアウトバウンド fetch に引き続き注入される。`telemetry.propagateTraceContext: 'trusted-hosts' | 'all' | 'none'` を追加し、§11 と同じ許可リストを使って動作を決定できるようにすることが可能。
-- **Gemini のセッション ID staleness lazy-invalidate 修正**（§8.6 選択肢 A）：`/clear` 時に contentGenerator を dirty とマークし、次の LLM 呼び出し時に lazy recreate。Gemini パスでも fetch wrapper のリアルタイム性を享受できるようにする。
-- **サブプロセスの `TRACEPARENT` 環境変数**：`BashTool` でサブプロセスを実行する際に環境変数を注入し、外部ツールがトレースを引き継げるようにする。ツール実行ライフサイクルを個別に確認する必要がある。
-- **受信 `TRACEPARENT`**：`--prompt` モードで起動時に環境変数を読み取り、CI / 外部 orchestrator が Qwen Code をより大きなトレースに接続できるようにする。
-- **`correlationHeader` 名の設定可能化**：企業のオペレーターがヘッダーをカスタマイズできるようにする（デフォルト `X-Qwen-Code-Session-Id`）。
-- **`baggage` propagation ポリシー**：`user.id` / `tenant.id` などを baggage として積極的に設定し、下流に伝播させるかどうか。今期は対応しない。要件が明確になってから検討する。
+- **`X-Qwen-Code-Request-Id`** — リクエストごとのランダム UUID（claude-code 相当：`x-client-request-id`）。タイムアウト/エラー相関に有用です——タイムアウト時、サーバー側がまだ request id を割り当てていない可能性があり、クライアントが先に発行した id が唯一の関連付け手段となります。R3 改訂後、この提案はより意味を増しました。per-request UUID には「リクエストをまたがる行動プロファイリング」リスクがなく、「すべての LLM provider に送信するサポート/デバッグ用 header」として位置づけられます。
+- **`traceparent` の per-destination scope 切り替え** — R3 改訂では session id header のスコープのみ処理しました。`traceparent` は引き続きすべての送信 fetch に注入されます。`telemetry.propagateTraceContext: 'trusted-hosts' | 'all' | 'none'` を追加し、§11 と同じ allowlist を使用して動作を決定することも可能です。
+- **Gemini の session id 古さの lazy-invalidate 修正**（§8.6 オプションA）：`/clear` 時に contentGenerator を dirty とマークし、次の LLM 呼び出しで lazy recreate します。Gemini パスでも fetch wrapper のリアルタイム性を享受できるようにします。
+- **子プロセスへの `TRACEPARENT` 環境変数**：`BashTool` が子プロセスを実行する際に env を注入し、外部ツールが trace を継続できるようにします。tool execution lifecycle を別途検討する必要があります。
+- **受信 `TRACEPARENT`**：`--prompt` モード起動時に env を読み取り、CI / 外部 orchestrator が qwen-code をより大きな trace に接続できるようにします。
+- **設定可能な `correlationHeader` 名**：企業運用で header 名をカスタマイズ可能にします（デフォルト `X-Qwen-Code-Session-Id`）。
+- **`baggage` 伝搬ポリシー**：`user.id` / `tenant.id` などを baggage 経由で下流に渡すために、active に baggage を設定するかどうか。今回は実施せず、需要が明確になり次第対応します。
 
-## 11. R3 改訂 — `X-Qwen-Code-Session-Id` のホスト許可リストスコーピング
+## 11. R3 改訂 — `X-Qwen-Code-Session-Id` のホスト許可リストスコープ
 
-> トリガー：[LaZzyMan による PR #4390 での REQUEST_CHANGES レビュー](https://github.com/QwenLM/qwen-code/pull/4390)
-> 実装 commit：`1c8528a56`（コア実装）+ `cb162e716`（Vertex baseUrl フェイルクローズド + `["*"]` trim フォールバック）
+> トリガー：[LaZzyMan による PR #4390 の REQUEST_CHANGES review](https://github.com/QwenLM/qwen-code/pull/4390)
+> 実装 commit：`1c8528a56`（コア実装）+ `cb162e716`（Vertex baseUrl fail-closed + `["*"]` トリム許容）
 
-### 11.1 トリガーと論証
+### 11.1 トリガーと論拠
 
-R1 の設計は `X-Qwen-Code-Session-Id` を**すべての**アウトバウンド LLM リクエストに注入し、`telemetry.enabled` のみで制御していた。LaZzyMan のレビューは 3 つの段階的な問題を指摘した：
+R1 設計では、`X-Qwen-Code-Session-Id` を**すべての**送信 LLM リクエストに注入し、`telemetry.enabled` のみで制御していました。LaZzyMan の review は、3 つの段階的な問題を指摘しました：
 
-1. **ラベルの不一致**：`feat(telemetry):` + `telemetry/` パス + `getTelemetryEnabled()` ゲートにより、ユーザーは「自社の可観測性データが自社の collector に流れる」と合理的に理解する。しかし `X-Qwen-Code-Session-Id` は OTLP バックエンドには届かず、LLM API リクエストとして DashScope / OpenAI / Anthropic / Gemini / OpenRouter / MiniMax / ModelScope / Mistral に送られる。2 種類の異なるデータ出力の決定が 1 つのスイッチに束ねられている。
+1. **ラベルの不一致**：`feat(telemetry):` + `telemetry/` パス + `getTelemetryEnabled()` gate により、ユーザーは「自社の可観測性データが自社の collector に送られる」と合理的に解釈します。しかし、`X-Qwen-Code-Session-Id` は OTLP バックエンドには到達せず、LLM API リクエストに乗って DashScope / OpenAI / Anthropic / Gemini / OpenRouter / MiniMax / ModelScope / Mistral に送られます。2 つの異なるデータ出力先の決定が 1 つのスイッチに結びついています。
 
-2. **claude-code の類比が成立しない**：R1 の §9 でネームスペース戦略と fetch wrapper パターンを claude-code に「合わせた」。しかし claude-code は Anthropic（一者）→ Anthropic（一者）（シングルベンダー、単方向）であり、Qwen Code はオープンソース CLI → 複数のサードパーティプロバイダー。「安定したクロスリクエスト UUID をすべてのサードパーティにブロードキャストする」という点は、R1 が正面から答えていなかった問題。
+2. **claude-code の類推は成立しない**：R1 の §9 では、名前空間戦略と fetch wrapper パターンの両方を claude-code に「合わせました」。しかし claude-code は Anthropic 一方 → Anthropic 一方（single vendor, single direction）であり、qwen-code はオープンソース CLI → 複数のサードパーティ provider です。「安定した cross-request UUID をすべてのサードパーティにブロードキャストする」ことは、R1 が正面から答えなかった問題です。
 
-3. **traceparent は同じ指紋の別チャンネル**：trace id = `sha256(sessionId).slice(0, 32)`。受信側にとっては依然として安定した per-session 識別子（ハッシュ後は不可逆だが、同じセッション内では安定している）。
+3. **traceparent は同じフィンガープリントの別チャネル**：trace id = `sha256(sessionId).slice(0, 32)`。受信側にとっては依然として安定した per-session 識別子です（ハッシュ後は不可逆ですが、同一セッションでは安定しています）。
 
-LaZzyMan が深刻度を判定：session id `high` / traceparent `medium`。
+LaZzyMan は重要度を次のように設定しました：session id `high` / traceparent `medium`。
 
-### 11.2 解決策の概要
+### 11.2 解決策概要
 
-**デフォルトスコープをファーストパーティホストに限定する**。新しい設定を追加：
+**デフォルトスコープを first-party ホストに限定します。** 以下の設定項目を新設します：
 
 ```jsonc
 "telemetry": {
   "sessionIdHeaderHosts": ["*"]                          // R1 のブロードキャスト動作に戻す
-  "sessionIdHeaderHosts": []                              // ヘッダーを全無効化
+  "sessionIdHeaderHosts": []                              // header を完全にオフ
   "sessionIdHeaderHosts": ["api.mycompany.com",
                            "*.gateway.mycompany.internal"]
 }
 ```
 
-デフォルト値（`packages/core/src/telemetry/trusted-llm-hosts.ts:DEFAULT_SESSION_ID_HEADER_HOSTS`）：
+デフォルト値（`packages/core/src/telemetry/trusted-llm-hosts.ts:DEFAULT_SESSION_ID_HEADER_HOSTS` より）：
 
 ```
 dashscope.aliyuncs.com
@@ -674,22 +672,22 @@ dashscope-intl.aliyuncs.com
 *.aliyun-inc.com
 ```
 
-このセットのセマンティクスは「LLM プロバイダー、ARMS Tracing バックエンド、Qwen Code ディストリビューションが同一法的主体」——つまり、claude-code のシングルベンダー/単方向の関係に対応する Qwen Code のセット。サードパーティプロバイダー（OpenAI / Anthropic / OpenRouter / 等）はデフォルトではヘッダーを**受信しない**。
+この集合の意味は「LLM provider、ARMS Tracing バックエンド、qwen-code 配布と同じ法的エンティティ」——つまり、claude-code における single-vendor / single-direction の関係を qwen-code で対応させたものです。サードパーティ provider（OpenAI / Anthropic / OpenRouter / 等）はデフォルトで header を**受信しません**。
 
-### 11.3 パターン構文（意図的に最小限）
+### 11.3 パターン構文（意図的に小さく）
 
-`matchesTrustedHost(hostname, patterns)` は 2 種類のパターンのみをサポートし、`DashScopeOpenAICompatibleProvider.isDashScopeProvider` と整合する：
+`matchesTrustedHost(hostname, patterns)` は 2 つのパターンだけをサポートし、`DashScopeOpenAICompatibleProvider.isDashScopeProvider` と合わせます：
 
-- ベアホスト名 → 完全一致（大文字小文字無視）
-- `*.suffix` → `suffix` 自体**AND** 任意のサブドメインにマッチ；ドット境界でアンカーされ、`evil-alibaba-inc.com` / `alibaba-inc.com.attacker.tld` などの typo-suffix 攻撃ベクトルを拒否する
+- bare hostname → 完全一致（大文字小文字を区別しない）
+- `*.suffix` → `suffix` 自身 **および** 任意のサブドメインに一致；ドットアンカーにより `evil-alibaba-inc.com` / `alibaba-inc.com.attacker.tld` などの typo-suffix 攻撃ベクターを拒否
 
-正規表現、ポート/スキームを意識した glob は導入しない——settings.json 内の文字列は見た目どおりのセマンティクスを持たせる。
+regex、ポート/スキーム認識 globbing は導入しません。settings 内の文字列は、そのままリテラルとしての意味を持ちます。
 
-### 11.4 R1 との実装上の差異
+### 11.4 R1 との実装差異
 
 #### `wrapFetchWithCorrelation`（OpenAI / Anthropic）
 
-R1 の wrapper は telemetry-enabled + sessionId の 2 つのゲートのみだった。R3 では両者の間に 3 番目のゲートを挿入する：
+R1 の wrapper は telemetry-enabled + sessionId の 2 つのゲートのみでした。R3 ではその間に第 3 のゲートを挿入します：
 
 ```ts
 const trustedHosts =
@@ -711,11 +709,11 @@ return async function correlationFetch(input, init) {
 };
 ```
 
-`trustedHosts` は wrap 時に一度スナップショットされる（セッション ID の「リクエストごとのリアルタイム読み取り」とは異なる）。途中で `telemetry.sessionIdHeaderHosts` を変更した場合、有効にするには contentGenerator の再生成が必要。`[" * "]` のようにスペースを含む書き方は `.trim()` でブロードキャストにフォールバックし、settings.json の手入力ミスによるサイレントな退行を防ぐ。
+`trustedHosts` は wrap 時に一度だけ snapshot されます（session id の「リクエストごとにリアルタイム読み取り」とは異なります）。途中で `telemetry.sessionIdHeaderHosts` を変更するには、contentGenerator の再構築が必要です。`[" * "]` のようなスペースを含む記述は `.trim()` でブロードキャストとして扱い、settings.json の手入力ミスによるサイレント退化を防ぎます。
 
 #### `staticCorrelationHeaders`（Gemini）
 
-シグネチャに `destinationUrl?: string` パラメーターを追加：
+シグネチャに `destinationUrl?: string` パラメータを追加：
 
 ```ts
 export function staticCorrelationHeaders(
@@ -723,7 +721,7 @@ export function staticCorrelationHeaders(
   destinationUrl?: string,
 ): Record<string, string> {
   if (!config.getTelemetryEnabled()) return {};
-  if (!destinationUrl) return {}; // fail-closed: 宛先不明の場合は送信しない
+  if (!destinationUrl) return {}; // fail-closed: 送信先が不明なら送らない
   if (!matchesTrustedHost(new URL(destinationUrl).hostname, trustedHosts)) {
     return {};
   }
@@ -731,148 +729,147 @@ export function staticCorrelationHeaders(
 }
 ```
 
-#### Gemini ファクトリーの統合
+#### Gemini factory 統合
 
-Gemini SDK には 2 つの不可視なデフォルト endpoint がある（`generativelanguage.googleapis.com` と `{region}-aiplatform.googleapis.com`、`vertexai` の設定によって決まる）。ファクトリーレイヤーではどちらか一方を正確に復元できない。R3 では「`config.baseUrl` が設定されていなければ `undefined` を渡す」アプローチをとり、helper を fail-closed にする → ヘッダーを送信しない。オペレーターが相関を必要とする場合は `baseUrl` を明示的に設定する必要がある（SDK 自体も宛先を解決するために同じ入力を使用する）。この変更により、Vertex の宛先を誤って推測して許可リストに誤ってマッチすることを防ぐ。
+Gemini SDK には 2 つの不可視なデフォルトエンドポイントがあります（`generativelanguage.googleapis.com` と `{region}-aiplatform.googleapis.com`、`vertexai` が決定）。factory 層ではそのうちの 1 つを正確に復元できません。R3 では、`config.baseUrl` が設定されていない場合は `undefined` を渡すようにし、helper を fail-closed（header を送信しない）とします。事業者は相関を取得したい場合、明示的に `baseUrl` を設定する必要があります（これは SDK 自身が送信先を解決するために使用する入力と同じものです）。この変更により、Vertex の送信先を誤って推測し、許可リストに誤ヒットすることを回避します。
 
 ### 11.5 新規ファイル / 新規コード
 
-| ファイル                                                                 | 説明                                                                                              |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `packages/core/src/telemetry/trusted-llm-hosts.ts`（新規）             | `DEFAULT_SESSION_ID_HEADER_HOSTS` + `matchesTrustedHost` + `extractRequestHost`                   |
-| `packages/core/src/telemetry/trusted-llm-hosts.test.ts`（新規）        | 単体テスト：TLD suffix 攻撃ベクトル、IPv6 のフェイルクローズド、ポート/ユーザー情報/クエリの抽出を含む                          |
-| `packages/core/src/telemetry/llm-correlation-fetch.ts`               | ホストゲートを追加；`staticCorrelationHeaders` に `destinationUrl` パラメーターを追加                                 |
-| `packages/core/src/telemetry/llm-correlation-fetch.test.ts`          | ホストゲートの 8 つのケースを追加；`mockConfig` で `'hosts' in opts` を使って「デフォルト許可リスト」と「ブロードキャスト」を区別 |
-| `packages/core/src/telemetry/config.ts`（`resolveTelemetrySettings`） | `sessionIdHeaderHosts` を透過                                                                       |
-| `packages/core/src/config/config.ts`                                 | `TelemetrySettings.sessionIdHeaderHosts` + `getTelemetrySessionIdHeaderHosts()` getter            |
-| `packages/core/src/core/geminiContentGenerator/index.ts`             | `config.baseUrl` を helper に渡す；undefined の場合はフェイルクローズド                                            |
-| `packages/core/src/core/geminiContentGenerator/index.test.ts`        | 新しいフェイルクローズドのセマンティクスに合わせて telemetry-on の Gemini テストを書き直す                                            |
-| `packages/cli/src/config/settingsSchema.ts`                          | `sessionIdHeaderHosts` の JSON スキーマエントリー                                                    |
-| `packages/vscode-ide-companion/schemas/settings.schema.json`         | `npm run generate:settings-schema` で再生成                                                    |
-| `docs/developers/development/telemetry.md`                           | "Session correlation header" セクションを書き直し、デフォルトスコープとオーバーライド構文を追加                                |
+| ファイル                                                                             | 説明                                                                                                                          |
+| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `packages/core/src/telemetry/trusted-llm-hosts.ts` (新規)                          | `DEFAULT_SESSION_ID_HEADER_HOSTS` + `matchesTrustedHost` + `extractRequestHost`                                               |
+| `packages/core/src/telemetry/trusted-llm-hosts.test.ts` (新規)                     | ユニットテスト。TLD-suffix 攻撃ベクター、IPv6 fail-closed、port/userinfo/query 抽出を含む                                    |
+| `packages/core/src/telemetry/llm-correlation-fetch.ts`                             | host gate を追加；`staticCorrelationHeaders` に `destinationUrl` パラメータを追加                                             |
+| `packages/core/src/telemetry/llm-correlation-fetch.test.ts`                        | host-gate 8 ケースを追加；`mockConfig` で `'hosts' in opts` により「デフォルト allowlist」と「ブロードキャスト」を区別      |
+| `packages/core/src/telemetry/config.ts` (`resolveTelemetrySettings`)               | `sessionIdHeaderHosts` の受け渡しを追加                                                                                       |
+| `packages/core/src/config/config.ts`                                               | `TelemetrySettings.sessionIdHeaderHosts` + `getTelemetrySessionIdHeaderHosts()` getter                                        |
+| `packages/core/src/core/geminiContentGenerator/index.ts`                           | `config.baseUrl` を helper に渡す；undefined 時は fail-closed                                                                 |
+| `packages/core/src/core/geminiContentGenerator/index.test.ts`                      | telemetry-on Gemini テストを新しい fail-closed セマンティクスに合わせて書き直し                                                |
+| `packages/cli/src/config/settingsSchema.ts`                                        | `sessionIdHeaderHosts` JSON schema エントリ                                                                                   |
+| `packages/vscode-ide-companion/schemas/settings.schema.json`                       | `npm run generate:settings-schema` で再生成                                                                                   |
+| `docs/developers/development/telemetry.md`                                         | "Session correlation header" 段落を書き直し + デフォルトスコープ + オーバーライド構文                                        |
 
-### 11.6 各 LaZzyMan の論点への回答
+### 11.6 各 LazzyMan の論点への対応
 
-| LaZzyMan の論点                         | R3 での回答                                                                                                                                                             |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ① telemetry ラベルの不一致                  | **解消**：DashScope のユースケースでは、セッション ID ヘッダーは文字通り ARMS Tracing バックエンド（同一法的主体）に送られる。`telemetry.enabled` のセマンティクスと整合する                                                       |
-| ② クロスベンダーの安定識別子ブロードキャスト | **解消**：デフォルトの許可リストには Alibaba 系ファーストパーティホストのみ含まれる；ブロードキャストは opt-in（`["*"]`）                                                                                                   |
-| ③ traceparent は同じ指紋の別チャンネル    | **現時点では保持**：traceparent は R1 設計どおり全注入を継続。理由：W3C 標準、trace id は sha256 ハッシュ、同一ベンダー内でのトレース継続は W3C のコア設計シナリオ。per-destination traceparent toggle は §10 の将来の作業として記録 |
+| LazzyMan の論点                                          | R3 の対応                                                                                                                                                                                         |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ① telemetry ラベルの不一致                               | **解決**：DashScope ユースケースでは、session id header は文字通り ARMS Tracing バックエンド（同じ法的エンティティ）に送信されるため、`telemetry.enabled` のセマンティクスは一致します                 |
+| ② cross-vendor 安定識別子のブロードキャスト              | **解決**：デフォルトの allowlist は Alibaba 系 first-party host のみを含む；ブロードキャストは opt-in (`["*"]`) に変更                                                                              |
+| ③ traceparent は同じフィンガープリントの別チャネル       | **一旦保留**：traceparent は引き続き R1 のまま全注入。理由：W3C 標準、trace id は sha256 ハッシュ、同一ベンダー内での trace 継承は W3C の中心的な設計シナリオ。per-destination traceparent 切り替えは §10 の将来作業に記載 |
 
-### 11.7 既知の残課題と追跡項目
+### 11.7 既知の残存課題 + フォローアップ
 
-- **traceparent のスコープ** — 上記 ③ 参照、§10 に記録
-- **リクエストごとのランダム UUID**（`X-Qwen-Code-Request-Id`）— LaZzyMan が R3 ラウンドで提案した代替設計、§10 に記録
-- **Gemini staleness lazy-invalidate**（§8.6 選択肢 A）— R3 とは分離して独立したサブ issue で追跡
-- **`matchesTrustedHost` の IPv6 サポート** — 現在、IPv6 宛先は許可リストに一切含まれない（`URL.hostname` が `[::1]` のように角括弧付きで返し、パターン構文に対応形式がない）。現時点では「名前付きファーストパーティ endpoint」のユースケースを満たしている。将来 raw IP の許可リストが必要になった場合に拡張する。
+- **traceparent スコープ** — 上記 ③ を参照、§10 に記載
+- **Per-request random UUID** (`X-Qwen-Code-Request-Id`) — LazzyMan が提案した代替案、§10 に記載
+- **Gemini stale の lazy-invalidate**（§8.6 オプションA） — R3 とは切り離し、独立した sub-issue
+- **`matchesTrustedHost` IPv6 サポート** — 現在の IPv6 送信先は決して allowlist に一致しません（`URL.hostname` は `[::1]` のように角括弧付きで返し、パターン構文に対応する形式がありません）。現在のところ「名前付き first-party エンドポイント」のユースケースを満たしています。将来的に raw IP の allowlist が必要になった場合に拡張します。
 
-## 12. R4 改訂 — スコープ混在の分割
+## 12. R4 改訂 — スコープ混同の分割
 
-> トリガー：[PR #4390 での LaZzyMan round-8 フォローアップレビュー](https://github.com/QwenLM/qwen-code/pull/4390)
-> 実装：本 PR を縮小；R3 で実装したセッション ID 全体を独立した follow-up PR に移動
+> トリガー：[LaZzyMan round-8 follow-up review on PR #4390](https://github.com/QwenLM/qwen-code/pull/4390)
+> 実装：本 PR でスコープを縮小；R3 で実装された session-id 一式は独立した follow-up PR に移動
 
-### 12.1 トリガーと論証
+### 12.1 トリガーと論拠
 
-R3 は LaZzyMan の第 1 ラウンドレビューの「安定した指紋をサードパーティプロバイダーにブロードキャストする」懸念（深刻度：high）を解消した。しかし round-8 フォローアップでは、より深いアーキテクチャ原則への反対に発展した：
+R3 は LaZzyMan の初回 review の「サードパーティ provider への安定フィンガープリントブロードキャスト」懸念（重要度: high）を解決しました。しかし round-8 follow-up では、より深いアーキテクチャ原則の反対に発展しました：
 
-> "Telemetry is not a container for adjacent features. The `traceparent` cross-process propagation and the `X-Qwen-Code-Session-Id` header injection are **not telemetry**. They are outbound-identity / outbound-correlation work that uses some OTel APIs internally as an implementation detail."
+> "Telemetry は隣接する機能のコンテナではありません。`traceparent` のクロスプロセス伝搬と `X-Qwen-Code-Session-Id` header 注入は **telemetry ではありません**。これらは、内部的にいくつかの OTel API を実装の詳細として使用する、送信 ID / 送信相関処理です。"
 
-彼のコアとなるメタ論点：
+彼の核心的なメタ論点：
 
-- **"telemetry" namespace は recipient = ユーザー自身の OTLP collector を暗示する**
-- しかし `traceparent` と `X-Qwen-Code-Session-Id` の recipient = **サードパーティ LLM プロバイダー**
-- 2 種類の異なる recipient には 2 種類の異なる同意判断ツリーが必要
-- デフォルト動作がセキュアでも（R3 で実装済み）、ワイヤーレベルの動作を `telemetry.*` 下に置くことは**悪い先例を設ける**：将来の telemetry PR でもサードパーティへのワイヤー動作を持ち込めてしまう
+- **"telemetry" 名前空間は、受信者 = ユーザー自身の OTLP collector を示唆する**
+- しかし `traceparent` と `X-Qwen-Code-Session-Id` の受信者 = **サードパーティ LLM provider**
+- 2 種類の異なる受信者には、2 種類の異なる同意判断ツリーが必要
+- たとえデフォルト動作が安全でも（R3 で実装済み）、wire レベルの動作を `telemetry.*` の下に置くことは**悪い前例**を設定する：将来の telemetry PR が wire 動作をサードパーティに紛れ込ませ続ける可能性がある
 - "If we accept that principle, the split is mechanical. If we don't, this PR is the wrong place to debate it because the technical fixes are already in."
 
-### 12.2 解決策の概要（「方案 C」ハイブリッド分割）
+### 12.2 解決策概要（"スキームC" hybrid split）
 
-複数ラウンドの内部議論（yiliang が提案した customHeader テンプレート代替案を含む。最終的に customHeader はランタイムダイナミックな値を持てないと判断）の後、**方案 C** を採用：
+数回の内部議論（yiliang による customHeader テンプレート代替案を含むが、最終的に customHeader はランタイム動的な値を保持できないと判断）を経て、**スキームC** を採用することにしました：
 
 **本 PR に残すもの**：
 
-- `UndiciInstrumentation` の登録（クライアント HTTP span を生成 → ユーザー自身の OTLP collector に送る）
-- OTLP フィードバックループガード（前者の必要な副作用）
-- **`NoopTextMapPropagator` をデフォルトとしてインストール** → `propagation.inject()` が no-op になる → アウトバウンド `fetch` に**`traceparent` が付かなくなる**
-- **新設 `outboundCorrelation.propagateTraceContext: bool`（デフォルト false）** を独立した namespace のトップレベル設定として追加；true に設定するとデフォルトの W3C composite propagator がインストールされる
-- R3 で実装したセッション ID 関連のコード全体（`llm-correlation-fetch.ts` / `trusted-llm-hosts.ts` / `telemetry.sessionIdHeaderHosts` 設定 / 4 つのプロバイダー統合ポイント / 関連するすべてのテスト）を**すべて削除**
+- `UndiciInstrumentation` の登録（クライアント HTTP span を生成 → ユーザー自身の OTLP collector へ）
+- OTLP feedback-loop guard（前者の必要な副作用）
+- **`NoopTextMapPropagator` をデフォルトでインストール** → `propagation.inject()` は no-op → 送信 `fetch` に **`traceparent` は付与されない**
+- **新たに `outboundCorrelation.propagateTraceContext: bool`（デフォルト false）** を独立した名前空間のトップレベル設定として追加；true の場合はデフォルトの W3C composite propagator をインストール
+- **R3 session-id のコード一式**（`llm-correlation-fetch.ts` / `trusted-llm-hosts.ts` / `telemetry.sessionIdHeaderHosts` setting / 4 つの provider 統合ポイント / 関連テストすべて）**はすべて削除**
 
-**follow-up PR に移動するもの**：
+**follow-up PR に移動**：
 
-- `X-Qwen-Code-Session-Id` ヘッダーの仕組み全体（R3 実装を再利用）
-- 新しい `outboundCorrelation.*` namespace に移行（具体的な設定キーは TBD だが、**`telemetry.*` は使わない**）
-- Follow-up PR には：脅威モデルセクション、独立したレビュー、security-relevant 標注のドキュメントを含める
-- `X-Qwen-Code-Request-Id` リクエストごとの UUID（LaZzyMan が R3 ラウンドで提案した代替設計）もこの follow-up の検討範囲に含める
+- `X-Qwen-Code-Session-Id` header の仕組み全体（R3 実装を再利用）
+- 新しい `outboundCorrelation.*` 名前空間に配置（具体的な setting key は未定だが、**`telemetry.*` とは呼ばない**）
+- Follow-up PR には以下を含む：threat model セクション、独立した review、security-relevant と明記されたドキュメント
+- `X-Qwen-Code-Request-Id` per-request UUID（LazzyMan が R3 round で提案した代替設計）もこの follow-up の検討範囲に含める
 
-### 12.3 R3・R1 論点とのマッピング
+### 12.3 R1/R3 論点との対応
 
-| R1/R3 論点                                          | R4 以降の状態                                                                                                           |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| §3.1「すべてのアウトバウンド LLM リクエストに traceparent を付与」              | ❌ **R4 ではデフォルト off**；`outboundCorrelation.propagateTraceContext: true` が必要                                       |
-| §3.1「すべてのアウトバウンド LLM リクエストに `X-Qwen-Code-Session-Id` を付与」 | ❌ **R4 では本 PR から丸ごと削除**し follow-up PR に移動                                                                          |
-| §4.3 fetch wrapper によるセッション ID 注入                  | ❌ 本 PR にはコードが存在しない；follow-up PR で再利用                                                                           |
-| §11 ホスト許可リスト（R3 設計）                        | ❌ 同上；follow-up PR に全体移行                                                                                      |
-| §4.4 新しい設定を導入しない                               | ❌ **本 PR は `outboundCorrelation.propagateTraceContext` という boolean を 1 つ追加**；セッション ID 関連設定は follow-up PR |
-| §10 将来の作業「`X-Qwen-Code-Request-Id`」          | ✅ 引き続き将来の作業；セッション ID の follow-up と合わせて設計                                                               |
+| R1/R3 の論点                                                              | R4 後の状態                                                                                                                                                   |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| §3.1 「すべての送信 LLM リクエストに traceparent を付与」                 | ❌ **R4 ではデフォルト off**；`outboundCorrelation.propagateTraceContext: true` の場合のみ有効                                                                |
+| §3.1 「すべての送信 LLM リクエストに `X-Qwen-Code-Session-Id` を付与」   | ❌ **R4 では本 PR から一式削除**、follow-up PR に移動                                                                                                         |
+| §4.3 fetch wrapper による session id 注入                               | ❌ 該当コードは本 PR に含まれない；follow-up PR で再利用                                                                                                       |
+| §11 host allowlist（R3 設計）                                             | ❌ 同上；follow-up PR に全体移行                                                                                                                              |
+| §4.4 新しい設定を導入しない                                               | ❌ **本 PR では `outboundCorrelation.propagateTraceContext`** 1 つのブール値を新規導入；session id 関連の設定は follow-up PR                                    |
+| §10 将来作業「`X-Qwen-Code-Request-Id`」                                  | ✅ 引き続き将来作業；session-id follow-up と併せて設計                                                                                                         |
 
-### 12.4 新しい namespace の設計意図
+### 12.4 新しい名前空間の設計意図
 
-`outboundCorrelation.*` トップレベル namespace は、本 PR では boolean が 1 つ（`propagateTraceContext`）しかなく、過剰に構造化されているように見える。しかしこれは**意図的な選択**だ：
+`outboundCorrelation.*` トップレベル名前空間は、本 PR では 1 つのブール値 (`propagateTraceContext`) のみを持ち、過剰な構造に見えるかもしれません。しかし、これは**慎重に選択されたもの**です：
 
-- **namespace をコミットメントとして確立する**：後続のセッション ID / リクエスト ID / etc. がこの namespace に自然に収まるようにする
-- **security-relevant と標注する**：`settingsSchema.ts` の description に "SECURITY-RELEVANT" を明示的に記載し、「セキュリティ設定」としてドキュメント化する（「observability 設定」ではなく）
-- **デフォルトはすべて off**：LaZzyMan が提唱する「オープンソースクライアントは明示的な同意なしにサードパーティに安定した ID を送るべきでない」原則に合致する
-- **`telemetry.*` との分離**：ユーザーが settings.json で `outboundCorrelation.*` を見ると、これがアウトバウンドのワイヤー動作であり observability ではないとすぐに識別できる
+- **名前空間をコミットメントとして確立**：今後の session-id / request-id / などを自然にこの名前空間に収められる
+- **security-relevant と明示**：`settingsSchema.ts` の description に "SECURITY-RELEVANT" と明示的に書き、ドキュメントでも「セキュリティ設定」として分類（「可観測性設定」ではない）
+- **デフォルトはすべて off**：LazzyMan が主張した「オープンソースクライアントは明示的な同意なしに安定した ID をサードパーティに送るべきではない」という原則に準拠
+- **telemetry.\* から分離**：ユーザーが settings.json で `outboundCorrelation.*` を見れば、これが送信 wire 動作であり、可観測性ではないと即座に認識できる
 
 #### 暗黙の依存関係：`telemetry.enabled`
 
-namespace は `telemetry.*` から分離されているが、**実行時の有効化は `telemetry.enabled: true` に依存している**——OTel SDK は telemetry が有効な場合にのみ初期化される。SDK なしでは propagator がインストールされず、`propagation.inject()` が呼ばれず、flag はサイレントな no-op になる。踏みやすい落とし穴：オペレーターが `propagateTraceContext: true` を設定しても telemetry を忘れて有効にしないと、サーバーで `traceparent` が一切見えず、エラーも警告も出ない。
+名前空間は `telemetry.*` から分離されていますが、**実行時に有効にするには `telemetry.enabled: true` が必要です**——OTel SDK は telemetry が有効な場合のみ初期化され、SDK がなければ propagator のインストールも `propagation.inject()` の呼び出しも行われず、フラグは静かな no-op になります。ユーザーが陥りやすい footgun：事業者が `propagateTraceContext: true` を設定しても telemetry を忘れると、trap server 上で `traceparent` が全く見えず、エラーも警告も出ません。
 
-ユーザー向けの 2 つのパネルにはこの依存関係を明示する：
+2 つのユーザー向けパネルでこの依存関係を明示的に注記します：
 
-- `telemetry.md` の `propagateTraceContext` セクションに両フラグの完全な JSON 例を添付
-- `settingsSchema.ts` の description 文字列の**冒頭**に "Requires `telemetry.enabled: true`" と記載（VS Code 設定 UI で長い説明が折り畳まれても見えるように先頭に置く）
+- `telemetry.md` の `propagateTraceContext` セクションに、完全なデュアルフラグ JSON 例を添付
+- `settingsSchema.ts` の description 文字列の**最初の文**に "Requires `telemetry.enabled: true`" と記述（VS Code の設定 UI で長い説明が折りたたまれた後も見えるようにするため）
 
-将来 session-id header や他の `outboundCorrelation.*` 設定を追加する場合、**同じ依存関係が適用される**——すべて OTel instrumentation/SDK を通じて注入されるため、telemetry が有効な前提でのみ意味を持つ。Follow-up PR ではこの落とし穴への注意喚起パターンを継承すること。
+将来的に session-id header やその他の `outboundCorrelation.*` 設定を追加する場合も、**同じ依存関係が適用されます**——いずれも telemetry が有効であることが前提となります（OTel instrumentation/SDK を介して注入されるため）。Follow-up PR ではこの footgun 警告パターンを継承する必要があります。
 
 ### 12.5 実装
 
-| ファイル                                                                            | 変更内容                                                                                                                                                                                                                              |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/core/src/telemetry/llm-correlation-fetch.ts`                          | **削除**                                                                                                                                                                                                                          |
-| `packages/core/src/telemetry/llm-correlation-fetch.test.ts`                     | **削除**                                                                                                                                                                                                                          |
-| `packages/core/src/telemetry/trusted-llm-hosts.ts`                              | **削除**                                                                                                                                                                                                                          |
-| `packages/core/src/telemetry/trusted-llm-hosts.test.ts`                         | **削除**                                                                                                                                                                                                                          |
-| `packages/core/src/telemetry/sdk.ts`                                            | `NoopTextMapPropagator` を追加；`getOutboundCorrelationPropagateTraceContext()` の結果に基づいて SDK の textMapPropagator を決定                                                                                                                          |
-| `packages/core/src/core/openaiContentGenerator/provider/default.ts`             | `wrapFetchWithCorrelation` の参照を削除                                                                                                                                                                                              |
-| `packages/core/src/core/openaiContentGenerator/provider/dashscope.ts`           | 同上                                                                                                                                                                                                                              |
-| `packages/core/src/core/anthropicContentGenerator/anthropicContentGenerator.ts` | 同上                                                                                                                                                                                                                              |
-| `packages/core/src/core/geminiContentGenerator/index.ts`                        | `staticCorrelationHeaders` の参照を削除                                                                                                                                                                                              |
-| 上記 4 つのプロバイダーの `*.test.ts`                                               | セッション ID 関連のテストケースを削除                                                                                                                                                                                                       |
-| `packages/core/src/config/config.ts`                                            | `TelemetrySettings.sessionIdHeaderHosts`・`getTelemetrySessionIdHeaderHosts` を削除；**`OutboundCorrelationSettings` インターフェース + `outboundCorrelationSettings` フィールド + `getOutboundCorrelationPropagateTraceContext()` getter を新設**        |
-| `packages/core/src/telemetry/config.ts`                                         | `resolveTelemetrySettings` から sessionIdHeaderHosts の透過を削除                                                                                                                                                                        |
-| `packages/cli/src/config/settingsSchema.ts`                                     | `sessionIdHeaderHosts` スキーマを削除；**`outboundCorrelation` トップレベルスキーマ項目を新設**                                                                                                                                                   |
-| `packages/cli/src/config/config.ts`                                             | `outboundCorrelation: settings.outboundCorrelation` を `ConfigParameters` に透過                                                                                                                                                    |
-| `packages/vscode-ide-companion/schemas/settings.schema.json`                    | `npm run generate:settings-schema` で再生成（description 更新時に同期して更新）                                                                                                                                                     |
-| `docs/developers/development/telemetry.md`                                      | "Trace context propagation" → "Client-side HTTP span on outbound fetch" に書き直し；"Session correlation header" セクション全体を削除；"Outbound correlation (SECURITY-RELEVANT)" トップレベルセクションを新設；`telemetry.enabled` 依存説明 + JSON 設定例を添付 |
-| `docs/design/telemetry-outbound-propagation-design.md`                          | 本セクション + R4 表ヘッダー + 改訂ポインター                                                                                                                                                                                         |
-| `packages/core/src/config/config.test.ts`                                       | **`OutboundCorrelation Configuration` describe ブロックを新設**、`it.each` で 4 つのケースを記述し `getOutboundCorrelationPropagateTraceContext` のデフォルト false というセキュリティ不変条件を固定（省略 / `{}` / 明示的 true / 明示的 false）                |
+| ファイル                                                                             | 変更内容                                                                                                                                                                                                                          |
+| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/core/src/telemetry/llm-correlation-fetch.ts`                             | **削除**                                                                                                                                                                                                                          |
+| `packages/core/src/telemetry/llm-correlation-fetch.test.ts`                        | **削除**                                                                                                                                                                                                                          |
+| `packages/core/src/telemetry/trusted-llm-hosts.ts`                                 | **削除**                                                                                                                                                                                                                          |
+| `packages/core/src/telemetry/trusted-llm-hosts.test.ts`                            | **削除**                                                                                                                                                                                                                          |
+| `packages/core/src/telemetry/sdk.ts`                                               | + `NoopTextMapPropagator`；`getOutboundCorrelationPropagateTraceContext()` に応じて SDK の textMapPropagator を決定                                                                                                              |
+| `packages/core/src/core/openaiContentGenerator/provider/default.ts`                | `wrapFetchWithCorrelation` 参照を削除                                                                                                                                                                                           |
+| `packages/core/src/core/openaiContentGenerator/provider/dashscope.ts`              | 同上                                                                                                                                                                                                                              |
+| `packages/core/src/core/anthropicContentGenerator/anthropicContentGenerator.ts`    | 同上                                                                                                                                                                                                                              |
+| `packages/core/src/core/geminiContentGenerator/index.ts`                           | `staticCorrelationHeaders` 参照を削除                                                                                                                                                                                           |
+| 上記 4 つの provider の `*.test.ts`                                                 | session-id 関連のテストケースを削除                                                                                                                                                                                               |
+| `packages/core/src/config/config.ts`                                               | `TelemetrySettings.sessionIdHeaderHosts`、`getTelemetrySessionIdHeaderHosts` を削除；**新たに `OutboundCorrelationSettings` インターフェース + `outboundCorrelationSettings` フィールド + `getOutboundCorrelationPropagateTraceContext()` getter を追加**        |
+| `packages/core/src/telemetry/config.ts`                                            | `resolveTelemetrySettings` 内の sessionIdHeaderHosts 受け渡しを削除                                                                                                                                                             |
+| `packages/cli/src/config/settingsSchema.ts`                                        | `sessionIdHeaderHosts` schema を削除；**新たに `outboundCorrelation` トップレベル schema エントリを追加**                                                                                                                         |
+| `packages/cli/src/config/config.ts`                                                | `outboundCorrelation: settings.outboundCorrelation` を `ConfigParameters` に受け渡し                                                                                                                                               |
+| `packages/vscode-ide-companion/schemas/settings.schema.json`                       | `npm run generate:settings-schema` で再生成（description の後続更新時に同期して更新）                                                                                                                                             |
+| `docs/developers/development/telemetry.md`                                         | "Trace context propagation" を "Client-side HTTP span on outbound fetch" に書き換え；"Session correlation header" セクション全体を削除；"Outbound correlation (SECURITY-RELEVANT)" トップレベルセクションを新設；`telemetry.enabled` 依存説明 + JSON 設定例を追加 |
+| `docs/design/telemetry-outbound-propagation-design.md`                             | 本節 + R4 ヘッダー + 改訂ポインタ                                                                                                                                                                                               |
+| `packages/core/src/config/config.test.ts`                                          | **新たに `OutboundCorrelation Configuration` describe block を追加**；`it.each` 4 ケースで `getOutboundCorrelationPropagateTraceContext` のデフォルト false の安全性を固定（omitted / `{}` / explicit true / explicit false） |
 
-### 12.6 LaZzyMan のメタ論点への回答
+### 12.6 LazzyMan のメタ論点への対応
 
-| 論点                                            | R4 以降の状態                                                                                             |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| "Telemetry namespace は自社 collector の受信を暗示する" | ✅ ワイヤー動作は `telemetry.*` から移動済み；新しい `outboundCorrelation.*` namespace が「アウトバウンドのサードパーティ」セマンティクスを明示       |
-| "デフォルト動作で明示的同意なしにサードパーティに識別子を送るべきでない"      | ✅ `propagateTraceContext` はデフォルト false；セッション ID 全体の follow-up PR もデフォルト off にする                      |
-| "telemetry PR はワイヤーレベルの動作を持ち込むべきでない"         | ✅ 本 PR では「telemetry がワイヤー動作を制御する」コードパスを一切追加しない；ワイヤー動作は `outboundCorrelation.*` で統一管理 |
-| "split is mechanical, work isn't wasted"        | ✅ R3 実装コードは本ブランチから物理削除し、git history に残して follow-up PR で再利用（または cherry-pick）          |
+| 論点                                                          | R4 後の状態                                                                                                                                   |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Telemetry 名前空間は自社 collector 受信者を示唆する"         | ✅ wire 動作を `telemetry.*` から移動；新 `outboundCorrelation.*` 名前空間は「送信先はサードパーティ」という意味を明示                          |
+| "デフォルト動作では明示的な同意なしにサードパーティに識別子を送るべきでない" | ✅ `propagateTraceContext` デフォルト false；session-id 一式の follow-up PR でもデフォルト off とする                                         |
+| "telemetry PR が wire レベルの動作を紛れ込ませるべきでない" | ✅ 本 PR では「telemetry が wire 動作を制御する」コードパスを一切追加しない；wire 動作は `outboundCorrelation.*` で一元管理                     |
+| "split is mechanical, work isn't wasted"                      | ✅ R3 実装コードは本ブランチから物理削除されるが、git history に残り、follow-up PR で再利用（または cherry-pick）可能                              |
+### 12.7 フォローアップPR概要（参考情報、本PRの範囲外）
 
-### 12.7 follow-up PR の概要（情報提供のみ、本 PR のスコープ外）
+今後のフォローアップPRには以下を含めること：
 
-将来の follow-up PR に含めるべき内容：
-
-- `outboundCorrelation.sessionIdHeader: { enabled, trustedHosts }` または類似の設定
-- R3 で実装した `wrapFetchWithCorrelation` / `matchesTrustedHost` / `DEFAULT_SESSION_ID_HEADER_HOSTS` のコード骨格を再利用
-- 脅威モデルのセクション：recipient セット、安定した ID の匿名性解除ウィンドウ、オプションのリクエストごとの UUID セット
-- **デフォルト off**（デフォルトの許可リストなし——R3 よりも厳格。LaZzyMan のオープンソース CLI 原則に合致）
-- security-relevant 標注 + docs/users/configuration/settings.md への収録
+- `outboundCorrelation.sessionIdHeader: { enabled, trustedHosts }` または同様の設定
+- R3で既に実装済みの `wrapFetchWithCorrelation` / `matchesTrustedHost` / `DEFAULT_SESSION_ID_HEADER_HOSTS` コードの骨格を再利用
+- 脅威モデルのセクション：受信者集合、安定IDの非匿名化ウィンドウ、オプションのリクエストごとのUUID対応を明確化
+- **デフォルトではオフ**（デフォルトの許可リストなし —— R3より厳格、LazzyManのオープンソースCLIの原則に準拠）
+- セキュリティ関連の注釈 + `docs/users/configuration/settings.md` への収録

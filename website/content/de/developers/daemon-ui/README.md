@@ -1,11 +1,11 @@
-# Daemon UI SDK – Entwicklerhandbuch
+# Daemon UI SDK — Entwicklerleitfaden
 
-Der Subpfad `@qwen-code/sdk/daemon` liefert gemeinsame UI-Primitive für Daemon-Clients. Das aktuelle Ziel ist Web-Chat und Web-Terminal; native lokale TUI-, Kanal- und IDE-Integrationen behalten ihre bestehenden Standardpfade, während der Daemon-UI-Vertrag stabilisiert wird. Dieser Leitfaden deckt die API-Oberfläche ab, die mit PR #4353 (dem vereinheitlichten Nachfolger des gemeinsamen UI-Transkriptlayers von PR #4328) eingeführt wurde.
+Der `@qwen-code/sdk/daemon` Subpfad liefert gemeinsame UI-Primitiven für Daemon-Clients. Das aktuelle Einsatzgebiet sind Web-Chat und Web-Terminal; native lokale TUI-, Channel- und IDE-Integrationen behalten ihre vorhandenen Standardpfade, während sich der Daemon-UI-Vertrag stabilisiert. Dieser Leitfaden behandelt die API-Oberfläche, die mit PR #4353 (dem vereinheitlichten Folge-PR zu PR #4328s gemeinsamer UI-Transkriptschicht) eingeführt wurde.
 
 ## Drei-Schichten-Modell
 
 ```
-Daemon SSE Wire (NDJSON Umschläge)
+Daemon SSE Wire (NDJSON-Envelopes)
    │
    ▼
 normalizeDaemonEvent(envelope) → DaemonUiEvent[]
@@ -15,12 +15,12 @@ reduceDaemonTranscriptEvents(state, events) → DaemonTranscriptState
    │                                            { blocks, currentToolCallId,
    │                                              approvalMode, toolProgress, ... }
    ▼
-daemonBlockToMarkdown(block) / ToHtml / ToPlainText  ← hier steckst du deinen Renderer an
+daemonBlockToMarkdown(block) / ToHtml / ToPlainText  ← hier wird dein Renderer eingehängt
 ```
 
-- **Normalisierer**: Nimmt rohe Daemon-SSE-Umschläge entgegen, gibt typisierte UI-Ereignisse zurück
-- **Reducer**: Akkumuliert Ereignisse in eine Transkriptstatusmaschine
-- **Render-Helfer**: Projiziert Statusblöcke in darstellbare Zeichenketten
+- **Normalizer**: Nimmt rohe Daemon-SSE-Envelopes entgegen, gibt typisierte UI-Events zurück
+- **Reducer**: Akkumuliert Events in eine Transkript-Zustandsmaschine
+- **Render-Helfer**: Projizieren Zustandsblöcke in darstellbare Zeichenketten
 
 ## Schnellstart
 
@@ -47,7 +47,7 @@ for await (const envelope of session.events({ signal })) {
   store.dispatch(events);
 }
 
-// Zustand von einem beliebigen Abonnenten auslesen
+// Zustand von einem beliebigen Abonnenten lesen
 store.subscribe(() => {
   const state = store.getSnapshot();
   const currentTool = selectCurrentTool(state);
@@ -57,55 +57,56 @@ store.subscribe(() => {
 });
 ```
 
-## Ereignistaxonomie (28+ Typen)
+## Event-Taxonomie (28+ Typen)
 
-`DaemonUiEvent` ist eine diskriminierte Vereinigung aller UI-Ereignisse:
+`DaemonUiEvent` ist eine diskriminierte Vereinigung aller UI-Events:
 
-### Chat-Stream-Ereignisse
+### Chat-Stream-Events
 
-| Ereignis                     | Wann                                                         |
-| ---------------------------- | ------------------------------------------------------------ |
-| `user.text.delta`            | Ein Teil einer Benutzernachricht kommt vom Daemon an         |
-| `assistant.text.delta`       | Gestreamter Teil der Antwort des Assistenten                 |
-| `assistant.done`             | Abschluss der Eingabeaufforderung (aus dem Auflösen von sendPrompt) |
-| `thought.text.delta`         | Teil der Überlegungen des Agenten                            |
-| `tool.update`                | Lebenszyklus eines Toolaufrufs (läuft / abgeschlossen / abgebrochen) |
-| `shell.output`               | Teil von stderr/stdout des Shell-Tools                       |
-| `permission.request`         | Tool benötigt Benutzerautorisierung                          |
-| `permission.resolved`        | Entscheidung über die Berechtigung liegt vor                 |
-| `model.changed`              | Sitzungsmodell gewechselt                                    |
-| `status` / `debug` / `error` | Status-/Debug-/Fehlerblöcke                                  |
+| Ereignis                      | Wann                                                  |
+| ----------------------------- | ----------------------------------------------------- |
+| `user.text.delta`            | Benutzernachricht-Chunk vom Daemon                    |
+| `assistant.text.delta`       | Assistents-Streaming-Chunk                            |
+| `assistant.done`             | Prompt-Abschluss (durch sendPrompt-Auflösung)         |
+| `thought.text.delta`         | Agenten-Überlegungs-Chunk                             |
+| `tool.update`                | Tool-Call-Lebenszyklus (running / completed / cancelled) |
+| `shell.output`               | Shell-Tool-stdout/stderr-Chunk                        |
+| `permission.request`         | Tool benötigt Benutzerautorisierung                   |
+| `permission.resolved`        | Berechtigungsentscheidung eingetroffen                |
+| `model.changed`              | Sitzungsmodell gewechselt                             |
+| `status` / `debug` / `error` | Status-/Debug-/Error-Blöcke                           |
 
-### Sitzungs-Meta-Ereignisse (PR-A)
+### Sitzungs-Meta-Events (PR-A)
 
-| Ereignis                           | Wann                                                     |
-| ---------------------------------- | -------------------------------------------------------- |
-| `session.metadata.changed`         | Sitzungstitel / Anzeigename aktualisiert                 |
-| `session.approval_mode.changed`    | Modus umgeschaltet (Plan / Standard / YOLO / Auto-Bearbeiten) |
-| `session.available_commands`       | Liste der Schrägstrichbefehle aktualisiert                |
+| Ereignis                          | Wann                                             |
+| -------------------------------- | ------------------------------------------------ |
+| `session.metadata.changed`      | Sitzungstitel / Anzeigename aktualisiert         |
+| `session.approval_mode.changed` | Modus umgeschaltet (plan / default / yolo / auto-edit) |
+| `session.available_commands`    | Slash-Befehl-Liste aktualisiert                  |
 
-### Arbeitsbereichsereignisse (PR-A, Wave 3-4)
+### Workspace-Events (PR-A, Wave 3-4)
 
-| Ereignis                                  | Wann                                                  |
-| ----------------------------------------- | ----------------------------------------------------- |
-| `workspace.memory.changed`                | QWEN.md / Speicherdatei verändert                     |
-| `workspace.agent.changed`                 | Unter-Agent erstellt / aktualisiert / gelöscht        |
-| `workspace.tool.toggled`                  | Eingebautes Tool aktiviert / deaktiviert              |
-| `workspace.initialized`                   | `qwen init` abgeschlossen                             |
-| `workspace.mcp.budget_warning`            | MCP-Kindanzahl nähert sich dem Limit                  |
-| `workspace.mcp.child_refused`             | MCP-Server aufgrund des Budgets abgelehnt             |
-| `workspace.mcp.server_restarted`          | Manueller MCP-Neustart erfolgreich                    |
-| `workspace.mcp.server_restart_refused`    | Manueller Neustart blockiert                          |
+| Ereignis                                  | Wann                                  |
+| ----------------------------------------- | ------------------------------------- |
+| `workspace.memory.changed`             | QWEN.md / Memory-Datei modifiziert    |
+| `workspace.agent.changed`              | Sub-Agent erstellt / aktualisiert / gelöscht |
+| `workspace.tool.toggled`               | Integriertes Tool aktiviert / deaktiviert |
+| `workspace.initialized`                | `qwen init` abgeschlossen             |
+| `workspace.mcp.budget_warning`         | MCP-Kind-Anzahl nähert sich Limit     |
+| `workspace.mcp.child_refused`          | MCP-Server aufgrund von Budget abgelehnt |
+| `workspace.mcp.server_restarted`       | Manueller MCP-Neustart erfolgreich    |
+| `workspace.mcp.server_restart_refused` | Manueller Neustart blockiert          |
 
-### Authentifizierungs-Device-Flow-Ereignisse (PR-A, Wave 4 OAuth)
+### Auth-Device-Flow-Events (PR-A, Wave 4 OAuth)
 
 `auth.device_flow.{started,throttled,authorized,failed,cancelled}`
 
-Jedes trägt die `deviceFlowId` des Daemons. Fehlgeschlagene Ereignisse enthalten eine geschlossene Aufzählung `errorKind` (closed enum – siehe `KNOWN_DEVICE_FLOW_ERROR_KINDS`, exportiert aus `@qwen-code/sdk/daemon` für die kanonische Liste, derzeit: `expired_token` / `access_denied` / `invalid_grant` / `upstream_error` / `persist_failed` / `not_found_or_evicted`).
+Jedes trägt die `deviceFlowId` des Daemon. Fehlgeschlagene Events haben einen geschlossenen Enum `errorKind` (geschlossener Enum – siehe die kanonische Liste in `KNOWN_DEVICE_FLOW_ERROR_KINDS`, exportiert aus `@qwen-code/sdk/daemon`, derzeit: `expired_token` / `access_denied` / `invalid_grant` / `upstream_error` / `persist_failed` / `not_found_or_evicted`).
 
 ## Render-Vertrag (PR-D)
 
-Drei Projektionshelfer, ein Vorschauhelfer. Alle unterscheiden nach `block.kind` oder `preview.kind`:
+Drei Projektionshelfer, ein Vorschauhelfer. Alle diskriminieren auf `block.kind` oder `preview.kind`:
+
 ```ts
 daemonBlockToMarkdown(block, { sanitizeUrls?, maxFieldLength?, locale? })
 daemonBlockToHtml(block, { sanitizer?, ...renderOpts })
@@ -113,7 +114,7 @@ daemonBlockToPlainText(block, renderOpts)
 daemonToolPreviewToMarkdown(preview, renderOpts)
 ```
 
-### Kochbuch: Ein Transkript als Markdown rendern
+### Kochbuch: Transkript als Markdown rendern
 
 ```ts
 const markdown = state.blocks
@@ -130,14 +131,14 @@ const md = new MarkdownIt();
 
 const html = state.blocks
   .map((b) => {
-    // Zwei-Stufen-Pipeline: Markdown → HTML → DOMPurify
+    // Zweistufige Pipeline: Markdown → HTML → DOMPurify
     const rawHtml = md.render(daemonBlockToMarkdown(b));
     return DOMPurify.sanitize(rawHtml);
   })
   .join('\n');
 ```
 
-Oder verwenden Sie den eingebauten konservativen HTML-Renderer (kein Markdown-Parsing, nur HTML-Escape):
+Oder den integrierten konservativen HTML-Renderer verwenden (kein Markdown-Parsing, nur HTML-Escaping):
 
 ```ts
 const html = state.blocks
@@ -145,7 +146,7 @@ const html = state.blocks
   .join('\n');
 ```
 
-### Kochbuch: Klartext kopieren und einfügen
+### Kochbuch: Klartext für Kopieren und Einfügen
 
 ```ts
 const plain = state.blocks.map(daemonBlockToPlainText).join('\n');
@@ -154,23 +155,23 @@ navigator.clipboard.writeText(plain);
 
 ## Tool-Vorschau-Taxonomie (13 Arten)
 
-| Art                  | Darstellung                                       |
-| -------------------- | ------------------------------------------------- |
-| `ask_user_question`  | Multiple-Choice-Frage mit Optionen                |
-| `command`            | Bash-ähnlicher Befehl + Arbeitsverzeichnis        |
-| `file_diff`          | Dateibearbeitung mit oldText/newText oder Patch   |
-| `file_read`          | Pfad + optionaler Zeilenbereich                   |
-| `web_fetch`          | URL + HTTP-Methode                                |
-| `mcp_invocation`     | MCP-Server + Tool + Argumente-Zusammenfassung     |
-| `code_block`         | Sprachgetaggtes Code-Snippet                      |
-| `search`             | Abfrage + Ergebnisanzahl + Top-Ergebnisse         |
-| `tabular`            | Spalten + Zeilen (begrenzt auf 50, Kürzung markiert) |
-| `image_generation`   | Prompt + optionale Miniaturbild-URL               |
-| `subagent_delegation`| Agentenname + Aufgabe                             |
-| `key_value`          | Generische Label/Wert-Zeilen                      |
-| `generic`            | Fallback-Zusammenfassung                          |
+| Art                   | Oberfläche                                           |
+| --------------------- | ---------------------------------------------------- |
+| `ask_user_question`   | Multiple-Choice-Frage mit Optionen                   |
+| `command`             | Bash-ähnlicher Befehl + cwd                          |
+| `file_diff`           | Dateibearbeitung mit oldText/newText oder Patch      |
+| `file_read`           | Pfad + optionaler Zeilenbereich                      |
+| `web_fetch`           | URL + HTTP-Methode                                   |
+| `mcp_invocation`      | MCP-Server + Tool + Argumentzusammenfassung          |
+| `code_block`          | Sprachgetaggtes Code-Snippet                         |
+| `search`              | Suchanfrage + Ergebnisanzahl + Top-Ergebnisse        |
+| `tabular`             | Spalten + Zeilen (max. 50, Kürzung markiert)         |
+| `image_generation`    | Prompt + optionale Thumbnail-URL                     |
+| `subagent_delegation` | Agentenname + Aufgabe                                |
+| `key_value`           | Generische Label/Wert-Zeilen                         |
+| `generic`             | Fallback-Zusammenfassung                             |
 
-Jede hat eine `daemonToolPreviewToMarkdown`-Projektion. Benutzerdefinierte Renderer können auf `preview.kind` verzweigen, um eine umfangreiche typabhängige Darstellung zu ermöglichen (Dateidiff mit Syntax-Highlighting, MCP-Server-Badge, Bild-Miniaturansicht usw.).
+Jede hat eine `daemonToolPreviewToMarkdown`-Projektion. Benutzerdefinierte Renderer können auf `preview.kind` für eine reichhaltige, typabhängige Anzeige verzweigen (Dateidiff mit Syntaxhervorhebung, MCP-Server-Badge, Bild-Thumbnail usw.).
 
 ## Zustandsselektoren (PR-E)
 
@@ -180,33 +181,33 @@ selectApprovalMode(state); // → 'plan' | 'default' | 'auto-edit' | 'yolo' | un
 selectToolProgress(state, toolCallId); // → { ratio?, step? } | undefined
 selectPendingPermissionBlocks(state); // → ReadonlyArray<DaemonPermissionTranscriptBlock>
 selectTranscriptBlocks(state); // → ReadonlyArray<DaemonTranscriptBlock>
-selectTranscriptBlocksOrderedByEventId(state); // sorted by daemon-monotonic id
+selectTranscriptBlocksOrderedByEventId(state); // sortiert nach daemon-monotoner ID
 
-// PR-K — Sub-Agenten-Verschachtelung
-selectSubagentChildBlocks(state, parentToolCallId); // direct children only
-isSubagentChildBlock(block); // type guard: was this tool invoked inside a sub-agent?
+// PR-K — Sub-Agent-Verschachtelung
+selectSubagentChildBlocks(state, parentToolCallId); // nur direkte Kinder
+isSubagentChildBlock(block); // Typwächter: wurde dieses Tool innerhalb eines Sub-Agenten aufgerufen?
 ```
 
 `currentToolCallId` wird automatisch vom Reducer verwaltet:
 
-- Wird gesetzt, wenn ein Tool den Status „in Bearbeitung“ erreicht (`running` / `in_progress` / `pending` / `confirming`)
-- Wird gelöscht, wenn das Tool einen Endstatus erreicht (`completed` / `failed` / `cancelled` / usw.)
-- Unbekannte Status lassen es unverändert (vorwärtskompatibel)
+- Gesetzt, wenn ein Tool in einen In-Flight-Status eintritt (`running` / `in_progress` / `pending` / `confirming`)
+- Gelöscht, wenn das Tool einen Endstatus erreicht (`completed` / `failed` / `cancelled` / usw.)
+- Unbekannte Status lassen es unberührt (vorwärtskompatibel)
 
 ## Abbruchweitergabe (PR-E)
 
-Wenn `assistant.done.reason === 'cancelled'`, durchläuft der Reducer jeden in Bearbeitung befindlichen Tool-Block und setzt dessen Status erzwingend auf `'cancelled'`. Der Daemon garantiert keine abschließende `tool_call_update` für jedes laufende Tool, wenn die übergeordnete Eingabeaufforderung abgebrochen wird – diese Weitergabe verhindert, dass UI-Ladeanzeigen endlos drehen.
+Wenn `assistant.done.reason === 'cancelled'` durchläuft der Reducer jeden in Flight befindlichen Tool-Block und setzt dessen Status auf `'cancelled'`. Der Daemon garantiert keinen abschließenden `tool_call_update` für jedes in Flight befindliche Tool, wenn der übergeordnete Prompt abgebrochen wird – diese Weitergabe verhindert, dass UI-Spinner ewig drehen.
 
-Untergeordnete Sub-Agenten werden zusammen mit ihrem übergeordneten Agenten abgebrochen, da die Abbruchlogik jeden in Bearbeitung befindlichen Tool-Block in `toolBlockByCallId` durchläuft, nicht nur den aktuellen Zeiger.
+Sub-Agent-Kinder werden zusammen mit ihrem Elternteil abgebrochen, da die Abbruchlogik jeden in Flight befindlichen Tool-Block in `toolBlockByCallId` durchläuft, nicht nur den aktuellen Zeiger.
 
-## Sub-Agenten-Verschachtelung (PR-K)
+## Sub-Agent-Verschachtelung (PR-K)
 
-Wenn der Hauptagent an einen Sub-Agenten delegiert (das `Task`-Tool oder ein Äquivalent), markiert der Daemon `parentToolCallId` und `subagentType` auf den **untergeordneten** Tool-Aufrufen über `tool_call._meta`. Der Reducer liest beide und:
+Wenn der Haupt-Agent an einen Sub-Agenten delegiert (das `Task`-Tool oder Äquivalent), stempelt der Daemon `parentToolCallId` und `subagentType` auf die **Kind**-Tool-Aufrufe via `tool_call._meta`. Der Reducer liest beide und:
 
 - Spiegelt `parentToolCallId` + `subagentType` auf `DaemonToolTranscriptBlock`
-- Löst `parentBlockId` (die `id` des übergeordneten Transkript-Blocks) auf, wenn der übergeordnete Block bereits im Zustand ist; andernfalls bleibt es `undefined` und wird nachgefüllt, wenn der übergeordnete Block später erscheint
+- Löst `parentBlockId` (die Transkriptblock-`id` des Elternteils) auf, wenn der Elternblock bereits im Zustand ist; andernfalls bleibt sie `undefined` und wird nachgefüllt, wenn der Elternblock später erscheint
 
-Auftreten in falscher Reihenfolge (Kind vor Eltern) wird transparent behandelt. Ein Kind, dessen Elternteil durch `maxBlocks` abgeschnitten wird, behält `parentToolCallId` für Selektorabfragen, aber `parentBlockId` wird auf null gesetzt (die verwaiste ID würde nicht mehr über `blockIndexById` aufgelöst werden).
+Auftreten in falscher Reihenfolge (Kind vor Elternteil) wird transparent behandelt. Ein Kind, dessen Elternteil durch `maxBlocks` abgeschnitten wurde, behält `parentToolCallId` für Selektorabfragen, aber `parentBlockId` wird auf null gesetzt (die lose ID würde nicht mehr via `blockIndexById` aufgelöst werden).
 
 ```ts
 import {
@@ -214,7 +215,7 @@ import {
   isSubagentChildBlock,
 } from '@qwen-code/sdk/daemon';
 
-// Ein übergeordnetes Tool-Block rendern, dann Kinder durchlaufen:
+// Einen Eltern-Tool-Block rendern, dann Kinder durchlaufen:
 function renderToolBlock(state, block) {
   if (block.kind !== 'tool') return renderOther(block);
   const children = selectSubagentChildBlocks(state, block.toolCallId);
@@ -229,27 +230,28 @@ function renderToolBlock(state, block) {
   );
 }
 
-// Oder auf oberster Ebene vs. verschachtelt zur Renderzeit filtern:
+// Oder zur Renderzeit nach oberster Ebene vs. verschachtelt filtern:
 const topLevel = state.blocks.filter((b) => !isSubagentChildBlock(b));
 ```
-`selectSubagentChildBlocks` gibt nur **direkte** Kinder zurück. Durchlaufen Sie rekursiv, um verschachtelte Sub-Agents darzustellen (ein Sub-Agent in einem Sub-Agent). Der Daemon erzeugt keine Zyklen, aber Renderer, die über `parentBlockId` nach oben gehen, sollten sie dennoch defensiv erkennen (z. B. Tiefenbegrenzung oder besuchte Menge).
 
-Selbstreferenzen (`parentToolCallId === toolCallId`) werden vom Normalisierer verworfen, bevor sie den Reducer erreichen.
+`selectSubagentChildBlocks` gibt nur **direkte** Kinder zurück. Rekursiv durchlaufen, um verschachtelte Sub-Agenten zu rendern (ein Sub-Agent innerhalb eines Sub-Agenten). Der Daemon emittiert keine Zyklen, aber Renderer, die via `parentBlockId` aufwärts gehen, sollten diese defensiv erkennen (z. B. Tiefenbegrenzung oder visited-Set).
 
-## Zeit-Semantik (PR-B)
+Selbstreferenzen (`parentToolCallId === toolCallId`) werden vom Normalizer verworfen, bevor sie den Reducer erreichen.
+
+## Zeitsemantik (PR-B)
 
 ```ts
 interface DaemonTranscriptBlockBase {
-  eventId?: number; // PRIMARY sort key — daemon-monotonic
-  serverTimestamp?: number; // PREFERRED display — daemon-authoritative
-  clientReceivedAt: number; // FALLBACK — local clock
-  createdAt: number; // @deprecated alias for clientReceivedAt
+  eventId?: number; // PRIMÄRER Sortierschlüssel — daemon-monoton
+  serverTimestamp?: number; // BEVORZUGTE Anzeige — daemon-autoritativ
+  clientReceivedAt: number; // FALLBACK — lokale Uhr
+  createdAt: number; // @deprecated Alias für clientReceivedAt
 }
 ```
 
-**Sortieren Sie immer nach `eventId`** (verwenden Sie `selectTranscriptBlocksOrderedByEventId`), wenn Sie lange Sitzungen anzeigen. Der daemon-monotonische Cursor bleibt über SSE-Wiederholung nach Wiederverbindung erhalten; Client-Uhren nicht.
+**Immer nach `eventId` sortieren** (verwende `selectTranscriptBlocksOrderedByEventId`) bei der Anzeige langer Sitzungen. Der daemon-monotone Cursor bleibt über SSE-Wiederholung nach Wiederverbindung erhalten; Client-Uhren nicht.
 
-**Formatieren Sie Anzeigezeitstempel immer von `serverTimestamp`** (mit Fallback auf `clientReceivedAt`). Mehrere Clients, die dieselbe Sitzung anzeigen, sehen dieselbe „vor 5 Minuten"-Angabe nur, wenn beide von der Daemon-Uhr lesen.
+**Anzeige-Zeitstempel immer von `serverTimestamp` formatieren** (mit Fallback auf `clientReceivedAt`). Mehrere Clients, die dieselbe Sitzung anzeigen, sehen nur dann dasselbe "vor 5 Minuten", wenn beide von der Daemon-Uhr lesen.
 
 ```ts
 import { formatBlockTimestamp } from '@qwen-code/sdk/daemon';
@@ -263,7 +265,7 @@ const label = formatBlockTimestamp(block, {
 
 ## Adapter-Konformität (PR-G)
 
-Validieren Sie, dass Ihr Adapter das Referenzkorpus des SDKs semantisch äquivalent ausgibt:
+Validiere, dass dein Adapter das Referenzkorpus des SDK in semantisch äquivalente Ausgabe projiziert:
 
 ```ts
 import { runAdapterConformanceSuite } from '@qwen-code/sdk/daemon';
@@ -277,13 +279,13 @@ it('my adapter conforms to daemon UI corpus', () => {
 });
 ```
 
-Das Fixture-Korpus (`DAEMON_UI_CONFORMANCE_FIXTURES`) deckt Chat, Tool-Lebenszyklus, Dateibearbeitungen, MCP, Berechtigungen, MCP-Budgetwarnung, Stornierung, Schwärzung fehlerhafter Nutzdaten, OAuth, Befehlsaktualisierungen und Sub-Agent-Verschachtelung ab. (Die Anzahl ist zur Laufzeit ableitbar – lesen Sie `DAEMON_UI_CONFORMANCE_FIXTURES.length`.)
+Das Fixture-Korpus (`DAEMON_UI_CONFORMANCE_FIXTURES`) deckt Chat, Tool-Lebenszyklus, Dateibearbeitungen, MCP, Berechtigungen, MCP-Budgetwarnung, Abbruch, Bereinigung fehlerhafter Nutzlasten, OAuth, Befehlsaktualisierungen und Sub-Agent-Verschachtelung ab. (Die Anzahl ist zur Laufzeit ableitbar – lies `DAEMON_UI_CONFORMANCE_FIXTURES.length`.)
 
-**Formatsagnostisch** – Ihr Adapter kann nach ANSI / HTML / Markdown / JSX rendern; das Framework prüft nur den semantischen Inhalt über `expectedContains` und `expectedAbsent`.
+**Formatunabhängig** – dein Adapter kann nach ANSI / HTML / Markdown / JSX rendern; das Framework prüft nur semantischen Inhalt via `expectedContains` und `expectedAbsent`.
 
 ## Fehlerkategorisierung (PR-A)
 
-`DaemonUiErrorEvent.errorKind` ist ein geschlossenes Enum, das aus der typisierten Fehlertaxonomie des Daemons weitergegeben wird (wenn der Daemon es stempelt):
+`DaemonUiErrorEvent.errorKind` ist ein geschlossener Enum, der aus der typisierten Fehler-Taxonomie des Daemon weitergegeben wird (wenn der Daemon ihn stempelt):
 
 ```ts
 import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
@@ -291,22 +293,22 @@ import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
 // | 'protocol_error' | 'missing_file' | 'parse_error' | 'budget_exhausted'
 ```
 
-Renderer sollten auf `errorKind` verzweigen, um umsetzbare Hilfsmittel bereitzustellen:
+Renderer sollten auf `errorKind` verzweigen, um umsetzbare Hinweise zu geben:
 
 ```ts
 function errorAffordance(errorKind?: DaemonErrorKind): React.ReactNode {
   switch (errorKind) {
-    case 'auth_env_error': return <button>Re-authenticate</button>;
-    case 'missing_file':   return <button>Choose file</button>;
-    case 'blocked_egress': return <span>Network blocked — check proxy</span>;
+    case 'auth_env_error': return <button>Erneut authentifizieren</button>;
+    case 'missing_file':   return <button>Datei auswählen</button>;
+    case 'blocked_egress': return <span>Netzwerk blockiert – Proxy prüfen</span>;
     default:               return null;
   }
 }
 ```
 
-## Tool-Herkunfts-Dispatch (PR-A)
+## Tool-Herkunftsverteilung (PR-A)
 
-`DaemonUiToolUpdateEvent.provenance` ist ein geschlossenes Enum (`builtin` / `mcp` / `subagent` / `unknown`). Mit `serverId?: string` bei `mcp`. Verwenden Sie es für die Icon-Dispatch und Badging:
+`DaemonUiToolUpdateEvent.provenance` ist ein geschlossener Enum (`builtin` / `mcp` / `subagent` / `unknown`). Mit `serverId?: string` bei `mcp`. Verwende es für Icons und Badges:
 
 ```ts
 function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
@@ -319,23 +321,23 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 }
 ```
 
-Das SDK hat einen `mcp__<server>__<tool>`-Namensheuristik-Fallback – selbst wenn der Daemon keine Herkunft explizit stempelt, sind MCP-Tools erkennbar.
+Das SDK hat eine `mcp__<server>__<tool>`-Namensheuristik als Fallback – selbst wenn der Daemon die Herkunft nicht explizit stempelt, sind MCP-Tools erkennbar.
 
-## Forward-Compat-Prinzipien
+## Vorwärtskompatibilitätsprinzipien
 
-Jede Schicht im Daemon-UI-SDK folgt dem **Forward-Compat-Prinzip**: unbekannte Werte werfen KEINE Fehler; sie degradieren elegant.
+Jede Schicht im Daemon-UI-SDK folgt dem **Vorwärtskompatibilitätsprinzip**: Unbekannte Werte werfen KEINE Exceptions; sie degradieren elegant.
 
-- Unbekannte Daemon-Ereignistypen → `debug`-Ereignis mit dem rohen Typnamen
+- Unbekannte Daemon-Event-Typen → `debug`-Event mit dem rohen Typnamen
 - Unbekannter Tool-Status → `currentToolCallId` bleibt unberührt (kein Löschen)
-- Unbekannter Fehlertyp → `errorKind` undefiniert (Renderer fällt auf Text zurück)
+- Unbekannte Error-Art → `errorKind` undefined (Renderer fällt auf Text zurück)
 - Fehlender serverTimestamp → fällt auf `clientReceivedAt` zurück
-- Nicht erkannte Vorschauform → `generic`-Art mit `summary`
+- Unerkannte Vorschauform → `generic`-Art mit `summary`
 
-Das bedeutet, dass das **SDK vor der Daemon-Emission ausgeliefert werden kann**. PR-As Tool-Herkunfts-Heuristik, PR-Bs Drei-Stellen-Zeitstempel-Extraktion und PR-Es Erhaltung unbekannter Status sind alles Beispiele für „bereit, wenn der Daemon sendet; sicher, wenn nicht".
+Das bedeutet, **das SDK kann vor der Daemon-Emission ausgeliefert werden**. PR-As Tool-Herkunfts-Heuristik, PR-Bs Drei-Ort-Zeitstempel-Extraktion und PR-Es Erhalt unbekannter Status sind alles Beispiele für "bereit, wenn der Daemon sendet; sicher, wenn nicht."
 
 ## Querverweise
 
-- [PR #4328](https://github.com/QwenLM/qwen-code/pull/4328) — Basis-PR mit der gemeinsamen UI-Transkript-Schicht
-- [PR #4353](https://github.com/QwenLM/qwen-code/pull/4353) — dieser PR (vereinheitlichtes Vollständigkeits-Follow-up)
+- [PR #4328](https://github.com/QwenLM/qwen-code/pull/4328) — Basis-PR mit der gemeinsamen UI-Transkriptschicht
+- [PR #4353](https://github.com/QwenLM/qwen-code/pull/4353) — dieser PR (vereinheitlichter Vollständigkeits-Follow-up)
 - [Issue #3803](https://github.com/QwenLM/qwen-code/issues/3803) — Daemon-Mode-Vorschlag
-- [Issue #4175](https://github.com/QwenLM/qwen-code/issues/4175) — Mode B v0.16-Implementierungs-Tracker
+- [Issue #4175](https://github.com/QwenLM/qwen-code/issues/4175) — Mode B v0.16 Implementierungs-Tracker

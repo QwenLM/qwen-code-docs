@@ -1,64 +1,64 @@
-# ink 7 长对话虚拟视口
+# 适用于长对话的 ink 7 虚拟视口
 
 状态：**已实现**，PR #4146 包含：
-核心视口、带自动隐藏动画的 ASCII 滚动条、SGR 鼠标滚轮、`ui.useTerminalBuffer` 开关、键盘滚动快捷键。
-滚动条拖拽 / 应用内搜索 / 备用缓冲区模式 / 双写到宿主滚动历史 已推迟至 V.3+（见 §7）。
+核心视口、带自动隐藏动画的 ASCII 滚动条、SGR 鼠标滚轮、`ui.useTerminalBuffer` 开关、键盘滚动键。
+滚动条拖拽 / 应用内搜索 / 备用缓冲区模式 / 双写入宿主回滚缓冲区推迟到 V.3 及以上（参见 §7）。
 作者：秦奇
-追踪分支：`feat/virtual-viewport-on-ink7`（基于：`main`）
+追踪分支：`feat/virtual-viewport-on-ink7`（基础分支：`main`）
 
 ## 1. 问题
 
-用户反馈的多个闪烁 / 卡顿问题，根源均在同一架构事实：ink 的 `<Static>` 是**只追加**的，而 qwen-code 的 `MainContent.tsx` 在每次渲染时都会将整个 `mergedHistory` 传入。对于 1000 轮对话，每次状态变更都会触发 1000 次 `HistoryItemDisplay` React 渲染 + ink 布局传递。
+多个用户报告的闪烁 / 延迟问题最终都归结到同一架构事实：ink 的 `<Static>` 是**只追加**的，而 qwen-code 的 `MainContent.tsx` 在每次渲染时都将完整的 `mergedHistory` 传入其中。对于一个 1000 轮对话，这意味着每次状态变更都会触发 1000 个 `HistoryItemDisplay` React 渲染 + ink 布局传递。
 
-当前存在的问题症状：
+当前由此引发的症状：
 
-| 问题            | 症状                                 | 当前原因                                                      |
-| --------------- | ------------------------------------ | ------------------------------------------------------------- |
-| #2950           | 长会话出现持续的上下滚动风暴         | 每次刷新时 Static 完全重新挂载                                |
-| #3118           | 切换回窗口时持续闪烁                 | `clearTerminal` + `historyRemountKey++` 触发完全重挂载        |
-| #3007           | 通用界面闪烁                         | 与 #3118 相同                                                 |
-| #3838（UI 侧）  | 滚动条无限增长                       | 每次累积增量渲染都会添加行；没有视口淘汰机制                  |
-| #3899 → #3905   | Ctrl+O 导致终端冻结数秒              | 已部分修复，通过 `setImmediate` 分块处理解决                  |
+| 问题             | 症状                                               | 当前的贡献因素                                             |
+| --------------- | -------------------------------------------------- | ------------------------------------------------------------- |
+| #2950           | 长会话中持续上下滚屏风暴                           | 每次刷新时完整 Static 重新挂载                                |
+| #3118           | 切回窗口时持续闪烁                                 | `clearTerminal` + `historyRemountKey++` 触发完整重新挂载      |
+| #3007           | 通用界面闪烁                                       | 与 #3118 相同                                                |
+| #3838（UI 侧）  | 滚动条无限增长                                     | 每次累积增量渲染增加行数；没有视口淘汰                        |
+| #3899 → #3905   | Ctrl+O 冻结终端数秒                                | 部分修复的案例，通过 `setImmediate` 分块锁定                  |
 
 PR #3905 明确指出：
 
-> 讨论了多种替代方案（sealed prefix + live tail、**真正的视口虚拟化**、ANSI 输出缓存），但每种方案要么改变 UX，要么需要架构重写。
+> 讨论了替代方案（固定前缀 + 活动尾部、**真正的视口虚拟化**、ANSI 输出缓存），但每种方案都会改变 UX 或需要架构重写。
 
-本设计方案正是要进行这一架构重写。
+本文档提出的正是这种架构重写。
 
 ## 2. 参考实现
 
-调研了两个已解决（或绕过）此问题的开源 ink CLI：
+调研了两个已经解决（或绕过）相同问题的开源基于 ink 的 CLI：
 
-### 2.1 claude-code（`/Users/gawain/Documents/codebase/opensource/claude-code`）
+### 2.1 claude-code (`/Users/gawain/Documents/codebase/opensource/claude-code`)
 
-维护了自己**分叉的 ink**，位于 `src/ink/`：
+在 `src/ink/` 中维护自己的**分支 ink**：
 
-- `ink.tsx` — 1722 行自定义主循环
-- `log-update.ts` — 773 行自定义差异渲染器，带滚动区域（`DECSTBM`）优化，当滚动历史会被触及时回退到全帧模式
-- `screen.ts` / `frame.ts` — 显式 Screen / Frame 对象，`cellAt` / `diffEach` 单元格级差异比较
-- `render-to-screen.ts` — 暴露 `renderToScreen(node)`，可将任意节点树带外渲染到 `Screen` 对象。这是"渲染一次、缓存、重放"即虚拟化的底层能力
+- `ink.tsx` —— 1722 行自定义主循环
+- `log-update.ts` —— 773 行自定义差异渲染器，带有滚动区域（`DECSTBM`）优化，当会触及回滚缓冲区时使用全帧回退
+- `screen.ts` / `frame.ts` —— 显式的 Screen / Frame 对象，`cellAt` / `diffEach` 单元格级别差异比较
+- `render-to-screen.ts` —— 公开 `renderToScreen(node)`，可离线将任意节点树渲染到 `Screen` 对象。这是“一次渲染、缓存、回放”的基础能力——即虚拟化
 - `screens/REPL.tsx`：
-  - `visibleStreamingText = streamingText.substring(0, streamingText.lastIndexOf('\n') + 1) || null` — 只将完整行暴露给渲染器
-  - `ScrollBox` 带 `scrollRef`、`cursorNavRef`
-  - `Markdown.tsx` 的 `StreamingMarkdown` 在最后一个顶层块边界处分割内容，对稳定前缀做 memoize，只重新解析不稳定的后缀
-- `Markdown.tsx` token 缓存（LRU-500）— 在卸载→重挂载后依然有效，虚拟滚动重新挂载时命中缓存，无需重新词法分析
+  - `visibleStreamingText = streamingText.substring(0, streamingText.lastIndexOf('\n') + 1) || null` —— 仅暴露完整行给渲染器
+  - 带有 `scrollRef`、`cursorNavRef` 的 `ScrollBox`
+  - `Markdown.tsx` 的 `StreamingMarkdown` 在最后一个顶级块边界处拆分内容，记忆化稳定前缀，仅重新解析不稳定后缀
+- `Markdown.tsx` 的令牌缓存（LRU-500）—— 在卸载→重新挂载时存活，因此虚拟滚动的重新挂载命中缓存而无需重新词法分析
 
-**为何不复制此方案**：完整分叉 ink 维护成本不可持续（仅 `ink.tsx` 就有 1722 行，加上自定义协调器）。每个上游 ink 修复都需要手动合并。这一成本对 claude-code 的规模是合理的；对 qwen-code 则不然。
+**我们不复制此方法的原因**：完全分支 ink 的维护不可持续（仅 `ink.tsx` 就有 1722 行，加上自定义协调器）。每个上游 ink 修复都必须手动合并。这种成本对于 claude-code 的规模是合理的；对于 qwen-code 则不适用。
 
-### 2.2 gemini-cli（`/Users/gawain/Documents/codebase/opensource/gemini-cli`）
+### 2.2 gemini-cli (`/Users/gawain/Documents/codebase/opensource/gemini-cli`)
 
-使用 `@jrichman/ink@6.6.9`（一个添加了 `ResizeObserver` 和 `StaticRender` 导出的较小分叉），并以**纯组件**形式提供了**完整的虚拟化列表**：
+使用 `@jrichman/ink@6.6.9`（一个较小的分支，增加了 `ResizeObserver` 和 `StaticRender` 导出），并以**纯组件形式提供完整的虚拟化列表**：
 
-| 文件                                    | 行数 | 职责                                                         |
-| --------------------------------------- | ---- | ------------------------------------------------------------ |
-| `components/shared/VirtualizedList.tsx` | 764  | 核心视口 + 测量 + 滚动锚点 + 每项大小变更追踪               |
-| `components/shared/ScrollableList.tsx`  | 278  | 封装 `VirtualizedList`，添加按键导航 + 平滑滚动 + 滚动条     |
-| `contexts/ScrollProvider.tsx`           | 469  | 鼠标拖拽、滚动锁定、焦点上下文                               |
-| `hooks/useBatchedScroll.ts`             | 35   | 合并同一 tick 内的滚动更新                                   |
-| `hooks/useAnimatedScrollbar.ts`         | 130  | 滚动条淡入/淡出动画                                          |
+| 文件                                         | 行数 | 角色                                                                   |
+| --------------------------------------- | --- | ---------------------------------------------------------------------- |
+| `components/shared/VirtualizedList.tsx` | 764 | 核心视口 + 测量 + 滚动锚点 + 每项大小变化跟踪                          |
+| `components/shared/ScrollableList.tsx`  | 278 | 封装 `VirtualizedList`，添加按键导航 + 平滑滚动 + 滚动条              |
+| `contexts/ScrollProvider.tsx`           | 469 | 鼠标拖拽、滚动锁定、焦点上下文                                         |
+| `hooks/useBatchedScroll.ts`             | 35  | 合并同一 Tick 内的滚动更新                                             |
+| `hooks/useAnimatedScrollbar.ts`         | 130 | 滚动条淡入/淡出动画                                                    |
 
-`MainContent.tsx` 通过 `isAlternateBufferOrTerminalBuffer` 标志在两种渲染路径之间切换：
+`MainContent.tsx` 通过 `isAlternateBufferOrTerminalBuffer` 标志在两种渲染路径间切换：
 
 ```tsx
 if (isAlternateBufferOrTerminalBuffer) {
@@ -68,79 +68,79 @@ if (isAlternateBufferOrTerminalBuffer) {
 return <Static items={[<AppHeader />, ...staticHistoryItems, ...lastResponseHistoryItems]}>...</Static>;
 ```
 
-`HistoryItemDisplay` 被 `React.memo` 包裹，未变更的条目不会重新渲染。
+`HistoryItemDisplay` 被 `React.memo` 包裹，因此未变化的项不会重新渲染。
 
-**这是生产级参考实现。**
+**这是生产级参考。**
 
 ## 3. ink 7 能力检查
 
-qwen-code 正在 `chore/upgrade-ink-7` 分支上。检查了 `node_modules/ink/build/index.d.ts` 的导出：
+qwen-code 处于正在进行的 `chore/upgrade-ink-7` 分支上。检查了 `node_modules/ink/build/index.d.ts` 的导出：
 
-- ✅ `useBoxMetrics(ref): {width, height, left, top, hasMeasured}` — 布局变更时自动更新。**`ResizeObserver` 的功能等价物。**
-- ✅ `measureElement(node)` — 单次命令式测量
-- ✅ `useWindowSize` — 终端大小变更
-- ✅ `useAnimation` — 用于滚动条淡出
-- ✅ `Static`、`Box`、`Text` 等
-- ❌ `ResizeObserver`（组件/类）— 需要适配
-- ❌ `StaticRender` — 需要自定义实现
+- ✅ `useBoxMetrics(ref): {width, height, left, top, hasMeasured}` —— 在布局变化时自动更新。**功能等价于 `ResizeObserver`。**
+- ✅ `measureElement(node)` —— 一次性命令式测量
+- ✅ `useWindowSize` —— 终端尺寸变化
+- ✅ `useAnimation` —— 用于滚动条淡出
+- ✅ `Static`, `Box`, `Text` 等
+- ❌ `ResizeObserver`（组件/类） —— 需要适配
+- ❌ `StaticRender` —— 需要自定义实现
 
-**结论**：ink 7 具备所需的全部原语。无需切换分叉。
+**结论**：ink 7 拥有所有必需的原语。无需交换分支。
 
-## 4. 策略决策
+## 4. 战略决策
 
-**将 gemini-cli 的 `ScrollableList` + `VirtualizedList` + 配套 hooks/contexts 移植到 qwen-code，将 `ResizeObserver` 适配为 `useBoxMetrics`，并自定义实现 `StaticRender`。**
+**将 gemini-cli 的 `ScrollableList` + `VirtualizedList` + 辅助 hooks/contexts 移植到 qwen-code，将 `ResizeObserver` 适配为 `useBoxMetrics`，并自行实现 `StaticRender`。**
 
-被否决的替代方案：
+已拒绝的替代方案：
 
-| 替代方案                      | 否决原因                                                                                            |
-| ----------------------------- | --------------------------------------------------------------------------------------------------- |
-| 像 claude-code 一样分叉 ink   | 维护成本不可持续                                                                                    |
-| 切换到 `@jrichman/ink`        | 会撤销进行中的 ink 7 升级，损失 ink 7 的 React 19.2 + reconciler 0.33 + 新差异渲染器的改进         |
-| 从零构建虚拟化                | 重新发明约 1700 行经过验证的设计；gemini-cli 的参考实现已经存在且可用                              |
+| 替代方案                           | 拒绝理由                                                                                                      |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 像 claude-code 一样分支 ink         | 维护负担不可持续                                                                                                |
+| 切换到 `@jrichman/ink`             | 逆转正在进行的 ink 7 升级；丢失 ink 7 的 React 19.2 + 协调器 0.33 + 新差异渲染器改进                              |
+| 从头构建虚拟化                     | 重新发明约 1700 行已验证的设计；gemini-cli 的参考已经存在且可用                                                     |
 
 ## 5. 架构
 
-### PR #4146 后的文件结构
+### PR #4146 后的文件映射
 
 ```
 packages/cli/src/ui/
 ├── components/shared/
-│   ├── VirtualizedList.tsx          [NEW] 核心视口 + ASCII 滚动条
-│   ├── ScrollableList.tsx           [NEW] 键盘 + 鼠标滚轮封装
-│   └── StaticRender.tsx             [NEW] React.memo 封装（替代 gemini-cli 的 ink 分叉导出）
+│   ├── VirtualizedList.tsx          [新建] 核心视口 + ASCII 滚动条
+│   ├── ScrollableList.tsx           [新建] 键盘 + 鼠标滚轮封装
+│   └── StaticRender.tsx             [新建] React.memo 封装（替代 gemini-cli 的 ink 分支导出）
 ├── hooks/
-│   ├── useBatchedScroll.ts          [NEW] 合并同一 tick 的滚动更新
-│   ├── useMouseEvents.ts            [NEW] 启用 SGR 鼠标模式 + 解析 stdin 事件
-│   └── useAnimatedScrollbar.ts      [NEW] 滚动时滑块闪现 + 空闲自动隐藏
+│   ├── useBatchedScroll.ts          [新建] 合并同一 Tick 的滚动更新
+│   ├── useMouseEvents.ts            [新建] 启用 SGR 鼠标模式 + 解析标准输入事件
+│   └── useAnimatedScrollbar.ts      [新建] 滚动时拇指块闪烁 + 空闲自动隐藏
 ├── utils/
-│   └── mouse.ts                     [NEW] SGR + X11 鼠标事件解析器（从 gemini-cli 移植）
-├── components/MainContent.tsx       [MOD] 添加虚拟化分支 + 稳定性 refs
-└── AppContainer.tsx                 [MOD] 将滚动相关 UI 状态注入 context + 控制 refreshStatic
+│   └── mouse.ts                     [新建] SGR + X11 鼠标事件解析器（从 gemini-cli 移植）
+├── components/MainContent.tsx       [修改] 添加虚拟化分支 + 稳定性引用
+└── AppContainer.tsx                 [修改] 将滚动相关 UI 状态注入上下文 + 控制 refreshStatic
 ```
 
 推迟到后续 PR：
 
-- **滚动条拖拽 + 点击定位** — 需要屏幕绝对元素坐标，受限于原生 ink 7 限制（见 V.4 / V.7）。
-- **应用内 `/` 搜索** — claude-code 的 `TranscriptSearchBar` 模式（V.5）。
-- **备用缓冲区模式** — `contexts/ScrollProvider.tsx` 风格的焦点 / 锁定，带完整的 alt-screen 接管（V.6）。
+- **滚动条拖拽 + 点击定位** —— 需要屏幕绝对元素坐标，受限于原生 ink 7 的限制（参见 V.4 / V.7）。
+- **应用内 `/` 搜索** —— claude-code 的 `TranscriptSearchBar` 模式（V.5）。
+- **备用缓冲区模式** —— `contexts/ScrollProvider.tsx` 风格的焦点 / 锁定，配合完整备屏接管（V.6）。
 
-### 配置项（V.2）
+### 设置（V.2）
 
 ```ts
 // settings schema
 ui: {
   /**
-   * 为长对话启用虚拟化历史渲染。
-   * 为 true 时，只有可见视口内的条目通过 React 渲染；
-   * 已滚出的条目保留在终端滚动历史缓冲区中。
+   * 启用虚拟化历史渲染以支持长对话。
+   * 为 true 时，仅可见视口中的项通过 React 渲染；
+   * 滚动出的项保留在终端回滚缓冲区中。
    *
-   * 默认值：false。在长对话上验证稳定前保持可选启用。
+   * 默认值：false。在长对话中验证稳定性之前为 opt-in。
    */
   useTerminalBuffer?: boolean;  // 别名保持与 gemini-cli 兼容
 }
 ```
 
-`MainContent.tsx` 读取配置并切换路径：
+`MainContent.tsx` 读取设置并切换路径：
 
 ```tsx
 const useTerminalBuffer = uiState.settings?.ui?.useTerminalBuffer ?? false;
@@ -152,9 +152,9 @@ if (useTerminalBuffer) {
 return <Static .../>; // 现有路径，保持不变
 ```
 
-旧版 `<Static>` 路径保持不变——未选择启用的用户不存在回退风险。
+原有的 `<Static>` 路径保持不变 —— 未选择加入的用户不会有回归风险。
 
-## 6. 来自 gemini-cli 源码的关键适配
+## 6. 从 gemini-cli 源码的关键适配
 
 ### 6.1 `ResizeObserver` → `useBoxMetrics`
 
@@ -182,7 +182,7 @@ const containerRefCallback = useCallback((node: DOMElement | null) => {
 }, []);
 ```
 
-我们的适配（声明式 ink 7 hook）：
+我们的适配（声明式 ink 7 钩子）：
 
 ```ts
 const containerRef = useRef<DOMElement>(null);
@@ -190,11 +190,11 @@ const { width: containerWidth, height: containerHeight } =
   useBoxMetrics(containerRef);
 ```
 
-`useBoxMetrics` 已处理挂载/卸载 + 布局变更订阅；命令式的样板代码随之消失。
+`useBoxMetrics` 已处理附加/分离及布局变化订阅；命令式簿记消失。
 
-### 6.2 每项大小变更追踪器（`itemsObserver`）
+### 6.2 每项大小变化跟踪器（`itemsObserver`）
 
-难度更高。gemini-cli 通过单个 `ResizeObserver` 观察 N 个条目节点，并通过 `WeakMap` 将 entry 路由到对应的 key：
+更难。gemini-cli 通过单个 `ResizeObserver` 观察 N 个项节点，并通过 `WeakMap` 将条目路由到键：
 
 ```ts
 const nodeToKeyRef = useRef(new WeakMap<DOMElement, string>());
@@ -217,11 +217,11 @@ const itemsObserver = useMemo(
 );
 ```
 
-`useBoxMetrics` 是**单 ref 单 hook**，无法 1:1 替换。有两种方案：
+`useBoxMetrics` 是**每个钩子单个引用**，因此无法 1:1 替换。两个选项：
 
-**方案 A — 将测量下推到 `VirtualizedListItem`**
+**选项 A — 将测量下推到 `VirtualizedListItem`**
 
-每个 `VirtualizedListItem` 本身已是独立组件（memoized）。在其内部添加 `useBoxMetrics`，通过回调 prop 向上报告高度：
+每个 `VirtualizedListItem` 已经作为自己的组件运行（已记忆化）。在其内部添加 `useBoxMetrics`；通过回调属性向上报告高度：
 
 ```tsx
 const VirtualizedListItem = memo(({ itemKey, onHeightChange, ...props }) => {
@@ -234,9 +234,9 @@ const VirtualizedListItem = memo(({ itemKey, onHeightChange, ...props }) => {
 });
 ```
 
-**方案 B — 在父组件中使用 `measureElement` + `useLayoutEffect`**
+**选项 B — 在父组件中使用 `measureElement` + `useLayoutEffect`**
 
-父组件存储可见条目的 refs，在每次渲染后运行 layout-effect 进行测量。响应性较低但更简单：
+父组件存储可见项的引用，在每次渲染后运行布局效果进行测量。反应性较低但更简单：
 
 ```ts
 useLayoutEffect(() => {
@@ -255,11 +255,11 @@ useLayoutEffect(() => {
 });
 ```
 
-**推荐：方案 A。** 职责分离更清晰，利用了 ink 7 内置的变更检测。避免了每次渲染都测量所有内容的"测量风暴"风险。
+**推荐：选项 A。** 职责分离更清晰，利用 ink 7 内置的变化检测。避免了“测量风暴”风险——即每次渲染都测量所有内容。
 
 ### 6.3 `StaticRender` — 自定义实现
 
-gemini-cli 从 `@jrichman/ink` 导入 `StaticRender`。查看 `VirtualizedList.tsx` 中的用法：
+gemini-cli 从 `@jrichman/ink` 导入 `StaticRender`。查看 `VirtualizedList.tsx` 中的使用方式：
 
 ```tsx
 {shouldBeStatic ? (
@@ -271,9 +271,9 @@ gemini-cli 从 `@jrichman/ink` 导入 `StaticRender`。查看 `VirtualizedList.t
 )}
 ```
 
-语义：以给定宽度渲染一次 `content`；后续使用相同 key + 宽度的渲染返回缓存结果。
+语义：在给定宽度下渲染 `content` 一次；后续具有相同键 + 宽度的渲染返回缓存的结果。
 
-在 ink 7 中，等价实现是使用普通的 `React.memo` 加上父组件保证不会重新渲染的稳定组件。自定义实现如下：
+对于 ink 7，等价做法是使用 `React.memo` 包裹一个稳定组件，并保证父组件不会重新渲染它。自定义实现：
 
 ```tsx
 import { memo } from 'react';
@@ -294,11 +294,11 @@ const StaticRender = memo(
 );
 ```
 
-结合父组件稳定的 `key` prop（`${itemKey}-static-${width}`），当 children 或 width 变化时触发全新挂载；否则 React 跳过重新渲染。
+结合父组件的稳定 `key` 属性（`${itemKey}-static-${width}`），改变子元素或宽度会导致新的挂载；否则 React 跳过重新渲染。
 
-这是核心能力：静态条目（例如已完成的 Gemini 消息）只被测量和渲染一次，永远不会再走 React 流程。
+这是核心能力：那些是**静态**的项（例如已完成的 Gemini 消息）会被测量 + 渲染一次，并且永远不会再通过 React 重新遍历。
 
-### 6.4 Memoize `HistoryItemDisplay`
+### 6.4 记忆化 `HistoryItemDisplay`
 
 gemini-cli 的做法：
 
@@ -306,63 +306,62 @@ gemini-cli 的做法：
 const MemoizedHistoryItemDisplay = memo(HistoryItemDisplay);
 ```
 
-qwen-code 采用相同模式。这是虚拟化实际跳过重新渲染的必要条件。
+qwen-code 中采用相同模式。虚拟化要真正跳过重新渲染，必须这么做。
 
 ## 7. PR 序列
 
-| PR        | 标题（草稿）                                                                | 范围                                                                                                                                                                              | 行数              | 依赖         | 风险                                           |
+| PR        | 标题（草稿）                                                               | 范围                                                                                                                                                                              | 代码行数         | 依赖关系     | 风险                                           |
 | --------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------ | ---------------------------------------------- |
-| **#4146** | feat(cli): ink 7 长对话虚拟视口                                             | 核心原语 + 带**自动隐藏动画**的 ASCII 滚动条 + SGR **鼠标滚轮** + `ui.useTerminalBuffer` 开关 + `MainContent`/`AppContainer` 接线 + 测试                                           | ~2800 行          | `main`       | ✅ **已发布** — 类型检查通过，vitest 全绿      |
-| **V.3**   | test(integration): 流式传输/大小调整/shell 的捕获套件回归测试               | 从 PR #3663 移植 3 个捕获脚本                                                                                                                                                      | ~2000（仅测试）   | #4146        | 待处理                                         |
-| **V.4**   | feat(cli): 滚动条拖拽 + 点击定位                                            | 滚动条列上的 SGR 鼠标命中测试。需要屏幕绝对坐标——要么将上游 `getBoundingBox` 引入 ink 7，要么自己实现 yoga walker。自动隐藏动画已在 #4146 中发布。                                 | ~400              | #4146        | 已推迟 — 坐标问题阻塞                          |
-| **V.5**   | feat(cli): 应用内 `/` 搜索                                                  | 视口范围内的高亮 + n/N 导航（claude-code 的 `TranscriptSearchBar` 模式）                                                                                                           | ~300              | #4146        | 已推迟                                         |
-| **V.6**   | feat(cli): 备用缓冲区模式（完整 alt-screen 接管）                           | 新增配置项 `ui.useAlternateBuffer`                                                                                                                                                 | ~500              | #4146        | 已推迟 — 需要单独的 UX 决策                    |
-| **V.7**   | research: 保留宿主终端滚动历史（双写）                                      | `@jrichman/ink` 的 `overflowToBackbuffer` 仅存在于分叉中。选项：向 ink 7 提交上游 PR、自己实现双写或接受缺失。调研中。                                                             | —                 | #4146        | 结构上受限于原生 ink 7                         |
+| **#4146** | feat(cli): 基于 ink 7 的长对话虚拟视口                                     | 核心原语 + 带**自动隐藏动画**的 ASCII 滚动条 + SGR **鼠标滚轮** + `ui.useTerminalBuffer` 开关 + `MainContent`/`AppContainer` 集成 + 测试                   | ~2800 行         | `main`       | ✅ **已发布** — 类型检查通过，vitest 绿色      |
+| **V.3**   | test(integration): 针对流式/调整大小/shell 的捕获套件回归测试               | 从 PR #3663 移植 3 个捕获脚本                                                                                                                                                      | ~2000（仅测试） | #4146        | 待完成                                        |
+| **V.4**   | feat(cli): 滚动条拖拽 + 点击定位                                           | 滚动条列上的 SGR 鼠标命中测试。需要屏幕绝对坐标 —— 要么向上游 ink 7 提交 `getBoundingBox`，要么自己实现 yoga 遍历。自动隐藏动画已在 #4146 中发布。 | ~400              | #4146        | 已推迟 — 坐标阻塞                             |
+| **V.5**   | feat(cli): 应用内 `/` 搜索                                                 | 视口内高亮 + n/N 导航（claude-code 的 `TranscriptSearchBar` 模式）                                                                                                                 | ~300              | #4146        | 已推迟                                       |
+| **V.6**   | feat(cli): 备用缓冲区模式（完整备屏接管）                                   | 额外设置 `ui.useAlternateBuffer`                                                                                                                                                   | ~500              | #4146        | 已推迟 — 需要单独的 UX 决策                  |
+| **V.7**   | research: 保留宿主终端回滚缓冲区（双写入）                                   | `@jrichman/ink` 的 `overflowToBackbuffer` 仅存在于分支中。选项：向上游 ink 7 提交 PR，自己实现双写入，或接受损失。调研中。                 | —                 | #4146        | 结构上受限于原生 ink 7                        |
 
-V.3（集成测试）是翻转默认值前剩余的关键路径项。V.4–V.6 填补了与 gemini-cli 的剩余功能差距；V.7 是开放性研究，因为我们需要的底层 ink prop（`overflowToBackbuffer`）仅存在于 gemini-cli 的 `@jrichman/ink` 分叉中。
+V.3（集成测试）是更默认值前的剩余关键路径项。V.4–V.6 填补与 gemini-cli 功能对等的剩余差距；V.7 是开放研究，因为我们需要的底层 ink 属性（`overflowToBackbuffer`）只存在于 gemini-cli 的 `@jrichman/ink` 分支中。
 
 ## 8. 验证计划
 
-每个 PR（"可审查"前的强制项）：
+每个 PR 必须满足（在标记“准备审查”之前）：
 
-- `npm run typecheck --workspace=@qwen-code/qwen-code` — 通过
-- `npm run lint --workspace=@qwen-code/qwen-code` — 通过
-- `cd packages/cli && npx vitest run` — 全部绿色
-- 按项目工作流进行多轮无方向审计
+- `npm run typecheck --workspace=@qwen-code/qwen-code` —— 干净
+- `npm run lint --workspace=@qwen-code/qwen-code` —— 干净
+- `cd packages/cli && npx vitest run` —— 全部绿色
+- 根据项目工作流进行多轮无方向审计
 
 端到端（V.3 之后）：
 
 - 长对话基准测试：1000 轮会话，测量
-  - 首次渲染时间（初始挂载 + 绘制）
+  - 首次绘制时间（初始挂载 + 绘制）
   - Ctrl+O 切换延迟
-  - 大小调整延迟
-  - 流式传输期间的每帧渲染时间
-- 对比 `useTerminalBuffer: false`（旧版）与 `true`（虚拟化）
+  - 调整大小延迟
+  - 流式渲染期间的每帧渲染时间
+- 比较 `useTerminalBuffer: false`（旧版）与 `true`（虚拟化）
 
-## 9. 待解决问题 / 需要决策
+## 9. 待定问题 / 需要决策
 
-1. **配置项名称**：`ui.useTerminalBuffer`（与 gemini-cli 兼容）还是 `ui.virtualizedHistory`（更具描述性）？
-2. **默认值**：以 `false` 发布（可选启用）还是先通过环境变量分阶段推出？
-3. **静态条目启发式规则**：gemini-cli 只将 `header` 标记为静态。我们是否还应标记已完成的 Gemini 消息、不再在 `pendingHistoryItems` 中的工具结果等？
-4. **鼠标支持**：gemini-cli 的 `ScrollProvider` 包含滚动条鼠标拖拽。现在移植还是跳过到 V.4？
-5. **与 #3905 的兼容性**：~~PR #3905（Ctrl+O 冻结修复）还在开放中，修改了同一个 `MainContent.tsx`。协调合并顺序——V.2 很可能会在 #3905 之上 rebase。~~ **已解决**：#3905 的渐进式重放已落地到 `main`，并在 `MainContent.tsx` 的旧版 `<Static>` 分支中得到保留；VP 分支仅对可选启用用户取代了它，因为冻结触发条件（完整 Static 重挂载）不再适用。
-6. **与 `chore/re-upgrade-ink-7-0-3` 的兼容性**：PR #4146 在其之上叠加。#4119（ink 7.0.3 重升级 PR）合并到 `main` 后，PR #4146 的基础将重新指向 `main`。
+1. **设置名称**：`ui.useTerminalBuffer`（gemini-cli 兼容）还是 `ui.virtualizedHistory`（更具描述性）？
+2. **默认值**：发布为 `false`（选择加入），还是先通过环境变量分阶段推出？
+3. **静态项启发式**：gemini-cli 仅将 `header` 标记为静态。我们是否也应标记已完成的 Gemini 消息、不再在 `pendingHistoryItems` 中的工具结果等？
+4. **鼠标支持**：gemini-cli 的 `ScrollProvider` 包含用于滚动条的鼠标拖拽。现在移植还是等到 V.4？
+5. **与 #3905 的兼容性**：~~PR #3905（Ctrl+O 冻结修复）是开放的，并修改了同一 `MainContent.tsx`。协调合并顺序——V.2 很可能在 #3905 之上变基。~~ **已解决**：#3905 的渐进式重放已进入 `main`，并在 `MainContent.tsx` 的旧版 `<Static>` 分支中保留；VP 分支为 opt-in 用户取代了它，因为冻结触发器（完整的 Static 重新挂载）不再适用。
+6. **与 `chore/re-upgrade-ink-7-0-3` 的兼容性**：PR #4146 在此基础上堆叠。#4119（ink 7.0.3 重新升级 PR）合并到 `main` 后，PR #4146 的基础将重新定位到 `main`。
 
 ## 10. 风险
 
-| 风险                                                               | 可能性 | 缓解措施                                                                                              |
-| ------------------------------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------- |
-| 每项 `useBoxMetrics` 在长列表上产生测量风暴                        | 中     | §6.2 的方案 A 已对每项做 memoize；只有渲染窗口内的条目承担成本。在 V.3 中基准测试。                   |
-| 自定义 `StaticRender` 实现遗漏了 @jrichman 分叉处理的边缘情况     | 中     | 审计 gemini-cli 的 StaticRender 源码（如可获取）；否则依赖功能测试 + 基准测试。                       |
-| `<Static>` 旧版路径随新路径演进而产生漂移                         | 低     | 功能标志控制两条路径都保持活跃；CI 通过配置矩阵同时运行两者。                                         |
-| ink 7 上游仍有未填补的 bug                                         | 低     | 我们已通过 `chore/upgrade-ink-7` 使用 ink 7；本 PR 不引入额外的 ink 风险。                            |
-| 长时间运行的会话在测量缓存中积累内存                               | 中     | 当 `heights` Record 大小超过 N×视口（如 5×）时添加 LRU 淘汰。V.3 基准测试这一点。                    |
-
+| 风险                                                                      | 可能性 | 缓解措施                                                                                              |
+| ------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------- |
+| 每项使用 `useBoxMetrics` 会在长列表上产生测量风暴                          | 中等     | §6.2 中的选项 A 已经对每项记忆化；只有渲染窗口中的项承担成本。在 V.3 中进行基准测试。 |
+| 自定义 `StaticRender` 实现可能遗漏 @jrichman 分支处理的边界情况            | 中等     | 如果可用，审计 gemini-cli 的 StaticRender 源码；否则依赖功能测试 + 基准测试。            |
+| 随着新路径演化，`<Static>` 旧版路径发生漂移                               | 低       | 功能标志开关保持两条路径活跃；CI 通过设置矩阵运行两者。                             |
+| ink 7 仍存在上游未修复的错误                                               | 低       | 我们已通过 `chore/upgrade-ink-7` 使用 ink 7；此 PR 未引入额外的 ink 风险。        |
+| 长时间运行会话在测量缓存中累积内存                                          | 中等     | 在 `heights` 记录超过 N×视口（例如 5×）时添加 LRU 淘汰。V.3 进行基准测试。             |
 ## 11. 审批清单
 
-- [x] 架构方向已确认 — 从 gemini-cli 移植（§4）
-- [x] 配置项名称 + 默认值已确定 — `ui.useTerminalBuffer`，默认 `false`（可选启用）
-- [x] 静态条目启发式规则 — `isStaticItem={(item) => item.id > 0}`（已完成的历史条目）
-- [x] 鼠标支持范围 — 推迟到 V.4；#4146 中仅支持键盘滚动
-- [x] 与 #3905 的合并顺序（§9.5）— #3905 已在 `main` 中；#4146 保留旧版渐进式重放路径，仅对 VP 用户取代它
+- [x] 架构方向已批准 — 从 gemini-cli 迁移（§4）
+- [x] 设置名称 + 默认值已确定 — `ui.useTerminalBuffer`，默认 `false`（opt-in）
+- [x] 静态项启发式 — `isStaticItem={(item) => item.id > 0}`（已完成的历史项）
+- [x] 鼠标支持范围 — 推迟到 V.4；#4146 中仅键盘滚动
+- [x] 与 #3905 合并顺序（§9.5）— #3905 已在 `main` 分支中；#4146 保留旧的渐进式回放路径，并仅在 VP 用户中取代它
 - [x] PR #4146 实现完成

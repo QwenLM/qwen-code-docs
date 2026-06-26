@@ -1,21 +1,21 @@
 # 迁移到 `@qwen-code/sdk/daemon` v2
 
-PR #4328 发布了 v1 daemon UI 层。PR #4353（本 PR）发布了 v2，新增了七个功能提交。本指南首先介绍 web chat 和 web terminal 适配器作者需要了解的变更。原生本地 TUI、channel 和 IDE 维护者可以在之后复用相同的基础组件，但这些默认产品路径不在本 PR 的迁移范围内。
+PR #4328 交付了 v1 守护进程 UI 层。PR #4353（本 PR）交付了 v2，包含七个新增功能提交。本指南首先介绍 Web 聊天和 Web 终端适配器作者的变更。原生本地 TUI、频道和 IDE 维护者稍后可以复用相同的原语，但本 PR **未**迁移这些默认产品路径。
 
-## 现有使用者 TL;DR
+## 现有消费者的 TL;DR
 
-**无破坏性变更。** 本 PR 的每个提交都是增量式的：
+**无破坏性变更。** 本 PR 中的每个提交都是新增的：
 
 - v1 字段仍然有效（`createdAt` 保留为 `clientReceivedAt` 的 `@deprecated` 别名）
-- v1 normalizer 仍以相同方式映射相同的 13 种事件类型
-- v1 reducer 仍为 chat 事件生成相同的 blocks
-- 新 API 通过额外的参数和 helper 按需启用
+- v1 的 normalizer 仍然以相同方式映射相同的 13 种事件类型
+- v1 的 reducer 仍然为聊天事件生成相同的 block
+- 新 API 通过额外参数和辅助函数可选使用
 
-本 PR 无需任何消费方变更即可安全合并。**新特性的采用是增量式的。**
+本 PR 可以安全合入，无需任何消费者变更。**新功能的采用是渐进式的。**
 
-## 推荐采用顺序
+## 推荐的采用顺序
 
-针对每个适配器，按投入/产出比排序：
+对于每个适配器，按投入产出比排序：
 
 ### 1. 排序：将排序键从 `createdAt` 切换为 `eventId`
 
@@ -32,7 +32,7 @@ import { selectTranscriptBlocksOrderedByEventId } from '@qwen-code/sdk/daemon';
 const ordered = selectTranscriptBlocksOrderedByEventId(state);
 ```
 
-**原因**：`eventId` 是 daemon 单调递增的；在 SSE 重连后重放时仍然有效。`createdAt` 是客户端时钟，在重放时会发生偏移。
+**原因**：`eventId` 在守护进程中单调递增；在 SSE 重新连接重放后仍然有效。`createdAt` 是客户端时钟，重放时会偏移。
 
 ### 2. 显示：将 `createdAt` 切换为 `serverTimestamp ?? clientReceivedAt`
 
@@ -49,23 +49,23 @@ import { formatBlockTimestamp } from '@qwen-code/sdk/daemon';
 <TimeLabel text={formatBlockTimestamp(block, { locale })} />;
 ```
 
-**原因**：多个客户端只有在都读取 daemon 时钟时，才能看到一致的"X 分钟前"。Renderer 加 `formatBlockTimestamp` 处理时区和 locale。
+**原因**：多个客户端只有在都读取守护进程时钟时，才能看到一致的“X 分钟前”。渲染器加上 `formatBlockTimestamp` 处理时区和区域设置。
 
-**注意**：Daemon 需要在 envelope 上标记 `_meta.serverTimestamp` 才能生效。SDK 已做前向兼容，在此之前会回退到 `clientReceivedAt`。
+**注意**：守护进程需要在信封上标记 `_meta.serverTimestamp` 才能使此功能生效。SDK 已做好向前兼容；在此之前会回退到 `clientReceivedAt`。
 
-### 3. 监听新事件类型 — 选择子集进行渲染
+### 3. 监听新事件类型——选择子集进行渲染
 
-16 种新事件类型（session-meta、workspace、auth）不会推送 transcript blocks，它们是旁路观测数据。每个适配器自行选择需要展示的部分：
+16 种新事件类型（session-meta、workspace、auth）不会推送转录块。它们是侧通道观察结果。每个适配器选择要展示的事件：
 
 ```ts
-// 在你的 SSE 消费者中
+// 在 SSE 消费者中
 const uiEvents = normalizeDaemonEvent(envelope, {
   clientId,
   suppressOwnUserEcho: true,
 });
 store.dispatch(uiEvents);
 
-// 然后在 UI 侧
+// 然后在 UI 端
 for (const event of uiEvents) {
   switch (event.type) {
     case 'session.approval_mode.changed':
@@ -73,7 +73,7 @@ for (const event of uiEvents) {
       break;
     case 'workspace.mcp.budget_warning':
       myToast.show(
-        `MCP servers approaching budget: ${event.liveCount}/${event.budget}`,
+        `MCP 服务器即将达到预算：${event.liveCount}/${event.budget}`,
       );
       break;
     case 'auth.device_flow.started':
@@ -83,21 +83,21 @@ for (const event of uiEvents) {
         expiresAt: event.expiresAt,
       });
       break;
-    // ... 等，按 UI 需要选择性接入
+    // ... 依此类推，按需选择 UI 需要的事件
   }
 }
 ```
 
-或使用 selector 获取状态镜像的旁路数据：
+或者使用选择器访问状态镜像的侧通道：
 
 ```ts
 import { selectApprovalMode, selectCurrentTool } from '@qwen-code/sdk/daemon';
 
-const mode = selectApprovalMode(state); // 从 approval_mode.changed 镜像而来
-const currentTool = selectCurrentTool(state); // 当前正在执行的 tool
+const mode = selectApprovalMode(state); // 镜像自 approval_mode.changed
+const currentTool = selectCurrentTool(state); // 当前正在进行的工具
 ```
 
-### 4. 渲染契约：使用 `daemonBlockToMarkdown`（或 HTML / plainText）
+### 4. 渲染约定：使用 `daemonBlockToMarkdown`（或 HTML / plainText）
 
 **之前**（每个适配器自己做投影）：
 
@@ -105,12 +105,12 @@ const currentTool = selectCurrentTool(state); // 当前正在执行的 tool
 function blockToString(block: DaemonTranscriptBlock): string {
   switch (block.kind) {
     case 'user':
-      return `You: ${block.text}`;
+      return `你：${block.text}`;
     case 'assistant':
       return block.text;
     case 'tool':
       return `[${block.title}]\n${block.status}`;
-    // ... 等
+    // ... 依此类推
   }
 }
 ```
@@ -122,7 +122,7 @@ import { daemonBlockToMarkdown } from '@qwen-code/sdk/daemon';
 const md = daemonBlockToMarkdown(block);
 ```
 
-HTML SSR 场景：
+对于 HTML SSR：
 
 ```ts
 import MarkdownIt from 'markdown-it';
@@ -130,21 +130,21 @@ import DOMPurify from 'dompurify';
 const html = DOMPurify.sanitize(md.render(daemonBlockToMarkdown(block)));
 ```
 
-纯文本场景：
+对于纯文本：
 
 ```ts
 import { daemonBlockToPlainText } from '@qwen-code/sdk/daemon';
 const plain = daemonBlockToPlainText(block);
 ```
 
-### 5. 一致性测试
+### 5. 符合性测试
 
-在适配器的测试套件中添加：
+添加到适配器的测试套件中：
 
 ```ts
 import { runAdapterConformanceSuite } from '@qwen-code/sdk/daemon';
 
-it('adapter projects daemon UI corpus correctly', () => {
+it('适配器正确投影守护进程 UI 语料库', () => {
   const result = runAdapterConformanceSuite({
     reduce: (events) => myReduce(events),
     renderToText: (state) => myRender(state),
@@ -153,9 +153,9 @@ it('adapter projects daemon UI corpus correctly', () => {
 });
 ```
 
-这将针对 10 个 fixture 场景运行你的适配器，在投影偏差影响用户之前将其暴露出来。
+这将针对 10 个测试场景运行你的适配器，并在问题影响用户之前发现投影漂移。
 
-### 6. 通过 `provenance` 分发 tool 图标
+### 6. 通过 `provenance` 分发工具图标
 
 **之前**（对 toolName 做字符串匹配）：
 
@@ -164,7 +164,7 @@ const isMcp = toolName?.startsWith('mcp__');
 const isBuiltin = ['Bash', 'Edit', 'Read'].includes(toolName);
 ```
 
-**之后**（使用 PR-A 提供的类型化 provenance）：
+**之后**（来自 PR-A 的类型化 provenance）：
 
 ```tsx
 import type { DaemonUiToolUpdateEvent } from '@qwen-code/sdk/daemon';
@@ -184,7 +184,7 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 }
 ```
 
-SDK 内置 `mcp__<server>__<tool>` 命名启发式回退 — 即使 daemon 未显式标记 provenance，当前也能正常工作。
+SDK 提供了一个 `mcp__<server>__<tool>` 命名启发式回退——即使守护进程没有显式标记 provenance，现在也能工作。
 
 ### 7. 通过 `errorKind` 进行错误分类
 
@@ -195,7 +195,7 @@ if (error.text.includes('auth')) showAuthRetry();
 else if (error.text.includes('file not found')) showFilePicker();
 ```
 
-**之后**（使用 PR-A 提供的封闭枚举）：
+**之后**（来自 PR-A 的封闭枚举）：
 
 ```ts
 import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
@@ -211,19 +211,19 @@ function errorAction(errorKind?: DaemonErrorKind): React.ReactNode {
 }
 ```
 
-**注意**：Daemon 需要在 session_died / stream_error 上标记 `data.errorKind` 才能填充该字段。SDK 已做好读取准备。
+**注意**：守护进程需要在 session_died / stream_error 上标记 `data.errorKind` 才能填充此字段。SDK 已经读取了该字段。
 
-### 8. 取消处理 — 已自动化
+### 8. 取消处理——已是自动行为
 
-在 v1 中，被取消的 prompt 会导致正在执行的 tool blocks 永久旋转。在 v2（PR-E）中，当 `assistant.done.reason === 'cancelled'` 时，`propagateCancellationToInFlightTools` 会自动执行。子 agent 的子节点会与父节点一起被取消。
+在 v1 中，取消的提示会让正在进行的工具块永远旋转。在 v2（PR-E）中，当 `assistant.done.reason === 'cancelled'` 时，`propagateCancellationToInFlightTools` 会自动运行。子代理与其父代理一起被取消。
 
-**无需适配器变更** — 你的加载动画将正确解析。
+**无需适配器变更**——你的旋转器将正确解析。
 
-### 8a. 子 agent 嵌套 — 选择启用嵌套渲染（PR-K）
+### 8a. 子代理嵌套——选择是否参与嵌套渲染（PR-K）
 
-在子 agent 委托内部调用的 tool blocks 现在携带 `parentToolCallId`、`subagentType`，以及（当父节点处于状态中时）`parentBlockId`。适配器可选择启用嵌套渲染：
+在子代理委派中调用的工具块现在携带 `parentToolCallId`、`subagentType`，并且（当父代理处于状态时）携带 `parentBlockId`。适配器可以选择嵌套渲染：
 
-**之前**（扁平列表，子 agent 调用与顶层调用在视觉上无法区分）：
+**之前**（扁平列表，子代理调用在外观上与顶层不可区分）：
 
 ```tsx
 state.blocks.map((b) => <ToolBlock block={b} />);
@@ -251,18 +251,18 @@ const topLevel = state.blocks.filter((b) => !isSubagentChildBlock(b));
 return topLevel.map(renderTool);
 ```
 
-**如果你倾向于保持扁平视图，无需任何适配器变更** — 新字段是增量式的，不读取它们的代码会直接忽略。
+**如果偏好扁平视图，则无需适配器变更**——新字段是新增的，不会被不读取它们的代码影响。
 
-### 9. Tool 预览分类 — 选择子集并使用自定义组件渲染
+### 9. 工具预览分类——选择要渲染的子集并使用自定义组件
 
-PR-D + PR-F 带来 13 种预览类型：
+PR-D + PR-F 带来了 13 种预览种类：
 
-- 4 种文件型：`file_diff`、`file_read`、`web_fetch`、`mcp_invocation`
-- 5 种内容型：`code_block`、`search`、`tabular`、`image_generation`、`subagent_delegation`
-- 2 种控制型：`ask_user_question`、`command`
-- 2 种通用型：`key_value`、`generic`
+- 4 种文件形状：`file_diff`、`file_read`、`web_fetch`、`mcp_invocation`
+- 5 种内容形状：`code_block`、`search`、`tabular`、`image_generation`、`subagent_delegation`
+- 2 种控制：`ask_user_question`、`command`
+- 2 种通用：`key_value`、`generic`
 
-每个适配器根据 `preview.kind` 进行分发：
+每个适配器对 `preview.kind` 进行分发：
 
 ```tsx
 function ToolPreviewComponent({ preview }: { preview: DaemonToolPreview }) {
@@ -288,27 +288,27 @@ function ToolPreviewComponent({ preview }: { preview: DaemonToolPreview }) {
           prompt={preview.prompt}
         />
       );
-    // ... 或回退到：
+    // ... 或者回退到：
     default:
       return <Markdown text={daemonToolPreviewToMarkdown(preview)} />;
   }
 }
 ```
 
-未针对全部 13 种类型实现自定义组件的适配器，可对任何未处理的类型回退到 SDK 的 `daemonToolPreviewToMarkdown`。
+没有为所有 13 种种类提供自定义组件的适配器，可以回退到 SDK 的 `daemonToolPreviewToMarkdown` 来处理任何未处理的种类。
 
-## 向后兼容性检查清单
+## 向后兼容清单
 
-| 关注点                                                 | 状态                                          |
-| ------------------------------------------------------ | --------------------------------------------- |
-| 现有的 `block.createdAt` 读取                          | ✅ 仍然有效（`clientReceivedAt` 的别名）      |
-| 现有 reducer 的事件处理                                | ✅ v1 事件类型保持不变                        |
-| `daemonTranscriptToUnifiedMessages(blocks)` 调用点     | ✅ 新的 options 参数是可选的                  |
-| 现有的 `selectTranscriptBlocks` 使用者                 | ✅ 保持不变                                   |
-| v1 reducer 中的新事件类型                              | ✅ 无操作，`lastEventId` 仍然递增             |
+| 关注点                                                         | 状态                                            |
+| -------------------------------------------------------------- | ----------------------------------------------- |
+| 现有 `block.createdAt` 读取                                    | ✅ 仍然有效（作为 `clientReceivedAt` 的别名）   |
+| 现有 reducer 事件处理                                          | ✅ 对 v1 事件类型不变                           |
+| `daemonTranscriptToUnifiedMessages(blocks)` 调用点             | ✅ 新 options 参数是可选的                      |
+| 现有 `selectTranscriptBlocks` 消费者                           | ✅ 未变                                         |
+| v1 reducer 中的新事件类型                                      | ✅ 无操作，`lastEventId` 仍然递增               |
 
 ## 交叉引用
 
-- [PR #4353 SUMMARY](https://github.com/QwenLM/qwen-code/pull/4353)
-- [Daemon UI README](./README.md) — 完整 API 参考
-- [PR #4328](https://github.com/QwenLM/qwen-code/pull/4328) — 包含共享 UI transcript 层的基础 PR
+- [PR #4353 摘要](https://github.com/QwenLM/qwen-code/pull/4353)
+- [Daemon UI 自述文档](./README.md)——完整 API 参考
+- [PR #4328](https://github.com/QwenLM/qwen-code/pull/4328)——基础 PR，包含共享的 UI 转录层

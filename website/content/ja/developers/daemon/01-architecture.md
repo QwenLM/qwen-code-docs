@@ -2,13 +2,13 @@
 
 ## 概要
 
-`qwen serve` プロセスは **1デーモン = 1ワークスペース** です。単一の Express HTTP サーバーをホストし、`@qwen-code/acp-bridge` インスタンスを所有し、実際のエージェントランタイムを実行する ACP 子プロセス（`qwen --acp`）を起動します。複数のクライアント（CLI TUI、IDE コンパニオン、IM チャンネルボット、Web BFF、カスタムスクリプト）が HTTP + SSE 経由で接続し、1つの ACP セッションを共有するか（`sessionScope: 'single'`、デフォルト）、会話スレッドごとにセッションを分割します（`sessionScope: 'thread'`）。
+`qwen serve` プロセスは **1 デーモン = 1 ワークスペース** です。単一の Express HTTP サーバーをホストし、`@qwen-code/acp-bridge` インスタンスを所有し、実際のエージェントランタイムを実行する 1 つの ACP 子プロセス (`qwen --acp`) を生成します。複数のクライアント（CLI TUI、IDE コンパニオン、IM チャネルボット、Web BFF、カスタムスクリプト）は HTTP + SSE を介して接続し、1 つの ACP セッションを共有するか（`sessionScope: 'single'`、デフォルト）、会話スレッドごとにセッションを分割します（`sessionScope: 'thread'`）。
 
-ACP 子プロセス内では、MCP サーバーが `McpTransportPool`（F2）を通じてワークスペース全体で共有されます。（サーバー名 + 設定フィンガープリント）の組み合わせが 1つの MCP トランスポートにマッピングされ、セッションが何個検出しても同じトランスポートが使われます。ブリッジの `MultiClientPermissionMediator`（F3）は、4つのポリシーのいずれかに基づいて、接続されているすべてのクライアント間でパーミッションの承認を調整します。
+ACP 子プロセス内では、MCP サーバーは `McpTransportPool`（F2）によってワークスペース全体で共有されます。つまり、（サーバー名 + 設定フィンガープリント）のタプルは、それを検出するセッションの数に関係なく、1 つの MCP トランスポートにマッピングされます。ブリッジの `MultiClientPermissionMediator`（F3）は、4 つのポリシーのいずれかの下で、接続されたすべてのクライアント間の権限投票を調整します。
 
-このドキュメントは、残りのドキュメントセットが基盤とする**システムレベルの全体像**を示します。各重要フローは Mermaid シーケンス図として示されており、コンポーネントごとの実装詳細は他の 18 のドキュメントに記載されています。
+このドキュメントは、このドキュメントセットの残り部分が基盤とする**システムレベルの全体像**を示します。各重要なフローは Mermaid シーケンス図で示され、コンポーネントごとの実装の詳細は他の 18 のドキュメントに記載されています。
 
-## プロセストポロジー
+## プロセストポロジ
 
 ```mermaid
 flowchart LR
@@ -57,7 +57,7 @@ flowchart LR
     POOL -- "shared transport" --> MCP2
 ```
 
-デーモンプロセスと ACP 子プロセスは `AcpChannel`（デフォルト: 実際のサブプロセス stdio パイプペア、テスト用は `inMemoryChannel`）で接続されています。デーモンが行うすべてのことはこの分割によって形成されます。HTTP と SSE のトラフィックはデーモンで終端し、エージェントの意思決定とツール呼び出しは子プロセスで行われ、ブリッジが両者を接続します。
+デーモンプロセスと ACP 子プロセスは `AcpChannel`（デフォルト: 実際の子プロセスの stdio パイプペア、テストでは `inMemoryChannel`）で接続されています。デーモンが行うすべてのことは、この分割によって形作られます。HTTP と SSE のトラフィックはデーモンで終端し、エージェントの決定とツール呼び出しは子プロセスで発生し、ブリッジが両者を接続します。
 
 ## パッケージマップ
 
@@ -139,7 +139,7 @@ flowchart TB
     DC --> AUTHF
 ```
 
-信頼境界は 3つあります。HTTP エッジ（`serve/auth.ts` ミドルウェアチェーン）、ブリッジから ACP 子プロセスへの境界（stdio 上の NDJSON、認証なし。子プロセスはブリッジを暗黙的に信頼）、エージェントから MCP サーバーへの境界（エージェントがホストに触れるツールを呼び出す可能性あり）。
+3 つの信頼境界が重要です: HTTP エッジ（`serve/auth.ts` ミドルウェアチェーン）、ブリッジから ACP 子プロセスへの境界（stdio 上の NDJSON、認証なし、子プロセスはブリッジを暗黙的に信頼）、エージェントから MCP サーバーへの境界（エージェントはホストに触れるツールを呼び出す可能性があります）。
 
 ## ワークフロー 1: HTTP リクエストのライフサイクル
 
@@ -172,7 +172,7 @@ sequenceDiagram
     R-->>C: 200 JSON
 ```
 
-非ストリーミングルート（プロンプト、キャンセル、モデル切り替え、メタデータ、ワークスペース CRUD）は単一の JSON レスポンスとして終了します。ストリーミング出力はこの接続のチャンク HTTP ボディとしてではなく、SSE チャンネル上でアウトオブバンドで配信されます。ワークフロー 2 を参照してください。
+非ストリーミングルート（prompt、cancel、model switch、metadata、workspace CRUD）は、単一の JSON 応答として終了します。ストリーミング出力は、この接続上のチャンク化された HTTP ボディ**ではなく**、SSE チャネル上でアウトオブバンドで配信されます。ワークフロー 2 を参照してください。
 
 ## ワークフロー 2: SSE イベント配信とリプレイ
 
@@ -196,9 +196,9 @@ sequenceDiagram
     Note over EB,SR: If subscriber queue >= maxQueued,<br/>EventBus emits client_evicted terminal frame<br/>and closes subscriber.
 ```
 
-リングバッファには上限があります（`eventRingSize`、デフォルト 8000）。`Last-Event-ID` がリングの先頭より古い再接続クライアントは、合成されたキャッチアップシグナルを受け取り、より深い状態を再構築するために `loadSession` / `resumeSession` を呼び出す必要があります。処理の遅いクライアントはキュー 75% 時に `slow_client_warning` を、上限到達時に `client_evicted` をトリガーします。
+リングバッファは有限です（`eventRingSize`、デフォルト 8000）。`Last-Event-ID` がリングの先頭より古い再接続クライアントは、合成されたキャッチアップ信号を受け取り、`loadSession` / `resumeSession` を呼び出してより深い状態を再構築する必要があります。低速クライアントは、キューフィル率 75% で `slow_client_warning` を、上限に達すると `client_evicted` をトリガーします。
 
-## ワークフロー 3: マルチクライアントパーミッション調整
+## ワークフロー 3: マルチクライアント権限調整
 
 ```mermaid
 sequenceDiagram
@@ -241,9 +241,9 @@ sequenceDiagram
     end
 ```
 
-クロスポリシーのエスケープハッチ: どのクライアントも `CANCEL_VOTE_SENTINEL` に投票することで、リクエストを `cancelled / agent_cancelled` として短絡させることができます。ブリッジは、通常の `optionId` フィールド経由でワイヤー呼び出し元がセンチネルを密輸するのを防ぎます（`InvalidPermissionOptionError`）。
+ポリシー間エスケープハッチ: どのクライアントも `CANCEL_VOTE_SENTINEL` に投票することで、リクエストを `cancelled / agent_cancelled` としてショートサーキットできます。ブリッジは、ワイヤー呼び出し元が通常の `optionId` フィールドを介してセンチネルを注入することを防ぎます（`InvalidPermissionOptionError`）。
 
-## ワークフロー 4: MCP トランスポートプールの acquire / release / restart
+## ワークフロー 4: MCP トランスポートプールの取得/解放/再起動
 
 ```mermaid
 sequenceDiagram
@@ -290,7 +290,7 @@ sequenceDiagram
     P-->>S: single result or {entries: RestartResult[]}
 ```
 
-`releaseSession(sessionId)` は逆引き `sessionToEntries` インデックスを使って、セッションが保持するすべてのエントリを O(refs) でリリースします。デーモンのシャットダウン時、`drainAll()` は `draining` フラグを設定し（新規 acquire を拒否）、設定可能なタイムアウト以内にすべてのエントリがクローズするのを待ちます。
+`releaseSession(sessionId)` は逆方向の `sessionToEntries` インデックスを使用して、セッションが保持しているすべてのエントリを O(refs) で解放します。デーモンシャットダウン時には、`drainAll()` が `draining` フラグを設定し（新しい取得を拒否）、設定可能なタイムアウト下で全てのエントリがクローズするのを待ちます。
 
 ## ワークフロー 5: ライフサイクル — 起動とグレースフルシャットダウン
 
@@ -321,31 +321,31 @@ sequenceDiagram
     Note over Op,RQS: Second SIGTERM during shutdown →<br/>bridge.killAllSync() + process.exit(1) (orphan prevention)
 ```
 
-2フェーズシャットダウンが重要な理由は、処理中の HTTP リクエスト、処理中の SSE サブスクライバー、ACP 子プロセスの処理中のツール呼び出しが、すべて有限のティアダウンウィンドウを必要とするためです。タイムアウトを超えてブロックが発生した場合、強制クローズパスが引き継ぎ、スタックした子プロセスがデーモンプロセスを生かし続けることを防ぎます。
+二段階シャットダウンが重要なのは、インフライトの HTTP リクエスト、インフライトの SSE サブスクライバ、および ACP 子プロセス内のインフライトのツール呼び出しすべてに、制限された終了ウィンドウが必要だからです。これらのデッドラインを超えて何かがブロックされると、強制クローズパスが引き継がれ、スタックした子プロセスがデーモンプロセスを生かし続けるのを防ぎます。
 
-## 重要ファイル
+## 主要ファイル
 
-| 関心事              | ファイル                                                        |
-| -------------------- | ----------------------------------------------------------- |
-| ブートストラップ            | `packages/cli/src/serve/run-qwen-serve.ts`                    |
-| Express アプリ          | `packages/cli/src/serve/server.ts`                          |
-| ケイパビリティレジストリ  | `packages/cli/src/serve/capabilities.ts`                    |
-| 認証ミドルウェア      | `packages/cli/src/serve/auth.ts`                            |
-| ブリッジ               | `packages/acp-bridge/src/bridge.ts`                         |
-| BridgeClient         | `packages/acp-bridge/src/bridgeClient.ts`                   |
-| パーミッションメディエーター  | `packages/acp-bridge/src/permissionMediator.ts`             |
-| EventBus             | `packages/acp-bridge/src/eventBus.ts`                       |
-| MCP トランスポートプール   | `packages/core/src/tools/mcp-transport-pool.ts`             |
-| ワークスペース MCP バジェット | `packages/core/src/tools/mcp-workspace-budget.ts`           |
-| ワークスペース FS         | `packages/cli/src/serve/fs/`                                |
-| SDK DaemonClient     | `packages/sdk-typescript/src/daemon/DaemonClient.ts`        |
-| SDK SessionClient    | `packages/sdk-typescript/src/daemon/DaemonSessionClient.ts` |
-| イベントスキーマ         | `packages/sdk-typescript/src/daemon/events.ts`              |
+| 関心事                   | ファイル                                                       |
+| ----------------------- | -------------------------------------------------------------- |
+| ブートストラップ          | `packages/cli/src/serve/run-qwen-serve.ts`                      |
+| Express アプリ           | `packages/cli/src/serve/server.ts`                              |
+| 機能レジストリ            | `packages/cli/src/serve/capabilities.ts`                        |
+| 認証ミドルウェア          | `packages/cli/src/serve/auth.ts`                                |
+| ブリッジ                 | `packages/acp-bridge/src/bridge.ts`                              |
+| BridgeClient            | `packages/acp-bridge/src/bridgeClient.ts`                        |
+| 権限メディエーター        | `packages/acp-bridge/src/permissionMediator.ts`                  |
+| EventBus                | `packages/acp-bridge/src/eventBus.ts`                            |
+| MCP トランスポートプール  | `packages/core/src/tools/mcp-transport-pool.ts`                  |
+| ワークスペース MCP 予算   | `packages/core/src/tools/mcp-workspace-budget.ts`                |
+| ワークスペース FS        | `packages/cli/src/serve/fs/`                                    |
+| SDK DaemonClient        | `packages/sdk-typescript/src/daemon/DaemonClient.ts`             |
+| SDK SessionClient       | `packages/sdk-typescript/src/daemon/DaemonSessionClient.ts`      |
+| イベントスキーマ          | `packages/sdk-typescript/src/daemon/events.ts`                   |
 
-## 参照
+## 参考文献
 
-- デザイン issue: [#3803](https://github.com/QwenLM/qwen-code/issues/3803)（デーモン設計）、[#4175](https://github.com/QwenLM/qwen-code/issues/4175)（F シリーズマイルストーン）。
-- ユーザーガイド: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)。
-- ワイヤープロトコルリファレンス: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)。
-- F2 設計ドキュメント: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)。
-- F2 設計ノート: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) コミット 4-6。
+- 設計イシュー: [#3803](https://github.com/QwenLM/qwen-code/issues/3803)（デーモン設計）、[#4175](https://github.com/QwenLM/qwen-code/issues/4175)（F シリーズマイルストーン）
+- ユーザーガイド: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)
+- ワイヤープロトコルリファレンス: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)
+- F2 設計文書: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)
+- F2 設計ノート: イシュー [#4175](https://github.com/QwenLM/qwen-code/issues/4175) コミット 4-6

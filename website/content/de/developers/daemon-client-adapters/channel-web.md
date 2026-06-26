@@ -1,18 +1,15 @@
-# Entwurf eines Daemon-Adapters für Channel- und Web-Backend
+# Channel- und Web-Backend-Daemon-Adapter – Entwurf
 
 ## Ziel
 
-Channel-Adapter und Web-Chat-Backends sollen `qwen serve` über
-`DaemonSessionClient` nutzen können, während das bestehende ACP-Subprozess-Verhalten
-für Channel die Voreinstellung bleibt.
+Channel-Adapter und Web-Chat-Backends sollen `qwen serve` über `DaemonSessionClient` nutzen können, während das bisherige Channel-ACP-Subprozess-Verhalten die Standardeinstellung bleibt.
 
 Dieser Entwurf behandelt nur serverseitige Clients:
 
-- Channel-Bot-Backend -> `qwen serve`
-- Webbrowser -> Web-Backend / BFF -> `qwen serve`
+- Channel-Bot-Backend → `qwen serve`
+- Webbrowser → Web-Backend / BFF → `qwen serve`
 
-Es erlaubt explizit keinem Browser-JavaScript, den Daemon direkt aufzurufen.
-Der Daemon lehnt Browser-`Origin`-Anfragen derzeit bewusst ab.
+Er erlaubt ausdrücklich nicht, dass Browser-JavaScript direkt den Daemon aufruft. Der Daemon lehnt Browser-`Origin`-Requests aktuell bewusst ab.
 
 ## Vorgeschlagene Einstiegspunkte
 
@@ -37,84 +34,79 @@ QWEN_DAEMON_WORKSPACE=/repo
 
 ## Minimaler Channel-Ablauf
 
-Dieser PR fügt `DaemonChannelBridge` hinzu, eine lokal überprüfbare serverseitige Brücke für
-Channel- und Web-Backend-Adapter. Die bestehende ACP-Brücke bleibt die
-Voreinstellung und der Daemon-Session-Zustand wird im Backend-Prozess gehalten.
+Dieser PR fügt `DaemonChannelBridge` hinzu, eine lokal verifizierbare serverseitige Brücke für Channel- und Web-Backend-Adapter. Sie behält die bestehende ACP-Brücke als Standard und verwaltet den Daemon-Session-Zustand innerhalb des Backend-Prozesses.
 
-1. Auflösen des Channel-Absenders/Threads zu einem Channel-Session-Key.
-2. Verwenden von `DaemonClient` + `DaemonSessionClient.createOrAttach()`.
-3. Einreichen des eingehenden Benutzertexts mit `session.prompt()`.
-4. Abonnieren von `session.events()` und Sammeln der Assistant-Textblöcke.
-5. Senden des endgültigen Texts über den Plattform-Adapter.
-6. Abgeben von Berechtigungsstimmen mit `session.respondToPermission()`.
-7. Abbrechen der aktiven Arbeit mit `session.cancel()`.
+1. Auflösen von Channel-Sender/Thread zu einem Channel-Session-Key.
+2. Verwendung von `DaemonClient` + `DaemonSessionClient.createOrAttach()`.
+3. Übermittlung eingehenden Benutzertexts mit `session.prompt()`.
+4. Subskription von `session.events()` und Sammeln von Assistenten-Text-Chunks.
+5. Senden des finalen Texts über den Plattform-Adapter.
+6. Abgeben von Berechtigungsstimmen über `session.respondToPermission()`.
+7. Abbrechen aktiver Arbeit über `session.cancel()`.
 
 ## Minimaler Web-Backend-Ablauf
 
-1. Der Browser öffnet einen WebSocket oder HTTP-Stream zum Web-Backend.
-2. Das Backend besitzt `DaemonSessionClient`.
-3. Das Backend übersetzt Browser-Nachrichten in Daemon-Prompts.
-4. Das Backend übersetzt Daemon-SSE-Ereignisse in browsersichere App-Ereignisse.
-5. Das Backend speichert die Daemon-`sessionId` und die zuletzt gesehene Ereignis-ID serverseitig.
+1. Browser öffnet einen Websocket- oder HTTP-Stream zum Web-Backend.
+2. Backend besitzt `DaemonSessionClient`.
+3. Backend übersetzt Browser-Nachrichten in Daemon-Prompts.
+4. Backend übersetzt Daemon-SSE-Ereignisse in browsertaugliche App-Ereignisse.
+5. Backend speichert die Daemon-`sessionId` und die zuletzt gesehene Ereignis-ID serverseitig.
 
 Browser-Clients dürfen keine Daemon-Bearer-Tokens erhalten.
 
-## Einschränkung der Session-Isolation
+## Session-Isolationsbeschränkung
 
-Das aktuelle Verhalten von Daemon Stage 1 entspricht effektiv `sessionScope: single` auf der
-Daemon-Einstellungsebene. Bis `sessionScope` pro Anfrage verfügbar ist, müssen
-Multi-User-Channel- oder Web-Bereitstellungen eine dieser sicheren Formen wählen:
+Das aktuelle Daemon-Stage-1-Verhalten entspricht effektiv `sessionScope: single` auf der Daemon-Einstellungsebene. Bis `sessionScope` pro Request verfügbar ist, müssen Multi-User-Channel- oder Web-Deployments eine dieser sicheren Formen wählen:
 
 - ein Daemon pro Channel-Thread / Web-Raum
 - ein Daemon pro Benutzer-Workspace
 - nur Single-User-Demo
 
-Multiplexen Sie nicht stillschweigend unabhängige Channel-Threads in eine Daemon-Session.
+Mehrere unabhängige Channel-Threads dürfen nicht stillschweigend in eine Daemon-Session gemultiplext werden.
 
-## Vertrag zur Ereigniszuordnung
+## Ereignismapping-Vertrag
 
-| Daemon-Ereignis                           | Behandlung durch Channel-/Web-Backend        |
-| ----------------------------------------- | -------------------------------------------- |
-| `session_update` / `agent_message_chunk`  | Assistant-Text anhängen                      |
-| `session_update` / `agent_thought_chunk`  | Optionaler versteckter/Debug-Stream          |
-| `session_update` / `tool_call`            | Tool-Status-Karte/Nachricht ausgeben         |
-| `permission_request`                      | Plattformspezifische Genehmigungsinteraktion |
-| `permission_resolved`                     | Genehmigungsinteraktion schließen/aktualisieren |
-| `model_switched`                          | Backend-Session-Metadaten aktualisieren      |
-| `session_died`                            | Benutzer benachrichtigen und Stream beenden  |
+| Daemon-Ereignis                          | Channel-/Web-Backend-Behandlung          |
+| ---------------------------------------- | ---------------------------------------- |
+| `session_update` / `agent_message_chunk` | Assistenten-Text anhängen                |
+| `session_update` / `agent_thought_chunk` | Optionaler versteckter/Debug-Stream      |
+| `session_update` / `tool_call`           | Tool-Status-Card/-Nachricht ausgeben     |
+| `permission_request`                     | Plattformspezifische Genehmigungsinteraktion |
+| `permission_resolved`                    | Genehmigungsinteraktion schließen/aktualisieren |
+| `model_switched`                         | Backend-Session-Metadaten aktualisieren  |
+| `session_died`                           | Benutzer benachrichtigen und Stream stoppen |
 
-Unbekannte Daemon-Ereignisse müssen ignoriert oder als Debug-Metadaten weitergeleitet werden, nicht als Fehler.
+Unbekannte Daemon-Ereignisse müssen ignoriert oder als Debug-Metadaten weitergereicht werden, nicht als fatal.
 
-Die Brücke ist noch nicht in `qwen channel start` eingebunden. Das bestehende Verhalten
-von Telegram, Weixin, Dingtalk, Plugin-Channel und Browser bleibt unverändert.
+Die Brücke ist noch nicht in `qwen channel start` eingebunden. Bestehendes Telegram-, Weixin-, Dingtalk-, Plugin-Channel- und Browser-Verhalten bleibt unverändert.
 
 ## Explizite Nicht-Ziele
 
-- Kein direkter Browser-zu-Daemon-Fetch oder EventSource.
+- Kein direkter Browser-zu-Daemon-`fetch` oder `EventSource`.
 - Keine CORS-Lockerung in diesem Adapter-PR.
-- Keine Standardmigration von Telegram, Weixin, Dingtalk oder Plugin-Channels.
-- Kein Datei-CRUD, Memory-CRUD, MCP-Neustart oder Provider-Änderung.
-- Keine SessionScope-Emulation im Client, wenn die Daemon-Seite diese nicht unterstützt.
+- Keine Standardmigration von Telegram-, Weixin-, Dingtalk- oder Plugin-Channels.
+- Kein Datei-CRUD, Memory-CRUD, MCP-Neustart oder Provider-Mutation.
+- Keine `sessionScope`-Emulation im Client, wenn die Daemon-Seite keine Unterstützung bietet.
 
 ## Merge-Sicherheit
 
-- Standardmäßig deaktiviert.
-- Die bestehende ACP-Channel-Brücke bleibt die Voreinstellung.
-- Das Web-Backend ist eine explizite BFF-Schicht, keine Daemon-Sicherheitsänderung.
-- Kein Channel-Adapter sollte Daemon-Tokens in Frontend-/Browser-Code importieren.
+- Standardmäßig ausgeschaltet.
+- Bestehende ACP-Channel-Bridge bleibt Standard.
+- Web-Backend ist eine explizite BFF-Schicht, keine Daemon-Sicherheitsänderung.
+- Kein Channel-Adapter soll Daemon-Tokens in Frontend-/Browser-Code importieren.
 
 ## Validierungsplan
 
-- Unit-Test der Bindung von Channel-Session-Key zu Daemon-Session.
-- Unit-Test der Abbildung von Daemon-Ereignissen auf Channel-/Web-Nachrichten.
-- Unit-Test der Weiterleitung von Prompt, Cancel, Modellwechsel und Berechtigungsantwort.
+- Unit-Tests für Channel-Session-Key zu Daemon-Session-Bindung.
+- Unit-Tests für Daemon-Ereignis-zu-Channel/Web-Nachrichten-Mapping.
+- Unit-Tests für Prompt-, Cancel-, Model-Switch- und Permission-Response-Weiterleitung.
 - Smoke-Test eines Single-User-Channel-Backends gegen lokales `qwen serve`.
-- Smoke-Test Browser -> BFF -> Daemon ohne Offenlegung des Daemon-Tokens.
+- Smoke-Test Browser → BFF → Daemon ohne Offenlegung des Daemon-Tokens.
 
-## Blockierer vor der Standardmigration
+## Blocker vor Standardmigration
 
-- `sessionScope` pro Anfrage.
-- Session-Metadaten + Lebenszyklus für Schließen/Löschen.
+- `sessionScope` pro Request.
+- Session-Metadaten + Close/Delete-Lebenszyklus.
 - Daemon-gestempelte Client-Identität.
-- Berechtigungsroute im Session-Bereich.
-- Nur-Lese-Diagnose für MCP, Skills, Provider und Umgebung.
+- Session-bezogene Permission-Route.
+- Schreibgeschützte Diagnosen für MCP, Skills, Providers und Umgebung.

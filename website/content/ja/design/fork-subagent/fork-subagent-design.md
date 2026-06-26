@@ -1,10 +1,10 @@
-# Fork Subagent の設計
+# Fork Subagent 設計
 
-> 親の会話コンテキスト全体を継承し、プロンプトキャッシュを共有することで、コスト効率の高い並列タスク実行を可能にする暗黙的な fork subagent です。
+> 親の会話コンテキスト全体を継承し、プロンプトキャッシュを共有することで、コスト効率の高い並列タスク実行を可能にする暗黙的なフォークサブエージェント。
 
 ## 概要
 
-Agent ツールが `subagent_type` なしで呼び出されると、暗黙的な **fork** がトリガーされます。これは親の会話履歴、システムプロンプト、ツール定義を継承するバックグラウンドのサブエージェントです。fork は `CacheSafeParams` を使用して API リクエストが親と同じプレフィックスを共有するようにし、DashScope のプロンプトキャッシュヒットを有効にします。
+Agent ツールが `subagent_type` なしで呼び出されると、暗黙的な **フォーク** がトリガーされます。これは、親の会話履歴、システムプロンプト、ツール定義を継承するバックグラウンドサブエージェントです。フォークは `CacheSafeParams` を使用して、その API リクエストが親と同じプレフィックスを共有するようにし、DashScope プロンプトキャッシュのヒットを可能にします。
 
 ## アーキテクチャ
 
@@ -21,7 +21,7 @@ Fork C: [...MsgN | placeholder results | "Test C"]      ← shared cache
 
 ### 1. FORK_AGENT (`forkSubagent.ts`)
 
-合成エージェント設定であり、`builtInAgents` には登録されていません。フォールバック用の `systemPrompt` を持ちますが、実際には `generationConfigOverride` を介して親のレンダリング済みシステムプロンプトを使用します。
+組み込みエージェントには登録されていない合成エージェント設定。フォールバック用の `systemPrompt` を持つが、実際には `generationConfigOverride` を介して親のレンダリング済みシステムプロンプトを使用する。
 
 ### 2. CacheSafeParams の統合 (`agent.ts` + `forkedQuery.ts`)
 
@@ -55,58 +55,58 @@ agent.ts (fork path)
 
 ### 3. 履歴の構築 (`agent.ts` + `forkSubagent.ts`)
 
-fork の `extraHistory` は、`agent-headless` が `task_prompt` を送信する際に Gemini API の user/model の交互送信ルールを維持するため、model メッセージで終了する必要があります。
+フォークの `extraHistory` は、`agent-headless` が `task_prompt` を送信するときに Gemini API の user/model 交互を維持するために、モデルメッセージで終了する必要があります。
 
-3つのケース:
+3 つのケース:
 
-| 親の履歴の末尾              | extraHistory の構築方法                                              | task_prompt                    |
-| ----------------------------- | ---------------------------------------------------------------------- | ------------------------------ |
-| `model` (関数呼び出しなし)   | `[...rawHistory]` (変更なし)                                          | `buildChildMessage(directive)` |
-| `model` (関数呼び出しあり) | `[...rawHistory, model(clone), user(responses+directive), model(ack)]` | `'Begin.'`                     |
-| `user` (稀なケース)              | `rawHistory.slice(0, -1)` (末尾の user を削除)                         | `buildChildMessage(directive)` |
+| 親履歴の最後                   | extraHistory の構築                                                     | task_prompt                    |
+| ------------------------------ | ----------------------------------------------------------------------- | ------------------------------ |
+| `model` (関数呼び出しなし)     | `[...rawHistory]` (変更なし)                                            | `buildChildMessage(directive)` |
+| `model` (関数呼び出しあり)     | `[...rawHistory, model(clone), user(responses+directive), model(ack)]`  | `'Begin.'`                     |
+| `user` (通常ではない)          | `rawHistory.slice(0, -1)` (最後の user を削除)                           | `buildChildMessage(directive)` |
 
-### 4. 再帰的 Fork の防止 (`forkSubagent.ts`)
+### 4. 再帰的なフォークの防止 (`forkSubagent.ts`)
 
-`isInForkChild()` は会話履歴内の `<fork-boilerplate>` タグをスキャンします。見つかった場合、fork の試行はエラーメッセージと共に拒否されます。
+`isInForkChild()` は会話履歴をスキャンして `<fork-boilerplate>` タグを探します。見つかった場合、フォーク試行はエラーメッセージで拒否されます。
 
 ### 5. バックグラウンド実行 (`agent.ts`)
 
-Fork は `void executeSubagent()`（fire-and-forget）を使用し、`FORK_PLACEHOLDER_RESULT` を親に即座に返します。バックグラウンドタスクで発生したエラーはキャッチされ、ログに記録されて表示状態に反映されます。
+フォークは `void executeSubagent()` (fire-and-forget) を使用し、すぐに `FORK_PLACEHOLDER_RESULT` を親に返します。バックグラウンドタスクのエラーはキャッチされ、ログに記録され、表示状態に反映されます。
 
 ## データフロー
 
 ```
-1. Model calls Agent tool (no subagent_type)
+1. モデルが Agent ツールを呼び出す (subagent_type なし)
 2. agent.ts: import forkSubagent.js
 3. agent.ts: getCacheSafeParams() → forkGenerationConfig + forkToolsOverride
-4. agent.ts: build extraHistory from parent's getHistory(true)
-5. agent.ts: build forkTaskPrompt (directive or 'Begin.')
+4. agent.ts: 親の getHistory(true) から extraHistory を構築
+5. agent.ts: forkTaskPrompt を構築 (directive または 'Begin.')
 6. agent.ts: createAgentHeadless(FORK_AGENT, ...)
-7. agent.ts: void executeSubagent() — background
-8. agent.ts: return FORK_PLACEHOLDER_RESULT to parent immediately
-9. Background:
+7. agent.ts: void executeSubagent() — バックグラウンド
+8. agent.ts: すぐに FORK_PLACEHOLDER_RESULT を親に返す
+9. バックグラウンド:
    a. AgentHeadless.execute(context, signal, {extraHistory, generationConfigOverride, toolsOverride})
-   b. AgentCore.createChat() — uses parent's generationConfig (cache-shared)
-   c. runReasoningLoop() — uses parent's tool declarations
-   d. Fork executes tools, produces result
-   e. updateDisplay() with final status
+   b. AgentCore.createChat() — 親の generationConfig を使用 (キャッシュ共有)
+   c. runReasoningLoop() — 親のツール宣言を使用
+   d. フォークがツールを実行し、結果を生成
+   e. updateDisplay() で最終ステータスを表示
 ```
 
 ## グレースフルデグラデーション
 
-`getCacheSafeParams()` が null を返す場合（最初のターンで履歴がまだない場合）、fork は以下のフォールバック処理を行います：
+`getCacheSafeParams()` が null を返す場合 (最初のターンで履歴がない場合)、フォークは以下にフォールバックします:
 
-- システムインストラクションに `FORK_AGENT.systemPrompt` を使用
-- ツール宣言に `prepareTools()` を使用
+- `FORK_AGENT.systemPrompt` をシステムインストラクションとして使用
+- `prepareTools()` をツール宣言として使用
 
-これにより、キャッシュ共有がなくても fork が常に動作することが保証されます。
+これにより、キャッシュ共有がなくてもフォークが常に動作することが保証されます。
 
-## ファイル構成
+## ファイル
 
-| ファイル                                                 | 役割                                                                                  |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `packages/core/src/agents/runtime/forkSubagent.ts`   | FORK_AGENT 設定、buildForkedMessages()、isInForkChild()、buildChildMessage()        |
-| `packages/core/src/tools/agent.ts`                   | Fork パス：CacheSafeParams の取得、extraHistory の構築、バックグラウンド実行 |
-| `packages/core/src/agents/runtime/agent-headless.ts` | execute() オプション：generationConfigOverride、toolsOverride                            |
-| `packages/core/src/agents/runtime/agent-core.ts`     | CreateChatOptions.generationConfigOverride                                            |
-| `packages/core/src/followup/forkedQuery.ts`          | CacheSafeParams インフラストラクチャ（既存、変更なし）                                 |
+| ファイル                                                 | 役割                                                                                     |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `packages/core/src/agents/runtime/forkSubagent.ts`       | FORK_AGENT 設定、buildForkedMessages()、isInForkChild()、buildChildMessage()             |
+| `packages/core/src/tools/agent.ts`                       | フォークパス: CacheSafeParams の取得、extraHistory の構築、バックグラウンド実行          |
+| `packages/core/src/agents/runtime/agent-headless.ts`     | execute() オプション: generationConfigOverride、toolsOverride                            |
+| `packages/core/src/agents/runtime/agent-core.ts`         | CreateChatOptions.generationConfigOverride                                                |
+| `packages/core/src/followup/forkedQuery.ts`              | CacheSafeParams インフラストラクチャ (既存、変更なし)                                     |

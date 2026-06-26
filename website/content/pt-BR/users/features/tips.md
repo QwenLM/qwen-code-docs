@@ -1,43 +1,43 @@
 # Dicas Contextuais
 
-O Qwen Code inclui um sistema de dicas contextuais que ajuda você a descobrir recursos e acompanhar o estado da sessão.
+O Qwen Code inclui um sistema de dicas contextuais que ajuda você a descobrir recursos e ficar ciente do estado da sessão.
 
 ## Dicas de Inicialização
 
-Sempre que você inicia o Qwen Code, uma dica é exibida no cabeçalho. A seleção das dicas segue a ordem de prioridade e, em seguida, elas são alternadas entre as sessões usando o agendamento LRU (least-recently-used) para dicas de mesma prioridade, garantindo que você veja uma dica diferente a cada vez.
+Cada vez que você inicia o Qwen Code, uma dica é exibida na área do cabeçalho. As dicas são selecionadas primeiro por prioridade e depois rotacionadas entre as sessões usando agendamento LRU (least-recently-used, ou menos recentemente usado) entre dicas da mesma prioridade, para que você veja uma dica diferente a cada vez.
 
-Novos usuários veem dicas focadas em onboarding durante suas primeiras sessões:
+Novos usuários veem dicas focadas na integração durante as primeiras sessões:
 
-| Sessões | Exemplos de dicas                                      |
-| ------- | ------------------------------------------------------ |
-| < 5     | Comandos slash (`/`), Autocompletar com Tab            |
+| Sessões | Exemplos de dicas                          |
+| ------- | ------------------------------------------ |
+| < 5     | Comandos de barra (`/`), Autocomplete de Tab |
 | < 10    | Contexto do projeto `QWEN.md`, `--continue` / `--resume` |
-| < 15    | Comandos de shell com prefixo `!`                      |
+| < 15    | Comandos Shell com prefixo `!`             |
 
-Após esse período, as dicas alternam entre recursos gerais como `/compress`, `/approval-mode`, `/insight`, `/btw` e outros.
+Depois disso, as dicas alternam entre recursos gerais como `/compress`, `/approval-mode`, `/insight`, `/btw`, e mais.
 
 ## Dicas Pós-Resposta
 
-Durante uma conversa, o Qwen Code monitora o uso da janela de contexto e exibe dicas quando uma ação pode ser necessária:
+Durante uma conversa, o Qwen Code monitora o uso da janela de contexto e mostra dicas quando uma ação pode ser necessária:
 
-| Uso do contexto | Condição                          | Dica                                                |
-| --------------- | --------------------------------- | --------------------------------------------------- |
-| 50-80%          | Após alguns prompts na sessão     | Sugere `/compress` para liberar contexto            |
-| 80-95%          | —                                 | Alerta que o contexto está ficando cheio            |
-| >= 95%          | —                                 | Urgente: execute `/compress` agora ou `/new` para continuar |
+| Uso do contexto | Condição                      | Dica                                               |
+| --------------- | ----------------------------- | -------------------------------------------------- |
+| 50-80%          | Após alguns prompts na sessão | Sugere `/compress` para liberar contexto           |
+| 80-95%          | —                             | Avisa que o contexto está ficando cheio             |
+| >= 95%          | —                             | Urgente: execute `/compress` agora ou `/new` para continuar |
 
-As dicas pós-resposta possuem cooldowns individuais para evitar repetições.
+Dicas pós-resposta têm períodos de espera por dica para evitar repetição.
 
 ## Histórico de Dicas
 
-O histórico de exibição das dicas é armazenado em `~/.qwen/tip_history.json`. Esse arquivo rastreia:
+O histórico de exibição de dicas é persistido em `~/.qwen/tip_history.json`. Este arquivo rastreia:
 
-- Contagem de sessões (usada para selecionar dicas para novos usuários)
-- Quais dicas foram exibidas e quando (usado para rotação LRU e cooldown)
+- Contagem de sessões (usada para seleção de dicas para novos usuários)
+- Quais dicas foram mostradas e quando (usado para rotação LRU e período de espera)
 
-Você pode excluir esse arquivo com segurança para redefinir o histórico de dicas.
+Você pode excluir este arquivo com segurança para redefinir o histórico de dicas.
 
-## Desativando Dicas
+## Desabilitando Dicas
 
 Para ocultar todas as dicas (tanto de inicialização quanto pós-resposta), defina `ui.hideTips` como `true` em `~/.qwen/settings.json`:
 
@@ -49,6 +49,6 @@ Para ocultar todas as dicas (tanto de inicialização quanto pós-resposta), def
 }
 ```
 
-Você também pode alternar essa opção na janela de configurações usando o comando `/settings`.
+Você também pode alternar isso na caixa de diálogo de configurações através do comando `/settings`.
 
-As dicas também são ocultadas automaticamente quando o modo de leitor de tela está ativado.
+As dicas também são ocultadas automaticamente quando o modo leitor de tela está ativado.

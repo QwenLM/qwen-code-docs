@@ -1,12 +1,12 @@
-# Проектирование подсказок запросов (NES)
+# Дизайн подсказок (NES)
 
-> Предсказывает, что пользователь введет следующим после завершения ответа ИИ, и отображает это в виде ghost text в поле ввода.
+> Предсказывает, что пользователь естественным образом ввел бы следующим после ответа ИИ, и отображает это как призрачный текст в поле ввода.
 >
-> Статус реализации: `prompt-suggestion-implementation.md`. Движок спекулятивного выполнения: `speculation-design.md`.
+> Статус реализации: `prompt-suggestion-implementation.md`. Механизм спекуляции: `speculation-design.md`.
 
 ## Обзор
 
-**Подсказка запроса** (Next-step Suggestion / NES) — это краткое предсказание (2–12 слов) следующего ввода пользователя, генерируемое вызовом LLM после каждого ответа ИИ. Оно отображается в виде ghost text в поле ввода. Пользователь может принять его с помощью Tab/Enter/Right Arrow или отклонить, начав печатать.
+**Подсказка следующего шага** (Next-step Suggestion / NES) — это краткое предсказание (2–12 слов) следующего ввода пользователя, генерируемое вызовом LLM после каждого ответа ИИ. Отображается как призрачный текст в поле ввода. Пользователь может принять его клавишами Tab/Enter/Стрелка вправо или отклонить, начав печатать.
 
 ## Архитектура
 
@@ -14,43 +14,43 @@
 ┌─────────────────────────────────────────────────────────────┐
 │  AppContainer (CLI)                                         │
 │                                                             │
-│  Responding → Idle transition                               │
+│  Переход Responding → Idle                                  │
 │       │                                                     │
 │       ▼                                                     │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  Guard Conditions (11 categories)                    │    │
-│  │  settings, interactive, sdk, plan mode, dialogs,    │    │
-│  │  elicitation, API error                             │    │
+│  │  Условия-гейты (11 категорий)                        │    │
+│  │  настройки, интерактивность, SDK, режим плана,       │    │
+│  │  диалоги, уточнение, ошибка API                      │    │
 │  └────────────────────┬────────────────────────────────┘    │
 │                       │                                     │
 │                       ▼                                     │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │  generatePromptSuggestion()                         │    │
 │  │                                                     │    │
-│  │  ┌─── CacheSafeParams available? ───┐               │    │
+│  │  ┌─── CacheSafeParams доступны? ────┐               │    │
 │  │  │                                  │               │    │
-│  │  ▼ YES                         NO ▼                 │    │
+│  │  ▼ ДА                           НЕТ ▼               │    │
 │  │  runForkedQuery()      BaseLlmClient.generateJson() │    │
-│  │  (cache-aware)         (standalone fallback)        │    │
+│  │  (с учётом кэша)       (автономный fallback)        │    │
 │  │                                                     │    │
 │  │  ──── SUGGESTION_PROMPT ────                        │    │
-│  │  ──── 12 filter rules ──────                        │    │
+│  │  ──── 12 правил фильтрации ────                     │    │
 │  │  ──── getFilterReason() ────                        │    │
 │  └────────────────────┬────────────────────────────────┘    │
 │                       │                                     │
 │                       ▼                                     │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  FollowupController (framework-agnostic)            │    │
-│  │  300ms delay → show as ghost text                   │    │
+│  │  FollowupController (не зависит от фреймворка)       │    │
+│  │  задержка 300 мс → показать как призрачный текст     │    │
 │  │                                                     │    │
-│  │  Tab    → accept (fill input)                       │    │
-│  │  Enter  → accept + submit                           │    │
-│  │  Right  → accept (fill input)                       │    │
-│  │  Type   → dismiss + abort speculation               │    │
+│  │  Tab    → принять (заполнить ввод)                  │    │
+│  │  Enter  → принять + отправить                       │    │
+│  │  Right  → принять (заполнить ввод)                  │    │
+│  │  Печать → отклонить + прервать спекуляцию           │    │
 │  └─────────────────────────────────────────────────────┘    │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  Telemetry (PromptSuggestionEvent)                  │    │
+│  │  Телеметрия (PromptSuggestionEvent)                  │    │
 │  │  outcome, accept_method, timing, similarity,        │    │
 │  │  keystroke, focus, suppression reason, prompt_id     │    │
 │  └─────────────────────────────────────────────────────┘    │
@@ -59,7 +59,7 @@
 
 ## Генерация подсказок
 
-### Промпт для LLM
+### Промпт LLM
 
 ```
 [SUGGESTION MODE: Suggest what the user might naturally type next.]
@@ -87,50 +87,50 @@ Reply with ONLY the suggestion, no quotes or explanation.
 
 ### Правила фильтрации (12)
 
-| Правило            | Пример блокировки                                |
-| ------------------ | ------------------------------------------------ |
-| done               | "done"                                           |
-| meta_text          | "nothing found", "no suggestion", "silence"      |
-| meta_wrapped       | "(silence)", "[no suggestion]"                   |
-| error_message      | "api error: 500"                                 |
-| prefixed_label     | "Suggestion: commit"                             |
-| too_few_words      | "hmm" (но разрешает "yes", "commit", "push" и т.д.)  |
-| too_many_words     | > 12 слов                                        |
-| too_long           | >= 100 символов                                  |
-| multiple_sentences | "Run tests. Then commit."                        |
-| has_formatting     | переносы строк, жирный текст markdown            |
-| evaluative         | "looks good", "thanks" (с границами слов \b)     |
-| ai_voice           | "Let me...", "I'll...", "Here's..."              |
+| Правило              | Пример заблокированного                         |
+| -------------------- | ----------------------------------------------- |
+| done                 | "done"                                          |
+| meta_text            | "nothing found", "no suggestion", "silence"     |
+| meta_wrapped         | "(silence)", "[no suggestion]"                  |
+| error_message        | "api error: 500"                                |
+| prefixed_label       | "Suggestion: commit"                            |
+| too_few_words        | "hmm" (но допускается "yes", "commit", "push")  |
+| too_many_words       | > 12 слов                                       |
+| too_long             | >= 100 символов                                  |
+| multiple_sentences   | "Run tests. Then commit."                       |
+| has_formatting       | переводы строк, жирный шрифт markdown           |
+| evaluative           | "looks good", "thanks" (с границей слова \b)    |
+| ai_voice             | "Let me...", "I'll...", "Here's..."             |
 
-### Guard Conditions
+### Условия-гейты
 
 **AppContainer useEffect (13 проверок в коде):**
 
-| Условие                | Проверка                                            |
-| ---------------------- | --------------------------------------------------- |
-| Переключатель настроек | `enableFollowupSuggestions`                         |
-| Неинтерактивный режим  | `config.isInteractive()`                            |
-| Режим SDK              | `!config.getSdkMode()`                              |
-| Переход потоковой передачи | `Responding → Idle` (2 проверки)              |
-| Ошибка API (история)   | `historyManager.history[last]?.type !== 'error'`    |
-| Ошибка API (ожидание)  | `!pendingGeminiHistoryItems.some(type === 'error')` |
-| Диалоги подтверждения  | shell + general + loop detection (3 проверки)       |
-| Диалог разрешений      | `isPermissionsDialogOpen`                           |
-| Запрос уточнений       | `settingInputRequests.length === 0`                 |
-| Режим планирования     | `ApprovalMode.PLAN`                                 |
+| Гейт                  | Проверка                                           |
+| --------------------- | -------------------------------------------------- |
+| Переключатель настроек| `enableFollowupSuggestions`                        |
+| Неинтерактивный режим | `config.isInteractive()`                           |
+| Режим SDK             | `!config.getSdkMode()`                             |
+| Переход стриминга     | `Responding → Idle` (2 проверки)                   |
+| Ошибка API (история)  | `historyManager.history[last]?.type !== 'error'`   |
+| Ошибка API (ожидание) | `!pendingGeminiHistoryItems.some(type === 'error')`|
+| Диалоги подтверждения | shell + general + обнаружение циклов (3 проверки)  |
+| Диалог разрешений     | `isPermissionsDialogOpen`                          |
+| Уточнение             | `settingInputRequests.length === 0`                |
+| Режим плана           | `ApprovalMode.PLAN`                                |
 
 **Внутри generatePromptSuggestion():**
 
-| Условие              | Проверка       |
-| -------------------- | -------------- |
-| Начало диалога       | `modelTurns < 2` |
+| Гейт                    | Проверка               |
+| ----------------------- | ---------------------- |
+| Начало разговора        | `modelTurns < 2`        |
 
-**Отдельные feature flags (не в блоке guard):**
+**Отдельные функциональные флаги (не в блоке гейтов):**
 
-| Флаг                 | Управление                                            |
-| -------------------- | ----------------------------------------------------- |
-| `enableCacheSharing` | Использовать ли forked-запрос или fallback на generateJson |
-| `enableSpeculation`  | Запускать ли спекулятивное выполнение при отображении подсказки |
+| Флаг                    | Управление                                             |
+| ----------------------- | ------------------------------------------------------ |
+| `enableCacheSharing`    | Использовать forked-запрос или fallback на generateJson |
+| `enableSpeculation`     | Запускать ли спекуляцию при отображении подсказки      |
 
 ## Управление состоянием
 
@@ -146,92 +146,92 @@ interface FollowupState {
 
 ### FollowupController
 
-Фреймворк-агностичный контроллер, общий для CLI (Ink) и WebUI (React):
+Контроллер, не зависящий от фреймворка, общий для CLI (Ink) и WebUI (React):
 
-- `setSuggestion(text)` — отложенный показ на 300 мс, `null` очищает немедленно
-- `accept(method)` — очищает состояние, вызывает `onAccept` через микротаск, блокировка debounce на 100 мс
+- `setSuggestion(text)` — отображает с задержкой 300 мс, `null` очищает сразу
+- `accept(method)` — очищает состояние, вызывает `onAccept` через microtask, блокировка дебаунса 100 мс
 - `dismiss()` — очищает состояние, логирует телеметрию `ignored`
-- `clear()` — полный сброс состояния и таймеров
+- `clear()` — жёсткий сброс всего состояния и таймеров
 - `Object.freeze(INITIAL_FOLLOWUP_STATE)` предотвращает случайную мутацию
 
-## Взаимодействие с клавиатурой
+## Клавиатурное взаимодействие
 
-| Клавиша     | CLI                         | WebUI                                |
-| ----------- | --------------------------- | ------------------------------------ |
-| Tab         | Заполняет ввод (без отправки)      | Заполняет ввод (без отправки)               |
-| Enter       | Заполняет + отправляет               | Заполняет + отправляет (`explicitText` param) |
-| Right Arrow | Заполняет ввод (без отправки)      | Заполняет ввод (без отправки)               |
-| Ввод текста | Отклоняет + прерывает спекуляцию | Отклоняет                              |
-| Вставка     | Отклоняет + прерывает спекуляцию | Отклоняет                              |
+| Клавиша         | CLI                         | WebUI                                |
+| --------------- | --------------------------- | ------------------------------------ |
+| Tab             | Заполнить ввод (без отправки)| Заполнить ввод (без отправки)        |
+| Enter           | Заполнить + отправить       | Заполнить + отправить (параметр `explicitText`) |
+| Стрелка вправо  | Заполнить ввод (без отправки)| Заполнить ввод (без отправки)        |
+| Печать          | Отклонить + прервать спекуляцию | Отклонить                      |
+| Вставка         | Отклонить + прервать спекуляцию | Отклонить                      |
 
 ### Примечание по привязке клавиш
 
-Обработчик Tab явно использует `key.name === 'tab'` (а не матчер `ACCEPT_SUGGESTION`), потому что `ACCEPT_SUGGESTION` также совпадает с Enter, который должен передаваться дальше в обработчик `SUBMIT`.
+Обработчик Tab использует явное `key.name === 'tab'` (не `ACCEPT_SUGGESTION`), поскольку `ACCEPT_SUGGESTION` также соответствует Enter, который должен передаваться обработчику SUBMIT.
 
 ## Телеметрия
 
 ### PromptSuggestionEvent
 
-| Поле                       | Тип                         | Описание                          |
-| -------------------------- | --------------------------- | --------------------------------- |
-| outcome                    | accepted/ignored/suppressed | Итоговый результат                |
-| prompt_id                  | string                      | По умолчанию: 'user_intent'       |
-| accept_method              | tab/enter/right             | Способ принятия пользователем     |
-| time_to_accept_ms          | number                      | Время от показа до принятия       |
-| time_to_ignore_ms          | number                      | Время от показа до отклонения     |
-| time_to_first_keystroke_ms | number                      | Время до первого нажатия клавиши во время показа |
-| suggestion_length          | number                      | Количество символов               |
-| similarity                 | number                      | 1.0 при принятии, 0.0 при отклонении |
-| was_focused_when_shown     | boolean                     | Терминал был в фокусе             |
-| reason                     | string                      | Для suppressed: имя правила фильтрации |
+| Поле                        | Тип                        | Описание                             |
+| --------------------------- | -------------------------- | ------------------------------------ |
+| outcome                     | accepted/ignored/suppressed | Итоговый результат                   |
+| prompt_id                   | string                     | По умолчанию: 'user_intent'          |
+| accept_method               | tab/enter/right            | Как пользователь принял подсказку    |
+| time_to_accept_ms           | number                     | Время от показа до принятия          |
+| time_to_ignore_ms           | number                     | Время от показа до отклонения        |
+| time_to_first_keystroke_ms  | number                     | Время до первого нажатия при показе  |
+| suggestion_length           | number                     | Количество символов                  |
+| similarity                  | number                     | 1.0 для принятия, 0.0 для игнорирования |
+| was_focused_when_shown      | boolean                    | Фокус терминала в момент показа      |
+| reason                      | string                     | Для suppressed: имя правила фильтра  |
 
 ### SpeculationEvent
 
-| Поле                     | Тип                     | Описание                  |
-| ------------------------ | ----------------------- | ------------------------- |
-| outcome                  | accepted/aborted/failed | Результат спекуляции      |
-| turns_used               | number                  | Количество API round-trips|
-| files_written            | number                  | Файлы в оверлее           |
-| tool_use_count           | number                  | Выполненные инструменты   |
-| duration_ms              | number                  | Реальное время выполнения |
-| boundary_type            | string                  | Что остановило спекуляцию |
-| had_pipelined_suggestion | boolean                 | Следующая подсказка сгенерирована |
+| Поле                      | Тип                    | Описание                |
+| ------------------------- | ---------------------- | ----------------------- |
+| outcome                   | accepted/aborted/failed | Результат спекуляции    |
+| turns_used                | number                 | Круглых вызовов API     |
+| files_written             | number                 | Файлов в overlay        |
+| tool_use_count            | number                 | Выполнено инструментов  |
+| duration_ms               | number                 | Реальное время          |
+| boundary_type             | string                 | Что остановило спекуляцию |
+| had_pipelined_suggestion  | boolean                | Сгенерирована следующая подсказка |
 
-## Feature Flags и настройки
+## Функциональные флаги и настройки
 
-| Настройка                   | Тип     | По умолчанию | Описание                                                                       |
-| --------------------------- | ------- | ------------ | ------------------------------------------------------------------------------ |
-| `enableFollowupSuggestions` | boolean | true         | Главный переключатель подсказок запросов                                       |
-| `enableCacheSharing`        | boolean | true         | Использовать кэш-ориентированные forked-запросы                                |
-| `enableSpeculation`         | boolean | false        | Движок предсказательного выполнения                                            |
-| `fastModel` (верхний уровень) | string  | ""           | Модель для всех фоновых задач (пусто = использовать основную модель). Устанавливается через `/model --fast` |
+| Настройка                   | Тип     | По умолчанию | Описание                                                                    |
+| --------------------------- | ------- | ------------ | --------------------------------------------------------------------------- |
+| `enableFollowupSuggestions` | boolean | true         | Главный включатель подсказок                                                |
+| `enableCacheSharing`        | boolean | true         | Использовать forked-запросы с учётом кэша                                   |
+| `enableSpeculation`         | boolean | false        | Механизм предсказательного исполнения                                       |
+| `fastModel` (верхний уровень)| string  | ""           | Модель для всех фоновых задач (пусто = основная модель). Устанавливается через `/model --fast` |
 
-### Фильтрация внутренних Prompt ID
+### Внутренняя фильтрация по prompt ID
 
-Фоновые операции используют выделенные prompt ID (`INTERNAL_PROMPT_IDS` в `utils/internalPromptIds.ts`), чтобы их API-трафик и вызовы инструментов не отображались в пользовательском интерфейсе:
+Фоновые операции используют специальные prompt ID (`INTERNAL_PROMPT_IDS` в `utils/internalPromptIds.ts`), чтобы их API-трафик и вызовы инструментов не отображались в видимом пользователю интерфейсе:
 
-| Prompt ID           | Используется               |
-| ------------------- | -------------------------- |
-| `prompt_suggestion` | Генерация подсказок        |
-| `forked_query`      | Кэш-ориентированные forked-запросы |
-| `speculation`       | Движок спекулятивного выполнения |
+| Prompt ID          | Используется                      |
+| ------------------ | --------------------------------- |
+| `prompt_suggestion`| Генерация подсказок               |
+| `forked_query`     | Forked-запросы с учётом кэша      |
+| `speculation`      | Механизм спекуляции               |
 
-**Применяемая фильтрация:**
+**Фильтрация применяется в:**
 
 - `loggingContentGenerator` — пропускает `logApiRequest` и логирование взаимодействия с OpenAI для внутренних ID
 - `logApiResponse` / `logApiError` — пропускает `chatRecordingService.recordUiTelemetryEvent`
 - `logToolCall` — пропускает `chatRecordingService.recordUiTelemetryEvent`
-- `uiTelemetryService.addEvent` — **не фильтруется** (обеспечивает работу отслеживания токенов в `/stats`)
+- `uiTelemetryService.addEvent` — **не фильтруется** (чтобы работало отслеживание токенов в `/stats`)
 
-### Thinking Mode
+### Режим размышлений
 
-Режим мышления/рассуждений явно отключен (`thinkingConfig: { includeThoughts: false }`) для всех путей фоновых задач:
+Режим размышлений/рассуждений явно отключён (`thinkingConfig: { includeThoughts: false }`) для всех фоновых путей:
 
-- **Путь forked-запроса** (`createForkedChat`) — переопределяет `thinkingConfig` в клонированном `generationConfig`, охватывая как генерацию подсказок, так и спекуляцию
-- **Fallback-путь BaseLlm** (`generateViaBaseLlm`) — конфигурация на каждый запрос переопределяет настройки мышления базового генератора контента
+- **Путь forked-запроса** (`createForkedChat`) — переопределяет `thinkingConfig` в клонированном `generationConfig`, включая как генерацию подсказок, так и спекуляцию
+- **Путь BaseLlm fallback** (`generateViaBaseLlm`) — настройка на запрос переопределяет настройки размышлений базового генератора контента
 
 Это безопасно, потому что:
 
-- Префикс кэша определяется `systemInstruction` + `tools` + `history`, а не `thinkingConfig` — попадания в кэш не затрагиваются
-- Все бэкенды (Gemini, OpenAI-compatible, Anthropic) обрабатывают `includeThoughts: false`, опуская поле мышления — ошибок API на моделях без поддержки мышления не возникает
-- Генерация подсказок и спекуляция не получают преимуществ от токенов рассуждений
+- Префикс кэша определяется через systemInstruction + tools + history, а не `thinkingConfig` — попадания в кэш не затрагиваются
+- Все бэкенды (Gemini, OpenAI-совместимые, Anthropic) обрабатывают `includeThoughts: false`, опуская поле thinking — ошибок API на моделях без поддержки размышлений не возникает
+- Генерация подсказок и спекуляция не выигрывают от токенов рассуждений

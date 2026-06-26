@@ -1,24 +1,24 @@
 # Internationalisierung (i18n) & Sprache
 
-Qwen Code ist für mehrsprachige Arbeitsabläufe konzipiert: Es unterstützt UI-Lokalisierung (i18n/l10n) in der CLI, ermöglicht die Wahl der Ausgabesprache des Assistenten und erlaubt benutzerdefinierte Sprachpakete für die Benutzeroberfläche.
+Qwen Code ist für mehrsprachige Arbeitsabläufe ausgelegt: Es unterstützt UI-Lokalisierung (i18n/l10n) in der CLI, ermöglicht die Wahl der Ausgabesprache des Assistenten und erlaubt benutzerdefinierte UI-Sprachpakete.
 
-## Überblick
+## Übersicht
 
 Aus Benutzersicht umfasst die „Internationalisierung“ von Qwen Code mehrere Ebenen:
 
-| Funktion / Einstellung | Steuert                                                        | Gespeichert in                  |
-| ---------------------- | -------------------------------------------------------------- | ------------------------------- |
-| `/language ui`         | Terminal-UI-Text (Menüs, Systemmeldungen, Eingabeaufforderungen) | `~/.qwen/settings.json`         |
-| `/language output`     | Sprache, in der die KI antwortet (eine Ausgabeeinstellung, keine UI-Übersetzung) | `~/.qwen/output-language.md`    |
-| Benutzerdefinierte UI-Sprachpakete | Überschreibt/erweitert integrierte UI-Übersetzungen | `~/.qwen/locales/*.js`          |
+| Fähigkeit / Einstellung | Was es steuert                                                         | Wo gespeichert                 |
+| ----------------------- | ---------------------------------------------------------------------- | ------------------------------ |
+| `/language ui`          | Terminal-UI-Texte (Menüs, Systemmeldungen, Eingabeaufforderungen)      | `~/.qwen/settings.json`        |
+| `/language output`      | Sprache, in der die KI antwortet (eine Ausgabepräferenz, keine UI-Übersetzung) | `~/.qwen/output-language.md` |
+| Benutzerdefinierte UI-Sprachpakete | Überschreibt/erweitert integrierte UI-Übersetzungen            | `~/.qwen/locales/*.js`         |
 
-## Sprache der Benutzeroberfläche (UI)
+## UI-Sprache
 
-Dies ist die UI-Lokalisierungsebene (i18n/l10n) der CLI: Sie steuert die Sprache von Menüs, Eingabeaufforderungen und Systemmeldungen.
+Dies ist die UI-Lokalisierungsebene der CLI (i18n/l10n): Sie steuert die Sprache von Menüs, Eingabeaufforderungen und Systemmeldungen.
 
 ### Festlegen der UI-Sprache
 
-Verwende den Befehl `/language ui`:
+Verwenden Sie den Befehl `/language ui`:
 
 ```bash
 /language ui zh-CN    # Chinesisch
@@ -46,7 +46,7 @@ Aliase werden ebenfalls unterstützt:
 
 ### Automatische Erkennung
 
-Beim ersten Start erkennt Qwen Code Ihre Systemsprache und setzt die UI-Sprache automatisch.
+Beim ersten Start erkennt Qwen Code Ihre Systemsprache und stellt die UI-Sprache automatisch ein.
 
 Erkennungsreihenfolge:
 
@@ -55,17 +55,17 @@ Erkennungsreihenfolge:
 3. Systemsprache über die JavaScript Intl API
 4. Standard: Englisch
 
-## Ausgabesprache des LLM
+## LLM-Ausgabesprache
 
 Die LLM-Ausgabesprache steuert, in welcher Sprache der KI-Assistent antwortet, unabhängig davon, in welcher Sprache Sie Ihre Fragen stellen.
 
 ### Funktionsweise
 
-Die Ausgabesprache des LLM wird durch eine Regeldatei unter `~/.qwen/output-language.md` gesteuert. Diese Datei wird beim Start automatisch in den Kontext des LLM aufgenommen und weist ihn an, in der angegebenen Sprache zu antworten.
+Die LLM-Ausgabesprache wird durch eine Regeldatei unter `~/.qwen/output-language.md` gesteuert. Diese Datei wird beim Start automatisch in den Kontext des LLM aufgenommen und weist ihn an, in der angegebenen Sprache zu antworten.
 
 ### Automatische Erkennung
 
-Beim ersten Start, falls keine `output-language.md`-Datei existiert, erstellt Qwen Code automatisch eine basierend auf Ihrer Systemsprache. Zum Beispiel:
+Beim ersten Start, falls keine Datei `output-language.md` existiert, erstellt Qwen Code automatisch eine basierend auf Ihrer Systemsprache. Zum Beispiel:
 
 - Systemsprache `zh` erstellt eine Regel für chinesische Antworten
 - Systemsprache `en` erstellt eine Regel für englische Antworten
@@ -78,7 +78,7 @@ Beim ersten Start, falls keine `output-language.md`-Datei existiert, erstellt Qw
 
 ### Manuelle Einstellung
 
-Verwende `/language output <Sprache>`, um die Sprache zu ändern:
+Verwenden Sie `/language output <Sprache>`, um die Ausgabesprache zu ändern:
 
 ```bash
 /language output Chinese
@@ -87,13 +87,13 @@ Verwende `/language output <Sprache>`, um die Sprache zu ändern:
 /language output German
 ```
 
-Jeder Sprachname funktioniert. Das LLM wird angewiesen, in dieser Sprache zu antworten.
+Jeder Sprachname funktioniert. Der LLM wird angewiesen, in dieser Sprache zu antworten.
 
 > [!note]
 >
-> Starte Qwen Code nach dem Ändern der Ausgabesprache neu, damit die Änderung wirksam wird.
+> Nach dem Ändern der Ausgabesprache starten Sie Qwen Code neu, damit die Änderung wirksam wird.
 
-### Dateipfad
+### Speicherort
 
 ```
 ~/.qwen/output-language.md
@@ -103,9 +103,9 @@ Jeder Sprachname funktioniert. Das LLM wird angewiesen, in dieser Sprache zu ant
 
 ### Über den Einstellungsdialog
 
-1. Führe `/settings` aus
-2. Finde „Sprache“ unter „Allgemein“
-3. Wähle deine bevorzugte UI-Sprache
+1. Führen Sie `/settings` aus
+2. Finden Sie „Sprache“ unter „Allgemein“
+3. Wählen Sie Ihre bevorzugte UI-Sprache
 
 ### Über Umgebungsvariable
 
@@ -113,11 +113,11 @@ Jeder Sprachname funktioniert. Das LLM wird angewiesen, in dieser Sprache zu ant
 export QWEN_CODE_LANG=zh
 ```
 
-Dies beeinflusst die automatische Erkennung beim ersten Start (falls noch keine UI-Sprache festgelegt wurde und keine `output-language.md`-Datei existiert).
+Dies beeinflusst die automatische Erkennung beim ersten Start (falls Sie noch keine UI-Sprache festgelegt haben und noch keine Datei `output-language.md` existiert).
 
 ## Benutzerdefinierte Sprachpakete
 
-Für UI-Übersetzungen kannst du benutzerdefinierte Sprachpakete unter `~/.qwen/locales/` erstellen:
+Für UI-Übersetzungen können Sie benutzerdefinierte Sprachpakete in `~/.qwen/locales/` erstellen:
 
 - Beispiel: `~/.qwen/locales/es.js` für Spanisch
 - Beispiel: `~/.qwen/locales/fr.js` für Französisch
@@ -126,45 +126,46 @@ Das Benutzerverzeichnis hat Vorrang vor den integrierten Übersetzungen.
 
 > [!tip]
 >
-> Beiträge sind willkommen! Wenn du die integrierten Übersetzungen verbessern oder neue Sprachen hinzufügen möchtest.
-> Ein konkretes Beispiel findest du unter [PR #1238: feat(i18n): add Russian language support](https://github.com/QwenLM/qwen-code/pull/1238).
+> Beiträge sind willkommen! Wenn Sie die integrierten Übersetzungen verbessern oder neue Sprachen hinzufügen möchten.
+> Ein konkretes Beispiel finden Sie unter [PR #1238: feat(i18n): add Russian language support](https://github.com/QwenLM/qwen-code/pull/1238).
 
 ### Pflege von `zh-TW` (Traditionelles Chinesisch für Taiwan)
 
-`zh-TW` ist **keine** automatische OpenCC-s2t-Konvertierung von `zh.js` – es ist eine manuell gepflegte Übersetzung mit taiwanischem Vokabular. Beim Hinzufügen oder Ändern von Schlüsseln sind die folgenden Konventionen zu beachten.
+`zh-TW` ist **keine** automatische OpenCC-s2t-Konvertierung von `zh.js` – es ist eine manuell gepflegte Übersetzung mit taiwanischem Vokabular. Bitte beachten Sie beim Hinzufügen oder Aktualisieren von Schlüsseln die folgenden Konventionen.
 
-Die Spalte „CI erzwungen?“ gibt an, ob `npm run check-i18n` den Build bei einem Verstoß fehlschlagen lässt. Zeilen, die mit **Nein** markiert sind, sind Stilrichtlinien, die nur durch Review durchgesetzt werden – typischerweise weil die beanstandete Form eine legitime nicht-UI-Bedeutung hat (`文件` kann „Dokument“ bedeuten, `打開` ist im Taiwan-Umgangssprachgebrauch in Ordnung).
+Die Spalte „CI erzwungen?“ gibt an, ob `npm run check-i18n` den Build bei einem Verstoß fehlschlagen lässt. Mit **Nein** markierte Zeilen sind Stilrichtlinien, die nur durch Reviews durchgesetzt werden – in der Regel, weil die anstößige Form eine legitime Nicht-UI-Bedeutung hat (`文件` kann „Dokument“ bedeuten, `打開` ist im taiwanischen Sprachgebrauch umgangssprachlich in Ordnung).
 
-| Zu vermeiden           | Stattdessen verwenden | CI erzwungen? | Begründung                                                                                                                                                                           |
-| ---------------------- | --------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 文件 (Datei)           | 檔案                  | Nein          | Taiwan-Begriff für Dateisystemdateien (aber `文件` kann legitim „Dokument“ bedeuten)                                                                                                  |
-| 服務器 / 服务器        | 伺服器                | Ja            | Taiwan-Begriff für „Server“                                                                                                                                                          |
-| 菜單 / 菜单            | 選單                  | Ja            | Taiwan-Begriff für „Menü“                                                                                                                                                            |
-| 鏈接 / 链接            | 連結                  | Ja            | Taiwan-Begriff für „Link“ (nacktes `鏈` ist in Ordnung – z.B. 區塊鏈)                                                                                                                 |
-| 打開                   | 開啟                  | Nein          | Bevorzugtes Verb in Taiwan für „Öffnen“ (UI); `打開` ist umgangssprachlich üblich                                                                                                     |
-| 爲 / 啓 / 曆史 / 鏈接  | 為 / 啟 / 歷史 / 連結 | Ja            | Variante traditioneller Formen aus roher OpenCC-s2t. Hinweis: `曆` ist kontextabhängig und korrekt in Kalenderbegriffen (日曆, 農曆, 西曆); CI markiert nur das Bigramm `曆史`, nicht nacktes `曆`. |
-Wenn Sie kein traditioneller Chinesisch-Sprecher sind und einen Wert bootstrappen müssen, **fügen Sie keine rohe OpenCC-`s2t`-Ausgabe ein**: das Standard-s2t-Profil gibt abweichende traditionelle Zeichen aus (z.B. 爲, 啓), die in Taiwan nicht verwendet werden, und schreibt nie chinesisches Vokabular aus Festlandchina um (服務器, 菜單). Bevorzugen Sie `s2twp.json` (Simplified → Taiwan mit Phrasenzuordnung) als Ausgangspunkt und lassen Sie es dann von einem taiwanesischen Chinesisch-Sprecher überprüfen.
+| Vermeiden              | Stattdessen verwenden | CI erzwungen? | Grund                                                                                                                                                                           |
+| ---------------------- | ---------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 文件 (Datei)           | 檔案                  | Nein          | Taiwanischer Begriff für Dateien im Dateisystem (aber `文件` kann durchaus „Dokument“ bedeuten)                                                                                 |
+| 服務器 / 服务器        | 伺服器                | Ja            | Taiwanischer Begriff für „Server“                                                                                                                                               |
+| 菜單 / 菜单            | 選單                  | Ja            | Taiwanischer Begriff für „Menü“                                                                                                                                                 |
+| 鏈接 / 链接            | 連結                  | Ja            | Taiwanischer Begriff für „Link“ (reines `鏈` ist in Ordnung – z. B. 區塊鏈)                                                                                                       |
+| 打開                   | 開啟                  | Nein           | In Taiwan bevorzugtes Verb für „öffnen“ (UI); `打開` ist umgangssprachlich üblich                                                                                               |
+| 爲 / 啓 / 曆史 / 鏈接  | 為 / 啟 / 歷史 / 連結 | Ja            | Varianten traditioneller Formen aus roher OpenCC-s2t-Konvertierung. Hinweis: `曆` ist kontextabhängig und korrekt in Kalenderbegriffen (日曆, 農曆, 西曆); CI markiert nur das Bigramm `曆史`, nicht ein einzelnes `歷`. |
 
-Das `check-i18n`-Skript (ausgeführt in CI über `npm run check-i18n`) wird den Build fehlschlagen lassen, wenn eine der oben genannten CI-erzwungenen Teilzeichenfolgen in einem `zh-TW`-Wert landet. Siehe `scripts/check-i18n.ts → ZH_TW_FORBIDDEN_PATTERNS` für die vollständige Liste. Wenn eine Übersetzung legitimerweise eine CI-verbotene Teilzeichenfolge enthalten muss, fügen Sie ihren Schlüssel zu `ZH_TW_ALLOWED_EXCEPTIONS` in derselben Datei mit einer kurzen Begründung hinzu.
+Wenn Sie kein traditionelles Chinesisch sprechen und einen Wert bootstrappen müssen, **fügen Sie keine rohe OpenCC-`s2t`-Ausgabe ein**: Das Standard-s2t-Profil gibt Varianten traditioneller Zeichen aus (z. B. 爲, 啓), die in Taiwan nicht verwendet werden, und schreibt nie festlandchinesisches Vokabular um (服務器, 菜單). Bevorzugen Sie `s2twp.json` (Vereinfacht → Taiwan mit Phrasen-Mapping) als Ausgangspunkt und lassen Sie die Übersetzung dann von einem taiwanisch-chinesischen Muttersprachler überprüfen.
+
+Das Skript `check-i18n` (ausgeführt in CI über `npm run check-i18n`) wird den Build fehlschlagen lassen, wenn eine der oben genannten CI-erzwungenen Teilzeichenfolgen in einem `zh-TW`-Wert vorkommt. Siehe `scripts/check-i18n.ts → ZH_TW_FORBIDDEN_PATTERNS` für die vollständige Liste. Wenn eine Übersetzung legitimerweise eine CI-verbotene Teilzeichenfolge enthalten muss, fügen Sie ihren Schlüssel mit einer kurzen Begründung zu `ZH_TW_ALLOWED_EXCEPTIONS` in derselben Datei hinzu.
 
 > [!note]
 >
-> Die Prüfung verwendet einfache Teilzeichenfolgensuche, die chinesische Wortgrenzen nicht versteht. Ein Bigramm-Muster kann daher fälschlich positiv über Wortverbindungsgrenzen hinweg anschlagen – zum Beispiel enthält `區塊鏈接口` (= `區塊鏈` + `接口`) die Teilzeichenfolge `鏈接`, obwohl keines der Wörter falsch ist. Wenn Sie auf einen solchen überraschenden CI-Fehler stoßen, fügen Sie den Übersetzungsschlüssel zu `ZH_TW_ALLOWED_EXCEPTIONS` hinzu, anstatt das Muster zu entfernen.
+> Die Prüfung verwendet einfache Teilzeichenfolgen-Suche, die keine chinesischen Wortgrenzen erkennt. Ein Bigramm-Muster kann daher fälschlicherweise über Wortzusammensetzungsgrenzen hinweg anschlagen – zum Beispiel enthält `區塊鏈接口` (= `區塊鏈` + `接口`) die Teilzeichenfolge `鏈接`, obwohl keines der Wörter falsch ist. Wenn Sie auf einen überraschenden CI-Fehler dieser Art stoßen, fügen Sie den Übersetzungsschlüssel zu `ZH_TW_ALLOWED_EXCEPTIONS` hinzu, anstatt das Muster zu entfernen.
 
-### Sprachpaket-Format
+### Format eines Sprachpakets
 
 ```javascript
 // ~/.qwen/locales/es.js
 export default {
   Hello: 'Hola',
   Settings: 'Configuracion',
-  // ... more translations
+  // ... weitere Übersetzungen
 };
 ```
 
 ## Verwandte Befehle
 
-- `/language` - Aktuelle Spracheinstellungen anzeigen
-- `/language ui [lang]` - UI-Sprache festlegen
-- `/language output <language>` - LLM-Ausgabesprache festlegen
-- `/settings` - Einstellungsdialog öffnen
+- `/language` – Aktuelle Spracheinstellungen anzeigen
+- `/language ui [Sprache]` – UI-Sprache festlegen
+- `/language output <Sprache>` – LLM-Ausgabesprache festlegen
+- `/settings` – Einstellungsdialog öffnen

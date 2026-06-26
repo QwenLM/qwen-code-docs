@@ -2,16 +2,16 @@
 
 ## `qwen-code-sdk`
 
-`qwen-code-sdk` ist ein experimentelles Python-SDK für Qwen Code. Version 1 zielt auf das bestehende `stream-json` CLI-Protokoll ab und hält die Transportoberfläche klein und testbar.
+`qwen-code-sdk` ist ein experimentelles Python SDK für Qwen Code. v1 zielt auf das bestehende `stream-json` CLI-Protokoll ab und hält die Transportschnittstelle klein und testbar.
 
 ## Umfang
 
 - Paketname: `qwen-code-sdk`
 - Importpfad: `qwen_code_sdk`
-- Laufzeitvoraussetzung: Python `>=3.10`
-- CLI-Abhängigkeit: In v1 wird ein externes `qwen`-Programm benötigt
-- Transportumfang: Nur Prozess-Transport
-- Nicht in v1 enthalten: ACP-Transport, SDK-eingebettete MCP-Server
+- Laufzeitanforderung: Python `>=3.10`
+- CLI-Abhängigkeit: In v1 wird die externe `qwen`-Ausführungsdatei benötigt
+- Transportumfang: nur Prozesstransport
+- Nicht enthalten in v1: ACP-Transport, SDK-eingebettete MCP-Server
 
 ## Installation
 
@@ -25,9 +25,9 @@ Für Vorabversionen:
 pip install --pre qwen-code-sdk
 ```
 
-Falls `qwen` nicht im `PATH` ist, geben Sie `path_to_qwen_executable` explizit an.
+Wenn `qwen` nicht im `PATH` ist, übergebe `path_to_qwen_executable` explizit.
 
-Stellen Sie vor dem Schreiben von SDK-Code sicher, dass die CLI in derselben Shell funktioniert:
+Bevor du SDK-Code schreibst, stelle sicher, dass die CLI in derselben Shell funktioniert:
 
 ```bash
 qwen --version
@@ -83,11 +83,11 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-`asyncio.run()` eignet sich für eigenständige Skripte. Wenn Ihre Anwendung bereits eine Ereignisschleife ausführt, z. B. Jupyter, FastAPI oder pytest-asyncio, rufen Sie stattdessen `await main()` auf.
+`asyncio.run()` ist für eigenständige Skripte geeignet. Wenn deine Anwendung bereits eine Ereignisschleife ausführt, wie Jupyter, FastAPI oder pytest-asyncio, rufe stattdessen `await main()` auf.
 
 ## Synchrone Nutzung
 
-Verwenden Sie `query_sync`, wenn Ihre Host-Anwendung nicht asynchron ist:
+Verwende `query_sync`, wenn deine Host-Anwendung nicht asynchron ist:
 
 ```python
 from qwen_code_sdk import is_sdk_result_message, query_sync
@@ -119,11 +119,11 @@ with query_sync(
 `prompt` unterstützt entweder:
 
 - `str` für Einzelanfragen
-- `AsyncIterable[SDKUserMessage]` für mehrteilige Streams
+- `AsyncIterable[SDKUserMessage]` für Mehrfachdurchläufe (Multi-Turn Streams)
 
 ### `Query`
 
-- Asynchron iterierbar über SDK-Nachrichten
+- Async iterable über SDK-Nachrichten
 - `close()`
 - `interrupt()`
 - `set_model(model)`
@@ -135,29 +135,30 @@ with query_sync(
 
 ### `QueryOptions`
 
-| Option                     | Typ / Werte                                                  | Beschreibung                                                                                                           |
-| -------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `cwd`                      | `str`                                                        | Arbeitsverzeichnis für den CLI-Prozess.                                                                                |
-| `model`                    | `str`                                                        | Modell-Override für diese SDK-Sitzung.                                                                                 |
-| `path_to_qwen_executable`  | `str`                                                        | `qwen`, ein expliziter Binärpfad oder ein `.js`-CLI-Bundle.                                                            |
-| `permission_mode`          | `default`, `plan`, `auto-edit`, `yolo`                       | Genehmigungsmodus für Werkzeugausführung. `yolo` genehmigt alle Werkzeuge automatisch; nur in vertrauenswürdigen oder Sandbox-Umgebungen verwenden. |
-| `can_use_tool`             | asynchroner Callback                                         | Benutzerdefinierter Genehmigungs-Callback für Werkzeuganfragen.                                                        |
-| `env`                      | `dict[str, str]`                                             | Zusätzliche Umgebungsvariablen, die an den CLI-Prozess übergeben werden.                                                |
-| `system_prompt`            | `str`                                                        | Überschreibt den System-Prompt.                                                                                        |
-| `append_system_prompt`     | `str`                                                        | Hängt zusätzliche Anweisungen an den System-Prompt an.                                                                 |
-| `debug`                    | `bool`                                                       | Leitet CLI-stderr an stderr weiter, wenn kein `stderr`-Hook vorhanden ist.                                             |
-| `max_session_turns`        | `int`                                                        | Maximale Anzahl von Runden, bevor die CLI die Sitzung beendet.                                                         |
-| `core_tools`               | `list[str]`                                                  | Beschränkt den verfügbaren Werkzeugsatz.                                                                               |
-| `exclude_tools`            | `list[str]`                                                  | Schließt passende Werkzeuge aus.                                                                                       |
-| `allowed_tools`            | `list[str]`                                                  | Erlaubt passende Werkzeuge ohne Callback-Genehmigung.                                                                  |
-| `auth_type`                | `openai`, `anthropic`, `qwen-oauth`, `gemini`, `vertex-ai`   | Authentifizierungsmodus, der an die CLI übergeben wird.                                                                |
-| `include_partial_messages` | `bool`                                                       | Sendet partielle Assistant-Stream-Ereignisse.                                                                          |
-| `resume`                   | UUID-String                                                  | Setzt eine bekannte Sitzungs-ID fort.                                                                                  |
-| `continue_session`         | `bool`                                                       | Setzt die letzte CLI-Sitzung fort.                                                                                     |
-| `session_id`               | UUID-String                                                  | Startet eine Sitzung oder ordnet sie einer bekannten ID zu.                                                            |
-| `timeout`                  | Mapping                                                      | Timeouts in Sekunden.                                                                                                  |
-| `stderr`                   | aufrufbar                                                    | Empfängt CLI-stderr-Zeilen.                                                                                            |
-Verwenden Sie nur eine von `resume`, `continue_session` oder `session_id` in einer Anfrage. Das SDK löst `ValidationError` aus, wenn diese Sitzungsoptionen kombiniert werden.
+| Option                     | Typ / Werte                                                 | Beschreibung                                                                                                     |
+| -------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `cwd`                      | `str`                                                       | Arbeitsverzeichnis für den CLI-Prozess.                                                                          |
+| `model`                    | `str`                                                       | Modellüberschreibung für diese SDK-Sitzung.                                                                      |
+| `path_to_qwen_executable`  | `str`                                                       | `qwen`, ein expliziter Binärpfad oder ein `.js` CLI-Bundle.                                                       |
+| `permission_mode`          | `default`, `plan`, `auto-edit`, `yolo`                      | Genehmigungsmodus für Tool-Ausführung. `yolo` genehmigt alle Tools automatisch; verwende es nur in vertrauenswürdigen oder isolierten Umgebungen. |
+| `can_use_tool`             | async callback                                              | Benutzerdefinierter Berechtigungs-Callback für Tool-Anfragen.                                                     |
+| `env`                      | `dict[str, str]`                                            | Zusätzliche Umgebungsvariablen, die an den CLI-Prozess weitergegeben werden.                                      |
+| `system_prompt`            | `str`                                                       | System-Prompt überschreiben.                                                                                      |
+| `append_system_prompt`     | `str`                                                       | Zusätzliche Anweisungen an den System-Prompt anhängen.                                                           |
+| `debug`                    | `bool`                                                      | Leite CLI stderr an stderr weiter, wenn kein `stderr`-Hook existiert.                                            |
+| `max_session_turns`        | `int`                                                       | Maximale Durchläufe, bevor die CLI die Sitzung beendet.                                                          |
+| `core_tools`               | `list[str]`                                                 | Verfügbaren Tool-Satz einschränken.                                                                               |
+| `exclude_tools`            | `list[str]`                                                 | Übereinstimmende Tools ausschließen.                                                                             |
+| `allowed_tools`            | `list[str]`                                                 | Übereinstimmende Tools ohne Callback-Genehmigung zulassen.                                                       |
+| `auth_type`                | `openai`, `anthropic`, `qwen-oauth`, `gemini`, `vertex-ai` | Authentifizierungsmodus, der an die CLI übergeben wird.                                                          |
+| `include_partial_messages` | `bool`                                                      | Teilweise Assistant-Stream-Ereignisse ausgeben.                                                                  |
+| `resume`                   | UUID-String                                                 | Eine bekannte Sitzungs-ID fortsetzen.                                                                            |
+| `continue_session`         | `bool`                                                      | Die letzte CLI-Sitzung fortsetzen.                                                                               |
+| `session_id`               | UUID-String                                                 | Eine Sitzung mit einer bekannten ID starten oder verknüpfen.                                                     |
+| `timeout`                  | mapping                                                     | Timeouts in Sekunden.                                                                                             |
+| `stderr`                   | callable                                                    | Empfängt CLI-stderr-Zeilen.                                                                                      |
+
+Verwende nur eine der Optionen `resume`, `continue_session` oder `session_id` in einer Anfrage. Das SDK wirft einen `ValidationError`, wenn diese Sitzungsoptionen kombiniert werden.
 
 Nicht unterstützt in v1:
 
@@ -183,18 +184,18 @@ options = {
 }
 ```
 
-Timeout-Werte sind in Sekunden. `env` wird über die Umgebung des übergeordneten Prozesses gelegt, daher müssen Sie nur Variablen übergeben, die für diese SDK-Sitzung abweichen sollen. Legen Sie Geheimnisse wie `OPENAI_API_KEY` in der übergeordneten Umgebung oder einem Secrets-Manager fest, anstatt sie fest im Quellcode zu codieren.
+Timeout-Werte sind in Sekunden. `env` wird über die Umgebung des übergeordneten Prozesses gelegt, sodass du nur Variablen übergeben musst, die sich für diese SDK-Sitzung unterscheiden sollen. Setze Geheimnisse wie `OPENAI_API_KEY` in der übergeordneten Umgebung oder einem Secrets Manager, anstatt sie im Quellcode fest zu codieren.
 
-## Berechtigungsbehandlung
+## Berechtigungsverwaltung
 
-Wenn die CLI eine `can_use_tool`-Kontrollanfrage ausgibt, leitet das SDK sie durch `can_use_tool(tool_name, tool_input, context)`.
+Wenn die CLI eine `can_use_tool`-Steuerungsanfrage ausgibt, leitet das SDK sie durch `can_use_tool(tool_name, tool_input, context)`.
 
-- Standardverhalten: verweigern
+- Standardverhalten: ablehnen
 - Standard-Timeout: 60 Sekunden, konfigurierbar mit `timeout.can_use_tool`
-- Timeout-Fallback: verweigern
-- Callback-Ausnahmen: werden mit einer Fehlermeldung in eine Verweigerung umgewandelt
+- Timeout-Fallback: ablehnen
+- Callback-Ausnahmen: in Ablehnung mit Fehlermeldung umgewandelt
 - Callback-Kontext: `cancel_event`, `suggestions` und `blocked_path`
-- Callback-Vertrag: `can_use_tool` muss asynchron mit 3 Positionsargumenten sein; `stderr` muss 1 Positionsargument vom Typ String akzeptieren
+- Callback-Vertrag: `can_use_tool` muss async mit 3 Positionsargumenten sein; `stderr` muss 1 Positions-String-Argument akzeptieren
 
 Beispiel:
 
@@ -262,11 +263,11 @@ async def main():
 asyncio.run(main())
 ```
 
-Wenn Sie `can_use_tool` nicht übergeben, verweigert das SDK standardmäßig Berechtigungsanfragen.
+Wenn du kein `can_use_tool` übergibst, lehnt das SDK standardmäßig Berechtigungsanfragen ab.
 
-## Sitzungen mit mehreren Durchgängen
+## Multi-Turn-Sitzungen
 
-Für Sitzungen mit mehreren Durchgängen übergeben Sie ein asynchrones Iterable von `SDKUserMessage`-Objekten:
+Für Multi-Turn-Sitzungen übergib ein asynchrones Iterable von `SDKUserMessage`-Objekten:
 
 ```python
 import asyncio
@@ -321,11 +322,12 @@ async def main():
 asyncio.run(main())
 ```
 
-Alle Nachrichten im asynchronen Iterable müssen im Voraus bekannt sein. Das SDK sendet sie sequenziell an die CLI, kann aber keine vorherige Antwort zurück in den Generator einspeisen. Wenn Sie einen Konversationsablauf mit abwechselnden Beiträgen benötigen, verwalten Sie jeden Durchgang als separaten `query()`-Aufruf.
+Alle Nachrichten im asynchronen Iterable müssen im Voraus bekannt sein. Das SDK sendet sie sequenziell an die CLI, kann aber keine vorherige Antwort in den Generator zurückführen. Wenn du einen konversationellen Wechsel benötigst, verwalte jede Runde als separaten `query()`-Aufruf.
 
 ## Laufzeitsteuerung
 
 Das zurückgegebene `Query`-Objekt kann den laufenden CLI-Prozess steuern:
+
 ```python
 import asyncio
 
@@ -334,7 +336,7 @@ from qwen_code_sdk import is_sdk_result_message, query
 
 async def main():
     async with query(
-        "Untersuche dieses Repository und erkläre die Teststruktur.",
+        "Inspect this repository and explain the test layout.",
         {
             "cwd": "/path/to/project",
             "path_to_qwen_executable": "qwen",
@@ -350,7 +352,7 @@ async def main():
             if is_sdk_result_message(message):
                 if message.get("is_error"):
                     error = message.get("error") or {}
-                    print(f"Fehler: {error.get('message', 'Unbekannter Fehler')}")
+                    print(f"Error: {error.get('message', 'Unknown error')}")
                 else:
                     print(message.get("result", ""))
 
@@ -358,11 +360,9 @@ async def main():
 asyncio.run(main())
 ```
 
-Verwende `interrupt()`, um den aktuellen Vorgang abzubrechen, `close()`, um den
-zugrunde liegenden Prozess zu bereinigen, und `get_session_id()`, um eine
-Sitzungs-ID für später zu speichern.
+Verwende `interrupt()`, um den aktuellen Vorgang abzubrechen, `close()`, um den zugrunde liegenden Prozess zu bereinigen, und `get_session_id()`, um eine Sitzungs-ID für später zu speichern.
 
-## Sitzung fortsetzen
+## Sitzungsfortsetzung
 
 ```python
 import asyncio
@@ -371,9 +371,9 @@ from qwen_code_sdk import is_sdk_result_message, query
 
 
 async def main():
-    # Eine bekannte Sitzung anhand ihrer ID fortsetzen.
+    # Resume a known session by its id.
     async with query(
-        "Setze diese Sitzung fort.",
+        "Continue from this session.",
         {
             "path_to_qwen_executable": "qwen",
             "resume": "123e4567-e89b-12d3-a456-426614174000",
@@ -383,7 +383,7 @@ async def main():
             if is_sdk_result_message(message):
                 if message.get("is_error"):
                     error = message.get("error") or {}
-                    print(f"Fehler: {error.get('message', 'Unbekannter Fehler')}")
+                    print(f"Error: {error.get('message', 'Unknown error')}")
                 else:
                     print(message.get("result", ""))
 
@@ -391,7 +391,7 @@ async def main():
 asyncio.run(main())
 ```
 
-Die letzte Sitzung stattdessen fortsetzen:
+Um stattdessen die letzte Sitzung fortzusetzen:
 
 ```python
 import asyncio
@@ -401,7 +401,7 @@ from qwen_code_sdk import is_sdk_result_message, query
 
 async def main():
     async with query(
-        "Setze die letzte Sitzung fort.",
+        "Continue the latest session.",
         {
             "path_to_qwen_executable": "qwen",
             "continue_session": True,
@@ -411,7 +411,7 @@ async def main():
             if is_sdk_result_message(message):
                 if message.get("is_error"):
                     error = message.get("error") or {}
-                    print(f"Fehler: {error.get('message', 'Unbekannter Fehler')}")
+                    print(f"Error: {error.get('message', 'Unknown error')}")
                 else:
                     print(message.get("result", ""))
 
@@ -419,15 +419,13 @@ async def main():
 asyncio.run(main())
 ```
 
-`resume` ist nützlich, wenn deine Anwendung Sitzungs-IDs speichert.
-`continue_session` delegiert die Auswahl der letzten Sitzung an die CLI.
+`resume` ist nützlich, wenn deine Anwendung Sitzungs-IDs speichert. `continue_session` delegiert die Auswahl der letzten Sitzung an die CLI.
 
 ## Fehlermodell
 
 - `ValidationError`: ungültige Optionen, ungültige UUIDs, nicht unterstützte Kombinationen
-- `ControlRequestTimeoutError`: Initialisierung, Unterbrechung oder andere Steuerungsanfrage
-  ist abgelaufen
-- `ProcessExitError`: CLI wurde mit einem Nicht-Null-Exit beendet
+- `ControlRequestTimeoutError`: Initialisierungs-, Unterbrechungs- oder andere Steuerungsanfrage ist abgelaufen
+- `ProcessExitError`: CLI wurde mit einem Nicht-Null-Exit-Code beendet
 - `AbortError`: Steuerungsanfrage oder Sitzung wurde abgebrochen
 
 ```python
@@ -439,18 +437,18 @@ from qwen_code_sdk import (
 )
 
 try:
-    with query_sync("Sag Hallo", {"path_to_qwen_executable": "qwen"}) as result:
+    with query_sync("Say hello", {"path_to_qwen_executable": "qwen"}) as result:
         for message in result:
             if is_sdk_result_message(message):
                 if message.get("is_error"):
                     error = message.get("error") or {}
-                    print(f"Fehler: {error.get('message', 'Unbekannter Fehler')}")
+                    print(f"Error: {error.get('message', 'Unknown error')}")
                 else:
                     print(message.get("result", ""))
 except ValidationError as exc:
-    print(f"Ungültige SDK-Optionen: {exc}")
+    print(f"Invalid SDK options: {exc}")
 except ProcessExitError as exc:
-    print(f"qwen wurde mit Exit-Code {exc.exit_code} beendet: {exc}")
+    print(f"qwen exited with {exc.exit_code}: {exc}")
 ```
 
 ## Fehlerbehebung
@@ -458,15 +456,14 @@ except ProcessExitError as exc:
 Wenn das SDK die CLI nicht starten kann:
 
 - Überprüfe, ob `qwen --version` in der Zielumgebung funktioniert
-- Übergib `path_to_qwen_executable`, wenn deine Shell `nvm`, `pyenv` oder eine andere
-  nicht standardmäßige PATH-Konfiguration verwendet
-- Verwende `debug=True` oder `stderr=print`, um CLI-Stderr während der Fehlersuche auszugeben
+- Übergib `path_to_qwen_executable`, wenn deine Shell `nvm`, `pyenv` oder andere nicht standardmäßige PATH-Einstellungen verwendet
+- Verwende `debug=True` oder `stderr=print`, um während der Fehlersuche CLI-stderr sichtbar zu machen
 
-Wenn Sitzungssteuerungsaufrufe ein Zeitlimit überschreiten:
+Wenn Sitzungssteuerungsaufrufe ein Timeout auslösen:
 
-- Überprüfe, ob die Ziel-`qwen`-Version `--input-format stream-json` unterstützt
+- Überprüfe, ob die Zielversion von `qwen` `--input-format stream-json` unterstützt
 - Erhöhe `timeout.control_request`
-- Stelle sicher, dass kein Wrapper-Script stdout/stderr verschluckt
+- Vergewissere dich, dass kein Wrapper-Skript stdout/stderr schluckt
 
 ## Repository-Integration
 
@@ -477,11 +474,9 @@ Hilfsbefehle auf Repository-Ebene:
 - `npm run typecheck:sdk:python`
 - `npm run smoke:sdk:python -- --qwen qwen`
 
-## Echter E2E-Smoketest
+## Echter E2E-Smoke-Test
 
-Für eine echte Laufzeitprüfung (tatsächlicher `qwen`-Prozess + echter Modellaufruf)
-vom Repository-Stammverzeichnis ausführen. Der npm-Helfer verwendet `python3`,
-also stelle sicher, dass es auf einen Python-Interpreter `>=3.10` verweist:
+Für eine echte Laufzeitprüfung (tatsächlicher `qwen`-Prozess + echter Modellaufruf) führe vom Repository-Stammverzeichnis aus. Der npm-Helfer verwendet `python3`, stelle also sicher, dass er auf einen Python-`>=3.10`-Interpreter verweist:
 
 ```bash
 npm run smoke:sdk:python -- --qwen qwen
@@ -489,8 +484,8 @@ npm run smoke:sdk:python -- --qwen qwen
 
 Dieses Skript führt aus:
 
-- asynchrone Single-Turn-Abfrage
-- asynchrone Steuerungsabläufe (`supported_commands`, Berechtigungsmodusaktualisierungen)
+- asynchrone Einzelanfrage
+- asynchroner Kontrollfluss (`supported_commands`, Berechtigungsmodus-Updates)
 - synchrone `query_sync`-Abfrage
 
-Es gibt JSON aus und liefert einen Nicht-Null-Exit bei Fehlschlag.
+Es gibt JSON aus und gibt bei Fehlern einen von Null abweichenden Wert zurück.

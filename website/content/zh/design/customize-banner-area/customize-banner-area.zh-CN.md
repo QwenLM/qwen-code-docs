@@ -607,7 +607,6 @@ export function resolveCustomBanner(settings: LoadedSettings): ResolvedBanner;
 - **缺点**：与 issue 原文写法不完全一致；现有 UI 设置以扁平为主
   （仅 `ui.accessibility` 与 `ui.statusLine` 是嵌套的），一致性
   打折；多了一层让用户记忆。
-
 ### 方案 3 —— Banner profile 预设 + slot override
 
 ```jsonc

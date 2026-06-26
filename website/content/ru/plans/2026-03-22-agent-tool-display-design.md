@@ -1,49 +1,49 @@
 # План реализации отображения инструментов агента
 
-> **Для Claude:** REQUIRED SUB-SKILL: Используйте superpowers:executing-plans для пошаговой реализации этого плана.
+> **Для Claude:** ОБЯЗАТЕЛЬНЫЙ ДОПОЛНИТЕЛЬНЫЙ НАВЫК: используйте superpowers:executing-plans для поэтапной реализации этого плана.
 
-**Цель:** Добавить отдельный интерфейс отображения в VSCode/web UI для выполнения инструментов агента, чтобы прогресс, сводки и ошибки субагентов рендерились из структурированного `rawOutput`, а не использовали стандартную карточку инструмента.
+**Цель:** Добавить выделенное отображение выполнения инструментов агента в VSCode/веб-интерфейсе, чтобы прогресс подзадач, сводки и ошибки отображались на основе структурированного `rawOutput` вместо использования универсальной карточки инструмента.
 
-**Архитектура:** Сохранить ACP `rawOutput` в пайплайне сессии/обновлений VSCode и передать его в `ToolCallData`, после чего позволить общему роутеру web UI обнаруживать полезные нагрузки `task_execution` и рендерить отдельный компонент `AgentToolCall`. Изменения должны оставаться общими в `packages/webui`, чтобы VSCode и `ChatViewer` оставались синхронизированными.
+**Архитектура:** Сохранить ACP `rawOutput` через конвейер сессии/обновления VSCode в `ToolCallData`, затем позволить общему веб-интерфейсу маршрутизатора определять полезные нагрузки `task_execution` и отображать выделенный компонент `AgentToolCall`. Изменение должно быть общим в `packages/webui`, чтобы VSCode и `ChatViewer` оставались согласованными.
 
-**Стек технологий:** TypeScript, React, Vitest, общие компоненты вызовов инструментов `@qwen-code/webui`.
+**Технологический стек:** TypeScript, React, Vitest, общие компоненты тул-коллов `@qwen-code/webui`.
 
-### Задача 1: Фиксация ожидаемого падения тестов для потока данных
+### Задача 1: Зафиксировать ошибочное поведение потока данных
 
 **Файлы:**
 
 - Изменить: `packages/vscode-ide-companion/src/services/qwenSessionUpdateHandler.test.ts`
 - Создать: `packages/vscode-ide-companion/src/webview/hooks/useToolCalls.test.tsx`
 
-**Шаг 1: Написание тестов, которые должны падать**
+**Шаг 1: Написать падающие тесты**
 
-- Добавьте тест обработчика сессии, проверяющий, что `tool_call_update` передаёт `rawOutput`, когда ACP отправляет полезную нагрузку `task_execution`.
-- Добавьте тест хука, проверяющий, что `useToolCalls` сохраняет и обновляет `rawOutput` для вызова инструмента агента.
+- Добавить в тест обработчика сессии утверждение, что `tool_call_update` передаёт `rawOutput`, когда ACP отправляет полезную нагрузку `task_execution`.
+- Добавить в тест хука утверждение, что `useToolCalls` сохраняет и обновляет `rawOutput` для вызова инструмента агента.
 
-**Шаг 2: Запуск тестов для проверки падения**
+**Шаг 2: Запустить тесты и убедиться, что они падают**
 
-Запуск: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
+Запустить: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
 
-Ожидаемый результат: падение тестов, так как `rawOutput` не сохраняется в текущем пайплайне обработчика/хука.
+Ожидается: ошибки, потому что `rawOutput` не сохраняется в текущем конвейере обработчика/хука.
 
-### Задача 2: Фиксация ожидаемого падения тестов для рендерера
+### Задача 2: Зафиксировать ошибочное поведение рендеринга
 
 **Файлы:**
 
 - Создать: `packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
-**Шаг 1: Написание теста, который должен падать**
+**Шаг 1: Написать падающий тест**
 
-- Отрендерите маршрутизированный вызов инструмента с `kind: 'other'` и `rawOutput.type === 'task_execution'`.
-- Проверьте, что описание задачи, активный дочерний инструмент, сводка и причина ошибки рендерятся через отдельный интерфейс агента, а не через стандартный текстовый вывод.
+- Отрендерить маршрутизированный вызов инструмента с `kind: 'other'` и `rawOutput.type === 'task_execution'`.
+- Утвердить, что описание задачи, активный дочерний инструмент, сводка и причина ошибки отображаются в выделенном интерфейсе агента, а не в общем текстовом выводе.
 
-**Шаг 2: Запуск теста для проверки падения**
+**Шаг 2: Запустить тест и убедиться, что он падает**
 
-Запуск: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+Запустить: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
-Ожидаемый результат: падение, так как роутер ориентируется только на `kind`, а отдельный компонент агента отсутствует.
+Ожидается: ошибка, потому что маршрутизатор работает только по `kind` и не существует выделенного компонента агента.
 
-### Задача 3: Сквозное сохранение структурированного вывода агента
+### Задача 3: Сохранять структурированный вывод агента сквозным образом
 
 **Файлы:**
 
@@ -52,20 +52,20 @@
 - Изменить: `packages/vscode-ide-companion/src/webview/hooks/useToolCalls.ts`
 - Изменить: `packages/webui/src/components/toolcalls/shared/types.ts`
 
-**Шаг 1: Реализация минимальных изменений в модели данных**
+**Шаг 1: Реализовать минимальные изменения модели данных**
 
-- Добавьте опциональное поле `rawOutput` в типы вызовов инструментов для сессии/webview VSCode.
-- Передавайте `rawOutput` в `QwenSessionUpdateHandler`.
-- Сохраняйте/объединяйте `rawOutput` в `useToolCalls`.
-- Экспортируйте `rawOutput` в общих типах данных вызовов инструментов web UI.
+- Добавить опциональное поле `rawOutput` в типы вызовов инструментов сессии VSCode и webview.
+- Передавать `rawOutput` в `QwenSessionUpdateHandler`.
+- Сохранять/объединять `rawOutput` в `useToolCalls`.
+- Экспонировать `rawOutput` в общих типах данных вызовов инструментов веб-интерфейса.
 
-**Шаг 2: Запуск целевых тестов**
+**Шаг 2: Запустить целевые тесты**
 
-Запуск: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
+Запустить: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
 
-Ожидаемый результат: успешное прохождение.
+Ожидается: успешное выполнение.
 
-### Задача 4: Добавление общего UI для вызовов инструментов агента
+### Задача 4: Добавить общий пользовательский интерфейс вызова инструмента агента
 
 **Файлы:**
 
@@ -74,33 +74,33 @@
 - Изменить: `packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.tsx`
 - Изменить: `packages/webui/src/components/ChatViewer/ChatViewer.tsx`
 
-**Шаг 1: Реализация минимального рендерера**
+**Шаг 1: Реализовать минимальный рендерер**
 
-- Добавьте guard для `rawOutput.type === 'task_execution'`.
-- Отрендерите описание задачи в качестве заголовка.
-- Отобразите имя и статус агента, текущие выполняемые дочерние инструменты, сводку завершения и причину ошибки/отмены.
-- Сохраните совместимость макета с несколькими параллельными карточками агентов, рендеря каждый вызов инструмента независимо.
+- Добавить проверку на `rawOutput.type === 'task_execution'`.
+- Отображать описание задачи в заголовке.
+- Показывать имя агента + статус, запущенные дочерние инструменты, сводку по завершению и причину ошибки/отмены.
+- Обеспечить совместимость макета с несколькими параллельными карточками агентов, отображая каждый вызов инструмента независимо.
 
-**Шаг 2: Запуск целевого теста рендерера**
+**Шаг 2: Запустить целевой тест рендерера**
 
-Запуск: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+Запустить: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
-Ожидаемый результат: успешное прохождение.
+Ожидается: успешное выполнение.
 
-### Задача 5: Проверка интегрированного интерфейса
+### Задача 5: Проверить интегрированную поверхность
 
 **Файлы:**
 
 - Изменить: `packages/webui/src/index.ts`
 
-**Шаг 1: Экспорт нового общего компонента (при необходимости)**
+**Шаг 1: Экспортировать новый общий компонент при необходимости**
 
-- Выполните реэкспорт любых новых компонентов/типов, необходимых для VSCode или `ChatViewer`.
+- Повторно экспортировать любые новые компоненты/типы, необходимые VSCode или `ChatViewer`.
 
-**Шаг 2: Запуск проверки пакета**
+**Шаг 2: Запустить проверку пакета**
 
-Запуск: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
-Запуск: `npm run check-types --workspace=packages/vscode-ide-companion`
-Запуск: `npm run typecheck --workspace=packages/webui`
+Запустить: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+Запустить: `npm run check-types --workspace=packages/vscode-ide-companion`
+Запустить: `npm run typecheck --workspace=packages/webui`
 
-Ожидаемый результат: успешное прохождение всех целевых тестов и проверок типов.
+Ожидается: все целевые тесты и проверки типов проходят успешно.

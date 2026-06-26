@@ -1,289 +1,290 @@
-# Worktree – Allgemeiner Fähigkeitsentwurf
+# Worktree universelles Fähigkeitsdesign
 
 ## Problemstellung
 
-qwen-code verfügt derzeit nur über eine interne Worktree-Implementierung (`GitWorktreeService`), die auf das Arena-Szenario mit mehreren Modellen ausgerichtet ist. Benutzer können in normalen Sitzungen kein Worktree nutzen, um Arbeiten zu isolieren. Auch `AgentTool` unterstützt nicht das Erstellen isolierter Worktree-Umgebungen für Sub-Agenten.
+qwen-code hat derzeit nur eine interne Worktree-Implementierung (`GitWorktreeService`) für das Arena-Multi-Modell-Vergleichsszenario. Benutzer können Worktrees in normalen Sitzungen nicht zur Isolation nutzen, und `AgentTool` unterstützt keine Erstellung isolierter Worktree-Umgebungen für Sub-Agenten.
 
-Ziel ist es, Worktree zu einer allgemeinen Fähigkeit zu machen, die sowohl die Isolierung auf Benutzersitzungsebene als auch auf Agentenebene unterstützt, während die bestehende Arena-Funktionalität vollständig erhalten bleibt.
+Das Ziel ist es, Worktree zu einer universellen Fähigkeit zu machen, die sowohl Sitzungsebene- als auch Agentenebene-Isolation unterstützt, während die bestehende Arena-Funktionalität vollständig erhalten bleibt.
 
-## Vergleich des aktuellen Stands
+## Statusvergleich
 
-| Funktion                                | qwen-code       | claude-code | Phase    |
-| --------------------------------------- | --------------- | ----------- | -------- |
-| `EnterWorktree`-Tool                    | ✅ (Phase A)    | ✅          | —        |
-| `ExitWorktree`-Tool                     | ✅ (Phase A)    | ✅          | —        |
-| AgentTool `isolation: 'worktree'`       | ✅ (Phase B)    | ✅          | —        |
-| Automatische Bereinigung abgelaufener Worktrees | ✅ (Phase B)   | ✅          | —        |
-| Persistenz und Wiederherstellung des Worktree-Sitzungsstatus | ❌ | ✅          | Phase C  |
-| Post-creation Setup (Hooks-Konfiguration) | ❌            | ✅          | Phase C  |
-| StatusLine-Worktree-Statusanzeige       | ❌              | ✅          | Phase C  |
-| WorktreeExitDialog (Beenden-Hinweis)    | ❌              | ✅          | Phase C  |
-| `--worktree` CLI-Startflag              | ✅ (Phase D)    | ✅          | —        |
-| Symbolische Verzeichnislinks (node_modules usw.) | ✅ (Phase D)   | ✅          | —        |
-| PR-Referenz (`--worktree=#123`)         | ✅ (Phase D)    | ✅          | —        |
-| Sparse Checkout                         | ❌              | ✅          | Future   |
-| tmux-Integration                        | ❌              | ✅          | Future   |
-| Worktree-Isolierung für mehrere Arena-Modelle | ✅ (nur qwen)  | ❌          | —        |
-| Überschreibung von Dirty State (stash + copy) | ✅          | ✅          | —        |
-| Baseline-Commit-Nachverfolgung           | ✅ (nur qwen)  | ❌          | —        |
+| Funktion                            | qwen-code       | claude-code | Phase   |
+| ----------------------------------- | --------------- | ----------- | ------- |
+| `EnterWorktree`-Tool                | ✅ (Phase A)    | ✅          | —       |
+| `ExitWorktree`-Tool                 | ✅ (Phase A)    | ✅          | —       |
+| `AgentTool` `isolation: 'worktree'` | ✅ (Phase B)    | ✅          | —       |
+| Automatische Bereinigung abgelaufener Worktrees | ✅ (Phase B) | ✅ | — |
+| Worktree-Sitzungsstatus persistieren und wiederherstellen | ❌ | ✅ | Phase C |
+| Post-creation Setup (Hooks-Konfiguration) | ❌ | ✅ | Phase C |
+| StatusLine Worktree-Statusanzeige   | ❌              | ✅          | Phase C |
+| WorktreeExitDialog (Austrittshinweis) | ❌            | ✅          | Phase C |
+| `--worktree` CLI-Startflag          | ✅ (Phase D)    | ✅          | —       |
+| Symbolische Link-Verzeichnisse (node_modules etc.) | ✅ (Phase D) | ✅ | — |
+| PR-Referenz (`--worktree=#123`)     | ✅ (Phase D)    | ✅          | —       |
+| Sparse Checkout                     | ❌              | ✅          | Future  |
+| tmux-Integration                    | ❌              | ✅          | Future  |
+| Arena Multi-Modell Worktree-Isolation | ✅ (qwen-exklusiv) | ❌       | —       |
+| Dirty-State-Überschreibung (stash + copy) | ✅       | ✅          | —       |
+| Baseline-Commit-Tracking            | ✅ (qwen-exklusiv) | ❌       | —       |
 
 ## Entwurfsprinzipien
 
-**Worktree ist eine allgemeine Fähigkeit; Arena ist ihre darüberliegende Anwendung.**
+**Worktree ist eine universelle Fähigkeit, Arena ist eine darüber liegende Anwendung.**
 
-- Allgemeine Worktree-Ebene: `EnterWorktree`/`ExitWorktree`-Tools, `AgentTool`-Parameter `isolation`, Sitzungsstatusverwaltung, automatische Bereinigung
-- Arena-Ebene: Parallele Planung mehrerer Modelle, benutzerdefinierter Pfad `worktreeBaseDir`, Batch-Erstellung und Diff-Vergleich; verwendet weiterhin die bestehende Logik von `GitWorktreeService.setupWorktrees()`, unbeeinflusst von Änderungen an der allgemeinen Ebene
+- Universelle Worktree-Ebene: `EnterWorktree`/`ExitWorktree`-Tools, `AgentTool`-Parameter `isolation`, Sitzungszustandsverwaltung, automatische Bereinigung
+- Arena-Ebene: Multi-Modell-Parallelplanung, `worktreeBaseDir`-benutzerdefinierter Pfad, Massenerstellung und Diff-Vergleich. Verwendet weiterhin die bestehende Logik von `GitWorktreeService.setupWorktrees()`, unbeeinflusst von Änderungen auf der universellen Ebene.
 
-`isolation: 'worktree'` von `AgentTool` nutzt nur den allgemeinen Pfad; Arena erstellt Worktrees nicht über diesen Parameter. Beide Pfade sind unabhängig.
+`AgentTool` mit `isolation: 'worktree'` folgt nur dem universellen Pfad. Arena erstellt intern keine Worktrees über diesen Parameter; beide Pfade sind unabhängig.
 
 ## Pfade und Konfiguration
 
-### Allgemeiner Worktree-Pfad
+### Universeller Worktree-Pfad
 
-Worktrees, die durch das `EnterWorktree`-Tool oder `AgentTool` mit `isolation: 'worktree'` erstellt werden, werden fest abgelegt unter:
+Worktrees, die mit dem `EnterWorktree`-Tool oder `AgentTool` `isolation: 'worktree'` erstellt werden, werden fest abgelegt unter:
 
 ```
-{git-Repository-Stamm}/.qwen/worktrees/{slug}
+{git-Repository-Root}/.qwen/worktrees/{slug}
 ```
 
-Der Pfad ist nicht konfigurierbar. Namensregeln für Slug:
+Der Pfad ist nicht konfigurierbar. slug-Namensregeln:
 
-- Benutzersitzungs-Worktree: Vom Benutzer angegebener Name oder automatisch generiert (Format: `{Adjektiv}-{Nomen}-{4-stellige Zufallszahl}`)
-- Agent-Worktree: `agent-{7-stelliges zufälliges Hex}`
+- Benutzersitzungs-Worktree: vom Benutzer angegebener Name oder automatisch generiert (Format: `{Adjektiv}-{Nomen}-{4-stellige Zufallszahl}`)
+- Agent-Worktree: `agent-{7-stellige Hex-Zufallszahl}`
 
-### Arena-Worktree-Pfad (bereits vorhanden, unverändert)
+### Arena-Worktree-Pfad (bestehend, bleibt unverändert)
 
-Der Worktree-Pfad für Arena wird durch `agents.arena.worktreeBaseDir` gesteuert, Standard ist `~/.qwen/arena` (`ArenaManager.ts:125`). Er ist völlig unabhängig vom allgemeinen Pfad und wird nicht geändert.
+Der Arena-Worktree-Pfad wird durch `agents.arena.worktreeBaseDir` gesteuert, Standard `~/.qwen/arena` (`ArenaManager.ts:125`), vollständig unabhängig vom universellen Pfad, keine Änderungen.
 
 ### Erweiterte Konfiguration
 
-| Konfiguration                        | Typ        | Zweck                                                                 | Phase    |
-| ------------------------------------ | ---------- | --------------------------------------------------------------------- | -------- |
-| `ui.hideBuiltinWorktreeIndicator`    | `boolean`  | Ausblenden der eingebauten Zeile `⎇ worktree-… (…)` im Footer; Platz für benutzerdefinierte Statusleiste | Phase C |
-| `worktree.symlinkDirectories`        | `string[]` | Symbolische Links auf bestimmte Verzeichnisse (z. B. `node_modules`) im Worktree, um Speicherverschwendung zu vermeiden | Phase D |
-| `worktree.sparsePaths`               | `string[]` | Git-Sparse-Checkout-Kegelmodus; bei großen Monorepos nur angegebene Pfade auschecken | Future  |
+| Konfiguration                     | Typ        | Verwendung                                                                        | Phase    |
+| --------------------------------- | ---------- | --------------------------------------------------------------------------------- | ------- |
+| `ui.hideBuiltinWorktreeIndicator` | `boolean`  | Ausblenden der eingebauten `⎇ worktree-… (…)`-Zeile im Footer, für benutzerdefinierte Statusleiste | Phase C |
+| `worktree.symlinkDirectories`     | `string[]` | Symbolische Links der angegebenen Verzeichnisse (z. B. `node_modules`) in den Worktree, um Speicherplatz zu sparen | Phase D |
+| `worktree.sparsePaths`            | `string[]` | Git Sparse-Checkout-Kegelmodus, nur die angegebenen Pfade in großen Monorepos auschecken | Future  |
 
-Phase A/B fügen keine neuen Konfigurationsoptionen hinzu.
+Phase A / B fügen keine neuen Konfigurationselemente hinzu.
 
-## Werkzeugentwurf
+## Tool-Design
 
 ### EnterWorktree
 
-**Auslösebedingungen:** Der Benutzer sagt explizit „Starte ein Worktree“, „Verwende ein Worktree“, „Erstelle ein Worktree“ o. Ä. Das Tool sollte nicht automatisch ausgelöst werden, wenn der Benutzer „Fehler beheben“ oder „Funktion entwickeln“ sagt.
+**Auslösebedingung:** Der Benutzer verwendet explizit Begriffe wie "Starte einen Worktree", "Verwende einen Worktree", "Erstelle einen Worktree" usw. Es sollte nicht automatisch ausgelöst werden, wenn der Benutzer "Fehler beheben", "Funktion entwickeln" sagt.
 
-**Eingabeschema:**
+**Eingabe-Schema:**
 
 ```
-name?: string  // optional; Slug-Format: Buchstaben/Ziffern/Punkte/Unterstriche/Bindestriche, max. 64 Zeichen
+name?: string  // Optional, slug-Format: Buchstaben/Ziffern/Punkte/Unterstriche/Bindestriche, max. 64 Zeichen
 ```
 
 **Verhalten:**
 
-1. Prüfen, dass aktuell kein Worktree aktiv ist (Verschachtelung verhindern)
-2. Auflösen des Git-Repository-Stamms (auch wenn bereits in einem Unterverzeichnis)
-3. Aufruf von `GitWorktreeService`, um das Worktree zu erstellen; Pfad: `.qwen/worktrees/{slug}`
+1. Überprüfen, ob aktuell kein Worktree aktiv ist (Verschachtelung verhindern)
+2. Auflösen des Git-Repository-Roots (behandelt Fälle, in denen man sich bereits in einem Unterverzeichnis befindet)
+3. Aufruf von `GitWorktreeService` zum Erstellen des Worktrees, Pfad: `.qwen/worktrees/{slug}`
 4. Schreiben der Worktree-Sitzung in `SessionService`
 5. Wechseln des Arbeitsverzeichnisses in den Worktree-Pfad
-6. Leeren des Dateicaches
+6. Löschen des Dateicaches
 
 **Ausgabe:** `worktreePath`, `worktreeBranch`, `message`
 
 ### ExitWorktree
 
-**Auslösebedingungen:** Der Benutzer sagt „Beende das Worktree“, „Verlasse das Worktree“, „Geh zurück“ o. Ä.
+**Auslösebedingung:** Der Benutzer sagt "Worktree verlassen", "Worktree beenden", "Zurückgehen" usw.
 
-**Eingabeschema:**
+**Eingabe-Schema:**
 
 ```
 action: 'keep' | 'remove'
-discard_changes?: boolean  // nur gültig bei action='remove'
+discard_changes?: boolean  // Nur gültig bei action='remove'
 ```
 
-**Sicherheitsvorkehrungen:**
+**Sicherheitswächter:**
 
-- Arbeitet nur mit dem Worktree, das durch `EnterWorktree` in dieser Sitzung erstellt wurde.
-- Bei `action='remove'` und vorhandenen nicht committeten Änderungen wird die Ausführung verweigert (außer `discard_changes: true`).
+- Bearbeitet nur den Worktree, der in dieser Sitzung über `EnterWorktree` erstellt wurde
+- Bei `action='remove'` und vorhandenen nicht committeten Änderungen wird die Aktion verweigert (es sei denn, `discard_changes: true`)
 
 **Verhalten:**
 
-- `keep`: Löschen des Worktree-Status in der Sitzung; Worktree-Verzeichnis und Branch bleiben erhalten; ursprüngliches Arbeitsverzeichnis wiederherstellen.
-- `remove`: Löschen des Worktree-Verzeichnisses, Löschen des zugehörigen Git-Branches, Löschen des Sitzungsstatus, ursprüngliches Arbeitsverzeichnis wiederherstellen.
+- `keep`: Löscht den Worktree-Status in der Sitzung, behält das Worktree-Verzeichnis und den Branch, stellt das ursprüngliche Arbeitsverzeichnis wieder her
+- `remove`: Löscht das Worktree-Verzeichnis, löscht den entsprechenden Git-Branch, löscht den Sitzungsstatus, stellt das ursprüngliche Arbeitsverzeichnis wieder her
 
 **Ausgabe:** `action`, `originalCwd`, `worktreePath`, `worktreeBranch`
 
-## Auslösemechanismen für Benutzer
+## Benutzerauslösemethoden
 
-| Methode               | Beispiel                                                         | Implementierungsphase |
-| --------------------- | ---------------------------------------------------------------- | --------------------- |
-| Explizite Anfrage in der Sitzung | Benutzer sagt „Beginne mit der Arbeit in einem Worktree“ → Modell ruft EnterWorktree auf | Phase A               |
-| Agent-Isolierung      | Modell setzt für Sub-Agenten `isolation: 'worktree'`             | Phase B               |
-| CLI-Startflag         | `qwen --worktree my-feature`                                     | Phase D               |
+| Methode                   | Beispiel                                                       | Implementierungsphase |
+| ------------------------- | -------------------------------------------------------------- | --------------------- |
+| Explizite Anfrage in der Sitzung | Benutzer sagt "Beginne die Arbeit in einem Worktree" → Modell ruft EnterWorktree auf | Phase A |
+| Agent-Isolation           | Modell setzt `isolation: 'worktree'` für Sub-Agenten           | Phase B |
+| CLI-Startflag             | `qwen --worktree my-feature`                                   | Phase D |
 
-Keine Slash-Befehle. Die Auslösung eines Worktrees in der Sitzung hängt von der expliziten Erwähnung durch den Benutzer ab; `isolation: 'worktree'` ist das Szenario, in dem das Modell selbstständig entscheidet.
+Keine Slash-Befehle. Die Worktree-Auslösung in der Sitzung erfordert explizite Erwähnung durch den Benutzer; `isolation: 'worktree'` ist das Szenario, in dem das Modell selbstständig entscheidet.
 
-## Stufenweiser Implementierungsplan
+## Stufenweise Implementierungsplanung
 
-### Phase A: Kernwerkzeuge (Worktree auf Benutzersitzungsebene)
+### Phase A: Kern-Tools (Benutzersitzungsebene Worktree)
 
-**Ziel:** Benutzer können in einer Sitzung ein Worktree betreten/verlassen.
+**Ziel:** Benutzer können in der Sitzung Worktrees betreten/verlassen.
 
 **Zu implementierende Funktionen:**
 
-- `EnterWorktree`-Tool: Worktree erstellen, Arbeitsverzeichnis wechseln, Sitzungsstatus aufzeichnen
-- `ExitWorktree`-Tool: Zwei Beendigungsmodi (keep/remove), Sicherheitsvorkehrungen
-- Erweiterung von `GitWorktreeService`: Neue Methoden `createUserWorktree()` / `removeUserWorktree()` für einzelne Benutzersitzungen; Wiederverwendung der vorhandenen Git-Logik; keine Änderung der von Arena verwendeten Batch-Schnittstellen
-- Erweiterung von `SessionService`: Neues `WorktreeSession`-Feld mit `{ slug, worktreePath, worktreeBranch, originalCwd, originalBranch }`; Wiederherstellung des Worktree-Arbeitsverzeichnisses bei `--resume`
-- Tool-Prompt: Für jedes Werkzeug eine Nutzungsanleitung erstellen, die klar angibt, wann es aufzurufen ist und wann nicht
+- `EnterWorktree`-Tool: Erstellen eines Worktrees, Wechseln des Arbeitsverzeichnisses, Aufzeichnen des Sitzungsstatus
+- `ExitWorktree`-Tool: Zwei Austrittsmodi keep / remove, Sicherheitswächter
+- `GitWorktreeService`-Erweiterung: Neue Methoden `createUserWorktree()` / `removeUserWorktree()` für einzelne Benutzersitzungen, Wiederverwendung der vorhandenen Git-Operationslogik, keine Änderungen an den von Arena verwendeten Batch-Schnittstellen
+- `SessionService`-Erweiterung: Neues `WorktreeSession`-Feld, das `{ slug, worktreePath, worktreeBranch, originalCwd, originalBranch }` aufzeichnet; Wiederherstellung des Worktree-Arbeitsverzeichnisses bei `--resume`
+- Tool-Prompt: Schreiben einer Gebrauchsanweisung für jedes Tool, die klarstellt, wann es aufgerufen werden soll und wann nicht
 
 **Betroffene Dateien:**
 
-| Datei                                                 | Änderungsart                                    |
-| ----------------------------------------------------- | ----------------------------------------------- |
-| `packages/core/src/tools/tool-names.ts`               | Neue Konstanten `ENTER_WORKTREE`, `EXIT_WORKTREE` |
-| `packages/core/src/tools/EnterWorktreeTool/`          | Neues Verzeichnis: `EnterWorktreeTool.ts`, `prompt.ts` |
-| `packages/core/src/tools/ExitWorktreeTool/`           | Neues Verzeichnis: `ExitWorktreeTool.ts`, `prompt.ts` |
-| `packages/core/src/services/gitWorktreeService.ts`    | Neue Schnittstellen auf Benutzersitzungsebene (Arena-Schnittstellen unverändert) |
-| `packages/core/src/services/sessionService.ts`        | Neues Feld `WorktreeSession` sowie Lese-/Schreibmethoden |
-| `packages/core/src/tools/` Registrierungseinstieg     | Neue Werkzeuge registrieren                    |
-**Nicht in Phase A enthalten:**
+| Datei                                                       | Änderungstyp                                       |
+| ---------------------------------------------------------- | -------------------------------------------------- |
+| `packages/core/src/tools/tool-names.ts`                    | Neue Konstanten `ENTER_WORKTREE`, `EXIT_WORKTREE` |
+| `packages/core/src/tools/EnterWorktreeTool/`               | Neues Verzeichnis: `EnterWorktreeTool.ts`, `prompt.ts` |
+| `packages/core/src/tools/ExitWorktreeTool/`                | Neues Verzeichnis: `ExitWorktreeTool.ts`, `prompt.ts` |
+| `packages/core/src/services/gitWorktreeService.ts`         | Neue Benutzersitzungsschnittstelle (ohne Änderungen an Arena-Schnittstellen) |
+| `packages/core/src/services/sessionService.ts`             | Neues `WorktreeSession`-Feld sowie Lese-/Schreibmethoden |
+| `packages/core/src/tools/` Registrierungseinstiegspunkt    | Registrierung neuer Tools                          |
+
+**Nicht im Umfang von Phase A:**
 
 - Agent-Isolation (Phase B)
-- Hooks-Konfiguration etc. Post-Creation-Setup (Phase C)
+- Post-Creation-Setup wie Hooks-Konfiguration (Phase C)
 - UI-Statusanzeige (Phase C)
 
 ---
 
-### Phase B: Agent-Isolation (AgentTool `isolation: 'worktree'`) + Beschreibungsaktualisierung
+### Phase B: Agent-Isolation (`AgentTool` `isolation: 'worktree'`) + Beschreibungsaktualisierung
 
-**Ziel:** Das Modell kann für Subagenten ein temporäres isoliertes Worktree erstellen, das nach dem Agenten automatisch gelöscht wird; gleichzeitig werden die betroffenen Tool-Beschreibungen und Prompts aktualisiert.
+**Ziel:** Das Modell kann temporäre isolierte Worktrees für Sub-Agenten erstellen, die nach Agent-Ende automatisch bereinigt werden; gleichzeitige Aktualisierung betroffener Tool-Beschreibungen und Prompts.
 
 **Zu implementierende Funktionen:**
 
-_Agent-Isolation Kern:_
+_Agent-Isolationskern:_
 
 - `AgentTool` erhält neuen Parameter `isolation?: 'worktree'`
-- Beim Starten des Agenten wird ein temporäres Worktree erstellt (Slug: `agent-{7hex}`, Pfad: `.qwen/worktrees/agent-{7hex}`)
-- Nach Agent-Ende: Bei unverändertem Zustand automatisch löschen; bei Änderungen beibehalten, Pfad und Branch im Ergebnis zurückgeben
-- Automatische Bereinigung abgelaufener Worktrees: Scanne `.qwen/worktrees/`, match `agent-{7hex}`-Muster, lösche wenn älter als 30 Tage und keine ungepushten Commits, Fail-Closed-Strategie
+- Bei Agent-Start wird ein temporärer Worktree erstellt (slug: `agent-{7hex}`, Pfad: `.qwen/worktrees/agent-{7hex}`)
+- Nach Agent-Ende: Keine Änderungen → automatisch löschen; bei Änderungen → behalten, Pfad und Branch in Ergebnis zurückgeben
+- Automatische Bereinigung abgelaufener Worktrees: Scan `.qwen/worktrees/`, Muster `agent-{7hex}`, älter als 30 Tage und keine ungepushten Commits → löschen, Fail-closed-Strategie
 
 _Beschreibungs- und Prompt-Aktualisierung:_
 
-- `AgentTool`-description um Parameter `isolation: 'worktree'` ergänzen (Referenz zu claude-code `AgentTool/prompt.ts:272`)
-- `buildWorktreeNotice()` hinzufügen: Wenn ein Fork-Subagent in einem Worktree läuft, einen Kontexthinweis einfügen, der besagt, dass er sich in einem isolierten Worktree befindet, der Pfad vom übergeordneten Agenten übernommen wird und die Datei vor dem Bearbeiten erneut gelesen werden muss (Referenz zu claude-code `forkSubagent.ts:buildWorktreeNotice`)
+- `AgentTool`-Beschreibung um `isolation: 'worktree'`-Parameter ergänzen (Referenz: claude-code `AgentTool/prompt.ts:272`)
+- Neue `buildWorktreeNotice()`: Wenn ein geforkter Sub-Agent in einem Worktree läuft, wird ihm Kontexthinweis eingefügt, dass er sich in einem isolierten Worktree befindet, der Pfad vom übergeordneten Agenten geerbt wird und Dateien vor der Bearbeitung erneut gelesen werden müssen (Referenz: claude-code `forkSubagent.ts:buildWorktreeNotice`)
 
 _Keine Änderungen erforderlich:_
 
-- Review-Skill (`SKILL.md`): Review verwendet einen unabhängigen Mechanismus (Pfad `.qwen/tmp/review-pr-<n>`, über `qwen review fetch-pr`-Befehl erstellt), unterscheidet sich völlig von generischen Worktree-Pfaden und Mechanismen, es gibt keine Verwechslung
+- Review-Skill (`SKILL.md`): Review verwendet einen unabhängigen Mechanismus (Pfad `.qwen/tmp/review-pr-<n>`, erstellt über `qwen review fetch-pr`-Befehl), komplett unterschiedlich zum universellen Worktree-Pfad und -Mechanismus, keine Verwechslungsgefahr
 
-**Arena-Kompatibilitätsgarantie:** Arena erstellt keine Worktrees über den `isolation`-Parameter, diese Änderung berührt keine Arena-Code-Pfade.
+**Arena-Kompatibilitätsgarantie:** Arena erstellt keine Worktrees über den Parameter `isolation`. Diese Änderung berührt den Arena-Codepfad nicht.
 
 **Betroffene Dateien:**
 
-| Datei                                               | Änderungsart                                             |
-| --------------------------------------------------- | -------------------------------------------------------- |
-| `packages/core/src/tools/agent/agent.ts`           | Neuer `isolation`-Parameter plus Worktree-Erstellungs-/Löschlogik |
-| `packages/core/src/tools/agent/fork-subagent.ts`   | Neues `buildWorktreeNotice()` und Einspritzen im Worktree-Modus |
-| `packages/core/src/services/gitWorktreeService.ts` | Neue `createAgentWorktree()`/`removeAgentWorktree()`      |
-| `packages/core/src/services/worktreeCleanup.ts`    | Neu: Logik zur automatischen Bereinigung abgelaufener Worktrees |
+| Datei                                               | Änderungstyp                                       |
+| --------------------------------------------------- | -------------------------------------------------- |
+| `packages/core/src/tools/agent/agent.ts`            | Neuer `isolation`-Parameter und Logik zum Erstellen/Bereinigen von Worktrees |
+| `packages/core/src/tools/agent/fork-subagent.ts`    | Neue `buildWorktreeNotice()` und Injektion im Worktree-Modus |
+| `packages/core/src/services/gitWorktreeService.ts`  | Neue `createAgentWorktree()` / `removeAgentWorktree()` |
+| `packages/core/src/services/worktreeCleanup.ts`     | Neu: automatische Bereinigung abgelaufener Worktrees |
 
 ---
 
-### Phase C: Sitzungsintegrität (SessionService-Persistierung + UI-Sicherheitsnetz)
+### Phase C: Sitzungsintegrität (SessionService-Persistenz + UI-Sicherheitsnetz)
 
-**Ziel:** Der Worktree-Zustand kann nach einer Sitzungsunterbrechung wiederhergestellt werden, der Benutzer sieht immer, in welchem Worktree er sich befindet, und beim Verlassen der Sitzung gibt es eine Sicherheitsabfrage.
+**Ziel:** Worktree-Status nach Sitzungsunterbrechung wiederherstellbar, Benutzer wissen stets, in welchem Worktree sie sind, Sicherheitshinweis beim Verlassen der Sitzung.
 
 **Zu implementierende Funktionen:**
 
-_SessionService Worktree-Zustand persistieren + `--resume` Wiederherstellung:_
+_SessionService Worktree-Status-Persistenz + `--resume`-Wiederherstellung:_
 
-- `SessionService` erweitern um `WorktreeSession`-Felder, die `{ slug, worktreePath, worktreeBranch, originalCwd, originalBranch }` speichern
-- `EnterWorktreeTool` ruft `sessionService.setWorktreeSession()` auf, um den Zustand zu schreiben
-- `ExitWorktreeTool` ruft `sessionService.clearWorktreeSession()` auf, um den Zustand zu löschen
-- `--resume`-Startpfad liest dieses Feld, stellt `targetDir` wieder her und injiziert dem Modell einen Kontexthinweis
+- `SessionService` erweitert das `WorktreeSession`-Feld, das `{ slug, worktreePath, worktreeBranch, originalCwd, originalBranch }` aufzeichnet
+- `EnterWorktreeTool` ruft `sessionService.setWorktreeSession()` zum Schreiben des Status auf
+- `ExitWorktreeTool` ruft `sessionService.clearWorktreeSession()` zum Löschen des Status auf
+- Beim Start mit `--resume` wird dieses Feld gelesen, `targetDir` wiederhergestellt und dem Modell ein Kontexthinweis eingefügt
 
 _Post-Creation-Setup:_
 
-- Nach Worktree-Erstellung automatisch `git config core.hooksPath <mainRepo>/.git/hooks` ausführen, um sicherzustellen, dass Commits im Worktree das gleiche Hook-Verhalten wie das Hauptrepo haben
+- Nach Erstellung des Worktrees wird automatisch `git config core.hooksPath <mainRepo>/.git/hooks` ausgeführt, um sicherzustellen, dass Commits im Worktree das gleiche Hooks-Verhalten wie im Haupt-Repository haben
 
 _StatusLine Worktree-Anzeige:_
 
-- `UIStateContext` erhält neues Feld `activeWorktree` (aus Session-Zustand gelesen), wird beim Betreten/Verlassen eines Worktrees aktualisiert
-- `StatusLineCommandInput`-Payload erhält neues Feld `worktree?: { slug: string; branch: string }`, das von benutzerdefinierten Statusline-Skripten verwendet werden kann
-- `Footer` zeigt bei nicht-leerem `activeWorktree` eine Zeile `⎇ <branch> (<slug>)` an, ohne dass der Benutzer ein Statusline-Skript konfigurieren muss, um grundlegende Sichtbarkeit zu gewährleisten
+- `UIStateContext` erhält neues `activeWorktree`-Feld (aus Sitzungsstatus gelesen), aktualisiert beim Betreten/Verlassen des Worktrees
+- `StatusLineCommandInput` erhält neues Feld `worktree?: { slug: string; branch: string }` für benutzerdefinierte Statusleisten-Skripte
+- `Footer` zeigt bei nicht leerem `activeWorktree` eine eingebaute Zeile `⎇ <branch> (<slug>)` an, ohne dass der Benutzer ein Statusleisten-Skript konfigurieren muss, um grundlegende Sichtbarkeit zu erhalten
 
 _WorktreeExitDialog:_
 
-- Neue Komponente `WorktreeExitDialog.tsx`, angelehnt an vorhandene Dialog-Implementierung
-- Ändern der Behandlung der Exit-Tasten (Strg+C/Strg+D): Bei gesetztem `activeWorktree` nach erstem Drücken abfangen und den Dialog anzeigen, in dem der Benutzer zwischen „Behalten“ und „Löschen“ wählen kann
-- Keep-/Remove-Operationen nutzen die vorhandenen Pfade von `ExitWorktreeTool`
+- Neue Komponente `WorktreeExitDialog.tsx`, angelehnt an bestehende Dialog-Schreibweise
+- Änderung der Beendigungstasten (Ctrl+C / Ctrl+D): Wenn `activeWorktree` nicht leer ist, wird die zweite Bestätigung abgefangen und ein Dialog angezeigt, der den Benutzer auffordert, keep oder remove zu wählen
+- keep / remove verwenden bestehende Pfade von `ExitWorktreeTool`
 
 **Betroffene Dateien:**
 
-| Datei                                                          | Änderungsart                                                               |
-| ------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `packages/core/src/services/sessionService.ts`                | Neues `WorktreeSession`-Feld sowie Lese-/Schreibmethoden                   |
-| `packages/core/src/tools/enter-worktree.ts`                   | Aufruf von `sessionService.setWorktreeSession()`                           |
-| `packages/core/src/tools/exit-worktree.ts`                    | Aufruf von `sessionService.clearWorktreeSession()`                         |
-| `packages/core/src/services/gitWorktreeService.ts`            | Nach `createUserWorktree()`/`createAgentWorktree()` zusätzlich `core.hooksPath` setzen |
-| `packages/cli/src/ui/contexts/UIStateContext.tsx`             | Neues `activeWorktree`-Feld und set/delete-Aktion                          |
-| `packages/cli/src/ui/hooks/useStatusLine.ts`                  | `StatusLineCommandInput` um `worktree`-Feld ergänzt                        |
-| `packages/cli/src/ui/components/Footer.tsx`                   | Eingebaute Worktree-Zeilenanzeige                                          |
-| `packages/cli/src/ui/components/WorktreeExitDialog.tsx`       | Neu                                                                        |
-| `packages/cli/src/ui/components/DialogManager.tsx`            | Registrierung von `WorktreeExitDialog`                                     |
-| `packages/cli/src/ui/components/ExitWarning.tsx` oder Tastenbehandlung | Erkennung von `activeWorktree` und Abfangen der Exit-Taste       |
+| Datei                                                         | Änderungstyp                                       |
+| ------------------------------------------------------------- | ------------------------------------------------- |
+| `packages/core/src/services/sessionService.ts`                | Neues `WorktreeSession`-Feld sowie Lese-/Schreibmethoden |
+| `packages/core/src/tools/enter-worktree.ts`                  | Aufruf von `sessionService.setWorktreeSession()`  |
+| `packages/core/src/tools/exit-worktree.ts`                   | Aufruf von `sessionService.clearWorktreeSession()` |
+| `packages/core/src/services/gitWorktreeService.ts`           | Nach `createUserWorktree()` / `createAgentWorktree()` Anhängen der `core.hooksPath`-Konfiguration |
+| `packages/cli/src/ui/contexts/UIStateContext.tsx`             | Neues Feld `activeWorktree` und set/clear-Action |
+| `packages/cli/src/ui/hooks/useStatusLine.ts`                 | Neues Feld `worktree` in `StatusLineCommandInput` |
+| `packages/cli/src/ui/components/Footer.tsx`                   | Eingebaute Anzeige der Worktree-Zeile            |
+| `packages/cli/src/ui/components/WorktreeExitDialog.tsx`       | Neu erstellt                                     |
+| `packages/cli/src/ui/components/DialogManager.tsx`            | Registrierung von `WorktreeExitDialog`          |
+| `packages/cli/src/ui/components/ExitWarning.tsx` oder Tastenbehandlung | Erkennung von `activeWorktree` und Abfangen der Beendigung |
 
 ---
 
-### Phase D: Startkonfiguration (`--worktree` CLI-Flag + Verzeichnis-Symlink + PR-Referenz)
+### Phase D: Startkonfiguration (`--worktree` CLI-Flag + Verzeichnis-Symbolische Links + PR-Referenz)
 
-**Ziel:** Direktes Betreten eines Worktrees beim Start, Reduzierung des Festplattenaufwands bei großen Projekten durch Verzeichnis-Symlinks, sowie schnelles Erstellen eines Worktrees basierend auf einem Pull Request über PR-Referenz.
+**Ziel:** Unterstützung des direkten Eintritts in einen Worktree beim Start, Reduzierung des Speicherplatzes großer Projekte durch symbolische Links und schnelle Erstellung eines Worktrees basierend auf einem Pull Request über PR-Referenz.
 
-**Umfang:** Drei Funktionen werden in einer Phase gemeinsam umgesetzt, da sie alle am selben Starteinstiegspunkt hängen und Symlink/PR-Fetch beide sofort nach der Worktree-Erstellung ausgeführt werden müssen – eine separate Aufteilung würde die Bootstrap-Sequenz wiederholt ändern.
+**Umfang:** Drei Funktionen werden in einer Phase gemeinsam umgesetzt, da sie alle am gleichen Starteinstiegspunkt hängen und Symlink-/PR-Fetch beide unmittelbar nach der Worktree-Erstellung ausgeführt werden müssen – eine separate Aufteilung würde die Bootstrap-Sequenz mehrmals ändern.
 
-#### D-1: `--worktree [name]` CLI-Start-Flag
+#### D-1: `--worktree [name]` CLI-Startflag
 
-**Parameterform:** yargs-Option akzeptiert drei Formen:
+**Parameterform:** Yargs-Option akzeptiert drei Formen:
 
-| Form                      | Verhalten                                                                 |
-| ------------------------- | ------------------------------------------------------------------------- |
-| `qwen --worktree`         | Bare Flag, generiert automatisch einen Slug (`{Adjektiv}-{Nomen}-{6hex}`) |
-| `qwen --worktree my-name` | Expliziter Slug, folgt denselben Slug-Validierungsregeln wie `EnterWorktreeTool` |
-| `qwen --worktree=my-name` | Äquivalent zur vorherigen Form                                            |
-Kein kurzer Alias `-w` (qwen-code behält kurze Aliase nur für die am häufigsten verwendeten Parameter vor, um Namenskonflikte zu vermeiden).
+| Form                         | Verhalten                                                   |
+| ---------------------------- | ----------------------------------------------------------- |
+| `qwen --worktree`            | Bare Flag, automatische slug-Erzeugung (`{Adjektiv}-{Nomen}-{6hex}`) |
+| `qwen --worktree my-name`    | Expliziter slug, übernimmt slug-Validierungsregeln von `EnterWorktreeTool` |
+| `qwen --worktree=my-name`    | Äquivalent zur vorherigen                                   |
 
-**Startreihenfolge:** Der Worktree wird an folgenden Stellen erstellt:
+Kein kurzer Alias `-w` (qwen-code reserviert kurze Aliase nur für die häufigsten Parameter, um Namenskonflikte zu vermeiden).
+
+**Startsequenz:** Der Worktree wird an folgender Stelle erstellt:
 
 1. `parseArguments()` parst argv (bereits vorhanden)
-2. Resume Picker (bereits vorhanden, Zeile 588-629 von `gemini.tsx`)
-3. `loadCliConfig()` initialisiert Config + Auth (bereits vorhanden, Zeile 643-653)
-4. **Neu:** Falls `argv.worktree !== undefined`, wird `createUserWorktree()` aufgerufen
-   - Sidecar schreiben (`writeWorktreeSession()`)
-   - `process.chdir(worktreePath)` setzen, gleichzeitig `Config.setTargetDir(worktreePath)`
-   - Re-attach-Pfad für denselben Worktree: Überspringe `git worktree add` und chdir in-place (wird in Phase 6 behoben). Kombinationen von `--resume` × `--worktree` mit unterschiedlichem projectHash schlagen in der Session-Suche fehl, siehe unten unter "Priorität gegenüber `--resume`".
-5. Hauptschleife (TUI / Headless `-p` / ACP – alle drei Einstiegspunkte müssen Schritt 4 durchlaufen)
+2. Resume-Auswahl (bereits vorhanden, Zeile 588-629 von `gemini.tsx`)
+3. `loadCliConfig()` initialisiert Config + auth (bereits vorhanden, Zeile 643-653)
+4. **Neu:** Wenn `argv.worktree !== undefined`, Aufruf von `createUserWorktree()`
+   - Schreiben in Sidecar (`writeWorktreeSession()`)
+   - Setzen von `process.chdir(worktreePath)` gleichzeitig `Config.setTargetDir(worktreePath)`
+   - Re-attach-Pfad desselben Worktrees: Überspringen von `git worktree add` und direktes chdir (Phase-6-Fix). Kombination `--resume` × `--worktree` über verschiedene projectHash hinweg schlägt in der Session-Lookup-Phase fehl, siehe unten "Priorität mit `--resume`".
+5. Hauptschleife (TUI / headless `-p` / ACP – alle drei Einstiegspunkte müssen Schritt 4 durchlaufen)
 
-**Unterschied zur Vereinfachung von Phase A:** Das `EnterWorktreeTool` aus Phase A ändert **nicht** `Config.targetDir`; es verlässt sich darauf, dass das Modell aus dem Tool-Ergebnis den absoluten Pfad ausliest und damit weiterarbeitet. Das CLI-Flag von Phase D wirkt bereits beim Start, ohne dass ein laufender Modellkontext kompatibel sein muss. Daher wird **direkt** `targetDir` und `process.cwd()` umgeschaltet – das bietet eine stärkere Isolationsgarantie. Die beiden Pfade verhalten sich unterschiedlich, was in der Benutzerdokumentation erläutert werden muss.
+**Unterschied zu Phase-A-Vereinfachung:** Phase A's `EnterWorktreeTool` ändert **nicht** `Config.targetDir`, das Modell liest den absoluten Pfad aus dem Tool-Ergebnis und verwendet ihn weiter. Das CLI-Flag von Phase D wirkt bereits in der Startphase, es gibt keinen laufenden Modellkontext, der kompatibel sein muss, daher wird **direkt `targetDir` und `process.cwd()` umgeschaltet** – eine stärkere Isolationsgarantie. Die beiden Pfade verhalten sich unterschiedlich, was in der Benutzerdokumentation erläutert werden muss.
 
-**Verhalten beim Beenden:** Der vorhandene `WorktreeExitDialog` wird wiederverwendet (bereits in Phase C implementiert). Zweimaliges Drücken von Ctrl+C/D → Benutzer wählt zwischen keep / remove / cancel. Kein neuer Codepfad erforderlich.
+**Austrittsverhalten:** Wiederverwendung des vorhandenen `WorktreeExitDialog` (bereits in Phase C implementiert). Strg+C/D zweimal auslösen → Benutzer wählt zwischen keep / remove / cancel. Kein neuer Codepfad erforderlich.
 
-**Priorität gegenüber `--resume`:**
+**Priorität mit `--resume`:**
 
-Da die Session-Speicherung mit `projectHash(process.cwd())` als Schlüssel erfolgt und `--worktree` bereits vor dem Resume Picker / `loadCliConfig` das Verzeichnis zum Worktree wechselt, ist es **architektonisch nicht erreichbar**, eine Session, die in Worktree X gestartet wurde, von Worktree Y aus fortzusetzen (die projectHashs sind unterschiedlich, die Session-Dateien liegen in verschiedenen Verzeichnissen). Die folgende Tabelle spiegelt das tatsächliche Verhalten nach der D-1-Implementierung + dem Phase-6-Re-attach-Fix wider:
+Da die Sitzungsspeicherung mit `projectHash(process.cwd())` als Schlüssel erfolgt und `--worktree` bereits vor der Resume-Auswahl / `loadCliConfig` per chdir in den Worktree wechselt, ist es **architektonisch unmöglich**, eine "in Worktree X gestartete Sitzung aus Worktree Y heraus fortzusetzen" (die projectHash sind unterschiedlich, die Sitzungsdateien liegen in verschiedenen Verzeichnissen). Die folgende Tabelle zeigt das tatsächliche Verhalten nach D-1-Implementierung + Phase-6-Re-attach-Fix:
 
-| `--resume`-Status                     | `--worktree`-Status                    | Ergebnis                                                                                             |
-| ------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Kein                                  | Kein                                   | Normale Session, kein Worktree                                                                       |
-| Kein                                  | Ja (neuer Slug)                        | Neuen Worktree erstellen                                                                             |
-| Kein                                  | Ja (bereits vorhandener Slug)          | **Re-attach** an vorhandenen Worktree (Phase-6-Fix)                                                  |
-| Ja                                    | Kein                                   | Alten Worktree wiederherstellen (Phase-C-Verhalten, Sidecar-Treffer führt zu Reminder-Injection)     |
-| Ja (sid stammt aus demselben Worktree) | Ja (gleicher Slug, Re-attach)          | Re-attach + Session-Treffer: normales Resume                                                         |
-| Ja (sid stammt aus Main Checkout)    | Ja (beliebiger Slug)                   | **Session-Suche fehlgeschlagen**: `No saved session found with ID …`, exit 1. Dokumentierte Einschränkung |
-| Ja (sid stammt aus Worktree X)       | Ja (Slug Y, X != Y)                    | Wie oben, Session kann über verschiedene projectHashs nicht gefunden werden                          |
+| `--resume`-Status                 | `--worktree`-Status                  | Ergebnis                                                                                      |
+| --------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Kein                              | Kein                                 | Normale Sitzung, kein Worktree                                                                |
+| Kein                              | Ja (neuer slug)                      | Neuen Worktree erstellen                                                                      |
+| Kein                              | Ja (bereits vorhandener slug)        | **Re-attach** an vorhandenen Worktree (Phase-6-Fix)                                           |
+| Ja                                | Kein                                 | Alten Worktree wiederherstellen (Phase-C-Verhalten, Sidecar-Treffer injiziert Reminder)       |
+| Ja (sid stammt aus selbem Worktree) | Ja (selber slug, re-attach)        | Re-attach + Session-Treffer: Normales Resume                                                  |
+| Ja (sid stammt aus main checkout) | Ja (beliebiger slug)                | **Session-Lookup fehlgeschlagen**: `No saved session found with ID …`, exit 1. Dokumentierte Einschränkung |
+| Ja (sid stammt aus Worktree X)    | Ja (slug Y, X != Y)                  | Gleiches Problem, Session kann über verschiedene projectHash nicht gefunden werden            |
 
+Die Semantik eines projectHash-Overrides (Übertrag des `--worktree` zwischen verschiedenen Worktrees / main-Checkout-Sessions) erfordert eine Verankerung des Speichers auf Repository-Root-Ebene statt cwd-abgeleitetem projectHash – dies gehört zu einer zukünftigen Config-Refaktorisierung. Der `overrodeResumedWorktree`-Zweig in `persistStartupWorktreeSidecar` wird für den Fall dieser Refaktorisierung beibehalten, damit er dann automatisch wirkt; derzeit wird er im Produktionspfad nicht ausgelöst.
 
-Eine Überschreibung des projectHash (Übertragen einer `--worktree`-Session zwischen verschiedenen Worktrees / Main Checkout) würde eine Verankerung des Storages auf Repo-Root-Ebene anstelle des cwd-abgeleiteten projectHash erfordern. Dies gehört in den Bereich einer zukünftigen Config-Umstrukturierung. Der `overrodeResumedWorktree`-Zweig in `persistStartupWorktreeSidecar` bleibt erhalten, damit er nach der Umstrukturierung automatisch greift; im aktuellen Produktionspfad wird er nicht ausgelöst.
-
-#### D-2: Konfigurationsoption `worktree.symlinkDirectories`
+#### D-2: `worktree.symlinkDirectories`-Konfiguration
 
 **Schema:**
 
@@ -295,46 +296,46 @@ Eine Überschreibung des projectHash (Übertragen einer `--worktree`-Session zwi
 }
 ```
 
-- Typ: `string[]`, Standardwert `undefined` (deaktiviert, Opt-in)
-- Der Namespace `worktree` auf oberster Ebene ist neu (wird in `settingsSchema.ts` alphabetisch zwischen `tools` und `ui` eingefügt)
-- Pfade sind **relativ zum Haupt-Repo-Root**; absolute Pfade oder Pfade mit `..` werden durch einen Path-Traversal-Guard abgewiesen
+- Typ: `string[]`, Standard `undefined` (nicht aktiviert, Opt-in)
+- Der oberste Namespace `worktree` ist neu (wird in `settingsSchema.ts` alphabetisch zwischen `tools` und `ui` eingefügt)
+- Pfade **relativ zum Haupt-Repository-Root**, absolute Pfade oder Pfade mit `..` werden durch einen Pfad-Traversal-Guard abgelehnt
 
-**Wirkungsbereich:** Alle von der generischen Ebene erstellten Worktrees, einschließlich:
+**Anwendungsbereich:** Alle von der universellen Ebene erstellten Worktrees, einschließlich:
 
 - `EnterWorktreeTool` (Phase A)
 - `AgentTool` `isolation: 'worktree'` (Phase B)
 - `--worktree` CLI-Flag (Phase D-1)
 
-Worktrees der Arena durchlaufen nicht die generische Ebene und **werden** von dieser Konfiguration **nicht** beeinflusst.
+Arenas Worktrees durchlaufen nicht die universelle Ebene und **bleiben** von dieser Konfiguration **unbeeinflusst**.
 
-**Implementierungsort:** `GitWorktreeService.performPostCreationSetup()` – direkt im Anschluss an die bestehende `configureHooksPath()` (bereits in Phase C etabliertes Muster). Neue Methode `symlinkConfiguredDirectories()` wird hinzugefügt, die für jeden Eintrag `fs.symlink(absSource, absDest, 'dir')` aufruft.
+**Implementierungsort:** `GitWorktreeService.performPostCreationSetup()` – direkt im Anschluss an die vorhandene `configureHooksPath()` (bereits in Phase C etabliert). Neue Methode `symlinkConfiguredDirectories()`, die für jedes konfigurierte Element `fs.symlink(absSource, absDest, 'dir')` aufruft.
 
-**Fehlerbehandlung (Fail-Open):**
+**Fehlerbehandlung (Fail-open):**
 
-| Szenario                           | Verhalten                                       |
-| ---------------------------------- | ----------------------------------------------- |
-| Quellverzeichnis existiert nicht (ENOENT)       | Still überspringen, Debug-Log                   |
-| Zielpfad existiert bereits (EEXIST)            | Still überspringen, Debug-Log (keine Überschreibung) |
-| Path Traversal (`../`, absolute Pfade usw.)    | Eintrag ablehnen, Debug-Log Warnung             |
-| Andere I/O-Fehler                     | Debug-Log Warnung, mit restlichen Einträgen fortfahren |
+| Szenario                     | Verhalten                       |
+| ---------------------------- | ------------------------------- |
+| Quellverzeichnis existiert nicht (ENOENT) | Stille Überspringung, Debug-Log |
+| Zielpfad existiert bereits (EEXIST) | Stille Überspringung, Debug-Log (kein Überschreiben) |
+| Pfad-Traversal (`../`, absolute Pfade etc.) | Element ablehnen, Debug-Log-Warnung |
+| Andere I/O-Fehler            | Debug-Log-Warnung, Fortsetzung mit nächstem Element |
 
-Die Worktree-Erstellung selbst wird **nicht** aufgrund eines fehlgeschlagenen Symlinks abgebrochen – identisch mit dem "Best-Effort-Post-Creation-Setup"-Prinzip von `configureHooksPath()`.
+Die Worktree-Erstellung selbst **wird** wegen eines fehlgeschlagenen Symlinks **nicht abgebrochen** – gleiches "Best-Effort-Post-Creation-Setup"-Prinzip wie `configureHooksPath()`.
 
 #### D-3: PR-Referenzauflösung (`--worktree=#<N>` / vollständige URL)
 
-**Unterstützte Formate:**
+**Unterstützte Formen:**
 
-| Form                                                            | Aufgelöste PR-Nummer |
-| --------------------------------------------------------------- | -------------------- |
-| `--worktree=#123`                                               | 123                  |
-| `--worktree '#123'`                                             | 123                  |
-| `--worktree https://github.com/foo/bar/pull/123`                | 123                  |
+| Form                                                             | Aufgelöste PR-Nummer |
+| ---------------------------------------------------------------- | -------------------- |
+| `--worktree=#123`                                                | 123                  |
+| `--worktree '#123'`                                              | 123                  |
+| `--worktree https://github.com/foo/bar/pull/123`                 | 123                  |
 | `--worktree https://gh.enterprise.com/foo/bar/pull/123?baz=qux` | 123                  |
 
-**Slug- und Branch-Namensgebung:**
+**Slug- und Branch-Benennung:**
 
-- Slug: `pr-<N>` (spezielles reserviertes Präfix, unterscheidet sich von Benutzer-Slugs)
-- Branch: `worktree-pr-<N>` (übernimmt die bestehende `worktree-<slug>`-Namenskonvention von qwen-code; verwendet nicht die direkte `pr-<N>`-Benennung von claude-code, um Konflikte mit lokalen `pr-<N>`-Branches zu vermeiden)
+- slug: `pr-<N>` (speziell reserviertes Präfix, zur Unterscheidung von Benutzer-Slugs)
+- Branch: `worktree-pr-<N>` (übernimmt qwen-code's existierende `worktree-<slug>`-Namensregel; verwendet nicht claude-code's `pr-<N>`-direkte Benennung, um Konflikte mit lokalen `pr-<N>`-Branches zu vermeiden)
 
 **Fetch-Strategie:**
 
@@ -343,53 +344,54 @@ git fetch origin pull/<N>/head
 → FETCH_HEAD als Basis für den neuen Worktree verwenden
 ```
 
-Keine Abhängigkeit von der `gh`-CLI – reines `git fetch`, unterstützt jede GitHub-Instanz (öffentlich oder Enterprise), solange das Remote `origin` auf GitHub zeigt.
+Nicht abhängig von `gh` CLI – reiner Git-Fetch, unterstützt jede GitHub-Instanz (öffentlich oder Enterprise), solange der `origin`-Remote auf GitHub verweist.
 
 **Fehlerpfade:**
 
-| Szenario                              | Fehlermeldung                                                                                |
-| ------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Remote `origin` fehlt                 | `--worktree=#<N> requires an "origin" remote that points at GitHub.`                         |
-| `git fetch` schlägt fehl             | `Failed to fetch PR #<N>: PR may not exist or origin remote is unreachable.`                 |
-| Netzwerk-Timeout (30s)                | Wie oben, mit Zusatz `(timeout)`                                                             |
-| Remote `origin` ist nicht GitHub      | Keine aktive Prüfung; `git fetch` schlägt dann von selbst fehl (PR-Protokoll ist GitHub-spezifisch) |
-**Beziehung zu D-2:** PR-Worktree wendet **ebenfalls** `symlinkDirectories` an (Nutzer erwarten, sofort Tests im PR ausführen zu können, Abhängigkeitsverzeichnisse müssen wiederverwendet werden).
+| Szenario                          | Fehlermeldung                                                                 |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| `origin`-Remote fehlt             | `--worktree=#<N> erfordert einen "origin"-Remote, der auf GitHub verweist.`   |
+| `git fetch` schlägt fehl          | `Fehler beim Abrufen von PR #<N>: PR existiert möglicherweise nicht oder der origin-Remote ist nicht erreichbar.` |
+| Netzwerk-Timeout (30s)            | Gleiche Meldung, plus `(Zeitüberschreitung)`                                  |
+| `origin`-Remote ist nicht GitHub  | Keine aktive Prüfung, Fehlschlag erfolgt natürlich über `git fetch` (PR-Protokoll ist GitHub-spezifisch) |
+
+**Beziehung zu D-2:** PR-Worktrees **wenden ebenfalls** `symlinkDirectories` an (der Benutzer erwartet, dass er sofort Tests auf dem PR ausführen kann, abhängige Verzeichnisse müssen wiederverwendet werden).
 
 #### Betroffene Dateien
 
-| Datei                                                         | Änderungstyp                                                                                                                             |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/cli/src/config/config.ts`                          | yargs neue Option `--worktree`; `CliArgs` Interface erhält `worktree?: string \| boolean`                                                |
-| `packages/cli/src/gemini.tsx`                                | Aufruf des neuen Helpers `setupStartupWorktree()` nach `loadCliConfig()`, vor der Hauptschleife                                         |
-| `packages/cli/src/startup/worktreeStartup.ts`                | Neu: `setupStartupWorktree()` behandelt Slug-Parsing, PR-Fetch, Sidecar-Schreiben, CWD-Wechsel                                           |
-| `packages/cli/src/nonInteractiveCli.ts`                      | Verwendet denselben Helper (bestehende `restoreWorktreeContext` Injectionslogik, keine Änderung nötig)                                   |
-| `packages/cli/src/acp-integration/acpAgent.ts`               | Verwendet denselben Helper                                                                                                               |
-| `packages/core/src/services/gitWorktreeService.ts`           | Neu: `parsePRReference()`, `fetchPullRequestRef()`, `symlinkConfiguredDirectories()`; `createUserWorktree()` akzeptiert optionalen `baseBranchRef` Parameter |
-| `packages/cli/src/config/settingsSchema.ts`                  | Neuer Top-Level-Eintrag `worktree.symlinkDirectories: string[]`                                                                          |
-| `packages/vscode-ide-companion/schemas/settings.schema.json` | Neu generiert                                                                                                                            |
-| `docs/users/features/worktree.md`                            | Neues Kapitel „Quick Start CLI flag“, Settings-Tabelle um eine Zeile erweitert                                                           |
+| Datei                                                        | Änderungstyp                                       |
+| ------------------------------------------------------------ | -------------------------------------------------- |
+| `packages/cli/src/config/config.ts`                          | yargs erhält neue `--worktree`-Option; `CliArgs`-Schnittstelle erhält `worktree?: string \| boolean` |
+| `packages/cli/src/gemini.tsx`                                | Nach `loadCliConfig()`, vor der Hauptschleife, Aufruf des neuen `setupStartupWorktree()`-Helpers |
+| `packages/cli/src/startup/worktreeStartup.ts`                | Neu: `setupStartupWorktree()` für slug-Auflösung, PR-Fetch, Sidecar-Schreiben, cwd-Wechsel |
+| `packages/cli/src/nonInteractiveCli.ts`                      | Wiederverwendung desselben Helpers (bereits vorhandene `restoreWorktreeContext`-Injektionslogik, keine Änderungen nötig) |
+| `packages/cli/src/acp-integration/acpAgent.ts`               | Wiederverwendung desselben Helpers                 |
+| `packages/core/src/services/gitWorktreeService.ts`           | Neue Methoden: `parsePRReference()`, `fetchPullRequestRef()`, `symlinkConfiguredDirectories()`; `createUserWorktree()` erhält optionalen Parameter `baseBranchRef` |
+| `packages/cli/src/config/settingsSchema.ts`                  | Neues Top-Level-Element `worktree.symlinkDirectories: string[]` |
+| `packages/vscode-ide-companion/schemas/settings.schema.json` | Neu generieren                                     |
+| `docs/users/features/worktree.md`                            | Neuer Abschnitt für Quick Start CLI-Flag, neue Zeile in Settings-Tabelle |
 
 #### Sicherheit und Rollback
 
-- **Fail-Open vs. Fail-Close:** Fehler bei Symlinks/Hooks **unterbrechen** die Worktree-Erstellung **nicht** (gleiches Muster wie Phase C); Fehler beim PR-Fetch **unterbrechen** den Start (ohne Base-Ref kann kein Worktree erstellt werden); Fehler bei der Slug-Validierung **unterbrechen** den Start (konsistent mit `EnterWorktreeTool`).
-- **Path Traversal:** Alle Einträge in `symlinkDirectories` müssen nach Auflösung noch innerhalb von `repoRoot` liegen, andernfalls wird der Eintrag abgelehnt und geloggt.
-- **PR-Fetch-Timeout:** Hartes Timeout von 30 Sekunden, um hängende Netzwerke nicht den Start blockieren zu lassen.
-- **Nebenwirkungen des CWD-Wechsels:** Nach dem Ändern von `process.cwd()` wird die Auflösung relativer Pfade (z. B. `--prompt-file ./foo.txt`) beeinflusst. **Gegenmaßnahme:** Alle relativen Pfadargumente werden vor dem CWD-Wechsel normalisiert (konkret einmalig zu Beginn von `setupStartupWorktree()`).
+- **Fail-open vs Fail-close:** Fehlschlag von Symlink/Hooks **bricht** die Worktree-Erstellung **nicht ab** (gleiches Muster wie Phase C); Fehlschlag von PR-Fetch **bricht** den Start **ab** (ohne Basis-Ref kann kein Worktree erstellt werden); Fehlschlag der slug-Validierung **bricht** den Start **ab** (konsistent mit `EnterWorktreeTool`).
+- **Pfad-Traversal:** `symlinkDirectories`-Einträge müssen nach Auflösung innerhalb des `repoRoot` liegen, andernfalls Ablehnung des Eintrags und Log-Eintrag.
+- **PR-Fetch-Timeout:** Harte 30-Sekunden-Timeout, um zu verhindern, dass ein nicht antwortendes Netzwerk den Start aufhält.
+- **Nebenwirkungen des cwd-Wechsels:** Nach dem Wechsel von `process.cwd()` kann die Auflösung relativer Pfade (z. B. `--prompt-file ./foo.txt`) beeinträchtigt sein. **Gegenmaßnahme:** Vor dem cwd-Wechsel alle relativen Pfadparameter normalisieren (genauer: am Einstieg von `setupStartupWorktree()` einmal normalisieren).
 
 #### Offene Fragen
 
-1. **`--worktree-keep-on-exit`?** claude-code hat das nicht. Braucht qwen-code ein CLI-Flag, damit der Exit-Dialog standardmäßig „Behalten“ wählt? Vorschlag: **zunächst nicht hinzufügen**, auf Nutzerfeedback warten.
-2. **Benötigt `worktree.symlinkDirectories` ein Per-Project-Override?** Die aktuellen Einstellungen unterstützen bereits eine Drei-Ebenen-Zusammenführung (user/workspace/project), keine Sonderbehandlung nötig.
-3. **Soll der PR-Fetch den `merge`-Ref (`pull/<N>/merge`, also den mit dem Base gemergten Ref) statt `head` holen?** claude-code verwendet `head` mit der Begründung, dass Nutzer normalerweise die tatsächlichen Änderungen des PR sehen möchten. Wir folgen dieser Wahl.
+1. **`--worktree-keep-on-exit`?** claude-code hat es nicht. Braucht qwen-code ein CLI-Flag, das den Exit-Dialog standardmäßig auf keep setzt? Vorschlag: **vorerst nicht hinzufügen**, auf Benutzerfeedback warten.
+2. **Muss `worktree.symlinkDirectories` per-Projekt-Override unterstützen?** Die aktuelle Einstellungen unterstützen bereits die dreistufige Zusammenführung von User/Workspace/Project, keine spezielle Behandlung nötig.
+3. **Soll PR-Fetch die `merge`-Ref (`pull/<N>/merge`, also den mit der Basis gemergten Ref) statt `head` abrufen?** claude-code wählt `head`. Begründung: Benutzer möchten normalerweise die tatsächlichen Änderungen des PR sehen. Diese Wahl wird übernommen.
 
 ---
 
-### Zukunft: Erweiterte Funktionen (nach Bedarf)
+### Future: Erweiterte Funktionen (nach Bedarf)
 
-Die folgenden Funktionen sind für spezifischere Anwendungsszenarien gedacht, werden in dieser Phase nicht eingeplant und erst nach Klärung des Nutzerbedarfs umgesetzt.
+Die folgenden Funktionen richten sich an spezifischere Anwendungsszenarien. Sie werden derzeit nicht eingeplant, erst wenn die Benutzeranforderungen klar sind, wird die Implementierung bewertet.
 
-| Funktion                    | Beschreibung                                                                                                                |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Sparse Checkout             | Konfigurationsoption `worktree.sparsePaths`: In großen Monorepos nur bestimmte Pfade auschecken, verkürzt Erstellungszeit und Speicherverbrauch |
-| `.worktreeinclude`-Datei    | Automatisches Kopieren von gitignore-Dateien (`.env`, `secrets.json` usw.) in den Worktree                                   |
-| tmux-Integration            | `--worktree --tmux`: Worktree-Session in einem neuen tmux-Fenster starten                                                  |
+| Funktion                  | Beschreibung                                                                                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| Sparse Checkout           | Konfiguration `worktree.sparsePaths`, nur angegebene Pfade in großen Monorepos auschecken, verkürzt Erstellungszeit und Speicherplatz |
+| `.worktreeinclude`-Datei  | Automatisches Kopieren von gitignorierten Dateien (`.env`, `secrets.json` etc.) in den Worktree |
+| tmux-Integration          | `--worktree --tmux` startet die Worktree-Sitzung in einem neuen tmux-Fenster                    |

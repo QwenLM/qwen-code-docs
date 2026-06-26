@@ -1,24 +1,24 @@
-# Auto-Compaction Threshold Redesign
+# Auto-Compaction Threshold Redesign（自动压缩阈值重构）
 
-**Status:** Draft · 2026-05-14
+**状态：** 草案 · 2026-05-14
 
 ## 背景
 
-> 本节描述本 PR 落地**之前**的状态（pre-redesign behavior）。下文出现的 `COMPRESSION_TOKEN_THRESHOLD`、`thinkingConfig.includeThoughts = true`、`hasFailedCompressionAttempt`、以及具体的 file:line 引用都对应 PR #4345 合入前的代码——合入后这些符号 / 行号会不再有效。
+> 本节描述本 PR 落地**之前**的状态（重设计前的行为）。下文出现的 `COMPRESSION_TOKEN_THRESHOLD`、`thinkingConfig.includeThoughts = true`、`hasFailedCompressionAttempt` 以及具体的 file:line 引用都对应 PR #4345 合入前的代码——合入后这些符号 / 行号会不再有效。
 
-当前 qwen-code 的自动压缩仅使用单一比例阈值 `COMPRESSION_TOKEN_THRESHOLD = 0.7`（`chatCompressionService.ts:33`），所有窗口大小共用同一比例。对比 claude-code 的「绝对 token 梯子」（autoCompact.ts:62-65），qwen-code 存在三个具体问题：
+当前 Qwen Code 的自动压缩仅使用单一比例阈值 `COMPRESSION_TOKEN_THRESHOLD = 0.7`（`chatCompressionService.ts:33`），所有窗口大小共用同一比例。对比 claude-code 的「绝对 token 阶梯」（autoCompact.ts:62-65），Qwen Code 存在三个具体问题：
 
 1. **大窗口下预留过多**：1M 模型 70% 阈值在 700K 触发，剩余 300K 远超摘要 + 输出实际所需的 ~33K
 2. **失败 1 次永久锁**：`hasFailedCompressionAttempt = true` 之后整个 session 不再尝试 auto-compact（geminiChat.ts:504），比 claude-code 的「连续 3 次熔断」更严苛
 3. **tip 系统与 auto 阈值脱钩**：`tipRegistry.ts` 里的三条 `context-*` tip 使用固定的 50/80/95 百分比，与 auto-compact 阈值（70%）完全独立。这意味着在「auto 正常工作」的主路径上 80% / 95% tip 极少触发，而在「auto 失败 / 反应式兜底」的边缘路径上又缺乏与阈值对齐的语义
-4. **压缩调用本身没有输出预算控制**：[chatCompressionService.ts:374-376](packages/core/src/services/chatCompressionService.ts:374) 显式开启 `thinkingConfig.includeThoughts = true`（注释：「Compression quality drives every subsequent main turn」），同时 sideQuery 调用未设 `maxOutputTokens` 上限。代码注释（[:436-437](packages/core/src/services/chatCompressionService.ts:436)）也承认 `compressionOutputTokenCount may include non-persisted tokens (thoughts)`。在压缩接近窗口顶时，总输出可能膨胀，使 buffer 预留缺乏可预测上限。<br/><br/>更糟糕的是跨 provider 行为不一致：Anthropic 的 thinking budget 与 max_tokens 完全独立；OpenAI 的 reasoning tokens 不受 max_completion_tokens 限制；Gemini 的行为又因模型版本而异。这意味着「单靠加 maxOutputTokens 就能控制总输出」在 qwen-code 这种多 provider 项目里不成立
+4. **压缩调用本身没有输出预算控制**：[chatCompressionService.ts:374-376](packages/core/src/services/chatCompressionService.ts:374) 显式开启 `thinkingConfig.includeThoughts = true`（注释：「Compression quality drives every subsequent main turn」），同时 sideQuery 调用未设 `maxOutputTokens` 上限。代码注释（[:436-437](packages/core/src/services/chatCompressionService.ts:436)）也承认 `compressionOutputTokenCount may include non-persisted tokens (thoughts)`。在压缩接近窗口顶时，总输出可能膨胀，使 buffer 预留缺乏可预测上限。<br/><br/>更糟糕的是跨 provider 行为不一致：Anthropic 的 thinking budget 与 max_tokens 完全独立；OpenAI 的 reasoning tokens 不受 max_completion_tokens 限制；Gemini 的行为又因模型版本而异。这意味着「单靠加 maxOutputTokens 就能控制总输出」在 Qwen Code 这种多 provider 项目里不成立
 
-5. **阈值判断使用的 `lastPromptTokenCount` 系统性下偏。** [geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217) 表明这个数来自上一轮 API response 的 `usageMetadata.totalTokenCount`。两个 gap：(a) 不包含本轮即将加入的 user message，每次 cheap-gate 判断都比真实 prompt 小一段；(b) 首轮初始值是 0，`--continue` 恢复巨大 session / sub-agent 继承大量历史时第一次 send 永远绕过所有阈值。对比 claude-code 的 `tokenCountWithEstimation`（[query.ts:638](src/query.ts:638)）走「最后一条 assistant API usage + 之后新增 message 估算」的双轨制能闭合这两个 gap
+5. **阈值判断使用的 `lastPromptTokenCount` 系统性下偏。** [geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217) 表明这个数来自上一轮 API 响应的 `usageMetadata.totalTokenCount`。两个 gap：(a) 不包含本轮即将加入的 user message，每次 cheap-gate 判断都比真实 prompt 小一段；(b) 首轮初始值是 0，`--continue` 恢复巨大 session / sub-agent 继承大量历史时第一次 send 永远绕过所有阈值。对比 claude-code 的 `tokenCountWithEstimation`（[query.ts:638](src/query.ts:638)）走「最后一条 assistant API usage + 之后新增 message 估算」的双轨制能闭合这两个 gap
 
 ## 设计目标
 
 - 引入「比例 + 绝对」混合阈值，让大窗口模型由绝对值接管，小窗口仍走比例兜底
-- 新增 warn / hard 两层（auto 保留为主触发点），形成三层梯子
+- 新增 warn / hard 两层（auto 保留为主触发点），形成三层阶梯
 - 把 tip 系统重写为跟随新阈值的触发条件
 - 失败处理从「1 次永久锁」升级为「3 次熔断 + 自动恢复」
 - **压缩调用关闭 thinking 并加 `maxOutputTokens` 上限**：与 claude-code 对齐，让总输出受单一参数约束、buffer 预算可预测；接受压缩质量可能下降的代价
@@ -26,7 +26,7 @@
 - 删除 settings 里的 `contextPercentageThreshold` 配置入口（内部 PCT 常量保留）
 - **不引入** env 覆盖通道、**不**新增显式 enabled 开关
 
-## 三层阈值梯子
+## 三层阈值阶梯
 
 ```
                        window  (raw context window)
@@ -68,7 +68,7 @@ warn_threshold = max((PCT - WARN_OFFSET) * window, auto_threshold - WARN_BUFFER)
 const DEFAULT_PCT = 0.7; // auto 比例兜底
 const WARN_PCT_OFFSET = 0.1; // warn 比例 = PCT - WARN_OFFSET = 0.6
 const COMPACT_MAX_OUTPUT_TOKENS = 20_000; // 压缩 sideQuery 输出硬上限（thinking + summary 合计）
-const SUMMARY_RESERVE = 20_000; // 阈值梯子从窗口顶减去的输出预留 = maxOutput
+const SUMMARY_RESERVE = 20_000; // 阈值阶梯从窗口顶减去的输出预留 = maxOutput
 const AUTOCOMPACT_BUFFER = 13_000; // auto 与 effectiveWindow 间距
 const WARN_BUFFER = 20_000; // warn 与 auto 间距
 const HARD_BUFFER = 3_000; // hard 与 effectiveWindow 间距
@@ -152,11 +152,11 @@ export interface ChatCompressionSettings {
 | 类型 | `boolean`                      | `number`                                                             |
 | 语义 | `true` = 永久禁用 auto-compact | `>= MAX_CONSECUTIVE_FAILURES`（默认 3）= 暂时禁用直到 force 成功重置 |
 
-仓库内只有 `GeminiChat.tryCompress` 一个内部消费方，所以内部 migration 风险低；但 `@qwen-code/qwen-code-core` 是 published package、`CompressOptions` 在 d.ts 里可见，下游 SDK 直接调 `service.compress({ ..., hasFailedCompressionAttempt: true })` 的代码会拿到 TS 编译错误。**迁移指引：** 把 `true` 改为 `MAX_CONSECUTIVE_FAILURES`（或任意 >= 3 的整数），`false` 改为 `0`。如果调用方维护自己的失败计数，直接传入即可。
+仓库内只有 `GeminiChat.tryCompress` 一个内部消费方，所以内部 migration 风险低；但 `@qwen-code/qwen-code-core` 是 published package、`CompressOptions` 在 d.ts 里可见，下游 SDK 直接调用 `service.compress({ ..., hasFailedCompressionAttempt: true })` 的代码会拿到 TS 编译错误。**迁移指引：** 把 `true` 改为 `MAX_CONSECUTIVE_FAILURES`（或任意 >= 3 的整数），`false` 改为 `0`。如果调用方维护自己的失败计数，直接传入即可。
 
 ## Token 估算补偿
 
-qwen-code 的 `lastPromptTokenCount` 来自上一轮 API response 的 `usageMetadata.totalTokenCount`（[geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217)）。这导致：
+Qwen Code 的 `lastPromptTokenCount` 来自上一轮 API 响应的 `usageMetadata.totalTokenCount`（[geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217)）。这导致：
 
 1. **滞后一轮**：cheap-gate 用 `lastPromptTokenCount` 判断，但本次 send 实际 prompt = 它 + 本轮 user message。少算的部分可能让阈值判断 false-negative
 2. **首轮为 0**：初始值是 0，第一次 send 时无论历史多大都不会触发任何阈值（含 `--continue` 恢复 / sub-agent 继承场景）
@@ -410,9 +410,9 @@ const { warn, auto, hard, effectiveWindow } =
 
 1. **关 thinking 可能影响摘要质量。** 原作者注释 "Compression quality drives every subsequent main turn — keep reasoning on" 表达过对此的担忧。本 spec 的判断是「可预测的 token 上限」优先于「最大化质量」，但落地后需要观察 telemetry 里 `compression_input_token_count` / `compression_output_token_count` 的分布，以及主对话在压缩后的质量变化（用户反馈、`COMPRESSION_FAILED_*` 状态率）。如果质量下降明显，再考虑回退到 thinking 开启 + provider-specific thinkingBudget 控制。
 
-2. **`maxOutputTokens` 触顶可能导致 summary 被截断。** 关 thinking 后，20K 直接限制 summary 主体；claude-code 实测 p99.99 ≈ 17K，留 ~3K 安全冗余。但 qwen-code 的压缩 prompt 与 claude-code 不同，分布需要观测。建议在压缩失败分支（[chatCompressionService.ts:464-491](packages/core/src/services/chatCompressionService.ts:464)）追加「检测到 finish_reason = MAX_TOKENS」的 NOOP 路径，避免持久化半截 summary。
+2. **`maxOutputTokens` 触顶可能导致 summary 被截断。** 关 thinking 后，20K 直接限制 summary 主体；claude-code 实测 p99.99 ≈ 17K，留 ~3K 安全冗余。但 Qwen Code 的压缩 prompt 与 claude-code 不同，分布需要观测。建议在压缩失败分支（[chatCompressionService.ts:464-491](packages/core/src/services/chatCompressionService.ts:464)）追加「检测到 finish_reason = MAX_TOKENS」的 NOOP 路径，避免持久化半截 summary。
 
-3. **跨 provider 的 maxOutputTokens 映射差异。** OpenAI compat (dashscope) → `max_tokens`、Anthropic → `max_tokens`、Gemini SDK → `maxOutputTokens`。当前 qwen-code 已有这层映射（[contentGenerator.ts:94](packages/core/src/core/contentGenerator.ts:94) 等），需要在 P6 实现时验证 sideQuery 路径上 `maxOutputTokens` 字段确实贯穿到所有 provider 的请求体。
+3. **跨 provider 的 maxOutputTokens 映射差异。** OpenAI compat (dashscope) → `max_tokens`、Anthropic → `max_tokens`、Gemini SDK → `maxOutputTokens`。当前 Qwen Code 已有这层映射（[contentGenerator.ts:94](packages/core/src/core/contentGenerator.ts:94) 等），需要在 P6 实现时验证 sideQuery 路径上 `maxOutputTokens` 字段确实贯穿到所有 provider 的请求体。
 
 4. **Token 估算是粗略下界，不应反向用作"跳过触发"的依据。** `char/4` 与各 provider 真实 tokenizer 偏差可能 ±30%。本 spec 只用估算来「让阈值更早触发」（false-positive 方向，宁可早压不可晚压）。所有「降低 token 计数 / 跳过压缩」的代码路径仍应使用 `lastPromptTokenCount`（API 权威值）。
 
@@ -424,7 +424,7 @@ const { warn, auto, hard, effectiveWindow } =
 - Footer 常驻可视化：留作 follow-up
 - 摘要 prompt 改进、`MIN_COMPRESSION_FRACTION` 调整：与阈值设计正交
 
-## 开放问题（等 review）
+## 开放问题（待 review）
 
 1. **breaking change 强度**：警告 + 忽略字段 vs 启动报错。当前选警告，需要确认对企业部署/团队配置是否够友好
 

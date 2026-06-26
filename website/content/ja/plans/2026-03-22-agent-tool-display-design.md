@@ -1,106 +1,106 @@
-# Agent Tool Display 実装計画
+# Agentツール表示実装計画
 
-> **For Claude:** REQUIRED SUB-SKILL: superpowers:executing-plans を使用して、この計画をタスクごとに実装してください。
+> **Claude向け:** 必須サブスキル: スーパーパワー:executing-plans を使用して、この計画をタスクごとに実装してください。
 
-**Goal:** Agent ツールの実行専用の VSCode/web UI 表示を追加し、サブエージェントの進捗、要約、失敗が汎用ツールカードにフォールバックするのではなく、構造化された `rawOutput` からレンダリングされるようにする。
+**目標:** Agentツールの実行専用のVSCode/web UI表示を追加し、サブエージェントの進捗、サマリー、障害を構造化された`rawOutput`からレンダリングし、汎用ツールカードにフォールバックしないようにします。
 
-**Architecture:** ACP の `rawOutput` を VSCode のセッション/更新パイプラインを通じて `ToolCallData` に保持し、共有 web UI ルーターが `task_execution` ペイロードを検出して専用の `AgentToolCall` コンポーネントをレンダリングするようにする。変更は `packages/webui` で共有し、VSCode と `ChatViewer` の整合性を保つ。
+**アーキテクチャ:** ACPの`rawOutput`をVSCodeのセッション/更新パイプラインを通して`ToolCallData`に保持し、共有web UIルーターが`task_execution`ペイロードを検出して専用の`AgentToolCall`コンポーネントをレンダリングできるようにします。変更は`packages/webui`内で共有し、VSCodeと`ChatViewer`の一貫性を保ちます。
 
-**Tech Stack:** TypeScript, React, Vitest, 共有 `@qwen-code/webui` tool-call コンポーネント。
+**技術スタック:** TypeScript, React, Vitest, 共有`@qwen-code/webui`ツール呼び出しコンポーネント。
 
-### Task 1: データフローの失敗動作をテストで確定する
+### タスク1: 失敗するデータフロー動作を確定する
 
-**Files:**
+**ファイル:**
 
-- 変更: `packages/vscode-ide-companion/src/services/qwenSessionUpdateHandler.test.ts`
-- 新規作成: `packages/vscode-ide-companion/src/webview/hooks/useToolCalls.test.tsx`
+- 修正: `packages/vscode-ide-companion/src/services/qwenSessionUpdateHandler.test.ts`
+- 作成: `packages/vscode-ide-companion/src/webview/hooks/useToolCalls.test.tsx`
 
-**Step 1: 失敗するテストを記述する**
+**ステップ1: 失敗するテストを書く**
 
-- ACP が `task_execution` ペイロードを送信した際に `tool_call_update` が `rawOutput` を転送することを検証するセッションハンドラーのテストを追加する。
-- `useToolCalls` がエージェントツール呼び出しの `rawOutput` を保存・更新することを検証するフックのテストを追加する。
+- ACPが`task_execution`ペイロードを送信したときに`tool_call_update`が`rawOutput`を転送することをアサートするセッションハンドラテストを追加する。
+- `useToolCalls`がエージェントツール呼び出しの`rawOutput`を保存および更新することをアサートするフックテストを追加する。
 
-**Step 2: テストを実行して失敗することを確認する**
+**ステップ2: テストを実行して失敗を確認する**
 
-Run: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
+実行: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
 
-期待結果: 現在のハンドラー/フックパイプラインで `rawOutput` が保持されていないため、テストが失敗する。
+期待結果: 現在のハンドラ/フックパイプラインで`rawOutput`が保持されていないため、失敗する。
 
-### Task 2: レンダラーの失敗動作をテストで確定する
+### タスク2: 失敗するレンダラー動作を確定する
 
-**Files:**
+**ファイル:**
 
-- 新規作成: `packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+- 作成: `packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
-**Step 1: 失敗するテストを記述する**
+**ステップ1: 失敗するテストを書く**
 
-- `kind: 'other'` かつ `rawOutput.type === 'task_execution'` のルーティング済みツール呼び出しをレンダリングする。
-- タスクの説明、実行中の子ツール、要約、失敗理由が汎用テキスト出力ではなく、専用のエージェント表示からレンダリングされることを検証する。
+- `kind: 'other'` と `rawOutput.type === 'task_execution'` を持つルーティングされたツール呼び出しをレンダリングする。
+- タスクの説明、アクティブな子ツール、サマリー、障害理由が、汎用テキスト出力ではなく、専用のエージェント表示からレンダリングされることをアサートする。
 
-**Step 2: テストを実行して失敗することを確認する**
+**ステップ2: テストを実行して失敗を確認する**
 
-Run: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+実行: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
-期待結果: ルーターが `kind` のみをキーとしており、専用のエージェントコンポーネントが存在しないため、テストが失敗する。
+期待結果: ルーターは`kind`のみをキーとしており、専用のエージェントコンポーネントが存在しないため、失敗する。
 
-### Task 3: 構造化されたエージェント出力をエンドツーエンドで保持する
+### タスク3: 構造化されたエージェント出力をエンドツーエンドで保持する
 
-**Files:**
+**ファイル:**
 
-- 変更: `packages/vscode-ide-companion/src/types/chatTypes.ts`
-- 変更: `packages/vscode-ide-companion/src/services/qwenSessionUpdateHandler.ts`
-- 変更: `packages/vscode-ide-companion/src/webview/hooks/useToolCalls.ts`
-- 変更: `packages/webui/src/components/toolcalls/shared/types.ts`
+- 修正: `packages/vscode-ide-companion/src/types/chatTypes.ts`
+- 修正: `packages/vscode-ide-companion/src/services/qwenSessionUpdateHandler.ts`
+- 修正: `packages/vscode-ide-companion/src/webview/hooks/useToolCalls.ts`
+- 修正: `packages/webui/src/components/toolcalls/shared/types.ts`
 
-**Step 1: 最小限のデータモデル変更を実装する**
+**ステップ1: 最小限のデータモデル変更を実装する**
 
-- VSCode セッション/webview のツール呼び出し型にオプションの `rawOutput` を追加する。
-- `QwenSessionUpdateHandler` で `rawOutput` を転送する。
-- `useToolCalls` で `rawOutput` を保存/マージする。
-- 共有 web UI ツール呼び出しデータ型で `rawOutput` を公開する。
+- VSCodeセッション/ウェブビューのツール呼び出しタイプにオプションの`rawOutput`を追加する。
+- `QwenSessionUpdateHandler`で`rawOutput`を転送する。
+- `useToolCalls`で`rawOutput`を保存/マージする。
+- 共有web UIツール呼び出しデータ型で`rawOutput`を公開する。
 
-**Step 2: 対象テストを実行する**
+**ステップ2: フォーカステストを実行する**
 
-Run: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
+実行: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
 
-期待結果: テストが成功する。
+期待結果: 合格。
 
-### Task 4: 共有エージェントツール呼び出し UI を追加する
+### タスク4: 共有エージェントツール呼び出しUIを追加する
 
-**Files:**
+**ファイル:**
 
-- 新規作成: `packages/webui/src/components/toolcalls/AgentToolCall.tsx`
-- 変更: `packages/webui/src/components/toolcalls/index.ts`
-- 変更: `packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.tsx`
-- 変更: `packages/webui/src/components/ChatViewer/ChatViewer.tsx`
+- 作成: `packages/webui/src/components/toolcalls/AgentToolCall.tsx`
+- 修正: `packages/webui/src/components/toolcalls/index.ts`
+- 修正: `packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.tsx`
+- 修正: `packages/webui/src/components/ChatViewer/ChatViewer.tsx`
 
-**Step 1: 最小限のレンダラーを実装する**
+**ステップ1: 最小限のレンダラーを実装する**
 
 - `rawOutput.type === 'task_execution'` のガードを追加する。
 - タスクの説明をヘッダーとしてレンダリングする。
-- エージェント名とステータス、現在実行中の子ツール、完了要約、失敗/キャンセル理由を表示する。
-- 各ツール呼び出しを独立してレンダリングし、複数の並列エージェントカードと互換性のあるレイアウトを維持する。
+- エージェント名+ステータス、現在実行中の子ツール、完了サマリー、障害/キャンセル理由を表示する。
+- 各ツール呼び出しを独立してレンダリングすることで、複数の並列エージェントカードと互換性のあるレイアウトを維持する。
 
-**Step 2: 対象レンダラーテストを実行する**
+**ステップ2: フォーカスレンダラーテストを実行する**
 
-Run: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+実行: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
-期待結果: テストが成功する。
+期待結果: 合格。
 
-### Task 5: 統合された画面を検証する
+### タスク5: 統合された表面を検証する
 
-**Files:**
+**ファイル:**
 
-- 変更: `packages/webui/src/index.ts`
+- 修正: `packages/webui/src/index.ts`
 
-**Step 1: 必要に応じて新しい共有コンポーネントをエクスポートする**
+**ステップ1: 必要に応じて新しい共有コンポーネントをエクスポートする**
 
-- VSCode または `ChatViewer` で必要な新しいコンポーネント/型を再エクスポートする。
+- VSCodeまたは`ChatViewer`が必要とする新しいコンポーネント/タイプを再エクスポートする。
 
-**Step 2: パッケージの検証を実行する**
+**ステップ2: パッケージ検証を実行する**
 
-Run: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
-Run: `npm run check-types --workspace=packages/vscode-ide-companion`
-Run: `npm run typecheck --workspace=packages/webui`
+実行: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+実行: `npm run check-types --workspace=packages/vscode-ide-companion`
+実行: `npm run typecheck --workspace=packages/webui`
 
-期待結果: 対象のすべてのテストと型チェックが成功する。
+期待結果: 対象となるすべてのテストと型チェックが合格する。

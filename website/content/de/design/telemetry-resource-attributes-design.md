@@ -1,17 +1,17 @@
-# Telemetrie: Benutzerdefinierte Ressourcenattribute + Metrik-Kardinalitätskontrollen
+# Telemetrie: Benutzerdefinierte Resource-Attribute + Metrik-Kardinalitätssteuerung
 
-> Begleitendes Issue: [#4365](https://github.com/QwenLM/qwen-code/issues/4365)
+> Zugehöriges Issue: [#4365](https://github.com/QwenLM/qwen-code/issues/4365)
 > Übergeordnetes Issue: [#3731](https://github.com/QwenLM/qwen-code/issues/3731)
-> Basierend auf dem Code-Review des qwen-code main-Zweigs vom 2026-05-21
+> Basierend auf dem Code-Review des qwen-code main-Branches vom 21.05.2026
 
 ## 1. Hintergrund
 
-qwen-code ist bereits in das OpenTelemetry SDK integriert, aber die Art und Weise, wie die Resource konstruiert wird, macht sie in zwei häufigen Produktionsszenarien unbrauchbar:
+qwen-code ist bereits mit dem OpenTelemetry SDK verbunden, aber die Art und Weise, wie die Resource konstruiert wird, macht sie in zwei häufigen Produktionsszenarien unbrauchbar:
 
-1. **Benutzerdefinierte Dimensionen können nicht hinzugefügt werden**: Das Betriebsteam möchte allen Telemetriedaten die Labels `team` / `env` / `cost_center` / `user_id` hinzufügen, aber heute gibt es keinen Mechanismus dafür. Selbst das Setzen der standardmäßigen Umgebungsvariablen `OTEL_RESOURCE_ATTRIBUTES` funktioniert **überhaupt nicht**.
-2. **Kardinalität von Metriken außer Kontrolle**: `session.id` wird in die Resource-Ebene injiziert und automatisch an jeden Metrikdatenpunkt angehängt. Jede CLI-Sitzung erzeugt einen neuen Wert, sodass das Metrik-Backend (Prometheus / Alibaba Cloud ARMS Metric / VictoriaMetrics) durch unbegrenzte Time Series überlastet wird.
+1. **Keine Möglichkeit, benutzerdefinierte Dimensionen anzuhängen**: Die Betriebsseite möchte allen Telemetriedaten `team`/`env`/`cost_center`/`user_id`-Tags hinzufügen, aber derzeit gibt es keinen Mechanismus dafür. Selbst die Standard-Umgebungsvariable `OTEL_RESOURCE_ATTRIBUTES` hat **überhaupt keine Wirkung**.
+2. **Kardinalität von Metriken außer Kontrolle**: `session.id` wird in die Resource-Ebene injiziert und automatisch an jeden Metrikdatenpunkt angehängt. Jede CLI-Sitzung erzeugt einen neuen Wert, was das Metrik-Backend (Prometheus / Alibaba Cloud ARMS Metric / VictoriaMetrics) mit unbegrenzten Time-Series überlastet.
 
-Diese beiden Probleme sind gekoppelt: Die Lösung des ersten würde es Benutzern **erleichtern**, Daten mit hochkardinalen Feldern zu versehen, daher muss das zweite Problem parallel gelöst werden.
+Diese beiden Probleme sind miteinander verknüpft: Die Lösung des ersten Problems würde es Benutzern **leichter** machen, hochkardinale Felder zu den Daten hinzuzufügen, daher muss das zweite Problem parallel gelöst werden.
 
 ## 2. Aktueller Stand
 
@@ -41,18 +41,18 @@ sdk = new NodeSDK({
 });
 ```
 
-`autoDetectResources: false` deaktiviert den standardmäßigen OTel `envDetector` – also genau die Ebene, die normalerweise `OTEL_RESOURCE_ATTRIBUTES` und `OTEL_SERVICE_NAME` ausliest. Das hat einen Grund (die Detektoren sind asynchron und lösen vor dem Settlen einen `diag.error` aus), aber der Nebeneffekt ist, dass diese beiden Standard-Umgebungsvariablen in qwen-code **vollständig unwirksam** sind.
+`autoDetectResources: false` deaktiviert den standardmäßigen OTel `envDetector` – also die Ebene, die normalerweise `OTEL_RESOURCE_ATTRIBUTES` und `OTEL_SERVICE_NAME` liest. Dafür gibt es einen Grund (der Detector ist asynchron und löst vor dem Settle `diag.error` aus), aber der Nebeneffekt ist, dass diese beiden Standard-Umgebungsvariablen in qwen-code **vollständig unwirksam** sind.
 
-### 2.2 `session.id` ist tatsächlich eine dreifache Injektion
+### 2.2 `session.id` ist tatsächlich dreifach injiziert
 
-| Position                        | Zeile                     | Auswirkung                                  |
-| ------------------------------- | ------------------------- | ------------------------------------------- |
-| Resource                        | `sdk.ts:160`              | Alle Signale (Spans / Logs / Metriken)      |
-| Pro Span                        | `session-tracing.ts:169`  | Spans                                       |
-| Pro Log                         | `loggers.ts:128`          | Logs                                        |
-| **`getCommonAttributes()`**     | `metrics.ts:57`           | **Explizite Überlagerung jedes Metrik-Records** |
+| Position                      | Zeile                    | Auswirkung                             |
+| ----------------------------- | ------------------------ | -------------------------------------- |
+| Resource                      | `sdk.ts:160`             | Alle Signale (Spans / Logs / Metriken) |
+| Pro Span                      | `session-tracing.ts:169` | Spans                                  |
+| Pro Log                       | `loggers.ts:128`         | Logs                                   |
+| **`getCommonAttributes()`**   | `metrics.ts:57`          | **Explizit pro Metrik-Record überlagert** |
 
-Das bedeutet: **Allein das Entfernen von `session.id` aus der Resource reicht nicht** – `baseMetricDefinition.getCommonAttributes()` in `metrics.ts:57` wird von über 30 Metrik-Aufrufstellen per `...spread` eingebunden und setzt `session.id` erneut ein.
+Das heißt, **es reicht nicht, `session.id` einfach aus der Resource zu entfernen** – `getCommonAttributes()` in `metrics.ts:57` wird von über 30 Metrik-Aufrufstellen per `...spread` eingebunden und fügt `session.id` erneut ein.
 
 ```ts
 // metrics.ts:55-59
@@ -63,19 +63,19 @@ const baseMetricDefinition = {
 };
 ```
 
-Gute Nachricht: Alle Metrik-Aufrufstellen (30+) gehen durch diese eine Funktion – ein natürlicher Engpass.
+Gute Nachricht: Alle Metrik-Aufrufstellen (30+) gehen durch diese eine Funktion – das ist ein natürlicher Engpass.
 
 ### 2.3 Config-Resolver-Muster
 
 `packages/core/src/telemetry/config.ts:resolveTelemetrySettings()` verwendet eine einheitliche Prioritätskette:
 
 ```
-argv (höchste Priorität)  >  QWEN_*-Umgebungsvariablen  >  OTEL_*-Umgebungsvariablen  >  settings.json (niedrigste Priorität)
+argv (höchste)  >  QWEN_* env  >  OTEL_* env  >  settings.json (niedrigste)
 ```
 
-Neue Felder folgen diesem Muster.
+Neue Felder übernehmen dieses Muster.
 
-### 2.4 Aktueller Stand des Einstellungsschemas
+### 2.4 Aktueller Stand des Settings-Schemas
 
 `packages/cli/src/config/settingsSchema.ts:998-1018` definiert das JSON-Schema für `telemetry`:
 
@@ -88,67 +88,68 @@ telemetry: {
     properties: {
       includeSensitiveSpanAttributes: { ... },
     },
-    additionalProperties: true,  // ← Validiert heute keine anderen telemetry.*-Schlüssel
+    additionalProperties: true,  // ← Heute werden andere telemetry.*-Keys nicht validiert
   },
 }
 ```
 
-`additionalProperties: true` bedeutet, dass das Schema heute andere Felder wie `otlpEndpoint` / `otlpProtocol` / `resourceAttributes` alle durchlässt, ohne sie zu validieren. Wenn neue Felder wie `resourceAttributes` / `metrics` hinzugefügt werden, sollte das Schema hier entsprechend ergänzt werden, um IDE-Autovervollständigung und Einstellungs-UI-Rendering zu unterstützen.
+`additionalProperties: true` bedeutet, dass das Schema heute andere Felder wie `otlpEndpoint` / `otlpProtocol` / `resourceAttributes` nicht validiert. Beim Hinzufügen der neuen Felder `resourceAttributes` / `metrics` sollte hier das Schema ergänzt werden, um IDE-Autovervollständigung und die Darstellung in den Settings-UI zu ermöglichen.
 
-### 2.5 Code-Pfade außerhalb des Entwurfsbereichs
+### 2.5 Nicht im Entwurfsbereich liegende Codepfade
 
-`packages/core/src/telemetry/qwen-logger/qwen-logger.ts` ist der **First-Party-Reporting-Kanal** von qwen-code (basiert auf dem internen Ali-RUM-Protokoll `RumResourceEvent`), vollständig unabhängig vom OTel SDK. Es hat eigene Endpunkte, Proxys und Datenmodelle und **wird von diesem Entwurf nicht beeinflusst**. Siehe Abschnitt 3.
+`packages/core/src/telemetry/qwen-logger/qwen-logger.ts` ist der **erstanbieterliche Nutzungsmeldekanal** von qwen-code (basiert auf dem internen Alibaba RUM-Protokoll `RumResourceEvent`) und völlig unabhängig vom OTel SDK. Es hat seinen eigenen Endpoint, Proxy und sein eigenes Datenmodell und **wird von diesem Entwurf nicht beeinflusst**. Siehe Abschnitt 3.
 
 ### 2.6 Unterstützte / nicht unterstützte `OTEL_*`-Umgebungsvariablen
 
-| Umgebungsvariable                                       | Status                              |
-| ------------------------------------------------------- | ----------------------------------- |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`                           | ✅ Unterstützt (`config.ts:79`)     |
-| `OTEL_EXPORTER_OTLP_{TRACES,LOGS,METRICS}_ENDPOINT`     | ✅ Unterstützt                      |
-| `OTEL_EXPORTER_OTLP_HEADERS`                            | ✅ Wird direkt vom zugrunde liegenden Exporter gelesen |
-| `OTEL_TRACES_SAMPLER`                                   | ✅ Unterstützt (`tracer.ts:247`)    |
-| **`OTEL_RESOURCE_ATTRIBUTES`**                          | ❌ Gar nicht unterstützt            |
-| **`OTEL_SERVICE_NAME`**                                 | ❌ Gar nicht unterstützt            |
-| **`OTEL_METRICS_INCLUDE_*`**                            | ❌ Gar nicht unterstützt (im Stil von claude-code) |
+| Umgebungsvariable                                         | Status                          |
+| --------------------------------------------------------- | ------------------------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`                             | ✅ Unterstützt (`config.ts:79`) |
+| `OTEL_EXPORTER_OTLP_{TRACES,LOGS,METRICS}_ENDPOINT`       | ✅ Unterstützt                  |
+| `OTEL_EXPORTER_OTLP_HEADERS`                              | ✅ Wird direkt vom Exporter gelesen |
+| `OTEL_TRACES_SAMPLER`                                     | ✅ Unterstützt (`tracer.ts:247`) |
+| **`OTEL_RESOURCE_ATTRIBUTES`**                            | ❌ Überhaupt nicht unterstützt  |
+| **`OTEL_SERVICE_NAME`**                                   | ❌ Überhaupt nicht unterstützt  |
+| **`OTEL_METRICS_INCLUDE_*`**                              | ❌ Überhaupt nicht unterstützt (claude-code-Stil) |
 
 ## 3. Ziele / Nicht-Ziele
 
 ### 3.1 Ziele
 
-- Dem Betriebsteam ermöglichen, über standardmäßige `OTEL_RESOURCE_ATTRIBUTES` und das eigene `settings.json` benutzerdefinierte Ressourcenattribute an alle OTLP-exportierten Spans/Logs/Metriken anzuhängen.
-- `OTEL_SERVICE_NAME` gemäß der OTel-Spezifikation funktionieren lassen (einschließlich der Priorität mit `service.name` in `OTEL_RESOURCE_ATTRIBUTES`).
-- Standardmäßig **kein** `session.id` in Metriken (Schutz der Kardinalität des Backends).
-- Expliziten Schalter bereitstellen, damit Benutzer, die eine Sitzungskorrelation auf Metrikebene benötigen, diese wieder aktivieren können.
-- `session.id` in Spans und Logs beibehalten (Trace-Korrelation ist zwingend erforderlich).
-- `autoDetectResources: false` beibehalten, um den bereits behobenen Fehler mit `diag.error` nicht wieder einzuführen.
-- Entsprechende Aktualisierung von `settingsSchema.ts`, um die neuen Felder für die Einstellungs-UI und IDE sichtbar zu machen.
+- Betriebsteams sollen über die standardmäßige `OTEL_RESOURCE_ATTRIBUTES` und das eigene `settings.json` benutzerdefinierte Resource-Attribute an alle OTLP-exportierten Spans / Logs / Metriken anhängen können.
+- `OTEL_SERVICE_NAME` soll gemäß der OTel-Spezifikation funktionieren (einschließlich der Priorität von `service.name` in `OTEL_RESOURCE_ATTRIBUTES`).
+- Standardmäßig sollen Metriken **kein** `session.id` tragen (Schutz der Backend-Kardinalität).
+- Ein expliziter Schalter soll es Benutzern, die eine Metrik-Level-Sitzungskorrelation benötigen, ermöglichen, diese wieder zu aktivieren.
+- `session.id` soll auf Spans und Logs erhalten bleiben (Trace-Korrelation ist erforderlich).
+- `autoDetectResources: false` soll erhalten bleiben, um den bereits behobenen Bug mit `diag.error` nicht zu verschlechtern.
+- Das `settingsSchema.ts` soll entsprechend aktualisiert werden, sodass die neuen Felder für Settings-UI und IDE sichtbar sind.
 
 ### 3.2 Nicht-Ziele
 
-- **`qwen-logger` First-Party-Reporting**: Vollständig unabhängiger RUM-Kanal, nicht im Rahmen dieses Entwurfs. Seine Reporting-Felder (Geräte-ID, User-Agent usw.) werden durch das RUM-Protokoll bestimmt und sollten nicht durch benutzerdefinierte Ressourcenattribute gestört werden. Sollten in Zukunft benutzerdefinierte Dimensionen für `qwen-logger` erforderlich sein, ist das ein separater, unabhängiger Entwurf.
-- **Dynamischer Attribut-Hook pro Span**: Benutzern erlauben, Code/Hooks zu schreiben, um Attribute für jeden Span zu berechnen. claude-code hat das auch nicht gelöst – hohe Komplexität, geringer Nutzen.
-- **Kardinalitätskontrolle für `service.version`**: Versionsänderungen sind selten (monatlich), der Anstieg der Time Series ist beherrschbar. Bei Bedarf in v2 mit Einführung der OTel View API.
-- **Pro-Abfrage-Ressourcenattribute in Agent-SDK-Form**: qwen-code hat derzeit kein SDK-Aufrufszenario.
-- **Konfiguration der OTLP-Request-Header (Auth-Header)**: Ist eine andere Issue-Linie (#3731 P1) und unabhängig von diesem Entwurf.
-- **Ressourcenattribute in CLI-Flag-Form**: Umgebungsvariablen + `settings.json` decken sowohl temporäre als auch Basisszenarien ab. CLI-Flags würden die Befehlszeile aufblähen, ohne erkennbaren Nutzen.
-## 4. Design
+- **`qwen-logger`-Erstanbieter-Meldung**: Ein völlig unabhängiger RUM-Kanal, der nicht in den Entwurfsbereich fällt. Seine Meldefelder (Device-ID, User-Agent usw.) werden durch das RUM-Protokoll bestimmt und sollten nicht durch benutzerdefinierte Resource-Attribute gestört werden. Wenn in Zukunft benutzerdefinierte Dimensionen für `qwen-logger` hinzugefügt werden sollen, ist dies ein separater, unabhängiger Entwurf.
+- **Dynamischer Attribute-Hook pro Span**: Benutzern das Schreiben von Code / Hooks ermöglichen, um Attribute pro Span zu berechnen. claude-code hat dies auch nicht gelöst; die Komplexität ist hoch, der Nutzen gering.
+- **Kardinalitätssteuerung von `service.version`**: Versionsänderungen sind selten (monatlich), das Time-Series-Wachstum ist kontrollierbar. Falls nötig, in v2 mit der OTel View API.
+- **Per-Query Resource-Attrs im Agent-SDK-Format**: qwen-code hat derzeit kein SDK-Aufrufszenario.
+- **Konfiguration von OTLP-Request-Headern (Auth-Header)**: Dies ist eine separate Issue-Linie (#3731 P1) und unabhängig von diesem Entwurf.
+- **Resource-Attribute als CLI-Flag**: Umgebungsvariablen + settings.json decken bereits temporäre und Basis-Szenarien ab. Ein CLI-Flag würde die Befehlszeile aufblähen, ohne erkennbaren Mehrwert.
 
-### 4.1 Allgemeine Schichtung
+## 4. Entwurf
+
+### 4.1 Gesamtschichtenmodell
 
 ```
-┌─ Resource（sdk.ts:156）────────────────────────────────────────┐
-│   service.name        ← OTEL_SERVICE_NAME                      │
+┌─ Resource (sdk.ts:156)────────────────────────────────────────┐
+│   service.name        ← OTEL_SERVICE_NAME                     │
 │                          > OTEL_RESOURCE_ATTRIBUTES.service.name│
-│                          > 'qwen-code'                         │
-│   service.version     ← config.getCliVersion()  [reserved]     │
-│   ...user attrs       ← OTEL_RESOURCE_ATTRIBUTES               │
-│                          + settings.resourceAttributes         │
-│   ✗ session.id 移走                                            │
+│                          > 'qwen-code'                        │
+│   service.version     ← config.getCliVersion()  [reserviert]  │
+│   ...Benutzer-Attrs   ← OTEL_RESOURCE_ATTRIBUTES              │
+│                          + settings.resourceAttributes        │
+│   ✗ session.id entfernt                                        │
 └────────────────────────────────────────────────────────────────┘
        │
-       ├──→ Spans     ＋ session.id（session-tracing.ts:169，保留）
-       ├──→ Logs      ＋ session.id（loggers.ts:128，保留）
-       └──→ Metrics   ＋ getCommonAttributes() — 默认 {}
+       ├──→ Spans     ＋ session.id (session-tracing.ts:169, beibehalten)
+       ├──→ Logs      ＋ session.id (loggers.ts:128, beibehalten)
+       └──→ Metriken  ＋ getCommonAttributes() — Standard {}
                           toggle ON: { session.id }
 ```
 
@@ -158,48 +159,48 @@ telemetry: {
 
 Niedrig → Hoch:
 
-1. `OTEL_RESOURCE_ATTRIBUTES`（Standard-OTel-Umgebungsvariable）
+1. `OTEL_RESOURCE_ATTRIBUTES` (Standard-OTel-Umgebungsvariable)
 2. `settings.telemetry.resourceAttributes`
-3. Integrierte reservierte Schlüssel (überschreiben jede gleichnamige Variable oben)
+3. Eingebaute reservierte Keys (überschreiben alle gleichnamigen oben)
 
-**Begründung**: Umgebungsvariablen dienen als temporäre Überschreibungen zur Laufzeit (CI / lokales Debugging), `settings.json` ist die fleet-weite Baseline, und integrierte Felder sind der Produktvertrag – die Baseline sollte höhere Priorität als temporäre Variablen haben, und integrierte Felder sollten über allem stehen.
+**Begründung**: Umgebungsvariablen sind temporäre Betriebszeit-Überschreibungen (CI / Debug auf einzelnen Maschinen), settings.json ist eine flottenweit ausgerollte Baseline, eingebaute sind Produktverträge – die Baseline sollte höhere Priorität als temporäre Variablen haben, und eingebaute sollten höchste Priorität haben.
 
-#### Spezielle Behandlung von `service.name`
+#### Sonderbehandlung von `service.name`
 
 `service.name` muss der [OTel-Spezifikation](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) folgen:
 
 > **`OTEL_SERVICE_NAME` hat Vorrang vor `service.name`, das mit der Variable `OTEL_RESOURCE_ATTRIBUTES` definiert wurde.**
 
-Daher gilt für `service.name` diese Prioritätskette (hoch → niedrig):
+Daher wird für `service.name` diese Prioritätskette separat angewendet (hoch → niedrig):
 
-1. `OTEL_SERVICE_NAME` (höchste Priorität, gemäß OTel-Spezifikation)
-2. `settings.resourceAttributes.service.name` (Einstellungen haben Vorrang vor ENV, konform mit den allgemeinen Regeln dieses Designs)
+1. `OTEL_SERVICE_NAME` (höchste, gemäß OTel-Standard)
+2. `settings.resourceAttributes.service.name` (Settings haben Vorrang vor Env, gemäß der allgemeinen Regel dieses Entwurfs)
 3. `OTEL_RESOURCE_ATTRIBUTES.service.name`
-4. Integrierter Standardwert `'qwen-code'`
+4. Eingebauter Standard `'qwen-code'`
 
-`service.name` darf über die Einstellungen überschrieben werden – es ist die Service-Identität, und es ist üblich und sinnvoll, dass ein Unternehmens-Fleet `service.name` über eine einheitliche `settings.json` konfiguriert; ein Verbot würde GitOps-Verteilungsszenarien blockieren. `OTEL_SERVICE_NAME` bleibt als „höchste Priorität“ gemäß OTel-Spezifikation erhalten und kann in CI / lokalem Debugging temporär die Einstellungen überschreiben.
+`service.name` kann über Settings überschrieben werden – es ist die Service-Identität. Es ist üblich und sinnvoll, dass Unternehmensflotten `service.name` über ein einheitliches `settings.json` konfigurieren. Ein Verbot würde GitOps-Verteilungsszenarien blockieren. `OTEL_SERVICE_NAME` als standardmäßiger OTel-Kanal mit „höchster Priorität" kann weiterhin in CI / beim Debuggen auf einzelnen Maschinen temporär die Settings überschreiben.
 
 Konkrete Regeln:
 
-| Quelle                                                    | Überschreibt `service.name` wirksam?                          |
-| --------------------------------------------------------- | ------------------------------------------------------------- |
-| `OTEL_SERVICE_NAME=foo`                                  | ✅ Höchste Priorität (überschreibt jede andere Quelle)        |
-| `settings.resourceAttributes={ "service.name": "foo" }`  | ✅ Nur wirksam, wenn kein `OTEL_SERVICE_NAME` gesetzt ist     |
-| `OTEL_RESOURCE_ATTRIBUTES=service.name=foo`              | ✅ Nur wirksam, wenn keines der beiden obigen gesetzt ist     |
+| Quelle                                                   | Schreiben von `service.name` wirksam?                |
+| -------------------------------------------------------- | ---------------------------------------------------- |
+| `OTEL_SERVICE_NAME=foo`                                  | ✅ Höchste Priorität (überschreibt jede andere Quelle) |
+| `settings.resourceAttributes={ "service.name": "foo" }`  | ✅ Nur wirksam, wenn kein `OTEL_SERVICE_NAME` gesetzt |
+| `OTEL_RESOURCE_ATTRIBUTES=service.name=foo`              | ✅ Nur wirksam, wenn keines der beiden obigen gesetzt |
 
-### 4.3 Strategie für reservierte Schlüssel
+### 4.3 Reservierte-Key-Strategie
 
-| Schlüssel         | Kann vom Benutzer überschrieben werden?                                                  | Begründung                                                                                                 |
-| ----------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `service.name`    | ✅ ENV-Variable + Einstellungen (siehe §4.2 Prioritätskette)                             | Service-Identität, sollte vom Betrieb kontrolliert werden können                                           |
-| `service.version` | ❌ Wird aus jeder Quelle verworfen + Warnung                                             | Vertrauenswürdigkeit der Telemetrie – Benutzer dürfen keine falsche Version angeben                        |
-| `session.id`      | ❌ Wird aus jeder Quelle verworfen + Warnung (für Metriken gibt es zusätzlich einen Toggle zur Laufzeit-Injektion) | Laufzeit-spezifisch; wenn der Benutzer es in das Resource setzt, wird der Metrik-Kardinalitäts-Toggle umgangen (Resource-Attribute werden automatisch an alle Signale angehängt) |
-| `qwen.*`-Präfix   | ⚠️ Nicht fest reserviert, aber docs empfehlen, es für Produktzwecke zu reservieren       | Vermeidung zukünftiger Konflikte zwischen eingebauten und benutzerdefinierten Attributen                   |
+| Key               | Kann vom Benutzer überschrieben werden?                                    | Begründung                                                                                                   |
+| ----------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `service.name`    | ✅ Sowohl Env-Var als auch Settings (siehe §4.2 Prioritätskette)           | Service-Identität, sollte vom Betrieb steuerbar sein                                                         |
+| `service.version` | ❌ Wird aus jeder Quelle verworfen + warn                                  | Vertrauenswürdigkeit der Telemetrie – dem Benutzer soll es nicht erlaubt sein, die Version falsch anzugeben |
+| `session.id`      | ❌ Wird aus jeder Quelle verworfen + warn (bei Metriken zusätzlicher Toggle für Laufzeit-Injektion) | Nur zur Laufzeit; ein Schreiben in die Resource würde den Metrik-Kardinalitäts-Toggle umgehen (Resource-Attrs werden automatisch an alle Signale angehängt) |
+| `qwen.*`-Präfix   | ⚠️ Nicht reserviert, aber die Docs empfehlen, es für die Produktnutzung freizuhalten | Vermeidung zukünftiger Konflikte zwischen eingebauten und benutzerdefinierten Attrs |
 
-**Reservierte Schlüssel werden zentral als Konstante verwaltet:**
+**Reservierte Keys werden zentral als Konstante verwaltet**:
 
 ```ts
-// telemetry/resource-attributes.ts (new file)
+// telemetry/resource-attributes.ts (neue Datei)
 /** Keys that cannot be overridden from any source (env or settings). */
 export const RESERVED_RESOURCE_ATTRIBUTE_KEYS = new Set<string>([
   'service.version',
@@ -207,11 +208,11 @@ export const RESERVED_RESOURCE_ATTRIBUTE_KEYS = new Set<string>([
 ]);
 ```
 
-`service.name` **nicht** in der RESERVED-Liste – es folgt seiner eigenen Prioritätskette (§4.2) und fällt nicht unter die Semantik „globales Überschreibeverbot“. RESERVED bedeutet: „Bei Überschreibung aus beliebiger Quelle wird gewarnt und verworfen“, und gilt einheitlich für ENV und Einstellungen als zwei Eingabepunkte.
+`service.name` steht **nicht** in der RESERVED-Liste – es hat seine eigene Prioritätskette (§4.2) und fällt nicht unter die Semantik „globales Überschreibungsverbot". RESERVED bedeutet „aus jeder Quelle geschrieben → warnen und verwerfen", einheitlich für die beiden Einstiegspunkte Env und Settings.
 
-### 4.4 Parsen von `OTEL_RESOURCE_ATTRIBUTES`
+### 4.4 `OTEL_RESOURCE_ATTRIBUTES`-Parsing
 
-Synchrone Implementierung, die den asynchronen envDetector von OTel umgeht:
+Synchron implementiert, um den asynchronen envDetector von OTel zu umgehen:
 
 ```ts
 function parseOtelResourceAttributes(
@@ -247,9 +248,9 @@ function parseOtelResourceAttributes(
 }
 ```
 
-Format streng nach OTel-Spezifikation: `key1=val1,key2=val2`, Werte percent-codiert.
+Format streng nach OTel-Spezifikation: `key1=val1,key2=val2`, Werte percent-kodiert.
 
-### 4.5 Metrik-Attribut-Filter
+### 4.5 Metrik-Attribute-Filter
 
 Einzige Änderungsstelle `metrics.ts:55-59`:
 
@@ -264,31 +265,32 @@ const baseMetricDefinition = {
   },
 };
 ```
-Aufrufstellen (30+ Stück) null Änderung – `...spread` eines leeren Objekts ist gleichbedeutend mit dem Nicht-Entfalten von Feldern.
+
+Aufrufstellen (30+) benötigen keine Änderungen – `...spread` auf ein leeres Objekt ist gleichbedeutend mit dem Nicht-Expandieren von Feldern.
 
 ### 4.6 Grenzfälle und Validierung
 
-| Eingabe                                                          | Verhalten                                                               |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `OTEL_RESOURCE_ATTRIBUTES=""` (leerer String)                    | Gibt `{}` zurück, Start normal                                          |
-| `OTEL_RESOURCE_ATTRIBUTES="a"` (kein `=`)                        | Element überspringen + `diag.warn`, restliche Elemente weiter parsen    |
-| `OTEL_RESOURCE_ATTRIBUTES="=val"` (leerer Schlüssel)             | Element überspringen, restliche Elemente weiter parsen                  |
-| `OTEL_RESOURCE_ATTRIBUTES="a=,b=2"` (leerer Wert)                | `a=''`, `b='2'` (OTel-Spezifikation erlaubt leere Werte)                |
-| `OTEL_RESOURCE_ATTRIBUTES="a=val%ZZbad"` (ungültige Percent-Codierung) | Original `val%ZZbad` beibehalten + `diag.warn`                     |
-| `OTEL_RESOURCE_ATTRIBUTES="a=1,a=2"` (doppelter Schlüssel)       | Letzterer gewinnt: `a=2` (entspricht OTel SDK-Referenzimplementierung)  |
-| `OTEL_RESOURCE_ATTRIBUTES="a=1, b=2 "` (mit Leerzeichen)         | Automatisches Trimmen                                                    |
-| `OTEL_RESOURCE_ATTRIBUTES=service.version=x`                     | `service.version` still verwerfen + `diag.warn`, andere Schlüssel behalten |
-| `settings.resourceAttributes={ "service.name": "x" }`            | Akzeptiert (settings dürfen service.name, siehe §4.2)                   |
-| `settings.resourceAttributes={ "service.version": "x" }`         | Still verwerfen + `diag.warn`                                            |
-| `settings.resourceAttributes={ "team": 123 }` (kein String)      | TypeScript-Typ verhindert; bei Runtime-Eingabe lehnt settings JSON Schema Validator ab |
-| Ressourcengröße insgesamt > OTel-Limit (4KB?)                    | Wird vom zugrundeliegenden OTel SDK behandelt, keine Prüfung in dieser Schicht |
+| Eingabe                                                           | Verhalten                                                                  |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `OTEL_RESOURCE_ATTRIBUTES=""` (leerer String)                     | Gibt `{}` zurück, normaler Start                                          |
+| `OTEL_RESOURCE_ATTRIBUTES="a"` (kein `=`)                         | Überspringt diesen Eintrag + `diag.warn`, parst den Rest weiter            |
+| `OTEL_RESOURCE_ATTRIBUTES="=val"` (leerer Key)                    | Überspringt diesen Eintrag, parst den Rest weiter                          |
+| `OTEL_RESOURCE_ATTRIBUTES="a=,b=2"` (leerer Wert)                | `a=''`, `b='2'` (OTel-Spezifikation erlaubt leere Werte)                 |
+| `OTEL_RESOURCE_ATTRIBUTES="a=val%ZZbad"` (ungültige Percent-Kodierung) | Behält den Rohwert `val%ZZbad` + `diag.warn`                         |
+| `OTEL_RESOURCE_ATTRIBUTES="a=1,a=2"` (doppelter Key)              | Letzter gewinnt `a=2` (entspricht der OTel SDK-Referenzimplementierung)    |
+| `OTEL_RESOURCE_ATTRIBUTES="a=1, b=2 "` (enthält Leerzeichen)      | Wird automatisch getrimmt                                                  |
+| `OTEL_RESOURCE_ATTRIBUTES=service.version=x`                      | `service.version` wird stillschweigend verworfen + `diag.warn`, andere Keys bleiben erhalten |
+| `settings.resourceAttributes={ "service.name": "x" }`             | Wird akzeptiert (Settings können service.name setzen, siehe §4.2)          |
+| `settings.resourceAttributes={ "service.version": "x" }`          | Wird stillschweigend verworfen + `diag.warn`                               |
+| `settings.resourceAttributes={ "team": 123 }` (kein String)       | TypeScript-Typ verhindert; zur Laufzeit wird der JSON-Schema-Validator von Settings es ablehnen |
+| Resource-Gesamtgröße > OTel-Limit (4KB?)                          | Wird vom zugrunde liegenden OTel SDK behandelt, nicht auf dieser Ebene validiert |
 
-**Warum keine Attribut-Schlüssel-Namensvalidierung in dieser Schicht** (wie von OTel empfohlenes Schema `[a-z][a-z0-9_.]*`): Das OTel SDK prüft selbst beim Export. Eine doppelte Prüfung wäre langsam und könnte vom SDK-Verhalten abweichen. Wir parsen nur das Format, keine semantische Validierung.
+**Warum wird auf dieser Ebene keine Attribut-Key-Namensvalidierung durchgeführt** (z. B. das von OTel empfohlene Muster `[a-z][a-z0-9_.]*`)? Das OTel SDK validiert selbst beim Export; eine zusätzliche Validierung auf dieser Ebene wäre langsam und könnte vom SDK-Verhalten abweichen. Wir parsen nur das Format, keine semantische Validierung.
 
-**Erzwungener Schutz von RESERVED-Schlüsseln gilt für beide Einstiegspunkte**:
+**Der obligatorische Schutz reservierter Keys gilt für beide Einstiegspunkte**:
 
 ```ts
-// Angewendet auf umgebungsgeparste Attribute
+// Angewendet auf env-geparste Attrs
 for (const k of RESERVED_RESOURCE_ATTRIBUTE_KEYS) {
   if (k in envAttrs) {
     diag.warn(`OTEL_RESOURCE_ATTRIBUTES cannot override "${k}"; ignoring`);
@@ -296,7 +298,7 @@ for (const k of RESERVED_RESOURCE_ATTRIBUTE_KEYS) {
   }
 }
 
-// Angewendet auf Settings-Attribute
+// Angewendet auf Settings-Attrs
 for (const k of RESERVED_RESOURCE_ATTRIBUTE_KEYS) {
   if (k in settingsAttrs) {
     diag.warn(
@@ -309,23 +311,23 @@ for (const k of RESERVED_RESOURCE_ATTRIBUTE_KEYS) {
 
 ### 4.7 Lebenszyklus und Multiprozess
 
-- **SDK init-Zeitpunkt**: Resource wird einmalig in `initializeTelemetry()` erstellt, **innerhalb des Prozesses unveränderlich**. Dies entspricht dem OTel SDK-Design.
-- **Subagent fork**: qwen-code-Subagent läuft innerhalb desselben Prozesses (`subagent-runtime.ts`) und teilt sich die Resource. Falls in Zukunft ein prozessübergreifender Subagent eingeführt wird, initialisiert der Kindprozess das SDK **neu**, liest erneut Umgebungsvariablen und Settings – solange die Umgebungsvariablen durchgereicht werden, ist das Verhalten konsistent.
-- **Hot Reload**: Nach Änderung der Settings wird die Resource **nicht neu erstellt**. Ein Neustart der CLI ist erforderlich. Die Dokumentation sollte dies klarstellen.
-- **`refreshSessionContext()`** (`sdk.ts:306`): Aktualisiert nur den Session-ALS-Kontext, **erstellt die Resource nicht neu** – da `session.id` nicht mehr auf der Resource vorhanden ist (eine der Kernänderungen dieses Designs).
+- **SDK-Init-Zeitpunkt**: Die Resource wird bei `initializeTelemetry()` einmalig konstruiert und ist **innerhalb des Prozesses unveränderlich**. Dies entspricht dem OTel SDK-Design.
+- **Subagent-Fork**: Der Subagent von qwen-code läuft innerhalb desselben Prozesses (`subagent-runtime.ts`) und teilt die Resource. Sollte in Zukunft ein prozessübergreifender Subagent eingeführt werden, würde der Kindprozess das SDK **neu initialisieren** und die Env-Var und Settings erneut lesen – solange die Env weitergegeben wird, ist das Verhalten konsistent.
+- **Hot-Reload**: Eine Änderung der Settings führt **nicht** zur Neukonstruktion der Resource. Damit die Änderung wirksam wird, muss der Bediener die CLI neu starten. Die Dokumentation sollte dies klarstellen.
+- **`refreshSessionContext()`** (`sdk.ts:306`): Aktualisiert nur den Session-ALS-Kontext, **baut die Resource nicht neu** – da die Resource kein `session.id` mehr enthält (eine der Kernänderungen dieses Entwurfs).
 
-## 5. Config Schema-Änderungen
+## 5. Änderungen am Config-Schema
 
 ### 5.1 `TelemetrySettings`-Interface (`packages/core/src/config/config.ts:293`)
 
 ```ts
 export interface TelemetrySettings {
-  // ... existing fields
-  /** Statische Resource-Attribute, die an jeden Span/Log/Metric angehängt werden. */
+  // ... bestehende Felder
+  /** Statische Resource-Attribute, die an jeden Span/Log/Metrik angehängt werden. */
   resourceAttributes?: Record<string, string>;
-  /** Kardinalitätskontrollen pro Signal. */
+  /** Per-Signal-Kardinalitätssteuerung. */
   metrics?: {
-    /** session.id in Metrikdatenpunkte einfügen (Standard: false). */
+    /** session.id in Metrikdatenpunkte aufnehmen (Standard: false). */
     includeSessionId?: boolean;
   };
 }
@@ -344,7 +346,7 @@ class Config {
 }
 ```
 
-### 5.3 `resolveTelemetrySettings()` neu hinzugefügt
+### 5.3 `resolveTelemetrySettings()` neu
 
 ```ts
 const envResourceAttrs = parseOtelResourceAttributes(
@@ -352,7 +354,7 @@ const envResourceAttrs = parseOtelResourceAttributes(
 );
 const settingsResourceAttrs = { ...(settings.resourceAttributes ?? {}) };
 
-// RESERVED-Schlüssel aus beiden Quellen entfernen (Warnung bei Benutzerversuch)
+// Strip RESERVED keys from both sources (warn if user tried to set them).
 for (const k of RESERVED_RESOURCE_ATTRIBUTE_KEYS) {
   if (k in envResourceAttrs) {
     diag.warn(`OTEL_RESOURCE_ATTRIBUTES cannot override "${k}"; ignoring`);
@@ -366,14 +368,14 @@ for (const k of RESERVED_RESOURCE_ATTRIBUTE_KEYS) {
   }
 }
 
-// Zusammenführen: env < settings (settings gewinnt bei Konflikten)
+// Merge: env < settings (settings wins on conflict).
 const merged: Record<string, string> = {
   ...envResourceAttrs,
   ...settingsResourceAttrs,
 };
 
-// service.name-Vorrang: OTEL_SERVICE_NAME (nur env-Ausweichmöglichkeit) überschreibt
-// alles andere. settings haben in der Spread-Operation bereits env überschrieben.
+// service.name precedence: OTEL_SERVICE_NAME (env-only escape) wins over
+// everything else. settings already overwrote env in the spread above.
 if (env['OTEL_SERVICE_NAME']) {
   merged['service.name'] = env['OTEL_SERVICE_NAME'];
 }
@@ -386,17 +388,18 @@ const metricsIncludeSessionId =
   false;
 
 return {
-  // ... existing fields
+  // ... bestehende Felder
   resourceAttributes,
   metrics: { includeSessionId: metricsIncludeSessionId },
 };
 ```
-### 5.4 Änderungen am Resource-Aufbau in `sdk.ts`
+
+### 5.4 `sdk.ts` Resource-Konstruktion geändert
 
 ```ts
 const userAttrs = config.getTelemetryResourceAttributes();
-// service.version ist immer eingebaut; service.name kommt durch userAttrs
-// (wurde bereits mit OTEL_SERVICE_NAME-Priorität im Resolver aufgelöst).
+// service.version is always built-in; service.name flows through userAttrs
+// (it was already resolved with OTEL_SERVICE_NAME precedence in resolver).
 const builtinServiceName = userAttrs['service.name'] ?? SERVICE_NAME;
 const { 'service.name': _, 'service.version': __, ...nonReserved } = userAttrs;
 
@@ -405,13 +408,13 @@ const resource = resourceFromAttributes({
   [SemanticResourceAttributes.SERVICE_NAME]: builtinServiceName,
   [SemanticResourceAttributes.SERVICE_VERSION]:
     config.getCliVersion() || 'unknown',
-  // session.id wird bewusst NICHT auf Resource gesetzt – siehe Design-Dokument §4.1
+  // session.id deliberately NOT placed on Resource — see design doc §4.1
 });
 ```
 
-### 5.5 Änderungen in `settingsSchema.ts`
+### 5.5 `settingsSchema.ts` geändert
 
-In `packages/cli/src/config/settingsSchema.ts:998-1018` bei `telemetry.jsonSchemaOverride.properties` hinzufügen:
+`packages/cli/src/config/settingsSchema.ts:998-1018` `telemetry.jsonSchemaOverride.properties` hinzufügen:
 
 ```ts
 {
@@ -420,9 +423,9 @@ In `packages/cli/src/config/settingsSchema.ts:998-1018` bei `telemetry.jsonSchem
     type: 'object',
     additionalProperties: { type: 'string' },
     description:
-      'Statische Resource-Attribute, die an alle Telemetriedaten angehängt werden. ' +
-      'Schlüssel müssen Strings sein; Werte müssen Strings sein. ' +
-      'Reservierte Schlüssel (service.name, service.version) werden stillschweigend verworfen.',
+      'Static resource attributes attached to all telemetry data. ' +
+      'Keys must be strings; values must be strings. ' +
+      'Reserved keys (service.name, service.version) are silently dropped.',
     default: {},
   },
   metrics: {
@@ -433,77 +436,77 @@ In `packages/cli/src/config/settingsSchema.ts:998-1018` bei `telemetry.jsonSchem
         type: 'boolean',
         default: false,
         description:
-          'session.id auf jedem Metrik-Datenpunkt einschließen. ' +
-          'WARNUNG: Jede CLI-Sitzung erzeugt einen neuen Wert, was zu unbegrenztem ' +
-          'Metrik-Zeitreihen-Fan-out führt. Nur für kurzfristiges Debugging aktivieren.',
+          'Include session.id on every metric data point. ' +
+          'WARNING: each CLI session creates a new value, causing unbounded ' +
+          'metric time-series fan-out. Only enable for short-term debugging.',
       },
     },
   },
 }
 ```
 
-Ebenso sollte `additionalProperties: true` neu bewertet werden – derzeit permissiv, kann beibehalten oder strikt gemacht werden. Es wird empfohlen, permissiv zu lassen, um keine breaking changes für andere nicht im Schema deklarierte `telemetry.*`-Felder zu verursachen, aber in der Dokumentation klarstellen: „Nicht deklarierte Felder werden ignoriert."
+Zusätzlich sollte `additionalProperties: true` neu bewertet werden – derzeit ist es permissiv, es kann beibehalten oder auf strict umgestellt werden. Es wird empfohlen, es permissiv zu lassen, um keine breaking changes für andere nicht im Schema deklarierte `telemetry.*`-Felder zu verursachen, aber die Docs sollten klarstellen, dass „nicht deklarierte Felder ignoriert werden".
 
-## 6. Liste der Dateiänderungen
+## 6. Dateiänderungsliste
 
-| Datei                                                           | Änderung                                                                             |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `packages/core/src/telemetry/sdk.ts`                           | Resource-Aufbau geändert (User-Attrs zusammengeführt, `session.id` entfernt)         |
-| `packages/core/src/telemetry/resource-attributes.ts` (neu)     | `parseOtelResourceAttributes()` + Konstante `RESERVED_RESOURCE_ATTRIBUTE_KEYS`       |
-| `packages/core/src/telemetry/config.ts`                        | Resolver: `resourceAttributes` + `metrics.includeSessionId` Parsing und Merge        |
-| `packages/core/src/telemetry/metrics.ts`                       | `getCommonAttributes()` um Toggle-Gate erweitert                                     |
-| `packages/core/src/config/config.ts`                           | `TelemetrySettings` Schema + zwei Getter                                             |
-| `packages/cli/src/config/settingsSchema.ts`                    | `jsonSchemaOverride`: `resourceAttributes` + `metrics` hinzugefügt                   |
-| `docs/developers/development/telemetry.md`                     | Abschnitte „Resource attributes“ + „Cardinality controls“ + Migrationshinweise + Beispiele |
-| `packages/core/src/telemetry/resource-attributes.test.ts` (neu) | Unit-Tests für Parser (alle Fälle aus §4.6 abgedeckt)                               |
-| `packages/core/src/telemetry/sdk.test.ts`                      | Merge-Priorität / reservierte Schlüssel / `OTEL_SERVICE_NAME`                        |
-| `packages/core/src/telemetry/metrics.test.ts`                  | `session.id` erscheint bei toggle off/on                                             |
-| `packages/core/src/telemetry/config.test.ts`                   | Umgebungsvariablen / Settings Merge                                                  |
-| `CHANGELOG.md` oder Release Notes                              | Breaking-Change-Hinweis zu PR 2                                                      |
+| Datei                                                          | Änderung                                                                        |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `packages/core/src/telemetry/sdk.ts`                           | Resource-Konstruktion geändert (Benutzer-Attrs mergen, `session.id` entfernen)  |
+| `packages/core/src/telemetry/resource-attributes.ts` (neu)     | `parseOtelResourceAttributes()` + `RESERVED_RESOURCE_ATTRIBUTE_KEYS`-Konstante |
+| `packages/core/src/telemetry/config.ts`                        | Resolver: `resourceAttributes` + `metrics.includeSessionId`-Parsing & Merge     |
+| `packages/core/src/telemetry/metrics.ts`                       | `getCommonAttributes()`: Toggle-Tor hinzugefügt                                 |
+| `packages/core/src/config/config.ts`                           | `TelemetrySettings`-Schema + zwei Getter                                         |
+| `packages/cli/src/config/settingsSchema.ts`                    | `jsonSchemaOverride`: `resourceAttributes` + `metrics` hinzugefügt               |
+| `docs/developers/development/telemetry.md`                     | Zwei Abschnitte „Resource attributes" + „Cardinality controls" + Migrationshinweise + Beispiele |
+| `packages/core/src/telemetry/resource-attributes.test.ts` (neu) | Unit-Tests für den Parser (alle Fälle aus §4.6 abdecken)                        |
+| `packages/core/src/telemetry/sdk.test.ts`                      | Merge-Priorität / reservierte Keys / `OTEL_SERVICE_NAME`                         |
+| `packages/core/src/telemetry/metrics.test.ts`                  | session.id bei toggle off/on                                                   |
+| `packages/core/src/telemetry/config.test.ts`                   | Merge von Env / Settings                                                        |
+| `CHANGELOG.md` oder Release Notes                              | Breaking-Change-Hinweis für PR 2                                                |
 
-## 7. Aufteilung in mehrere PRs
+## 7. Aufteilung in PRs
 
-Nach Review-Freundlichkeit und Blast Radius in drei PRs:
+Nach Review-Freundlichkeit und Blast-Radius in drei PRs aufgeteilt:
 
-### PR 1 — Benutzerdefinierte Resource-Attribute (additiv, keine Brüche)
+### PR 1 — Custom resource attributes (additiv, keine Breaks)
 
 - Neue Datei `resource-attributes.ts`: `parseOtelResourceAttributes()` + `RESERVED_RESOURCE_ATTRIBUTE_KEYS`
-- Feld `TelemetrySettings.resourceAttributes` + Resolver-Merge-Logik
-- Anbindung von `OTEL_SERVICE_NAME` / `OTEL_RESOURCE_ATTRIBUTES` gemäß Priorität §4.2
-- Merge in Resource (`sdk.ts`)
-- `settingsSchema.ts`: `resourceAttributes` JSON-Schema hinzugefügt
-- **Rührt** die Position von `session.id` auf Resource **nicht** an
-- Docs: Abschnitt „Resource attributes"
+- `TelemetrySettings.resourceAttributes`-Feld + Resolver-Merge-Logik
+- `OTEL_SERVICE_NAME` / `OTEL_RESOURCE_ATTRIBUTES` angebunden, gemäß §4.2 Priorität
+- In die Resource gemerged (`sdk.ts`)
+- `settingsSchema.ts`: `resourceAttributes`-JSON-Schema hinzugefügt
+- **`session.id` wird in der Resource nicht angerührt**
+- Docs: Abschnitt „Resource attributes" hinzugefügt
+**Risiko**: Niedrig. Vollständig additiv, ohne bestehendes Verhalten zu ändern. Die exportierten Daten ändern sich nicht, es sei denn, der Benutzer setzt aktiv Umgebungsvariablen oder Einstellungen.
 
-**Risiko**: Niedrig. Vollständig additiv, kein bestehendes Verhalten wird geändert. Nur wenn Benutzer explizit Umgebungsvariablen oder Settings setzen, ändern sich die exportierten Daten.
+### PR 2 — Cardinality-Steuerung (semantischer Bruch)
 
-### PR 2 — Cardinality-Kontrollen (semantischer Bruch)
-
-- `session.id` aus Resource entfernen (Zeile `sdk.ts:160`)
-- Toggle `metrics.includeSessionId` hinzufügen (Settings + Umgebungsvariable) + Gate in `getCommonAttributes()`
-- `settingsSchema.ts`: `metrics` JSON-Schema hinzugefügt
+- Entferne `session.id` aus Resource (Zeile `sdk.ts:160`)
+- Füge `metrics.includeSessionId`-Toggle hinzu (settings + env) + `getCommonAttributes()`-Gate
+- Füge in `settingsSchema.ts` das `metrics`-JSON-Schema hinzu
 - CHANGELOG / Migrationshinweise
-- Snapshot-Tests sperren Metrics-Attributsatz (Regression verhindern)
-- Docs: Abschnitt „Cardinality controls" + Migrationsleitfaden
+- Snapshot-Tests, die den Satz an Metrik-Attributen fixieren (Regression verhindern)
+- Docs um Abschnitt "Cardinality-Steuerung" + Migrationsanleitung ergänzen
 
-**Risiko**: Mittel. Jede Prometheus-Abfrage / jedes Grafana-Dashboard / jede Alarmregel, die auf `session.id` in Metriken angewiesen ist, wird ungültig. Expliziter Release-Hinweis und ein Migrationsfenster von 1–2 Versionen sind nötig.
+**Risiko**: Mittel. Jede Prometheus-Query / Grafana-Dashboard / Alarmregel, die auf `session.id` in Metriken angewiesen ist, wird ungültig. Erfordert expliziten Release-Hinweis und ein Migrationsfenster von 1–2 Versionen.
 
-**Opt-in-Übergangslösung** (Kandidat, wird für dieses Issue **nicht empfohlen**):
+**Opt-in-Übergangslösung** (möglich, für dieses Release **nicht empfohlen**):
 
-> PR 2 könnte zunächst als „opt-out" ausgerollt werden – standardmäßig wird `session.id` weiterhin in Metriken injiziert, aber mit einer Warnmeldung „Diese Voreinstellung wird in v0.X umgekehrt". Nach einem Release die Voreinstellung umdrehen.
+> PR 2 könnte zunächst als "Opt-out" implementiert werden – standardmäßig wird `session.id` weiterhin in Metriken injiziert, jedoch mit einem Warn-Log "this default will flip in v0.X". Ein Release später wird die Voreinstellung umgekehrt.
 
-Nicht empfohlen, weil: (1) Die aktuelle Benutzergruppe von Qwen Code ist klein, der Schaden begrenzt; (2) dies ist ein Cardinality-Bug, je früher standardmäßig sicher, desto besser; (3) ein zweistufiger Rollout erhöht den Dokumentationsaufwand. Wenn der Eigentümer des übergeordneten Issues konservativer sein möchte, kann dies übernommen werden.
-### PR 3 — Docs aufpolieren + Samples (Bereinigung)
+Gründe gegen die Empfehlung: (1) Der aktuelle qwen-code-Benutzerkreis ist klein, der Bruch begrenzt; (2) Es handelt sich um einen Cardinality-Bug – je früher standardmäßig sicher, desto besser; (3) Eine zweistufige Veröffentlichung erhöht den Dokumentationsaufwand. Falls der Verantwortliche des übergeordneten Issues konservativer sein möchte, könnte dieser Vorschlag angenommen werden.
 
-- `docs/developers/development/telemetry.md` Beispiel ergänzen (siehe §10)
+### PR 3 — Docs-Polish + Samples (Cleanup)
+
+- `docs/developers/development/telemetry.md` um Beispiele ergänzen (siehe §10)
 - Beispiele für die Integration von Alibaba Cloud ARMS / Prometheus / Grafana
-- Füge `settings.json`-Ausschnitte für alle typischen Anwendungsfälle hinzu
+- Alle typischen Use-Cases als settings.json-Ausschnitte hinzufügen
 
 ## 8. Testplan
 
-### 8.1 `parseOtelResourceAttributes()`-Unit-Tests
+### 8.1 Unit-Tests für `parseOtelResourceAttributes()`
 
-Parametrisierte Abdeckung aller Zeilen in Tabelle §4.6 (Empfehlung: vitest `it.each`):
+Parametrisierte Abdeckung aller Zeilen aus Tabelle §4.6 (empfohlen mit vitest `it.each`):
 
 ```ts
 it.each([
@@ -511,34 +514,34 @@ it.each([
   ['a=1', { a: '1' }],
   ['a=1,b=2', { a: '1', b: '2' }],
   ['a=hello%20world', { a: 'hello world' }],
-  ['a=val%ZZbad', { a: 'val%ZZbad' }], // invalid percent
+  ['a=val%ZZbad', { a: 'val%ZZbad' }], // ungültiges Prozent
   ['malformed', {}],
   ['=val', {}],
   ['a=', { a: '' }],
   ['a=1,a=2', { a: '2' }],
   [' a = 1 , b = 2 ', { a: '1', b: '2' }],
-])('parses %j → %j', (input, expected) => {
+])('parst %j → %j', (input, expected) => {
   expect(parseOtelResourceAttributes(input)).toEqual(expected);
 });
 ```
 
 ### 8.2 Resolver-Merge-Tests
 
-| Szenario                                                                               | Erwarteter `service.name`                                   | Erwartetes user attr                       |
-| -------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------ |
-| Alle leer                                                                              | `'qwen-code'`                                               | Nicht vorhanden                            |
-| Nur env `OTEL_SERVICE_NAME=A`                                                          | `'A'`                                                       | —                                          |
-| Nur env `OTEL_RESOURCE_ATTRIBUTES=service.name=B`                                      | `'B'`                                                       | —                                          |
-| `OTEL_SERVICE_NAME=A` + `OTEL_RESOURCE_ATTRIBUTES=service.name=B`                     | `'A'` (OTEL_SERVICE_NAME hat Vorrang)                       | —                                          |
-| `OTEL_SERVICE_NAME=A` + `settings={service.name:C}`                                   | `'A'` (OTEL_SERVICE_NAME hat Vorrang)                       | —                                          |
-| `OTEL_RESOURCE_ATTRIBUTES=service.name=B` + `settings={service.name:C}`               | `'C'` (settings haben Vorrang vor env, wenn kein OTEL_SERVICE_NAME) | —                                          |
-| `OTEL_RESOURCE_ATTRIBUTES=team=x` + `settings={team:y}`                               | `'qwen-code'`                                               | `team='y'` (settings haben Vorrang)        |
-| `OTEL_RESOURCE_ATTRIBUTES=service.version=fake`                                       | `'qwen-code'` + warn                                        | service.version bleibt echte CLI-Version   |
-| `settings={service.version:fake}`                                                     | `'qwen-code'` + warn                                        | service.version bleibt echte CLI-Version   |
+| Szenario                                                                  | Erwarteter `service.name`                         | Erwartetes user attr                       |
+| ------------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------ |
+| Alle leer                                                                 | `'qwen-code'`                                     | Nicht vorhanden                            |
+| Nur env `OTEL_SERVICE_NAME=A`                                             | `'A'`                                             | —                                          |
+| Nur env `OTEL_RESOURCE_ATTRIBUTES=service.name=B`                         | `'B'`                                             | —                                          |
+| `OTEL_SERVICE_NAME=A` + `OTEL_RESOURCE_ATTRIBUTES=service.name=B`         | `'A'` (`OTEL_SERVICE_NAME` hat Vorrang)           | —                                          |
+| `OTEL_SERVICE_NAME=A` + `settings={service.name:C}`                       | `'A'` (`OTEL_SERVICE_NAME` hat Vorrang)           | —                                          |
+| `OTEL_RESOURCE_ATTRIBUTES=service.name=B` + `settings={service.name:C}`   | `'C'` (Settings vor env, wenn `OTEL_SERVICE_NAME` fehlt) | —                                          |
+| `OTEL_RESOURCE_ATTRIBUTES=team=x` + `settings={team:y}`                   | `'qwen-code'`                                     | `team='y'` (Settings haben Vorrang)        |
+| `OTEL_RESOURCE_ATTRIBUTES=service.version=fake`                           | `'qwen-code'` + warn                              | service.version bleibt echte CLI-Version   |
+| `settings={service.version:fake}`                                         | `'qwen-code'` + warn                              | service.version bleibt echte CLI-Version   |
 
-### 8.3 Resource-Inhalts-Snapshot-Tests
+### 8.3 Snapshot-Tests für Resource-Inhalte
 
-Hole einen Span mit `InMemorySpanExporter` und behaupte:
+Mit `InMemorySpanExporter` einen Span holen und behaupten:
 
 ```ts
 expect(span.resource.attributes['service.name']).toBe('qwen-code');
@@ -547,18 +550,18 @@ expect(span.resource.attributes['session.id']).toBeUndefined(); // entscheidend
 expect(span.resource.attributes['team']).toBe('platform'); // vom Benutzer hinzugefügt
 ```
 
-### 8.4 Metric-Attribut-Toggle-Tests
+### 8.4 Tests für Metrik-Attribut-Toggle
 
 ```ts
-it('does not emit session.id on metrics by default', async () => {
-  // emit one tool call counter
+it('sendet standardmäßig kein session.id in Metriken', async () => {
+  // einen Tool-Call-Zähler ausgeben
   recordToolCallMetrics(...);
   const data = await metricReader.collect();
   const dp = data.resourceMetrics.scopeMetrics[0].metrics[0].dataPoints[0];
   expect(dp.attributes['session.id']).toBeUndefined();
 });
 
-it('emits session.id when toggle is true', async () => {
+it('sendet session.id, wenn der Toggle aktiviert ist', async () => {
   config.telemetrySettings.metrics = { includeSessionId: true };
   recordToolCallMetrics(...);
   const data = await metricReader.collect();
@@ -567,54 +570,54 @@ it('emits session.id when toggle is true', async () => {
 });
 ```
 
-### 8.5 Spans/Logs-Verhalten-beibehalten-Tests
+### 8.5 Tests für unverändertes Verhalten von Spans / Logs
 
-- spans haben weiterhin `session.id` (unbeeinflusst vom Metric-Toggle)
-- logs haben weiterhin `session.id` (unbeeinflusst vom Metric-Toggle)
+- Spans enthalten weiterhin `session.id` (nicht vom Metrik-Toggle betroffen)
+- Logs enthalten weiterhin `session.id` (nicht vom Metrik-Toggle betroffen)
 
 ### 8.6 Regressionsschutz
 
-- `autoDetectResources: false` bleibt unverändert (Assertion auf Config)
-- Während des Starts treten keine neuen `diag.error` auf (OTel diag-Logs abfangen und assertion)
-- Alle bestehenden Telemetrietests bestehen (CI)
+- `autoDetectResources: false` bleibt unverändert (Assertion auf config)
+- Während des Starts tritt kein neues `diag.error` auf (OTel diag-Logs abfangen und behaupten)
+- Alle bestehenden Telemetrie-Tests bestehen (CI)
 
-### 8.7 Diag-warn-Tests
+### 8.7 Tests für diag-warn
 
-Überprüfe, dass die folgenden Eingaben jeweils einmal `diag.warn` auslösen:
+Prüfen, dass die folgenden Eingaben jeweils einmal `diag.warn` auslösen:
 
 - `settings.resourceAttributes = { 'service.version': 'x' }` (reserviert)
 - `OTEL_RESOURCE_ATTRIBUTES=service.version=x` (reserviert, env soll auch warnen)
 - `OTEL_RESOURCE_ATTRIBUTES=malformed` (kein `=`)
-- `OTEL_RESOURCE_ATTRIBUTES=a=val%ZZ` (ungültige Prozent-Kodierung)
+- `OTEL_RESOURCE_ATTRIBUTES=a=val%ZZ` (ungültiges Prozent-Encoding)
 
-Überprüfe, dass die folgenden Eingaben **kein** warn auslösen (gültige Pfade):
+Prüfen, dass die folgenden Eingaben **kein** warn auslösen (gültige Pfade):
 
-- `settings.resourceAttributes = { 'service.name': 'x' }` (settings erlauben service.name zu setzen)
-- `OTEL_SERVICE_NAME=foo` + `settings.resourceAttributes = { 'service.name': 'bar' }` (OTEL_SERVICE_NAME hat Vorrang, kein warn nötig)
+- `settings.resourceAttributes = { 'service.name': 'x' }` (Settings erlauben das Setzen von service.name)
+- `OTEL_SERVICE_NAME=foo` + `settings.resourceAttributes = { 'service.name': 'bar' }` (`OTEL_SERVICE_NAME` hat Vorrang, kein warn nötig)
 
 ## 9. Migration / Breaking Changes
 
-### 9.1 Breaking Changes (PR 2)
+### 9.1 Breaking Change (PR 2)
 
-**`session.id` bei Metriken verschwindet standardmäßig.** Dies betrifft:
+**Das `session.id` in Metriken fehlt standardmäßig**. Dies betrifft:
 
-- Aggregationen in Prometheus-Queries mit `by (session_id)` / `group_left(session_id)`
-- Diagramme im Grafana-Dashboard, die nach Session aufgeschlüsselt sind
-- Alle Regeln, die Alarme nach session.id gruppieren
+- Prometheus-Queries mit `by (session_id)` / `group_left(session_id)` Aggregationen
+- Grafana-Dashboards mit nach Sitzung unterteilten Diagrammen
+- Regeln, die nach `session.id` gruppieren
 
-Hinweis: `session.id` auf Spans und Logs **bleibt unverändert**.
+Hinweis: `session.id` in Spans und Logs **bleibt unberührt**.
 
 ### 9.2 Migrationspfad
 
-Das Dokument gibt zwei Optionen:
+In der Dokumentation werden zwei Optionen angeboten:
 
-**Option A**: Altes Verhalten wiederherstellen (für kurzfristiges Debuggen empfohlen)
+**Option A**: Altes Verhalten wiederherstellen (kurzzeitiges Debugging empfohlen)
 
 ```bash
 export QWEN_TELEMETRY_METRICS_INCLUDE_SESSION_ID=true
 ```
 
-oder `settings.json`:
+Oder in `settings.json`:
 
 ```json
 {
@@ -624,51 +627,52 @@ oder `settings.json`:
 }
 ```
 
-⚠️ **Warnung**: Langfristiges Aktivieren führt dazu, dass die Anzahl der Metrik-Zeitreihen = Anzahl der historischen Sitzungen ist, was das Backend überlasten kann. Nur für kurzfristiges Debuggen.
+⚠️ **Warnung**: Langfristig aktiviert führt dies dazu, dass die Anzahl der Metrik-Zeitreihen = der Anzahl historischer Sitzungen ist und das Backend überlastet. Nur für kurzfristiges Debugging verwenden.
 
-**Option B**: Stattdessen Spans/Logs für Session-Aufschlüsselung verwenden (empfohlen)
-- spans / logs tragen weiterhin `session.id`, Segmentierung im Trace-Backend (z. B. Jaeger / Aliyun ARMS Tracing) / Log-Backend (z. B. Loki / SLS) nach Session möglich
-- Diese Datenarten werden ohnehin per-event gespeichert, Kardinalität explodiert nicht
-- Geeignet für Session-Level-Drill-down-Analysen
+**Option B**: Stattdessen Spans / Logs für Sitzungs-Slicing verwenden (empfohlen)
 
-### 9.3 Release-Notiz-Vorlage
+- Spans / Logs enthalten weiterhin `session.id`. Sie können in Trace-Backends (z. B. Jaeger / Aliyun ARMS Tracing) / Log-Backends (z. B. Loki / SLS) nach Sitzung slicen
+- Diese Daten sind ohnehin pro Event gespeichert, die Cardinality explodiert nicht
+- Geeignet für Session-Level-Drill-Down-Analysen
+
+### 9.3 Release-Hinweis-Vorlage
 
 ```
-**Breaking Change (Metrik-Attribut):**
+**Breaking change (Metrik-Attribut):**
 
-Das Attribut `session.id` wird standardmäßig nicht mehr an Metrik-Datenpunkte angehängt.
-Dies schützt Metrik-Backends vor unbegrenztem Time-Series-Fan-Out.
+Das Attribut `session.id` wird standardmäßig nicht mehr an Metrik-Datenpunkte
+angehängt. Dies schützt Metrik-Backends vor unbegrenzter Ausbreitung von Zeitreihen.
 
 - Spans und Logs sind nicht betroffen – `session.id` ist weiterhin vorhanden.
-- Zur Wiederherstellung des vorherigen Verhaltens (nur für kurzfristiges Debugging) setzen Sie
+- Um das vorherige Verhalten wiederherzustellen (nur kurzfristiges Debugging), setzen Sie
   `QWEN_TELEMETRY_METRICS_INCLUDE_SESSION_ID=true` oder in settings.json:
   `telemetry.metrics.includeSessionId: true`.
-- Für langfristige Session-Korrelation fragen Sie Trace-/Log-Backends ab, nicht Metrik-Backends.
+- Für langfristige Sitzungskorrelation fragen Sie Trace-/Log-Backends anstelle von Metrik-Backends ab.
 
-Einzelheiten finden Sie in docs/developers/development/telemetry.md unter „Migration“.
+Weitere Details finden Sie unter docs/developers/development/telemetry.md „Migration“.
 ```
 
 ## 10. Beispielkonfigurationen (für die Dokumentation)
 
-### 10.1 Alle Telemetriedaten nach Team/Umgebung segmentieren
+### 10.1 Alle Telemetriedaten nach Team / Umgebung slicen
 
 ```bash
 export OTEL_RESOURCE_ATTRIBUTES="team=platform,env=prod,cost_center=eng-123"
 ```
 
-Effekt: Alle Span-/Log-/Metrik-Daten tragen `team=platform` `env=prod` `cost_center=eng-123`.
+Effekt: Alle Spans / Logs / Metriken enthalten `team=platform`, `env=prod`, `cost_center=eng-123`.
 
-### 10.2 Routing im Shared Collector mit `OTEL_SERVICE_NAME`
+### 10.2 Mit `OTEL_SERVICE_NAME` in einem gemeinsamen Collector routen
 
 ```bash
 export OTEL_SERVICE_NAME=qwen-code-ci
 ```
 
-Effekt: `service.name=qwen-code-ci`, der Multi-Tenant-OTel-Collector kann nach service.name an verschiedene Backends routen.
+Effekt: `service.name=qwen-code-ci`. Ein Multi-Tenant-OTel-Collector kann nach service.name an verschiedene Backends routen.
 
-### 10.3 Fleet-Baseline + Einzelmaschinen-Override
+### 10.3 Fleet-Baseline + Einzelne Rechner-Überschreibung
 
-`~/.qwen/settings.json` der Firmen-Fleet (GitOps-Verteilung):
+Firmenweites `~/.qwen/settings.json` (GitOps-Verteilung):
 
 ```json
 {
@@ -681,22 +685,22 @@ Effekt: `service.name=qwen-code-ci`, der Multi-Tenant-OTel-Collector kann nach s
 }
 ```
 
-Temporäres Override auf einer einzelnen Maschine für Ops (ohne settings zu ändern):
+Einzelner Operateur überschreibt temporär (ohne Einstellungen zu ändern):
 
 ```bash
 export OTEL_RESOURCE_ATTRIBUTES="debug_run=true"
-# deployment.environment / service.namespace aus settings gelten weiterhin
-# dieser Lauf erhält zusätzlich debug_run=true
+# deployment.environment / service.namespace aus den Einstellungen bleiben erhalten
+# Dieser Lauf erhält zusätzlich debug_run=true
 ```
 
 ### 10.4 Kurzfristiges Debugging: Metrik-session.id aktivieren
 
 ```bash
-# Einmaliger Debug-Durchlauf
+# Einmaliger Debug-Lauf
 QWEN_TELEMETRY_METRICS_INCLUDE_SESSION_ID=true qwen "Investitionsanalyse"
 ```
 
-Nach dem Debuggen sofort deaktivieren, nicht in settings persistieren.
+Danach sofort deaktivieren, nicht in den Einstellungen persistieren.
 
 ### 10.5 Alibaba Cloud ARMS Metric-Anbindung (empfohlene Konfiguration)
 
@@ -717,39 +721,39 @@ Nach dem Debuggen sofort deaktivieren, nicht in settings persistieren.
 }
 ```
 
-## 11. Vergleich mit der claude-code-Implementierung
+## 11. Vergleich mit claude-code-Implementierung
 
-| Dimension                        | claude-code                                      | qwen-code (dieses Design)                        | Entscheidungsgrundlage                              |
-| -------------------------------- | ------------------------------------------------ | ------------------------------------------------ | --------------------------------------------------- |
-| Standard-OTel-Env-Vars           | `OTEL_RESOURCE_ATTRIBUTES` / `OTEL_SERVICE_NAME` | ✅ gleich                                        | Standardvertrag                                     |
-| `OTEL_SERVICE_NAME`-Priorität    | Folgt OTel-Spezifikation                         | ✅ folgt                                         | Spezifikation legt klar fest                        |
-| Kardinalitäts-Toggle-Benennung   | `OTEL_METRICS_INCLUDE_*`                         | `QWEN_TELEMETRY_METRICS_INCLUDE_*`               | Verschmutzt nicht den OTel-Standard-Namespace       |
-| Toggle-Wirkungsbereich           | Nur Metriken                                     | ✅ nur Metriken                                  | Spans/Logs sind per-event, kein Kardinalitätsproblem |
-| Standardwert                     | Hochkardinalitäts-Attribut standardmäßig false   | ✅ standardmäßig false                           | Sicherheit zuerst                                   |
-| Per-Attribut-Granularität        | Ein Toggle pro Attribut                          | ✅ gleich                                        | Flexibel, entspricht Diagnoseanforderungen          |
-| settings.json-Äquivalent         | ❌ nicht vorhanden                               | ✅ `telemetry.resourceAttributes` + `metrics`    | Enterprise-Fleet-Base-Config                        |
-| Per-Span-Dynamic-Hook            | ❌ nicht vorhanden                               | ❌ nicht vorhanden                               | Hohe Komplexität, claude-code hat das auch nicht, diese Iteration nicht |
-| Multi-Tenant `account_uuid`      | Vorhanden                                        | ❌ nicht vorhanden                               | qwen-code-Metriken haben dieses Attribut nicht      |
-| Agent SDK `options.env`          | Vorhanden                                        | ❌ nicht vorhanden                               | qwen-code hat kein Äquivalent                       |
-| Schlüsselschutzstrategie         | Überschreiben von built-in-IDs nicht erlaubt     | ✅ gleich                                        | Vertrauenswürdigkeit der Telemetrie                 |
-| Eigener Meldekanal               | claude-code hat ebenfalls eigenen Kanal (isoliert von OTel) | ✅ qwen-logger ebenfalls isoliert                | Trennung von Eigenkanal und Drittanbieterkanal      |
+| Dimension                         | claude-code                                      | qwen-code (dieses Design)                       | Entscheidungsgrundlage                             |
+| --------------------------------- | ------------------------------------------------ | ----------------------------------------------- | -------------------------------------------------- |
+| Standard-OTel-Env-Var             | `OTEL_RESOURCE_ATTRIBUTES` / `OTEL_SERVICE_NAME` | ✅ Konsistent                                   | Standardvertrag                                    |
+| Priorität `OTEL_SERVICE_NAME`     | Befolgt OTel-Spezifikation                       | ✅ Befolgt                                      | Spezifikation legt es klar fest                    |
+| Cardinality-Schalter-Benennung    | `OTEL_METRICS_INCLUDE_*`                          | `QWEN_TELEMETRY_METRICS_INCLUDE_*`               | Verschmutzt nicht den Standard-OTel-Namensraum     |
+| Schalter-Geltungsbereich          | Nur Metrik                                       | ✅ Nur Metrik                                   | Spans/Logs sind pro Event, kein Cardinality-Problem |
+| Standardwert                      | High-Cardinality-Attribut standardmäßig false    | ✅ Standardmäßig false                          | Sicherheit zuerst                                  |
+| Pro-Attribut-Granularität         | Ein Toggle pro Attribut                          | ✅ Konsistent                                   | Flexibel, entspricht praktischen Diagnoseanforderungen |
+| Settings.json-Äquivalent           | ❌ Nicht vorhanden                               | ✅ Vorhanden (`telemetry.resourceAttributes` + `metrics`) | Unternehmens-Fleet-Bereitstellung von Basis-Konfiguration |
+| Dynamischer Hook pro Span         | ❌ Nicht vorhanden                               | ❌ Nicht vorhanden                              | Hohe Komplexität, claude-code hat es auch nicht; wird in diesem Release nicht umgesetzt |
+| Multi-Tenant `account_uuid`       | Vorhanden                                        | ❌ Nicht vorhanden                              | qwen-code-Metriken enthalten dieses Attribut nicht |
+| Agent SDK `options.env`           | Vorhanden                                        | ❌ Nicht vorhanden                              | qwen-code hat kein äquivalentes Muster             |
+| Reservierte-Schlüssel-Strategie   | Erlaubt Überschreibung von built-in IDs nicht    | ✅ Konsistent                                   | Telemetrie-Vertrauenswürdigkeit                    |
+| Erstanbieter-Meldekana             | claude-code hat auch unabhängigen Erstanbieter-Kanal (getrennt von OTel) | ✅ qwen-logger ebenfalls getrennt              | Trennung der Verantwortung zwischen Erst- und Drittanbieter |
 
-**Zwei besonders übernehmenswerte Punkte**:
+**Zwei am meisten lohnende Übernahmen**:
 
-1. **Namenskonvention**: `*_INCLUDE_*` – die Semantik ist sofort klar, besser als gegenteilige Namen (`*_EXCLUDE_*` / `*_DROP_*`)
-2. **Begrenzter Geltungsbereich**: Nur Metriken werden gegated, nicht Spans/Logs – claude-code hat diese Grenze offenbar schon überschritten, wir profitieren direkt
+1. **Namenskonvention**: `*_INCLUDE_*` zeigt sofort die Semantik, klarer als gegenteilige Namen (`*_EXCLUDE_*` / `*_DROP_*`)
+2. **Eingeschränkter Geltungsbereich**: Nur Metrik-Gate, kein Gate für Span/Log – claude-code hat offensichtlich diese Grenze überschritten, wir profitieren direkt
 
-**Was qwen-code besser macht**:
+**Punkte, bei denen qwen-code besser abschneidet**:
 
-- settings.json-Unterstützung: claude-code verlässt sich komplett auf Env-Vars, das ist für Enterprise-Fleet-Szenarien ungünstig
-- Klare Schlüsselschutzstrategie (`service.version` nicht überschreibbar): Reduziert die Wahrscheinlichkeit von verunreinigter Telemetrie
-- Isolierter Eigenkanal: qwen-logger läuft über einen separaten Kanal, vollständig entkoppelt von den Benutzer-OTLP-Einstellungen
+- Unterstützung von settings.json: claude-code verlässt sich vollständig auf Env-Vars, was für Unternehmens-Fleet-Szenarien ungünstig ist
+- Klare reservierte Schlüsselstrategie (`service.version` kann nicht überschrieben werden): Verringert die Wahrscheinlichkeit, dass Telemetrie verunreinigt wird
+- Trennung der Erstanbieter-Meldung: qwen-logger läuft über einen unabhängigen Kanal, vollständig entkoppelt von den OTLP-Einstellungen des Benutzers
 
 ## 12. Zukünftige Arbeiten (v2 + Kandidaten)
 
-- **Kardinalitätskontrolle für `service.version`**: Attribut auf Metrikebene mit der OTel View API droppen
-- **Weitere Kardinalitäts-Toggles**: Falls in Zukunft `user.account_uuid` / `model` auf Metriken eingeführt werden, Toggles nach Bedarf ergänzen
-- **Per-Span-Dynamic-Attribute-Hook**: Könnte an das hauseigene Hooks-System von qwen-code angelehnt werden, mit Callback `OnSpanStart(span, context) => attrs`. Erfordert separates Design.
-- **Schema-Validierung für Resource-Attribute**: Einschränkung des Key-Namespace (z. B. Überschreiben von built-in-Attributen außerhalb des `service.*`-Präfix verbieten). Bisher reicht die hartkodierte Schlüsselliste aus.
-- **Hot-Reload von Resource**: Wenn settings.json während der Prozesslaufzeit geändert wird (z. B. im qwen-serve-Daemon), wird derzeit kein neues Resource erstellt. Falls das Daemon-Szenario reift, kann ein Reload-Pfad ergänzt werden.
-- **Kontextweitergabe für Subagenten über Prozessgrenzen hinweg**: Wenn ein Subagent prozessübergreifend läuft, den Trace-Kontext (inkl. Resource) des Elternprozesses über Standard-Header der OTel-Context-Propagation übergeben. Erfordert separates Design.
+- **`service.version`-Cardinality-Steuerung**: Mit dem OTel View API das Attribut auf Metrikebene entfernen
+- **Weitere Cardinality-Toggles**: Falls in Zukunft Attribute wie `user.account_uuid` / `model` in Metriken eingeführt werden, können Toggles nach Bedarf ergänzt werden
+- **Dynamischer Attribut-Hook pro Span**: Könnte das hauseigene Hooks-System von qwen-code nutzen, um einen `OnSpanStart(span, context) => attrs`-Callback hinzuzufügen. Erfordert separates Design.
+- **Validierung des Resource-Attribut-Schemas**: Einschränkung des Key-Namensraums (z. B. Überschreiben von built-in-Attributen mit `service.*`-Präfix verbieten) – derzeit reicht eine hartcodierte Liste reservierter Schlüssel.
+- **Hot-Reload von Resource**: Wenn settings.json innerhalb des Prozesses geändert wird (z. B. im qwen-serve-Daemon-Szenario), wird derzeit die Resource nicht neu erstellt. Wenn der Daemon reifer wird, könnte ein Reload-Pfad hinzugefügt werden.
+- **Context-Propagation für Subagenten über Prozesse hinweg**: Wenn ein Subagent prozessübergreifend läuft, den Trace-Context (einschließlich Resource) des übergeordneten Prozesses über standardisierte OTel-Context-Propagation-Header übertragen. Erfordert separates Design.

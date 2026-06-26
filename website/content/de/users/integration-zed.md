@@ -1,50 +1,50 @@
 # Zed Editor
 
-> Zed Editor bietet native Unterstützung für AI-Coding-Assistenten über das Agent Client Protocol (ACP). Diese Integration ermöglicht es dir, Qwen Code direkt in der Zed-Oberfläche mit Echtzeit-Codevorschlägen zu nutzen.
+> Zed Editor bietet native Unterstützung für KI-Coding-Assistenten über das Agent Client Protocol (ACP). Diese Integration ermöglicht die direkte Verwendung von Qwen Code in der Zed-Oberfläche mit Echtzeit-Codevorschlägen.
 
-![Zed Editor Overview](https://img.alicdn.com/imgextra/i1/O1CN01aAhU311GwEoNh27FP_!!6000000000686-2-tps-3024-1898.png)
+![Zed Editor Übersicht](https://img.alicdn.com/imgextra/i1/O1CN01aAhU311GwEoNh27FP_!!6000000000686-2-tps-3024-1898.png)
 
 ### Funktionen
 
-- **Native Agent-Erfahrung**: Integriertes AI-Assistenten-Panel in der Zed-Oberfläche
+- **Native Agent-Erfahrung**: Integriertes KI-Assistenten-Panel in der Zed-Oberfläche
 - **Agent Client Protocol**: Vollständige ACP-Unterstützung für erweiterte IDE-Interaktionen
-- **Dateiverwaltung**: Dateien per @-Erwähnung zum Konversationskontext hinzufügen
-- **Konversationsverlauf**: Zugriff auf frühere Konversationen innerhalb von Zed
+- **Dateiverwaltung**: @-erwähnte Dateien zum Gesprächskontext hinzufügen
+- **Gesprächsverlauf**: Zugriff auf frühere Unterhaltungen in Zed
 
 ### Voraussetzungen
 
-- Zed Editor (aktuellste Version empfohlen)
-- Installiertes Qwen Code CLI
+- Zed Editor (aktuelle Version empfohlen)
+- Qwen Code CLI installiert
 
 ### Installation
 
-#### Installation über die ACP Registry (Empfohlen)
+#### Installation aus der ACP-Registry (Empfohlen)
 
-1. Installiere das Qwen Code CLI:
+1. Qwen Code CLI installieren:
 
 ```bash
 npm install -g @qwen-code/qwen-code
 ```
 
-2. Lade den [Zed Editor](https://zed.dev/) herunter und installiere ihn.
+2. [Zed Editor](https://zed.dev/) herunterladen und installieren
 
-3. Klicke in Zed auf die **Einstellungsschaltfläche** oben rechts, wähle **"Add agent"**, dann **"Install from Registry"**, suche nach **Qwen Code** und klicke auf **Install**.
+3. In Zed oben rechts auf die **Einstellungen-Schaltfläche** klicken, **"Agent hinzufügen"** auswählen, dann **"Aus Registry installieren"** wählen, **Qwen Code** suchen und auf **Installieren** klicken.
 
    ![ACP Registry](https://img.alicdn.com/imgextra/i4/O1CN0186ybL61EeG35fHFjy_!!6000000000376-2-tps-3056-1705.png)
 
-   ![Qwen Code ACP Installed](https://img.alicdn.com/imgextra/i1/O1CN01OXHhoR1J8irAvjs8F_!!6000000000984-2-tps-1247-703.png)
+   ![Qwen Code ACP installiert](https://img.alicdn.com/imgextra/i1/O1CN01OXHhoR1J8irAvjs8F_!!6000000000984-2-tps-1247-703.png)
 
 #### Manuelle Installation
 
-1. Installiere das Qwen Code CLI:
+1. Qwen Code CLI installieren:
 
 ```bash
 npm install -g @qwen-code/qwen-code
 ```
 
-2. Lade den [Zed Editor](https://zed.dev/) herunter und installiere ihn.
+2. [Zed Editor](https://zed.dev/) herunterladen und installieren
 
-3. Klicke in Zed auf die **Einstellungsschaltfläche** oben rechts, wähle **"Add agent"**, dann **"Create a custom agent"** und füge die folgende Konfiguration hinzu:
+3. In Zed oben rechts auf die **Einstellungen-Schaltfläche** klicken, **"Agent hinzufügen"** auswählen, dann **"Benutzerdefinierten Agent erstellen"** wählen und folgende Konfiguration hinzufügen:
 
 ```json
 "Qwen Code": {
@@ -61,12 +61,12 @@ npm install -g @qwen-code/qwen-code
 
 ### Agent wird nicht angezeigt
 
-- Führe `qwen --version` im Terminal aus, um die Installation zu überprüfen
-- Stelle sicher, dass die JSON-Konfiguration gültig ist
-- Starte den Zed Editor neu
+- Führen Sie `qwen --version` im Terminal aus, um die Installation zu überprüfen
+- Stellen Sie sicher, dass die JSON-Konfiguration gültig ist
+- Starten Sie Zed Editor neu
 
-### Qwen Code reagiert nicht
+### Qwen Code antwortet nicht
 
-- Überprüfe deine Internetverbindung
-- Überprüfe, ob das CLI funktioniert, indem du `qwen` im Terminal ausführst
-- [Erstelle ein Issue auf GitHub](https://github.com/qwenlm/qwen-code/issues), falls das Problem weiterhin besteht
+- Überprüfen Sie Ihre Internetverbindung
+- Testen Sie die CLI mit `qwen` im Terminal
+- [Melden Sie ein Problem auf GitHub](https://github.com/qwenlm/qwen-code/issues), falls das Problem weiterhin besteht

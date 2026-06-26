@@ -1,25 +1,24 @@
-# Banner-Design für benutzerdefinierte Bereiche
+# Banner-Bereich – Design für benutzerdefinierte Anpassung
 
-> Ermöglicht Benutzern, das QWEN-ASCII-Logo zu ersetzen, den Markennamen zu ändern oder das gesamte Banner auszublenden –
-> aber es ist nicht erlaubt, die Laufzeitinformationen (Versionsnummer, Authentifizierungsmethode, Modell,
-> Arbeitsverzeichnis) zu entfernen, die für die Fehlerbehebung und Vertrauenswürdigkeit erforderlich sind.
+> [!note]
+> Erlaubt es dem Benutzer, das QWEN ASCII-Logo zu ersetzen, den Markennamen zu ändern oder das gesamte Banner auszublenden – untersagt jedoch das Entfernen von Laufzeitinformationen (Version, Authentifizierungsmethode, Modell, Arbeitsverzeichnis), die für Fehlerbehebung und Vertrauenswürdigkeit erforderlich sind.
 
-## Überblick
+## Übersicht
 
-Qwen Code CLI druckt beim Start ein Banner am oberen Rand des Terminals, das ein QWEN-ASCII-Logo und ein umrandetes Informationspanel enthält. Es gibt verschiedene reale Szenarien, in denen dieser Bereich kontrolliert werden muss:
+Beim Start von Qwen Code CLI wird oben im Terminal ein Banner angezeigt, bestehend aus dem QWEN ASCII-Logo und einem umrandeten Informationspanel. Verschiedene reale Szenarien erfordern eine Steuerung dieses Bereichs:
 
-- **White-Labeling / Branding von Drittanbietern**: Bei der Integration von Qwen Code in unternehmenseigene oder Teamprodukte muss die eigene Marke anstelle des standardmäßigen "Qwen Code" angezeigt werden.
-- **Personalisierung**: Einzelne Benutzer möchten das Terminal-Banner an die Teamrichtlinien oder den persönlichen Geschmack anpassen.
-- **Multi-Tenant / Multi-Instance-Unterscheidung**: In gemeinsam genutzten Umgebungen möchten verschiedene Teams schnell erkennen, welche Instanz sie gerade verwenden.
+- **White-Label / Drittanbieter-Branding**: Wenn Qwen Code in Unternehmens- oder Team-eigene Produkte eingebettet wird, soll das eigene Branding anstelle des standardmäßigen „Qwen Code" angezeigt werden.
+- **Personalisierung**: Einzelne Benutzer möchten das Terminal-Banner an Teamrichtlinien oder den eigenen Geschmack anpassen.
+- **Multi-Tenant / Multi-Instanz-Unterscheidung**: In gemeinsam genutzten Umgebungen möchten verschiedene Teams schnell erkennen, welche Instanz sie gerade verwenden.
 
-Der Design-Ansatz ist sehr einfach: **Markenerscheinungsbild austauschbar; Laufzeitinformationen nicht austauschbar**.
-Die Anpassung erlaubt nur, dass Benutzer ihre eigene Marke darüberlegen, **aber nicht**, dass wichtige Informationen zur Fehlerbehebung ausgeblendet werden. Jede spätere Entscheidung, ob etwas "änderbar" oder "unveränderbar" ist, folgt aus diesem Ansatz.
+Die Design-Position ist denkbar einfach: **Das Branding ist austauschbar; die Laufzeitinformationen sind nicht austauschbar.**
+Die Anpassung erlaubt es dem Benutzer lediglich, sein eigenes Branding darüberzulegen, **untersagt jedoch das Ausblenden von für die Fehlerbehebung wesentlichen Informationen**. Jede Entscheidung für „änderbar / nicht änderbar" in diesem Dokument basiert auf dieser Position.
 
-Entspricht dem Issue: [#3005](https://github.com/QwenLM/qwen-code/issues/3005).
+Entsprechendes Issue: [#3005](https://github.com/QwenLM/qwen-code/issues/3005).
 
 ## Aufteilung des Bannerbereichs
 
-Das aktuell Banner wird von `Header` (gemountet durch `AppHeader`) gerendert und lässt sich wie folgt unterteilen:
+Der aktuelle Banner wird von `Header` (eingehängt durch `AppHeader`) gerendert und lässt sich wie folgt aufteilen:
 
 ```
   marginX=2                                                           marginX=2
@@ -27,89 +26,90 @@ Das aktuell Banner wird von `Header` (gemountet durch `AppHeader`) gerendert und
   ▼                                                                          ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                                                                             │
-│   ┌──── Logo-Spalte ───────┐  gap=2  ┌──── Infopanel (mit Rahmen) ───────┐ │
-│   │                        │         │                                    │ │
-│   │  ███ QWEN ASCII ███    │         │  ① Titel:     >_ Qwen Code (vX.Y.Z) │
-│   │  ███   ART ART  ███    │         │  ② Untertitel: «Leerzeile / eigene Überschreibung» │
-│   │  ███ QWEN ASCII ███    │         │  ③ Status:    Qwen OAuth | qwen-…   │
-│   │                        │         │  ④ Pfad:      ~/projects/example    │
-│   └──────── A ──────────┘         └──────────────── B ──────────────────┘ │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-                               Bereichszugehörigkeit: AppHeader
-                          │ Tips-Komponente wird darunter gerendert (gesteuert durch ui.hideTips) │
+│   ┌──── Logo-Spalte ─────────┐  gap=2  ┌──── Informationspanel (mit Rahmen) ─┐
+│   │                          │         │                                     │
+│   │  ███ QWEN ASCII ███      │         │  ① Titel:    >_ Qwen Code (vX.Y.Z)  │
+│   │  ███   ART ART  ███      │         │  ② Untertitel: «Leerzeile / benutzerdef. Überschreibung» │
+│   │  ███ QWEN ASCII ███      │         │  ③ Status:    Qwen OAuth | qwen-…    │
+│   │                          │         │  ④ Pfad:      ~/projects/example     │
+│   └──────── A ───────────────┘         └──────────────── B ──────────────────┘│
+│                                                                               │
+└───────────────────────────────────────────────────────────────────────────────┘
+                               Zuständig: AppHeader
+                          │ Tipps-Komponente wird darunter gerendert (gesteuert durch ui.hideTips) │
 ```
 
 Zwei Hauptblöcke:
 
-- **A. Logo-Spalte** – Ein einzelner, farbverlaufshinterlegter ASCII-Art.
-  Derzeitige Quelle: `shortAsciiLogo` in `packages/cli/src/ui/components/AsciiArt.ts`.
-- **B. Infopanel** – umrandete Informationsbox mit insgesamt vier Zeilen. Die zweite Zeile ist standardmäßig ein visueller Platzhalter, der optional durch einen vom Aufrufer bereitgestellten Untertitel ersetzt werden kann:
-  - **B①** Titel: `>_ Qwen Code (vX.Y.Z)` – Markentext mit Versionsnummer.
-  - **B②** Untertitel / Platzhalter: Standardmäßig eine einzelne Leerzeichenzeile. Wenn `ui.customBannerSubtitle` gesetzt ist, wird ein bereinigter, einzeiliger Untertitel-String gerendert (z. B. für einen Fork `Built-in DataWorks Official Skills`).
-  - **B③** Status: `<Authentifizierungstyp> | <Modell> (/model wechseln)`.
-  - **B④** Pfad: Das mit Tilde-Operator gekürzte Arbeitsverzeichnis.
+- **A. Logo-Spalte** – Ein einzelner Block mit Farbverlauf-ASCII-Art.
+  Aktuelle Quelle: `shortAsciiLogo` in `packages/cli/src/ui/components/AsciiArt.ts`.
+- **B. Informationspanel** – Ein umrandeter Infokasten mit insgesamt vier Zeilen. Die zweite Zeile ist standardmäßig ein visueller Leerraum-Spacer, der optional durch einen vom Aufrufer bereitgestellten Untertitel ersetzt werden kann:
+  - **B① Titel**: `>_ Qwen Code (vX.Y.Z)` – Markentext + Versionsnummer-Suffix.
+  - **B② Untertitel / Spacer**: Standardmäßig eine einzelnes Leerzeichen; bei gesetztem `ui.customBannerSubtitle` wird der bereinigte einzeilige Untertitelstring gerendert (z.B. ein Fork mit `Built-in DataWorks Official Skills`).
+  - **B③ Status**: `<Anzeigetyp Authentifizierung> | <Modell> (/model wechseln)`.
+  - **B④ Pfad**: Das mit Tilde und verkürztem Arbeitsverzeichnis.
 
-Die äußere `<AppHeader>`-Komponente versteckt das Banner bereits im Screenreader-Modus basierend auf `showBanner = !config.getScreenReader()` (im Screenreader-Modus wird auf reine Textausgabe zurückgegriffen).
+Die äußere Komponente `<AppHeader>` versteckt den Banner bereits bei Screenreader-Modus basierend auf `showBanner = !config.getScreenReader()` (im Screenreader-Modus Fallback auf reinen Text).
 
-## Anpassungsregeln – Was geändert werden kann und was gesperrt ist
+## Anpassungsregeln – Was geändert werden darf und was gesperrt ist
 
-| Bereich                              | Aktuelle Quelle                       | Anpassungskategorie       | Grund für Sperrung/Freigabe                                                                                                                                       |
-| ------------------------------------ | ------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **A. Logo-Spalte**                   | `shortAsciiLogo` (`AsciiArt.ts`)      | **Austauschbar + automatisch ausblendbar** | Reiner Markenbereich. White-Labeling-Szenarien benötigen vollständige visuelle Kontrolle. Das bestehende Verhalten bei schmalen Terminals („Logo automatisch ausblenden") bleibt erhalten. |
-| **B①. Titeltext** (`>_ Qwen Code`)   | In `Header.tsx` hartcodiert           | **Austauschbar**          | Markenbereich. Die Zeichenfolge `>_` ist Teil der aktuellen Marke; wenn nicht gewünscht, kann der Benutzer sie in `customBannerTitle` weglassen.                   |
-| **B①. Versionsnummer-Suffix** (`(vX.Y.Z)`) | `version`-Prop                         | **Gesperrt**              | Notwendig für Fehlerbehebung und Support. Wenn ausgeblendet, könnte nur noch durch `--version` beantwortet werden, welche Version verwendet wird – das ist ein echter Kostenfaktor im Support. Wir nehmen dafür eine geringfügige Einschränkung des White-Labeling-Erlebnisses in Kauf. |
-| **B②. Untertitel / Platzhalterzeile** | Standardmäßig leer                    | **Austauschbar**          | Reiner Marken-/Kontextbereich. White-Label-Forks verwenden dies, um eine Build-Version zu taggen (z. B. "Built-in DataWorks Official Skills"). Die Bereinigungsregeln sind die gleichen wie für den Titel; es ist nur eine einzelne Zeile erlaubt, keine Zeilenumbrüche, die das Layout stören würden. |
-| **B③. Statuszeile** (Auth + Modell)   | `formattedAuthType`-, `model`-Props   | **Gesperrt**              | Betriebs- und Sicherheitssignal. Der Benutzer muss die aktuell verwendeten Anmeldeinformationen und das Modell, das tatsächlich Tokens verbraucht, sehen. Jedes Ausblenden/Ersetzen wäre gefährlich – selbst in White-Labeling-Szenarien nicht erlaubt. |
-| **B④. Pfadzeile** (Arbeitsverzeichnis) | `workingDirectory`-Prop                | **Gesperrt**              | Betriebsinformation. „In welchem Verzeichnis bin ich gerade?" ist eine häufige Frage; das Banner ist die einzige autoritative Quelle dafür.                     |
-| **Gesamtes Banner** (A + B)          | `<Header>`-Mount in `AppHeader.tsx`   | **Ausblendbar**           | Ein `ui.hideBanner: true` überspringt sowohl Block A als auch Block B – analog zum bestehenden Screenreader-Modus-Switch. `<Tips>` wird weiterhin separat durch `ui.hideTips` gesteuert. |
+| Bereich                               | Aktuelle Quelle                           | Kategorie der Anpassung       | Grund für Sperrung / Freigabe                                                                                                                                                                     |
+| -------------------------------------- | ----------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A. Logo-Spalte**                     | `shortAsciiLogo` (`AsciiArt.ts`)         | **Ersetzbar + automatisch ausblendbar** | Reiner Branding-Bereich. White-Label-Szenarien benötigen vollständige Kontrolle über die Optik. Das bestehende Verhalten „Logo bei schmalem Terminal automatisch ausblenden" bleibt erhalten. |
+| **B①. Titeltext** (`>_ Qwen Code`)    | Hartcodiert in `Header.tsx`              | **Ersetzbar**                 | Branding-Bereich. Das führende `>_` ist Teil des bestehenden Brandings; wenn nicht gewünscht, lässt der Benutzer es in `customBannerTitle` einfach weg.                                           |
+| **B①. Versionsnummer-Suffix** (`(vX.Y.Z)`) | `version`-Prop                          | **Gesperrt**                  | Notwendig für Fehlerbehebung und Support. Ohne dieses könnte die Frage „Welche Version verwendest du?" nur noch über `--version` beantwortet werden – ein echter Aufwand für den Support. Wir akzeptieren einen kleinen White-Label-Komfortverlust zugunsten der Erreichbarkeit des Supports. |
+| **B②. Untertitel / Spacer-Zeile**      | Standardmäßig leer                       | **Ersetzbar**                 | Reiner Branding-/Kontext-Bereich. White-Label-Forks nutzen diese, um Build-Versionen zu taggen (z.B. „Built-in DataWorks Official Skills"). Bereinigungsregeln identisch mit Titel; nur einzeilig, keine Zeilenumbrüche, die das Layout zerstören würden. |
+| **B③. Statuszeile** (Authentifizierung + Modell) | `formattedAuthType`-, `model`-Props      | **Gesperrt**                  | Betriebs- und Sicherheitssignal. Der Benutzer muss sehen, welche Anmeldeinformationen verwendet werden und welches Modell tatsächlich Tokens verbraucht. Jegliches Verstecken/Ersetzen wäre ein Footgun, selbst im White-Label-Szenario. |
+| **B④. Pfadzeile** (Arbeitsverzeichnis) | `workingDirectory`-Prop                 | **Gesperrt**                  | Betriebsinformation. „In welchem Verzeichnis bin ich gerade?" ist eine häufige Frage; das Banner ist die einzige autoritative Antwort darauf.                                                     |
+| **Gesamter Banner** (A + B)            | `<Header>`-Einhängepunkt in `AppHeader.tsx` | **Ausblendbar**               | Ein `ui.hideBanner: true` überspringt beide Blöcke A und B – analog zum bestehenden Screenreader-Schalter. `<Tips>` bleibt durch unabhängiges `ui.hideTips` gesteuert.                           |
 
 Die obige Matrix entspricht genau vier Einstellungen:
 
-| Einstellung                   | Standardwert | Effekt                                                                                                 | Betroffener Bereich |
-| ----------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ | ------------------- |
-| `ui.hideBanner`               | `false`      | Blendet das gesamte Banner aus (Bereich A + B).                                                        | A + B               |
-| `ui.customBannerTitle`        | nicht gesetzt| Ersetzt den Markentext in B①. Die Versionsnummer wird wie gehabt angehängt. Wird getrimmt; leerer String = Standard verwenden. | B① Markentext      |
-| `ui.customBannerSubtitle`     | nicht gesetzt| Ersetzt den leeren Platzhalter in B② durch eine Untertitelzeile. Wird bereinigt; maximal 160 Zeichen; leerer String = leerer Platzhalter bleibt (abwärtskompatibel). | B② Platzhalterzeile |
-| `ui.customAsciiArt`           | nicht gesetzt| Ersetzt Bereich A. Unterstützt drei Datenformen (siehe unten). Jeder Fehler führt zum Fallback auf das Standard-ASCII-Art. | A                  |
-**Bewusst nicht bereitgestellte Funktionen**:
+| Einstellung                   | Standardwert | Effekt                                                                                                         | Betroffener Bereich |
+| ----------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `ui.hideBanner`               | `false`      | Versteckt den gesamten Banner (Bereich A + B).                                                                 | A + B               |
+| `ui.customBannerTitle`        | nicht gesetzt | Ersetzt den Markentext in B①. Das Versionsnummer-Suffix wird wie gehabt angehängt. Wird getrimmt; leerer String = Standard verwenden. | B① Markentext       |
+| `ui.customBannerSubtitle`     | nicht gesetzt | Ersetzt den leeren Spacer in B② durch eine einzeilige Untertitelzeile. Wird bereinigt; maximal 160 Zeichen; leerer String = Spacer beibehalten (abwärtskompatibel). | B② Spacer-Zeile     |
+| `ui.customAsciiArt`           | nicht gesetzt | Ersetzt Bereich A. Unterstützt drei Datenformen (siehe unten). Jeglicher Fehler fallbackt auf Standard.          | A                   |
 
-- Es wird kein Schalter zum "nur Ausblenden der Versionsnummer-Suffixe" bereitgestellt.
-- Es wird kein Schalter zum "nur Ausblenden der Authentifizierungs-/Modellzeile" bereitgestellt.
-- Es wird kein Schalter zum "nur Ausblenden der Pfadzeile" bereitgestellt.
-- Es wird keine Änderungsmöglichkeit für die Farbverlaufsfarbe des Logos bereitgestellt (die Farbe wird vom Theme verwaltet).
-- Es wird keine Möglichkeit zur Anpassung der Reihenfolge oder Struktur des Informationspanels bereitgestellt.
+**Absichtlich nicht bereitgestellt**:
 
-Sollte zukünftig tatsächlich Bedarf bestehen, muss dies als neues Feld separat evaluiert werden und nicht aus den drei oben genannten Feldern abgeleitet werden.
+- Kein Schalter zum „nur Verstecken des Versionsnummer-Suffixes".
+- Kein Schalter zum „nur Verstecken der Authentifizierungs-/Modellzeile".
+- Kein Schalter zum „nur Verstecken der Pfadzeile".
+- Keine Einstiegsmöglichkeit zum Ändern der Verlaufsfarbe des Logos (Farbe wird vom Theme gesteuert).
+- Keine Möglichkeit, die Reihenfolge oder Struktur des Informationspanels anzupassen.
 
-## Benutzerkonfigurationsanleitung – So ändern Sie es
+Sollte in Zukunft ein Bedarf entstehen, ist dies als neues Feld separat zu bewerten und nicht aus den obigen drei Feldern abzuleiten.
+
+## Benutzerkonfigurationsanleitung – Wie man Änderungen vornimmt
 
 ### Einschränkungen im Überblick
 
-Jede benutzerdefinierte Banner-Anpassung unterliegt den folgenden Limits. Lesen Sie diese vor dem manuellen Erstellen von ASCII-Art durch, um zu vermeiden, dass der Parser diese stillschweigend abschneidet oder ablehnt.
+Jede Banner-Anpassung unterliegt diesen Obergrenzen. Bevor Sie manuell ASCII-Art erstellen, lesen Sie diese durch, damit der Parser nicht stillschweigend abschneidet oder ablehnt.
 
-| Posten                         | Obergrenze                                                                                                                                         |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Zeichenanzahl des Titels**   | **80 Zeichen Obergrenze** (gezählt nach Bereinigung). Bei Überschreitung wird abgeschnitten und eine `[BANNER]`-Warnung ausgegeben. Zeilenumbrüche und Steuerzeichen werden vor dem Zählen entfernt. |
-| **Zeichenanzahl des Untertitels** | **160 Zeichen Obergrenze** (gezählt nach Bereinigung). Die Bereinigungspipeline ist identisch mit der des Titels; bei Überschreitung wird ebenfalls eine `[BANNER]`-Warnung ausgegeben. |
-| **ASCII-Art-Blockgröße**       | **200 Zeilen × 200 Spalten Obergrenze**. Bei Überschreitung wird abgeschnitten und eine `[BANNER]`-Warnung ausgegeben.                             |
-| **ASCII-Art-Dateigröße**       | **64 KB Obergrenze**. Wenn die Datei größer ist, werden nur die Bytes bis zur Obergrenze gelesen, der Rest wird ignoriert.                         |
-| **Tatsächlich darstellbare Breite von ASCII-Art** | Wird durch die Terminal-Spaltenanzahl beim Start bestimmt, **keine feste Zeichenanzahl**. Die genaue Formel und die verfügbaren Werte für verschiedene Terminalbreiten finden Sie im Abschnitt "Wie groß kann das Logo sein? – Breitenbudget". |
+| Element                       | Obergrenze                                                                                                         |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Zeichenanzahl Titel**       | **Maximal 80 Zeichen** (nach Bereinigung gezählt). Überschreitung wird abgeschnitten und eine `[BANNER]`-Warnung ausgegeben. Zeilenumbrüche und Steuerzeichen werden vor der Zählung entfernt. |
+| **Zeichenanzahl Untertitel**  | **Maximal 160 Zeichen** (nach Bereinigung gezählt). Bereinigungspipeline identisch mit Titel; Überschreitung ebenfalls Warnung. |
+| **Größe des ASCII-Art-Blocks**   | **Maximal 200 Zeilen × 200 Spalten**. Überschreitung wird abgeschnitten und `[BANNER]`-Warnung.                      |
+| **Dateigröße ASCII-Art**     | **Maximal 64 KB**. Dateien größer als die Obergrenze werden nur bis zur Obergrenze gelesen, der Rest ignoriert.     |
+| **Tatsächlich renderbare Breite des ASCII-Art** | Wird durch die Spaltenanzahl des Terminals beim Start bestimmt, **keine feste Zeichenanzahl**. Die genaue Formel und die verfügbaren Werte für verschiedene Terminalbreiten finden Sie weiter unten unter „Wie groß darf das Logo sein? – Breitenbudget". |
 
-ASCII-Art hat **keine feste Zeichenbegrenzung** – nur die oben genannten harten Spalten-/Zeilenobergrenzen und das nach Start anhand der Terminal-Spaltenanzahl berechnete Breitenbudget. Dasselbe 17 Zeichen lange Markenlogo kann je nach Schriftart möglicherweise nicht in einer Zeile dargestellt werden, je nach visueller Breite und nicht nach Buchstabenanzahl.
+ASCII-Art hat **keine feste Obergrenze für die Zeichenanzahl** – nur die beiden oben genannten harten Limits für Zeilen/Spalten und das zur Laufzeit berechnete Breitenbudget. Derselbe Markenname mit 17 Zeichen kann je nach Schriftart in einer Zeile dargestellt werden oder nicht, abhängig von der visuellen Breite, nicht von der Buchstabenanzahl.
 
-### Speicherort der Konfiguration
+### Ablageort der Konfiguration
 
-Alle vier Einstellungen befinden sich im Knoten `ui` in `settings.json`. Es werden sowohl benutzerspezifische (`~/.qwen/settings.json`) als auch workspace-spezifische (`.qwen/settings.json` im Projektstammverzeichnis) Einstellungen unterstützt, die gemäß der standardmäßigen Merge-Priorität wirksam werden (Workspace überschreibt User, System überschreibt Workspace).
+Alle vier Einstellungen befinden sich im Knoten `ui` der `settings.json`. Sowohl benutzerspezifische (`~/.qwen/settings.json`) als auch arbeitsbereichsspezifische (`.qwen/settings.json` im Projektstammverzeichnis) Einstellungen werden nach den üblichen Merge-Prioritäten verarbeitet (Workspace überschreibt User, System überschreibt Workspace).
 
-`customAsciiArt` ist ein Sonderfall: Der Parser ersetzt nicht das gesamte Objekt als einen Wert durch die höher priorisierte Sphäre, sondern durchläuft stattdessen schrittweise (tier) alle Sphären. Wenn die User-Einstellung `{ small }` definiert und die Workspace-Einstellung `{ large }` definiert, werden beide wirksam – `small` stammt vom User, `large` vom Workspace. Dadurch werden zwei Anforderungen gleichzeitig erfüllt:
+`customAsciiArt` ist ein Sonderfall: Der Parser ersetzt nicht das gesamte Objekt als einen Wert durch einen höher priorisierten Scope, sondern traversiert tierweise nacheinander alle Scopes. Wenn ein User-Scope `{ small }` und ein Workspace-Scope `{ large }` definiert, werden beide wirksam – `small` stammt aus dem User-Scope, `large` aus dem Workspace-Scope. Dies ermöglicht zwei Dinge gleichzeitig:
 
-1. Jeder `{ path }`-Eintrag wird relativ zu der Datei aufgelöst, in der er deklariert ist (Workspace `.qwen/` vs. User `~/.qwen/`); wenn man nur die zusammengeführte Ansicht betrachtet, geht diese Sphäreninformation verloren.
-2. Benutzer können die standardmäßige `large`-Stufe in ihren persönlichen Einstellungen belassen und pro Workspace nur `small` überschreiben, ohne das gesamte Objekt jedes Mal neu schreiben zu müssen.
+1. Jeder `{ path }`-Eintrag wird relativ zu dem Verzeichnis der Datei aufgelöst, in der er deklariert ist (Workspace `.qwen/` vs. User `~/.qwen/`); bei alleiniger Betrachtung der gemergten Ansicht ginge der Scope-Kontext verloren.
+2. Der Benutzer kann den standardmäßigen `large`-Tier in seinen persönlichen Einstellungen belassen und nur den `small`-Tier pro Arbeitsbereich überschreiben, ohne jedes Mal das gesamte Objekt neu schreiben zu müssen.
 
-Wenn dieselbe Stufe in mehreren Sphären definiert ist, gilt dennoch die normale Priorität (System > Workspace > User). Wenn `customAsciiArt` in einer beliebigen Sphäre als einzelne Zeichenfolge oder `{ path }` gesetzt wird, werden gleichzeitig beide Stufen dieser Sphäre befüllt.
+Wenn derselbe Tier in mehreren Scopes definiert ist, gilt die normale Priorität (System > Workspace > User). Wenn `customAsciiArt` in einem beliebigen Scope als einzelner String oder `{ path }` gesetzt wird, werden dennoch beide Tiers dieses Scopes gleichzeitig gefüllt.
 
-### Banner vollständig ausblenden
+### Gesamten Banner ausblenden
 
 ```jsonc
 {
@@ -119,7 +119,7 @@ Wenn dieselbe Stufe in mehreren Sphären definiert ist, gilt dennoch die normale
 }
 ```
 
-Die Startausgabe überspringt die Logo-Spalte und das Informationspanel. Sofern nicht auch `ui.hideTips` gesetzt ist, werden Tipps weiterhin angezeigt.
+Die Startausgabe überspringt die Logo-Spalte und das Informationspanel. Tipps werden weiterhin angezeigt, es sei denn, `ui.hideTips` ist ebenfalls gesetzt.
 
 ### Markentitel ersetzen
 
@@ -131,10 +131,10 @@ Die Startausgabe überspringt die Logo-Spalte und das Informationspanel. Sofern 
 }
 ```
 
-Das Informationspanel wird als `Acme CLI (vX.Y.Z)` dargestellt. Nach dem Setzen eines benutzerdefinierten Titels wird standardmäßig kein `>_`-Zeichen mehr angehängt; wenn Sie es behalten möchten, fügen Sie es selbst hinzu:
+Das Informationspanel rendert dann `Acme CLI (vX.Y.Z)`. Nach dem Setzen eines benutzerdefinierten Titels wird standardmäßig kein `>_`-Zeichen mehr angezeigt; um dies beizubehalten, schreiben Sie es selbst hin:
 `"customBannerTitle": ">_ Acme CLI"`.
 
-### Markenuntertitel hinzufügen
+### Marken-Untertitel hinzufügen
 
 ```jsonc
 {
@@ -144,7 +144,7 @@ Das Informationspanel wird als `Acme CLI (vX.Y.Z)` dargestellt. Nach dem Setzen 
 }
 ```
 
-Der Untertitel wird in sekundärer Textfarbe in einer eigenen Zeile angezeigt und **ersetzt** die standardmäßige leere Spacer-Zeile (die Zeile, die sich ursprünglich zwischen dem Titel und der Authentifizierungs-/Modellzeile befand):
+Der Untertitel erscheint als separate Zeile in sekundärer Textfarbe und **ersetzt die standardmäßige leere Spacer-Zeile** (also die Zeile, die sich ursprünglich zwischen Titel und Authentifizierungs-/Modellzeile befand):
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -157,10 +157,10 @@ Der Untertitel wird in sekundärer Textfarbe in einer eigenen Zeile angezeigt un
 
 Einschränkungen:
 
-- Nur eine einzelne Zeile erlaubt. Zeilenumbrüche und andere Steuerbytes werden entfernt / als Leerzeichen behandelt, um Layout-Probleme im Informationspanel durch Einfügen zu vermeiden.
-- Obergrenze nach Bereinigung: 160 Zeichen (etwas großzügiger als beim Titel – Slogans / "powered by"-Texte sind oft länger als Markennamen).
-- Leer lassen (oder als leeren String / nur Leerzeichen setzen) = die standardmäßige leere Spacer-Zeile beibehalten – Abwärtskompatibilität ist das Standardverhalten.
-- Der Untertitel ändert nicht das Verhalten der fixierten Zeilen; Authentifizierung, Modell und Arbeitsverzeichnis sind immer sichtbar, unabhängig vom Zustand des Untertitels.
+- Nur eine einzige Zeile erlaubt. Zeilenumbrüche und andere Steuerbytes werden entfernt / zu Leerzeichen gefaltet, um zu vermeiden, dass Einfügefehler das Layout des Informationspanels zerreißen.
+- Nach der Bereinigung maximal 160 Zeichen (etwas großzügiger als der Titel – Slogans, „powered by"-Phrasen usw. sind oft länger als Markennamen).
+- Leer (oder als leerer String / nur Leerzeichen gesetzt) = standardmäßige leere Spacer-Zeile beibehalten – Abwärtskompatibilität ist das Standardverhalten.
+- Der Untertitel ändert nichts am Verhalten der gesperrten Zeilen; Authentifizierung, Modell und Arbeitsverzeichnis sind immer sichtbar, unabhängig vom Zustand des Untertitels.
 
 ### ASCII-Art ersetzen – Inline-String
 
@@ -172,10 +172,10 @@ Einschränkungen:
 }
 ```
 
-Verwenden Sie `\n` im JSON-String für Zeilenumbrüche. Diese ASCII-Art wird wie das Standard-Logo mit dem aktuellen Theme-Farbverlauf eingefärbt.
+Im JSON-String wird `\n` für Zeilenumbrüche verwendet. Diese ASCII-Art erhält denselben Farbverlauf des aktuellen Themes wie das Standard-Logo.
 
-> **Sie haben keine ASCII-Art zur Hand?** Jeder externe Generator ist geeignet – fügen Sie das generierte Ergebnis einfach ein. Der einfachste Weg ist `figlet`:
-> `npx figlet -f "ANSI Shadow" "xxxCode" > brand.txt`, dann verweisen Sie mit `customAsciiArt: { "path": "./brand.txt" }` auf diese Datei. Die CLI **rendert** keinen Text zur Laufzeit in ASCII-Art – der Grund dafür findet sich im Abschnitt "Nicht im Umfang dieses Designs".
+> **Haben Sie keine ASCII-Art zur Hand?** Jeder externe Generator ist verwendbar; fügen Sie das Ergebnis einfach ein. Der einfachste Weg ist `figlet`:
+> `npx figlet -f "ANSI Shadow" "xxxCode" > brand.txt` und dann mit `customAsciiArt: { "path": "./brand.txt" }` darauf verweisen. Die CLI **rendert** keinen Text zur Laufzeit in ASCII-Art um – der Grund dafür wird weiter unten unter „Nicht im Designumfang" erläutert.
 
 ### ASCII-Art ersetzen – Externe Datei
 
@@ -187,14 +187,14 @@ Verwenden Sie `\n` im JSON-String für Zeilenumbrüche. Diese ASCII-Art wird wie
 }
 ```
 
-Vermeiden Sie die Escape-Sequenzen für lange mehrzeilige Strings im JSON. Pfadauflösungsregeln:
+Vermeidet das Escapen langer mehrzeiliger Strings im JSON. Pfadauflösungsregeln:
 
-- **Workspace-Einstellungen**: Relative Pfade werden relativ zum `.qwen/`-Verzeichnis des Workspace aufgelöst.
-- **Benutzerspezifische Einstellungen**: Relative Pfade werden relativ zu `~/.qwen/` aufgelöst.
+- **Arbeitsbereichsbezogene Einstellung**: Relative Pfade relativ zum `.qwen/`-Verzeichnis des Workspace.
+- **Benutzerbezogene Einstellung**: Relative Pfade relativ zu `~/.qwen/`.
 - Absolute Pfade werden direkt verwendet.
-- Die Datei wird **nur beim Start einmal gelesen**, nach der Bereinigung in den Cache geschrieben. Wenn die Datei während der Sitzung geändert wird, erfolgt keine Neuberechnung – starten Sie die CLI neu.
+- Die Datei wird **nur beim Start einmal gelesen**, bereinigt und zwischengespeichert. Änderungen an der Datei während der Sitzung führen nicht zu einem Neu-Rendering – bitte CLI neu starten.
 
-### ASCII-Art ersetzen – Breitenanpassung
+### ASCII-Art ersetzen – Breitenabhängige Auswahl
 
 ```jsonc
 {
@@ -207,35 +207,35 @@ Vermeiden Sie die Escape-Sequenzen für lange mehrzeilige Strings im JSON. Pfada
 }
 ```
 
-Wenn das Terminal breit genug ist, wird bevorzugt `large` verwendet; andernfalls `small`; falls auch das nicht reicht, wird die Logo-Spalte ausgeblendet (gemäß der aktuellen Zwei-Spalten-Fallback-Strategie). `small` und `large` können jeweils entweder ein String oder ein `{ path }` sein. Jede Stufe kann weggelassen werden: Fehlt eine, wird automatisch zur nächsten Stufe übergegangen.
+Wenn das Terminal breit genug ist, wird bevorzugt `large` verwendet; andernfalls `small`; andernfalls wird die Logo-Spalte ausgeblendet (unter Verwendung der aktuellen Zwei-Spalten-Fallback-Strategie). Sowohl `small` als auch `large` können entweder ein String oder ein `{ path }` sein. Jeder Tier kann weggelassen werden: Fehlt er, wird direkt zum nächsten Tier übergegangen.
 
-### Wie groß kann das Logo sein? – Breitenbudget
+### Wie groß darf das Logo sein? – Breitenbudget
 
-Weder der Titel noch die Art haben eine "harte Zeichenbegrenzung", sondern nur ein **Breitenbudget**, das von der Terminal-Spaltenanzahl abhängt, sowie absolute harte Limits, um zu verhindern, dass fehlerhafte Eingaben das Layout einfrieren:
+Weder Titel noch Art haben eine „harte Obergrenze für Zeichen", sondern nur ein **Breitenbudget**, das von der Spaltenanzahl des Terminals abhängt, sowie absolute harte Limits, um fehlerhafte Eingaben vom Einfrieren des Layouts abzuhalten:
 
-| Posten                                 | Obergrenze                                                                                                        |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Terminal-Spaltenanzahl beim Start      | So viele, wie das Terminal des Benutzers meldet.                                                                  |
-| Container-Außenabstand                 | 4 Spalten (2 links + 2 rechts).                                                                                  |
-| Abstand zwischen Logo-Spalte und Info-Panel | 2 Spalten.                                                                                                        |
-| Mindestbreite des Informationspanels   | 44 Spalten (40 Pfad + Rahmen + Innenabstand).                                                                    |
-| **Verfügbare Breite für jede Art-Stufe beim Rendern** | `Terminal-Spaltenanzahl − 4 − 2 − 44 = Terminal-Spaltenanzahl − 50`.                                            |
-| Harte Obergrenze für bereinigte Art pro Stufe | 200 Spalten × 200 Zeilen. Bei Überschreitung wird abgeschnitten und eine `[BANNER]`-Warnung ausgegeben.           |
-| Harte Obergrenze für `customBannerTitle` nach Bereinigung | 80 Zeichen. Bei Überschreitung wird abgeschnitten und eine `[BANNER]`-Warnung ausgegeben.                         |
+| Element                              | Obergrenze                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------ |
+| Spaltenanzahl des Terminals beim Start | So viele, wie das Terminal meldet.                                                   |
+| Äußerer Rand des Containers          | 4 Spalten (links 2 + rechts 2).                                                      |
+| Abstand zwischen Logo-Spalte und Informationspanel | 2 Spalten.                                                                           |
+| Mindestbreite des Informationspanels | 44 Spalten (40 Pfad + Rahmen + Innenabstand).                                        |
+| **Verfügbare Breite für Art pro Tier beim Rendern** | `Terminalspalten − 4 − 2 − 44 = Terminalspalten − 50`.                               |
+| Harte Obergrenze für bereinigtes Art pro Tier | 200 Spalten × 200 Zeilen. Überschreitung wird abgeschnitten und `[BANNER]`-Warnung.  |
+| Harte Obergrenze für bereinigtes `customBannerTitle` | 80 Zeichen. Überschreitung wird abgeschnitten und `[BANNER]`-Warnung.                |
 
-Häufige Terminalbreiten und die entsprechenden Logo-Obergrenzen:
+Häufige Terminalbreiten und die entsprechenden maximalen Logo-Breiten:
 
-| Terminal-Spaltenanzahl | Maximal darstellbare Logo-Breite | Was das praktisch bedeutet                                                                   |
-| ---------------------- | -------------------------------- | -------------------------------------------------------------------------------------------- |
-| 80                     | 30                               | Die meisten figlet "ANSI Shadow"-Buchstaben sind 7–11 Spalten breit, maximal 3 Buchstaben.   |
-| 100                    | 50                               | ANSI Shadow kann ein kurzes Wort (ca. 6 Buchstaben) oder zwei kurze gestapelte Wörter unterbringen. |
-| 120                    | 70                               | Mehrzeilige, gestapelte Wort-Art ist völlig ausreichend.                                     |
-| 200                    | 150                              | Einzelne lange Zeichenfolgen (z. B. ANSI Shadow des vollständigen Produktnamens) passen ebenfalls. |
-Zwei Faustregeln für das Design von ASCII-Art:
+| Terminalspalten | Maximal renderbare Logo-Breite | Tatsächliche Bedeutung                                                         |
+| --------------- | ------------------------------ | ------------------------------------------------------------------------------ |
+| 80              | 30                             | Die meisten figlet-Zeichen in „ANSI Shadow" benötigen 7–11 Spalten, maximal 3 Buchstaben. |
+| 100             | 50                             | ANSI Shadow reicht für ein kurzes Wort (ca. 6 Buchstaben) oder zwei gestapelte kurze Wörter. |
+| 120             | 70                             | Mehrzeilige Wortstapel-Art ist völlig ausreichend.                             |
+| 200             | 150                            | Einzeilige lange Zeichenfolgen (z.B. ANSI Shadow für einen vollständigen Produktnamen) passen ebenfalls. |
 
-1. **Mehrwörtige Markennamen lassen sich auf den meisten Terminals nicht in einer einzigen Zeile mit ANSI Shadow rendern.**  
-   ANSI Shadow benötigt pro Buchstabe etwa 7–9 Spalten. Selbst ein 12 Zeichen langer Markenname wie `Custom Agent` würde etwa 95 Spalten Art in einer Zeile benötigen – ein 100-Spalten-Terminal reicht nach dem Einfügen des Info-Panels nicht mehr aus. Entweder die Wortzeilen stapeln (Line Break) oder eine schmalere Figlet-Schriftart verwenden, oder direkt eine kompakte einzeilige Verzierung wie `▶ Custom Agent ◀` nutzen.
-2. **Wenn eine einzelne Konfiguration sowohl auf breiten Bildschirmen gut aussehen als auch auf schmalen nicht scheitern soll, verwende die `{ small, large }`-Breitenanpassung.** Im folgenden Beispiel ist `large` ein gestapeltes mehrzeiliges Art für Terminals ≥ 104 Spalten, `small` eine einzeilige Verzierung mit 16 Spalten. Wenn beides zu schmal ist, wird die Logo-Spalte einfach ausgeblendet.
+Zwei Faustregeln beim Entwerfen von Art:
+
+1. **Markennamen mit mehreren Wörtern lassen sich auf den meisten Terminals nicht in einer Zeile mit ANSI Shadow darstellen.** ANSI Shadow benötigt pro Buchstabe etwa 7–9 Spalten. Selbst ein 12-Zeichen-Markenname wie `Custom Agent` benötigt etwa 95 Spalten Art in einer Zeile – ein 100-Spalten-Terminal reicht nach Abzug des Informationspanels nicht mehr aus. Stapeln Sie die Wörter entweder, verwenden Sie eine schmalere figlet-Schriftart oder greifen Sie direkt zu einer kompakten einzeiligen Dekoration, z.B. `▶ Custom Agent ◀`.
+2. **Wenn ein einzelner Tier sowohl „auf breiten Bildschirmen gut aussehen" als auch „auf schmalen Bildschirmen nicht sterben" soll, verwenden Sie die breitenabhängige Form `{ small, large }`.** Im folgenden Beispiel ist `large` eine gestapelte mehrzeilige Art für Terminals ≥ 104 Spalten, `small` eine einzeilige Dekoration mit 16 Spalten. Wenn das Terminal zu schmal für beides ist, wird die Logo-Spalte ausgeblendet.
 
 ```jsonc
 {
@@ -249,14 +249,14 @@ Zwei Faustregeln für das Design von ASCII-Art:
 }
 ```
 
-In `banner-large.txt` wird die gestapelte ANSI Shadow Ausgabe (etwa 54 Spalten × 12 Zeilen) abgelegt, erzeugt mit folgendem Befehl:
+In `banner-large.txt` wird die gestapelte ANSI-Shadow-Ausgabe (ca. 54 Spalten × 12 Zeilen) abgelegt, erzeugt mit folgendem Befehl:
 
 ```bash
 ( npx figlet -f "ANSI Shadow" CUSTOM
   npx figlet -f "ANSI Shadow" AGENT ) > banner-large.txt
 ```
 
-### Dreier-Kombination
+### Drei Kombinationen
 
 ```jsonc
 {
@@ -271,11 +271,11 @@ In `banner-large.txt` wird die gestapelte ANSI Shadow Ausgabe (etwa 54 Spalten �
 }
 ```
 
-### So überprüfst du es
+### Wie überprüfen
 
-1. Speichere `settings.json` und starte `qwen` neu – die Banner-Analyse läuft nur beim Start einmal.
-2. Ändere die Terminalbreite und stelle sicher, dass der Wechsel zwischen `small` / `large` wie erwartet funktioniert und bei extrem schmaler Breite die Logo-Spalte korrekt ausgeblendet wird.
-3. Falls das Ergebnis nicht deinen Erwartungen entspricht, sieh in `~/.qwen/debug/<sessionId>.txt` nach (der Symlink `latest.txt` zeigt auf die aktuelle Session), grep nach `[BANNER]` – bei jedem soft failure wird eine Warnzeile mit der Ursache ausgegeben.
+1. Speichern Sie `settings.json`, starten Sie `qwen` neu – die Banner-Analyse läuft nur einmal beim Start.
+2. Passen Sie die Terminalbreite an und prüfen Sie, ob der Wechsel zwischen `small` / `large` wie erwartet funktioniert und die Logo-Spalte bei sehr schmaler Breite korrekt ausgeblendet wird.
+3. Wenn das Ergebnis nicht den Erwartungen entspricht, prüfen Sie `~/.qwen/debug/<sessionId>.txt` (`latest.txt` zeigt auf die aktuelle Sitzung) und suchen Sie nach `[BANNER]` – jeder weiche Fehler gibt eine Warnung mit Begründung aus.
 
 ## Analyse-Pipeline
 
@@ -298,38 +298,38 @@ In `banner-large.txt` wird die gestapelte ANSI Shadow Ausgabe (etwa 54 Spalten �
         ▼                                workingDirectory=… />
    resolveCustomBanner(settings)                  │
    ┌─────────────────────────┐                    ▼
-   │ 1. Normalisieren in      │         packages/cli/src/ui/components/
+   │ 1. Normalisieren zu      │         packages/cli/src/ui/components/
    │    { small, large }     │         Header.tsx
-   │ 2. Jede Stufe auflösen: │           │
-   │    string → direkt verwenden     │  Auswahl der Stufe anhand
-   │    {path} → fs.read     │    verfügbarer Terminalbreite
-   │      O_NOFOLLOW         │           ▼
-   │      ≤ 64 KB            │         Rendern der Logo-Spalte
-   │ 3. Art bereinigen:      │         Rendern des Info-Panels:
-   │    stripControlSeqs     │           Titel    = customBannerTitle
-   │    ≤ 200 Zeilen × 200 Spalten   │           ?? '>_ Qwen Code'
-   │ 4. Titel + Untertitel    │           Untertitel = customBannerSubtitle
-   │    bereinigen (einzeilig,│           ?? Leerzeile als Abstandshalter
-   │    ≤ 80 / 160 Zeichen)  │           Status   = gesperrt
-   │ 5. Nach Quelle memoizen │           Pfad     = gesperrt
+   │ 2. Jeden Tier auflösen:  │           │
+   │    string → direkt       │           │  Je nach availableTerminalWidth
+   │    {path} → fs.read      │           │  Tier auswählen
+   │      O_NOFOLLOW          │           ▼
+   │      ≤ 64 KB             │          Logo-Spalte rendern
+   │ 3. Art bereinigen:        │          Informationspanel rendern:
+   │    stripControlSeqs      │           Titel    = customBannerTitle
+   │    ≤ 200 Zeilen × 200 Sp.│                   ?? '>_ Qwen Code'
+   │ 4. Titel + Untertitel     │           Untertitel = customBannerSubtitle
+   │    bereinigen (einzeilig, │                   ?? Leere Spacer-Zeile
+   │    ≤ 80 / 160 Zeichen)    │           Status   = Gesperrt
+   │ 5. Nach Quelle memoizen   │           Pfad     = Gesperrt
    └─────────────────────────┘
 ```
 
-Der fünfstufige Analyse-Algorithmus wird einmal beim Laden der Einstellungen ausgeführt und nur bei einem Hot-Reload-Ereignis der Einstellungen erneut gestartet:
+Der fünfstufige Analysealgorithmus läuft einmal beim Laden der Einstellungen und erneut nur bei Auslösung eines Einstellungs-Hot-Reload-Ereignisses:
 
-1. **Normalisieren**. Ein nackter `string` oder `{ path }` wird in `{ small: x, large: x }` umgewandelt. Das `{ small, large }`-Objekt wird unverändert durchgelassen.
-2. **Auflösen pro Stufe**. Für jede `AsciiArtSource`:
-   - Zeichenkette: sofort verwenden.
-   - `{ path }`: synchron lesen, mit `O_NOFOLLOW` als Schutz vor Symlink-Angriffen (unter Windows Rückfall auf normales Read-Only-Lesen – diese Konstante wird nicht exportiert). Maximalgröße 64 KB. Relative Pfadangaben beziehen sich auf das Verzeichnis der übergeordneten Einstellungsdatei: Workspace-Einstellungen relativ zum `.qwen/` des Workspace, User-Einstellungen relativ zu `~/.qwen/`. Lesefehler → `[BANNER]` warn, diese Stufe fällt auf den Standard zurück.
-3. **Bereinigen**. Banner-spezifischer Stripper: Entfernt OSC‑/CSI‑/SS2‑/SS3‑Escape-Sequenzen, ersetzt verbleibende C0‑/C1‑Steuerzeichen (inkl. DEL) durch Leerzeichen, behält aber `\n` bei, damit mehrzeilige ASCII Art überlebt. Jede Zeile wird nach Tail‑Whitespace geschnitten und dann auf 200 Zeilen × 200 Spalten begrenzt; überschüssige Teile werden abgeschnitten und ein `[BANNER]` warn ausgegeben.
-4. **Stufenauswahl zur Renderzeit**. In `Header.tsx` wird anhand des vorhandenen Platzbudgets (`availableTerminalWidth ≥ logoWidth + logoGap + minInfoPanelWidth`) zwischen dem aufgelösten `small` und `large` gewählt:
-   - Wenn `large` passt, bevorzugt `large`.
-   - Sonst, wenn `small` passt, Rückfall auf `small`.
-   - Sonst, **sofern der Benutzer überhaupt ein Custom Art angegeben hat**, wird die Logo-Spalte direkt ausgeblendet (Verwendung des Zweigs `showLogo = false`) – ein Rückfall auf das eingebaute QWEN-Logo würde bei schmalen Terminals die White-Label-Bereitstellung leise aufdecken. Das Info-Panel wird weiterhin gerendert.
-   - Andernfalls (Benutzer hat gar kein Custom Art angegeben) Rückfall auf `shortAsciiLogo`, die Breitenschwelle des Standardlogos entscheidet über die Anzeige.
-5. **Absicherung**. Falls beide Stufen aufgrund von Softfehlern (Datei fehlt, nach Bereinigung leer, fehlerhafte Konfiguration) letztendlich leer oder ungültig sind, wird nach nicht konfiguriertem Fallback `shortAsciiLogo` gerendert und die Breitenschwelle des Standardlogos angewendet. Die CLI **darf** wegen eines Banner-Konfigurationsfehlers nicht abstürzen.
+1. **Normalisierung**. Bloßer `string` oder `{ path }` wird in `{ small: x, large: x }` umgewandelt. `{ small, large }`-Objekte werden unverändert durchgereicht.
+2. **Tierweise Auflösung**. Für jede `AsciiArtSource`:
+   - String: Direkt verwenden.
+   - `{ path }`: Synchron lesen, mit `O_NOFOLLOW` zum Schutz vor Symlink-Angriffen (Windows fällt auf normales schreibgeschütztes Lesen zurück – die Konstante wird dort nicht exponiert), maximal 64 KB. Relative Pfade relativ zum *Verzeichnis der zugehörigen Einstellungsdatei*: Workspace-Einstellungen relativ zu `.qwen/` des Workspace, User-Einstellungen relativ zu `~/.qwen/`. Lesefehler → `[BANNER]`-Warnung, dieser Tier fällt auf Standard zurück.
+3. **Bereinigung**. Banner-spezifischer Stripper: Entfernt OSC / CSI / SS2 / SS3-Einführungszeichen, ersetzt die restlichen C0 / C1-Steuerbytes (einschließlich DEL) durch Leerzeichen, behält aber `\n` bei, damit mehrzeilige ASCII-Art überlebt. Jede Zeile wird mit getrimmten nachgestellten Leerzeichen auf maximal 200 Zeilen × 200 Spalten abgeschnitten; Überschreitung erzeugt `[BANNER]`-Warnung.
+4. **Tier-Auswahl zur Renderingzeit**. In `Header.tsx` wird bei gegebenem aufgelöstem `small` und `large` basierend auf dem aktuellen Breitenbudget (`availableTerminalWidth ≥ logoWidth + logoGap + minInfoPanelWidth`) ausgewählt:
+   - Wenn `large` passt, wird `large` bevorzugt.
+   - Sonst, wenn `small` passt, Fallback auf `small`.
+   - Sonst: **Wenn der Benutzer jemals Custom-Art bereitgestellt hat**, wird die Logo-Spalte direkt ausgeblendet (unter Verwendung des `showLogo = false`-Zweigs) – ein Fallback auf das integrierte QWEN-Logo würde auf schmalen Terminals die White-Label-Bereitstellung stillschweigend zerstören. Das Informationspanel wird weiterhin gerendert.
+   - Sonst (Benutzer hat überhaupt kein Custom-Art bereitgestellt) Fallback auf `shortAsciiLogo`, wobei die Breitenschwelle des Standardlogos entscheidet, ob es angezeigt wird.
+5. **Sicherung**. Wenn beide Tiers aufgrund weicher Fehler (Datei fehlt, nach Bereinigung leer, fehlerhafte Konfiguration) letztendlich leer oder ungültig sind, wird wie bei nicht benutzerdefiniertem `shortAsciiLogo` gerendert, und es gelten die Breitenschwellen des Standardlogos. Die CLI **darf aufgrund einer fehlerhaften Banner-Konfiguration nicht abstürzen**.
 
-Pseudocode zur Stufenauswahl:
+Pseudocode für die Tier-Auswahl:
 
 ```ts
 function pickTier(
@@ -350,9 +350,9 @@ function pickTier(
 }
 ```
 
-## Ergänzungen zum Settings-Schema
+## Settings Schema – Neuerungen
 
-In der Datei `packages/cli/src/config/settingsSchema.ts` werden im Objekt `ui` direkt nach `shellOutputMaxLines` vier weitere Eigenschaften hinzugefügt:
+Im Objekt `ui` in `packages/cli/src/config/settingsSchema.ts` werden direkt nach `shellOutputMaxLines` vier Eigenschaften hinzugefügt:
 
 ```ts
 hideBanner: {
@@ -393,31 +393,27 @@ customAsciiArt: {
   description:
     'Replace the default QWEN ASCII art. Accepts an inline string, {"path": "..."}, or {"small": ..., "large": ...} for width-aware selection.',
   showInDialog: false,
-  // 运行时接受 SettingDefinition `type` 表达不出来的联合形态。
-  // override 由 JSON-schema 生成器原样输出，让 VS Code 接受所有
-  // 文档化的形态（string、{path}、{small,large}），不再把裸字符串
-  // 标红。
+  // Union-Typ, der sich im `type` der SettingDefinition nicht ausdrücken lässt.
+  // Der override wird vom JSON-Schema-Generator unverändert ausgegeben, sodass VS Code
+  // alle dokumentierten Formen akzeptiert (string, {path}, {small,large}) und nackte
+  // Strings nicht rot markiert.
   jsonSchemaOverride: { /* string | {path} | {small,large} oneOf … */ },
 },
 ```
-`hideBanner` übernimmt das bestehende Muster von `hideTips` (`showInDialog: true`);
-Die drei weiteren Freitextfelder (Titel, Untertitel, Art) erscheinen nicht im Einstellungsdialog der Anwendung —
-Ein mehrzeiliger ASCII-Editor im TUI-Dialog ist ein separates Projekt. Fortgeschrittene Benutzer bearbeiten direkt
-die `settings.json`.
+
+`hideBanner` folgt dem bestehenden Muster von `hideTips` (`showInDialog: true`); die drei anderen Freitextfelder (Titel, Untertitel, Art) erscheinen nicht im anwendungsinternen Einstellungsdialog – einen mehrzeiligen ASCII-Editor im TUI-Dialog zu bauen ist ein separates Projekt; fortgeschrittene Benutzer bearbeiten direkt `settings.json`.
 
 ## Code-Änderungspunkte
 
-Die Änderungen sind minimal. Nachfolgend sind die Dateien und die Zeilenbereiche im aktuellen `main`-Branch aufgeführt.
+Die Änderungen sind gering. Nachfolgend sind für jede Stelle die Datei und die Zeilenbereiche auf dem aktuellen `main`-Branch angegeben.
 
-`packages/cli/src/ui/components/AppHeader.tsx:53` — Erweiterung von
-`showBanner`:
+`packages/cli/src/ui/components/AppHeader.tsx:53` – Erweiterung von `showBanner`:
 
 ```ts
 const showBanner = !config.getScreenReader() && !settings.merged.ui?.hideBanner;
 ```
 
-`packages/cli/src/ui/components/AppHeader.tsx` — Übergabe der geparsten
-Banner-Daten an `<Header>`:
+`packages/cli/src/ui/components/AppHeader.tsx` – Übergabe der aufgelösten Banner-Daten an `<Header>`:
 
 ```tsx
 <Header
@@ -431,7 +427,7 @@ Banner-Daten an `<Header>`:
 />
 ```
 
-`packages/cli/src/ui/components/Header.tsx` — Erweiterung von `HeaderProps`:
+`packages/cli/src/ui/components/Header.tsx` – Erweiterung von `HeaderProps`:
 
 ```ts
 interface HeaderProps {
@@ -445,8 +441,7 @@ interface HeaderProps {
 }
 ```
 
-`packages/cli/src/ui/components/Header.tsx:45-46` — Vor der Berechnung von
-`logoWidth` wird zuerst `pickTier` aufgerufen, mit vorhandenen Standardwerten als Fallback:
+`packages/cli/src/ui/components/Header.tsx:45-46` – Vor der Berechnung von `logoWidth` den Tier auswählen und mit dem vorhandenen Standard als Rückfall:
 
 ```ts
 const tier = pickTier(
@@ -459,8 +454,7 @@ const tier = pickTier(
 const displayLogo = tier ?? shortAsciiLogo;
 ```
 
-`packages/cli/src/ui/components/Header.tsx` — Titel wird aus Prop gerendert,
-Untertitel ersetzt die ursprüngliche leere Spacer-Zeile, wenn Prop wahr ist:
+`packages/cli/src/ui/components/Header.tsx` – Titel aus Prop rendern, Untertitel ersetzt bei vorhandenem Prop die standardmäßige leere Spacer-Zeile:
 
 ```tsx
 <Text bold color={theme.text.accent}>
@@ -474,7 +468,7 @@ Untertitel ersetzt die ursprüngliche leere Spacer-Zeile, wenn Prop wahr ist:
 )}
 ```
 
-**Neue Datei**: `packages/cli/src/ui/utils/customBanner.ts` — Parser.
+**Neue Datei**: `packages/cli/src/ui/utils/customBanner.ts` – Parser.
 Externes Interface:
 
 ```ts
@@ -487,16 +481,13 @@ export interface ResolvedBanner {
 export function resolveCustomBanner(settings: LoadedSettings): ResolvedBanner;
 ```
 
-Der Parser übernimmt die in der obigen "Parsing-Pipeline" beschriebene Normalisierung, Dateilesen, Bereinigung und Caching.
-Er wird beim Start der CLI einmal aufgerufen und erneut bei Hot-Reload-Ereignissen der Einstellungen. Die Dateipfade jedes Scopes stammen direkt aus `settings.system.path` / `settings.workspace.path` /
-`settings.user.path`, daher wird jeder `{ path }` relativ zur Datei aufgelöst, in der er deklariert ist;
-Wenn `settings.isTrusted` false ist, wird der Workspace-Scope komplett übersprungen.
+Der Parser ist verantwortlich für die in der „Analyse-Pipeline" beschriebene Normalisierung, Datei-Lesen, Bereinigung und Caching. Er wird beim Start der CLI einmal aufgerufen und erneut bei Einstellungs-Hot-Reload-Ereignissen. Die Dateipfade jedes Scopes stammen direkt von `settings.system.path` / `settings.workspace.path` / `settings.user.path`, sodass jeder `{ path }` relativ zu der Datei aufgelöst wird, in der er deklariert ist; wenn `settings.isTrusted` falsch ist, wird der Workspace-Scope komplett übersprungen.
 
-## Alternativenvergleich
+## Alternativen-Vergleich
 
-Nachfolgend sind 5 bewertete Varianten aufgeführt, um späteren Maintainern den Entwurfsraum zu verdeutlichen und ggf. eine Neubewertung zu ermöglichen.
+Im Folgenden werden die fünf zuvor evaluierten Formen aufgeführt, damit zukünftige Maintainer den Designraum verstehen und bei Bedarf neu bewerten können.
 
-### Variante 1 — Drei flache Felder (empfohlen, identisch mit Issue)
+### Option 1 – Drei flache Felder (empfohlen, deckungsgleich mit dem Issue)
 
 ```jsonc
 {
@@ -508,12 +499,11 @@ Nachfolgend sind 5 bewertete Varianten aufgeführt, um späteren Maintainern den
 }
 ```
 
-- **Effekt**: Minimale Benutzeroberfläche, eins-zu-eins mit Issue-Beschreibung.
-- **Vorteile**: NULL Lernaufwand; extrem einfache Dokumentation; konsistent mit vorhandenen flachen `ui.*`-Feldern
-  (`hideTips`, `customWittyPhrases` etc.).
-- **Nachteile**: Drei semantisch verwandte Schlüssel liegen lose in `ui` auf oberster Ebene; zukünftige Banner-spezifische Schalter (Gradient, Untertitel etc.) müssten als weitere Geschwisterfelder in `ui` landen, keine natürliche Gruppierung möglich.
+- **Wirkung**: Minimaler Benutzeraufwand, eins-zu-eins mit der Beschreibung im Issue.
+- **Vorteile**: Null Lernkurve; Dokumentation extrem einfach; konsistent mit bestehenden flachen `ui.*`-Feldern (`hideTips`, `customWittyPhrases` usw.).
+- **Nachteile**: Drei semantisch zusammengehörige Schlüssel sind lose auf der obersten Ebene von `ui` verteilt; zukünftige Banner-spezifische Schalter (Farbverlauf, Untertitel usw.) müssten weiterhin als Geschwisterfelder zu `ui` hinzugefügt werden, ohne natürliche Gruppierung.
 
-### Variante 2 — Verschachtelter `ui.banner`-Namespace
+### Option 2 – Verschachtelter `ui.banner`-Namespace
 
 ```jsonc
 {
@@ -527,26 +517,25 @@ Nachfolgend sind 5 bewertete Varianten aufgeführt, um späteren Maintainern den
 }
 ```
 
-- **Effekt**: Gleiche Funktionalität wie Variante 1, aber funktional gruppiert.
-- **Vorteile**: Sauberer Namespace für zukünftige Banner-spezifische Schalter; bessere Auffindbarkeit in `/settings`.
-- **Nachteile**: Nicht exakt mit der Schreibweise im Issue übereinstimmend; vorhandene UI-Einstellungen sind überwiegend flach (nur `ui.accessibility` und `ui.statusLine` sind verschachtelt), Konsistenz leidet; eine zusätzliche Ebene, die der Benutzer sich merken muss.
-
-### Variante 3 — Banner-Profil-Preset + Slot-Override
+- **Wirkung**: Gleiche Funktionalität wie Option 1, aber nach Feature gruppiert.
+- **Vorteile**: Zukünftige Banner-spezifische Schalter haben einen sauberen Namensraum; bessere Auffindbarkeit in `/settings`.
+- **Nachteile**: Nicht vollständig deckungsgleich mit der Schreibweise im Issue; bestehende UI-Einstellungen sind überwiegend flach (nur `ui.accessibility` und `ui.statusLine` sind verschachtelt), was die Konsistenz beeinträchtigt; eine zusätzliche Ebene zum Merken.
+### Lösung 3 – Banner-Profil-Vorgabe + Slot-Überschreibung
 
 ```jsonc
 {
   "ui": {
     "bannerProfile": "minimal" | "default" | "branded" | "hidden",
-    "banner": { /* Slot-Overrides für 'branded' */ }
+    "banner": { /* Slot-Überschreibungen unter 'branded' */ }
   }
 }
 ```
 
-- **Effekt**: Benutzer wählen aus benannten Presets; Fortgeschrittene überschreiben einzelne Slots im gewählten Preset.
-- **Vorteile**: Bessere Onboarding-Erfahrung; Presets können von der CLI mitgeliefert werden.
-- **Nachteile**: Deutlich höhere Komplexität; Presets sind langfristige Wartungsverpflichtung; das Issue fordert offene Anpassung, keine Content-Kuration.
+- **Effekt**: Benutzer wählen aus benannten Profilen; fortgeschrittene Benutzer überschreiben bestimmte Slots im gewählten Profil.
+- **Vorteile**: Bessere Onboarding-Erfahrung; Profile können von der CLI mitgeliefert werden.
+- **Nachteile**: Deutlich höhere Komplexität; Profile sind eine langfristige Wartungsverpflichtung; im Issue wird offene Anpassbarkeit gefordert, keine Inhaltskuratierung.
 
-### Variante 4 — Gesamter Banner-Vorlagen-String
+### Lösung 4 – Gesamte Banner-Vorlage als Template-String
 
 ```jsonc
 {
@@ -556,61 +545,63 @@ Nachfolgend sind 5 bewertete Varianten aufgeführt, um späteren Maintainern den
 }
 ```
 
-- **Effekt**: Ein einziger Freiform-Vorlagenstring mit Slot-Interpolation.
-- **Vorteile**: Höchste Flexibilität für nicht standardisierte Layouts.
-- **Nachteile**: Layout-Verantwortung wird auf den Benutzer abgewälzt; die zweispaltige Ink-Anordnung verliert ihre Robustheit gegenüber Terminalbreiten; es können leicht Vorlagen erstellt werden, die auf schmalen Terminals zerbrechen; zu großer Schadenbereich für den geringen Nutzen.
+- **Effekt**: Ein einzelnes freiformatiges Template, in das festgelegte Felder interpoliert werden.
+- **Vorteile**: Maximale Flexibilität für unübliche Layouts.
+- **Nachteile**: Die Layoutverantwortung wird auf den Benutzer abgewälzt; die Robustheit von Inks Zweispaltenlayout gegenüber Terminalbreiten geht verloren; leicht lassen sich Templates erstellen, die in schmalen Terminals zerbrechen; große Angriffsfläche für relativ geringen Nutzen.
 
-### Variante 5 — Plugin / Hook-API
+### Lösung 5 – Plugin-/Hook-API
 
-Exposition eines Banner-Renderer-Hooks über ein Erweiterungssystem.
+Einen Banner-Renderer-Hook über das Erweiterungssystem bereitstellen.
 
 - **Effekt**: Code-Level-Anpassung; Erweiterungen können beliebige Inhalte rendern.
-- **Vorteile**: Höchste Leistungsfähigkeit; Unternehmen können vollständig gekapselte Branding-Plugins bereitstellen.
-- **Nachteile**: Riesige API-Oberfläche; beliebiges Terminal-Rendering erfordert Sicherheitsüberprüfung; für dieses Issue völlig überdimensioniert.
+- **Vorteile**: Höchste Leistungsfähigkeit; Unternehmen können komplett gekapselte Branding-Plugins ausliefern.
+- **Nachteile**: Riesige API-Oberfläche; beliebiges Terminal-Rendering erfordert Sicherheitsprüfung; für dieses Issue völlig überdimensioniert.
 
-### Empfehlung
+### Empfohlene Entscheidung
 
-**Variante 1 wird eingesetzt**. Sie erfüllt das Issue direkt, passt zum bestehenden `ui.*`-Stil und wird nicht durch einen Namespace eingeschränkt, solange wir noch nicht wissen, welche weiteren Banner-spezifischen Schalter es geben wird. Falls sich in Zukunft Geschwisterfelder ansammeln, ist die Migration zu Variante 2 additiv — `ui.banner.title` und `ui.customBannerTitle` können während einer Deprecation-Periode nebeneinander existieren.
+**Lösung 1 wird umgesetzt**. Sie erfüllt das Issue direkt, passt zum vorhandenen `ui.*`-Stil und wird nicht durch einen Namespace eingeschränkt, bevor wir wissen, welche weiteren Banner-spezifischen Schalter es noch geben wird. Falls in Zukunft verwandte Felder dazukommen, ist der Übergang zu Lösung 2 additiv – `ui.banner.title` und `ui.customBannerTitle` können während einer Abkündigungsfrist nebeneinander existieren.
 
-## Sicherheit & Fehlerbehandlung
+## Sicherheit und Fehlerbehandlung
 
-Benutzerdefinierte Banner-Inhalte werden **buchstabengetreu auf dem Terminal gerendert** und im Pfad-Modus zusätzlich **von der Festplatte gelesen**. Beide Pfade sind bei bösartigen oder manipulierten Einstellungen erreichbar. Das gleiche Bedrohungsmodell, das die Session-Title-Funktion adressiert, gilt auch hier.
+Benutzerdefinierte Banner-Inhalte werden **wörtlich an das Terminal gerendert**, bei der Pfad-Variante zusätzlich **von der Festplatte gelesen**. Beide Pfade sind bei geladenen oder manipulierten Einstellungen erreichbar. Das gleiche Bedrohungsmodell wie bei der Session-Title-Funktion gilt hier entsprechend.
 
-| Aspekt | Schutzmaßnahme |
-| :--- | :--- |
-| ANSI / OSC-8 / CSI-Injektion in ASCII-Art / Titel / Untertitel | Banner-spezifischer Stripper (`sanitizeArt` / `sanitizeSingleLine`): Entfernt OSC-/CSI-/SS2-/SS3-Einführungssequenzen, ersetzt übrige C0-/C1-Steuerzeichen (inkl. DEL) durch Leerzeichen. Wird vor dem Rendern und vor dem Schreiben in den Cache angewendet. |
-| Einfrieren des Starts durch übermäßig große Dateien | Dateilesen mit hartem Limit von 64 KB. |
-| Einfrieren des Layouts durch pathologische ASCII-Art | Jedes Parsing-Ergebnis auf maximal 200 Zeilen × 200 Spalten begrenzt; Überschreitung wird abgeschnitten + `[BANNER]`-Warnung. |
-| Symlink-Hijacking im Pfad-Modus | Dateilesen mit `O_NOFOLLOW` (unter Windows auf schreibgeschützt zurückgefallen; Konstante nicht exponiert). |
-| Fehlende oder nicht lesbare Datei | Abfangen → `[BANNER]`-Warnung → Fallback auf Standard; niemals in die UI werfen. |
-| Zeilenumbrüche oder Überlänge in Titel / Untertitel | Zeilenumbrüche durch Leerzeichen ersetzen, auf 80 (Titel) / 160 (Untertitel) Zeichen kürzen. |
-| Nicht vertrauenswürdiger Workspace beeinflusst Rendering oder Dateilesen | Wenn `settings.isTrusted` false ist, überspringt der Parser `settings.workspace` komplett (konsistent mit dem Vertrauens-Gate der `settings.merged`-Ansicht). |
-| Race-Condition bei Hot-Reload der Einstellungen | Parsing-Ergebnisse werden pro Aufruf nach Quelle (Pfad oder String) memoisiert; Reload führt den Parser erneut aus und liest betroffene Dateien neu. |
-Zusammenfassung der Fehlermodi: Alle weichen Fehler landen letztendlich in `shortAsciiLogo` (oder dem gesperrten Standardtitel) + eine Zeile Debug-Log-Warnung. Kein Zweig darf einen harten Fehler verursachen (Ausnahme nach oben werfen).
+| Aspekt                                                   | Schutzmaßnahme                                                                                                                                                                                                                     |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ANSI / OSC-8 / CSI Injection in ASCII-Art / Titel / Untertitel | Banner-spezifischer Stripper (`sanitizeArt` / `sanitizeSingleLine`): Entfernt OSC / CSI / SS2 / SS3-Einführungssequenzen, ersetzt übrige C0-/C1-Steuerbytes (inkl. DEL) durch Leerzeichen. Wird vor Rendering und Cacheschreiben angewendet. |
+| Start einfrieren durch übergroße Datei                   | Datei-Lese-Hard-Limit von 64 KB.                                                                                                                                                                                                    |
+| Layout einfrieren durch pathologische ASCII-Art          | Max. 200 Zeilen × 200 Spalten pro Parse-Ergebnis; Überstehendes wird abgeschnitten + `[BANNER]`-Warnung.                                                                                                                           |
+| Symlink-Angriff auf Pfad-Variante                        | Dateilesen mit `O_NOFOLLOW` (unter Windows Fallback auf Nur-Lesen; Konstante nicht exponiert).                                                                                                                                     |
+| Fehlende oder nicht lesbare Datei                        | Abfangen → `[BANNER]`-Warnung → Fallback auf Standard; wird niemals in die UI geworfen.                                                                                                                                           |
+| Titel / Untertitel enthalten Zeilenumbrüche oder sind zu lang | Zeilenumbrüche durch Leerzeichen ersetzen, auf 80 (Titel) / 160 (Untertitel) Zeichen kürzen.                                                                                                                                       |
+| Nicht vertrauenswürdiger Workspace beeinflusst Rendering oder Dateilesen | Wenn `settings.isTrusted` false ist, überspringt der Parser `settings.workspace` komplett (übereinstimmend mit der Vertrauensschranke der `settings.merged`-Ansicht).                                                              |
+| Race-Condition bei Hot-Reload der Einstellungen          | Parse-Ergebnisse werden pro Aufruf nach Quelle (Pfad oder String) memoized; bei Reload wird der Parser erneut durchlaufen und betroffene Dateien neu gelesen.                                                                       |
 
-## Nicht im Rahmen dieses Designs
+Zusammenfassung der Fehlermodi: Alle weichen Fehler führen letztlich zu `shortAsciiLogo` (oder festgelegtem Standardtitel) + einer Debug-Log-Warnung. Kein Zweig darf einen harten Fehler (Exception nach oben) produzieren.
 
-Die folgenden Punkte sind bewusst ausgeschlossen. Jeder Punkt kann auf Basis von Benutzerfeedback als separater Vorschlag nachgereicht werden.
+## Nicht im Entwurf enthalten
 
-| Punkt                                             | Begründung                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Text in ASCII-Art umwandeln (Form `{ text: "xxxCode" }`) | Nach v1-Bewertung **abgelehnt**. Entweder Einführung einer Laufzeitabhängigkeit von `figlet` (ca. 2–3 MB unpacked mit einem Satz verfügbarer Schriftarten) oder selbst einen Single-Font-Renderer bereitstellen (~200 Zeilen Code + eine `.flf`-Schriftart, die wir selbst pflegen). Beide Wege bedeuten langfristigen Wartungsaufwand: Schriftartauswahl, Lizenzprüfung der Schriftarten, Issues wie „Meine Schriftart wird in Terminal X nicht richtig dargestellt", CJK-/Vollbreitenzeichenbehandlung. Der Anwendungsfall für diese Funktion (White-Labeling / Multi-Tenancy) hat fast immer ein fertiges ASCII-Art vom Designer, das nicht auf Standardschriftarten von figlet angewiesen ist. Benutzer, die heute eine Einzeiler-Generierung wünschen, können `npx figlet "xxxCode" > brand.txt` + `customAsciiArt: { "path": "./brand.txt" }` verwenden – gleicher Effekt, null neue Abhängigkeiten, null internen Supportaufwand für Qwen Code. Sollte die Nachfrage in Zukunft steigen, ist diese Form reine Erweiterung: `AsciiArtSource` um `string \| {path} \| {text, font?}` erweitern, ohne bestehende Konfigurationen zu brechen. |
-| `/banner` Slash-Befehl zur Online-Bearbeitung      | Das Einstellungs-UI ist der standardisierte Bearbeitungseinstieg; ein Online-Editor für mehrzeiliges ASCII ist ein separates Projekt.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Benutzerdefinierte Farbverläufe / Einzelfarben      | Farben gehören zum Theme. Falls eine Erweiterung gewünscht ist, sollte ein separater Vorschlag eingereicht werden; Banner-Anpassung soll dieses Rad nicht neu erfinden.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ASCII-Art per URL laden                            | Netzwerkanfragen beim Start bringen eine Reihe von Problemen mit sich: Fehlermodi, Caching, Sicherheitsprüfungen. Das Laden per `{path}`-Datei ist ein risikoarmes Äquivalent.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Animationen (rotierendes Logo, Laufbandtitel)       | Erhöht die Rendering-Last und Barrierefreiheitsprobleme; der Anwendungsfall dieser Funktion benötigt sie nicht.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Banner-Ausrichtung in VSCode / Web-UI              | Diese beiden Endpunkte rendern derzeit kein Ink-Banner. Falls dies in Zukunft eingeführt wird, dient dieses Design als Referenz.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Dynamisches Neuladen bei Dateiänderungen             | Der Parser läuft nur beim Start und beim Neuladen der Einstellungen. Der Bedarf, mitten in einer Sitzung die Kunst zu wechseln, ist gering; „Neustart erforderlich" ist ein akzeptabler Kompromiss.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Ausblenden gesperrter Bereiche (Version/Auth/Model/Pfad) | Diese sind Laufzeitsignale; sie zu unterdrücken schadet dem Support und der Sicherheitslage mehr, als es dem White-Labeling-Szenario nützt.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+Folgende Punkte wurden bewusst ausgeschlossen. Jeder kann auf Basis von Benutzerfeedback in einem separaten Vorschlag nachgereicht werden.
+
+| Punkt                                                | Grund für Nichteinbeziehung                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Text in ASCII-Art umwandeln (Form `{ text: "xxxCode" }`) | Nach v1-Bewertung **abgelehnt**. Entweder man bringt die Laufzeitabhängigkeit `figlet` mit (ca. 2–3 MB unpacked inkl. eines Satzes nutzbarer Fonts) oder man vendort einen eigenen Single-Font-Renderer (~200 Codezeilen + eine selbst gepflegte `.flf`-Fontdatei). Beide Wege verursachen langfristige Wartungskosten: Schriftauswahl, Lizenzprüfung, Issues wie „mein Font rendert in Terminal X falsch“, CJK-/Vollbreitenzeichenbehandlung. Der Anwendungsfall, der diese Funktion treibt (White-Label / Multi-Tenant), wird mit hoher Wahrscheinlichkeit fertige ASCII-Art vom Designer liefern, nicht auf figlet-Standardfonts angewiesen sein. Benutzer, die sich eine Einzeiler-Generierung wünschen, können heute `npx figlet "xxxCode" > brand.txt` + `customAsciiArt: { "path": "./brand.txt" }` nutzen – gleicher Effekt, null neue Abhängigkeiten, kein interner Qwen Code-Supportaufwand. Falls die Nachfrage steigt, ist diese Form rein additiv: Erweiterung von `AsciiArtSource` um `string \| {path} \| {text, font?}`, ohne bestehende Konfigurationen zu brechen. |
+| `/banner`-Slash-Befehl zur Online-Bearbeitung        | Das Einstellungs-UI ist der normative Editor; ein mehrzeiliger ASCII-Online-Editor ist ein separates Projekt.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Benutzerdefinierte Farbverläufe / Einzelfarben       | Farbe gehört zum Theme. Falls nötig, eigener Vorschlag – Banner-Anpassung soll diese Fläche nicht neu erfinden.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ASCII-Art von URL laden                              | Netzwerkanfragen beim Start bringen viele Probleme mit sich: Fehlermodi, Caching, Sicherheitsprüfung. Der `{path}`-Dateiladepfad ist ein risikoarmes Äquivalent.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Animation (rotierendes Logo, Laufschrift-Titel)      | Erhöht Rendering-Aufwand und Barrierefreiheitsprobleme; der Anwendungsfall dieser Funktion benötigt dies nicht.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Banner-Anpassung für VSCode / Web-UI                 | Diese beiden Endpoints rendern derzeit kein Ink-Banner. Falls in Zukunft eingeführt, dient dieser Entwurf als Referenz.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Dynamisches Neuladen bei Dateiänderungen             | Der Parser läuft nur beim Start und beim Reload der Einstellungen. Der Bedarf, mid-session die Art zu wechseln, ist gering; „Neustart erforderlich“ ist ein akzeptabler Kompromiss.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Einzelnes Ausblenden von gesperrten Bereichen (version / auth / model / path) | Dies sind Laufzeitsignale; ihr Ausblenden schadet Support- und Sicherheitslage mehr, als es White-Label-Szenarien nützt.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+
 ## Validierungsplan
 
-Nachfolgende Implementierungs-PRs sollten die folgenden End-to-End-Prüfungen bestehen:
+Der nachfolgende Implementierungs-PR sollte die folgenden End-to-End-Prüfungen durchlaufen:
 
-1. In `~/.qwen/settings.json` wird `customBannerTitle: "Acme CLI"` und eine Inline-`customAsciiArt` gesetzt → beim Start von `qwen` wird der neue Titel und das neue ASCII-Kunstwerk angezeigt; der Versionsnummer-Suffix bleibt bestehen.
-2. Setzen von `customBannerSubtitle: "Built-in Acme Skills"` → die Untertitelzeile erscheint in sekundärer Textfarbe zwischen der Titel- und der Authentifizierungs-/Modellzeile; Authentifizierung, Modell und Pfad sind weiterhin sichtbar. Nach dem Zurücksetzen erscheint wieder die leere Spacer-Zeile (abwärtskompatibel).
+1. `~/.qwen/settings.json` setzt `customBannerTitle: "Acme CLI"` und eine Inline-`customAsciiArt` → nach Start von `qwen` wird der neue Titel und die neue ASCII-Art angezeigt; das Versionssuffix bleibt erhalten.
+2. Setzen von `customBannerSubtitle: "Built-in Acme Skills"` → die Untertitelzeile erscheint in sekundärer Textfarbe zwischen Titel und Authentifizierungs-/Modellzeile; Authentifizierung, Modell und Pfad bleiben sichtbar. Nach Entfernen der Einstellung wird wieder die leere Spacer-Zeile angezeigt (Abwärtskompatibilität).
 3. Setzen von `hideBanner: true` → `qwen` startet ohne Banner; Tipps und Hauptinhalt werden normal gerendert.
-4. In workspace `settings.json` wird `customAsciiArt: { "path": "./brand.txt" }` gesetzt, `brand.txt` befindet sich zusammen mit `.qwen/` im selben Verzeichnis → beim Öffnen des Workspace wird es von der Festplatte geladen.
-5. `customAsciiArt: { "small": "...", "large": "..." }` → Die Terminalgröße wird auf breit/mittel/schmal angepasst; bei breit wird "large" verwendet, bei mittel "small", bei schmal wird die Logo-Spalte ausgeblendet; das Informationspanel bleibt immer sichtbar.
-6. In `customBannerTitle` **und** `customBannerSubtitle` wird jeweils `\x1b[31mhostile` injiziert → an beiden Stellen wird es als Literaltext gerendert, nicht als rote Farbe interpretiert.
-7. `path` zeigt auf eine nicht existierende Datei → CLI startet normal; in `~/.qwen/debug/<sessionId>.txt` erscheint `[BANNER]` Warnung; Standard-Art wird gerendert.
-8. Wenn ein Worktree bei deaktiviertem Workspace-Vertrauen geöffnet wird → das vom Workspace bereitgestellte `customAsciiArt` (einschließlich `{ path }`-Eintrag) wird stillschweigend ignoriert; die Einstellungen des user-scope bleiben wirksam.
+4. Im Workspace `settings.json` wird `customAsciiArt: { "path": "./brand.txt" }` gesetzt, `brand.txt` befindet sich im selben Verzeichnis `.qwen/` → beim Öffnen des Workspace wird von der Festplatte geladen.
+5. `customAsciiArt: { "small": "...", "large": "..." }` → Terminalgröße in den Stufen breit / mittel / schmal ändern; bei breiter Größe wird große, bei mittlerer kleine Art angezeigt, bei schmaler Größe wird die Logo-Spalte ausgeblendet; das Informationspanel bleibt immer sichtbar.
+6. In `customBannerTitle` **und** `customBannerSubtitle` wird jeweils `\x1b[31mhostile` injiziert → beide Stellen rendern als Literaltext, werden nicht als rot interpretiert.
+7. `path` zeigt auf eine nicht existierende Datei → CLI startet normal; in `~/.qwen/debug/<sessionId>.txt` erscheint eine `[BANNER]`-Warnung; Standard-Art wird gerendert.
+8. Bei deaktiviertem Workspace-Vertrauen wird ein Worktree geöffnet → die vom Workspace bereitgestellte `customAsciiArt` (einschließlich `{ path }`-Eintrag) wird stillschweigend ignoriert; Einstellungen im Benutzerbereich sind weiterhin wirksam.

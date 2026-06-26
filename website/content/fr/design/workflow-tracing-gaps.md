@@ -1,24 +1,24 @@
-# Analyse de granularité insuffisante des Spans au niveau du Workflow (P1)
+# Analyse du manque de granularité des spans au niveau du workflow (P1)
 
-> Basé sur la révision du 2026-05-13 de qwen-code origin/main
+> Basé sur la revue de qwen-code origin/main du 2026-05-13
 
 ## État actuel
 
-qwen-code dispose d'une infrastructure de tracing :
+qwen-code dispose déjà d'une infrastructure de tracing :
 
-| Composant      | Emplacement                                       | Description                                                                   |
-| -------------- | ------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Définition des types de Span | `packages/core/src/telemetry/session-tracing.ts` | `interaction`, `llm_request`, `tool`, `tool.execution`                        |
-| Outil Tracer   | `packages/core/src/telemetry/tracer.ts`          | session root context, `withSpan`, `startSpanWithContext`                      |
-| Point d'entrée des interactions | `packages/core/src/core/client.ts`               | Les interactions de haut niveau démarrent explicitement un span `interaction` |
-| Gestion du cycle de vie | —                                                | AsyncLocalStorage + WeakRef + nettoyage TTL                                  |
+| Composant           | Emplacement                                        | Description                                                                 |
+| ------------------- | -------------------------------------------------- | --------------------------------------------------------------------------- |
+| Définition des spans| `packages/core/src/telemetry/session-tracing.ts`   | `interaction`, `llm_request`, `tool`, `tool.execution`                      |
+| Outils Tracer       | `packages/core/src/telemetry/tracer.ts`            | session root context, `withSpan`, `startSpanWithContext`                    |
+| Point d'entrée des interactions | `packages/core/src/core/client.ts`       | L'interaction de haut niveau démarre explicitement un span `interaction`    |
+| Gestion du cycle de vie | —                                               | AsyncLocalStorage + WeakRef + nettoyage TTL                                 |
 
-Actuellement, deux types de spans génériques sont principalement intégrés de manière stable dans le runtime :
+Actuellement, seuls deux types de spans génériques sont stablement intégrés dans le runtime :
 
 - `api.generateContent` / `api.generateContentStream`
 - `tool.<toolName>`
 
-**Conclusion : nous sommes entrés dans la phase « backbone de tracing présent », mais les limites des phases du workflow agent ne sont pas encore complètement encodées dans l'arbre de trace.**
+**Conclusion : nous sommes à l'étape "tronc de tracing existant", mais les limites des phases du workflow agent ne sont pas encore encodées dans l'arbre de trace.**
 
 ### Comparaison : types de spans déjà implémentés par claude-code
 
@@ -33,43 +33,43 @@ Référence : `claude-code/src/utils/telemetry/sessionTracing.ts` (ligne 49) :
 
 ## Éléments manquants
 
-| Span / mécanisme manquant                       | Impact                                                |
-| ----------------------------------------------- | ----------------------------------------------------- |
-| Span `permission_wait` / `blocked_on_user`      | Impossible de distinguer le temps d'attente d'approbation vs le temps d'exécution de l'outil |
-| Span `hook`                                     | Le temps du hook est intégré dans le span de l'outil, rendant les limites floues |
-| Span racine `subagent`                          | Les appels llm/tool internes au subagent ne forment pas de sous-arbre de trace |
-| Câblage réel de `tool.execution`                | Le helper est défini mais le chemin principal ne l'appelle pas |
-| Câblage parent-enfant stable                    | Les spans sont souvent des frères sous la racine de la session plutôt qu'un arbre hiérarchique |
+| Span / mécanisme manquant                      | Impact                                                                 |
+| ---------------------------------------------- | ---------------------------------------------------------------------- |
+| Span `permission_wait` / `blocked_on_user`     | Impossible de distinguer le temps d'attente d'approbation vs temps d'exécution de l'outil |
+| Span `hook`                                    | Le temps des hooks est absorbé dans le span tool, limite floue         |
+| Span racine `subagent`                         | Les appels llm/tool internes au subagent ne forment pas de sous-arbre de trace |
+| Câblage réel de `tool.execution`               | Le helper est défini mais n'est pas appelé dans la chaîne principale   |
+| Wiring parent-enfant stable                    | Les spans sont surtout des frères sous la racine de session plutôt qu'un arbre hiérarchique |
 
 ## Analyse détaillée
 
-### 1. L'attente d'approbation de l'utilisateur n'est pas dans la trace
+### 1. L'attente d'approbation utilisateur n'est pas dans la trace
 
 Lorsqu'un appel d'outil attend l'approbation, le chemin de transition d'état est `awaiting_approval` → `scheduled` → exécution.
 
-- « Attente de confirmation utilisateur » n'est qu'une transition d'état, pas un nœud de trace
-- La durée d'attente d'approbation n'est pas visible dans la trace
-- Si un outil est lent, il est impossible de savoir s'il « bloque en attendant l'utilisateur » ou si « l'outil lui-même est lent à exécuter »
+- "Attente de confirmation utilisateur" n'est qu'une transition d'état, pas un nœud de trace
+- Le temps d'attente d'approbation n'est pas visible dans la trace
+- En cas de lenteur d'un outil, impossible de savoir si c'est "bloqué sur l'utilisateur" ou "exécution lente de l'outil"
 
-### 2. Les hooks ont des enregistrements d'événements mais pas de spans indépendants
+### 2. Les hooks ont des enregistrements d'événements mais pas de span indépendant
 
-Après l'exécution d'un hook Pre/Post, un `HookCallEvent` est produit, passant par `logHookCall()`, mais aucun span OTel indépendant n'est créé.
+L'exécution des hooks pre/post produit un `HookCallEvent`, via `logHookCall()`, mais ne crée pas de span OTel indépendant.
 
-- Un hook lent se manifeste par un span d'outil externe plus lent
-- Un échec de hook se manifeste par un « échec de l'outil »
-- La trace ne peut pas répondre à « le temps a-t-il été passé dans le hook ou dans tool.execution »
+- Quand un hook ralentit, cela se manifeste par un ralentissement du span tool englobant
+- En cas d'échec d'un hook, cela apparaît comme "échec de l'outil"
+- La trace ne permet pas de répondre "le temps est-il passé dans le hook ou dans tool.execution ?"
 
-### 3. Subagent est log/metric et non une sous-arborescence de trace
+### 3. Les subagents sont des logs/métriques, pas une sous-arborescence de trace
 
-Lors du démarrage/achèvement d'un subagent, un `SubagentExecutionEvent` est enregistré et passe dans les logs/metrics, mais il ne forme pas de sous-arbre de span explicite.
+Le démarrage/arrêt d'un subagent enregistre un `SubagentExecutionEvent` et va dans les logs/métriques, mais ne forme pas un sous-arbre de span explicite.
 
-- On peut compter « quel subagent a été exécuté »
-- On ne peut pas suivre dans la trace « quels appels llm/tool ce subagent a déclenchés »
-- La chaîne causale est floue dans les scénarios de subagents concurrents
+- On peut compter "quel subagent a été exécuté"
+- On ne peut pas suivre dans la trace "quels appels llm/tool ce subagent a déclenchés"
+- En cas de subagents concurrents, la chaîne causale est floue
 
-### 4. Le helper tool.execution est défini mais non connecté au chemin principal
+### 4. Le helper tool.execution est défini mais pas raccordé à la chaîne principale
 
-`startToolExecutionSpan()` / `endToolExecutionSpan()` existent déjà dans `session-tracing.ts`, mais aucun appel n'est visible dans le code non-test.
+`session-tracing.ts` contient déjà `startToolExecutionSpan()` / `endToolExecutionSpan()`, mais aucun appel n'est visible dans le code non-test.
 
 Arbre de trace actuel :
 
@@ -98,41 +98,41 @@ interaction
         tool
 ```
 
-### 5. Câblage parent-enfant insuffisamment stable
+### 5. Le wiring parent-enfant n'est pas assez stable
 
-Le span interaction existe déjà, mais de nombreux spans en cours d'exécution sont accrochés sous la racine de la session comme des frères, plutôt que comme des enfants du span interaction.
+Le span interaction existe déjà, mais de nombreux spans en cours d'exécution sont rattachés sous la racine de session en tant que frères, plutôt que comme enfants du span interaction.
 
 - L'arbre d'appels est plat
-- La relation causale entre les nœuds n'est pas intuitive
-- L'expérience de navigation d'un tour utilisateur vers les appels internes llm/tool/hook/subagent n'est pas fluide
+- Les relations de cause à effet entre nœuds ne sont pas intuitives
+- L'expérience de suivi depuis un tour utilisateur jusqu'aux appels llm/tool/hook/subagent internes n'est pas fluide
 
 ## Impact
 
-- Les traces ont une valeur de base, mais ne suffisent pas pour le débogage au niveau du workflow
-- Impossible de répondre directement à « ce tour a-t-il été lent à cause de l'attente utilisateur, du hook, ou de l'exécution réelle de l'outil »
-- Impossible de reconstituer le processus d'exécution d'un subagent en un sous-arbre de trace lisible
-- Les problèmes de hook sont intégrés dans le span de l'outil, rendant les limites floues
-- L'arbre dans Jaeger / Tempo / ARMS est plus plat et plus difficile à lire que celui de claude-code
+- Les traces ont une valeur de base, mais insuffisante pour le diagnostic au niveau workflow
+- Impossible de répondre directement "cette étape est lente à cause de l'attente utilisateur, d'un hook, ou de l'exécution réelle de l'outil"
+- Impossible de reconstituer le déroulement d'un subagent comme un sous-arbre de trace lisible
+- Les problèmes de hooks sont absorbés dans le span tool, limite floue
+- Dans Jaeger / Tempo / ARMS, l'arbre est plus plat et plus difficile à lire que celui de claude-code
 
 ---
 
-## Analyse de la réutilisation de la solution claude-code
+## Analyse de réutilisation de la solution claude-code
 
-> Basé sur une comparaison approfondie du code source de claude-code le 2026-05-13
+> Basé sur une comparaison approfondie du code source de claude-code du 2026-05-13
 
 ### Architecture de tracing de claude-code
 
-claude-code implémente un **système de gestion de spans unifié basé sur deux ALS** dans `src/utils/telemetry/sessionTracing.ts` :
+claude-code implémente dans `src/utils/telemetry/sessionTracing.ts` un **système de gestion de spans unifié basé sur deux ALS** :
 
 ```
                     interactionContext (ALS)          toolContext (ALS)
                           │                                │
                           ▼                                ▼
               ┌─────────────────────┐           ┌─────────────────────┐
-              │  span interaction   │           │    span tool        │
-              │  (racine session)   │           │  (enfant de intxn)  │
+              │  interaction span   │           │    tool span        │
+              │  (session root)     │           │  (child of intxn)   │
               └─────────────────────┘           └─────────────────────┘
-                   ▲ parent de                       ▲ parent de
+                   ▲ parent of                       ▲ parent of
                    │                                 │
            ┌───────┴───────┐              ┌──────────┼──────────┐
            │               │              │          │          │
@@ -140,16 +140,17 @@ claude-code implémente un **système de gestion de spans unifié basé sur deux
                                      _on_user
 ```
 
-**Mécanismes principaux :**
+**Mécanismes clés :**
 
-| Mécanisme   | Implémentation                                                                                                                                                                            |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Double ALS  | `interactionContext` stocke le span interaction en cours ; `toolContext` stocke le span tool en cours                                                                                     |
-| Résolution parent | Chaque type de span a un ALS source codé en dur pour obtenir son parent : `llm_request`/`tool` depuis `interactionContext` ; `blocked_on_user`/`execution`/`hook` depuis `toolContext` ; `hook` a un fallback vers `interactionContext` |
-| Cycle de vie | enterWith injection → exécution du span → enterWith(undefined) nettoyage                                                                                                                 |
-| Recherche de span | Les spans non stockés dans ALS (comme `blocked_on_user`) sont retrouvés via la Map `activeSpans` par `span.type`                                                                          |
-| Gestion mémoire | Les spans détenus par ALS utilisent WeakRef ; les spans non détenus par ALS utilisent strongRef pour éviter le GC ; nettoyage automatique TTL 30min                                      |
-**Cycle de vie complet du span tool de claude-code** (`toolExecution.ts`) :
+| Mécanisme     | Implémentation                                                                                                                                                                               |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Double ALS    | `interactionContext` stocke le span interaction courant ; `toolContext` stocke le span tool courant                                                                                          |
+| Résolution parent | Chaque type de span a un ALS source codé en dur pour trouver son parent : `llm_request`/`tool` prennent `interactionContext` ; `blocked_on_user`/`execution`/`hook` prennent `toolContext` ; `hook` a un fallback vers `interactionContext` |
+| Cycle de vie  | enterWith injecte → span s'exécute → enterWith(undefined) efface                                                                                                                             |
+| Recherche de span | Les spans non stockés dans ALS (ex. blocked_on_user) sont retrouvés via une Map `activeSpans` par `span.type`                                                                               |
+| Gestion mémoire | Les spans détenus par ALS utilisent WeakRef ; les spans hors ALS utilisent strongRef pour éviter le GC ; nettoyage automatique TTL 30 min                                                    |
+
+**Cycle de vie complet d'un span tool chez claude-code** (`toolExecution.ts`):
 
 ```
 startToolSpan(name, attrs)                    // → toolContext.enterWith(spanCtx)
@@ -162,7 +163,7 @@ startToolSpan(name, attrs)                    // → toolContext.enterWith(spanC
 endToolSpan(result)                           // → toolContext.enterWith(undefined)
 ```
 
-**Span hook de claude-code** (`hooks.ts`) :
+**Span hook chez claude-code** (`hooks.ts`):
 
 ```
 startHookSpan(event, name, count, defs)       // → parent = toolContext ?? interactionContext
@@ -172,54 +173,54 @@ endHookSpan(span, { success, blocking, ... })
 
 ### Architecture existante de qwen-code vs claude-code
 
-#### Différence fondamentale : deux chemins disjoints de création de spans
+#### Différence fondamentale : deux chemins de création de spans disjoints
 
-C'est le problème architectural le plus critique de qwen-code actuellement :
+C'est le problème d'architecture le plus critique de qwen-code actuellement :
 
-| Couche              | Fichier                | Utilisation                                                                                   | Résolution du parent                                       |
-| ------------------- | ----------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Couche session-tracing | `session-tracing.ts`   | `startInteractionSpan` / `startLLMRequestSpan` / `startToolSpan` / `startToolExecutionSpan`    | Récupère explicitement le parent depuis l'ALS `interactionContext` |
-| Couche tracer       | `tracer.ts`            | `withSpan` / `startSpanWithContext`                                                           | Récupère le parent depuis `context.active()`, fallback vers la racine de session |
+| Couche               | Fichier                | Utilisation                                                                                     | Résolution parent                                            |
+| -------------------- | ---------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Couche session-tracing | `session-tracing.ts` | `startInteractionSpan` / `startLLMRequestSpan` / `startToolSpan` / `startToolExecutionSpan`     | Récupère explicitement le parent depuis l'ALS `interactionContext` |
+| Couche tracer        | `tracer.ts`            | `withSpan` / `startSpanWithContext`                                                             | Prend le parent de `context.active()`, fallback vers session root |
 
-**Appels réels à l'exécution :**
+**Situation réelle des appels dans le runtime :**
 
-- `startInteractionSpan` → **déjà intégré** (`client.ts` ligne 956), écrit dans l'ALS `interactionContext`
-- `startLLMRequestSpan` / `endLLMRequestSpan` → **non intégré** ; l'exécution utilise `withSpan('api.generateContent', ...)` (dans `loggingContentGenerator.ts`)
-- `startToolSpan` / `endToolSpan` → **non intégré** ; l'exécution utilise `withSpan('tool.${name}', ...)` (dans `coreToolScheduler.ts`)
-- `startToolExecutionSpan` / `endToolExecutionSpan` → **non intégré**
+- `startInteractionSpan` → **déjà raccordé** (`client.ts` ligne 956), écrit dans l'ALS `interactionContext`
+- `startLLMRequestSpan` / `endLLMRequestSpan` → **non raccordé**, le runtime utilise `withSpan('api.generateContent', ...)` (dans `loggingContentGenerator.ts`)
+- `startToolSpan` / `endToolSpan` → **non raccordé**, le runtime utilise `withSpan('tool.${name}', ...)` (dans `coreToolScheduler.ts`)
+- `startToolExecutionSpan` / `endToolExecutionSpan` → **non raccordé**
 
 **Conséquence :**
 
-`getParentContext()` de `withSpan` vérifie d'abord `context.active()` (contexte natif OTel). S'il ne trouve pas de span actif, il retourne au contexte racine de la session. Il **ne lit absolument pas** l'ALS `interactionContext`.
+`getParentContext()` de `withSpan` vérifie d'abord `context.active()` (contexte OTel natif), et s'il n'y a pas de span actif, retombe sur le contexte racine de session. Il **ne lit pas du tout** l'ALS `interactionContext`.
 
-Ainsi, le span d'interaction et les spans LLM/tool deviennent des **siblings au même niveau** sous la racine de session, au lieu d'une arborescence parent-enfant :
+Par conséquent, le span interaction et les spans LLM/tool deviennent des **frères de même niveau** sous la racine de session, plutôt qu'un arbre parent-enfant :
 
 ```
 session-root
-  ├── interaction         (venant de session-tracing, écrit dans l'ALS interactionContext)
-  ├── api.generateContent (venant de withSpan, ne lit pas interactionContext → rattaché à session-root)
-  ├── tool.Bash           (venant de withSpan, idem)
-  └── tool.Read           (venant de withSpan, idem)
+  ├── interaction         (depuis session-tracing, écrit dans l'ALS interactionContext)
+  ├── api.generateContent (depuis withSpan, ne lit pas interactionContext → attaché à session root)
+  ├── tool.Bash           (depuis withSpan, idem)
+  └── tool.Read           (depuis withSpan, idem)
 ```
 
-**Alors que dans claude-code, il n'y a qu'un seul chemin de création de spans (sessionTracing.ts) : tous les spans passent par la même logique de conversion ALS → contexte OTel, donc l'arborescence est complète.**
+**Alors que chez claude-code, il n'y a qu'un seul chemin de création de spans (sessionTracing.ts), tous les spans passent par la même logique de conversion ALS → contexte OTel, donc l'arbre est complet.**
 
-#### Évaluation point par point de la réutilisabilité
+#### Évaluation de réutilisation par élément
 
-##### 1. Double ALS + résolution explicite du parent — réutilisable, c'est la correction centrale
+##### 1. Double ALS + résolution explicite du parent — Réutilisable, c'est la correction centrale
 
-| Dimension       | claude-code                                           | qwen-code                                    |
-| --------------- | ----------------------------------------------------- | -------------------------------------------- |
-| Nombre d'ALS    | 2 (`interactionContext` + `toolContext`)              | 1 (`interactionContext`, pas de `toolContext`)   |
-| Résolution parent | Chaque type de span spécifie explicitement depuis quel ALS récupérer le parent | `withSpan` passe uniformément par `context.active()` |
-| Injection contexte | `trace.setSpan(otelContext.active(), parentCtx.span)` | `withSpan` injecte implicitement via `startActiveSpan` |
+| Dimension       | claude-code                                        | qwen-code                                  |
+| --------------- | -------------------------------------------------- | ------------------------------------------ |
+| Nombre d'ALS    | 2 (`interactionContext` + `toolContext`)           | 1 (`interactionContext`, pas de `toolContext`) |
+| Résolution parent | Chaque type de span spécifie explicitement de quel ALS prendre le parent | `withSpan` passe systématiquement par `context.active()` |
+| Injection contexte | `trace.setSpan(otelContext.active(), parentCtx.span)` | `withSpan` utilise `startActiveSpan` en interne (implicite) |
 
 **Plan de réutilisation :**
 
-Le fichier `session-tracing.ts` de qwen-code implémente déjà un **modèle de résolution du parent quasiment identique** à celui de claude-code :
+Le `session-tracing.ts` de qwen-code implémente déjà un **modèle de résolution parent presque identique** à celui de claude-code :
 
 ```typescript
-// qwen-code session-tracing.ts (existe mais non utilisé)
+// qwen-code session-tracing.ts (existe mais inutilisé)
 export function startLLMRequestSpan(model, promptId): Span {
   const parentCtx = interactionContext.getStore();
   const ctx = parentCtx
@@ -229,75 +230,76 @@ export function startLLMRequestSpan(model, promptId): Span {
 }
 ```
 
-Ce code est **parfaitement identique** à la logique de `startLLMRequestSpan` de claude-code.
+Cette logique est **parfaitement cohérente** avec `startLLMRequestSpan` de claude-code.
 
-**Chemin de correction central : abandonner les appels `withSpan('api.*')` / `withSpan('tool.*')` dans l'exécution, et les remplacer par les helpers typés de session-tracing.** Inutile de réécrire la couche session-tracing — son API est déjà prête.
+**Chemin de correction central : abandonner les appels `withSpan('api.*')` / `withSpan('tool.*')` dans le runtime et les remplacer par les helpers typés de session-tracing.** Pas besoin de réécrire la couche session-tracing — son API est déjà prête.
 
-Il faut seulement ajouter :
+Seuls besoins supplémentaires :
 
-- Un ALS `toolContext` (sur le modèle de claude-code)
-- Les types de span `blocked_on_user` et `hook` ainsi que leurs fonctions helpers
+- Ajouter un ALS `toolContext` (en imitant claude-code)
+- Ajouter les types de span `blocked_on_user` et `hook` ainsi que leurs fonctions helper
 
-##### 2. tool.blocked_on_user — nécessite une adaptation aux différences du flux d'approbation
+##### 2. tool.blocked_on_user — Nécessite une adaptation au flux d'approbation
 
-| Dimension       | claude-code                                | qwen-code                                                                  |
-| --------------- | ------------------------------------------ | -------------------------------------------------------------------------- |
-| Emplacement approbation | Dans `toolExecution.ts`, à l'intérieur du span tool | Dans `coreToolScheduler._schedule()`, avant le span tool                      |
-| Mode approbation | Attente synchrone de `resolveHookPermissionDecision()` | Piloté par machine d'état : `validating` → `awaiting_approval` → `scheduled` → `executing` |
-| Couverture du span | Le span tool inclut blocked + execution | Le span tool (`withSpan`) ne couvre que l'exécution (à partir de `executeSingleToolCall`) |
+| Dimension       | claude-code                                          | qwen-code                                                                              |
+| --------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Emplacement de l'approbation | Dans `toolExecution.ts`, à l'intérieur du span tool   | Dans `coreToolScheduler._schedule()`, avant le span tool                               |
+| Mode d'approbation | Attente synchrone de `resolveHookPermissionDecision()` | Piloté par machine d'état : `validating` → `awaiting_approval` → `scheduled` → `executing` |
+| Couverture du span | Le span tool inclut blocked + execution               | Le span tool (`withSpan`) ne couvre que l'exécution (à partir de `executeSingleToolCall`) |
 
-**Différence clé :** Le point d'entrée `executeSingleToolCall` de qwen-code vérifie que `toolCall.status !== 'scheduled'` avant de continuer — autrement dit, l'approbation est déjà terminée quand on y arrive. Le `withSpan` du tool span ne peut pas englober l'attente d'approbation.
+**Différence clé :** Le point d'entrée `executeSingleToolCall` de qwen-code vérifie que `toolCall.status !== 'scheduled'` pour continuer — donc quand on y arrive, l'approbation est déjà terminée. Le `withSpan` du span tool n'englobe pas le temps d'attente d'approbation.
 
 **Plan d'adaptation (deux options) :**
 
-**Option A — Déplacer le point de départ du tool span (recommandée) :**
+**Option A — Déplacer le début du span tool (recommandé) :**
 
-Déplacer l'appel `startToolSpan` de `executeSingleToolCall` vers `_schedule`, avant la vérification d'approbation, afin que le tool span couvre l'ensemble du cycle de vie. Lors de l'entrée dans l'état `awaiting_approval`, appeler `startToolBlockedOnUserSpan` ; lorsque l'approbation est terminée (état `scheduled`), appeler `endToolBlockedOnUserSpan`.
+Déplacer l'appel `startToolSpan` de `executeSingleToolCall` vers `_schedule`, avant la vérification d'approbation, pour que le span tool couvre le cycle de vie complet. Appeler `startToolBlockedOnUserSpan` lors de l'entrée dans l'état `awaiting_approval`, et `endToolBlockedOnUserSpan` à la fin de l'approbation (état `scheduled`).
+
 ```
 _schedule():
-  startToolSpan(name)                         // ← 新增
-    startToolBlockedOnUserSpan()              // ← 新增，进入 awaiting_approval 时
-      [状态机等待]
-    endToolBlockedOnUserSpan(decision)        // ← 新增，进入 scheduled 时
+  startToolSpan(name)                         // ← nouveau
+    startToolBlockedOnUserSpan()              // ← nouveau, à l'entrée de awaiting_approval
+      [attente de la machine d'état]
+    endToolBlockedOnUserSpan(decision)        // ← nouveau, à l'entrée de scheduled
 executeSingleToolCall():
-    startToolExecutionSpan()                  // ← 接入已有 helper
+    startToolExecutionSpan()                  // ← raccorder le helper existant
       [hook + execute]
     endToolExecutionSpan()
-  endToolSpan()                               // ← 需要在 finally 中
+  endToolSpan()                               // ← doit être dans un finally
 ```
 
-**方案 B — 保持 tool span 位置不变，单独追踪审批：**
+**Option B — Garder la position actuelle du span tool, tracer l'approbation séparément :**
 
-在 `_schedule` 中独立创建 `approval_wait` span（不作为 tool 的 child），挂到 interaction 下。好处是改动更小，坏处是与 claude-code 模型不一致、trace 树可读性差。
+Créer un span `approval_wait` indépendant dans `_schedule` (pas en tant qu'enfant de tool), rattaché à interaction. Avantage : moins de modifications. Inconvénient : incohérence avec le modèle de claude-code, arbre de trace moins lisible.
 
-**建议采用方案 A**，因为：
+**Il est recommandé d'adopter l'option A**, car :
 
-- 与 claude-code 的 trace 树结构一致
-- trace 上一个 tool 节点就能看到"等了多久 + 执行了多久"
-- 状态机驱动的特性只影响 span start/end 的触发时机，不影响 parent-child 建模
+- Structure d'arbre de trace cohérente avec claude-code
+- Un seul nœud tool dans la trace permet de voir "temps d'attente + temps d'exécution"
+- La nature pilotée par machine d'état n'affecte que le déclenchement des début/fin de span, pas la modélisation parent-enfant
 
-##### 3. hook span — 可直接复用
+##### 3. Hook span — directement réutilisable
 
-| 维度          | claude-code                         | qwen-code                                                            |
-| ------------- | ----------------------------------- | -------------------------------------------------------------------- |
-| hook 执行入口 | `executeHooks()` in `hooks.ts`      | `firePreToolUseHook`/`firePostToolUseHook` via `hookEventHandler.ts` |
-| 现有记录方式  | OTel span + Perfetto span           | `HookCallEvent` → `QwenLogger` (无 OTel)                             |
-| parent        | `toolContext ?? interactionContext` | —                                                                    |
+| Dimension         | claude-code                           | qwen-code                                                        |
+| ----------------- | ------------------------------------- | ---------------------------------------------------------------- |
+| Point d'entrée hook | `executeHooks()` dans `hooks.ts`      | `firePreToolUseHook`/`firePostToolUseHook` via `hookEventHandler.ts` |
+| Mode d'enregistrement actuel | Span OTel + span Perfetto            | `HookCallEvent` → `QwenLogger` (pas d'OTel)                      |
+| Parent            | `toolContext ?? interactionContext`   | —                                                                |
 
-**复用方案：**
+**Plan de réutilisation :**
 
-1. 在 `session-tracing.ts` 新增 `startHookSpan` / `endHookSpan`（parent = `toolContext ?? interactionContext`，与 claude-code 一致）
-2. 在 `coreToolScheduler.ts` 的 `executeSingleToolCall` 中，pre/post hook 调用前后分别 start/end hook span
-3. 保留现有 `logHookCall` 事件记录（两套并行，不互斥）
+1. Ajouter `startHookSpan` / `endHookSpan` dans `session-tracing.ts` (parent = `toolContext ?? interactionContext`, identique à claude-code)
+2. Dans `coreToolScheduler.ts` de `executeSingleToolCall`, appeler start/end hook span avant/après les hooks pre/post
+3. Conserver l'enregistrement existant des événements `logHookCall` (les deux en parallèle, non exclusifs)
 
-改动量低，不影响现有 hook 逻辑。
+Faible volume de modifications, sans impact sur la logique existante des hooks.
 
-##### 4. tool.execution — 已有 helper，只需接线
+##### 4. tool.execution — helper existant, il suffit de le raccorder
 
-qwen-code 的 `startToolExecutionSpan(parentToolSpan)` / `endToolExecutionSpan(span, metadata)` 已经完整实现，只需在 `executeSingleToolCall` 中调用：
+`startToolExecutionSpan(parentToolSpan)` / `endToolExecutionSpan(span, metadata)` sont déjà entièrement implémentés dans qwen-code, il suffit de les appeler dans `executeSingleToolCall` :
 
 ```typescript
-// coreToolScheduler.ts executeSingleToolCall 内部
+// coreToolScheduler.ts à l'intérieur de executeSingleToolCall
 const toolSpan = startToolSpan(toolName, attrs);
 // ... hook pre ...
 const execSpan = startToolExecutionSpan(toolSpan);
@@ -311,63 +313,64 @@ try {
 endToolSpan(toolSpan);
 ```
 
-注意：qwen-code 的 `startToolExecutionSpan` 接收显式 `parentToolSpan` 参数，而 claude-code 的是从 `toolContext` ALS 隐式获取。这不影响功能，只是风格差异。如果引入 `toolContext` ALS，可以统一改为隐式获取。
+Note : `startToolExecutionSpan` de qwen-code prend un paramètre explicite `parentToolSpan`, alors que chez claude-code il est récupéré implicitement depuis l'ALS `toolContext`. Cela n'affecte pas la fonctionnalité, c'est juste une différence de style. Si l'ALS `toolContext` est introduit, on pourrait unifier en récupération implicite.
 
-##### 5. subagent trace tree — 双方都不完整，不建议直接复用
+##### 5. Arbre de trace subagent — les deux côtés sont incomplets, déconseillé de réutiliser directement
 
-| 维度            | claude-code                                                             | qwen-code                                            |
-| --------------- | ----------------------------------------------------------------------- | ---------------------------------------------------- |
-| OTel trace 传播 | **无** — subagent 的 interaction 是新 root                              | **无** — subagent 无显式 trace 传播                  |
-| 身份关联        | Perfetto metadata（agent process/thread）+ `teammateContextStorage` ALS | `subagentNameContext` ALS + `SubagentExecutionEvent` |
-| 并发隔离        | OTel ALS 有泄漏风险（`enterWith` 是进程级，并发 subagent 会互覆盖）     | 同样的风险                                           |
+| Dimension          | claude-code                                                             | qwen-code                                            |
+| ------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------- |
+| Propagation trace OTel | **Aucune** — l'interaction du subagent est une nouvelle racine          | **Aucune** — pas de propagation explicite de trace pour subagent |
+| Association d'identité | Métadonnées Perfetto (process/thread agent) + ALS `teammateContextStorage` | ALS `subagentNameContext` + `SubagentExecutionEvent` |
+| Isolation concurrente | Risque de fuite ALS OTel (`enterWith` est au niveau processus, les subagents concurrents s'écrasent mutuellement) | Même risque                                        |
 
-claude-code 在 subagent OTel tracing 上**自己也没解决好**：
+claude-code **n'a pas non plus résolu** le tracing OTel des subagents :
 
-- `interactionContext.enterWith()` 是进程级的，并发 subagent 会覆盖彼此的 ALS 值
-- 真正的 agent 层级树只存在于 Perfetto（一个 Anthropic 内部 feature-flagged 的系统），不在 OTel 中
+- `interactionContext.enterWith()` est au niveau processus, des subagents concurrents écrasent les valeurs ALS les uns des autres
+- Le véritable arbre hiérarchique agent n'existe que dans Perfetto (système interne à Anthropic, feature-flag), pas dans OTel
 
-**建议：**
+**Recommandations :**
 
-- 短期：沿用 qwen-code 现有的 `subagentNameContext` + 事件日志方案
-- 中期：在 subagent 启动时创建一个 `subagent` span（parent = 当前 toolContext），并用 `context.with()` 而非 `enterWith()` 来隔离并发 subagent 的 OTel context
-- 这是需要独立设计的工作项，不建议直接照搬 claude-code
+- Court terme : conserver le schéma existant de qwen-code (`subagentNameContext` + logs d'événements)
+- Moyen terme : créer un span `subagent` au démarrage du subagent (parent = toolContext actuel) et utiliser `context.with()` plutôt que `enterWith()` pour isoler le contexte OTel des subagents concurrents
+- C'est un élément de travail nécessitant une conception indépendante, il est déconseillé de copier directement claude-code
 
-##### 6. LLM request span — 路径明确
+##### 6. LLM request span — Chemin clair
 
-qwen-code 当前在 `loggingContentGenerator.ts` 中用 `withSpan('api.generateContent', ...)` 和 `startSpanWithContext('api.generateContentStream', ...)`。
+qwen-code utilise actuellement `withSpan('api.generateContent', ...)` et `startSpanWithContext('api.generateContentStream', ...)` dans `loggingContentGenerator.ts`.
 
-改为调用 `startLLMRequestSpan` / `endLLMRequestSpan`（session-tracing 层已有实现）即可。streaming 场景需要注意：
+Il suffit de les remplacer par des appels à `startLLMRequestSpan` / `endLLMRequestSpan` (déjà implémentés dans la couche session-tracing). Attention pour le cas streaming :
 
-- `startLLMRequestSpan` 返回 `Span` 对象
-- 需要手动传入 `endLLMRequestSpan(span, metadata)` 终结
-- 这与 `startSpanWithContext` 的手动管理模式兼容
+- `startLLMRequestSpan` retourne un objet `Span`
+- Il faut appeler manuellement `endLLMRequestSpan(span, metadata)` pour terminer
+- Cela est compatible avec le mode de gestion manuelle de `startSpanWithContext`
 
-### 复用总结
+### Résumé de la réutilisation
 
-| 改造项                                                                    | 可复用程度                            | 改动量                                        | 优先级 |
-| ------------------------------------------------------------------------- | ------------------------------------- | --------------------------------------------- | ------ |
-| 统一 span 创建路径（废弃 runtime `withSpan`，用 session-tracing helpers） | **核心修复** — 解决 parent-child 断裂 | 中（~5 个调用点）                             | P0     |
-| 新增 `toolContext` ALS                                                    | 直接照搬 claude-code 模式             | 低（session-tracing.ts 内部）                 | P0     |
-| tool.blocked_on_user span                                                 | 方案 A 需适配状态机                   | 中（\_schedule + executeSingleToolCall 协调） | P1     |
-| tool.execution 接线                                                       | helper 已有，只需调用                 | 低（executeSingleToolCall 内 3 行）           | P1     |
-| hook span                                                                 | 新增 helper + 调用点                  | 低                                            | P1     |
-| LLM request span 切换                                                     | 替换 withSpan 为 typed helper         | 低（2 个调用点）                              | P1     |
-| subagent trace tree                                                       | **不建议直接复用** — 需独立设计       | 高                                            | P2     |
-### Ordre de mise en œuvre recommandé
+| Élément à modifier                                                         | Degré de réutilisabilité                    | Volume de modifs                     | Priorité |
+| -------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------ | -------- |
+| Unifier le chemin de création des spans (abandonner `withSpan` runtime, utiliser les helpers session-tracing) | **Correction centrale** — résout la rupture parent-enfant | Moyen (~5 points d'appel)            | P0       |
+| Ajouter l'ALS `toolContext`                                                | Copie directe du modèle claude-code        | Faible (dans session-tracing.ts)     | P0       |
+| Span tool.blocked_on_user                                                  | Option A nécessite une adaptation à la machine d'état | Moyen (coordination \_schedule + executeSingleToolCall) | P1       |
+| Raccordement de tool.execution                                             | Helper existant, juste appel                | Faible (3 lignes dans executeSingleToolCall) | P1       |
+| Span hook                                                                  | Nouveau helper + point d'appel             | Faible                               | P1       |
+| Remplacement du span LLM request                                           | Remplacer withSpan par helper typé         | Faible (2 points d'appel)            | P1       |
+| Arbre de trace subagent                                                    | **Déconseillé de réutiliser directement** — conception indépendante nécessaire | Élevé | P2       |
+
+### Ordre d'implémentation recommandé
 
 ```
-Phase 1 — Correction de la structure de l'arborescence trace (P0)
-├── 1a. session-tracing.ts : Ajout d'ALS toolContext + helpers blocked_on_user / hook span
+Phase 1 — Réparer la structure de l'arbre de trace (P0)
+├── 1a. Ajouter l'ALS toolContext + helpers de span blocked_on_user / hook dans session-tracing.ts
 ├── 1b. loggingContentGenerator.ts : withSpan → startLLMRequestSpan/endLLMRequestSpan
 └── 1c. coreToolScheduler.ts : withSpan → startToolSpan/endToolSpan
 
-Phase 2 — Compléter les spans workflow (P1)
-├── 2a. coreToolScheduler._schedule : Intégration du span blocked_on_user
-├── 2b. coreToolScheduler.executeSingleToolCall : Intégration du span tool.execution
-└── 2c. Points d'appel pre/post hook : Intégration du span hook
+Phase 2 — Compléter les spans de workflow (P1)
+├── 2a. coreToolScheduler._schedule : raccorder le span blocked_on_user
+├── 2b. coreToolScheduler.executeSingleToolCall : raccorder le span tool.execution
+└── 2c. Aux endroits d'appel des hooks pre/post : raccorder le span hook
 
-Phase 3 — Arborescence trace Subagent (P2)
-├── 3a. Conception d'une isolation context.with() (alternative à enterWith)
-├── 3b. Création d'un sous-span racine subagent au lancement du subagent
-└── 3c. Validation du scénario de subagents concurrents
+Phase 3 — Arbre de trace subagent (P2)
+├── 3a. Concevoir une solution d'isolation avec context.with() (remplacer enterWith)
+├── 3b. Créer un span racine subagent au démarrage du subagent
+└── 3c. Valider le scénario de subagents concurrents
 ```

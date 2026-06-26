@@ -1,40 +1,40 @@
-# Todo-Write-Tool (`todo_write`)
+# Todo Write Tool (`todo_write`)
 
-Dieses Dokument beschreibt das Tool `todo_write` für Qwen Code.
+Dieses Dokument beschreibt das `todo_write`-Tool für Qwen Code.
 
 ## Beschreibung
 
-Verwenden Sie `todo_write`, um eine strukturierte Aufgabenliste für Ihre aktuelle Codiersitzung zu erstellen und zu verwalten. Dieses Tool hilft dem KI-Assistenten, den Fortschritt zu verfolgen und komplexe Aufgaben zu organisieren, und gibt Ihnen Einblick in die durchgeführten Arbeiten.
+Verwende `todo_write`, um eine strukturierte Aufgabenliste für deine aktuelle Coding-Session zu erstellen und zu verwalten. Dieses Tool hilft dem KI-Assistenten, den Fortschritt zu verfolgen und komplexe Aufgaben zu organisieren, und gibt dir Einblick in die durchgeführten Arbeiten.
 
 ### Argumente
 
 `todo_write` akzeptiert ein Argument:
 
-- `todos` (Array, erforderlich): Ein Array von Aufgabenpunkten, wobei jeder Punkt Folgendes enthält:
+- `todos` (Array, erforderlich): Ein Array von Todo-Elementen, wobei jedes Element Folgendes enthält:
   - `content` (String, erforderlich): Die Beschreibung der Aufgabe.
   - `status` (String, erforderlich): Der aktuelle Status (`pending`, `in_progress` oder `completed`).
-  - `id` (String, erforderlich): Eine eindeutige Kennung für den Aufgabenpunkt.
+  - `id` (String, erforderlich): Eine eindeutige Kennung für das Todo-Element.
 
-## So verwenden Sie `todo_write` mit Qwen Code
+## So verwendest du `todo_write` mit Qwen Code
 
-Der KI-Assistent verwendet dieses Tool automatisch, wenn er an komplexen, mehrschrittigen Aufgaben arbeitet. Sie müssen es nicht explizit anfordern, können den Assistenten jedoch bitten, eine Aufgabenliste zu erstellen, wenn Sie die geplante Vorgehensweise für Ihre Anfrage sehen möchten.
+Der KI-Assistent wird dieses Tool automatisch verwenden, wenn er an komplexen, mehrstufigen Aufgaben arbeitet. Du musst es nicht explizit anfordern, aber du kannst den Assistenten bitten, eine Todo-Liste zu erstellen, wenn du den geplanten Ansatz für deine Anfrage sehen möchtest.
 
-Das Tool speichert Aufgabenlisten in Ihrem Home-Verzeichnis (`~/.qwen/todos/`) mit sitzungsspezifischen Dateien, sodass jede Codiersitzung ihre eigene Aufgabenliste verwaltet.
+Das Tool speichert Todo-Listen in deinem Home-Verzeichnis (`~/.qwen/todos/`) in sitzungsspezifischen Dateien, sodass jede Coding-Session ihre eigene Aufgabenliste behält.
 
-## Wann die KI dieses Tool verwendet
+## Wann der KI dieses Tool verwendet
 
 Der Assistent verwendet `todo_write` für:
 
 - Komplexe Aufgaben, die mehrere Schritte erfordern
 - Feature-Implementierungen mit mehreren Komponenten
-- Refactoring-Operationen über mehrere Dateien hinweg
-- Arbeiten, die drei oder mehr unterschiedliche Aktionen umfassen
+- Refactoring-Vorgänge über mehrere Dateien hinweg
+- Jegliche Arbeiten mit 3 oder mehr verschiedenen Aktionen
 
-Der Assistent wird dieses Tool nicht für einfache, einschrittige Aufgaben oder rein informative Anfragen verwenden.
+Der Assistent wird dieses Tool nicht für einfache, einstufige Aufgaben oder rein informative Anfragen verwenden.
 
-### Beispiele für `todo_write`
+### `todo_write`-Beispiele
 
-Erstellen eines Plans für eine Feature-Implementierung:
+Erstellen eines Implementierungsplans für eine Funktion:
 
 ```
 todo_write(todos=[
@@ -58,6 +58,6 @@ todo_write(todos=[
 
 ## Wichtige Hinweise
 
-- **Automatische Verwendung:** Der KI-Assistent verwaltet Aufgabenlisten während komplexer Aufgaben automatisch.
-- **Fortschrittstransparenz:** Sie sehen Aufgabenlisten in Echtzeit aktualisiert, während die Arbeit fortschreitet.
-- **Sitzungsisolierung:** Jede Codiersitzung hat ihre eigene Aufgabenliste, die andere Sitzungen nicht beeinträchtigt.
+- **Automatische Nutzung:** Der KI-Assistent verwaltet Todo-Listen automatisch während komplexer Aufgaben.
+- **Fortschrittstransparenz:** Du wirst sehen, wie Todo-Listen in Echtzeit aktualisiert werden, während die Arbeit voranschreitet.
+- **Sitzungsisolierung:** Jede Coding-Session hat ihre eigene Todo-Liste, die andere nicht beeinträchtigt.

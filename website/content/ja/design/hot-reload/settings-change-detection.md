@@ -1,53 +1,53 @@
-# 設定ファイル変更検知（Issue #3696 サブタスク 1）
+# 設定ファイル変更検知 (Issue #3696 Sub-task 1)
 
-## コンテキスト
+## 背景
 
-Qwen Code には現在、設定ファイルの変更検知機構がありません。`settings.json` を変更した後、変更を反映させるにはセッションを再起動する必要があります。この提案は、#3696 ホットリロードシステムのインフラレイヤーを実装するものです。具体的には、設定ファイルの変更を自動検知してイベントをディスパッチする仕組みを提供します。
+Qwen Code には現在、設定ファイルの変更検知機構がありません。`settings.json` を変更しても、セッションを再起動するまで反映されません。本提案は #3696 ホットリロードシステムのインフラストラクチャ層 ― 設定ファイル変更の自動検出とイベントディスパッチ ― を実装します。
 
-**スコープ**: このサブタスクは「ファイル変更の検知 → リロード → リスナーへの通知」のみを担当します。`Config` はコンストラクション時に多くの設定フィールドをコピー（`approvalMode`、`mcpServers`、`telemetry` など）しており、これらのスナップショットはこのサブタスクでは自動更新されません。`LoadedSettings.merged` をリアルタイムで読み取るコンシューマ（`useSettings()` フック、`disabledSkillNamesProvider` など）のみが変更を即座に反映します。Config の内部状態への更新プッシュは、他のサブタスク（MCP 再接続、`/reload` コマンド）が担当します。
+**スコープ**: このサブタスクは「ファイル変更の検出 → リロード → リスナーへの通知」のみを担当します。`Config` はコンストラクタ時に多くの設定フィールド (`approvalMode`, `mcpServers`, `telemetry` など) をコピーしますが、これらのスナップショットは本サブタスクでは自動更新されません。リアルタイムで `LoadedSettings.merged` を読み取る消費者（例: `useSettings()` フック、`disabledSkillNamesProvider`）だけが即座に変更を確認できます。他のサブタスク（MCP 再接続、`/reload` コマンド）が Config の内部状態への更新をプッシュする責任を負います。
 
 ## アーキテクチャ上の決定
 
-### モジュールの配置: `packages/cli/src/config/settingsWatcher.ts`
+### モジュールの場所: `packages/cli/src/config/settingsWatcher.ts`
 
-- `LoadedSettings` と設定ファイルパスはいずれも `packages/cli` にあります
+- `LoadedSettings` と設定ファイルパスは両方とも `packages/cli` にあります
 - `reloadScopeFromDisk()` は `LoadedSettings` のメソッドです
-- コアパッケージが受け取るのは最小限のライフサイクルインターフェース `{ stopWatching(): void }` のみであり、`SettingScope` などの CLI 型はインポートしません
-- 変更イベントのディスパッチとダウンストリームのリフレッシュロジックは、CLI レイヤーで完全にワイヤリングされます
+- core パッケージは最小限のライフサイクルインターフェース `{ stopWatching(): void }` のみを受け取り、`SettingScope` のような CLI 型をインポートしません
+- 変更イベントのディスパッチと下流のリフレッシュロジックはすべて CLI 層で結線されます
 
-### 監視戦略: 親ディレクトリの監視 + 厳密なパスフィルタリング
+### 監視戦略: 親ディレクトリ監視 + 厳密なパスフィルタリング
 
-`writeWithBackupSync` の書き込みフローは `write(.tmp) → rename(target, .orig) → rename(.tmp, target) → unlink(.orig)` となっており、対象ファイルが一時的に消滅します。ファイルパスを直接監視すると chokidar が監視を失うため、親ディレクトリを（`depth: 0` で）監視し、**正確なベースネーム一致**でフィルタリングして、`settings.json` のファイルイベントのみに応答し、`.tmp`・`.orig`・エディタ一時ファイルなどは無視します。`.orig` バックアップは処理中のセーフティネットであり、成功時には**削除**（最終の `unlink` ステップ）されるため、ユーザーのディレクトリに残ることはありません。
+`writeWithBackupSync` の書き込みフローは `write(.tmp) → rename(target, .orig) → rename(.tmp, target) → unlink(.orig)` であり、これによりターゲットファイルが一時的に消えます。ファイルパスを直接監視すると、chokidar がウォッチを失う可能性があります。そのため、親ディレクトリを監視し (`depth: 0`)、**完全な basename 一致**でフィルタリングし、`settings.json` のファイルイベントのみに応答して `.tmp`、`.orig`、エディタの一時ファイルなどを無視します。`.orig` バックアップは処理中のセーフティネットであり、**成功時には削除**されます（最終的な `unlink` ステップ）。そのため、ユーザーのディレクトリに残ることはありません。
 
 ### 遅延ディレクトリ処理: 起動時に `.qwen/` を作成しない
 
-> **起動時のファイルシステム副作用（意図的に回避）。** ウォッチャーは、監視を開始するために `<project>/.qwen/`（または `~/.qwen/`）を**絶対に作成してはなりません**。以前のバージョンでは、存在しない設定ディレクトリに対して `mkdirSync({ recursive: true })` を呼び出していたため、Qwen の設定を持ったことのないプロジェクトでも通常の起動時に `<project>/.qwen/` が静かに作成され、ワークスペースや git の状態を汚染していました。ディレクトリの作成は設定の_永続化_（`saveSettings()` がユーザーによる実際の書き込み時に独自の `mkdirSync` を実行）のみが担当します。
+> **起動時のファイルシステム副作用（意図的に回避）。** ウォッチャーは監視のために `<project>/.qwen/`（または `~/.qwen/`）を**決して作成してはなりません**。初期バージョンでは、欠落している設定ディレクトリに対して `mkdirSync({ recursive: true })` を呼び出していました。そのため、通常の非ベア起動では、Qwen 設定がまったくないプロジェクトでも `<project>/.qwen/` が作成され、ワークスペースや git ステータスを汚染していました。ディレクトリ作成は設定の _永続化_ のみが担当します（`saveSettings()` はユーザーが実際に設定を書き込むときに独自の `mkdirSync` を実行します）。
 
-セッション中に後から追加された `settings.json` をディレクトリ作成なし・プロジェクトツリーの再帰なしで検知するため、ウォッチャーは**ディレクトリ**の存在をキーとした、スコープごとの 2 段階戦略を使用します。
+セッション中に後から追加された `settings.json` を、ディレクトリを作成せず、プロジェクトツリーを再帰せずに検出するために、ウォッチャーは **ディレクトリ** の存在をキーとする、スコープごとの 2 段階戦略を使用します。
 
-- **起動時に `.qwen` が存在する** → 直接監視（`watchTargetDir`、上記戦略）。
-- **`.qwen` が存在しない** → **親ディレクトリをブートストラップ監視**（`watchParentForDir`）: `chokidar.watch(parentDir, { depth: 0, ignoreInitial: true, ignored })` で、`ignored` 述語 `(p) => p !== parentDir && basename(p) !== '.qwen'` により **`.qwen` エントリのみ**を通過させます。これにより、無関係なトップレベルの変動を抑制し、再帰的なスキャンを行いません。`.qwen` が現れたら、ウォッチャーは**昇格**します: ブートストラップウォッチャーを閉じ、`.qwen` 上でターゲットウォッチャーを開始し、すでに内部に存在する可能性のある `settings.json` を取得するためにリフレッシュをスケジュールします。
+- **`.qwen` が起動時に存在する** → それを直接監視します（`watchTargetDir`、上記の戦略）。
+- **`.qwen` が存在しない** → **親をブートストラップ監視**します（`watchParentForDir`）: `chokidar.watch(parentDir, { depth: 0, ignoreInitial: true, ignored })`。ここで `ignored` 述語 `(p) => p !== parentDir && basename(p) !== '.qwen'` は **`.qwen` エントリのみ**を許可します。これにより、関連のないトップレベルのチャーンをすべて抑制し、再帰も行われません。`.qwen` が出現すると、ウォッチャーは**昇格**します: ブートストラップウォッチャーを閉じて `.qwen` にターゲットウォッチャーを開始し、すでに内部にある可能性のある `settings.json` を取得するためにリフレッシュをスケジュールします。
 
 堅牢性の詳細:
 
-- **TOCTOU ガード**: ブートストラップウォッチャーの設置（`ignoreInitial` を使用）後に `existsSync(dir)` を再チェックし、その間に `.qwen` が作成されていた場合は即座に昇格します。
-- **降格時の対応**: `.qwen` 自体が削除された場合（`unlinkDir`）、ターゲットウォッチャーは親のブートストラップウォッチャーに降格し、その後の再作成も確実に補足します。
-- **世代ガード**: chokidar の `close()` は非同期であるため、破棄中のウォッチャーの古い `'all'` コールバックが再度昇格をトリガーしてウォッチャーが積み重なる可能性があります。スコープごとの単調増加する世代トークン（昇格・降格・`stopWatching` のたびにインクリメント）により、古いコールバックが no-op となり、スコープごとに最大 1 つのアクティブなウォッチャーが保証されます。
+- **TOCTOU ガード**: ブートストラップウォッチャーのアーミング（`ignoreInitial` を使用）後、`existsSync(dir)` を再チェックします。ギャップ中に `.qwen` が作成された場合、即座に昇格します。
+- **削除時に降格**: `.qwen` 自体が削除された場合（`unlinkDir`）、ターゲットウォッチャーは親ブートストラップウォッチャーに降格し、後で再作成された場合もキャッチできるようにします。
+- **世代ガード**: chokidar の `close()` は非同期であるため、破棄されつつあるウォッチャーからの古い `'all'` コールバックが昇格を再トリガーしてウォッチャーをスタックさせる可能性があります。スコープごとの単調増加世代トークン（昇格/降格時および `stopWatching` 時にインクリメント）により、古いコールバックは no-op になり、スコープごとに最大 1 つのアクティブなウォッチャーが保証されます。
 
-### 変更検知: セマンティック差分による主要な重複排除
+### 変更検知: セマンティック差分を主要な重複排除メカニズムとして使用
 
-ウォッチャーがトリガーされるたびに、まずリロード前の**現在のインメモリ状態**（`JSON.stringify(file.settings)`）をスナップショットし、次に `reloadScopeFromDisk()` を呼び出してリロードし、最後に前後のスナップショットを比較します。セマンティックな内容が実際に変化した場合にのみリスナーへ通知します。
+ウォッチャーがトリガーされるたびに、まずリロード**前の現在のメモリ内状態**のスナップショットを取得し（`JSON.stringify(file.settings)`）、次に `reloadScopeFromDisk()` を呼び出してリロードし、最後にスナップショットの前後を比較します。リスナーは、セマンティックコンテンツが実際に変更された場合にのみ通知されます。
 
-キー: 比較対象はリロードの**前後のインメモリ状態**であり、保存された履歴スナップショットではありません。これは `setValue()` がディスクへの書き込み前に `file.settings` をインメモリで同期的に更新するためです。ウォッチャーがリロードをトリガーすると、インメモリ状態にはすでに自己書き込みの値が含まれており、リロードしても同じ内容が得られるため、差分なし・通知なしとなります。
+重要な点: 比較は、保存された過去のスナップショットではなく、**リロード前後のメモリ内状態**の間で行われます。これは、`setValue()` がディスクに書き込む前に `file.settings` を同期的にメモリ内で更新するためです。ウォッチャーがリロードをトリガーすると、メモリ内状態にはすでに自分で書き込んだ値が含まれています。リロードによって同じコンテンツが生成される → 差分なし → 通知なし。
 
-これにより自然に以下が抑制されます:
+これにより、自然に抑制されます:
 
-- 自己書き込みによる重複イベント（`setValue()` がすでにメモリを更新済み、リロードで同一内容 → 差分なし → 通知なし）
-- フォーマット・コメントのみの変更（解決済み設定にコメントは含まれない）
-- 内容変更を伴わないエディタの保存
-- chokidar の重複イベント
+- 自己書き込みからの重複イベント（`setValue()` がすでにメモリを更新しており、リロードによって同一のコンテンツが生成される → 差分なし → 通知なし）
+- フォーマット/コメントのみの変更（解決済み設定にはコメントが含まれていません）
+- コンテンツ変更なしのエディタ保存
+- 重複する chokidar イベント
 
-既知の制限: `JSON.stringify` はキーの順序に依存します。ユーザーが settings.json のキーを値の変更なしに手動で並び替えた場合、無害な余分な通知が 1 回発生します。これは許容範囲内であり、deep-equal の依存関係を導入する必要はありません。
+既知の制限: `JSON.stringify` はキーの順序に依存します。ユーザーが値を変更せずに settings.json のキーを手動で並べ替えた場合、無害な追加通知が 1 回発生します。これは許容範囲であり、深層等価依存関係を導入する必要はありません。
 
 ## 実装
 
@@ -69,10 +69,10 @@ export type SettingsChangeListener = (
 export class SettingsWatcher {
   private readonly settings: LoadedSettings;
   private readonly watchers: Map<SettingScope, FSWatcher> = new Map();
-  // 'bootstrap' = .qwen を待つ親を監視; 'target' = .qwen を監視
+  // 'bootstrap' = 親を監視して `.qwen` を待つ、'target' = `.qwen` を監視
   private readonly watchStage: Map<SettingScope, 'bootstrap' | 'target'> =
     new Map();
-  // スコープごとの単調増加トークン; 昇格・降格時にインクリメントして古いコールバックを無効化
+  // スコープごとの単調増加トークン、昇格/降格時にインクリメントして古いコールバックを無効化
   private readonly watchGeneration: Map<SettingScope, number> = new Map();
   private readonly changeListeners: Set<SettingsChangeListener> = new Set();
   private refreshTimer: NodeJS.Timeout | null = null;
@@ -89,10 +89,10 @@ export class SettingsWatcher {
 
 #### `startWatching()`
 
-- User スコープと Workspace スコープの両方を反復処理します
-- **ディレクトリ**の存在によって分岐: `.qwen` が存在する場合は直接監視、存在しない場合は親ディレクトリをブートストラップ監視（[遅延ディレクトリ処理](#遅延ディレクトリ処理-起動時に-qwen-を作成しない)を参照）
-- ディレクトリを**絶対に作成しない** — `mkdirSync` なし
-- 全体を通して `ignoreInitial: true`、`depth: 0`
+- User と Workspace の両方のスコープを反復処理
+- **ディレクトリ**の存在に基づいて分岐: `.qwen` が存在する場合は直接監視、存在しない場合は親をブートストラップ監視（[遅延ディレクトリ処理](#遅延ディレクトリ処理-起動時に-qwen-を作成しない) を参照）
+- **決してディレクトリを作成しない** — `mkdirSync` は呼び出さない
+- 全体を通して `ignoreInitial: true`、`depth: 0` を使用
 - ベアモードでは呼び出されない
 
 ```typescript
@@ -103,7 +103,7 @@ startWatching(): void {
   for (const { scope, settingsPath } of this.getScopePaths()) {
     if (!settingsPath) continue;
     const dir = path.dirname(settingsPath);
-    // ディレクトリを作成しない; 設定の永続化 (saveSettings) がその役割を担う。
+    // 決してディレクトリを作成しない。設定の永続化（saveSettings）がそれを担当する。
     if (fs.existsSync(dir)) {
       this.watchTargetDir(scope, settingsPath);
     } else {
@@ -113,7 +113,7 @@ startWatching(): void {
 }
 ```
 
-`watchTargetDir` は上述の親ディレクトリ + 厳密なベースネームウォッチャーです（`.qwen` 自体が削除された場合はブートストラップウォッチャーに降格します）。`watchParentForDir` は `.qwen` のみのブートストラップウォッチャーを設置し、`.qwen` が現れたら昇格します:
+`watchTargetDir` は、上記で説明した親ディレクトリ + 厳密な basename ウォッチャーです（`.qwen` 自体が削除された場合、ブートストラップウォッチャーに降格も行います）。`watchParentForDir` は `.qwen` のみのブートストラップウォッチャーをアーミングし、`.qwen` が出現したら昇格します。
 
 ```typescript
 private watchParentForDir(scope: SettingScope, settingsPath: string): void {
@@ -140,16 +140,16 @@ private watchParentForDir(scope: SettingScope, settingsPath: string): void {
   this.watchers.set(scope, watcher);
   this.watchStage.set(scope, 'bootstrap');
 
-  // TOCTOU ガード: 存在チェックとここの間に .qwen が作成された可能性がある。
+  // TOCTOU ガード: 存在チェックとこのコードの間に `.qwen` が出現した可能性がある。
   if (fs.existsSync(dir)) void this.promoteScope(scope, settingsPath);
 }
 
 private async promoteScope(scope: SettingScope, settingsPath: string): Promise<void> {
-  if (this.watchStage.get(scope) !== 'bootstrap') return; // 二重昇格防止
-  await this.replaceWatcher(scope); // 世代をインクリメントし async close() を待機
+  if (this.watchStage.get(scope) !== 'bootstrap') return; // 二重昇格をガード
+  await this.replaceWatcher(scope); // 世代をインクリメント + 非同期 close() を待機
   if (!this.started) return;
   this.watchTargetDir(scope, settingsPath);
-  this.scheduleRefresh(scope); // .qwen 内にすでに存在する settings.json を取得
+  this.scheduleRefresh(scope); // すでに .qwen 内にある settings.json を取得
 }
 ```
 
@@ -171,7 +171,7 @@ stopWatching(): void {
 }
 ```
 
-#### `scheduleRefresh(scope)` — 300ms デバウンス + スコープ蓄積
+#### `scheduleRefresh(scope)` — 300ms デバウンス + スコープ累積
 
 ```typescript
 private scheduleRefresh(scope: SettingScope): void {
@@ -184,11 +184,11 @@ private scheduleRefresh(scope: SettingScope): void {
 }
 ```
 
-#### `drainPendingChanges()` — 再入防止のための直列化処理
+#### `drainPendingChanges()` — 再入を防ぐための直列化処理
 
 ```typescript
 private async drainPendingChanges(): Promise<void> {
-  if (this.processing) return; // 前のラウンドがまだ実行中; 終了時にドレインされる
+  if (this.processing) return; // 前のラウンドがまだ実行中、終了時にドレインする
   this.processing = true;
   try {
     while (this.pendingScopeChanges.size > 0) {
@@ -211,18 +211,18 @@ private async handleChange(changedScopes: Set<SettingScope>): Promise<void> {
   for (const scope of changedScopes) {
     const file = this.settings.forScope(scope);
 
-    // リロード前の現在のインメモリ状態をスナップショット（setValue() による変更を含む）
+    // リロード前の現在のメモリ内状態のスナップショット（setValue() の変更も含む）
     const beforeSettings = JSON.stringify(file.settings);
     const existedBefore = file.rawJson !== undefined;
 
-    // reloadScopeFromDisk は内部で try/catch を持つ; パース失敗時は古い状態を保持
+    // reloadScopeFromDisk は内部で try/catch している。パース失敗時は古い状態を保持
     this.settings.reloadScopeFromDisk(scope);
 
     const afterSettings = JSON.stringify(file.settings);
     const existsNow = file.rawJson !== undefined;
 
-    // セマンティック差分: 内容が実際に変化した場合のみ通知
-    // 自己書き込み抑制: setValue() がすでにメモリを更新済み → リロードが一致 → 通知なし
+    // セマンティック差分: コンテンツが実際に変更された場合のみ通知
+    // 自己書き込み抑制: setValue() がすでにメモリを更新 → リロードが一致 → 通知なし
     if (afterSettings === beforeSettings) continue;
 
     events.push({
@@ -242,7 +242,7 @@ private async handleChange(changedScopes: Set<SettingScope>): Promise<void> {
 
 #### `notifyListeners(events)` — `Promise.allSettled()` + 30 秒タイムアウト
 
-SkillManager のリスナー通知パターン（`packages/core/src/skills/skill-manager.ts:188-236`）を再利用します: 各リスナーは 30 秒のタイムアウトレースでラップされ、`Promise.allSettled` で並列実行され、失敗はプロパゲートされません。
+SkillManager のリスナー通知パターン（`packages/core/src/skills/skill-manager.ts:188-236`）を再利用します。各リスナーは 30 秒のタイムアウトレースでラップされ、`Promise.allSettled` を介して並行実行され、失敗は伝播しません。
 
 #### `addChangeListener(listener)` — 購読解除関数を返す
 
@@ -250,16 +250,16 @@ SkillManager のリスナー通知パターン（`packages/core/src/skills/skill
 
 **ファイル**: `packages/cli/src/config/settings.ts`
 
-**変更不要**。セマンティック差分のメカニズムはウォッチャー内で完全に自己完結しています。`setValue()` がメモリを同期的に更新 → `saveSettings()` がディスクに書き込み → ウォッチャーがトリガー → `reloadScopeFromDisk()` がリロード → 差分比較で同一内容を検出 → 通知なし。このチェーンは自然に閉じます。
+**変更は不要です**。セマンティック差分メカニズムはウォッチャー内に完全に自己完結しています。`setValue()` は同期的にメモリを更新 → `saveSettings()` がディスクに書き込む → ウォッチャーがトリガー → `reloadScopeFromDisk()` がリロード → 差分比較で同一コンテンツを検出 → 通知なし。チェーンは自然に閉じます。
 
-### 3. Config の統合（最小限のインターフェース）
+### 3. Config 統合（最小限のインターフェース）
 
 **ファイル**: `packages/core/src/config/config.ts`
 
 `ConfigParameters` に追加:
 
 ```typescript
-/** 外部ファイルウォッチャーのライフサイクルハンドル。シャットダウン時に停止される。 */
+/** 外部ファイルウォッチャーのライフサイクルハンドル。シャットダウン時に停止されます。 */
 settingsWatcher?: { stopWatching(): void };
 ```
 
@@ -268,7 +268,7 @@ settingsWatcher?: { stopWatching(): void };
 ```typescript
 async shutdown(): Promise<void> {
   try {
-    // 初期化状態に関わらず外部ウォッチャーを停止
+    // 初期化状態に関係なく外部ウォッチャーを停止
     this.settingsWatcher?.stopWatching();
 
     if (!this.initialized) return;
@@ -277,9 +277,9 @@ async shutdown(): Promise<void> {
 }
 ```
 
-**settingsChangeListeners は Config に追加しません**。変更イベントのディスパッチは CLI レイヤーで完全に処理され、リスナーがコアのリフレッシュメソッド（`skillManager.refreshCache()`、`toolRegistry.restartMcpServers()` など）を直接呼び出します。これにより、コアが設定変更のセマンティクスを知る必要がなくなります。
+**Config に `settingsChangeListeners` は追加しません**。変更イベントのディスパッチは CLI 層で完全に処理され、リスナーはコアのリフレッシュメソッド（例: `skillManager.refreshCache()`、`toolRegistry.restartMcpServers()`）を直接呼び出します。これにより、コアは設定変更のセマンティクスを認識する必要がなくなります。
 
-### 4. 起動時のワイヤリング
+### 4. 起動時の結線
 
 **ファイル**: `packages/cli/src/gemini.tsx`
 
@@ -290,94 +290,93 @@ async shutdown(): Promise<void> {
 const settingsWatcher = isBareMode(argv.bare) ? undefined : new SettingsWatcher(settings);
 settingsWatcher?.startWatching();
 
-// CLI config 読み込み時にウォッチャーのライフサイクルハンドルを渡す
+// CLI config をロードするときにウォッチャーのライフサイクルハンドルを渡す
 const config = await loadCliConfig(settings.merged, argv, ..., {
   settingsWatcher,
 });
 
-// 変更リスナーを登録（将来のサブタスクで実際のリフレッシュロジックが追加される）
+// 変更リスナーを登録（将来のサブタスクで実際のリフレッシュロジックを追加予定）
 settingsWatcher?.addChangeListener(async (events) => {
   debugLogger.info('Settings changed:', events.map(e => `${e.scope}:${e.changeType}`));
-  // サブタスク 2-6 で以下が追加される:
+  // サブタスク 2-6 で以下を追加予定:
   // - skillManager.refreshCache()
   // - toolRegistry.restartMcpServers()
   // - clearAllCaches()
-  // - needsRefresh フラグ
+  // - needsRefresh flag
 });
 ```
 
-**`loadCliConfig` シグネチャの変更**（`packages/cli/src/config/config.ts`）: `settingsWatcher` を `ConfigParameters` に渡すためのオプションパラメータを追加。
+**`loadCliConfig` のシグネチャ変更**（`packages/cli/src/config/config.ts`）: `ConfigParameters` に `settingsWatcher` を渡すためのオプションパラメータを追加。
 
 ## エッジケースの処理
 
-| シナリオ                                 | 処理方法                                                                                                      |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `.qwen` ディレクトリが存在しない         | **作成しない。** 親ディレクトリをブートストラップ監視（`depth: 0`、`.qwen` のみフィルタ）し、`.qwen` が現れたら昇格 |
-| 起動後に `.qwen` が作成された            | ブートストラップウォッチャーが `addDir` を補足し、ターゲットウォッチャーに昇格 + リフレッシュをスケジュール  |
-| 昇格後に `.qwen` が削除された            | ターゲットウォッチャーが `unlinkDir` を補足 → 親のブートストラップウォッチャーに降格                         |
-| ファイルが削除された                     | `reloadScopeFromDisk` が `!existsSync` を検出し `{}` にリセット、差分が `deleted` イベントをトリガー         |
-| 起動後にファイルが作成された（ディレクトリは存在） | ディレクトリウォッチャーが `add` イベントを補足、`reloadScopeFromDisk` が新しいファイルを読み込む          |
-| 昇格・降格中の古いコールバック           | スコープごとの世代トークンにより、閉じるウォッチャーの処理中コールバックが no-op に（ウォッチャーの積み重ねなし） |
-| エディタのアトミック書き込み             | ディレクトリ監視 + 厳密なベースネームフィルタリング（`.tmp`/`.orig` を除外）+ 300ms デバウンスによるまとめ処理 |
-| `.tmp`/`.orig` ファイルイベント          | ベースネームフィルタが `settings.json` に完全一致し、それ以外のファイル名はすべて無視                         |
-| 自己書き込み（`setValue` → `saveSettings`） | セマンティック差分: リロード内容がインメモリスナップショットと一致 → 通知なし                               |
-| 外部編集と同時の自己書き込み             | 外部編集が内容を変更 → 差分が変更を検出 → 正しく通知                                                        |
-| フォーマット・コメントのみの変更         | `reloadScopeFromDisk` がコメントなしで設定を解決 → 差分が一致 → 通知なし                                    |
-| chokidar の重複イベント                  | デバウンスまとめ処理 + セマンティック差分による二重保護                                                      |
-| `QWEN_HOME` リダイレクト                | `getUserSettingsPath()` がすでにパスを解決済み; ウォッチャーは解決済みパスを使用                            |
-| ベアモード                               | `startWatching()` は呼び出されず、オーバーヘッドゼロ                                                        |
-| ウォッチャー作成の失敗                   | 例外がキャッチされ警告がログに記録される。そのスコープはリアルタイム検知なしになるが機能には影響しない        |
-| `reloadScopeFromDisk` のパース失敗       | 内部 try/catch（`settings.ts:501`）が古い状態を保持 → 前後の差分が一致 → 通知なし                           |
-| キー順序の変更（値の変更なし）           | `JSON.stringify` はキー順序に依存; 無害な余分な通知が 1 回発生する可能性                                     |
-| Config の初期化失敗                      | `shutdown()` が `initialized` チェック前にウォッチャーを停止し、リークを防止                                 |
-| 再入（リスナーがまだ実行中）             | `processing` フラグ + `drainPendingChanges` ループが処理を直列化                                            |
-| 無効な JSON                              | `reloadScopeFromDisk` の内部 try/catch が古い状態を保持                                                     |
+| シナリオ                                      | 処理方法                                                                                                                |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `.qwen` ディレクトリが存在しない               | **作成されない。** 親をブートストラップ監視（`depth: 0`、`.qwen` のみフィルタ）、`.qwen` 出現時に昇格                    |
+| `.qwen` が起動後に作成された                   | ブートストラップウォッチャーが `addDir` をキャッチ、ターゲットウォッチャーに昇格 + リフレッシュをスケジュール            |
+| 昇格後に `.qwen` が削除された                  | ターゲットウォッチャーが `unlinkDir` をキャッチ → 親ブートストラップウォッチャーに降格                                 |
+| ファイルが削除された                           | `reloadScopeFromDisk` が `!existsSync` を検出、`{}` にリセット、差分が `deleted` イベントをトリガー                    |
+| 起動後にファイルが作成された（ディレクトリは存在） | ディレクトリウォッチャーが `add` イベントをキャッチ、`reloadScopeFromDisk` が新しいファイルを読み込む                 |
+| 昇格/降格中の古いコールバック                  | スコープごとの世代トークンにより、閉じようとしているウォッチャーの進行中のコールバックが no-op になる（ウォッチャーのスタックなし） |
+| エディタのアトミック書き込み                  | ディレクトリ監視 + 厳密な basename フィルタリング（`.tmp`/`.orig` を除外）+ 300ms デバウンスの統合                   |
+| `.tmp`/`.orig` ファイルイベント               | Basename フィルタが `settings.json` を完全一致、他のすべてのファイル名は無視                                          |
+| 自己書き込み（`setValue` → `saveSettings`）    | セマンティック差分: リロード内容がメモリスナップショットと一致 → 通知なし                                              |
+| 自己書き込みと外部編集の同時発生              | 外部編集が内容を変更 → 差分が変更を検出 → 正しく通知                                                                   |
+| フォーマット/コメントのみの変更               | `reloadScopeFromDisk` がコメントなしで設定を解決 → 差分が一致 → 通知なし                                              |
+| 重複する chokidar イベント                    | デバウンスの統合 + セマンティック差分による二重保護                                                                     |
+| `QWEN_HOME` リダイレクト                      | `getUserSettingsPath()` がすでにパスを解決、ウォッチャーは解決済みパスを使用                                            |
+| ベアモード                                    | `startWatching()` は決して呼び出されず、オーバーヘッドゼロ                                                              |
+| ウォッチャー作成失敗                          | 例外をキャッチして警告をログ、そのスコープはリアルタイム検出なしだが機能には影響なし                                    |
+| `reloadScopeFromDisk` パース失敗              | 内部 try/catch（`settings.ts:501`）が古い状態を保持 → 前後比較が一致 → 通知なし                                        |
+| キー順序の変更（値の変更なし）                | `JSON.stringify` はキー順序に依存、無害な追加通知が 1 回発生する可能性あり                                              |
+| Config 初期化失敗                             | `shutdown()` が `initialized` チェック前にウォッチャーを停止、リークを防止                                              |
+| 再入（リスナーがまだ実行中）                  | `processing` フラグ + `drainPendingChanges` ループによる直列化                                                         |
+| 不正な JSON                                   | `reloadScopeFromDisk` 内部 try/catch が古い状態を保持                                                                  |
 
 ## パフォーマンス分析
 
-- スコープごとに最大 1 つのウォッチャー（合計 ≤ 2）、各 `depth: 0` — ファイルディスクリプタのオーバーヘッドが最小; 昇格・降格でウォッチャーを交換するため積み重ならない
-- `depth: 0` は、大規模なモノレポでの親ブートストラップウォッチャーであっても、プロジェクトツリーの**再帰的ウォーク**を行いません。コストは親ディレクトリの直接の子に限定されます: 無関係なトップレベルの変動は chokidar を 1 回の `readdir` + `ignored` フィルタパス（`O(トップレベルエントリ数)`）で起動させた後に抑制されます — 再帰スキャンは行われません
-- 300ms デバウンスにより、エディタの高速な保存が複数のリロードをトリガーしないことが保証される
-- `reloadScopeFromDisk` は同期的な `readFileSync` を使用、呼び出しあたり 1ms 未満
-- `JSON.stringify` 比較は O(n) だが、設定オブジェクトは通常 < 10KB; 追加のスナップショット保存は不要
-- リスナー通知は `Promise.allSettled` で並列実行
+- スコープあたり最大 1 つのウォッチャー（合計 ≤ 2）、それぞれ `depth: 0` — ファイル記述子のオーバーヘッド最小限。昇格/降格はウォッチャーを交換し、スタックさせない
+- `depth: 0` は、大規模なモノレポでもプロジェクトツリーの**再帰的走査がない**ことを意味します。親ブートストラップウォッチャーであってもコストは親ディレクトリの直接の子に制限されます。関連のないトップレベルのチャーンは、イベントが抑制される前に chokidar が 1 回の `readdir` + `ignored` フィルタパス（`O(トップレベルエントリ数)`）を実行するだけです。再帰スキャンはありません
+- 300ms デバウンスにより、エディタの高速保存が複数のリロードをトリガーしないようにします
+- `reloadScopeFromDisk` は同期 `readFileSync` を使用、呼び出しあたり < 1ms
+- `JSON.stringify` 比較は O(n) ですが、設定オブジェクトは通常 10KB 未満です。追加のスナップショットストレージは不要
+- リスナー通知は `Promise.allSettled` を介して並行実行
 - ポーリングなし — 純粋にイベント駆動
 
-## 作成・変更するファイル
+## 作成/変更するファイル
 
-**新規ファイル**:
+**新しいファイル**:
 
 - `packages/cli/src/config/settingsWatcher.ts` — ウォッチャークラス
-- `packages/cli/src/config/settingsWatcher.test.ts` — ユニットテスト
+- `packages/cli/src/config/settingsWatcher.test.ts` — 単体テスト
 
-**変更ファイル**:
+**変更するファイル**:
 
-- `packages/core/src/config/config.ts` — `ConfigParameters` に `settingsWatcher` フィールドを追加、`Config.shutdown()` の `initialized` チェック前に `stopWatching()` を呼び出す
-- `packages/cli/src/config/config.ts`（`loadCliConfig`）— `settingsWatcher` を渡すためのオプションパラメータを追加
-- `packages/cli/src/gemini.tsx` — ウォッチャーのインスタンス化とワイヤリング
+- `packages/core/src/config/config.ts` — `ConfigParameters` に `settingsWatcher` フィールドを追加、`Config.shutdown()` の `initialized` チェック前に `stopWatching()` を呼び出し
+- `packages/cli/src/config/config.ts`（`loadCliConfig`） — `settingsWatcher` を渡すためのオプションパラメータを追加
+- `packages/cli/src/gemini.tsx` — ウォッチャーのインスタンス化 + 結線
 
-**変更不要**: `packages/cli/src/config/settings.ts`（セマンティック差分は自己完結しており、`LoadedSettings` の協力を必要としない）
-
+**変更不要**: `packages/cli/src/config/settings.ts`（セマンティック差分は自己完結しており、`LoadedSettings` の協力を必要としません）
 ## テスト計画
 
-### ユニットテスト（`settingsWatcher.test.ts`）
+### 単体テスト（`settingsWatcher.test.ts`）
 
-chokidar をモック化（`skill-manager.test.ts` のモックパターンを再利用）:
+chokidar をモック化（`skill-manager.test.ts` のモックパターンを再利用）：
 
-1. **ライフサイクル**: `startWatching` がウォッチャーを作成し、`stopWatching` がウォッチャーを閉じ、両方が冪等である
-2. **パスフィルタリング**: `settings.json` ベースネームイベントのみがリフレッシュをトリガーし、`.tmp`/`.orig`/その他のファイルは無視される
-3. **デバウンス**: 複数の高速イベントが 1 回のリロードにまとめられる（`vi.useFakeTimers()`）
-4. **セマンティック差分**: 変更のない内容 → リスナーが呼び出されない; 変更された内容 → 正しいイベントでリスナーが呼び出される
-5. **自己書き込み抑制**: `setValue()` によるウォッチャーイベントが同一差分で自然にフィルタリングされる
-6. **直列化**: `handleChange` 中の新しいイベントが蓄積され、処理完了後にドレインされる
-7. **エラー隔離**: chokidar エラーがクラッシュを起こさない; リスナーの例外が他のリスナーに影響しない; `reloadScopeFromDisk` の失敗がキャッチされる
-8. **リスナータイムアウト**: 30 秒タイムアウト保護
-9. **遅延ディレクトリ監視**: `.qwen` が存在しない場合、`mkdirSync` が呼び出されない; 親にブートストラップウォッチャーが設置され、その `ignored` 述語が `.qwen` エントリのみを通過させる
-10. **昇格 / TOCTOU**: `.qwen` の出現（`addDir` またはポスト設置後の再チェック）がブートストラップウォッチャーを閉じ、`.qwen` 上でターゲットウォッチャーを開き、リフレッシュをスケジュールする
-11. **降格 / 再作成**: `.qwen` の削除（`unlinkDir`）が親にブートストラップし直し、その後の再作成が再び昇格する
-12. **世代ガード**: すでに閉じたブートストラップウォッチャーの古いコールバックが 2 つ目のターゲットウォッチャーを作成しない
+1. **ライフサイクル**：`startWatching` は watcher を作成し、`stopWatching` は watcher を閉じます。両方とも冪等です。
+2. **パスフィルタリング**：`settings.json` の basename イベントのみがリフレッシュをトリガーします。`.tmp` / `.orig` / その他のファイルは無視されます。
+3. **デバウンス**：複数の高速イベントは1回のリロードにまとめられます（`vi.useFakeTimers()`）。
+4. **意味的差分**：内容が変わらない場合→リスナーは呼び出されません。内容が変わった場合→正しいイベントでリスナーが呼び出されます。
+5. **自己書き込み抑制**：`setValue()` によってトリガーされた watcher イベントは、同一の差分により自然にフィルタリングされます。
+6. **シリアル化**：`handleChange` 中の新しいイベントは蓄積され、処理完了後に排出されます。
+7. **エラー分離**：chokidar のエラーはクラッシュを引き起こさず、リスナーの例外は他のリスナーに影響を与えず、`reloadScopeFromDisk` の失敗はキャッチされます。
+8. **リスナータイムアウト**：30秒のタイムアウト保護。
+9. **遅延ディレクトリ監視**：`.qwen` が存在しない場合、`mkdirSync` は呼び出されません。親ディレクトリにブートストラップ watcher が設定され、その `ignored` 述語は `.qwen` エントリのみを許可します。
+10. **昇格 / TOCTOU**：`.qwen` が出現した場合（`addDir` またはアーム後の再チェック経由）、ブートストラップ watcher を閉じ、`.qwen` 上のターゲット watcher を開き、リフレッシュをスケジュールします。
+11. **降格 / 再作成**：`.qwen` を削除すると（`unlinkDir`）、親ディレクトリに再ブートストラップされます。その後再作成されると、再度昇格します。
+12. **世代ガード**：既に閉じられたブートストラップ watcher からの古いコールバックが、2番目のターゲット watcher を作成することはありません。
 
-### リグレッション検証
+### 回帰検証
 
 ```bash
 cd packages/cli && npx tsc --noEmit
@@ -388,66 +387,65 @@ cd packages/core && npx vitest run src/config/
 
 ### 手動検証
 
-実行中のセッションで `~/.qwen/settings.json` を編集し、変更イベントのデバッグログ出力を確認します。
+実行中のセッション中に `~/.qwen/settings.json` を編集し、変更イベントのデバッグログ出力を確認します。
 
 ---
 
-## フォローアップサブタスク: 再起動が必要な設定と機密設定のイベント抑制
+## フォローアップサブタスク：再起動が必要な設定と機密設定のイベントを抑制する
 
-> **ステータス: 抑制ゲートは実装済み; 2 つのスキーマ変更はまだ調査待ち。**
-> 上記のサブタスク 1 では、スコープの_任意の_セマンティック変更に対して `SettingsChangeEvent` を 1 つ発行していました。このフォローアップでは、再起動なしに実際に反映できない設定のみの変更、または機密情報（認証情報）の変更がリスナーに**通知されないよう**フィルタを追加します。
+> **ステータス：抑制ゲートは実装済み。スキーマの2つのフリップはまだ調査保留中。** 上記のサブタスク1では、_任意の_ 意味的変更に対してスコープごとに1つの `SettingsChangeEvent` を発行していました。このフォローアップでは、本当に効果を発揮するために再起動が必要な設定、または機密設定（認証情報）に限定された変更がリスナーに通知され**ない**ようにフィルターを追加します。
 >
-> - **完了:** `SettingsWatcher.handleChange()` における `requiresRestart` ベースの抑制ゲートとユニットテスト（下記「メカニズム」を参照）。
-> - **保留中:** 2 つの `requiresRestart` スキーマ修正（`modelProviders` → `true`、`permissions.*` → ホットリロード可能に維持）、それぞれランタイムの読み取りパスを確認した上で実施。
+> - **完了:** `SettingsWatcher.handleChange()` における `requiresRestart` ベースの抑制ゲートと、単体テスト（下記メカニズム参照）。
+> - **保留中:** 2つの `requiresRestart` スキーマ修正（`modelProviders` → `true`、`permissions.*` → ホットリロード可能のまま）。それぞれ、実行時の読み取りパスを先に確認する必要があります。
 
 ### 動機
 
-一部の設定はプロセス起動時（`Config.initialize()`、コンテンツジェネレーター・クライアント構築、子プロセス起動、Node ランタイムフラグ）に正確に 1 回だけ読み取られます。ユーザーが具体的に指摘した例: **API トークン、`env`、モデルプロバイダー**。これらのホットリロードイベントを発行することは積極的に誤解を招きます — リスナーが「リフレッシュ」しても、新しい値はユーザーが `qwen-code` を再起動するまで実際には反映されません。機密値（認証情報）については、実行中のセッションで再配線すべきでないという追加の理由もあります。
+一部の設定は、プロセスの起動中に一度だけ読み込まれます（`Config.initialize()`、コンテンツジェネレーター/クライアントの構築、子プロセスの生成、Node ランタイムフラグなど）。ユーザーが明示的に挙げた例：**API トークン、`env`、モデルプロバイダー**。これらのホットリロードイベントを発行することは積極的に誤解を招きます。リスナーは「リフレッシュ」しますが、実際に新しい値が適用されるのはユーザーが `qwen-code` を再起動するまでです。機密値（認証情報）はさらに、実行中のセッションを通じて再配線されるべきではありません。
 
-### 決定: スキーマの `requiresRestart` フラグを再利用（単一の真実の源）
+### 決定：スキーマの `requiresRestart` フラグを再利用（単一の真実源）
 
-`settingsSchema.ts` はすでに**すべての**キーに `requiresRestart: boolean` を宣言しており、`packages/cli/src/utils/settingsUtils.ts` はすでにルックアップを公開しています:
+`settingsSchema.ts` は既に**すべての**キーに `requiresRestart: boolean` を宣言しており、`packages/cli/src/utils/settingsUtils.ts` は既に以下のルックアップを公開しています：
 
 - `requiresRestart(key: string): boolean` — ドットパスキーのフラグ
-- `getFlattenedSchema()` — フラット化された `key → 定義` マップ全体
-- `getRestartRequiredSettings()` — `requiresRestart: true` のすべてのキー
+- `getFlattenedSchema()` — フラット化された完全な `key → 定義` マップ
+- `getRestartRequiredSettings()` — `requiresRestart: true` の全キー
 
-抑制シグナルとしてこのフラグを**再利用**します。スキーマからドリフトする可能性のある手動で管理される拒否リストは維持しません。`requiresRestart: true` はすでに正確に「再起動なしに反映されない」を意味しており、これがイベントを抑制すべき条件です。
+私たちは**このフラグを抑制シグナルとして再利用**します。別途手作業で管理される拒否リスト（必然的にスキーマから乖離する）を維持するのではなく。`requiresRestart: true` は既に「再起動なしでは効果がない」という意味であり、これはイベントを抑制すべき条件と正確に一致します。
 
-### メカニズム（`SettingsWatcher.handleChange()` で実装済み）
+### メカニズム（`SettingsWatcher.handleChange()` に実装済み）
 
-旧ゲートはファイル全体の `JSON.stringify` 差分を行い、どのキーが変更されたかを知ることができませんでした。リーフレベルの差分 + キーごとの分類に置き換えられています:
+以前のゲートはファイル全体の `JSON.stringify` 差分を行っており、どのキーが変更されたかを特定できませんでした。これはリーフレベルの差分 + キーごとの分類に置き換えられています：
 
-1. **`collectChangedKeys(before, after)`** がリロード前のインメモリ状態をスナップショット（`structuredClone`）し、before/after を走査して値が異なるすべてのリーフのドットパスを収集します。プレーンオブジェクトは再帰処理され、配列とプリミティブは全体として比較されます（`permissions.allow` などのスキーマ配列キーに対応）。追加・削除されたキーは変更されたリーフとして浮かび上がるため、ファイルの作成・削除は別途の存在チェックなしで処理されます。
-2. **`isRestartRequiredKey(path)`** が、パスと等しいかその**プレフィックス**となる**最長のスキーマキー**を使用して、各変更パスをスキーマに対して解決します。フリーフォームのオブジェクト設定（`env`、`modelProviders`）はリーフスキーマキーであるため、`env.FOO` は `env` 定義に解決されます。不明なキーはデフォルトで再起動不要とされ、分類できない変更が静かに抑制されることはありません。
-3. スコープは、**少なくとも 1 つの変更されたキーがホットリロード可能**（`!isRestartRequiredKey`）な場合にのみ通知します。変更されたすべてのキーが再起動必須の場合、スコープはイベントを生成しません。
+1. **`collectChangedKeys(before, after)`** は、リロード前のメモリ状態をスナップショット化し（`structuredClone`）、before/after を走査して、値が異なるすべてのリーフのドットパスを収集します。プレーンオブジェクトは再帰され、配列とプリミティブは全体として比較されます（スキーマの配列キー `permissions.allow` に一致）。追加/削除されたキーは変更されたリーフとして表面化するため、ファイルの作成/削除は個別の存在チェックなしでカバーされます。
+2. **`isRestartRequiredKey(path)`** は、各変更パスをスキーマに対して解決します。**そのパスのプレフィックス（またはそれと等しい）である最長のスキーマキー**を使用します。自由形式オブジェクト設定（`env`、`modelProviders`）はリーフスキーマキーであるため、`env.FOO` は `env` 定義に解決されます。未知のキーはデフォルトで再起動不要とみなされるため、分類できない変更が黙って抑制されることはありません。
+3. スコープは、**少なくとも1つの変更キーがホットリロード可能（`!isRestartRequiredKey`）である場合にのみ**通知します。すべての変更キーが再起動必要な場合、スコープはイベントを生成しません。
 
-`SettingsChangeEvent` の形式は変更なし（引き続き `{ scope, path, changeType }`）; 生き残った変更キーをイベントに含めることは、将来の拡張として残されます。自己書き込み抑制（空の差分 → イベントなし）、デバウンス、直列化、リスナータイムアウト動作はすべて変更なし。
+`SettingsChangeEvent` の形状は変更なし（依然として `{ scope, path, changeType }`）。イベントに生き残った変更キーを載せることは、将来の拡張として残されます。自己書き込み抑制（空の差分→イベントなし）、デバウンス、シリアル化、リスナータイムアウトの動作はすべて変更されていません。
 
-### 調査・適用が必要な 2 つのスキーマ修正
+### 調査して適用する2つのスキーマ調整
 
-再利用アプローチが意図通りに動作するために、これらの 2 つの `requiresRestart` 値を修正する必要があります。**それぞれ、フラグを変更する前に実際のランタイム読み取りパスを確認してください。**
+再利用アプローチが意図通りに動作するためには、これら2つの `requiresRestart` 値を修正する必要があります。**それぞれ、フラグを反転する前に実際の実行時読み取りパスを確認する必要があります。**
 
 1. **`modelProviders`: `false` → `true`**（`settingsSchema.ts:294`）
-   - 現在 `requiresRestart: false` とマークされているため、再利用アプローチでは抑制_されない_ — プロバイダー変更がホットリロードされないという要件に矛盾します。
-   - プロバイダー設定（プロバイダーごとの `apiKey` / `baseUrl` を含む）は、起動時にモデルクライアント・コンテンツジェネレーターが構築される際に消費されます。
-   - **調査項目:** `modelProviders` のランタイム再読み取りがないことを確認（コンテンツジェネレーター・クライアント構築を検索）。期待される結果: `false` は潜在的なバグ; `true` に変更。
+   - 現在は `requiresRestart: false` とマークされているため、再利用アプローチでは抑制され**ません**。これは、プロバイダー変更がホットリロードされないという要件に反します。
+   - プロバイダー設定（プロバイダーごとの `apiKey` / `baseUrl` を含む）は、起動時にモデルクライアント / コンテンツジェネレーターが構築される際に消費されます。
+   - **調査項目：** `modelProviders` の実行時再読み込みが存在しないことを確認（コンテンツジェネレーター / クライアント構築を検索）。期待される結果：`false` は潜在的なバグであり、`true` に反転する。
 
-2. **`permissions.*`: ホットリロード可能を維持**（`settingsSchema.ts:1560`、サブツリー全体が現在 `requiresRestart: true`）
-   - パーミッションルール（`deny > ask > allow`）はツール呼び出しごとに評価され、ユーザーが即座に反映させたいと最も望む設定であることが意図されています。
-   - `permissions` サブツリー全体が `showInDialog: false` であるため、現在の `requiresRestart` フラグは **UI 上の意味を持っていません** — `true` は意図的な「再起動が必要」という決定ではなくデフォルトであった可能性が高く、変更の影響範囲は小さいです。
-   - **調査項目:** ランタイムが起動時のスナップショットからではなく、リアルタイムでパーミッションを読み取ることを確認（例: 評価時に `config.getXxx()` 経由で）。確認できたら、`permissions` サブツリーを `requiresRestart: false` に設定して、再利用メカニズムで**抑制されないよう**にする。
+2. **`permissions.*`: ホットリロード可能のまま**（`settingsSchema.ts:1560`、サブツリー全体が現在 `requiresRestart: true`）
+   - 権限ルール（`deny > ask > allow`）はツール呼び出しごとに評価され、ユーザーが最も即座に効果を期待する設定です。
+   - `permissions` サブツリー全体は `showInDialog: false` であるため、その `requiresRestart` フラグは現在**UI 上の意味を持ちません** — これは、`true` が「再起動が必要」という意図的な決定ではなくデフォルトであった可能性が高いことを強く示唆しており、反転の影響範囲は低いです。
+   - **調査項目：** 実行時に権限が毎回再読み込みされていることを確認（例：評価時に `config.getXxx()` 経由）。起動時のスナップショットからではない。確認できたら、`permissions` サブツリーを `requiresRestart: false` に設定し、再利用メカニズムによって抑制され**ない**ようにします。
 
-> 注意: `requiresRestart` は設定 UI や再起動プロンプトにも表示されるため、これらのフラグを変更するとその動作も変わります。これは許容範囲内であり、むしろより正確ですが、PR の説明に明記する必要があります。
+> 注：`requiresRestart` は設定 UI / 再起動プロンプトにも表示されるため、これらのフラグを反転するとその動作も変わります。これは許容可能であり、おそらくより正確ですが、PR の説明で明示する必要があります。
 
-### 受け入れ基準
+### 受け入れ条件
 
-- 再起動必須・機密キーのみの変更（`security.auth.*`、`env`、`modelProviders`、`mcpServers`、`proxy` など）は `SettingsChangeEvent` を**発行しない**。
-- ホットリロード可能なキーの変更（`ui.*`、`model.name`、変更後の `permissions.*` など）は引き続きイベントを発行する。
-- 混合変更（再起動必須キー 1 つ + ホットリロード可能キー 1 つ）は依然としてイベントを発行する（ホットリロード可能な部分が正当にリフレッシュを必要とするため）。
-- 不明な（スキーマ外の）キーの変更は、静かに抑制されるのではなく、イベントを発行する。
+- 再起動が必要 / 機密設定（`security.auth.*`、`env`、`modelProviders`、`mcpServers`、`proxy` など）のみに触れる変更は、**`SettingsChangeEvent` を発行しません**。
+- ホットリロード可能なキー（`ui.*`、`model.name`、`permissions.*`（反転後）など）への変更は、依然としてイベントを発行します。
+- 混合変更（再起動必要なキー1つ + ホットリロード可能なキー1つ）は、依然としてイベントを発行します（ホットリロード可能な部分は正当にリフレッシュする必要があります）。
+- 未知の（スキーマ外の）キー変更は、黙って抑制されるのではなく、発行されます。
 
-テストステータス:
+テストステータス：
 
-- **完了** — `settingsWatcher.test.ts` の `restart-required suppression` ブロックが、全抑制（`env`、`security.auth.apiKey`）、全許可（`ui.theme`）、混合、不明キーのケースを網羅。
-- **保留中（スキーマ変更とともに）** — 修正された 2 つの `requiresRestart` 値を固定する `settingsSchema.test.ts` アサーション、および変更後に `permissions.*` が抑制されないことを検証するウォッチャーテスト。
+- **完了** — `settingsWatcher.test.ts` の `restart-required suppression` ブロックは、全抑制（`env`、`security.auth.apiKey`）、全許可（`ui.theme`）、混合、未知キーの各ケースをカバーしています。
+- **保留中（スキーマ反転とともに）** — `settingsSchema.test.ts` で2つの修正後の `requiresRestart` 値を検証するアサーションと、`permissions.*` が反転後は抑制されなくなることを検証する watcher テスト。

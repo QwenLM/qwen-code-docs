@@ -1,14 +1,14 @@
-# Channel-Design
+# Channels-Design
 
-> Externe Messaging-Integrationen für Qwen Code – Interaktion mit einem Agenten über Telegram, WeChat und mehr.
+> Externe Messaging-Integrationen für Qwen Code – Interagiere mit einem Agenten über Telegram, WeChat und mehr.
 >
-> Benutzerdokumentation: [Übersicht der Channels](../../users/features/channels/overview.md).
+> Benutzerdokumentation: [Channels-Übersicht](../../users/features/channels/overview.md).
 
-## Overview
+## Übersicht
 
-Ein **Channel** verbindet eine externe Messaging-Plattform mit einem Qwen Code-Agenten. Konfiguriert in `settings.json`, verwaltet über `qwen channel`-Subcommands, unterstützt mehrere Benutzer (jeder Benutzer erhält eine isolierte ACP-Sitzung).
+Ein **Channel** verbindet eine externe Messaging-Plattform mit einem Qwen-Code-Agenten. Konfiguriert in `settings.json`, verwaltet über `qwen channel`-Subcommands, multi-user (jeder Benutzer erhält eine isolierte ACP-Session).
 
-## Architecture
+## Architektur
 
 ```
 ┌──────────┐                        ┌─────────────────────────────────────┐
@@ -40,63 +40,63 @@ Ein **Channel** verbindet eine externe Messaging-Plattform mit einem Qwen Code-A
                                     └─────────────────────────────────────┘
 ```
 
-**Platform Adapter** – stellt eine Verbindung zur externen API her und übersetzt Nachrichten in Envelopes und zurück. **ACP Bridge** – startet `qwen-code --acp`, verwaltet Sitzungen und emittiert `textChunk`/`toolCall`/`disconnected`-Events. **Session Router** – ordnet Absender über namespaced Keys (`<channel>:<sender>`) ACP-Sitzungen zu. **Sender Gate** / **Group Gate** – Zugriffskontrolle (Allowlist / Pairing / Open) und Mention-Gating. **Channel Base** – abstrakte Basisklasse mit Template-Method-Pattern: Plugins überschreiben `connect`, `sendMessage`, `disconnect`. **Channel Registry** – `Map<string, ChannelPlugin>` mit Kollisionserkennung.
+**Platform Adapter** – verbindet sich mit der externen API, übersetzt Nachrichten von/nach Envelopes. **ACP Bridge** – startet `qwen-code --acp`, verwaltet Sessions, emittiert `textChunk`/`toolCall`/`disconnected`-Events. **Session Router** – bildet Absender über namespaced Keys (`<channel>:<sender>`) auf ACP-Sessions ab. **Sender Gate** / **Group Gate** – Zugriffskontrolle (Allowlist / Pairing / Open) und Mention-Gating. **Channel Base** – abstrakte Basis mit Template-Method-Pattern: Plugins überschreiben `connect`, `sendMessage`, `disconnect`. **Channel Registry** – `Map<string, ChannelPlugin>` mit Kollisionserkennung.
 
 ### Envelope
 
 Normalisiertes Nachrichtenformat, in das alle Plattformen konvertieren:
 
-- **Identität**: `senderId`, `senderName`, `chatId`, `channelName`
-- **Inhalt**: `text`, optional `imageBase64`/`imageMimeType`, optional `referencedText`
-- **Kontext**: `isGroup`, `isMentioned`, `isReplyToBot`, optional `threadId`
+- **Identity**: `senderId`, `senderName`, `chatId`, `channelName`
+- **Content**: `text`, optional `imageBase64`/`imageMimeType`, optional `referencedText`
+- **Context**: `isGroup`, `isMentioned`, `isReplyToBot`, optional `threadId`
 
-Verantwortlichkeiten des Plugins: `senderId` muss stabil/eindeutig sein; `chatId` muss zwischen DMs und Gruppen unterscheiden; boolesche Flags müssen für die Gate-Logik korrekt sein; @Mentions werden aus `text` entfernt.
+Plugin-Verantwortlichkeiten: `senderId` muss stabil/eindeutig sein; `chatId` muss DMs von Gruppen unterscheiden; boolesche Flags müssen für die Gate-Logik korrekt sein; @-Mentions werden aus `text` entfernt.
 
-### Message Flow
+### Nachrichtenfluss
 
 ```
-Inbound:  User message → Adapter → GroupGate → SenderGate → Slash commands → SessionRouter → AcpBridge → Agent
-Outbound: Agent response → AcpBridge → SessionRouter → Adapter → User
+Inbound:  Benutzernachricht → Adapter → GroupGate → SenderGate → Slash-Befehle → SessionRouter → AcpBridge → Agent
+Outbound: Agentenantwort → AcpBridge → SessionRouter → Adapter → Benutzer
 ```
 
-Slash-Commands (`/clear`, `/help`, `/status`) werden in ChannelBase verarbeitet, bevor sie den Agenten erreichen.
+Slash-Befehle (`/clear`, `/help`, `/status`) werden in ChannelBase behandelt, bevor sie den Agenten erreichen.
 
 ### Sessions
 
-Ein `qwen-code --acp`-Prozess mit mehreren ACP-Sitzungen. Scope pro Channel: **`user`** (Standard), **`thread`** oder **`single`**. Routing-Keys sind namespaced als `<channelName>:<key>`.
+Ein `qwen-code --acp`-Prozess mit mehreren ACP-Sessions. Gültigkeitsbereich pro Channel: **`user`** (Standard), **`thread`** oder **`single`**. Routing-Keys sind als `<channelName>:<key>` namespaced.
 
-### Error Handling
+### Fehlerbehandlung
 
-- **Verbindungsfehler** – werden protokolliert; der Dienst läuft weiter, wenn sich mindestens ein Channel verbindet
-- **Bridge-Abstürze** – exponentielles Backoff (max. 3 Wiederholungsversuche), `setBridge()` auf allen Channels, Sitzungs-Wiederherstellung
-- **Sitzungs-Serialisierung** – pro Sitzung gebildete Promise-Chains verhindern gleichzeitige Prompt-Kollisionen
+- **Verbindungsfehler** – werden protokolliert; Dienst läuft weiter, wenn mindestens ein Channel verbunden ist
+- **Bridge-Abstürze** – exponentielles Backoff (max. 3 Wiederholungen), `setBridge()` auf allen Channels, Session-Wiederherstellung
+- **Session-Serialisierung** – pro Session verkettete Promise-Chains verhindern konkurrierende Prompt-Kollisionen
 
-## Plugin System
+## Plugin-System
 
-Die Architektur ist erweiterbar – neue Adapter (auch von Drittanbietern) können hinzugefügt werden, ohne den Core zu ändern. Eingebaute Channels verwenden dieselbe Plugin-Schnittstelle (Dogfooding).
+Die Architektur ist erweiterbar – neue Adapter (auch von Drittanbietern) können hinzugefügt werden, ohne den Kern zu ändern. Integrierte Channels verwenden dieselbe Plugin-Schnittstelle (Dogfooding).
 
-### Plugin Contract
+### Plugin-Vertrag
 
 Ein `ChannelPlugin` deklariert `channelType`, `displayName`, `requiredConfigFields` und eine `createChannel()`-Factory. Plugins implementieren drei Methoden:
 
-| Methode                     | Verantwortlichkeit                                |
-| --------------------------- | ------------------------------------------------- |
-| `connect()`                 | Verbindung zur Plattform herstellen und Message-Handler registrieren |
-| `sendMessage(chatId, text)` | Antwort des Agenten formatieren und zustellen     |
-| `disconnect()`              | Bereinigung beim Herunterfahren                   |
+| Methode                       | Verantwortung                                            |
+| ----------------------------- | -------------------------------------------------------- |
+| `connect()`                   | Mit Plattform verbinden und Nachrichten-Handler registrieren |
+| `sendMessage(chatId, text)`   | Agentenantwort formatieren und ausliefern                |
+| `disconnect()`                | Bei Herunterfahren aufräumen                             |
 
-Bei eingehenden Nachrichten erstellen Plugins ein `Envelope` und rufen `this.handleInbound(envelope)` auf – die Basisklasse übernimmt den Rest: Zugriffskontrolle, Group-Gating, Pairing, Session-Routing, Prompt-Serialisierung, Slash-Commands, Instructions-Injection, Reply-Kontext und Crash-Recovery.
+Bei eingehenden Nachrichten bauen Plugins ein `Envelope` und rufen `this.handleInbound(envelope)` auf – die Basisklasse übernimmt den Rest: Zugriffskontrolle, Gruppen-Gating, Pairing, Session-Routing, Prompt-Serialisierung, Slash-Befehle, Instructions-Injektion, Reply-Kontext und Crash-Recovery.
 
-### Extension Points
+### Erweiterungspunkte
 
-- Benutzerdefinierte Slash-Commands über `registerCommand()`
-- Arbeitsindikatoren durch Wrapping von `handleInbound()` mit Typing-/Reaktionsanzeige
+- Benutzerdefinierte Slash-Befehle über `registerCommand()`
+- Arbeitsanzeigen durch Wrappern von `handleInbound()` mit Tipp-/Reaktionsanzeige
 - Tool-Call-Hooks über `onToolCall()`
-- Medienverarbeitung durch Anhängen an das Envelope vor `handleInbound()`
+- Medienbehandlung durch Anhängen an Envelope vor `handleInbound()`
 
-### Discovery & Loading
+### Auffinden & Laden
 
-Externe Plugins sind **Extensions**, die vom `ExtensionManager` verwaltet und in `qwen-extension.json` deklariert werden:
+Externe Plugins sind **Extensions**, verwaltet vom `ExtensionManager`, deklariert in `qwen-extension.json`:
 
 ```json
 {
@@ -105,17 +105,17 @@ Externe Plugins sind **Extensions**, die vom `ExtensionManager` verwaltet und in
   "channels": {
     "my-platform": {
       "entry": "dist/index.js",
-      "displayName": "My Platform Channel"
+      "displayName": "Mein Plattform-Channel"
     }
   }
 }
 ```
 
-Ladesequenz bei `qwen channel start`: Einstellungen laden → Built-ins registrieren → Extensions scannen → dynamischer Import + Validierung → registrieren (Kollisionen ablehnen) → Konfiguration validieren → `createChannel()` → `connect()`.
+Ladereihenfolge bei `qwen channel start`: Einstellungen laden → Built-ins registrieren → Extensions scannen → dynamischer Import + validieren → registrieren (Kollisionen ablehnen) → Konfiguration validieren → `createChannel()` → `connect()`.
 
-Plugins laufen im selben Prozess (keine Sandbox), mit demselben Vertrauensmodell wie npm-Abhängigkeiten.
+Plugins laufen im selben Prozess (keine Sandbox), gleiches Vertrauensmodell wie npm-Abhängigkeiten.
 
-## Configuration
+## Konfiguration
 
 ```jsonc
 {
@@ -136,69 +136,69 @@ Plugins laufen im selben Prozess (keine Sandbox), mit demselben Vertrauensmodell
 }
 ```
 
-Die Authentifizierung ist plugin-spezifisch: statisches Token (Telegram), App-Credentials (DingTalk), QR-Code-Login (WeChat), Proxy-Token (TMCP).
+Auth ist plugin-spezifisch: statischer Token (Telegram), App-Anmeldedaten (DingTalk), QR-Code-Login (WeChat), Proxy-Token (TMCP).
 
-## CLI Commands
+## CLI-Befehle
 
 ```bash
 # Channels
-qwen channel start [name]                     # startet alle oder einen Channel
-qwen channel stop                             # stoppt den laufenden Dienst
-qwen channel status                           # zeigt Channels, Sitzungen und Uptime an
+qwen channel start [name]                     # starte alle oder einen Channel
+qwen channel stop                             # stoppe laufenden Dienst
+qwen channel status                           # zeige Channels, Sessions, Laufzeit
 qwen channel pairing list <ch>                # ausstehende Pairing-Anfragen
-qwen channel pairing approve <ch> <code>      # genehmigt eine Anfrage
+qwen channel pairing approve <ch> <code>      # genehmige eine Anfrage
 
 # Extensions
-qwen extensions install <path-or-package>     # installiert
-qwen extensions link <local-path>             # Symlink für die Entwicklung
-qwen extensions list                          # zeigt installierte an
-qwen extensions remove <name>                 # deinstalliert
+qwen extensions install <path-or-package>     # installieren
+qwen extensions link <local-path>             # Symlink für Entwicklung
+qwen extensions list                          # installierte anzeigen
+qwen extensions remove <name>                 # deinstallieren
 ```
 
-## Package Structure
+## Paketstruktur
 
 ```
 packages/channels/
 ├── base/                    # @qwen-code/channel-base
 │   └── src/
-│       ├── AcpBridge.ts     # ACP process lifecycle, session management
-│       ├── SessionRouter.ts # sender ↔ session mapping, persistence
-│       ├── SenderGate.ts    # allowlist / pairing / open
-│       ├── GroupGate.ts     # group chat policy + mention gating
-│       ├── PairingStore.ts  # pairing code generation + approval
-│       ├── ChannelBase.ts   # abstract base: routing, slash commands
+│       ├── AcpBridge.ts     # ACP-Prozess-Lebenszyklus, Session-Management
+│       ├── SessionRouter.ts # Absender ↔ Session-Mapping, Persistenz
+│       ├── SenderGate.ts    # Allowlist / Pairing / Open
+│       ├── GroupGate.ts     # Gruppen-Chat-Richtlinie + Mention-Gating
+│       ├── PairingStore.ts  # Pairing-Code-Generierung + -Genehmigung
+│       ├── ChannelBase.ts   # Abstrakte Basis: Routing, Slash-Befehle
 │       └── types.ts         # Envelope, ChannelConfig, etc.
 ├── telegram/                # @qwen-code/channel-telegram
 ├── weixin/                  # @qwen-code/channel-weixin
 └── dingtalk/                # @qwen-code/channel-dingtalk
 ```
 
-## Future Work
+## Zukünftige Arbeiten
 
-### Sicherheit & Gruppenchat
+### Sicherheit & Gruppen-Chat
 
-- **Tool-Einschränkungen pro Gruppe** – `tools`/`toolsBySender` Deny-/Allow-Listen pro Gruppe
-- **Gruppenkontext-Verlauf** – Ringpuffer kürzlich übersprungener Nachrichten, wird bei @Mention vorangestellt
-- **Regex-Mention-Muster** – Fallback-`mentionPatterns` für unzuverlässige @Mention-Metadaten
-- **Anweisungen pro Gruppe** – `instructions`-Feld in `GroupConfig` für gruppenbezogene Personas
-- **`/activation`-Command** – Runtime-Toggle für `requireMention`, wird auf der Festplatte persistiert
+- **Pro-Gruppen-Tool-Einschränkungen** – `tools`/`toolsBySender`-Deny-/Allow-Listen pro Gruppe
+- **Gruppenkontext-Verlauf** – Ringpuffer der letzten übersprungenen Nachrichten, bei @-Mention vorangestellt
+- **Regex-Mention-Muster** – Fallback `mentionPatterns` für unzuverlässige @-Mention-Metadaten
+- **Pro-Gruppen-Instructions** – `instructions`-Feld auf `GroupConfig` für gruppenspezifische Personas
+- **`/activation`-Befehl** – Laufzeit-Umschaltung für `requireMention`, auf Festplatte gespeichert
 
-### Betriebliche Tools
+### Betriebliche Werkzeuge
 
 - **`qwen channel doctor`** – Konfigurationsvalidierung, Umgebungsvariablen, Bot-Tokens, Netzwerkprüfungen
 - **`qwen channel status --probe`** – echte Konnektivitätsprüfungen pro Channel
 
-### Plattform-Erweiterung
+### Plattformerweiterung
 
 - **Discord** – Bot-API + Gateway, Server/Channels/DMs/Threads
 - **Slack** – Bolt SDK, Socket Mode, Workspaces/Channels/DMs/Threads
 
 ### Multi-Agent
 
-- **Multi-Agent-Routing** – mehrere Agenten mit Bindings pro Channel/Gruppe/Benutzer
+- **Multi-Agent-Routing** – mehrere Agenten mit Bindungen pro Channel/Gruppe/Benutzer
 - **Broadcast-Gruppen** – mehrere Agenten antworten auf dieselbe Nachricht
 
 ### Plugin-Ökosystem
 
-- **Community-Plugin-Template** – `create-qwen-channel`-Scaffolding-Tool
+- **Community-Plugin-Vorlage** – `create-qwen-channel`-Scaffolding-Tool
 - **Plugin-Registry/Discovery** – `qwen extensions search`, Versionskompatibilität

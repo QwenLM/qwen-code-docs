@@ -1,34 +1,34 @@
-# Virtual viewport para conversas longas no ink 7
+# Viewport virtual para conversas longas no ink 7
 
-Status: **implementado**, PR #4146 implementa:
-viewport principal, barra de rolagem ASCII com animação de ocultação automática, roda do mouse SGR, comporta `ui.useTerminalBuffer`, teclas de rolagem do teclado.
-Arrasto da barra de rolagem / pesquisa no aplicativo / modo buffer alternativo / gravação dupla no scrollback do host estão fora do escopo para V.3+ (ver §7).
+Status: **implementado**, PR #4146 inclui:
+viewport principal, scrollbar ASCII com animação de auto-ocultação, mouse-wheel SGR, bloqueio `ui.useTerminalBuffer`, teclas de rolagem do teclado.
+Arrasto da scrollbar / pesquisa no aplicativo / modo de buffer alternativo / escrita dupla para o scrollback do host estão fora do escopo para V.3+ (veja §7).
 Autor: 秦奇
 Branch de rastreamento: `feat/virtual-viewport-on-ink7` (base: `main`)
 
 ## 1. Problema
 
-Vários problemas de flicker / lag relatados por usuários se resumem ao mesmo fato arquitetural: `<Static>` do ink é **somente anexação** e o `MainContent.tsx` do qwen-code alimenta o `mergedHistory` _inteiro_ através dele a cada renderização. Para uma conversa de 1000 turnos, são 1000 renderizações React de `HistoryItemDisplay` + passes de layout do ink por mudança de estado.
+Diversos problemas reportados de flicker / lag convergem no mesmo fato arquitetural: o `<Static>` do ink é **apenas append** e o `MainContent.tsx` do qwen-code alimenta o `mergedHistory` inteiro através dele a cada render. Para uma conversa de 1000 turnos, são 1000 renderizações React de `HistoryItemDisplay` + passes de layout do ink por mudança de estado.
 
 Os sintomas atuais que isso possibilita:
 
-| Problema        | Sintoma                                            | Contribuidor atual                                           |
-| --------------- | -------------------------------------------------- | ------------------------------------------------------------- |
-| #2950           | Sessão longa mostra tempestade contínua de rolagem para cima/baixo | remontagem completa do Static a cada atualização                          |
-| #3118           | Voltar para a janela continua piscando          | `clearTerminal` + `historyRemountKey++` aciona remontagem completa |
-| #3007           | Flickering genérico da interface                       | mesmo que #3118                                                 |
-| #3838 (lado da UI) | Barra de rolagem cresce sem limite        | cada renderização de delta cumulativo adiciona linhas; sem remoção de viewport  |
-| #3899 → #3905   | Ctrl+O congelou terminal por segundos            | o caso parcialmente corrigido, selado com chunking `setImmediate` |
+| Issue          | Sintoma                                              | Contribuidor atual                                                    |
+| -------------- | ---------------------------------------------------- | --------------------------------------------------------------------- |
+| #2950          | Sessão longa mostra tempestade contínua de rolagem   | remontagem completa de Static a cada refresh                          |
+| #3118          | Voltar para a janela continua piscando               | `clearTerminal` + `historyRemountKey++` dispara remontagem completa   |
+| #3007          | Pisca-pisca genérico da interface                    | igual ao #3118                                                        |
+| #3838 (lado UI)| Scrollbar cresce sem limites                         | cada render delta cumulativo adiciona linhas; sem evicção de viewport |
+| #3899 → #3905  | Ctrl+O congelou o terminal por segundos              | o caso parcialmente corrigido, selado com chunking `setImmediate`     |
 
 PR #3905 observa explicitamente:
 
-> Discussão de alternativas (prefixo selado + tail ao vivo, **virtualização real de viewport**, cache de saída ANSI) foi considerada, mas cada uma altera a UX ou requer uma reescrita arquitetural.
+> Discussão de alternativas (prefixo selado + cauda ao vivo, **virtualização real de viewport**, cache de saída ANSI) foi considerada, mas cada uma muda a UX ou requer uma reescrita arquitetural.
 
 Essa reescrita arquitetural é o que este design propõe.
 
 ## 2. Implementações de referência
 
-Examinamos duas CLIs open-source baseadas em ink que já resolveram (ou contornaram) o mesmo problema:
+Pesquisadas duas CLIs baseadas em ink open-source que já resolveram (ou contornaram) o mesmo problema:
 
 ### 2.1 claude-code (`/Users/gawain/Documents/codebase/opensource/claude-code`)
 
@@ -36,29 +36,29 @@ Mantém seu **próprio fork do ink** em `src/ink/`:
 
 - `ink.tsx` — 1722 LoC de loop principal personalizado
 - `log-update.ts` — 773 LoC de renderizador diff personalizado com otimização de região de rolagem (`DECSTBM`), fallback de quadro completo quando o scrollback seria tocado
-- `screen.ts` / `frame.ts` — objetos explícitos de Screen / Frame, diffing em nível de célula `cellAt` / `diffEach`
-- `render-to-screen.ts` — expõe `renderToScreen(node)` para renderizar QUALQUER árvore de nós em um objeto `Screen` fora da banda. Esta é a capacidade subjacente para "renderizar uma vez, cachear, reproduzir" — ou seja, virtualização
+- `screen.ts` / `frame.ts` — objetos Screen / Frame explícitos, `cellAt` / `diffEach` com diff em nível de célula
+- `render-to-screen.ts` — expõe `renderToScreen(node)` para renderizar QUALQUER árvore de nós em um objeto `Screen` fora de banda. Esta é a capacidade subjacente para "renderizar uma vez, cache, reproduzir" — ou seja, virtualização
 - `screens/REPL.tsx`:
   - `visibleStreamingText = streamingText.substring(0, streamingText.lastIndexOf('\n') + 1) || null` — apenas linhas completas expostas ao renderizador
   - `ScrollBox` com `scrollRef`, `cursorNavRef`
-  - `Markdown.tsx` `StreamingMarkdown` divide o conteúdo no último limite de bloco de nível superior, memoiza prefixo estável, apenas reanalisa sufixo instável
-- Cache de tokens do `Markdown.tsx` (LRU-500) — sobrevive a desmontagem→remontagem, então as remontagens de rolagem virtual acertam o cache sem re-analisar
+  - `Markdown.tsx` `StreamingMarkdown` divide o conteúdo no último limite de bloco de nível superior, memoiza prefixo estável, apenas re-analisa sufixo instável
+- Cache de token `Markdown.tsx` (LRU-500) — sobrevive a desmontagem→remontagem, então remontagens de rolagem virtual atingem o cache sem re-lexar
 
-**Por que não replicamos essa abordagem**: bifurcar o ink inteiro é uma manutenção insustentável (apenas 1722 LoC `ink.tsx`, mais um reconciler personalizado). Cada correção upstream do ink precisa ser mesclada manualmente. Esse custo é justificado para a escala do claude-code; não para o qwen-code.
+**Por que não replicamos essa abordagem**: forkar o ink por completo é manutenção insustentável (1722 LoC só de `ink.tsx`, mais um reconciler personalizado). Cada correção upstream do ink precisa ser mesclada manualmente. Esse custo é justificado para a escala do claude-code; não para o qwen-code.
 
 ### 2.2 gemini-cli (`/Users/gawain/Documents/codebase/opensource/gemini-cli`)
 
-Usa `@jrichman/ink@6.6.9` (um fork menor que adiciona exportações `ResizeObserver` e `StaticRender`), e entrega **uma lista virtualizada completa como componentes simples**:
+Usa `@jrichman/ink@6.6.9` (um fork menor que adiciona `ResizeObserver` e exportações `StaticRender`), e entrega **uma lista virtualizada completa como componentes simples**:
 
-| Arquivo                                  | LoC | Função                                                                   |
-| --------------------------------------- | --- | ---------------------------------------------------------------------- |
-| `components/shared/VirtualizedList.tsx` | 764 | Viewport principal + medição + âncora de rolagem + rastreamento de redimensionamento por item |
-| `components/shared/ScrollableList.tsx`  | 278 | Encapsula `VirtualizedList`, adiciona navegação por teclas + rolagem suave + barra de rolagem |
-| `contexts/ScrollProvider.tsx`           | 469 | Arrasto do mouse, bloqueio de rolagem, contexto de foco                                     |
-| `hooks/useBatchedScroll.ts`             | 35  | Coalesce atualizações de rolagem no mesmo tick                                     |
-| `hooks/useAnimatedScrollbar.ts`         | 130 | Animação de fade-in/out da barra de rolagem                                        |
+| Arquivo                                  | LoC | Função                                                                |
+| ---------------------------------------- | --- | --------------------------------------------------------------------- |
+| `components/shared/VirtualizedList.tsx`  | 764 | Viewport principal + medição + âncora de rolagem + rastreamento de redimensionamento por item |
+| `components/shared/ScrollableList.tsx`   | 278 | Encapsula `VirtualizedList`, adiciona navegação por teclas + rolagem suave + scrollbar |
+| `contexts/ScrollProvider.tsx`            | 469 | Arrasto do mouse, bloqueio de rolagem, contexto de foco               |
+| `hooks/useBatchedScroll.ts`             | 35  | Coalesce atualizações de rolagem no mesmo tick                        |
+| `hooks/useAnimatedScrollbar.ts`         | 130 | Animação de fade-in/out da scrollbar                                  |
 
-`MainContent.tsx` alterna entre dois caminhos de renderização usando um sinalizador `isAlternateBufferOrTerminalBuffer`:
+`MainContent.tsx` alterna entre dois caminhos de renderização através de uma flag `isAlternateBufferOrTerminalBuffer`:
 
 ```tsx
 if (isAlternateBufferOrTerminalBuffer) {
@@ -68,74 +68,75 @@ if (isAlternateBufferOrTerminalBuffer) {
 return <Static items={[<AppHeader />, ...staticHistoryItems, ...lastResponseHistoryItems]}>...</Static>;
 ```
 
-`HistoryItemDisplay` é envolvido em `React.memo` para que itens inalterados não sejam renderizados novamente.
+`HistoryItemDisplay` é envolvido em `React.memo` para que itens inalterados não sejam re-renderizados.
+
 **Esta é a referência de nível de produção.**
 
 ## 3. Verificação de capacidade do ink 7
 
-qwen-code está na branch em desenvolvimento `chore/upgrade-ink-7`. Foram inspecionadas as exportações de `node_modules/ink/build/index.d.ts`:
+qwen-code está na branch em andamento `chore/upgrade-ink-7`. Inspecionados as exportações de `node_modules/ink/build/index.d.ts`:
 
-- ✅ `useBoxMetrics(ref): {width, height, left, top, hasMeasured}` — atualiza automaticamente com mudanças de layout. **Equivalente funcional do `ResizeObserver`.**
-- ✅ `measureElement(node)` — medição imperativa única
+- ✅ `useBoxMetrics(ref): {width, height, left, top, hasMeasured}` — atualiza automaticamente em mudanças de layout. **Equivalente funcional do `ResizeObserver`.**
+- ✅ `measureElement(node)` — medição imperativa de uso único
 - ✅ `useWindowSize` — redimensionamento do terminal
-- ✅ `useAnimation` — para fade da barra de rolagem
+- ✅ `useAnimation` — para fade da scrollbar
 - ✅ `Static`, `Box`, `Text`, etc.
 - ❌ `ResizeObserver` (componente/classe) — precisa de adaptação
 - ❌ `StaticRender` — precisa de implementação personalizada
 
-**Conclusão**: o ink 7 tem todas as primitivas necessárias. Nenhuma troca de fork é necessária.
+**Conclusão**: ink 7 tem todos os primitivos necessários. Nenhuma troca de fork necessária.
 
 ## 4. Decisão estratégica
 
-**Portar o `ScrollableList` + `VirtualizedList` + hooks/contexts de suporte do gemini-cli para qwen-code, adaptando `ResizeObserver` → `useBoxMetrics` e criando um `StaticRender` personalizado.**
+**Portar o `ScrollableList` + `VirtualizedList` + hooks/contexts de suporte do gemini-cli para o qwen-code, adaptando `ResizeObserver` → `useBoxMetrics` e criando um `StaticRender` personalizado.**
 
 Alternativas rejeitadas:
 
-| Alternative                       | Why rejected                                                                                                      |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Fork do ink como o claude-code    | Carga de manutenção insustentável                                                                                 |
-| Mudar para `@jrichman/ink`        | Reverte a atualização em andamento do ink 7; perde as melhorias do ink 7: React 19.2 + reconciliador 0.33 + novo renderizador de diff |
-| Construir virtualização do zero   | Reinventa ~1700 linhas de código de design comprovado; a referência do gemini-cli existe e funciona               |
+| Alternativa                       | Por que rejeitada                                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Forkar o ink como o claude-code   | Carga de manutenção insustentável                                                                                |
+| Mudar para `@jrichman/ink`       | Reverte o upgrade em andamento do ink 7; perde as melhorias do ink 7 (React 19.2 + reconciler 0.33 + novo renderizador diff) |
+| Construir virtualização do zero   | Reinventa ~1700 LoC de design comprovado; a referência do gemini-cli existe e funciona                           |
 
 ## 5. Arquitetura
 
-### Mapa de arquivos após o PR #4146
+### Mapa de arquivos após PR #4146
 
 ```
 packages/cli/src/ui/
 ├── components/shared/
-│   ├── VirtualizedList.tsx          [NOVO] viewport principal + barra de rolagem ASCII
-│   ├── ScrollableList.tsx           [NOVO] wrapper de teclado + roda do mouse
-│   └── StaticRender.tsx             [NOVO] wrapper React.memo (substitui a exportação do fork do ink do gemini-cli)
+│   ├── VirtualizedList.tsx          [NOVO] viewport principal + scrollbar ASCII
+│   ├── ScrollableList.tsx           [NOVO] encapsulador de teclado + mouse-wheel
+│   └── StaticRender.tsx             [NOVO] wrapper React.memo (substitui a exportação do fork ink do gemini-cli)
 ├── hooks/
 │   ├── useBatchedScroll.ts          [NOVO] coalesce atualizações de rolagem no mesmo tick
-│   ├── useMouseEvents.ts            [NOVO] ativa modo mouse SGR + analisa eventos stdin
-│   └── useAnimatedScrollbar.ts      [NOVO] flash do polegar na rolagem + ocultação automática em idle
+│   ├── useMouseEvents.ts            [NOVO] habilita modo SGR mouse + analisa eventos stdin
+│   └── useAnimatedScrollbar.ts      [NOVO] flash do polegar na rolagem + auto-ocultação quando ocioso
 ├── utils/
-│   └── mouse.ts                     [NOVO] analisador de eventos de mouse SGR + X11 (portado do gemini-cli)
+│   └── mouse.ts                     [NOVO] analisador de eventos de mouse SGR + X11 (port do gemini-cli)
 ├── components/MainContent.tsx       [MOD] adiciona ramo virtualizado + refs de estabilidade
-└── AppContainer.tsx                 [MOD] alimenta estado de UI relacionado à rolagem no contexto + controla refreshStatic
+└── AppContainer.tsx                 [MOD] alimenta estado relacionado a rolagem para o contexto + bloqueia refreshStatic
 ```
 
-Adiado para PRs futuros:
+Adiado para PRs subsequentes:
 
-- **Arrastar barra de rolagem + clicar para posicionar** — precisa de coordenadas absolutas do elemento na tela, bloqueado por uma limitação do ink 7 padrão (veja V.4 / V.7).
-- **Busca `/` no aplicativo** — padrão `TranscriptSearchBar` do claude-code (V.5).
-- **Modo buffer alternativo** — foco/bloqueio no estilo `contexts/ScrollProvider.tsx`, com tomada completa da tela alternativa (V.6).
+- **Arrasto da scrollbar + clique para posicionar** — precisa de coordenadas absolutas do elemento na tela, bloqueado por uma limitação do ink 7 padrão (veja V.4 / V.7).
+- **Pesquisa `/` no aplicativo** — padrão `TranscriptSearchBar` do claude-code (V.5).
+- **Modo de buffer alternativo** — foco/bloqueio estilo `contexts/ScrollProvider.tsx`, com tomada completa da tela alternativa (V.6).
 
 ### Configuração (V.2)
 
 ```ts
-// settings schema
+// esquema de configurações
 ui: {
   /**
-   * Enables virtualized history rendering for long conversations.
-   * When true, only items in the visible viewport are rendered through React;
-   * scrolled-out items remain in the terminal scrollback buffer.
+   * Habilita renderização virtualizada do histórico para conversas longas.
+   * Quando true, apenas itens no viewport visível são renderizados via React;
+   * itens fora do viewport permanecem no buffer de scrollback do terminal.
    *
-   * Default: false. Opt-in until proven stable on long conversations.
+   * Padrão: false. Opt-in até ser comprovadamente estável em conversas longas.
    */
-  useTerminalBuffer?: boolean;  // alias kept compat with gemini-cli
+  useTerminalBuffer?: boolean;  // alias mantido para compatibilidade com gemini-cli
 }
 ```
 
@@ -145,19 +146,19 @@ ui: {
 const useTerminalBuffer = uiState.settings?.ui?.useTerminalBuffer ?? false;
 
 if (useTerminalBuffer) {
-  return <ScrollableList .../>; // virtualized
+  return <ScrollableList .../>; // virtualizado
 }
 
-return <Static .../>; // existing path, untouched
+return <Static .../>; // caminho existente, inalterado
 ```
 
 O caminho legado `<Static>` permanece como está — sem risco de regressão para usuários que não optarem.
 
-## 6. Principais adaptações do código-fonte do gemini-cli
+## 6. Principais adaptações do código fonte do gemini-cli
 
 ### 6.1 `ResizeObserver` → `useBoxMetrics`
 
-O observer de contêiner do gemini-cli (padrão imperativo):
+Observador de contêiner do gemini-cli (padrão imperativo):
 
 ```ts
 const containerObserverRef = useRef<ResizeObserver | null>(null);
@@ -189,11 +190,12 @@ const { width: containerWidth, height: containerHeight } =
   useBoxMetrics(containerRef);
 ```
 
-`useBoxMetrics` já lida com anexar/desanexar + assinatura de mudança de layout; a contabilidade imperativa desaparece.
+`useBoxMetrics` já lida com attach/detach + assinatura de mudança de layout; a contabilidade imperativa desaparece.
 
 ### 6.2 Rastreador de redimensionamento por item (`itemsObserver`)
 
-Mais difícil. O gemini-cli observa N nós de item através de um único `ResizeObserver` e roteia a entrada → chave através de um `WeakMap`:
+Mais difícil. O gemini-cli observa N nós de item através de um único `ResizeObserver` e roteia a entrada → chave via um `WeakMap`:
+
 ```ts
 const nodeToKeyRef = useRef(new WeakMap<DOMElement, string>());
 const itemsObserver = useMemo(
@@ -217,9 +219,9 @@ const itemsObserver = useMemo(
 
 `useBoxMetrics` é **um ref por hook**, então não podemos substituir 1:1. Duas opções:
 
-**Opção A — empurrar a medição para dentro de `VirtualizedListItem`**
+**Opção A — empurrar medição para baixo para `VirtualizedListItem`**
 
-Cada `VirtualizedListItem` já executa como seu próprio componente (memoizado). Adicione `useBoxMetrics` dentro dele; reporte a altura para cima via uma prop de callback:
+Cada `VirtualizedListItem` já roda como seu próprio componente (memoizado). Adicionar `useBoxMetrics` dentro dele; relatar altura para cima via prop de callback:
 
 ```tsx
 const VirtualizedListItem = memo(({ itemKey, onHeightChange, ...props }) => {
@@ -234,7 +236,7 @@ const VirtualizedListItem = memo(({ itemKey, onHeightChange, ...props }) => {
 
 **Opção B — usar `measureElement` + `useLayoutEffect`** no pai
 
-O pai armazena refs para itens visíveis, executa um layout-effect após cada renderização para medi-los. Menos reativo, porém mais simples:
+O pai armazena refs para itens visíveis, executa um layout-effect após cada render para medi-los. Menos reativo, mas mais simples:
 
 ```ts
 useLayoutEffect(() => {
@@ -253,11 +255,11 @@ useLayoutEffect(() => {
 });
 ```
 
-**Recomendação: Opção A.** Separação mais limpa, aproveita a detecção de mudanças nativa do ink 7. Evita o risco de "tempestade de medições" onde toda renderização mede tudo.
+**Recomendação: Opção A.** Separação mais limpa, aproveita a detecção de mudança embutida do ink 7. Evita o risco de "tempestade de medições" onde cada render mede tudo.
 
 ### 6.3 `StaticRender` — implementação personalizada
 
-gemini-cli importa `StaticRender` de `@jrichman/ink`. Observando o uso em `VirtualizedList.tsx`:
+O gemini-cli importa `StaticRender` de `@jrichman/ink`. Observando o uso em `VirtualizedList.tsx`:
 
 ```tsx
 {shouldBeStatic ? (
@@ -269,9 +271,9 @@ gemini-cli importa `StaticRender` de `@jrichman/ink`. Observando o uso em `Virtu
 )}
 ```
 
-Semântica: renderizar `content` uma vez com a largura fornecida; renderizações subsequentes com a mesma chave + largura retornam o cache da renderização.
+Semântica: renderizar `content` uma vez na largura fornecida; renders subsequentes com a mesma chave + largura retornam o render em cache.
 
-Para o ink 7, o equivalente é usar `React.memo` com um componente estável que o pai garante não re-renderizar. Implementação personalizada:
+Para o ink 7, o equivalente é `React.memo` simples com um componente estável que o pai garante não re-renderizar. Implementação personalizada:
 
 ```tsx
 import { memo } from 'react';
@@ -292,13 +294,13 @@ const StaticRender = memo(
 );
 ```
 
-Combinado com a prop `key` estável do pai (`${itemKey}-static-${width}`), mudar `children` ou `width` causa uma nova montagem; caso contrário, o React pula a re-renderização.
+Combinado com a prop `key` estável do pai (`${itemKey}-static-${width}`), mudar children ou width causa uma montagem nova; caso contrário, o React pula a re-renderização.
 
-Esta é a capacidade central: itens que SÃO estáticos (ex.: mensagens Gemini concluídas) são medidos + renderizados uma vez e nunca mais passam pelo React.
+Esta é a capacidade central: itens que SÃO estáticos (ex.: mensagens Gemini concluídas) são medidos + renderizados uma vez e nunca mais passam pelo React novamente.
 
-### 6.4 Memoizar `HistoryItemDisplay`
+### 6.4 Memorizar `HistoryItemDisplay`
 
-gemini-cli faz:
+O gemini-cli faz:
 
 ```ts
 const MemoizedHistoryItemDisplay = memo(HistoryItemDisplay);
@@ -308,24 +310,25 @@ Mesmo padrão no qwen-code. Necessário para que a virtualização realmente pul
 
 ## 7. Sequência de PRs
 
-| PR        | Título (rascunho)                                                           | Escopo                                                                                                                                                                              | Linhas            | Dependências | Risco                                          |
-| --------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------ | ---------------------------------------------- |
-| **#4146** | feat(cli): viewport virtual para conversas longas no ink 7                  | primitivas principais + barra de rolagem ASCII com **animação de auto-ocultação** + SGR **roda do mouse** + portão `ui.useTerminalBuffer` + `MainContent`/`AppContainer` + testes   | ~2800 LoC         | `main`       | ✅ **enviado** — typecheck limpo, vitest verde |
-| **V.3**   | test(integração): regressões do capture-suite para streaming / redimensionamento / shell | portar 3 scripts de captura do PR #3663                                                                                                                                             | ~2000 (só testes) | #4146        | pendente                                       |
-| **V.4**   | feat(cli): arrastar barra de rolagem + clique para posicionar               | teste de clique SGR na coluna da barra. Necessita coordenadas absolutas da tela — ou `getBoundingBox` upstream para ink 7 ou próprio walker yoga. Animação auto-ocultação já enviada em #4146. | ~400              | #4146        | adiado — bloqueio de coordenadas              |
-| **V.5**   | feat(cli): busca `/` no aplicativo                                          | destaque limitado ao viewport + navegação n/N (padrão `TranscriptSearchBar` do claude-code)                                                                                          | ~300              | #4146        | adiado                                         |
-| **V.6**   | feat(cli): modo de buffer alternativo (tomada total da tela alternativa)    | configuração adicional `ui.useAlternateBuffer`                                                                                                                                      | ~500              | #4146        | adiado — requer decisão UX separada            |
-| **V.7**   | pesquisa: preservar histórico de rolagem do terminal hospedeiro (escrita dupla) | `overflowToBackbuffer` do `@jrichman/ink` é apenas fork. Opções: PR upstream para ink 7, própria escrita dupla ou aceitar perda. Investigação.                                       | —                 | #4146        | estruturalmente bloqueado no ink 7 original    |
-V.3 (testes de integração) é o item de caminho crítico restante antes de alterar o padrão. V.4–V.6 fecham as lacunas restantes de paridade com o gemini-cli; V.7 é pesquisa aberta porque a prop do ink que precisaríamos (`overflowToBackbuffer`) só existe no fork `@jrichman/ink` do gemini-cli.
+| PR        | Título (rascunho)                                                                 | Escopo                                                                                                                                                                            | Linhas            | Dependências | Risco                                          |
+| --------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------ | ---------------------------------------------- |
+| **#4146** | feat(cli): viewport virtual para conversas longas no ink 7                        | Primitivos principais + scrollbar ASCII com **animação de auto-ocultação** + **mouse-wheel** SGR + bloqueio `ui.useTerminalBuffer` + conexão `MainContent`/`AppContainer` + testes | ~2800 LoC         | `main`       | ✅ **entregue** — typecheck limpo, vitest verde|
+| **V.3**   | test(integração): regressões de suíte de captura para streaming / redimensionamento / shell | portar 3 scripts de captura do PR #3663                                                                                                                                           | ~2000 (só testes) | #4146        | pendente                                       |
+| **V.4**   | feat(cli): arrasto da scrollbar + clique para posicionar                          | Hit-test de mouse SGR na coluna da scrollbar. Precisa de coordenadas absolutas na tela — ou `getBoundingBox` upstream para ink 7 ou próprio yoga walker. Animação de auto-ocultação já entregue em #4146. | ~400              | #4146        | adiado — bloqueador de coordenadas            |
+| **V.5**   | feat(cli): pesquisa `/` no aplicativo                                             | Destaque limitado ao viewport + navegação n/N (padrão `TranscriptSearchBar` do claude-code)                                                                                       | ~300              | #4146        | adiado                                         |
+| **V.6**   | feat(cli): modo de buffer alternativo (tomada completa da tela alternativa)       | Configuração adicional `ui.useAlternateBuffer`                                                                                                                                     | ~500              | #4146        | adiado — decisão UX separada necessária        |
+| **V.7**   | pesquisa: preservar scrollback do terminal host (escrita dupla)                   | O `overflowToBackbuffer` do `@jrichman/ink` é exclusivo do fork. Opções: PR upstream para ink 7, própria escrita dupla, ou aceitar perda. Investigação.                            | —                 | #4146        | estruturalmente bloqueado no ink 7 padrão      |
+
+V.3 (testes de integração) é o item restante de caminho crítico antes de alterar o padrão. V.4–V.6 fecham as lacunas restantes de paridade com gemini-cli; V.7 é pesquisa aberta porque a prop do ink que precisaríamos (`overflowToBackbuffer`) só existe no fork `@jrichman/ink` do gemini-cli.
 
 ## 8. Plano de verificação
 
-Por PR (obrigatório antes de qualquer "pronto para revisão"):
+Por PR (obrigatório antes de "pronto para revisão"):
 
 - `npm run typecheck --workspace=@qwen-code/qwen-code` — limpo
 - `npm run lint --workspace=@qwen-code/qwen-code` — limpo
 - `cd packages/cli && npx vitest run` — tudo verde
-- Auditoria sem direção em várias rodadas conforme fluxo de trabalho do projeto
+- Auditoria multi-round sem direção por fluxo de trabalho do projeto
 
 Fim a fim (após V.3):
 
@@ -338,28 +341,27 @@ Fim a fim (após V.3):
 
 ## 9. Perguntas em aberto / decisões necessárias
 
-1. **Nome da configuração**: `ui.useTerminalBuffer` (compatível com gemini-cli) vs `ui.virtualizedHistory` (mais descritivo)?
-2. **Valor padrão**: enviar como `false` (opt-in) ou lançamento em etapas via variável de ambiente primeiro?
-3. **Heurística de item estático**: gemini-cli marca apenas `header` como estático. Devemos também marcar mensagens Gemini concluídas, resultados de ferramentas que não estão mais em `pendingHistoryItems`, etc.?
-4. **Suporte a mouse**: `ScrollProvider` do gemini-cli inclui arrastar com mouse para barra de rolagem. Vale a pena portar agora ou pular até V.4?
-5. **Compatibilidade com #3905**: ~~PR #3905 (correção de congelamento Ctrl+O) está aberto e modifica o mesmo `MainContent.tsx`. Coordenar ordem de merge — provavelmente V.2 baseado em cima de #3905.~~ **Resolvido**: o replay progressivo de #3905 foi para `main` e está preservado no branch `<Static>` legado de `MainContent.tsx`; o branch VP o substitui para usuários opt-in porque o gatilho de congelamento (remontagem completa de Static) não se aplica mais.
-6. **Compatibilidade com `chore/re-upgrade-ink-7-0-3`**: PR #4146 se baseia nele. Após #4119 (PR de re-upgrade do ink 7.0.3) ser mesclado em `main`, a base do PR #4146 será redirecionada para `main`.
+1. **Nome da configuração**: `ui.useTerminalBuffer` (compatibilidade com gemini-cli) vs `ui.virtualizedHistory` (mais descritivo)?
+2. **Valor padrão**: entregar como `false` (opt-in) ou implementar rollout gradual via env var primeiro?
+3. **Heurística de item estático**: o gemini-cli marca apenas `header` como estático. Devemos também marcar mensagens Gemini concluídas, resultados de ferramentas que não estão mais em `pendingHistoryItems`, etc.?
+4. **Suporte a mouse**: o `ScrollProvider` do gemini-cli inclui arrasto do mouse para a scrollbar. Vale a pena portar agora ou pular até V.4?
+5. **Compatibilidade com #3905**: ~~PR #3905 (correção de congelamento Ctrl+O) está aberto e modifica o mesmo `MainContent.tsx`. Coordenar ordem de merge — provavelmente V.2 rebaseia em cima de #3905.~~ **Resolvido**: a reprodução progressiva de #3905 foi lançada em `main` e preservada no ramo legado `<Static>` de `MainContent.tsx`; o ramo VP o substitui para usuários opt-in porque o gatilho de congelamento (remontagem completa de Static) não se aplica mais.
+6. **Compatibilidade com `chore/re-upgrade-ink-7-0-3`**: PR #4146 empilha sobre ela. Após #4119 (o PR de re-upgrade do ink 7.0.3) mesclar em `main`, a base do PR #4146 será redirecionada para `main`.
 
 ## 10. Riscos
 
-| Risco                                                                      | Probabilidade | Mitigação                                                                                              |
-| ------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------ |
-| `useBoxMetrics` por item cria tempestades de medição em listas longas     | média         | A opção A na §6.2 já memoiza por item; apenas os itens na janela de renderização pagam o custo. Benchmark em V.3. |
-| A implementação customizada de `StaticRender` perde um caso extremo que o fork @jrichman tratava | média         | Auditar o fonte do StaticRender do gemini-cli se disponível; caso contrário, confiar em testes funcionais + benchmark. |
-| Deriva do caminho legado `<Static>` à medida que o novo caminho evolui    | baixa         | O gate de feature-flag mantém ambos os caminhos ativos; CI executa ambos via matriz de configuração. |
-| ink 7 ainda tem bugs não preenchidos upstream                             | baixa         | Já estamos no ink 7 via `chore/upgrade-ink-7`; este PR não introduz risco adicional do ink.           |
-| Sessões longas acumulam memória em caches de medição                      | média         | Adicionar evicção LRU no Record `heights` quando o tamanho exceder N×viewport (ex. 5×). V.3 faz benchmark disso. |
-
-## 11. Lista de verificação de aprovação
+| Risco                                                                                     | Probabilidade | Mitigação                                                                                            |
+| ----------------------------------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
+| `useBoxMetrics` por item cria tempestades de medição em listas longas                     | média         | Opção A em §6.2 já memoiza por item; apenas itens na janela de render pagam o custo. Benchmark em V.3.|
+| A implementação personalizada de `StaticRender` perde um caso de borda que o fork @jrichman tratava | média         | Auditar o código fonte do StaticRender do gemini-cli se disponível; caso contrário, confiar em testes funcionais + benchmark. |
+| O caminho legado `<Static>` se desvia à medida que o novo caminho evolui                  | baixa         | A flag de funcionalidade mantém ambos os caminhos ativos; CI executa ambos via matriz de configuração.|
+| O ink 7 ainda tem bugs não corrigidos upstream                                           | baixa         | Já estamos no ink 7 via `chore/upgrade-ink-7`; este PR não introduz risco adicional de ink.          |
+| Sessões longas acumulam memória em caches de medição                                     | média         | Adicionar evicção LRU no registro `heights` assim que o tamanho exceder N×viewport (ex.: 5×). V.3 benchmarka isso. |
+## 11. Checklist de aprovação
 
 - [x] Direção arquitetural aprovada — port do gemini-cli (§4)
-- [x] Nome da configuração + padrão decididos — `ui.useTerminalBuffer`, padrão `false` (opt-in)
+- [x] Nome da configuração + padrão definido — `ui.useTerminalBuffer`, padrão `false` (opt-in)
 - [x] Heurística de item estático — `isStaticItem={(item) => item.id > 0}` (itens de histórico concluídos)
-- [x] Escopo de suporte a mouse — adiado para V.4; rolagem apenas por teclado em #4146
-- [x] Ordem de merge com #3905 (§9.5) — #3905 já está em `main`; #4146 preserva o caminho legado de replay progressivo e o substitui apenas para usuários VP
+- [x] Escopo de suporte a mouse — adiado para V.4; scroll apenas por teclado na #4146
+- [x] Ordenação de merge com #3905 (§9.5) — #3905 já está em `main`; #4146 preserva o caminho legado de progressive-replay e o substitui apenas para usuários VP
 - [x] Implementação do PR #4146 completa

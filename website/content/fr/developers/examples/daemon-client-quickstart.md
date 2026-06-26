@@ -1,4 +1,4 @@
-# Démarrage rapide de DaemonClient (TypeScript)
+# Prise en main rapide de DaemonClient (TypeScript)
 
 Un exemple minimal de bout en bout : démarrez un démon `qwen serve` dans un autre terminal, puis pilotez-le depuis un script Node avec le `DaemonClient` du SDK. Voir aussi : [Guide utilisateur du mode démon](../../users/qwen-serve.md) et [Référence du protocole HTTP](../qwen-serve-protocol.md).
 
@@ -9,10 +9,10 @@ Dans un terminal :
 ```bash
 cd your-project/
 qwen serve --port 4170
-# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
+# → qwen serve écoute sur http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
 ```
 
-Selon [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02, chaque démon se lie à un seul espace de travail au démarrage (le `cwd` courant, ou bien on peut le remplacer par `--workspace /path/to/dir`). Le chemin lié du démon est annoncé sur `/capabilities.workspaceCwd` afin que les clients puissent faire une vérification préalable et omettre `cwd` dans `POST /session`.
+D'après [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02, chaque démon se lie à un espace de travail au démarrage (le `cwd` actuel, ou peut être remplacé par `--workspace /path/to/dir`). Le chemin lié du démon est annoncé sur `/capabilities.workspaceCwd` afin que les clients puissent effectuer une vérification préalable et omettre `cwd` dans `POST /session`.
 
 Dans un autre terminal :
 
@@ -118,7 +118,7 @@ function handleEvent(event: DaemonEvent): void {
 
 ## Aides pour les fichiers de l'espace de travail
 
-Les routes de fichiers sont limitées à l'espace de travail, pas à la session, donc elles se trouvent directement sur `DaemonClient` :
+Les routes de fichiers sont limitées à l'espace de travail, pas à la session, donc elles résident directement sur `DaemonClient` :
 
 ```ts
 const file = await client.readWorkspaceFile('src/main.ts');
@@ -132,32 +132,30 @@ const updated = await client.editWorkspaceFile({
 
 console.log(updated.hash);
 ```
-`expectedHash` est le SHA-256 des octets bruts sur le disque. `mode: "replace"` et
-`editWorkspaceFile()` le nécessitent pour que des clients obsolètes n'écrasent pas un fichier qu'ils
-ne viennent pas de lire. Écrire/éditer nécessitent une configuration de jeton porteur (bearer token) même sur
-loopback ; démarrez le démon avec `--token` ou `QWEN_SERVER_TOKEN` avant de les utiliser.
+
+`expectedHash` est un SHA-256 des octets bruts sur le disque. `mode: "replace"` et `editWorkspaceFile()` l'exigent afin que les clients obsolètes n'écrasent pas un fichier qu'ils n'ont pas lu juste avant. Les opérations d'écriture/édition nécessitent une configuration avec jeton porteur même en boucle locale ; démarrez le démon avec `--token` ou `QWEN_SERVER_TOKEN` avant de les utiliser.
 
 ## Reconnexion avec `Last-Event-ID`
 
-Si votre processus client redémarre en cours de session, rejouez les événements manqués :
+Si votre processus client redémarre au milieu d'une session, rejouez les événements que vous avez manqués :
 
 ```ts
 let cursor: number | undefined;
 
 for await (const event of client.subscribeEvents(session.sessionId, {
   signal: abort.signal,
-  lastEventId: cursor, // reprendre après cet id ; undefined = direct uniquement
+  lastEventId: cursor, // resume from after this id; undefined = live only
 })) {
   if (typeof event.id === 'number') cursor = event.id;
   handleEvent(event);
 }
 ```
 
-Le démon conserve les 8000 derniers événements par session dans un tampon circulaire ; les écarts au-delà de cette fenêtre ne pourront pas être redélivrés.
+Le démon conserve les 8000 derniers événements par session dans un tampon circulaire ; les écarts au-delà de cette fenêtre ne pourront pas être redistribués.
 
-## Vote sur les autorisations
+## Vote sur les permissions
 
-Lorsque l'agent demande la permission d'exécuter un outil, chaque client connecté voit l'événement `permission_request`. **Le premier répondant gagne** — dès qu'un client a voté, les autres reçoivent une `404` s'ils tentent de voter sur le même `requestId`.
+Lorsque l'agent demande la permission d'exécuter un outil, chaque client connecté voit l'événement `permission_request`. **Le premier répondant gagne** — dès qu'un client vote, les autres obtiennent une `404` s'ils tentent de voter sur le même `requestId`.
 
 ```ts
 case 'permission_request': {
@@ -165,13 +163,13 @@ case 'permission_request': {
     requestId: string;
     options: Array<{ optionId: string; name: string; kind: string }>;
   };
-  // Choisissez l'option que vous voulez — `proceed_once`, `allow`, etc.
+  // Pick whichever option you want — `proceed_once`, `allow`, etc.
   const choice = req.options.find((o) => o.kind === 'allow_once') ?? req.options[0];
   const accepted = await client.respondToPermission(req.requestId, {
     outcome: { outcome: 'selected', optionId: choice.optionId },
   });
   if (!accepted) {
-    console.log('Un autre client a voté en premier ; rien à faire.');
+    console.log('Another client voted first; nothing to do.');
   }
   break;
 }
@@ -179,27 +177,27 @@ case 'permission_request': {
 
 ## Collaboration en session partagée
 
-Deux clients pointant vers le **même démon** se retrouvent sur la même session. Conformément à #3803 §02, chaque démon est lié à UN seul espace de travail au démarrage, donc le démon lancé avec `qwen serve --workspace /work/repo` (ou `cd /work/repo && qwen serve`) est celui auquel les deux clients se connectent :
+Deux clients pointant vers le **même démon** se retrouvent sur la même session. D'après #3803 §02, chaque démon est lié à UN seul espace de travail au démarrage, donc le démon lancé avec `qwen serve --workspace /work/repo` (ou `cd /work/repo && qwen serve`) est celui auquel les deux clients se connectent :
 
 ```ts
-// Le démon a été lancé avec `qwen serve --workspace /work/repo` donc
-// `caps.workspaceCwd === '/work/repo'` pour les deux clients.
+// Daemon was launched as `qwen serve --workspace /work/repo` so
+// `caps.workspaceCwd === '/work/repo'` for both clients.
 
-// Client A (ex. un plugin IDE)
+// Client A (e.g. an IDE plugin)
 const a = await clientA.createOrAttachSession({ workspaceCwd: '/work/repo' });
-console.log(a.attached); // false — A a créé l'agent
+console.log(a.attached); // false — A spawned the agent
 
-// Client B (ex. une interface web sur la même machine)
+// Client B (e.g. a web UI on the same machine)
 const b = await clientB.createOrAttachSession({ workspaceCwd: '/work/repo' });
-console.log(b.attached); // true — B a rejoint la session de A
+console.log(b.attached); // true — B joined A's session
 console.log(a.sessionId === b.sessionId); // true
 ```
 
-Les deux clients voient le même flux `session_update` / `permission_request`. Chacun peut envoyer une requête ; ils sont mis en file d'attente FIFO selon la garantie de l'agent d'« une seule requête active par session ».
+Les deux clients voient le même flux `session_update` / `permission_request`. Chacun peut envoyer une requête ; ils sont mis en file d'attente FIFO selon la garantie de l'agent « une invite active par session ».
 
 ## Incompatibilité d'espace de travail
 
-Si `workspaceCwd` ne correspond pas à l'espace de travail lié du démon, `createOrAttachSession` rejette avec une `DaemonHttpError` portant le statut `400` et un corps structuré :
+Si `workspaceCwd` ne correspond pas à l'espace de travail lié du démon, `createOrAttachSession` est rejetée avec `DaemonHttpError` portant le statut `400` et un corps structuré :
 
 ```ts
 import { DaemonHttpError } from '@qwen-code/sdk';
@@ -215,20 +213,20 @@ try {
     };
     if (body.code === 'workspace_mismatch') {
       console.error(
-        `Ce démon est lié à ${body.boundWorkspace}, ` +
-          `pas à ${body.requestedWorkspace}. Démarrez un démon séparé ` +
-          `pour cet espace de travail, ou dirigez-vous vers le bon.`,
+        `This daemon is bound to ${body.boundWorkspace}, ` +
+          `not ${body.requestedWorkspace}. Start a separate daemon ` +
+          `for that workspace, or route to the right one.`,
       );
     }
   }
 }
 ```
 
-Les déploiements multi-espaces de travail exécutent un démon par espace de travail sur des ports séparés — il n'y a pas de routage intra-démon selon §02. Un orchestrateur (ou le lanceur de l'utilisateur) choisit le bon démon en fonction du projet auquel le client veut se connecter.
+Les déploiements multi-espaces de travail exécutent un démon par espace de travail sur des ports séparés — il n'y a pas de routage intra-démon selon §02. Un orchestrateur (ou le lanceur de l'utilisateur) choisit le bon démon en fonction du projet avec lequel le client souhaite communiquer.
 
 ## Authentification
 
-Lorsque le démon a été démarré avec un jeton (toute liaison non-loopback en nécessite un) :
+Lorsque le démon a été démarré avec un jeton (toute liaison non en boucle locale en nécessite un) :
 
 ```ts
 const client = new DaemonClient({
@@ -237,16 +235,17 @@ const client = new DaemonClient({
 });
 ```
 
-**Repli sur variable d'environnement SDK (PR 27, v0.16-alpha)** — `DaemonClient` lit `QWEN_SERVER_TOKEN` depuis l'environnement automatiquement lorsque `token` est omis, imitant le repli propre au démon avec `--token` CLI. Ainsi, si votre shell a `export QWEN_SERVER_TOKEN=...`, cela équivaut à ce qui précède :
+**Repli sur la variable d'environnement du SDK (PR 27, v0.16-alpha)** — `DaemonClient` lit `QWEN_SERVER_TOKEN` depuis l'environnement automatiquement lorsque `token` est omis, reflétant le repli de la CLI `--token` du démon. Donc si votre shell a `export QWEN_SERVER_TOKEN=...`, cela équivaut à ce qui précède :
 
 ```ts
-// Même effet que token: process.env.QWEN_SERVER_TOKEN, mais sans le code standard.
+// Same effect as token: process.env.QWEN_SERVER_TOKEN, but without the boilerplate.
 const client = new DaemonClient({ baseUrl: 'https://your-host:4170' });
 ```
 
-Le repli supprime les espaces en début et fin de chaîne (pratique pour `export QWEN_SERVER_TOKEN="$(cat token.txt)"` où `cat` ajoute une nouvelle ligne) et traite les valeurs vides ou composées uniquement d'espaces comme non définies (un `export QWEN_SERVER_TOKEN=""` périmé n'enverra pas accidentellement `Authorization: Bearer ` sans jeton). Le repli s'exécute une fois à la construction ; les mutations ultérieures de `process.env` n'affectent pas les clients déjà construits. Les bundles navigateur (par exemple via `@qwen-code/webui`) obtiennent `undefined` proprement car `globalThis.process` n'existe pas là.
+Le repli supprime les espaces en début et fin de chaîne (pratique pour `export QWEN_SERVER_TOKEN="$(cat token.txt)"` où `cat` ajoute un saut de ligne) et traite les valeurs vides/uniquement espacées comme non définies (un `export QWEN_SERVER_TOKEN=""` périmé n'enverra pas accidentellement `Authorization: Bearer ` sans jeton). Le repli s'exécute une fois à la construction ; les mutations ultérieures de `process.env` n'affectent pas les clients déjà construits. Les bundles navigateurs (par exemple via `@qwen-code/webui`) obtiennent proprement `undefined` car `globalThis.process` n'existe pas là-bas.
 
-Les jetons erronés / manquants renvoient une `401` avec un corps uniforme — le SDK lève `DaemonHttpError` sur tout 4xx/5xx provenant d'un gestionnaire de route.
+Les jetons erronés/manquants renvoient une `401` avec un corps uniforme — le SDK lance `DaemonHttpError` pour tout 4xx/5xx provenant d'un gestionnaire de route.
+
 ```ts
 import { DaemonHttpError } from '@qwen-code/sdk';
 
@@ -261,7 +260,7 @@ try {
 }
 ```
 
-## Annuler une requête en cours
+## Annuler une invite en cours
 
 Si votre utilisateur appuie sur Échap :
 
@@ -270,7 +269,7 @@ await client.cancel(session.sessionId);
 // In the event stream you'll see the prompt resolve with stopReason: "cancelled"
 ```
 
-L'annulation n'arrête que la requête **active** — tout ce que vous avez déjà POSTé et qui est encore en file d'attente derrière elle continuera de s'exécuter. (Voir la référence du protocole pour la justification.)
+L'annulation n'arrête que l'invite **active** — tout ce que vous avez déjà envoyé en POST et qui est encore en file d'attente derrière continuera à s'exécuter. (Voir la référence du protocole pour la justification.)
 
 ## Prochaines étapes
 

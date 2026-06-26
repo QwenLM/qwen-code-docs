@@ -1,149 +1,149 @@
 # 退出计划模式工具 (`exit_plan_mode`)
 
-本文档介绍了 Qwen Code 的 `exit_plan_mode` 工具。
+本文档描述了 Qwen Code 的 `exit_plan_mode` 工具。
 
 ## 描述
 
-当处于计划模式且已完成实现方案的展示时，请使用 `exit_plan_mode`。该工具会提示用户批准或拒绝方案，并从计划模式切换到实现模式。
+当你处于计划模式并已完成实施计划的演示后，使用 `exit_plan_mode`。该工具会提示用户批准或拒绝该计划，并从计划模式切换到实施模式。
 
-该工具专为需要在编写代码前规划实现步骤的任务而设计。不应将其用于研究或信息收集任务。
+该工具专为需要先规划实施步骤再编写代码的任务而设计。**不**应用于研究或信息收集类任务。
 
 ### 参数
 
 `exit_plan_mode` 接受一个参数：
 
-- `plan`（字符串，必填）：你希望提交给用户审批的实现方案。这应是一份简洁的、采用 Markdown 格式的方案，用于描述具体的实现步骤。
+- `plan`（字符串，必需）：你要呈现给用户审批的实施计划。应为简洁的、Markdown 格式的计划，描述实施步骤。
 
 ## 如何在 Qwen Code 中使用 `exit_plan_mode`
 
 退出计划模式工具是 Qwen Code 规划工作流的一部分。当你处于计划模式时（通常在探索代码库并设计实现方案之后），你可以使用此工具来：
 
-1. 向用户展示你的实现方案
-2. 请求批准以继续实现
-3. 根据用户的响应，从计划模式切换到实现模式
+1. 向用户展示你的实施计划
+2. 请求批准以继续实施
+3. 根据用户响应从计划模式切换到实施模式
 
-该工具会向用户展示你的方案，并提供以下选项：
+该工具会提示用户你的计划，并提供以下选项：
 
-- **Proceed Once**：仅批准当前会话的方案
-- **Proceed Always**：批准方案并为后续的编辑操作启用自动批准
-- **Cancel**：拒绝方案并保持在计划模式
+- **仅本次继续**：仅批准本次会话的计划
+- **始终继续**：批准计划并启用未来编辑操作的自动审批
+- **取消**：拒绝计划并保持在计划模式
 
 用法：
 
 ```
-exit_plan_mode(plan="Your detailed implementation plan here...")
+exit_plan_mode(plan="你的详细实施计划...")
 ```
 
 ## 何时使用此工具
 
-在以下情况下使用 `exit_plan_mode`：
+在以下情况使用 `exit_plan_mode`：
 
-1. **实现任务**：你正在为编码任务规划实现步骤
-2. **方案完成**：你已完成探索并设计好实现方案
-3. **需要用户批准**：在进行代码更改前需要用户确认
-4. **代码编写任务**：任务涉及编写、修改或重构代码
+1. **实施任务**：你在规划编码任务的实施步骤
+2. **计划完成**：你已完成对实施方案的探索和设计
+3. **需要用户批准**：在继续代码更改之前需要用户确认
+4. **编写代码任务**：任务涉及编写、修改或重构代码
 
 ### 适用场景示例：
 
-- “帮我实现用户认证” → 在规划完认证系统实现后使用
-- “为用户管理添加新的 API 端点” → 在设计完端点结构后使用
-- “将数据库层重构为使用 TypeORM” → 在规划完重构方案后使用
+- “帮我实现用户认证”→ 规划认证系统实现后使用
+- “为用户管理添加一个新的 API 端点”→ 设计端点结构后使用
+- “将数据库层重构为 TypeORM”→ 规划重构方案后使用
 
-## 何时不应使用此工具
+## 何时**不**使用此工具
 
-请勿在以下情况下使用 `exit_plan_mode`：
+以下情况**不要**使用 `exit_plan_mode`：
 
 1. **研究任务**：专注于理解或探索现有代码的任务
-2. **信息收集**：当你进行搜索、阅读或分析，且不涉及实现时
-3. **文档任务**：在不更改代码的情况下创建文档时
-4. **分析任务**：在不涉及实现的情况下提供解释或审查时
+2. **信息收集**：搜索、阅读或分析而不进行实现时
+3. **文档任务**：创建文档而不涉及代码更改时
+4. **分析任务**：提供解释或审查而不涉及实现时
 
-### 不适用场景示例：
+### 不适用的场景示例：
 
-- “搜索并理解代码库中 vim 模式的实现” → 请勿使用（研究任务）
-- “解释认证系统的工作原理” → 请勿使用（分析任务）
-- “查找项目中所有的 TODO 注释” → 请勿使用（信息收集）
+- “搜索并理解代码库中 vim 模式的实现”→ 不使用（研究任务）
+- “解释认证系统的工作原理”→ 不使用（分析任务）
+- “查找项目中所有的 TODO 注释”→ 不使用（信息收集）
 
 ## `exit_plan_mode` 示例
 
-### 实现规划示例
+### 实施计划示例
 
 ```
-exit_plan_mode(plan="## Implementation Plan for User Dashboard
+exit_plan_mode(plan="## 用户仪表盘实施计划
 
-### 1. Create Dashboard Components
-- Create `UserDashboard.tsx` with main dashboard layout
-- Add `DashboardStats.tsx` for displaying user statistics
-- Implement `ActivityFeed.tsx` for recent user activities
+### 1. 创建仪表盘组件
+- 创建包含主仪表盘布局的 `UserDashboard.tsx`
+- 添加 `DashboardStats.tsx` 用于显示用户统计信息
+- 实现 `ActivityFeed.tsx` 用于最近用户活动
 
-### 2. Add API Integration
-- Create `dashboardApi.ts` for dashboard data fetching
-- Add endpoints for user stats and activity data
-- Implement error handling and loading states
+### 2. 添加 API 集成
+- 创建 `dashboardApi.ts` 用于仪表盘数据获取
+- 添加用户统计和活动数据的端点
+- 实现错误处理和加载状态
 
-### 3. Update Routing
-- Add dashboard route in `App.tsx`
-- Update navigation component with dashboard link
-- Add route protection for authenticated users
+### 3. 更新路由
+- 在 `App.tsx` 中添加仪表盘路由
+- 使用仪表盘链接更新导航组件
+- 为已认证用户添加路由保护
 
-### 4. Testing and Documentation
-- Write unit tests for dashboard components
-- Add integration tests for API calls
-- Update user documentation with dashboard features
+### 4. 测试和文档
+- 为仪表盘组件编写单元测试
+- 添加 API 调用的集成测试
+- 更新用户文档，包含仪表盘功能
 
-This implementation will take approximately 4-6 hours and requires changes to 8-10 files.")
+此实施预计需要 4-6 小时，涉及 8-10 个文件的更改。")
 ```
 
-### 重构方案示例
+### 重构计划示例
 
 ```
-exit_plan_mode(plan="## Database Layer Refactoring Plan
+exit_plan_mode(plan="## 数据库层重构计划
 
-### Phase 1: Setup and Configuration
-- Install and configure TypeORM dependencies
-- Create database connection configuration
-- Set up entity definitions for existing models
+### 第一阶段：安装和配置
+- 安装并配置 TypeORM 依赖
+- 创建数据库连接配置
+- 为现有模型设置实体定义
 
-### Phase 2: Migration
-- Create migration scripts for existing data
-- Implement new repository pattern using TypeORM
-- Replace raw SQL queries with TypeORM query builder
+### 第二阶段：迁移
+- 为现有数据创建迁移脚本
+- 使用 TypeORM 实现新的仓库模式
+- 将原始 SQL 查询替换为 TypeORM 查询构建器
 
-### Phase 3: Testing and Validation
-- Update all database tests to use TypeORM
-- Validate data integrity after migration
-- Performance testing to ensure no regressions
+### 第三阶段：测试和验证
+- 更新所有数据库测试以使用 TypeORM
+- 迁移后验证数据完整性
+- 进行性能测试以确保无回归
 
-This refactoring will modernize our database layer while maintaining backward compatibility.")
+此重构将现代化数据库层，同时保持向后兼容性。")
 ```
 
 ## 用户响应处理
 
 调用 `exit_plan_mode` 后，用户可以通过以下几种方式响应：
 
-- **Proceed Once**：方案获得批准，将使用默认确认设置立即开始实现
-- **Proceed Always**：方案获得批准，并为后续的编辑操作启用自动批准
-- **Cancel**：方案被拒绝，系统将保持在计划模式以进行进一步规划
+- **仅本次继续**：批准计划并立即以默认确认设置实施
+- **始终继续**：批准计划，并为后续编辑操作启用自动审批
+- **取消**：拒绝计划，系统保持计划模式以便进一步规划
 
-该工具会根据用户的选择自动调整批准模式，从而根据用户偏好简化实现流程。
+该工具会根据用户的选择自动调整审批模式，从而根据用户偏好简化实施流程。
 
-## 重要注意事项
+## 重要说明
 
-- **仅限计划模式**：仅当你当前处于计划模式时才应使用此工具
-- **聚焦实现**：仅用于涉及编写或修改代码的任务
-- **方案简洁**：保持方案聚焦且简洁——追求清晰明了，而非事无巨细
-- **支持 Markdown**：方案支持 Markdown 格式，以提升可读性
-- **单次使用**：在准备继续时，每个规划会话中应仅使用一次该工具
+- **仅限计划模式**：此工具仅应在你当前处于计划模式时使用
+- **专注实施**：仅用于涉及编写或修改代码的任务
+- **计划简洁**：保持计划简洁明了——追求清晰而非详尽
+- **支持 Markdown**：计划支持 Markdown 格式，提高可读性
+- **单次使用**：每个计划会话准备好继续时仅使用一次
 - **用户控制**：是否继续的最终决定权始终在用户手中
 
 ## 与规划工作流的集成
 
-退出计划模式工具是更大规模规划工作流的一部分：
+退出计划模式工具是更大规划工作流的一部分：
 
-1. **进入计划模式**：用户请求或系统判定需要进行规划
-2. **探索阶段**：分析代码库、理解需求、探索可行方案
-3. **方案设计**：基于探索结果制定实现策略
-4. **方案展示**：使用 `exit_plan_mode` 向用户展示方案
-5. **实现阶段**：获得批准后，按计划进行实现
+1. **进入计划模式**：用户请求或系统判定需要规划
+2. **探索阶段**：分析代码库、理解需求、探索选项
+3. **计划设计**：基于探索创建实施策略
+4. **计划展示**：使用 `exit_plan_mode` 向用户展示计划
+5. **实施阶段**：批准后，按计划继续实施
 
-该工作流确保了深思熟虑的实现方案，并让用户对重大代码更改拥有控制权。
+此工作流确保了经过深思熟虑的实施方案，并让用户对重大代码更改保持控制。

@@ -270,7 +270,7 @@ _WorktreeExitDialog：_
 
 **与 `--resume` 的优先级：**
 
-由于 session 存储以 `projectHash(process.cwd())` 为 key，而 `--worktree` 在 resume picker / `loadCliConfig` 之前就 chdir 到 worktree，所以"在 worktree X 启动的 session，从 worktree Y 内 resume"是**架构上不可达**的（两者的 projectHash 不同，session 文件落在不同目录）。下表反映 D-1 实现 + Phase 6 re-attach 修复后的实际行为：
+由于 session 存储以 `projectHash(process.cwd())` 为 key，而 `--worktree` 在 resume picker / `loadCliConfig` 之前就 chdir 到 worktree，因此"在 worktree X 启动的 session，从 worktree Y 内 resume"是**架构上不可达**的（两者的 projectHash 不同，session 文件落在不同目录）。下表反映 D-1 实现 + Phase 6 re-attach 修复后的实际行为：
 
 | `--resume` 状态              | `--worktree` 状态          | 结果                                                                                       |
 | ---------------------------- | -------------------------- | ------------------------------------------------------------------------------------------ |

@@ -1,63 +1,63 @@
-# Outil Todo Write (`todo_write`)
+# Todo Write Tool (`todo_write`)
 
-Ce document décrit l'outil `todo_write` pour Qwen Code.
+This document describes the `todo_write` tool for Qwen Code.
 
 ## Description
 
-Utilisez `todo_write` pour créer et gérer une liste de tâches structurée pour votre session de codage en cours. Cet outil aide l'assistant IA à suivre la progression et à organiser des tâches complexes, en vous donnant une visibilité sur le travail en cours.
+Use `todo_write` to create and manage a structured task list for your current coding session. This tool helps the AI assistant track progress and organize complex tasks, providing you with visibility into what work is being performed.
 
 ### Arguments
 
-`todo_write` prend un argument :
+`todo_write` takes one argument:
 
-- `todos` (tableau, obligatoire) : Un tableau d'éléments de tâches, où chaque élément contient :
-  - `content` (chaîne, obligatoire) : La description de la tâche.
-  - `status` (chaîne, obligatoire) : Le statut actuel (`pending`, `in_progress` ou `completed`).
-  - `id` (chaîne, obligatoire) : Un identifiant unique pour l'élément de tâche.
+- `todos` (array, required): An array of todo items, where each item contains:
+  - `content` (string, required): The description of the task.
+  - `status` (string, required): The current status (`pending`, `in_progress`, or `completed`).
+  - `id` (string, required): A unique identifier for the todo item.
 
-## Comment utiliser `todo_write` avec Qwen Code
+## How to use `todo_write` with Qwen Code
 
-L'assistant IA utilisera automatiquement cet outil lorsqu'il travaillera sur des tâches complexes en plusieurs étapes. Vous n'avez pas besoin de le demander explicitement, mais vous pouvez demander à l'assistant de créer une liste de tâches si vous souhaitez voir l'approche planifiée pour votre requête.
+The AI assistant will automatically use this tool when working on complex, multi-step tasks. You don't need to explicitly request it, but you can ask the assistant to create a todo list if you want to see the planned approach for your request.
 
-L'outil stocke les listes de tâches dans votre répertoire personnel (`~/.qwen/todos/`) avec des fichiers spécifiques à chaque session, de sorte que chaque session de codage conserve sa propre liste de tâches.
+The tool stores todo lists in your home directory (`~/.qwen/todos/`) with session-specific files, so each coding session maintains its own task list.
 
-## Quand l'IA utilise cet outil
+## When the AI uses this tool
 
-L'assistant utilise `todo_write` pour :
+The assistant uses `todo_write` for:
 
-- Les tâches complexes nécessitant plusieurs étapes
-- Les implémentations de fonctionnalités avec plusieurs composants
-- Les opérations de refactorisation sur plusieurs fichiers
-- Tout travail impliquant 3 actions distinctes ou plus
+- Complex tasks requiring multiple steps
+- Feature implementations with several components
+- Refactoring operations across multiple files
+- Any work involving 3 or more distinct actions
 
-L'assistant n'utilisera pas cet outil pour des tâches simples en une seule étape ou des demandes purement informationnelles.
+The assistant will not use this tool for simple, single-step tasks or purely informational requests.
 
-### Exemples d'utilisation de `todo_write`
+### `todo_write` examples
 
-Création d'un plan d'implémentation de fonctionnalité :
+Creating a feature implementation plan:
 
 ```
 todo_write(todos=[
   {
     "id": "1",
-    "content": "Créer le modèle de préférences utilisateur",
+    "content": "Create user preferences model",
     "status": "pending"
   },
   {
     "id": "2",
-    "content": "Ajouter les points d'API pour les préférences",
+    "content": "Add API endpoints for preferences",
     "status": "pending"
   },
   {
     "id": "3",
-    "content": "Implémenter les composants frontend",
+    "content": "Implement frontend components",
     "status": "pending"
   }
 ])
 ```
 
-## Remarques importantes
+## Important notes
 
-- **Utilisation automatique :** L'assistant IA gère automatiquement les listes de tâches lors de tâches complexes.
-- **Visibilité de la progression :** Vous verrez les listes de tâches mises à jour en temps réel au fur et à mesure de l'avancement.
-- **Isolation des sessions :** Chaque session de codage possède sa propre liste de tâches qui n'interfère pas avec les autres.
+- **Automatic usage:** The AI assistant manages todo lists automatically during complex tasks.
+- **Progress visibility:** You'll see todo lists updated in real-time as work progresses.
+- **Session isolation:** Each coding session has its own todo list that doesn't interfere with others.

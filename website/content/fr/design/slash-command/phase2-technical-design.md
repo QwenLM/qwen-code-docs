@@ -1,106 +1,106 @@
-# Document de conception technique Phase 2 : Extension des fonctionnalités
+# Document de conception technique Phase 2 : Extension des capacités
 
 ## 1. Objectifs de conception et contraintes
 
 ### 1.1 Objectifs
 
-- Étendre les `supportedModes` de 13 commandes intégrées pour inclure `non_interactive` et/ou `acp`
-- Garantir que chaque commande étendue retourne un contenu texte adapté à la consommation par l'IDE dans les chemins ACP/non-interactive
-- Activer le canal d'appel de modèle pour les commandes prompt (`SkillTool` consommant `getModelInvocableCommands()`)
-- Implémenter la détection de base des commandes slash en milieu de saisie
+- Étendre le `supportedModes` des 13 commandes intégrées pour inclure `non_interactive` et/ou `acp`
+- Garantir que chaque commande étendue retourne, sous le chemin ACP/non-interactive, un contenu textuel adapté à la consommation par un IDE
+- Mettre en place le pipeline d’appel de modèle pour la commande prompt (`SkillTool` consomme `getModelInvocableCommands()`)
+- Implémenter la détection de base des slash commandes en milieu de saisie (mid-input)
 
 ### 1.2 Contraintes strictes
 
-- **Zéro régression sur le chemin interactif** : le comportement interactif existant de toutes les commandes étendues reste strictement inchangé. Les branches par mode sont ajoutées uniquement à l'intérieur de `action`, sans toucher au code du chemin interactif.
-- **Stratégie d'implémentation : branchement par mode, et non double enregistrement** : les 13 commandes utilisent toutes une vérification `executionMode` à l'intérieur de `action`. Le mode de double enregistrement décrit dans la Phase 1 §10.2 n'est pas utilisé (il n'est nécessaire que lorsque la logique interactive et non-interactive diffère radicalement, ce qui n'est pas le cas ici).
-- **Format des messages ACP** : le texte retourné par le chemin ACP ne contient pas de styles ANSI et doit être en Markdown ou en texte brut, optimisé pour la consommation par les plugins IDE.
-- **Ignorer les effets secondaires liés à l'environnement** : les opérations dépendant d'un environnement graphique comme l'ouverture d'un navigateur (`open()`) ou la manipulation du presse-papiers (`copyToClipboard()`) doivent être ignorées dans les chemins non-interactive/ACP.
+- **Zéro régression du chemin interactif** : le comportement interactif existant de toutes les commandes étendues reste strictement inchangé ; seules de nouvelles branches de mode sont ajoutées à l’intérieur de l’action, sans toucher au code du chemin interactif
+- **Stratégie d’implémentation : branche de mode, pas de double enregistrement** : les 13 commandes utilisent toutes une vérification `executionMode` interne à l’`action`, sans recourir au double enregistrement décrit dans la §10.2 du document de conception Phase 1 (le double enregistrement n’est nécessaire que si les logiques interactive et non-interactive divergent fortement, ce qui n’est pas le cas pour la complexité de cette phase)
+- **Format des messages ACP** : le contenu textuel retourné par le chemin ACP ne contient pas de style ANSI, de préférence en Markdown ou en texte brut, destiné à être consommé par un plugin IDE
+- **Sauter les effets de bord liés à l’environnement** : les opérations dépendant d’un environnement graphique (ouverture de navigateur `open()`, manipulation du presse-papiers `copyToClipboard()`, etc.) doivent être ignorées dans les chemins non-interactive/ACP
 
 ---
 
 ## 2. État de base après la Phase 1
 
-Points clés de l'architecture à l'issue de la Phase 1 (la Phase 2 s'appuie directement dessus) :
+Points d’architecture après la Phase 1 (sur lesquels la Phase 2 étend directement) :
 
-- Le champ `commandType` a été supprimé de l'interface `SlashCommand` ; toutes les commandes utilisent désormais `supportedModes` de manière explicite
-- `getEffectiveSupportedModes()` utilise une inférence à deux niveaux : `supportedModes` explicite → fallback sur `CommandKind`
-- `CommandService.getCommandsForMode(mode)` remplace l'ancienne liste blanche `ALLOWED_BUILTIN_COMMANDS_NON_INTERACTIVE`
+- Le champ `commandType` a été supprimé de l’interface `SlashCommand` ; toutes les commandes utilisent désormais un `supportedModes` explicite
+- `getEffectiveSupportedModes()` suit une inférence à deux niveaux : `supportedModes` explicite → `CommandKind` de repli
+- `CommandService.getCommandsForMode(mode)` remplace l’ancienne liste blanche `ALLOWED_BUILTIN_COMMANDS_NON_INTERACTIVE`
 - `btw`, `bug`, `compress`, `context`, `init`, `summary` ont déjà été étendus à tous les modes en Phase 1 et **ne font pas partie de la liste de cette phase**
-- Toutes les méthodes dans `createNonInteractiveUI()` sont des no-op : `addItem`, `clear`, `setDebugMessage`, `setPendingItem`, `reloadCommands` ignorent silencieusement les appels
+- Dans `createNonInteractiveUI()`, toutes les méthodes sont des no-op : `addItem`, `clear`, `setDebugMessage`, `setPendingItem`, `reloadCommands` ignorent silencieusement les appels
 
 ---
 
-## 3. Vue d'ensemble du périmètre des modifications
+## 3. Vue d’ensemble du périmètre des modifications
 
-Cette phase couvre 13 commandes, classées en quatre catégories selon leur complexité d'implémentation :
+Cette phase concerne 13 commandes, classées en quatre catégories selon leur complexité d’implémentation :
 
-| Catégorie | Commandes | Points de modification |
-| ---------- | -------------------------------------------- | ------------------------------------------------------------------------------------ |
-| **Catégorie A** | `export` | Modification de `supportedModes` uniquement ; tous les chemins `action` retournent déjà un type valide |
-| **Interactif uniquement** | `plan`, `statusline` | Décision de conception : ces commandes sont sémantiquement couplées à l'interface interactive ; `supportedModes: ['interactive']` est conservé |
-| **Catégorie A+** | `language` | Modification de `supportedModes` + gestion légère de branches non-interactive |
-| **Interactif uniquement** | `copy`, `restore` | Décision de conception : le presse-papiers et la restauration d'instantanés sont intrinsèquement interactifs ; `supportedModes: ['interactive']` est conservé |
-| **Catégorie A'** | `model`, `approval-mode` | Les chemins avec arguments retournent déjà un `message` ; les chemins sans argument nécessitent une nouvelle branche non-interactive (déclenchent actuellement un `dialog`) |
-| **Catégorie B** | `about`, `stats`, `insight`, `docs`, `clear` | Aucun chemin `action` ne retourne de valeur ou n'appelle `addItem`/`clear` ; nécessite une branche non-interactive complète |
+| Catégorie      | Commande                                    | Points de modification                                                                 |
+|----------------|---------------------------------------------|----------------------------------------------------------------------------------------|
+| **Classe A**  | `export`                                    | Modification uniquement de `supportedModes` ; tous les chemins de l’action retournent déjà un type valide |
+| **Uniquement interactif** | `plan`, `statusline`          | Décision de conception : ces commandes sont sémantiquement couplées à l’interface interactive, `supportedModes: ['interactive']` conservé |
+| **Classe A+** | `language`                                  | Modification de `supportedModes` + quelques branches non-interactives mineures          |
+| **Uniquement interactif** | `copy`, `restore`             | Décision de conception : presse-papiers et restauration de snapshot sont des opérations interactives, `supportedModes: ['interactive']` conservé |
+| **Classe A'** | `model`, `approval-mode`                   | Chemins avec paramètres retournant déjà `message` ; chemins sans paramètre nécessitant une nouvelle branche non-interactive (déclenchent actuellement une dialog) |
+| **Classe B**   | `about`, `stats`, `insight`, `docs`, `clear` | Aucun retour ou appels à `addItem`/`clear` sur tous les chemins de l’action ; nécessitent une branche non-interactive complète |
 
 ---
 
-## 4. Catégorie A : Modification de `supportedModes` uniquement
+## 4. Classe A : modification uniquement de `supportedModes`
 
-Tous les chemins `action` de ces trois commandes retournent déjà `message` ou `submit_prompt`, sans aucune dépendance UI. `handleCommandResult` peut les traiter directement.
+Tous les chemins `action` de ces trois commandes retournent déjà `message` ou `submit_prompt`, sans aucune dépendance UI ; `handleCommandResult` peut les traiter directement.
 
-### 4.1 `/export` (et sous-commandes)
+### 4.1 `/export` (et ses sous-commandes)
 
-**État actuel** : `supportedModes: ['interactive']`, tous les chemins `action` des sous-commandes retournent `MessageActionReturn`.
+**État actuel** : `supportedModes: ['interactive']`, toutes les sous-commandes retournent un `MessageActionReturn`.
 
-**Modification** : Passer les `supportedModes` de la commande parente et des quatre sous-commandes (`md`, `html`, `json`, `jsonl`) à `['interactive', 'non_interactive', 'acp']`.
+**Modification** : passer le `supportedModes` de la commande parente et des quatre sous-commandes (`md`, `html`, `json`, `jsonl`) à `['interactive', 'non_interactive', 'acp']`.
 
-**Contenu du message ACP** : le contenu retourné par `action` inclut déjà le chemin complet du fichier (ex. `Session exported to markdown: qwen-export-2024-01-01T12-00-00.md`), ce qui est adapté à la consommation par l'IDE. Aucun changement de texte n'est nécessaire.
+**Contenu du message ACP** : le contenu retourné par l’action contient déjà le chemin complet du fichier (ex. `Session exported to markdown: qwen-export-2024-01-01T12-00-00.md`), adapté à la consommation IDE, aucun changement de texte nécessaire.
 
-> **Remarque** : la commande parente `/export` n'a pas de `action`, uniquement des sous-commandes. Après avoir étendu `supportedModes` à tous les modes, `parseSlashCommand` peut router vers les sous-commandes. Si l'utilisateur saisit uniquement `/export` sans sous-commande, `commandToExecute.action` est `undefined`, `handleSlashCommand` retourne `no_command` et l'appelant affiche l'invite des sous-commandes disponibles. C'est le comportement attendu.
+> **Remarque** : la commande parente `/export` n’a pas d’`action` propre, seulement des sous-commandes. En passant son `supportedModes` à tous les modes, `parseSlashCommand` pourra correspondre aux sous-commandes, mais si l’utilisateur tape simplement `/export` sans sous-commande, `commandToExecute.action` est `undefined`, `handleSlashCommand` retourne `no_command` et l’appelant affichera l’aide des sous-commandes disponibles. C’est un comportement attendu.
 
 ### 4.2 `/plan`
 
-**État actuel** : `supportedModes: ['interactive']`, tous les chemins `action` retournent `MessageActionReturn` ou `SubmitPromptActionReturn`.
+**État actuel** : `supportedModes: ['interactive']`, tous les chemins de l’action retournent `MessageActionReturn` ou `SubmitPromptActionReturn`.
 
-**Décision de conception** : `/plan` est une commande guidant l'utilisateur dans une planification interactive multi-tours, sémantiquement couplée à l'interface interactive. Il a été décidé de conserver `supportedModes: ['interactive']` et de ne pas l'étendre aux modes non-interactive/acp.
+**Décision de conception** : `/plan` est une commande guidant l’utilisateur dans une planification multi-tours, sémantiquement couplée à l’interface interactive. Après discussion, on conserve `supportedModes: ['interactive']`, sans extension aux modes non-interactive/acp.
 
 ### 4.3 `/statusline`
 
-**État actuel** : `supportedModes: ['interactive']`, `action` retourne toujours `SubmitPromptActionReturn` (soumet le prompt d'appel de subagent au modèle).
+**État actuel** : `supportedModes: ['interactive']`, l’action retourne toujours `SubmitPromptActionReturn` (soumet un prompt de résumé du subagent au modèle).
 
-**Décision de conception** : `/statusline` déclenche un subagent pour résumer l'état actuel, sémantiquement couplé à l'interface interactive. Il a été décidé de conserver `supportedModes: ['interactive']` et de ne pas l'étendre aux modes non-interactive/acp.
+**Décision de conception** : `/statusline` déclenche un subagent pour résumer l’état actuel, sémantiquement couplée à l’interface interactive. Après discussion, on conserve `supportedModes: ['interactive']`, sans extension aux modes non-interactive/acp.
 
 ---
 
-## 5. Catégorie A+ : Gestion légère de branches non-interactive
+## 5. Classe A+ : quelques branches non-interactives
 
 ### 5.1 `/language`
 
-**État actuel** : tous les chemins `action` retournent `MessageActionReturn` (lecture/définition des paramètres de langue).
+**État actuel** : tous les chemins de l’action retournent `MessageActionReturn` (lecture/définition de la langue).
 
-**Effets secondaires à gérer** : `setUiLanguage()` appelle `context.ui.reloadCommands()`, qui est déjà un no-op dans l'UI non-interactive. Aucun traitement supplémentaire n'est requis.
+**Effet de bord à traiter** : `setUiLanguage()` appelle `context.ui.reloadCommands()`, qui est déjà un no-op dans l’UI non-interactive. Aucun traitement supplémentaire nécessaire.
 
 **Modification** :
 
-- Passer les `supportedModes` de la commande parente et des sous-commandes (`ui`, `output`, ainsi que les sous-commandes générées dynamiquement via `SUPPORTED_LANGUAGES`) à `['interactive', 'non_interactive', 'acp']`.
-- `action` ne nécessite pas de branche par mode ; le texte retourné est déjà adapté à la consommation machine.
+- Passer le `supportedModes` de la commande parente et des sous-commandes (`ui`, `output`, ainsi que les sous-commandes générées dynamiquement depuis `SUPPORTED_LANGUAGES`) à `['interactive', 'non_interactive', 'acp']`.
+- Aucune branche de mode à ajouter dans l’action ; le texte retourné existant est déjà adapté à une consommation machine.
 
-**Sémantique ACP** : l'exécution de `/language ui zh-CN` en non-interactive (appel unique) modifie le paramètre persistant (écriture dans le fichier settings). Ce changement s'applique aux sessions suivantes et l'i18n est immédiatement active dans la session courante. Cela correspond aux attentes de l'utilisateur.
+**Sémantique ACP** : exécuter `/language ui zh-CN` en mode non-interactive (appel unique) modifie le paramétrage persistant (écriture dans le fichier de settings). Cette modification prend effet pour les sessions suivantes, et la i18n de la session courante est également appliquée immédiatement. Cela correspond aux attentes de l’utilisateur.
 
 ### 5.2 `/copy`
 
-**État actuel** : `action` appelle `copyToClipboard()`, ce qui peut lever une exception ou échouer silencieusement dans un environnement ACP/headless (presse-papiers indisponible).
+**État actuel** : l’action appelle `copyToClipboard()`, qui peut lever une exception ou échouer silencieusement dans un environnement ACP/headless (presse-papiers indisponible).
 
 **Modification** :
 
 1. Passer `supportedModes` à `['interactive', 'non_interactive', 'acp']`.
-2. Ajouter une branche par mode dans `action` :
+2. Ajouter une branche de mode dans l’action :
 
 ```typescript
-// 获取 last AI message（现有逻辑，可复用）
+// Récupérer le dernier message AI (logique existante, réutilisable)
 if (context.executionMode !== 'interactive') {
-  // 非交互/ACP：跳过剪贴板，返回内容本身
+  // Non-interactif/ACP : ignorer le presse-papiers, retourner le contenu lui-même
   if (!lastAiOutput) {
     return {
       type: 'message',
@@ -114,7 +114,7 @@ if (context.executionMode !== 'interactive') {
     content: lastAiOutput,
   };
 }
-// interactive 路径：原有剪贴板逻辑不变
+// Chemin interactif : logique de presse-papiers inchangée
 await copyToClipboard(lastAiOutput);
 return {
   type: 'message',
@@ -123,38 +123,38 @@ return {
 };
 ```
 
-**Sémantique ACP** : l'IDE reçoit le texte brut de la dernière sortie du modèle et peut décider de l'écrire dans le presse-papiers ou de l'afficher à l'utilisateur.
+**Sémantique ACP** : l’IDE reçoit le texte brut de la dernière sortie du modèle et peut décider s’il souhaite l’écrire dans le presse-papiers ou l’afficher à l’utilisateur.
 
 ### 5.3 `/restore`
 
 **État actuel** : `supportedModes: ['interactive']`.
 
-**Décision de conception** : la restauration d'instantanés entraîne la réexécution d'appels d'outils, sémantiquement couplée à l'interface interactive. Il a été décidé de conserver `supportedModes: ['interactive']` et de ne pas l'étendre aux modes non-interactive/acp.
+**Décision de conception** : la restauration de snapshot ré-exécute des appels d’outils, sémantiquement couplée à l’interface interactive. Après discussion, on conserve `supportedModes: ['interactive']`, sans extension aux modes non-interactive/acp.
 
-**Sémantique ACP** : la restauration de l'état git du checkpoint et la configuration de l'historique du client gemini sont exécutées comme effets secondaires ; après réception du message de confirmation, l'IDE peut indiquer à l'utilisateur que "l'état a été restauré", et la réexécution des outils est déclenchée ou non selon la logique de l'IDE.
+**Sémantique ACP** : la restauration du statut git du checkpoint et la configuration de l’historique du client Gemini sont exécutées comme effets de bord ; l’IDE reçoit un message de confirmation et peut indiquer à l’utilisateur que l’état a été restauré. La ré-exécution de l’outil est laissée à la discrétion de l’IDE.
 
 ---
 
-## 6. Catégorie A' : Gestion non-interactive des chemins dialog sans argument
+## 6. Classe A' : traitement non-interactif des chemins de dialog sans paramètre
 
 ### 6.1 `/model`
 
 **État actuel** :
 
-| 输入                             | 当前行为                                                                         |
-| -------------------------------- | -------------------------------------------------------------------------------- |
-| `/model`（无参数）               | → `{ type: 'dialog', dialog: 'model' }`（non-interactive 下变 unsupported）      |
-| `/model <model-id>`              | 未实现（只有 `--fast` 分支）                                                     |
-| `/model --fast`（无 model name） | → `{ type: 'dialog', dialog: 'fast-model' }`（non-interactive 下变 unsupported） |
-| `/model --fast <model-id>`       | → `MessageActionReturn` ✅                                                       |
+| Entrée                         | Comportement actuel                                                                |
+| ------------------------------ | ---------------------------------------------------------------------------------- |
+| `/model` (sans paramètre)      | → `{ type: 'dialog', dialog: 'model' }` (devient unsupported en non-interactif)    |
+| `/model <model-id>`            | Non implémenté (seule la branche `--fast` existe)                                   |
+| `/model --fast` (sans nom de modèle) | → `{ type: 'dialog', dialog: 'fast-model' }` (devient unsupported en non-interactif) |
+| `/model --fast <model-id>`     | → `MessageActionReturn` ✅                                                         |
 
 **Modification** :
 
 1. Passer `supportedModes` à `['interactive', 'non_interactive', 'acp']`.
-2. Insérer une branche non-interactive avant chaque chemin `dialog` dans `action` :
+2. Insérer une branche non-interactive avant chaque chemin de dialog dans l’action :
 
 ```typescript
-// 无参数路径（原返回 dialog: 'model'）
+// Chemin sans paramètre (retournait dialog: 'model')
 if (!args.trim()) {
   if (context.executionMode !== 'interactive') {
     const currentModel = config.getModel() ?? 'unknown';
@@ -167,7 +167,7 @@ if (!args.trim()) {
   return { type: 'dialog', dialog: 'model' };
 }
 
-// --fast 无参数路径（原返回 dialog: 'fast-model'）
+// Chemin --fast sans paramètre (retournait dialog: 'fast-model')
 if (args.startsWith('--fast') && !modelName) {
   if (context.executionMode !== 'interactive') {
     const fastModel = context.services.settings?.merged?.fastModel ?? 'not set';
@@ -181,24 +181,24 @@ if (args.startsWith('--fast') && !modelName) {
 }
 ```
 
-**Sémantique ACP** : l'IDE affiche le nom du modèle actuel pour référence ; le changement de modèle s'effectue via un appel avec argument (`/model <model-id>`).
+**Sémantique ACP** : l’IDE affiche le nom du modèle courant pour information ; le changement de modèle se fait via un appel avec paramètre (`/model <model-id>`).
 
-> **Remarque** : `/model <model-id>` (sans `--fast`) n'implémente actuellement pas la logique de définition du modèle pour la session courante, seul `--fast <model-id>` le fait. Si la Phase 2 doit prendre en charge le changement de modèle principal en ACP, la logique `set` de `/model <model-id>` devra être implémentée simultanément. Cette conception réserve ce chemin mais le marque comme optionnel pour la Phase 2, en priorisant le chemin read-only "afficher le modèle actuel".
+> **Remarque** : `/model <model-id>` (sans `--fast`) n’a actuellement pas de logique pour définir le modèle de la session courante ; seul `--fast <model-id>` en a. Si la Phase 2 doit supporter le changement du modèle principal sous ACP, il faudra implémenter simultanément la logique de set pour `/model <model-id>`. Cette conception réserve ce chemin mais le marque comme optionnel pour la Phase 2, en priorisant le chemin read-only « voir le modèle courant ».
 
 ### 6.2 `/approval-mode`
 
 **État actuel** :
 
-| 输入                       | 当前行为                                                                            |
-| -------------------------- | ----------------------------------------------------------------------------------- |
-| `/approval-mode`（无参数） | → `{ type: 'dialog', dialog: 'approval-mode' }`（non-interactive 下变 unsupported） |
-| `/approval-mode <mode>`    | → `MessageActionReturn` ✅                                                          |
-| `/approval-mode <invalid>` | → `MessageActionReturn`（error）✅                                                  |
+| Entrée                           | Comportement actuel                                                                      |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| `/approval-mode` (sans paramètre) | → `{ type: 'dialog', dialog: 'approval-mode' }` (devient unsupported en non-interactif) |
+| `/approval-mode <mode>`          | → `MessageActionReturn` ✅                                                               |
+| `/approval-mode <invalid>`       | → `MessageActionReturn` (erreur) ✅                                                      |
 
 **Modification** :
 
 1. Passer `supportedModes` à `['interactive', 'non_interactive', 'acp']`.
-2. Insérer une branche non-interactive dans le chemin sans argument (`!args.trim()`) :
+2. Insérer une branche non-interactive dans le chemin sans paramètre (`!args.trim()`) :
 
 ```typescript
 if (!args.trim()) {
@@ -216,20 +216,20 @@ if (!args.trim()) {
 
 ---
 
-## 7. Catégorie B : Nécessite une branche non-interactive complète
+## 7. Classe B : besoin d’une branche non-interactive complète
 
-Dans le mode interactif, l'`action` de ces cinq commandes rend des composants React via `context.ui.addItem()` ou appelle `context.ui.clear()`, et retourne `void`. En mode non-interactive, ces appels sont des no-op, ce qui amène `handleSlashCommand` à traiter l'absence de valeur de retour comme `"Command executed successfully."`, sans sortie réelle.
+Ces cinq commandes, en mode interactif, utilisent `context.ui.addItem()` pour afficher des composants React ou `context.ui.clear()` ; leur valeur de retour est `void`. En mode non-interactif, ces appels sont des no-op, ce qui fait que `handleSlashCommand` traite l’absence de retour comme `"Command executed successfully."`, sans contenu réel.
 
-**Principe d'implémentation** : vérifier `executionMode` **en haut** de `action`. En mode non-interactive, **retourner anticipativement** un `message` contenant le contenu réel. Le code du chemin interactif reste strictement inchangé.
+**Principe d’implémentation** : vérifier `executionMode` **en haut** de l’action, et **retourner par avance** un `message` contenant le contenu réel si le mode n’est pas interactif, sans toucher au code du chemin interactif.
 
-### 7.1 `/about` (altName : `status`)
+### 7.1 `/about` (altName: `status`)
 
-**Source des données** : `getExtendedSystemInfo(context)` retourne `ExtendedSystemInfo`, contenant : `cliVersion`, `osPlatform`, `osArch`, `osRelease`, `nodeVersion`, `modelVersion`, `selectedAuthType`, `ideClient`, `sessionId`, `memoryUsage`, `baseUrl`, `apiKeyEnvKey`, `gitCommit`, `fastModel`. Tous les champs sont accessibles en non-interactive (`context.services.config` et `settings` sont déjà injectés).
+**Source de données** : `getExtendedSystemInfo(context)` retourne un `ExtendedSystemInfo` contenant : `cliVersion`, `osPlatform`, `osArch`, `osRelease`, `nodeVersion`, `modelVersion`, `selectedAuthType`, `ideClient`, `sessionId`, `memoryUsage`, `baseUrl`, `apiKeyEnvKey`, `gitCommit`, `fastModel`. Tous ces champs sont accessibles en mode non-interactif (context.services.config et settings sont déjà injectés).
 
 **Modification** :
 
 1. Passer `supportedModes` à `['interactive', 'non_interactive', 'acp']`.
-2. Insérer une branche par mode après l'appel à `getExtendedSystemInfo`, avant le chemin interactif :
+2. Après l’appel à `getExtendedSystemInfo`, avant le chemin interactif, insérer une branche de mode :
 
 ```typescript
 action: async (context) => {
@@ -254,7 +254,7 @@ action: async (context) => {
     };
   }
 
-  // interactive 路径：原有 addItem 逻辑不变
+  // Chemin interactif : logique addItem inchangée
   const aboutItem: Omit<HistoryItemAbout, 'id'> = { type: MessageType.ABOUT, systemInfo };
   context.ui.addItem(aboutItem, Date.now());
 },
@@ -262,15 +262,15 @@ action: async (context) => {
 
 ### 7.2 `/stats` (et sous-commandes `model`, `tools`)
 
-**Source des données** : `context.session.stats` (`SessionStatsState`) contient `sessionStartTime`, `metrics` (`SessionMetrics` : `models`, `tools`, `files`), `promptCount`. En non-interactive, `sessionStartTime` correspond au moment de l'appel, `metrics` provient de `uiTelemetryService.getMetrics()` (valeur cumulée de l'appel courant, généralement zéro), `promptCount` vaut 1.
+**Source de données** : `context.session.stats` (`SessionStatsState`) contient `sessionStartTime`, `metrics` (`SessionMetrics` : `models`, `tools`, `files`), `promptCount`. En mode non-interactif, `sessionStartTime` correspond au moment de l’appel courant, `metrics` provient de `uiTelemetryService.getMetrics()` (cumul de l’appel courant, généralement zéro), et `promptCount` vaut 1.
 
 **Modification** :
 
-1. Passer les `supportedModes` de la commande parente `stats` et des sous-commandes `model`, `tools` à `['interactive', 'non_interactive', 'acp']`.
-2. Insérer une branche par mode dans `action` de la commande parente et de chaque sous-commande pour retourner anticipativement les statistiques au format texte :
+1. Passer le `supportedModes` de la commande parente `stats` et des sous-commandes `model`, `tools` à `['interactive', 'non_interactive', 'acp']`.
+2. Insérer une branche de mode dans l’action de la commande parente et de chaque sous-commande, retournant par avance des statistiques textuelles formatées :
 
 ```typescript
-// /stats 主命令
+// Commande principale /stats
 action: (context) => {
   if (context.executionMode !== 'interactive') {
     const now = new Date();
@@ -280,7 +280,7 @@ action: (context) => {
     }
     const wallDuration = now.getTime() - sessionStartTime.getTime();
 
-    // 汇总所有 model 的 token 数
+    // Agréger les tokens de tous les modèles
     let totalPromptTokens = 0, totalCandidateTokens = 0, totalRequests = 0;
     for (const modelMetrics of Object.values(metrics.models)) {
       totalPromptTokens += modelMetrics.tokens.prompt;
@@ -299,34 +299,34 @@ action: (context) => {
     return { type: 'message', messageType: 'info', content: lines.join('\n') };
   }
 
-  // interactive 路径：原有 addItem 逻辑不变
+  // Chemin interactif : logique addItem inchangée
   const statsItem: HistoryItemStats = { type: MessageType.STATS, duration: formatDuration(wallDuration) };
   context.ui.addItem(statsItem, Date.now());
 },
 ```
 
-Les sous-commandes `model` et `tools` insèrent également leurs propres branches par mode pour retourner les statistiques textuelles correspondantes (dimension `model` : liste des tokens par nom de modèle ; dimension `tools` : liste des appels par outil).
+Les sous-commandes `model` et `tools` insèrent également leur propre branche de mode, retournant des statistiques textuelles pour leur dimension respective (dimension modèle : utilisation token par nom de modèle ; dimension outils : nombre d’appels par outil).
 
-**Remarque** : lors d'un appel unique non-interactive, les métriques sont généralement à zéro (nouvelle session), mais la structure est complète et n'affecte pas le formatage. Dans une session ACP, les valeurs cumulées peuvent avoir un sens concret.
+**Explication** : dans un appel non-interactif unique, les métriques sont généralement nulles (nouvelle session), mais la structure est complète et n’affecte pas le format. Dans une session ACP, elles peuvent avoir une valeur cumulée significative.
 
 ### 7.3 `/insight`
 
-**État actuel** : `action` retourne `void`, affiche la progression et les résultats via `addItem`, et appelle enfin `open(outputPath)` pour ouvrir le navigateur. La logique principale est `insightGenerator.generateStaticInsight()` qui génère un fichier HTML.
+**État actuel** : l’action retourne `void`, affiche la progression et le résultat via `addItem`, puis appelle `open(outputPath)` pour ouvrir le navigateur. La logique principale est `insightGenerator.generateStaticInsight()` qui génère un fichier HTML.
 
 **Modification** :
 
 1. Passer `supportedModes` à `['interactive', 'non_interactive', 'acp']`.
-2. Diviser en trois branches selon `executionMode` :
-   - `non_interactive` : génération synchrone, ignore les callbacks de progression, n'ouvre pas le navigateur, retourne directement un `message` (chemin du fichier)
-   - `acp` : lancement asynchrone de la génération, pousse la progression (`encodeInsightProgressMessage`) et la fin (`encodeInsightReadyMessage`) à l'IDE via `stream_messages`
-   - `interactive` : logique `addItem` + `setPendingItem` + `open()` existante inchangée
+2. Embranchement à trois voies selon `executionMode` :
+   - `non_interactive` : génération synchrone, ignorer le callback de progression, ne pas ouvrir le navigateur, retourner directement un `message` (chemin du fichier)
+   - `acp` : lancer la génération de manière asynchrone, pousser la progression (`encodeInsightProgressMessage`) et la complétion (`encodeInsightReadyMessage`) vers l’IDE via `stream_messages`
+   - `interactive` : logique existante `addItem` + `setPendingItem` + `open()` inchangée
 
 ```typescript
-// non_interactive 路径
+// Chemin non_interactive
 if (context.executionMode === 'non_interactive') {
   const outputPath = await insightGenerator.generateStaticInsight(
     projectsDir,
-    () => {}, // no-op progress
+    () => {}, // callback de progression no-op
   );
   return {
     type: 'message',
@@ -335,28 +335,28 @@ if (context.executionMode === 'non_interactive') {
   };
 }
 
-// acp 路径：stream_messages
+// Chemin acp : stream_messages
 if (context.executionMode === 'acp') {
-  // ... 构造 streamMessages async generator，yield encodeInsightProgressMessage / encodeInsightReadyMessage ...
+  // ... construction du générateur async streamMessages, yield encodeInsightProgressMessage / encodeInsightReadyMessage ...
   return { type: 'stream_messages', messages: streamMessages() };
 }
 
-// interactive 路径：原有实现不变
+// Chemin interactif : implémentation existante inchangée
 ```
 
-**Justification de la conception** : le mode `non_interactive` (pipeline CLI) ne prend pas en charge `stream_messages` et ne peut retourner qu'un seul `message`. Le mode ACP (plugin IDE) peut consommer `stream_messages` et afficher la progression en temps réel, d'où la conservation du chemin streaming pour ce mode.
+**Justification** : le mode `non_interactive` (pipeline CLI) ne supporte pas `stream_messages`, il ne peut retourner qu’un seul `message` ; le mode ACP (plugin IDE) peut consommer `stream_messages` et afficher la progression en temps réel, d’où la conservation du chemin streaming pour ce mode.
 
-**Format des messages ACP** : `encodeInsightProgressMessage(stage, progress, detail?)` génère un message de barre de progression analysable par l'IDE ; `encodeInsightReadyMessage(outputPath)` notifie l'IDE que le fichier est prêt, laissant l'IDE décider comment afficher le lien.
+**Format des messages ACP** : `encodeInsightProgressMessage(stage, progress, detail?)` produit un message de barre de progression interprétable par l’IDE ; `encodeInsightReadyMessage(outputPath)` notifie l’IDE que le fichier est prêt, l’IDE décide comment afficher le lien.
 
 ### 7.4 `/docs`
 
-**État actuel** : `action` retourne `void`, affiche un message via `addItem` et appelle `open(docsUrl)` pour ouvrir le navigateur. Il existe une branche pour la variable d'environnement `SANDBOX` (en sandbox, seul `addItem` est appelé, pas d'ouverture de navigateur).
+**État actuel** : l’action retourne `void`, affiche un message via `addItem` et appelle `open(docsUrl)` pour ouvrir le navigateur. Il existe une branche pour la variable d’environnement `SANDBOX` (dans le bac à sable, seulement addItem, pas d’ouverture de navigateur).
 
 **Modification** :
 
 1. Passer `supportedModes` à `['interactive', 'non_interactive', 'acp']`.
-2. Modifier le type de retour de `action` en `Promise<void | MessageActionReturn>`.
-3. Insérer une branche non-interactive au début de `action` :
+2. Modifier le type de retour de l’action en `Promise<void | MessageActionReturn>`.
+3. Insérer une branche non-interactive au début de l’action :
 
 ```typescript
 action: async (context) => {
@@ -364,7 +364,7 @@ action: async (context) => {
   const docsUrl = `https://qwenlm.github.io/qwen-code-docs/${langPath}`;
 
   if (context.executionMode !== 'interactive') {
-    // 非交互/ACP：直接返回 URL，不打开浏览器，不调用 addItem
+    // Non-interactif/ACP : retourner l'URL directement, sans ouvrir le navigateur, sans addItem
     return {
       type: 'message',
       messageType: 'info',
@@ -372,7 +372,7 @@ action: async (context) => {
     };
   }
 
-  // interactive 路径：原有 SANDBOX 判断 + addItem + open() 不变
+  // Chemin interactif : logique SANDBOX + addItem + open() inchangée
   if (process.env['SANDBOX'] && ...) {
     context.ui.addItem(...);
   } else {
@@ -382,32 +382,32 @@ action: async (context) => {
 },
 ```
 
-### 7.5 `/clear` (altNames : `reset`, `new`)
+### 7.5 `/clear` (altNames: `reset`, `new`)
 
-**État actuel** : `action` exécute les opérations suivantes et retourne `void` :
+**État actuel** : l’action effectue les opérations suivantes et retourne `void` :
 
-1. `config.getHookSystem()?.fireSessionEndEvent()` — déclenche le hook (effet secondaire)
-2. `config.startNewSession()` — démarre un nouvel ID de session (effet secondaire)
-3. `uiTelemetryService.reset()` — réinitialise les compteurs de télémétrie (effet secondaire)
-4. `skillTool.clearLoadedSkills()` — vide le cache des skills (effet secondaire)
-5. `context.ui.clear()` — vide l'UI du terminal (**effet secondaire UI, no-op en non-interactive**)
-6. `geminiClient.resetChat()` — réinitialise l'historique du chat (effet secondaire)
-7. `config.getHookSystem()?.fireSessionStartEvent()` — déclenche le hook (effet secondaire)
+1. `config.getHookSystem()?.fireSessionEndEvent()` — déclenche un hook (effet de bord)
+2. `config.startNewSession()` — commence un nouvel ID de session (effet de bord)
+3. `uiTelemetryService.reset()` — réinitialise les compteurs de télémétrie (effet de bord)
+4. `skillTool.clearLoadedSkills()` — vide le cache des compétences (effet de bord)
+5. `context.ui.clear()` — vide l’UI du terminal (**effet de bord UI, no-op en non-interactif**)
+6. `geminiClient.resetChat()` — réinitialise l’historique de la conversation (effet de bord)
+7. `config.getHookSystem()?.fireSessionStartEvent()` — déclenche un hook (effet de bord)
 
 **Analyse sémantique non-interactive/ACP** :
 
-- `ui.clear()` est déjà un no-op en non-interactive, aucun traitement requis
-- `geminiClient.resetChat()` : effet secondaire significatif dans une session ACP (vide l'historique du chat), doit être conservé ; en appel unique non-interactive, chaque appel est une session entièrement nouvelle, la sémantique `resetChat` est redondante mais inoffensive
-- `config.startNewSession()` : significatif en ACP (démarre un nouvel ID de session) ; redondant mais inoffensif en appel unique non-interactive
-- `fireSessionEndEvent` / `fireSessionStartEvent` : significatifs en ACP (déclenchent les hooks)
+- `ui.clear()` est déjà no-op en non-interactif, aucun traitement nécessaire
+- `geminiClient.resetChat()` : dans une session ACP, c’est un effet de bord significatif (vider l’historique) ; dans un appel non-interactif unique, chaque appel est une toute nouvelle session, `resetChat` est redondant mais inoffensif
+- `config.startNewSession()` : significatif en ACP (commencer un nouvel ID de session) ; redondant mais inoffensif dans un appel non-interactif unique
+- `fireSessionEndEvent` / `fireSessionStartEvent` : significatif en ACP (déclencher des hooks)
 
-**Décision** : le chemin non-interactive/ACP conserve tous les effets secondaires significatifs (`resetChat`, `startNewSession`, événements hook), ignore uniquement `ui.clear()` (déjà no-op) et retourne un message de délimitation de contexte.
+**Décision** : dans les chemins non-interactive/ACP, conserver tous les effets de bord significatifs (resetChat, startNewSession, events hooks), sauter uniquement `ui.clear()` (déjà no-op) et retourner un message marqueur de limite de contexte.
 
 **Modification** :
 
 1. Passer `supportedModes` à `['interactive', 'non_interactive', 'acp']`.
-2. Modifier le type de retour de `action` en `Promise<void | MessageActionReturn>`.
-3. Dans `action`, après l'appel à `context.ui.clear()` (ou en remplacement), brancher selon le mode :
+2. Modifier le type de retour de l’action en `Promise<void | MessageActionReturn>`.
+3. Dans l’action, après l’appel à `context.ui.clear()` (ou à sa place), branche selon le mode :
 
 ```typescript
 action: async (context, _args) => {
@@ -426,7 +426,7 @@ action: async (context, _args) => {
       context.session.startNewSession(newSessionId);
     }
 
-    // ui.clear() 在非交互下已是 no-op，但依然调用（不需要条件分支）
+    // ui.clear() est déjà no-op en non-interactif, on l'appelle quand même (pas besoin de branche conditionnelle)
     context.ui.clear();
 
     const geminiClient = config.getGeminiClient();
@@ -439,7 +439,7 @@ action: async (context, _args) => {
     context.ui.clear();
   }
 
-  // 根据模式决定返回值
+  // Retour selon le mode
   if (context.executionMode !== 'interactive') {
     return {
       type: 'message',
@@ -447,95 +447,94 @@ action: async (context, _args) => {
       content: 'Context cleared. Previous messages are no longer in context.',
     };
   }
-  // interactive 路径：void（不返回，React UI 由 ui.clear() 驱动更新）
+  // Chemin interactif : void (pas de retour, l'UI React est mise à jour par ui.clear())
 },
 ```
 
-**Sémantique ACP** : après réception du marqueur de délimitation de contexte, l'IDE peut l'afficher comme un séparateur de session (ex. invite "Nouvelle session commencée") et vider le cache local de l'historique du chat.
+**Sémantique ACP** : l’IDE reçoit la marque de limite de contexte et peut l’afficher comme séparateur de session (ex. notification « Nouvelle session ») et vider son cache local d’historique de conversation.
 
 ---
 
-## 8. Modifications de `handleCommandResult`
+## 8. Modification de `handleCommandResult`
 
 **Conclusion : aucune modification nécessaire.**
 
-Après les modifications de toutes les commandes de la Phase 2, les types de retour pour les chemins non-interactive/ACP sont `message` ou `submit_prompt`, déjà correctement gérés dans le `switch` de `handleCommandResult`.
+Après les modifications de toutes les commandes de la Phase 2, les types de retour des chemins non-interactive/ACP sont tous `message` ou `submit_prompt`, déjà correctement traités dans le switch de `handleCommandResult`.
 
 ---
 
-## 9. Modifications de `createNonInteractiveUI()`
+## 9. Modification de `createNonInteractiveUI()`
 
 **Conclusion : aucune modification nécessaire.**
 
-L'implémentation no-op actuelle est suffisante. Les no-op `addItem`, `clear`, `setPendingItem`, etc., ne seront pas appelés dans les chemins non-interactive des commandes de Catégorie B (car retour anticipé) ; le chemin interactif n'est pas affecté.
+L’implémentation actuelle no-op est suffisante. Les méthodes no-op `addItem`, `clear`, `setPendingItem` ne sont pas appelées dans les chemins non-interactifs des commandes de classe B (car retour anticipé) ; les chemins interactifs ne sont pas affectés.
 
 ---
 
-## 10. Phase 2.2 : Activation de l'appel de modèle pour les commandes prompt
+## 10. Phase 2.2 : ouverture de l’appel de modèle pour les commandes prompt
 
-Dans la Phase 1, `CommandService.getModelInvocableCommands()` a déjà été implémenté, et `BundledSkillLoader`, `FileCommandLoader` (commandes utilisateur/projet), `McpPromptLoader` ont défini `modelInvocable: true`.
+Dans la Phase 1, `CommandService.getModelInvocableCommands()` a été implémenté, et `BundledSkillLoader`, `FileCommandLoader` (commandes utilisateur/projet), `McpPromptLoader` ont défini `modelInvocable: true`.
 
-Le travail de la Phase 2.2 consiste à modifier `SkillTool` pour qu'il consomme à la fois `SkillManager.listSkills()` et `CommandService.getModelInvocableCommands()`, unifiant ainsi le point d'entrée des commandes invocables par le modèle.
+Le travail de la Phase 2.2 est de modifier `SkillTool` pour qu’il consomme non seulement `SkillManager.listSkills()` mais aussi `CommandService.getModelInvocableCommands()`, unifiant ainsi le point d’entrée des commandes invocables par le modèle.
 
-**Fichiers modifiés** : `packages/core/src/tools/SkillTool.ts` (ou chemin équivalent)
+**Fichier modifié** : `packages/core/src/tools/SkillTool.ts` (ou chemin correspondant)
 
-**Modifications détaillées** :
+**Modifications concrètes** :
 
-1. `SkillTool` reçoit `CommandService` (ou le résultat de `getModelInvocableCommands()`) comme injection de dépendance lors de l'initialisation
-2. Lors de la construction de la description de l'outil, fusionner les résultats de `listSkills()` et `getModelInvocableCommands()`
-3. Garantir que les commandes intégrées (`modelInvocable: false`) n'apparaissent pas dans la description de l'outil
+1. `SkillTool` reçoit `CommandService` (ou le résultat de `getModelInvocableCommands()`) en injection de dépendance lors de l’initialisation
+2. Lors de la construction de la description de l’outil, fusionner les résultats de `listSkills()` et de `getModelInvocableCommands()`
+3. S’assurer que les commandes intégrées (`modelInvocable: false`) n’apparaissent pas dans la description de l’outil
 
-> **Note** : l'implémentation spécifique de `SkillTool` dépend de l'architecture interne de `packages/core`. Ce document ne décrit que les changements d'interface ; les détails d'implémentation doivent être déterminés en fonction de la structure existante du package core.
-
----
-
-## 11. Phase 2.3 : Détection des commandes slash en milieu de saisie (version de base)
-
-Détecte le token slash près du curseur dans le composant `InputPrompt` (pas uniquement en début de ligne) pour déclencher le menu de complétion.
-
-**Règles de détection** :
-
-- Lorsqu'un token commençant par `/` et ne contenant pas d'espace précède le curseur, déclencher la complétion des commandes
-- Les candidats de complétion proviennent de la liste des commandes visibles de `getCommandsForMode('interactive')`
-- Le menu de complétion affiche le nom de la commande + description (sans `argumentHint`, etc., ajouté en Phase 3)
-
-> Cette fonctionnalité est une modification au niveau de l'UI, constituant une sous-tâche indépendante de la Phase 2.3, et n'affecte pas l'implémentation des Phases 2.1/2.2.
+> **Note** : l’implémentation concrète de `SkillTool` dépend de l’architecture interne de `packages/core`. Ce document ne décrit que les changements d’interface ; les détails d’implémentation doivent être déterminés en fonction de la structure existante du package core.
 
 ---
 
-## 12. Vue d'ensemble des modifications de fichiers
+## 11. Phase 2.3 : détection de slash commande en milieu de saisie (version de base)
+
+Dans le composant `InputPrompt`, détecter un token slash près du curseur (pas seulement en début de ligne) et déclencher un menu de complétion.
+
+**Règle de détection** :
+
+- Lorsqu’un token commençant par `/` et ne contenant pas d’espace est présent devant le curseur, déclencher la complétion de commande
+- Les candidates de complétion proviennent de la liste des commandes visibles de `getCommandsForMode('interactive')`
+- Le menu de complétion affiche le nom de la commande + sa description (sans argumentHint, complété en Phase 3)
+
+> Cette fonctionnalité est un changement au niveau UI, sous-tâche indépendante de la Phase 2.3. Elle n’affecte pas la mise en œuvre des autres phases 2.1/2.2.
+
+---
+
+## 12. Récapitulatif des fichiers modifiés
 
 ### 12.1 Modifications des fichiers de commandes (Phase 2.1)
 
-| Fichier | Type de modification | Contenu spécifique |
-| ------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `exportCommand.ts` | Catégorie A | Commande parente + 4 sous-commandes : `supportedModes` → tous les modes |
-| `planCommand.ts` | Interactif uniquement | Décision de conception : `supportedModes: ['interactive']` conservé, aucune modification |
-| `statuslineCommand.ts` | Interactif uniquement | Décision de conception : `supportedModes: ['interactive']` conservé, aucune modification |
-| `languageCommand.ts` | Catégorie A+ | Commande parente + sous-commandes `ui`/`output` + sous-commandes dynamiques : `supportedModes` → tous les modes |
-| `copyCommand.ts` | Interactif uniquement | Décision de conception : `supportedModes: ['interactive']` conservé, aucune modification |
-| `restoreCommand.ts` | Interactif uniquement | Décision de conception : `supportedModes: ['interactive']` conservé, aucune modification |
-| `modelCommand.ts` | Catégorie A' | `supportedModes` → tous les modes + nouvelle branche non-interactive pour les chemins sans argument/sans fast model |
-| `approvalModeCommand.ts` | Catégorie A' | `supportedModes` → tous les modes + nouvelle branche non-interactive pour le chemin sans argument |
-| `aboutCommand.ts` | Catégorie B | `supportedModes` → tous les modes + retour `message` en chemin non-interactive (résumé version/modèle/environnement) |
-| `statsCommand.ts` | Catégorie B | `supportedModes` → tous les modes + retour `message` en chemin non-interactive (stats texte) ; sous-commandes traitées simultanément |
-| `insightCommand.ts` | Catégorie B | `supportedModes` → tous les modes + chemin `non_interactive` génère de manière synchrone et retourne `message` (chemin fichier) ; chemin `acp` retourne `stream_messages` avec progression |
-| `docsCommand.ts` | Catégorie B | `supportedModes` → tous les modes + retour `message` en chemin non-interactive (URL documentation), n'ouvre pas le navigateur |
-| `clearCommand.ts` | Catégorie B | `supportedModes` → tous les modes + retour `message` ou `void` à la fin de `action` selon le mode |
-
+| Fichier                    | Type de modification | Contenu concret                                                                                                                        |
+| -------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `exportCommand.ts`         | Classe A             | Commande parente + 4 sous-commandes : `supportedModes` → tous les modes                                                                 |
+| `planCommand.ts`           | Uniquement interactif | Décision de conception : conserver `supportedModes: ['interactive']`, pas de modification                                                |
+| `statuslineCommand.ts`     | Uniquement interactif | Décision de conception : conserver `supportedModes: ['interactive']`, pas de modification                                                |
+| `languageCommand.ts`       | Classe A+            | Commande parente + sous-commandes `ui`/`output` + sous-commandes dynamiques de langue : `supportedModes` → tous les modes               |
+| `copyCommand.ts`           | Uniquement interactif | Décision de conception : conserver `supportedModes: ['interactive']`, pas de modification                                                |
+| `restoreCommand.ts`        | Uniquement interactif | Décision de conception : conserver `supportedModes: ['interactive']`, pas de modification                                                |
+| `modelCommand.ts`          | Classe A'            | `supportedModes` → tous les modes + nouvelle branche non-interactive pour les chemins sans paramètre / sans fast model                  |
+| `approvalModeCommand.ts`   | Classe A'            | `supportedModes` → tous les modes + nouvelle branche non-interactive pour le chemin sans paramètre                                      |
+| `aboutCommand.ts`          | Classe B             | `supportedModes` → tous les modes + chemin non-interactif retourne `message` (résumé version/modèle/environnement)                       |
+| `statsCommand.ts`          | Classe B             | `supportedModes` → tous les modes + chemin non-interactif retourne `message` (texte des stats) ; sous-commandes traitées en parallèle   |
+| `insightCommand.ts`        | Classe B             | `supportedModes` → tous les modes + chemin `non_interactive` génère de manière synchrone et retourne `message` (chemin du fichier) ; chemin `acp` retourne `stream_messages` avec progression |
+| `docsCommand.ts`           | Classe B             | `supportedModes` → tous les modes + chemin non-interactif retourne `message` (URL de la documentation), sans ouvrir le navigateur       |
+| `clearCommand.ts`          | Classe B             | `supportedModes` → tous les modes + retourne `message` ou `void` en fonction du mode à la fin de l’action                               |
 ### 12.2 Autres modifications de fichiers
 
-| Fichier | Contenu de la modification |
-| --------------------------------------------------- | ----------------------------------------------------------------- |
-| `packages/core/src/tools/SkillTool.ts` | Phase 2.2 : intégration de `getModelInvocableCommands()` (conception détaillée à définir) |
-| `packages/cli/src/ui/InputPrompt.tsx` (ou composant équivalent) | Phase 2.3 : logique de détection slash en milieu de saisie |
+| Fichier                                               | Modification                                                                  |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `packages/core/src/tools/SkillTool.ts`                | Phase 2.2 : Intégration de `getModelInvocableCommands()` (détail à définir) |
+| `packages/cli/src/ui/InputPrompt.tsx` (ou composant équivalent) | Phase 2.3 : Logique de détection du slash en milieu de saisie               |
 
 ### 12.3 Fichiers inchangés
 
 - `packages/cli/src/nonInteractiveCliCommands.ts` (`handleCommandResult`, `handleSlashCommand` ne nécessitent aucune modification)
-- `packages/cli/src/ui/noninteractive/nonInteractiveUi.ts` (UI stub ne nécessite aucune modification)
+- `packages/cli/src/ui/noninteractive/nonInteractiveUi.ts` (UI stub inchangée)
 - `packages/cli/src/services/commandUtils.ts` (`filterCommandsForMode`, `getEffectiveSupportedModes` ne nécessitent aucune modification)
-- `packages/cli/src/services/CommandService.ts` (`getCommandsForMode`, `getModelInvocableCommands` déjà implémentés en Phase 1)
+- `packages/cli/src/services/CommandService.ts` (`getCommandsForMode`, `getModelInvocableCommands` déjà implémentées dans la Phase 1)
 
 ---
 
@@ -543,113 +542,113 @@ Détecte le token slash près du curseur dans le composant `InputPrompt` (pas un
 
 ### 13.1 Tests unitaires des commandes
 
-Ajouter ou mettre à jour les fichiers de test (`*.test.ts`) dans le même répertoire pour chaque commande modifiée, couvrant les cas suivants :
+Ajouter ou mettre à jour les fichiers de test (`*.test.ts`) dans le même répertoire pour chaque commande modifiée, en couvrant les cas suivants :
 
-**Commandes Catégorie A/A+** (`export`, `language`) :
+**Commandes de classe A/A+** (`export`, `language`) :
 
 - `supportedModes` inclut correctement `non_interactive` et `acp`
-- Avec `executionMode: 'non_interactive'`, `action` retourne `MessageActionReturn` ou `SubmitPromptActionReturn`, sans appeler `ui.addItem` ou `ui.clear`
-- Le comportement du chemin interactif reste strictement identique à avant le refactoring (tests snapshot)
+- En `executionMode: 'non_interactive'`, l'action retourne `MessageActionReturn` ou `SubmitPromptActionReturn`, sans appeler `ui.addItem` ou `ui.clear`
+- Le comportement en mode interactif est strictement identique à avant le refactoring (test snapshot)
 
 **Commandes interactives uniquement** (`plan`, `statusline`, `copy`, `restore`) :
 
-- `supportedModes` est `['interactive']`, conformément à la décision de conception
-- Vérifier que l'exécution en mode non-interactive retourne correctement `unsupported`
+- `supportedModes` est `['interactive']`, décision de conception
+- Vérifier que l’exécution en mode non-interactive retourne correctement `unsupported`
 
-**Commandes Catégorie A'** (`model`, `approval-mode`) :
+**Commandes de classe A'** (`model`, `approval-mode`) :
 
-- Sans argument + `executionMode: 'non_interactive'` → retourne un `message` d'état actuel, pas de `dialog`
+- Sans argument + `executionMode: 'non_interactive'` → retourne le `message` d'état courant, pas de `dialog`
 - Avec argument + `executionMode: 'non_interactive'` → la logique `message` existante s'exécute normalement
 - Chemin interactif : sans argument → `dialog`, avec argument → `message` (inchangé)
 
-**Commandes Catégorie B** (`about`, `stats`, `insight`, `docs`, `clear`) :
+**Commandes de classe B** (`about`, `stats`, `insight`, `docs`, `clear`) :
 
-- Avec `executionMode: 'non_interactive'`, `action` retourne `MessageActionReturn`, sans appeler de méthode `ui.*`
-- La chaîne `content` retournée contient les champs clés attendus (version, nom du modèle, URL, etc.)
+- En `executionMode: 'non_interactive'`, l'action retourne `MessageActionReturn`, sans appeler aucune méthode `ui.*`
+- La chaîne `content` retournée contient les champs clés attendus (numéro de version, nom du modèle, URL, etc.)
 - Chemin interactif : `ui.addItem` est appelé, `action` retourne `void` (inchangé)
 
-**Cas spécifique pour `clear`** :
+**Cas spécial `clear`** :
 
-- Avec `executionMode: 'non_interactive'`, `geminiClient.resetChat()` est toujours appelé (effet secondaire conservé)
-- Retourne un `message` de délimitation de contexte avec le contenu `'Context cleared. Previous messages are no longer in context.'`
+- En `executionMode: 'non_interactive'`, `geminiClient.resetChat()` est toujours appelé (effet de bord conservé)
+- Retourne un `message` de frontière de contexte, avec le contenu `'Context cleared. Previous messages are no longer in context.'`
 
 ### 13.2 Tests d'intégration (`handleSlashCommand`)
 
 Dans `nonInteractiveCli.test.ts` ou un nouveau fichier de test d'intégration :
 
-- `handleSlashCommand('/about', ...)` en mode non-interactive retourne `{ type: 'message', content: contenant la version }`
-- `handleSlashCommand('/stats', ...)` en mode non-interactive retourne `{ type: 'message', content: contenant 'Session duration' }`
-- `handleSlashCommand('/docs', ...)` en mode non-interactive retourne `{ type: 'message', content: contenant 'qwenlm.github.io' }`
+- `handleSlashCommand('/about', ...)` en mode non-interactive retourne `{ type: 'message', content: contient le numéro de version }`
+- `handleSlashCommand('/stats', ...)` en mode non-interactive retourne `{ type: 'message', content: contient 'Session duration' }`
+- `handleSlashCommand('/docs', ...)` en mode non-interactive retourne `{ type: 'message', content: contient 'qwenlm.github.io' }`
 - `handleSlashCommand('/clear', ...)` en mode non-interactive retourne `{ type: 'message', content: 'Context cleared.' }`
 - `handleSlashCommand('/plan', ...)` en mode non-interactive retourne `unsupported` (commande interactive uniquement)
-- Aucun comportement dégradé pour les commandes non-interactive existantes (`btw`, `bug`, etc.)
+- Les commandes non-interactive existantes (`btw`, `bug`, etc.) ne présentent pas de régression
 
-### 13.3 Tests `commandUtils`
+### 13.3 Tests de `commandUtils`
 
-Ajouter dans `commandUtils.test.ts` (ou continuer à couvrir avec les tests existants) :
+Ajouter (ou couvrir via des tests existants) dans `commandUtils.test.ts` :
 
-- Les commandes étendues (`export`, `language`, etc.) passent correctement les filtres `filterCommandsForMode(commands, 'non_interactive')` et `filterCommandsForMode(commands, 'acp')`
+- Les commandes étendues (`export`, `language`, etc.) passent bien le filtre `filterCommandsForMode(commands, 'non_interactive')` et `filterCommandsForMode(commands, 'acp')`
 - Les commandes interactives uniquement (`plan`, `statusline`, `copy`, `restore`) sont correctement filtrées par `filterCommandsForMode(commands, 'non_interactive')`
 
 ---
 
-## 14. Analyse d'impact comportemental
+## 14. Analyse de l'impact comportemental
 
-| Scénario | Comportement avant Phase 2 | Comportement après Phase 2 | Nature |
-| -------------------------------------------- | --------------------------------------------------------- | ---------------------------------- | ------------------ |
-| Exécution de `/export md` en non-interactive | ❌ `unsupported` (filtré) | ✅ Retourne un `message` avec le chemin du fichier | Extension de fonctionnalité |
-| Exécution de `/plan <task>` en non-interactive | ❌ `unsupported` | ❌ `unsupported` (décision de conception : interactif uniquement) | Inchangé |
-| Exécution de `/statusline` en non-interactive | ❌ `unsupported` | ❌ `unsupported` (décision de conception : interactif uniquement) | Inchangé |
-| Exécution de `/language ui zh-CN` en non-interactive | ❌ `unsupported` | ✅ Définit la langue, retourne un `message` de confirmation | Extension de fonctionnalité |
-| Exécution de `/copy` en non-interactive | ❌ `unsupported` | ❌ `unsupported` (décision de conception : interactif uniquement) | Inchangé |
-| Exécution de `/restore` (sans argument) en non-interactive | ❌ `unsupported` | ❌ `unsupported` (décision de conception : interactif uniquement) | Inchangé |
-| Exécution de `/restore <id>` en non-interactive | ❌ `unsupported` | ❌ `unsupported` (décision de conception : interactif uniquement) | Inchangé |
-| Exécution de `/model` en non-interactive | ❌ `unsupported` (`dialog`) | ✅ Retourne le nom du modèle actuel | Extension de fonctionnalité |
-| Exécution de `/model <id>` en non-interactive | ❌ `unsupported` | 🔄 Optionnel Phase 2 : implémenter la logique de basculement | Extension de fonctionnalité (optionnel) |
-| Exécution de `/approval-mode` en non-interactive | ❌ `unsupported` (`dialog`) | ✅ Retourne le mode d'approbation actuel | Extension de fonctionnalité |
-| Exécution de `/approval-mode yolo` en non-interactive | ❌ `unsupported` | ✅ Définit le mode, retourne une confirmation | Extension de fonctionnalité |
-| Exécution de `/about` en non-interactive | ❌ Retourne `"Command executed successfully."` (`addItem` no-op) | ✅ Retourne un résumé version/modèle/environnement | Correction de bug + extension |
-| Exécution de `/stats` en non-interactive | ❌ Retourne `"Command executed successfully."` | ✅ Retourne les statistiques de session en texte | Correction de bug + extension |
-| Exécution de `/insight` en non-interactive | ❌ Retourne `"Command executed successfully."` (généré mais sans sortie) | ✅ Génère et retourne le chemin du fichier | Correction de bug + extension |
-| Exécution de `/docs` en non-interactive | ❌ Retourne `"Command executed successfully."` | ✅ Retourne l'URL de la documentation | Correction de bug + extension |
-| Exécution de `/clear` en non-interactive | ❌ Retourne `"Command executed successfully."` | ✅ Retourne un `message` de délimitation de contexte | Correction de bug + extension |
-| Exécution de l'une des commandes ci-dessus en interactif | ✅ Comportement existant | ✅ Comportement existant (zéro régression) | Inchangé |
+| Scénario                                        | Comportement avant Phase 2                                         | Comportement après Phase 2                    | Nature                    |
+| ----------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------- | ------------------------- |
+| Exécution de `/export md` en non-interactive    | ❌ unsupported (filtré)                                            | ✅ retourne un message avec le chemin du fichier | Extension de capacité    |
+| Exécution de `/plan <task>` en non-interactive  | ❌ unsupported                                                     | ❌ unsupported (décision de conception : interactif uniquement) | Inchangé                  |
+| Exécution de `/statusline` en non-interactive   | ❌ unsupported                                                     | ❌ unsupported (décision de conception : interactif uniquement) | Inchangé                  |
+| Exécution de `/language ui zh-CN` en non-interactive | ❌ unsupported                                                | ✅ définit la langue, retourne un message de confirmation | Extension de capacité    |
+| Exécution de `/copy` en non-interactive         | ❌ unsupported                                                     | ❌ unsupported (décision de conception : interactif uniquement) | Inchangé                  |
+| Exécution de `/restore` (sans argument) en non-interactive | ❌ unsupported                                        | ❌ unsupported (décision de conception : interactif uniquement) | Inchangé                  |
+| Exécution de `/restore <id>` en non-interactive | ❌ unsupported                                                     | ❌ unsupported (décision de conception : interactif uniquement) | Inchangé                  |
+| Exécution de `/model` en non-interactive        | ❌ unsupported (dialog)                                            | ✅ retourne le nom du modèle courant           | Extension de capacité    |
+| Exécution de `/model <id>` en non-interactive   | ❌ unsupported                                                     | 🔄 Phase 2 optionnelle : implémenter la logique de changement | Extension de capacité (optionnelle) |
+| Exécution de `/approval-mode` en non-interactive | ❌ unsupported (dialog)                                          | ✅ retourne le mode d'approbation courant      | Extension de capacité    |
+| Exécution de `/approval-mode yolo` en non-interactive | ❌ unsupported                                              | ✅ définit le mode, retourne une confirmation  | Extension de capacité    |
+| Exécution de `/about` en non-interactive        | ❌ retourne "Command executed successfully." (addItem no-op)       | ✅ retourne un résumé version/modèle/environnement | Correction de bug + extension de capacité |
+| Exécution de `/stats` en non-interactive        | ❌ retourne "Command executed successfully."                       | ✅ retourne les statistiques de session        | Correction de bug + extension de capacité |
+| Exécution de `/insight` en non-interactive      | ❌ retourne "Command executed successfully." (généré mais sans sortie) | ✅ génère et retourne le chemin du fichier | Correction de bug + extension de capacité |
+| Exécution de `/docs` en non-interactive         | ❌ retourne "Command executed successfully."                       | ✅ retourne l'URL de la documentation          | Correction de bug + extension de capacité |
+| Exécution de `/clear` en non-interactive        | ❌ retourne "Command executed successfully."                       | ✅ retourne un message de frontière de contexte | Correction de bug + extension de capacité |
+| Exécution de n'importe quelle commande ci-dessus en interactif | ✅ Comportement existant                              | ✅ Comportement existant (zéro régression)     | Inchangé                  |
 
 ---
 
 ## 15. Ordre d'implémentation
 
-Il est recommandé de procéder dans l'ordre suivant, chaque lot pouvant faire l'objet d'un commit et d'une review indépendants :
+Il est recommandé d'implémenter dans l'ordre suivant, chaque groupe pouvant faire l'objet d'un commit et d'une review indépendants :
 
-**Lot 1** (~30 min) : Catégorie A — Modification de `supportedModes` uniquement
+**Batch 1** (~30 min) : Classe A — modifier uniquement `supportedModes`
 
 Modifier `exportCommand.ts` (et ses sous-commandes), vérifier que les tests passent.
 
-**Lot 2** (~45 min) : Catégorie A+ — Branches légères
+**Batch 2** (~45 min) : Classe A+ — quelques branches
 
-Modifier `languageCommand.ts`, ajouter des branches non-interactive pour les chemins à effets secondaires, mettre à jour les tests correspondants. (`copyCommand.ts` et `restoreCommand.ts` restent interactifs uniquement après discussion.)
+Modifier `languageCommand.ts`, ajouter une branche non-interactive pour les chemins avec effets de bord, mettre à jour les tests correspondants. (`copyCommand.ts` et `restoreCommand.ts` restent en interactif uniquement suite à la discussion.)
 
-**Lot 3** (~45 min) : Catégorie A' — Chemins dialog
+**Batch 3** (~45 min) : Classe A' — chemins dialog
 
-Modifier `modelCommand.ts`, `approvalModeCommand.ts`, ajouter des branches non-interactive pour les chemins sans argument, mettre à jour les tests correspondants.
+Modifier `modelCommand.ts`, `approvalModeCommand.ts`, ajouter une branche non-interactive pour les chemins sans argument, mettre à jour les tests correspondants.
 
-**Lot 4** (~1,5 h) : Catégorie B — Branches complètes
+**Batch 4** (~1.5 h) : Classe B — branches complètes
 
 Modifier `aboutCommand.ts`, `statsCommand.ts` (avec sous-commandes), `docsCommand.ts`.
 
-**Lot 5** (~1 h) : Catégorie B spéciale — `insightCommand.ts`, `clearCommand.ts`
+**Batch 5** (~1 h) : Classe B spéciale — `insightCommand.ts`, `clearCommand.ts`
 
-Ces deux commandes ont de nombreux effets secondaires ; commit séparé, mise à jour des tests et tests d'intégration correspondants.
+Ces deux commandes ont plus d'effets de bord, un commit séparé, mise à jour des tests correspondants et des tests d'intégration.
 
-**Lot 6** (~2 h) : Phase 2.2 — Activation de l'appel de modèle pour les commandes prompt
+**Batch 6** (~2 h) : Phase 2.2 — intégration de l'appel modèle pour la commande prompt
 
-Modifier `SkillTool`, intégrer `getModelInvocableCommands()`, mettre à jour les tests `SkillTool`.
+Modifier `SkillTool`, intégrer `getModelInvocableCommands()`, mettre à jour les tests de SkillTool.
 
-**Lot 7** (~2 h) : Phase 2.3 — Détection slash en milieu de saisie
+**Batch 7** (~2 h) : Phase 2.3 — détection du slash en milieu de saisie
 
-Modifier le composant `InputPrompt`, ajouter la logique de déclenchement de la complétion et les tests UI.
+Modifier le composant `InputPrompt`, ajouter la logique de déclenchement de l'autocomplétion et des tests UI.
 
-**Lot 8** (~30 min) : Tests complets + vérification de type
+**Batch 8** (~30 min) : Tests complets + vérification de types
 
 Exécuter `npm run typecheck`, `cd packages/cli && npx vitest run`, corriger les problèmes restants.
 
@@ -657,32 +656,32 @@ Exécuter `npm run typecheck`, `cd packages/cli && npx vitest run`, corriger les
 
 ## 16. Checklist de validation
 
-**Extension des commandes Phase 2.1**
+**Phase 2.1 Extension des commandes**
 
-- [ ] Catégorie A : `/export` (et sous-commandes), `/plan`, `/statusline` s'exécutent correctement en modes non-interactive et acp et retournent une sortie significative
-- [ ] Catégorie A+ : `/language` (et sous-commandes) s'exécute correctement en non-interactive, applique la persistance
-- [ ] Catégorie A+ : `/copy` retourne le dernier texte de sortie IA en non-interactive/acp (sans manipuler le presse-papiers)
-- [ ] Catégorie A+ : `/restore` sans argument retourne la liste des checkpoints en non-interactive ; avec argument, restaure l'état et retourne un `message` de confirmation (ne retourne pas `type: 'tool'`)
-- [ ] Catégorie A' : `/model` sans argument retourne le nom du modèle actuel en non-interactive/acp (ne déclenche pas de `dialog`) ; `/model --fast <id>` configure correctement
-- [ ] Catégorie A' : `/approval-mode` sans argument retourne le mode actuel en non-interactive/acp (ne déclenche pas de `dialog`) ; configure correctement avec argument
-- [ ] Catégorie B : `/about` retourne un résumé texte brut contenant la version et le nom du modèle en non-interactive/acp
-- [ ] Catégorie B : `/stats` (avec sous-commandes) retourne des statistiques en texte brut en non-interactive/acp
-- [ ] Catégorie B : `/insight` génère le fichier insight et retourne son chemin en non-interactive/acp (n'ouvre pas le navigateur)
-- [ ] Catégorie B : `/docs` retourne l'URL de la documentation en non-interactive/acp (n'ouvre pas le navigateur)
-- [ ] Catégorie B : `/clear` retourne un `message` de délimitation de contexte en non-interactive/acp, `geminiClient.resetChat()` s'exécute correctement
-- [ ] Les 13 commandes se comportent exactement comme avant le refactoring en mode interactif (zéro régression)
-- [ ] Compilation TypeScript sans erreur (`npm run typecheck`)
-- [ ] `npm run lint` sans nouvelle erreur
+- [ ] Classe A : `/export` (et sous-commandes), `/plan`, `/statusline` s'exécutent correctement en mode non-interactive et acp et retournent une sortie significative
+- [ ] Classe A+ : `/language` (et sous-commandes) s'exécute correctement en mode non-interactive, les paramètres sont persistés
+- [ ] Classe A+ : `/copy` en mode non-interactive/acp retourne le dernier texte de sortie de l'IA (n'utilise pas le presse-papiers)
+- [ ] Classe A+ : `/restore` sans argument retourne la liste des checkpoints en mode non-interactive ; avec argument, restaure l'état et retourne un message de confirmation (ne retourne pas `type: 'tool'`)
+- [ ] Classe A' : `/model` sans argument retourne le nom du modèle courant en mode non-interactive/acp (sans déclencher de dialog) ; `/model --fast <id>` fonctionne normalement
+- [ ] Classe A' : `/approval-mode` sans argument retourne le mode courant en mode non-interactive/acp (sans déclencher de dialog) ; avec argument, le mode est défini normalement
+- [ ] Classe B : `/about` en mode non-interactive/acp retourne un résumé texte contenant le numéro de version et le nom du modèle
+- [ ] Classe B : `/stats` (avec sous-commandes) en mode non-interactive/acp retourne des statistiques texte
+- [ ] Classe B : `/insight` en mode non-interactive/acp génère un fichier insight et retourne son chemin (sans ouvrir le navigateur)
+- [ ] Classe B : `/docs` en mode non-interactive/acp retourne l'URL de la documentation (sans ouvrir le navigateur)
+- [ ] Classe B : `/clear` en mode non-interactive/acp retourne un message de marqueur de frontière de contexte, `geminiClient.resetChat()` s'exécute normalement
+- [ ] Les 13 commandes en mode interactif ont un comportement strictement identique à avant le refactoring (aucune régression)
+- [ ] La compilation TypeScript ne génère aucune erreur (`npm run typecheck`)
+- [ `npm run lint` n'ajoute aucune nouvelle erreur
 - [ ] Tous les tests existants passent (`cd packages/cli && npx vitest run`)
 
-**Appel de modèle Phase 2.2**
+**Phase 2.2 Appel modèle**
 
-- [ ] Le modèle peut appeler les bundled skills, file commands (utilisateur/projet) et prompts MCP via `SkillTool` pendant la conversation
-- [ ] Le modèle ne peut pas appeler les commandes intégrées (`built-in commands`)
-- [ ] La description d'outil de `SkillTool` inclut le nom et la description de toutes les commandes avec `modelInvocable: true`
+- [ ] Le modèle peut appeler via `SkillTool` les compétences intégrées (bundled skill), les commandes de fichier (utilisateur/projet) et les prompts MCP dans la conversation
+- [ ] Le modèle ne peut pas appeler les commandes intégrées (built-in commands)
+- [ ] La description de l'outil `SkillTool` contient le nom et la description de toutes les commandes avec `modelInvocable: true`
 
-**Phase 2.3 slash en milieu de saisie**
+**Phase 2.3 Slash en milieu de saisie**
 
-- [ ] La saisie de `/` dans le corps de la zone de texte déclenche le menu de complétion des commandes (pas limité au début de la ligne)
-- [ ] Le menu de complétion affiche le nom de la commande + description
-- [ ] La sélection de la complétion remplit correctement la zone de saisie
+- [ ] La saisie de `/` dans le corps du champ de saisie déclenche un menu d'autocomplétion des commandes (pas seulement en début de ligne)
+- [ ] Le menu d'autocomplétion affiche le nom de la commande + sa description
+- [ ] La sélection d'une complétion remplit correctement le champ de saisie

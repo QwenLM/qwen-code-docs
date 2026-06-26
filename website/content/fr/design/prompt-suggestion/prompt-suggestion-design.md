@@ -1,12 +1,12 @@
 # Conception de la suggestion de prompt (NES)
 
-> Prédit ce que l'utilisateur taperait naturellement ensuite après qu'une réponse de l'IA est terminée, en l'affichant sous forme de texte fantôme dans le champ de saisie.
+> Prédit ce que l’utilisateur taperait naturellement ensuite après la réponse de l’IA, et l’affiche sous forme de texte fantôme dans la zone de saisie.
 >
-> État de l'implémentation : `prompt-suggestion-implementation.md`. Moteur de spéculation : `speculation-design.md`.
+> État d’implémentation : `prompt-suggestion-implementation.md`. Moteur de spéculation : `speculation-design.md`.
 
-## Vue d'ensemble
+## Vue d’ensemble
 
-Une **suggestion de prompt** (Next-step Suggestion / NES) est une courte prédiction (2 à 12 mots) de la prochaine saisie de l'utilisateur, générée par un appel LLM après chaque réponse de l'IA. Elle s'affiche sous forme de texte fantôme dans le champ de saisie. L'utilisateur peut l'accepter avec Tab/Entrée/Flèche droite ou la rejeter en commençant à taper.
+Une **suggestion de prompt** (suggestion de prochaine étape / NES) est une courte prédiction (2-12 mots) de la prochaine saisie de l’utilisateur, générée par un appel LLM après chaque réponse de l’IA. Elle apparaît sous forme de texte fantôme dans la zone de saisie. L’utilisateur peut l’accepter avec Tab/Entrée/Flèche droite ou la rejeter en commençant à taper.
 
 ## Architecture
 
@@ -14,11 +14,11 @@ Une **suggestion de prompt** (Next-step Suggestion / NES) est une courte prédic
 ┌─────────────────────────────────────────────────────────────┐
 │  AppContainer (CLI)                                         │
 │                                                             │
-│  Responding → Idle transition                               │
+│  Transition Répondre → Inactif                              │
 │       │                                                     │
 │       ▼                                                     │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  Guard Conditions (11 categories)                    │    │
+│  │  Conditions de garde (11 catégories)                 │    │
 │  │  settings, interactive, sdk, plan mode, dialogs,    │    │
 │  │  elicitation, API error                             │    │
 │  └────────────────────┬────────────────────────────────┘    │
@@ -27,30 +27,30 @@ Une **suggestion de prompt** (Next-step Suggestion / NES) est une courte prédic
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │  generatePromptSuggestion()                         │    │
 │  │                                                     │    │
-│  │  ┌─── CacheSafeParams available? ───┐               │    │
+│  │  ┌─── CacheSafeParams disponibles ? ───┐            │    │
 │  │  │                                  │               │    │
-│  │  ▼ YES                         NO ▼                 │    │
+│  │  ▼ OUI                         NON ▼               │    │
 │  │  runForkedQuery()      BaseLlmClient.generateJson() │    │
-│  │  (cache-aware)         (standalone fallback)        │    │
+│  │  (conscient du cache)         (fallback autonome)   │    │
 │  │                                                     │    │
 │  │  ──── SUGGESTION_PROMPT ────                        │    │
-│  │  ──── 12 filter rules ──────                        │    │
+│  │  ──── 12 règles de filtrage ────                    │    │
 │  │  ──── getFilterReason() ────                        │    │
 │  └────────────────────┬────────────────────────────────┘    │
 │                       │                                     │
 │                       ▼                                     │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  FollowupController (framework-agnostic)            │    │
-│  │  300ms delay → show as ghost text                   │    │
+│  │  FollowupController (indépendant du framework)       │    │
+│  │  Délai de 300 ms → affichage en texte fantôme       │    │
 │  │                                                     │    │
-│  │  Tab    → accept (fill input)                       │    │
-│  │  Enter  → accept + submit                           │    │
-│  │  Right  → accept (fill input)                       │    │
-│  │  Type   → dismiss + abort speculation               │    │
+│  │  Tab    → accepter (remplit la saisie)              │    │
+│  │  Entrée → accepter + soumettre                      │    │
+│  │  Droite → accepter (remplit la saisie)              │    │
+│  │  Saisie → rejeter + abandonner la spéculation       │    │
 │  └─────────────────────────────────────────────────────┘    │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  Telemetry (PromptSuggestionEvent)                  │    │
+│  │  Télémétrie (PromptSuggestionEvent)                 │    │
 │  │  outcome, accept_method, timing, similarity,        │    │
 │  │  keystroke, focus, suppression reason, prompt_id     │    │
 │  └─────────────────────────────────────────────────────┘    │
@@ -87,52 +87,52 @@ Reply with ONLY the suggestion, no quotes or explanation.
 
 ### Règles de filtrage (12)
 
-| Règle              | Exemple bloqué                                   |
-| ------------------ | ------------------------------------------------ |
-| done               | "done"                                           |
-| meta_text          | "nothing found", "no suggestion", "silence"      |
-| meta_wrapped       | "(silence)", "[no suggestion]"                   |
-| error_message      | "api error: 500"                                 |
-| prefixed_label     | "Suggestion: commit"                             |
-| too_few_words      | "hmm" (mais autorise "yes", "commit", "push", etc.)  |
-| too_many_words     | > 12 mots                                        |
-| too_long           | >= 100 caractères                                |
-| multiple_sentences | "Run tests. Then commit."                        |
-| has_formatting     | sauts de ligne, gras markdown                    |
-| evaluative         | "looks good", "thanks" (avec des limites de mots \b) |
-| ai_voice           | "Let me...", "I'll...", "Here's..."              |
+| Règle               | Exemple bloqué                                    |
+| ------------------- | ------------------------------------------------- |
+| done                | « fait »                                          |
+| meta_text           | « rien trouvé », « pas de suggestion », « silence » |
+| meta_wrapped        | « (silence) », « [pas de suggestion] »            |
+| error_message       | « erreur api : 500 »                               |
+| prefixed_label      | « Suggestion : commit »                           |
+| too_few_words       | « hmm » (mais autorise « oui », « commit », « push », etc.) |
+| too_many_words      | > 12 mots                                          |
+| too_long            | >= 100 caractères                                  |
+| multiple_sentences  | « Exécute les tests. Ensuite, commit. »            |
+| has_formatting      | sauts de ligne, gras Markdown                     |
+| evaluative          | « semble bon », « merci » (avec limites de mot \b) |
+| ai_voice            | « Laissez-moi… », « Je vais… », « Voici… »        |
 
 ### Conditions de garde
 
-**AppContainer useEffect (13 vérifications dans le code) :**
+**useEffect d’AppContainer (13 vérifications dans le code) :**
 
-| Condition de garde     | Vérification                                          |
-| ---------------------- | ----------------------------------------------------- |
-| Paramètre activé/désactivé | `enableFollowupSuggestions`                         |
-| Mode non interactif    | `config.isInteractive()`                              |
-| Mode SDK               | `!config.getSdkMode()`                                |
-| Transition de streaming| `Responding → Idle` (2 vérifications)                 |
-| Erreur API (historique)| `historyManager.history[last]?.type !== 'error'`      |
-| Erreur API (en attente)| `!pendingGeminiHistoryItems.some(type === 'error')`   |
-| Boîtes de dialogue de confirmation | shell + general + détection de boucle (3 vérifications) |
-| Boîte de dialogue d'autorisation | `isPermissionsDialogOpen`                       |
-| Élicitation            | `settingInputRequests.length === 0`                   |
-| Mode plan              | `ApprovalMode.PLAN`                                   |
+| Garde                    | Vérification                                          |
+| ----------------------- | ----------------------------------------------------- |
+| Activation réglage      | `enableFollowupSuggestions`                           |
+| Non interactif          | `config.isInteractive()`                              |
+| Mode SDK                | `!config.getSdkMode()`                                |
+| Transition streaming    | `Répondre → Inactif` (2 vérifications)                |
+| Erreur API (historique) | `historyManager.history[last]?.type !== 'error'`      |
+| Erreur API (en attente) | `!pendingGeminiHistoryItems.some(type === 'error')`   |
+| Boîtes de dialogue de confirmation | shell + général + détection de boucle (3 vérifications) |
+| Dialogue d’autorisation | `isPermissionsDialogOpen`                             |
+| Élicitation             | `settingInputRequests.length === 0`                   |
+| Mode plan               | `ApprovalMode.PLAN`                                   |
 
-**Dans `generatePromptSuggestion()` :**
+**Dans generatePromptSuggestion() :**
 
-| Condition de garde     | Vérification     |
-| ---------------------- | ---------------- |
-| Début de conversation  | `modelTurns < 2` |
+| Garde                     | Vérification       |
+| ------------------------- | ----------------- |
+| Début de conversation     | `modelTurns < 2`  |
 
-**Flags de fonctionnalités séparés (hors bloc de garde) :**
+**Indicateurs de fonctionnalité distincts (pas dans le bloc de garde) :**
 
-| Flag                   | Contrôle                                                        |
-| ---------------------- | --------------------------------------------------------------- |
-| `enableCacheSharing`   | Utiliser la requête forkée ou le fallback vers generateJson     |
-| `enableSpeculation`    | Démarrer la spéculation lors de l'affichage de la suggestion    |
+| Indicateur              | Contrôle                                                    |
+| ----------------------- | ----------------------------------------------------------- |
+| `enableCacheSharing`    | Utiliser une requête forkée ou recourir à generateJson      |
+| `enableSpeculation`     | Démarrer la spéculation à l’affichage de la suggestion      |
 
-## Gestion de l'état
+## Gestion d’état
 
 ### FollowupState
 
@@ -140,81 +140,81 @@ Reply with ONLY the suggestion, no quotes or explanation.
 interface FollowupState {
   suggestion: string | null;
   isVisible: boolean;
-  shownAt: number; // timestamp for telemetry
+  shownAt: number; // timestamp pour la télémétrie
 }
 ```
 
 ### FollowupController
 
-Contrôleur agnostique au framework partagé par la CLI (Ink) et la WebUI (React) :
+Contrôleur indépendant du framework, partagé entre le CLI (Ink) et la WebUI (React) :
 
-- `setSuggestion(text)` — affichage retardé de 300 ms, `null` efface immédiatement
-- `accept(method)` — efface l'état, déclenche `onAccept` via une microtask, verrou debounce de 100 ms
-- `dismiss()` — efface l'état, enregistre la télémétrie `ignored`
-- `clear()` — réinitialisation complète de l'état et des timers
+- `setSuggestion(text)` — affichage différé de 300 ms, null efface immédiatement
+- `accept(method)` — efface l’état, déclenche `onAccept` via microtask, verrou anti-rebond de 100 ms
+- `dismiss()` — efface l’état, enregistre une télémétrie `ignored`
+- `clear()` — réinitialisation complète de tout état + temporisateurs
 - `Object.freeze(INITIAL_FOLLOWUP_STATE)` empêche toute mutation accidentelle
 
 ## Interaction clavier
 
-| Touche      | CLI                         | WebUI                                |
-| ----------- | --------------------------- | ------------------------------------ |
-| Tab         | Remplit le champ (sans soumettre)      | Remplit le champ (sans soumettre)               |
-| Entrée      | Remplit + soumet            | Remplit + soumet (paramètre `explicitText`) |
-| Flèche droite | Remplit le champ (sans soumettre)    | Remplit le champ (sans soumettre)               |
-| Saisie      | Rejette + annule la spéculation | Rejette                              |
-| Coller      | Rejette + annule la spéculation | Rejette                              |
+| Touche        | CLI                          | WebUI                                |
+| ------------- | ---------------------------- | ------------------------------------ |
+| Tab           | Remplit la saisie (sans envoi) | Remplit la saisie (sans envoi)      |
+| Entrée        | Remplit + envoie             | Remplit + envoie (paramètre `explicitText`) |
+| Flèche droite | Remplit la saisie (sans envoi) | Remplit la saisie (sans envoi)      |
+| Saisie        | Rejette + abandonne la spéculation | Rejette                             |
+| Coller        | Rejette + abandonne la spéculation | Rejette                             |
 
-### Note sur les raccourcis clavier
+### Note sur la liaison des touches
 
-Le gestionnaire Tab utilise explicitement `key.name === 'tab'` (et non le matcher `ACCEPT_SUGGESTION`) car `ACCEPT_SUGGESTION` correspond aussi à Entrée, qui doit être propagée au gestionnaire SUBMIT.
+Le gestionnaire Tab utilise explicitement `key.name === 'tab'` (pas le sélecteur `ACCEPT_SUGGESTION`) car `ACCEPT_SUGGESTION` correspond aussi à Entrée, qui doit être transmis au gestionnaire SOUMETTRE.
 
 ## Télémétrie
 
 ### PromptSuggestionEvent
 
-| Champ                      | Type                        | Description                         |
-| -------------------------- | --------------------------- | ----------------------------------- |
-| outcome                    | accepted/ignored/suppressed | Résultat final                      |
-| prompt_id                  | string                      | Par défaut : 'user_intent'          |
-| accept_method              | tab/enter/right             | Méthode d'acceptation par l'utilisateur |
-| time_to_accept_ms          | number                      | Délai entre l'affichage et l'acceptation |
-| time_to_ignore_ms          | number                      | Délai entre l'affichage et le rejet |
-| time_to_first_keystroke_ms | number                      | Délai jusqu'à la première frappe pendant l'affichage |
-| suggestion_length          | number                      | Nombre de caractères                |
-| similarity                 | number                      | 1.0 pour accept, 0.0 pour ignore    |
-| was_focused_when_shown     | boolean                     | Le terminal avait le focus          |
-| reason                     | string                      | Pour suppressed : nom de la règle de filtrage |
+| Champ                       | Type                        | Description                            |
+| --------------------------- | --------------------------- | -------------------------------------- |
+| outcome                     | accepted / ignored / suppressed | Résultat final                       |
+| prompt_id                   | string                      | Par défaut : 'user_intent'             |
+| accept_method               | tab / enter / right         | Comment l’utilisateur a accepté        |
+| time_to_accept_ms           | number                      | Temps entre l’affichage et l’acceptation |
+| time_to_ignore_ms           | number                      | Temps entre l’affichage et le rejet    |
+| time_to_first_keystroke_ms  | number                      | Temps avant la première frappe pendant l’affichage |
+| suggestion_length           | number                      | Nombre de caractères                   |
+| similarity                  | number                      | 1.0 pour acceptation, 0.0 pour rejet   |
+| was_focused_when_shown      | boolean                     | Le terminal avait le focus             |
+| reason                      | string                      | Pour suppressed : nom de la règle de filtrage |
 
 ### SpeculationEvent
 
-| Champ                    | Type                    | Description               |
-| ------------------------ | ----------------------- | ------------------------- |
-| outcome                  | accepted/aborted/failed | Résultat de la spéculation |
-| turns_used               | number                  | Allers-retours API        |
-| files_written            | number                  | Fichiers dans l'overlay   |
-| tool_use_count           | number                  | Outils exécutés           |
-| duration_ms              | number                  | Temps réel (wall-clock)   |
-| boundary_type            | string                  | Ce qui a arrêté la spéculation |
-| had_pipelined_suggestion | boolean                 | Prochaine suggestion générée |
+| Champ                      | Type                    | Description                     |
+| -------------------------- | ----------------------- | ------------------------------- |
+| outcome                    | accepted / aborted / failed | Résultat de la spéculation   |
+| turns_used                 | number                  | Allers-retours API              |
+| files_written              | number                  | Fichiers dans le calque         |
+| tool_use_count             | number                  | Outils exécutés                 |
+| duration_ms                | number                  | Temps réel écoulé               |
+| boundary_type              | string                  | Ce qui a arrêté la spéculation  |
+| had_pipelined_suggestion   | boolean                 | Suggestion suivante générée     |
 
-## Flags de fonctionnalités et paramètres
+## Indicateurs de fonctionnalité et réglages
 
-| Paramètre                     | Type    | Par défaut | Description                                                                      |
-| --------------------------- | ------- | ------- | -------------------------------------------------------------------------------- |
-| `enableFollowupSuggestions` | boolean | true    | Interrupteur principal pour les suggestions de prompt                            |
-| `enableCacheSharing`        | boolean | true    | Utiliser les requêtes forkées avec prise en compte du cache                      |
-| `enableSpeculation`         | boolean | false   | Moteur d'exécution prédictive                                                    |
-| `fastModel` (niveau supérieur)     | string  | ""      | Modèle pour toutes les tâches en arrière-plan (vide = utiliser le modèle principal). Défini via `/model --fast` |
+| Réglage                      | Type    | Défaut | Description                                                |
+| ---------------------------- | ------- | ------ | ---------------------------------------------------------- |
+| `enableFollowupSuggestions`  | boolean | true   | Interrupteur principal pour les suggestions de prompt      |
+| `enableCacheSharing`         | boolean | true   | Utiliser des requêtes forkées conscientes du cache         |
+| `enableSpeculation`          | boolean | false  | Moteur d’exécution prédictive                              |
+| `fastModel` (niveau supérieur) | string | ""     | Modèle pour toutes les tâches en arrière‑plan (vide = modèle principal). Défini via `/model --fast` |
 
-### Filtrage des ID de prompt internes
+### Filtrage interne par ID de prompt
 
-Les opérations en arrière-plan utilisent des ID de prompt dédiés (`INTERNAL_PROMPT_IDS` dans `utils/internalPromptIds.ts`) pour empêcher leur trafic API et leurs appels d'outils d'apparaître dans l'interface visible par l'utilisateur :
+Les opérations en arrière‑plan utilisent des ID de prompt dédiés (`INTERNAL_PROMPT_IDS` dans `utils/internalPromptIds.ts`) pour éviter que leur trafic API et leurs appels d’outils n’apparaissent dans l’interface utilisateur visible :
 
-| Prompt ID           | Utilisé par                    |
-| ------------------- | -------------------------- |
-| `prompt_suggestion` | Génération de suggestion      |
-| `forked_query`      | Requêtes forkées avec prise en compte du cache |
-| `speculation`       | Moteur de spéculation         |
+| ID de prompt    | Utilisé par                        |
+| --------------- | ---------------------------------- |
+| `prompt_suggestion` | Génération de la suggestion       |
+| `forked_query`  | Requêtes forkées conscientes du cache |
+| `speculation`   | Moteur de spéculation             |
 
 **Filtrage appliqué :**
 
@@ -223,15 +223,15 @@ Les opérations en arrière-plan utilisent des ID de prompt dédiés (`INTERNAL_
 - `logToolCall` — ignore `chatRecordingService.recordUiTelemetryEvent`
 - `uiTelemetryService.addEvent` — **non filtré** (garantit le suivi des tokens `/stats`)
 
-### Mode Thinking
+### Mode réflexion
 
-La réflexion/le raisonnement est explicitement désactivé (`thinkingConfig: { includeThoughts: false }`) pour tous les chemins de tâches en arrière-plan :
+La réflexion/le raisonnement est explicitement désactivé (`thinkingConfig: { includeThoughts: false }`) pour tous les chemins de tâches en arrière‑plan :
 
 - **Chemin de requête forkée** (`createForkedChat`) — remplace `thinkingConfig` dans le `generationConfig` cloné, couvrant à la fois la génération de suggestion et la spéculation
-- **Chemin de fallback BaseLlm** (`generateViaBaseLlm`) — la configuration par requête remplace les paramètres de réflexion du générateur de contenu de base
+- **Chemin de repli BaseLlm** (`generateViaBaseLlm`) — la configuration par requête remplace les réglages de réflexion du générateur de contenu de base
 
-Cela est sûr car :
+Ceci est sûr car :
 
-- Le préfixe de cache est déterminé par systemInstruction + tools + history, et non par `thinkingConfig` — les hits de cache ne sont pas affectés
-- Tous les backends (Gemini, compatible OpenAI, Anthropic) gèrent `includeThoughts: false` en omettant le champ de réflexion — aucune erreur API sur les modèles sans support de réflexion
-- La génération de suggestion et la spéculation ne tirent aucun avantage des tokens de raisonnement
+- Le préfixe de cache est déterminé par systemInstruction + outils + historique, pas par `thinkingConfig` — les hits de cache ne sont pas affectés
+- Tous les backends (Gemini, compatible OpenAI, Anthropic) gèrent `includeThoughts: false` en omettant le champ de réflexion — pas d’erreur API sur les modèles sans support de réflexion
+- La génération de suggestion et la spéculation ne bénéficient pas des tokens de raisonnement

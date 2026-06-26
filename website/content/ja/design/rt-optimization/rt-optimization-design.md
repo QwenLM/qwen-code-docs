@@ -1,80 +1,80 @@
-# Qwen Code Agent Loop RT 最適化技術設計書
+# Qwen Code Agent Loop RT 最適化技術案
 
 ## 1. 背景と問題定義
 
 ### 1.1 現状
 
-Qwen Code の Agent Loop は厳密な直列モデルで動作している：
+Qwen Code の Agent Loop は厳密な直列モデルである：
 
 ```
-User Prompt → [LLM 決定] → Tool Execution → [LLM 決定] → Tool Execution → ... → [LLM 返答] → Idle
+User Prompt → [LLM 決定] → Tool Execution → [LLM 決定] → Tool Execution → ... → [LLM 応答] → Idle
                ~3-4s          ~Xms-Ns          ~3-4s          ~Xms-Ns            ~3-4s
 ```
 
-1 回の LLM 呼び出し（ネットワーク RTT＋モデル推論を含む）は約 3〜4 秒であり、エンドツーエンド RT のほとんどを占める。
+毎回の LLM 呼び出し（ネットワーク RTT ＋モデル推論）には約 3～4 秒かかり、エンドツーエンド RT の主要なコストとなっている。
 
 ### 1.2 実測データ
 
-テストシナリオ：「私のワークスペース一覧を教えて」（agent loop 3 ラウンド、ツール呼び出し 2 回、シングルサンプル）
+テストシナリオ：「自分のワークスペースは？」（3 ラウンドの agent loop、2 回のツール呼び出し、単一サンプル）
 
-| フェーズ                              | 所要時間  | 割合 |
-| ------------------------------------- | --------- | ---- |
-| LLM Round 1（skill 呼び出しを決定）  | 3.8s      | 28%  |
-| Skill 実行                            | 1ms       | <1%  |
-| LLM Round 2（shell 呼び出しを決定）  | 3.0s      | 22%  |
-| Shell 実行                            | 2.5s      | 19%  |
-| LLM Round 3（テキスト要約）          | 3.8s      | 28%  |
-| フレームワークオーバーヘッド（状態同期・レンダリング） | 0.3s | 3% |
-| **合計**                              | **13.4s** | 100% |
+| フェーズ                    | 所要時間   | 割合 |
+| --------------------------- | ---------- | ---- |
+| LLM Round 1（skill 呼び出し決定） | 3.8s      | 28%  |
+| Skill 実行                  | 1ms       | <1%  |
+| LLM Round 2（shell 呼び出し決定） | 3.0s      | 22%  |
+| Shell 実行                  | 2.5s      | 19%  |
+| LLM Round 3（テキスト要約）     | 3.8s      | 28%  |
+| フレームワークオーバーヘッド（状態同期、レンダリング） | 0.3s      | 3%   |
+| **合計**                    | **13.4s** | 100% |
 
-**結論**：LLM 呼び出しが 78%、ツール実行が 19%、フレームワークが 3%。最適化の核心は **LLM 呼び出し回数の削減** と **単回 LLM 呼び出しレイテンシの低減** にある。
+**結論**：LLM 呼び出しが 78%、ツール実行が 19%、フレームワークが 3% を占める。最適化の核心は **LLM 呼び出し回数の削減** と **1 回あたりの LLM 呼び出しレイテンシの低減** である。
 
-> 注：シングルサンプル・単一シナリオのデータ。19% のツール実行は shell の低速呼び出しが支配的であり、読み取り主体のシナリオではツール実行は <5% まで低下する可能性がある。方式導入前に ≥3 種のシナリオ（書き込み操作、複数ツールをまたぐ推論、エラー回復）のベースラインを取得する必要がある。
+> 注：単一サンプル、単一シナリオ。19% のツール実行は shell の遅い呼び出しが支配的であり、read-heavy シナリオではツール実行は 5% 未満に低下する可能性がある。本方式の導入前に、3 種類以上のシナリオ（書き込み操作、ツール間推論、エラーリカバリ）のベースラインを補完する必要がある。
 
-### 1.3 現アーキテクチャの主要制約
+### 1.3 現在のアーキテクチャにおける主要な制約
 
-| 制約                    | コード位置                                                                                  | 説明                                                                             |
-| ----------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| ツール結果に後置制御なし | `tools.ts` `ToolResult` インターフェース (L422)                                             | `llmContent`/`returnDisplay`/`error` のみで「LLM をスキップ」を表現できない       |
-| 結果は無条件 LLM に返送  | `useGeminiStream.ts` `handleCompletedTools` (L2038) → `submitQuery(ToolResult, …)` (L2355) | gemini が起動したすべてのツール結果が返送される                                  |
-| stream 完了後にスケジュール | `useGeminiStream.ts` `processGeminiStreamEvents` (L1365)                                 | stream ループ終了後に `scheduleToolCalls`、インクリメンタルスケジューリングなし  |
-| モデル選択に戦略レイヤなし | `client.ts` `modelOverride ?? getModel()` (L1305, L1598)                                  | インフラは `turn.run(model, …)` (L1707) まで貫通しているが、呼び出し側は skill が明示した場合のみ使用 |
+| 制約                      | コード位置                                                                                | 説明                                                                               |
+| ------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| ツール結果に後続制御がない  | `tools.ts` `ToolResult` インターフェース (L422)                                            | `llmContent`/`returnDisplay`/`error` のみで、"LLM をスキップ" を表現できない        |
+| 結果が無条件に LLM に戻される | `useGeminiStream.ts` `handleCompletedTools` (L2038) → `submitQuery(ToolResult, …)` (L2355) | gemini-initiated なツール結果はすべて LLM に戻される                                    |
+| Stream 完了後にのみスケジュール | `useGeminiStream.ts` `processGeminiStreamEvents` (L1365)                                   | stream ループ終了後に `scheduleToolCalls` が実行され、増分スケジューリングはない              |
+| モデル層の選択に戦略層がない  | `client.ts` `modelOverride ?? getModel()` (L1305, L1598)                                   | インフラは `turn.run(model, …)` (L1707) まで貫通しているが、呼び出し側は skill が明示的に指定した場合のみ使用 |
 
-### 1.4 既存インフラ（本設計で多用）
+### 1.4 既に整備済みのインフラ（本方式で広く再利用）
 
-| 機能                                          | 位置                                                   | 状態                                                                   |
-| --------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------- |
-| `fastModel` 設定 + `/model --fast <id>`        | `config.ts:684`, `1987`, `2021`                        | 利用可能                                                               |
-| `SendMessageOptions.modelOverride`             | `client.ts:142` → `1598` → `turn.run`                  | `geminiChat.sendMessageStream(model, …)` まで貫通                      |
-| フックレイヤ `modelOverrideRef`（skill のモデル選択を保持） | `useGeminiStream.ts:376`, `2225`, `1841`   | 貫通済み                                                               |
-| fast-model **非ストリーミング** サイドクエリの先例 | `services/toolUseSummary.ts:108`（`runSideQuery` 経由） | 本番稼働中、fast モデル設定の健全性を証明；ただし**非ストリーミングパス** |
-| fast-model **ストリーミング**の先例            | `followup/speculation.ts:224`                          | 本番稼働中、ただし **forked chat**（`createForkedChat`）を使用し、メイン chat とは分離 |
+| 能力                                           | 位置                                                   | 現状                                                                   |
+| ---------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `fastModel` 設定 + `/model --fast <id>`        | `config.ts:684`, `1987`, `2021`                        | 準備完了                                                               |
+| `SendMessageOptions.modelOverride`             | `client.ts:142` → `1598` → `turn.run`                  | エンドツーエンドで `geminiChat.sendMessageStream(model, …)` まで貫通    |
+| フック層 `modelOverrideRef`（skill のモデル選択を保持） | `useGeminiStream.ts:376`, `2225`, `1841`               | 貫通済み                                                               |
+| fast-model **非ストリーミング** side query の先行例 | `services/toolUseSummary.ts:108`（via `runSideQuery`） | 本番投入済み、fast モデル設定の健全性を証明；ただし**非ストリーミングパス** |
+| fast-model **ストリーミング** 先行例           | `followup/speculation.ts:224`                          | 本番投入済み、ただし**forked chat**（`createForkedChat`）を使用し、メインチャットとは分離 |
 
-**重要なギャップ**：**本番コードには存在しない**、メイン chat 上で fast model を使ったストリーミングの事例。本設計の D2 が初のケースとなり、事前に検証実験が必要（詳細は §3.2 前提条件参照）。
+**主要なギャップ**：**メインチャット上で fast model を使ってストリーミングを実行する本番コードは存在しない**。本方式の D2 が最初のケースとなるため、事前に検証実験を行う必要がある（詳細は §3.2 前提条件を参照）。
 
 ---
 
 ## 2. 設計原則
 
-1. **汎用性**：特定の tool/skill に依存しない
-2. **後方互換性**：既存ツールは変更なしで引き続き動作する
-3. **漸進的＋明示的シグナル**：デフォルトは conservative。ツール作者が明示的なフィールドで opt-in する
-4. **ロールバック可能**：すべての最適化は feature flag で制御。ユーザーレベルで強制無効化できる
-5. **誠実なトレードオフ**：品質リスク、コストリスク、適用範囲を明確に示す
+1. **汎用性**：方式は特定の tool/skill に依存しない
+2. **後方互換性**：既存のツールは修正なしで引き続き動作する
+3. **段階的導入 + 明示的なシグナル**：戦略はデフォルトで conservative であり、ツール作成者が明示的なフィールドで opt-in する
+4. **ロールバック可能**：すべての最適化は feature flag で制御可能；ユーザーレベルで強制無効化できる
+5. **正直なトレードオフ**：品質リスク、コストリスク、適用範囲を明示的に示す
 
 ---
 
 ## 3. 最適化方式
 
-### 3.1 方向 1：ツール後置実行ディレクティブ（ToolResult Post-Execution Directive）
+### 3.1 方向性一：ツール後続実行指示（ToolResult Post-Execution Directive）
 
-#### 問題
+#### 問題点
 
-現在の `ToolResult` には「次に何をすべきか」の情報が含まれていない。ツール結果が自己説明的であるかに関わらず、無条件に 1 ラウンドの LLM が起動される。
+現在の `ToolResult` は「次に何をすべきか」に関する情報を一切含まない。ツール結果が自己説明的かどうかに関わらず、無条件に LLM ラウンドがトリガーされる。
 
 #### 設計
 
-`ToolResult` インターフェースを拡張する（`packages/core/src/tools/tools.ts` L422）：
+`ToolResult` インターフェースを拡張（`packages/core/src/tools/tools.ts` L422）：
 
 ```typescript
 export interface ToolResult {
@@ -82,128 +82,129 @@ export interface ToolResult {
   returnDisplay: ToolResultDisplay;
   error?: { message: string; type?: ToolErrorType };
 
-  // 新規追加：後置実行ディレクティブ
+  // 新規追加：後続実行指示
   postExecution?: {
     /**
-     * ツール結果を LLM に返送せず、最終返答としてユーザーに直接表示する。
-     * 結果が完全に自包含で、モデルによる再解釈が不要なシナリオに適用。
+     * ツール結果を LLM に戻さず、最終応答としてユーザーに直接表示する。
+     * 結果が完全に自己完結しており、モデルによる再解釈が不要な場合に使用する。
      * ToolResult のローカルプロパティ。
      */
     skipLlmRound?: boolean;
 
     /**
-     * ツール結果が「自包含かつユーザーに直接表示可能」——つまり `returnDisplay` が
-     * ユーザーの期待する最終形であり、モデルによる処理が不要。
-     * ToolResult のローカルプロパティ。「次ラウンドが summary かどうか」は予測しない。
-     * 方向 3（表示解耦）と連動：true → Summarizing 状態に遷移してユーザー入力を許可。
+     * ツール結果が「自己完結しており、ユーザーに直接表示可能」——つまり
+     * `returnDisplay` が既にユーザーが期待する最終形態であり、
+     * モデルによる加工が不要であることを示す。
+     * ToolResult のローカルプロパティであり、「次のラウンドが要約かどうか」を**予測しない**。
+     * 方向性三（表示の分離）と連携：true → Summarizing 状態に入り、ユーザー入力を受け付ける。
      */
     resultIsTerminal?: boolean;
   };
 }
 ```
 
-> **設計修正**：初期バージョンでは単一の `selfExplanatory` フィールドが「ツール成果物の属性」と「会話フロー予測シグナル」の 2 つの役割を兼ねていたが、両者は一致しない（例：ユーザーの prompt が「X を読んで Y を修正して」の場合、read_file の出力は自包含だが次のラウンドは明らかに summary ではない）。**予測シグナルは会話フロー全体のグローバル属性**であり、ツールフィールドで表現すべきでない——D2 では会話フロー起因のヒューリスティックのみを使用する（§3.2 参照）。
+> **設計修正**：初期バージョンでは単一の `selfExplanatory` フィールドに「ツール成果物の属性」と「対話フローの予測シグナル」の二つの役割を持たせていたが、これらは必ずしも一致しない（例：ユーザープロンプトが「X を読んで Y を修正して」の場合、read_file の出力は自己完結しているが、次のラウンドが要約であることは明らかにない）。**予測シグナルは対話フローのグローバル属性**であり、ツールフィールドで表現すべきではない——D2 では完全に対話フローのヒューリスティックを使用する（§3.2 参照）。
 
 #### 動作変更
 
-`handleCompletedTools` に新たな判定を追加：
+`handleCompletedTools` に新しい判定を追加：
 
 ```
 ツールバッチ完了
-  → バッチ内のすべてのツールの postExecution.skipLlmRound を確認
-  → すべて true の場合?
-    → YES: markToolsAsSubmitted、submitQuery を呼ばず直接 idle
-    → NO: 既存の動作を維持（submitQuery）
+  → バッチ内のすべてのツールの postExecution.skipLlmRound をチェック
+  → すべて true か？
+    → YES: markToolsAsSubmitted を実行、submitQuery を呼ばずに直接 idle に遷移
+    → NO: 既存の動作を維持 (submitQuery)
 ```
 
-**重要な制約**：`skipLlmRound` は**現在のバッチのすべてのツールが skip を宣言**した場合のみ有効。混在バッチは引き続き返送される。
+**重要な制約**：`skipLlmRound` は**現在のバッチのすべてのツールが skip を宣言した場合にのみ**有効になる。混合バッチでは引き続き LLM に戻される。
 
-#### 履歴不変条件
+#### 歴史的不変条件
 
-LLM をスキップした後の履歴の形式：`user → function_call → function_response → <assistant なし>`。
+LLM スキップ後の履歴は次のようになる：`user → function_call → function_response → <assistant なし>`
 
-- `repairOrphanedToolUseTurnsInHistory`（セッション読み込み時に呼ばれる）がこの形式を許容するか検証
-- assistant テキストがない場合の auto-compaction の動作を検証
-- PR #4176 が tool_use↔tool_result 不変条件を直近でクローズしたため、「skip 後の次ラウンド user message」の alternation をカバーする単体テストを導入前に追加する必要がある
-- Qwen / OpenAI スタイルの API は許容；Anthropic は厳密な alternation を要求——将来 Anthropic に直接接続する場合はフォールバックが必要（history に空の assistant text を注入）
+- `repairOrphanedToolUseTurnsInHistory`（session-load 時に呼び出される）がこの形式を許容するか確認する
+- auto-compaction が assistant テキストがない場合の動作を確認する
+- PR #4176 で tool_use↔tool_result の不変条件が修正されたばかりなので、導入前に「skip 後の次の user message」での alternation をカバーする単体テストを追加する
+- Qwen / OpenAI スタイルの API は許容する；Anthropic は厳密な alternation を要求する —— 今後 Anthropic 直接接続をサポートする場合はフォールバックが必要（履歴に空の assistant テキストを注入する）
 
-> **統一修正ポイント**：ここと §3.3（D3 での Summarizing 中断）が破壊するのは**同じ履歴不変条件**。修正方法は 2 択（空 assistant 注入 / Qwen 許容を受け入れる）のいずれか——両方向で同じ選択を使う必要がある。
+> **統一修正ポイント**：ここおよび §3.3（D3 の中途中断 Summarizing）は**同じ歴史的不変条件を破壊する**。修正方法は二択（空の assistant を注入する / Qwen の許容に依存する）であり、両方の方向で同じ選択を使用する必要がある。
 
 #### シグナルエコシステム（Phase 2 の作業）
 
-| ツール                                | `skipLlmRound`           | `resultIsTerminal`      | 備考                                                            |
-| ------------------------------------- | ------------------------ | ----------------------- | --------------------------------------------------------------- |
-| `read_file`                           | クエリのみのシナリオと連動 | true                   | ファイル内容が回答そのもの                                       |
-| `cat`（shell 経由）                   | シナリオによる           | true                    | read_file と同様                                                |
-| `grep` / `glob` / `ls`                | false                    | **false（デフォルト）** | 結果をモデルが選別・並べ替え・要約する必要がある。skill レイヤが「純粋なクエリ」と判明している場合のみ明示的に true |
-| `git status` / `git log`（shell 経由） | false                   | true                    | 出力はすでにフォーマット済み                                     |
-| Skill ツール                          | 各 skill が判断          | 各 skill が判断         | クエリ系 skill は true 寄り                                     |
-| MCP ツール                            | デフォルト false         | デフォルト false        | allowlist で明示的に opt-in                                     |
+| ツール                                | `skipLlmRound`       | `resultIsTerminal` | 備考                                                            |
+| ------------------------------------- | -------------------- | ------------------ | --------------------------------------------------------------- |
+| `read_file`                           | query-only シナリオと連携 | true               | ファイル内容がそのまま回答                                      |
+| `cat`（shell 経由）                   | シナリオ次第            | true               | read_file と同じ                                                |
+| `grep` / `glob` / `ls`                | false                | **false（デフォルト）** | 結果はモデルによる選択/並べ替え/要約が必要なことが多い；skill 層が「純粋なクエリ」シナリオだとわかっている場合に明示的に true |
+| `git status` / `git log`（shell 経由） | false                | true               | 出力は既にフォーマット済み                                      |
+| Skill ツール                          | 各 skill が判断        | 各 skill が判断     | クエリ系 skill は true になる傾向あり                                |
+| MCP ツール                            | デフォルト false       | デフォルト false    | allowlist によって明示的に opt-in                               |
 
-サードパーティ/MCP ツールは信頼できないためデフォルトでは付与しない。`config.toolPostExecAllowlist` で明示的に有効化する。
+サードパーティ / MCP ツールは信頼できないため、デフォルトではマークしない；`config.toolPostExecAllowlist` で明示的に有効化する。
 
-> `grep/glob/ls` のデフォルト false は厳格な選択：モデルによる要約・並べ替えが必要なシナリオで D2/D3 が誤判定しないようにするため。
+> `grep/glob/ls` がデフォルト false なのは慎重な選択：モデルによる要約/並べ替えが必要なシナリオで D2/D3 が誤判定するのを防ぐため。
 
-#### 適用範囲と非適用範囲
+#### 適用可能と適用不可
 
-- **適用**：終態クエリ（read/cat/print 系）、自包含な結果（skill がフォーマット済みで出力）
-- **非適用**：マルチステップタスクの中間ステップ、書き込み操作の確認、解釈が必要な複雑なログ
+- **適用可能**：終了状態のクエリ（read/cat/print タイプ）、自己完結した結果（skill が既にフォーマット済みの出力）
+- **適用不可**：複数ステップの中間ステップ、書き込み操作の確認、解釈が必要な複雑なログ
 
 #### リスクと緩和策
 
-| リスク                                          | 深刻度 | 緩和策                                           |
-| ----------------------------------------------- | ------ | ------------------------------------------------ |
-| ツールが skipLlmRound を誤設定してマルチステップタスクが中断 | 中 | バッチレベルのセマンティクス＋llmContent は履歴で回復可能 |
-| サードパーティツールの乱用                       | 中     | MCP はデフォルト無効、allowlist で明示的に有効化  |
-| 履歴不変条件の破壊                               | 中     | 導入前に単体テストを追加；セッション読み込みリプレイを検証 |
-| ユーザーの期待と不一致（要約を期待していたが存在しない） | 低 | setting `alwaysSummarize: true` でオーバーライド可能 |
+| リスク                                       | 深刻度 | 緩和策                                       |
+| -------------------------------------------- | ------ | -------------------------------------------- |
+| ツールが誤って skipLlmRound を設定し、マルチステップタスクが中断される | 中     | バッチレベルのセマンティクス ＋ llmContent は履歴に残り復元可能 |
+| サードパーティツールの悪用                   | 中     | MCP はデフォルトで無効、allowlist で明示的に有効化 |
+| 歴史的不変条件の破壊                         | 中     | 導入前に単体テストを追加；session-load リプレイでカバー |
+| ユーザーの期待との不一致（要約を期待したが得られない） | 低     | setting `alwaysSummarize: true` で上書き可能 |
 
-#### メリット
+#### 効果
 
-終態クエリシナリオで 3〜4 秒を節約（最後の LLM ラウンドをスキップ）。
+終了状態のクエリシナリオで 3～4 秒削減（最後の LLM ラウンドをスキップ）。
 
 ---
 
-### 3.2 方向 2：summary ラウンド fast-model ルーティング戦略
+### 3.2 方向性二：要約ラウンドにおける fast-model ルーティング戦略
 
-#### 位置付け
+#### 位置づけ
 
-**本方向では新たなパイプラインは導入せず、ランタイムでのモデル切り替えをサポートするために GeminiChat インターフェースを拡張する必要がある**。
+**本方向性は新しいパイプラインを導入せず、GeminiChat インターフェースを拡張してランタイムでのモデル切り替えを可能にする必要がある**。
 
-§1.4 のインフラは fast モデル設定と modelOverride のエンドツーエンド貫通を提供しているが、**メイン chat で fastModel＋ストリーミングを実行した先例はなく**、以下が必要：
+§1.4 のインフラは fast モデルの設定と modelOverride のエンドツーエンドでの貫通を提供しているが、**メインチャット上で fastModel ＋ストリーミングを実行する先例はなく**、以下が必要：
 
 - 決定関数：いつ `config.getFastModel()` を override として渡すか
-- 安全なフォールバック：`GeminiChat.retryStreamWithModel` 新インターフェース（chat の内部状態を処理）
-- 実験的検証：メイン chat でのモデル切り替えが compaction / history 記録を破壊しないことを確認
+- 安全なフォールバック：`GeminiChat.retryStreamWithModel` という新しいインターフェース（チャット内部状態を処理するため）
+- 実験による検証：メインチャットでの fast/primary 切り替えが compaction / history-recording を破壊しないこと
 
 #### 適用範囲
 
-D2 の適用対象：
+D2 は以下にのみ作用する：
 
-- **useGeminiStream**（TUI メインパス）—— `sendMessageStream` 呼び出し点 L1841
-- **ACP Session**（IDE 統合パス）—— `acp-integration/session/Session.ts:1182`、Phase 3 で同時改修
+- **useGeminiStream**（TUI メインパス）—— `sendMessageStream` 呼び出しポイント L1841
+- **ACP Session**（IDE 統合パス）—— `acp-integration/session/Session.ts:1182`、Phase 3 で同期改造
 
-D2 の**非適用対象**（非インタラクティブまたは独立したコンテキストで余分な障害モードを避けるため）：
+D2 は以下のパスには**作用しない**。非対話型または独立コンテキストで追加の障害モードを導入するのを避けるため：
 
-- **Subagent ランタイム**（`agents/runtime/agent-core.ts:614`）：子 agent は独立したモデル設定を持つ
-- **Cron トリガー turn**（`SendMessageType.Cron`, client.ts:127）：非インタラクティブ、RT の緊急性なし
+- **Subagent ランタイム**（`agents/runtime/agent-core.ts:614`）：子エージェントは独立したモデル設定を持っている
+- **Cron トリガー turn**（`SendMessageType.Cron`, client.ts:127）：非対話型、RT の緊急性なし
 - **Notification turn**（`SendMessageType.Notification`, client.ts:129）：同上
 
-#### コアとなる難点
+#### 核心的難しさ
 
-`submitQuery` の呼び出し時点では、**モデルが結果を見た後に新たなツールを呼び出すのか、テキストを直接出力するのかはわからない**。fast model で呼び出してモデルがさらにツールを呼び出す場合——その影響は**サイレント**となる：fast が誤ったツールや誤ったパラメータを呼び出す可能性があり、エラーは明らかなシグナルを発しない。
+`submitQuery` を呼び出す時点で、**モデルが結果を確認した後に新しいツールを呼び出すのか、それとも単にテキストを出力するのか、私たちは知ることができない**。もし fast モデルで呼び出して、モデルが実際にはツールを呼び出す必要がある場合、結果は**静かに**失敗する：fast モデルが誤ったツールや誤ったパラメータを呼び出す可能性があり、エラーは明確なシグナルとして現れない。
 
-**どんなツールレベルのフィールドも「次ラウンドが summary かどうか」を確実に予測できない**——なぜなら、それは会話フロー（user prompt＋累積コンテキスト）に依存し、ツール成果物のローカル属性ではないから。例：
+**ツールレベルのフィールドは「次のラウンドが要約かどうか」を確実に予測できない**。なぜならそれは対話フロー（ユーザープロンプト＋累積コンテキスト）に依存しており、ツール成果物のローカル属性ではないからである。例：
 
 ```
-ユーザー：「utils.ts を読んで、その中の console.log をすべて logger.info に変えて」
-  → Tool 1: read_file → 結果は自包含
-  → しかし次のラウンドは明らかに summary ではない
+ユーザー：「utils.ts を読んで、中の console.log をすべて logger.info に変更して」
+  → Tool 1: read_file → 結果は自己完結
+  → しかし次のラウンドが要約であることは明らかにない
 ```
 
-したがって D2 は**会話フローのヒューリスティック**のみで予測し、ツールフィールドには依存しない。
+したがって、D2 は**対話フローのヒューリスティック**のみを使用して予測し、ツールフィールドには依存しない。
 
-#### 決定関数：会話フローヒューリスティック＋拒否
+#### 決定関数：対話フローヒューリスティック ＋ 拒否
 
 ```typescript
 import { Kind, MUTATOR_KINDS } from '../tools/tools.js';
@@ -213,80 +214,80 @@ function selectContinuationTier(
   userPrompt: string,
   batch: ToolCall[],
 ): 'fast' | 'primary' {
-  // ===== ユーザーレベルの強制スイッチ（最高優先度） =====
+  // ===== ユーザーレベル強制スイッチ（最優先） =====
   const userPref = config.getSummaryTierStrategy();
   if (userPref === 'always_primary') return 'primary';
-  if (userPref === 'always_fast') return 'fast'; // ランタイム安全策の制約は引き続き適用
+  if (userPref === 'always_fast') return 'fast'; // それでもランタイム保険の制約を受ける
 
   // ===== ユーザー意図による拒否 =====
-  // 1. user prompt に動作動詞が含まれる → 次のラウンドはほぼツールを呼び出す
+  // 1. user prompt に動作動詞が含まれる → 次のラウンドはツール呼び出しの可能性が高い
   if (requestImpliesFurtherAction(userPrompt)) return 'primary';
 
-  // 2. 本ラウンドに mutator ツールが含まれる → 後続の読み取り/検証の可能性が高い
+  // 2. 現在のラウンドに mutator ツールが含まれる → 検証/読み取りの後続が可能性が高い
   if (batch.some((c) => MUTATOR_KINDS.includes(c.tool.kind))) return 'primary';
 
-  // 3. 本ラウンドまたは履歴に未解決のエラーがある → primary でモデルが診断する必要
+  // 3. 現在のラウンドまたは履歴に未解決のエラーがある → モデルは primary で診断する必要がある
   if (hasUnresolvedError(turn.toolResults, batch)) return 'primary';
 
   // ===== 出力複雑度による拒否 =====
-  // 4. user prompt が深い分析を要求（説明/比較/理由 など）
+  // 4. user prompt が深い分析を要求する（説明/比較/なぜ系）
   if (needsDeepReasoning(userPrompt)) return 'primary';
 
-  // 5. 3 つ以上の異なるツール呼び出し → 複数結果にまたがる叙述は primary が必要
+  // 5. ツール呼び出しが 3 つ以上の異なるツール → 結果間の叙述には primary が必要
   if (needsCrossResultReasoning(turn)) return 'primary';
 
-  // 6. ツール出力が長い → 長いコンテンツの要約は primary が必要
+  // 6. ツール出力が長すぎる → 長い内容の要約には primary が必要
   if (estimateTotalToolOutputTokens(turn) > 4000) return 'primary';
 
-  // ===== モデルフィージビリティによる拒否 =====
-  // 7. fast モデルのコンテキストウィンドウが不足 → fast に切ると compression がトリガーされる
-  //    （compression 自体が LLM 呼び出しを必要とし、RT とコストが悪化する）
+  // ===== モデル実現可能性による拒否 =====
+  // 7. fast モデルの context window が足りない → fast に切り替えると compression がトリガーされる
+  //    （compression 自体が LLM 呼び出しを必要とし、かえって遅くなりコストも増加する）
   if (wouldTriggerCompression(turn.history, config.getFastModel()))
     return 'primary';
 
   // ===== 多言語フォールバック =====
   if (!isPromptLanguageSupported(userPrompt)) return 'primary';
 
-  // ===== セッション状態フォールバック =====
+  // ===== Session 状態フォールバック =====
   if (turn.justCompacted || turn.justCleared) return 'primary';
 
   return 'fast';
 }
 ```
 
-8 つの拒否条件の意味：
+8 つの拒否項目の意味：
 
-- **`requestImpliesFurtherAction`**：動作動詞（`改|削|加|替換|修復|実装|新規作成|create|fix|change|add|remove|implement|write|update`）→ マルチステップタスク
-- **`MUTATOR_KINDS` ヒット**：本ラウンドで書き込みが発生 → 後続の読み取り/検証の可能性が高い。**`tools.ts:806` の既存の `MUTATOR_KINDS = [Edit, Delete, Move, Execute]` を再利用**（各 Tool インスタンスの `kind: Kind` 属性が権威的な分類。`isWriteTool` を再発明しないこと）
-- **`hasUnresolvedError(turnResults, currentBatch)`**：2 段階で判定——
-  - **現在のバッチにエラーがある → 常に未解決**（並列バッチが自己修正できると仮定しない）
-  - **履歴は `(toolName, args fingerprint)` で重複排除し、最後の結果がまだエラーなら未解決とみなす**（toolName のみでは同名で異なるパラメータの場合に誤判定）
-  - shell などは `ToolResult.error` を正しく設定する必要がある（データ品質の前提依存）
+- **`requestImpliesFurtherAction`**：動作動詞（`改|削除|追加|置換|修正|実装|新規作成|create|fix|change|add|remove|implement|write|update`）→ マルチステップタスク
+- **`MUTATOR_KINDS` に該当**：現在のラウンドで既に書き込みが行われた → 読み取り/検証が続く可能性が高い。**`tools.ts:806` の既存の `MUTATOR_KINDS = [Edit, Delete, Move, Execute]` を再利用する**（各 Tool インスタンスの `kind: Kind` プロパティが権威ある分類であり、`isWriteTool` を再発明しない）
+- **`hasUnresolvedError(turnResults, currentBatch)`**：二段階判定——
+  - **現在のバッチにエラーがある → 常に未解決**（並列バッチが自己修正できるとは仮定しない）
+  - **履歴は `(toolName, args fingerprint)` で重複除去、最後もエラーの場合は未解決とみなす**（toolName のみでは同名異パラメータで誤判定するため）
+  - shell などは `ToolResult.error` を正しく設定する必要がある（事前データ品質依存）
 - **`needsDeepReasoning`**：「分析/説明/なぜ/比較/診断」系のキーワードを含む
-- **`needsCrossResultReasoning`**：異なるツール呼び出しが ≥3（同じツール・同じパラメータは 1 回とカウント）
-- **出力トークン > 4000**：経験的閾値、**fast モデルのベースラインを実測した後に調整**
-- **`wouldTriggerCompression`**：fast モデルのコンテキストウィンドウは通常 primary より小さく、同じ history で fast の方が早く `tryCompress`（geminiChat.ts:1418）をトリガーする——compression 自体が 1 回の LLM 呼び出しを必要とし、**RT とコストが逆に悪化する可能性がある**。予算見積もり：`estimateHistoryTokens(history) > fastModelContextWindow × COMPACTION_THRESHOLD` ならトリガーされると判断
-- **未対応言語**：中国語と英語のキーワードのみ検出。その他の言語（日本語・韓国語など）はデフォルトで primary
-- **セッション状態の突変**：`/compact` または `/clear` 直後の最初の continuation → primary でメンタルモデルを再構築
+- **`needsCrossResultReasoning`**：異なるツール呼び出しが 3 以上（同じツール、同じパラメータは同一とみなす）
+- **出力トークン数 > 4000**：経験的な閾値であり、**fast モデルのベースライン実測後に調整する**
+- **`wouldTriggerCompression`**：fast モデルの context window は通常 primary より小さいため、同じ履歴では fast の方が早く `tryCompress`（geminiChat.ts:1418）をトリガーする可能性がある —— compression 自体に LLM 呼び出しが必要なため、**RT とコストを逆に悪化させる可能性がある**。予算見積もり：`estimateHistoryTokens(history) > fastModelContextWindow × COMPACTION_THRESHOLD` の場合、トリガーされるとみなす
+- **未サポート言語**：中国語と英語のキーワードのみを検出し、その他の言語（日本語、韓国語など）はデフォルトで primary
+- **session 状態の急変**：`/compact` または `/clear` 直後の最初の continuation → primary でメンタルモデルを再構築
 
-拒否の方向は **primary 寄り**（品質を落とすくらいなら 2 秒遅い方がよい）。
+拒否の方向性は**primary に偏っている**（2 秒多くかかっても品質を落とさない）。
 
 #### 重要な実装：`GeminiChat.retryStreamWithModel`
 
-**問題**：abort して直接 `client.sendMessageStream` を呼び出すと chat の状態が破壊される：
+**問題**：そのまま abort して `client.sendMessageStream` を呼び出すと、チャットの状態が破壊される：
 
-1. `geminiChat.ts:1428` はストリーム開始時に `userContent` を history に push する。再起動すると**再度 push され、履歴に `function_response` が重複**する
-2. `sendPromise` ロック（`geminiChat.ts:1392, 1398`）—— abort 後に `streamDoneResolver` が呼ばれることを保証する必要がある
-3. PR #4176 で導入された `pendingPartialState` などの不変条件マーカーを正しくクリーンアップする必要がある
+1. `geminiChat.ts:1428` は stream 開始時に `userContent` を history に push する；再起動すると**もう一度 push され**、history に重複した `function_response` が現れる
+2. `sendPromise` ロック（`geminiChat.ts:1392, 1398`）—— abort 後も `streamDoneResolver` が呼び出されることを保証する必要がある
+3. `pendingPartialState` など PR #4176 で導入された不変条件マーカーの適切なクリーンアップが必要
 4. Telemetry span の model 属性を更新する必要がある
 
-**新規インターフェース**（`packages/core/src/core/geminiChat.ts`）：
+**新しいインターフェース**（`packages/core/src/core/geminiChat.ts`）：
 
 ```typescript
 /**
- * Retry an in-flight or just-aborted streaming send with a different model.
- * Does NOT re-push userContent (kept from original send).
- * Resets pendingPartialState; releases stale sendPromise; re-opens span.
+ * 実行中または abort されたばかりのストリーミング送信を、別のモデルで再試行する。
+ * userContent を再 push しない（元の送信から保持）。
+ * pendingPartialState をリセットし、古い sendPromise を解放し、span を再オープンする。
  */
 async retryStreamWithModel(
   model: string,
@@ -294,29 +295,29 @@ async retryStreamWithModel(
 ): Promise<AsyncGenerator<StreamEvent>>;
 ```
 
-呼び出し規約：
+呼び出し契約：
 
-- 元の send が abort された後にのみ呼び出す（並行しない）
-- prompt_id を再利用（同じユーザー意図）
-- 履歴にすでに push された userContent は再度 push しない
+- 元の送信が abort された後にのみ呼び出す（同時実行はしない）
+- prompt_id を再利用する（同じユーザー意図）
+- 履歴に既に push された userContent は再 push しない
 
-実装工数：約 1.5 日＋単体テスト。
+実装作業量は約 1.5 日＋単体テスト。
 
-#### ランタイム安全策
+#### ランタイム保険
 
-`selectContinuationTier` が `'fast'` を返したが、ストリームで `ServerGeminiEventType.ToolCallRequest` イベントを検出 → **現在のストリームを即 abort し、`retryStreamWithModel(primaryModel)` を呼び出す**。
+`selectContinuationTier` が `'fast'` を返したが、stream 中に `ServerGeminiEventType.ToolCallRequest` イベントが発生した場合 → **直ちに現在のストリームを abort し、`retryStreamWithModel(primaryModel)` を呼び出す**。
 
-これは「summary と予測したが実際にはツールが必要」というサイレントエラーの唯一のシナリオをカバーする。代償：fast 呼び出しで消費されたトークン（コスト帰属は §5.3 参照）。
+これにより、「要約と予測されたが、実際にはツールが必要だった」という唯一の静かな誤分類シナリオをカバーする。代償：1 回の fast 呼び出しで無駄になったトークン（コストは §5.3 で説明）。
 
 #### skill `modelOverride` との分離
 
-`useGeminiStream.modelOverrideRef`（L376, L2225）は現在 **skill が明示的に選択したモデル**を保持し、「ビジネスセマンティクス」に属する。本方向の fast ルーティングは「最適化セマンティクス」であり、両者は**必ず分離する**：
+`useGeminiStream.modelOverrideRef`（L376, L2225）は現在 **skill が明示的に選択したモデル**を保持しており、「ビジネスセマンティクス」に属する。本方向性の fast ルーティングは「最適化セマンティクス」に属し、両者は**分離する必要がある**：
 
 ```typescript
-// 独立した ref を新規追加
+// 新しい独立した ref
 const summaryTierRef = useRef<'fast' | 'primary' | undefined>(undefined);
 
-// 呼び出し点でのマージ（modelOverrideRef は再利用しない）
+// 呼び出しポイントの統合（modelOverrideRef は再利用しない）
 const stream = geminiClient.sendMessageStream(
   finalQueryToSend,
   abortSignal,
@@ -325,7 +326,7 @@ const stream = geminiClient.sendMessageStream(
     type: submitType,
     notificationDisplayText: metadata?.notificationDisplayText,
     modelOverride:
-      modelOverrideRef.current ?? // skill の明示的な選択を優先
+      modelOverrideRef.current ?? // skill の明示的な選択が最優先
       (summaryTierRef.current === 'fast' ? config.getFastModel() : undefined),
   },
 );
@@ -333,32 +334,32 @@ const stream = geminiClient.sendMessageStream(
 
 ライフサイクル：
 
-| タイミング                                       | `modelOverrideRef`（skill） | `summaryTierRef`（fast ルーティング）    |
-| ------------------------------------------------ | --------------------------- | ---------------------------------------- |
-| 新しい user turn（`!Retry && !ToolResult`）      | クリア                      | クリア                                   |
-| skill ツールが `modelOverride` フィールドを返す  | 書き込み                    | 変更なし                                 |
-| tool バッチ完了 → `selectContinuationTier`       | 変更なし                    | 書き込み                                 |
-| ランタイムフォールバック（ToolCallRequest を検出） | 変更なし                   | `'primary'` に昇格                       |
-| Retry（ユーザーが手動で Ctrl+Y）                  | 保持                        | `'primary'` に昇格（fast 失敗後は fast を使わない） |
+| タイミング                                   | `modelOverrideRef`（skill） | `summaryTierRef`（fast ルーティング）            |
+| -------------------------------------------- | --------------------------- | ------------------------------------------------ |
+| 新しい user turn（`!Retry && !ToolResult`）  | クリア                      | クリア                                           |
+| skill ツールが `modelOverride` フィールドを返す | 書き込み                    | 変更なし                                         |
+| tool batch 完了 → `selectContinuationTier`   | 変更なし                    | 書き込み                                         |
+| Runtime フォールバック（ToolCallRequest を検出） | 変更なし                    | `'primary'` に昇格                               |
+| Retry（ユーザー手動 Ctrl+Y）                  | 保持                        | `'primary'` に昇格（fast 失敗後は fast を使わない） |
 
-skill の明示的な選択は**常に優先**——ユーザーの明示的な意図は最適化戦略よりも優先される。
+skill の明示的な選択が**常に勝つ**——ユーザーの明示的な意図は最適化戦略よりも優先される。
 
-#### Telemetry 修正
+#### Telemetry の修正
 
-`client.ts:1303` の interaction span は turn 開始時に `model` 属性を記録する。フォールバックがトリガーされるとモデルが実際に変わるため、span のデータが歪む。以下が必要：
+`client.ts:1303` の interaction span は turn 開始時に `model` 属性を記録する。フォールバックがトリガーされると実際のモデルが変わり、span のデータが不正確になる。以下が必要：
 
 ```typescript
-// フォールバック時
+// フォールバックトリガー時
 span.setAttribute('llm.model.requested', fastModel);
 span.setAttribute('llm.model.actual', primaryModel);
 span.setAttribute('llm.fallback.reason', 'tool_call_seen');
 ```
 
-また `addUserPromptAttributes` で `requested` / `actual` モデルを区別し、課金・監査の混乱を防ぐ。
+また、`addUserPromptAttributes` で `requested` / `actual` モデルを区別し、課金/監査の混乱を避ける。
 
-#### ユーザーレベルの強制スイッチ
+#### ユーザーレベル強制スイッチ
 
-新規 setting（`packages/cli/src/config/settingsSchema.ts`）：
+新しい設定（`packages/cli/src/config/settingsSchema.ts`）：
 
 ```typescript
 summaryTierStrategy: 'auto' | 'always_primary' | 'always_fast';
@@ -366,64 +367,64 @@ summaryTierStrategy: 'auto' | 'always_primary' | 'always_fast';
 ```
 
 - `'auto'`：`selectContinuationTier` を使用（推奨）
-- `'always_primary'`：D2 最適化を完全に無効化（本番の重要なシナリオ向け）
-- `'always_fast'`：拒否をスキップするが、**ランタイム安全策は引き続き適用**（上級ユーザー向け）
+- `'always_primary'`：D2 の最適化を完全に無効化（プロダクション機密シナリオ）
+- `'always_fast'`：拒否をスキップ、**それでもランタイム保険の制約を受ける**（上級ユーザー向け）
 
-理由：D2 は品質を速度と交換するものであり、一部のユーザー/シナリオには明示的なオプトアウト手段が必要。
+理由：D2 は品質と速度のトレードオフであり、一部のユーザー/シナリオでは明示的なオプトアウト権が必要。
 
 #### 前提条件
 
-- `config.getFastModel()` が設定済み
-- **メイン chat での fastModel ストリーミング検証実験**（コーディング前に 1 日）：
-  - `resultIsTerminal=true` のモックツールを用意し、メイン chat で繰り返し summary ラウンドをトリガー
-  - `tryCompress` が誤ってトリガーされるか観察（fast モデルのコンテキストウィンドウが小さいと早期トリガーの可能性がある）
-  - chatRecordingService の出力に model mismatch がないか観察
-  - 1 回の fast 呼び出し後の次の primary 呼び出しが history を正常に読めるか観察
-- **fast 候補モデルのベースライン測定**（1 日）：
-  - summary ラウンドの prompt（`function_response` を含む入力）を 100 件実行し、エンドツーエンドの P50/P95 レイテンシと time-to-first-token を測定
-  - `tryCompress` トリガー率 `P_compact` を測定し、正味 RT 収益 = `(1 - P_compact) × ΔRT − P_compact × compression_RT > 0` を検証
-  - fast の P50 ≤ primary の P50 × 0.5、かつ P95 ≤ primary の P95 × 0.6 の場合のみ有効化
-- fast モデルと primary モデルは同一ファミリー（`function_response` エンコーディングの差異を避けるため）；ファミリーをまたぐ場合は `getFastModel()` レイヤで拒否が必要
-- **`thinkingConfig` 互換性**：
-  - fast モデルと primary は `thinkingConfig.includeThoughts` のサポートが一致していること；または
-  - fast パスで強制的に `includeThoughts: false`（`sideQuery.ts:118-122` と整合）
-  - 検証：history に thought parts が含まれる場合、fast モデルが正しく処理できること（エラーなし、thought をユーザー入力として扱わない）
+- `config.getFastModel()` が設定済みであること
+- **メインチャット上での fastModel-streaming 検証実験**（コーディング前に 1 日）：
+  - `resultIsTerminal=true` のツールをモックし、メインチャットで要約ラウンドを繰り返しトリガーする
+  - `tryCompress` が誤ってトリガーされないか観察する（fast モデルの context window が小さいため、早期にトリガーされる可能性がある）
+  - chatRecordingService の出力に model mismatch がないか観察する
+  - 1 回の fast 呼び出し後に次の primary 呼び出しが正常に履歴を読み取れるか観察する
+- **Fast 候補モデルのベースライン測定**（1 日）：
+  - 100 件の要約ラウンドプロンプト（入力に `function_response` を含む）を実行し、P50/P95 のエンドツーエンドレイテンシと time-to-first-token を測定
+  - `tryCompress` のトリガー確率 `P_compact` を測定し、純 RT 利益 = `(1 - P_compact) × ΔRT − P_compact × compression_RT > 0` を検証
+  - fast P50 ≤ primary P50 × 0.5 かつ P95 ≤ primary P95 × 0.6 の場合のみ有効化
+- Fast モデルと primary モデルは同じファミリーであること（function_response のエンコーディングの違いを避ける）；異なるファミリーの場合は `getFastModel()` 層で拒否
+- **`thinkingConfig` の互換性**：
+  - Fast モデルは primary と `thinkingConfig.includeThoughts` のサポートで一致している必要がある；または
+  - Fast パスで強制的に `includeThoughts: false` とする（`sideQuery.ts:118-122` と合わせる）
+  - 検証：thought parts を含む履歴を fast モデルが正しく処理できること（エラーにならず、thought をユーザー入力とみなさない）
 
 #### リスクと緩和策
 
-| リスク                                                                   | 深刻度     | 緩和策                                                                                                                                   |
-| ------------------------------------------------------------------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Fast モデルがツール呼び出しをサイレントに誤る                            | 高         | 会話フローヒューリスティック＋ランタイム ToolCallRequest abort 安全策                                                                    |
-| エラーを含む入力で fast がハルシネーションし「ユーザーに見える誤った回答」を生成 | **高** | `hasUnresolvedError` 拒否；ユーザー追質問率を監視（注：`emitToolUseSummaries` の同様リスクは 60 トークンのラベルにのみ影響するが、本リスクは最終回答に影響し重大度がより高い） |
-| Fast パスが `tryCompress` をトリガー → 追加の LLM 呼び出しで **RT とコストが逆に悪化** | **高** | `wouldTriggerCompression` 予測ゲート（決定関数 #7 参照）；前置ベースライン測定で `P_compact` 閾値を確認 |
-| Compression 自体がどのモデルを使うか                                      | 中         | compression トリガー時は fast ルーティングを放棄（ゲート #7 でカバー）；回答品質の問題を避ける                                            |
-| メイン chat でのモデル切り替えが chat 内部状態/記録を破壊する            | 中         | 前置検証実験でカバー；セッション再開のリプレイテスト                                                                                    |
-| D2 と `emitToolUseSummaries` が同時に fast を呼び出し、rate-limit を超過 | 中         | どちらか一方：D2 有効時は `emitToolUseSummaries` を無効化（タイトルに影響しない）、またはレート制限用のトークンバケットを共有             |
-| `thinkingConfig` が fast / primary 間で不一致となり history のパースが異常 | 中         | 同一ファミリー＋fast パスで強制 `includeThoughts: false`（前提条件参照）                                                                 |
-| フォールバックパスがより高コストになる（fast トークン浪費＋primary フル実行） | 中      | `fast_tokens_consumed` 決定ログで監視；フォールバック率 >20% で flag を自動無効化                                                         |
-| Telemetry span のモデル情報が歪む                                         | 中         | `requested` / `actual` を分割（Telemetry 修正参照）                                                                                     |
-| コンテキスト形式の非互換性（ファミリー間）                               | 中         | `getFastModel()` でファミリー間の選択を拒否                                                                                              |
-| skill の modelOverride とセマンティクスが衝突                            | 中         | 独立した ref＋skill 優先                                                                                                                 |
-| `/model` でプライマリモデルをランタイム切り替え後、`summaryTierRef` の決定が無効化 | 低  | `/model` コマンド処理時に `summaryTierRef` を同時にクリア                                                                                |
-| fast のトークン/秒が逆に遅い                                              | 低         | 測定時は TTFT も同時に測定し、総 RT だけを見ない                                                                                         |
+| リスク                                                                      | 深刻度 | 緩和策                                                                                                                                 |
+| --------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Fast モデルの tool-calling が静かに誤ったツールを呼び出す                         | 高     | 対話フローヒューリスティック ＋ ランタイムでの ToolCallRequest abort 保険                                                                     |
+| Fast モデルがエラーを含む入力に対して「ユーザーに見える誤った回答」を幻覚する         | **高** | `hasUnresolvedError` で拒否；ユーザーの再質問率を監視（注：`emitToolUseSummaries` の同種リスクは 60 トークンのラベルにしか影響しないが、本リスクは最終回答に影響し、影響の度合いが大きい） |
+| Fast パスで `tryCompress` がトリガーされ、**LLM 呼び出しが増え、RT とコストが逆に悪化** | **高** | `wouldTriggerCompression` による事前ゲート（決定関数 #7 参照）；事前ベースライン測定で P_compact 閾値を設定                                     |
+| Compression 自体がどのモデルを使うか                                          | 中     | compression がトリガーされた場合は fast ルーティングを放棄（ゲート #7 で対応）；回答問題を回避                                        |
+| メインチャットでのモデル切り替えがチャット内部状態/レコーディングを異常にする      | 中     | 事前検証実験でカバー；session resume リプレイテスト                                                                                       |
+| D2 と `emitToolUseSummaries` が同時に concurrent fast 呼び出しをトリガーし、rate-limit を超える | 中     | 二択：D2 有効時は `emitToolUseSummaries` を無効にする（タイトルは機能に影響しない）、または rate-limit token bucket を共有する                       |
+| `thinkingConfig` が fast / primary 間で一貫せず、履歴解析が異常になる          | 中     | 同ファミリー ＋ fast パスで強制的に `includeThoughts: false`（前提条件参照）                                                                |
+| フォールバックパスがかえって高くつく（fast トークンの無駄＋ primary 全体）            | 中     | `fast_tokens_consumed` 決定ログを監視；フォールバック率が 20% を超えたら自動でフラグをオフ                                                    |
+| Telemetry span の model が不正確になる                                       | 中     | `requested` / `actual` に分割（Telemetry 修正参照）                                                                                       |
+| コンテキスト形式の非互換性（異なるファミリー間）                              | 中     | `getFastModel()` で異なるファミリーを拒否                                                                                                  |
+| skill modelOverride とのセマンティクスの衝突                                    | 中     | 独立した ref ＋ skill 優先                                                                                                                |
+| `/model` でメインモデルをランタイム切り替えした後、`summaryTierRef` の決定が無効になる | 低     | `/model` コマンド処理時に `summaryTierRef` も同期してクリア                                                                                |
+| fast tokens/s がかえって遅い                                                  | 低     | 実測時に RT 全体だけでなく TTFT も測定する                                                                                               |
 
-#### 収益（実測待ち）
+#### 効果（実測待ち）
 
-- **RT**：summary ラウンドで 2〜3 秒の節約（実測前に PR タイトルには記載しない）
-- **コスト**：fast モデルの単価は通常 primary より大幅に低く、高頻度 summary シナリオではトークンコストが 30〜50% 低下する可能性があるが、フォールバックパスの浪費が一部の収益を相殺する。`fast_tokens_consumed` の実測で正味収益を確認する必要がある
+- **RT**：要約ラウンドで 2～3 秒削減（実測前は PR タイトルに記載しない）
+- **コスト**：fast モデルの単価は通常 primary より大幅に低く、高頻度要約シナリオではトークンコストが 30～50% 削減される可能性がある；ただしフォールバックパスでの無駄が一部の利益を相殺するため、`fast_tokens_consumed` で実測して純利益を確認する必要がある
 
 ---
 
-### 3.3 方向 3：結果表示とインタラクションの分離（Presentation Decoupling）
+### 3.3 方向性三：結果表示とインタラクションの分離（Presentation Decoupling）
 
-#### 問題
+#### 問題点
 
-ユーザーはツールが完了してから再度入力できるようになるまで、LLM 要約ラウンドの完了を待たなければならない：
+ユーザーはツール完了から再入力可能になるまで、LLM 要約ラウンドが完了するのを待つ必要がある：
 
 ```
-ツール完了 → [結果レンダリング] → [submitQuery] → [LLM ストリーミング 3-4s 待機] → Idle → 入力可能
-                                                    ~~~~~~~~~~~~~~~~~~~~~~~~
-                                                    ユーザーは結果を見ているが操作できない
+ツール完了 → [結果のレンダリング] → [submitQuery] → [LLM のストリーミング応答を 3～4 秒待つ] → Idle → 入力可能
+                                         ~~~~~~~~~~~~~~~~~~~~~~~~
+                                         ユーザーは結果を既に見ているが操作できない
 ```
 
 #### 設計
@@ -439,83 +440,82 @@ export enum StreamingState {
 }
 ```
 
-#### 状態機械の変更
+#### 状態遷移の変更
 
 ```
-ツール完了かつ結果を表示済み
-  → バッチ全体の postExecution.resultIsTerminal === true の場合:
+ツール完了かつ結果が表示済み
+  → バッチの全員の postExecution.resultIsTerminal === true の場合：
     → Summarizing に遷移（ユーザーは入力可能）
-    → submitQuery を非同期実行
-    → LLM 要約を history に追記（またはユーザーの新しいメッセージでキャンセル）
-  → それ以外:
-    → Responding のまま（ユーザーは入力不可）
+    → submitQuery を非同期で実行
+    → LLM の要約が履歴に追加される（またはユーザーの新しいメッセージでキャンセルされる）
+  → それ以外の場合：
+    → Responding を維持（ユーザーは入力不可）
 ```
 
-#### ユーザーの新規メッセージ処理
+#### ユーザーの新しいメッセージの処理
 
 - `Summarizing` 状態でユーザーが新しいメッセージを送信 → 現在の要約を abort → 新しいメッセージを処理
-- 生成された**部分的な要約テキストは破棄**（history に入れない）。半文 assistant がコンテキストを汚染しないようにするため
-- `function_response` は history に保持（モデルはツールが実行されたことを知る）
-- followup suggestion は Summarizing 完了またはキャンセル後にトリガー
+- 生成済みの**部分的な要約テキストは破棄**（履歴に入れない）、不完全な assistant によるコンテキスト汚染を防ぐ
+- `function_response` は履歴に残る（モデルはツールが実行されたことを認識している）
+- followup suggestion は Summarizing が完了するかキャンセルされた後にトリガーする
 
-#### Abort 時の partial text クリーンアップチェックリスト
+#### Abort 時の部分テキストクリーンアップリスト
 
-partial text は複数箇所に存在する。**すべてを同時に**クリーンアップする必要があり、1 つでも漏れると状態不整合が発生する：
+部分テキストは複数の場所に分散しており、**同時に**クリーンアップする必要がある。一つ欠けても状態の不整合が発生する：
 
-| 位置                                                          | クリーンアップ操作                                                                        |
-| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `pendingHistoryItemRef.current`（useGeminiStream React state） | `null` を設定し、`addItem` を呼ばない                                                    |
-| `GeminiChat.history` の内部累積                               | abort 前に部分的な assistant content を push していた場合、新しい `discardPendingAssistant()` インターフェースでロールバック |
-| `ChatRecordingService` のバッファ済み turn                     | cancelled としてマークし、JSONL に書き込まない                                            |
-| `dualOutput.emitText`（有効な場合）                           | abort sentinel を送信し、sidecar が自ら破棄する                                           |
-| `loopDetectorRef` の累積トークン                              | 現在の turn カウントをリセット                                                            |
-
-実行順序：abort シグナルがトリガー → 上記 5 箇所のクリーンアップが完了 → 新しい user message が `submitQuery` に入ることを許可。競合状態テスト：abort がトリガーされた瞬間にちょうど最後のチャンクを受信した場合をカバー。
+| 位置                                                           | クリーンアップアクション                                                                          |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `pendingHistoryItemRef.current`（useGeminiStream React state） | `null` に設定、`addItem` を呼ばない                                                             |
+| `GeminiChat.history` 内部の累積                                  | abort 前に部分的な assistant content が既に push されている場合、新しい `discardPendingAssistant()` インターフェースでロールバック |
+| `ChatRecordingService` のバッファリングされた turn               | キャンセル済みとしてマーク、JSONL に書き込まない                                                |
+| `dualOutput.emitText`（有効な場合）                              | abort sentinel を送信、sidecar 自身で破棄                                                        |
+| `loopDetectorRef` の累積トークン                                 | 現在の turn カウントをリセット                                                                  |
+执行顺序：abort signal の発火 → 上記5箇所のクリーンアップを収集 → その後はじめて新たな user message が `submitQuery` に入ることができる。競合テストの対象：abort の瞬間に最後の chunk が届くケース。
 
 #### 適用条件
 
-バッチ全体が `postExecution.resultIsTerminal === true`。
+batch 全員の `postExecution.resultIsTerminal === true` であること。
 
-#### 履歴不変条件（§3.1 と同源）
+#### 歴史的不変条件（§3.1 と同源）
 
-Summarizing 中に中断すると以下が発生する：
+途中で Summarizing が中断されると次のようになる：
 
 ```
 [user_1, function_call, function_response, user_2]
-                                          ↑ assistant turn がない
+                                          ↑ assistant turn なし
 ```
 
-**これは §3.1 で LLM ラウンドをスキップした場合と同じ不変条件を破壊する**。D1 と同じ修正戦略（空 assistant 注入 / Qwen 許容を受け入れる）を使う必要がある。
+**これは §3.1 で LLM ラウンドをスキップした際に壊れるのと同じ不変条件である**。したがって D1 と同じ修正戦略（空の assistant の注入 / Qwen の許容に頼る）を使用しなければならない。
 
-- D1 の不変条件単体テストを再利用する
-- セッション読み込みリプレイ（`repairOrphanedToolUseTurnsInHistory` を含む）がこの形式をカバーする必要がある
-- Anthropic alternation：直接接続時は D1 と同時にフォールバックを追加する
+- D1 の不変条件ユニットテストを流用する
+- session-load のリプレイ（`repairOrphanedToolUseTurnsInHistory` を含む）でこのパターンをカバーする必要がある
+- Anthropic alternation：直結時には D1 と同時に補完処理を入れる
 
-#### リスクと緩和策
+#### リスクと緩和
 
-| リスク                                          | 深刻度     | 緩和策                                                             |
-| ----------------------------------------------- | ---------- | ------------------------------------------------------------------ |
-| Abort 時に半文 assistant が history に入る      | **中**     | partial text を明示的に破棄；function_response のみ保持；競合の単体テスト |
-| 履歴不変条件の破壊（assistant の後続なし）       | **中**     | D1 と同源の問題、統一修正（§3.1 履歴不変条件参照）                  |
-| UI 状態の複雑度増加                             | 中         | Summarizing = Idle＋バックグラウンドタスク；入力パスは Idle を再利用 |
-| ユーザーが体感できる収益が行動パターンに依存する | 低         | ユーザーが 3 秒以内に入力しなければ要約は完了している → 体感できる収益なし；ただし**悪化することはない** |
+| リスク                                  | 深刻度 | 緩和                                                                        |
+| --------------------------------------- | ------ | --------------------------------------------------------------------------- |
+| Abort 時に中途半端な assistant が history に入る | **中** | partial text を明示的に破棄；function_response のみ保持；競合状態をユニットテストでカバー |
+| 歴史的不変条件の破壊（assistant の後続がない） | **中** | D1 と同源の問題、統一的に修正する（§3.1 歴史的不変条件を参照）              |
+| UI 状態の複雑さ増加                      | 中     | Summarizing = Idle + バックグラウンドタスク；入力経路は Idle を再利用       |
+| ユーザー体感利益は行動パターンに依存    | 低     | ユーザーが 3 秒以内に入力しない場合、summary は完了 → 体感利益なし；ただし**劣化もしない** |
 
-#### 収益
+#### 利益
 
-- **理論的上限**：3〜4 秒の体感 RT（ユーザーがツール完了直後に入力）
-- **実際の中央値**：ユーザーの入力間隔に依存——結果を 2〜5 秒読んでから入力するユーザーは差を感じないが、**遅くなることは絶対にない**
+- **理論的上限**: 3-4 秒の体感 RT（ユーザーがツール完了時に入力する場合）
+- **実質中央値**: ユーザーの入力間隔に依存——結果を読むのに 2-5 秒かかるユーザーには差を感じないが、**決して遅くなることはない**
 
 ---
 
-### 3.4 方向 4：ストリーム先行スケジューリング（Stream-Ahead Scheduling）
+### 3.4 方向四：ストリーム先読みスケジューリング（Stream-Ahead Scheduling）
 
-#### 問題
+#### 問題点
 
-`processGeminiStreamEvents` はストリームが完全に終了した後にバッチ処理でツールをスケジュールする。`ToolCallRequest` イベントはストリームの途中でも yield される可能性がある。
+`processGeminiStreamEvents` はストリームが完全に終了した後にのみツールをバッチスケジューリングする。`ToolCallRequest` イベントはストリームの途中で yield される可能性がある。
 
 #### 設計
 
-ストリームイベント処理で `ToolCallRequest` に対して即座に**事前検証**を開始する（実行はしない）：
+ストリームイベント処理において、`ToolCallRequest` に対して**事前検証**（実行はしない）を直ちに開始する：
 
 ```typescript
 case ServerGeminiEventType.ToolCallRequest:
@@ -526,16 +526,16 @@ case ServerGeminiEventType.ToolCallRequest:
 
 `CoreToolScheduler.prevalidate(request)`：
 
-1. ツール登録を検索
+1. ツールの登録を検索
 2. invocation を構築
 3. `shouldConfirmExecute` を実行（結果をキャッシュ）
-4. `schedule()` 時にキャッシュされた結果を直接使用
+4. `schedule()` 時にキャッシュ結果を直接使用
 
 #### 純粋性契約と Allowlist
 
-`prevalidate` は `shouldConfirmExecute` が副作用なし（side-effect-free）**かつ**、prevalidate→schedule の間隙に外部から結果が無効化されないことを要求する。
+`prevalidate` は `shouldConfirmExecute` が副作用がなく、**かつ** prevalidate→schedule の間に外部で結果が変更されて無効にならないことを要求する。
 
-**`tools.ts:818` の `CONCURRENCY_SAFE_KINDS` をそのまま再利用する**：
+**`tools.ts:818` の `CONCURRENCY_SAFE_KINDS` を直接再利用する**：
 
 ```typescript
 export const CONCURRENCY_SAFE_KINDS: ReadonlySet<Kind> = new Set([
@@ -545,60 +545,60 @@ export const CONCURRENCY_SAFE_KINDS: ReadonlySet<Kind> = new Set([
 ]);
 ```
 
-これはプロジェクト既存の「副作用なし＋並行安全」分類であり、prevalidate の要件にちょうど合致する。
+これはプロジェクト既存の「副作用なし＋並行実行可能」分類であり、prevalidate の要件に正確に合致する。
 
-| ツール Kind                        | Allowlist に含まれるか  | 理由                                                    |
-| ---------------------------------- | ----------------------- | ------------------------------------------------------- |
-| `Read`（read_file など）           | ✅                      | 純粋な読み取り                                          |
-| `Search`（grep / glob）            | ✅                      | 純粋な読み取り                                          |
-| `Fetch`（web_fetch など）          | ✅                      | リモート読み取り、書き込み副作用なし                    |
-| `Edit`                             | **❌**（以下の TOCTOU 参照） | shouldConfirmExecute は純粋な読み取りだが、スケジュール間隙で diff が無効化される可能性 |
-| `Delete` / `Move` / `Execute`      | ❌                      | MUTATOR_KINDS                                           |
-| `Think`                            | ❌                      | `save_memory` / `todo_write` などの暗黙的な書き込みを含む |
-| MCP ツール                         | ❌                      | 信頼できない                                            |
+| ツール Kind                     | allowlist 対象 | 理由                                                         |
+| ------------------------------- | -------------- | ------------------------------------------------------------ |
+| `Read`（read_file など）        | ✅             | 純粋読み取り                                                 |
+| `Search`（grep / glob）         | ✅             | 純粋読み取り                                                 |
+| `Fetch`（web_fetch など）       | ✅             | リモート読み取り、書き込み副作用なし                         |
+| `Edit`                          | **❌**（後述の TOCTOU） | shouldConfirmExecute は純粋読み取りだが、スケジューリングの隙間に diff が無効になる可能性がある |
+| `Delete` / `Move` / `Execute`   | ❌             | MUTATOR_KINDS                                                |
+| `Think`                         | ❌             | save_memory / todo_write などの暗黙的な書き込みを含む        |
+| MCP ツール                      | ❌             | 信頼できない                                                 |
 
-**TOCTOU：なぜ Edit を Allowlist に含めないか**
+**TOCTOU：なぜ Edit が allowlist に入らないか**
 
-理論的には Edit の `shouldConfirmExecute` は純粋な読み取り（ファイルを読んで diff を計算）。しかし prevalidate と schedule の間には時間窓が存在する：
+理論的には Edit の `shouldConfirmExecute` は純粋読み取り（ファイルを読み、diff を計算する）。しかし prevalidate と schedule の間には時間窓が存在する：
 
 ```
 T=0      stream が Edit(file=a.ts, ...) を受信 → prevalidate
 T=10ms   shouldConfirmExecute が a.ts を読み、diff_v0 をキャッシュ
 T=300ms  stream 終了、scheduler.schedule()
-T=305ms  その間に別のツール/IDE/外部プロセスが a.ts を変更
+T=305ms  その間に他のツール/IDE/外部プロセスが a.ts を変更
 T=310ms  scheduler が diff_v0 をユーザーに表示
-T=320ms  ユーザーが v0 に基づいて承認
-T=330ms  Edit が古いパラメータを v1 ファイルに適用 → 内容破損 / マージ失敗
+T=320ms  ユーザーが v0 に基づいて確認
+T=330ms  Edit が古い params を v1 ファイルに適用 → 内容破損 / merge 失敗
 ```
 
 これが TOCTOU である。修正方向：
 
-- **A（推奨）**：Edit を Allowlist に含めず、prevalidate は `CONCURRENCY_SAFE_KINDS` の 3 種のみをカバー。代償：収益が「50〜200ms（Edit 主体）」から「50〜100ms（読み取り系のみ）」に低下
-- **B（オプションで強化）**：Edit を Allowlist に含めるが、キャッシュに `(mtime, size, content_hash)` を添付；schedule() 時に変更がないことを確認してからキャッシュを使用。そうでなければ再計算
+- **A（推奨）**: Edit を allowlist に入れず、prevalidate は `CONCURRENCY_SAFE_KINDS` の 3 種類のみを対象とする。代償：利益が「50-200ms（Edit 主体）」から「50-100ms（読み取り系のみ）」に減少する。
+- **B（オプション強化）**: Edit を allowlist に入れるが、キャッシュに `(mtime, size, content_hash)` を付与；schedule() 時に変更がない場合のみキャッシュを使用し、それ以外は再計算する。
 
-本ドキュメントは暫定的に A を採用。
+ドキュメントでは当面 A を選択する。
 
-#### 既存の並列スケジューリングとの相互作用
+#### 既存の並行スケジューリングとの相互作用
 
-`coreToolScheduler.attemptExecutionOfScheduledCalls`（L2436+）は `partitionToolCalls` を使ってツールを「並行安全バッチ」と「直列バッチ」に分け、並行バッチは `runConcurrently`（L2473）で実行される。
+`coreToolScheduler.attemptExecutionOfScheduledCalls`（L2436+）は `partitionToolCalls` を使用してツールを「並行セーフ batch」と「直列 batch」に分割し、並行 batch は `runConcurrently`（L2473）で実行される。
 
-prevalidate はこの分割モデルと整合する必要がある：
+prevalidate はこの分割モデルに適合しなければならない：
 
-- キャッシュは `callId` でインデックス付け（`(toolName, args)` ではなく、並行する同名呼び出しの衝突を避ける）
-- prevalidate が失敗した call → 他の call に影響せず、schedule 時にその call は元の `shouldConfirmExecute` パスを使用
-- ストリームがキャンセルされた場合、`signal` を通じてすべてのインフライト prevalidate を連鎖的に abort
+- キャッシュは `callId` でインデックス付けする（`(toolName, args)` ではない。同じ名前の並行呼び出しでの競合を避けるため）
+- prevalidate に失敗した call → 他の call に影響せず、schedule 時にその call は元の `shouldConfirmExecute` パスをたどる
+- stream がキャンセルされた場合、`signal` に従ってすべての実行中の prevalidate をカスケード abort する
 
 #### リスク
 
-| リスク                                          | 深刻度 | 緩和策                                                                    |
-| ----------------------------------------------- | ------ | ------------------------------------------------------------------------- |
-| キャッシュされた diff と確認時の実際のファイルが不一致（TOCTOU） | 高 | 方案 A：Edit を Allowlist に含めない；方案 B：キャッシュに `(mtime, size, hash)` を添付して検証 |
-| prevalidate の失敗がスケジューリングに影響する  | 低     | 失敗/タイムアウト時は元の `shouldConfirmExecute` パスに戻る。キャッシュなし = 無効化と等価 |
-| 並行 prevalidate でファイルディスクリプタ/リソースの競合 | 低 | `QWEN_CODE_MAX_TOOL_CONCURRENCY` で並行数の上限を制限済み（デフォルト 10） |
+| リスク                                                   | 深刻度 | 緩和                                                                                |
+| -------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------- |
+| キャッシュされた diff と確認時の実際のファイルが一致しない（TOCTOU） | 高     | 方式 A：Edit を allowlist に入れない；方式 B：キャッシュに `(mtime, size, hash)` 検証を付与 |
+| prevalidate の失敗がスケジューリングに影響               | 低     | 失敗/タイムアウト時は元の `shouldConfirmExecute` パスにフォールバック、キャッシュ欠落 ≡ 未使用と同等 |
+| 並行 prevalidate による fd / リソースの競合              | 低     | `QWEN_CODE_MAX_TOOL_CONCURRENCY` で並行上限を制限済み（デフォルト 10）              |
 
-#### 収益
+#### 利益
 
-50〜100ms/ラウンド（`CONCURRENCY_SAFE_KINDS` の範囲のみ）。方案 B で Edit を含む場合は理論的に 100〜200ms。
+50-100ms/ラウンド（`CONCURRENCY_SAFE_KINDS` の範囲のみ）。方式 B で Edit を含めた場合、理論的利益は 100-200ms。
 
 ---
 
@@ -606,108 +606,108 @@ prevalidate はこの分割モデルと整合する必要がある：
 
 ### 4.1 総合評価
 
-| 方向                      | RT 収益                          | 実装複雑度               | 品質リスク | 依存                                          | 優先度 |
-| ------------------------- | -------------------------------- | ------------------------ | ---------- | --------------------------------------------- | ------ |
-| D1 ツール後置ディレクティブ | 3〜4s/終態ラウンド              | 低（2〜3 日）            | 低         | なし                                          | **P0** |
-| D2 summary fast ルーティング | 2〜3s/summary ラウンド（実測待ち） | **中〜高（9 日）**       | 中〜高     | D2 独自のヒューリスティック＋メイン chat 検証実験＋ACP 同期 | **P1** |
-| D3 表示解耦                | 3〜4s の体感改善（ユーザー行動依存） | 中（3〜5 日、不変条件修正含む） | 中    | D1 の履歴不変条件修正                         | **P1** |
-| D4 ストリーム先行スケジューリング | 50〜200ms/ラウンド           | 高（5〜7 日）            | 極低       | なし                                          | P2     |
+| 方向                   | RT 利益                         | 実装複雑度                      | 品質リスク | 依存関係                                        | 優先度 |
+| ---------------------- | ------------------------------- | ------------------------------- | ---------- | ----------------------------------------------- | ------ |
+| D1 ツール後置命令      | 3-4秒/終端ラウンド              | 低（2-3日）                     | 低         | なし                                            | **P0** |
+| D2 summary fast ルーティング | 2-3秒/summary ラウンド（実測待ち） | **中-高（9日）**                 | 中-高      | D2 独自のヒューリスティック + メインチャット検証実験 + ACP 同期 | **P1** |
+| D3 表示分離            | 3-4秒の体感改善（ユーザー行動に依存） | 中（3-5日、不変条件修正を含む） | 中         | D1 の不変条件修正                                | **P1** |
+| D4 ストリーム先読みスケジューリング | 50-200ms/ラウンド                   | 高（5-7日）                    | 極低       | なし                                            | P2     |
 
-#### D2 工数内訳
+#### D2 作業量詳細
 
-| サブタスク                                                                                               | 見積もり |
-| -------------------------------------------------------------------------------------------------------- | -------- |
-| メイン chat での fastModel ストリーミング検証実験（P_compact 測定含む）                                   | 1 日     |
-| fast 候補モデルのベースライン測定（TTFT、P95、`thinkingConfig` 互換性含む）                              | 1 日     |
-| `selectContinuationTier` + `summaryTierRef` の接続（useGeminiStream）                                    | 0.5 日   |
-| ヒューリスティック実装（`MUTATOR_KINDS` 再利用 / `wouldTriggerCompression` 見積もり / 多言語 / 状態突変含む） | 1 日   |
-| `GeminiChat.retryStreamWithModel` + `discardPendingAssistant` インターフェース実装                       | 1.5 日   |
-| ACP Session の同期改修（acp-integration/session/Session.ts）                                             | 1 日     |
-| Telemetry span 修正（`requested` / `actual` 分割）                                                       | 0.5 日   |
-| ユーザーレベル setting `summaryTierStrategy` + JSON schema + `/config` 統合                              | 0.5 日   |
-| 単体テスト（競合、abort タイミング、履歴不変条件、フォールバックパス、ACP パス）                          | 2 日     |
-| **合計**                                                                                                 | **9 日** |
+| サブタスク                                                                                                   | 所要時間 |
+| ------------------------------------------------------------------------------------------------------------ | -------- |
+| メインチャット fastModel-streaming 検証実験（P_compact 測定を含む）                                          | 1日      |
+| Fast 候補モデルのベースライン測定（TTFT、P95、`thinkingConfig` 互換性を含む）                               | 1日      |
+| `selectContinuationTier` + `summaryTierRef` の組み込み（useGeminiStream）                                    | 0.5日    |
+| ヒューリスティックの実装（`MUTATOR_KINDS` の再利用 / `wouldTriggerCompression` の推定 / 多言語 / 状態変化） | 1日      |
+| `GeminiChat.retryStreamWithModel` + `discardPendingAssistant` インターフェイスの実装                         | 1.5日    |
+| ACP Session の同期改修（acp-integration/session/Session.ts）                                                 | 1日      |
+| Telemetry span の修正（`requested` / `actual` の分割）                                                      | 0.5日    |
+| User-level setting `summaryTierStrategy` + JSON schema + `/config` 統合                                     | 0.5日    |
+| ユニットテスト（競合、abort タイミング、history 不変条件、フォールバックパス、ACP パス）                     | 2日      |
+| **合計**                                                                                                     | **9日**  |
 
-> 注：初期見積もりの 6.5 日には ACP パス、`wouldTriggerCompression` ゲート、クリーンアップチェックリスト、settings schema のエンジニアリングコストが含まれていなかった。
+> 注：初期見積もり 6.5 日には ACP パス、`wouldTriggerCompression` gate、クリーンアップリスト、settings schema の工数などが含まれていなかった。
 
 ### 4.2 実装ロードマップ
 
-#### Phase 1：D1 ツール後置ディレクティブ（1 週間）
+#### Phase 1：D1 ツール後置命令（1 週間）
 
 - `ToolResult.postExecution` を拡張（tools.ts L422）：`skipLlmRound` + `resultIsTerminal`
 - `handleCompletedTools` で `skipLlmRound` のショートサーキットを実装（useGeminiStream.ts L2038）
-- 履歴不変条件の単体テストを追加
-- **Phase 1 では `resultIsTerminal` を消費しない**（Phase 3 に持ち越し）
+- 歴史的不変条件のユニットテスト
+- **Phase 1 では `resultIsTerminal` は使わない**（Phase 3 に回す）
 
-#### Phase 2：シグナルエコシステム構築（2 週間、Phase 4 と並行）
+#### Phase 2：シグナルエコシステムの構築（2 週間、Phase 4 と並行）
 
-- 組み込みツールに順次 `skipLlmRound` / `resultIsTerminal` を付与（§3.1 の表参照）
-- 付与カバレッジ ≥60% を検証（turn 数で重み付け、呼び出し回数ではなく）
-- 本番データを収集し、§3.2 の拒否ゲート閾値を校正
-- Phase 2 末期に §3.2 のメイン chat 検証実験とベースライン測定を実施
+- 組み込みツールに順次 `skipLlmRound` / `resultIsTerminal` を付与（§3.1 の表を参照）
+- 付与率 ≥60% を検証（呼び出し回数ではなく turn 数で加重）
+- プロダクションデータを収集し、§3.2 の veto gate 閾値を調整
+- Phase 2 終了時に §3.2 のメインチャット検証実験とベースライン測定を実施
 
-#### Phase 3：D2 + D3（約 3 週間、ACP 同期含む）
+#### Phase 3：D2 + D3（約 3 週間、ACP 同期を含む）
 
-> **修正**：初期ロードマップの見積もりは 1 週間だったが、fastModel ストリーミング検証実験、`retryStreamWithModel` 実装、不変条件の統一修正、ACP パスの同期が含まれていなかった。
+> **修正**：初期ロードマップでは 1 週間と見積もっていたが、fastModel-streaming 検証実験、`retryStreamWithModel` の実装、不変条件の統一的修正、ACP パスの同期が含まれていなかった。
 
-- コーディング前：メイン chat 検証実験＋ベースライン測定完了（`P_compact` と thinkingConfig 互換性含む）
-- `summaryTierRef` + `selectContinuationTier` を新規追加（`wouldTriggerCompression` ゲート含む）
-- `GeminiChat.retryStreamWithModel` + `discardPendingAssistant` を新規追加
-- **ACP Session パスを同期改修**（acp-integration/session/Session.ts）して同じ決定関数を使用
-- `StreamingState.Summarizing` + 入力パスの再利用 + abort クリーンアップチェックリストを新規追加
-- 履歴不変条件を統一修正（D1+D3 は同源）
-- Feature flag `experimental.summaryRoundFastModel: false`、**Release N はデフォルト無効**
-- ユーザー setting `summaryTierStrategy`
-- Telemetry span 修正
-- ランタイム安全策（ToolCallRequest abort + retryStreamWithModel）
+- コーディング前：メインチャット検証実験 + ベースライン測定を完了（`P_compact` と thinkingConfig 互換性を含む）
+- `summaryTierRef` + `selectContinuationTier` を追加（`wouldTriggerCompression` gate を含む）
+- `GeminiChat.retryStreamWithModel` + `discardPendingAssistant` を追加
+- **ACP Session パスを同時に改修**（acp-integration/session/Session.ts）し、同じ決定関数を使用
+- `StreamingState.Summarizing` を追加 + 入力パスの再利用 + abort クリーンアップリスト
+- 歴史的不変条件の統一的修正（D1+D3 同源）
+- Feature flag `experimental.summaryRoundFastModel: false`、**Release N ではデフォルト OFF**
+- User setting `summaryTierStrategy`
+- Telemetry span の修正
+- 実行時セーフティ（ToolCallRequest abort + retryStreamWithModel）
 
-#### Phase 4：D4 ストリーム先行スケジューリング（独立して挿入可能）
+#### Phase 4：D4 ストリーム先読みスケジューリング（独立して挿入可能）
 
 - `CoreToolScheduler.prevalidate` + allowlist
 - `processGeminiStreamEvents` のインクリメンタルスケジューリング
 
 ---
 
-## 5. 指標、受け入れ基準、制限
+## 5. 測定、受入基準と制限
 
 ### 5.1 パフォーマンス指標
 
-| 指標                                 | ベースライン | Phase 1 | Phase 3                    |
-| ------------------------------------ | ------------ | ------- | -------------------------- |
-| エンドツーエンド RT P50（3 ラウンドループ） | 13.4s      | <10s    | <8s（実測待ち）            |
-| エンドツーエンド RT P95              | -            | <13s    | <12s（フォールバックパス上限） |
-| ユーザー体感での最初の結果表示 P50   | 13.4s        | <10s    | <5s（D3 有効時）           |
-| ユーザー体感での最初の結果表示 P95   | -            | <13s    | <8s                        |
-| LLM 呼び出し回数（スキップ可能シナリオ） | 3           | 2       | 2（より高速）              |
+| 指標                               | ベースライン | Phase 1 | Phase 3                   |
+| ---------------------------------- | ------------ | ------- | ------------------------- |
+| エンドツーエンド RT P50（3 ラウンドループ） | 13.4秒       | <10秒   | <8秒（実測待ち）          |
+| エンドツーエンド RT P95            | -            | <13秒   | <12秒（フォールバックパス上限） |
+| ユーザー体感初回結果時間 P50       | 13.4秒       | <10秒   | <5秒（D3 有効時）         |
+| ユーザー体感初回結果時間 P95       | -            | <13秒   | <8秒                      |
+| LLM 呼び出し回数（スキップ可能なシナリオ） | 3            | 2       | 2（より高速）             |
 
-> 注：ベースラインはシングルサンプル。導入前に ≥3 種のシナリオのデータを補完する必要がある。
+> 注：ベースラインは単一回のサンプリングであり、導入前に 3 クラス以上のシナリオで補完する必要がある。
 
 ### 5.2 品質指標
 
 | 指標                                               | ベースライン | 許容劣化                 |
 | -------------------------------------------------- | ------------ | ------------------------ |
-| ツール呼び出し正確度（fast model summary ラウンド） | 100%         | ≥98%                     |
-| skipLlmRound 誤用率（ユーザーが「もっと詳しく」と追質問） | -    | <1%                      |
-| Fast model fallback_triggered 率                   | -            | <10%（>20% で flag を自動無効化） |
-| Summarizing 状態で半文 assistant が history に入る | 0            | 0（ハード要件）          |
+| Tool-calling 精度（fast model summary ラウンド）    | 100%         | ≥98%                     |
+| skipLlmRound 誤用率（ユーザーが「もっと詳しく」と尋ねるケース） | -            | <1%                      |
+| Fast model fallback_triggered 率                   | -            | <10%（>20% で自動的にフラグを OFF） |
+| Summarizing 状態で中途半端な assistant が history に入ること | 0            | 0（厳守）                |
 
 ### 5.3 コスト指標
 
-| 指標                                | ベースライン | Phase 3 目標                                                    |
-| ----------------------------------- | ------------ | --------------------------------------------------------------- |
-| 1000 セッションあたりのトークンコスト（summary ラウンド） | 100% | <70%                                              |
-| フォールバックパスで浪費するトークンの割合 | 0        | <15%（フォールバック率 × 1 回の fast トークン / 1 回の primary トークン） |
+| 指標                                | ベースライン | Phase 3 目標                                                |
+| ----------------------------------- | ------------ | ------------------------------------------------------------ |
+| 1000 セッションあたりのトークンコスト（summary ラウンド） | 100%         | <70%                                                         |
+| フォールバックパスで無駄になるトークン割合 | 0            | <15%（フォールバック率 × 1 回の fast tokens / 1 回の primary tokens） |
 
-### 5.4 決定ログのスキーマ
+### 5.4 決定ログスキーマ
 
-`selectContinuationTier` と `handleCompletedTools` の各判定で構造化ログを 1 件記録：
+`selectContinuationTier` と `handleCompletedTools` の各重要な判定を構造化ログとして 1 行記録する：
 
 ```
 {
   turn_id, prompt_id,
   decision: 'skip' | 'fast' | 'primary',
   tier_requested: 'fast' | 'primary',          // 決定（フォールバック前）
-  tier_actual:    'fast' | 'primary',          // 実際の実行（フォールバック後）
+  tier_actual:    'fast' | 'primary',          // 実際に実行されたもの（フォールバック後）
   signal_skipLlmRound: bool,
   signal_resultIsTerminal: bool,
   user_strategy: 'auto' | 'always_primary' | 'always_fast',
@@ -720,471 +720,470 @@ prevalidate はこの分割モデルと整合する必要がある：
   output_tokens_est: int,
   user_prompt_classification: 'query' | 'action' | 'analysis',
   fast_ttft_ms, primary_ttft_ms,                // フォールバック時は両方
-  fast_tokens_consumed: int,                    // フォールバックで浪費したトークン（コスト帰属）
+  fast_tokens_consumed: int,                    // フォールバックで無駄になったトークン（コスト帰属）
   total_rt_ms,
   fallback_triggered: bool,
   fallback_reason: 'tool_call_seen' | 'timeout' | 'error' | null,
 }
 ```
 
-観察指標：
+観測指標：
 
-- fast トリガー率（期待値 30〜50%）
-- fallback_triggered 率（期待値 <10%；>20% は次の release でデフォルト flag を無効化するサイン）
-- 各 veto の割合（厳しすぎる/緩すぎるの識別）
-- fast_tokens_consumed × fallback_rate（コストの逆リスク）
-- ユーザーの「もっと詳しく」追質問頻度（fast 品質劣化のシグナル）
+- fast 発動率（想定 30-50%）
+- fallback_triggered 率（想定 <10%；>20% の場合は次のリリースでデフォルトフラグを OFF にすることを検討）
+- 各 veto の割合（過剰/過小の識別）
+- fast_tokens_consumed × fallback_rate（コストの逆方向リスク）
+- ユーザーが「もっと詳しく」と尋ねる頻度（fast 品質の回帰シグナル）
 
-**`fast_tokens_consumed` の測定に関する注記**：
+**`fast_tokens_consumed` 測定の説明**：
 
-abort で中断されたストリームは **`finishReason` / `usageMetadata` を受信できない可能性が高い**——後者は通常ストリームが完全に終了したときに返される。以下の推定実装が必要：
+abort で中断されたストリームは、**ほとんどの場合 `finishReason` / `usageMetadata` を受信できない**——これらはストリームが完全に終了したときにのみ設定される。実装では推定が必要：
 
-- 優先：abort 前に `stream.return()` を試みてジェネレーターが finally パスを通るようにする。partial usage を取得できる可能性がある
-- フォールバック：受信済みチャンクのテキスト長 × 4 で output tokens を推定；input tokens は history から推定
-- ラベル付け：ログフィールドに `tokens_source: 'usage' | 'estimated'` を添付。事後分析で区別が必要
+- 優先：abort 前に `stream.return()` を試み、ジェネレーターが finally パスを通るようにし、部分的な usage が取得できる可能性がある
+- フォールバック：それまでに受信した chunk のテキスト長 × 4 で output tokens を推定；input tokens は history から推定
+- 注釈：ログフィールドに `tokens_source: 'usage' | 'estimated'` を付与し、事後分析で区別可能にする
 
 ### 5.5 検証方法とリリース戦略
 
 #### 検証
 
-- `/tmp/tool-timing.log` の計時フレームワークを再利用
-- `T_userIdle`（ユーザーが再度入力できる時刻）を新規追加
-- `T_firstToken`（ストリーミングの最初のトークン時刻）を新規追加
-- A/B テストで各 Phase の前後の RT とコスト分布を比較
+- `/tmp/tool-timing.log` タイミングフレームワークを再利用
+- `T_userIdle`（ユーザーが再入力可能な時刻）を新規追加
+- `T_firstToken`（ストリームの最初のトークン時刻）を新規追加
+- A/B テストで各 Phase 前後の RT とコスト分布を比較
 
-#### リリース戦略（ローカル CLI に適応）
+#### リリース戦略（ローカル CLI に適合）
 
-Qwen Code はローカル CLI であり、**ランタイムでの配布機能を持たない**——従来の「5% / 25% / 100% グラデーション」は適用できない。**段階的な release 推進**を採用：
+Qwen Code はローカル CLI であり、**実行時に設定を配信する能力はない**——従来の「5% / 25% / 100% のカナリアリリース」は適用できない。**段階的なリリースで進める**：
 
-| フェーズ                   | Release ノード          | feature flag デフォルト値 | トリガー条件                                                      |
-| -------------------------- | ----------------------- | ------------------------- | ----------------------------------------------------------------- |
-| Phase 3a：ドッグフード     | Release N               | `false`                   | 社内ユーザーが `summaryTierStrategy=always_fast` で自己有効化     |
-| Phase 3b：opt-in デフォルト | Release N+1（≥2 週後） | `false`（変更なし）        | ドッグフード段階の決定ログ達成：fallback <10%、正味 RT/cost 収益 >0 |
-| Phase 3c：デフォルト有効   | Release N+2（≥4 週後） | `true`                    | Phase 3b ユーザーレベルでの品質劣化報告なし                       |
-| ロールバック                | Release N+3（必要に応じて） | `true → false`        | 大規模 fallback >20% または品質指標の劣化                         |
+| 段階                  | Release ノード         | feature flag デフォルト値 | トリガー条件                                                   |
+| --------------------- | ---------------------- | ------------------------- | ------------------------------------------------------------ |
+| Phase 3a：dogfood     | Release N              | `false`                   | 内部ユーザーが `summaryTierStrategy=always_fast` で自ら有効化 |
+| Phase 3b：opt-in デフォルト | Release N+1（2 週間以上後） | `false`（変更なし）        | dogfood 段階で決定ログが基準を満たす：fallback <10%、正味の RT/コスト利益 >0 |
+| Phase 3c：デフォルト有効 | Release N+2（4 週間以上後） | `true`                    | Phase 3b でユーザーレベルの品質回帰報告なし                   |
+| ロールバック          | Release N+3（必要に応じて） | `true → false`            | 大規模な fallback >20% または品質指標の劣化                   |
 
-**ロールバック機構**：
+**ロールバックメカニズム**：
 
-- ランタイム配布なし、**ロールバック = 新 release を発行してデフォルト flag を無効化**
-- ユーザーレベルの `summaryTierStrategy=always_primary` は常に「今すぐ退出」チャンネルを提供し、新 release に依存しない
+- 実行時に配信不可であるため、**ロールバック = デフォルトフラグを OFF にした新しいリリースを出す**
+- ユーザーレベルの `summaryTierStrategy=always_primary` は常に「すぐに抜け出す」手段を提供し、新しいリリースに依存しない
 - 決定ログの `fallback_rate` / `cost_regression` を各 Release サイクルで評価し、次のステップを決定する
 
 ### 5.6 既知の制限
 
-1. **ベースラインデータが希薄**：シングルサンプルはすべてのタスクパターンをカバーできない。導入前にシナリオを補完する必要がある
-2. **fast モデルの前提**：大幅に高速でツール呼び出しの品質が同一ファミリー内で合格するモデルが存在しない場合 → D2 は有効化しない
-3. **`skipLlmRound` は品質と速度のトレードオフ**：LLM をスキップする = モデルの理解とエラー修正を放棄する。確実性の高いシナリオにのみ適用
-4. **D2 は品質＋コストと速度のトレードオフ**：fast モデルの品質は primary より低い。フォールバックパスはより高コストになる——決定ログで正味収益を実測する必要がある
-5. **`tryCompress` トリガーが逆効果になる可能性**：fast モデルのコンテキストが小さく、compression 自体が LLM 呼び出しを消費する——`wouldTriggerCompression` ゲートは必須の防御策
-6. **表示解耦はインタラクションモデルを変更する**：新しいモードにはユーザーの適応が必要；ユーザー行動が実際の体感収益を決定する
-7. **ネットワークレイテンシは制御不能**：本設計は呼び出し回数を削減するが、単回呼び出しを最適化するものではない
-8. **Anthropic 直接接続は未カバー**：現在の alternation 許容度は Qwen / OpenAI スタイルの API に依存
-9. **メイン chat での fastModel ストリーミングは初の本番適用**：先例なし、独立した検証実験が必要
-10. **ローカル CLI にランタイム配布なし**：リリース戦略は段階的な release 推進のみ。高速なグラデーション調整は不可能
-11. **D2 はインタラクティブパスのみに適用**：Subagent / Cron / Notification には収益なし。これは意図的な設計
-12. **混在モデル history の長期影響は未知**：D2 有効後、セッション内の turn が fast/primary 間で切り替わる。長いセッションの再開とコンテキスト連続性の観察が必要
-13. **D4 の収益縮小**：Edit が Allowlist を外れた後、prevalidate は純粋な読み取り系ツールのみをカバー（50〜100ms の収益）；Edit を含む 200ms の収益には方案 B の mtime/hash 検証機構が必要
+1. **ベースラインデータが不十分**：単一回のサンプリングではすべてのタスクパターンをカバーできない。導入前にシナリオを補完する必要がある。
+2. **fast モデルの前提**：著しく高速で tool-calling が基準を満たす同族モデルが存在しない場合 → D2 は有効にしない。
+3. **`skipLlmRound` は品質と速度のトレードオフ**：LLM をスキップ = モデルの理解と修正を放棄するため、決定性の高いシナリオにのみ適用する。
+4. **D2 は品質+コストと速度のトレードオフ**：fast モデルの品質は primary より低い；フォールバックパスはむしろ高コストになる——決定ログで正味利益を実測しなければならない。
+5. **`tryCompress` の起動が逆効果になる可能性**：fast モデルのコンテキストは小さく、圧縮自体が LLM 呼び出しを消費する——`wouldTriggerCompression` gate は必須の防御策である。
+6. **表示分離は対話モデルを変える**：新しいモードにユーザーが適応する必要がある；ユーザーの行動が実際の体感利益を決定する。
+7. **ネットワーク遅延は制御不能**：本方式は呼び出し回数を減らすのであって、個々の呼び出しを最適化するものではない。
+8. **Anthropic 直結は未対応**：現在の alternation 許容度は Qwen / OpenAI スタイルの API に依存している。
+9. **メインチャットでの fastModel-streaming は初めての導入**：プロダクションでの前例がないため、独立した検証実験が必要。
+10. **ローカル CLI は実行時配信不可**：リリース戦略は段階的なリリースで進めるしかなく、迅速なカナリア調整はできない。
+11. **D2 は対話パスにのみ作用**：Subagent / Cron / Notification は対象外（意図的）。
+12. **混合モデル history の長期的影響は未知**：D2 有効後、セッション内の turn が fast/primary 間で切り替わるため、長いセッションの再開とコンテキストの一貫性を観察する必要がある。
+13. **D4 の利益縮小**：Edit が allowlist から外れた後、prevalidate は純粋読み取り系ツールのみを対象とする（50-100ms の利益）；Edit を含めた 200ms の利益を得るには方式 B の mtime/hash 検証メカニズムが必要。
 
-### 5.7 重要なコード位置
+### 5.7 主要コード位置
 
-| ファイル                                                  | 重要なシンボル                                                    | 位置                     |
-| --------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------ |
-| `packages/core/src/tools/tools.ts`                        | `ToolResult` インターフェース                                     | L422                     |
-| `packages/core/src/tools/tools.ts`                        | `Kind` enum + `MUTATOR_KINDS` + `CONCURRENCY_SAFE_KINDS`          | L793, L806, L818         |
-| `packages/core/src/tools/tools.ts`                        | `DeclarativeTool.kind: Kind`（各 Tool インスタンスが持つ）        | L165                     |
-| `packages/core/src/core/client.ts`                        | `SendMessageOptions.modelOverride`                                | L142                     |
-| `packages/core/src/core/client.ts`                        | `sendMessageStream`                                               | L1216                    |
-| `packages/core/src/core/client.ts`                        | `modelOverride ?? getModel()`                                     | L1305, L1598             |
-| `packages/core/src/core/client.ts`                        | `turn.run(model, …)`                                              | L1707                    |
-| `packages/core/src/core/geminiChat.ts`                    | `sendMessageStream(model, …)`                                     | L1387                    |
-| `packages/core/src/core/geminiChat.ts`                    | `history.push(userContent)`                                       | L1428                    |
-| `packages/core/src/core/geminiChat.ts`                    | `sendPromise` ロック                                              | L1392                    |
-| `packages/cli/src/ui/hooks/useGeminiStream.ts`            | `modelOverrideRef`（skill のモデル選択）                          | L376, L2225              |
-| `packages/cli/src/ui/hooks/useGeminiStream.ts`            | `processGeminiStreamEvents`                                       | L1365                    |
-| `packages/cli/src/ui/hooks/useGeminiStream.ts`            | `sendMessageStream` 呼び出し点                                    | L1841                    |
-| `packages/cli/src/ui/hooks/useGeminiStream.ts`            | `handleCompletedTools`                                            | L2038                    |
-| `packages/cli/src/ui/hooks/useGeminiStream.ts`            | `submitQuery(ToolResult, …)`                                      | L2355                    |
-| `packages/core/src/services/toolUseSummary.ts`            | fast-model サイドクエリ（非ストリーミングの先例）                  | L108                     |
-| `packages/core/src/followup/speculation.ts`               | fast-model ストリーミング（forked chat の先例）                   | L224                     |
-| `packages/core/src/config/config.ts`                      | `fastModel` + `getFastModel` + `setFastModel`                     | L684, L1987, L2021       |
-| `packages/core/src/core/coreToolScheduler.ts`             | `attemptExecutionOfScheduledCalls`                                | L2436                    |
-| `packages/core/src/core/coreToolScheduler.ts`             | `runConcurrently` + `partitionToolCalls`                          | L2473                    |
-| `packages/cli/src/acp-integration/session/Session.ts`     | `sendMessageStream` 呼び出し点（ACP / IDE パス）                  | L705, L965, L1182, L1423 |
-| `packages/core/src/agents/runtime/agent-core.ts`          | Subagent の `sendMessageStream`（D2 の適用外）                    | L614                     |
+| ファイル                                                | キーシンボル                                         | 位置                     |
+| ------------------------------------------------------- | ---------------------------------------------------- | ------------------------ |
+| `packages/core/src/tools/tools.ts`                      | `ToolResult` interface                               | L422                     |
+| `packages/core/src/tools/tools.ts`                      | `Kind` enum + `MUTATOR_KINDS` + `CONCURRENCY_SAFE_KINDS` | L793, L806, L818         |
+| `packages/core/src/tools/tools.ts`                      | `DeclarativeTool.kind: Kind`（各 Tool インスタンスに付与） | L165                     |
+| `packages/core/src/core/client.ts`                      | `SendMessageOptions.modelOverride`                   | L142                     |
+| `packages/core/src/core/client.ts`                      | `sendMessageStream`                                  | L1216                    |
+| `packages/core/src/core/client.ts`                      | `modelOverride ?? getModel()`                        | L1305, L1598             |
+| `packages/core/src/core/client.ts`                      | `turn.run(model, …)`                                 | L1707                    |
+| `packages/core/src/core/geminiChat.ts`                  | `sendMessageStream(model, …)`                        | L1387                    |
+| `packages/core/src/core/geminiChat.ts`                  | `history.push(userContent)`                          | L1428                    |
+| `packages/core/src/core/geminiChat.ts`                  | `sendPromise` ロック                                 | L1392                    |
+| `packages/cli/src/ui/hooks/useGeminiStream.ts`          | `modelOverrideRef`（skill のモデル選択）             | L376, L2225              |
+| `packages/cli/src/ui/hooks/useGeminiStream.ts`          | `processGeminiStreamEvents`                          | L1365                    |
+| `packages/cli/src/ui/hooks/useGeminiStream.ts`          | `sendMessageStream` 呼び出し箇所                     | L1841                    |
+| `packages/cli/src/ui/hooks/useGeminiStream.ts`          | `handleCompletedTools`                               | L2038                    |
+| `packages/cli/src/ui/hooks/useGeminiStream.ts`          | `submitQuery(ToolResult, …)`                         | L2355                    |
+| `packages/core/src/services/toolUseSummary.ts`          | fast-model side query（非ストリーミングの先例）      | L108                     |
+| `packages/core/src/followup/speculation.ts`             | fast-model streaming（forked chat の先例）           | L224                     |
+| `packages/core/src/config/config.ts`                    | `fastModel` + `getFastModel` + `setFastModel`        | L684, L1987, L2021       |
+| `packages/core/src/core/coreToolScheduler.ts`           | `attemptExecutionOfScheduledCalls`                   | L2436                    |
+| `packages/core/src/core/coreToolScheduler.ts`           | `runConcurrently` + `partitionToolCalls`             | L2473                    |
+| `packages/cli/src/acp-integration/session/Session.ts`   | `sendMessageStream` 呼び出し箇所（ACP / IDE パス）   | L705, L965, L1182, L1423 |
+| `packages/core/src/agents/runtime/agent-core.ts`        | Subagent `sendMessageStream`（D2 の影響を受けない）  | L614                     |
 
 ---
 
-## 6. レビュー検証記録（2026-05-26）
+## 6. Review 検証記録（2026-05-26）
 
 ### 6.1 検証方法
 
-設計文書で**宣言のみで定量化されていない**いくつかのデータ品質の前提と収益見積もりに対して、4 つの並行 Explore subagent を起動して読み取り専用のコード調査を実施した。各 subagent は 1 つの事実確認のみを行い、判断や最適化提案は行わない。調査は現在の `main` ブランチ（HEAD: `026f2f768`）に基づく。
+設計ドキュメントで**宣言のみで定量化されていない**いくつかの前提データ品質仮定と利益見積もりに対して、4 つの並行 Explore subagent を起動し、読み取り専用のコード調査を実施する。各 subagent は 1 つの事実質問のみに答え、判断は行わず、最適化提案もしない。調査は現在の `main` ブランチ（HEAD: `026f2f768`）に基づく。
 
-| 検証課題                                                                        | 関連セクション                      |
-| ------------------------------------------------------------------------------- | ----------------------------------- |
-| Q3 すべてのツールの `ToolResult.error` フィールドの記入率                       | §3.2 `hasUnresolvedError` の前提依存 |
-| Q4 stream abort 後の `usageMetadata` の実際の取得可能性                         | §5.4 `fast_tokens_consumed` の測定   |
-| Q5 「ユーザー追質問 / 明確化要求」のテレメトリポイントの有無                    | §5.2 fast 品質劣化の監視シグナル     |
-| Q6 `CONCURRENCY_SAFE_KINDS` ツールの `shouldConfirmExecute` の実際の IO 工数    | §3.4 D4 収益見積もり                 |
+| 検証質問                                                                 | 関連セクション                       |
+| ------------------------------------------------------------------------ | ------------------------------------ |
+| Q3 現在の全ツールの `ToolResult.error` フィールドの充填率                | §3.2 `hasUnresolvedError` の前提依存 |
+| Q4 stream abort 後の `usageMetadata` の実際の取得可能性                  | §5.4 `fast_tokens_consumed` 測定     |
+| Q5 "ユーザーが質問/明確化" の計装ポイントの有無                          | §5.2 fast 品質回帰監視シグナル       |
+| Q6 `CONCURRENCY_SAFE_KINDS` ツールの `shouldConfirmExecute` 実際の IO 作業量 | §3.4 D4 利益見積もり                 |
 
-### 6.2 発見 1：`hasUnresolvedError` ヒューリスティックに 32% のツール盲点が存在（D2 に影響）
+### 6.2 発見 1：`hasUnresolvedError` ヒューリスティックに 32% のツール死角がある（D2 に影響）
 
-**事実**：エラーパスを持つ 22 のツールのうち、**15 個（68%）が `ToolResult.error` フィールドを規範通りに記入**している（shell、read-file、write-file、edit、grep、glob、ls、web-fetch、mcp-tool、cron-\* などのコア I/O ツール）。**7 個（32%）はエラーを `llmContent` 文字列に詰めているだけ**：`askUserQuestion`、`monitor`、`skill`、`lsp`、`exitPlanMode`、`todoWrite` など。
+**事実**：エラーパスを持つ 22 個のツールのうち、**15 個（68%）は `ToolResult.error` フィールドを正しく設定している**（shell、read-file、write-file、edit、grep、glob、ls、web-fetch、mcp-tool、cron-* などの主要 I/O ツールは揃っている）。**7 個（32%）はエラーを `llmContent` 文字列にだけ詰め込んでいる**：`askUserQuestion`、`monitor`、`skill`、`lsp`、`exitPlanMode`、`todoWrite` など。
 
-統一された `createErrorResult` ヘルパーは**存在せず**、各ツールが独立してエラー構造を実装している。
+**統一的な `createErrorResult` ヘルパーは存在せず**、各ツールが独立してエラー構造を構築している。
 
 **設計への影響**：
 
-- §3.2 の `hasUnresolvedError` 拒否が `ToolResult.error` フィールドのみをチェックする場合、**これら 7 つのツールの失敗は「primary に切り戻す」をトリガーしない**——次のラウンドも fast model にルーティングされる
-- 特に **`skill` ツールの失敗が fast model によって誤って要約される**のは高優先度リスク（本リポジトリには大量の skill 駆動ワークフローがある）
-- §3.2 で「shell などは `ToolResult.error` を正しく記入する必要がある（データ品質の前提依存）」と記載しているが、**shell は実際に規範通り**。本当に漏れているのは skill / lsp / todoWrite などである
+- §3.2 の `hasUnresolvedError` 拒否項目が `ToolResult.error` フィールドのみをチェックする場合、**これら 7 個のツールの失敗は決して「primary に戻す」をトリガーしない**——次のラウンドも引き続き fast model にルーティングされる。
+- 中でも **`skill` ツールの失敗が fast model によって誤って要約される**ことは高優先度のリスクシナリオである（本リポジトリでは大量の skill 駆動ワークフローが影響を受ける）。
+- §3.2 で「shell などは正しく ToolResult.error を設定する必要がある（前提データ品質依存）」としているが、**範囲が狭すぎる**。shell は実際には正しく設定されており、本当の盲点は skill / lsp / todoWrite などである。
 
-**修正提案**：「**`llmContent` のみでエラーを伝えている 7 つのツールを `error` フィールドを規範通りに記入するよう改修する**」を D2 のハード前提依存（§3.2 前提条件）として追加する。見積もり約 2 日；`llmContent.match(/^Error:/i)` によるダーティなフォールバックパスは許容しない（誤判定リスクが高い）。
+**修正提案**：「**`llmContent` のみでエラーを伝えている 7 個のツールを、正しく `error` フィールドを設定するように改造する**」を D2 のハードな前提依存として追加する（§3.2 前提条件）。所要見積もり ~2日；「`llmContent.match(/^Error:/i)` で誤魔化す」ような汚いパスは許容しない（誤判定リスクが高い）。
 
-### 6.3 発見 2：`fast_tokens_consumed` 指標の実装コストが過小評価（D2 / §5.3 に影響）
+### 6.3 発見 2：`fast_tokens_consumed` 指標の実装コストが過小評価されている（D2 / §5.3 に影響）
 
 **事実**：
 
-- `turn.ts` の abort パス（L289-291）は直接 `return` しており、**finally ブロックも `stream.return()` 呼び出しもない**——文書 §5.4 が示唆する「abort 前に `stream.return()` でジェネレーターを finally パスに導く」という入口は現在のコードに存在しない
-- `geminiChat.ts:processStreamResponse` の `for await` ループは完全に反復した場合のみ turn を記録する（L1286）。abort による中断は最後の usage-only チャンク（通常完全な metadata を持つ）が**直接破棄**されることを意味する
-- メインチャットパスには**チャンクレベルのトークン累計フォールバックが一切ない**；サブエージェントレイヤ（`agent.ts:731-744`）にのみ累計があるが再利用不可
-- 結論：abort 時の `usageMetadata` は**ゼロ取得**であり、`chars/4` による推定（±20% 誤差）しかない
+- `turn.ts` の abort パス（L289-291）は直接 `return` しており、**finally ブロックはなく、`stream.return()` の呼び出しもない**——ドキュメント §5.4 で示唆された「abort 前に `stream.return()` でジェネレーターが finally パスを通る」は現在のコードには存在しない。
+- `geminiChat.ts:processStreamResponse` の `for await` ループは、完全に走査された場合にのみ turn を記録する（L1286）。abort による中断は、通常完全なメタデータを持つ最後の usage-only chunk が**直接破棄される**ことを意味する。
+- メインチャットパスには **chunk レベルのトークン累積のフォールバックは一切ない**；subagent 層（`agent.ts:731-744`）のみに累積があるが、再利用できない。
+- 結論：abort 時には `usageMetadata` は **ゼロ取得**、`chars/4` による推定（±20% 誤差）のみに頼ることになる。
 
 **設計への影響**：
 
-- §5.4 末尾の「優先 / フォールバック / ラベル」3 層方案の**「優先」パスは現在のコードでは到達不能**——先に `sendMessageStream` ジェネレーター構造に finally を追加する必要があり、工数は約 1 日。設計文書にこのコストは反映されていない
-- §5.3 で「1000 セッションあたりのトークンコスト <70%」を Phase 3 の目標としているが、指標自体の誤差が ±20% であれば、**「70%」と「82%」は測定ノイズの範囲内**
+- §5.4 末尾の「優先 / フォールバック / 注釈」の 3 層方式において、**「優先」パスは現在のコードでは到達不能**——まず `sendMessageStream` ジェネレーター構造を変更して finally を追加する必要があり、作業量約 1 日、設計ドキュメントにはこのコストが反映されていない。
+- §5.3 では「1000 セッションあたりのトークンコスト <70%」を Phase 3 の目標としているが、指標自体に ±20% の誤差がある場合、**「70%」と「82%」は測定ノイズ内に収まる**。
 
 **修正提案**：
 
-- §5.3 を**トレンド指標**に書き直す。release ゲートとして使用しない；代わりに「決定ログの `fallback_triggered` 率と `fast_tokens_consumed` の同方向トレンド」のデュアル指標で判断する
-- §5.4 に追記：`fast_tokens_consumed` の実装には先に turn.ts の abort パスに finally + `stream.return()` を追加する必要がある。§3.2 の工数に補足（+1 日）
+- §5.3 を**トレンド指標**に書き換え、リリースゲートとして使わない；代わりに「決定ログの `fallback_triggered` 率 + `fast_tokens_consumed` の同方向トレンド」の複合指標で判断する。
+- §5.4 に追記：`fast_tokens_consumed` の実装には、まず turn.ts の abort パスを変更して finally + `stream.return()` を追加する必要がある。これを §3.2 の作業量に加える（+1日）。
 
-### 6.4 発見 3：`user_prompt_classification` と「ユーザー追質問」のテレメトリは新規作成が必要（D2 / §5.2 に影響）
-
-**事実**：
-
-- `packages/core/src/followup/` には `speculation.ts` / `suggestionGenerator.ts` / `followupState.ts` が存在するが、そのテレメトリ（`PromptSuggestionEvent`）は「**システムが提案した候補が採用/無視された**」を記録するものであり、「ユーザーが能動的に追質問した」ではない
-- `ChatRecordingService` はユーザーメッセージを保存するが**分類ラベルは付与しない**
-- リポジトリ全体で grep しても `user_prompt_classification`、中英文の追質問パターンマッチ、`clarif*` / `intentDetect` 系の機構は**存在しない**
-
-**設計への影響**：
-
-- §5.4 の決定ログスキーマの `user_prompt_classification: 'query' | 'action' | 'analysis'` フィールドは**データソースがない**——既存の `PromptSuggestionEvent` から推導できず、`ChatRecord` からも読み出せない
-- §5.2 の「ユーザーが『もっと詳しく』と追質問する頻度」監視シグナルも同様。**最も近い既存のアンカー `followupState.onOutcome` は再利用不可**
-
-**修正提案**：
-
-- §3.2 前提条件に「最小限のユーザー入力分類器の実装」を追加（中英文パターンマッチ、約 3 日）。そうしないと §5.4 決定ログの `user_prompt_classification` と `requestImpliesFurtherAction` のデータが不足する
-- または**受け入れる**：Phase 3a ドッグフード段階ではこれら 2 つのシグナルなしで進め、`fallback_triggered` 率のみで品質劣化を監視する——コストは低いがリスクは高い
-
-### 6.5 発見 4：D4 設計に内在する矛盾——allowlist と収益帰属の不整合（D4 / §3.4 に影響）
+### 6.4 発見 3：`user_prompt_classification` と「ユーザーが質問」の計装ポイントは新規作成が必要（D2 / §5.2 に影響）
 
 **事実**：
 
-- `Kind.Read`（read_file）、`Kind.Search`（glob / grep）、`Kind.Fetch`（web_fetch）の 3 種のツールの `shouldConfirmExecute` / `getConfirmationDetails` は、**大半が `BaseToolInvocation` のデフォルト実装を継承し、IO はゼロ**（read_file / glob / grep は完全に override なし。web_fetch は URL ホスト名のパースを行う 5〜10 行のコードのみ）
-- 実際に IO があるのは `Edit` / `WriteFile`（`calculateEdit` + `readTextFile` + `Diff.createPatch`、典型的に約 20ms）だが、§3.4 方案 A では TOCTOU を避けるために allowlist から除外している
-- **結果**：allowlist に残った 3 種のツールでは、prevalidate と prevalidate なしでほぼ同じ工数——allowlist が実際に遮断しているのは「唯一 IO を節約できる Edit」であり、「元々ゼロコストのツール」が残っている
+- `packages/core/src/followup/` には既に `speculation.ts` / `suggestionGenerator.ts` / `followupState.ts` が存在するが、そのテレメトリー（`PromptSuggestionEvent`）は **「システム提案が採用/無視された」** を記録するものであり、「ユーザーが自発的に質問した」ではない。
+- `ChatRecordingService` はユーザーメッセージを保存するが、**分類タグは付けない**。
+- リポジトリ全体を grep しても `user_prompt_classification`、日本語/英語の質問パターンマッチ、`clarif*` / `intentDetect` 系のメカニズムは存在しない。
 
 **設計への影響**：
 
-- §3.4 の「IO の事前検証」という叙述は**成立しない**：50〜100ms の収益の真の源泉は **「ストリーム完了 → バッチスケジュール」というスケジューリング待機の排除**であり、ツール側の IO とはほぼ無関係
-- 収益帰属の誤りは 2 つの問題を引き起こす：
-  1. **Allowlist はより広くできる**——べき等な prevalidate のツールであればよく、`CONCURRENCY_SAFE_KINDS` に縛る必要はない
-  2. **5〜7 日の投資対効果が自己矛盾**——真の収益がスケジューリングモデルの変更のみの ~50ms であり、Edit が allowlist 外であれば、投資の ROI は設計文書が示すより低い
+- §5.4 の決定ログスキーマの `user_prompt_classification: 'query' | 'action' | 'analysis'` フィールドには**データソースがない**——既存の PromptSuggestionEvent から導出することも、ChatRecord から読み出すこともできない。
+- §5.2 の「ユーザーが「もっと詳しく」と尋ねる頻度」の監視シグナルも同様で、**最も近い既存のアンカーである `followupState.onOutcome` は再利用できない**。
+**建议修正**：
 
-**修正提案**：§3.4 の収益帰属を書き直す——
+- §3.2 前置条件に「ユーザー入力分類器最小実装」（中英パターンマッチ、~3d）を追加。追加しないと §5.4 の決定ログ内 `user_prompt_classification` と `requestImpliesFurtherAction` の両方にデータが不足する
+- または **受け入れる**：Phase 3a dogfood 段階ではこれらの2つのシグナルがなく、`fallback_triggered` 率のみで品質回帰を監視する——コストは低いがリスクは高い
 
-- 2 部分に分割：(a) スケジューリングモデル変更でストリーム待機を省いた ~50ms、(b) ツール側 IO の事前実行で省ける工数 ~0ms（allowlist 内）/ ~20ms（Edit を allowlist に含める場合）
-- §4.1 総合評価表で D4 の RT 収益を「50〜200ms」から「30〜80ms（方案 A、主にスケジューリングモデル）/ 100〜200ms（方案 B、Edit 含む）」に変更
-- §4.2 ロードマップで D4 の優先度をさらに引き下げ——純粋なスケジューリングモデルの改修は独立して実施可能であり、prevalidate の概念に強引に結びつける必要はない
+### 6.5 発見 4：D4 設計内在矛盾——allowlist と利益帰属の不一致（D4 / §3.4 に影響）
 
-### 6.6 ロードマップへの合算影響
+**事実**：
 
-| セクション                    | 元の見積もり | 検証後の見積もり | 増加の原因                                                                                     |
-| ----------------------------- | ------------ | ---------------- | ---------------------------------------------------------------------------------------------- |
-| D2 §3.2 工数（§4.1 内訳表）  | 9 日         | **14〜16 日**    | +2 日（発見 1 の前置ツール改修）+1 日（発見 2 の turn.ts finally 改修）+3 日（発見 3 の入力分類器、ハードパスの場合） |
-| D4 §3.4 総合評価              | 5〜7 日      | 5〜7 日（変更なし） | 工数は変わらないが、**RT 収益帰属を「ツール側 IO」から「スケジューリングモデル」に変更**。投資 ROI は下方修正 |
-| Phase 3 総所要時間（§4.2）    | 約 3 週間    | **約 4〜5 週間** | D2 工数の上方修正＋前置ツール改修 PR の review サイクル                                        |
+- `Kind.Read`（read_file）、`Kind.Search`（glob / grep）、`Kind.Fetch`（web_fetch）の3種類のツールにおける `shouldConfirmExecute` / `getConfirmationDetails` は、**ほぼすべてが `BaseToolInvocation` のデフォルト実装を継承し、IOをゼロ**（read_file / glob / grep は完全にオーバーライドなし、web_fetch は5-10行の文字列解析でURLホスト名を抽出するのみ）
+- 実際にIOが発生するのは `Edit` / `WriteFile`（`calculateEdit` + `readTextFile` + `Diff.createPatch`、通常 ~20ms）だが、§3.4 の方案Aでは TOCTOU を回避するためにこれらを allowlist から除外している
+- **結果**：allowlist に残る3種類のツールでは、prevalidate ありとなしで作業量がほぼ同じ——allowlist が実際に遮断しているのは「唯一IOの削減が可能なEdit」だけであり、「元々コストがゼロのツール」が残っている
 
-**元のロードマップへの修正提案**：
+**設計への影響**：
 
-1. **D1（P0）と直後に続く D3 を維持**——今回の検証でコアの前提は揺らいでいない。ROI 判断は変わらない
-2. **D2 の開始条件を厳格化**——発見 1/2/3 の前置作業（合計約 6 日）を「D2 開始ゲート」とし、完了しないと §3.2 の前置実験に進まない
-3. **D4 の優先度を再評価**——真の収益がスケジューリングモデル変更であるなら、(a) 30〜80ms を受け入れて D4 を P3 に格下げするか、(b) 方案 B（Edit + mtime/hash）で 100〜200ms を取り戻すが追加 5〜7 日が必要
-4. **§1.2 のシングルサンプルベースラインは変更しない**——ただし §5.1 の P95 欄は D1 が導入され、≥3 種のシナリオのベースラインが取得されるまで具体的な数字を記載しない
+- §3.4 の「前置IO検証」という説明は**成立しない**：50-100ms の利益の真の源泉は **「stream が完全に終了 → その後に一括 schedule」というスケジューリング待ちを解消すること**であり、ツール側のIOとはほぼ無関係
+- 利益帰属の誤りが2つの問題を引き起こす：
+  1. **allowlist はもっと広くできる**——べき等な prevalidate が可能なツールであればよく、`CONCURRENCY_SAFE_KINDS` に縛られる必要はない
+  2. **5-7dの投入が自己矛盾を起こす**——真の利益がスケジューリングモデル変更による ~50ms だけで、Edit が allowlist に含まれていないなら、この投入のROIは設計書が示唆するより低い
 
-### 6.7 検証未カバーの追加課題
+**建议修正**：§3.4 の利益帰属を書き直しする——
 
-以下の追加課題は主観的判断または作者の意図の問題であり、今回 subagent では処理せず、後続の design review に委ねる：
+- (a) スケジューリングモデル変更による stream 待ち削減 ~50ms、(b) ツール側IO前置で削減可能な作業量 ~0ms（allowlist内） / ~20ms（Editがallowlistに入った場合） の2つに分割
+- §4.1 の総合評価表で D4 RT 利益を "50-200ms" から "30-80ms（方案A、主にスケジューリングモデル）/ 100-200ms（方案B、Edit含む）" に変更
+- §4.2 のロードマップで D4 を更に降格——純粋なスケジューリングモデル改造は独立して実施可能であり、prevalidate の概念に強く紐づける必要はない
 
-- D2 の実施順序を D3 より後にすべきか（主観的な順序）
+### 6.6 ロードマップへの統合的影響
+
+| 節                          | 元見積もり | 検証後見積もり | 増分源泉                                                                                         |
+| ----------------------------- | ------ | ------------ | ------------------------------------------------------------------------------------------------ |
+| D2 §3.2 作業量（§4.1 詳細表） | 9d     | **14-16d**   | +2d（発見1 前置ツール改造）+1d（発見2 turn.ts finally 改造）+3d（発見3 入力分類器、直截なパスを取る場合） |
+| D4 §3.4 総合評価              | 5-7d   | 5-7d（不变） | 作業量は変わらず、**RT利益帰属が「ツール側IO」から「スケジューリングモデル」に変更**、投入ROIは低下                         |
+| Phase 3 総期間（§4.2）        | ~3週間  | **~4-5週間**  | D2作業量増加 ＋ 前置ツール改造PRが単独でレビュー期間を要する                                               |
+
+**元ロードマップへの修正提案**：
+
+1. **D1（P0）とD3は引き続き優先**——今回の検証ではこれらのコア前提は触れておらず、ROI判断は不変
+2. **D2 の開始条件を厳格化**——発見1/2/3の前置作業（合計 ~6d）を「D2開始ゲート」とし、完了しなければ §3.2 の前置実験に入らない
+3. **D4 の優先度を再評価**——真の利益がツール側IOではなくスケジューリングモデル変更であるなら、(a) 30-80ms を受け入れて D4 を P3 後置に落とすか、(b) 方案B（Edit + mtime/hash）を検討して 100-200ms を確保するが追加 5-7d をかける
+4. **§1.2 の単回サンプリングベースラインは修正しない**——ただし §5.1 P95 の欄は、D1 が実装され、≥3種のシナリオベースラインが完成するまでは具体的な数字を記載しない
+
+### 6.7 検証でカバーできなかった追質問
+
+以下の追質問は主観的判断や作者の意図に関するものであり、今回の検証では subagent で処理しなかった。今後の設計レビューでの議論のために残す：
+
+- D2 の実施順序を D3 の後ろにするべきか（主観的順序）
 - D1/D3 を Phase 1 にまとめて実施すべきか（実施戦略）
-- §3.2 の `needsCrossResultReasoning` 閾値 ≥3 が §1.2 のベースラインシナリオに対して逆方向過適合していないか（作者の意図）
-- §5.7 重要コード位置表の行番号アンカーをシンボルアンカーに変更すべきか（文書の安定性）
+- §3.2 の `needsCrossResultReasoning` 閾値 ≥3 が §1.2 のベースラインシナリオに逆適合しているか（作者の意図）
+- §5.7 のキーコード位置テーブルの行番号アンカーをシンボルアンカーに変更すべきか（ドキュメント安定性）
 
 ---
 
-## 7. 浮遊オイル評価と次のステップ（2026-05-26 第二次レビュー）
+## 7. 浮利評価と次のステップ（2026-05-26 二次レビュー）
 
-### 7.1 本次再評価のトリガーとなった事実
+### 7.1 今回の再整理を引き起こした事実
 
-§6 の検証後、**ROI 判断を変える 2 つの事実**が発見された：
+§6 の検証後、さらに**ROI判断を変える2つの事実**が発見された：
 
-1. **DashScope の `cache_control` がすでに実装済み**（`packages/core/src/core/openaiContentGenerator/provider/dashscope.ts:172-181`）
-   - ストリーミングリクエストに `system + 最後の message + 最後の tool definition` をマーク
-   - ヒットデータ `cached_tokens` はすでに `usageMetadata.cachedContentTokenCount` に収集されている（`converter.ts:1124-1149`）
-   - これは prefix cache 機構：Round N+1 が自動的に Round N の書き込みプレフィックスにヒットする
-   - **summary ラウンドはプレフィックスのヒット率が最も高いラウンドに相当する**
+1. **DashScope `cache_control` が実装済み**（`packages/core/src/core/openaiContentGenerator/provider/dashscope.ts:172-181`）
+   - streaming リクエストに `system + 最後の message + 最後の tool definition` をマーク
+   - ヒットデータ `cached_tokens` は既に `usageMetadata.cachedContentTokenCount` に収集されている（`converter.ts:1124-1149`）
+   - これは prefix cache の仕組み：Round N+1 は Round N が書き込んだプレフィックスを自動的にヒット
+   - **summary ラウンドはまさに最も長いプレフィックスをヒットするラウンド**
 
-2. **system prompt はすでに安定状態**（`prompts.ts` の監査結果）
-   - cwd / timestamp / git status / ファイルリスト / LSP 状態など「turn ごとに変わる」ハードな問題がない
-   - `process.cwd()` は `isGitRepository()` のスイッチにのみ使用され、prompt の内容には書き込まれない
-   - 唯一の動的ポイント：`save_memory` ツールのトリガー / `/model` の切り替え / MCP の動的ロード（いずれもイベント性で低頻度）
+2. **system prompt は既に定常状態**（`prompts.ts` 監査結果）
+   - cwd / timestamp / git status / ファイルリスト / LSP 状態など「ターンごとに変わる」決定的な問題はない
+   - `process.cwd()` は `isGitRepository()` のスイッチとしてのみ使われ、prompt 内容には書き込まれない
+   - 唯一の動的点：`save_memory` ツールのトリガー / `/model` 切り替え / MCP 動的ロード（いずれもイベント的であり、低頻度）
 
-### 7.2 これら 2 つの事実が D2 の ROI 判断を変えた
+### 7.2 これら2つの事実が D2 のROI判断を変えた
 
-§3.2 の文書は「fast model が primary より約 2 秒速い」と仮定しており、比較対象は **primary uncached vs fast uncached** だった。
+§3.2 のドキュメントは「fast model は primary より ~2s 速い」と仮定し、対照ベースラインは **primary uncached vs fast uncached** であった。
 
-しかし実際の運用では primary は **cached**（summary ラウンドはキャッシュが最も効く）。よって正しい比較は：
+しかし実際の稼働では primary は **cached**（summary ラウンドはちょうど最も強いキャッシュをヒットする）であるため、正しい対照は：
 
 > primary cached vs fast uncached
 
-| ルーティング                          | 推定レイテンシ  | 備考                        |
-| ------------------------------------- | --------------- | --------------------------- |
-| primary が 80% のプレフィックスキャッシュにヒット | ~1.8〜2.2s | summary ラウンドの現実の実際の表現 |
-| fast がキャッシュにミス（クロスモデルは共有されない） | ~1.5〜2s | D2 切り替え後の実際の表現   |
+| ルーティング                          | 推定遅延  | 備考                     |
+| ----------------------------- | --------- | ------------------------ |
+| primary が 80% の確率で prefix cache ヒット   | ~1.8-2.2s | summary ラウンドの現在の実際の性能 |
+| fast キャッシュなし（モデル間共有なし） | ~1.5-2s   | D2 切り替え後の実際の性能 |
 
-**正味の差：数百ミリ秒、場合によっては fast の方が遅い可能性もある**。14〜16 日の工数コスト＋品質リスク＋フォールバックの浪費を重ねると、**D2 の正味収益はゼロに近いかマイナス**。
+**純差分：数百ミリ秒、場合によっては fast の方が遅い可能性もある**。これに 14-16d の工数コスト + 品質リスク + fallback の浪費が加わり、**D2 の純利益はほぼゼロまたはマイナス**。
 
-§3.2 の前提条件に**必ず追加する**：ベースライン測定では primary **cached** と fast **uncached** を比較しなければならず、`T_primary_cached < T_fast_uncached × 1.5` の場合は D2 を有効化すべきでない。
+§3.2 の前提条件**に追加が必要**：ベースライン測定では primary **cached** vs fast **uncached** を比較しなければならない。`T_primary_cached < T_fast_uncached × 1.5` の場合、D2 は有効にすべきでない。
 
-### 7.3 候補リスト（浮遊オイル度順に再ソート）
+### 7.3 候補リスト（浮利度合いで再整理）
 
-**真の浮遊オイル（すぐに着手可能、<1 日の投資、極低リスク、確実な収益）**：
+**真の浮利（すぐに着手、< 1d 投入、極低リスク、確実な利益）**：
 
-| 項目                            | 投資     | 収益                                | 操作箇所                                                                     |
-| ------------------------------- | -------- | ----------------------------------- | ---------------------------------------------------------------------------- |
-| 簡潔な返答指示                  | 30 分    | ~2s/summary ラウンド（出力トークン半減） | `prompts.ts` の Final Reminder セクションに 1 文追加                       |
-| キャッシュヒット率テレメトリの公開 | 0.5 日 | 0s 直接、後続の意思決定の **enabler** | `cachedContentTokenCount` は収集済みだが公開されていない；`save_memory` 後の個別マーキングも追加 |
+| 項                            | 投入  | 利益                              | 操作位置                                                                    |
+| ----------------------------- | ----- | --------------------------------- | --------------------------------------------------------------------------- |
+| 簡潔な応答指示                  | 30分 | ~2s/summary ラウンド（出力トークン半減） | `prompts.ts` Final Reminder 段に一文追加                                        |
+| cache hit rate テレメトリの露出 | 0.5d  | 0s 直接、後続判断の **enabler**   | `cachedContentTokenCount` は既に収集済み、露出が不足；さらに `save_memory` 後に別途タグを打つべき |
 
-**ニアフローティング（データ取得後に判断、0.5〜1 日の投資）**：
+**準浮利（データを待って判断、0.5-1d 投入）**：
 
-| 項目                            | 投資                  | 収益                                   | 意思決定の前提                                                                    |
-| ------------------------------- | --------------------- | -------------------------------------- | --------------------------------------------------------------------------------- |
-| summary ラウンドの `tool_choice='none'` | 0.5〜1 日     | 0.3〜1s（sampling でツール呼び出しトークンをスキップ） | 「summary ラウンドである」の判定ロジックが必要。誤判定リスクは低い          |
-| summary ラウンドの thinking 無効化 | 1 日               | 0.5〜2s                                | thinking を有効にしているモデル（qwen3.5-plus、glm-4.7、kimi-k2.5 など）にのみ意味がある |
-| UI レンダリングレイヤのチャンクバッチング | 0.5 日調査 + 0.5 日実装 | 要検証                            | 仮説：長い summary の `useGeminiStream` のトークンレンダリング累積オーバーヘッドが無視できない |
+| 項                              | 投入                  | 利益                                    | 判断の前提                                                              |
+| ------------------------------- | --------------------- | --------------------------------------- | --------------------------------------------------------------------- |
+| summary ラウンド `tool_choice='none'` | 0.5-1d                | 0.3-1s（sampling で tool_call token をスキップ） | 「summary ラウンド」の判定ロジックが必要、誤判定リスクは低い                               |
+| summary ラウンドで thinking をオフ | 1d                    | 0.5-2s                                  | thinking を有効にするモデルにのみ意味がある（qwen3.5-plus、glm-4.7、kimi-k2.5 等） |
+| UI レンダリング層の chunk batching | 0.5d 調査 + 0.5d 実装 | 要検証                                  | 仮定：長い summary の `useGeminiStream` トークンレンダリングの累積オーバーヘッドは少なくない |
 
-**調査待ち（大きな成果の可能性）**：
+**調査待ち（大きな効果の可能性あり）**：
 
-| 項目                                   | 調査投資                   | 潜在的な収益          | 重要な未知点                                                                                       |
-| -------------------------------------- | -------------------------- | --------------------- | -------------------------------------------------------------------------------------------------- |
-| ~~DashScope の `scope: 'global'` 対応~~ | ~~0.5 日文書 + 0.5 日 A/B~~ | ~~クロスセッションヒット~~ | **調査済み、結論 (c) 不可。**（§7.4 発見 B の調査結果参照）。この行は意思決定記録として保持し、再調査を再開しないこと |
+| 項                                   | 調査投入                 | 潜在的利益            | 主要な未知                                                                                   |
+| ------------------------------------ | ------------------------ | ------------------- | ------------------------------------------------------------------------------------ |
+| ~~DashScope `scope: 'global'` サポート~~ | ~~0.5d ドキュメント + 0.5d A/B~~ | ~~セッション間ヒット~~ | **既に調査、結論 (c) 不可行**（§7.4 発見 B 調査結果参照）。この行は決定記録として残し、調査を再開しないこと |
 
-**中程度の改修（浮遊オイルではなく、個別に評価）**：
+**中程度の改造（浮利とは言えない、個別評価）**：
 
-| 項目                                  | 投資             | リスク | 収益             |
-| ------------------------------------- | ---------------- | ------ | ---------------- |
-| D1 `skipLlmRound`（終態クエリシナリオ） | 2〜3 日        | 中     | 3〜4s/終態ラウンド |
-| summary ラウンドのツール結果削減（D5 サブセット） | 2 日     | 中     | 1〜2s            |
-| D3 `Summarizing` 状態                 | 3〜5 日          | 中     | 体感改善 3s      |
-| system prompt のスリム化              | 2〜3 日（A/B テスト含む） | 中  | 0.5〜1s          |
+| 項                                | 投入             | リスク | 利益        |
+| --------------------------------- | ---------------- | ---- | ----------- |
+| D1 `skipLlmRound`（終状態クエリシナリオ） | 2-3d             | 中   | 3-4s/終状態ラウンド |
+| summary ラウンドツール結果のトリミング（D5 サブセット） | 2d               | 中   | 1-2s        |
+| D3 `Summarizing` 状態             | 3-5d             | 中   | 体感改善 3s |
+| system prompt の軽量化                | 2-3d 含 A/B テスト | 中   | 0.5-1s      |
 
-**廃棄された方向（以降実施しない）**：
+**既に廃止した方向（今後実施しない）**：
 
-| 項目                                        | 廃棄理由                                               |
-| ------------------------------------------- | ------------------------------------------------------ |
-| D2 fast model ルーティング                  | DashScope キャッシュで相殺。正味収益はゼロに近いかマイナス |
-| D4 prevalidate                              | 収益帰属が誤り（真の収益はスケジューリングモデル由来の ~50ms のみ）。5〜7 日の投資に見合わない |
-| system prompt の安定化                      | すでに安定状態。実施不要                               |
-| ストリームの早期終端（締めくくりの文を早期 abort） | 誤判定リスクが高く、ユーザーが回答を切り取られたと感じる |
+| 項                                         | 廃止理由                                               |
+| ------------------------------------------ | ------------------------------------------------------ |
+| D2 fast model ルーティング                     | DashScope cache で相殺され、純利益はほぼゼロまたはマイナス             |
+| D4 prevalidate                             | 利益帰属の誤り（実際はスケジューリングモデルによる ~50ms のみ）、5-7d の投入に値しない |
+| system prompt 安定化                       | 既に定常状態、実施すべきことはない                                       |
+| ストリーミングの早期終了（早期に abort して余計な挨拶を止める） | 誤判定リスクが高く、ユーザーは回答が途中で切られたと感じる                         |
 
-### 7.4 展開に値する 3 つの新発見
+### 7.4 詳細化する価値のある3つの新たな発見
 
-#### 発見 A：`tool_choice='none'` の実際のメカニズム
+#### 発見 A：`tool_choice='none'` の真の仕組み
 
-OpenAI / DashScope API での `tool_choice='none'` は「ツール呼び出しを禁止する」だけではない——モデルの sampling 段階で **`<tool_call>` の特殊トークンの確率割り当てが完全にスキップ**され、デコーダが直接自然言語生成パスに進む。収益は「1〜2 回の retry の節約」ではなく、**sampling 自体が高速化**することにある。
+OpenAI / DashScope API で `tool_choice='none'` は単に「ツールを呼ばない」という意味だけでなく、モデルの sampling 段階で **`<tool_call>` 特殊トークンの確率割り当てを完全にスキップ**し、デコーダは直接自然言語生成パスを進む。利益は「リトライを1、2回節約する」ことではなく、sampling 自体が高速になることにある。
 
-#### 発見 B：`scope: 'global'` がリポジトリに既存の Anthropic 先例あり
+#### 発見 B：`scope: 'global'` はリポジトリ内に Anthropic の先行例あり
 
-`packages/core/src/core/anthropicContentGenerator/converter.test.ts:85, 1543` に `cache_control: { type: 'ephemeral', scope: 'global' }` の使用例がある。しかし `provider/dashscope.ts:288` では cache_control のマーキング時に **scope を渡していない**：
+`packages/core/src/core/anthropicContentGenerator/converter.test.ts:85, 1543` に既に `cache_control: { type: 'ephemeral', scope: 'global' }` の使用方法がある。しかし `provider/dashscope.ts:288` で cache_control を設定する際に **scope を渡していない**：
 
 ```typescript
 cache_control: { type: 'ephemeral' },   // scope なし
 ```
 
-DashScope サーバー側が `scope: 'global'` を認識する場合：
+もし DashScope サーバーが `scope: 'global'` を認識するなら：
 
-- system + tools がグローバルキャッシュにアップグレード（TTL が ephemeral の 5 分より大幅に長い）
-- **クロスセッションヒット**が可能になり、起動レイテンシも低下
-- この 1 点だけで D2 の全仮定収益を超える可能性がある
+- system + tools がグローバルキャッシュに昇格（TTL は ephemeral の 5分よりはるかに長い）
+- **セッション間でヒット**、起動遅延も削減
+- この1つの利益だけでも、元の D2 の全仮定利益を上回る可能性がある
 
-##### 調査結果（2026-05-26、結論：(c) 不可、本ラインをクローズ）
+##### 調査結果（2026-05-26、結論：(c) 不可行、この線は閉じる）
 
-阿里云百炼公式ドキュメント `help.aliyun.com/zh/model-studio/context-cache` を確認して得た事実：
+Alibaba Cloud 百煉の公式ドキュメント `help.aliyun.com/zh/model-studio/context-cache` を調べた事実リスト：
 
-| 課題                     | 結論                                                                                                                                                                                                 | 証拠                                                   |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `scope` フィールドの対応  | **非対応**。`type: 'ephemeral'` のみ認識。`scope`/`persistent`/`global` はいずれもサイレントに無視される                                                                                              | 公式ドキュメント：「`type` を `ephemeral` に設定することのみをサポートする」 |
-| ephemeral の実際の TTL    | **5 分のスライディングウィンドウ**（ヒット時にリセット）                                                                                                                                              | 百炼ドキュメントで明記                                  |
-| 長い TTL / グローバルメカニズム | **パブリッククラウド API には一切存在しない**。`persistent` type 値なし、個別のアップロード API なし、`prompt_cache_key` なし；唯一の「グローバル永続」製品は PAI グローバルコンテキストキャッシュ（セルフデプロイ + vLLM + Lingjun + 共有 Redis）であり、DashScope API とは無関係 | PAI ドキュメント |
-| クロスセッション共有      | 同アカウント + 同モデル + コンテンツ一致 → すでにヒット（これは `ephemeral` がすでに実施していること）；異なるアカウント間での共有は絶対にない                                                          | 百炼ドキュメント                                        |
-| 料金                      | cache write 125%、明示的 cache read 10%、**暗黙的 cache read 20%**（`cache_control` マークなしでも暗黙的な 20% 割引が適用）                                                                            | 百炼料金ドキュメント                                    |
-| 最小キャッシュ可能プロンプト | **1024 トークン**                                                                                                                                                                                   | 百炼ドキュメント                                        |
-| モデル対応（明示的キャッシュ） | qwen3.7-max / qwen3.6-plus / qwen3.5-plus / qwen3-coder-plus / qwen3-vl-plus / deepseek-v3.2 / kimi-k2.5 / glm-5.1 がリストに明記。**qwen3.6-plus と qwen3.7-max はいずれも 90% の明示的キャッシュ割引を受ける** | 百炼モデルリスト（2026-05-26 再確認） |
+| 問題                   | 結論                                                                                                                                                                                               | 証拠                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `scope` フィールドのサポート       | **非対応**。`type: 'ephemeral'` のみ認識。`scope`/`persistent`/`global` はすべて静かに無視される                                                                                                   | 公式ドキュメント原文：「`type` には `ephemeral` のみ設定可能」 |
+| ephemeral の実際の TTL     | **5分のスライディングウィンドウ**（ヒット後にリセット）                                                                                                                                                                   | 百煉ドキュメントで明示                                       |
+| 長い TTL / グローバル仕組み      | **パブリッククラウド API 側には全くメカニズムなし**。`persistent` type 値も、独立した事前アップロード API も、`prompt_cache_key` もない。唯一の「グローバル永続」プロダクトは PAI グローバルコンテキストキャッシュ（自社デプロイ + vLLM + 灵駿 + 共有 Redis）であり、DashScope API とは無関係 | PAI ドキュメント                                           |
+| セッション間共有        | 同一アカウント + 同一モデル + 内容一致 → 既にヒット（これが ephemeral が既に行っていること）。異なるアカウント間では絶対に共有されない                                                                                                         | 百煉ドキュメント                                           |
+| 料金                   | cache write 125%、明示的な cache read 10%、**暗黙の cache read 20%**（`cache_control` マークがなくても暗黙の 20% 割引が得られる）                                                                                     | 百煉料金ドキュメント                                       |
+| 最小キャッシュ可能 prompt      | **1024 tokens**                                                                                                                                                                                    | 百煉ドキュメント                                           |
+| モデルサポート（明示的 cache） | qwen3.7-max / qwen3.6-plus / qwen3.5-plus / qwen3-coder-plus / qwen3-vl-plus / deepseek-v3.2 / kimi-k2.5 / glm-5.1 が全て明示的にリストされている。**qwen3.6-plus と qwen3.7-max は同じく 90% の明示的キャッシュ割引が適用される**        | 百煉モデルリスト（2026-05-26 再確認）                    |
 
-**副次的な発見の連鎖的な意義**：
+**いくつかの副発見による付随的意味**：
 
-1. **TTL スライディングウィンドウ**は agent loop にとって好ましい——ループ内の連続呼び出しの間隔は通常 <30 秒。**キャッシュは常に新鮮で 5 分で失効しない**
-2. **暗黙的キャッシュの 20% 割引**は無料の恩恵——`cache_control` なしでも取得できる；ただし精細な制御には明示的なマークが必要
-3. ~~`qwen3.6-plus` が明示的リストにない~~——**訂正（2026-05-26）**：再確認の結果、qwen3.6-plus は**明示的キャッシュリストに確かに存在**し、90% 割引を受ける。前回のレポートのこの箇所は誤りで、本節の最初のテーブルで訂正済み
-4. **`dashscope.ts:288` の現在のアプローチはすでに DashScope パブリッククラウド API の能力上限**——これ以上絞り出す余地はない
+1. **TTL スライディングウィンドウ** は agent loop にとって良いニュース——ループ内の連続呼び出しの間隔は通常 < 30s であり、**キャッシュは常に新鮮で、5分で失効することはない**
+2. **暗黙のキャッシュ 20% 割引** は無料のボーナス——`cache_control` をマークしていなくても得られる；ただし細かい制御には明示的マークが必要
+3. ~~`qwen3.6-plus` は明示的リストにない~~ —— **訂正（2026-05-26）**：再確認の結果、qwen3.6-plus **は明示的キャッシュリストに含まれている**、90% 割引が適用される。前回の報告ではこの点が誤っていたため、本節の最初の表で訂正済み
+4. **`dashscope.ts:288` の現在の実装は DashScope パブリッククラウド API の能力上限**——これ以上搾り出す余地はない
 
-**§7.2 の D2 判断に対する連鎖的な強化**：
+**§7.2 D2 判断への付随的な強化**：
 
-TTL スライディングウィンドウは、agent loop 内の summary ラウンドが **primary のキャッシュをほぼ 100% ヒットする**ことを意味する（直前の数ラウンドで 5 分以内にヒットしているため）。D2 が fast model に切り替えると、累積されたキャッシュ書き込みチェーンが崩れるだけでなく、**summary ラウンドが「ほぼ 100% ヒット」から「完全ミス」に退化する**——正味収益の判断は §7.2 の元の仮定よりも明確にマイナスとなる。
+TTL スライディングウィンドウは、agent loop 内で summary ラウンドが**ほぼ 100% の確率で** primary のキャッシュをヒットすることを意味する（直前のラウンドでちょうどヒットしており、5分以内）。D2 で fast model に切り替えると、累積されたキャッシュ書き込みチェーンが壊れるだけでなく、**summary ラウンドは「ほぼ 100% ヒット」から「完全ミス」に退化する**——純利益判断は §7.2 の元の仮定よりも明確にマイナスになる。
 
-#### 発見 C：UI レンダリングレイヤは見落とされた盲点
+#### 発見 C：UI レンダリング層は見落とされていた盲点
 
-§1.2 のベースラインは「フレームワークオーバーヘッド」を 0.3s（3%）と記載しているが、これは概算である。Ink 7 + React 19.2 は各チャンクで setState → re-render をトリガーし、長い summary では累積で 200〜500ms になる可能性がある。`useGeminiStream` がトークンストリームをどう処理しているか、`requestAnimationFrame` / `useDeferredValue` によるチャンク合算があるかどうかを確認する必要がある。
+§1.2 のベースラインでは「フレームワークオーバーヘッド」を 0.3s（3%）と見積もっているが、これは粗い見積もりである。Ink 7 + React 19.2 では各 chunk が setState → re-render をトリガーし、長い summary では累積で 200-500ms になる可能性がある。`useGeminiStream` がトークンストリームをどのように処理しているか、`requestAnimationFrame` / `useDeferredValue` で chunk をマージしているかを確認する必要がある。
 
-### 7.5 データ待ちチェックポイント——データが得られたらどの意思決定を見直すか
+### 7.5 データチェックポイント —— データが来たらどの判断を再確認すべきか
 
-本節はこの**文書の活動的なエントリポイント**：以降、何らかの測定データが得られたら、下の表を参照してどの意思決定を確認するかを判断すること。
+本節は**このドキュメントの活動エントリポイント**：今後何らかのメトリクスデータが得られたら、以下の表と照らし合わせてどの判断を再確認すべきかを決定する。
 
-#### チェックポイント 1：キャッシュヒット率データが出てから
+#### チェックポイント 1：cache hit rate データが出た後
 
-**トリガー条件**：浮遊オイル「キャッシュヒット率テレメトリの公開」が本番稼働から ≥3 日経過し、決定ログに `cached_tokens` / `prompt_tokens` の分布が含まれている。
+**トリガー条件**：浮利「cache hit rate テレメトリの露出」が稼働開始 ≥3 日、決定ログに `cached_tokens` / `prompt_tokens` の分布が含まれている
 
 **確認すべきデータ**：
 
 - 全体のヒット率（cached / prompt）の P50、P90 分布
-- ラウンド別：Round 1 / Round 2 / Round 3（summary）それぞれのヒット率
-- `save_memory` トリガー後の次ラウンドのヒット率（ほぼ 0 のはず）
-- `/model` 切り替え後の次ラウンドのヒット率（ほぼ 0 のはず）
+- ラウンド別：Round 1 / Round 2 / Round 3 (summary) それぞれのヒット率
+- `save_memory` トリガー後の次のラウンドのヒット率（ほぼ 0 になるはず）
+- `/model` 切り替え後の次のラウンドのヒット率（ほぼ 0 になるはず）
 
-**意思決定パス**：
+**判断パス**：
 
-| 全体ヒット率 | 意味                          | 行動                                                                        |
-| ------------ | ----------------------------- | --------------------------------------------------------------------------- |
-| > 70%        | 現状がほぼ理論上限に近い      | #1 簡潔指示＋発見 B の調査のみ実施；その他の浮遊オイルは必要に応じて        |
-| 40〜70%      | 改善余地はあるが原因不明      | ラウンド別ヒット率を分析し、どのセグメントがミスしているかを特定             |
-| < 40%        | 動的なポイントがキャッシュを壊している | system prompt / userMemory のトリガー頻度を再監査；`save_memory` が想定以上に頻繁な可能性 |
+| 全体ヒット率 | 意味                 | 行動                                                                        |
+| ---------- | -------------------- | --------------------------------------------------------------------------- |
+| > 70%      | 現状は理論的上限に近い | 浮利 #1 簡潔な応答 + 発見 B 調査のみ実施。その他の浮利は必要に応じて                                |
+| 40-70%     | まだ余地があるが原因不明   | ラウンド別ヒット率を分析し、どの部分でミスが発生しているかを特定                                         |
+| < 40%      | キャッシュを壊す動的点がある  | system prompt / userMemory トリガー頻度を再監査。`save_memory` が想定より頻繁な可能性がある      |
 
-#### チェックポイント 2：DashScope の `scope: 'global'` 文書調査結果 ✅ 完了（2026-05-26）
+#### チェックポイント 2：DashScope `scope: 'global'` ドキュメント調査結果 ✅ 完了（2026-05-26）
 
-**結果**：**完全に非対応**。詳細は §7.4 発見 B の「調査結果」セクション参照。
+**結果**：**全く認識しない**。詳細は §7.4 発見 B の「調査結果」の段落を参照。
 
-**実行済みの行動**：現状を受け入れ、本項をスキップ。`dashscope.ts:288` は現在の `ephemeral` マーキングを維持し、改修不要。
+**実行済みの行動**：現状を受け入れ、この項目はスキップする。`dashscope.ts:288` は既存の `ephemeral` マークを維持し、改造は不要。
 
-**以降この調査を再開しないこと**——DashScope が公式に新しい永続化メカニズムを発表しない限り。
+**この調査を再開しないこと**——ただし DashScope が公式発表で新しい永続化メカニズムを追加した場合を除く。
 
-#### チェックポイント 3：UI レンダリングレイヤ調査結果
+#### チェックポイント 3：UI レンダリング層の調査結果
 
-**トリガー条件**：発見 C の調査完了（`useGeminiStream` のトークンフロー処理 + Ink/React DevTools での実測）。
+**トリガー条件**：発見 C の調査完了（`useGeminiStream` のトークンストリーム処理 + Ink/React DevTools 実測を確認）。
 
-**意思決定パス**：
+**判断パス**：
 
-| 結果                                         | 行動                                                 |
-| -------------------------------------------- | ---------------------------------------------------- |
-| 長い summary stream のレンダリング累積 > 200ms | バッチング（`useDeferredValue` または独自スロットリング）に変更 |
-| レンダリングオーバーヘッド < 100ms            | 本ラインをクローズ                                   |
+| 結果                               | 行動                                             |
+| ---------------------------------- | ------------------------------------------------ |
+| 長い summary stream レンダリング累積 > 200ms | batching に変更（`useDeferredValue` またはカスタムスロットリング） |
+| レンダリングオーバーヘッド < 100ms                   | この手がかりをクローズ                                       |
 
-#### チェックポイント 4：「真の浮遊オイル」完了後の第二次ベースライン測定
+#### チェックポイント 4：「真の浮利」完了後の二次ベースライン測定
 
-**トリガー条件**：#1 簡潔指示＋チェックポイント 1/2/3 の意思決定完了から ≥1 週間。
+**トリガー条件**：#1 簡潔な応答 + チェックポイント 1/2/3 の判断完了 ≥1 週間。
 
 **確認すべきデータ**：
 
-- エンドツーエンド RT P50 と §1.2 のシングルサンプルベースライン（13.4s）との比較
-- summary ラウンド単体の P50 / P95
-- ユーザー追質問率（浮遊オイル A でユーザー入力分類も実施した場合）
+- エンドツーエンド RT P50 と §1.2 単回サンプリングベースライン（13.4s）との比較
+- summary ラウンド単独の P50 / P95
+- ユーザー再質問率（浮利 A でユーザー入力分類も併せて行った場合）
 
-**意思決定パス**：
+**判断パス**：
 
-| 累積節約時間                     | 行動                                                                            |
-| -------------------------------- | ------------------------------------------------------------------------------- |
-| > 4s（エンドツーエンド P50 が 9.6s 以下） | D1 `skipLlmRound` の評価（さらに 3〜4s/終態ラウンドの節約）            |
-| 2〜4s                            | 現状を受け入れ、D3 の体感改善が実施に値するか評価                               |
-| < 2s                             | 再評価：浮遊オイル自体が過大評価されていたか、未特定のボトルネック（ネットワーク RTT、プロバイダ側のレイテンシ）があるか |
+| 累積削減                     | 行動                                                                          |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| > 4s（9.6s エンドツーエンド P50 を達成） | D1 `skipLlmRound` を評価（さらに 3-4s/終状態ラウンド省ける）                                    |
+| 2-4s                         | 現状を受け入れ、D3 の体感改善に取り組む価値があるか評価                                          |
+| < 2s                         | 再検討：浮利そのものが過大評価されていないか、識別されていないボトルネック（ネットワーク RTT、プロバイダ側レイテンシ）がないか |
 
-### 7.6 §3 各方向の最終判断
+### 7.6 §3 の各方向との最終判断
 
-§6 検証＋本節の ROI 再ソートに基づく：
+§6 の検証 + 本節の ROI 再整理に基づく：
 
-| 方向                      | §3 元の優先度 | 本節の判断                                         | 理由                                               |
-| ------------------------- | ------------- | -------------------------------------------------- | -------------------------------------------------- |
-| D1 ツール後置ディレクティブ | P0           | **P0 維持**、ただし浮遊オイル完了後に評価           | ROI は依然として良好。ただし「すぐ実施」ではない——より安価な浮遊オイルを先に取る |
-| D2 summary fast ルーティング | P1          | **Defer / Won't Fix**                              | DashScope キャッシュで相殺。14〜16 日の投資でほぼゼロの収益 |
-| D3 表示解耦                | P1            | **オプションとして維持**。チェックポイント 4 のデータを確認 | 体感改善は確実だが絶対 RT は変わらない。ユーザー行動に依存 |
-| D4 ストリーム先行スケジューリング | P2       | **Defer**                                          | 収益帰属が誤り。真の ~50ms は 5〜7 日の価値なし    |
+| 方向                 | §3 元の優先度 | 本節の判断                             | 理由                                               |
+| -------------------- | ----------- | ------------------------------------ | -------------------------------------------------- |
+| D1 ツール後置命令      | P0          | **P0 維持**、ただし浮利完了後に再評価    | ROI は依然良好だが、「今すぐやる」必要はない——より安価な浮利を先に回収する |
+| D2 summary fast ルーティング | P1          | **延期 / 対応しない**                | DashScope cache で相殺され、14-16d の投入に対してほぼ 0 の利益  |
+| D3 表示切り離し          | P1          | **オプションとして維持**、チェックポイント 4 のデータを確認 | 体感改善は確実だが、絶対 RT は変わらず、ユーザー行動に依存         |
+| D4 ストリーミング早期スケジューリング      | P2          | **延期**                            | 利益帰属の誤り、実際 ~50ms に対して 5-7d は価値がない                   |
 
-### 7.7 推奨実施順序
+### 7.7 推奨実行順序
 
-**Day 1**（1 人で 1 日で完了可能）：
+**Day 1**（1人で1日で完了可能）：
 
-- ✅ `prompts.ts` に簡潔な返答指示を追加（30 分）
-- ✅ `cachedContentTokenCount` を telemetry に公開＋`save_memory` / `/model` 切り替え時のマーキング（0.5 日）
-- ✅ 発見 B の調査開始：DashScope の `scope: 'global'` のドキュメント確認＋既存の Anthropic 使用例との対照（0.5 日）
+- ✅ `prompts.ts` に簡潔な応答指示を追加（30分）
+- ✅ `cachedContentTokenCount` をテレメトリに露出 + `save_memory` / `/model` 切り替え時にタグ付け（0.5d）
+- ✅ 発見 B 調査を開始：DashScope `scope: 'global'` ドキュメント確認 + 既存の Anthropic 使用法の対照（0.5d）
 
-**Day 2〜3**：
+**Day 2-3**：
 
-- 最初のキャッシュヒット率データを収集
-- 発見 C の調査開始：`useGeminiStream` の React レンダリングパス
-- チェックポイント 2 の結果に基づいて `scope: 'global'` 改修を実施するか判断
+- 最初の batch の cache hit rate データを収集
+- 発見 C 調査を開始：`useGeminiStream` の React レンダリングパス
+- チェックポイント 2 の結果に基づき、`scope: 'global'` 改造を行うかどうかを決定
 
 **Week 1 末**：
 
-- チェックポイント 1 のデータ意思決定（分布を確認）
-- `tool_choice='none'` / thinking 無効化を実施するか判断（ヒット率データに基づく）
+- チェックポイント 1 データ判断（分布を確認）
+- `tool_choice='none'` / thinking をオフにするかどうかを決定（hit rate データに基づく）
 
-**Week 2〜3**：
+**Week 2-3**：
 
-- チェックポイント 4 の第二次ベースライン測定
-- D1 を開始するか判断（最大の非浮遊オイル項目、3〜4s/終態ラウンド）
+- チェックポイント 4 二次ベースライン測定
+- D1 を開始するかどうかを決定（最大の非浮利項目、3-4s/終状態ラウンド）
 
-**永遠に実施しない**：D2 / D4 / system prompt の安定化。
+**常に実施しない**：D2 / D4 / system prompt 安定化。
 
-### 7.8 `prompts.ts` の動的コンテンツ監査（2026-05-27）
+### 7.8 `prompts.ts` 動的コンテンツ監査（2026-05-27）
 
-§7.1 で「system prompt が安定状態にある」と結論付けた際は大まかな grep のみ実施した。本節は `packages/core/src/core/prompts.ts`（1169 行）の体系的な監査であり、後続のキャッシュヒット率分析と浮遊オイル意思決定の根拠となる一覧を提供する。
+§7.1 で「system prompt は既に定常状態」という結論を出す際に、大まかな grep のみを行った。本節では `packages/core/src/core/prompts.ts`（1169行）の体系的な監査を行い、リストとして後続のキャッシュヒット率分析と浮利判断の根拠として残す。
 
-**監査方法**：すべての `${...}` 補間表現、IIFE、`process.*` / `new Date` / `Date.now` / `Math.random` / `fs.*` 呼び出しを列挙し、それぞれについて「同一セッション内で変化するか」を判断する。
+**監査方法**：全ての `${...}` 補間式、IIFE、`process.*` / `new Date` / `Date.now` / `Math.random` / `fs.*` 呼び出しを列挙し、各箇所について「同一セッション内で変化するか」を判断する。
 
-#### 完全に存在しない（よく疑われるハードな問題）
+#### 完全に存在しない（よく疑われるが問題がない箇所）
 
-| 候補                               | コードの事実                                                                           |
-| ---------------------------------- | -------------------------------------------------------------------------------------- |
-| `Date.now()` / `new Date()`        | 全文で**ゼロ件**（`rg` でマッチなし）                                                  |
-| `Math.random()`                    | **ゼロ件**                                                                             |
-| `process.cwd()` の値を prompt に書き込む | L366 の `if (isGitRepository(process.cwd())) { ... }` のみ。**値は文字列に書き込まれない**、スイッチとしてのみ使用 |
-| git status / git branch のサブプロセス呼び出し | **ゼロ件**。git セクションは静的なガイドテキスト                         |
-| 現在のファイルリスト / プロジェクト構造の注入 | **ゼロ件**                                                                    |
-| LSP の状態 / エラー数              | **ゼロ件**                                                                             |
-| ユーザー入力履歴                   | **ゼロ件**（history は messages で管理され、system にない）                            |
+| 候補                               | コードの事実                                                                            |
+| ---------------------------------- | ----------------------------------------------------------------------------------- |
+| `Date.now()` / `new Date()`        | 全文 **0 回出現**（`rg` で全くマッチなし）                                                  |
+| `Math.random()`                    | **0 回出現**                                                                        |
+| `process.cwd()` 値の prompt への書き込み      | L366 で `if (isGitRepository(process.cwd())) { ... }` のみ、**値は文字列に書き込まれず**、単なるスイッチとして使用 |
+| git status / git branch サブプロセス呼び出し | **0 回**、git の部分は静的なガイダンステキスト                                                      |
+| 現在のファイルリスト / プロジェクト構造の注入        | **0 回**                                                                            |
+| LSP 状態 / エラー数                  | **0 回**                                                                            |
+| ユーザー入力履歴                       | **0 回**（history は messages 経由で、system にはない）                                        |
 
-#### 起動時に 1 回、セッション内では変化しない
+#### 起動時に一度、セッション内で不変
 
-| 位置     | 内容                                                                                                          | 変化するタイミング         |
-| -------- | ------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| L190     | `process.env['QWEN_SYSTEM_MD']` が basePrompt のソースを決定（デフォルト vs ユーザーの system.md）            | プロセス内では変化しない    |
-| L342-343 | `process.env['SANDBOX']` が sandbox セクションのバージョンを決定（Seatbelt / Sandbox / Outside）              | プロセス内では変化しない    |
-| L366     | `isGitRepository(process.cwd())` が git セクションを挿入するかどうかを決定                                    | cwd は通常セッション内で変化しない |
-| L871     | `process.env['QWEN_CODE_TOOL_CALL_STYLE']` がツール呼び出しスタイルを決定（qwen-coder / qwen-vl / general）   | プロセス内では変化しない    |
+| 位置     | 内容                                                                                             | いつ変わる可能性がある                |
+| -------- | ------------------------------------------------------------------------------------------------ | ------------------------- |
+| L190     | `process.env['QWEN_SYSTEM_MD']` が basePrompt のソースを決定（デフォルト vs ユーザー system.md）                   | プロセス内で不変                |
+| L342-343 | `process.env['SANDBOX']` が sandbox 部分のバージョンを決定（Seatbelt / Sandbox / Outside）                 | プロセス内で不変                |
+| L366     | `isGitRepository(process.cwd())` が git 部分を挿入するかどうかを決定                                             | cwd は同一セッション内で通常不変 |
+| L871     | `process.env['QWEN_CODE_TOOL_CALL_STYLE']` が tool call スタイルを決定（qwen-coder / qwen-vl / general） | プロセス内で不変                |
 
 #### イベントトリガー（低頻度）
 
-| パラメータ                                              | トリガー条件                                       | 頻度見積もり           |
-| ------------------------------------------------------- | -------------------------------------------------- | ---------------------- |
-| `userMemory`（`getCoreSystemPrompt` の第 1 引数）       | `save_memory` ツール / `/memory refresh` / 拡張ロード | 0〜3 回/セッション   |
-| `model` 名（`getToolCallExamples` でどのブランチを使うかに影響） | `/model` 切り替え                          | まれ                   |
-| `appendInstruction`                                     | 設定項目、セッション内でほぼ変化しない             | ほぼなし               |
-| `deferredTools`（`buildDeferredToolsSection`）           | MCP ツールの動的ロード                             | セッション起動時が多い |
+| パラメータ                                              | トリガー条件                                          | 頻度推定           |
+| ------------------------------------------------- | ------------------------------------------------- | ------------------ |
+| `userMemory`（`getCoreSystemPrompt` 第1引数）     | `save_memory` ツール / `/memory refresh` / 拡張読み込み | 0-3 回/セッション     |
+| `model` 名（`getToolCallExamples` のどのブランチを選ぶかに影響） | `/model` 切り替え                                     | 稀               |
+| `appendInstruction`                               | 設定項目、セッション内でほぼ不変                        | ほぼなし           |
+| `deferredTools`（`buildDeferredToolsSection`）    | MCP ツール動的ロード                                  | セッション起動期が多い |
 
-#### 隠れた小さな落とし穴
+#### 1つの隠れた小さな問題点
 
-L207-209：`QWEN_SYSTEM_MD` env が設定されている場合、`getCoreSystemPrompt` が呼ばれるたびに `fs.readFileSync(systemMdPath)` が**毎回**実行される：
+L207-209：`QWEN_SYSTEM_MD` env が設定されている場合、**毎回** `getCoreSystemPrompt` で `fs.readFileSync(systemMdPath)` が実行される：
 
 ```typescript
 const basePrompt = systemMdEnabled
@@ -1192,14 +1191,14 @@ const basePrompt = systemMdEnabled
   : `...`;
 ```
 
-- ファイルが変化しない場合、内容は安定しているためキャッシュヒットには影響しない
-- ただし LLM 呼び出しのたびに 1 回の同期 IO が発生する（デフォルトは `.qwen/system.md`；ネットワークマウントのファイルの場合はより遅い）
-- 本節の「キャッシュ親和性」の結論には影響しない。既知のパフォーマンス上の小さな落とし穴として記録のみ
+- ファイルが変わらなければ内容は安定 → cache ヒットには影響しない
+- しかし毎ラウンドの LLM 呼び出しで同期 IO が1回発生する（デフォルトは `.qwen/system.md`、ネットワークマウントファイルの場合はさらに遅くなる）
+- 本節の「cache フレンドリー性」の結論には影響しないが、既知の性能上の小さな問題として記録する
 
-#### 連鎖的な結論
+#### 付随的結論
 
-1. **安定状態のセッションでは、system prompt は毎回バイト単位で一致した出力をする** → DashScope の ephemeral キャッシュキー（コンテンツハッシュに基づく）がセクション全体で安定 → **system セクションのキャッシュヒット率はほぼ 100%**
-2. キャッシュを壊す唯一のイベントは `save_memory`——コアな機能であり、キャッシュのために妥協できない
-3. **浮遊オイル #1（簡潔な返答指示）のコスト分析**：Final Reminder セクション（L389-390）に指示を追加 → system prompt のコンテンツが一度変化 → **最初のリクエストはキャッシュミス（一度限りのウォームアップコスト）、その後のすべてのリクエストは引き続きヒット**
-4. **§7 の「system prompt の安定化は廃棄」という判断が正式な証拠に裏付けられた**——実施する必要がないだけでなく、「理論的に実施することでキャッシュミス率をさらに低下させられる」すら成立しない。なぜなら元々 ≈ 0 だから
-5. 本監査は後続の関連議論の引用ベースラインとして使用できる。重複した grep を避けるため；`prompts.ts` に大きな変更があった場合は本節を同時に更新すること
+1. **system prompt は定常状態のセッション内で毎回 byte-for-byte で一致する** → DashScope ephemeral cache key（内容のハッシュベース）の全体が安定 → **system 部分の cache ヒット率はほぼ 100%**
+2. cache を壊す唯一のイベントは `save_memory`——コア機能であり、cache のために譲歩することはできない
+3. **浮利 #1（簡潔な応答指示）のコスト分析**：指示を Final Reminder セクション（L389-390）に追加 → system prompt 内容が一度変化 → **最初のリクエストは cache miss（一度限りのウォームアップコスト）、その後全てのリクエストは引き続き cache ヒット**
+4. **§7 の「system prompt 安定化」は既に廃止とした判断が正式な証拠で裏付けられた**——実施する必要がないだけでなく、「理論上実施すれば cache miss 率をさらに下げられる」ということも成立しない。なぜなら、現状が既に ≈ 0 だからである
+5. 本監査は後続の関連議論の参照ベースラインとして使用でき、重複した grep を避けることができる。`prompts.ts` に大きな変更があった場合、本節の更新が必要

@@ -1,12 +1,12 @@
-# Adaptateur d'interface Web pour le Daemon
+# Adaptateur Web UI du Daemon
 
 ## Objectif
 
-Les clients de chat Web et de terminal Web doivent consommer `qwen serve` via les API HTTP/SSE du démon et afficher une transcription côté client. Les intégrations natives locales TUI, de canal et IDE conservent leurs chemins par défaut actuels pour l'instant.
+Les clients de chat Web et de terminal Web doivent consommer `qwen serve` via les API HTTP/SSE du daemon et afficher une transcription côté client. Les intégrations natives locales TUI, canal et IDE conservent leurs chemins par défaut actuels pour le moment.
 
-## Contrat d'interface partagé
+## Contrat UI partagé
 
-Utilisez les exportations UI du démon du SDK TypeScript comme frontière commune :
+Utilisez les exports UI du daemon du SDK TypeScript comme frontière commune :
 
 ```ts
 import {
@@ -19,9 +19,9 @@ import {
 
 La répartition est :
 
-- `DaemonClient` gère les routes HTTP du démon.
-- `DaemonSessionClient` gère la création/attachement de session et la relecture SSE.
-- `normalizeDaemonEvent()` convertit les événements filaires du démon en événements UI.
+- `DaemonClient` gère les routes HTTP du daemon.
+- `DaemonSessionClient` possède la création/attachement de session et la relecture SSE.
+- `normalizeDaemonEvent()` convertit les événements filaires du daemon en événements UI.
 - `createDaemonTranscriptStore()` réduit les événements UI en blocs de transcription.
 
 Les clients React peuvent utiliser la liaison optionnelle `@qwen-code/webui` :
@@ -54,46 +54,46 @@ function Transcript() {
 }
 ```
 
-Le fournisseur crée ou attache une session démon, s'abonne aux SSE, conserve le dernier identifiant d'événement sur `DaemonSessionClient`, et reconnecte le flux par défaut. Les appelants peuvent désactiver cela avec `autoReconnect={false}` pour les tests ou une gestion de connexion personnalisée.
+Le fournisseur crée ou attache une session daemon, s'abonne au SSE, conserve le dernier identifiant d'événement sur `DaemonSessionClient` et reconnecte le flux par défaut. Les appelants peuvent désactiver cela avec `autoReconnect={false}` pour les tests ou la gestion personnalisée des connexions.
 
 ## Formes de déploiement navigateur
 
 ### POC local de même origine
 
-Une page servie par le démon peut appeler le démon directement car la page et l'API partagent une seule origine. C'est la forme POC précoce privilégiée pour la validation locale du chat Web et du terminal Web.
+Une page servie par le daemon peut appeler le daemon directement car la page et l'API partagent une même origine. C'est la forme POC précoce préférée pour la validation du chat Web local et du terminal Web.
 
 ### Chat Web / Terminal Web distant
 
-Une application Web distante en production devrait normalement communiquer avec un backend-pour-frontend. Le BFF possède l'URL du démon, le jeton, le routage de l'espace de travail et les métadonnées de session, puis transmet les événements d'application sécurisés pour le navigateur au navigateur. Cela évite de stocker les jetons bearer dans le navigateur et permet au déploiement de décider à quel démon/espace de travail un utilisateur est autorisé à accéder.
+Une application Web distante de production devrait normalement communiquer avec un backend pour le frontend (BFF). Le BFF gère l'URL du daemon, le jeton, le routage de l'espace de travail et les métadonnées de session, puis transmet les événements d'application sécurisés pour le navigateur au navigateur. Cela empêche les jetons d'accès de se trouver dans le stockage du navigateur et permet au déploiement de décider à quel daemon/espace de travail un utilisateur est autorisé à accéder.
 
-### Navigateur local contre démon local
+### Navigateur local contre daemon local
 
-Un serveur de développement local séparé est cross-origin par rapport à `qwen serve` ; il doit soit proxy les routes du démon via la même origine, soit être servi par le démon. Le démon rejette intentionnellement les requêtes arbitraires d'`Origin` de navigateur.
+Un serveur de développement local séparé a une origine différente de `qwen serve` ; il doit soit proxyer les routes du daemon via la même origine, soit être servi par le daemon. Le daemon rejette intentionnellement les requêtes arbitraires d'`Origin` du navigateur.
 
 ## Responsabilités de rendu
 
 Le modèle de transcription partagé est sémantique, pas visuel. Les clients UI décident comment afficher :
 
-- les blocs de messages utilisateur et assistant
-- les blocs de pensée repliés
-- les cartes de statut d'outil
-- les blocs de sortie shell
-- les contrôles de demande d'autorisation
-- les blocs de statut/erreur/débogage
+- blocs de messages utilisateur et assistant
+- blocs de pensée réduits
+- cartes d'état des outils
+- blocs de sortie shell
+- contrôles de demande d'autorisation
+- blocs de statut/erreur/débogage
 
-Le terminal Web est un rendu sémantique natif du navigateur. Il doit ressembler et donner l'impression d'un terminal avec une disposition monospace, le défilement arrière, la saisie d'invite, les raccourcis et les blocs de streaming, mais ce n'est pas un proxy PTY brut et il ne nécessite pas de rendu Ink côté serveur.
+Le terminal Web est un rendu sémantique natif du navigateur. Il doit ressembler et se comporter comme un terminal avec une disposition monospace, un défilement arrière, une entrée d'invite, des raccourcis et des blocs de streaming, mais ce n'est pas un proxy PTY brut et il ne nécessite pas de rendu Ink côté serveur.
 
-## Sécurité de fusion
+## Sécurité des fusions
 
-- La TUI native `qwen` reste directe et inchangée.
-- Les chemins `--acp`, de canal et IDE restent inchangés par défaut.
+- Le TUI natif `qwen` reste direct et inchangé.
+- Les chemins `--acp`, canal et IDE restent inchangés par défaut.
 - Le noyau UI du SDK est additif.
-- La liaison React WebUI est optionnelle et ne s'exécute que dans les clients qui l'importent.
-- Le code spike TUI du démon supprimé ne doit pas être traité comme une migration de produit.
+- La liaison React WebUI est facultative et s'exécute uniquement dans les clients qui l'importent.
+- Le code de prototype TUI du daemon supprimé ne doit pas être traité comme une migration de produit.
 
-## Suites
+## Suivis
 
-- Ajouter un POC local `/web` servi par le démon ou une application Web de même origine équivalente.
-- Construire des rendus de chat et de terminal de première classe au-dessus des blocs de transcription.
-- Ajouter des événements typés plus riches uniquement là où les événements existants du démon sont trop bas niveau pour un comportement stable de l'interface navigateur.
+- Ajouter un POC local `/web` servi par le daemon ou une application Web de même origine équivalente.
+- Construire des rendus de chat et de terminal de première classe sur la base des blocs de transcription.
+- Ajouter des événements typés plus riches uniquement là où les événements existants du daemon sont de trop bas niveau pour un comportement UI stable du navigateur.
 - Envisager un paquet dédié `@qwen-code/daemon-ui-core` si des consommateurs non-SDK ont besoin du noyau UI comme dépendance indépendante.

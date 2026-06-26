@@ -5,7 +5,7 @@
 ### 1.1 目标
 
 - 建立统一的命令元数据模型，覆盖来源（source）、执行类型（commandType）、模式能力（supportedModes）、可见性（userInvocable / modelInvocable）四个维度
-- 用 capability-based 过滤替换 non-interactive/acp 中的硬编码白名单
+- 用基于 capability 的过滤替换 non-interactive/acp 中的硬编码白名单
 - 为 Phase 2/3 的能力扩展提供稳定的底层接口
 
 ### 1.2 硬性约束
@@ -557,23 +557,23 @@ const slashCommands = await getAvailableCommands(
 
 ### 9.1 修改的文件
 
-| 文件                                                                    | 修改内容                                                                                         |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `packages/cli/src/ui/commands/types.ts`                                 | 新增 `ExecutionMode`、`CommandSource`、`CommandType` 类型；扩展 `SlashCommand` 接口              |
-| `packages/cli/src/services/CommandService.ts`                           | 新增 `getCommandsForMode()`、`getModelInvocableCommands()` 方法                                  |
-| `packages/cli/src/nonInteractiveCliCommands.ts`                         | 删除白名单常量和旧过滤函数；更新两个导出函数的签名；引入 `filterCommandsForMode`                 |
-| `packages/cli/src/acp-integration/session/Session.ts`                   | 更新 `handleSlashCommand` 和 `getAvailableCommands` 调用                                         |
-| `packages/cli/src/services/BuiltinCommandLoader.ts`                     | 在构建命令时注入 `source: 'builtin-command'`、`sourceLabel: 'Built-in'`、`modelInvocable: false` |
-| `packages/cli/src/services/BundledSkillLoader.ts`                       | 注入 `source: 'bundled-skill'`、`commandType: 'prompt'`、`modelInvocable: true`                  |
-| `packages/cli/src/services/FileCommandLoader.ts` / `command-factory.ts` | 注入 `source`、`commandType: 'prompt'`、`modelInvocable`（根据 extensionName）                   |
-| `packages/cli/src/services/McpPromptLoader.ts`                          | 注入 `source: 'mcp-prompt'`、`commandType: 'prompt'`、`modelInvocable: true`                     |
-| **各 built-in 命令文件（10 个 local + 27 个 local-jsx）**               | 声明 `commandType: 'local'` 或 `commandType: 'local-jsx'`                                        |
+| 文件                                                                        | 修改内容                                                                                         |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `packages/cli/src/ui/commands/types.ts`                                     | 新增 `ExecutionMode`、`CommandSource`、`CommandType` 类型；扩展 `SlashCommand` 接口              |
+| `packages/cli/src/services/CommandService.ts`                               | 新增 `getCommandsForMode()`、`getModelInvocableCommands()` 方法                                  |
+| `packages/cli/src/nonInteractiveCliCommands.ts`                             | 删除白名单常量和旧过滤函数；更新两个导出函数的签名；引入 `filterCommandsForMode`                 |
+| `packages/cli/src/acp-integration/session/Session.ts`                       | 更新 `handleSlashCommand` 和 `getAvailableCommands` 调用                                         |
+| `packages/cli/src/services/BuiltinCommandLoader.ts`                         | 在构建命令时注入 `source: 'builtin-command'`、`sourceLabel: 'Built-in'`、`modelInvocable: false` |
+| `packages/cli/src/services/BundledSkillLoader.ts`                           | 注入 `source: 'bundled-skill'`、`commandType: 'prompt'`、`modelInvocable: true`                  |
+| `packages/cli/src/services/FileCommandLoader.ts` / `command-factory.ts`     | 注入 `source`、`commandType: 'prompt'`、`modelInvocable`（根据 extensionName）                   |
+| `packages/cli/src/services/McpPromptLoader.ts`                              | 注入 `source: 'mcp-prompt'`、`commandType: 'prompt'`、`modelInvocable: true`                     |
+| **各 built-in 命令文件（10 个 local + 27 个 local-jsx）**                   | 声明 `commandType: 'local'` 或 `commandType: 'local-jsx'`                                        |
 
 ### 9.2 新增的文件
 
-| 文件                                        | 内容                                                                       |
-| ------------------------------------------- | -------------------------------------------------------------------------- |
-| `packages/cli/src/services/commandUtils.ts` | `getEffectiveSupportedModes()`、`filterCommandsForMode()` 工具函数及其导出 |
+| 文件                                          | 内容                                                                       |
+| --------------------------------------------- | -------------------------------------------------------------------------- |
+| `packages/cli/src/services/commandUtils.ts`   | `getEffectiveSupportedModes()`、`filterCommandsForMode()` 工具函数及其导出 |
 
 ### 9.3 不变的文件
 
@@ -603,7 +603,6 @@ const slashCommands = await getAvailableCommands(
 | non-interactive 下执行 `/export`     | ❌ 不在白名单                | ❌ 不允许（`commandType: local`，默认 interactive only） | 无变化      |
 | non-interactive 下执行 `/memory`     | ❌ 不在白名单                | ❌ 不允许（`commandType: local`，默认 interactive only） | 无变化      |
 | non-interactive 下执行 `/plan`       | ❌ 不在白名单                | ❌ 不允许（`commandType: local`，默认 interactive only） | 无变化      |
-
 > **关于 `local` 命令的保守默认策略**：`commandType: 'local'` 的默认 `supportedModes` 为 `['interactive']`，这与 Claude Code 的设计一致——`local` 类型命令需要显式声明 `supportsNonInteractive: true` 才能在非交互模式下运行。Phase 1 中白名单内的 6 个命令（`init`、`summary`、`compress`、`btw`、`bug`、`context`）通过显式声明 `supportedModes: ['interactive', 'non_interactive', 'acp']` 来等价替换原白名单效果。Phase 2 中需要扩展的命令（如 `/export`、`/memory`、`/plan`）在验证 action 实现 headless-friendly 之后，再逐个解锁。
 
 ---

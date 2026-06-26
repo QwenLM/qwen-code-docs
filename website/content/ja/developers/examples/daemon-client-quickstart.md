@@ -1,10 +1,10 @@
 # DaemonClient クイックスタート (TypeScript)
 
-最小構成のエンドツーエンドサンプルです。別のターミナルで `qwen serve` デーモンを起動し、SDK の `DaemonClient` を使って Node スクリプトから操作します。関連ドキュメント: [デーモンモード ユーザーガイド](../../users/qwen-serve.md) および [HTTP プロトコルリファレンス](../qwen-serve-protocol.md)。
+最小限のエンドツーエンドの例: 別のターミナルで `qwen serve` デーモンを起動し、SDK の `DaemonClient` を使って Node スクリプトから操作します。関連: [デーモンモードユーザーガイド](../../users/qwen-serve.md) と [HTTP プロトコルリファレンス](../qwen-serve-protocol.md)。
 
 ## セットアップ
 
-ターミナル 1:
+1 つ目のターミナルで:
 
 ```bash
 cd your-project/
@@ -12,56 +12,59 @@ qwen serve --port 4170
 # → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
 ```
 
-[#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02 の仕様により、各デーモンは起動時に 1 つのワークスペースにバインドされます（現在の `cwd`、または `--workspace /path/to/dir` で上書き可能）。デーモンのバインドパスは `/capabilities.workspaceCwd` で公開されるため、クライアントは事前確認を行い、`POST /session` の `cwd` を省略できます。
+[#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02 により、各デーモンは起動時に 1 つのワークスペースにバインドされます (現在の `cwd`、または `--workspace /path/to/dir` で上書き可能)。デーモンのバインドされたパスは `/capabilities.workspaceCwd` で公開されるため、クライアントは事前にチェックし、`POST /session` から `cwd` を省略できます。
 
-ターミナル 2:
+もう 1 つのターミナルで:
 
 ```bash
 npm install @qwen-code/sdk
 ```
 
-## Hello daemon
+## Hello デーモン
 
 ```ts
 import { DaemonClient, type DaemonEvent } from '@qwen-code/sdk';
 
 const client = new DaemonClient({
   baseUrl: 'http://127.0.0.1:4170',
-  // PR 27 (v0.16-alpha): when `token` is omitted, DaemonClient falls
-  // back to `process.env.QWEN_SERVER_TOKEN` automatically — same env
-  // var the daemon's `--token` CLI flag falls back to. So either:
-  //   export QWEN_SERVER_TOKEN="$(openssl rand -hex 32)"   # one-shot
-  //   export QWEN_SERVER_TOKEN="$(cat ./my-token-file)"    # user-managed file
+  // PR 27 (v0.16-alpha): `token` を省略すると、DaemonClient は自動的に
+  // `process.env.QWEN_SERVER_TOKEN` にフォールバックします — これは
+  // デーモンの `--token` CLI フラグがフォールバックするのと同じ環境変数です。
+  // つまり、次のいずれか:
+  //   export QWEN_SERVER_TOKEN="$(openssl rand -hex 32)"   # 使い捨て
+  //   export QWEN_SERVER_TOKEN="$(cat ./my-token-file)"    # ユーザー管理ファイル
   //   const client = new DaemonClient({ baseUrl: '...' });
-  // OR pass it explicitly when you have a different env-var name:
+  // または、異なる環境変数名を使用する場合は明示的に渡します:
   //   token: process.env.MY_TOKEN,
 });
 
-// 1. デーモンへの疎通確認、機能確認、バインドされたワークスペースの取得 (#3803 §02)
+// 1. デーモンに到達可能であることを確認し、機能に基づいて UI をゲートし、
+//    デーモンのバインドされたワークスペースを読み取ります (#3803 §02)。
 const caps = await client.capabilities();
 console.log('Daemon features:', caps.features);
-console.log('Daemon workspace:', caps.workspaceCwd); // canonical bound path
+console.log('Daemon workspace:', caps.workspaceCwd); // 正規化されたバインドパス
 
-// 2. セッションの生成またはアタッチ。2 つの等価な記述方法:
-//    (a) 明示的に `workspaceCwd: caps.workspaceCwd` を渡す、または
-//    (b) `workspaceCwd` を省略 — SDK は `cwd` フィールドを送らず、
-//        デーモンルートはバインドされたワークスペースにフォールバックする。
-//        (b) は簡潔だが、`caps.workspaceCwd` が意図通りであることを前提とする。
-//    空でない `workspaceCwd` がデーモンのバインドパスに正規化されない場合、
-//    `400 workspace_mismatch` が返される（後述の「ワークスペースの不一致」参照）。
+// 2. セッションを生成またはアタッチします。2 つの等しく有効な形式:
+//    (a) `workspaceCwd: caps.workspaceCwd` を渡して明示的にする
+//    (b) `workspaceCwd` を完全に省略する — SDK は `cwd` フィールドを送信せず、
+//        デーモンルートはバインドされたワークスペースにフォールバックします。
+//        (b) の形式は簡潔ですが、`caps.workspaceCwd` が意図したものであると
+//        信頼していることが前提です。
+//    デーモンのバインドされたパスに正規化されない空でない `workspaceCwd` は
+//    `400 workspace_mismatch` を返します (下記「ワークスペースの不一致」参照)。
 const session = await client.createOrAttachSession({
   workspaceCwd: caps.workspaceCwd,
 });
 console.log(`session=${session.sessionId} attached=${session.attached}`);
 
-// 3. イベントストリームを購読する。`lastEventId: 0` を渡すことで、
-//    セッション開始からのイベントをデーモンがリプレイする。
-//    指定しない場合、`subscribeEvents()` がイテレータを返してから
-//    SSE 接続が実際に開くまでの間（1 フェッチ往復分）に TOCTOU ウィンドウが生じ、
-//    高速起動したエージェントが発行したイベントがリングバッファに入っても
-//    カーソルなしの新規サブスクライバーにはストリームされない。
-//    `lastEventId: 0` を指定するとリプレイバッファがそのギャップを埋め
-//    （後述の再接続時も同様）。
+// 3. イベントストリームを購読します。`lastEventId: 0` を渡すと、デーモンは
+//    セッション開始時からすべてをリプレイします。これがないと、
+//    `subscribeEvents()` がイテレータを返してから、実際の SSE 接続が
+//    開かれるまでに (fetch 1 ラウンドトリップ分) TOCTOU ウィンドウが存在し、
+//    その間に高速に開始するエージェントがイベントを発行する可能性があります。
+//    それらはセッションごとのリングバッファには入りますが、カーソルなしの
+//    新規購読者にはストリーミングされません。`lastEventId: 0` により、
+//    リプレイバッファがそのギャップをカバーします (および後述の再接続も)。
 const abort = new AbortController();
 const subscription = (async () => {
   for await (const event of client.subscribeEvents(session.sessionId, {
@@ -72,15 +75,16 @@ const subscription = (async () => {
   }
 })();
 
-// 4. プロンプトを送信して完了を待つ。（実行順序の注意:
-//    SSE ハンドシェイク完了前に `prompt()` が発火しても、
-//    手順 3 の `lastEventId: 0` によりすべてのイベントがイテレータに届く。）
+// 4. プロンプトを送信し、終了するのを待ちます (操作順序の注意:
+//    `prompt()` が SSE ハンドシェイク完了前に発火しても、
+//    ステップ 3 の `lastEventId: 0` によりすべてのイベントが
+//    イテレータに届くことが保証されます)。
 const result = await client.prompt(session.sessionId, {
   prompt: [{ type: 'text', text: 'Summarize src/main.ts in one sentence.' }],
 });
 console.log('stop reason:', result.stopReason);
 
-// 5. 購読を解除してスクリプトを終了できるようにする。
+// 5. 購読を解除してスクリプトが終了できるようにします。
 abort.abort();
 await subscription;
 
@@ -97,7 +101,7 @@ function handleEvent(event: DaemonEvent): void {
       break;
     }
     case 'permission_request':
-      // 先着優先のセマンティクスについては後述の「権限への投票」を参照。
+      // 「権限の投票」のファーストレスポンダーセマンティクスを参照。
       console.log('\n[needs permission]', event.data);
       break;
     case 'permission_resolved':
@@ -114,7 +118,7 @@ function handleEvent(event: DaemonEvent): void {
 
 ## ワークスペースファイルヘルパー
 
-ファイルルートはセッションスコープではなくワークスペーススコープのため、`DaemonClient` に直接定義されています。
+ファイルルートはセッションスコープではなくワークスペーススコープのため、`DaemonClient` に直接存在します:
 
 ```ts
 const file = await client.readWorkspaceFile('src/main.ts');
@@ -129,29 +133,29 @@ const updated = await client.editWorkspaceFile({
 console.log(updated.hash);
 ```
 
-`expectedHash` はディスク上の生バイトに対する SHA-256 です。`mode: "replace"` と `editWorkspaceFile()` はこの値を必須とするため、古いクライアントが直前に読んでいないファイルを上書きすることを防ぎます。書き込み・編集操作はループバック接続でも Bearer トークン設定が必要です。使用前にデーモンを `--token` または `QWEN_SERVER_TOKEN` 付きで起動してください。
+`expectedHash` はディスク上の raw バイトに対する SHA-256 です。`mode: "replace"` および `editWorkspaceFile()` はこれを必須とし、古いクライアントが読み取ったばかりのファイルを上書きしないようにします。書き込み/編集にはループバックでも Bearer トークンの設定が必要です。使用する前に `--token` または `QWEN_SERVER_TOKEN` を指定してデーモンを起動してください。
 
 ## `Last-Event-ID` による再接続
 
-クライアントプロセスがセッション中に再起動した場合、見逃したイベントをリプレイできます。
+クライアントプロセスがセッション途中で再起動した場合、見逃したイベントをリプレイします:
 
 ```ts
 let cursor: number | undefined;
 
 for await (const event of client.subscribeEvents(session.sessionId, {
   signal: abort.signal,
-  lastEventId: cursor, // resume from after this id; undefined = live only
+  lastEventId: cursor, // この ID 以降から再開; undefined はライブのみ
 })) {
   if (typeof event.id === 'number') cursor = event.id;
   handleEvent(event);
 }
 ```
 
-デーモンはセッションごとに最新 8000 イベントをリングバッファで保持します。そのウィンドウを超えたギャップは再配信できません。
+デーモンはセッションごとに最新 8000 イベントをリングバッファに保持します。そのウィンドウを超えたギャップは再配信できません。
 
-## 権限への投票
+## 権限の投票
 
-エージェントがツール実行の権限を要求すると、接続中のすべてのクライアントが `permission_request` イベントを受け取ります。**先着優先** — 一方のクライアントが投票すると、同じ `requestId` に投票しようとした残りのクライアントは `404` を受け取ります。
+エージェントがツールの実行許可を求めると、接続されているすべてのクライアントが `permission_request` イベントを受け取ります。**最初に応答したクライアントが勝ち** — 1 つのクライアントが投票すると、他のクライアントが同じ `requestId` に投票しようとすると `404` が返ります。
 
 ```ts
 case 'permission_request': {
@@ -159,41 +163,41 @@ case 'permission_request': {
     requestId: string;
     options: Array<{ optionId: string; name: string; kind: string }>;
   };
-  // Pick whichever option you want — `proceed_once`, `allow`, etc.
+  // 希望するオプションを選択 — `proceed_once`、`allow` など
   const choice = req.options.find((o) => o.kind === 'allow_once') ?? req.options[0];
   const accepted = await client.respondToPermission(req.requestId, {
     outcome: { outcome: 'selected', optionId: choice.optionId },
   });
   if (!accepted) {
-    console.log('Another client voted first; nothing to do.');
+    console.log('別のクライアントが先に投票しました。何もしません。');
   }
   break;
 }
 ```
 
-## セッション共有によるコラボレーション
+## 共有セッションコラボレーション
 
-**同じデーモン**を指す 2 つのクライアントは同じセッションに入ります。#3803 §02 の仕様により各デーモンは起動時に 1 つのワークスペースにバインドされるため、`qwen serve --workspace /work/repo` で起動された（または `cd /work/repo && qwen serve` で起動された）デーモンに両クライアントが接続します。
+**同じデーモン**を指す 2 つのクライアントは、同じセッションになります。#3803 §02 により、各デーモンは起動時に 1 つのワークスペースにバインドされるため、`qwen serve --workspace /work/repo` (または `cd /work/repo && qwen serve`) として起動されたデーモンが、両方のクライアントの接続先になります:
 
 ```ts
-// Daemon was launched as `qwen serve --workspace /work/repo` so
-// `caps.workspaceCwd === '/work/repo'` for both clients.
+// デーモンは `qwen serve --workspace /work/repo` として起動されたため、
+// 両方のクライアントで `caps.workspaceCwd === '/work/repo'` になります。
 
-// Client A (e.g. an IDE plugin)
+// クライアント A (例: IDE プラグイン)
 const a = await clientA.createOrAttachSession({ workspaceCwd: '/work/repo' });
-console.log(a.attached); // false — A spawned the agent
+console.log(a.attached); // false — A がエージェントを生成
 
-// Client B (e.g. a web UI on the same machine)
+// クライアント B (例: 同じマシン上の Web UI)
 const b = await clientB.createOrAttachSession({ workspaceCwd: '/work/repo' });
-console.log(b.attached); // true — B joined A's session
+console.log(b.attached); // true — B が A のセッションに参加
 console.log(a.sessionId === b.sessionId); // true
 ```
 
-両クライアントは同じ `session_update` / `permission_request` ストリームを受け取ります。どちらからでもプロンプトを送信できますが、エージェントの「1 セッションにつきアクティブなプロンプトは 1 つ」という保証に基づき FIFO キューで処理されます。
+両方のクライアントは同じ `session_update` / `permission_request` ストリームを見ます。どちらもプロンプトを送信できます。エージェントの「セッションごとに 1 つのアクティブプロンプト」保証により FIFO キューイングされます。
 
 ## ワークスペースの不一致
 
-`workspaceCwd` がデーモンのバインドワークスペースと一致しない場合、`createOrAttachSession` はステータス `400` と構造化されたボディを持つ `DaemonHttpError` でリジェクトされます。
+`workspaceCwd` がデーモンのバインドされたワークスペースと一致しない場合、`createOrAttachSession` は `DaemonHttpError` で拒否され、ステータス `400` と構造化ボディが返ります:
 
 ```ts
 import { DaemonHttpError } from '@qwen-code/sdk';
@@ -209,20 +213,20 @@ try {
     };
     if (body.code === 'workspace_mismatch') {
       console.error(
-        `This daemon is bound to ${body.boundWorkspace}, ` +
-          `not ${body.requestedWorkspace}. Start a separate daemon ` +
-          `for that workspace, or route to the right one.`,
+        `このデーモンは ${body.boundWorkspace} にバインドされています。` +
+          `${body.requestedWorkspace} ではありません。そのワークスペース用に個別のデーモンを` +
+          `起動するか、正しい方にルーティングしてください。`,
       );
     }
   }
 }
 ```
 
-マルチワークスペース構成では、ワークスペースごとに別々のポートでデーモンを 1 つずつ起動します — §02 ではデーモン間のルーティングは行われません。オーケストレーター（またはユーザーのランチャー）がクライアントの接続先プロジェクトに基づいて適切なデーモンを選択します。
+マルチワークスペースデプロイメントでは、ワークスペースごとに 1 つのデーモンを別々のポートで実行します。§02 ではデーモン内ルーティングはありません。オーケストレータ (またはユーザーのランチャー) が、クライアントが通信したいプロジェクトに基づいて適切なデーモンを選択します。
 
 ## 認証
 
-トークン付きでデーモンを起動した場合（ループバック以外のバインドには必須）:
+デーモンがトークン付きで起動された場合 (非ループバックバインドではトークンが必須):
 
 ```ts
 const client = new DaemonClient({
@@ -231,16 +235,16 @@ const client = new DaemonClient({
 });
 ```
 
-**SDK 環境変数フォールバック (PR 27, v0.16-alpha)** — `token` が省略された場合、`DaemonClient` はデーモン自身の `--token` CLI フォールバックと同様に、環境変数から `QWEN_SERVER_TOKEN` を自動で読み取ります。シェルに `export QWEN_SERVER_TOKEN=...` が設定されている場合、以下は上記と等価です。
+**SDK 環境変数フォールバック (PR 27, v0.16-alpha)** — `DaemonClient` は `token` が省略された場合、自動的に環境変数 `QWEN_SERVER_TOKEN` を読み取ります。これはデーモン自身の `--token` CLI フラグのフォールバックと同じです。したがって、シェルに `export QWEN_SERVER_TOKEN=...` が設定されていれば、上記と同等です:
 
 ```ts
-// Same effect as token: process.env.QWEN_SERVER_TOKEN, but without the boilerplate.
+// token: process.env.QWEN_SERVER_TOKEN と同じ効果ですが、定型コードなしで済みます。
 const client = new DaemonClient({ baseUrl: 'https://your-host:4170' });
 ```
 
-このフォールバックは先頭・末尾の空白を除去します（`export QWEN_SERVER_TOKEN="$(cat token.txt)"` で `cat` が改行を追加した場合に便利です）。また、空文字列や空白のみの値は未設定として扱われるため、古い `export QWEN_SERVER_TOKEN=""` が誤って `Authorization: Bearer ` をトークンなしで送信することはありません。フォールバックはコンストラクタ実行時に一度だけ評価されるため、その後の `process.env` の変更は構築済みのクライアントには影響しません。ブラウザバンドル（`@qwen-code/webui` 経由など）では `globalThis.process` が存在しないため、クリーンに `undefined` が返されます。
+フォールバックは先頭/末尾の空白を除去し ( `export QWEN_SERVER_TOKEN="$(cat token.txt)"` で `cat` が改行を追加する場合に便利)、空または空白のみの値は未設定として扱います (古い `export QWEN_SERVER_TOKEN=""` が誤ってトークンなしの `Authorization: Bearer ` を送信するのを防ぎます)。フォールバックはコンストラクタで 1 回実行されます。その後の `process.env` の変更は既に構築されたクライアントには影響しません。ブラウザバンドル (例: `@qwen-code/webui` 経由) では `globalThis.process` が存在しないため、きれいに `undefined` になります。
 
-トークンが誤っているか欠落している場合、統一されたボディとともに `401` が返されます — SDK はルートハンドラからの 4xx/5xx に対して `DaemonHttpError` をスローします。
+間違ったトークンや欠落したトークンは、統一されたボディとともに `401` を返します。SDK はルートハンドラからのすべての 4xx/5xx で `DaemonHttpError` をスローします。
 
 ```ts
 import { DaemonHttpError } from '@qwen-code/sdk';
@@ -256,19 +260,19 @@ try {
 }
 ```
 
-## 実行中のプロンプトのキャンセル
+## 進行中のプロンプトのキャンセル
 
-ユーザーが Esc を押した場合:
+ユーザーが Esc キーを押した場合:
 
 ```ts
 await client.cancel(session.sessionId);
-// In the event stream you'll see the prompt resolve with stopReason: "cancelled"
+// イベントストリームで、プロンプトが stopReason: "cancelled" で解決されるのを確認できます
 ```
 
-キャンセルは**アクティブな**プロンプトのみを停止します — すでに POST 済みでキューに残っているプロンプトはそのまま実行され続けます（詳細はプロトコルリファレンスを参照）。
+キャンセルは**アクティブな**プロンプトのみを終了します。既に POST 済みで後ろにキューイングされているものは引き続き実行されます。(理由についてはプロトコルリファレンスを参照してください。)
 
 ## 次のステップ
 
-- [HTTP プロトコルリファレンス](../qwen-serve-protocol.md) — ステータスコードを含む完全なルート仕様
-- [デーモンモード ユーザーガイド](../../users/qwen-serve.md) — オペレーター向けドキュメント
+- [HTTP プロトコルリファレンス](../qwen-serve-protocol.md) — ステータスコード付きの完全なルート仕様
+- [デーモンモードユーザーガイド](../../users/qwen-serve.md) — 運用者向けドキュメント
 - ソース: `packages/sdk-typescript/src/daemon/`

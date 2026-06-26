@@ -1,46 +1,24 @@
 # JetBrains IDEs
 
-> JetBrains IDE は、Agent Client Protocol (ACP) を介して AI コーディングアシスタントをネイティブにサポートしています。この統合により、リアルタイムのコード提案機能付きで Qwen Code を JetBrains IDE 内で直接使用できます。
+> JetBrains IDE は、Agent Client Protocol（ACP）を通じて AI コーディングアシスタントをネイティブにサポートしています。この統合により、JetBrains IDE 内で Qwen Code を直接使用し、リアルタイムのコード提案を受けることができます。
 
-### Features
+### 特長
 
-- **Native agent experience**: JetBrains IDE 内に統合された AI アシスタントパネル
-- **Agent Client Protocol**: 高度な IDE 操作を可能にする ACP のフルサポート
-- **Symbol management**: `` `#` `` メンションでファイルを会話コンテキストに追加
-- **Conversation history**: IDE 内での過去の会話へのアクセス
+- **ネイティブエージェントエクスペリエンス**: JetBrains IDE 内に統合された AI アシスタントパネル
+- **Agent Client Protocol**: ACP を完全サポートし、高度な IDE 連携を実現
+- **シンボル管理**: #-mention でファイルを会話コンテキストに追加可能
+- **会話履歴**: IDE 内で過去の会話にアクセス可能
 
-### Requirements
+### 必要条件
 
-- ACP をサポートする JetBrains IDE（IntelliJ IDEA、WebStorm、PyCharm など）
-- Qwen Code CLI がインストール済みであること
+- ACP 対応の JetBrains IDE（IntelliJ IDEA、WebStorm、PyCharm など）
+- Qwen Code CLI のインストール
 
-### Installation
+### インストール
 
-#### Install from ACP Registry (Recommend)
+#### ACP レジストリからインストール（推奨）
 
-1. Qwen Code CLI をインストールします：
-
-   ```bash
-   npm install -g @qwen-code/qwen-code
-   ```
-
-2. JetBrains IDE を開き、AI Chat ツールウィンドウに移動します。
-
-3. **Add ACP Agent** をクリックし、**Install** をクリックします。
-
-   ![Install](https://img.alicdn.com/imgextra/i4/O1CN01qNdPCW1y8AcqxRgCy_!!6000000006533-2-tps-2490-1788.png)
-
-   JetBrains AI Assistant やその他の ACP エージェントをすでに使用している場合は、Agents List で **Install From ACP Registry** をクリックし、Qwen Code ACP をインストールしてください。
-
-   ![Add from Agents List](https://img.alicdn.com/imgextra/i2/O1CN01ZyOugP26BOKzNgZXx_!!6000000007623-2-tps-479-523.png)
-
-4. AI Assistant パネルに Qwen Code エージェントが表示されます。
-
-   ![Qwen Code in JetBrains AI Chat](https://img.alicdn.com/imgextra/i4/O1CN013kAVE41XVzbIZOxyv_!!6000000002930-2-tps-3188-2170.png)
-
-#### Manual Install (for older version of JetBrains IDEs)
-
-1. Qwen Code CLI をインストールします：
+1. Qwen Code CLI をインストールします。
 
    ```bash
    npm install -g @qwen-code/qwen-code
@@ -48,7 +26,29 @@
 
 2. JetBrains IDE を開き、AI Chat ツールウィンドウに移動します。
 
-3. 右上の 3 点メニューをクリックし、**Configure ACP Agent** を選択して、以下の設定で Qwen Code を構成します：
+3. **ACP エージェントを追加**をクリックし、次に**インストール**をクリックします。
+
+   ![インストール](https://img.alicdn.com/imgextra/i4/O1CN01qNdPCW1y8AcqxRgCy_!!6000000006533-2-tps-2490-1788.png)
+
+   JetBrains AI Assistant や他の ACP エージェントを既に利用しているユーザーは、Agent List の **ACP レジストリからインストール**をクリックし、Qwen Code ACP をインストールします。
+
+   ![Agent List から追加](https://img.alicdn.com/imgextra/i2/O1CN01ZyOugP26BOKzNgZXx_!!6000000007623-2-tps-479-523.png)
+
+4. Qwen Code エージェントが AI Assistant パネルに表示されます。
+
+   ![JetBrains AI Chat の Qwen Code](https://img.alicdn.com/imgextra/i4/O1CN013kAVE41XVzbIZOxyv_!!6000000002930-2-tps-3188-2170.png)
+
+#### 手動インストール（JetBrains IDE の旧バージョン向け）
+
+1. Qwen Code CLI をインストールします。
+
+   ```bash
+   npm install -g @qwen-code/qwen-code
+   ```
+
+2. JetBrains IDE を開き、AI Chat ツールウィンドウに移動します。
+
+3. 右上の 3 点リーダーメニューをクリックし、**ACP エージェントを設定**を選択して、以下の設定で Qwen Code を構成します。
 
 ```json
 {
@@ -62,20 +62,20 @@
 }
 ```
 
-4. AI Assistant パネルに Qwen Code エージェントが表示されます。
+4. Qwen Code エージェントが AI Assistant パネルに表示されます。
 
-![Qwen Code in JetBrains AI Chat](https://img.alicdn.com/imgextra/i3/O1CN01ZxYel21y433Ci6eg0_!!6000000006524-2-tps-2774-1494.png)
+![JetBrains AI Chat の Qwen Code](https://img.alicdn.com/imgextra/i3/O1CN01ZxYel21y433Ci6eg0_!!6000000006524-2-tps-2774-1494.png)
 
-## Troubleshooting
+## トラブルシューティング
 
-### Agent not appearing
+### エージェントが表示されない
 
 - ターミナルで `qwen --version` を実行し、インストールを確認する
-- 使用している JetBrains IDE のバージョンが ACP をサポートしていることを確認する
+- JetBrains IDE のバージョンが ACP をサポートしていることを確認する
 - JetBrains IDE を再起動する
 
-### Qwen Code not responding
+### Qwen Code が応答しない
 
 - インターネット接続を確認する
-- ターミナルで `qwen` を実行し、CLI が正常に動作するか確認する
-- 問題が解決しない場合は、[GitHub で Issue を作成してください](https://github.com/qwenlm/qwen-code/issues)
+- ターミナルで `qwen` を実行して CLI が動作するか確認する
+- 問題が解決しない場合は [GitHub で Issue を報告する](https://github.com/qwenlm/qwen-code/issues)

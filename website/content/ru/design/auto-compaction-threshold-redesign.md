@@ -1,35 +1,35 @@
-# Auto-Compaction Threshold Redesign
+# Перепроектирование порогов автоматического сжатия
 
-**Status:** Draft · 2026-05-14
+**Статус:** Черновик · 2026-05-14
 
-## 背景
+## Предыстория
 
-> В этом разделе описывается состояние **до** внедрения данного PR (pre-redesign behavior). Все упоминания `COMPRESSION_TOKEN_THRESHOLD`, `thinkingConfig.includeThoughts = true`, `hasFailedCompressionAttempt` и конкретные ссылки на file:line относятся к коду до слияния PR #4345 — после слияния эти символы/строки перестанут быть актуальными.
+> В этом разделе описывается состояние **до** внедрения данного PR (поведение до редизайна). Используемые далее `COMPRESSION_TOKEN_THRESHOLD`, `thinkingConfig.includeThoughts = true`, `hasFailedCompressionAttempt`, а также конкретные ссылки file:line относятся к коду до слияния PR #4345 — после слияния эти символы/номера строк станут неактуальны.
 
-Текущая реализация автоматической компрессии в qwen-code использует только единый порог `COMPRESSION_TOKEN_THRESHOLD = 0.7` (`chatCompressionService.ts:33`), единый для всех размеров окна. По сравнению с «абсолютной токеновой лестницей» claude-code (`autoCompact.ts:62-65`), у qwen-code есть четыре конкретные проблемы:
+Текущая реализация автоматического сжатия в qwen-code использует только единый пропорциональный порог `COMPRESSION_TOKEN_THRESHOLD = 0.7` (`chatCompressionService.ts:33`), общий для всех размеров окна. По сравнению с «абсолютной токенной лестницей» claude-code (`autoCompact.ts:62-65`), у qwen-code есть три конкретные проблемы:
 
-1. **Избыточный запас при больших окнах**: при модели 1M порог 70% срабатывает на 700K, остаётся 300K, что намного превышает реальные ~33K, необходимые для сводки + вывода
-2. **Блокировка после первого сбоя**: после установки `hasFailedCompressionAttempt = true` сессия больше не пытается выполнить авто-компресс (`geminiChat.ts:504`), что более жёстко, чем «отключение после 3 последовательных сбоев» в claude-code
-3. **Система tip-ов отвязана от порога авто-компрессии**: три tip-а `context-*` в `tipRegistry.ts` используют фиксированные проценты 50/80/95, полностью независимые от порога авто-компрессии (70%). Это означает, что на основном пути, где авто работает нормально, tip-ы 80%/95% срабатывают редко, а на периферийных путях, где авто не работает или происходит реактивный откат, они не имеют выровненной семантики
-4. **Сам вызов компрессии не имеет контроля бюджета вывода**: в [chatCompressionService.ts:374-376](packages/core/src/services/chatCompressionService.ts:374-376) явно включён `thinkingConfig.includeThoughts = true` (комментарий: «Compression quality drives every subsequent main turn»), при этом вызов sideQuery не имеет ограничения `maxOutputTokens`. Комментарий в коде ([:436-437](packages/core/src/services/chatCompressionService.ts:436)) признаёт, что `compressionOutputTokenCount may include non-persisted tokens (thoughts)`. Когда компрессия близка к заполнению окна, общий вывод может расширяться, что делает резервирование буфера непредсказуемым.<br/><br/>Что ещё хуже, поведение различается между провайдерами: у Anthropic thinking budget и max_tokens полностью независимы; reasoning tokens у OpenAI не ограничены параметром max_completion_tokens; поведение Gemini зависит от версии модели. Это означает, что «просто добавить maxOutputTokens для контроля общего вывода» не работает в проекте с несколькими провайдерами, как qwen-code
+1. **Избыточный резерв при больших окнах**: Для модели с 1M порог в 70% срабатывает при 700K, оставляя 300K, что значительно превышает ~33K, реально необходимые для резюме + вывода.
+2. **Постоянная блокировка после 1-го сбоя**: После `hasFailedCompressionAttempt = true` авто-сжатие больше не предпринимается в течение всей сессии (`geminiChat.ts:504`), что строже, чем «автоматический выключатель после 3-х последовательных сбоев» в claude-code.
+3. **Разрыв между системой подсказок и авто-порогом**: Три подсказки `context-*` в `tipRegistry.ts` используют фиксированные проценты 50/80/95, полностью независимые от порога авто-сжатия (70%). Это означает, что подсказки 80%/95% редко срабатывают на основном пути, где «авто работает нормально», и лишены семантики, согласованной с порогом, на пограничных путях, где «авто не удалось / срабатывает реактивное резервирование».
+4. **Отсутствие контроля бюджета вывода в самом вызове сжатия**: [chatCompressionService.ts:374-376](packages/core/src/services/chatCompressionService.ts:374) явно включает `thinkingConfig.includeThoughts = true` (комментарий: «Качество сжатия определяет каждый последующий основной ход»), при этом вызов sideQuery не имеет ограничения `maxOutputTokens`. Комментарий в коде ([:436-437](packages/core/src/services/chatCompressionService.ts:436)) также признает, что `compressionOutputTokenCount may include non-persisted tokens (thoughts)`. При приближении сжатия к верху окна общий объем вывода может увеличиться, что делает резерв буфера непредсказуемым.<br/><br/>Хуже того, поведение不一致 у разных провайдеров: thinking budget в Anthropic полностью независим от max_tokens; reasoning токены в OpenAI не ограничены max_completion_tokens; поведение Gemini варьируется в зависимости от версии модели. Это означает, что «простое добавление maxOutputTokens для контроля общего вывода» не работает в таком мультипровайдерном проекте, как qwen-code.
 
-5. **`lastPromptTokenCount`, используемый для проверки порога, систематически занижен.** В [geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217) показано, что это значение берётся из `usageMetadata.totalTokenCount` предыдущего ответа API. Два пробела: (a) оно не включает user message, добавляемый в текущем раунде, поэтому каждая дешёвая проверка порога меньше реального промпта на один сегмент; (b) начальное значение в первом раунде равно 0, поэтому при `--continue` с большой сессией или при наследовании большого объёма истории sub-agent-ом первый send всегда обходит все пороги. В claude-code используется `tokenCountWithEstimation` ([query.ts:638](src/query.ts:638)), работающий по двухрежимной схеме «использование API последнего ассистента + оценка последующих добавленных сообщений», что закрывает оба этих пробела
+5. **Систематическое занижение `lastPromptTokenCount`, используемого для проверки порога.** [geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217) показывает, что это число берется из `usageMetadata.totalTokenCount` предыдущего ответа API. Два разрыва: (а) не включает пользовательское сообщение, добавляемое в текущем раунде, поэтому каждая дешевая проверка порога видит промпт меньше реального на один сегмент; (б) начальное значение равно 0, поэтому при восстановлении огромного сеанса через `--continue` или наследовании большой истории суб-агентом первый send всегда обходит все пороги. Для сравнения, `tokenCountWithEstimation` в claude-code ([query.ts:638](src/query.ts:638)), использующий двухколейную систему «API usage последнего ответа ассистента + оценка последующих сообщений», устраняет оба этих разрыва.
 
-## Дизайнерские цели
+## Цели дизайна
 
-- Ввести смешанный порог «пропорция + абсолют», чтобы для моделей с большим окном преобладал абсолют, а для маленьких окон оставалась пропорция
-- Добавить два уровня: warn и hard (авто остаётся основной точкой срабатывания), формируя трёхуровневую лестницу
-- Переработать систему tip-ов, чтобы они соответствовали новым порогам
-- Обновить обработку сбоев с «блокировки после первого сбоя» на «отключение после 3 сбоев с автоматическим восстановлением»
-- **Отключить thinking в вызове компрессии и добавить верхнюю границу `maxOutputTokens`**: выровнять с claude-code, чтобы общий вывод был ограничен одним параметром, а бюджет буфера стал предсказуемым; принять возможное снижение качества компрессии
-- **Добавить компенсацию оценки токенов**: устранить систематическое занижение `lastPromptTokenCount` из-за «задержки на один раунд» и «нулевого начального значения», приблизив проверку порога к реальному размеру промпта
-- Удалить конфигурационный вход `contextPercentageThreshold` в настройках (внутренняя константа PCT остаётся)
-- **Не вводить** каналы переопределения через env, **не добавлять** явный переключатель enabled
+- Ввести гибридный порог «пропорция + абсолютное значение», чтобы для моделей с большим окном работало абсолютное значение, а для маленьких окон оставался запасной вариант по пропорции.
+- Добавить два уровня: warn / hard (auto остается основным триггером), формируя трехступенчатую лестницу.
+- Переписать систему подсказок так, чтобы они следовали за новыми условиями срабатывания порогов.
+- Модернизировать обработку сбоев с «постоянной блокировки после 1 сбоя» на «автоматический выключатель после 3 сбоев + автоматическое восстановление».
+- **Отключить thinking в вызове сжатия и добавить ограничение `maxOutputTokens`**: В соответствии с claude-code, чтобы общий вывод контролировался одним параметром, а бюджет буфера был предсказуем; принять потенциальное снижение качества сжатия.
+- **Добавить компенсацию оценки токенов**: Устранить два систематических занижения `lastPromptTokenCount` — «запаздывание на один раунд» и «начальное значение 0», чтобы проверка порога точнее соответствовала реальному размеру промпта.
+- Удалить точку входа конфигурации `contextPercentageThreshold` в настройках (внутренняя константа PCT остается).
+- **Не вводить** канал переопределения через env, **не добавлять** новый явный переключатель enabled.
 
-## Трёхуровневая лестница порогов
+## Трехступенчатая лестница порогов
 
 ```
-                       window  (raw context window)
+                       window  (сырое окно контекста)
                           │
                           │  ← SUMMARY_RESERVE = 20K
                           ▼
@@ -51,33 +51,33 @@ warn_threshold = max((PCT - WARN_OFFSET) * window, auto_threshold - WARN_BUFFER)
                           0
 ```
 
-### Семантика трёх уровней
+### Семантика трех уровней
 
-| Уровень  | Условие срабатывания                  | Поведение                                                                 |
-| -------- | ------------------------------------- | ------------------------------------------------------------------------- |
-| **warn** | `tokenCount >= warn_threshold`        | UI-подсказка «Осталось X токенов до авто-компрессии», не меняет поведение send |
-| **auto** | `tokenCount >= auto_threshold`        | Перед send вызывается `tryCompress(force=false)`, обычный процесс компрессии |
-| **hard** | `tokenCount >= hard_threshold`        | Перед send вызывается `tryCompress(force=true)`, сброс блокировки сбоя и принудительная компрессия |
+| Уровень     | Условие срабатывания              | Поведение                                                                  |
+| ----------- | --------------------------------- | -------------------------------------------------------------------------- |
+| **warn**    | `tokenCount >= warn_threshold`    | Подсказка в UI «Осталось X токенов до авто-сжатия», поведение send не меняется |
+| **auto**    | `tokenCount >= auto_threshold`    | Вызов `tryCompress(force=false)` перед send, обычный процесс сжатия        |
+| **hard**    | `tokenCount >= hard_threshold`    | Вызов `tryCompress(force=true)` перед send, сброс блокировки сбоев, принудительное сжатие |
 
-Уровень `hard` по сути переносит существующую логику реактивного переполнения (`geminiChat.ts:711`) на этап до send, избегая неудачной круглой поездки запроса с превышением размера.
+Уровень `hard` фактически переносит существующее резервное поведение реактивного переполнения (`geminiChat.ts:711`) на этап перед send, избегая одного неудачного round-trip oversized запроса.
 
 ## Внутренние константы
 
 ```ts
 // chatCompressionService.ts
-const DEFAULT_PCT = 0.7; // пропорция для авто
-const WARN_PCT_OFFSET = 0.1; // пропорция warn = PCT - WARN_OFFSET = 0.6
-const COMPACT_MAX_OUTPUT_TOKENS = 20_000; // жёсткий лимит вывода компрессионного sideQuery (thinking + summary вместе)
-const SUMMARY_RESERVE = 20_000; // резерв вывода, вычитаемый из вершины окна для лестницы порогов = maxOutput
+const DEFAULT_PCT = 0.7; // запасной вариант по пропорции для auto
+const WARN_PCT_OFFSET = 0.1; // пропорция для warn = PCT - WARN_OFFSET = 0.6
+const COMPACT_MAX_OUTPUT_TOKENS = 20_000; // жесткий лимит вывода sideQuery сжатия (thinking + резюме вместе)
+const SUMMARY_RESERVE = 20_000; // резерв вывода, вычитаемый из вершины окна в лестнице порогов = maxOutput
 const AUTOCOMPACT_BUFFER = 13_000; // расстояние между auto и effectiveWindow
 const WARN_BUFFER = 20_000; // расстояние между warn и auto
 const HARD_BUFFER = 3_000; // расстояние между hard и effectiveWindow
-const MAX_CONSECUTIVE_FAILURES = 3; // порог отключения при сбоях
+const MAX_CONSECUTIVE_FAILURES = 3; // порог срабатывания автоматического выключателя
 ```
 
-Значения взяты: все заимствованы из проверенных значений claude-code ([autoCompact.ts:30,62-65](src/services/compact/autoCompact.ts:30)).
+Источник значений: все взяты из实测ных значений claude-code ([autoCompact.ts:30,62-65](src/services/compact/autoCompact.ts:30)).
 
-`SUMMARY_RESERVE = COMPACT_MAX_OUTPUT_TOKENS` – ключевая зависимость: модель ограничена жёстким лимитом `maxOutputTokens`, вывод не может превысить 20K, поэтому резерву не нужен дополнительный запас безопасности. Примечание: в данной разработке с отключением thinking это равенство выполняется (весь бюджет вывода отдаётся сводке); если сохранить thinking, то `thinking + summary` делят общий бюджет (семантика `maxOutputTokens` в Gemini SDK / у большинства провайдеров), и модель сама распределяет их, поэтому фактическое пространство для summary меньше 20K (см. «Риски и примечания», пункты 1 и 2).
+`SUMMARY_RESERVE = COMPACT_MAX_OUTPUT_TOKENS` — это ключевое соотношение: модель ограничена жестким лимитом `maxOutputTokens`, вывод не может превысить 20K, поэтому резерву не нужен дополнительный запас прочности. Примечание: это равенство выполняется при отключенном thinking в данном дизайне (весь бюджет вывода отдается резюме). Если бы thinking был сохранен, `thinking + резюме` делили бы общий бюджет (семантика `maxOutputTokens` в Gemini SDK / большинстве провайдеров), и модель распределяла бы его между ними самостоятельно, делая фактическое доступное пространство для резюме меньше 20K (см. пункты 1 и 2 в «Риски и примечания»).
 
 ## Функция вычисления
 
@@ -85,7 +85,7 @@ const MAX_CONSECUTIVE_FAILURES = 3; // порог отключения при с
 export interface CompactionThresholds {
   warn: number;
   auto: number;
-  hard: number; // когда hard < auto, равно auto (деградация для маленьких окон)
+  hard: number; // если hard < auto, то равно auto (деградация для маленьких окон)
   effectiveWindow: number;
 }
 
@@ -104,20 +104,21 @@ export function computeThresholds(window: number): CompactionThresholds {
   return { warn, auto, hard, effectiveWindow };
 }
 ```
-### Экспериментальные данные
 
-| Окно  | warn           | auto           | hard              | Примечание                                        |
-| ----- | -------------- | -------------- | ----------------- | ------------------------------------------------- |
-| 32K   | 19.2K (pct)    | 22.4K (pct)    | 22.4K (деградация)| Запас по процентной формуле                       |
-| 64K   | 38.4K (pct)    | 44.8K (pct)    | 44.8K (деградация)| Запас по процентной формуле                       |
-| 128K  | 76.8K (pct)    | 95K (abs)      | 105K (abs)        | Смешанный (warn=pct, auto/hard=abs)               |
-| 200K  | 147K (abs)     | 167K (abs)     | 177K (abs)        | Абсолютное управление                             |
-| 256K  | 203K (abs)     | 223K (abs)     | 233K (abs)        | Абсолютное управление                             |
-| 1M    | 947K (abs)     | 967K (abs)     | 977K (abs)        | Полностью абсолютное                              |
+### Тестовые данные
 
-`(pct)` означает, что для этого уровня используется процентная формула, `(abs)` — абсолютная формула.
+| Окно    | warn          | auto          | hard           | Примечание                                     |
+| ------- | ------------- | ------------- | -------------- | ---------------------------------------------- |
+| 32K     | 19.2K (pct)   | 22.4K (pct)   | 22.4K (деград) | Запасной вариант по пропорции                  |
+| 64K     | 38.4K (pct)   | 44.8K (pct)   | 44.8K (деград) | Запасной вариант по пропорции                  |
+| 128K    | 76.8K (pct)   | 95K (abs)     | 105K (abs)     | Смешанный (warn=pct, auto/hard=abs)            |
+| 200K    | 147K (abs)    | 167K (abs)    | 177K (abs)     | Абсолютное значение接管                        |
+| 256K    | 203K (abs)    | 223K (abs)    | 233K (abs)     | Абсолютное значение接管                        |
+| 1M      | 947K (abs)    | 967K (abs)    | 977K (abs)     | Все абсолютное                                 |
 
-## Пользовательская конфигурация
+`(pct)` означает, что уровень определяется формулой пропорции, `(abs)` — формулой абсолютного значения.
+
+## Конфигурация пользователя
 
 ### Изменения ChatCompressionSettings
 
@@ -129,62 +130,63 @@ export interface ChatCompressionSettings {
 }
 ```
 
-**Удалено:** поле `contextPercentageThreshold`. Причина:
+**Удаляется:** поле `contextPercentageThreshold`. Причины:
 
-1. При новой формуле для основных окон (>= 128K) это поле практически не влияет — управление переходит к абсолютным значениям
-2. На малых окнах пользовательская настройка может привести к более раннему сжатию, что противоречит интуитивному желанию экономить токены
-3. В claude-code это поле не было доступно, нет прецедента подобной пользовательской конфигурации
+1.  При новой формуле для основных окон (>= 128K) это поле почти не влияет — работает абсолютное значение.
+2.  Для маленьких окон настройка пользователя может, наоборот, заставить порог срабатывать «раньше», что противоречит интуиции экономии токенов.
+3.  В claude-code это поле не раскрыто, нет аналогичного прецедента пользовательской конфигурации.
 
-### Обработка критических изменений (Breaking change)
+### Обработка breaking change
 
-**Пользовательская сторона:** при загрузке `Config` во время запуска, если обнаружено `chatCompression.contextPercentageThreshold`:
+**Для пользователя:** При запуске `Config` обнаруживает наличие `chatCompression.contextPercentageThreshold`:
 
-- Запись предупреждения в stderr: `"chatCompression.contextPercentageThreshold has been removed and is now controlled by built-in thresholds."`
-- **Не** вызывает ошибку, **не** блокирует запуск
-- Значение поля игнорируется
+-   Выводит в stderr предупреждение: `"chatCompression.contextPercentageThreshold has been removed and is now controlled by built-in thresholds."`
+-   **Не** вызывает ошибку, **не** блокирует запуск.
+-   Значение поля игнорируется.
 
-**SDK сторона (R5.4):** поле `hasFailedCompressionAttempt: boolean` в `CompressOptions` переименовано в `consecutiveFailures: number`. Два отличия:
+**Для SDK (R5.4):** Поле `hasFailedCompressionAttempt: boolean` в `CompressOptions` переименовывается в `consecutiveFailures: number`. Два отличия:
 
-|        | Старое поле                     | Новое поле                                                               |
-| ------ | ------------------------------- | ------------------------------------------------------------------------ |
-| Имя    | `hasFailedCompressionAttempt`   | `consecutiveFailures`                                                    |
-| Тип    | `boolean`                       | `number`                                                                 |
-| Смысл  | `true` = навсегда отключает auto-compact | `>= MAX_CONSECUTIVE_FAILURES` (по умолчанию 3) = временное отключение до успешного force сброса |
+|       | Старое поле                      | Новое поле                                                         |
+| ----- | -------------------------------- | ------------------------------------------------------------------ |
+| Имя   | `hasFailedCompressionAttempt`    | `consecutiveFailures`                                              |
+| Тип   | `boolean`                        | `number`                                                           |
+| Семантика | `true` = навсегда отключает auto-compact | `>= MAX_CONSECUTIVE_FAILURES` (по умолчанию 3) = временно отключает до успешного сброса через force |
 
-В репозитории только один внутренний потребитель — `GeminiChat.tryCompress`, поэтому риск внутренней миграции низок; однако `@qwen-code/qwen-code-core` — это опубликованный пакет, `CompressOptions` виден в d.ts, и код, напрямую вызывающий `service.compress({ ..., hasFailedCompressionAttempt: true })` от нижестоящего SDK, получит ошибку компиляции TypeScript. **Руководство по миграции:** замените `true` на `MAX_CONSECUTIVE_FAILURES` (или любое целое число >= 3), `false` на `0`. Если вызывающая сторона ведет собственный счетчик неудач, просто передавайте его.
+Внутри репозитория есть только один внутренний потребитель — `GeminiChat.tryCompress`, поэтому риск внутренней миграции низок; но `@qwen-code/qwen-code-core` — это опубликованный пакет, `CompressOptions` виден в d.ts, поэтому код нижестоящих SDK, напрямую вызывающий `service.compress({ ..., hasFailedCompressionAttempt: true })`, получит ошибку компиляции TypeScript. **Руководство по миграции:** Замените `true` на `MAX_CONSECUTIVE_FAILURES` (или любое целое >= 3), `false` на `0`. Если вызывающая сторона ведет свой собственный счетчик сбоев, можно передавать его напрямую.
 
 ## Компенсация оценки токенов
 
-`lastPromptTokenCount` в qwen-code берётся из `usageMetadata.totalTokenCount` предыдущего API-ответа ([geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217)). Это приводит к:
+`lastPromptTokenCount` в qwen-code берется из `usageMetadata.totalTokenCount` предыдущего ответа API ([geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217)). Это приводит к:
 
-1. **Задержка на один раунд**: cheap-gate использует `lastPromptTokenCount` для оценки, но фактический промпт текущей отправки = он + сообщение пользователя текущего раунда. Недосчитанная часть может привести к ложноотрицательному результату при проверке порога.
-2. **Первый раунд равен 0**: начальное значение 0, поэтому при первой отправке независимо от объёма истории не сработает ни один порог (включая сценарии восстановления через `--continue` / наследования sub-agent).
+1.  **Запаздыванию на один раунд**: cheap-gate использует `lastPromptTokenCount` для проверки, но фактический промпт текущего send = он + пользовательское сообщение этого раунда. Недосчитанная часть может привести к ложноотрицательному результату проверки порога.
+2.  **Начальному значению 0**: Исходное значение равно 0, поэтому первый send не запускает ни один порог, независимо от размера истории (включая сценарии восстановления через `--continue` / наследования суб-агентом).
 
-Вводится лёгкая локальная функция оценки `estimatePromptTokens`, которая восполняет эти недостающие части в проверках cheap-gate / hard перед отправкой:
+Вводится легковесная локальная функция оценки `estimatePromptTokens`, которая восполняет эти два недостающих сегмента при проверках cheap-gate / hard перед send:
 
 ```ts
-// chatCompressionService.ts（或新文件 packages/core/src/services/tokenEstimation.ts）
+// chatCompressionService.ts (или новый файл packages/core/src/services/tokenEstimation.ts)
 
-const BYTES_PER_TOKEN = 4; // 通用 char/4 估算（claude-code 同此）
-const BYTES_PER_TOKEN_JSON = 2; // JSON / tool_call input 更密集
+const BYTES_PER_TOKEN = 4; // общая оценка char/4 (claude-code использует ту же)
+const BYTES_PER_TOKEN_JSON = 2; // JSON / tool_call input более плотные
 
 /**
- * 估算一组 Content 的 token 数，用于补偿 API usage metadata 的滞后。
- * 对 image / document 复用现有 imageTokenEstimate（默认 1600）。
+ * Оценивает количество токенов для набора Content, чтобы компенсировать
+ * запаздывание метаданных usage API.
+ * Для image / document переиспользует существующий imageTokenEstimate (по умолчанию 1600).
  */
 export function estimateContentTokens(
   contents: Content[],
   imageTokenEstimate = DEFAULT_IMAGE_TOKEN_ESTIMATE,
 ): number {
-  // 复用 estimateContentChars（compactionInputSlimming.ts），再除以 bytesPerToken
-  // 内部对 functionCall / functionResponse 用 BYTES_PER_TOKEN_JSON
+  // Переиспользует estimateContentChars (compactionInputSlimming.ts), затем делит на bytesPerToken
+  // Внутри для functionCall / functionResponse использует BYTES_PER_TOKEN_JSON
   // ...
 }
 
 /**
- * cheap-gate 与 hard 判断的统一入口。
- * 主路径：lastPromptTokenCount 准 + 本轮 user message 估算
- * 首轮路径：full history 估算
+ * Единая точка входа для проверок cheap-gate и hard.
+ * Основной путь: точный lastPromptTokenCount + оценка пользовательского сообщения текущего раунда
+ * Путь первого раунда: оценка полной истории
  */
 export function estimatePromptTokens(
   history: Content[],
@@ -200,54 +202,55 @@ export function estimatePromptTokens(
 
 Места применения:
 
-- cheap-gate в `chatCompressionService.compress()`: заменить источник `originalTokenCount` на `estimatePromptTokens(history, userMessage, lastPromptTokenCount)`
-- проверка hard на входе `geminiChat.sendMessageStream` (см. следующий раздел)
+-   Cheap-gate в `chatCompressionService.compress()`: заменить источник `originalTokenCount` на `estimatePromptTokens(history, userMessage, lastPromptTokenCount)`.
+-   Проверка hard на входе в `geminiChat.sendMessageStream` (см. следующий раздел).
 
-**Оценка используется только для раннего срабатывания, а не для пропуска срабатывания.** Поскольку char/4 — это грубая нижняя граница, она безопасна на стороне ложноположительных результатов (лучше сжать раньше), но ненадёжна для ложноотрицательных.
+**Оценка используется только для раннего срабатывания, а не для пропуска срабатывания.** Поскольку char/4 — это грубая нижняя оценка, она безопасна на стороне ложноположительного результата (лучше сжать немного раньше), но ненадежна на стороне ложноотрицательного.
 
 ## Изменения в цепочке срабатывания
 
 ### chatCompressionService.ts
 
-1. **Экспорт `computeThresholds`** для повторного использования в cheap-gate / UI / командах
-2. **`compress()` cheap-gate** (строки 221-249):
-   ```ts
-   if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES && !force) {
-     return NOOP;
-   }
-   const { auto } = computeThresholds(contextLimit);
-   const effectiveTokens = estimatePromptTokens(
-     curatedHistory,
-     userMessage,
-     originalTokenCount,
-   );
-   if (!force && effectiveTokens < auto) return NOOP;
-   ```
-3. **Вызов `runSideQuery` в `compress()`** (строки 356-380): отключение thinking + добавление `maxOutputTokens`:
+1.  **Экспортировать `computeThresholds`** для повторного использования в cheap-gate / UI / командах.
+2.  **Cheap-gate в `compress()`** (строки 221-249):
+    ```ts
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES && !force) {
+      return NOOP;
+    }
+    const { auto } = computeThresholds(contextLimit);
+    const effectiveTokens = estimatePromptTokens(
+      curatedHistory,
+      userMessage,
+      originalTokenCount,
+    );
+    if (!force && effectiveTokens < auto) return NOOP;
+    ```
+3.  **Вызов `runSideQuery` в `compress()`** (строки 356-380): Отключить thinking + добавить `maxOutputTokens`:
 
-   ```ts
-   const summaryResult = await runSideQuery(config, {
-     // ...
-     config: {
-       thinkingConfig: { includeThoughts: false }, // 关闭 thinking（与 claude-code 一致）
-       maxOutputTokens: COMPACT_MAX_OUTPUT_TOKENS, // 硬上限 20K
-     },
-     // ...
-   });
-   ```
+    ```ts
+    const summaryResult = await runSideQuery(config, {
+      // ...
+      config: {
+        thinkingConfig: { includeThoughts: false }, // Отключаем thinking (в соответствии с claude-code)
+        maxOutputTokens: COMPACT_MAX_OUTPUT_TOKENS, // Жесткий лимит 20K
+      },
+      // ...
+    });
+    ```
 
-   Или просто удалить `thinkingConfig`, чтобы по умолчанию `runSideQuery` (в [sideQuery.ts:118](packages/core/src/utils/sideQuery.ts:118) по умолчанию `includeThoughts: false`) взял управление.
-После отключения `thinking`, `maxOutputTokens` напрямую ограничивает общий вывод (без отдельного бюджета для thinking), и `SUMMARY_RESERVE = maxOutput = 20K` — это четкая жесткая зависимость.
+    Или просто удалить `thinkingConfig`, позволив сработать значению по умолчанию `runSideQuery` ([sideQuery.ts:118](packages/core/src/utils/sideQuery.ts:118) по умолчанию `includeThoughts: false`).
 
-Также обновить комментарий в [chatCompressionService.ts:374-376](packages/core/src/services/chatCompressionService.ts:374) с «Compression quality drives every subsequent main turn — keep reasoning on» на «Для обеспечения предсказуемого верхнего предела вывода у разных провайдеров, в соответствии с дизайном claude-code».
+    При отключенном thinking `maxOutputTokens` напрямую ограничивает общий вывод (нет проблемы отдельного бюджета для thinking), и `SUMMARY_RESERVE = maxOutput = 20K` становится чистым жестким соотношением.
 
-Комментарий «may include non-persisted tokens (thoughts)» в разделе token math ([:436-437](packages/core/src/services/chatCompressionService.ts:436)) также можно синхронно почистить.
+    Одновременно обновить комментарий в [chatCompressionService.ts:374-376](packages/core/src/services/chatCompressionService.ts:374) с «Качество сжатия определяет каждый последующий основной ход — оставить рассуждения включенными» на объяснение, что это сделано для обеспечения предсказуемого лимита вывода у разных провайдеров, в соответствии с дизайном claude-code.
 
-### geminiChat.ts: точка входа `sendMessageStream` (строка 562)
+    Комментарий про token math ([:436-437](packages/core/src/services/chatCompressionService.ts:436)) «может включать несохраняемые токены (мысли)» также можно синхронно почистить.
+
+### geminiChat.ts: вход `sendMessageStream` (строка 562)
 
 ```ts
 // Было: tryCompress(force=false)
-// Стало: оценка токенов для определения hard и установка флага force
+// Стало: используем оценку токенов для определения срабатывания hard, решаем флаг force
 
 const { hard } = computeThresholds(contextLimit);
 const effectiveTokens = estimatePromptTokens(
@@ -258,7 +261,7 @@ const effectiveTokens = estimatePromptTokens(
 const shouldForceFromHard = effectiveTokens >= hard;
 
 if (shouldForceFromHard) {
-  // Сбрасываем счетчик отказов, эквивалентно force compress
+  // Сбрасываем автоматический выключатель, равносильно force compress
   this.consecutiveFailures = 0;
 }
 
@@ -270,16 +273,16 @@ compressionInfo = await this.tryCompress(
 );
 ```
 
-### Улучшение обработки ошибок (`geminiChat.ts:504-510`)
+### Модернизация обработки сбоев (`geminiChat.ts:504-510`)
 
 ```ts
 // Было
 hasFailedCompressionAttempt: boolean;
 
 // Стало
-consecutiveFailures: number;  // по умолчанию 0
+consecutiveFailures: number; // По умолчанию 0
 
-// Ветка ошибки
+// Ветка сбоя
 } else if (isCompressionFailureStatus(info.compressionStatus)) {
   if (!force) {
     this.consecutiveFailures += 1;
@@ -290,25 +293,25 @@ consecutiveFailures: number;  // по умолчанию 0
 this.consecutiveFailures = 0;
 ```
 
-Вызов с `force=true` в случае ошибки не увеличивает счетчик (сохраняет семантику, когда reactive / manual не «занимают квоту»).
+Сбой при `force=true` не учитывается в счетчике (сохраняется семантика «реактивный / ручной вызов не расходует лимит»).
 
 ## Изменения в UI
 
-### Переписывание трех tip-ов `context-*` в tipRegistry.ts
+### Переписывание трех подсказок context-* в tipRegistry.ts
 
-Три пороговых уровня соответствуют трем tip-ам один к одному. Сопоставление (по возрастанию числа токенов):
+Три уровня порогов идеально сопоставляются с тремя подсказками. Соответствие (по возрастанию количества токенов):
 
-| Tip ID             | Текущее условие                                 | Новое условие                                                        | Изменения в тексте                                                   |
-| ------------------ | ----------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `compress-intro`   | `pct >= 50 && < 80 && sessionPromptCount > 5`   | `tokenCount >= warn && tokenCount < auto && sessionPromptCount > 5`  | Без изменений                                                        |
-| `context-high`     | `pct >= 80 && < 95`                             | `tokenCount >= auto && tokenCount < hard`                            | Без изменений                                                        |
-| `context-critical` | `pct >= 95`                                     | `tokenCount >= hard`                                                 | Добавить фразу «Auto-compact will force on next send.» для отражения нового поведения hard-уровня |
+| ID подсказки        | Текущее условие                                | Новое условие                                                         | Изменение текста                                                                   |
+| ------------------- | ---------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `compress-intro`    | `pct >= 50 && < 80 && sessionPromptCount > 5`  | `tokenCount >= warn && tokenCount < auto && sessionPromptCount > 5`   | Без изменений                                                                      |
+| `context-high`      | `pct >= 80 && < 95`                            | `tokenCount >= auto && tokenCount < hard`                             | Без изменений                                                                      |
+| `context-critical`  | `pct >= 95`                                    | `tokenCount >= hard`                                                  | Добавить фразу «Auto-compact will force on next send.» отражающую поведение нового уровня hard |
 
 **Влияние на частоту срабатывания:**
 
-- Основной путь (auto работает нормально): `tokenCount` пересекает auto, сразу запускается сжатие, на следующем шаге `tokenCount` снижается, поэтому `context-high` виден лишь короткое время между «запуском сжатия и его применением»
-- Граничный путь (auto не сработал / предохранитель / reactive не успел): `tokenCount` продолжает расти, последовательно проходя warn → auto → hard и запуская три tip-а, что согласуется с пользовательским восприятием «контекст становится всё больше»
-- При срабатывании `context-critical` hard-уровень уже запускает force compress перед send (см. изменения в цепочке spec), так что этот tip — по сути «уведомление post-rescue», а не «предупреждение pre-rescue»; текст дополнен соответствующим пояснением
+-   Основной путь (auto работает нормально): `tokenCount` пересекает auto, сразу запускается сжатие, на следующем раунде `tokenCount` падает, поэтому `context-high` видна лишь короткое время между «срабатыванием» и «эффектом сжатия».
+-   Пограничные пути (auto не удался / автоматический выключатель / реактивное резервирование не успело): `tokenCount` продолжает расти, последовательно проходя через warn → auto → hard, запуская три подсказки, что соответствует пользовательскому восприятию «контекст становится все более плотным».
+-   При срабатывании `context-critical` уровень hard уже выполняет force compress перед send (см. раздел spec «Изменения в цепочке срабатывания»), поэтому эта подсказка фактически является «пост-спасательным уведомлением», а не «пред-спасательным предупреждением», в текст добавляется соответствующее пояснение.
 
 Добавить в интерфейс `TipContext`:
 
@@ -319,116 +322,116 @@ export interface TipContext {
   sessionPromptCount: number;
   sessionCount: number;
   platform: string;
-  // Новое поле: чтобы функция isRelevant имела доступ к порогам.
-  // computeThresholds вычисляется на стороне вызывающего кода и передается,
-  // чтобы tipRegistry не зависел напрямую от core.
+  // Новое: чтобы функция isRelevant могла получить пороги.
+  // computeThresholds вычисляется на стороне вызывающего и передается, избегая прямой зависимости tipRegistry от core.
   thresholds?: CompactionThresholds;
 }
 ```
 
-В `AppContainer.tsx:1150` при конструировании `TipContext` синхронно передавать его.
+В `AppContainer.tsx:1150` при создании `TipContext` синхронно внедрять пороги.
 
 ### Синхронизация команды /context (`contextCommand.ts:177-183`)
 
 ```ts
-// Вместо жестко заданного (1 - threshold) * contextWindowSize
+// Заменить жестко закодированное (1 - threshold) * contextWindowSize
 const { warn, auto, hard, effectiveWindow } =
   computeThresholds(contextWindowSize);
 
-// Отображать четыре строки:
+// Показать четыре строки:
 //   Effective window:   180K   (window − 20K reserve)
 //   Warn threshold:     147K   (...)
 //   Auto threshold:     167K   ← текущая позиция
 //   Hard threshold:     177K
-// Показывать, на каком уровне находится текущее количество токенов
+// Отметить, на каком уровне находится текущее количество токенов
 ```
 
-### Постоянное отображение в Footer (опционально, follow-up)
+### Постоянная подсказка в Footer (опционально, follow-up)
 
-Данная спецификация **не требует** обязательной реализации постоянного отображения в Footer. Причины:
+Данный spec не требует обязательной реализации постоянной подсказки в footer по следующим причинам:
 
-- Существующая система tip-ов уже показывает подсказки в истории
-- Постоянное отображение в Footer потребует изменения рендеринга ink и увеличения частоты перерисовки
-- Это может быть реализовано как follow-up к данной спецификации (отдельный PR)
+-   Существующая система подсказок уже может давать подсказки в истории.
+-   Постоянная подсказка в footer потребует изменения рендеринга ink и увеличения частоты перерисовки.
+-   Это можно оставить как последующий follow-up к данному spec (отдельный PR).
 
-Если делать позже, предлагается условие срабатывания `tokenCount >= warn && tokenCount < auto`; скрывать после превышения auto (сжатие уже началось).
+Если в будущем это будет реализовано, рекомендуется условие срабатывания `tokenCount >= warn && tokenCount < auto`; после превышения auto подсказку скрывать (сжатие уже началось).
 
-## Покрытие тестами
+## Тестовое покрытие
 
 ### Модульные тесты (chatCompressionService.test.ts)
 
-- `computeThresholds(32K)` → ветка с процентным запасом (warn/auto — pct, hard — деградация)
-- `computeThresholds(128K)` → смешанная ветка (warn=pct, auto=abs, hard=abs)
-- `computeThresholds(200K)` → ветка абсолютного замещения (warn/auto/hard — все abs)
-- `computeThresholds(1M)` → ветка со всеми абсолютными значениями
-- `computeThresholds(window=10K)` → минимальное окно (все абсолютные значения отрицательны), формула не ломается
-- Три порога всегда удовлетворяют `warn <= auto <= hard`
-- Формула max() стабильна на граничных точках (pct \* window == abs)
+-   `computeThresholds(32K)` → ветка запасного варианта по пропорции (warn и auto оба pct, hard деградирует)
+-   `computeThresholds(128K)` → смешанная ветка (warn=pct, auto=abs, hard=abs)
+-   `computeThresholds(200K)` → ветка абсолютного接管 (warn/auto/hard все abs)
+-   `computeThresholds(1M)` → ветка все абсолютное
+-   `computeThresholds(window=10K)` → очень маленькое окно (абсолютные значения все отрицательны), формула не ломается
+-   Трехуровневые пороги всегда удовлетворяют `warn <= auto <= hard`
+-   Формула max() стабильна в граничных точках (pct * window == abs)
 
 ### Модульные тесты (tokenEstimation.test.ts)
 
-- `estimateContentTokens` для plain text / json / functionCall / functionResponse / image / document — соответствующий bytesPerToken
-- `estimatePromptTokens` при `lastPromptTokenCount > 0` идет по «основному пути», при равенстве 0 — по «пути первого раунда»
-- Большое сообщение пользователя на этапе cheap-gate добавляется так, что превышает порог auto
-- Отклонение оценки от реального API usage в пределах ±30% (регрессия на реальных исторических выборках)
+-   `estimateContentTokens` для plain text / json / functionCall / functionResponse / image / document использует соответствующий bytesPerToken
+-   `estimatePromptTokens` при `lastPromptTokenCount > 0` идет по «основному пути», при равенстве 0 — по «пути первого раунда»
+-   Большое пользовательское сообщение, добавленное на этапе cheap-gate, может пересечь порог auto
+-   Отклонение оценки от реального usage API находится в пределах ±30% (регрессия на реальных исторических выборках)
 
 ### Интеграционные тесты (geminiChat.test.ts / chatCompressionService.test.ts)
 
-- После 3 последовательных ошибок cheap-gate — NOOP; после следующего force — восстановление
-- Одиночная ошибка больше не блокирует навсегда
-- При превышении оценки токенов порога hard send принудительно запускает force compress
-- При сжатии вызов sideQuery с `maxOutputTokens = COMPACT_MAX_OUTPUT_TOKENS` корректно передается в `runSideQuery`, `thinkingConfig.includeThoughts` равен `false` (или задается значением по умолчанию для sideQuery)
-- **Покрытие первого раунда**: создается чат с `lastPromptTokenCount = 0`, но с огромной историей (симуляция восстановления через `--continue`); при первом send порог auto должен срабатывать через путь оценки.
-### 兼容性测试
+-   После 3 последовательных сбоев cheap-gate возвращает NOOP; следующий вызов force восстанавливает работу
+-   Одиночный сбой больше не блокирует постоянно
+-   Пересечение порога hard оценочными токенами запускает автоматический force compress при send
+-   Параметры вызова sideQuery сжатия `maxOutputTokens = COMPACT_MAX_OUTPUT_TOKENS` правильно передаются в `runSideQuery`, `thinkingConfig.includeThoughts` равен `false` (или переопределяется значением по умолчанию sideQuery)
+-   **Покрытие первого раунда**: Создать чат с `lastPromptTokenCount = 0`, но огромной историей (имитация восстановления через `--continue`); при первом send порог auto должен сработать через оценочный путь
 
-- 设置 `contextPercentageThreshold = 0.5` 启动 → stderr 警告 + 字段被忽略，行为以内部 PCT 常量为准
+### Тесты совместимости
 
-### Tip 系统测试（tipRegistry.test.ts）
+-   Запуск с настройкой `contextPercentageThreshold = 0.5` → предупреждение в stderr + поле игнорируется, поведение определяется внутренней константой PCT
 
-- 三条 context-\* tip 在跨越 warn/auto/hard 时正确触发，且区间不重叠
-- 主路径下 auto 阈值触发压缩后 `context-high` 不持续可见
-- 边缘路径（熔断 + token 继续涨）下三条 tip 依次触发
-- TipContext 缺 `thresholds` 时（fallback）行为合理
+### Тесты системы подсказок (tipRegistry.test.ts)
 
-## 实施分阶段
+-   Три подсказки context-* правильно срабатывают при пересечении warn/auto/hard, диапазоны не перекрываются
+-   В основном пути после срабатывания порога auto и запуска сжатия `context-high` не остается постоянно видимой
+-   В пограничном пути (автоматический выключатель + токены продолжают расти) три подсказки срабатывают последовательно
+-   Поведение TipContext при отсутствии `thresholds` (fallback) разумно
 
-| Phase | 内容                                                                                         | 独立性             |
-| ----- | -------------------------------------------------------------------------------------------- | ------------------ |
-| 1     | 内部常量 + `computeThresholds` + cheap-gate 改动（不含估算补偿）                             | 可独立合并         |
-| 2     | 失败处理升级（1 → 3 熔断）                                                                   | 可独立合并         |
-| 3     | hard 层 force compress 提前                                                                  | 依赖 P1 + P7       |
-| 4     | 配置面变更 + breaking change 警告                                                            | 依赖 P1            |
-| 5     | UI（tip 重写 + /context）                                                                    | 依赖 P1            |
-| 6     | 压缩 sideQuery 关 thinking + 加 `maxOutputTokens` 上限                                       | 独立可先于 P1 落地 |
-| 7     | Token 估算补偿（`estimateContentTokens` + `estimatePromptTokens`，应用到 cheap-gate / hard） | 独立可与 P1 并行   |
+## Поэтапное внедрение
 
-每个 Phase 可独立 PR。建议合并顺序 **P6 → P7 → P1 → P2 → P4 → P3 → P5**：先给压缩调用打上 `maxOutputTokens` 上限（让 buffer 假设可信）；再加估算补偿（让 token 数判断更可靠）；再把阈值基础设施落地；再做失败熔断、配置面变更；最后才打开 hard 层主动救场（这时已有可靠的 token 数 + 熔断器）。每个 PR 都能独立验证、独立回滚。
+| Фаза | Содержание                                                                                   | Независимость         |
+| ---- | -------------------------------------------------------------------------------------------- | --------------------- |
+| 1    | Внутренние константы + `computeThresholds` + изменения cheap-gate (без компенсации оценки)   | Можно объединить независимо |
+| 2    | Модернизация обработки сбоев (1 → 3 автоматический выключатель)                             | Можно объединить независимо |
+| 3    | Упреждающий force compress на уровне hard                                                    | Зависит от P1 + P7    |
+| 4    | Изменения на стороне конфигурации + предупреждение о breaking change                         | Зависит от P1         |
+| 5    | UI (переписывание подсказок + /context)                                                      | Зависит от P1         |
+| 6    | Отключение thinking в sideQuery сжатия + добавление лимита `maxOutputTokens`                 | Независима, может быть реализована до P1 |
+| 7    | Компенсация оценки токенов (`estimateContentTokens` + `estimatePromptTokens`, применение к cheap-gate / hard) | Независима, может быть параллельна P1 |
 
-## 风险与注意事项
+Каждая фаза может быть отдельным PR. Рекомендуемый порядок слияния **P6 → P7 → P1 → P2 → P4 → P3 → P5**: сначала добавить лимит `maxOutputTokens` в вызов сжатия (сделать предположение о буфере надежным); затем добавить компенсацию оценки (сделать оценку количества токенов более надежной); затем внедрить инфраструктуру порогов; затем сделать автоматический выключатель сбоев, изменения на стороне конфигурации; и только в конце включить упреждающее спасение на уровне hard (к этому моменту будут надежные данные о токенах и автоматический выключатель). Каждый PR можно независимо проверить и откатить.
 
-1. **关 thinking 可能影响摘要质量。** 原作者注释 "Compression quality drives every subsequent main turn — keep reasoning on" 表达过对此的担忧。本 spec 的判断是「可预测的 token 上限」优先于「最大化质量」，但落地后需要观察 telemetry 里 `compression_input_token_count` / `compression_output_token_count` 的分布，以及主对话在压缩后的质量变化（用户反馈、`COMPRESSION_FAILED_*` 状态率）。如果质量下降明显，再考虑回退到 thinking 开启 + provider-specific thinkingBudget 控制。
+## Риски и примечания
 
-2. **`maxOutputTokens` 触顶可能导致 summary 被截断。** 关 thinking 后，20K 直接限制 summary 主体；claude-code 实测 p99.99 ≈ 17K，留 ~3K 安全冗余。但 qwen-code 的压缩 prompt 与 claude-code 不同，分布需要观测。建议在压缩失败分支（[chatCompressionService.ts:464-491](packages/core/src/services/chatCompressionService.ts:464)）追加「检测到 finish_reason = MAX_TOKENS」的 NOOP 路径，避免持久化半截 summary。
+1.  **Отключение thinking может повлиять на качество резюме.** Исходный комментарий автора «Качество сжатия определяет каждый последующий основной ход — оставить рассуждения включенными» выражал обеспокоенность по этому поводу. Решение в данном spec — приоритет «предсказуемого лимита токенов» над «максимизацией качества», но после внедрения необходимо наблюдать за распределением `compression_input_token_count` / `compression_output_token_count` в телеметрии, а также за изменениями качества в основном диалоге после сжатия (отзывы пользователей, уровень статусов `COMPRESSION_FAILED_*`). Если качество упадет значительно, можно рассмотреть возврат к включенному thinking с контролем provider-specific thinkingBudget.
 
-3. **跨 provider 的 maxOutputTokens 映射差异。** OpenAI compat (dashscope) → `max_tokens`、Anthropic → `max_tokens`、Gemini SDK → `maxOutputTokens`。当前 qwen-code 已有这层映射（[contentGenerator.ts:94](packages/core/src/core/contentGenerator.ts:94) 等），需要在 P6 实现时验证 sideQuery 路径上 `maxOutputTokens` 字段确实贯穿到所有 provider 的请求体。
+2.  **Достижение лимита `maxOutputTokens` может привести к усечению резюме.** При отключенном thinking 20K напрямую ограничивают тело резюме; claude-code实测 p99.99 ≈ 17K, оставляя запас ~3K. Однако промпт сжатия qwen-code отличается от claude-code, распределение требует наблюдения. Рекомендуется в ветке сбоя сжатия ([chatCompressionService.ts:464-491](packages/core/src/services/chatCompressionService.ts:464)) добавить путь NOOP при обнаружении `finish_reason = MAX_TOKENS`, чтобы избежать сохранения неполного резюме.
 
-4. **Token 估算是粗略下界，不应反向用作"跳过触发"的依据。** `char/4` 与各 provider 真实 tokenizer 偏差可能 ±30%。本 spec 只用估算来「让阈值更早触发」（false-positive 方向，宁可早压不可晚压）。所有「降低 token 计数 / 跳过压缩」的代码路径仍应使用 `lastPromptTokenCount`（API 权威值）。
+3.  **Различия в отображении maxOutputTokens у разных провайдеров.** OpenAI compat (dashscope) → `max_tokens`, Anthropic → `max_tokens`, Gemini SDK → `maxOutputTokens`. В текущем qwen-code уже есть такое отображение ([contentGenerator.ts:94](packages/core/src/core/contentGenerator.ts:94) и т.д.), необходимо при реализации P6 убедиться, что поле `maxOutputTokens` на пути sideQuery действительно передается в тело запроса для всех провайдеров.
 
-5. **估算函数与现有 `estimateContentChars` 的关系。** [compactionInputSlimming.ts](packages/core/src/services/compactionInputSlimming.ts) 已经有 `estimateContentChars`（用于压缩 split point 计算），新增的 `estimateContentTokens` 应复用它（除以 bytesPerToken）而非新写一套，避免两套估算口径出现分歧。
+4.  **Оценка токенов — это грубая нижняя граница, ее не следует использовать в обратном направлении как основание для «пропуска срабатывания».** Отклонение `char/4` от реального токенизатора провайдера может достигать ±30%. Данный spec использует оценку только для того, чтобы «заставить порог сработать раньше» (направление ложноположительного результата, лучше сжать раньше, чем позже). Все пути кода, которые «уменьшают счетчик токенов / пропускают сжатие», по-прежнему должны использовать `lastPromptTokenCount` (авторитетное значение API).
 
-## 不在本 spec 范围
+5.  **Связь новой функции оценки с существующей `estimateContentChars`.** В [compactionInputSlimming.ts](packages/core/src/services/compactionInputSlimming.ts) уже есть `estimateContentChars` (используется для вычисления точки разделения при сжатии). Новая `estimateContentTokens` должна переиспользовать ее (делить на bytesPerToken), а не писать новую с нуля, чтобы избежать расхождения между двумя системами оценки.
 
-- Env 变量覆盖通道（D 方案）：维持「配置面最小」原则
-- Footer 常驻可视化：留作 follow-up
-- 摘要 prompt 改进、`MIN_COMPRESSION_FRACTION` 调整：与阈值设计正交
+## Что не входит в scope данного spec
 
-## 开放问题（等 review）
+-   Канал переопределения через env-переменные (вариант D): сохраняем принцип «минимальной конфигурационной поверхности».
+-   Постоянная визуализация в footer: оставляем как follow-up.
+-   Улучшение промпта для резюме, настройка `MIN_COMPRESSION_FRACTION`: ортогонально дизайну порогов.
 
-1. **breaking change 强度**：警告 + 忽略字段 vs 启动报错。当前选警告，需要确认对企业部署/团队配置是否够友好
+## Открытые вопросы (ожидают review)
 
-## 已结案
+1.  **Сила breaking change**: предупреждение + игнорирование поля vs. ошибка при запуске. Сейчас выбран вариант с предупреждением. Необходимо подтверждение, что это достаточно удобно для корпоративных развертываний / командных конфигураций.
 
-2. **小窗口（≤ ~76.7K）下 hard 与 auto 退化为同一值** — 决定**不在 `/context` 明示**。理由：
-   - 塌缩范围不只是 32K，所有 `effectiveWindow - HARD_BUFFER ≤ 0.7 × window` 的窗口都塌缩（包括 64K）
-   - 用户行为不变：塌缩窗口上 `currentTier` 跳过 `'auto'` 直接报 `'hard'`（`contextCommand.ts:43-44` 先判 `>= hard`），`context-high` band（`auto ≤ t < hard`）变成空带，少一档提示在小窗口上是合理的——窗口本身就小，用户大概率手动管理上下文
-   - 如果未来有真实用户报告"小窗口看不到中间档提示"，再决定加 UI 标注或调整 `context-high` 触发条件（这是 UI 工作，不是 spec 工作）。当前选不增加 UI 复杂度
+## Закрытые вопросы
+
+2.  **Для маленьких окон (≤ ~76.7K) hard и auto деградируют до одного значения** — решено **не указывать это явно в `/context`**. Причина:
+    -   Диапазон коллапса — не только 32K; коллапс происходит для всех окон, где `effectiveWindow - HARD_BUFFER ≤ 0.7 × window` (включая 64K).
+    -   Поведение пользователя не меняется: в коллапсированном окне `currentTier` пропускает `'auto'` и показывает сразу `'hard'` (`contextCommand.ts:43-44` сначала проверяет `>= hard`), а полоса `context-high` (`auto ≤ t < hard`) становится пустой. Отсутствие одной ступени подсказки в маленьком окне оправдано — окно само по себе маленькое, пользователи, скорее всего, управляют контекстом вручную.
+    -   Если в будущем появятся реальные сообщения пользователей «в маленьком окне не видно промежуточную подсказку», можно будет принять решение о добавлении UI-маркировки или настройке условия срабатывания `context-high` (это работа UI, а не spec). В текущем варианте сложность UI не увеличивается.

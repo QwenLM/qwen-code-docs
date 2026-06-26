@@ -1,80 +1,80 @@
-# Qwen Code Agent Loop RT – Plan d'optimisation technique
+# Plan d'optimisation technique du Qwen Code Agent Loop RT
 
 ## 1. Contexte et définition du problème
 
 ### 1.1 État actuel
 
-La boucle d'agent de Qwen Code suit un modèle strictement séquentiel :
+L'Agent Loop de Qwen Code est un modèle strictement séquentiel :
 
 ```
-User Prompt → [Décision LLM] → Exécution d'outil → [Décision LLM] → Exécution d'outil → ... → [Réponse LLM] → Inactif
-               ~3-4s                ~Xms-Ns            ~3-4s                ~Xms-Ns              ~3-4s
+User Prompt → [Décision LLM] → Exécution Outil → [Décision LLM] → Exécution Outil → ... → [Réponse LLM] → Idle
+               ~3-4s              ~Xms-Ns            ~3-4s              ~Xms-Ns            ~3-4s
 ```
 
-Chaque appel LLM (incluant le RTT réseau + l'inférence du modèle) prend environ 3 à 4 secondes, représentant le coût principal du temps de réponse de bout en bout.
+Chaque appel LLM (incluant RTT réseau + inférence du modèle) prend environ 3-4s, ce qui constitue le coût principal du RT de bout en bout.
 
 ### 1.2 Données mesurées
 
-Scénario de test : « Quels espaces de travail ai-je ? » (3 tours de boucle agent, 2 appels d'outil, échantillon unique)
+Scénario de test : "Quels espaces de travail ai-je" (3 tours d'agent loop, 2 appels d'outil, échantillon unique)
 
-| Phase                               | Durée    | Pourcentage |
-| ----------------------------------- | -------- | ----------- |
-| Tour LLM 1 (décision d'appeler skill) | 3,8 s    | 28%         |
-| Exécution Skill                     | 1 ms     | <1%         |
-| Tour LLM 2 (décision d'appeler shell) | 3,0 s    | 22%         |
-| Exécution Shell                     | 2,5 s    | 19%         |
-| Tour LLM 3 (résumé textuel)         | 3,8 s    | 28%         |
-| Surcharge framework (sync état, rendu) | 0,3 s | 3%          |
-| **Total**                           | **13,4 s** | **100%**    |
+| Phase                          | Durée     | Proportion |
+| ------------------------------ | --------- | ---------- |
+| Tour LLM 1 (décision d'appeler skill) | 3,8s      | 28%        |
+| Exécution Skill                | 1ms       | <1%        |
+| Tour LLM 2 (décision d'appeler shell) | 3,0s      | 22%        |
+| Exécution Shell                | 2,5s      | 19%        |
+| Tour LLM 3 (résumé textuel)    | 3,8s      | 28%        |
+| Overhead framework (synchronisation état, rendu) | 0,3s      | 3%         |
+| **Total**                      | **13,4s** | **100%**   |
 
-**Conclusion** : Les appels LLM représentent 78 %, l'exécution des outils 19 %, le framework 3 %. L'optimisation consiste principalement à **réduire le nombre d'appels LLM** et à **diminuer la latence de chaque appel LLM**.
+**Conclusion** : Les appels LLM représentent 78%, l'exécution des outils 19%, le framework 3%. L'optimisation clé est de **réduire le nombre d'appels LLM** et **diminuer la latence de chaque appel LLM**.
 
-> Remarque : Échantillon unique, scénario unique. Les 19 % d'exécution outil sont dominés par un appel shell lent ; dans les scénarios fortement axés sur la lecture, l'exécution outil peut descendre en dessous de 5 %. Avant de mettre en œuvre le plan, il est nécessaire de compléter une référence avec ≥3 types de scénarios (opérations d'écriture, raisonnement multi-outil, reprise sur erreur).
+> Note : Échantillon unique, scénario unique. Les 19% d'exécution d'outils sont dominés par un appel shell lent ; dans les scénarios read-heavy, l'exécution d'outils peut descendre en dessous de 5%. Avant la mise en œuvre de la solution, il est nécessaire de compléter une baseline avec ≥3 types de scénarios (opérations d'écriture, raisonnement multi-outils, récupération d'erreur).
 
 ### 1.3 Contraintes clés de l'architecture actuelle
 
-| Contrainte                       | Emplacement dans le code                                                                                          | Explication                                                                                  |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Aucun contrôle post-exécution sur les résultats d'outil | `tools.ts` interface `ToolResult` (L422)                                                                          | Seulement `llmContent`/`returnDisplay`/`error` – impossible d'exprimer « ignorer LLM »       |
-| Résultats systématiquement renvoyés au LLM | `useGeminiStream.ts` `handleCompletedTools` (L2038) → `submitQuery(ToolResult, …)` (L2355)                           | Tous les résultats d'outil initiés par Gemini sont renvoyés                                  |
-| Ordonnancement uniquement après la fin du stream | `useGeminiStream.ts` `processGeminiStreamEvents` (L1365)                                                           | L'ordonnancement `scheduleToolCalls` n'a lieu qu'après la boucle stream – pas d'ordonnancement incrémental |
-| Sélection de modèle sans couche de stratégie | `client.ts` `modelOverride ?? getModel()` (L1305, L1598)                                                             | L'infrastructure est déjà câblée jusqu'à `turn.run(model, …)` (L1707), mais l'appelant ne l'utilise que lorsqu'un skill le spécifie explicitement |
+| Contrainte                         | Emplacement dans le code                                                                             | Description                                                                                               |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Aucun contrôle post-exécution sur les résultats d'outil | `tools.ts` Interface `ToolResult` (L422)                                                             | Possède uniquement `llmContent`/`returnDisplay`/`error`, impossible d'exprimer "ignorer le LLM"           |
+| Résultat toujours renvoyé au LLM   | `useGeminiStream.ts` `handleCompletedTools` (L2038) → `submitQuery(ToolResult, …)` (L2355)           | Tous les résultats d'outil initiés par gemini sont renvoyés                                                |
+| Planification uniquement après la fin du stream | `useGeminiStream.ts` `processGeminiStreamEvents` (L1365)                                             | `scheduleToolCalls` n'est appelé qu'après la fin de la boucle stream, pas de planification incrémentale   |
+| Aucune couche de stratégie pour la sélection du modèle | `client.ts` `modelOverride ?? getModel()` (L1305, L1598)                                             | L'infrastructure est déjà en place jusqu'à `turn.run(model, …)` (L1707), mais l'appelant ne l'utilise que lorsque le skill le spécifie explicitement |
 
-### 1.4 Infrastructure déjà prête (largement réutilisée par ce plan)
+### 1.4 Infrastructure déjà prête (largement réutilisée dans cette solution)
 
-| Capacité                                                     | Emplacement                                                                | État actuel                                                                                          |
-| ------------------------------------------------------------ | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Configuration `fastModel` + `/model --fast <id>`             | `config.ts:684`, `1987`, `2021`                                               | Prêt                                                                                                 |
-| `SendMessageOptions.modelOverride`                           | `client.ts:142` → `1598` → `turn.run`                                         | Câblé de bout en bout jusqu'à `geminiChat.sendMessageStream(model, …)`                               |
-| Couche hook `modelOverrideRef` (pour la sélection du modèle par skill) | `useGeminiStream.ts:376`, `2225`, `1841`                                        | Câblé                                                                                                |
-| Précédent de requête side non‑streaming avec fast‑model      | `services/toolUseSummary.ts:108` (via `runSideQuery`)                          | Déjà en production, preuve que la configuration fast‑model est fiable ; mais **voie non‑streaming**  |
-| Précédent de **streaming** avec fast‑model                   | `followup/speculation.ts:224`                                                  | Déjà en production, mais utilise un **chat forké** (`createForkedChat`), isolé du chat principal     |
+| Capacité                                         | Emplacement                                                              | Statut                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| Configuration `fastModel` + `/model --fast <id>` | `config.ts:684`, `1987`, `2021`                                          | Prêt                                                                                           |
+| `SendMessageOptions.modelOverride`               | `client.ts:142` → `1598` → `turn.run`                                    | Entièrement connecté jusqu'à `geminiChat.sendMessageStream(model, …)`                           |
+| Couche hook `modelOverrideRef` (pour la sélection de modèle par skill) | `useGeminiStream.ts:376`, `2225`, `1841`                                 | En place                                                                                       |
+| Précédent de requête secondaire **non-stream** fast-model | `services/toolUseSummary.ts:108` (via `runSideQuery`)                    | Déployé, prouve que la configuration du modèle rapide est saine ; mais **chemin non-stream**   |
+| Précédent **stream** fast-model                  | `followup/speculation.ts:224`                                            | Déployé, mais utilise un **chat fork** (`createForkedChat`), isolé du chat principal           |
 
-**Lacune critique** : **Aucun code en production** n'exécute de streaming avec un modèle rapide sur le chat principal. La phase D2 de ce plan sera le premier cas – une expérience de validation préalable est nécessaire (voir §3.2 Conditions préalables).
+**Lacune clé** : **Aucun code de production** n'exécute de streaming sur le chat principal avec un fast model. Cette solution D2 est le premier cas, une expérience de validation est nécessaire (voir §3.2 Conditions préalables).
 
 ---
 
 ## 2. Principes de conception
 
-1. **Généralité** : La solution n'est pas liée à un outil ou skill spécifique
-2. **Rétrocompatibilité** : Les outils existants fonctionnent sans modification
-3. **Progressivité + signal explicite** : La stratégie est conservatrice par défaut ; l'optimisation est activée par les auteurs d'outils via des champs explicites
-4. **Réversibilité** : Toutes les optimisations sont contrôlées par des feature flags ; possibilité de désactivation forcée au niveau utilisateur
-5. **Compromis honnêtes** : Mention claire des risques de qualité, des coûts et des limites d'applicabilité
+1. **Généralité** : La solution n'est pas liée à un outil/skill spécifique
+2. **Rétrocompatibilité** : Les outils existants continuent de fonctionner sans modification
+3. **Progressif + signal explicite** : La stratégie est conservatrice par défaut, les auteurs d'outils choisissent l'optimisation via des champs explicites
+4. **Réversible** : Toutes les optimisations sont contrôlées par des feature flags ; l'utilisateur peut les désactiver au niveau du compte
+5. **Compromis honnêtes** : Marquage clair des risques de qualité, des risques de coût et des limites d'applicabilité
 
 ---
 
 ## 3. Plan d'optimisation
 
-### 3.1 Direction 1 : Directive post-exécution sur le résultat d'outil (ToolResult Post-Execution Directive)
+### 3.1 Direction 1 : Directive post-exécution dans ToolResult
 
 #### Problème
 
-Actuellement, `ToolResult` ne contient aucune information sur « la suite à donner ». Quel que soit le caractère auto‑explicatif du résultat, un tour LLM est systématiquement déclenché.
+Actuellement, `ToolResult` ne contient aucune information sur "ce qu'il faut faire ensuite". Que le résultat de l'outil soit auto-explicatif ou non, il déclenche inconditionnellement un tour LLM.
 
 #### Conception
 
-Étendre l'interface `ToolResult` (`packages/core/src/tools/tools.ts` L422) :
+Extension de l'interface `ToolResult` (`packages/core/src/tools/tools.ts` L422) :
 
 ```typescript
 export interface ToolResult {
@@ -85,28 +85,24 @@ export interface ToolResult {
   // Nouveau : directive post-exécution
   postExecution?: {
     /**
-     * Le résultat de l'outil n'est pas renvoyé au LLM, il est directement affiché
-     * comme réponse finale à l'utilisateur.
-     * Convient lorsque le résultat est totalement auto-contenu et ne nécessite
-     * pas de réinterprétation par le modèle.
-     * Propriété locale au ToolResult.
+     * Le résultat de l'outil n'est pas renvoyé au LLM, il est directement affiché à l'utilisateur comme réponse finale.
+     * Convient lorsque le résultat est totalement autonome et n'a pas besoin d'être interprété à nouveau par le modèle.
+     * C'est une propriété locale du ToolResult.
      */
     skipLlmRound?: boolean;
 
     /**
-     * Le résultat de l'outil est « auto-contenu et directement présentable à l'utilisateur »
-     * – c'est-à-dire que `returnDisplay` est déjà la forme finale souhaitée par l'utilisateur,
-     * sans besoin de traitement par le modèle.
-     * Propriété locale au ToolResult, **ne prédit pas** si « le prochain tour sera un résumé ».
-     * En interaction avec la direction 3 (découplage affichage) : true → passage en état
-     * « Summarizing » permettant la saisie utilisateur.
+     * Le résultat de l'outil est "autonome et peut être directement affiché à l'utilisateur" – c'est-à-dire que `returnDisplay` est déjà
+     * la forme finale attendue par l'utilisateur, sans besoin de traitement par le modèle.
+     * C'est une propriété locale du ToolResult, **ne** prédit pas "si le tour suivant est un résumé".
+     * Lié à la direction 3 (découplage de l'affichage) : true → entre dans l'état Summarizing, permettant la saisie utilisateur.
      */
     resultIsTerminal?: boolean;
   };
 }
 ```
 
-> **Correction de conception** : Les premières versions utilisaient un champ unique `selfExplanatory` pour porter à la fois « la propriété du résultat d'outil » et « le signal de prédiction du flux de dialogue », mais ces deux rôles ne se recoupent pas (exemple : l'utilisateur demande « lis X puis modifie Y », la sortie de read_file est auto‑contenue, mais le tour suivant n'est clairement pas un résumé). **Le signal de prédiction appartient aux attributs globaux du flux de dialogue** et ne doit pas être exprimé via un champ d'outil – D2 utilisera exclusivement une heuristique de flux (voir §3.2).
+> **Correction de conception** : Les versions antérieures utilisaient un champ unique `selfExplanatory` pour assumer à la fois "propriété de l'artefact outil" et "signal de prédiction du flux de dialogue", mais les deux ne se recoupent pas (exemple : le prompt utilisateur est "lis X puis modifie Y", la sortie de read_file est autonome, mais le tour suivant n'est clairement pas un résumé). **Le signal de prédiction appartient à la propriété globale du flux de dialogue** et ne doit pas être exprimé via un champ d'outil – D2 utilise désormais entièrement une heuristique de flux de dialogue (voir §3.2).
 
 #### Changement de comportement
 
@@ -115,98 +111,99 @@ Ajout d'une vérification dans `handleCompletedTools` :
 ```
 Fin d'un lot d'outils
   → Vérifier `postExecution.skipLlmRound` pour tous les outils du lot
-  → Tous à true ?
-    → OUI : `markToolsAsSubmitted`, ne pas appeler `submitQuery`, passer directement à inactif
-    → NON : conserver le comportement actuel (`submitQuery`)
+  → Tous sont true ?
+    → OUI : markToolsAsSubmitted, ne pas appeler submitQuery, passer directement en idle
+    → NON : conserver le comportement actuel (submitQuery)
 ```
 
-**Contrainte importante** : `skipLlmRound` n'est effectif que si **tous les outils du lot actuel déclarent skip**. Un lot mixte conserve le comportement actuel de renvoi.
+**Contrainte importante** : `skipLlmRound` n'est effectif que si **tous les outils du lot actuel déclarent skip**. Un lot mixte est toujours renvoyé.
 
 #### Invariant historique
 
-Après avoir sauté le LLM, l'historique prend la forme : `user → function_call → function_response → <pas d'assistant>`.
+Après avoir sauté le LLM, l'historique ressemble à : `user → function_call → function_response → <aucun assistant>`.
 
 - Vérifier que `repairOrphanedToolUseTurnsInHistory` (appelé lors du chargement de session) tolère cette forme
-- Vérifier le comportement de l'auto‑compaction en l'absence de texte assistant
-- La PR #4176 vient de fermer un invariant tool_use↔tool_result – avant le déploiement, ajouter des tests unitaires couvrant l'alternance « tour sauté → message utilisateur suivant »
-- Les APIs de style Qwen / OpenAI tolèrent ce format ; Anthropic impose une alternance stricte – si le support direct d'Anthropic est ajouté, une protection sera nécessaire (injection d'un texte assistant vide dans l'historique)
-> **Point de correction unifié** : Ici et au §3.3 (interruption de résumé en cours de D3), c'est **le même invariant historique** qui est brisé. Deux options de correction (injection d'un assistant vide / accepter la tolérance de Qwen), les deux directions doivent utiliser le même choix.
+- Vérifier le comportement de l'auto-compaction en l'absence de texte assistant
+- La PR #4176 vient de fermer un invariant `tool_use↔tool_result` ; avant le déploiement, ajouter des tests unitaires couvrant l'alternance "tour utilisateur après skip"
+- L'API Qwen / OpenAI tolère ; Anthropic a une alternance stricte — si le support direct d'Anthropic est ajouté ultérieurement, une solution de repli est nécessaire (injecter un texte assistant vide dans l'historique)
+
+> **Point de correction unifié** : Ici et au §3.3 (D3 interruption en Summarizing), c'est **le même invariant historique** qui est rompu. Une seule des deux solutions de réparation doit être choisie (injecter un assistant vide / accepter la tolérance Qwen), et les deux directions doivent utiliser le même choix.
 
 #### Écosystème de signaux (Travail Phase 2)
 
-| Outil                                | `skipLlmRound`       | `resultIsTerminal` | Remarque                                                                                  |
-| ------------------------------------ | -------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
-| `read_file`                          | utilisé avec query-only | true               | le contenu du fichier est la réponse                                                      |
-| `cat` (via shell)                    | selon le scénario    | true               | identique à read_file                                                                     |
-| `grep` / `glob` / `ls`               | false                | **false (par défaut)** | les résultats nécessitent souvent sélection/tri/résumé par le modèle ; la couche skill peut explicitement mettre true dans les scénarios « pure query » |
-| `git status` / `git log` (via shell) | false                | true               | sortie déjà formatée                                                                      |
-| Skill  outils                        | chaque skill décide  | chaque skill décide| les skills de type requête tendent vers true                                              |
-| Outils MCP                           | false par défaut     | false par défaut   | opt-in explicite via allowlist                                                            |
+| Outil                                 | `skipLlmRound`       | `resultIsTerminal` | Remarques                                                     |
+| ------------------------------------- | -------------------- | ------------------ | ------------------------------------------------------------- |
+| `read_file`                           | selon scénario query-only | true               | Le contenu du fichier est la réponse                          |
+| `cat` (via shell)                     | selon scénario       | true               | Comme read_file                                               |
+| `grep` / `glob` / `ls`                | false                | **false (défaut)** | Les résultats nécessitent souvent sélection/classement/résumé ; le niveau skill met explicitement true en scénario "pure requête" |
+| `git status` / `git log` (via shell)  | false                | true               | Sortie déjà formatée                                          |
+| Outils Skill                          | Décidé par chaque skill | Décidé par chaque skill | Les skills de type requête tendent vers true                  |
+| Outils MCP                            | false par défaut     | false par défaut   | Opt-in explicite via allowlist                                |
 
-Les outils tiers/MCP ne sont pas fiables, pas de marquage par défaut ; activation explicite via `config.toolPostExecAllowlist`.
+Les outils tiers/MCP ne sont pas fiables, pas de marquage par défaut ; activés explicitement via `config.toolPostExecAllowlist`.
 
-> Le false par défaut pour `grep/glob/ls` est un choix strict : éviter que D2/D3 ne fassent une mauvaise décision dans les scénarios où le modèle doit résumer/trier.
+> `grep/glob/ls` en false par défaut est un choix strict : éviter que D2/D3 ne se méprennent dans les scénarios nécessitant un résumé/tri par le modèle.
 
-#### Applicable et non applicable
+#### Quand l'utiliser et quand ne pas l'utiliser
 
-- **Applicable** : Requêtes terminales (type read/cat/print), résultats autonomes (sortie déjà formatée par skill)
-- **Non applicable** : Étapes intermédiaires de tâches multi-étapes, confirmation d'opérations d'écriture, logs complexes nécessitant interprétation
+- **Utilisable** : Requêtes terminales (type read/cat/print), résultats autonomes (skill déjà formaté)
+- **Non utilisable** : Étapes intermédiaires de tâches multi-étapes, confirmation d'opérations d'écriture, logs complexes nécessitant une interprétation
 
 #### Risques et atténuations
 
-| Risque                                                | Gravité | Atténuation                                                                        |
-| ----------------------------------------------------- | ------- | ---------------------------------------------------------------------------------- |
-| Interruption de tâche multi-étape due à un mauvais réglage de skipLlmRound | Moyen   | Sémantique batch + llmContent toujours dans l'historique, récupérable              |
-| Abus d'outils tiers                                   | Moyen   | MCP désactivé par défaut, activation explicite via allowlist                        |
-| Violation d'invariant historique                      | Moyen   | Ajouter tests unitaires avant déploiement ; rejeu session-load pour couverture     |
-| Incohérence des attentes utilisateur (résumé attendu mais absent) | Faible  | Le paramètre `alwaysSummarize: true` peut remplacer                                |
+| Risque                                                      | Sévérité | Atténuation                                              |
+| ----------------------------------------------------------- | -------- | -------------------------------------------------------- |
+| L'outil définit `skipLlmRound` par erreur, interrompant une tâche multi-étapes | Moyen    | Sémantique au niveau du lot + `llmContent` toujours dans l'historique, récupérable |
+| Abus par des outils tiers                                   | Moyen    | Désactivé par défaut pour MCP, activé via allowlist      |
+| Rupture d'invariant historique                              | Moyen    | Ajouter des tests unitaires avant déploiement ; couvrir le rechargement de session |
+| Attentes utilisateur incohérentes (résumé attendu mais absent) | Faible   | Le paramètre `alwaysSummarize: true` peut remplacer      |
 
 #### Bénéfices
 
-Économie de 3 à 4 secondes dans les scénarios de requêtes terminales (saut du dernier tour LLM).
+Économie de 3-4s pour les scénarios de requêtes terminales (saut du dernier tour LLM).
 
 ---
 
-### 3.2 Direction 2 : stratégie de routage vers le fast-model pour le tour de résumé
+### 3.2 Direction 2 : Stratégie de routage fast-model pour le tour de résumé
 
 #### Positionnement
 
 **Cette direction n'introduit pas de nouveau pipeline, mais nécessite d'étendre l'interface GeminiChat pour supporter le changement de modèle à l'exécution**.
 
-L'infrastructure du §1.4 fournit la configuration du fast-model et le passage de bout en bout de modelOverride, mais **il n'y a pas de précédent pour exécuter fastModel + streaming sur le chat principal**, cela nécessite :
+L'infrastructure du §1.4 fournit la configuration du modèle rapide et la connexion de bout en bout de `modelOverride`, mais **exécuter fastModel + streaming sur le chat principal n'a pas de précédent**, nécessite :
 
-- Fonction de décision : quand passer `config.getFastModel()` comme override
-- Fallback sécurisé : nouvelle interface `GeminiChat.retryStreamWithModel` (gère l'état interne du chat)
-- Validation expérimentale : le basculement fast/primary sur le chat principal ne brise pas compaction / history-recording
+- Une fonction de décision : quand passer `config.getFastModel()` comme override
+- Un repli sécurisé : nouvelle interface `GeminiChat.retryStreamWithModel` (gère l'état interne du chat)
+- Validation expérimentale : le changement fast/primary sur le chat principal ne casse pas la compaction / l'enregistrement d'historique
 
-#### Portée d'application
+#### Périmètre d'application
 
-D2 s'applique uniquement à :
+D2 agit uniquement sur :
 
-- **useGeminiStream** (chemin principal TUI) – point d'appel `sendMessageStream` L1841
-- **Session ACP** (chemin d'intégration IDE) – `acp-integration/session/Session.ts:1182`, transformation synchrone Phase 3
+- **useGeminiStream** (chemin principal TUI) — point d'appel `sendMessageStream` L1841
+- **Session ACP** (chemin d'intégration IDE) — `acp-integration/session/Session.ts:1182`, refactorisation synchrone en Phase 3
 
-D2 **ne s'applique pas** aux chemins suivants, pour éviter d'introduire des modes d'échec supplémentaires dans des contextes non interactifs ou isolés :
+D2 **n'agit pas** sur les chemins suivants, pour éviter d'introduire des modes d'échec supplémentaires dans des contextes non interactifs ou indépendants :
 
-- **Runtime de sous-agent** (`agents/runtime/agent-core.ts:614`) : le sous-agent a déjà sa propre configuration de modèle
-- **Tour déclenché par Cron** (`SendMessageType.Cron`, client.ts:127) : non interactif, sans urgence temps réel
+- **Runtime Subagent** (`agents/runtime/agent-core.ts:614`) : les sous-agents ont déjà leur propre configuration de modèle
+- **Tour déclenché par Cron** (`SendMessageType.Cron`, client.ts:127) : non interactif, pas d'urgence RT
 - **Tour de notification** (`SendMessageType.Notification`, client.ts:129) : idem
 
-#### Difficulté principale
+#### Difficulté centrale
 
-Lors de l'appel à `submitQuery`, **nous ne savons pas** si le modèle, après avoir vu les résultats, va lancer un nouvel outil ou produire directement du texte. Si on utilise le fast-model alors que le modèle doit encore appeler un outil – les conséquences sont **silencieuses** : le fast-model pourrait appeler le mauvais outil ou avec de mauvais paramètres, sans signal d'erreur évident.
+Au moment d'appeler `submitQuery`, **nous ne savons pas** si le modèle, après avoir vu le résultat, va lancer un nouvel outil ou simplement produire du texte. Si nous utilisons le fast model alors que le modèle a besoin d'appeler un outil, la conséquence est **silencieuse** : le fast model pourrait appeler le mauvais outil ou avec les mauvais paramètres, sans signal d'erreur évident.
 
-**Aucun champ au niveau de l'outil ne peut prédire de manière fiable** « si le prochain tour est un résumé », car cela dépend du flux de la conversation (prompt utilisateur + contexte accumulé), et non d'une propriété locale du résultat de l'outil. Exemple :
+**Aucun champ au niveau de l'outil ne peut prédire de manière fiable** "si le tour suivant est un résumé", car cela dépend du flux de dialogue (prompt utilisateur + contexte cumulé), pas d'une propriété locale de l'artefact outil. Exemple :
 
 ```
-Utilisateur : « Lis utils.ts puis remplace tous les console.log par logger.info »
-  → Outil 1: read_file → résultat autonome
-  → mais le tour suivant n'est clairement pas un résumé
+Utilisateur : "Lis utils.ts puis remplace tous les console.log par logger.info"
+  → Outil 1 : read_file → résultat autonome
+  → Mais le tour suivant n'est clairement pas un résumé
 ```
 
-Donc D2 utilise entièrement des **heuristiques de flux de conversation** pour prédire, sans dépendre des champs de l'outil.
+Par conséquent, D2 utilise exclusivement une **heuristique de flux de dialogue** pour la prédiction, sans dépendre de champs d'outil.
 
-#### Fonction de décision : heuristique de flux + veto
+#### Fonction de décision : Heuristique de flux de dialogue + Veto
 
 ```typescript
 import { Kind, MUTATOR_KINDS } from '../tools/tools.js';
@@ -216,79 +213,80 @@ function selectContinuationTier(
   userPrompt: string,
   batch: ToolCall[],
 ): 'fast' | 'primary' {
-  // ===== 用户级别强制开关（最高优先级） =====
+  // ===== Contrainte au niveau utilisateur (priorité la plus haute) =====
   const userPref = config.getSummaryTierStrategy();
   if (userPref === 'always_primary') return 'primary';
-  if (userPref === 'always_fast') return 'fast'; // 仍受运行时保险约束
+  if (userPref === 'always_fast') return 'fast'; // toujours soumis aux contraintes de sécurité d'exécution
 
-  // ===== 用户意图否决 =====
-  // 1. user prompt 含动作动词 → 下一轮大概率还要调工具
+  // ===== Veto basé sur l'intention utilisateur =====
+  // 1. Le prompt utilisateur contient un verbe d'action → forte probabilité de nouvel appel d'outil
   if (requestImpliesFurtherAction(userPrompt)) return 'primary';
 
-  // 2. 本轮已有 mutator 工具 → 大概率有验证/读后续
+  // 2. Le lot actuel contient un outil mutateur → forte probabilité de vérification/lecture ultérieure
   if (batch.some((c) => MUTATOR_KINDS.includes(c.tool.kind))) return 'primary';
 
-  // 3. 本轮或历史有未解决 error → 模型需要 primary 诊断
+  // 3. Le lot actuel ou l'historique contient une erreur non résolue → le modèle a besoin de primary pour diagnostiquer
   if (hasUnresolvedError(turn.toolResults, batch)) return 'primary';
 
-  // ===== 输出复杂度否决 =====
-  // 4. user prompt 要求深度分析（解释/对比/为什么类）
+  // ===== Veto basé sur la complexité de la sortie =====
+  // 4. Le prompt utilisateur nécessite un raisonnement approfondi (explique/compare/pourquoi)
   if (needsDeepReasoning(userPrompt)) return 'primary';
 
-  // 5. 工具调用 ≥3 个不同工具 → 跨结果叙述靠 primary
+  // 5. Appels à ≥3 outils différents → narration multi-résultats nécessite primary
   if (needsCrossResultReasoning(turn)) return 'primary';
 
-  // 6. 工具输出过长 → 长内容总结靠 primary
+  // 6. Sortie d'outil trop longue → résumé de contenu long nécessite primary
   if (estimateTotalToolOutputTokens(turn) > 4000) return 'primary';
 
-  // ===== 模型可行性否决 =====
-  // 7. fast 模型 context window 不够 → 切到 fast 会触发 compression
-  //    （compression 自身要 LLM 调用，反而拖慢且增加成本）
+  // ===== Veto basé sur la faisabilité du modèle =====
+  // 7. La fenêtre de contexte du fast model est insuffisante → le passage au fast déclencherait une compression
+  //    (la compression elle-même nécessite un appel LLM, ce qui ralentit et augmente le coût)
   if (wouldTriggerCompression(turn.history, config.getFastModel()))
     return 'primary';
 
-  // ===== 多语言兜底 =====
+  // ===== Repli multilingue =====
   if (!isPromptLanguageSupported(userPrompt)) return 'primary';
 
-  // ===== Session 状态兜底 =====
+  // ===== Repli basé sur l'état de la session =====
   if (turn.justCompacted || turn.justCleared) return 'primary';
 
   return 'fast';
 }
 ```
 
-Signification des huit veto :
+Signification des huit vetos :
 
-- **`requestImpliesFurtherAction`** : verbes d'action (`改|删|加|替换|修复|实现|新建|create|fix|change|add|remove|implement|write|update`) → tâche multi-étape
-- **`MUTATOR_KINDS` déclenché** : cette étape a déjà écrit → forte probabilité d'une lecture/vérification qui suit. **Réutiliser le `MUTATOR_KINDS = [Edit, Delete, Move, Execute]` existant de `tools.ts:806`** (la propriété `kind: Kind` de chaque instance d'outil est la classification autoritaire, ne pas réinventer `isWriteTool`)
-- **`hasUnresolvedError(turnResults, currentBatch)`** : deux niveaux de jugement —
-  - **Toute erreur dans le lot actuel → toujours non résolue** (on ne suppose pas que les lots parallèles peuvent s'auto-corriger)
-  - **L'historique dédupliqué par `(toolName, args fingerprint)`, si la dernière occurrence est encore une erreur, elle est considérée non résolue** (se baser uniquement sur toolName peut être erroné pour des paramètres différents)
-  - Les shells etc. doivent remplir correctement `ToolResult.error` (dépend de la qualité des données en amont)
-- **`needsDeepReasoning`** : contient des mots-clés comme « analyse / explication / pourquoi / comparaison / diagnostic »
-- **`needsCrossResultReasoning`** : appels d'outils distincts ≥3 (même outil et mêmes paramètres comptent pour un)
-- **Tokens de sortie > 4000** : seuil empirique, **à ajuster après mesure de la baseline du fast-model**
-- **`wouldTriggerCompression`** : la fenêtre de contexte du fast-model est généralement plus petite que celle du primary, le même historique déclenchera `tryCompress` plus tôt sur fast (geminiChat.ts:1418) – la compression elle-même nécessite un appel LLM, ce qui pourrait **dégrader le temps de réponse et le coût**. Estimation : `estimateHistoryTokens(history) > fastModelContextWindow × COMPACTION_THRESHOLD` est considéré comme déclenchant
-- **Langue non supportée** : seuls les mots-clés en chinois et anglais sont détectés, les autres langues (japonais, coréen, etc.) par défaut primary
+- **`requestImpliesFurtherAction`** : verbes d'action (`改|删|加|替换|修复|实现|新建|create|fix|change|add|remove|implement|write|update`) → tâche multi-étapes
+- **`MUTATOR_KINDS` match** : déjà écrit dans ce tour → forte probabilité de lecture/vérification suivante. **Réutilise `MUTATOR_KINDS = [Edit, Delete, Move, Execute]` déjà présent dans `tools.ts:806`** (la propriété `kind: Kind` de chaque instance `Tool` est la classification faisant autorité, ne pas réinventer `isWriteTool`)
+- **`hasUnresolvedError(turnResults, currentBatch)`** : jugement en deux parties — 
+  - **Toute erreur dans le lot actuel → toujours non résolu** (ne pas supposer qu'un lot parallèle peut s'auto-corriger)
+  - **Historique dédupliqué par `(toolName, args fingerprint)`, la dernière occurrence encore en erreur est considérée non résolue** (uniquement par toolName, avec des paramètres différents, cela peut être mal jugé)
+  - shell etc. doivent correctement remplir `ToolResult.error` (dépend de la qualité des données en amont)
+- **`needsDeepReasoning`** : contient des mots-clés comme "analyse/explique/pourquoi/compare/diagnostic"
+- **`needsCrossResultReasoning`** : appels d'outils distincts ≥3 (même outil avec mêmes paramètres considéré comme un seul)
+- **Sortie tokens > 4000** : seuil empirique, **à ajuster après mesures de base du fast model**
+- **`wouldTriggerCompression`** : la fenêtre de contexte du fast model est généralement plus petite que celle du primary ; pour le même historique, le fast déclenchera `tryCompress` plus tôt (geminiChat.ts:1418) — la compression elle-même nécessite un appel LLM, ce qui pourrait **dégrader le RT et augmenter le coût**. Estimation budgétaire : `estimateHistoryTokens(history) > fastModelContextWindow × COMPACTION_THRESHOLD` est considéré comme déclencheur
+- **Langue non prise en charge** : uniquement détection de mots-clés chinois/anglais ; autres langues (japonais, coréen, etc.) par défaut primary
 - **Changement d'état de session** : première continuation après `/compact` ou `/clear` → primary pour reconstruire le modèle mental
-否决方向**偏向 primary**（宁可多 2s 不要降质）。
 
-#### 关键实现：`GeminiChat.retryStreamWithModel`
+Les vetos penchent **vers primary** (plutôt 2s de plus que de perdre en qualité).
 
-**问题**：直接 abort + 调 `client.sendMessageStream` 会破坏 chat 状态：
+#### Implémentation clé : `GeminiChat.retryStreamWithModel`
 
-1. `geminiChat.ts:1428` 在 stream 启动时就 push `userContent` 到 history；重起会**再 push 一次**导致 history 出现重复 `function_response`
-2. `sendPromise` 锁（`geminiChat.ts:1392, 1398`）—— abort 后需要确保 `streamDoneResolver` 被调用
-3. `pendingPartialState` 等 PR #4176 引入的不变量 marker 需要正确清理
-4. Telemetry span 的 model 属性需要更新
+**Problème** : Abort + appel direct à `client.sendMessageStream` briserait l'état du chat :
 
-**新增接口**（`packages/core/src/core/geminiChat.ts`）：
+1. `geminiChat.ts:1428` pousse `userContent` dans l'historique dès le démarrage du stream ; un redémarrage le **pousserait à nouveau**, entraînant une duplication de `function_response` dans l'historique
+2. Le verrou `sendPromise` (`geminiChat.ts:1392, 1398`) — après abort, il faut garantir que `streamDoneResolver` est appelé
+3. Les marqueurs d'invariant comme `pendingPartialState` introduits par PR #4176 doivent être correctement nettoyés
+4. L'attribut model du span Telemetry doit être mis à jour
+
+**Nouvelle interface** (`packages/core/src/core/geminiChat.ts`) :
 
 ```typescript
 /**
- * Retry an in-flight or just-aborted streaming send with a different model.
- * Does NOT re-push userContent (kept from original send).
- * Resets pendingPartialState; releases stale sendPromise; re-opens span.
+ * Relance un send stream en cours ou venant d'être avorté avec un modèle différent.
+ * NE repousse PAS userContent (conservé du send original).
+ * Réinitialise pendingPartialState ; libère le sendPromise obsolète ; rouvre un span.
  */
 async retryStreamWithModel(
   model: string,
@@ -296,29 +294,29 @@ async retryStreamWithModel(
 ): Promise<AsyncGenerator<StreamEvent>>;
 ```
 
-调用契约：
+Contrat d'appel :
 
-- 仅在原 send 已经 abort 后调用（不并发）
-- prompt_id 复用（同一用户意图）
-- 历史中已经 push 的 userContent 不再 push
+- Uniquement après abort du send original (pas de concurrence)
+- prompt_id réutilisé (même intention utilisateur)
+- Le userContent déjà poussé dans l'historique n'est pas repoussé
 
-实现工作量约 1.5d 加单测。
+Effort d'implémentation : environ 1,5j + tests unitaires.
 
-#### 运行时保险
+#### Protection à l'exécution
 
-`selectContinuationTier` 返回 `'fast'` 但 stream 中出现 `ServerGeminiEventType.ToolCallRequest` 事件 → **立即 abort 当前流，调 `retryStreamWithModel(primaryModel)`**。
+`selectContinuationTier` retourne `'fast'` mais le stream reçoit un événement `ServerGeminiEventType.ToolCallRequest` → **abort immédiat du stream actuel, appel à `retryStreamWithModel(primaryModel)`**.
 
-这覆盖"预测为 summary 实际仍需工具"的唯一静默放错场景。代价：一次 fast 调用浪费的 tokens（成本归因见 §5.3）。
+Cela couvre le seul scénario d'erreur silencieuse "prédit résumé mais nécessite encore un outil". Coût : un appel fast gaspillé en tokens (attribution des coûts voir §5.3).
 
-#### 与 skill `modelOverride` 解耦
+#### Découplage avec le `modelOverride` du skill
 
-`useGeminiStream.modelOverrideRef`（L376, L2225）当前承载 **skill 显式选择的模型**，属"业务语义"。本方向的 fast 路由属"优化语义"，两者**必须分离**：
+`useGeminiStream.modelOverrideRef` (L376, L2225) porte actuellement **le modèle choisi explicitement par le skill**, relevant de la "sémantique métier". Le routage fast de cette direction relève de la "sémantique d'optimisation". Les deux **doivent être séparés** :
 
 ```typescript
-// 新增独立 ref
+// Nouveau ref indépendant
 const summaryTierRef = useRef<'fast' | 'primary' | undefined>(undefined);
 
-// 调用点合并（不复用 modelOverrideRef）
+// Point d'appel fusionné (ne réutilise pas modelOverrideRef)
 const stream = geminiClient.sendMessageStream(
   finalQueryToSend,
   abortSignal,
@@ -327,182 +325,184 @@ const stream = geminiClient.sendMessageStream(
     type: submitType,
     notificationDisplayText: metadata?.notificationDisplayText,
     modelOverride:
-      modelOverrideRef.current ?? // skill 显式选择优先
+      modelOverrideRef.current ?? // choix explicite du skill en priorité
       (summaryTierRef.current === 'fast' ? config.getFastModel() : undefined),
   },
 );
 ```
 
-生命周期：
+Cycle de vie :
 
-| 时机                                       | `modelOverrideRef`（skill） | `summaryTierRef`（fast 路由）            |
-| ------------------------------------------ | --------------------------- | ---------------------------------------- |
-| 新 user turn (`!Retry && !ToolResult`)     | 清空                        | 清空                                     |
-| skill 工具返回 `modelOverride` 字段        | 写入                        | 不变                                     |
-| tool batch 完成 → `selectContinuationTier` | 不变                        | 写入                                     |
-| Runtime fallback（看到 ToolCallRequest）   | 不变                        | 升级为 `'primary'`                       |
-| Retry（用户手动 Ctrl+Y）                   | 保留                        | 升级为 `'primary'`（fast 失败不再 fast） |
+| Moment                                      | `modelOverrideRef` (skill) | `summaryTierRef` (routage fast)          |
+| ------------------------------------------- | -------------------------- | ---------------------------------------- |
+| Nouveau tour utilisateur (`!Retry && !ToolResult`) | Vidé                       | Vidé                                     |
+| L'outil skill retourne le champ `modelOverride` | Écrit                      | Inchangé                                 |
+| Lot d'outils terminé → `selectContinuationTier` | Inchangé                   | Écrit                                    |
+| Repli runtime (ToolCallRequest vu)          | Inchangé                   | Mis à jour en `'primary'`                |
+| Retry (Ctrl+Y manuel utilisateur)           | Conservé                   | Mis à jour en `'primary'` (fast ayant échoué, ne plus retenter fast) |
 
-skill 显式选择**永远赢**——用户的显式意图优先于优化策略。
+Le choix explicite du skill **gagne toujours** — l'intention explicite de l'utilisateur prime sur la stratégie d'optimisation.
 
-#### Telemetry 修正
+#### Correction Telemetry
 
-`client.ts:1303` 的 interaction span 在 turn 启动时记录 `model` 属性。fallback 触发时 model 实际变了，span 数据失真。需要：
+Le span d'interaction `client.ts:1303` enregistre l'attribut `model` au démarrage du tour. Lorsqu'un fallback est déclenché, le modèle change réellement, les données du span sont faussées. Nécessite :
 
 ```typescript
-// fallback 触发时
+// Lors du déclenchement du fallback
 span.setAttribute('llm.model.requested', fastModel);
 span.setAttribute('llm.model.actual', primaryModel);
 span.setAttribute('llm.fallback.reason', 'tool_call_seen');
 ```
 
-并在 `addUserPromptAttributes` 中区分 `requested` / `actual` 模型，避免计费/审计混淆。
+Et dans `addUserPromptAttributes`, distinguer `requested` / `actual` pour éviter les confusions de facturation/audit.
 
-#### 用户级别强制开关
+#### Interrupteur de forçage au niveau utilisateur
 
-新增 setting（`packages/cli/src/config/settingsSchema.ts`）：
+Nouveau paramètre (`packages/cli/src/config/settingsSchema.ts`) :
 
 ```typescript
 summaryTierStrategy: 'auto' | 'always_primary' | 'always_fast';
 // default: 'auto'
 ```
 
-- `'auto'`：使用 `selectContinuationTier`（推荐）
-- `'always_primary'`：完全禁用 D2 优化（生产敏感场景）
-- `'always_fast'`：跳过 vetoes，**仍受运行时保险约束**（高级用户）
+- `'auto'` : utilise `selectContinuationTier` (recommandé)
+- `'always_primary'` : désactive complètement l'optimisation D2 (scénarios sensibles à la production)
+- `'always_fast'` : ignore les vetos, **toujours soumis aux contraintes de sécurité d'exécution** (utilisateurs avancés)
 
-理由：D2 是质量换速度，部分用户/场景需要明确退出权。
+Raison : D2 échange qualité contre vitesse, certains utilisateurs/scénarios ont besoin d'un droit explicite de désactivation.
 
-#### 前置条件
+#### Conditions préalables
 
-- `config.getFastModel()` 已配置
-- **主 chat fastModel-streaming 验证实验**（编码前 1d）：
-  - mock 一个 `resultIsTerminal=true` 工具，在主 chat 反复触发 summary 轮
-  - 观察 `tryCompress` 是否被错误触发（fast 模型 context window 小可能提前触发）
-  - 观察 chatRecordingService 输出是否有 model mismatch
-  - 观察单次 fast 调用后下一次 primary 调用是否能正常读 history
-- **Fast 候选模型基线测量**（1d）：
-  - 跑 100 条 summary 轮 prompt（输入含 `function_response`），测 P50/P95 端到端延迟与 time-to-first-token
-  - 测 `tryCompress` 触发率 `P_compact`，验证净 RT 收益 = `(1 - P_compact) × ΔRT − P_compact × compression_RT > 0`
-  - 仅当 fast P50 ≤ primary P50 × 0.5 且 P95 ≤ primary P95 × 0.6 时启用
-- Fast model 与 primary model 同家族（避免 function_response 编码差异）；跨家族需 `getFastModel()` 层校验拒绝
-- **`thinkingConfig` 兼容性**：
-  - Fast 模型必须与 primary 在 `thinkingConfig.includeThoughts` 支持上一致；或
-  - Fast 路径强制 `includeThoughts: false`（与 `sideQuery.ts:118-122` 对齐）
-  - 验证：history 含 thought parts 时 fast 模型能正确处理（不报错、不把 thought 当用户输入）
+- `config.getFastModel()` configuré
+- **Expérience de validation du streaming fastModel sur le chat principal** (1j avant codage) :
+  - Simuler un outil avec `resultIsTerminal=true`, déclencher des tours de résumé répétés sur le chat principal
+  - Observer si `tryCompress` est déclenché par erreur (fenêtre de contexte du fast model plus petite peut déclencher prématurément)
+  - Observer si la sortie de chatRecordingService a un mismatch de modèle
+  - Vérifier si l'appel fast unique suivant peut lire correctement l'historique
+- **Mesures de base du modèle fast candidat** (1j) :
+  - Exécuter 100 prompts de tour de résumé (entrée contenant `function_response`), mesurer la latence de bout en bout P50/P95 et le time-to-first-token
+  - Mesurer le taux de déclenchement de `tryCompress` `P_compact`, vérifier que le gain RT net = `(1 - P_compact) × ΔRT − P_compact × compression_RT > 0`
+  - Activer uniquement si le fast P50 ≤ primary P50 × 0,5 et P95 ≤ primary P95 × 0,6
+- Le fast model et le primary model doivent être de la même famille (éviter les différences d'encodage de `function_response`) ; un crossing de famille doit être rejeté par la couche `getFastModel()`
+- **Compatibilité `thinkingConfig`** :
+  - Le fast model doit être cohérent avec le primary en ce qui concerne le support `thinkingConfig.includeThoughts` ; ou
+  - Le chemin fast force `includeThoughts: false` (aligné avec `sideQuery.ts:118-122`)
+  - Validation : lorsque l'historique contient des thought parts, le fast model doit les traiter correctement (pas d'erreur, ne pas traiter thought comme entrée utilisateur)
 
-#### 风险与缓解
+#### Risques et atténuations
 
-| 风险                                                                      | 严重度 | 缓解                                                                                                                                 |
-| ------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Fast 模型 tool-calling 静默放错                                           | 高     | 对话流启发式 + 运行时 ToolCallRequest abort 保险                                                                                     |
-| Fast 在含 error 的输入上幻觉成"对用户可见的错误回答"                      | **高** | `hasUnresolvedError` 否决；监控用户追问率（注：`emitToolUseSummaries` 的同类风险只影响 60 token 标签，本风险影响最终回答，量级更高） |
-| Fast 路径触发 `tryCompress` → 多一次 LLM 调用，**反向恶化 RT 和成本**     | **高** | `wouldTriggerCompression` 预判 gate（见决策函数 #7）；前置基线测量 P_compact 阈值                                                    |
-| Compression 自身用谁的模型                                                | 中     | 触发 compression 即放弃 fast 路由（gate #7 兜底）；避免回答出问题                                                                    |
-| 主 chat 切模型让 chat 内部状态/recording 异常                             | 中     | 前置验证实验覆盖；session resume 重放测试                                                                                            |
-| D2 与 `emitToolUseSummaries` 同时触发 concurrent fast 调用，超 rate-limit | 中     | 二选一：D2 启用时禁用 `emitToolUseSummaries`（标题不影响功能），或共享 rate-limit token bucket                                       |
-| `thinkingConfig` 在 fast / primary 间不一致导致 history 解析异常          | 中     | 同家族 + fast 路径强制 `includeThoughts: false`（见前置条件）                                                                        |
-| Fallback 路径反而更贵（fast tokens 浪费 + primary 全程）                  | 中     | `fast_tokens_consumed` 决策日志监控；fallback 率 >20% 自动关 flag                                                                    |
-| Telemetry span model 失真                                                 | 中     | `requested` / `actual` 拆分（见 Telemetry 修正）                                                                                     |
-| 上下文格式不兼容（跨家族）                                                | 中     | `getFastModel()` 拒绝跨家族选择                                                                                                      |
-| 与 skill modelOverride 语义冲突                                           | 中     | 独立 ref + skill 优先                                                                                                                |
-| `/model` 运行时切换主模型后 `summaryTierRef` 决策失效                     | 低     | `/model` 命令处理时同步清空 `summaryTierRef`                                                                                         |
-| fast tokens/s 反而更慢                                                    | 低     | 实测时同时测 TTFT，不只总 RT                                                                                                         |
-#### Bénéfices (à mesurer)
+| Risque                                                                                     | Sévérité | Atténuation                                                                                                                                |
+| ------------------------------------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Le fast model appelle un mauvais outil silencieusement                                     | Élevée   | Heuristique de flux de dialogue + protection d'abort ToolCallRequest runtime                                                               |
+| Le fast modèle hallucine une "réponse erronée visible par l'utilisateur" sur une entrée contenant une erreur | **Élevée** | Veto `hasUnresolvedError` ; surveiller le taux de relance utilisateur (note : le risque similaire de `emitToolUseSummaries` n'affecte qu'un label de 60 tokens, ce risque affecte la réponse finale, d'un ordre de grandeur plus élevé) |
+| Le chemin fast déclenche `tryCompress` → un appel LLM supplémentaire, **dégradation du RT et du coût** | **Élevée** | Barrière `wouldTriggerCompression` préventive (voir fonction de décision #7) ; mesurer le seuil P_compact en amont                        |
+| Quel modèle utilise la compression elle-même                                               | Moyen    | Si compression déclenchée, abandon du routage fast (barrière gate #7) ; éviter les problèmes de réponse                                   |
+| Le changement de modèle sur le chat principal perturbe l'état interne/enregistrement du chat | Moyen    | Expérience de validation préalable couverte ; test de relecture de session resume                                                          |
+| D2 et `emitToolUseSummaries` déclenchent simultanément un appel fast concurrent, dépassement de rate-limit | Moyen    | Choix binaire : désactiver `emitToolUseSummaries` quand D2 est activé (le titre n'affecte pas la fonctionnalité), ou partager un bucket de tokens rate-limit |
+| `thinkingConfig` incohérent entre fast/primary entraînant une erreur d'analyse de l'historique | Moyen    | Même famille + chemin fast force `includeThoughts: false` (voir conditions préalables)                                                     |
+| Le chemin de fallback est plus coûteux (gâchis de tokens fast + primary complet)           | Moyen    | Surveillance des logs de décision `fast_tokens_consumed` ; désactiver automatiquement le flag si taux de fallback >20%                    |
+| Distorsion du model dans le span Telemetry                                                 | Moyen    | Séparation `requested` / `actual` (voir correction Telemetry)                                                                              |
+| Incompatibilité de format de contexte (crossing de famille)                                | Moyen    | `getFastModel()` refuse les choix cross-famille                                                                                            |
+| Conflit sémantique avec le modelOverride du skill                                          | Moyen    | Ref indépendant + priorité skill                                                                                                           |
+| `/model` change le modèle principal à l'exécution, rendant la décision `summaryTierRef` invalide | Faible   | Vider `summaryTierRef` de manière synchrone lors de la commande `/model`                                                                   |
+| fast tokens/s plus lent                                                                    | Faible   | Mesurer également TTFT lors des tests, pas seulement le RT total                                                                           |
 
-- **RT** : économise 2-3s sur le tour de summary (ne pas inscrire dans le titre de la PR avant mesure réelle)
-- **Coût** : le prix unitaire du modèle fast est généralement nettement inférieur à celui du primary ; dans les scénarios à forte utilisation de summary, le coût en tokens peut diminuer de 30-50% ; mais le gaspillage dû au chemin de fallback peut annuler une partie des gains ; il faut utiliser `fast_tokens_consumed` pour mesurer réellement le bénéfice net.
+#### Bénéfices (à valider par mesure)
+
+- **RT** : Économie de 2-3s sur le tour de résumé (ne pas mettre dans le titre de PR avant mesure)
+- **Coût** : Le prix unitaire du fast model est généralement nettement inférieur à celui du primary ; dans les scénarios de résumé fréquent, le coût en tokens pourrait baisser de 30-50% ; mais le gâchis du chemin de fallback annulera une partie du bénéfice, nécessitant une mesure réelle via `fast_tokens_consumed` pour confirmer le bénéfice net
 
 ---
 
-### 3.3 Direction 3 : Découplage de l'affichage des résultats et de l'interaction (Presentation Decoupling)
+### 3.3 Direction 3 : Découplage entre l'affichage des résultats et l'interaction (Presentation Decoupling)
 
 #### Problème
 
-L'utilisateur doit attendre la fin du tour de résumé LLM pour pouvoir ressaisir après la fin de l'outil :
+L'utilisateur, une fois l'outil terminé, doit attendre la fin du tour de résumé LLM avant de pouvoir saisir à nouveau :
 
 ```
-工具完成 → [渲染结果] → [submitQuery] → [等 LLM 流式回复 3-4s] → Idle → 可输入
+Outil terminé → [Rendu résultat] → [submitQuery] → [Attente réponse stream LLM 3-4s] → Idle → Saisie possible
                                          ~~~~~~~~~~~~~~~~~~~~~~~~
-                                         用户已看到结果但无法操作
+                                         L'utilisateur voit déjà le résultat mais ne peut pas agir
 ```
 
 #### Conception
 
-Ajout de l'état `StreamingState.Summarizing` :
+Nouvel état `StreamingState.Summarizing` :
 
 ```typescript
 export enum StreamingState {
   Idle = 'idle',
   Responding = 'responding',
   WaitingForConfirmation = 'waiting_for_confirmation',
-  Summarizing = 'summarizing', // 新增
+  Summarizing = 'summarizing', // Nouveau
 }
 ```
 
-#### Changements de la machine d'états
+#### Changement dans la machine à états
 
 ```
-工具完成且结果已展示
-  → 若 batch 全员 postExecution.resultIsTerminal === true:
-    → 进入 Summarizing（用户可输入）
-    → submitQuery 异步执行
-    → LLM 总结追加到 history（或被用户新消息取消）
-  → 否则:
-    → 保持 Responding（用户不可输入）
+Outil terminé et résultat affiché
+  → Si `postExecution.resultIsTerminal === true` pour tous les outils du lot :
+    → Entrer dans l'état Summarizing (utilisateur peut saisir)
+    → submitQuery exécuté de manière asynchrone
+    → Le résumé LLM est ajouté à l'historique (ou annulé par un nouveau message utilisateur)
+  → Sinon :
+    → Rester en état Responding (utilisateur ne peut pas saisir)
 ```
 
-#### Gestion des nouveaux messages utilisateur
+#### Gestion d'un nouveau message utilisateur
 
-- Lorsque l'utilisateur soumet un nouveau message alors qu'il est dans l'état `Summarizing`, on abort le résumé en cours et on traite le nouveau message.
-- Le **texte partiel** du résumé déjà généré est supprimé (pas d'ajout à l'history) pour éviter qu'un demi-assistant ne pollue le contexte.
-- `function_response` reste dans l'history (le modèle sait que l'outil a été exécuté).
-- Les suggestions de suivi ne sont déclenchées qu'après la fin ou l'annulation de Summarizing.
+- Dans l'état `Summarizing`, si l'utilisateur soumet un nouveau message → abort du résumé en cours → traiter le nouveau message
+- Le **texte partiel du résumé déjà généré est jeté** (pas dans l'historique), pour éviter qu'une demi-phrase assistant ne pollue le contexte
+- `function_response` reste dans l'historique (le modèle sait que l'outil a été exécuté)
+- Les followup suggestions etc. sont déclenchées après la fin ou l'annulation du Summarizing
 
 #### Liste de nettoyage du texte partiel lors de l'abort
 
-| Emplacement | Action de nettoyage |
-| :- | :- |
-| `pendingHistoryItemRef.current` (state React useGeminiStream) | Mettre à `null`, ne pas appeler `addItem` |
-| Accumulation dans `GeminiChat.history` | Si un contenu assistant partiel a déjà été push avant l'abort, effectuer un rollback via la nouvelle interface `discardPendingAssistant()`. |
-| Turn bufferisé de `ChatRecordingService` | Marquer comme cancelled, ne pas écrire dans le JSONL. |
-| `dualOutput.emitText` (si activé) | Envoyer un sentinel d'abort, le sidecar le jette lui-même. |
-| Tokens accumulés dans `loopDetectorRef` | Réinitialiser le compteur du tour actuel. |
+Le texte partiel est réparti à plusieurs endroits, doit être **nettoyé simultanément**, sinon incohérence d'état :
 
-Ordre d'exécution : Le signal d'abort est déclenché → les cinq nettoyages ci-dessus sont effectués → ce n'est qu'alors qu'un nouveau message utilisateur peut entrer dans `submitQuery`. Tests de concurrence : couvrir le cas où l'abort est déclenché exactement au moment où le dernier chunk est reçu.
+| Emplacement                                                                 | Action de nettoyage                                                                             |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `pendingHistoryItemRef.current` (état React useGeminiStream)                | Mettre à `null`, ne pas appeler `addItem`                                                       |
+| Accumulation interne dans `GeminiChat.history`                              | Si du contenu assistant partiel a déjà été poussé avant abort, doit être rollbacké via une nouvelle interface `discardPendingAssistant()` |
+| `ChatRecordingService` buffered turn                                        | Marquer comme cancelled, ne pas écrire dans JSONL                                               |
+| `dualOutput.emitText` (si activé)                                           | Envoyer un sentinel d'abort, le sidecar jette lui-même                                          |
+| `loopDetectorRef` tokens cumulés                                            | Réinitialiser le compteur du tour actuel                                                        |
+Ordre d'exécution : le signal d'abort est déclenché → les cinq nettoyages ci-dessus sont terminés → un nouveau message utilisateur est autorisé à entrer dans `submitQuery`. La couverture des tests de concurrence inclut : l'abort est déclenché au moment exact où le dernier chunk est reçu.
 
-#### Condition d'application
+#### Conditions d'application
 
-Tous les membres du batch ont `postExecution.resultIsTerminal === true`.
+L'ensemble du batch doit avoir `postExecution.resultIsTerminal === true`.
 
-#### Invariant historique (même origine que §3.1)
+#### Invariant d'historique (même origine que §3.1)
 
-Interrompre Summarizing en cours produit :
+Interrompre la phase Summarizing pendant son exécution produit :
 
 ```
 [user_1, function_call, function_response, user_2]
-                                          ↑ 无 assistant turn
+                                          ↑ pas de tour assistant
 ```
 
-**Ceci est le même invariant que celui brisé par l'omission du tour LLM dans §3.1**, et doit être réparé avec la même stratégie que D1 (injecter un assistant vide / accepter la tolérance de Qwen).
+**Cela viole le même invariant que celui que §3.1 brise en sautant le tour LLM**, et doit être corrigé avec la même stratégie que D1 (injecter un assistant vide / accepter la tolérance de Qwen).
 
-- Réutiliser la couverture de test unitaire de l'invariant D1
-- Le rejeu du session-load (incluant `repairOrphanedToolUseTurnsInHistory`) doit couvrir cette forme.
-- Alternance Anthropic : en connexion directe, ajouter la sauvegarde en même temps que D1.
+- Réutiliser la couverture de test unitaire de l'invariant de D1
+- La relecture de session-load (incluant `repairOrphanedToolUseTurnsInHistory`) doit couvrir cette forme
+- Alternance Anthropic : en connexion directe, ajouter une solution de repli avec D1
 
 #### Risques et atténuations
 
-| Risque | Gravité | Atténuation |
-| :- | :- | :- |
-| Un assistant partiel entre dans l'history lors de l'abort | **Moyen** | Supprimer explicitement le texte partiel ; ne conserver que function_response ; test unitaire couvrant la race condition. |
-| Violation de l'invariant historique (pas d'assistant de suite) | **Moyen** | Problème identique à D1, correction unifiée (voir invariant historique §3.1). |
-| Complexité accrue de l'état UI | Moyen | Summarizing = Idle + tâche de fond ; le chemin d'entrée réutilise Idle. |
-| Le bénéfice perçu dépend du comportement utilisateur | Faible | Si l'utilisateur ne saisit rien dans les 3s, le summary est terminé → pas de bénéfice perçu ; mais **pas de régression**. |
+| Risque                                                               | Gravité | Atténuation                                                                                     |
+| -------------------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------- |
+| Une demi-phrase assistant entre dans l'historique lors d'un abort    | **Moyen**   | Jeter explicitement le texte partiel ; ne conserver que le function_response ; tests unitaires couvrant la race |
+| Invariant d'historique violé (pas d'assistant pour la suite)        | **Moyen**   | Problème de même origine que D1, correction unifiée (voir §3.1 Invariant d'historique)          |
+| Complexité accrue de l'état UI                                      | Moyen   | Summarizing = Idle + tâche d'arrière-plan ; chemin d'entrée utilisateur réutilise Idle          |
+| Bénéfice perçu par l'utilisateur dépend du modèle de comportement   | Faible  | Si l'utilisateur ne saisit pas dans les 3s, le résumé est terminé → pas de bénéfice perçu ; mais **pas de régression** |
 
 #### Bénéfices
 
-- **Limite théorique** : 3-4s de RT perçu (l'utilisateur saisit immédiatement après la fin de l'outil).
-- **Médiane réelle** : dépend de l'intervalle de saisie de l'utilisateur — ceux qui lisent les résultats pendant 2-5s avant de saisir ne ressentiront pas de différence, mais **jamais plus lent**.
+- **Limite théorique** : RT perçue de 3-4s (l'utilisateur saisit dès la fin des outils)
+- **Médiane réelle** : dépend de l'intervalle de saisie utilisateur — les utilisateurs qui lisent les résultats pendant 2-5s avant de saisir ne ressentiront pas la différence, mais **jamais plus lent**
 
 ---
 
@@ -510,16 +510,16 @@ Interrompre Summarizing en cours produit :
 
 #### Problème
 
-`processGeminiStreamEvents` planifie les outils en lot seulement après la fin complète du stream. L'événement `ToolCallRequest` peut être yield au milieu du stream.
+`processGeminiStreamEvents` planifie les outils en lot uniquement après la fin complète du flux. L'événement `ToolCallRequest` peut être émis en milieu de flux.
 
 #### Conception
 
-Dès la réception de l'événement `ToolCallRequest` dans le traitement du stream, démarrer immédiatement une **validation préalable** (sans exécution) :
+Dans le traitement des événements du flux, lancer immédiatement une **pré-validation** (sans exécution) pour `ToolCallRequest` :
 
 ```typescript
 case ServerGeminiEventType.ToolCallRequest:
   toolCallRequests.push(event.value);
-  scheduler.prevalidate(event.value, signal);  // 新增
+  scheduler.prevalidate(event.value, signal);  // nouveau
   break;
 ```
 
@@ -532,7 +532,7 @@ case ServerGeminiEventType.ToolCallRequest:
 
 #### Contrat de pureté et Allowlist
 
-`prevalidate` exige que `shouldConfirmExecute` soit sans effet de bord **et** que le résultat ne puisse pas être invalidé par une modification externe entre prevalidate et schedule.
+`prevalidate` exige que `shouldConfirmExecute` soit sans effet de bord **et** que son résultat ne puisse pas être invalidé de l'extérieur entre la pré-validation et l'ordonnancement.
 
 **Réutiliser directement `CONCURRENCY_SAFE_KINDS` de `tools.ts:818`** :
 
@@ -544,59 +544,60 @@ export const CONCURRENCY_SAFE_KINDS: ReadonlySet<Kind> = new Set([
 ]);
 ```
 
-C'est la classification existante du projet 'sans effets de bord + concurrente', qui correspond exactement aux besoins de prevalidate.
+Il s'agit de la classification existante du projet « sans effet de bord + concurrentiel », qui correspond parfaitement au besoin de pré-validation.
 
-| Kind de l'outil | Dans l'allowlist | Raison |
-| :- | :- | :- |
-| `Read` (read_file, etc.) | ✅ | Lecture pure |
-| `Search` (grep / glob) | ✅ | Lecture pure |
-| `Fetch` (web_fetch, etc.) | ✅ | Lecture distante, pas d'effet de bord écrit |
-| `Edit` | **❌** (voir TOCTOU ci-dessous) | shouldConfirmExecute est en lecture seule pure, mais le diff peut être invalide pendant l'intervalle de planification |
-| `Delete` / `Move` / `Execute` | ❌ | MUTATOR_KINDS |
-| `Think` | ❌ | Contient des écritures implicites (save_memory / todo_write, etc.) |
-| Outils MCP | ❌ | Non fiables |
-**TOCTOU : pourquoi Edit n'entre pas dans l'allowlist**
+| Kind d'outil              | Dans l'allowlist        | Raison                                                                                |
+| ------------------------- | ----------------------- | ------------------------------------------------------------------------------------- |
+| `Read` (read_file, etc.)  | ✅                      | Lecture pure                                                                          |
+| `Search` (grep / glob)    | ✅                      | Lecture pure                                                                          |
+| `Fetch` (web_fetch, etc.) | ✅                      | Lecture à distance, pas d'effet de bord en écriture                                   |
+| `Edit`                    | **❌** (voir TOCTOU ci-dessous) | shouldConfirmExecute est en lecture pure, mais le diff peut devenir invalide entre la pré-validation et l'ordonnancement |
+| `Delete` / `Move` / `Execute` | ❌                      | MUTATOR_KINDS                                                                         |
+| `Think`                   | ❌                      | Contient des écritures implicites comme save_memory / todo_write                      |
+| Outils MCP                | ❌                      | Non fiables                                                                            |
 
-En théorie, le `shouldConfirmExecute` d'Edit est en lecture seule (lire le fichier, calculer le diff). Mais il existe une fenêtre entre la prévalidation et la planification :
+**TOCTOU : pourquoi Edit n'est pas dans l'allowlist**
+
+Théoriquement, `shouldConfirmExecute` pour Edit est une lecture pure (lire le fichier, calculer le diff). Mais il existe une fenêtre temporelle entre la pré-validation et l'ordonnancement :
 
 ```
-T=0      stream reçoit Edit(file=a.ts, ...) → prévalidation
+T=0      le flux reçoit Edit(file=a.ts, ...) → pré-validation
 T=10ms   shouldConfirmExecute lit a.ts, met en cache diff_v0
-T=300ms  stream se termine, scheduler.schedule()
-T=305ms  pendant ce temps, un autre outil/IDE/processus externe modifie a.ts
-T=310ms  le scheduler affiche diff_v0 à l'utilisateur
-T=320ms  l'utilisateur confirme sur la base de v0
-T=330ms  Edit applique les anciens paramètres au fichier v1 → contenu corrompu / échec de merge
+T=300ms  le flux se termine, scheduler.schedule()
+T=305ms  entre-temps, un autre outil / IDE / processus externe modifie a.ts
+T=310ms  le scheduler utilise diff_v0 pour l'affichage utilisateur
+T=320ms  l'utilisateur confirme en se basant sur v0
+T=330ms  Edit applique les anciens params au fichier v1 → contenu corrompu / échec du merge
 ```
 
-C'est un TOCTOU. Direction de correction :
+C'est un problème TOCTOU. Directions de correction :
 
-- **A (recommandé)** : Edit n'entre pas dans l'allowlist, la prévalidation couvre uniquement les trois catégories `CONCURRENCY_SAFE_KINDS`. Coût : le gain passe de « 50-200ms (Edit dominant) » à « 50-100ms (lecture seule) »
-- **B (renforcement optionnel)** : Edit entre dans l'allowlist mais le cache est accompagné de `(mtime, size, content_hash)` ; lors de `schedule()`, on vérifie que le fichier n'a pas changé avant d'utiliser le cache, sinon on recalcule
+- **A (recommandé)** : Edit n'entre pas dans l'allowlist, la pré-validation ne couvre que les trois catégories `CONCURRENCY_SAFE_KINDS`. Coût : le gain passe de « 50-200ms (dominé par Edit) » à « 50-100ms (lecture uniquement) ».
+- **B (optionnel, renforcement)** : Edit entre dans l'allowlist mais le cache est accompagné de `(mtime, size, content_hash)` ; lors de `schedule()`, vérifier que rien n'a changé avant d'utiliser le cache, sinon recalculer.
 
-La documentation opte provisoirement pour A.
+La documentation choisit provisoirement A.
 
-#### Interaction avec le parallélisme existant
+#### Interaction avec l'ordonnancement parallèle existant
 
-`coreToolScheduler.attemptExecutionOfScheduledCalls` (L2436+) utilise `partitionToolCalls` pour diviser les outils en « lot concurrent-sûr » et « lot sérialisé », le lot concurrent étant exécuté via `runConcurrently` (L2473).
+`coreToolScheduler.attemptExecutionOfScheduledCalls` (L2436+) utilise `partitionToolCalls` pour diviser les outils en « batch concurrentiel sûr » et « batch séquentiel », le batch concurrentiel étant exécuté via `runConcurrently` (L2473).
 
-La prévalidation doit s'aligner sur ce modèle de répartition :
+La pré-validation doit s'aligner sur ce modèle de partitionnement :
 
-- Le cache est indexé par `callId` (pas par `(toolName, args)`, pour éviter les conflits entre appels simultanés de même nom)
-- Un appel qui échoue à la prévalidation → n'affecte pas les autres appels ; lors de la planification, cet appel reprend le chemin original `shouldConfirmExecute`
-- En cas d'annulation du stream, tous les `prevalidate` en vol sont annulés en cascade via le `signal`
+- Le cache est indexé par `callId` (pas par `(toolName, args)`, pour éviter les conflits entre appels concurrents de même nom)
+- Un appel en échec de pré-validation → n'affecte pas les autres appels ; lors de l'ordonnancement, cet appel emprunte le chemin original `shouldConfirmExecute`
+- L'annulation du flux annule en cascade tous les appels de pré-validation en vol via le `signal`
 
 #### Risques
 
-| Risque                                                           | Sévérité | Atténuation                                                                          |
-| ---------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------ |
-| Le diff en cache ne correspond pas au fichier réel à la confirmation (TOCTOU) | Élevée   | Solution A : Edit n'entre pas dans l'allowlist ; Solution B : cache avec vérification `(mtime, size, hash)` |
-| Un échec de prévalidation perturbe la planification              | Faible   | En cas d'échec/dépassement, retombée sur le chemin `shouldConfirmExecute` original ; absence de cache ≡ non activé |
-| Conflit de ressources / fd partagés entre prévalidations concurrentes | Faible   | `QWEN_CODE_MAX_TOOL_CONCURRENCY` limite déjà la concurrence (10 par défaut)          |
+| Risque                                                                               | Gravité | Atténuation                                                                                       |
+| ------------------------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------ |
+| Incohérence entre le diff en cache et le fichier réel au moment de la confirmation (TOCTOU) | **Élevée**   | Solution A : Edit n'entre pas dans l'allowlist ; Solution B : le cache vérifie `(mtime, size, hash)` |
+| Un échec de pré-validation impacte l'ordonnancement                                  | Faible  | En cas d'échec/délai d'attente, retour au chemin original `shouldConfirmExecute` ; absence de cache ≡ pas activé |
+| Concurrence sur les descripteurs de fichiers / contention de ressources              | Faible  | `QWEN_CODE_MAX_TOOL_CONCURRENCY` limite déjà la concurrence maximale (par défaut 10)             |
 
 #### Bénéfices
 
-50-100ms/tour (dans le périmètre `CONCURRENCY_SAFE_KINDS` seulement). Si l'on choisit la solution B incluant Edit, le gain théorique est de 100-200ms.
+50-100ms/tour (uniquement dans le périmètre `CONCURRENCY_SAFE_KINDS`). Avec la solution B incluant Edit, le gain théorique est de 100-200ms.
 
 ---
 
@@ -604,107 +605,108 @@ La prévalidation doit s'aligner sur ce modèle de répartition :
 
 ### 4.1 Évaluation globale
 
-| Direction                | Gain RT                      | Complexité de mise en œuvre | Risque qualité | Dépendances                                                         | Priorité |
-| ------------------------ | ---------------------------- | --------------------------- | -------------- | ------------------------------------------------------------------- | -------- |
-| D1 Instructions post-outil | 3-4s/tour final               | Faible (2-3j)               | Faible         | Aucune                                                              | **P0**   |
-| D2 Routage rapide du résumé | 2-3s/tour de résumé (à mesurer) | **Moyen-Élevée (9j)**       | Moyen-Élevé    | Heuristique D2 + expérience chat principal + synchronisation ACP    | **P1**   |
-| D3 Découplage affichage  | 3-4s d'amélioration perçue (dépend du comportement utilisateur) | Moyen (3-5j, incluant correction d'invariants) | Moyen          | Correction invariants historiques D1                                | **P1**   |
-| D4 Planification anticipée en flux | 50-200ms/tour                | Élevée (5-7j)               | Très faible    | Aucune                                                              | P2       |
+| Direction                   | Gain RT                      | Complexité de mise en œuvre | Risque qualité | Dépendances                                     | Priorité |
+| --------------------------- | ---------------------------- | --------------------------- | -------------- | ----------------------------------------------- | -------- |
+| D1 Instruction post-outil   | 3-4s/tour terminal           | Faible (2-3j)               | Faible         | Aucune                                          | **P0**   |
+| D2 Routage rapide résumé    | 2-3s/tour résumé (à mesurer) | **Moyen-Élevée (9j)**       | Moyen-Élevée   | Heuristique D2 + expérience de validation chat principal + synchronisation ACP | **P1**   |
+| D3 Découplage affichage     | 3-4s amélioration perçue (dépend du comportement utilisateur) | Moyen (3-5j, incluant correction invariant) | Moyen          | Correction invariant historique D1              | **P1**   |
+| D4 Ordonnancement anticipé  | 50-200ms/tour                | Élevé (5-7j)                | Très faible    | Aucune                                          | P2       |
 
-#### Sous-détail D2
+#### Détail de charge pour D2
 
-| Sous-tâche                                                                                                                       | Estimation |
-| -------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| Expérience de validation en flux du fastModel du chat principal (incluant mesure de P_compact)                                   | 1j         |
-| Mesure de la baseline des modèles candidats Fast (incluant TTFT, P95, compatibilité `thinkingConfig`)                              | 1j         |
-| Intégration de `selectContinuationTier` + `summaryTierRef` (useGeminiStream)                                                     | 0.5j       |
-| Implémentation de l'heuristique (incluant réutilisation de `MUTATOR_KINDS` / estimation de `wouldTriggerCompression` / multilangue / mutation d'état) | 1j         |
-| Implémentation de `GeminiChat.retryStreamWithModel` + `discardPendingAssistant`                                                  | 1.5j       |
-| Adaptation de la session ACP (acp-integration/session/Session.ts)                                                                | 1j         |
-| Correction des spans de télémétrie (séparation `requested` / `actual`)                                                              | 0.5j       |
-| Paramètre utilisateur `summaryTierStrategy` + schéma JSON + intégration `/config`                                                | 0.5j       |
-| Tests unitaires (race, moment d'abandon, invariants d'historique, chemins de repli, chemin ACP)                                  | 2j         |
-| **Total**                                                                                                                        | **9j**     |
+| Sous-tâche                                                                                                          | Estimation |
+| ------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Expérience de validation fastModel-streaming du chat principal (incluant la mesure `P_compact`)                     | 1j         |
+| Mesure de base des candidats modèles rapides (incluant TTFT, P95, compatibilité `thinkingConfig`)                   | 1j         |
+| Intégration de `selectContinuationTier` + `summaryTierRef` (dans useGeminiStream)                                  | 0,5j       |
+| Implémentation de l'heuristique (incluant réutilisation `MUTATOR_KINDS` / estimation `wouldTriggerCompression` / multilangue / mutation d'état) | 1j         |
+| Implémentation de l'interface `GeminiChat.retryStreamWithModel` + `discardPendingAssistant`                         | 1,5j       |
+| Adaptation de la synchronisation ACP Session (acp-integration/session/Session.ts)                                   | 1j         |
+| Correction des spans Telemetry (dédoublement `requested` / `actual`)                                                | 0,5j       |
+| Intégration du paramètre utilisateur `summaryTierStrategy` + schéma JSON + `/config`                                | 0,5j       |
+| Tests unitaires (race, moment d'abort, invariants d'historique, chemins de fallback, chemin ACP)                    | 2j         |
+| **Total**                                                                                                           | **9j**     |
 
-> Note : l'estimation initiale de 6,5j n'incluait pas le coût du chemin ACP, du garde-fou `wouldTriggerCompression`, de la liste de nettoyage, ni de l'ingénierie du schéma de paramètres.
+> Note : l'estimation initiale de 6,5j n'incluait pas les coûts du chemin ACP, du garde-fou `wouldTriggerCompression`, de la liste de nettoyage, de l'ingénierie du schéma de paramètres, etc.
 
-### 4.2 Calendrier de mise en œuvre
+### 4.2 Feuille de route de mise en œuvre
 
-#### Phase 1 : D1 Instructions post-outil (1 semaine)
+#### Phase 1 : D1 Instruction post-outil (1 semaine)
 
 - Étendre `ToolResult.postExecution` (tools.ts L422) : `skipLlmRound` + `resultIsTerminal`
 - `handleCompletedTools` implémente le court-circuit `skipLlmRound` (useGeminiStream.ts L2038)
-- Tests unitaires couvrant les invariants d'historique
-- **La phase 1 ne consomme pas `resultIsTerminal`** (réservé à la phase 3)
+- Tests unitaires couvrant l'invariant d'historique
+- **La Phase 1 ne consomme pas `resultIsTerminal`** (réservé à la Phase 3)
 
-#### Phase 2 : Construction de l'écosystème de signaux (2 semaines, en parallèle de la phase 4)
+#### Phase 2 : Construction de l'écosystème de signaux (2 semaines, en parallèle avec Phase 4)
 
-- Marquage progressif des outils intégrés avec `skipLlmRound` / `resultIsTerminal` (voir tableau §3.1)
-- Vérifier que la couverture de marquage est ≥60 % (pondérée par nombre de tours, pas par nombre d'appels)
-- Collecter des données de production, calibrer les seuils des portes de refus §3.2
-- En fin de phase 2, lancer l'expérience de validation du chat principal §3.2 et les mesures de base
+- Les outils intégrés reçoivent progressivement les marqueurs `skipLlmRound` / `resultIsTerminal` (voir tableau §3.1)
+- Vérifier que la couverture des marqueurs est ≥60 % (pondéré par nombre de tours, pas par nombre d'appels)
+- Collecter des données de production, calibrer les seuils du garde-fou de récusation §3.2
+- À la fin de la Phase 2, exécuter l'expérience de validation du chat principal de §3.2 et les mesures de base
 
 #### Phase 3 : D2 + D3 (environ 3 semaines, incluant synchronisation ACP)
 
-> **Correction** : la feuille de route initiale estimait 1 semaine, sans inclure l'expérience de validation du fastModel en streaming, l'implémentation de `retryStreamWithModel`, la correction unifiée des invariants, ni la synchronisation du chemin ACP.
+> **Correction** : le plan précédent estimait 1 semaine, sans inclure l'expérience de validation fastModel-streaming, l'implémentation de `retryStreamWithModel`, la correction unifiée des invariants, ni la synchronisation du chemin ACP.
 
-- Avant le codage : terminer l'expérience de validation du chat principal + mesures de base (incluant compatibilité de `P_compact` avec thinkingConfig)
-- Ajouter `summaryTierRef` + `selectContinuationTier` (incluant garde-fou `wouldTriggerCompression`)
+- Avant le codage : terminer l'expérience de validation du chat principal + mesures de base (incluant compatibilité `P_compact` avec thinkingConfig)
+- Ajouter `summaryTierRef` + `selectContinuationTier` (incluant le garde-fou `wouldTriggerCompression`)
 - Ajouter `GeminiChat.retryStreamWithModel` + `discardPendingAssistant`
-- **Adapter le chemin de session ACP** (acp-integration/session/Session.ts) pour utiliser la même fonction de décision
-- Ajouter `StreamingState.Summarizing` + réutilisation du chemin d'entrée + liste de nettoyage d'abandon
-- Correction unifiée des invariants d'historique (même source pour D1 et D3)
-- Drapeau de fonctionnalité `experimental.summaryRoundFastModel: false`, **désactivé par défaut dans Release N**
+- **Adapter en parallèle le chemin ACP Session** (acp-integration/session/Session.ts) en utilisant la même fonction de décision
+- Ajouter `StreamingState.Summarizing` + réutilisation du chemin d'entrée + liste de nettoyage pour l'abort
+- Correction unifiée des invariants d'historique (même source D1+D3)
+- Feature flag `experimental.summaryRoundFastModel: false`, **désactivé par défaut dans la Release N**
 - Paramètre utilisateur `summaryTierStrategy`
-- Correction des spans de télémétrie
-- Filet de sécurité à l'exécution (ToolCallRequest abort + retryStreamWithModel)
+- Correction des spans Telemetry
+- Filet de sécurité à l'exécution (abort ToolCallRequest + retryStreamWithModel)
 
-#### Phase 4 : D4 Planification anticipée en flux (peut être insérée indépendamment)
+#### Phase 4 : D4 Ordonnancement anticipé (peut être inséré indépendamment)
 
 - `CoreToolScheduler.prevalidate` + allowlist
-- Planification incrémentale dans `processGeminiStreamEvents`
+- Ordonnancement incrémental dans `processGeminiStreamEvents`
+
 ---
 
-## 5. Métriques, validation et limites
+## 5. Mesures, validation et limites
 
 ### 5.1 Indicateurs de performance
 
-| Indicateur                           | Référence | Phase 1 | Phase 3                   |
-| ------------------------------------ | --------- | ------- | ------------------------- |
-| RT de bout en bout P50 (3 tours)     | 13,4 s    | <10 s   | <8 s (à mesurer)          |
-| RT de bout en bout P95               | -         | <13 s   | <12 s (limite fallback)   |
-| Temps au premier résultat perçu P50  | 13,4 s    | <10 s   | <5 s (D3 activé)          |
-| Temps au premier résultat perçu P95  | -         | <13 s   | <8 s                      |
-| Appels LLM (scénarios évitables)     | 3         | 2       | 2 (plus rapide)           |
+| Indicateur                         | Référence | Phase 1 | Phase 3                       |
+| ---------------------------------- | --------- | ------- | ----------------------------- |
+| RT de bout en bout P50 (3 tours)   | 13,4s     | <10s    | <8s (à mesurer)               |
+| RT de bout en bout P95             | -         | <13s    | <12s (limite du chemin de fallback) |
+| Temps perçu jusqu'au premier résultat P50 | 13,4s     | <10s    | <5s (D3 activé)               |
+| Temps perçu jusqu'au premier résultat P95 | -         | <13s    | <8s                           |
+| Nombre d'appels LLM (scénarios pouvant être sautés) | 3         | 2       | 2 (plus rapide)               |
 
-> Remarque : la référence provient d’un seul échantillon ; avant le déploiement, compléter avec ≥3 scénarios.
+> Note : la référence est un échantillon unique ; au moins 3 scénarios doivent être ajoutés avant déploiement.
 
 ### 5.2 Indicateurs de qualité
 
-| Indicateur                                       | Référence | Dégradation autorisée |
-| ------------------------------------------------ | --------- | --------------------- |
-| Précision du tool-calling (tour fast model summary) | 100 %    | ≥98 %                 |
-| Taux d’abus skipLlmRound (l’utilisateur demande plus de détails) | - | <1 %              |
-| Taux de fallback_triggered du fast model          | -         | <10 % (>20 % désactive le flag) |
-| Assistant demi-tour dans l’historique en état Summarizing | 0     | 0 (strict)            |
+| Indicateur                                                             | Référence | Dégradation autorisée |
+| ---------------------------------------------------------------------- | --------- | --------------------- |
+| Précision du tool-calling (tour résumé avec modèle rapide)             | 100%      | ≥98%                  |
+| Taux de mauvaise utilisation de `skipLlmRound` (utilisateur demande « plus de détails ») | -         | <1%                   |
+| Taux de `fallback_triggered` pour le modèle rapide                     | -         | <10% (>20% désactive automatiquement le flag) |
+| Pas de demi-phrase assistant dans l'historique pendant Summarizing    | 0         | 0 (strict)            |
 
 ### 5.3 Indicateurs de coût
 
-| Indicateur                                | Référence | Objectif Phase 3           |
-| ----------------------------------------- | --------- | -------------------------- |
-| Coût en tokens par 1000 sessions (tour summary) | 100 % | <70 %                   |
-| Tokens gaspillés par fallback              | 0         | <15 % (taux fallback × fast tokens / primary tokens) |
+| Indicateur                                      | Référence | Objectif Phase 3                                              |
+| ----------------------------------------------- | --------- | ------------------------------------------------------------- |
+| Coût en tokens par millier de sessions (tour résumé) | 100%      | <70%                                                          |
+| Proportion de tokens gaspillés par fallback     | 0         | <15% (taux de fallback × tokens rapides d'une fois / tokens primaires d'une fois) |
 
 ### 5.4 Schéma du journal de décision
 
-Chaque décision de `selectContinuationTier` et `handleCompletedTools` doit écrire un log structuré :
+Chaque décision clé de `selectContinuationTier` et `handleCompletedTools` est enregistrée dans un journal structuré :
 
 ```
 {
   turn_id, prompt_id,
   decision: 'skip' | 'fast' | 'primary',
   tier_requested: 'fast' | 'primary',          // décision (avant fallback)
-  tier_actual:    'fast' | 'primary',          // exécuté (après fallback)
+  tier_actual:    'fast' | 'primary',          // réellement exécuté (après fallback)
   signal_skipLlmRound: bool,
   signal_resultIsTerminal: bool,
   user_strategy: 'auto' | 'always_primary' | 'always_fast',
@@ -716,467 +718,471 @@ Chaque décision de `selectContinuationTier` et `handleCompletedTools` doit écr
   has_error: bool, has_cancel: bool,
   output_tokens_est: int,
   user_prompt_classification: 'query' | 'action' | 'analysis',
-  fast_ttft_ms, primary_ttft_ms,                // double mesure en fallback
-  fast_tokens_consumed: int,                    // tokens gaspillés par fallback (attribution coût)
+  fast_ttft_ms, primary_ttft_ms,                // en double en cas de fallback
+  fast_tokens_consumed: int,                    // tokens gaspillés par fallback (imputation de coût)
   total_rt_ms,
   fallback_triggered: bool,
   fallback_reason: 'tool_call_seen' | 'timeout' | 'error' | null,
 }
 ```
 
-Indicateurs d’observation :
+Indicateurs observés :
 
-- Taux de déclenchement fast (attendu 30-50 %)
-- Taux de fallback_triggered (attendu <10 % ; >20 % → désactiver le flag par défaut dans la prochaine release)
-- Répartition des veto (détecter si trop/peu restrictif)
-- fast_tokens_consumed × fallback_rate (risque de surcoût)
-- Fréquence des demandes « plus de détails » (signal de régression qualité fast)
+- Taux de déclenchement du mode rapide (attendu 30-50 %)
+- Taux de `fallback_triggered` (attendu <10 % ; >20 % suggère de désactiver le flag par défaut dans la prochaine release)
+- Proportion de chaque veto (identifier si trop strict ou trop laxiste)
+- `fast_tokens_consumed` × `fallback_rate` (risque de retour de coût)
+- Fréquence des demandes utilisateur « plus de détails » (signal de régression de la qualité du modèle rapide)
 
-**Mesure de `fast_tokens_consumed`** :
+**Note de mesure pour `fast_tokens_consumed`** :
 
-Un stream interrompu par abort **n’aura probablement pas de `finishReason` / `usageMetadata`** — ces champs ne sont remplis qu’à la fin complète du stream. L’implémentation doit estimer :
+Un flux interrompu par abort **ne reçoit probablement pas `finishReason` / `usageMetadata`** — ces derniers ne sont remplis qu'à la fin complète du flux. L'implémentation doit estimer :
 
-- Prioritaire : avant l’abort, essayer `stream.return()` pour forcer le générateur à passer par le chemin finally ; peut récupérer un usage partiel
-- Solution de repli : cumuler la longueur textuelle des chunks reçus × 4 pour estimer les tokens de sortie ; les tokens d’entrée sont estimés via l’historique
-- Annotation : ajouter un champ `tokens_source: 'usage' | 'estimated'` dans le log, à distinguer lors de l’analyse post-mortem
+- Priorité : avant l'abort, essayer `stream.return()` pour que le générateur passe par le chemin finally, peut-être obtenir un usage partiel
+- Repli : cumuler la longueur des chunks de texte déjà reçus × 4 pour estimer les tokens de sortie ; les tokens d'entrée sont estimés via l'historique
+- Marquage : le champ du journal est accompagné de `tokens_source: 'usage' | 'estimated'` ; l'analyse postérieure doit distinguer
 
-### 5.5 Méthodes de validation et stratégie de publication
+### 5.5 Méthode de validation et stratégie de publication
 
 #### Validation
 
-- Réutiliser le framework de chronométrage `/tmp/tool-timing.log`
-- Ajouter `T_userIdle` (moment où l’utilisateur peut resaisir)
-- Ajouter `T_firstToken` (moment du premier token du streaming)
-- Tests A/B comparant les distributions de RT et coût avant/après chaque Phase
+- Réutiliser le cadre de chronométrage `/tmp/tool-timing.log`
+- Ajouter `T_userIdle` (moment où l'utilisateur peut à nouveau saisir)
+- Ajouter `T_firstToken` (moment du premier token en streaming)
+- Test A/B comparant la distribution des RT et des coûts avant/après chaque Phase
 
 #### Stratégie de publication (adaptée au CLI local)
 
-Qwen Code est un CLI local, **sans capacité de déploiement runtime** — les traditionnels « 5 % / 25 % / 100 % » ne s’appliquent pas. On utilise une **progression par releases successives** :
+Qwen Code est un CLI local, **sans capacité de déploiement à chaud** — le traditionnel « 5% / 25% / 100% de déploiement progressif » ne s'applique pas. On adopte une **progression par releases** :
 
-| Phase                  | Nœud de release       | Valeur par défaut du flag | Condition de déclenchement                                |
-| ---------------------- | --------------------- | ------------------------- | --------------------------------------------------------- |
-| Phase 3a : dogfood     | Release N             | `false`                   | Les utilisateurs internes activent avec `summaryTierStrategy=always_fast` |
-| Phase 3b : opt-in par défaut | Release N+1 (≥2 semaines) | `false` (inchangé) | Les logs de décision du dogfood satisfont : fallback <10 %, gain net RT/coût >0 |
-| Phase 3c : activé par défaut  | Release N+2 (≥4 semaines) | `true`              | Aucun rapport de régression qualité côté utilisateur Phase 3b |
-| Rollback              | Release N+3 (si besoin) | `true → false`            | Fallback massif >20 % ou dégradation des métriques qualité |
+| Phase                  | Release                    | Valeur par défaut du feature flag | Condition de déclenchement                                                                         |
+| ---------------------- | -------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Phase 3a : dogfood     | Release N                  | `false`                          | Les utilisateurs internes activent avec `summaryTierStrategy=always_fast`                          |
+| Phase 3b : opt-in par défaut | Release N+1 (≥2 semaines) | `false` (inchangé)               | Les journaux de décision du dogfood sont conformes : fallback <10%, gain net RT/coût >0            |
+| Phase 3c : activé par défaut | Release N+2 (≥4 semaines) | `true`                           | Aucun rapport de régression de qualité au niveau utilisateur en Phase 3b                           |
+| Retour arrière         | Release N+3 (si nécessaire) | `true → false`                   | Fallback massif >20% ou dégradation des indicateurs de qualité                                     |
 
-**Mécanisme de rollback** :
+**Mécanisme de retour arrière** :
 
-- Pas de déploiement runtime : **rollback = nouvelle release avec flag par défaut désactivé**
-- Le paramètre utilisateur `summaryTierStrategy=always_primary` offre toujours une porte de sortie immédiate, indépendamment des nouvelles releases
-- Les métriques `fallback_rate` / `cost_regression` des logs de décision sont évaluées à chaque cycle de release pour décider de la suite
+- Pas de déploiement à chaud, **le retour arrière = publier une nouvelle release avec le flag par défaut désactivé**
+- Le paramètre utilisateur `summaryTierStrategy=always_primary` offre toujours un canal « Je veux sortir immédiatement », ne dépendant pas d'une nouvelle release
+- Le `fallback_rate` / `cost_regression` des journaux de décision est évalué à chaque cycle de Release pour décider de la suite
 
 ### 5.6 Limitations connues
 
-1. **Données de référence limitées** : un seul échantillon ne couvre pas tous les modes de tâche ; avant déploiement, compléter les scénarios
-2. **Prérequis du fast model** : pas de modèle significativement plus rapide avec un taux de tool-calling acceptable dans la même famille → D2 non activé
-3. **`skipLlmRound` échange qualité contre vitesse** : sauter le LLM = renoncer à la compréhension et correction du modèle, applicable seulement aux scénarios très déterministes
-4. **D2 échange qualité+coût contre vitesse** : le fast model a une qualité inférieure au primary ; le chemin fallback est plus coûteux — le gain net doit être mesuré via les logs de décision
-5. **`tryCompress` peut aggraver la situation** : le fast model a un petit contexte ; la compression elle-même consomme un appel LLM — le garde-fou `wouldTriggerCompression` est indispensable
-6. **Le découplage d’affichage modifie le modèle d’interaction** : les utilisateurs doivent s’adapter ; le gain perçu dépend de leur comportement
-7. **Latence réseau non maîtrisable** : cette approche réduit le nombre d’appels, n’optimise pas chaque appel individuel
-8. **Connexion directe Anthropic non couverte** : la tolérance d’alternance actuelle repose sur les API de style Qwen / OpenAI
-9. **FastModel‑streaming sur le chat principal est une première** : aucun précédent en production, nécessite une validation indépendante
-10. **CLI local sans déploiement runtime** : la stratégie de publication ne peut avancer que par releases, sans ajustement progressif rapide
-11. **D2 n’agit que sur le chemin interactif** : Subagent / Cron / Notification n’en bénéficient pas, délibérément
-12. **Effet à long terme de l’historique mixte inconnu** : après activation de D2, les tours dans une session basculent entre fast/primary ; la reprise de sessions longues et la cohérence contextuelle sont à observer
-13. **Bénéfice réduit de D4** : après le retrait de Edit de la allowlist, la prévalidation ne couvre que les outils purement lecture (gain 50-100 ms) ; le gain de 200 ms avec Edit nécessite le mécanisme mtime/hash de la solution B
+1. **Données de référence insuffisantes** : un seul échantillon ne couvre pas tous les modes de tâche ; des scénarios doivent être ajoutés avant déploiement
+2. **Prémisse du modèle rapide** : aucun modèle de la même famille ne doit être significativement plus rapide et atteindre le niveau de tool-calling requis → D2 n'est pas activé
+3. **`skipLlmRound` est un échange qualité/vitesse** : sauter le LLM = renoncer à la compréhension et à la correction du modèle, applicable uniquement aux scénarios à forte déterminisme
+4. **D2 est un échange qualité+coût/vitesse** : la qualité du modèle rapide est inférieure à celle du modèle primaire ; le chemin de fallback est en fait plus coûteux — le bénéfice net doit être mesuré avec les journaux de décision
+5. **Le déclenchement de `tryCompress` peut aggraver la situation** : le contexte du modèle rapide est plus petit, la compression consomme elle-même des appels LLM — le garde-fou `wouldTriggerCompression` est une défense indispensable
+6. **Le découplage de l'affichage modifie le modèle d'interaction** : le nouveau modèle nécessite une adaptation de l'utilisateur ; le comportement de l'utilisateur détermine le gain réel perçu
+7. **La latence réseau n'est pas contrôlable** : cette solution réduit le nombre d'appels, n'optimise pas la latence d'un seul appel
+8. **La connexion directe Anthropic n'est pas couverte** : la tolérance actuelle d'alternance dépend des API de style Qwen / OpenAI
+9. **fastModel-streaming sur le chat principal est une première** : aucun précédent en production, nécessite une expérience de validation indépendante
+10. **CLI local sans déploiement à chaud** : la stratégie de publication ne peut qu'avancer par releases, sans ajustement progressif rapide
+11. **D2 n'affecte que le chemin d'interaction** : Subagent / Cron / Notification ne bénéficient pas, c'est intentionnel
+12. **Impact à long terme de l'historique mixte de modèles inconnu** : après activation de D2, les tours de session basculent entre rapide/principal ; la reprise des sessions longues et la cohérence contextuelle nécessitent une observation
+13. **Gain réduit pour D4** : après le retrait d'Edit de l'allowlist, la pré-validation ne couvre que les outils de lecture pure (50-100ms de gain) ; le gain de 200ms avec Edit nécessite le mécanisme de vérification mtime/hash de la solution B
+
 ### 5.7 Emplacements clés du code
 
-| Fichier                                                  | Symbole clé                                               | Position                 |
-| -------------------------------------------------------- | --------------------------------------------------------- | ------------------------ |
-| `packages/core/src/tools/tools.ts`                       | interface `ToolResult`                                    | L422                     |
-| `packages/core/src/tools/tools.ts`                       | enum `Kind` + `MUTATOR_KINDS` + `CONCURRENCY_SAFE_KINDS`  | L793, L806, L818         |
-| `packages/core/src/tools/tools.ts`                       | `DeclarativeTool.kind: Kind` (chaque instance de Tool en est pourvue) | L165                     |
-| `packages/core/src/core/client.ts`                       | `SendMessageOptions.modelOverride`                        | L142                     |
-| `packages/core/src/core/client.ts`                       | `sendMessageStream`                                       | L1216                    |
-| `packages/core/src/core/client.ts`                       | `modelOverride ?? getModel()`                             | L1305, L1598             |
-| `packages/core/src/core/client.ts`                       | `turn.run(model, …)`                                      | L1707                    |
-| `packages/core/src/core/geminiChat.ts`                   | `sendMessageStream(model, …)`                             | L1387                    |
-| `packages/core/src/core/geminiChat.ts`                   | `history.push(userContent)`                               | L1428                    |
-| `packages/core/src/core/geminiChat.ts`                   | verrou `sendPromise`                                      | L1392                    |
-| `packages/cli/src/ui/hooks/useGeminiStream.ts`           | `modelOverrideRef` (sélection de modèle par skill)        | L376, L2225              |
-| `packages/cli/src/ui/hooks/useGeminiStream.ts`           | `processGeminiStreamEvents`                               | L1365                    |
-| `packages/cli/src/ui/hooks/useGeminiStream.ts`           | point d'appel `sendMessageStream`                         | L1841                    |
-| `packages/cli/src/ui/hooks/useGeminiStream.ts`           | `handleCompletedTools`                                    | L2038                    |
-| `packages/cli/src/ui/hooks/useGeminiStream.ts`           | `submitQuery(ToolResult, …)`                              | L2355                    |
-| `packages/core/src/services/toolUseSummary.ts`           | requête côté fast-model (précédent non‑streaming)         | L108                     |
-| `packages/core/src/followup/speculation.ts`              | streaming fast-model (précédent chat forké)               | L224                     |
-| `packages/core/src/config/config.ts`                     | `fastModel` + `getFastModel` + `setFastModel`             | L684, L1987, L2021       |
-| `packages/core/src/core/coreToolScheduler.ts`            | `attemptExecutionOfScheduledCalls`                        | L2436                    |
-| `packages/core/src/core/coreToolScheduler.ts`            | `runConcurrently` + `partitionToolCalls`                  | L2473                    |
-| `packages/cli/src/acp-integration/session/Session.ts`    | point d'appel `sendMessageStream` (chemin ACP / IDE)      | L705, L965, L1182, L1423 |
-| `packages/core/src/agents/runtime/agent-core.ts`         | `sendMessageStream` du Subagent (non affecté par D2)      | L614                     |
+| Fichier                                                     | Symbole clé                                                | Emplacement |
+| ----------------------------------------------------------- | ---------------------------------------------------------- | ----------- |
+| `packages/core/src/tools/tools.ts`                          | Interface `ToolResult`                                     | L422        |
+| `packages/core/src/tools/tools.ts`                          | Enum `Kind` + `MUTATOR_KINDS` + `CONCURRENCY_SAFE_KINDS`   | L793, L806, L818 |
+| `packages/core/src/tools/tools.ts`                          | `DeclarativeTool.kind: Kind` (chaque instance de Tool porte un kind) | L165        |
+| `packages/core/src/core/client.ts`                          | `SendMessageOptions.modelOverride`                         | L142        |
+| `packages/core/src/core/client.ts`                          | `sendMessageStream`                                        | L1216       |
+| `packages/core/src/core/client.ts`                          | `modelOverride ?? getModel()`                              | L1305, L1598 |
+| `packages/core/src/core/client.ts`                          | `turn.run(model, …)`                                       | L1707       |
+| `packages/core/src/core/geminiChat.ts`                      | `sendMessageStream(model, …)`                              | L1387       |
+| `packages/core/src/core/geminiChat.ts`                      | `history.push(userContent)`                                | L1428       |
+| `packages/core/src/core/geminiChat.ts`                      | Verrou `sendPromise`                                       | L1392       |
+| `packages/cli/src/ui/hooks/useGeminiStream.ts`              | `modelOverrideRef` (sélection du modèle pour les skills)   | L376, L2225 |
+| `packages/cli/src/ui/hooks/useGeminiStream.ts`              | `processGeminiStreamEvents`                                | L1365       |
+| `packages/cli/src/ui/hooks/useGeminiStream.ts`              | Point d'appel `sendMessageStream`                          | L1841       |
+| `packages/cli/src/ui/hooks/useGeminiStream.ts`              | `handleCompletedTools`                                     | L2038       |
+| `packages/cli/src/ui/hooks/useGeminiStream.ts`              | `submitQuery(ToolResult, …)`                               | L2355       |
+| `packages/core/src/services/toolUseSummary.ts`              | Requête secondaire modèle rapide (précédent non-streaming) | L108        |
+| `packages/core/src/followup/speculation.ts`                 | Streaming modèle rapide (précédent chat fork)               | L224        |
+| `packages/core/src/config/config.ts`                        | `fastModel` + `getFastModel` + `setFastModel`              | L684, L1987, L2021 |
+| `packages/core/src/core/coreToolScheduler.ts`               | `attemptExecutionOfScheduledCalls`                         | L2436       |
+| `packages/core/src/core/coreToolScheduler.ts`               | `runConcurrently` + `partitionToolCalls`                    | L2473       |
+| `packages/cli/src/acp-integration/session/Session.ts`       | Point d'appel `sendMessageStream` (chemin ACP / IDE)       | L705, L965, L1182, L1423 |
+| `packages/core/src/agents/runtime/agent-core.ts`            | `sendMessageStream` de Subagent (non affecté par D2)       | L614        |
 
 ---
 
-## 6. Enregistrement de vérification Review (2026-05-26)
+## 6. Enregistrement de vérification de la revue (2026-05-26)
 
 ### 6.1 Méthode de vérification
 
-Conformément à plusieurs hypothèses de qualité des données préalables et estimations de bénéfices **uniquement déclarées, non quantifiées** dans le document de conception, 4 Explore subagents parallèles ont été lancés pour une enquête de code en lecture seule. Chaque subagent répond à une seule question factuelle, sans porter de jugement ni donner de suggestions d'optimisation. L'enquête est basée sur la branche `main` actuelle (HEAD: `026f2f768`).
+Pour les hypothèses de qualité des données préalables et les estimations de bénéfices **uniquement déclarées, non quantifiées** dans le document de conception, 4 subagents Explore parallèles sont lancés pour une recherche de code en lecture seule. Chaque subagent répond à une seule question factuelle, sans porter de jugement ni donner de suggestion d'optimisation. La recherche est basée sur la branche `main` actuelle (HEAD: `026f2f768`).
 
-| Question de vérification                                                               | Section associée                  |
-| -------------------------------------------------------------------------------------- | --------------------------------- |
-| Q3 Taux de remplissage du champ `ToolResult.error` pour tous les outils actuels        | §3.2 Dépendance préalable de `hasUnresolvedError` |
-| Q4 Disponibilité réelle de `usageMetadata` après un stream abort                       | §5.4 Mesure de `fast_tokens_consumed`  |
-| Q5 Existence des points de trace « relance utilisateur / clarification »               | §5.2 Signal de suivi de régression qualité du fast |
-| Q6 Charge de travail IO réelle de `shouldConfirmExecute` pour les outils `CONCURRENCY_SAFE_KINDS` | §3.4 Estimation du bénéfice D4 |
+| Question de vérification                                        | Section associée                        |
+| --------------------------------------------------------------- | --------------------------------------- |
+| Q3 Taux de remplissage actuel du champ `ToolResult.error` pour tous les outils | §3.2 Dépendance préalable `hasUnresolvedError` |
+| Q4 Disponibilité réelle de `usageMetadata` après un abort de flux | §5.4 Mesure de `fast_tokens_consumed` |
+| Q5 Existence de points de mesure pour « question / clarification utilisateur » | §5.2 Signal de surveillance de régression qualité modèle rapide |
+| Q6 Charge IO réelle de `shouldConfirmExecute` pour les outils `CONCURRENCY_SAFE_KINDS` | §3.4 Estimation du gain D4             |
 
-### 6.2 Découverte 1 : l'heuristique `hasUnresolvedError` a une zone aveugle de 32% des outils (impact D2)
+### 6.2 Découverte 1 : l'heuristique `hasUnresolvedError` a 32 % d'angle mort pour les outils (impact sur D2)
 
-**Fait** : Sur les 22 outils disposant d'un chemin d'erreur, **15 (68%) remplissent correctement le champ `ToolResult.error`** (shell, read-file, write-file, edit, grep, glob, ls, web-fetch, mcp-tool, cron-\*, etc., tous les outils E/S principaux sont complets), **7 (32%) placent uniquement l'erreur dans la chaîne `llmContent`** : `askUserQuestion`, `monitor`, `skill`, `lsp`, `exitPlanMode`, `todoWrite`, etc.
+**Fait** : parmi les 22 outils ayant un chemin d'erreur, **15 (68 %) remplissent correctement le champ `ToolResult.error`** (shell, read-file, write-file, edit, grep, glob, ls, web-fetch, mcp-tool, cron-\*, etc., tous les outils IO de base sont présents), **7 (32 %) mettent l'erreur uniquement dans la chaîne `llmContent`** : `askUserQuestion`, `monitor`, `skill`, `lsp`, `exitPlanMode`, `todoWrite`, etc.
 
-**Il n'existe pas** de helper `createErrorResult` unifié, chaque outil implémente indépendamment la construction d'erreur.
-
-**Impact sur la conception** :
-
-- Si l'élément de rejet `hasUnresolvedError` du §3.2 ne vérifie que le champ `ToolResult.error`, **l'échec de ces 7 outils ne déclenchera jamais le « retour au primary »** — le tour suivant sera toujours routé vers le fast model.
-- Parmi eux, **l'échec de l'outil `skill` résumé par le fast model** est un scénario à haut risque prioritaire (un grand nombre de workflows pilotés par skill dans ce dépôt seront affectés).
-- La liste du §3.2 « shell, etc., doivent correctement remplir ToolResult.error (dépendance de qualité des données préalable) » est **trop étroite** ; en réalité, shell est déjà conforme, les vrais manquants sont skill / lsp / todoWrite, etc.
-
-**Correction suggérée** : ajoutez « **Modifier les 7 outils qui ne transmettent les erreurs que via `llmContent` pour qu'ils remplissent correctement le champ `error`** » comme dépendance préalable dure de D2 (condition préalable §3.2), estimation ~2j ; n'acceptez pas le chemin sale de « recours à `llmContent.match(/^Error:/i)` » (risque élevé de faux positifs).
-### 6.3 Découverte 2 : le coût d'implémentation de la métrique `fast_tokens_consumed` est sous-estimé (impact D2 / §5.3)
-
-**Faits** :
-
-- Dans le chemin d'abandon (`abort`) de `turn.ts` (L289-291), il y a un `return` direct, **pas de bloc `finally`, ni d'appel à `stream.return()`** – la suggestion du §5.4 disant "avant l'abandon, `stream.return()` permet au générateur de passer par le `finally`" n'existe pas dans le code actuel à cette entrée.
-- La boucle `for await` de `geminiChat.ts:processStreamResponse` n'enregistre le tour que lorsqu'elle est parcourue entièrement (L1286). Une interruption par abandon signifie que le dernier chunk (contenant généralement les métadonnées complètes) **est directement ignoré**.
-- **Aucun cumul de secours des tokens au niveau des chunks** n'existe dans le chemin principal de chat ; seul le niveau subagent (`agent.ts:731-744`) a un cumul, non réutilisable.
-- Conclusion : lors d'un abandon, `usageMetadata` **n'est pas récupéré du tout**, on ne peut qu'estimer via `chars/4` (erreur de ±20 %).
+**Il n'existe pas** de helper unifié `createErrorResult` ; chaque outil implémente indépendamment la construction d'erreur.
 
 **Impact sur la conception** :
 
-- Dans le schéma à trois niveaux "prioritaire / secours / annotation" de la fin du §5.4, le chemin **"prioritaire" est inaccessible dans le code actuel** – il faut d'abord modifier la structure du générateur `sendMessageStream` pour y ajouter un `finally`, effort estimé à 1j, non mentionné dans le document de conception.
-- Le §5.3 fixe "coût token par millier de sessions <70%" comme objectif de la Phase 3, mais si la métrique elle-même a une erreur de ±20 %, alors **"70 %" et "82 %" se situent dans le bruit de mesure**.
+- Si le signal de récusation `hasUnresolvedError` de §3.2 vérifie uniquement le champ `ToolResult.error`, **les échecs de ces 7 outils ne déclencheront jamais le retour vers le modèle primaire** — le tour suivant sera encore routé vers le modèle rapide
+- Parmi eux, **l'échec de l'outil `skill` mal résumé par le modèle rapide** est un scénario à haut risque (le dépôt contient de nombreux workflows pilotés par skill qui seront affectés)
+- La condition « shell et autres outils doivent correctement remplir ToolResult.error (dépendance de qualité des données préalable) » listée dans §3.2 **est trop étroite** : shell est déjà conforme, ce sont les vrais absents comme skill / lsp / todoWrite
 
-**Corrections suggérées** :
+**Correction suggérée** : ajouter « **Transformer les 7 outils qui ne transmettent leur erreur que via `llmContent` pour qu'ils remplissent correctement le champ `error`** » comme dépendance dure préalable à D2 (condition préalable §3.2), estimation ~2j ; ne pas accepter le chemin sale utilisant `llmContent.match(/^Error:/i)` comme solution de repli (trop de faux positifs).
 
-- Réécrire le §5.3 comme **indicateur de tendance**, ne servant pas de critère de release ; utiliser plutôt le taux de `fallback_triggered` dans les logs de décision combiné à la tendance de `fast_tokens_consumed` comme double indicateur conjoint.
-- Ajouter au §5.4 : l'implémentation de `fast_tokens_consumed` nécessite d'abord de modifier le chemin d'abandon de `turn.ts` en ajoutant un `finally` + `stream.return()`, à mentionner comme complément d'effort au §3.2 (+1j).
+### 6.3 Découverte 2 : le coût d'implémentation de l'indicateur `fast_tokens_consumed` a été sous-estimé (impact sur D2 / §5.3)
 
-### 6.4 Découverte 3 : `user_prompt_classification` et le "suivi des questions utilisateur" doivent être créés (impact D2 / §5.2)
+**Fait** :
 
-**Faits** :
-
-- Dans `packages/core/src/followup/`, il existe déjà `speculation.ts` / `suggestionGenerator.ts` / `followupState.ts`, mais leur télémétrie (`PromptSuggestionEvent`) enregistre **"suggestion système acceptée/ignorée"**, et non "question active de l'utilisateur".
-- `ChatRecordingService` stocke les messages utilisateur mais **ne leur attribue pas de catégorie**.
-- Une recherche dans tout le dépôt ne trouve ni `user_prompt_classification`, ni de correspondance de modèles de questions en chinois/anglais, ni de mécanisme de type `clarif*` / `intentDetect`.
-
-**Impact sur la conception** :
-
-- Le champ `user_prompt_classification: 'query' | 'action' | 'analysis'` dans le schéma des logs de décision du §5.4 **n'a pas de source de données** – il ne peut être déduit ni des `PromptSuggestionEvent` existants, ni lu à partir de `ChatRecord`.
-- Le signal de surveillance du §5.2 "fréquence des questions utilisateur du type 'plus de détails'" souffre du même problème, **le point d'ancrage existant le plus proche `followupState.onOutcome` n'est pas réutilisable**.
-
-**Corrections suggérées** :
-
-- Ajouter aux prérequis du §3.2 "implémentation minimale d'un classifieur d'entrée utilisateur" (correspondance de modèles en chinois/anglais, ~3j), sinon les champs `user_prompt_classification` et `requestImpliesFurtherAction` des logs de décision du §5.4 manqueront de données.
-- Ou **accepter** de ne pas disposer de ces deux signaux pendant la phase de dogfood Phase 3a, en ne surveillant la régression de qualité que via le taux de `fallback_triggered` – coût faible mais risque élevé.
-
-### 6.5 Découverte 4 : contradiction interne de la conception D4 – l'allowlist et l'attribution des gains ne sont pas alignés (impact D4 / §3.4)
-
-**Faits** :
-
-- Pour les trois catégories d'outils `Kind.Read` (read_file), `Kind.Search` (glob / grep), `Kind.Fetch` (web_fetch), les méthodes `shouldConfirmExecute` / `getConfirmationDetails` **héritent pour la plupart de l'implémentation par défaut de `BaseToolInvocation`, sans aucune opération d'E/S** (read_file / glob / grep n'ont pas de surcharge, web_fetch ne fait qu'analyser l'hôte de l'URL avec 5-10 lignes de chaîne).
-- Les véritables opérations d'E/S se trouvent dans `Edit` / `WriteFile` (`calculateEdit` + `readTextFile` + `Diff.createPatch`, typiquement ~20ms), mais le §3.4 les exclut de l'allowlist pour éviter le problème TOCTOU.
-- **Résultat** : pour les trois outils restant dans l'allowlist, le travail de pré-validation est quasiment le même que sans pré-validation – l'allowlist ne bloque en réalité que "les seules E/S économisables sur Edit", laissant "les outils dont le coût est déjà nul".
+- Le chemin d'abort de `turn.ts` (L289-291) fait un `return` direct, **sans bloc finally, ni appel à `stream.return()`** — le « avant l'abort, essayer `stream.return()` pour que le générateur passe par le chemin finally » suggéré par le document §5.4 n'a pas cette entrée dans le code actuel
+- La boucle `for await` de `geminiChat.ts:processStreamResponse` n'enregistre le tour qu'à la fin complète de l'itération (L1286) ; un arrêt par abort signifie que le dernier chunk contenant seulement le usage (contenant généralement les métadonnées complètes) **est directement jeté**
+- Le chemin principal du chat **n'a aucun cumul de tokens au niveau chunk comme filet de sécurité** ; seul le niveau subagent (`agent.ts:731-744`) a un cumul, non réutilisable
+- Conclusion : en cas d'abort, `usageMetadata` **est totalement inaccessible**, on ne peut qu'estimer par `chars/4` (erreur de ±20 %)
 
 **Impact sur la conception** :
 
-- Le récit "validation IO préalable" du §3.4 **n'est pas valide** : le gain réel de 50-100ms provient de **"la fin complète du flux → l'attente de planification en lot est supprimée"**, presque indépendamment des IO des outils.
-- Une attribution erronée des gains entraîne deux problèmes :
-  1. **L'allowlist pourrait être plus large** – tous les outils dont la pré-validation est idempotente peuvent y figurer, sans être liés à `CONCURRENCY_SAFE_KINDS`.
-  2. **L'investissement de 5-7j est difficilement justifiable** – si le gain réel n'est que d'environ 50ms dû au changement du modèle d'ordonnancement, et qu'Edit n'est pas dans l'allowlist, le ROI de cet investissement est inférieur à ce que suggère le document de conception.
+- Parmi les trois couches « prioritaire / repli / marquage » de la fin de §5.4, **le chemin « prioritaire » est inaccessible dans le code actuel** — il faut d'abord modifier la structure du générateur `sendMessageStream` pour ajouter un finally, charge de travail d'environ 1j, non mentionnée dans le document de conception
+- §5.3 fixe l'objectif « coût en tokens par millier de sessions <70 % » pour la Phase 3, mais si l'indicateur lui-même a une erreur de ±20 %, alors **« 70 % » et « 82 % » tombent dans le bruit de mesure**
 
-**Corrections suggérées** : Réécrire l'attribution des gains dans §3.4 :
+**Correction suggérée** :
 
-- La décomposer en deux parties : (a) l'économie de l'attente du flux grâce au changement de modèle d'ordonnancement ~50ms, (b) l'économie possible des IO côté outil ~0ms (dans l'allowlist) / ~20ms (si Edit est inclus).
-- Dans le tableau d'évaluation globale §4.1, modifier le gain RT de D4 de "50-200ms" à "30-80ms (solution A, principalement due au changement de modèle d'ordonnancement) / 100-200ms (solution B, incluant Edit)".
-- Dans la feuille de route §4.2, rétrograder davantage D4 – la simple modification du modèle d'ordonnancement peut être faite indépendamment, sans être forcée de lier le concept de pré-validation.
+- Remplacer §5.3 par **un indicateur de tendance**, non utilisé comme gate de release ; utiliser plutôt l'indicateur combiné « taux de `fallback_triggered` des journaux de décision + tendance de `fast_tokens_consumed` dans le même sens »
+- Compléter §5.4 : l'implémentation de `fast_tokens_consumed` nécessite d'abord de modifier le chemin d'abort de turn.ts pour ajouter finally + `stream.return()`, comme complément de charge de travail pour §3.2 (+1j)
 
-### 6.6 Impact combiné sur la feuille de route
+### 6.4 Découverte 3 : `user_prompt_classification` et le point de mesure « question utilisateur » doivent être créés (impact sur D2 / §5.2)
 
-| Section                 | Estimation initiale | Estimation après vérification | Source de l'augmentation                                                                                          |
-| ----------------------- | ------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| D2 §3.2 effort (tableau détaillé §4.1) | 9j                  | **14-16j**                    | +2j (découverte 1 transformation préalable des outils) +1j (découverte 2 modification finally de turn.ts) +3j (découverte 3 classifieur d'entrée, si voie dure) |
-| D4 §3.4 évaluation globale            | 5-7j                | 5-7j (inchangé)               | Effort inchangé, mais **l'attribution des gains RT passe de "IO côté outil" à "modèle d'ordonnancement"**, baisse du ROI de l'investissement |
-| Durée totale Phase 3 (§4.2)           | ~3 semaines         | **~4-5 semaines**             | Augmentation de l'effort D2 + PR de transformation préalable des outils passant par un cycle de review séparé    |
+**Fait** :
 
-**Suggestions de correction pour la feuille de route originale** :
+- `packages/core/src/followup/` contient déjà `speculation.ts` / `suggestionGenerator.ts` / `followupState.ts`, mais leur télémétrie (`PromptSuggestionEvent`) enregistre le fait que **« la suggestion système a été acceptée/ignorée »**, pas que « l'utilisateur a posé une question proactive »
+- `ChatRecordingService` stocke les messages utilisateur mais **sans étiquette de classification**
+- Aucune occurrence de `user_prompt_classification`, aucun motif de question/répétition en chinois ou anglais, aucun mécanisme de type `clarif*` / `intentDetect` dans tout le dépôt
 
-1. **Garder D1 (P0) et D3 juste après** – La vérification n'a pas touché à leurs hypothèses centrales, le jugement ROI reste inchangé.
-2. **Durcir les conditions de démarrage de D2** – Faire des travaux préalables des découvertes 1/2/3 (total ~6j) une "porte de démarrage D2" ; ne pas entrer dans l'expérience préalable du §3.2 tant qu'elle n'est pas franchie.
-3. **Réévaluer la priorité de D4** – Puisque le vrai gain vient du changement du modèle d'ordonnancement et non des IO côté outil, soit (a) accepter 30-80ms et rétrograder D4 en post-P3, soit (b) envisager la solution B (Edit + mtime/hash) pour récupérer 100-200ms mais avec 5-7j supplémentaires.
-4. **Ne pas modifier la ligne de base d'échantillonnage unique du §1.2** – Mais dans le §5.1, la colonne P95 ne devrait pas spécifier de chiffres avant la mise en œuvre de D1 et la complétion d'au moins 3 catégories de scénarios de base.
+**Impact sur la conception** :
 
-### 6.7 Points non couverts par la vérification
+- Le champ `user_prompt_classification: 'query' | 'action' | 'analysis'` du schéma de journal de décision §5.4 **n'a pas de source de données** — il ne peut être déduit de l'existant PromptSuggestionEvent ni lu à partir de ChatRecord
+- La fréquence des questions utilisateur « plus de détails » de §5.2, même problème, **le point d'ancrage existant le plus proche `followupState.onOutcome` n'est pas réutilisable**
+**建议修正**：
 
-Les points suivants relèvent de jugements subjectifs ou de questions d'intention de l'auteur, n'ont pas été traités par le subagent lors de cette vérification, et sont réservés pour une discussion lors de la revue de conception ultérieure :
+- §3.2 前置条件中追加"用户输入分类器最小实现"（中英文模式匹配，~3d），否则 §5.4 决策日志的 `user_prompt_classification` 与 `requestImpliesFurtherAction` 都缺数据
+- 或者**接受**在 Phase 3a dogfood 阶段没有这两个信号，仅靠 `fallback_triggered` 率监控质量回归——成本低但风险高
 
-- L'ordre de mise en œuvre de D2 devrait-il être après D3 ? (question d'ordre subjectif)
-- D1/D3 devraient-ils être fusionnés dans la Phase 1 ? (stratégie de mise en œuvre)
-- Le seuil ≥3 de `needsCrossResultReasoning` au §3.2 est-il un ajustement inverse aux scénarios de base du §1.2 ? (intention de l'auteur)
-- Les ancres de lignes dans le tableau des emplacements de code clés au §5.7 devraient-elles être remplacées par des ancres symboliques ? (stabilité de la documentation)
+### 6.5 发现 4：D4 设计内在矛盾——allowlist 与收益归因不对齐（影响 D4 / §3.4）
+
+**事实**：
+
+- `Kind.Read`（read_file）、`Kind.Search`（glob / grep）、`Kind.Fetch`（web_fetch）三类工具的 `shouldConfirmExecute` / `getConfirmationDetails`，**绝大多数继承 `BaseToolInvocation` 默认实现，做零 IO**（read_file / glob / grep 完全没 override，web_fetch 只做 5-10 行字符串解析 URL hostname）
+- 真正有 IO 的是 `Edit` / `WriteFile`（`calculateEdit` + `readTextFile` + `Diff.createPatch`，典型 ~20ms），但 §3.4 方案 A 把它们排除出 allowlist 以规避 TOCTOU
+- **结果**：留在 allowlist 里的三类工具，prevalidate 与不 prevalidate 工作量基本相同——allowlist 实际拦截的是"唯一有 IO 可省的 Edit"，留下"本来就零成本的工具"
+
+**对设计的影响**：
+
+- §3.4 的"前置 IO 验证"叙事**不成立**：50-100ms 收益的真正来源是 **"stream 完全结束 → 才批量 schedule" 这段调度等待被消除**，与工具端 IO 几乎无关
+- 收益归因错误会带来两个问题：
+  1. **allowlist 可以更宽**——凡是 idempotent prevalidate 的工具都行，不必绑定 `CONCURRENCY_SAFE_KINDS`
+  2. **5-7d 投入难以自洽**——如果真实收益只有调度模型改变的 ~50ms，Edit 又不在 allowlist 里，这笔投入的 ROI 比设计文档暗示的低
+
+**建议修正**：§3.4 重写收益归因——
+
+- 拆分为两部分：(a) 调度模型改变省下的 stream 等待 ~50ms，(b) 工具端 IO 前置可省的工作量 ~0ms（allowlist 内）/ ~20ms（若 Edit 入 allowlist）
+- 在 §4.1 综合评估表里把 D4 RT 收益从 "50-200ms" 改为 "30-80ms（方案 A，主要来自调度模型）/ 100-200ms（方案 B，含 Edit）"
+- 在 §4.2 路线图中把 D4 进一步降级——纯调度模型改造可独立做，不必强行绑定 prevalidate 概念
+
+### 6.6 对路线图的合并影响
+
+| 章节                          | 原估时 | 验证后估时   | 增量来源                                                                                         |
+| ----------------------------- | ------ | ------------ | ------------------------------------------------------------------------------------------------ |
+| D2 §3.2 工作量（§4.1 细分表） | 9d     | **14-16d**   | +2d（发现 1 前置工具改造）+1d（发现 2 turn.ts finally 改造）+3d（发现 3 输入分类器，如取硬路径） |
+| D4 §3.4 综合评估              | 5-7d   | 5-7d（不变） | 工作量不变，但 **RT 收益归因从"工具端 IO"改为"调度模型"**，投入 ROI 下调                         |
+| Phase 3 总时长（§4.2）        | ~3 周  | **~4-5 周**  | D2 工作量上调 + 前置工具改造 PR 单独走 review 周期                                               |
+
+**对原路线图的修正建议**：
+
+1. **保持 D1（P0）和 D3 紧随其后**——本次验证未触及它们的核心假设，ROI 判断不变
+2. **D2 启动条件加严**——把发现 1/2/3 的前置工作（共 ~6d）作为 "D2 启动 gate"，未完成不进入 §3.2 前置实验
+3. **D4 重新评估优先级**——既然真实收益是调度模型改变而非工具端 IO，要么 (a) 接受 30-80ms 把 D4 降到 P3 后置，要么 (b) 考虑方案 B（Edit + mtime/hash）拿回 100-200ms 但额外 5-7d
+4. **不修改 §1.2 单次采样基线**——但 §5.1 P95 一栏在 D1 落地、补完 ≥3 类场景基线之前不写具体数字
+
+### 6.7 验证未覆盖的追问点
+
+以下追问点属于主观判断或作者意图问题，本次验证未通过 subagent 处理，留作后续 design review 讨论：
+
+- D2 实施次序应否后置于 D3（主观次序）
+- D1/D3 是否应合并到 Phase 1 一起做（实施策略）
+- §3.2 `needsCrossResultReasoning` 阈值 ≥3 是否反向拟合 §1.2 基线场景（作者意图）
+- §5.7 关键代码位置表的行号锚点是否应改为符号锚点（文档稳定性）
 
 ---
 
-## 7. Évaluation des "floating oils" et prochaines étapes (deuxième revue 2026-05-26)
+## 7. 浮油评估与下一步（2026-05-26 二次 review）
 
-### 7.1 Faits à l'origine de ce réordonnancement
+### 7.1 触发本次重排的事实
 
-Après la vérification du §6, deux **faits modifiant le jugement de ROI** ont été découverts :
+§6 验证之后，又发现两个**改变 ROI 判断的事实**：
 
-1. **`cache_control` de DashScope est déjà implémenté** (`packages/core/src/core/openaiContentGenerator/provider/dashscope.ts:172-181`)
-   - Les requêtes en streaming marquent `system + dernier message + dernière définition d'outil`
-   - Les données de `cached_tokens` sont déjà collectées dans `usageMetadata.cachedContentTokenCount` (`converter.ts:1124-1149`)
-   - Il s'agit d'un mécanisme de préfixe de cache : le tour N+1 atteint automatiquement le préfixe écrit par le tour N
-   - **Le tour de résumé est justement celui où le préfixe est le plus long**
+1. **DashScope `cache_control` 已实装**（`packages/core/src/core/openaiContentGenerator/provider/dashscope.ts:172-181`）
+   - streaming 请求标记 `system + 最后一条 message + 最后一个 tool definition`
+   - 命中数据 `cached_tokens` 已采集到 `usageMetadata.cachedContentTokenCount`（`converter.ts:1124-1149`）
+   - 这是 prefix cache 机制：Round N+1 自动命中 Round N 写入的前缀
+   - **summary 轮恰好是命中前缀最长的一轮**
 
-2. **Le prompt système est déjà stable** (audit de `prompts.ts`)
-   - Il n'y a pas de problèmes graves comme cwd / timestamp / git status / liste de fichiers / état LSP qui changent à chaque tour
-   - `process.cwd()` n'est utilisé que comme interrupteur pour `isGitRepository()`, et n'est pas écrit dans le contenu du prompt
-   - Les seuls points dynamiques : déclenchement de l'outil `save_memory` / changement de `/model` / chargement dynamique MCP (tous événementiels, basse fréquence)
+2. **system prompt 已经稳态**（`prompts.ts` 审计结果）
+   - 没有 cwd / timestamp / git status / 文件列表 / LSP 状态等"每 turn 都变"的硬伤
+   - `process.cwd()` 仅用作 `isGitRepository()` 开关，不写入 prompt 内容
+   - 唯一动态点：`save_memory` 工具触发 / `/model` 切换 / MCP 动态加载（均事件性，低频）
 
-### 7.2 Ces deux faits changent le jugement de ROI de D2
+### 7.2 这两条事实改变了 D2 的 ROI 判断
 
-Le document §3.2 suppose que "le modèle rapide est environ 2s plus rapide que le modèle principal", avec une ligne de base **principal non mis en cache vs rapide non mis en cache**.
+§3.2 文档假设 "fast model 比 primary 快 ~2s"，对照基线是 **primary uncached vs fast uncached**。
 
-Mais dans la réalité, le modèle principal est **mis en cache** (le tour de résumé atteint justement le cache le plus fort), donc la comparaison correcte est :
-> cache primaire vs rapide non-caché
+但现实运行中 primary 是 **cached**（summary 轮恰好命中最强），所以正确对照是：
 
-| Route                         | Latence estimée | Remarques                                     |
-| ----------------------------- | --------------- | --------------------------------------------- |
-| cache primaire hit 80% préfixe | ~1.8-2.2s      | Performance actuelle du tour de résumé         |
-| rapide sans cache (non partagé entre modèles) | ~1.5-2s | Performance réelle après le basculement D2 |
+> primary cached vs fast uncached
 
-**Écart net : quelques centaines de millisecondes, voire le rapide peut être plus lent**. Avec un coût d'ingénierie de 14-16j + risque qualité + gaspillage de fallback, **le bénéfice net de D2 est proche de 0 ou négatif**.
+| 路由                          | 估算延迟  | 备注                     |
+| ----------------------------- | --------- | ------------------------ |
+| primary 命中 80% 前缀 cache   | ~1.8-2.2s | summary 轮的当前实际表现 |
+| fast 无 cache（跨模型不共享） | ~1.5-2s   | D2 切换后的实际表现      |
 
-§3.2 Nouvelle condition préalable **obligatoire** : les mesures de base doivent comparer le primaire **caché** vs le rapide **non-caché**, et `T_primary_cached < T_fast_uncached × 1.5` doit être vrai pour que D2 soit activé.
+**净差距：几百毫秒，甚至可能 fast 反而慢**。叠加 14-16d 工程成本 + 质量风险 + fallback 浪费，**D2 净收益接近 0 或负**。
 
-### 7.3 Liste des candidats (réorganisée par facilité)
+§3.2 前置条件**必须新增**：基线测量必须对比 primary **cached** vs fast **uncached**，且 `T_primary_cached < T_fast_uncached × 1.5` 时 D2 不应启用。
 
-**Vrai facile (à faire immédiatement, < 1j d'effort, risque très faible, bénéfice certain)** :
+### 7.3 候选清单（按浮油性重排）
 
-| Élément                     | Effort | Bénéfice                              | Emplacement                                                                  |
-| --------------------------- | ------ | ------------------------------------- | ---------------------------------------------------------------------------- |
-| Instruction de réponse concise | 30min | ~2s/tour de résumé (réduction de moitié des tokens de sortie) | Ajouter une ligne dans la section Final Reminder de `prompts.ts`             |
-| Exposer la télémétrie du taux de hit cache | 0.5j   | 0s directement, mais **enableur** pour les décisions futures | `cachedContentTokenCount` déjà collecté, manque d'exposition ; doit aussi identifier `save_memory` pour marquage séparé |
+**真·浮油（立刻动手，< 1d 投入，极低风险，确定收益）**：
 
-**Presque facile (attendre les données, 0.5-1j d'effort)** :
+| 项                            | 投入  | 收益                              | 操作位置                                                                    |
+| ----------------------------- | ----- | --------------------------------- | --------------------------------------------------------------------------- |
+| 简洁回复指令                  | 30min | ~2s/summary 轮（输出 token 减半） | `prompts.ts` Final Reminder 段加一句                                        |
+| 暴露 cache hit rate telemetry | 0.5d  | 0s 直接，是后续决策 **enabler**   | `cachedContentTokenCount` 已采集，缺暴露；并应识别 `save_memory` 后单独打标 |
 
-| Élément                            | Effort                | Bénéfice                          | Prérequis de décision                                              |
-| ---------------------------------- | --------------------- | --------------------------------- | ------------------------------------------------------------------ |
-| `tool_choice='none'` au tour de résumé | 0.5-1j                | 0.3-1s (sampling saute les tokens tool_call) | Logique de détection "c'est un tour de résumé" nécessaire, risque faible d'erreur |
-| Désactiver la réflexion au tour de résumé | 1j                    | 0.5-2s                            | Significatif seulement pour les modèles avec réflexion activée (qwen3.5-plus, glm-4.7, kimi-k2.5, etc.) |
-| Traitement par lots des chunks au niveau UI | 0.5j recherche + 0.5j implémentation | À valider                        | Hypothèse : le coût cumulé du rendu des tokens de `useGeminiStream` pour les longs résumés est non négligeable |
+**近浮油（等数据决定，0.5-1d 投入）**：
 
-**À étudier (peut-être gros poisson)** :
+| 项                              | 投入                  | 收益                                    | 决策前置                                                              |
+| ------------------------------- | --------------------- | --------------------------------------- | --------------------------------------------------------------------- |
+| summary 轮 `tool_choice='none'` | 0.5-1d                | 0.3-1s（sampling 跳过 tool_call token） | 需"是 summary 轮"判定逻辑，错判风险低                                 |
+| summary 轮关 thinking           | 1d                    | 0.5-2s                                  | 仅对启用 thinking 的模型有意义（qwen3.5-plus、glm-4.7、kimi-k2.5 等） |
+| UI 渲染层 chunk batching        | 0.5d 调研 + 0.5d 实施 | 待验证                                  | 假设：长 summary 的 `useGeminiStream` token 渲染累计开销不小          |
 
-| Élément                               | Effort de recherche   | Bénéfice potentiel  | Inconnue clé                                                                                |
-| ------------------------------------- | --------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
-| ~~Support de DashScope `scope: 'global'`~~ | ~~0.5j doc + 0.5j A/B~~ | ~~Hit inter-session~~ | **Déjà étudié, conclusion (c) non faisable** (voir §7.4 découverte B résultats). Cette ligne est conservée comme trace de décision, ne pas relancer l'étude |
+**待调研（可能是大鱼）**：
 
-**Modifications moyennes (pas faciles, évaluation séparée)** :
+| 项                                   | 调研投入                 | 潜在收益            | 关键未知                                                                                   |
+| ------------------------------------ | ------------------------ | ------------------- | ------------------------------------------------------------------------------------------ |
+| ~~DashScope `scope: 'global'` 支持~~ | ~~0.5d 文档 + 0.5d A/B~~ | ~~跨 session 命中~~ | **已调研，结论 (c) 不可行**（见 §7.4 发现 B 调研结果）。此行保留作为决策记录，不要重启调研 |
 
-| Élément                              | Effort  | Risque | Bénéfice        |
-| ------------------------------------ | ------- | ------ | --------------- |
-| D1 `skipLlmRound` (scénario requête finale) | 2-3j    | Moyen  | 3-4s/tour final |
-| Découpage des résultats d'outils au tour de résumé (sous-ensemble D5) | 2j      | Moyen  | 1-2s            |
-| État D3 `Summarizing`                | 3-5j    | Moyen  | Amélioration perçue 3s |
-| Régime du prompt système             | 2-3j avec A/B test | Moyen  | 0.5-1s          |
+**中等改造（不算浮油，单独评估）**：
 
-**Directions abandonnées (ne plus faire)** :
+| 项                                | 投入             | 风险 | 收益        |
+| --------------------------------- | ---------------- | ---- | ----------- |
+| D1 `skipLlmRound`（终态查询场景） | 2-3d             | 中   | 3-4s/终态轮 |
+| summary 轮工具结果裁剪（D5 子集） | 2d               | 中   | 1-2s        |
+| D3 `Summarizing` 状态             | 3-5d             | 中   | 感知改善 3s |
+| system prompt 减肥                | 2-3d 含 A/B 测试 | 中   | 0.5-1s      |
 
-| Élément                                     | Raison d'abandon                                                       |
-| ------------------------------------------- | ---------------------------------------------------------------------- |
-| Routage D2 vers modèle rapide               | Annulé par le cache DashScope, bénéfice net proche de 0 ou négatif     |
-| D4 prévalidation                            | Attribution de bénéfice erronée (réellement seulement ~50ms du modèle de planification), 5-7j d'effort pas rentables |
-| Stabilisation du prompt système             | Déjà stable, rien à faire                                              |
-| Terminaison anticipée du flux (abort précoce des formules de fin) | Risque élevé de mauvaise interprétation, l'utilisateur perçoit la réponse coupée |
+**已废弃方向（不要再做）**：
 
-### 7.4 Trois nouvelles découvertes à développer
+| 项                                         | 废弃原因                                               |
+| ------------------------------------------ | ------------------------------------------------------ |
+| D2 fast model 路由                         | 被 DashScope cache 抵消，净收益接近 0 或负             |
+| D4 prevalidate                             | 收益归因错（真实仅 ~50ms 来自调度模型），5-7d 投入不值 |
+| system prompt 稳定化                       | 已稳态，无事可做                                       |
+| 流式提前 terminal（提前 abort 收尾客套话） | 高误判风险，用户感知答案被切断                         |
 
-#### Découverte A : Mécanisme réel de `tool_choice='none'`
+### 7.4 三个值得展开的新发现
 
-Dans l'API OpenAI / DashScope, `tool_choice='none'` n'est pas seulement "interdire l'outil" — la phase de sampling du modèle saute complètement l'allocation de probabilité du token spécial `<tool_call>`, le décodeur suit directement le chemin de génération en langage naturel. Le bénéfice ne vient pas d'"économiser quelques tentatives", mais du sampling lui-même plus rapide.
+#### 发现 A：`tool_choice='none'` 的真实机制
 
-#### Découverte B : `scope: 'global'` déjà un précédent Anthropic dans le dépôt
+OpenAI / DashScope API 里 `tool_choice='none'` 不仅是"禁止调工具"——模型 sampling 阶段会**完全跳过 `<tool_call>` 特殊 token 的概率分配**，decoder 直接走自然语言生成路径。收益不在"省一两次 retry"，而在 sampling 本身更快。
 
-`packages/core/src/core/anthropicContentGenerator/converter.test.ts:85, 1543` contient déjà `cache_control: { type: 'ephemeral', scope: 'global' }`. Mais `provider/dashscope.ts:288` marque cache_control **sans passer scope** :
+#### 发现 B：`scope: 'global'` 在仓库已有 Anthropic 先例
+
+`packages/core/src/core/anthropicContentGenerator/converter.test.ts:85, 1543` 已有 `cache_control: { type: 'ephemeral', scope: 'global' }` 用法。但 `provider/dashscope.ts:288` 标 cache_control 时**没传 scope**：
 
 ```typescript
-cache_control: { type: 'ephemeral' },   // pas de scope
+cache_control: { type: 'ephemeral' },   // 没有 scope
 ```
 
-Si le serveur DashScope reconnaît `scope: 'global'` :
+若 DashScope 服务端识别 `scope: 'global'`：
 
-- system + tools passent en cache global (TTL bien supérieur aux 5min d'ephemeral)
-- **Hit inter-session**, latence de démarrage réduite
-- Ce seul bénéfice pourrait dépasser toutes les hypothèses de bénéfice du D2 original
+- system + tools 升级为 global cache（TTL 远大于 ephemeral 的 5min）
+- **跨 session 命中**，启动延迟也降
+- 单这一条收益可能超过原 D2 全部假设收益
 
-##### Résultats de l'étude (26 mai 2026, conclusion : (c) non faisable, fermer cette piste)
+##### 调研结果（2026-05-26，结论：(c) 不可行，关闭此线）
 
-En consultant la documentation officielle d'Alibaba Cloud Bailian `help.aliyun.com/zh/model-studio/context-cache`, voici la liste des faits :
+通过查阿里云百炼官方文档 `help.aliyun.com/zh/model-studio/context-cache` 得到的事实清单：
 
-| Question                   | Conclusion                                                                                                                                                                                           | Preuve                                               |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Support du champ `scope`   | **Non supporté**. Seul `type: 'ephemeral'` est reconnu, tout `scope`/`persistent`/`global` est silencieusement ignoré                                                                                 | Texte officiel : "Seul le réglage de `type` à `ephemeral` est supporté" |
-| TTL réel d'ephemeral       | **Fenêtre glissante de 5 minutes** (réinitialisée après un hit)                                                                                                                                     | Documentation Bailian clairement indiquée            |
-| Mécanisme long TTL / global | **Aucun mécanisme d'API cloud public**. Pas de valeur `persistent` pour type, pas d'API de préchargement indépendante, pas de `prompt_cache_key` ; le seul produit "persistant global" est le cache de contexte global PAI (auto-déploiement + vLLM + Lingjun + Redis partagé), sans lien avec l'API DashScope | Docs PAI                                           |
-| Partage inter-session      | Même compte + même modèle + contenu correspondant → déjà un hit (c'est ce que fait déjà `ephemeral`) ; jamais partagé entre comptes différents                                                         | Documentation Bailian                               |
-| Tarification               | Cache write 125 %, cache read explicite 10 %, **cache read implicite 20 %** (obtient aussi une remise implicite de 20 % sans marquage `cache_control`)                                               | Documentation tarif Bailian                         |
-| Prompt minimal cachable    | **1024 tokens**                                                                                                                                                                                    | Documentation Bailian                               |
-| Support modèle (cache explicite) | qwen3.7-max / qwen3.6-plus / qwen3.5-plus / qwen3-coder-plus / qwen3-vl-plus / deepseek-v3.2 / kimi-k2.5 / glm-5.1 sont tous listés explicitement. **qwen3.6-plus et qwen3.7-max bénéficient aussi de la remise de 90 % pour cache explicite** | Liste des modèles Bailian (revérifié le 26 mai 2026) |
-**Quelques implications supplémentaires des sous-découvertes** :
+| 问题                   | 结论                                                                                                                                                                                               | 证据                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `scope` 字段支持       | **不支持**。仅识别 `type: 'ephemeral'`，任何 `scope`/`persistent`/`global` 会被 silently dropped                                                                                                   | 官方文档原文："仅支持将 `type` 设置为 `ephemeral`" |
+| ephemeral 实际 TTL     | **5 分钟滑动窗口**（命中后重置）                                                                                                                                                                   | 百炼文档明确说明                                   |
+| 长 TTL / 全局机制      | **无任何公有云 API 端机制**。无 `persistent` type 值、无独立预上传 API、无 `prompt_cache_key`；唯一"全局持久"产品是 PAI 全局上下文缓存（自部署 + vLLM + 灵骏 + 共享 Redis），与 DashScope API 无关 | PAI 文档                                           |
+| 跨 session 共享        | 同账号 + 同模型 + 内容匹配 → 已经命中（这就是 `ephemeral` 已经在做的）；不同账号绝对不共享                                                                                                         | 百炼文档                                           |
+| 定价                   | cache write 125%、显式 cache read 10%、**隐式 cache read 20%**（无 `cache_control` 标记也能拿到隐式 20% 折扣）                                                                                     | 百炼定价文档                                       |
+| 最小可缓存 prompt      | **1024 tokens**                                                                                                                                                                                    | 百炼文档                                           |
+| 模型支持（显式 cache） | qwen3.7-max / qwen3.6-plus / qwen3.5-plus / qwen3-coder-plus / qwen3-vl-plus / deepseek-v3.2 / kimi-k2.5 / glm-5.1 均显式列出。**qwen3.6-plus 与 qwen3.7-max 同样享受 90% 显式 cache 折扣**        | 百炼模型列表（2026-05-26 重核）                    |
 
-1. **Fenêtre glissante TTL** est une bonne nouvelle pour la boucle d'agent – les intervalles d'appels consécutifs dans la boucle sont généralement < 30 s, **le cache reste toujours frais, il n'expire pas après 5 min**
-2. **Remise de 20% du cache implicite** est un bonus gratuit – même sans spécifier `cache_control`, il s'applique ; mais un contrôle fin nécessite un cache explicite
-3. ~~`qwen3.6-plus` n'est pas dans la liste explicite~~ — **Correction (2026-05-26)** : après vérification, qwen3.6-plus **est bien dans la liste du cache explicite**, bénéficiant de 90% de réduction. Le rapport précédent contenait une erreur, déjà corrigée dans le premier tableau de cette section
-4. **La pratique actuelle de `dashscope.ts:288` est déjà la limite des capacités de l'API DashScope Cloud Public** – il n'y a plus de marge d'optimisation
+**几条副发现的连带意义**：
 
-**Confirmation supplémentaire pour la décision D2 en §7.2** :
+1. **TTL 滑动窗口** 对 agent loop 是好消息——loop 内连续调用间隔通常 < 30s，**cache 永远新鲜，不会 5min 失效**
+2. **隐式 cache 20% 折扣** 是免费红利——即使没标 `cache_control` 也能拿；但精细控制需要显式
+3. ~~`qwen3.6-plus` 未在显式列表~~ —— **更正（2026-05-26）**：经重核，qwen3.6-plus **确实在显式 cache 列表里**，享受 90% 折扣。前一轮报告此处错误，已于本节首张表更正
+4. **`dashscope.ts:288` 当前做法已经是 DashScope 公有云 API 的能力上限**——没有继续榨的空间
 
-La fenêtre glissante TTL implique que dans la boucle d'agent, le tour de résumé **a presque 100% de chance de toucher le cache** du primaire (les tours précédents viennent de l'atteindre, dans les 5 min). Passer au modèle rapide D2 non seulement brise la chaîne d'écritures de cache cumulées, **mais fait aussi régresser le tour de résumé de 'presque 100% de hit' à 'complètement miss'** – le jugement de gain net est encore plus clairement négatif que l'hypothèse initiale de §7.2.
+**对 §7.2 D2 判断的连带加强**：
 
-#### Découverte C : La couche de rendu UI est un angle mort négligé
+TTL 滑动窗口意味着 agent loop 内 summary 轮**几乎 100% 命中** primary 的 cache（前几轮刚刚命中过、5min 内）。D2 切 fast model 不仅会打碎累计的 cache 写入链，**还会让 summary 轮从"近 100% 命中"退化为"完全 miss"**——净收益判断比 §7.2 原假设更明确为负。
 
-La baseline §1.2 évaluait la "surcharge du framework" à 0,3 s (3%), mais c'était une estimation grossière. Ink 7 + React 19.2 déclenche setState → re-render pour chaque chunk. Un long résumé cumulé peut atteindre 200-500 ms. Il faut examiner comment `useGeminiStream` traite le flux de tokens, s'il y a `requestAnimationFrame` / `useDeferredValue` pour fusionner les chunks.
+#### 发现 C：UI 渲染层是被忽视的盲区
 
-### 7.5 Checkpoint en attente de données – Quelle décision réexaminer lorsque les données arrivent
+§1.2 基线把"框架开销"标为 0.3s（3%），但这是粗估。Ink 7 + React 19.2 在每个 chunk 触发 setState → re-render，长 summary 累计可能 200-500ms。需要查 `useGeminiStream` 怎么处理 token 流，有没有 `requestAnimationFrame` / `useDeferredValue` 合并 chunk。
 
-Cette section est le **point d'entrée actif de ce document** : dès que des mesures arrivent, consultez le tableau ci-dessous pour décider quelle décision reconsidérer.
+### 7.5 待数据 checkpoint —— 数据到了该看哪个决策
 
-#### Checkpoint 1 : Après obtention des données de taux de hit du cache
+本节是**这份文档的活动入口**：后续有任何度量数据，对照下表决定该回看哪个决策。
 
-**Condition de déclenchement** : La télémétrie du taux de hit du cache est exposée depuis ≥3 jours dans la flaque de surface, les journaux de décision contiennent la distribution `cached_tokens` / `prompt_tokens`.
+#### Checkpoint 1：cache hit rate 数据出来后
 
-**Données à examiner** :
+**触发条件**：浮油"暴露 cache hit rate telemetry"上线 ≥3 天，决策日志含 `cached_tokens` / `prompt_tokens` 分布。
 
-- Distribution P50, P90 du taux de hit global (cached / prompt)
-- Par tour : taux de hit respectifs pour Round 1 / Round 2 / Round 3 (résumé)
-- Taux de hit du tour suivant après déclenchement de `save_memory` (devrait être proche de 0)
-- Taux de hit du tour suivant après changement de `/model` (devrait être proche de 0)
+**该看的数据**：
 
-**Chemin de décision** :
+- 整体命中率（cached / prompt）的 P50、P90 分布
+- 按轮次划分：Round 1 / Round 2 / Round 3 (summary) 各自命中率
+- `save_memory` 触发后下一轮命中率（应该接近 0）
+- `/model` 切换后下一轮命中率（应该接近 0）
 
-| Taux de hit global | Signification | Action |
-|-------------------|---------------|--------|
-| > 70% | L'état actuel est déjà proche de la limite théorique | Faire seulement #1 instructions concises + enquête sur la découverte B ; le reste au besoin |
-| 40-70% | Il reste de la marge mais la source est inconnue | Analyser les taux de hit par tour, identifier où se produisent les miss |
-| < 40% | Un point dynamique casse le cache | Réauditer la fréquence de déclenchement du system prompt / userMemory ; `save_memory` pourrait être plus fréquent que prévu |
+**决策路径**：
 
-#### Checkpoint 2 : Résultat de l'enquête sur la documentation DashScope `scope: 'global'` ✅ Terminé (2026-05-26)
+| 整体命中率 | 含义                 | 行动                                                                        |
+| ---------- | -------------------- | --------------------------------------------------------------------------- |
+| > 70%      | 现状已经接近理论上限 | 只做 #1 简洁指令 + 发现 B 调研；其余浮油按需                                |
+| 40-70%     | 还有空间但来源不明   | 分析按轮次命中率，找出哪一段在 miss                                         |
+| < 40%      | 有动态点在打 cache   | 重新审计 system prompt / userMemory 触发频率；可能 `save_memory` 比预期频繁 |
 
-**Résultat** : **Totalement non reconnu**. Voir le paragraphe "Résultat de l'enquête" de la découverte B en §7.4.
+#### Checkpoint 2：DashScope `scope: 'global'` 文档调研结果 ✅ 已完成（2026-05-26）
 
-**Action déjà exécutée** : Accepter l'état actuel, ignorer ce point. `dashscope.ts:288` garde le marquage `ephemeral` existant, aucune modification nécessaire.
+**结果**：**完全不识别**。详见 §7.4 发现 B 的"调研结果"段。
 
-**Ne pas relancer cette enquête** – sauf annonce officielle de DashScope d'un nouveau mécanisme de persistance.
+**已执行行动**：接受现状，跳过此项。`dashscope.ts:288` 维持现有 `ephemeral` 标记，无需改造。
 
-#### Checkpoint 3 : Résultat de l'enquête sur la couche de rendu UI
+**后续不要重新启动此调研**——除非 DashScope 官方公告新增持久化机制。
 
-**Condition de déclenchement** : Enquête sur la découverte C terminée (examen du traitement du flux de tokens de `useGeminiStream` + mesures réelles avec Ink/React DevTools).
+#### Checkpoint 3：UI 渲染层调研结果
 
-**Chemin de décision** :
+**触发条件**：发现 C 调研完成（看 `useGeminiStream` token 流处理 + Ink/React DevTools 实测）。
 
-| Résultat | Action |
-|----------|--------|
-| Cumul du rendu du long résumé stream > 200 ms | Passer au batching (`useDeferredValue` ou throttling personnalisé) |
-| Coût de rendu < 100 ms | Clore cette piste |
+**决策路径**：
 
-#### Checkpoint 4 : Deuxième mesure de baseline après avoir terminé la "vraie flaque de surface"
+| 结果                               | 行动                                             |
+| ---------------------------------- | ------------------------------------------------ |
+| 长 summary stream 渲染累计 > 200ms | 改用 batching（`useDeferredValue` 或自定义节流） |
+| 渲染开销 < 100ms                   | 关闭此线索                                       |
 
-**Condition de déclenchement** : #1 instructions concises + décisions des Checkpoints 1/2/3 terminées depuis ≥1 semaine.
+#### Checkpoint 4：完成"真·浮油"后的二次基线测量
 
-**Données à examiner** :
+**触发条件**：#1 简洁指令 + Checkpoint 1/2/3 决策完成 ≥1 周。
 
-- Comparaison du temps de réponse P50 de bout en bout avec la baseline d'un seul échantillon de §1.2 (13,4 s)
-- P50 / P95 du tour de résumé seul
-- Taux de relance des utilisateurs (si la flaque A a également inclus la classification des entrées utilisateur)
+**该看的数据**：
 
-**Chemin de décision** :
+- 端到端 RT P50 与 §1.2 单次采样基线（13.4s）对比
+- summary 轮单独的 P50 / P95
+- 用户追问率（如果浮油 A 顺带做了用户输入分类）
 
-| Économie cumulée | Action |
-|------------------|--------|
-| > 4 s (atteindre 9,6 s de P50 bout en bout) | Évaluer D1 `skipLlmRound` (économise encore 3-4 s par tour final) |
-| 2-4 s | Accepter l'état actuel, évaluer si l'amélioration perceptive D3 vaut la peine |
-| < 2 s | Remettre en question : la flaque de surface a-t-elle été surestimée, ou y a-t-il un goulot d'étranglement non identifié (RTT réseau, latence du fournisseur) |
+**决策路径**：
 
-### 7.6 Jugement final des différentes directions de §3
+| 累计节省                     | 行动                                                                          |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| > 4s（达到 9.6s 端到端 P50） | 评估 D1 `skipLlmRound`（再省 3-4s/终态轮）                                    |
+| 2-4s                         | 接受现状，评估 D3 感知改善是否值得做                                          |
+| < 2s                         | 重新审视：是否浮油本身被高估，还是有未识别的瓶颈（网络 RTT、provider 端延迟） |
 
-Basé sur la validation §6 + réorganisation du ROI de cette section :
+### 7.6 与 §3 各方向的最终判定
 
-| Direction | Priorité initiale §3 | Jugement de cette section | Raison |
-|-----------|----------------------|---------------------------|--------|
-| D1 Instructions post-outil | P0 | **P0 conservé**, mais attendre que la flaque de surface soit terminée pour réévaluer | Le ROI est toujours bon, mais ce n'est plus "à faire immédiatement" – d'abord récupérer les flaques moins coûteuses |
-| D2 Routage rapide du résumé | P1 | **Remettre à plus tard / Won't Fix** | Contrebalancé par le cache DashScope, investissement de 14-16 j pour un rendement quasi nul |
-| D3 Découplage d'affichage | P1 | **Conservé comme optionnel**, voir les données du Checkpoint 4 | L'amélioration perceptive est certaine, mais le temps de réponse absolu ne change pas, dépend du comportement utilisateur |
-| D4 Ordonnancement anticipé en streaming | P2 | **Remettre à plus tard** | Le bénéfice est mal attribué, en réalité ~50 ms ne vaut pas 5-7 j |
+基于 §6 验证 + 本节 ROI 重排：
 
-### 7.7 Ordre d'exécution recommandé
+| 方向                 | §3 原优先级 | 本节判定                             | 理由                                               |
+| -------------------- | ----------- | ------------------------------------ | -------------------------------------------------- |
+| D1 工具后置指令      | P0          | **P0 保留**，但等浮油完成后再评估    | ROI 仍然好，但不再"立刻就做"——先把更便宜的浮油拿掉 |
+| D2 summary fast 路由 | P1          | **Defer / Won't Fix**                | 被 DashScope cache 抵消，14-16d 投入换接近 0 收益  |
+| D3 展示解耦          | P1          | **保留为可选**，看 Checkpoint 4 数据 | 感知改善确定，但绝对 RT 不变，依赖用户行为         |
+| D4 流式提前调度      | P2          | **Defer**                            | 收益归因错，真实 ~50ms 不值 5-7d                   |
 
-**Jour 1** (réalisable par une seule personne en un jour) :
+### 7.7 推荐执行顺序
 
-- ✅ Ajouter une instruction de réponse concise dans `prompts.ts` (30 min)
-- ✅ Exposer `cachedContentTokenCount` dans la télémétrie + marquer les changements `save_memory` / `/model` (0,5 j)
-- ✅ Lancer l'enquête sur la découverte B : requête documentaire DashScope `scope: 'global'` + vérification de l'utilisation existante d'Anthropic (0,5 j)
+**Day 1**（可单人单日完成）：
 
-**Jour 2-3** :
+- ✅ `prompts.ts` 加简洁回复指令（30min）
+- ✅ `cachedContentTokenCount` 暴露到 telemetry + `save_memory` / `/model` 切换打标（0.5d）
+- ✅ 启动发现 B 调研：DashScope `scope: 'global'` 文档查询 + 现有 Anthropic 用法对照（0.5d）
 
-- Recueillir les premiers lots de données de taux de hit du cache
-- Lancer l'enquête sur la découverte C : chemin de rendu React de `useGeminiStream`
-- Selon le résultat du Checkpoint 2, décider s'il faut faire la modification `scope: 'global'`
+**Day 2-3**：
 
-**Fin de la semaine 1** :
+- 收第一批 cache hit rate 数据
+- 启动发现 C 调研：`useGeminiStream` 的 React 渲染路径
+- 根据 Checkpoint 2 决定要不要做 `scope: 'global'` 改造
 
-- Décision sur les données du Checkpoint 1 (voir la distribution)
-- Décider s'il faut faire `tool_choice='none'` / désactiver le thinking (selon les données de taux de hit)
+**Week 1 末**：
 
-**Semaine 2-3** :
+- Checkpoint 1 数据决策（看分布）
+- 决定要不要做 `tool_choice='none'` / 关 thinking（根据 hit rate 数据）
 
-- Deuxième mesure de baseline du Checkpoint 4
-- Décider s'il faut lancer D1 (le plus gros élément non-flaque, 3-4 s par tour final)
+**Week 2-3**：
 
-**À ne jamais faire** : D2 / D4 / stabilisation du system prompt.
+- Checkpoint 4 二次基线测量
+- 决定是否启动 D1（最大的非浮油项，3-4s/终态轮）
 
-### 7.8 Audit du contenu dynamique dans `prompts.ts` (2026-05-27)
+**始终不做**：D2 / D4 / system prompt 稳定化。
 
-§7.1 concluait "le system prompt est stable" avec un grep rapide seulement. Cette section est un audit systématique de `packages/core/src/core/prompts.ts` (1169 lignes), dressant une liste comme base pour l'analyse future du taux de hit du cache et les décisions sur les flaques de surface.
+### 7.8 `prompts.ts` 动态内容审计（2026-05-27）
 
-**Méthode d'audit** : Énumérer toutes les expressions d'interpolation `${...}`, les IIFE, les appels `process.*` / `new Date` / `Date.now` / `Math.random` / `fs.*`, et pour chacun, déterminer s'il change ou non au sein d'une même session.
+§7.1 给出 "system prompt 已稳态" 的结论时只做了粗略 grep。本节是对 `packages/core/src/core/prompts.ts`（1169 行）的系统性审计，列清单作为后续 cache 命中率分析与浮油决策的依据。
 
-#### Absence totale (problèmes souvent suspectés)
+**审计方法**：枚举所有 `${...}` 插值表达式、IIFE、`process.*` / `new Date` / `Date.now` / `Math.random` / `fs.*` 调用，对每一处判断"在同一 session 内是否会变化"。
 
-| Candidat | Réalité dans le code |
-|----------|----------------------|
-| `Date.now()` / `new Date()` | **Zéro occurrence** dans tout le fichier (aucune correspondance avec `rg`) |
-| `Math.random()` | **Zéro occurrence** |
-| Valeur de `process.cwd()` écrite dans le prompt | Seulement L366 : `if (isGitRepository(process.cwd())) { ... }`, la valeur **n'est pas écrite dans la chaîne**, sert uniquement de commutateur |
-| Appels de sous-processus git status / git branch | **Zéro occurrence**, la partie git est un texte d'instruction statique |
-| Injection de la liste de fichiers courants / structure du projet | **Zéro occurrence** |
-| État LSP / nombre d'erreurs | **Zéro occurrence** |
-| Historique des entrées utilisateur | **Zéro occurrence** (l'historique passe par messages, pas dans system) |
-#### Une fois au démarrage, inchangé durant la session
+#### 完全没有（常被怀疑的硬伤）
 
-| Emplacement | Contenu                                                                                             | Quand peut-il changer          |
-| ----------- | --------------------------------------------------------------------------------------------------- | ------------------------------ |
-| L190        | `process.env['QWEN_SYSTEM_MD']` détermine la source de basePrompt (par défaut vs system.md utilisateur) | Invariable pendant le processus |
-| L342-343    | `process.env['SANDBOX']` détermine la version de la section sandbox (Seatbelt / Sandbox / Outside) | Invariable pendant le processus |
-| L366        | `isGitRepository(process.cwd())` détermine si la section git est insérée                           | cwd généralement constant dans la session |
-| L871        | `process.env['QWEN_CODE_TOOL_CALL_STYLE']` détermine le style d'appel d'outil (qwen-coder / qwen-vl / general) | Invariable pendant le processus |
+| 候选                               | 代码事实                                                                            |
+| ---------------------------------- | ----------------------------------------------------------------------------------- |
+| `Date.now()` / `new Date()`        | 全文 **零次出现**（`rg` 全无匹配）                                                  |
+| `Math.random()`                    | **零次出现**                                                                        |
+| `process.cwd()` 值写入 prompt      | 仅 L366 `if (isGitRepository(process.cwd())) { ... }`，**值不写入字符串**，只作开关 |
+| git status / git branch 子进程调用 | **零次**，git 段是静态指导文本                                                      |
+| 当前文件列表 / 项目结构注入        | **零次**                                                                            |
+| LSP 状态 / 错误数                  | **零次**                                                                            |
+| 用户输入历史                       | **零次**（history 走 messages，不在 system）                                        |
 
-#### Déclenchement par événement (faible fréquence)
+#### 启动时一次，session 内不变
 
-| Paramètre                                        | Condition de déclenchement                                | Estimation de fréquence |
-| ------------------------------------------------ | --------------------------------------------------------- | ----------------------- |
-| `userMemory` (1er paramètre de `getCoreSystemPrompt`) | Outil `save_memory` / `/memory refresh` / chargement d'extension | 0-3 fois/session        |
-| Nom du modèle (affecte le choix de `getToolCallExamples`) | Changement via `/model`                                   | Rare                    |
-| `appendInstruction`                              | Option de configuration, quasi invariant dans la session  | Presque jamais          |
-| `deferredTools` (`buildDeferredToolsSection`)    | Chargement dynamique des outils MCP                       | Principalement au démarrage de la session |
+| 位置     | 内容                                                                                             | 何时可能变                |
+| -------- | ------------------------------------------------------------------------------------------------ | ------------------------- |
+| L190     | `process.env['QWEN_SYSTEM_MD']` 决定 basePrompt 来源（默认 vs 用户 system.md）                   | 进程内不变                |
+| L342-343 | `process.env['SANDBOX']` 决定 sandbox 段选哪一版（Seatbelt / Sandbox / Outside）                 | 进程内不变                |
+| L366     | `isGitRepository(process.cwd())` 决定 git 段是否插入                                             | cwd 同 session 内通常不变 |
+| L871     | `process.env['QWEN_CODE_TOOL_CALL_STYLE']` 决定 tool call 风格（qwen-coder / qwen-vl / general） | 进程内不变                |
 
-#### Un petit piège discret
+#### 事件触发（低频）
 
-L207-209 : si la variable d'environnement `QWEN_SYSTEM_MD` est définie, **à chaque** appel de `getCoreSystemPrompt`, `fs.readFileSync(systemMdPath)` est exécuté :
+| 参数                                              | 触发条件                                          | 频率估计           |
+| ------------------------------------------------- | ------------------------------------------------- | ------------------ |
+| `userMemory`（`getCoreSystemPrompt` 第 1 参）     | `save_memory` 工具 / `/memory refresh` / 扩展加载 | 0-3 次/session     |
+| `model` 名（影响 `getToolCallExamples` 选哪一支） | `/model` 切换                                     | 罕见               |
+| `appendInstruction`                               | 配置项，session 内基本不变                        | 几乎从不           |
+| `deferredTools`（`buildDeferredToolsSection`）    | MCP 工具动态加载                                  | session 启动期居多 |
+
+#### 一个隐蔽的小坑
+
+L207-209：若设置了 `QWEN_SYSTEM_MD` env，**每次** `getCoreSystemPrompt` 都会 `fs.readFileSync(systemMdPath)`：
 
 ```typescript
 const basePrompt = systemMdEnabled
@@ -1184,14 +1190,14 @@ const basePrompt = systemMdEnabled
   : `...`;
 ```
 
-- Fichier inchangé → contenu stable → hit cache non affecté
-- Mais chaque appel LLM entraîne une E/S synchrone (par défaut `.qwen/system.md`, plus lent sur un montage réseau)
-- N'affecte pas la conclusion de cette section sur le « cache‑friendliness », simplement une petite limitation de performance connue
+- 文件不变时内容稳定 → cache 命中不受影响
+- 但每轮 LLM 调用都有一次同步 IO（默认 `.qwen/system.md`，网络挂载文件会更慢）
+- 不影响本节"cache 友好性"结论，仅作为已知性能小坑记录
 
-#### Conclusions en cascade
+#### 连带结论
 
-1. **Le system prompt produit un résultat byte‑for‑byte identique à chaque fois dans une session stable** → la clé de cache éphémère DashScope (basée sur le hachage du contenu) reste constante → **le taux de hit cache de la section system est pratiquement de 100 %**
-2. Le seul événement qui brise le cache est `save_memory` — fonctionnalité centrale, on ne peut pas la sacrifier pour le cache
-3. **Analyse de coût de l’option n°1 (instruction de réponse concise)** : en ajoutant l’instruction au segment Final Reminder (L389-390) → le contenu du system prompt change une fois → **première requête cache miss (coût de préchauffage unique), toutes les requêtes suivantes continuent de hit**
-4. **Le jugement « stabiliser le system prompt » (mentionné au §7) est désormais officiellement obsolète et soutenu par des preuves** — non seulement ce n’est pas nécessaire, mais même « en théorie cela réduirait encore le taux de cache miss » est faux, car il est déjà ≈ 0
-5. Ce rapport d’audit peut servir de référence de base pour les discussions futures, évitant des `grep` répétés ; si `prompts.ts` subit des modifications importantes, cette section devra être mise à jour en conséquence
+1. **system prompt 在稳态 session 内每次产出 byte-for-byte 一致** → DashScope ephemeral cache key（基于内容 hash）整段稳定 → **system 段 cache 命中率几乎 100%**
+2. 唯一打 cache 的事件是 `save_memory`——核心功能，不能为 cache 让路
+3. **浮油 #1（简洁回复指令）的代价分析**：把指令加到 Final Reminder 段（L389-390）→ system prompt 内容改变一次 → **首次请求 cache miss（一次性预热成本），之后所有请求继续命中**
+4. **§7 的 "system prompt 稳定化" 已废弃判断得到正式证据支持**——不仅没必要做，连"理论上做了能进一步降低 cache miss 率"都不成立，因为本来就 ≈ 0
+5. 本审计可作为后续相关讨论的引用基线，避免重复 grep；若 prompts.ts 有大改动，本节需要同步更新

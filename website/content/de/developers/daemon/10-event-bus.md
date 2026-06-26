@@ -1,42 +1,42 @@
 # SSE Event Bus & Backpressure
 
-## Übersicht
+## Überblick
 
-`EventBus` (`packages/acp-bridge/src/eventBus.ts`) ist der pro-Sitzung arbeitende In-Memory-Pub/Sub, der die SSE-Route `GET /session/:id/events` des Daemons speist. Es weist jedem Ereignis eine monotone ID zu, puffert die letzten Ereignisse in einem begrenzten Ring für `Last-Event-ID`-Wiederholungen, verteilt veröffentlichte Ereignisse an alle Abonnenten, wendet pro-Abonnent Backpressure an (Warnung bei 75% Auslastung der Warteschlange, Räumung bei Erreichen des Limits) und gibt zwei synthetische Terminal-Frames (`client_evicted`, `slow_client_warning`) aus, die vom SDK als erstklassige Ereignisse behandelt werden, die der Bus jedoch **ohne `id`** markiert, sodass sie keinen Slot in der pro-Sitzung-Sequenz belegen.
+Der `EventBus` (`packages/acp-bridge/src/eventBus.ts`) ist der session-bezogene In-Memory-Pub/Sub-Mechanismus, der die SSE-Route `GET /session/:id/events` des Daemons speist. Er weist jedem Ereignis eine monotone ID zu, puffert aktuelle Ereignisse in einem begrenzten Ring für die `Last-Event-ID`-Wiederherstellung, verteilt veröffentlichte Ereignisse an alle Abonnenten, wendet Backpressure pro Abonnent an (Warnung bei 75 % Warteschlangenfüllung, Entfernung bei Erreichen des Limits) und gibt zwei synthetische Terminal-Frames (`client_evicted`, `slow_client_warning`) aus, die vom SDK als erstklassige Ereignisse behandelt werden, vom Bus jedoch **ohne `id`** markiert werden, sodass sie keinen Slot in der sessionspezifischen Sequenz belegen.
 
-`EventBus` ist derzeit paket-privat für `acp-bridge` und wird von der Bridge-Factory über eine geschlossene Instanz pro Sitzung genutzt. Ein zukünftiges Refactoring (in Zeile 150–159 von `eventBus.ts` angekündigt) wird es zu einem grundlegenden Baustein erheben, sodass Kanäle, Dual-Output und zukünftige WebSocket-Transporte denselben Bus abonnieren können, anstatt parallele Streams zu betreiben.
+Der `EventBus` ist derzeit paket-privat für `acp-bridge` und wird von der Bridge-Factory über eine geschlossene Instanz pro Session konsumiert. Ein zukünftiges Refactoring (in Zeile 150–159 von `eventBus.ts` erwähnt) wird es zu einem grundlegenden Baustein erheben, sodass Kanäle, Dual-Output und zukünftige WebSocket-Transporte denselben Bus abonnieren können, anstatt parallele Streams zu betreiben.
 
 ## Verantwortlichkeiten
 
-- Zuweisung monotoner Ereignis-IDs pro Sitzung, beginnend bei 1.
-- Puffern der letzten `ringSize` Ereignisse für die Wiederholung beim Abonnieren mit `lastEventId`.
-- Verteilen veröffentlichter Ereignisse an ≤ `maxSubscribers` gleichzeitige Abonnenten.
-- Anwenden begrenzter Warteschlangen pro Abonnent; Abonnenten mit Überlauf werden durch einen synthetischen `client_evicted`-Terminal-Frame entfernt.
-- Ausgabe von `slow_client_warning` einmal pro Überlauf-Episode bei 75% Auslastung der Warteschlange, mit 37,5% Hysterese, um wiederholte Warnungen zu vermeiden.
-- Schnelles Beenden von Abonnements bei `AbortSignal.abort()`.
-- Sauberes Schließen aller Abonnenten beim Schließen des Busses (z. B. Sitzungsabbau).
-- Kein Werfen von Ausnahmen durch `publish` (der Vertrag lautet: „Publish ist immer sicher aufzurufen“).
+- Zuweisung monotoner Session-Ereignis-IDs beginnend bei 1.
+- Pufferung der letzten `ringSize` Ereignisse für die Wiederherstellung per `subscribe`-mit-`lastEventId`.
+- Verteilung veröffentlichter Ereignisse an ≤ `maxSubscribers` gleichzeitige Abonnenten.
+- Anwendung begrenzter Warteschlangen pro Abonnent; Entfernung überlaufender Abonnenten mit einem synthetischen `client_evicted`-Terminal-Frame.
+- Ausgabe von `slow_client_warning` einmal pro Überlauf-Episode bei 75 % Warteschlangenfüllung mit 37,5 % Hysterese, um wiederholte Warnungen zu verhindern.
+- Saubere Beendigung von Abonnements bei `AbortSignal.abort()`.
+- Ordentliches Schließen jedes Abonnenten beim Schließen des Busses (z. B. Session-Tear-Down).
+- Der `publish`-Vorgang wirft niemals Fehler (der Vertrag lautet: "publish ist immer sicher aufzurufen").
 
 ## Architektur
 
-| Konstante                             | Wert        | Zweck                                                                                             |
-| ------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------- |
-| `EVENT_SCHEMA_VERSION`                | `1`         | Wird auf jedes `BridgeEvent.v` gestempelt; bei Breaking-Änderungen an Frames erhöht.              |
-| `DEFAULT_RING_SIZE`                   | `8000`      | Wiederholungsring pro Sitzung. Operator-Überschreibung über `--event-ring-size`.                  |
-| `DEFAULT_MAX_QUEUED`                  | `256`       | Maximaler Rückstand pro Abonnent.                                                                 |
-| `DEFAULT_MAX_SUBSCRIBERS`             | `64`        | Maximalanzahl an Abonnenten pro Sitzung.                                                          |
-| `WARN_THRESHOLD_RATIO`                | `0.75`      | `slow_client_warning`-Auslöser als Bruchteil von `maxQueued`.                                     |
-| `WARN_RESET_RATIO`                    | `0.375`     | Hysterese-Wiederaktivierungs-Bruchteil.                                                           |
-| `MAX_EVENT_RING_SIZE` (in `bridge.ts`) | `1_000_000` | Weiche Obergrenze für `BridgeOptions.eventRingSize`, um Out-of-Memory-Fehler durch Tippfehler zu verhindern. |
+| Konstante                     | Wert         | Zweck                                                                                                   |
+| ----------------------------- | ------------ | ------------------------------------------------------------------------------------------------------- |
+| `EVENT_SCHEMA_VERSION`        | `1`          | Wird auf jedes `BridgeEvent.v` gestempelt; erhöht bei bahnbrechenden Frame-Änderungen.                  |
+| `DEFAULT_RING_SIZE`           | `8000`       | Session-Wiederherstellungsring. Operator-Override via `--event-ring-size`.                              |
+| `DEFAULT_MAX_QUEUED`          | `256`        | Maximaler Rückstand pro Abonnent.                                                                       |
+| `DEFAULT_MAX_SUBSCRIBERS`     | `64`         | Maximalgrenze für Abonnenten pro Session.                                                               |
+| `WARN_THRESHOLD_RATIO`        | `0.75`       | Auslöser-Schwellwert für `slow_client_warning` (Anteil von `maxQueued`).                                |
+| `WARN_RESET_RATIO`            | `0.375`      | Hysterese-Wiederherstellungsanteil.                                                                     |
+| `MAX_EVENT_RING_SIZE` (in `bridge.ts`) | `1_000_000` | Weiche Obergrenze für `BridgeOptions.eventRingSize`, um durch Tippfehler verursachte Speicherfehler abzufangen. |
 
 ### `BridgeEvent`
 
 ```ts
 interface BridgeEvent {
-  id?: number; // monoton pro Sitzung; fehlt bei synthetischen Terminal-Frames
+  id?: number; // monoton pro Session; fehlt bei synthetischen Terminal-Frames
   v: 1; // EVENT_SCHEMA_VERSION
   type: string; // einer der 43 bekannten Typen oder zukünftig erweiterbar
-  data: unknown; // Nutzlast (typisiert pro Typ durch das SDK; siehe 09-event-schema.md)
+  data: unknown; // Nutzlast (typspezifisch pro Typ durch das SDK; siehe 09-event-schema.md)
   originatorClientId?: string; // gesetzt, wenn das Ereignis von einer mit clientId gestempelten Anfrage stammt
 }
 ```
@@ -45,48 +45,49 @@ interface BridgeEvent {
 
 ```ts
 interface SubscribeOptions {
-  lastEventId?: number; // Wiederholung ab nach dieser ID (Last-Event-ID-Fortsetzung)
+  lastEventId?: number; // Wiederherstellung ab nach dieser ID (Last-Event-ID-Fortsetzung)
   signal?: AbortSignal; // bricht das Abonnement umgehend ab
-  maxQueued?: number; // maximaler Rückstand pro Abonnent; Standard 256
+  maxQueued?: number; // Maximaler Rückstand pro Abonnent; Standard 256
 }
 ```
 
-`subscribe()` gibt ein `AsyncIterable<BridgeEvent>` zurück. Die SSE-Route konsumiert es mit `for await`. Die Registrierung ist **synchron** – zum Zeitpunkt der Rückkehr von `subscribe()` ist der Abonnent bereits angeschlossen, sodass ein `publish()`, das mit dem ersten `next()` des Konsumenten konkurriert, dennoch zugestellt wird.
+`subscribe()` gibt ein `AsyncIterable<BridgeEvent>` zurück. Die SSE-Route konsumiert es mit `for await`. Die Registrierung erfolgt **synchron** – zum Zeitpunkt der Rückkehr von `subscribe()` ist der Abonnent bereits angehängt, sodass ein `publish()`, das mit dem ersten `next()` des Consumers konkurriert, trotzdem zugestellt wird.
 
 ### `BoundedAsyncQueue`
 
-Die warteschlange pro Abonnent. Zwei Schlüsselverhalten:
+Die Warteschlange pro Abonnent. Zwei entscheidende Verhaltensweisen:
 
-- **Das Live-Limit gilt nur für Live-Elemente.** Über `forcePush()` eingefügte Elemente tragen ein `forced: true`-Tag pro Eintrag und zählen nie zu `maxSize`. Dadurch kann der `Last-Event-ID`-Wiederholungspfad hunderte historische Frames in einen frischen Abonnenten mittels force-push einfügen, ohne sofort das Live-Limit zu erreichen und den gerade fortgesetzten Abonnenten zu entfernen.
-- **`liveCount` wird als Feld geführt**, nicht aus der Position von `forcedInBuf` abgeleitet. Die frühere positionsbasierte Heuristik brach, als `slow_client_warning` begann, mittendrin force-pushes durchzuführen (Warnungen gehen ans ENDE der Warteschlange, nicht wie Wiederholungen an den Anfang). Die per-Eintrag `forced`-Tags sind positionsunabhängig.
+- **Live-Cap gilt nur für Live-Elemente.** Elemente, die über `forcePush()` eingefügt werden, tragen ein `forced: true`-Tag pro Eintrag und zählen nie zu `maxSize`. Dadurch kann der `Last-Event-ID`-Wiederherstellungspfad hunderte historischer Frames per Force Push in einen neuen Abonnenten einfügen, ohne sofort das Live-Limit auszulösen und den gerade wiederhergestellten Abonnenten zu entfernen.
+- **`liveCount` wird als Feld geführt**, nicht von der Position `forcedInBuf` abgeleitet. Die frühere positionbasierte Heuristik brach, als `slow_client_warning` begann, mid-stream per Force Push einzufügen (Warnungen kommen ans ENDE der Warteschlange, nicht an den Anfang wie bei Wiederherstellungen). Die eintragsbasierten `forced`-Tags sind positionsunabhängig.
 
-`push(value)` gibt `false` zurück (anstatt zu blockieren oder zu werfen), wenn der Live-Rückstand das Limit erreicht hat – der Bus nutzt dieses Signal, um den Abonnenten zu entfernen. `forcePush(value)` umgeht das Limit. `close({drain?: boolean})` leert standardmäßig ausstehende Elemente; der Abbruch-Pfad übergibt `drain: false`, um sie sofort zu verwerfen.
-## Workflow
+`push(value)` gibt `false` zurück (anstatt zu blockieren oder zu werfen), wenn der Live-Rückstand das Limit erreicht hat – der Bus nutzt dieses Signal, um den Abonnenten zu entfernen. `forcePush(value)` umgeht das Limit. `close({drain?: boolean})` entleert standardmäßig ausstehende Elemente; der Abbruchpfad übergibt `drain: false`, um sie sofort zu verwerfen.
 
-### Veröffentlichen
+## Arbeitsablauf
+
+### Veröffentlichung (Publish)
 
 ```mermaid
 flowchart TD
     P["publish({type, data, originatorClientId?})"] --> C{"bus closed?"}
-    C -->|yes| RU["return undefined"]
-    C -->|no| AID["assign id = nextId++, v = 1"]
+    C -->|ja| RU["return undefined"]
+    C -->|nein| AID["assign id = nextId++, v = 1"]
     AID --> PR["push to ring (shift if > ringSize)"]
     PR --> FAN["snapshot subscribers, for each sub:"]
     FAN --> EVCK{"sub.evicted?"}
-    EVCK -->|yes| NEXT[next subscriber]
-    EVCK -->|no| PUSH["sub.queue.push(event)"]
+    EVCK -->|ja| NEXT[next subscriber]
+    EVCK -->|nein| PUSH["sub.queue.push(event)"]
     PUSH --> OK{"accepted?"}
-    OK -->|no| EVICT["mark evicted; force-push client_evicted; queue.close; sub.dispose"]
-    OK -->|yes| WARN{"!warned && liveSize >= warnThreshold?"}
-    WARN -->|yes| FW["force-push slow_client_warning; warned = true"]
-    WARN -->|no| RES{"warned && liveSize <= warnResetThreshold?"}
-    RES -->|yes| RA["warned = false (hysteresis re-arm)"]
-    RES -->|no| NEXT
+    OK -->|nein| EVICT["mark evicted; force-push client_evicted; queue.close; sub.dispose"]
+    OK -->|ja| WARN{"!warned && liveSize >= warnThreshold?"}
+    WARN -->|ja| FW["force-push slow_client_warning; warned = true"]
+    WARN -->|nein| RES{"warned && liveSize <= warnResetThreshold?"}
+    RES -->|ja| RA["warned = false (Hysterese wiederherstellen)"]
+    RES -->|nein| NEXT
 ```
 
-`publish` wirft niemals einen Fehler. Wenn der Bus während des Veröffentlichens geschlossen wird (der Shutdown-Pfad schließt die Sitzungsbusse, bevor er auf `channel.kill()` wartet), wird `undefined` zurückgegeben – kein Fehlerwurf, da der Agent im kleinen Zeitfenster zwischen Bus-Schließen und Channel-Kill noch `sessionUpdate`-Benachrichtigungen ausgeben kann.
+`publish` wirft niemals Fehler. Das Schließen des Busses während eines laufenden `publish` (der Shutdown-Pfad schließt Session-Busse, bevor `channel.kill()` abgewartet wird) gibt `undefined` zurück, anstatt zu werfen, weil der Agent im kleinen Fenster zwischen Bus-Schließen und Channel-Kill möglicherweise noch `sessionUpdate`-Benachrichtigungen emittiert.
 
-### Abonnieren + Wiedergabe (mit Ring-Verdrängungserkennung)
+### Abonnieren + Wiederherstellung (mit Ring-Entfernungs-Erkennung)
 
 ```mermaid
 sequenceDiagram
@@ -96,21 +97,21 @@ sequenceDiagram
     participant Q as BoundedAsyncQueue
 
     SR->>EB: subscribe({lastEventId: 42, maxQueued: 256, signal})
-    EB->>EB: refuse if subs.size >= maxSubscribers<br/>(throws SubscriberLimitExceededError)
+    EB->>EB: refuse if subs.size >= maxSubscribers<br/>(wirft SubscriberLimitExceededError)
     EB->>Q: new BoundedAsyncQueue(256)
     EB->>EB: subs.add(sub)
     EB->>EB: epochReset = lastEventId >= nextId
-    alt epochReset (old bus epoch)
+    alt epochReset (alte Bus-Epoche)
         EB->>Q: forcePush state_resync_required<br/>{ reason: 'epoch_reset', lastDeliveredId: 42, earliestAvailableId: ring[0]?.id ?? nextId }
-        Note over EB,Q: id-less synthetic, frame goes BEFORE replay.<br/>Replay scans the whole current ring.
-    else same bus epoch
+        Note over EB,Q: id-loser synthetischer Frame, geht VOR der Wiederherstellung.<br/>Wiederherstellung scannt den gesamten aktuellen Ring.
+    else gleiche Bus-Epoche
         EB->>EB: earliestInRing = ring[0]?.id
-        opt earliestInRing > lastEventId + 1 (gap evicted)
+        opt earliestInRing > lastEventId + 1 (Lücke entfernt)
             EB->>Q: forcePush state_resync_required<br/>{ reason: 'ring_evicted', lastDeliveredId: 42, earliestAvailableId: earliestInRing }
-            Note over EB,Q: id-less synthetic, frame goes BEFORE replay.<br/>Stream stays open; SDK reducer flips awaitingResync.
+            Note over EB,Q: id-loser synthetischer Frame, geht VOR der Wiederherstellung.<br/>Stream bleibt offen; SDK-Reducer schaltet awaitingResync um.
         end
     end
-    loop ring scan
+    loop Ringscan
         EB->>EB: for e in ring where e.id > (epochReset ? 0 : 42)
         EB->>Q: forcePush(e)
     end
@@ -119,19 +120,17 @@ sequenceDiagram
     SR->>Q: next() in for-await loop
 ```
 
-Wenn zum Zeitpunkt des Abonnierens `subs.size >= maxSubscribers` ist, wird `SubscriberLimitExceededError` geworfen – die SSE-Route fängt diesen ab und serialisiert einen synthetischen `stream_error`-Frame für den abgelehnten Client, sodass dieser keinen stillen leeren Stream sieht. Die Rückgabe einer leeren iterierbaren Menge würde den Betreibern die Sichtbarkeit nehmen, dass „manche Clients Ereignisse erhalten, manche nicht“ unter Last.
+Wenn zum Zeitpunkt des Abonnierens `subs.size >= maxSubscribers` ist, wird `SubscriberLimitExceededError` geworfen – die SSE-Route fängt ihn ab und serialisiert einen synthetischen `stream_error`-Frame an den abgelehnten Client, damit dieser keinen stillen, leeren Stream sieht. Die Rückgabe eines leeren Iterables würde den Betreibern die Sichtbarkeit nehmen ("einige Clients erhalten Ereignisse, andere nicht" unter Last).
 
-### Ring-Verdrängung → `state_resync_required` (der Wiederherstellungsablauf)
+### Ring-Entfernung → `state_resync_required` (der Wiederherstellungsablauf)
 
-Wenn ein Verbraucher mit `Last-Event-ID: N` erneut verbindet und das früheste überlebende Ereignis im Ring `id > N + 1` hat, wurden die Ereignisse in `[N+1, earliestInRing-1]` verdrängt, bevor der Verbraucher die Verbindung wiederherstellte. Die naive Wiedergabe würde stillschweigend mit einem nicht zusammenhängenden Suffix erfolgreich sein, der SDK-Reduzierer würde weiterhin Deltas anwenden, als wäre der Stream zusammenhängend, und sein Zustand würde von der Wahrheit des Daemons abweichen – ohne terminales Signal.
+Wenn ein Consumer mit `Last-Event-ID: N` wieder verbindet und das früheste noch vorhandene Ereignis im Ring eine `id > N + 1` hat, wurden die Ereignisse in `[N+1, earliestInRing-1]` entfernt, bevor der Consumer wieder verbunden ist. Die naive Wiederherstellung würde stillschweigend mit einem nicht zusammenhängenden Suffix erfolgreich sein, der SDK-Reducer würde weiterhin Deltas anwenden, als ob der Stream zusammenhängend wäre, und sein Zustand würde von der Wahrheit des Daemons abweichen – ohne abschließendes Signal.
 
 Implementiert in `EventBus.subscribe()`:
 
-1. Zuerst wird geprüft: `opts.lastEventId >= this.nextId`. Falls zutreffend, stammt der Client-Cursor
-   aus einer älteren Bus-Epoche (Daemon-Neustart / EventBus-Neuerstellung), daher gibt der
-   Bus `reason: 'epoch_reset'` aus und spielt den gesamten aktuellen Ring erneut ab.
-2. Andernfalls wird `earliestInRing = this.ring[0]?.id` berechnet.
-3. Wenn `earliestInRing > opts.lastEventId + 1`, wird **vor** den Wiedergabe-Frames ein synthetischer Frame per forcePush eingefügt:
+1. Zuerst Prüfung von `opts.lastEventId >= this.nextId`. Wenn wahr, stammt der Client-Cursor aus einer älteren Bus-Epoche (Daemon-Neustart / EventBus-Rekonstruktion), daher emittiert der Bus `reason: 'epoch_reset'` und spielt den gesamten aktuellen Ring ab.
+2. Andernfalls Berechnung von `earliestInRing = this.ring[0]?.id`.
+3. Wenn `earliestInRing > opts.lastEventId + 1`, per Force Push einen synthetischen Frame **vor** den Wiederherstellungsframes einfügen:
    ```jsonc
    {
      "v": 1,
@@ -143,65 +142,66 @@ Implementiert in `EventBus.subscribe()`:
      }
    }
    ```
-4. Danach wird die normale Wiedergabeschleife fortgesetzt.
+4. Danach die normale Wiederherstellungsschleife fortsetzen.
 
-Kritische Verträge (und was die Überprüfung in #4360 korrigiert hat):
+Kritische Verträge (und was die Überprüfung #4360 korrigiert hat):
 
-- **Keine `id`** – dasselbe „kein Slot“-Muster wie bei `client_evicted`, belegt also keinen Slot in der sitzungsspezifischen monotonen Sequenz, die andere Abonnenten beobachten.
-- **Stream bleibt offen** – anders als `client_evicted` (echt terminal) ist `state_resync_required` wiederherstellungsorientiert. Wiedergabe- und Live-Frames fließen danach weiter.
-- **Reduzierer überspringt Deltas automatisch** – die SDK-Seite setzt `awaitingResync = true` und wendet nur `state_resync_required`, die terminalen Frames und Vollzustands-Snapshots an, bis der Consumer-Code `loadSession` aufruft und das Flag löscht. Siehe [`09-event-schema.md`](./09-event-schema.md) für `RESYNC_PASSTHROUGH_TYPES`.
-- **Netzwerkfreundlich** – Frames bleiben auf der Leitung, sodass das SDK später eine „was du verpasst hast“-Differenz berechnen kann, falls gewünscht. Kein zusätzlicher Wiederverbindungszyklus erforderlich.
-### Eviction-Terminal-Fluss
+- **Keine `id`** – gleiches no-slot-Muster wie `client_evicted`, sodass es keinen Slot in der sessionbezogenen monotonen Sequenz belegt, die andere Abonnenten sehen.
+- **Stream bleibt offen** – anders als `client_evicted` (wirklich terminal) ist `state_resync_required` wiederherstellungsorientiert. Wiederherstellungs- und Live-Frames fließen danach weiter.
+- **Reducer überspringt Deltas automatisch** – die SDK-Seite setzt `awaitingResync = true` und wendet nur `state_resync_required`, die Terminal-Frames und Vollzustands-Snapshots an, bis der Consumer-Code `loadSession` aufruft und das Flag löscht. Siehe [`09-event-schema.md`](./09-event-schema.md) für `RESYNC_PASSTHROUGH_TYPES`.
+- **Netzwerkfreundlich** – Frames bleiben auf der Leitung, sodass das SDK später ein "Was du verpasst hast"-Diff berechnen kann, falls gewünscht. Kein zusätzlicher Verbindungszyklus erforderlich.
 
-Wenn der Live-Backlog eines Abonnenten `maxQueued` erreicht hat und der nächste Aufruf von `push()` `false` zurückgibt:
+### Terminaler Ablauf der Entfernung (Eviction)
+
+Wenn der Live-Rückstand eines Abonnenten auf `maxQueued` ist und der nächste `push()` `false` zurückgibt:
 
 1. Setze `sub.evicted = true`.
-2. Erstelle einen `client_evicted`-Frame **ohne `id`** — `{ v: 1, type: 'client_evicted', data: { reason: 'queue_overflow', droppedAfter: <letzte ausgelieferte id> } }`.
-3. `queue.forcePush(evictionFrame)`, sodass der Consumer-Iterator einen terminalen Frame sieht.
-4. `queue.close()`, sodass die Iteration nach dem terminalen Frame beendet wird.
-5. Rufe `sub.dispose()` auf — entfernt aus `subs` und löst den `AbortSignal`-Listener; ohne diese Bereinigung bleiben die Closures von blockierten Consumern aktiv, bis der `AbortSignal`-Garbage-Collection erfolgt.
+2. Erstelle `client_evicted`-Frame **ohne `id`** – `{ v: 1, type: 'client_evicted', data: { reason: 'queue_overflow', droppedAfter: <last delivered id> } }`.
+3. `queue.forcePush(evictionFrame)`, damit der Consumer-Iterator einen terminalen Frame sieht.
+4. `queue.close()`, damit die Iteration nach dem terminalen Frame beendet wird.
+5. Rufe `sub.dispose()` auf – entfernt aus `subs` und löst den `AbortSignal`-Listener; ohne diese Bereinigung bleiben die Closures von blockierten Consumern bis zur Garbage Collection von `AbortSignal` aktiv.
 
-### Abort-Fluss
+### Abbruch-Ablauf (Abort)
 
 `AbortSignal.abort()` → `onAbort()`:
 
-1. `queue.close({drain: false})` — verwirf gepufferte Einträge, damit die SSE-Route keine Events serialisiert, die keiner mehr hört.
-2. `dispose()` — idempotent durch ein `disposed`-Flag.
+1. `queue.close({drain: false})` – verwirft gepufferte Elemente, damit die SSE-Route nicht weiterhin Ereignisse an einen Socket serialisiert, den niemand hört.
+2. `dispose()` – idempotent durch ein `disposed`-Flag.
 
-Bereits abgebrochene Signale rufen zum Zeitpunkt des Abonnierens `onAbort()` synchron auf, bevor der Iterator zurückgegeben wird.
+Bereits abgebrochene Signale zum Zeitpunkt des Abonnierens rufen `onAbort()` synchron auf, bevor der Iterator zurückgegeben wird.
 
 ## Zustand & Lebenszyklus
 
 - `nextId` beginnt bei 1 und wird nur erhöht. Der Getter `lastEventId` gibt `nextId - 1` zurück.
-- `ring` ist begrenzt; Eviction durch Verschieben ist O(n), sobald der Ring voll ist. Bei `ringSize=8000` liegt der Aufwand bei hochfrequenten Sessions im niedrigen Millisekundenbereich – weit unter dem Budget der Frame-Latenz. Eine Umstellung auf einen Ringpuffer wird zurückgestellt, bis Profiling es anzeigt oder Operatoren `--event-ring-size` um eine Größenordnung erhöhen.
-- `close()` setzt `closed`, schließt die Queue jedes Abonnenten und löscht `subs`. Nachfolgende Aufrufe von `publish()` / `subscribe()` sind No-Ops (`publish` gibt `undefined` zurück; `subscribe` gibt `emptyAsyncIterable` zurück).
-- Jede Session besitzt einen eigenen `EventBus`. Das Schließen des Busses erfolgt vor `channel.kill()`, sodass während des Herunterfahrens in Flug befindliche Publikationen `undefined` zurückgeben, anstatt einen Fehler zu werfen.
+- `ring` ist begrenzt; Entfernung durch Shifting ist O(n) sobald voll. Bei `ringSize=8000` liegt das bei hochvolumigen Sessions im niedrigen Millisekundenbereich – weit unter dem Latenzbudget pro Frame. Ein Refactoring zu einem Ringpuffer wird zurückgestellt, bis Profiling es anzeigt oder Betreiber `--event-ring-size` um eine Größenordnung erhöhen.
+- `close()` setzt `closed`, schließt die Warteschlange jedes Abonnenten und leert `subs`. Nachfolgende `publish()` / `subscribe()`-Aufrufe sind No-Ops (`publish` gibt `undefined` zurück; `subscribe` gibt `emptyAsyncIterable` zurück).
+- Jede Session besitzt einen eigenen `EventBus`. Das Schließen des Busses erfolgt vor `channel.kill()`, sodass laufende `publish`-Aufrufe während des Herunterfahrens `undefined` zurückgeben, anstatt zu werfen.
 
 ## Abhängigkeiten
 
-- Wird verwendet von `packages/acp-bridge/src/bridge.ts` (`BridgeClient.sessionUpdate` / `BridgeClient.extNotification` → `events.publish(...)`).
-- Wird verwendet von `packages/cli/src/serve/server.ts` (SSE-Route-Handler → `events.subscribe(...)`, formatiert dann `BridgeEvent` zu SSE-Wire-Frames).
+- Konsumiert von `packages/acp-bridge/src/bridge.ts` (`BridgeClient.sessionUpdate` / `BridgeClient.extNotification` → `events.publish(...)`).
+- Konsumiert von `packages/cli/src/serve/server.ts` (SSE-Route-Handler → `events.subscribe(...)`, formatiert dann `BridgeEvent` in SSE-Wire-Frames).
 - Re-Export-Shim: `packages/cli/src/serve/event-bus.ts` → `@qwen-code/acp-bridge/eventBus`.
 - SDK-Consumer: `packages/sdk-typescript/src/daemon/sse.ts` (`parseSseStream`), dann `asKnownDaemonEvent` (siehe [`09-event-schema.md`](./09-event-schema.md), [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)).
 
 ## Konfiguration
 
-- `--event-ring-size <n>` — Ringtiefe pro Session; soft gedeckelt bei `MAX_EVENT_RING_SIZE = 1_000_000`.
-- Abonnenten-`?maxQueued=N`-Query-Parameter auf `GET /session/:id/events`, Bereich `[16, 2048]`. SDK-Clients prüfen `caps.features.slow_client_warning` vor dem Opt-in.
+- `--event-ring-size <n>` – Ringtiefe pro Session; weich gedeckelt bei `MAX_EVENT_RING_SIZE = 1_000_000`.
+- Subscriber-Query-Parameter `?maxQueued=N` auf `GET /session/:id/events`, Bereich `[16, 2048]`. SDK-Clients prüfen zuerst `caps.features.slow_client_warning`, bevor sie zustimmen.
 - `BridgeOptions.eventRingSize` (überschreibt den Daemon-Standard für eingebettete Nutzung).
 - Capability-Tags: `session_events`, `slow_client_warning`, `typed_event_schema`.
 
-## Hinweise & bekannte Einschränkungen
+## Einschränkungen & bekannte Grenzen
 
-- **Synthtische Frames haben keine `id`.** SDK-Consumer, die `Last-Event-ID` zum Wiederaufnehmen verwenden, protokollieren nur Frames mit IDs; `slow_client_warning`, `client_evicted`, `state_resync_required` und `replay_complete` bewegen den Cursor nicht und verbrauchen keine Sequenznummern der Session. Wenn zwei ID-tragende Live-Frames eine tatsächliche Lücke aufweisen, wird dies über den Ring-Eviction-/Epoch-Reset-Resync-Pfad behandelt und nicht als privater synthetischer Frame.
-- `client_evicted` ist **pro Abonnent**, nicht pro Session. Derselbe Client kann sich erneut verbinden.
-- Der Iterator von `BoundedAsyncQueue` ist **nicht sicher für gleichzeitige Treiber** – zwei gleichzeitige `.next()`-Aufrufe würden um dasselbe Event konkurrieren. Die Daemon-Nutzung ist sequenziell (`for await ... of` im SSE-Route-Handler), daher ist dies in der Produktion sicher.
-- Der Bus ist derzeit package-private; Kanäle und die Web-UI müssen sich über die HTTP-SSE-Route des Daemons abonnieren, nicht direkt auf den Bus zugreifen. Stufe 1.5 wird dies aufheben.
+- **Synthetische Frames haben keine `id`.** SDK-Consumer, die `Last-Event-ID` für die Wiederherstellung verwenden, zeichnen nur Frames mit IDs auf; `slow_client_warning`, `client_evicted`, `state_resync_required` und `replay_complete` bewegen den Cursor nicht und verbrauchen keine sessionspezifischen Sequenznummern. Wenn zwei ID tragende Live-Frames eine echte Lücke aufweisen, behandeln Sie dies über den Ring-Entfernungs-/Epochen-Reset-Resync-Pfad und nicht als privaten synthetischen Frame.
+- `client_evicted` gilt **pro Abonnent**, nicht pro Session. Derselbe Client kann erneut verbinden.
+- Der `BoundedAsyncQueue`-Iterator ist **nicht sicher für gleichzeitige Treiber** – zwei gleichzeitige `.next()`-Aufrufe würden um dasselbe Ereignis konkurrieren. Die Daemon-Nutzung ist sequentiell (`for await ... of` im SSE-Route-Handler), daher ist dies in der Produktion sicher.
+- Der Bus ist derzeit paket-privat; Kanäle und die Weboberfläche müssen über die HTTP-SSE-Route des Daemons abonnieren, nicht direkt auf den Bus zugreifen. Stufe 1.5 wird dies beheben.
 
 ## Referenzen
 
 - `packages/acp-bridge/src/eventBus.ts` (gesamte Datei)
-- `packages/acp-bridge/src/bridge.ts` (Publish-Stellen, insb. `BridgeClient.sessionUpdate` und die F3-Berechtigungs-Events)
-- `packages/cli/src/serve/server.ts` (SSE-Route-Handler – formatiert `BridgeEvent` zu SSE-Wire-Frames)
-- `packages/sdk-typescript/src/daemon/sse.ts` (SSE-Wire-Parser auf Client-Seite)
-- Wire-Referenz: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md) (Der `Last-Event-ID`-Wiederaufnahme-Vertrag).
+- `packages/acp-bridge/src/bridge.ts` (Publish-Stellen, insb. `BridgeClient.sessionUpdate` und die F3-Berechtigungsereignisse)
+- `packages/cli/src/serve/server.ts` (SSE-Route-Handler – formatiert `BridgeEvent` in Wire-SSE)
+- `packages/sdk-typescript/src/daemon/sse.ts` (SSE-Wire-Parser auf der Client-Seite)
+- Wire-Referenz: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md) (der `Last-Event-ID`-Wiederherstellungsvertrag).

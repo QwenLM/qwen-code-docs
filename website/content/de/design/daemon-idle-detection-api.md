@@ -1,41 +1,41 @@
-# Design der Leerlauferkennungs-API des Daemons
+# Entwurf der Daemon-Leerlauferkennungsschnittstelle
 
 ## Hintergrund
 
 ### Problem
 
-Der Qwen-Daemon wird auf mehreren Maschinen als langlaufender Dienst bereitgestellt. Wenn der Daemon längere Zeit keine Aufgaben ausführt, ist es Verschwendung, weiterhin Maschinenressourcen zu belegen. Ein externer Scheduler (K8s HPA / benutzerdefinierter Scaler) benötigt ein zuverlässiges Signal, um zu entscheiden, ob der Daemon im Leerlauf ist, um ihn für die Skalierung herunterzufahren.
+Der Qwen-Daemon wird auf mehreren Maschinen als langlebiger Dienst bereitgestellt. Wenn der Daemon über einen längeren Zeitraum keine Aufgaben ausführt, ist es eine Verschwendung, weiterhin Maschinenressourcen zu belegen. Ein externer Scheduler (K8s HPA / benutzerdefinierter Scaler) benötigt ein zuverlässiges Signal, um zu erkennen, ob sich der Daemon im Leerlauf befindet, damit eine Skalierung nach unten und Freigabe der Ressourcen vorgenommen werden kann.
 
-### Aktueller Stand
+### Aktuelle Situation
 
 Derzeit verfügbare Schnittstellen:
 
-| Schnittstelle                    | Rückgabeinformationen                               | Einschränkungen                                                           |
-| -------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------- |
-| `GET /health?deep=true`          | `{ sessions, pendingPermissions }`                  | Nur Anzahl der Sessions, kann nicht unterscheiden zwischen "Session im Leerlauf" und "Session arbeitet" |
-| `GET /workspace/:cwd/sessions`   | Für jede Session `hasActivePrompt` + `clientCount`  | Erfordert eine zusätzliche Anfrage, keine zeitliche Dimension (wie lange inaktiv?) |
+| Schnittstelle                     | Rückgabeinformationen                           | Einschränkungen                                                                                          |
+| --------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `GET /health?deep=true`           | `{ sessions, pendingPermissions }`              | Enthält nur die Anzahl der Sessions, kann nicht zwischen "Session hat Leerlauf" und "Session arbeitet" unterscheiden |
+| `GET /workspace/:cwd/sessions`    | `hasActivePrompt` + `clientCount` pro Session   | Erfordert eine zusätzliche Anfrage und liefert keine Zeitdimension (wie lange keine Aktivität?)          |
 
-**Kernlücken**:
+**Wesentliche Lücken**:
 
-1. Kein aggregiertes Indikator für "aktive Prompts"
-2. Kein "letzter Aktivitätszeitpunkt", externe Systeme müssen selbst einen Zustandsautomaten zur Berechnung der Leerlaufdauer pflegen
-3. Keine Offenlegung der SSE-Verbindungsanzahl (wird intern als `activeSseCount` verwaltet, aber `/health` gibt sie nicht zurück)
-4. Keine Offenlegung des Kanal- (Agent-Subprozess-) Lebendstatus
+1. Keine aggregierte Metrik für "aktive Prompt-Ausführungen"
+2. Keine "letzte Aktivitätszeit" – externe Systeme müssten selbst eine Zustandsmaschine verwalten, um die Leerlaufdauer zu berechnen
+3. Keine Offenlegung der Anzahl der SSE-Verbindungen (wird intern bereits als `activeSseCount` geführt, aber nicht in `/health` zurückgegeben)
+4. Keine Offenlegung des Aktivitätsstatus von Channels (Agent-Unterprozessen)
 
 ## Designziele
 
-Bereitstellung einer Schnittstelle, die mit **einem einzigen HTTP-Aufruf** die Leerlaufbeurteilung ermöglicht:
+Bereitstellung einer Schnittstelle, die **mit einem einzigen HTTP-Aufruf** eine Leerlaufbewertung ermöglicht:
 
-- Externer Scheduler kann mit einem GET entscheiden, ob freigegeben werden kann
-- Unterstützt Zeitdimension (wie lange im Leerlauf), vermeidet externe Zustandsverwaltung
-- Rückwärtskompatibel zum bestehenden `/health`-Verhalten
-- Null zusätzliche Abhängigkeiten, Nutzung bestehender interner Zustände
+- Ein externer Scheduler kann mit einem GET-Aufruf entscheiden, ob der Daemon freigegeben werden kann
+- Unterstützung der Zeitdimension (wie lange läuft der Leerlauf?), damit keine externe Zustandsverwaltung nötig ist
+- Abwärtskompatibilität zum bestehenden `/health`-Verhalten
+- Keine zusätzlichen Abhängigkeiten – Nutzung bereits vorhandener interner Zustände
 
 ## Lösung
 
-### Erweiterung der Antwort von `GET /health?deep=true`
+### Erweiterte Antwort von `GET /health?deep=true`
 
-Füge Felder zur bestehenden Antwort von `/health?deep=true` hinzu:
+In der bestehenden Antwort von `/health?deep=true` werden folgende Felder ergänzt:
 
 ```jsonc
 // GET /health?deep=true
@@ -47,51 +47,51 @@ Füge Felder zur bestehenden Antwort von `/health?deep=true` hinzu:
   "pendingPermissions": 0,
 
   // --- Neue Felder ---
-  "activePrompts": 1, // Anzahl der Sessions, die gerade einen Prompt ausführen
-  "connectedClients": 3, // Aktive SSE-Verbindungen
-  "channelAlive": true, // Lebt der Agent-Subprozess?
+  "activePrompts": 1,          // Anzahl der Sessions, die gerade einen Prompt ausführen
+  "connectedClients": 3,       // Aktive SSE-Verbindungen
+  "channelAlive": true,        // Agent-Unterprozess lebt
   "lastActivityAt": "2026-06-10T08:30:00.000Z", // Zeitstempel der letzten Aktivität (ISO 8601)
-  "idleSinceMs": 120000, // Millisekunden seit der letzten Aktivität
+  "idleSinceMs": 120000,       // Millisekunden seit der letzten Aktivität
 }
 ```
 
 ### Felddefinitionen
 
-| Feld                | Typ                | Bedeutung                                                                                             |
-| ------------------- | ------------------ | ----------------------------------------------------------------------------------------------------- |
-| `activePrompts`     | `number`           | Anzahl der Sessions mit `promptActive === true`                                                        |
-| `connectedClients`  | `number`           | Anzahl aktuell aktiver SSE-Verbindungen (bereits vorhanden `activeSseCount`)                          |
-| `channelAlive`      | `boolean`          | Ob der Agent-Subprozess noch lebt (bereits vorhanden `bridge.isChannelLive()`)                        |
-| `lastActivityAt`    | `string \| null`   | ISO-Zeitstempel des letzten Prompt-Starts oder -Endes; `null`, wenn seit Daemon-Start nie ein Prompt stattfand |
-| `idleSinceMs`       | `number \| null`   | `Date.now() - lastActivityAt`; `null`, wenn keine Aktivitätsaufzeichnung                              |
+| Feld                | Typ              | Bedeutung                                                                             |
+| ------------------- | ---------------- | ------------------------------------------------------------------------------------- |
+| `activePrompts`     | `number`         | Anzahl der Sessions, bei denen `promptActive === true` gilt                           |
+| `connectedClients`  | `number`         | Aktuelle Anzahl der aktiven SSE-Verbindungen (bereits vorhanden als `activeSseCount`) |
+| `channelAlive`      | `boolean`        | Gibt an, ob der Agent-Unterprozess läuft (bereits vorhanden via `bridge.isChannelLive()`) |
+| `lastActivityAt`    | `string \| null` | ISO-Zeitstempel des letzten Beginns oder Abschlusses eines Prompts; `null`, wenn seit Daemon-Start nie ein Prompt ausgeführt wurde |
+| `idleSinceMs`       | `number \| null` | `Date.now() - lastActivityAt`; `null`, wenn keine Aktivität aufgezeichnet wurde       |
 
-### Definition von "Aktivität"
+### Definition von „Aktivität“
 
-Folgende Ereignisse gelten als "Aktivität" und aktualisieren `lastActivityAt`:
+Die folgenden Ereignisse gelten als „Aktivität“ und setzen `lastActivityAt` zurück:
 
-- Prompt beginnt Ausführung (`promptActive` wechselt von false → true)
-- Prompt wird beendet/schließt fehl (`promptActive` wechselt von true → false)
+- Prompt-Ausführung beginnt (`promptActive` wechselt von false → true)
+- Prompt-Ausführung endet/schlägt fehl (`promptActive` wechselt von true → false)
 - Neue Session wird erstellt (`spawnOrAttach` erfolgreich)
 - Session wird wiederhergestellt/geladen (`loadSession` / `resumeSession` erfolgreich)
 
-**Nicht** als Aktivität gewertet (um Fehlinterpretationen zu vermeiden):
+**Nicht** als Aktivität betrachtete Ereignisse (um Fehlinterpretationen zu vermeiden):
 
-- SSE-Verbindung auf-/abbauen
-- Heartbeat
-- `/health`-Anfrage selbst
-- Permission-Anfrage/-Antwort
+- SSE-Verbindungsaufbau/-abbau
+- Heartbeats
+- `/health`-Aufrufe selbst
+- Permission-Anfragen/-Antworten
 
-### Leerlauf-Erkennungsregeln (als Referenz für externen Scheduler)
+### Regeln zur Leerlauferkennung (zur Referenz für externe Scheduler)
 
 ```python
 def should_reclaim(health, idle_threshold_ms=300_000):
-    """Empfohlene Freigabebedingung: Leerlauf länger als Schwellwert (Standard 5 Minuten)"""
+    """Suggested reclaim condition: idle more than threshold (default 5 min)"""
     if health["activePrompts"] > 0:
-        return False  # Aufgabe läuft
+        return False  # Tasks laufen
     if health["connectedClients"] > 0:
         return False  # Clients sind verbunden
     if health["idleSinceMs"] is None:
-        # Noch nie aktiv — möglicherweise frisch gestarteter Cold Daemon
+        # Nie Aktivität gehabt – möglicherweise ein frisch gestarteter Cold-Daemon
         return True
     return health["idleSinceMs"] >= idle_threshold_ms
 ```
@@ -106,13 +106,13 @@ Im Interface `AcpSessionBridge` neu hinzufügen:
 /** Anzahl der Sessions, die gerade einen Prompt ausführen */
 get activePromptCount(): number;
 
-/** Zeitstempel der letzten Aktivität (epoch ms), null falls noch nie aktiv */
+/** Zeitstempel der letzten Aktivität (epoch ms), null bedeutet nie Aktivität gehabt */
 get lastActivityAt(): number | null;
 ```
 
 ### 2. `packages/acp-bridge/src/bridge.ts`
 
-Innerhalb der Factory-Funktion `createAcpSessionBridge`:
+In der Factory-Funktion `createAcpSessionBridge`:
 
 ```typescript
 // Neue Zustandsverfolgung
@@ -125,12 +125,12 @@ function touchActivity(): void {
 
 `touchActivity()` an folgenden Stellen aufrufen:
 
-- `entry.promptActive = true` (ca. Zeile 2528) — Prompt start
-- `entry.promptActive = false` (ca. Zeile 2551, 2559) — Prompt Ende
-- Nach erfolgreichem `doSpawn` einer Session (ca. Zeile 1906)
+- `entry.promptActive = true` (~ Zeile 2528) – Prompt startet
+- `entry.promptActive = false` (~ Zeile 2551, 2559) – Prompt endet
+- Nach erfolgreichem `doSpawn` (Session erstellt) – etwa bei Zeile 1906
 - Nach erfolgreichem `restoreSession`
 
-Im zurückgegebenen Objekt offenlegen:
+Im zurückgegebenen Objekt bereitstellen:
 
 ```typescript
 get activePromptCount() {
@@ -148,7 +148,7 @@ get lastActivityAt() {
 
 ### 3. `packages/cli/src/serve/server.ts`
 
-`healthHandler` (ca. Zeile 803) im `deep`-Zweig ändern:
+`healthHandler` (~ Zeile 803) im `deep`-Zweig anpassen:
 
 ```typescript
 const healthHandler = (req: Request, res: Response): void => {
@@ -182,41 +182,42 @@ const healthHandler = (req: Request, res: Response): void => {
   }
 };
 ```
+
 ### 4. `packages/cli/src/serve/server.test.ts`
 
-Neue Testfälle decken ab:
+Neue Testfälle hinzufügen, die Folgendes abdecken:
 
-- `/health?deep=true` gibt die Korrektheit der neuen Felder zurück
-- Ohne Session: `activePrompts === 0`, `idleSinceMs === null`
-- Während der Prompt-Ausführung: `activePrompts > 0`, `idleSinceMs` wird kontinuierlich aktualisiert
+- Korrekte Rückgabe der neuen Felder in `/health?deep=true`
+- Bei keiner Session: `activePrompts === 0`, `idleSinceMs === null`
+- Während der Prompt-Ausführung: `activePrompts > 0`, `idleSinceMs` wird ständig aktualisiert
 - Nach Abschluss des Prompts: `idleSinceMs` beginnt zu steigen
 
 ### 5. `packages/acp-bridge/src/bridge.test.ts`
 
-Neue Testfälle decken ab:
+Neue Testfälle hinzufügen, die Folgendes abdecken:
 
-- Änderungen des `activePromptCount`-Werts im Lebenszyklus eines Prompts
-- `lastActivityAt` wird nach jedem Aktivitätsereignis aktualisiert
-- Korrekte Akkumulation von `activePromptCount` bei parallelen Sessions
+- Werteveränderungen von `activePromptCount` im Lebenszyklus eines Prompts
+- Aktualisierung von `lastActivityAt` nach verschiedenen Aktivitätsereignissen
+- Korrekte Summierung von `activePromptCount` bei parallelen Sessions
 
-## Dateiänderungsübersicht
+## Dateiänderungsliste
 
-| Datei                                     | Änderungstyp       | Beschreibung                                                 |
-| ---------------------------------------- | ------------------ | ------------------------------------------------------------ |
-| `packages/acp-bridge/src/bridgeTypes.ts` | Schnittstellenerw. | Neue Eigenschaften `activePromptCount`, `lastActivityAt`      |
-| `packages/acp-bridge/src/bridge.ts`      | Logikimplementierung | Neue `lastActivityTimestamp`-Verfolgung + Getter              |
-| `packages/cli/src/serve/server.ts`       | HTTP-Antwort-Erw.  | `/health?deep=true` um neue Felder erweitert                  |
-| `packages/cli/src/serve/server.test.ts`  | Test               | Neue Felder der Health-Schnittstelle abgedeckt                |
-| `packages/acp-bridge/src/bridge.test.ts` | Test               | Neue Bridge-Eigenschaften abgedeckt                           |
+| Datei                                    | Änderungsart   | Beschreibung                                                                 |
+| ---------------------------------------- | -------------- | ---------------------------------------------------------------------------- |
+| `packages/acp-bridge/src/bridgeTypes.ts` | Schnittstellen-Erweiterung | Neue Eigenschaften `activePromptCount` und `lastActivityAt` hinzugefügt      |
+| `packages/acp-bridge/src/bridge.ts`      | Logik-Implementierung      | Neue Verfolgung von `lastActivityTimestamp` + Getter                         |
+| `packages/cli/src/serve/server.ts`       | HTTP-Antwort-Erweiterung   | `/health?deep=true` gibt neue Felder zurück                                 |
+| `packages/cli/src/serve/server.test.ts`  | Tests         | Neue Abdeckung der Health-Endpunkt-Felder                                    |
+| `packages/acp-bridge/src/bridge.test.ts` | Tests         | Neue Abdeckung der Bridge-Eigenschaften                                      |
 
 ## Kompatibilität
 
-- **Rückwärtskompatibel**: Neue Felder werden hinzugefügt, keine vorhandenen Felder werden geändert oder gelöscht
-- **`GET /health` (nicht deep)**: Verhalten unverändert, gibt weiterhin nur `{ "status": "ok" }` zurück
-- **OTel Gauge**: Vorhandene `registerDaemonGaugeCallbacks` können optional später einen `activePrompts`-Gauge hinzufügen, dies ist jedoch nicht Teil dieses Umfangs
+- **Abwärtskompatibel**: Neue Felder werden angehängt, keine vorhandenen Felder werden geändert oder gelöscht
+- **`GET /health` (nicht deep)**: Verhalten bleibt unverändert – es wird nur `{ "status": "ok" }` zurückgegeben
+- **OTel-Gauge**: Der bestehende `registerDaemonGaugeCallbacks` kann optional später um einen `activePrompts`-Gauge erweitert werden, liegt aber nicht im Umfang dieses Changes
 
-## Zukünftige Erweiterungen (nicht Teil dieses Umfangs)
+## Zukünftige Erweiterungen (nicht in diesem Umfang)
 
-1. **Automatisches Herunterfahren**: Daemon erhält Parameter `--auto-shutdown-idle-ms`, wird nach Leerlauf-Timeout selbstständig beendet (geeignet für systemd/K8s-Pod-Szenarien)
-2. **Offenlegung von OTel-Metriken**: `activePrompts` und `idleSinceMs` als Gauge im OTel-Meter registrieren
-3. **Webhook-Callback**: Bei Überschreitung der Leerlaufschwelle werden Ereignisse aktiv an ein externes System gesendet
+1. **Automatisches Herunterfahren**: Daemon-interner Parameter `--auto-shutdown-idle-ms`, der bei Überschreiten der Leerlaufzeit den Daemon selbstständig beendet (geeignet für systemd/K8s-Pod-Szenarien)
+2. **OTel-Metrik-Export**: `activePrompts` und `idleSinceMs` als Gauge beim OTel-Meter registrieren
+3. **Webhook-Callback**: Bei Überschreiten der Leerlaufschwelle ein Ereignis aktiv an ein externes System senden

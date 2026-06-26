@@ -1,27 +1,27 @@
-# PRD: Custom API Key Auth Wizard
+# PRD zum Assistenten für die Einrichtung benutzerdefinierter API-Schlüssel
 
 ## Zusammenfassung
 
-Verbesserung des Ablaufs `/auth -> API Key -> Custom API Key`, indem der bisherige rein dokumentationsbasierte Bildschirm durch einen interaktiven Einrichtungsassistenten im Terminal für benutzerdefinierte API-Anbieter ersetzt wird.
+Verbessere die `/auth -> API-Key -> Benutzerdefinierter API-Key`-Erfahrung, indem der aktuelle dokumentationsbasierte Bildschirm durch einen interaktiven Einrichtungsassistenten für benutzerdefinierte API-Anbieter ersetzt wird.
 
-Qwen Code unterstützt mehrere API-Protokolle über die Schlüssel `authType` / `modelProviders`, darunter `openai`, `anthropic` und `gemini`. Daher sollte der Assistent für die benutzerdefinierte Einrichtung zunächst die Benutzer auffordern, das Protokoll auszuwählen, und anschließend Endpunkt-, Schlüssel- und Modellinformationen für dieses Protokoll erfassen.
+Qwen Code unterstützt mehrere API-Protokolle über die Schlüssel `authType` / `modelProviders`, darunter `openai`, `anthropic` und `gemini`. Daher sollte der Assistent für benutzerdefinierte Einrichtungen zunächst den Benutzer auffordern, das Protokoll auszuwählen, und dann Endpunkt-, Schlüssel- und Modellinformationen für dieses Protokoll sammeln.
 
-Der Assistent führt Benutzer durch:
+Der Assistent führt den Benutzer durch:
 
 ```text
-Protokoll auswählen → Basis-URL eingeben → API-Schlüssel eingeben → Modell-IDs eingeben → JSON prüfen → Speichern + authentifizieren
+Protokoll auswählen → Basis-URL eingeben → API-Key eingeben → Modell-IDs eingeben → JSON überprüfen → Speichern + authentifizieren
 ```
 
-Dies hält die Einrichtung des benutzerdefinierten API-Schlüssels innerhalb von Qwen Code, reduziert die Notwendigkeit, `settings.json` manuell zu bearbeiten, und macht die endgültige Konfiguration transparent, indem das generierte JSON vor dem Speichern angezeigt wird.
+Dies hält die Einrichtung benutzerdefinierter API-Schlüssel innerhalb von Qwen Code, reduziert die Notwendigkeit, `settings.json` manuell zu bearbeiten, und macht die endgültige Konfiguration transparent, indem das erzeugte JSON vor dem Speichern angezeigt wird.
 
 ## Hintergrund
 
-Derzeit zeigt die Auswahl von `Custom API Key` in `/auth` einen statischen Informationsbildschirm:
+Derzeit zeigt die Auswahl von `Benutzerdefinierter API-Key` in `/auth` einen statischen Informationsbildschirm:
 
 ```text
 Benutzerdefinierte Konfiguration
 
-Sie können Ihren API-Schlüssel und Ihre Modelle in settings.json konfigurieren
+Sie können Ihren API-Key und Ihre Modelle in settings.json konfigurieren
 
 Weitere Anweisungen finden Sie in der Dokumentation
 https://qwenlm.github.io/qwen-code-docs/de/users/configuration/model-providers/
@@ -29,77 +29,77 @@ https://qwenlm.github.io/qwen-code-docs/de/users/configuration/model-providers/
 Esc zum Zurückgehen
 ```
 
-Dies erfordert, dass Benutzer die CLI verlassen, die Dokumentation lesen, `settings.json` verstehen, `modelProviders` manuell konfigurieren, einen `envKey` auswählen, API-Schlüssel hinzufügen und dann zu Qwen Code zurückkehren. Benutzer haben berichtet, dass dieser Ablauf schwierig und vom restlichen `/auth`-Erlebnis losgelöst ist.
+Dies erfordert, dass der Benutzer die CLI verlässt, Dokumentation liest, `settings.json` versteht, `modelProviders` manuell konfiguriert, einen `envKey` auswählt, API-Keys hinzufügt und dann zu Qwen Code zurückkehrt. Benutzer haben berichtet, dass dieser Ablauf schwierig und vom Rest der `/auth`-Erfahrung losgelöst ist.
 
-Der bestehende Pfad für den ModelStudio Standard API-Schlüssel bietet bereits einen geführten Einrichtungsablauf:
+Der aktuelle Pfad für den Standard-API-Key von ModelStudio bietet bereits eine geführte Einrichtung:
 
 ```text
-Alibaba Cloud ModelStudio Standard API-Schlüssel
+Alibaba Cloud ModelStudio Standard API-Key
 └─ Region auswählen
-   └─ API-Schlüssel eingeben
+   └─ API-Key eingeben
       └─ Modell-IDs eingeben
          └─ Speichern + authentifizieren
 ```
 
-Die Einrichtung eines benutzerdefinierten API-Schlüssels sollte ein ähnlich geführtes Erlebnis bieten, dabei aber berücksichtigen, dass Qwen Code mehrere Anbieterprotokolle unterstützt.
+Die Einrichtung benutzerdefinierter API-Schlüssel sollte eine ähnlich geführte Erfahrung bieten, dabei aber berücksichtigen, dass Qwen Code mehrere Anbieterprotokolle unterstützt.
 
 ## Problemstellung
 
-Der Pfad für benutzerdefinierte API-Schlüssel endet derzeit in einer Sackgasse innerhalb von `/auth`:
+Der Pfad für benutzerdefinierte API-Schlüssel ist derzeit eine Sackgasse innerhalb von `/auth`:
 
 ```text
 /auth
 └─ Authentifizierungsmethode auswählen
    ├─ Alibaba Cloud Coding Plan
-   ├─ API-Schlüssel
-   │  └─ API-Schlüsseltyp auswählen
-   │     ├─ Alibaba Cloud ModelStudio Standard API-Schlüssel
+   ├─ API-Key
+   │  └─ API-Key-Typ auswählen
+   │     ├─ Alibaba Cloud ModelStudio Standard API-Key
    │     │  ├─ Region auswählen
-   │     │  ├─ API-Schlüssel eingeben
+   │     │  ├─ API-Key eingeben
    │     │  ├─ Modell-IDs eingeben
    │     │  └─ Speichern + authentifizieren
    │     │
-   │     └─ Benutzerdefinierter API-Schlüssel
-   │        └─ Nur Dokumentationsbildschirm
+   │     └─ Benutzerdefinierter API-Key
+   │        └─ Nur-Dokumentationsbildschirm
    │
    └─ Qwen OAuth
 ```
 
 Dies verursacht mehrere Benutzerfreundlichkeitsprobleme:
 
-- Benutzer können die Einrichtung eines benutzerdefinierten Anbieters nicht von `/auth` aus abschließen.
-- Benutzer müssen Low-Level-Konfigurationskonzepte verstehen, bevor sie sich authentifizieren können.
+- Benutzer können die Einrichtung benutzerdefinierter Anbieter nicht von `/auth` aus abschließen.
+- Benutzer müssen Low-Level-Einstellungskonzepte verstehen, bevor sie sich authentifizieren können.
 - Benutzer wissen möglicherweise nicht, welche Felder erforderlich sind: `authType`, `baseUrl`, `envKey`, `modelProviders`, `model.name` und `security.auth.selectedType`.
-- Benutzer könnten versehentlich mit vorhandenen Umgebungsvariablen in Konflikt geraten oder eine bestehende Anbieterkonfiguration überschreiben.
-- Nach manueller Bearbeitung der Einstellungen erhalten Benutzer keine sofortige Authentifizierungsrückmeldung.
+- Benutzer könnten versehentlich mit vorhandenen Umgebungsvariablen kollidieren oder bestehende Anbieterkonfigurationen überschreiben.
+- Benutzer erhalten nach dem manuellen Bearbeiten der Einstellungen kein sofortiges Authentifizierungsfeedback.
 
 ## Ziele
 
 1. Benutzern ermöglichen, einen benutzerdefinierten API-Anbieter vollständig innerhalb von `/auth` zu konfigurieren.
-2. Die wichtigsten Protokolle unterstützen, die Qwen Code in `modelProviders` unterstützt: `openai`, `anthropic` und `gemini`.
-3. Den Ablauf nah am bestehenden ModelStudio Standard-Ablauf halten.
-4. `baseUrl` als das benutzerdefinierte Äquivalent zu `region` behandeln.
+2. Die wichtigsten von Qwen Code in `modelProviders` unterstützten Protokolle unterstützen: `openai`, `anthropic` und `gemini`.
+3. Den Ablauf nah am bestehenden ModelStudio-Standardablauf halten.
+4. `baseUrl` als das Äquivalent des benutzerdefinierten Anbieters zur Regionsauswahl behandeln.
 5. Automatisch einen von Qwen verwalteten privaten `envKey` aus dem ausgewählten Protokoll und der eingegebenen `baseUrl` generieren.
-6. Den API-Schlüssel unter `settings.json.env` speichern, konsistent mit dem aktuellen, von Qwen verwalteten Anmeldedatenmuster.
-7. Konflikte mit Shell-Umgebungsvariablen des Benutzers vermeiden, indem ein von Qwen spezifisch generierter Schlüsselname verwendet wird.
-8. Das generierte JSON vor dem Speichern anzeigen, damit Benutzer die genauen Einstellungsänderungen überprüfen können.
-9. Nicht zusammenhängende vorhandene `modelProviders`-Einträge erhalten.
-10. Sofort nach dem Speichern authentifizieren und Erfolgs- oder Fehlerrückmeldung anzeigen.
+6. Den API-Key unter `settings.json.env` speichern, konsistent mit dem aktuellen Muster der von Qwen verwalteten Anmeldeinformationen.
+7. Konflikte mit Shell-Umgebungsvariablen des Benutzers vermeiden, indem ein Qwen-spezifischer, generierter Schlüsselname verwendet wird.
+8. Das generierte JSON vor dem Speichern anzeigen, damit der Benutzer die genauen Einstellungsänderungen überprüfen kann.
+9. Nicht verwandte vorhandene `modelProviders`-Einträge erhalten.
+10. Sofort nach dem Speichern authentifizieren und Erfolgs- oder Fehlerfeedback anzeigen.
 
 ## Nicht-Ziele
 
-1. Benutzer nicht zwingen, `envKey` manuell einzugeben.
-2. Den Anbieternamen nicht als separates Konzept einführen.
-3. Keine erweiterten `generationConfig`, `capabilities` oder modellspezifischen Überschreibungen zum Assistenten hinzufügen.
-4. Den Dokumentationslink nicht vollständig entfernen; er sollte für erweiterte Konfiguration weiterhin verfügbar bleiben.
-5. Die bestehenden Abläufe für Coding Plan oder ModelStudio Standard API-Schlüssel nicht ändern.
-6. In der ersten Version nicht versuchen, das Protokoll automatisch aus der `baseUrl` zu erkennen; Benutzer wählen das Protokoll explizit aus.
+1. Nicht verlangen, dass Benutzer `envKey` manuell eingeben.
+2. Kein separates Konzept für den Anbieternamen einführen.
+3. Keine erweiterten `generationConfig`, `capabilities` oder modellspezifischen Überschreibungen im Assistenten hinzufügen.
+4. Den Dokumentationslink nicht vollständig entfernen; er sollte für erweiterte Konfiguration weiterhin verfügbar sein.
+5. Die bestehenden Abläufe für Coding Plan oder ModelStudio Standard API-Key nicht ändern.
+6. In der ersten Version kein automatisches Erkennen des Protokolls aus der `baseUrl` versuchen; Benutzer wählen das Protokoll explizit aus.
 
-## Zielgruppe
+## Zielbenutzer
 
 - Benutzer, die einen eigenen benutzerdefinierten API-Endpunkt mitbringen.
 - Benutzer, die Anbieter wie OpenAI-kompatible APIs, Anthropic-kompatible APIs, Gemini-kompatible APIs, vLLM, Ollama, LM Studio oder interne Gateways konfigurieren.
-- Benutzer, die die Authentifizierung lieber über die CLI einrichten, anstatt `settings.json` manuell zu bearbeiten.
+- Benutzer, die die Authentifizierung lieber von der CLI aus einrichten als `settings.json` manuell zu bearbeiten.
 
 ## Unterstützte Protokolle
 
@@ -111,14 +111,15 @@ anthropic
 gemini
 ```
 
-Jedes Protokoll wird direkt einem `modelProviders`-Schlüssel und dem Wert `security.auth.selectedType` zugeordnet.
+Jedes Protokoll bildet direkt auf einen `modelProviders`-Schlüssel und den Wert `security.auth.selectedType` ab.
 
-| Protokolloption         | Auth-Typ / modelProviders-Schlüssel | Hinweise                                                                                                 |
-| ----------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| OpenAI-kompatibel       | `openai`                            | OpenAI, OpenRouter, Fireworks, lokale OpenAI-kompatible Server, interne Gateways                         |
-| Anthropic-kompatibel    | `anthropic`                         | Anthropic-kompatible Endpunkte                                                                           |
-| Gemini-kompatibel       | `gemini`                            | Gemini-kompatible Endpunkte                                                                              |
-## Benutzeroberflächen-Überblick
+| Protokolloption        | Auth-Typ / modelProviders-Schlüssel | Hinweise                                                                                       |
+| ---------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| OpenAI-kompatibel      | `openai`                            | OpenAI, OpenRouter, Fireworks, lokale OpenAI-kompatible Server, interne Gateways                 |
+| Anthropic-kompatibel   | `anthropic`                         | Anthropic-kompatible Endpunkte                                                                  |
+| Gemini-kompatibel      | `gemini`                            | Gemini-kompatible Endpunkte                                                                     |
+
+## Benutzererfahrung – Überblick
 
 ### Aktualisierter `/auth`-Baum
 
@@ -127,21 +128,21 @@ Jedes Protokoll wird direkt einem `modelProviders`-Schlüssel und dem Wert `secu
 └─ Authentifizierungsmethode auswählen
    ├─ Alibaba Cloud Coding Plan
    │  └─ Region auswählen
-   │     └─ API-Schlüssel eingeben
+   │     └─ API-Key eingeben
    │        └─ Speichern + authentifizieren
    │
-   ├─ API-Schlüssel
-   │  └─ API-Schlüssel-Typ auswählen
-   │     ├─ Alibaba Cloud ModelStudio Standard API-Schlüssel
+   ├─ API-Key
+   │  └─ API-Key-Typ auswählen
+   │     ├─ Alibaba Cloud ModelStudio Standard API-Key
    │     │  ├─ Region auswählen
-   │     │  ├─ API-Schlüssel eingeben
+   │     │  ├─ API-Key eingeben
    │     │  ├─ Modell-IDs eingeben
    │     │  └─ Speichern + authentifizieren
    │     │
-   │     └─ Benutzerdefinierter API-Schlüssel
+   │     └─ Benutzerdefinierter API-Key
    │        ├─ Protokoll auswählen
    │        ├─ Basis-URL eingeben
-   │        ├─ API-Schlüssel eingeben
+   │        ├─ API-Key eingeben
    │        ├─ Modell-IDs eingeben
    │        ├─ Generiertes JSON überprüfen
    │        └─ Speichern + authentifizieren
@@ -149,7 +150,7 @@ Jedes Protokoll wird direkt einem `modelProviders`-Schlüssel und dem Wert `secu
    └─ Qwen OAuth
 ```
 
-### Zustandsautomat für benutzerdefinierten API-Schlüssel
+### Zustandsautomat für benutzerdefinierte API-Schlüssel
 
 ```text
 api-key-type-select
@@ -158,20 +159,20 @@ api-key-type-select
       │
       ▼
 custom-protocol-select
-      │ Enter
+      │ Eingabe
       ▼
 custom-base-url-input
-      │ Enter
-      │ envKey aus protocol + baseUrl generieren
+      │ Eingabe
+      │ envKey aus Protokoll + baseUrl generieren
       ▼
 custom-api-key-input
-      │ Enter
+      │ Eingabe
       ▼
 custom-model-id-input
-      │ Enter
+      │ Eingabe
       ▼
 custom-review-json
-      │ Enter
+      │ Eingabe
       ▼
 Einstellungen speichern + refreshAuth(selectedProtocol)
 ```
@@ -201,7 +202,7 @@ custom-protocol-select
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Benutzerdefinierter API-Schlüssel · Protokoll auswählen      │
+│ Benutzerdefinierter API-Key · Protokoll auswählen           │
 │                                                              │
 │  ◉ OpenAI-kompatibel                                         │
 │    OpenAI, OpenRouter, Fireworks, vLLM, Ollama, LM Studio    │
@@ -212,7 +213,7 @@ custom-protocol-select
 │  ○ Gemini-kompatibel                                         │
 │    Gemini-kompatible Endpunkte                               │
 │                                                              │
-│ Enter zur Auswahl, ↑↓ zum Navigieren, Esc zum Zurückgehen   │
+│ Eingabe zum Auswählen, ↑↓ zum Navigieren, Esc zum Zurückgehen│
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -220,24 +221,24 @@ Das ausgewählte Protokoll bestimmt:
 
 - Den zu aktualisierenden `modelProviders`-Schlüssel.
 - Den zu speichernden Wert von `security.auth.selectedType`.
-- Die Bezeichnung des Protokolls, die auf späteren Bildschirmen angezeigt wird.
-- Den nach dem Speichern verwendeten `refreshAuth()`-Authentifizierungstyp.
+- Die Protokollbezeichnung auf späteren Bildschirmen.
+- Den nach dem Speichern verwendeten Auth-Typ für `refreshAuth()`.
 
 ### Schritt 2: Basis-URL eingeben
 
-`baseUrl` ist das Äquivalent zur Regionsauswahl beim benutzerdefinierten Anbieter. Sie sollte vor der Eingabe des API-Schlüssels kommen, da sie festlegt, zu welchem Endpunkt der API-Schlüssel gehört.
+`baseUrl` ist das Äquivalent des benutzerdefinierten Anbieters zur Regionsauswahl. Sie sollte vor der Eingabe des API-Keys kommen, da sie bestimmt, zu welchem Endpunkt der API-Key gehört.
 
 Für OpenAI-kompatibel:
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Benutzerdefinierter API-Schlüssel · Basis-URL                │
+│ Benutzerdefinierter API-Key · Basis-URL                     │
 │                                                              │
 │ Protokoll: OpenAI-kompatibel                                 │
 │                                                              │
 │ Geben Sie den OpenAI-kompatiblen API-Endpunkt ein.           │
 │                                                              │
-│ Basis-URL: https://openrouter.ai/api/v1_                     │
+│ Basis-URL: https://openrouter.ai/api/v1_                    │
 │                                                              │
 │ Beispiele:                                                   │
 │   OpenAI:      https://api.openai.com/v1                     │
@@ -246,7 +247,7 @@ Für OpenAI-kompatibel:
 │   Ollama:     http://localhost:11434/v1                      │
 │   LM Studio:  http://localhost:1234/v1                       │
 │                                                              │
-│ Enter zum Fortfahren, Esc zum Zurückgehen                    │
+│ Eingabe zum Fortfahren, Esc zum Zurückgehen                  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -254,15 +255,15 @@ Für Anthropic-kompatibel:
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Benutzerdefinierter API-Schlüssel · Basis-URL                │
+│ Benutzerdefinierter API-Key · Basis-URL                     │
 │                                                              │
 │ Protokoll: Anthropic-kompatibel                              │
 │                                                              │
 │ Geben Sie den Anthropic-kompatiblen API-Endpunkt ein.        │
 │                                                              │
-│ Basis-URL: https://api.anthropic.com/v1_                     │
+│ Basis-URL: https://api.anthropic.com/v1_                    │
 │                                                              │
-│ Enter zum Fortfahren, Esc zum Zurückgehen                    │
+│ Eingabe zum Fortfahren, Esc zum Zurückgehen                  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -270,7 +271,7 @@ Für Gemini-kompatibel:
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Benutzerdefinierter API-Schlüssel · Basis-URL                │
+│ Benutzerdefinierter API-Key · Basis-URL                     │
 │                                                              │
 │ Protokoll: Gemini-kompatibel                                 │
 │                                                              │
@@ -278,35 +279,36 @@ Für Gemini-kompatibel:
 │                                                              │
 │ Basis-URL: https://generativelanguage.googleapis.com_        │
 │                                                              │
-│ Enter zum Fortfahren, Esc zum Zurückgehen                    │
+│ Eingabe zum Fortfahren, Esc zum Zurückgehen                  │
 └──────────────────────────────────────────────────────────────┘
 ```
+
 Validierung:
 
 - Erforderlich.
 - Muss mit `http://` oder `https://` beginnen.
 - Führende und nachfolgende Leerzeichen entfernen.
-- Den normalisierten String wie eingegeben beibehalten, abgesehen vom Trimmen.
+- Die normalisierte Zeichenfolge wie eingegeben beibehalten, außer Kürzung.
 
 Bei gültiger Eingabe:
 
-- Generiere den von Qwen verwalteten `envKey` aus dem ausgewählten Protokoll und der `baseUrl`.
-- Weiter zur API-Key-Eingabe.
+- Den von Qwen verwalteten `envKey` aus dem ausgewählten Protokoll und der `baseUrl` generieren.
+- Zur API-Key-Eingabe wechseln.
 
 ### Schritt 3: API-Key eingeben
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Benutzerdefinierter API-Key · API-Key                        │
+│ Benutzerdefinierter API-Key · API-Key                       │
 │                                                              │
 │ Protokoll: OpenAI-kompatibel                                 │
 │ Endpunkt: https://openrouter.ai/api/v1                       │
 │                                                              │
-│ Geben Sie den API-Key für diesen Endpunkt ein.               │
+│ Geben Sie den API-Key für diesen Endpunkt ein.                │
 │                                                              │
-│ API-Key: sk-or-v1-••••••••••••••••_                          │
+│ API-Key: sk-or-v1-••••••••••••••••_                         │
 │                                                              │
-│ Enter zum Fortfahren, Esc zum Zurückgehen                    │
+│ Eingabe zum Fortfahren, Esc zum Zurückgehen                  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -317,24 +319,24 @@ Validierung:
 
 Hinweise:
 
-- Die Eingabe kann anfangs das bestehende Texteingabeverhalten zur Konsistenz mit benachbarten Flows verwenden.
-- Der Überprüfungsbildschirm soll den API-Key maskieren.
+- Die Eingabe kann zunächst das vorhandene Texteingabeverhalten verwenden, um Konsistenz mit benachbarten Abläufen zu gewährleisten.
+- Der Überprüfungsbildschirm sollte den API-Key maskieren.
 
 ### Schritt 4: Modell-IDs eingeben
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Benutzerdefinierter API-Key · Modell-IDs                     │
+│ Benutzerdefinierter API-Key · Modell-IDs                    │
 │                                                              │
 │ Protokoll: OpenAI-kompatibel                                 │
 │ Endpunkt: https://openrouter.ai/api/v1                       │
 │                                                              │
-│ Geben Sie eine oder mehrere Modell-IDs ein, getrennt durch   │
+│ Geben Sie eine oder mehrere Modell-IDs ein, getrennt durch  │
 │ Kommas.                                                      │
 │                                                              │
 │ Modell-IDs: qwen/qwen3-coder,openai/gpt-4.1_                │
 │                                                              │
-│ Enter zum Fortfahren, Esc zum Zurückgehen                    │
+│ Eingabe zum Fortfahren, Esc zum Zurückgehen                  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -342,29 +344,29 @@ Validierung:
 
 - Erforderlich.
 - Durch Komma trennen.
-- Jede Modell-ID trimmen.
+- Jede Modell-ID kürzen.
 - Leere Einträge entfernen.
-- Dubletten entfernen, dabei die Reihenfolge beibehalten.
+- Doppelte Einträge entfernen, Reihenfolge beibehalten.
 - Mindestens eine Modell-ID muss übrig bleiben.
 
 Modellbenennung:
 
-- `id` und `name` sollten identisch sein.
-- Es wird kein separater Provider-Name vom Benutzer abgefragt.
+- `id` und `name` sollen identisch sein.
+- Es wird kein separater Anbietername vom Benutzer abgefragt.
 
 Beispiel:
 
 ```text
-Input:
+Eingabe:
 qwen/qwen3-coder, openai/gpt-4.1, qwen/qwen3-coder
 
-Normalized:
+Normalisiert:
 qwen/qwen3-coder, openai/gpt-4.1
 ```
 
 ### Schritt 5: JSON überprüfen
 
-Vor dem Speichern wird das erstellte JSON-Snippet angezeigt, das in `settings.json` geschrieben oder eingefügt wird.
+Vor dem Speichern wird der generierte JSON-Auszug angezeigt, der in `settings.json` geschrieben oder eingefügt wird.
 
 OpenAI-kompatibles Beispiel:
 
@@ -372,7 +374,7 @@ OpenAI-kompatibles Beispiel:
 ┌──────────────────────────────────────────────────────────────┐
 │ Benutzerdefinierter API-Key · Überprüfung                    │
 │                                                              │
-│ Das folgende JSON wird in settings.json gespeichert:        │
+│ Das folgende JSON wird in settings.json gespeichert:         │
 │                                                              │
 │ {                                                            │
 │   "env": {                                                   │
@@ -399,7 +401,7 @@ OpenAI-kompatibles Beispiel:
 │   }                                                          │
 │ }                                                            │
 │                                                              │
-│ Enter zum Speichern, Esc zum Zurückgehen                     │
+│ Eingabe zum Speichern, Esc zum Zurückgehen                   │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -430,6 +432,7 @@ Anthropic-kompatibles Beispiel:
   }
 }
 ```
+
 Das angezeigte JSON sollte:
 
 - Das ausgewählte Protokoll als `modelProviders`-Schlüssel verwenden.
@@ -440,11 +443,11 @@ Das angezeigte JSON sollte:
 - Für jedes Modell `id === name` setzen.
 - `model.name` auf die erste normalisierte Modell-ID setzen.
 
-Wenn das JSON zu breit für das aktuelle Terminal ist, ist ein Umbruch akzeptabel. Ziel ist Transparenz, nicht eine perfekt kopierbare Formatierung.
+Falls das JSON für das aktuelle Terminal zu breit ist, ist ein Umbruch akzeptabel. Ziel ist Transparenz, nicht ein zum Kopieren perfektes Format.
 
-### Schritt 6: Speichern und Authentifizieren
+### Schritt 6: Speichern und authentifizieren
 
-Bei Eingabe im Überprüfungsbildschirm:
+Bei Eingabe vom Überprüfungsbildschirm:
 
 ```text
 save:
@@ -462,26 +465,26 @@ save:
 Erfolgsmeldung:
 
 ```text
-Custom API Key erfolgreich authentifiziert. Einstellungen mit generiertem Env-Key und Modellanbieter-Konfiguration aktualisiert.
-Tipp: Verwende /model, um zwischen konfigurierten Modellen zu wechseln.
+Benutzerdefinierter API-Key erfolgreich authentifiziert. Einstellungen mit generiertem EnvKey und Modellanbieterkonfiguration aktualisiert.
+Tipp: Verwenden Sie /model, um zwischen konfigurierten Modellen zu wechseln.
 ```
 
-Fehlermeldung sollte das bestehende Authentifizierungsfehler-Muster beibehalten, mit zusätzlichen benutzerfreundlichen Hinweisen, wenn möglich:
+Fehlermeldung sollte das bestehende Authentifizierungsfehlermuster beibehalten, mit zusätzlichen benutzerfreundlichen Hinweisen, falls möglich:
 
 ```text
-Authentifizierung fehlgeschlagen. Nachricht: <error>
+Authentifizierung fehlgeschlagen. Meldung: <Fehler>
 
-Bitte prüfen:
-- Base URL ist mit dem ausgewählten Protokoll kompatibel
-- API-Key ist für diesen Endpunkt gültig
-- Modell-ID existiert für diesen Anbieter
+Bitte überprüfen Sie:
+- Die Basis-URL ist mit dem ausgewählten Protokoll kompatibel
+- Der API-Key ist für diesen Endpunkt gültig
+- Die Modell-ID existiert für diesen Anbieter
 ```
 
-## Env-Key-Generierung
+## EnvKey-Generierung
 
-Der Assistent soll Benutzer nicht auffordern, einen `envKey` einzugeben.
+Der Assistent sollte Benutzer nicht auffordern, einen `envKey` einzugeben.
 
-Von Qwen verwaltete API-Keys werden in `settings.json.env` gespeichert, daher sollte der Env-Key automatisch unter einem Qwen-spezifischen Namespace generiert werden. Dies vermeidet Konflikte mit benutzerseitig verwalteten Shell-Umgebungsvariablen und verhindert, dass mehrere benutzerdefinierte Endpunkte sich gegenseitig überschreiben.
+Von Qwen verwaltete API-Schlüssel werden in `settings.json.env` gespeichert, daher sollte der EnvKey automatisch unter einem Qwen-spezifischen Namensraum generiert werden. Dies vermeidet Kollisionen mit benutzerverwalteten Shell-Umgebungsvariablen und verhindert, dass sich mehrere benutzerdefinierte Endpunkte gegenseitig überschreiben.
 
 ### Format
 
@@ -489,29 +492,29 @@ Von Qwen verwaltete API-Keys werden in `settings.json.env` gespeichert, daher so
 QWEN_CUSTOM_API_KEY_${PROTOCOL}_${NORMALIZED_BASE_URL}
 ```
 
-Die Aufnahme des Protokolls vermeidet Konflikte, wenn derselbe Endpunkt unter verschiedenen Protokolladaptern verwendet wird.
+Die Einbeziehung des Protokolls vermeidet Kollisionen, wenn derselbe Endpunkt unter verschiedenen Protokolladaptern verwendet wird.
 
 ### Beispiele
 
 ```text
-Protocol: openai
-Base URL: https://api.openai.com/v1
+Protokoll: openai
+Basis-URL: https://api.openai.com/v1
 -> QWEN_CUSTOM_API_KEY_OPENAI_HTTPS_API_OPENAI_COM_V1
 
-Protocol: openai
-Base URL: https://openrouter.ai/api/v1
+Protokoll: openai
+Basis-URL: https://openrouter.ai/api/v1
 -> QWEN_CUSTOM_API_KEY_OPENAI_HTTPS_OPENROUTER_AI_API_V1
 
-Protocol: anthropic
-Base URL: https://api.anthropic.com/v1
+Protokoll: anthropic
+Basis-URL: https://api.anthropic.com/v1
 -> QWEN_CUSTOM_API_KEY_ANTHROPIC_HTTPS_API_ANTHROPIC_COM_V1
 
-Protocol: gemini
-Base URL: https://generativelanguage.googleapis.com
+Protokoll: gemini
+Basis-URL: https://generativelanguage.googleapis.com
 -> QWEN_CUSTOM_API_KEY_GEMINI_HTTPS_GENERATIVELANGUAGE_GOOGLEAPIS_COM
 
-Protocol: openai
-Base URL: http://localhost:11434/v1
+Protokoll: openai
+Basis-URL: http://localhost:11434/v1
 -> QWEN_CUSTOM_API_KEY_OPENAI_HTTP_LOCALHOST_11434_V1
 ```
 
@@ -548,10 +551,9 @@ function generateCustomApiKeyEnvKey(protocol: string, baseUrl: string): string {
   return `QWEN_CUSTOM_API_KEY_${normalize(protocol)}_${normalize(baseUrl)}`;
 }
 ```
+## Design der Einstellungen speichern
 
-## Entwurf der Einstellungsschreibweise
-
-Bei Benutzereingabe:
+Angenommene Benutzereingabe:
 
 ```text
 Protocol: openai
@@ -560,7 +562,7 @@ API key: sk-or-v1-xxx
 Model IDs: qwen/qwen3-coder,openai/gpt-4.1
 ```
 
-Sollte der Assistent Folgendes erzeugen:
+Der Assistent soll Folgendes erzeugen:
 
 ```json
 {
@@ -610,21 +612,21 @@ security.auth.selectedType = gemini
 refreshAuth(gemini)
 ```
 
-### Persistenzbereich
+### Persist-Scope
 
-Verwende die gleiche Persistenzbereichsstrategie wie bei der Modellauswahl und den bestehenden API-Key-Flows:
+Verwende dieselbe Strategie für den Persist-Scope wie bei der Modellauswahl und den bestehenden API-Key-Flows:
 
 ```text
 getPersistScopeForModelSelection(settings)
 ```
 
-Dies hält das Verhalten konsistent mit den bestehenden `modelProviders`-Besitzregeln.
+Dies gewährleistet Konsistenz mit den bestehenden Besitzregeln für `modelProviders`.
 
 ### Backup
 
-Vor dem Schreiben ein Backup der Zieleinstellungsdatei erstellen, konsistent mit dem bestehenden Coding Plan- und ModelStudio Standard-Flows.
+Vor dem Schreiben wird die Zieldatei der Einstellungen gesichert, konsistent mit den bestehenden Abläufen von Coding Plan und ModelStudio Standard.
 
-### Prozess-Env-Sync
+### Synchronisation der Prozess-Umgebungsvariablen
 
 Nach dem Schreiben von `settings.json.env[generatedEnvKey]` sofort synchronisieren:
 
@@ -632,16 +634,17 @@ Nach dem Schreiben von `settings.json.env[generatedEnvKey]` sofort synchronisier
 process.env[generatedEnvKey] = apiKey
 ```
 
-Dies stellt sicher, dass `refreshAuth(selectedProtocol)` den neu eingegebenen Key in derselben Sitzung verwenden kann.
-### Regel zum Zusammenführen von Modellanbietern
+Dadurch kann `refreshAuth(selectedProtocol)` den neu eingegebenen Schlüssel in derselben Sitzung verwenden.
 
-Für den generierten Umgebungs-Schlüssel:
+### Modell-Provider-Zusammenführungsregel
+
+Für den generierten Umgebungsvariablenschlüssel:
 
 ```text
 generatedEnvKey = QWEN_CUSTOM_API_KEY_${PROTOCOL}_${NORMALIZED_BASE_URL}
 ```
 
-Aktualisieren Sie `modelProviders[selectedProtocol]` wie folgt:
+Aktualisiere `modelProviders[selectedProtocol]` wie folgt:
 
 ```text
 newConfigs = normalizedModelIds.map(modelId => ({
@@ -665,16 +668,16 @@ updatedConfigs = [
 
 Begründung:
 
-- Eine Neukonfiguration desselben Protokolls + derselben `baseUrl` ersetzt alte Modelle für diesen Endpunkt.
-- Die Konfiguration eines anderen Protokolls oder einer anderen `baseUrl` verwendet einen anderen Umgebungs-Schlüssel und überschreibt keine vorherigen benutzerdefinierten Endpunkte.
-- Coding Plan, ModelStudio Standard und andere Benutzerkonfigurationen bleiben erhalten, es sei denn, sie verwenden denselben generierten Umgebungs-Schlüssel unter demselben Protokoll.
+- Die Neukonfiguration desselben Protokolls + derselben `baseUrl` ersetzt alte Modelle für diesen Endpunkt.
+- Die Konfiguration eines anderen Protokolls oder einer anderen `baseUrl` verwendet einen anderen Umgebungsvariablenschlüssel und überschreibt keine vorherigen benutzerdefinierten Endpunkte.
+- Coding Plan, ModelStudio Standard und andere Benutzerkonfigurationen bleiben erhalten, es sei denn, sie verwenden denselben generierten Umgebungsvariablenschlüssel unter demselben Protokoll.
 - Neue Konfigurationen werden zuerst platziert, sodass die neu konfigurierten Modelle sofort sichtbar und standardmäßig ausgewählt sind.
 
 ## Fehlerbehandlung
 
 ### Protokollvalidierungsfehler
 
-Das Protokoll muss eines der folgenden sein:
+Das Protokoll muss einer der folgenden Werte sein:
 
 ```text
 openai
@@ -682,54 +685,54 @@ anthropic
 gemini
 ```
 
-### Basis-URL-Validierungsfehler
+### Base-URL-Validierungsfehler
 
 ```text
-Basis-URL darf nicht leer sein.
+Base URL darf nicht leer sein.
 ```
 
 ```text
-Basis-URL muss mit http:// oder https:// beginnen.
+Base URL muss mit http:// oder https:// beginnen.
 ```
 
-### API-Schlüssel-Validierungsfehler
+### API-Key-Validierungsfehler
 
 ```text
-API-Schlüssel darf nicht leer sein.
+API key darf nicht leer sein.
 ```
 
-### Modell-ID-Validierungsfehler
+### Modell-IDs-Validierungsfehler
 
 ```text
-Modell-IDs dürfen nicht leer sein.
+Model IDs dürfen nicht leer sein.
 ```
 
 ### Authentifizierungsfehler
 
-Verwenden Sie nach Möglichkeit den vorhandenen Fehlermechanismus, aber der benutzerseitige Fehler sollte Benutzern bei der Wiederherstellung helfen:
+Verwende nach Möglichkeit den bestehenden Fehlermechanismus, aber die benutzerseitige Fehlermeldung sollte dem Benutzer helfen, sich zu erholen:
 
 ```text
 Authentifizierung fehlgeschlagen. Nachricht: <message>
 
-Bitte überprüfen Sie:
-- Die Basis-URL ist mit dem ausgewählten Protokoll kompatibel
-- Der API-Schlüssel ist für diesen Endpunkt gültig
-- Die Modell-ID existiert für diesen Anbieter
+Bitte überprüfen:
+- Base URL ist mit dem ausgewählten Protokoll kompatibel
+- API key ist für diesen Endpunkt gültig
+- Model ID existiert für diesen Anbieter
 ```
 
 ## Dokumentationslink
 
-Der Assistent sollte weiterhin die vorhandene Dokumentation zu Modellanbietern für fortgeschrittene Benutzer anzeigen.
+Der Assistent sollte weiterhin die bestehende Dokumentation zu Modellanbietern für fortgeschrittene Benutzer anzeigen.
 
 Empfohlene Platzierung:
 
-- In der Fußzeile des Überprüfungsbildschirms oder
-- Als sekundärer Text auf dem Basis-URL-Bildschirm.
+- In der Fußzeile des Überprüfungsbildschirms, oder
+- Als sekundärer Text auf dem Base-URL-Bildschirm.
 
 Vorgeschlagener Text:
 
 ```text
-Benötigen Sie erweiterte generationConfig oder Fähigkeiten? Siehe:
+Erweiterte generationConfig oder Fähigkeiten benötigt? Siehe:
 https://qwenlm.github.io/qwen-code-docs/en/users/configuration/model-providers/
 ```
 
@@ -800,23 +803,23 @@ normalizeCustomModelIds(modelIdsInput: string): string[]
 maskApiKey(apiKey: string): string
 ```
 
-## Abnahmekriterien
+## Akzeptanzkriterien
 
 ### UX
 
-- Wenn Sie `/auth -> API-Schlüssel -> Benutzerdefinierter API-Schlüssel` auswählen, wird der benutzerdefinierte Assistent anstelle der reinen Dokumentationsseite geöffnet.
+- Die Auswahl `/auth -> API Key -> Custom API Key` öffnet den benutzerdefinierten Assistenten anstatt der Nur-Dokumentationsseite.
 - Der erste Schritt des benutzerdefinierten Assistenten fragt nach dem Protokoll.
-- Der zweite Schritt fragt nach der Basis-URL und zeigt das ausgewählte Protokoll an.
-- Der dritte Schritt fragt nach dem API-Schlüssel und zeigt das ausgewählte Protokoll und den Endpunkt an.
-- Der vierte Schritt fragt nach Modell-IDs und zeigt das ausgewählte Protokoll und den Endpunkt an.
-- Der Überprüfungsschritt zeigt das generierte JSON an, einschließlich maskiertem API-Schlüssel, ausgewähltem Protokoll und generiertem Umgebungs-Schlüssel.
-- Durch Drücken der Eingabetaste im Überprüfungsschritt werden die Einstellungen gespeichert und die Authentifizierung versucht.
-- Durch Drücken von Esc wird schrittweise zurück navigiert.
+- Der zweite Schritt fragt nach der Base URL und zeigt das ausgewählte Protokoll an.
+- Der dritte Schritt fragt nach dem API-Key und zeigt das ausgewählte Protokoll und den Endpunkt an.
+- Der vierte Schritt fragt nach den Modell-IDs und zeigt das ausgewählte Protokoll und den Endpunkt an.
+- Der Überprüfungsschritt zeigt das generierte JSON an, einschließlich maskiertem API-Key, ausgewähltem Protokoll und generiertem Umgebungsvariablenschlüssel.
+- Drücken der Eingabetaste im Überprüfungsschritt speichert die Einstellungen und versucht die Authentifizierung.
+- Drücken der Escape-Taste navigiert einen Schritt zurück.
 
 ### Einstellungen
 
-- Der API-Schlüssel wird in `settings.json.env[generatedEnvKey]` geschrieben.
-- `generatedEnvKey` wird aus dem ausgewählten Protokoll und der `baseUrl` unter Verwendung des Qwen-privaten Namespace abgeleitet.
+- Der API-Key wird in `settings.json.env[generatedEnvKey]` geschrieben.
+- `generatedEnvKey` wird aus dem ausgewählten Protokoll und `baseUrl` unter Verwendung des privaten Qwen-Namespace abgeleitet.
 - `modelProviders[selectedProtocol]` erhält einen Eintrag pro normalisierter Modell-ID.
 - Jeder benutzerdefinierte Modelleintrag verwendet `id === name`.
 - `security.auth.selectedType` wird auf das ausgewählte Protokoll gesetzt.
@@ -824,37 +827,38 @@ maskApiKey(apiKey: string): string
 - Vorhandene Einträge unter `modelProviders[selectedProtocol]` mit einem anderen `envKey` bleiben erhalten.
 - Vorhandene Einträge unter `modelProviders[selectedProtocol]` mit demselben generierten `envKey` werden ersetzt.
 - Einträge unter anderen `modelProviders`-Protokollschlüsseln bleiben erhalten.
+
 ### Authentifizierung
 
-- Der generierte Env-Key wird vor der Authentifizierungsaktualisierung mit `process.env` synchronisiert.
-- Die App lädt die Konfiguration des Modellanbieters neu, bevor `refreshAuth(selectedProtocol)` aufgerufen wird.
-- Erfolgreiche Authentifizierung schließt den Auth-Dialog und zeigt eine Erfolgsmeldung an.
-- Fehlgeschlagene Authentifizierung belässt den Benutzer im Auth-Flow und zeigt einen umsetzbaren Fehler an.
+- Der generierte Umgebungsvariablenschlüssel wird vor dem Aktualisieren der Authentifizierung mit `process.env` synchronisiert.
+- Die App lädt die Modellanbieterkonfiguration neu, bevor `refreshAuth(selectedProtocol)` aufgerufen wird.
+- Erfolgreiche Authentifizierung schließt den Auth-Dialog und zeigt eine Erfolgsmeldung.
+- Fehlgeschlagene Authentifizierung belässt den Benutzer im Auth-Flow und zeigt eine umsetzbare Fehlermeldung.
 
 ### Tests
 
-- Fügen Sie Tests für `AuthDialog` hinzu oder aktualisieren Sie sie, um den benutzerdefinierten Wizard-Pfad abzudecken.
-- Fügen Sie Tests für die Protokollauswahl hinzu.
-- Fügen Sie Tests für die Env-Key-Generierung aus Protokoll und Basis-URL hinzu.
-- Fügen Sie Tests für die Normalisierung und Deduplizierung von Modell-IDs hinzu.
-- Fügen Sie Tests für das Zusammenführungsverhalten der Einstellungen hinzu:
-  - derselbe generierte Env-Key ersetzt alte benutzerdefinierte Einträge unter demselben Protokoll;
-  - unterschiedliche Env-Keys werden beibehalten;
-  - andere Protokollschlüssel werden beibehalten;
-  - Einträge für Coding Plan und ModelStudio Standard werden beibehalten.
-- Fügen Sie nach Möglichkeit Tests für den generierten JSON-Vorschauinhalt hinzu.
+- Füge `AuthDialog`-Tests hinzu oder aktualisiere sie, um den benutzerdefinierten Assistentenpfad abzudecken.
+- Füge Tests für die Protokollauswahl hinzu.
+- Füge Tests für die Generierung des Umgebungsvariablenschlüssels aus Protokoll und Base URL hinzu.
+- Füge Tests für die Normalisierung und Deduplizierung von Modell-IDs hinzu.
+- Füge Tests für das Zusammenführungsverhalten der Einstellungen hinzu:
+  - Derselbe generierte Umgebungsvariablenschlüssel ersetzt alte benutzerdefinierte Einträge unter demselben Protokoll;
+  - Unterschiedliche Umgebungsvariablenschlüssel bleiben erhalten;
+  - Andere Protokollschlüssel bleiben erhalten;
+  - Coding Plan und ModelStudio Standard Einträge bleiben erhalten.
+- Füge Tests für die Vorschau des generierten JSON-Inhalts hinzu, soweit praktikabel.
 
 ## Offene Fragen
 
-1. Soll die API-Key-Eingabe während der Eingabe maskiert werden, oder nur auf dem Überprüfungsbildschirm?
-2. Sollten lokale Endpunkte wie `http://localhost:11434/v1` leere oder Platzhalter-API-Keys für Server zulassen, die keine Authentifizierung erfordern?
-3. Soll die generierte JSON-Vorschau nur den angewendeten Patch anzeigen, oder den resultierenden vollständigen relevanten Einstellungs-Unterbaum nach der Zusammenführung?
-4. Sollte Vertex AI in diesen benutzerdefinierten API-Key-Wizard aufgenommen werden, oder außen vor bleiben, da sich seine Authentifizierungseinrichtung von einfachen API-Key-Anbietern unterscheidet?
+1. Soll der API-Key während der Eingabe maskiert werden, oder nur auf dem Überprüfungsbildschirm?
+2. Sollten lokale Endpunkte wie `http://localhost:11434/v1` leere oder Platzhalter-API-Keys für Server erlauben, die keine Authentifizierung erfordern?
+3. Soll die generierte JSON-Vorschau nur den anzuwendenden Patch anzeigen oder den resultierenden vollständigen relevanten Einstellungsuntersbaum nach dem Zusammenführen?
+4. Soll Vertex AI in diesen benutzerdefinierten API-Key-Assistenten aufgenommen werden oder außen vor bleiben, da sich dessen Authentifizierungseinrichtung von einfachen API-Key-Anbietern unterscheidet?
 
 Für die erste Version werden folgende Standardeinstellungen empfohlen:
 
-- Unterstützung für `openai`, `anthropic` und `gemini`.
-- Verwenden Sie das vorhandene Eingabeverhalten während der Eingabe.
-- Erfordern Sie einen nicht-leeren API-Key zur Konsistenz mit API-Key-Authentifizierungsabläufen.
-- Zeigen Sie das Patch-Format-JSON an, das gespeichert oder aktualisiert wird.
-- Behalten Sie Vertex AI außerhalb des benutzerdefinierten API-Key-Wizards, bis eine separate Produktentscheidung getroffen wird.
+- Unterstützt `openai`, `anthropic` und `gemini`.
+- Verwende das bestehende Eingabeverhalten während der Eingabe.
+- Erfordere einen nicht leeren API-Key aus Konsistenzgründen mit API-Key-Authentifizierungsflows.
+- Zeige das Patch-Format-JSON an, das gespeichert oder aktualisiert wird.
+- Lass Vertex AI außerhalb des benutzerdefinierten API-Key-Assistenten, bis eine separate Produktentscheidung getroffen wurde.

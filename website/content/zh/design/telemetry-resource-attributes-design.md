@@ -1,4 +1,4 @@
-# Telemetry: Custom Resource Attributes + Metric Cardinality Controls
+# Telemetry: 自定义资源属性 + 指标基数控制
 
 > 配套 issue: [#4365](https://github.com/QwenLM/qwen-code/issues/4365)
 > 父 issue: [#3731](https://github.com/QwenLM/qwen-code/issues/3731)
@@ -477,17 +477,16 @@ const resource = resourceFromAttributes({
 - `settingsSchema.ts` 加 `resourceAttributes` JSON schema
 - **不动** `session.id` 在 Resource 上的位置
 - Docs 加 "Resource attributes" 一节
-
 **风险**：低。完全 additive，不改任何现有行为。除非用户主动设置环境变量或 settings，否则导出的数据无变化。
 
-### PR 2 — Cardinality controls（semantic break）
+### PR 2 — Cardinality controls（语义断裂）
 
-- 从 Resource 删 `session.id` (`sdk.ts:160` 那一行)
-- 加 `metrics.includeSessionId` toggle（settings + env）+ `getCommonAttributes()` gate
-- `settingsSchema.ts` 加 `metrics` JSON schema
+- 从 Resource 删除 `session.id` (`sdk.ts:160` 那一行)
+- 添加 `metrics.includeSessionId` toggle（settings + env）+ `getCommonAttributes()` gate
+- `settingsSchema.ts` 添加 `metrics` JSON schema
 - CHANGELOG / 迁移说明
 - 快照测试锁定 metric attribute 集合（防回归）
-- Docs 加 "Cardinality controls" 一节 + 迁移指南
+- Docs 添加 "Cardinality controls" 一节 + 迁移指南
 
 **风险**：中等。任何依赖 metric 上 `session.id` 的 Prometheus query / Grafana dashboard / 告警规则会失效。需要显式 release note 与 1-2 个版本的迁移窗口。
 
@@ -497,9 +496,9 @@ const resource = resourceFromAttributes({
 
 不建议采用的原因：（1）当前 qwen-code 用户群不大，破坏面有限；（2）这是 cardinality bug，越早默认安全越好；（3）双段式发布会增加文档负担。如果父 issue owner 想要保守一些，可以采纳。
 
-### PR 3 — Docs polish + samples（cleanup）
+### PR 3 — Docs polish + samples（清理）
 
-- `docs/developers/development/telemetry.md` 补示例（见 §10）
+- `docs/developers/development/telemetry.md` 补充示例（见 §10）
 - 阿里云 ARMS / Prometheus / Grafana 接入示例
 - 把所有典型 use case 的 settings.json 片段加进去
 

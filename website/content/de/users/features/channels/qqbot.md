@@ -1,6 +1,6 @@
-# QQ Bot (QQ机器人)
+# QQ Bot (QQ-Roboter)
 
-Diese Anleitung beschreibt die Einrichtung eines Qwen-Code-Kanals auf QQ über die offizielle QQ-Bot-Open-Plattform-API.
+Diese Anleitung erklärt, wie du einen Qwen Code-Channel auf QQ über die offizielle QQ Bot Open Platform API einrichtest.
 
 ## Voraussetzungen
 
@@ -10,7 +10,7 @@ Diese Anleitung beschreibt die Einrichtung eines Qwen-Code-Kanals auf QQ über d
 
 ### QR-Code-Anmeldung
 
-Starten Sie den Kanal – beim ersten Mal wird ein QR-Code angezeigt. Scannen Sie diesen mit Ihrer QQ-App, um den Kanal zu aktivieren. Weder ein Entwicklerkonto noch eine manuelle Registrierung sind erforderlich. Die Anmeldedaten werden gespeichert und automatisch wiederverwendet.
+Starte den Channel – beim ersten Mal wird ein QR-Code angezeigt. Scanne ihn mit deiner QQ-App, um den Channel zu aktivieren. Es ist kein Entwicklerkonto oder manuelle Registrierung nötig. Die Anmeldedaten werden automatisch gespeichert und wiederverwendet.
 
 ```json
 {
@@ -24,29 +24,29 @@ Starten Sie den Kanal – beim ersten Mal wird ein QR-Code angezeigt. Scannen Si
 
 ```bash
 qwen channel start my-qq
-# Scannen Sie den QR-Code im Terminal mit Ihrer QQ-App
+# Scanne den QR-Code im Terminal mit deiner QQ-App
 ```
 
 ### Manuelle Konfiguration (Entwicklerportal)
 
-Sie können auch Anmeldedaten vom Entwicklerportal der [QQ-Bot-Open-Plattform](https://q.qq.com/) verwenden, falls dort bereits eine App registriert ist:
+Du kannst auch Anmeldedaten vom [QQ Bot Open Platform](https://q.qq.com/)-Entwicklerportal verwenden, falls dort bereits eine App registriert ist:
 
 ```json
 {
   "channels": {
     "my-qq": {
       "type": "qq",
-      "appID": "IHRE_APP_ID",
+      "appID": "YOUR_APP_ID",
       "appSecret": "$QQ_APP_SECRET"
     }
   }
 }
 ```
 
-Setzen Sie das Secret als Umgebungsvariable:
+Setze das Geheimnis als Umgebungsvariable:
 
 ```bash
-export QQ_APP_SECRET=<ihr-app-secret>
+export QQ_APP_SECRET=<dein-app-secret>
 ```
 
 ## Konfiguration
@@ -56,12 +56,12 @@ export QQ_APP_SECRET=<ihr-app-secret>
   "channels": {
     "my-qq": {
       "type": "qq",
-      "appID": "IHRE_APP_ID",
+      "appID": "YOUR_APP_ID",
       "appSecret": "$QQ_APP_SECRET",
       "sandbox": false,
       "senderPolicy": "open",
       "sessionScope": "user",
-      "cwd": "/pfad/zu/ihrem/projekt",
+      "cwd": "/path/to/your/project",
       "instructions": "你是一个通过 QQ Bot 对话的 AI 助手。回复控制在 2000 字符以内。",
       "blockStreaming": "on",
       "groupPolicy": "disabled",
@@ -75,104 +75,105 @@ export QQ_APP_SECRET=<ihr-app-secret>
 
 ### QQ-spezifische Optionen
 
-| Option      | Standard | Beschreibung                                                                       |
-| ----------- | -------- | ---------------------------------------------------------------------------------- |
-| `appID`     | —        | QQ-Bot-AppID aus dem Entwicklerportal. Wenn nicht angegeben, wird QR-Code-Login verwendet. |
-| `appSecret` | —        | QQ-Bot-AppSecret. Unterstützt die Syntax `$ENV_VAR`. Wenn nicht angegeben, wird QR-Code-Login verwendet. |
-| `sandbox`   | `false`  | Auf `true` setzen, um die QQ-Sandbox-API-Umgebung zu nutzen (`sandbox.api.sgroup.qq.com`) |
+| Option      | Standard | Beschreibung                                                                               |
+| ----------- | -------- | ------------------------------------------------------------------------------------------ |
+| `appID`     | —        | QQ Bot AppID aus dem Entwicklerportal. Wenn weggelassen, wird die QR-Code-Anmeldung genutzt. |
+| `appSecret` | —        | QQ Bot AppSecret. Unterstützt die `$ENV_VAR`-Syntax. Wenn weggelassen, wird die QR-Code-Anmeldung genutzt. |
+| `sandbox`   | `false`  | Setze auf `true`, um die QQ-Sandbox-API-Umgebung zu verwenden (`sandbox.api.sgroup.qq.com`) |
 
-Alle standardmäßigen Kanaloptionen (siehe [Kanalübersicht](./overview#options)) werden ebenfalls unterstützt:
+Alle standardmäßigen Channel-Optionen (siehe [Channel Übersicht](./overview#options)) werden ebenfalls unterstützt:
 `senderPolicy`, `allowedUsers`, `sessionScope`, `cwd`, `instructions`, `groupPolicy`, `groups`, `dispatchMode`, `blockStreaming`, `blockStreamingChunk`, `blockStreamingCoalesce`.
 
 ## Ausführung
 
 ```bash
-# Nur den QQ-Kanal starten
+# Starte nur den QQ-Channel
 qwen channel start my-qq
 
-# Oder alle konfigurierten Kanäle gleichzeitig starten
+# Oder starte alle konfigurierten Channels zusammen
 qwen channel start
 ```
 
-Öffnen Sie QQ und senden Sie eine Nachricht an Ihren Bot. Die Antwort sollte in Ihrem Chat erscheinen.
+Öffne QQ und sende eine Nachricht an deinen Bot. Du solltest die Antwort in deinem Chat sehen.
 
 ## Gruppenchats
 
 Um den Bot in QQ-Gruppen zu nutzen:
 
-1. Setzen Sie `groupPolicy` in Ihrer Kanalkonfiguration auf `"allowlist"` oder `"open"`.
-2. Fügen Sie den Bot über das QQ-Bot-Open-Plattform-Dashboard einer QQ-Gruppe hinzu, oder lassen Sie ihn von einem Gruppenadministrator einladen.
-3. Gruppenmitglieder müssen den Bot **@erwähnen**, um eine Antwort auszulösen.
+1. Setze `groupPolicy` auf `"allowlist"` oder `"open"` in deiner Channel-Konfiguration
+2. Füge den Bot über das QQ Bot Open Platform Dashboard oder durch Einladung eines Gruppenadministrators zu einer QQ-Gruppe hinzu
+3. Gruppenmitglieder müssen den Bot **@erwähnen**, um eine Antwort auszulösen
 
-Die QQ-Bot-API V2 liefert nur Gruppenmitteilungen, die den Bot @erwähnen – der Bot sieht nicht alle Gruppenmitteilungen. Standardmäßig ist `requireMention` auf `true` gesetzt und sollte für QQ auch so bleiben.
+Die QQ Bot API V2 liefert nur Gruppennachrichten, die den Bot @erwähnen – der Bot sieht nicht alle Gruppennachrichten. Standardmäßig ist `requireMention` auf `true` gesetzt; für QQ sollte dieser Wert auch so bleiben.
 
-Vollständige Details zu Gruppenrichtlinien und Erwähnungsfilterung finden Sie unter [Gruppenchats](./overview#group-chats).
+Siehe [Gruppenchats](./overview#group-chats) für vollständige Details zu Gruppenrichtlinien und Erwähnungsbeschränkungen.
 
 ## Markdown-Unterstützung
 
-Der QQ-Bot-Kanal unterstützt Markdown-Formatierung (`msg_type=2`). Die Markdown-Antworten des Agenten werden unverändert gesendet, und QQ rendert sie mit umfangreicher Formatierung (fett, kursiv, Codeblöcke, Links, Listen).
+Der QQ Bot-Channel unterstützt Markdown-Formatierung (`msg_type=2`). Die Markdown-Antworten des Agents werden unverändert gesendet, und QQ rendert sie mit umfangreicher Formatierung (fett, kursiv, Codeblöcke, Links, Listen).
 
-Sollte der QQ-Server eine Markdown-Nachricht aus irgendeinem Grund ablehnen, wiederholt der Kanal sie automatisch als Klartext – Ihre Nachrichten kommen also immer an, auch wenn die Markdown-Fähigkeit des Bots serverseitig eingeschränkt ist.
+Falls der QQ-Server eine Markdown-Nachricht aus irgendeinem Grund ablehnt, sendet der Channel sie automatisch als Klartext erneut – deine Nachrichten kommen also immer durch, selbst wenn die Markdown-Fähigkeit des Bots serverseitig eingeschränkt ist.
 
-Dies ist das Gegenteil des WeChat-Kanals, der sämtliche Markdown-Formatierung entfernt. Sie können den Agenten im QQ-Kanal durchgängig Markdown verwenden lassen.
+Dies ist das Gegenteil des WeChat-Channels, der alle Markdown-Formatierung entfernt. Du kannst dem Agent im QQ-Channel die vollständige Markdown-Nutzung gestatten.
 
 ## Token-Verwaltung
 
-Zugriffstokens laufen nach etwa 2 Stunden ab. Der Kanal erneuert sie automatisch bei 80 % ihrer Lebensdauer (normalerweise ~1,6 Stunden). Falls eine Erneuerung fehlschlägt, wird sie nach 60 Sekunden wiederholt.
+Access-Token laufen nach etwa 2 Stunden ab. Der Channel erneuert sie automatisch bei 80 % ihrer TTL (normalerweise ~1,6 Stunden). Wenn eine Erneuerung fehlschlägt, wird sie nach 60 Sekunden wiederholt.
 
-Die Token-Aktualisierung läuft auch bei WebSocket-Wiederverbindungen weiter – der Kanal wird niemals aufgrund eines abgelaufenen Tokens offline gehen, solange AppID und AppSecret gültig bleiben.
+Die Token-Erneuerung läuft über WebSocket-Wiederverbindungen hinweg weiter – der Channel geht nie aufgrund eines abgelaufenen Tokens offline, solange AppID und AppSecret gültig bleiben.
 
-## Verbindungsstabilität
+## Verbindungsresilienz
 
-- **Automatische Wiederverbindung:** Bei WebSocket-Trennung wiederholt der Kanal die Verbindung mit exponentiellem Backoff (bis zu 20 Versuche, maximal 30 Sekunden zwischen den Versuchen).
-- **Sitzungswiederaufnahme:** Wenn die WebSocket-Verbindung kurzzeitig unterbrochen wird, verwendet der Kanal den QQ-Befehl `RESUME`, um die Sitzung wiederherzustellen, ohne dass laufende Nachrichten verloren gehen.
-- **Serverübergreifende Kontextfortsetzung:** Chat-Sitzungen und Routing-Status werden auf der Festplatte gespeichert. Wenn der Daemon neu startet, werden Unterhaltungen nahtlos fortgesetzt.
-- **Heartbeat-Überwachung:** Timeouts bei HEARTBEAT_ACK werden erkannt und erzwingen eine Wiederverbindung, um Zombie-Verbindungen zu vermeiden.
-- **Nachrichtendeduplizierung:** Nach einer Wiederverbindung erneut gesendete Nachrichten werden erkannt und übersprungen.
+- **Automatische Wiederverbindung:** Bei einer WebSocket-Unterbrechung wiederholt der Channel die Verbindung mit exponentiellem Backoff (bis zu 20 Versuche, max. 30 Sekunden zwischen den Versuchen)
+- **Sitzungswiederaufnahme:** Falls die WebSocket-Verbindung kurzzeitig unterbrochen wird, nutzt der Channel den `RESUME`-Opcode von QQ, um die Sitzung ohne Verlust laufender Nachrichten wiederherzustellen
+- **Serverübergreifende Kontextfortsetzung:** Chat-Sitzungen und Routing-Zustand werden auf der Festplatte gespeichert. Wenn der Daemon neu startet, werden Gespräche an der Stelle fortgesetzt, an der sie unterbrochen wurden
+- **Heartbeat-Überwachung:** Timeouts bei HEARTBEAT_ACK werden erkannt und erzwingen eine Wiederverbindung, um Zombie-Verbindungen zu vermeiden
+- **Nachrichten-Deduplizierung:** Nach einer Wiederverbindung erneut zugestellte Nachrichten werden erkannt und übersprungen
 
 ## Tipps
 
-- **Nutzen Sie Markdown frei** – Anders als bei WeChat rendert QQ Markdown nativ. Fett, Codeblöcke, Listen und Links funktionieren alle.
-- **Halten Sie Antworten unter 2000 Zeichen** – Längere Antworten werden automatisch in Blöcke aufgeteilt. Ein Hinweis zur Länge in Ihren Anweisungen hilft dem Agenten, prägnant zu bleiben.
-- **Sandbox zum Testen** – Setzen Sie `"sandbox": true`, um während der Entwicklung die Sandbox-API zu verwenden. Davon sind keine Produktionsnachrichten betroffen.
-- **Zugriff beschränken** – Verwenden Sie `senderPolicy: "allowlist"` für einen festen QQ-Benutzerkreis oder `"pairing"`, um neue Benutzer über die CLI zu genehmigen. Details finden Sie unter [DM-Pairing](./overview#dm-pairing).
+- **Nutze Markdown frei** – Anders als WeChat rendert QQ Markdown nativ. Fettschrift, Codeblöcke, Listen und Links funktionieren alle.
+- **Halte Antworten unter 2000 Zeichen** – Längere Antworten werden automatisch aufgeteilt. Ein Hinweis zur Zeichenbegrenzung in deinen Anweisungen hilft dem Agent, präzise zu bleiben.
+- **Sandbox zum Testen** – Setze `"sandbox": true`, um während der Entwicklung die Sandbox-API zu verwenden. Produktionsnachrichten werden nicht beeinträchtigt.
+- **Zugriff einschränken** – Verwende `senderPolicy: "allowlist"` für einen festen Benutzerkreis oder `"pairing"`, um neue Benutzer über die CLI zu genehmigen. Siehe [DM-Pairing](./overview#dm-pairing) für Details.
+
 ## Hauptunterschiede zu Telegram
 
-| Bereich             | QQ Bot                                      | Telegram                                      |
-| ------------------- | ------------------------------------------- | --------------------------------------------- |
-| Authentifizierung   | QR-Code-Login oder AppID/AppSecret          | Statischer Bot-Token von BotFather            |
-| Markdown            | Natives QQ-Markdown mit Fallback auf Klartext | HTML-formatiert aus Agent-Markdown            |
-| Token-Lebenszyklus  | 2h TTL, automatische Aktualisierung bei 80% | Permanenter Bot-Token                         |
-| Gruppennachrichten  | Nur @Erwähnungen werden an den Bot gesendet | Bot sieht alle Nachrichten (bei deaktiviertem Privatsphäre-Modus) |
-| Tipp-Anzeige        | Nicht verfügbar (QQ-API-Einschränkung)      | „Arbeite…“-Nachricht                          |
-| Sandbox-Modus       | Zum Testen unterstützt                      | Nicht verfügbar                               |
+| Bereich           | QQ Bot                                      | Telegram                                      |
+| ----------------- | ------------------------------------------- | --------------------------------------------- |
+| Authentifizierung | QR-Code-Anmeldung oder AppID/AppSecret      | Statischer Bot-Token von BotFather            |
+| Markdown          | Nativer QQ-Markdown mit Klartext-Fallback   | HTML-Formatierung aus Agent-Markdown          |
+| Token-Lebensdauer | 2h TTL, automatische Erneuerung bei 80 %    | Dauerhafter Bot-Token                         |
+| Gruppennachrichten| Nur @Erwähnungen werden an den Bot geliefert| Bot sieht alle Nachrichten (Privacy-Mode aus) |
+| Schreibanzeige    | Nicht verfügbar (QQ-API-Einschränkung)      | „Working…“-Nachricht                          |
+| Sandbox-Modus     | Wird zum Testen unterstützt                 | Nicht verfügbar                               |
 
 ## Fehlerbehebung
 
 ### Bot antwortet nicht
 
-- Überprüfen Sie die Terminalausgabe auf Fehler
-- Stellen Sie sicher, dass der Kanal läuft (`qwen channel status`)
-- Wenn Sie `senderPolicy: "allowlist"` verwenden, stellen Sie sicher, dass Ihre QQ-Benutzer-ID in `allowedUsers` enthalten ist
-- Beim ersten Start erscheint ein QR-Code im Terminal – scannen Sie ihn mit Ihrer QQ-App
+- Überprüfe die Terminalausgabe auf Fehler
+- Stelle sicher, dass der Channel läuft (`qwen channel status`)
+- Wenn `senderPolicy: "allowlist"` verwendet wird, stelle sicher, dass deine QQ-Benutzer-ID in `allowedUsers` enthalten ist
+- Beim ersten Start erscheint ein QR-Code im Terminal – scanne ihn mit deiner QQ-App
 
 ### Bot antwortet nicht in Gruppen
 
-- Überprüfen Sie, dass `groupPolicy` auf `"allowlist"` oder `"open"` gesetzt ist (Standard ist `"disabled"`)
-- **Sie müssen den Bot @erwähnen** – QQ liefert nur Nachrichten, die den Bot taggen
-- Stellen Sie sicher, dass der Bot der Gruppe hinzugefügt wurde
+- Überprüfe, dass `groupPolicy` auf `"allowlist"` oder `"open"` gesetzt ist (Standard ist `"disabled"`)
+- **Du musst den Bot @erwähnen** – QQ liefert nur Nachrichten, die den Bot markieren
+- Stelle sicher, dass der Bot zur Gruppe hinzugefügt wurde
 
-### QR-Code-Login hängt
+### QR-Code-Anmeldung hängt fest
 
-- Der QR-Code wird im Terminal angezeigt. Scannen Sie ihn mit Ihrer QQ-Mobil-App (Ich → Scannen)
-- Wenn der QR-Code abläuft (normalerweise nach einigen Minuten), starten Sie den Kanal neu, um einen neuen zu erhalten
+- Der QR-Code wird im Terminal angezeigt. Scanne ihn mit deiner QQ-Mobil-App (Ich → Scannen)
+- Wenn der QR-Code abläuft (normalerweise nach einigen Minuten), starte den Channel neu, um einen neuen zu erhalten
 
-### Markdown-Nachrichten erscheinen als Klartext
+### Markdown-Nachrichten werden als Klartext angezeigt
 
-- Der QQ-Server hat die Markdown-Nachricht möglicherweise abgelehnt, und der Kanal ist stillschweigend auf Klartext zurückgefallen. Überprüfen Sie das Terminal auf Logmeldungen wie `"Markdown rejected"`
+- Möglicherweise wurde die Markdown-Nachricht vom QQ-Server abgelehnt und der Channel ist stillschweigend auf Klartext zurückgefallen. Überprüfe das Terminal auf `"Markdown rejected"`-Logmeldungen
 - Dies ist auf der QQ Bot Open Platform ungewöhnlich, kann aber vorkommen, wenn die Markdown-Fähigkeit des Bots serverseitig eingeschränkt ist
 
-### Token nach langer Ausfallzeit abgelaufen
+### Token nach längerer Ausfallzeit abgelaufen
 
-- Wenn der Kanal länger als 2 Stunden offline ist, ist der Zugriffstoken abgelaufen. Der Kanal holt sich beim erneuten Verbinden einen neuen Token – kein Handlungsbedarf
-- Wenn das AppSecret selbst ungültig ist (z. B. im Entwicklerportal gedreht), aktualisieren Sie das Feld `appSecret` oder löschen Sie `~/.qwen/channels/<name>-credentials.json`, um den QR-Code-Login erneut auszulösen
+- Wenn der Channel länger als 2 Stunden offline war, ist das Access-Token abgelaufen. Der Channel holt bei der Wiederverbindung ein neues Token – kein Handlungsbedarf
+- Wenn das AppSecret selbst ungültig ist (z. B. im Entwicklerportal rotiert), aktualisiere das `appSecret`-Feld oder lösche `~/.qwen/channels/<name>-credentials.json`, um die QR-Code-Anmeldung erneut auszulösen

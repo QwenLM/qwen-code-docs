@@ -1,12 +1,12 @@
-# Design de Channels
+# Design de Canais
 
-> Integrações de mensagens externas para o Qwen Code — interaja com um agente pelo Telegram, WeChat e outros.
+> Integrações de mensageria externa para o Qwen Code — interaja com um agente a partir do Telegram, WeChat e outros.
 >
-> Documentação do usuário: [Visão geral dos Channels](../../users/features/channels/overview.md).
+> Documentação do usuário: [Visão Geral dos Canais](../../users/features/channels/overview.md).
 
 ## Visão Geral
 
-Um **channel** conecta uma plataforma de mensagens externa a um agente do Qwen Code. Configurado no `settings.json`, gerenciado por meio de subcomandos `qwen channel` e com suporte a múltiplos usuários (cada usuário recebe uma sessão ACP isolada).
+Um **canal** conecta uma plataforma de mensagens externa a um agente do Qwen Code. Configurado em `settings.json`, gerenciado via subcomandos `qwen channel`, multi-usuário (cada usuário recebe uma sessão ACP isolada).
 
 ## Arquitetura
 
@@ -40,17 +40,17 @@ Um **channel** conecta uma plataforma de mensagens externa a um agente do Qwen C
                                     └─────────────────────────────────────┘
 ```
 
-**Platform Adapter** — conecta-se à API externa e traduz mensagens de/para Envelopes. **ACP Bridge** — inicia o `qwen-code --acp`, gerencia sessões e emite os eventos `textChunk`/`toolCall`/`disconnected`. **Session Router** — mapeia remetentes para sessões ACP por meio de chaves com namespace (`<channel>:<sender>`). **Sender Gate** / **Group Gate** — controle de acesso (allowlist / pairing / open) e filtragem de menções. **Channel Base** — classe base abstrata com o padrão Template Method: os plugins sobrescrevem `connect`, `sendMessage` e `disconnect`. **Channel Registry** — `Map<string, ChannelPlugin>` com detecção de colisões.
+**Platform Adapter** — conecta-se à API externa, traduz mensagens para/desde Envelopes. **ACP Bridge** — inicia `qwen-code --acp`, gerencia sessões, emite eventos `textChunk`/`toolCall`/`disconnected`. **Session Router** — mapeia remetentes para sessões ACP via chaves com namespace (`<channel>:<sender>`). **Sender Gate** / **Group Gate** — controle de acesso (allowlist / pairing / open) e mention gating. **Channel Base** — base abstrata com padrão Template Method: plugins sobrescrevem `connect`, `sendMessage`, `disconnect`. **Channel Registry** — `Map<string, ChannelPlugin>` com detecção de colisões.
 
 ### Envelope
 
-Formato de mensagem normalizado para o qual todas as plataformas convertem:
+Formato de mensagem normalizada para o qual todas as plataformas convertem:
 
-- **Identidade**: `senderId`, `senderName`, `chatId`, `channelName`
-- **Conteúdo**: `text`, `imageBase64`/`imageMimeType` (opcional), `referencedText` (opcional)
-- **Contexto**: `isGroup`, `isMentioned`, `isReplyToBot`, `threadId` (opcional)
+- **Identity**: `senderId`, `senderName`, `chatId`, `channelName`
+- **Content**: `text`, opcional `imageBase64`/`imageMimeType`, opcional `referencedText`
+- **Context**: `isGroup`, `isMentioned`, `isReplyToBot`, opcional `threadId`
 
-Responsabilidades do plugin: `senderId` deve ser estável/único; `chatId` deve diferenciar DMs de grupos; os flags booleanos devem ser precisos para a lógica de gate; @menções devem ser removidas do `text`.
+Responsabilidades do plugin: `senderId` deve ser estável/único; `chatId` deve distinguir DMs de grupos; flags booleanas devem ser precisas para a lógica de gate; @menções removidas de `text`.
 
 ### Fluxo de Mensagens
 
@@ -59,44 +59,44 @@ Inbound:  User message → Adapter → GroupGate → SenderGate → Slash comman
 Outbound: Agent response → AcpBridge → SessionRouter → Adapter → User
 ```
 
-Os slash commands (`/clear`, `/help`, `/status`) são processados no ChannelBase antes de chegar ao agente.
+Comandos slash (`/clear`, `/help`, `/status`) são tratados no ChannelBase antes de chegar ao agente.
 
 ### Sessões
 
-Um único processo `qwen-code --acp` com múltiplas sessões ACP. Escopo por channel: **`user`** (padrão), **`thread`** ou **`single`**. Chaves de roteamento com namespace no formato `<channelName>:<key>`.
+Um processo `qwen-code --acp` com múltiplas sessões ACP. Escopo por canal: **`user`** (padrão), **`thread`** ou **`single`**. Chaves de roteamento com namespace `<channelName>:<key>`.
 
 ### Tratamento de Erros
 
-- **Falhas de conexão** — registradas em log; o serviço continua se pelo menos um channel conectar
-- **Falhas no Bridge** — backoff exponencial (máx. 3 tentativas), `setBridge()` em todos os channels, restauração de sessão
-- **Serialização de sessão** — cadeias de promises por sessão evitam colisões concorrentes de prompts
+- **Falhas de conexão** — registradas; o serviço continua se pelo menos um canal conectar
+- **Crashes da Bridge** — backoff exponencial (máx. 3 tentativas), `setBridge()` em todos os canais, restauração de sessão
+- **Serialização de sessão** — cadeias de promessas por sessão evitam colisões concorrentes de prompt
 
 ## Sistema de Plugins
 
-A arquitetura é extensível — novos adaptadores (incluindo de terceiros) podem ser adicionados sem modificar o core. Os channels nativos usam a mesma interface de plugin (dogfooding).
+A arquitetura é extensível — novos adaptadores (incluindo de terceiros) podem ser adicionados sem modificar o core. Canais embutidos usam a mesma interface de plugin (dogfooding).
 
 ### Contrato do Plugin
 
-Um `ChannelPlugin` declara `channelType`, `displayName`, `requiredConfigFields` e uma factory `createChannel()`. Os plugins implementam três métodos:
+Um `ChannelPlugin` declara `channelType`, `displayName`, `requiredConfigFields` e uma fábrica `createChannel()`. Plugins implementam três métodos:
 
-| Método                      | Responsabilidade                                  |
-| --------------------------- | ------------------------------------------------- |
-| `connect()`                 | Conectar à plataforma e registrar handlers de mensagem |
-| `sendMessage(chatId, text)` | Formatar e entregar a resposta do agente          |
-| `disconnect()`              | Realizar limpeza no shutdown                      |
+| Método                      | Responsabilidade                                    |
+| --------------------------- | --------------------------------------------------- |
+| `connect()`                 | Conectar-se à plataforma e registrar handlers de mensagem |
+| `sendMessage(chatId, text)` | Formatar e entregar a resposta do agente            |
+| `disconnect()`              | Limpar recursos ao desligar                         |
 
-Em mensagens de entrada, os plugins constroem um `Envelope` e chamam `this.handleInbound(envelope)` — a classe base cuida do restante: controle de acesso, filtragem de grupos, pairing, roteamento de sessão, serialização de prompt, slash commands, injeção de instruções, contexto de resposta e recuperação de falhas.
+Em mensagens recebidas, os plugins constroem um `Envelope` e chamam `this.handleInbound(envelope)` — a classe base cuida do resto: controle de acesso, group gating, pareamento, roteamento de sessão, serialização de prompt, comandos slash, injeção de instruções, contexto de resposta e recuperação de falhas.
 
 ### Pontos de Extensão
 
-- Slash commands personalizados via `registerCommand()`
-- Indicadores de atividade envolvendo `handleInbound()` com exibição de digitação/reação
+- Comandos slash personalizados via `registerCommand()`
+- Indicadores de digitação encapsulando `handleInbound()` com exibição de typing/reaction
 - Hooks de tool call via `onToolCall()`
-- Tratamento de mídia anexando ao Envelope antes de `handleInbound()`
+- Manipulação de mídia anexando ao Envelope antes de `handleInbound()`
 
 ### Descoberta e Carregamento
 
-Plugins externos são **extensões** gerenciadas pelo `ExtensionManager`, declaradas no `qwen-extension.json`:
+Plugins externos são **extensões** gerenciadas pelo `ExtensionManager`, declaradas em `qwen-extension.json`:
 
 ```json
 {
@@ -111,9 +111,9 @@ Plugins externos são **extensões** gerenciadas pelo `ExtensionManager`, declar
 }
 ```
 
-Sequência de carregamento em `qwen channel start`: carregar configurações → registrar nativos → escanear extensões → importação dinâmica + validação → registrar (rejeitar colisões) → validar config → `createChannel()` → `connect()`.
+Sequência de carregamento ao `qwen channel start`: carregar configurações → registrar embutidos → escanear extensões → import dinâmico + validar → registrar (rejeitar colisões) → validar config → `createChannel()` → `connect()`.
 
-Os plugins são executados in-process (sem sandbox), com o mesmo modelo de confiança das dependências npm.
+Plugins executam in-process (sem sandbox), mesmo modelo de confiança que dependências npm.
 
 ## Configuração
 
@@ -128,7 +128,7 @@ Os plugins são executados in-process (sem sandbox), com o mesmo modelo de confi
       "sessionScope": "user", // user | thread | single
       "cwd": "/path/to/project",
       "model": "qwen3.5-plus",
-      "instructions": "Keep responses short.",
+      "instructions": "Mantenha as respostas curtas.",
       "groupPolicy": "disabled", // disabled | allowlist | open
       "groups": { "*": { "requireMention": true } },
     },
@@ -136,22 +136,22 @@ Os plugins são executados in-process (sem sandbox), com o mesmo modelo de confi
 }
 ```
 
-A autenticação é específica do plugin: token estático (Telegram), credenciais de app (DingTalk), login por QR code (WeChat), token de proxy (TMCP).
+Autenticação é específica do plugin: token estático (Telegram), credenciais de app (DingTalk), login via QR code (WeChat), token proxy (TMCP).
 
-## Comandos da CLI
+## Comandos CLI
 
 ```bash
-# Channels
-qwen channel start [name]                     # inicia todos ou um channel
+# Canais
+qwen channel start [name]                     # inicia todos ou um canal específico
 qwen channel stop                             # para o serviço em execução
-qwen channel status                           # exibe channels, sessões e tempo de atividade
-qwen channel pairing list <ch>                # solicitações de pairing pendentes
+qwen channel status                           # exibe canais, sessões, tempo de atividade
+qwen channel pairing list <ch>                # solicitações de pareamento pendentes
 qwen channel pairing approve <ch> <code>      # aprova uma solicitação
 
-# Extensions
+# Extensões
 qwen extensions install <path-or-package>     # instala
-qwen extensions link <local-path>             # symlink para desenvolvimento
-qwen extensions list                          # exibe as instaladas
+qwen extensions link <local-path>             # link simbólico para desenvolvimento
+qwen extensions list                          # exibe instaladas
 qwen extensions remove <name>                 # desinstala
 ```
 
@@ -161,44 +161,44 @@ qwen extensions remove <name>                 # desinstala
 packages/channels/
 ├── base/                    # @qwen-code/channel-base
 │   └── src/
-│       ├── AcpBridge.ts     # ACP process lifecycle, session management
-│       ├── SessionRouter.ts # sender ↔ session mapping, persistence
+│       ├── AcpBridge.ts     # ciclo de vida do processo ACP, gerenciamento de sessões
+│       ├── SessionRouter.ts # mapeamento remetente ↔ sessão, persistência
 │       ├── SenderGate.ts    # allowlist / pairing / open
-│       ├── GroupGate.ts     # group chat policy + mention gating
-│       ├── PairingStore.ts  # pairing code generation + approval
-│       ├── ChannelBase.ts   # abstract base: routing, slash commands
+│       ├── GroupGate.ts     # política de grupo + mention gating
+│       ├── PairingStore.ts  # geração e aprovação de códigos de pareamento
+│       ├── ChannelBase.ts   # base abstrata: roteamento, comandos slash
 │       └── types.ts         # Envelope, ChannelConfig, etc.
 ├── telegram/                # @qwen-code/channel-telegram
 ├── weixin/                  # @qwen-code/channel-weixin
 └── dingtalk/                # @qwen-code/channel-dingtalk
 ```
 
-## Trabalho Futuro
+## Trabalhos Futuros
 
-### Segurança e Chat em Grupo
+### Segurança e Grupos
 
-- **Restrições de ferramentas por grupo** — listas de deny/allow `tools`/`toolsBySender` por grupo
-- **Histórico de contexto do grupo** — ring buffer de mensagens recentes ignoradas, anexado no @mention
-- **Padrões de menção via Regex** — fallback `mentionPatterns` para metadados de @mention não confiáveis
+- **Restrições de ferramentas por grupo** — listas de negação/permissão `tools`/`toolsBySender` por grupo
+- **Histórico de contexto do grupo** — buffer circular de mensagens ignoradas recentes, prepended ao @mention
+- **Padrões de menção via regex** — `mentionPatterns` de fallback para metadados de @mention não confiáveis
 - **Instruções por grupo** — campo `instructions` no `GroupConfig` para personas por grupo
-- **Comando `/activation`** — toggle em runtime para `requireMention`, persistido em disco
+- **Comando `/activation`** — alternância em tempo de execução para `requireMention`, persistido em disco
 
 ### Ferramentas Operacionais
 
-- **`qwen channel doctor`** — validação de config, env vars, tokens de bot, verificações de rede
-- **`qwen channel status --probe`** — verificações reais de conectividade por channel
+- **`qwen channel doctor`** — validação de configuração, variáveis de ambiente, tokens de bot, verificações de rede
+- **`qwen channel status --probe`** — verificações reais de conectividade por canal
 
 ### Expansão de Plataformas
 
-- **Discord** — Bot API + Gateway, servidores/channels/DMs/threads
-- **Slack** — Bolt SDK, Socket Mode, workspaces/channels/DMs/threads
+- **Discord** — Bot API + Gateway, servidores/canais/DMs/threads
+- **Slack** — Bolt SDK, Socket Mode, workspaces/canais/DMs/threads
 
-### Multi-Agent
+### Multi-Agente
 
-- **Roteamento multi-agent** — múltiplos agentes com bindings por channel/grupo/usuário
+- **Roteamento multi-agente** — múltiplos agentes com bindings por canal/grupo/usuário
 - **Grupos de broadcast** — múltiplos agentes respondem à mesma mensagem
 
 ### Ecossistema de Plugins
 
-- **Template de plugin da comunidade** — ferramenta de scaffolding `create-qwen-channel`
+- **Modelo de plugin comunitário** — ferramenta de scaffolding `create-qwen-channel`
 - **Registro/descoberta de plugins** — `qwen extensions search`, compatibilidade de versões

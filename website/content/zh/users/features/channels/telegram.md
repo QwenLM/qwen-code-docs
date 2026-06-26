@@ -1,30 +1,30 @@
 # Telegram
 
-本指南介绍如何在 Telegram 上配置 Qwen Code 频道。
+本指南介绍如何在 Telegram 上设置 Qwen Code 频道。
 
-## 前置条件
+## 前提条件
 
 - 一个 Telegram 账号
-- 一个 Telegram Bot Token（见下文）
+- 一个 Telegram Bot Token（参见下文）
 
-## 创建 Bot
+## 创建机器人
 
-1. 打开 Telegram 并搜索 [@BotFather](https://t.me/BotFather)
-2. 发送 `/newbot` 并按照提示设置名称和用户名
-3. BotFather 会提供一个 Bot Token，请妥善保存
+1. 打开 Telegram，搜索 [@BotFather](https://t.me/BotFather)
+2. 发送 `/newbot` 并按提示选择名称和用户名
+3. BotFather 会给你一个 Bot Token——请妥善保存
 
-## 获取你的 User ID
+## 查找你的用户 ID
 
-要使用 `senderPolicy: "allowlist"` 或 `"pairing"`，你需要获取 Telegram 的 User ID（数字 ID，而非用户名）。
+使用 `senderPolicy: "allowlist"` 或 `"pairing"` 时，你需要提供 Telegram 用户 ID（一个数字 ID，不是用户名）。
 
-获取方法如下：
+最简单的查找方法：
 
 1. 在 Telegram 中搜索 [@userinfobot](https://t.me/userinfobot)
-2. 发送任意消息，它会回复你的 User ID
+2. 向其发送任意消息——它就会回复你的用户 ID
 
 ## 配置
 
-将频道配置添加到 `~/.qwen/settings.json`：
+将频道添加到 `~/.qwen/settings.json`：
 
 ```json
 {
@@ -52,7 +52,7 @@
 export TELEGRAM_BOT_TOKEN=<your-token-from-botfather>
 ```
 
-或者将其添加到运行前加载的 `.env` 文件中。
+或者将其添加到运行前会加载的 `.env` 文件中。
 
 ## 运行
 
@@ -60,61 +60,61 @@ export TELEGRAM_BOT_TOKEN=<your-token-from-botfather>
 # 仅启动 Telegram 频道
 qwen channel start my-telegram
 
-# 或同时启动所有已配置的频道
+# 或者启动所有已配置的频道
 qwen channel start
 ```
 
-然后在 Telegram 中打开你的 Bot 并发送消息。你应该会立即看到 "Working..." 提示，随后是 Agent 的回复。
+然后在 Telegram 中打开你的机器人并发送一条消息。你应该会立即看到 "Working..." 字样，随后是 agent 的回复。
 
-## 群组聊天
+## 群聊
 
-要在 Telegram 群组中使用该 Bot：
+要在 Telegram 群组中使用机器人：
 
 1. 在频道配置中将 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`
-2. 在 BotFather 中**关闭隐私模式**：`/mybots` → 选择你的 Bot → Bot Settings → Group Privacy → Turn Off
-3. 将 Bot 添加到群组。如果它已经在群组中，请**先移除再重新添加**（Telegram 会缓存 Bot 加入时的隐私设置）
-4. 如果使用 `groupPolicy: "allowlist"`，请将群组的 Chat ID 添加到配置的 `groups` 中
+2. **在 BotFather 中关闭隐私模式**：`/mybots` → 选择你的机器人 → Bot Settings → Group Privacy → 关闭
+3. 将机器人添加到群组。如果它已经在群组中，请**移除并重新添加**（Telegram 会缓存机器人加入时的隐私设置）
+4. 如果使用 `groupPolicy: "allowlist"`，请将群组的聊天 ID 添加到配置的 `groups` 中
 
-默认情况下，Bot 在群组中需要 @提及 或回复才会响应。为特定群组设置 `"requireMention": false` 可使其响应所有消息（适用于专用任务群组）。完整详情请参阅 [群组聊天](./overview#group-chats)。
+默认情况下，机器人在群组中需要通过 @提及或回复来响应。如果希望特定群组对所有消息都响应（适用于专用任务群组），可设置 `"requireMention": false`。详见[群聊](./overview#group-chats)。
 
 ## 图片与文件
 
-除了文本，你还可以向 Bot 发送图片和文档。
+你可以向机器人发送照片和文档，而不仅仅是文本。
 
-**图片：** 发送图片后，Agent 将使用视觉能力进行分析。这需要多模态模型支持——在频道配置中添加 `"model": "qwen3.5-plus"`（或其他支持视觉的模型）。图片说明文字会作为消息文本传递。
+**照片：** 发送照片后，agent 会利用其视觉能力进行分析。这需要多模态模型——请在频道配置中添加 `"model": "qwen3.5-plus"`（或其他支持视觉的模型）。照片的说明文字会作为消息文本传递。
 
-**文档：** 发送 PDF、代码文件或任意文档。Bot 会将其下载并保存到本地，以便 Agent 使用文件工具读取。此功能适用于所有模型。Telegram 的文件大小限制为 20MB。
+**文档：** 发送 PDF、代码文件或任何文档。机器人会下载并保存到本地，以便 agent 使用文件工具读取。此功能适用于任何模型。Telegram 的文件大小限制为 20MB。
 
-## 使用建议
+## 提示
 
-- **保持指令简洁** — Telegram 的消息长度限制为 4096 个字符。添加类似“保持回复简短”的指令有助于 Agent 控制在限制范围内。
-- **使用 `sessionScope: "user"`** — 这将为每个用户提供独立的会话。使用 `/clear` 可重新开始。
-- **限制访问权限** — 使用 `senderPolicy: "allowlist"` 固定允许的用户列表，或使用 `"pairing"` 让新用户通过你经 CLI 审批的配对码申请访问。详情请参阅 [私聊配对](./overview#dm-pairing)。
+- **保持指令简洁聚焦**——Telegram 有 4096 字符的消息限制。添加类似 "keep responses short" 的指令有助于 agent 保持在限制内。
+- **使用 `sessionScope: "user"`**——这样每个用户都有独立的对话。使用 `/clear` 重新开始。
+- **限制访问**——使用 `senderPolicy: "allowlist"` 限制为固定用户集，或使用 `"pairing"` 让新用户通过你通过 CLI 批准的代码请求访问。详见[私聊配对](./overview#dm-pairing)。
 
 ## 消息格式
 
-Agent 的 Markdown 回复会自动转换为 Telegram 兼容的 HTML 格式。代码块、粗体、斜体、链接和列表均受支持。
+agent 的 Markdown 响应会自动转换为 Telegram 兼容的 HTML。代码块、粗体、斜体、链接和列表都支持。
 
-## 故障排查
+## 故障排除
 
-### Bot 无响应
+### 机器人无响应
 
-- 检查 Bot Token 是否正确且环境变量已设置
-- 如果使用 `senderPolicy: "allowlist"`，请确认你的 User ID 已加入 `allowedUsers`；如果使用 `"pairing"`，请确认你已通过审批
-- 检查终端输出是否有错误信息
+- 检查 Bot Token 是否正确，以及环境变量是否已设置
+- 如果使用 `senderPolicy: "allowlist"`，确认你的用户 ID 在 `allowedUsers` 中；如果使用 `"pairing"`，确认已获得批准
+- 检查终端输出中的错误信息
 
-### Bot 在群组中无响应
+### 机器人在群组中无响应
 
-- 检查 `groupPolicy` 是否设置为 `"allowlist"` 或 `"open"`（默认为 `"disabled"`）
-- 如果使用 `"allowlist"`，请确认群组的 Chat ID 已添加到 `groups` 配置中
-- 确保在 BotFather 中**已关闭 Group Privacy** — 否则 Bot 无法看到群组中的非命令消息
-- 如果在将 Bot 加入群组后修改了隐私模式，请**将 Bot 从群组中移除并重新添加**
-- 默认情况下，Bot 需要 @提及 或回复才会响应。可发送 `@yourbotname hello` 进行测试
+- 确保 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`（默认是 `"disabled"`）
+- 如果使用 `"allowlist"`，确认群组的聊天 ID 已添加到 `groups` 配置中
+- 确保在 BotFather 中**关闭了 Group Privacy**——如果没有关闭，机器人无法看到群组中的非命令消息
+- 如果在将机器人加入群组后更改了隐私模式，请**移除并重新添加机器人**到群组
+- 默认情况下，机器人需要 @提及或回复。发送 `@yourbotname hello` 进行测试
 
 ### "Sorry, something went wrong processing your message"
 
-这通常表示 Agent 在处理时遇到了错误。请查看终端输出获取详细信息。
+这通常意味着 agent 遇到了错误。请查看终端输出以获取详细信息。
 
-### Bot 响应时间较长
+### 机器人响应时间过长
 
-Agent 可能正在执行多次工具调用（读取文件、搜索等）。Agent 处理期间会显示 "Working..." 提示。复杂任务可能需要一分钟或更长时间。
+agent 可能正在执行多个工具调用（读取文件、搜索等）。处理过程中会显示 "Working..." 指示器。复杂任务可能需要一分钟或更长时间。

@@ -456,7 +456,6 @@ executeToolCalls
 | 该 skill 触发场景的端到端 RT P50          | 下降 ≥ 2s                | 来自少一轮 LLM 调用        |
 | 该 skill 的 `user_followup_within_30s` 率 | 不上升                   | 用户没追问 = 答案完整      |
 | 该 skill 的 `success` 率                  | 不下降                   | 内联 followup 没引入新失败 |
-
 ### 5.2 整体 RT 指标
 
 | 指标                               | 基线                                  | Layer 2 改完 top-3 skill 后目标  |

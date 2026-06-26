@@ -1,90 +1,90 @@
-# Plan de refonte du module Command de Qwen Code
+# Plan de refonte du module Qwen Code Command
 
 ## 1. Définition des objectifs
 
-Ce plan repose sur un seul principe fondamental :
+Ce plan repose sur l'unique principe suivant :
 
-- **L'architecture du code ne doit pas nécessairement copier celle de Claude Code**
-- **Mais les fonctionnalités principales, l'expérience d'utilisation et l'interactivité du système de commandes doivent atteindre 95 % de parité avec Claude Code**
+- **L'architecture du code peut ne pas copier Claude Code**
+- **Mais les fonctionnalités principales, l'expérience utilisateur et l’interaction du système de commandes doivent être alignées à 95 % avec Claude Code**
 
-Ici, « parité » désigne les capacités directement perceptibles par l'utilisateur, notamment :
+Par « alignement », on entend les capacités directement perceptibles par l'utilisateur, notamment :
 
 1. Couverture des sources de commandes
 2. Aide et découvrabilité des commandes
-3. Complétion des commandes et expérience des `mid-input slash command`
-4. Disponibilité en mode ACP / `non-interactive`
-5. Capacité d'invocation par le modèle pour les `prompt command` / `skill`
+3. Autocomplétion des commandes et expérience de saisie slash en milieu de champ
+4. Disponibilité ACP / non interactive
+5. Capacité d'appel des commandes prompt / compétences (skills) par le modèle
 
-Cette refonte ne consiste pas à ajouter quelques champs ni à retoucher légèrement l'actuel `SlashCommand`. Il s'agit de faire évoluer le module `command` d'une « fonctionnalité annexe de l'UI interactive » vers une « plateforme de commandes unifiée pour les modes interactive / ACP / non-interactive / model ».
+Cette refonte ne consiste pas à ajouter quelques champs ni à bricoler l’actuel `SlashCommand`, mais à faire évoluer le module de commandes d’une « capacité annexe de l’interface interactive » vers une « plateforme unifiée de commandes, transverse aux modes interactif / ACP / non interactif / modèle ».
 
 ---
 
-## 2. Conclusions après réécriture
+## 2. Conclusion après réécriture
 
-Les problèmes du système `command` actuel de Qwen ne résident pas dans une absence totale de capacités, mais dans le fait que :
+Les problèmes du système de commandes actuel de Qwen ne sont pas une absence totale de capacités, mais :
 
-1. Il n'est complet que sur le chemin principal `interactive`
-2. Le modèle de types est trop léger pour supporter un produit au niveau de Claude
-3. Les modes ACP / `non-interactive` dépendent d'une `allowlist`, ce qui limite fortement l'extensibilité
-4. Bien que les sources de commandes existent, elles ne forment pas une vision unifiée et visible pour l'utilisateur
-5. Les `prompt command` et le système d'exposition des `skill` du modèle sont cloisonnés
+1. Une complétude seulement sur le chemin principal interactif
+2. Un modèle de types trop léger pour porter l’envergure produit de Claude
+3. Une dépendance aux listes blanches (whitelist) en ACP / non interactif, avec une extensibilité très limitée
+4. Des sources de commandes existantes mais sans unifier un modèle mental visible pour l’utilisateur
+5. Une dissociation entre les commandes prompt et l’exposition des compétences du modèle
 
-La nouvelle approche doit donc résoudre simultanément quatre points :
+Le nouveau plan doit donc résoudre quatre choses simultanément :
 
-1. **Combler les écarts de fonctionnalités avec Claude Code**
-2. **Conserver les avantages techniques du modèle `outcome` unifié de Qwen**
-3. **Mettre en place une architecture unifiée `registry` / `resolver` / `executor` / `adapter`**
-4. **Faire partager les mêmes métadonnées à l'aide, la complétion, les `ACP available commands` et la documentation**
+1. **Combler le périmètre fonctionnel de Claude Code**
+2. **Conserver l’avantage architectural du modèle de résultat unifié de Qwen**
+3. **Établir une architecture unifiée registry / resolver / executor / adapter**
+4. **Faire en sorte que l’aide, l’autocomplétion, les commandes disponibles ACP et la documentation partagent les mêmes métadonnées**
 
 ---
 
 ## 3. Principes de refonte
 
-### 3.1 La parité fonctionnelle prime sur la parité d'implémentation
+### 3.1 Priorité à l’alignement fonctionnel plutôt qu’à l’alignement d’implémentation
 
-Différences autorisées :
+Ce qui peut différer :
 
-- Noms des classes internes
+- Noms de classes internes
 - Découpage des modules
-- Implémentation des exécuteurs
-- Structure `effect` / `outcome`
+- Implémentation des exécuteurs (executor)
+- Structure effect / outcome
 
-Différences non autorisées :
+Ce qui ne peut pas différer :
 
-- Réduction notable de la couverture des sources de commandes
-- Dégradation notable de l'aide et de la complétion des commandes
-- Réduction notable de la disponibilité en mode ACP / `non-interactive`
-- Diminution notable de l'intégration entre `prompt command` et les capacités du modèle
+- Couverture des sources de commandes sensiblement réduite
+- Expérience d’aide et d’autocomplétion sensiblement dégradée
+- Disponibilité ACP / non interactif sensiblement dégradée
+- Intégration des commandes prompt et des capacités du modèle sensiblement réduite
 
-En cas de compromis, les priorités sont les suivantes :
+En cas d’arbitrage, la priorité est :
 
-1. Parité de l'expérience utilisateur
-2. Parité de la couverture des capacités de commandes
-3. Cohérence des modes
-4. Simplicité de l'implémentation interne
+1. Alignement de l’expérience utilisateur
+2. Alignement de la couverture fonctionnelle des commandes
+3. Alignement de la cohérence des modes
+4. Simplicité de l’implémentation interne
 
-### 3.2 Conserver le modèle `outcome` unifié de Qwen
+### 3.2 Conserver le modèle de résultat unifié de Qwen
 
-Il est déconseillé de copier mécaniquement l'implémentation d'exécution de Claude.
+Il n’est pas recommandé de copier mécaniquement l’implémentation d’exécution de Claude.
 
-Le modèle de résultat unifié actuel de Qwen mérite d'être conservé, car il est naturellement adapté à :
+Le modèle de résultat unifié actuel de Qwen mérite d’être conservé car il est naturellement adapté à :
 
-- Prise en charge par l'UI
-- Approbation / confirmation
-- Orchestration des `tool`
-- Soumission de `prompt`
-- Adaptation inter-modes
+- La prise en main par l’interface utilisateur (UI)
+- L’approbation / confirmation
+- L’orchestration des outils (tool scheduling)
+- La soumission de prompts
+- L’adaptation entre modes
 
-Il doit cependant être évolué pour supporter des capacités de commandes au niveau de Claude, au lieu de rester un framework de commandes UI simplifié.
+Mais il doit être mis à niveau pour porter des capacités de commandes au niveau de Claude, et non plus rester un cadre de commandes simplifié pour l’interface utilisateur.
 
-### 3.3 Découplage strict du type, de la source, du mode et de la visibilité
+### 3.3 Découpler complètement type, source, mode et visibilité
 
-Le nouveau modèle `command` doit au minimum séparer les dimensions suivantes :
+Le nouveau modèle de commandes doit au minimum séparer les dimensions suivantes :
 
-1. **Type** : comment la commande est exécutée
-2. **Source** : d'où provient la commande
-3. **Capacités par mode** : dans quels environnements d'exécution elle est disponible
-4. **Visibilité** : visible pour l'utilisateur ou pour le modèle
+1. **Type** : comment la commande s’exécute
+2. **Source** : d’où vient la commande
+3. **Capacité de mode** : dans quels environnements d’exécution elle est disponible
+4. **Visibilité** : visible pour l’utilisateur ou pour le modèle
 
 ---
 
@@ -100,7 +100,7 @@ Qwen doit prendre en charge explicitement trois types de commandes :
 
 ### 4.2 Sources de commandes
 
-Le schéma `command` de Qwen doit couvrir dès la première phase les sources suivantes :
+Le schéma de commandes de Qwen doit couvrir les sources suivantes dès la première phase :
 
 1. built-in commands
 2. bundled skills
@@ -112,11 +112,11 @@ Le schéma `command` de Qwen doit couvrir dès la première phase les sources su
 8. mcp prompts
 9. mcp skills
 
-Il n'est plus question de revenir à « ne supporter que les catégories déjà existantes pour commencer ».
+Il ne faut plus reculer en disant « on ne supporte d’abord que les quelques catégories actuelles ».
 
 ### 4.3 Métadonnées des commandes
 
-Au minimum, les champs suivants doivent être ajoutés :
+Au minimum, ajouter les champs suivants :
 
 1. `argumentHint`
 2. `whenToUse`
@@ -131,27 +131,27 @@ Au minimum, les champs suivants doivent être ajoutés :
 11. `supportedModes`
 12. `requiresUi`
 
-### 4.4 Capacités UX
+### 4.4 Capacités d’expérience
 
-Au minimum, les expériences suivantes doivent être implémentées :
+Au minimum, ajouter les expériences suivantes :
 
-1. Complétion sur correspondance d'`alias`
+1. Complétion par alias
 2. Badge de source
 3. Indication des paramètres
-4. Tri par `recently used`
-5. Détection et complétion des `mid-input slash command`
-6. Aide sous forme de catalogue de commandes
-7. Expression complète des `ACP available commands`
+4. Tri par utilisation récente
+5. Détection et complétion de slash en milieu de champ
+6. Aide par catalogue des commandes
+7. Expression complète des commandes disponibles ACP
 
 ---
 
-## 5. Nouveau modèle `command`
+## 5. Nouveau modèle de commandes
 
-## 5.1 Structure principale
+## 5.1 Structure centrale
 
-Il est recommandé d'introduire un `CommandDescriptor` unifié, servant de format d'enregistrement pour toutes les commandes.
+Il est recommandé d’introduire un `CommandDescriptor` unifié, comme format d’enregistrement de toutes les commandes.
 
-Il doit au minimum comporter quatre parties :
+Il comprend au moins quatre parties :
 
 1. `identity`
 2. `metadata`
@@ -179,8 +179,8 @@ Il doit au minimum comporter quatre parties :
 
 ### `capabilities`
 
-- `type`: `prompt | local | local-jsx`
-- `supportedModes`: `interactive | acp | non_interactive`
+- `type` : `prompt | local | local-jsx`
+- `supportedModes` : `interactive | acp | non_interactive`
 - `requiresUi`
 - `supportsDialog`
 - `supportsStreaming`
@@ -216,9 +216,9 @@ Utilisé pour :
 
 Caractéristiques :
 
-- Génère des assets `prompt` / `skill`
-- Prend en charge par défaut `interactive` / ACP / `non-interactive`
-- Peut être invoqué par l'utilisateur ou par le modèle
+- Produit des actifs de prompt / skill
+- Supporte par défaut les modes interactif / ACP / non interactif
+- Peut être invoqué par l’utilisateur ou par le modèle
 
 ### `local`
 
@@ -226,36 +226,36 @@ Utilisé pour :
 
 - Commandes de requête
 - Commandes de configuration
-- Commandes d'état exécutables en mode `headless`
-- Point d'entrée d'exécution principal pour la plupart des `built-in commands`
+- Commandes d’état exécutables en mode headless
+- Point d’entrée principal de la plupart des commandes built-in
 
 Caractéristiques :
 
-- Ne dépend pas de l'UI
-- Doit devenir le type principal pour ACP / `non-interactive`
+- Ne dépend pas de l’interface utilisateur
+- Doit devenir le principal type porteur pour l’ACP et le non interactif
 
 ### `local-jsx`
 
 Utilisé pour :
 
-- `picker`
-- Panneaux
-- `wizard`
-- Shell UI `interactive`
+- Picker
+- Panels
+- Wizard
+- Shell interactif de l’interface utilisateur
 
 Caractéristiques :
 
-- Gère uniquement l'UI `interactive`
-- Ne peut plus être le seul point d'entrée d'exécution
-- Doit fournir un `fallback` ou des sous-commandes `local` correspondantes
+- Ne traite que l’interface utilisateur interactive
+- Ne peut plus être le seul point d’entrée d’exécution
+- Doit fournir un fallback ou une sous-commande `local` correspondante
 
 ---
 
-## 6. Modèle de sources de commandes
+## 6. Modèle de source des commandes
 
-## 6.1 Modèle de sources externes
+## 6.1 Modèle de source externe
 
-Ce modèle de sources, destiné aux utilisateurs, doit s'aligner autant que possible sur la logique de Claude Code :
+C’est le modèle de source présenté à l’utilisateur, qui doit être aussi cohérent que possible avec le modèle mental de Claude Code :
 
 - `builtin-command`
 - `bundled-skill`
@@ -268,16 +268,16 @@ Ce modèle de sources, destiné aux utilisateurs, doit s'aligner autant que poss
 - `mcp-prompt`
 - `mcp-skill`
 
-Ces champs seront directement utilisés pour :
+Cet ensemble de champs sera utilisé directement pour :
 
-- Le regroupement dans l'aide
-- Le badge de source dans la complétion
-- Les `ACP available commands`
-- L'export de documentation
+- Les groupes d’aide
+- Le badge de source dans l’autocomplétion
+- Les commandes disponibles ACP
+- L’exportation de documentation
 
 ## 6.2 Modèle de normalisation interne
 
-Pour ne pas être contraint par les noms externes, une couche supplémentaire de champs d'implémentation est ajoutée en interne :
+Pour ne pas être lié par les noms externes, on ajoute une couche de champs d’implémentation en interne :
 
 - `providerType`
 - `artifactType`
@@ -288,39 +288,39 @@ Pour ne pas être contraint par les noms externes, une couche supplémentaire de
 
 Cela permet de :
 
-- Aligner l'expérience externe sur Claude
-- Conserver la maintenabilité interne propre à Qwen
+- Aligner l’expérience externe sur Claude
+- Conserver en interne une maintenabilité Qwen
 
-## 6.3 Stratégie de résolution des conflits
+## 6.3 Stratégie de conflit
 
-Gestion unifiée via un `id` stable, avec séparation du nom d'affichage et du nom de saisie :
+Gestion unifiée par `id` stable, avec séparation du nom d’affichage et du nom de saisie :
 
 1. `id` : identifiant unique stable
 2. `name` : nom principal de saisie
-3. `userFacingName` : nom affiché dans l'aide/la complétion
+3. `userFacingName` : nom d’affichage dans l’aide / l’autocomplétion
 
-Priorités recommandées en cas de conflit :
+Priorité de conflit suggérée :
 
 1. built-in
 2. bundled / skill-dir / workflow
 3. plugin / builtin-plugin
 4. dynamic
-5. `namespace` MCP isolé
+5. mcp (namespace indépendant)
 
 ---
 
-## 7. Architecture d'exécution unifiée
+## 7. Architecture d’exécution unifiée
 
 ## 7.1 `CommandRegistry`
 
 Responsabilités :
 
-1. Agréger tous les `loader`/`provider`
-2. Construire des index multidimensionnels
-3. Générer les vues pour l'aide, la complétion, ACP et la documentation
-4. Fournir des vues distinctes pour les commandes visibles par l'utilisateur et par le modèle
+1. Agréger tous les chargeurs (loader) / fournisseurs (provider)
+2. Construire un index multidimensionnel
+3. Produire les vues d’aide, d’autocomplétion, d’ACP et de documentation
+4. Fournir des vues séparées des commandes visibles pour l’utilisateur et des commandes visibles pour le modèle
 
-`provider` obligatoires à supporter :
+Fournisseurs obligatoirement supportés :
 
 1. `BuiltinCommandLoader`
 2. `BundledSkillLoader`
@@ -332,49 +332,49 @@ Responsabilités :
 8. `DynamicSkillProvider`
 9. `BuiltinPluginSkillLoader`
 
-Même si certains `provider` ne sont pas entièrement opérationnels dès la première phase, le schéma et l'API doivent les prendre en charge dès le départ.
+Même si certains fournisseurs ne sont pas complètement mis en œuvre dans la première phase, le schéma et l’API doivent les supporter dès le départ.
 
 ## 7.2 `CommandResolver`
 
 Responsabilités :
 
-1. Résoudre les `slash command`
-2. Résoudre les `alias`
+1. Résoudre les commandes slash
+2. Résoudre les alias
 3. Résoudre les chemins de sous-commandes
-4. Identifier les `mid-input slash token`
-5. Produire la commande résolue canonique
+4. Identifier les tokens slash en milieu de champ
+5. Produire une commande résolue canonique
 
 ## 7.3 `CommandExecutor`
 
 Responsabilités :
 
-1. Vérifier les `capabilities`
+1. Effectuer les vérifications de capacité (capability)
 2. Exécuter `prompt | local | local-jsx`
-3. Générer un `outcome` unifié
-4. Gérer les `fallback` / cas non supportés
+3. Produire un outcome unifié
+4. Gérer le fallback / le non supporté
 
 ## 7.4 `ModeAdapter`
 
-Trois `adapter` doivent être créés :
+Trois adaptateurs doivent être extraits :
 
 1. `InteractiveModeAdapter`
 2. `AcpModeAdapter`
 3. `NonInteractiveModeAdapter`
 
-Cela permet aux trois modes de partager le même `command registry` et `executor`, au lieu d'être codés en dur séparément.
+Ainsi, les trois modes peuvent partager le même registry et le même executor de commandes, au lieu d’avoir des implémentations codées en dur séparément.
 
 ---
 
-## 8. Principes de refonte des commandes UI : séparation des commandes principales et du shell interactif
+## 8. Principes de refonte des commandes UI : séparation commandes principales et coquille interactive
 
-C'est la clé pour rendre ACP et `non-interactive` véritablement utilisables.
+C’est la clé pour que l’ACP et le mode non interactif soient réellement utilisables.
 
-Toute commande dont la nature actuelle est « ouvrir un `dialog` » doit être transformée en :
+Toute commande qui est actuellement par essence « ouvre un dialogue » doit être transformée en :
 
-1. Un shell `interactive`
+1. Un shell interactif
 2. Un ensemble de sous-commandes `local`
 
-### Première vague de commandes à découpler
+### Première liste de commandes à décomposer
 
 1. `/model`
 2. `/permissions`
@@ -385,7 +385,7 @@ Toute commande dont la nature actuelle est « ouvrir un `dialog` » doit être t
 7. `/agents`
 8. `/approval-mode`
 
-### Exemple de structure cible
+### Exemple de forme cible
 
 #### `/model`
 
@@ -412,13 +412,13 @@ Toute commande dont la nature actuelle est « ouvrir un `dialog` » doit être t
 
 ---
 
-## 9. Conception unifiée des `Prompt Command` / `Skill`
+## 9. Conception unifiée des commandes prompt / skills
 
-Il s'agit d'une priorité P0 dans cette refonte, et non d'une fonctionnalité à ajouter ultérieurement.
+C’est le P0 de la refonte, pas une capacité à ajouter après coup.
 
 ## 9.1 Objectif
 
-Créer un **`Model-Invocable Prompt Command Registry`** unifié, fusionnant les assets suivants en une seule vue invocable par le modèle :
+Établir un **registre unifié des commandes prompt invocables par le modèle**, fusionnant les actifs suivants en une seule vue invocable par le modèle :
 
 1. bundled skills
 2. file commands
@@ -428,7 +428,7 @@ Créer un **`Model-Invocable Prompt Command Registry`** unifié, fusionnant les 
 
 ## 9.2 Champs clés
 
-Champs obligatoires à ajouter :
+À ajouter obligatoirement :
 
 1. `userInvocable`
 2. `modelInvocable`
@@ -441,23 +441,23 @@ Champs obligatoires à ajouter :
 
 ## 9.3 Relation avec `SkillTool`
 
-Après la refonte, `SkillTool` ne doit plus consommer uniquement des `skill` au sens strict.
+Après la refonte, `SkillTool` ne doit plus consommer uniquement les skills au sens étroit.
 
 Il faut plutôt :
 
-1. `CommandRegistry.getModelInvocablePromptCommands()` génère une vue unifiée
-2. `SkillTool` ou un futur `command tool` unifié consomme cette vue
-3. Les `slash command` utilisateur et l'invocation de `skill` par le modèle partagent le même pool d'assets `prompt-command`
+1. `CommandRegistry.getModelInvocablePromptCommands()` produit une vue unifiée
+2. `SkillTool` (ou un futur outil de commande unifié) consomme cette vue
+3. Les commandes slash de l’utilisateur et l’invocation de skills par le modèle partagent le même pool d’actifs de commandes prompt
 
-Cela permettra à Qwen de s'approcher de l'expérience offerte par Claude pour des capacités comme `/review`, `/commit` ou `/openspec-apply`.
+Ainsi Qwen peut s’approcher, en termes d’expérience, de la façon dont Claude traite des commandes comme `/review`, `/commit`, `/openspec-apply`.
 
 ---
 
-## 10. Refonte de l'aide / de la complétion / de la découvrabilité
+## 10. Refonte de l’aide / autocomplétion / découvrabilité
 
-## 10.1 Completion
+## 10.1 Autocomplétion
 
-Les éléments de complétion doivent au minimum afficher :
+Les éléments d’autocomplétion doivent au moins afficher :
 
 1. `label`
 2. `description`
@@ -467,30 +467,30 @@ Les éléments de complétion doivent au minimum afficher :
 6. `aliasHit`
 7. `recentlyUsedScore`
 
-Le tri doit au minimum prendre en compte :
+Le tri doit au moins prendre en compte :
 
 1. Correspondance exacte
-2. Correspondance d'`alias`
+2. Correspondance par alias
 3. Utilisation récente
 4. Correspondance par préfixe
-5. Correspondance `fuzzy`
+5. Correspondance floue (fuzzy)
 
-## 10.2 Mid-input slash command
+## 10.2 Slash en milieu de champ
 
-Les éléments suivants doivent être implémentés :
+Doit être complété :
 
-1. Détection des `slash token` près du curseur
-2. Affichage du `ghost text`
-3. Validation via `Tab`
-4. Mise en surbrillance des `token` de commande valides
+1. Détection du token slash près du curseur
+2. Indication de texte fantôme (ghost text)
+3. Complétion par Tab
+4. Surbrillance des tokens de commande valides
 
-La première phase alignera l'expérience de saisie ; l'introduction d'une « sémantique d'exécution de commande intégrée » plus poussée pourra être envisagée lors d'itérations ultérieures.
+La première phase aligne d’abord l’expérience de saisie ; l’introduction d’une « sémantique d’exécution de commande intégrée » plus forte pourra être traitée dans une itération ultérieure.
 
-## 10.3 Help
+## 10.3 Aide
 
-L'aide ne sera plus une simple liste à plat, mais un catalogue complet de commandes.
+L’aide n’est plus une simple liste à plat, mais un catalogue complet de commandes.
 
-Regroupement minimum :
+Au moins, regrouper par :
 
 1. Built-in Commands
 2. Bundled Skills
@@ -502,37 +502,37 @@ Regroupement minimum :
 8. Builtin Plugin Skills
 9. MCP Commands / MCP Skills
 
-Chaque commande doit au minimum afficher :
+Chaque commande affiche au moins :
 
 1. Nom
 2. Indication des paramètres
 3. Description
 4. Source
 5. Modes supportés
-6. Invocable par le modèle (oui/non)
+6. Indication si invocable par le modèle
 7. Résumé des sous-commandes
 
 ---
 
-## 11. Refonte ACP / `Non-Interactive`
+## 11. Refonte ACP / Non interactif
 
-## 11.1 Abandon définitif de l'approche par `allowlist`
+## 11.1 Abandon complet de l’approche par liste blanche
 
 Ancienne approche :
 
-- `allowlist` intégrée
-- Cas spéciaux `FILE` / `SKILL`
-- Autres types de résultats non supportés
+- Liste blanche built-in
+- Traitement spécial pour FILE / SKILL
+- Autres types de résultat non supportés
 
 Nouvelle approche :
 
-- Chaque commande déclare ses propres `capabilities`
-- Le `registry` gère le filtrage
-- L'`adapter` gère l'exécution et le `fallback`
+- Chaque commande déclare sa propre capacité (capability)
+- Le registry se charge du filtrage
+- L’adaptateur (adapter) se charge de l’exécution et du fallback
 
-## 11.2 Objectifs de support des `outcome`
+## 11.2 Support des outcomes
 
-### interactive
+### interactif
 
 - `submit_prompt`
 - `message`
@@ -563,9 +563,9 @@ Nouvelle approche :
 - `confirm_shell_commands`
 - `dialog fallback / structured failure`
 
-## 11.3 Sortie des `ACP available commands`
+## 11.3 Sortie des commandes disponibles ACP
 
-Doit au minimum inclure :
+Doit au minimum contenir :
 
 1. `name`
 2. `description`
@@ -579,28 +579,28 @@ Doit au minimum inclure :
 
 ---
 
-## 12. Métadonnées partagées pour la documentation, l'aide et la complétion
+## 12. Documentation, aide, autocomplétion partagent les mêmes métadonnées
 
-Après la refonte, les éléments suivants doivent être exportés depuis une seule et même vue du `registry` :
+Après la refonte, les éléments suivants doivent être exportés à partir d’une même vue du registre :
 
-1. Help
-2. Completion
-3. ACP available commands
-4. Export de documentation
+1. Aide
+2. Autocomplétion
+3. Commandes disponibles ACP
+4. Exportation de documentation
 
-Cela vise à résoudre le problème actuel d'incohérence entre les trois représentations des commandes (implémentation, aide, documentation).
+Cela résout le problème actuel où « l’implémentation, l’aide et la documentation présentent trois ensembles de commandes incohérents ».
 
 ---
 
-## 13. Phasage de l'implémentation
+## 13. Phases de mise en œuvre
 
-## Phase 1 : Refonte des fondations
+## Phase 1 : Reconstruction des fondations
 
 Livrables :
 
 1. Nouveau `CommandDescriptor`
 2. Schéma complet des sources
-3. Modèle de `capabilities`
+3. Modèle de capabilities
 4. `userInvocable / modelInvocable`
 5. `CommandRegistry`
 6. `CommandResolver`
@@ -621,51 +621,51 @@ Livrables :
 7. `/agents`
 8. `/approval-mode`
 
-Toutes ces commandes doivent subir la refonte « shell `interactive` + sous-commandes `local` ».
+Ces commandes doivent toutes avoir été transformées en « shell interactif + sous-commandes local ».
 
 ## Phase 3 : Intégration des capacités du modèle
 
 Livrables :
 
-1. Intégration de `SkillTool` à la vue unifiée du `registry`
-2. Inclusion des `file command` / `bundled skill` / `mcp prompt` / `plugin skill` dans l'ensemble unifié invocable par le modèle
-3. Unification totale des assets `prompt command` et `skill`
+1. `SkillTool` connecté à la vue unifiée du registre
+2. File command / bundled skill / mcp prompt / plugin skill intégrés dans un ensemble unifié invocable par le modèle
+3. Commandes prompt et actifs skill complètement unifiés
 
-## Phase 4 : Alignement de la couche UX sur Claude
+## Phase 4 : Alignement de l’expérience sur Claude
 
 Livrables :
 
-1. Tri par `recently used`
+1. Tri par utilisation récente
 2. Badge de source
-3. Indication des paramètres
+3. Indication des paramètres (argument hint)
 4. Badge de mode
-5. Catalogue d'aide complet
-6. Expérience `mid-input slash command`
-7. Export ou validation automatique de la documentation
+5. Catalogue d’aide complet
+6. Expérience de slash en milieu de champ
+7. Exportation ou validation automatique de la documentation
 
 ---
 
-## 14. Critères d'acceptation
+## 14. Critères de validation
 
-À l'issue du projet, les critères suivants doivent être remplis :
+Après la refonte, au moins :
 
-1. L'aide, la complétion, ACP et la documentation doivent toutes refléter le modèle complet des sources
-2. À l'exception des commandes purement UI, la plupart des `built-in command` doivent être utilisables en mode ACP / `non-interactive`
-3. Les `prompt command` et l'invocation de `skill` par le modèle doivent utiliser le même pool d'assets
-4. L'expérience des commandes doit atteindre 95 % du niveau de Claude Code en termes d'aide, de complétion, d'expression des sources, d'indication des paramètres et d'expérience `mid-input`
-5. Ne plus dépendre d'une `built-in allowlist` pour maintenir les capacités de commandes en mode ACP / `non-interactive`
+1. L’aide, l’autocomplétion, l’ACP et la documentation expriment toutes le modèle de source complet
+2. À l’exception des commandes purement UI, la plupart des commandes built-in sont utilisables en ACP / non interactif
+3. Les commandes prompt et l’invocation de skills par le modèle utilisent le même pool d’actifs
+4. L’expérience des commandes (aide, autocomplétion, expression des sources, indication des paramètres, expérience de slash en milieu de champ) atteint 95 % du niveau de Claude Code
+5. On ne dépend plus d’une liste blanche built-in pour maintenir les capacités de commandes en ACP / non interactif
 
 ---
 
-## 15. Verdict final
+## 15. Conclusion finale
 
-L'essence de cette refonte n'est pas « d'ajouter quelques champs à l'actuel `SlashCommand` », mais plutôt :
+L’essence de cette refonte n’est pas « d’ajouter quelques champs supplémentaires au SlashCommand actuel », mais :
 
-- **Livrer, avec le style architectural interne de Qwen, une plateforme de commandes offrant 95 % de parité avec Claude Code sur le plan de l'expérience externe**
+- **Livrer, avec le style architectural interne de Qwen, une plateforme de commandes dont l’expérience externe est alignée à 95 % avec Claude Code**
 
-Si un choix s'impose entre :
+S’il faut choisir entre les deux :
 
-- Une implémentation interne plus proche de Claude
-- Une expérience externe plus proche de Claude
+- Implémentation interne qui ressemble plus à Claude
+- Expérience externe qui ressemble plus à Claude
 
-Ce plan choisit explicitement la seconde option.
+Ce plan choisit clairement la seconde option.

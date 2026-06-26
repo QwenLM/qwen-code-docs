@@ -1,6 +1,6 @@
 # Beispiel-Proxy-Skript
 
-Das folgende Beispiel zeigt ein Proxy-Skript, das mit der Umgebungsvariable `QWEN_SANDBOX_PROXY_COMMAND` verwendet werden kann. Dieses Skript erlaubt ausschließlich `HTTPS`-Verbindungen zu `example.com:443` und lehnt alle anderen Anfragen ab.
+Das Folgende ist ein Beispiel für ein Proxy-Skript, das mit der Umgebungsvariable `QWEN_SANDBOX_PROXY_COMMAND` verwendet werden kann. Dieses Skript erlaubt nur `HTTPS`-Verbindungen zu `example.com:443` und lehnt alle anderen Anfragen ab.
 
 ```javascript
 #!/usr/bin/env node

@@ -1,39 +1,39 @@
-# Dual Output
+# Sortie Duplex (Dual Output)
 
-Dual Output est un mode sidecar pour le TUI interactif : pendant que Qwen Code continue de s'afficher normalement sur `stdout`, il émet simultanément un flux structuré d'événements JSON vers un canal séparé afin qu'un programme externe — une extension IDE, une interface web, un pipeline CI, un script d'automatisation — puisse observer et piloter la session.
+La sortie duplex est un mode sidecar pour le TUI interactif : pendant que Qwen Code continue de s'afficher normalement sur `stdout`, il émet simultanément un flux structuré d'événements JSON vers un canal séparé, permettant à un programme externe — une extension IDE, une interface web, un pipeline CI, un script d'automatisation — d'observer et de piloter la session.
 
-Il fournit également un canal inverse : un programme externe peut écrire des commandes JSONL dans un fichier que le TUI surveille, lui permettant de soumettre des invites et de répondre aux demandes d'autorisation d'outils comme si un humain était au clavier.
+Elle fournit également un canal inverse : un programme externe peut écrire des commandes JSONL dans un fichier que le TUI surveille, ce qui lui permet de soumettre des prompts et de répondre aux demandes d'autorisation d'outils comme si un humain était au clavier.
 
-Dual Output est entièrement optionnel. Lorsque les indicateurs ci-dessous sont absents, le TUI se comporte exactement comme avant, sans E/S supplémentaires ni changements de comportement.
+La sortie duplex est entièrement optionnelle. Lorsque les drapeaux ci-dessous sont absents, le TUI se comporte exactement comme avant, sans E/S supplémentaires ni changements de comportement.
 
 ## Cas d'utilisation
 
-Dual Output est un mécanisme de plomberie de bas niveau. Voici les intégrations concrètes qu'il permet :
+La sortie duplex est un mécanisme de bas niveau. Voici les intégrations concrètes qu'elle permet :
 
-### Synchronisation en temps réel en mode double Terminal + Chat
+### Synchronisation en temps réel en mode double Terminal + ChatUI
 
-Le cas d'utilisation phare. Une interface de chat web ou de bureau héberge le TUI dans un PTY et affiche une vue parallèle de la conversation pilotée par le flux d'événements structuré :
+Le cas d'utilisation phare. Une ChatUI web ou de bureau héberge le TUI dans un PTY et affiche une vue de conversation parallèle pilotée par le flux d'événements structuré :
 
-- L'utilisateur peut taper sur l'une ou l'autre surface — le TUI (pour les utilisateurs avancés natifs du terminal) ou l'interface web (pour une UX plus riche, des liens partageables, mobile). Les deux vues restent synchronisées car chaque message circule à travers les mêmes événements JSON.
-- Les invites d'approbation d'outils apparaissent aux deux endroits ; celui qui approuve en premier gagne.
-- L'historique de la session est capturé textuellement depuis `--json-file`, donc le serveur dispose d'une transcription canonique lisible par machine sans avoir à parser l'ANSI.
+- L'utilisateur peut saisir du texte dans l'une ou l'autre surface — le TUI (pour les utilisateurs avancés en terminal) ou l'interface web (pour une UX plus riche, des liens partageables, le mobile). Les deux vues restent synchronisées car chaque message transite par les mêmes événements JSON.
+- Les demandes d'approbation d'outils apparaissent dans les deux endroits ; le premier qui approuve gagne.
+- L'historique de la session est capturé textuellement depuis `--json-file`, de sorte que le côté serveur dispose d'une transcription canonique lisible par machine sans avoir à analyser l'ANSI.
 
 ### Extensions IDE (VS Code / JetBrains / Cursor / Neovim)
 
-Intégrer Qwen Code dans l'IDE. Le TUI s'exécute dans le terminal intégré de l'éditeur pour les utilisateurs qui le souhaitent, tandis que l'extension consomme les événements `--json-fd` / `--json-file` pour piloter :
+Intégration de Qwen Code dans l'IDE. Le TUI s'exécute dans le panneau de terminal intégré de l'éditeur pour les utilisateurs qui le souhaitent, tandis que l'extension consomme les événements `--json-fd` / `--json-file` pour piloter :
 
-- Superpositions de diff en ligne lorsque l'agent modifie des fichiers.
-- Un panneau latéral webview avec du markdown formaté, des appels d'outils avec coloration syntaxique et des citations cliquables.
-- Indicateurs de barre d'état (réflexion / réponse / en attente d'approbation).
-- Écritures programmatiques de `confirmation_response` lorsque l'utilisateur clique sur un bouton d'approbation natif de l'IDE.
+- Des superpositions de diff en ligne lorsque l'agent modifie des fichiers.
+- Un panneau latéral webview avec du Markdown formaté, des appels d'outils avec coloration syntaxique et des citations cliquables.
+- Des indicateurs dans la barre d'état (en train de réfléchir / en train de répondre / en attente d'approbation).
+- Des écritures programmatiques de `confirmation_response` lorsque l'utilisateur clique sur un bouton d'approbation natif de l'IDE.
 
-### Frontends de chat basés sur navigateur
+### Frontaux de chat basés sur le navigateur
 
-Un serveur Node/Bun lance le TUI dans un PTY pour ses sémantiques de rendu mais expose un canal WebSocket au navigateur. Les événements sur `--json-file` sont transférés au client ; les messages de l'utilisateur tapés dans le navigateur sont injectés via `--input-file`. Aucun parsing ANSI d'aucun côté.
+Un serveur Node/Bun lance le TUI dans un PTY pour sa sémantique de rendu, mais expose un canal WebSocket au navigateur. Les événements de `--json-file` sont transmis au client ; les messages utilisateur saisis dans le navigateur sont injectés via `--input-file`. Pas d'analyse ANSI d'aucun côté.
 
-### Observateurs CI / automatisation
+### Observateurs CI / automation
 
-Un job CI exécute Qwen Code avec une invite de tâche. L'humain voit le TUI dans le journal du job ; le système CI suit `--json-file` pour :
+Un job CI exécute Qwen Code avec un prompt de tâche. L'humain voit le TUI dans le journal du job ; le système CI suit `--json-file` pour :
 
 - Échouer le job si un événement `result` signale une erreur.
 - Pousser les compteurs `token usage` / `duration_ms` / `tool_use` vers les métriques.
@@ -41,40 +41,41 @@ Un job CI exécute Qwen Code avec une invite de tâche. L'humain voit le TUI dan
 
 ### Orchestration multi-agents
 
-Un agent superviseur lance plusieurs workers TUI, chacun avec sa propre paire de fichiers événements/entrée. Il surveille la progression, injecte des invites de suivi et applique des politiques globales de budget/sécurité en approuvant ou refusant les appels d'outils sur tous les workers.
+Un agent superviseur lance plusieurs workers TUI, chacun avec sa propre paire de fichiers événements/entrée. Il surveille la progression, injecte des prompts de suivi et applique un budget global et des politiques de sécurité en approuvant ou refusant les appels d'outils sur tous les workers.
 
-### Enregistrement, audit et rejeu de session
+### Enregistrement de session, audit et rejeu
 
-Tee chaque session TUI vers un fichier régulier avec `--json-file`. Plus tard :
+Dévier chaque session TUI vers un fichier régulier avec `--json-file`. Plus tard :
 
 - Les audits de conformité peuvent reconstruire exactement ce qui a été exécuté.
 - Les tests de régression automatisés peuvent comparer les exécutions entre différentes versions de modèle.
-- Un outil de rejeu peut réémettre des événements via le même protocole pour alimenter des tableaux de bord de visualisation.
+- Un outil de rejeu peut réémettre les événements via le même protocole pour alimenter des tableaux de bord de visualisation.
 
 ### Tableaux de bord d'observabilité
 
-Diffuser `--json-file` dans Loki / OTEL / n'importe quel pipeline qui accepte JSONL. Extraire `usage.input_tokens`, `tool_use.name`, `result.duration_api_ms` comme métriques de première classe dans Grafana. Pas besoin de regex de parsing de logs.
+Diffuser `--json-file` vers Loki / OTEL / n'importe quel pipeline acceptant JSONL. Extraire `usage.input_tokens`, `tool_use.name`, `result.duration_api_ms` comme métriques de premier ordre dans Grafana. Pas besoin d'expressions régulières pour analyser les logs.
 
 ### Tests et QA
 
-Les tests d'intégration lancent Qwen Code sans tête, le pilotent avec des scripts `--input-file` et vérifient les événements `--json-file`. Contrairement au parsing ANSI de stdout, les assertions sont stables lors des refontes de l'interface.
+Les tests d'intégration lancent Qwen Code sans tête, le pilotent avec des scripts `--input-file` et vérifient les événements `--json-file`. Contrairement à l'analyse de la sortie ANSI, les assertions sont stables malgré les refontes de l'interface utilisateur.
 
-## Flags
+## Drapeaux
 
-| Option                  | Type             | Objectif                                                                                                                                    |
-| ----------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--json-fd <n>`         | number, `n >= 3` | Écrire des événements JSON structurés sur le descripteur de fichier `n`. L'appelant doit fournir ce fd via la configuration `stdio` du spawn ou une redirection shell. |
-| `--json-file <path>`    | path             | Écrire des événements JSON structurés dans un fichier. Le chemin peut être un fichier régulier, un FIFO (tube nommé) ou `/dev/fd/N`.                               |
-| `--input-file <path>`   | path             | Surveiller ce fichier pour les commandes JSONL écrites par un programme externe.                                                                         |
+| Drapeau                | Type             | Objectif                                                                                                                                                                     |
+| ---------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--json-fd <n>`        | nombre, `n >= 3` | Écrire des événements JSON structurés vers le descripteur de fichier `n`. L'appelant doit fournir ce fd via la configuration `stdio` de spawn ou une redirection shell.         |
+| `--json-file <chemin>` | chemin           | Écrire des événements JSON structurés dans un fichier. Le chemin peut être un fichier régulier, un FIFO (tube nommé) ou `/dev/fd/N`.                                          |
+| `--input-file <chemin>`| chemin           | Surveiller ce fichier pour des commandes JSONL écrites par un programme externe.                                                                                             |
 
-`--json-fd` et `--json-file` sont mutuellement exclusifs. Les fd 0, 1 et 2 sont rejetés pour éviter de corrompre la sortie du TUI lui-même.
+`--json-fd` et `--json-file` s'excluent mutuellement. Les fds 0, 1 et 2 sont rejetés pour éviter de corrompre la sortie propre du TUI.
 
-## Pourquoi deux options de sortie ? (`--json-fd` vs `--json-file`)
+## Pourquoi deux drapeaux de sortie ? (`--json-fd` vs `--json-file`)
 
-À première vue, `--json-fd` semble suffisant — l'appelant lance Qwen Code avec un descripteur de fichier supplémentaire, le TUI y écrit les événements, terminé. En pratique, le passage de fd échoue dans le scénario d'intégration le plus important : l'exécution du TUI à l'intérieur d'un pseudo-terminal (PTY). C'est pourquoi cette fonctionnalité expose également une alternative basée sur un chemin.
+À première vue, `--json-fd` semble suffisant — l'appelant lance Qwen Code avec un descripteur de fichier supplémentaire, le TUI écrit les événements dessus, terminé. En pratique, le passage de fd échoue dans le scénario d'intégration le plus important : l'exécution du TUI dans un pseudo-terminal (PTY). C'est pourquoi cette fonctionnalité expose également une alternative basée sur le chemin d'accès.
+
 ### Quand `--json-fd` fonctionne
 
-`child_process.spawn` pur avec un tableau `stdio` :
+Un simple `child_process.spawn` avec un tableau `stdio` :
 
 ```ts
 const child = spawn('qwen', ['--json-fd', '3'], {
@@ -82,40 +83,21 @@ const child = spawn('qwen', ['--json-fd', '3'], {
 });
 ```
 
-Le spawn de Node prend en charge des entrées `stdio` arbitraires ; le fd 3 est hérité par l'enfant, qui peut y écrire directement. Zero-copy, zero-buffer, zero filesystem — le chemin le plus rapide.
+Le spawn de Node prend en charge des entrées `stdio` arbitraires ; fd 3 est hérité par l'enfant, qui peut écrire directement dessus. Zéro copie, zéro tampon, zéro système de fichiers — le chemin le plus rapide.
 
-### Pourquoi `--json-fd` ne fonctionne **pas** sous PTY
+### Pourquoi `--json-fd` ne fonctionne **pas** avec un PTY
 
-Les wrappers PTY comme [`node-pty`](https://github.com/microsoft/node-pty) et
-[`bun-pty`](https://github.com/oven-sh/bun) sont la façon dont tout embedder sérieux
-(extensions IDE, terminaux web, multiplexeurs de type tmux) héberge une TUI interactive.
-Ils ne peuvent pas transmettre de fd supplémentaires à l'enfant, pour trois raisons qui se
-renforcent mutuellement :
+Les wrappers PTY comme [`node-pty`](https://github.com/microsoft/node-pty) et [`bun-pty`](https://github.com/oven-sh/bun) sont la façon dont tout intégrateur sérieux (extensions IDE, terminaux web, multiplexeurs de type tmux) héberge un TUI interactif. Ils ne peuvent pas transmettre de fds supplémentaires à l'enfant, pour trois raisons qui se renforcent mutuellement :
 
-1. **Surface API.** `node-pty.spawn(file, args, options)` accepte `cwd`,
-   `env`, `cols`, `rows`, `encoding`, etc. — mais **pas de tableau `stdio`**. Il n'y a
-   tout simplement aucun endroit dans l'API pour dire « attache aussi ce fd comme fd 3
-   dans l'enfant ». `bun-pty` expose la même structure.
-2. **Sémantique de `forkpty(3)`.** Sous le capot, les wrappers PTY appellent
-   `forkpty(3)` (ou l'équivalent `posix_openpt` + `login_tty`). Cet appel système alloue
-   une paire de pseudo-terminal maître/esclave et redirige les fd 0/1/2 de l'enfant vers
-   le côté esclave, de sorte que l'enfant pense être connecté à un vrai terminal. Tous les
-   fd supérieurs à 2 dans le parent sont fermés par `login_tty`, qui appelle `close(fd)`
-   pour `fd >= 3` avant `exec`. Les fd supplémentaires sont activement effacés, pas hérités.
-3. **Effet secondaire du terminal de contrôle.** Même si vous parveniez à faire passer
-   un fd supplémentaire, il ne s'agirait pas d'un terminal, donc le rendu TUI de l'enfant
-   (qui écrit des séquences d'échappement en supposant un TTY sur fd 1) aurait toujours
-   besoin de l'esclave pour sa sortie. Vous vous retrouveriez de toute façon avec deux
-   transports indépendants.
+1. **Surface d'API.** `node-pty.spawn(fichier, args, options)` accepte `cwd`, `env`, `cols`, `rows`, `encoding`, etc. — mais **pas de tableau `stdio`**. Il n'y a tout simplement aucun endroit dans l'API pour dire "attachez aussi ce fd en tant que fd 3 dans l'enfant". `bun-pty` expose la même forme.
+2. **Sémantique de `forkpty(3)`.** Sous le capot, les wrappers PTY appellent `forkpty(3)` (ou l'équivalent `posix_openpt` + `login_tty`). Cet appel système alloue une paire maître/esclave de pseudo-terminal et redirige les fds 0/1/2 de l'enfant vers le côté esclave afin que l'enfant pense être attaché à un vrai terminal. Tous les fds supérieurs à 2 dans le parent sont fermés par `login_tty`, qui appelle `close(fd)` pour `fd >= 3` avant `exec`. Les fds supplémentaires sont activement supprimés, pas hérités.
+3. **Effet secondaire du terminal de contrôle.** Même si vous passiez un fd supplémentaire en force, ce ne serait pas un terminal, donc le moteur de rendu TUI de l'enfant (qui écrit des séquences d'échappement en supposant un TTY sur fd 1) aurait toujours besoin de l'esclave pour sa sortie. Vous vous retrouveriez de toute façon avec deux transports indépendants.
 
-En résumé : dès qu'un embedder a besoin d'un vrai TTY pour le rendu TUI —
-ce qui est le cas de chaque extension IDE, chaque terminal web, chaque application de
-chat de bureau — l'héritage de fd est exclu.
+En bref : dès qu'un intégrateur a besoin d'un vrai TTY pour le rendu TUI — ce qui est le cas de chaque extension IDE, chaque terminal web, chaque application de chat de bureau — l'héritage de fd est hors de question.
 
 ### `--json-file` comble le fossé
 
-Un chemin de fichier est passé comme un argument CLI ordinaire, donc il survit à tous
-les modèles de spawn :
+Un chemin de fichier est passé comme argument CLI ordinaire, donc il survit à tous les modèles de spawn :
 
 ```ts
 import { spawn } from 'node-pty';
@@ -132,28 +114,23 @@ const pty = spawn(
 );
 ```
 
-L'enfant ouvre le fichier lui-même et y écrit les événements ; l'embedder suit le même
-chemin avec `fs.watch` + des lectures incrémentielles. Trois points à noter :
+L'enfant ouvre le fichier lui-même et y écrit les événements ; l'intégrateur suit le même chemin avec `fs.watch` + lectures incrémentales. Trois choses à noter :
 
-- **Fichier régulier**, FIFO (pipe nommé) ou `/dev/fd/N` fonctionnent tous. FIFO est
-  l'option avec la latence la plus faible lorsque les deux côtés sont sur le même hôte.
-- Le pont ouvre les FIFO avec `O_NONBLOCK` et revient en mode bloquant sur `ENXIO`
-  (pas encore de lecteur), donc le démarrage du PTY n'est jamais bloqué en attendant
-  un consommateur.
-- Pour l'isolation multi-session, utilisez des chemins par session sous
-  `$XDG_RUNTIME_DIR` ou un répertoire créé par `mkdtemp` avec le mode `0700`.
+- **Fichier régulier**, FIFO (tube nommé) ou `/dev/fd/N` fonctionnent tous. FIFO est l'option à la latence la plus faible lorsque les deux côtés sont sur le même hôte.
+- Le pont ouvre les FIFOs avec `O_NONBLOCK` et revient en mode bloquant sur `ENXIO` (pas encore de lecteur), donc le démarrage du PTY n'est jamais bloqué en attendant un consommateur.
+- Pour l'isolation multi-session, utilisez des chemins par session sous `$XDG_RUNTIME_DIR` ou un répertoire `mkdtemp` avec le mode `0700`.
 
-### Quelle option utiliser ?
+### Quel drapeau dois-je utiliser ?
 
-| Style d'embedding                                   | Utiliser                  |
-| ------------------------------------------------- | -------------------- |
-| `child_process.spawn` avec stdio simple            | `--json-fd`          |
-| `node-pty` / `bun-pty` / tout hôte PTY             | `--json-file`        |
-| Redirection shell / test manuel de pipeline       | les deux               |
-| Collecte de logs CI (fichier régulier, lecture après sortie) | `--json-file`        |
-| Latence la plus faible possible sur le même hôte              | `--json-file` + FIFO |
+| Style d'intégration                               | Utiliser            |
+| ------------------------------------------------- | ------------------- |
+| `child_process.spawn` avec stdio simple           | `--json-fd`         |
+| `node-pty` / `bun-pty` / tout hôte PTY            | `--json-file`       |
+| Redirection shell / test de pipeline manuel       | les deux            |
+| Collecte de logs CI (fichier régulier, lecture après sortie) | `--json-file` |
+| Latence la plus faible possible sur le même hôte  | `--json-file` + FIFO |
 
-La règle générale : **si vous avez besoin que la TUI s'affiche correctement, vous avez besoin d'un PTY, ce qui signifie que vous avez besoin de `--json-file`.** `--json-fd` est destiné aux embedders plus simples qui ne se soucient pas de la fidélité de la TUI — généralement des wrappers programmatiques qui jettent stdout de toute façon.
+La règle générale : **si vous avez besoin que le TUI s'affiche correctement, vous avez besoin d'un PTY, ce qui signifie que vous avez besoin de `--json-file`.** `--json-fd` est destiné aux intégrateurs plus simples qui ne se soucient pas de la fidélité du TUI — généralement des wrappers programmatiques qui jettent de toute façon la sortie standard.
 
 ## Démarrage rapide
 
@@ -172,19 +149,20 @@ Dans un second terminal, suivez le flux d'événements :
 tail -f /tmp/qwen-events.jsonl
 ```
 
-Dans un troisième terminal, envoyez une invite dans la TUI en cours d'exécution :
+Dans un troisième terminal, poussez un prompt dans le TUI en cours d'exécution :
 
 ```bash
-echo '{"type":"submit","text":"Explain this repo"}' >> /tmp/qwen-input.jsonl
+echo '{"type":"submit","text":"Expliquez ce dépôt"}' >> /tmp/qwen-input.jsonl
 ```
 
-L'invite apparaît dans la TUI exactement comme si l'utilisateur l'avait tapée, et la réponse en streaming est reflétée dans `/tmp/qwen-events.jsonl`.
+Le prompt apparaît dans le TUI exactement comme si l'utilisateur l'avait tapé, et la réponse en streaming est reflétée dans `/tmp/qwen-events.jsonl`.
 
-### Utiliser des FIFO (pipes nommés) pour la sortie d'événements
+### Utilisation de FIFOs (tubes nommés) pour la sortie des événements
 
-Les FIFO offrent une latence plus faible que les fichiers réguliers (pas d'E/S disque) et fonctionnent bien lorsque les deux côtés sont sur le même hôte. Le pont ouvre les FIFO avec `O_RDWR | O_NONBLOCK`, donc il **ne bloque pas** même si aucun lecteur n'est encore connecté — les événements sont mis en tampon dans le tampon du pipe du noyau jusqu'à ce qu'un lecteur s'attache.
+Les FIFOs offrent une latence plus faible que les fichiers réguliers (pas d'E/S disque) et fonctionnent bien lorsque les deux côtés sont sur le même hôte. Le pont ouvre les FIFOs avec `O_RDWR | O_NONBLOCK`, donc il **ne bloque pas** même si aucun lecteur n'est encore connecté — les événements sont mis en tampon dans le tampon du tube du noyau jusqu'à ce qu'un lecteur se connecte.
 
-> **Remarque :** `--input-file` nécessite un fichier régulier (pas un FIFO) car le watcher se base sur `stat.size` pour détecter de nouvelles données, qui est toujours 0 pour les FIFO.
+> [!note]
+> `--input-file` nécessite un fichier régulier (pas un FIFO) car le watcher se fie à `stat.size` pour détecter de nouvelles données, qui est toujours 0 pour les FIFOs.
 
 ```bash
 mkfifo /tmp/qwen-events.jsonl
@@ -192,42 +170,43 @@ touch /tmp/qwen-input.jsonl
 qwen \
   --json-file /tmp/qwen-events.jsonl \
   --input-file /tmp/qwen-input.jsonl
-# TUI starts immediately — no need to start a reader first.
+# Le TUI démarre immédiatement — pas besoin de démarrer un lecteur d'abord.
 
-# In a second terminal, connect whenever ready:
+# Dans un second terminal, connectez-vous quand vous êtes prêt :
 cat /tmp/qwen-events.jsonl
 ```
-Si aucun lecteur ne se connecte jamais, le pont se désactive automatiquement dès que le tampon interne dépasse 1 Mo. Le TUI continue de fonctionner normalement.
+
+Si aucun lecteur ne se connecte jamais, le pont se désactive automatiquement une fois que le tampon interne dépasse 1 Mo. Le TUI continue de fonctionner normalement.
 
 ## Schéma des événements de sortie
 
-Les événements sont émis au format JSON Lines (un objet par ligne). Le schéma est le même que celui utilisé par le mode non interactif `--output-format=stream-json`, avec `includePartialMessages` toujours activé.
+Les événements sont émis sous forme de JSON Lines (un objet par ligne). Le schéma est le même que celui utilisé par le mode non interactif `--output-format=stream-json`, avec `includePartialMessages` toujours activé.
 
-Le premier événement sur le canal est toujours `system` / `session_start`, émis lors de la construction du pont. Utilisez-le pour associer le canal à un identifiant de session avant l'arrivée de tout autre événement.
+Le premier événement sur le canal est toujours `system` / `session_start`, émis lors de la construction du pont. Utilisez-le pour corréler le canal avec un identifiant de session avant l'arrivée de tout autre événement.
 
 ```jsonc
-// Session lifecycle
+// Cycle de vie de la session
 {
   "type": "system",
   "subtype": "session_start",
   "uuid": "...",
   "session_id": "...",
-  "data": { "session_id": "...", "cwd": "/path/to/cwd" }
+  "data": { "session_id": "...", "cwd": "/chemin/vers/cwd" }
 }
 
-// Streaming events for an in-progress assistant turn
+// Événements de streaming pour un tour d'assistant en cours
 { "type": "stream_event", "event": { "type": "message_start", "message": { ... } }, ... }
 { "type": "stream_event", "event": { "type": "content_block_start", "index": 0, "content_block": { "type": "text" } }, ... }
-{ "type": "stream_event", "event": { "type": "content_block_delta", "index": 0, "delta": { "type": "text_delta", "text": "Hello" } }, ... }
+{ "type": "stream_event", "event": { "type": "content_block_delta", "index": 0, "delta": { "type": "text_delta", "text": "Bonjour" } }, ... }
 { "type": "stream_event", "event": { "type": "content_block_stop", "index": 0 }, ... }
 { "type": "stream_event", "event": { "type": "message_stop" }, ... }
 
-// Completed messages
+// Messages terminés
 { "type": "user", "message": { "role": "user", "content": [...] }, ... }
 { "type": "assistant", "message": { "role": "assistant", "content": [...], "usage": { ... } }, ... }
 { "type": "user", "message": { "role": "user", "content": [{ "type": "tool_result", ... }] } }
 
-// Permission control plane (only when a tool needs approval)
+// Plan de contrôle des permissions (uniquement lorsqu'un outil nécessite une approbation)
 {
   "type": "control_request",
   "request_id": "...",
@@ -254,34 +233,34 @@ Le premier événement sur le canal est toujours `system` / `session_start`, ém
 
 ## Schéma des commandes d'entrée
 
-Deux formes de commande sont acceptées sur `--input-file` :
+Deux formes de commandes sont acceptées sur `--input-file` :
 
 ```jsonc
-// Submit a user message into the prompt queue
-{ "type": "submit", "text": "What does this function do?" }
+// Soumettre un message utilisateur dans la file d'attente de prompts
+{ "type": "submit", "text": "Que fait cette fonction ?" }
 
-// Reply to a pending control_request
+// Répondre à un control_request en attente
 { "type": "confirmation_response", "request_id": "...", "allowed": true }
 ```
 
 Comportement :
 
 - Les commandes `submit` sont mises en file d'attente. Si le TUI est occupé à répondre, elles sont réessayées automatiquement la prochaine fois que le TUI revient à l'état inactif.
-- Les commandes `confirmation_response` sont dispatchées immédiatement et jamais mises en file d'attente, car un appel d'outil bloque et la réponse doit atteindre le gestionnaire `onConfirm` sous-jacent sans attendre un `submit` antérieur.
-- Celui qui approuve un outil en premier gagne ; la réponse tardive de l'autre côté est ignorée sans dommage.
-- Les lignes qui ne peuvent pas être analysées comme du JSON sont enregistrées et ignorées — elles n'arrêtent pas le watcher.
+- Les commandes `confirmation_response` sont dispatchées immédiatement et jamais mises en file d'attente, car un appel d'outil bloque et la réponse doit atteindre le gestionnaire `onConfirm` sous-jacent sans attendre un éventuel `submit` antérieur.
+- Le premier côté qui approuve un outil gagne ; la réponse tardive de l'autre côté est ignorée sans conséquence.
+- Les lignes qui ne peuvent pas être analysées comme du JSON sont journalisées et ignorées — elles n'arrêtent pas le watcher.
 
 ## Remarques sur la latence
 
-Le fichier d'entrée est observé avec `fs.watchFile` à un intervalle de scrutation de 500 ms, donc la latence aller-retour maximale pour un `submit` distant est d'environ une demi-seconde. Ceci est intentionnel : la scrutation est portable sur toutes les plateformes et systèmes de fichiers (y compris macOS / montages réseau), et correspond au rythme typique d'intervention humaine que cette fonctionnalité cible. Le canal de sortie n'a pas de scrutation — les événements sont écrits de manière synchrone au fur et à mesure que le TUI les émet.
+Le fichier d'entrée est observé avec `fs.watchFile` à un intervalle de 500 ms, donc la latence aller-retour maximale pour un `submit` distant est d'environ une demi-seconde. C'est intentionnel : le sondage est portable entre les plateformes et les systèmes de fichiers (y compris macOS / les montages réseau) et correspond au rythme typique d'intervention humaine que la fonctionnalité vise. Le canal de sortie n'a pas de sondage — les événements sont écrits de manière synchrone au fur et à mesure que le TUI les émet.
 
 ## Modes de défaillance
 
-- **Mauvais descripteur de fichier.** Si le fd passé à `--json-fd` n'est pas ouvert ou est l'un des 0/1/2, le TUI imprime un avertissement sur `stderr` et continue sans activer la sortie double.
-- **Mauvais chemin.** Si le fichier passé à `--json-file` ne peut pas être ouvert, le TUI imprime un avertissement et continue sans sortie double.
-- **Déconnexion du consommateur.** Si le lecteur de l'autre côté du canal disparaît (`EPIPE`), le pont se désactive silencieusement et le TUI continue de fonctionner. Pas de nouvelle tentative.
-- **Débordement du tampon FIFO.** Lors de l'écriture dans un FIFO sans lecteur attaché, les événements sont mis en mémoire tampon dans le tube du noyau (~64 Ko sur Linux) et le WriteStream Node.js. Une fois le tube plein ou le tampon interne dépassant 1 Mo, le pont se désactive et ferme le fd. Aucun `session_end` n'est émis dans ce cas — les consommateurs doivent traiter un flux fermé sans `session_end` comme une terminaison anormale. Le TUI continue de fonctionner normalement.
-- **Exception de l'adaptateur.** Toute exception levée lors de l'émission d'un événement est interceptée, enregistrée et désactive le pont. Le TUI n'est jamais planté à cause d'une défaillance de la sortie double.
+- **Mauvais fd.** Si le fd passé à `--json-fd` n'est pas ouvert ou est l'un des 0/1/2, le TUI affiche un avertissement sur `stderr` et continue sans sortie duplex activée.
+- **Mauvais chemin.** Si le fichier passé à `--json-file` ne peut pas être ouvert, le TUI affiche un avertissement et continue sans sortie duplex.
+- **Déconnexion du consommateur.** Si le lecteur de l'autre côté du canal disparaît (`EPIPE`), le pont se désactive silencieusement et le TUI continue de s'exécuter. Pas de nouvelle tentative.
+- **Débordement du tampon FIFO.** Lors de l'écriture dans un FIFO sans lecteur attaché, les événements sont mis en tampon dans le tube du noyau (~64 Ko sur Linux) et le WriteStream de Node.js. Une fois le tube plein ou le tampon interne dépassant 1 Mo, le pont se désactive et ferme le fd. Aucun `session_end` n'est émis dans ce cas — les consommateurs doivent traiter un flux fermé sans `session_end` comme une terminaison anormale. Le TUI continue de fonctionner normalement.
+- **Exception de l'adaptateur.** Toute exception levée lors de l'émission d'un événement est interceptée, journalisée et désactive le pont. Le TUI n'est jamais planté par une défaillance de la sortie duplex.
 
 ## Exemple de spawn
 
@@ -298,15 +277,16 @@ const child = spawn(
   { stdio: ['inherit', 'inherit', 'inherit', eventsFd] },
 );
 ```
-La TUI conserve le contrôle du terminal de l'utilisateur sur stdio 0/1/2, tandis que l'embedder lit les événements structurés sur le fichier associé au fd 3 et envoie des commandes en ajoutant des lignes JSONL dans `/tmp/qwen-input.jsonl`.
+
+Le TUI possède toujours le terminal de l'utilisateur sur stdio 0/1/2, tandis que l'intégrateur lit les événements structurés sur le fichier soutenant fd 3 et pousse les commandes en ajoutant des lignes JSONL à `/tmp/qwen-input.jsonl`.
 
 ## Configuration basée sur les paramètres
 
-Pour les embedders de longue durée, il est souvent fastidieux de faire passer les flags CLI à chaque lancement. Les mêmes canaux peuvent être configurés dans `settings.json` sous la clé de premier niveau `dualOutput` :
+Pour les intégrateurs de longue durée, il est souvent peu pratique de faire passer les drapeaux CLI à chaque lancement. Les mêmes canaux peuvent être configurés dans `settings.json` sous la clé de niveau supérieur `dualOutput` :
 
 ```jsonc
 // ~/.qwen/settings.json  (niveau utilisateur)
-// ou <workspace>/.qwen/settings.json  (niveau espace de travail)
+// ou <espace de travail>/.qwen/settings.json  (niveau espace de travail)
 {
   "dualOutput": {
     "jsonFile": "/tmp/qwen-events.jsonl",
@@ -317,19 +297,19 @@ Pour les embedders de longue durée, il est souvent fastidieux de faire passer l
 
 Règles de précédence :
 
-- Le flag CLI **l'emporte** sur les paramètres. Passer `--json-file /foo` en ligne de commande écrase `dualOutput.jsonFile` dans les paramètres.
-- `--json-fd` n'a pas d'équivalent dans les paramètres — le passage de fd est une préoccupation au moment du spawn qui ne peut pas être déclarée de manière statique.
-- Si ni flag ni paramètre n'est présent, la double sortie reste désactivée (identique au comportement par défaut actuel).
+- Le drapeau CLI **l'emporte** sur les paramètres. Passer `--json-file /foo` en ligne de commande remplace `dualOutput.jsonFile` dans les paramètres.
+- `--json-fd` n'a pas d'équivalent dans les paramètres — le passage de fd est une préoccupation au moment du spawn qui ne peut pas être déclarée statiquement.
+- Si ni le drapeau ni le paramètre n'est présent, la sortie duplex reste désactivée (identique à la valeur par défaut actuelle).
 
-Le flag `requiresRestart: true` signifie que les modifications ne prennent effet qu'au prochain lancement de Qwen Code, car le pont est construit une fois au démarrage.
+Le drapeau `requiresRestart: true` signifie que les modifications ne prennent effet qu'au prochain lancement de Qwen Code, car le pont est construit une fois au démarrage.
 
 ## Démonstrations exécutables
 
-Chaque script ci-dessous est prêt à être copié-collé. Commencez par POC&nbsp;1 pour vérifier que la build a la double sortie ; POC&nbsp;4 est l'analogue le plus proche d'une intégration réelle avec une extension IDE.
+Chaque script ci-dessous est prêt à être copié-collé. Commencez par POC&nbsp;1 pour vérifier que la build a la sortie duplex ; POC&nbsp;4 est l'analogue le plus proche d'une véritable intégration d'extension IDE.
 
 ### POC 1 — observer le flux d'événements
 
-Observez chaque événement structuré que la TUI émet lorsqu'un humain l'utilise normalement :
+Regardez chaque événement structuré que le TUI émet pendant qu'un humain l'utilise normalement :
 
 ```bash
 # Terminal A
@@ -338,7 +318,7 @@ cat /tmp/qwen-events.jsonl | jq -c 'select(.type != "stream_event") | {type, sub
 
 # Terminal B
 qwen --json-file /tmp/qwen-events.jsonl
-# ...puis discutez normalement ; le terminal A affiche session_start,
+# ...ensuite discuter normalement ; le terminal A montre session_start,
 # le cycle de vie user/assistant/result/control_request en temps réel.
 ```
 
@@ -348,21 +328,21 @@ Première ligne attendue dans le terminal A :
 { "type": "system", "subtype": "session_start" }
 ```
 
-### POC 2 — injecter des invites depuis l'extérieur
+### POC 2 — injecter des prompts depuis l'extérieur
 
-Pilotez la TUI depuis un second terminal sans toucher au clavier du premier :
+Pilotez le TUI depuis un second terminal sans toucher au clavier du premier :
 
 ```bash
 # Terminal A
 touch /tmp/qwen-in.jsonl
 qwen --input-file /tmp/qwen-in.jsonl
 
-# Terminal B — la TUI répond comme si vous aviez tapé
+# Terminal B — le TUI répond comme si vous l'aviez tapé
 echo '{"type":"submit","text":"list files in the current directory"}' \
   >> /tmp/qwen-in.jsonl
 ```
 
-### POC 3 — pont d'autorisation d'outils à distance
+### POC 3 — pont de permissions d'outil à distance
 
 Approuvez ou refusez les appels d'outils depuis un processus séparé :
 
@@ -375,12 +355,12 @@ touch /tmp/qwen-in.jsonl
 
 # Terminal B
 qwen --json-file /tmp/qwen-out.jsonl --input-file /tmp/qwen-in.jsonl
-# Demandez à Qwen de faire quelque chose qui nécessite une approbation, par ex.
+# Demandez à Qwen de faire quelque chose qui nécessite une approbation, par exemple
 # "run `ls -la /tmp`". Un control_request apparaîtra dans le terminal A.
 # Copiez le request_id, puis dans un troisième terminal :
-echo '{"type":"confirmation_response","request_id":"<paste-id>","allowed":true}' \
+echo '{"type":"confirmation_response","request_id":"<collez-id>","allowed":true}' \
   >> /tmp/qwen-in.jsonl
-# La fenêtre de confirmation de la TUI disparaît et l'outil s'exécute.
+# Le prompt de confirmation du TUI disparaît et l'outil s'exécute.
 ```
 
 Si vous répondez avec un `request_id` inconnu, le pont émet un `control_response` avec `subtype: "error"` sur le canal de sortie afin que votre consommateur puisse le journaliser ou réessayer :
@@ -391,14 +371,14 @@ Si vous répondez avec un `request_id` inconnu, le pont émet un `control_respon
   "response": {
     "subtype": "error",
     "request_id": "...",
-    "error": "unknown request_id (already resolved, cancelled, or never issued)"
+    "error": "request_id inconnu (déjà résolu, annulé ou jamais émis)"
   }
 }
 ```
 
-### POC 4 — embedder Node (type IDE)
+### POC 4 — Intégrateur Node (comme un IDE)
 
-La forme la plus réaliste : un processus parent lance Qwen Code, suit les événements et injecte des invites selon son propre calendrier.
+La forme la plus réaliste : un processus parent lance Qwen Code, suit les événements et injecte des prompts à son propre rythme.
 
 ```ts
 // demo-embedder.ts
@@ -417,8 +397,8 @@ const child = spawn('qwen', ['--json-file', events, '--input-file', input], {
   stdio: 'inherit',
 });
 
-// Suivre le canal de sortie. En production, utilisez une queue
-// basée sur un décalage d'octets ; celle-ci re-émet depuis 0 pour plus de simplicité.
+// Suivre le canal de sortie. En production, vous utiliseriez un suivi
+// approprié par décalage d'octets ; celui-ci re-stream depuis 0 par souci de concision.
 const rl = createInterface({
   input: createReadStream(events, { encoding: 'utf8' }),
 });
@@ -447,11 +427,11 @@ rl.on('line', (line) => {
   }
 });
 
-// Après 2s, injecter une invite comme si l'utilisateur l'avait tapée
+// Après 2s, injecter un prompt comme si l'utilisateur l'avait tapé
 setTimeout(() => {
   appendFileSync(
     input,
-    JSON.stringify({ type: 'submit', text: 'hello from embedder' }) + '\n',
+    JSON.stringify({ type: 'submit', text: 'bonjour de l\'intégrateur' }) + '\n',
   );
 }, 2000);
 
@@ -461,14 +441,14 @@ Exécutez avec :
 
 ```bash
 npx tsx demo-embedder.ts
-# La TUI de Qwen Code s'ouvre dans le terminal courant ; l'embedder enregistre
+# La TUI Qwen Code s'ouvre dans le terminal courant ; l'embedder journalise
 # les événements handshake + turn-end + session_end sur la sortie standard du parent.
 ```
 
-### POC 5 — détection de fonctionnalité par handshake de capacité
+### POC 5 — détection de fonctionnalité par handshake de capacités
 
-Les anciennes versions de Qwen Code n'émettront pas `protocol_version`. Traitez ce champ
-comme optionnel et détectez la fonctionnalité :
+Les anciennes versions de Qwen Code n'émettent pas `protocol_version`.
+Traitez ce champ comme optionnel et détectez la fonctionnalité :
 
 ```ts
 rl.on('line', (line) => {
@@ -477,17 +457,17 @@ rl.on('line', (line) => {
     const v = ev.data?.protocol_version ?? 0;
     if (v < 1) {
       console.error(
-        'qwen-code dual output est présent mais protocole < 1 ; ' +
-          'repli sur un comportement au mieux',
+        'La sortie duale de qwen-code est présente mais le protocole < 1 ; ' +
+          'retour au comportement au mieux',
       );
     } else {
-      console.log('qwen-code dual output protocole v' + v);
+      console.log('Protocole de sortie duale qwen-code v' + v);
     }
   }
 });
 ```
 
-### POC 6 — session_end comme signal d'arrêt propre
+### POC 6 — session_end comme signal de terminaison propre
 
 ```ts
 rl.on('line', (line) => {
@@ -500,7 +480,7 @@ rl.on('line', (line) => {
 ```
 
 Si la TUI plante avant `session_end`, le flux de sortie se ferme
-(`EPIPE` à la prochaine écriture) ; les embedders doivent gérer les deux chemins.
+(`EPIPE` à la prochaine écriture) ; les embedders doivent gérer les deux cas.
 
 ### POC 7 — tests de défaillance (prouver que les flags ne cassent jamais la TUI)
 
@@ -514,16 +494,16 @@ qwen --json-fd 9999
 # La TUI se lance normalement.
 
 qwen --json-fd 3 --json-file /tmp/x.jsonl
-# yargs rejette : "--json-fd and --json-file are mutually exclusive."
+# yargs rejette : "--json-fd et --json-file sont mutuellement exclusifs."
 # Le processus se termine avant le démarrage de la TUI.
 
 qwen --json-file /nonexistent/dir/x.jsonl
-# avertissement sur stderr ; la TUI se lance quand même.
+# avertissement stderr ; la TUI se lance normalement.
 ```
 
 ## Relation avec Claude Code
 
-Claude Code expose un format d'événements JSON streamé similaire via
+Claude Code expose un format d'événements JSON-stream similaire avec
 `--print --output-format stream-json`, mais uniquement en mode non interactif
-— il n'a pas d'équivalent pour exécuter la TUI et un canal sidecar structuré
-en même temps. Dual Output comble cette lacune.
+— il n'a pas d'équivalent pour exécuter la TUI et un canal structuré
+parallèle en même temps. Dual Output comble cette lacune.

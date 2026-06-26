@@ -1,29 +1,23 @@
 # Migration vers `@qwen-code/sdk/daemon` v2
 
-La PR #4328 a mis en place la couche UI du démon v1. La PR #4353 (cette PR) déploie la v2 avec
-sept commits de fonctionnalités additives. Ce guide explique d'abord les changements pour
-les auteurs d'adaptateurs de chat web et de terminal web. Les mainteneurs natifs de TUI local, de canal et d'IDE
-pourront réutiliser les mêmes primitives plus tard, mais ces chemins de produits par défaut
-ne sont pas migrés par cette PR.
+La PR #4328 a livré la couche UI du daemon v1. La PR #4353 (cette PR) livre la v2 avec sept commits de fonctionnalités additives. Ce guide parcourt les changements pour les auteurs d'adaptateurs de chat web et de terminal web en premier. Les responsables du TUI natif local, du canal et de l'IDE peuvent réutiliser les mêmes primitives plus tard, mais ces chemins de produit par défaut ne sont pas migrés par cette PR.
 
-## En résumé pour les consommateurs existants
+## TL;DR pour les consommateurs existants
 
-**Aucune rupture de compatibilité.** Chaque commit de cette PR est additif :
+**Pas de breaking changes.** Chaque commit de cette PR est additif :
 
-- Les champs v1 fonctionnent toujours (`createdAt` conservé comme alias `@deprecated` pour
-  `clientReceivedAt`)
-- Le normaliseur v1 traite toujours les 13 mêmes types d'événements de la même manière
+- Les champs v1 fonctionnent toujours (`createdAt` conservé comme alias `@deprecated` pour `clientReceivedAt`)
+- Le normaliseur v1 mappe toujours les mêmes 13 types d'événements de la même manière
 - Le réducteur v1 produit toujours les mêmes blocs pour les événements de chat
-- La nouvelle API est optionnelle via des paramètres et des helpers supplémentaires
+- La nouvelle API est opt-in via des paramètres supplémentaires et des helpers
 
-La PR peut être fusionnée sans modification du côté consommateur. **L'adoption des
-nouvelles fonctionnalités est incrémentale.**
+Cette PR peut être fusionnée sans aucun changement côté consommateur. **L'adoption des nouvelles fonctionnalités est incrémentale.**
 
 ## Ordre d'adoption recommandé
 
-Pour chaque adaptateur, par ordre de rapport effort/valeur :
+Pour chaque adaptateur, dans l'ordre du rapport effort/valeur :
 
-### 1. Ordonnancement : passer la clé de tri de `createdAt` à `eventId`
+### 1. Ordonnancement : passer de la clé de tri `createdAt` à `eventId`
 
 **Avant :**
 
@@ -38,8 +32,7 @@ import { selectTranscriptBlocksOrderedByEventId } from '@qwen-code/sdk/daemon';
 const ordered = selectTranscriptBlocksOrderedByEventId(state);
 ```
 
-**Pourquoi :** `eventId` est monotone côté démon ; survit à une réexécution SSE après reconnexion.
-`createdAt` dépend de l'horloge client et se décale lors d'une réexécution.
+**Pourquoi** : `eventId` est monotone par rapport au daemon ; survit à la relecture SSE après reconnexion. `createdAt` est l'horloge du client et se décale lors de la relecture.
 
 ### 2. Affichage : remplacer `createdAt` par `serverTimestamp ?? clientReceivedAt`
 
@@ -56,18 +49,13 @@ import { formatBlockTimestamp } from '@qwen-code/sdk/daemon';
 <TimeLabel text={formatBlockTimestamp(block, { locale })} />;
 ```
 
-**Pourquoi :** Plusieurs clients voient un « il y a X minutes » cohérent seulement quand les deux
-lisent l'horloge du démon. Le rendu via `formatBlockTimestamp` gère le fuseau horaire et
-la locale.
+**Pourquoi** : Plusieurs clients voient un « il y a X minutes » cohérent seulement lorsque les deux lisent l'horloge du daemon. Le rendu avec `formatBlockTimestamp` gère le fuseau horaire et la locale.
 
-**Remarque :** Le démon doit apposer `_meta.serverTimestamp` sur les enveloppes pour
-que cela prenne effet. Le SDK est prêt pour la rétrocompatibilité ; utilise
-`clientReceivedAt` en secours jusqu'alors.
+**Note** : Le daemon doit timbrer `_meta.serverTimestamp` sur les enveloppes pour que cela prenne effet. Le SDK est prêt pour la rétrocompatibilité ; il revient à `clientReceivedAt` jusque-là.
 
 ### 3. Écouter les nouveaux types d'événements — choisir le sous-ensemble à afficher
 
-Les 16 nouveaux types d'événements (session-meta, workspace, auth) ne poussent pas
-de blocs de transcription. Ce sont des observations de canal secondaire. Chaque adaptateur choisit ceux à remonter :
+Les 16 nouveaux types d'événements (session-meta, workspace, auth) ne poussent pas de blocs de transcription. Ce sont des observations de canal latéral. Chaque adaptateur choisit ceux à afficher :
 
 ```ts
 // Dans votre consommateur SSE
@@ -95,12 +83,12 @@ for (const event of uiEvents) {
         expiresAt: event.expiresAt,
       });
       break;
-    // ... etc, n'activer que ce dont votre UI a besoin
+    // ... etc, optez pour ce dont votre UI a besoin
   }
 }
 ```
 
-Ou utiliser des sélecteurs pour les canaux secondaires reflétés dans l'état :
+Ou utilisez des selecteurs pour les canaux latéraux reflétés dans l'état :
 
 ```ts
 import { selectApprovalMode, selectCurrentTool } from '@qwen-code/sdk/daemon';
@@ -134,7 +122,7 @@ import { daemonBlockToMarkdown } from '@qwen-code/sdk/daemon';
 const md = daemonBlockToMarkdown(block);
 ```
 
-Pour le SSR HTML :
+Pour le HTML SSR :
 
 ```ts
 import MarkdownIt from 'markdown-it';
@@ -151,12 +139,12 @@ const plain = daemonBlockToPlainText(block);
 
 ### 5. Test de conformité
 
-Ajoutez dans la suite de tests de votre adaptateur :
+Ajoutez à la suite de tests de votre adaptateur :
 
 ```ts
 import { runAdapterConformanceSuite } from '@qwen-code/sdk/daemon';
 
-it('l\'adaptateur projette correctement le corpus UI du démon', () => {
+it('l\'adaptateur projette correctement le corpus UI du daemon', () => {
   const result = runAdapterConformanceSuite({
     reduce: (events) => myReduce(events),
     renderToText: (state) => myRender(state),
@@ -165,19 +153,18 @@ it('l\'adaptateur projette correctement le corpus UI du démon', () => {
 });
 ```
 
-Cela exécutera votre adaptateur sur 10 scénarios de fixtures et signalera toute
-dérive de projection avant qu'elle n'atteigne les utilisateurs.
+Cela exécutera votre adaptateur sur 10 scénarios de fixtures et signalera toute dérive de projection avant qu'elle n'atteigne les utilisateurs.
 
-### 6. Répartition des icônes d'outils via `provenance`
+### 6. Répartition des icônes d'outil via `provenance`
 
-**Avant** (correspondance de chaîne sur `toolName`) :
+**Avant** (correspondance de chaîne sur toolName) :
 
 ```tsx
 const isMcp = toolName?.startsWith('mcp__');
 const isBuiltin = ['Bash', 'Edit', 'Read'].includes(toolName);
 ```
 
-**Après** (provenance typée issue de PR-A) :
+**Après** (provenance typée de PR-A) :
 
 ```tsx
 import type { DaemonUiToolUpdateEvent } from '@qwen-code/sdk/daemon';
@@ -196,7 +183,8 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
   }
 }
 ```
-Le SDK a une heuristique de secours de nommage `mcp__<server>__<tool>` — fonctionne dès aujourd'hui même lorsque le daemon n'explicite pas la provenance.
+
+Le SDK dispose d'une heuristique de repli de nommage `mcp__<server>__<tool>` — fonctionne dès maintenant même si le daemon ne timbre pas explicitement la provenance.
 
 ### 7. Catégorisation des erreurs via `errorKind`
 
@@ -207,7 +195,7 @@ if (error.text.includes('auth')) showAuthRetry();
 else if (error.text.includes('file not found')) showFilePicker();
 ```
 
-**Après** (enum fermé de PR-A) :
+**Après** (enum fermée de PR-A) :
 
 ```ts
 import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
@@ -223,19 +211,20 @@ function errorAction(errorKind?: DaemonErrorKind): React.ReactNode {
 }
 ```
 
-**Remarque** : Le daemon doit écrire `data.errorKind` sur session_died / stream_error pour que cela soit renseigné. Le SDK le lit déjà.
+**Note** : Le daemon doit timbrer `data.errorKind` sur les événements session_died / stream_error pour que cela soit peuplé. Le SDK le lit déjà.
 
 ### 8. Gestion de l'annulation — déjà automatique
 
-Dans la v1, les invites annulées laissaient les blocs d'outils en cours tourner indéfiniment. Dans la v2 (PR-E), `propagateCancellationToInFlightTools` s'exécute automatiquement sur `assistant.done.reason === 'cancelled'`. Les enfants du sous-agent sont annulés en même temps que leur parent.
+Dans v1, les prompts annulés laissaient les blocs d'outils en cours tourner indéfiniment.
+Dans v2 (PR-E), `propagateCancellationToInFlightTools` s'exécute automatiquement sur `assistant.done.reason === 'cancelled'`. Les enfants du sous-agent sont annulés en même temps que leur parent.
 
 **Aucune modification d'adaptateur nécessaire** — vos spinners se résoudront correctement.
 
-### 8a. Imbrication des sous-agents — option pour un rendu imbriqué (PR-K)
+### 8a. Imbrication de sous-agents — opt-in pour le rendu imbriqué (PR-K)
 
-Les blocs d'outils invoqués dans une délégation de sous-agent portent désormais `parentToolCallId`, `subagentType` et (lorsque le parent est dans l'état) `parentBlockId`. Les adaptateurs peuvent opter pour un rendu imbriqué :
+Les blocs d'outils invoqués dans une délégation de sous-agent portent désormais `parentToolCallId`, `subagentType`, et (lorsque le parent est dans l'état) `parentBlockId`. Les adaptateurs peuvent opter pour le rendu imbriqué :
 
-**Avant** (liste plate, les appels de sous-agent sont visuellement indiscernables du niveau supérieur) :
+**Avant** (liste plate, les appels de sous-agent sont visuellement indiscernables des appels de premier niveau) :
 
 ```tsx
 state.blocks.map((b) => <ToolBlock block={b} />);
@@ -263,15 +252,15 @@ const topLevel = state.blocks.filter((b) => !isSubagentChildBlock(b));
 return topLevel.map(renderTool);
 ```
 
-**Aucune modification d'adaptateur n'est nécessaire si vous préférez la vue plate** — les nouveaux champs sont additifs et ignorés par le code qui ne les lit pas.
+**Aucune modification d'adaptateur nécessaire si vous préférez la vue plate** — les nouveaux champs sont additifs et ignorés par le code qui ne les lit pas.
 
-### 9. Taxonomie des aperçus d'outils — choisir un sous-ensemble à afficher avec des composants personnalisés
+### 9. Taxonomie des aperçus d'outils — choisir le sous-ensemble à afficher avec des composants personnalisés
 
 PR-D + PR-F apportent 13 types d'aperçus :
 
 - 4 de type fichier : `file_diff`, `file_read`, `web_fetch`, `mcp_invocation`
 - 5 de type contenu : `code_block`, `search`, `tabular`, `image_generation`, `subagent_delegation`
-- 2 de contrôle : `ask_user_question`, `command`
+- 2 de type contrôle : `ask_user_question`, `command`
 - 2 génériques : `key_value`, `generic`
 
 Chaque adaptateur dispatche sur `preview.kind` :
@@ -300,27 +289,27 @@ function ToolPreviewComponent({ preview }: { preview: DaemonToolPreview }) {
           prompt={preview.prompt}
         />
       );
-    // ... ou utiliser le repli :
+    // ... ou revenir au cas par défaut :
     default:
       return <Markdown text={daemonToolPreviewToMarkdown(preview)} />;
   }
 }
 ```
 
-Les adaptateurs sans composants personnalisés pour les 13 types peuvent utiliser le repli `daemonToolPreviewToMarkdown` du SDK pour tout type non pris en charge.
+Les adaptateurs sans composants personnalisés pour les 13 types peuvent se rabattre sur `daemonToolPreviewToMarkdown` du SDK pour tout type non traité.
 
-## Vérification de rétrocompatibilité
+## Liste de vérification de rétrocompatibilité
 
-| Préoccupation                                                | Statut                                        |
-| ------------------------------------------------------------ | --------------------------------------------- |
-| Lectures existantes de `block.createdAt`                     | ✅ fonctionne toujours (alias pour `clientReceivedAt`) |
-| Gestion des événements du reducer existant                   | ✅ inchangé pour les types d'événements v1     |
-| Sites d'appel `daemonTranscriptToUnifiedMessages(blocks)`    | ✅ le nouveau paramètre options est facultatif |
-| Consommateurs existants de `selectTranscriptBlocks`          | ✅ inchangé                                    |
-| Nouveaux types d'événements dans le reducer v1               | ✅ sans effet, `lastEventId` continue d'avancer |
+| Point                                                | Statut                                        |
+| ---------------------------------------------------- | --------------------------------------------- |
+| Lectures existantes de `block.createdAt`             | ✅ fonctionne toujours (alias pour `clientReceivedAt`) |
+| Gestion des événements du réducteur existant           | ✅ inchangé pour les types d'événements v1               |
+| Sites d'appel de `daemonTranscriptToUnifiedMessages(blocks)` | ✅ le nouveau paramètre d'options est facultatif |
+| Consommateurs existants de `selectTranscriptBlocks`  | ✅ inchangé                                  |
+| Nouveaux types d'événements dans le réducteur v1     | ✅ no-op, `lastEventId` avance toujours       |
 
 ## Références croisées
 
 - [PR #4353 SUMMARY](https://github.com/QwenLM/qwen-code/pull/4353)
-- [README de l'UI du daemon](./README.md) — documentation complète de l'API
-- [PR #4328](https://github.com/QwenLM/qwen-code/pull/4328) — PR de base avec couche de transcription d'interface partagée
+- [README du Daemon UI](./README.md) — Référence complète de l'API
+- [PR #4328](https://github.com/QwenLM/qwen-code/pull/4328) — PR de base avec la couche de transcription UI partagée

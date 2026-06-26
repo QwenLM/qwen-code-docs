@@ -1,6 +1,6 @@
-# DaemonClient: краткое руководство (TypeScript)
+# Краткое руководство по DaemonClient (TypeScript)
 
-Минимальный сквозной пример: запустите демон `qwen serve` в одном терминале, затем управляйте им из Node-скрипта с помощью `DaemonClient` из SDK. Смотрите также: [руководство пользователя по режиму демона](../../users/qwen-serve.md) и [справочник по HTTP-протоколу](../qwen-serve-protocol.md).
+Минимальный сквозной пример: запустите демон `qwen serve` в другом терминале, затем управляйте им из Node-скрипта с помощью `DaemonClient` из SDK. См. также: [Руководство по режиму демона](../../users/qwen-serve.md) и [Справочник HTTP-протокола](../qwen-serve-protocol.md).
 
 ## Настройка
 
@@ -9,12 +9,12 @@
 ```bash
 cd your-project/
 qwen serve --port 4170
-# → qwen serve прослушивает http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
+# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
 ```
 
-Согласно [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02 каждый демон привязывается к одной рабочей области при запуске (текущий каталог `cwd`, или укажите свой через `--workspace /path/to/dir`). Привязанный путь демона сообщается в `/capabilities.workspaceCwd`, чтобы клиенты могли выполнить предварительную проверку и не указывать `cwd` в `POST /session`.
+Согласно [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02, каждый демон привязывается к одной рабочей области при запуске (текущая `cwd`, или переопределить с помощью `--workspace /path/to/dir`). Привязанный путь демона сообщается в `/capabilities.workspaceCwd`, чтобы клиенты могли выполнить предварительную проверку и опустить `cwd` в `POST /session`.
 
-В другом терминале:
+В другом:
 
 ```bash
 npm install @qwen-code/sdk
@@ -27,45 +27,42 @@ import { DaemonClient, type DaemonEvent } from '@qwen-code/sdk';
 
 const client = new DaemonClient({
   baseUrl: 'http://127.0.0.1:4170',
-  // PR 27 (v0.16-alpha): если `token` опущен, DaemonClient автоматически
-  // использует `process.env.QWEN_SERVER_TOKEN` — ту же переменную
-  // окружения, на которую запасной вариант `--token` CLI-флага демона.
-  // То есть либо:
+  // PR 27 (v0.16-alpha): когда `token` опущен, DaemonClient автоматически
+  // использует `process.env.QWEN_SERVER_TOKEN` — та же переменная
+  // окружения, к которой обращается флаг `--token` демона. То есть:
   //   export QWEN_SERVER_TOKEN="$(openssl rand -hex 32)"   # одноразовый
-  //   export QWEN_SERVER_TOKEN="$(cat ./my-token-file)"    # файл пользователя
+  //   export QWEN_SERVER_TOKEN="$(cat ./my-token-file)"    # файл, управляемый пользователем
   //   const client = new DaemonClient({ baseUrl: '...' });
-  // ИЛИ передать явно, если имя переменной окружения другое:
+  // ИЛИ передайте его явно, если у вас другое имя переменной:
   //   token: process.env.MY_TOKEN,
 });
 
-// 1. Убедимся, что можем связаться с демоном, проверим его возможности
-//    и узнаем привязанную рабочую область (#3803 §02).
+// 1. Убедимся, что можем связаться с демоном, узнаем его возможности и
+//    прочитаем привязанную рабочую область (#3803 §02).
 const caps = await client.capabilities();
-console.log('Возможности демона:', caps.features);
-console.log('Рабочая область демона:', caps.workspaceCwd); // канонический привязанный путь
+console.log('Daemon features:', caps.features);
+console.log('Daemon workspace:', caps.workspaceCwd); // канонический привязанный путь
 
-// 2. Создать или подключиться к сессии. Два равноценных варианта:
-//    (a) явно передать `workspaceCwd: caps.workspaceCwd`,
-//    (b) опустить `workspaceCwd` — тогда SDK не отправляет поле `cwd`,
-//        и маршрут демона по умолчанию использует привязанную
-//        рабочую область. Вариант (b) короче, но предполагает,
-//        что вы доверяете `caps.workspaceCwd` тому, что задумали.
-//    Непустой `workspaceCwd`, не соответствующий каноническому пути
-//    демона, приведет к ошибке `400 workspace_mismatch` (см.
-//    «Несоответствие рабочей области» ниже).
+// 2. Создать или подключиться к сессии. Две равнозначные формы:
+//    (a) передать `workspaceCwd: caps.workspaceCwd` явно, или
+//    (b) полностью опустить `workspaceCwd` — тогда SDK не отправляет поле `cwd`
+//        и маршрут демона использует свою привязанную рабочую область.
+//        Форма (b) лаконична, но предполагает доверие к `caps.workspaceCwd`.
+//    Непустое `workspaceCwd`, не совпадающее с привязанным путём демона,
+//    приводит к ошибке `400 workspace_mismatch` (см. "Несоответствие рабочей области" ниже).
 const session = await client.createOrAttachSession({
   workspaceCwd: caps.workspaceCwd,
 });
 console.log(`session=${session.sessionId} attached=${session.attached}`);
 
 // 3. Подписаться на поток событий. Передайте `lastEventId: 0`, чтобы демон
-//    воспроизвел все события с начала сессии — без этого возникает окно
-//    гонки между возвратом итератора из `subscribeEvents()` и фактическим
-//    открытием SSE-соединения (один fetch-цикл). За это время быстро
-//    запускающийся агент может испустить события, которые попадут
-//    в кольцевой буфер сессии, но не будут переданы новому подписчику
-//    без курсора. `lastEventId: 0` гарантирует, что буфер воспроизведения
-//    перекроет этот разрыв (а также при последующем переподключении — см. ниже).
+//    воспроизвёл все события с начала сессии — без этого существует
+//    окно TOCTOU между моментом возврата итератора из `subscribeEvents()`
+//    и фактическим открытием SSE-соединения (один круг запроса-ответа),
+//    во время которого быстрый агент может испустить события, которые
+//    попадут в кольцевой буфер сессии, но не будут переданы новому подписчику
+//    без курсора. `lastEventId: 0` перекрывает этот пробел (и любое
+//    переподключение — см. ниже).
 const abort = new AbortController();
 const subscription = (async () => {
   for await (const event of client.subscribeEvents(session.sessionId, {
@@ -76,16 +73,16 @@ const subscription = (async () => {
   }
 })();
 
-// 4. Отправить запрос и дождаться завершения. (Примечание о порядке
-//    операций: даже если `prompt()` выполняется до завершения
-//    SSE-рукопожатия, `lastEventId: 0` из шага 3 гарантирует,
-//    что каждое событие окажется в итераторе.)
+// 4. Отправить запрос и дождаться завершения. (Замечание о порядке операций:
+//    даже если `prompt()` выполнится до завершения рукопожатия SSE,
+//    `lastEventId: 0` на шаге 3 гарантирует, что все события попадут
+//    в итератор.)
 const result = await client.prompt(session.sessionId, {
-  prompt: [{ type: 'text', text: 'Опиши src/main.ts одним предложением.' }],
+  prompt: [{ type: 'text', text: 'Опиши src/main.ts одной строкой.' }],
 });
-console.log('Причина остановки:', result.stopReason);
+console.log('stop reason:', result.stopReason);
 
-// 5. Завершить подписку, чтобы скрипт мог завершиться.
+// 5. Завершить подписку, чтобы скрипт мог выйти.
 abort.abort();
 await subscription;
 
@@ -102,7 +99,7 @@ function handleEvent(event: DaemonEvent): void {
       break;
     }
     case 'permission_request':
-      // См. «Голосование за разрешения» ниже о семантике первого ответчика.
+      // См. "Голосование по разрешениям" ниже о семантике первого ответившего.
       console.log('\n[требуется разрешение]', event.data);
       break;
     case 'permission_resolved':
@@ -117,10 +114,9 @@ function handleEvent(event: DaemonEvent): void {
 }
 ```
 
-## Вспомогательные методы для файлов рабочей области
+## Вспомогательные функции для файлов рабочей области
 
-Файловые маршруты привязаны к рабочей области, а не к сессии, поэтому они
-находятся непосредственно в `DaemonClient`:
+Файловые маршруты привязаны к рабочей области, а не к сессии, поэтому они находятся непосредственно на `DaemonClient`:
 
 ```ts
 const file = await client.readWorkspaceFile('src/main.ts');
@@ -134,29 +130,30 @@ const updated = await client.editWorkspaceFile({
 
 console.log(updated.hash);
 ```
-`expectedHash` — это SHA-256 от сырых байт на диске. `mode: "replace"` и `editWorkspaceFile()` требуют его, чтобы устаревшие клиенты не перезаписывали файл, который они только что не читали. Для записи/редактирования требуется настройка bearer-токена даже на loopback; запустите демон с `--token` или `QWEN_SERVER_TOKEN` перед их использованием.
 
-## Переподключение с помощью `Last-Event-ID`
+`expectedHash` — это SHA-256 от сырых байтов файла на диске. Режим `"replace"` и `editWorkspaceFile()` требуют его, чтобы устаревшие клиенты не перезаписали файл, который они только что не читали. Запись/редактирование требуют настройки bearer-токена даже на локальном хосте; запустите демон с `--token` или `QWEN_SERVER_TOKEN` перед их использованием.
 
-Если ваш клиентский процесс перезапускается во время сессии, воспроизведите пропущенные события:
+## Переподключение с `Last-Event-ID`
+
+Если ваш клиентский процесс перезапускается в середине сессии, воспроизведите пропущенные события:
 
 ```ts
 let cursor: number | undefined;
 
 for await (const event of client.subscribeEvents(session.sessionId, {
   signal: abort.signal,
-  lastEventId: cursor, // resume from after this id; undefined = live only
+  lastEventId: cursor, // возобновить после этого id; undefined = только новые
 })) {
   if (typeof event.id === 'number') cursor = event.id;
   handleEvent(event);
 }
 ```
 
-Демон сохраняет последние 8000 событий на сессию в кольцевом буфере; пробелы за пределами этого окна не будут повторно доставлены.
+Демон хранит последние 8000 событий на сессию в кольцевом буфере; события за пределами этого окна не могут быть повторно доставлены.
 
-## Голосование за разрешения
+## Голосование по разрешениям
 
-Когда агент запрашивает разрешение на выполнение инструмента, каждый подключенный клиент видит событие `permission_request`. **Побеждает первый ответивший** — как только один клиент проголосовал, остальные получают `404`, если попытаются проголосовать за тот же `requestId`.
+Когда агент запрашивает разрешение на запуск инструмента, каждый подключённый клиент видит событие `permission_request`. **Первый ответивший выигрывает** — как только один клиент проголосует, остальные получат `404`, если попытаются голосовать по тому же `requestId`.
 
 ```ts
 case 'permission_request': {
@@ -164,13 +161,13 @@ case 'permission_request': {
     requestId: string;
     options: Array<{ optionId: string; name: string; kind: string }>;
   };
-  // Pick whichever option you want — `proceed_once`, `allow`, etc.
+  // Выберите любой вариант — `proceed_once`, `allow` и т.д.
   const choice = req.options.find((o) => o.kind === 'allow_once') ?? req.options[0];
   const accepted = await client.respondToPermission(req.requestId, {
     outcome: { outcome: 'selected', optionId: choice.optionId },
   });
   if (!accepted) {
-    console.log('Another client voted first; nothing to do.');
+    console.log('Другой клиент проголосовал первым; ничего не делать.');
   }
   break;
 }
@@ -178,25 +175,25 @@ case 'permission_request': {
 
 ## Совместная работа в общей сессии
 
-Два клиента, направленных на **один и тот же демон**, оказываются в одной сессии. Согласно §02 #3803 каждый демон при запуске привязан к ОДНОЙ рабочей области, поэтому демон, запущенный как `qwen serve --workspace /work/repo` (или `cd /work/repo && qwen serve`), — это то, к чему подключаются оба клиента:
+Два клиента, указывающие на **один и тот же демон**, оказываются в одной сессии. Согласно §02 из #3803, каждый демон при запуске привязан к ОДНОЙ рабочей области, поэтому демон, запущенный как `qwen serve --workspace /work/repo` (или `cd /work/repo && qwen serve`), — это то, к чему подключаются оба клиента:
 
 ```ts
-// Daemon was launched as `qwen serve --workspace /work/repo` so
-// `caps.workspaceCwd === '/work/repo'` for both clients.
+// Демон запущен как `qwen serve --workspace /work/repo`, поэтому
+// `caps.workspaceCwd === '/work/repo'` для обоих клиентов.
 
-// Client A (e.g. an IDE plugin)
+// Клиент A (например, плагин для IDE)
 const a = await clientA.createOrAttachSession({ workspaceCwd: '/work/repo' });
-console.log(a.attached); // false — A spawned the agent
+console.log(a.attached); // false — A запустил агента
 
-// Client B (e.g. a web UI on the same machine)
+// Клиент B (например, веб-интерфейс на той же машине)
 const b = await clientB.createOrAttachSession({ workspaceCwd: '/work/repo' });
-console.log(b.attached); // true — B joined A's session
+console.log(b.attached); // true — B присоединился к сессии A
 console.log(a.sessionId === b.sessionId); // true
 ```
 
 Оба клиента видят один и тот же поток `session_update` / `permission_request`. Любой из них может отправить запрос; они ставятся в очередь FIFO в соответствии с гарантией агента «один активный запрос на сессию».
 
-## Несовпадение рабочей области
+## Несоответствие рабочей области
 
 Если `workspaceCwd` не совпадает с привязанной рабочей областью демона, `createOrAttachSession` отклоняется с `DaemonHttpError` со статусом `400` и структурированным телом:
 
@@ -214,20 +211,20 @@ try {
     };
     if (body.code === 'workspace_mismatch') {
       console.error(
-        `This daemon is bound to ${body.boundWorkspace}, ` +
-          `not ${body.requestedWorkspace}. Start a separate daemon ` +
-          `for that workspace, or route to the right one.`,
+        `Этот демон привязан к ${body.boundWorkspace}, ` +
+          `а не к ${body.requestedWorkspace}. Запустите отдельный демон ` +
+          `для этой рабочей области или направьте запрос к правильному.`,
       );
     }
   }
 }
 ```
 
-В развертываниях с несколькими рабочими областями запускается один демон на рабочую область на отдельных портах — внутридемонной маршрутизации в соответствии с §02 нет. Оркестратор (или лаунчер пользователя) выбирает нужного демона на основе проекта, с которым клиент хочет взаимодействовать.
+В развёртываниях с несколькими рабочими областями запускается один демон на рабочую область на разных портах — внутридемонной маршрутизации в §02 нет. Оркестратор (или программа запуска пользователя) выбирает нужного демона на основе проекта, к которому клиент хочет обратиться.
 
 ## Аутентификация
 
-Когда демон был запущен с токеном (любая привязка не к loopback требует его):
+Когда демон запущен с токеном (любая привязка не к локальному хосту требует его):
 
 ```ts
 const client = new DaemonClient({
@@ -236,16 +233,17 @@ const client = new DaemonClient({
 });
 ```
 
-**Резервное использование переменной окружения SDK (PR 27, v0.16-alpha)** — `DaemonClient` автоматически читает `QWEN_SERVER_TOKEN` из окружения, когда `token` опущен, повторяя собственное резервное поведение демона с `--token` CLI. Таким образом, если в вашей оболочке есть `export QWEN_SERVER_TOKEN=...`, это эквивалентно приведенному выше:
+**Резервное использование переменной окружения SDK (PR 27, v0.16-alpha)** — `DaemonClient` автоматически читает `QWEN_SERVER_TOKEN` из окружения, когда `token` опущен, зеркалируя собственный флаг `--token` демона. Так что если в вашей оболочке есть `export QWEN_SERVER_TOKEN=...`, это эквивалентно предыдущему коду:
 
 ```ts
-// Same effect as token: process.env.QWEN_SERVER_TOKEN, but without the boilerplate.
+// То же самое, что token: process.env.QWEN_SERVER_TOKEN, но без шаблонного кода.
 const client = new DaemonClient({ baseUrl: 'https://your-host:4170' });
 ```
 
-Резервный вариант удаляет начальные и конечные пробельные символы (удобно для `export QWEN_SERVER_TOKEN="$(cat token.txt)"`, где `cat` добавляет новую строку) и рассматривает пустые значения или значения, состоящие только из пробелов, как неустановленные (устаревший `export QWEN_SERVER_TOKEN=""` не приведет к случайной отправке `Authorization: Bearer ` без токена). Резервный вариант выполняется один раз при создании; последующие изменения `process.env` не влияют на уже созданные клиенты. Пакеты для браузера (например, через `@qwen-code/webui`) корректно получают `undefined`, так как `globalThis.process` там не существует.
+Резервный механизм удаляет начальные и конечные пробелы (удобно для `export QWEN_SERVER_TOKEN="$(cat token.txt)"`, где `cat` добавляет новую строку) и считает пустые значения и значения из одних пробелов как неустановленные (устаревший `export QWEN_SERVER_TOKEN=""` не отправит случайно `Authorization: Bearer ` без токена). Резервный механизм выполняется один раз при создании объекта; последующие изменения `process.env` не влияют на уже созданные клиенты. В браузерных сборках (например, через `@qwen-code/webui`) он корректно возвращает `undefined`, потому что `globalThis.process` там не существует.
 
-Неправильные / отсутствующие токены возвращают `401` с единообразным телом — SDK выбрасывает `DaemonHttpError` при любом 4xx/5xx от обработчика маршрута.
+Неправильные или отсутствующие токены возвращают `401` с единообразным телом — SDK выбрасывает `DaemonHttpError` при любом 4xx/5xx от обработчика маршрута.
+
 ```ts
 import { DaemonHttpError } from '@qwen-code/sdk';
 
@@ -269,10 +267,10 @@ await client.cancel(session.sessionId);
 // В потоке событий запрос завершится с stopReason: "cancelled"
 ```
 
-Отмена останавливает только **активный** запрос — всё, что вы уже отправили через POST и что всё ещё ожидает в очереди, продолжит выполняться. (См. протокол для объяснения.)
+Отмена останавливает только **активный** запрос — всё, что вы уже отправили POST-запросом и что всё ещё стоит в очереди за ним, продолжит выполняться. (См. справочник протокола для обоснования.)
 
 ## Что дальше
 
-- [Справочник по HTTP-протоколу](../qwen-serve-protocol.md) — полная спецификация маршрутов с кодами состояния
-- [Руководство пользователя режима демона](../../users/qwen-serve.md) — документация для операторов
+- [Справочник HTTP-протокола](../qwen-serve-protocol.md) — полная спецификация маршрутов с кодами статуса
+- [Руководство по режиму демона](../../users/qwen-serve.md) — документация для операторов
 - Исходный код: `packages/sdk-typescript/src/daemon/`

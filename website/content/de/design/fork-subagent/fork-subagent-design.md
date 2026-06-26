@@ -1,10 +1,10 @@
-# Fork-Subagent-Design
+# Fork Subagent Design
 
-> Impliziter Fork-Subagent, der den vollständigen Konversationskontext des übergeordneten Agents übernimmt und den Prompt-Cache teilt, um eine kosteneffiziente parallele Aufgabenausführung zu ermöglichen.
+> Impliziter Fork-Subagent, der den gesamten Gesprächskontext des übergeordneten Subagents erbt und den Prompt-Cache für eine kosteneffiziente parallele Aufgabenausführung gemeinsam nutzt.
 
 ## Übersicht
 
-Wenn das Agent-Tool ohne `subagent_type` aufgerufen wird, löst es einen impliziten **Fork** aus – einen Hintergrund-Subagenten, der den Konversationsverlauf, den System-Prompt und die Tool-Definitionen des übergeordneten Agents übernimmt. Der Fork verwendet `CacheSafeParams`, um sicherzustellen, dass seine API-Anfragen denselben Präfix wie die des übergeordneten Agents teilen, wodurch DashScope-Prompt-Cache-Treffer ermöglicht werden.
+Wenn das Agent-Tool ohne `subagent_type` aufgerufen wird, löst es einen impliziten **Fork** aus – einen Hintergrund-Subagenten, der die Gesprächsgeschichte, den System-Prompt und die Tool-Definitionen des übergeordneten Subagents erbt. Der Fork verwendet `CacheSafeParams`, um sicherzustellen, dass seine API-Anfragen dasselbe Präfix wie die des übergeordneten Subagents teilen, was DashScope-Prompt-Cache-Treffer ermöglicht.
 
 ## Architektur
 
@@ -17,11 +17,11 @@ Fork B: [...MsgN | placeholder results | "Modify B"]    ← shared cache
 Fork C: [...MsgN | placeholder results | "Test C"]      ← shared cache
 ```
 
-## Wichtige Komponenten
+## Schlüsselkomponenten
 
 ### 1. FORK_AGENT (`forkSubagent.ts`)
 
-Synthetische Agent-Konfiguration, die nicht in `builtInAgents` registriert ist. Besitzt einen Fallback-`systemPrompt`, verwendet in der Praxis jedoch den gerenderten System-Prompt des übergeordneten Agents über `generationConfigOverride`.
+Synthetische Agent-Konfiguration, nicht in `builtInAgents` registriert. Hat einen Fallback-`systemPrompt`, verwendet aber in der Praxis den gerenderten System-Prompt des übergeordneten Subagents über `generationConfigOverride`.
 
 ### 2. CacheSafeParams Integration (`agent.ts` + `forkedQuery.ts`)
 
@@ -53,25 +53,25 @@ agent.ts (fork path)
                           ↑ byte-identical to parent's config
 ```
 
-### 3. History Construction (`agent.ts` + `forkSubagent.ts`)
+### 3. Aufbau des Verlaufs (`agent.ts` + `forkSubagent.ts`)
 
-Die `extraHistory` des Forks muss mit einer Model-Nachricht enden, um die User/Model-Alternierung der Gemini-API beizubehalten, wenn `agent-headless` den `task_prompt` sendet.
+Der `extraHistory` des Forks muss mit einer Modell-Nachricht enden, um die Benutzer/Modell-Abwechslung der Gemini-API beizubehalten, wenn `agent-headless` den `task_prompt` sendet.
 
 Drei Fälle:
 
-| Verlauf des übergeordneten Agents endet mit | Konstruktion von `extraHistory`                                              | `task_prompt`                    |
-| ----------------------------- | ---------------------------------------------------------------------- | ------------------------------ |
-| `model` (ohne Function Calls)   | `[...rawHistory]` (unverändert)                                          | `buildChildMessage(directive)` |
-| `model` (mit Function Calls) | `[...rawHistory, model(clone), user(responses+directive), model(ack)]` | `'Begin.'`                     |
-| `user` (ungewöhnlich)              | `rawHistory.slice(0, -1)` (letzten User-Eintrag entfernen)                         | `buildChildMessage(directive)` |
+| Ende der übergeordneten Geschichte        | Aufbau von extraHistory                                                                 | task_prompt                    |
+| ----------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------ |
+| model (keine Funktionsaufrufe)            | `[...rawHistory]` (unverändert)                                                         | `buildChildMessage(directive)` |
+| model (mit Funktionsaufrufen)             | `[...rawHistory, model(clone), user(responses+directive), model(ack)]`                  | `'Begin.'`                     |
+| user (ungewöhnlich)                       | `rawHistory.slice(0, -1)` (letzten Benutzer entfernen)                                  | `buildChildMessage(directive)` |
 
-### 4. Recursive Fork Prevention (`forkSubagent.ts`)
+### 4. Rekursive Fork-Verhinderung (`forkSubagent.ts`)
 
-`isInForkChild()` durchsucht den Konversationsverlauf nach dem `<fork-boilerplate>`-Tag. Wird es gefunden, wird der Fork-Versuch mit einer Fehlermeldung abgelehnt.
+`isInForkChild()` durchsucht die Gesprächsgeschichte nach dem `<fork-boilerplate>`-Tag. Wenn gefunden, wird der Fork-Versuch mit einer Fehlermeldung abgelehnt.
 
-### 5. Background Execution (`agent.ts`)
+### 5. Hintergrundausführung (`agent.ts`)
 
-Der Fork verwendet `void executeSubagent()` (Fire-and-Forget) und gibt `FORK_PLACEHOLDER_RESULT` sofort an den übergeordneten Agent zurück. Fehler im Hintergrundtask werden abgefangen, protokolliert und im Anzeigestatus berücksichtigt.
+Der Fork verwendet `void executeSubagent()` (Feuern und Vergessen) und gibt sofort `FORK_PLACEHOLDER_RESULT` an den übergeordneten Subagenten zurück. Fehler in der Hintergrundaufgabe werden abgefangen, protokolliert und im Anzeigestatus widergespiegelt.
 
 ## Datenfluss
 
@@ -94,19 +94,19 @@ Der Fork verwendet `void executeSubagent()` (Fire-and-Forget) und gibt `FORK_PLA
 
 ## Graceful Degradation
 
-Wenn `getCacheSafeParams()` null zurückgibt (erster Turn, noch kein Verlauf vorhanden), greift der Fork auf Folgendes zurück:
+Wenn `getCacheSafeParams()` null zurückgibt (erster Durchlauf, noch kein Verlauf), greift der Fork zurück auf:
 
 - `FORK_AGENT.systemPrompt` für die Systemanweisung
-- `prepareTools()` für die Tool-Deklarationen
+- `prepareTools()` für Tool-Deklarationen
 
-Dies stellt sicher, dass der Fork immer funktioniert, auch ohne Cache-Sharing.
+Dies stellt sicher, dass der Fork immer funktioniert, auch ohne Cache-Freigabe.
 
 ## Dateien
 
-| Datei                                                 | Rolle                                                                                  |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `packages/core/src/agents/runtime/forkSubagent.ts`   | FORK_AGENT-Konfiguration, `buildForkedMessages()`, `isInForkChild()`, `buildChildMessage()`        |
-| `packages/core/src/tools/agent.ts`                   | Fork-Pfad: Abruf von `CacheSafeParams`, Konstruktion von `extraHistory`, Hintergrundausführung |
-| `packages/core/src/agents/runtime/agent-headless.ts` | `execute()`-Optionen: `generationConfigOverride`, `toolsOverride`                            |
-| `packages/core/src/agents/runtime/agent-core.ts`     | `CreateChatOptions.generationConfigOverride`                                            |
-| `packages/core/src/followup/forkedQuery.ts`          | `CacheSafeParams`-Infrastruktur (bestehend, keine Änderungen)                                 |
+| Datei                                                    | Rolle                                                                                  |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `packages/core/src/agents/runtime/forkSubagent.ts`       | FORK_AGENT-Konfiguration, buildForkedMessages(), isInForkChild(), buildChildMessage()  |
+| `packages/core/src/tools/agent.ts`                       | Fork-Pfad: CacheSafeParams-Abfrage, Aufbau von extraHistory, Hintergrundausführung     |
+| `packages/core/src/agents/runtime/agent-headless.ts`     | execute()-Optionen: generationConfigOverride, toolsOverride                            |
+| `packages/core/src/agents/runtime/agent-core.ts`         | CreateChatOptions.generationConfigOverride                                             |
+| `packages/core/src/followup/forkedQuery.ts`              | CacheSafeParams-Infrastruktur (bestehend, keine Änderungen)                            |

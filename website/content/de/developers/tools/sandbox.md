@@ -1,16 +1,16 @@
 ## Anpassen der Sandbox-Umgebung (Docker/Podman)
 
-### Derzeit unterstützt das Projekt die Verwendung der `BUILD_SANDBOX`-Funktion nicht, wenn die Installation über das npm-Paket erfolgte
+### Derzeit unterstützt das Projekt die Verwendung der BUILD_SANDBOX-Funktion nach der Installation über das npm-Paket nicht.
 
-1. Um eine benutzerdefinierte Sandbox zu erstellen, musst du auf die Build-Skripte (`scripts/build_sandbox.js`) im Quellcode-Repository zugreifen.
-2. Diese Build-Skripte sind nicht in den über npm veröffentlichten Paketen enthalten.
-3. Der Code enthält hartkodierte Pfadprüfungen, die Build-Anfragen aus Nicht-Quellcode-Umgebungen explizit ablehnen.
+1. Um eine benutzerdefinierte Sandbox zu erstellen, müssen Sie auf die Build-Skripte (scripts/build_sandbox.js) im Quellcode-Repository zugreifen.
+2. Diese Build-Skripte sind nicht in den von npm veröffentlichten Paketen enthalten.
+3. Der Code enthält hartcodierte Pfadprüfungen, die Build-Anfragen aus Nicht-Quellcode-Umgebungen explizit ablehnen.
 
-Wenn du zusätzliche Tools im Container benötigst (z. B. `git`, `python`, `rg`), erstelle ein benutzerdefiniertes Dockerfile. Die genaue Vorgehensweise ist wie folgt:
+Wenn Sie zusätzliche Werkzeuge im Container benötigen (z. B. `git`, `python`, `rg`), erstellen Sie ein benutzerdefiniertes Dockerfile. Die genaue Vorgehensweise ist wie folgt:
 
-#### 1. Klone zunächst das Qwen Code-Projekt: https://github.com/QwenLM/qwen-code.git
+#### 1. Klonen Sie zuerst das Qwen Code-Projekt: https://github.com/QwenLM/qwen-code.git
 
-#### 2. Stelle sicher, dass du die folgenden Schritte im Verzeichnis des Quellcode-Repositories ausführst
+#### 2. Stellen Sie sicher, dass Sie die folgenden Operationen im Quellcode-Repository-Verzeichnis ausführen
 
 ```bash
 # 1. First, install the dependencies of the project
@@ -41,7 +41,7 @@ qwen -v
 
 ```
 
-#### 3. Erstelle dein Sandbox-Dockerfile im Stammverzeichnis deines eigenen Projekts
+#### 3. Erstellen Sie Ihr Sandbox-Dockerfile im Stammverzeichnis Ihres eigenen Projekts
 
 - Pfad: `.qwen/sandbox.Dockerfile`
 
@@ -57,18 +57,18 @@ RUN apt-get update && apt-get install -y \
     ripgrep
 ```
 
-#### 4. Erstelle das erste Sandbox-Image im Stammverzeichnis deines Projekts
+#### 4. Erstellen Sie das erste Sandbox-Image im Stammverzeichnis Ihres Projekts
 
 ```bash
 QWEN_SANDBOX=docker BUILD_SANDBOX=1 qwen -s
 # Observe whether the sandbox version of the tool you launched is consistent with the version of your custom image. If they are consistent, the startup will be successful
 ```
 
-Dadurch wird ein projektspezifisches Image basierend auf dem Standard-Sandbox-Image erstellt.
+Dadurch wird ein projektspezifisches Image auf Basis des Standard-Sandbox-Images erstellt.
 
-#### npm-Link entfernen
+#### Entfernen des npm-Links
 
-- Wenn du die offizielle Qwen CLI wiederherstellen möchtest, entferne bitte den npm-Link
+- Wenn Sie die offizielle CLI von Qwen wiederherstellen möchten, entfernen Sie den npm-Link
 
 ```bash
 # Method 1: Unlink globally
