@@ -1,0 +1,256 @@
+---
+title: "Qwen Code 週間レポート：トークンコスト一目了然、音声入力、ワークフロー保存＆再利用"
+date: "2026-06-25"
+description: "今週 Qwen Code は v0.18.4〜v0.19.2 の5つのバージョンをリリース。/stats で日々のトークン消費が確認でき、/voice でキーボード入力不要の音声入力、ワークフローはスラッシュコマンドとして保存して再利用可能、UI も大幅にスリム化されました。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 週間レポート：トークンコスト一目了然、音声入力、ワークフロー保存＆再利用"
+  date="2026-06-25"
+  author="Qwen Team"
+/>
+
+今週 Qwen Code は v0.18.4〜v0.19.2（メジャーバージョン v0.19.0 へアップグレード）の5つの正式版をリリースし、140以上の PR がマージされ、3つの方向性をカバーしました：
+
+**音声入力、キーボード入力不要。** これまですべての入力はキーボードで打ち込む必要がありました——長いコマンド、複雑なパラメータ、中英混在、打字が遅く間違いやすい。今週の `/voice` 音声入力でマイクに向かって話すだけでよく、話し終わると fast model が自動的に語尾の「えーと」や誤字脱字をクリーニングし、きれいに整形されたテキストが表示されます。Web Shell でもサポートされています。
+
+**ワークフローが保存・再利用可能になりました。** これまでワークフローは実行し終わると消えてしまい、次回同じタスクを実行するには最初から prompt を書き直す必要があり、同じ session 内で中断しても再開できませんでした。今週 Dynamic Workflows が最後のピースを補完：実行後 `s` キーを押すとスクリプトを `.qwen/workflows/<名前>.js` に保存し、保存後はスラッシュコマンドとして利用可能——次回は `/<名前>` と入力するだけで実行できます。project レベル（現在のプロジェクトのみ）または user レベル（全プロジェクトで利用可能）を選択して保存でき、同名のスクリプトがある場合は上書き確認が表示されます。
+
+**UI が全面的にスリム化。** これまでターミナルのツールグループは角丸ボーダーで箱のように積み重なり、thinking ブロックは折りたたんだ後に専用の展開キーがなく、拡張機能や MCP server の管理は手動で設定ファイルを編集する必要がありました。今週はボーダーを削除、完了したツールを1行に折りたたみ、Alt+T で thinking を専用管理、`/extensions` がインタラクティブマネージャーになり、MCP Resources の閲覧と `@` 補完が可能になりました。
+
+### 音声入力：マイクに向かって話すだけ
+
+これまですべての入力は手打ちでした。長いコマンド、複雑なパラメータ、中英混在、打字が遅く間違いやすい。
+
+今週 `/voice` 音声入力を追加。2つのモード：hold モードは Space を押しながら話し、離すと停止；tap モードは1回クリックして開始、もう1回クリックするか無音で自動停止して送信。オーディオはネイティブマイクバックエンド（`@qwen-code/audio-capture` N-API addon）でキャプチャ。Linux では arecord/SoX に自動 fallback、macOS ではマイク権限を自動要求します。
+
+トランスクリプションには2つのパスがあります：batch モード（`qwen3-asr-flash`）は OpenAI 互換の chat/completions + input_audio API を使用；realtime モード（`qwen3-asr-flash-realtime`、`fun-asr-realtime`）は WebSocket で PCM をストリーミングし、画面に部分的なトランスクリプト文字をリアルタイム表示。話し終わると fast model が語尾の「um」「嗯」などのフィラーワードや誤字脱字をクリーニングしますが、元の表現は改変せず保持——タイムアウトまたは失敗時は生のトランスクリプトテキストを直接使用。音声入力は常にテキストを生成します。
+
+`/model --voice` でトランスクリプションモデルを選択、`general.voice.{enabled,mode,language}` で動作を設定。
+
+**できること：**
+
+- `/voice hold` — Space を押しながら話し、離すとトランスクリプション停止
+- `/voice tap` — 1回クリックして開始、一文話すか無音で停止
+- `/model --voice qwen3-asr-flash-realtime` — リアルタイムストリーミングトランスクリプションモデルを選択
+- `/voice status` — 現在の音声設定を確認
+- Web Shell：マイクボタンをクリックして音声入力（ブラウザ録音、daemon 側トランスクリプション）
+
+PR [#5502](https://github.com/QwenLM/qwen-code/pull/5502)、[#5794](https://github.com/QwenLM/qwen-code/pull/5794)、[#5755](https://github.com/QwenLM/qwen-code/pull/5755) を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000007672/O1CN01cQTFg726XplXC7x8W_!!6000000007672-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/xSM0An5Xn8aZOyD5oPMN3poEtyqI8-S8C71k8ve6UHw.mp4" controls></video>
+
+### Dynamic Workflows：実行後ワンクリック保存、次回は直接呼び出し
+
+これまでワークフローは実行し終わると消えてしまいました。次回同じタスクを実行するには、最初から prompt を書き直す必要があり、同じ session 内で中断しても再開できませんでした。
+
+今週 Dynamic Workflows がこのギャップを埋めました。ワークフロー実行後、`s` キーを押してスクリプトを `.qwen/workflows/<名前>.js` に保存。保存後はスラッシュコマンドになり——次回は `/<名前>` と入力するだけで実行でき、prompt を再作成する必要がありません。保存時に project レベル（現在のプロジェクトのみ利用可能）または user レベル（全プロジェクトで利用可能）を選択でき、同名スクリプトがある場合は上書き確認が表示されます。
+
+同じ session 内では以前実行したワークフローを resume することも可能です：`resumeFromRunId` が JSONL ログから再生し、キャッシュから最長の不変プレフィックスで読み取り、最初の分岐点で続行。各 terminal run 完了時に `<projectDir>/workflows/<runId>.json` に自動保存され、`/workflows` パネルで履歴を確認できます（再起動後も残っており、最も古いものは自動クリーンアップ）。
+
+その他の機能：agent stall ウォッチドッグ（子 agent タイムアウト時に自動3回リトライ）、ネスト呼び出し（ある workflow 内で `workflow('<名前>')` で別の workflow を呼び出し）、"workflow" キーワード入力時に workflow tool へのソフトガイド（`ui.disableWorkflowKeywordTrigger` で無効化可能）、完了/失敗時に端末ベル通知。
+
+**できること：**
+
+- ワークフロー実行後 `s` キーを押して `/<名前>` スラッシュコマンドとして保存、次回直接呼び出し
+- `/workflows` パネルで履歴確認、再起動後も残る
+- 同じ session 内で中断したワークフローを resume
+- project レベルまたは user レベルで保存、可視範囲を選択
+
+PR [#5600](https://github.com/QwenLM/qwen-code/pull/5600) を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000002851/O1CN01ZFEhlY1WvoKgVeWGy_!!6000000002851-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/3zW_YjyuBEjlL9twIVcavHGej85RiTfvay3BjhF2c4I.mp4" controls></video>
+
+### UI エクスペリエンス全面最適化
+
+今週ターミナルと Web Shell の UI に集中的なスリム化を実施——ビジュアルノイズ削減から操作効率、管理機能まで一気に改善。
+
+**TUI ボーダー削除 + 完了ツール折りたたみ。** これまで各ツール呼び出しは角丸ボーダーで囲まれ、複数ツール並列実行時はボックスが積み重なっていました。今週はボーダーを完全に削除。compact モードでは完了したツールを1行に折りたたみ（ステータスアイコン + ツール名 + 所要時間）、実行中とエラーのもののみ展開。non-compact モードは影響を受けません。
+
+**Thinking Alt+T + 全画面ビューア。** 先週 Thinking は折りたたみ可能でしたが専用の展開キーがなく、Ctrl+O で compactMode と共有していました。今週 Alt+T が thinking ブロックの展開/折りたたみを専用に管理。折りたたまれた thinking 行をクリックすると AlternateScreen 全画面ビューアが開き、キーボードナビゲーション（↑↓、PgUp/PgDn）+ マウスホイールで閲覧可能。
+
+**`/extensions` がインタラクティブマネージャーに。** これまで `/extensions` は読み取り専用のフラットリストで、インストールや設定は手動で settings を編集する必要がありました。今週はインタラクティブなマルチタブマネージャーに：Installed タブはレベル別グループ化 + 各拡張機能にアクションメニュー（有効化/無効化/お気に入り/scope 変更/更新/アンインストール）；Discover タブで marketplace の拡張機能を検索してワンクリックインストール；Sources タブで新しい marketplace を追加（GitHub repo、Claude marketplace、npm パッケージ、ローカルパスをサポート）。CLI にも `qwen extensions sources add/list/update/remove` コマンドグループを追加。
+
+**MCP Resources の閲覧と `@` 補完。** これまで MCP server の resources には発見機制がなく、ユーザーは何なデータが利用可能か分かりませんでした。今週 `/mcp` ダイアログに View resources アクションを追加し、resource URI リストを開いて詳細を確認；`@server:` と入力するとその server の全 resource URI を自動補完；`@` と入力すると全 server の resources を検索。prompts も過度な capability gating でフィルタリングされなくなりました。
+
+**できること：**
+
+- compact モードで完了ツールを1行に折りたたみ、Alt+T で thinking を管理
+- `/extensions` でマネージャーを開き、拡張機能の検索・インストール・設定・アンインストール
+- `/mcp` → View resources で MCP server のデータを閲覧、`@server:` で resource 補完
+- `/extensions` Sources タブで Claude marketplace や GitHub repo を追加
+
+PR [#5003](https://github.com/QwenLM/qwen-code/pull/5003)、[#5627](https://github.com/QwenLM/qwen-code/pull/5627)、[#4850](https://github.com/QwenLM/qwen-code/pull/4850)、[#5398](https://github.com/QwenLM/qwen-code/pull/5398)、[#5544](https://github.com/QwenLM/qwen-code/pull/5544)、[#5635](https://github.com/QwenLM/qwen-code/pull/5635)、[#5733](https://github.com/QwenLM/qwen-code/pull/5733)、[#5774](https://github.com/QwenLM/qwen-code/pull/5774) を参照
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01FXcw501LOPg5h2D7y_!!6000000001289-2-tps-3837-2160.png)
+
+### Artifact：モデルがインタラクティブなウェブページを提供
+
+これまでモデルにアーキテクチャ図を描かせたり、インタラクティブなダッシュボードを作成させたりすると、ターミナル内にテキストとテーブルしか出力できませんでした——看到的是排版，不是真正的图表，无法点击也无法拖拽。
+
+今週 Artifact ツールを追加（実験的、手動有効化必要）。有効化後、モデルは生成したコンテンツをウェブページにして直接開くことができます——アーキテクチャ図はノードをクリックして詳細を展開、データテーブルはソートやフィルタリング、コードウォークスルーはリンクジャンプが可能。デザイナーがプロトタイプを描き、ブラウザで開くのと同じです。
+
+すべてのコンテンツはローカルファイルに書き込まれ（`~/.qwen/artifacts/`）、`file://` アドレスで開きます——ネットワーク接続なし。同じファイルで再実行すると旧バージョンを上書き、異なるファイルだと新ページを作成。モデル生成のコンテンツは完全に自己完結型である必要があります——外部 CSS や JS を参照できず、制御不能な外部リソースの読み込みを回避。単一ページのサイズ上限は 16 MB。
+
+有効化方法：settings で `experimental.artifact` を設定、または環境変数 `QWEN_CODE_ENABLE_ARTIFACT=1` を設定。non-interactive および SDK モードではデフォルトで利用不可。
+
+**できること：**
+
+- モデルにインタラクティブなアーキテクチャ図を生成させ、ノードをクリックして詳細を確認
+- データダッシュボードを生成し、ソート・フィルタリング
+- コードウォークスルーページを生成し、クリックでジャンプ
+- settings で `experimental.artifact` を有効化、または `QWEN_CODE_ENABLE_ARTIFACT=1` を設定
+
+PR [#5557](https://github.com/QwenLM/qwen-code/pull/5557) を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000007494/O1CN01e3vlf425EJGYfSNAL_!!6000000007494-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/xNcVhC0ROxt9BL93SP57MXnSSjKuSFJTNKmTxTwVErs.mp4" controls></video>
+
+### Vision Bridge：純テキストモデルでも画像が見えるようになりました
+
+これまで純テキストモデル（DeepSeek V4 など）を使用すると、`@` で画像を参照しても "unsupported-image" という提示に置き換えられ、モデルは画像コンテンツを一切見ることができませんでした。
+
+今週 Vision Bridge 自動互換パスを追加。ユーザーが `@` で画像を参照し、primary モデルが text-only で、同じ provider に image-capable モデルがある場合、Qwen Code は自動的に vision モデルを借りて画像コンテンツをテキストにトランスクリプトし、そのテキストを primary モデルに送信します。ユーザー設定不要——条件がすべて満たされると自動トリガー：primary が text-only + 同 provider に vision モデルあり + ユーザー turn に image parts 含む。primary が既に画像入力に対応している場合は直接送信で bridge を経由せず；primary の modalities が不明または同 provider に利用可能な vision モデルがない場合は bridge がトリガーされず、既存の動作を維持。
+
+Bridge は同一 provider 内でのみモデルを借用——cross-provider ルーティングはせず、credentials が第三者に漏洩しません。
+
+**できること：**
+
+- DeepSeek V4 などの純テキストモデル使用時に `@` でスクリーンショットを参照、自動的にテキスト記述にトランスクリプト
+- 設定不要、条件が自動で満たされるとトリガー
+- 同 provider 内で vision モデルを借用、cross-provider ルーティングなし
+
+PR [#5126](https://github.com/QwenLM/qwen-code/pull/5126) を参照
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000003090/O1CN01zmZ6491YhGzaWeQy5_!!6000000003090-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/v5tSXL4m6iP5OGVFcWHQqWI-pzZ5GwW2oHBg5qjShmY.mp4" controls></video>
+
+### /stats：トークン消費が一目了然
+
+これまで何トークン使用したか、いくら費用がかかったかは感覚で推測するしかありませんでした。長時間タスクを実行すると、気づかないうちに数万トークンを消費していましたが、`/stats` は session レベルの統計しか表示せず、日別、月別、モデル別の詳細な消費状況は確認できませんでした。
+
+今週 `/stats` に永続化トークン会計を追加。`/stats daily` は当日の総トークン、リクエスト数、input/output/cached/thought 分類明細をモデルおよび auth type 別に表示；`/stats monthly` は月間サマリーを表示；`/stats export daily YYYY-MM-DD --format csv` または `/stats export monthly YYYY-MM --format json --output <パス>` でファイルをエクスポート、集計データのみを含み prompt/response テキストやプロジェクトパスは一切含まれません。エクスポートパスはプロジェクト作業ディレクトリ内に制限され、パストラバーサル、シンボリックリンク、Windows alternate-data-stream パスを拒否。
+
+データは `~/.qwen/stats/` ディレクトリに永続化され、再起動後も残ります。
+
+**できること：**
+
+- `/stats daily` で今日のトークン消費をモデル別に表示
+- `/stats monthly` で月間消費サマリーを表示
+- `/stats export` で CSV/JSON をエクスポート、集計データのみでプライバシー情報は含まない
+- 再起動後もデータが残る
+
+PR [#4564](https://github.com/QwenLM/qwen-code/pull/4564) を参照
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN012AIyPr1gezx2OOfjC_!!6000000004168-2-tps-3854-2160.png)
+
+### その他の新機能
+
+| 機能 | PR | 影響 |
+| ---- | -- | ---- |
+| **Revivable subagent + transcript TTL** | [#5556](https://github.com/QwenLM/qwen-code/pull/5556) | 完了したバックグラウンド Agent を同じ session 内で再アクティブ化可能、コンテキスト再構築不要；古い transcript は `cleanupPeriodDays` で自動期限切れ |
+| **Desktop ファイルプレビューサイドパネル** | [#5730](https://github.com/QwenLM/qwen-code/pull/5730) | Desktop アプリのファイルプレビューが全画面を覆わなくなり、右側にドッキングして幅調整可能なパネル、会話とファイルツリーが同時に見える；CJK パスと `.md` ドメイン誤認識を修正 |
+| **desktop-pet skill** | [#4808](https://github.com/QwenLM/qwen-code/pull/4808) | `/desktop-pet` + キャラクター名を入力するとピクセルペットの spritesheet を自動生成してアクティブ化 |
+| **macOS 26+ Liquid Glass アイコン** | [#5284](https://github.com/QwenLM/qwen-code/pull/5284) | brand-create が Assets.car を自動コンパイル、macOS 26+ Liquid Glass アイコンレンダリング |
+| **Auto mode 破壊的コマンド硬ブロック** | [#5754](https://github.com/QwenLM/qwen-code/pull/5754) | `git reset --hard`、`git clean -fd`、`terraform destroy` などの破壊的コマンドは AUTO モードで決定論的 regex 事前フィルタリング、LLM 分類器に依存しない |
+| **/history collapse-on-resume** | [#4085](https://github.com/QwenLM/qwen-code/pull/4085) | 長い session を resume 時履歴はデフォルトで折りたたみ、`/history collapse-on-resume` で設定を保存、`/history expand-now` で一時展開 |
+| **応答タイムスタンプ [HH:MM:SS]** | [#5001](https://github.com/QwenLM/qwen-code/pull/5001) | `output.showTimestamps` 設定で各 assistant 返信前にタイムスタンプを表示、opt-in でデフォルトオフ |
+| **qwen serve から Web Shell** | [#5392](https://github.com/QwenLM/qwen-code/pull/5392) | `qwen serve` で Web Shell UI を直接提供、追加設定不要 |
+| **QQ Bot channel** | [#5202](https://github.com/QwenLM/qwen-code/pull/5202) | 新しい QQ ボット channel adapter、Qwen Code を QQ グループに接続可能 |
+| **Loop 秒単位ウェイクエンジン** | [#5182](https://github.com/QwenLM/qwen-code/pull/5182) | `/loop` のタイミング精度を分単位から秒単位に向上；delay 範囲 `[60, 3600]s`、self-paced wakeup は MAX_JOBS 制限にカウントされない |
+| **Loop self-paced 自歩進循環** | [#5197](https://github.com/QwenLM/qwen-code/pull/5197) | `/loop <prompt>`（interval なし）は自歩進循環に——model が次にチェックするタイミングを自分で決定、固定10分 cron 不要；polling が速い時は短間隔、状態安定時は自動延長、タスク完了で停止 |
+| **Workspace permissions rules API** | [#5743](https://github.com/QwenLM/qwen-code/pull/5743) | daemon と ACP クライアントは REST API で workspace の allow/ask/deny ルールを読み書き可能 |
+| **Requesty provider** | [#5478](https://github.com/QwenLM/qwen-code/pull/5478) | 新しい Requesty モデル provider サポート |
+| **Workflow P5 トークン予算 + per-run UI** | [#5231](https://github.com/QwenLM/qwen-code/pull/5231) | ワークフローにトークン予算制御と per-run UI 表示を追加 |
+| **DashScope preserve_thinking デフォルトオン** | [#5637](https://github.com/QwenLM/qwen-code/pull/5637) | DashScope provider はデフォルトで thinking token を送信、モデル推論過程がより完全 |
+| **fastOnly/voiceOnly モデルタグ** | [#5632](https://github.com/QwenLM/qwen-code/pull/5632) | モデルを `fastOnly` または `voiceOnly` としてタグ付け可能、主モデルリストに表示されない |
+| **Settings ファイル変更検出** | [#4933](https://github.com/QwenLM/qwen-code/pull/4933) | chokidar watcher が settings ファイルの変更を検出し、設定を自動リフレッシュ |
+| **/extensions archive インストールソース** | [#4909](https://github.com/QwenLM/qwen-code/pull/4909) | archive ファイルからの拡張機能インストールをサポート |
+| **MCP resource read tool** | [#5781](https://github.com/QwenLM/qwen-code/pull/5781) | モデルが `read_mcp_resource` ツールを取得、MCP server の指定 resource URI を自律的に読み取り可能、ユーザー手動 `@` 注入不要 |
+| **Web Shell session branching** | [#5613](https://github.com/QwenLM/qwen-code/pull/5613) | Web Shell が session branching をサポート |
+| **Daemon idle detection** | [#4934](https://github.com/QwenLM/qwen-code/pull/4934) | `GET /health?deep=true` で daemon のアイドル状態を検出 |
+| **Agent ignore files 設定可能** | [#4653](https://github.com/QwenLM/qwen-code/pull/4653) | agent がファイル無視リストを設定可能 |
+| **応答トークンレート表示** | [#5401](https://github.com/QwenLM/qwen-code/pull/5401) | ステータスバーで応答トークンレートをオプション表示 |
+| **hook system toolCallId** | [#4918](https://github.com/QwenLM/qwen-code/pull/4918) | hook システムが生の API call ID を受信 |
+| **i18n ツール表示名** | [#5220](https://github.com/QwenLM/qwen-code/pull/5220) | TUI と web-shell のツール名をローカライズ |
+| **kebab-case ファイル名 lint** | [#4797](https://github.com/QwenLM/qwen-code/pull/4797) | ESLint が kebab-case ファイル名を強制 |
+| **ACP permission timeout 設定可能** | [#5260](https://github.com/QwenLM/qwen-code/pull/5260) | daemon ACP 権限タイムアウト時間を設定可能 |
+| **Remote LSP status route** | [#5741](https://github.com/QwenLM/qwen-code/pull/5741) | `qwen serve` にリモート LSP ステータス照会エンドポイントを追加 |
+| **Extension operation polling** | [#5753](https://github.com/QwenLM/qwen-code/pull/5753) | 拡張機能操作がポーリング待機完了をサポート |
+
+## 🔧 重要な修正
+
+| 修正 | PR | 影響 |
+| ---- | -- | ---- |
+| **権限キャンセル後実行を継続しない** | [#5258](https://github.com/QwenLM/qwen-code/pull/5258) | ユーザーが権限を拒否すると agent は即座に停止、権限をスキップして実行を継続しない |
+| **per-turn tool-call circuit breaker** | [#5279](https://github.com/QwenLM/qwen-code/pull/5279) | 各 turn 内の tool 呼び出しにハード上限 + オプション loop 検出、agent の無限ループを防止 |
+| **連続同一 tool call always-on guard** | [#5573](https://github.com/QwenLM/qwen-code/pull/5573) | 連続重複の同一 tool 呼び出しを自動インターセプト、opt-in 不要 |
+| **plan gate 利用不可時に脱出路** | [#5430](https://github.com/QwenLM/qwen-code/pull/5430) | plan gate agent 失敗時に turn 全体をブロックせず、ユーザーは操作を継続可能 |
+| **ユーザー手動 plan mode 進入要確認** | [#5595](https://github.com/QwenLM/qwen-code/pull/5595) | 誤操作で plan mode に切り替わるのを防止 |
+| **workflow path-traversal 防護** | [#5740](https://github.com/QwenLM/qwen-code/pull/5740) | runId を検証してパストラバーサルによるディレクトリ誤削除を防止 |
+| **fork turn 上限 + 権限提示浮上** | [#5737](https://github.com/QwenLM/qwen-code/pull/5737) | fork 子 agent に turn 上限、権限リクエストは主 agent に浮上して確認 |
+| **デスクトップ markdown リンク2バグ修正** | [#5730](https://github.com/QwenLM/qwen-code/pull/5730) | `readme.md` がドメインと誤認識され parked ページにリダイレクト；CJK パス `/Users/me/项目/笔记.md` が ASCII-only regex でリンク化されない |
+| **IME カーソル位置復元** | [#4993](https://github.com/QwenLM/qwen-code/pull/4993) | #4779 で導入された IME 組合入力カーソル偏移回帰を修正 |
+| **systemd-inhibit がパスワードボックスをポップせず TUI を破壊しない** | [#5318](https://github.com/QwenLM/qwen-code/pull/5318) | `--no-ask-password` パラメータで systemd がパスワードを要求してターミナルインターフェースを損なうのを防止 |
+| **auto-memory /quit が OOM にならない** | [#5181](https://github.com/QwenLM/qwen-code/pull/5181) | 退出時の自動メモリー抽出が大規模対話でクラッシュしない |
+| **mid-turn 画像メッセージ保持** | [#5183](https://github.com/QwenLM/qwen-code/pull/5183) | ユーザーがモデル返信途中に貼り付けた画像が失われない |
+| **duplicate model 名称消歧** | [#5769](https://github.com/QwenLM/qwen-code/pull/5769) | 複数の provider が同名モデルを持つ場合に混同せず、provider 識別子を表示して区別 |
+| **voice addon を standalone archive にパッケージング** | [#5628](https://github.com/QwenLM/qwen-code/pull/5628) | `@qwen-code/audio-capture` N-API addon を standalone tar.gz に含め、音声入力に必要なプリビルドバイナリが欠落しない |
+| **stale prompt client 拒否** | [#5784](https://github.com/QwenLM/qwen-code/pull/5784) | daemon が期限切れの prompt クライアントを拒否、ゴースト session を防止 |
+| **MCP Claude server transport タイプ映射** | [#5812](https://github.com/QwenLM/qwen-code/pull/5812) | Claude MCP server の sse/stdio/streamable-http transport タイプをインポートと .mcp.json で正しく映射 |
+| **貼り付け画像パス自動添付昇格** | [#5803](https://github.com/QwenLM/qwen-code/pull/5803) | ターミナルで貼り付けた画像ファイルパスを自動認識して添付、手動 @ 不要 |
+| **model が選択した provider を記憶** | [#5179](https://github.com/QwenLM/qwen-code/pull/5179) | 複数の provider が同一 model ID を共有する場合、選択後に provider を失わない |
+| **thinking emoji を Unicode 記号に変更** | [#5788](https://github.com/QwenLM/qwen-code/pull/5788) | 思考と摘要アイコンを emoji から Unicode テキスト記号（💡→⟡）に変更、ターミナルレンダリング不一致を回避 |
+
+## 🎉 貢献者
+
+今週初めて PR を提出した以下の新規貢献者に感謝します：
+
+- **@shiloong** — hook system toolCallId が生の API call ID を渡す ([#4918](https://github.com/QwenLM/qwen-code/pull/4918))
+- **@Eric-GoodBoy-Tech** — QQ Bot channel adapter ([#5202](https://github.com/QwenLM/qwen-code/pull/5202))
+- **@aspnmy** — MCP server 設定 ([#5311](https://github.com/QwenLM/qwen-code/pull/5311))
+- **@xxlaura** — desktop-pet ピクセルアート skill ([#4808](https://github.com/QwenLM/qwen-code/pull/4808))
+- **@mvanhorn** — Windows home パス展開と desktop session ゴーストエントリー修正 ([#5253](https://github.com/QwenLM/qwen-code/pull/5253))
+- **@CubeLander** — plan gate AbortSignal 隔離 ([#5185](https://github.com/QwenLM/qwen-code/pull/5185))
+- **@water-in-stone** — Settings ファイル変更検出 ([#4933](https://github.com/QwenLM/qwen-code/pull/4933))
+- **@OrbitZore** — systemd-inhibit --no-ask-password ([#5318](https://github.com/QwenLM/qwen-code/pull/5318))
+- **@Gove2004** — /history collapse-on-resume ([#4085](https://github.com/QwenLM/qwen-code/pull/4085))
+- **@Zoean-z** — trustedFolders コメント保持 ([#4746](https://github.com/QwenLM/qwen-code/pull/4746))
+- **@ken-jo** — hooks 死フィールドクリーンアップ ([#5423](https://github.com/QwenLM/qwen-code/pull/5423))
+- **@Thibaultjaigu** — Requesty provider ([#5478](https://github.com/QwenLM/qwen-code/pull/5478))
+- **@interconnectedMe** — MCP 改善 ([#5488](https://github.com/QwenLM/qwen-code/pull/5488))
+- **@lcheng321** — 入力ボックス背景塗りつぶし修正 ([#5568](https://github.com/QwenLM/qwen-code/pull/5568))
+- **@russeell** — OpenAI log ファイル制限修正 ([#5569](https://github.com/QwenLM/qwen-code/pull/5569)) と ask_user_question 回答インデックス検証 ([#5622](https://github.com/QwenLM/qwen-code/pull/5622))
+
+今週も継続的に迭代した以下のコア貢献者に感謝します：
+
+- **@he-yufeng** — BMP/WebP/AVI 画像形式修正、model text-only タグ、duration レンダリング、emacs ediff パスエスケープ、環境変数厳密解析（10+ PR）
+- **@wenshao** — circuit breaker、consecutive call guard、daemon mid-turn イベント、settings v5 移行冪等性、theme background 修正、triage cross-repo インターセプト、SDK bundle 予算（8+ PR）
+- **@doudouOUC** — sed file history、mid-turn 画像保持、model provider メモリー、権限キャンセル後停止、daemon workspace provider リフレッシュ、duplicate model 消歧、stale client 拒否、MCP OAuth docs（7+ PR）
+- **@yiliang114** — extension list スペース、bare fast model auth、settings 移行、VSCode sidebar chat view（4+ PR）
+- **@qqqys** — artifact 確認 + キャンセル、voice addon standalone パッケージング、fork turn cap + 権限浮上、/context token ソース修正（4+ PR）
+- **@huww98** — VSCode per-session McpServer、Token Plan モデル補完、stats 二重カウント修正
+- **@ZijianZhang989** — window title に session name を表示、auto-memory /quit OOM 修正
+- **@kkhomej33-netizen** — streaming thought buffer 上限、interactive tool output メモリー削減
+- **@Alex-ai-future** — @path ドロップダウン Enter で閉じる、plan gate 脱出路、slash completion ランキング
+- **@LaZzyMan** — plan mode 手動確認、workflow path-traversal 防護
+- **@DragonnZhang** — telemetry クラッシュ防護、extension secrets fallback
+- **@pomelo-nwu** — thinking emoji→Unicode、custom model ID 保存復元
+- **@chiga0** — theme background fill を input box と user messages から削除
+- **@ZevGit** — VP mouse インタラクション安定化
+- **@BZ-D** — Claude MCP transport タイプ映射修正
+- **@cyphercodes** — resume preview history レンダリング、loop detection non-interactive 失敗
+- **@BenGuanRan** — IME カーソル位置復元
+- **@Jerry2003826** — output language が side queries で有効
+- **@tanzhenxin** — DashScope 上の GLM が web_fetch コンテンツを落とさない
+
+<Callout type="info">
+  **アップグレード方法**：
+  - CLI：`npm i @qwen-code/qwen-code@latest -g` を実行して最新バージョンにアップグレード。
+  - Desktop：[GitHub Releases](https://github.com/QwenLM/qwen-code/releases/tag/desktop-latest) からプラットフォーム対応のインストーラーをダウンロード。
+</Callout>
+
+ご質問やご提案があれば、[GitHub Issues](https://github.com/QwenLM/qwen-code/issues) でお知らせください！

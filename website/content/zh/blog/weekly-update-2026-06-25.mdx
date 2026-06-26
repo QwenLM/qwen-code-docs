@@ -1,0 +1,257 @@
+---
+title: "Qwen Code 周报：Token 花了多少一目了然、语音输入不用手打、工作流可保存复用"
+date: "2026-06-25"
+description: "这周 Qwen Code 发布 v0.18.4～v0.19.2 五个版本，/stats 让你看到每天花了多少 token，语音输入对着麦克风说就行，工作流保存成斜杠命令下次直接调用，界面也瘦了一大圈。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：Token 花了多少一目了然、语音输入不用手打、工作流可保存复用"
+  date="2026-06-25"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 v0.18.4～v0.19.2 五个正式版（主版本升级到 v0.19.0），超过 140 个 PR 合入，覆盖三个方向：
+
+**支持语音输入，不用手打字了。** 之前所有输入都是键盘敲出来的——长命令、复杂参数、中英混排，打字慢还容易拼错。这周 `/voice` 语音输入让你对着麦克风说话就行，说完 fast model 自动清理语气词和错别字，你看到的已经是润色过的干净文本。Web Shell 也支持了。
+
+**工作流能保存、能复用了。** 之前工作流跑完就没了，下次还得从头写 prompt 手动跑。这周 Dynamic Workflows 补上了最后一块：跑完一键保存成斜杠命令，下次直接 `/<名字>` 调用，同一 session 里还能 resume 之前中断的运行。
+
+**界面全面瘦身。** 之前终端里工具组的圆角边框堆成盒子山，thinking 块折叠后没有专用展开键，扩展和 MCP server 管理只能手动改配置文件。这周边框去掉、已完成工具折叠成一行、Alt+T 专门管 thinking、`/extensions` 变成交互式管理器、MCP Resources 能浏览和 `@` 补全。
+
+### 语音输入：对着麦克风说话就行
+
+之前所有输入都是手打的。长命令、复杂参数、中英混排，打字慢还容易拼错。
+
+这周新增 `/voice` 语音输入。两种模式：hold 模式按住 Space 说话，松手停止；tap 模式点一下开始，再点一下或静音自动停止提交。音频通过原生麦克风后端捕获（`@qwen-code/audio-capture` N-API addon），Linux 上自动 fallback 到 arecord/SoX，macOS 自动请求麦克风权限。
+
+转录有两条路径：batch 模式（`qwen3-asr-flash`）用 OpenAI-compatible chat/completions + input_audio API；realtime 模式（`qwen3-asr-flash-realtime`、`fun-asr-realtime`）通过 WebSocket 流式 PCM，屏幕上实时显示部分转录文字。说完后 fast model 自动清理语气词（"um"、" 嗯 "）和错别字，保留原始表达不做改写——超时或失败时直接用原始转录文本，语音输入永远产出文字。
+
+`/model --voice` 选择转录模型，`general.voice.{enabled,mode,language}` 配置行为。
+
+**你能用它做什么：**
+
+- `/voice hold` 按住 Space 说话，松手停止转录
+- `/voice tap` 点一下开始，再说一句或静音停止
+- `/model --voice qwen3-asr-flash-realtime` 选实时流式转录模型
+- `/voice status` 查看当前语音配置
+- Web Shell 点击麦克风按钮也能语音输入（浏览器录音，daemon 端转录）
+
+详见 PR [#5502](https://github.com/QwenLM/qwen-code/pull/5502)、[#5794](https://github.com/QwenLM/qwen-code/pull/5794)、[#5755](https://github.com/QwenLM/qwen-code/pull/5755)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000007672/O1CN01cQTFg726XplXC7x8W_!!6000000007672-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/xSM0An5Xn8aZOyD5oPMN3poEtyqI8-S8C71k8ve6UHw.mp4" controls></video>
+
+### Dynamic Workflows：工作流跑完一键保存，下次直接调用
+
+之前工作流跑完就没了。下次想跑同样的任务，还得重新写 prompt 手动触发，同一个 session 里中断了也没办法接续。
+
+这周 Dynamic Workflows 补上了这块。跑完一个工作流后，按 `s` 键把脚本保存到 `.qwen/workflows/<名字>.js`，保存完它就变成一个斜杠命令——下次直接输入 `/<名字>` 就跑，不用重新写 prompt。保存时可以选择 project 级别（只当前项目可用）或 user 级别（所有项目可用），已有同名脚本会提示覆盖确认。
+
+同一 session 里也能 resume 之前跑过的工作流：`resumeFromRunId` 通过 JSONL 日志回放，在最长的不变前缀处从缓存读取，然后在第一个变化处接续执行。每次跑完的 terminal run 自动保存到 `<projectDir>/workflows/<runId>.json`，`/workflows` 面板能看到历史记录（重启后还在，最旧的自动清理）。
+
+还有几个辅助能力：agent stall 看门狗（子 agent 超时静默后自动重试 3 次）、嵌套调用（一个 workflow 里可以 `workflow('<名字>')` 调另一个）、输入 "workflow" 关键词时软引导到 workflow tool（可以 `ui.disableWorkflowKeywordTrigger` 关掉）、跑完/失败时终端 bell 通知。
+
+**你能用它做什么：**
+
+- 工作流跑完按 `s` 保存为 `/<名字>` 斜杠命令，下次直接调用
+- `/workflows` 面板查看历史运行记录，重启后还在
+- 同一 session 内 resume 之前中断的工作流
+- project 级别或 user 级别保存，按需选择可见范围
+
+详见 PR [#5600](https://github.com/QwenLM/qwen-code/pull/5600)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000002851/O1CN01ZFEhlY1WvoKgVeWGy_!!6000000002851-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/3zW_YjyuBEjlL9twIVcavHGej85RiTfvay3BjhF2c4I.mp4" controls></video>
+
+### 界面体验全面优化
+
+这周终端和 Web Shell 的界面做了一轮集中瘦身——从视觉降噪到交互效率到管理能力，一口气改善了四块。
+
+**TUI 去边框 + 已完成工具折叠。** 之前每个工具调用都被圆角边框包着，多工具并行跑时屏幕是盒子堆叠。这周边框全去掉，compact 模式下已完成的工具折叠成一行（状态图标 + 工具名 + 耗时），只有正在执行和报错的才展开。非 compact 模式不受影响。
+
+**Thinking Alt+T + 全屏查看器。** 上周 Thinking 折叠但没有专用展开键，只能和 Ctrl+O 切 compactMode 共用。这周 Alt+T 专门管展开/折叠所有 thinking 块。点击折叠的 thinking 行还能进 AlternateScreen 全屏浏览——键盘导航（↑↓、PgUp/PgDn）+ 鼠标滚轮。
+
+**`/extensions` 变成交互式管理器。** 之前 `/extensions` 是只读扁平列表，想安装或配置只能手动改 settings。这周变成交互式多标签管理器：Installed 标签按级别分组 + 每个扩展有操作菜单（启用/禁用/收藏/改 scope/更新/卸载）；Discover 标签搜索并一键安装 marketplace 里的扩展；Sources 标签添加新 marketplace（支持 GitHub repo、Claude marketplace、npm 包、本地路径）。CLI 也有 `qwen extensions sources add/list/update/remove` 命令组。
+
+**MCP Resources 可浏览和 `@` 补全。** 之前 MCP server 的 resources 没有发现机制，用户不知道有什么数据可用。这周 `/mcp` 对话框新增 View resources 操作，打开资源 URI 列表看详情；输入 `@server:` 自动补全该 server 的所有资源 URI；输入 `@` 搜索所有 server 的资源。prompts 也不再被过严的 capability gating 过滤掉了。
+
+**你能用它做什么：**
+
+- compact 模式下已完成工具折叠成一行，Alt+T 专门管 thinking
+- `/extensions` 打开管理器，搜索安装、配置、卸载扩展
+- `/mcp` → View resources 浏览 MCP server 的数据，`@server:` 补全资源
+- `/extensions` Sources 标签添加 Claude marketplace 或 GitHub repo
+
+详见 PR [#5003](https://github.com/QwenLM/qwen-code/pull/5003)、[#5627](https://github.com/QwenLM/qwen-code/pull/5627)、[#4850](https://github.com/QwenLM/qwen-code/pull/4850)、[#5398](https://github.com/QwenLM/qwen-code/pull/5398)、[#5544](https://github.com/QwenLM/qwen-code/pull/5544)、[#5635](https://github.com/QwenLM/qwen-code/pull/5635)、[#5733](https://github.com/QwenLM/qwen-code/pull/5733)、[#5774](https://github.com/QwenLM/qwen-code/pull/5774)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01FXcw501LOPg5h2D7y_!!6000000001289-2-tps-3837-2160.png)
+
+### Artifact：模型给你一个可交互的网页
+
+之前让模型画个架构图、做个交互式仪表盘，它只能在终端里输出文字和表格——你看到的是一堆排版，不是真正的图表，没法点击也没法拖拽。
+
+这周新增 Artifact 工具（实验性，需手动开启）。开启后，模型可以把生成的内容做成一个网页直接打开——架构图可以点击节点展开详情，数据表格可以排序筛选，代码 walkthrough 可以跳转链接。就像你让设计师画了个原型，打开浏览器就能看到。
+
+所有内容写在本地文件里（`~/.qwen/artifacts/`），打开的是 `file://` 地址，不联网。同一个文件重跑会覆盖旧版本，换文件会创建新页面。模型生成的内容必须完全自包含——不能引用外部 CSS 或 JS，避免加载不可控的外部资源。单个页面大小上限 16 MB。
+
+开启方式：在 settings 里设置 `experimental.artifact`，或设置环境变量 `QWEN_CODE_ENABLE_ARTIFACT=1`。non-interactive 和 SDK 模式下默认不可用。
+
+**你能用它做什么：**
+
+- 让模型生成一个可交互的架构图，点击节点查看详情
+- 生成一个数据仪表盘，排序筛选
+- 生成一个代码 walkthrough 页面，点击跳转
+- 在 settings 里开启 `experimental.artifact`，或设置 `QWEN_CODE_ENABLE_ARTIFACT=1`
+
+详见 PR [#5557](https://github.com/QwenLM/qwen-code/pull/5557)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000007494/O1CN01e3vlf425EJGYfSNAL_!!6000000007494-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/xNcVhC0ROxt9BL93SP57MXnSSjKuSFJTNKmTxTwVErs.mp4" controls></video>
+
+### Vision Bridge：纯文本模型也能看图了
+
+之前用纯文本模型（如 DeepSeek V4）时，`@` 引用图片直接被替换成 "unsupported-image" 提示，模型看不到任何图像内容。
+
+这周新增 Vision Bridge 自动兼容路径。当用户 `@` 引用图片、primary 模型已知为 text-only、且同一 provider 有 image-capable 模型时，Qwen Code 自动借一个 vision 模型转录图片内容为文字，然后把文字发给 primary 模型。不需要用户配置——检测条件全满足就自动触发：primary 是 text-only + 同 provider 有 vision 模型 + 用户 turn 包含 image parts。如果 primary 已支持图片输入，直接发送不走 bridge；如果 primary 的 modalities 未知或同 provider 没有可用 vision 模型，bridge 不触发，保留原有行为。
+
+Bridge 只在同一 provider 内借模型——不会跨 provider 路由，credentials 不泄露到第三方。
+
+**你能用它做什么：**
+
+- 用 DeepSeek V4 等纯文本模型时 `@` 引用截图，自动转录为文字描述
+- 不需要任何配置，检测条件自动满足就触发
+- 同 provider 内借 vision 模型，不跨 provider 路由
+
+详见 PR [#5126](https://github.com/QwenLM/qwen-code/pull/5126)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000003090/O1CN01zmZ6491YhGzaWeQy5_!!6000000003090-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/v5tSXL4m6iP5OGVFcWHQqWI-pzZ5GwW2oHBg5qjShmY.mp4" controls></video>
+
+### /stats：花了多少 Token 一目了然
+
+之前用了多少 token、花了多少钱，只能凭感觉猜。长时间跑一个任务，可能不知不觉烧了几万 token，但 `/stats` 只显示 session 级别统计，看不到按天、按月、按模型细分的消耗。
+
+这周 `/stats` 新增持久化 token 记账。`/stats daily` 显示当天总 token、请求数、input/output/cached/thought 分类明细，按模型和 auth type 分组；`/stats monthly` 显示整月汇总；`/stats export daily YYYY-MM-DD --format csv` 或 `/stats export monthly YYYY-MM --format json --output <路径>` 导出文件，只含聚合数据不含任何 prompt/response 文本或项目路径。导出路径限制在项目工作目录内，拒绝路径穿越、符号链接和 Windows alternate-data-stream 路径。
+
+数据持久化在 `~/.qwen/stats/` 目录，重启后还在。
+
+**你能用它做什么：**
+
+- `/stats daily` 看今天花了多少 token，按模型分组
+- `/stats monthly` 看整月消耗汇总
+- `/stats export` 导出 CSV/JSON，只含聚合数据不含隐私内容
+- 重启后数据还在
+
+详见 PR [#4564](https://github.com/QwenLM/qwen-code/pull/4564)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN012AIyPr1gezx2OOfjC_!!6000000004168-2-tps-3854-2160.png)
+
+### 更多新功能
+
+| 功能                                        | PR                                                     | 对你的影响                                                                                                           |
+| ----------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| **Revivable subagent + transcript TTL**   | [#5556](https://github.com/QwenLM/qwen-code/pull/5556) | 已完成的后台 Agent 可以在同 session 内重新发消息复活，不用重建上下文；旧 transcript 按 `cleanupPeriodDays` 自动过期                              |
+| **Desktop 文件预览侧面板** | [#5730](https://github.com/QwenLM/qwen-code/pull/5730) | Desktop 应用文件预览不再全屏遮挡，右侧 docked 可拖拽调整宽度的面板，对话和文件树同时可见；修复 CJK 路径和 `.md` 域名误识别 |
+| **desktop-pet skill** | [#4808](https://github.com/QwenLM/qwen-code/pull/4808) | 输入 `/desktop-pet` + 角色名，自动生成像素宠物 spritesheet 并激活 |
+| **macOS 26+ Liquid Glass 图标** | [#5284](https://github.com/QwenLM/qwen-code/pull/5284) | brand-create 自动编译 Assets.car，macOS 26+ Liquid Glass 图标渲染 |
+| **Auto mode 破坏性命令硬阻断**                    | [#5754](https://github.com/QwenLM/qwen-code/pull/5754) | `git reset --hard`、`git clean -fd`、`terraform destroy` 等破坏性命令在 AUTO 模式下有确定性 regex 预过滤，不再依赖 LLM 分类器              |
+| **/history collapse-on-resume**           | [#4085](https://github.com/QwenLM/qwen-code/pull/4085) | resume 长会话时历史默认折叠，`/history collapse-on-resume` 保存偏好，`/history expand-now` 临时展开                                 |
+| **响应时间戳 [HH:MM:SS]**                      | [#5001](https://github.com/QwenLM/qwen-code/pull/5001) | `output.showTimestamps` 设置在每个 assistant 回复前显示时间戳，opt-in 默认关闭                                                    |
+| **Web Shell 从 qwen serve**                | [#5392](https://github.com/QwenLM/qwen-code/pull/5392) | `qwen serve` 直接 serve Web Shell UI，不需要额外配置                                                                      |
+| **QQ Bot channel**                        | [#5202](https://github.com/QwenLM/qwen-code/pull/5202) | 新增 QQ 机器人 channel adapter，Qwen Code 可以接入 QQ 群                                                                   |
+| **Loop 秒级唤醒引擎**                           | [#5182](https://github.com/QwenLM/qwen-code/pull/5182) | `/loop` 定时精度从分钟级提升到秒级；delay 范围 `[60, 3600]s`，self-paced wakeup 不计入 MAX_JOBS 限制；是 align CC `ScheduleWakeup` 的第一步 |
+| **Loop self-paced 自步进循环**                 | [#5197](https://github.com/QwenLM/qwen-code/pull/5197) | `/loop <prompt>`（无 interval）变成自步进循环——model 自己决定何时再检查，不再固定 10 分钟 cron；polling 快时短间隔，状态稳定时自动拉长间隔，任务完成就停           |
+| **Workspace permissions rules API**       | [#5743](https://github.com/QwenLM/qwen-code/pull/5743) | daemon 和 ACP 客户端可以通过 REST API 读写 workspace 的 allow/ask/deny 规则                                                  |
+| **Requesty provider**                     | [#5478](https://github.com/QwenLM/qwen-code/pull/5478) | 新增 Requesty 模型 provider 支持                                                                                      |
+| **Workflow P5 token budget + per-run UI** | [#5231](https://github.com/QwenLM/qwen-code/pull/5231) | 工作流新增 token 预算控制和 per-run UI 展示                                                                                 |
+| **DashScope preserve_thinking 默认开启**      | [#5637](https://github.com/QwenLM/qwen-code/pull/5637) | DashScope provider 默认发送 thinking token，模型推理过程更完整                                                                |
+| **fastOnly/voiceOnly 模型标记**               | [#5632](https://github.com/QwenLM/qwen-code/pull/5632) | 模型可以标记为 `fastOnly` 或 `voiceOnly`，不在主模型列表显示                                                                      |
+| **Settings 文件变更检测**                       | [#4933](https://github.com/QwenLM/qwen-code/pull/4933) | chokidar watcher 检测 settings 文件变更，自动刷新配置                                                                        |
+| **/extensions archive 安装来源**              | [#4909](https://github.com/QwenLM/qwen-code/pull/4909) | 支持从 archive 文件安装扩展                                                                                              |
+| **MCP resource read tool**                | [#5781](https://github.com/QwenLM/qwen-code/pull/5781) | 模型获得 `read_mcp_resource` 工具，可以自主读取 MCP server 的指定 resource URI，不需要用户手动 `@` 注入                                   |
+| **Web Shell session branching**           | [#5613](https://github.com/QwenLM/qwen-code/pull/5613) | Web Shell 支持 session branching                                                                                  |
+| **Daemon idle detection**                 | [#4934](https://github.com/QwenLM/qwen-code/pull/4934) | `GET /health?deep=true` 检测 daemon 空闲状态                                                                          |
+| **Agent ignore files 可配置**                | [#4653](https://github.com/QwenLM/qwen-code/pull/4653) | agent 可以配置忽略文件列表                                                                                                |
+| **响应 token rate 显示**                      | [#5401](https://github.com/QwenLM/qwen-code/pull/5401) | 状态栏可选显示响应 token 速率                                                                                              |
+| **hook system toolCallId**                | [#4918](https://github.com/QwenLM/qwen-code/pull/4918) | hook 系统接收原始 API call ID                                                                                         |
+| **i18n 工具显示名**                            | [#5220](https://github.com/QwenLM/qwen-code/pull/5220) | TUI 和 web-shell 工具名本地化                                                                                          |
+| **kebab-case 文件名 lint**                   | [#4797](https://github.com/QwenLM/qwen-code/pull/4797) | ESLint 强制 kebab-case 文件名                                                                                        |
+| **ACP permission timeout 可配置**            | [#5260](https://github.com/QwenLM/qwen-code/pull/5260) | daemon ACP 权限超时时间可配置                                                                                            |
+| **Remote LSP status route**               | [#5741](https://github.com/QwenLM/qwen-code/pull/5741) | `qwen serve` 新增远程 LSP 状态查询端点                                                                                    |
+| **Extension operation polling**           | [#5753](https://github.com/QwenLM/qwen-code/pull/5753) | 扩展操作支持轮询等待完成                                                                                                    |
+
+## 🔧 重要修复
+
+| 修复 | PR | 影响 |
+|------|-----|------|
+| **取消权限后不再继续执行** | [#5258](https://github.com/QwenLM/qwen-code/pull/5258) | 用户拒绝权限时 agent 立即停止，不会跳过权限继续跑 |
+| **per-turn tool-call circuit breaker** | [#5279](https://github.com/QwenLM/qwen-code/pull/5279) | 每个 turn 内 tool 调用有硬上限 + 可选 loop 检测，防止 agent 无限循环调工具 |
+| **连续相同 tool call always-on guard** | [#5573](https://github.com/QwenLM/qwen-code/pull/5573) | 连续重复的相同 tool 调用自动拦截，不需要 opt-in |
+| **plan gate 不可用时有逃生路径** | [#5430](https://github.com/QwenLM/qwen-code/pull/5430) | plan gate agent 失败时不再阻塞整个 turn，用户可以继续操作 |
+| **用户手动进入 plan mode 需确认** | [#5595](https://github.com/QwenLM/qwen-code/pull/5595) | 防止误触切换到 plan mode |
+| **workflow path-traversal 防护** | [#5740](https://github.com/QwenLM/qwen-code/pull/5740) | 校验 runId 防止路径穿越导致目录误删 |
+| **fork turn 上限 + 权限提示上浮** | [#5737](https://github.com/QwenLM/qwen-code/pull/5737) | fork 子 agent 有 turn 上限，权限请求上浮到主 agent 确认 |
+| **桌面端修复 markdown 链接两个 bug** | [#5730](https://github.com/QwenLM/qwen-code/pull/5730) | `readme.md` 被误识别为域名跳转到 parked 页面；CJK 路径 `/Users/me/项目/笔记.md` 因 ASCII-only regex 不被链接化 |
+| **IME 光标定位恢复** | [#4993](https://github.com/QwenLM/qwen-code/pull/4993) | #4779 引入的 IME 组合输入光标偏移回归已修复 |
+| **systemd-inhibit 不再弹密码框破坏 TUI** | [#5318](https://github.com/QwenLM/qwen-code/pull/5318) | `--no-ask-password` 参数防止 systemd 请求密码导致终端界面损坏 |
+| **auto-memory /quit 不再 OOM** | [#5181](https://github.com/QwenLM/qwen-code/pull/5181) | 退出时自动提取记忆不再因大对话崩溃 |
+| **保留 mid-turn 图片消息** | [#5183](https://github.com/QwenLM/qwen-code/pull/5183) | 用户在模型回复中途粘贴的图片不再丢失 |
+| **duplicate model 名称消歧** | [#5769](https://github.com/QwenLM/qwen-code/pull/5769) | 多个 provider 有同名模型时不再混淆，显示 provider 标识区分 |
+| **voice addon 打包进 standalone archive** | [#5628](https://github.com/QwenLM/qwen-code/pull/5628) | `@qwen-code/audio-capture` N-API addon 包含在 standalone tar.gz 里，语音输入不再缺预构建 |
+| **stale prompt client 拒绝** | [#5784](https://github.com/QwenLM/qwen-code/pull/5784) | daemon 拒绝过期的 prompt 客户端，防止幽灵 session |
+| **MCP Claude server transport 类型映射** | [#5812](https://github.com/QwenLM/qwen-code/pull/5812) | Claude MCP server 的 sse/stdio/streamable-http transport 类型在导入和 .mcp.json 中正确映射 |
+| **粘贴图片路径自动升为 attachment** | [#5803](https://github.com/QwenLM/qwen-code/pull/5803) | 终端粘贴的图片文件路径自动识别为附件，不需要手动 @ |
+| **model 记住选中的 provider** | [#5179](https://github.com/QwenLM/qwen-code/pull/5179) | 多个 provider 共享同一 model ID 时，选择后不再丢失 provider |
+| **thinking emoji 换 Unicode 符号** | [#5788](https://github.com/QwenLM/qwen-code/pull/5788) | 思考和摘要图标从 emoji 换成 Unicode 文本符号（💡→⟡），避免终端渲染不一致 |
+
+## 🎉 贡献者
+
+感谢以下新贡献者在本周首次提交 PR：
+
+- **@shiloong** — hook system toolCallId 传递原始 API call ID ([#4918](https://github.com/QwenLM/qwen-code/pull/4918))
+- **@Eric-GoodBoy-Tech** — QQ Bot channel adapter ([#5202](https://github.com/QwenLM/qwen-code/pull/5202))
+- **@aspnmy** — MCP server 配置 ([#5311](https://github.com/QwenLM/qwen-code/pull/5311))
+- **@xxlaura** — desktop-pet pixel-art skill ([#4808](https://github.com/QwenLM/qwen-code/pull/4808))
+- **@mvanhorn** — Windows home path 展开和 desktop session 幽灵条目修复 ([#5253](https://github.com/QwenLM/qwen-code/pull/5253))
+- **@CubeLander** — plan gate AbortSignal 隔离 ([#5185](https://github.com/QwenLM/qwen-code/pull/5185))
+- **@water-in-stone** — Settings 文件变更检测 ([#4933](https://github.com/QwenLM/qwen-code/pull/4933))
+- **@OrbitZore** — systemd-inhibit --no-ask-password ([#5318](https://github.com/QwenLM/qwen-code/pull/5318))
+- **@Gove2004** — /history collapse-on-resume ([#4085](https://github.com/QwenLM/qwen-code/pull/4085))
+- **@Zoean-z** — trustedFolders comments 保留 ([#4746](https://github.com/QwenLM/qwen-code/pull/4746))
+- **@ken-jo** — hooks 死字段清理 ([#5423](https://github.com/QwenLM/qwen-code/pull/5423))
+- **@Thibaultjaigu** — Requesty provider ([#5478](https://github.com/QwenLM/qwen-code/pull/5478))
+- **@interconnectedMe** — MCP 改进 ([#5488](https://github.com/QwenLM/qwen-code/pull/5488))
+- **@lcheng321** — 输入框背景填充修复 ([#5568](https://github.com/QwenLM/qwen-code/pull/5568))
+- **@russeell** — OpenAI log 文件 limit 修复 ([#5569](https://github.com/QwenLM/qwen-code/pull/5569)) 和 ask_user_question 答案索引校验 ([#5622](https://github.com/QwenLM/qwen-code/pull/5622))
+
+感谢以下核心贡献者本周持续迭代：
+
+- **@he-yufeng** — BMP/WebP/AVI 图片格式修复、model text-only 标记、duration 渲染、emacs ediff 路径转义、环境变量严格解析（10+ PR）
+- **@wenshao** — circuit breaker、consecutive call guard、daemon mid-turn 事件、settings v5 迁移幂等、theme background 修复、triage cross-repo 拦截、SDK bundle budget（8+ PR）
+- **@doudouOUC** — sed file history、mid-turn 图片保留、model provider 记忆、权限取消后停止、daemon workspace provider 刷新、duplicate model 消歧、stale client 拒绝、MCP OAuth docs（7+ PR）
+- **@yiliang114** — extension list spacing、bare fast model auth、settings migration、VSCode sidebar chat view（4+ PR）
+- **@qqqys** — artifact 确认 + cancel、voice addon standalone 打包、fork turn cap + 权限上浮、/context token 来源修复（4+ PR）
+- **@huww98** — VSCode per-session McpServer、Token Plan 模型补全、stats double-count 修复
+- **@ZijianZhang989** — window title 显示 session name、auto-memory /quit OOM 修复
+- **@kkhomej33-netizen** — streaming thought buffer 上限、interactive tool output 内存缩减
+- **@Alex-ai-future** — @path 下拉框 Enter 关闭、plan gate 逃生路径、slash completion 排名
+- **@LaZzyMan** — plan mode 手动确认、workflow path-traversal 防护
+- **@DragonnZhang** — telemetry crash 防护、extension secrets fallback
+- **@pomelo-nwu** — thinking emoji→Unicode、custom model ID 保存恢复
+- **@chiga0** — theme background fill 从 input box 和 user messages 移除
+- **@ZevGit** — VP mouse 交互稳定化
+- **@BZ-D** — Claude MCP transport 类型映射修复
+- **@cyphercodes** — resume preview history 渲染、loop detection 非 interactive 失败
+- **@BenGuanRan** — IME 光标定位恢复
+- **@Jerry2003826** — output language 在 side queries 中生效
+- **@tanzhenxin** — GLM on DashScope 不再丢 web_fetch content
+
+
+<Callout type="info">
+  **升级方式**：
+  - CLI：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+  - Desktop：从 [GitHub Releases](https://github.com/QwenLM/qwen-code/releases/tag/desktop-latest) 下载对应平台的安装包。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！
