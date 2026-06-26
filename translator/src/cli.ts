@@ -21,6 +21,7 @@ interface ProjectConfig {
   targetLanguages: string[];
   outputDir: string;
   branch?: string; // 源仓库分支
+  excludeFromTranslation?: string[]; // 跳过翻译的路径（目录前缀或精确文件名）
 }
 
 /**
@@ -362,6 +363,7 @@ class TranslationCLI {
       targetLanguages: projectConfig.targetLanguages, // 传递目标语言
       outputDir: projectConfig.outputDir, // 传递输出目录
       branch: projectConfig.branch, // 传递分支参数
+      excludeFromTranslation: projectConfig.excludeFromTranslation, // 传递排除翻译列表
     });
 
     try {
