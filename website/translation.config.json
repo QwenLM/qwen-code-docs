@@ -5,5 +5,13 @@
   "sourceLanguage": "en",
   "targetLanguages": ["zh", "de", "fr", "ru", "ja", "pt-BR"],
   "outputDir": "content",
-  "branch": "main"
+  "branch": "main",
+  "excludeFromTranslation": [
+    "e2e-tests",
+    "plans",
+    "superpowers",
+    "verification",
+    "declarative-agents-port.md",
+    "yaml-parser-replacement.md"
+  ]
 }

@@ -27,6 +27,9 @@ interface SyncOptions {
   projectRoot?: string; // 项目根目录
   outputDir?: string; // 输出目录
   branch?: string; // 新增：源仓库分支
+  // 新增：跳过翻译的路径（目录前缀或精确文件名，相对 docsPath）。
+  // 这些文档仍会同步到 content/<sourceLanguage>，但不会翻译到目标语言。
+  excludeFromTranslation?: string[];
 }
 
 interface SyncRecord {
@@ -85,6 +88,7 @@ export class SyncManager {
   private translator: DocumentTranslator | null = null; // 懒加载：仅在需要翻译时构造
   private projectRoot: string; // 新增：项目根目录
   private outputDir: string; // 新增：输出目录
+  private excludeFromTranslation: string[]; // 新增：跳过翻译的路径
 
   constructor(options: SyncOptions = {}) {
     // 确定项目根目录
@@ -113,6 +117,7 @@ export class SyncManager {
       "es",
     ];
     this.branch = options.branch || "main"; // 默认使用 main 分支
+    this.excludeFromTranslation = options.excludeFromTranslation || [];
 
     // 设置输出目录
     this.outputDir = options.outputDir || "content";
@@ -425,6 +430,17 @@ export class SyncManager {
   /**
    * 翻译变更的文件
    */
+  /**
+   * 判断某文档（相对 docsPath 的路径）是否被配置排除翻译。
+   * 规则：精确匹配文件名，或匹配某个目录前缀（pattern 或 pattern/...）。
+   */
+  private isExcludedFromTranslation(relativePath: string): boolean {
+    return this.excludeFromTranslation.some((pattern) => {
+      const p = pattern.replace(/\/+$/, ""); // 去掉末尾斜杠
+      return relativePath === p || relativePath.startsWith(p + "/");
+    });
+  }
+
   async translateChangedFiles(
     changedFiles: string[]
   ): Promise<Record<string, TranslationResult>> {
@@ -454,6 +470,15 @@ export class SyncManager {
           if (isMetaFile(relativePath)) {
             console.log(
               chalk.gray(`  ↪ 跳过导航文件（不覆盖本地 _meta）: ${relativePath}`)
+            );
+            continue;
+          }
+
+          // 跳过配置中排除翻译的文档（内部文档/不在站点导航显示的页面）。
+          // 这些文档仍同步进 content/<sourceLanguage>，但不翻译到目标语言。
+          if (this.isExcludedFromTranslation(relativePath)) {
+            console.log(
+              chalk.gray(`  ↪ 跳过翻译（excludeFromTranslation）: ${relativePath}`)
             );
             continue;
           }
