@@ -1,105 +1,104 @@
-# Outil Web Fetch (`web_fetch`)
+# Outil de récupération web (`web_fetch`)
 
 Ce document décrit l'outil `web_fetch` pour Qwen Code.
 
 ## Description
 
-Utilisez `web_fetch` pour récupérer le contenu d'une URL spécifiée et le traiter à l'aide d'un modèle d'IA. L'outil prend en entrée une URL et un prompt, récupère le contenu de l'URL et le traite avec le prompt en utilisant un modèle léger et rapide.
+Utilisez `web_fetch` pour récupérer le contenu d'une URL spécifiée et le traiter à l'aide d'un modèle d'IA. L'outil prend une URL et une invite (prompt) en entrée, récupère le contenu de l'URL et traite ce contenu avec l'invite en utilisant un modèle petit et rapide.
 
 ### Arguments
 
-`web_fetch` accepte trois arguments :
+`web_fetch` prend trois arguments :
 
-- `url` (string, required) : L'URL depuis laquelle récupérer le contenu. Doit être une URL valide et complète commençant par `http://` ou `https://`.
-- `prompt` (string, required) : Le prompt décrivant les informations que vous souhaitez extraire du contenu de la page.
-- `format` (string, optional) : Contrôle uniquement l'en-tête `Accept` envoyé au serveur, indiquant votre préférence de contenu. **Tout le contenu récupéré est normalisé en texte brut pour le traitement par le LLM**, quel que soit le format spécifié. La valeur par défaut est `"auto"` si non spécifié.
-  - `"auto"` (default) : Privilégie le markdown via la négociation de contenu (`Accept: text/markdown, text/html`), accepte le HTML en secours. **Recommandé pour la plupart des cas d'utilisation** car il peut réduire la consommation de tokens jusqu'à 80 % pour les serveurs prenant en charge le markdown.
-  - `"markdown"` : Envoie `Accept: text/markdown`. À utiliser lorsque vous avez explicitement besoin de contenu markdown.
-  - `"html"` : Envoie `Accept: text/html`. À utiliser lorsque le serveur exige du HTML dans l'en-tête Accept. Le contenu est tout de même converti en texte brut pour le traitement par le LLM.
-  - `"text"` : Envoie `Accept: text/plain`. À utiliser lorsque vous avez spécifiquement besoin de contenu en texte brut.
+- `url` (chaîne, obligatoire) : L'URL dont récupérer le contenu. Doit être une URL valide et complète commençant par `http://` ou `https://`.
+- `prompt` (chaîne, obligatoire) : L'invite décrivant les informations que vous souhaitez extraire du contenu de la page.
+- `format` (chaîne, facultatif) : Contrôle uniquement l'en-tête `Accept` envoyé au serveur, indiquant votre préférence de contenu. **Tout le contenu récupéré est normalisé en texte brut pour le traitement par LLM**, quel que soit le format spécifié. Par défaut `"auto"` si non spécifié.
+  - `"auto"` (par défaut) : Préfère le Markdown via la négociation de contenu (`Accept: text/markdown, text/html;q=0.9, text/plain;q=0.8, */*;q=0.1`), puis se rabat sur HTML, texte brut ou d'autres types de contenu. **Recommandé pour la plupart des cas d'usage** car il peut réduire la consommation de jetons jusqu'à 80 % pour les serveurs qui prennent en charge le Markdown, tout en continuant à fonctionner avec les API uniquement JSON.
+  - `"markdown"` : Préfère `Accept: text/markdown, */*;q=0.1`. À utiliser lorsque vous avez explicitement besoin de contenu Markdown.
+  - `"html"` : Préfère `Accept: text/html, */*;q=0.1`. À utiliser lorsque le serveur exige HTML dans l'en-tête Accept. Le contenu est tout de même converti en texte brut pour le traitement par LLM.
+  - `"text"` : Préfère `Accept: text/plain, */*;q=0.1`. À utiliser lorsque vous avez spécifiquement besoin de contenu texte brut.
 
 ## Comment utiliser `web_fetch` avec Qwen Code
 
-Pour utiliser `web_fetch` avec Qwen Code, fournissez une URL et un prompt décrivant ce que vous souhaitez extraire de cette URL. L'outil demandera une confirmation avant de récupérer l'URL. Une fois confirmé, l'outil récupérera directement le contenu et le traitera à l'aide d'un modèle d'IA.
+Pour utiliser `web_fetch` avec Qwen Code, fournissez une URL et une invite décrivant ce que vous souhaitez extraire de cette URL. L'outil demandera une confirmation avant de récupérer l'URL. Une fois confirmé, l'outil récupérera le contenu directement et le traitera à l'aide d'un modèle d'IA.
 
-L'outil effectue automatiquement les opérations suivantes :
+L'outil fait automatiquement :
 
-- Convertit le HTML en texte lorsque nécessaire
-- Gère les URL blob GitHub (en les convertissant en URL brutes)
-- Met à niveau les URL HTTP vers HTTPS pour des raisons de sécurité
-- Prend en charge la négociation de contenu pour le markdown (réduit considérablement la consommation de tokens)
+- Convertir le HTML en texte si nécessaire
+- Gérer les URLs de blob GitHub (les convertit en URLs brutes)
+- Mettre à niveau les URLs HTTP vers HTTPS pour la sécurité
+- Prendre en charge la négociation de contenu pour le Markdown (réduit significativement la consommation de jetons)
 
 Utilisation :
 
 ```
-web_fetch(url="https://example.com", prompt="Summarize the main points of this article")
+web_fetch(url="https://example.com", prompt="Résume les points principaux de cet article")
 ```
 
-Avec spécification du format :
+Avec spécification de format :
 
 ```
-web_fetch(url="https://example.com", prompt="Get the raw content", format="markdown")
+web_fetch(url="https://example.com", prompt="Obtenir le contenu brut", format="markdown")
 ```
 
-## Exemples `web_fetch`
+## Exemples de `web_fetch`
 
 Résumer un seul article :
 
 ```
-web_fetch(url="https://example.com/news/latest", prompt="Can you summarize the main points of this article?")
+web_fetch(url="https://example.com/news/latest", prompt="Peux-tu résumer les points principaux de cet article ?")
 ```
 
 Extraire des informations spécifiques :
 
 ```
-web_fetch(url="https://arxiv.org/abs/2401.0001", prompt="What are the key findings and methodology described in this paper?")
+web_fetch(url="https://arxiv.org/abs/2401.0001", prompt="Quels sont les résultats clés et la méthodologie décrits dans cet article ?")
 ```
 
 Analyser la documentation GitHub :
 
 ```
-web_fetch(url="https://github.com/QwenLM/Qwen/blob/main/README.md", prompt="What are the installation steps and main features?")
+web_fetch(url="https://github.com/QwenLM/Qwen/blob/main/README.md", prompt="Quelles sont les étapes d'installation et les principales fonctionnalités ?")
 ```
 
-Obtenir du contenu markdown (pour les serveurs prenant en charge Markdown for Agents) :
+Obtenir du contenu Markdown (pour les serveurs prenant en charge Markdown for Agents) :
 
 ```
-web_fetch(url="https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/", prompt="Extract the key information", format="markdown")
+web_fetch(url="https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/", prompt="Extrais les informations clés", format="markdown")
 ```
 
-## Notes importantes
+## Remarques importantes
 
-- **Traitement d'une seule URL :** `web_fetch` traite une URL à la fois. Pour analyser plusieurs URL, effectuez des appels séparés à l'outil.
-- **Format d'URL :** L'outil met automatiquement à niveau les URL HTTP vers HTTPS et convertit les URL blob GitHub au format brut pour un meilleur accès au contenu.
-- **Négociation de contenu :** L'outil prend en charge la négociation de contenu "Markdown for Agents". Lors de l'utilisation de `format="auto"` (par défaut), il envoie les en-têtes `Accept: text/markdown, text/html`, permettant aux serveurs prenant en charge le markdown de le retourner directement au lieu du HTML. Cela peut réduire la consommation de tokens jusqu'à 80 %.
-- **Traitement du contenu :** L'outil récupère directement le contenu et le traite à l'aide d'un modèle d'IA. Lorsque le serveur retourne du HTML, il le convertit en format texte lisible. Lorsque le serveur retourne du markdown ou du texte brut, il utilise le contenu tel quel.
-- **Qualité de la sortie :** La qualité du résultat dépendra de la clarté des instructions dans le prompt.
-- **Outils MCP :** Si un outil de récupération web fourni par MCP est disponible (commençant par "mcp\_\_"), privilégiez son utilisation car il peut comporter moins de restrictions.
+- **Traitement d'une seule URL :** `web_fetch` traite une URL à la fois. Pour analyser plusieurs URLs, effectuez des appels séparés à l'outil.
+- **Format d'URL :** L'outil met automatiquement à niveau les URLs HTTP vers HTTPS et convertit les URLs de blob GitHub en format brut pour un meilleur accès au contenu.
+- **Négociation de contenu :** L'outil prend en charge la négociation de contenu "Markdown for Agents". Lorsque vous utilisez `format="auto"` (par défaut), il envoie `Accept: text/markdown, text/html;q=0.9, text/plain;q=0.8, */*;q=0.1`, permettant aux serveurs qui prennent en charge le Markdown de le renvoyer directement au lieu du HTML. La solution de secours `*/*` de faible priorité permet de continuer à récupérer les API uniquement JSON et autres points de terminaison non textuels. Cela peut réduire la consommation de jetons jusqu'à 80 %.
+- **Traitement du contenu :** L'outil récupère le contenu directement et le traite à l'aide d'un modèle d'IA. Lorsque le serveur renvoie du HTML, il le convertit en un format texte lisible. Lorsque le serveur renvoie du Markdown, du texte brut ou un autre type de contenu de secours comme du JSON, il utilise le contenu tel quel.
+- **Qualité de la sortie :** La qualité de la sortie dépendra de la clarté des instructions dans l'invite.
+- **Outils MCP :** Si un outil de récupération web fourni par MCP est disponible (commençant par "mcp\_\_"), privilégiez l'utilisation de cet outil car il peut avoir moins de restrictions.
 
 ## Prise en charge de Markdown for Agents
 
-L'outil `web_fetch` de Qwen Code implémente la prise en charge de la spécification [Markdown for Agents de Cloudflare](https://blog.cloudflare.com/markdown-for-agents/). Cette fonctionnalité permet aux sites web de servir directement du contenu markdown aux agents IA, réduisant considérablement la consommation de tokens par rapport à l'analyse du HTML.
+L'outil `web_fetch` de Qwen Code implémente la prise en charge de la spécification [Markdown for Agents de Cloudflare](https://blog.cloudflare.com/markdown-for-agents/). Cette fonctionnalité permet aux sites web de servir du contenu Markdown directement aux agents IA, réduisant considérablement la consommation de jetons par rapport à l'analyse du HTML.
 
 ### Fonctionnement
 
 1. Le paramètre `format` contrôle **uniquement** l'en-tête `Accept` envoyé au serveur (il n'affecte pas le format de sortie) :
-   - `format="auto"` : envoie `Accept: text/markdown, text/html`
-   - `format="markdown"` : envoie `Accept: text/markdown`
-   - `format="html"` : envoie `Accept: text/html`
-   - `format="text"` : envoie `Accept: text/plain`
-2. Si le serveur prend en charge le markdown, il retourne `Content-Type: text/markdown`
-3. L'outil utilise directement le contenu markdown ou texte brut sans conversion
-4. Si le serveur retourne du HTML, il est converti en format texte lisible pour le traitement par le LLM
+   - `format="auto"` : envoie `Accept: text/markdown, text/html;q=0.9, text/plain;q=0.8, */*;q=0.1`
+   - `format="markdown"` : envoie `Accept: text/markdown, */*;q=0.1`
+   - `format="html"` : envoie `Accept: text/html, */*;q=0.1`
+   - `format="text"` : envoie `Accept: text/plain, */*;q=0.1`
+2. Si le serveur prend en charge le Markdown, il renvoie `Content-Type: text/markdown`
+3. L'outil utilise le contenu Markdown ou texte brut directement sans conversion
+4. Si le serveur renvoie du HTML, il le convertit en un format texte lisible pour le traitement par LLM ; le Markdown, le texte brut et les types de contenu de secours comme le JSON sont utilisés tels quels
 5. Tout le contenu est normalisé en texte avant d'être traité par le modèle d'IA
-
 ### Avantages
 
-- **Efficacité des tokens :** Le contenu markdown utilise généralement 80 % de tokens en moins qu'un HTML équivalent
-- **Meilleure structure :** Le markdown préserve la structure sémantique (titres, listes, etc.)
-- **Compatibilité descendante :** Fonctionne avec tous les sites web, expérience améliorée pour les serveurs compatibles
+- **Efficacité des tokens** : le contenu Markdown utilise généralement 80 % de tokens en moins que le HTML équivalent
+- **Meilleure structure** : Markdown préserve la structure sémantique (titres, listes, etc.)
+- **Rétrocompatible** : fonctionne avec tous les sites web, offre une expérience améliorée pour les serveurs compatibles
 
 ### Exemples de serveurs prenant en charge le markdown
 
-- Documentation développeur Cloudflare
-- Blog Cloudflare
-- Tout site web utilisant la fonctionnalité "Markdown for Agents" de Cloudflare
+- Documentation développeur de Cloudflare
+- Blog de Cloudflare
+- Tout site web utilisant la fonctionnalité « Markdown for Agents » de Cloudflare

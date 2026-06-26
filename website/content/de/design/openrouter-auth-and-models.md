@@ -1,88 +1,63 @@
-# Design der OpenRouter-Authentifizierung und Modellverwaltung
+# OpenRouter Auth und Model Management Design
 
-Dieses Dokument beschreibt die Designabsicht hinter dem OpenRouter-Auth-Flow und den
-damit eingeführten Änderungen an der Modellverwaltung. Es konzentriert sich bewusst auf
-Produkt- und Architektur-Entscheidungen, nicht auf die Implementierungshistorie.
+Dieses Dokument beschreibt die Design-Intention hinter dem OpenRouter-Authentifizierungsablauf und den damit eingeführten Änderungen im Modellmanagement. Es konzentriert sich bewusst auf die Produkt- und Architekturentscheidungen, nicht auf die Implementierungsgeschichte.
 
-## Ziele
+## Goals
 
-- Ermöglicht Benutzern die Authentifizierung bei OpenRouter sowohl über die CLI als auch über `/auth`.
-- Wiederverwendung des bestehenden OpenAI-kompatiblen Provider-Pfads, anstatt einen neuen Auth-
-Typ für OpenRouter hinzuzufügen.
-- Die Erststart-Erfahrung nutzbar machen, ohne Benutzer sofort mit der Verwaltung Hunderter
-Modelle zu belasten.
-- Einen klaren Weg zu einer umfassenderen Modellverwaltung über `/manage-models` offenhalten.
+- Benutzern ermöglichen, sich sowohl über die CLI als auch über `/auth` bei OpenRouter zu authentifizieren.
+- Den bestehenden, mit OpenAI kompatiblen Provider-Pfad wiederverwenden, anstatt einen neuen Auth-Typ für OpenRouter hinzuzufügen.
+- Die Erstnutzungserfahrung nutzbar machen, ohne dass Benutzer sofort Hunderte von Modellen verwalten müssen.
+- Einen klaren Pfad zu umfassenderem Modellmanagement über `/manage-models` beibehalten.
 
-## OpenRouter-Authentifizierung
+## OpenRouter Auth
 
 OpenRouter ist als OpenAI-kompatibler Provider integriert:
 
 - Auth-Typ: `AuthType.USE_OPENAI`
 - Provider-Einstellungen: `modelProviders.openai`
 - API-Key-Umgebungsvariable: `OPENROUTER_API_KEY`
-- Base-URL: `https://openrouter.ai/api/v1`
+- Basis-URL: `https://openrouter.ai/api/v1`
 
-Dies vermeidet die Einführung eines OpenRouter-spezifischen `AuthType`, da der Laufzeit-
-Provider-Pfad für Modelle bereits OpenAI-kompatibel ist. Dadurch bleiben Auth-Status, Modell-
-Auflösung, Provider-Auswahl und Settings-Schema mit der bestehenden Provider-Abstraktion synchron.
+Dies vermeidet die Einführung eines OpenRouter-spezifischen `AuthType`, da der Laufzeit-Modell-Provider-Pfad bereits OpenAI-kompatibel ist. So bleiben Auth-Status, Modellauflösung, Providerauswahl und Einstellungsschema mit der bestehenden Provider-Abstraktion konsistent.
 
 Die benutzerseitigen Abläufe sind:
 
-- `qwen auth openrouter --key <key>` für Automatisierung oder direktes API-Key-Setup.
-- `qwen auth openrouter` für browserbasiertes OAuth.
-- `/auth` → API Key → OpenRouter für den TUI-Ablauf.
+- `/auth` → OpenRouter für den interaktiven TUI-Ablauf.
+- Umgebungsvariablen für Automatisierung oder direkte API-Key-Einrichtung: `OPENROUTER_API_KEY` plus `OPENAI_BASE_URL=https://openrouter.ai/api/v1`.
+- `~/.qwen/settings.json` für skriptgesteuerte Einrichtung, die explizite Modell-Provider-Einträge benötigt.
 
-Browser-OAuth nutzt den PKCE-Flow von OpenRouter und schreibt den ausgetauschten API-Key in die
-Einstellungen, bevor die Authentifizierung als `AuthType.USE_OPENAI` aktualisiert wird.
+Browser OAuth nutzt den PKCE-Ablauf von OpenRouter und schreibt den ausgetauschten API-Key in die Einstellungen, bevor die Authentifizierung als `AuthType.USE_OPENAI` aktualisiert wird.
 
-## Modellverwaltung
+## Model Management
 
-OpenRouter stellt einen großen dynamischen Modellkatalog bereit. Jedes entdeckte Modell
-in `modelProviders.openai` zu schreiben, würde `/model` unübersichtlich machen und ein langfristiges
-Settings-Feld in einen Cache eines Remote-Katalogs verwandeln.
+OpenRouter bietet einen großen, dynamischen Modellkatalog. Jedes entdeckte Modell in `modelProviders.openai` zu schreiben, würde `/model` überladen und ein langfristiges Einstellungsfeld in einen Cache eines externen Katalogs verwandeln.
 
-Die zentrale Design-Trennung ist:
+Der entscheidende Design-Split ist:
 
-- **Katalog**: Die vollständige Menge an Modellen, die von einer Quelle wie
-OpenRouter entdeckt wurden.
-- **Aktivierte Menge**: Die kleinere Menge an Modellen, die in `/model` erscheinen und
-in den Benutzereinstellungen persistiert werden sollen.
+- **Katalog**: die vollständige Menge an Modellen, die von einer Quelle wie OpenRouter entdeckt wurden.
+- **Aktivierte Menge**: die kleinere Menge an Modellen, die in `/model` erscheinen und in den Benutzereinstellungen gespeichert werden sollen.
 
-Beim initialen OpenRouter-Ablauf sollte die Authentifizierung mit einer nützlichen Standard-
-Aktivierungsmenge enden, anstatt den Benutzer mit einem großen Auswahldialog zu unterbrechen. Die empfohlene Menge
-sollte klein, stabil und auf Modelle ausgerichtet sein, die Benutzern einen erfolgreichen Produkttest
-ermöglichen, einschließlich kostenloser Modelle, falls verfügbar.
+Für den ersten OpenRouter-Ablauf sollte die Authentifizierung mit einem nützlichen Standard-Aktivierungssatz enden, anstatt den Benutzer mit einer großen Auswahl zu unterbrechen. Der empfohlene Satz sollte klein, stabil und auf Modelle ausgerichtet sein, die es Benutzern ermöglichen, das Produkt erfolgreich auszuprobieren, einschließlich kostenloser Modelle, wenn verfügbar.
 
-`/model` bleibt ein schneller Modell-Switcher. Es sollte nicht zum Ort werden, an dem
-Benutzer einen vollständigen Provider-Katalog durchsuchen und kuratieren.
+`/model` bleibt ein schneller Modellwechsler. Es sollte nicht der Ort werden, an dem Benutzer einen vollständigen Providerkatalog durchsuchen und kuratieren.
 
 ## `/manage-models`
 
-Umfassendere Modellverwaltung gehört in einen separaten Einstiegspunkt `/manage-models`. Dieser
-Ablauf sollte Benutzern ermöglichen:
+Umfassenderes Modellmanagement gehört in einen separaten Einstiegspunkt `/manage-models`. Dieser Ablauf sollte es Benutzern ermöglichen:
 
-- entdeckte Modelle zu durchsuchen;
-- nach ID, Anzeigenamen, Provider-Präfix und abgeleiteten Tags wie `free` oder
-`vision` zu suchen;
-- zu sehen, welche Modelle aktuell aktiviert sind;
-- Modelle stapelweise zu aktivieren oder zu deaktivieren.
+- entdeckte Modelle durchzublättern;
+- nach ID, Anzeigename, Provider-Präfix und abgeleiteten Tags wie `free` oder `vision` zu suchen;
+- zu sehen, welche Modelle derzeit aktiviert sind;
+- Modelle in Stapeln zu aktivieren oder zu deaktivieren.
 
-Die Quell-Dimension muss Teil dieses Designs bleiben. OpenRouter ist nur die
-erste dynamische Katalogquelle; zukünftige Quellen wie ModelScope und ModelStudio
-sollten in dieselbe Struktur passen. Die UI-Komplexität kann reduziert werden, aber die zugrunde liegende
-Quellen-Abstraktion sollte als Erweiterungspunkt verfügbar bleiben.
+Die Quellendimension muss Teil dieses Designs bleiben. OpenRouter ist nur die erste dynamische Katalogquelle; zukünftige Quellen wie ModelScope und ModelStudio sollten in die gleiche Form passen. Die UI-Komplexität kann reduziert werden, aber die zugrunde liegende Quellenabstraktion sollte als Erweiterungspunkt verfügbar bleiben.
 
-## Aktueller Umfang
+## Current Boundary
 
-Diese Änderung sollte das Nötigste tun, um OpenRouter-Authentifizierung und Modell-Setup
-angenehm zu gestalten:
+Diese Änderung sollte das Mindeste tun, um die OpenRouter-Authentifizierung und Modelleinrichtung angenehm zu gestalten:
 
-- OAuth- oder key-basierte Authentifizierung konfiguriert OpenRouter über den bestehenden
-OpenAI-kompatiblen Provider-Pfad.
-- Die initiale aktivierte Modellmenge wird kuratiert, anstatt den vollständigen Katalog
-in die Einstellungen zu schreiben.
-- Vollständige Katalogspeicherung, Durchsuchen, Filtern und Stapelverwaltung werden auf
-`/manage-models` verschoben.
+- OAuth- oder schlüsselbasierte Authentifizierung konfiguriert OpenRouter über den bestehenden, mit OpenAI kompatiblen Provider-Pfad.
+- Der anfängliche aktivierte Modellsatz ist kuratiert, anstatt den vollständigen Katalog in die Einstellungen zu übernehmen.
+- Die vollständige Katalog-Speicherung, das Durchsuchen, Filtern und die Stapelverwaltung werden auf `/manage-models` verschoben.
 
-Das Designprinzip ist einfach: Die Authentifizierung sollte Benutzer schnell in einen funktionsfähigen
-Zustand bringen, während die Modellkuratierung in einem dedizierten Verwaltungsablauf stattfinden sollte.
+Das Designprinzip ist einfach: Die Authentifizierung sollte Benutzer schnell in einen funktionsfähigen Zustand versetzen, während die Modellkuratierung in einem dedizierten Verwaltungsablauf stattfinden sollte.

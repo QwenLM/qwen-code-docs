@@ -1,65 +1,67 @@
-# Qwen Code – Übersicht
+# Qwen Code Übersicht
 
 [![@qwen-code/qwen-code downloads](https://img.shields.io/npm/dw/@qwen-code/qwen-code.svg)](https://npm-compare.com/@qwen-code/qwen-code)
 [![@qwen-code/qwen-code version](https://img.shields.io/npm/v/@qwen-code/qwen-code.svg)](https://www.npmjs.com/package/@qwen-code/qwen-code)
 
-> Erfahre mehr über Qwen Code, das agentenbasierte Coding-Tool von Qwen, das direkt in deinem Terminal läuft und dir hilft, Ideen schneller als je zuvor in Code umzusetzen.
+> Erfahren Sie mehr über Qwen Code, das agentische Codierungs-Tool von Qwen, das in Ihrem Terminal lebt und Ihnen hilft, Ideen schneller als je zuvor in Code umzusetzen.
 
-## In 30 Sekunden loslegen
+## In 30 Sekunden starten
 
 ### Qwen Code installieren:
+
+Das empfohlene Installationsprogramm verwendet ein eigenständiges Archiv, sofern für Ihre Plattform eines verfügbar ist. Falls auf npm zurückgegriffen wird, muss Node.js 22 oder höher mit npm im PATH verfügbar sein.
 
 **Linux / macOS**
 
 ```sh
-curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh | bash
+curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen-standalone.sh | bash
 ```
 
-**Windows (Als Administrator ausführen)**
+**Windows**
 
-```cmd
-powershell -Command "Invoke-WebRequest 'https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat' -OutFile (Join-Path $env:TEMP 'install-qwen.bat'); & (Join-Path $env:TEMP 'install-qwen.bat')"
+```powershell
+irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen-standalone.ps1 | iex
 ```
 
 > [!note]
 >
-> Es wird empfohlen, das Terminal nach der Installation neu zu starten, um sicherzustellen, dass die Umgebungsvariablen übernommen werden. Falls die Installation fehlschlägt, siehe [Manuelle Installation](./quickstart#manual-installation) im Quickstart-Guide.
+> Es wird empfohlen, Ihr Terminal nach der Installation neu zu starten, falls `qwen` nicht sofort im PATH verfügbar ist. Wenn die Installation fehlschlägt, lesen Sie bitte [Manuelle Installation](./quickstart#manual-installation) im Quickstart-Leitfaden. Für eine Offline-Installation laden Sie ein Release-Archiv herunter und führen Sie das Installationsprogramm mit `--archive PFAD` aus; behalten Sie `SHA256SUMS` neben dem Archiv.
 
-### Qwen Code verwenden:
+### Qwen Code starten:
 
 ```bash
 cd your-project
 qwen
 ```
 
-Wähle deine Authentifizierungsmethode – **API Key** oder **[Alibaba Cloud Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index)** ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) – und folge den Anweisungen zur Konfiguration. Eine Schritt-für-Schritt-Anleitung findest du im API-Einrichtungs-Guide ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)). Anschließend kannst du direkt damit beginnen, deine Codebase zu erkunden. Probiere einen dieser Befehle aus:
+Beim ersten Start werden Sie aufgefordert, einen Modellanbieter zu verbinden. Das Menü bietet **Alibaba ModelStudio** (Coding Plan, Token Plan oder Standard API Key), **Drittanbieter** (integrierte Anbieter wie DeepSeek, MiniMax, Z.AI und OpenRouter, verbunden mit einem API-Key) und **Benutzerdefinierter Anbieter** (einen lokalen Server, Proxy oder nicht unterstützten Anbieter). Für den [Alibaba Cloud Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) wählen Sie **Alibaba ModelStudio → Coding Plan**; um einen ModelStudio-API-Key zu verwenden, wählen Sie **Alibaba ModelStudio → Standard API Key** und folgen Sie der API-Einrichtungsanleitung ([Peking](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)). Dann beginnen wir mit dem Verständnis Ihrer Codebasis. Versuchen Sie einen dieser Befehle:
 
 ```
-what does this project do?
+was macht dieses Projekt?
 ```
 
 ![](https://cloud.video.taobao.com/vod/j7-QtQScn8UEAaEdiv619fSkk5p-t17orpDbSqKVL5A.mp4)
 
-Bei der ersten Nutzung wirst du aufgefordert, dich anzumelden. Das war's! [Weiter zum Quickstart (5 Min.) →](./quickstart)
+Sie werden beim ersten Mal aufgefordert, sich anzumelden. Das war's! [Weiter mit Quickstart (5 Min.) →](./quickstart)
 
 > [!tip]
 >
-> Siehe [Troubleshooting](./support/troubleshooting), falls Probleme auftreten.
+> Siehe [Fehlerbehebung](./support/troubleshooting), falls Probleme auftreten.
 
 > [!note]
 >
-> **Neue VS Code Extension (Beta)**: Du bevorzugst eine grafische Oberfläche? Unsere neue **VS Code Extension** bietet eine benutzerfreundliche, native IDE-Erfahrung, ohne dass du dich mit dem Terminal auskennen musst. Installiere sie einfach aus dem Marketplace und beginne direkt in deiner Sidebar mit Qwen Code zu programmieren. Lade jetzt die [Qwen Code Companion](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion) herunter und installiere sie.
+> **Neue VS Code-Erweiterung (Beta)**: Bevorzugen Sie eine grafische Oberfläche? Unsere neue **VS Code-Erweiterung** bietet ein benutzerfreundliches natives IDE-Erlebnis, ohne dass Sie sich mit dem Terminal auskennen müssen. Installieren Sie sie einfach aus dem Marketplace und beginnen Sie direkt in Ihrer Seitenleiste mit Qwen Code zu coden. Laden Sie jetzt [Qwen Code Companion](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion) herunter und installieren Sie sie.
 
-## Was Qwen Code für dich tut
+## Was Qwen Code für Sie tut
 
-- **Features aus Beschreibungen erstellen**: Sage Qwen Code in natürlicher Sprache, was du bauen möchtest. Es erstellt einen Plan, schreibt den Code und stellt sicher, dass er funktioniert.
-- **Debuggen und Probleme beheben**: Beschreibe einen Bug oder füge eine Fehlermeldung ein. Qwen Code analysiert deine Codebase, identifiziert das Problem und implementiert eine Lösung.
-- **Jede Codebase navigieren**: Stelle beliebige Fragen zur Codebase deines Teams und erhalte eine fundierte Antwort. Qwen Code kennt die gesamte Projektstruktur, kann aktuelle Informationen aus dem Web abrufen und mit [MCP](./features/mcp) auf externe Datenquellen wie Google Drive, Figma und Slack zugreifen.
-- **Lästige Aufgaben automatisieren**: Behebe knifflige Lint-Probleme, löse Merge-Konflikte und schreibe Release Notes. All das mit einem einzigen Befehl von deinem Entwickler-PC aus oder automatisch in der CI.
-- **[Follow-up-Vorschläge](./features/followup-suggestions)**: Qwen Code antizipiert, was du als Nächstes eingeben möchtest, und zeigt es als Ghost-Text an. Drücke Tab, um ihn zu übernehmen, oder tippe einfach weiter, um ihn zu verwerfen.
+- **Funktionen aus Beschreibungen erstellen**: Teilen Sie Qwen Code in einfacher Sprache mit, was Sie bauen möchten. Es erstellt einen Plan, schreibt den Code und stellt sicher, dass er funktioniert.
+- **Fehler beheben und Probleme lösen**: Beschreiben Sie einen Fehler oder fügen Sie eine Fehlermeldung ein. Qwen Code analysiert Ihre Codebasis, identifiziert das Problem und implementiert eine Lösung.
+- **Jede Codebasis navigieren**: Fragen Sie alles über die Codebasis Ihres Teams und erhalten Sie eine durchdachte Antwort. Qwen Code behält den Überblick über Ihre gesamte Projektstruktur, kann aktuelle Informationen aus dem Web finden und mit [MCP](./features/mcp) Daten aus externen Quellen wie Google Drive, Figma und Slack abrufen.
+- **Mühsame Aufgaben automatisieren**: Beheben Sie knifflige Lint-Probleme, lösen Sie Merge-Konflikte und schreiben Sie Release-Notizen. Erledigen Sie all dies mit einem einzigen Befehl auf Ihren Entwicklermaschinen oder automatisch in CI.
+- **[Folgevorschläge](./features/followup-suggestions)**: Qwen Code sagt voraus, was Sie als Nächstes eingeben möchten, und zeigt es als Geistertext an. Drücken Sie Tab, um zu akzeptieren, oder tippen Sie einfach weiter, um zu verwerfen.
 
 ## Warum Entwickler Qwen Code lieben
 
-- **Läuft in deinem Terminal**: Kein weiteres Chat-Fenster. Keine weitere IDE. Qwen Code trifft dich dort, wo du bereits arbeitest, mit den Tools, die du bereits liebst.
-- **Handelt aktiv**: Qwen Code kann Dateien direkt bearbeiten, Befehle ausführen und Commits erstellen. Du brauchst mehr? [MCP](./features/mcp) ermöglicht es Qwen Code, deine Design-Dokumente in Google Drive zu lesen, deine Tickets in Jira zu aktualisieren oder _deine_ eigenen Developer-Tools zu nutzen.
-- **Unix-Philosophie**: Qwen Code ist komponierbar und skriptfähig. `tail -f app.log | qwen -p "Slack me if you see any anomalies appear in this log stream"` _funktioniert_. Deine CI kann `qwen -p "If there are new text strings, translate them into French and raise a PR for @lang-fr-team to review"` ausführen.
+- **Funktioniert in Ihrem Terminal**: Kein weiteres Chat-Fenster. Keine weitere IDE. Qwen Code trifft Sie dort, wo Sie bereits arbeiten, mit den Werkzeugen, die Sie bereits lieben.
+- **Ergreift Maßnahmen**: Qwen Code kann direkt Dateien bearbeiten, Befehle ausführen und Commits erstellen. Benötigen Sie mehr? [MCP](./features/mcp) ermöglicht es Qwen Code, Ihre Designdokumente in Google Drive zu lesen, Ihre Tickets in Jira zu aktualisieren oder _Ihre_ benutzerdefinierten Entwicklerwerkzeuge zu verwenden.
+- **Unix-Philosophie**: Qwen Code ist kombinierbar und scriptbar. `tail -f app.log | qwen -p "Slack mir, wenn du Anomalien in diesem Logstream siehst"` _funktioniert_. Ihre CI kann `qwen -p "Wenn es neue Textstrings gibt, übersetze sie ins Französische und erstelle einen PR zur Überprüfung durch @lang-fr-team"` ausführen.

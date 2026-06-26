@@ -1,53 +1,161 @@
 # Statuszeile
 
-> Zeige benutzerdefinierte Informationen im Footer mithilfe eines Shell-Befehls an.
+> Zeigt benutzerdefinierte Informationen in der Fußzeile an.
 
-Die Statuszeile ermöglicht es dir, einen Shell-Befehl auszuführen, dessen Ausgabe im linken Bereich des Footers angezeigt wird. Der Befehl erhält strukturierten JSON-Kontext über stdin und kann somit sitzungsbezogene Informationen wie das aktuelle Modell, die Token-Nutzung, den Git-Branch oder beliebige andere skriptbare Daten anzeigen.
+Die Statuszeile zeigt sitzungsbezogene Informationen – Modellname, Token-Verbrauch, Git-Branch und mehr – im linken Abschnitt der Fußzeile an. Es gibt zwei Konfigurationsmodi:
+
+- **Voreinstellungsmodus** – Wählen Sie aus integrierten Datenelementen über einen interaktiven Dialog oder eine JSON-Konfiguration aus. Keine Skripterstellung erforderlich.
+- **Befehlsmodus** – Führen Sie einen Shell-Befehl aus, der strukturierten JSON-Kontext über stdin erhält. Volle Flexibilität für benutzerdefinierte Formatierung.
 
 ```
-Single-line status (default approval mode — 1 row):
+Einzeilige Statuszeile (Standard-Bestätigungsmodus – 1 Zeile):
 ┌─────────────────────────────────────────────────────────────────┐
-│  user@host ~/project (main) ctx:34%   🔒 docker | Debug | 67%  │  ← status line
+│  user@host ~/project (main) ctx:34%   🔒 docker | Debug | 67%  │  ← Statuszeile
 └─────────────────────────────────────────────────────────────────┘
 
-Multi-line status (up to 2 lines — 2 rows):
+Mehrzeilige Statuszeile (bis zu 2 Zeilen – 2 Zeilen):
 ┌─────────────────────────────────────────────────────────────────┐
-│  user@host ~/project (main) ctx:34%   🔒 docker | Debug | 67%  │  ← status line 1
-│  ████████░░░░░░░░░░ 34% context                                │  ← status line 2
+│  user@host ~/project (main) ctx:34%   🔒 docker | Debug | 67%  │  ← Statuszeile 1
+│  ████████░░░░░░░░░░ 34% context                                │  ← Statuszeile 2
 └─────────────────────────────────────────────────────────────────┘
 
-Multi-line status + non-default mode (3 rows max):
+Mehrzeilige Statuszeile + nicht-standardmäßiger Modus (max. 3 Zeilen):
 ┌─────────────────────────────────────────────────────────────────┐
-│  user@host ~/project (main) ctx:34%   🔒 docker | Debug | 67%  │  ← status line 1
-│  ████████░░░░░░░░░░ 34% context                                │  ← status line 2
-│  auto-accept edits (shift + tab to cycle)                       │  ← mode indicator
+│  user@host ~/project (main) ctx:34%   🔒 docker | Debug | 67%  │  ← Statuszeile 1
+│  ████████░░░░░░░░░░ 34% context                                │  ← Statuszeile 2
+│  auto-accept edits (shift + tab to cycle)                       │  ← Modusanzeige
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Nach der Konfiguration ersetzt die Statuszeile den standardmäßigen Hinweis „? für Shortcuts". Nachrichten mit hoher Priorität (Exit-Prompts für Ctrl+C/D, Esc, vim INSERT-Modus) überlagern die Statuszeile vorübergehend. Der Text der Statuszeile wird bei Bedarf gekürzt, um in die verfügbare Breite zu passen.
+Wenn konfiguriert, ersetzt die Statuszeile den standardmäßigen Hinweis "? für Tastenkombinationen". Nachrichten mit hoher Priorität (Strg+C/D-Beenden-Aufforderungen, Esc, vim EINFÜGEModus) überlagern vorübergehend die Statuszeile. Der Text der Statuszeile wird abgeschnitten, um in die verfügbare Breite zu passen.
 
-## Voraussetzungen
+## Schnelleinrichtung
 
-- [`jq`](https://jqlang.github.io/jq/) wird zum Parsen der JSON-Eingabe empfohlen (Installation z. B. über `brew install jq`, `apt install jq` usw.)
-- Einfache Befehle, die keine JSON-Daten benötigen (z. B. `git branch --show-current`), funktionieren auch ohne `jq`
-
-## Schnelles Setup
-
-Der einfachste Weg, eine Statuszeile zu konfigurieren, ist der Befehl `/statusline`. Er startet einen Setup-Agent, der deine Shell-PS1-Konfiguration ausliest und eine passende Statuszeile generiert:
+Der einfachste Weg, eine Statuszeile zu konfigurieren, ist der Befehl `/statusline`. Er öffnet einen interaktiven Dialog, in dem Sie Voreinstellungselemente auswählen, Themenfarben umschalten und eine Live-Vorschau sehen können:
 
 ```
 /statusline
 ```
 
-Du kannst ihm auch spezifische Anweisungen geben:
+Dies öffnet den Konfigurator für den Voreinstellungsmodus. Verwenden Sie die Pfeiltasten zur Navigation, die Leertaste zum Umschalten von Elementen und die Eingabetaste zum Bestätigen. Ihre Auswahl wird automatisch in den Einstellungen gespeichert.
+
+Sie können `/statusline` auch spezifische Anweisungen geben, um eine Konfiguration für den Befehlsmodus generieren zu lassen:
 
 ```
 /statusline show model name and context usage percentage
 ```
 
-## Manuelle Konfiguration
+---
 
-Füge ein `statusLine`-Objekt unter dem `ui`-Schlüssel in `~/.qwen/settings.json` hinzu:
+## Voreinstellungsmodus
+
+Der Voreinstellungsmodus bietet eine Reihe von integrierten Datenelementen, die Sie auswählen und kombinieren können – keine Shell-Befehle, kein `jq`, keine Skripterstellung. Elemente werden als `item1 | item2 | item3` in einer einzigen Zeile dargestellt.
+
+### Konfiguration
+
+Fügen Sie ein Objekt `statusLine` unter dem Schlüssel `ui` in `~/.qwen/settings.json` hinzu:
+
+```json
+{
+  "ui": {
+    "statusLine": {
+      "type": "preset",
+      "items": [
+        "model-with-reasoning",
+        "git-branch",
+        "context-remaining",
+        "current-dir",
+        "context-used"
+      ],
+      "useThemeColors": true
+    }
+  }
+}
+```
+
+| Feld                   | Typ         | Erforderlich | Beschreibung                                                                                                 |
+| ---------------------- | ----------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
+| `type`                 | `"preset"`  | Ja           | Muss `"preset"` sein                                                                                         |
+| `items`                | string[]    | Ja           | Geordnete Liste der anzuzeigenden Voreinstellungselement-IDs (siehe Tabelle unten). Elemente werden mit `\|` als Trennzeichen verbunden. |
+| `useThemeColors`       | boolean     | Nein         | Wendet die Farbe des aktiven `/theme` auf den Text der Statuszeile an. Standard: `true`.                     |
+| `hideContextIndicator` | boolean     | Nein         | Blendet den integrierten Kontextnutzungsindikator im rechten Fußzeilenabschnitt aus. Standard: `false`.      |
+
+### Verfügbare Voreinstellungselemente
+
+| Element-ID               | Standard | Beschreibung                                                         |
+| ------------------------ | -------- | -------------------------------------------------------------------- |
+| `model-with-reasoning`   | Ja       | Aktueller Modellname mit Reasoning-Stufe (z. B. `qwen-3-235b high`)  |
+| `model`                  |          | Aktueller Modellname ohne Reasoning-Stufe                            |
+| `git-branch`             | Ja       | Aktueller Git-Branch-Name (ausgeblendet, wenn nicht in einem Git-Repo)|
+| `context-remaining`      | Ja       | Prozentsatz des verbleibenden Kontextfensters (z. B. `Context 65.7% left`) |
+| `total-input-tokens`     |          | Kumulierte eingegebene Token in der Sitzung (z. B. `30.0k total in`) |
+| `total-output-tokens`    |          | Kumulierte ausgegebene Token in der Sitzung (z. B. `5.0k total out`) |
+| `current-dir`            | Ja       | Aktuelles Arbeitsverzeichnis                                         |
+| `project-name`           |          | Projektname (Basisname des Arbeitsverzeichnisses)                    |
+| `pull-request-number`    |          | Offene PR-Nummer für den aktuellen Branch (erfordert `gh`-CLI)       |
+| `branch-changes`         |          | Dateiänderungsstatistiken der Sitzung (z. B. `+120 -30`)             |
+| `context-used`           | Ja       | Prozentsatz des genutzten Kontextfensters (z. B. `Context 34.3% used`)|
+| `run-state`              |          | Kompakter Sitzungsstatus (`Ready`, `Working` oder `Confirm`)         |
+| `qwen-version`           |          | Qwen Code-Version (z. B. `v0.14.1`)                                  |
+| `context-window-size`    |          | Gesamtgröße des Kontextfensters (z. B. `131.1k window`)              |
+| `used-tokens`            |          | Aktuelle Prompt-Token-Anzahl (z. B. `45.0k used`)                    |
+| `session-id`             |          | Aktuelle Sitzungskennung                                             |
+Elemente, die als **Default** markiert sind, sind vorausgewählt, wenn Sie den `/statusline`-Dialog zum ersten Mal öffnen.
+
+`total-input-tokens` und `total-output-tokens` sind Sitzungssummen. Sie summieren die Token-Nutzung über mehrere Turns hinweg, sodass die Eingabe-Token schnell anwachsen können, da jede neue Modellanfrage den aktuellen Gesprächskontext erneut einschließt. Verwenden Sie `used-tokens`, wenn Sie die aktuelle Prompt-Größe anstelle der kumulativen Sitzungsausgabe benötigen.
+
+### Beispielausgabe
+
+Mit den Standardelementen sieht die Statuszeile wie folgt aus:
+
+```
+qwen-3-235b high | main | Context 65.7% left | /home/user/project | Context 34.3% used
+```
+
+### Anpassen über den Dialog
+
+Die Ausführung von `/statusline` öffnet einen interaktiven Mehrfachauswahl-Dialog:
+
+```
+┌ Configure Status Line ────────────────────────────────────────┐
+│ Select which items to display in the status line.             │
+│                                                               │
+│ Type to search                                                │
+│ >                                                             │
+│                                                               │
+│ [x] Use theme colors        Apply colors from the active /theme│
+│ ───────────────────────                                       │
+│ [x] model-with-reasoning    Current model name with reasoning │
+│ [ ] model-only              Current model name without reason │
+│ [x] git-branch              Current Git branch when available │
+│ [x] context-remaining       Percentage of context remaining   │
+│ ...                                                           │
+│                                                               │
+│ Preview                                                       │
+│ qwen-3-235b high | main | Context 65.7% left                 │
+│                                                               │
+│ Use up/down to navigate, space to select, enter to confirm    │
+└───────────────────────────────────────────────────────────────┘
+```
+
+- Geben Sie ein, um Elemente nach Namen oder Beschreibung zu filtern
+- Eine Live-Vorschau wird aktualisiert, während Sie Elemente umschalten
+- Drücken Sie die Eingabetaste, um die Konfiguration zu speichern
+
+---
+
+## Befehlsmodus
+
+Der Befehlsmodus führt einen Shell-Befehl aus, dessen stdout in der Statuszeile angezeigt wird. Der Befehl erhält strukturierten JSON-Kontext über stdin für sitzungsbewusste Ausgabe.
+
+### Voraussetzungen
+
+- [`jq`](https://jqlang.github.io/jq/) wird empfohlen, um die JSON-Eingabe zu parsen (Installation via `brew install jq`, `apt install jq` usw.)
+- Einfache Befehle, die keine JSON-Daten benötigen (z. B. `git branch --show-current`), funktionieren ohne `jq`
+
+### Konfiguration
+
+Fügen Sie ein `statusLine`-Objekt unter dem Schlüssel `ui` in `~/.qwen/settings.json` hinzu:
 
 ```json
 {
@@ -60,15 +168,17 @@ Füge ein `statusLine`-Objekt unter dem `ui`-Schlüssel in `~/.qwen/settings.jso
 }
 ```
 
-| Feld              | Typ         | Erforderlich | Beschreibung                                                                                                                       |
-| ----------------- | ----------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `type`            | `"command"` | Ja           | Muss `"command"` sein                                                                                                               |
-| `command`         | string      | Ja           | Auszuführender Shell-Befehl. Empfängt JSON über stdin, stdout wird angezeigt (max. 2 Zeilen).                                           |
-| `refreshInterval` | number      | Nein         | Führt den Befehl alle N Sekunden erneut aus (Minimum 1). Nützlich für Daten, die sich ohne ein Agent-State-Event ändern (Uhrzeit, Kontingent, Uptime). |
+| Feld                  | Typ        | Erforderlich | Beschreibung                                                                                                                       |
+| ---------------------- | ----------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `type`                 | `"command"` | Ja           | Muss `"command"` sein                                                                                                             |
+| `command`              | string      | Ja           | Shell-Befehl zur Ausführung. Empfängt JSON über stdin, stdout wird angezeigt (maximal 2 Zeilen).                                  |
+| `refreshInterval`      | number      | Nein         | Führt den Befehl alle N Sekunden erneut aus (Minimum 1). Nützlich für Daten, die sich ohne Agent-Statusereignis ändern (Uhr, Kontingent, Betriebszeit). |
+| `respectUserColors`    | boolean     | Nein         | Behält ANSI-Farbcodes in der Befehlsausgabe bei, anstatt abgedunkelte Fußzeilenformatierung anzuwenden. Standard: `false`.                       |
+| `hideContextIndicator` | boolean     | Nein         | Blendet den integrierten Kontextnutzungsindikator im rechten Fußzeilenbereich aus. Standard: `false`.                                       |
 
-## JSON-Eingabe
+### JSON-Eingabe
 
-Der Befehl erhält ein JSON-Objekt über stdin mit folgenden Feldern:
+Der Befehl erhält über stdin ein JSON-Objekt mit den folgenden Feldern:
 
 ```json
 {
@@ -90,6 +200,13 @@ Der Befehl erhält ein JSON-Objekt über stdin mit folgenden Feldern:
   },
   "git": {
     "branch": "main"
+  },
+  "worktree": {
+    "name": "fix-auth",
+    "path": "/home/user/project/.qwen/worktrees/fix-auth",
+    "branch": "fix-auth",
+    "original_cwd": "/home/user/project",
+    "original_branch": "main"
   },
   "metrics": {
     "models": {
@@ -118,31 +235,36 @@ Der Befehl erhält ein JSON-Objekt über stdin mit folgenden Feldern:
   }
 }
 ```
+| Feld                                | Typ              | Beschreibung                                                                        |
+| ----------------------------------- | ---------------- | ----------------------------------------------------------------------------------- |
+| `session_id`                        | string           | Eindeutige Sitzungskennung                                                          |
+| `version`                           | string           | Qwen-Code-Version                                                                   |
+| `model.display_name`                | string           | Aktueller Modellname                                                                |
+| `context_window.context_window_size` | number           | Gesamtgröße des Kontextfensters in Tokens                                           |
+| `context_window.used_percentage`    | number           | Nutzung des Kontextfensters in Prozent (0–100)                                      |
+| `context_window.remaining_percentage` | number           | Verbleibendes Kontextfenster in Prozent (0–100)                                     |
+| `context_window.current_usage`      | number           | Tokenanzahl des letzten API-Aufrufs (aktuelle Kontextgröße)                         |
+| `context_window.total_input_tokens` | number           | Gesamte eingegebene Token in dieser Sitzung                                         |
+| `context_window.total_output_tokens` | number           | Gesamte ausgegebene Token in dieser Sitzung                                         |
+| `workspace.current_dir`             | string           | Aktuelles Arbeitsverzeichnis                                                        |
+| `git`                               | object \| absent | Nur vorhanden, wenn ein Git-Repository aktiv ist.                                   |
+| `git.branch`                        | string           | Name des aktuellen Branches                                                        |
+| `worktree`                          | object \| absent | Nur vorhanden, wenn ein aktiver Worktree (via `enter_worktree`) vorliegt.           |
+| `worktree.name`                     | string           | Slug-Name des Worktrees                                                            |
+| `worktree.path`                     | string           | Absoluter Pfad zum Worktree-Verzeichnis                                             |
+| `worktree.branch`                   | string           | Im Worktree ausgecheckter Branch                                                    |
+| `worktree.original_cwd`             | string           | Arbeitsverzeichnis vor Betreten des Worktrees                                       |
+| `worktree.original_branch`          | string           | Branch, der vor Betreten des Worktrees aktiv war                                    |
+| `metrics.models.<id>.api`           | object           | Modellspezifische API-Statistiken: `total_requests`, `total_errors`, `total_latency_ms` |
+| `metrics.models.<id>.tokens`        | object           | Modellspezifische Token-Nutzung: `prompt`, `completion`, `total`, `cached`, `thoughts` |
+| `metrics.files`                     | object           | Dateiänderungsstatistiken: `total_lines_added`, `total_lines_removed`               |
+| `vim`                               | object \| absent | Nur vorhanden, wenn der Vim-Modus aktiviert ist. Enthält `mode` (`"INSERT"` oder `"NORMAL"`). |
 
-| Feld                                  | Typ              | Beschreibung                                                                        |
-| ------------------------------------- | ---------------- | ---------------------------------------------------------------------------------- |
-| `session_id`                          | string           | Eindeutige Sitzungs-ID                                                          |
-| `version`                             | string           | Qwen Code Version                                                                  |
-| `model.display_name`                  | string           | Name des aktuellen Modells                                                                 |
-| `context_window.context_window_size`  | number           | Gesamtgröße des Context-Fensters in Tokens                                                |
-| `context_window.used_percentage`      | number           | Nutzung des Context-Fensters in Prozent (0–100)                                         |
-| `context_window.remaining_percentage` | number           | Verbleibendes Context-Fenster in Prozent (0–100)                                     |
-| `context_window.current_usage`        | number           | Token-Anzahl des letzten API-Aufrufs (aktuelle Context-Größe)                          |
-| `context_window.total_input_tokens`   | number           | Gesamtzahl der in dieser Sitzung verbrauchten Input-Tokens                                           |
-| `context_window.total_output_tokens`  | number           | Gesamtzahl der in dieser Sitzung verbrauchten Output-Tokens                                          |
-| `workspace.current_dir`               | string           | Aktuelles Arbeitsverzeichnis                                                          |
-| `git`                                 | object \| absent | Nur innerhalb eines Git-Repositories vorhanden.                                              |
-| `git.branch`                          | string           | Name des aktuellen Branches                                                                |
-| `metrics.models.<id>.api`             | object           | API-Statistiken pro Modell: `total_requests`, `total_errors`, `total_latency_ms`          |
-| `metrics.models.<id>.tokens`          | object           | Token-Nutzung pro Modell: `prompt`, `completion`, `total`, `cached`, `thoughts`       |
-| `metrics.files`                       | object           | Statistiken zu Dateiänderungen: `total_lines_added`, `total_lines_removed`                      |
-| `vim`                                 | object \| absent | Nur vorhanden, wenn der Vim-Modus aktiviert ist. Enthält `mode` (`"INSERT"` oder `"NORMAL"`). |
+> **Important:** stdin kann nur einmal gelesen werden. Speichere es immer zuerst in einer Variable: `input=$(cat)`.
 
-> **Wichtig:** stdin kann nur einmal gelesen werden. Speichere die Eingabe immer zuerst in einer Variable: `input=$(cat)`.
+### Beispiele
 
-## Beispiele
-
-### Modell und Token-Nutzung
+#### Modell- und Token-Nutzung
 
 ```json
 {
@@ -157,7 +279,7 @@ Der Befehl erhält ein JSON-Objekt über stdin mit folgenden Feldern:
 
 Ausgabe: `qwen-3-235b  ctx:34%`
 
-### Git-Branch + Verzeichnis
+#### Git-Branch + Verzeichnis
 
 ```json
 {
@@ -172,9 +294,9 @@ Ausgabe: `qwen-3-235b  ctx:34%`
 
 Ausgabe: `my-project (main)`
 
-> Hinweis: Das Feld `git.branch` wird direkt in der JSON-Eingabe bereitgestellt – ein Shell-Aufruf von `git` ist nicht erforderlich.
+> Note: Das Feld `git.branch` wird direkt im JSON-Eingabe bereitgestellt – ein Umweg über das `git`-Kommando ist nicht nötig.
 
-### Statistiken zu Dateiänderungen
+#### Dateiänderungsstatistiken
 
 ```json
 {
@@ -189,9 +311,9 @@ Ausgabe: `my-project (main)`
 
 Ausgabe: `+120/-30 lines`
 
-### Live-Uhrzeit und Git-Branch
+#### Live-Uhr und Git-Branch
 
-Verwende `refreshInterval`, wenn die Statuszeile Daten anzeigt, die sich ohne ein Agent-Event ändern (z. B. Uhrzeit, Uptime oder Rate-Limit-Zähler):
+Verwende `refreshInterval`, wenn die Statusleiste Daten anzeigt, die sich ohne Agent-Ereignis ändern (z. B. die Uhr, Betriebszeit oder Ratenbegrenzungszähler):
 
 ```json
 {
@@ -204,12 +326,11 @@ Verwende `refreshInterval`, wenn die Statuszeile Daten anzeigt, die sich ohne ei
   }
 }
 ```
+Ausgabe (aktualisiert jede Sekunde): `14:32:07  (main)`
 
-Ausgabe (jede Sekunde aktualisiert): `14:32:07  (main)`
+#### Skriptdatei für komplexe Befehle
 
-### Skriptdatei für komplexe Befehle
-
-Für längere Befehle speichere ein Skript unter `~/.qwen/statusline-command.sh`:
+Für längere Befehle speichern Sie eine Skriptdatei unter `~/.qwen/statusline-command.sh`:
 
 ```bash
 #!/bin/bash
@@ -229,7 +350,7 @@ parts=()
 echo "${parts[*]}"
 ```
 
-Verweise dann in den Einstellungen darauf:
+Referenzieren Sie es dann in den Einstellungen:
 
 ```json
 {
@@ -244,18 +365,32 @@ Verweise dann in den Einstellungen darauf:
 
 ## Verhalten
 
-- **Update-Auslöser**: Die Statuszeile aktualisiert sich, wenn sich das Modell ändert, eine neue Nachricht gesendet wird (Token-Anzahl ändert sich), der Vim-Modus umgeschaltet wird, sich der Git-Branch ändert, Tool-Aufrufe abgeschlossen werden oder Dateiänderungen auftreten. Updates werden gedebounced (300 ms). Setze `refreshInterval` (in Sekunden), um den Befehl zusätzlich zeitgesteuert erneut auszuführen – nützlich für Daten, die sich ohne ein Agent-Event ändern (Uhrzeit, Rate Limits, Build-Status).
-- **Timeout**: Befehle, die länger als 5 Sekunden dauern, werden abgebrochen. Bei einem Fehler wird die Statuszeile geleert.
-- **Ausgabe**: Mehrzeilige Ausgaben werden unterstützt (max. 2 Zeilen; zusätzliche Zeilen werden verworfen). Jede Zeile wird als separate Reihe mit abgedunkelten Farben im linken Bereich des Footers gerendert. Zeilen, die die verfügbare Breite überschreiten, werden gekürzt.
-- **Hot Reload**: Änderungen an `ui.statusLine` in den Einstellungen werden sofort wirksam – kein Neustart erforderlich.
-- **Shell**: Befehle werden unter macOS/Linux über `/bin/sh` ausgeführt. Unter Windows wird standardmäßig `cmd.exe` verwendet – binde POSIX-Befehle mit `bash -c "..."` ein oder verweise auf ein Bash-Skript (z. B. `bash ~/.qwen/statusline-command.sh`).
-- **Entfernen**: Lösche den Schlüssel `ui.statusLine` aus den Einstellungen, um die Funktion zu deaktivieren. Der Hinweis „? für Shortcuts" wird wieder angezeigt.
+**Beide Modi:**
+
+- **Aktualisierungsauslöser**: Die Statuszeile wird aktualisiert, wenn sich das Modell ändert, eine neue Nachricht gesendet wird (Tokenanzahl ändert sich), der Vim-Modus umgeschaltet wird, der Git-Branch wechselt, Toolaufrufe abgeschlossen werden oder Dateiänderungen auftreten. Aktualisierungen werden entprellt (300 ms).
+- **Ausgabe**: Bis zu 2 Zeilen. Jede Zeile wird als separate Reihe im linken Bereich der Fußzeile dargestellt. Zeilen, die die verfügbare Breite überschreiten, werden abgeschnitten.
+- **Hot Reload**: Änderungen an `ui.statusLine` in den Einstellungen werden sofort übernommen – kein Neustart erforderlich.
+- **Entfernen**: Löschen Sie den Schlüssel `ui.statusLine` aus den Einstellungen, um die Funktion zu deaktivieren. Der Hinweis „? für Tastenkürzel" wird wieder angezeigt.
+
+**Nur Befehlsmodus:**
+
+- **Zeitüberschreitung**: Befehle, die länger als 5 Sekunden dauern, werden abgebrochen. Die Statuszeile wird bei Fehlschlag geleert.
+- **Aktualisierung**: Setzen Sie `refreshInterval` (Sekunden), um den Befehl zusätzlich zeitgesteuert erneut auszuführen – nützlich für Daten, die sich ohne Agent-Ereignis ändern (Uhr, Ratenlimits, Build-Status).
+- **Shell**: Befehle werden unter macOS/Linux über `/bin/sh` ausgeführt. Unter Windows wird standardmäßig `cmd.exe` verwendet – umgeben Sie POSIX-Befehle mit `bash -c "..."` oder verweisen Sie auf ein Bash-Skript (z.B. `bash ~/.qwen/statusline-command.sh`).
+
+**Nur Preset-Modus:**
+
+- **Keine externen Abhängigkeiten**: Preset-Elemente werden intern berechnet – keine Shell-Befehle, kein `jq`, keine Zeitüberschreitungen.
+- **Theme-Integration**: Wenn `useThemeColors` auf `true` gesetzt ist (Standard), verwendet der Text der Statuszeile die aktive Farbe des `/theme`. Bei `false` wird die abgedunkelte Fußzeilenformatierung angewendet.
+- **PR-Suche**: Das Element `pull-request-number` führt im Hintergrund `gh pr view` aus (2s Zeitüberschreitung). Es wird nur ausgelöst, wenn sich der Branch ändert, nicht bei jeder Aktualisierung.
 
 ## Fehlerbehebung
 
-| Problem                 | Ursache                  | Lösung                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ----------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Statuszeile wird nicht angezeigt | Konfiguration im falschen Pfad   | Muss unter `ui.statusLine` stehen, nicht auf Root-Ebene als `statusLine`                                                                                                                                                                                                                                                                                                                                             |
-| Leere Ausgabe            | Befehl schlägt stillschweigend fehl | Manuell testen: `echo '{"session_id":"test","version":"0.14.1","model":{"display_name":"test"},"context_window":{"context_window_size":0,"used_percentage":0,"remaining_percentage":100,"current_usage":0,"total_input_tokens":0,"total_output_tokens":0},"workspace":{"current_dir":"/tmp"},"metrics":{"models":{},"files":{"total_lines_added":0,"total_lines_removed":0}}}' \| sh -c 'your_command'` |
-| Veraltete Daten              | Kein Auslöser wurde gefeuert       | Sende eine Nachricht oder wechsle das Modell, um ein Update auszulösen – oder setze `refreshInterval`, um den Befehl zeitgesteuert erneut auszuführen                                                                                                                                                                                                                                                                                       |
-| Befehl zu langsam        | Komplexes Skript         | Optimiere das Skript oder lagere rechenintensive Aufgaben in einen Hintergrund-Cache aus                                                                                                                                                                                                                                                                                                                                           |
+| Problem                     | Ursache                          | Lösung                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Statuszeile wird nicht angezeigt | Konfiguration am falschen Pfad       | Muss unter `ui.statusLine` liegen, nicht auf oberster Ebene als `statusLine`                                                                                                                                                                                                                                                                                                                                                                                       |
+| Leere Ausgabe (Befehlsmodus) | Befehl schlägt stillschweigend fehl | Manuell testen: `echo '{"session_id":"test","version":"0.14.1","model":{"display_name":"test"},"context_window":{"context_window_size":0,"used_percentage":0,"remaining_percentage":100,"current_usage":0,"total_input_tokens":0,"total_output_tokens":0},"workspace":{"current_dir":"/tmp"},"metrics":{"models":{},"files":{"total_lines_added":0,"total_lines_removed":0}}}' | sh -c 'your_command'` |
+| Veraltete Daten (Befehlsmodus) | Kein Auslöser ausgelöst               | Senden Sie eine Nachricht oder wechseln Sie das Modell, um eine Aktualisierung auszulösen – oder setzen Sie `refreshInterval`, um den Befehl zeitgesteuert erneut auszuführen                                                                                                                                                                                                                                                                                          |
+| Befehl zu langsam            | Komplexes Skript                  | Optimieren Sie das Skript oder verlagern Sie schwere Arbeit in einen Hintergrund-Cache                                                                                                                                                                                                                                                                                                                                                                                   |
+| Preset-Elemente fehlen       | Bedingte Elemente haben keine Daten | `git-branch` wird außerhalb von Git-Repos ausgeblendet; `context-used` wird bei Nutzung 0 ausgeblendet; `branch-changes` wird ausgeblendet, wenn keine Dateien geändert wurden. Dies ist erwartet – Elemente erscheinen, sobald ihre Daten verfügbar sind                                                                                                                                                                                                                 |
+| PR-Nummer wird nicht angezeigt | `gh` CLI nicht installiert            | Installieren Sie die [GitHub CLI](https://cli.github.com/) und authentifizieren Sie sich mit `gh auth login`. Die Suche läuft mit einer Zeitüberschreitung von 2s                                                                                                                                                                                                                                                                                                    |

@@ -1,145 +1,146 @@
-# Task-Tool (`task`)
+# Agent-Tool (`agent`)
 
-Dieses Dokument beschreibt das `task`-Tool für Qwen Code.
+Dieses Dokument beschreibt das `agent`-Tool für Qwen Code.
 
 ## Beschreibung
 
-Verwende `task`, um einen spezialisierten Subagenten zu starten, der komplexe, mehrstufige Aufgaben autonom bearbeitet. Das Task-Tool delegiert Arbeit an spezialisierte Agenten, die unabhängig mit Zugriff auf ihren eigenen Satz an Tools arbeiten können. Dies ermöglicht die parallele Ausführung von Aufgaben und den Einsatz von spezialisiertem Fachwissen.
+Verwenden Sie `agent`, um einen spezialisierten Subagenten zu starten, der komplexe, mehrschrittige Aufgaben autonom erledigt. Das Agent-Tool delegiert Arbeiten an spezialisierte Agenten, die unabhängig arbeiten und Zugriff auf ihre eigenen Werkzeuge haben. Dadurch sind parallele Aufgabenausführung und spezialisiertes Fachwissen möglich.
 
 ### Argumente
 
-`task` akzeptiert die folgenden Argumente:
+`agent` akzeptiert die folgenden Argumente:
 
-- `description` (string, erforderlich): Eine kurze (3–5 Wörter) Beschreibung der Aufgabe zur Sichtbarkeit und Nachverfolgung für den Benutzer.
-- `prompt` (string, erforderlich): Der detaillierte Aufgaben-Prompt, den der Subagent ausführen soll. Sollte umfassende Anweisungen für die autonome Ausführung enthalten.
-- `subagent_type` (string, erforderlich): Der Typ des spezialisierten Agenten, der für diese Aufgabe verwendet werden soll. Muss mit einem der verfügbaren, konfigurierten Subagenten übereinstimmen.
+- `description` (Zeichenkette, erforderlich): Eine kurze (3–5 Wörter) Beschreibung der Aufgabe für Sichtbarkeit und Nachverfolgung durch den Benutzer.
+- `prompt` (Zeichenkette, erforderlich): Die detaillierte Aufgabenanweisung für den Subagenten. Sollte umfassende Anweisungen für die autonome Ausführung enthalten.
+- `subagent_type` (Zeichenkette, optional): Der Typ des zu verwendenden spezialisierten Agenten. Standardmäßig wird `general-purpose` verwendet, wenn nicht angegeben.
+- `run_in_background` (boolesch, optional): Setzen Sie dies auf `true`, um den Agenten im Hintergrund auszuführen. Sie werden benachrichtigt, wenn er abgeschlossen ist.
+- `isolation` (Zeichenkette, optional): Setzen Sie dies auf `"worktree"`, um den Agenten in einem isolierten Git-Worktree auszuführen.
 
-## So verwendest du `task` mit Qwen Code
+## Verwendung von `agent` mit Qwen Code
 
-Das Task-Tool lädt verfügbare Subagenten dynamisch aus deiner Konfiguration und delegiert Aufgaben an sie. Jeder Subagent läuft unabhängig und kann seinen eigenen Satz an Tools verwenden, was spezialisiertes Fachwissen und parallele Ausführung ermöglicht.
+Das Agent-Tool lädt dynamisch verfügbare Subagenten aus Ihrer Konfiguration und delegiert Aufgaben an sie. Jeder Subagent läuft unabhängig und kann seine eigenen Werkzeuge verwenden, was spezialisiertes Fachwissen und parallele Ausführung ermöglicht.
 
-Wenn du das Task-Tool verwendest, führt der Subagent Folgendes aus:
+Wenn Sie das Agent-Tool verwenden, führt der Subagent folgende Schritte aus:
 
-1. Erhält den Aufgaben-Prompt mit voller Autonomie
-2. Führt die Aufgabe mit seinen verfügbaren Tools aus
-3. Gibt eine finale Ergebnisnachricht zurück
-4. Beendet sich (Subagenten sind zustandslos und für die einmalige Verwendung konzipiert)
+1. Erhält die Aufgabenanweisung mit vollständiger Autonomie
+2. Führt die Aufgabe mit seinen verfügbaren Werkzeugen aus
+3. Gibt eine abschließende Ergebnismeldung zurück
+4. Beendet sich (Subagenten sind zustandslos und werden nur einmal verwendet)
 
 Verwendung:
 
 ```
-task(description="Brief task description", prompt="Detailed task instructions for the subagent", subagent_type="agent_name")
+agent(description="Kurze Aufgabenbeschreibung", prompt="Detaillierte Aufgabenanweisungen für den Subagenten", subagent_type="agenten_name")
 ```
 
 ## Verfügbare Subagenten
 
-Die verfügbaren Subagenten hängen von deiner Konfiguration ab. Häufige Subagenten-Typen sind unter anderem:
+Die verfügbaren Subagenten hängen von Ihrer Konfiguration ab. Häufige Subagententypen sind z. B.:
 
-- **general-purpose**: Für komplexe, mehrstufige Aufgaben, die verschiedene Tools erfordern
+- **general-purpose**: Für komplexe mehrschrittige Aufgaben, die verschiedene Werkzeuge erfordern
 - **code-reviewer**: Zum Überprüfen und Analysieren der Codequalität
 - **test-runner**: Zum Ausführen von Tests und Analysieren der Ergebnisse
 - **documentation-writer**: Zum Erstellen und Aktualisieren von Dokumentation
 
-Du kannst verfügbare Subagenten mit dem `/agents`-Befehl in Qwen Code anzeigen.
+Sie können verfügbare Subagenten mit dem Befehl `/agents` in Qwen Code anzeigen.
 
-## Funktionen des Task-Tools
+## Agent-Tool-Funktionen
 
-### Echtzeit-Fortschrittsupdates
+### Echtzeit-Fortschrittsaktualisierungen
 
-Das Task-Tool bietet Live-Updates, die Folgendes anzeigen:
+Das Agent-Tool bietet Live-Updates mit:
 
-- Ausführungsstatus des Subagenten
-- Einzelne Tool-Aufrufe, die vom Subagenten durchgeführt werden
-- Ergebnisse der Tool-Aufrufe sowie eventuelle Fehler
-- Gesamter Aufgabenfortschritt und Abschlussstatus
+- Status der Subagenten-Ausführung
+- Einzelne Tool-Aufrufe des Subagenten
+- Ergebnisse der Tool-Aufrufe und etwaige Fehler
+- Gesamtfortschritt und Abschlussstatus der Aufgabe
 
 ### Parallele Ausführung
 
-Du kannst mehrere Subagenten gleichzeitig starten, indem du das Task-Tool mehrfach in einer einzigen Nachricht aufrufst. Dies ermöglicht die parallele Ausführung von Aufgaben und steigert die Effizienz.
+Sie können mehrere Subagenten gleichzeitig starten, indem Sie das Agent-Tool mehrmals in einer einzigen Nachricht aufrufen. Dadurch wird die parallele Aufgabenausführung und eine verbesserte Effizienz ermöglicht.
 
 ### Spezialisiertes Fachwissen
 
-Jeder Subagent kann mit Folgendem konfiguriert werden:
+Jeder Subagent kann konfiguriert werden mit:
 
 - Spezifischen Tool-Zugriffsberechtigungen
 - Spezialisierten System-Prompts und Anweisungen
 - Benutzerdefinierten Modellkonfigurationen
 - Domänenspezifischem Wissen und Fähigkeiten
 
-## `task`-Beispiele
+## `agent`-Beispiele
 
-### Delegieren an einen general-purpose-Agenten
+### Delegieren an einen Allzweck-Agenten
 
 ```
-task(
-  description="Code refactoring",
-  prompt="Please refactor the authentication module in src/auth/ to use modern async/await patterns instead of callbacks. Ensure all tests still pass and update any related documentation.",
+agent(
+  description="Code-Refactoring",
+  prompt="Bitte refaktorieren Sie das Authentifizierungsmodul in src/auth/ mit modernen async/await-Mustern anstelle von Callbacks. Stellen Sie sicher, dass alle Tests weiterhin bestehen, und aktualisieren Sie die zugehörige Dokumentation.",
   subagent_type="general-purpose"
 )
 ```
 
-### Ausführen paralleler Aufgaben
+### Parallele Aufgaben ausführen
 
 ```
-# Launch code review and test execution in parallel
-task(
-  description="Code review",
-  prompt="Review the recent changes in the user management module for code quality, security issues, and best practices compliance.",
-  subagent_type="code-reviewer"
+# Code-Review und Testausführung parallel starten
+agent(
+  description="Code-Review",
+  prompt="Überprüfen Sie die letzten Änderungen im Benutzerverwaltungsmodul auf Codequalität, Sicherheitsprobleme und Einhaltung von Best Practices.",
+  subagent_type="general-purpose"
 )
 
-task(
-  description="Run tests",
-  prompt="Execute the full test suite and analyze any failures. Provide a summary of test coverage and recommendations for improvement.",
-  subagent_type="test-runner"
-)
-```
-
-### Dokumentationsgenerierung
-
-```
-task(
-  description="Update docs",
-  prompt="Generate comprehensive API documentation for the newly implemented REST endpoints in the orders module. Include request/response examples and error codes.",
-  subagent_type="documentation-writer"
+agent(
+  description="Tests ausführen",
+  prompt="Führen Sie die gesamte Testsuite aus und analysieren Sie alle Fehler. Geben Sie eine Zusammenfassung der Testabdeckung und Empfehlungen zur Verbesserung.",
+  subagent_type="test-engineer"
 )
 ```
 
-## Wann du das Task-Tool verwenden solltest
+### Dokumentation generieren
 
-Verwende das Task-Tool, wenn:
+```
+agent(
+  description="Dokumentation aktualisieren",
+  prompt="Erstellen Sie eine umfassende API-Dokumentation für die neu implementierten REST-Endpunkte im Modul orders. Fügen Sie Request-/Response-Beispiele und Fehlercodes hinzu.",
+  subagent_type="general-purpose"
+)
+```
 
-1. **Komplexe, mehrstufige Aufgaben** – Aufgaben, die mehrere Operationen erfordern, die autonom bearbeitet werden können
-2. **Spezialisiertes Fachwissen** – Aufgaben, die von domänenspezifischem Wissen oder Tools profitieren
-3. **Parallele Ausführung** – Wenn du mehrere unabhängige Aufgaben hast, die gleichzeitig laufen können
-4. **Delegationsbedarf** – Wenn du eine vollständige Aufgabe abgeben möchtest, anstatt einzelne Schritte detailliert zu steuern
-5. **Ressourcenintensive Operationen** – Aufgaben, die erhebliche Zeit oder Rechenressourcen beanspruchen könnten
+## Wann Sie das Agent-Tool verwenden sollten
 
-## Wann du das Task-Tool NICHT verwenden solltest
+Verwenden Sie das Agent-Tool, wenn:
 
-Verwende das Task-Tool nicht für:
+1. **Komplexe mehrschrittige Aufgaben** – Aufgaben, die mehrere Operationen erfordern und autonom erledigt werden können
+2. **Spezialisiertes Fachwissen** – Aufgaben, die von domänenspezifischem Wissen oder Werkzeugen profitieren
+3. **Parallele Ausführung** – Wenn Sie mehrere unabhängige Aufgaben haben, die gleichzeitig ausgeführt werden können
+4. **Delegationsbedarf** – Wenn Sie eine vollständige Aufgabe abgeben möchten, anstatt jeden Schritt zu kontrollieren
+5. **Ressourcenintensive Operationen** – Aufgaben, die viel Zeit oder Rechenressourcen beanspruchen können
 
-- **Einfache, einstufige Operationen** – Verwende direkte Tools wie Read, Edit usw.
-- **Interaktive Aufgaben** – Aufgaben, die einen wechselseitigen Austausch erfordern
-- **Das Lesen bestimmter Dateien** – Verwende das Read-Tool direkt für eine bessere Performance
-- **Einfache Suchen** – Verwende die Grep- oder Glob-Tools direkt
+## Wann Sie das Agent-Tool NICHT verwenden sollten
+
+Verwenden Sie das Agent-Tool nicht für:
+
+- **Einfache, einteilige Operationen** – Verwenden Sie direkte Werkzeuge wie Read, Edit usw.
+- **Interaktive Aufgaben** – Aufgaben, die eine wechselseitige Kommunikation erfordern
+- **Bestimmte Dateilesevorgänge** – Verwenden Sie das Read-Tool direkt für eine bessere Leistung
+- **Einfache Suchvorgänge** – Verwenden Sie die Werkzeuge Grep oder Glob direkt
 
 ## Wichtige Hinweise
 
-- **Zustandslose Ausführung**: Jeder Subagenten-Aufruf ist unabhängig und verfügt über keinen Speicher vorheriger Ausführungen
-- **Einmalige Kommunikation**: Subagenten liefern eine einzige finale Ergebnisnachricht – keine fortlaufende Kommunikation
-- **Umfassende Prompts**: Dein Prompt sollte den gesamten notwendigen Kontext und alle Anweisungen für die autonome Ausführung enthalten
-- **Tool-Zugriff**: Subagenten haben nur Zugriff auf Tools, die in ihrer spezifischen Konfiguration festgelegt sind
-- **Parallele Fähigkeit**: Mehrere Subagenten können gleichzeitig laufen, um die Effizienz zu steigern
-- **Konfigurationsabhängig**: Verfügbare Subagenten-Typen hängen von deiner Systemkonfiguration ab
-
+- **Zustandslose Ausführung**: Jeder Subagentenaufruf ist unabhängig und hat keine Erinnerung an vorherige Ausführungen
+- **Einmalige Kommunikation**: Subagenten liefern eine abschließende Ergebnismeldung – keine fortlaufende Kommunikation
+- **Umfassende Prompts**: Ihr Prompt sollte alle notwendigen Kontext- und Ausführungsanweisungen für die autonome Bearbeitung enthalten
+- **Werkzeugzugriff**: Subagenten haben nur Zugriff auf Werkzeuge, die in ihrer spezifischen Konfiguration festgelegt sind
+- **Parallelfähigkeit**: Mehrere Subagenten können gleichzeitig ausgeführt werden, um die Effizienz zu steigern
+- **Konfigurationsabhängig**: Verfügbare Subagententypen hängen von Ihrer Systemkonfiguration ab
 ## Konfiguration
 
-Subagenten werden über das Agenten-Konfigurationssystem von Qwen Code konfiguriert. Verwende den `/agents`-Befehl, um:
+Subagents werden über das Agentenkonfigurationssystem von Qwen Code konfiguriert. Verwenden Sie den Befehl `/agents`, um:
 
-- verfügbare Subagenten anzuzeigen
-- neue Subagenten-Konfigurationen zu erstellen
-- bestehende Subagenten-Einstellungen zu ändern
-- Tool-Berechtigungen und -Fähigkeiten festzulegen
+- Verfügbare Subagents anzeigen
+- Neue Subagent-Konfigurationen erstellen
+- Bestehende Subagent-Einstellungen ändern
+- Tool-Berechtigungen und -Funktionen festlegen
 
-Weitere Informationen zur Konfiguration von Subagenten findest du in der Subagenten-Dokumentation.
+Weitere Informationen zur Konfiguration von Subagents finden Sie in der Subagent-Dokumentation.

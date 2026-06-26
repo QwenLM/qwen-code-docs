@@ -1,63 +1,63 @@
-# Todo Write Tool (`todo_write`)
+# Todo-Write-Tool (`todo_write`)
 
-Dieses Dokument beschreibt das `todo_write` Tool für Qwen Code.
+Dieses Dokument beschreibt das Tool `todo_write` für Qwen Code.
 
 ## Beschreibung
 
-Verwende `todo_write`, um eine strukturierte Aufgabenliste für deine aktuelle Coding-Session zu erstellen und zu verwalten. Dieses Tool hilft dem KI-Assistenten, den Fortschritt zu verfolgen und komplexe Aufgaben zu organisieren, sodass du stets einen Überblick über die ausgeführten Arbeiten hast.
+Verwenden Sie `todo_write`, um eine strukturierte Aufgabenliste für Ihre aktuelle Codiersitzung zu erstellen und zu verwalten. Dieses Tool hilft dem KI-Assistenten, den Fortschritt zu verfolgen und komplexe Aufgaben zu organisieren, und gibt Ihnen Einblick in die durchgeführten Arbeiten.
 
 ### Argumente
 
-`todo_write` erwartet ein Argument:
+`todo_write` akzeptiert ein Argument:
 
-- `todos` (array, erforderlich): Ein Array von Todo-Einträgen, wobei jeder Eintrag Folgendes enthält:
-  - `content` (string, erforderlich): Die Beschreibung der Aufgabe.
-  - `status` (string, erforderlich): Der aktuelle Status (`pending`, `in_progress` oder `completed`).
-  - `activeForm` (string, erforderlich): Die Verlaufsform (Present Continuous), die beschreibt, was gerade getan wird (z. B. „Running tests“, „Building the project“).
+- `todos` (Array, erforderlich): Ein Array von Aufgabenpunkten, wobei jeder Punkt Folgendes enthält:
+  - `content` (String, erforderlich): Die Beschreibung der Aufgabe.
+  - `status` (String, erforderlich): Der aktuelle Status (`pending`, `in_progress` oder `completed`).
+  - `id` (String, erforderlich): Eine eindeutige Kennung für den Aufgabenpunkt.
 
-## So verwendest du `todo_write` mit Qwen Code
+## So verwenden Sie `todo_write` mit Qwen Code
 
-Der KI-Assistent verwendet dieses Tool automatisch, wenn er an komplexen, mehrstufigen Aufgaben arbeitet. Du musst es nicht explizit anfordern, kannst den Assistenten aber bitten, eine Todo-Liste zu erstellen, wenn du den geplanten Ansatz für deine Anfrage einsehen möchtest.
+Der KI-Assistent verwendet dieses Tool automatisch, wenn er an komplexen, mehrschrittigen Aufgaben arbeitet. Sie müssen es nicht explizit anfordern, können den Assistenten jedoch bitten, eine Aufgabenliste zu erstellen, wenn Sie die geplante Vorgehensweise für Ihre Anfrage sehen möchten.
 
-Das Tool speichert Todo-Listen in deinem Home-Verzeichnis (`~/.qwen/todos/`) in sessionspezifischen Dateien, sodass jede Coding-Session ihre eigene Aufgabenliste verwaltet.
+Das Tool speichert Aufgabenlisten in Ihrem Home-Verzeichnis (`~/.qwen/todos/`) mit sitzungsspezifischen Dateien, sodass jede Codiersitzung ihre eigene Aufgabenliste verwaltet.
 
-## Wann der KI-Assistent dieses Tool verwendet
+## Wann die KI dieses Tool verwendet
 
 Der Assistent verwendet `todo_write` für:
 
 - Komplexe Aufgaben, die mehrere Schritte erfordern
 - Feature-Implementierungen mit mehreren Komponenten
 - Refactoring-Operationen über mehrere Dateien hinweg
-- Jegliche Arbeiten, die drei oder mehr unterschiedliche Aktionen umfassen
+- Arbeiten, die drei oder mehr unterschiedliche Aktionen umfassen
 
-Der Assistent verwendet dieses Tool nicht für einfache, einstufige Aufgaben oder rein informative Anfragen.
+Der Assistent wird dieses Tool nicht für einfache, einschrittige Aufgaben oder rein informative Anfragen verwenden.
 
-### `todo_write`-Beispiele
+### Beispiele für `todo_write`
 
-Erstellen eines Feature-Implementierungsplans:
+Erstellen eines Plans für eine Feature-Implementierung:
 
 ```
 todo_write(todos=[
   {
+    "id": "1",
     "content": "Create user preferences model",
-    "status": "pending",
-    "activeForm": "Creating user preferences model"
+    "status": "pending"
   },
   {
+    "id": "2",
     "content": "Add API endpoints for preferences",
-    "status": "pending",
-    "activeForm": "Adding API endpoints for preferences"
+    "status": "pending"
   },
   {
+    "id": "3",
     "content": "Implement frontend components",
-    "status": "pending",
-    "activeForm": "Implementing frontend components"
+    "status": "pending"
   }
 ])
 ```
 
 ## Wichtige Hinweise
 
-- **Automatische Verwendung:** Der KI-Assistent verwaltet Todo-Listen bei komplexen Aufgaben automatisch.
-- **Fortschrittsübersicht:** Du siehst Todo-Listen in Echtzeit aktualisiert, während die Arbeit fortschreitet.
-- **Session-Isolation:** Jede Coding-Session verfügt über eine eigene Todo-Liste, die andere nicht beeinträchtigt.
+- **Automatische Verwendung:** Der KI-Assistent verwaltet Aufgabenlisten während komplexer Aufgaben automatisch.
+- **Fortschrittstransparenz:** Sie sehen Aufgabenlisten in Echtzeit aktualisiert, während die Arbeit fortschreitet.
+- **Sitzungsisolierung:** Jede Codiersitzung hat ihre eigene Aufgabenliste, die andere Sitzungen nicht beeinträchtigt.

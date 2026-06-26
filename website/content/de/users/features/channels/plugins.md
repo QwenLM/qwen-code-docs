@@ -1,33 +1,33 @@
 # Benutzerdefinierte Channel-Plugins
 
-Du kannst das Channel-System um benutzerdefinierte Plattform-Adapter erweitern, die als [Extensions](../../extension/introduction) verpackt sind. Dadurch kannst du Qwen Code mit jeder Messaging-Plattform, jedem Webhook oder benutzerdefinierten Transport verbinden.
+Sie können das Channel-System mit benutzerdefinierten Plattform-Adaptern erweitern, die als [Erweiterungen](../../extension/introduction) verpackt sind. So können Sie Qwen Code mit jeder Messaging-Plattform, jedem Webhook oder benutzerdefinierten Transport verbinden.
 
 ## Funktionsweise
 
-Channel-Plugins werden beim Start aus aktiven Extensions geladen. Wenn `qwen channel start` ausgeführt wird, passiert Folgendes:
+Channel-Plugins werden beim Start aus aktiven Erweiterungen geladen. Wenn `qwen channel start` ausgeführt wird, durchläuft es:
 
-1. Es scannt alle aktivierten Extensions nach `channels`-Einträgen in deren `qwen-extension.json`
-2. Es importiert den Einstiegspunkt jedes Channels dynamisch
-3. Es registriert den Channel-Typ, sodass er in `settings.json` referenziert werden kann
-4. Es erstellt Channel-Instanzen mithilfe der Factory-Funktion des Plugins
+1. Alle aktivierten Erweiterungen auf Einträge vom Typ `channels` in deren `qwen-extension.json` scannen
+2. Den Einstiegspunkt jedes Channels dynamisch importieren
+3. Den Channel-Typ registrieren, sodass er in `settings.json` referenziert werden kann
+4. Channel-Instanzen mithilfe der Factory-Funktion des Plugins erstellen
 
-Dein benutzerdefiniertes Channel-Plugin erhält die vollständige gemeinsame Pipeline kostenlos dazu: Sender-Gating, Gruppenrichtlinien, Session-Routing, Slash-Befehle, Crash-Recovery und die ACP-Brücke zum Agent.
+Ihr benutzerdefinierter Channel erhält automatisch die gesamte gemeinsame Pipeline: Sender-Gating, Gruppenrichtlinien, Sitzungs-Routing, Slash-Befehle, Crash-Wiederherstellung und die ACP-Brücke zum Agenten.
 
-## Installation eines benutzerdefinierten Channels
+## Installieren eines benutzerdefinierten Channels
 
-Installiere eine Extension, die ein Channel-Plugin bereitstellt:
+Installieren Sie eine Erweiterung, die ein Channel-Plugin bereitstellt:
 
 ```bash
-# Aus einem lokalen Pfad (für Entwicklung oder private Plugins)
-qwen extensions install /path/to/my-channel-extension
+# Über einen lokalen Pfad (für Entwicklung oder private Plugins)
+qwen extensions install /pfad/zu/meiner-channel-erweiterung
 
-# Oder für die Entwicklung verlinken (Änderungen werden sofort übernommen)
-qwen extensions link /path/to/my-channel-extension
+# Oder verlinken Sie sie für die Entwicklung (Änderungen werden sofort übernommen)
+qwen extensions link /pfad/zu/meiner-channel-erweiterung
 ```
 
-## Konfiguration eines benutzerdefinierten Channels
+## Konfigurieren eines benutzerdefinierten Channels
 
-Füge einen Channel-Eintrag zu `~/.qwen/settings.json` hinzu und verwende dabei den von der Extension bereitgestellten benutzerdefinierten Typ:
+Fügen Sie in `~/.qwen/settings.json` einen Channel-Eintrag mit dem von der Erweiterung bereitgestellten benutzerdefinierten Typ hinzu:
 
 ```json
 {
@@ -36,52 +36,52 @@ Füge einen Channel-Eintrag zu `~/.qwen/settings.json` hinzu und verwende dabei 
       "type": "my-platform",
       "apiKey": "$MY_PLATFORM_API_KEY",
       "senderPolicy": "open",
-      "cwd": "/path/to/project"
+      "cwd": "/pfad/zu/projekt"
     }
   }
 }
 ```
 
-Der `type` muss mit einem von einer installierten Extension registrierten Channel-Typ übereinstimmen. In der Dokumentation der Extension findest du, welche plugin-spezifischen Felder erforderlich sind (z. B. `apiKey`, `webhookUrl`).
+Der `type` muss mit einem Channel-Typ übereinstimmen, der von einer installierten Erweiterung registriert wurde. Überprüfen Sie die Dokumentation der Erweiterung, welche plugin-spezifischen Felder erforderlich sind (z.B. `apiKey`, `webhookUrl`).
 
 Alle Standard-Channel-Optionen funktionieren auch mit benutzerdefinierten Channels:
 
-| Option         | Beschreibung                                   |
-| -------------- | ---------------------------------------------- |
-| `senderPolicy` | `allowlist`, `pairing` oder `open`             |
-| `allowedUsers` | Statische Allowlist von Sender-IDs             |
-| `sessionScope` | `user`, `thread` oder `single`                 |
-| `cwd`          | Arbeitsverzeichnis für den Agent               |
-| `instructions` | Wird der ersten Nachricht jeder Session vorangestellt |
-| `model`        | Modell-Override für den Channel                |
-| `groupPolicy`  | `disabled`, `allowlist` oder `open`            |
-| `groups`       | Einstellungen pro Gruppe                       |
+| Option         | Beschreibung                                    |
+| -------------- | ----------------------------------------------- |
+| `senderPolicy` | `allowlist`, `pairing` oder `open`              |
+| `allowedUsers` | Statische Allowlist von Sender-IDs              |
+| `sessionScope` | `user`, `thread` oder `single`                  |
+| `cwd`          | Arbeitsverzeichnis für den Agenten              |
+| `instructions` | Vor die erste Nachricht jeder Sitzung gestellt  |
+| `model`        | Modell-Überschreibung für den Channel           |
+| `groupPolicy`  | `disabled`, `allowlist` oder `open`             |
+| `groups`       | Pro-Gruppen-Einstellungen                       |
 
-Details zu den einzelnen Optionen findest du in der [Übersicht](./overview).
+Details zu jeder Option finden Sie in der [Übersicht](./overview).
 
 ## Starten des Channels
 
 ```bash
-# Startet alle Channels, einschließlich benutzerdefinierter
+# Alle Channels starten, einschließlich benutzerdefinierter
 qwen channel start
 
-# Startet nur deinen benutzerdefinierten Channel
+# Nur Ihren benutzerdefinierten Channel starten
 qwen channel start my-bot
 ```
 
-## Standardmäßig enthaltene Funktionen
+## Was Sie automatisch erhalten
 
-Benutzerdefinierte Channels unterstützen automatisch alle Funktionen, die auch die integrierten Channels bieten:
+Benutzerdefinierte Channels unterstützen automatisch alles, was die integrierten Channels bieten:
 
-- **Sender-Richtlinien** — Zugriffskontrolle mit `allowlist`, `pairing` und `open`
-- **Gruppenrichtlinien** — Einstellungen pro Gruppe mit optionalem @mention-Gating
-- **Session-Routing** – Sessions pro Benutzer, pro Thread oder eine einzige gemeinsame Session
-- **DM-Pairing** – Vollständiger Pairing-Code-Flow für unbekannte Benutzer
-- **Slash-Befehle** – `/help`, `/clear`, `/status` funktionieren out of the box
-- **Benutzerdefinierte Anweisungen** – Werden der ersten Nachricht jeder Session vorangestellt
-- **Crash-Recovery** – Automatischer Neustart mit Session-Erhalt
-- **Serialisierung pro Session** – Nachrichten werden in eine Warteschlange gestellt, um Race Conditions zu vermeiden
+- **Sender-Richtlinien** — Zugriffskontrolle per `allowlist`, `pairing` und `open`
+- **Gruppen-Richtlinien** — Pro-Gruppen-Einstellungen mit optionalem @-Erwähnungs-Gating
+- **Sitzungs-Routing** — Einzelsitzungen pro Benutzer, Thread oder gemeinsam genutzt
+- **DM-Pairing** — Vollständiger Pairing-Code-Ablauf für unbekannte Benutzer
+- **Slash-Befehle** — `/help`, `/clear`, `/status` funktionieren sofort
+- **Benutzerdefinierte Anweisungen** — Werden der ersten Nachricht jeder Sitzung vorangestellt
+- **Crash-Wiederherstellung** — Automatischer Neustart mit Beibehaltung der Sitzung
+- **Pro-Sitzungs-Serialisierung** — Nachrichten werden zur Vermeidung von Wettlaufsituationen in die Warteschlange gestellt
 
-## Erstellen eines eigenen Channel-Plugins
+## Erstellen Ihres eigenen Channel-Plugins
 
-Möchtest du ein Channel-Plugin für eine neue Plattform entwickeln? Im [Channel Plugin Developer Guide](/developers/channel-plugins) findest du Informationen zum `ChannelPlugin`-Interface, zum `Envelope`-Format und zu den Extension Points.
+Möchten Sie ein Channel-Plugin für eine neue Plattform erstellen? Lesen Sie den [Channel Plugin Developer Guide](../../../developers/channel-plugins.md) für das `ChannelPlugin`-Interface, das `Envelope`-Format und Erweiterungspunkte.

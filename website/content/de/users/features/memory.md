@@ -1,45 +1,62 @@
-# Memory
+# Speicher
 
-Jede Qwen Code-Sitzung startet mit einem frischen Kontextfenster. Zwei Mechanismen transportieren Wissen über Sitzungen hinweg, sodass du dich nicht jedes Mal neu erklären musst:
+Jede Qwen Code-Sitzung beginnt mit einem frischen Kontextfenster. Zwei Mechanismen übertragen Wissen zwischen Sitzungen, damit du dich nicht jedes Mal neu erklären musst:
 
-- **QWEN.md** – Anweisungen, die _du_ einmal schreibst und die Qwen in jeder Sitzung liest
-- **Auto-memory** – Notizen, die Qwen selbst basierend auf dem erstellt, was es von dir lernt
+- **QWEN.md** — Anweisungen, die du einmal schreibst und Qwen liest sie jede Sitzung
+- **Auto-memory** — Notizen, die Qwen selbst schreibt, basierend auf dem, was es von dir lernt
 
 ---
 
-## QWEN.md: Deine Anweisungen an Qwen
+## QWEN.md: deine Anweisungen an Qwen
 
-QWEN.md ist eine reine Textdatei, in der du Dinge festhältst, die Qwen immer über dein Projekt oder deine Präferenzen wissen sollte. Betrachte es als ein dauerhaftes Briefing, das zu Beginn jeder Konversation geladen wird.
+QWEN.md ist eine einfache Textdatei, in die du Dinge schreibst, die Qwen immer über dein Projekt oder deine Vorlieben wissen sollte. Betrachte es als ein dauerhaftes Briefing, das zu Beginn jeder Unterhaltung geladen wird.
 
-### Was gehört in QWEN.md
+### Was in QWEN.md stehen sollte
 
-Füge Dinge hinzu, die du sonst in jeder Sitzung wiederholen müsstest:
+Füge Dinge hinzu, die du sonst jede Sitzung wiederholen müsstest:
 
-- Build- und Test-Befehle (`npm run test`, `make build`)
-- Coding-Konventionen, die dein Team befolgt („alle neuen Dateien müssen JSDoc-Kommentare enthalten“)
-- Architekturentscheidungen („wir verwenden das Repository-Pattern, rufen die Datenbank niemals direkt aus Controllern auf“)
-- Persönliche Präferenzen („verwende immer pnpm, nicht npm“)
+- Build- und Testbefehle (`npm run test`, `make build`)
+- Code-Konventionen deines Teams ("alle neuen Dateien müssen JSDoc-Kommentare haben")
+- Architekturentscheidungen ("wir verwenden das Repository-Pattern, rufe die Datenbank niemals direkt aus Controllern auf")
+- Persönliche Vorlieben ("verwende immer pnpm, nicht npm")
 
-Nimm nichts auf, was Qwen durch das Lesen deines Codes selbst herausfinden kann. QWEN.md funktioniert am besten, wenn es kurz und präzise ist – je länger es wird, desto unzuverlässiger befolgt Qwen die Anweisungen.
+Füge keine Dinge hinzu, die Qwen durch Lesen deines Codes selbst herausfinden kann. QWEN.md funktioniert am besten, wenn es kurz und spezifisch ist – je länger es wird, desto unzuverlässiger folgt Qwen ihm.
 
-### Wo du QWEN.md erstellst
+### Wo QWEN.md erstellt wird
 
-| Datei                         | Für wen gilt es                                 |
-| ----------------------------- | ----------------------------------------------- |
-| `~/.qwen/QWEN.md`             | Dich, projektübergreifend                       |
-| `QWEN.md` im Projekt-Root     | Dein gesamtes Team (commite es in die Versionskontrolle) |
+| Datei                              | Für wen es gilt                                     |
+| ---------------------------------- | --------------------------------------------------- |
+| `~/.qwen/QWEN.md`                  | Du, für alle deine Projekte                         |
+| `QWEN.md` im Projektstammverzeichnis | Dein gesamtes Team (in die Versionsverwaltung einchecken) |
+| `.qwen/QWEN.local.md`              | Nur du, nur in diesem Projekt (aus Git ausschließen) |
 
-Du kannst beide verwenden. Qwen lädt beim Start einer Sitzung alle gefundenen QWEN.md-Dateien – deine persönliche sowie alle im Projekt.
+Du kannst jede beliebige Kombination dieser Dateien haben. Qwen lädt alle, wenn du eine Sitzung startest.
 
-Falls dein Repository bereits eine `AGENTS.md`-Datei für andere KI-Tools enthält, liest Qwen diese ebenfalls. Eine Duplizierung der Anweisungen ist nicht nötig.
+Wenn dein Repository bereits eine `AGENTS.md`-Datei für andere KI-Tools enthält, liest Qwen diese ebenfalls. Keine Notwendigkeit, Anweisungen zu duplizieren.
 
-### Automatisch generieren mit `/init`
+#### Wann `.qwen/QWEN.local.md` verwenden
 
-Führe `/init` aus und Qwen analysiert deine Codebasis, um eine initiale QWEN.md mit Build-Befehlen, Testanweisungen und erkannten Konventionen zu erstellen. Falls bereits eine existiert, schlägt es Ergänzungen vor, anstatt die Datei zu überschreiben.
+Verwende es für **projektspezifische, aber persönliche** Anweisungen – Dinge, die zu diesem Projekt gehören, aber nicht mit dem Team geteilt werden sollten:
+
+- Deine eigene Cluster-ID, Container-Registry-Namespace oder Cloud-Konto
+- Ein persönlicher Debug-Befehl, der deine lokale Umgebung fest codiert
+- Notizen, die Qwen über deine laufende Arbeit wissen soll, aber nicht committen
+
+Es wird **nach** dem gemeinsamen Projekt-`QWEN.md` geladen, sodass deine lokalen Anweisungen die des Teams ergänzen oder überschreiben können.
+
+**Du musst es selbst in die `.gitignore` aufnehmen.** Obwohl `.qwen/` oft als lokales Verzeichnis behandelt wird, generiert qwen-code keine `.gitignore` für dich, und manche Projekte committen `.qwen/settings.json`. Füge diese Zeile zu deiner `.gitignore` (oder zu deiner globalen Git-Ignore) hinzu:
+
+```
+.qwen/QWEN.local.md
+```
+
+### Automatisch eine mit `/init` erstellen
+
+Führe `/init` aus und Qwen analysiert deine Codebasis, um ein Starter-QWEN.md mit Build-Befehlen, Testanweisungen und gefundenen Konventionen zu erstellen. Wenn bereits eine existiert, schlägt es Ergänzungen vor, anstatt sie zu überschreiben.
 
 ### Andere Dateien referenzieren
 
-Du kannst in QWEN.md auf andere Dateien verweisen, damit Qwen diese ebenfalls liest:
+Du kannst QWEN.md auf andere Dateien verweisen lassen, damit Qwen diese ebenfalls liest:
 
 ```markdown
 See @README.md for project overview.
@@ -49,46 +66,45 @@ See @README.md for project overview.
 - Git workflow: @docs/git-workflow.md
 ```
 
-Verwende `@path/to/file` an beliebiger Stelle in QWEN.md. Relative Pfade werden relativ zur QWEN.md-Datei selbst aufgelöst.
+Verwende `@path/to/file` überall in QWEN.md. Relative Pfade werden relativ zur QWEN.md-Datei selbst aufgelöst.
 
 ---
 
-## Auto-memory: Was Qwen über dich lernt
+## Auto-memory: was Qwen über dich lernt
 
-Auto-memory läuft im Hintergrund. Nach jeder deiner Konversationen speichert Qwen unauffällig nützliche Erkenntnisse – deine Präferenzen, gegebenes Feedback, Projektkontext –, damit es diese in zukünftigen Sitzungen verwenden kann, ohne dass du dich wiederholen musst.
+Auto-memory läuft im Hintergrund. Nach jedem deiner Gespräche speichert Qwen leise nützliche Dinge, die es gelernt hat – deine Vorlieben, gegebenes Feedback, Projektkontext –, damit es sie in zukünftigen Sitzungen verwenden kann, ohne dass du dich wiederholen musst.
 
-Das unterscheidet sich von QWEN.md: Du schreibst es nicht, Qwen tut es.
+Dies unterscheidet sich von QWEN.md: du schreibst es nicht, Qwen tut es.
 
 ### Was Qwen speichert
 
-Qwen sucht nach vier Arten von Informationen, die es sich zu merken lohnt:
+Qwen sucht nach vier Arten von Dingen, die es sich zu merken lohnt:
 
-| Was                     | Beispiele                                                |
-| ----------------------- | -------------------------------------------------------- |
-| **Über dich**           | Deine Rolle, Hintergrund, wie du gerne arbeitest         |
-| **Dein Feedback**       | Von dir vorgenommene Korrekturen, bestätigte Ansätze     |
-| **Projektkontext**      | Laufende Arbeiten, Entscheidungen, Ziele, die nicht direkt aus dem Code ersichtlich sind |
-| **Externe Referenzen**  | Dashboards, Ticket-Tracker, von dir erwähnte Doc-Links   |
+| Was                  | Beispiele                                                        |
+| -------------------- | ---------------------------------------------------------------- |
+| **Über dich**        | Deine Rolle, dein Hintergrund, wie du gerne arbeitest            |
+| **Dein Feedback**    | Korrekturen, die du vorgenommen hast, Ansätze, die du bestätigt hast |
+| **Projektkontext**   | Laufende Arbeiten, Entscheidungen, Ziele, die aus dem Code nicht offensichtlich sind |
+| **Externe Referenzen** | Dashboards, Ticket-Tracker, Dokumentationslinks, die du erwähnt hast |
 
-Qwen speichert nicht alles – nur Dinge, die beim nächsten Mal tatsächlich nützlich wären.
+Qwen speichert nicht alles – nur Dinge, die tatsächlich beim nächsten Mal nützlich wären.
 
 ### Wo es gespeichert wird
 
-Die Auto-memory-Dateien befinden sich unter `~/.qwen/projects/<project>/memory/`. Alle Branches und Worktrees desselben Repositories teilen sich denselben Memory-Ordner. Was Qwen also in einem Branch lernt, ist in anderen ebenfalls verfügbar.
+Auto-memory-Dateien liegen unter `~/.qwen/projects/<project>/memory/`. Alle Branches und Worktrees desselben Repositories teilen sich denselben Speicherordner, sodass das, was Qwen in einem Branch lernt, auch in anderen verfügbar ist.
 
-Alles Gespeicherte ist reines Markdown – du kannst jede Datei jederzeit öffnen, bearbeiten oder löschen.
+Alles Gespeicherte ist einfaches Markdown – du kannst jede Datei jederzeit öffnen, bearbeiten oder löschen.
 
 ### Regelmäßige Bereinigung
 
-Qwen durchsucht regelmäßig seine gespeicherten Memories, um Duplikate zu entfernen und veraltete Einträge zu bereinigen. Dies läuft automatisch im Hintergrund einmal täglich, sobald genügend Sitzungen angesammelt wurden. Du kannst es manuell mit `/dream` auslösen, wenn es sofort laufen soll.
+Qwen durchläuft regelmäßig seine gespeicherten Erinnerungen, um Duplikate zu entfernen und veraltete Einträge zu bereinigen. Dies läuft automatisch im Hintergrund einmal täglich, nachdem genügend Sitzungen angesammelt wurden. Du kannst es manuell mit `/dream` auslösen, wenn du es jetzt ausführen möchtest.
 
-Während die Bereinigung läuft, erscheint **✦ dreaming** in der Bildschirmecke. Deine Sitzung läuft normal weiter.
+Während die Bereinigung läuft, erscheint **✦ dreaming** in der Ecke des Bildschirms. Deine Sitzung läuft normal weiter.
 
-### Aktivieren oder Deaktivieren
+### Ein- und Ausschalten
 
-Auto-memory ist standardmäßig aktiviert. Um es umzuschalten, öffne `/memory` und verwende die Schalter oben. Du kannst nur das automatische Speichern, nur die regelmäßige Bereinigung oder beides deaktivieren.
-
-Du kannst sie auch in `~/.qwen/settings.json` (gilt für alle Projekte) oder `.qwen/settings.json` (nur für dieses Projekt) konfigurieren:
+Auto-memory ist standardmäßig aktiviert. Um es umzuschalten, öffne `/memory` und verwende die Schalter oben. Du kannst entweder nur das automatische Speichern, nur die regelmäßige Bereinigung oder beides deaktivieren.
+Sie können sie auch in `~/.qwen/settings.json` (gilt für alle Projekte) oder `.qwen/settings.json` (nur für dieses Projekt) festlegen:
 
 ```json
 {
@@ -101,25 +117,25 @@ Du kannst sie auch in `~/.qwen/settings.json` (gilt für alle Projekte) oder `.q
 
 ---
 
-## Befehle
+## Commands
 
 ### `/memory`
 
-Öffnet das Memory-Panel. Von hier aus kannst du:
+Öffnet das Memory-Panel. Hier können Sie:
 
-- Das automatische Speichern von Auto-memory aktivieren oder deaktivieren
-- Die regelmäßige Bereinigung (dream) aktivieren oder deaktivieren
-- Deine persönliche QWEN.md öffnen (`~/.qwen/QWEN.md`)
+- Automatisches Speichern des Speichers ein- oder ausschalten
+- Periodische Bereinigung (Dream) ein- oder ausschalten
+- Ihre persönliche QWEN.md öffnen (`~/.qwen/QWEN.md`)
 - Die Projekt-QWEN.md öffnen
-- Den Auto-memory-Ordner durchsuchen
+- Den Auto-Memory-Ordner durchsuchen
 
 ### `/init`
 
-Generiert eine initiale QWEN.md für dein Projekt. Qwen liest deine Codebasis und füllt Build-Befehle, Testanweisungen und erkannte Konventionen ein.
+Generiert eine Starter-QWEN.md für Ihr Projekt. Qwen liest Ihre Codebasis und füllt Build-Befehle, Testanweisungen und von ihm entdeckte Konventionen ein.
 
 ### `/remember <text>`
 
-Speichert etwas sofort in Auto-memory, ohne darauf zu warten, dass Qwen es automatisch erkennt:
+Speichert sofort etwas im Auto-Memory, ohne darauf zu warten, dass Qwen es automatisch aufnimmt:
 
 ```
 /remember always use snake_case for Python variable names
@@ -128,7 +144,7 @@ Speichert etwas sofort in Auto-memory, ohne darauf zu warten, dass Qwen es autom
 
 ### `/forget <text>`
 
-Entfernt Auto-memory-Einträge, die deiner Beschreibung entsprechen:
+Entfernt Auto-Memory-Einträge, die Ihrer Beschreibung entsprechen:
 
 ```
 /forget old workaround for the login bug
@@ -136,7 +152,7 @@ Entfernt Auto-memory-Einträge, die deiner Beschreibung entsprechen:
 
 ### `/dream`
 
-Führt die Memory-Bereinigung jetzt aus, anstatt auf den automatischen Zeitplan zu warten:
+Führt die Speicherbereinigung jetzt aus, anstatt auf die automatische Planung zu warten:
 
 ```
 /dream
@@ -144,25 +160,25 @@ Führt die Memory-Bereinigung jetzt aus, anstatt auf den automatischen Zeitplan 
 
 ---
 
-## Fehlerbehebung
+## Troubleshooting
 
 ### Qwen befolgt meine QWEN.md nicht
 
-Öffne `/memory`, um zu sehen, welche Dateien geladen sind. Wenn deine Datei nicht aufgeführt ist, kann Qwen sie nicht sehen – stelle sicher, dass sie sich im Projekt-Root oder unter `~/.qwen/` befindet.
+Öffnen Sie `/memory`, um zu sehen, welche Dateien geladen sind. Wenn Ihre Datei nicht aufgeführt ist, kann Qwen sie nicht sehen – stellen Sie sicher, dass sie im Projektstamm oder in `~/.qwen/` liegt.
 
-Anweisungen funktionieren besser, wenn sie präzise sind:
+Anweisungen funktionieren besser, wenn sie spezifisch sind:
 
 - ✓ `Use 2-space indentation for TypeScript files`
 - ✗ `Format code nicely`
 
-Falls du mehrere QWEN.md-Dateien mit widersprüchlichen Anweisungen hast, kann sich Qwen inkonsistent verhalten. Überprüfe sie und entferne alle Widersprüche.
+Wenn Sie mehrere QWEN.md-Dateien mit widersprüchlichen Anweisungen haben, kann Qwen inkonsistent handeln. Überprüfen Sie sie und entfernen Sie alle Widersprüche.
 
 ### Ich möchte sehen, was Qwen gespeichert hat
 
-Führe `/memory` aus und wähle **Auto-memory-Ordner öffnen**. Alle gespeicherten Memories sind lesbare Markdown-Dateien, die du durchsuchen, bearbeiten oder löschen kannst.
+Führen Sie `/memory` aus und wählen Sie **Auto-Memory-Ordner öffnen**. Alle gespeicherten Erinnerungen sind lesbare Markdown-Dateien, die Sie durchsuchen, bearbeiten oder löschen können.
 
 ### Qwen vergisst ständig Dinge
 
-Wenn Auto-memory aktiviert ist, Qwen sich aber scheinbar nicht über Sitzungen hinweg erinnert, versuche `/dream` auszuführen, um eine Bereinigung zu erzwingen. Prüfe außerdem `/memory`, um sicherzustellen, dass beide Schalter aktiviert sind.
+Wenn Auto-Memory aktiviert ist, Qwen aber scheinbar über Sitzungen hinweg nichts merkt, versuchen Sie, `/dream` auszuführen, um einen Bereinigungsdurchlauf zu erzwingen. Überprüfen Sie auch `/memory`, um zu bestätigen, dass beide Schalter aktiviert sind.
 
-Für Dinge, die Qwen immer wissen soll, füge sie stattdessen zu QWEN.md hinzu – Auto-memory ist best-effort, QWEN.md ist garantiert.
+Für Dinge, die Qwen immer merken soll, fügen Sie sie stattdessen zur QWEN.md hinzu – Auto-Memory ist eine bestmögliche Leistung, QWEN.md ist garantiert.

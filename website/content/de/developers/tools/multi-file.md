@@ -1,59 +1,61 @@
-# Tool zum Lesen mehrerer Dateien (`read_many_files`)
+# Lesen mehrerer Dateien (`read_many_files`)
 
-Dieses Dokument beschreibt das `read_many_files`-Tool für Qwen Code.
+> [!note]
+>
+> `read_many_files` war zuvor als eigenständiges Werkzeug verfügbar, wurde jedoch in eine interne Hilfsfunktion umgestaltet. Das Modell ruft es nicht mehr direkt auf – stattdessen decken die Werkzeuge `read_file`, `glob` und `grep_search` das Lesen einzelner und mehrerer Dateien ab. Die folgenden Informationen dienen als Referenz.
 
 ## Beschreibung
 
-Verwende `read_many_files`, um Inhalte aus mehreren Dateien zu lesen, die durch Pfade oder Glob-Patterns angegeben sind. Das Verhalten dieses Tools hängt von den bereitgestellten Dateien ab:
+`read_many_files` liest den Inhalt mehrerer Dateien, die durch Pfade oder Glob-Muster angegeben werden. Das Verhalten hängt vom Dateityp ab:
 
-- Bei Textdateien verkettet dieses Tool deren Inhalte zu einem einzigen String.
-- Bei Bild- (z. B. PNG, JPEG), PDF-, Audio- (MP3, WAV) und Videodateien (MP4, MOV) liest und gibt es diese als base64-kodierte Daten zurück, sofern sie explizit nach Name oder Erweiterung angefordert werden.
+- Bei Textdateien verkettet dieses Werkzeug deren Inhalt zu einer einzigen Zeichenkette.
+- Bei Bild- (z. B. PNG, JPEG), PDF-, Audio- (MP3, WAV) und Videodateien (MP4, MOV) werden diese gelesen und als base64-kodierte Daten zurückgegeben, sofern sie explizit nach Name oder Erweiterung angefordert werden.
 
-`read_many_files` kann verwendet werden, um Aufgaben wie das Erhalten eines Überblicks über eine Codebasis, das Auffinden der Implementierung bestimmter Funktionen, das Überprüfen von Dokumentationen oder das Sammeln von Kontext aus mehreren Konfigurationsdateien durchzuführen.
+`read_many_files` kann für Aufgaben wie das Verschaffen eines Überblicks über eine Codebasis, das Auffinden der Implementierung einer bestimmten Funktionalität, das Durchsehen von Dokumentation oder das Sammeln von Kontext aus mehreren Konfigurationsdateien verwendet werden.
 
-**Hinweis:** `read_many_files` sucht nach Dateien anhand der bereitgestellten Pfade oder Glob-Patterns. Ein Verzeichnispfad wie `"/docs"` liefert ein leeres Ergebnis; das Tool benötigt ein Pattern wie `"/docs/*"` oder `"/docs/*.md"`, um die relevanten Dateien zu identifizieren.
+**Hinweis:** `read_many_files` sucht nach Dateien, die den angegebenen Pfaden oder Glob-Mustern entsprechen. Ein Verzeichnispfad wie `"/docs"` liefert ein leeres Ergebnis; das Werkzeug benötigt ein Muster wie `"/docs/*"` oder `"/docs/*.md"`, um die relevanten Dateien zu identifizieren.
 
 ### Argumente
 
 `read_many_files` akzeptiert die folgenden Argumente:
 
-- `paths` (list[string], erforderlich): Ein Array aus Glob-Patterns oder Pfaden relativ zum Zielverzeichnis des Tools (z. B. `["src/**/*.ts"]`, `["README.md", "docs/*", "assets/logo.png"]`).
-- `exclude` (list[string], optional): Glob-Patterns für Dateien/Verzeichnisse, die ausgeschlossen werden sollen (z. B. `["**/*.log", "temp/"]`). Diese werden zu den Standardausschlüssen hinzugefügt, wenn `useDefaultExcludes` auf `true` gesetzt ist.
-- `include` (list[string], optional): Zusätzliche Glob-Patterns, die eingeschlossen werden sollen. Diese werden mit `paths` zusammengeführt (z. B. `["*.test.ts"]`, um Testdateien explizit hinzuzufügen, falls sie pauschal ausgeschlossen wurden, oder `["images/*.jpg"]`, um bestimmte Bildtypen einzuschließen).
-- `recursive` (boolean, optional): Gibt an, ob rekursiv gesucht werden soll. Dies wird hauptsächlich durch `**` in Glob-Patterns gesteuert. Standardwert ist `true`.
-- `useDefaultExcludes` (boolean, optional): Gibt an, ob eine Liste von Standardausschluss-Patterns angewendet werden soll (z. B. `node_modules`, `.git`, binäre Dateien, die keine Bilder/PDFs sind). Standardwert ist `true`.
-- `respect_git_ignore` (boolean, optional): Gibt an, ob `.gitignore`-Pattern beim Suchen von Dateien berücksichtigt werden sollen. Standardwert ist `true`.
+- `paths` (Liste[string], erforderlich): Ein Array von Glob-Mustern oder Pfaden relativ zum Zielverzeichnis des Werkzeugs (z. B. `["src/**/*.ts"]`, `["README.md", "docs/*", "assets/logo.png"]`).
+- `exclude` (Liste[string], optional): Glob-Muster für auszuschließende Dateien/Verzeichnisse (z. B. `["**/*.log", "temp/"]`). Diese werden zu den standardmäßigen Ausschlüssen hinzugefügt, wenn `useDefaultExcludes` auf `true` gesetzt ist.
+- `include` (Liste[string], optional): Zusätzliche Glob-Muster, die eingeschlossen werden sollen. Diese werden mit `paths` zusammengeführt (z. B. `["*.test.ts"]`, um Testdateien spezifisch hinzuzufügen, falls sie weitgehend ausgeschlossen waren, oder `["images/*.jpg"]`, um bestimmte Bildtypen einzuschließen).
+- `recursive` (Boolesch, optional): Gibt an, ob rekursiv gesucht werden soll. Dies wird hauptsächlich durch `**` in Glob-Mustern gesteuert. Standardwert: `true`.
+- `useDefaultExcludes` (Boolesch, optional): Gibt an, ob eine Liste standardmäßiger Ausschlussmuster angewendet werden soll (z. B. `node_modules`, `.git`, Nicht-Bild/PDF-Binärdateien). Standardwert: `true`.
+- `respect_git_ignore` (Boolesch, optional): Gibt an, ob `.gitignore`-Muster beim Finden von Dateien berücksichtigt werden sollen. Standardwert: `true`.
 
 ## Verwendung von `read_many_files` mit Qwen Code
 
-`read_many_files` sucht nach Dateien, die den angegebenen `paths`- und `include`-Pattern entsprechen, und berücksichtigt dabei `exclude`-Pattern sowie Standardausschlüsse (sofern aktiviert).
+`read_many_files` sucht nach Dateien, die den angegebenen `paths`- und `include`-Mustern entsprechen, während `exclude`-Muster und standardmäßige Ausschlüsse (falls aktiviert) beachtet werden.
 
-- Bei Textdateien: Es liest den Inhalt jeder gefundenen Datei (und versucht, binäre Dateien zu überspringen, die nicht explizit als Bild/PDF angefordert wurden) und verkettet sie zu einem einzigen String. Zwischen den Inhalten der einzelnen Dateien wird ein Trennzeichen `--- {filePath} ---` eingefügt. Standardmäßig wird UTF-8-Kodierung verwendet.
-- Das Tool fügt nach der letzten Datei ein `--- End of content ---` ein.
-- Bei Bild- und PDF-Dateien: Wenn sie explizit nach Name oder Erweiterung angefordert werden (z. B. `paths: ["logo.png"]` oder `include: ["*.pdf"]`), liest das Tool die Datei und gibt ihren Inhalt als base64-kodierten String zurück.
-- Das Tool versucht, andere binäre Dateien (die nicht gängigen Bild-/PDF-Typen entsprechen oder nicht explizit angefordert wurden) zu erkennen und zu überspringen, indem es den Anfangsinhalt auf Null-Bytes prüft.
+- Bei Textdateien: Es liest den Inhalt jeder gefundenen Datei (wobei versucht wird, Binärdateien zu überspringen, die nicht explizit als Bild/PDF angefordert wurden) und verkettet ihn zu einer einzigen Zeichenkette, mit einem Trennzeichen `--- {filePath} ---` zwischen den Inhalten der einzelnen Dateien. Standardmäßig wird UTF-8-Kodierung verwendet.
+- Das Werkzeug fügt nach der letzten Datei ein `--- End of content ---` ein.
+- Bei Bild- und PDF-Dateien: Wenn sie explizit nach Name oder Erweiterung angefordert werden (z. B. `paths: ["logo.png"]` oder `include: ["*.pdf"]`), liest das Werkzeug die Datei und gibt ihren Inhalt als base64-kodierte Zeichenkette zurück.
+- Das Werkzeug versucht, andere Binärdateien (solche, die nicht den üblichen Bild-/PDF-Typen entsprechen oder nicht explizit angefordert wurden) zu erkennen und zu überspringen, indem es in ihrem Anfangsbereich nach Nullbytes sucht.
 
 Verwendung:
 
 ```
-read_many_files(paths=["Your files or paths here."], include=["Additional files to include."], exclude=["Files to exclude."], recursive=False, useDefaultExcludes=false, respect_git_ignore=true)
+read_many_files(paths=["Ihre Dateien oder Pfade hier."], include=["Zusätzliche Dateien zum Einschließen."], exclude=["Auszuschließende Dateien."], recursive=False, useDefaultExcludes=false, respect_git_ignore=true)
 ```
 
 ## Beispiele für `read_many_files`
 
-Lese alle TypeScript-Dateien im `src`-Verzeichnis:
+Alle TypeScript-Dateien im `src`-Verzeichnis lesen:
 
 ```
 read_many_files(paths=["src/**/*.ts"])
 ```
 
-Lese die Haupt-README, alle Markdown-Dateien im `docs`-Verzeichnis und ein bestimmtes Logo-Bild, wobei eine bestimmte Datei ausgeschlossen wird:
+Die Haupt-README, alle Markdown-Dateien im `docs`-Verzeichnis und ein bestimmtes Logo-Bild lesen, wobei eine bestimmte Datei ausgeschlossen wird:
 
 ```
 read_many_files(paths=["README.md", "docs/**/*.md", "assets/logo.png"], exclude=["docs/OLD_README.md"])
 ```
 
-Lese alle JavaScript-Dateien, aber schließe explizit Testdateien und alle JPEGs in einem `images`-Ordner ein:
+Alle JavaScript-Dateien lesen, aber explizit Testdateien und alle JPEGs in einem `images`-Ordner einschließen:
 
 ```
 read_many_files(paths=["**/*.js"], include=["**/*.test.js", "images/**/*.jpg"], useDefaultExcludes=False)
@@ -61,9 +63,9 @@ read_many_files(paths=["**/*.js"], include=["**/*.test.js", "images/**/*.jpg"], 
 
 ## Wichtige Hinweise
 
-- **Verarbeitung binärer Dateien:**
-  - **Bild-/PDF-/Audio-/Videodateien:** Das Tool kann gängige Bildtypen (PNG, JPEG usw.), PDF-, Audio- (mp3, wav) und Videodateien (mp4, mov) lesen und gibt sie als base64-kodierte Daten zurück. Diese Dateien _müssen_ explizit durch die `paths`- oder `include`-Pattern angesprochen werden (z. B. durch Angabe des exakten Dateinamens wie `video.mp4` oder eines Patterns wie `*.mov`).
-  - **Andere binäre Dateien:** Das Tool versucht, andere Arten von binären Dateien zu erkennen und zu überspringen, indem es deren Anfangsinhalt auf Null-Bytes prüft. Diese Dateien werden von der Ausgabe ausgeschlossen.
-- **Performance:** Das Lesen einer sehr großen Anzahl von Dateien oder sehr großer Einzeldateien kann ressourcenintensiv sein.
-- **Pfadgenauigkeit:** Stelle sicher, dass Pfade und Glob-Patterns korrekt relativ zum Zielverzeichnis des Tools angegeben sind. Achte bei Bild-/PDF-Dateien darauf, dass die Pattern spezifisch genug sind, um sie einzuschließen.
-- **Standardausschlüsse:** Beachte die Standardausschluss-Patterns (wie `node_modules`, `.git`) und verwende `useDefaultExcludes=False`, wenn du sie überschreiben musst, gehe dabei jedoch vorsichtig vor.
+- **Umgang mit Binärdateien:**
+  - **Bild-/PDF-/Audio-/Videodateien:** Das Werkzeug kann gängige Bildtypen (PNG, JPEG usw.), PDF-, Audio- (mp3, wav) und Videodateien (mp4, mov) lesen und als base64-kodierte Daten zurückgeben. Diese Dateien _müssen_ explizit durch die `paths`- oder `include`-Muster adressiert werden (z. B. durch Angabe des genauen Dateinamens wie `video.mp4` oder eines Musters wie `*.mov`).
+  - **Andere Binärdateien:** Das Werkzeug versucht, andere Arten von Binärdateien zu erkennen und zu überspringen, indem es deren Anfangsbereich auf Nullbytes überprüft. Diese Dateien werden aus der Ausgabe ausgeschlossen.
+- **Leistung:** Das Lesen einer sehr großen Anzahl von Dateien oder sehr großer einzelner Dateien kann ressourcenintensiv sein.
+- **Pfadspezifität:** Stellen Sie sicher, dass Pfade und Glob-Muster korrekt relativ zum Zielverzeichnis des Werkzeugs angegeben werden. Stellen Sie bei Bild-/PDF-Dateien sicher, dass die Muster spezifisch genug sind, um sie einzuschließen.
+- **Standardmäßige Ausschlüsse:** Beachten Sie die standardmäßigen Ausschlussmuster (wie `node_modules`, `.git`) und verwenden Sie `useDefaultExcludes=False`, wenn Sie diese überschreiben müssen, aber seien Sie dabei vorsichtig.

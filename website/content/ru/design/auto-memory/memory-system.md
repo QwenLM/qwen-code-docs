@@ -1,35 +1,35 @@
-# Memory: система управления памятью
+# Memory 记忆管理系统
 
-> В этом документе описывается механизм управления памятью **Managed Auto-Memory** (управляемая автоматическая память) в Qwen Code, условия её активации и детали реализации.
+> 本文介绍 Qwen Code 中 **Managed Auto-Memory**（托管自动记忆）的记忆管理机制、触发时机和实现细节。
 
 ---
 
 ## 目录
 
-1. [Обзор](#概述)
-2. [Структура хранения](#存储结构)
-3. [Типы памяти](#记忆类型)
-4. [Формат записи памяти](#记忆条目格式)
-5. [Основной жизненный цикл](#核心生命周期)
-6. [Extract — извлечение](#extract--提取)
-7. [Dream — консолидация](#dream--整合)
-8. [Recall — поиск](#recall--召回)
-9. [Forget — удаление](#forget--遗忘)
-10. [Перестроение индекса](#索引重建)
-11. [Телеметрия](#遥测埋点)
+1. [概述](#概述)
+2. [存储结构](#存储结构)
+3. [记忆类型](#记忆类型)
+4. [记忆条目格式](#记忆条目格式)
+5. [核心生命周期](#核心生命周期)
+6. [Extract — 提取](#extract--提取)
+7. [Dream — 整合](#dream--整合)
+8. [Recall — 召回](#recall--召回)
+9. [Forget — 遗忘](#forget--遗忘)
+10. [索引重建](#索引重建)
+11. [遥测埋点](#遥测埋点)
 
 ---
 
 ## 概述
 
-Managed Auto-Memory — это система постоянной памяти, которая **автоматически** накапливает, консолидирует и извлекает знания о пользователе в процессе AI-сессий. Жизненный цикл памяти поддерживается с помощью четырёх основных операций:
+Managed Auto-Memory 是一套在 AI 会话过程中**自动**积累、整合和检索用户相关知识的持久化记忆系统。它通过四个核心操作维护记忆的生命周期：
 
-| Операция | Англ. название | Условие активации | Назначение |
+| 操作 | 英文    | 触发方式                   | 作用                                   |
 | ---- | ------- | -------------------------- | -------------------------------------- |
-| Извлечение | Extract | Автоматически (после каждого раунда диалога) | Выделение новых знаний из истории диалога и запись в файлы памяти |
-| Консолидация | Dream | Автоматически (периодическая фоновая задача) | Дедупликация и объединение файлов памяти для поддержания порядка |
-| Поиск | Recall | Автоматически (перед каждым раундом диалога) | Поиск релевантной памяти и инъекция в системный промпт |
-| Удаление | Forget | Вручную (команда пользователя `/forget`) | Точное удаление указанных записей памяти |
+| 提取 | Extract | 自动（每轮对话后）         | 从对话记录中提炼新知识写入记忆文件     |
+| 整合 | Dream   | 自动（周期性后台任务）     | 对记忆文件去重、合并，保持整洁         |
+| 召回 | Recall  | 自动（每轮对话前）         | 检索与当前请求相关的记忆注入到系统提示 |
+| 遗忘 | Forget  | 手动（用户命令 `/forget`） | 精确删除指定的记忆条目                 |
 
 ---
 
@@ -54,55 +54,55 @@ Managed Auto-Memory — это система постоянной памяти,
                 └── grafana.md                ← 外部资源记忆
 ```
 
-> **Переопределение через переменные окружения**:
+> **环境变量覆盖**：
 >
-> - `QWEN_CODE_MEMORY_BASE_DIR`: заменяет глобальный базовый каталог
-> - `QWEN_CODE_MEMORY_LOCAL=1`: использует путь внутри проекта `.qwen/memory/`
+> - `QWEN_CODE_MEMORY_BASE_DIR`：替换全局基础目录
+> - `QWEN_CODE_MEMORY_LOCAL=1`：改用项目内路径 `.qwen/memory/`
 
 ### 关键文件说明
 
-| Файл | Описание |
+| 文件                  | 说明                                                                   |
 | --------------------- | ---------------------------------------------------------------------- |
-| `meta.json` | Фиксирует время последнего Extract / Dream, ID сессии, затронутые типы памяти и статус выполнения |
-| `extract-cursor.json` | Хранит смещение (offset) в истории диалога, до которого обработана текущая сессия, чтобы избежать повторного извлечения |
-| `consolidation.lock` | Файловая блокировка во время работы Dream. Содержит PID процесса-владельца. Автоматически истекает через 1 час |
-| `MEMORY.md` | Индекс всех тематических файлов. Перестраивается после каждого Extract/Dream в формате Markdown-списка |
+| `meta.json`           | 记录最后一次 Extract / Dream 的时间、会话 ID、涉及的记忆类型、执行状态 |
+| `extract-cursor.json` | 记录当前会话已处理到对话历史的哪个偏移量，避免重复提取                 |
+| `consolidation.lock`  | Dream 运行时的文件锁，内容为持有者 PID，超过 1 小时自动失效            |
+| `MEMORY.md`           | 所有主题文件的索引，每次 Extract/Dream 后重建，格式为 Markdown 列表    |
 
 ---
 
 ## 记忆类型
 
-Система поддерживает четыре встроенных типа памяти, каждый из которых соответствует своему измерению информации:
+系统支持四种内置记忆类型，每种对应不同的信息维度：
 
-| Тип | Хранимые данные | Условие записи | Условие чтения |
+| 类型        | 存储内容                                              | 何时写入                                 | 何时读取                     |
 | ----------- | ----------------------------------------------------- | ---------------------------------------- | ---------------------------- |
-| `user` | Роль пользователя, навыки, рабочие привычки | При выявлении роли/предпочтений/бэкграунда пользователя | Когда ответ требует кастомизации под бэкграунд пользователя |
-| `feedback` | Инструкции пользователя по поведению AI: чего избегать, что продолжать | При коррекции AI пользователем или подтверждении неочевидного подхода | Когда влияет на стиль поведения AI |
-| `project` | Прогресс проекта, цели, решения, дедлайны, отслеживание багов | При получении информации о том, кто что делает, зачем и к какому сроку | Когда помогает AI понять контекст работы и мотивацию |
-| `reference` | Указатели на внешние ресурсы (дашборды, тикет-системы, Slack-каналы и т.д.) | При обнаружении внешнего ресурса и его назначения | Когда пользователь упоминает внешнюю систему или связанную информацию |
+| `user`      | 用户的角色、技能背景、工作习惯                        | 了解到用户角色/偏好/知识背景时           | 回答需要根据用户背景定制时   |
+| `feedback`  | 用户对 AI 行为的指导：避免什么、继续什么              | 用户纠正 AI 或确认某种非显而易见的做法时 | 影响 AI 行为方式时           |
+| `project`   | 项目进展、目标、决策、截止日期、Bug 追踪              | 了解到谁在做什么、为什么、截止何时时     | 帮助 AI 理解工作背景和动机时 |
+| `reference` | 外部系统资源指针（Dashboard、工单系统、Slack 频道等） | 得知某种外部资源及其用途时               | 用户提及外部系统或相关信息时 |
 
-**Что не следует сохранять в памяти**: паттерны/соглашения кода, история Git, схемы отладки, временные статусы задач, информация, уже задокументированная в `QWEN.md`/`AGENTS.md`.
+**不应该存入记忆的内容**：代码模式/约定、Git 历史、调试方案、临时任务状态、已在 QWEN.md/AGENTS.md 中记录的内容。
 
 ---
 
 ## 记忆条目格式
 
-Каждый тематический файл использует формат **YAML frontmatter + Markdown body**:
+每个主题文件使用 **YAML frontmatter + Markdown body** 格式：
 
 ```markdown
 ---
-name: Название памяти
-description: Краткое описание в одно предложение (используется для оценки релевантности при поиске, должно быть конкретным)
+name: 记忆名称
+description: 一句话描述（用于判断召回相关性，要具体）
 type: user|feedback|project|reference
 ---
 
-Основное содержание памяти (строка summary)
+记忆主体内容（summary 行）
 
-Why: Причина (позволяет AI понимать граничные случаи, а не слепо следовать правилам)
-How to apply: Сценарии применения и способ использования
+Why: 背后原因（让 AI 能理解边界情况而不是盲目遵守规则）
+How to apply: 适用场景和使用方式
 ```
 
-Для типов `feedback` и `project` настоятельно рекомендуется заполнять поля `Why` и `How to apply`, чтобы память корректно применялась в граничных случаях.
+对于 `feedback` 和 `project` 类型，强烈建议填写 `Why` 和 `How to apply`，使记忆在边界情况下仍能正确应用。
 
 ---
 
@@ -173,172 +173,171 @@ flowchart TD
         AQ --> AR[释放锁]
     end
 ```
-
 ---
 
-## Extract — 提取
+## Extract — Извлечение
 
-### 触发时机
+### Момент срабатывания
 
-Автоматически вызывается функцией `scheduleAutoMemoryExtract` после каждого ответа AI (фоновый неблокирующий процесс).
+Автоматически запускается с помощью `scheduleAutoMemoryExtract` после каждого завершения ответа AI (фоновый неблокирующий).
 
-### 调度逻辑（`extractScheduler.ts`）
+### Логика планирования (`extractScheduler.ts`)
 
 ```mermaid
 flowchart TD
-    A[scheduleAutoMemoryExtract 被调用] --> B{本轮历史记录中\n是否有写记忆文件的工具调用?}
-    B -- 是 --> C[登记 skipped 任务\n原因: memory_tool]
-    B -- 否 --> D{isExtractRunning?}
-    D -- 是 --> E{是否已有 queued 请求?}
-    E -- 是 --> F[更新 queued 请求的\nhistory 参数]
-    E -- 否 --> G[注册 pending 任务\n放入 queue]
-    D -- 否 --> H[注册 running 任务\n调用 runTask]
+    A[scheduleAutoMemoryExtract вызван] --> B{Есть ли в текущей истории\nвызов инструмента записи файла памяти?}
+    B -- Да --> C[Регистрируем задачу как пропущенную\nПричина: memory_tool]
+    B -- Нет --> D{isExtractRunning?}
+    D -- Да --> E{Уже есть запрос в очереди?}
+    E -- Да --> F[Обновить параметр history\nдля запроса в очереди]
+    E -- Нет --> G[Регистрируем задачу в ожидании\nПомещаем в очередь]
+    D -- Нет --> H[Регистрируем выполняющуюся задачу\nВызываем runTask]
     H --> I[markExtractRunning\nsetCurrentTaskId]
     I --> J[runAutoMemoryExtract]
-    J --> K[任务完成]
-    K --> L[clearExtractRunning\n检查 queue → startQueuedIfNeeded]
-    F --> M[返回 skipped: queued]
+    J --> K[Задача завершена]
+    K --> L[clearExtractRunning\nПроверить очередь → startQueuedIfNeeded]
+    F --> M[Вернуть пропущено: queued]
     G --> M
-    C --> N[返回 skipped: memory_tool]
+    C --> N[Вернуть пропущено: memory_tool]
 ```
 
-**Причины пропуска**:
+**Пояснения причин пропуска**:
 
 | Причина | Значение |
 | ----------------- | ----------------------------------------------- |
-| `memory_tool` | Основной агент в этом раунде уже записал файлы памяти напрямую. Пропуск для избежания конфликтов |
-| `already_running` | Извлечение уже выполняется, задача не может быть добавлена в очередь |
-| `queued` | Извлечение уже запущено, текущий запрос добавлен в очередь |
+| `memory_tool` | Основной агент в текущем раунде напрямую записал файл памяти, пропускаем, чтобы избежать конфликта |
+| `already_running` | Извлечение уже выполняется, постановка в очередь невозможна |
+| `queued` | Извлечение уже выполняется, текущий запрос поставлен в очередь |
 
-### 核心提取流程（`extract.ts`）
+### Основной процесс извлечения (`extract.ts`)
 
 ```mermaid
 flowchart TD
-    A[runAutoMemoryExtract] --> B[ensureAutoMemoryScaffold\n初始化目录和文件]
-    B --> C[buildTranscriptMessages\n将 Content[] 转换为带 offset 的消息列表]
-    C --> D[readExtractCursor\n读取上次处理到的位置]
-    D --> E[loadUnprocessedTranscriptSlice\n截取未处理的消息段]
-    E --> F{slice 为空?}
-    F -- 是 --> G[返回无 patches 结果]
-    F -- 否 --> H[runAutoMemoryExtractionByAgent\n调用 forked agent 提取 patches]
-    H --> I[dedupeExtractPatches\n去重+规范化]
-    I --> J{有 touched topics?}
-    J -- 是 --> K[bumpMetadata\n更新 meta.json]
-    K --> L[rebuildManagedAutoMemoryIndex\n重建 MEMORY.md]
-    L --> M[writeExtractCursor\n记录最新 offset]
-    J -- 否 --> M
-    M --> N[返回 AutoMemoryExtractResult]
+    A[runAutoMemoryExtract] --> B[ensureAutoMemoryScaffold\nИнициализация каталогов и файлов]
+    B --> C[readExtractCursor\nЧтение позиции последней обработки]
+    C --> D[history.slice startOffset\nБерём только необработанный срез сообщений]
+    D --> E{В срезе есть новые сообщения пользователя?}
+    E -- Нет --> F[Обновляем курсор\nВозвращаем результат без изменений]
+    E -- Да --> G[runAutoMemoryExtractionByAgent\nЗапуск извлечения через форкнутого агента]
+    G --> H{Есть затронутые темы?}
+    H -- Да --> I[bumpMetadata\nОбновление meta.json]
+    I --> J[rebuildManagedAutoMemoryIndex\nПерестроение MEMORY.md]
+    J --> K[writeExtractCursor\nЗапись последнего смещения = history.length]
+    H -- Нет --> K
+    K --> L[Возвращаем AutoMemoryExtractResult]
 ```
+
+> **Примечание:** Вентиль `isUnderMemoryPressure` находится в `MemoryManager.runExtract()`, а не в этом процессе. Когда монитор сообщает о жёстком/критическом давлении, `MemoryManager` пропускает вызов извлечения, не продвигая курсор.
 
 **Курсор извлечения (Cursor)**:
 
 - Поля: `{ sessionId, processedOffset, updatedAt }`
-- После каждого извлечения `processedOffset` обновляется до текущей длины истории
-- При следующем извлечении обрабатываются только сообщения с `offset >= processedOffset`
-- При смене сессии (изменение `sessionId`) процесс начинается со смещения 0
+- Перед извлечением читаем текущий прогресс через `readExtractCursor`, затем обрабатываем только непрочитанную часть через `history.slice(processedOffset)`
+- После каждого извлечения обновляем `processedOffset` до текущей длины истории (`params.history.length`)
+- При смене сессии (`sessionId` изменился) начинаем с нулевого смещения
+- Важно: больше не используем `buildTranscriptMessages` / `loadUnprocessedTranscriptSlice` для построения транскрипта – проверка `hasNewUserMessages` выполняется через `history.slice(startOffset).some(m => m.role === 'user' && partToString(m.parts).trim().length > 0)`, лёгкая строкификация только на непрочитанном срезе, полная история больше не обрабатывается
 
 **Правила фильтрации патчей**:
 
-- Длина summary < 12 символов → отбрасывается
-- Summary заканчивается на `?` → отбрасывается (вопросительное предложение)
+- Длина суммаризации < 12 символов → отбрасывается
+- Суммаризация заканчивается на `?` → отбрасывается (вопросительное предложение)
 - Содержит временные ключевые слова (today/now/currently/temporary и т.д.) → отбрасывается
-- Одинаковая комбинация `topic:summary` → дедупликация
+- Комбинация `topic:summary` дублируется → дедупликация
 
 ---
 
-## Dream — 整合
+## Dream — Консолидация
 
-### 触发时机
+### Момент срабатывания
 
-Автоматически вызывается функцией `scheduleManagedAutoMemoryDream` после каждого ответа AI (фоновый неблокирующий процесс). Защищён несколькими условиями-гейтами, поэтому в большинстве случаев пропускается.
+Автоматически запускается с помощью `scheduleManagedAutoMemoryDream` после каждого завершения ответа AI (фоновый неблокирующий). Но защищён несколькими вентилями, поэтому в большинстве случаев пропускается.
 
-### 调度门控（`dreamScheduler.ts`）
+### Вентили планирования (`dreamScheduler.ts`)
 
 ```mermaid
 flowchart TD
-    A[scheduleManagedAutoMemoryDream 被调用] --> B{Dream 功能是否启用?}
-    B -- 否 --> C[跳过: disabled]
-    B -- 是 --> D[ensureAutoMemoryScaffold\n读取 lastDreamSessionId]
-    D --> E{当前 sessionId\n== lastDreamSessionId?}
-    E -- 是 --> F[跳过: same_session]
-    E -- 否 --> G{elapsedHours ≥ 24h\n或从未 dream?}
-    G -- 否 --> H[跳过: min_hours]
-    G -- 是 --> I{距上次 session scan\n< 10 分钟?}
-    I -- 是 --> J[跳过: min_sessions\n等待下次扫描窗口]
-    I -- 否 --> K[扫描 chats/*.jsonl mtime\n统计上次 Dream 后的新会话数]
-    K --> L{新会话数 ≥ 5?}
-    L -- 否 --> M[跳过: min_sessions]
-    L -- 是 --> N{lockExists?\nPID 检查 + 过期检查}
-    N -- 是 --> O[跳过: locked]
-    N -- 否 --> P{dedupeKey 是否已有\n同项目 Dream 任务?}
-    P -- 是 --> Q[跳过: running\n返回已有 taskId]
-    P -- 否 --> R[调度后台任务\nBgTaskScheduler]
-    R --> S[acquireDreamLock\n写入 PID 到 consolidation.lock]
+    A[scheduleManagedAutoMemoryDream вызван] --> B{Функция Dream включена?}
+    B -- Нет --> C[Пропущено: disabled]
+    B -- Да --> D[ensureAutoMemoryScaffold\nЧтение lastDreamSessionId]
+    D --> E{Текущий sessionId\n== lastDreamSessionId?}
+    E -- Да --> F[Пропущено: same_session]
+    E -- Нет --> G{elapsedHours ≥ 24 ч\nили никогда не было Dream?}
+    G -- Нет --> H[Пропущено: min_hours]
+    G -- Да --> I{С момента последнего сканирования сессий\nпрошло < 10 минут?}
+    I -- Да --> J[Пропущено: min_sessions\nОжидание следующего окна сканирования]
+    I -- Нет --> K[Сканирование chats/*.jsonl mtime\nПодсчёт новых сессий после последнего Dream]
+    K --> L{Количество новых сессий ≥ 5?}
+    L -- Нет --> M[Пропущено: min_sessions]
+    L -- Да --> N{lockExists?\nПроверка PID + проверка на устаревание}
+    N -- Да --> O[Пропущено: locked]
+    N -- Нет --> P{Есть ли уже задача Dream\nдля того же проекта по dedupeKey?}
+    P -- Да --> Q[Пропущено: running\nВозврат существующего taskId]
+    P -- Нет --> R[Планирование фоновой задачи\nBgTaskScheduler]
+    R --> S[acquireDreamLock\nЗапись PID в consolidation.lock]
     S --> T[runManagedAutoMemoryDream]
-    T --> U[更新 meta.json\n释放锁]
+    T --> U[Обновление meta.json\nОсвобождение блокировки]
 ```
 
-**Параметры гейтов**:
+**Параметры вентилей**:
 
 | Параметр | Значение по умолчанию | Описание |
 | -------------------------- | -------- | ----------------------------- |
-| `minHoursBetweenDreams` | 24 часа | Минимальный интервал между двумя запусками Dream |
-| `minSessionsBetweenDreams` | 5 сессий | Минимальное количество новых сессий для активации Dream |
-| `SESSION_SCAN_INTERVAL_MS` | 10 минут | Интервал троттлинга при сканировании файлов сессий |
-| `DREAM_LOCK_STALE_MS` | 1 час | Порог времени, после которого lock-файл считается истёкшим |
+| `minHoursBetweenDreams` | 24 часа | Минимальный интервал между двумя Dream |
+| `minSessionsBetweenDreams` | 5 сессий | Минимальное количество новых сессий, необходимое для запуска Dream |
+| `SESSION_SCAN_INTERVAL_MS` | 10 минут | Интервал срабатывания для сканирования файлов сессий |
+| `DREAM_LOCK_STALE_MS` | 1 час | Время, после которого файл блокировки считается устаревшим |
 
 **Механизм блокировки**:
 
-- Lock-файл находится в `<project-state-dir>/consolidation.lock`
-- Содержит PID процесса-владельца
-- При проверке: если процесс с PID больше не существует (ошибка `kill(pid, 0)`) или lock старше 1 часа → считается истёкшим и автоматически удаляется
+- Файл блокировки находится в `<project-state-dir>/consolidation.lock`
+- Содержит PID процесса, владеющего блокировкой
+- При проверке: если процесс с PID не существует (ошибка `kill(pid, 0)`) или блокировка старше 1 часа → считается устаревшей, автоматически удаляется
 
-### 整合执行流程（`dream.ts`）
+### Процесс выполнения консолидации (`dream.ts`)
 
 ```mermaid
 flowchart TD
-    A[runManagedAutoMemoryDream] --> B{是否配置了 Config?}
-    B -- 是 --> C[Agent 路径\nplanManagedAutoMemoryDreamByAgent]
-    C --> D{Agent 是否修改了文件?}
-    D -- 是 --> E[从文件路径推断 touched topics]
-    E --> F[bumpMetadata\n重建 MEMORY.md 索引]
+    A[runManagedAutoMemoryDream] --> B{Настроен ли Config?}
+    B -- Да --> C[Путь агента\nplanManagedAutoMemoryDreamByAgent]
+    C --> D{Изменил ли агент файлы?}
+    D -- Да --> E[Определение затронутых тем по путям файлов]
+    E --> F[bumpMetadata\nПерестроение индекса MEMORY.md]
     F --> G[updateDreamMetadataResult]
-    G --> H[记录遥测事件]
-    H --> I[返回结果]
-    B -- 否 --> J[机械去重路径]
-    C -- 抛出异常 --> J
-    D -- 否 --> J
+    G --> H[Запись события телеметрии]
+    H --> I[Возврат результата]
+    B -- Нет --> J[Механический путь дедупликации]
+    C -- Исключение --> J
+    D -- Нет --> J
 
-    J --> K[scanAutoMemoryTopicDocuments\n读取所有主题文件]
-    K --> L[对每个文件执行 buildDreamedBody]
-    L --> M[解析 entries → 按 summary 去重\n按字母升序排序 → 重新渲染]
-    M --> N{body 有变化?}
-    N -- 是 --> O[写回文件]
-    O --> P[记录 touched topic]
-    N --> Q[检查跨文件重复\ndedupeKey = type:summary]
-    Q --> R{发现重复文件?}
-    R -- 是 --> S[合并 entries 到 canonical 文件\n删除重复文件]
+    J --> K[scanAutoMemoryTopicDocuments\nЧтение всех файлов тем]
+    K --> L[Для каждого файла выполнить buildDreamedBody]
+    L --> M[Разбор entries → дедупликация по summary\nСортировка по алфавиту → повторная рендеринг]
+    M --> N{Изменился body?}
+    N -- Да --> O[Запись обратно в файл]
+    O --> P[Запись затронутой темы]
+    N --> Q[Проверка дубликатов между файлами\ndedupeKey = type:summary]
+    Q --> R{Обнаружены дублирующиеся файлы?}
+    R -- Да --> S[Объединение entries в канонический файл\nУдаление дублирующихся файлов]
     S --> P
-    R -- 否 --> T{有 touched topics?}
+    R -- Нет --> T{Есть затронутые темы?}
     P --> T
-    T -- 是 --> U[bumpMetadata\n重建 MEMORY.md 索引]
-    U --> V[updateDreamMetadataResult\n记录遥测 → 返回结果]
-    T -- 否 --> V
+    T -- Да --> U[bumpMetadata\nПерестроение индекса MEMORY.md]
+    U --> V[updateDreamMetadataResult\nЗапись телеметрии → возврат результата]
+    T -- Нет --> V
 ```
 
 **Логика механической дедупликации**:
 
-1. Внутри каждого тематического файла: дедупликация по `summary.toLowerCase()`, объединение полей `why`/`howToApply`
-2. Повторная сортировка по алфавиту на основе summary
-3. Между файлами: записи с одинаковым `type:summary` объединяются в первый найденный файл, дубликаты удаляются
-
+1. Внутри каждого файла темы: дедупликация по `summary.toLowerCase()`, объединение полей `why`/`howToApply`
+2. Пересортировка по алфавиту summary
+3. Между файлами: записи с одинаковым `type:summary` объединяются в первый обнаруженный файл, дублирующиеся файлы удаляются
 ---
 
 ## Recall — 召回
 
 ### 触发时机
 
-Автоматически вызывается функцией `resolveRelevantAutoMemoryPromptForQuery` перед обработкой каждого запроса пользователя AI. Внедряет релевантную память в системный промпт.
+在每个 AI 处理用户请求之前，由 `resolveRelevantAutoMemoryPromptForQuery` 自动触发，将相关记忆注入系统提示词。
 
 ### 召回流程（`recall.ts`）
 
@@ -366,27 +365,27 @@ flowchart TD
     Q --> R[返回注入主系统提示的 prompt 片段]
 ```
 
-**Правила скоринга (эвристические)**:
+**评分规则（启发式）**：
 
-| Условие | Баллы |
+| 条件                             | 加分             |
 | -------------------------------- | ---------------- |
-| Токен запроса найден в содержимом документа | +2 (за каждый токен) |
-| Токен запроса является характерным ключевым словом для данного типа | +1 (за каждый токен) |
-| Body документа не пуст | +1 |
+| query token 出现在文档内容中     | +2（每个 token） |
+| query token 是该类型的特征关键词 | +1（每个 token） |
+| 文档 body 非空                   | +1               |
 
-**Характерные ключевые слова для каждого типа**:
+**每种类型的特征关键词**：
 
-- `user`: user, preference, background, role, terse
-- `feedback`: feedback, rule, avoid, style, summary
-- `project`: project, goal, incident, deadline, release
-- `reference`: reference, dashboard, ticket, docs, link
+- `user`：user, preference, background, role, terse
+- `feedback`：feedback, rule, avoid, style, summary
+- `project`：project, goal, incident, deadline, release
+- `reference`：reference, dashboard, ticket, docs, link
 
-**Правила сборки промпта**:
+**Prompt 构建规则**：
 
-- Внедряется не более 5 документов (`MAX_RELEVANT_DOCS`)
-- Body каждого документа обрезается до 1200 символов (`MAX_DOC_BODY_CHARS`)
-- При превышении лимита добавляется предупреждение: "NOTE: Relevant memory truncated for prompt budget."
-- Включает информацию о свежести документа (на основе mtime файла)
+- 最多注入 5 篇文档（`MAX_RELEVANT_DOCS`）
+- 每篇文档 body 截断至 1200 字符（`MAX_DOC_BODY_CHARS`）
+- 超出截断时追加提示："NOTE: Relevant memory truncated for prompt budget."
+- 包含文档的新鲜度信息（基于文件 mtime）
 
 ---
 
@@ -394,7 +393,7 @@ flowchart TD
 
 ### 触发时机
 
-Активируется вручную пользователем через команду `/forget <query>`.
+由用户手动执行 `/forget <query>` 命令触发。
 
 ### 遗忘流程（`forget.ts`）
 
@@ -423,17 +422,17 @@ flowchart TD
     Q --> R
 ```
 
-**Дизайн Entry ID**:
+**Entry ID 设计**：
 
-- Файлы с одной записью (частый случай): `relativePath` (например, `feedback/no-summary.md`)
-- Файлы с несколькими записями: `relativePath:index` (например, `feedback/style.md:2`)
-- Использование стабильных ID позволяет модели точно указывать на запись, не затрагивая другие записи в том же файле
+- 单条目文件（常见情况）：`relativePath`（如 `feedback/no-summary.md`）
+- 多条目文件：`relativePath:index`（如 `feedback/style.md:2`）
+- 使用稳定 ID 使模型可以精确定位条目而不影响同文件的其他条目
 
 ---
 
 ## 索引重建
 
-Файл `MEMORY.md` служит навигационным индексом для всех тематических файлов. Перестраивается функцией `rebuildManagedAutoMemoryIndex` после каждого Extract или Dream:
+`MEMORY.md` 是所有主题文件的导航索引，每次 Extract 或 Dream 后调用 `rebuildManagedAutoMemoryIndex` 重建：
 
 ```
 - [用户偏好](user/preferences.md) — 用户是资深 Go 工程师，第一次接触 React
@@ -441,69 +440,69 @@ flowchart TD
 - [项目里程碑](project/milestone.md) — 移动端发布切分支前的合并冻结窗口
 ```
 
-**Ограничения индекса**:
+**索引限制**：
 
-- Не более 150 символов на строку (при превышении обрезается с помощью `…`)
-- Не более 200 строк
-- Общий размер не превышает 25 000 байт
+- 每行最多 150 字符（超出用 `…` 截断）
+- 最多 200 行
+- 总大小不超过 25,000 字节
 
 ---
 
 ## 遥测埋点
 
-В систему встроены три типа телеметрических событий для мониторинга производительности и эффективности операций с памятью:
+系统内置三类遥测事件，用于监控记忆操作的性能和效果：
 
 ### Extract 遥测
 
-| Поле | Тип | Описание |
+| 字段             | 类型                        | 说明                    |
 | ---------------- | --------------------------- | ----------------------- |
-| `trigger` | `'auto'` | Способ активации (на данный момент только автоматический) |
-| `status` | `'completed'` \| `'failed'` | Результат выполнения |
-| `patches_count` | number | Количество извлечённых валидных патчей |
-| `touched_topics` | string[] | Список затронутых типов памяти |
-| `duration_ms` | number | Общее время выполнения (мс) |
+| `trigger`        | `'auto'`                    | 触发方式（当前仅自动）  |
+| `status`         | `'completed'` \| `'failed'` | 执行结果                |
+| `patches_count`  | number                      | 提取到的有效 patch 数量 |
+| `touched_topics` | string[]                    | 被写入的记忆类型列表    |
+| `duration_ms`    | number                      | 总耗时（毫秒）          |
 
 ### Dream 遥测
 
-| Поле | Тип | Описание |
+| 字段              | 类型                                  | 说明                   |
 | ----------------- | ------------------------------------- | ---------------------- |
-| `trigger` | `'auto'` | Способ активации |
-| `status` | `'updated'` \| `'noop'` \| `'failed'` | Результат выполнения |
-| `deduped_entries` | number | Количество записей, обработанных механической дедупликацией |
-| `touched_topics` | string[] | Список изменённых типов памяти |
-| `duration_ms` | number | Общее время выполнения (мс) |
+| `trigger`         | `'auto'`                              | 触发方式               |
+| `status`          | `'updated'` \| `'noop'` \| `'failed'` | 执行结果               |
+| `deduped_entries` | number                                | 机械路径去重的条目数量 |
+| `touched_topics`  | string[]                              | 被修改的记忆类型列表   |
+| `duration_ms`     | number                                | 总耗时（毫秒）         |
 
 ### Recall 遥测
 
-| Поле | Тип | Описание |
+| 字段            | 类型                                   | 说明             |
 | --------------- | -------------------------------------- | ---------------- |
-| `query_length` | number | Длина строки запроса |
-| `docs_scanned` | number | Общее количество просканированных документов |
-| `docs_selected` | number | Количество документов, внедрённых в итоге |
-| `strategy` | `'none'` \| `'heuristic'` \| `'model'` | Стратегия выбора |
-| `duration_ms` | number | Общее время выполнения (мс) |
+| `query_length`  | number                                 | 查询字符串长度   |
+| `docs_scanned`  | number                                 | 扫描的文档总数   |
+| `docs_selected` | number                                 | 最终注入的文档数 |
+| `strategy`      | `'none'` \| `'heuristic'` \| `'model'` | 选择策略         |
+| `duration_ms`   | number                                 | 总耗时（毫秒）   |
 
 ---
 
 ## 相关源文件索引
 
-| Файл | Назначение |
+| 文件                                                 | 职责                                                                          |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `packages/core/src/memory/types.ts` | Определение типов: `AutoMemoryType`, `AutoMemoryMetadata`, `AutoMemoryExtractCursor` |
-| `packages/core/src/memory/paths.ts` | Вычисление путей: `getAutoMemoryRoot`, `isAutoMemPath`, хелперы для путей к файлам |
-| `packages/core/src/memory/store.ts` | Инициализация структуры: `ensureAutoMemoryScaffold`, чтение/запись индекса и метаданных |
-| `packages/core/src/memory/scan.ts` | Сканирование тематических файлов: `scanAutoMemoryTopicDocuments`, парсинг frontmatter |
-| `packages/core/src/memory/entries.ts` | Парсинг и рендеринг записей: `parseAutoMemoryEntries`, `renderAutoMemoryBody` |
-| `packages/core/src/memory/extract.ts` | Основная логика извлечения: `runAutoMemoryExtract`, управление курсором, дедупликация патчей |
-| `packages/core/src/memory/extractScheduler.ts` | Планировщик извлечения: `ManagedAutoMemoryExtractRuntime`, очередь/машина состояний выполнения |
-| `packages/core/src/memory/extractionAgentPlanner.ts` | Агент извлечения: `runAutoMemoryExtractionByAgent` |
-| `packages/core/src/memory/dream.ts` | Основная логика консолидации: `runManagedAutoMemoryDream`, путь через агент + механическая дедупликация |
-| `packages/core/src/memory/dreamScheduler.ts` | Планировщик консолидации: `ManagedAutoMemoryDreamRuntime`, проверка гейтов, управление блокировками |
-| `packages/core/src/memory/dreamAgentPlanner.ts` | Агент консолидации: `planManagedAutoMemoryDreamByAgent` |
-| `packages/core/src/memory/recall.ts` | Логика поиска: `resolveRelevantAutoMemoryPromptForQuery`, двойной путь (эвристика + модель) |
-| `packages/core/src/memory/forget.ts` | Логика удаления: `forgetManagedAutoMemoryEntries`, генерация кандидатов + точное удаление |
-| `packages/core/src/memory/indexer.ts` | Перестроение индекса: `rebuildManagedAutoMemoryIndex`, `buildManagedAutoMemoryIndex` |
-| `packages/core/src/memory/prompt.ts` | Шаблоны системных промптов: описание типов памяти, примеры формата, правила использования |
-| `packages/core/src/memory/governance.ts` | Типы рекомендаций по управлению: `AutoMemoryGovernanceSuggestionType` |
-| `packages/core/src/memory/state.ts` | Состояние выполнения извлечения: `isExtractRunning`, `markExtractRunning`, `clearExtractRunning` |
-| `packages/core/src/memory/memoryAge.ts` | Описание свежести: `memoryAge`, `memoryFreshnessText` |
+| `packages/core/src/memory/types.ts`                  | 类型定义：`AutoMemoryType`、`AutoMemoryMetadata`、`AutoMemoryExtractCursor`   |
+| `packages/core/src/memory/paths.ts`                  | 路径计算：`getAutoMemoryRoot`、`isAutoMemPath`、各类文件路径 helpers          |
+| `packages/core/src/memory/store.ts`                  | 脚手架初始化：`ensureAutoMemoryScaffold`，索引/元数据读写                     |
+| `packages/core/src/memory/scan.ts`                   | 扫描主题文件：`scanAutoMemoryTopicDocuments`，解析 frontmatter                |
+| `packages/core/src/memory/entries.ts`                | 条目解析和渲染：`parseAutoMemoryEntries`、`renderAutoMemoryBody`              |
+| `packages/core/src/memory/extract.ts`                | 提取核心逻辑：`runAutoMemoryExtract`，游标管理，patch 去重                    |
+| `packages/core/src/memory/extractScheduler.ts`       | 提取调度器：`ManagedAutoMemoryExtractRuntime`，队列/运行状态机                |
+| `packages/core/src/memory/extractionAgentPlanner.ts` | 提取 Agent：`runAutoMemoryExtractionByAgent`                                  |
+| `packages/core/src/memory/dream.ts`                  | 整合核心逻辑：`runManagedAutoMemoryDream`，Agent 路径 + 机械去重              |
+| `packages/core/src/memory/dreamScheduler.ts`         | 整合调度器：`ManagedAutoMemoryDreamRuntime`，门控检查，锁管理                 |
+| `packages/core/src/memory/dreamAgentPlanner.ts`      | 整合 Agent：`planManagedAutoMemoryDreamByAgent`                               |
+| `packages/core/src/memory/recall.ts`                 | 召回逻辑：`resolveRelevantAutoMemoryPromptForQuery`，启发式+模型双路径        |
+| `packages/core/src/memory/forget.ts`                 | 遗忘逻辑：`forgetManagedAutoMemoryEntries`，候选生成+精确删除                 |
+| `packages/core/src/memory/indexer.ts`                | 索引重建：`rebuildManagedAutoMemoryIndex`，`buildManagedAutoMemoryIndex`      |
+| `packages/core/src/memory/prompt.ts`                 | 系统提示模板：记忆类型说明、格式示例、使用规范                                |
+| `packages/core/src/memory/governance.ts`             | 治理建议类型：`AutoMemoryGovernanceSuggestionType`                            |
+| `packages/core/src/memory/state.ts`                  | 提取运行状态：`isExtractRunning`、`markExtractRunning`、`clearExtractRunning` |
+| `packages/core/src/memory/memoryAge.ts`              | 新鲜度描述：`memoryAge`、`memoryFreshnessText`                                |

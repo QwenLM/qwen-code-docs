@@ -1,68 +1,67 @@
 # Publication d'extensions
 
-Il existe trois méthodes principales pour publier des extensions auprès des utilisateurs :
+Il existe trois méthodes principales pour publier des extensions destinées aux utilisateurs :
 
-- [Dépôt Git](#releasing-through-a-git-repository)
-- [GitHub Releases](#releasing-through-github-releases)
-- [Registre npm](#releasing-through-npm-registry)
+- [Dépôt Git](#publication-avec-un-dépôt-git)
+- [GitHub Releases](#publication-avec-les-github-releases)
+- [Registre npm](#publication-avec-le-registre-npm)
 
-Les publications via un dépôt Git sont généralement l'approche la plus simple et la plus flexible. Les GitHub Releases peuvent être plus efficaces lors de l'installation initiale, car elles sont distribuées sous forme d'archives uniques au lieu de nécessiter un `git clone` qui télécharge chaque fichier individuellement. Les GitHub Releases peuvent également contenir des archives spécifiques à une plateforme si vous devez distribuer des fichiers binaires dépendants du système d'exploitation. Les publications via le registre npm sont idéales pour les équipes qui utilisent déjà npm pour la distribution de paquets, en particulier avec des registres privés.
+La publication via un dépôt Git est généralement l'approche la plus simple et la plus flexible, tandis que les GitHub Releases peuvent être plus efficaces lors de l'installation initiale car elles sont livrées sous forme d'archives uniques plutôt que de nécessiter un clone Git qui télécharge chaque fichier individuellement. Les GitHub Releases peuvent également contenir des archives spécifiques à une plateforme si vous devez distribuer des fichiers binaires spécifiques à une plateforme. La publication via le registre npm est idéale pour les équipes qui utilisent déjà npm pour la distribution de paquets, en particulier avec des registres privés.
 
-## Publication via un dépôt Git
+## Publication avec un dépôt Git
 
-Il s'agit de l'option la plus flexible et la plus simple. Il vous suffit de créer un dépôt Git accessible publiquement (comme un dépôt GitHub public) pour que les utilisateurs puissent installer votre extension avec `qwen extensions install <your-repo-uri>`, ou utiliser le format simplifié `qwen extensions install <org>/<repo>` pour un dépôt GitHub. Ils peuvent éventuellement cibler une référence spécifique (branche/tag/commit) à l'aide de l'argument `--ref=<some-ref>`, qui cible par défaut la branche principale.
+C'est l'option la plus flexible et la plus simple. Tout ce que vous avez à faire est de créer un dépôt Git accessible publiquement (par exemple un dépôt GitHub public), puis les utilisateurs peuvent installer votre extension avec `qwen extensions install <votre-uri-du-dépôt>`, ou pour un dépôt GitHub ils peuvent utiliser le format simplifié `qwen extensions install <org>/<repo>`. Ils peuvent éventuellement dépendre d'une référence spécifique (branche/tag/commit) en utilisant l'argument `--ref=<une-réf>`, qui par défaut utilise la branche par défaut.
 
-Chaque fois que des commits sont poussés vers la référence dont dépend un utilisateur, celui-ci sera invité à mettre à jour l'extension. Notez que cela permet également des retours en arrière faciles : le commit `HEAD` est toujours considéré comme la dernière version, indépendamment de la version indiquée dans le fichier `qwen-extension.json`.
+Lorsque des commits sont poussés sur la référence dont dépend un utilisateur, celui-ci sera invité à mettre à jour l'extension. Notez que cela permet également des retours en arrière faciles : le commit HEAD est toujours considéré comme la dernière version, indépendamment de la version réelle dans le fichier `qwen-extension.json`.
 
-### Gestion des canaux de publication via un dépôt Git
+### Gestion des canaux de publication avec un dépôt Git
 
 Les utilisateurs peuvent dépendre de n'importe quelle référence de votre dépôt Git, comme une branche ou un tag, ce qui vous permet de gérer plusieurs canaux de publication.
 
-Par exemple, vous pouvez maintenir une branche `stable`, que les utilisateurs peuvent installer ainsi : `qwen extensions install <your-repo-uri> --ref=stable`. Vous pouvez également en faire le comportement par défaut en considérant votre branche principale comme votre branche de publication stable, et en effectuant le développement dans une autre branche (par exemple `dev`). Vous pouvez maintenir autant de branches ou de tags que vous le souhaitez, offrant ainsi une flexibilité maximale pour vous et vos utilisateurs.
+Par exemple, vous pouvez maintenir une branche `stable`, que les utilisateurs installeront ainsi : `qwen extensions install <votre-uri-du-dépôt> --ref=stable`. Ou vous pouvez en faire la valeur par défaut en traitant votre branche par défaut comme votre branche de publication stable, et effectuer le développement dans une autre branche (par exemple appelée `dev`). Vous pouvez maintenir autant de branches ou de tags que vous le souhaitez, offrant une flexibilité maximale pour vous et vos utilisateurs.
 
-Notez que ces arguments `ref` peuvent être des tags, des branches ou même des commits spécifiques, ce qui permet aux utilisateurs de cibler une version précise de votre extension. La gestion de vos tags et branches vous appartient entièrement.
+Notez que ces arguments `ref` peuvent être des tags, des branches, ou même des commits spécifiques, ce qui permet aux utilisateurs de dépendre d'une version spécifique de votre extension. C'est à vous de décider comment gérer vos tags et branches.
 
 ### Exemple de flux de publication avec un dépôt Git
 
-Bien qu'il existe de nombreuses façons de gérer les publications avec un flux Git, nous recommandons de traiter votre branche principale comme votre branche de publication "stable". Cela signifie que le comportement par défaut de `qwen extensions install <your-repo-uri>` est de pointer vers la branche de publication stable.
+Bien qu'il existe de nombreuses options pour gérer les publications avec un flux Git, nous vous recommandons de traiter votre branche par défaut comme votre branche de publication "stable". Cela signifie que le comportement par défaut de `qwen extensions install <votre-uri-du-dépôt>` est d'être sur la branche de publication stable.
 
-Supposons que vous souhaitiez maintenir trois canaux de publication standards : `stable`, `preview` et `dev`. Vous effectuerez tout votre développement standard dans la branche `dev`. Lorsque vous êtes prêt à publier une version preview, vous fusionnez cette branche dans votre branche `preview`. Lorsque vous êtes prêt à promouvoir votre branche preview en stable, vous fusionnez `preview` dans votre branche stable (qui peut être votre branche principale ou une autre branche).
+Disons que vous souhaitez maintenir trois canaux de publication standard : `stable`, `preview` et `dev`. Vous effectuerez tout votre développement standard dans la branche `dev`. Lorsque vous êtes prêt à faire une publication preview, vous fusionnez cette branche dans votre branche `preview`. Lorsque vous êtes prêt à promouvoir votre branche preview en stable, vous fusionnez `preview` dans votre branche stable (qui peut être votre branche par défaut ou une branche différente).
 
-Vous pouvez également appliquer des modifications d'une branche à une autre à l'aide de `git cherry-pick`, mais notez que cela entraînera une légère divergence dans l'historique de vos branches, à moins que vous ne forciez la poussée (`force push`) des modifications vers vos branches à chaque publication pour réinitialiser l'historique (ce qui peut ne pas être possible pour la branche principale selon les paramètres de votre dépôt). Si vous prévoyez d'utiliser des cherry-picks, il est préférable d'éviter que votre branche principale ne soit la branche stable, afin d'éviter les `force push` sur la branche principale, une pratique généralement déconseillée.
+Vous pouvez également sélectionner des modifications d'une branche à une autre en utilisant `git cherry-pick`, mais notez que cela entraînera un historique légèrement divergent entre vos branches, à moins que vous ne forciez la poussée des modifications sur vos branches à chaque publication pour restaurer un historique vierge (ce qui peut ne pas être possible pour la branche par défaut selon les paramètres de votre dépôt). Si vous prévoyez d'utiliser des cherry-picks, vous voudrez peut-être éviter que votre branche par défaut soit la branche stable afin d'éviter de forcer la poussée vers la branche par défaut, ce qui doit généralement être évité.
 
-## Publication via GitHub Releases
+## Publication avec les GitHub Releases
 
-Les extensions Qwen Code peuvent être distribuées via [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases). Cela offre aux utilisateurs une expérience d'installation initiale plus rapide et plus fiable, car cela évite de devoir cloner le dépôt.
+Les extensions Qwen Code peuvent être distribuées via les [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases). Cela offre une expérience d'installation initiale plus rapide et plus fiable pour les utilisateurs, car cela évite de cloner le dépôt.
 
-Chaque publication inclut au moins un fichier d'archive, qui contient l'intégralité du contenu du dépôt au niveau du tag auquel elle est liée. Les publications peuvent également inclure des [archives précompilées](#custom-pre-built-archives) si votre extension nécessite une étape de build ou si elle contient des binaires spécifiques à une plateforme.
+Chaque publication inclut au moins un fichier d'archive, qui contient l'intégralité du contenu du dépôt au tag auquel elle était liée. Les publications peuvent également inclure des [archives pré-construites personnalisées](#archives-pré-construites-personnalisées) si votre extension nécessite une étape de build ou contient des binaires spécifiques à une plateforme.
 
-Lors de la vérification des mises à jour, Qwen Code recherchera simplement la dernière publication sur GitHub (vous devez la marquer comme telle lors de sa création), sauf si l'utilisateur a installé une publication spécifique en passant `--ref=<some-release-tag>`. Nous ne prenons pas encore en charge l'opt-in pour les versions pre-release ou le semver.
+Lors de la vérification des mises à jour, Qwen Code cherchera simplement la dernière publication sur GitHub (vous devez la marquer comme telle lors de sa création), sauf si l'utilisateur a installé une publication spécifique en passant `--ref=<un-tag-de-publication>`. Nous ne supportons pas pour l'instant l'option d'activation des publications préliminaires ou du semver.
 
-### Archives précompilées personnalisées
+### Archives pré-construites personnalisées
 
-Les archives personnalisées doivent être jointes directement à la publication GitHub en tant qu'assets et doivent être entièrement autonomes. Cela signifie qu'elles doivent inclure l'intégralité de l'extension, voir [structure de l'archive](#archive-structure).
+Les archives personnalisées doivent être attachées directement à la publication GitHub en tant qu'artefacts et doivent être totalement autonomes. Cela signifie qu'elles doivent inclure l'extension entière, voir [structure d'archive](#structure-darchive).
 
-Si votre extension est indépendante de la plateforme, vous pouvez fournir un seul asset générique. Dans ce cas, un seul asset doit être joint à la publication.
+Si votre extension est indépendante de la plateforme, vous pouvez fournir un seul artefact générique. Dans ce cas, un seul artefact doit être attaché à la publication.
 
-Les archives personnalisées peuvent également être utilisées si vous souhaitez développer votre extension au sein d'un dépôt plus vaste. Vous pouvez ainsi générer une archive dont la structure diffère de celle du dépôt (par exemple, une archive ne contenant qu'un sous-répertoire avec l'extension).
+Les archives personnalisées peuvent également être utilisées si vous souhaitez développer votre extension dans un dépôt plus vaste : vous pouvez créer une archive qui a une disposition différente du dépôt lui-même (par exemple, il peut s'agir simplement d'une archive d'un sous-répertoire contenant l'extension).
+#### Archives spécifiques à la plateforme
 
-#### Archives spécifiques à une plateforme
+Pour garantir que Qwen Code puisse trouver automatiquement le bon artefact de publication pour chaque plateforme, vous devez respecter cette convention de nommage. La CLI recherchera les artefacts dans l'ordre suivant :
 
-Pour garantir que Qwen Code puisse trouver automatiquement le bon asset de publication pour chaque plateforme, vous devez respecter cette convention de nommage. La CLI recherchera les assets dans l'ordre suivant :
-
-1.  **Spécifique à la plateforme et à l'architecture :** `{platform}.{arch}.{name}.{extension}`
-2.  **Spécifique à la plateforme :** `{platform}.{name}.{extension}`
-3.  **Générique :** Si un seul asset est fourni, il sera utilisé comme solution de repli générique.
+1.  **Plateforme et architecture spécifiques :** `{platform}.{arch}.{name}.{extension}`
+2.  **Plateforme spécifique :** `{platform}.{name}.{extension}`
+3.  **Générique :** Si un seul artefact est fourni, il sera utilisé comme solution de repli générique.
 
 - `{name}` : Le nom de votre extension.
-- `{platform}` : Le système d'exploitation. Les valeurs prises en charge sont :
+- `{platform}` : Le système d'exploitation. Valeurs prises en charge :
   - `darwin` (macOS)
   - `linux`
   - `win32` (Windows)
-- `{arch}` : L'architecture. Les valeurs prises en charge sont :
+- `{arch}` : L'architecture. Valeurs prises en charge :
   - `x64`
   - `arm64`
-- `{extension}` : L'extension du fichier d'archive (par ex. `.tar.gz` ou `.zip`).
+- `{extension}` : L'extension de fichier de l'archive (par exemple, `.tar.gz` ou `.zip`).
 
 **Exemples :**
 
@@ -73,13 +72,13 @@ Pour garantir que Qwen Code puisse trouver automatiquement le bon asset de publi
 
 #### Structure de l'archive
 
-Les archives doivent contenir l'intégralité de l'extension et respecter toutes les exigences standards : le fichier `qwen-extension.json` doit notamment se trouver à la racine de l'archive.
+Les archives doivent contenir des extensions autonomes et répondre à toutes les exigences standard - en particulier, le fichier `qwen-extension.json` doit se trouver à la racine de l'archive.
 
-Le reste de la structure doit être identique à celui d'une extension classique, voir [extensions.md](extension.md).
+Le reste de la structure doit être exactement identique à celui d'une extension typique, voir [introduction.md](./introduction.md).
 
 #### Exemple de workflow GitHub Actions
 
-Voici un exemple de workflow GitHub Actions qui build et publie une extension Qwen Code pour plusieurs plateformes :
+Voici un exemple de workflow GitHub Actions qui construit et publie une extension Qwen Code pour plusieurs plateformes :
 
 ```yaml
 name: Release Extension
@@ -98,7 +97,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install dependencies
         run: npm ci
@@ -123,82 +122,82 @@ jobs:
 
 ## Publication via le registre npm
 
-Vous pouvez publier des extensions Qwen Code sous forme de paquets npm scopés (par ex. `@your-org/my-extension`). Cette approche est idéale lorsque :
+Vous pouvez publier les extensions Qwen Code sous forme de paquets npm avec scope (par exemple `@your-org/my-extension`). Cela convient bien lorsque :
 
 - Votre équipe utilise déjà npm pour la distribution de paquets
-- Vous avez besoin d'un support pour les registres privés avec votre infrastructure d'authentification existante
-- Vous souhaitez que la résolution des versions et le contrôle d'accès soient gérés par npm
+- Vous avez besoin du support d'un registre privé avec une infrastructure d'authentification existante
+- Vous souhaitez que la résolution de version et le contrôle d'accès soient gérés par npm
 
 ### Prérequis du paquet
 
-Votre paquet npm doit inclure un fichier `qwen-extension.json` à la racine du paquet. Il s'agit du même fichier de configuration utilisé par toutes les extensions Qwen Code : le tarball npm est simplement un autre mécanisme de distribution.
+Votre paquet npm doit inclure un fichier `qwen-extension.json` à la racine du paquet. Il s'agit du même fichier de configuration utilisé par toutes les extensions Qwen Code — le tarball npm n'est qu'un autre mécanisme de distribution.
 
-Une structure de paquet minimale ressemble à ceci :
+Une structure de paquet minimale ressemble à :
 
 ```
 my-extension/
 ├── package.json
 ├── qwen-extension.json
-├── QWEN.md              # optional context file
-├── commands/             # optional custom commands
-├── skills/               # optional custom skills
-└── agents/               # optional custom subagents
+├── QWEN.md              # fichier de contexte optionnel
+├── commands/             # commandes personnalisées optionnelles
+├── skills/               # compétences personnalisées optionnelles
+└── agents/               # sous-agents personnalisés optionnels
 ```
 
-Assurez-vous que `qwen-extension.json` est bien inclus dans votre paquet publié (c'est-à-dire qu'il n'est pas exclu par `.npmignore` ou par le champ `files` de `package.json`).
+Assurez-vous que `qwen-extension.json` est inclus dans votre paquet publié (c'est-à-dire qu'il n'est pas exclu par `.npmignore` ou le champ `files` dans `package.json`).
 
 ### Publication
 
-Utilisez les outils de publication npm standards :
+Utilisez les outils de publication npm standard :
 
 ```bash
-# Publish to the default registry
+# Publier sur le registre par défaut
 npm publish
 
-# Publish to a private/custom registry
+# Publier sur un registre privé/personnalisé
 npm publish --registry https://your-registry.com
 ```
 
 ### Installation
 
-Les utilisateurs installent votre extension en utilisant le nom scopé du paquet :
+Les utilisateurs installent votre extension en utilisant le nom du paquet avec scope :
 
 ```bash
-# Install latest version
+# Installer la dernière version
 qwen extensions install @your-org/my-extension
 
-# Install a specific version
+# Installer une version spécifique
 qwen extensions install @your-org/my-extension@1.2.0
 
-# Install from a custom registry
+# Installer depuis un registre personnalisé
 qwen extensions install @your-org/my-extension --registry https://your-registry.com
 ```
 
-### Comportement des mises à jour
+### Comportement de mise à jour
 
-- Les extensions installées sans version figée (par ex. `@scope/pkg`) suivent le dist-tag `latest`.
-- Les extensions installées avec un dist-tag (par ex. `@scope/pkg@beta`) suivent ce tag spécifique.
-- Les extensions figées sur une version exacte (par ex. `@scope/pkg@1.2.0`) sont toujours considérées comme à jour et ne proposeront pas de mise à jour.
+- Les extensions installées sans version spécifiée (par exemple `@scope/pkg`) suivent le dist-tag `latest`.
+- Les extensions installées avec un dist-tag (par exemple `@scope/pkg@beta`) suivent ce tag spécifique.
+- Les extensions épinglées à une version exacte (par exemple `@scope/pkg@1.2.0`) sont toujours considérées comme à jour et ne proposeront pas de mise à jour.
 
 ### Authentification pour les registres privés
 
-Qwen Code lit automatiquement les identifiants d'authentification npm :
+Qwen Code lit automatiquement les informations d'authentification npm :
 
-1. **Variable d'environnement `NPM_TOKEN`** — priorité la plus élevée
-2. **Fichier `.npmrc`** — prend en charge les entrées `_authToken` au niveau de l'hôte et avec un scope de chemin (par ex. `//your-registry.com/:_authToken=TOKEN` ou `//pkgs.dev.azure.com/org/_packaging/feed/npm/registry/:_authToken=TOKEN`)
+1. **`NPM_TOKEN` variable d'environnement** — priorité la plus élevée
+2. **Fichier `.npmrc`** — prend en charge les entrées `_authToken` au niveau de l'hôte et avec scope de chemin (par exemple `//your-registry.com/:_authToken=TOKEN` ou `//pkgs.dev.azure.com/org/_packaging/feed/npm/registry/:_authToken=TOKEN`)
 
-Les fichiers `.npmrc` sont lus depuis le répertoire courant et le répertoire personnel de l'utilisateur.
+Les fichiers `.npmrc` sont lus à partir du répertoire courant et du répertoire personnel de l'utilisateur.
 
 ### Gestion des canaux de publication
 
 Vous pouvez utiliser les dist-tags npm pour gérer les canaux de publication :
 
 ```bash
-# Publish a beta release
+# Publier une version bêta
 npm publish --tag beta
 
-# Users install beta channel
+# Les utilisateurs installent le canal bêta
 qwen extensions install @your-org/my-extension@beta
 ```
 
-Cela fonctionne de manière similaire aux canaux de publication basés sur des branches Git, mais utilise le mécanisme natif des dist-tags de npm.
+Cela fonctionne de manière similaire aux canaux de publication basés sur des branches git, mais utilise le mécanisme natif des dist-tags de npm.
