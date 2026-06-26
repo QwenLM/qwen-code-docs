@@ -21,7 +21,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 22
           run_install: false
 
       - name: Install dependencies
@@ -32,9 +32,11 @@ jobs:
         run: npm run build
         working-directory: ./website
         env:
-          # Docs set grew large (multi-locale + synced source docs); raise the
-          # V8 heap so `next build` doesn't OOM at the default ~4GB old-space cap.
-          NODE_OPTIONS: --max-old-space-size=8192
+          # Full multi-locale docs set is memory-heavy to statically export.
+          # Node 22 (above) is far more memory-efficient than the previous
+          # Node 18 (local full build peaks ~5.8GB); 12GB heap on the 16GB
+          # runner leaves comfortable headroom for future growth.
+          NODE_OPTIONS: --max-old-space-size=12288
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
