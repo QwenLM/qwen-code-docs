@@ -1,6 +1,6 @@
 # Exemplo de Script de Proxy
 
-A seguir, um exemplo de script de proxy que pode ser usado com a variável de ambiente `QWEN_SANDBOX_PROXY_COMMAND`. Este script permite apenas conexões `HTTPS` para `example.com:443` e rejeita todas as outras requisições.
+A seguir, um exemplo de script de proxy que pode ser usado com a variável de ambiente `QWEN_SANDBOX_PROXY_COMMAND`. Este script permite apenas conexões `HTTPS` para `example.com:443` e recusa todas as outras requisições.
 
 ```javascript
 #!/usr/bin/env node

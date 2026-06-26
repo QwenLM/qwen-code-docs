@@ -1,109 +1,109 @@
-# Guide de l'assistant de clé API personnalisée PRD
+# PRD de l'assistant de configuration de clé API personnalisée
 
 ## Résumé
 
-Améliorer l'expérience `/auth -> Clé API -> Clé API personnalisée` en remplaçant l'écran actuel d'information statique par un assistant de configuration en terminal pour les fournisseurs d'API personnalisés.
+Améliorer l'expérience `/auth -> Clé API -> Clé API personnalisée` en remplaçant l'écran actuel, qui n'affiche que de la documentation, par un assistant de configuration en terminal pour les fournisseurs d'API personnalisés.
 
-Qwen Code prend en charge plusieurs protocoles d'API via les clés `authType` / `modelProviders`, notamment `openai`, `anthropic` et `gemini`. Par conséquent, l'assistant de configuration personnalisée doit d'abord demander aux utilisateurs de sélectionner le protocole, puis collecter les informations de point de terminaison, de clé et de modèle pour ce protocole.
+Qwen Code prend en charge plusieurs protocoles d'API via les clés `authType` / `modelProviders`, notamment `openai`, `anthropic` et `gemini`. Par conséquent, l'assistant de configuration personnalisée doit commencer par demander à l'utilisateur de sélectionner le protocole, puis collecter les informations de point de terminaison, de clé et de modèle pour ce protocole.
 
-L'assistant guide les utilisateurs à travers :
+L'assistant guide l'utilisateur à travers les étapes suivantes :
 
 ```text
-Select Protocol -> Enter Base URL -> Enter API Key -> Enter Model IDs -> Review JSON -> Save + authenticate
+Sélection du protocole -> Saisie de l'URL de base -> Saisie de la clé API -> Saisie des ID de modèle -> Révision du JSON -> Enregistrement + authentification
 ```
 
-Cela maintient la configuration de la clé API personnalisée à l'intérieur de Qwen Code, réduit le besoin de modifier manuellement `settings.json` et rend la configuration finale transparente en affichant le JSON généré avant l'enregistrement.
+Cela permet de garder la configuration de la clé API personnalisée dans Qwen Code, de réduire le besoin de modifier manuellement `settings.json`, et de rendre la configuration finale transparente en affichant le JSON généré avant l'enregistrement.
 
 ## Contexte
 
-Actuellement, sélectionner `Clé API personnalisée` dans `/auth` affiche un écran d'information statique :
+Actuellement, la sélection de `Clé API personnalisée` dans `/auth` affiche un écran d'information statique :
 
 ```text
-Custom Configuration
+Configuration personnalisée
 
-You can configure your API key and models in settings.json
+Vous pouvez configurer votre clé API et vos modèles dans settings.json
 
-Refer to the documentation for setup instructions
-https://qwenlm.github.io/qwen-code-docs/en/users/configuration/model-providers/
+Reportez-vous à la documentation pour les instructions de configuration
+https://qwenlm.github.io/qwen-code-docs/fr/users/configuration/model-providers/
 
-Esc to go back
+Esc pour revenir en arrière
 ```
 
-Cela oblige l'utilisateur à quitter le CLI, à lire de la documentation, à comprendre `settings.json`, à configurer manuellement `modelProviders`, à choisir une `envKey`, à ajouter des clés API, puis à revenir à Qwen Code. Les utilisateurs ont signalé que ce flux est difficile et déconnecté du reste de l'expérience `/auth`.
+Cela oblige les utilisateurs à quitter le CLI, à lire la documentation, à comprendre `settings.json`, à configurer manuellement `modelProviders`, à choisir une `envKey`, à ajouter des clés API, puis à revenir à Qwen Code. Les utilisateurs ont signalé que ce flux est difficile et déconnecté du reste de l'expérience `/auth`.
 
-Le chemin actuel de la clé API standard ModelStudio offre déjà un flux de configuration guidé :
+Le chemin actuel de la clé API standard ModelStudio fournit déjà un flux de configuration guidé :
 
 ```text
-Alibaba Cloud ModelStudio Standard API Key
-└─ Select Region
-   └─ Enter API Key
-      └─ Enter Model IDs
-         └─ Save + authenticate
+Clé API standard Alibaba Cloud ModelStudio
+└─ Sélectionner la région
+   └─ Saisir la clé API
+      └─ Saisir les ID de modèle
+         └─ Enregistrer + authentifier
 ```
 
-La configuration de clé API personnalisée devrait offrir une expérience guidée similaire, tout en respectant le fait que Qwen Code prend en charge plusieurs protocoles de fournisseurs.
+La configuration de la clé API personnalisée devrait offrir une expérience guidée similaire, tout en respectant le fait que Qwen Code prend en charge plusieurs protocoles de fournisseurs.
 
-## Problématique
+## Énoncé du problème
 
-Le chemin de la clé API personnalisée est actuellement une impasse dans `/auth` :
+Le chemin de la clé API personnalisée est actuellement un cul-de-sac dans `/auth` :
 
 ```text
 /auth
-└─ Select Authentication Method
-   ├─ Alibaba Cloud Coding Plan
-   ├─ API Key
-   │  └─ Select API Key Type
-   │     ├─ Alibaba Cloud ModelStudio Standard API Key
-   │     │  ├─ Select Region
-   │     │  ├─ Enter API Key
-   │     │  ├─ Enter Model IDs
-   │     │  └─ Save + authenticate
+└─ Sélectionner la méthode d'authentification
+   ├─ Plan de codage Alibaba Cloud
+   ├─ Clé API
+   │  └─ Sélectionner le type de clé API
+   │     ├─ Clé API standard Alibaba Cloud ModelStudio
+   │     │  ├─ Sélectionner la région
+   │     │  ├─ Saisir la clé API
+   │     │  ├─ Saisir les ID de modèle
+   │     │  └─ Enregistrer + authentifier
    │     │
-   │     └─ Custom API Key
-   │        └─ Documentation-only screen
+   │     └─ Clé API personnalisée
+   │        └─ Écran d'information uniquement
    │
    └─ Qwen OAuth
 ```
 
-Cela entraîne plusieurs problèmes d'utilisabilité :
+Cela entraîne plusieurs problèmes d'utilisabilité :
 
 - Les utilisateurs ne peuvent pas terminer la configuration d'un fournisseur personnalisé depuis `/auth`.
-- Les utilisateurs doivent comprendre des concepts de configuration de bas niveau avant de pouvoir s'authentifier.
-- Les utilisateurs peuvent ne pas savoir quels champs sont obligatoires : `authType`, `baseUrl`, `envKey`, `modelProviders`, `model.name`, et `security.auth.selectedType`.
+- Les utilisateurs doivent comprendre les concepts de configuration de bas niveau avant de pouvoir s'authentifier.
+- Les utilisateurs peuvent ne pas savoir quels champs sont obligatoires : `authType`, `baseUrl`, `envKey`, `modelProviders`, `model.name` et `security.auth.selectedType`.
 - Les utilisateurs peuvent accidentellement entrer en conflit avec des variables d'environnement existantes ou écraser une configuration de fournisseur existante.
-- Les utilisateurs n'obtiennent pas de retour d'authentification immédiat après avoir modifié manuellement les paramètres.
+- Les utilisateurs ne reçoivent pas de retour d'authentification immédiat après avoir modifié manuellement les paramètres.
 
 ## Objectifs
 
-1. Permettre aux utilisateurs de configurer un fournisseur d'API personnalisé entièrement dans `/auth`.
-2. Prendre en charge les principaux protocoles que Qwen Code supporte dans `modelProviders` : `openai`, `anthropic` et `gemini`.
+1. Permettre aux utilisateurs de configurer un fournisseur d'API personnalisé entièrement depuis `/auth`.
+2. Prendre en charge les principaux protocoles que Qwen Code supporte dans `modelProviders` : `openai`, `anthropic` et `gemini`.
 3. Garder le flux proche du flux standard ModelStudio existant.
-4. Traiter `baseUrl` comme l'équivalent de `region` pour les fournisseurs personnalisés.
-5. Générer automatiquement une `envKey` privée gérée par Qwen à partir du protocole sélectionné et du `baseUrl` saisi.
-6. Stocker la clé API dans `settings.json.env`, conformément au modèle actuel des identifiants gérés par Qwen.
+4. Traiter `baseUrl` comme l'équivalent de `region` pour un fournisseur personnalisé.
+5. Générer automatiquement une `envKey` privée gérée par Qwen à partir du protocole sélectionné et de la `baseUrl` saisie.
+6. Stocker la clé API dans `settings.json.env`, conformément au modèle actuel des informations d'identification gérées par Qwen.
 7. Éviter les conflits avec les variables d'environnement shell de l'utilisateur en utilisant un nom de clé généré spécifique à Qwen.
 8. Afficher le JSON généré avant l'enregistrement afin que les utilisateurs puissent examiner les modifications exactes des paramètres.
 9. Préserver les entrées `modelProviders` existantes non liées.
-10. Authentifier immédiatement après l'enregistrement et afficher un retour de succès ou d'échec.
+10. Authentifier immédiatement après l'enregistrement et afficher un retour de réussite ou d'échec.
 
-## Objectifs exclus
+## Non-objectifs
 
 1. Ne pas obliger les utilisateurs à saisir manuellement `envKey`.
 2. Ne pas introduire le nom du fournisseur en tant que concept distinct.
-3. Ne pas ajouter de paramètres avancés (`generationConfig`, `capabilities` ou surcharges par modèle) à l'assistant.
-4. Ne pas supprimer complètement le lien vers la documentation ; il doit rester disponible pour une configuration avancée.
-5. Ne pas modifier les flux existants de Coding Plan ou de clé API standard ModelStudio.
-6. Ne pas tenter de détecter automatiquement le protocole à partir de `baseUrl` dans la première version ; les utilisateurs sélectionnent explicitement le protocole.
+3. Ne pas ajouter de `generationConfig`, `capabilities` ou de surcharges par modèle avancés à l'assistant.
+4. Ne pas supprimer complètement le lien vers la documentation ; il doit rester disponible pour une configuration avancée.
+5. Ne pas modifier les flux existants du Plan de codage ou de la clé API standard ModelStudio.
+6. Ne pas tenter de détecter automatiquement le protocole à partir de `baseUrl` dans la première version ; les utilisateurs sélectionnent explicitement le protocole.
 
-## Utilisateurs ciblés
+## Utilisateurs cibles
 
-- Les utilisateurs qui apportent leur propre point de terminaison d'API personnalisé.
-- Les utilisateurs configurant des fournisseurs tels que des API compatibles OpenAI, compatibles Anthropic, compatibles Gemini, vLLM, Ollama, LM Studio ou des passerelles internes.
-- Les utilisateurs qui préfèrent configurer l'authentification depuis le CLI plutôt que de modifier manuellement `settings.json`.
+- Utilisateurs qui apportent leur propre point de terminaison d'API personnalisé.
+- Utilisateurs configurant des fournisseurs tels que des API compatibles OpenAI, des API compatibles Anthropic, des API compatibles Gemini, vLLM, Ollama, LM Studio ou des passerelles internes.
+- Utilisateurs qui préfèrent configurer l'authentification depuis le CLI plutôt que de modifier manuellement `settings.json`.
 
 ## Protocoles pris en charge
 
-L'assistant doit initialement exposer ces options de protocole :
+L'assistant doit initialement exposer ces options de protocole :
 
 ```text
 openai
@@ -111,21 +111,22 @@ anthropic
 gemini
 ```
 
-Chaque protocole correspond directement à une clé `modelProviders` et une valeur `security.auth.selectedType`.
+Chaque protocole correspond directement à une clé `modelProviders` et à une valeur `security.auth.selectedType`.
 
-| Option de protocole          | Type d'authentification / clé modelProviders | Notes                                                                                         |
-| ---------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Compatible OpenAI            | `openai`                                     | OpenAI, OpenRouter, Fireworks, serveurs locaux compatibles OpenAI, passerelles internes        |
-| Compatible Anthropic         | `anthropic`                                  | Points de terminaison compatibles Anthropic                                                     |
-| Compatible Gemini            | `gemini`                                     | Points de terminaison compatibles Gemini                                                       |
-## Présentation de l'expérience utilisateur
+| Option de protocole        | Clé authType / modelProviders | Remarques                                                                     |
+| -------------------------- | ----------------------------- | ----------------------------------------------------------------------------- |
+| Compatible OpenAI          | `openai`                      | OpenAI, OpenRouter, Fireworks, serveurs locaux compatibles OpenAI, passerelles internes |
+| Compatible Anthropic       | `anthropic`                   | Points de terminaison compatibles Anthropic                                   |
+| Compatible Gemini          | `gemini`                      | Points de terminaison compatibles Gemini                                      |
+
+## Aperçu de l'expérience utilisateur
 
 ### Arborescence `/auth` mise à jour
 
 ```text
 /auth
 └─ Sélectionner la méthode d'authentification
-   ├─ Alibaba Cloud Coding Plan
+   ├─ Plan de codage Alibaba Cloud
    │  └─ Sélectionner la région
    │     └─ Saisir la clé API
    │        └─ Enregistrer + authentifier
@@ -143,56 +144,56 @@ Chaque protocole correspond directement à une clé `modelProviders` et une vale
    │        ├─ Saisir l'URL de base
    │        ├─ Saisir la clé API
    │        ├─ Saisir les ID de modèle
-   │        ├─ Vérifier le JSON généré
+   │        ├─ Réviser le JSON généré
    │        └─ Enregistrer + authentifier
    │
    └─ Qwen OAuth
 ```
 
-### Machine d'état de la clé API personnalisée
+### Machine à états de la clé API personnalisée
 
 ```text
-api-key-type-select
+sélection-type-clé-api
   │
-  └─ CUSTOM_API_KEY
+  └─ CLÉ_API_PERSONNALISÉE
       │
       ▼
-custom-protocol-select
-      │ Saisir
+sélection-protocole-personnalisé
+      │ Saisie
       ▼
-custom-base-url-input
-      │ Saisir
-      │ générer envKey à partir de protocol + baseUrl
+saisie-url-base-personnalisée
+      │ Saisie
+      │ générer envKey à partir du protocole + baseUrl
       ▼
-custom-api-key-input
-      │ Saisir
+saisie-clé-api-personnalisée
+      │ Saisie
       ▼
-custom-model-id-input
-      │ Saisir
+saisie-id-modèle-personnalisé
+      │ Saisie
       ▼
-custom-review-json
-      │ Saisir
+révision-json-personnalisée
+      │ Saisie
       ▼
-enregistrer les paramètres + refreshAuth(selectedProtocol)
+enregistrer paramètres + refreshAuth(protocoleSélectionné)
 ```
 
-### Comportement de la touche Échap
+### Comportement avec la touche Échap
 
 ```text
-custom-review-json
-  Échap -> custom-model-id-input
+révision-json-personnalisée
+  Esc -> saisie-id-modèle-personnalisé
 
-custom-model-id-input
-  Échap -> custom-api-key-input
+saisie-id-modèle-personnalisé
+  Esc -> saisie-clé-api-personnalisée
 
-custom-api-key-input
-  Échap -> custom-base-url-input
+saisie-clé-api-personnalisée
+  Esc -> saisie-url-base-personnalisée
 
-custom-base-url-input
-  Échap -> custom-protocol-select
+saisie-url-base-personnalisée
+  Esc -> sélection-protocole-personnalisé
 
-custom-protocol-select
-  Échap -> api-key-type-select
+sélection-protocole-personnalisé
+  Esc -> sélection-type-clé-api
 ```
 
 ## Conception détaillée des interactions
@@ -207,16 +208,16 @@ custom-protocol-select
 │    OpenAI, OpenRouter, Fireworks, vLLM, Ollama, LM Studio    │
 │                                                              │
 │  ○ Compatible Anthropic                                      │
-│    Points de terminaison compatibles Anthropic                │
+│    Points de terminaison compatibles Anthropic               │
 │                                                              │
 │  ○ Compatible Gemini                                         │
 │    Points de terminaison compatibles Gemini                  │
 │                                                              │
-│ Entrée pour sélectionner, ↑↓ pour naviguer, Échap pour revenir │
+│ Entrée pour sélectionner, ↑↓ pour naviguer, Esc pour revenir │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Le protocole sélectionné détermine :
+Le protocole sélectionné détermine :
 
 - La clé `modelProviders` à mettre à jour.
 - La valeur `security.auth.selectedType` à conserver.
@@ -225,9 +226,9 @@ Le protocole sélectionné détermine :
 
 ### Étape 2 : Saisir l'URL de base
 
-`baseUrl` est l'équivalent de la sélection de région pour un fournisseur personnalisé. Elle doit être saisie avant la clé API car elle détermine le point de terminaison auquel appartient la clé.
+`baseUrl` est l'équivalent de la sélection de région pour un fournisseur personnalisé. Elle doit venir avant la saisie de la clé API car elle détermine le point de terminaison auquel la clé API appartient.
 
-Pour compatible OpenAI :
+Pour un protocole compatible OpenAI :
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
@@ -235,22 +236,22 @@ Pour compatible OpenAI :
 │                                                              │
 │ Protocole : Compatible OpenAI                                │
 │                                                              │
-│ Saisissez le point de terminaison API compatible OpenAI.     │
+│ Saisissez le point de terminaison d'API compatible OpenAI.    │
 │                                                              │
 │ URL de base : https://openrouter.ai/api/v1_                  │
 │                                                              │
-│ Exemples :                                                   │
-│   OpenAI :      https://api.openai.com/v1                    │
+│ Exemples :                                                    │
+│   OpenAI :     https://api.openai.com/v1                     │
 │   OpenRouter : https://openrouter.ai/api/v1                  │
-│   Fireworks :  https://api.fireworks.ai/inference/v1         │
-│   Ollama :     http://localhost:11434/v1                     │
-│   LM Studio :  http://localhost:1234/v1                      │
+│   Fireworks : https://api.fireworks.ai/inference/v1          │
+│   Ollama :    http://localhost:11434/v1                      │
+│   LM Studio : http://localhost:1234/v1                       │
 │                                                              │
-│ Entrée pour continuer, Échap pour revenir                    │
+│ Entrée pour continuer, Esc pour revenir                      │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Pour compatible Anthropic :
+Pour un protocole compatible Anthropic :
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
@@ -258,15 +259,15 @@ Pour compatible Anthropic :
 │                                                              │
 │ Protocole : Compatible Anthropic                             │
 │                                                              │
-│ Saisissez le point de terminaison API compatible Anthropic.  │
+│ Saisissez le point de terminaison d'API compatible Anthropic.│
 │                                                              │
 │ URL de base : https://api.anthropic.com/v1_                  │
 │                                                              │
-│ Entrée pour continuer, Échap pour revenir                    │
+│ Entrée pour continuer, Esc pour revenir                      │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Pour compatible Gemini :
+Pour un protocole compatible Gemini :
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
@@ -274,21 +275,22 @@ Pour compatible Gemini :
 │                                                              │
 │ Protocole : Compatible Gemini                                │
 │                                                              │
-│ Saisissez le point de terminaison API compatible Gemini.     │
+│ Saisissez le point de terminaison d'API compatible Gemini.   │
 │                                                              │
 │ URL de base : https://generativelanguage.googleapis.com_     │
 │                                                              │
-│ Entrée pour continuer, Échap pour revenir                    │
+│ Entrée pour continuer, Esc pour revenir                      │
 └──────────────────────────────────────────────────────────────┘
 ```
-Validation :
 
-- Requis.
+Validation :
+
+- Obligatoire.
 - Doit commencer par `http://` ou `https://`.
-- Supprimer les espaces de début et de fin.
-- Conserver la chaîne normalisée telle que saisie, à l’exception de la suppression des espaces.
+- Supprimer les espaces blancs de début et de fin.
+- Conserver la chaîne normalisée telle que saisie, à l'exception de la suppression des espaces.
 
-En cas de soumission valide :
+Lors de la soumission valide :
 
 - Générer la `envKey` gérée par Qwen à partir du protocole sélectionné et de `baseUrl`.
 - Passer à la saisie de la clé API.
@@ -300,57 +302,57 @@ En cas de soumission valide :
 │ Clé API personnalisée · Clé API                              │
 │                                                              │
 │ Protocole : Compatible OpenAI                                │
-│ Point d’accès : https://openrouter.ai/api/v1                │
+│ Point de terminaison : https://openrouter.ai/api/v1          │
 │                                                              │
-│ Saisissez la clé API pour ce point d’accès.                 │
+│ Saisissez la clé API pour ce point de terminaison.           │
 │                                                              │
-│ Clé API : sk-or-v1-••••••••••••••••_                         │
+│ Clé API : sk-or-v1-••••••••••••••••_                        │
 │                                                              │
-│ Entrée pour continuer, Échap pour revenir en arrière         │
+│ Entrée pour continuer, Esc pour revenir                      │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Validation :
+Validation :
 
-- Requis.
-- Supprimer les espaces de début et de fin.
+- Obligatoire.
+- Supprimer les espaces blancs de début et de fin.
 
-Remarques :
+Remarques :
 
-- La saisie peut initialement utiliser le comportement de champ de texte existant pour rester cohérente avec les flux voisins.
-- L’écran de révision doit masquer la clé API.
+- La saisie peut initialement utiliser le comportement de saisie de texte existant pour rester cohérente avec les flux voisins.
+- L'écran de révision doit masquer la clé API.
 
-### Étape 4 : Saisir les identifiants de modèles
+### Étape 4 : Saisir les ID de modèle
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Clé API personnalisée · Identifiants de modèles             │
+│ Clé API personnalisée · ID de modèle                         │
 │                                                              │
 │ Protocole : Compatible OpenAI                                │
-│ Point d’accès : https://openrouter.ai/api/v1                │
+│ Point de terminaison : https://openrouter.ai/api/v1          │
 │                                                              │
-│ Saisissez un ou plusieurs identifiants de modèles,          │
-│ séparés par des virgules.                                    │
+│ Saisissez un ou plusieurs ID de modèle, séparés par des      │
+│ virgules.                                                     │
 │                                                              │
-│ Identifiants : qwen/qwen3-coder,openai/gpt-4.1_              │
+│ ID de modèle : qwen/qwen3-coder,openai/gpt-4.1_             │
 │                                                              │
-│ Entrée pour continuer, Échap pour revenir en arrière         │
+│ Entrée pour continuer, Esc pour revenir                      │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Validation :
+Validation :
 
-- Requis.
-- Séparer par des virgules.
-- Supprimer les espaces de début et de fin de chaque identifiant.
+- Obligatoire.
+- Diviser par virgule.
+- Supprimer les espaces blancs de chaque ID de modèle.
 - Supprimer les entrées vides.
-- Dédupliquer les entrées tout en conservant l’ordre.
-- Au moins un identifiant de modèle doit subsister.
+- Dédupliquer les entrées tout en préservant l'ordre.
+- Au moins un ID de modèle doit rester.
 
-Nommage des modèles :
+Nommage des modèles :
 
 - `id` et `name` doivent être identiques.
-- Aucun nom de fournisseur distinct n’est demandé à l’utilisateur.
+- Aucun nom de fournisseur distinct n'est demandé à l'utilisateur.
 
 Exemple :
 
@@ -362,11 +364,11 @@ Normalisé :
 qwen/qwen3-coder, openai/gpt-4.1
 ```
 
-### Étape 5 : Révision du JSON
+### Étape 5 : Réviser le JSON
 
-Avant de sauvegarder, afficher l’extrait JSON généré qui sera écrit ou fusionné dans `settings.json`.
+Avant d'enregistrer, afficher l'extrait JSON généré qui sera écrit ou fusionné dans `settings.json`.
 
-Exemple compatible OpenAI :
+Exemple pour un protocole compatible OpenAI :
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
@@ -399,11 +401,11 @@ Exemple compatible OpenAI :
 │   }                                                          │
 │ }                                                            │
 │                                                              │
-│ Entrée pour sauvegarder, Échap pour revenir en arrière       │
+│ Entrée pour enregistrer, Esc pour revenir                    │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Exemple compatible Anthropic :
+Exemple pour un protocole compatible Anthropic :
 
 ```json
 {
@@ -430,28 +432,29 @@ Exemple compatible Anthropic :
   }
 }
 ```
-Le JSON affiché doit :
+
+Le JSON affiché doit :
 
 - Utiliser le protocole sélectionné comme clé `modelProviders`.
 - Utiliser le protocole sélectionné comme `security.auth.selectedType`.
 - Utiliser la `envKey` réellement générée.
 - Masquer la clé API.
-- Utiliser l'`baseUrl` saisie par l'utilisateur.
+- Utiliser la `baseUrl` saisie par l'utilisateur.
 - Utiliser `id === name` pour chaque modèle.
 - Afficher `model.name` défini sur le premier ID de modèle normalisé.
 
-Si le JSON est trop large pour le terminal actuel, l'habillage est acceptable. L'objectif est la transparence, pas un formatage parfait pour le copier-coller.
+Si le JSON est trop large pour le terminal actuel, un retour à la ligne est acceptable. L'objectif est la transparence, pas un formatage parfaitement copiable.
 
 ### Étape 6 : Enregistrer et authentifier
 
-Sur la touche Entrée depuis l'écran de révision :
+Lors de la pression sur Entrée depuis l'écran de révision :
 
 ```text
-save:
+enregistrer :
   env[generatedEnvKey] = apiKey
   modelProviders[selectedProtocol] = [
-    ...new custom configs using generatedEnvKey,
-    ...existing configs whose envKey !== generatedEnvKey
+    ...nouvelles configs personnalisées utilisant generatedEnvKey,
+    ...configs existantes dont envKey !== generatedEnvKey
   ]
   security.auth.selectedType = selectedProtocol
   model.name = firstModelId
@@ -459,99 +462,98 @@ save:
   refreshAuth(selectedProtocol)
 ```
 
-Message de succès :
+Message de succès :
 
 ```text
-Custom API Key authenticated successfully. Settings updated with generated env key and model provider config.
-Tip: Use /model to switch between configured models.
+Clé API personnalisée authentifiée avec succès. Paramètres mis à jour avec la clé d'environnement générée et la configuration du fournisseur de modèles.
+Astuce : Utilisez /model pour basculer entre les modèles configurés.
 ```
 
-Le message d'échec doit conserver le modèle existant de message d'échec d'authentification, avec des indications supplémentaires pour l'utilisateur si possible :
+Le message d'échec doit conserver le modèle d'échec d'authentification existant, avec des astuces supplémentaires destinées à l'utilisateur si possible :
 
 ```text
-Failed to authenticate. Message: <error>
+Échec de l'authentification. Message : <error>
 
-Please check:
-- Base URL is compatible with the selected protocol
-- API key is valid for this endpoint
-- Model ID exists for this provider
+Veuillez vérifier :
+- L'URL de base est compatible avec le protocole sélectionné
+- La clé API est valide pour ce point de terminaison
+- L'ID de modèle existe pour ce fournisseur
 ```
 
 ## Génération de la clé d'environnement
 
 L'assistant ne doit pas demander aux utilisateurs de saisir une `envKey`.
 
-Les clés API gérées par Qwen sont stockées dans `settings.json.env`, donc la clé d'environnement doit être générée automatiquement dans un espace de noms spécifique à Qwen. Cela évite les collisions avec les variables d'environnement shell gérées par l'utilisateur et empêche plusieurs points de terminaison personnalisés de se chevaucher.
+Les clés API gérées par Qwen sont stockées dans `settings.json.env`, donc la clé d'environnement doit être générée automatiquement sous un espace de noms spécifique à Qwen. Cela évite les collisions avec les variables d'environnement shell gérées par l'utilisateur et empêche plusieurs points de terminaison personnalisés de s'écraser mutuellement.
 
 ### Format
 
 ```text
-QWEN_CUSTOM_API_KEY_${PROTOCOL}_${NORMALIZED_BASE_URL}
+QWEN_CUSTOM_API_KEY_${PROTOCOLE}_${URL_BASE_NORMALISÉE}
 ```
 
-Inclure le protocole évite les collisions lorsque le même point de terminaison est utilisé sous différents adaptateurs de protocole.
+Inclure le protocole évite les collisions lorsque le même point de terminaison est utilisé avec différents adaptateurs de protocole.
 
 ### Exemples
 
 ```text
-Protocol: openai
-Base URL: https://api.openai.com/v1
+Protocole : openai
+URL de base : https://api.openai.com/v1
 -> QWEN_CUSTOM_API_KEY_OPENAI_HTTPS_API_OPENAI_COM_V1
 
-Protocol: openai
-Base URL: https://openrouter.ai/api/v1
+Protocole : openai
+URL de base : https://openrouter.ai/api/v1
 -> QWEN_CUSTOM_API_KEY_OPENAI_HTTPS_OPENROUTER_AI_API_V1
 
-Protocol: anthropic
-Base URL: https://api.anthropic.com/v1
+Protocole : anthropic
+URL de base : https://api.anthropic.com/v1
 -> QWEN_CUSTOM_API_KEY_ANTHROPIC_HTTPS_API_ANTHROPIC_COM_V1
 
-Protocol: gemini
-Base URL: https://generativelanguage.googleapis.com
+Protocole : gemini
+URL de base : https://generativelanguage.googleapis.com
 -> QWEN_CUSTOM_API_KEY_GEMINI_HTTPS_GENERATIVELANGUAGE_GOOGLEAPIS_COM
 
-Protocol: openai
-Base URL: http://localhost:11434/v1
+Protocole : openai
+URL de base : http://localhost:11434/v1
 -> QWEN_CUSTOM_API_KEY_OPENAI_HTTP_LOCALHOST_11434_V1
 ```
 
 ### Règle de normalisation
 
 ```text
-protocol
-  -> trim
-  -> uppercase
-  -> replace every non A-Z / 0-9 character with _
+protocole
+  -> supprimer les espaces
+  -> mettre en majuscules
+  -> remplacer tout caractère non A-Z / 0-9 par _
 
-baseUrl
-  -> trim
-  -> uppercase
-  -> replace every non A-Z / 0-9 character with _
-  -> collapse consecutive _ characters
-  -> remove leading/trailing _
+urlBase
+  -> supprimer les espaces
+  -> mettre en majuscules
+  -> remplacer tout caractère non A-Z / 0-9 par _
+  -> réduire les caractères _ consécutifs
+  -> supprimer les _ de début et de fin
 
-return QWEN_CUSTOM_API_KEY_${NORMALIZED_PROTOCOL}_${NORMALIZED_BASE_URL}
+retourner QWEN_CUSTOM_API_KEY_${PROTOCOLE_NORMALISÉ}_${URL_BASE_NORMALISÉE}
 ```
 
 Pseudo-code :
 
 ```ts
-function generateCustomApiKeyEnvKey(protocol: string, baseUrl: string): string {
-  const normalize = (value: string) =>
-    value
+function generateCustomApiKeyEnvKey(protocole: string, urlBase: string): string {
+  const normaliser = (valeur: string) =>
+    valeur
       .trim()
       .toUpperCase()
       .replace(/[^A-Z0-9]+/g, '_')
       .replace(/_+/g, '_')
       .replace(/^_+|_+$/g, '');
 
-  return `QWEN_CUSTOM_API_KEY_${normalize(protocol)}_${normalize(baseUrl)}`;
+  return `QWEN_CUSTOM_API_KEY_${normaliser(protocole)}_${normaliser(urlBase)}`;
 }
 ```
-
 ## Conception de l'écriture des paramètres
 
-Étant donné les entrées utilisateur :
+Étant donné une entrée utilisateur :
 
 ```text
 Protocol: openai
@@ -610,29 +612,30 @@ security.auth.selectedType = gemini
 refreshAuth(gemini)
 ```
 
-### Portée de la persistance
+### Portée de persistance
 
-Utilisez la même stratégie de portée de persistance que la sélection de modèle et les flux de clés API existants :
+Utiliser la même stratégie de portée de persistance que la sélection de modèle et les flux existants de clés API :
 
 ```text
 getPersistScopeForModelSelection(settings)
 ```
 
-Cela maintient la cohérence avec les règles de propriété `modelProviders` existantes.
+Cela maintient la cohérence avec les règles de propriété existantes de `modelProviders`.
 
 ### Sauvegarde
 
-Avant d'écrire, sauvegardez le fichier de paramètres cible, comme dans les flux existants Coding Plan et ModelStudio Standard.
+Avant d'écrire, sauvegarder le fichier de paramètres cible, conformément aux flux existants du Plan de codage et du Standard ModelStudio.
 
-### Synchronisation process.env
+### Synchronisation des variables d'environnement de processus
 
-Après avoir écrit `settings.json.env[generatedEnvKey]`, synchronisez immédiatement :
+Après avoir écrit `settings.json.env[generatedEnvKey]`, synchroniser immédiatement :
 
 ```text
 process.env[generatedEnvKey] = apiKey
 ```
 
 Cela garantit que `refreshAuth(selectedProtocol)` peut utiliser la clé nouvellement saisie dans la même session.
+
 ### Règle de fusion des fournisseurs de modèles
 
 Pour la clé d'environnement générée :
@@ -641,7 +644,7 @@ Pour la clé d'environnement générée :
 generatedEnvKey = QWEN_CUSTOM_API_KEY_${PROTOCOL}_${NORMALIZED_BASE_URL}
 ```
 
-Mettez à jour `modelProviders[selectedProtocol]` comme suit :
+Mettre à jour `modelProviders[selectedProtocol]` comme suit :
 
 ```text
 newConfigs = normalizedModelIds.map(modelId => ({
@@ -666,8 +669,8 @@ updatedConfigs = [
 Justification :
 
 - Reconfigurer le même protocole + `baseUrl` remplace les anciens modèles pour ce point de terminaison.
-- Configurer un protocole ou une `baseUrl` différent utilise une clé d'environnement différente et n'écrase pas les points de terminaison personnalisés précédents.
-- Le plan de codage, ModelStudio Standard et les autres configurations utilisateur sont conservés sauf s'ils utilisent la même clé d'environnement générée sous le même protocole.
+- Configurer un protocole ou une `baseUrl` différente utilise une clé d'environnement différente et n'écrase pas les points de terminaison personnalisés précédents.
+- Le Plan de codage, le Standard ModelStudio et les autres configurations utilisateur sont conservés, sauf s'ils utilisent la même clé d'environnement générée sous le même protocole.
 - Les nouvelles configurations sont placées en premier afin que les modèles nouvellement configurés soient immédiatement visibles et sélectionnés par défaut.
 
 ## Gestion des erreurs
@@ -698,15 +701,15 @@ L'URL de base doit commencer par http:// ou https://.
 La clé API ne peut pas être vide.
 ```
 
-### Erreur de validation des IDs de modèles
+### Erreur de validation des ID de modèle
 
 ```text
-Les IDs de modèles ne peuvent pas être vides.
+Les ID de modèle ne peuvent pas être vides.
 ```
 
 ### Échec d'authentification
 
-Utilisez le mécanisme d'échec existant lorsque cela est possible, mais le message destiné à l'utilisateur doit l'aider à se rétablir :
+Utiliser le mécanisme d'échec existant lorsque c'est possible, mais le message destiné à l'utilisateur doit l'aider à se rétablir :
 
 ```text
 Échec de l'authentification. Message : <message>
@@ -723,19 +726,19 @@ L'assistant doit toujours exposer la documentation existante des fournisseurs de
 
 Emplacement recommandé :
 
-- Sur le pied de page de l'écran de révision, ou
+- Dans le pied de page de l'écran de révision, ou
 - Sous forme de texte secondaire sur l'écran de l'URL de base.
 
 Texte suggéré :
 
 ```text
-Besoin de configuration avancée ou de capacités avancées ? Voir :
+Besoin de paramètres avancés generationConfig ou de capacités ? Voir :
 https://qwenlm.github.io/qwen-code-docs/en/users/configuration/model-providers/
 ```
 
 ## Notes d'implémentation
 
-Niveaux de vue attendus pour `AuthDialog` :
+Niveaux de vue attendus dans `AuthDialog` :
 
 ```ts
 type ViewLevel =
@@ -808,15 +811,15 @@ maskApiKey(apiKey: string): string
 - La première étape de l'assistant personnalisé demande le protocole.
 - La deuxième étape demande l'URL de base et affiche le protocole sélectionné.
 - La troisième étape demande la clé API et affiche le protocole et le point de terminaison sélectionnés.
-- La quatrième étape demande les IDs de modèles et affiche le protocole et le point de terminaison sélectionnés.
+- La quatrième étape demande les ID de modèle et affiche le protocole et le point de terminaison sélectionnés.
 - L'étape de révision affiche le JSON généré, y compris la clé API masquée, le protocole sélectionné et la clé d'environnement générée.
-- Appuyer sur Entrée à l'étape de révision enregistre les paramètres et tente une authentification.
+- Appuyer sur Entrée à l'étape de révision enregistre les paramètres et tente l'authentification.
 - Appuyer sur Échap permet de revenir en arrière d'une étape à la fois.
 
 ### Paramètres
 
 - La clé API est écrite dans `settings.json.env[generatedEnvKey]`.
-- `generatedEnvKey` est dérivé du protocole sélectionné et de `baseUrl` en utilisant l'espace de noms privé de Qwen.
+- `generatedEnvKey` est dérivé du protocole sélectionné et de `baseUrl` en utilisant l'espace de noms privé Qwen.
 - `modelProviders[selectedProtocol]` reçoit une entrée par ID de modèle normalisé.
 - Chaque entrée de modèle personnalisé utilise `id === name`.
 - `security.auth.selectedType` est défini sur le protocole sélectionné.
@@ -824,37 +827,38 @@ maskApiKey(apiKey: string): string
 - Les entrées existantes sous `modelProviders[selectedProtocol]` avec une `envKey` différente sont conservées.
 - Les entrées existantes sous `modelProviders[selectedProtocol]` avec la même `generatedEnvKey` sont remplacées.
 - Les entrées sous d'autres clés de protocole `modelProviders` sont conservées.
+
 ### Authentification
 
-- La clé d’environnement générée est synchronisée avec `process.env` avant l’actualisation de l’authentification.
-- L’application recharge la configuration du fournisseur de modèle avant `refreshAuth(selectedProtocol)`.
-- Une authentification réussie ferme la boîte de dialogue d’authentification et affiche un message de succès.
-- Une authentification échouée maintient l’utilisateur dans le flux d’authentification et affiche une erreur exploitable.
+- La clé d'environnement générée est synchronisée avec `process.env` avant le rafraîchissement de l'authentification.
+- L'application recharge la configuration du fournisseur de modèle avant `refreshAuth(selectedProtocol)`.
+- Une authentification réussie ferme la boîte de dialogue d'authentification et affiche un message de succès.
+- Une authentification échouée maintient l'utilisateur dans le flux d'authentification et affiche une erreur exploitable.
 
 ### Tests
 
-- Ajoutez ou mettez à jour les tests d’`AuthDialog` pour couvrir le chemin personnalisé de l’assistant.
-- Ajoutez des tests pour la sélection du protocole.
-- Ajoutez des tests pour la génération de la clé d’environnement à partir du protocole et de l’URL de base.
-- Ajoutez des tests pour la normalisation et la déduplication des ID de modèle.
-- Ajoutez des tests pour le comportement de fusion des paramètres :
-  - la même clé d’environnement générée remplace les anciennes entrées personnalisées sous le même protocole ;
-  - les différentes clés d’environnement sont conservées ;
-  - les clés d’autres protocoles sont conservées ;
-  - les entrées Coding Plan et ModelStudio Standard sont conservées.
-- Ajoutez des tests pour l’aperçu JSON généré lorsque cela est pertinent.
+- Ajouter ou mettre à jour les tests `AuthDialog` pour couvrir le chemin de l'assistant personnalisé.
+- Ajouter des tests pour la sélection du protocole.
+- Ajouter des tests pour la génération de la clé d'environnement à partir du protocole et de l'URL de base.
+- Ajouter des tests pour la normalisation et la déduplication des ID de modèle.
+- Ajouter des tests pour le comportement de fusion des paramètres :
+  - la même clé d'environnement générée remplace les anciennes entrées personnalisées sous le même protocole ;
+  - les clés d'environnement différentes sont conservées ;
+  - les autres clés de protocole sont conservées ;
+  - les entrées du Plan de codage et du Standard ModelStudio sont conservées.
+- Ajouter des tests pour le contenu de l'aperçu JSON généré lorsque c'est pratique.
 
 ## Questions ouvertes
 
-1. La saisie de la clé API doit-elle être masquée pendant la frappe, ou seulement sur l’écran de révision ?
-2. Les points d’accès locaux comme `http://localhost:11434/v1` doivent-ils autoriser des clés API vides ou fictives pour les serveurs qui n’exigent pas d’authentification ?
-3. L’aperçu JSON généré doit-il montrer uniquement le correctif appliqué, ou la totalité de la sous-arborescence des paramètres pertinents après fusion ?
-4. Vertex AI doit-il être inclus dans cet assistant de clé API personnalisé, ou rester en dehors car sa configuration d’authentification diffère des fournisseurs simples par clé API ?
+1. La clé API doit-elle être masquée pendant la saisie, ou uniquement sur l'écran de révision ?
+2. Les points de terminaison locaux tels que `http://localhost:11434/v1` doivent-ils autoriser une clé API vide ou un espace réservé pour les serveurs qui ne nécessitent pas d'authentification ?
+3. L'aperçu JSON généré doit-il montrer uniquement le patch appliqué, ou la totalité de la sous-arborescence des paramètres pertinents après fusion ?
+4. Vertex AI doit-il être inclus dans cet assistant de clé API personnalisée, ou rester en dehors car sa configuration d'authentification diffère des fournisseurs simples avec clé API ?
 
-Pour la première version, les valeurs par défaut recommandées sont les suivantes :
+Pour la première version, les valeurs par défaut recommandées sont :
 
 - Prendre en charge `openai`, `anthropic` et `gemini`.
 - Utiliser le comportement de saisie existant pendant la frappe.
-- Exiger une clé API non vide pour rester cohérent avec les flux d’authentification par clé API.
-- Afficher le JSON de type correctif qui sera sauvegardé ou mis à jour.
-- Laisser Vertex AI en dehors de l’assistant de clé API personnalisé jusqu’à une décision produit distincte.
+- Exiger une clé API non vide pour la cohérence avec les flux d'authentification par clé API.
+- Afficher le JSON de type patch qui sera sauvegardé ou mis à jour.
+- Laisser Vertex AI en dehors de l'assistant de clé API personnalisée jusqu'à une décision produit distincte.

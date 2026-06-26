@@ -1,76 +1,69 @@
-# Fehlerbehebung für Bildentfernung bei Komprimierung und Token-Schätzung
+# Problemstellung
 
-## Problemstellung
+Wenn `ChatCompressionService` (automatisch oder manuell) auslöst, übergibt es
+`historyToCompress` unverändert an das Zusammenfassungsmodell. Zwei zusammenhängende Probleme
+beeinträchtigen Qualität, Genauigkeit und Kosten:
 
-Wenn `ChatCompressionService` ausgelöst wird (automatisch oder manuell), wird
-`historyToCompress` unverändert an das Zusammenfassungsmodell gesendet. Zwei
-verwandte Probleme beeinträchtigen Qualität, Genauigkeit und Kosten:
+1. **Inline-Bild- / Dokument-Bytes gelangen in den Zusammenfassungs-Prompt.**
+   MCP-Tools, die Anhänge (Screenshots, Design-Mockups, PDFs) einbinden, platzieren
+   `inlineData`-Teile direkt im Gesprächsverlauf. Die Komprimierungspipeline entfernt diese
+   nicht, sodass das Zusammenfassungsmodell rohe Base64-Daten erhält, die es meist nicht
+   interpretieren kann, und die Nutzlast der Seitenabfrage wird unnötig aufgebläht.
 
-1. **Inline-Bild-/Dokument-Bytes gelangen in den Zusammenfassungs-Prompt.**
-   MCP-Tools, die Anhänge (Screenshots, Design-Mockups, PDFs) einbinden,
-   platzieren `inlineData`-Teile direkt in der Konversation. Die
-   Komprimierungspipeline entfernt sie nicht, sodass das Zusammenfassungsmodell
-   rohe Base64-Daten erhält, die es normalerweise nicht interpretieren kann, und
-   die Seitenabfrage-Nutzlast wird unnötig aufgebläht.
+2. **Die Token-Schätzung von `findCompressSplitPoint` ist bei binären Teilen falsch.**
+   Der Split-Point-Algorithmus verwendet `JSON.stringify(content).length`, um Zeichen
+   auf den Verlauf zu verteilen. Ein einzelnes 1 MB Base64-Bild (~1,4 M Zeichen) lässt
+   einen Eintrag wie ~350 K Token aussehen, überragt den eigentlichen Text und verschiebt
+   den Schnitt an die falsche Stelle. Die tatsächlichen Token-Kosten für ein Qwen-VL-Bild
+   betragen maximal ein paar tausend Token. Der Schätzer sollte binäre Teile als kleine
+   Konstante behandeln.
 
-2. **`findCompressSplitPoint` Token-Schätzung ist für binäre Teile falsch.**
-   Der Split-Point-Algorithmus verwendet
-   `JSON.stringify(content).length`, um Zeichen über den Verlauf zu
-   verteilen. Ein einzelnes 1 MB Base64-Bild (~1,4 M Zeichen) lässt einen
-   Eintrag wie ~350 K Token aussehen, überlagert den tatsächlichen Text und
-   verschiebt den Schnittpunkt an die falsche Stelle. Die tatsächlichen
-   Token-Kosten für ein Qwen-VL-Bild betragen höchstens einige tausend Token.
-   Der Schätzer sollte binäre Teile als kleine Konstante behandeln.
+claude-code adressiert (1) mit `stripImagesFromMessages`. qwen-code hat weder diesen
+Stripping-Schritt noch die entsprechende Zeichenzählungs-Korrektur.
 
-claude-code behandelt (1) mit `stripImagesFromMessages`. qwen-code hat
-weder diesen Strip noch die entsprechende Zeichenzähl-Korrektur.
+Diese Änderung fügt beides hinzu, begrenzt auf die **Eingabe der Komprimierungs-Seitenabfrage**.
+Der Live-Gesprächsverlauf, die Persistenz (`chats/<sessionId>.jsonl`) und der Prompt, der
+beim nächsten Turn an das Hauptmodell gesendet wird, bleiben unberührt. Die Schlankung
+betrifft nur die Nutzlast der Seitenabfrage, die innerhalb von `chatCompressionService`
+erstellt wird.
 
-Diese Änderung fügt beides hinzu, begrenzt auf die **Komprimierungs-Seitenabfrage-Eingabe
-nur**. Der aktuelle Konversationsverlauf, die Persistenz
-(`chats/<sessionId>.jsonl`) und der Prompt, der beim nächsten Zug an das
-Hauptmodell gesendet wird, bleiben unberührt. Die Verschlankung gilt nur für die
-Seitenabfrage-Nutzlast, die innerhalb von `chatCompressionService` erstellt wird.
+### Außerhalb des Gültigkeitsbereichs (verschoben oder abgelehnt)
 
-### Außerhalb des Rahmens (verschoben oder abgelehnt)
+- **Externalisierung großer Einfügungen in einen Einfüge-Cache.** Ein früherer Entwurf
+  dieses Designs schlug vor, überlangen Text zu hashen und in
+  `~/.qwen/paste-cache/<sha>.txt` zu speichern und durch einen Platzhalter zu ersetzen.
+  Wir haben dies nach einer Untersuchung der claude-code-Versionen 2026-03 bis 2026-05
+  abgelehnt: Die Entwicklungsrichtung ist, Benutzereingaben für das Modell sichtbar zu
+  lassen und Kosten durch Prompt-Caching (1h TTL-Knöpfe, Bild-Downscaling) zu amortisieren,
+  anstatt sie zu externalisieren. Das Platzieren von wörtlichen Benutzereingaben hinter
+  einem Hash-Platzhalter riskiert „Intent-Drift", sobald die Komprimierung den
+  ursprünglichen Text kollabiert hat. Falls wir dies später erneut aufgreifen, ist das
+  richtige Muster `read_paste(hash)` als echtes Tool, das das Modell erreichen kann,
+  nicht stilles Umschreiben.
 
-- **Auslagerung großer Texte in einen Paste-Cache.** Ein früherer Entwurf
-  dieses Designs schlug vor, übergroßen Text zu hashen und in
-  `~/.qwen/paste-cache/<sha>.txt` zu speichern und durch einen Platzhalter zu
-  ersetzen. Wir haben dies nach einer Untersuchung der claude-code-Releases von
-  2026-03 bis 2026-05 abgelehnt: Die Richtung upstream ist, Benutzereingaben für
-  das Modell sichtbar zu halten und Kosten durch Prompt-Caching (1h-TTL-Knöpfe,
-  Bildverkleinerung) zu amortisieren, anstatt sie auszulagern. Das Einfügen
-  wörtlicher Benutzereingaben hinter einem Hash-Platzhalter birgt das Risiko von
-  „Intent-Drift", sobald die Komprimierung den ursprünglichen Text beseitigt
-  hat. Falls wir dies später erneut aufgreifen, ist das richtige Muster
-  `read_paste(hash)` als echtes Werkzeug, das das Modell erreichen kann, nicht
-  stilles Umschreiben.
+## Aktueller Zustand vs. Ziel
 
-## Aktueller Stand vs. Ziel
-
-| Betreff                                          | qwen-code aktuell                                | claude-code Referenz                                                    | Ziel nach dieser Änderung                                           |
-| ------------------------------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Bild/Dokument im Komprimierungsprompt            | Wird wörtlich gesendet                           | `stripImagesFromMessages` ersetzt mit `[image]` / `[document]`          | Wird als Platzhalter `[image: mime]` / `[document: mime]` gesendet |
-| Token-Schätzung für binäre Teile                 | `JSON.stringify().length` (stark daneben)        | Wird als festes Budget behandelt                                        | Konfigurierbare Konstante (Standard 1.600 Token / ~6.400 Zeichen)   |
-| Bildbereinigung bei Microcompact                 | Nicht berührt (nur Text-Tool-Ergebnisse werden im Leerlauf gelöscht) | Zeitbasiertes MC löscht alle            | Microcompact löscht auch veraltete Inline-Bilder zusammen mit Tool-Ergebnissen |
+| Aspekt                           | qwen-code heute                                      | claude-code Referenz                                            | Ziel nach dieser Änderung                                             |
+| -------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Bild/Dokument im Komprimierungs-Prompt | Wird unverändert gesendet                                | `stripImagesFromMessages` ersetzt mit `[image]` / `[document]` | Wird als `[image: mime]` / `[document: mime]` Platzhalter gesendet      |
+| Token-Schätzung für binäre Teile | `JSON.stringify().length` (weit daneben)               | Wird als festes Budget behandelt                                | Konfigurierbare Konstante (Standard 1.600 Token / ~6.400 Zeichen)      |
+| Microcompact-Bildbereinigung     | Nicht berührt (nur Text-Tool-Ergebnisse werden bei Leerlauf gelöscht) | Zeitbasiertes MC löscht alles                                 | Microcompact löscht auch veraltete Inline-Bilder zusammen mit Tool-Ergebnissen |
 
 ## Vorgeschlagene Änderungen
 
-### Schicht 1: Komprimierungseingabe verschlanken (`services/compactionInputSlimming.ts`)
+### Ebene 1: Schlankung der Komprimierungseingabe (`services/compactionInputSlimming.ts`)
 
-Ein neues reines Modul, das `Content[]` entgegennimmt und ein verschlanktes
+Ein neues reines Modul, das `Content[]` entgegennimmt und ein geschlanktes
 `Content[]` zurückgibt. Eine Transformation: Entfernen von Inline-Medien.
-Durchlaufe jeden `Part`. Wenn der Teil `inlineData` oder `fileData` enthält,
+Gehe jeden `Part` durch. Wenn der Teil `inlineData` oder `fileData` hat,
 ersetze ihn durch einen `text`-Teil der Form `[image: image/png]` (oder
 `[document: application/pdf]`).
 
-qwen-code hängt von Werkzeugen zurückgegebene Medien an
-`functionResponse.parts` an (eine Erweiterung über das standardmäßige
-`@google/genai` `FunctionResponse`-Schema; siehe
-`coreToolScheduler.createFunctionResponsePart`). Der Verschlanker
-durchläuft dieses verschachtelte Array rekursiv, sodass auch ein Base64-Bild,
-das von `read_file` oder einem MCP-Anhänge ausgebenden Werkzeug zurückgegeben
-wurde, ersetzt wird.
+qwen-code hängt von Tools zurückgegebene Medien an `functionResponse.parts` an
+(eine Erweiterung des standardmäßigen `@google/genai`-Schemas `FunctionResponse`;
+siehe `coreToolScheduler.createFunctionResponsePart`). Der Schlankungsmechanismus
+durchläuft rekursiv dieses verschachtelte Array, sodass auch ein von `read_file`
+oder einem beliebigen MCP-Anhang-Tool zurückgegebenes Base64-Bild ersetzt wird.
 
 Die Transformation gibt ein neues `Content[]`-Array zurück; das Original wird
 niemals mutiert. Wenn die Transformation keine Änderungen erzeugt, wird die
@@ -78,51 +71,52 @@ ursprüngliche Array-Referenz zurückgegeben (identitätsgleich). Der Orchestrat
 ruft `slimCompactionInput` als letzten Schritt vor `runSideQuery` in
 `chatCompressionService.ts` auf.
 
-### Schicht 2: Korrektur der Token-Schätzung (`chatCompressionService.ts`)
+### Ebene 2: Token-Schätzungskorrektur (`chatCompressionService.ts`)
 
 `findCompressSplitPoint` verwendet derzeit `JSON.stringify(content).length`
-für die Zeichenzähl-Verteilung. Ersetze dies durch einen
+für die Zeichenzählungs-Verteilung. Ersetze dies durch einen
 `estimateContentChars`-Helfer, der:
 
 - Für `text`-Teile: `text.length`
-- Für `inlineData`- / `fileData`-Teile: `imageTokenEstimate * 4` (Standard
+- Für `inlineData` / `fileData`-Teile: `imageTokenEstimate * 4` (Standard
   1.600 × 4 = 6.400 Zeichen).
-- Für `functionCall`- / `functionResponse`-Teile:
+- Für `functionCall` / `functionResponse`-Teile:
   `JSON.stringify(part).length` (unverändertes Verhalten).
 
-Dies ist dieselbe Konstante, die das Verschlankungsmodul verwendet, sodass das
-Budget, das der Split-Point-Algorithmus sieht, mit dem übereinstimmt, was der
-verschlankte Prompt downstream tatsächlich verbraucht. Um doppelte Durchläufe
-zu vermeiden, berechnet `compress()` die `charCounts` einmal vor und übergibt
-sie an `findCompressSplitPoint` (neues optionales 4. Argument); dasselbe Array
-wird für die `MIN_COMPRESSION_FRACTION`-Absicherung wiederverwendet.
-### Layer 3: Microcompact-Bildbereinigung (`microcompaction/microcompact.ts`)
+Dies ist dieselbe Konstante, die das Schlankungsmodul verwendet, sodass das
+Budget, das der Split-Point-Algorithmus sieht, mit dem übereinstimmt, was
+der geschlankte Prompt tatsächlich nachgelagert verbraucht. Um doppelte
+Durchläufe zu vermeiden, berechnet `compress()` `charCounts` einmal vor
+und übergibt sie an `findCompressSplitPoint` (neues optionales 4. Argument);
+dasselbe Array wird für die `MIN_COMPRESSION_FRACTION`-Schranke wiederverwendet.
+
+### Ebene 3: Microcompact-Bildbereinigung (`microcompaction/microcompact.ts`)
 
 `collectCompactablePartRefs` gibt nun drei Gruppen zurück:
 
-- `tool` — `functionResponse`-Teile von komprimierbaren integrierten Tools.
-  Als Einheit gelöscht: Antwortausgabe durch den Sentinel ersetzt,
-  `functionResponse.parts` zusammen mit ihr entfernt.
-- `media` — oberste `inlineData` / `fileData`-Teile unter Benutzerrollen-
-  Nachrichten (z. B. über `@reference` eingefügte Bilder). Ersetzt durch
+- `tool` — `functionResponse`-Teile von komprimierbaren Built-in-Tools.
+  Wird als Einheit gelöscht: Antwortausgabe wird durch den Sentinel ersetzt,
+  `functionResponse.parts` wird damit verworfen.
+- `media` — Top-Level-`inlineData` / `fileData`-Teile unter Nachrichten mit
+  Benutzerrolle (z. B. über `@reference` eingefügte Bilder). Ersetzt mit
   `[Old inline media cleared: <mime>]`.
 - `nested-media` — `functionResponse`-Teile von **nicht komprimierbaren**
-  Tools (z. B. MCP-Screenshot-Tools, deren Namen nicht in
-  `COMPACTABLE_TOOLS` enthalten sind), die Bilder/Dokumente im
-  Erweiterungsfeld `functionResponse.parts` enthalten. Nur die
-  verschachtelten Medien werden entfernt; die Textausgabe des Tools bleibt
-  erhalten.
+  Tools (z. B. MCP-Screenshot-Tools, deren Namen nicht in
+  `COMPACTABLE_TOOLS` sind), die Bilder / Dokumente im
+  `functionResponse.parts`-Erweiterungsfeld tragen. Nur die verschachtelten
+  Medien werden gelöscht; die Textausgabe des Tools bleibt erhalten.
 
-Jede Art hat ihr eigenes `keepRecent`-Budget. Die Einstellung
-`toolResultsNumToKeep: 1` behält die neueste jeder Kategorie
-(1 Tool + 1 Medium + 1 nested-media), nicht 1 Eintrag insgesamt über die
-kombinierte Liste.
+Jede Kategorie hat ihr eigenes `keepRecent`-Budget. Die Einstellung
+`toolResultsNumToKeep: 1` behält den aktuellsten jeder Kategorie
+(1 Tool + 1 Medium + 1 verschachteltes Medium), nicht 1 Eintrag insgesamt
+aus der kombinierten Liste.
 
-mimeType-Werte, die von MCP-Tool-Servern bereitgestellt werden, werden durch
-`sanitizeMimeForPlaceholder` geleitet, bevor sie in eine Platzhalterzeichenfolge
-eingebettet werden. Der Slimmer und Microcompact teilen sich diese Hilfsfunktion.
+MimeType-Werte, die von MCP-Tool-Servern stammen, werden mit
+`sanitizeMimeForPlaceholder` verarbeitet, bevor sie in einen Platzhalterstring
+eingebettet werden. Der Schlankungsmechanismus und Microcompact teilen sich
+diesen Helfer.
 
-### Layer 4: Konfiguration (`config/config.ts`)
+### Ebene 4: Konfiguration (`config/config.ts`)
 
 Ein neues Feld unter den `chatCompression`-Einstellungen:
 
@@ -140,29 +134,29 @@ Plus eine Umgebungsüberschreibung für Betrieb/Debug: `QWEN_IMAGE_TOKEN_ESTIMAT
 ## Wichtige Designentscheidungen
 
 **Entscheidung 1: `imageTokenEstimate = 1600`.**
-Die Qwen-VL-Familie begrenzt auf 1.280 visuelle Tokens pro Bild ohne
+Die Qwen-VL-Familie begrenzt auf 1.280 visuelle Token pro Bild ohne
 `vl_high_resolution_images`; mit diesem Flag bis zu 16.384. 1.600 ist ein
-konservativer Mittelwert, der leicht nach oben tendiert — eine Überschätzung
-führt zu früherer Kompression (sicher), eine Unterschätzung führt zu später
-Kompression (unsicher). Für Nicht-VL-Modelle (Qwen3-Coder, der qwen-code-
-Standard) ist die Konstante nur für die Korrektheit der Tokenschätzung relevant,
-da Bilder das Modell ohnehin nicht erreichen.
+konservativer Mittelwert, der leicht nach oben tendiert – Überschätzung führt
+zu früherer Komprimierung (sicher), Unterschätzung zu später Komprimierung
+(unsicher). Für Nicht-VL-Modelle (Qwen3-Coder, der qwen-code-Standard) ist
+die Konstante nur für die Korrektheit der Token-Schätzung relevant, da Bilder
+ohnehin nicht zum Modell gelangen.
 
 **Entscheidung 2: Die geschlankte Kopie entfernen, nicht den Live-Verlauf.**
 `slimCompactionInput` gibt ein neues Array zurück; der in `GeminiChat`
-gespeicherte Chat-Verlauf bleibt unberührt. Lokale Persistenz
-(`.chats/<sessionId>.jsonl`) behält die vollständige Unterhaltung so, wie der
-Benutzer sie erlebt hat, sodass `--resume` ohne Verlust funktioniert.
+gespeicherte Gesprächsverlauf bleibt unberührt. Die lokale Persistenz
+(`.chats/<sessionId>.jsonl`) behält die vollständige Unterhaltung bei,
+wie sie der Benutzer erlebt hat, sodass `--resume` ohne Verlust funktioniert.
 
 **Entscheidung 3: Microcompact behandelt Bilder einheitlich mit alten
 Tool-Ergebnissen.** Der zeitbasierte Leerlauf-Trigger löscht bereits veraltete
-Tool-Ausgaben; die Erweiterung auf Inline-Bilder hält die Richtlinie konsistent
-und verwendet das vorhandene keepRecent-Fenster wieder.
+Tool-Ausgaben; die Ausweitung auf Inline-Bilder hält die Richtlinie konsistent
+und nutzt das bestehende `keepRecent`-Fenster wieder.
 
 **Entscheidung 4: Kein Paste-Store / keine Textexternalisierung.**
-Siehe Abschnitt „Außerhalb des Rahmens“. Upstream-Konsens (claude-code 2026-03 →
-2026-05) ist, die wörtliche Benutzereingabe sichtbar zu halten und über
-Prompt-Caching zu amortisieren, nicht zu externalisieren.
+Siehe Abschnitt „Außerhalb des Gültigkeitsbereichs". Der Upstream-Konsens
+(claude-code 2026-03 → 2026-05) ist, wörtliche Benutzereingaben sichtbar zu
+lassen und Kosten durch Prompt-Caching zu amortisieren, nicht zu externalisieren.
 
 ## Betroffene Dateien
 
@@ -173,56 +167,55 @@ Prompt-Caching zu amortisieren, nicht zu externalisieren.
 
 **Geänderte Dateien**
 
-- `packages/core/src/config/config.ts` — erweitere `ChatCompressionSettings`
-- `packages/core/src/services/chatCompressionService.ts` — rufe Slimming vor
-  `runSideQuery` auf; ersetze Char-Count-Helfer; berechne charCounts einmal
-  für Splitter + Guard
-- `packages/core/src/services/chatCompressionService.test.ts` — füge einen
-  Wire-Up-Test hinzu, der bestätigt, dass Base64 das Zusammenfassungsmodell
-  nie erreicht
-- `packages/core/src/services/microcompaction/microcompact.ts` — erweitere
-  Sammlung auf Inline-Bilder
+- `packages/core/src/config/config.ts` — `ChatCompressionSettings` erweitern
+- `packages/core/src/services/chatCompressionService.ts` — Schlankung vor
+  `runSideQuery` aufrufen; Zeichenzählungs-Helfer ersetzen; `charCounts` einmal
+  für Splitter + Schranke vorberechnen
+- `packages/core/src/services/chatCompressionService.test.ts` — einen
+  Integrationstest hinzufügen, der bestätigt, dass Base64 nie das Zusammenfassungsmodell erreicht
+- `packages/core/src/services/microcompaction/microcompact.ts` — Sammlung auf
+  Inline-Bilder erweitern
 - `packages/core/src/services/microcompaction/microcompact.test.ts` —
-  teste Bildbereinigung
+  Bildbereinigung testen
 
-## Rahmenbedingungen
+## Gültigkeitsbereichsgrenzen
 
-**Im Rahmen**
+**Im Gültigkeitsbereich**
 
-- Entfernen von Inline-Medien aus dem Komprimierungseingang
-- Korrektur der Zeichenschätzung von `findCompressSplitPoint`
+- Inline-Medien aus der Komprimierungseingabe entfernen
+- `findCompressSplitPoint`-Zeichenschätzung korrigieren
 - Microcompact-Bildteilbereinigung beim Leerlauf-Trigger
 - Eine Einstellung + Umgebungsüberschreibung
 
-**Zurückgestellt**
+**Verschoben**
 
-- Externalisierung großer Einfügungen (siehe Außerhalb des Rahmens oben)
-- Wiederherstellungstool (`read_paste(hash)` usw.)
-- Deduplizierung auf Persistenzebene
-- `/context` Einfügungsaufschlüsselung
-- Telemetrieereignisse für Schlankheitsstatistiken
+- Externalisierung großer Einfügungen (siehe „Außerhalb des Gültigkeitsbereichs" oben)
+- Wiederherstellungs-Tool (`read_paste(hash)` usw.)
+- Persistenzschicht-Deduplizierung
+- `/context`-Einfügungsaufschlüsselung
+- Telemetrie-Ereignisse für Schlankungsstatistiken
 
 ## Offene Fragen
 
 1. **Sollte der Platzhaltertext einen Hash enthalten, um eine zukünftige
-   Wiederherstellung zu ermöglichen?** Heute geben wir nur
-   `[image: image/png]` aus. Falls/sobald ein Tool im `read_paste`-Stil
-   eingeführt wird, möchten wir möglicherweise eine ID. Vorerst ist der
-   Platzhalter informativ; das ursprüngliche Bild existiert weiterhin im
-   Live-Verlauf und in der Persistenz.
-2. **Ist `imageTokenEstimate = 1600` für Nicht-Qwen-VL-Modelle korrekt, die
-   über Anthropic / OpenAI-Proxys bereitgestellt werden?** Wahrscheinlich eine
-   leichte Unterschätzung für Claude (wo Bilder bis zu ~5K Tokens sein können),
-   aber harmlos: Es betrifft nur die Split-Point-Heuristik, niemals den
-   tatsächlichen Prompt, den das benutzerseitige Modell sieht.
-3. **Das `MIN_COMPRESSION_FRACTION`-Gate wird auf Basis der Zeichenanzahl vor
-   dem Schlanken berechnet.** Ein bildlastiger Abschnitt kann die 5%-Schwelle
-   überschreiten (da Bilder im Schätzer mit ~6.400 Zeichen zählen) und nach dem
-   Schlanken auf `[image: …]`-Platzhalter schrumpfen. Das Zusammenfassungsmodell
-   erhält dann fast keinen Textkontext. Dies ist vorerst beabsichtigt: Die
-   Aufgabe der Zusammenfassung ist es, „Benutzer hat ein Bild von X geteilt“
-   aufzuzeichnen, selbst wenn der Großteil des Abschnitts visuell war, und der
-   Zweck des Gates ist „gibt es genug, um eine Zusammenfassung zu
-   rechtfertigen“ — was Bilder vernünftigerweise erfüllen. Sollte die Qualität
-   nachlassen, können wir nachbessern, indem wir entweder nach dem Schlanken
-   erneut prüfen oder das Gate proportional zu `imagesStripped` gewichten.
+   Wiederherstellung zu ermöglichen?** Derzeit geben wir nur `[image: image/png]` aus.
+   Falls/wenn ein `read_paste`-ähnliches Tool eingeführt wird, könnte eine ID
+   nützlich sein. Vorerst ist der Platzhalter informativ; das Originalbild
+   existiert weiterhin im Live-Verlauf und in der Persistenz.
+2. **Ist `imageTokenEstimate = 1600` korrekt für Nicht-Qwen-VL-Modelle, die
+   über Anthropic / OpenAI-Proxys bedient werden?** Wahrscheinlich eine leichte
+   Unterschätzung für Claude (wo Bilder bis zu ~5K Token haben können), aber
+   harmlos: Es betrifft nur die Split-Point-Heuristik, niemals den tatsächlichen
+   Prompt, den das benutzersichtige Modell sieht.
+3. **Die `MIN_COMPRESSION_FRACTION`-Schranke wird auf Basis der Zeichenzahlen
+   vor der Schlankung berechnet.** Ein bildlastiger Ausschnitt kann die 5%-Schwelle
+   überschreiten (weil Bilder im Schätzer mit ~6.400 Zeichen zählen) und dann
+   nach der Schlankung auf `[image: …]`-Platzhalter schrumpfen. Das
+   Zusammenfassungsmodell erhält dann fast keinen textuellen Kontext. Dies ist
+   fürs Erste beabsichtigt: Die Aufgabe der Zusammenfassung ist es, „Benutzer hat
+   ein Bild von X geteilt" festzuhalten, selbst wenn der Großteil des Ausschnitts
+   visuell war, und der Zweck der Schranke ist „gibt es genug, um eine
+   Zusammenfassung zu lohnen" – was Bilder vernünftigerweise erfüllen. Falls die
+   Qualität nachlässt, können wir dies erneut aufgreifen, entweder durch erneute
+   Prüfung nach der Schlankung oder durch Gewichtung der Schranke basierend auf
+   dem `imagesStripped`-Anteil.

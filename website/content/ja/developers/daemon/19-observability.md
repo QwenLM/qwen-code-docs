@@ -1,36 +1,36 @@
-# オブザーバビリティとデバッグ
+# 可観測性とデバッグ
 
 ## 概要
 
-`qwen serve` は現在、**OpenTelemetry スパン計装**、**構造化ファイルログ**（`DaemonLogger`）、**リクエストごとのアクセスログ**、デバッグ用 stderr ログ、構造化プリフライトセル、およびインメモリのパーミッション監査リングを備えています。このページは、現在のオブザーバビリティの全体像と、トリアージ時に注意すべきギャップについての実践的なガイドです。
+`qwen serve` は現在、**OpenTelemetry スパン計装**、**構造化ファイルログ** (`DaemonLogger`)、**リクエストごとのアクセスログ**、デバッグ用 stderr ログ、構造化された preflight セル、およびインメモリのパーミッション監査リングを提供しています。このページは、現在の可観測性の概要と、トリアージ時に把握すべきギャップに関する実践的なガイドです。
 
-## 現在利用できる機能
+## 現在の機能
 
-| サーフェス                                      | 場所                                           | 目的                                                                                                                                                                                                                                                                                   |
-| ----------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `QWEN_SERVE_DEBUG` stderr ログ                  | `bridge.ts` および各呼び出し箇所               | 環境変数の値が `1` / `true` / `on` / `yes`（大文字小文字不問）の場合、`qwen serve debug: ...` の行を stderr に出力します。                                                                                                                                                              |
-| OpenTelemetry スパン計装                        | `server.ts` `daemonTelemetryMiddleware`        | 各 HTTP リクエストは `withDaemonRequestSpan` でラップされます。属性にはルート、sessionId、clientId、ステータスコードが含まれます。パーミッションルートには専用のスパンがあります。プロンプトのライフサイクルはエンドツーエンドでトレースされます。設定は `settings.json` の `telemetry` にあります。 |
-| `DaemonLogger` 構造化ファイルログ               | `serve/daemon-logger.ts`                       | 構造化された JSON 形式のログ行がファイルに書き込まれます。起動時に `daemon log -> <path>` が出力されます。`info` / `warn` / `error` レベルをサポートし、`route`、`sessionId`、`clientId`、`childPid`、`channelId` などの構造化フィールドを持ちます。                                    |
-| リクエストごとのアクセスログミドルウェア        | `server.ts`（`bearerAuth` の前に登録）         | 各リクエスト後に `method`、`path`、`status`、`durationMs`、`sessionId`、`clientId` をログに記録します。`GET /health` とハートビートはスキップします。4xx 以上は `warn`、成功時は `info` を使用します。                                                                                   |
-| `/health`                                       | `server.ts` ルート                             | 死活確認プローブ。`?deep=1` で拡張詳細を返します。                                                                                                                                                                                                                                      |
-| `/capabilities`                                 | `server.ts` ルート                             | プリフライトによる機能検出。[`11-capabilities-versioning.md`](./11-capabilities-versioning.md) を参照してください。                                                                                                                                                                      |
-| `/workspace/preflight`                          | ルート -> `DaemonStatusProvider`               | 構造化された準備状態セル: Node バージョン、CLI エントリ、ripgrep、git、npm、および子プロセスが起動した後の ACP レベルのセル。                                                                                                                                                            |
-| `/workspace/env`                                | ルート -> `DaemonStatusProvider`               | デーモンプロセスの環境変数スナップショット。シークレット環境変数は存在の有無のみ報告されます。プロキシ URL のクレデンシャルは除去されます。                                                                                                                                              |
-| `/workspace/mcp`                                | ルート -> bridge の extMethod                  | プール、バジェット、および拒否状態のスナップショット。                                                                                                                                                                                                                                  |
-| `/workspace/skills`、`/workspace/providers`     | ルート                                         | ACP 側のライブスナップショット。セッションが存在しない場合は空のアイドルデータを返します。                                                                                                                                                                                               |
-| セッションごとの SSE                            | `GET /session/:id/events`                      | リアルタイムのイベントストリーム。                                                                                                                                                                                                                                                      |
-| `/demo` デバッグコンソール                      | `GET /demo`（`packages/cli/src/serve/demo.ts`）| ブラウザからアクセス可能なシングルページコンソール: チャット、イベントログ、ワークスペースインスペクター、パーミッション UX。ループバックでは `http://127.0.0.1:4170/demo` が SDK コードを書かずにエンドツーエンドを検証する最速の手段です。登録ルールは [`02-serve-runtime.md`](./02-serve-runtime.md) にあります。 |
-| `PermissionAuditRing`                           | `permission-audit.ts`                          | 512 件のパーミッション決定をインメモリ FIFO で保持します。                                                                                                                                                                                                                              |
-| Mediator の `decisionReason` 監査               | `permissionMediator.ts`                        | パーミッションリクエストが解決された理由を説明する内部の構造化レコード。                                                                                                                                                                                                                |
+| 表面                                         | 場所                                            | 目的                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `QWEN_SERVE_DEBUG` stderr ログ              | `bridge.ts` および呼び出し箇所                 | 環境変数が `1` / `true` / `on` / `yes` (大文字小文字を区別しない) の場合、`qwen serve debug: ...` 行を stderr に出力します。                                                                                                                                                                      |
+| OpenTelemetry スパン計装                     | `server.ts` `daemonTelemetryMiddleware`        | 各 HTTP リクエストは `withDaemonRequestSpan` でラップされます。属性にはルート、sessionId、clientId、ステータスコードが含まれます。パーミッションルートには専用のスパンがあります。プロンプトのライフサイクルはエンドツーエンドでトレースされます。設定は `settings.json` の `telemetry` にあります。 |
+| `DaemonLogger` 構造化ファイルログ           | `serve/daemon-logger.ts`                       | 構造化された JSON ライクなログ行がファイルに書き込まれます。起動時に `daemon log -> <path>` と出力されます。`info` / `warn` / `error` レベルをサポートし、`route`、`sessionId`、`clientId`、`childPid`、`channelId` などの構造化フィールドを含みます。                                          |
+| リクエストごとのアクセスログミドルウェア     | `server.ts`、`bearerAuth` の前に登録           | 各リクエスト後に `method`、`path`、`status`、`durationMs`、`sessionId`、`clientId` を記録します。`GET /health` と heartbeat はスキップします。4xx 以上は `warn`、成功は `info` を使用します。                                                                                                |
+| `/health`                                   | `server.ts` ルート                              | 生存確認プローブ。`?deep=1` で拡張詳細を返します。                                                                                                                                                                                                                                         |
+| `/capabilities`                             | `server.ts` ルート                              | プレフライト機能のディスカバリー。詳細は [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) を参照してください。                                                                                                                                                             |
+| `/workspace/preflight`                      | ルート -> `DaemonStatusProvider`                | 構造化された準備状況セル: Node バージョン、CLI エントリ、ripgrep、git、npm、さらに子プロセスが生きている場合の ACP レベルのセル。                                                                                                                                                           |
+| `/workspace/env`                            | ルート -> `DaemonStatusProvider`                | デーモンプロセスの環境変数スナップショット。秘密の環境変数は存在の有無のみを報告し、プロキシ URL の認証情報は除去されます。                                                                                                                                                              |
+| `/workspace/mcp`                            | ルート -> bridge extMethod                      | プール、予算、拒否のスナップショット。                                                                                                                                                                                                                                                       |
+| `/workspace/skills`、`/workspace/providers` | ルート                                          | ACP 側のライブスナップショット。セッションが存在しない場合は空のアイドルデータを返します。                                                                                                                                                                                                |
+| セッションごとの SSE                        | `GET /session/:id/events`                      | リアルタイムイベントストリーム。                                                                                                                                                                                                                                                             |
+| `/demo` デバッグコンソール                   | `GET /demo` (`packages/cli/src/serve/demo.ts`) | ブラウザからアクセス可能なシングルページコンソール: チャット、イベントログ、ワークスペースインスペクター、パーミッション UI。ループバックでは、`http://127.0.0.1:4170/demo` が SDK コードを書かずにエンドツーエンド検証する最も高速なパスです。登録ルールは [`02-serve-runtime.md`](./02-serve-runtime.md) にあります。 |
+| `PermissionAuditRing`                       | `permission-audit.ts`                          | 512 件のパーミッション決定を保持するインメモリ FIFO。                                                                                                                                                                                                                                       |
+| Mediator `decisionReason` 監査              | `permissionMediator.ts`                        | パーミッションリクエストがなぜそのように解決されたかを説明する内部構造化レコード。                                                                                                                                                                                                           |
 
-## 現在存在しない機能
+## 現在存在しないもの
 
 - **Prometheus / メトリクスエンドポイントはありません。** `process_cpu_seconds_total`、`http_requests_total`、`event_bus_queue_depth` などは存在しません。
-- **`PermissionAuditRing` 向けの外部監査シンクはありません。** リングは存在しますが、SIEM や外部ストレージへのファンアウトフックは実装されていません。
+- **`PermissionAuditRing` 向けの外部監査シンクはありません。** リングは存在しますが、SIEM や外部ストレージへのファンアウトフックは配線されていません。
 
 ## デバッグレシピ
 
-### 1. デーモンは起動しているか？
+### 1. デーモンは生きていますか？
 
 ```bash
 curl -s http://127.0.0.1:4170/health
@@ -40,25 +40,25 @@ curl -s 'http://127.0.0.1:4170/health?deep=1' | jq
 # {"status":"ok","workspaceCwd":"/path","sessions":N,...}
 ```
 
-ループバックで 401 が返る場合は `--require-auth` が有効になっている可能性があります。起動時のログを確認するには、起動時に `QWEN_SERVE_DEBUG=1` を設定してください。
+ループバックで 401 が返る場合は、`--require-auth` が有効になっている可能性があります。起動時に `QWEN_SERVE_DEBUG=1` を使用すると、ブートログを確認できます。
 
-### 2. どの機能がアドバタイズされているか？
+### 2. どの機能がアドバタイズされていますか？
 
 ```bash
 curl -s http://127.0.0.1:4170/capabilities | jq
 ```
 
-`mcp_workspace_pool`（F2 プールが有効か）、`require_auth`（強化されているか）、`permission_mediation.modes`（サポートされているポリシー）、および `policy.permission`（有効なポリシー）を確認してください。
+`mcp_workspace_pool`（F2 プールがオンか）、`require_auth`（強化されているか）、`permission_mediation.modes`（サポートされているポリシー）、`policy.permission`（アクティブなポリシー）を確認してください。
 
-### 3. デーモンホストの準備状態は正常か？
+### 3. デーモンホストの準備状態は正常ですか？
 
 ```bash
 curl -s http://127.0.0.1:4170/workspace/preflight | jq
 ```
 
-`status: 'not_started'` のセルは ACP レベルのものであり、最初のセッションがアタッチされた後にのみ表示されます。`status: 'fail'` のセルにはクローズドな `errorKind` が含まれます。[`18-error-taxonomy.md`](./18-error-taxonomy.md) から構造化された修復手順を参照してください。
+`status: 'not_started'` のセルは ACP レベルのもので、最初のセッションがアタッチした後にのみ設定されます。`status: 'fail'` のセルにはクローズドな `errorKind` が含まれており、構造化された修正情報は [`18-error-taxonomy.md`](./18-error-taxonomy.md) にあります。
 
-### 4. セッションの SSE ストリームをテールする
+### 4. セッション SSE ストリームを tail する
 
 ```bash
 curl -N -H 'Accept: text/event-stream' \
@@ -68,28 +68,28 @@ curl -N -H 'Accept: text/event-stream' \
      'http://127.0.0.1:4170/session/<sid>/events'
 ```
 
-`-N` は curl の出力バッファリングを無効にします。`Last-Event-ID: 0` は `id > 0` のリングイベントの再生をリクエストします。
+`-N` は curl の出力バッファリングを無効にします。`Last-Event-ID: 0` は、`id > 0` のリングイベントのリプレイを要求します。
 
-### 5. パーミッションリクエストがこのように解決された理由は？
+### 5. なぜパーミッションリクエストがこのように解決されたのか？
 
-`PermissionAuditRing` はインメモリであり、現時点では HTTP エンドポイントがありません。`QWEN_SERVE_DEBUG=1` を有効にして再現してください。メディエーターは各投票と決定に対して構造化された行を出力し、`decisionReason.type` も含まれます。後続の PR でリングを HTTP 経由で公開できます。
+`PermissionAuditRing` はインメモリであり、現在 HTTP サーフェスはありません。`QWEN_SERVE_DEBUG=1` を有効にして再現してください。メディエーターは各投票と決定について、`decisionReason.type` を含む構造化行を出力します。今後の PR でリングを HTTP 経由で公開する可能性があります。
 
-### 6. どのコンシューマーが遅いか？
+### 6. どのコンシューマーが遅いですか？
 
-キューが 75% に達したオーバーフローエピソードごとに `slow_client_warning` が一度発火します。セッションの SSE ストリームをサブスクライブして合成フレームを探してください。ペイロードには `queueSize`、`maxQueued`、`lastEventId` が含まれます。繰り返し警告が出る場合はスタックしたコンシューマー（通常はブロックされた SDK の `for await` ループ）を示しています。
+`slow_client_warning` は、キューが 75% に達したときにオーバーフローエピソードごとに 1 回発火します。セッション SSE ストリームを購読し、合成フレームを探してください。ペイロードには `queueSize`、`maxQueued`、`lastEventId` が含まれます。警告が繰り返される場合は、スタックしたコンシューマー（通常はブロックされた SDK の `for await` ループ）を示しています。
 
-### 7. MCP サーバーが拒否された理由は？
+### 7. MCP サーバーが拒否されたのはなぜですか？
 
-`/workspace/mcp` のセルごとの `disabledReason: 'budget'`、`refusedServerNames` リスト、および `mcp_child_refused_batch` SSE イベントを組み合わせて確認してください。それらを `/capabilities` の `mcp_guardrails.modes`（`enforce` が有効か）および `getReservedSlots()` で確認できるライブの `--mcp-client-budget` 状態と比較してください。
+`/workspace/mcp` のセルごとの `disabledReason: 'budget'`、`refusedServerNames` リスト、`mcp_child_refused_batch` SSE イベントを組み合わせます。これらを `/capabilities` の `mcp_guardrails.modes`（`enforce` がアクティブか）および `getReservedSlots()` で確認できる現在の `--mcp-client-budget` 状態と比較してください。
 
 ### 8. デーモンがシャットダウンしない
 
-最初のシグナルはグレースフルシャットダウンをトリガーします（[`02-serve-runtime.md`](./02-serve-runtime.md) を参照）。10 秒を超えてハングする場合は以下を確認してください:
+最初のシグナルはグレースフルシャットダウンをトリガーします（[`02-serve-runtime.md`](./02-serve-runtime.md) を参照）。10 秒経ってもハングする場合は、以下を確認してください：
 
 - ACP 子プロセスがグレースフルクローズに応答しなかった。
-- 長い SSE 接続が HTTP `server.close()` を `SHUTDOWN_FORCE_CLOSE_MS`（5 秒）を超えて開き続けた。
+- 長い SSE 接続により、`SHUTDOWN_FORCE_CLOSE_MS`（5 秒）を超えて HTTP `server.close()` が開いたままになっている。
 
-**2 回目**の SIGTERM/SIGINT は意図的に `bridge.killAllSync()` + `process.exit(1)` をトリガーします。
+**2 回目の** SIGTERM/SIGINT は意図的に `bridge.killAllSync()` + `process.exit(1)` をトリガーします。
 
 ## フロー
 
@@ -97,56 +97,56 @@ curl -N -H 'Accept: text/event-stream' \
 
 ```mermaid
 flowchart TD
-    A[User reports issue] --> B{daemon alive?}
-    B -->|no| BD[check process; check boot logs]
-    B -->|yes| C{capabilities match expectations?}
-    C -->|no| CD["check --require-auth, QWEN_SERVE_NO_MCP_POOL, settings.json"]
-    C -->|yes| D{preflight all green?}
-    D -->|no| DD["fix the errorKind cell"]
-    D -->|yes| E{issue is session-specific?}
-    E -->|yes| ES["tail SSE for that session;<br/>QWEN_SERVE_DEBUG=1 + reproduce"]
-    E -->|no| EW["check /workspace/mcp,<br/>/workspace/env"]
+    A[ユーザーが問題を報告] --> B{デーモンは生きているか？}
+    B -->|いいえ| BD[プロセスを確認、ブートログを確認]
+    B -->|はい| C{機能は期待と一致するか？}
+    C -->|いいえ| CD["--require-auth、QWEN_SERVE_NO_MCP_POOL、settings.json を確認"]
+    C -->|はい| D{preflight はすべて正常か？}
+    D -->|いいえ| DD["errorKind セルを修正"]
+    D -->|はい| E{問題はセッション固有か？}
+    E -->|はい| ES["そのセッションの SSE を tail；<br/>QWEN_SERVE_DEBUG=1 で再現"]
+    E -->|いいえ| EW["/workspace/mcp、<br/>/workspace/env を確認"]
 ```
 
 ## 状態とライフサイクル
 
-- `QWEN_SERVE_DEBUG` は `debug-mode.ts` の `isServeDebugMode()` を通じてチェックのたびに読み取られます。変更に再起動は不要です。ただし、起動時に設定されていない場合、起動ログは利用できません。
-- `PermissionAuditRing` は 512 件の FIFO エントリに制限されており、古いレコードはサイレントに破棄されます。
-- `DaemonStatusProvider` はリクエストごとにセルを再構築しキャッシュしません。不必要な高頻度ポーリングは避けてください。
+- `QWEN_SERVE_DEBUG` は、`debug-mode.ts` の `isServeDebugMode()` を通じてチェックのたびに読み取られます。切り替えに再起動は必要ありません。ブートログは、起動時に環境変数が設定されていない限り利用できません。
+- `PermissionAuditRing` は最大 512 FIFO エントリに制限されており、古いレコードは静かに破棄されます。
+- `DaemonStatusProvider` はリクエストごとにセルを再構築し、キャッシュしません。不要な高頻度ポーリングは避けてください。
 
 ## 依存関係
 
-- デバッグ用 stderr には `process.stderr.write` を使用。
-- 構造化ファイルログには `DaemonLogger` を使用。
-- `initializeTelemetry` および `createDaemonBridgeTelemetry` を通じた OpenTelemetry SDK。
-- 環境変数とシグナル検査には `node:process` を使用。
+- デバッグ stderr 用の `process.stderr.write`
+- 構造化ファイルログ用の `DaemonLogger`
+- `initializeTelemetry` および `createDaemonBridgeTelemetry` を通じた OpenTelemetry SDK
+- 環境変数とシグナル検査用の `node:process`
 
 ## 設定
 
-| 設定項目                        | 効果                                                                                         |
-| ------------------------------- | -------------------------------------------------------------------------------------------- |
-| `QWEN_SERVE_DEBUG`              | 詳細な stderr ログを有効にします。[`17-configuration.md`](./17-configuration.md) を参照。    |
-| `settings.json` `telemetry`     | OTel の動作を制御: `enabled`、`otlpEndpoint`、`otlpProtocol`、およびシグナルごとのエンドポイント。 |
-| `DaemonLogger` ログパス         | 起動時に生成され、`daemon log -> <path>` として stderr に出力されます。                       |
-| `PermissionAuditRing` サイズ    | 現在 512 にハードコードされています。                                                         |
-| `slow_client_warning` しきい値  | `0.75` / `0.375`、`eventBus.ts` にハードコードされています。                                 |
+| ノブ                            | 効果                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------ |
+| `QWEN_SERVE_DEBUG`              | 詳細な stderr ログを有効にします。[`17-configuration.md`](./17-configuration.md) を参照。 |
+| `settings.json` `telemetry`     | OTel の動作を制御します: `enabled`、`otlpEndpoint`、`otlpProtocol`、およびシグナルごとのエンドポイント。 |
+| `DaemonLogger` ログパス         | 起動時に生成され、`daemon log -> <path>` として stderr に出力されます。                   |
+| `PermissionAuditRing` サイズ    | 現在はハードコードで 512。                                                                 |
+| `slow_client_warning` しきい値 | `0.75` / `0.375`、`eventBus.ts` でハードコード。                                          |
 
-## 注意事項と既知の制限
+## 注意点と既知の制限
 
-- **DaemonLogger のファイルログは構造化されており**、`route`、`sessionId`、`clientId` でフィルタリングできます。`QWEN_SERVE_DEBUG` の stderr ログは非構造化テキストのままです。
-- **OpenTelemetry スパンにはリクエストごとの相関情報が含まれます。** 各 HTTP リクエストのスパンはルート、sessionId、clientId の属性を持ち、トレーシングバックエンドで結合できます。
-- **ACP レベルの `/workspace/preflight` セルはライブセッションが必要です。** アイドル状態のデーモンでは、auth / MCP / skills / providers が `status: 'not_started'` を示すことがありますが、これは想定された動作です。
-- **`/workspace/env` はシークレットの存在のみ報告し、値は報告しません。** シークレットの存在自体が機密情報となる環境ではレスポンスを公開しないでください。
-- **監査リングはプロセスローカルであり**、デーモン再起動時に履歴は失われます。
-- **負荷テストのレシピはここに記載されていません。** パフォーマンスベースラインは `test/perf-daemon-baseline` ブランチにあります。
+- **DaemonLogger ファイルログは構造化されており**、`route`、`sessionId`、`clientId` でフィルタリングできます。`QWEN_SERVE_DEBUG` stderr ログは構造化されていないテキストのままです。
+- **OpenTelemetry スパンにはリクエストごとの相関情報が含まれます。** 各 HTTP リクエストスパンには、トレースバックエンドで結合できるルート、sessionId、clientId 属性が含まれています。
+- **ACP レベルの `/workspace/preflight` セルには、アクティブなセッションが必要です。** アイドル状態のデーモンでは、認証 / MCP / skills / providers が `status: 'not_started'` を表示することがありますが、これは想定内です。
+- **`/workspace/env` は秘密の存在の有無のみを報告し、値は報告しません。** 秘密の存在自体が機密となる場合は、レスポンスを公開しないでください。
+- **監査リングはプロセスローカルであり、** デーモン再起動時に履歴は失われます。
+- **ここにロードテストのレシピは記載されていません。** パフォーマンスベースラインは `test/perf-daemon-baseline` ブランチにあります。
 
-## 参照
+## 参考資料
 
 - `packages/cli/src/serve/daemon-status-provider.ts`
-- `packages/cli/src/serve/daemon-logger.ts`（`DaemonLogger`、`buildDaemonLogLine`）
-- `packages/cli/src/serve/debug-mode.ts`（`isServeDebugMode`）
-- `packages/acp-bridge/src/permissionMediator.ts`（`PermissionDecisionReason`）
-- `packages/cli/src/serve/server.ts`（`daemonTelemetryMiddleware`、アクセスログミドルウェア）
+- `packages/cli/src/serve/daemon-logger.ts` (`DaemonLogger`、`buildDaemonLogLine`)
+- `packages/cli/src/serve/debug-mode.ts` (`isServeDebugMode`)
+- `packages/acp-bridge/src/permissionMediator.ts` (`PermissionDecisionReason`)
+- `packages/cli/src/serve/server.ts` (`daemonTelemetryMiddleware`、アクセスログミドルウェア)
 - 設定: [`17-configuration.md`](./17-configuration.md)
 - エラー分類: [`18-error-taxonomy.md`](./18-error-taxonomy.md)
 - ユーザー操作ガイド: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)

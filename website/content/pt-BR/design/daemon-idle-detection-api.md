@@ -1,37 +1,37 @@
-# Design da Interface de Detecção de Inatividade do Daemon
+# Design da interface de detecção de inatividade do Daemon
 
 ## Contexto
 
 ### Problema
 
-O Qwen Daemon será implantado em várias máquinas como um serviço de longa duração. Quando o Daemon fica muito tempo sem executar tarefas, continuar ocupando recursos da máquina é um desperdício. Um escalonador externo (K8s HPA / Scaler personalizado) precisa de um sinal confiável para determinar se o Daemon está ocioso, a fim de realizar a redução e recuperação.
+O Qwen Daemon será implantado em várias máquinas como um serviço de longa duração. Quando o Daemon fica muito tempo sem executar tarefas, continuar ocupando recursos da máquina é um desperdício. Um escalonador externo (K8s HPA / Scaler customizado) precisa de um sinal confiável para determinar se o Daemon está ocioso, a fim de realizar a redução de escala e coleta.
 
-### Situação Atual
+### Situação atual
 
-Interfaces disponíveis atualmente:
+Interfaces atualmente disponíveis:
 
-| Interface                      | Informação Retornada                             | Limitação                                                                                 |
-| ------------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| `GET /health?deep=true`        | `{ sessions, pendingPermissions }`               | Apenas número de sessões, não distingue "com sessão mas ociosa" de "com sessão trabalhando" |
-| `GET /workspace/:cwd/sessions` | `hasActivePrompt` + `clientCount` de cada sessão | Requer uma requisição extra e sem informação de dimensão temporal (há quanto tempo inativa?) |
+| Interface                           | Informação retornada                              | Limitação                                                                                  |
+| ----------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `GET /health?deep=true`             | `{ sessions, pendingPermissions }`                | Apenas quantidade de sessões, não distingue "tem sessão mas ocioso" de "tem sessão ativa"  |
+| `GET /workspace/:cwd/sessions`      | `hasActivePrompt` + `clientCount` de cada sessão  | Requer uma requisição extra e não fornece dimensão temporal (há quanto tempo sem atividade?) |
 
 **Lacunas principais**:
 
-1. Não há uma métrica agregada de "se há prompt ativo"
-2. Não há "último horário de atividade", o sistema externo precisa manter sua própria máquina de estados para calcular o tempo ocioso
-3. Não há exposição do número de conexões SSE (o `activeSseCount` já é mantido internamente, mas não é retornado em `/health`)
-4. Não há exposição do estado de atividade do canal (subprocesso agent)
+1. Ausência de uma métrica agregada de "prompt ativo"
+2. Ausência de "último momento de atividade"; sistemas externos precisam manter sua própria máquina de estados para calcular o tempo ocioso
+3. Ausência de exposição do número de conexões SSE (já mantido internamente como `activeSseCount`, mas não retornado em `/health`)
+4. Ausência de exposição do estado ativo do canal (subprocesso agent)
 
-## Objetivos do Design
+## Objetivos de design
 
-Fornecer uma interface que permita **determinar a inatividade com uma única chamada HTTP**, atendendo:
+Fornecer uma interface que **determine a ociosidade com uma única chamada HTTP**, atendendo:
 
-- O escalonador externo pode decidir se pode recuperar com um único GET
-- Suporte à dimensão temporal (há quanto tempo está ocioso), evitando que o externo mantenha estado
-- Compatibilidade retroativa com o comportamento existente de `/health`
-- Zero dependências extras, utilizando estado interno já existente
+- Um escalonador externo pode decidir se pode ser coletado com um único GET
+- Suporte para dimensão temporal (há quanto tempo ocioso), evitando que o externo mantenha estado
+- Compatibilidade retroativa com o comportamento atual de `/health`
+- Zero dependências adicionais, utilizando o estado interno já existente
 
-## Proposta
+## Solução
 
 ### Aprimorar a resposta de `GET /health?deep=true`
 
@@ -48,26 +48,26 @@ Adicionar campos na resposta existente de `/health?deep=true`:
 
   // --- Novos campos ---
   "activePrompts": 1, // Número de sessões executando um prompt
-  "connectedClients": 3, // Conexões SSE ativas
+  "connectedClients": 3, // Número de conexões SSE ativas
   "channelAlive": true, // Se o subprocesso agent está vivo
-  "lastActivityAt": "2026-06-10T08:30:00.000Z", // Último horário de atividade (ISO 8601)
+  "lastActivityAt": "2026-06-10T08:30:00.000Z", // Timestamp da última atividade (ISO 8601)
   "idleSinceMs": 120000, // Milissegundos desde a última atividade
 }
 ```
 
-### Definição dos Campos
+### Definição dos campos
 
-| Campo               | Tipo             | Significado                                                                                 |
-| ------------------- | ---------------- | ------------------------------------------------------------------------------------------- |
-| `activePrompts`     | `number`         | Contagem de sessões com `promptActive === true` atualmente                                  |
-| `connectedClients`  | `number`         | Número de conexões SSE ativas (já existe `activeSseCount`)                                  |
-| `channelAlive`      | `boolean`        | Se o subprocesso agent está vivo (já existe `bridge.isChannelLive()`)                       |
+| Campo               | Tipo             | Semântica                                                                                        |
+| ------------------- | ---------------- | ------------------------------------------------------------------------------------------------ |
+| `activePrompts`     | `number`         | Contagem de sessões onde `promptActive === true`                                                  |
+| `connectedClients`  | `number`         | Número atual de conexões SSE ativas (já existe `activeSseCount`)                                 |
+| `channelAlive`      | `boolean`        | Se o subprocesso agent está vivo (já existe `bridge.isChannelLive()`)                            |
 | `lastActivityAt`    | `string \| null` | Timestamp ISO do último início ou fim de prompt; `null` se nunca houve prompt desde a inicialização |
-| `idleSinceMs`       | `number \| null` | `Date.now() - lastActivityAt`; `null` se não houver registro de atividade                   |
+| `idleSinceMs`       | `number \| null` | `Date.now() - lastActivityAt`; `null` se não houver registro de atividade                        |
 
-### Definição de "Atividade"
+### Definição de "atividade"
 
-Os eventos a seguir são considerados "atividade" e atualizam `lastActivityAt`:
+Os seguintes eventos são considerados "atividade" e atualizam `lastActivityAt`:
 
 - Início da execução de um prompt (`promptActive` muda de false → true)
 - Conclusão/falha de um prompt (`promptActive` muda de true → false)
@@ -81,22 +81,22 @@ Os eventos a seguir são considerados "atividade" e atualizam `lastActivityAt`:
 - A própria requisição `/health`
 - Requisições/respostas de permissão
 
-### Regra de Determinação de Inatividade (para referência do escalonador externo)
+### Regra de determinação de ociosidade (para referência do escalonador externo)
 
 ```python
 def should_reclaim(health, idle_threshold_ms=300_000):
-    """Condição sugerida para recuperação: inativo por mais que o limite (padrão 5 minutos)"""
+    """Condição sugerida para coleta: ocioso por mais que o limiar (padrão 5 minutos)"""
     if health["activePrompts"] > 0:
-        return False  # Há tarefa em execução
+        return False  # Há tarefas em execução
     if health["connectedClients"] > 0:
         return False  # Há clientes conectados
     if health["idleSinceMs"] is None:
-        # Nunca houve atividade — pode ser um daemon recém-iniciado e frio
+        # Nunca houve atividade — pode ser um Daemon frio recém-iniciado
         return True
     return health["idleSinceMs"] >= idle_threshold_ms
 ```
 
-## Alterações de Código Envolvidas
+## Alterações de código envolvidas
 
 ### 1. `packages/acp-bridge/src/bridgeTypes.ts`
 
@@ -106,13 +106,13 @@ Adicionar na interface `AcpSessionBridge`:
 /** Número de sessões executando um prompt */
 get activePromptCount(): number;
 
-/** Último timestamp de atividade (epoch ms), null se nunca houve atividade */
+/** Timestamp da última atividade (epoch ms), null se nunca houve atividade */
 get lastActivityAt(): number | null;
 ```
 
 ### 2. `packages/acp-bridge/src/bridge.ts`
 
-Dentro da função fábrica `createAcpSessionBridge`:
+Dentro da função de fábrica `createAcpSessionBridge`:
 
 ```typescript
 // Novo rastreamento de estado
@@ -125,9 +125,9 @@ function touchActivity(): void {
 
 Chamar `touchActivity()` nos seguintes locais:
 
-- `entry.promptActive = true` (linha ~2528) — início do prompt
-- `entry.promptActive = false` (linhas ~2551, 2559) — fim do prompt
-- Após `doSpawn` criar sessão com sucesso (próximo à linha ~1906)
+- `entry.promptActive = true` (~linha 2528) — início do prompt
+- `entry.promptActive = false` (~linhas 2551, 2559) — fim do prompt
+- Após `doSpawn` criar uma sessão com sucesso (~próximo à linha 1906)
 - Após `restoreSession` com sucesso
 
 Expor no objeto retornado:
@@ -148,7 +148,7 @@ get lastActivityAt() {
 
 ### 3. `packages/cli/src/serve/server.ts`
 
-Modificar o ramo `deep` no `healthHandler` (linha ~803):
+Modificar o ramo `deep` em `healthHandler` (~linha 803):
 
 ```typescript
 const healthHandler = (req: Request, res: Response): void => {
@@ -166,7 +166,7 @@ const healthHandler = (req: Request, res: Response): void => {
       // Existente
       sessions: bridge.sessionCount,
       pendingPermissions: bridge.pendingPermissionCount,
-      // Novos
+      // Novo
       activePrompts: bridge.activePromptCount,
       connectedClients: getActiveSseCount(),
       channelAlive: bridge.isChannelLive(),
@@ -182,41 +182,42 @@ const healthHandler = (req: Request, res: Response): void => {
   }
 };
 ```
+
 ### 4. `packages/cli/src/serve/server.test.ts`
 
-Novos casos de teste:
+Adicionar novos casos de teste cobrindo:
 
-- Correção dos novos campos retornados por `/health?deep=true`
-- Quando não há sessão, `activePrompts === 0`, `idleSinceMs === null`
-- Durante a execução de um prompt, `activePrompts > 0` e `idleSinceMs` é continuamente atualizado
-- Após a conclusão de um prompt, `idleSinceMs` começa a aumentar
+- Corretude dos novos campos em `/health?deep=true`
+- `activePrompts === 0` e `idleSinceMs === null` quando não há sessões
+- `activePrompts > 0` e `idleSinceMs` sendo atualizado continuamente durante execução de prompt
+- `idleSinceMs` começando a aumentar após a conclusão do prompt
 
 ### 5. `packages/acp-bridge/src/bridge.test.ts`
 
-Novos casos de teste:
+Adicionar novos casos de teste cobrindo:
 
-- Mudanças no valor de `activePromptCount` ao longo do ciclo de vida de um prompt
-- `lastActivityAt` é atualizado após cada evento de atividade
-- Quando múltiplas sessões estão em paralelo, `activePromptCount` é acumulado corretamente
+- Variação do valor de `activePromptCount` ao longo do ciclo de vida de um prompt
+- `lastActivityAt` sendo atualizado após cada evento de atividade
+- Acumulação correta de `activePromptCount` com múltiplas sessões paralelas
 
 ## Lista de alterações de arquivos
 
-| Arquivo                                    | Tipo de alteração            | Descrição                                                     |
-| ------------------------------------------ | ---------------------------- | ------------------------------------------------------------- |
-| `packages/acp-bridge/src/bridgeTypes.ts`   | Extensão de interface        | Adicionadas propriedades `activePromptCount` e `lastActivityAt` |
-| `packages/acp-bridge/src/bridge.ts`        | Implementação de lógica      | Adicionado rastreamento `lastActivityTimestamp` + getter      |
-| `packages/cli/src/serve/server.ts`         | Extensão de resposta HTTP    | Adicionados novos campos a `/health?deep=true`                |
-| `packages/cli/src/serve/server.test.ts`    | Teste                        | Nova cobertura de campos do endpoint health                   |
-| `packages/acp-bridge/src/bridge.test.ts`   | Teste                        | Nova cobertura de propriedades do bridge                      |
+| Arquivo                                   | Tipo de alteração    | Descrição                                                    |
+| ----------------------------------------- | -------------------- | ------------------------------------------------------------ |
+| `packages/acp-bridge/src/bridgeTypes.ts`  | Extensão de interface | Novas propriedades `activePromptCount` e `lastActivityAt`    |
+| `packages/acp-bridge/src/bridge.ts`       | Implementação lógica | Novo rastreamento `lastActivityTimestamp` + getters          |
+| `packages/cli/src/serve/server.ts`        | Extensão de resposta HTTP | `/health?deep=true` agora inclui novos campos                |
+| `packages/cli/src/serve/server.test.ts`   | Testes               | Cobertura dos novos campos da interface de saúde             |
+| `packages/acp-bridge/src/bridge.test.ts`  | Testes               | Cobertura das propriedades da bridge                         |
 
 ## Compatibilidade
 
-- **Retrocompatível**: novos campos são adicionados, nenhum campo existente é modificado/removido
-- **`GET /health` (não deep)**: comportamento inalterado, ainda retorna apenas `{ "status": "ok" }`
-- **OTel Gauge**: o `registerDaemonGaugeCallbacks` existente pode opcionalmente adicionar posteriormente um gauge `activePrompts`, mas isso está fora do escopo atual
+- **Compatível com versões anteriores**: Novos campos são adicionais; nenhum campo existente é modificado ou removido
+- **`GET /health` (não deep)**: Comportamento inalterado, ainda retorna apenas `{ "status": "ok" }`
+- **OTel Gauge**: O já existente `registerDaemonGaugeCallbacks` pode opcionalmente adicionar a gauge `activePrompts` posteriormente, mas não está no escopo atual
 
 ## Extensões futuras (fora do escopo atual)
 
-1. **Desligamento automático**: o daemon possui um parâmetro `--auto-shutdown-idle-ms` interno, que sai após tempo ocioso excedido (adequado para cenários systemd/K8s Pod)
-2. **Exposição de métricas OTel**: registrar `activePrompts` e `idleSinceMs` como gauges no meter OTel
-3. **Callback Webhook**: enviar eventos proativamente para sistemas externos quando o limite de ociosidade for excedido
+1. **Desligamento automático**: Parâmetro embutido `--auto-shutdown-idle-ms` no Daemon para encerrar após tempo ocioso (adequado para cenários systemd/K8s Pod)
+2. **Exposição de métricas OTel**: Registrar `activePrompts` e `idleSinceMs` como gauges no meter OTel
+3. **Callback Webhook**: Enviar evento ativamente para sistemas externos quando o limiar de ociosidade for excedido

@@ -1,23 +1,23 @@
-# SDK Java Qwen Code
+# SDK Java pour Qwen Code
 
-Le SDK Java Qwen Code est un SDK expérimental minimal pour l'accès programmatique aux fonctionnalités de Qwen Code. Il fournit une interface Java pour interagir avec le CLI Qwen Code, permettant aux développeurs d'intégrer les capacités de Qwen Code dans leurs applications Java.
+Le SDK Java pour Qwen Code est un SDK expérimental minimal offrant un accès programmatique aux fonctionnalités de Qwen Code. Il fournit une interface Java pour interagir avec la CLI de Qwen Code, permettant aux développeurs d'intégrer les capacités de Qwen Code dans leurs applications Java.
 
 ## Prérequis
 
 - Java >= 1.8
-- Maven >= 3.6.0 (pour la compilation depuis les sources)
+- Maven >= 3.6.0 (pour la construction à partir des sources)
 - qwen-code >= 0.5.0
 
 ### Dépendances
 
-- **Journalisation** : ch.qos.logback:logback-classic
+- **Logging** : ch.qos.logback:logback-classic
 - **Utilitaires** : org.apache.commons:commons-lang3
 - **Traitement JSON** : com.alibaba.fastjson2:fastjson2
 - **Tests** : JUnit 5 (org.junit.jupiter:junit-jupiter)
 
 ## Installation
 
-Ajoutez la dépendance suivante à votre `pom.xml` Maven :
+Ajoutez la dépendance suivante à votre fichier `pom.xml` Maven :
 
 ```xml
 <dependency>
@@ -33,21 +33,21 @@ Ou si vous utilisez Gradle, ajoutez à votre `build.gradle` :
 implementation 'com.alibaba:qwencode-sdk:{$version}'
 ```
 
-## Compilation et exécution
+## Construction et exécution
 
-### Commandes de compilation
+### Commandes de construction
 
 ```bash
-# Compiler le projet
+# Compilation du projet
 mvn compile
 
-# Exécuter les tests
+# Exécution des tests
 mvn test
 
-# Packager le JAR
+# Empaquetage du JAR
 mvn package
 
-# Installer dans le dépôt local
+# Installation dans le dépôt local
 mvn install
 ```
 
@@ -124,69 +124,70 @@ public static void runStreamingExample() {
 }
 ```
 
-d'autres exemples se trouvent dans src/test/java/com/alibaba/qwen/code/cli/example
+Pour d'autres exemples, consultez le répertoire src/test/java/com/alibaba/qwen/code/cli/example
 
 ## Architecture
 
 Le SDK suit une architecture en couches :
 
-- **Couche API** : Fournit les points d'entrée principaux via la classe `QwenCodeCli` avec des méthodes statiques simples pour une utilisation de base
-- **Couche Session** : Gère les sessions de communication avec le CLI Qwen Code via la classe `Session`
-- **Couche Transport** : Gère le mécanisme de communication entre le SDK et le processus CLI (utilise actuellement le transport par processus via `ProcessTransport`)
-- **Couche Protocole** : Définit les structures de données pour la communication basée sur le protocole CLI
-- **Utilitaires** : Utilitaires courants pour l'exécution concurrente, la gestion des délais d'attente et la gestion des erreurs
+- **Couche API** : Fournit les points d'entrée principaux via la classe `QwenCodeCli` avec des méthodes statiques simples pour une utilisation basique
+- **Couche Session** : Gère les sessions de communication avec la CLI de Qwen Code via la classe `Session`
+- **Couche Transport** : Gère le mécanisme de communication entre le SDK et le processus CLI (actuellement via un transport de processus avec `ProcessTransport`)
+- **Couche Protocole** : Définit les structures de données pour la communication basée sur le protocole de la CLI
+- **Utilitaires** : Utilitaires courants pour l'exécution concurrente, la gestion des timeouts et la gestion des erreurs
 
 ## Fonctionnalités clés
 
 ### Modes de permission
 
 Le SDK prend en charge différents modes de permission pour contrôler l'exécution des outils :
+
 - **`default`** : Les outils d'écriture sont refusés sauf approbation via le callback `canUseTool` ou dans `allowedTools`. Les outils en lecture seule s'exécutent sans confirmation.
-- **`plan`** : Bloque tous les outils d'écriture, en demandant à l'IA de présenter d'abord un plan.
+- **`plan`** : Bloque tous les outils d'écriture, en demandant à l'IA de présenter un plan d'abord.
 - **`auto-edit`** : Approuve automatiquement les outils d'édition (`edit`, `write_file`, `notebook_edit`) tandis que les autres outils nécessitent une confirmation.
 - **`yolo`** : Tous les outils s'exécutent automatiquement sans confirmation.
 
 ### Consommateurs d'événements de session et consommateurs de contenu d'assistant
 
-Le SDK fournit deux interfaces clés pour la gestion des événements et du contenu du CLI :
+Le SDK fournit deux interfaces clés pour gérer les événements et le contenu de la CLI :
 
 #### Interface SessionEventConsumers
 
-L'interface `SessionEventConsumers` propose des callbacks pour différents types de messages durant une session :
+L'interface `SessionEventConsumers` fournit des callbacks pour différents types de messages au cours d'une session :
 
-- `onSystemMessage` : Gère les messages système du CLI (reçoit Session et SDKSystemMessage)
-- `onResultMessage` : Gère les messages de résultat du CLI (reçoit Session et SDKResultMessage)
-- `onAssistantMessage` : Gère les messages de l'assistant (réponses IA) (reçoit Session et SDKAssistantMessage)
-- `onPartialAssistantMessage` : Gère les messages partiels de l'assistant durant le streaming (reçoit Session et SDKPartialAssistantMessage)
+- `onSystemMessage` : Gère les messages système de la CLI (reçoit Session et SDKSystemMessage)
+- `onResultMessage` : Gère les messages de résultat de la CLI (reçoit Session et SDKResultMessage)
+- `onAssistantMessage` : Gère les messages d'assistant (réponses de l'IA) (reçoit Session et SDKAssistantMessage)
+- `onPartialAssistantMessage` : Gère les messages partiels d'assistant lors du streaming (reçoit Session et SDKPartialAssistantMessage)
 - `onUserMessage` : Gère les messages utilisateur (reçoit Session et SDKUserMessage)
 - `onOtherMessage` : Gère les autres types de messages (reçoit Session et String message)
 - `onControlResponse` : Gère les réponses de contrôle (reçoit Session et CLIControlResponse)
 - `onControlRequest` : Gère les requêtes de contrôle (reçoit Session et CLIControlRequest, retourne CLIControlResponse)
-- `onPermissionRequest` : Gère les demandes d'autorisation (reçoit Session et CLIControlRequest<CLIControlPermissionRequest>, retourne Behavior)
+- `onPermissionRequest` : Gère les requêtes de permission (reçoit Session et CLIControlRequest<CLIControlPermissionRequest>, retourne Behavior)
 
 #### Interface AssistantContentConsumers
 
-L'interface `AssistantContentConsumers` gère différents types de contenu au sein des messages de l'assistant :
+L'interface `AssistantContentConsumers` gère différents types de contenu dans les messages d'assistant :
 
 - `onText` : Gère le contenu textuel (reçoit Session et TextAssistantContent)
 - `onThinking` : Gère le contenu de réflexion (reçoit Session et ThinkingAssistantContent)
-- `onToolUse` : Gère l'utilisation d'outils (reçoit Session et ToolUseAssistantContent)
-- `onToolResult` : Gère les résultats d'outils (reçoit Session et ToolResultAssistantContent)
+- `onToolUse` : Gère le contenu d'utilisation d'outil (reçoit Session et ToolUseAssistantContent)
+- `onToolResult` : Gère le contenu de résultat d'outil (reçoit Session et ToolResultAssistantContent)
 - `onOtherContent` : Gère les autres types de contenu (reçoit Session et AssistantContent)
 - `onUsage` : Gère les informations d'utilisation (reçoit Session et AssistantUsage)
-- `onPermissionRequest` : Gère les demandes d'autorisation (reçoit Session et CLIControlPermissionRequest, retourne Behavior)
+- `onPermissionRequest` : Gère les requêtes de permission (reçoit Session et CLIControlPermissionRequest, retourne Behavior)
 - `onOtherControlRequest` : Gère les autres requêtes de contrôle (reçoit Session et ControlRequestPayload, retourne ControlResponsePayload)
 
 #### Relation entre les interfaces
 
-**Note importante sur la hiérarchie des événements :**
+**Remarque importante sur la hiérarchie des événements :**
 
-- `SessionEventConsumers` est le **processeur d'événements de haut niveau** qui gère les différents types de messages (système, assistant, utilisateur, etc.)
-- `AssistantContentConsumers` est le **processeur de contenu de bas niveau** qui gère les différents types de contenu au sein des messages de l'assistant (texte, outils, réflexion, etc.)
+- `SessionEventConsumers` est le processeur d'événements **haut niveau** qui gère différents types de messages (système, assistant, utilisateur, etc.)
+- `AssistantContentConsumers` est le processeur de contenu **bas niveau** qui gère différents types de contenu au sein des messages d'assistant (texte, outils, réflexion, etc.)
 
-**Relation de traitement :**
+**Relation entre les processeurs :**
 
-- `SessionEventConsumers` → `AssistantContentConsumers` (SessionEventConsumers utilise AssistantContentConsumers pour traiter le contenu des messages de l'assistant)
+- `SessionEventConsumers` → `AssistantContentConsumers` (SessionEventConsumers utilise AssistantContentConsumers pour traiter le contenu des messages d'assistant)
 
 **Relations de dérivation des événements :**
 
@@ -196,7 +197,7 @@ L'interface `AssistantContentConsumers` gère différents types de contenu au se
 
 **Relations de timeout des événements :**
 
-Chaque méthode de gestion d'événement possède une méthode de timeout correspondante qui permet de personnaliser le comportement de timeout pour cet événement spécifique :
+Chaque méthode de gestion d'événement possède une méthode de timeout correspondante permettant de personnaliser le comportement de timeout pour cet événement spécifique :
 
 - `onSystemMessage` ↔ `onSystemMessageTimeout`
 - `onResultMessage` ↔ `onResultMessageTimeout`
@@ -222,60 +223,61 @@ Pour les méthodes de timeout de AssistantContentConsumers :
 - `SessionEventSimpleConsumers` timeout par défaut : 180 secondes (Timeout.TIMEOUT_180_SECONDS)
 - `AssistantContentSimpleConsumers` timeout par défaut : 60 secondes (Timeout.TIMEOUT_60_SECONDS)
 
-**Exigences de hiérarchie des timeout :**
+**Exigences de hiérarchie des timeouts :**
 
-Pour un fonctionnement correct, les relations de timeout suivantes doivent être respectées :
+Pour un bon fonctionnement, les relations de timeout suivantes doivent être maintenues :
 
 - La valeur de retour de `onAssistantMessageTimeout` doit être supérieure aux valeurs de retour de `onTextTimeout`, `onThinkingTimeout`, `onToolUseTimeout`, `onToolResultTimeout` et `onOtherContentTimeout`
 - La valeur de retour de `onControlRequestTimeout` doit être supérieure aux valeurs de retour de `onPermissionRequestTimeout` et `onOtherControlRequestTimeout`
-### Options de Transport
 
-La classe `TransportOptions` permet de configurer la manière dont le SDK communique avec la CLI Qwen Code :
+### Options de transport
 
-- `pathToQwenExecutable` : Chemin vers l'exécutable de la CLI Qwen Code
+La classe `TransportOptions` permet de configurer la communication entre le SDK et la CLI de Qwen Code :
+
+- `pathToQwenExecutable` : Chemin vers l'exécutable de la CLI de Qwen Code
 - `cwd` : Répertoire de travail pour le processus CLI
-- `model` : Modèle IA à utiliser pour la session
+- `model` : Modèle d'IA à utiliser pour la session
 - `permissionMode` : Mode de permission qui contrôle l'exécution des outils
-- `env` : Variables d'environnement à transmettre au processus CLI
+- `env` : Variables d'environnement à passer au processus CLI
 - `maxSessionTurns` : Limite le nombre de tours de conversation dans une session
-- `coreTools` : Liste des outils principaux qui doivent être disponibles pour l'IA
+- `coreTools` : Liste des outils de base qui doivent être disponibles pour l'IA
 - `excludeTools` : Liste des outils à exclure de la disponibilité pour l'IA
 - `allowedTools` : Liste des outils pré-approuvés pour une utilisation sans confirmation supplémentaire
 - `authType` : Type d'authentification à utiliser pour la session
-- `includePartialMessages` : Permet de recevoir des messages partiels lors des réponses en streaming
-- `turnTimeout` : Délai d'attente pour un tour de conversation complet
-- `messageTimeout` : Délai d'attente pour les messages individuels au sein d'un tour
-- `resumeSessionId` : Identifiant d'une session précédente à reprendre
-- `otherOptions` : Options supplémentaires en ligne de commande à transmettre à la CLI
+- `includePartialMessages` : Active la réception de messages partiels lors des réponses en streaming
+- `turnTimeout` : Timeout pour un tour de conversation complet
+- `messageTimeout` : Timeout pour les messages individuels au sein d'un tour
+- `resumeSessionId` : ID d'une session précédente à reprendre
+- `otherOptions` : Options supplémentaires en ligne de commande à passer à la CLI
 
-### Fonctionnalités de Contrôle de Session
+### Fonctionnalités de contrôle de session
 
 - **Création de session** : Utilisez `QwenCodeCli.newSession()` pour créer une nouvelle session avec des options personnalisées
-- **Gestion de session** : La classe `Session` fournit des méthodes pour envoyer des invites, gérer les réponses et gérer l'état de la session
+- **Gestion de session** : La classe `Session` fournit des méthodes pour envoyer des prompts, gérer les réponses et gérer l'état de la session
 - **Nettoyage de session** : Fermez toujours les sessions avec `session.close()` pour terminer correctement le processus CLI
 - **Reprise de session** : Utilisez `setResumeSessionId()` dans `TransportOptions` pour reprendre une session précédente
-- **Interruption de session** : Utilisez `session.interrupt()` pour interrompre une invite en cours d'exécution
-- **Changement dynamique de modèle** : Utilisez `session.setModel()` pour changer de modèle en cours de session
-- **Changement dynamique de mode de permission** : Utilisez `session.setPermissionMode()` pour changer le mode de permission en cours de session
+- **Interruption de session** : Utilisez `session.interrupt()` pour interrompre un prompt en cours d'exécution
+- **Changement dynamique de modèle** : Utilisez `session.setModel()` pour changer le modèle pendant une session
+- **Changement dynamique de mode de permission** : Utilisez `session.setPermissionMode()` pour changer le mode de permission pendant une session
 
-### Configuration du Pool de Threads
+### Configuration du pool de threads
 
 Le SDK utilise un pool de threads pour gérer les opérations concurrentes avec la configuration par défaut suivante :
 
 - **Taille de base du pool** : 30 threads
 - **Taille maximale du pool** : 100 threads
 - **Temps de maintien en vie** : 60 secondes
-- **Capacité de la file d'attente** : 300 tâches (en utilisant LinkedBlockingQueue)
+- **Capacité de la file d'attente** : 300 tâches (avec LinkedBlockingQueue)
 - **Nommage des threads** : "qwen_code_cli-pool-{number}"
-- **Threads démons** : false
+- **Threads daemon** : false
 - **Gestionnaire d'exécution rejetée** : CallerRunsPolicy
 
-## Gestion des Erreurs
+## Gestion des erreurs
 
 Le SDK fournit des types d'exceptions spécifiques pour différents scénarios d'erreur :
 
 - `SessionControlException` : Levée en cas de problème de contrôle de session (création, initialisation, etc.)
-- `SessionSendPromptException` : Levée en cas de problème d'envoi d'une invite ou de réception d'une réponse
+- `SessionSendPromptException` : Levée en cas de problème d'envoi d'un prompt ou de réception d'une réponse
 - `SessionClosedException` : Levée lors d'une tentative d'utilisation d'une session fermée
 
 ## FAQ / Dépannage
@@ -284,13 +286,13 @@ Le SDK fournit des types d'exceptions spécifiques pour différents scénarios d
 
 R : Oui, la CLI Qwen 0.5.5 ou supérieure est requise.
 
-### Q : Quelles versions de Java sont supportées ?
+### Q : Quelles versions de Java sont prises en charge ?
 
 R : Le SDK nécessite Java 1.8 ou supérieur.
 
 ### Q : Comment gérer les requêtes de longue durée ?
 
-R : Le SDK inclut des utilitaires de délai d'attente. Vous pouvez configurer les délais d'attente à l'aide de la classe `Timeout` dans `TransportOptions`.
+R : Le SDK inclut des utilitaires de timeout. Vous pouvez configurer les timeouts à l'aide de la classe `Timeout` dans `TransportOptions`.
 
 ### Q : Pourquoi certains outils ne s'exécutent-ils pas ?
 
@@ -300,9 +302,9 @@ R : Cela est probablement dû aux modes de permission. Vérifiez vos paramètres
 
 R : Utilisez la méthode `setResumeSessionId()` dans `TransportOptions` pour reprendre une session précédente.
 
-### Q : Puis-je personnaliser l'environnement pour le processus CLI ?
+### Q : Puis-je personnaliser l'environnement du processus CLI ?
 
-R : Oui, utilisez la méthode `setEnv()` dans `TransportOptions` pour transmettre des variables d'environnement au processus CLI.
+R : Oui, utilisez la méthode `setEnv()` dans `TransportOptions` pour passer des variables d'environnement au processus CLI.
 
 ## Licence
 

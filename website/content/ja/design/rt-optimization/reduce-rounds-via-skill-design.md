@@ -1,101 +1,101 @@
-# Agent Loop ラウンド削減：Skill 設計から始める
+# Agent Loop 減輪方案：Skill 設計から始める
 
-> `rt-optimization-design.md` と同ディレクトリに置き、互いに補完する関係にある。あちらは**フレームワーク機構**レベルのラウンド削減（D1 末尾総括ラウンドのスキップ、D2 fast ルーティング、D4 prevalidate）を扱うが、本ドキュメントは**ラウンド削減の真のレバレッジは skill/tool 設計層にある**と主張し、フレームワーク改造にも cache ヒット率データにも依存しない実装パスを提示する。
+> `rt-optimization-design.md` と同じディレクトリにあり、相互補完関係にあります。その文書は**フレームワーク機構**レベルでの減輪（D1 最後のサマリーラウンドをスキップ、D2 fast ルーティング、D4 prevalidate）について議論しています。この文書は**減輪の真のレバレッジは skill/tool 設計層にある**と主張し、フレームワーク改造や cache hit rate データに依存しない実施可能なパスを提案します。
 
 ---
 
-## 0. 検収 Spec（開発前置 gate）
+## 0. 受け入れ仕様（開発前のゲート）
 
-> 本節は開発の**前置 gate** — どの spec を着手前に確定すべきか、どの spec をデータドリブンで後から確定すべきかを列挙する。spec を前置することで、(a) 完成後にメトリクスが計測不能であることが判明する、(b) 閾値が結果に引きずられて結論が歪む、(c) ストップロスが設定されず「作業しているように見えるが成果がない」状態に陥る、という問題を回避する。
+> このセクションは開発の**前提ゲート**です。つまり、着手前に確認すべき仕様と、データ駆動で待つべき仕様をリストアップしています。仕様を「あとで指標を見てから決める」のではなく事前に決めることで、(a) 書き終わってから指標が測定不能と判明する、(b) 結果に応じて閾値が変動し結論が歪む、(c) ストップロスラインを設定せず「やっているように見えて実際には効果がない」状態に陥る、を防ぎます。
 >
-> **本 spec フレームワークの適用範囲**：このフレームワークは P1.5 ベースライン計測後に方向性の正しさを判断できることを前提とする。「ラウンド削減」シナリオでは明確に計測可能なシグナル（ラウンド数、followup_rate、batch_size）があるためこの前提が成立する。**前提が成立しないシナリオ**（将来、同フレームワークを「品質最適化」など定量化困難な方向に適用する場合）では、spec 前置がむしろ迅速な学習を妨げる可能性がある。その際は §0.5 ガバナンスプロセスに戻って再評価し、本フレームワークを機械的に適用しないこと。
+> **本仕様フレームワークの適用範囲**：このフレームワークは、正しい方向性が P1.5 ベースライン測定後に判断できることを前提としています。この前提は「減輪」シナリオでは成立します。なぜなら明確な測定可能シグナル（ラウンド数、followup_rate、batch_size）があるからです。**この前提を超えるシナリオ**（例えば将来同じフレームワークを「品質最適化」など定量化が難しい方向に使う場合）では、仕様を事前に決めることがむしろ迅速な学習を妨げる可能性があります。その場合は §0.5 のガバナンスプロセスに戻って再評価し、このフレームワークを機械的に適用しないでください。
 
-**spec は 4 層に分類 — タイミングが異なる**：
+**仕様は 4 層に分かれます。各層のタイミングが異なります。**
 
-| 層 | 種別 | 確定タイミング |
-| ---- | --------------------------------------- | -------------------------------- |
-| §0.1 | エンジニアリング層 spec（データパイプライン・コード変更の正確性） | **前置**、即座に確定可能 |
-| §0.2 | 統計層 spec（プロジェクトの「成功」指標） | **前置**、閾値は P1.5 ベースライン後に確定 |
-| §0.3 | ストップロスライン（「発生したら中止」のハード条件） | **前置**、変更不可 |
-| §0.4 | per-skill spec（具体的な変更対象と目標値） | **後置**、Layer 1 データドリブン |
+| 層     | タイプ                                         | 確定タイミング                           |
+| ------ | ---------------------------------------------- | ---------------------------------------- |
+| §0.1 | エンジニアリング層仕様（データパイプライン、コード変更の正確性） | **事前**、すぐに確定可能                 |
+| §0.2 | 統計層仕様（プロジェクトの「成功」指標）       | **事前**、閾値は P1.5 ベースライン後に確定 |
+| §0.3 | ストップロスライン（「発生したら諦める」ハード条件） | **事前**、変更不可                       |
+| §0.4 | skill ごとの仕様（具体的に何をどう変えるか、目標値） | **事後**、Layer 1 データ駆動            |
 
-### 0.1 エンジニアリング層 spec（前置必須 · 即座に確定可能）
+### 0.1 エンジニアリング層仕様（必ず事前、すぐに確定可能）
 
-データパイプラインとコード変更の正確性 spec — ビジネス判断やベースラインデータに依存せず、着手前に確定すべきもの：
+データパイプラインとコード変更の正確性に関する仕様。ビジネス判断やベースラインデータに依存せず、開発前に確定すべきです。
 
-- **qwen-logger パイプライン疎通**（§4.1.1b）：skill_launch イベントが OTLP と qwen-logger の両パイプラインに記録される
-- **`prompt_id` の連結**：単一の user prompt が起点の `skill_launch` と後続の `tool_call` が同一の `prompt_id` で完全なトレイルとして grep できる
-- **`batch_size` が undefined でない**（§4.3.2 方向 A）：単一ツールの batch は `batch_size = 1` / `batch_position = 0` を明示的に設定する
-- **SQL が動作する**（§4.1.2）：オフライン SQL が実際の telemetry バックエンドで非空の結果を出力し、followup_rate が高い/低い skill を区別できる
-- **ベースライン分散 < P50 × 20%**（P1.5）：ベースライン計測が安定している（でなければ後続の A/B 比較が信頼できない）— 注：本条は §0.1 エンジニアリング層に列挙しているが、**確定は P1.5 ベースラインデータに依存する**ため §0.1 中唯一の後置検証項である。P1.5 を通過しない場合、§0.2 の閾値を信頼できる形で確定できない
-- **Skill サイズ予算**（Layer 2 改造）：followup を内部処理化した後、skill 説明のトークン数が改造前の 2× を超えず、かつ絶対値 ≤ 500 tokens（小さい方を採用）。超過する場合は §4.2 に従って skill を分割し、統合しないこと。本条は §7 第 2 条および §4.2 の既存制約と整合しており、spec 層に前置する
-- **`npm run preflight` が全て通過**：各 PR のハード要件
+- **qwen-logger リンクの正常性**（§4.1.1b）：skill_launch イベントが OTLP と qwen-logger の両方のパイプラインに届くこと
+- **`prompt_id` による連結**：単一の user prompt によって起動された `skill_launch` と後続の `tool_call` が同じ `prompt_id` で完全なトレイルを grep できること
+- **`batch_size` が undefined でないこと**（§4.1.1 の方向 A）：単一ツールバッチは明示的に `batch_size = 1` / `batch_position = 0` を設定すること
+- **SQL が実行可能であること**（§4.1.2）：オフライン SQL が本番 telemetry backend で空でない結果を返し、followup_rate が高い skill と低い skill を区別できること
+- **ベースラインの分散が P50 の 20% 未満であること**（P1.5）：ベースライン測定が安定していること（そうでなければ後続の A/B 比較が信頼できない）。注：この項目は §0.1 エンジニアリング層に記載されていますが、**確定には P1.5 ベースラインデータが必要**であり、§0.1 の中で唯一の事後検証項目です。P1.5 が不合格の場合、§0.2 の閾値を信頼して確定できません。
+- **Skill サイズ予算**（Layer 2 改造）：インライン followup 後、skill 説明のトークン数が改造前の 2 倍を超えず、かつ絶対値で 500 トークン以下（小さい方を採用）であること。超過した場合は skill をマージせず §4.2 に従って分割すること。本項目は §7 の第 2 条、§4.2 の既存制約と整合し、仕様層に事前化します。
+- **`npm run preflight` が全て成功すること**：各 PR のハードな必須条件。
 
-### 0.2 統計層 spec（前置必須 · 閾値は P1.5 後に確定）
+### 0.2 統計層仕様（必ず事前、閾値は P1.5 後に確定）
 
-プロジェクトが「統計的に成功」と見なせる指標 — **方向**は前置確定、**閾値**はベースライン計測後に確定（根拠なく数値を設定することを避けるため）：
+プロジェクトが「統計的に成功」と見なされるための指標。**方向**は事前に決め、**閾値**はベースライン測定後に確定します（適当な数値を事前に埋めることを避けるため）。
 
-| 指標 | 方向 | 確定タイミング | 暫定閾値（要校正） |
-| ---------------------------------- | -------- | --------- | ---------------------- |
-| top-3 skill 加重 `followup_rate` | ↓ | P1.5 末 | ≥ 30% |
-| skill を含むセッションの端到端 RT P50 | ↓ | P1.5 末 | ≥ 2s |
-| `batch_size > 1` の tool_call 割合 | ↑ | P3 前 | ≥ 30% |
-| 改造 skill の発動シナリオ A/B 有意性 | p < 0.05 | P2 完了前 | n は要確定 |
+| 指標                                             | 方向     | 確定タイミング | 現在の仮の閾値（調整予定） |
+| ------------------------------------------------ | -------- | -------------- | ------------------------- |
+| トップ 3 skill の重み付き `followup_rate`          | ↓        | P1.5 終了時    | ≥ 30%                     |
+| skill を含むセッションのエンドツーエンド RT P50   | ↓        | P1.5 終了時    | ≥ 2s                      |
+| `batch_size > 1` の tool_call の割合              | ↑        | P3 前          | ≥ 30%                     |
+| 改造した skill のトリガーシナリオでの A/B 有意性 | p < 0.05 | P2 改造完了前  | n 未定                    |
 
-> **重要な制約**：暫定閾値はコミットメントではない。P1.5 ベースラインが「top-5 skill 加重 followup_rate < 30%」を示した場合（§0.3 ストップロスライン #1 の発動）、プロジェクトを終了する。**閾値を「達成」させるために spec を下方修正してはならない**。
+> **重要な制約**：仮の閾値はコミットメントではありません。P1.5 ベースラインで「トップ 5 skill の重み付き followup_rate < 30%」となった場合（§0.3 ストップロス #1 が発動）、プロジェクトは終了します。**閾値を「達成」させるために仕様を引き下げてはいけません。**
 >
-> **計測方法**：各指標の計測方法、SQL テンプレート、A/B 設計は §5.1-§5.2 を参照。統計的有意性（p < 0.05）のサンプルサイズ計算は §5.1 を参照。
+> **測定方法**：各指標の測定方法、SQL テンプレート、A/B デザインは §5.1-§5.2 を参照。統計的有意性（p < 0.05）のサンプルサイズ計算は §5.1 を参照。
 
-### 0.3 ストップロスライン（前置必須 · P-1 確定後は限定的に変更可）
+### 0.3 ストップロスライン（必ず事前、P-1 で確定後は限定的に調整可能）
 
-§5.3 に列挙済み。これらは「発生したら中止」のハード条件 — **§0.2 統計層 spec を達成するためにストップロスラインを緩和することはいかなる場合も不可**。
+§5.3 で列挙済み。これらは「発生したら諦める」ハード条件です。**§0.2 統計層仕様を達成するために、ストップロスラインを緩めてはいけません。**
 
-- **結果指標**（3 件）：top-5 加重 `followup_rate < 30%` / 2 つの skill 改造後 RT P50 ↓ < 1s / Layer 3 後 `batch_size P50` が依然 = 1
-- **プロセス指標**（3 件）：skill 命中率 ↓ ≥ 5pp / インライン followup 失敗率 ≥ 5% / ユーザーキャンセル率 ↑ ≥ 2pp
+- **結果指標**（3 つ）：トップ 5 の重み付き `followup_rate < 30%` / 2 つの skill 改造後 RT P50 減少 < 1s / Layer 3 後も `batch_size P50` が 1 のまま
+- **プロセス指標**（3 つ）：skill ヒット率減少 ≥ 5pp / インライン followup 失敗率 ≥ 5% / ユーザーキャンセル率増加 ≥ 2pp
 
 詳細は §5.3 を参照。
 
-**変更可能性ルール**（データ根拠のない硬直した規律を避けるため）：
+**調整可能性ルール**（データなしで規律が過度に硬直的になるのを防ぐ）：
 
-| フェーズ | 変更可否 | 変更方向 |
-| --------------------- | ---------------------------------------- | ------------------------------------------------------------------------------- |
-| P-1 確定時 | ✅ 任意変更可（過去の telemetry またはコンセンサスに基づく） | 任意 |
-| P-1 確定後 → P1.5 末 | ❌ 変更不可 | — |
-| P1.5 末（ベースライン公開時） | ✅ **緩和方向のみ**一度だけ許可 | 緩和（例：30% → 25%）にはデータ根拠 + 2 人レビューが必要。**収縮は不可**（事後のストップロス追加防止） |
-| P1.5 以降 | ❌ 変更不可 | — |
+| フェーズ               | 調整可否                                     | 調整方向                                                                                 |
+| ---------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| P-1 確定時             | ✅ 任意に調整可能（過去 telemetry または合意に基づく） | 任意                                                                               |
+| P-1 確定後 → P1.5 終了 | ❌ 調整不可                                  | —                                                                                        |
+| P1.5 終了時（ベースライン取得時） | ✅ **一度だけ緩和**可能                     | 緩和（例：30% → 25%）にはデータ証拠と 2 名のレビューが必要。**厳格化は不可**（事後的にストップロスを追加することを防ぐ） |
+| P1.5 以降              | ❌ 調整不可                                  | —                                                                                        |
 
-> 閾値の暫定値（30% / 1s / 5pp 等）は現時点で**過去データの裏付けなし**、P-1 レビュー前のエンジニアの直感による。P-1 レビュー時に直近 4 週間の過去 telemetry を取得できる場合は、過去データに基づいてストップロスラインを校正すること。取得できない場合は暫定値を維持し、P1.5 末に上記の「一度だけ緩和」ルールを適用する。
+> 仮の閾値（30% / 1s / 5pp など）は現在**過去データによる裏付けがなく**、P-1 レビュー前のエンジニアの直感に基づいています。P-1 レビュー時に過去 4 週間の telemetry が入手可能であれば、それに基づいてストップロスラインを調整すべきです。入手できない場合は仮の値を保持し、P1.5 終了時に上記の「一度だけ緩和」ルールを適用します。
 
-### 0.4 per-skill spec（後置必須 · データドリブン）
+### 0.4 skill ごとの仕様（必ず事後、データ駆動）
 
-具体的にどの skill を変更し、`followup_rate` の目標値をいくつにするか — **Layer 1 データが出るまで確定しない**。
+どの skill をどのように変更するか、目標 `followup_rate` をいくつにするかは、**Layer 1 データが出るまで確定しません**。
 
-確定しない理由：事前設計と事後データは大きく乖離することがある。前置強制すると `rt-optimization-design.md` §7 D2 路線の轍を踏む — 「fast モデルが 2-3s 速い」という事前仮定が、cache 実装という事後事実によって覆され、純収益がほぼゼロかマイナスになった先例がある。
+確定しない理由：事前設計と事後データは大きく乖離する可能性があります。無理に事前に決めると、`rt-optimization-design.md` §7 の D2 ルートと同じ轍を踏むことになります。事前の仮定「fast モデルが 2-3 秒速い」が、キャッシュ実装という事後の事実によって覆され、正味効果がほぼゼロまたはマイナスになったのです。
 
-**成果物の置き場**：per-skill spec は P1.5 末にデータドリブンで作成し、各 Layer 2 PR の description に独立して記載する（design ドキュメントには含めない。skill を一つ変更するたびにドキュメントを更新することを避けるため）。
+**成果物の場所**：skill ごとの仕様は P1.5 終了時にデータ駆動で生成され、各 Layer 2 PR の description 内で独立して宣言されます（design ドキュメントには入れません。skill が変わるたびにドキュメントを更新するのを避けるため）。
 
-**per-skill spec 構造テンプレート**（§4.2 の PR description 必須項目と対応 — この 2 つのリストは同一のもので、§4.2 はプロセス視点、本節は spec 視点）：
+**skill ごとの仕様テンプレート**（§4.2 の PR description 必須項目と整合。これら二つのリストは同一のもので、§4.2 はプロセス視点、本節は仕様視点です。）
 
-| フィールド | 内容 | データソース |
-| --------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------- |
-| 1. 現状データ | invocation_count、followup_rate、top followup tools | Layer 1 telemetry |
-| 2. 目標 | followup_rate を X% から Y% に削減 | §0.2 の改善方向に基づき、絶対値は PR 内で自己定義 |
-| 3. 改造範囲 | どの followup をインライン化するか（read/grep/shell read-only）、明示的に**インライン化しない**もの（write 操作 / 別 skill / 深い推論） | §4.2 改造モード表 |
-| 4. 出力コントラクト更新 | skill 説明に追加する事前宣言（"Returns: ..."） | §3.2 改造例 |
-| 5. A/B 計画 | 改造後 2 週間の followup_rate / RT P50 / プロセス指標の観察、§5.1 検収ラインとの対照 | §5.1 |
-| 6. サイズ証明 | 改造前後の skill 説明トークン数（tiktoken で推定）、§0.1「Skill サイズ予算」を超えないこと | §0.1 第 6 条 |
+| フィールド     | 内容                                                                                                       | データソース                |
+| -------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------- |
+| 1. 現在のデータ | invocation_count、followup_rate、トップ followup tools                                                     | Layer 1 telemetry           |
+| 2. 目標        | followup_rate を X% から Y% に下げる                                                                       | §0.2 の改善方向に基づき、絶対値は PR 内で自己決定 |
+| 3. 改造範囲    | どの followup をインライン化するか（read/grep/shell read-only）、**インライン化しない**ものを明記（write操作 / 他 skill / 深い推論） | §4.2 改造パターン表         |
+| 4. 出力契約更新 | skill 説明に追加する事前宣言（"Returns: ..."）                                                             | §3.2 改造例                 |
+| 5. A/B 計画    | 改造後 2 週間の followup_rate / RT P50 / プロセス指標の観測、§5.1 の合格ラインとの比較                     | §5.1                        |
+| 6. サイズ証明  | 改造前後の skill 説明トークン数（tiktoken で見積もり）、§0.1「Skill サイズ予算」を超えないこと              | §0.1 第 6 条                |
 
-### 0.5 spec ガバナンス
+### 0.5 仕様ガバナンス
 
-- **§0.1 / §0.3 spec の変更**には design ドキュメントの更新 + PR レビューが必要。§0.3 は §0.3「変更可能性ルール」に従い P1.5 末のウィンドウ内でのみ緩和可
-- **§0.2 閾値の変更（P1.5 確定後）**には以下のデータ根拠を少なくとも 1 つ添付する：
-  - (a) P1.5 ベースライン計測結果と確定済み閾値との乖離分析（元の計測記録へのリンク含む）
-  - (b) 同種プロジェクトの公開 benchmark データ（ソースへのリンク含む）
-  - (c) 社内 ≥ 2 人のレビュー署名付き乖離説明
+- **§0.1 / §0.3 の仕様変更**には design ドキュメントの更新と PR レビューが必要。§0.3 は §0.3「調整可能性ルール」に従い、P1.5 終了時のウィンドウ内でのみ緩和可能。
+- **§0.2 の閾値変更（P1.5 確定後）**には、以下のデータ証拠のうち少なくとも 1 つが必要：
+  - (a) P1.5 ベースライン測定結果と確定済み閾値との偏差分析（元の測定記録へのリンクを含む）
+  - (b) 類似プロジェクトの公開ベンチマークデータ（ソースリンクを含む）
+  - (c) 社内 2 名以上のレビュー署名付きの偏差説明
 
-  PR レビュー時に上記根拠が一切ない場合、レビュアーは **PR をブロックする義務がある** — 「エンジニアの直感による調整」は認めない
+  PR レビュー時にこれらの証拠が全くない場合、レビュアーは**PR をブロックする義務がある**。エンジニアの直感による調整は受け入れない。
 
-- **§0.4 per-skill spec** はデータドリブンで作成後、PR description に記載する（§0.4 の 6 項テンプレートに従い、design ドキュメントには含めない）
+- **§0.4 の skill ごとの仕様**はデータ駆動で生成された後、PR description に書き込む（§0.4 の 6 項目テンプレートに従う）。design ドキュメントには入れない。
 
 ---
 
@@ -103,68 +103,68 @@
 
 ### 1.1 問題
 
-`rt-optimization-design.md` §1.2 に示されたベースライン：3 ラウンドの agent loop、13.4s 端到端、うち LLM 呼び出しが 78% を占める。各ラウンドは約 3-4s。
+`rt-optimization-design.md` §1.2 のベースライン：3 ラウンドの agent loop、13.4s エンドツーエンド、うち LLM 呼び出しが 78% を占める。各ラウンドは約 3-4s。
 
 ```
-Round 1 (3.8s, 28%): LLM が skill を呼び出すことを決定
-Round 2 (3.0s, 22%): LLM が shell を呼び出すことを決定
-Round 3 (3.8s, 28%): LLM が総括
+Round 1 (3.8s, 28%): LLM が skill 呼び出しを決定
+Round 2 (3.0s, 22%): LLM が shell 呼び出しを決定
+Round 3 (3.8s, 28%): LLM がまとめ
 ```
 
-`rt-optimization-design.md` §6/§7 で 2 回のレビューを経た結果、D2/D4 は却下され、D1/D3 も「浮き油対応完了後に再評価」に格下げされた。しかし**元のドキュメント全体が末尾の Round 3（総括ラウンド）や単一ラウンド内のマイクロ最適化（D4）に集中しており、Round 1 → Round 2 という「中間ラウンド」がなぜ発生するのか、排除できるかどうかについては全く正面から議論していない**。
+`rt-optimization-design.md` §6/§7 は 2 ラウンドのレビューを経て、D2/D4 は却下、D1/D3 も「バタフライが終わってから再評価」に格下げされました。しかし、**元のドキュメント全体は最後の Round 3（サマリーラウンド）または単一ラウンド内のマイクロ最適化（D4）に焦点を当てており、Round 1 → Round 2 という「中間ラウンド」がなぜ存在するのか、それを消せるのかについて正面から議論していません。**
 
-実際のところ：Round 2 が存在する理由は、**大多数のケースで Round 1 が呼び出した skill が完全な回答を返さなかった**ため、モデルが追加の shell クエリを発行して補完するからである。skill を「一度で完全な結果を返す」設計にすれば、3 ラウンド → 2 ラウンドになり、削減できるのは Round 2 の約 3s — これは D1 とは全く重複しない収益面である。
+実際には、Round 2 が存在する理由は、**圧倒的に、Round 1 で呼び出された skill が完全な答えを返さなかったため**、モデルが追加で shell クエリで補完しているからです。skill が「一度で完全な結果を取得する」ように設計されていれば、3 ラウンド → 2 ラウンドになり、Round 2 の約 3s を節約できます。これは D1 とまったく重ならない利益範囲です。
 
 ### 1.2 rt-optimization-design との関係
 
-| ラウンド削減方向 | 対象ラウンド | レバレッジ位置 | 本ドキュメントの位置付け |
-| -------------------- | ------------------------------- | ---------------------------- | ---------------------------- |
-| D1 `skipLlmRound` | 末尾総括ラウンド | フレームワーク機構 + per-tool opt-in | フォールバック、**Layer 2 以降に実施** |
-| D2 fast ルーティング | 単一ラウンドのレイテンシ | フレームワーク機構 | defer 済み、**本ドキュメントの範囲外** |
-| D3 Summarizing 状態 | 末尾総括ラウンド（知覚層） | UI ステートマシン | オプション、本方案と直交 |
-| D4 prevalidate | 単一ラウンドのレイテンシ | フレームワーク機構 | defer 済み、**本ドキュメントの範囲外** |
-| **本方案 Layer 1-3** | **中間決定ラウンド + 並列未発動ラウンド** | **skill 設計 + プロンプトエンジニアリング** | **新規追加方向** |
+| 減輪の方向                    | ヒットするラウンド                | レバレッジの場所                 | 本ドキュメントの位置付け                           |
+| ----------------------------- | -------------------------------- | ------------------------------- | ------------------------------------------------ |
+| D1 `skipLlmRound`             | 最後のサマリーラウンド             | フレームワーク機構 + per-tool opt-in | セーフティネット。**Layer 2 の後に実施**        |
+| D2 fast ルーティング           | 単一ラウンドの遅延               | フレームワーク機構               | 延期済み。**本ドキュメントの範囲外**              |
+| D3 Summarizing 状態           | 最後のサマリーラウンド（認識層）  | UI ステートマシン               | オプション。本方式とは直交                       |
+| D4 prevalidate                | 単一ラウンドの遅延               | フレームワーク機構               | 延期済み。**本ドキュメントの範囲外**              |
+| **本方式 Layer 1-3**           | **中間決定ラウンド + 並行化されていないラウンド** | **skill 設計 + プロンプトエンジニアリング** | **新規方向**            |
 
-### 1.3 核心的な主張
+### 1.3 核となる主張
 
-ラウンド削減の真のレバレッジは skill/tool 設計層にあり、agent フレームワークにはない。3 つの理由：
+減輪の真のレバレッジは skill/tool 設計層にあり、agent フレームワークにはありません。3 つの理由：
 
-1. **§1.2 のベースライン自体が問題の所在を skill に示している** — Round 1 → Round 2 への遷移は skill が不完全な返答をしたために発生しており、フレームワークは正しいが、skill が誤っている
-2. **フレームワークレベルのラウンド削減も最終的には per-tool opt-in が必要** — D1 の `skipLlmRound` は各ツールで明示的にマークする必要があり、一回りして skill エンジニアリングに戻る。さらに追加の不変量修正とデシジョンゲートコストが生じる
-3. **ROI が局所的に計測可能でグレイリリースが容易** — 1 つの skill を変更すれば、その skill の発動回数分だけラウンドが削減される。cache ヒット率データもシステム横断的な変更も不要
+1. **§1.2 のベースラインはそもそも問題が skill にあることを露呈している** — Round 1 → Round 2 のジャンプは、skill の戻り値が不完全だったために発生します。フレームワークは正しく動作していて、skill が間違っているのです。
+2. **フレームワークレベルの減輪も結局 per-tool opt-in が必要** — D1 の `skipLlmRound` はすべてのツールを明示的にマークする必要があり、skill エンジニアリングに戻ってきて、さらに不変条件の修復と決定ゲーティングのコストが追加でかかります。
+3. **ROI が局所的に測定可能で、段階的リリースが容易** — 1 つの skill を変更すれば、その skill がトリガーされる回数だけ 1 ラウンド減ります。cache hit rate データに依存せず、システム間の変更に依存しません。
 
-> **実装前に §0 検収 Spec 前置レビュー（P-1 フェーズ、0.5d）を必ず実施すること** — §0.1 エンジニアリング層 spec と §0.3 ストップロスラインは着手前に確定必須。§0.2 統計層閾値の方向性も前置確認が必要（具体的な数値は P1.5 ベースライン後に確定）。§0 をスキップして P0 実装に入ることは「完成後に指標を確認する」アンチパターンを黙認することと同義であり、本ドキュメントはそのアプローチを推奨しない。
+> **実施前に §0 の受け入れ仕様事前レビュー（P-1 フェーズ、0.5d）を必ず実施してください**。§0.1 エンジニアリング層仕様と §0.3 ストップロスラインは着手前に確定する必要があります。§0.2 統計層の閾値の方向も事前に確定し（具体的な数値は P1.5 ベースライン後）、数値は後で確定します。§0 をスキップして P0 の実装に入ることは、「やった後に指標を見る」というアンチパターンをデフォルトで選択することになり、本ドキュメントはそのような方法を推奨しません。
 
 ---
 
 ## 2. 設計原則
 
-1. **agent フレームワークを変更しない** — `useGeminiStream` / `coreToolScheduler` / `geminiChat` のコアパスには触れない
-2. **データドリブンで優先順位を決める** — まず telemetry を構築し、どの skill を変更すべきかをデータに語らせる。直感に頼らない
-3. **per-skill で計測可能・グレイリリース可能** — 各 skill の改造は独立して A/B 検証し、失敗時は局所的にロールバック
-4. **複利優先** — 収益 = 単一ラウンド削減の収益 × 発動頻度。高頻度 skill を優先
-5. **D1 に依存しない** — 本方案の成功は D1 の実装に依存しない
+1. **agent フレームワークは変更しない** — `useGeminiStream` / `coreToolScheduler` / `geminiChat` のコアパスには手を触れません。
+2. **データ駆動で優先順位を決める** — まず telemetry を構築し、データがどの skill を変更すべきかを教えてくれるようにします。勘に頼りません。
+3. **skill ごとに測定可能で段階的リリース可能** — 各 skill の改造は独立した A/B テストが可能で、失敗した場合は局所的にロールバックします。
+4. **複利効果を優先** — 利益 = 1 回の減輪利益 × トリガー頻度。高頻度 skill を優先します。
+5. **D1 に依存しない** — 本方式の成功は D1 の導入に依存しません。
 
 ---
 
-## 3. 三層方案
+## 3. 3 層のアプローチ
 
-### 3.1 Layer 1：ラウンド削減 Telemetry（金脈を探す）
+### 3.1 Layer 1：減輪 Telemetry（金鉱を探す）
 
-**目標**：どの skill が最も改造価値があるかをデータに示させる — つまり「この skill を使った後、モデルが追加のツール呼び出しを行う確率がどれだけ高いか」を把握する。
+**目標**：データに基づいてどの skill が最も変更に値するかを明らかにする。つまり「この skill を使った後、モデルが追加のツール呼び出しを行う確率」を把握します。
 
-**コアフィールド**（per-turn、per-skill-invocation）：
+**コアフィールド**（turn ごと、skill 呼び出しごと）：
 
 ```typescript
 interface SkillFollowupRecord {
   skill_name: string;
-  prompt_id: string; // 同一 user prompt 内の全イベントを関連付ける
-  turn_index: number; // この skill が loop の何ラウンド目か
-  followup_tool_names: string[]; // 同一 prompt_id で skill 以降に呼び出されたツール
+  prompt_id: string; // 同じ user prompt 内の全イベントを関連付ける
+  turn_index: number; // loop の中でその skill が何番目のラウンドか
+  followup_tool_names: string[]; // 同じ prompt_id で、skill の後に呼ばれたツールのリスト
   followup_count: number; // followup_tool_names.length
   followup_kinds: Kind[]; // Read/Edit/Execute/...
-  next_turn_is_terminal: boolean; // skill の次のラウンドがテキスト出力（ツール呼び出しなし）
-  user_followup_within_30s: boolean; // 結果表示から 30s 以内にユーザーが新しい prompt を追加（品質回帰シグナル）
+  next_turn_is_terminal: boolean; // skill の次のラウンドでテキスト出力（ツール呼び出しなし）になったか
+  user_followup_within_30s: boolean; // 結果表示後 30 秒以内にユーザーが新しいプロンプトを送信したか（品質悪化シグナル）
 }
 ```
 
@@ -172,41 +172,41 @@ interface SkillFollowupRecord {
 
 - `skill_followup_rate = sum(followup_count > 0) / total_invocations`
 - `terminal_after_skill_rate = sum(next_turn_is_terminal) / total_invocations`
-- `(skill_name, top followup tool)` で集計 — どの skill の後に最もよく追加されるツールを特定
+- `(skill_name, top followup tool)` で集計 — 各 skill の後にどのツールが最も頻繁に呼ばれるかを確認。
 
-**金脈の判定**：
+**金鉱判定**：
 
 ```
 (invocation_count_weekly × skill_followup_rate) ≥ threshold
 ↓
-この skill はラウンド削減の金脈、Layer 2 改造を優先
+その skill は減輪の金鉱。Layer 2 改造の優先対象。
 ```
 
-閾値の推奨：上記の式でソートした top-3 skill のうち、最初の 2 つから着手する。
+閾値の提案：上記の式でソートしたトップ 3 のうち、最初の 2 つを変更します。
 
 ### 3.2 Layer 2：Skill 出力の完全化
 
-**目標**：金脈として識別された skill が一度で完全な回答を返すようにし、Round 1 → Round 2 への遷移を排除する。
+**目標**：金鉱と判定された skill が一度で完全な答えを返すようにし、Round 1 → Round 2 のジャンプを排除します。
 
-**改造モード（followup タイプ別）**：
+**改造パターン（followup タイプ別）**：
 
-| Followup パターン | 典型的なシナリオ | 改造方向 |
-| --------------------------- | -------------------------- | ---------------------------------- |
-| skill → `read_file` | skill がパスを返し、モデルが再度読み込む | skill 内部で直接読み込み、内容を返す |
-| skill → `grep/glob` | skill がディレクトリを返し、モデルが再度検索 | skill 内部で検索し、マッチ結果を返す |
-| skill → `shell` (read-only) | skill がコマンドを返し、モデルが再度実行 | skill 内部でコマンドを実行し、出力を返す |
-| skill → `shell` (write) | skill が方案を返し、モデルが書き込みを実行 | **保留**（書き込み操作は確認が必要、統合すべきでない） |
-| skill → another skill | チェーン呼び出し | **統合しない**（組み合わせ可能性を保持） |
+| Followup パターン               | 典型的なシナリオ           | 改造方向                                              |
+| ------------------------------- | ------------------------- | ----------------------------------------------------- |
+| skill → `read_file`             | skill がパスを返し、モデルが読む | skill 内部で直接読み込み、内容を返す                 |
+| skill → `grep/glob`             | skill がディレクトリを返し、モデルが検索 | skill 内部で検索し、マッチを返す                     |
+| skill → `shell` (read-only)     | skill がコマンドを返し、モデルが実行 | skill 内部でコマンドを実行し、出力を返す              |
+| skill → `shell` (write)         | skill が計画を返し、モデルが書き込み実行 | **そのまま**（書き込み操作は確認が必要であり、マージすべきでない） |
+| skill → another skill           | チェーン呼び出し           | **マージしない**（コンポーザビリティを維持する）      |
 
-**改造チェックリスト（per-skill PR テンプレート）**：
+**改造チェックリスト（skill ごと PR テンプレート）**：
 
-1. skill 説明に**出力コントラクトを事前宣言**：「Returns: full file content / matched lines / command output」と明記し、モデルが追加クエリを発行する必要がないことを示す
-2. skill 内部で**全 read-only followup を完了**：telemetry が > 50% の追加率を示す read/search 操作を skill 内部にインライン化する
-3. **write 操作をインライン化しない**：書き込み操作はユーザー確認が必要であり、独立したラウンドにする必要がある
-4. **深い推論 followup をインライン化しない**：followup が「この結果を元にさらに分析する」という内容であれば、それはモデルの仕事であり skill の仕事ではない
-5. **A/B telemetry を付与**：改造後 2 週間で `followup_rate` が < 20% に低下したかを比較する
+1. skill 説明で**出力契約を事前宣言**："Returns: full file content / matched lines / command output" のように明記し、モデルが追加クエリを必要としないことを伝える。
+2. skill 内部で**すべての read-only フォローアップを完了する**：telemetry が 50% 以上の追加速度を示す read/search 操作を skill にインライン化する。
+3. **write 操作はインライン化しない**：書き込み操作はユーザー確認が必要であり、独立したラウンドでなければならない。
+4. **深い推論を伴うフォローアップはインライン化しない**：フォローアップが「これに基づいてさらに分析する」というものであれば、それはモデルの仕事であり、skill の仕事ではない。
+5. **A/B telemetry を添付する**：改造後 2 週間の `followup_rate` が < 20% に低下したかを比較する。
 
-**典型的な改造例（概要）**：
+**典型的な改造例**：
 
 改造前：
 
@@ -225,45 +225,45 @@ description updated: "Returns workspaces with owner, last_active, status"
 → Round 2 disappears for ~80% of queries
 ```
 
-### 3.3 Layer 3：プロンプトでモデルの並列実行を促す
+### 3.3 Layer 3：プロンプトでモデルに並行実行を教育
 
-**目標**：独立したツール（複数ファイルの読み込み、複数ディレクトリの検索）に対し、モデルが同一ラウンドで並列に tool_calls を発行し、N ラウンドを 1 ラウンドに圧縮できるようにする。
+**目標**：独立したツール（複数ファイル読み取り、複数ディレクトリ検索）に対して、モデルが同一ラウンド内で並行に tool_calls を発行し、N ラウンドを 1 ラウンドに圧縮するようにする。
 
-**前提**：基盤インフラは既に整っている — `tools/tools.ts:818` の `CONCURRENCY_SAFE_KINDS` と `coreToolScheduler` の `partitionToolCalls` は同一 batch 内の read/search/fetch ツールを並列実行できる。**不足しているのはモデルが並列 tool_calls を積極的に発行する意欲だけ**であり、qwen-coder はデフォルトでシリアル実行を好む。
+**前提**：インフラはすでに整っています。`tools/tools.ts:818` の `CONCURRENCY_SAFE_KINDS` と `coreToolScheduler` の `partitionToolCalls` は、同じバッチ内の read/search/fetch ツールを並行実行できます。**不足しているのはモデルが自発的に並行 tool_calls を開始する意思だけ**で、qwen-coder はデフォルトで直列実行傾向があります。
 
-**変更場所**：`packages/core/src/core/prompts.ts`（監査済み。`# Final Reminder` セクション L396 付近に追加してもキャッシュヒット以外には影響しない — 一度限りのウォームアップコストのみ）。
+**変更箇所**：`packages/core/src/core/prompts.ts`（すでに監査済み。`# Final Reminder` セクション L396 付近に追加しても、cache ヒット以外には影響しません。一度だけのウォームアップコストだけです。）
 
-**ガイダンステキスト（概要、A/B 調整が必要）**：
+**指示テキスト（例、A/B テストで調整）**：
 
 ```
-When you need to call multiple independent read-only tools (read_file,
-grep, glob, web_fetch), emit them in a SINGLE tool_calls batch — do NOT
-call them sequentially across rounds. They will execute concurrently.
+複数の独立した読み取り専用ツール（read_file, grep, glob, web_fetch）を
+呼び出す必要がある場合、それらを SINGLE tool_calls batch として出力してください。
+ラウンドをまたいで逐次的に呼び出さないでください。これらは並行実行されます。
 
-Examples:
-- Reading 3 files for comparison: emit 3 read_file calls in one batch
-- Searching for 2 patterns: emit 2 grep calls in one batch
+例：
+- 比較のために 3 つのファイルを読む：1 つのバッチで 3 つの read_file 呼び出しを出力
+- 2 つのパターンを検索：1 つのバッチで 2 つの grep 呼び出しを出力
 
-Do NOT batch when the second call depends on the first call's result.
+2 つ目の呼び出しが 1 つ目の結果に依存する場合はバッチ化しないでください。
 ```
 
-**効果の計測**：新たに telemetry フィールド `batch_size`（同一ターン内の tool_calls 数）を追加し、プロンプト変更前後の分布を比較する。
+**効果測定**：新しい telemetry フィールド `batch_size`（同ターン内の tool_calls 数）を追加。プロンプト変更前後で分布を比較します。
 
 #### 3.3.1 `CONCURRENCY_SAFE_KINDS` の拡張（Layer 3 のサブ項目）
 
-プロンプトでモデルの並列実行を促すのは供給側（モデルが一度に複数の tool_calls を発行する意欲）だが、`tools/tools.ts:818` の `CONCURRENCY_SAFE_KINDS = { Read, Search, Fetch }` が**実際に並列実行できるツールの範囲**を決定する：`partitionToolCalls`（`coreToolScheduler.ts:775`）は「連続する安全なツール」をまとめて concurrent batch にし、それ以外は個別にシリアル実行する。
+プロンプトでモデルに並行実行を教育するのは供給側の対策（モデルが一度に複数の tool_calls を発行するようにする）ですが、`tools/tools.ts:818` の `CONCURRENCY_SAFE_KINDS = { Read, Search, Fetch }` が**実際に並行実行できるツールの範囲**を決定します。`partitionToolCalls`（`coreToolScheduler.ts:775`）は「連続する安全なツール」を並行バッチにまとめ、それ以外は各々逐次実行します。
 
-モデルがガイダンスに従って 3 つの tool_calls を一度に発行しても、そのうち 1 つが `Kind.Execute` で安全集合に含まれない場合、batch 全体が分割されてシリアル実行になる — Layer 3 のプロンプト変更による収益がランタイムスケジューリングによって相殺される。
+モデルが指示に従って 3 つの tool_calls を一度に発行したとしても、そのうち 1 つが `Kind.Execute` で安全セットに含まれていなければ、バッチ全体が分解されて逐次実行されます。Layer 3 のプロンプト変更の効果がランタイムのスケジューリングによって相殺されます。
 
-**拡張候補**（リスクの低い順）：
+**拡張候補（リスクの低い順）**：
 
-- `Kind.Think`（save_memory / todo_write を含む）—— **追加しない**、暗黙の書き込みがある
-- 読み取り専用 shell（`isShellCommandReadOnly()` が true を返す Execute）—— `partitionToolCalls` には既に特別処理がある（`coreToolScheduler.ts` の `partitionToolCalls` コメントに「Execute (shell) is safe only when isShellCommandReadOnly() returns true」と記載）。現状で既に対応済みのため `CONCURRENCY_SAFE_KINDS` の変更は不要
-- MCP ツールを `Kind` で分類 —— 各 MCP server の動作の差異が大きく、ツール登録時に明示的な opt-in が必要
+- `Kind.Think`（save_memory / todo_write を含む）—— **追加しない**。暗黙的な書き込みがあるため。
+- 読み取り専用 shell（`isShellCommandReadOnly()` が true を返す Execute）—— `partitionToolCalls` にすでに特別な処理がある（`coreToolScheduler.ts` の `partitionToolCalls` コメントに「Execute (shell) は isShellCommandReadOnly() が true を返す場合のみ安全」と記載）。現在の実装でカバー済み。`CONCURRENCY_SAFE_KINDS` の変更は不要。
+- MCP ツールを `Kind` で分類 —— MCP サーバーごとに動作が大きく異なるため、ツール登録時に明示的な opt-in が必要。
 
-**結論**：現在の集合は合理的であり、**Layer 3 は `CONCURRENCY_SAFE_KINDS` の拡張に依存しない**。本節が存在する意義は：`batch_size` telemetry データ収集後、**「並列 batch P50 が期待値を下回る」場合、モデルが並列化しないのではなく `partitionToolCalls` によって分割されているのではないかを先に確認する**ためである。これは Layer 3 A/B が失敗した際の診断パスであり、必須作業ではない。
+**結論**：現在のセットはすでに妥当であり、**Layer 3 は `CONCURRENCY_SAFE_KINDS` の拡張に依存しません**。本セクションの存在意義は、`batch_size` telemetry データを収集した後、**「並行バッチ P50 が期待値より低い」場合、モデルが並行実行しないのではなく、`partitionToolCalls` によって分解されている可能性を先にチェックするための診断パス**としてです。Layer 3 A/B が失敗したときの診断パスであり、必ず実施するものではありません。
 
-> クレジット：codex レビューが「`CONCURRENCY_SAFE_KINDS` の拡張は見落とされたレバレッジ」と指摘。確認した結果、現状に `isShellCommandReadOnly` の特別処理が最大の部分をカバーしており、集合の拡張自体は収益が小さくリスクが大きいと判断。診断パスとして保留。
+> クレジット：codex レビューで「`CONCURRENCY_SAFE_KINDS` の拡張は見過ごされたレバレッジである」という指摘がありました。確認した結果、現状では `isShellCommandReadOnly` の特別処理が最大の部分をカバーしており、拡張自体の利益は小さくリスクは大きいと判断しました。診断パスとして残します。
 
 ---
 
@@ -271,11 +271,11 @@ Do NOT batch when the second call depends on the first call's result.
 
 ### 4.1 Layer 1：Telemetry 拡張（1-2d）
 
-#### 4.1.1 `SkillLaunchEvent` に `prompt_id` を追加
+#### 4.1.1 `prompt_id` を `SkillLaunchEvent` に追加
 
 **場所**：`packages/core/src/telemetry/types.ts:896`
 
-現状の `SkillLaunchEvent` は `skill_name` + `success` のみを含み、**`prompt_id` がない** — 同一ターン内の他の `ToolCallEvent` と関連付けることができない。
+現在の `SkillLaunchEvent` は `skill_name` + `success` のみ含み、**`prompt_id` がありません**。同じターン内の他の `ToolCallEvent` と関連付けることができません。
 
 ```typescript
 // types.ts:896
@@ -284,56 +284,56 @@ export class SkillLaunchEvent implements BaseTelemetryEvent {
   'event.timestamp': string;
   skill_name: string;
   success: boolean;
-  prompt_id: string;                    // 新規追加
-  turn_index?: number;                  // 新規追加
+  prompt_id: string;                    // 追加
+  turn_index?: number;                  // 追加
 
   constructor(
     skill_name: string,
     success: boolean,
-    prompt_id: string,                  // 新規追加
-    turn_index?: number,                // 新規追加
+    prompt_id: string,                  // 追加
+    turn_index?: number,                // 追加
   ) { ... }
 }
 ```
 
-**呼び出し元の更新**：`packages/core/src/tools/skill.ts` の 4 つの `logSkillLaunch` 呼び出しポイント（L386, L399, L426, L482）で `this.params` から `prompt_id` を取得できない — `BaseToolInvocation` は `params` のみを保持し、`request.prompt_id` フィールドがない。**実際の実装**ではダックタイピングでの注入を使用：`SkillToolInvocation` が `setPromptId(id)` setter + プライベート `promptId` フィールドを公開し、`CoreToolScheduler.buildInvocation`（`coreToolScheduler.ts:1253`）がビルド後にダックタイプで `setPromptId(request.prompt_id)` を呼び出す。これは既存の `setCallId` フックのパターンと整合している。invocation の `execute()` 内の 4 つの `logSkillLaunch` はすべて `this.promptId` を渡す。**初期バージョンの本節の記述（「BaseToolInvocation は既に request.prompt_id を持つ」）は誤りであり**、PR #4565 のレビュー後に修正済み。
+**呼び出し元の更新**：`packages/core/src/tools/skill.ts` の 4 つの `logSkillLaunch` 呼び出し箇所（L386, L399, L426, L482）。`this.params` から `prompt_id` を取得できません。`BaseToolInvocation` は `params` のみを保持し、`request.prompt_id` フィールドを持ちません。**実際の実装**ではダックタイピングで注入します。`SkillToolInvocation` に `setPromptId(id)` セッターとプライベート `promptId` フィールドを公開し、`CoreToolScheduler.buildInvocation`（`coreToolScheduler.ts:1253`）で build 後にダックタイプで `setPromptId(request.prompt_id)` を呼び出します。既存の `setCallId` フックのパターンに合わせます。invocation の `execute()` 内の 4 つの `logSkillLaunch` はすべて `this.promptId` を渡します。**このセクションの初期バージョンの説明（「BaseToolInvocation はすでに request.prompt_id を持つ」）は誤りであり、PR #4565 のレビュー後に修正されました。**
 
-#### 4.1.1b qwen-logger パイプラインの修復（前置）
+#### 4.1.1b qwen-logger リンクの修正（事前）
 
-`prompt_id` を追加する前に、**既存のパイプラインの断点**を解消する必要がある：`packages/core/src/telemetry/qwen-logger/qwen-logger.ts:908` に `logSkillLaunchEvent(event)` メソッドが定義されているが、**リポジトリ内に呼び出し元が一切存在しない** — `loggers.ts:958` の `logSkillLaunch` は `logs.getLogger(SERVICE_NAME).emit()` という OTLP パスを直接使用しており、qwen-logger をバイパスしている。
+`prompt_id` を追加する前に、既存の**リンク断絶**に対処する必要があります。`packages/core/src/telemetry/qwen-logger/qwen-logger.ts:908` で `logSkillLaunchEvent(event)` メソッドが定義されていますが、**リポジトリ全体でこのメソッドを呼び出すコードがどこにもありません**。`loggers.ts:958` の `logSkillLaunch` は直接 `logs.getLogger(SERVICE_NAME).emit()` という OTLP パスを使用しており、qwen-logger をバイパスしています。
 
-影響：
+結果：
 
-- OTLP パス上の skill_launch イベントは OTLP コレクターに届いている（動作中）が、qwen-logger の専用上報パイプラインは現在デッドである
-- telemetry バックエンドが OTLP ではなく qwen-logger から消費している場合、skill_launch イベントが**完全に上報されない**
-- §4.1.2 のオフライン SQL が `SkillFollowupRecord` を派生させるには skill_launch イベントのデータベース書き込みが必要 — **まず skill_launch がバックエンドで可視かどうかを検証する必要がある**
+- OTLP パス上の skill_launch イベントは OTLP collector に到達します（既に動作中）。しかし、qwen-logger の専用報告リンクは現在デッドです。
+- telemetry backend が qwen-logger から消費している場合（OTLP ではなく）、skill_launch イベントは**全く報告されません**。
+- §4.1.2 のオフライン SQL で `SkillFollowupRecord` を導出するには、skill_launch イベントのデータベースへの格納が必要です。**まず現在 skill_launch が backend で見えるかどうかを確認する必要があります。**
 
-修復方向（2 択）：
+修復方向は 2 つ：
 
-- **A**（推奨）`loggers.ts:958` の `logSkillLaunch` に `QwenLogger.getInstance(config)?.logSkillLaunchEvent(event)` の 1 行を追加し、`loggers.ts:230` の `logToolCall` の書き方と整合させる
-- **B** バックエンドが OTLP のみから消費していることを確認し、qwen-logger 内の `logSkillLaunchEvent` を `@deprecated` マークするか削除する
+- **A**（推奨）：`loggers.ts:958` の `logSkillLaunch` 内に `QwenLogger.getInstance(config)?.logSkillLaunchEvent(event)` の 1 行を追加します。`logToolCall` の `loggers.ts:230` の書き方に合わせます。
+- **B**：backend が OTLP からのみ消費していることを確認し、qwen-logger 内の `logSkillLaunchEvent` を `@deprecated` とマークするか削除します。
 
-**なぜ QwenLogger の 1 パスだけを追加し、`logToolCall` の 4 パス全てに合わせないのか**：
+**なぜ QwenLogger の 1 パスのみ追加し、`logToolCall` のような 4 パス全てにはしないのか**：
 
-`logToolCall`（`loggers.ts:220-247`）には実際に 4 つの出口がある：
+`logToolCall`（`loggers.ts:220-247`）は実際には 4 つの出力先を持っています。
 
 1. `uiTelemetryService.addEvent(...)` — UI 表示
 2. `config.getChatRecordingService()?.recordUiTelemetryEvent(...)` — チャット履歴
-3. `QwenLogger.getInstance(config)?.logToolCallEvent(...)` — qwen-logger バックエンドテレメトリー
+3. `QwenLogger.getInstance(config)?.logToolCallEvent(...)` — qwen-logger バックエンドテレメトリ
 4. OTLP `logger.emit(...)` — OpenTelemetry
 
-skill_launch は**純粋なバックエンドテレメトリーイベント**であり、UI 上に表示する必要はない（ユーザーは SkillTool の returnDisplay を既に見ている）、また ChatRecording のターン履歴にも入れる必要はない（skill 内部のツール呼び出しはそれぞれ recordUiTelemetryEvent で記録済み）。したがって第 3 パス（QwenLogger）のみを追加し、第 4 パス（OTLP）を保持し、1/2 をスキップするのは意図的であり、見落としではない。
+skill_launch は**純粋なバックエンドテレメトリイベント**であり、UI に表示する必要はなく（ユーザーはすでに SkillTool の returnDisplay で確認済み）、ChatRecording のターン履歴に入れる必要もありません（skill 内部のツール呼び出しは各々がすでに recordUiTelemetryEvent で記録されています）。したがって、3 番目（QwenLogger）のみを追加し、4 番目（OTLP）は維持し、1/2 は意図的にスキップします。これは見落としではありません。
 
-**フィールドの透過的な伝達**：`loggers.ts:961-966` の `{ ...event }` スプレッドで新フィールドは自動的に透過される（`prompt_id` を `SkillLaunchEvent` に追加すれば自動的に有効）。ただし `qwen-logger.ts:908` の `logSkillLaunchEvent` 内部が `event.skill_name` / `event.success` を明示的に分割代入している場合、新フィールドは自動的に含まれないため手動での同期が必要。
+**フィールド透過の詳細**：`loggers.ts:961-966` は `{ ...event }` スプレッドを使用して新しいフィールドを自動的に透過します。`prompt_id` を `SkillLaunchEvent` に追加すると、このパスで自動的に有効になります。ただし、`qwen-logger.ts:908` の `logSkillLaunchEvent` 内部で明示的に `event.skill_name` / `event.success` をデストラクチャリングしている場合、新しいフィールドは自動的に含まれないため、手動で同期する必要があります。
 
-工数：A パス約 0.5d（バックエンド確認含む）；B パス約 0.2d（コード削除 + ドキュメント説明）。
+作業量：A パスは約 0.5d（バックエンド側の確認を含む）。B パスは約 0.2d（コード削除＋ドキュメント説明）。
 
-#### 4.1.2 `SkillFollowupRecord` の派生（オフライン集計）
+#### 4.1.2 `SkillFollowupRecord` の導出（オフライン集計）
 
-新しいイベントタイプは不要 — `ToolCallEvent` と `SkillLaunchEvent` はどちらも `prompt_id` を持ち、オフライン SQL で派生できる：
+新しいイベントタイプは不要です。`ToolCallEvent` と `SkillLaunchEvent` は両方とも `prompt_id` を持っており、オフライン SQL で導出できます。
 
 ```sql
--- 擬似 SQL、実際の telemetry バックエンドに合わせて調整
+-- 疑似 SQL、実際の telemetry backend に合わせて調整
 WITH skill_events AS (
   SELECT prompt_id, skill_name, timestamp FROM events
   WHERE event_name = 'skill_launch' AND success = true
@@ -360,215 +360,214 @@ GROUP BY skill_name
 ORDER BY invocations * followup_rate DESC;
 ```
 
-#### 4.1.3 1 週間 telemetry を実行してデータを収集
+#### 4.1.3 telemetry を 1 週間実行してデータ収集
 
-- ユーザー向けの動作は変更しない
-- 設定スイッチは不要 — telemetry には opt-in フレームワークが既にある（`telemetry.target` 設定項目）
-- 1 週間後に skill ランキングレポートを生成
+- ユーザー向け動作は変更しません。
+- 設定スイッチは不要 — telemetry には既存の opt-in フレームワークがあります（`telemetry.target` 設定）。
+- 1 週間後に skill ランキングレポートを生成します。
 
-### 4.2 Layer 2：Skill 改造（per-skill 0.5-1d）
+### 4.2 Layer 2：Skill 改造（skill ごとに 0.5-1d）
 
-Layer 1 データに基づき top-down で改造する。各 skill は独立した PR とし、PR description に以下を必ず含めること：
+Layer 1 のデータに基づいて、上位から順に改造します。各 skill は独立した PR とし、PR description には以下を必ず含めます：
 
-1. **データ**：現在の invocation_count、followup_rate、top followup tools
-2. **改造範囲**：インライン化した followup（明示的にインライン化しないものも記載）
-3. **出力コントラクト更新**：skill 説明に追加した事前宣言
-4. **A/B 計画**：改造後 2 週間後に followup_rate を再観察
+1. **データ**：現在の invocation_count、followup_rate、トップ followup tools
+2. **改造範囲**：どの followup をインライン化したか（インライン化しないものを明確に）
+3. **出力契約の更新**：skill 説明に追加した事前宣言
+4. **A/B 計画**：改造後 2 週間、再び followup_rate を観測
 
 **注意事項**：
 
-- skill 内部での read 操作インライン化で、read_file のすべての境界ケース処理（エンコード、バイナリ検出など）を重複して実装しないこと — `read_file` ツール自体を呼び出し、再実装しない
-- grep/glob のインライン化も同様
-- shell コマンドのインライン化は `executeToolCall` の標準パスを使用すること（telemetry を保持）
-- **skill のサイズを爆発させない**：followup をインライン化した後、skill 説明が > 500 tokens になる場合は統合ではなく分割する
+- Skill 内で read 操作をインライン化する場合、read_file のすべてのエッジケース（エンコーディング、バイナリ検出など）を再実装しないでください。`read_file` ツール自体を呼び出し、再実装しないでください。
+- Skill 内での grep/glob も同様です。
+- Skill 内での shell コマンドは `executeToolCall` 標準パスを使用します（telemetry を保持するため）。
+- **skill のサイズを爆発させない**：followup をインライン化した結果、skill 説明が 500 トークンを超える場合、skill を分割し、マージしないでください。
 
-### 4.3 Layer 3：プロンプト教育（0.5d 変更 + 実測チューニング）
+### 4.3 Layer 3：プロンプト教育（0.5d の変更 ＋ 実測による調整）
 
-#### 4.3.1 並列実行ガイダンスの追加
+#### 4.3.1 並行実行ガイダンスの追加
 
 **場所**：`packages/core/src/core/prompts.ts` の `# Final Reminder` セクション（L396）
 
-§3.3 のガイダンステキストを追加する。具体的な文言は A/B が必要 — まず最もシンプルなバージョンから始め、並列率の改善程度に応じて調整する。
+セクション 3.3 の指示テキストを追加します。具体的な文言は A/B テストで調整します。まずは最もシンプルなバージョンを使用し、並行率の向上度合いに応じて詳細化します。
 
 #### 4.3.2 `batch_size` telemetry の追加
 
-**場所**：`packages/core/src/telemetry/types.ts` の `ToolCallEvent` または新規軽量 `ToolBatchEvent`
+**場所**：`packages/core/src/telemetry/types.ts` の `ToolCallEvent` または新しい軽量 `ToolBatchEvent`
 
 ```typescript
-// 選択肢 A：ToolCallEvent にフィールドを追加（侵入度が小さい）
+// オプション A：ToolCallEvent にフィールドを追加（影響が少ない）
 export class ToolCallEvent {
   ...
-  batch_size?: number;        // 同一 batch 内の tool_call 数
-  batch_position?: number;    // batch 内での位置（0 始まり）
+  batch_size?: number;        // 同じバッチ内の tool_call 数
+  batch_position?: number;    // バッチ内での位置 (0-indexed)
 }
 
-// 選択肢 B：ToolBatchEvent を新規追加（セマンティクスが明確、完全な新イベントタイプのフロー必要）
+// オプション B：新しい ToolBatchEvent を追加（セマンティクスはより明確だが、新しいイベントタイプの全手順が必要）
 ```
 
-**選択肢 A を推奨** — 変更が小さく、クエリ時の集計が便利。
+**推奨はオプション A** — 変更が小さく、クエリ時に集計しやすい。
 
-**状態伝達パス**（重要 — 初期バージョンではこのステップのコストが過小評価されていた）：
+**状態の受け渡しパス（重要 — このステップのコストは初期バージョンで過小評価されていました）**：
 
-`coreToolScheduler.ts:2456` の `partitionToolCalls(callsToExecute)` が `batches` を返すが、**batch 情報はスケジューリングパス上で即座に失われる**：
+`coreToolScheduler.ts:2456` の `partitionToolCalls(callsToExecute)` は `batches` を返しますが、**バッチ情報はスケジューリングパス上で即座に失われます**：
 
 ```
 executeToolCalls
-  └─ batches = partitionToolCalls(...)           // batch.calls.length がわかる
+  └─ batches = partitionToolCalls(...)           // batch.calls.length を知っている
      └─ for batch of batches:
-        └─ this.runConcurrently(batch.calls, ...) // batch.calls.length がわかる
-           └─ executeSingleToolCall(call, ...)   // ❌ batch がわからない
+        └─ this.runConcurrently(batch.calls, ...) // batch.calls.length を知っている
+           └─ executeSingleToolCall(call, ...)   // ❌ バッチ情報を知らない
               └─ ...
                  └─ finalizeToolCalls
-                    └─ logToolCall(config, new ToolCallEvent(call)) // ❌ batch コンテキストなし
+                    └─ logToolCall(config, new ToolCallEvent(call)) // ❌ batch context なし
 ```
 
-`ToolCallEvent` のコンストラクタ（`types.ts:189`）は単一の `CompletedToolCall` のみを受け取り、batch フィールドがない。
+`ToolCallEvent` のコンストラクタ（`types.ts:189`）は単一の `CompletedToolCall` のみを受け取り、バッチフィールドはありません。
 
-修復方向：
+修正方向：
 
-- **方向 A**（推奨）：`ScheduledToolCall` に `batchSize?: number` + `batchPosition?: number` を追加。2 つの分岐でそれぞれ設定：
-  - 並列分岐（`coreToolScheduler.ts:2459-2460`、`batch.calls.length > 1`）：`runConcurrently(batch.calls, ...)` のループに入る前に各 `call` に `batchSize = batch.calls.length`、`batchPosition = i` を設定
-  - シリアル分岐（`L2462-2464` の `for (const call of batch.calls)`）：単一ツール batch は `batchSize = 1`、`batchPosition = 0` を明示的に設定（**undefined をデフォルトにしない**。でなければ下流の telemetry 集計で並列化未発動のラウンドをデータ欠損と誤判定する）
+- **方向 A**（推奨）：`ScheduledToolCall` に `batchSize?: number` + `batchPosition?: number` を追加。2 つの分岐でそれぞれ値を設定します。
+  - 並行分岐（`coreToolScheduler.ts:2459-2460`、`batch.calls.length > 1`）：`runConcurrently(batch.calls, ...)` がループに入る前に、各 `call` に `batchSize = batch.calls.length`、`batchPosition = i` を設定。
+  - 直列分岐（`L2462-2464` の `for (const call of batch.calls)`）：単一ツールバッチは明示的に `batchSize = 1`、`batchPosition = 0` を設定（**デフォルトで undefined にしない**。そうしないと、下流の telemetry 集計で並行実行が有効でないラウンドをデータ欠損と誤判定する可能性があります）。
 
-  `new ToolCallEvent(call)` のコンストラクタで `call` からこれらの 2 フィールドを読み取る
+  `new ToolCallEvent(call)` のコンストラクタで `call` からこれらのフィールドを読み取ります。
 
-- **方向 B**：`ToolCallEvent` コンストラクタのシグネチャを `new ToolCallEvent(call, batchInfo?)` に変更し、全ての呼び出し元を同期変更する（4 つの logToolCall 呼び出しポイント + テスト）。方向 A より変更範囲が大きい
+- **方向 B**：`ToolCallEvent` コンストラクタのシグネチャを `new ToolCallEvent(call, batchInfo?)` に変更し、すべての呼び出し元（4 つの logToolCall 呼び出し箇所 + テスト）を同時に修正。方向 A より影響範囲が大きい。
 
-工数：方向 A 約 0.5d（ユニットテスト含む）；方向 B 約 1d（呼び出し元が多い）。
+作業量：方向 A はユニットテスト含めて約 0.5d。方向 B は約 1d（呼び出し元が多いため）。
 
-**「モデルの並列実行意欲」の同時計測** — Layer 3 で prompts.ts を変更する前後で `batch_size > 1 の tool_call 割合` の分布を比較する。これは Layer 3 が有効かどうかの重要指標であり、このデータがなければ Layer 3 A/B を締めくくることができない。
+**「モデルの並行実行意欲」を同時に測定** — Layer 3 で prompts.ts を変更する前後で、`batch_size > 1 の tool_call の割合` の分布を比較します。これは Layer 3 が効果を発揮したかどうかの重要な指標であり、このデータがなければ Layer 3 の A/B テストを完了できません。
 
 #### 4.3.3 cache への影響評価
 
-`prompts.ts` の変更により DashScope のエフェメラルキャッシュが一度だけ無効になる（初回リクエストは cache miss、その後は回復）。これは既知の一度限りのコストであり、`rt-optimization-design.md` §7.8 のプロンプト定常状態監査を参照。
+`prompts.ts` の変更により、DashScope ephemeral cache が一度だけ無効になります（最初のリクエストで cache miss、その後復旧）。これは既知の一度だけのコストです。`rt-optimization-design.md` §7.8 のプロンプト定常状態監査を参照してください。
 
 ---
 
-## 5. 検収と計測
+## 5. 受け入れと測定
 
-> **本節は §0 検収 Spec の「方法論」の補完** — §0 が「成功の指標 + 閾値の前置/後置タイミング」を宣言し、§5 が「どう計測するか、SQL をどう書くか、A/B をどう設計するか」を説明する。本節の閾値は §0.2 の現在の暫定値であり、最終値は P1.5 ベースライン計測後に確定する。
+> **このセクションは §0 受け入れ仕様の「方法論」を補完するものです。** §0 では「成功の指標＋閾値の事前／事後タイミング」を宣言し、§5 では「どのように測定するか、SQL はどう書くか、A/B はどう設計するか」を説明します。このセクションの閾値は §0.2 の現在の仮の値であり、最終的な値は P1.5 ベースライン測定後に確定します。
 
-### 5.1 per-skill A/B 指標（改造後 2 週間）
+### 5.1 skill ごとの A/B 指標（改造後 2 週間）
 
-| 指標 | 検収ライン | 備考 |
-| ----------------------------------------- | ------------------------ | -------------------------- |
-| その skill の `followup_rate` | < 20%（改造前が 70%+ の場合） | 主指標 |
-| その skill 発動シナリオの端到端 RT P50 | ≥ 2s 低下 | LLM 呼び出し 1 ラウンド削減による |
-| その skill の `user_followup_within_30s` 率 | 上昇しないこと | ユーザーが追加質問をしない = 回答が完全 |
-| その skill の `success` 率 | 低下しないこと | followup インライン化が新たな失敗を招かない |
-
+| 指標                                              | 合格ライン                          | 備考                                      |
+| ------------------------------------------------- | ---------------------------------- | ----------------------------------------- |
+| その skill の `followup_rate`                       | < 20%（改造前が 70%+ の場合）         | 主指標                                      |
+| その skill がトリガーするシナリオのエンドツーエンド RT P50 | 減少 ≥ 2s                        | 1 ラウンド少ない LLM 呼び出しに由来        |
+| その skill の `user_followup_within_30s` 率         | 上昇しない                         | ユーザーが追及しない＝答えが完全であること |
+| その skill の `success` 率                          | 低下しない                         | インライン followup が新しい失敗を導入しない |
 ### 5.2 全体 RT 指標
 
-| 指標 | ベースライン | Layer 2 top-3 skill 改造完了後の目標 |
+| 指標                               | ベースライン                          | Layer 2 改修後 top-3 skill 目標 |
 | ---------------------------------- | ------------------------------------- | -------------------------------- |
-| 端到端 RT P50（skill を含むセッション） | 13.4s（単一採用）/ ≥3 シナリオのベースライン要補完 | 2-3s 低下 |
-| Tool batch P50 サイズ（Layer 3） | 要計測 | ≥ 1.3（> 30% の呼び出しが並列 batch を含む） |
-| Skill 全体 followup_rate（加重平均） | 要計測 | ≥ 30% 低下 |
+| エンドツーエンド RT P50（skill を含むセッション） | 13.4s（単回サンプル）/ 後日補完 ≥3 クラスシナリオベースライン | 2〜3s 削減                      |
+| Tool batch P50 size（Layer 3）     | 未測定                                | ≥ 1.3（>30% の呼び出しが並行 batch に関与） |
+| Skill 全体 followup_rate（加重平均） | 未測定                                | 30% 以上削減                     |
 
-### 5.3 失敗シグナル — この方向をいつ諦めるか
+### 5.3 失敗シグナル — いつこの方向を諦めるか
 
-**結果指標ストップロスライン**：
+**結果指標のストップロスライン**：
 
-- Layer 1 データ公開後、**top-5 skill の加重 followup_rate < 30%** → ラウンド削減の余地が小さく、Layer 2 を継続する価値がない
-- Layer 2 で 2 つの skill を改造後、**端到端 RT P50 の低下 < 1s** → 改造方向が誤り（followup が write 操作で統合すべきでない可能性）、停止して振り返る
-- Layer 3 プロンプト変更から 2 週間後も **batch_size P50 が依然 = 1** → モデルが並列実行ガイダンスを受け入れない、Layer 3 を諦めて Layer 1+2 のみ保持
+- Layer 1 データ取得後、**top-5 skill の加重 followup_rate < 30%** → ラウンド削減余地が小さく、Layer 2 に進む価値なし
+- Layer 2 で 2 つの skill を改修後、**エンドツーエンド RT P50 削減幅 < 1s** → 改修方向が誤り（followup が書き込み操作であり、統合すべきでない可能性）、中断して再検討
+- Layer 3 prompt 変更から 2 週間経過後も **batch_size P50 が = 1** → モデルが並行指示を受け入れず、Layer 3 を放棄し Layer 1+2 のみ維持
 
-**プロセス指標ストップロスライン（前置警告、「作業しているように見えるが成果がない」状態を避けるため）**：
+**プロセス指標のストップロスライン（事前警告：対策が「一見進んでいるが効果がない」状況を防ぐ）**：
 
-- **Skill 命中率（意図した skill vs 実際に選択された skill）が ≥ 5pp 低下** → skill 説明の変更でモデルが誤った skill を選択するようになった。典型的なシナリオ：改造前はユーザーが X と聞くと常に skill_a にヒットしていたが、改造後は時々 skill_b にルーティングされるがエラーは発生しない（モデルが誤った skill を使うが辛うじて回答を作り出す）、結果指標は正常に見えるが followup_rate が逆に上昇する。**計測方法**：telemetry に `skill_invocation_pattern` を追加 — user prompt の先頭 N キーワードでクラスタリングし、各クラスターが主にどの skill を発動するかを確認。改造前後で top-1 のシフトを比較
-- **Skill のインライン followup 失敗率 ≥ 5%** → skill 改造で元々存在しなかった失敗モード（例：`read_file` のインライン化で大きなファイルがメモリを使い果たす）が発生。計測：`SkillLaunchEvent.success` の改造前後比較
-- **per-skill のユーザーキャンセル率（Ctrl+C）が ≥ 2pp 上昇** → skill の出力が遅くなったり長くなったりしてユーザーが待ちきれなくなった。計測：`ToolCallEvent.status === 'cancelled'` の割合
+- **Skill ヒット率（intended skill vs selected skill）が 5pp 以上低下** → skill 説明の変更が原因でモデルが間違った skill を選択。典型的なシナリオ：改修前はユーザーが X を質問すると常に skill_a がヒットしていたが、改修後は時々 skill_b にルーティングされてエラーは発生しない（モデルが間違った skill を使ってもなんとか回答を生成）。結果指標は一見正常だが、followup_rate がむしろ上昇。**測定方法**：telemetry に `skill_invocation_pattern` を追加 — ユーザー prompt の先頭 N キーワードでクラスタリングし、各クラスタがどの skill を主にトリガーしているかを把握；改修前後で top-1 の偏移を比較
+- **Skill インライン followup 失敗率 ≥ 5%** → skill 改修により、元々存在しなかった失敗パターンが導入された（例：インライン `read_file` で大ファイルを処理してメモリオーバーフロー）。測定：`SkillLaunchEvent.success` を改修前後で比較
+- **Per-skill ユーザーキャンセル率（Ctrl+C）が 2pp 以上上昇** → skill 出力が遅くなったり長くなったりしてユーザーが忍耐を失った。測定：`ToolCallEvent.status === 'cancelled'` の比率
 
 ---
 
-## 6. D1/D3 との接続
+## 6. D1/D3 との連携
 
 ### 6.1 D1 との関係
 
-Layer 2 で top skill を改造した後、**残りの followup が多い skill こそが D1 `skipLlmRound` の真の適用シナリオ** — それらの skill は出力が既に完全（Round 2 が不要）であり、かつ終端クエリである（Round 3 の総括も無駄）。
+Layer 2 で top skill を改修した後、**残りの followup が多い skill こそが D1 `skipLlmRound` の真の適用シナリオ** — それらの skill 出力は既に完全（Round 2 が不要）であり、かつ本当に最終状態のクエリである（Round 3 での要約も無駄）。
 
-実施順序：
+実行順序：
 
-1. Layer 1 telemetry をリリース → 1 週間データ収集
-2. Layer 2 で top 2-3 skill を改造 → A/B 2 週間
-3. Layer 3 プロンプト並列化 → 実測 1 週間
-4. **この時点で** D1 を評価：残りの高頻度 skill のうちどれだけが「出力完全 + 終端クエリ」の形態か → 2-3d のフレームワーク改造に値するか
+1. Layer 1 telemetry 導入 → 1 週間データ
+2. Layer 2 で top 2-3 skill を改修 → A/B 2 週間
+3. Layer 3 prompt 並行化 → 実測 1 週間
+4. **この時点で** D1 を再評価：残っている高頻度 skill のうち、「出力完全 + 最終状態クエリ」の形態がどれだけあるか → 2〜3日間のフレームワーク改修に価値があるか判断
 
 ### 6.2 D3 との関係
 
-D3（`StreamingState.Summarizing`）は知覚層の最適化であり、本方案と完全に直交する。Layer 1-3 が削減するのは**実際のラウンド数**であり、D3 が削減するのは**ユーザーが感じる待機時間**である。Layer 2 で RT がユーザーが許容できるレベルまで低下した場合、D3 の価値は下がる。逆の場合は D3 を重ねて適用できる。
+D3（`StreamingState.Summarizing`）は知覚層の最適化であり、本提案とは完全に直交する。Layer 1〜3 は実際のラウンド数を削減し、D3 はユーザーが知覚する待ち時間を削減する。Layer 2 によって RT がユーザーが許容できる範囲にまで低下すれば、D3 の価値は下がる。逆に、低下しなければ D3 を重ねることができる。
 
 ---
 
-## 7. 制限と既知のリスク
+## 7. 制約と既知のリスク
 
-1. **カバレッジが改造範囲に制限される** — 10 の skill を改造すれば、その 10 のシナリオのみカバーされる。ただし収益は確実に計測可能で複利効果がある
-2. **skill 内部への followup インライン化で単一 skill が重くなる可能性がある** — 説明が膨張し、ロードが遅くなり、再利用性が低下する。Layer 2 チェックリスト第 5 条で防御
-3. **Layer 3 でモデルが並列実行ガイダンスを聞かない可能性がある** — qwen-coder の学習データはシリアル実行に偏っている。A/B データがプロンプト変更の無効を示す可能性があり、既知の失敗モードとして認識
-4. **Telemetry のプライバシー境界** — `SkillFollowupRecord` はツールパラメータを記録すべきでない（既にデフォルトで `ToolCallEvent.function_args` から取得しているが、skill_name がユーザーの意図を漏らさないか監査が必要）
-5. **サブエージェント / cron / notification には適用されない** — これらのパスは skill システムを経由せず、本方案はカバーしない
-6. **ベースラインデータが薄い** — `rt-optimization-design.md` §1.2 の単一採用データを踏襲しており、Layer 2 実装前に ≥3 シナリオのベースラインを補完する必要がある
-7. **`logSkillLaunch` のフィールド拡張により既存の telemetry コンシューマが壊れる** — 4 つの呼び出しポイントと下流の logger を同期変更する必要がある
-8. **`qwen-logger.ts:908` の `logSkillLaunchEvent` は現在デッドコード** — リポジトリ内に呼び出し元が一切なく、§4.1.1b に前置修復項目として列挙済み
+1. **カバレッジは改修範囲に制限される** — 10 個の skill を改修しても、その 10 個のシナリオにしか影響しない。ただし、効果は確定して測定可能で複利的である
+2. **Skill インライン followup により単一 skill が重くなる可能性** — 説明の肥大化、読み込みの遅延、再利用性の低下。Layer 2 のチェックリスト第 5 項で防御
+3. **Layer 3 でモデルが並行指示に従わない可能性** — qwen-coder の学習データは逐次処理志向；A/B データで prompt 変更が無効であることが判明する可能性があり、既知の失敗パターンとして扱う
+4. **Telemetry のプライバシー境界** — `SkillFollowupRecord` にツールパラメータを記録してはならない（デフォルトで `ToolCallEvent.function_args` から取得するが、`skill_name` がユーザーの意図を漏洩しないか監査する必要あり）
+5. **サブエージェント / cron / notification には非適用** — これらのパスは skill システムを経由しないため、本提案の対象外
+6. **ベースラインデータが薄い** — `rt-optimization-design.md` §1.2 の単回サンプルを継承；Layer 2 実装前に ≥3 クラス × ≥10 回のベースラインを補完する必要あり
+7. **`logSkillLaunch` のフィールド拡張は既存の telemetry consumer を破壊する** — 4 箇所の呼び出しポイントと下流の logger を同時に変更する必要あり
+8. **`qwen-logger.ts:908` の `logSkillLaunchEvent` は現在デッドコード** — リポジトリ内に呼び出し元が存在しない；§4.1.1b に事前修正を記載済み
 
-### 7.1 既存のフレームワーク機構との境界（本方案の範囲外）
+### 7.1 既存フレームワーク機構との境界（本提案の範囲外）
 
-リポジトリには既にラウンド削減と間接的に関連するフレームワーク機構がいくつか存在する。**本方案はそれらを再発明せず、代替もしない**：
+リポジトリにはラウンド削減に間接的に関連する既存のフレームワーク機構がいくつか存在する。**本提案で再発明せず、代替もしない**：
 
-| 既存機構 | 場所 | 本方案との関係 |
-| ---------------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `partitionToolCalls` + `runConcurrently`（並列実行） | `coreToolScheduler.ts:775, 2473` | Layer 3 で直接再利用。本方案は変更しない |
-| `CONCURRENCY_SAFE_KINDS`（並列実行可能なツールを決定） | `tools/tools.ts:818` | §3.3.1 で現状が合理的であることを論証済み。拡張しない |
-| `FileReadCache`（同一ファイルの重複読み込みを回避） | `services/fileReadCache.ts` | 「モデルがファイルを重複読み込みする」ラウンドに間接的な影響があり、既に有効。本方案は依存せず、強化もしない |
-| `chatCompressionService`（履歴圧縮） | `services/chatCompressionService.ts` | ラウンドとは直交（単一ラウンドのコストに影響し、ラウンド数には影響しない）。`rt-optimization-design.md` §3.2 の fast ルーティングの `wouldTriggerCompression` gate と同一コンポーネント |
+| 既存機構                                            | 位置                                | 本提案との関係                                                                                                               |
+| --------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `partitionToolCalls` + `runConcurrently`（並行実行） | `coreToolScheduler.ts:775, 2473`    | Layer 3 で直接再利用；本提案では変更しない                                                                                   |
+| `CONCURRENCY_SAFE_KINDS`（どのツールが並行可能かを決定） | `tools/tools.ts:818`                | §3.3.1 で現状が妥当と論証済み、拡張しない                                                                                    |
+| `FileReadCache`（同一ファイルの重複読み取りを回避） | `services/fileReadCache.ts`         | 「モデルが同じファイルを繰り返し読み取るラウンド」に間接的に影響；既に有効。本提案では依存せず強化もしない                    |
+| `chatCompressionService`（履歴圧縮）                | `services/chatCompressionService.ts`| ラウンド数とは直交（単一ラウンドのコストに影響し、ラウンド数には影響しない）；`rt-optimization-design.md` §3.2 fast ルートの `wouldTriggerCompression` gate と同じコンポーネント |
 
-これらを列挙するのは、「本方案が既存の機構を無視している」という誤解を避けるためである。
-
----
-
-## 8. 実施タイムライン
-
-> **前提：本タイムラインは P-1 から開始し、スキップ不可**。P-1 は §0 検収 Spec の前置レビューであり、0.5d の工数だが**強制的** — 通過しない場合は P0 に進まない。この制約は「先にコードを書いて後から spec を補う」アンチパターンを避けるためである：spec の後置は「成功かどうかの判断」を結果が出てから行うことと同義であり、「指標を良く見せるために spec を調整する」歪みが発生しやすい（`rt-optimization-design.md` §7 D2 路線の轍を参照）。
-
-| フェーズ | 内容 | 工数 | 成果物 | spec 確定アクション |
-| -------- | ---------------------------------------------------------------------- | --------------------- | ------------------------------ | --------------------------------------- |
-| **P-1** | spec 前置レビュー | 0.5d | §0.1 / §0.3 確定 | **§0.1 エンジニアリング層 spec + §0.3 ストップロスライン確定** |
-| **P0** | qwen-logger パイプライン修復（§4.1.1b 前置） | 0.5d | skill_launch イベントの可視性確認 | §0.1 第 1 条の検証 |
-| **P1** | Layer 1 telemetry：`prompt_id` フィールド追加 + オフライン SQL | 1-2d | skill ランキングレポート | §0.1 第 2/3/4 条の検証 |
-| **P1.5** | 1 週間データ収集 + ベースライン計測（≥3 シナリオ × ≥10 回） | 1w | 改造する 2-3 skill を決定 | **§0.2 閾値確定 + §0.1 第 5 条の検証** |
-| **P2** | Layer 2 で top-1 skill 改造（PR + A/B） | 0.5-1d 改造 + 2w 観察 | followup_rate ↓、RT P50 ↓ の検証 | **PR 内で §0.4 per-skill spec を宣言** |
-| **P3** | Layer 3 プロンプト並列化ガイダンス + `batch_size` telemetry（§4.3.2 状態伝達含む） | 1-1.5d 変更 + 1w 実測 | batch_size 分布 | §0.2 第 3 条の検証 |
-| **P4** | Layer 2 で top-2 / top-3 skill を引き続き改造（P3 と並行） | 0.5-1d × N | 累積 RT P50 ↓ | PR 毎に §0.4 を宣言 |
-| **P5** | D1 が依然として価値があるかを評価 | 意思決定会議 | ロードマップ更新 | — |
-
-**重要な意思決定ポイント（§0.3 ストップロスラインとの照合）**：
-
-- **P-1 末**：§0.1 / §0.3 のいずれかでコンセンサスが得られない → P0 に進まない
-- **P1.5 末**：§0.3 結果指標 #1 発動（top-5 加重 followup_rate < 30%）→ 方向を終了。そうでなければ §0.2 閾値を確定
-- **P2 末**：§0.3 結果指標 #2 発動（top-1 改造後 RT P50 ↓ < 1s）またはプロセス指標のいずれか → 停止して振り返る
-- **P3 末**：§0.3 結果指標 #3 発動（batch_size P50 が依然 = 1）→ Layer 3 を諦める
-- **P5**：残りの skill の形態に応じて D1 の ROI を判断
+これらを列挙することで、「本提案が既存機構を無視している」と誤解されるのを防ぐ。
 
 ---
 
-## 9. 重要なコード位置
+## 8. 実装タイムライン
 
-| ファイル | 重要なシンボル | 場所 |
-| -------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------- |
-| `packages/core/src/telemetry/types.ts` | `ToolCallEvent`（`prompt_id` / `duration_ms` 含む） | L170 |
-| `packages/core/src/telemetry/types.ts` | `SkillLaunchEvent`（`prompt_id` 追加が必要） | L896 |
-| `packages/core/src/telemetry/loggers.ts` | `logToolCall` | L220 |
-| `packages/core/src/telemetry/loggers.ts` | `logSkillLaunch`（OTLP を経由。qwen-logger 転送が欠落） | L958 |
-| `packages/core/src/telemetry/loggers.ts` | `logToolCall`（デュアルパス：OTLP + qwen-logger、修復サンプルとして） | L220, L230 |
-| `packages/core/src/telemetry/qwen-logger/qwen-logger.ts` | `logSkillLaunchEvent`（**現在デッドコード**、§4.1.1b 前置修復対象） | L908 |
-| `packages/core/src/core/coreToolScheduler.ts` | `partitionToolCalls` | L775 |
-| `packages/core/src/core/coreToolScheduler.ts` | `runConcurrently` / batch スケジューリング | L2456, L2473 |
-| `packages/core/src/core/coreToolScheduler.ts` | `logToolCall` 呼び出しポイント（batch_size 状態伝達の終点） | L3163 |
-| `packages/core/src/services/fileReadCache.ts` | `FileReadCache`（既存、重複読み込みラウンドに影響） | L135 |
-| `packages/core/src/tools/skill.ts` | `SkillTool` + 4 つの `logSkillLaunch` 呼び出しポイント | L386, L399, L426, L482 |
-| `packages/core/src/skills/skill-manager.ts` | `SkillManager`（skill の登録/ロード） | ファイル全体 |
-| `packages/core/src/skills/skill-load.ts` | skill 説明のロード（出力コントラクト変更の入口） | ファイル全体 |
-| `packages/core/src/tools/tools.ts` | `Kind` + `CONCURRENCY_SAFE_KINDS` | L793, L818 |
-| `packages/core/src/core/coreToolScheduler.ts` | `partitionToolCalls` + `runConcurrently`（既存の並列実行基盤） | rt-optimization-design.md §5.7 を参照 |
-| `packages/core/src/core/prompts.ts` | `# Final Reminder` セクション（Layer 3 の並列実行ガイダンス追加箇所） | L396 |
-| `.qwen/skills/` | 各 skill 定義ディレクトリ（Layer 2 改造対象） | ディレクトリ |
+> **前提：本タイムラインは P-1 から開始し、スキップ不可**。P-1 は §0 の acceptance spec の事前レビューであり、0.5日分の工数だが**必須** — 通過しなければ P0 に進まない。この制約は「コードを先に書いて後から spec を補う」というアンチパターンを防ぐため：spec 後置は「成功」の判断を結果が出た後に先送りすることになり、「指標を良く見せるために spec を調整する」というバイアスを生みやすい（`rt-optimization-design.md` §7 D2 ルートの轍を参照）。
+
+| Phase    | 内容                                                                    | 投入                    | 成果                               | spec 確定アクション                    |
+| -------- | ----------------------------------------------------------------------- | ----------------------- | ---------------------------------- | -------------------------------------- |
+| **P-1**  | spec 事前レビュー                                                       | 0.5d                    | §0.1 / §0.3 を確定                 | **§0.1 工学的 spec + §0.3 ストップロスラインを確定** |
+| **P0**   | qwen-logger リンク修復（§4.1.1b 事前対応）                             | 0.5d                    | skill_launch イベントの可視性確認   | §0.1 第 1 条を検証                      |
+| **P1**   | Layer 1 telemetry：`prompt_id` フィールド補完 + オフライン SQL          | 1-2d                    | skill ranking レポート             | §0.1 第 2/3/4 条を検証                |
+| **P1.5** | 1 週間データ収集 + ベースライン測定（≥3 クラス × ≥10 回）              | 1w                      | どの 2〜3 skill を改修するか決定    | **§0.2 閾値を確定 + §0.1 第5条を検証**     |
+| **P2**   | Layer 2 で top-1 skill 改修（PR + A/B）                                | 0.5〜1d 改修 + 2w 観察  | followup_rate ↓、RT P50 ↓ を検証  | **PR 内で §0.4 per-skill spec を宣言**     |
+| **P3**   | Layer 3 prompt 並行指示 + `batch_size` telemetry（§4.3.2 状態伝達を含む） | 1〜1.5d 変更 + 1w 実測 | batch_size 分布                   | §0.2 第 3 条を検証                      |
+| **P4**   | Layer 2 で top-2 / top-3 skill を継続改修（P3 と並行）                 | 0.5〜1d × N            | 累積 RT P50 ↓                      | 各 PR 内で §0.4 を宣言                  |
+| **P5**   | D1 にまだ価値があるか評価                                               | 意思決定会議            | ロードマップ更新                   | —                                      |
+
+**主要な意思決定ポイント（§0.3 ストップロスラインと対照）**：
+
+- **P-1 終了時**：§0.1 / §0.3 のいずれかで合意に達しない → P0 に進まない
+- **P1.5 終了時**：§0.3 結果指標 #1（top-5 加重 followup_rate < 30%）をトリガー → 方向性を中止；それ以外は §0.2 閾値を確定
+- **P2 終了時**：§0.3 結果指標 #2（top-1 改修後 RT P50 削減幅 < 1s）またはいずれかのプロセス指標をトリガー → 中断して再検討
+- **P3 終了時**：§0.3 結果指標 #3（batch_size P50 が = 1）をトリガー → Layer 3 を放棄
+- **P5**：残りの skill の形態に基づいて D1 の ROI を判断
+
+---
+
+## 9. 主要コード位置
+
+| ファイル                                                  | 主要シンボル                                                   | 位置                              |
+| --------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------- |
+| `packages/core/src/telemetry/types.ts`                    | `ToolCallEvent`（`prompt_id` / `duration_ms` を含む）          | L170                              |
+| `packages/core/src/telemetry/types.ts`                    | `SkillLaunchEvent`（`prompt_id` を追加する必要あり）           | L896                              |
+| `packages/core/src/telemetry/loggers.ts`                  | `logToolCall`                                                  | L220                              |
+| `packages/core/src/telemetry/loggers.ts`                  | `logSkillLaunch`（OTLP 経由；qwen-logger への転送が欠落）       | L958                              |
+| `packages/core/src/telemetry/loggers.ts`                  | `logToolCall`（二重パス：OTLP + qwen-logger、修復のサンプルとして） | L220, L230                        |
+| `packages/core/src/telemetry/qwen-logger/qwen-logger.ts`  | `logSkillLaunchEvent`（**現在デッドコード**、§4.1.1b 事前修復対象） | L908                              |
+| `packages/core/src/core/coreToolScheduler.ts`             | `partitionToolCalls`                                           | L775                              |
+| `packages/core/src/core/coreToolScheduler.ts`             | `runConcurrently` / batch スケジューリング                      | L2456, L2473                      |
+| `packages/core/src/core/coreToolScheduler.ts`             | `logToolCall` 呼び出しポイント（batch_size 状態伝達の終端）      | L3163                             |
+| `packages/core/src/services/fileReadCache.ts`             | `FileReadCache`（既存、重複読み取りラウンドに影響）             | L135                              |
+| `packages/core/src/tools/skill.ts`                        | `SkillTool` + 4 つの `logSkillLaunch` 呼び出しポイント        | L386, L399, L426, L482            |
+| `packages/core/src/skills/skill-manager.ts`               | `SkillManager`（skill 登録/読み込み）                          | ファイル全体                      |
+| `packages/core/src/skills/skill-load.ts`                  | skill 説明読み込み（出力契約変更のエントリポイント）           | ファイル全体                      |
+| `packages/core/src/tools/tools.ts`                        | `Kind` + `CONCURRENCY_SAFE_KINDS`                              | L793, L818                        |
+| `packages/core/src/core/coreToolScheduler.ts`             | `partitionToolCalls` + `runConcurrently`（既存の並行基盤）     | 参照 rt-optimization-design.md §5.7 |
+| `packages/core/src/core/prompts.ts`                       | `# Final Reminder` セクション（Layer 3 で並行指示を追加する場所） | L396                              |
+| `.qwen/skills/`                                           | 各 skill 定義ディレクトリ（Layer 2 改修対象）                  | ディレクトリ                      |

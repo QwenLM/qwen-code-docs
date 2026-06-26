@@ -1,96 +1,97 @@
 # Genehmigungsmodus
 
-Qwen Code bietet fünf verschiedene Berechtigungsmodi, mit denen Sie flexibel steuern können, wie KI mit Ihrem Code und System interagiert – abgestimmt auf Aufgabenkomplexität und Risikograd.
+Qwen Code bietet fünf verschiedene Berechtigungsmodi, mit denen Sie flexibel steuern können, wie die KI basierend auf Aufgabenkomplexität und Risikostufe mit Ihrem Code und System interagiert.
 
 ## Vergleich der Berechtigungsmodi
 
-| Modus                 | Dateibearbeitung             | Shell-Befehle                | Am besten geeignet                                                                                     | Risikograd |
-| --------------------- | ---------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------ | ---------- |
-| **Plan**              | ❌ Nur Leseanalyse           | ❌ Nicht ausgeführt          | • Code-Erkundung <br>• Planung komplexer Änderungen <br>• Sicheres Code-Review                        | Niedrigst  |
-| **Berechtigungen**    | ✅ Manuelle Genehmigung nötig | ✅ Manuelle Genehmigung nötig | • Neue/unbekannte Codebasen <br>• Kritische Systeme <br>• Teamzusammenarbeit <br>• Lernen und Lehren   | Niedrig    |
-| **Auto-Bearbeitung**  | ✅ Automatisch genehmigt     | ❌ Manuelle Genehmigung nötig | • Tägliche Entwicklungsaufgaben <br>• Refactoring und Codeverbesserungen <br>• Sichere Automatisierung  | Mittel     |
-| **Auto**              | ✅ Vom Klassifizierer bewertet | ✅ Vom Klassifizierer bewertet | • Lange autonome Sitzungen <br>• Wenn Auto-Bearbeitung zu vorsichtig, aber YOLO zu riskant ist          | Mittel     |
-| **YOLO**              | ✅ Automatisch genehmigt     | ✅ Automatisch genehmigt     | • Vertraute persönliche Projekte <br>• Automatisierte Skripte/CI/CD <br>• Batch-Verarbeitungsaufgaben   | Höchst     |
+| Modus                  | Dateibearbeitung              | Shell-Befehle                 | Am besten geeignet für                                                                                  | Risikostufe |
+| ---------------------- | ----------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------- | ----------- |
+| **Plan**               | ❌ Nur schreibgeschützte Analyse | ❌ Werden nicht ausgeführt    | • Code-Erkundung <br>• Planung komplexer Änderungen <br>• Sicheres Code-Review                            | Niedrigste  |
+| **Ask Permissions**    | ✅ Manuelle Genehmigung erforderlich | ✅ Manuelle Genehmigung erforderlich | • Neue/unbekannte Codebasen <br>• Kritische Systeme <br>• Team-Zusammenarbeit <br>• Lernen und Lehren    | Niedrig     |
+| **Auto-Edit**          | ✅ Automatisch genehmigt      | ❌ Manuelle Genehmigung erforderlich | • Tägliche Entwicklungsaufgaben <br>• Refactoring und Code-Verbesserungen <br>• Sichere Automatisierung  | Mittel      |
+| **Auto**               | ✅ Klassifikator-bewertet     | ✅ Klassifikator-bewertet     | • Lange autonome Sitzungen <br>• Wenn Auto-Edit zu vorsichtig, aber YOLO zu riskant ist                 | Mittel      |
+| **YOLO**               | ✅ Automatisch genehmigt      | ✅ Automatisch genehmigt      | • Vertraute persönliche Projekte <br>• Automatisierte Skripte/CI/CD <br>• Batch-Verarbeitungsaufgaben    | Höchste     |
 
 > [!NOTE]
 >
-> Der zuvor **Standard** genannte Modus wurde zur besseren Beschreibung seines Verhaltens in **Berechtigungen** umbenannt. Der zugrunde liegende Konfigurationswert (`tools.approvalMode: "default"`) und der Befehl `/approval-mode default` bleiben aus Gründen der Rückwärtskompatibilität unverändert.
+> Der Modus, der zuvor **Default** hieß, wurde in **Ask Permissions** umbenannt, um sein Verhalten besser zu beschreiben. Der zugrunde liegende Konfigurationswert (`tools.approvalMode: "default"`) und der Befehl `/approval-mode default` bleiben aus Gründen der Abwärtskompatibilität unverändert.
 
-### Kurzanleitung
+### Kurzreferenz
 
-- **Im Plan-Modus starten**: Ideal zum Verstehen vor Änderungen
-- **Im Berechtigungen-Modus arbeiten**: Die ausgewogene Wahl für die meisten Entwicklungsarbeiten
-- **Zu Auto-Bearbeitung wechseln**: Wenn Sie viele sichere Codeänderungen vornehmen
-- **Auto-Modus ausprobieren**: Wenn Sie weniger Unterbrechungen wünschen, aber dennoch Sicherheit bei Shell-Befehlen und Netzwerkaufrufen möchten – ein LLM-Klassifizierer bewertet jeden Aufruf
-- **YOLO sparsam einsetzen**: Nur für vertrauenswürdige Automatisierung in kontrollierten Umgebungen
+- **Beginnen Sie im Plan Mode**: Ideal, um zu verstehen, bevor Sie Änderungen vornehmen
+- **Arbeiten Sie im Ask Permissions Mode**: Die ausgewogene Wahl für die meisten Entwicklungsarbeiten
+- **Wechseln Sie zu Auto-Edit**: Wenn Sie viele sichere Code-Änderungen vornehmen
+- **Probieren Sie den Auto Mode**: Wenn Sie weniger Unterbrechungen wünschen, aber dennoch Sicherheit bei Shell-Befehlen und Netzwerkaufrufen – ein LLM-Klassifikator bewertet jeden Aufruf
+- **Verwenden Sie YOLO sparsam**: Nur für vertrauenswürdige Automatisierung in kontrollierten Umgebungen
 
 > [!tip]
 >
-> Sie können während einer Sitzung schnell mit **Umschalt+Tab** (oder **Tab** unter Windows) durch die Modi wechseln. Die Statusleiste des Terminals zeigt Ihren aktuellen Modus an, sodass Sie immer wissen, welche Berechtigungen Qwen Code hat.
+> Sie können während einer Sitzung mit **Shift+Tab** (oder **Tab** unter Windows) schnell durch die Modi wechseln. Die Statusleiste des Terminals zeigt Ihren aktuellen Modus an, sodass Sie stets wissen, welche Berechtigungen Qwen Code hat.
 
-> Die Reihenfolge des Durchlaufs ist: **Plan → Berechtigungen → Auto-Bearbeitung → Auto → YOLO → Plan → ...**
+> Die Zyklusreihenfolge ist: **plan → default → auto-edit → auto → yolo → plan → ...**
 
-## 1. Plan-Modus für sichere Code-Analyse verwenden
+## 1. Verwenden Sie den Plan Mode für sichere Code-Analyse
 
-Der Plan-Modus weist Qwen Code an, einen Plan zu erstellen, indem die Codebasis mit **schreibgeschützten** Operationen analysiert wird. Perfekt zum Erkunden von Codebasen, Planen komplexer Änderungen oder sicheren Code-Reviews.
+Der Plan Mode weist Qwen Code an, einen Plan zu erstellen, indem er die Codebasis mit **schreibgeschützten** Operationen analysiert. Dies ist ideal, um Codebasen zu erkunden, komplexe Änderungen zu planen oder Code sicher zu überprüfen.
 
-### Wann sollte der Plan-Modus verwendet werden?
+### Wann Sie den Plan Mode verwenden sollten
 
-- **Mehrschritt-Implementierung**: Wenn Ihre Funktion Änderungen an vielen Dateien erfordert
-- **Code-Erkundung**: Wenn Sie die Codebasis vor Änderungen gründlich untersuchen möchten
-- **Interaktive Entwicklung**: Wenn Sie die Richtung mit Qwen Code iterativ entwickeln möchten
+- **Mehrschrittige Implementierung**: Wenn Ihre Funktion Änderungen an vielen Dateien erfordert
+- **Code-Erkundung**: Wenn Sie die Codebasis gründlich untersuchen möchten, bevor Sie etwas ändern
+- **Interaktive Entwicklung**: Wenn Sie die Richtung mit Qwen Code iterieren möchten
 
-### So verwenden Sie den Plan-Modus
+### So verwenden Sie den Plan Mode
 
-**Plan-Modus während einer Sitzung aktivieren**
+**Plan Mode während einer Sitzung aktivieren**
 
-Sie können während einer Sitzung mit **Umschalt+Tab** (oder **Tab** unter Windows) in den Plan-Modus wechseln, indem Sie durch die Berechtigungsmodi blättern.
+Sie können während einer Sitzung mit **Shift+Tab** (oder **Tab** unter Windows) in den Plan Mode wechseln, indem Sie durch die Berechtigungsmodi blättern.
 
-Wenn Sie sich im Normalmodus befinden, wechselt **Umschalt+Tab** (oder **Tab** unter Windows) zuerst in den Auto-Bearbeitung-Modus, angezeigt durch `⏵⏵ edits annehmen` am unteren Bildschirmrand des Terminals. Ein weiteres **Umschalt+Tab** (oder **Tab** unter Windows) wechselt in den Plan-Modus, angezeigt durch `⏸ Plan-Modus`.
+Wenn Sie sich im Normalmodus befinden, wechselt **Shift+Tab** (oder **Tab** unter Windows) zuerst in den `auto-edits` Modus, erkennbar an `⏵⏵ accept edits on` am unteren Rand des Terminals. Ein weiteres **Shift+Tab** (oder **Tab** unter Windows) wechselt in den Plan Mode, erkennbar an `⏸ plan mode`.
 
-**Den Befehl `/plan` verwenden**
+**Den `/plan` Befehl verwenden**
 
-Der Befehl `/plan` bietet eine schnelle Abkürzung zum Betreten und Verlassen des Plan-Modus:
+Der `/plan` Befehl bietet eine schnelle Abkürzung zum Betreten und Verlassen des Plan Mode:
 
-Normale Planungsanfragen wechseln den Modus nicht von selbst. Wenn Sie den schreibgeschützten Plan-Modus-Workflow wünschen, verwenden Sie `/plan`, die Tastenkombination oder setzen Sie den Genehmigungsmodus explizit auf `plan`.
+Reguläre Planungsanfragen wechseln nicht automatisch den Modus. Wenn Sie den schreibgeschützten Plan Mode Workflow wünschen, verwenden Sie `/plan`, das Tastaturkürzel oder setzen Sie den Genehmigungsmodus explizit auf `plan`.
 
 ```bash
-/plan                          # Plan-Modus betreten
-/plan refactor the auth module # Plan-Modus betreten und Planung starten
-/plan exit                     # Plan-Modus verlassen, vorherigen Modus wiederherstellen
+/plan                          # Plan Mode betreten
+/plan refactor the auth module # Plan Mode betreten und mit der Planung beginnen
+/plan exit                     # Plan Mode verlassen, vorherigen Modus wiederherstellen
 ```
 
-Wenn Sie den Plan-Modus mit `/plan exit` verlassen, wird Ihr vorheriger Genehmigungsmodus automatisch wiederhergestellt (z. B. wenn Sie vor dem Betreten des Plan-Modus im Auto-Bearbeitung-Modus waren, kehren Sie zu Auto-Bearbeitung zurück).
+Wenn Sie den Plan Mode mit `/plan exit` verlassen, wird Ihr vorheriger Genehmigungsmodus automatisch wiederhergestellt (z. B. wenn Sie vor dem Betreten des Plan Mode im Auto-Edit waren, kehren Sie zu Auto-Edit zurück).
 
-**Eine neue Sitzung im Plan-Modus starten**
+**Eine neue Sitzung im Plan Mode starten**
 
-Um eine neue Sitzung im Plan-Modus zu starten, verwenden Sie `/approval-mode` und wählen Sie dann `plan` aus.
+Um eine neue Sitzung im Plan Mode zu starten, verwenden Sie `/approval-mode` und wählen dann `plan`
 
 ```bash
 /approval-mode
 ```
 
-**"Headless"-Abfragen im Plan-Modus ausführen**
+**„Headless"-Abfragen im Plan Mode ausführen**
 
-Sie können eine Abfrage im Plan-Modus auch direkt mit `-p` oder `prompt` ausführen:
-
-```bash
-qwen --prompt "Was ist maschinelles Lernen?"
-```
-
-### Beispiel: Planung einer komplexen Umstrukturierung
+Sie können eine Abfrage auch direkt mit `-p` oder `prompt` im Plan Mode ausführen:
 
 ```bash
-/plan Ich muss unser Authentifizierungssystem auf OAuth2 umstellen. Erstelle einen detaillierten Migrationsplan.
+qwen --prompt "What is machine learning?"
 ```
 
-Qwen Code wechselt in den Plan-Modus und analysiert die aktuelle Implementierung, um einen umfassenden Plan zu erstellen. Verfeinern Sie ihn mit Nachfragen:
+### Beispiel: Planung eines komplexen Refactorings
+
+```bash
+/plan I need to refactor our authentication system to use OAuth2. Create a detailed migration plan.
+```
+
+Qwen Code wechselt in den Plan Mode und analysiert die aktuelle Implementierung, um einen umfassenden Plan zu erstellen. Verfeinern Sie ihn mit Folgefragen:
 
 ```
-Was ist mit Rückwärtskompatibilität?
-Wie sollen wir die Datenbankmigration handhaben?
+What about backward compatibility?
+How should we handle database migration?
 ```
-### Plan-Modus als Standard konfigurieren
+
+### Plan Mode als Standard konfigurieren
 
 ```json
 // .qwen/settings.json
@@ -101,38 +102,38 @@ Wie sollen wir die Datenbankmigration handhaben?
 }
 ```
 
-## 2. Ask Permissions Mode für kontrollierte Interaktion verwenden
+## 2. Verwenden Sie den Ask Permissions Mode für kontrollierte Interaktion
 
-Ask Permissions Mode ist die Standardmethode, um mit Qwen Code zu arbeiten. In diesem Modus behalten Sie die volle Kontrolle über alle potenziell riskanten Vorgänge – Qwen Code wird Sie um Ihre Zustimmung bitten, bevor Dateiänderungen vorgenommen oder Shell-Befehle ausgeführt werden.
+Der Ask Permissions Mode ist die Standardmethode, um mit Qwen Code zu arbeiten. In diesem Modus behalten Sie die volle Kontrolle über alle potenziell riskanten Operationen – Qwen Code wird vor jeder Dateiänderung oder Shell-Befehlsausführung um Ihre Genehmigung bitten.
 
-### Wann Ask Permissions Mode verwendet werden sollte
+### Wann Sie den Ask Permissions Mode verwenden sollten
 
 - **Neu in einer Codebasis**: Wenn Sie ein unbekanntes Projekt erkunden und besonders vorsichtig sein möchten
-- **Kritische Systeme**: Bei der Arbeit an Produktionscode, Infrastruktur oder sensiblen Daten
+- **Kritische Systeme**: Wenn Sie an Produktionscode, Infrastruktur oder sensiblen Daten arbeiten
 - **Lernen und Lehren**: Wenn Sie jeden Schritt verstehen möchten, den Qwen Code unternimmt
-- **Teamzusammenarbeit**: Wenn mehrere Personen an derselben Codebasis arbeiten
-- **Komplexe Vorgänge**: Wenn die Änderungen mehrere Dateien oder komplexe Logik umfassen
+- **Team-Zusammenarbeit**: Wenn mehrere Personen an derselben Codebasis arbeiten
+- **Komplexe Operationen**: Wenn die Änderungen mehrere Dateien oder komplexe Logik umfassen
 
-### So verwenden Sie Ask Permissions Mode
+### So verwenden Sie den Ask Permissions Mode
 
 **Ask Permissions Mode während einer Sitzung aktivieren**
 
-Sie können während einer Sitzung mit **Shift+Tab** (oder **Tab** unter Windows) durch die Berechtigungsmodi wechseln, um in den Ask Permissions Mode zu gelangen. Wenn Sie sich in einem anderen Modus befinden, gelangen Sie durch wiederholtes Drücken von **Shift+Tab** (oder **Tab** unter Windows) schließlich zurück in den Ask Permissions Mode, der durch das Fehlen eines Modusindikators am unteren Rand des Terminals angezeigt wird.
+Sie können während einer Sitzung mit **Shift+Tab** (oder **Tab** unter Windows) in den Ask Permissions Mode wechseln, indem Sie durch die Berechtigungsmodi blättern. Wenn Sie sich in einem anderen Modus befinden, führt das Drücken von **Shift+Tab** (oder **Tab** unter Windows) schließlich zurück zum Ask Permissions Mode, erkennbar am Fehlen eines Modus-Indikators am unteren Rand des Terminals.
 
 **Eine neue Sitzung im Ask Permissions Mode starten**
 
-Ask Permissions Mode ist der anfängliche Modus beim Start von Qwen Code. Wenn Sie den Modus geändert haben und zu Ask Permissions Mode zurückkehren möchten, verwenden Sie:
+Der Ask Permissions Mode ist der anfängliche Modus beim Start von Qwen Code. Wenn Sie den Modus geändert haben und zurück zum Ask Permissions Mode möchten, verwenden Sie:
 
 ```
 /approval-mode default
 ```
 
-**„Headless“-Abfragen im Ask Permissions Mode ausführen**
+**„Headless"-Abfragen im Ask Permissions Mode ausführen**
 
-Bei der Ausführung von Headless-Befehlen ist Ask Permissions Mode das Standardverhalten. Sie können es explizit angeben mit:
+Bei der Ausführung von headless-Befehlen ist Ask Permissions Mode das Standardverhalten. Sie können es explizit angeben mit:
 
 ```
-qwen --prompt "Analysiere diesen Code auf potenzielle Fehler"
+qwen --prompt "Analyze this code for potential bugs"
 ```
 
 ### Beispiel: Sicheres Implementieren einer Funktion
@@ -142,16 +143,16 @@ qwen --prompt "Analysiere diesen Code auf potenzielle Fehler"
 ```
 
 ```
-Ich muss Benutzerprofilbilder zu unserer Anwendung hinzufügen. Die Bilder sollten in einem S3-Bucket gespeichert und die URLs in der Datenbank abgelegt werden.
+I need to add user profile pictures to our application. The pictures should be stored in an S3 bucket and the URLs saved in the database.
 ```
 
-Qwen Code analysiert Ihre Codebasis und schlägt einen Plan vor. Anschließend wird es Sie um Zustimmung bitten, bevor:
+Qwen Code analysiert Ihre Codebasis und schlägt einen Plan vor. Anschließend wird vor jedem Schritt um Genehmigung gebeten:
 
-1. Neue Dateien erstellt werden (Controller, Modelle, Migrationen)
-2. Vorhandene Dateien geändert werden (Hinzufügen neuer Spalten, Aktualisieren von APIs)
-3. Shell-Befehle ausgeführt werden (Datenbankmigrationen, Abhängigkeitsinstallation)
+1. Neue Dateien erstellen (Controller, Modelle, Migrationen)
+2. Vorhandene Dateien ändern (neue Spalten hinzufügen, APIs aktualisieren)
+3. Shell-Befehle ausführen (Datenbankmigrationen, Abhängigkeitsinstallation)
 
-Sie können jede vorgeschlagene Änderung überprüfen und einzeln genehmigen oder ablehnen.
+Sie können jede vorgeschlagene Änderung einzeln prüfen und genehmigen oder ablehnen.
 
 ### Ask Permissions Mode als Standard konfigurieren
 
@@ -164,58 +165,57 @@ Sie können jede vorgeschlagene Änderung überprüfen und einzeln genehmigen od
 }
 ```
 
-## 3. Auto Edits Mode
+## 3. Auto-Edits Mode
 
-Auto-Edit Mode weist Qwen Code an, Dateibearbeitungen automatisch zu genehmigen, während für Shell-Befehle eine manuelle Genehmigung erforderlich ist – ideal, um Entwicklungsabläufe zu beschleunigen und gleichzeitig die Systemsicherheit zu gewährleisten.
+Der Auto-Edit Mode weist Qwen Code an, Dateibearbeitungen automatisch zu genehmigen, während für Shell-Befehle eine manuelle Genehmigung erforderlich ist. Dies ist ideal, um Entwicklungsabläufe zu beschleunigen und gleichzeitig die Systemsicherheit zu gewährleisten.
 
-Automatisch genehmigte Bearbeitungswerkzeuge sind `edit`, `write_file` und `notebook_edit`.
+Zu den automatisch genehmigten Bearbeitungswerkzeugen gehören `edit`, `write_file` und `notebook_edit`.
 
-### Wann Auto-Accept Edits Mode verwendet werden sollte
+### Wann Sie den Auto-Accept-Edits Mode verwenden sollten
 
-- **Tägliche Entwicklung**: Ideal für die meisten Programmieraufgaben
+- **Tägliche Entwicklung**: Ideal für die meisten Codierungsaufgaben
 - **Sichere Automatisierung**: Erlaubt der KI, Code zu ändern, während die versehentliche Ausführung gefährlicher Befehle verhindert wird
-- **Teamzusammenarbeit**: In gemeinsamen Projekten verwenden, um unbeabsichtigte Auswirkungen auf andere zu vermeiden
+- **Team-Zusammenarbeit**: Verwenden Sie ihn in gemeinsamen Projekten, um unbeabsichtigte Auswirkungen auf andere zu vermeiden
 
 ### So wechseln Sie in diesen Modus
 
 ```
-# Über Befehl wechseln
+# Wechseln per Befehl
 /approval-mode auto-edit
 
-# Oder Tastenkürzel verwenden
-Shift+Tab (oder Tab unter Windows) # Von anderen Modi wechseln
+# Oder Tastaturkürzel verwenden
+Shift+Tab (oder Tab unter Windows) # Wechseln aus anderen Modi
 ```
 
-### Beispiel Arbeitsablauf
+### Beispiel-Workflow
 
-1. Sie bitten Qwen Code, eine Funktion umzugestalten
+1. Sie bitten Qwen Code, eine Funktion zu refaktorisieren
 2. Die KI analysiert den Code und schlägt Änderungen vor
-3. **Automatisch** werden alle Dateiänderungen ohne Bestätigung angewendet
-4. Wenn Tests ausgeführt werden müssen, wird um **Zustimmung** zur Ausführung von `npm test` gebeten
+3. **Automatisch** werden alle Dateiänderungen ohne Bestätigung übernommen
+4. Wenn Tests ausgeführt werden müssen, wird **um Genehmigung gebeten**, `npm test` auszuführen
 
-## 4. Auto Mode – Klassifikator-gesteuerte Genehmigung
+## 4. Auto Mode – Klassifikatorgesteuerte Genehmigung
 
-Auto Mode liegt zwischen Auto-Edit und YOLO. Ein LLM-Klassifikator bewertet jeden
-Shell-Befehl, Netzwerkaufruf und jede außerhalb des Workspace vorgenommene Bearbeitung und genehmigt
-automatisch diejenigen, die er als sicher einstuft, während riskante blockiert werden. Die meisten
-schreibgeschützten Vorgänge und Bearbeitungen innerhalb des Workspace überspringen den Klassifikator aus
-Geschwindigkeitsgründen.
+Der Auto Mode liegt zwischen Auto-Edit und YOLO. Ein LLM-Klassifikator bewertet jeden
+Shell-Befehl, Netzwerkaufruf und jede Bearbeitung außerhalb des Arbeitsbereichs und genehmigt
+diejenigen automatisch, die er als sicher einstuft, während riskante blockiert werden.
+Die meisten schreibgeschützten Operationen und Bearbeitungen innerhalb des Arbeitsbereichs überspringen den Klassifikator aus Geschwindigkeitsgründen.
 
-Siehe [auto-mode.md](./auto-mode.md) für die vollständige Referenz (Hints-Konfiguration,
-Fehlerbehebung, FAQ).
+Die vollständige Referenz finden Sie unter [auto-mode.md](./auto-mode.md) (Hinweise
+zur Konfiguration, Fehlerbehebung, FAQ).
 
-### Wann Auto Mode verwendet werden sollte
+### Wann Sie den Auto Mode verwenden sollten
 
-- **Lange autonome Sitzungen**: Wenn Ask Permissions Mode zu oft unterbricht, aber
+- **Lange autonome Sitzungen**: Wenn der Ask Permissions Mode zu oft unterbricht, aber
   YOLO zu riskant ist.
-- **Vertrauenswürdige Projekte**: Interne Codebasen, bei denen der Agent weiterarbeiten
-  soll, aber dennoch eine Absicherung gegen destruktive Shell-Befehle und
-  ausgehende Netzwerkaufrufe gewünscht wird.
-- **Headless / geplante Ausführungen**: Wenn Auto-Edit nicht ausreicht (der Agent
-  muss auch Shell-Befehle ausführen), aber Sicherheit bei `rm -rf /`,
-  `curl ... | sh`, Credential-Exfiltration usw. gewünscht wird.
+- **Vertraute Projekte**: Interne Codebasen, in denen der Agent weiterarbeiten soll,
+  aber Sie dennoch eine Sicherheitsvorkehrung gegen destruktive Shell-Befehle und
+  ausgehende Netzwerkaufrufe wünschen.
+- **Headless- / geplante Ausführungen**: Wenn Auto-Edit nicht ausreicht (der Agent
+  muss auch Shell-Befehle ausführen), aber Sie Sicherheit vor `rm -rf /`,
+  `curl ... | sh`, Credential-Exfiltration usw. wünschen.
 
-### So verwenden Sie Auto Mode
+### So verwenden Sie den Auto Mode
 
 **Auto Mode während einer Sitzung aktivieren**
 
@@ -228,8 +228,8 @@ Statusleiste zeigt den aktiven Modus an.
 /approval-mode auto
 ```
 
-Beim ersten Betreten von Auto Mode erklärt eine Informationsmeldung, wie er
-funktioniert. Der Hinweis erscheint nicht erneut.
+Beim ersten Betreten des Auto Mode wird eine Informationsmeldung angezeigt, die erklärt, wie er
+funktioniert. Der Hinweis erscheint danach nicht wieder.
 
 **Eine neue Sitzung im Auto Mode starten**
 
@@ -242,49 +242,50 @@ funktioniert. Der Hinweis erscheint nicht erneut.
 }
 ```
 
-### Was Auto Mode automatisch genehmigt vs. blockiert
+### Was der Auto Mode automatisch genehmigt vs. blockiert
 
-Der Klassifikator tendiert dazu, bei Unsicherheit zu blockieren. Standardeinstellungen:
-- **Automatisch genehmigt**: Nur-Lese-Befehle (ls, cat, git status, grep, find),
+Der Klassifikator neigt dazu, bei Unsicherheit zu blockieren. Standardmäßig:
+
+- **Automatisch genehmigt**: Schreibgeschützte Befehle (ls, cat, git status, grep, find),
   Paketinstallation im aktuellen Arbeitsverzeichnis, Build-/Testbefehle, Dateibearbeitungen innerhalb des
-  Arbeitsbereichs, lokale Operationen.
-- **Blockiert**: irreversible Zerstörung (rm -rf /, fdisk, mkfs),
-  Code-Ausführung von extern (curl | sh, eval von Remote-Inhalten),
-  Abgreifen von Anmeldedaten, unbefugte Persistenz (.bashrc-Änderungen,
+  Arbeitsbereichs, rein lokale Operationen.
+- **Blockiert**: Irreversible Zerstörung (rm -rf /, fdisk, mkfs),
+  Codeausführung von externen Quellen (curl | sh, eval von Remote-Inhalten),
+  Credential-Exfiltration, unbefugte Persistenz (.bashrc-Änderungen,
   crontab), Sicherheitsschwächung, Force-Push auf main/master.
 
 Sie können die Bewertung des Klassifikators über natürlichsprachliche Hinweise in
 settings.json anpassen. Siehe [auto-mode.md](./auto-mode.md#configuring-hints).
 
-### Sicherheitsleitplanken
+### Sicherheitsvorkehrungen
 
 - **Harte Regeln bleiben in Kraft**: `permissions.deny`-Regeln blockieren Aktionen,
   bevor der Klassifikator überhaupt läuft.
-- **Zu weit gefasste Erlaubnisregeln werden im Auto-Modus entfernt**: z.B.
-  `permissions.allow: ["Bash"]` (jeden Shell-Befehl erlauben) würde den Klassifikator
-  aushebeln; beim Betreten des Auto-Modus werden solche Regeln vorübergehend deaktiviert, damit der
-  Klassifikator seine Aufgabe erfüllen kann. Die Regeln werden beim Verlassen des Auto-
-  Modus wiederhergestellt. Die Einstellungen auf der Festplatte werden nie geändert.
-- **Fail-closed**: Wenn die Klassifikator-API nicht erreichbar ist, wird die Aktion
-  blockiert anstatt erlaubt. Nach zwei aufeinanderfolgenden nicht erreichbaren Aufrufen,
-  fällt der nächste Tool-Aufruf auf manuelle Genehmigung zurück.
-- **Schleifenwächter**: Nach drei aufeinanderfolgenden Richtlinienblocks fällt der nächste
-  Aufruf ebenfalls auf manuelle Genehmigung zurück, damit der Agent nicht in einer Endlosschleife
-  auf einem toten Pfad stecken bleibt.
+- **Zu weit gefasste Erlaubnisregeln werden im Auto Mode deaktiviert**: Z. B.
+  `permissions.allow: ["Bash"]` (jeden Shell-Befehl erlauben) umgeht den
+  Klassifikator; beim Betreten des Auto Mode werden solche Regeln vorübergehend deaktiviert, damit der
+  Klassifikator seine Arbeit tun kann. Die Regeln werden beim Verlassen des Auto
+  Mode wiederhergestellt. Einstellungen auf der Festplatte werden nie geändert.
+- **Fail-Closed**: Wenn die Klassifikator-API nicht erreichbar ist, wird die Aktion
+  blockiert, anstatt erlaubt. Nach zwei aufeinanderfolgenden nicht verfügbaren Aufrufen
+  wird der nächste Werkzeugaufruf auf manuelle Genehmigung zurückgesetzt.
+- **Schleifenschutz**: Nach drei aufeinanderfolgenden Richtlinienblockaden wird der nächste Aufruf
+  ebenfalls auf manuelle Genehmigung zurückgesetzt, damit der Agent nicht in einer
+  Sackgasse stecken bleibt.
 
 ### Beispiel
 
 ```
 /approval-mode auto
-Refaktorieren Sie das Auth-Modul, um OAuth2 zu verwenden. Führen Sie anschließend die vollständige Testsuite aus.
+Refactor the auth module to use OAuth2. Run the full test suite afterwards.
 ```
 
-Qwen Code führt die Dateibearbeitungen durch (Bearbeitungen im Arbeitsbereich überspringen den Klassifikator),
-führt `npm test` aus (vom Klassifikator als sicher eingestuft) und zeigt einen Block an, falls es jemals
-etwas Riskantes versucht wie `rm -rf /Users/me/.aws`. Sie können den Grund
-inline einsehen und entscheiden, ob Sie für diesen Schritt in den "Ask Permissions"-Modus wechseln möchten.
+Qwen Code nimmt die Dateibearbeitungen vor (Bearbeitungen innerhalb des Arbeitsbereichs überspringen den Klassifikator),
+führt `npm test` aus (vom Klassifikator als sicher eingestuft) und zeigt eine Blockade an, falls es
+jemals etwas Riskantes versucht, wie `rm -rf /Users/me/.aws`. Sie können den Grund
+inline einsehen und entscheiden, ob Sie für diesen Schritt in den Ask Permissions Mode wechseln.
 
-### Auto-Modus als Standard konfigurieren
+### Auto Mode als Standard konfigurieren
 
 ```jsonc
 // .qwen/settings.json
@@ -295,20 +296,20 @@ inline einsehen und entscheiden, ob Sie für diesen Schritt in den "Ask Permissi
   "permissions": {
     "autoMode": {
       "hints": {
-        "allow": ["Ausführen von pytest, mypy und ruff in diesem Python-Repo"],
-        "deny": ["Jeder Netzwerkaufruf an intranet.example.com"],
+        "allow": ["Running pytest, mypy, and ruff on this Python repo"],
+        "deny": ["Any network call to intranet.example.com"],
       },
-      "environment": ["Open-Source-Monorepo; Commits sind signiert"],
+      "environment": ["Open-source monorepo; commits are signed"],
     },
   },
 }
 ```
 
-## 5. YOLO-Modus – Vollständige Automatisierung
+## 5. YOLO Mode – Vollautomatisierung
 
-Der YOLO-Modus gewährt Qwen Code die höchsten Berechtigungen und genehmigt automatisch alle Tool-Aufrufe, einschließlich Dateibearbeitung und Shell-Befehle.
+Der YOLO Mode gewährt Qwen Code die höchsten Berechtigungen und genehmigt automatisch alle Werkzeugaufrufe, einschließlich Dateibearbeitung und Shell-Befehle.
 
-### Wann der YOLO-Modus verwendet werden sollte
+### Wann Sie den YOLO Mode verwenden sollten
 
 - **Automatisierte Skripte**: Ausführung vordefinierter automatisierter Aufgaben
 - **CI/CD-Pipelines**: Automatisierte Ausführung in kontrollierten Umgebungen
@@ -317,22 +318,22 @@ Der YOLO-Modus gewährt Qwen Code die höchsten Berechtigungen und genehmigt aut
 
 > [!warning]
 >
-> **YOLO-Modus mit Vorsicht verwenden**: KI kann jeden Befehl mit Ihren Terminal-Berechtigungen ausführen. Stellen Sie sicher:
+> **Verwenden Sie den YOLO Mode mit Vorsicht**: Die KI kann jeden Befehl mit Ihren Terminalberechtigungen ausführen. Stellen Sie sicher:
 >
 > 1. Sie vertrauen der aktuellen Codebasis
 > 2. Sie verstehen alle Aktionen, die die KI ausführen wird
-> 3. Wichtige Dateien sind gesichert oder in der Versionsverwaltung committet
+> 3. Wichtige Dateien sind gesichert oder in der Versionskontrolle committet
 
-### So aktivieren Sie den YOLO-Modus
+### So aktivieren Sie den YOLO Mode
 
 ```
-# Vorübergehend aktivieren (nur für die aktuelle Sitzung)
+# Vorübergehend aktivieren (nur für aktuelle Sitzung)
 /approval-mode yolo
 
-# Als Projektstandard setzen
+# Als Projektstandard festlegen
 /approval-mode yolo --project
 
-# Als globalen Benutzerstandard setzen
+# Als globalen Benutzerstandard festlegen
 /approval-mode yolo --user
 ```
 
@@ -350,12 +351,12 @@ Der YOLO-Modus gewährt Qwen Code die höchsten Berechtigungen und genehmigt aut
 ### Beispiel für einen automatisierten Workflow
 
 ```bash
-# Vollständig automatisierte Refaktorierungsaufgabe
-qwen --prompt "Führen Sie die Testsuite aus, beheben Sie alle fehlschlagenden Tests und committen Sie dann die Änderungen"
+# Vollautomatisierte Refactoring-Aufgabe
+qwen --prompt "Run the test suite, fix all failing tests, then commit changes"
 
 # Ohne menschliches Eingreifen wird die KI:
 # 1. Testbefehle ausführen (automatisch genehmigt)
-# 2. Fehlgeschlagene Testfälle beheben (Dateien automatisch bearbeiten)
+# 2. Fehlgeschlagene Testfälle korrigieren (Dateien automatisch bearbeiten)
 # 3. Git-Commit ausführen (automatisch genehmigt)
 ```
 
@@ -363,10 +364,10 @@ qwen --prompt "Führen Sie die Testsuite aus, beheben Sie alle fehlschlagenden T
 
 ### Tastaturkürzel zum Wechseln
 
-Während einer Qwen Code-Sitzung können Sie mit **Umschalt+Tab** (oder **Tab** unter Windows) schnell durch die fünf Modi wechseln:
+Während einer Qwen Code Sitzung verwenden Sie **Shift+Tab** (oder **Tab** unter Windows), um schnell durch die fünf Modi zu blättern:
 
 ```
-Plan-Modus → Ask Permissions-Modus → Auto-Edit-Modus → Auto-Modus → YOLO-Modus → Plan-Modus
+Plan Mode → Ask Permissions Mode → Auto-Edit Mode → Auto Mode → YOLO Mode → Plan Mode
 ```
 
 ### Dauerhafte Konfiguration
@@ -381,9 +382,9 @@ Plan-Modus → Ask Permissions-Modus → Auto-Edit-Modus → Auto-Modus → YOLO
 }
 ```
 
-### Empfehlungen zur Modusnutzung
+### Modus-Verwendungsempfehlungen
 
-1. **Neu in der Codebasis**: Beginnen Sie mit dem **Plan-Modus** für sichere Erkundung
-2. **Tägliche Entwicklungsaufgaben**: Verwenden Sie **Auto-Accept Edits** (Standardmodus), effizient und sicher
-3. **Automatisierte Skripte**: Verwenden Sie den **YOLO-Modus** in kontrollierten Umgebungen für vollständige Automatisierung
-4. **Komplexe Refaktorierung**: Verwenden Sie zuerst den **Plan-Modus** für eine detaillierte Planung, wechseln Sie dann für die Ausführung in den passenden Modus
+1. **Neu in der Codebasis**: Beginnen Sie mit **Plan Mode** für eine sichere Erkundung
+2. **Tägliche Entwicklungsaufgaben**: Verwenden Sie **Auto-Accept-Edits** (Standardmodus), effizient und sicher
+3. **Automatisierte Skripte**: Verwenden Sie **YOLO Mode** in kontrollierten Umgebungen für vollständige Automatisierung
+4. **Komplexes Refactoring**: Verwenden Sie zuerst **Plan Mode** für eine detaillierte Planung, wechseln Sie dann für die Ausführung in den geeigneten Modus

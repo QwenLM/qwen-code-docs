@@ -1,10 +1,10 @@
-# Дизайн форк-субагента
+# Дизайн Fork Subagent
 
-> Неявный форк-субагент, который наследует полный контекст разговора родителя и использует общий кэш промптов для экономичного параллельного выполнения задач.
+> Неявный fork subagent, который наследует полный контекст беседы родителя и использует общий кеш подсказок для экономичной параллельной задачи.
 
 ## Обзор
 
-При вызове инструмента Agent без указания `subagent_type` запускается неявный **форк** — фоновый субагент, который наследует историю разговора, системный промпт и определения инструментов родителя. Форк использует `CacheSafeParams`, чтобы гарантировать, что его API-запросы имеют тот же префикс, что и у родителя, что обеспечивает попадание в кэш промптов DashScope.
+Когда инструмент Agent вызывается без `subagent_type`, он запускает неявный **fork** — фоновый subagent, который наследует историю беседы родителя, системный промпт и определения инструментов. Fork использует `CacheSafeParams`, чтобы его API-запросы имели одинаковый префикс с запросами родителя, что обеспечивает попадание в кеш подсказок DashScope.
 
 ## Архитектура
 
@@ -21,7 +21,7 @@ Fork C: [...MsgN | placeholder results | "Test C"]      ← shared cache
 
 ### 1. FORK_AGENT (`forkSubagent.ts`)
 
-Синтетическая конфигурация агента, не зарегистрированная в `builtInAgents`. Имеет резервный `systemPrompt`, но на практике использует сформированный системный промпт родителя через `generationConfigOverride`.
+Синтетическая конфигурация агента, не зарегистрированная в `builtInAgents`. Имеет запасной `systemPrompt`, но на практике использует отрисованный системный промпт родителя через `generationConfigOverride`.
 
 ### 2. Интеграция CacheSafeParams (`agent.ts` + `forkedQuery.ts`)
 
@@ -53,60 +53,60 @@ agent.ts (fork path)
                           ↑ byte-identical to parent's config
 ```
 
-### 3. Формирование истории (`agent.ts` + `forkSubagent.ts`)
+### 3. Построение истории (`agent.ts` + `forkSubagent.ts`)
 
-Поле `extraHistory` форка должно заканчиваться сообщением от модели, чтобы сохранить чередование user/model в Gemini API при отправке `task_prompt` через `agent-headless`.
+`extraHistory` у fork должен заканчиваться сообщением модели, чтобы соблюсти чередование user/model в Gemini API, когда `agent-headless` отправляет `task_prompt`.
 
 Три случая:
 
-| Завершение истории родителя      | Формирование extraHistory                                              | task_prompt                    |
-| ----------------------------- | ---------------------------------------------------------------------- | ------------------------------ |
-| `model` (без вызовов функций)   | `[...rawHistory]` (без изменений)                                          | `buildChildMessage(directive)` |
-| `model` (с вызовами функций) | `[...rawHistory, model(clone), user(responses+directive), model(ack)]` | `'Begin.'`                     |
-| `user` (редкий случай)              | `rawHistory.slice(0, -1)` (удаляет последний user)                         | `buildChildMessage(directive)` |
+| История родителя заканчивается на | Построение extraHistory                                          | task_prompt                    |
+| --------------------------------- | ---------------------------------------------------------------- | ------------------------------ |
+| `model` (без вызовов функций)     | `[...rawHistory]` (без изменений)                                | `buildChildMessage(directive)` |
+| `model` (с вызовами функций)      | `[...rawHistory, model(clone), user(responses+directive), model(ack)]` | `'Begin.'`                     |
+| `user` (необычный случай)         | `rawHistory.slice(0, -1)` (удалить последний user)               | `buildChildMessage(directive)` |
 
-### 4. Предотвращение рекурсивных форков (`forkSubagent.ts`)
+### 4. Предотвращение рекурсивных fork (`forkSubagent.ts`)
 
-Функция `isInForkChild()` сканирует историю разговора на наличие тега `<fork-boilerplate>`. Если тег найден, попытка создания форка отклоняется с сообщением об ошибке.
+`isInForkChild()` сканирует историю беседы на наличие тега `<fork-boilerplate>`. Если тег найден, попытка fork отклоняется с сообщением об ошибке.
 
 ### 5. Фоновое выполнение (`agent.ts`)
 
-Форк использует `void executeSubagent()` (fire-and-forget) и немедленно возвращает родителю `FORK_PLACEHOLDER_RESULT`. Ошибки в фоновой задаче перехватываются, логируются и отражаются в состоянии отображения.
+Fork использует `void executeSubagent()` (запустил и забыл) и немедленно возвращает `FORK_PLACEHOLDER_RESULT` родителю. Ошибки в фоновой задаче перехватываются, логируются и отражаются в состоянии отображения.
 
 ## Поток данных
 
 ```
-1. Model calls Agent tool (no subagent_type)
+1. Модель вызывает инструмент Agent (без subagent_type)
 2. agent.ts: import forkSubagent.js
 3. agent.ts: getCacheSafeParams() → forkGenerationConfig + forkToolsOverride
-4. agent.ts: build extraHistory from parent's getHistory(true)
-5. agent.ts: build forkTaskPrompt (directive or 'Begin.')
+4. agent.ts: build extraHistory из parent's getHistory(true)
+5. agent.ts: build forkTaskPrompt (directive или 'Begin.')
 6. agent.ts: createAgentHeadless(FORK_AGENT, ...)
-7. agent.ts: void executeSubagent() — background
-8. agent.ts: return FORK_PLACEHOLDER_RESULT to parent immediately
-9. Background:
+7. agent.ts: void executeSubagent() — фоновый
+8. agent.ts: return FORK_PLACEHOLDER_RESULT родителю немедленно
+9. Фоновый процесс:
    a. AgentHeadless.execute(context, signal, {extraHistory, generationConfigOverride, toolsOverride})
-   b. AgentCore.createChat() — uses parent's generationConfig (cache-shared)
-   c. runReasoningLoop() — uses parent's tool declarations
-   d. Fork executes tools, produces result
-   e. updateDisplay() with final status
+   b. AgentCore.createChat() — использует generationConfig родителя (общий кеш)
+   c. runReasoningLoop() — использует объявления инструментов родителя
+   d. Fork выполняет инструменты, формирует результат
+   e. updateDisplay() с финальным статусом
 ```
 
 ## Graceful Degradation
 
-Если `getCacheSafeParams()` возвращает null (первый запрос, история ещё отсутствует), форк переключается на резервный вариант:
+Если `getCacheSafeParams()` возвращает null (первый ход, нет истории), то fork использует запасной вариант:
 
 - `FORK_AGENT.systemPrompt` для системной инструкции
-- `prepareTools()` для описаний инструментов
+- `prepareTools()` для объявлений инструментов
 
-Это гарантирует работоспособность форка даже без совместного использования кэша.
+Это гарантирует, что fork всегда работает, даже без общего кеша.
 
 ## Файлы
 
-| Файл                                                 | Роль                                                                                  |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `packages/core/src/agents/runtime/forkSubagent.ts`   | Конфигурация FORK_AGENT, buildForkedMessages(), isInForkChild(), buildChildMessage()        |
-| `packages/core/src/tools/agent.ts`                   | Логика форка: получение CacheSafeParams, формирование extraHistory, фоновое выполнение |
-| `packages/core/src/agents/runtime/agent-headless.ts` | Опции execute(): generationConfigOverride, toolsOverride                            |
-| `packages/core/src/agents/runtime/agent-core.ts`     | CreateChatOptions.generationConfigOverride                                            |
-| `packages/core/src/followup/forkedQuery.ts`          | Инфраструктура CacheSafeParams (существующая, без изменений)                                 |
+| Файл                                                           | Роль                                                                                 |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `packages/core/src/agents/runtime/forkSubagent.ts`             | Конфигурация FORK_AGENT, buildForkedMessages(), isInForkChild(), buildChildMessage() |
+| `packages/core/src/tools/agent.ts`                             | Путь fork: получение CacheSafeParams, построение extraHistory, фоновое выполнение    |
+| `packages/core/src/agents/runtime/agent-headless.ts`           | Опции execute(): generationConfigOverride, toolsOverride                             |
+| `packages/core/src/agents/runtime/agent-core.ts`               | CreateChatOptions.generationConfigOverride                                           |
+| `packages/core/src/followup/forkedQuery.ts`                    | Инфраструктура CacheSafeParams (существующая, без изменений)                         |

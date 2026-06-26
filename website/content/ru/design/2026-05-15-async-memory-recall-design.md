@@ -1,4 +1,4 @@
-# Асинхронное извлечение памяти — Спецификация дизайна
+# Async Memory Recall — Спецификация дизайна
 
 **Дата:** 2026-05-15
 **Статус:** Утверждено
@@ -9,22 +9,22 @@
 
 ## Проблема
 
-`relevanceSelector.ts` использует `AbortSignal.timeout(1_000)` (введено в #3866). При холодных стартах первой сессии qwen3.5-flash в среднем занимает ~908 мс — стабильно попадает в порог 1 с. Внешний дедлайн 2,5 с в `resolveAutoMemoryWithDeadline` означает, что каждый UserQuery может блокироваться до 2,5 с, даже если извлечение всегда завершается неудачей.
+`relevanceSelector.ts` использует `AbortSignal.timeout(1_000)` (добавлен в #3866). При холодном старте первого сеанса qwen3.5-flash в среднем занимает ~908 мс — что постоянно достигает порога в 1 с. Внешний дедлайн в 2,5 с в `resolveAutoMemoryWithDeadline` означает, что каждый UserQuery может блокироваться до 2,5 с, даже если recall всегда завершается неудачей.
 
-Основная причина: основной агентский путь запроса `await`ит результат извлечения перед отправкой модели. Любая медлительность побочного запроса на извлечение напрямую увеличивает видимую пользователем задержку.
+Коренная причина: основной путь запроса главного агента `await` ожидает результат recall перед отправкой модели. Любая задержка в боковом запросе recall напрямую увеличивает видимую пользователем задержку.
 
 ---
 
-## Проектирование
+## Дизайн
 
 ### Основная идея
 
-Запускать извлечение при UserQuery и никогда не `await`ить его. Использовать результат в двух оппортунистических точках — сработает та, которая первой выполнится:
+Запускать recall при UserQuery и никогда не ожидать его. Использовать результат в двух оппортунистических точках — какая сработает первой:
 
-1. **Точка потребления UserQuery** — синхронная проверка `settledAt !== null` непосредственно перед `turn.run()`. Нулевое ожидание: если уже выполнился — используем; если нет — пропускаем.
-2. **Точка внедрения ToolResult** — та же проверка на каждом такте ToolResult. Внедряет память как `system-reminder`, **добавленный после** частей `functionResponse` в `requestToSend`, предоставляя модели контекст памяти перед следующим ответом. (Добавление, а не вставка в начало: API Qwen требует, чтобы `functionResponse` следовал сразу за `functionCall` модели — см. существующий пропуск `hasPendingToolCall` для контекста IDE по той же причине.)
+1. **Точка потребления UserQuery** — синхронная проверка `settledAt !== null` непосредственно перед `turn.run()`. Нулевое ожидание: если уже завершён — используем, если нет — пропускаем.
+2. **Точка внедрения ToolResult** — та же проверка на каждом обороте ToolResult. Внедряет память как `system-reminder`, **добавленный после** частей functionResponse в `requestToSend`, предоставляя модели контекст памяти перед следующим ответом. (Добавить, а не вставить в начало: API Qwen требует, чтобы functionResponse следовал сразу за functionCall модели — см. существующий пропуск `hasPendingToolCall` в IDE-контексте по той же причине.)
 
-Это соответствует шаблону, используемому upstream в Claude Code (`startRelevantMemoryPrefetch` / опрос `settledAt` в `query.ts`).
+Это соответствует шаблону, используемому в upstream Claude Code (`startRelevantMemoryPrefetch` / опрос `settledAt` в `query.ts`).
 
 ---
 
@@ -35,9 +35,9 @@
 ```typescript
 type MemoryPrefetchHandle = {
   promise: Promise<RelevantAutoMemoryPromptResult>;
-  /** Устанавливается через promise.finally(). null, пока promise не завершится. */
+  /** Устанавливается promise.finally(). null до завершения promise. */
   settledAt: number | null;
-  /** true после внедрения памяти — предотвращает двойное внедрение. */
+  /** true после того, как память внедрена — предотвращает двойное внедрение. */
   consumed: boolean;
   controller: AbortController;
 };
@@ -45,9 +45,9 @@ type MemoryPrefetchHandle = {
 
 ### Изменение поля в `GeminiClient`
 
-| Удалено                                                       | Добавлено                                                    |
-| ------------------------------------------------------------- | ------------------------------------------------------------ |
-| `pendingRecallAbortController: AbortController \| undefined`  | `pendingMemoryPrefetch: MemoryPrefetchHandle \| undefined`   |
+| Удалить                                                       | Добавить                                                        |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| `pendingRecallAbortController: AbortController \| undefined` | `pendingMemoryPrefetch: MemoryPrefetchHandle \| undefined` |
 
 ---
 
@@ -55,23 +55,22 @@ type MemoryPrefetchHandle = {
 
 ### 1. `client.ts` — удалить `resolveAutoMemoryWithDeadline`
 
-Полностью удалить эту функцию. Она заменяется механизмом флага `settledAt`.
+Удалить функцию полностью. Она заменяется механизмом флага `settledAt`.
 
 ### 2. `client.ts` — путь запуска UserQuery
 
 Заменить вызов `resolveAutoMemoryWithDeadline` на:
 
 ```typescript
-// Прерываем любое выполняющееся предварительное извлечение от предыдущего UserQuery
-// перед установкой нового дескриптора (предотвращает осиротевшие побочные запросы,
-// когда пользователь вводит снова до завершения извлечения).
+// Прерываем любой выполняющийся prefetch от предыдущего UserQuery перед установкой
+// нового handle (предотвращает зависшие боковые запросы, если пользователь снова вводит текст
+// до завершения recall).
 this.pendingMemoryPrefetch?.controller.abort();
 this.pendingMemoryPrefetch = undefined;
 
 const controller = new AbortController();
-// Передаём сигнал вызывающей стороны в контроллер предварительного извлечения,
-// чтобы отмена пользователем (Ctrl-C / Esc) родительского такта также завершила
-// побочный запрос на извлечение.
+// Пробрасываем сигнал вызывающего кода в контроллер prefetch, чтобы отмена пользователем
+// (Ctrl-C / Esc) соответствующего оборота также завершала боковой запрос recall.
 const onParentAbort = () => controller.abort();
 if (signal.aborted) {
   controller.abort();
@@ -88,7 +87,7 @@ const promise = this.config
   })
   .catch((error: unknown) => {
     if (!(error instanceof DOMException && error.name === 'AbortError')) {
-      debugLogger.warn('Управляемое предварительное извлечение автоматической памяти не удалось.', error);
+      debugLogger.warn('Managed auto-memory recall prefetch failed.', error);
     }
     return EMPTY_RELEVANT_AUTO_MEMORY_RESULT;
   });
@@ -104,7 +103,7 @@ void promise.finally(() => {
   signal.removeEventListener('abort', onParentAbort);
 });
 this.pendingMemoryPrefetch = handle;
-// нет await — продолжаем немедленно
+// нет await — продолжается немедленно
 ```
 
 ### 3. `client.ts` — точка потребления UserQuery (заменяет `await relevantAutoMemoryPromise`)
@@ -118,12 +117,12 @@ if (
 ) {
   prefetchHandle.consumed = true;
   this.pendingMemoryPrefetch = undefined;
-  const result = await prefetchHandle.promise; // уже выполнился, возвращается мгновенно
+  const result = await prefetchHandle.promise; // уже завершён, возвращается немедленно
   if (result.prompt) {
-    // unshift, не push: память должна оставаться в начале systemReminders,
-    // чтобы она возглавляла блок system-reminder на тактах UserQuery.
-    // (На тактах ToolResult, наоборот, добавляется в конец requestToSend для
-    // сохранения пар functionCall / functionResponse — см. ниже.)
+    // unshift, не push: размещаем память в начале systemReminders, чтобы
+    // она была первой в блоке system-reminder на оборотах UserQuery. (На оборотах
+    // ToolResult, наоборот, добавляется в конец requestToSend, чтобы сохранить
+    // пару functionCall / functionResponse — см. ниже.)
     systemReminders.unshift(result.prompt);
     for (const doc of result.selectedDocs) {
       this.surfacedRelevantAutoMemoryPaths.add(doc.filePath);
@@ -149,8 +148,8 @@ if (messageType === SendMessageType.ToolResult) {
     const result = await prefetchHandle.promise;
     if (result.prompt) {
       // Добавляем в конец (не в начало), чтобы части functionResponse оставались первыми
-      // и парное соответствие functionCall / functionResponse модели
-      // не нарушалось на нативном пути Gemini.
+      // и пара functionCall/functionResponse модели
+      // не нарушалась на нативном пути Gemini.
       requestToSend = [...requestToSend, result.prompt];
       for (const doc of result.selectedDocs) {
         this.surfacedRelevantAutoMemoryPaths.add(doc.filePath);
@@ -159,48 +158,49 @@ if (messageType === SendMessageType.ToolResult) {
   }
 }
 ```
-### 5. `client.ts` — очистка путей
 
-Дескриптор освобождается двумя различными механизмами:
+### 5. `client.ts` — пути очистки
 
-**5 мест для прерывания и очистки** (предварительная выборка всё ещё ожидает выполнения, прервите контроллер перед удалением ссылки). Замените `pendingRecallAbortController?.abort()` + `= undefined` на:
+Handle освобождается двумя различными механизмами:
+
+**5 мест с прерыванием и очисткой** (prefetch ещё выполняется, прерываем контроллер перед удалением ссылки). Заменить `pendingRecallAbortController?.abort()` + `= undefined` на:
 
 ```typescript
 this.pendingMemoryPrefetch?.controller.abort();
 this.pendingMemoryPrefetch = undefined;
 ```
 
-Места: `resetChat()`, ранний возврат `MaxSessionTurns`, ранний возврат `boundedTurns=0`, ранний возврат `SessionTokenLimitExceeded`, ранний возврат сигнала управления Arena. Сам путь срабатывания также выполняет это прерывание и замену, когда новый UserQuery поступает, пока предыдущая предварительная выборка ещё выполняется.
+Места: `resetChat()`, досрочный выход `MaxSessionTurns`, досрочный выход `boundedTurns=0`, досрочный выход `SessionTokenLimitExceeded`, досрочный выход управления арены. Сам путь запуска также выполняет такое прерывание-и-замену, когда новый UserQuery поступает во время выполнения предыдущего prefetch.
 
-**2 места только для очистки** (предварительная выборка уже завершена, и мы её потребляем — нет контроллера для прерывания, просто удалите ссылку):
+**2 места только с очисткой** (prefetch уже завершён, и мы его потребляем — контроллер прерывать не нужно, просто удаляем ссылку):
 
 ```typescript
 prefetchHandle.consumed = true;
 this.pendingMemoryPrefetch = undefined;
 ```
 
-Места: точка потребления UserQuery, точка вставки ToolResult.
+Места: точка потребления UserQuery, точка внедрения ToolResult.
 
-### 6. `relevanceSelector.ts` — удалите `AbortSignal.timeout(1_000)`
+### 6. `relevanceSelector.ts` — удалить `AbortSignal.timeout(1_000)`
 
-Удалите объединённый `AbortSignal.any([AbortSignal.timeout(1_000), callerAbortSignal])` и передавайте напрямую `callerAbortSignal`.
+Удалить комбинированный `AbortSignal.any([AbortSignal.timeout(1_000), callerAbortSignal])` и передавать напрямую `callerAbortSignal`.
 
 ---
 
 ## Сравнение поведения
 
-| Сценарий                                     | До                         | После                                                  |
-| -------------------------------------------- | ------------------------------ | ------------------------------------------------------ |
-| вызов завершается до подготовки модели           | вставка в UserQuery, ~0 ожидания   | вставка в UserQuery, ~0 ожидания                           |
-| медленный вызов (холодный старт)                     | блокировка до 2,5 с              | пропуск UserQuery, вставка при первом ToolResult             |
-| истечение времени вызова (1 с)                       | прерывание, пустой результат, без памяти | нет жёсткого тайм-аута; вставка после завершения               |
-| нет вызовов инструментов, медленный вызов                   | блокировка до 2,5 с, затем пропуск   | пропуск UserQuery, нет возможности ToolResult — промах       |
-| пользователь отправляет 2-е сообщение до завершения вызова | второй вызов соревнуется с первым дескриптором    | первый дескриптор прерван, когда второй UserQuery запускает новый дескриптор |
+| Сценарий                                     | До                              | После                                                 |
+| -------------------------------------------- | ------------------------------- | ----------------------------------------------------- |
+| recall завершается до подготовки модели      | внедрение на UserQuery, ~0 ожидания | внедрение на UserQuery, ~0 ожидания                   |
+| recall медленный (холодный старт)            | блокировка до 2,5 с             | пропуск UserQuery, внедрение на первом ToolResult     |
+| recall истекает по таймауту (1 с)            | прерывание, пустой результат, без памяти | нет жёсткого таймаута; внедрение, когда завершится   |
+| нет вызовов инструментов, recall медленный   | блокировка до 2,5 с, затем пропуск | пропуск UserQuery, нет возможности ToolResult — пропуск |
+| пользователь отправляет 2-е сообщение до завершения recall | 2-й recall гоняется за 1-м handle | 1-й handle прерывается, когда 2-й UserQuery запускает новый handle |
 
 ---
 
-## Вне рамок
+## Вне области рассмотрения
 
 - Изменение формата внедрения памяти с `system-reminder` на вложение `tool-result` (стиль CC)
-- Проходной шлюз бюджета байтов на сессию
-- Проходной шлюз для однословных подсказок
+- Шлюз пропуска по бюджету байт на сессию
+- Шлюз пропуска для запросов из одного слова

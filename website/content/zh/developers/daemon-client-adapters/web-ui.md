@@ -1,12 +1,12 @@
-# Daemon Web UI 适配器
+# Daemon Web UI Adapter
 
 ## 目标
 
-Web 聊天客户端和 Web 终端客户端应通过 daemon HTTP/SSE API 使用 `qwen serve`，并在客户端渲染对话记录。原生本地 TUI、channel 及 IDE 集成暂时保留其现有默认路径。
+Web 聊天和 Web 终端客户端应通过 daemon 的 HTTP/SSE API 消费 `qwen serve`，并渲染客户端侧 transcript。本地的 TUI、channel 和 IDE 集成暂时保留原有默认路径。
 
-## 共享 UI 契约
+## 共享 UI 合约
 
-使用 TypeScript SDK daemon UI 导出作为公共边界：
+使用 TypeScript SDK 的 daemon UI 导出作为公共边界：
 
 ```ts
 import {
@@ -17,14 +17,14 @@ import {
 } from '@qwen-code/sdk/daemon';
 ```
 
-各模块职责划分：
+职责划分如下：
 
-- `DaemonClient` 负责处理 daemon HTTP 路由。
-- `DaemonSessionClient` 负责会话创建/附加及 SSE 重放。
+- `DaemonClient` 处理 daemon HTTP 路由。
+- `DaemonSessionClient` 负责 session 创建/绑定和 SSE 重放。
 - `normalizeDaemonEvent()` 将 daemon 线路事件转换为 UI 事件。
-- `createDaemonTranscriptStore()` 将 UI 事件归并为对话记录块。
+- `createDaemonTranscriptStore()` 将 UI 事件规约为 transcript 块。
 
-React 客户端可使用可选的 `@qwen-code/webui` 绑定：
+React 客户端可以使用可选的 `@qwen-code/webui` 绑定：
 
 ```tsx
 import {
@@ -36,7 +36,7 @@ import {
 } from '@qwen-code/webui';
 ```
 
-最简 React 结构：
+最小 React 结构示例：
 
 ```tsx
 function App() {
@@ -54,46 +54,46 @@ function Transcript() {
 }
 ```
 
-Provider 会创建或附加一个 daemon 会话，订阅 SSE，将最新事件 id 保存在 `DaemonSessionClient` 上，并默认自动重连流。测试或自定义连接管理时，可通过 `autoReconnect={false}` 禁用该行为。
+该 provider 会创建或绑定一个 daemon session，订阅 SSE，在 `DaemonSessionClient` 上保留最后一个事件 ID，并默认重新连接流。调用者可以通过设置 `autoReconnect={false}` 为测试或自定义连接管理禁用该行为。
 
 ## 浏览器部署形态
 
 ### 同源本地 POC
 
-由 daemon 提供服务的页面可以直接调用 daemon，因为页面与 API 共享同一源。这是本地 Web 聊天和 Web 终端验证的首选早期 POC 形态。
+由 daemon 提供的页面可以直接调用 daemon，因为页面和 API 共享一个源。这是本地 Web 聊天和 Web 终端验证的首选早期 POC 形态。
 
 ### 远程 Web 聊天 / Web 终端
 
-生产环境的远程 Web 应用通常应通过 backend-for-frontend（BFF）进行通信。BFF 管理 daemon URL、token、工作区路由和会话元数据，然后将对浏览器安全的应用事件转发给浏览器。这样可以避免 bearer token 暴露在浏览器存储中，并由部署方决定用户可以访问哪个 daemon/工作区。
+生产环境下的远程 Web 应用通常应通过 BFF（后端 for 前端）进行通信。BFF 拥有 daemon URL、token、工作空间路由和 session 元数据，然后将浏览器安全的应用事件转发给浏览器。这样可以避免 bearer token 存储在浏览器中，并允许部署决定用户可访问的 daemon/工作空间。
 
-### 本地浏览器对接本地 Daemon
+### 本地浏览器连接本地 Daemon
 
-独立的本地开发服务器与 `qwen serve` 跨源；它必须将 daemon 路由代理到同一源，或由 daemon 直接提供服务。daemon 会故意拒绝任意浏览器 `Origin` 的请求。
+一个单独的本地开发服务器与 `qwen serve` 是跨域的；它必须通过同源代理 daemon 路由，或者由 daemon 提供服务。daemon 故意拒绝任意浏览器 `Origin` 请求。
 
 ## 渲染职责
 
-共享的对话记录模型是语义化的，而非视觉化的。UI 客户端自行决定如何渲染：
+共享的 transcript 模型是语义的，而非视觉的。UI 客户端自行决定如何渲染：
 
-- 用户和 assistant 消息块
+- 用户和助手的消息块
 - 折叠的思考块
 - 工具状态卡片
 - shell 输出块
 - 权限请求控件
 - 状态/错误/调试块
 
-Web 终端是一个基于浏览器原生的语义渲染器。它的外观和体验应类似终端，具备等宽布局、滚动回放、提示输入、快捷键和流式块，但它不是原始 PTY 代理，也不需要服务端 Ink 渲染。
+Web 终端是一个浏览器原生的语义渲染器。它应具备终端风格的外观和体验，包括等宽布局、回滚、提示输入、快捷键和流式块，但它不是原始的 PTY 代理，也无需服务器端 Ink 渲染。
 
 ## 合并安全性
 
-- 原生 `qwen` TUI 保持直接调用，不受影响。
-- `--acp`、channel 及 IDE 路径默认不受影响。
-- SDK UI 核心为纯增量扩展。
-- WebUI React 绑定为可选项，仅在导入它的客户端中运行。
-- 已移除的 daemon TUI spike 代码不应视为产品迁移。
+- 原生 `qwen` TUI 保持直接且不变。
+- `--acp`、channel 和 IDE 路径默认保持不变。
+- SDK UI 核心是附加的。
+- WebUI React 绑定是可选的，仅在导入它的客户端中运行。
+- 移除的 daemon TUI 原型代码不应视为产品迁移。
 
-## 后续工作
+## 后续计划
 
-- 添加一个由 daemon 提供服务的本地 `/web` POC 或等效的同源 Web 应用。
-- 在对话记录块之上构建一流的聊天和终端渲染器。
-- 仅在现有 daemon 事件对稳定的浏览器 UI 行为过于底层时，才添加更丰富的类型化事件。
-- 如果非 SDK 消费者需要将 UI 核心作为独立依赖项，考虑提供专用的 `@qwen-code/daemon-ui-core` 包。
+- 添加一个由 daemon 提供的本地 `/web` POC 或等效的同源 Web 应用。
+- 在 transcript 块之上构建一流的聊天和终端渲染器。
+- 仅在现有 daemon 事件对稳定的浏览器 UI 行为过于底层时，添加更丰富的类型化事件。
+- 如果非 SDK 消费者需要将 UI 核心作为独立依赖，考虑提供专门的 `@qwen-code/daemon-ui-core` 包。

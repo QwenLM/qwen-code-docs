@@ -9,9 +9,9 @@
 
 ## Problem
 
-`relevanceSelector.ts` verwendet `AbortSignal.timeout(1_000)` (eingeführt durch #3866). Bei Kaltstarts der ersten Sitzung benötigt qwen3.5-flash durchschnittlich ~908 ms – das liegt beständig knapp über der 1‑s‑Schwelle. Die äußere 2,5‑s‑Frist in `resolveAutoMemoryWithDeadline` führt dazu, dass jede UserQuery bis zu 2,5 s blockieren kann, selbst wenn der Rückruf immer fehlschlägt.
+`relevanceSelector.ts` verwendet `AbortSignal.timeout(1_000)` (eingeführt in #3866). Bei Kaltstarts der ersten Sitzung benötigt qwen3.5-flash durchschnittlich ~908 ms – und überschreitet damit regelmäßig die 1-Sekunden-Schwelle. Die äußere Frist von 2,5 s in `resolveAutoMemoryWithDeadline` führt dazu, dass jede UserQuery bis zu 2,5 s blockieren kann, selbst wenn der Recall immer fehlschlägt.
 
-Ursache: Der Haupt‑Agent‑Request-Pfad wartet mit `await` auf das Recall-Ergebnis, bevor es an das Modell gesendet wird. Jede Verzögerung in der Nebenabfrage des Recalls schlägt sich direkt auf die für den Benutzer sichtbare Latenz nieder.
+Ursache: Der Haupt-Agent-Anfragepfad `await`ed das Recall-Ergebnis, bevor die Anfrage an das Modell gesendet wird. Jede Verzögerung in der Recall-Nebenabfrage wirkt sich direkt auf die für den Benutzer sichtbare Latenz aus.
 
 ---
 
@@ -19,12 +19,12 @@ Ursache: Der Haupt‑Agent‑Request-Pfad wartet mit `await` auf das Recall-Erge
 
 ### Kernidee
 
-Den Recall bei UserQuery auslösen und niemals darauf warten. Das Ergebnis an zwei opportunistischen Stellen konsumieren – je nachdem, welche zuerst eintritt:
+Fire den Recall bei UserQuery und `await`e ihn nie. Konsumiere das Ergebnis an zwei opportunistischen Punkten – je nachdem, welcher zuerst feuert:
 
-1. **UserQuery-Verbrauchspunkt** – Synchroner `settledAt !== null`‑Check unmittelbar vor `turn.run()`. Null‑Wartezeit: Wenn bereits abgeschlossen, verwenden; falls nicht, überspringen.
-2. **ToolResult-Einfügepunkt** – Gleicher Check bei jeder ToolResult‑Runde. Das Memory wird als `system-reminder` **angefügt nach** den functionResponse‑Teilen in `requestToSend` – das gibt dem Modell den Speicherkontext vor seiner nächsten Antwort. (Anfügen, nicht voranstellen: Die Qwen‑API verlangt, dass functionResponse unmittelbar auf den functionCall des Modells folgt – siehe den bestehenden IDE‑Kontext‑Skip für `hasPendingToolCall` aufgrund derselben Einschränkung.)
+1. **UserQuery-Konsumpunkt** – synchroner `settledAt !== null`-Check unmittelbar vor `turn.run()`. Keine Wartezeit: Wenn bereits abgeschlossen, verwende es; wenn nicht, überspringe es.
+2. **ToolResult-Injektionspunkt** – derselbe Check bei jedem ToolResult-Turn. Injiziere Memory als `system-reminder`, **angefügt nach** den functionResponse-Teilen in `requestToSend`, um dem Modell Memory-Kontext vor seiner nächsten Antwort zu geben. (Anhängen, nicht voranstellen: Die Qwen-API erfordert, dass der functionResponse unmittelbar auf den model-seitigen functionCall folgt – siehe den bestehenden `hasPendingToolCall`-IDE-Kontext-Skip für dieselbe Einschränkung.)
 
-Dies entspricht dem Muster von Claude Code upstream (`startRelevantMemoryPrefetch` / `settledAt`‑Polling in `query.ts`).
+Dies entspricht dem Muster, das upstream von Claude Code verwendet wird (`startRelevantMemoryPrefetch` / `settledAt`-Polling in `query.ts`).
 
 ---
 
@@ -35,43 +35,44 @@ Dies entspricht dem Muster von Claude Code upstream (`startRelevantMemoryPrefetc
 ```typescript
 type MemoryPrefetchHandle = {
   promise: Promise<RelevantAutoMemoryPromptResult>;
-  /** Wird von promise.finally() gesetzt. null, bis das Promise abgeschlossen ist. */
+  /** Wird von promise.finally() gesetzt. null, bis die Promise abgeschlossen ist. */
   settledAt: number | null;
-  /** True, nachdem Memory eingefügt wurde – verhindert doppeltes Einfügen. */
+  /** True, nachdem Memory injiziert wurde – verhindert doppelte Injektion. */
   consumed: boolean;
   controller: AbortController;
 };
 ```
 
-### Feldänderung an `GeminiClient`
+### Feldänderung bei `GeminiClient`
 
-| Entfernen                                                     | Hinzufügen                                               |
-| ------------------------------------------------------------- | -------------------------------------------------------- |
-| `pendingRecallAbortController: AbortController \| undefined`  | `pendingMemoryPrefetch: MemoryPrefetchHandle \| undefined` |
+| Entfernen                                                     | Hinzufügen                                                  |
+| ------------------------------------------------------------- | ----------------------------------------------------------- |
+| `pendingRecallAbortController: AbortController \| undefined`  | `pendingMemoryPrefetch: MemoryPrefetchHandle \| undefined`  |
 
 ---
 
 ## Änderungen
 
-### 1. `client.ts` – Entfernen von `resolveAutoMemoryWithDeadline`
+### 1. `client.ts` – Entferne `resolveAutoMemoryWithDeadline`
 
-Funktion vollständig löschen. Sie wird durch den `settledAt`‑Flag‑Mechanismus ersetzt.
+Lösche die Funktion vollständig. Sie wird durch den `settledAt`-Flag-Mechanismus ersetzt.
 
-### 2. `client.ts` – UserQuery-Auslösepfad
+### 2. `client.ts` – UserQuery-Fire-Pfad
 
 Ersetze den Aufruf von `resolveAutoMemoryWithDeadline` durch:
 
 ```typescript
-// Bricht einen laufenden Prefetch einer vorherigen UserQuery ab, bevor
-// der neue Handle installiert wird (verhindert verwaiste Nebenabfragen,
-// wenn der Benutzer erneut tippt, bevor der Recall abgeschlossen ist).
+// Brich einen laufenden Prefetch von einer vorherigen UserQuery ab,
+// bevor der neue Handle installiert wird (verhindert verwaiste
+// Nebenabfragen, wenn der Benutzer erneut tippt, bevor der Recall
+// abgeschlossen ist).
 this.pendingMemoryPrefetch?.controller.abort();
 this.pendingMemoryPrefetch = undefined;
 
 const controller = new AbortController();
-// Verbindet das Signal des Aufrufers mit dem Prefetch‑Controller, sodass
-// ein Benutzerabbruch (Strg‑C / Esc) der übergeordneten Runde auch die
-// Recall‑Nebenabfrage beendet.
+// Brücke das Signal des Aufrufers in den Prefetch-Controller,
+// sodass ein Benutzerabbruch (Strg-C / Esc) des übergeordneten
+// Turns auch die Recall-Nebenabfrage beendet.
 const onParentAbort = () => controller.abort();
 if (signal.aborted) {
   controller.abort();
@@ -88,7 +89,7 @@ const promise = this.config
   })
   .catch((error: unknown) => {
     if (!(error instanceof DOMException && error.name === 'AbortError')) {
-      debugLogger.warn('Managed auto-memory recall prefetch failed.', error);
+      debugLogger.warn('Managed auto-memory recall prefetch fehlgeschlagen.', error);
     }
     return EMPTY_RELEVANT_AUTO_MEMORY_RESULT;
   });
@@ -104,10 +105,10 @@ void promise.finally(() => {
   signal.removeEventListener('abort', onParentAbort);
 });
 this.pendingMemoryPrefetch = handle;
-// kein await – sofort fortfahren
+// kein await – fahre sofort fort
 ```
 
-### 3. `client.ts` – UserQuery-Verbrauchspunkt (ersetzt `await relevantAutoMemoryPromise`)
+### 3. `client.ts` – UserQuery-Konsumpunkt (ersetzt `await relevantAutoMemoryPromise`)
 
 ```typescript
 const prefetchHandle = this.pendingMemoryPrefetch;
@@ -120,10 +121,10 @@ if (
   this.pendingMemoryPrefetch = undefined;
   const result = await prefetchHandle.promise; // bereits abgeschlossen, kehrt sofort zurück
   if (result.prompt) {
-    // unshift, nicht push: Memory an den Anfang von systemReminders setzen,
-    // damit es bei UserQuery‑Runden den system‑reminder‑Block anführt. (Bei
-    // ToolResult‑Runden wird stattdessen an requestToSend angefügt, um die
-    // Paarung functionCall / functionResponse zu bewahren – siehe unten.)
+    // unshift, nicht push: halte Memory am Anfang von systemReminders,
+    // damit es den system-reminder-Block bei UserQuery-Turns anführt.
+    // (ToolResult-Turns hängen stattdessen an requestToSend an, um die
+    // functionCall- / functionResponse-Paarung zu erhalten – siehe unten.)
     systemReminders.unshift(result.prompt);
     for (const doc of result.selectedDocs) {
       this.surfacedRelevantAutoMemoryPaths.add(doc.filePath);
@@ -132,9 +133,9 @@ if (
 }
 ```
 
-### 4. `client.ts` – ToolResult-Einfügepunkt (neu)
+### 4. `client.ts` – ToolResult-Injektionspunkt (neu)
 
-Nachdem `requestToSend` zusammengestellt wurde, vor `turn.run()` einfügen:
+Nachdem `requestToSend` zusammengestellt wurde, vor `turn.run()`, füge hinzu:
 
 ```typescript
 if (messageType === SendMessageType.ToolResult) {
@@ -148,9 +149,9 @@ if (messageType === SendMessageType.ToolResult) {
     this.pendingMemoryPrefetch = undefined;
     const result = await prefetchHandle.promise;
     if (result.prompt) {
-      // Anfügen (nicht voranstellen), damit functionResponse‑Teile zuerst
-      // kommen und die Paarung functionCall/functionResponse auf dem
-      // nativen Gemini‑Pfad nicht zerstört wird.
+      // Anhängen (nicht voranstellen), damit functionResponse-Teile
+      // zuerst bleiben und die functionCall-/functionResponse-Paarung
+      // des Modells auf dem nativen Gemini-Pfad nicht unterbrochen wird.
       requestToSend = [...requestToSend, result.prompt];
       for (const doc of result.selectedDocs) {
         this.surfacedRelevantAutoMemoryPaths.add(doc.filePath);
@@ -159,48 +160,49 @@ if (messageType === SendMessageType.ToolResult) {
   }
 }
 ```
-### 5. `client.ts` — Bereinigung von Pfaden
 
-Das Handle wird durch zwei unterschiedliche Mechanismen freigegeben:
+### 5. `client.ts` – Bereinigungspfade
 
-**5 Abbruch-und-Lösch-Stellen** (der Prefetch ist noch ausstehend, breche den Controller ab, bevor die Referenz gelöscht wird). Ersetze `pendingRecallAbortController?.abort()` + `= undefined` durch:
+Der Handle wird durch zwei verschiedene Mechanismen freigegeben:
+
+**5 Abbruch-und-Lösch-Stellen** (der Prefetch läuft noch, brich den Controller ab, bevor die Referenz gelöscht wird). Ersetze `pendingRecallAbortController?.abort()` + `= undefined` durch:
 
 ```typescript
 this.pendingMemoryPrefetch?.controller.abort();
 this.pendingMemoryPrefetch = undefined;
 ```
 
-Stellen: `resetChat()`, frühe Rückgabe von `MaxSessionTurns`, frühe Rückgabe von `boundedTurns=0`, frühe Rückgabe von `SessionTokenLimitExceeded`, frühe Rückgabe des Arena-Steuerungssignals. Der Ausführungspfad selbst führt ebenfalls diesen Abbruch-und-Ersetz-Vorgang durch, wenn eine neue UserQuery eintrifft, während der vorherige Prefetch noch läuft.
+Stellen: `resetChat()`, `MaxSessionTurns`-Frührückgabe, `boundedTurns=0`-Frührückgabe, `SessionTokenLimitExceeded`-Frührückgabe, Arena-Steuersignal-Frührückgabe. Der Fire-Pfad selbst führt ebenfalls diesen Abbruch-und-Ersatz durch, wenn eine neue UserQuery eintrifft, während der vorherige Prefetch noch läuft.
 
-**2 Nur-Lösch-Stellen** (der Prefetch ist bereits abgeschlossen und wir verarbeiten ihn — kein Controller zum Abbrechen, nur die Referenz löschen):
+**2 Nur-Lösch-Stellen** (der Prefetch ist bereits abgeschlossen und wir konsumieren ihn – kein Controller zum Abbrechen, lösche einfach die Referenz):
 
 ```typescript
 prefetchHandle.consumed = true;
 this.pendingMemoryPrefetch = undefined;
 ```
 
-Stellen: Verwendungspunkt von UserQuery, Einspeisepunkt von ToolResult.
+Stellen: UserQuery-Konsumpunkt, ToolResult-Injektionspunkt.
 
-### 6. `relevanceSelector.ts` — Entferne `AbortSignal.timeout(1_000)`
+### 6. `relevanceSelector.ts` – Entferne `AbortSignal.timeout(1_000)`
 
-Entferne das kombinierte `AbortSignal.any([AbortSignal.timeout(1_000), callerAbortSignal])` und übergib `callerAbortSignal` direkt.
+Entferne die kombinierte `AbortSignal.any([AbortSignal.timeout(1_000), callerAbortSignal])` und übergebe `callerAbortSignal` direkt.
 
 ---
 
 ## Verhaltensvergleich
 
-| Szenario                                           | Vorher                          | Nachher                                                   |
-| -------------------------------------------------- | ------------------------------- | --------------------------------------------------------- |
-| Abruf abgeschlossen vor Modellvorbereitung         | Einspeisung bei UserQuery, ~0 Wartezeit | Einspeisung bei UserQuery, ~0 Wartezeit                   |
-| Abruf langsam (Kaltstart)                           | Blockierung bis zu 2,5 s        | UserQuery überspringen, Einspeisung bei erstem ToolResult |
-| Abruf Zeitüberschreitung (1 s)                     | Abbruch, leeres Ergebnis, kein Speicher | Keine harte Zeitüberschreitung; Einspeisung sobald abgeschlossen |
-| Keine Tool-Aufrufe, Abruf langsam                  | Blockierung bis zu 2,5 s, dann überspringen | UserQuery überspringen, keine ToolResult-Gelegenheit — Fehlschlag |
-| Benutzer sendet zweite Nachricht bevor Abruf abgeschlossen | Zweiter Abruf konkurriert mit erstem Handle | Erstes Handle wird abgebrochen, wenn zweite UserQuery neues Handle auslöst |
+| Szenario                                        | Vorher                          | Nachher                                                  |
+| ----------------------------------------------- | ------------------------------- | -------------------------------------------------------- |
+| Recall abgeschlossen vor Modellvorbereitung     | Injektion bei UserQuery, ~0 Wartezeit | Injektion bei UserQuery, ~0 Wartezeit             |
+| Recall langsam (Kaltstart)                      | Blockieren bis zu 2,5 s         | UserQuery überspringen, bei erstem ToolResult injizieren |
+| Recall zeitüberschreitung (1 s)                 | Abbruch, leeres Ergebnis, kein Memory | Kein hartes Timeout; injizieren, sobald abgeschlossen     |
+| Keine Tool-Aufrufe, Recall langsam              | Blockieren bis zu 2,5 s, dann überspringen | UserQuery überspringen, keine ToolResult-Gelegenheit – Fehlschlag |
+| Benutzer sendet 2. Nachricht, bevor Recall abgeschlossen | 2. Recall überholt 1. Handle  | 1. Handle wird abgebrochen, wenn 2. UserQuery neuen Handle erzeugt |
 
 ---
 
-## Nicht im Geltungsbereich
+## Außerhalb des Geltungsbereichs
 
-- Änderung des Speicher-Einspeisungsformats von `system-reminder` zu `tool-result`-Anhang (CC-Stil)
-- Pro-Sitzung Byte-Budget-Überspringungs-Gate
-- Ein-Wort-Aufforderungs-Überspringungs-Gate
+- Änderung des Memory-Injektionsformats von `system-reminder` zu `tool-result`-Anhang (CC-Stil)
+- Byte-Budget-Skip-Gate pro Sitzung
+- Ein-Wort-Prompt-Skip-Gate

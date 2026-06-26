@@ -1,12 +1,12 @@
 # Design do Motor de Especulação
 
-> Executa especulativamente a sugestão antes da confirmação do usuário, usando isolamento de arquivos com copy-on-write. Os resultados aparecem instantaneamente quando o usuário pressiona Tab.
+> Executa especulativamente a sugestão aceita antes da confirmação do usuário, usando isolamento de arquivos copy-on-write. Os resultados aparecem instantaneamente quando o usuário pressiona Tab.
 
-## Overview
+## Visão Geral
 
-Quando uma sugestão de prompt é exibida, o **motor de especulação** inicia imediatamente sua execução em segundo plano usando um GeminiChat em fork. As gravações de arquivo são direcionadas a um diretório de overlay temporário. Se o usuário aceitar a sugestão, os arquivos do overlay são copiados para o sistema de arquivos real e a conversa especulada é injetada no histórico principal do chat. Se o usuário digitar outra coisa, a especulação é abortada e o overlay é limpo.
+Quando uma sugestão de prompt é mostrada, o **motor de especulação** imediatamente começa a executá-la em segundo plano usando um GeminiChat forkado. As gravações de arquivos vão para um diretório overlay temporário. Se o usuário aceitar a sugestão, os arquivos overlay são copiados para o sistema de arquivos real e a conversa especulada é injetada no histórico principal do chat. Se o usuário digitar outra coisa, a especulação é abortada e o overlay é limpo.
 
-## Architecture
+## Arquitetura
 
 ```
 User sees suggestion "commit this"
@@ -80,7 +80,7 @@ User sees suggestion "commit this"
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## Copy-on-Write Overlay
+## Overlay Copy-on-Write
 
 ```
 Real CWD: /home/user/project/
@@ -106,37 +106,37 @@ Abort:
   - rm -rf overlay/
 ```
 
-## Tool Gate Security
+## Segurança do Tool Gate
 
-| Ferramenta                                                   | Ação     | Condição                                     |
-| ------------------------------------------------------------ | -------- | -------------------------------------------- |
-| read_file, grep, glob, ls, lsp                               | allow    | Caminhos de leitura resolvidos via overlay   |
-| edit, write_file                                             | redirect | Apenas no modo de aprovação auto-edit / yolo |
-| edit, write_file                                             | boundary | No modo de aprovação padrão / plan           |
-| shell                                                        | allow    | `isShellCommandReadOnlyAST()` retorna true   |
-| shell                                                        | boundary | Comandos não somente leitura                 |
-| web_fetch, web_search                                        | boundary | Requisições de rede exigem consentimento do usuário |
-| agent, skill, memory, ask_user, todo_write, exit_plan_mode   | boundary | Não é possível interagir com o usuário durante a especulação |
-| Ferramentas desconhecidas / MCP                              | boundary | Padrão seguro                                |
+| Ferramenta                                                 | Ação     | Condição                                    |
+| ---------------------------------------------------------- | -------- | ------------------------------------------- |
+| read_file, grep, glob, ls, lsp                             | allow    | Caminhos de leitura resolvidos através do overlay |
+| edit, write_file                                           | redirect | Apenas no modo de aprovação auto-edit / yolo      |
+| edit, write_file                                           | boundary | No modo de aprovação padrão / plano               |
+| shell                                                      | allow    | `isShellCommandReadOnlyAST()` retorna true        |
+| shell                                                      | boundary | Comandos não somente leitura                      |
+| web_fetch, web_search                                      | boundary | Requisições de rede exigem consentimento do usuário |
+| agent, skill, memory, ask_user, todo_write, exit_plan_mode | boundary | Não é possível interagir com o usuário durante a especulação |
+| Unknown / MCP tools                                        | boundary | Padrão seguro                                |
 
-### Path Rewrite
+### Reescrita de Caminhos
 
 - **Ferramentas de escrita**: `rewritePathArgs()` redireciona `file_path` para o overlay via `overlayFs.redirectWrite()`
-- **Ferramentas de leitura**: `resolveReadPaths()` redireciona `file_path` para o overlay via `overlayFs.resolveReadPath()` se já tiver sido gravado
-- **Falha no redirecionamento**: Tratada como boundary (ex.: caminho absoluto fora do cwd gera erro em `redirectWrite`)
+- **Ferramentas de leitura**: `resolveReadPaths()` redireciona `file_path` para o overlay via `overlayFs.resolveReadPath()` se foi escrito anteriormente
+- **Falha na reescrita**: Tratado como boundary (por exemplo, caminho absoluto fora do cwd gera erro em `redirectWrite`)
 
-## Boundary Handling
+## Tratamento de Limites
 
-Quando um boundary é atingido no meio de um turno:
+Quando um limite é atingido no meio de um turno:
 
-1. Chamadas de ferramenta já executadas são preservadas (rastreamento por índice, não por nome)
+1. Chamadas de ferramentas já executadas são preservadas (rastreamento baseado em índice, não em nome)
 2. Chamadas de função não executadas são removidas da mensagem do modelo
 3. Respostas parciais de ferramentas são adicionadas ao histórico
 4. `ensureToolResultPairing()` valida a completude antes da injeção
 
-## Pipelined Suggestion
+## Sugestão em Pipeline
 
-Após a conclusão da especulação (sem boundary), uma segunda chamada ao LLM gera a **próxima** sugestão:
+Após a especulação ser concluída (sem boundary), uma segunda chamada LLM gera a **próxima** sugestão:
 
 ```
 Context: original conversation + "commit this" + speculated messages
@@ -145,25 +145,25 @@ Context: original conversation + "commit this" + speculated messages
 → On accept: setPromptSuggestion("push it") — appears instantly
 ```
 
-Isso permite fluxos de trabalho Tab-Tab-Tab, em que cada aceitação exibe imediatamente a próxima etapa.
+Isso possibilita workflows Tab-Tab-Tab onde cada aceitação mostra imediatamente o próximo passo.
 
 A sugestão em pipeline reutiliza a constante exportada `SUGGESTION_PROMPT` de `suggestionGenerator.ts` (não uma cópia local) para garantir qualidade consistente com as sugestões iniciais.
 
-## Fast Model
+## Modelo Rápido
 
-`startSpeculation` aceita um parâmetro opcional `options.model`, propagado por `runSpeculativeLoop` e `generatePipelinedSuggestion` até `runForkedQuery`. Configurado pela definição de nível superior `fastModel` (vazio = usa o modelo principal). O mesmo `fastModel` é usado para todas as tarefas em segundo plano: geração de sugestões, especulação e sugestões em pipeline. Definido via `/model --fast <name>` ou `settings.json`.
+`startSpeculation` aceita um parâmetro opcional `options.model`, que é transmitido através de `runSpeculativeLoop` e `generatePipelinedSuggestion` para `runForkedQuery`. Configurado via a configuração de nível superior `fastModel` (vazio = usar modelo principal). O mesmo `fastModel` é usado para todas as tarefas em segundo plano: geração de sugestão, especulação e sugestões em pipeline. Definido via `/model --fast <name>` ou `settings.json`.
 
-## UI Rendering
+## Renderização da UI
 
 Quando a especulação é concluída, `acceptSpeculation` renderiza os resultados via `historyManager.addItem()`:
 
-- **Mensagens do usuário**: renderizadas como itens `type: 'user'`
-- **Texto do modelo**: renderizado como itens `type: 'gemini'`
-- **Chamadas de ferramenta**: renderizadas como itens `type: 'tool_group'` com entradas estruturadas `IndividualToolCallDisplay` (nome da ferramenta, descrição do argumento, texto do resultado, status)
+- **Mensagens do usuário**: renderizadas como itens do tipo `'user'`
+- **Texto do modelo**: renderizado como itens do tipo `'gemini'`
+- **Chamadas de ferramenta**: renderizadas como itens do tipo `'tool_group'` com entradas estruturadas `IndividualToolCallDisplay` (nome da ferramenta, descrição do argumento, texto do resultado, status)
 
-Isso exibe ao usuário a saída completa da especulação, incluindo detalhes das chamadas de ferramenta, e não apenas texto simples.
+Isso mostra ao usuário a saída completa da especulação, incluindo detalhes das chamadas de ferramenta, não apenas texto simples.
 
-## Forked Query (Cache Sharing)
+## Consulta Forkada (Compartilhamento de Cache)
 
 ### CacheSafeParams
 
@@ -177,39 +177,39 @@ interface CacheSafeParams {
 ```
 
 - Salvo após cada turno principal bem-sucedido em `GeminiClient.sendMessageStream()`
-- Limpo em `startChat()` / `resetChat()` para evitar vazamento entre sessões
-- Histórico truncado para 40 entradas; `createForkedChat` usa cópias superficiais (os parâmetros já são snapshots clonados profundamente)
-- Modo de raciocínio explicitamente desativado (`thinkingConfig: { includeThoughts: false }`) — tokens de raciocínio não são necessários para especulação e aumentariam custo/latência desnecessariamente. Isso não afeta a correspondência de prefixo de cache (determinada apenas por systemInstruction + tools + history)
-- Detecção de versão via comparação `JSON.stringify` de systemInstruction + tools
+- Limpado em `startChat()` / `resetChat()` para evitar vazamento entre sessões
+- Histórico truncado para 40 entradas; `createForkedChat` usa cópias rasas (os parâmetros já são snapshots clonados em profundidade)
+- Modo de pensamento explicitamente desabilitado (`thinkingConfig: { includeThoughts: false }`) — tokens de raciocínio não são necessários para especulação e desperdiçariam custo/latência. Isso não afeta a correspondência de prefixo do cache (determinada apenas por `systemInstruction` + `tools` + `history`)
+- Detecção de versão via comparação `JSON.stringify` de `systemInstruction` + `tools`
 
-### Cache Mechanism
+### Mecanismo de Cache
 
-O DashScope já habilita o cache de prefixo via:
+DashScope já permite cache de prefixo via:
 
 - Cabeçalho `X-DashScope-CacheControl: enable`
 - Anotações `cache_control: { type: 'ephemeral' }` em mensagens e ferramentas
 
-A instância `GeminiChat` em fork usa o mesmo `generationConfig` (incluindo ferramentas) e prefixo de histórico, portanto o mecanismo de cache existente do DashScope gera acertos de cache automaticamente.
+O GeminiChat forkado usa `generationConfig` idêntico (incluindo ferramentas) e prefixo de histórico, então o mecanismo de cache existente do DashScope produz acertos de cache automaticamente.
 
-## Constants
+## Constantes
 
-| Constante                | Valor | Descrição                                |
-| ------------------------ | ----- | ---------------------------------------- |
-| MAX_SPECULATION_TURNS    | 20    | Número máximo de round-trips da API      |
-| MAX_SPECULATION_MESSAGES | 100   | Número máximo de mensagens no histórico especulado |
-| SUGGESTION_DELAY_MS      | 300   | Atraso antes de exibir a sugestão        |
-| ACCEPT_DEBOUNCE_MS       | 100   | Lock de debounce para aceitações rápidas |
-| MAX_HISTORY_FOR_CACHE    | 40    | Entradas de histórico salvas em CacheSafeParams |
+| Constante                 | Valor | Descrição                                    |
+| ------------------------- | ----- | -------------------------------------------- |
+| MAX_SPECULATION_TURNS     | 20    | Número máximo de idas e voltas da API        |
+| MAX_SPECULATION_MESSAGES  | 100   | Número máximo de mensagens no histórico especulado |
+| SUGGESTION_DELAY_MS       | 300   | Atraso antes de mostrar a sugestão           |
+| ACCEPT_DEBOUNCE_MS        | 100   | Bloqueio de debounce para aceitações rápidas |
+| MAX_HISTORY_FOR_CACHE     | 40    | Entradas de histórico salvas em CacheSafeParams |
 
-## File Structure
+## Estrutura de Arquivos
 
 ```
 packages/core/src/followup/
-├── followupState.ts          # Controlador de estado agnóstico a framework
-├── suggestionGenerator.ts    # Geração de sugestões baseada em LLM + 12 regras de filtro
-├── forkedQuery.ts            # Infraestrutura de consulta em fork com suporte a cache
-├── overlayFs.ts              # Sistema de arquivos overlay com copy-on-write
-├── speculationToolGate.ts    # Aplicação de boundary de ferramentas
-├── speculation.ts            # Motor de especulação (start/accept/abort)
-└── index.ts                  # Exportações do módulo
+├── followupState.ts          # Framework-agnostic state controller
+├── suggestionGenerator.ts    # LLM-based suggestion generation + 12 filter rules
+├── forkedQuery.ts            # Cache-aware forked query infrastructure
+├── overlayFs.ts              # Copy-on-write overlay filesystem
+├── speculationToolGate.ts    # Tool boundary enforcement
+├── speculation.ts            # Speculation engine (start/accept/abort)
+└── index.ts                  # Module exports
 ```

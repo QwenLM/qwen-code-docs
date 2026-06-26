@@ -1,112 +1,112 @@
-# Fork Subagent 设计
+# 分支子代理设计
 
-> 隐式 fork subagent，继承父级的完整对话上下文并共享 prompt cache，以实现高性价比的并行任务执行。
+> 隐式分支子代理，继承父级的完整对话上下文，并共享提示词缓存，以实现成本高效的并行任务执行。
 
 ## 概述
 
-当调用 Agent tool 时未指定 `subagent_type`，将触发隐式 **fork** —— 一个在后台运行的 subagent，它会继承父级的对话历史、system prompt 和 tool 定义。该 fork 使用 `CacheSafeParams` 确保其 API 请求与父级共享相同的前缀，从而命中 DashScope 的 prompt cache。
+当 Agent 工具在未指定 `subagent_type` 的情况下被调用时，会触发一个隐式的 **分支**——一个后台子代理，它继承父级的对话历史、系统提示词和工具定义。该分支使用 `CacheSafeParams` 确保其 API 请求与父级共享相同的前缀，从而使 DashScope 提示词缓存能够命中。
 
 ## 架构
 
 ```
-Parent conversation: [SystemPrompt | Tools | Msg1 | Msg2 | ... | MsgN (model)]
-                              ↑ identical prefix for all forks ↑
+父级对话: [SystemPrompt | Tools | Msg1 | Msg2 | ... | MsgN (模型)]
+                              ↑ 所有分支共享相同前缀 ↑
 
-Fork A: [...MsgN | placeholder results | "Research A"]  ← shared cache
-Fork B: [...MsgN | placeholder results | "Modify B"]    ← shared cache
-Fork C: [...MsgN | placeholder results | "Test C"]      ← shared cache
+分支 A: [...MsgN | placeholder results | "Research A"]  ← 共享缓存
+分支 B: [...MsgN | placeholder results | "Modify B"]    ← 共享缓存
+分支 C: [...MsgN | placeholder results | "Test C"]      ← 共享缓存
 ```
 
-## 核心组件
+## 关键组件
 
-### 1. FORK_AGENT (`forkSubagent.ts`)
+### 1. FORK_AGENT（`forkSubagent.ts`）
 
-合成的 agent 配置，未注册到 `builtInAgents` 中。包含一个备用的 `systemPrompt`，但实际运行时通过 `generationConfigOverride` 使用父级渲染后的 system prompt。
+合成 Agent 配置，未注册到 `builtInAgents`。包含一个后备的 `systemPrompt`，但实际使用中通过 `generationConfigOverride` 采用父级渲染后的系统提示词。
 
-### 2. CacheSafeParams 集成 (`agent.ts` + `forkedQuery.ts`)
+### 2. CacheSafeParams 集成（`agent.ts` + `forkedQuery.ts`）
 
 ```
-agent.ts (fork path)
+agent.ts（分支路径）
   │
-  ├── getCacheSafeParams()          ← parent's generationConfig snapshot
+  ├── getCacheSafeParams()          ← 父级的 generationConfig 快照
   │     ├── generationConfig        ← systemInstruction + tools + temp/topP
-  │     └── history                 ← (not used — we build extraHistory instead)
+  │     └── history                 ← （未使用——我们改为构建 extraHistory）
   │
-  ├── forkGenerationConfig          ← passed as generationConfigOverride
-  └── forkToolsOverride             ← FunctionDeclaration[] extracted from tools
+  ├── forkGenerationConfig          ← 作为 generationConfigOverride 传递
+  └── forkToolsOverride             ← 从 tools 中提取的 FunctionDeclaration[]
         │
         ▼
   AgentHeadless.execute(context, signal, {
-    extraHistory,                   ← parent conversation history
-    generationConfigOverride,       ← parent's exact systemInstruction + tools
-    toolsOverride,                  ← parent's exact tool declarations
+    extraHistory,                   ← 父级对话历史
+    generationConfigOverride,       ← 父级的精确 systemInstruction + tools
+    toolsOverride,                  ← 父级的精确 tool 声明
   })
         │
         ▼
   AgentCore.createChat(context, {
     extraHistory,
-    generationConfigOverride,       ← bypasses buildChatSystemPrompt()
-  })                                   AND skips getInitialChatHistory()
-        │                              (extraHistory already has env context)
+    generationConfigOverride,       ← 跳过 buildChatSystemPrompt()
+  })                                   并跳过 getInitialChatHistory()
+        │                                （extraHistory 已包含环境上下文）
         ▼
   new GeminiChat(config, generationConfig, startHistory)
-                          ↑ byte-identical to parent's config
+                          ↑ 与父级 config 字节一致
 ```
 
-### 3. History 构建 (`agent.ts` + `forkSubagent.ts`)
+### 3. 历史构建（`agent.ts` + `forkSubagent.ts`）
 
-fork 的 `extraHistory` 必须以 model 消息结尾，以便在 `agent-headless` 发送 `task_prompt` 时保持 Gemini API 要求的 user/model 交替格式。
+分支的 `extraHistory` 必须以模型消息结尾，以确保当 `agent-headless` 发送 `task_prompt` 时符合 Gemini API 的用户/模型交替规则。
 
-分为三种情况：
+三种情况：
 
-| 父级历史结尾类型 | `extraHistory` 构建方式 | `task_prompt` |
-| ----------------------------- | ---------------------------------------------------------------------- | ------------------------------ |
-| `model`（无 function calls） | `[...rawHistory]`（保持不变） | `buildChildMessage(directive)` |
-| `model`（含 function calls） | `[...rawHistory, model(clone), user(responses+directive), model(ack)]` | `'Begin.'` |
-| `user`（罕见情况） | `rawHistory.slice(0, -1)`（移除末尾的 user 消息） | `buildChildMessage(directive)` |
+| 父级历史结尾       | extraHistory 构造方式                                               | task_prompt                  |
+| ----------------- | ------------------------------------------------------------------- | ---------------------------- |
+| `model`（无函数调用） | `[...rawHistory]`（不变）                                           | `buildChildMessage(directive)` |
+| `model`（有函数调用） | `[...rawHistory, model(clone), user(responses+directive), model(ack)]` | `'Begin.'`                     |
+| `user`（异常情况）    | `rawHistory.slice(0, -1)`（丢弃末尾 user）                           | `buildChildMessage(directive)` |
 
-### 4. 防止递归 Fork (`forkSubagent.ts`)
+### 4. 递归分支预防（`forkSubagent.ts`）
 
-`isInForkChild()` 会扫描对话历史中是否存在 `<fork-boilerplate>` 标签。若发现该标签，则拒绝 fork 尝试并返回错误信息。
+`isInForkChild()` 扫描对话历史，检查是否存在 `<fork-boilerplate>` 标签。如果发现，则拒绝分支尝试并返回错误消息。
 
-### 5. 后台执行 (`agent.ts`)
+### 5. 后台执行（`agent.ts`）
 
-Fork 使用 `void executeSubagent()`（fire-and-forget 模式）并立即向父级返回 `FORK_PLACEHOLDER_RESULT`。后台任务中的错误会被捕获、记录日志，并反映在显示状态中。
+分支使用 `void executeSubagent()`（即发即忘），并立即向父级返回 `FORK_PLACEHOLDER_RESULT`。后台任务中的错误会被捕获、记录并反映在显示状态中。
 
 ## 数据流
 
 ```
-1. Model calls Agent tool (no subagent_type)
-2. agent.ts: import forkSubagent.js
+1. 模型调用 Agent 工具（未指定 subagent_type）
+2. agent.ts: 导入 forkSubagent.js
 3. agent.ts: getCacheSafeParams() → forkGenerationConfig + forkToolsOverride
-4. agent.ts: build extraHistory from parent's getHistory(true)
-5. agent.ts: build forkTaskPrompt (directive or 'Begin.')
-6. agent.ts: createAgentHeadless(FORK_AGENT, ...)
-7. agent.ts: void executeSubagent() — background
-8. agent.ts: return FORK_PLACEHOLDER_RESULT to parent immediately
-9. Background:
+4. agent.ts: 从父级的 getHistory(true) 构建 extraHistory
+5. agent.ts: 构建 forkTaskPrompt（directive 或 'Begin.'）
+6. agent.ts: 创建 AgentHeadless(FORK_AGENT, ...)
+7. agent.ts: void executeSubagent() — 后台运行
+8. agent.ts: 立即向父级返回 FORK_PLACEHOLDER_RESULT
+9. 后台：
    a. AgentHeadless.execute(context, signal, {extraHistory, generationConfigOverride, toolsOverride})
-   b. AgentCore.createChat() — uses parent's generationConfig (cache-shared)
-   c. runReasoningLoop() — uses parent's tool declarations
-   d. Fork executes tools, produces result
-   e. updateDisplay() with final status
+   b. AgentCore.createChat() — 使用父级的 generationConfig（缓存共享）
+   c. runReasoningLoop() — 使用父级的 tool 声明
+   d. 分支执行工具，产生结果
+   e. 使用最终状态调用 updateDisplay()
 ```
 
 ## 优雅降级
 
-如果 `getCacheSafeParams()` 返回 null（首轮对话，尚无历史），fork 将回退至：
+如果 `getCacheSafeParams()` 返回 null（第一次交互，尚无历史记录），分支会回退到：
 
-- 使用 `FORK_AGENT.systemPrompt` 作为 system instruction
-- 使用 `prepareTools()` 获取 tool declarations
+- 使用 `FORK_AGENT.systemPrompt` 作为系统指令
+- 使用 `prepareTools()` 作为 tool 声明
 
-这确保了即使无法共享 cache，fork 也能正常运行。
+这确保了即使没有缓存共享，分支也始终能工作。
 
-## 相关文件
+## 文件
 
-| 文件 | 职责 |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `packages/core/src/agents/runtime/forkSubagent.ts`   | FORK_AGENT 配置、buildForkedMessages()、isInForkChild()、buildChildMessage() |
-| `packages/core/src/tools/agent.ts`                   | Fork 路径：获取 CacheSafeParams、构建 extraHistory、后台执行 |
-| `packages/core/src/agents/runtime/agent-headless.ts` | execute() 选项：generationConfigOverride、toolsOverride |
-| `packages/core/src/agents/runtime/agent-core.ts`     | CreateChatOptions.generationConfigOverride |
-| `packages/core/src/followup/forkedQuery.ts`          | CacheSafeParams 基础设施（现有代码，无变更） |
+| 文件                                                       | 角色                                                                                    |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `packages/core/src/agents/runtime/forkSubagent.ts`         | FORK_AGENT 配置，buildForkedMessages()，isInForkChild()，buildChildMessage()            |
+| `packages/core/src/tools/agent.ts`                         | 分支路径：CacheSafeParams 获取，extraHistory 构建，后台执行                             |
+| `packages/core/src/agents/runtime/agent-headless.ts`       | execute() 选项：generationConfigOverride，toolsOverride                                 |
+| `packages/core/src/agents/runtime/agent-core.ts`           | CreateChatOptions.generationConfigOverride                                              |
+| `packages/core/src/followup/forkedQuery.ts`                | CacheSafeParams 基础设施（已有，未改动）                                                |

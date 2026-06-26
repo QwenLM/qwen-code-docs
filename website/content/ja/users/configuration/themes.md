@@ -1,10 +1,10 @@
 # テーマ
 
-Qwen Code は、カラースキームや外観をカスタマイズするためのさまざまなテーマをサポートしています。`/theme` コマンドまたは `"ui.theme"` 設定を使用して、好みに合わせてテーマを変更できます。
+Qwen Code は、カラースキームや外観をカスタマイズするためのさまざまなテーマをサポートしています。`/theme` コマンド、または `"ui.theme"` 設定オプションを使用して、好みに合わせてテーマを変更できます。
 
 ## 利用可能なテーマ
 
-Qwen Code には事前定義されたテーマが用意されており、CLI 内で `/theme` コマンドを使用して一覧表示できます:
+Qwen Code には、あらかじめ定義されたテーマが用意されています。CLI 内で `/theme` コマンドを使用すると、その一覧を表示できます。
 
 - **ダークテーマ:**
   - `ANSI`
@@ -27,25 +27,25 @@ Qwen Code には事前定義されたテーマが用意されており、CLI 内
 ### テーマの変更
 
 1.  Qwen Code に `/theme` と入力します。
-2.  利用可能なテーマの一覧が表示されたダイアログまたは選択プロンプトが表示されます。
-3.  矢印キーを使用してテーマを選択します。インターフェースによってはライブプレビューや選択時のハイライトが表示される場合があります。
-4.  選択を確定してテーマを適用します。
+2.  利用可能なテーマをリスト表示するダイアログまたは選択プロンプトが表示されます。
+3.  矢印キーを使用してテーマを選択します。インターフェースによっては、選択中にライブプレビューやハイライトが表示される場合があります。
+4.  選択を確定すると、テーマが適用されます。
 
-**注意:** `settings.json` ファイルにテーマが定義されている場合（名前またはファイルパスで指定）、`/theme` コマンドを使用してテーマを変更する前に、`"ui.theme"` 設定をファイルから削除する必要があります。
+**注:** `settings.json` ファイルにテーマが定義されている場合（名前またはファイルパスで）、`/theme` コマンドを使用してテーマを変更する前に、ファイルから `"ui.theme"` 設定を削除する必要があります。
 
-### テーマの永続化
+### テーマの永続性
 
-選択したテーマは Qwen Code の[設定](../configuration/settings)に保存されるため、セッションをまたいで設定が維持されます。
+選択したテーマは Qwen Code の[設定](../configuration/settings)に保存されるため、セッションをまたいでも設定が保持されます。
 
 ---
 
-## テーマの自動検出
+## 自動テーマ検出
 
-テーマが `"auto"` に設定されている場合（または未設定の場合）、Qwen Code はターミナルのダーク・ライトの背景を自動的に検出し、対応する Qwen テーマ（`Qwen Dark` または `Qwen Light`）を選択します。
+テーマが `"auto"` に設定されている場合（または未設定の場合）、Qwen Code は自動的にターミナルの背景がダークかライトかを検出し、一致する Qwen テーマ（`Qwen Dark` または `Qwen Light`）を選択します。
 
-### 有効化する方法
+### 有効化方法
 
-`settings.json` でテーマを `"auto"` に設定します:
+`settings.json` でテーマを `"auto"` に設定します。
 
 ```json
 {
@@ -55,36 +55,36 @@ Qwen Code には事前定義されたテーマが用意されており、CLI 内
 }
 ```
 
-または `/theme` ダイアログで **Auto** を選択します。これはテーマが明示的に設定されていない場合のデフォルトの動作です。
+または、`/theme` ダイアログで **Auto** を選択します。テーマが明示的に設定されていない場合のデフォルトの動作です。
 
 ### 検出方法
 
-Qwen Code はフォールバックチェーンで複数の検出方法を使用します。起動時（非同期パス）の優先順位は次のとおりです:
+Qwen Code はフォールバックチェーンで複数の検出方法を使用します。起動時（非同期パス）の優先順位は次のとおりです。
 
-| 優先度 | 方法                    | プラットフォーム | 動作内容                                                                                             |
-| ------ | ----------------------- | ---------------- | ---------------------------------------------------------------------------------------------------- |
-| 1      | `COLORFGBG`             | すべて           | `COLORFGBG` 環境変数を読み取ります（iTerm2、rxvt、Konsole などのターミナルが設定）                  |
-| 2      | OSC 11                  | すべて（TTY）    | ターミナルに `ESC]11;?` クエリを送信し、レスポンスから背景色を解析します（約200ms）                  |
-| 3      | macOS システム外観      | macOS のみ       | `defaults read -g AppleInterfaceStyle` を実行して macOS ダークモードが有効かどうかを確認します       |
-| 4      | デフォルト              | すべて           | どの方法も成功しない場合はダークテーマにフォールバックします                                         |
+| 優先度 | 方法                    | プラットフォーム | 動作                                                                                  |
+| ------ | ----------------------- | ---------------- | ------------------------------------------------------------------------------------- |
+| 1      | `COLORFGBG`             | すべて           | `COLORFGBG` 環境変数（iTerm2、rxvt、Konsole などのターミナルで設定）を読み取ります      |
+| 2      | OSC 11                  | すべて（TTY）    | `ESC]11;?` クエリをターミナルに送信し、応答から背景色を解析します（約200ms）            |
+| 3      | macOS システムの外観設定 | macOS のみ       | `defaults read -g AppleInterfaceStyle` を実行し、macOS のダークモードが有効か確認します |
+| 4      | デフォルト              | すべて           | どの方法も成功しなかった場合、ダークテーマにフォールバックします                        |
 
-最初に結果を返した方法が採用されます。検出された値はセッション中にキャッシュされるため、以降のテーマ解決（`/theme` ダイアログで Auto を再選択するなど）で一貫した結果が得られます。
+結果を返した最初の方法が採用されます。検出された値はセッション中キャッシュされるため、後続のテーマ解決（例：`/theme` ダイアログで Auto を再選択）は一貫性を保ちます。
 
-### Auto を使うべき場合
+### Auto を使用するタイミング
 
-- **ほとんどのユーザー** — ターミナルの背景が OS の外観と一致している場合、またはターミナルが `COLORFGBG` を設定しているか OSC 11 をサポートしている場合、Auto は適切に動作します。
-- **tmux / screen ユーザー** — OSC 11 がマルチプレクサを通過しない場合があります。検出は `COLORFGBG` または macOS システム外観にフォールバックします。どちらも利用できない場合はデフォルトのダークテーマが使用されます。自動検出で誤った結果が得られる場合は、特定のテーマを設定してください。
-- **SSH セッション** — 検出はリモート環境に依存します。`COLORFGBG` が転送されておらず、リモートターミナルが OSC 11 に応答しない場合は、デフォルトのダークテーマが使用されます。
+- **ほとんどのユーザー** — ターミナルの背景が OS の外観と一致している場合や、ターミナルが `COLORFGBG` を設定している / OSC 11 をサポートしている場合、Auto は適切に動作します。
+- **tmux / screen ユーザー** — OSC 11 はマルチプレクサを通過しない場合があります。検出は `COLORFGBG` または macOS システムの外観設定にフォールバックします。どちらも利用できない場合は、デフォルトのダークテーマが使用されます。自動検出で誤った結果が得られる場合は、特定のテーマを設定してください。
+- **SSH セッション** — 検出はリモート環境に依存します。`COLORFGBG` が転送されておらず、リモートターミナルが OSC 11 に応答しない場合、デフォルトのダークテーマが使用されます。
 
 ---
 
 ## カスタムカラーテーマ
 
-Qwen Code では、`settings.json` ファイルで指定することで独自のカスタムカラーテーマを作成できます。これにより CLI で使用するカラーパレットを完全にコントロールできます。
+Qwen Code では、`settings.json` ファイルでカスタムカラーテーマを定義して、独自のテーマを作成できます。これにより、CLI で使用するカラーパレットを完全に制御できます。
 
 ### カスタムテーマの定義方法
 
-ユーザー、プロジェクト、またはシステムの `settings.json` ファイルに `customThemes` ブロックを追加します。各カスタムテーマは、一意の名前とカラーキーのセットを持つオブジェクトとして定義されます。例:
+ユーザー、プロジェクト、またはシステムの `settings.json` ファイルに `customThemes` ブロックを追加します。各カスタムテーマは、一意の名前と一連のカラーキーを持つオブジェクトとして定義します。例：
 
 ```json
 {
@@ -120,7 +120,7 @@ Qwen Code では、`settings.json` ファイルで指定することで独自の
 
 **必須プロパティ:**
 
-- `name`（`customThemes` オブジェクトのキーと一致する文字列である必要があります）
+- `name`（`customThemes` オブジェクトのキーと一致している必要があり、文字列である必要があります）
 - `type`（文字列 `"custom"` である必要があります）
 - `Background`
 - `Foreground`
@@ -134,15 +134,15 @@ Qwen Code では、`settings.json` ファイルで指定することで独自の
 - `Comment`
 - `Gray`
 
-カラー値には、16進数コード（例: `#FF0000`）**または**標準 CSS カラー名（例: `coral`、`teal`、`blue`）を使用できます。サポートされている名前の完全なリストは [CSS カラー名](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#color_keywords) を参照してください。
+色の値には、16 進コード（例：`#FF0000`）**または**標準の CSS 色名（例：`coral`、`teal`、`blue`）のいずれかを使用できます。サポートされている名前の完全なリストについては、[CSS 色名](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#color_keywords) を参照してください。
 
 `customThemes` オブジェクトにエントリを追加することで、複数のカスタムテーマを定義できます。
 
-### ファイルからテーマを読み込む
+### ファイルからのテーマの読み込み
 
-`settings.json` でカスタムテーマを定義することに加えて、`settings.json` にファイルパスを指定することで JSON ファイルから直接テーマを読み込むこともできます。これはテーマを共有したり、メイン設定とは別に管理したりする場合に便利です。
+`settings.json` でカスタムテーマを定義するだけでなく、`settings.json` にファイルパスを指定して、JSON ファイルから直接テーマを読み込むこともできます。これは、テーマを共有したり、メインの設定から分離して管理する場合に便利です。
 
-ファイルからテーマを読み込むには、`settings.json` の `ui.theme` プロパティにテーマファイルのパスを設定します:
+ファイルからテーマを読み込むには、`settings.json` の `ui.theme` プロパティをテーマファイルのパスに設定します。
 
 ```json
 {
@@ -152,7 +152,7 @@ Qwen Code では、`settings.json` ファイルで指定することで独自の
 }
 ```
 
-テーマファイルは、`settings.json` で定義されるカスタムテーマと同じ構造に従う有効な JSON ファイルである必要があります。
+テーマファイルは、`settings.json` で定義されたカスタムテーマと同じ構造に従った、有効な JSON ファイルである必要があります。
 
 **`my-theme.json` の例:**
 
@@ -178,25 +178,25 @@ Qwen Code では、`settings.json` ファイルで指定することで独自の
 }
 ```
 
-**セキュリティに関する注意:** 安全のため、Qwen Code はホームディレクトリ内に配置されたテーマファイルのみを読み込みます。ホームディレクトリ外からテーマを読み込もうとした場合、警告が表示されてテーマは読み込まれません。これは信頼できないソースから悪意のある可能性があるテーマファイルが読み込まれるのを防ぐためです。
+**セキュリティに関する注意:** 安全性のため、Qwen Code はホームディレクトリ内にあるテーマファイルのみを読み込みます。ホームディレクトリ外からテーマを読み込もうとすると、警告が表示され、テーマは読み込まれません。これは、信頼できないソースから悪意のあるテーマファイルが読み込まれるのを防ぐためです。
 
 ### カスタムテーマの例
 
 <img src="https://gw.alicdn.com/imgextra/i1/O1CN01Em30Hc1jYXAdIgls3_!!6000000004560-2-tps-1009-629.png" alt=" " style="zoom:100%;text-align:center;margin: 0 auto;" />
 
-### カスタムテーマを使用する
+### カスタムテーマの使用
 
-- Qwen Code の `/theme` コマンドを使用してカスタムテーマを選択します。カスタムテーマはテーマ選択ダイアログに表示されます。
-- または、`settings.json` の `ui` オブジェクトに `"theme": "MyCustomTheme"` を追加してデフォルトとして設定します。
-- カスタムテーマはユーザー、プロジェクト、またはシステムレベルで設定でき、他の設定と同じ[設定の優先順位](../configuration/settings)に従います。
+- Qwen Code で `/theme` コマンドを使用して、カスタムテーマを選択します。カスタムテーマはテーマ選択ダイアログに表示されます。
+- または、`settings.json` の `ui` オブジェクトに `"theme": "MyCustomTheme"` を追加して、デフォルトとして設定します。
+- カスタムテーマは、ユーザー、プロジェクト、システムレベルで設定でき、他の設定と同様の[設定の優先順位](../configuration/settings)に従います。
 
-## テーマのプレビュー
+## テーマプレビュー
 
-|  ダークテーマ  |                                                                                プレビュー                                                                                |  ライトテーマ  |                                                                                プレビュー                                                                                |
-| :----------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-|     ANSI     |     <img src="https://gw.alicdn.com/imgextra/i2/O1CN01ZInJiq1GdSZc9gHsI_!!6000000000645-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />     |  ANSI Light   |     <img src="https://gw.alicdn.com/imgextra/i2/O1CN01IiJQFC1h9E3MXQj6W_!!6000000004234-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />     |
-| Atom OneDark |     <img src="https://gw.alicdn.com/imgextra/i2/O1CN01Zlx1SO1Sw21SkTKV3_!!6000000002310-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />     |   Ayu Light   | <img src="https://gw.alicdn.com/imgextra/i3/O1CN01zEUc1V1jeUJsnCgQb_!!6000000004573-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
-|     Ayu      | <img src="https://gw.alicdn.com/imgextra/i3/O1CN019upo6v1SmPhmRjzfN_!!6000000002289-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> | Default Light | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01RHjrEs1u7TXq3M6l3_!!6000000005990-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
-|   Default    |     <img src="https://gw.alicdn.com/imgextra/i4/O1CN016pIeXz1pFC8owmR4Q_!!6000000005330-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />     | GitHub Light  | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01US2b0g1VETCPAVWLA_!!6000000002621-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
-|   Dracula    |     <img src="https://gw.alicdn.com/imgextra/i4/O1CN016htnWH20c3gd2LpUR_!!6000000006869-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />     |  Google Code  | <img src="https://gw.alicdn.com/imgextra/i1/O1CN01Ng29ab23iQ2BuYKz8_!!6000000007289-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
-|    GitHub    | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01fFCRda1IQIQ9qDNqv_!!6000000000887-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |     Xcode     | <img src="https://gw.alicdn.com/imgextra/i1/O1CN010E3QAi1Huh5o1E9LN_!!6000000000818-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
+| ダークテーマ   |                                                                                                       プレビュー                                                                                                       | ライトテーマ    |                                                                                                       プレビュー                                                                                                       |
+| :------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| ANSI           |           <img src="https://gw.alicdn.com/imgextra/i2/O1CN01ZInJiq1GdSZc9gHsI_!!6000000000645-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />           | ANSI Light      |           <img src="https://gw.alicdn.com/imgextra/i2/O1CN01IiJQFC1h9E3MXQj6W_!!6000000004234-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />           |
+| Atom OneDark   |     <img src="https://gw.alicdn.com/imgextra/i2/O1CN01Zlx1SO1Sw21SkTKV3_!!6000000002310-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />      | Ayu Light       | <img src="https://gw.alicdn.com/imgextra/i3/O1CN01zEUc1V1jeUJsnCgQb_!!6000000004573-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
+| Ayu            | <img src="https://gw.alicdn.com/imgextra/i3/O1CN019upo6v1SmPhmRjzfN_!!6000000002289-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> | Default Light   | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01RHjrEs1u7TXq3M6l3_!!6000000005990-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
+| Default        |       <img src="https://gw.alicdn.com/imgextra/i4/O1CN016pIeXz1pFC8owmR4Q_!!6000000005330-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />       | GitHub Light    | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01US2b0g1VETCPAVWLA_!!6000000002621-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
+| Dracula        |       <img src="https://gw.alicdn.com/imgextra/i4/O1CN016htnWH20c3gd2LpUR_!!6000000006869-2-tps-1140-934.png" style="zoom:30%;text-align:center;margin: 0 auto;" />       | Google Code     | <img src="https://gw.alicdn.com/imgextra/i1/O1CN01Ng29ab23iQ2BuYKz8_!!6000000007289-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |
+| GitHub         | <img src="https://gw.alicdn.com/imgextra/i4/O1CN01fFCRda1IQIQ9qDNqv_!!6000000000887-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> | Xcode           | <img src="https://gw.alicdn.com/imgextra/i1/O1CN010E3QAi1Huh5o1E9LN_!!6000000000818-2-tps-1140-934.png" alt=" " style="zoom:30%;text-align:center;margin: 0 auto;" /> |

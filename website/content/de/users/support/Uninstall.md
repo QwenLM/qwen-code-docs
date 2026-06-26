@@ -1,17 +1,17 @@
 # Deinstallation
 
-Ihre Deinstallationsmethode hängt davon ab, wie Sie die CLI installiert haben.
+Die Deinstallationsmethode hängt davon ab, wie Sie die CLI installiert haben.
 
-## Methode 1: Mit npx
+## Methode 1: Verwendung von npx
 
-npx führt Pakete aus einem temporären Cache aus, ohne dauerhafte Installation. Um die CLI zu „deinstallieren“, müssen Sie diesen Cache leeren. Dadurch werden qwen-code und alle anderen Pakete entfernt, die zuvor mit npx ausgeführt wurden.
+npx führt Pakete aus einem temporären Cache aus, ohne eine dauerhafte Installation. Um die CLI zu „deinstallieren“, müssen Sie diesen Cache leeren, wodurch qwen-code und alle anderen zuvor mit npx ausgeführten Pakete entfernt werden.
 
-Der npx-Cache ist ein Verzeichnis namens `_npx` in Ihrem Haupt-npm-Cache-Ordner. Sie finden den npm-Cache-Pfad, indem Sie `npm config get cache` ausführen.
+Der npx-Cache ist ein Verzeichnis namens `_npx` in Ihrem Haupt-npm-Cache-Ordner. Sie können den Pfad zu Ihrem npm-Cache finden, indem Sie `npm config get cache` ausführen.
 
 **Für macOS / Linux**
 
 ```bash
-# The path is typically ~/.npm/_npx
+# Der Pfad ist in der Regel ~/.npm/_npx
 rm -rf "$(npm config get cache)/_npx"
 ```
 
@@ -20,18 +20,18 @@ rm -rf "$(npm config get cache)/_npx"
 _Eingabeaufforderung_
 
 ```cmd
-:: The path is typically %LocalAppData%\npm-cache\_npx
+:: Der Pfad ist in der Regel %LocalAppData%\npm-cache\_npx
 rmdir /s /q "%LocalAppData%\npm-cache\_npx"
 ```
 
 _PowerShell_
 
 ```powershell
-# The path is typically $env:LocalAppData\npm-cache\_npx
+# Der Pfad ist in der Regel $env:LocalAppData\npm-cache\_npx
 Remove-Item -Path (Join-Path $env:LocalAppData "npm-cache\_npx") -Recurse -Force
 ```
 
-## Methode 2: Mit npm (Globale Installation)
+## Methode 2: Verwendung von npm (Globale Installation)
 
 Wenn Sie die CLI global installiert haben (z. B. `npm install -g @qwen-code/qwen-code`), verwenden Sie den Befehl `npm uninstall` mit der Option `-g`, um sie zu entfernen.
 
@@ -43,7 +43,7 @@ Dieser Befehl entfernt das Paket vollständig von Ihrem System.
 
 ## Methode 3: Eigenständige Installation
 
-Wenn Sie über das eigenständige Installationsprogramm installiert haben (`curl ... | bash` oder `irm ... | iex`), verwenden Sie das dedizierte Deinstallationsskript.
+Wenn Sie über das eigenständige Installationsprogramm (`curl ... | bash` oder `irm ... | iex`) installiert haben, verwenden Sie das dafür vorgesehene Deinstallationsskript.
 
 **Linux / macOS**
 
@@ -57,4 +57,4 @@ curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/un
 irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/uninstall-qwen-standalone.ps1 | iex
 ```
 
-Das Deinstallationsprogramm entfernt die eigenständige Laufzeit, den generierten `qwen`-Wrapper und die vom Installationsprogramm verwalteten PATH-Änderungen. Ihre Qwen Code-Konfiguration (`~/.qwen`) bleibt standardmäßig erhalten.
+Das Deinstallationsprogramm entfernt die eigenständige Laufzeitumgebung, den generierten `qwen`-Wrapper und die vom Installationsprogramm verwalteten PATH-Änderungen. Ihre Qwen Code-Konfiguration (`~/.qwen`) bleibt standardmäßig erhalten.

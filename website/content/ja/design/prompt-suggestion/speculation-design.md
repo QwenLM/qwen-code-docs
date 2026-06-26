@@ -1,10 +1,10 @@
-# Speculation Engine の設計
+# 投機実行エンジンの設計
 
-> ユーザーが確定する前に、提案された内容を copy-on-write によるファイル分離を用いて投機的に実行します。ユーザーが Tab キーを押すと、結果が即座に表示されます。
+> ユーザーが確定する前に、提案された内容を投機的に実行します。コピーオンライトのファイル分離を用いて、ユーザーがTabを押した瞬間に結果が表示されます。
 
 ## 概要
 
-プロンプトの提案が表示されると、**speculation engine** は fork された GeminiChat を使用してバックグラウンドで直ちに実行を開始します。ファイルへの書き込みは一時的な overlay ディレクトリに行われます。ユーザーが提案を承認（accept）すると、overlay ファイルが実際のファイルシステムにコピーされ、投機的に実行された会話履歴がメインのチャット履歴に挿入されます。ユーザーが別の入力を開始した場合、speculation は中止され、overlay はクリーンアップされます。
+プロンプトの提案が表示されると、**投機実行エンジン**は即座にフォークしたGeminiChatを使ってその提案をバックグラウンドで実行し始めます。ファイル書き込みは一時的なオーバレイディレクトリに行われます。ユーザーが提案を受け入れた場合、オーバレイファイルは実際のファイルシステムにコピーされ、投機実行の会話履歴がメインチャット履歴に注入されます。ユーザーが別の内容を入力した場合は、投機実行は中断され、オーバレイはクリーンアップされます。
 
 ## アーキテクチャ
 
@@ -80,7 +80,7 @@ User sees suggestion "commit this"
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## Copy-on-Write Overlay
+## コピーオンライトオーバレイ
 
 ```
 Real CWD: /home/user/project/
@@ -106,37 +106,37 @@ Abort:
   - rm -rf overlay/
 ```
 
-## Tool Gate セキュリティ
+## ツールゲートのセキュリティ
 
-| ツール                                                       | アクション | 条件                                    |
-| ---------------------------------------------------------- | -------- | -------------------------------------------- |
-| read_file, grep, glob, ls, lsp                             | allow    | overlay を介して解決された読み取りパス          |
-| edit, write_file                                           | redirect | auto-edit / yolo 承認モードの場合のみ       |
-| edit, write_file                                           | boundary | デフォルト / plan 承認モードの場合              |
-| shell                                                      | allow    | `isShellCommandReadOnlyAST()` が true を返す   |
-| shell                                                      | boundary | 読み取り専用ではないコマンド                       |
-| web_fetch, web_search                                      | boundary | ネットワークリクエストにはユーザーの同意が必要        |
-| agent, skill, memory, ask_user, todo_write, exit_plan_mode | boundary | speculation 中はユーザーとの対話不可 |
-| Unknown / MCP ツール                                        | boundary | 安全なデフォルト動作                                 |
+| ツール                                                     | アクション | 条件                                           |
+| ---------------------------------------------------------- | -------- | ---------------------------------------------- |
+| read_file, grep, glob, ls, lsp                             | allow    | オーバレイを通して読み取りパスを解決            |
+| edit, write_file                                           | redirect | auto-edit / yolo 承認モード時のみ               |
+| edit, write_file                                           | boundary | デフォルト / plan 承認モード時                  |
+| shell                                                      | allow    | `isShellCommandReadOnlyAST()` が true を返す    |
+| shell                                                      | boundary | 読み取り専用でないコマンド                      |
+| web_fetch, web_search                                      | boundary | ネットワークリクエストにはユーザーの同意が必要  |
+| agent, skill, memory, ask_user, todo_write, exit_plan_mode | boundary | 投機実行中はユーザーと対話できない              |
+| 未知 / MCP ツール                                          | boundary | セーフデフォルト                                |
 
 ### パス書き換え
 
-- **書き込みツール**: `rewritePathArgs()` は `overlayFs.redirectWrite()` を介して `file_path` を overlay にリダイレクトします
-- **読み取りツール**: `resolveReadPaths()` は、以前に書き込まれた場合、`overlayFs.resolveReadPath()` を介して `file_path` を overlay にリダイレクトします
-- **書き換え失敗**: boundary として処理されます（例: cwd 外の絶対パスは `redirectWrite` で例外をスロー）
+- **書き込みツール**: `rewritePathArgs()` は `overlayFs.redirectWrite()` を介して `file_path` をオーバレイにリダイレクトします。
+- **読み取りツール**: `resolveReadPaths()` は、以前に書き込まれた場合、`overlayFs.resolveReadPath()` を介して `file_path` をオーバレイにリダイレクトします。
+- **書き換え失敗**: バウンダリとして扱われます（例：cwd外の絶対パスは `redirectWrite` で例外をスロー）。
 
-## Boundary の処理
+## バウンダリ処理
 
-ターン途中で boundary に到達した場合:
+ターン中にバウンダリに達した場合：
 
-1. 既に実行されたツール呼び出しは保持されます（名前ベースではなくインデックスベースで追跡）
-2. 未実行の関数呼び出しはモデルメッセージから削除されます
-3. 部分的なツールレスポンスが履歴に追加されます
-4. `ensureToolResultPairing()` は挿入前に完全性を検証します
+1. 既に実行されたツール呼び出しは保持されます（名前ベースではなく、インデックスベースの追跡）。
+2. 未実行の関数呼び出しはモデルメッセージから削除されます。
+3. 部分的なツール応答は履歴に追加されます。
+4. `ensureToolResultPairing()` は注入前に完全性を検証します。
 
-## Pipelined Suggestion
+## パイプライン化された提案
 
-speculation が完了し（boundary に到達せず）、2回目の LLM 呼び出しによって**次の**提案が生成されます:
+投機実行が完了した後（バウンダリなし）、2回目のLLM呼び出しで **次の** 提案を生成します。
 
 ```
 Context: original conversation + "commit this" + speculated messages
@@ -145,25 +145,25 @@ Context: original conversation + "commit this" + speculated messages
 → On accept: setPromptSuggestion("push it") — appears instantly
 ```
 
-これにより、承認するたびに次のステップが即座に表示される Tab-Tab-Tab ワークフローが可能になります。
+これにより、Tab-Tab-Tab ワークフローが可能になり、受け入れるたびに次のステップが即座に表示されます。
 
-pipelined suggestion は、初期提案との品質の一貫性を確保するため、`suggestionGenerator.ts` からエクスポートされた `SUGGESTION_PROMPT` 定数を再利用します（ローカルコピーではありません）。
+パイプライン化された提案は、`suggestionGenerator.ts` でエクスポートされた定数 `SUGGESTION_PROMPT` を（ローカルコピーではなく）再利用して、初期提案と一貫した品質を確保します。
 
-## Fast Model
+## 高速モデル
 
-`startSpeculation` はオプションの `options.model` パラメータを受け取り、`runSpeculativeLoop` と `generatePipelinedSuggestion` を経由して `runForkedQuery` に渡されます。トップレベルの `fastModel` 設定で構成されます（空の場合はメインモデルを使用）。提案の生成、speculation、pipelined suggestion を含むすべてのバックグラウンドタスクで、同じ `fastModel` が使用されます。`/model --fast <name>` または `settings.json` で設定します。
+`startSpeculation` はオプションの `options.model` パラメータを受け付け、`runSpeculativeLoop` および `generatePipelinedSuggestion` を通じて `runForkedQuery` に渡されます。これはトップレベルの `fastModel` 設定で設定します（空の場合はメインモデルを使用）。同じ `fastModel` が、提案生成、投機実行、パイプライン化された提案のすべてのバックグラウンドタスクで使用されます。設定は `/model --fast <name>` または `settings.json` で行います。
 
 ## UI レンダリング
 
-speculation が完了すると、`acceptSpeculation` は `historyManager.addItem()` を介して結果をレンダリングします:
+投機実行が完了すると、`acceptSpeculation` は `historyManager.addItem()` を介して結果をレンダリングします。
 
 - **ユーザーメッセージ**: `type: 'user'` アイテムとしてレンダリング
 - **モデルテキスト**: `type: 'gemini'` アイテムとしてレンダリング
 - **ツール呼び出し**: 構造化された `IndividualToolCallDisplay` エントリ（ツール名、引数の説明、結果テキスト、ステータス）を持つ `type: 'tool_group'` アイテムとしてレンダリング
 
-これにより、ユーザーにはプレーンテキストだけでなく、ツール呼び出しの詳細を含む speculation の完全な出力が表示されます。
+これにより、ユーザーはプレーンテキストだけでなく、ツール呼び出しの詳細を含む投機実行の全体像を確認できます。
 
-## Forked Query（キャッシュ共有）
+## フォークされたクエリ（キャッシュ共有）
 
 ### CacheSafeParams
 
@@ -176,40 +176,40 @@ interface CacheSafeParams {
 }
 ```
 
-- `GeminiClient.sendMessageStream()` でメインのターンが正常に完了するたびに保存されます
-- `startChat()` / `resetChat()` 時にクリアされ、セッション間のリークを防止します
-- 履歴は 40 エントリに切り捨てられます。`createForkedChat` は shallow copy を使用します（パラメータは既に deep-cloned スナップショットです）
-- 思考モードは明示的に無効化されます（`thinkingConfig: { includeThoughts: false }`）。speculation に推論トークンは不要であり、コストとレイテンシの無駄になります。これはキャッシュプレフィックスのマッチングには影響しません（`systemInstruction` + `tools` + `history` のみで決定されます）
-- `systemInstruction` + `tools` の `JSON.stringify` 比較によるバージョン検出
+- `GeminiClient.sendMessageStream()` でメインのターンが成功するたびに保存されます
+- セッション間の漏洩を防ぐため、`startChat()` / `resetChat()` でクリアされます
+- 履歴は40エントリに切り詰められます。`createForkedChat` は浅いコピーを使用します（params はすでにディープクローンされたスナップショットです）
+- 思考モードは明示的に無効化されます（`thinkingConfig: { includeThoughts: false }`）— 推論トークンは投機実行に不要であり、コストとレイテンシの無駄になるためです。これはキャッシュプレフィックスのマッチングには影響しません（systemInstruction + tools + history のみによって決定されます）
+- バージョン検出は、systemInstruction + tools の `JSON.stringify` 比較によって行われます
 
-### キャッシュメカニズム
+### キャッシュ機構
 
-DashScope は既に以下の方法でプレフィックスキャッシュを有効にしています:
+DashScope は既に以下の方法でプレフィックスキャッシュを有効にしています。
 
 - `X-DashScope-CacheControl: enable` ヘッダー
-- メッセージとツールへの `cache_control: { type: 'ephemeral' }` アノテーション
+- メッセージとツールの `cache_control: { type: 'ephemeral' }` アノテーション
 
-fork された `GeminiChat` は同一の `generationConfig`（ツールを含む）と履歴プレフィックスを使用するため、DashScope の既存のキャッシュメカニズムが自動的にキャッシュヒットを生成します。
+フォークされた `GeminiChat` は同一の `generationConfig`（ツールを含む）と履歴プレフィックスを使用するため、DashScope の既存のキャッシュ機構により自動的にキャッシュヒットが発生します。
 
 ## 定数
 
-| 定数                 | 値 | 説明                              |
+| 定数                     | 値    | 説明                                      |
 | ------------------------ | ----- | ---------------------------------------- |
-| MAX_SPECULATION_TURNS    | 20    | API ラウンドトリップの最大数                  |
-| MAX_SPECULATION_MESSAGES | 100   | speculation 履歴内のメッセージ最大数   |
-| SUGGESTION_DELAY_MS      | 300   | 提案表示までの遅延時間          |
-| ACCEPT_DEBOUNCE_MS       | 100   | 連続承認時のデバウンスロック          |
+| MAX_SPECULATION_TURNS    | 20    | API の最大ラウンドトリップ数             |
+| MAX_SPECULATION_MESSAGES | 100   | 投機履歴内の最大メッセージ数             |
+| SUGGESTION_DELAY_MS      | 300   | 提案を表示する前の遅延                   |
+| ACCEPT_DEBOUNCE_MS       | 100   | 高速受け入れのためのデバウンスロック      |
 | MAX_HISTORY_FOR_CACHE    | 40    | CacheSafeParams に保存される履歴エントリ数 |
 
 ## ファイル構成
 
 ```
 packages/core/src/followup/
-├── followupState.ts          # フレームワーク非依存のステートコントローラー
-├── suggestionGenerator.ts    # LLM ベースの提案生成 + 12 のフィルタールール
-├── forkedQuery.ts            # キャッシュ対応の forked query インフラストラクチャ
-├── overlayFs.ts              # Copy-on-write overlay ファイルシステム
-├── speculationToolGate.ts    # ツールの boundary 強制
-├── speculation.ts            # Speculation エンジン（開始/承認/中止）
-└── index.ts                  # モジュールのエクスポート
+├── followupState.ts          # フレームワーク非依存の状態コントローラ
+├── suggestionGenerator.ts    # LLM ベースの提案生成 + 12 のフィルタルール
+├── forkedQuery.ts            # キャッシュ対応のフォーククエリ基盤
+├── overlayFs.ts              # コピーオンライトのオーバレイファイルシステム
+├── speculationToolGate.ts    # ツールバウンダリの強制
+├── speculation.ts            # 投機実行エンジン（開始/受け入れ/中断）
+└── index.ts                  # モジュールエクスポート
 ```

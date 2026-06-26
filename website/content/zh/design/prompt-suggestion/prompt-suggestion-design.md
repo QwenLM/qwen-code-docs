@@ -1,12 +1,12 @@
-# Prompt Suggestion (NES) 设计
+# 提示建议 (NES) 设计
 
-> 预测用户在 AI 完成回复后自然输入的下一步内容，并将其以幽灵文本（ghost text）的形式显示在输入提示框中。
+> 预测用户在 AI 完成回复后接下来会自然输入的内容，并在输入框中以幽灵文本的形式显示。
 >
 > 实现状态：`prompt-suggestion-implementation.md`。推测引擎：`speculation-design.md`。
 
 ## 概述
 
-**Prompt suggestion**（下一步建议 / NES）是对用户下一次输入的简短预测（2-12 个词），在每次 AI 回复后通过 LLM 调用生成。它会以幽灵文本的形式显示在输入提示框中。用户可以通过 Tab/Enter/右方向键接受该建议，或通过直接输入来忽略它。
+**提示建议**（下一步建议 / NES）是一个简短的预测（2-12 个词），由 LLM 在每次 AI 回复后调用生成。它以幽灵文本的形式出现在输入提示框中。用户可以通过 Tab/Enter/右箭头接受，或通过输入内容将其取消。
 
 ## 架构
 
@@ -14,11 +14,11 @@
 ┌─────────────────────────────────────────────────────────────┐
 │  AppContainer (CLI)                                         │
 │                                                             │
-│  Responding → Idle transition                               │
+│  Responding → Idle 过渡                                     │
 │       │                                                     │
 │       ▼                                                     │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  Guard Conditions (11 categories)                    │    │
+│  │  守卫条件（11 类）                                    │    │
 │  │  settings, interactive, sdk, plan mode, dialogs,    │    │
 │  │  elicitation, API error                             │    │
 │  └────────────────────┬────────────────────────────────┘    │
@@ -27,26 +27,26 @@
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │  generatePromptSuggestion()                         │    │
 │  │                                                     │    │
-│  │  ┌─── CacheSafeParams available? ───┐               │    │
+│  │  ┌─── CacheSafeParams 可用？ ───┐                    │    │
 │  │  │                                  │               │    │
-│  │  ▼ YES                         NO ▼                 │    │
+│  │  ▼ 是                         否 ▼                 │    │
 │  │  runForkedQuery()      BaseLlmClient.generateJson() │    │
-│  │  (cache-aware)         (standalone fallback)        │    │
+│  │  (缓存感知)                  (独立回退)                │    │
 │  │                                                     │    │
 │  │  ──── SUGGESTION_PROMPT ────                        │    │
-│  │  ──── 12 filter rules ──────                        │    │
+│  │  ──── 12 条过滤规则 ───────                        │    │
 │  │  ──── getFilterReason() ────                        │    │
 │  └────────────────────┬────────────────────────────────┘    │
 │                       │                                     │
 │                       ▼                                     │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  FollowupController (framework-agnostic)            │    │
-│  │  300ms delay → show as ghost text                   │    │
+│  │  FollowupController (框架无关)                       │    │
+│  │  300ms 延迟 → 显示为幽灵文本                          │    │
 │  │                                                     │    │
-│  │  Tab    → accept (fill input)                       │    │
-│  │  Enter  → accept + submit                           │    │
-│  │  Right  → accept (fill input)                       │    │
-│  │  Type   → dismiss + abort speculation               │    │
+│  │  Tab    → 接受（填充输入）                            │    │
+│  │  Enter  → 接受并提交                                │    │
+│  │  Right  → 接受（填充输入）                            │    │
+│  │  Type   → 取消 + 中止推测                            │    │
 │  └─────────────────────────────────────────────────────┘    │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐    │
@@ -59,78 +59,77 @@
 
 ## 建议生成
 
-### LLM Prompt
+### LLM 提示
 
 ```
-[SUGGESTION MODE: Suggest what the user might naturally type next.]
+[建议模式：建议用户接下来可能自然输入的内容。]
 
-FIRST: Read the LAST FEW LINES of the assistant's most recent message — that's where
-next-step hints, tips, and actionable suggestions usually appear. Then check the user's
-recent messages and original request.
+首先：阅读助手最新消息的最后几行——那里通常会出现下一步提示、技巧和可操作建议。
+然后检查用户最近的消息和原始请求。
 
-Your job is to predict what THEY would type - not what you think they should do.
-THE TEST: Would they think "I was just about to type that"?
+你的任务是预测**他们会**输入什么——而不是你认为他们应该做什么。
+测试标准：他们会觉得“我正要输入那个”吗？
 
-PRIORITY: If the assistant's last message contains a tip or hint like "Tip: type X to ..."
-or "type X to ...", extract X as the suggestion. These are explicit next-step hints.
+优先级：如果助手的最后一条消息包含类似“提示：输入 X 来...”或“输入 X 来...”的提示，
+则将 X 提取为建议。这些是明确的下一步提示。
 
-EXAMPLES:
-Assistant says "Tip: type post comments to publish findings" → "post comments"
-Assistant says "type /review to start" → "/review"
-User asked "fix the bug and run tests", bug is fixed → "run the tests"
-After code written → "try it out"
-Task complete, obvious follow-up → "commit this" or "push it"
+示例：
+助手说“提示：输入 post comments 来发布发现” → “post comments”
+助手说“输入 /review 来开始” → “/review”
+用户要求“修复 bug 并运行测试”，bug 已修复 → “run the tests”
+写了代码后 → “try it out”
+任务完成，明显的后续操作 → “commit this” 或 “push it”
 
-Format: 2-12 words, match the user's style. Or nothing.
-Reply with ONLY the suggestion, no quotes or explanation.
+格式：2-12 个词，匹配用户的风格。或者不返回任何内容。
+仅回复建议本身，不要带引号或解释。
 ```
 
 ### 过滤规则（12 条）
 
-| 规则               | 拦截示例                                  |
-| ------------------ | ------------------------------------------------ |
-| done               | "done"                                           |
-| meta_text          | "nothing found", "no suggestion", "silence"      |
-| meta_wrapped       | "(silence)", "[no suggestion]"                   |
-| error_message      | "api error: 500"                                 |
-| prefixed_label     | "Suggestion: commit"                             |
-| too_few_words      | "hmm"（但允许 "yes", "commit", "push" 等）  |
-| too_many_words     | > 12 个词                                       |
-| too_long           | >= 100 个字符                                     |
-| multiple_sentences | "Run tests. Then commit."                        |
-| has_formatting     | 换行符、Markdown 加粗                          |
-| evaluative         | "looks good", "thanks"（使用 \b 单词边界） |
-| ai_voice           | "Let me...", "I'll...", "Here's..."              |
+| 规则                | 被拦截的示例                                    |
+| ------------------- | ----------------------------------------------- |
+| done                | “done”                                          |
+| meta_text           | “nothing found”, “no suggestion”, “silence”     |
+| meta_wrapped        | “(silence)”, “[no suggestion]”                  |
+| error_message       | “api error: 500”                                |
+| prefixed_label      | “Suggestion: commit”                            |
+| too_few_words       | “hmm”（但允许 “yes”, “commit”, “push” 等）      |
+| too_many_words      | > 12 个词                                       |
+| too_long            | >= 100 字符                                     |
+| multiple_sentences  | “Run tests. Then commit.”                      |
+| has_formatting      | 换行、Markdown 加粗                             |
+| evaluative          | “looks good”, “thanks”（使用 \b 词边界）       |
+| ai_voice            | “Let me...”, “I'll...”, “Here's...”           |
 
 ### 守卫条件
 
-**AppContainer useEffect（代码中包含 13 项检查）：**
+**AppContainer useEffect（代码中 13 项检查）：**
 
-| 守卫条件                | 检查逻辑                                               |
-| -------------------- | --------------------------------------------------- |
-| 设置开关      | `enableFollowupSuggestions`                         |
-| 非交互模式      | `config.isInteractive()`                            |
-| SDK 模式             | `!config.getSdkMode()`                              |
-| 流式状态转换 | `Responding → Idle`（2 项检查）                      |
-| API 错误（历史记录）  | `historyManager.history[last]?.type !== 'error'`    |
-| API 错误（待处理）  | `!pendingGeminiHistoryItems.some(type === 'error')` |
-| 确认对话框 | shell + general + 循环检测（3 项检查）         |
-| 权限对话框    | `isPermissionsDialogOpen`                           |
-| 引导请求          | `settingInputRequests.length === 0`                 |
-| 计划模式            | `ApprovalMode.PLAN`                                 |
+| 守卫                     | 检查条件                                             |
+| ------------------------ | ---------------------------------------------------- |
+| 设置开关                 | `enableFollowupSuggestions`                          |
+| 非交互模式               | `config.isInteractive()`                             |
+| SDK 模式                 | `!config.getSdkMode()`                               |
+| 流式传输过渡             | `Responding → Idle`（2 项检查）                      |
+| API 错误（历史）         | `historyManager.history[last]?.type !== 'error'`     |
+| API 错误（待定）         | `!pendingGeminiHistoryItems.some(type === 'error')`  |
+| 确认对话框               | shell + general + loop detection（3 项检查）         |
+| 权限对话框               | `isPermissionsDialogOpen`                            |
+| 启发式询问               | `settingInputRequests.length === 0`                  |
+| 计划模式                 | `ApprovalMode.PLAN`                                  |
 
-**在 `generatePromptSuggestion()` 内部：**
+**generatePromptSuggestion() 内部：**
 
-| 守卫条件              | 检查逻辑            |
-| ------------------ | ---------------- |
-| 对话初期 | `modelTurns < 2` |
+| 守卫             | 检查条件           |
+| ---------------- | ------------------ |
+| 早期对话         | `modelTurns < 2`   |
 
-**独立的功能开关（不在守卫条件块中）：**
+**独立功能标志（不在守卫块中）：**
 
-| 开关                 | 控制内容                                                |
-| -------------------- | ------------------------------------------------------- |
-| `enableCacheSharing` | 是否使用 forked query 或回退到 generateJson |
-| `enableSpeculation`  | 是否在显示建议时启动推测      |
+| 标志                   | 控制                                                    |
+| ---------------------- | ------------------------------------------------------- |
+| `enableCacheSharing`   | 是否使用分叉查询，或回退到 generateJson                  |
+| `enableSpeculation`    | 是否在建议显示时开始推测                                |
 
 ## 状态管理
 
@@ -140,98 +139,98 @@ Reply with ONLY the suggestion, no quotes or explanation.
 interface FollowupState {
   suggestion: string | null;
   isVisible: boolean;
-  shownAt: number; // timestamp for telemetry
+  shownAt: number; // 用于遥测的时间戳
 }
 ```
 
 ### FollowupController
 
-CLI (Ink) 和 WebUI (React) 共享的框架无关控制器：
+框架无关的控制器，由 CLI（Ink）和 WebUI（React）共享：
 
-- `setSuggestion(text)` — 延迟 300ms 显示，传入 null 立即清除
-- `accept(method)` — 清除状态，通过微任务触发 `onAccept`，100ms 防抖锁定
-- `dismiss()` — 清除状态，记录 `ignored` 遥测数据
-- `clear()` — 硬重置所有状态和计时器
+- `setSuggestion(text)` — 延迟 300ms 显示，null 立即清除
+- `accept(method)` — 清除状态，通过微任务触发 `onAccept`，100ms 防抖锁
+- `dismiss()` — 清除状态，记录 `ignored` 遥测
+- `clear()` — 硬重置所有状态和定时器
 - `Object.freeze(INITIAL_FOLLOWUP_STATE)` 防止意外修改
 
 ## 键盘交互
 
-| 按键         | CLI                         | WebUI                                |
-| ----------- | --------------------------- | ------------------------------------ |
-| Tab         | 填充输入框（不提交）      | 填充输入框（不提交）               |
-| Enter       | 填充并提交               | 填充并提交（`explicitText` 参数） |
-| Right Arrow | 填充输入框（不提交）      | 填充输入框（不提交）               |
-| 输入字符      | 忽略并中止推测 | 忽略                              |
-| 粘贴       | 忽略并中止推测 | 忽略                              |
+| 键               | CLI                        | WebUI                                |
+| ---------------- | -------------------------- | ------------------------------------ |
+| Tab              | 填充输入（不提交）         | 填充输入（不提交）                   |
+| Enter            | 填充 + 提交                | 填充 + 提交（使用 `explicitText` 参数）|
+| 右箭头           | 填充输入（不提交）         | 填充输入（不提交）                   |
+| 输入字符         | 取消 + 中止推测            | 取消                                 |
+| 粘贴             | 取消 + 中止推测            | 取消                                 |
 
 ### 按键绑定说明
 
-Tab 处理器显式使用 `key.name === 'tab'`（而非 `ACCEPT_SUGGESTION` 匹配器），因为 `ACCEPT_SUGGESTION` 也会匹配 Enter，而 Enter 需要穿透到 SUBMIT 处理器。
+Tab 处理程序显式使用 `key.name === 'tab'`（而不是 `ACCEPT_SUGGESTION` 匹配器），因为 `ACCEPT_SUGGESTION` 也会匹配 Enter，而 Enter 需要进入 SUBMIT 处理程序。
 
-## 遥测数据
+## 遥测
 
 ### PromptSuggestionEvent
 
-| 字段                      | 类型                        | 说明                         |
-| -------------------------- | --------------------------- | ----------------------------------- |
-| outcome                    | accepted/ignored/suppressed | 最终结果                       |
-| prompt_id                  | string                      | 默认值：'user_intent'              |
-| accept_method              | tab/enter/right             | 用户接受的方式                   |
-| time_to_accept_ms          | number                      | 从显示到接受的时间           |
-| time_to_ignore_ms          | number                      | 从显示到忽略的时间          |
-| time_to_first_keystroke_ms | number                      | 显示期间到首次按键的时间 |
-| suggestion_length          | number                      | 字符数                     |
-| similarity                 | number                      | 接受为 1.0，忽略为 0.0      |
-| was_focused_when_shown     | boolean                     | 显示时终端是否处于焦点                  |
-| reason                     | string                      | 被拦截时：过滤规则名称    |
+| 字段                         | 类型                         | 描述                           |
+| ---------------------------- | ---------------------------- | ------------------------------ |
+| outcome                      | accepted/ignored/suppressed  | 最终结果                       |
+| prompt_id                    | string                       | 默认：'user_intent'            |
+| accept_method                | tab/enter/right              | 用户接受方式                   |
+| time_to_accept_ms            | number                       | 从显示到接受的时间             |
+| time_to_ignore_ms            | number                       | 从显示到取消的时间             |
+| time_to_first_keystroke_ms   | number                       | 显示期间到首次按键的时间       |
+| suggestion_length            | number                       | 字符数                         |
+| similarity                   | number                       | 接受时为 1.0，忽略时为 0.0    |
+| was_focused_when_shown       | boolean                      | 终端是否处于焦点               |
+| reason                       | string                       | 对于被抑制的情况：过滤规则名称 |
 
 ### SpeculationEvent
 
-| 字段                    | 类型                    | 说明               |
-| ------------------------ | ----------------------- | ------------------------- |
-| outcome                  | accepted/aborted/failed | 推测结果        |
-| turns_used               | number                  | API 往返次数           |
-| files_written            | number                  | 覆盖层中的文件数          |
-| tool_use_count           | number                  | 执行的工具数            |
-| duration_ms              | number                  | 实际耗时（Wall-clock time）           |
-| boundary_type            | string                  | 终止推测的原因  |
-| had_pipelined_suggestion | boolean                 | 是否生成了下一条建议 |
+| 字段                      | 类型                      | 描述                     |
+| ------------------------- | ------------------------- | ------------------------ |
+| outcome                   | accepted/aborted/failed   | 推测结果                 |
+| turns_used                | number                    | API 往返次数             |
+| files_written             | number                    | overlay 中的文件数       |
+| tool_use_count            | number                    | 执行的工具数             |
+| duration_ms               | number                    | 墙上时钟时间             |
+| boundary_type             | string                    | 停止推测的原因           |
+| had_pipelined_suggestion  | boolean                   | 是否生成了下一个建议     |
 
-## 功能开关与设置
+## 功能标志与设置
 
-| 设置项                     | 类型    | 默认值 | 说明                                                                      |
-| --------------------------- | ------- | ------- | -------------------------------------------------------------------------------- |
-| `enableFollowupSuggestions` | boolean | true    | Prompt suggestion 的总开关                                             |
-| `enableCacheSharing`        | boolean | true    | 使用支持缓存感知的 forked query                                                   |
-| `enableSpeculation`         | boolean | false   | 预测性执行引擎                                                      |
-| `fastModel`（顶层）     | string  | ""      | 用于所有后台任务的模型（留空表示使用主模型）。通过 `/model --fast` 设置 |
+| 设置                         | 类型    | 默认值 | 描述                                     |
+| ---------------------------- | ------- | ------ | ---------------------------------------- |
+| `enableFollowupSuggestions`  | boolean | true   | 提示建议的总开关                         |
+| `enableCacheSharing`         | boolean | true   | 使用缓存感知的分叉查询                   |
+| `enableSpeculation`          | boolean | false  | 预测执行引擎                             |
+| `fastModel`（顶层）          | string  | ""     | 所有后台任务的模型（空值 = 使用主模型）。通过 `/model --fast` 设置 |
 
 ### 内部 Prompt ID 过滤
 
-后台操作使用专用的 prompt ID（位于 `utils/internalPromptIds.ts` 中的 `INTERNAL_PROMPT_IDS`），以防止其 API 流量和工具调用出现在用户可见的 UI 中：
+后台操作使用专用的 prompt ID（`utils/internalPromptIds.ts` 中的 `INTERNAL_PROMPT_IDS`），以防止它们的 API 流量和工具调用出现在用户可见的 UI 中：
 
-| Prompt ID           | 使用方                    |
-| ------------------- | -------------------------- |
-| `prompt_suggestion` | 建议生成      |
-| `forked_query`      | 支持缓存感知的 forked query |
-| `speculation`       | 推测引擎         |
+| Prompt ID           | 用途                     |
+| ------------------- | ------------------------ |
+| `prompt_suggestion` | 建议生成                 |
+| `forked_query`      | 缓存感知的分叉查询       |
+| `speculation`       | 推测引擎                 |
 
-**应用的过滤逻辑：**
+**应用过滤：**
 
-- `loggingContentGenerator` — 针对内部 ID 跳过 `logApiRequest` 和 OpenAI 交互日志记录
+- `loggingContentGenerator` — 对于内部 ID，跳过 `logApiRequest` 和 OpenAI 交互日志
 - `logApiResponse` / `logApiError` — 跳过 `chatRecordingService.recordUiTelemetryEvent`
 - `logToolCall` — 跳过 `chatRecordingService.recordUiTelemetryEvent`
-- `uiTelemetryService.addEvent` — **不过滤**（确保 `/stats` 的 token 统计正常工作）
+- `uiTelemetryService.addEvent` — **不过滤**（确保 `/stats` token 追踪正常工作）
 
-### 思考模式
+### 思维模式
 
-所有后台任务路径均显式禁用思考/推理功能（`thinkingConfig: { includeThoughts: false }`）：
+所有后台任务路径都显式禁用了思维/推理模式（`thinkingConfig: { includeThoughts: false }`）：
 
-- **Forked query 路径**（`createForkedChat`）—— 在克隆的 `generationConfig` 中覆盖 `thinkingConfig`，涵盖建议生成和推测
-- **BaseLlm 回退路径**（`generateViaBaseLlm`）—— 每次请求的配置会覆盖基础内容生成器的思考设置
+- **分叉查询路径**（`createForkedChat`）— 在克隆的 `generationConfig` 中覆盖 `thinkingConfig`，涵盖建议生成和推测
+- **BaseLlm 回退路径**（`generateViaBaseLlm`）— 每次请求的配置覆盖基础内容生成器的思维设置
 
-这样做是安全的，原因如下：
+这样做是安全的，因为：
 
-- 缓存前缀由 systemInstruction + tools + history 决定，而非 `thinkingConfig` —— 缓存命中率不受影响
-- 所有后端（Gemini、OpenAI 兼容、Anthropic）均通过省略 thinking 字段来处理 `includeThoughts: false` —— 不支持思考功能的模型不会引发 API 错误
-- 建议生成和推测功能无法从推理 token 中获益
+- 缓存前缀由 systemInstruction + tools + history 决定，而非 `thinkingConfig` — 缓存命中不受影响
+- 所有后端（Gemini、兼容 OpenAI 的服务、Anthropic）都通过省略 thinking 字段来处理 `includeThoughts: false` — 对于不支持思维功能的模型不会产生 API 错误
+- 建议生成和推测并不受益于推理 token

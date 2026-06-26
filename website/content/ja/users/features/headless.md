@@ -1,23 +1,23 @@
 # ヘッドレスモード
 
-ヘッドレスモードを使用すると、対話型 UI を介さずに、コマンドラインスクリプトや自動化ツールから Qwen Code をプログラム的に実行できます。スクリプティング、自動化、CI/CD パイプライン、AI 搭載ツールの構築に最適です。
+ヘッドレスモードを使用すると、インタラクティブなUIなしで、コマンドラインスクリプトや自動化ツールからプログラムによってQwen Codeを実行できます。これは、スクリプト作成、自動化、CI/CDパイプライン、およびAIを活用したツールの構築に最適です。
 
 ## 概要
 
-ヘッドレスモードは Qwen Code へのヘッドレスインターフェースを提供し、以下の機能を備えています。
+ヘッドレスモードは、以下の機能を提供するQwen Codeのヘッドレスインターフェースです：
 
-- コマンドライン引数または stdin からプロンプトを受け取る
-- 構造化された出力（テキストまたは JSON）を返す
-- ファイルリダイレクトとパイプをサポート
-- 自動化およびスクリプティングワークフローを有効化
-- エラーハンドリングのための一貫した終了コードを提供
-- 複数ステップの自動化のために、現在のプロジェクトにスコープされた前回のセッションを再開可能
+- コマンドライン引数または標準入力からのプロンプトの受け付け
+- 構造化出力（テキストまたはJSON）の返却
+- ファイルリダイレクションとパイプのサポート
+- 自動化とスクリプトワークフローの有効化
+- エラーハンドリングのための一貫した終了コードの提供
+- マルチステップ自動化のための現在のプロジェクトにスコープされた以前のセッションの再開
 
 ## 基本的な使い方
 
 ### 直接プロンプト
 
-`--prompt`（または `-p`）フラグを使用してヘッドレスモードで実行します。
+`--prompt`（または`-p`）フラグを使用してヘッドレスモードで実行します：
 
 ```bash
 qwen --prompt "What is machine learning?"
@@ -25,7 +25,7 @@ qwen --prompt "What is machine learning?"
 
 ### 標準入力
 
-ターミナルから Qwen Code にパイプで入力を渡します。
+ターミナルからQwen Codeにパイプで入力します：
 
 ```bash
 echo "Explain this code" | qwen
@@ -33,50 +33,50 @@ echo "Explain this code" | qwen
 
 ### ファイル入力との組み合わせ
 
-ファイルを読み込んで Qwen Code で処理します。
+ファイルから読み取り、Qwen Codeで処理します：
 
 ```bash
 cat README.md | qwen --prompt "Summarize this documentation"
 ```
 
-### 前回のセッションの再開（ヘッドレス）
+### 以前のセッションの再開（ヘッドレス）
 
-ヘッドレススクリプトで現在のプロジェクトの会話コンテキストを再利用します。
+ヘッドレススクリプトで現在のプロジェクトの会話コンテキストを再利用します：
 
 ```bash
-# このプロジェクトの最新セッションを引き継いで新しいプロンプトを実行する
+# このプロジェクトの最新セッションを続けて、新しいプロンプトを実行
 qwen --continue -p "Run the tests again and summarize failures"
 
-# 特定のセッション ID を直接再開する（UI なし）
+# 特定のセッションIDを直接再開（UIなし）
 qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refactor"
 ```
 
 > [!note]
 >
-> - セッションデータはプロジェクトスコープの JSONL として `~/.qwen/projects/<sanitized-cwd>/chats` に保存されます。
-> - 新しいプロンプトを送信する前に、会話履歴、ツール出力、チャット圧縮チェックポイントを復元します。
+> - セッションデータは`~/.qwen/projects/<サニタイズされたカレントディレクトリ>/chats`以下にプロジェクトスコープのJSONLとして保存されます。
+> - 新しいプロンプトを送信する前に、会話履歴、ツール出力、チャット圧縮チェックポイントが復元されます。
 
 ## メインセッションプロンプトのカスタマイズ
 
-共有メモリファイルを編集せずに、単一の CLI 実行でメインセッションのシステムプロンプトを変更できます。
+共有メモリファイルを編集せずに、単一のCLI実行に対してメインセッションのシステムプロンプトを変更できます。
 
 ### 組み込みシステムプロンプトの上書き
 
-`--system-prompt` を使用して、現在の実行で Qwen Code の組み込みメインセッションプロンプトを置き換えます。
+`--system-prompt`を使用して、現在の実行においてQwen Codeの組み込みメインセッションプロンプトを置き換えます：
 
 ```bash
 qwen -p "Review this patch" --system-prompt "You are a terse release reviewer. Report only blocking issues."
 ```
 
-### 追加指示の付加
+### 追加指示の追加
 
-`--append-system-prompt` を使用して、組み込みプロンプトを維持しながら今回の実行に追加指示を加えます。
+`--append-system-prompt`を使用して、組み込みプロンプトを維持しつつ、この実行用の追加指示を追加します：
 
 ```bash
 qwen -p "Review this patch" --append-system-prompt "Be terse and focus on concrete findings."
 ```
 
-カスタムベースプロンプトと実行固有の追加指示を組み合わせる場合は、両方のフラグを使用できます。
+両方のフラグを組み合わせて、カスタムベースプロンプトと実行固有の追加指示を同時に指定できます：
 
 ```bash
 qwen -p "Summarize this repository" \
@@ -86,33 +86,33 @@ qwen -p "Summarize this repository" \
 
 > [!note]
 >
-> - `--system-prompt` は現在の実行のメインセッションにのみ適用されます。
-> - `QWEN.md` などのロードされたメモリおよびコンテキストファイルは、`--system-prompt` の後に引き続き付加されます。
-> - `--append-system-prompt` は組み込みプロンプトとロードされたメモリの後に適用され、`--system-prompt` と併用できます。
+> - `--system-prompt`は現在の実行のメインセッションにのみ適用されます。
+> - `QWEN.md`などのロードされたメモリとコンテキストファイルは、`--system-prompt`の後にも追加されます。
+> - `--append-system-prompt`は組み込みプロンプトとロードされたメモリの後に適用され、`--system-prompt`と一緒に使用できます。
 
 ## 出力フォーマット
 
-Qwen Code はユースケースに応じた複数の出力フォーマットをサポートしています。
+Qwen Codeはさまざまなユースケースに対応する複数の出力フォーマットをサポートしています：
 
 ### テキスト出力（デフォルト）
 
-標準的な人間が読みやすい出力です。
+標準の人間可読出力：
 
 ```bash
 qwen -p "What is the capital of France?"
 ```
 
-レスポンスフォーマット:
+応答フォーマット：
 
 ```
 The capital of France is Paris.
 ```
 
-### JSON 出力
+### JSON出力
 
-構造化データを JSON 配列として返します。すべてのメッセージはバッファリングされ、セッション完了時にまとめて出力されます。このフォーマットはプログラムによる処理や自動化スクリプトに最適です。
+構造化データをJSON配列として返します。すべてのメッセージはバッファリングされ、セッション完了時に一緒に出力されます。このフォーマットはプログラムによる処理や自動化スクリプトに最適です。
 
-JSON 出力はメッセージオブジェクトの配列です。出力には複数のメッセージタイプが含まれます: システムメッセージ（セッション初期化）、アシスタントメッセージ（AI レスポンス）、結果メッセージ（実行サマリー）。
+JSON出力はメッセージオブジェクトの配列です。出力には複数のメッセージタイプが含まれます：システムメッセージ（セッション初期化）、アシスタントメッセージ（AI応答）、結果メッセージ（実行サマリー）。
 
 #### 使用例
 
@@ -120,7 +120,7 @@ JSON 出力はメッセージオブジェクトの配列です。出力には複
 qwen -p "What is the capital of France?" --output-format json
 ```
 
-出力（実行終了時）:
+出力（実行終了時）：
 
 ```json
 [
@@ -164,15 +164,15 @@ qwen -p "What is the capital of France?" --output-format json
 ]
 ```
 
-### Stream-JSON 出力
+### Stream-JSON出力
 
-Stream-JSON フォーマットは、実行中にイベントが発生するとすぐに JSON メッセージを出力し、リアルタイムモニタリングを可能にします。このフォーマットは行区切り JSON を使用し、各メッセージは 1 行の完全な JSON オブジェクトです。
+Stream-JSONフォーマットは、実行中にJSONメッセージをリアルタイムで出力し、即時監視を可能にします。このフォーマットは改行区切りのJSONを使用し、各メッセージは1行に完全なJSONオブジェクトとして出力されます。
 
 ```bash
 qwen -p "Explain TypeScript" --output-format stream-json
 ```
 
-出力（イベント発生時にストリーミング）:
+出力（イベント発生ごとにストリーミング）：
 
 ```json
 {"type":"system","subtype":"session_start","uuid":"...","session_id":"..."}
@@ -180,7 +180,7 @@ qwen -p "Explain TypeScript" --output-format stream-json
 {"type":"result","subtype":"success","uuid":"...","session_id":"..."}
 ```
 
-`--include-partial-messages` と組み合わせると、リアルタイム UI 更新のための追加ストリームイベント（message_start、content_block_delta など）がリアルタイムで出力されます。
+`--include-partial-messages`と組み合わせると、リアルタイムUI更新のために追加のストリームイベント（message_start、content_block_deltaなど）がリアルタイムで出力されます。
 
 ```bash
 qwen -p "Write a Python script" --output-format stream-json --include-partial-messages
@@ -188,16 +188,16 @@ qwen -p "Write a Python script" --output-format stream-json --include-partial-me
 
 ### 入力フォーマット
 
-`--input-format` パラメータは、Qwen Code が標準入力からどのように入力を受け取るかを制御します。
+`--input-format`パラメータは、Qwen Codeが標準入力から入力をどのように消費するかを制御します：
 
-- **`text`**（デフォルト）: stdin またはコマンドライン引数からの標準テキスト入力
-- **`stream-json`**: 双方向通信のための stdin 経由 JSON メッセージプロトコル
+- **`text`**（デフォルト）：標準入力またはコマンドライン引数からの標準テキスト入力
+- **`stream-json`**：双方向通信のための標準入力経由のJSONメッセージプロトコル
 
-> **Note:** Stream-json 入力モードは現在開発中であり、SDK 連携を目的としています。`--output-format stream-json` の設定が必要です。
+> **注記：** stream-json入力モードは現在構築中であり、SDK統合を目的としています。`--output-format stream-json`を設定する必要があります。
 
-### ファイルリダイレクト
+### ファイルリダイレクション
 
-出力をファイルに保存したり、他のコマンドにパイプしたりできます。
+出力をファイルに保存したり、他のコマンドにパイプしたりできます：
 
 ```bash
 # ファイルに保存
@@ -212,66 +212,66 @@ qwen -p "What is Kubernetes?" --output-format json | jq '.response'
 qwen -p "Explain microservices" | wc -w
 qwen -p "List programming languages" | grep -i "python"
 
-# リアルタイム処理のための Stream-JSON 出力
+# リアルタイム処理のためのStream-JSON出力
 qwen -p "Explain Docker" --output-format stream-json | jq '.type'
 qwen -p "Write code" --output-format stream-json --include-partial-messages | jq '.event.type'
 ```
 
 ## 設定オプション
 
-ヘッドレス使用のための主要なコマンドラインオプション:
+ヘッドレス使用時の主要なコマンドラインオプション：
 
-| オプション                     | 説明                                                                     | 例                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `--prompt`, `-p`               | ヘッドレスモードで実行                                                   | `qwen -p "query"`                                                        |
-| `--output-format`, `-o`        | 出力フォーマットを指定（text、json、stream-json）                        | `qwen -p "query" --output-format json`                                   |
-| `--input-format`               | 入力フォーマットを指定（text、stream-json）                              | `qwen --input-format text --output-format stream-json`                   |
-| `--include-partial-messages`   | stream-json 出力に部分メッセージを含める                                 | `qwen -p "query" --output-format stream-json --include-partial-messages` |
-| `--system-prompt`              | 今回の実行のメインセッションシステムプロンプトを上書き                   | `qwen -p "query" --system-prompt "You are a terse reviewer."`            |
-| `--append-system-prompt`       | 今回の実行のメインセッションシステムプロンプトに追加指示を付加           | `qwen -p "query" --append-system-prompt "Focus on concrete findings."`   |
-| `--debug`, `-d`                | デバッグモードを有効化                                                   | `qwen -p "query" --debug`                                                |
-| `--all-files`, `-a`            | コンテキストにすべてのファイルを含める                                   | `qwen -p "query" --all-files`                                            |
-| `--include-directories`        | 追加ディレクトリを含める                                                 | `qwen -p "query" --include-directories src,docs`                         |
-| `--yolo`, `-y`                 | すべてのアクションを自動承認                                             | `qwen -p "query" --yolo`                                                 |
-| `--approval-mode`              | 承認モードを設定                                                         | `qwen -p "query" --approval-mode auto_edit`                              |
-| `--continue`                   | このプロジェクトの最新セッションを再開                                   | `qwen --continue -p "Pick up where we left off"`                         |
-| `--resume [sessionId]`         | 特定のセッションを再開（またはインタラクティブに選択）                   | `qwen --resume 123e... -p "Finish the refactor"`                         |
-| `--max-session-turns`          | 実行中のユーザー/モデル/ツールターン数の上限を設定                       | `qwen -p "..." --max-session-turns 30`                                   |
-| `--max-wall-time`              | 経過時間の予算。`90`（秒）、`30s`、`5m`、`1h`、`1.5h` の形式を受け付ける | `qwen -p "..." --max-wall-time 10m`                                      |
-| `--max-tool-calls`             | 実行中の累計ツール呼び出し回数の予算                                     | `qwen -p "..." --max-tool-calls 50`                                      |
+| オプション                       | 説明                                                              | 例                                                                    |
+| -------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `--prompt`, `-p`                 | ヘッドレスモードで実行                                            | `qwen -p "query"`                                                      |
+| `--output-format`, `-o`          | 出力フォーマットを指定（text, json, stream-json）                 | `qwen -p "query" --output-format json`                                 |
+| `--input-format`                 | 入力フォーマットを指定（text, stream-json）                       | `qwen --input-format text --output-format stream-json`                 |
+| `--include-partial-messages`     | stream-json出力に部分メッセージを含める                           | `qwen -p "query" --output-format stream-json --include-partial-messages` |
+| `--system-prompt`                | この実行のメインセッションシステムプロンプトを上書き              | `qwen -p "query" --system-prompt "You are a terse reviewer."`          |
+| `--append-system-prompt`         | この実行のメインセッションシステムプロンプトに追加指示を追加      | `qwen -p "query" --append-system-prompt "Focus on concrete findings."` |
+| `--debug`, `-d`                  | デバッグモードを有効化                                            | `qwen -p "query" --debug`                                              |
+| `--all-files`, `-a`              | すべてのファイルをコンテキストに含める                            | `qwen -p "query" --all-files`                                          |
+| `--include-directories`          | 追加のディレクトリを含める                                        | `qwen -p "query" --include-directories src,docs`                       |
+| `--yolo`, `-y`                   | すべてのアクションを自動承認                                      | `qwen -p "query" --yolo`                                               |
+| `--approval-mode`                | 承認モードを設定                                                  | `qwen -p "query" --approval-mode auto_edit`                            |
+| `--continue`                     | このプロジェクトの最新セッションを再開                            | `qwen --continue -p "Pick up where we left off"`                       |
+| `--resume [sessionId]`           | 特定のセッションを再開（または対話的に選択）                      | `qwen --resume 123e... -p "Finish the refactor"`                       |
+| `--max-session-turns`            | 実行におけるユーザー/モデル/ツールのターン数を制限                | `qwen -p "..." --max-session-turns 30`                                 |
+| `--max-wall-time`                | ウォールクロック予算；`90`（秒）、`30s`、`5m`、`1h`、`1.5h`を許可 | `qwen -p "..." --max-wall-time 10m`                                    |
+| `--max-tool-calls`               | 実行における累積ツール呼び出し予算                                | `qwen -p "..." --max-tool-calls 50`                                    |
 
 利用可能なすべての設定オプション、設定ファイル、環境変数の詳細については、[設定ガイド](../configuration/settings)を参照してください。
 
 ## 無人実行時の安全性
 
-ヘッドレス / CI 実行で `--yolo`（または `--approval-mode=yolo`）を使用すると、`shell`、`write`、`edit` を含むすべてのツール呼び出しが自動承認されます。**`--yolo` はサンドボックスを有効にしません** — これらのツールはホストプロセスの権限レベルで実行されます。Qwen Code がサンドボックスを設定せずにこの組み合わせを検出した場合、起動時に stderr へ 1 行の警告を出力します。トレードオフを確認した上で `QWEN_CODE_SUPPRESS_YOLO_WARNING=1` を設定することで警告を非表示にできます。
+ヘッドレス/CI実行と`--yolo`（または`--approval-mode=yolo`）を組み合わせると、`shell`、`write`、`edit`を含むすべてのツール呼び出しが自動承認されます。**`--yolo`はサンドボックスを有効にしません** — これらのツールはホストプロセスの権限レベルで実行されます。Qwen Codeがこの組み合わせを検出し、サンドボックスが設定されていない場合、起動時にstderrに1行の警告を出力します。トレードオフを確認した上で、`QWEN_CODE_SUPPRESS_YOLO_WARNING=1`を設定して警告を抑制できます。
 
 ### 実行レベルの予算
 
-Qwen Code は、以下のしきい値のいずれかを超えた場合に無人実行を中断できます。デフォルトはそれぞれ `-1`（無制限）であり、いずれか一つを設定するだけで暴走を抑制できます。これらは SIGINT と同じ `AbortController` に対して協調的に適用されるため、予算超過時は構造化された `FatalBudgetExceededError`（終了コード **55**）が発生します — ターンキャップの終了コード 53 や SIGINT の 130 とは区別されるため、CI スクリプトで理由に応じた分岐処理が可能です。
+Qwen Codeは、以下のいずれかのしきい値を超えた場合に無人実行を中断できます。各予算はデフォルトで`-1`（無制限）です。ひとつでも設定すれば、暴走動作を抑えるのに十分です。これらは協調的に、SIGINTと同じ`AbortController`に対して適用されるため、予算による中断は構造化された`FatalBudgetExceededError`（終了コード**55**）を出力します。これはターンキャップの終了コード53やSIGINTの130とは異なるため、CIスクリプトが理由に応じて分岐できます。
 
-| フラグ                | 設定キー                   | 制限対象                                                                                                                                                                                                       |
-| --------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--max-wall-time`     | `model.maxWallTimeSeconds` | 実行全体の経過時間。フラグは `90`（秒）、`30s`、`5m`、`1h`、`1.5h`（小数単位対応）を受け付ける。最小 1 秒 — サブ秒の値はタイポとして拒否。設定値は秒単位。                                                    |
-| `--max-tool-calls`    | `model.maxToolCalls`       | メインの実行ループがディスパッチした累計トップレベルのツール呼び出し回数（成功と失敗の両方をカウント — エラー時もモデルはトークンを消費）。サブエージェント / 構造化出力の除外については「スコープ」を参照。   |
-| `--max-session-turns` | `model.maxSessionTurns`    | ユーザー/モデル/ツールターン数。超過時は終了コード 53 で終了（予算超過の終了コード 55 とは異なる）。                                                                                                           |
+| フラグ                  | 設定キー                    | 制限内容                                                                                                                                                                                                                                                                                       |
+| ----------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--max-wall-time`       | `model.maxWallTimeSeconds`  | 実行全体のウォールクロック時間。フラグは`90`（秒）、`30s`、`5m`、`1h`、`1.5h`（小数単位対応）を受け付けます。最小1秒 — 1秒未満の値はタイプミスとして拒否されます。設定は秒単位。                                                                                                                |
+| `--max-tool-calls`      | `model.maxToolCalls`        | メイン実行ループがディスパッチする累積トップレベルツール呼び出し（成功と失敗の両方をカウント — エラー時にもモデルはトークンを消費します）。以下の「スコープ」を参照し、サブエージェント/構造化出力の除外を確認してください。                                                                    |
+| `--max-session-turns`   | `model.maxSessionTurns`     | ユーザー/モデル/ツールのターン数。既存の設定。超過時は終了コード53で終了します（予算超過の55とは異なります）。                                                                                                                                                                                  |
 
 #### スコープ
 
-- **`--max-tool-calls` はトップレベルのディスパッチのみをカウントします。** モデルが `agent` ツールを呼び出すと、そのディスパッチは **1** としてカウントされます。スポーンされたサブエージェントが実行する内部ツール呼び出しはカウント**されません**。サブエージェントを通じて作業を行うモデルは、小さなトップレベル予算のもとで内部的に無制限の作業を行える可能性があります。より厳格な制限が必要な場合は `--exclude-tools agent` と組み合わせてください。
-- **`structured_output` は `--max-tool-calls` から除外されます。** `--json-schema` 下では、モデルの最終的な `structured_output` 呼び出しは「完了」を示す契約であり、実際の作業ではありません — `--max-tool-calls` にカウントされないため、予算ギリギリの完了が誤検知で中断されることはありません。この除外は（Ajv バリデーション失敗を含む）無条件に適用されるため、不正な出力形式でリトライループに入ったモデルは `--max-tool-calls` で制限**されません**。リトライを制限するには `--max-session-turns` または `--max-wall-time` と組み合わせてください。
-- **`structured_output` は `--max-session-turns` から除外されません。** このカウンターは既存のものであり、最終契約を含むすべてのターンでインクリメントされます。`--json-schema` 下で `N` 回の実際の作業ターンを許可する場合は、`--max-session-turns` を `N+1` に設定してください。
-- **シングルショット vs `--input-format stream-json`:** stream-json 入力モードでは、デーモンは各ユーザーメッセージの開始時に予算カウンターをリセットします。予算はプロセス単位ではなくメッセージ単位です。
-- **`qwen serve` / ACP セッション:** デーモン ACP セッションパスは現在、settings.json の `--max-wall-time` / `--max-tool-calls` を参照**しません**。これらの予算は、シングルショットの `qwen -p` 実行と `--input-format stream-json` セッションにのみ適用されます。（`qwen serve` は、settings に `tools.approvalMode: 'yolo'` が設定されている場合、起動時に YOLO-no-sandbox 警告を出力します。）
+- **`--max-tool-calls`はトップレベルのディスパッチのみをカウントします。** モデルが`agent`ツールを呼び出した場合、そのディスパッチは**1**としてカウントされます。起動されたサブエージェントが実行する内部ツール呼び出しはカウント**されません**。サブエージェントに作業を委譲するモデルは、小さなトップレベル予算の下で無制限の内部作業を行う可能性があります。より厳しい制限が必要な場合は、`--exclude-tools agent`を組み合わせてください。
+- **`structured_output`は`--max-tool-calls`の対象外です。** `--json-schema`のもとでは、モデルの最終的な`structured_output`呼び出しは「完了」の契約であり、実際の作業ではありません。そのため、予算ぎりぎりの完了が誤検出で中断されないように、`--max-tool-calls`の対象外となります。この除外は無条件です（失敗したAjv検証も含む）。したがって、不正な出力のリトライループに陥ったモデルは`--max-tool-calls`で制限されません。リトライを制限するには`--max-session-turns`または`--max-wall-time`を組み合わせてください。
+- **`structured_output`は`--max-session-turns`の対象外ではありません。** そのカウンターは既存のもので、最終契約を含むすべてのターンごとに増加します。`--json-schema`のもとで`N`回の実作業ターンを許可したい場合は、`--max-session-turns`を`N+1`に設定してください。
+- **単発実行 vs `--input-format stream-json`：** stream-json入力モードでは、デーモンは各ユーザーメッセージの開始時に予算カウンターをリセットします。予算はプロセス単位ではなく、メッセージ単位です。
+- **`qwen serve` / ACPセッション：** デーモンのACPセッションパスは、現在`settings.json`の`--max-wall-time` / `--max-tool-calls`を参照しません。これらの予算は、単発の`qwen -p`実行と`--input-format stream-json`セッションにのみ適用されます。（`qwen serve`は、設定で`tools.approvalMode: 'yolo'`が設定されている場合、起動時にYOLOサンドボックスなしの警告を出力します。）
 
-### 推奨の組み合わせ
+### 推奨される組み合わせ
 
-- **信頼済みの隔離環境（エフェメラル CI ランナー、コンテナ）:** `qwen -p "..." --yolo --max-session-turns N --max-wall-time 10m --output-format json`。スタックしたエージェントが CI 時間を消費しないようにターン予算とウォールクロック予算を設定し、実行後の使用状況/ツール呼び出し監査のために `--output-format json` をキャプチャします。
-- **ローカルマシンまたは共有インフラ:** `--sandbox`（または `QWEN_SANDBOX=1`）も渡すことで、shell / write / edit ツールをサンドボックスイメージ内で実行します。
-- **レート制限時のリトライを伴う長時間 CI:** `QWEN_CODE_UNATTENDED_RETRY=1` と `--max-wall-time` を組み合わせます。リトライ環境変数により一時的な 429 / 529 レスポンスを超えて実行を継続し、ウォールクロック予算により永続的に失敗するプロバイダーがジョブを無期限に延長するのを防ぎます。
-- **制限付き監査 / 調査:** 読み取り専用タスクには `--max-tool-calls 25` でモデルが grep / read を積極的に行うことを制限します。`--exclude-tools shell,write,edit` と組み合わせることで制限をより意味のあるものにします。
+- **信頼された隔離環境（エフェメラルCIランナー、コンテナ）：** `qwen -p "..." --yolo --max-session-turns N --max-wall-time 10m --output-format json`。ターン予算とウォールクロック予算を設定することで、スタックしたエージェントがCI分を消費し尽くすのを防ぎ、`--output-format json`で実行後の使用状況やツール呼び出しの監査を取得します。
+- **ローカルマシンまたは共有インフラ：** `--sandbox`も指定するか（または`QWEN_SANDBOX=1`を設定）、shell/write/editツールがサンドボックスイメージ内で実行されるようにします。
+- **リトライ可能な長時間実行CI：** `QWEN_CODE_UNATTENDED_RETRY=1`と`--max-wall-time`を組み合わせます。リトライ環境変数により、一時的な429/529応答があっても実行を継続します。ウォールクロック予算により、永続的に失敗するプロバイダーがジョブを無制限に延長することを防ぎます。
+- **制限付きの監査/探索：** 読み取り専用タスクでは、`--max-tool-calls 25`により、モデルがgrep/readを行う頻度を制限します。`--exclude-tools shell,write,edit`を組み合わせて制限を意味のあるものにします。
 
-## 使用例
+## 例
 
 ### コードレビュー
 
@@ -286,7 +286,7 @@ result=$(git diff --cached | qwen -p "Write a concise commit message for these c
 echo "$result" | jq -r '.response'
 ```
 
-### API ドキュメント
+### APIドキュメント
 
 ```bash
 result=$(cat api/routes.js | qwen -p "Generate OpenAPI spec for these routes" --output-format json)
@@ -304,7 +304,7 @@ for file in src/*.py; do
 done
 ```
 
-### PR コードレビュー
+### PRコードレビュー
 
 ```bash
 result=$(git diff origin/main...HEAD | qwen -p "Review these changes for bugs, security issues, and code quality" --output-format json)
@@ -342,27 +342,27 @@ tail -5 usage.log
 
 ## 永続的リトライモード
 
-Qwen Code が CI/CD パイプラインまたはバックグラウンドデーモンとして実行されている場合、短い API 停止（レート制限または過負荷）によって数時間かかるタスクが中断されるべきではありません。**永続的リトライモード**により、Qwen Code はサービスが回復するまで一時的な API エラーを無期限にリトライします。
+Qwen CodeがCI/CDパイプラインやバックグラウンドデーモンとして実行される場合、短時間のAPI障害（レート制限や過負荷）によって長時間のタスクが中断されるべきではありません。**永続的リトライモード**は、サービスが回復するまで、Qwen Codeが一時的なAPIエラーを無期限にリトライします。
 
-### 動作の仕組み
+### 動作仕様
 
-- **一時的なエラーのみ**: HTTP 429（レート制限）と 529（過負荷）のみが無期限にリトライされます。その他のエラー（400、500 など）は通常通り失敗します。
-- **上限付き指数バックオフ**: リトライの間隔は指数的に増加しますが、1 回のリトライあたり最大 **5 分** で上限が設けられています。
-- **ハートビートキープアライブ**: 長い待機中は、CI ランナーが非アクティブによってプロセスを終了しないよう、**30 秒**ごとに stderr にステータス行が出力されます。
-- **グレースフルデグラデーション**: 一時的でないエラーおよびインタラクティブモードは完全に影響を受けません。
+- **一時的なエラーのみ：** HTTP 429（レート制限）および529（過負荷）は無期限にリトライされます。その他のエラー（400、500など）は通常どおり失敗します。
+- **キャップ付き指数バックオフ：** リトライ遅延は指数関数的に増加しますが、リトライごとに最大**5分**でキャップされます。
+- **ハートビートキープアライブ：** 長い待機中、30秒ごとにステータス行がstderrに出力され、CIランナーが非アクティブのためにプロセスを強制終了するのを防ぎます。
+- **グレースフルデグラデーション：** 非一時的なエラーやインタラクティブモードは完全に影響を受けません。
 
 ### 有効化
 
-`QWEN_CODE_UNATTENDED_RETRY` 環境変数を `true` または `1`（厳密一致、大文字小文字を区別）に設定します。
+環境変数`QWEN_CODE_UNATTENDED_RETRY`を`true`または`1`に設定します（厳密一致、大文字小文字区別）：
 
 ```bash
 export QWEN_CODE_UNATTENDED_RETRY=1
 ```
 
 > [!important]
-> 永続的リトライは**明示的なオプトイン**が必要です。`CI=true` だけでは有効化されません — 高速失敗の CI ジョブを無限待機ジョブに暗黙的に変えることは危険です。パイプライン設定で必ず `QWEN_CODE_UNATTENDED_RETRY` を明示的に設定してください。
+> 永続的リトライには**明示的なオプトイン**が必要です。`CI=true`だけでは**有効になりません** — 高速失敗のCIジョブを無期限待機ジョブに静かに変更するのは危険です。パイプライン設定で常に`QWEN_CODE_UNATTENDED_RETRY`を明示的に設定してください。
 
-### 使用例
+### 例
 
 #### GitHub Actions
 
@@ -392,18 +392,18 @@ QWEN_CODE_UNATTENDED_RETRY=1 nohup qwen -p "Audit all dependencies for known CVE
 
 ### モニタリング
 
-永続的リトライ中、ハートビートメッセージが **stderr** に出力されます。
+永続的リトライ中、ハートビートメッセージが**stderr**に出力されます：
 
 ```
 [qwen-code] Waiting for API capacity... attempt 3, retry in 45s
 [qwen-code] Waiting for API capacity... attempt 3, retry in 15s
 ```
 
-これらのメッセージにより CI ランナーが稼働し続け、進行状況を監視できます。stdout には表示されないため、他のツールにパイプされた JSON 出力はクリーンな状態を保ちます。
+これらのメッセージによりCIランナーが存続し、進捗状況を監視できます。これらはstdoutには表示されないため、他のツールにパイプされたJSON出力はクリーンな状態が保たれます。
 
 ## リソース
 
-- [CLI 設定](../configuration/settings#command-line-arguments) - 完全な設定ガイド
-- [認証](../configuration/auth.md) - 認証のセットアップ
+- [CLI設定](../configuration/settings#command-line-arguments) - 完全な設定ガイド
+- [認証](../configuration/auth.md) - 認証の設定
 - [コマンド](../features/commands) - インタラクティブコマンドリファレンス
 - [チュートリアル](../quickstart) - ステップバイステップの自動化ガイド

@@ -1,20 +1,20 @@
 # Feishu (Lark)
 
-Ce guide explique comment configurer un canal Qwen Code sur Feishu (飞书) / Lark.
+Ce guide vous explique comment configurer un canal Qwen Code sur Feishu (飞书) / Lark.
 
 ## Prérequis
 
 - Un compte organisation Feishu
 - Une application Feishu avec un App ID et un App Secret (voir ci-dessous)
 
-## Création d'une application
+## Créer une application
 
-1. Accédez à la [Plateforme ouverte Feishu](https://open.feishu.cn)
-2. Créez une nouvelle application (ou utilisez-en une existante)
+1. Accédez à la [Plateforme Ouverte Feishu](https://open.feishu.cn)
+2. Créez une nouvelle application (ou utilisez une application existante)
 
 ![](https://gw.alicdn.com/imgextra/i4/O1CN01ORb10i1JM0MQfhnsV_!!6000000001013-2-tps-2219-931.png)
 
-3. Dans l'application, activez la capacité **Bot** (添加应用能力 → 机器人)
+3. Sous l'application, activez la capacité **Bot** (添加应用能力 → 机器人)
 
 ![](https://gw.alicdn.com/imgextra/i4/O1CN01bClpxu1FZxyH4kNjJ_!!6000000000502-2-tps-2219-931.png)
 
@@ -46,18 +46,18 @@ Après avoir configuré les permissions et les événements, créez une version 
 
 ## Configuration
 
-Ajoutez le canal dans `~/.qwen/settings.json` :
+Ajoutez le canal à `~/.qwen/settings.json` :
 
 ```json
 {
   "channels": {
     "my-feishu": {
       "type": "feishu",
-      "clientId": "<your-app-id>",
-      "clientSecret": "<your-app-secret>",
+      "clientId": "<votre-app-id>",
+      "clientSecret": "<votre-app-secret>",
       "senderPolicy": "open",
       "sessionScope": "user",
-      "cwd": "/path/to/your/project",
+      "cwd": "/chemin/vers/votre/projet",
       "groupPolicy": "open",
       "collapsible": true,
       "groups": {
@@ -70,17 +70,17 @@ Ajoutez le canal dans `~/.qwen/settings.json` :
 
 ### Options de configuration
 
-| Option                 | Description                                                                      |
-| ---------------------- | -------------------------------------------------------------------------------- |
-| `clientId`             | App ID Feishu                                                                    |
-| `clientSecret`         | App Secret Feishu                                                                |
-| `collapsible`          | Réduire les longues réponses en sections extensibles (par défaut : `false`)      |
-| `collapsibleThreshold` | Seuil de caractères pour la réduction (par défaut : `500`)                       |
-| `webhookPort`          | Si défini, utilise le mode webhook HTTP au lieu de WebSocket                     |
-| `verificationToken`    | Jeton de vérification pour le mode webhook                                       |
-| `encryptKey`           | Clé de chiffrement pour le mode webhook                                          |
+| Option                | Description                                                                      |
+| --------------------- | -------------------------------------------------------------------------------- |
+| `clientId`            | App ID Feishu                                                                    |
+| `clientSecret`        | App Secret Feishu                                                                |
+| `collapsible`         | Réduit les longues réponses en sections extensibles (défaut : `false`)           |
+| `collapsibleThreshold`| Seuil de caractères pour le repli (défaut : `500`)                               |
+| `webhookPort`         | Si défini, utilise le mode webhook HTTP au lieu de WebSocket                     |
+| `verificationToken`   | Jeton de vérification pour le mode webhook                                       |
+| `encryptKey`          | Clé de chiffrement pour le mode webhook                                          |
 
-## Lancement
+## Exécution
 
 ```bash
 # Démarrer uniquement le canal Feishu
@@ -96,7 +96,7 @@ Ouvrez Feishu et envoyez un message au bot. Vous devriez voir une carte interact
 
 ### WebSocket (par défaut)
 
-Le mode WebSocket utilise une connexion longue sortante — aucune URL publique ni serveur n'est nécessaire. Ce mode est recommandé pour la plupart des déploiements.
+Le mode WebSocket utilise une connexion longue sortante — aucune URL publique ni serveur n'est nécessaire. C'est le mode recommandé pour la plupart des déploiements.
 
 ### Webhook
 
@@ -108,76 +108,77 @@ Si vous avez besoin du mode webhook (par exemple pour des applications partagée
     "my-feishu": {
       "type": "feishu",
       "webhookPort": 9321,
-      "verificationToken": "<from-feishu-console>",
-      "encryptKey": "<from-feishu-console>"
+      "verificationToken": "<depuis-la-console-feishu>",
+      "encryptKey": "<depuis-la-console-feishu>"
     }
   }
 }
 ```
 
-Ensuite, définissez l'URL de requête dans la plateforme ouverte Feishu sur `http://<votre-serveur>:9321`.
+Définissez ensuite l'URL de requête dans la Plateforme Ouverte Feishu sur `http://<votre-serveur>:9321`.
 
 ## Discussions de groupe
 
 Les bots Feishu fonctionnent à la fois en conversation privée et en groupe. Pour activer le support des groupes :
 
-1. Définissez `groupPolicy` sur `"allowlist"` ou `"open"` dans la configuration du canal
+1. Définissez `groupPolicy` sur `"allowlist"` ou `"open"` dans la configuration de votre canal
 2. Ajoutez le bot à un groupe Feishu
-3. Mentionnez @bot dans le groupe pour déclencher une réponse
+3. Mentionnez le bot dans le groupe (@mention) pour déclencher une réponse
 
 Par défaut, le bot nécessite une mention @ dans les discussions de groupe (`requireMention: true`). Définissez `"requireMention": false` pour un groupe spécifique afin qu'il réponde à tous les messages.
 
 ## Fonctionnalités
 
-### Streaming par cartes interactives
+### Diffusion en continu des cartes interactives
 
-Les réponses sont affichées sous forme de cartes interactives Feishu avec des mises à jour en temps réel. La carte affiche un indicateur « génération en cours » pendant la production de la réponse, et un bouton **Arrêter** pour annuler la génération.
+Les réponses sont affichées sous forme de cartes interactives Feishu avec mises à jour en temps réel. La carte affiche un indicateur « génération en cours » pendant la production de la réponse, ainsi qu'un bouton **Stop** pour annuler la génération.
 
 ### Contexte de citation/réponse
 
-Lorsque vous répondez à (citation) un message, le contenu cité est automatiquement inclus comme contexte pour l'agent. Cela fonctionne pour :
+Lorsque vous répondez à (citez) un message, le contenu cité est automatiquement inclus comme contexte pour l'agent. Cela fonctionne pour :
 
-- Les messages texte et texte enrichi
+- Les messages textuels et enrichis
 - Les cartes interactives (réponses précédentes du bot)
 
 ### Images et fichiers
 
 Vous pouvez envoyer des photos et des documents au bot :
 
-- **Images :** analysées à l'aide des capacités de vision multimodale
+- **Images :** analysées grâce aux capacités de vision multimodale
 - **Fichiers :** téléchargés et sauvegardés localement pour que l'agent puisse les lire
 
 ### Messages simultanés
 
-Plusieurs utilisateurs peuvent envoyer des messages simultanément dans le même groupe. Chaque message obtient sa propre carte et sa propre réponse indépendante — ils n'interfèrent pas entre eux.
-## Principales différences avec DingTalk
+Plusieurs utilisateurs peuvent envoyer des messages simultanément dans la même discussion de groupe. Chaque message obtient sa propre carte et sa propre réponse indépendante — ils n'interfèrent pas entre eux.
 
-- **Format de réponse :** Utilise les cartes interactives Feishu (schéma v2) avec rendu natif du Markdown, y compris les tableaux
-- **Streaming :** Le contenu de la carte est mis à jour sur place avec des requêtes PATCH limitées (intervalle de 1,5 s)
-- **Connexion :** WebSocket via `@larksuiteoapi/node-sdk` — même modèle sortant uniquement, pas d'URL publique nécessaire
-- **Indicateur de travail :** Une réaction emoji "OnIt" est ajoutée pendant le traitement
-- **Contexte de citation :** Prend en charge la citation des messages textuels et des cartes interactives
+## Différences clés avec DingTalk
+
+- **Format des réponses :** utilise les cartes interactives Feishu (schéma v2) avec rendu Markdown natif, y compris les tableaux
+- **Diffusion en continu :** le contenu de la carte est mis à jour en place avec des requêtes PATCH limitées (intervalle de 1,5 s)
+- **Connexion :** WebSocket via `@larksuiteoapi/node-sdk` — même modèle sortant uniquement, aucune URL publique nécessaire
+- **Indicateur de travail :** une réaction émoji « OnIt » est ajoutée pendant le traitement
+- **Contexte de citation :** permet de citer à la fois les messages textuels et les cartes interactives
 
 ## Dépannage
 
 ### Le bot ne se connecte pas
 
-- Vérifiez que votre App ID et App Secret sont corrects
-- Assurez-vous que **Long Connection** est sélectionné dans les abonnements aux événements
+- Vérifiez que votre App ID et votre App Secret sont corrects
+- Assurez-vous que **Connexion longue** est sélectionné dans les abonnements aux événements
 - Vérifiez que l'événement `im.message.receive_v1` est abonné
 - Consultez la sortie du terminal pour les erreurs de connexion
 
 ### Le bot ne répond pas dans les groupes
 
-- Vérifiez que `groupPolicy` est défini sur `"allowlist"` ou `"open"` (par défaut : `"disabled"`)
-- Assurez-vous de mentionner le bot avec @ dans le message de groupe
-- Vérifiez que le bot a bien été ajouté au groupe
+- Vérifiez que `groupPolicy` est défini sur `"allowlist"` ou `"open"` (la valeur par défaut est `"disabled"`)
+- Assurez-vous de mentionner le bot (@) dans le message du groupe
+- Vérifiez que le bot a été ajouté au groupe
 
-### La carte reste dans l'état "génération"
+### La carte reste à l'état « génération en cours »
 
 - Cela indique généralement que la réponse est terminée mais que la mise à jour finale de la carte a échoué
-- Consultez les logs du terminal pour les erreurs d'API (limitation de débit, limites de taille de carte)
-- Les très longues réponses contenant de nombreux tableaux peuvent atteindre les limites d'éléments de carte de Feishu
+- Consultez les logs du terminal pour les erreurs d'API (limitations de débit, limites de taille de carte)
+- Les très longues réponses avec de nombreux tableaux peuvent atteindre les limites d'éléments de carte Feishu
 
 ### La citation n'inclut pas le contenu de la carte
 

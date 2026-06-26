@@ -2,41 +2,41 @@
 
 ## Обзор
 
-Процесс `qwen serve` — это **один демон = одно рабочее пространство**. Он запускает один HTTP-сервер Express, владеет экземпляром `@qwen-code/acp-bridge` и порождает один дочерний процесс ACP (`qwen --acp`), который выполняет саму среду агента. Несколько клиентов (CLI TUI, IDE-компаньон, боты каналов, веб-BFF, пользовательские скрипты) подключаются по HTTP + SSE и либо используют одну ACP-сессию (`sessionScope: 'single'`, по умолчанию), либо разделяют сессии по потокам общения (`sessionScope: 'thread'`).
+Процесс `qwen serve` — это **один демон = одно рабочее пространство**. Он запускает один HTTP-сервер Express, владеет экземпляром `@qwen-code/acp-bridge` и порождает один дочерний процесс ACP (`qwen --acp`), который выполняет фактическую среду выполнения агента. Несколько клиентов (CLI TUI, IDE companion, IM channel bots, web BFFs, пользовательские скрипты) подключаются через HTTP + SSE и либо используют одну сессию ACP (`sessionScope: 'single'`, по умолчанию), либо разделяют сессии по тредам обсуждения (`sessionScope: 'thread'`).
 
-Внутри дочернего ACP-процесса MCP-серверы являются общими для всего рабочего пространства через `McpTransportPool` (F2): кортеж (имя_сервера + отпечаток_конфигурации) отображается ровно на один MCP-транспорт, независимо от того, сколько сессий его обнаруживают. `MultiClientPermissionMediator` (F3) координатует голосование за разрешения от всех подключенных клиентов в рамках одной из четырёх политик.
+Внутри дочернего процесса ACP MCP-серверы используются всем рабочим пространством через `McpTransportPool` (F2): один кортеж (имя_сервера + отпечаток_конфигурации) отображается на один транспорт MCP, независимо от того, сколько сессий его обнаруживают. `MultiClientPermissionMediator` (F3) моста координирует голосование за разрешения среди всех подключенных клиентов в рамках одной из четырёх политик.
 
-Этот документ даёт **системную картину**, на которую опирается остальная документация. Каждый критический поток показан в виде диаграммы последовательности Mermaid; детали реализации компонентов живут в остальных 18 документах.
+Этот документ даёт общую картину системы, на которой основаны остальные документы документации. Каждый критический поток показан в виде последовательной диаграммы Mermaid; детали реализации каждого компонента находятся в остальных 18 документах.
 
 ## Топология процессов
 
 ```mermaid
 flowchart LR
-    subgraph clients["Клиенты"]
-        WUI["Веб-интерфейс<br/>(packages/webui/src/daemon)"]
+    subgraph clients["Clients"]
+        WUI["Web UI<br/>(packages/webui/src/daemon)"]
         TUI["CLI TUI<br/>(packages/cli/src/ui/daemon)"]
         IDE["VS Code IDE<br/>(packages/vscode-ide-companion)"]
-        CH["Боты каналов<br/>(DingTalk / WeChat / Telegram / Feishu)"]
-        SDK["Любой потребитель SDK<br/>(packages/sdk-typescript/src/daemon)"]
+        CH["Channel bots<br/>(DingTalk / WeChat / Telegram / Feishu)"]
+        SDK["Any SDK consumer<br/>(packages/sdk-typescript/src/daemon)"]
     end
 
-    subgraph daemon["Процесс qwen serve (одно рабочее пространство)"]
-        EXP["Приложение Express<br/>(packages/cli/src/serve/server.ts)"]
+    subgraph daemon["qwen serve process (one workspace)"]
+        EXP["Express app<br/>(packages/cli/src/serve/server.ts)"]
         BR["AcpBridge<br/>(packages/acp-bridge/src/bridge.ts)"]
         MED["MultiClientPermissionMediator<br/>(F3)"]
-        EB["EventBus на сессию<br/>(eventBus.ts)"]
+        EB["EventBus per session<br/>(eventBus.ts)"]
         FS["WorkspaceFileSystem<br/>(cli/src/serve/fs/)"]
     end
 
-    subgraph child["Дочерний процесс ACP (qwen --acp)"]
-        AGT["Среда QwenAgent"]
+    subgraph child["ACP child process (qwen --acp)"]
+        AGT["QwenAgent runtime"]
         POOL["McpTransportPool<br/>(F2, core/src/tools)"]
         BDG["WorkspaceMcpBudget"]
     end
 
-    subgraph external["Внешние"]
-        MCP1["MCP-сервер A<br/>(stdio)"]
-        MCP2["MCP-сервер B<br/>(websocket)"]
+    subgraph external["External"]
+        MCP1["MCP server A<br/>(stdio)"]
+        MCP2["MCP server B<br/>(websocket)"]
     end
 
     WUI -- "HTTP+SSE" --> EXP
@@ -50,25 +50,25 @@ flowchart LR
     BR --> EB
     EXP --> FS
 
-    BR -- "ACP NDJSON по stdio" --> AGT
+    BR -- "ACP NDJSON over stdio" --> AGT
     AGT --> POOL
     POOL --> BDG
-    POOL -- "общий транспорт" --> MCP1
-    POOL -- "общий транспорт" --> MCP2
+    POOL -- "shared transport" --> MCP1
+    POOL -- "shared transport" --> MCP2
 ```
 
-Процесс демона и дочерний процесс ACP соединены через `AcpChannel` (по умолчанию: реальная пара stdio-каналов дочернего процесса; `inMemoryChannel` для тестов). Всё, что делает демон, определяется этим разделением: HTTP- и SSE-трафик завершается в демоне, решения агента и вызовы инструментов выполняются в дочернем процессе, а мост соединяет их.
+Процесс демона и дочерний процесс ACP соединены через `AcpChannel` (по умолчанию: реальная пара stdio-каналов дочернего процесса; `inMemoryChannel` для тестов). Вся работа демона определяется этим разделением: трафик HTTP и SSE завершается в демоне, решения агента и вызовы инструментов выполняются в дочернем процессе, а мост соединяет их.
 
 ## Карта пакетов
 
 ```mermaid
 flowchart TB
     subgraph serve["packages/cli/src/serve"]
-        RQS["run-qwen-serve.ts<br/>(загрузка)"]
+        RQS["run-qwen-serve.ts<br/>(bootstrap)"]
         SRV["server.ts (Express)"]
         CAP["capabilities.ts"]
         AUTH["auth.ts"]
-        FSM["fs/ (песочница)"]
+        FSM["fs/ (sandbox)"]
         DSP["daemon-status-provider.ts"]
     end
 
@@ -94,10 +94,10 @@ flowchart TB
         EVT["events.ts"]
         SSE["sse.ts"]
         AUTHF["DaemonAuthFlow.ts"]
-        UI["ui/* (#4328 + #4353)<br/>нормализатор / транскрипт / хранилище / рендер"]
+        UI["ui/* (#4328 + #4353)<br/>normalizer / transcript / store / render"]
     end
 
-    subgraph adapters["Адаптеры"]
+    subgraph adapters["Adapters"]
         WUIP["webui/src/daemon/<br/>DaemonSessionProvider.tsx"]
         TUIA["cli/src/ui/daemon/<br/>daemon-tui-adapter.ts"]
         CHB["channels/base/<br/>DaemonChannelBridge.ts"]
@@ -119,7 +119,7 @@ flowchart TB
     BR2 --> MED2
     BR2 --> CH2
 
-    BR2 -.порождает.-> core
+    BR2 -.spawns.-> core
     POOL2 --> ENT
     POOL2 --> WBG
     POOL2 --> SMV
@@ -139,8 +139,9 @@ flowchart TB
     DC --> AUTHF
 ```
 
-Три границы доверия имеют значение: HTTP-граница (цепочка middleware из `serve/auth.ts`), граница между мостом и дочерним процессом ACP (NDJSON по stdio, без аутентификации; дочерний процесс доверяет мосту неявно) и граница между агентом и MCP-сервером (агент может вызывать инструменты, взаимодействующие с хостом).
-## Сценарий 1: Жизненный цикл HTTP-запроса
+Три границы доверия имеют значение: граница HTTP (цепочка middleware `serve/auth.ts`), граница между мостом и дочерним процессом ACP (NDJSON через stdio, без аутентификации; дочерний процесс неявно доверяет мосту) и граница между агентом и MCP-сервером (агент может вызывать инструменты, которые взаимодействуют с хостом).
+
+## Workflow 1: жизненный цикл HTTP-запроса
 
 ```mermaid
 sequenceDiagram
@@ -171,9 +172,9 @@ sequenceDiagram
     R-->>C: 200 JSON
 ```
 
-Нестримингые маршруты (prompt, cancel, model switch, metadata, workspace CRUD) завершаются одним JSON-ответом. Потоковый вывод доставляется вне полосы (out-of-band) по SSE-каналу, **не** в виде фрагментированного HTTP-тела в этом соединении. Смотрите сценарий 2.
+Маршруты без стриминга (prompt, cancel, переключение модели, метаданные, CRUD рабочего пространства) завершаются одиночным JSON-ответом. Стриминговый вывод доставляется вне полосы по SSE-каналу, **а не** как фрагментированное HTTP-тело на этом соединении. См. workflow 2.
 
-## Сценарий 2: Доставка и повторное воспроизведение SSE-событий
+## Workflow 2: доставка и повтор событий SSE
 
 ```mermaid
 sequenceDiagram
@@ -195,9 +196,9 @@ sequenceDiagram
     Note over EB,SR: If subscriber queue >= maxQueued,<br/>EventBus emits client_evicted terminal frame<br/>and closes subscriber.
 ```
 
-Кольцевой буфер ограничен (`eventRingSize`, по умолчанию 8000). Переподключающийся клиент, чей `Last-Event-ID` старше головы буфера, получает синтетический сигнал синхронизации и должен вызвать `loadSession` / `resumeSession` для восстановления более глубокого состояния. Медленные клиенты инициируют `slow_client_warning` при заполнении очереди на 75% и `client_evicted` при достижении предела.
+Кольцевой буфер ограничен (`eventRingSize`, по умолчанию 8000). Если переподключающийся клиент отправляет `Last-Event-ID`, который старше начала буфера, он получает синтетический сигнал догоняния и должен вызвать `loadSession` / `resumeSession`, чтобы восстановить более глубокое состояние. Медленные клиенты вызывают `slow_client_warning` при заполнении очереди на 75% и `client_evicted` при достижении предела.
 
-## Сценарий 3: Посредничество разрешений для нескольких клиентов
+## Workflow 3: много клиентское согласование разрешений
 
 ```mermaid
 sequenceDiagram
@@ -240,9 +241,9 @@ sequenceDiagram
     end
 ```
 
-Аварийный выход для кроссполитик: любой клиент может проголосовать `CANCEL_VOTE_SENTINEL`, чтобы замкнуть запрос как `cancelled / agent_cancelled`. Мост защищает от попыток проводных вызывающих абонентов протащить sentinel через обычное поле `optionId` (`InvalidPermissionOptionError`).
+Кросс-политический запасной выход: любой клиент может проголосовать `CANCEL_VOTE_SENTINEL`, чтобы прервать запрос как `cancelled / agent_cancelled`. Мост защищается от попыток протащить sentinel через обычное поле `optionId` из вызовов по сети (`InvalidPermissionOptionError`).
 
-## Сценарий 4: Получение/освобождение/перезапуск пула MCP-транспортов
+## Workflow 4: захват / освобождение / перезапуск пула транспортов MCP
 
 ```mermaid
 sequenceDiagram
@@ -288,9 +289,10 @@ sequenceDiagram
     P->>EB: publish mcp_server_restarted<br/>with stable entryIndex
     P-->>S: single result or {entries: RestartResult[]}
 ```
-`releaseSession(sessionId)` использует обратный индекс `sessionToEntries`, чтобы освободить все записи, удерживаемые сессией, за O(refs). При завершении демона `drainAll()` устанавливает флаг `draining` (отказываясь от новых захватов) и ожидает закрытия каждой записи в пределах настраиваемого таймаута.
 
-## Workflow 5: Жизненный цикл — запуск и корректное завершение
+`releaseSession(sessionId)` использует обратный индекс `sessionToEntries`, чтобы освободить все записи, удерживаемые сессией, за O(refs). При завершении демона `drainAll()` устанавливает флаг `draining` (отказывая в новых захватах) и ожидает закрытия каждой записи в течение настраиваемого тайм-аута.
+
+## Workflow 5: жизненный цикл — запуск и корректное завершение
 
 ```mermaid
 sequenceDiagram
@@ -319,31 +321,31 @@ sequenceDiagram
     Note over Op,RQS: Second SIGTERM during shutdown →<br/>bridge.killAllSync() + process.exit(1) (orphan prevention)
 ```
 
-Двухфазное завершение важно, потому что текущие HTTP-запросы, активные подписчики SSE и текущие вызовы инструментов дочернего процесса ACP — все требуют ограниченных окон для завершения. Если что-то блокирует выполнение дольше установленных сроков, вступает в силу принудительное закрытие, чтобы зависший дочерний процесс не удерживал процесс демона в живых.
+Двухфазное завершение важно, потому что выполняющиеся HTTP-запросы, активные подписчики SSE и выполняющиеся вызовы инструментов дочернего процесса ACP требуют ограниченных окон завершения. Если что-то блокируется после этих дедлайнов, вступает в силу путь принудительного закрытия, чтобы зависший дочерний процесс не мог удерживать демон активным.
 
 ## Критические файлы
 
-| Область ответственности      | Файл                                                        |
-| ---------------------------- | ------------------------------------------------------------|
-| Загрузка                     | `packages/cli/src/serve/run-qwen-serve.ts`                    |
-| Express приложение           | `packages/cli/src/serve/server.ts`                          |
-| Реестр возможностей          | `packages/cli/src/serve/capabilities.ts`                      |
-| Промежуточное ПО аутентификации | `packages/cli/src/serve/auth.ts`                            |
-| Мост (Bridge)                | `packages/acp-bridge/src/bridge.ts`                         |
-| BridgeClient                 | `packages/acp-bridge/src/bridgeClient.ts`                   |
-| Посредник разрешений         | `packages/acp-bridge/src/permissionMediator.ts`             |
-| EventBus                     | `packages/acp-bridge/src/eventBus.ts`                       |
-| Пул транспортов MCP          | `packages/core/src/tools/mcp-transport-pool.ts`             |
-| Бюджет MCP рабочей области   | `packages/core/src/tools/mcp-workspace-budget.ts`           |
-| Файловая система рабочей области | `packages/cli/src/serve/fs/`                                |
-| SDK DaemonClient             | `packages/sdk-typescript/src/daemon/DaemonClient.ts`        |
-| SDK SessionClient            | `packages/sdk-typescript/src/daemon/DaemonSessionClient.ts` |
-| Схема событий                | `packages/sdk-typescript/src/daemon/events.ts`              |
+| Область                     | Файл                                                          |
+| --------------------------- | ------------------------------------------------------------- |
+| Загрузка                    | `packages/cli/src/serve/run-qwen-serve.ts`                    |
+| Express-приложение          | `packages/cli/src/serve/server.ts`                            |
+| Реестр возможностей         | `packages/cli/src/serve/capabilities.ts`                      |
+| Middleware аутентификации   | `packages/cli/src/serve/auth.ts`                              |
+| Мост                        | `packages/acp-bridge/src/bridge.ts`                           |
+| BridgeClient                | `packages/acp-bridge/src/bridgeClient.ts`                     |
+| Посредник разрешений        | `packages/acp-bridge/src/permissionMediator.ts`               |
+| EventBus                    | `packages/acp-bridge/src/eventBus.ts`                         |
+| Пул транспортов MCP         | `packages/core/src/tools/mcp-transport-pool.ts`               |
+| Бюджет MCP рабочего пространства | `packages/core/src/tools/mcp-workspace-budget.ts`         |
+| Файловая система рабочего пространства | `packages/cli/src/serve/fs/`                          |
+| SDK DaemonClient            | `packages/sdk-typescript/src/daemon/DaemonClient.ts`          |
+| SDK SessionClient           | `packages/sdk-typescript/src/daemon/DaemonSessionClient.ts`   |
+| Схема событий               | `packages/sdk-typescript/src/daemon/events.ts`                |
 
 ## Ссылки
 
-- Дизайн-issue: [#3803](https://github.com/QwenLM/qwen-code/issues/3803) (дизайн демона), [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (вехи F-серии).
+- Вопросы дизайна: [#3803](https://github.com/QwenLM/qwen-code/issues/3803) (дизайн демона), [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (вехи серии F).
 - Руководство пользователя: [`../../users/qwen-serve.md`](../../users/qwen-serve.md).
-- Спецификация протокола по проводам: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
-- Дизайн-документ F2: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md).
-- Заметки к дизайну F2: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175), коммиты 4–6.
+- Справочник по протоколу: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
+- Документ дизайна F2: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md).
+- Заметки по дизайну F2: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175), коммиты 4–6.

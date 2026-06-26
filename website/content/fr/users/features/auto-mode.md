@@ -1,101 +1,102 @@
-# Mode Auto
+# Auto Mode
 
-Le mode Auto utilise un classificateur LLM pour évaluer chaque appel d'outil et décider
+Auto Mode utilise un classifieur LLM pour évaluer chaque appel d'outil et décider
 s'il doit être auto-approuvé. Il se situe entre Auto-Edit (qui n'auto-approuve
 que les modifications de fichiers) et YOLO (qui auto-approuve tout).
 
-Cette page est la référence pour configurer et dépanner le mode Auto.
-Pour une introduction, voir l'
-[aperçu du mode d'approbation](./approval-mode.md#4-auto-mode---classifier-driven-approval).
+Cette page est la référence pour configurer et dépanner Auto Mode.
+Pour une introduction, voir la
+[Présentation des modes d'approbation](./approval-mode.md#4-auto-mode---classifier-driven-approval).
 
-## Fonctionnement
+## Comment ça fonctionne
 
-Lorsque vous êtes en mode Auto et que l'agent tente d'exécuter un outil, Qwen Code
+Lorsque vous êtes en Auto Mode et que l'agent tente d'exécuter un outil, Qwen Code
 parcourt trois couches dans l'ordre :
 
-1. **acceptEdits fast-path** — Les modifications/écritures dont le chemin cible se trouve
-   dans l'espace de travail sont auto-approuvées sans invoquer le classificateur.
-   **Exception :** les écritures sur les surfaces d'auto-modification propres à Qwen Code
+1. **Chemin rapide acceptEdits** — Les opérations Édition / Écriture dont le chemin cible est
+   dans l'espace de travail sont auto-approuvées sans invoquer le classifieur.
+   **Exception :** les écritures sur les surfaces d'auto-modification de Qwen Code
    (`.qwen/settings*.json`, `QWEN.md`, `AGENTS.md`, `QWEN.local.md`,
    noms de fichiers de contexte configurés, `.qwen/rules/`, `.qwen/commands/`,
    `.qwen/agents/`, `.qwen/skills/`, `.qwen/hooks/`, `.mcp.json`) et
    les surfaces de persistance (`.git/`, `.husky/`, `package.json`, `.npmrc`,
-   `Makefile`, `.github/workflows/`, etc.) passent par le classificateur
-   même lorsqu'elles sont dans l'espace de travail. Les liens symboliques pointant vers des chemins
-   protégés sont également résolus et rejetés. Les commandes shell qui atteignent ces
-   chemins via `cd && bash -lc '...'` ou d'autres enveloppes passent aussi par
-   le classificateur.
-2. **Liste blanche d'outils sûrs** — Les outils intégrés en lecture seule ou ne traitant que des métadonnées
+   `Makefile`, `.github/workflows/`, etc.) passent par le classifieur
+   même lorsqu'elles sont dans l'espace de travail. Les liens symboliques pointant vers des chemins protégés
+   sont également résolus et rejetés. Les commandes shell qui atteignent ces
+   chemins via `cd && bash -lc '...'` ou d'autres wrappers passent aussi par le
+   classifieur.
+2. **Liste blanche d'outils sûrs** — Les outils intégrés en lecture seule et ne manipulant que des métadonnées
    (Read, Grep, Glob, LS, LSP, TodoWrite, AskUserQuestion, etc.) sont
-   auto-approuvés sans invoquer le classificateur.
-3. **Classificateur LLM** — Tout le reste (commandes shell, requêtes web,
-   création de sous-agents, modifications en dehors de l'espace de travail, outils MCP) est envoyé à
-   un classificateur en deux étapes :
-   - **Étape 1 (rapide)** — ne produit que `{ shouldBlock }`. Environ 300 ms.
+   auto-approuvés sans invoquer le classifieur.
+3. **Classifieur LLM** — Tout le reste (commandes shell, requêtes web,
+   lancements de sous-agents, modifications hors de l'espace de travail, outils MCP) est envoyé à
+   un classifieur en deux étapes :
+   - **Étape 1 (rapide)** — produit uniquement `{ shouldBlock }`. Environ ~300 ms.
      Si `shouldBlock` est `false`, l'action est autorisée et l'appel
-     se poursuit.
-   - **Étape 2 (réflexion)** — ne s'exécute que si l'étape 1 a indiqué blocage. Utilise un
-     examen par raisonnement en chaîne pour réduire les faux positifs de l'étape 1.
+     continue.
+   - **Étape 2 (réflexion)** — ne s'exécute que si l'étape 1 a dit de bloquer. Utilise
+     une réflexion par chaîne de pensée pour réduire les faux positifs de l'étape 1.
      Peut rétrograder le blocage de l'étape 1 en autorisation. Produit la
      `reason` visible par l'utilisateur en cas de blocage.
 
-Le classificateur utilise votre modèle rapide configuré
-(`/model --fast`). Si aucun modèle rapide n'est configuré, le modèle de session principal
-est utilisé à la place.
+Le classifieur utilise votre modèle rapide configuré
+(`/model --fast`). Si aucun modèle rapide n'est configuré, le modèle de session
+principal est utilisé à la place.
 
-## Les règles strictes prévalent toujours
+## Les règles strictes l'emportent toujours
 
-Le mode Auto ne **remplace pas** les règles d'autorisation strictes. Avant que le classificateur
+Auto Mode ne remplace **pas** les règles de permission strictes. Avant que le classifieur
 ne s'exécute :
 
 - Les règles `permissions.deny` bloquent l'action avec la raison de la règle. Le
-  classificateur ne la voit jamais.
-- Les règles `permissions.allow` avec des spécificateurs précis (par ex.
-  `Bash(git status)`, `Read(./docs/**)`) continuent d'autoriser sans
-  le classificateur — **sauf** lorsque l'appel aboutit à une écriture sur un chemin
-  protégé d'auto-modification ou de persistance (voir la liste dans
-  "Fonctionnement"). Dans ce cas, le mode Auto réévalue l'appel via
-  le classificateur pour qu'une règle d'autorisation sur `Bash(*)` ne puisse pas silencieusement
-  se transformer en permission de réécrire les paramètres, commandes, hooks,
-  skills ou serveurs MCP de Qwen Code.
-- Les règles `permissions.ask` imposent une confirmation manuelle même en mode Auto.
+  classifieur ne la voit jamais.
+- Les règles `permissions.allow` avec des spécificateurs spécifiques (par ex.
+  `Bash(git status)`, `Read(./docs/**)`) auto-autorisent sans le
+  classifieur — **sauf** lorsque l'appel correspond à une écriture sur un chemin
+  protégé d'auto-modification ou de persistance (voir la liste sous
+  "Comment ça fonctionne"). Dans ce cas, Auto Mode revérifie l'appel via
+  le classifieur afin qu'une règle allow sur `Bash(*)` ne puisse pas silencieusement se
+  transformer en autorisation de réécrire les paramètres, commandes, hooks,
+  compétences ou serveurs MCP de Qwen Code.
+- Les règles `permissions.ask` forcent une confirmation manuelle même en Auto Mode.
 
-## Les règles d'autorisation trop larges sont retirées en mode Auto
+## Les règles allow trop larges sont supprimées en Auto Mode
 
-Des règles comme les suivantes permettraient à l'agent d'exécuter du code arbitraire
-sans examen du classificateur :
+Des règles comme les suivantes laisseraient l'agent exécuter du code arbitraire
+sans révision du classifieur :
 
-- `Bash` / `Bash(*)` / `Bash()` — auto-autorise toutes les commandes shell
-- `Bash(python:*)`, `Bash(node*)`, `Bash(bash*)` — wildcards d'interpréteurs
+- `Bash` / `Bash(*)` / `Bash()` — auto-autorise toute commande shell
+- `Bash(python:*)`, `Bash(node*)`, `Bash(bash*)` — wildcards d'interpréteur
 - `Agent` / `Agent(coder)` — toute autorisation sur l'outil Agent
 - `Skill` / `Skill(pdf)` — toute autorisation sur l'outil Skill
 
-Lorsque vous entrez en mode Auto, Qwen Code supprime temporairement ces règles de
-l'ensemble d'autorisations actif et affiche un avis les listant. Les règles
-reviennent dès que vous quittez le mode Auto. `settings.json` n'est jamais
+Lorsque vous entrez en Auto Mode, Qwen Code supprime temporairement ces règles de
+l'ensemble de permissions actif et affiche un avis les listant. Les règles
+reviennent dès que vous quittez Auto Mode. `settings.json` n'est jamais
 modifié.
 
-Si vous avez vraiment besoin de ces règles larges, utilisez le mode YOLO à la place.
+Si vous avez vraiment besoin de ces règles larges, utilisez plutôt le mode YOLO.
 
 ## Configuration des indices
 
-Le mode Auto lit `permissions.autoMode` dans votre `settings.json`. Les
+Auto Mode lit `permissions.autoMode` dans votre `settings.json`. Les
 entrées sont des descriptions en langage naturel, pas des motifs de règles — elles sont
-injectées de manière additive dans le prompt système du classificateur en plus des
+injectées de manière additive dans le prompt système du classifieur, en complément des
 valeurs par défaut intégrées.
 
-Il existe trois catégories d'indices plus une liste d'environnement :
+Il existe trois catégories d'indices ainsi qu'une liste d'environnement :
 
-- **`allow`** — actions que le classificateur doit auto-approuver.
-- **`softDeny`** — actions destructrices ou irréversibles que le classificateur doit
-  bloquer **sauf si la demande explicite la plus récente de l'utilisateur demandait
-  exactement cette action et ce périmètre**. Les soft denys peuvent être levés par
-  l'intention de l'utilisateur ; un "oui, fais ce que tu veux" générique ne compte pas.
-- **`hardDeny`** — actions de limite de sécurité que le classificateur doit bloquer
-  en mode Auto, indépendamment de `autoMode.hints.allow` ou de l'intention
-  récente de l'utilisateur. Il s'agit d'une politique du classificateur, pas d'une règle
-  d'autorisation déterministe : elle ne remplace pas `permissions.allow`. Utilisez `permissions.deny`
-  pour les actions qui ne doivent jamais être autorisées par le gestionnaire d'autorisations.
+- **`allow`** — actions que le classifieur doit auto-approuver.
+- **`softDeny`** — actions destructrices ou irréversibles que le classifieur
+  doit bloquer **sauf si la demande explicite la plus récente de l'utilisateur
+  demandait exactement cette action et cette portée**. Les softDeny peuvent être
+  annulées par l'intention de l'utilisateur ; un "oui, fais tout ça" générique
+  ne compte pas.
+- **`hardDeny`** — actions aux limites de sécurité que le classifieur doit bloquer
+  en Auto Mode, indépendamment de `autoMode.hints.allow` ou de l'intention
+  récente de l'utilisateur. Il s'agit d'une politique du classifieur, pas d'une règle de permission
+  déterministe : elle ne remplace pas `permissions.allow`. Utilisez `permissions.deny`
+  pour les actions qui ne doivent jamais être autorisées par le gestionnaire de permissions.
 
 ```json
 {
@@ -105,79 +106,112 @@ Il existe trois catégories d'indices plus une liste d'environnement :
         "allow": [
           "Exécuter poetry install et poetry update dans ce projet Python",
           "Nettoyer les artefacts de build sous ./dist ou ./build",
-          "Lire n'importe quel fichier sous /Users/me/code/"
+          "Lire tout fichier sous /Users/me/code/"
         ],
         "softDeny": [
           "Modifier les paramètres de Qwen Code sauf si je demande explicitement le changement exact",
-          "Exécuter des scripts de migration qui touchent la base de production"
+          "Exécuter des scripts de migration qui touchent la DB de production"
         ],
         "hardDeny": [
-          "Envoyer des secrets ou le contenu de .env vers un point de terminaison réseau",
+          "Envoyer des secrets ou le contenu de .env vers un point d'accès réseau",
           "Modifier quoi que ce soit sous ~/.ssh ou ~/.aws"
         ]
       },
       "environment": [
         "Ceci est un monorepo privé avec une signature de commit stricte",
-        "Les identifiants de production se trouvent dans 1Password, jamais dans des fichiers en clair"
+        "Les identifiants de production sont dans 1Password, jamais dans des fichiers en clair"
       ]
     }
   }
 }
 ```
-`hints.deny` est toujours accepté pour la compatibilité ascendante et est traité comme `softDeny`. Le mélange des deux est possible — les entrées sont concaténées, `softDeny` en premier.
+
+`hints.deny` est toujours accepté pour la rétrocompatibilité et est traité
+comme `softDeny`. Mélanger les deux est possible — les entrées sont concaténées, d'abord
+`softDeny`.
 
 ### Limites de longueur et de nombre
 
-Pour garder le prompt système du classificateur petit :
+Pour garder le prompt système du classifieur petit :
 
-- Chaque entrée est limitée à 200 caractères (les entrées plus longues sont tronquées avec un avertissement).
-- `hints.allow`, `hints.softDeny` et `hints.hardDeny` acceptent jusqu'à 50 entrées chacun.
+- Chaque entrée est limitée à 200 caractères (les entrées plus longues sont tronquées
+  avec un avertissement).
+- `hints.allow`, `hints.softDeny` et `hints.hardDeny` acceptent jusqu'à 50
+  entrées chacune.
 - `environment` accepte jusqu'à 20 entrées.
 
-### Empilement entre fichiers de configuration
+### Cumul entre fichiers de paramètres
 
-`autoMode` est fusionné entre les paramètres système / utilisateur / espace de travail de la même manière que les autres paramètres d'autorisation : les tableaux sont concaténés et dédoublonnés.
+`autoMode` est fusionné entre les paramètres système / utilisateur / espace de travail
+de la même manière que les autres paramètres de permission : les tableaux sont concaténés et
+dédupliqués.
 
-## Interprétation de la décision
+## Lecture de la décision
 
-Lorsque le classificateur bloque une action, l'appel d'outil échoue avec l'un des messages d'erreur suivants :
+Lorsque le classifieur bloque une action, l'appel d'outil échoue avec l'un
+des textes d'erreur suivants :
 
-- **`Blocked by auto mode policy: <reason>`** — le classificateur a jugé l'action dangereuse. La raison provient de l'étape 2 du classificateur.
-- **`Auto mode classifier unavailable; action blocked for safety`** — l'API du classificateur était inaccessible, a expiré ou a renvoyé une réponse non analysable. C'est un comportement de sécurité par défaut : en cas de doute, bloquer.
+- **`Bloqué par la politique du mode auto : <raison>`** —
+  le classifieur a jugé l'action dangereuse. La raison provient de l'étape
+  2 du classifieur.
+- **`Classifieur du mode auto indisponible ; action bloquée par sécurité`** —
+  l'API du classifieur était injoignable, a expiré ou a renvoyé une
+  réponse non analysable. Il s'agit d'un comportement de fermeture en cas d'échec : en cas de doute,
+  bloquer.
 
-Les deux messages sont suivis d'une ligne de guidage finale indiquant à l'agent que **l'action refusée spécifiquement** ne doit pas être accomplie via un autre outil, indirection shell, script généré, alias, lien symbolique, changement de configuration, hook, fichier de commandes, configuration MCP, charge utile encodée, ou tout chemin équivalent. **Les travaux sécurisés sans rapport et les alternatives réellement plus sûres sont toujours autorisées** — seules les tentatives d'accomplir la même intention refusée via une surface différente sont bloquées.
+Les deux messages sont suivis d'une ligne d'orientation indiquant à l'agent
+que l'**action refusée spécifiquement** ne doit pas être effectuée via un autre
+outil, une indirection shell, un script généré, un alias, un lien symbolique, un changement de
+configuration, un hook, un fichier de commande, une configuration MCP, un payload encodé
+ou une voie équivalente. **Les tâches sûres sans rapport et les alternatives réellement plus
+sûres sont toujours autorisées** — seules les tentatives d'accomplir la même intention refusée
+via une surface différente sont bloquées.
 
-Si l'action refusée est réellement nécessaire, l'agent doit s'arrêter et vous demander une approbation explicite plutôt que de contourner le refus.
+Si l'action refusée est réellement nécessaire, l'agent doit s'arrêter et
+vous demander une approbation explicite plutôt que de contourner le refus.
 
-### Langue des raisons du classificateur
+### Langue des raisons du classifieur
 
-Les raisons du classificateur sont produites par le LLM et ne sont pas traduites. Si vous souhaitez des raisons non anglaises, ajoutez une indication comme `Respond reasons in Chinese` à `permissions.autoMode.environment`.
+Les raisons du classifieur sont produites par le LLM et ne sont pas traduites. Si vous
+souhaitez des raisons non anglaises, ajoutez un indice comme
+`Répondre les raisons en chinois` à `permissions.autoMode.environment`.
 
 ## Repli vers l'approbation manuelle
 
-Le mode automatique vous évite de rester bloqué :
+Auto Mode vous protège contre les blocages :
 
-- Après **3 blocages consécutifs par la politique**, le prochain appel d'outil bascule vers l'invite d'approbation manuelle standard. Cela couvre le cas où l'agent continue d'essayer des variantes mineures d'une commande interdite.
-- Après **2 résultats indisponibles consécutifs** (échecs de l'API du classificateur), le prochain appel d'outil bascule également. Cela évite d'attendre un classificateur défaillant.
+- Après **3 blocages consécutifs par la politique**, l'appel d'outil suivant revient à
+  l'invite d'approbation manuelle standard. Cela couvre le cas où l'agent
+  essaie sans cesse de petites variantes d'une commande interdite.
+- Après **2 résultats consécutifs d'indisponibilité** (échecs de l'API du classifieur),
+  l'appel d'outil suivant revient également en arrière. Cela évite d'attendre un
+  classifieur défaillant.
 
-La session elle-même reste en mode automatique — seul l'appel de repli unique passe par l'approbation manuelle. Les compteurs se réinitialisent lorsque vous approuvez l'appel de repli ou changez de mode.
+La session elle-même reste en Auto Mode — seul l'appel de repli unique
+passe par une approbation manuelle. Les compteurs se réinitialisent lorsque vous approuvez l'appel de
+repli ou changez de mode.
 
-Si vous rencontrez constamment des replis, les causes les plus probables sont une panne de l'API du classificateur ou des indications nécessitant un ajustement. Passez en mode par défaut pendant que vous enquêtez.
+Si vous rencontrez constamment des replis, les causes les plus probables
+sont une panne de l'API du classifieur ou des indices nécessitant un réglage. Passez en
+mode par défaut pendant que vous examinez le problème.
 
 ## Dépannage
 
-**"Le mode automatique bloque mes commandes"**
+**"Le mode auto bloque constamment mes commandes"**
 
-Regardez la raison dans le message d'erreur. Si le classificateur est trop conservateur pour votre contexte, ajoutez une entrée à `permissions.autoMode.hints.allow` décrivant le modèle en langage naturel. Exemples :
+Regardez la raison dans le message d'erreur. Si le classifieur est trop
+conservateur pour votre contexte, ajoutez une entrée dans
+`permissions.autoMode.hints.allow` décrivant le motif en langage
+naturel. Exemples :
 
-- `"Building Docker images for this project (docker build ...)"`
-- `"Running database migrations against the local test DB"`
+- `"Construction d'images Docker pour ce projet (docker build ...)"`
+- `"Exécution de migrations de base de données sur la base de test locale"`
 
-**"Classificateur du mode automatique indisponible"**
+**"Classifieur du mode auto indisponible"**
 
-L'API du classificateur n'a pas répondu. Causes possibles :
+L'API du classifieur n'a pas répondu. Causes possibles :
 
-- Problème réseau entre vous et le point de terminaison du modèle.
+- Problème réseau entre vous et le point d'accès du modèle.
 - Le modèle rapide configuré n'est plus disponible — vérifiez `/model --fast`.
 - Le transcript est trop long et dépasse la fenêtre de contexte du modèle rapide.
 
@@ -185,48 +219,91 @@ Pendant le diagnostic, repassez en mode par défaut : `/approval-mode default`.
 
 **"Repli vers l'approbation manuelle"**
 
-Vous avez atteint soit la protection des 3 blocages consécutifs, soit celle des 2 indisponibilités consécutives. Approuvez ou rejetez l'invite comme d'habitude. Après un repli approuvé, le compteur consécutif se réinitialise.
+Vous avez atteint le garde-fou de 3 blocages consécutifs ou de 2 indisponibilités consécutives.
+Approuvez ou rejetez l'invite comme d'habitude. Après un repli approuvé,
+le compteur de consécutifs se réinitialise.
 
-**"Le classificateur voit des données sensibles dans mes invites"**
+**Le classifieur voit des données sensibles dans mes invites**
 
-Les entrées des outils sont projetées via la méthode `toAutoClassifierInput` de chaque outil avant d'atteindre le classificateur. Les longs contenus d'édition, les invites de récupération web et les invites de sous-agent sont tronqués. Les résultats des outils (contenus de fichiers, pages web) ne sont jamais envoyés au classificateur — seuls le texte de l'utilisateur et les appels d'utilisation d'outils de l'assistant passent.
+Les entrées des outils sont projetées via la méthode `toAutoClassifierInput` de chaque outil
+avant d'atteindre le classifieur. Les longs contenus d'édition, les invites de requête web
+et les invites de sous-agent sont tronqués. Les résultats des outils (contenus des fichiers,
+pages web) ne sont jamais envoyés au classifieur — seuls le texte de l'utilisateur
+et les appels d'outils de l'assistant passent par lui.
 
-Si un outil spécifique expose des champs que vous préférez masquer, signalez un problème avec le nom de l'outil ; la projection est par outil et est censée être resserrée au fil du temps.
+Si un outil expose des champs que vous préférez masquer, signalez un problème
+avec le nom de l'outil ; la projection est spécifique à chaque outil et est destinée à être
+renforcée au fil du temps.
 
 ## Limitations
 
-- **Pas capable hors ligne.** Le classificateur nécessite un appel LLM.
-- **Ajoute de la latence sur le chemin lent.** La liste blanche + acceptEdits couvrent la plupart des appels sans latence, mais un `run_shell_command` ajoute généralement ~300ms (chemin rapide du classificateur) ou ~3-5s (chemin lent avec revue de réflexion).
-- **Ne remplace pas les règles `deny`.** Le classificateur est au mieux. Pour les commandes qui ne doivent jamais être exécutées, placez-les dans `permissions.deny`.
-- **Les outils MCP sont par défaut bloqués de manière conservative.** Les outils MCP tiers (`mcp__*`) adhèrent au transfert d'arguments via la redéfinition de `toAutoClassifierInput`. Les outils qui n'ont pas adhéré n'exposent que leur nom au classificateur — la plupart de ces appels sont bloqués de manière conservative sauf si vous avez écrit une règle `allow` explicite. C'est un échec fermé par conception (les identifiants et le contenu volumineux ne fuient pas dans le LLM du classificateur). Si vous faites confiance à un outil MCP spécifique, ajoutez `permissions.allow: ["mcp__server__tool"]` pour qu'il contourne complètement le classificateur.
+- **Pas utilisable hors ligne.** Le classifieur nécessite un appel LLM.
+- **Ajoute de la latence sur le chemin lent.** La liste blanche + acceptEdits couvrent la plupart
+  des appels sans latence, mais un `run_shell_command` ajoute généralement
+  ~300 ms (chemin rapide du classifieur) ou ~3-5 s (chemin lent avec réflexion).
+- **Ne remplace pas les règles `deny`.** Le classifieur fait de son mieux.
+  Pour les commandes dont vous êtes sûr qu'elles ne doivent jamais être exécutées, mettez-les dans
+  `permissions.deny`.
+- **Les outils MCP sont bloqués de manière conservatrice par défaut.** Les outils MCP tiers
+  (`mcp__*`) optent pour le transfert d'arguments via la
+  redéfinition `toAutoClassifierInput`. Les outils qui n'ont pas opté exposent
+  uniquement leur nom au classifieur — la plupart de ces appels sont
+  bloqués de manière conservatrice, sauf si vous avez écrit une règle `allow`
+  explicite. C'est une fermeture par conception (les identifiants et le contenu
+  volumineux ne fuient pas vers le LLM du classifieur). Si vous faites confiance à un
+  outil MCP spécifique, ajoutez `permissions.allow: ["mcp__serveur__outil"]` pour
+  qu'il contourne complètement le classifieur.
+
 ## FAQ
 
-**Est-ce que le mode Auto envoie mon code à un tiers ?**
+**Auto Mode envoie-t-il mon code à un tiers ?**
 
-Le mode Auto réutilise votre configuration de modèle existante — le même point de terminaison que l'agent principal. Si vous avez configuré Qwen Code pour utiliser un modèle auto-hébergé, le classificateur s'exécute également sur ce point de terminaison.
+Auto Mode réutilise votre configuration de modèle existante — même point d'accès que
+l'agent principal. Si vous avez configuré Qwen Code pour utiliser un modèle
+auto-hébergé, le classifieur utilise également ce point d'accès.
 
-**Est-ce que mes secrets / le contenu du `.env` parviennent au classificateur ?**
+**Mes secrets / le contenu de `.env` atteignent-ils le classifieur ?**
 
-Le classificateur ne voit que ce que la projection `toAutoClassifierInput` de chaque outil expose :
+Le classifieur ne voit que ce que la projection `toAutoClassifierInput`
+de chaque outil expose :
 
-- `read_file` et autres outils en lecture seule : non invoqués (ils sont dans la liste blanche du chemin rapide).
-- `edit` / `write_file` : le chemin du fichier plus les 80 premiers caractères du contenu ancien/nouveau. Le contenu complet n'est pas transmis.
-- `run_shell_command` : la commande complète (c'est nécessaire — c'est ce que le classificateur évalue).
-- `web_fetch` : l'URL uniquement. Le champ `prompt` n'est pas transmis.
-- `agent` : le type de sous-agent plus le prompt complet. Le prompt est l'instruction que le sous-agent va suivre, donc le classificateur en a besoin en entier pour détecter les attaques qui orienteraient le sous-agent vers des actions destructrices — même raison pour laquelle `run_shell_command` transmet la commande complète.
+- `read_file` et autres outils en lecture seule : non invoqués (ils sont sur la
+  liste blanche du chemin rapide).
+- `edit` / `write_file` : chemin du fichier plus les 80 premiers caractères du
+  contenu ancien/nouveau. Le contenu complet n'est pas transmis.
+- `run_shell_command` : la commande complète (elle doit l'être — c'est ce que le
+  classifieur juge).
+- `web_fetch` : l'URL uniquement. Le champ prompt n'est pas transmis.
+- `agent` : type du sous-agent plus le prompt complet. Le prompt est l'instruction
+  que le sous-agent suivra, donc le classifieur en a besoin
+  en entier pour détecter les attaques qui orienteraient le sous-agent vers des
+  actions destructrices — même raison pour laquelle `run_shell_command` transmet la
+  commande complète.
 
-Les résultats des outils (le contenu réel renvoyé par les outils) sont entièrement supprimés du transcript du classificateur.
+Les résultats des outils (le contenu réel renvoyé par les outils) sont supprimés
+du transcript du classifieur entièrement.
 
-Les outils MCP (`mcp__*`) suivent une valeur par défaut plus stricte : leurs paramètres ne sont pas transmis, sauf si l'auteur de l'outil MCP a explicitement activé la surcharge `toAutoClassifierInput`. Le classificateur voit le nom de l'outil mais aucun argument, donc la plupart des appels MCP seront bloqués par défaut, sauf si l'utilisateur a écrit une règle d'autorisation explicite. C'est un échec par conception — les outils tiers ne doivent pas fuiter de credentials ou de contenu volumineux de fichiers dans le LLM du classificateur sans intention.
+Les outils MCP (`mcp__*`) suivent une valeur par défaut plus stricte : leurs paramètres ne
+sont pas transmis, sauf si l'auteur de l'outil MCP a explicitement opté via la
+redéfinition `toAutoClassifierInput`. Le classifieur voit le nom de l'outil
+mais aucun argument, donc la plupart des appels MCP seront bloqués de manière conservatrice,
+sauf si l'utilisateur a écrit une règle allow explicite. Il s'agit d'une
+fermeture par conception — les outils tiers ne doivent pas fuir d'identifiants ou
+de contenu de fichier volumineux vers le LLM du classifieur sans intention.
 
-**Puis-je désactiver le message d'information de première utilisation ?**
+**Puis-je désactiver le message d'information de la première fois ?**
 
-Il ne s'affiche qu'une fois par fichier de paramètres utilisateur. Après avoir été ignoré, `ui.autoModeAcknowledged: true` est défini dans vos paramètres utilisateur.
+Il ne s'affiche qu'une fois par fichier de paramètres utilisateur. Après
+l'avoir rejeté, `ui.autoModeAcknowledged: true` est défini dans vos paramètres
+utilisateur.
 
-**En quoi cela diffère-t-il de Auto-Edit ?**
+**En quoi est-ce différent d'Auto-Edit ?**
 
-Auto-Edit approuve automatiquement les modifications de fichiers et rien d'autre — les commandes shell demandent toujours confirmation. Le mode Auto utilise un classificateur pour également approuver automatiquement les commandes shell sûres et autres appels d'outils tout en bloquant les risques.
+Auto-Edit auto-approuve les modifications de fichiers et rien d'autre — les commandes
+shell demandent toujours. Auto Mode utilise un classifieur pour aussi auto-approuver les commandes shell
+sûres et autres appels d'outils tout en bloquant les risques.
 
-**En quoi cela diffère-t-il de YOLO ?**
+**En quoi est-ce différent de YOLO ?**
 
-YOLO approuve tout automatiquement sans aucune vérification. Le mode Auto a le classificateur dans la boucle et bloque les actions risquées.
+YOLO auto-approuve tout sans aucune révision. Auto Mode a le
+classifieur dans la boucle et bloque les actions risquées.

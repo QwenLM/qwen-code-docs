@@ -1,4 +1,4 @@
-# Início Rápido
+# Guia de início rápido
 
 > 👏 Bem-vindo ao Qwen Code!
 
@@ -10,13 +10,13 @@ Certifique-se de ter:
 
 - Um **terminal** ou prompt de comando aberto
 - Um projeto de código para trabalhar
-- Uma chave de API do Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)), ou uma assinatura do Plano de Codificação da Alibaba Cloud ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))
+- Uma chave de API do Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)), ou uma assinatura do Alibaba Cloud Coding Plan ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) / [intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index))
 
 ## Passo 1: Instalar o Qwen Code
 
 Para instalar o Qwen Code, use um dos seguintes métodos:
 
-### Instalação Rápida (Recomendado)
+### Instalação rápida (Recomendado)
 
 **Linux / macOS**
 
@@ -32,9 +32,9 @@ irm https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-q
 
 > [!note]
 >
-> Recomenda-se reiniciar o terminal após a instalação para garantir que as variáveis de ambiente entrem em vigor.
+> É recomendado reiniciar o terminal após a instalação para garantir que as variáveis de ambiente entrem em vigor.
 
-### Instalação Manual
+### Instalação manual
 
 **Pré-requisitos**
 
@@ -54,7 +54,7 @@ brew install qwen-code
 
 ## Passo 2: Configurar autenticação
 
-Ao iniciar uma sessão interativa com o comando `qwen`, você será solicitado a configurar a autenticação:
+Quando você iniciar uma sessão interativa com o comando `qwen`, será solicitado a configurar a autenticação:
 
 ```bash
 # Você será solicitado a configurar a autenticação no primeiro uso
@@ -66,20 +66,20 @@ qwen
 /auth
 ```
 
-O menu da primeira execução permite conectar um provedor de modelo. Escolha um dos:
+O menu de primeira execução permite conectar um provedor de modelo. Escolha um dos seguintes:
 
 - **Alibaba ModelStudio** — a configuração recomendada. Abre um submenu:
-  - **Plano de Codificação**: para desenvolvedores individuais, com uma cota semanal inclusa e diversas opções de modelo. Consulte o [guia do Plano de Codificação](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) para instruções de configuração.
-  - **Plano de Token**: faturamento baseado em uso com um endpoint dedicado, voltado para equipes e empresas.
-  - **Chave de API Padrão**: conecte-se com uma chave de API existente do Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Veja o guia de configuração de API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) para detalhes.
-- **Provedores Terceiros** — escolha um provedor integrado (DeepSeek, MiniMax, Z.AI, ModelScope, OpenRouter, Requesty e outros) e conecte-se com uma chave de API.
-- **Provedor Personalizado** — conecte manualmente um servidor local, proxy ou provedor não suportado.
+  - **Coding Plan**: para desenvolvedores individuais, com uma cota semanal inclusa e diversas opções de modelos. Veja o [guia do Coding Plan](https://bailian.console.aliyun.com/cn-beijing/?tab=coding-plan#/efm/coding-plan-index) ([intl](https://modelstudio.console.alibabacloud.com/?tab=coding-plan#/efm/coding-plan-index)) para instruções de configuração.
+  - **Token Plan**: faturamento baseado em uso com um endpoint dedicado, voltado para equipes e empresas.
+  - **Standard API Key**: conecte-se com uma chave de API existente do Alibaba Cloud ModelStudio ([Beijing](https://bailian.console.aliyun.com/) / [intl](https://modelstudio.console.alibabacloud.com/)). Veja o guia de configuração de API ([Beijing](https://bailian.console.aliyun.com/cn-beijing/?tab=doc#/doc/?type=model&url=3023091) / [intl](https://modelstudio.console.alibabacloud.com/ap-southeast-1?tab=doc#/doc/?type=model&url=2974721)) para detalhes.
+- **Provedores de terceiros** — escolha um provedor embutido (DeepSeek, MiniMax, Z.AI, ModelScope, OpenRouter, Requesty e outros) e conecte-se com uma chave de API.
+- **Provedor personalizado** — conecte manualmente um servidor local, proxy ou provedor não suportado.
 
-> ⚠️ **Nota**: O Qwen OAuth foi descontinuado em 15 de abril de 2026. Se você estava usando o Qwen OAuth anteriormente, mude para um dos métodos acima.
+> ⚠️ **Nota**: O Qwen OAuth foi descontinuado em 15 de abril de 2026. Se você estava usando o Qwen OAuth anteriormente, alterne para um dos métodos acima.
 
 > [!note]
 >
-> Quando você autentica o Qwen Code pela primeira vez com sua conta Qwen, um espaço de trabalho chamado ".qwen" é criado automaticamente para você. Este espaço de trabalho fornece rastreamento e gerenciamento de custos centralizados para todo o uso do Qwen Code em sua organização.
+> Quando você autenticar o Qwen Code pela primeira vez com sua conta Qwen, um workspace chamado ".qwen" é criado automaticamente para você. Este workspace oferece rastreamento e gerenciamento centralizado de custos para todo o uso do Qwen Code em sua organização.
 
 > [!tip]
 >
@@ -92,11 +92,11 @@ Abra seu terminal em qualquer diretório de projeto e inicie o Qwen Code:
 ```bash
 # opcional
 cd /caminho/para/seu/projeto
-# inicia qwen
+# inicia o qwen
 qwen
 ```
 
-Você verá a tela de boas-vindas do Qwen Code com as informações da sua sessão, conversas recentes e últimas atualizações. Digite `/help` para ver os comandos disponíveis.
+Você verá a tela de boas-vindas do Qwen Code com informações da sessão, conversas recentes e últimas atualizações. Digite `/help` para comandos disponíveis.
 
 ## Converse com o Qwen Code
 
@@ -120,7 +120,7 @@ o que o Qwen Code pode fazer?
 
 ### Faça sua primeira alteração de código
 
-Agora vamos fazer o Qwen Code realizar alguma codificação de verdade. Tente uma tarefa simples:
+Agora vamos fazer o Qwen Code codificar de verdade. Tente uma tarefa simples:
 
 ```
 adicione uma função hello world ao arquivo principal
@@ -135,17 +135,18 @@ O Qwen Code irá:
 
 > [!note]
 >
-> O Qwen Code sempre pede permissão antes de modificar arquivos. Você pode aprovar alterações individuais ou ativar o modo "Aceitar todas" para uma sessão.
+> O Qwen Code sempre pede permissão antes de modificar arquivos. Você pode aprovar alterações individuais ou ativar o modo "Aceitar tudo" para uma sessão.
 
 ### Use Git com o Qwen Code
 
 O Qwen Code torna as operações Git conversacionais:
 
 ```
-quais arquivos eu modifiquei?
+quais arquivos eu alterei?
 ```
+
 ```
-faça um commit das minhas alterações com uma mensagem descritiva
+commite minhas alterações com uma mensagem descritiva
 ```
 
 Você também pode solicitar operações Git mais complexas:
@@ -162,9 +163,9 @@ mostre os últimos 5 commits
 ajude-me a resolver conflitos de merge
 ```
 
-### Corrigir um bug ou adicionar uma funcionalidade
+### Corrigir um bug ou adicionar um recurso
 
-O Qwen Code é proficiente em depuração e implementação de funcionalidades.
+O Qwen Code é proficiente em depuração e implementação de recursos.
 
 Descreva o que você deseja em linguagem natural:
 
@@ -175,7 +176,7 @@ adicione validação de entrada ao formulário de registro de usuário
 Ou corrija problemas existentes:
 
 ```
-há um bug onde os usuários podem enviar formulários vazios - corrija isso
+há um bug onde os usuários podem enviar formulários vazios — corrija isso
 ```
 
 O Qwen Code irá:
@@ -187,7 +188,7 @@ O Qwen Code irá:
 
 ### Teste outros fluxos de trabalho comuns
 
-Existem várias maneiras de trabalhar com o Qwen Code:
+Há várias maneiras de trabalhar com o Qwen Code:
 
 **Refatorar código**
 
@@ -215,27 +216,27 @@ revise minhas alterações e sugira melhorias
 
 > [!tip]
 >
-> **Lembre-se**: O Qwen Code é seu programador parceiro de IA. Fale com ele como faria com um colega prestativo - descreva o que deseja alcançar, e ele o ajudará a chegar lá.
+> **Lembre-se**: O Qwen Code é seu programador parceiro de IA. Converse com ele como faria com um colega útil — descreva o que deseja alcançar, e ele o ajudará a chegar lá.
 
 ## Comandos essenciais
 
 Aqui estão os comandos mais importantes para uso diário:
 
-| Comando              | O que faz                                        | Exemplo                       |
-| -------------------- | ------------------------------------------------ | ----------------------------- |
-| `qwen`               | iniciar o Qwen Code                              | `qwen`                        |
-| `/auth`              | Alterar método de autenticação (na sessão)       | `/auth`                       |
-| `/doctor`            | Verificar autenticação e ambiente atuais         | `/doctor`                     |
-| `/help`              | Exibir informações de ajuda para comandos disponíveis | `/help` ou `/?`               |
-| `/compress`          | Substituir histórico do chat por resumo para economizar Tokens | `/compress`                   |
-| `/clear`             | Limpar o conteúdo da tela do terminal            | `/clear` (atalho: `Ctrl+L`)   |
-| `/theme`             | Alterar o tema visual do Qwen Code               | `/theme`                      |
-| `/language`          | Visualizar ou alterar configurações de idioma    | `/language`                   |
-| → `ui [idioma]`      | Definir idioma da interface                      | `/language ui pt-BR`          |
-| → `output [idioma]`  | Definir idioma de saída do LLM                   | `/language output Português`  |
-| `/quit`              | Sair do Qwen Code imediatamente                  | `/quit` ou `/exit`            |
+| Comando             | O que faz                                           | Exemplo                       |
+| ------------------- | --------------------------------------------------- | ----------------------------- |
+| `qwen`              | iniciar o Qwen Code                                 | `qwen`                        |
+| `/auth`             | Alterar método de autenticação (na sessão)           | `/auth`                       |
+| `/doctor`           | Verificar autenticação e ambiente atuais            | `/doctor`                     |
+| `/help`             | Exibir ajuda para comandos disponíveis              | `/help` ou `/?`               |
+| `/compress`         | Substituir histórico de chat por resumo para economizar Tokens | `/compress`                   |
+| `/clear`            | Limpar conteúdo da tela do terminal                 | `/clear` (atalho: `Ctrl+L`)   |
+| `/theme`            | Alterar tema visual do Qwen Code                     | `/theme`                      |
+| `/language`         | Visualizar ou alterar configurações de idioma        | `/language`                   |
+| → `ui [idioma]`     | Definir idioma da interface                         | `/language ui zh-CN`          |
+| → `output [idioma]` | Definir idioma de saída do LLM                      | `/language output Chinese`    |
+| `/quit`             | Sair do Qwen Code imediatamente                     | `/quit` ou `/exit`            |
 
-Consulte a [referência CLI](./features/commands) para uma lista completa de comandos.
+Veja a [referência da CLI](./features/commands) para uma lista completa de comandos.
 
 ## Dicas profissionais para iniciantes
 
@@ -249,9 +250,9 @@ Consulte a [referência CLI](./features/commands) para uma lista completa de com
 - Divida tarefas complexas em etapas:
 
 ```
-1. crie uma nova tabela de banco de dados para perfis de usuário
-2. crie um endpoint de API para obter e atualizar perfis de usuário
-3. construa uma página web que permita aos usuários ver e editar suas informações
+1. criar uma nova tabela de banco de dados para perfis de usuário
+2. criar um endpoint de API para obter e atualizar perfis de usuário
+3. construir uma página web que permita aos usuários ver e editar suas informações
 ```
 
 **Deixe o Qwen Code explorar primeiro**
@@ -263,14 +264,14 @@ analise o esquema do banco de dados
 ```
 
 ```
-construa um dashboard mostrando produtos que são mais frequentemente devolvidos por nossos clientes do Reino Unido
+crie um dashboard mostrando produtos que são mais frequentemente devolvidos por nossos clientes no Reino Unido
 ```
 
 **Economize tempo com atalhos**
 
 - Pressione `?` para ver todos os atalhos de teclado disponíveis
 - Use Tab para completar comandos
-- Pressione ↑ para o histórico de comandos
+- Pressione ↑ para histórico de comandos
 - Digite `/` para ver todos os comandos de barra
 
 ## Obtendo ajuda

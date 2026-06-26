@@ -1,74 +1,74 @@
-# Agent Skills
+# 智能体技能
 
-> 创建、管理和共享 Skills，扩展 Qwen Code 的能力。
+> 创建、管理和共享技能，以扩展 Qwen Code 的能力。
 
-本指南介绍如何在 **Qwen Code** 中创建、使用和管理 Agent Skills。Skills 是模块化的能力单元，通过包含指令（以及可选的脚本/资源）的有组织目录来增强模型的效能。
+本指南将介绍如何在 **Qwen Code** 中创建、使用和管理智能体技能。技能是通过包含指令（以及可选的脚本/资源）的文件夹来模块化扩展模型能力的组件。
 
 ## 前提条件
 
 - Qwen Code（最新版本）
-- 熟悉 Qwen Code 基础用法（[快速入门](../quickstart.md)）
+- 熟悉 Qwen Code 的基本使用（[快速入门](../quickstart.md)）
 
-## 什么是 Agent Skills？
+## 什么是智能体技能？
 
-Agent Skills 将专业知识打包成可发现的能力单元。每个 Skill 由一个 `SKILL.md` 文件组成，其中包含模型在适当时机可加载的指令，以及可选的脚本和模板等支持文件。
+智能体技能将专业知识封装为可发现的能力。每个技能包含一个 `SKILL.md` 文件，其中包含模型在相关时可以加载的指令，以及可选的辅助文件（如脚本和模板）。
 
-### Skills 的调用方式
+### 技能如何被调用
 
-Skills 是**模型调用**的 — 模型根据你的请求和 Skill 的描述自主决定何时使用它。这与 slash 命令不同，slash 命令是**用户调用**的（你需要显式输入 `/command`）。
+技能是**模型调用的**——模型会根据你的请求和技能描述自主决定何时使用它们。这与斜杠命令不同，斜杠命令是**用户调用的**（你显式输入 `/command`）。
 
-如果你想显式调用某个 Skill，可以使用 `/skills` slash 命令：
+如果你想显式调用某个技能，可以使用 `/skills` 斜杠命令：
 
 ```bash
-/skills <skill-name>
+/skills <技能名称>
 ```
 
-使用自动补全浏览可用的 Skills 和描述。
+使用自动补全功能浏览可用的技能及其描述。
 
 ### 优势
 
-- 为你的工作流扩展 Qwen Code
-- 通过 git 在团队中共享专业知识
+- 为你的工作流程扩展 Qwen Code
+- 通过 git 在团队间共享专业知识
 - 减少重复性提示
-- 组合多个 Skills 完成复杂任务
+- 组合多个技能以完成复杂任务
 
-## 创建 Skill
+## 创建技能
 
-Skills 以包含 `SKILL.md` 文件的目录形式存储。
+技能以包含 `SKILL.md` 文件的目录形式存储。
 
-### 个人 Skills
+### 个人技能
 
-个人 Skills 在你所有的项目中均可使用。将它们存储在 `~/.qwen/skills/`：
+个人技能在你的所有项目中都可使用。将它们存储在 `~/.qwen/skills/` 目录下：
 
 ```bash
 mkdir -p ~/.qwen/skills/my-skill-name
 ```
 
-个人 Skills 适用于：
+个人技能的用途：
 
-- 你个人的工作流和偏好
-- 正在开发中的 Skills
-- 个人生产力辅助工具
+- 你自己的专属工作流程和偏好
+- 正在开发的技能
+- 个人效率工具
 
-### 项目 Skills
+### 项目技能
 
-项目 Skills 与团队共享。将它们存储在项目根目录下的 `.qwen/skills/`：
+项目技能可与你的团队共享。将它们存储在你的项目中的 `.qwen/skills/` 目录下：
 
 ```bash
 mkdir -p .qwen/skills/my-skill-name
 ```
 
-项目 Skills 适用于：
+项目技能的用途：
 
-- 团队工作流和规范
-- 项目专属知识
-- 共享工具和脚本
+- 团队工作流程和规范
+- 项目特定的专业知识
+- 共享的实用工具和脚本
 
-项目 Skills 可以提交到 git，并自动对团队成员生效。
+项目技能可以提交到 git 仓库，并自动提供给团队成员使用。
 
 ## 编写 `SKILL.md`
 
-创建包含 YAML frontmatter 和 Markdown 内容的 `SKILL.md` 文件：
+创建一个包含 YAML 前置内容和 Markdown 内容的 `SKILL.md` 文件：
 
 ```yaml
 ---
@@ -88,21 +88,21 @@ Show concrete examples of using this Skill.
 
 ### 字段要求
 
-Qwen Code 目前验证以下内容：
+Qwen Code 目前会验证以下内容：
 
-- `name` 是非空字符串，需匹配 `/^[\p{L}\p{N}_:.-]+$/u` — 支持 Unicode 字母和数字（CJK / 西里尔 / 带重音的拉丁字母均可），以及 `_`、`:`、`.`、`-`。空格、斜杠、括号及其他结构上不安全的字符在解析时会被拒绝。
-- `description` 是非空字符串
-- `priority` 是可选的。如果存在，必须是有限数字。较大的值仅在 `/skills` 列表中排序靠前 — slash 命令补全（输入 `/`）和 `/help` 自定义命令视图保持字母顺序，因此高优先级 Skill 不会改变内置命令的排序。省略或无效值视为未设置，行为等同于 `0`。
+- `name` 是一个非空字符串，匹配正则表达式 `/^[\p{L}\p{N}_:.-]+$/u`——Unicode 字母和数字（中文字符、西里尔字母、带重音拉丁字母均可用），以及 `_`、`:`、`.`、`-`。空格、斜杠、方括号和其他结构上不安全的字符将在解析时被拒绝。
+- `description` 是一个非空字符串
+- `priority` 是可选的。如果存在，必须是有限数值。值越大，在 `/skills` 列表中排序越靠前——这仅影响 `/skills` 命令的列出顺序。斜杠命令的补全（输入 `/`）和 `/help` 自定义命令视图保持字母顺序，因此高优先级技能不会重新排序内置命令。省略或无效的值被视为未设置，行为类似于 `0`。
 
 推荐约定：
 
-- 对于可共享的名称，优先使用小写 ASCII 字母加连字符（如 `tsx-helper`）
-- 使 `description` 具体化：同时包含 Skill **做什么**和**何时使用**（用户自然会提到的关键词）
-- 谨慎使用 `priority`，仅用于需要在 `/skills` 默认字母排序之前可靠出现的 Skills。允许负优先级，排序低于未设置的 Skills。
+- 对于可共享的名称，优先使用小写 ASCII 字母和连字符（例如 `tsx-helper`）
+- 使 `description` 具体：同时包含技能**做什么**和**何时使用**（用户自然会提到的关键词）
+- 谨慎使用 `priority`，仅用于那些希望在 `/skills` 中可靠地出现在默认字母顺序之前的技能。允许使用负优先级，它们将排在未设置优先级的技能之后。
 
-### 可选：通过文件路径限制 Skill（`paths:`）
+### 可选：根据文件路径限制技能（`paths:`）
 
-对于只与代码库特定部分相关的 Skills，可以添加 `paths:` glob 模式列表。在工具调用触及匹配文件之前，该 Skill 不会出现在模型的可用 Skills 列表中：
+对于仅与代码库中特定部分相关的技能，添加一个 `paths:` 列表，包含 glob 模式。在工具调用访问到匹配的文件之前，该技能不会出现在模型的可用技能列表中：
 
 ```yaml
 ---
@@ -116,14 +116,14 @@ paths:
 
 注意事项：
 
-- Glob 使用 [picomatch](https://github.com/micromatch/picomatch) 相对于项目根目录进行匹配；项目根目录之外的文件不会触发激活。
-- 路径限制的 Skill 一旦有匹配文件被触及，**在整个会话期间保持激活状态**。新会话或编辑任意 Skill 文件触发的 `refreshCache` 会重置激活状态。
-- `paths:` 仅限制**模型**发现，且仅在 SkillTool 列表层面生效。除非设置了 `user-invocable: false`，你始终可以通过 `/<skill-name>` 或 `/skills` 选择器自行调用路径限制的 Skill — 该用户路径会直接运行 Skill 内容，不受激活状态影响。但模型侧在匹配文件被触及之前仍处于限制状态：slash 调用**不会**解锁模型侧激活，因此如果你希望模型在你调用后继续链式调用（自行调用 `Skill { skill: ... }`），还需要先访问一个匹配该 Skill `paths:` 的文件。
-- 将 `paths:` 与 `disable-model-invocation: true` 组合是允许的，但限制门控不会生效 — Skill 本就对模型隐藏，路径激活不会向模型公布它。
+- glob 模式相对于项目根目录进行匹配（使用 [picomatch](https://github.com/micromatch/picomatch)）；项目根目录之外的文件永远不会触发激活。
+- 一旦访问到匹配的文件，路径限制的技能**在当前会话的剩余时间内保持激活状态**。新会话或编辑任何技能文件触发的 `refreshCache` 会重置激活状态。
+- `paths:` 仅限制**模型**的发现，且仅在 SkillTool 列出层面。除非设置了 `user-invocable: false`，你始终可以通过 `/<skill-name>` 或 `/skills` 选择器自行调用路径限制的技能——用户路径会无视激活状态执行技能内容。但模型端仍然保持受限，直到访问到匹配的文件：斜杠调用**不会**解锁模型端的激活，因此如果你希望模型在你调用后进行链式调用（自己调用 `Skill { skill: ... }`），还需要先访问一个匹配技能 `paths:` 的文件。
+- 允许同时使用 `paths:` 和 `disable-model-invocation: true`，但限制条件无效——无论如何技能都不会对模型可见，因此路径激活不会将其公开。
 
-### 可选：控制用户和模型的调用方式
+### 可选：控制用户和模型调用
 
-Skills 默认对用户可调用。若要对直接 slash 命令调用隐藏某个 Skill，同时保持模型可调用，设置 `user-invocable: false`：
+默认情况下，技能对用户可调用。要隐藏技能使其不能通过直接斜杠命令使用，但保持对模型可调用，设置 `user-invocable: false`：
 
 ```yaml
 ---
@@ -133,9 +133,9 @@ user-invocable: false
 ---
 ```
 
-这会将该 Skill 从 `/<skill-name>` 调用和 `/skills` 选择器结果中移除，但不会对模型隐藏。
+这会将技能从 `/<skill-name>` 调用和 `/skills` 选择器结果中移除。但它不会对模型隐藏技能。
 
-若要对模型调用隐藏某个 Skill，同时保持用户直接调用可用，设置 `disable-model-invocation: true`：
+要隐藏技能使其不被模型调用，但保持对用户直接调用可用，设置 `disable-model-invocation: true`：
 
 ```yaml
 ---
@@ -145,7 +145,7 @@ disable-model-invocation: true
 ---
 ```
 
-你可以同时设置两个字段，但这样该 Skill 将无法通过正常的用户或模型调用路径访问。
+你可以同时使用这两个字段，但此时技能无法通过正常的用户或模型调用路径访问。
 
 ## 添加支持文件
 
@@ -165,73 +165,73 @@ my-skill/
 在 `SKILL.md` 中引用这些文件：
 
 ````markdown
-For advanced usage, see [reference.md](reference.md).
+关于高级用法，请参阅 [reference.md](reference.md)。
 
-Run the helper script:
+运行辅助脚本：
 
 ```bash
 python scripts/helper.py input.txt
 ```
 ````
 
-## 查看可用 Skills
+## 查看可用技能
 
-Qwen Code 从以下位置发现 Skills：
+Qwen Code 从以下位置发现技能：
 
-- 个人 Skills：`~/.qwen/skills/`
-- 项目 Skills：`.qwen/skills/`
-- 扩展 Skills：已安装扩展提供的 Skills
+- 个人技能：`~/.qwen/skills/`
+- 项目技能：`.qwen/skills/`
+- 扩展技能：已安装的扩展提供的技能
 
-### 扩展 Skills
+### 扩展技能
 
-扩展可以提供自定义 Skills，在扩展启用时自动可用。这些 Skills 存储在扩展的 `skills/` 目录中，格式与个人和项目 Skills 相同。
+扩展可以提供自定义技能，当扩展启用时这些技能变为可用。这些技能存储在扩展的 `skills/` 目录中，遵循与个人和项目技能相同的格式。
 
-扩展 Skills 在安装并启用扩展时自动被发现和加载。
+扩展技能在扩展安装并启用后自动被发现和加载。
 
-要查看哪些扩展提供了 Skills，检查扩展的 `qwen-extension.json` 文件中的 `skills` 字段。
+要查看哪些扩展提供技能，请检查扩展的 `qwen-extension.json` 文件中是否有 `skills` 字段。
 
-直接询问 Qwen Code 查看可用 Skills：
+要查看可用技能，可以直接向 Qwen Code 提问：
 
 ```text
-What Skills are available?
+有哪些技能可用？
 ```
 
-> **注意 — 模型视图与用户视图的区别。** 询问模型只会显示模型当前能看到的 Skills。如果某个 Skill 使用了 `paths:`（见上方”可选：通过文件路径限制 Skill”），在匹配文件被触及之前不会出现在该列表中。`/skills` slash 命令显示你可以直接调用的 Skills；设置了 `user-invocable: false` 的 Skills 在磁盘上仍然可见，且模型可能仍能看到。
+> **注意——模型视角与用户视角不同。** 向模型提问只会显示模型当前能看到的技能。如果某个技能使用了 `paths:`（见上文“可选：根据文件路径限制技能”），则在访问到匹配文件之前，该技能不会出现在列表中。`/skills` 斜杠命令显示你可以直接调用的技能；`user-invocable: false` 的技能在磁盘上仍然可见，并且可能仍然对模型可见。
 
-或使用 slash 命令浏览用户可调用列表（包括尚未激活的路径限制 Skills）：
+或者使用斜杠命令浏览用户可调用的列表（包括尚未激活的路径限制技能）：
 
 ```text
 /skills
 ```
 
-或直接检查文件系统：
+或者检查文件系统：
 
 ```bash
-# List personal Skills
+# 列出个人技能
 ls ~/.qwen/skills/
 
-# List project Skills (if in a project directory)
+# 列出项目技能（如果在项目目录中）
 ls .qwen/skills/
 
-# View a specific Skill's content
+# 查看特定技能的内容
 cat ~/.qwen/skills/my-skill/SKILL.md
 ```
 
-## 测试 Skill
+## 测试技能
 
-创建 Skill 后，通过提问与描述匹配的问题来测试它。
+创建一个技能后，通过提出与你的描述相匹配的问题来测试它。
 
-示例：如果你的描述中提到”PDF 文件”：
+例如，如果你的描述提到了“PDF 文件”：
 
 ```text
-Can you help me extract text from this PDF?
+你能帮我从这个 PDF 中提取文本吗？
 ```
 
-如果请求与 Skill 匹配，模型会自主决定使用你的 Skill — 无需显式调用。
+如果请求匹配，模型会自主决定使用你的技能——你不需要显式调用它。
 
-## 调试 Skill
+## 调试技能
 
-如果 Qwen Code 没有使用你的 Skill，检查以下常见问题：
+如果 Qwen Code 没有使用你的技能，请检查以下常见问题：
 
 ### 使描述更具体
 
@@ -241,7 +241,7 @@ Can you help me extract text from this PDF?
 description: Helps with documents
 ```
 
-具体：
+具体的描述：
 
 ```yaml
 description: Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDFs, forms, or document extraction.
@@ -249,20 +249,20 @@ description: Extract text and tables from PDF files, fill forms, merge documents
 
 ### 验证文件路径
 
-- 个人 Skills：`~/.qwen/skills/<skill-name>/SKILL.md`
-- 项目 Skills：`.qwen/skills/<skill-name>/SKILL.md`
+- 个人技能：`~/.qwen/skills/<skill-name>/SKILL.md`
+- 项目技能：`.qwen/skills/<skill-name>/SKILL.md`
 
 ```bash
-# Personal
+# 个人技能
 ls ~/.qwen/skills/my-skill/SKILL.md
 
-# Project
+# 项目技能
 ls .qwen/skills/my-skill/SKILL.md
 ```
 
 ### 检查 YAML 语法
 
-无效的 YAML 会导致 Skill 元数据无法正确加载。
+无效 YAML 会导致技能元数据无法正确加载。
 
 ```bash
 cat SKILL.md | head -n 15
@@ -271,77 +271,77 @@ cat SKILL.md | head -n 15
 确保：
 
 - 第 1 行有开头的 `---`
-- Markdown 内容前有结尾的 `---`
-- 有效的 YAML 语法（无 tab，正确缩进）
+- 在 Markdown 内容之前有结束的 `---`
+- YAML 语法有效（无制表符，正确缩进）
 
 ### 查看错误
 
-以 debug 模式运行 Qwen Code 查看 Skill 加载错误：
+以调试模式运行 Qwen Code，查看技能加载时的错误：
 
 ```bash
 qwen --debug
 ```
 
-## 与团队共享 Skills
+## 与你的团队共享技能
 
-你可以通过项目仓库共享 Skills：
+你可以通过项目仓库共享技能：
 
-1. 将 Skill 添加到 `.qwen/skills/` 下
+1. 将技能添加到 `.qwen/skills/` 目录下
 2. 提交并推送
-3. 团队成员拉取更改
+3. 团队成员拉取变更
 
 ```bash
 git add .qwen/skills/
-git commit -m “Add team Skill for PDF processing”
+git commit -m "Add team Skill for PDF processing"
 git push
 ```
 
-## 更新 Skill
+## 更新技能
 
-直接编辑 `SKILL.md`：
+直接编辑 `SKILL.md` 文件：
 
 ```bash
-# Personal Skill
+# 个人技能
 code ~/.qwen/skills/my-skill/SKILL.md
 
-# Project Skill
+# 项目技能
 code .qwen/skills/my-skill/SKILL.md
 ```
 
-更改将在下次启动 Qwen Code 时生效。如果 Qwen Code 已在运行，重启以加载更新。
+更改将在下次启动 Qwen Code 时生效。如果 Qwen Code 正在运行，请重启以加载更新。
 
-## 删除 Skill
+## 删除技能
 
-删除 Skill 目录：
+删除技能目录：
 
 ```bash
-# Personal
+# 个人技能
 rm -rf ~/.qwen/skills/my-skill
 
-# Project
+# 项目技能
 rm -rf .qwen/skills/my-skill
-git commit -m “Remove unused Skill”
+git commit -m "Remove unused Skill"
 ```
 
 ## 最佳实践
 
-### 保持 Skills 聚焦
+### 保持技能聚焦
 
-每个 Skill 应只处理一种能力：
+每个技能应该关注一个能力：
 
-- 聚焦：”PDF 表单填写”、”Excel 分析”、”Git commit 消息”
-- 过于宽泛：”文档处理”（拆分为更小的 Skills）
+- 聚焦的：“PDF 表单填写”、“Excel 分析”、“Git 提交信息”
+- 过于宽泛的：“文档处理”（应拆分为更小的技能）
 
 ### 编写清晰的描述
 
-通过包含具体触发词帮助模型发现何时使用 Skills：
+帮助模型发现何时使用技能，包含具体的触发词：
 
 ```yaml
 description: Analyze Excel spreadsheets, create pivot tables, and generate charts. Use when working with Excel files, spreadsheets, or .xlsx data.
 ```
 
-### 与团队测试
+### 与团队一起测试
 
-- Skill 是否在预期时机激活？
+- 技能是否在预期情况下激活？
 - 指令是否清晰？
 - 是否缺少示例或边缘情况？

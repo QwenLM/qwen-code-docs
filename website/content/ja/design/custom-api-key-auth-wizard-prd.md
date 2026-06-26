@@ -1,109 +1,109 @@
-# カスタム API Key 認証ウィザード PRD
+# カスタムAPIキー認証ウィザードPRD
 
 ## 概要
 
-`/auth -> API Key -> Custom API Key` のエクスペリエンスを改善するため、現在のドキュメント表示のみの画面を、カスタム API プロバイダー向けのターミナル内セットアップウィザードに置き換えます。
+`/auth -> API Key -> Custom API Key` のエクスペリエンスを改善し、現在のドキュメントのみの画面を、カスタムAPIプロバイダ向けのターミナル内セットアップウィザードに置き換えます。
 
-Qwen Code は `authType` / `modelProviders` キーを通じて `openai`、`anthropic`、`gemini` を含む複数の API プロトコルをサポートしています。そのため、カスタムセットアップウィザードはまずユーザーにプロトコルの選択を促し、そのプロトコルに対応するエンドポイント・キー・モデル情報を収集する必要があります。
+Qwen Codeは `authType` / `modelProviders` キーを通じて、`openai`、`anthropic`、`gemini` など複数のAPIプロトコルをサポートしています。そのため、カスタムセットアップウィザードでは、まずユーザーにプロトコルを選択させ、その後エンドポイント、キー、モデル情報を収集します。
 
-ウィザードは以下の流れでユーザーを案内します：
+ウィザードは以下の手順でユーザーを導きます：
 
 ```text
-Select Protocol -> Enter Base URL -> Enter API Key -> Enter Model IDs -> Review JSON -> Save + authenticate
+プロトコル選択 -> ベースURL入力 -> APIキー入力 -> モデルID入力 -> JSON確認 -> 保存 + 認証
 ```
 
-これにより、カスタム API キーのセットアップを Qwen Code 内で完結させ、`settings.json` の手動編集の手間を削減し、保存前に生成された JSON を表示することで最終的な設定を透明化します。
+これにより、カスタムAPIキーのセットアップをQwen Code内で完結させ、`settings.json` を手動で編集する必要性を減らし、保存前に生成されたJSONを表示することで最終的な設定を透明にします。
 
 ## 背景
 
 現在、`/auth` で `Custom API Key` を選択すると、静的な情報画面が表示されます：
 
 ```text
-Custom Configuration
+カスタム設定
 
-You can configure your API key and models in settings.json
+settings.json で APIキーとモデルを設定できます
 
-Refer to the documentation for setup instructions
+セットアップ手順についてはドキュメントを参照してください
 https://qwenlm.github.io/qwen-code-docs/en/users/configuration/model-providers/
 
-Esc to go back
+Esc で戻る
 ```
 
-この方式では、ユーザーが CLI を離れてドキュメントを読み、`settings.json` を理解し、`modelProviders` を手動で設定し、`envKey` を選択し、API キーを追加してから Qwen Code に戻る必要があります。このフローは難しく、`/auth` の他の体験から切り離されているというフィードバックが多く寄せられています。
+このフローでは、ユーザーはCLIを離れ、ドキュメントを読み、`settings.json` を理解し、`modelProviders` を手動で設定し、`envKey` を選び、APIキーを追加し、その後Qwen Codeに戻る必要があります。ユーザーからは、このフローが難しく、他の `/auth` エクスペリエンスと断絶していると報告されています。
 
-現在の ModelStudio 標準 API キーパスはすでにガイド付きセットアップフローを提供しています：
+現在のModelStudio Standard APIキーパスは、以下のようなガイド付きセットアップフローを提供しています：
 
 ```text
 Alibaba Cloud ModelStudio Standard API Key
-└─ Select Region
-   └─ Enter API Key
-      └─ Enter Model IDs
-         └─ Save + authenticate
+└─ リージョン選択
+   └─ APIキー入力
+      └─ モデルID入力
+         └─ 保存 + 認証
 ```
 
-カスタム API キーのセットアップも同様のガイド付き体験を提供しながら、Qwen Code が複数のプロバイダープロトコルをサポートしていることを考慮する必要があります。
+カスタムAPIキーのセットアップも同様のガイド付きエクスペリエンスを提供するべきであり、同時にQwen Codeが複数のプロバイダプロトコルをサポートしていることを考慮する必要があります。
 
-## 問題の定義
+## 問題提起
 
-カスタム API キーパスは現在 `/auth` 内の行き止まりになっています：
+カスタムAPIキーパスは、現在 `/auth` 内で行き止まりになっています：
 
 ```text
 /auth
-└─ Select Authentication Method
+└─ 認証方式の選択
    ├─ Alibaba Cloud Coding Plan
    ├─ API Key
-   │  └─ Select API Key Type
+   │  └─ APIキータイプの選択
    │     ├─ Alibaba Cloud ModelStudio Standard API Key
-   │     │  ├─ Select Region
-   │     │  ├─ Enter API Key
-   │     │  ├─ Enter Model IDs
-   │     │  └─ Save + authenticate
+   │     │  ├─ リージョン選択
+   │     │  ├─ APIキー入力
+   │     │  ├─ モデルID入力
+   │     │  └─ 保存 + 認証
    │     │
    │     └─ Custom API Key
-   │        └─ Documentation-only screen
+   │        └─ ドキュメントのみの画面
    │
    └─ Qwen OAuth
 ```
 
-これにより、いくつかのユーザビリティの問題が生じています：
+これにより、以下のようなユーザビリティの問題が発生します：
 
-- `/auth` からカスタムプロバイダーのセットアップを完了できない。
-- 認証を行う前に、低レベルの設定概念を理解する必要がある。
-- 必須フィールド（`authType`、`baseUrl`、`envKey`、`modelProviders`、`model.name`、`security.auth.selectedType`）を把握していない場合がある。
-- 既存の環境変数と競合したり、既存のプロバイダー設定を上書きしてしまう可能性がある。
-- 設定を手動編集した後、認証の即時フィードバックが得られない。
+- ユーザーが `/auth` からカスタムプロバイダのセットアップを完了できない。
+- ユーザーが認証前に低レベルの設定概念を理解する必要がある。
+- ユーザーが `authType`、`baseUrl`、`envKey`、`modelProviders`、`model.name`、`security.auth.selectedType` などの必須項目を認識できない可能性がある。
+- ユーザーが既存の環境変数と誤って競合したり、既存のプロバイダ設定を上書きする可能性がある。
+- 設定を手動で編集した後、すぐに認証フィードバックが得られない。
 
 ## 目標
 
-1. `/auth` 内でカスタム API プロバイダーを完全に設定できるようにする。
-2. `modelProviders` で Qwen Code がサポートする主要プロトコル（`openai`、`anthropic`、`gemini`）をサポートする。
-3. 既存の ModelStudio 標準フローに近い形を維持する。
-4. `baseUrl` をカスタムプロバイダーにおける `region` 相当として扱う。
-5. 選択されたプロトコルと入力された `baseUrl` から Qwen 管理のプライベート `envKey` を自動生成する。
-6. 既存の Qwen 管理認証情報パターンに合わせ、API キーを `settings.json.env` に保存する。
-7. Qwen 固有の生成キー名を使用することで、ユーザーのシェル環境変数との競合を回避する。
-8. 保存前に生成された JSON を表示し、ユーザーが設定変更内容を確認できるようにする。
-9. 既存の関係ない `modelProviders` エントリを保持する。
-10. 保存直後に認証を行い、成功または失敗のフィードバックを表示する。
+1. ユーザーが `/auth` 内でカスタムAPIプロバイダを完全に設定できるようにする。
+2. Qwen Codeが `modelProviders` でサポートする主要プロトコル（`openai`、`anthropic`、`gemini`）に対応する。
+3. フローを既存のModelStudio Standardフローに近づける。
+4. `baseUrl` をカスタムプロバイダにおけるリージョン選択と同等に扱う。
+5. 選択したプロトコルと入力された `baseUrl` から、Qwen管理のプライベート `envKey` を自動生成する。
+6. APIキーを `settings.json.env` に保存し、現在のQwen管理の認証情報パターンと一貫性を持たせる。
+7. Qwen固有の生成キー名を使用することで、ユーザーのシェル環境変数との競合を避ける。
+8. 保存前に生成されたJSONを表示し、ユーザーが正確な設定変更を確認できるようにする。
+9. 既存の無関係な `modelProviders` エントリは保持する。
+10. 保存後すぐに認証し、成功または失敗のフィードバックを表示する。
 
-## 対象外
+## 非目標
 
-1. ユーザーに `envKey` を手動入力させない。
-2. プロバイダー名を別概念として導入しない。
-3. ウィザードに高度な `generationConfig`、`capabilities`、またはモデルごとのオーバーライドを追加しない。
-4. ドキュメントリンクを完全に削除しない（高度な設定向けに引き続き提供する）。
-5. 既存の Coding Plan や ModelStudio 標準 API キーフローを変更しない。
-6. 初回バージョンでは `baseUrl` からプロトコルを自動検出しない（ユーザーがプロトコルを明示的に選択する）。
+1. ユーザーに手動での `envKey` 入力を要求しない。
+2. プロバイダ名を独立した概念として導入しない。
+3. ウィザードに高度な `generationConfig`、`capabilities`、モデルごとの上書き設定を追加しない。
+4. ドキュメントへのリンクを完全に削除しない。高度な設定のために引き続き利用可能にする。
+5. 既存のCoding PlanやModelStudio Standard APIキーフローは変更しない。
+6. 最初のバージョンでは `baseUrl` からプロトコルを自動検出しようとしない。ユーザーが明示的にプロトコルを選択する。
 
 ## 対象ユーザー
 
-- 独自のカスタム API エンドポイントを利用するユーザー。
-- OpenAI 互換 API、Anthropic 互換 API、Gemini 互換 API、vLLM、Ollama、LM Studio、または内部ゲートウェイなどのプロバイダーを設定するユーザー。
-- `settings.json` を手動編集するよりも CLI から認証を設定したいユーザー。
+- 独自のカスタムAPIエンドポイントを使用するユーザー。
+- OpenAI互換API、Anthropic互換API、Gemini互換API、vLLM、Ollama、LM Studio、内部ゲートウェイなどのプロバイダを設定するユーザー。
+- CLIから認証を設定することを好み、手動で `settings.json` を編集したくないユーザー。
 
 ## サポートするプロトコル
 
-ウィザードは最初に以下のプロトコルオプションを提供します：
+ウィザードでは、初期状態で以下のプロトコルオプションを提供します：
 
 ```text
 openai
@@ -111,46 +111,46 @@ anthropic
 gemini
 ```
 
-各プロトコルは `modelProviders` キーおよび `security.auth.selectedType` の値に直接対応します。
+各プロトコルは、直接 `modelProviders` キーおよび `security.auth.selectedType` 値にマッピングされます。
 
-| プロトコルオプション | Auth type / modelProviders キー | 備考 |
-| -------------------- | ------------------------------ | --------------------------------------------------------------------------------- |
-| OpenAI-compatible    | `openai`                       | OpenAI、OpenRouter、Fireworks、ローカル OpenAI 互換サーバー、内部ゲートウェイ |
-| Anthropic-compatible | `anthropic`                    | Anthropic 互換エンドポイント |
-| Gemini-compatible    | `gemini`                       | Gemini 互換エンドポイント |
+| プロトコルオプション      | 認証タイプ / modelProvidersキー | 備考                                                                               |
+| ------------------------ | ------------------------------ | ---------------------------------------------------------------------------------- |
+| OpenAI互換               | `openai`                       | OpenAI、OpenRouter、Fireworks、ローカルのOpenAI互換サーバー、内部ゲートウェイ           |
+| Anthropic互換            | `anthropic`                    | Anthropic互換エンドポイント                                                           |
+| Gemini互換               | `gemini`                       | Gemini互換エンドポイント                                                             |
 
 ## ユーザーエクスペリエンス概要
 
-### 更新後の `/auth` ツリー
+### 更新された `/auth` ツリー
 
 ```text
 /auth
-└─ Select Authentication Method
+└─ 認証方式の選択
    ├─ Alibaba Cloud Coding Plan
-   │  └─ Select Region
-   │     └─ Enter API Key
-   │        └─ Save + authenticate
+   │  └─ リージョン選択
+   │     └─ APIキー入力
+   │        └─ 保存 + 認証
    │
    ├─ API Key
-   │  └─ Select API Key Type
+   │  └─ APIキータイプの選択
    │     ├─ Alibaba Cloud ModelStudio Standard API Key
-   │     │  ├─ Select Region
-   │     │  ├─ Enter API Key
-   │     │  ├─ Enter Model IDs
-   │     │  └─ Save + authenticate
+   │     │  ├─ リージョン選択
+   │     │  ├─ APIキー入力
+   │     │  ├─ モデルID入力
+   │     │  └─ 保存 + 認証
    │     │
    │     └─ Custom API Key
-   │        ├─ Select Protocol
-   │        ├─ Enter Base URL
-   │        ├─ Enter API Key
-   │        ├─ Enter Model IDs
-   │        ├─ Review generated JSON
-   │        └─ Save + authenticate
+   │        ├─ プロトコル選択
+   │        ├─ ベースURL入力
+   │        ├─ APIキー入力
+   │        ├─ モデルID入力
+   │        ├─ 生成されたJSONの確認
+   │        └─ 保存 + 認証
    │
    └─ Qwen OAuth
 ```
 
-### カスタム API Key ステートマシン
+### カスタムAPIキーのステートマシン
 
 ```text
 api-key-type-select
@@ -163,7 +163,7 @@ custom-protocol-select
       ▼
 custom-base-url-input
       │ Enter
-      │ generate envKey from protocol + baseUrl
+      │ プロトコル + baseUrl から envKey を生成
       ▼
 custom-api-key-input
       │ Enter
@@ -174,10 +174,10 @@ custom-model-id-input
 custom-review-json
       │ Enter
       ▼
-save settings + refreshAuth(selectedProtocol)
+設定を保存 + refreshAuth(selectedProtocol)
 ```
 
-### Esc の動作
+### エスケープ動作
 
 ```text
 custom-review-json
@@ -196,184 +196,184 @@ custom-protocol-select
   Esc -> api-key-type-select
 ```
 
-## 詳細インタラクションデザイン
+## 詳細なインタラクションデザイン
 
-### ステップ 1: プロトコルの選択
+### ステップ1: プロトコル選択
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Custom API Key · Select Protocol                             │
+│ Custom API Key · プロトコル選択                              │
 │                                                              │
-│  ◉ OpenAI-compatible                                         │
-│    OpenAI, OpenRouter, Fireworks, vLLM, Ollama, LM Studio    │
+│  ◉ OpenAI互換                                               │
+│    OpenAI、OpenRouter、Fireworks、vLLM、Ollama、LM Studio     │
 │                                                              │
-│  ○ Anthropic-compatible                                      │
-│    Anthropic-compatible endpoints                            │
+│  ○ Anthropic互換                                            │
+│    Anthropic互換エンドポイント                               │
 │                                                              │
-│  ○ Gemini-compatible                                         │
-│    Gemini-compatible endpoints                               │
+│  ○ Gemini互換                                               │
+│    Gemini互換エンドポイント                                  │
 │                                                              │
-│ Enter to select, ↑↓ to navigate, Esc to go back              │
+│ Enterで選択、↑↓で移動、Escで戻る                           │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-選択されたプロトコルによって以下が決まります：
+選択されたプロトコルは以下を決定します：
 
 - 更新する `modelProviders` キー。
-- 永続化する `security.auth.selectedType` の値。
-- 後続の画面に表示されるプロトコルラベル。
-- 保存後に使用する `refreshAuth()` の認証タイプ。
+- 永続化する `security.auth.selectedType` 値。
+- 以降の画面で表示されるプロトコルラベル。
+- 保存後に使用される `refreshAuth()` の認証タイプ。
 
-### ステップ 2: Base URL の入力
+### ステップ2: ベースURL入力
 
-`baseUrl` はカスタムプロバイダーにおけるリージョン選択の相当物です。どのエンドポイントに API キーが属するかを決定するため、API キー入力より前に来る必要があります。
+`baseUrl` はカスタムプロバイダにおけるリージョン選択と同等です。APIキー入力の前に配置されるのは、APIキーがどのエンドポイントに属するかを決定するためです。
 
-OpenAI 互換の場合：
+OpenAI互換の場合：
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Custom API Key · Base URL                                    │
+│ Custom API Key · ベースURL                                   │
 │                                                              │
-│ Protocol: OpenAI-compatible                                  │
+│ プロトコル: OpenAI互換                                       │
 │                                                              │
-│ Enter the OpenAI-compatible API endpoint.                    │
+│ OpenAI互換のAPIエンドポイントを入力してください。             │
 │                                                              │
-│ Base URL: https://openrouter.ai/api/v1_                      │
+│ ベースURL: https://openrouter.ai/api/v1_                    │
 │                                                              │
-│ Examples:                                                    │
+│ 例:                                                          │
 │   OpenAI:      https://api.openai.com/v1                     │
 │   OpenRouter: https://openrouter.ai/api/v1                   │
 │   Fireworks:  https://api.fireworks.ai/inference/v1          │
 │   Ollama:     http://localhost:11434/v1                      │
 │   LM Studio:  http://localhost:1234/v1                       │
 │                                                              │
-│ Enter to continue, Esc to go back                            │
+│ Enterで続行、Escで戻る                                       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Anthropic 互換の場合：
+Anthropic互換の場合：
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Custom API Key · Base URL                                    │
+│ Custom API Key · ベースURL                                   │
 │                                                              │
-│ Protocol: Anthropic-compatible                               │
+│ プロトコル: Anthropic互換                                    │
 │                                                              │
-│ Enter the Anthropic-compatible API endpoint.                 │
+│ Anthropic互換のAPIエンドポイントを入力してください。          │
 │                                                              │
-│ Base URL: https://api.anthropic.com/v1_                      │
+│ ベースURL: https://api.anthropic.com/v1_                    │
 │                                                              │
-│ Enter to continue, Esc to go back                            │
+│ Enterで続行、Escで戻る                                       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Gemini 互換の場合：
+Gemini互換の場合：
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Custom API Key · Base URL                                    │
+│ Custom API Key · ベースURL                                   │
 │                                                              │
-│ Protocol: Gemini-compatible                                  │
+│ プロトコル: Gemini互換                                       │
 │                                                              │
-│ Enter the Gemini-compatible API endpoint.                    │
+│ Gemini互換のAPIエンドポイントを入力してください。             │
 │                                                              │
-│ Base URL: https://generativelanguage.googleapis.com_         │
+│ ベースURL: https://generativelanguage.googleapis.com_        │
 │                                                              │
-│ Enter to continue, Esc to go back                            │
+│ Enterで続行、Escで戻る                                       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
 バリデーション：
 
-- 必須項目。
-- `http://` または `https://` で始まる必要がある。
-- 先頭と末尾の空白をトリムする。
-- トリム以外は入力された文字列をそのまま保持する。
+- 必須。
+- `http://` または `https://` で始まっている必要がある。
+- 先頭と末尾の空白をトリム。
+- トリム後の正規化された文字列をそのまま保持。
 
-有効な送信時：
+有効な場合の処理：
 
-- 選択されたプロトコルと `baseUrl` から Qwen 管理の `envKey` を生成する。
-- API キー入力に移動する。
+- 選択したプロトコルと`baseUrl`からQwen管理の`envKey`を生成。
+- APIキー入力画面に進む。
 
-### ステップ 3: API Key の入力
+### ステップ3: APIキー入力
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Custom API Key · API Key                                     │
+│ Custom API Key · APIキー                                     │
 │                                                              │
-│ Protocol: OpenAI-compatible                                  │
-│ Endpoint: https://openrouter.ai/api/v1                       │
+│ プロトコル: OpenAI互換                                       │
+│ エンドポイント: https://openrouter.ai/api/v1                │
 │                                                              │
-│ Enter the API key for this endpoint.                         │
+│ このエンドポイントのAPIキーを入力してください。               │
 │                                                              │
-│ API key: sk-or-v1-••••••••••••••••_                          │
+│ APIキー: sk-or-v1-••••••••••••••••_                        │
 │                                                              │
-│ Enter to continue, Esc to go back                            │
+│ Enterで続行、Escで戻る                                       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
 バリデーション：
 
-- 必須項目。
-- 先頭と末尾の空白をトリムする。
+- 必須。
+- 先頭と末尾の空白をトリム。
 
-注意事項：
+備考：
 
-- 入力は近接するフローとの一貫性のため、既存のテキスト入力動作を使用する場合があります。
-- レビュー画面では API キーをマスクする必要があります。
+- 入力は、近隣のフローとの一貫性を保つため、初期状態では既存のテキスト入力動作を使用する可能性があります。
+- 確認画面ではAPIキーをマスク表示します。
 
-### ステップ 4: モデル ID の入力
+### ステップ4: モデルID入力
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Custom API Key · Model IDs                                   │
+│ Custom API Key · モデルID                                    │
 │                                                              │
-│ Protocol: OpenAI-compatible                                  │
-│ Endpoint: https://openrouter.ai/api/v1                       │
+│ プロトコル: OpenAI互換                                       │
+│ エンドポイント: https://openrouter.ai/api/v1                │
 │                                                              │
-│ Enter one or more model IDs, separated by commas.            │
+│ 1つ以上のモデルIDをカンマ区切りで入力してください。          │
 │                                                              │
-│ Model IDs: qwen/qwen3-coder,openai/gpt-4.1_                  │
+│ モデルID: qwen/qwen3-coder,openai/gpt-4.1_                 │
 │                                                              │
-│ Enter to continue, Esc to go back                            │
+│ Enterで続行、Escで戻る                                       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
 バリデーション：
 
-- 必須項目。
-- カンマで分割する。
-- 各モデル ID をトリムする。
-- 空のエントリを除外する。
-- 順序を保持しながら重複を排除する。
-- 少なくとも 1 つのモデル ID が残る必要がある。
+- 必須。
+- カンマで分割。
+- 各モデルIDをトリム。
+- 空エントリを削除。
+- 重複を削除（順序は保持）。
+- 少なくとも1つのモデルIDが残っている必要がある。
 
-モデルの命名：
+モデル命名：
 
-- `id` と `name` は同一にする。
-- ユーザーにプロバイダー名は要求しない。
+- `id` と `name` は同じにする。
+- ユーザーに別途プロバイダ名を要求しない。
 
 例：
 
 ```text
-Input:
+入力:
 qwen/qwen3-coder, openai/gpt-4.1, qwen/qwen3-coder
 
-Normalized:
+正規化後:
 qwen/qwen3-coder, openai/gpt-4.1
 ```
 
-### ステップ 5: JSON のレビュー
+### ステップ5: JSON確認
 
-保存前に、`settings.json` に書き込まれる（またはマージされる）生成された JSON スニペットを表示します。
+保存前に、`settings.json` に書き込まれる（またはマージされる）生成JSONスニペットを表示します。
 
-OpenAI 互換の例：
+OpenAI互換の例：
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Custom API Key · Review                                      │
+│ Custom API Key · 確認                                        │
 │                                                              │
-│ The following JSON will be saved to settings.json:           │
+│ 以下のJSONがsettings.jsonに保存されます：                    │
 │                                                              │
 │ {                                                            │
 │   "env": {                                                   │
@@ -400,11 +400,11 @@ OpenAI 互換の例：
 │   }                                                          │
 │ }                                                            │
 │                                                              │
-│ Enter to save, Esc to go back                                │
+│ Enterで保存、Escで戻る                                       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Anthropic 互換の例：
+Anthropic互換の例：
 
 ```json
 {
@@ -432,28 +432,28 @@ Anthropic 互換の例：
 }
 ```
 
-表示される JSON は以下の条件を満たす必要があります：
+表示されるJSONは以下の条件を満たす必要があります：
 
-- 選択されたプロトコルを `modelProviders` キーとして使用する。
-- 選択されたプロトコルを `security.auth.selectedType` として使用する。
-- 実際に生成された `envKey` を使用する。
-- API キーをマスクする。
-- ユーザーが入力した `baseUrl` を使用する。
-- 各モデルに `id === name` を使用する。
-- `model.name` を最初の正規化されたモデル ID に設定して表示する。
+- 選択したプロトコルを `modelProviders` キーとして使用。
+- 選択したプロトコルを `security.auth.selectedType` として使用。
+- 実際に生成された `envKey` を使用。
+- APIキーはマスク表示。
+- ユーザーが入力した `baseUrl` を使用。
+- 各モデルの `id` と `name` は同じ。
+- `model.name` は最初の正規化されたモデルIDに設定。
 
-JSON が現在のターミナルの幅に収まらない場合、折り返しは許容されます。目的は透明性の確保であり、コピー＆ペースト用の完璧なフォーマットではありません。
+JSONが現在の端末幅に対して広すぎる場合は、折り返しを許容します。目的は透明性であり、コピペできる完璧なフォーマットではありません。
 
-### ステップ 6: 保存と認証
+### ステップ6: 保存と認証
 
-レビュー画面で Enter を押した場合：
+確認画面でEnterを押した場合：
 
 ```text
-save:
+保存:
   env[generatedEnvKey] = apiKey
   modelProviders[selectedProtocol] = [
-    ...new custom configs using generatedEnvKey,
-    ...existing configs whose envKey !== generatedEnvKey
+    ...新しいカスタム設定（generatedEnvKeyを使用）,
+    ...既存の設定（envKey !== generatedEnvKeyのもの）
   ]
   security.auth.selectedType = selectedProtocol
   model.name = firstModelId
@@ -464,26 +464,26 @@ save:
 成功メッセージ：
 
 ```text
-Custom API Key authenticated successfully. Settings updated with generated env key and model provider config.
-Tip: Use /model to switch between configured models.
+カスタムAPIキーの認証に成功しました。生成されたenvキーとモデルプロバイダ設定で設定を更新しました。
+ヒント: /model を使用して設定済みモデルを切り替えられます。
 ```
 
-失敗メッセージは既存の認証失敗パターンを踏襲しつつ、可能であればユーザー向けのヒントを追加します：
+失敗メッセージは既存の認証失敗パターンを維持し、可能であれば追加のユーザー向けヒントを表示します：
 
 ```text
-Failed to authenticate. Message: <error>
+認証に失敗しました。メッセージ: <error>
 
-Please check:
-- Base URL is compatible with the selected protocol
-- API key is valid for this endpoint
-- Model ID exists for this provider
+以下を確認してください：
+- ベースURLが選択したプロトコルと互換性があること
+- APIキーがこのエンドポイントに対して有効であること
+- モデルIDがこのプロバイダに存在すること
 ```
 
-## Env Key の生成
+## Envキーの生成
 
-ウィザードではユーザーに `envKey` を入力させません。
+ウィザードはユーザーに `envKey` の入力を要求してはいけません。
 
-Qwen 管理の API キーは `settings.json.env` に保存されるため、env キーは Qwen 固有の名前空間のもとで自動生成する必要があります。これにより、ユーザーが管理するシェル環境変数との競合を回避し、複数のカスタムエンドポイントが互いを上書きしないようにします。
+Qwen管理のAPIキーは `settings.json.env` に保存されるため、envキーはQwen固有の名前空間の下で自動生成する必要があります。これにより、ユーザー管理のシェル環境変数との競合を回避し、複数のカスタムエンドポイントが互いに上書きするのを防ぎます。
 
 ### フォーマット
 
@@ -491,29 +491,29 @@ Qwen 管理の API キーは `settings.json.env` に保存されるため、env 
 QWEN_CUSTOM_API_KEY_${PROTOCOL}_${NORMALIZED_BASE_URL}
 ```
 
-プロトコルを含めることで、同じエンドポイントを異なるプロトコルアダプターで使用した場合の競合を防ぎます。
+プロトコルを含めることで、異なるプロトコルアダプターで同じエンドポイントが使用された場合の衝突を回避します。
 
 ### 例
 
 ```text
-Protocol: openai
-Base URL: https://api.openai.com/v1
+プロトコル: openai
+ベースURL: https://api.openai.com/v1
 -> QWEN_CUSTOM_API_KEY_OPENAI_HTTPS_API_OPENAI_COM_V1
 
-Protocol: openai
-Base URL: https://openrouter.ai/api/v1
+プロトコル: openai
+ベースURL: https://openrouter.ai/api/v1
 -> QWEN_CUSTOM_API_KEY_OPENAI_HTTPS_OPENROUTER_AI_API_V1
 
-Protocol: anthropic
-Base URL: https://api.anthropic.com/v1
+プロトコル: anthropic
+ベースURL: https://api.anthropic.com/v1
 -> QWEN_CUSTOM_API_KEY_ANTHROPIC_HTTPS_API_ANTHROPIC_COM_V1
 
-Protocol: gemini
-Base URL: https://generativelanguage.googleapis.com
+プロトコル: gemini
+ベースURL: https://generativelanguage.googleapis.com
 -> QWEN_CUSTOM_API_KEY_GEMINI_HTTPS_GENERATIVELANGUAGE_GOOGLEAPIS_COM
 
-Protocol: openai
-Base URL: http://localhost:11434/v1
+プロトコル: openai
+ベースURL: http://localhost:11434/v1
 -> QWEN_CUSTOM_API_KEY_OPENAI_HTTP_LOCALHOST_11434_V1
 ```
 
@@ -521,16 +521,16 @@ Base URL: http://localhost:11434/v1
 
 ```text
 protocol
-  -> trim
-  -> uppercase
-  -> replace every non A-Z / 0-9 character with _
+  -> トリム
+  -> 大文字
+  -> A-Z / 0-9 以外の文字をすべて _ に置換
 
 baseUrl
-  -> trim
-  -> uppercase
-  -> replace every non A-Z / 0-9 character with _
-  -> collapse consecutive _ characters
-  -> remove leading/trailing _
+  -> トリム
+  -> 大文字
+  -> A-Z / 0-9 以外の文字をすべて _ に置換
+  -> 連続する _ を1つにまとめる
+  -> 先頭/末尾の _ を削除
 
 return QWEN_CUSTOM_API_KEY_${NORMALIZED_PROTOCOL}_${NORMALIZED_BASE_URL}
 ```
@@ -550,10 +550,9 @@ function generateCustomApiKeyEnvKey(protocol: string, baseUrl: string): string {
   return `QWEN_CUSTOM_API_KEY_${normalize(protocol)}_${normalize(baseUrl)}`;
 }
 ```
+## 設定書き込み設計
 
-## 設定書き込みの設計
-
-ユーザーが以下を入力した場合：
+与えられたユーザー入力:
 
 ```text
 Protocol: openai
@@ -562,7 +561,7 @@ API key: sk-or-v1-xxx
 Model IDs: qwen/qwen3-coder,openai/gpt-4.1
 ```
 
-ウィザードは以下を生成します：
+ウィザードは以下を生成するべきです:
 
 ```json
 {
@@ -596,7 +595,7 @@ Model IDs: qwen/qwen3-coder,openai/gpt-4.1
 }
 ```
 
-`anthropic` の場合、同じ構造で以下が異なります：
+`anthropic` の場合も同じ構造を使用しますが、以下が異なります:
 
 ```text
 modelProviders.anthropic
@@ -604,7 +603,7 @@ security.auth.selectedType = anthropic
 refreshAuth(anthropic)
 ```
 
-`gemini` の場合、同じ構造で以下が異なります：
+`gemini` の場合も同じ構造を使用しますが、以下が異なります:
 
 ```text
 modelProviders.gemini
@@ -614,37 +613,37 @@ refreshAuth(gemini)
 
 ### 永続化スコープ
 
-モデル選択および既存の API キーフローと同じ永続化スコープ戦略を使用します：
+モデル選択や既存の API キーフローと同じ永続化スコープ戦略を使用します:
 
 ```text
 getPersistScopeForModelSelection(settings)
 ```
 
-これにより、既存の `modelProviders` の所有ルールと一貫した動作を維持します。
+これにより、既存の `modelProviders` 所有ルールと一貫した動作が維持されます。
 
 ### バックアップ
 
-書き込み前に、既存の Coding Plan および ModelStudio 標準フローと同様に対象の設定ファイルをバックアップします。
+書き込み前に、既存の Coding Plan や ModelStudio Standard フローと同様に、対象の設定ファイルをバックアップします。
 
-### プロセス env の同期
+### プロセス環境変数の同期
 
-`settings.json.env[generatedEnvKey]` への書き込み後、即座に同期します：
+`settings.json.env[generatedEnvKey]` に書き込んだ後、直ちに同期します:
 
 ```text
 process.env[generatedEnvKey] = apiKey
 ```
 
-これにより、同じセッション内で `refreshAuth(selectedProtocol)` が新しく入力されたキーを使用できるようになります。
+これにより、`refreshAuth(selectedProtocol)` が同じセッション内で新しく入力されたキーを使用できるようになります。
 
-### モデルプロバイダーのマージルール
+### モデルプロバイダマージルール
 
-生成された env キー：
+生成された env キーについて:
 
 ```text
 generatedEnvKey = QWEN_CUSTOM_API_KEY_${PROTOCOL}_${NORMALIZED_BASE_URL}
 ```
 
-`modelProviders[selectedProtocol]` を以下のように更新します：
+`modelProviders[selectedProtocol]` を次のように更新します:
 
 ```text
 newConfigs = normalizedModelIds.map(modelId => ({
@@ -666,18 +665,18 @@ updatedConfigs = [
 ]
 ```
 
-設計の理由：
+根拠:
 
-- 同じプロトコル + `baseUrl` を再設定した場合、そのエンドポイントの古いモデルが置き換えられます。
-- 異なるプロトコルまたは `baseUrl` を設定した場合、異なる env キーが使用され、既存のカスタムエンドポイントは上書きされません。
-- Coding Plan、ModelStudio 標準、およびその他のユーザー設定は、同じプロトコル配下で同じ生成 env キーを使用しない限り保持されます。
-- 新しい設定が先頭に配置されるため、新たに設定されたモデルがすぐに表示され、デフォルトで選択されます。
+- 同じプロトコル + `baseUrl` を再設定すると、そのエンドポイントの古いモデルが置き換えられます。
+- 異なるプロトコルまたは `baseUrl` を設定すると、異なる env キーが使用され、以前のカスタムエンドポイントは上書きされません。
+- Coding Plan、ModelStudio Standard、その他のユーザー設定は、同じ生成 env キーを同じプロトコルで使用しない限り保持されます。
+- 新しい設定を先頭に配置することで、新しく設定されたモデルがすぐに表示され、デフォルトで選択されるようにします。
 
 ## エラーハンドリング
 
-### プロトコルのバリデーションエラー
+### プロトコルバリデーションエラー
 
-プロトコルは以下のいずれかである必要があります：
+プロトコルは次のいずれかである必要があります:
 
 ```text
 openai
@@ -685,7 +684,7 @@ anthropic
 gemini
 ```
 
-### Base URL のバリデーションエラー
+### Base URL バリデーションエラー
 
 ```text
 Base URL cannot be empty.
@@ -695,13 +694,13 @@ Base URL cannot be empty.
 Base URL must start with http:// or https://.
 ```
 
-### API キーのバリデーションエラー
+### API キーバリデーションエラー
 
 ```text
 API key cannot be empty.
 ```
 
-### モデル ID のバリデーションエラー
+### モデル ID バリデーションエラー
 
 ```text
 Model IDs cannot be empty.
@@ -709,7 +708,7 @@ Model IDs cannot be empty.
 
 ### 認証失敗
 
-可能な限り既存の失敗メカニズムを使用しますが、ユーザー向けのエラーメッセージで復旧を支援します：
+可能な限り既存の失敗メカニズムを使用しますが、ユーザー向けエラーメッセージはユーザーが回復できるように支援する必要があります:
 
 ```text
 Failed to authenticate. Message: <message>
@@ -722,23 +721,23 @@ Please check:
 
 ## ドキュメントリンク
 
-ウィザードは高度なユーザー向けに既存のモデルプロバイダードキュメントへのリンクを引き続き提供します。
+ウィザードは、上級ユーザー向けに既存のモデルプロバイダドキュメントを公開する必要があります。
 
-推奨配置：
+推奨配置場所:
 
-- レビュー画面のフッター、または
-- Base URL 画面のサブテキスト。
+- 確認画面のフッター、または
+- Base URL 画面の補足テキストとして。
 
-推奨テキスト：
+推奨コピー:
 
 ```text
 Need advanced generationConfig or capabilities? See:
 https://qwenlm.github.io/qwen-code-docs/en/users/configuration/model-providers/
 ```
 
-## 実装メモ
+## 実装ノート
 
-`AuthDialog` で想定される view levels：
+`AuthDialog` の想定ビューレベル:
 
 ```ts
 type ViewLevel =
@@ -756,7 +755,7 @@ type ViewLevel =
   | 'custom-review-json';
 ```
 
-想定されるカスタムプロトコル型：
+想定されるカスタムプロトコル型:
 
 ```ts
 type CustomApiProtocol =
@@ -765,7 +764,7 @@ type CustomApiProtocol =
   | AuthType.USE_GEMINI;
 ```
 
-`AuthDialog` で想定される新しい state：
+`AuthDialog` での新しい state の想定:
 
 ```ts
 const [customProtocol, setCustomProtocol] = useState<CustomApiProtocol>(
@@ -784,7 +783,7 @@ const [customModelIdsError, setCustomModelIdsError] = useState<string | null>(
 );
 ```
 
-想定される新しい UI アクション：
+想定される新しい UI アクション:
 
 ```ts
 handleCustomApiKeySubmit: (
@@ -795,7 +794,7 @@ handleCustomApiKeySubmit: (
 ) => Promise<void>;
 ```
 
-想定されるヘルパー関数：
+想定されるヘルパー関数:
 
 ```ts
 generateCustomApiKeyEnvKey(protocol: string, baseUrl: string): string
@@ -807,58 +806,58 @@ maskApiKey(apiKey: string): string
 
 ### UX
 
-- `/auth -> API Key -> Custom API Key` を選択すると、ドキュメント表示のみのページではなくカスタムウィザードが開く。
-- カスタムウィザードの最初のステップでプロトコルを尋ねる。
-- 2 番目のステップで Base URL を尋ね、選択されたプロトコルを表示する。
-- 3 番目のステップで API キーを尋ね、選択されたプロトコルとエンドポイントを表示する。
-- 4 番目のステップでモデル ID を尋ね、選択されたプロトコルとエンドポイントを表示する。
-- レビューステップでマスクされた API キー、選択されたプロトコル、生成された env キーを含む生成 JSON を表示する。
-- レビューステップで Enter を押すと設定が保存され、認証が試みられる。
-- Esc を押すと 1 ステップずつ前に戻る。
+- `/auth -> API Key -> Custom API Key` を選択すると、ドキュメントのみのページではなく、カスタムウィザードが開くこと。
+- 最初のカスタムウィザードステップでプロトコルを問い合わせること。
+- 2 番目のステップで Base URL を問い合わせ、選択されたプロトコルを表示すること。
+- 3 番目のステップで API キーを問い合わせ、選択されたプロトコルとエンドポイントを表示すること。
+- 4 番目のステップでモデル ID を問い合わせ、選択されたプロトコルとエンドポイントを表示すること。
+- 確認ステップで生成された JSON（マスクされた API キー、選択されたプロトコル、生成された env キーを含む）を表示すること。
+- 確認ステップで Enter を押すと設定が保存され、認証が試行されること。
+- Esc を押すと 1 ステップずつ戻ること。
 
 ### 設定
 
-- API キーが `settings.json.env[generatedEnvKey]` に書き込まれる。
-- `generatedEnvKey` が Qwen プライベート名前空間を使用して選択されたプロトコルと `baseUrl` から導出される。
-- `modelProviders[selectedProtocol]` が正規化された各モデル ID に対して 1 つのエントリを受け取る。
-- 各カスタムモデルエントリが `id === name` を使用する。
-- `security.auth.selectedType` が選択されたプロトコルに設定される。
-- `model.name` が最初の正規化されたモデル ID に設定される。
-- `modelProviders[selectedProtocol]` 配下の異なる `envKey` を持つ既存エントリが保持される。
-- `modelProviders[selectedProtocol]` 配下の同じ生成 `envKey` を持つ既存エントリが置き換えられる。
-- 他の `modelProviders` プロトコルキー配下のエントリが保持される。
+- API キーが `settings.json.env[generatedEnvKey]` に書き込まれること。
+- `generatedEnvKey` が Qwen プライベート名前空間を使用して、選択されたプロトコルと `baseUrl` から導出されること。
+- `modelProviders[selectedProtocol]` に正規化されたモデル ID ごとに 1 つのエントリが追加されること。
+- 各カスタムモデルエントリで `id === name` となること。
+- `security.auth.selectedType` が選択されたプロトコルに設定されること。
+- `model.name` が最初の正規化されたモデル ID に設定されること。
+- 異なる `envKey` を持つ `modelProviders[selectedProtocol]` の既存エントリは保持されること。
+- 同じ生成 `envKey` を持つ `modelProviders[selectedProtocol]` の既存エントリは置き換えられること。
+- 他の `modelProviders` プロトコルキーのエントリは保持されること。
 
 ### 認証
 
-- 生成された env キーが認証リフレッシュ前に `process.env` に同期される。
-- `refreshAuth(selectedProtocol)` の前にアプリがモデルプロバイダー設定を再読み込みする。
-- 認証成功時に認証ダイアログが閉じ、成功メッセージが表示される。
-- 認証失敗時にユーザーが認証フローに留まり、実行可能なエラーが表示される。
+- 認証リフレッシュ前に、生成された env キーが `process.env` に同期されること。
+- アプリが `refreshAuth(selectedProtocol)` の前にモデルプロバイダ設定を再読み込みすること。
+- 認証成功により認証ダイアログが閉じられ、成功メッセージが表示されること。
+- 認証失敗によりユーザーは認証フローに留まり、実行可能なエラーが表示されること。
 
 ### テスト
 
-- カスタムウィザードパスをカバーするよう `AuthDialog` テストを追加または更新する。
-- プロトコル選択のテストを追加する。
-- プロトコルと Base URL からの env キー生成のテストを追加する。
-- モデル ID の正規化と重複排除のテストを追加する。
-- 設定マージ動作のテストを追加する：
-  - 同じ生成 env キーが同じプロトコル配下の古いカスタムエントリを置き換える；
-  - 異なる env キーが保持される；
-  - 他のプロトコルキーが保持される；
-  - Coding Plan および ModelStudio 標準エントリが保持される。
-- 実用的な範囲で生成 JSON プレビューの内容のテストを追加する。
+- `AuthDialog` のテストを追加または更新し、カスタムウィザードパスをカバーすること。
+- プロトコル選択のテストを追加すること。
+- プロトコルと Base URL からの env キー生成のテストを追加すること。
+- モデル ID の正規化と重複排除のテストを追加すること。
+- 設定マージ動作のテストを追加すること:
+  - 同じ生成 env キーが同じプロトコル下の古いカスタムエントリを置き換えること。
+  - 異なる env キーは保持されること。
+  - 他のプロトコルキーは保持されること。
+  - Coding Plan や ModelStudio Standard のエントリは保持されること。
+- 実用的な範囲で、生成された JSON プレビュー内容のテストを追加すること。
 
-## 未解決の問題
+## 未解決の質問
 
-1. API キー入力は入力中にマスクすべきか、それともレビュー画面でのみマスクすべきか？
-2. `http://localhost:11434/v1` のようなローカルエンドポイントについて、認証を必要としないサーバー向けに空またはプレースホルダーの API キーを許可すべきか？
-3. 生成 JSON プレビューは適用されるパッチのみを表示すべきか、それともマージ後の関連する設定サブツリー全体を表示すべきか？
-4. Vertex AI はこのカスタム API キーウィザードに含めるべきか、それとも単純な API キープロバイダーとは異なる認証セットアップを持つため除外すべきか？
+1. API キー入力は入力中にマスクすべきか、それとも確認画面でのみマスクすべきか？
+2. `http://localhost:11434/v1` のようなローカルエンドポイントでは、認証を必要としないサーバーのために空の API キーやプレースホルダー API キーを許可すべきか？
+3. 生成された JSON プレビューは、適用されるパッチのみを表示すべきか、それともマージ後の結果の全関連設定サブツリーを表示すべきか？
+4. Vertex AI はこのカスタム API キーウィザードに含めるべきか、それとも認証設定が単純な API キープロバイダと異なるため除外すべきか？
 
-初回バージョンの推奨デフォルト：
+最初のバージョンでは、以下のデフォルトを推奨します:
 
 - `openai`、`anthropic`、`gemini` をサポートする。
-- 入力中は既存の入力動作を使用する。
-- API キー認証フローとの一貫性のため、空でない API キーを要求する。
-- 保存または更新されるパッチスタイルの JSON を表示する。
-- 別途製品判断が行われるまで Vertex AI はカスタム API キーウィザードから除外する。
+- 入力中の動作は既存のものを使用する。
+- API キー認証フローとの一貫性のために空でない API キーを必須とする。
+- 保存または更新されるパッチ形式の JSON を表示する。
+- Vertex AI は、別の製品判断が下されるまでカスタム API キーウィザードから除外する。

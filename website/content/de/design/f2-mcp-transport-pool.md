@@ -1,157 +1,159 @@
-# F2: Shared MCP Transport Pool — Design v2.2
+# F2: Gemeinsamer MCP-Transport-Pool – Design v2.2
 
-> Targets `daemon_mode_b_main` (gemäß #4175 Branching-Strategie). Ersetzt #4175 Wave 5 PR 23.
-> **Ein-PR-Auslieferung** gemäß der Richtlinie des Maintainers für funktional kohärente Batches (2026-05-19).
-> Autor: doudouOUC. Datum: 2026-05-20. Überarbeitet: 2026-05-20 (v2.2 — Zusammenführung von Implementierungs-Reviews).
+> Zielt auf `daemon_mode_b_main` (gemäß #4175 Branching-Strategie). Ersetzt #4175 Wave 5 PR 23.
+> **Single-PR-Lieferung** gemäß der Anleitung des Maintainers zur funktionskohärenten Batch-Bereitstellung (2026-05-19).
+> Autor: doudouOUC. Datum: 2026-05-20. Überarbeitet: 2026-05-20 (v2.2 – Überarbeitungsfaltungen aus der Implementierungsprüfung).
 
 ---
 
 ## 0. Änderungsprotokoll
 
-### v2.2 (2026-05-20) — PR #4336 Implementierung + 32 Übernahme-Reviews
+### v2.2 (2026-05-20) – PR #4336 Implementierung + 32 Überprüfungs-Faltungen
 
-PR #4336 lieferte F2 als 6 atomare Commits + 6 Fix-Commits über ~4 Stunden aus. Wenshao hat kumulativ in 3 Batches reviewt; jeder Batch erzeugte Inline- + kritische Fixes, die zurückgefaltet wurden. Die folgende Tabelle zeigt die Änderungen gegenüber v2.1, gruppiert nach Review-Batch.
+PR #4336 lieferte F2 in 6 atomaren Commits + 6 Fix-Commits über ~4 Stunden. Wenshao überprüfte kumulativ in 3 Batches; jeder Batch produzierte Inline- und kritische Korrekturen, die zurückgefaltet wurden. Die folgende Tabelle dokumentiert die Änderungen gegenüber v2.1, geordnet nach Überprüfungsbatch.
 
-#### v2.1 → Erster Review-Batch (Commits 1-4, wenshao C1-C7 + S1-S4)
+#### v2.1 → erster Überprüfungsbatch (Commits 1-4, wenshao C1-C7 + S1-S4)
 
-| #   | Fundstelle                                                  | Fehlerbeschreibung                                                                                                                                                                                                                          | Eingefalteter Commit |
-| --- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| C1  | `acpAgent.ts:269` — IDE-close Pfad                          | Pool-Leeren lief nur im SIGTERM-Handler; ein vom IDE initiierter normaler Schließen-Vorgang ließ Einträge auslaufen, bis das Betriebssystem sie einsammelte. Spiegelt das SIGTERM-Pool-Leeren bei `await connection.closed`                  | `ae0b296c4`          |
-| C2  | `mcp-pool-entry.ts:cancelDrainTimer`                        | `cancelDrainTimer` setzte `maxIdleTimer` bei jedem Flackern zurück, wodurch die harte Obergrenze von §6.3 außer Kraft gesetzt wurde. Löscht jetzt nur `drainTimer`; max-idle überlebt die gesamte Lebensdauer eines Eintrags                 | `ae0b296c4`          |
-| C3  | `mcp-pool-entry.ts:doRestart`                               | Fehlgeschlagener Verbindungsaufbau ließ den Eintrag in einem Zombie-Zustand zurück (`localStatus=CONNECTED`, `state='active'`, veralteter Snapshot). Try/catch + Übergang zu `'failed'` bei Fehlschlag                                       | `ae0b296c4`          |
-| C4  | `mcp-pool-entry.ts:forceShutdown`                           | `state='closed'` wurde NACH `await`s gesetzt, sodass ein gleichzeitiger `acquire` `'active'` sehen und eine veraltete Verbindung ausgeben konnte. Wird jetzt synchron am Anfang gesetzt                                                     | `ae0b296c4`          |
-| C5  | `mcp-transport-pool.ts:drainAll`                            | Gleichzeitiger `acquire` konnte mitten im Leeren einen neuen Eintrag erzeugen. `draining`-Mutex-Flag + `await Promise.allSettled(spawnInFlight)` vor dem Löschen hinzugefügt                                                               | `ae0b296c4`          |
-| C6  | `mcp-pool-entry.ts:statusChangeListener`                    | Listener wurde nicht nach `serverName` gefiltert; jeder Eintrag erhielt Statusbenachrichtigungen von jedem Server + die eigenen `markActive`-Schreibvorgänge wurden zurückgeworfen                                                         | `ae0b296c4`          |
-| C7  | `mcp-client-manager.ts:discoverAllMcpToolsIncremental`      | Pool-Mode-Gate wurde zu `discoverAllMcpTools` hinzugefügt, aber in `Incremental` übersehen — `/mcp refresh` umging den Pool und erzeugte einen Client pro Sitzung                                                                          | `ae0b296c4`          |
-| S1  | `session-mcp-view.ts:passesSessionFilter`                   | Dokumentation hob nicht hervor, dass `excludeTools` direkte Gleichheit verwendet (keine Klammern-Form-Unterstützung); Abweichung gegenüber `mcp-client.ts:isEnabled`                                                                        | `ae0b296c4`          |
-| S2  | `pid-descendants.ts` Docstring                              | Behauptete einen Windows-spezifischen `taskkill /F`-Zweig, der nicht existierte — Node polyfillt `process.kill('SIGTERM')` zu `TerminateProcess`                                                                                            | `ae0b296c4`          |
-| S3  | `session-mcp-view.ts:applyTools` Debug-Log                  | String enthielt buchstäblich `"N"` anstelle einer Interpolation — Operatoren sahen `applied 12 tools (filtered to N registered)`                                                                                                             | `ae0b296c4`          |
-| S4  | `mcp-transport-pool.ts:createUnpooledConnection` Status-CB  | Hartcodiert auf `() => CONNECTED`, sodass `aggregateStatusByName` nach einer Trennung log. Jetzt `() => client.getStatus()`                                                                                                                 | `ae0b296c4`          |
+| #   | Stelle                                                       | Was falsch war                                                                                                                                                                      | Fold-in-Commit |
+| --- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| C1  | `acpAgent.ts:269` – IDE-close-Pfad                           | Pool-Drain lief nur im SIGTERM-Handler; normaler IDE-Schließvorgang ließ Einträge auslaufen, bis das Betriebssystem sie bereinigte. Spiegele den Pool-Drain von SIGTERM bei `await connection.closed` | `ae0b296c4`    |
+| C2  | `mcp-pool-entry.ts:cancelDrainTimer`                         | `cancelDrainTimer` setzte bei jedem Flap den `maxIdleTimer` zurück, was die harte Obergrenze aus §6.3 außer Kraft setzte. Löscht jetzt nur `drainTimer`; max-idle überlebt die gesamte Entry-Lebensdauer | `ae0b296c4`    |
+| C3  | `mcp-pool-entry.ts:doRestart`                                | Wiederherstellfehler hinterließ Entry im Zombie-Zustand (`localStatus=CONNECTED`, `state='active'`, veralteter Snapshot). Try/Catch + Übergang zu `'failed'` bei Fehler              | `ae0b296c4`    |
+| C4  | `mcp-pool-entry.ts:forceShutdown`                            | `state='closed'` wurde NACH awaits gesetzt, sodass ein gleichzeitiges `acquire` den Zustand `'active'` sehen und eine veraltete Verbindung ausgeben konnte. Wird jetzt synchron ganz oben gesetzt | `ae0b296c4`    |
+| C5  | `mcp-transport-pool.ts:drainAll`                             | Gleichzeitiges `acquire` konnte mitten im Drain eine neue Entry erzeugen. `draining`-Mutex-Flag + `await Promise.allSettled(spawnInFlight)` vor dem Löschen hinzugefügt              | `ae0b296c4`    |
+| C6  | `mcp-pool-entry.ts:statusChangeListener`                     | Listener wurde nicht nach `serverName` gefiltert; jede Entry erhielt jede Statusbenachrichtigung jedes Servers + das eigene `markActive`-Write wurde zurückgespiegelt               | `ae0b296c4`    |
+| C7  | `mcp-client-manager.ts:discoverAllMcpToolsIncremental`       | Pool-Mode-Gate wurde zu `discoverAllMcpTools` hinzugefügt, fehlte aber bei `Incremental` – `/mcp refresh` umging den Pool und erzeugte einen pro-Sitzung-Client                        | `ae0b296c4`    |
+| S1  | `session-mcp-view.ts:passesSessionFilter`                    | Dokumentation wies nicht darauf hin, dass `excludeTools` direkte Gleichheit verwendet (keine Klammer-Form-Unterstützung); Abweichung von `mcp-client.ts:isEnabled`                    | `ae0b296c4`    |
+| S2  | `pid-descendants.ts` Docstring                               | Behauptete einen Windows-spezifischen `taskkill /F`-Zweig, der nicht existierte – Node polyfillt `process.kill('SIGTERM')` zu `TerminateProcess`                                       | `ae0b296c4`    |
+| S3  | `session-mcp-view.ts:applyTools` Debug-Log                   | Zeichenkette enthielt buchstäblich `"N"` anstelle einer Interpolation – Betreiber sahen `applied 12 tools (filtered to N registered)`                                                | `ae0b296c4`    |
+| S4  | `mcp-transport-pool.ts:createUnpooledConnection` Status-CB   | Hartcodiert auf `() => CONNECTED`, sodass `aggregateStatusByName` nach einer Trennung log. Jetzt `() => client.getStatus()`                                                          | `ae0b296c4`    |
 
-#### Commit-5 Selbstprüfungs-Batch (R1-R3 klein)
+#### Commit-5 Selbstüberprüfungsbatch (R1-R3 klein)
 
-| #   | Fundstelle                                                 | Fehlerbeschreibung                                                                                                                                                                                                                       | Eingefalteter Commit |
-| --- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| R1  | `server.test.ts:918` `/capabilities` Envelope              | Test bestätigte `getAdvertisedServeFeatures()` (keine Umschaltungen), aber server.ts übergibt `mcpPoolActive: opts.mcpPoolActive !== false` (standardmäßig aktiv). Umschaltung verankern                                                | `3e68c00bc`          |
-| R2  | `server.test.ts` Standardmäßig-aktiv-Abedeckung            | Kein Test startete mit Standardoptionen, um zu prüfen, ob Pool-Tags angekündigt werden. Expliziten Test mit `mcpPoolActive: false` hinzugefügt                                                                                          | `3e68c00bc`          |
-| R3  | `events.ts:DaemonMcpServerRestartRefusedData`              | Dokumentation besagte, dass SDKs vor dem PR "den neuen Wert als unbekannt sehen und generisch anzeigen" würden — tatsächlich lehnt `MCP_RESTART_REFUSED_REASONS.has(...)` ab → stilles Verwerfen                                        | `3e68c00bc`          |
-#### Zweiter Review-Durchlauf (Commits 1-5, wenshao R1-R10)
+| #   | Stelle                                            | Was falsch war                                                                                                                                                                    | Fold-in-Commit |
+| --- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| R1  | `server.test.ts:918` `/capabilities`-Hülle        | Test behauptete `getAdvertisedServeFeatures()` (keine Toggles), aber server.ts übergibt `mcpPoolActive: opts.mcpPoolActive !== false` (standardmäßig aktiv). Toggle verankern      | `3e68c00bc`    |
+| R2  | `server.test.ts` Coverage für standardmäßige Aktivierung | Kein Test startete mit Standardoptionen, um zu überprüfen, ob Pool-Tags angezeigt werden. Expliziten Test mit `mcpPoolActive: false` hinzugefügt                                        | `3e68c00bc`    |
+| R3  | `events.ts:DaemonMcpServerRestartRefusedData`     | Dokumentation sagte, Pre-PR-SDKs würden "neuen Wert als unbekannt sehen und generisch anzeigen" – tatsächlich lehnt `MCP_RESTART_REFUSED_REASONS.has(...)` ab → stiller Drop       | `3e68c00bc`    |
 
-| #   | Stelle                                               | Was falsch war                                                                                                                                                                                                                            | Einarbeitungs-Commit |
-| --- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| WR1 | `mcp-pool-entry.ts:maxIdleTimer`                     | C2-Fix bewahrte `maxIdleTimer` korrekt über das Flapping, aber die Fire-Action schloss unabhängig von `refs.size` zwangsweise. Eine aktive Sitzung mit Wiederverbindung innerhalb der Gnadenfrist würde nach 5 Minuten Werkzeuge verlieren | `72399f109`          |
-| WR2 | `mcp-client-manager.ts:discoverAllMcpToolsViaPool`   | `releaseAllPooledConnections` + erneutes Akquirieren aller Verbindungen bei jedem Durchlauf hinterließ ein kurzes Fenster mit null registrierten MCP-Werkzeugen und setzte jeden Drain-Timer zurück. Differenz gegen gewünschtes `(name, fingerprint)` | `72399f109`          |
-| WR3 | `mcp-pool-entry.ts:doRestart` snapshot fan-out       | Neustart aktualisierte `toolsSnapshot`/`promptsSnapshot` und sandte getippte Ereignisse – aber keine `SessionMcpView`-Instanz hatte diesen Stream abonniert. Iteriere `subscribers` direkt nach dem Snapshot                                       | `72399f109`          |
-| WR4 | `mcp-transport-pool.ts:getSnapshot subprocessCount`  | Zählte WebSocket zu `subprocessCount` – WebSocket verbindet remote, kein lokaler Kindprozess. Auf `'stdio'` beschränkt                                                                                                                     | `72399f109`          |
-| WR5 | `pid-descendants.ts` PowerShell `-Filter`            | Interpolierte `${pid}` direkt in den `-Filter`-String. Der Einstiegspunkt `Number.isInteger` verhindert heute Injection; Bindung an `$p` für Defense-in-Depth gegen zukünftige Lockerungen der Guard                                             | `72399f109`          |
-| WR6 | `mcp-pool-entry.ts` ctor `cfg` field                 | `readonly cfg: MCPServerConfig` war implizit öffentlich, machte Umgebungs-API-Schlüssel / Header-Auth / OAuth-Felder zugänglich. Auf `private` gesetzt; neuer `transportKind`-Getter für den einzigen externen Leser                              | `72399f109`          |
-| WR7 | `mcp-pool-events.ts` premature exports               | 5 PoolEvent-Typwächter + `Prompt`-Reexport + `PoolEntryConnectionStatus` hatten keine Aufrufer. Entfernt; `MCPCallInterruptedError` beibehalten (Design §13.4 vorgeschrieben)                                                                 | `72399f109`          |
-| WR8 | `acpAgent.ts:269,300` pool drain duplication         | SIGTERM + IDE-Schließen hatten identische `if (agentInstance) { try { await shutdownMcpPool(8_000) } catch... }`-Blöcke. `drainPoolBeforeExit(label)`-Helfer extrahiert                                                                      | `72399f109`          |
+#### Zweiter Überprüfungsbatch (Commits 1-5, wenshao R1-R10)
 
-#### Commit-6 Selbstüberprüfungsdurchlauf (R1-R3 kritischer Wettlauf)
+| #   | Stelle                                                | Was falsch war                                                                                                                                                                             | Fold-in-Commit |
+| --- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
+| WR1 | `mcp-pool-entry.ts:maxIdleTimer`                      | C2-Fix bewahrte `maxIdleTimer` korrekt über den Flap, aber die Feueraktion schloss unabhängig von `refs.size`. Aktive Sitzung mit erneutem Anhängen innerhalb der Gnadenfrist verlor Tools nach 5min | `72399f109`    |
+| WR2 | `mcp-client-manager.ts:discoverAllMcpToolsViaPool`    | `releaseAllPooledConnections` + erneutes ERWERBEN ALLER bei jedem Durchlauf hinterließ kurzzeitiges Fenster ohne registrierte MCP-Tools UND setzte jeden Drain-Timer zurück. Abweichung vom gewünschten `(name, fingerprint)` | `72399f109`    |
+| WR3 | `mcp-pool-entry.ts:doRestart` Snapshot-Fanout         | Neustart aktualisierte `toolsSnapshot`/`promptsSnapshot` und emittierte typisierte Events – aber keine `SessionMcpView`-Instanz abonnierte diesen Stream. Iteriere `subscribers` direkt nach Snapshot | `72399f109`    |
+| WR4 | `mcp-transport-pool.ts:getSnapshot subprocessCount`   | Zählte WebSocket zu `subprocessCount` – WebSocket verbindet sich entfernt, kein lokaler Kindprozess. Auf `'stdio'` beschränkt                                                                | `72399f109`    |
+| WR5 | `pid-descendants.ts` PowerShell `-Filter`             | Interpolierte `${pid}` direkt in den `-Filter`-String. Einstiegspunkt `Number.isInteger` Guard verhindert heute eine Einschleusung; zur Verteidigung gegen zukünftige Lockerungen an `$p` binden | `72399f109`    |
+| WR6 | `mcp-pool-entry.ts` ctor `cfg`-Feld                   | `readonly cfg: MCPServerConfig` war implizit öffentlich, gab API-Schlüssel/Header-Auth/OAuth-Felder preis. Auf `private` gesetzt; neuer Getter `transportKind` für den einzigen externen Leser | `72399f109`    |
+| WR7 | `mcp-pool-events.ts` verfrühte Exporte                | 5 PoolEvent-Typwächter + `Prompt`-Reexport + `PoolEntryConnectionStatus` hatten null Aufrufer. Entfernt; `MCPCallInterruptedError` (Design §13.4 Vorgabe) beibehalten                        | `72399f109`    |
+| WR8 | `acpAgent.ts:269,300` Pool-Drain-Duplizierung         | SIGTERM + IDE-close hatten identische `if (agentInstance) { try { await shutdownMcpPool(8_000) } catch... }`-Blöcke. `drainPoolBeforeExit(label)`-Helfer extrahiert                         | `72399f109`    |
 
-| #   | Stelle                                    | Was falsch war                                                                                                                                                                                              | Einarbeitungs-Commit |
-| --- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| 6R1 | `mcp-transport-pool.ts:onClosed`          | Slot-Freigabe-Wettlauf: A beendet Spawn, B (anderer Fingerabdruck, gleicher Name) startet Spawn, A wird entladen. Close-cb prüfte nur `entries` (B noch nicht registriert) → vorzeitige Freigabe               | `0e58a098f`          |
-| 6R2 | `events.ts:mcpBudgetWarningCount` JSDoc   | Workspace-weite Ereignisse werden an N Sitzungen verteilt → N Inkremente im Reducer; Verbraucher, die über Sitzungen aggregieren, zählen doppelt. Docstring aktualisiert, um den Multiplikator zu erwähnen | `0e58a098f`          |
-| 6R3 | `acpAgent.ts:broadcastBudgetEvent`        | Iterierte direkt über `this.sessions.keys()` während asynchronem Fan-Out; gleichzeitiges `killSession` könnte Iterator beschädigen. Snapshot via `Array.from(...)`                                          | `0e58a098f`          |
+#### Commit-6 Selbstüberprüfungsbatch (R1-R3 kritischer Wettlauf)
 
-#### Dritter Review-Durchlauf (Commits 1-6, wenshao W1-W15)
+| #   | Stelle                                    | Was falsch war                                                                                                                                                                   | Fold-in-Commit |
+| --- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 6R1 | `mcp-transport-pool.ts:onClosed`          | Slot-Freigabe-Wettlauf: A beendet Spawn, B (anderer Fingerabdruck, gleicher Name) startet Spawn, A drainiert. Close-CB prüfte nur `entries` (B noch nicht registriert) → verfrühte Freigabe | `0e58a098f`    |
+| 6R2 | `events.ts:mcpBudgetWarningCount` JSDoc   | Workspace-bezogene Events fächern zu N Sitzungen auf → N Reducer-Inkremente; Verbraucher, die über Sitzungen hinweg aggregieren, zählen doppelt. Docstring aktualisiert, um den Multiplikator zu erwähnen | `0e58a098f`    |
+| 6R3 | `acpAgent.ts:broadcastBudgetEvent`        | Iterierte `this.sessions.keys()` direkt während des asynchronen Fanouts; gleichzeitiges `killSession` konnte den Iterator beschädigen. Snapshot über `Array.from(...)`            | `0e58a098f`    |
 
-| #   | Stelle                                                          | Was falsch war                                                                                                                                                                                                                               | Einarbeitungs-Commit |
-| --- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| W1  | `mcp-transport-pool.ts:spawnEntry` catch                        | Spawn-Fehler ließ `statusChangeListener` dauerhaft hängen – nur `forceShutdown` entfernt ihn. `entry.forceShutdown('manual')` zum Catch hinzugefügt                                                                                             | `4a3c5cd90`          |
-| W2  | `mcp-pool-entry.ts:statusChangeListener` cross-check            | Modulweite `serverStatuses`-Map wird von Multi-Fingerabdruck-Einträgen gemeinsam genutzt. A's Transportfehler schrieb DISCONNECTED, B's Listener beschädigte B's `localStatus`. `client.getStatus()`-Prüfung hinzugefügt                       | `4a3c5cd90`          |
-| W3  | `mcp-pool-entry.ts:doRestart` pid sweep                         | Neustart übersprang `listDescendantPids` + `sigtermPids` – jeder Neustart von `npx`/`uvx`-gewickeltem stdio verwaiste den eigentlichen MCP-Enkel. Bereinigung vor disconnect hinzugefügt                                                       | `4a3c5cd90`          |
-| W4  | `mcp-pool-entry.ts:doRestart` drain timer race                  | Drain-Timer könnte während des Neustart-Yields feuern → `forceShutdown` entfernt Eintrag → `client.connect` erzeugt eine Waise. `cancelDrainTimer` + `state→active` am Anfang von `doRestart` hinzugefügt                                      | `4a3c5cd90`          |
-| W5  | `mcp-client-manager.ts:pooledConnections` dead handles          | Wenn ein Eintrag zu `'failed'` wechselte, hielt der Manager die tote `PooledConnection` für immer. Abonniere Eintragsereignisse; entferne bei `'failed'` (idempotent via `get(name) === conn` Guard)                                            | `4a3c5cd90`          |
-| W6  | `mcp-client-manager.ts:discoverAllMcpToolsViaPool` Reentranz    | Zwei sich überlappende Durchläufe könnten beide `set(name, conn)` aufrufen → erste Verbindung leakte. `discoveryInFlight`-Mutex hinzugefügt; zweiter Aufrufer wartet auf dasselbe Promise. Neuer Regressionstest                                   | `4a3c5cd90`          |
-| W9  | `acpAgent.ts:parsePoolDrainMs` Strenge                          | `Number.parseInt` akzeptierte `'30000ms'` / `'30000abc'`. Strenger `^\d+$`-Regex; Ablehnung mit stderr-Warnung + Standardfallback                                                                                                              | `4a3c5cd90`          |
-| W10 | `mcp-transport-pool.ts:acquire` indexAttach Reihenfolge         | `indexAttach` mutierte `sessionToEntries` VOR `entry.attach()`. Wenn `attach` einen Fehler warf, veraltete Reverse-Index-Zuordnung. `indexAttach` nach erfolgreichem `attach` verschoben (sowohl schnelle als auch in-flight-Pfade)               | `4a3c5cd90`          |
-| W13 | `mcp-transport-pool.ts:subprocessCount` JSDoc                  | Dokumentation behauptete noch `stdio + websocket`, nachdem WR4 auf stdio beschränkte. Aktualisiert.                                                                                                                                         | `4a3c5cd90`          |
-| W14 | `mcp-transport-pool.ts:createUnpooledConnection` catch          | Gleicher `statusChangeListener`-Leak wie W1 im ungepoolten Pfad. Gleicher Spiegel: `forceShutdown` vor disconnect                                                                                                                            | `4a3c5cd90`          |
-| W15 | `bridge.ts:restartMcpServer` response                          | `as PoolEntries`-Cast war unsicher – ungetyptes JSON von ACP-Kind. `Array.isArray`-Prüfung + Shape-Guard pro Eintrag; fehlerhafte Einträge mit stderr-Brotkrümel übersprungen                                                                  | `4a3c5cd90`          |
-#### Abgelehnt mit Antwort (als F2-Folgen erfasst)
+#### Dritter Überprüfungsbatch (Commits 1-6, wenshao W1-W15)
 
-| #   | Stelle                                              | Grund für Ablehnung                                                                                                                                                             |
-| --- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| W7  | Testabdeckungslücken (4 ungetestete kritische Pfade)      | 1/4 hinzugefügt (W6-Regressionstest); Rest auf fokussierten Testabdeckungs-PR nach Zusammenführung der F2-Serie verschoben                                                                                 |
-| W8  | `maxReconnectAttempts` / `reconnectStrategy` ungenutzt | Forward-compat-Platzhalter für das verschobene, vom Gesundheitsmonitor gesteuerte Wiederherstellen der Verbindung (Design §6.6); Entfernen und erneutes Hinzufügen verursacht öffentliche Typänderungen                                          |
-| W11 | Doppelte Fast-Path- / In-Flight-Path-Anhängeblöcke | ✅ Erledigt in PR A: Private Hilfsfunktionen `attachPooledSession` + `rollbackReservationOnSpawnFailure` (Commit `2d546efca`)                                                                |
-| W12 | `passesSessionFilter` O(M×N) pro `applyTools`       | ✅ Erledigt in PR A: `applyTools` / `applyPrompts` berechnen Filter-`Set`s einmal pro Durchlauf vor; Prädikat wird O(1) pro Tool (Commit `a4a855ab3`)                                      |
-| R9  | `McpClientManager` ctor 7 Positions-Sentinels      | ✅ Erledigt in PR A: Options-Objekt ctor + `mkManager`-Testfabrik (Commit `0cb1eaa27`)                                                                                             |
-| R10 | `pgrep -P <pid>` Kosten pro PID und Ebene             | ✅ Erledigt in PR A: Einzelner `ps -A -o pid=,ppid=` Snapshot + In-Memory-BFS-Durchlauf; pgrep-BFS als Fallback für BusyBox <v1.28 / Distroless beibehalten (Commit landet als letzter PR-A-Teil) |
+| #   | Stelle                                                           | Was falsch war                                                                                                                                                                               | Fold-in-Commit |
+| --- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| W1  | `mcp-transport-pool.ts:spawnEntry` catch                         | Spawn-Fehler ließ `statusChangeListener` dauerhaft hängen – nur `forceShutdown` entfernt ihn. `entry.forceShutdown('manual')` im catch hinzugefügt                                            | `4a3c5cd90`    |
+| W2  | `mcp-pool-entry.ts:statusChangeListener` Querprüfung             | Modulweite `serverStatuses`-Map wird von Einträgen mit mehreren Fingerabdrücken geteilt. A's Transportfehler schrieb DISCONNECTED, B's Listener beschädigte B's `localStatus`. `client.getStatus()`-Prüfung hinzugefügt | `4a3c5cd90`    |
+| W3  | `mcp-pool-entry.ts:doRestart` PID-Sweep                          | Neustart übersprang `listDescendantPids` + `sigtermPids` – jeder Neustart eines mit `npx`/`uvx` umschlossenen stdio hinterließ den tatsächlichen MCP-Enkel als Waise. Sweep vor Trennung hinzugefügt | `4a3c5cd90`    |
+| W4  | `mcp-pool-entry.ts:doRestart` Drain-Timer-Wettlauf               | Drain-Timer konnte mitten im Neustart-Yield auslösen → `forceShutdown` entfernt Entry → `client.connect` erzeugt Waise. `cancelDrainTimer` + `state→active` am Anfang von `doRestart` hinzugefügt | `4a3c5cd90`    |
+| W5  | `mcp-client-manager.ts:pooledConnections` tote Handles           | Wenn Entry zu `'failed'` wechselte, behielt Manager tote `PooledConnection` für immer. Subscribe auf Entry-Events; Räumung bei `'failed'` (idempotent über `get(name) === conn`-Guard)       | `4a3c5cd90`    |
+| W6  | `mcp-client-manager.ts:discoverAllMcpToolsViaPool` Wiedereintritt | Zwei Durchläufe, die sich überlappen, konnten beide `set(name, conn)` aufrufen → erste Verbindung ausgelaufen. `discoveryInFlight`-Mutex hinzugefügt; zweiter Aufrufer wartet auf dasselbe Promise. Neuer Regressionstest | `4a3c5cd90`    |
+| W9  | `acpAgent.ts:parsePoolDrainMs` Strenge                           | `Number.parseInt` akzeptierte `'30000ms'` / `'30000abc'`. Strenger `^\d+$`-Regex; Zurückweisung mit stderr-Warnung + Standard-Fallback                                                       | `4a3c5cd90`    |
+| W10 | `mcp-transport-pool.ts:acquire` indexAttach-Reihenfolge          | `indexAttach` mutierte `sessionToEntries` VOR `entry.attach()`. Wenn `attach` einen Fehler warf, veraltete Rückwärtsindexierung. `indexAttach` nach erfolgreichem `attach` verschoben (sowohl schneller als auch in-Flight-Pfad) | `4a3c5cd90`    |
+| W13 | `mcp-transport-pool.ts:subprocessCount` JSDoc                    | Doc behauptete nach WR4 immer noch `stdio + websocket`, obwohl auf stdio beschränkt. Aktualisiert                                                                                            | `4a3c5cd90`    |
+| W14 | `mcp-transport-pool.ts:createUnpooledConnection` catch           | Gleicher `statusChangeListener`-Leck wie W1 im ungepoolten Pfad. Gleicher Spiegel: `forceShutdown` vor Trennung                                                                              | `4a3c5cd90`    |
+| W15 | `bridge.ts:restartMcpServer` Antwort                             | `as PoolEntries`-Cast war unsicher – untypisiertes JSON vom ACP-Kind. `Array.isArray`-Prüfung + Formwächter pro Entry; fehlerhafte Einträge mit stderr-Brotkrümel übersprungen               | `4a3c5cd90`    |
+
+#### Abgelehnt mit Antwort (als F2-Folgeaufgaben eingereicht)
+
+| #   | Stelle                                                | Grund für Ablehnung                                                                                                                                                              |
+| --- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W7  | Lücken in der Testabdeckung (4 ungetestete kritische Pfade) | 1/4 hinzugefügt (W6-Regressionstest); Rest auf fokussierten Testabdeckungs-PR nach Zusammenführung der F2-Serie verschoben                                                          |
+| W8  | `maxReconnectAttempts` / `reconnectStrategy` ungenutzt | Vorwärtskompatibilitäts-Platzhalter für den verschobenen Health-Monitor-gesteuerten Wiederherstellungsvorgang (Design §6.6); Entfernen + erneutes Hinzufügen verursacht öffentlichen Typ-Churn |
+| W11 | Doppelte schnelle Pfad-/in-Flight-Pfad-Anhänge-Blöcke  | ✅ In PR A erledigt: `attachPooledSession` + `rollbackReservationOnSpawnFailure` private Helfer (Commit `2d546efca`)                                                            |
+| W12 | `passesSessionFilter` O(M×N) pro `applyTools`          | ✅ In PR A erledigt: `applyTools` / `applyPrompts` berechnen Filter-`Set`s einmal pro Durchlauf vor; Prädikat wird O(1) pro Tool (Commit `a4a855ab3`)                             |
+| R9  | `McpClientManager` ctor 7-Positions-Wächter            | ✅ In PR A erledigt: Options-Objekt ctor + `mkManager`-Testfabrik (Commit `0cb1eaa27`)                                                                                         |
+| R10 | `pgrep -P <pid>` pro-PID-pro-Ebene-Kosten              | ✅ In PR A erledigt: einzelner `ps -A -o pid=,ppid=` Snapshot + In-Memory-BFS-Durchlauf; pgrep BFS als Fallback für BusyBox <v1.28 / Distroless beibehalten (Commit landet als letztes PR-A-Stück) |
 
 #### Fehleranzahl
 
-- **3 Batches × 27 kritische / wichtige Korrekturen** + 5 Dokumentations-/Vorschlagsfaltungen = **32 Review-Einarbeitungen** insgesamt
-- **2 kritische Race Conditions, die erst beim zweiten Blick entdeckt wurden** (6R1 Slot-Freigabe-während-Spawn-Race; W6 Wiedereintritts-Race bei Erkennung)
-- **0 stille Fehler ausgeliefert** — jede Korrektur trägt einen Inline-`// F2 (#4175 Commit X Review-Korrektur — wenshao YN):` Brotkrümel, der auf die ursprüngliche Überprüfung verweist
+- **3 Batches × 27 kritische / wichtige Korrekturen** + 5 Dokumentations-/Vorschlagsfaltungen = **32 Überprüfungs-Faltungen insgesamt**
+- **2 kritische Wettläufe nur beim zweiten Hinsehen entdeckt** (6R1 Slot-Freigabe-während-Spawn-Wettlauf; W6 Discovery-Wiedereintritt)
+- **0 stille Fehler ausgeliefert** — jede Korrektur trägt einen Inline-Krümel `// F2 (#4175 Commit X Überprüfung Fix — wenshao YN):`, der auf die ursprüngliche Überprüfung verweist
 
-### v2.1 (2026-05-20) — Single-PR-Strategie + 12 Review-Einarbeitungen
+### v2.1 (2026-05-20) – Single-PR-Strategie + 12 Überprüfungs-Faltungen
 
 | #      | Was                                                                                                          | Warum                                                                                                             |
-| ------ | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| V21-1  | Wechsel von 6-Unter-PR-Plan zu **einem funktional kohärenten PR** mit 6 atomaren Commits                           | Gemäß Maintainer-Anleitung (#4175 Branchenstrategie); Reviewer können Commit für Commit via `git log -p` lesen         |
-| V21-2  | Hinzugefügt `sessionToEntries: Map<sid, Set<ConnectionId>>` Reverse-Index im Pool (§6)                              | `releaseSession` O(N Einträge) → O(Refs der Session); für 1000-Session-Skalierung erforderlich                               |
-| V21-3  | `?fingerprint=` Query-Parameter auf Neustart-Route (§13.1)                                                          | Operator möchte möglicherweise nur einen Eintrag neu starten, wenn derselbe Name mehrere Fingerabdrücke hat; fast keine Kosten, es jetzt hinzuzufügen |
-| V21-4  | Spawn-Fehlerpfad gibt reservierten Slot explizit frei (§6.1, §6.5)                                             | Andernfalls läuft der Slot bis zum nächsten Gesundheitsmonitor-Durchlauf; subtiler echter Fehler                                            |
-| V21-5  | Neuer §13.4: Semantik für laufende Tool-Aufrufe während Wiederverbindung                                                     | `MCPCallInterruptedError`; Pool wiederholt NICHT automatisch (Schreibvorgänge unsicher)                                            |
-| V21-6  | Neuer §10.4: `/mcp disable X` löst erneutes Anwenden von `SessionMcpView` aus                                                | Andernfalls entfernt eine Deaktivierung während der Sitzung nicht bereits registrierte Tools                                             |
-| V21-7  | Status-Route gibt `entryIndex` aus, nicht rohen Fingerabdruck (§8.3)                                                 | Vermeidet Seitenkanal-Offenlegung der OAuth-Token-Rotation durch Fingerabdruckänderung                                     |
-| V21-8  | Wiederholungsintervall für Wiederverbindung spezifiziert: stdio fest 5s × 3, HTTP/SSE exponentiell 1/2/4/8/16s × 5 (§6.6)                     | v2 hat nichts gesagt; HTTP benötigt längeres Wiederholungsbudget für Netzwerkflatter                                                  |
-| V21-9  | `canonicalOAuth(o)` normalisiert `{enabled: false}` ≡ `undefined` ≡ `null` (§5.1)                               | Andernfalls erzeugen funktional äquivalente Konfigurationen unterschiedliche Einträge                                              |
-| V21-10 | Pool-Fallback-Helfer umbenannt von "Legacy-In-Prozess-Acquire" zu `createUnpooledConnection` (§5.3, §6.1)      | SDK-MCP-Umgehung ist permanent, nicht Legacy                                                                         |
-| V21-11 | `drainAll(opts?)` gibt `Promise<void>` mit `timeoutMs` Wanduhr-Budget zurück (§17)                            | Aufrufer muss wissen, wann der Drain abgeschlossen ist, um die Reihenfolge des Herunterfahrens zu bestimmen                                                  |
-| V21-12 | SDK-Reduzierer-Feldnamen fixiert (Q1 gelöst): `mcpBudgetWarningCount` etc. mit Bereichssemantik in JSDoc beibehalten | Keine öffentliche API-Umbenennung während des PR                                                                                     |
-| V21-13 | Fixiert Q3 (Standard-Pool-an, `--no-mcp-pool` Kill-Switch), Q4 (HTTP/SSE Opt-in), Q6 (Eager-Konstruktion)       | Single-PR-Auslieferung; keine Flag-Schaltung erforderlich                                                                       |
-| V21-14 | Hinzugefügt R9/R10/R11 Single-PR-Risiken (§23)                                                                        | Review-Ermüdung, Merge-Konflikt mit daemon_mode_b_main, CI-Zeit                                                      |
-| V21-15 | Behandlung von Waisen-Einträgen bei Deinstallation von Erweiterungen auf natürliches `MAX_IDLE_MS`-Reaping verschoben (§16.3)                      | Kein explizites `invalidateByExtension`; hält das Modell einheitlich                                                        |
-### v2 (2026-05-20) — initial review fold-ins from v1 sketch
+| ------ | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| V21-1  | Wechsel von 6-Sub-PR-Plan zu **einem funktionskohärenten PR** mit 6 atomaren Commits                           | Gemäß Maintainer-Anleitung (#4175 Branching-Strategie); Prüfer kann Commit-für-Commit via `git log -p` lesen       |
+| V21-2  | `sessionToEntries: Map<sid, Set<ConnectionId>>` Reverse-Index im Pool hinzugefügt (§6)                          | `releaseSession` O(N Einträge) → O(Refs der Sitzung); für 1000-Sitzungen-Skalierung benötigt                     |
+| V21-3  | `?fingerprint=`-Abfrageparameter auf Neustart-Route (§13.1)                                                    | Betreiber möchten möglicherweise nur einen Eintrag neu starten, wenn derselbe Name mehrere Fingerabdrücke hat; minimale Kosten jetzt hinzufügen |
+| V21-4  | Fehlerpfad beim Spawn gibt reservierten Slot explizit frei (§6.1, §6.5)                                        | Andernfalls Slot-Leck bis zum nächsten Health-Monitor-Durchlauf; subtiler echter Fehler                            |
+| V21-5  | Neuer §13.4: In-Flight-Tool-Aufruf während Wiederherstellungssemantik                                          | `MCPCallInterruptedError`; Pool führt KEINE automatische Wiederholung aus (Schreibvorgänge unsicher)               |
+| V21-6  | Neuer §10.4: `/mcp disable X` löst `SessionMcpView`-Neuanwendung aus                                           | Andernfalls entfernt das Deaktivieren während der Sitzung nicht bereits registrierte Tools                         |
+| V21-7  | Status-Route gibt `entryIndex` und nicht rohen Fingerabdruck preis (§8.3)                                      | Vermeidet Seitenkanal-Offenlegung der OAuth-Token-Rotation via Fingerabdruckänderung                               |
+| V21-8  | Wiederherstellungs-Backoff spezifiziert: stdio fest 5s × 3, HTTP/SSE exponentiell 1/2/4/8/16s × 5 (§6.6)       | v2 sagte nichts; HTTP benötigt längeres Wiederholungsbudget für Netzwerk-Flaps                                   |
+| V21-9  | `canonicalOAuth(o)` normalisiert `{enabled: false}` ≡ `undefined` ≡ `null` (§5.1)                              | Andernfalls erzeugen funktional äquivalente Konfigurationen unterschiedliche Einträge                            |
+| V21-10 | Pool-Fallback-Helfer von "Legacy-In-Prozess-Acquire" in `createUnpooledConnection` umbenannt (§5.3, §6.1)      | SDK-MCP-Umgehung ist dauerhaft, nicht Legacy                                                                       |
+| V21-11 | `drainAll(opts?)` gibt `Promise<void>` zurück mit `timeoutMs` Wanduhr-Budget (§17)                              | Aufrufer muss wissen, wann Drain für die Abschaltreihenfolge beendet ist                                            |
+| V21-12 | SDK-Reducer-Feldnamen gesperrt (Q1 gelöst): `mcpBudgetWarningCount` usw. mit Geltungsbereich-Semantik in JSDoc beibehalten | Keine öffentliche API-Umbenennung mitten im PR                                                                     |
+| V21-13 | Q3 (Standard-Pool-aktiv, `--no-mcp-pool`-Kill-Switch), Q4 (HTTP/SSE Opt-in), Q6 (eifrige Konstruktion) gesperrt | Single-PR-Lieferung; keine Flag-Gating erforderlich                                                               |
+| V21-14 | R9/R10/R11 Single-PR-Risiken hinzugefügt (§23)                                                                  | Überprüfungsermüdung, daemon_mode_b_main Merge-Konflikt, CI-Zeit                                                  |
+| V21-15 | Verwaiste Einträge bei Extension-Deinstallation auf natürliches Bereinigen durch `MAX_IDLE_MS` verschoben (§16.3)| Kein explizites `invalidateByExtension`; hält Modell einheitlich                                                  |
 
-| #   | Was                                                                                                  | Warum                                                                                     |
-| --- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| C1  | Pool verteilt **Werkzeuge + Prompts** (war: nur Werkzeuge)                                            | `McpClient`-Konstruktor akzeptiert beide Registries; Prompts gehen sonst im Pool-Modus still verloren       |
-| C2  | Neuer Abschnitt über **Koexistenz globaler Zustände** (`serverStatuses` / `mcpServerRequiresOAuth` Modul-Maps) | Sitzungsübergreifende Nutzung existiert bereits heute; Pool übernimmt und formalisiert                     |
-| C3  | Factory-Pfad von `connectToMcpServer` **vereinheitlicht** mit der `McpClient`-Klasse in F2-1                          | v1 hat nur die Klasse umstrukturiert; würde einen parallelen nicht-gepoolten Pfad hinterlassen                       |
-| C4  | Snapshot-Wiedergabe beim Anhängen (earlyEvents-Stil) zu `PoolEntry.attach()` hinzugefügt                           | Neues Wettrennen: Sitzung B hängt an → Server sendet `tools/list_changed` bevor das Abonnement eingerichtet ist |
-| C5  | `spawnInFlight: Map<ConnectionId, Promise<PoolEntry>>` zur Deduplizierung bei gleichzeitigem Abruf                  | v1 im Testmatrix erwähnt, aber im Implementierungsvertrag übersehen                          |
-| C6  | Plattformübergreifende Absteiger-PID-Bereinigung (Linux/macOS pgrep, Windows wmic/PowerShell)                      | v1 sagte "opencode's `pgrep -P` kopieren" — das ist nur Unix-kompatibel                                    |
-| C7  | `trust`-Feld als **Kopie** des Tool-Objekts pro Sitzung                                                     | trust lebt in `DiscoveredMCPTool`; eine gemeinsam genutzte Instanz würde das pro-Sitzung-Vertrauen vermischen            |
-| C8  | HTTP/SSE-Transporte **Opt-in** für Pooling (Standard: nur stdio + Websocket)                           | Einige MCP-HTTP-Server verwalten einen sitzungsspezifischen Transportzustand; Teilen riskiert Zustandsverlust      |
-| C9  | SDK-MCP-Server (`isSdkMcpServerConfig`) explizit umgehen                                               | `sendSdkMcpMessage` ist per Design pro Sitzung                                               |
-| C10 | OAuth-Pfad explizit **auf F3 verschoben**                                                              | OAuth-Ablauf benötigt PermissionMediator-ähnliches Routing; nicht im Umfang von F2                            |
-| C11 | Semantik der Neustart-Route spezifiziert (Name → alle passenden Einträge)                                          | PR 17s `POST /workspace/mcp/:server/restart` war zuvor eindeutig (1 Eintrag); jetzt 1..N   |
-| C12 | Status-Routen-Refaktor-Abschnitt (neuer Pfad: `QwenAgent.getMcpPoolAccounting()`)                          | `httpAcpBridge.ts:733-770` liest derzeit den Manager der Bootstrap-Sitzung — muss geändert werden       |
-| C13 | Generationszähler auf `PoolEntry` zum Schutz vor veralteten `tools/list_changed`-Handlern                        | Opencode-Muster: `if (s.clients[name] !== client) return`                                 |
-| C14 | Aufteilung der Unter-PRs 4 → **6**                                                                            | v1 unterschätzt; A2/B1/B3/C6 fügen jeweils echte Arbeit hinzu                                          |
-| C15 | Lazy Pool-Erstellung (nur wenn N≥2 Sitzungen gesehen) — optional                                       | `qwen serve --foreground` Einzelsitzung profitiert nicht; spart Initialisierungskosten                              |
+### v2 (2026-05-20) – erste Überprüfungs-Faltungen aus v1-Skizze
 
+| #   | Was                                                                                                  | Warum                                                                                        |
+| --- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| C1  | Pool fächert **Tools + Prompts** auf (bisher nur Tools)                                                | `McpClient`-ctor nimmt beide Registrierungen; Prompts gehen sonst im Pool-Modus still verloren |
+| C2  | Neuer Abschnitt zur **Koexistenz globaler Zustände** (`serverStatuses` / `mcpServerRequiresOAuth` Modul-Maps) | Sitzungsübergreifende Teilung existiert bereits heute; Pool erbt + formalisiert              |
+| C3  | `connectToMcpServer`-Werkspfad **vereinheitlicht** mit der `McpClient`-Klasse in F2-1                | v1 refaktorierte nur die Klasse; würde einen parallelen, nicht gepoolten Pfad hinterlassen    |
+| C4  | Snapshot-Wiedergabe beim Anhängen (EarlyEvents-ähnlich) zu `PoolEntry.attach()` hinzugefügt           | Neuer Wettlauf: Sitzung-B hängt an → Server emittiert `tools/list_changed` bevor Subscription verdrahtet |
+| C5  | `spawnInFlight: Map<ConnectionId, Promise<PoolEntry>>` für gleichzeitiges Acquire-Deduplizierung      | v1 in Testmatrix erwähnt, aber im Implementierungsvertrag vergessen                                 |
+| C6  | Plattformübergreifender Descendant-PID-Sweep (Linux/macOS pgrep, Windows wmic/PowerShell)            | v1 sagte "openodes `pgrep -P` kopieren" – das ist nur Unix                              |
+| C7  | `trust`-Feld pro Sitzung als **Kopie** des Tool-Objekts                                                    | trust lebt auf `DiscoveredMCPTool`; gemeinsam genutzte Instanz würde pro-Sitzung-Trust vermischen         |
+| C8  | HTTP/SSE-Transporte **Opt-in** zum Pooling (Standard: nur stdio + websocket)                                 | Einige MCP-HTTP-Server verwalten pro-Transport-Sitzungszustand; Teilen riskiert Zustandsverlust         |
+| C9  | Explizite Umgehung des SDK-MCP-Servers (`isSdkMcpServerConfig`)                                               | `sendSdkMcpMessage` ist per Design pro Sitzung                                                         |
+| C10 | OAuth-Pfad explizit **auf F3 verschoben**                                                                      | OAuth-Flow benötigt PermissionMediator-artiges Routing; nicht F2-Bereich                            |
+| C11 | Neustart-Route-Semantik spezifiziert (Name → alle passenden Einträge)                                          | PR 17's `POST /workspace/mcp/:server/restart` war zuvor eindeutig (1 Eintrag); jetzt 1..N               |
+| C12 | Status-Route-Refaktor-Abschnitt (neuer Pfad: `QwenAgent.getMcpPoolAccounting()`)                                | `httpAcpBridge.ts:733-770` liest derzeit den Bootstrap-Sitzungs-Manager – muss geändert werden          |
+| C13 | Generierungszähler auf `PoolEntry` für veralteten `tools/list_changed`-Handler-Guard                           | Opencode-Muster: `if (s.clients[name] !== client) return`                                                         |
+| C14 | Sub-PR-Aufteilung 4 → **6**                                                                                    | v1 unterschätzte; A2/B1/B3/C6 fügen jeweils echte Arbeit hinzu                                                |
+| C15 | Fauler Pool-Aufbau (nur wenn N≥2 Sitzungen gesehen) – optional                                                 | `qwen serve --foreground` mit einer Sitzung profitiert nicht; spart Initialisierungskosten                    |
 ---
 
 ## 1. Ziele / Nicht-Ziele
 
 **Ziele**
 
-- N Sitzungen in 1 Arbeitsbereich teilen sich 1 Prozess pro eindeutiger Serverkonfiguration — fingerabdruck-basiert
-- Pro-Sitzungsansichten von `ToolRegistry` / `PromptRegistry` bleiben erhalten (Filterung, Vertrauen)
-- Refcount + Grace-Drain-Lebenszyklus robust gegenüber erneutem Anhängen
-- Plattformübergreifende Bereinigung von Absteiger-PIDs
-- Budget-Begrenzungen werden von pro Sitzung auf pro Arbeitsbereich erweitert (PR 14 hat dies versprochen)
-- Rückwärtskompatibilität mit nicht-Daemon standalone qwen (dort wird kein Pool erstellt)
+- N Sitzungen in 1 Workspace, die sich 1 Prozess pro eindeutiger Server-Konfiguration teilen – fingerprint-basiert
+- Pro-Sitzung `ToolRegistry` / `PromptRegistry` Ansichten erhalten (Filterung, Vertrauensstufe)
+- Refcount + Grace-Drain-Lebenszyklus, widerstandsfähig gegen erneutes Anhängen
+- Plattformübergreifende Bereinigung von Kindprozessen
+- Budget-Guardrails wechseln von Pro-Sitzung zu Pro-Workspace (PR 14 hat dies versprochen)
+- Abwärtskompatibel mit Nicht-Daemon-Standalone-Qwen (Pool wird dort nicht aufgebaut)
 
 **Nicht-Ziele (F2-Umfang)**
 
-- Sitzungsübergreifendes Pooling (1 Daemon = 1 Arbeitsbereich, Invariante aus PR #4113 bleibt bestehen)
-- Daemon-übergreifendes Pooling (außerhalb des Umfangs — Bereich des Multi-Prozess-Orchestrators)
+- Workspace-übergreifendes Pooling (1 Daemon = 1 Workspace Invariante aus PR #4113 bleibt bestehen)
+- Daemon-übergreifendes Pooling (außerhalb des Rahmens – Multi-Prozess-Orchestrator-Territorium)
 - Überarbeitung des OAuth-Routings (F3 mit `PermissionMediator`)
-- Pool-Persistenz über Daemon-Neustart hinweg (nur im Speicher)
-- Automatische Erkennung von "pool-sicheren" HTTP-Servern (nur Opt-in-Flag)
+- Pool-Persistenz über Daemon-Neustart hinweg (nur In-Memory)
+- Automatische Erkennung von „Pool-sicheren“ HTTP-Servern (nur Opt-In-Flag)
 - Live-`MCPServerConfig`-Diff zur direkten Änderung von Einträgen (Konfigurationsänderung → neuer Eintrag, alter wird abgebaut)
 
 ---
 
-## 2. Aktueller Zustand (Ersetzungsziel)
+## 2. Aktueller Stand (Ablöseziel)
 
 ```
 acpAgent.newSession(sessionId)
@@ -164,68 +166,70 @@ acpAgent.newSession(sessionId)
 ```
 
 **Kopplungsdiagramm (was aufgebrochen oder durchgereicht werden muss):**
-| Kopplung                                                                         | Ort                                              | Aktion in F2                                                                        |
+
+| Kopplung                                                                         | Ort                                               | Aktion in F2                                                                        |
 | -------------------------------------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `McpClient`-Konstruktor bindet 1 ToolRegistry + 1 PromptRegistry                         | mcp-client.ts:106-119                             | Pool besitzt Transport; `SessionMcpView` (pro Session) besitzt die Session-eigenen Registries |
-| `McpClient.discover()` ruft `toolRegistry.registerTool()` inline auf                | mcp-client.ts:178-198                             | Aufteilung: `discoverAndReturn()` gibt Snapshot zurück; View registriert                       |
-| `ListRootsRequestSchema`-Handler schließt über `workspaceContext.getDirectories()` | mcp-client.ts:142-153 + connectToMcpServer.ts:893 | Der an den Arbeitsbereich gebundene Kontext des Pools                                               |
-| `workspaceContext.onDirectoriesChanged`-Listener wird pro Verbindung registriert          | mcp-client.ts:907                                 | Pool registriert einmal pro Eintrag                                                       |
-| `McpClientManager` wird innerhalb von `ToolRegistry` instanziiert                                   | tool-registry.ts:199                              | Optionalen `pool?`-Konstruktorparameter hinzufügen; Injektion aus der Konfiguration                              |
-| Budget-Durchsetzung pro Session                                                   | mcp-client-manager.ts:91-95 Kommentar               | Zustandsautomat in den Pool verschieben                                                        |
-| `serverDiscoveryPromises` dedupliziert in-flight pro Server                            | mcp-client-manager.ts:350                         | Pool hat `spawnInFlight: Map<ConnectionId, Promise<PoolEntry>>`                     |
-| `setMcpBudgetEventCallback`-Registrierung pro Session                             | acpAgent.ts:1851-1899                             | Pool emittiert → `QwenAgent` sendet an alle Sessions                                 |
+| `McpClient`-Konstruktor bindet 1 ToolRegistry + 1 PromptRegistry                 | mcp-client.ts:106-119                             | Pool besitzt Transport; `SessionMcpView` (pro Sitzung) besitzt die Sitzungs-Registries |
+| `McpClient.discover()` ruft `toolRegistry.registerTool()` inline auf                | mcp-client.ts:178-198                             | Aufteilung: `discoverAndReturn()` gibt Snapshot zurück; View registriert            |
+| `ListRootsRequestSchema`-Handler schließt über `workspaceContext.getDirectories()` | mcp-client.ts:142-153 + connectToMcpServer.ts:893 | Pool-Kontext, der an einen einzelnen Workspace gebunden ist                         |
+| `workspaceContext.onDirectoriesChanged` Listener wird pro Verbindung registriert          | mcp-client.ts:907                                 | Pool registriert einmal pro Eintrag                                                 |
+| `McpClientManager` wird innerhalb von ToolRegistry erstellt                                   | tool-registry.ts:199                              | Optionalen `pool?`-Konstruktorparameter hinzufügen; Injektion aus Config            |
+| Budget-Durchsetzung pro Sitzung                                                   | mcp-client-manager.ts:91-95 Kommentar               | Zustandsautomat in Pool verschieben                                                 |
+| `serverDiscoveryPromises` deduplizieren laufende Anfragen pro Server                            | mcp-client-manager.ts:350                         | Pool hat `spawnInFlight: Map<ConnectionId, Promise<PoolEntry>>`                     |
+| `setMcpBudgetEventCallback` Registrierung pro Sitzung                             | acpAgent.ts:1851-1899                             | Pool sendet → `QwenAgent` broadcastet an alle Sitzungen                            |
 
-**Bereits gemeinsam genutzter Zustand (Pool erbt, führt nicht neu ein):**
+**Bereits gemeinsam genutzter Zustand (Pool erbt, führt nichts Neues ein):**
 
-| Zustand                                          | Ort                         | Hinweis                                                              |
-| ---------------------------------------------- | -------------------------------- | ----------------------------------------------------------------- |
-| `serverStatuses: Map<string, MCPServerStatus>` | mcp-client.ts:292 (Modulebene) | Prozessweit derzeit; Pool-Schlüssel weiterhin nach Name → „any-CONNECTED-gewinnt“ |
-| `mcpServerRequiresOAuth: Map<string, boolean>` | mcp-client.ts:302 (Modulebene) | Gleiches                                                              |
-| `MCPOAuthTokenStorage`-Token auf Datenträger          | `~/.qwen/mcp-oauth/<name>.json`  | Daemon-übergreifend gemeinsam genutzt; Pool nutzt es nur effizienter               |
+| Zustand                                         | Ort                                | Hinweis                                                         |
+| ----------------------------------------------- | ---------------------------------- | --------------------------------------------------------------- |
+| `serverStatuses: Map<string, MCPServerStatus>`  | mcp-client.ts:292 (module-level)   | Prozessweit heute; Pool-Schlüssel noch nach Name → „any-CONNECTED-gewinnt“ |
+| `mcpServerRequiresOAuth: Map<string, boolean>`  | mcp-client.ts:302 (module-level)   | Gleich                                                          |
+| `MCPOAuthTokenStorage` Token auf Festplatte     | `~/.qwen/mcp-oauth/<name>.json`    | Daemon-geteilt; Pool nutzt nur effizienter                      |
 
 ---
 
-## 3. Referenzfunde
+## 3. Referenzergebnisse
 
-| Projekt         | Pool?              | Schlüssel                                           | Lebenszyklus                                                                               | Zu übernehmende Muster                                                                                                                |
-| --------------- | ------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **claude-code** | Nein, pro Prozess    | `name + JSON.stringify(cfg)` (lodash.memoize)       | `clearServerCache` + Remote-Backoff×5; Stdio-Absturz → `failed`                           | Sortiertes Schlüssel-SHA-256 `hashMcpConfig` für Invalidierung/Schlüsselvergabe                                                                       |
-| **opencode**    | Ja, pro Arbeitsbereich | Server **nur Name** (kein Konfigurations-Hash)      | Kein Referenzzähler / keine Verdrängung / kein Neustart; Effect-Finalizer + `pgrep -P` rekursives SIGTERM | Nachkommen-PID-Bereinigung, Stale-Handler-Schutz (`if (s.clients[name] !== client) return`), `tools/list_changed`-Fan-out über Event-Bus |
+| Projekt         | Pool?              | Schlüssel                                      | Lebenszyklus                                                                              | Muster zum Übernehmen                                                                                                           |
+| --------------- | ------------------ | --------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **claude-code** | Nein, pro Prozess  | `name + JSON.stringify(cfg)` (lodash.memoize) | `clearServerCache` + remote Backoff×5; stdio Crash → `failed`                            | Sortierter-Schlüssel SHA-256 `hashMcpConfig` für Invalidierung/Schlüsselbildung                                                  |
+| **opencode**    | Ja, pro Workspace  | Servername **nur Name** (kein Konfigurations-Hash) | Kein Refcount / keine Räumung / kein Neustart; Effect-Finalizer + `pgrep -P` rekursives SIGTERM | Rekursive PID-Bereinigung, Stale-Handler-Guard (`if (s.clients[name] !== client) return`), `tools/list_changed` Fan-out über Event-Bus |
 
-**Was F2 von jedem erbt:** Konfigurations-Hash von claude-code (behandelt pro Session unterschiedliche Umgebungen/Authentifizierungen, was opencode nicht tut), Nachkommen-PID-Bereinigung von opencode (npx/uvx-Wrapper lecken). Was wir hinzufügen: Referenzzähler + Drain (Multi-Client-Daemon), automatischer Neustart (lange laufender Daemon), Prompt-Fan-out, Generierungs-Schutz.
+**Was F2 von jedem übernimmt:** Konfigurations-Hash von claude-code (behandelt pro-Sitzung Env/Auth-Unterschiede, die opencode nicht handhabt), rekursive PID-Bereinigung von opencode (npx/uvx-Wrapper lecken). Was wir hinzufügen: Refcount + Drain (Multi-Client-Daemon), automatischer Neustart (lange laufender Daemon), Prompt-Fan-out, Generierungs-Guard.
 
 ---
 
 ## 4. Architektur
 
-### 4.1 Prozess-Layout
+### 4.1 Prozesslayout
 
 ```
-HTTP daemon (packages/cli/src/serve, qwen serve)
-  │ spawns
+HTTP-Daemon (packages/cli/src/serve, qwen serve)
+  │ startet
   ▼
-ACP child (qwen --acp, single process per workspace)
+ACP-Kind (qwen --acp, einzelner Prozess pro Workspace)
   │
   QwenAgent (acpAgent.ts)
-  ├── McpTransportPool ◄── new, workspace-scoped, 1 instance
+  ├── McpTransportPool ◄── neu, Workspace-bezogen, 1 Instanz
   │     ├── entries: Map<ConnectionId, PoolEntry>
   │     ├── spawnInFlight: Map<ConnectionId, Promise<PoolEntry>>
-  │     ├── workspaceContext (bound to daemon workspace)
-  │     └── budget guardrails (PR 14 state machine, graduated to workspace)
+  │     ├── workspaceContext (an Daemon-Workspace gebunden)
+  │     └── Budget-Guardrails (PR 14 Zustandsautomat, hochgestuft auf Workspace)
   │
   └── sessions: Map<sessionId, Session>
         └── Session.Config → ToolRegistry → McpClientManager(pool?)
                                                      │
                                             ┌────────┴────────┐
-                                            │ pool injected   │
+                                            │ Pool injiziert  │
                                             ▼                 ▼
-                                pool.acquire(name,cfg,sid)   legacy in-process
-                                  → SessionMcpView            (standalone qwen)
+                                pool.acquire(name,cfg,sid)   legacy im Prozess
+                                  → SessionMcpView            (Standalone-Qwen)
                                     .applyTools/Prompts
-                                    (filter + register into
-                                     session's own registries)
+                                    (Filter + Registrierung in
+                                     sitzungseigene Registries)
 ```
-**Pool lebt im ACP-Child**, nicht im HTTP-Daemon. Der HTTP-Daemon fragt den Pool-Zustand über die vorhandene `bridge.client` extMethod-Oberfläche ab (`getMcpPoolAccounting`, `restartMcpServer`). Der F2-Code befindet sich in **`packages/core/src/tools/`** (neben `mcp-client-manager.ts`), nicht in `packages/acp-bridge/`.
+
+**Pool lebt im ACP-Kind**, nicht im HTTP-Daemon. Der HTTP-Daemon fragt den Pool-Zustand über die vorhandene `bridge.client` extMethod-Oberfläche ab (`getMcpPoolAccounting`, `restartMcpServer`). F2-Code liegt in **`packages/core/src/tools/`** (neben `mcp-client-manager.ts`), nicht in `packages/acp-bridge/`.
 
 ### 4.2 Klassendiagramm
 
@@ -233,19 +237,19 @@ ACP child (qwen --acp, single process per workspace)
 McpTransportPool
   ├─ acquire(name, cfg, sid) → PooledConnection
   ├─ release(connectionId, sid) → void
-  ├─ releaseSession(sid) → void   (bulk release for session teardown)
+  ├─ releaseSession(sid) → void   (Massenfreigabe für Sitzungsteardown)
   ├─ restartByName(name) → RestartResult[]
-  ├─ getAccounting() → McpClientAccounting   (workspace-scope)
+  ├─ getAccounting() → McpClientAccounting   (Workspace-Bereich)
   ├─ getBudgetMode/Budget()
-  ├─ drainAll() → Promise<void>   (shutdown)
-  └─ onBudgetEvent: (event) => void   (set by QwenAgent)
+  ├─ drainAll() → Promise<void>   (Herunterfahren)
+  └─ onBudgetEvent: (event) => void   (gesetzt von QwenAgent)
 
-PoolEntry (internal)
+PoolEntry (intern)
   ├─ refs: Set<sessionId>
   ├─ client: McpClient
   ├─ toolsSnapshot: DiscoveredMCPTool[]
   ├─ promptsSnapshot: Prompt[]
-  ├─ generation: number   (++ on reconnect; stale-event guard)
+  ├─ generation: number   (++ bei erneuter Verbindung; Schutz vor veralteten Events)
   ├─ state: 'spawning' | 'active' | 'draining' | 'closed' | 'failed'
   ├─ drainTimer?: NodeJS.Timeout
   ├─ healthMonitor: { intervalTimer, consecutiveFailures, isReconnecting }
@@ -253,18 +257,18 @@ PoolEntry (internal)
   ├─ attach(sid, view) → PooledConnection
   └─ detach(sid) → void
 
-PooledConnection (handle returned to caller)
+PooledConnection (Handle, das an den Aufrufer zurückgegeben wird)
   ├─ id: ConnectionId
   ├─ on('toolsChanged' | 'promptsChanged' | 'disconnected' | 'reconnected' | 'failed', cb)
   ├─ callTool(name, args, { sessionId }) → CallToolResult
   ├─ readResource(uri, { sessionId, signal })
   └─ release()
 
-SessionMcpView (per session, per server)
+SessionMcpView (pro Sitzung, pro Server)
   ├─ ctor(toolRegistry, promptRegistry, sessionId, serverName, cfg)
-  ├─ applyTools(snapshot) → void   (filters by include/exclude, decorates trust)
+  ├─ applyTools(snapshot) → void   (filtert nach include/exclude, dekoriert Vertrauensstufe)
   ├─ applyPrompts(snapshot) → void
-  └─ teardown() → void   (removes its registrations)
+  └─ teardown() → void   (entfernt seine Registrierungen)
 ```
 
 ---
@@ -274,7 +278,7 @@ SessionMcpView (per session, per server)
 ### 5.1 Gehashte kanonische Felder
 
 ```ts
-type PoolKey = string; // sha256 hex, first 16 chars sufficient (collision-free for realistic N)
+type PoolKey = string; // sha256 hex, erste 16 Zeichen ausreichend (kollisionsfrei für realistische N)
 type ConnectionId = `${serverName}::${PoolKey}`;
 
 function fingerprint(cfg: MCPServerConfig): PoolKey {
@@ -283,7 +287,7 @@ function fingerprint(cfg: MCPServerConfig): PoolKey {
     command: cfg.command ?? null,
     args: cfg.args ?? [],
     cwd: cfg.cwd ?? null,
-    env: sortedEntries(cfg.env ?? {}), // [[k,v],...] sorted by k
+    env: sortedEntries(cfg.env ?? {}), // [[k,v],...] sortiert nach k
     url: cfg.url ?? null,
     httpUrl: cfg.httpUrl ?? null,
     headers: sortedEntries(cfg.headers ?? {}),
@@ -294,9 +298,9 @@ function fingerprint(cfg: MCPServerConfig): PoolKey {
 }
 
 /**
- * V21-9: normalize functionally-equivalent OAuth configs so they
- * collapse to the same fingerprint. `{enabled: false}`, `undefined`,
- * `null`, and `{}` all mean "no OAuth" → all return `null`.
+ * V21-9: Normalisiert funktional äquivalente OAuth-Konfigurationen, sodass sie
+ * zum gleichen Fingerprint kollabieren. `{enabled: false}`, `undefined`,
+ * `null` und `{}` bedeuten alle „kein OAuth“ → alle geben `null` zurück.
  */
 function canonicalOAuth(o?: OAuthConfig | null): OAuthConfig | null {
   if (!o || !o.enabled) return null;
@@ -309,11 +313,11 @@ function canonicalOAuth(o?: OAuthConfig | null): OAuthConfig | null {
   };
 }
 
-// Excluded fields (per-session filters, NOT transport-level):
+// Ausgeschlossene Felder (Pro-Sitzungs-Filter, NICHT Transportebene):
 //   includeTools, excludeTools, trust, description, extensionName
 ```
 
-### 5.2 Transport-Klassengatter
+### 5.2 Transportklassen-Steuerung
 
 ```ts
 const POOLED_TRANSPORTS_DEFAULT = new Set(['stdio', 'websocket']);
@@ -325,18 +329,18 @@ function isPoolable(cfg: MCPServerConfig, opts: PoolOptions): boolean {
 }
 ```
 
-**Standardmäßig `pooledTransports = {stdio, websocket}`**. Betreiber optieren HTTP/SSE ein über:
+**Standardmäßig `pooledTransports = {stdio, websocket}`**. Operatoren wählen HTTP/SSE über Folgendes ein:
 
 - CLI: `--mcp-pool-transports=stdio,websocket,http,sse`
 - Env: `QWEN_SERVE_MCP_POOL_TRANSPORTS=stdio,websocket,http`
 
-**Warum HTTP/SSE standardmäßig ausschließen**: Einige MCP-HTTP-Serverimplementierungen binden Zustand (Auth-Kontext, Gesprächsspeicher) an den TCP/SSE-Stream; mehrere ACP-Sitzungen, die diesen teilen, würden den Zustand vermischen. stdio + Websocket sind echte OS-Prozesse, deren Zustand beobachtbar und isolierbar ist.
+**Warum HTTP/SSE standardmäßig ausgeschlossen:** Einige MCP-HTTP-Server-Implementierungen binden Zustand (Auth-Kontext, Gesprächsverlauf) an den TCP/SSE-Stream; mehrere ACP-Sitzungen, die ihn teilen, würden den Zustand vermischen. stdio + websocket sind echte Betriebssystemprozesse, deren Zustand beobachtbar und isolierbar ist.
 
-### 5.3 SDK MCP-Umgehung
+### 5.3 SDK-MCP-Umgehung
 
-`isSdkMcpServerConfig(cfg)` wahr → Pool gibt einen dünnen `PooledConnection`-Wrapper über `createUnpooledConnection(name, cfg, sid)` zurück, der sofort einen `McpClient` erstellt, keine gemeinsame Nutzung, kein Eintrag im Pool gespeichert. Grund: `sendSdkMcpMessage` ist per Design sitzungsbezogen (durch die ACP-Steuerungsebene zurück zur ursprünglichen Sitzung). Derselbe Pfad wird für HTTP/SSE verwendet, wenn der Transport nicht in `pooledTransports` enthalten ist (§10.3).
+`isSdkMcpServerConfig(cfg)` true → Pool gibt einen dünnen `PooledConnection`-Wrapper über `createUnpooledConnection(name, cfg, sid)` zurück, der sofort einen `McpClient` erstellt, keine gemeinsame Nutzung, kein Eintrag im Pool. Grund: `sendSdkMcpMessage` ist von Natur aus pro Sitzung (Routing über ACP-Steuerebene zurück zur ursprünglichen Sitzung). Gleicher Pfad für HTTP/SSE, wenn der Transport nicht in `pooledTransports` ist (§10.3).
 
-V21-10: Name ist `createUnpooledConnection`, nicht `legacyInProcessAcquire` – SDK MCP und HTTP-Opt-out sind dauerhafte Designentscheidungen, kein Legacy-Code.
+V21-10: Name ist `createUnpooledConnection`, nicht `legacyInProcessAcquire` – SDK-MCP und HTTP-Opt-out sind dauerhafte Designentscheidungen, kein Legacy-Code.
 
 ---
 
@@ -349,7 +353,7 @@ class McpTransportPool {
   private entries = new Map<ConnectionId, PoolEntry>();
   private spawnInFlight = new Map<ConnectionId, Promise<PoolEntry>>();
 
-  /** V21-2: reverse index, O(refs) releaseSession instead of O(entries). */
+  /** V21-2: Rückwärtsindex, O(refs) releaseSession statt O(entries). */
   private sessionToEntries = new Map<string, Set<ConnectionId>>();
 
   async acquire(
@@ -378,9 +382,9 @@ class McpTransportPool {
       }
       inFlight = this.spawnEntry(name, cfg, id)
         .catch((err) => {
-          // V21-4: release reserved slot on spawn failure. Without
-          // this, slot leaks until health monitor's release path
-          // runs (which it doesn't, because there's no entry to monitor).
+          // V21-4: Reservierten Slot bei Fehlschlag des Startens freigeben. Ohne
+          // dies würde der Slot lecken, bis der Health-Monitor-Pfad zur Freigabe
+          // ausgeführt wird (der nicht ausgeführt wird, da kein Eintrag zu überwachen ist).
           if (slot === 'reserved') this.releaseSlotName(name);
           throw err;
         })
@@ -400,7 +404,7 @@ class McpTransportPool {
     if (entry.refs.size === 0) entry.startDrainTimer(this.opts.drainDelayMs);
   }
 
-  /** V21-2: O(refs of this session), not O(all entries). */
+  /** V21-2: O(refs dieser Sitzung), nicht O(alle Einträge). */
   releaseSession(sid: string): void {
     const ids = this.sessionToEntries.get(sid);
     if (!ids) return;
@@ -430,33 +434,34 @@ class McpTransportPool {
   }
 }
 ```
-### 6.2 Deduplizierung paralleler Acquire-Vorgänge (`spawnInFlight`)
 
-Spiegelt `McpClientManager.serverDiscoveryPromises` wider (mcp-client-manager.ts:350). Ohne sie sehen 5 Sitzungen, die beim Start spawnen, alle `entries.has(id) === false` und konkurrieren darum, 5 Kindprozesse zu spawnen.
+### 6.2 Gleichzeitiges Acquire deduplizieren (`spawnInFlight`)
 
-### 6.3 Entleerungs-Gnadenfrist + Leerlauf-Obergrenze
+Spiegelt `McpClientManager.serverDiscoveryPromises` (mcp-client-manager.ts:350) wider. Ohne dies würden 5 Sitzungen, die beim Start aufsetzen, alle `entries.has(id) === false` sehen und sich darum kümmern, 5 Kindprozesse zu starten.
+
+### 6.3 Drain-Gnadenfrist + Leerlaufobergrenze
 
 ```ts
 const DRAIN_DELAY_MS_DEFAULT = 30_000; // Gnadenfrist nach letzter Freigabe
-const MAX_IDLE_MS_DEFAULT = 5 * 60_000; // harte Obergrenze (Schutz vor Schleife durch Entleerungs-Abbruch)
+const MAX_IDLE_MS_DEFAULT = 5 * 60_000; // harte Obergrenze (Schutz gegen Drain-Abbruchschleife)
 ```
 
-Zustandsmaschine in `PoolEntry`:
+Zustandsautomat in `PoolEntry`:
 
 ```
-spawning ──spawn ok──► active ──last detach──► draining ──timeout──► closed
-   │                     │                       │
-   │                     │                       └──attach──► active (Timer abbrechen)
-   spawn fail───────────►failed
-                          │
-                          └──manual restart──► spawning
+spawning ──Spawn ok────► active ──letztes detach──► draining ──Timeout──► closed
+   │                        │                          │
+   │                        │                          └──attach──► active (Timer abbrechen)
+   Spawn fehlgeschlagen──►failed
+                           │
+                           └──manueller Neustart──► spawning
 ```
 
-Harte Leerlauf-Obergrenze: Der Entleerungs-Timer kann unbegrenzt abgebrochen und neu gestartet werden (Acquire/Release-Flattern). `MAX_IDLE_MS` ist ein separater Timer, der **beim ersten Leerlauf** gestartet und nie zurückgesetzt wird; wenn er auslöst, wird der Eintrag zwangsgeschlossen, selbst wenn die Entleerung gerade in der aktiven Gnadenfrist ist. Verhindert Zombie-Pool-Einträge durch fehlerhafte Clients, die Acquire/Release übermäßig auslösen.
+Harte Leerlaufobergrenze: Drain-Timer kann unbegrenzt abgebrochen und neu gestartet werden (acquire/release-Flatter). `MAX_IDLE_MS` ist ein separater Timer, der **beim ersten Leerlauf** gestartet und nie zurückgesetzt wird; wenn er auslöst, wird der Eintrag zwangsweise geschlossen, selbst wenn der Drain gerade in der aktiven Gnadenfrist ist. Verhindert Zombie-Pool-Einträge durch fehlerhafte Clients, die acquire/release ständig ausführen.
 
-### 6.4 Plattformübergreifende Nachfahren-PID-Bereinigung
+### 6.4 Plattformübergreifende Bereinigung von Kindprozessen
 
-**R10 / R23 T7 / PR A Update (2026-05-22)**: Wechsel von pro-PID-BFS (ein `pgrep -P <pid>` / `Get-CimInstance -Filter`-Unterprozess pro Knoten) zu einem einzelnen Prozess-Tabellen-Snapshot gefolgt von einem In-Memory-Baumdurchlauf. Zwei Motivationen: (1) eine Fork anstelle von B^D Forks auf dem heißen Pool-Shutdown-Pfad; (2) Snapshot-Konsistenz – vor der Korrektur konnte BFS Nachfahren übersehen, die zwischen benachbarten BFS-Ebenen forkten. Der pro-PID-Pfad wurde als Fallback für BusyBox `ps` <v1.28 (keine `-o`-Unterstützung) und Distroless-Container ohne `ps` beibehalten.
+**R10 / R23 T7 / PR A Update (22.05.2026)**: Umstellung von BFS pro PID (jeweils ein `pgrep -P <pid>` / `Get-CimInstance -Filter` Subprozess pro Knoten) auf eine einzige Momentaufnahme der Prozesstabelle, gefolgt von einem In-Memory-Baumdurchlauf. Zwei Gründe: (1) ein Fork statt viele Forks auf dem heißen Pool-Herunterfahrpfad; (2) Konsistenz der Momentaufnahme – vor dem Fix konnte BFS Nachfahren übersehen haben, die zwischen benachbarten BFS-Ebenen abgezweigt sind. Der Pfad pro PID bleibt als Fallback für BusyBox `ps` <v1.28 (keine `-o`-Unterstützung) und Distroless-Container ohne `ps` erhalten.
 
 ```ts
 // packages/core/src/tools/pid-descendants.ts
@@ -467,7 +472,7 @@ export async function listDescendantPids(rootPid: number): Promise<number[]> {
       return await listDescendantPidsWin(rootPid);
     return await listDescendantPidsUnix(rootPid);
   } catch {
-    return []; // OS räumt Waisenkinder auf; Pool-Shutdown wird trotzdem fortgesetzt.
+    return []; // OS kümmert sich um Waisenkinder; Pool-Herunterfahren wird trotzdem fortgesetzt.
   }
 }
 
@@ -476,7 +481,7 @@ async function listDescendantPidsUnix(root: number): Promise<number[]> {
   try {
     tree = await snapshotProcessTreeUnix(); // ps -A -o pid=,ppid=
   } catch {
-    /* fällt auf Fallback zurück */
+    /* Fallback */
   }
   if (tree) return walkDescendants(tree, root); // O(Nachfahren), 1 Fork
   return await listDescendantPidsUnixPgrepFallback(root); // Legacy-BFS
@@ -484,10 +489,10 @@ async function listDescendantPidsUnix(root: number): Promise<number[]> {
 
 async function snapshotProcessTreeUnix(): Promise<Map<number, number[]>> {
   // -A: alle Prozesse (POSIX, äquivalent zu -e aber eindeutig auf BSD).
-  // -o pid=,ppid=: pid + ppid Spalten, nachgestelltes `=` unterdrückt Kopfzeilen.
+  // -o pid=,ppid=: pid + ppid Spalten, das nachgestellte `=` unterdrückt Kopfzeilen.
   const { stdout } = await execFile('ps', ['-A', '-o', 'pid=,ppid='], {
     timeout: 2000,
-    maxBuffer: 8 * 1024 * 1024, // deckt pathologische Hosts mit >250k Prozessen ab
+    maxBuffer: 8 * 1024 * 1024, // deckt >250k-Prozess pathologische Hosts ab
   });
   const childrenByPpid = new Map<number, number[]>();
   for (const line of stdout.split('\n')) {
@@ -498,39 +503,38 @@ async function snapshotProcessTreeUnix(): Promise<Map<number, number[]>> {
   return childrenByPpid;
 }
 
-// Windows: einzelner Get-CimInstance Win32_Process | ConvertTo-Csv Snapshot
-// aller (ProcessId, ParentProcessId) Zeilen + In-Memory-Baumdurchlauf; pro-PID
-// `Get-CimInstance -Filter "ParentProcessId=$p"` als Fallback beibehalten.
+// Windows: Einzige Get-CimInstance Win32_Process | ConvertTo-Csv Momentaufnahme
+// aller (ProcessId, ParentProcessId) Zeilen + In-Memory-Durchlauf; pro PID
+// `Get-CimInstance -Filter "ParentProcessId=$p"` als Fallback erhalten.
 ```
 
-Wird von `PoolEntry.shutdown()` vor `client.disconnect()` aufgerufen. Behandelt Wrapper-Lecks wie `npx @modelcontextprotocol/server-X`, `uvx ...`, `pnpm dlx ...`. Die Begrenzungen MAX_DESCENDANTS=256 / MAX_DEPTH=8 bleiben erhalten.
+Wird von `PoolEntry.shutdown()` vor `client.disconnect()` aufgerufen. Behandelt `npx @modelcontextprotocol/server-X`, `uvx ...`, `pnpm dlx ...` Wrapper-Leaks. MAX_DESCENDANTS=256 / MAX_DEPTH=8 Schutzgrenzen bleiben erhalten.
 
-### 6.5 Behandlung von Spawn-Fehlern
+### 6.5 Behandlung von Startfehlern
 
-Wenn `spawnEntry` ablehnt, nachdem mehrere Abonnenten angehängt wurden (via `spawnInFlight`):
+Wenn `spawnEntry` nachdem mehrere Abonnenten (via `spawnInFlight`) angehängt wurden, ablehnt:
 
 - Alle Wartenden erhalten die Ablehnung
-- `tryReserveSlot` wird **über einen expliziten `.catch`-Zweig in `acquire`** freigegeben (V21-4); ohne diese Korrektur lief der Slot bis zum nächsten Health-Monitor-Durchlauf aus, der nie stattfand, da kein Eintrag zum Überwachen existierte.
-- Fehlgeschlagener Eintrag wird NICHT in `entries` gespeichert
-- Die Codepfade der Abonnenten behandeln dies, als ob `acquire` ursprünglich fehlgeschlagen wäre (die vorhandene Abfanglogik für `discoverMcpToolsForServer` pro Sitzung bleibt gültig)
+- `tryReserveSlot` wird **über expliziten `.catch`-Zweig in `acquire`** freigegeben (V21-4); ohne diesen Fix blieb der Slot bis zum nächsten Health-Monitor-Durchlauf undicht, der nie stattfand, da kein Eintrag zu überwachen war.
+- Fehlgeschlagener Eintrag NICHT in `entries` gespeichert
+- Die Codepfade der Abonnenten behandeln den Fall, als ob `acquire` ursprünglich fehlgeschlagen wäre (vorhandene Catch-Logik von `discoverMcpToolsForServer` pro Sitzung bleibt gültig)
 
-### 6.6 Wiederverbindungs-Backoff (V21-8)
+### 6.6 Wiederherstellungs-Backoff (V21-8)
 
-Wenn ein `PoolEntry` nach einem Transportausfall in die Wiederverbindung eintritt:
+Wenn ein `PoolEntry` nach einem Transportabbruch in die Wiederherstellung eintritt:
 
-| Transportfamilie | Strategie                                     | Obergrenze                                                      |
-| ---------------- | -------------------------------------------- | ---------------------------------------------------------------- |
-| stdio            | Fest 5 s × 3 Versuche                        | Laut vorhandenem `DEFAULT_HEALTH_CONFIG.reconnectDelayMs`            |
-| websocket        | Fest 5 s × 3 Versuche                        | Wie stdio                                                    |
-| http (opt-in)    | Exponentiell 1 s, 2 s, 4 s, 8 s, 16 s × 5 Versuche | Remote-Endpunkte flattern bei vorübergehenden Netzwerkproblemen; größeres Budget |
-| sse (opt-in)     | Exponentiell 1 s, 2 s, 4 s, 8 s, 16 s × 5 Versuche | Wie http                                                     |
-Nach Erschöpfung der Obergrenze: Eintrag wechselt in den Status `failed`; Abonnenten erhalten das `failed`-Ereignis; ein neues `acquire` für dieselbe `ConnectionId` wiederholt einmal und wirft dann einen Fehler. Neustart des Operators (§13) setzt den Status zurück.
+| Transportfamilie | Strategie                                     | Obergrenze                                                        |
+| ---------------- | --------------------------------------------- | ----------------------------------------------------------------- |
+| stdio            | Fest 5s × 3 Versuche                         | Entspricht vorhandenem `DEFAULT_HEALTH_CONFIG.reconnectDelayMs`   |
+| websocket        | Fest 5s × 3 Versuche                         | Gleich wie stdio                                                  |
+| http (Opt-In)    | Exponentiell 1s, 2s, 4s, 8s, 16s × 5 Versuche | Remote-Endpunkte flattern bei vorübergehenden Netzwerkproblemen; größeres Budget |
+| sse (Opt-In)     | Exponentiell 1s, 2s, 4s, 8s, 16s × 5 Versuche | Gleich wie http                                                    |
 
+Nach Erschöpfung der Obergrenze: Eintrag wechselt in den Zustand `failed`; Abonnenten erhalten das `failed`-Event; ein neuer `acquire` für dieselbe `ConnectionId` versucht einmal einen Neustart, dann wird ausgelöst. Operatorenstart (§13) setzt den Zustand zurück.
 ---
+## 7. Discovery / SessionMcpView
 
-## 7. Entdeckung / SessionMcpView
-
-### 7.1 Tools + Prompts Dual-Fan-out
+### 7.1 Tools + Prompts Dual-Fan-Out
 
 ```ts
 // packages/core/src/tools/mcp-client.ts — split discover into pure
@@ -580,7 +584,7 @@ class SessionMcpView {
 }
 ```
 
-### 7.2 Snapshot-Replay beim Anhängen (earlyEvents-Stil)
+### 7.2 Snapshot-Replay bei Attach (earlyEvents-Stil)
 
 ```ts
 class PoolEntry {
@@ -601,9 +605,9 @@ class PoolEntry {
 }
 ```
 
-Spiegelt das `BridgeClient.earlyEvents`-Muster aus PR 14b Fix #1 wider – löst eine analoge Race-Condition beim Anhängen an den Pool.
+Spiegelt das PR-14b-Fix#1-`BridgeClient.earlyEvents`-Muster wider – löst das analoge Race-Condition beim Pool-Attach.
 
-### 7.3 Stale-Handler-Schutz (Generationszähler)
+### 7.3 Stale-Handler-Guard (Generation Counter)
 
 ```ts
 class PoolEntry {
@@ -637,27 +641,28 @@ class PoolEntry {
 }
 ```
 
-Ohne diesen Schutz könnte ein alter Handler aus einer vorherigen Client-Instanz den Snapshot nach dem erneuten Verbinden mit veralteten Daten überschreiben.
+Ohne diese Absicherung könnte ein Stale-Handler einer vor dem Reconnect erstellten Client-Instanz den Snapshot nach dem Reconnect mit veralteten Daten überschreiben.
 
-**Monotonie-Invariante** (Klarstellung V21): `generation` wird nur erhöht, niemals zurückgesetzt. Jeder in Bearbeitung befindliche Vorgang erfasst `myGen` beim Start und prüft nach `await`, ob `myGen === this.generation`. Das entspricht: "Seit meinem Start ist kein überholendes Ereignis eingetreten." Begrenzt durch Number.MAX_SAFE_INTEGER (~285k Jahre bei 1 Hz Wiederverbindung), keine Überlaufgefahr.
+**Monotonie-Invariante** (V21-Präzisierung): `generation` inkrementiert nur, wird nie zurückgesetzt. Jede laufende Operation erfasst zu Beginn `myGen` und prüft nach `await`, ob `myGen === this.generation`. Entspricht „Seit meinem Start ist kein neueres Ereignis eingetreten". Begrenzt auf Number.MAX_SAFE_INTEGER (~285k Jahre bei 1Hz Reconnect), kein Überlaufproblem.
 
-### 7.4 Pfadvereinheitlichung (F2-1 Bereichserweiterung)
+### 7.4 Pfadvereinheitlichung (F2-1 Scope-Erweiterung)
 
-`packages/core/src/tools/mcp-client.ts` hat ZWEI Pfade zum Verbinden mit einem Server:
+`packages/core/src/tools/mcp-client.ts` hat ZWEI Connect-to-Server-Pfade:
 
 1. `McpClient`-Klasse (mcp-client.ts:100) – verwendet von `McpClientManager`
 2. `connectToMcpServer`-Factory-Funktion (mcp-client.ts:875) – verwendet von `discoverMcpTools` (Zeile 560) und `connectAndDiscover` (Zeile 607)
 
-F2-1 muss beide hinter `McpClient.discoverAndReturn` zusammenführen (wobei `connectToMcpServer` entweder ein privater Helfer von `McpClient` wird oder beide eine gemeinsame `establishConnection()`-Primitive aufrufen). Andernfalls deckt der Pool nur den Klassenpfad ab; der Factory-Pfad bleibt pro Sitzung und untergräbt die gesamte Bemühung.
+F2-1 muss beide hinter `McpClient.discoverAndReturn` zusammenführen (entweder wird `connectToMcpServer` zu einem privaten Helfer von `McpClient` oder beide rufen eine gemeinsame `establishConnection()`-Primitive auf). Andernfalls deckt der Pool nur den Klassenpfad ab; der Factory-Pfad bleibt pro Session und untergräbt die gesamte Bemühung.
 
 ---
 
 ## 8. Koexistenz globaler Zustände
 
-### 8.1 `serverStatuses` (mcp-client.ts:292) – kollisionstolerantes Schreiben
+### 8.1 `serverStatuses` (mcp-client.ts:292) – kollisionstolerante Schreibvorgänge
 
-Modulweite `Map<serverName, MCPServerStatus>`. Die `ConnectionId` des Pools ist `name::hash`, aber `updateMCPServerStatus(name, status)` schreibt nach Name. **Mehrere Pool-Einträge für denselben Namen (unterschiedliche Fingerabdrücke, z. B. Token-Abweichung) würden sich gegenseitig den Status überschreiben.**
-**Auflösung**: Der Pool fängt Status-Schreibvorgänge ab:
+Modulweite `Map<serverName, MCPServerStatus>`. Die `ConnectionId` des Pools ist `name::hash`, aber `updateMCPServerStatus(name, status)` schreibt nach Name. **Mehrere Pool-Einträge für denselben Namen (unterschiedliche Fingerabdrücke, z. B. Token-Divergenz) würden sich gegenseitig den Status überschreiben.**
+
+**Lösung**: Pool fängt Status-Schreibvorgänge ab:
 
 ```ts
 class PoolEntry {
@@ -683,17 +688,17 @@ class McpTransportPool {
 }
 ```
 
-Die Status-Route gibt `entryCount: number` aus, sodass Betreiber sehen, wenn Name → mehrere Einträge.
+Die Status-Route zeigt `entryCount: number` an, sodass Bediener sehen, wenn ein Name → mehrere Einträge hat.
 
 ### 8.2 OAuth-Token-Speicher
 
-`MCPOAuthTokenStorage` schreibt nach `~/.qwen/mcp-oauth/<serverName>.json` – bereits Daemon-Host-geteilt. Der Pool profitiert beiläufig (erste Sitzung schließt OAuth ab → Token auf Platte → Wiederverbindung des Pool-Eintrags nimmt Token auf → alle anderen Sitzungen profitieren).
+`MCPOAuthTokenStorage` schreibt nach `~/.qwen/mcp-oauth/<serverName>.json` – bereits daemon-host-shared. Der Pool profitiert beiläufig (OAuth der ersten Session wird abgeschlossen → Token auf Platte → Pool-Eintrag holt Token beim Reconnect → alle anderen Sessions hängen sich mit dran).
 
-**Einschränkung – Multi-Fingerprint-Fall**: 2 Einträge für denselben Namen (unterschiedliche Header/Umgebung), aber gleicher OAuth-Anbieter → beide lesen dieselbe Token-Datei. Wenn Token serverbezogen sind (bei OAuth üblich), funktioniert dies. Wenn Token umgebungsbezogen sind (selten), ist eine explizite Speichererweiterung erforderlich. **Auf F3 verschieben** mit dokumentierter bekannter Einschränkung.
+**Einschränkung – Multi-Fingerprint-Fall**: 2 Einträge für denselben Namen (unterschiedliche Header/Env) aber derselbe OAuth-Provider → beide lesen dieselbe Token-Datei. Wenn Token server-scoped sind (OAuth typisch), funktioniert das. Wenn Token env-scoped sind (selten), ist eine explizite Erweiterung des Speicherschlüssels nötig. **Auf F3 verschoben** mit dokumentiertem Known-Limitation.
 
 ### 8.3 `entryCount` im Snapshot
 
-`GET /workspace/mcp` Pro-Server-Zelle fügt hinzu:
+`GET /workspace/mcp`-Zelle pro Server fügt hinzu:
 
 ```ts
 {
@@ -710,82 +715,83 @@ Die Status-Route gibt `entryCount: number` aus, sodass Betreiber sehen, wenn Nam
 }
 ```
 
-**V21-7**: `entrySummary[].entryIndex` ist ein **stabiler undurchsichtiger Integer**, der bei der Erstellung des Eintrags vergeben wird (Einfügereihenfolge innerhalb der Namensgruppe), NICHT der rohe Fingerprint. Begründung: Der Fingerprint ändert sich, wenn OAuth-Tokens oder Umgebungsvariablen rotieren, was diese Informationen durch Snapshot-Diffs preisgeben würde (Betreiber könnte aus dem Übergang von `'a3b1'` zu `'f972'` auf „Token rotiert bei T+5min“ schließen). `entryIndex` ist innerhalb der Namensgruppe monoton, bleibt aber bei Rotationen stabil, weil alter Eintrag abgebaut wird und neuer Eintrag den nächsten Index erhält.
+**V21-7**: `entrySummary[].entryIndex` ist ein **stabiler, undurchsichtiger Integer**, der bei der Eintragserstellung zugewiesen wird (Einfügereihenfolge innerhalb der Namensgruppe), NICHT der rohe Fingerprint. Begründung: Fingerprints ändern sich, wenn OAuth-Tokens oder Umgebungsvariablen rotieren, was diese Information über Snapshot-Diffs durchsickern lassen würde (Operator könnte auf „Token rotiert bei T+5min" schließen aus dem Übergang `'a3b1' → 'f972'`). `entryIndex` ist innerhalb der Namensgruppe monoton, bleibt aber über Rotationen hinweg stabil, weil der alte Eintrag drainiert und der neue Eintrag den nächsten Index bekommt.
 
-Alte SDK-Clients ignorieren unbekannte Felder gemäß PR-14-Vertrag; neue Clients verwenden `entryCount` für Badges. Der interne Neustart-nach-Fingerprint-Pfad verwendet ein undurchsichtiges Token, das nur über privilegiertes extMethod zurückgegeben wird, nicht im HTTP-Snapshot offengelegt.
+Alte SDK-Clients ignorieren unbekannte Felder laut PR-14-Vertrag; neue Clients verwenden `entryCount` für Badges. Der interne Restart-by-Fingerprint-Pfad verwendet ein undurchsichtiges Token, das nur über privilegierte extMethod zurückgegeben wird, nicht im HTTP-Snapshot.
 
 ---
 
 ## 9. WorkspaceContext / ListRoots
 
-### 9.1 Einzelne Registrierung
+### 9.1 Einmalige Registrierung
 
-Die `McpClient`-Instanzen des Pools teilen sich **einen** `WorkspaceContext` – den gebundenen Workspace-Kontext des Daemons (Invariante PR #4113). Der `ListRootsRequestSchema`-Handler von `connectToMcpServer` schließt über diesen einzelnen Kontext.
+Die `McpClient`-Instanzen des Pools teilen sich **einen** `WorkspaceContext` – den gebundenen Workspace-Context des Daemons (PR-#4113-Invariante). Der `ListRootsRequestSchema`-Handler von `connectToMcpServer` schließt über diesen einzigen Context.
 
-Der Listener `onDirectoriesChanged` wird **einmal pro Eintrag** registriert, nicht einmal pro `acquire`. Wird beim Herunterfahren des Eintrags entfernt.
+Der `onDirectoriesChanged`-Listener wird **einmal pro Eintrag** registriert, nicht einmal pro `acquire`. Bei Shutdown des Eintrags wird er abgemeldet.
 
-### 9.2 `roots/list_changed` nach oben
+### 9.2 `roots/list_changed` Fan-Up
 
-Server benachrichtigt Client über neue Roots → Pool verteilt nach oben:
+Server benachrichtigt Client über neue Roots → Pool verteilt:
 
-- Pool erkennt neu (Server kann unter neuen Roots andere Tool-Menge melden) → `toolsChanged`-Ereignis → alle Abonnenten-Views wenden erneut an
+- Pool erkennt neu (Server könnte unter neuen Roots andere Toolmengen melden) → `toolsChanged`-Event → alle Subscriber-Views wenden erneut an
 
-### 9.3 Pro-Sitzung `updateWorkspaceDirectories`
+### 9.3 Pro-Session `updateWorkspaceDirectories`
 
-**Vertrag**: In Modus B sind pro Sitzung hinzugefügte Verzeichnisse ein weicher Hinweis, nicht autoritativ. Der `WorkspaceContext` des Pools befindet sich auf Daemon-Ebene.
+**Vertrag**: In Modus B sind pro-Session-Verzeichniserweiterungen nur ein weicher Hinweis, nicht autoritativ. Der `WorkspaceContext` des Pools liegt auf Daemon-Ebene.
 
 Zwei Implementierungsoptionen:
 
-- **v1 einfach**: Ignoriere pro-Sitzung Hinzufügungen, protokolliere Warnung bei Erkennung
-- **v2 Vereinigung**: Pool pflegt `extraRoots: Map<sessionId, Set<dir>>`, der ListRoots-Handler gibt die Vereinigung von gebundenem Workspace und allen Extras zurück. Entfernung pro Sitzung löst `roots/list_changed` aus. Fügt 50-80 LOC Komplexität hinzu.
+- **v1 einfach**: Pro-Session-Hinzufügungen ignorieren, Warnung loggen wenn erkannt
+- **v2 Union**: Pool pflegt `extraRoots: Map<sessionId, Set<dir>>`, ListRoots-Handler gibt Union aus gebundenem Workspace + allen Extras zurück. Entfernen pro Session löst `roots/list_changed` aus. Erhöht die Code-Komplexität um 50-80 LOC.
 
-**Wähle v1 einfach für F2**; v2 Vereinigung als Nachfolger, wenn Benutzerleid auftritt.
+**Für F2 v1 einfach wählen**; v2 Union als Follow-up, falls Nutzerprobleme auftreten.
 
 ---
 
-## 10. Pro-Sitzung Injektion
+## 10. Pro-Session-Injektion
 
-### 10.1 `mcpServers` von `newSession({mcpServers})`
+### 10.1 `mcpServers` aus `newSession({mcpServers})`
 
-`newSessionConfig(cwd, mcpServers, ...)` fügt die injizierte Liste mit `settings.merged.mcpServers` zusammen (acpAgent.ts:1778-1831). Der Pool verbraucht die **pro-Sitzung zusammengeführte Ansicht**:
+`newSessionConfig(cwd, mcpServers, ...)` merged die injizierte Liste mit `settings.merged.mcpServers` (acpAgent.ts:1778-1831). Der Pool konsumiert die **pro-Session-gemerge Ansicht**:
 
 ```ts
 async newSessionConfig(...) {
   const config = await loadCliConfig(...);
   if (this.mcpPool) config.setMcpTransportPool(this.mcpPool);
-  // ...vorhandener setMcpBudgetEventCallback ENTFERNT — Pool übernimmt Broadcast direkt
+  // ...existing setMcpBudgetEventCallback REMOVED — pool handles broadcast directly
 }
 ```
 
-Wenn zwei Sitzungen denselben Servernamen mit unterschiedlichen Umgebungen/Headern injizieren → unterschiedliche Fingerprints → zwei Pool-Einträge. Pool-Sharing greift nur, wenn Sitzungen exakt übereinstimmen.
+Wenn zwei Sessions einen gleichnamigen Server mit unterschiedlichem Env/Headers injizieren → unterschiedliche Fingerprints → zwei Pool-Einträge. Pool-Sharing greift nur, wenn Sessions exakt übereinstimmen.
 
 ### 10.2 Auth-Divergenz
 
-Statische `~/.qwen/settings.json`-mcpServers sind über Sitzungen hinweg identisch → alle teilen sich → 80%-Fall. Pro Sitzung injizierte mcpServers mit Benutzer-Tokens → einzigartige Fingerprints → keine Teilung. Beides sicher.
+Statische `~/.qwen/settings.json`-mcpServers sind über Sessions hinweg identisch → alle teilen → 80%-Fall. Pro-Session injizierte mcpServers mit nutzerspezifischen Tokens → eindeutige Fingerprints → kein Sharing. Beides sicher.
 
-### 10.3 HTTP-Transport-Opt-in (Zusammenfassung von §5.2)
+### 10.3 HTTP-Transport-Opt-In (Zusammenfassung aus §5.2)
 
-Standardmäßig `pooledTransports = {stdio, websocket}`. HTTP/SSE-Server durchlaufen den `createUnpooledConnection`-Pfad (ein McpClient pro Sitzung), es sei denn, der Betreiber entscheidet sich für das Opt-in.
+Standardmäßig `pooledTransports = {stdio, websocket}`. HTTP/SSE-Server durchlaufen den `createUnpooledConnection`-Pfad (ein McpClient pro Session), es sei denn, der Bediener optiert ein.
 
-### 10.4 `/mcp disable X` während der Sitzung (V21-6)
+### 10.4 `/mcp disable X` während der Session (V21-6)
 
-Wenn der Betreiber `/mcp disable github` gegen eine laufende Sitzung ausführt:
-1. `Config.disableMcpServer('github')` fügt zur pro-Config-Menge `disabledMcpServers` hinzu
-2. **F2-Hook**: `Config.onDisabledMcpServersChanged` wird ausgelöst; `SessionMcpView` für diesen Namen ruft `teardown()` auf (entfernt die Tool/Prompt-Registrierungen aus den Session-Registries).
-3. Der Pool-Eintrag **kann am Leben bleiben**, wenn andere Sessions ihn noch referenzieren (refcount > 0) – nur die deaktivierende Session-Ansicht wird abgekoppelt.
-4. Wenn alle Sessions deaktivieren → refcount → 0 → Drain-Timer startet.
+Wenn der Bediener `/mcp disable github` gegen eine laufende Session ausführt:
 
-Ohne Schritt 2 würde eine Deaktivierung während einer Session bereits registrierte Tools in der `ToolRegistry` der Session belassen, bis zum nächsten Session-Neustart. Test 21.4 deckt dies ab.
+1. `Config.disableMcpServer('github')` fügt dem pro-Config-Set `disabledMcpServers` hinzu
+2. **F2-Hook**: `Config.onDisabledMcpServersChanged` feuert; `SessionMcpView` für diesen Namen ruft `teardown()` auf (entfernt seine Tool-/Prompt-Registrierungen aus den Session-Registries)
+3. Pool-Eintrag **kann bestehen bleiben**, falls andere Sessions ihn noch referenzieren (refcount > 0) – nur die deaktivierende Session trennt ihre View ab
+4. Wenn alle Sessions deaktivieren → refcount → 0 → Drain-Timer startet
 
-`/mcp enable github` ist die Umkehrung: löst ein neues `pool.acquire` für die Session aus, hängt eine neue Ansicht an und wendet den Snapshot erneut an.
+Ohne Schritt 2 würde eine Deaktivierung während der Session bereits registrierte Tools im `ToolRegistry` der Session belassen, bis zum nächsten Session-Neustart. Test 21.4 deckt dies ab.
+
+`/mcp enable github` ist die Umkehrung: löst ein erneutes `pool.acquire` für die Session aus, hängt eine neue View an und wendet den Snapshot erneut an.
 
 ---
 
-## 11. Budget Guardrails – Graduierung
+## 11. Budget-Guardrails-Graduierung
 
-### 11.1 Zustandsautomat wechselt in den Pool
+### 11.1 Zustandsmaschine wandert in den Pool
 
-`tryReserveSlot` / `releaseSlotName` / 75% Hysterese / refused_batch-Koaleszenz / `bulkPassDepth` / `pendingRefusalNames` – all dies wandert von `McpClientManager` in `McpTransportPool`. `McpClientManager` behält den Zustand nur, wenn er eigenständig läuft (kein Pool injiziert).
+`tryReserveSlot` / `releaseSlotName` / 75%-Hysterese / `refused_batch`-Coalescing / `bulkPassDepth` / `pendingRefusalNames` – all das migriert von `McpClientManager` zu `McpTransportPool`. `McpClientManager` behält den Zustand nur, wenn er standalone läuft (kein Pool injiziert).
 
 ### 11.2 Snapshot-Zellen-Scope
 
@@ -800,9 +806,9 @@ Ohne Schritt 2 würde eine Deaktivierung während einer Session bereits registri
 }
 ```
 
-Laut PR-14-Vertrag: „Consumers MUST tolerate additional entries with unrecognized scope values (drop, don't fail).“ Alte SDK-Clients sehen `scope: 'workspace'`, rendern es als unbekannt (oder fallen auf die Top-Level-Zahlen zurück). Das neue SDK fügt die Hilfsfunktion `isWorkspaceScopedBudget(cell)` hinzu.
+Laut PR-14-Vertrag: „Consumers MUST tolerate additional entries with unrecognized scope values (drop, don't fail)." Alte SDK-Clients sehen `scope: 'workspace'`, rendern als unbekannt (oder fallen zurück auf Top-Level-Zahlen). Neues SDK fügt den Helper `isWorkspaceScopedBudget(cell)` hinzu.
 
-### 11.3 Event-Verteilung (Fan-out)
+### 11.3 Event-Fan-Out
 
 ```ts
 class QwenAgent {
@@ -833,11 +839,11 @@ class QwenAgent {
 
 PR 14b exportierte diese (müssen additiv erweitert werden):
 
-- `DaemonMcpBudgetWarningData` – füge `scope?: 'workspace' | 'session'` hinzu (optional für Abwärtskompatibilität; nicht vorhanden = 'session')
+- `DaemonMcpBudgetWarningData` – `scope?: 'workspace' | 'session'` hinzufügen (optional für Rückwärtskompatibilität; fehlend = 'session')
 - `DaemonMcpChildRefusedBatchData` – gleiche `scope?`-Erweiterung
 - `DaemonMcpGuardrailEvent` – Diskriminator unverändert
 
-Neue SDK-Hilfsfunktionen:
+Neue SDK-Helper:
 
 ```ts
 export function isWorkspaceScopedBudgetEvent(
@@ -847,64 +853,65 @@ export function isWorkspaceScopedBudgetEvent(
 
 Reducer-Zustand auf `DaemonSessionViewState`:
 
-- **Keine neuen Felder** – `mcpBudgetWarningCount` / `mcpChildRefusedBatchCount` werden unabhängig vom Scope erhöht (Scope ist eine Eigenschaft jedes Events, kein separater Stream).
-- Dokumentieren, dass diese Zählwerte unter F2 Workspace-weite Events widerspiegeln, die an jede Session verteilt werden – sie werden **gleichzeitig in allen angehängten Sessions** erhöht, wenn Budgetdruck auftritt.
+- **Keine neuen Felder** – `mcpBudgetWarningCount` / `mcpChildRefusedBatchCount` inkrementieren unabhängig vom Scope (Scope ist eine Eigenschaft jedes Events, kein separater Stream)
+- Dokumentieren, dass diese Zähler unter F2 Workspace-Level-Events widerspiegeln, die an jede Session weitergeleitet werden – sie werden bei Budgetdruck **gleichzeitig über alle angehängten Sessions** inkrementieren
 
-**V21-12 (Q1 gelöst, in v2.1 festgeschrieben)**: die vorhandenen Feldnamen (`mcpBudgetWarningCount`, `mcpChildRefusedBatchCount`, `lastMcpBudgetWarning`, `lastMcpChildRefusedBatch`) beibehalten, mit erweiterter Scope-Semantik, dokumentiert im JSDoc:
+**V21-12 (Q1 gelöst, in v2.1 eingefroren)**: bestehende Feldnamen behalten (`mcpBudgetWarningCount`, `mcpChildRefusedBatchCount`, `lastMcpBudgetWarning`, `lastMcpChildRefusedBatch`) mit erweiterter Scope-Semantik, dokumentiert im JSDoc:
 
 ```ts
 /**
- * Anzahl der `mcp_budget_warning`-Ereignisse, die die Session beobachtet hat.
- * Unter F2 (`scope: 'workspace'`) wird dieser Wert gleichzeitig in allen
- * angehängten Sessions erhöht, da Budget-Ereignisse auf Workspace-Ebene
- * verteilt werden. Verwende `isWorkspaceScopedBudgetEvent(lastMcpBudgetWarning)`,
- * um den Scope des letzten Ereignisses zu prüfen.
+ * Count of `mcp_budget_warning` events the session has observed.
+ * Under F2 (`scope: 'workspace'`), this increments simultaneously
+ * across all attached sessions because budget events fan out at
+ * workspace level. Use `isWorkspaceScopedBudgetEvent(lastMcpBudgetWarning)`
+ * to inspect scope of the most recent event.
  */
 mcpBudgetWarningCount: number;
 ```
 
-Begründung: PR 14b hat diese Namen bereits als öffentliche SDK-Oberfläche ausgeliefert; eine Umbenennung wäre ein noch schwerwiegenderer Breaking Change als die leicht unpräzise Semantik.
+Begründung: PR 14b hat diese Namen bereits als öffentliche SDK-Oberfläche ausgeliefert; eine Umbenennung wäre ein Breaking Change, der schlimmer ist als die leicht ungenaue Semantik.
 
 ---
 
-## 12. OAuth – explizite Verschiebung auf F3
+## 12. OAuth – Explizites F3-Deferral
 
-Der OAuth-401-Fallback in `connectToMcpServer` (mcp-client.ts:950-1010) erfordert interaktive Auflösung (Browser öffnen oder Device-Flow). Der Mode-B-Daemon **darf keinen Browser starten** (gemäß PR-21-Design – der statische Quellcode-Grep-Test schlägt bei `open`/`xdg-open`/`shell.openExternal` fehl).
+Der OAuth-401-Fallback in `connectToMcpServer` (mcp-client.ts:950-1010) benötigt interaktive Auflösung (Browser öffnen oder Device-Flow). Mode-B-Daemon **darf keinen Browser öffnen** (laut PR-21-Design – statischer Source-Grep-Test schlägt bei `open`/`xdg-open`/`shell.openExternal` im Build fehl).
 
-**F2-Verhalten bei einem Server, der OAuth erfordert**:
+**F2-Verhalten bei OAuth-erforderndem Server**:
 
-1. Erstes Acquire löst `connectToMcpServer` aus → 401 erkannt
-2. Der Pool fängt die OAuth-erfordernde Ausnahme ab, markiert den Eintrag als `failed_auth_required`
-3. Die Status-Route zeigt `errorKind: 'auth_env_error'` (bestehendes PR-13-errorKind)
-4. Der Pool **wiederholt nicht automatisch**
-5. Der Bediener führt `/mcp auth <name>` (bestehendes CLI) aus ODER verwendet die PR-21-Device-Flow-Route, um ein Token auf die Festplatte zu bekommen → nächster Session-Acquire-Versuch wiederholt und gelingt.
+1. Erstes `acquire` löst `connectToMcpServer` aus → 401 erkannt
+2. Pool fängt die OAuth-erfordernde Exception, markiert Eintrag als `failed_auth_required`
+3. Status-Route zeigt `errorKind: 'auth_env_error'` (bestehender PR-13-errorKind)
+4. Pool **wiederholt nicht automatisch**
+5. Bediener führt `/mcp auth <name>` aus (bestehende CLI) ODER verwendet PR-21-Device-Flow-Route, um ein Token auf die Platte zu bekommen → nächstes Session-`acquire` wiederholt und hat Erfolg
 
-**F3 wird die Schritte 4-5** durch `PermissionMediator` ersetzen, der die OAuth-Abschlussanfrage an die angehängten Sessions als Ersthelfer weiterleitet.
+**F3 wird Schritte 4-5** durch `PermissionMediator` ersetzen, der die OAuth-Completion-Anfrage an angehängte Sessions zur Erstantwort weiterleitet.
 
-Dies vermeidet, dass F2 in die Auth-Zustandsmaschinenarbeit eingreift.
+Dies vermeidet, dass F2 in die Auth-State-Machine-Arbeit hineingezogen wird.
 
 ---
 
-## 13. Semantik der Restart-Route
+## 13. Neustart-Routen-Semantik
 
-### 13.1 `POST /workspace/mcp/:server/restart` unter dem Pool
+### 13.1 `POST /workspace/mcp/:server/restart` unter Pool
 
-Heute (PR 17): Neustart im Manager der Bootstrap-Session = Neustart des einzelnen Eintrags für diesen Namen.
+Heute (PR 17): Restart im Bootstrap-Session-Manager = Neustart des einzelnen Eintrags für diesen Namen.
 
-Unter dem Pool: Name → möglicherweise mehrere Einträge (unterschiedliche Fingerprints für den gleichen Namen = verschiedene Sessions mit unterschiedlichen Konfigurationen).
+Unter Pool: Name → möglicherweise mehrere Einträge (unterschiedliche Fingerprints für denselben Namen = unterschiedliche Sessions mit unterschiedlichen Konfigurationen).
+
 **Spezifiziertes Verhalten**:
 
-| Anfrage                                            | Verhalten                                                                             |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `POST /workspace/mcp/:server/restart`              | Neustart **aller** Einträge, die `serverName` entsprechen (parallel via `Promise.allSettled`)    |
-| `POST /workspace/mcp/:server/restart?entryIndex=0` | V21-3: nur Eintrag #0 neustarten (der undurchsichtige Index aus Snapshot §8.3); 404 wenn nicht gefunden |
-| `POST /workspace/mcp/:server/restart?entryIndex=*` | Explizit "all" (gleich wie kein Parameter)                                                    |
+| Request                                            | Verhalten                                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `POST /workspace/mcp/:server/restart`              | Alle Einträge, die zu `serverName` passen, neu starten (parallel via `Promise.allSettled`)  |
+| `POST /workspace/mcp/:server/restart?entryIndex=0` | V21-3: nur Eintrag #0 neu starten (der undurchsichtige Index aus Snapshot §8.3); 404 falls nicht gefunden |
+| `POST /workspace/mcp/:server/restart?entryIndex=*` | Explizit „alle" (wie ohne Parameter)                                                          |
 
-Antwortform:
+Antwortstruktur:
 
 ```ts
 type RestartResult = {
-  entryIndex: number;        // V21-7: undurchsichtiger Index, nicht roher Fingerabdruck
+  entryIndex: number;        // V21-7: undurchsichtiger Index, nicht roher Fingerprint
   restarted: boolean;
   durationMs?: number;
   reason?: string;           // 'budget_would_exceed' | 'not_connected' | 'in_flight'
@@ -912,9 +919,9 @@ type RestartResult = {
 POST /workspace/mcp/:server/restart → { entries: RestartResult[] }
 ```
 
-Alte Form `{restarted: true, durationMs}` wird beibehalten, wenn `entries.length === 1` UND kein `entryIndex`-Query-Parameter, aus Gründen der Abwärtskompatibilität; Clients können die neue Form erkennen, indem sie prüfen, ob `'entries' in response`.
+Alte Form `{restarted: true, durationMs}` bleibt erhalten, wenn `entries.length === 1` UND kein `entryIndex`-Query-Parameter angegeben ist (Rückwärtskompatibilität); Clients können die neue Form erkennen, indem sie auf `'entries' in response` prüfen.
 
-### 13.2 Deduplizierung von Neustarts während laufender Vorgänge
+### 13.2 In-Flight-Restart-Deduplizierung
 
 ```ts
 class PoolEntry {
@@ -929,37 +936,37 @@ class PoolEntry {
 }
 ```
 
-### 13.3 Budgetprüfung (behält PR 17 Verhalten bei)
+### 13.3 Budget-Prüfung (erhält PR-17-Verhalten)
 
-Vor dem Neustart prüft der Pool das Budget: wenn Trennung+Wiederverbindung noch passen würden, OK. Die aktuelle PR 17-Semantik `{restarted:false, skipped:true, reason:'budget_would_exceed'}` wird beibehalten (jetzt pro Eintrag angewendet).
+Vor dem Neustart prüft der Pool das Budget: wenn Disconnect+Reconnect noch passen, OK. Die aktuelle PR-17-Semantik `{restarted:false, skipped:true, reason:'budget_would_exceed'}` bleibt erhalten (wird jetzt pro Eintrag angewendet).
 
-### 13.4 Tool-Aufruf während laufender Wiederverbindung (V21-5, neu)
+### 13.4 In-Flight-Tool-Aufruf während Reconnect (V21-5, neu)
 
-Sitzung A ruft `pool.callTool('git.commit', args)` auf → Anfrage erreicht stdin des zugrunde liegenden Child-Prozesses → Child-Prozess stürzt während des Schreibens ab → Eintrag wechselt in den Wiederverbindungsmodus:
+Session A ruft `pool.callTool('git.commit', args)` auf → Anfrage trifft auf stdin des unterliegenden Child-Prozesses → Child-Prozess stürzt während des Schreibens ab → Eintrag geht in Reconnect:
 
 ```ts
 class MCPCallInterruptedError extends Error {
   readonly serverName: string;
   readonly entryIndex: number;
-  readonly clientGeneration: number;   // Generation vor der Wiederverbindung
-  readonly args: unknown;              // ursprüngliche Argumente, damit der Aufrufer bei Bedarf wiederholen kann
+  readonly clientGeneration: number;   // Generation vor dem Reconnect
+  readonly args: unknown;              // ursprüngliche Argumente, zum erneuten Versuch durch Aufrufer, falls sicher
   constructor(serverName, entryIndex, clientGeneration, args) { ... }
 }
 ```
 
 **Spezifikation**:
 
-- Das Promise des laufenden Aufrufs wird mit `MCPCallInterruptedError` abgelehnt, sobald der Transportabbruch erkannt wird (nicht auf Wiederverbindung warten)
-- Der Pool **wiederholt den Aufruf NICHT automatisch**; die Semantik ist für Schreibvorgänge unsicher (Commit, Dateibearbeitung usw.) und der Pool kann nicht zwischen Lese- und Schreibvorgängen unterscheiden
-- Der Aufrufer (typischerweise die Tool-Ausführungsschicht in der Agentenschleife) fängt diesen Fehler ab und entscheidet: wiederholen / dem Benutzer anzeigen / abbrechen
-- Nach der Wiederverbindung: Sitzung A kann erneut aufrufen (gleicher `PooledConnection.callTool`); der Pool leitet transparent an die neue Transportinstanz weiter
-- `MCPCallInterruptedError.clientGeneration` ermöglicht es dem Aufrufer, bei Bedarf eine Korrelation mit dem nachfolgenden `reconnected`-Ereignis herzustellen
+- Das Promise des laufenden Aufrufs wird mit `MCPCallInterruptedError` abgelehnt, sobald der Transportabbruch erkannt wird (nicht auf Reconnect warten)
+- Der Pool **wiederholt den Aufruf NICHT automatisch**; Semantik ist unsicher für Schreibvorgänge (Commit, Dateibearbeitung usw.) und der Pool kann Lesen von Schreiben nicht unterscheiden
+- Der Aufrufer (typischerweise Tool-Ausführungsschicht in der Agentenschleife) fängt diesen Fehler ab und entscheidet: erneut versuchen / dem Benutzer anzeigen / abbrechen
+- Nach dem Reconnect: Session A kann erneut aufrufen (gleicher `PooledConnection.callTool`); Pool leitet transparent zur neuen Transportinstanz weiter
+- `MCPCallInterruptedError.clientGeneration` ermöglicht es dem Aufrufer, bei Bedarf mit einem folgenden `reconnected`-Event zu korrelieren
 
-Test 21.6 muss abdecken: einen langlaufenden stdio-MCP starten, Tool-Aufruf senden, den Child-Prozess während des Aufrufs töten, Ablehnung mit `MCPCallInterruptedError` und nicht null `clientGeneration` bestätigen.
+Test 21.6 muss abdecken: Einen langlebigen stdio-MCP starten, Tool-Aufruf senden, das Child während des Aufrufs töten, Ablehnung mit `MCPCallInterruptedError` und nicht-null `clientGeneration` bestätigen.
 
 ---
 
-## 14. Umstrukturierung der Status-Route
+## 14. Status-Route-Refactoring
 
 ### 14.1 Neuer Abfragepfad
 
@@ -967,16 +974,16 @@ Test 21.6 muss abdecken: einen langlaufenden stdio-MCP starten, Tool-Aufruf send
 // httpAcpBridge.ts:733 buildWorkspaceMcpStatus — replace data source
 let accounting: McpClientAccounting | undefined;
 try {
-  // NEW: query pool directly via bridge extMethod, not bootstrap session
+  // NEU: Pool direkt via Bridge-extMethod abfragen, nicht Bootstrap-Session
   accounting = await this.bridge.client.getMcpPoolAccounting();
 } catch (err) {
-  // Fallback to legacy bootstrap session path for non-pool daemon
+  // Fallback auf Legacy-Bootstrap-Session-Pfad für Non-Pool-Daemon
   const manager = config.getToolRegistry()?.getMcpClientManager();
   if (manager) accounting = manager.getMcpClientAccounting();
 }
 ```
 
-`QwenAgent` stellt `getMcpPoolAccounting()` bereit:
+`QwenAgent` macht `getMcpPoolAccounting()` verfügbar:
 
 ```ts
 class QwenAgent {
@@ -986,117 +993,117 @@ class QwenAgent {
 }
 ```
 
-ACP-Child bridgt über `extMethod`, damit der Daemon aufrufen kann.
+ACP-Child-Bridges leiten über `extMethod` weiter, damit der Daemon aufrufen kann.
 
 ### 14.2 entryCount + entrySummary
 
 Siehe §8.3.
 
-### 14.3 Fall ohne Bootstrap-Sitzung
+### 14.3 Fall ohne Bootstrap-Session
 
-Derzeit (PR 12) gibt `GET /workspace/mcp` den Wert `initialized: false` zurück, wenn der Daemon im Leerlauf ist (noch keine Sitzungen), da keine Bootstrap-Sitzung zum Abfragen vorhanden ist.
+Heute (PR 12) gibt `GET /workspace/mcp` `initialized: false` zurück, wenn der Daemon im Leerlauf ist (noch keine Sessions), weil keine Bootstrap-Session zum Abfragen existiert.
 
-Unter Pool: Pool existiert ab dem Konstruktor von `QwenAgent` → Status-Route kann Live-Accounting **selbst bei null Sitzungen** zurückgeben. Zelle `initialized: true` bereits vor der ersten Sitzung. **Dokumentierte Verhaltensänderung** in der PR-Beschreibung; kein Regression.
+Unter Pool: Pool existiert ab dem `QwenAgent`-Konstruktor → Status-Route kann Live-Accounting zurückgeben **selbst bei null Sessions**. Zelle `initialized: true` sogar vor der ersten Session. **Dokumentierte Verhaltensänderung** in der PR-Beschreibung; kein Regression.
 
 ---
 
-## 15. Interaktion zwischen loadSession / resume (PR 6 #4222)
+## 15. loadSession / resume-Interaktion (PR 6 #4222)
 
-### 15.1 Abbruch des Drain bei Wiederaufnahme
+### 15.1 Drain-Abbruch bei Resume
 
 ```
 session-A aktiv, hält Referenz auf entry-X
-session-A trennt Verbindung (kein explizites Schließen) → irgendwann killSession → pool.releaseSession(A) → entry-X.refs.size === 0 → Drain-Timer startet (30s)
-session-A Wiederaufnahme innerhalb von 30s → neues newSessionConfig → pool.acquire gibt entry-X zurück → attach bricht Drain ab
-session-A Wiederaufnahme nach 30s → entry-X bereits geschlossen → pool erzeugt neuen Eintrag (Kaltstart)
+session-A disconnect (kein explizites Close) → irgendwann killSession → pool.releaseSession(A) → entry-X.refs.size === 0 → Drain-Timer startet (30s)
+session-A resume innerhalb von 30s → neues newSessionConfig → pool.acquire gibt entry-X zurück → attach bricht Drain ab
+session-A resume nach 30s → entry-X bereits geschlossen → Pool erzeugt neuen Eintrag (Kaltstart)
 ```
-
 ### 15.2 `restoreState`-Cache-Fenster (5 Min., aus PR 6)
-`acpAgent.restoreState` wird 5 Minuten nach der Trennung gehalten. Pool-Drain (Standard 30s) < Wiederherstellungsfenster (5min) → eine Wiederaufnahme zwischen 30s und 5min erfordert einen MCP-Kaltstart. Akzeptabler Kompromiss (die Wiederaufnahme selbst ist ein seltener Pfad).
 
-Alternative: Der Pool liest die Konfiguration des Daemon-Wiederherstellungsfensters und verlängert den Drain entsprechend. Erhöht die Kopplung zwischen Pool und Session-Zustandsmaschine; **auf ein Follow-Up verschieben, es sei denn, Benutzer melden Probleme mit Kaltstarts**.
+`acpAgent.restoreState` wird 5 Min. nach Trennung gehalten. Pool-Drain (30s Standard) < Wiederherstellungsfenster (5 Min.) → Wiederaufnahme zwischen 30s und 5 Min. verursacht MCP-Kaltstart. Akzeptabler Kompromiss (Wiederaufnahme selbst ist seltener Pfad).
 
-### 15.3 `pendingRestoreIds` Interaktion
+Alternative: Pool liest die Restore-Window-Konfiguration des Daemons und verlängert den Drain entsprechend. Erhöht Kopplung zwischen Pool und Session-Zustandsmaschine; **auf Folgearbeit verschieben, es sei denn, Benutzer melden Kaltstart-Schmerzen**.
 
-`acpAgent.killSession()` muss `pool.releaseSession(sid)` aufrufen, NACHDEM `pendingRestoreIds` bereinigt wurden. Reihenfolge:
+### 15.3 `pendingRestoreIds`-Interaktion
+
+`acpAgent.killSession()` MUSS `pool.releaseSession(sid)` NACH der Bereinigung von `pendingRestoreIds` aufrufen. Reihenfolge:
 
 1. Session als wiederherstellbar markiert (`pendingRestoreIds.add(sid)`)
-2. `Session.close()` – aber die Pool-Referenz wird noch gehalten
+2. Session.close() — aber Pool-Referenz bleibt erhalten
 3. Nach Ablauf von `RESTORE_WINDOW_MS` ohne Wiederaufnahme: `killSession` bereinigt endgültig → `pool.releaseSession(sid)` löst Drain aus
 
-Verhindert, dass Drain während eines Wiederherstellungsfensters ausgelöst wird.
+Vermeidet, dass Drain während eines Wiederherstellungsfensters ausgelöst wird.
 
 ---
 
-## 16. Heißes Neuladen der Konfiguration
+## 16. Hot Config Reload
 
 ### 16.1 Implizites Neuladen durch Fingerprint-Änderung
 
-Benutzer bearbeitet `~/.qwen/settings.json` während des Betriebs und ändert die Umgebung eines Servers:
+Benutzer bearbeitet `~/.qwen/settings.json` während des Betriebs, ändert die Umgebung eines Servers:
 
-1. Alte Sessions behalten den alten Config/McpServers-Snapshot → erwerben weiterhin den alten Fingerprint → entry-OLD Referenz bleibt bestehen
-2. Neue Session liest die aktualisierten Einstellungen → neuer Fingerprint → entry-NEW wird erstellt → existiert parallel zu entry-OLD
-3. Alte Sessions schließen sich auf natürliche Weise → entry-OLD wird gedraint → schließlich geschlossen
-4. Gleichgewichtszustand: Nur entry-NEW bleibt übrig
+1. Alte Sessions behalten alten `Config`/`McpServers`-Snapshot → behalten alten Fingerprint → Referenz auf Eintrag-Alt bleibt bestehen
+2. Neue Session liest neue Einstellungen → neuer Fingerprint → Eintrag-Neu erstellt → koexistiert mit Eintrag-Alt
+3. Alte Sessions schließen natürlich → Eintrag-Alt drain → schließlich geschlossen
+4. Gleichgewichtszustand: nur Eintrag-Neu bleibt
 
-**Keine Live-Mutation von laufenden Verbindungen** — saubere Trennung zwischen Sessions mit verschiedenen Konfigurationsversionen.
+**Keine Live-Mutation laufender Verbindungen** — saubere Trennung zwischen Sessions mit unterschiedlichen Konfigurationsversionen.
 
-### 16.2 Erzwungener Neuladungsweg (optional)
+### 16.2 Erzwungener Neuladepfad (optional)
 
 ```
 POST /workspace/mcp/reload-all
-  → for each session: re-load settings, swap Config.mcpServers
-  → for each entry no longer referenced: schedule eviction
+  → für jede Session: Einstellungen neu laden, Config.mcpServers austauschen
+  → für jeden nicht mehr referenzierten Eintrag: Löschung einplanen
 ```
 
-Nützlich für „Ich habe Umgebungsvariablen geändert und möchte sofortige Auswirkungen auf alle Sessions.“ Auf F2-Follow-Up verschieben (nicht blockierend).
+Nützlich für „Ich habe Umgebungsvariablen geändert und möchte sofortige Wirkung auf alle Sessions." Auf F2-Folgearbeit verschieben (nicht blockierend).
 
-### 16.3 Extension-Deinstallation verwaiste Einträge (V21-15)
+### 16.3 Erweiterungs-Deinstallation verwaiste Einträge (V21-15)
 
-Szenario: Extension `foo-ext` registriert MCP-Server `foo-server`. Operator führt `/extension uninstall foo-ext` aus. Der Extension-Lebenszyklus entfernt `foo-server` aus `extensionMcpServers`, sodass zukünftige `loadCliConfig`-Aufrufe ihn nicht mehr enthalten. Aber:
+Szenario: Erweiterung `foo-ext` registriert MCP-Server `foo-server`. Operator führt `/extension uninstall foo-ext` aus. Der Erweiterungslebenszyklus entfernt `foo-server` aus `extensionMcpServers`, sodass zukünftige `loadCliConfig`-Aufrufe ihn nicht enthalten. Aber:
 
-- Live-Sessions halten Config-Snapshots, die noch `foo-server` enthalten → diese Sessions nutzen den Eintrag weiter
-- Neue Sessions nach der Deinstallation erwerben ihn nicht (Server ist nicht mehr in ihrem zusammengeführten mcpServers) → keine Erhöhung des Referenzzählers
+- Live-Sessions halten `Config`-Snapshots, die noch `foo-server` enthalten → diese Sessions nutzen den Eintrag weiter
+- Neue Sessions nach Deinstallation erwerben ihn nicht (Server nicht mehr in ihrem gemergten mcpServers) → kein Referenzzähleranstieg
 
-**Lösung**: Auf natürlichen Drain vertrauen. Wenn alte Sessions geschlossen werden, sinkt der Referenzzähler; schließlich erreicht der Eintrag `MAX_IDLE_MS = 5min` und wird zwangsgeschlossen. **Keine explizite `pool.invalidateByExtension(name)` API** — hält das Modell einheitlich mit dem heißen Konfigurationsneuladen (§16.1).
+**Lösung**: Auf natürlichen Drain verlassen. Wenn alte Sessions schließen, sinkt der Referenzzähler; schließlich erreicht der Eintrag `MAX_IDLE_MS = 5min` und wird zwangsgeschlossen. **Keine explizite `pool.invalidateByExtension(name)`-API** — hält das Modell einheitlich mit Hot Config Reload (§16.1).
 
-Kompromiss: Der Server der Extension kann bis zu 5 Minuten nach der Deinstallation laufen, wenn eine lange Session ihn am Leben hält. Akzeptabel; Betreiber können `/mcp restart foo-server` ausführen und dann die Session beenden, falls Dringlichkeit erforderlich ist.
+Kompromiss: Der Server der Erweiterung kann bis zu 5 Min. nach Deinstallation laufen, wenn eine lange Session ihn am Leben hält. Akzeptabel; Operatoren können `/mcp restart foo-server` und dann die Session beenden, wenn Dringlichkeit besteht.
 
 ---
 
-## 17. Abschaltreihenfolge
+## 17. Abschalt-Reihenfolge
 
-`QwenAgent.close()` Ablauf (muss erzwungen werden):
+`QwenAgent.close()`-Sequenz (muss erzwungen werden):
 
 ```
 1. Setze acceptingNewSessions = false; lehne neue POST /session ab
-2. Für jede laufende Prompt: Abbruchsignal senden, auf Abschluss warten (bestehender PR 11 Lebenszyklus)
-3. Für jede Session: close auslösen → pool.releaseSession(sid)
-4. await pool.drainAll({ force: true, timeoutMs: 10_000 })   ← umgeht 30s Gnadenfrist
-   ├── Für jeden Eintrag: Drain- und Health-Timer abbrechen, als draining markieren
+2. Für jede laufende Eingabeaufforderung: Signalisiere Abbruch, warte auf Abschluss (bestehender PR 11 Lebenszyklus)
+3. Für jede Session: Trigger close → pool.releaseSession(sid)
+4. Await pool.drainAll({ force: true, timeoutMs: 10_000 })   ← umgeht 30s Gnadenfrist
+   ├── Für jeden Eintrag: Brich Drain + Health-Timer ab, markiere als drainend
    ├── Für jeden Eintrag parallel: listDescendantPids → SIGTERM an Kindprozesse
    ├── Für jeden Eintrag parallel: client.disconnect()
-   └── Promise.race gegen timeoutMs; aufgegebene Einträge erhalten SIGKILL
+   └── Promise.race gegen timeoutMs; verlassene Einträge erhalten SIGKILL
 5. Bridge-Kanal schließen
 6. Prozess beenden
 ```
 
-**V21-11**: `drainAll` Signatur:
+**V21-11**: `drainAll`-Signatur:
 
 ```ts
 async drainAll(opts?: {
-  force?: boolean;       // default false; true bypasses 30s grace timer
-  timeoutMs?: number;    // default 10_000; wall-clock budget; SIGKILL stragglers after
+  force?: boolean;       // Standard false; true umgeht 30s Gnadenfrist-Timer
+  timeoutMs?: number;    // Standard 10_000; Wanduhr-Budget; SIGKILL für Nachzügler danach
 }): Promise<DrainResult>;
 
 type DrainResult = {
-  drained: number;       // entries that disconnected cleanly
-  forced: number;        // entries SIGKILLed after timeout
+  drained: number;       // Einträge, die sauber getrennt wurden
+  forced: number;        // Einträge, die nach Timeout SIGKILL erhalten haben
   errors: Array<{ entryIndex: number; serverName: string; error: string }>;
 };
 ```
 
-Der Aufrufer verwendet `DrainResult` für Shutdown-Logging; bei `forced > 0` eine Warnung loggen, damit der Betreiber weiß, dass ein Server nicht sauber heruntergefahren wurde.
+Aufrufer verwendet `DrainResult` für Abschaltprotokollierung; bei `forced > 0` eine Warnung loggen, damit der Operator weiß, dass ein Server nicht sauber heruntergefahren wurde.
 
 ---
 
@@ -1106,12 +1113,12 @@ Der Aufrufer verwendet `DrainResult` für Shutdown-Logging; bei `forced > 0` ein
 
 ```
 packages/core/src/tools/
-  mcp-transport-pool.ts        # McpTransportPool main (~700 LOC)
-  mcp-pool-key.ts              # fingerprint + canonicalize helpers (~150 LOC)
+  mcp-transport-pool.ts        # McpTransportPool Hauptdatei (~700 LOC)
+  mcp-pool-key.ts              # Fingerprint + canonicalize Helfer (~150 LOC)
   mcp-pool-entry.ts            # PoolEntry: refcount + drain + health + generation (~500 LOC)
   session-mcp-view.ts          # SessionMcpView: filter + register tools/prompts (~200 LOC)
-  mcp-pool-events.ts           # PoolEvent discriminated union (~80 LOC)
-  pid-descendants.ts           # listDescendantPids cross-platform (~150 LOC, incl. tests)
+  mcp-pool-events.ts           # PoolEvent diskriminierte Union (~80 LOC)
+  pid-descendants.ts           # listDescendantPids plattformübergreifend (~150 LOC, inkl. Tests)
 
 packages/core/src/tools/
   mcp-transport-pool.test.ts   # ~900 LOC
@@ -1124,59 +1131,61 @@ packages/core/src/tools/
 **Geänderte Dateien:**
 
 ```
-packages/core/src/tools/mcp-client.ts            # discoverAndReturn() split; connectToMcpServer unified
-packages/core/src/tools/mcp-client-manager.ts    # optional pool param; budget state conditional
-packages/core/src/tools/tool-registry.ts         # threads pool from config into McpClientManager
+packages/core/src/tools/mcp-client.ts            # discoverAndReturn() aufgeteilt; connectToMcpServer vereinheitlicht
+packages/core/src/tools/mcp-client-manager.ts    # optionaler Pool-Parameter; Budget-Zustand konditional
+packages/core/src/tools/tool-registry.ts         # fädelt Pool von Config in McpClientManager ein
 packages/core/src/config/config.ts               # setMcpTransportPool / getMcpTransportPool
-packages/cli/src/acp-integration/acpAgent.ts     # QwenAgent.mcpPool construction; broadcastBudgetEvent;
-                                                 # newSessionConfig wires pool into Config;
-                                                 # killSession calls pool.releaseSession
-packages/cli/src/serve/run-qwen-serve.ts           # pass --mcp-pool-transports + budget env to ACP child
-packages/cli/src/serve/httpAcpBridge.ts          # buildWorkspaceMcpStatus reads pool;
-                                                 # restartMcpServer extMethod returns RestartResult[]
-packages/cli/src/serve/capabilities.ts           # advertise mcp_workspace_pool
-packages/sdk/src/daemon/mcpEvents.ts             # scope?: optional field; isWorkspaceScopedBudgetEvent helper
+packages/cli/src/acp-integration/acpAgent.ts     # QwenAgent.mcpPool-Konstruktion; broadcastBudgetEvent;
+                                                 # newSessionConfig verdrahtet Pool in Config;
+                                                 # killSession ruft pool.releaseSession auf
+packages/cli/src/serve/run-qwen-serve.ts           # übergibt --mcp-pool-transports + Budget-Umgebung an ACP-Kind
+packages/cli/src/serve/httpAcpBridge.ts          # buildWorkspaceMcpStatus liest Pool;
+                                                 # restartMcpServer extMethod gibt RestartResult[] zurück
+packages/cli/src/serve/capabilities.ts           # wirbt mcp_workspace_pool an
+packages/sdk/src/daemon/mcpEvents.ts             # scope?: optionales Feld; isWorkspaceScopedBudgetEvent Helfer
 ```
+
 ---
 
-## 19. Single-PR-Auslieferung — Commit-Aufschlüsselung (V21-1)
+## 19. Ein-PR-Auslieferung — Commit-Aufteilung (V21-1)
 
-Gemäß der Anleitung des Maintainers zur funktionszusammenhängenden Bündelung (#4175 Branching-Strategie 2026-05-19) wird F2 als **ein PR mit 6 atomaren Commits** ausgeliefert. Der Review kann schrittweise mit `git log -p HEAD~6..HEAD` erfolgen und commitweise geprüft werden.
+Gemäß der Richtlinie des Maintainers für funktionskohärente Batches (#4175 Branching-Strategie 2026-05-19) wird F2 als **ein PR mit 6 atomaren Commits** ausgeliefert. Der Reviewer kann mit `git log -p HEAD~6..HEAD` Schritt für Schritt vorgehen und Commit für Commit prüfen.
 
-| Commit-Nr. | Titel                                                                                         | Bereich                                                                                                                                                                                                                                                                                                                                                                                                                  | Betrifft                                                                                                                  |
-| ---------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| 1          | `refactor(core): split McpClient.discover into pure tool/prompt list and unify connect paths` | Fügt `discoverAndReturn()` hinzu; extrahiert die gemeinsame `establishConnection()`, die sowohl von `McpClient.connect()` als auch von der `connectToMcpServer()`-Factory verwendet wird; die alte `discover()` wird zu einem dünnen Wrapper, der registriert (bewahrt das eigenständige Qwen-Verhalten). Keine beobachtbare Verhaltensänderung.                                                                         | `mcp-client.ts`, `mcp-client.test.ts`                                                                                    |
-| 2          | `feat(core): McpTransportPool + SessionMcpView`                                               | Pool-Kern: `fingerprint`, Referenzzähler, `spawnInFlight`-Deduplizierung, `sessionToEntries`-Rückwärtsindex, Drain-Zustandsautomat, Snapshot-Wiederholung bei Verbindung, Generations-Guard, Tool+Prompt Dual-Fan-Out, pro-Sitzungs-Vertrauenskopie. Mock-McpClient für Komponententests. Keine Produktionsverdrahtung.                                                                                               | neu `mcp-transport-pool.ts`, `mcp-pool-key.ts`, `mcp-pool-entry.ts`, `session-mcp-view.ts`, `mcp-pool-events.ts` + Tests |
-| 3          | `feat(core): cross-platform descendant pid sweep + pool health monitor`                       | `listDescendantPids` (Unix `pgrep -P` rekursiv, Windows PowerShell CIM); einheitlicher Health-Monitor innerhalb von `PoolEntry` (Intervallprüfung + Fehleranzahl + Wiederverbindungs-Backoff gemäß §6.6); Subprozess-Spawn-Integrationstests, geschützt durch `QWEN_INTEGRATION === '1'`.                                                                                                                               | neu `pid-descendants.ts` + Tests; `mcp-pool-entry.ts`                                                                    |
-| 4          | `feat(serve): wire McpTransportPool into QwenAgent daemon mode`                               | `Config.setMcpTransportPool` + `getMcpTransportPool`; `ToolRegistry` fädelt Pool in `McpClientManager` ein; `McpClientManager` optionaler `pool?`-Konstruktorparameter; `acpAgent.QwenAgent` erstellt Pool bei Initialisierung; `newSessionConfig`-Injektion; `killSession` ruft `pool.releaseSession` auf; SDK MCP + HTTP/SSE-Umgehung über `createUnpooledConnection`; CLI-Flags `--mcp-pool-transports`, `--mcp-pool-drain-ms`, `--no-mcp-pool`. | `config.ts`, `tool-registry.ts`, `mcp-client-manager.ts`, `acpAgent.ts`, `run-qwen-serve.ts`                               |
-| 5          | `feat(serve): pool-aware status + restart routes`                                             | `QwenAgent.getMcpPoolAccounting`-Erweiterungsmethode; `httpAcpBridge.buildWorkspaceMcpStatus` pool-first + Bootstrap-Sitzung-Fallback; `restartMcpServer` akzeptiert `?entryIndex=` und gibt `RestartResult[]` zurück; `entryCount` + `entrySummary[].entryIndex` auf Zelle; Fähigkeits-Tags `mcp_workspace_pool` + `mcp_pool_restart`.                                                                               | `httpAcpBridge.ts`, `capabilities.ts`, SDK-Typen                                                                         |
-| 6          | `feat(serve): graduate MCP budget guardrails to workspace scope`                              | Verschiebt `tryReserveSlot`/`releaseSlotName`/Hysterese-Zustandsautomat von `McpClientManager` in den Pool; entfernt die pro-Sitzung `setMcpBudgetEventCallback`-Verdrahtung in `acpAgent.newSessionConfig`; `QwenAgent.broadcastBudgetEvent`-Fan-Out; Snapshot-Zelle `scope: 'workspace'`; SDK `scope?`-additives Feld; `isWorkspaceScopedBudgetEvent`-Hilfsfunktion; Inline-Dokumentationsupdates.                  | `mcp-transport-pool.ts`, `mcp-client-manager.ts`, `acpAgent.ts`, `httpAcpBridge.ts`, SDK                                 |
+| Commit # | Titel                                                                                         | Umfang                                                                                                                                                                                                                                                                                                                                                                                                                  | Betrifft                                                                                                                  |
+| -------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 1        | `refactor(core): McpClient.discover in reine Tool-/Prompt-Liste aufteilen und Connect-Pfade vereinheitlichen` | `discoverAndReturn()` hinzugefügt; gemeinsames `establishConnection()` extrahiert, das sowohl von `McpClient.connect()` als auch von der `connectToMcpServer()`-Factory verwendet wird; Legacy `discover()` wird dünner Wrapper, der registriert (bewahrt eigenständiges qwen-Verhalten). Keine beobachtbare Verhaltensänderung.                                                                                      | `mcp-client.ts`, `mcp-client.test.ts`                                                                                    |
+| 2        | `feat(core): McpTransportPool + SessionMcpView`                                               | Pool-Kern: `fingerprint`, refcount, `spawnInFlight`-Deduplizierung, `sessionToEntries`-Rückwärtsindex, Drain-Zustandsmaschine, Snapshot-Wiedergabe bei Anhang, Generation-Guard, Tool+Prompt duales Fan-out, pro-Session-Kopieren von trust. McpClient für Unit-Tests gemockt. Keine Produktionsverdrahtung.                                                                                                            | neue `mcp-transport-pool.ts`, `mcp-pool-key.ts`, `mcp-pool-entry.ts`, `session-mcp-view.ts`, `mcp-pool-events.ts` + Tests |
+| 3        | `feat(core): plattformübergreifender Abstiegs-PID-Sweep + Pool-Health-Monitor`                 | `listDescendantPids` (Unix `pgrep -P` rekursiv, Windows PowerShell CIM); vereinheitlichter Health-Monitor innerhalb von `PoolEntry` (Intervallprüfung + Fehlerzähler + Wiederverbindungs-Backoff gemäß §6.6); Subprozess-Spawn-Integrationstests gated auf `QWEN_INTEGRATION === '1'`.                                                                                                                                   | neue `pid-descendants.ts` + Tests; `mcp-pool-entry.ts`                                                                    |
+| 4        | `feat(serve): McpTransportPool in QwenAgent-Daemon-Modus einbinden`                           | `Config.setMcpTransportPool` + `getMcpTransportPool`; `ToolRegistry` fädelt Pool in `McpClientManager` ein; `McpClientManager` optionaler `pool?`-Konstruktorparameter; `acpAgent.QwenAgent` konstruiert Pool bei Initialisierung; `newSessionConfig`-Injektion; `killSession` ruft `pool.releaseSession` auf; SDK MCP + HTTP/SSE umgehen via `createUnpooledConnection`; CLI-Flags `--mcp-pool-transports`, `--mcp-pool-drain-ms`, `--no-mcp-pool`. | `config.ts`, `tool-registry.ts`, `mcp-client-manager.ts`, `acpAgent.ts`, `run-qwen-serve.ts`                               |
+| 5        | `feat(serve): Pool-bewusste Status- und Neustart-Routen`                                       | `QwenAgent.getMcpPoolAccounting` extMethod; `httpAcpBridge.buildWorkspaceMcpStatus` Pool-zuerst + Bootstrap-Session-Fallback; `restartMcpServer` akzeptiert `?entryIndex=` und gibt `RestartResult[]` zurück; `entryCount` + `entrySummary[].entryIndex` auf Zelle; Capability-Tags `mcp_workspace_pool` + `mcp_pool_restart`.                                                                                         | `httpAcpBridge.ts`, `capabilities.ts`, SDK-Typen                                                                          |
+| 6        | `feat(serve): MCP-Budget-Schutzmechanismen auf Workspace-Bereich heben`                       | `tryReserveSlot`/`releaseSlotName`/Hysterese-Zustandsmaschine von `McpClientManager` in den Pool verschieben; pro-Session `setMcpBudgetEventCallback`-Verdrahtung in `acpAgent.newSessionConfig` entfernen; `QwenAgent.broadcastBudgetEvent` Fan-out; Snapshot-Zelle `scope: 'workspace'`; SDK `scope?`-additives Feld; `isWorkspaceScopedBudgetEvent`-Helfer; Inline-Dokumentationsaktualisierungen.                    | `mcp-transport-pool.ts`, `mcp-client-manager.ts`, `acpAgent.ts`, `httpAcpBridge.ts`, SDK                                 |
+
 **Gesamte LOC-Schätzung**: ~4100 Produktion + ~1900 Tests = ~6000 LOC (v2-Schätzung ~3850; Wachstum absorbiert V21-Korrekturen).
 
-**Merge-Ziel**: Ein einzelner PR in `daemon_mode_b_main`. Periodischer Batch-Merge nach `main` gemäß #4175-Strategie.
+**Merge-Ziel**: einzelner PR in `daemon_mode_b_main`. Periodischer Batch-Merge nach `main` gemäß #4175-Strategie.
 
-**Self-Review-Prozess vor Eröffnung des PRs**:
+**Selbstreview-Prozess vor PR-Eröffnung**:
 
-1. Nach jedem Commit `code-reviewer`-Agent auf dem Commit-Diff ausführen; übernommene Erkenntnisse in denselben Commit einfließen lassen
-2. Bei Commit 2/4/6 (höchstes Designrisiko) zusätzlich `silent-failure-hunter` + `type-design-analyzer` ausführen
-3. Nach allen 6 Commits: 3 vollständige Review-Durchgänge von verschiedenen Agent-Kombinationen auf dem vollständigen PR-Diff
-4. Vollständige Testsuite + Typecheck + Lint über alle betroffenen Pakete ausführen
+1. Nach jedem Commit `code-reviewer`-Agent auf dem Commit-Diff ausführen; übernommene Erkenntnisse in denselben Commit einarbeiten
+2. Für Commit 2/4/6 (höchstes Designrisiko) zusätzlich `silent-failure-hunter` + `type-design-analyzer` ausführen
+3. Nachdem alle 6 Commits eingespielt sind: 3 vollständige Review-Durchgänge durch verschiedene Agent-Kombinationen auf dem gesamten PR-Diff
+4. Vollständige Test-Suite + Typcheck + Lint über alle betroffenen Pakete ausführen
 
-Spiegelung des spezialisierten Pre-Review-Musters von PR 21.
+Spiegelt das spezialisierte Prereview-Muster von PR 21 wider.
 
 ---
 
 ## 20. Capability-Tags + SDK-Vertragsänderungen
 
-### 20.1 Neue Capability-Tags (atomar in v0.16, V21-1 beworben)
+### 20.1 Neue Capability-Tags (atomar in v0.16 beworben, V21-1)
 
-Da F2 als ein PR ausgeliefert wird, werden alle drei Tags gemeinsam beworben. Pool-Consumer dürfen davon ausgehen, dass **`mcp_workspace_pool` angekündigt ⇒ `entryCount`/`entrySummary`/`scope?`-Felder alle vorhanden** sind; keine feldbezogene Capability-Prüfung erforderlich.
+Da F2 als ein PR ausgeliefert wird, werden alle drei Tags zusammen beworben. Pool-Konsumenten können davon ausgehen: **`mcp_workspace_pool` beworben ⇒ Felder `entryCount`/`entrySummary`/`scope?` alle vorhanden**; keine pro-Feld-Capability-Prüfung erforderlich.
 
-| Tag                        | Wann beworben                                                                                          | Bedeutung                                                                                                |
+| Tag                        | Wann beworben                                                                                        | Bedeutung                                                                                                |
 | -------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `mcp_workspace_pool`       | Wenn `QwenAgent.mcpPool !== undefined` (im Daemon-Mode immer wahr, es sei denn `--no-mcp-pool`-Kill-Switch) | `GET /workspace/mcp` spiegelt Pool-Status wider; `entryCount` + `entrySummary`-Felder vorhanden           |
+| `mcp_workspace_pool`       | Wenn `QwenAgent.mcpPool !== undefined` (immer wahr im Daemon-Modus, außer `--no-mcp-pool`-Killswitch) | `GET /workspace/mcp` spiegelt Pool-Zustand wider; Felder `entryCount` + `entrySummary` vorhanden         |
 | `mcp_pool_restart`         | Immer wenn `mcp_workspace_pool` aktiv ist                                                              | `POST /workspace/mcp/:server/restart` akzeptiert `?entryIndex=` und kann `entries: RestartResult[]` zurückgeben |
-| (erweitert `mcp_guardrails`) | unverändert                                                                                           | Gleiches Tag, Payload erweitert um `scope` (`'workspace'` unter F2)                                       |
+| (erweitert `mcp_guardrails`) | unverändert                                                                                              | Gleicher Tag, Payload um `scope` erweitert (`'workspace'` unter F2)                                       |
 
 ### 20.2 SDK-additive Oberfläche
 
@@ -1184,7 +1193,7 @@ Da F2 als ein PR ausgeliefert wird, werden alle drei Tags gemeinsam beworben. Po
 // @qwen-code/sdk — nur additiv
 export interface DaemonMcpBudgetWarningData {
   // bestehende Felder...
-  scope?: 'workspace' | 'session'; // NEU — fehlt bei alten Daemons (bedeutet 'session')
+  scope?: 'workspace' | 'session'; // NEU — fehlt auf alten Daemons (bedeutet 'session')
 }
 
 export interface DaemonMcpChildRefusedBatchData {
@@ -1213,158 +1222,161 @@ export function isWorkspaceScopedBudgetEvent(
 
 ## 21. Testmatrix
 
-### 21.1 Pool-Key (F2-2)
+### 21.1 Pool-Schlüssel (F2-2)
 
-- Gleiche Konfiguration → gleicher Key (Env-Key-Permutation stabil, Header-Key-Permutation stabil)
-- Env-Wert unterscheidet sich um 1 Byte → anderer Key
-- Header `Authorization`-Wert unterscheidet sich → anderer Key
-- `includeTools`/`excludeTools`/`trust` geändert → GLEICHER Key (pro-Sitzung-Filter)
-- Zwei `new MCPServerConfig(...)` mit identischem Inhalt → gleicher Key (kanonischer Hash, nicht Identität)
+- Gleiche Konfiguration → gleicher Schlüssel (Env-Key-Permutation stabil, Header-Key-Permutation stabil)
+- Env-Wert um 1 Byte unterschiedlich → anderer Schlüssel
+- Header `Authorization`-Wert unterschiedlich → anderer Schlüssel
+- `includeTools`/`excludeTools`/`trust` mutiert → GLEICHER Schlüssel (pro-Session-Filter)
+- Zwei `new MCPServerConfig(...)` mit identischem Inhalt → gleicher Schlüssel (kanonischer Hash, nicht Identität)
 
 ### 21.2 Lebenszyklus (F2-2)
 
-- 3 Sitzungen erwerben denselben Key → 1 Startvorgang (überprüft durch Spy auf `client.connect`)
+- 3 Sessions erwerben denselben Schlüssel → 1 Spawn (überprüfen via Spy auf `client.connect`)
 - Freigabesequenz n,n-1,...,1 → Drain-Timer startet nur bei 1→0
-- 30s Drain: Erwerb nach 25s bricht Timer ab; Erwerb nach 35s startet neuen Eintrag
-- `MAX_IDLE_MS` (5min) harte Schließung auch bei Drain-Flattern
-- Start fehlschlägt während laufender Anfragen: alle Wartenden erhalten Fehler; Slot wird freigegeben; kein Eintrag gespeichert
+- 30s Drain: Erwerb bei 25s bricht Timer ab; Erwerb bei 35s erzeugt neuen Eintrag
+- `MAX_IDLE_MS` (5 Min.) harter Schließen auch bei flappendem Drain
+- Spawn schlägt während „in flight" fehl: alle Wartenden erhalten Fehler; Slot freigegeben; kein Eintrag gespeichert
 
 ### 21.3 Gleichzeitiger Erwerb (F2-2)
 
 - 5 gleichzeitige `acquire(sameKey)` während kein Eintrag existiert → genau 1 `spawnEntry`-Aufruf, alle 5 erhalten denselben Eintrag
-- Start abgelehnt → alle 5 Wartenden lehnen mit demselben Fehler ab; nachfolgender Erwerb startet neu
+- Spawn lehnt ab → alle 5 Wartenden erhalten denselben Fehler; nachfolgender Erwerb erneut spawn
 
-### 21.4 Pro-Sitzungs-Isolation (F2-2)
+### 21.4 Pro-Session-Isolation (F2-2)
 
-- Sitzung A `excludeTools: ['foo']`, Sitzung B ohne Ausschluss → A's ToolRegistry lässt foo aus, B hat es; beide stammen aus derselben `toolsSnapshot`
-- Sitzung A `trust: true`, Sitzung B `trust: false` → Sitzung A's `DiscoveredMCPTool.trust === true`, B's `false`; überprüfen, dass es sich NICHT um eine gemeinsame Referenz handelt (Mutation einer beeinflusst nicht die andere)
-- Sitzung A erwirbt nur Prompt-Server → A's PromptRegistry befüllt, ToolRegistry für diesen Server leer
+- Session A `excludeTools: ['foo']`, Session B keine Ausschließung → A's ToolRegistry enthält foo nicht, B schon; beide aus derselben `toolsSnapshot`
+- Session A `trust: true`, Session B `trust: false` → Session A's `DiscoveredMCPTool.trust === true`, B's `false`; prüfen, dass KEINE gemeinsame Referenz vorliegt (Mutation einer beeinflusst nicht die andere)
+- Session A erwirbt Prompt-only-Server → A's PromptRegistry befüllt, ToolRegistry für diesen Server leer
 
-### 21.5 Tool-/Prompt-Listenänderung (F2-2)
+### 21.5 Tool-/Prompt-Liste geändert (F2-2)
 
-- Server sendet `notifications/tools/list_changed` → alle Abonnenten erhalten `applyTools` mit neuer Snapshot
-- Veralteter Handler aus einer Generation vor der Wiederverbindung überschreibt die Snapshot NICHT
+- Server sendet `notifications/tools/list_changed` → `applyTools` aller Abonnenten mit neuem Snapshot aufgerufen
+- Veralteter Handler aus vorheriger Wiederverbindungsgeneration überschreibt Snapshot NICHT
 - `notifications/prompts/list_changed` analog
 
 ### 21.6 Absturz + Wiederverbindung (F2-2)
 
-- Subprozess via `process.kill` beenden → Abonnenten erhalten `disconnected`-Ereignis
-- 3 Wiederverbindungsversuche (unter Verwendung bestehender `MCPHealthMonitorConfig`) → Erfolg → `reconnected` + neue Snapshot
-- Erschöpfte Wiederholungen → alle Abonnenten erhalten `failed`; Eintrag wechselt in den Zustand `failed`; neue Erwerbe versuchen es einmal erneut und werfen dann einen Fehler
-### 21.7 Nachfolger-PID-Bereinigung (F2-2b)
+- Subprozess via `process.kill` töten → Abonnenten erhalten `disconnected`-Ereignis
+- 3 Wiederverbindungsversuche (unter Verwendung der bestehenden `MCPHealthMonitorConfig`) → Erfolg → `reconnected` + frischer Snapshot
+- Erschöpfte Wiederholungen → alle Abonnenten erhalten `failed`; Eintrag wechselt in `failed`-Zustand; neue Erwerbe versuchen es einmal erneut, werfen dann Fehler
 
-- Linux/macOS: `bash -c "sleep 60 & sleep 60"` als stdio-Befehl starten → root-Prozess töten → bestätigen, dass beide Nachfolger bereinigt wurden (`/proc/<pid>/status` abfragen oder `kill(0, pid) === false`)
-- Windows: Wrapper `cmd /c "ping -t localhost"` starten → töten → bestätigen, dass der ping-Unterprozess verschwunden ist
-- `pgrep` nicht verfügbar (PATH fehlt) → Graceful Degradation: Warnung protokollieren, nur SIGTERM an root senden, nicht abstürzen
+### 21.7 Abstiegs-PID-Sweep (F2-2b)
 
-### 21.8 Budget im Workspace-Bereich (F2-4)
+- Linux/macOS: `bash -c "sleep 60 & sleep 60"` als stdio-Befehl spawnen → Root töten → überprüfen, dass beide Nachkommen bereinigt sind (`/proc/<pid>/status` Poll, oder `kill(0, pid) === false`)
+- Windows: `cmd /c "ping -t localhost"` Wrapper spawnen → töten → überprüfen, dass ping-Subprozess weg
+- `pgrep` nicht verfügbar (PATH fehlt) → sanfte Degradierung: Warnung loggen, nur SIGTERM an Root, nicht abstürzen
+
+### 21.8 Budget auf Workspace-Bereich (F2-4)
 
 - 4 Sessions × `--mcp-client-budget=2` mit 3 statischen MCP-Servern → Workspace-Gesamtsumme = 3 (nicht 12); Snapshot-Zelle `scope: 'workspace'`, `liveCount: 3`
-- Budget-Warnung wird einmal pro 75%-Aufwärtsüberschreitung im gesamten Workspace ausgelöst; wird gleichzeitig an alle 4 Sessions übertragen
-- Hysterese erneut scharf: Abfall auf 37,5% → nächste Überschreitung löst erneut aus
+- Budget-Warnung feuert einmal pro 75%-Aufwärtsüberschreitung über den gesamten Workspace; sendet gleichzeitig an alle 4 Sessions
+- Hysterese-Wiederbewaffnung: Abfall auf 37,5% → nächste Überschreitung feuert erneut
 
 ### 21.9 Rückwärtskompatibilität (F2-3)
 
-- Standalone `qwen` (ohne Daemon) → `mcpPool === undefined` → alle vorhandenen Tests in `mcp-client-manager.test.ts` bestehen unverändert
-- Daemon-Flag `--no-mcp-pool` → fällt auf pro-Session zurück, alle vorhandenen Daemon-E2E-Tests bestehen
+- Eigenständiges `qwen` (kein Daemon) → `mcpPool === undefined` → alle bestehenden `mcp-client-manager.test.ts`-Tests bestehen unverändert
+- `--no-mcp-pool`-Daemon-Flag → fällt auf pro-Session zurück, alle bestehenden Daemon-E2E-Tests bestehen
 
-### 21.10 Anmeldedaten-Isolation (F2-3)
+### 21.10 Credential-Isolation (F2-3)
 
-- Session A injiziert `{name: 'github', headers: {Authorization: 'Bearer tokenA'}}`, Session B `tokenB` → 2 getrennte Prozesse; durch Snapshot `entryCount: 2` bestätigen; bestätigen, dass A's Tool-Aufrufe über A's Transport erfolgen (durch Header-Inspektion in stdin/log)
+- Session A injiziert `{name: 'github', headers: {Authorization: 'Bearer tokenA'}}`, Session B `tokenB` → 2 separate Prozesse; überprüfen durch Snapshot `entryCount: 2`; überprüfen, dass A's Tool-Aufrufe durch A's Transport gehen (durch Header-Inspektion in stdin/log)
 
-### 21.11 LoadSession / Fortsetzen (F2-3)
+### 21.11 LoadSession / Wiederaufnahme (F2-3)
 
-- Session schließen → Drain beginnt → innerhalb von 30s fortsetzen → Pool-Eintrag wiederverwendet (kein Kaltstart, bestätigt durch `client.connect`-Spy-Zählung)
-- Fortsetzen nach 30s, aber vor Ablauf des Restore-Window → Pool-Kaltstart; restoreState-Inhalt bleibt erhalten
+- Session schließt → Drain startet → Wiederaufnahme innerhalb von 30s → Pool-Eintrag wiederverwendet (kein Kaltstart, bestätigt via `client.connect` Spy-Zähler)
+- Wiederaufnahme nach 30s aber vor Ablauf des Restore-Window → Pool-Kaltstart; restoreState-Inhalt bleibt erhalten
 
 ### 21.12 Restart-Route (F2-3b)
 
-- 1 Eintrag für Name → `POST /workspace/mcp/foo/restart` gibt legacy-Form `{restarted: true, durationMs}` zurück
-- 2 Einträge für Name (verschiedene Fingerabdrücke) → gibt `{entries: [{fingerprint, restarted, ...}, ...]}` zurück
+- 1 Eintrag für Name → `POST /workspace/mcp/foo/restart` gibt Legacy-Form `{restarted: true, durationMs}` zurück
+- 2 Einträge für Name (verschiedene Fingerprints) → gibt `{entries: [{fingerprint, restarted, ...}, ...]}` zurück
 - Neustart während ein anderer Neustart läuft → zweiter Aufruf gibt dasselbe Promise zurück (dedupliziert)
 - Neustart, wenn Budget überschritten würde → `{restarted: false, skipped: true, reason: 'budget_would_exceed'}` pro Eintrag
 
 ### 21.13 Status-Route (F2-3b)
 
-- Leerlauf-Daemon (keine Sessions), aber Pool hat zwischengespeicherte Einträge von vorheriger Session → `GET /workspace/mcp` gibt `initialized: true` mit Live-Abrechnung zurück
-- Bootstrap-Session nicht vorhanden → Fallback auf Pool-Direktpfad; kein Fehler
-- Pool-Abfrage wirft Fehler → fällt auf Bootstrap-Session-Pfad zurück; Snapshot stürzt nie ab
+- Leerlauf-Daemon (keine Sessions), aber Pool hat zwischengespeicherte Einträge von vorheriger Session → `GET /workspace/mcp` gibt `initialized: true` mit Live-Erfassung zurück
+- Bootstrap-Session existiert nicht → Fallback auf Pool-direkten Pfad; kein Fehler
+- Pool-Abfrage schlägt fehl → Fallback auf Bootstrap-Session-Pfad; Snapshot stürzt nie ab
 
 ### 21.14 SDK-Reducer (F2-4)
 
-- `mcpBudgetWarningCount` wird gleichzeitig über alle Abonnenten-Sessions erhöht, wenn das Workspace-Ereignis gesendet wird
-- `isWorkspaceScopedBudgetEvent(e)` identifiziert korrekt den Bereich aus der Nutzlast
-- Alter Daemon (kein `scope`-Feld) → standardmäßig 'session'-Interpretation
+- `mcpBudgetWarningCount` erhöht sich gleichzeitig bei allen abonnierenden Sessions, wenn Workspace-Ereignis gesendet wird
+- `isWorkspaceScopedBudgetEvent(e)` identifiziert Bereich korrekt aus Payload
+- Alter Daemon (kein `scope`-Feld) → standardmäßig auf 'session'-Interpretation
 
-### 21.15 Hot-Config-Neuladen (F2-3)
+### 21.15 Hot Config Reload (F2-3)
 
-- Änderung von settings.json während des Betriebs → alte Session behält alten Eintrag, neue Session erstellt neuen Eintrag, beide koexistieren; alter wird auf natürliche Weise geleert, wenn die letzte alte Session geschlossen wird
-- 0 Sessions nach Schließen der alten Session → Drain-Timer feuert → alter Eintrag wird GC't → nur neuer Eintrag bleibt
+- Während des Betriebs Änderung an settings.json → alte Session behält alten Eintrag, neue Session erstellt neuen Eintrag, beide koexistieren; alter drainet natürlich, wenn letzte alte Session schließt
+- 0 Sessions nachdem alte Session geschlossen hat → Drain-Timer feuert → alter Eintrag GC'd → nur neuer Eintrag bleibt
 
-### 21.16 Reihenfolge beim Herunterfahren (F2-3)
+### 21.16 Abschalt-Reihenfolge (F2-3)
 
-- `QwenAgent.close()` löst in Reihenfolge aus: Annahme stoppen → Prompts leeren → Sessions schließen → `pool.drainAll` → keine Zombie-PIDs in `pgrep -P <acpChildPid>` nach Beenden
+- `QwenAgent.close()` löst in Reihenfolge aus: Annehmen stoppen → Eingabeaufforderungen drainen → Sessions schließen → `pool.drainAll` → keine Zombie-PIDs in `pgrep -P <acpChildPid>` nach Beenden
+---
+## 22. Offene Fragen
+
+V21 hat Q1/Q3/Q4/Q6 in den Designvorgaben festgelegt (Einzel-PR-Auslieferung). Q2/Q5/Q7/Q8/Q9 bleiben offen.
+
+| #     | Frage                                                                                                                         | F2-Designvorgabe                                                                         | Entscheidung erforderlich vor |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------- |
+| Q1 ✅ | SDK-Reducer-Feldnamen – umbenennen oder beibehalten?                                                                          | **FESTGELEGT v2.1**: `mcpBudgetWarningCount` etc. mit erweiterter Scope-Semantik im JSDoc beibehalten | erledigt                      |
+| Q2    | `mcp_workspace_pool`-Fähigkeit – `protocolVersions` erhöhen ('v1' → 'v1.1') oder additiv bei 'v1' bleiben?                    | **Additiv bei 'v1' bleiben** (konsistent mit PR-14b-Präzedenzfall)                       | Commit 5                      |
+| Q3 ✅ | `--no-mcp-pool`-Flag – standardmäßig aktiv oder opt-in?                                                                       | **FESTGELEGT v2.1**: standardmäßig aktiv; `--no-mcp-pool` ist Kill-Schalter              | erledigt                      |
+| Q4 ✅ | HTTP/SSE-Standard – Pool aus oder an?                                                                                         | **FESTGELEGT v2.1**: Pool aus; opt-in über `--mcp-pool-transports`                       | erledigt                      |
+| Q5    | `POST /workspace/mcp/reload-all` – in F2 aufnehmen oder als Folge?                                                            | **Als Folge**                                                                             | n/a (zurückgestellt)          |
+| Q6 ✅ | Lazy Pool-Konstruktion – lohnt sich die Bedingung?                                                                            | **FESTGELEGT v2.1**: eager (immer im `QwenAgent`-Konstruktor konstruieren)                | erledigt                      |
+| Q7    | `restoreState`-Fenster vs. Pool-Drain – getrennt lassen, angleichen oder aus den Einstellungen lesen?                         | **Getrennt mit 30s Standard** + Konfigurationsknopf `--mcp-pool-drain-ms`                 | Commit 4                      |
+| Q8    | OAuth-Handling – F3-Verschiebung bestätigen, Workaround dokumentieren?                                                        | **Auf F3 verschoben**, Workaround `/mcp auth <name>` dokumentieren                        | Commit 4                      |
+| Q9    | `entrySummary`-Offenlegung – immer einbinden oder hinter einem verbose-Flag?                                                  | **Immer einbinden** (kleines Payload, nützlich für Betrieb)                               | Commit 5                      |
+| Q10   | `codeagents/qwen-code-daemon-design/02-architectural-decisions.md` Entscheidung #3 – mit @wenshao abstimmen?                  | F2-PR-Beschreibung verlinkt codeagents-PR; zwei PRs werden unabhängig reviewed           | PR offen                      |
 
 ---
 
-## 22. Offene Fragen
-
-V21 hat Q1/Q3/Q4/Q6 in den Design-Voreinstellungen festgelegt (Single-PR-Auslieferung). Q2/Q5/Q7/Q8/Q9 bleiben offen.
-
-| #     | Frage                                                                                                          | F2-Designvoreinstellung                                                                         | Entscheidung fällig vor |
-| ----- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------- |
-| Q1 ✅ | SDK-Reducer-Feldnamen — umbenennen oder behalten?                                                                         | **FESTGELEGT v2.1**: `mcpBudgetWarningCount` usw. mit erweiterten Bereichs-Semantiken in JSDoc behalten | gelöst               |
-| Q2    | `mcp_workspace_pool`-Fähigkeit — `protocolVersions` erhöhen ('v1' → 'v1.1') oder bei 'v1' additiv bleiben?                 | **Bei 'v1' additiv bleiben** (konsistent mit PR-14b-Präzedenzfall)                                 | commit 5               |
-| Q3 ✅ | `--no-mcp-pool`-Flag — standardmäßig aktiviert oder Opt-in?                                                                      | **FESTGELEGT v2.1**: standardmäßig aktiviert; `--no-mcp-pool` ist der Kill-Switch                               | gelöst               |
-| Q4 ✅ | HTTP/SSE-Standard — Pool aus oder an?                                                                                | **FESTGELEGT v2.1**: Pool aus; Opt-in via `--mcp-pool-transports`                             | gelöst               |
-| Q5    | `POST /workspace/mcp/reload-all` — in F2 enthalten oder Folge?                                                    | **Folge**                                                                             | n. z. (verschoben)         |
-| Q6 ✅ | Lazy Pool-Konstruktion — lohnt sich die Bedingung?                                                                   | **FESTGELEGT v2.1**: eager (immer im `QwenAgent`-Konstruktor erstellen)                             | gelöst               |
-| Q7    | `restoreState`-Fenster vs. Pool-Drain — getrennt halten, angleichen oder aus Einstellungen lesen?                                | **Getrennt halten, 30s Standard + Konfigurationsregler `--mcp-pool-drain-ms`**                         | commit 4               |
-| Q8    | OAuth-Behandlung — Verschiebung auf F3 bestätigen, Workaround dokumentieren?                                                        | **Auf F3 verschoben**, Workaround `/mcp auth <name>` dokumentieren                                | commit 4               |
-| Q9    | `entrySummary`-Offenlegung — immer einschließen oder hinter verbose-Flag?                                                 | **Immer einschließen** (kleine Nutzlast, nützlich für Betrieb)                                        | commit 5               |
-| Q10   | Update der Entscheidung #3 in `codeagents/qwen-code-daemon-design/02-architectural-decisions.md` — mit @wenshao abstimmen? | F2 PR-Beschreibung verlinkt codeagents PR; zwei PRs unabhängig überprüft                     | PR offen                |
 ## 23. Risiken
 
 ### Hoch
 
-- **R1 (A2 globaler Zustand)**: Kollision von `serverStatuses` bei mehreren Einträgen mit gleichem Namen. Gemildert durch die Aggregat-Status-Funktion; verbleibendes Risiko: SDK-Konsumenten, die die rohe globale Map lesen (unwahrscheinlich — wird nur über den Accessor `getMCPServerStatus(name)` verwendet).
-- **R2 (Symmetrie des PromptRegistry)**: Vergessen des Prompt-Fan-outs in einem Code-Pfad führt stillschweigend zum Verlust von Prompts. Gemildert durch F2-2 Test 21.4 dritter Punkt + Integrationstest, der die Prompt-Parität vor/nach F2 bestätigt.
-- **R3 (HTTP-Transport-Zustandsverschleppung)**: Die Aktivierung des HTTP-Pools für einen Server, der pro Transport Zustand hält, korrumpiert Sitzungskontexte. Gemildert durch standardmäßig deaktiviert + Dokumentation; nicht automatisch erkennbar.
+- **R1 (A2 globaler Zustand)**: Kollision von `serverStatuses` bei mehreren Einträgen mit gleichem Namen. Abgemildert durch Aggregat-Status-Funktion; Restrisiko: SDK-Konsumenten lesen die rohe globale Map (unwahrscheinlich – nur über Accessor `getMCPServerStatus(name)` genutzt).
+- **R2 (PromptRegistry-Symmetrie)**: Auslassen des Prompt-Fan-Outs in einem Codepfad lässt stumm Prompts verschwinden. Abgemildert durch F2-2-Test 21.4 dritter Aufzählungspunkt + Integrationstest, der Prompt-Parität gegenüber vor F2 bestätigt.
+- **R3 (HTTP-Transport-Zustandsübertragung)**: Bei opt-in HTTP-Pool für einen Server, der pro-Transport-Zustand verwaltet, werden Sitzungskontexte beschädigt. Abgemildert durch Standard-aus + Dokumentation; automatische Erkennung nicht möglich.
 
 ### Mittel
 
-- **R4 (Pfadvereinheitlichung F2-1)**: Die Factory `connectToMcpServer` und die Klasse `McpClient` haben subtile Verhaltensunterschiede (z. B. Fähigkeiten, die zum Zeitpunkt der Konstruktion vs. Verbindung angekündigt werden). Gemildert dadurch, dass F2-1 ein reiner Refactoring-PR mit vollständiger Regressionstestabdeckung ist, bevor die Pool-Arbeit beginnt.
-- **R5 (Windows-Prozess-PID)**: PowerShell `Get-CimInstance` kann langsam sein (Erzeugungskosten) oder durch AppLocker blockiert werden. Gemildert durch 2s Timeout + Graceful Degradation.
-- **R6 (Pool-Event-Broadcast-Verstärkung)**: Budget-Warnung, die an 100 Sitzungen gesendet wird, führt zu 100 extNotification-Aufrufen in einer engen Schleife. Gemildert durch `Promise.all`-Parallelisierung + pro Sitzung Catch (bestehendes PR-14b-Muster).
+- **R4 (Pfadvereinheitlichung F2-1)**: Fabrikmethode `connectToMcpServer` und Klasse `McpClient` haben subtile Verhaltensunterschiede (z.B. Fähigkeiten, die zum Konstruktionszeitpunkt vs. Verbindungszeitpunkt angekündigt werden). Abgemildert dadurch, dass F2-1 ein reiner Refactor-PR mit vollständiger Regressionsabdeckung vor Beginn der Pool-Arbeit ist.
+- **R5 (Windows-Child-PID)**: PowerShell `Get-CimInstance` kann langsam sein (Spawn-Kosten) oder durch AppLocker blockiert werden. Abgemildert durch 2s Timeout + Graceful Degradation.
+- **R6 (Pool-Event-Broadcast-Verstärkung)**: Fan-Out einer Budget-Warnung an 100 Sitzungen führt zu 100 extNotification-Aufrufen in enger Schleife. Abgemildert durch `Promise.all`-Parallelisierung + pro-Sitzung-catch (bestehendes PR-14b-Muster).
 
 ### Niedrig
 
-- **R7 (Fingerabdruck-Stabilität über MCPServerConfig-Versionen hinweg)**: Zukünftige Felder, die zu `MCPServerConfig` hinzugefügt werden und nicht im Fingerabdruck enthalten sind, würden stillschweigend falsches Teilen erlauben. Gemildert durch explizite Kanonikalisierungsfunktion + Test, der alle Felder von `MCPServerConfig` aufzählt und die Abdeckung bestätigt.
-- **R8 (Generierungszähler-Wettläufe)**: Schnelle Neustartzyklen könnten die JS-Zahlenpräzision erschöpfen (≈ 2^53 = ~285k Jahre bei 1/Sekunde). Kein praktisches Problem.
+- **R7 (Fingerabdruck-Stabilität über MCPServerConfig-Versionen)**: Zukünftige Felder in `MCPServerConfig`, die nicht im Fingerabdruck enthalten sind, würden stillschweigend falsches Sharing erlauben. Abgemildert durch explizite Kanonikalisierungsfunktion + Test, der alle `MCPServerConfig`-Felder aufzählt und Abdeckung bestätigt.
+- **R8 (Generationenzähler-Rennbedingungen)**: Schnelle Neustart-Zyklen könnten die JS-Zahlenpräzision erschöpfen (≈ 2^53 = ~285k Jahre bei 1/Sek.). Kein praktisches Problem.
 
 ### Einzel-PR-spezifisch (V21-14)
 
-- **R9 (Review-Ermüdung bei ~6000 LOC einzelner PR)**: Reviewer-Bandbreite wird zum kritischen Pfad. F3 blockiert auf F2-Merge → blockiert andere Mitwirkende. Milderung: (a) Vorab-Review mit 3 Spezialisten-Agenten und Falten von P0/P1 vor dem Öffnen, analog zum Muster von PR 21; (b) Aufbau als 6 atomare Commits, sodass der Reviewer schrittweise vorgehen kann; (c) Review-Fenster mit @wenshao per #4175-Kommentar im Voraus koordinieren.
-- **R10 (Merge-Konflikt-Akkumulation `daemon_mode_b_main`)**: F2 berührt `acpAgent.ts`, `httpAcpBridge.ts`, `capabilities.ts`, `mcp-client*.ts` — alles heiße Pfade. F3-/F4-Mitwirkende, die gleichzeitig landen, riskieren Konflikte während F2s 1–2-wöchigem Review-Fenster. Milderung: täglich `git rebase origin/daemon_mode_b_main`; Koordination per #4175-Update, dass F2 im Flug ist + Aufforderung an F3/F4, heiße Dateiänderungen bis zum Merge von F2 zurückzustellen.
-- **R11 (CI-Ausführungszeit)**: ~1900 LOC neuer Tests inkl. Subprozess-Erzeugung + plattformübergreifender PID-Sweep könnten CI von 30min auf 50min erhöhen. Milderung: (a) Subprozess-Tests hinter `process.env.QWEN_INTEGRATION === '1'` gaten, Teilmenge in PR CI + voller Satz nachts ausführen; (b) Vitest-Parallelität ≥ 4; (c) Windows-PID-Sweep-Tests nur auf GHA-Windows-Runner skip-gaten.
+- **R9 (Review-Ermüdung bei ~6000 LOC Einzel-PR)**: Reviewer-Bandbreite wird zum Engpass. F3 ist blockiert bis F2 gemerged → blockiert andere Mitwirkende. Abmilderung: (a) Pre-Review mit 3 Spezialagenten und Zusammenlegen von P0/P1 vor Öffnung, analog zum Muster von PR 21; (b) Strukturierung in 6 atomare Commits, damit der Reviewer schrittweise vorgehen kann; (c) Koordination des Review-Fensters mit @wenshao im Voraus via #4175-Kommentar.
+- **R10 (`daemon_mode_b_main`-Mergekonflikt-Akkumulation)**: F2 berührt `acpAgent.ts`, `httpAcpBridge.ts`, `capabilities.ts`, `mcp-client*.ts` – alles Hot Paths. F3/F4-Mitwirkende, die gleichzeitig landen, riskieren Konflikte während des 1–2-wöchigen Review-Fensters von F2. Abmilderung: tägliches `git rebase origin/daemon_mode_b_main`; Koordination via #4175-Update, dass F2 in Bearbeitung ist + Bitte an F3/F4, Hot-File-Änderungen bis zum F2-Merge zurückzustellen.
+- **R11 (CI-Ausführungszeit)**: ~1900 LOC neue Tests inklusive Subprozess-Spawn + plattformübergreifender PID-Sweep könnten CI von 30min auf 50min erhöhen. Abmilderung: (a) Subprozess-Tests hinter `process.env.QWEN_INTEGRATION === '1'` verbergen, Teilmenge in PR-CI + vollständiger Satz in nächtlichen CI; (b) Vitest-Parallelität ≥ 4; (c) Windows-PID-Sweep-Tests überspringen, nur auf GHA-Windows-Runner.
 
 ---
 
 ## 24. Dokumentationsaktualisierungen
 
-| Dokument                                                                       | Aktualisierung                                                                                                                                                                   | Wann                                                  |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| `codeagents/qwen-code-daemon-design/02-architectural-decisions.md`             | Entscheidung #3 „MCP-Server-Lebensdauer": derzeit „pro Sitzung"; aktualisiert auf „vom Arbeitsbereich gepoolt mit Konfigurations-Hash-Schlüssel im Daemon-Modus; pro Sitzung eigenständig" | F2-3 wird gemergt (Koordination mit @wenshao codeagents PR) |
-| `codeagents/qwen-code-daemon-design/06-roadmap.md`                             | Wave 5 PR 23 → als F2-Serie markieren; auf PRs verlinken                                                                                                                         | F2-3 wird gemergt                                     |
-| `packages/cli/src/serve/README.md` (falls vorhanden) oder neu `docs/serve/mcp-pool.md` | Neuer Abschnitt: Pool-Semantik, Fingerabdruck-Schlüssel, Transport-Opt-in, Neustart-Semantik, Status-Snapshot-Interpretation                                                     | F2-3b                                                 |
-| `packages/sdk/README.md`                                                       | `scope?`-Feld bei Guardrail-Ereignissen, `entryCount` beim Server-Status, Hilfsfunktion `isWorkspaceScopedBudgetEvent`                                                            | F2-4                                                  |
-| Issue #4175 Body                                                               | F2-Eintrag mit Unter-PR-Tabelle aktualisieren, Link zu Design v2 (dieses Dokument)                                                                                               | Bevor F2-1 geöffnet wird                              |
-| Issue #3803 Body                                                               | Entscheidung #3 Zeile: Aktualisieren von „Derzeit pro Sitzung" auf „Vom Arbeitsbereich gepoolt im Daemon-Modus (F2)"                                                              | Nach F2-3 Merge                                       |
-| `acpAgent.ts:869-936` Inline-Kommentar                                         | Entferne „Wave 5 PR 23" Vorwärtsverweis; aktualisiere auf „durch F2 zu `scope: 'workspace'` abgestuft"                                                       | F2-4 PR                                               |
-| CHANGELOG / Versionshinweise (Wave 6 / F5)                                     | „MCP-Prozesse jetzt über Sitzungen in einem Arbeitsbereich geteilt" Schlagzeile                                                                                                  | F5-Release                                            |
+| Dokument                                                                       | Aktualisierung                                                                                                                                                  | Zeitpunkt                                  |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `codeagents/qwen-code-daemon-design/02-architectural-decisions.md`             | Entscheidung #3 „MCP-Server-Lebensdauer": aktuell „pro Sitzung"; aktualisieren auf „im Workspace-Pool mit Config-Hash-Key unter Daemon-Modus; pro Sitzung eigenständig" | F2-3 merged (Koordination mit @wenshao codeagents-PR) |
+| `codeagents/qwen-code-daemon-design/06-roadmap.md`                             | Wave 5 PR 23 → als F2-Serie markieren; zu PRs verlinken                                                                                                        | F2-3 merged                                |
+| `packages/cli/src/serve/README.md` (falls vorhanden) oder neues `docs/serve/mcp-pool.md` | Neuer Abschnitt: Pool-Semantik, Fingerabdruck-Schlüssel, Transport-Opt-in, Neustartsemantik, Status-Snapshot-Interpretation                                            | F2-3b                                      |
+| `packages/sdk/README.md`                                                       | Feld `scope?` bei Guardrail-Events, `entryCount` bei Server-Status, Hilfsfunktion `isWorkspaceScopedBudgetEvent`                                                | F2-4                                       |
+| Issue #4175 Body                                                               | F2-Eintrag mit Sub-PR-Tabelle aktualisieren, Link zu Design v2 (dieses Dokument)                                                                                | Vor F2-1-Öffnung                           |
+| Issue #3803 Body                                                               | Zeile Entscheidung #3: „Aktuell pro Sitzung" → „Workspace-Pooled unter Daemon (F2)"                                                                             | Nach F2-3-Merge                            |
+| `acpAgent.ts:869-936` Inline-Kommentar                                         | Vorwärtsreferenz „Wave 5 PR 23" entfernen; aktualisieren auf „durch F2 zu `scope: 'workspace'` hochgestuft"                                                    | F2-4-PR                                    |
+| CHANGELOG / Release Notes (Wave 6 / F5)                                       | Schlagzeile: „MCP-Prozesse werden jetzt über Sitzungen in einem Workspace geteilt"                                                                              | F5-Release                                 |
+
 ---
 
-## 25. PR Description Template (single-PR delivery)
+## 25. PR-Beschreibungsvorlage (Einzel-PR-Auslieferung)
 
 ```markdown
 ## feat(serve): shared MCP transport pool (workspace-scoped) [F2]
@@ -1425,15 +1437,15 @@ Folded into first commit before opening:
 
 ## Zusammenfassung
 
-F2 v2.1 = ein einzelner PR mit 6 atomaren Commits (~6000 LOC), Zielbranche `daemon_mode_b_main`. Wichtigste Entwurfssäulen:
+F2 v2.1 = einzelner PR mit 6 atomaren Commits (~6000 LOC), Ziel `daemon_mode_b_main`. Zentrale Designpfeiler:
 
-1. **`McpTransportPool`** in `packages/core` (ACP-Kindseite), Workspace-Scope, Referenzzähler + 30s Drain
-2. **Fingerprint-Key** SHA-256 über kanonische Konfiguration inkl. Umgebungsvariablen/Header (Claude-Code-Muster), ohne session-spezifische Filter (includeTools/trust)
-3. **`SessionMcpView`** session-spezifische Tool+Prompt-Registry-Projektion mit Trust-Kopie
-4. **Snapshot-Replay + Generation Guard** für Attach-Race und veraltete Benachrichtigungen
+1. **`McpTransportPool`** in `packages/core` (ACP-Child-Seite), workspace-bezogen, Referenzzählung + 30s Drain
+2. **Fingerabdruck-Schlüssel** SHA-256 über kanonische Konfiguration inklusive Umgebungsvariablen/Header (claude-code-Muster), ohne pro-Sitzung-Filter (includeTools/trust)
+3. **`SessionMcpView`** pro-Sitzung Tool+Prompt-Registry-Projektion mit Trust-Kopie
+4. **Snapshot-Reply + Generationenschutz** für Attach-Race-Zustand und veraltete Benachrichtigungen
 5. **Plattformübergreifender Descendant-PID-Sweep** (opencode-Muster + Windows-Port)
-6. **HTTP/SSE-Opt-in**, SDK-MCP-Bypass, OAuth auf F3 verschoben
-7. **Budget-Zustandsmaschine** wechselt in Workspace-Scope; Snapshot-Zelle + Push-Events werden additiv erweitert (`scope?`)
-8. **Status + Restart-Routen** Refactoring: Pool-first mit Bootstrap-Session-Fallback; `entryCount` + `RestartResult[]`
+6. **HTTP/SSE-Opt-in**, SDK-MCP-Umgehung, OAuth auf F3 verschoben
+7. **Budget-Statusmaschine** wird auf Workspace-Scope hochgestuft; Snapshot-Zelle + Push-Events werden additiv erweitert (`scope?`)
+8. **Status + Neustart-Routen** umgestaltet: Pool-first mit Bootstrap-Sitzung-Fallback; `entryCount` + `RestartResult[]`
 
-**Offene Fragen Q1–Q10** in §22 benötigen Maintainer-Entscheidungen, bevor die entsprechenden Sub-PRs geöffnet werden. Es wird empfohlen, Q1–Q4 vor F2-3 zu klären (diese geben die grobe Richtung vor); Q5–Q10 können inkrementell gelöst werden.
+**Offene Fragen Q1–Q10** in §22 benötigen Maintainer-Entscheidungen, bevor die entsprechenden Sub-PRs geöffnet werden. Empfehlung: Q1–Q4 vor F2-3-Beginn zu klären (diese geben die grobe Richtung vor); Q5–Q10 können schrittweise gelöst werden.

@@ -1,241 +1,244 @@
-# Plano de Redução de Rodadas no Agent Loop: A partir do Design de Skills
+```markdown
+# Estratégia de Redução de Loops do Agent: Começando pelo Design de Skills
 
-> No mesmo diretório de `rt-optimization-design.md`, complementar um ao outro: aquele documento discute a **redução de rodadas no nível do framework** (D1 pular sumário final, D2 roteamento fast, D4 pré-validação), este documento defende que **a verdadeira alavanca para redução de rodadas está no nível do design de skills/ferramentas**, e propõe um caminho implementável que não depende de modificação no framework nem de dados de cache hit rate.
+> No mesmo diretório que `rt-optimization-design.md`, complementares: aquele documento discute a redução de loops no nível de **mecanismo do framework** (D1 pular rodada de resumo final, D2 roteamento rápido, D4 pré-validação); este documento defende que **a verdadeira alavanca para redução de loops está no nível de design de skill/tool** e propõe um caminho viável que não depende de modificações no framework nem de dados de taxa de acerto de cache.
 
 ---
 
-## 0. Spec de Aceitação (Gate Prévio ao Desenvolvimento)
+## 0. Especificação de Aceitação (Gate de Desenvolvimento Prévio)
 
-> Esta seção é o **gate prévio** para o desenvolvimento — lista quais specs devem ser confirmadas antes de começar a codificar e quais specs devem esperar por dados. Colocar spec antes, em vez de "olhar métricas depois de pronto", é para evitar: (a) descobrir depois de escrever que a métrica não é mensurável, (b) thresholds flutuarem com os resultados, distorcendo conclusões, (c) não ter stop-loss definido, fazendo o plano cair em "parece que está fazendo, mas não tem ganho".
+> Esta seção é o **gate de desenvolvimento** – lista quais especificações devem ser confirmadas antes de começar a implementação e quais devem aguardar dados. Colocar a especificação como pré-requisito em vez de "fazer e depois ver as métricas" visa evitar: (a) métricas não mensuráveis ao final, (b) desvio de thresholds devido a resultados instáveis, (c) falta de stop-loss que leva a esforço sem retorno real.
 >
-> **Limite de aplicação deste framework de spec**: Este framework assume que a correção da direção pode ser julgada após a medição da linha de base P1.5. Essa suposição é válida para o cenário de "redução de rodadas", pois tem sinais mensuráveis claros (número de rodadas, followup_rate, batch_size). **Cenários além desta suposição** (por exemplo, usar o mesmo framework no futuro para "otimização de qualidade" etc., que são difíceis de quantificar), a pré-colocação de spec pode atrapalhar o aprendizado rápido; nesses casos, recue para o processo de governança da §0.5 e reavalie, não aplique mecanicamente este framework.
+> **Limite de aplicabilidade deste framework de especificação**: Este framework assume que a correção da direção pode ser avaliada após a medição da linha de base P1.5. Essa suposição é válida para o cenário de "redução de loops", pois possui sinais mensuráveis claros (número de rodadas, followup_rate, batch_size). **Para cenários além desta suposição** (por exemplo, usar o mesmo framework para "otimização de qualidade" – difícil de quantificar), pré-especificações podem atrapalhar o aprendizado rápido; nesses casos, volte ao processo de governança da §0.5 para reavaliar, sem aplicar este framework mecanicamente.
 
-**Spec dividida em quatro camadas — momento diferente**:
+**A especificação tem quatro camadas – momentos diferentes:**
 
-| Camada | Tipo                                    | Momento de Bloqueio                   |
-| ------ | --------------------------------------- | ------------------------------------- |
-| §0.1   | Spec de engenharia (correção do pipeline de dados, alterações de código) | **Prévio**, pode ser bloqueado imediatamente |
-| §0.2   | Spec estatístico (métrica para "projeto é bem-sucedido")       | **Prévio**, thresholds a serem bloqueados após linha de base P1.5 |
-| §0.3   | Stop-loss ("se ocorrer, desista")        | **Prévio**, imutável                  |
-| §0.4   | Spec por skill (qual alterar, meta)  | **Posterior**, orientado por dados da Layer 1 |
+| Camada | Tipo                                                                           | Momento de Bloqueio                             |
+| ------ | ------------------------------------------------------------------------------ | ----------------------------------------------- |
+| §0.1   | Especificação de engenharia (pipeline de dados, correção de alterações de código) | **Prévio**, pode ser bloqueado imediatamente    |
+| §0.2   | Especificação estatística (métricas para definir "sucesso" do projeto)         | **Prévio**, thresholds a bloquear após linha de base P1.5 |
+| §0.3   | Stop-loss (condição rígida: "se acontecer, abandone")                          | **Prévio**, imutável                            |
+| §0.4   | Especificação por skill (qual alterar e qual a meta)                           | **Posterior**, orientada a dados da Camada 1    |
 
-### 0.1 Spec de Engenharia (Deve ser prévio · Pode ser bloqueado imediatamente)
+### 0.1 Especificação de Engenharia (Deve ser prévia · Pode ser bloqueada imediatamente)
 
-Spec de correção do pipeline de dados e alterações de código — não depende de qualquer julgamento de negócio ou dados de linha de base, deve ser bloqueado antes do desenvolvimento:
+Especificações de pipeline de dados e correção de alterações de código – não dependem de julgamento de negócio ou dados de linha de base, devem ser bloqueadas antes do desenvolvimento:
 
-- **Pipeline qwen-logger funcionando** (§4.1.1b): evento skill_launch deve cair em ambas as pipelines OTLP e qwen-logger
-- **Encadeamento de `prompt_id`**: skill_launch disparado por um único user prompt + tool_call subsequente devem poder ser greppados no mesmo `prompt_id` para rastrear toda a trilha
-- **`batch_size` não undefined** (§4.3.2 Direção A): batch explícito de ferramenta única com `batch_size = 1` / `batch_position = 0`
-- **SQL executável** (§4.1.2): SQL offline no backend de telemetria real deve retornar não vazio e ser capaz de distinguir skills com alta/baixa followup_rate
-- **Variância da linha de base < P50 × 20%** (P1.5): medição da linha de base estável (caso contrário, comparação A/B subsequente não é confiável) — Nota: embora listada aqui na camada de engenharia §0.1, o **bloqueio depende dos dados da linha de base P1.5**, é o único item de verificação posterior em §0.1; se P1.5 não passar, os thresholds de §0.2 não podem ser bloqueados com confiança
-- **Orçamento de tamanho da skill** (Modificação Layer 2): após inline do followup, tokens da descrição da skill não devem exceder 2× do antes da modificação, e valor absoluto ≤ 500 tokens (o menor dos dois). Se exceder, dividir a skill conforme §4.2 em vez de mesclar. Este item alinha-se com as restrições existentes na §7 item 2 e §4.2, sendo promovido para o nível de spec
-- **`npm run preflight` passa tudo**: barreira dura para cada PR
+- **Cadeia do qwen-logger íntegra** (§4.1.1b): evento skill_launch deve cair tanto no pipeline OTLP quanto no qwen-logger
+- **Encadeamento por `prompt_id`**: `skill_launch` + `tool_call` subsequente, disparados por um único prompt de usuário, devem ser pesquisáveis pelo mesmo `prompt_id` para rastrear o trail completo
+- **`batch_size` não undefined** (§4.3.2 direção A): batch de ferramenta única deve definir explicitamente `batch_size = 1` / `batch_position = 0`
+- **SQL executável** (§4.1.2): SQL offline deve produzir saída não vazia no backend de telemetria real e conseguir distinguir skills de alto/baixo followup_rate
+- **Variância da linha de base < P50 × 20%** (P1.5): medição de linha de base estável (caso contrário, comparação A/B futura não será confiável) – Nota: embora listado na camada de engenharia §0.1, **o bloqueio depende de dados da linha de base P1.5**; é o único item de verificação posterior dentro de §0.1; se P1.5 falhar, os thresholds de §0.2 não podem ser bloqueados com confiança
+- **Orçamento de tamanho da skill** (transformação Camada 2): após inline de followup, o número de tokens na descrição da skill não excede 2× o original e o valor absoluto é ≤ 500 tokens (o menor valor). Se exceder, divida a skill conforme §4.2 em vez de mesclar. Este item está alinhado com §7 item 2 e §4.2 restrições existentes; elevado ao nível de especificação
+- **`npm run preflight` passa tudo**: requisito obrigatório para cada PR
 
-### 0.2 Spec Estatístico (Deve ser prévio · Thresholds a serem bloqueados após P1.5)
+### 0.2 Especificação Estatística (Deve ser prévia · Thresholds a bloquear após P1.5)
 
-Métricas para "estatisticamente bem-sucedido" — **direção** fixada previamente, **thresholds** bloqueados após medição da linha de base (evitar números arbitrários):
+Métricas para definir "sucesso estatístico" do projeto – **direção** definida previamente, **thresholds** bloqueados após medição da linha de base (evitar preencher números sem dados):
 
-| Métrica                               | Direção   | Momento de Bloqueio | Threshold placeholder atual (a ser calibrado) |
-| -------------------------------------- | --------- | ------------------- | --------------------------------------------- |
-| followup_rate ponderado top-3 skills   | ↓         | Fim do P1.5         | ≥ 30%                                         |
-| RT P50 ponta a ponta de sessões contendo skills | ↓         | Fim do P1.5         | ≥ 2s                                          |
-| Proporção de tool_call com `batch_size > 1` | ↑         | Antes do P3         | ≥ 30%                                         |
-| Significância A/B do cenário com skill modificada | p < 0.05 | Antes do P2 pronto  | n a determinar                                |
+| Métrica                                                                   | Direção | Momento de Bloqueio | Threshold Provisório (a calibrar) |
+| ------------------------------------------------------------------------- | ------- | ------------------- | --------------------------------- |
+| `followup_rate` ponderado dos top-3 skills                                | ↓       | Fim de P1.5         | ≥ 30%                             |
+| RT P50 de ponta a ponta de sessões que contêm skill                       | ↓       | Fim de P1.5         | ≥ 2s                              |
+| Proporção de `tool_call` com `batch_size > 1`                             | ↑       | Antes de P3         | ≥ 30%                             |
+| Significância A/B do cenário que dispara a skill transformada             | p < 0.05 | Antes do fim P2     | n a determinar                  |
 
-> **Restrição chave**: Thresholds placeholder não são compromissos. Se a linha de base P1.5 mostrar "followup_rate ponderado top-5 skills < 30%" (disparando stop-loss #1 da §0.3), o projeto termina; **não é permitido abaixar o spec apenas para que o threshold "alcance"**.
+> **Restrição chave**: Thresholds provisórios não são promessas. Se a linha de base P1.5 mostrar "followup_rate ponderado dos top-5 skills < 30%" (disparando stop-loss #1 da §0.3), o projeto é encerrado; **não é permitido reduzir a especificação para que o threshold "seja atingido"** .
 >
-> **Como medir**: Método de medição para cada métrica, template SQL, design A/B veja §5.1-§5.2; cálculo de tamanho da amostra para significância estatística (p < 0.05) veja §5.1.
+> **Como medir**: Método de medição, template SQL e design A/B para cada métrica estão nas §5.1-§5.2; cálculo de tamanho amostral para significância estatística (p < 0.05) está na §5.1.
 
-### 0.3 Stop-Loss (Deve ser prévio · Ajustável apenas após bloqueio P-1 com restrição)
+### 0.3 Stop-Loss (Deve ser prévio · Imutável após bloqueio P-1, mas ajustável com restrições)
 
-Listado em §5.3. Estas são condições duras de "se ocorrer, desista" — **em nenhuma circunstância as stop-loss podem ser relaxadas para atingir o spec estatístico §0.2**.
+Listado na §5.3. Estas são condições rígidas de "se acontecer, abandone" – **em nenhuma circunstância os stop-loss devem ser relaxados para atingir as especificações estatísticas da §0.2**.
 
-- **Métricas de resultado** (3 itens): followup_rate ponderado top-5 < 30% / Após modificar 2 skills, RT P50 ↓ < 1s / Após Layer 3, `batch_size P50` ainda = 1
-- **Métricas de processo** (3 itens): Queda na taxa de acerto da skill ≥ 5pp / Taxa de falha de inline followup ≥ 5% / Aumento na taxa de cancelamento do usuário ≥ 2pp
+- **Métricas de resultado** (3): `followup_rate` ponderado top-5 < 30% / após alterar 2 skills, RT P50 ↓ < 1s / após Camada 3, `batch_size P50` ainda = 1
+- **Métricas de processo** (3): taxa de acerto da skill ↓ ≥ 5pp / taxa de falha de inline followup ≥ 5% / taxa de cancelamento do usuário ↑ ≥ 2pp
 
 Veja §5.3 para detalhes.
 
-**Regra de ajustabilidade** (evitar rigidez disciplinar sem suporte de dados):
+**Regras de ajustabilidade** (evitar rigidez disciplinar sem suporte de dados):
 
-| Estágio                  | Pode ajustar?                                    | Direção de ajuste                                                                  |
-| ------------------------ | ------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| No bloqueio P-1          | ✅ Pode ajustar arbitrariamente (baseado em telemetria histórica ou consenso) | Arbitrária                                                                         |
-| Após bloqueio P-1 → Fim do P1.5 | ❌ Não pode ajustar                           | —                                                                                  |
-| Fim do P1.5 (quando linha de base sai) | ✅ Apenas **relaxar** uma vez               | Relaxamento (ex.: 30% → 25%) requer evidência de dados + revisão por 2 pessoas; **não permitido endurecer** (evitar adicionar stop-loss a posteriori) |
-| Após P1.5                | ❌ Não pode ajustar                              | —                                                                                  |
+| Fase                                | Pode ajustar?                            | Direção de ajuste                                                                                 |
+| ----------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| No bloqueio P-1                     | ✅ Qualquer ajuste (baseado em telemetria histórica ou consenso) | Qualquer                                                                                          |
+| Após bloqueio P-1 → Fim de P1.5     | ❌ Não ajustável                         | —                                                                                                 |
+| Fim de P1.5 (quando linha de base sai) | ✅ Permitido **relaxar** uma vez        | Relaxar (ex.: 30% → 25%) requer evidência de dados + revisão por 2 pessoas; **não é permitido apertar** (evitar adicionar stop-loss retroativamente) |
+| Após P1.5                           | ❌ Não ajustável                         | —                                                                                                 |
 
-> Thresholds placeholder (30% / 1s / 5pp, etc.) **atualmente sem suporte de dados históricos**, são intuição do engenheiro antes da revisão P-1. Se na revisão P-1 for possível obter telemetria das últimas 4 semanas, calibrar stop-loss baseado em dados históricos; se não for possível, manter placeholder, aplicar a regra de "relaxar uma vez" no fim do P1.5.
+> Os valores provisórios dos thresholds (30% / 1s / 5pp, etc.) atualmente **não têm suporte de dados históricos**, são intuição do engenheiro antes da revisão P-1. Se for possível obter telemetria histórica das últimas 4 semanas durante a revisão P-1, os stop-loss devem ser calibrados com base nesses dados; caso contrário, mantenha os valores provisórios e aplique a regra de "relaxar uma vez" no fim de P1.5.
 
-### 0.4 Spec por Skill (Deve ser posterior · Orientado por dados)
+### 0.4 Especificação por Skill (Deve ser posterior · Orientada a dados)
 
-Qual skill modificar, meta de `followup_rate` para qual valor — **não bloquear antes dos dados da Layer 1 estarem disponíveis**.
+Qual skill alterar, meta de `followup_rate` – **não bloqueado antes dos dados da Camada 1 estarem disponíveis**.
 
-Razão para não bloquear: design a priori vs dados a posteriori podem divergir muito. Forçar pré-bloqueio repetiria o erro da rota D2 de `rt-optimization-design.md` §7 — a suposição a priori de "modelo fast é 2-3s mais rápido" foi derrubada pelo fato a posteriori (implementação real de cache), resultando em ganho líquido próximo de zero ou até negativo.
+Motivo: design a priori vs. dados a posteriori podem diferir muito. Forçar pré-especificação repetiria o erro da rota D2 em `rt-optimization-design.md` §7 – a suposição prévia de "modelo fast é 2-3s mais rápido" foi derrubada pelo fato posterior de que o cache foi implementado, resultando em benefício líquido próximo de zero ou negativo.
 
-**Local de produção**: Spec por skill é produzida orientada por dados no final do P1.5, declarada independentemente na descrição de cada PR Layer 2 (não entra no documento de design, para evitar ter que alterar o documento a cada skill modificada).
+**Local de saída**: a especificação por skill é produzida orientada a dados no fim de P1.5, declarada independentemente na descrição de cada PR da Camada 2 (não entra no documento de design, evitando alterações a cada skill modificada).
 
-**Template de estrutura de spec por skill** (alinhado com os itens obrigatórios na descrição do PR da §4.2 — as duas listas são a mesma, §4.2 é a perspectiva de processo, esta seção é a perspectiva de spec):
+**Template de estrutura da especificação por skill** (alinhado com os itens obrigatórios da descrição do PR na §4.2 – as duas listas são a mesma, §4.2 é a perspectiva de processo, esta seção é a perspectiva de especificação):
 
-| Campo            | Conteúdo                                                                                             | Fonte de dados                    |
-| ---------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------- |
-| 1. Dados atuais  | invocation_count, followup_rate, top followup tools                                                  | Telemetria Layer 1                |
-| 2. Meta          | Reduzir followup_rate de X% para Y%                                                                  | Baseado na direção de melhoria §0.2, valor absoluto definido no PR |
-| 3. Escopo da modificação | Quais followups inline (read/grep/shell read-only), explicitamente **o que não** inline (operações write / cross-skill / raciocínio profundo) | Tabela de padrões de modificação §4.2 |
-| 4. Atualização do contrato de saída | Pré-declaração adicionada na descrição da skill ("Returns: ...")                              | Exemplo de modificação §3.2       |
-| 5. Plano A/B      | Observar followup_rate / RT P50 / métricas de processo por 2 semanas após modificação, comparar com linha de aceitação §5.1 | §5.1                               |
-| 6. Prova de tamanho | Tokens da descrição da skill antes e depois da modificação (estimar com tiktoken), não exceder "Orçamento de tamanho da skill" §0.1 item 6 | §0.1 item 6                       |
-### 0.5 spec 治理
+| Campo                   | Conteúdo                                                                                                                                                              | Fonte de dados               |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| 1. Dados atuais         | invocation_count, followup_rate, top followup tools                                                                                                                   | Telemetria Camada 1          |
+| 2. Meta                 | followup_rate de X% para Y%                                                                                                                                          | Baseado na direção de melhoria §0.2; valor absoluto definido no próprio PR |
+| 3. Escopo da transformação | inline de quais followups (read/grep/shell read-only), explicitamente o que **não** inlinar (operações write / cross-skill / raciocínio profundo)                   | Tabela de modos de transformação §4.2 |
+| 4. Atualização do contrato de saída | pré-declarações adicionadas na descrição da skill (ex.: "Returns: ...")                                                                                       | Exemplo de transformação §3.2 |
+| 5. Plano A/B              | Observar followup_rate / RT P50 / métricas de processo por 2 semanas após a transformação, comparar com linha de aceitação §5.1                                      | §5.1                          |
+| 6. Prova de tamanho       | Número de tokens da descrição da skill antes e depois (estimado com tiktoken), não exceder "Orçamento de tamanho da skill" da §0.1                                      | §0.1 item 6                  |
 
-- **修改 §0.1 / §0.3 spec** 需 design 文档更新 + PR 评审；§0.3 仅遵循 §0.3"可调性规则"在 P1.5 末窗口内放宽
-- **修改 §0.2 阈值（P1.5 锁定后）** 需附以下至少一项数据证据：
-  - (a) P1.5 基线测量结果与已锁定阈值的偏差分析（含原始测量记录链接）
-  - (b) 同类项目的公开 benchmark 数据（含来源链接）
-  - (c) 内部 ≥ 2 人评审签字的偏差说明
+### 0.5 Governança da Especificação
 
-  PR 评审时若上述证据均无，评审者**有义务** block PR — 不接受"凭工程师直觉调整"
+- **Modificar §0.1 / §0.3** requer atualização do documento de design + revisão PR; §0.3 segue apenas a "regra de ajustabilidade" da §0.3 para relaxar na janela do fim de P1.5
+- **Modificar threshold da §0.2 (após bloqueio P1.5)** requer pelo menos uma das seguintes evidências de dados:
+  - (a) Análise de desvio entre resultados da linha de base P1.5 e o threshold bloqueado (com link para registro de medição original)
+  - (b) Dados de benchmark público de projetos similares (com link da fonte)
+  - (c) Declaração de desvio assinada por ≥ 2 revisores internos
 
-- **§0.4 per-skill spec** 在数据驱动产出后写入 PR description（按 §0.4 6 项模板），不进 design 文档
+  Se na revisão PR nenhuma das evidências acima estiver presente, o revisor **tem a obrigação** de bloquear o PR – não aceitar ajuste baseado apenas em intuição do engenheiro
+
+- **Especificação por skill §0.4**: após ser produzida orientada a dados, escreva na descrição do PR (conforme template de 6 itens da §0.4), não entra no documento de design
 
 ---
 
-## 1. 背景与定位
+## 1. Contexto e Posicionamento
 
-### 1.1 问题
+### 1.1 Problema
 
-`rt-optimization-design.md` §1.2 给出的基线：3 轮 agent loop，13.4s 端到端，其中 LLM 调用占 78%。每一轮 ~3-4s。
+A linha de base fornecida em `rt-optimization-design.md` §1.2: 3 rodadas de agent loop, 13,4s ponta a ponta, com chamadas LLM representando 78%. Cada rodada ~3-4s.
 
 ```
-Round 1 (3.8s, 28%): LLM 决策调 skill
-Round 2 (3.0s, 22%): LLM 决策调 shell
-Round 3 (3.8s, 28%): LLM 总结
+Rodada 1 (3,8s, 28%): LLM decide chamar skill
+Rodada 2 (3,0s, 22%): LLM decide chamar shell
+Rodada 3 (3,8s, 28%): LLM resume
 ```
 
-`rt-optimization-design.md` §6/§7 经过两轮 review 后，D2/D4 已被否决，D1/D3 也降级为"等浮油完成后再评估"。但**整份原文档都聚焦在末尾的 Round 3（总结轮）或单轮内的微优化（D4）上，完全没有正面讨论 Round 1 → Round 2 这个"中间轮"为什么会出现、能不能消掉**。
+Após duas rodadas de revisão em `rt-optimization-design.md` §6/§7, D2/D4 foram rejeitados, e D1/D3 foram rebaixados para "reavaliar após conclusão dos itens mais fáceis". Mas **todo o documento original focava na rodada final (rodada 3, resumo) ou micro-otimizações dentro de uma única rodada (D4), sem discutir diretamente por que a rodada 1 → rodada 2 (a "rodada intermediária") existe e se pode ser eliminada**.
 
-事实是：Round 2 之所以存在，**绝大多数情况是因为 Round 1 调用的 skill 没有返回完整答案**，模型才追加 shell 查询补全。如果 skill 设计成"一次拿到完整结果"，3 轮 → 2 轮，省掉的就是 Round 2 那 ~3s — 这是与 D1 完全不重叠的收益面。
+O fato é: a rodada 2 existe **na grande maioria dos casos porque a skill chamada na rodada 1 não retornou uma resposta completa**, e o modelo adiciona uma consulta shell para complementar. Se a skill for projetada para "obter o resultado completo de uma vez", 3 rodadas → 2 rodadas, economizando os ~3s da rodada 2 – um benefício que não se sobrepõe ao D1.
 
-### 1.2 与 rt-optimization-design 的关系
+### 1.2 Relação com rt-optimization-design
 
-| 减轮方向             | 命中的轮次                      | 杠杆位置                     | 本文档定位                   |
-| -------------------- | ------------------------------- | ---------------------------- | ---------------------------- |
-| D1 `skipLlmRound`    | 末尾总结轮                      | 框架机制 + per-tool opt-in   | 兜底，**放在 Layer 2 之后**  |
-| D2 fast 路由         | 单轮延迟                        | 框架机制                     | 已 defer，**不在本文档范围** |
-| D3 Summarizing 状态  | 末尾总结轮（感知层）            | UI 状态机                    | 可选，与本方案正交           |
-| D4 prevalidate       | 单轮延迟                        | 框架机制                     | 已 defer，**不在本文档范围** |
-| **本方案 Layer 1-3** | **中间决策轮 + 并发未触发的轮** | **skill 设计 + prompt 工程** | **新增方向**                 |
+| Direção de redução de loops              | Rodada(s) afetada(s)                | Ponto de alavancagem                     | Posicionamento neste documento                          |
+| ---------------------------------------- | ----------------------------------- | ---------------------------------------- | ------------------------------------------------------- |
+| D1 `skipLlmRound`                        | Rodada de resumo final              | Mecanismo do framework + opt-in por tool | Plano B, **colocado após Camada 2**                     |
+| D2 Roteamento rápido                     | Latência de uma rodada              | Mecanismo do framework                   | Já adiado, **fora do escopo deste documento**           |
+| D3 Estado "Summarizing"                  | Rodada de resumo final (camada de percepção) | Máquina de estado UI          | Opcional, ortogonal a este plano                        |
+| D4 Pré-validação                         | Latência de uma rodada              | Mecanismo do framework                   | Já adiado, **fora do escopo deste documento**           |
+| **Este plano: Camadas 1-3**              | **Rodada de decisão intermediária + rodadas não disparadas por concorrência** | **Design de skill + engenharia de prompt** | **Nova direção**                                        |
 
-### 1.3 核心论点
+### 1.3 Argumento Central
 
-减轮的真正杠杆在 skill/tool 设计层，不在 agent 框架。三个理由：
+A verdadeira alavanca para redução de loops está no nível de design de skill/tool, não no framework do agent. Três razões:
 
-1. **§1.2 基线本身就暴露问题在 skill** — Round 1 → Round 2 的跳跃是 skill 返回不全才发生的，框架做对了，skill 做错了
-2. **框架级减轮最终也要 per-tool opt-in** — D1 的 `skipLlmRound` 必须每个工具显式标记，绕一圈回到 skill 工程，还多一套不变量修复 + 决策门控成本
-3. **ROI 局部可测、灰度容易** — 改一个 skill 就少一轮 × 该 skill 触发次数，不依赖 cache hit rate 数据，不依赖跨系统改动
+1. **A linha de base §1.2 já expõe o problema na skill** – o salto da rodada 1 para a rodada 2 ocorre porque a skill não retornou completo; o framework funcionou, a skill errou
+2. **A redução de loops em nível de framework também requer opt-in por tool** – o `skipLlmRound` do D1 exige que cada ferramenta seja explicitamente marcada, contornando de volta para engenharia de skill, com custo extra de invariantes + gate de decisão
+3. **ROI localmente mensurável, fácil de fazer grayscale** – alterar uma skill economiza uma rodada × frequência de disparo dessa skill, não depende de dados de taxa de acerto de cache nem de alterações cross-system
 
-> **实施前必须先走 §0 验收 Spec 前置评审（P-1 阶段，0.5d）** — §0.1 工程层 spec 和 §0.3 止损线在动手前必须锁定；§0.2 统计层阈值的方向也要前置确认（具体数值等 P1.5 基线后再锁）。跳过 §0 进入 P0 实施 = 默认走"做完才看指标"的反模式，文档不背书这种做法。
-
----
-
-## 2. 设计原则
-
-1. **不改 agent 框架** — 不动 `useGeminiStream` / `coreToolScheduler` / `geminiChat` 核心路径
-2. **数据驱动选优先级** — 先建 telemetry，让数据告诉你改哪个 skill，不靠拍脑袋
-3. **per-skill 可测可灰度** — 每个 skill 改造独立 A/B，失败局部回退
-4. **复利优先** — 收益 = 单次减轮收益 × 触发频率，高频 skill 优先
-5. **不绑定 D1** — 本方案的成功不依赖 D1 是否落地
+> **Antes de implementar, deve-se passar pela revisão prévia da Especificação de Aceitação §0 (fase P-1, 0,5d)** – as especificações de engenharia §0.1 e stop-loss §0.3 devem ser bloqueadas antes de começar; a direção dos thresholds estatísticos §0.2 também deve ser confirmada previamente (valores numéricos bloqueados após linha de base P1.5). Pular §0 e entrar diretamente na implementação P0 = seguir o antipadrão de "fazer primeiro, medir depois"; este documento não endossa essa prática.
 
 ---
 
-## 3. 三层方案
+## 2. Princípios de Design
 
-### 3.1 Layer 1：减轮 Telemetry（找金矿）
+1. **Não modificar o framework do agent** – não mexer nos caminhos principais `useGeminiStream` / `coreToolScheduler` / `geminiChat`
+2. **Priorização orientada a dados** – primeiro construir telemetria, deixar os dados dizerem qual skill modificar, não por adivinhação
+3. **Por skill: mensurável e passível de grayscale** – cada transformação de skill é A/B independente, falha localizada reverte
+4. **Priorizar juros compostos** – benefício = ganho por redução de rodada × frequência de disparo; skills de alta frequência primeiro
+5. **Não atrelado ao D1** – o sucesso deste plano não depende da implementação do D1
 
-**目标**：让数据告诉你哪些 skill 最值得改 — 即"用了这个 skill 之后，模型有多大概率追加一次工具调用"。
+---
 
-**核心字段**（per-turn、per-skill-invocation）：
+## 3. Plano em Três Camadas
+
+### 3.1 Camada 1: Telemetria para Redução de Loops (Encontrar Mina de Ouro)
+
+**Objetivo**: Deixar os dados dizerem quais skills valem mais a pena modificar – ou seja, "depois de usar esta skill, qual a probabilidade de o modelo adicionar mais uma chamada de ferramenta?".
+
+**Campos principais** (por turno, por invocação de skill):
 
 ```typescript
 interface SkillFollowupRecord {
   skill_name: string;
-  prompt_id: string; // 关联同一 user prompt 内的所有 events
-  turn_index: number; // 该 skill 在 loop 里是第几轮
-  followup_tool_names: string[]; // 同一 prompt_id 下，skill 之后还调了哪些工具
+  prompt_id: string; // relaciona todos os eventos dentro de um mesmo prompt de usuário
+  turn_index: number; // número da rodada em que a skill foi chamada no loop
+  followup_tool_names: string[]; // ferramentas chamadas após a skill, dentro do mesmo prompt_id
   followup_count: number; // followup_tool_names.length
   followup_kinds: Kind[]; // Read/Edit/Execute/...
-  next_turn_is_terminal: boolean; // skill 之后下一轮就出文字（不再调工具）
-  user_followup_within_30s: boolean; // 用户在结果显示后 30s 内追加新 prompt（质量回归信号）
+  next_turn_is_terminal: boolean; // após a skill, a próxima rodada produz texto (sem chamar ferramentas)
+  user_followup_within_30s: boolean; // usuário adicionou novo prompt em 30s após o resultado (sinal de regressão de qualidade)
 }
 ```
 
-**关键指标**：
+**Métricas chave**:
 
-- `skill_followup_rate = sum(followup_count > 0) / total_invocations`
-- `terminal_after_skill_rate = sum(next_turn_is_terminal) / total_invocations`
-- 按 `(skill_name, top followup tool)` 聚合 — 看哪些 skill 之后最常追加哪个工具
+- `skill_followup_rate = soma(followup_count > 0) / total_invocations`
+- `terminal_after_skill_rate = soma(next_turn_is_terminal) / total_invocations`
+- Agregar por `(skill_name, top followup tool)` – ver qual ferramenta é mais frequentemente adicionada após cada skill
 
-**金矿判定**：
+**Critério de "mina de ouro"**:
 
 ```
 (invocation_count_weekly × skill_followup_rate) ≥ threshold
 ↓
-该 skill 是减轮金矿，优先 Layer 2 改造
+Esta skill é mina de ouro para redução de loops, priorizar transformação Camada 2
 ```
 
-阈值建议：top-3 按上式排序的 skill，先改前 2 个。
+Threshold sugerido: os top-3 skills ordenados pela fórmula acima; modificar os 2 primeiros.
 
-### 3.2 Layer 2：Skill 输出完整化
+### 3.2 Camada 2: Completude da Saída da Skill
 
-**目标**：让被识别为金矿的 skill 一次返回完整答案，消除 Round 1 → Round 2 的跳跃。
+**Objetivo**: Fazer com que a skill identificada como mina de ouro retorne uma resposta completa de uma só vez, eliminando o salto da rodada 1 para a rodada 2.
 
-**改造模式（按 followup 类型分类）**：
+**Modo de transformação (classificado por tipo de followup)**:
 
-| Followup 模式               | 典型场景                   | 改造方向                           |
-| --------------------------- | -------------------------- | ---------------------------------- |
-| skill → `read_file`         | skill 给路径，模型再读     | skill 内部直接读，返回内容         |
-| skill → `grep/glob`         | skill 给目录，模型再搜     | skill 内部搜好，返回匹配           |
-| skill → `shell` (read-only) | skill 给命令，模型再执行   | skill 内部跑命令，返回输出         |
-| skill → `shell` (write)     | skill 给方案，模型再执行写 | **保留**（写操作要确认，不应合并） |
-| skill → another skill       | 链式调用                   | **不合并**（保持组合性）           |
+| Padrão de Followup                  | Cenário Típico                        | Direção de Transformação                     |
+| ----------------------------------- | ------------------------------------- | -------------------------------------------- |
+| skill → `read_file`                 | skill dá caminho, modelo lê           | skill lê internamente, retorna conteúdo      |
+| skill → `grep/glob`                 | skill dá diretório, modelo procura    | skill busca internamente, retorna matches    |
+| skill → `shell` (read-only)         | skill dá comando, modelo executa      | skill executa comando internamente, retorna saída |
+| skill → `shell` (write)             | skill dá plano, modelo executa escrita | **Manter** (operação write precisa confirmação, não deve ser mesclada) |
+| skill → outra skill                 | chamada em cadeia                     | **Não mesclar** (manter composicionalidade)   |
 
-**改造检查清单（per-skill PR 模板）**：
+**Checklist de transformação (template de PR por skill)**:
 
-1. 在 skill 描述里**预声明输出契约**：明确写 "Returns: full file content / matched lines / command output"，让模型知道不必追加查询
-2. 在 skill 内部**完成所有 read-only followup**：把 telemetry 显示 >50% 追加率的 read/search 操作内联进 skill
-3. **不内联 write 操作**：写操作需要用户确认，必须单独成轮
-4. **不内联深度推理 followup**：如果 followup 是"基于此再分析"，那是模型的事，不是 skill 的事
-5. **附 A/B telemetry**：改造后 2 周对比 `followup_rate` 是否下降到 <20%
+1. Na descrição da skill, **declarar contrato de saída previamente**: escrever explicitamente "Returns: full file content / matched lines / command output", para que o modelo saiba que não precisa consultar adicionalmente
+2. Dentro da skill, **realizar todos os followups read-only**: operações read/search que a telemetria mostra taxa de followup >50% devem ser inline na própria skill
+3. **Não inlinar operações write**: operações write precisam de confirmação do usuário, devem ficar em rodada separada
+4. **Não inlinar followups de raciocínio profundo**: se o followup é "analise isso com base nisso", é trabalho do modelo, não da skill
+5. **Anexar telemetria A/B**: comparar `followup_rate` 2 semanas após transformação, se reduziu para <20%
 
-**典型改造示例（示意）**：
+**Exemplo típico de transformação (ilustrativo)**:
 
-改造前：
+Antes:
 
 ```
 skill "list-workspaces" returns: ["ws_a", "ws_b"]
-→ Round 2: model calls shell to get details for each workspace
+→ Rodada 2: modelo chama shell para obter detalhes de cada workspace
 ```
 
-改造后：
+Depois:
 
 ```
 skill "list-workspaces" returns:
   - ws_a (owner: foo, last_active: 2026-05-20, status: active)
   - ws_b (owner: bar, last_active: 2026-05-01, status: archived)
 description updated: "Returns workspaces with owner, last_active, status"
-→ Round 2 disappears for ~80% of queries
+→ Rodada 2 desaparece para ~80% das consultas
 ```
-### 3.3 Camada 3: Prompt para ensinar concorrência ao modelo
 
-**Objetivo**: Para ferramentas independentes (ler múltiplos arquivos, pesquisar em múltiplos diretórios), fazer o modelo emitir tool_calls concorrentes na mesma rodada, comprimindo N rodadas em 1.
+### 3.3 Camada 3: Educar o Modelo via Prompt para Concorrência
 
-**Pré-requisito**: A infraestrutura já está pronta — `CONCURRENCY_SAFE_KINDS` em `tools/tools.ts:818` + `partitionToolCalls` do `coreToolScheduler` já conseguem executar concorrentemente as ferramentas read/search/fetch dentro do mesmo lote. **Falta apenas a vontade do modelo de iniciar tool_calls concorrentes ativamente**, o qwen-coder por padrão tende a ser serial.
+**Objetivo**: Para ferramentas independentes (ler vários arquivos, pesquisar em vários diretórios), fazer o modelo emitir tool_calls concorrentes na mesma rodada, comprimindo N rodadas em 1.
 
-**Local da alteração**: `packages/core/src/core/prompts.ts` (já auditado, adicionar perto do segmento `# Final Reminder` linha L396 não afeta nada além do cache hit — apenas custo de aquecimento único).
+**Pré-requisito**: Infraestrutura já pronta – `CONCURRENCY_SAFE_KINDS` em `tools/tools.ts:818` + `partitionToolCalls` do `coreToolScheduler` já conseguem executar concorrentemente ferramentas read/search/fetch dentro do mesmo batch. **Falta apenas a vontade do modelo de iniciar tool_calls concorrentes**; o qwen-coder tende a ser serial.
 
-**Texto de orientação (ilustrativo, precisa de ajuste A/B)**:
+**Local da alteração**: `packages/core/src/core/prompts.ts` (já auditado; adicionar perto da seção `# Final Reminder` L396 não quebra nada além do cache – apenas custo único de aquecimento).
+
+**Texto guia (ilustrativo, requer otimização A/B)**:
 
 ```
 When you need to call multiple independent read-only tools (read_file,
-grep, glob, web_fetch), emit them in a SINGLE tool_calls batch — do NOT
+grep, glob, web_fetch), emit them in a SINGLE tool_calls batch – do NOT
 call them sequentially across rounds. They will execute concurrently.
 
 Examples:
@@ -245,23 +248,23 @@ Examples:
 Do NOT batch when the second call depends on the first call's result.
 ```
 
-**Métrica de eficácia**: Novo campo de telemetria `batch_size` (número de tool_calls dentro do mesmo turno) — comparar distribuição antes e depois da alteração do prompt.
+**Métrica de eficácia**: Novo campo de telemetria `batch_size` (número de tool_calls no mesmo turno) – comparar distribuição antes e depois da alteração do prompt.
 
 #### 3.3.1 Expandir `CONCURRENCY_SAFE_KINDS` (Subitem da Camada 3)
 
-O prompt ensina concorrência ao modelo apenas do lado da oferta (modelo disposto a emitir múltiplos tool_calls de uma vez), mas `CONCURRENCY_SAFE_KINDS = { Read, Search, Fetch }` em `tools/tools.ts:818` determina **o escopo real de ferramentas que podem ser executadas concorrentemente**: `partitionToolCalls` (`coreToolScheduler.ts:775`) empacota "ferramentas seguras consecutivas" em lotes concorrentes, as demais são seriais.
+Educar o modelo via prompt é apenas o lado da oferta (modelo disposto a emitir vários tool_calls de uma vez), mas `CONCURRENCY_SAFE_KINDS = { Read, Search, Fetch }` em `tools/tools.ts:818` determina o **escopo real de ferramentas que podem ser executadas concorrentemente**: `partitionToolCalls` (`coreToolScheduler.ts:775`) empacota "ferramentas seguras consecutivas" em um batch concorrente; as demais são executadas serialmente.
 
-Se o modelo seguir a orientação e emitir 3 tool_calls de uma vez, mas um deles pertencer a `Kind.Execute` e não estiver no conjunto seguro, todo o lote será desmembrado e executado serialmente — o ganho da alteração do prompt da Camada 3 será anulado pelo escalonador em tempo de execução.
+Se o modelo, seguindo a orientação, emitir 3 tool_calls de uma vez, mas um deles for do tipo `Kind.Execute` e não estiver no conjunto seguro, todo o batch será desmembrado para execução serial – o ganho da alteração do prompt da Camada 3 será neutralizado pelo runtime.
 
-**Candidatos para expansão** (em ordem crescente de risco):
+**Candidatos a expansão (em ordem crescente de risco)**:
 
-- `Kind.Think` (incluindo save_memory / todo_write) — **Não adicionar**, possui escrita implícita
-- Shell somente leitura (Execute onde `isShellCommandReadOnly()` retorna true) — `partitionToolCalls` já possui tratamento especial (comentário em `coreToolScheduler.ts` `partitionToolCalls` menciona "Execute (shell) is safe only when isShellCommandReadOnly() returns true"), a situação atual já cobre, não precisa alterar `CONCURRENCY_SAFE_KINDS`
-- Ferramentas MCP por `Kind` — Cada servidor MCP se comporta de forma muito diferente, precisa de opt-in explícito no registro da ferramenta para ser seguro
+- `Kind.Think` (inclui save_memory / todo_write) – **Não adicionar**, tem escrita implícita
+- Shell somente leitura (`isShellCommandReadOnly()` retorna true para Execute) – `partitionToolCalls` já tem tratamento especial (comentário em `coreToolScheduler.ts`: "Execute (shell) is safe only when isShellCommandReadOnly() returns true"), já coberto, sem necessidade de alterar `CONCURRENCY_SAFE_KINDS`
+- Ferramentas MCP por `Kind` – comportamento varia entre servidores MCP; seria necessário opt-in explícito no registro da ferramenta para ser seguro
 
-**Conclusão**: O conjunto atual já é razoável, **a Camada 3 não depende da expansão de `CONCURRENCY_SAFE_KINDS`**. O propósito desta seção é: após coletar os dados de telemetria `batch_size`, **se descobrir que o "P50 dos lotes concorrentes < valor esperado", primeiro verificar se é o `partitionToolCalls` que está cortando, não a falta de concorrência do modelo**. Este é um caminho de diagnóstico em caso de falha do A/B da Camada 3, não é obrigatório.
+**Conclusão**: O conjunto atual já é razoável; **a Camada 3 não depende da expansão de `CONCURRENCY_SAFE_KINDS`**. Esta subseção existe para: após coletar dados de telemetria `batch_size`, **se for descoberto que "concorrência batch P50 < esperado", primeiro verificar se está sendo cortado pelo `partitionToolCalls` em vez de o modelo não ser concorrente**. É um caminho de diagnóstico para falha A/B da Camada 3, não uma tarefa obrigatória.
 
-> Crédito: codex review levantou que "expandir `CONCURRENCY_SAFE_KINDS` é uma alavanca ignorada". Após verificação, conclui-se: a situação atual já cobre a maior parte com o tratamento especial `isShellCommandReadOnly`, expandir o conjunto traria pouco ganho e alto risco; manter como caminho de diagnóstico.
+> Crédito: revisão codex sugeriu que "expandir `CONCURRENCY_SAFE_KINDS` é uma alavanca ignorada". Após verificação, julgou-se que: o tratamento especial `isShellCommandReadOnly` já cobre o maior volume; expandir o conjunto traz pouco benefício e alto risco; mantido como caminho de diagnóstico.
 
 ---
 
@@ -273,7 +276,7 @@ Se o modelo seguir a orientação e emitir 3 tool_calls de uma vez, mas um deles
 
 **Local**: `packages/core/src/telemetry/types.ts:896`
 
-Atualmente, `SkillLaunchEvent` contém apenas `skill_name` + `success`, **sem `prompt_id`** — impossível associar a outros `ToolCallEvent` no mesmo turno.
+Atualmente `SkillLaunchEvent` contém apenas `skill_name` + `success`, **sem `prompt_id`** – impossível de associar a outros `ToolCallEvent` no mesmo turno.
 
 ```typescript
 // types.ts:896
@@ -282,55 +285,56 @@ export class SkillLaunchEvent implements BaseTelemetryEvent {
   'event.timestamp': string;
   skill_name: string;
   success: boolean;
-  prompt_id: string;                    // novo
-  turn_index?: number;                  // novo
+  prompt_id: string;                    // Novo
+  turn_index?: number;                  // Novo
 
   constructor(
     skill_name: string,
     success: boolean,
-    prompt_id: string,                  // novo
-    turn_index?: number,                // novo
+    prompt_id: string,                  // Novo
+    turn_index?: number,                // Novo
   ) { ... }
 }
 ```
 
-**Atualização dos chamadores**: 4 pontos de chamada `logSkillLaunch` em `packages/core/src/tools/skill.ts` (L386, L399, L426, L482) — `BaseToolInvocation` possui apenas `params`, não o campo `request.prompt_id`. **Implementação real**: usar duck typing para injetar: `SkillToolInvocation` expõe um setter `setPromptId(id)` + campo privado `promptId`, `CoreToolScheduler.buildInvocation` (`coreToolScheduler.ts:1253`) chama duck-type `setPromptId(request.prompt_id)` após construir, alinhado com o padrão do hook `setCallId` existente; a invocação nos 4 `logSkillLaunch` dentro de `execute()` passa `this.promptId`. **A descrição desta seção em versão anterior ("BaseToolInvocation já possui request.prompt_id") estava errada**, corrigida após review do PR #4565.
+**Atualização dos chamadores**: Os 4 pontos de chamada `logSkillLaunch` em `packages/core/src/tools/skill.ts` (L386, L399, L426, L482) – `this.params` não possui `prompt_id`; `BaseToolInvocation` contém apenas `params`, não tem campo `request.prompt_id`. **Implementação real**: injetar via duck typing: `SkillToolInvocation` expõe setter `setPromptId(id)` + campo privado `promptId`; `CoreToolScheduler.buildInvocation` (`coreToolScheduler.ts:1253`) chama duck-type `setPromptId(request.prompt_id)` após build, alinhando com o padrão existente do hook `setCallId`; os 4 `logSkillLaunch` dentro de `execute()` passam `this.promptId`. **A descrição anterior desta seção ("BaseToolInvocation já tem request.prompt_id") estava errada**, corrigida após revisão do PR #4565.
 
-#### 4.1.1b Correção do link qwen-logger (pré-requisito)
+#### 4.1.1b Correção da Cadeia do qwen-logger (Pré-requisito)
 
-Antes de adicionar `prompt_id`, é preciso resolver um **ponto de ruptura existente**: o método `logSkillLaunchEvent(event)` definido em `packages/core/src/telemetry/qwen-logger/qwen-logger.ts:908` **não possui nenhum chamador em todo o repositório** — `logSkillLaunch` em `loggers.ts:958` vai diretamente pelo caminho OTLP `logs.getLogger(SERVICE_NAME).emit()`, ignorando o qwen-logger.
+Antes de adicionar `prompt_id`, resolver um **ponto de interrupção existente na cadeia**: `packages/core/src/telemetry/qwen-logger/qwen-logger.ts:908` define o método `logSkillLaunchEvent(event)`, mas **não há nenhum chamador em todo o repositório** – `loggers.ts:958` `logSkillLaunch` vai diretamente pelo caminho OTLP `logs.getLogger(SERVICE_NAME).emit()`, ignorando o qwen-logger.
 
 Consequências:
 
-- Eventos skill_launch no caminho OTLP chegam ao coletor OTLP (já funciona), mas o caminho de envio dedicado do qwen-logger está atualmente morto
-- Se o backend de telemetria consumir do qwen-logger (em vez de OTLP), eventos skill_launch **não são reportados**
-- §4.1.2 deriva `SkillFollowupRecord` offline, dependendo da persistência dos eventos skill_launch — **primeiro validar se skill_launch está visível no backend atualmente**
+- Eventos skill_launch no caminho OTLP chegam ao collector OTLP (já funciona), mas a cadeia de relatório dedicada do qwen-logger está morta
+- Se o backend de telemetria consome do qwen-logger (não do OTLP), eventos skill_launch **não são relatados**
+- O SQL offline §4.1.2 para derivar `SkillFollowupRecord` depende dos eventos skill_launch no banco – **é necessário verificar primeiro se skill_launch está visível no backend atualmente**
 
-Direções de correção (duas opções):
+Duas direções de correção:
 
-- **A** (recomendado) Adicionar uma linha `QwenLogger.getInstance(config)?.logSkillLaunchEvent(event)` em `logSkillLaunch` em `loggers.ts:958`, alinhado com a escrita de `logToolCall` em `loggers.ts:230`
-- **B** Confirmar que o backend consome apenas de OTLP, marcar `logSkillLaunchEvent` no qwen-logger como `@deprecated` ou remover
+- **A** (recomendado): Adicionar uma linha `QwenLogger.getInstance(config)?.logSkillLaunchEvent(event)` em `loggers.ts:958` `logSkillLaunch`, alinhando com a escrita de `logToolCall` em `loggers.ts:230`
+- **B** Confirmar que o backend consome apenas OTLP e marcar `logSkillLaunchEvent` no qwen-logger como `@deprecated` ou removê-lo
 
-**Por que apenas adicionar o caminho QwenLogger, e não alinhar com os 4 caminhos completos de `logToolCall`**:
+**Por que adicionar apenas o caminho QwenLogger, sem alinhar com os 4 caminhos completos de `logToolCall`**:
 
 `logToolCall` (`loggers.ts:220-247`) tem na verdade 4 saídas:
 
-1. `uiTelemetryService.addEvent(...)` — exibição na UI
-2. `config.getChatRecordingService()?.recordUiTelemetryEvent(...)` — histórico de chat
-3. `QwenLogger.getInstance(config)?.logToolCallEvent(...)` — telemetria backend qwen-logger
-4. OTLP `logger.emit(...)` — OpenTelemetry
+1. `uiTelemetryService.addEvent(...)` – exibição UI
+2. `config.getChatRecordingService()?.recordUiTelemetryEvent(...)` – histórico de chat
+3. `QwenLogger.getInstance(config)?.logToolCallEvent(...)` – telemetria backend qwen-logger
+4. OTLP `logger.emit(...)` – OpenTelemetry
 
-skill_launch é **um evento de telemetria puramente de backend**, não precisa ser exibido na UI (o usuário já vê o returnDisplay do SkillTool) nem entrar no histórico de turnos do ChatRecording (as chamadas de ferramentas internas da skill já são registradas individualmente por recordUiTelemetryEvent). Portanto, adicionar apenas o caminho 3 (QwenLogger) e manter o caminho 4 (OTLP), pulando o 1/2 é intencional, não omissão.
+skill_launch é **um evento puro de telemetria backend**, não precisa ser exibido na UI (o usuário já vê o returnDisplay do SkillTool) nem entrar no histórico de turnos do ChatRecording (as chamadas de ferramentas internas à skill já são registradas individualmente por recordUiTelemetryEvent). Portanto, adicionar apenas o caminho 3 (QwenLogger), mantendo o caminho 4 (OTLP), e ignorar os caminhos 1/2 é intencional, não uma omissão.
 
-**Detalhes de passagem de campos**: `loggers.ts:961-966` usa spread `{ ...event }` para passar automaticamente novos campos (após adicionar `prompt_id` ao `SkillLaunchEvent`, esse caminho funciona automaticamente), mas `logSkillLaunchEvent` em `qwen-logger.ts:908`, se internamente desestruturar explicitamente `event.skill_name` / `event.success`, novos campos não serão incluídos automaticamente, precisando de sincronização manual.
+**Detalhe de transmissão de campos**: `loggers.ts:961-966` usa spread `{ ...event }` para transmitir automaticamente novos campos (após adicionar `prompt_id` ao `SkillLaunchEvent`, esse caminho funciona automaticamente), mas `logSkillLaunchEvent` em `qwen-logger.ts:908` internamente, se destruturar `event.skill_name` / `event.success` explicitamente, novos campos não serão incluídos automaticamente – é necessário sincronização manual.
 
-Carga de trabalho: Caminho A ~0.5d (incluindo confirmação no backend); Caminho B ~0.2d (remover código + documentação).
+Esforço: caminho A ~0,5d (incluindo confirmação no backend); caminho B ~0,2d (remover código + documentação).
 
-#### 4.1.2 Derivar `SkillFollowupRecord` (agregação offline)
-Não são necessários novos tipos de eventos — `ToolCallEvent` e `SkillLaunchEvent` já possuem `prompt_id`, basta uma consulta SQL offline para derivar:
+#### 4.1.2 Derivar `SkillFollowupRecord` (Agregação Offline)
+
+Nenhum novo tipo de evento necessário – `ToolCallEvent` e `SkillLaunchEvent` já possuem `prompt_id`, basta SQL offline:
 
 ```sql
--- pseudo SQL, ajuste conforme seu backend de telemetry
+-- SQL pseudo, ajustar conforme backend de telemetria real
 WITH skill_events AS (
   SELECT prompt_id, skill_name, timestamp FROM events
   WHERE event_name = 'skill_launch' AND success = true
@@ -357,56 +361,56 @@ GROUP BY skill_name
 ORDER BY invocations * followup_rate DESC;
 ```
 
-#### 4.1.3 Executar telemetry por 1 semana para coletar dados
+#### 4.1.3 Rodar Telemetria por 1 Semana para Coletar Dados
 
 - Nenhuma alteração no comportamento visível ao usuário
-- Nenhuma necessidade de chave de configuração — telemetry já possui framework opt-in (configuração `telemetry.target`)
+- Nenhuma chave de configuração necessária – telemetria já possui framework opt-in (configuração `telemetry.target`)
 - Após 1 semana, produzir relatório de ranking de skills
 
-### 4.2 Layer 2: Refatoração de Skills (0,5-1d por skill)
+### 4.2 Camada 2: Transformação de Skills (0,5-1d por skill)
 
-Refatorar de cima para baixo com base nos dados da Layer 1. Cada skill em um PR separado; a descrição do PR deve conter:
+Transformar do topo para baixo com base nos dados da Camada 1. Cada skill em um PR independente; a descrição do PR deve conter:
 
-1. **Dados**: invocation_count atual, followup_rate, principais ferramentas de followup
-2. **Escopo da refatoração**: quais followups foram incorporados (declarar explicitamente o que não foi incorporado)
-3. **Atualização do contrato de saída**: o que foi adicionado na descrição da skill como pré-declaração
-4. **Plano A/B**: após refatoração, observar followup_rate por mais 2 semanas
+1. **Dados**: invocation_count atual, followup_rate, top followup tools
+2. **Escopo da transformação**: quais followups foram inline (explicitamente o que não foi inline)
+3. **Atualização do contrato de saída**: quais pré-declarações foram adicionadas na descrição da skill
+4. **Plano A/B**: observar followup_rate por 2 semanas após transformação
 
 **Observações**:
 
-- Ao incorporar operações de leitura na skill, não reimplementar todo o tratamento de casos especiais de `read_file` (codificação, detecção binária, etc.) — chamar a ferramenta `read_file` em si, não reescrever
-- Incorporação de grep/glob na skill, da mesma forma
-- Incorporação de comandos shell na skill deve seguir o caminho padrão `executeToolCall` (preservar telemetry)
-- **Não explodir o tamanho da skill**: se após incorporar followups a descrição da skill ultrapassar 500 tokens, dividir a skill em vez de mesclar
+- Ao inlinar operações read na skill, não reimplementar todo o tratamento de casos de fronteira do `read_file` (encoding, detecção binária, etc.) – chamar a própria ferramenta `read_file`, não reescrever
+- O mesmo para grep/glob inline
+- Comandos shell inline na skill devem passar pelo caminho padrão `executeToolCall` (preservar telemetria)
+- **Não deixar o tamanho da skill explodir**: se a descrição da skill após inline de followup ultrapassar 500 tokens, dividir a skill em vez de mesclar
 
-### 4.3 Layer 3: Educação via Prompt (0,5d de alteração + ajuste com medição)
+### 4.3 Camada 3: Educação via Prompt (0,5d de alteração + otimização com medição)
 
-#### 4.3.1 Adicionar orientação de concorrência
+#### 4.3.1 Adicionar Orientação de Concorrência
 
-**Localização**: `packages/core/src/core/prompts.ts` seção `# Final Reminder` (L396)
+**Local**: `packages/core/src/core/prompts.ts` seção `# Final Reminder` (L396)
 
-Adicionar o texto de orientação da seção 3.3. O texto exato precisa de A/B — começar com a versão mais simples, refinar de acordo com o aumento da taxa de concorrência.
+Adicionar o texto guia da seção 3.3. A redação exata requer A/B – começar com a versão mais simples e refinar com base no aumento da taxa de concorrência.
 
-#### 4.3.2 Adicionar telemetry de `batch_size`
+#### 4.3.2 Adicionar Telemetria `batch_size`
 
-**Localização**: `ToolCallEvent` em `packages/core/src/telemetry/types.ts` ou novo `ToolBatchEvent` leve
+**Local**: `ToolCallEvent` em `packages/core/src/telemetry/types.ts` ou novo evento leve `ToolBatchEvent`
 
 ```typescript
-// Opção A: Adicionar campo em ToolCallEvent (menos intrusivo)
+// Opção A: Adicionar campos no ToolCallEvent (menos intrusivo)
 export class ToolCallEvent {
   ...
-  batch_size?: number;        // número de tool_call no mesmo batch
+  batch_size?: number;        // número de tool_calls no mesmo batch
   batch_position?: number;    // posição dentro do batch (0-indexed)
 }
 
-// Opção B: Novo ToolBatchEvent (semântica mais clara, exige fluxo completo de novo tipo de evento)
+// Opção B: Novo ToolBatchEvent (semântica mais clara, mas requer fluxo completo de novo tipo de evento)
 ```
 
-**Recomendação: Opção A** — menos alterações, agregação mais fácil em consultas.
+**Recomendação: Opção A** – alteração pequena, fácil de agregar em consultas.
 
-**Caminho de passagem de estado** (crítico — este custo foi subestimado nas versões iniciais):
+**Caminho de transmissão de estado (crítico – esta etapa foi subestimada na versão anterior)**:
 
-`coreToolScheduler.ts:2456` `partitionToolCalls(callsToExecute)` retorna `batches`, **mas a informação do batch é imediatamente perdida no caminho de dispatch**:
+`partitionToolCalls(callsToExecute)` em `coreToolScheduler.ts:2456` retorna `batches`, **mas a informação de batch se perde imediatamente no caminho de escalonamento**:
 
 ```
 executeToolCalls
@@ -419,151 +423,155 @@ executeToolCalls
                     └─ logToolCall(config, new ToolCallEvent(call)) // ❌ sem contexto de batch
 ```
 
-O construtor de `ToolCallEvent` (`types.ts:189`) recebe apenas um `CompletedToolCall`, sem campo de batch.
+O construtor de `ToolCallEvent` (`types.ts:189`) recebe apenas um único `CompletedToolCall`, sem campos de batch.
 
-Direção de correção:
+Direções de correção:
 
-- **Direção A** (recomendada): Adicionar `batchSize?: number` + `batchPosition?: number` em `ScheduledToolCall`. Preencher nas duas ramificações:
-  - Ramificação concorrente (`coreToolScheduler.ts:2459-2460`, `batch.calls.length > 1`): antes do loop em `runConcurrently(batch.calls, ...)`, atribuir a cada `call` `batchSize = batch.calls.length`, `batchPosition = i`
-  - Ramificação serial (`L2462-2464` loop `for (const call of batch.calls)`): para batch de ferramenta única, definir explicitamente `batchSize = 1`, `batchPosition = 0` (**não deixar undefined**, senão a agregação downstream de telemetry interpretará incorretamente como dado faltante em rodadas sem concorrência)
+- **Direção A** (recomendado): Adicionar `batchSize?: number` + `batchPosition?: number` em `ScheduledToolCall`. Preencher nas duas ramificações:
+  - Ramificação concorrente (`coreToolScheduler.ts:2459-2460`, `batch.calls.length > 1`): antes de `runConcurrently(batch.calls, ...)`, escrever `batchSize = batch.calls.length`, `batchPosition = i` em cada `call`
+  - Ramificação serial (`L2462-2464`, `for (const call of batch.calls)`): para batch de ferramenta única, definir explicitamente `batchSize = 1`, `batchPosition = 0` (**não deixar como undefined**, caso contrário a agregação de telemetria downstream pode interpretar rodadas sem concorrência como dados ausentes)
 
   `new ToolCallEvent(call)` no construtor lê esses dois campos de `call`
 
-- **Direção B**: Alterar assinatura do construtor `ToolCallEvent` para `new ToolCallEvent(call, batchInfo?)`, ajustar todos os pontos de chamada sincronamente (4 pontos de logToolCall + testes). Mudança maior que a direção A
+- **Direção B**: Alterar assinatura do construtor de `ToolCallEvent` para `new ToolCallEvent(call, batchInfo?)`, sincronizar todos os chamadores (4 pontos de chamada `logToolCall` + testes). Alteração maior que a A
 
-Esforço: Direção A ~0,5d incluindo testes unitários; Direção B ~1d (mais pontos de chamada).
+Esforço: direção A ~0.5d incluindo testes unitários; direção B ~1d (mais chamadores).
 
-**Medir sincronamente a "vontade de concorrência do modelo"** — comparar antes e depois da alteração de prompts.ts na Layer 3, a distribuição de `proporção de tool_call com batch_size > 1`. Este é o indicador-chave de eficácia da Layer 3; sem esses dados, o A/B da Layer 3 não pode ser concluído.
+**Medir simultaneamente a "vontade de concorrência do modelo"** – antes e depois da alteração do prompts.ts na Camada 3, comparar a distribuição da `proporção de tool_calls com batch_size > 1`. Essa é a métrica chave para saber se a Camada 3 é eficaz; sem ela, o A/B da Camada 3 não pode ser finalizado.
 
-#### 4.3.3 Avaliação de impacto no cache
+#### 4.3.3 Avaliação de Impacto no Cache
 
-A alteração em `prompts.ts` invalidará o cache efêmero DashScope por completo (primeira requisição com cache miss, depois recuperação). Este é um custo único conhecido, consulte `rt-optimization-design.md` §7.8 sobre auditoria de estado estacionário de prompts.
+A alteração no `prompts.ts` fará com que o cache efêmero do DashScope seja invalidado uma vez (primeira requisição cache miss, depois recupera). Este é um custo único conhecido, consulte `rt-optimization-design.md` §7.8 sobre auditoria de estabilidade de prompt.
 
 ---
 
-## 5. Aceitação e Métricas
+## 5. Aceitação e Medição
 
-> **Esta seção é o complemento metodológico da Spec de Aceitação §0** — §0 declara "indicadores de sucesso + thresholds pré/pós", §5 explica "como medir, como escrever SQL, como projetar A/B". Os thresholds aqui são placeholders atuais de §0.2; os valores finais serão travados após a medição da linha de base P1.5.
+> **Esta seção complementa a Especificação de Aceitação §0 com "metodologia"** – §0 declara "métricas de sucesso + thresholds prévios/posteriores", §5 explica "como medir, SQL, design A/B". Os thresholds nesta seção são os valores provisórios atuais da §0.2; os valores finais serão bloqueados após a medição da linha de base P1.5.
 
-### 5.1 Indicadores A/B por skill (2 semanas após refatoração)
+### 5.1 Métricas A/B por Skill (2 semanas após transformação)
 
-| Indicador                                    | Linha de aceitação          | Observação                       |
-| -------------------------------------------- | --------------------------- | -------------------------------- |
-| `followup_rate` da skill                     | < 20% (se antes estava 70%+) | Indicador principal               |
-| P50 de RT ponta a ponta do cenário acionado pela skill | Redução ≥ 2s     | Devido a uma chamada LLU a menos  |
-| Taxa de `user_followup_within_30s` da skill  | Não aumentar                | Usuário não perguntou = resposta completa |
-| Taxa de `success` da skill                   | Não diminuir                | Incorporar followup não introduziu novas falhas |
+| Métrica                                                               | Linha de Aceitação                  | Observações                                           |
+| --------------------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------- |
+| `followup_rate` da skill                                              | < 20% (se antes era 70%+)           | Métrica principal                                     |
+| RT P50 ponta a ponta do cenário que dispara a skill                   | Redução ≥ 2s                        | Devido a uma chamada LLM a menos                      |
+| Taxa de `user_followup_within_30s` da skill                           | Não aumentar                        | Usuário não perguntou mais = resposta completa         |
+| Taxa de `success` da skill                                            | Não diminuir                        | Inline de followup não introduziu novas falhas        |
+```
 
-### 5.2 Indicadores gerais de RT
+**Nota:** O conteúdo foi traduzido para português brasileiro, mantendo a estrutura Markdown, código inline, blocos de código, tabelas e termos técnicos em inglês quando apropriado (ex.: `followup_rate`, `prompt_id`, `skill`, `tool`, `batch_size`). As traduções seguem o estilo de documentação técnica para desenvolvedores.
+### 5.2 Métricas gerais de RT
 
-| Indicador                             | Linha de base                                    | Meta após Layer 2 refatorar top-3 skill |
-| ------------------------------------- | ------------------------------------------------ | --------------------------------------- |
-| P50 de RT ponta a ponta (sessões com skill) | 13,4s (amostra única) / pendente: linha de base de ≥3 cenários | Redução de 2-3s |
-| P50 de tamanho de Tool batch (Layer 3) | Pendente                                        | ≥ 1,3 (>30% das chamadas envolvem batch concorrente) |
-| `followup_rate` total das skills (média ponderada) | Pendente                                        | Redução ≥ 30% |
-### 5.3 Sinais de falha — quando abandonar esta direção
+| Métrica                                        | Linha de base                                          | Meta após Layer 2 alterar top-3 skills          |
+| ---------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------- |
+| RT P50 ponta a ponta (sessões com skill)       | 13.4s (amostragem única) / a complementar ≥3 cenários base | Reduzir 2-3s                                    |
+| Tamanho P50 do batch de ferramentas (Layer 3)  | A medir                                                | ≥ 1,3 (>30% das chamadas envolvem batch concorrente) |
+| Taxa de followup total do skill (média ponderada) | A medir                                                | Reduzir ≥ 30%                                   |
+
+### 5.3 Sinais de falha – quando abandonar essa direção
 
 **Linhas de parada para métricas de resultado**:
 
-- Após os dados da Layer 1 estarem disponíveis, **taxa de followup ponderada dos top-5 skills < 30%** → espaço de redução de rodadas pequeno, não vale a pena continuar com Layer 2
-- Após modificar 2 skills na Layer 2, **queda no RT P50 de ponta a ponta < 1s** → direção de melhoria errada (pode ser que followup seja uma operação de escrita que não deveria ser mesclada), pare e revise
-- Após 2 semanas de modificação no prompt da Layer 3, **batch_size P50 ainda = 1** → modelo não aceita orientação de concorrência, abandone Layer 3, mantenha apenas Layer 1+2
+- Após os dados da Layer 1, se a **taxa de followup ponderada dos top-5 skills < 30%** → o espaço para redução de rodadas é pequeno, não vale continuar para Layer 2
+- Após alterar 2 skills na Layer 2, se a **redução do RT P50 ponta a ponta for < 1s** → a direção da alteração está errada (talvez o followup seja uma operação de escrita que não deveria ser mesclada), pare e reavalie
+- Se após 2 semanas de alteração de prompt na Layer 3, **batch_size P50 ainda = 1** → o modelo não aceitou a orientação de concorrência, abandone Layer 3, mantenha apenas Layer 1+2
 
-**Linhas de parada para métricas de processo (alerta antecipado, para evitar que a solução "pareça estar funcionando, mas não traz retorno")**:
+**Linhas de parada para métricas de processo (alerta preventivo, evita que a abordagem "pareça estar acontecendo mas não traga retorno")**:
 
-- **Queda na taxa de acerto do skill (intended skill vs selected skill) ≥ 5pp** → descrição do skill piorou fazendo o modelo escolher o skill errado. Cenário típico: antes da modificação, o usuário perguntava X e sempre acertava skill_a; após a modificação, ocasionalmente é roteado para skill_b sem gerar erro (o modelo usou o skill errado mas produziu uma resposta quebrada), a métrica de resultado parece normal mas a followup_rate na verdade aumenta. **Método de medição**: adicionar `skill_invocation_pattern` na telemetria — agrupar por palavras-chave principais dos prompts do usuário, ver qual skill cada cluster aciona principalmentente; comparar antes e depois para ver deslocamento do top 1
-- **Taxa de falha de followup inline do skill ≥ 5%** → a modificação do skill introduziu modos de falha que não existiam antes (ex.: `read_file` inline processando arquivo grande estourando memória). Medição: comparar `SkillLaunchEvent.success` antes e depois
-- **Aumento na taxa de cancelamento por usuário por skill (Ctrl+C) ≥ 2pp** → saída do skill ficou mais lenta ou mais longa, fazendo o usuário perder a paciência. Medição: proporção de `ToolCallEvent.status === 'cancelled'`
+- **Queda na taxa de acerto do skill (skill pretendido vs skill selecionado) ≥ 5 pp** → a descrição do skill foi alterada de forma errada, fazendo o modelo escolher o skill errado. Cenário típico: antes da alteração, usuário perguntava X e sempre acertava skill_a; depois da alteração, ocasionalmente é roteado para skill_b sem gerar erro (o modelo usou o skill errado, mas deu um jeito de montar uma resposta), as métricas de resultado parecem normais, mas a taxa de followup aumenta. **Método de medição**: adicionar em telemetry `skill_invocation_pattern` – agrupar pelos primeiros N keywords do user prompt, ver qual skill cada cluster aciona principalmente; comparar antes e depois da alteração o deslocamento do top 1
+- **Taxa de falha no followup inline do skill ≥ 5%** → a alteração do skill introduziu um modo de falha que não existia antes (ex.: inline `read_file` processando arquivo grande estourando memória). Medição: comparar `SkillLaunchEvent.success` antes e depois da alteração
+- **Aumento na taxa de cancelamento do usuário por skill (Ctrl+C) ≥ 2 pp** → a saída do skill ficou mais lenta ou mais longa, fazendo o usuário perder a paciência. Medição: proporção de `ToolCallEvent.status === 'cancelled'`
 
 ---
 
-## 6. Integração com D1/D3
+## 6. Conexão com D1/D3
 
 ### 6.1 Relação com D1
 
-Após modificar os top skills na Layer 2, **os skills restantes com alto followup são o cenário real de aplicação do D1 `skipLlmRound`** — aqueles skills cuja saída já está completa (não precisam de Round 2) e realmente são consultas de estado final (Round 3 de resumo também é desperdício).
+Depois que a Layer 2 alterar os top skills, os **skills restantes com muito followup é que são o verdadeiro cenário de aplicação do `skipLlmRound` do D1** – aqueles skills cuja saída já está completa (não precisa da Round 2) e são de fato consultas de estado final (a Round 3 de resumo também é desperdício).
 
 Ordem de execução:
 
-1. Layer 1 telemetry no ar → 1 semana de dados
-2. Layer 2 modificar top 2-3 skills → A/B por 2 semanas
-3. Layer 3 prompt com concorrência → 1 semana de teste real
-4. **Só então** avaliar D1: quantos dos skills de alta frequência restantes estão no formato "saída completa + consulta de estado final" → se vale 2-3d de modificação no framework
+1. Layer 1 telemetry entra no ar → 1 semana de dados
+2. Layer 2 altera top 2-3 skills → A/B por 2 semanas
+3. Layer 3 prompt com concorrência → teste real por 1 semana
+4. **Só então** avaliar D1: dos skills frequentes restantes, quantos são do tipo "saída completa + consulta de estado final" → vale a pena uma alteração de framework de 2-3d?
 
 ### 6.2 Relação com D3
 
-D3 (`StreamingState.Summarizing`) é uma otimização na camada de percepção, totalmente ortogonal a este plano. Layer 1-3 reduzem o **número real de rodadas**, D3 reduz a **espera percebida pelo usuário**. Se Layer 2 já reduziu o RT para uma faixa aceitável para o usuário, o valor de D3 diminui; caso contrário, D3 pode ser adicionado em cima.
+D3 (`StreamingState.Summarizing`) é uma otimização da camada de percepção, totalmente ortogonal a esta proposta. Layer 1-3 reduzem o **número real de rodadas**, D3 reduz o **tempo de espera percebido pelo usuário**. Se a Layer 2 já reduzir o RT a um nível aceitável para o usuário, o valor do D3 diminui; caso contrário, D3 pode ser sobreposto.
 
 ---
 
-## 7. Limitações e riscos conhecidos
+## 7. Limitações e Riscos Conhecidos
 
-1. **Cobertura limitada pelo escopo da modificação** — modificar 10 skills cobre apenas os cenários desses 10. Mas o retorno é mensurável e composto
-2. **Skill inline followup pode tornar um skill individual mais pesado** — descrição inchada, carregamento lento, menor reuso. A defesa é o item 5 da checklist da Layer 2
-3. **Layer 3: modelo pode ignorar orientação de concorrência** — qwen-coder tem dados de treinamento mais seriais; dados A/B podem mostrar que a alteração no prompt é ineficaz, sendo um modo de falha conhecido
-4. **Limites de privacidade na telemetria** — `SkillFollowupRecord` não deve registrar argumentos de ferramenta (já por padrão obtidos de `ToolCallEvent.function_args`, mas é preciso auditar se `skill_name` vaza a intenção do usuário)
-5. **Não se aplica a sub-agent / cron / notification** — esses caminhos não passam pelo sistema de skills, este plano não os cobre
-6. **Dados de baseline escassos** — usando a amostragem única da §1.2 do `rt-optimization-design.md`, antes de implementar Layer 2 é necessário complementar com ≥3 tipos de baseline de cenário
-7. **Extensão do campo `logSkillLaunch` quebra consumidores existentes de telemetria** — 4 pontos de chamada + logger downstream precisam ser alterados em sincronia
-8. **`qwen-logger.ts:908` `logSkillLaunchEvent` atualmente é código morto** — nenhum cliente no repositório, §4.1.1b já lista a correção prévia
+1. **A cobertura é limitada pelo escopo da alteração** – alterar 10 skills cobre apenas os cenários desses 10 skills. Mas o retorno é mensurável e com juros compostos
+2. **O followup inline do skill pode tornar um único skill mais pesado** – descrição inflada, carregamento mais lento, reutilização reduzida. A defesa está no item 5 da checklist da Layer 2
+3. **O modelo da Layer 3 pode não seguir a orientação de concorrência** – qwen-coder tem dados de treino mais sequenciais; os dados A/B podem mostrar que a alteração de prompt é ineficaz, como modo de falha conhecido
+4. **Limites de privacidade na telemetry** – `SkillFollowupRecord` não deve registrar parâmetros de ferramentas (já obtém de `ToolCallEvent.function_args` por padrão, mas precisa auditar se `skill_name` vaza a intenção do usuário)
+5. **Não se aplica a sub-agentes / cron / notificações** – esses caminhos não passam pelo sistema de skills, esta proposta não os cobre
+6. **Linha de base de dados insuficiente** – herda a amostragem única da `rt-optimization-design.md` §1.2; antes da Layer 2, é necessário complementar com ≥3 cenários base
+7. **A extensão de campos `logSkillLaunch` quebrará consumidores existentes de telemetry** – os 4 pontos de chamada + loggers downstream precisam ser alterados em sincronia
+8. **`qwen-logger.ts:908` `logSkillLaunchEvent` é atualmente código morto** – nenhum chamador no repositório, a correção prévia está listada em §4.1.1b
 
-### 7.1 Limites com mecanismos existentes do framework (fora do escopo deste plano)
+### 7.1 Limite com mecanismos existentes do framework (fora do escopo desta proposta)
 
-O repositório já possui vários mecanismos indiretamente relacionados à redução de rodadas. **Este plano não reinventa nem substitui**:
+O repositório já possui alguns mecanismos de framework indiretamente relacionados à redução de rodadas. **Esta proposta não reinventa nem substitui**:
 
-| Mecanismo existente                                      | Localização                            | Relação com este plano                                                                                                                |
-| -------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `partitionToolCalls` + `runConcurrently` (execução concorrente) | `coreToolScheduler.ts:775, 2473`     | Layer 3 reutiliza diretamente; este plano não mexe                                                                                      |
-| `CONCURRENCY_SAFE_KINDS` (define quais ferramentas podem ser concorrentes) | `tools/tools.ts:818`                 | §3.3.1 já argumentou que a situação atual é razoável, não expande                                                                     |
-| `FileReadCache` (evita ler o mesmo arquivo várias vezes)  | `services/fileReadCache.ts`          | Afeta indiretamente as rodadas de "modelo relê arquivo"; já está ativo; este plano não depende nem aprimora                             |
-| `chatCompressionService` (compressão de histórico)        | `services/chatCompressionService.ts` | Ortogonal ao número de rodadas (afeta custo por rodada, não quantidade); é o mesmo componente que o gate `wouldTriggerCompression` da rota fast em `rt-optimization-design.md` §3.2 |
+| Mecanismo existente                                        | Localização                                  | Relação com esta proposta                                                                                                                |
+| ---------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `partitionToolCalls` + `runConcurrently` (execução concorrente) | `coreToolScheduler.ts:775, 2473`             | Layer 3 reutiliza diretamente; esta proposta não o altera                                                                                |
+| `CONCURRENCY_SAFE_KINDS` (define quais ferramentas podem ser concorrentes) | `tools/tools.ts:818`                         | §3.3.1 já demonstrou que a situação atual é razoável, não será expandido                                                                |
+| `FileReadCache` (evita ler o mesmo arquivo repetidamente)  | `services/fileReadCache.ts`                  | Afeta indiretamente as rodadas de "modelo lendo o mesmo arquivo de novo"; já está em vigor; esta proposta não depende nem o reforça      |
+| `chatCompressionService` (compressão de histórico)         | `services/chatCompressionService.ts`         | Ortogonal às rodadas (afeta o custo por rodada, não o número de rodadas); é o mesmo componente que o gate `wouldTriggerCompression` da rota rápida de `rt-optimization-design.md` §3.2 |
 
-A listagem é para evitar que "este plano seja interpretado como ignorar mecanismos existentes".
-
----
-
-## 8. Cronograma de implementação
-
-> **Premissa: esta linha do tempo começa em P-1 e não pode ser pulada.** P-1 é a revisão prévia da especificação de aceitação da §0, com 0.5d de trabalho mas **obrigatória** — se não aprovada, não se avança para P0. Essa restrição visa evitar o anti-padrão de "primeiro escrever código e depois fazer a spec": fazer a spec depois equivale a adiar o julgamento de "sucesso" para depois dos resultados, o que tende a gerar desvios de ajustar a spec para que os indicadores pareçam bons (vide o precedente da rota D2 em `rt-optimization-design.md` §7).
-
-| Fase       | Conteúdo                                                                 | Esforço                | Entrega                           | Ação de travamento da spec                           |
-| ---------- | ------------------------------------------------------------------------ | ---------------------- | --------------------------------- | ---------------------------------------------------- |
-| **P-1**    | Revisão prévia da spec                                                   | 0.5d                   | §0.1 / §0.3 travados              | **Travar §0.1 (spec da camada de engenharia) + §0.3 (linhas de parada)** |
-| **P0**     | Correção da cadeia qwen-logger (§4.1.1b prévia)                          | 0.5d                   | Visibilidade do evento skill_launch confirmada | Validar §0.1 item 1                        |
-| **P1**     | Layer 1 telemetry: adicionar campo `prompt_id` + SQL offline             | 1-2d                   | Relatório de ranking de skills     | Validar §0.1 itens 2/3/4                             |
-| **P1.5**   | 1 semana de coleta de dados + medição de baseline (≥3 cenários × ≥10 execuções) | 1w                | Decidir quais 2-3 skills modificar | **Travar §0.2 limites + validar §0.1 item 5**        |
-| **P2**     | Layer 2 modificar top-1 skill (PR + A/B)                                 | 0.5-1d mod + 2w obs  | Verificar queda de followup_rate ↓, RT P50 ↓ | **Declarar §0.4 per-skill spec dentro do PR** |
-| **P3**     | Layer 3: prompt com orientação de concorrência + telemetria `batch_size` (incluindo §4.3.2 passagem de estado) | 1-1.5d alteração + 1w teste real | Distribuição de batch_size        | Validar §0.2 item 3                                  |
-| **P4**     | Layer 2 continuar modificando top-2 / top-3 skills (paralelo a P3)       | 0.5-1d × N            | Queda acumulada de RT P50 ↓        | Declarar §0.4 em cada PR                             |
-| **P5**     | Avaliar se D1 ainda tem valor                                           | Reunião de decisão    | Atualização de roadmap             | —                                                    |
-**Pontos de Decisão Chave (comparados com a linha de parada §0.3):**
-
-- **Fim de P-1**: §0.1 / §0.3 qualquer item sem consenso → não entrar em P0
-- **Fim de P1.5**: Acionar indicador de resultado §0.3 #1 (taxa de acompanhamento ponderada top-5 < 30%) → terminar a direção; caso contrário, travar o limiar §0.2
-- **Fim de P2**: Acionar indicador de resultado §0.3 #2 (após modificação top-1, RT P50 ↓ < 1s) ou qualquer indicador de processo → parar para revisão
-- **Fim de P3**: Acionar indicador de resultado §0.3 #3 (batch_size P50 ainda = 1) → abandonar a Layer 3
-- **P5**: Decidir o ROI D1 com base na forma das skills restantes
+Listar esses mecanismos evita que esta proposta seja interpretada como ignorando os existentes.
 
 ---
 
-## 9. Principais Locais de Código
+## 8. Cronograma de Implementação
 
-| Arquivo                                                     | Símbolo Chave                                                      | Localização                              |
-| ----------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------- |
-| `packages/core/src/telemetry/types.ts`                      | `ToolCallEvent` (contém `prompt_id` / `duration_ms`)              | L170                                     |
-| `packages/core/src/telemetry/types.ts`                      | `SkillLaunchEvent` (precisa adicionar `prompt_id`)                 | L896                                     |
-| `packages/core/src/telemetry/loggers.ts`                    | `logToolCall`                                                      | L220                                     |
-| `packages/core/src/telemetry/loggers.ts`                    | `logSkillLaunch` (via OTLP; sem encaminhamento do qwen-logger)     | L958                                     |
-| `packages/core/src/telemetry/loggers.ts`                    | `logToolCall` (caminho duplo: OTLP + qwen-logger, usado como modelo de correção) | L220, L230                        |
-| `packages/core/src/telemetry/qwen-logger/qwen-logger.ts`    | `logSkillLaunchEvent` (**código morto atualmente**, alvo de correção prévia §4.1.1b) | L908                              |
-| `packages/core/src/core/coreToolScheduler.ts`               | `partitionToolCalls`                                               | L775                                     |
-| `packages/core/src/core/coreToolScheduler.ts`               | `runConcurrently` / agendamento batch                              | L2456, L2473                             |
-| `packages/core/src/core/coreToolScheduler.ts`               | Ponto de chamada `logToolCall` (ponto final de passagem de estado batch_size) | L3163                              |
-| `packages/core/src/services/fileReadCache.ts`               | `FileReadCache` (já existente, afeta rodadas de leitura repetidas) | L135                                     |
-| `packages/core/src/tools/skill.ts`                          | `SkillTool` + 4 pontos de chamada `logSkillLaunch`                | L386, L399, L426, L482                   |
-| `packages/core/src/skills/skill-manager.ts`                 | `SkillManager` (registro/carregamento de skills)                  | Arquivo inteiro                          |
-| `packages/core/src/skills/skill-load.ts`                    | Carregamento de descrição de skill (ponto de entrada de mudanças no contrato de saída) | Arquivo inteiro                    |
-| `packages/core/src/tools/tools.ts`                          | `Kind` + `CONCURRENCY_SAFE_KINDS`                                 | L793, L818                               |
-| `packages/core/src/core/coreToolScheduler.ts`               | `partitionToolCalls` + `runConcurrently` (infraestrutura de concorrência existente) | veja rt-optimization-design.md §5.7 |
-| `packages/core/src/core/prompts.ts`                         | Seção `# Final Reminder` (ponto de adição de orientação de concorrência na Layer 3) | L396                              |
-| `.qwen/skills/`                                             | Diretório de definição de cada skill (objeto de modificação da Layer 2) | Diretório                             |
+> **Pré-requisito: Este cronograma começa em P-1 e não pode ser pulado.** P-1 é a revisão prévia da especificação de §0, com 0,5d de trabalho, mas **obrigatória** – se não for aprovada, não se avança para P0. Essa restrição visa evitar o antipadrão de "escrever código primeiro e depois complementar a especificação": especificação postergada equivale a adiar o julgamento de "sucesso" até depois dos resultados, o que facilmente leva a ajustar a especificação para fazer os indicadores parecerem bons (veja o precedente da rota D2 de `rt-optimization-design.md` §7).
+
+| Fase     | Conteúdo                                                                 | Esforço                 | Entregável                          | Ação de congelamento da spec                              |
+| -------- | ------------------------------------------------------------------------ | ----------------------- | ----------------------------------- | --------------------------------------------------------- |
+| **P-1**  | Revisão prévia da spec                                                   | 0,5d                    | §0.1 / §0.3 congelados              | **Congelar §0.1 (spec de engenharia) + §0.3 (linhas de parada)** |
+| **P0**   | Correção da cadeia qwen-logger (pré-requisito §4.1.1b)                   | 0,5d                    | Visibilidade do evento skill_launch confirmada | Validar §0.1 item 1                              |
+| **P1**   | Layer 1 telemetry: adicionar campo `prompt_id` + SQL offline             | 1-2d                    | Relatório de ranking de skills       | Validar §0.1 itens 2/3/4                                    |
+| **P1.5** | Coleta de dados por 1 semana + medição de base (≥3 cenários × ≥10 vezes) | 1w                      | Decidir quais 2-3 skills alterar     | **Congelar §0.2 thresholds + validar §0.1 item 5**          |
+| **P2**   | Layer 2 alterar top-1 skill (PR + A/B)                                   | 0,5-1d alteração + 2w observação | Verificar redução de followup_rate e RT P50 | **Declarar §0.4 per-skill spec dentro do PR**              |
+| **P3**   | Layer 3 prompt com orientação de concorrência + telemetry `batch_size` (incluindo passagem de estado §4.3.2) | 1-1,5d alteração + 1w teste real | Distribuição de batch_size          | Validar §0.2 item 3                                        |
+| **P4**   | Layer 2 continua alterando top-2 / top-3 skills (paralelo a P3)          | 0,5-1d × N             | Redução acumulada de RT P50          | Declarar §0.4 em cada PR                                    |
+| **P5**   | Avaliar se D1 ainda tem valor                                           | Reunião de decisão      | Atualização do roadmap               | —                                                         |
+
+**Pontos-chave de decisão (conforme linhas de parada de §0.3)**:
+
+- **Fim de P-1**: Se qualquer item de §0.1 / §0.3 não obtiver consenso → não entrar em P0
+- **Fim de P1.5**: Se acionar a linha de parada de métrica de resultado §0.3 #1 (taxa de followup ponderada dos top-5 < 30%) → encerrar a direção; caso contrário, congelar §0.2 thresholds
+- **Fim de P2**: Se acionar a linha de parada §0.3 #2 (RT P50 após alteração do top-1 ↓ < 1s) ou qualquer métrica de processo → parar e reavaliar
+- **Fim de P3**: Se acionar a linha de parada §0.3 #3 (batch_size P50 ainda = 1) → abandonar Layer 3
+- **P5**: Decidir ROI do D1 com base na forma dos skills restantes
+
+---
+
+## 9. Localizações-chave no Código
+
+| Arquivo                                                   | Símbolo-chave                                                    | Localização                          |
+| ---------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------ |
+| `packages/core/src/telemetry/types.ts`                     | `ToolCallEvent` (com `prompt_id` / `duration_ms`)                | L170                                 |
+| `packages/core/src/telemetry/types.ts`                     | `SkillLaunchEvent` (precisa adicionar `prompt_id`)               | L896                                 |
+| `packages/core/src/telemetry/loggers.ts`                   | `logToolCall`                                                    | L220                                 |
+| `packages/core/src/telemetry/loggers.ts`                   | `logSkillLaunch` (via OTLP; falta encaminhamento do qwen-logger) | L958                                 |
+| `packages/core/src/telemetry/loggers.ts`                   | `logToolCall` (duplo caminho: OTLP + qwen-logger, como modelo de correção) | L220, L230                   |
+| `packages/core/src/telemetry/qwen-logger/qwen-logger.ts`   | `logSkillLaunchEvent` (**atualmente código morto**, alvo de correção prévia §4.1.1b) | L908                               |
+| `packages/core/src/core/coreToolScheduler.ts`              | `partitionToolCalls`                                             | L775                                 |
+| `packages/core/src/core/coreToolScheduler.ts`              | `runConcurrently` / escalonamento de batch                       | L2456, L2473                         |
+| `packages/core/src/core/coreToolScheduler.ts`              | Ponto de chamada `logToolCall` (ponto final de passagem de estado batch_size) | L3163                              |
+| `packages/core/src/services/fileReadCache.ts`              | `FileReadCache` (existente, afeta rodadas de leitura repetida)   | L135                                 |
+| `packages/core/src/tools/skill.ts`                         | `SkillTool` + 4 pontos de chamada `logSkillLaunch`               | L386, L399, L426, L482               |
+| `packages/core/src/skills/skill-manager.ts`                | `SkillManager` (registro/carregamento de skills)                 | Arquivo inteiro                      |
+| `packages/core/src/skills/skill-load.ts`                   | Carregamento de descrição de skill (ponto de entrada para alteração de contrato de saída) | Arquivo inteiro                      |
+| `packages/core/src/tools/tools.ts`                         | `Kind` + `CONCURRENCY_SAFE_KINDS`                                | L793, L818                           |
+| `packages/core/src/core/coreToolScheduler.ts`              | `partitionToolCalls` + `runConcurrently` (infraestrutura de concorrência existente) | Ver rt-optimization-design.md §5.7 |
+| `packages/core/src/core/prompts.ts`                        | Seção `# Final Reminder` (local para adicionar orientação de concorrência na Layer 3) | L396                               |
+| `.qwen/skills/`                                            | Diretório de definição de cada skill (objeto de alteração da Layer 2) | Diretório                             |

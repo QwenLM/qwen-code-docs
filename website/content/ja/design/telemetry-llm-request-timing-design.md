@@ -1,98 +1,98 @@
-# LLMリクエストタイミング分解設計 (P3 フェーズ4)
+# LLM リクエストタイミング分解設計 (P3 Phase 4)
 
-> Issue #3731 — 階層型セッショントレーシングのフェーズ4。`qwen-code.llm_request` スパンに time-to-first-token、リクエストセットアップ時間、サンプリング時間、試行ごとのリトライテレメトリを追加し、オペレーターが「なぜこのLLM呼び出しは遅かったのか？」を推測なしに分析できるようにする。
+> Issue #3731 — 階層セッショントレーシングのフェーズ4。time-to-first-token、リクエストセットアップ時間、サンプリング時間、試行ごとのリトライテレメトリを `qwen-code.llm_request` スパンに追加し、オペレータが「このLLM呼び出しはなぜ遅かったのか？」を推測せずに判断できるようにする。
 >
-> フェーズ1 (#4126)、フェーズ1.5 (#4302)、フェーズ2 (#4321) に基づく。フェーズ3 (#4410、レビュー中) とは独立しているが、フェーズ4の試行ごとのフィールドがサブエージェントサブツリー配下でクリーンに集計できるよう、フェーズ3を先にリリースすることを推奨する。
+> フェーズ1 (#4126)、フェーズ1.5 (#4302)、フェーズ2 (#4321) を基盤とする。フェーズ3 (#4410、レビュー中) とは独立 — フェーズ3を先にマージすることで、フェーズ4の試行ごとのフィールドがサブエージェントサブツリー下でクリーンに集約されるため、先にフェーズ3を適用することを推奨する。
 
 ## 問題
 
-現状の `qwen-code.llm_request` スパンには `model`、`prompt_id`、`input_tokens`、`output_tokens`、`success`、`error`、`duration_ms` しか含まれていない。単一のトレースを読んでも以下を判断できない:
+現在の `qwen-code.llm_request` スパンは、`model`、`prompt_id`、`input_tokens`、`output_tokens`、`success`、`error`、`duration_ms` のみを保持する。単一のトレースを読むオペレータは以下の点を判断できない：
 
-1. **`duration_ms` のうちどれだけがモデルの思考時間でどれだけがネットワークセットアップ時間か。** 12秒の `duration_ms` は「11秒のリトライ＋1秒の高速生成」かもしれないし、「100msのセットアップ＋12秒の低速ストリーミング」かもしれないが、トレースからは分からない。
-2. **ユーザーが最初のトークンを受け取ったタイミング。** TTFT (time-to-first-token) はチャットUIの標準レイテンシSLOだが、取得も計測もできていない。
-3. **リトライ中に何が起きたか。** `retryWithBackoff` (`utils/retry.ts:285`) は `debugLogger.warn` を呼ぶだけで、OTelイベントもスパン属性もない。これを通る4つのLLM呼び出しサイト (`client.ts:1540`、`baseLlmClient.ts:193,282`、`geminiChat.ts:1039`) はトレースにもメトリクスにもリトライの可視性がゼロ。`ContentRetryEvent` は `geminiChat.ts:806,830` 内のコンテンツ復旧リトライには存在するが、より一般的なレート制限/5xx リトライには存在しない。
-4. **`api.request.breakdown` がデッドコードであること。** このメトリクスは `metrics.ts:242-251` で4つの `ApiRequestPhase` 値として定義され、`index.ts:117` からエクスポートされ、`metrics.test.ts:646-675` でテストされているが、本番コードで `recordApiRequestBreakdown()` を呼び出す箇所がゼロ。メトリクスのインフラは用意されているが、データフローは接続されていなかった。
+1. **`duration_ms` のうち、モデルの思考時間とネットワークセットアップ時間はそれぞれどの程度か。** 12秒の `duration_ms` は、11秒のリトライ後に1秒の高速生成、または100msのセットアップ後に12秒の低速ストリーミング — トレースからは判断できない。
+2. **ユーザーが最初のトークンを見たのはいつか。** TTFT（time-to-first-token）はチャットUIの標準的なレイテンシSLOである。現在はそれを計算できず、キャプチャもしていない。
+3. **リトライ中に何が起こったか。** `retryWithBackoff` (`utils/retry.ts:285`) は `debugLogger.warn` を呼び出すのみ — OTelイベントもスパン属性もなし。これを経由する4つのLLM呼び出し箇所 (`client.ts:1540`、`baseLlmClient.ts:193,282`、`geminiChat.ts:1039`) はトレースやメトリクスにリトライの可視性が全くない。`ContentRetryEvent` は `geminiChat.ts:806,830` 内のコンテンツリカバリーリトライ用に存在するが、より一般的なレート制限/5xxリトライには適用されない。
+4. **`api.request.breakdown` はデッドコードである。** メトリクスは `metrics.ts:242-251` で4つの `ApiRequestPhase` 値とともに定義され、`index.ts:117` からエクスポートされ、`metrics.test.ts:646-675` でテストされている — しかし `recordApiRequestBreakdown()` の呼び出し元はプロダクションコードに存在しない。メトリクスインフラはコストがかかっているが、データフローは一度も接続されていない。
 
-これらのギャップにより、`qwen-code.llm_request` はトレースツリーの中で最も情報量の少ないスパンとなっている。ツールスパン (#4126/#4321) やサブエージェントスパン (#4410) はライフサイクルフェーズを公開しているが、LLMスパンはリクエスト全体を一つの不透明な duration に押しつぶしている。
+これらのギャップにより、`qwen-code.llm_request` はトレースツリーの中で最も情報量の少ないスパンとなっている。ツールスパン (#4126/#4321) とサブエージェントスパン (#4410) はどちらもライフサイクルフェーズを明らかにするが、LLMスパンはリクエスト全体を単一の不透明な時間にまとめてしまう。
 
-## 変更しない既存の面
+## 既存の対象範囲 (変更なし)
 
-| コンポーネント                                               | 場所                                                             | 変更しない理由                                                                                                                                                                                              |
-| ------------------------------------------------------------ | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| LLMリクエストスパンライフサイクル                            | `session-tracing.ts` `startLLMRequestSpan` / `endLLMRequestSpan` | フェーズ1 (#4126) でヘルパーが確立された。メタデータインターフェースを拡張するが、構造は変更しない                                                                                                        |
-| プロバイダージェネレーターへのアクティブスパン伝播           | `loggingContentGenerator.ts:213,287`                             | フェーズ1 (#4126) で `withSpan('api.*')` をネイティブヘルパーに置き換えた。アクティブコンテキストはすでにストリームラッパーに届いている                                                                   |
-| `ContentRetryEvent` スキーマ＋コンシューマー                 | `types.ts:626`、`qwen-logger.ts:947`、`loggers.ts:717`           | 既存のイベントはその形状とダウンストリームを維持する。`retryWithBackoff` パス用に兄弟イベントクラスを追加する                                                                                              |
-| `LogToSpanProcessor` ログブリッジスパン                      | `log-to-span-processor.ts`                                       | ContentRetryEvent の既存ブリッジはアクティブなLLMスパン配下へのネストを継続する。フェーズ4はこれを変更しない                                                                                              |
-| `ApiRequestPhase` enum                                       | `metrics.ts:330-334`                                             | パブリックな面 (4値)。本番コードから4値のうち3値を設定する。後方互換性のためenumは変更しない                                                                                                              |
-| プロバイダーごとのチャンク正規化 → `GenerateContentResponse` | `loggingContentGenerator.ts:286-393`                             | 各プロバイダーはすでにGoogleの `GenerateContentResponse` 形状に正規化してからLoggingContentGeneratorに渡す。TTFT検出はこの正規化済み形状に対して集中的に行われるため、プロバイダーごとのコードは不要     |
-| `retryWithBackoff` 汎用リトライ                              | `utils/retry.ts:140`                                             | LLM呼び出し元と非LLM (`channels/weixin/src/api.ts`) の両方で使用されている。LLMテレメトリへのハードカップリングの代わりに、オプトインの `onRetry` コールバックで拡張する                                  |
-| 非ストリーミング `generateContent`                           | `loggingContentGenerator.ts:212`                                 | 非ストリーミングではTTFTは無意味なため、新しいフィールドは `undefined` のままとなる。スパンライフサイクルと既存の属性は変更なし                                                                           |
+| コンポーネント                                                | 場所                                                             | なぜ触らないか                                                                                                                                                                                                           |
+| ------------------------------------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| LLM リクエストスパンライフサイクル                            | `session-tracing.ts` `startLLMRequestSpan` / `endLLMRequestSpan` | フェーズ1 (#4126) でヘルパーが確立された。メタデータインターフェースを拡張するが、再構築は行わない                                                                                                                        |
+| アクティブスパンのプロバイダージェネレーターへの伝搬        | `loggingContentGenerator.ts:213,287`                             | フェーズ1 (#4126) で `withSpan('api.*')` をネイティブヘルパーに置き換え、アクティブコンテキストはすでにストリームラッパーに到達している                                                                                  |
+| `ContentRetryEvent` スキーマ + コンシューマー                | `types.ts:626`、`qwen-logger.ts:947`、`loggers.ts:717`           | 既存のイベントはその形状と下流を維持。`retryWithBackoff` パスに兄弟イベントクラスを追加する                                                                                                                               |
+| `LogToSpanProcessor` ログブリッジスパン                      | `log-to-span-processor.ts`                                       | ContentRetryEvent の既存ブリッジは引き続きアクティブなLLMスパンの下にネストされる。フェーズ4はこれを変更しない                                                                                                            |
+| `ApiRequestPhase` 列挙                                       | `metrics.ts:330-334`                                             | 公開インターフェース (4つの値)。プロダクションコードから3つの値を入力。互換性のために列挙は変更しない                                                                                                                    |
+| プロバイダーごとのチャンク正規化 → `GenerateContentResponse` | `loggingContentGenerator.ts:286-393`                             | 各プロバイダーはすでにGoogleの `GenerateContentResponse` 形状に正規化してからLoggingContentGeneratorがストリームを見る。TTFT検出はこの正規化された形状を中心に一元実行。プロバイダーごとのコードは不要                       |
+| `retryWithBackoff` 汎用リトライ                              | `utils/retry.ts:140`                                             | LLM呼び出し元と非LLM (`channels/weixin/src/api.ts`) の両方で使用。LLMテレメトリへのハードカップリングではなく、オプトインの `onRetry` コールバックで拡張する                                                    |
+| 非ストリーミング `generateContent`                           | `loggingContentGenerator.ts:212`                                 | 非ストリーミングではTTFTは意味を持たないため、新しいフィールドは `undefined` のまま。スパンライフサイクルと既存の属性は変更なし                                                                                                |
 
-## スコープ外 (延期)
+## 対象外 (延期)
 
-- **SDKレベルのリトライ** (openai SDK `maxRetries=3`、google-genai SDK内部リトライ)。これらはサードパーティSDK内で完結するため、観測するにはSDKリトライを無効化して `retryWithBackoff` で再実装する必要がある。フェーズ4の対象外。
-- **トークンごとのストリーミングメトリクス** (トークン間レイテンシ、チャンクサイズ)。推論エンジンのパフォーマンスデバッグには有用だが、フェーズ4が対象とするユーザー体感レイテンシの問題には該当しない。
-- **思考/reasoningブロックの別途TTFT。** 「最初のトークン」には思考コンテンツが含まれる (D1参照)。将来の拡張として `ttft_to_reasoning_ms` と `ttft_to_answer_ms` の分割が可能だが、需要が確認されてから対応する。
-- **専用子スパンとしてのサンプリングフェーズ。** `duration_ms - ttft_ms - request_setup_ms` で算出可能。子スパンはOTelのみのバックエンドでは何も追加しない (claude-code はPerfettoのみ使用)。スパン属性として保存する — D6参照。
-- **永続的リトライモード (`QWEN_CODE_UNATTENDED_RETRY`) のイベントレベルのレート制限。** 単一のLLMリクエストで50件以上の `ContentRetryEvent` / `ApiRetryEvent` レコードが発生する可能性がある。フェーズ4ではすべてのイベントを送出する。本番ボリュームが問題になった場合は、スパンごとの送出上限と「+N件以上の試行 (切り捨て)」サマリーイベントをフォローアップPRで追加する。
-- **`TOKEN_PROCESSING` フェーズ。** enum値は存在するが、qwen-codeはポストストリームのローカル処理が実質的に計測する価値がない (<10ms 典型)。本番呼び出し元ではスキップ。enum値は将来の利用のために保持する。
-- **`ContentRetryEvent` をLLMスパンのスパンイベントに移行すること。** フェーズ3の `subagent_execution` LogRecordと同じ理由: 既存コンシューマー (qwen-logger RUM、将来のメトリクス) がLogRecordに密結合している。ブリッジスパンのカバレッジで十分。
+- **SDKレベルのリトライ** (openai SDK `maxRetries=3`、google-genai SDK内部リトライ)。これらはサードパーティSDK内で完全に発生する。観測するにはSDKリトライを無効化し、`retryWithBackoff` で再実装する必要がある。別の判断事項であり、フェーズ4では扱わない。
+- **トークンごとのストリーミングメトリクス** (トークン間レイテンシ、チャンクごとのサイズ)。推論エンジンのパフォーマンスデバッグに有用だが、フェーズ4が対象とするユーザー体感レイテンシの質問には関係しない。
+- **推論/思考ブロックの個別TTFT**。「最初のトークン」には思考コンテンツが含まれる (D1参照)。将来の拡張として `ttft_to_reasoning_ms` と `ttft_to_answer_ms` を分割することは可能だが、需要が確認された後にのみ行う。
+- **サンプリングフェーズを専用の子スパンとして実装。** `duration_ms - ttft_ms - request_setup_ms` から計算可能。子スパンはOTel専用バックエンドでは何も追加しない (claude-codeはPerfetto用に使用)。代わりにスパン属性として保存 — D6参照。
+- **永続リトライモード (`QWEN_CODE_UNATTENDED_RETRY`) のイベントレベルレート制限。** 単一のLLMリクエストで永続リトライ下で50以上の `ContentRetryEvent` / `ApiRetryEvent` レコードが生成される可能性がある。出力制限はフォローアップ — フェーズ4はすべてのイベントを出力。本番ボリュームが許容できない場合は、後続PRでスパンごとの出力制限と "+N more attempts (truncated)" サマリーイベントを追加する。
+- **`TOKEN_PROCESSING` 分解フェーズ。** 列挙値は存在するが、qwen-code には測定する価値のある実際のポストストリームローカル処理はない (通常10ms未満)。本番呼び出し元ではスキップ。列挙値は将来の使用または制御不能な呼び出し元のために保持。
+- **`ContentRetryEvent` をLLMスパンのスパンイベントとして移行。** フェーズ3の `subagent_execution` LogRecord と同じ理由：既存のコンシューマー (qwen-logger RUM、将来のメトリクス) はLogRecordに密結合。ブリッジスパンのカバレッジで十分。
 
-## 参考文献 (意思決定の根拠)
+## 参考文献 (決定根拠)
 
-| ソース                                                                                                                      | 主な知見                                                                                                                                                                                                                                                                                                                             |
-| --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| claude-code (Anthropic) `claude.ts:1762, 1789, 1982, 2882`                                                                  | TTFTは `message_start` SSEイベントで `Date.now() - start` として取得。`start` はリトライ試行ごとにリセット。`requestSetupMs = start - startIncludingRetries`。`attemptStartTimes` 配列は試行ごとに保持。アプローチの実現可能性を確認。TTFTのセマンティクスは「最初のストリームイベント」(qwen-codeは「最初のコンテンツ」に相違 — D1参照) |
-| claude-code `perfettoTracing.ts:549-671`                                                                                    | Request Setup → Attempt N (リトライ) → First Token → Sampling をネストされたB/Eペアとしてレンダリング。視覚的な分解を示す。qwen-codeはPerfettoがないため、OTel属性で同様の分解を行う                                                                                                                                              |
-| claude-code `sessionTracing.ts:447`                                                                                         | OTelスパンには `ttft_ms` のみが付与される (`requestSetupMs`、`samplingMs`、試行ごとのタイミングはなし)。qwen-codeはスパンにより多くの情報を意図的に付与する — claude-codeは可視化にPerfettoを持つが、qwen-codeには存在しない                                                                                                       |
-| opencode (sst/opencode) `session/llm.ts`、`route/client.ts`                                                                 | TTFT計測なし。単一の `LLM.run` EffectスパンですべてをカバーするAこのギャップが競合ツールにも存在することを確認。参考実装としては不適切                                                                                                                                                                                             |
-| [OTel GenAI Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/) (ステータス: 開発中/実験的)          | `gen_ai.usage.input_tokens` (Stable)、`gen_ai.usage.output_tokens` (Stable)、`gen_ai.usage.cached_tokens` (Experimental)、`gen_ai.request.model` (Stable)、`gen_ai.server.time_to_first_token` (Experimental、double型の秒)。デュアルエミットパターンは #4410 の先例に倣う                                                         |
-| [OTel Trace Spec — Span Events](https://opentelemetry.io/docs/specs/otel/trace/api/#add-events)                             | 「スパン属性として取得する方が適切な情報にはイベントを使用すべきでない。」試行ごとの情報はLLMスパン属性＋ログブリッジスパンに属し、親のスパンイベントとしてではないことを確認                                                                                                                                                  |
-| フェーズ3設計文書 (`telemetry-subagent-spans-design.md`)                                                                    | デュアルエミットパターン (`qwen-code.subagent.id` + `gen_ai.agent.id`) と「プライベート名が正規」ルールを確立した。フェーズ4はTTFTとトークンフィールドについて同じ規約に従う                                                                                                                                                       |
+| ソース                                                                                                                      | 重要なポイント                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| claude-code (Anthropic) `claude.ts:1762, 1789, 1982, 2882`                                                                  | TTFTは `message_start` SSEイベントで `Date.now() - start` としてキャプチャ。`start` はリトライ試行ごとにリセット。`requestSetupMs = start - startIncludingRetries`。`attemptStartTimes` 配列は試行ごとに保持。アプローチの実現可能性を確認。彼らのTTFTセマンティクスは「最初のストリームイベント」(我々は「最初のコンテンツ」で分岐 — D1参照) |
+| claude-code `perfettoTracing.ts:549-671`                                                                                    | リクエストセットアップ → 試行N (リトライ) → 最初のトークン → サンプリングをネストされたB/Eペアとしてレンダリング。視覚的分解を示す。qwen-code はPerfettoがないため、同じ分解をOTel属性で行う                                                                                                                                |
+| claude-code `sessionTracing.ts:447`                                                                                         | `ttft_ms` のみがOTelスパンに含まれる (`requestSetupMs`、`samplingMs`、試行ごとのタイミングは含まれない)。我々は意図的にスパンに多くの情報を入れる — claude-code は視覚化用のPerfettoを持っているが、我々は持っていない                                                                                         |
+| opencode (sst/opencode) `session/llm.ts`、`route/client.ts`                                                                   | TTFT測定なし。単一の `LLM.run` Effect スパンがすべてをカバー。競合ツール間でギャップが存在することを確認。行動の参考にはならない                                                                                                                                                                              |
+| [OTel GenAI Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/) (ステータス: Development / Experimental) | `gen_ai.usage.input_tokens` (安定)、`gen_ai.usage.output_tokens` (安定)、`gen_ai.usage.cached_tokens` (実験)、`gen_ai.request.model` (安定)、`gen_ai.server.time_to_first_token` (実験、秒を倍精度浮動小数点数)。デュアルエミットパターンは #4410 の先例に従う                                                               |
+| [OTel Trace Spec — Span Events](https://opentelemetry.io/docs/specs/otel/trace/api/#add-events)                             | "イベントは、スパン属性としてより適切にキャプチャされる情報を記録するために使用すべきではない (SHOULD NOT)。" 試行ごとの情報は親のスパンイベントではなく、LLMスパン属性 + ログブリッジスパンに属することを確認                                                                                                                    |
+| フェーズ3設計ドキュメント (`telemetry-subagent-spans-design.md`)                                                                   | デュアルエミットパターン (`qwen-code.subagent.id` + `gen_ai.agent.id`) と「プライベート名が権威」ルールを確立。フェーズ4はTTFTとトークンフィールドで同じ規則に従う                                                                                                                                        |
 
-## 設計 — 7つの決定とその根拠
+## 設計 — 7つの決定、それぞれに正当性
 
-### D1 — TTFTのセマンティクス: 「ユーザーが見える最初のコンテンツを含むチャンク」
+### D1 — TTFTセマンティクス: 「ユーザーに表示されるコンテンツを含む最初のチャンク」
 
-TTFTは**成功した試行の**リクエスト送信から**ユーザーが見える出力を含む最初のストリームチャンク**までのウォールクロック時間を計測する。チャンクが「ユーザーが見える」とは、`candidates[0].content.parts` に含まれる正規化された `Part` が以下のいずれかの場合:
+TTFTは、**成功した試行**のリクエストディスパッチから、**ユーザーに見える出力を含む最初のストリームチャンク**までの壁掛け時間を測定する。チャンクが「ユーザーに見える」のは、正規化された `Part` のいずれかが `candidates[0].content.parts` 内で以下の条件を満たす場合：
 
-- `text`: 空でない文字列
+- `text` で空でない文字列
 - `functionCall` (ツール使用)
 - `inlineData` (画像、バイナリ)
 - `executableCode`
-- `thought` / reasoningコンテンツ (プロバイダーが公開するもの — Geminiの `thought`、Anthropicの `<thinking>` ブロック、OpenAI o1 reasoningチャンク)
+- `thought` / 推論コンテンツ (プロバイダーが公開するもの — Geminiの `thought`、Anthropicの `<thinking>` ブロック、OpenAI o1推論チャンク)
 
-`role` メタデータのみ、または `usageMetadata` のみ (最終的な使用サマリーチャンク) を含むチャンクはTTFTをトリガーしない。
+`role` メタデータのみまたは `usageMetadata` のみ (最終使用量サマリーチャンク) を含むチャンクはTTFTをトリガーしない。
 
-**「任意の種類の最初のストリームイベント」(claude-codeの選択) としない理由**: claude-codeはAnthropicプロセス固有のメタデータイベントである `message_start` でTTFTを計測している。これは実際のコンテンツより50〜300ms前に発火する。claude-codeの内部 `headlessProfiler.ts` は「ユーザーが何かを見た」というセマンティクスのために `time_to_first_response_ms` を別途分離しており、この区別を認識している。qwen-codeは複数のプロバイダー (Anthropic、OpenAI、Gemini、Qwen) にまたがっている。メタデータイベントのセマンティクスを選ぶと、AnthropicのTTFTがOpenAI (同様のメタデータのみの最初のイベントがない) のTTFTと本質的に異なるものになる。ユーザーが見えるコンテンツのセマンティクスは4つのプロバイダーで均一であり、「time-to-first-token」を文字通りに解釈したものに一致する。
+**なぜ「任意の種類の最初のストリームイベント」(claude-codeの選択) ではないのか**: claude-code は `message_start` (Anthropic固有のメタデータイベントで、実際のコンテンツより50〜300ms早く発生) でTTFTを測定する。彼らの内部の `headlessProfiler.ts` はすでに `time_to_first_response_ms` を「ユーザーが何かを見た」セマンティクスとして分離しており、違いを認識している。qwen-code は複数のプロバイダー (Anthropic、OpenAI、Gemini、Qwen) にまたがる — メタデータイベントセマンティクスを選択すると、AnthropicのTTFTは (類似のメタデータのみの最初のイベントがない) OpenAIのTTFTと根本的に異なることになる。ユーザー可視コンテンツセマンティクスは4プロバイダーすべてで統一されており、「time-to-first-token」に文字通り一致する。
 
-**`thought` / reasoningを含める理由**: オペレーターの観点からは、reasoningチャンクも「モデルが出力を生成した」という事実。除外するとreasoningが多いモデル (o1、Qwen thinkingバリアント) のTTFTが過小評価される。将来の拡張として `ttft_to_reasoning_ms` と `ttft_to_answer_ms` への分割は可能だが、フェーズ4の対象外。
+**なぜ `thought` / 推論を含めるのか**: オペレータの視点では、推論チャンクも「モデルが出力を生成した」ことに変わりはない。除外すると、推論重視モデル (o1、Qwen思考バリアント) のTTFTを過小評価する。将来の `ttft_to_reasoning_ms` 対 `ttft_to_answer_ms` への分割は可能。フェーズ4では行わない。
 
-**ツール呼び出しのみのチャンクを含める理由**: エージェントのツール決定LLM呼び出し (1つの `tool_use`、テキストなし) はqwen-codeのワークフローで一般的。除外するとこれらのリクエストでTTFTが未定義になる。`functionCall` Partは意味のある出力。
+**なぜツール呼び出しのみのチャンクを含めるのか**: エージェントのツール決定LLM呼び出し (テキストなしで `tool_use` のみ) は、qwen-code のワークフローで一般的。除外すると、これらのリクエストではTTFTが未定義になる。`functionCall` Partは意味のある出力である。
 
-**製品間比較の注記**: 設計文書は `qwen-code.ttft_ms ≈ claude-code.time_to_first_response_ms ≠ claude-code.ttft_ms` と明記する。製品をまたいで比較するオペレーターはユーザーが見えるコンテンツのセマンティクスで揃えるべき。
+**クロスプロダクト比較の注意**: 設計ドキュメントは、`qwen-code.ttft_ms ≈ claude-code.time_to_first_response_ms ≠ claude-code.ttft_ms` であることを明示的に示す。製品間で比較するオペレータは、ユーザー可視コンテンツセマンティクスに合わせる必要がある。
 
-### D2 — TTFT計測の場所: `LoggingContentGenerator.generateContentStream` のメソッドローカル変数
+### D2 — TTFT計測サイト: `LoggingContentGenerator.generateContentStream` のメソッドローカル変数
 
-最初のチャンク検出は `loggingContentGenerator.ts:393` の既存ストリームラッパー (`async function* processStreamGenerator`) 内で実行される。呼び出しごとの変数 (`start`、`ttftMs`) はメソッドのクロージャ内に存在し、**インスタンスフィールドには絶対に格納しない**。
+最初のチャンク検出は、既存のストリームラッパー `loggingContentGenerator.ts:393` (`async function* processStreamGenerator`) 内で実行される。呼び出しごとの変数 (`start`、`ttftMs`) はメソッドのクロージャに存在し、**インスタンスフィールドとしては決して持たない**。
 
-**インスタンスフィールドにしない理由**: `LoggingContentGenerator` は **`ContentGenerator` ごとに1回インスタンス化** (`contentGenerator.ts:377`) され、すべての並行する `generateContentStream` 呼び出し (サブエージェントのファンアウト、ウォームアップクエリ、`geminiChat` からのサイドクエリ) で共有される。インスタンスフィールドは並行する呼び出し間で上書きされ、インターリーブされたリクエストの片方でTTFTが無意味な値になる。
+**なぜ決してインスタンスフィールドにしてはいけないのか**: `LoggingContentGenerator` は `ContentGenerator` ごとに**1回**インスタンス化され (`contentGenerator.ts:377`)、すべての同時 `generateContentStream` 呼び出し (サブエージェントファンアウト、ウォームアップクエリ、`geminiChat` からのサイドクエリ) で共有される。インスタンスフィールドは同時呼び出し間で上書きされ、インターリーブされた2つのリクエストのうち1つで無意味なTTFTを生成する。
 
-**AsyncLocalStorage にしない理由**: ALSは機能するが、メソッドを外に出る必要のない状態にコンテキスト管理レイヤーを追加することになる。メソッドローカルはよりシンプルで、オーバーヘッドゼロ、リークリスクゼロ。
+**なぜ AsyncLocalStorage ではないのか**: ALSは機能するが、メソッドからエスケープする必要のない状態に対してコンテキスト管理レイヤーを追加することになる。メソッドローカルの方がシンプルで、オーバーヘッドがゼロ、リークのリスクもゼロ。
 
 ```ts
 // loggingContentGenerator.ts — generateContentStream 内
 const attemptStart = Date.now(); // 呼び出しごとのローカル
-const requestEntryTime = Date.now(); // これも呼び出しごとのローカル — D3参照
+const requestEntryTime = Date.now(); // 呼び出しごとのローカル — D3参照
 let ttftMs: number | undefined;
 const attemptStartTimes: number[] = [attemptStart];
 let retryTotalDelayMs = 0;
 let finalAttempt = 1;
-// ストリームラッパーは各チャンクを検査し、hasUserVisibleContent に一致する最初のチャンクで:
+// ストリームラッパーは各チャンクを検査。hasUserVisibleContent に一致する最初のチャンク:
 //   ttftMs = Date.now() - attemptStart;
 ```
 
-`hasUserVisibleContent(chunk)` はラッパーと同じ場所にある小さなスタンドアロンヘルパーで、テスト用にエクスポートされる:
+`hasUserVisibleContent(chunk)` は、ラッパーと同じ場所に配置された小さなスタンドアロンヘルパーで、テスト用にエクスポートされる：
 
 ```ts
 function hasUserVisibleContent(chunk: GenerateContentResponse): boolean {
@@ -104,64 +104,63 @@ function hasUserVisibleContent(chunk: GenerateContentResponse): boolean {
       p.functionCall !== undefined ||
       p.inlineData !== undefined ||
       p.executableCode !== undefined ||
-      // @ts-expect-error — `thought` はすべてのSDKバージョンにはないがプロバイダーが送出する
+      // @ts-expect-error — `thought` はすべてのSDKバージョンにあるわけではないが、プロバイダーは出力する
       p.thought !== undefined,
   );
 }
 ```
 
-### D3 — `request_setup_ms` の計算: エントリー時刻 vs 成功した試行の開始時刻
+### D3 — `request_setup_ms` の計算: エントリー時間と成功試行開始時間
 
-`request_setup_ms` は `generateContentStream`/`generateContent` のエントリーから**成功した試行の開始**までのウォールクロック時間を計測する。失敗したリトライ、バックオフスリープ、リトライ前の準備作業をすべて含む。
+`request_setup_ms` は、`generateContentStream`/`generateContent` のエントリーから**成功した試行の開始**までの壁掛け時間を測定する — 失敗したすべてのリトライ、バックオフスリープ、リトライ前の準備作業を含む。
 
 ```ts
 request_setup_ms = attemptStart_of_successful_attempt - requestEntryTime;
 ```
 
-`attempt === 1` でリトライが発生しなかった場合、`request_setup_ms` は小さい (SDKセットアップのみ)。リトライが発生した場合、リトライバジェット全体のオーバーヘッドを捉える。
+`attempt === 1` でリトライがない場合、`request_setup_ms` は小さい (SDKセットアップのみ)。リトライが発生した場合、リトライバジェット全体のオーバーヘッドをキャプチャする。
 
-**OTelスパンに含める理由 (Perfettoにのみ含めるclaude-codeからの乖離)**: 3つのレベルで根拠がある:
+**OTelスパンに配置する (claude-code とは異なり、claude-code はPerfettoにのみ配置)**: 3つのレベルの理由：
 
-1. **Perfettoがない** — qwen-codeには帯域外の可視化レイヤーがない。OTel属性が唯一のチャネル。
-2. **シングルトレースデバッグ** — オペレーターは `duration_ms=12000, request_setup_ms=11500, ttft_ms=200, sampling_ms=300` を見て即座に「リトライが11.5秒を費やし、モデル自体は高速だった」と診断できる。他のフィールドから `request_setup_ms` を計算するには `sampling_ms` も公開する必要があり、それはいずれにせよ行う (D6)。
-3. **無視できるコスト** — 1つのINT64属性。既存の `input_tokens`、`output_tokens` 属性と同等のオーダー。バックエンドの取り込みコストは重要でない。
+1. **Perfettoがない** — qwen-code には帯域外の可視化レイヤーがない。OTel属性が唯一のチャネルである。
+2. **単一トレースデバッグ** — オペレータは `duration_ms=12000, request_setup_ms=11500, ttft_ms=200, sampling_ms=300` を見て、即座に「リトライが11.5秒かかった。モデル自体は高速だった」と診断できる。他のフィールドから `request_setup_ms` を計算するには、`sampling_ms` も公開する必要があるが、それはすでに行っている (D6)。
+3. **コストは無視できる** — 1つのINT64属性。既存の `input_tokens`、`output_tokens` 属性と同じオーダー。バックエンド取り込みコストは問題にならない。
 
-### D4 — リトライテレメトリ: `retryWithBackoff` の `onRetry` コールバックオプション + `ApiRetryEvent` + AsyncLocalStorage伝播
+### D4 — リトライテレメトリ: `retryWithBackoff` の `onRetry` コールバックオプション + `ApiRetryEvent` + AsyncLocalStorage 伝搬
 
-> **フェーズ4b更新 (設計後の発見)**: このセクションは当初、claude-codeの「1つのLLMスパンがリトライループを所有する」パターンを前提として書かれていた。フェーズ4bの実装中に、qwen-codeの4つの `retryWithBackoff` 呼び出しサイト (`client.ts:2109`、`baseLlmClient.ts:235,333`、`geminiChat.ts:2035` — マージ時の行番号) がすべて `apiCall = () => contentGenerator.generateContent(...)` をラップしていることが判明した。リトライレイヤーはLoggingContentGeneratorの**上位**に位置する。各リトライ試行は `apiCall()` を新たに呼び出す → 新しい `qwen-code.llm_request` スパン。試行をまたがる単一の共有スパンは存在しない。LoggingContentGenerator内のアキュムレーターは機能しない。
+> **フェーズ4b更新 (設計後の発見)**: このセクションは元々、claude-code の「1つのLLMスパンがリトライループを所有する」パターンを前提として書かれていた。フェーズ4bの実装中に、qwen-code の4つの `retryWithBackoff` 呼び出し箇所 (`client.ts:2109`、`baseLlmClient.ts:235,333`、`geminiChat.ts:2035` — マージ時点の行番号) がすべて `apiCall = () => contentGenerator.generateContent(...)` をラップしていることが判明した。リトライレイヤーは LoggingContentGenerator の**上**に位置する。各リトライ試行は `apiCall()` を新たに呼び出す → 新しい `qwen-code.llm_request` スパン。試行間で共有される単一スパンは存在しない。LoggingContentGenerator 内のアキュムレータは機能しない。
 >
-> **解決策**: `AsyncLocalStorage` (`packages/core/src/utils/retryContext.ts` の `retryContext`) 経由でリトライ状態を伝播する。`retryWithBackoff` は各 `await fn()` を `retryContext.run({ attempt, requestSetupMs, retryTotalDelayMs }, fn)` でラップする。`LoggingContentGenerator` は同期的なプリアンブルでALSを読み取り、値を `endLLMRequestSpan` に転送する。これにより当初の計画よりも**豊富な**観測性が得られる — 試行ごとのスパンは独自の `duration_ms` / `ttft_ms` / エラー詳細を持ち、さらに試行ごとの `attempt` / `requestSetupMs` / `retryTotalDelayMs` 属性を通じてリトライバジェット内の位置も把握できる。
+> **解決策**: `AsyncLocalStorage` (`packages/core/src/utils/retryContext.ts` の `retryContext`) を介してリトライ状態を伝搬する。`retryWithBackoff` は各 `await fn()` を `retryContext.run({ attempt, requestSetupMs, retryTotalDelayMs }, fn)` でラップする。`LoggingContentGenerator` は同期的な前置きでALSを読み取り、値を `endLLMRequestSpan` に転送する。これにより、元の計画よりも**より豊かな**可観測性が得られる — 試行ごとの各スパンは、独自の `duration_ms` / `ttft_ms` / エラー詳細を持ち、さらに試行ごとの `attempt` / `requestSetupMs` / `retryTotalDelayMs` 属性を介してリトライバジェット内の位置を認識する。
 >
-> ALSアプローチはコードベースの既存パターン (`promptIdContext`、`subagentNameContext`、`agent-context`) と一致する — 新しい面を最小限にし、十分に理解されたセマンティクスを持つ。プランモードレビュープロセスで3回のレビューラウンドを通じて22件の問題が発見され、マージ前にすべて対応された。
+> ALSのアプローチは、コードベースの既存のパターン (`promptIdContext`、`subagentNameContext`、`agent-context`) と一致する — 最小限の新しいインターフェースで、よく理解されたセマンティクス。Planモードのレビュープロセスでこの改訂を3ラウンドのレビューで捉え、22の問題をすべてマージ前に解決した。
 
-`retryWithBackoff` は現在 `logRetryAttempt` (`retry.ts:343`) を呼び出し、これは `debugLogger.warn` にのみ書き込む。`RetryOptions` インターフェースをオプトインコールバックで拡張する:
+`retryWithBackoff` は現在 `logRetryAttempt` (`retry.ts:343`) を呼び出しているが、これは `debugLogger.warn` にのみ書き込む。`RetryOptions` インターフェースをオプトインコールバックで拡張する：
 
 ```ts
 // utils/retry.ts
 interface RetryOptions<T> {
-  // ... 既存フィールド ...
+  // ... 既存のフィールド ...
   /**
-   * オプション。各失敗した試行の後、バックオフスリープの前に1回呼び出される。
-   * 試行番号 (1始まり)、エラー、次の試行前の遅延を受け取る。
-   * LLM呼び出しサイトのテレメトリイベントを送出するために使用する。
-   * 非LLM呼び出し元 (例: channels/weixin) では undefined のままにして
-   * LLM専用テレメトリチャネルへの出力を避ける。
+   * オプション。失敗した試行ごとに、バックオフスリープの前に1回呼び出される。
+   * 試行番号（1ベース）、エラー、および次の試行までの遅延を受け取る。
+   * LLM呼び出しサイトのテレメトリイベントを出力するために使用する。
+   * 非LLM呼び出し元 (例: channels/weixin) には undefined を指定し、
+   * LLM固有のテレメトリチャネルでサイレントにする。
    */
   onRetry?: (info: RetryAttemptInfo) => void;
 }
 
 interface RetryAttemptInfo {
-  attempt: number; // 1始まり、debugLogger出力と一致
+  attempt: number; // 1ベース、debugLogger の出力と一致
   error: unknown;
   errorStatus?: number;
-  delayMs: number; // 次の試行前のバックオフ遅延
+  delayMs: number; // 次の試行までのバックオフ遅延
 }
 ```
 
-4つのLLM呼び出しサイト (`client.ts:1540`、`baseLlmClient.ts:193,282`、`geminiChat.ts:1039`) は新しい `ApiRetryEvent` を送出するコールバックを登録する:
-
+4つのLLM呼び出し箇所 (`client.ts:1540`、`baseLlmClient.ts:193,282`、`geminiChat.ts:1039`) は、新しい `ApiRetryEvent` を出力するコールバックを登録する：
 ```ts
-// types.ts — ContentRetryEvent の兄弟となる新しいイベントクラス
+// types.ts — 新しいイベントクラス、ContentRetryEvent と同階層
 export class ApiRetryEvent implements BaseTelemetryEvent {
   'event.name': typeof EVENT_API_RETRY;
   'event.timestamp': string;
@@ -169,47 +168,47 @@ export class ApiRetryEvent implements BaseTelemetryEvent {
   prompt_id?: string;
   attempt_number: number; // 1始まり
   error_type: string;
-  error_message: string; // 256文字に切り捨て
+  error_message: string; // 256文字に切り詰め
   status_code?: number;
   retry_delay_ms: number;
-  // ... duration_ms は retry_delay_ms に設定され、LogToSpanProcessor が
-  // 意味のある幅のブリッジスパンをレンダリングできるようにする
+  // ... duration_ms は retry_delay_ms に設定されるため、LogToSpanProcessor は
+  // 意味のある幅のブリッジスパンを描画する
   duration_ms: number;
 }
 ```
 
-**新しいイベントクラスとして定義し `ContentRetryEvent` を拡張しない理由**:
+**なぜ新しいイベントクラスで、`ContentRetryEvent` を拡張しないのか**：
 
-- `ContentRetryEvent` には2つのダウンストリームコンシューマー (qwen-logger、ログレコードエクスポート) がある。ペイロードを変更すると破壊的変更のリスクがある。
-- 「content retry」という命名はセマンティクス的にコンテンツ復旧リトライ (無効なストリーム、スキーマ修復) を指す — レート制限リトライを含めるとスキーマが曖昧になる。
-- 新しいイベントは加算的であり、コンシューマーへの驚きがない。
+- `ContentRetryEvent` には2つの下流コンシューマー（qwen-logger、log-record エクスポート）が存在します。ペイロードを変更すると、それらが壊れるリスクがあります。
+- "content retry" という命名は、意味的にコンテンツ回復のリトライ（無効なストリーム、スキーマ修復）を指しており、レート制限リトライまでカバーするように拡張するとスキーマが曖昧になります。
+- 新しいイベントは追加的なものであり、コンシューマーに驚きを与えません。
 
-**`retry.ts` にコールバックをハードコードしない理由**: `retry.ts` は `channels/weixin/src/api.ts` (Microsoftメッセージング APIリトライ) からも呼び出される。retry.ts にLLMテレメトリをハードカップリングすると、非LLMリトライで `ApiRetryEvent` が送出される。`onRetry` コールバックは呼び出し元ごとのオプトイン — LLM呼び出し元はオプトイン、weixin呼び出し元はオプトアウト。
+**なぜ `retry.ts` 内部にコールバックを埋め込まないのか**：`retry.ts` は `channels/weixin/src/api.ts`（microsoft メッセージング API リトライ）からも呼び出されます。LLM テレメトリを retry.ts にハードコードすると、非 LLM のリトライに対しても `ApiRetryEvent` が出力されてしまいます。`onRetry` コールバックは呼び出し元ごとにオプトイン方式であり、LLM 呼び出し元はオプトインし、weixin 呼び出し元はオプトインしません。
 
-**ContentRetryEvent との共存**: ContentRetryEvent は `geminiChat.ts:806,830` 内のコンテンツ復旧リトライのためにそのまま残る。ApiRetryEvent は `retryWithBackoff` からのレート制限/5xx リトライをカバーする。2つのイベントは異なるレイヤーから発火され、重複することはない。両イベントの既存のログブリッジ動作は `LogToSpanProcessor` 経由で維持される — 両イベントはフェーズ1の配線により自動的にアクティブなLLMスパン配下にネストされる。
+**ContentRetryEvent との共存**：ContentRetryEvent はそのまま維持され、`geminiChat.ts:806,830` 内のコンテンツ回復リトライをカバーします。ApiRetryEvent は `retryWithBackoff` からのレート制限 / 5xx リトライをカバーします。2つのイベントは異なるレイヤーから発火し、決して重複しません。両方のイベントの既存のログブリッジ動作は `LogToSpanProcessor` によって維持されます。どちらのイベントもアクティブな LLM スパンの下に自動的にネストされます（Phase 1 の配線により、リトライ中は LLM スパンがアクティブであることが保証されています）。
 
-**永続的リトライモード (`QWEN_CODE_UNATTENDED_RETRY`)**: 単一の429ループリクエストで50件以上のイベントが送出される可能性がある。フェーズ4での送出レート制限はスコープ外 — 本番ボリュームが問題になった場合は、スパンごとの上限とサマリーイベントをフォローアップPRで追加する。親LLMスパンの集計 `attempt` と `retry_total_delay_ms` (D5) はイベント上限に関係なく正確なまま。
+**永続リトライモード（`QWEN_CODE_UNATTENDED_RETRY`）**：単一の 429 ループリクエストで 50 以上のイベントが出力される可能性があります。Phase 4 では出力をレート制限する範囲外とします。本番ボリュームが耐え難い場合は、フォローアップ PR でスパンあたりの上限と集約イベントを追加します。親 LLM スパン（D5）上の集約された `attempt` と `retry_total_delay_ms` は、イベント上限の有無にかかわらず正確なままです。
 
-### D5 — 親LLMスパンの集計: スカラー属性のみ (マップ型属性なし)
+### D5 — 親 LLM スパンの集約：スカラー属性のみ（マップ型属性は不可）
 
-OTelスパン属性はスカラー (`string | number | boolean | これらの配列`)。マップ型属性 (例: `retry_count_by_status: {429:2, 503:1}`) はJSONシリアライズが必要でクエリが煩雑。スキップする。
+OTel スパン属性はスカラー（`string | number | boolean | これらの配列`）です。マップ型属性（例：`retry_count_by_status: {429:2, 503:1}`）は JSON シリアル化が必要で、クエリが扱いにくくなります。スキップします。
 
-| 属性                       | 型     | セマンティクス                                                                                                                                               |
-| -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `attempt`                  | int    | `retryContext.attempt` からの1始まりの単調カウンター (この試行のイテレーション)。常に設定される (リトライコンテキストがない場合はデフォルト1)               |
-| `retry_total_delay_ms`     | int    | この試行が開始される前の累積バックオフスリープ。直接呼び出しの場合は未定義。試行1では0。後続のリトライ試行では > 0                                         |
-| `ttft_ms`                  | int    | D1によるTTFT。非ストリーミングまたは最初のチャンク前に中断されたリクエストの場合は未定義                                                                    |
-| `request_setup_ms`         | int    | D3による                                                                                                                                                     |
-| `sampling_ms`              | int    | D6による                                                                                                                                                     |
-| `output_tokens_per_second` | double | 派生値。`output_tokens / (sampling_ms / 1000)`。`sampling_ms === 0` の場合は未定義                                                                          |
+| 属性                          | 型     | セマンティクス                                                                                                             |
+| ----------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `attempt`                     | int    | `retryContext.attempt` から取得する 1 始まりの単調増加カウンター（この試行のイテレーション）。常に設定される（リトライコンテキストがない場合はデフォルト 1） |
+| `retry_total_delay_ms`        | int    | この試行が開始される前の累積バックオフスリープ時間。直接呼び出しの場合は未定義。attempt 1 の場合は 0。それ以降のリトライ試行では >0 |
+| `ttft_ms`                     | int    | D1 に従った TTFT。非ストリーミングまたは最初のチャンクより前に中断されたリクエストでは未定義                             |
+| `request_setup_ms`            | int    | D3 に従う                                                                                                               |
+| `sampling_ms`                 | int    | D6 に従う                                                                                                               |
+| `output_tokens_per_second`    | double | 派生値；`output_tokens / (sampling_ms / 1000)`；`sampling_ms === 0` の場合は未定義                                        |
 
-試行ごとのステータスコード分布 (例: 「3回の試行のうち2回が429」) は `ApiRetryEvent` レコードのログブリッジスパンからクエリ可能。親にフラット化された属性として重複させる必要はない。
+試行ごとのステータスコード分布（例：「3 回中 2 回が 429 だった」）は、`ApiRetryEvent` レコードのログブリッジスパンからクエリ可能です。親スパンにフラット属性として複製する必要はありません。
 
-**`sampling_ms` と `output_tokens_per_second` をスパンに含める理由**: 多くのスパンを集計するバックエンドクエリで計算するのは派生可能だが煩雑。`request_setup_ms` と同じコストベネフィット (D3)。
+**なぜ `sampling_ms` と `output_tokens_per_second` をスパンに含めるのか**：導出可能ですが、多くのスパンをまたいでバックエンドクエリで計算するのは面倒です。`request_setup_ms`（D3）と同様のコストベネフィットです。
 
-### D6 — `recordApiRequestBreakdown()` を4フェーズのうち3フェーズで有効化
+### D6 — 4 つのフェーズのうち 3 つで `recordApiRequestBreakdown()` を有効化
 
-`endLLMRequestSpan` (またはそれを呼び出すラッパー) で、TTFT/セットアップ/サンプリングを計算した後に送出する:
+`endLLMRequestSpan`（またはそれを呼び出すラッパー）内で、TTFT/セットアップ/サンプリングを計算した後、以下を出力します：
 
 ```ts
 recordApiRequestBreakdown(config, model, [
@@ -219,86 +218,86 @@ recordApiRequestBreakdown(config, model, [
 ]);
 ```
 
-**`TOKEN_PROCESSING` をスキップする理由**: qwen-codeはストリームチャンク処理をインライン (`loggingContentGenerator.ts:644` のラッパーで統合) で行う。ポストストリームのラップアップフェーズは <10ms であり、アーキテクチャ的に区別する価値がない。無意味な値を入れるとヒストグラムが汚染される。enum値を未使用のままにするのは安全 — `apiRequestBreakdownHistogram.record(value, {model, phase})` は `phase` をラベルとするヒストグラムであり、欠損ラベルはクエリに存在しないだけ。
+**なぜ `TOKEN_PROCESSING` をスキップするのか**：qwen-code はストリームチャンク処理をインラインで行います（統合は `loggingContentGenerator.ts:644` のラッパーで行われます）。ストリーム後の後処理フェーズは 10ms 未満であり、アーキテクチャ的に明確ではありません。意味のない値を設定するとヒストグラムが汚染されます。enum 値を使用しないままにしても安全です。`apiRequestBreakdownHistogram.record(value, {model, phase})` は単に `phase` をラベルとするヒストグラムであり、欠落したラベルはクエリで単に存在しないだけです。
 
-**`NETWORK_LATENCY` を再定義しない理由**: スペックの名前は若干誤解を招く (純粋なネットワークレイテンシではなく、ネットワーク + 最初のトークン生成) が:
+**なぜ `NETWORK_LATENCY` を再定義しないのか**：仕様名はやや誤解を招きます（純粋なネットワークレイテンシではなく、ネットワーク + 最初のトークン生成です）。しかし：
 
-- enumは `metrics.ts:330-334` に含まれ、`index.ts:117` からエクスポートされ、テストされている。
-- バックエンドダッシュボードはすでにこれらのフェーズ名を参照している可能性がある。
-- リネームや新しいフェーズの追加は、わずかな精度向上のための破壊的変更になる。
+- この enum は `metrics.ts:330-334` の一部であり、`index.ts:117` からエクスポートされ、テストされています。
+- バックエンドのダッシュボードは既にこれらのフェーズ名を参照している可能性があります。
+- 名前の変更や新しいフェーズの追加は、ごくわずかな精度向上のために破壊的変更となります。
 
-設計文書でセマンティクスを文書化し、enumは変更しない。
+設計ドキュメントでセマンティクスを文書化し、enum は変更しないでください。
 
-**スパンパスに置き、並列でなくする理由**: `recordApiRequestBreakdown` をスパン属性の書き込みと同じ場所に置くことで — 単一のゲートされた送出ポイント (D7のべき等性参照)、単一の順序制約となる。
+**なぜスパン上で、並列ではないのか**：`recordApiRequestBreakdown` をスパン属性の書き込みと同じ場所に配置し、単一のゲート付き出力ポイント（D7 の冪等性を参照）、単一の順序不変条件を維持します。
 
-### D7 — `endLLMRequestSpan` のべき等性: 既存のダブルエンドガードでゲートされたメトリクス記録
+### D7 — `endLLMRequestSpan` の冪等性：既存の二重終了ガードによるメトリクス記録のゲート
 
-フェーズ1.5 (#4302) で `endLLMRequestSpan` が2回呼び出される可能性があることが確立された (中断パス + エラーパスの衝突)。`session-tracing.ts:~470` の既存ガード (`if (!activeSpans.has(...)) return;`) はダブル `span.end()` を防ぐ。フェーズ4のメトリクス記録 (D6) は **同じガードブロック内、`span.end()` の前に位置しなければならない**:
+Phase 1.5（#4302）では、`endLLMRequestSpan` が2回呼び出される可能性があることが確立されました（中止パスとエラーパスの衝突）。`session-tracing.ts:~470` の既存ガード（`if (!activeSpans.has(...)) return;`）は、二重の `span.end()` を防ぎます。Phase 4 のメトリクス記録（D6）は、**同じガードブロック内かつ `span.end()` の前に配置する必要があります**：
 
 ```ts
 // session-tracing.ts — endLLMRequestSpan
 const llmCtx = activeSpans.get(spanRef);
-if (!llmCtx) return;            // すでに終了 — ダブルエンドガード
-activeSpans.delete(spanRef);    // 終了を確定
+if (!llmCtx) return;            // 既に終了 — 二重終了ガード
+activeSpans.delete(spanRef);    // 終了を主張
 
-// ... durationを計算し、属性を設定 ...
+// ... 期間を計算し、属性を設定 ...
 if (metadata) {
-  recordApiRequestBreakdown(config, llmCtx.attributes.model, [...]);   // 新規 — ゲートされている
+  recordApiRequestBreakdown(config, llmCtx.attributes.model, [...]);   // 新規 — ゲート付き
   recordTokenUsageMetrics(...); // 既存
 }
 
 span.end();
 ```
 
-これにより、LLMリクエストごとにメトリクスが**正確に1回**記録され、スパンライフサイクルと一致することが保証される。
+これにより、メトリクスが LLM リクエストごとに **正確に1回** 記録されることが保証され、スパンのライフサイクルと一致します。
 
-**`loggingContentGenerator` で記録しない理由**: 中断パスを検知できない。スパンライフサイクルレイヤーで記録することで、スパンを開いたすべてのLLMリクエストが成功/失敗/中断に関わらず正確に1つのbreakdownサンプルを生成することが保証される。
+**なぜ `loggingContentGenerator` で記録しないのか**：中止パスを認識しません。スパンライフサイクルレイヤーで記録することで、成功/失敗/中止に関わらず、スパンを開いたすべての LLM リクエストが1つのブレークダウンサンプルを生成します。
 
-### D8 — GenAI セマンティックコンベンション デュアルエミット (プライベート名が正規)
+### D8 — GenAI セマンティックコンベンションの二重出力（プライベート名を正規とする）
 
-GenAI semconv属性に対応するフェーズ4の各属性はスパンに2回書き込まれる:
+OTel GenAI セマンティックコンベンション（セマコンブ）属性に対応する各 Phase 4 属性は、スパン上で2回書き込まれます：
 
-| qwen-code プライベート (正規)              | GenAI semconv (互換レイヤー)                    | 単位変換         | スペックステータス |
-| ------------------------------------------ | ----------------------------------------------- | ---------------- | ------------------ |
-| `ttft_ms` (ms、int)                        | `gen_ai.server.time_to_first_token` (秒、double) | `ttftMs / 1000` | Experimental       |
-| `input_tokens` (int)                       | `gen_ai.usage.input_tokens` (int)               | 同一             | Stable             |
-| `output_tokens` (int)                      | `gen_ai.usage.output_tokens` (int)              | 同一             | Stable             |
-| `cached_input_tokens` (int) (存在する場合) | `gen_ai.usage.cached_tokens` (int)              | 同一             | Experimental       |
-| `qwen-code.model` (string)                 | `gen_ai.request.model` (string)                 | 同一             | Stable             |
+| qwen-code プライベート（正規）            | GenAI セマコンブ（互換層）                    | 単位変換        | 仕様ステータス |
+| ----------------------------------------- | --------------------------------------------- | --------------- | -------------- |
+| `ttft_ms` (ms, int)                       | `gen_ai.server.time_to_first_token` (s, double) | `ttftMs / 1000` | Experimental   |
+| `input_tokens` (int)                      | `gen_ai.usage.input_tokens` (int)              | 同一            | Stable         |
+| `output_tokens` (int)                     | `gen_ai.usage.output_tokens` (int)             | 同一            | Stable         |
+| `cached_input_tokens` (int)（存在する場合） | `gen_ai.usage.cached_tokens` (int)             | 同一            | Experimental   |
+| `qwen-code.model` (string)                | `gen_ai.request.model` (string)                | 同一            | Stable         |
 
-**LLMスパンの既存トークン属性名** (`endLLMRequestSpan` でフェーズ4より前に設定): qwen-codeはすでにベア名の `input_tokens` と `output_tokens` を使用している。フェーズ4は #4410 のパターンに合わせて `gen_ai.usage.*` の兄弟を追加する。ベア名は残す。**リネームしない**。
+**LLM スパン上の既存のトークン属性名**（Phase 4 より前の `endLLMRequestSpan` で設定）：qwen-code は既に `input_tokens` および `output_tokens` というベアの名前を使用しています。Phase 4 では、`gen_ai.usage.*` の兄弟を追加して #4410 のパターンに合わせます。ベアの名前はそのままにし、**名前を変更しないでください**。
 
-GenAI semconv に相当するものがないフィールド — `request_setup_ms`、`sampling_ms`、`retry_total_delay_ms`、`attempt`、`output_tokens_per_second` — はqwen-code名前空間のみで送出される。
+GenAI セマコンブに相当するものがないフィールド（`request_setup_ms`、`sampling_ms`、`retry_total_delay_ms`、`attempt`、`output_tokens_per_second`）は、qwen-code 名前空間の下でのみ出力されます。
 
-**「プライベートが正規、semconv は互換」の理由**:
+**なぜ「プライベートを正規とし、セマコンブを互換とする」のか**：
 
-- 内部ダッシュボード、SLO、debugLogger出力、qwen-logger RUM、ARMSクエリ — すべて `ttft_ms` 等を参照する。これらを正規として扱うことで、一斉移行が不要になる。
-- Experimental GenAI semconv は Stable に達する前に `gen_ai.server.time_to_first_token` をリネームする可能性がある。その場合はsemconv送出を更新するが、qwen-codeの名前は変わらない。
-- 将来のスペック対応バックエンド (Datadog AI views、Honeycomb AI、ARMS GenAI dashboards) は私たちの関与なしに `gen_ai.*` 属性を自動的に取得する。
+- 内部ダッシュボード、SLO、debugLogger 出力、qwen-logger RUM、ARMS クエリはすべて `ttft_ms` などを参照します。これらを正規とすることで、フラグ日移行を回避できます。
+- Experimental の GenAI セマコンブは、Stable に達する前に `gen_ai.server.time_to_first_token` がリネームされる可能性があります。もしリネームされた場合、セマコンブの出力を更新します。qwen-code の名前は動きません。
+- 将来、仕様を認識するバックエンド（Datadog AI ビュー、Honeycomb AI、ARMS GenAI ダッシュボード）は、私たちの関与なしに自動的に `gen_ai.*` 属性を取得します。
 
-**デュアルエミット単位変換の理由** (ms ↔ 秒): GenAI semconv はレイテンシに秒をdoubleとして選択したが、qwen-codeはms-as-int を選択した (スパン上の既存の `duration_ms` と一致)。両方の表現に価値があり、変換は安価。
+**なぜ二重出力で単位変換（ms ↔ 秒）を行うのか**：GenAI セマコンブはレイテンシに double の秒を選択しました。qwen-code は ms の int（スパン上の既存の `duration_ms` と一致）を選択しました。どちらの表現にも価値があり、変換はコストが低いです。
 
-## ヘルパーAPI (`session-tracing.ts` への加算)
+## ヘルパー API（`session-tracing.ts` への追加）
 
 ```ts
-// session-tracing.ts — LLMRequestMetadata インターフェースの拡張 (加算)
+// session-tracing.ts — LLMRequestMetadata インターフェースを拡張（追加的）
 export interface LLMRequestMetadata {
-  // ... 既存フィールド: inputTokens、outputTokens、cachedInputTokens、success、error、...
+  // ... 既存フィールド: inputTokens, outputTokens, cachedInputTokens, success, error, ...
 
-  /** 成功した試行の開始からユーザーが見える最初のコンテンツチャンクまでの時間 (ms)。非ストリーミングまたは最初のチャンク前に中断されたリクエストの場合は未定義。 */
+  /** 成功した試行の開始から最初のユーザー可視コンテンツチャンクまでの時間（ms）。非ストリーミングまたは最初のチャンクより前に中断されたリクエストでは未定義。 */
   ttftMs?: number;
 
-  /** generateContent エントリーから成功した試行の開始までの時間 (ms)。失敗したリトライ+バックオフをすべて含む。 */
+  /** generateContent エントリから成功した試行の開始までの時間（ms）。すべての失敗リトライ＋バックオフを含む。 */
   requestSetupMs?: number;
 
-  /** 最終試行番号 (1始まり)。1 = リトライなし。 */
+  /** 最終試行番号（1始まり）。1 = リトライなし。 */
   attempt?: number;
 
-  /** 成功した試行の前のすべてのバックオフ遅延の合計 (ms)。 */
+  /** 成功した試行までのすべてのバックオフ遅延の合計（ms）。 */
   retryTotalDelayMs?: number;
 }
 
-// 新しいエクスポートヘルパーなし — フェーズ4は拡張されたメタデータで startLLMRequestSpan / endLLMRequestSpan を再利用する。
+// 新しいエクスポートヘルパーは不要 — Phase 4 は拡張されたメタデータを使用して既存の startLLMRequestSpan / endLLMRequestSpan を再利用する。
 ```
 
 ```ts
@@ -313,7 +312,7 @@ export class ApiRetryEvent implements BaseTelemetryEvent {
   error_message: string;
   status_code?: number;
   retry_delay_ms: number;
-  duration_ms: number;  // = retry_delay_ms、LogToSpanProcessor ブリッジスパンの幅を決定
+  duration_ms: number;  // = retry_delay_ms、LogToSpanProcessor ブリッジスパンの幅を制御
 
   constructor(opts: { model: string; promptId?: string; attemptNumber: number; error: unknown; statusCode?: number; retryDelayMs: number }) { ... }
 }
@@ -326,7 +325,7 @@ export function logApiRetry(config: Config, event: ApiRetryEvent): void { ... }
 ```
 
 ```ts
-// utils/retry.ts — RetryOptions の拡張
+// utils/retry.ts — RetryOptions 拡張
 interface RetryOptions<T> {
   // ... 既存 ...
   onRetry?: (info: RetryAttemptInfo) => void;
@@ -339,14 +338,14 @@ interface RetryAttemptInfo {
   delayMs: number;
 }
 
-// retryWithBackoff 内、今日 logRetryAttempt が呼び出されている箇所:
+// Inside retryWithBackoff, where logRetryAttempt is called today:
 options.onRetry?.({ attempt, error, errorStatus, delayMs: actualDelay });
 logRetryAttempt(attempt, error, errorStatus); // 既存の debugLogger 呼び出しは変更なし
 ```
 
 ## ライフサイクルの配線
 
-### ストリーミングパス (一般的なケース)
+### ストリーミングパス（一般的なケース）
 
 ```ts
 // loggingContentGenerator.ts:283 — generateContentStream
@@ -357,14 +356,14 @@ async generateContentStream(req, userPromptId): Promise<AsyncGenerator<GenerateC
   let retryTotalDelayMs = 0;
   let finalAttempt = 1;
 
-  // 既存の startLLMRequestSpan を使用 (フェーズ1)
-  // 使用中のリトライレイヤーに onRetry コールバックを渡す:
+  // 既存の startLLMRequestSpan を使用（Phase 1）
+  // 使用中のリトライレイヤーに onRetry コールバックを渡す：
   const onRetry: RetryAttemptInfo & { invoke: ... } = (info) => {
-    finalAttempt = info.attempt + 1;        // 試行 N+1 を開始しようとしている
+    finalAttempt = info.attempt + 1;        // これから attempt N+1 を開始する
     retryTotalDelayMs += info.delayMs;
-    attemptStart = Date.now() + info.delayMs; // 近似値。実際のリセットは次の試行の先頭
+    attemptStart = Date.now() + info.delayMs; // 概算；実際のリセットは次の試行の先頭で行われる
     attemptStartTimes.push(attemptStart);
-    // ApiRetryEvent を送出
+    // ApiRetryEvent を出力
     logApiRetry(this.config, new ApiRetryEvent({
       model: req.model,
       promptId: userPromptId,
@@ -375,7 +374,7 @@ async generateContentStream(req, userPromptId): Promise<AsyncGenerator<GenerateC
     }));
   };
 
-  // ストリームラッパーが最初のユーザーが見えるチャンクを検出:
+  // ストリームラッパーが最初のユーザー可視チャンクを検出：
   return this.processStreamGenerator(stream, ..., {
     onFirstUserVisibleChunk: (now) => {
       ttftMs = now - attemptStart;
@@ -384,7 +383,7 @@ async generateContentStream(req, userPromptId): Promise<AsyncGenerator<GenerateC
 }
 ```
 
-スパン終了時 (フェーズ1の `endLLMRequestSpan` フローにすでにある)、`LLMRequestMetadata` に新しいフィールドを含める:
+スパン終了時（既に Phase 1 の `endLLMRequestSpan` フロー内）、新しいフィールドを `LLMRequestMetadata` に含めます：
 
 ```ts
 endLLMRequestSpan(llmSpan, {
@@ -401,14 +400,14 @@ endLLMRequestSpan(llmSpan, {
 
 ### 非ストリーミングパス
 
-`generateContent` (`loggingContentGenerator.ts:212`) はストリーミングチャンクを生成しない。TTFTは `undefined`。`request_setup_ms` は引き続き意味を持つ (リトライオーバーヘッドを捉える)。breakdownメトリクスは3フェーズではなく2フェーズ (REQUEST_PREPARATION + RESPONSE_PROCESSING、`RESPONSE_PROCESSING = duration_ms - request_setup_ms`) を記録する。
+`generateContent`（`loggingContentGenerator.ts:212`）はストリーミングチャンクを生成しません。TTFT は `undefined` です。`request_setup_ms` は依然として意味を持ちます（リトライオーバーヘッドをキャプチャ）。ブレークダウンメトリクスは 3 フェーズではなく 2 フェーズ（REQUEST_PREPARATION + RESPONSE_PROCESSING。ここで `RESPONSE_PROCESSING = duration_ms - request_setup_ms`）を記録します。
 
-### リトライレイヤーの統合 (4サイト)
+### リトライレイヤー統合（4ヶ所）
 
-4つのLLM `retryWithBackoff` 呼び出しサイトそれぞれに `onRetry` を追加する:
+4 つの LLM `retryWithBackoff` 呼び出しサイトのそれぞれに `onRetry` を追加します：
 
 ```ts
-// client.ts:1540 (baseLlmClient.ts:193、282、geminiChat.ts:1039 でも同様)
+// client.ts:1540（baseLlmClient.ts:193, 282、geminiChat.ts:1039 も同様）
 const result = await retryWithBackoff(apiCall, {
   ...existingOptions,
   onRetry: (info) => {
@@ -423,122 +422,122 @@ const result = await retryWithBackoff(apiCall, {
         retryDelayMs: info.delayMs,
       }),
     );
-    // LoggingContentGenerator のローカルリトライアキュムレーターにもフィードバック
-    // (スコープ内にある場合 — LoggingContentGenerator を経由しない呼び出し元では、
-    // endLLMRequestSpan がLLMレイヤーで呼び出されるため、LLMスパンはメタデータパス経由で
-    // `attempt` と `retry_total_delay_ms` を受け取る)
+    // LoggingContentGenerator のローカルリトライアキュムレータにもフィードバックする
+    // （スコープ内の場合 — LoggingContentGenerator を経由しない呼び出し元の場合、
+    // LLM スパンはメタデータパスを通じて依然として `attempt` と `retry_total_delay_ms` を取得する。
+    // endLLMRequestSpan は LLM レイヤーで呼び出されるため）
   },
 });
 ```
 
-非LLM呼び出し元 (`channels/weixin/src/api.ts`) は `onRetry` を**登録しない** — そのリトライで `ApiRetryEvent` は送出されず、今日の動作と一致する。
+非 LLM 呼び出し元（`channels/weixin/src/api.ts`）は **`onRetry` を登録しません** — そのリトライに対して `ApiRetryEvent` は出力されず、現在の動作と一致します。
 
-## 並行安全性 — 主要な保証
+## 並行安全性 — 重要な保証
 
-`LoggingContentGenerator` インスタンスは共有される (`ContentGenerator` ごとに1つ、`contentGenerator.ts:377`)。3つの並行する `generateContentStream` 呼び出し (例: `coreToolScheduler.runConcurrently` 経由で3つのサブエージェントがファンアウト) は `generateContentStream` の3つの独立したクロージャを実行する:
+`LoggingContentGenerator` インスタンスは共有されます（`ContentGenerator` ごとに1つ、`contentGenerator.ts:377`）。3つの同時 `generateContentStream` 呼び出し（例：3つのサブエージェントが `coreToolScheduler.runConcurrently` 経由でファンアウト）は、`generateContentStream` の3つの独立したクロージャを実行します：
 
 ```
-call_A: attemptStart_A、ttftMs_A、... (クロージャ)
-call_B: attemptStart_B、ttftMs_B、... (クロージャ)
-call_C: attemptStart_C、ttftMs_C、... (クロージャ)
+call_A: attemptStart_A, ttftMs_A, ... (クロージャ)
+call_B: attemptStart_B, ttftMs_B, ... (クロージャ)
+call_C: attemptStart_C, ttftMs_C, ... (クロージャ)
 ```
 
-呼び出しごとのローカルは重なることがない。ストリームチャンクは各呼び出しのローカル `attemptStart` に対して検出される。スパン属性は各呼び出し自身の `endLLMRequestSpan` で設定される。
+呼び出しごとのローカル変数は決して重複しません。ストリームチャンクは各呼び出しのローカル `attemptStart` に対して検出されます。スパン属性は各呼び出し自身の `endLLMRequestSpan` で設定されます。
 
-`AsyncLocalStorageContextManager` (NodeSDKにより `sdk.ts:273` で登録) はアクティブなOTelコンテキスト — したがって `startLLMRequestSpan` に渡される親スパン — がファイバーごとに正しいことをすでに保証している。
+`AsyncLocalStorageContextManager`（NodeSDK によって `sdk.ts:273` で登録）は、アクティブな OTel コンテキスト、したがって `startLLMRequestSpan` に渡される親スパンがファイバーごとに正しいことを既に保証しています。
 
-## 変更ファイル
+## 変更するファイル
 
-| ファイル                                                                         | 変更                                                                                                                                                                                                                                      | LOC 見積もり |
-| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| `packages/core/src/telemetry/constants.ts`                                       | `EVENT_API_RETRY` 定数を追加                                                                                                                                                                                                              | +2           |
-| `packages/core/src/telemetry/types.ts`                                           | `ApiRetryEvent` クラス + ユニオンメンバーを追加                                                                                                                                                                                           | +40          |
-| `packages/core/src/telemetry/loggers.ts`                                         | `logApiRetry()` 関数を追加                                                                                                                                                                                                                | +20          |
-| `packages/core/src/telemetry/qwen-logger/qwen-logger.ts`                         | RUMダウンストリームの一貫性のために `logApiRetryEvent()` を追加                                                                                                                                                                           | +20          |
-| `packages/core/src/telemetry/session-tracing.ts`                                 | `LLMRequestMetadata` を拡張 (ttftMs、requestSetupMs、attempt、retryTotalDelayMs)。`endLLMRequestSpan` を拡張して新しい属性 + breakdownメトリクス + デュアルエミット gen_ai.\* を設定                                                       | +60          |
-| `packages/core/src/telemetry/metrics.ts`                                         | `endLLMRequestSpan` 内の `recordApiRequestBreakdown` 呼び出しサイトを配線 (既存レコーダーに変更なし)                                                                                                                                     | 0            |
-| `packages/core/src/utils/retry.ts`                                               | `RetryOptions` に `onRetry?: (info: RetryAttemptInfo) => void` を追加。`RetryAttemptInfo` をエクスポート。既存の logRetryAttempt サイトでコールバックを呼び出す                                                                           | +25          |
-| `packages/core/src/core/loggingContentGenerator/loggingContentGenerator.ts`      | TTFTキャプチャ: メソッドローカルアキュムレーター + `hasUserVisibleContent` ヘルパー + ストリームラッパーでの最初のチャンク検出。`endLLMRequestSpan` に新しいメタデータを渡す                                                              | +80          |
-| `packages/core/src/core/client.ts`                                               | `retryWithBackoff` 呼び出しサイト (`client.ts:1540`) で `onRetry` コールバックを配線                                                                                                                                                     | +15          |
-| `packages/core/src/core/baseLlmClient.ts`                                        | 2つの `retryWithBackoff` 呼び出しサイトで `onRetry` コールバックを配線                                                                                                                                                                   | +25          |
-| `packages/core/src/core/geminiChat.ts`                                           | `retryWithBackoff` 呼び出しサイト (`geminiChat.ts:1039`) で `onRetry` コールバックを配線                                                                                                                                                 | +15          |
-| `packages/core/src/telemetry/session-tracing.test.ts`                            | `endLLMRequestSpan` が ttft_ms / request_setup_ms / attempt / retry_total_delay_ms / sampling_ms / output_tokens_per_second を設定 + gen_ai デュアルエミット + breakdownメトリクス (各フェーズ) + べき等な終了                            | +120         |
-| `packages/core/src/core/loggingContentGenerator/loggingContentGenerator.test.ts` | `hasUserVisibleContent` (text / functionCall / inlineData / executableCode / thought / role-only / usage-only)。並行呼び出しが TTFT を汚染しない。最初のチャンク前に中断した場合はTTFT未定義。非ストリーミングではTTFT未定義              | +100         |
-| `packages/core/src/utils/retry.test.ts`                                          | `onRetry` が失敗した各試行で正しい `attempt`、`delayMs`、`error`、`errorStatus` と共に呼び出される。`onRetry` が存在しない場合はサイレント (テレメトリ未送出)                                                                            | +50          |
-| `packages/core/src/telemetry/loggers.test.ts`                                    | `logApiRetry` が期待されるペイロードのLogRecordを送出し、LogToSpanProcessor経由でアクティブなLLMスパン配下のネストされたスパンにブリッジされる                                                                                           | +40          |
+| ファイル                                                                         | 変更内容                                                                                                                                                                                                                                    | 推定LOC |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `packages/core/src/telemetry/constants.ts`                                       | `EVENT_API_RETRY` 定数を追加                                                                                                                                                                                                               | +2      |
+| `packages/core/src/telemetry/types.ts`                                           | `ApiRetryEvent` クラス＋ユニオンメンバーを追加                                                                                                                                                                                              | +40     |
+| `packages/core/src/telemetry/loggers.ts`                                         | `logApiRetry()` 関数を追加                                                                                                                                                                                                                  | +20     |
+| `packages/core/src/telemetry/qwen-logger/qwen-logger.ts`                         | RUM 下流の一貫性のために `logApiRetryEvent()` を追加                                                                                                                                                                                        | +20     |
+| `packages/core/src/telemetry/session-tracing.ts`                                 | `LLMRequestMetadata` を拡張（ttftMs、requestSetupMs、attempt、retryTotalDelayMs）；`endLLMRequestSpan` を拡張して新しい属性、ブレークダウンメトリクス、二重出力 gen_ai.* を設定                                                                    | +60     |
+| `packages/core/src/telemetry/metrics.ts`                                         | `endLLMRequestSpan` 内部の `recordApiRequestBreakdown` 呼び出しサイトを配線（既存のレコーダーに変更なし）                                                                                                                                     | 0       |
+| `packages/core/src/utils/retry.ts`                                               | `onRetry?: (info: RetryAttemptInfo) => void` を RetryOptions に追加；`RetryAttemptInfo` をエクスポート；既存の logRetryAttempt サイトでコールバックを呼び出し                                                                                     | +25     |
+| `packages/core/src/core/loggingContentGenerator/loggingContentGenerator.ts`      | TTFT キャプチャ：メソッドローカルアキュムレータ＋`hasUserVisibleContent` ヘルパー＋ストリームラッパー内の最初のチャンク検出；新しいメタデータを `endLLMRequestSpan` に渡す                                                                      | +80     |
+| `packages/core/src/core/client.ts`                                               | `client.ts:1540` の `retryWithBackoff` 呼び出しサイトで `onRetry` コールバックを配線                                                                                                                                                          | +15     |
+| `packages/core/src/core/baseLlmClient.ts`                                        | 2つの `retryWithBackoff` 呼び出しサイトで `onRetry` コールバックを配線                                                                                                                                                                     | +25     |
+| `packages/core/src/core/geminiChat.ts`                                           | `geminiChat.ts:1039` の `retryWithBackoff` 呼び出しサイトで `onRetry` コールバックを配線                                                                                                                                                     | +15     |
+| `packages/core/src/telemetry/session-tracing.test.ts`                            | `endLLMRequestSpan` が ttft_ms / request_setup_ms / attempt / retry_total_delay_ms / sampling_ms / output_tokens_per_second + gen_ai 二重出力 + ブレークダウンメトリクス（各フェーズ）+ 冪等終了を設定することをテスト                                     | +120    |
+| `packages/core/src/core/loggingContentGenerator/loggingContentGenerator.test.ts` | `hasUserVisibleContent`（text / functionCall / inlineData / executableCode / thought / role-only / usage-only）；同時呼び出しが相互汚染しない；最初のチャンクより前に中断された場合 TTFT は未定義；非ストリーミングでは TTFT 未定義                   | +100    |
+| `packages/core/src/utils/retry.test.ts`                                          | `onRetry` が失敗した試行ごとに正しい `attempt`、`delayMs`、`error`、`errorStatus` で呼び出されることをテスト；`onRetry` がない場合はサイレント（テレメトリ出力なし）                                                                             | +50     |
+| `packages/core/src/telemetry/loggers.test.ts`                                    | `logApiRetry` が期待されるペイロードで LogRecord を出力すること；LogToSpanProcessor を介してアクティブな LLM スパン下のネストされたスパンにブリッジすることをテスト                                                                              | +40     |
+```
+合計: 14ファイル、約610 LOC。フェーズ2 (#4321) より大きいですが、フェーズ3 (#4410) と同等であり、統合範囲（4つのリトライ箇所 + テレメトリー配管 + ストリーミングラッパー）の広さを考慮すると妥当です。
 
-合計: 14ファイル、約610 LOC。フェーズ2 (#4321) より大きいが、フェーズ3 (#4410) と同等であり、統合の広さ (4つのリトライサイト + テレメトリ配管 + ストリーミングラッパー) によって正当化される。
+レビューでサイズが問題になった場合は、**フェーズ4a + 4b + 4c** に分割します:
 
-レビューでサイズへの懸念が出た場合: **フェーズ4a + 4b + 4c** に分割:
-
-- **4a** (~200 LOC): TTFTキャプチャ + 拡張された `LLMRequestMetadata` + デュアルエミット。自己完結した価値 (初日からTTFT可視性)。
-- **4b** (~250 LOC): `onRetry` コールバック + `ApiRetryEvent` + 4つの呼び出し元の配線。**独立したバグフィックス** として `retryWithBackoff` テレメトリのギャップを修正する。
-- **4c** (~160 LOC): `recordApiRequestBreakdown` の有効化 + 親スパン集計属性 (`attempt`、`retry_total_delay_ms`、`sampling_ms`、`output_tokens_per_second`)。4a + 4b に依存。
+- **4a** (~200 LOC): TTFTキャプチャ + 拡張された `LLMRequestMetadata` + デュアルエミット。それ単体で価値があります（初日からTTFTの可視性が得られます）。
+- **4b** (~250 LOC): `onRetry` コールバック + `ApiRetryEvent` + 4つの呼び出し元への配線。**独立したバグ修正**であり、`retryWithBackoff` のテレメトリーギャップを埋めます。
+- **4c** (~160 LOC): `recordApiRequestBreakdown` の有効化 + 親スパン集約属性（`attempt`、`retry_total_delay_ms`、`sampling_ms`、`output_tokens_per_second`）。4a + 4b に依存します。
 
 ## テスト戦略
 
-| テスト                                                                                                                                     | 証明すること                           |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
-| `hasUserVisibleContent` が text/functionCall/inlineData/executableCode/thought に対して true を返す                                         | D1 セマンティクス (各パートタイプ)     |
-| `hasUserVisibleContent` が role-only と usage-only チャンクに対して false を返す                                                            | D1 ネガティブケース                    |
-| ストリーミング: TTFTが試行開始から最初のユーザーが見えるチャンクまで計測される                                                              | エンドツーエンドのTTFT検出             |
-| ストリーミング: ユーザーが見えるチャンクの前にストリームが中断した場合はTTFT未定義                                                         | エッジケース                           |
-| ストリーミング: TTFTが最終試行の開始から計算される (最初の試行からではない)                                                                 | D3 — リトライ時のTTFTリセット          |
-| 非ストリーミング: TTFT が undefined のまま                                                                                                  | S3 の決定                              |
-| 並行する `generateContentStream` 呼び出しがTTFTを汚染しない                                                                                 | D2 — メソッドローカルの保証            |
-| `endLLMRequestSpan` がフェーズ4のすべての属性を設定する (ttft_ms、request_setup_ms、sampling_ms、attempt、retry_total_delay_ms、output_tokens_per_second) | 属性の存在                             |
-| `endLLMRequestSpan` が gen_ai.server.time_to_first_token + gen_ai.usage.\* + gen_ai.request.model をデュアルエミットする                   | D8 デュアルエミット                    |
-| `endLLMRequestSpan` がストリーミングでは3フェーズ、非ストリーミングでは2フェーズのbreakdownメトリクスを記録する                            | D6                                     |
-| `endLLMRequestSpan` が2回呼び出された場合: メトリクスは正確に1回記録され、属性は再設定されない                                             | D7 べき等性                            |
-| `onRetry` ありの `retryWithBackoff`: コールバックが失敗した各試行で正しい引数と共に呼び出される                                             | D4 コールバック契約                    |
-| `onRetry` なしの `retryWithBackoff`: テレメトリ未送出 (非LLM呼び出し元のサイレント)                                                        | P2 — channels/weixin スコープ保護      |
-| `client.ts` / `baseLlmClient.ts` / `geminiChat.ts` のリトライ呼び出しサイトがリトライ時に `ApiRetryEvent` を送出する                       | 4サイトでのD4の統合                    |
-| `ApiRetryEvent` LogRecordがLogToSpanProcessor経由でアクティブなLLMスパン配下の子スパンにブリッジされる                                     | トレースツリーの正確性                 |
-| LLMスパンの `attempt` フィールドがリトライ下で正しい最終試行番号を反映する                                                                  | D5 集計                                |
-| LLMスパンの `retry_total_delay_ms` が onRetry の遅延を正しく合計する                                                                       | D5 集計                                |
-| `sampling_ms === 0` (非ストリーミング) の場合に `output_tokens_per_second` が未定義                                                         | ゼロ除算を防ぐ                         |
+| テスト                                                                                                                                         | 何を証明するか                        |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `hasUserVisibleContent` が text/functionCall/inlineData/executableCode/thought に対して true を返す                                            | パートタイプ間でのD1セマンティクス        |
+| `hasUserVisibleContent` が role-only および usage-only チャンクに対して false を返す                                                             | D1の negative ケース                     |
+| ストリーミング: TTFTが試行開始から最初のユーザー可視チャンクまで測定される                                                                      | エンドツーエンドのTTFT検出             |
+| ストリーミング: ユーザー可視チャンクの前にストリームが中断された場合、TTFTは未定義                                                                    | エッジケース                             |
+| ストリーミング: TTFTが（最初の試行ではなく）最終試行の開始から計算される                                                                      | D3 — リトライ時のTTFTリセット          |
+| 非ストリーミング: TTFTは未定義のまま                                                                                                        | S3の決定                           |
+| 同時の `generateContentStream` 呼び出しがTTFTを相互汚染しない                                                                        | D2 — メソッドローカルな保証           |
+| `endLLMRequestSpan` がすべてのフェーズ4属性（ttft_ms、request_setup_ms、sampling_ms、attempt、retry_total_delay_ms、output_tokens_per_second）を設定する | 属性の存在                    |
+| `endLLMRequestSpan` が gen_ai.server.time_to_first_token + gen_ai.usage.\* + gen_ai.request.model をデュアルエミットする                                    | D8 デュアルエミット                          |
+| `endLLMRequestSpan` がストリーミングでは3フェーズ、非ストリーミングでは2フェーズで breakdown メトリクスを記録する                                                | D6                                    |
+| `endLLMRequestSpan` が2回呼び出される: メトリクスは正確に1回記録され、属性は再設定されない                                                             | D7 冪等性                        |
+| `retryWithBackoff` と `onRetry`: 失敗した試行ごとに正しい引数でコールバックが呼び出される                                                     | D4 コールバック契約                  |
+| `onRetry` なしの `retryWithBackoff`: テレメトリーは出力されない（非LLM呼び出し元ではサイレント）                                                      | P2 — channels/weixin スコープの保護 |
+| `client.ts` / `baseLlmClient.ts` / `geminiChat.ts` のリトライ呼び出し箇所が、リトライ時に `ApiRetryEvent` を出力する                                             | 4箇所でのD4統合          |
+| `ApiRetryEvent` LogRecord が LogToSpanProcessor を介して、アクティブなLLMスパンの下の子スパンにブリッジされる                                               | トレースツリーの正確性                |
+| LLMスパンの `attempt` フィールドがリトライ時の最終試行番号を正しく反映する                                                               | D5 集約                        |
+| LLMスパンの `retry_total_delay_ms` が onRetry の遅延を正しく合計する                                                                                | D5 集約                        |
+| `sampling_ms === 0`（ストリーミングなし）の場合、`output_tokens_per_second` は未定義                                                                 | ゼロ除算の回避                  |
 
 ## エッジケース
 
-| ケース                                                              | 処理                                                                                                                                                                                                                         |
-| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| チャンクが届く前にストリームが中断した場合                          | `ttftMs = undefined`、`sampling_ms = undefined`、`output_tokens_per_second = undefined`。`attempt`、`request_setup_ms` は引き続き設定される。`success = false`                                                               |
-| 最初のチャンク後にストリームが中断した場合                          | `ttftMs` は設定される。`sampling_ms` = `duration_ms - ttftMs - request_setup_ms`。部分的な応答時間を反映。`success = false`                                                                                                  |
-| 試行1で成功 (リトライなし)                                          | `attempt = 1`、`retry_total_delay_ms = 0`、`ApiRetryEvent` は送出されない。breakdownメトリクスは `request_setup_ms` をほぼ0として記録                                                                                        |
-| 永続的リトライモード 50回以上の試行                                 | 50件以上の `ApiRetryEvent` レコードが送出される (スコープ外のキャップは延期)。LLMスパンの `attempt = 51`、`retry_total_delay_ms = すべての遅延の合計`。オペレーターはスパンで集計ビューを確認し、ログブリッジスパンで試行ごとの詳細を確認できる |
-| 非LLM `retryWithBackoff` 呼び出し元 (channels/weixin)              | `onRetry` が登録されていない。既存の `debugLogger.warn` のみ発火。`ApiRetryEvent` なし。breakdownメトリクスなし (呼び出し元はLLMサイトではない)                                                                             |
-| `endLLMRequestSpan` が2回呼び出された場合 (中断 + エラーの競合)    | フェーズ1.5のガードが `activeSpans.delete()` で2回目の呼び出しを早期リターン。`recordApiRequestBreakdown` はガード内にあり、正確に1回記録される                                                                              |
-| コンテンツの前に Anthropic の `message_start` チャンクが届く場合   | `hasUserVisibleContent` はそれに対してfalseを返す (text/functionCall等を含むpartsがない)。後続の `content_block_delta` チャンクが届くまでTTFTはトリガーされない                                                             |
-| `delta.content` が空で `role` のみの OpenAI 最初のチャンク         | `hasUserVisibleContent` はfalseを返す。空でない delta を含む最初のチャンクが届くまでTTFTはトリガーされない                                                                                                                   |
-| ツール呼び出しのみのレスポンス (テキストなし)                       | `functionCall` Partを含む最初のチャンクがTTFTをトリガー。`output_tokens_per_second` はツール呼び出しのトークン数に対して計算される                                                                                           |
-| 並行サブエージェント (3つの呼び出しが進行中)                        | 各呼び出しのクロージャは独自の `attemptStart`、`ttftMs`、`attemptStartTimes` を持つ。呼び出しごとのスパンは `endLLMRequestSpan` で独自のメタデータを受け取る。インターリーブなし (D2)                                         |
-| openai-sdk内のSDKレベルのリトライ (`maxRetries=3`)                  | qwen-codeのテレメトリには不可視 — retryWithBackoffがリクエストを見る前にSDK内で完結する。`attempt` は retryWithBackoffの試行のみを反映。スコープ外 (スコープ外参照)                                                          |
-| `gen_ai.server.time_to_first_token` スペックが Stable 到達前にリネームされた場合 | シングルファイルの更新: `session-tracing.ts:endLLMRequestSpan`。qwen-codeネイティブの `ttft_ms` は正規のまま — ダウンストリームへの影響なし                                                                                 |
-| サブエージェントのLLMリクエスト                                     | 親はサブエージェントスパン (フェーズ3)。フェーズ4のフィールドは正しくネストされる。`qwen-code.subagent.id` でグループ化した集計により、サブエージェントごとのLLMパフォーマンスが得られる — 設計文書の将来の展望として実装が容易 |
-| 長い思考ブロックを持つreasoningモデル                               | 最初の `thought` PartがTTFTをトリガー。`sampling_ms` には思考フェーズと回答フェーズの両方が含まれる。別々のメトリクスへの分割は延期                                                                                          |
+| ケース                                                                    | 処理                                                                                                                                                                                                                 |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| チャンクが到着する前にストリームが中断される                                  | `ttftMs = undefined`、`sampling_ms = undefined`、`output_tokens_per_second = undefined`となります。`attempt`、`request_setup_ms`は設定されたままです。`success = false`                                                                      |
+| 最初のチャンク到着後にストリームが中断される                                         | `ttftMs`が設定されます; `sampling_ms` = `duration_ms - ttftMs - request_setup_ms`; 部分的な応答時間を反映します。`success = false`                                                                                               |
+| リトライが試行1で成功する（リトライなし）                                | `attempt = 1`、`retry_total_delay_ms = 0`、`ApiRetryEvent`は出力されず、breakdownメトリクスは `request_setup_ms` が0に近い値を記録します                                                                                            |
+| 永続リトライモードで50回以上の試行                                      | 50以上の `ApiRetryEvent` レコードが出力されます（上限設定はスコープ外で延期）; LLMスパン `attempt = 51`、`retry_total_delay_ms = 全遅延の合計`。オペレーターはスパンで集約ビューを確認; 完全な試行ごとの詳細はログブリッジスパンで確認可能 |
+| 非LLMの `retryWithBackoff` 呼び出し元（channels/weixin）                     | `onRetry` が登録されていません; 既存の `debugLogger.warn` のみが発火します。`ApiRetryEvent` は出力されません; breakdownメトリクスも出力されません（呼び出し元がLLMサイトではないため）                                                                                      |
+| `endLLMRequestSpan` が2回呼び出される（abort + error の競合）                   | フェーズ1.5のガードにより、`activeSpans.delete()` が2回目の呼び出しで早期リターンします; `recordApiRequestBreakdown` はガード内にあり、正確に1回記録されます                                                                           |
+| Anthropicの `message_start` チャンクがコンテンツより先に到着する                   | `hasUserVisibleContent` はこれに対して false を返します（text/functionCallなどのパートがないため）; TTFTは後続の `content_block_delta` チャンクまでトリガーされません                                                                     |
+| OpenAIの最初のチャンクに空の `delta.content` と `role` のみが含まれる           | `hasUserVisibleContent` は false を返します; TTFTは空でないデルタを持つ最初のチャンクまでトリガーされません                                                                                                                         |
+| ツール呼び出しのみの応答（テキストなし）                                       | `functionCall` パートを含む最初のチャンクがTTFTをトリガーします; `output_tokens_per_second` はツール呼び出しのトークン数に対して計算されます                                                                                                    |
+| 同時サブエージェント（3つの進行中の呼び出し）                                | 各呼び出しのクロージャは、独自の `attemptStart`、`ttftMs`、`attemptStartTimes` を持ちます。呼び出しごとのスパンは、`endLLMRequestSpan` で独自のメタデータを受け取ります。インターリーブは発生しません（D2）                                                      |
+| openai-sdk 内でのSDKレベルのリトライ（`maxRetries=3`）                    | qwen-code テレメトリーからは不可視 — retryWithBackoff がリクエストを認識する前にSDK内で完全に発生します。`attempt` は retryWithBackoff の試行のみを反映します。スコープ外です（「スコープ外」を参照）                              |
+| `gen_ai.server.time_to_first_token` の仕様変更がStableになる前のリネーム | 単一ファイルの更新: `session-tracing.ts:endLLMRequestSpan`。qwen-code ネイティブの `ttft_ms` は信頼できるソースのままです — ダウンストリームへの影響はありません                                                                                    |
+| サブエージェントのLLMリクエスト                                                  | 親はサブエージェントスパンです（フェーズ3）。フェーズ4のフィールドは正しくネストされます。`qwen-code.subagent.id` でグループ化された集約により、サブエージェントごとのLLMパフォーマンスが得られます — 設計ドキュメントで将来対応、簡単なフォローアップです                                     |
+| 長い思考ブロックを持つ推論モデル                                | 最初の `thought` パートがTTFTをトリガーします; `sampling_ms` には思考フェーズと回答フェーズの両方が含まれます。別々のメトリクスへの分割は延期されます                                                                                           |
 
 ## ロールバック
 
-変更はOTelとメトリクスレベルで加算的 — すべての新しい属性はオプションで、すべての新しいイベントは新しいクラス。新しいフィールドでフィルタリングしない既存のダッシュボードは変更なしで動作し続ける。
+この変更は、OTelおよびメトリクスレベルで追加的です — すべての新しい属性はオプションであり、すべての新しいイベントは新しいクラスです。新しいフィールドでフィルタリングしない既存のダッシュボードは、変更なく動作し続けます。
 
-動作に影響する変更:
+動作に影響を与える変更:
 
-- 新しい `ApiRetryEvent` LogRecordが流れ始める → リトライ率に比例してログ量が増加する (通常リクエストの <1% がリトライする)。必要に応じてSDKレイヤーでLogRecordをサンプリングして緩和する。
-- 新しいbreakdownメトリクス `qwen-code.api.request.breakdown` が時系列を生成し始める → Prometheusのカーディナリティがわずかに増加する (`{model, phase}` — 有界)。
-- `output_tokens_per_second` 派生属性は「すべての属性」をフィルタリングするダッシュボードで異常に見える可能性がある — ドキュメント化すること。
+- 新しい `ApiRetryEvent` LogRecord が流れ始める → ログボリュームがリトライ率に比例して増加します（通常、リクエストの1%未満がリトライします）。必要に応じてSDKレイヤーでLogRecordをサンプリングすることで軽減できます。
+- 新しい breakdown メトリクス `qwen-code.api.request.breakdown` が時系列を生成し始める → Prometheusのカーディナリティが若干増加します（`{model, phase}` — 制限付き）。
+- `output_tokens_per_second` 派生属性は、「すべての属性」でフィルタリングするダッシュボードでは異常に見える可能性があります — 文書化します。
 
-ロールバックパス: 単一のPR (または4a/4b/4cそれぞれ独立して) をリバートする。すべての新しいフィールドは防御的なデフォルト (undefined / 0) を使用し、スパン構造を変更しない。
+ロールバックパス: 単一のPR（または4a/4b/4cのそれぞれ独立して）を元に戻します。すべての新しいフィールドは防御的なデフォルト値（undefined / 0）を使用し、スパン構造を変更しません。
 
-## シーケンシング
+## シーケンス
 
-- **フェーズ3 (#4410、レビュー中) の後**: ハードな依存ではない。フェーズ4の属性は `qwen-code.llm_request` スパンに付与され、`qwen-code.subagent` (フェーズ3) 配下にあるか `qwen-code.interaction` (フェーズ1) 配下にあるかに関わらず機能する。サブエージェントサブツリー配下での試行ごとの集計が自然に機能するよう、フェーズ3を先にリリースすることを推奨する。
-- **#4384 (`traceparent` + `X-Qwen-Code-Session-Id` アウトバウンド伝播) とは独立**: HTTPレイヤーに触れる。フェーズ4はストリーム/リトライ/メトリクスレイヤーに触れる。
-- **`clearDetailedSpanState` チャット圧縮フォローアップ (#4097 フォローアップ) とは独立**: 異なる面。
+- **フェーズ3 (#4410、レビュー中) の後**: ハードな依存関係ではありません。フェーズ4の属性は、親が `qwen-code.subagent`（フェーズ3）であろうと `qwen-code.interaction`（フェーズ1）であろうと、`qwen-code.llm_request` スパンにアタッチされます。フェーズ3を先に導入して、サブエージェントサブツリー下での試行ごとの集約が自然に機能するようにすることを推奨します。
+- **#4384 から独立**（`traceparent` + `X-Qwen-Code-Session-Id` のアウトバウンド伝搬）。これらはHTTPレイヤーに影響します; フェーズ4はストリーム/リトライ/メトリクスレイヤーに影響します。
+- **`clearDetailedSpanState` チャット圧縮フォローアップから独立** (#4097 フォローアップ)。対象領域が異なります。
 
-## 未解決の問題
+## 未解決の質問
 
-1. **`onRetry` コールバックの発火セマンティクス**: バックオフスリープの**前** (現在の提案) か**後** (次の試行が開始される直前) に呼び出すか？前は簡単 — コールバックはすぐにすべての情報を持つ。後は、完了したばかりの遅延を別途捉える必要がある。スリープ前を推奨。コールバック契約に文書化する。
-2. **LLMスパンの試行ごとのタイミング**: `attempt_durations_ms: number[]` 配列を追加するか？OTelはプリミティブの配列属性をサポートする。「N回の試行のうちどれが遅かった」の診断に有用。本番データが需要を示すまで延期 — ログブリッジスパンがすでに同等の情報を持つ。
-3. **永続的リトライモードの送出上限**: `attempt > N` のどのしきい値でサンプリングを開始するか？`N = 5` で1/10回？`N = 10` でサマリーのみ？本番ボリュームデータが得られるまで延期。
-4. **`TOKEN_PROCESSING` フェーズ**: enum値を休眠状態のままにするか、何か (例: 統合時間) に配線するか？延期 — 実際のユースケースを待つ。
-5. **サブエージェントレベルのLLMロールアップ**: フェーズ4がリリースされれば trivial なフォローアップ — サブエージェントサブツリーごとに `ttft_ms`/`output_tokens`/`input_tokens` を合計する。フェーズ4のスコープではないが、データフローはそれを可能にする。
+1. **`onRetry` コールバックの発火セマンティクス**: バックオフスリープ**前**（現在の提案）と**後**（次の試行が開始されようとしているとき）、どちらで呼び出されるべきか？ 前者の方がシンプルです — コールバックはすべての情報を即座に利用できます; 後者の場合、完了したばかりの遅延を個別にキャプチャする必要があります。スリープ前が推奨です; コールバック契約に文書化します。
+2. **LLMスパン上の試行ごとのタイミング**: `attempt_durations_ms: number[]` 配列を追加すべきか？ OTelはプリミティブ属性の配列をサポートしています。「N回目の試行のうち、どれが遅かったか」の診断に役立ちます。同等の情報はログブリッジスパンがすでに保持しているため、本番データが需要を示すまで延期します。
+3. **永続リトライモードの出力上限**: `attempt > N` のどの閾値でサンプリングを開始すべきか？ `N = 5` で1/10? `N = 10` でサマリーのみ？ 本番ボリュームデータが得られるまで延期します。
+4. **`TOKEN_PROCESSING` フェーズ**: 列挙値を休眠状態のままにするか、何か（例: 統合時間）に配線するか？ 延期 — 実際のユースケースを待ちます。
+5. **サブエージェントレベルのLLMロールアップ**: フェーズ4が導入されれば、簡単なフォローアップです — サブエージェントサブツリーごとに `ttft_ms`/`output_tokens`/`input_tokens` を合計します。フェーズ4のスコープではありませんが、データフローによって可能になります。

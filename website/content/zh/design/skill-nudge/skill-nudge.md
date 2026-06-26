@@ -1,3 +1,4 @@
+```markdown
 # AutoSkill：自动技能提炼系统设计文档
 
 ## 概述
@@ -431,3 +432,4 @@ memory?: {
 ```
 
 SkillManager 的读取侧（`listSkills`、`loadSkill`）完全不需要修改——review agent 写入 `${projectRoot}/.qwen/skills/` 后，`SkillManager` 通过现有的 `chokidar` 文件监听自动感知变化，调用 `notifyChangeListeners()` 触发缓存刷新，下次对话自然可以在 system prompt 中看到新 skill。
+```

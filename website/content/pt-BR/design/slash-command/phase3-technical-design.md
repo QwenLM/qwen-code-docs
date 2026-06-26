@@ -1,33 +1,34 @@
-# Phase 3: Documento de Design Técnico – Alinhamento da Experiência
+```markdown
+# Documento de Design Técnico da Fase 3: Alinhamento de Experiência
 
 ## 1. Objetivos e Restrições de Design
 
-### 1.1 Objetivo
+### 1.1 Objetivos
 
-Com base nos metadados de comando, filtragem entre modos e invocação do modelo prompt command já implementados nas Fases 1/2, a Fase 3 completa a experiência de comandos barra (slash commands) perceptível pelo usuário:
+Com base nos metadados de comandos, filtragem entre modos e chamadas de modelo por prompt command implementados nas Fases 1/2, a Fase 3 completa a experiência de slash command perceptível pelo usuário:
 
-- Exibir fonte, dicas de argumentos e correspondência de alias no menu de autocompletar, e introduzir ordenação por uso recente no nível da sessão
-- Aprimorar o ghost text, dicas de argumentos, exibição de fonte e destaque de token válido para comandos barra no meio da entrada (mid-input)
-- Reestruturar `/help` de um amontoado de comandos atualmente inutilizável para um painel de ajuda com abas, claro e esteticamente agradável, no estilo do Claude Code
-- Melhorar os metadados de comando do ACP `available_commands_update`
-- Confirmar que `/doctor` já implementado não será reimplementado; `/release-notes` não será incluído nesta fase
+- Menu de autocompletar exibindo fonte, dica de argumento, alias correspondente e introduzindo ordenação por uso recente no nível da sessão
+- Aprimorar o ghost text do slash command em meio à digitação, dicas de argumento, exibição de fonte e destaque de tokens válidos
+- Reestruturar o `/help` de uma pilha de comandos atualmente inutilizável para um painel de ajuda no estilo Claude Code, com abas, claro e bonito
+- Enriquece os metadados de comando do ACP `available_commands_update`
+- Confirma que o `/doctor` já implementado não será reimplementado; `/release-notes` não está incluído nesta fase
 
 ### 1.2 Restrições Obrigatórias
 
-- **O código é a referência**: quando houver diferença entre a documentação das Fases 1/2 e a implementação, o código-fonte do branch principal atual é a referência.
-- **Não introduzir nova arquitetura de execução**: continuar reutilizando os componentes existentes `SlashCommand`, `CommandService`, `handleSlashCommand`, `useSlashCompletion` e `Help`, sem criar novos `CommandDescriptor` / `CommandExecutor` / `ModeAdapter`.
-- **Não restaurar `commandType`**: a implementação atual já removeu o campo `commandType` do design inicial da Fase 1; a Fase 3 não reintroduz esse campo.
-- **Uso recente em nível de sessão**: a ordenação por uso recente é válida apenas na sessão CLI atual, não é persistida em disco.
-- **O comportamento interativo não deve ser degradado**: as funcionalidades interativas existentes, como autocompletar, help, doctor, devem permanecer utilizáveis; a Fase 3 apenas melhora a exibição e completa comandos faltantes.
-- **Compatibilidade retroativa do ACP**: os três campos existentes `availableCommands[].name`, `description` e `input` permanecem inalterados; novos metadados devem ser colocados em campos compatíveis ou em `_meta`, para evitar quebrar clientes ACP existentes.
+- **O código é a referência**: Quando houver diferenças entre a documentação das Fases 1/2 e a implementação, o código-fonte do branch principal atual é a verdade.
+- **Não introduzir nova arquitetura de execução**: Continuar reutilizando os componentes `SlashCommand`, `CommandService`, `handleSlashCommand`, `useSlashCompletion` e `Help` existentes, sem criar novos `CommandDescriptor` / `CommandExecutor` / `ModeAdapter`.
+- **Não restaurar `commandType`**: A implementação atual já removeu o campo `commandType` do design inicial da Fase 1. A Fase 3 não reintroduzirá esse campo.
+- **Uso recente no nível da sessão**: A ordenação por uso recente só é válida dentro da sessão CLI atual, sem persistência em disco.
+- **Comportamento interativo não deve regredir**: Funcionalidades existentes como autocompletar, help, doctor, etc., devem continuar funcionando; a Fase 3 apenas aprimora a exibição e complementa comandos faltantes.
+- **Compatibilidade retroativa do ACP**: Os campos existentes `availableCommands[].name`, `description` e `input` permanecem inalterados; novos metadados são adicionados em campos compatíveis ou em `_meta` para evitar quebrar clientes ACP existentes.
 
 ---
 
 ## 2. Linha de Base da Implementação Atual (Conclusões da Auditoria de Código)
 
-### 2.1 Metadados Existentes e Comportamento dos Loaders
+### 2.1 Metadados Existentes e Comportamento do Loader
 
-`packages/cli/src/ui/commands/types.ts` atualmente `SlashCommand` já contém:
+`packages/cli/src/ui/commands/types.ts` atualmente já contém em `SlashCommand`:
 
 - `source?: CommandSource`
 - `sourceLabel?: string`
@@ -49,65 +50,66 @@ export type CommandSource =
   | 'mcp-prompt';
 ```
 
-Informações de exibição atualmente preenchidas por cada Loader:
+Informações de exibição já preenchidas por cada Loader:
 
 | Loader                                  | source                                 | sourceLabel                              | argumentHint     | modelInvocable                                   |
 | --------------------------------------- | -------------------------------------- | ---------------------------------------- | ---------------- | ------------------------------------------------ |
 | `BuiltinCommandLoader`                  | `builtin-command`                      | `Built-in`                               | A maioria não declarado | `false`                                          |
 | `BundledSkillLoader`                    | `bundled-skill`                        | `Skill`                                  | Vindo da skill   | `!disableModelInvocation`                        |
-| `FileCommandLoader` / `command-factory` | `skill-dir-command` / `plugin-command` | `Custom` / `Plugin: <extensionName>`     | Vindo do frontmatter | Usuário/projeto padrão true; plugin precisa de description/whenToUse |
-| `SkillCommandLoader`                    | `skill-dir-command` / `plugin-command` | `User` / `Project` / `Extension: <name>` | Vindo da skill   | Usuário/projeto padrão true; plugin precisa de description/whenToUse |
-| `McpPromptLoader`                       | `mcp-prompt`                           | `MCP: <serverName>`                      | Não gerado        | Atualmente não definido explicitamente `modelInvocable` |
+| `FileCommandLoader` / `command-factory` | `skill-dir-command` / `plugin-command` | `Custom` / `Plugin: <extensionName>`     | Vindo do frontmatter | Usuário/projeto default true; plugin requer description/whenToUse |
+| `SkillCommandLoader`                    | `skill-dir-command` / `plugin-command` | `User` / `Project` / `Extension: <name>` | Vindo da skill   | Usuário/projeto default true; plugin requer description/whenToUse |
+| `McpPromptLoader`                       | `mcp-prompt`                           | `MCP: <serverName>`                      | Não gerado       | Atualmente não define `modelInvocable` explicitamente |
 
-> [!NOTE]
-> O roadmap da Fase 1 exigia `modelInvocable: true` para MCP prompts, mas a implementação atual não define isso explicitamente. A Fase 3 não altera o caminho de invocação do modelo para MCP prompts; MCP prompts continuam sendo chamados pelo mecanismo nativo do MCP, não via `SkillTool`.
+> [!note]
+> O roadmap da Fase 1 exigia `modelInvocable: true` para MCP prompts, mas a implementação atual não define isso explicitamente. A Fase 3 não altera o caminho de chamada de modelo para MCP prompts; MCP prompts ainda são chamados pelo mecanismo nativo MCP, não via `SkillTool`.
 
-### 2.2 Capacidades Relacionadas à Fase 3 Já Implementadas
+### 2.2 Capacidades da Fase 3 Já Implementadas
 
-| Capacidade                                                             | Estado Atual                                                                                                           | Arquivos-Chave                                                       |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Ghost text básico para comandos barra no meio da entrada               | Parcialmente implementado, apenas preenchimento de prefixo para comandos `modelInvocable`                              | `ui/utils/commandUtils.ts`, `ui/hooks/useCommandCompletion.tsx`    |
-| Ghost text de argumento para comando no início da linha                | Parcialmente implementado: quando o comando corresponde exatamente e não há argumentos, exibe `argumentHint`           | `ui/hooks/useCommandCompletion.tsx`                                 |
-| Alias participando da correspondência                                  | Já implementado correspondência e ordenação, mas a exibição sempre mostra todos os aliases, sem distinguir o alias correspondido | `ui/hooks/useSlashCompletion.ts`                                   |
-| Badge de fonte                                                         | Apenas MCP exibe `[MCP]`                                                                                               | `ui/components/SuggestionsDisplay.tsx`, `ui/components/Help.tsx`    |
-| `/help`                                                                | A implementação atual é considerada incompleta: embora haja tentativa de agrupamento, ainda é um amontoado de comandos, sem a experiência de painel de ajuda com abas no estilo Claude Code | `ui/components/Help.tsx`                                            |
-| `argumentHint` do ACP                                                  | Já mapeado para `availableCommands[].input.hint`                                                                       | `acp-integration/session/Session.ts`                                |
-| ACP source / supportedModes / subcommands / modelInvocable             | Não exposto                                                                                                            | `acp-integration/session/Session.ts`                                |
-| Tratamento de conflitos                                                | Comandos de extensão conflitantes são renomeados para `extensionName.commandName`; comandos não de extensão com mesmo nome: o último carregado substitui o anterior | `services/CommandService.ts`                                        |
-| `/doctor`                                                              | Já implementado, suporta `interactive` / `non_interactive` / `acp`                                                     | `ui/commands/doctorCommand.ts`, `utils/doctorChecks.ts`             |
-### 2.3 Pontos de inspiração do Claude Code
+| Capacidade                                                 | Status Atual                                                                                                | Arquivos Chave                                                     |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Ghost text básico para slash em meio à digitação            | Parcialmente implementado, apenas para comandos `modelInvocable` com prefixo                                 | `ui/utils/commandUtils.ts`, `ui/hooks/useCommandCompletion.tsx`    |
+| Ghost text de argumento para comando no início da linha    | Parcialmente implementado, exibe `argumentHint` quando comando corresponde exatamente e sem argumentos       | `ui/hooks/useCommandCompletion.tsx`                                |
+| Participação de alias na correspondência                     | Correspondência e ordenação implementadas, mas a exibição sempre mostra todos os alias, sem distinguir o alias correspondido | `ui/hooks/useSlashCompletion.ts`                                   |
+| Badge de origem                                              | Apenas MCP exibe `[MCP]`                                                                                    | `ui/components/SuggestionsDisplay.tsx`, `ui/components/Help.tsx`   |
+| `/help`                                                      | Implementação atual considerada incompleta: embora haja tentativa de agrupamento, ainda é uma pilha de comandos, sem a experiência de painel de ajuda com abas, clara e legível ao estilo Claude Code | `ui/components/Help.tsx`                                           |
+| ACP `argumentHint`                                           | Já mapeado para `availableCommands[].input.hint`                                                             | `acp-integration/session/Session.ts`                               |
+| ACP source/supportedModes/subcommands/modelInvocable         | Não expostos                                                                                                | `acp-integration/session/Session.ts`                               |
+| Tratamento de conflitos                                      | Comandos de extensão com nomes conflitantes são renomeados para `extensionName.commandName`; conflitos não-extension sobrepõem o carregamento anterior pelo posterior | `services/CommandService.ts`                                       |
+| `/doctor`                                                    | Implementado, suporta `interactive` / `non_interactive` / `acp`                                             | `ui/commands/doctorCommand.ts`, `utils/doctorChecks.ts`            |
 
-Referência ao código-fonte em `/Users/mochi/code/claude-code`:
+### 2.3 Pontos de Referência do Claude Code
+
+Consultando o código-fonte em `/Users/mochi/code/claude-code`:
 
 - `src/types/command.ts`: O modelo de comando inclui campos de exibição/capacidade como `argumentHint`, `whenToUse`, `aliases`, `loadedFrom`, `kind`, `immediate`, `isSensitive`, `userFacingName`, `supportsNonInteractive`.
-- `src/utils/suggestions/commandSuggestions.ts`: A ordenação das sugestões considera tanto correspondência exata, correspondência por alias, prefixo, fuzzy, e uso de skills; quando um alias é correspondido, exibe apenas o alias que o usuário realmente usou.
-- `src/utils/suggestions/commandSuggestions.ts`: O uso de barra no meio da entrada (`mid-input slash`) utiliza `findMidInputSlashCommand()`, `getBestCommandMatch()` e `findSlashCommandPositions()` para suportar ghost text e destaque.
-- `src/components/HelpV2/Commands.tsx`: O Help V2 é um diretório navegável de comandos, exibindo informações da fonte ao mostrar a descrição.
-- `src/commands.ts`: O Claude Code inclui comandos internos como `/doctor`, `/release-notes`, etc. O Qwen Code já implementou `/doctor`; nesta fase não implementamos `/release-notes`.
+- `src/utils/suggestions/commandSuggestions.ts`: A ordenação de autocompletar considera correspondência exata, correspondência de alias, prefixo, fuzzy, uso de skill; quando um alias é correspondido, apenas o alias realmente usado pelo usuário é exibido.
+- `src/utils/suggestions/commandSuggestions.ts`: Para slash em meio à digitação, usa `findMidInputSlashCommand()`, `getBestCommandMatch()` e `findSlashCommandPositions()` para suportar ghost text e destaque.
+- `src/components/HelpV2/Commands.tsx`: Help V2 é um catálogo de comandos navegável, exibindo informações de origem junto com a descrição.
+- `src/commands.ts`: Claude Code inclui comandos built-in como `/doctor`, `/release-notes`; Qwen Code já implementou `/doctor` atualmente; `/release-notes` não será implementado nesta fase.
 
-A Fase 3 adota esses pontos com a abordagem "alinhar experiência, sem copiar arquitetura".
+A Fase 3 adota a abordagem "alinhamento de experiência, sem copiar a arquitetura" para se inspirar nos pontos acima.
 
 ---
 
-## 3. Visão Geral
+## 3. Plano Geral
 
-### 3.1 Resumo das Alterações de Arquivos
+### 3.1 Visão Geral das Alterações de Arquivos
 
-| Arquivo                                                  | Alterações                                                                                     |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `packages/cli/src/ui/components/SuggestionsDisplay.tsx`  | Estender o tipo `Suggestion` para exibir source badge, argumentHint, aliasHit                  |
-| `packages/cli/src/ui/hooks/useSlashCompletion.ts`        | Gerar itens de sugestão aprimorados; ordenação com uso recente; preservar info do alias usado  |
-| `packages/cli/src/ui/hooks/useCommandCompletion.tsx`     | Ghost text no meio da entrada reutilizando matching aprimorado; fornecer metadados de argumento/source para exibição na UI |
+| Arquivo                                                  | Conteúdo da Alteração                                                                 |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `packages/cli/src/ui/components/SuggestionsDisplay.tsx`  | Estender o tipo `Suggestion` para exibir badge de origem, argumentHint, aliasHit     |
+| `packages/cli/src/ui/hooks/useSlashCompletion.ts`        | Gerar itens de autocompletar aprimorados; ordenação integrada com uso recente; manter info de alias correspondido |
+| `packages/cli/src/ui/hooks/useCommandCompletion.tsx`     | Ghost text em meio à digitação reutiliza correspondência aprimorada; retorna metadados de argumento/origem para exibição na UI |
 | `packages/cli/src/ui/utils/commandUtils.ts`              | Adicionar funções auxiliares para destaque de token slash, ou estender funções existentes para retornar validade do comando |
-| `packages/cli/src/ui/components/InputPrompt.tsx`         | Renderizar destaque de token de comando slash válido; manter aceitação de ghost text com Tab   |
-| `packages/cli/src/ui/components/Help.tsx`                | Refatorar para painel de ajuda com abas no estilo Claude Code, evitando empilhamento de comandos |
-| `packages/cli/src/ui/commands/helpCommand.ts`            | Se necessário texto de ajuda non-interactive/acp, estender ação; caso contrário, manter apenas UI interativa |
-| `packages/cli/src/acp-integration/session/Session.ts`    | Expor metadados aprimorados na atualização ACP                                                |
-| `packages/cli/src/ui/commands/*Command.ts`               | Adicionar `argumentHint` para comandos internos comuns                                         |
+| `packages/cli/src/ui/components/InputPrompt.tsx`         | Renderizar destaque de token de slash command válido; manter aceitação de ghost text via Tab |
+| `packages/cli/src/ui/components/Help.tsx`                | Reestruturar para um painel de ajuda no estilo Claude Code com abas, evitando pilha de comandos |
+| `packages/cli/src/ui/commands/helpCommand.ts`            | Se necessário texto de ajuda para non-interactive/acp, estender a ação; caso contrário, apenas manter a UI interativa |
+| `packages/cli/src/acp-integration/session/Session.ts`    | Expor metadados aprimorados na atualização do ACP                                    |
+| `packages/cli/src/ui/commands/*Command.ts`               | Complementar `argumentHint` para comandos built-in comuns                             |
 
 ### 3.2 Nova Ferramenta de Exibição Compartilhada
 
-Sugere-se adicionar `packages/cli/src/services/commandMetadata.ts`, centralizando a lógica de exibição necessária para Help, Completion e ACP:
+Sugere-se criar `packages/cli/src/services/commandMetadata.ts` para centralizar a lógica de exibição necessária para Help, Completion e ACP:
 
 ```typescript
 export function getCommandSourceBadge(cmd: SlashCommand): string | null;
@@ -117,13 +119,13 @@ export function getCommandDisplayName(cmd: SlashCommand): string;
 export function getCommandSubcommandNames(cmd: SlashCommand): string[];
 ```
 
-Não é recomendado colocar essas funções de exibição no Loader, para evitar que o Loader assuma responsabilidades de UI.
+Não é recomendado colocar essas funções de exibição dentro dos Loaders, para evitar que os Loaders assumam responsabilidades de UI.
 
 ---
 
-## 4. Fase 3.1: Aprimoramento da Experiência de Sugestão
+## 4. Fase 3.1: Aprimoramento da Experiência de Autocompletar
 
-### 4.1 Estender a Estrutura de Dados `Suggestion`
+### 4.1 Estendendo a Estrutura de Dados `Suggestion`
 
 Atual:
 
@@ -137,7 +139,7 @@ export interface Suggestion {
 }
 ```
 
-Sugestão de extensão:
+Sugere-se estender para:
 
 ```typescript
 export interface Suggestion {
@@ -158,22 +160,22 @@ export interface Suggestion {
 }
 ```
 
-Sugestões de arquivo (`mode !== 'slash'`) e pesquisa reversa não precisam preencher esses campos.
+Sugestões de arquivo (para comandos não-slash) não precisam preencher esses campos.
 
-### 4.2 Exibição do source badge
+### 4.2 Exibição do Badge de Origem
 
-Atualmente, `SuggestionsDisplay` adiciona `[MCP]` apenas para `CommandKind.MCP_PROMPT`. Na Fase 3, passamos a usar `source` / `sourceLabel` para gerar o badge de forma unificada:
+Atualmente, `SuggestionsDisplay` só adiciona `[MCP]` para `CommandKind.MCP_PROMPT`. A Fase 3 muda para usar `source` / `sourceLabel` para gerar badges uniformemente:
 
-| source / sourceLabel                | badge                                     |
-| ----------------------------------- | ----------------------------------------- |
-| `builtin-command`                   | `[Built-in]` (opcional: não exibir por padrão para reduzir ruído) |
-| `bundled-skill` / `Skill`           | `[Skill]`                                 |
-| `skill-dir-command` / `User`        | `[User]`                                  |
-| `skill-dir-command` / `Project`     | `[Project]`                               |
-| `skill-dir-command` / `Custom`      | `[Custom]`                                |
-| `plugin-command` / `Plugin: x`      | `[Plugin]` ou `[Plugin: x]`               |
-| `plugin-command` / `Extension: x`   | `[Extension]` ou `[Extension: x]`         |
-| `mcp-prompt`                        | `[MCP]`                                   |
+| source / sourceLabel              | badge                                      |
+| --------------------------------- | ------------------------------------------ |
+| `builtin-command`                 | `[Built-in]` (opcional: não exibir por padrão para reduzir ruído) |
+| `bundled-skill` / `Skill`         | `[Skill]`                                  |
+| `skill-dir-command` / `User`      | `[User]`                                   |
+| `skill-dir-command` / `Project`   | `[Project]`                                |
+| `skill-dir-command` / `Custom`    | `[Custom]`                                 |
+| `plugin-command` / `Plugin: x`    | `[Plugin]` ou `[Plugin: x]`                |
+| `plugin-command` / `Extension: x` | `[Extension]` ou `[Extension: x]`          |
+| `mcp-prompt`                      | `[MCP]`                                    |
 
 Implementação recomendada:
 
@@ -199,43 +201,45 @@ function getCommandSourceBadge(cmd: SlashCommand): string | null {
 }
 ```
 
-> Se exibir `[Built-in]` ou não depende da legibilidade da UI. No Help, é obrigatório mostrar o agrupamento Built-in; no menu de sugestão, pode-se omitir o badge built-in e exibir badges apenas para fontes não internas.
+> [!note]
+> A decisão de exibir ou não `[Built-in]` depende da legibilidade da UI. No Help, o agrupamento Built-in deve ser exibido; no menu de autocompletar, o badge built-in pode ser omitido, exibindo badge apenas para origens não built-in.
 
-### 4.3 Exibição do argumentHint
+### 4.3 Exibição da Dica de Argumento
 
-No menu de sugestão, após o nome do comando, adicionar `argumentHint` em cinza:
+No menu de autocompletar, após o nome do comando, adicionar o `argumentHint` em cinza:
 
 ```text
 /model <model-id>              Switch model
 /export md|html|json|jsonl     Export current session
 /review [pr-number] [--comment] [Skill] Review changed code
 ```
-Implementação sugerida:
+
+Sugestões de implementação:
 
 - `useSlashCompletion` preenche `argumentHint: cmd.argumentHint` em `finalSuggestions`
-- `SuggestionsDisplay` renderiza `argumentHint` em `theme.text.secondary` após o label
-- `commandColumnWidth` calcula incluindo label + hint + badge, evitando desalinhamento da coluna de descrição
-- Completamento de subcomandos também suporta `argumentHint`
+- `SuggestionsDisplay` renderiza `argumentHint` após o label com `theme.text.secondary`
+- `commandColumnWidth` calcula incluindo label + hint + badge, para evitar desalinhamento da coluna de descrição
+- Autocompletar de subcomandos também suporta `argumentHint`
 
-Primeiro é necessário adicionar `argumentHint` para comandos built-in comuns. Sugestão inicial:
+É necessário primeiro complementar `argumentHint` para comandos built-in comuns. Sugere-se o primeiro lote:
 
-| Comando          | argumentHint                  |
-| ---------------- | ----------------------------- | ------------------ | -------- | ------------- | ------- |
-| `/model`         | `[--fast] [<model-id>]`       |
-| `/approval-mode` | `<mode>`                      |
-| `/language`      | `ui \| output <language>`      |
-| `/export`        | `md \| html \| json \| jsonl [path]` |
-| `/memory`        | `show \| add \| refresh`      |
-| `/mcp`           | `desc \| nodesc \| schema \| auth \| noauth` |
-| `/stats`         | `[model \| tools]`            |
-| `/docs`          | vazio ou não definido         |
-| `/doctor`        | vazio ou não definido         |
+| Comando           | argumentHint            |
+| ----------------- | ----------------------- |
+| `/model`          | `[--fast] [<model-id>]` |
+| `/approval-mode`  | `<mode>`                |
+| `/language`       | `ui                     | output <language>` |
+| `/export`         | `md                     | html               | json     | jsonl [path]` |
+| `/memory`         | `show                   | add                | refresh` |
+| `/mcp`            | `desc                   | nodesc             | schema   | auth          | noauth` |
+| `/stats`          | `[model                 | tools]`            |
+| `/docs`           | Vazio ou não definido   |
+| `/doctor`         | Vazio ou não definido   |
 
-### 4.4 Ordenação por usados recentemente
+### 4.4 Ordenação por Uso Recente
 
-#### 4.4.1 Armazenamento de estado
+#### 4.4.1 Armazenamento de Estado
 
-Em `useSlashCommandProcessor` ou `AppContainer`, manter estado de uso recente em nível de sessão:
+Manter o estado de uso recente no nível da sessão em `useSlashCommandProcessor` ou `AppContainer`:
 
 ```typescript
 type RecentSlashCommand = {
@@ -245,20 +249,20 @@ type RecentSlashCommand = {
 };
 ```
 
-Sugere-se armazenar como `Map<string, RecentSlashCommand>`, usando como chave o nome final do comando (ou seja, `cmd.name` após resolução de conflitos).
+Sugere-se armazenar como `Map<string, RecentSlashCommand>`, usando a chave como nome final do comando (ou seja, `cmd.name` após tratamento de conflitos).
 
-#### 4.4.2 Momento de registro
+#### 4.4.2 Momento de Registro
 
-Em `useSlashCommandProcessor.handleSlashCommand`, após resolver com sucesso `commandToExecute`, registrar o uso:
+Registrar o uso após `useSlashCommandProcessor.handleSlashCommand` resolver com sucesso `commandToExecute`:
 
-- Se o comando não for encontrado, não registrar
-- Comandos `hidden` podem não ser registrados
-- Chamadas via alias registram pelo nome canônico `commandToExecute.name`
-- Chamadas de subcomandos: sugere-se registrar o caminho completo do pai e da folha, mas aceita-se registrar apenas o comando folha na primeira versão
+- Se comando não encontrado, não registrar
+- Comandos ocultos podem não ser registrados
+- Chamadas via alias são registradas pelo nome canônico `commandToExecute.name`
+- Chamadas de subcomandos: sugere-se registrar o caminho completo do comando pai e folha; na primeira versão, apenas o comando folha é aceitável
 
-#### 4.4.3 Peso na ordenação
+#### 4.4.3 Peso na Ordenação
 
-A ordenação atual de `compareRankedCommandMatches()` é:
+A ordem atual de `compareRankedCommandMatches()` é:
 
 1. matchStrength
 2. completionPriority
@@ -267,7 +271,7 @@ A ordenação atual de `compareRankedCommandMatches()` é:
 5. item length
 6. original index
 
-Na Fase 3, inserir `recentScore`:
+Na Fase 3, insere `recentScore`:
 
 ```typescript
 return (
@@ -288,11 +292,11 @@ const RECENT_DECAY_MS = 10 * 60 * 1000;
 const recentScore = count * 10 + Math.max(0, 10 - ageMs / RECENT_DECAY_MS);
 ```
 
-Quando a query está vazia (usuário digitou apenas `/`), comandos usados recentemente ficam no topo; quando a query não está vazia, o peso é aplicado apenas entre resultados de mesma força de correspondência, evitando que comandos recentes sobrepujem comandos claramente mais precisos.
+Quando a query está vazia (usuário só digitou `/`), comandos usados recentemente são colocados no topo; quando a query não está vazia, a ponderação só ocorre na mesma intensidade de correspondência, para evitar que comandos recentes sobreponham comandos significativamente mais precisos.
 
-### 4.5 Exibição de alias na correspondência
+### 4.5 Exibição de Alias Correspondido
 
-Atualmente os alias já participam de `AsyncFzf` e do fallback por prefixo, mas `formatSlashCommandLabel()` sempre exibe todos os alias:
+Atualmente, o alias já participa do `AsyncFzf` e do fallback de prefixo, mas `formatSlashCommandLabel()` sempre mostra todos os alias:
 
 ```text
 help (?)
@@ -301,9 +305,9 @@ compress (summarize)
 
 Na Fase 3, mudar para:
 
-- Quando o usuário digitar correspondendo ao nome principal: não exibir alias adicional, ou manter formato conciso atual
-- Quando o usuário digitar correspondendo a um alias: exibir `help (alias: ?)`
-- `Suggestion.matchedAlias` deve ser preenchido pela etapa de correspondência
+- Quando o usuário digita o nome principal: não exibir alias extra, ou manter formato conciso atual
+- Quando o usuário digita um alias: exibir `help (alias: ?)`
+- `Suggestion.matchedAlias` é preenchido na fase de correspondência
 
 Pontos de implementação:
 
@@ -318,26 +322,26 @@ function findMatchedAlias(
 }
 ```
 
-Nos resultados do FZF, se `result.item` vier de `altNames`, pode-se usar diretamente como `matchedAlias`; o mesmo vale para o fallback por prefixo.
+Nos resultados FZF, se `result.item` vier de `altNames`, pode-se defini-lo diretamente como `matchedAlias`; o mesmo vale para o fallback de prefixo.
 
 ---
 
-## 5. Fase 3.2: Comando slash no meio da entrada (versão completa)
+## 5. Fase 3.2: Versão Completa do Slash Command em Meio à Digitação
 
-### 5.1 Comportamento atual
+### 5.1 Comportamento Atual
 
-Atualmente `findMidInputSlashCommand()` identifica apenas "tokens `/xxx` separados por espaço em branco" e exige que o cursor esteja no final do token; `getBestSlashCommandMatch()` faz apenas correspondência de prefixo em ordem alfabética entre comandos `modelInvocable`.
+Atualmente, `findMidInputSlashCommand()` só reconhece tokens `/xxx` separados por espaços em branco, e requer que o cursor esteja no final do token; `getBestSlashCommandMatch()` só faz correspondência de prefixo alfabético entre comandos `modelInvocable`.
 
-Isso atende ao objetivo da Fase 2 básica, mas a Fase 3 precisa completar a exibição e o destaque.
+Isso atende ao objetivo básico da Fase 2, mas a Fase 3 precisa complementar a exibição e o destaque.
 
-### 5.2 Melhoria do ghost text
+### 5.2 Aprimoramento do Ghost Text
 
-Manter a estratégia atual: mid-input slash sugere apenas comandos `modelInvocable`, pois comandos built-in no corpo do texto não serão executados como slash command.
+Manter a estratégia atual: ghost text para slash em meio à digitação só sugere comandos `modelInvocable`, pois comandos built-in no corpo do texto não serão executados como slash command.
 
-Pontos de melhoria:
+Pontos de aprimoramento:
 
-- O algoritmo de correspondência deve passar de prefixo alfabético para reutilizar as regras de ordenação de `useSlashCompletion` (pelo menos considerando `completionPriority` e usados recentemente)
-- A estrutura de retorno deve ser expandida para:
+- O algoritmo de correspondência muda de prefixo alfabético para reutilizar as regras de ordenação de `useSlashCompletion` (pelo menos considerando `completionPriority` e uso recente)
+- A estrutura de retorno é estendida para:
 
 ```typescript
 export type BestSlashCommandMatch = {
@@ -349,19 +353,19 @@ export type BestSlashCommandMatch = {
 };
 ```
 
-### 5.3 Badge de origem e dica de argumento no meio da entrada
+### 5.3 Badge de Origem e Dica de Argumento em Meio à Digitação
 
-Como o espaço do ghost text é limitado, não é recomendado colocar badge e hint diretamente no corpo do ghost text. Regra de exibição sugerida:
+Devido ao espaço limitado no ghost text, não é recomendado colocar badge e hint diretamente no corpo do ghost text. Regras de exibição sugeridas:
 
-- O ghost text ainda renderiza apenas o sufixo do nome do comando, por exemplo, digitar `please /rev` mostra `iew`
-- Quando o token já corresponde exatamente ao comando e o comando possui `argumentHint`, exibir a dica de parâmetros em tom claro após o cursor, por exemplo, `/review [pr-number] [--comment]`
-- O badge de origem é exibido apenas no dropdown ou em indicadores de estado; se o mid-input não abrir dropdown, a exibição do badge não é obrigatória
+- Ghost text ainda renderiza apenas o sufixo do nome do comando, por exemplo, ao digitar `please /rev` mostra `iew`
+- Quando o token já corresponde exatamente a um comando e o comando tem `argumentHint`, exibir a dica de parâmetro em tom claro após o cursor, por exemplo, `/review [pr-number] [--comment]`
+- Badge de origem é exibido apenas no dropdown ou em dica de status; se o meio da digitação não abrir dropdown, o badge não precisa ser exibido obrigatoriamente
 
-### 5.4 Destaque de token de comando válido
+### 5.4 Destaque de Token de Comando Válido
 
-Inspirado em `findSlashCommandPositions()` do Claude Code, em `InputPrompt.renderLineWithHighlighting()` colorir tokens de slash command válidos no corpo do texto.
+Inspirando-se em `findSlashCommandPositions()` do Claude Code, colorir tokens de slash command válidos no corpo do texto em `InputPrompt.renderLineWithHighlighting()`.
 
-Sugere-se adicionar funções utilitárias:
+Sugere-se adicionar função utilitária:
 
 ```typescript
 export type SlashCommandToken = {
@@ -379,48 +383,49 @@ export function findSlashCommandTokens(
 
 Regras:
 
-- O token deve estar no início da string ou ter um caractere de espaço em branco antes
+- O token deve estar no início da string ou ser precedido por caractere de espaço em branco
 - Token no formato `/[a-zA-Z][a-zA-Z0-9:_-]*`
-- Para destaque no meio da entrada, considerar apenas comandos `modelInvocable` como válidos
+- Para destaque em meio à digitação, apenas comandos `modelInvocable` são considerados válidos
 - Token no início da linha pode considerar todos os comandos interativos visíveis como válidos
-- Token válido usa cor de destaque (accent); token inválido mantém texto normal, evitando marcar caminhos como `/usr/bin` como se fossem comandos
+- Tokens válidos usam cor de destaque; tokens inválidos mantêm texto normal, evitando marcar caminhos como `/usr/bin` erroneamente como comandos
 
 ---
 
-## 6. Fase 3.3: Reestruturação da central de ajuda (Help)
+## 6. Fase 3.3: Reestruturação do Catálogo de Ajuda
 
-### 6.1 Problemas atuais
+### 6.1 Problemas Atuais
 
 `Help.tsx` atualmente exibe:
 
-- Básico
-- `Comandos:` de forma plana
-- Explicação de `[MCP]`
-- Atalhos de teclado
+- Basics
+- Comandos em lista plana `Commands:`
+- Explicação `[MCP]`
+- Atalhos de Teclado
 
 Problemas:
 
-- Todas as fontes misturadas: skill, custom, plugin, MCP difíceis de distinguir
+- Todas as origens misturadas, difícil distinguir skill, custom, plugin, MCP
 - Não exibe `argumentHint`
 - Não exibe `supportedModes`
 - Não exibe `modelInvocable`
-- Subcomandos apenas recuados em um nível, sem exibir fonte/modo
+- Subcomandos apenas recuados um nível, sem exibir origem/modo
 
-### 6.2 Design de agrupamento
+### 6.2 Design de Agrupamento
 
 Agrupar por `source` / `sourceLabel`:
 
-1. **Comandos Built-in**: `source === 'builtin-command'`
-2. **Skills Empacotados**: `source === 'bundled-skill'`
-3. **Comandos Customizados**: `source === 'skill-dir-command'`, incluindo `Custom` / `User` / `Project`
-4. **Comandos de Plugin**: `source === 'plugin-command'`, incluindo `Plugin:*` / `Extension:*`
-5. **Comandos MCP**: `source === 'mcp-prompt'`
-6. **Outros Comandos**: fallback de compatibilidade para fontes ausentes
-每组内部按命令名排序；hidden 命令不展示。
+1. **Built-in Commands**: `source === 'builtin-command'`
+2. **Bundled Skills**: `source === 'bundled-skill'`
+3. **Custom Commands**: `source === 'skill-dir-command'`, incluindo `Custom` / `User` / `Project`
+4. **Plugin Commands**: `source === 'plugin-command'`, incluindo `Plugin:*` / `Extension:*`
+5. **MCP Commands**: `source === 'mcp-prompt'`
+6. **Other Commands**: fallback de compatibilidade para comandos sem source
 
-### 6.3 每条命令展示字段
+Dentro de cada grupo, ordenar por nome do comando; comandos ocultos não são exibidos.
 
-格式建议：
+### 6.3 Campos Exibidos por Comando
+
+Formato sugerido:
 
 ```text
 /model [--fast] [<model-id>]  Switch model
@@ -430,40 +435,40 @@ Agrupar por `source` / `sourceLabel`:
   source: Skill  modes: interactive, non_interactive, acp  model: yes
 ```
 
-为避免 Help 过宽，建议压缩为单行：
+Para evitar que o Help fique muito largo, sugere-se comprimir em uma única linha:
 
 ```text
  /review [pr-number] [--comment] [Skill] [all] [model] - Review changed code
 ```
 
-Mode badge 建议：
+Badge de modo sugerido:
 
 | supportedModes                      | badge            |
 | ----------------------------------- | ---------------- |
-| `interactive` only                  | `[interactive]`  |
+| `interactive` apenas                | `[interactive]`  |
 | `interactive, non_interactive, acp` | `[all]`          |
 | `non_interactive, acp`              | `[headless]`     |
-| 其他组合                            | `[i] [ni] [acp]` |
+| Outras combinações                  | `[i] [ni] [acp]` |
 
-### 6.4 `/help` 是否扩展到 headless
+### 6.4 Extensão do `/help` para Headless
 
-路线图只要求 `/help` 输出按来源分组，没有明确要求 non-interactive/acp。当前 `/help` 是 `supportedModes: ['interactive']`。
+O roadmap exige apenas que `/help` exiba saída agrupada por origem, sem exigir explicitamente non-interactive/acp. Atualmente, `/help` tem `supportedModes: ['interactive']`.
 
-Phase 3 建议新增 headless 路径，但作为独立子任务：
+A Fase 3 sugere adicionar um caminho headless, mas como subtarefa independente:
 
-- `supportedModes` 改为 all modes
-- interactive：继续渲染 `HistoryItemHelp`
-- non_interactive/acp：返回纯文本分组目录 `message`
+- `supportedModes` alterado para todos os modos
+- interactive: continua renderizando `HistoryItemHelp`
+- non_interactive/acp: retorna um diretório agrupado em texto simples (`message`)
 
-如果 scope 需要收敛，可先只重构 interactive `Help` 组件，headless `/help` 延后。
+Se o escopo precisar ser reduzido, pode-se primeiro reestruturar apenas o componente `Help` interativo, adiando o `/help` headless.
 
 ---
 
-## 7. Phase 3.4：ACP available commands 元数据增强
+## 7. Fase 3.4: Aprimoramento dos Metadados de Comandos Disponíveis no ACP
 
-### 7.1 当前 ACP 输出
+### 7.1 Saída Atual do ACP
 
-`Session.sendAvailableCommandsUpdate()` 当前将 `SlashCommand[]` 映射为：
+`Session.sendAvailableCommandsUpdate()` atualmente mapeia `SlashCommand[]` para:
 
 ```typescript
 {
@@ -473,11 +478,11 @@ Phase 3 建议新增 headless 路径，但作为独立子任务：
 }
 ```
 
-其中 `argumentHint` 已通过 `input.hint` 暴露。
+Onde `argumentHint` já é exposto via `input.hint`.
 
-### 7.2 增强方案
+### 7.2 Plano de Aprimoramento
 
-ACP protocol 的 `AvailableCommand` 类型如果不能直接增加字段，使用 `_meta` 保持兼容：
+Se o tipo `AvailableCommand` do protocolo ACP não puder ter campos adicionados diretamente, usar `_meta` para manter compatibilidade:
 
 ```typescript
 const availableCommands: AvailableCommand[] = slashCommands.map((cmd) => ({
@@ -497,7 +502,7 @@ const availableCommands: AvailableCommand[] = slashCommands.map((cmd) => ({
 }));
 ```
 
-如果 `AvailableCommand` 类型允许扩展字段，则优先输出为一等字段：
+Se o tipo `AvailableCommand` permitir extensão de campos, priorizar a saída como campos de primeira classe:
 
 ```typescript
 {
@@ -512,17 +517,17 @@ const availableCommands: AvailableCommand[] = slashCommands.map((cmd) => ({
 }
 ```
 
-但仍建议保留 `_meta` 镜像一段时间，便于旧客户端渐进迁移。
+Mas ainda é recomendado manter `_meta` como espelho por um tempo, para facilitar a migração gradual de clientes antigos.
 
-### 7.3 subcommands 递归策略
+### 7.3 Estratégia de Subcomandos Recursivos
 
-验收标准只要求 `subcommands` 名称列表。首期输出一级子命令即可：
+Os critérios de aceitação exigem apenas a lista de nomes de `subcommands`. Na primeira versão, basta expor subcomandos de primeiro nível:
 
 ```typescript
 subcommands: cmd.subCommands?.map((sub) => sub.name) ?? [];
 ```
 
-后续如果 ACP 客户端需要多级树，可扩展为：
+Futuramente, se clientes ACP precisarem de árvore multinível, pode-se estender para:
 
 ```typescript
 type AcpSubcommandMeta = {
@@ -535,108 +540,111 @@ type AcpSubcommandMeta = {
 
 ---
 
-## 8. Phase 3.5：Claude Code 缺失命令补齐
+## 8. Fase 3.5: Complementação de Comandos Faltantes do Claude Code
 
-### 8.1 `/doctor`：已实现，不重复实现
+### 8.1 `/doctor`: Já Implementado, não Reimplementar
 
-当前 `doctorCommand` 已存在：
+Atualmente, `doctorCommand` já existe:
 
-- 文件：`packages/cli/src/ui/commands/doctorCommand.ts`
-- 注册：`BuiltinCommandLoader`
-- 模式：`['interactive', 'non_interactive', 'acp']`
-- interactive：展示 `HistoryItemDoctor`
-- non_interactive/acp：返回 JSON `message`
-- 诊断逻辑：`packages/cli/src/utils/doctorChecks.ts`
+- Arquivo: `packages/cli/src/ui/commands/doctorCommand.ts`
+- Registro: `BuiltinCommandLoader`
+- Modos: `['interactive', 'non_interactive', 'acp']`
+- interactive: exibe `HistoryItemDoctor`
+- non_interactive/acp: retorna `message` em JSON
+- Lógica de diagnóstico: `packages/cli/src/utils/doctorChecks.ts`
 
-Phase 3 只需在 Help 和补全中为 `/doctor` 正确展示来源、mode；如需优化，可将 headless JSON 改为更适合人读的 Markdown，但这不是必需项。
+A Fase 3 só precisa garantir que `/doctor` exiba corretamente origem e modo no Help e no autocompletar; se necessário otimizar, pode-se alterar o JSON headless para Markdown mais legível, mas isso não é obrigatório.
 
-### 8.2 `/release-notes`：不纳入本阶段
+### 8.2 `/release-notes`: Não Incluso nesta Fase
 
-`/release-notes` 不再作为 Phase 3 需求。本阶段不新增命令、不注册 built-in、不编写相关测试，避免引入无明确产品需求的命令表面。
-
----
-
-## 9. 冲突策略确认与展示
-
-当前 `CommandService` 冲突策略：
-
-- extension/plugin 命令若与已存在命令同名，重命名为 `extensionName.commandName`
-- 若二次冲突，追加数字后缀：`extensionName.commandName1`
-- 非 extension 命令同名时，后加载覆盖前加载
-
-Phase 3 不改变执行语义，只在 Help/Completion 中清晰展示最终名称和来源。
-
-建议补充测试确保：
-
-- 被重命名的 plugin command 在补全中显示最终名称和 `[Plugin]` badge
-- Help 中按 Plugin Commands 分组展示最终名称
-- ACP 输出使用最终名称
-
-> 路线图中“built-in > bundled/skill-dir > plugin > mcp”的优先级，与当前实现“非 extension 后加载覆盖前加载”不完全一致。Phase 3 文档以当前 `CommandService` 源码为准，不在本阶段改冲突语义；如需严格调整优先级，应作为单独 Phase 处理，避免改变已有用户/项目命令覆盖行为。
+`/release-notes` não é mais um requisito da Fase 3. Esta fase não adicionará novos comandos, não registrará built-in nem escreverá testes relacionados, evitando introduzir comandos superficiais sem requisitos de produto claros.
 
 ---
 
-## 10. 测试策略
+## 9. Confirmação e Exibição da Estratégia de Conflitos
 
-### 10.1 补全测试
+Estratégia de conflitos atual do `CommandService`:
 
-更新或新增：
+- Comandos de extensão/plugin com nomes conflitantes com comandos existentes são renomeados para `extensionName.commandName`
+- Se houver segundo conflito, adiciona sufixo numérico: `extensionName.commandName1`
+- Comandos não-extension com o mesmo nome: o carregamento posterior substitui o anterior
+
+A Fase 3 não altera a semântica de execução, apenas garante que o nome final e a origem sejam exibidos claramente no Help/Completion.
+
+Sugere-se complementar testes para garantir:
+
+- Comandos de plugin renomeados são exibidos com o nome final e badge `[Plugin]` no autocompletar
+- No Help, são exibidos no grupo Plugin Commands com o nome final
+- A saída ACP usa o nome final
+
+> [!note]
+> A prioridade "built-in > bundled/skill-dir > plugin > mcp" do roadmap não é totalmente consistente com a implementação atual "não-extension: o carregamento posterior substitui o anterior". A documentação da Fase 3 considera o código-fonte atual do `CommandService` como referência, e não alterará a semântica de conflitos nesta fase; se for necessário ajustar rigorosamente a prioridade, isso deve ser tratado como uma fase separada para evitar alterar o comportamento de substituição de comandos de usuário/projeto existentes.
+
+---
+
+## 10. Estratégia de Testes
+
+### 10.1 Testes de Autocompletar
+
+Atualizar ou adicionar:
 
 - `packages/cli/src/ui/hooks/useSlashCompletion.test.ts`
 - `packages/cli/src/ui/hooks/useCommandCompletion.test.ts`
-- `packages/cli/src/ui/components/SuggestionsDisplay.test.tsx`（如当前无文件则新增）
+- `packages/cli/src/ui/components/SuggestionsDisplay.test.tsx` (criar se não existir)
 
-覆盖：
+Cobertura:
 
-- source badge：Skill/Custom/Plugin/MCP 正确展示
-- argumentHint：命令名后展示 hint，且列宽不破坏描述
-- recently used：只输入 `/` 时近期命令排在前面；输入明确 query 时精确命中优先
-- alias 命中：输入 `?` 展示 `help (alias: ?)`，输入 `he` 不展示 alias 命中提示
-- mid-input ghost：正文 `/rev` 提示 modelInvocable `/review` 后缀
-- mid-input 不提示 built-in：正文 `/sta` 不提示 `/stats`（除非未来设计允许内嵌 built-in 执行）
+- Badge de origem: exibir corretamente Skill/Custom/Plugin/MCP
+- argumentHint: exibir hint após o nome do comando, e a largura da coluna não prejudicar a descrição
+- Uso recente: quando apenas `/` é digitado, comandos recentes aparecem primeiro; quando uma query clara é digitada, correspondência exata tem prioridade
+- Alias correspondido: ao digitar `?`, exibir `help (alias: ?)`; ao digitar `he`, não exibir dica de alias correspondido
+- Ghost text em meio à digitação: `/rev` no corpo sugere sufixo de `/review` (modelInvocable)
+- Em meio à digitação, não sugerir built-in: `/sta` no corpo não sugere `/stats` (a menos que design futuro permita execução de built-in embutida)
 
-### 10.2 Help 测试
+```
+### 10.2 Testes do Help
 
-更新：`packages/cli/src/ui/components/Help.test.tsx`
+Atualização: `packages/cli/src/ui/components/Help.test.tsx`
 
-覆盖：
+Cobertura:
 
-- 按 Built-in/Bundled Skills/Custom/Plugin/MCP 分组
-- hidden 命令不展示
-- 子命令展示名称列表
-- `argumentHint`、source badge、mode badge、model badge 正确出现
-- altNames 仍可展示，但不干扰主命令名
+- Agrupamento por Built-in / Bundled Skills / Custom / Plugin / MCP
+- Comandos ocultos (`hidden`) não são exibidos
+- Subcomandos exibem lista de nomes
+- `argumentHint`, source badge, mode badge e model badge aparecem corretamente
+- `altNames` ainda podem ser exibidos, mas sem interferir no nome principal do comando
 
-### 10.3 ACP 测试
+### 10.3 Testes ACP
 
-更新：`packages/cli/src/acp-integration/session/Session.test.ts`
+Atualização: `packages/cli/src/acp-integration/session/Session.test.ts`
 
-覆盖：
+Cobertura:
 
-- `availableCommands[].input.hint` 保持现有行为
-- 新增元数据包含 `argumentHint`、`source`、`sourceLabel`、`supportedModes`、`subcommands`、`modelInvocable`
-- 无 `argumentHint` 的命令 `input: null` 保持兼容
-- `getAvailableCommands(config, signal, 'acp')` 调用保持不变
+- `availableCommands[].input.hint` mantém o comportamento atual
+- Novos metadados incluem `argumentHint`, `source`, `sourceLabel`, `supportedModes`, `subcommands` e `modelInvocable`
+- Comandos sem `argumentHint` mantêm `input: null` para compatibilidade
+- A chamada `getAvailableCommands(config, signal, 'acp')` permanece inalterada
 
-### 10.4 新命令测试
+### 10.4 Testes de novos comandos
 
-本阶段不新增 `/release-notes` 或其他 built-in 命令，因此不需要新增命令测试。仅保留 `/doctor` 既有回归测试。
+Nesta fase não serão adicionados comandos built-in como `/release-notes`, portanto não é necessário criar novos testes de comando. Apenas mantêm-se os testes de regressão existentes para `/doctor`.
 
-### 10.5 E2E 测试方案
+### 10.5 Plano de testes E2E
 
-Phase 3 同时修改 TUI 补全、slash command 执行、ACP command metadata，单元测试不能覆盖完整用户路径。E2E 验证分三类进行：
+A Fase 3 modifica simultaneamente a completação TUI, a execução de slash commands e os metadados do comando ACP. Testes unitários não cobrem todo o caminho do usuário. A validação E2E é dividida em três categorias:
 
-1. **构建本地 CLI**：先运行 `npm run build && npm run bundle`，后续使用 `node dist/cli.js` 验证本地实现。
-2. **Interactive / tmux 场景**：用于验证补全菜单、ghost text、Tab 接受、Help 渲染等 TUI 行为。
-3. **Headless / JSON 场景**：用于验证 non-interactive slash command 输出，不依赖 TUI。
-4. **ACP integration 场景**：用于验证 `available_commands_update` 元数据。
-#### 10.5.1 Passos preliminares E2E
+1. **Build local da CLI**: primeiro execute `npm run build && npm run bundle`, depois use `node dist/cli.js` para validar a implementação local.
+2. **Cenário Interactive / tmux**: usado para validar o menu de compleção, ghost text, aceitação com Tab, renderização do Help e outros comportamentos TUI.
+3. **Cenário Headless / JSON**: usado para validar a saída non-interactive de slash commands, sem depender da TUI.
+4. **Cenário de integração ACP**: usado para validar os metadados `available_commands_update`.
+
+#### 10.5.1 Pré‑requisitos E2E
 
 ```bash
 npm run build && npm run bundle
 ```
 
-Para cenários interativos, recomenda-se usar um diretório temporário independente para evitar poluir o repositório atual:
+Para o cenário interactive, recomenda-se usar um diretório temporário isolado para não poluir o repositório atual:
 
 ```bash
 tmux new-session -d -s qwen-slash-phase3 -x 200 -y 50 \
@@ -644,7 +652,7 @@ tmux new-session -d -s qwen-slash-phase3 -x 200 -y 50 \
 sleep 3
 ```
 
-Ao enviar a entrada, separe o texto e o Enter para evitar que a TUI engula o envio:
+Ao enviar entrada, separe o texto do Enter para evitar que a TUI engula o envio:
 
 ```bash
 tmux send-keys -t qwen-slash-phase3 "/help"
@@ -652,7 +660,7 @@ sleep 0.5
 tmux send-keys -t qwen-slash-phase3 Enter
 ```
 
-Capturar a saída:
+Captura da saída:
 
 ```bash
 tmux capture-pane -t qwen-slash-phase3 -p -S -100
@@ -664,23 +672,23 @@ Limpeza:
 tmux kill-session -t qwen-slash-phase3
 ```
 
-#### 10.5.2 Lista de testes E2E
+#### 10.5.2 Lista de verificação E2E
 
-| Cenário                                    | Modo             | Passos                                                                                    | Resultado esperado                                                                                                                                                                                    |
-| ------------------------------------------ | ---------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Autocompletar o source badge               | interactive/tmux | Digite `/`, observe o menu de autocompletar                                               | Comandos skill/custom/plugin/MCP mostram o source badge correspondente; built-in pode não mostrar badge                                                                                               |
-| Autocompletar o argument hint              | interactive/tmux | Digite `/model`, `/export`                                                                | Após o nome do comando, exibe `argumentHint`; comandos sem argumentos não exibem hint de ruído                                                                                                        |
-| Ordenação por uso recente                  | interactive/tmux | Execute `/help` primeiro, depois digite `/`                                               | `/help` aparece primeiro sob condições de correspondência iguais; query exata ainda corresponde primeiro                                                                                               |
-| Exibição de alias correspondente           | interactive/tmux | Digite `/?`                                                                               | O item de autocompletar mostra `help (alias: ?)`; ao digitar `/he` não mostra falsamente correspondência de alias                                                                                     |
-| Texto fantasma no meio da entrada          | interactive/tmux | No texto principal, digite `please /rev`                                                  | Aparece o sufixo ghost text de `/review`; Tab pode aceitar                                                                                                                                            |
-| Destaque de token no meio da entrada       | interactive/tmux | Digite um texto contendo `/review`                                                        | Token slash model-invocable válido usa destaque de comando; caminhos como `/usr/bin` não são destacados como comandos                                                                                 |
-| Agrupamento do Help                        | interactive/tmux | Execute `/help`                                                                           | Saída contém os grupos Built-in Commands, Bundled Skills, Custom Commands, Plugin Commands, MCP Commands; cada comando mostra source/mode/hint                                                        |
-| Regressão headless do `/doctor`            | headless/json    | Execute `node dist/cli.js "/doctor" --approval-mode yolo --output-format json 2>/dev/null` | Retorna `message`, sem acionar erros de componente exclusivo de TUI                                                                                                                                   |
-| Metadados ACP                              | integration      | Execute uma sessão ACP e acione `available_commands_update`                               | Cada comando mantém `name`, `description`, `input.hint`, e inclui `argumentHint`, `source`, `supportedModes`, `subcommands`, `modelInvocable`                                                           |
+| Cenário                       | Modo                | Passos                                                                                          | Resultado esperado                                                                                                                                                             |
+| ----------------------------- | ------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Compleção – source badge      | interactive/tmux    | Digite `/`, observe o menu de compleção                                                         | Comandos skill/custom/plugin/MCP exibem o source badge correspondente; comandos built-in podem não exibir badge                                                                |
+| Compleção – argument hint     | interactive/tmux    | Digite `/model`, `/export`                                                                      | O argumentHint é exibido após o nome do comando; comandos sem parâmetros não exibem hint poluente                                                                              |
+| Ordenação – usado recentemente| interactive/tmux    | Execute `/help`, depois digite `/`                                                              | `/help` aparece em primeiro lugar quando o grau de correspondência é igual; uma query exata continua priorizando a correspondência à query                                     |
+| Exibição de alias encontrado  | interactive/tmux    | Digite `/?`                                                                                     | O item de compleção exibe `help (alias: ?)`; ao digitar `/he` não deve exibir incorretamente que um alias foi encontrado                                                        |
+| Ghost text no meio do texto   | interactive/tmux    | No corpo da mensagem digite `please /rev`                                                       | O sufixo ghost text de `/review` deve aparecer, e ao pressionar Tab deve ser aceito                                                                                            |
+| Destaque de token no meio     | interactive/tmux    | Digite um corpo contendo `/review`                                                              | Tokens de slash command válidos e invocáveis por modelo devem ser realçados com a cor de comando; caminhos como `/usr/bin` não devem ser realçados como comandos                |
+| Painéis de agrupamento do Help| interactive/tmux    | Execute `/help`                                                                                  | A saída contém os grupos Built-in Commands, Bundled Skills, Custom Commands, Plugin Commands e MCP Commands; cada comando exibe source/mode/hint                               |
+| Regressão headless `/doctor`  | headless/json       | Execute `node dist/cli.js "/doctor" --approval-mode yolo --output-format json 2>/dev/null`      | Retorna `message`, sem disparar erros de componentes exclusivos da TUI                                                                                                         |
+| Metadados ACP                 | integration         | Inicie uma sessão ACP e dispare `available_commands_update`                                     | Cada comando mantém `name`, `description`, `input.hint`, e inclui `argumentHint`, `source`, `supportedModes`, `subcommands`, `modelInvocable`                                  |
 
-#### 10.5.3 Exemplos de comandos headless
+#### 10.5.3 Exemplo de comando headless
 
-`/release-notes` não está incluído nesta fase; a regressão headless mantém apenas a verificação de comandos existentes como `/doctor`.
+`/release-notes` não faz parte desta fase; a regressão headless fica restrita a comandos existentes como `/doctor`.
 
 ### 10.6 Comandos de teste de regressão
 
@@ -693,7 +701,7 @@ cd packages/cli && npx vitest run src/ui/components/Help.test.tsx
 cd packages/cli && npx vitest run src/acp-integration/session/Session.test.ts
 ```
 
-Verificação final:
+Validação final:
 
 ```bash
 npm run build && npm run typecheck
@@ -704,59 +712,62 @@ npm run build && npm run bundle
 
 ## 11. Critérios de aceitação
 
-### 11.1 Menu de autocompletar
+### 11.1 Menu de compleção
 
-- [ ] O menu de autocompletar exibe o source badge (pelo menos `[MCP]`, `[Skill]`, `[Custom]`, `[Plugin]`)
-- [ ] O menu de autocompletar exibe `argumentHint`
-- [ ] Comandos usados recentemente na sessão aparecem primeiro ao digitar apenas `/`
-- [ ] Ao corresponder um alias, exibe `alias: <alias>`; quando não é correspondência de alias, não exibe ruído
-- [ ] Comandos renomeados devido a conflitos de plugin/extension exibem o nome final e a origem no autocompletar
+- [ ] O menu de compleção exibe source badge (pelo menos `[MCP]`, `[Skill]`, `[Custom]`, `[Plugin]`)
+- [ ] O menu de compleção exibe `argumentHint`
+- [ ] Comandos usados recentemente na sessão aparecem primeiro quando apenas `/` é digitado
+- [ ] Quando um alias é encontrado, exibe `alias: <alias>`; quando não é alias, não exibe poluição visual
+- [ ] Comandos renomeados por conflito com plugins/extensões exibem no menu o nome final e a origem
 
-### 11.2 mid-input slash
+### 11.2 Slash command no meio do texto
 
-- [ ] Ao digitar comandos model-invocable como `/review` no texto principal, o ghost text é exibido corretamente
-- [ ] Tab pode aceitar o ghost text no meio da entrada
-- [ ] Token de comando slash no meio da entrada válido é destacado
-- [ ] Comandos built-in não são erroneamente sugeridos como comandos incorporados executáveis no texto principal
-- [ ] A dica de argumento é exibida quando o comando coincide completamente e não possui args
+- [ ] Ao digitar comandos invocáveis por modelo como `/review` no corpo do texto, o ghost text é exibido corretamente
+- [ ] A tecla Tab aceita o ghost text no meio do texto
+- [ ] Tokens de slash command válidos no meio do texto são realçados
+- [ ] Comandos built-in não são sugeridos erroneamente como comandos executáveis inline no corpo do texto
+- [ ] A dica de argumento é exibida quando o comando foi completamente correspondido e não há argumentos
 
-### 11.3 Help
+### 11.3 Ajuda (Help)
 
 - [ ] `/help` exibe comandos agrupados por origem
-- [ ] Cada comando exibe nome, `argumentHint`, description, source, marcações de supportedModes
-- [ ] Comandos model-invocable têm marcação clara
+- [ ] Cada comando exibe nome, `argumentHint`, descrição, origem e marcadores de `supportedModes`
+- [ ] Comandos invocáveis por modelo têm marcador claro
 - [ ] Subcomandos são exibidos como lista de nomes ou itens indentados
-- [ ] Comandos ocultos não são exibidos
+- [ ] Comandos ocultos (`hidden`) não são exibidos
 
 ### 11.4 ACP
 
-- [ ] ACP `available_commands_update` continua incluindo `name`, `description`, `input.hint`
-- [ ] Os metadados do comando ACP incluem `argumentHint`, `source`, `supportedModes`, `subcommands`, `modelInvocable`
-- [ ] Clientes antigos não são afetados ao ignorar novos campos
+- [ ] ACP `available_commands_update` continua incluindo `name`, `description` e `input.hint`
+- [ ] Os metadados do comando ACP incluem `argumentHint`, `source`, `supportedModes`, `subcommands` e `modelInvocable`
+- [ ] Clientes antigos ignoram os novos campos sem sofrer impacto
 
 ### 11.5 Comandos ausentes
 
-- [ ] `/doctor` ainda está disponível e retorna `message` quando non-interactive
-- [ ] Não adicionar `/release-notes`; o comando não é mais exigido na documentação, testes e critérios de aceitação
+- [ ] `/doctor` ainda funciona e, em modo non-interactive, retorna `message`
+- [ ] Não é adicionado `/release-notes`; documentação, testes e critérios de aceitação não exigem mais esse comando
 
 ---
 
-## 12. Não objetivos
+## 12. Não escopo
 
-- Não implementar workflow command / dynamic skill / novo Loader de mcp skill
-- Não introduzir rastreamento persistente de uso de comando
-- Não alterar o protocolo de chamada de modelo do `SkillTool`
-- Não alterar o caminho de chamada de modelo do MCP prompt
-- Não refatorar o executor de comando ou o mode adapter
-- Não alterar a semântica de sobreposição dos comandos user/project existentes
+Os itens a seguir **não** fazem parte da Fase 3:
+
+- Não implementar workflow command / dynamic skill / novo Loader para mcp skill
+- Não introduzir rastreamento persistente de uso de comandos
+- Não alterar o protocolo de invocação de modelo do `SkillTool`
+- Não alterar o caminho de invocação de modelo dos prompts MCP
+- Não refatorar o executor de comandos ou o mode adapter
+- Não alterar a semântica de sobrescrita de comandos user/project existentes
+
 ---
 
-## 13. Ordem de Implementação Sugerida
+## 13. Ordem de implementação sugerida
 
-1. **Complementar estrutura de dados e exibição de badge/hint**: estender `Suggestion` e `SuggestionsDisplay` primeiro, baixo risco e feedback intuitivo.
-2. **Adicionar `argumentHint` built-in**: para que o ghost text existente e o ACP `input.hint` se beneficiem imediatamente.
-3. **Ordenação por recentemente usados**: introduzir o recent score em `useSlashCompletion`, complementar testes.
-4. **Exibição de correspondência de alias**: ajustar a correspondência FZF/prefix para preservar `matchedAlias`.
-5. **Reformulação do Help em abas**: fornecer painéis claros como General / Commands / Custom Commands, no estilo Claude Code, evitando empilhar comandos.
-6. **Aprimoramento de metadados ACP**: estender `Session.sendAvailableCommandsUpdate()`, mantendo a compatibilidade com `_meta`.
-7. **Aprimoramento de destaque mid-input**: processar a camada de renderização por último, para evitar grandes alterações paralelas com a lógica de conclusão.
+1. **Estrutura de dados de compleção e exibição de badge/hint**: primeiro expanda `Suggestion` e `SuggestionsDisplay` – baixo risco, feedback imediato.
+2. **Complementar `argumentHint` dos built-ins**: para que o ghost text existente e o `input.hint` do ACP sejam beneficiados imediatamente.
+3. **Ordenação por uso recente**: introduza o recent score em `useSlashCompletion` e adicione testes.
+4. **Exibição de alias encontrado**: ajuste a correspondência FZF/prefix para preservar `matchedAlias`.
+5. **Reestruturação do Help em abas**: forneça painéis claros no estilo Claude Code (General / Commands / Custom Commands), evitando aglomeração de comandos.
+6. **Aprimoramento dos metadados ACP**: expanda `Session.sendAvailableCommandsUpdate()`, mantendo compatibilidade via `_meta`.
+7. **Aprimoramento do destaque no meio do texto**: trate a camada de renderização por último, para evitar grandes alterações em paralelo com a lógica de compleção.

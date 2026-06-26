@@ -1,6 +1,6 @@
-# 代理脚本示例
+# 示例代理脚本
 
-以下是一个可与 `QWEN_SANDBOX_PROXY_COMMAND` 环境变量配合使用的代理脚本示例。该脚本仅允许与 `example.com:443` 建立 `HTTPS` 连接，并拒绝所有其他请求。
+以下是一个代理脚本示例，可与 `QWEN_SANDBOX_PROXY_COMMAND` 环境变量一起使用。该脚本仅允许到 `example.com:443` 的 `HTTPS` 连接，并拒绝所有其他请求。
 
 ```javascript
 #!/usr/bin/env node

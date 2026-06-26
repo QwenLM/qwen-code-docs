@@ -1,85 +1,85 @@
-# Status de Implementação da Sugestão de Prompt
+# Status de Implementação da Prompt Suggestion
 
-> Rastreia o status de implementação do recurso de sugestão de prompt (NES) em todos os pacotes.
+> Acompanha o status de implementação da funcionalidade de prompt suggestion (NES) em todos os pacotes.
 
 ## Módulo Principal (`packages/core/src/followup/`)
 
-| Component                | Status  | Lines | Description                                                   |
-| ------------------------ | ------- | ----- | ------------------------------------------------------------- |
-| `followupState.ts`       | ✅ Done | ~230  | Controlador independente de framework com timer/debounce      |
-| `suggestionGenerator.ts` | ✅ Done | ~260  | Geração via LLM + 12 regras de filtro + suporte a forked query|
-| `forkedQuery.ts`         | ✅ Done | ~240  | CacheSafeParams + createForkedChat + runForkedQuery           |
-| `overlayFs.ts`           | ✅ Done | ~140  | Sistema de arquivos overlay com copy-on-write                 |
-| `speculationToolGate.ts` | ✅ Done | ~150  | Aplicação de limites de ferramentas com parser AST de shell   |
-| `speculation.ts`         | ✅ Done | ~540  | Motor de speculation com sugestão em pipeline + substituição de modelo |
+| Componente                    | Status  | Linhas | Descrição                                                      |
+| ----------------------------- | ------- | ------ | -------------------------------------------------------------- |
+| `followupState.ts`            | ✅ Feito | ~230   | Controlador independente de framework com timer/debounce        |
+| `suggestionGenerator.ts`      | ✅ Feito | ~260   | Geração LLM + 12 regras de filtro + suporte a consultas bifurcadas |
+| `forkedQuery.ts`              | ✅ Feito | ~240   | CacheSafeParams + createForkedChat + runForkedQuery            |
+| `overlayFs.ts`                | ✅ Feito | ~140   | Sistema de arquivos overlay copy-on-write                      |
+| `speculationToolGate.ts`      | ✅ Feito | ~150   | Imposição de limites de ferramenta com analisador de shell AST |
+| `speculation.ts`              | ✅ Feito | ~540   | Motor de especulação com sugestão em pipeline + substituição de modelo |
 
-## Integração com CLI (`packages/cli/`)
+## Integração CLI (`packages/cli/`)
 
-| Component                    | Status  | Description                                                |
-| ---------------------------- | ------- | ---------------------------------------------------------- |
-| `AppContainer.tsx`           | ✅ Done | Geração de sugestões, ciclo de vida da speculation, renderização de UI |
-| `InputPrompt.tsx`            | ✅ Done | Aceitação via Tab/Enter/Seta Direita, dispensar + abortar  |
-| `Composer.tsx`               | ✅ Done | Passagem de props                                          |
-| `UIStateContext.tsx`         | ✅ Done | promptSuggestion + dismissPromptSuggestion                 |
-| `useFollowupSuggestions.tsx` | ✅ Done | React hook com telemetria + rastreamento de teclas         |
-| `settingsSchema.ts`          | ✅ Done | 3 feature flags + configuração fastModel                   |
-| `settings.schema.json`       | ✅ Done | Schema de configurações do VSCode                          |
+| Componente                       | Status  | Descrição                                                      |
+| -------------------------------- | ------- | -------------------------------------------------------------- |
+| `AppContainer.tsx`               | ✅ Feito | Geração de sugestão, ciclo de vida da especulação, renderização da UI |
+| `InputPrompt.tsx`                | ✅ Feito | Aceitação via Tab/Enter/Seta Direita, descarte + abortar       |
+| `Composer.tsx`                   | ✅ Feito | Encadeamento de props                                          |
+| `UIStateContext.tsx`             | ✅ Feito | promptSuggestion + dismissPromptSuggestion                     |
+| `useFollowupSuggestions.tsx`     | ✅ Feito | Hook React com telemetria + rastreamento de pressionamento de teclas |
+| `settingsSchema.ts`              | ✅ Feito | 3 flags de funcionalidade + configuração fastModel             |
+| `settings.schema.json`           | ✅ Feito | Esquema de configurações do VSCode                             |
 
-## Integração com WebUI (`packages/webui/`)
+## Integração WebUI (`packages/webui/`)
 
-| Component                   | Status  | Description                                 |
-| --------------------------- | ------- | ------------------------------------------- |
-| `InputForm.tsx`             | ✅ Done | Tab/Enter/Seta Direita + submit com explicitText |
-| `useFollowupSuggestions.ts` | ✅ Done | React hook com suporte a onOutcome          |
-| `followup.ts`               | ✅ Done | Ponto de entrada de subpath                 |
-| `components.css`            | ✅ Done | Estilização de ghost text                   |
-| `vite.config.followup.ts`   | ✅ Done | Configuração de build separada              |
+| Componente                      | Status  | Descrição                                                      |
+| ------------------------------- | ------- | -------------------------------------------------------------- |
+| `InputForm.tsx`                 | ✅ Feito | Tab/Enter/Seta Direita + envio explicitText                    |
+| `useFollowupSuggestions.ts`     | ✅ Feito | Hook React com suporte a onOutcome                             |
+| `followup.ts`                   | ✅ Feito | Entrada de subcaminho                                          |
+| `components.css`                | ✅ Feito | Estilização de texto fantasma                                  |
+| `vite.config.followup.ts`       | ✅ Feito | Configuração de build separada                                 |
 
 ## Telemetria (`packages/core/src/telemetry/`)
 
-| Component               | Status  | Description          |
-| ----------------------- | ------- | -------------------- |
-| `PromptSuggestionEvent` | ✅ Done | 10 campos            |
-| `SpeculationEvent`      | ✅ Done | 7 campos             |
-| `logPromptSuggestion()` | ✅ Done | Logger OpenTelemetry |
-| `logSpeculation()`      | ✅ Done | Logger OpenTelemetry |
+| Componente                | Status  | Descrição           |
+| ------------------------- | ------- | ------------------- |
+| `PromptSuggestionEvent`   | ✅ Feito | 10 campos           |
+| `SpeculationEvent`        | ✅ Feito | 7 campos            |
+| `logPromptSuggestion()`   | ✅ Feito | Logger OpenTelemetry |
+| `logSpeculation()`        | ✅ Feito | Logger OpenTelemetry |
 
 ## Cobertura de Testes
 
-| Test File                     | Tests | Description                                                     |
-| ----------------------------- | ----- | --------------------------------------------------------------- |
-| `followupState.test.ts`       | 14    | Timer do controller, debounce, callback de aceitação, onOutcome, clear |
-| `suggestionGenerator.test.ts` | 16    | Todas as 12 regras de filtro + edge cases + falsos positivos    |
-| `overlayFs.test.ts`           | 15    | Escrita COW, resolução de leitura, apply, cleanup, path traversal |
-| `speculationToolGate.test.ts` | 27    | Categorias de ferramentas, modo de aprovação, AST de shell, reescrita de path |
-| `forkedQuery.test.ts`         | 6     | Save/get/clear de parâmetros de cache, deep clone, detecção de versão |
-| `speculation.test.ts`         | 7     | Edge cases do ensureToolResultPairing                           |
-| `smoke.test.ts`               | 21    | E2E cross-module: filter + overlay + toolGate + cache + pairing |
-| `InputPrompt.test.tsx`        | 4     | Tab, Enter+submit, Seta Direita, completion guard               |
+| Arquivo de Teste                 | Testes | Descrição                                                     |
+| -------------------------------- | ------ | ------------------------------------------------------------- |
+| `followupState.test.ts`          | 14     | Timer do controlador, debounce, callback de aceitação, onOutcome, limpeza |
+| `suggestionGenerator.test.ts`    | 16     | Todas as 12 regras de filtro + casos extremos + falsos positivos |
+| `overlayFs.test.ts`              | 15     | Escrita COW, resolução de leitura, aplicação, limpeza, travessia de caminho |
+| `speculationToolGate.test.ts`    | 27     | Categorias de ferramenta, modo de aprovação, shell AST, reescrita de caminho |
+| `forkedQuery.test.ts`            | 6      | Parâmetros de cache save/get/clear, deep clone, detecção de versão |
+| `speculation.test.ts`            | 7      | Casos extremos do ensureToolResultPairing                     |
+| `smoke.test.ts`                  | 21     | E2E entre módulos: filtro + overlay + toolGate + cache + pareamento |
+| `InputPrompt.test.tsx`           | 4      | Tab, Enter+enviar, Seta Direita, proteção de conclusão       |
 
 ## Histórico de Auditoria
 
-| Round           | Issues Found | Issues Fixed                                             |
-| --------------- | ------------ | -------------------------------------------------------- |
-| R1-R4           | 10           | 10 (rule engine → LLM, simplificação de estado)          |
-| R5-R6           | 2            | 2 (conflito de keybinding do Enter, telemetria da Seta Direita) |
-| R7-R8           | 3            | 3 (telemetria WebUI, dead type, cobertura de testes)     |
-| R9              | 0            | — (convergência)                                         |
-| R10-R11         | 1            | 1 (dependência do historyManager)                        |
-| R12-R13         | 1            | 1 (word boundaries em regex avaliativa)                  |
-| Phase 1+2 R1-R4 | 20+          | 20+ (bypass de permissão, segurança do overlay, race conditions) |
-| **Total**       | **37+**      | **37+**                                                  |
+| Rodada          | Problemas Encontrados | Problemas Corrigidos                                |
+| --------------- | --------------------- | --------------------------------------------------- |
+| R1-R4           | 10                    | 10 (rule engine → LLM, simplificação de estado)     |
+| R5-R6           | 2                     | 2 (conflito de keybinding Enter, telemetria Seta Direita) |
+| R7-R8           | 3                     | 3 (telemetria WebUI, tipo morto, cobertura de testes) |
+| R9              | 0                     | — (convergência)                                     |
+| R10-R11         | 1                     | 1 (dep do historyManager)                            |
+| R12-R13         | 1                     | 1 (limites de palavra regex avaliativos)             |
+| Fase 1+2 R1-R4  | 20+                   | 20+ (bypass de permissão, segurança overlay, condições de corrida) |
+| **Total**       | **37+**               | **37+**                                              |
 
 ## Alinhamento com Claude Code
 
-| Feature                          | Alignment | Notes                                 |
-| -------------------------------- | --------- | ------------------------------------- |
-| Prompt text                      | 100%      | Idêntico (apenas nome da marca)       |
-| 12 filter rules                  | 100%+     | Melhoria nos word boundaries \b       |
-| UI interaction (Tab/Enter/Right) | 100%      |                                       |
-| Guard conditions                 | 100%      | 13 verificações                       |
-| Telemetry                        | 100%      | 10+7 campos                           |
-| Cache sharing                    | ✅        | DashScope cache_control               |
-| Speculation                      | ✅        | Overlay COW + tool gating             |
-| Pipelined suggestion             | ✅        | Gerada após a conclusão da speculation|
-| State management                 | 100%+     | Padrão controller, Object.freeze      |
+| Funcionalidade                   | Alinhamento | Notas                                    |
+| -------------------------------- | ----------- | ---------------------------------------- |
+| Texto do prompt                  | 100%        | Idêntico (apenas nome da marca)          |
+| 12 regras de filtro              | 100%+       | Melhoria nos limites de palavras \b      |
+| Interação UI (Tab/Enter/Seta)    | 100%        |                                          |
+| Condições de guarda              | 100%        | 13 verificações                          |
+| Telemetria                       | 100%        | 10+7 campos                              |
+| Compartilhamento de cache        | ✅          | DashScope cache_control                  |
+| Especulação                      | ✅          | Overlay COW + controle de ferramentas    |
+| Sugestão em pipeline             | ✅          | Gerado após a especulação ser concluída  |
+| Gerenciamento de estado          | 100%+       | Padrão controller, Object.freeze         |

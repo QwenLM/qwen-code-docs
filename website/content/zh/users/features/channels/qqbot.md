@@ -1,16 +1,16 @@
-# QQ Bot（QQ 机器人）
+# QQ 机器人
 
-本指南介绍如何通过 QQ Bot 开放平台官方 API 在 QQ 上配置 Qwen Code channel。
+本指南介绍如何通过 QQ 官方 Bot 开放平台 API 设置 Qwen Code 频道。
 
-## 前提条件
+## 前置条件
 
-- 一个 QQ 账号（用于手机扫描二维码）
+- 一个 QQ 账号（需使用手机应用扫描二维码）
 
-## 配置
+## 设置方式
 
 ### 二维码登录
 
-启动 channel——首次启动会显示一个二维码。使用 QQ 扫描即可激活，无需开发者账号或手动注册。凭证会自动保存并复用。
+启动频道——首次启动会显示一个二维码。用你的 QQ 应用扫描即可激活。无需开发者账号或手动注册。凭证会自动保存并复用。
 
 ```json
 {
@@ -24,12 +24,12 @@
 
 ```bash
 qwen channel start my-qq
-# 使用 QQ 扫描终端中的二维码
+# 使用你的 QQ 应用扫描终端中的二维码
 ```
 
-### 手动配置（开发者平台）
+### 手动配置（开发者后台）
 
-如果你已在 [QQ Bot 开放平台](https://q.qq.com/) 注册了应用，也可以使用开发者平台的凭证：
+如果你已经在 [QQ Bot 开放平台](https://q.qq.com/) 注册了应用，也可以使用该平台的凭证：
 
 ```json
 {
@@ -43,13 +43,13 @@ qwen channel start my-qq
 }
 ```
 
-将密钥设置为环境变量：
+将 Secret 设置为环境变量：
 
 ```bash
 export QQ_APP_SECRET=<your-app-secret>
 ```
 
-## 配置项
+## 配置
 
 ```json
 {
@@ -73,107 +73,107 @@ export QQ_APP_SECRET=<your-app-secret>
 }
 ```
 
-### QQ 专属选项
+### QQ 特有选项
 
-| 选项        | 默认值  | 说明                                                                              |
-| ----------- | ------- | --------------------------------------------------------------------------------- |
-| `appID`     | —       | 开发者平台的 QQ Bot AppID。省略时使用二维码登录。                                  |
-| `appSecret` | —       | QQ Bot AppSecret，支持 `$ENV_VAR` 语法。省略时使用二维码登录。                    |
-| `sandbox`   | `false` | 设为 `true` 时使用 QQ 沙盒 API 环境（`sandbox.api.sgroup.qq.com`）               |
+| 选项          | 默认值    | 描述                                                                 |
+| ------------- | --------- | -------------------------------------------------------------------- |
+| `appID`       | —         | 来自开发者后台的 QQ Bot AppID。如省略，则使用二维码登录。            |
+| `appSecret`   | —         | QQ Bot AppSecret。支持 `$ENV_VAR` 语法。如省略，则使用二维码登录。   |
+| `sandbox`     | `false`   | 设为 `true` 以使用 QQ 沙箱 API 环境（`sandbox.api.sgroup.qq.com`）   |
 
-所有标准 channel 选项（参见 [Channel 概览](./overview#options)）同样适用：
+所有标准频道选项（见[频道概览](./overview#options)）同样支持：
 `senderPolicy`、`allowedUsers`、`sessionScope`、`cwd`、`instructions`、`groupPolicy`、`groups`、`dispatchMode`、`blockStreaming`、`blockStreamingChunk`、`blockStreamingCoalesce`。
 
 ## 运行
 
 ```bash
-# 仅启动 QQ channel
+# 仅启动 QQ 频道
 qwen channel start my-qq
 
-# 或同时启动所有已配置的 channel
+# 或同时启动所有已配置的频道
 qwen channel start
 ```
 
-打开 QQ，向机器人发送消息，即可在聊天中看到回复。
+打开 QQ 并向你的机器人发送一条消息。你将看到回复出现在聊天中。
 
 ## 群聊
 
-在 QQ 群中使用机器人：
+要在 QQ 群中使用机器人：
 
-1. 在 channel 配置中将 `groupPolicy` 设为 `"allowlist"` 或 `"open"`
-2. 通过 QQ Bot 开放平台控制台将机器人添加到 QQ 群，或由群管理员邀请
+1. 在频道配置中将 `groupPolicy` 设置为 `"allowlist"` 或 `"open"`
+2. 通过 QQ Bot 开放平台后台或让群管理员邀请，将机器人添加到 QQ 群
 3. 群成员必须 **@提及** 机器人才能触发回复
 
-QQ Bot API V2 只推送 @提及机器人的群消息——机器人无法看到全部群消息。默认情况下 `requireMention` 为 `true`，QQ 场景下请保持此设置。
+QQ Bot API V2 仅投递 @提及 了机器人的群消息——机器人看不到所有群消息。默认情况下 `requireMention` 为 `true`，在 QQ 上应保持此设置。
 
-完整的群策略和提及门控说明，参见 [群聊](./overview#group-chats)。
+完整群组策略和提及限制说明请参见[群聊](./overview#group-chats)。
 
 ## Markdown 支持
 
-QQ Bot channel 支持 Markdown 格式（`msg_type=2`）。Agent 的 Markdown 回复会原样发送，QQ 会以富文本格式渲染（粗体、斜体、代码块、链接、列表）。
+QQ Bot 频道支持 Markdown 格式（`msg_type=2`）。智能体的 Markdown 回复会原样发送，QQ 会以富文本格式（加粗、斜体、代码块、链接、列表）渲染。
 
-若 QQ 服务器因任何原因拒绝 Markdown 消息，channel 会自动降级为纯文本重试，确保消息始终能送达——即使服务器端限制了机器人的 Markdown 能力。
+如果 QQ 服务器因任何原因拒绝 Markdown 消息，频道会自动以纯文本重试——因此即使机器人的 Markdown 能力在服务端受限，消息也始终能送达。
 
-这与微信 channel 相反——微信会去除所有 Markdown。使用 QQ channel 时，可以让 agent 自由使用完整的 Markdown。
+这与微信频道相反（微信会去除所有 Markdown）。在 QQ 频道中，你可以让智能体自由使用 Markdown。
 
 ## Token 管理
 
-访问 token 约 2 小时后过期。channel 会在 TTL 的 80%（约 1.6 小时）时自动刷新。若刷新失败，60 秒后重试。
+访问令牌约 2 小时后过期。频道会在其 TTL 达到 80%（约 1.6 小时）时自动刷新。如果刷新失败，会在 60 秒后重试。
 
-Token 刷新在 WebSocket 重连期间持续进行——只要 AppID 和 AppSecret 有效，channel 就不会因 token 过期而下线。
+Token 刷新会跨越 WebSocket 重连持续进行——只要 AppID 和 AppSecret 有效，频道就不会因令牌过期而离线。
 
-## 连接稳定性
+## 连接韧性
 
-- **自动重连：** WebSocket 断开后，channel 以指数退避策略重试（最多 20 次，最大间隔 30 秒）
-- **会话恢复：** WebSocket 短暂断开时，channel 使用 QQ 的 `RESUME` 操作码恢复会话，不丢失进行中的消息
-- **跨服务器上下文延续：** 聊天会话和路由状态持久化到磁盘。daemon 重启后，对话从中断处继续
-- **心跳监控：** 检测 HEARTBEAT_ACK 超时并强制重连，避免僵尸连接
-- **消息去重：** 重连后重放的消息会被检测并跳过
+- **自动重连：** WebSocket 断开后，频道会以指数退避方式重试（最多 20 次，每次重试间隔最大 30 秒）
+- **会话恢复：** 如果 WebSocket 短暂断开，频道会使用 QQ 的 `RESUME` opcode 恢复会话，不会丢失正在传输的消息
+- **跨服务器上下文延续：** 聊天会话和路由状态会持久化到磁盘。如果守护进程重启，对话可从断点继续
+- **心跳监控：** 检测到 HEARTBEAT_ACK 超时会强制重连，避免僵尸连接
+- **消息去重：** 重连后重播的消息会被检测并跳过
 
-## 使用建议
+## 提示
 
-- **自由使用 Markdown** — 与微信不同，QQ 原生支持 Markdown 渲染。粗体、代码块、列表、链接均可正常显示。
-- **回复控制在 2000 字符以内** — 超长回复会自动拆分发送。在 instructions 中加入长度提示有助于 agent 保持简洁。
-- **沙盒用于测试** — 开发期间设置 `"sandbox": true` 使用沙盒 API，不影响生产消息。
-- **限制访问** — 使用 `senderPolicy: "allowlist"` 限定固定的 QQ 用户，或使用 `"pairing"` 从 CLI 审批新用户。详见 [DM 配对](./overview#dm-pairing)。
+- **自由使用 Markdown** — 与微信不同，QQ 原生渲染 Markdown。加粗、代码块、列表和链接均有效。
+- **回复控制在 2000 字符以内** — 超过长度限制的回复会自动拆分。在指令中添加长度提示有助于智能体保持简洁。
+- **沙箱用于测试** — 设置 `"sandbox": true` 在开发阶段使用沙箱 API，不会影响生产消息。
+- **限制访问** — 使用 `senderPolicy: "allowlist"` 限制为固定的 QQ 用户，或使用 `"pairing"` 通过 CLI 批准新用户。详见[私聊配对](./overview#dm-pairing)。
 
-## 与 Telegram 的主要差异
+## 与 Telegram 的主要区别
 
-| 方面          | QQ Bot                                   | Telegram                                      |
-| ------------- | ---------------------------------------- | --------------------------------------------- |
-| 认证方式      | 二维码登录或 AppID/AppSecret              | BotFather 颁发的静态 bot token                |
-| Markdown      | 原生 QQ Markdown，降级为纯文本兜底        | Agent Markdown 转换为 HTML 格式               |
-| Token 生命周期 | 2 小时 TTL，80% 时自动刷新               | 永久 bot token                                |
-| 群消息        | 仅推送 @提及机器人的消息                  | 机器人可见所有消息（隐私模式关闭时）           |
-| 输入指示器    | 不支持（QQ API 限制）                     | 显示"Working..."消息                          |
-| 沙盒模式      | 支持测试用沙盒                            | 不支持                                        |
+| 领域           | QQ Bot                                      | Telegram                                      |
+| -------------- | ------------------------------------------- | --------------------------------------------- |
+| 身份认证       | 二维码登录或 AppID/AppSecret                | BotFather 提供的静态 Bot Token                |
+| Markdown       | 原生 QQ Markdown，平替为纯文本              | 从智能体 Markdown 转为 HTML 格式              |
+| Token 生命周期 | 2 小时 TTL，80% 时自动刷新                  | 永久 Bot Token                                |
+| 群消息         | 仅 @提及 的消息会投递给机器人                | 机器人能看到所有消息（关闭隐私模式时）        |
+| 输入状态指示   | 不支持（QQ API 限制）                       | "正在输入..." 消息                            |
+| 沙箱模式       | 支持测试                                     | 不支持                                        |
 
 ## 故障排查
 
 ### 机器人不响应
 
-- 检查终端输出是否有报错
-- 确认 channel 正在运行（`qwen channel status`）
-- 若使用 `senderPolicy: "allowlist"`，确认你的 QQ 用户 ID 在 `allowedUsers` 中
-- 首次启动时，终端会显示二维码——使用 QQ 扫描
+- 检查终端输出中的错误
+- 确认频道正在运行（`qwen channel status`）
+- 如果使用了 `senderPolicy: "allowlist"`，请确认你的 QQ 用户 ID 在 `allowedUsers` 中
+- 首次启动时终端会显示二维码——用你的 QQ 应用扫描
 
-### 机器人在群里不响应
+### 机器人在群中不响应
 
 - 检查 `groupPolicy` 是否设为 `"allowlist"` 或 `"open"`（默认为 `"disabled"`）
-- **必须 @提及机器人** — QQ 只推送 @机器人的消息
-- 确认机器人已被添加到群中
+- **你必须 @提及 机器人** —— QQ 只投递标记了机器人的消息
+- 确认机器人已添加到群组
 
 ### 二维码登录卡住
 
-- 二维码显示在终端中，使用 QQ 手机端扫描（我 → 扫一扫）
-- 若二维码过期（通常几分钟后），重启 channel 获取新二维码
+- 二维码显示在终端中。请用你的 QQ 手机应用（我 → 扫一扫）扫描
+- 如果二维码过期（通常几分钟后），重新启动频道以获得新二维码
 
 ### Markdown 消息显示为纯文本
 
-- QQ 服务器可能拒绝了 Markdown 消息，channel 自动降级为纯文本。检查终端是否有 `"Markdown rejected"` 日志
-- 这在 QQ Bot 开放平台上较为少见，但若服务器端限制了机器人的 Markdown 能力则可能出现
+- QQ 服务器可能拒绝了 Markdown 消息，频道静默降级为纯文本。检查终端中是否有 `"Markdown rejected"` 日志消息
+- 这在 QQ Bot 开放平台中不常见，但如果机器人的 Markdown 能力在服务端受限时可能发生
 
-### 长时间离线后 token 过期
+### 长时间离线后 Token 过期
 
-- 若 channel 离线超过 2 小时，访问 token 将过期。channel 重连时会自动获取新 token，无需手动操作
-- 若 AppSecret 本身已失效（如在开发者平台轮换），请更新 `appSecret` 字段，或删除 `~/.qwen/channels/<name>-credentials.json` 以重新触发二维码登录
+- 如果频道离线超过 2 小时，访问令牌将会过期。频道在重连时会获取新令牌——无需操作
+- 如果 AppSecret 本身无效（例如在开发者后台轮换过），请更新 `appSecret` 字段，或删除 `~/.qwen/channels/<name>-credentials.json` 以重新触发二维码登录

@@ -1,6 +1,6 @@
 # Visual Studio Code
 
-> Die VS Code-Erweiterung (Beta) zeigt dir Änderungen von Qwen in Echtzeit über eine native grafische Oberfläche, die direkt in deine IDE integriert ist. So kannst du einfacher auf Qwen Code zugreifen und damit interagieren.
+> Die VS Code-Erweiterung (Beta) ermöglicht es dir, die Änderungen von Qwen in Echtzeit über eine native grafische Oberfläche direkt in deiner IDE zu sehen, was den Zugriff und die Interaktion mit Qwen Code erleichtert.
 
 <br/>
 
@@ -10,11 +10,11 @@
 
 ### Funktionen
 
-- **Native IDE-Erfahrung**: Dediziertes Qwen Code-Seitenleisten-Panel, das über das Qwen-Symbol aufgerufen wird
-- **Auto-accept edits mode**: Wendet Änderungen von Qwen automatisch an, sobald sie vorgenommen werden
-- **Dateiverwaltung**: Verwende @-Mentions für Dateien oder hänge Dateien und Bilder über den System-Dateidialog an
-- **Konversationsverlauf**: Zugriff auf frühere Konversationen
-- **Mehrere Sessions**: Führe mehrere Qwen Code-Sessions gleichzeitig aus
+- **Native IDE-Erfahrung**: Dediziertes Qwen-Code-Seitenpanel, das über das Qwen-Symbol aufgerufen wird
+- **Auto-Accept-Edits-Modus**: Änderungen von Qwen werden automatisch übernommen, sobald sie gemacht werden
+- **Dateiverwaltung**: Dateien per @-Erwähnung einbinden oder Dateien und Bilder über die systemeigene Dateiauswahl anhängen
+- **Gesprächsverlauf**: Zugriff auf frühere Unterhaltungen
+- **Mehrere Sitzungen**: Mehrere Qwen-Code-Sitzungen gleichzeitig ausführen
 
 ### Voraussetzungen
 
@@ -26,14 +26,14 @@ Lade die Erweiterung aus dem [Visual Studio Code Extension Marketplace](https://
 
 ## Fehlerbehebung
 
-### Erweiterung lässt sich nicht installieren
+### Erweiterung wird nicht installiert
 
 - Stelle sicher, dass du VS Code 1.85.0 oder höher verwendest
-- Überprüfe, ob VS Code die Berechtigung zum Installieren von Erweiterungen hat
+- Prüfe, ob VS Code die Berechtigung zum Installieren von Erweiterungen hat
 - Versuche, die Erweiterung direkt über die Marketplace-Website zu installieren
 
-### Qwen Code reagiert nicht
+### Qwen Code antwortet nicht
 
 - Überprüfe deine Internetverbindung
-- Starte eine neue Konversation, um zu prüfen, ob das Problem weiterhin besteht
-- [Erstelle ein Issue auf GitHub](https://github.com/qwenlm/qwen-code/issues), falls das Problem weiterhin besteht
+- Starte eine neue Unterhaltung, um zu sehen, ob das Problem weiterhin besteht
+- [Melde das Problem auf GitHub](https://github.com/qwenlm/qwen-code/issues), falls es weiterhin auftritt

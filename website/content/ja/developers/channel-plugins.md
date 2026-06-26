@@ -1,29 +1,29 @@
 # チャネルプラグイン開発者ガイド
 
-チャネルプラグインは、Qwen Code をメッセージングプラットフォームに接続します。[拡張機能](../users/extension/introduction) としてパッケージ化され、起動時に読み込まれます。プラグインのインストールと設定に関するユーザー向けドキュメントは、[プラグイン](../users/features/channels/plugins) を参照してください。
+チャネルプラグインは、Qwen Code をメッセージングプラットフォームに接続します。これは[拡張機能](../users/extension/introduction)としてパッケージ化され、起動時に読み込まれます。プラグインのインストールと設定に関するユーザー向けドキュメントは、[プラグイン](../users/features/channels/plugins) を参照してください。
 
-## 連携の仕組み
+## 全体の構成
 
-プラグインは Platform Adapter 層に配置されます。プラットフォーム固有の処理（接続、メッセージの受信、レスポンスの送信）はプラグイン側で実装します。それ以外の処理（アクセス制御、セッションルーティング、プロンプトのキューイング、スラッシュコマンド、クラッシュリカバリ）は `ChannelBase` が担当します。
+あなたのプラグインは Platform Adapter 層に位置します。プラグインはプラットフォーム固有の処理（接続、メッセージ受信、応答送信）を担当します。`ChannelBase` はその他の処理（アクセス制御、セッションルーティング、プロンプトキューイング、スラッシュコマンド、クラッシュリカバリ）をすべて処理します。
 
 ```
-Your Plugin  →  builds Envelope  →  handleInbound()
-ChannelBase  →  gates → commands → routing → AcpBridge.prompt()
-ChannelBase  →  calls your sendMessage() with the agent's response
+あなたのプラグイン →  Envelope を構築 →  handleInbound()
+ChannelBase  →  ゲート → コマンド → ルーティング → AcpBridge.prompt()
+ChannelBase  →  エージェントの応答であなたの sendMessage() を呼び出す
 ```
 
 ## プラグインオブジェクト
 
-拡張機能のエントリポイントでは、`ChannelPlugin` に準拠した `plugin` をエクスポートします：
+あなたの拡張機能のエントリポイントは、`ChannelPlugin` に準拠した `plugin` をエクスポートします。
 
 ```typescript
 import type { ChannelPlugin } from '@qwen-code/channel-base';
 import { MyChannel } from './MyChannel.js';
 
 export const plugin: ChannelPlugin = {
-  channelType: 'my-platform', // Unique ID, used in settings.json "type" field
-  displayName: 'My Platform', // Shown in CLI output
-  requiredConfigFields: ['apiKey'], // Validated at startup (beyond standard ChannelConfig)
+  channelType: 'my-platform', // 一意のID。settings.jsonの"type"フィールドで使用
+  displayName: 'My Platform', // CLI出力に表示される名前
+  requiredConfigFields: ['apiKey'], // 起動時に検証（標準のChannelConfigに加えて）
   createChannel: (name, config, bridge, options) =>
     new MyChannel(name, config, bridge, options),
 };
@@ -31,7 +31,7 @@ export const plugin: ChannelPlugin = {
 
 ## チャネルアダプター
 
-`ChannelBase` を継承し、以下の 3 つのメソッドを実装します：
+`ChannelBase` を継承し、3つのメソッドを実装します。
 
 ```typescript
 import { ChannelBase } from '@qwen-code/channel-base';
@@ -39,67 +39,67 @@ import type { Envelope } from '@qwen-code/channel-base';
 
 export class MyChannel extends ChannelBase {
   async connect(): Promise<void> {
-    // Connect to your platform, register message handlers
-    // When a message arrives:
+    // プラットフォームに接続し、メッセージハンドラを登録
+    // メッセージが受信されたら：
     const envelope: Envelope = {
       channelName: this.name,
-      senderId: '...', // Stable, unique platform user ID
-      senderName: '...', // Display name
-      chatId: '...', // Chat/conversation ID (distinct for DMs vs groups)
-      text: '...', // Message text (strip @mentions)
-      isGroup: false, // Accurate — used by GroupGate
-      isMentioned: false, // Accurate — used by GroupGate
-      isReplyToBot: false, // Accurate — used by GroupGate
+      senderId: '...', // 安定した一意のプラットフォームユーザーID
+      senderName: '...', // 表示名
+      chatId: '...', // チャット/会話ID（DMとグループで異なる）
+      text: '...', // メッセージテキスト（@メンションは除去）
+      isGroup: false, // 正確であること — GroupGate で使用
+      isMentioned: false, // 正確であること — GroupGate で使用
+      isReplyToBot: false, // 正確であること — GroupGate で使用
     };
     this.handleInbound(envelope);
   }
 
   async sendMessage(chatId: string, text: string): Promise<void> {
-    // Format markdown → platform format, chunk if needed, deliver
+    // マークダウン → プラットフォーム形式に変換、必要に応じて分割、配信
   }
 
   disconnect(): void {
-    // Clean up connections
+    // 接続をクリーンアップ
   }
 }
 ```
 
-## Envelope オブジェクト
+## エンベロープ
 
-プラットフォームのデータから構築する、正規化されたメッセージオブジェクトです。ブール値のフラグはゲートロジックの制御に使用されるため、正確に設定する必要があります。
+プラットフォームデータから構築する、正規化されたメッセージオブジェクトです。ブール値フラグはゲートロジックを駆動するため、正確でなければなりません。
 
-| Field            | Type         | Required | Notes                                                                      |
-| ---------------- | ------------ | -------- | -------------------------------------------------------------------------- |
-| `channelName`    | string       | Yes      | `this.name` を使用                                                         |
-| `senderId`       | string       | Yes      | メッセージ間で安定している必要があります（セッションルーティングおよびアクセス制御に使用） |
-| `senderName`     | string       | Yes      | 表示名                                                                     |
-| `chatId`         | string       | Yes      | DM とグループを区別する必要があります                                      |
-| `text`           | string       | Yes      | ボットへの @メンションは削除してください                                   |
-| `threadId`       | string       | No       | `sessionScope: "thread"` 用                                                |
-| `messageId`      | string       | No       | プラットフォームのメッセージ ID（レスポンスの相関付けに有用）              |
-| `isGroup`        | boolean      | Yes      | GroupGate がこの値に依存します                                             |
-| `isMentioned`    | boolean      | Yes      | GroupGate がこの値に依存します                                             |
-| `isReplyToBot`   | boolean      | Yes      | GroupGate がこの値に依存します                                             |
-| `referencedText` | string       | No       | 引用メッセージ（コンテキストとして先頭に追加されます）                     |
-| `imageBase64`    | string       | No       | Base64 エンコードされた画像（レガシー。`attachments` の使用を推奨）        |
-| `imageMimeType`  | string       | No       | 例：`image/jpeg`（レガシー。`attachments` の使用を推奨）                   |
-| `attachments`    | Attachment[] | No       | 構造化されたメディア添付ファイル（下記参照）                               |
+| フィールド         | 型           | 必須    | 備考                                                         |
+| ----------------- | ------------ | ------- | ------------------------------------------------------------ |
+| `channelName`     | string       | はい    | `this.name` を使用                                           |
+| `senderId`        | string       | はい    | メッセージ間で安定している必要あり（セッションルーティング + アクセス制御に使用） |
+| `senderName`      | string       | はい    | 表示名                                                       |
+| `chatId`          | string       | はい    | DMとグループを区別する必要あり                                |
+| `text`            | string       | はい    | ボットへの@メンションは除去                                   |
+| `threadId`        | string       | いいえ | `sessionScope: "thread"` 用                                   |
+| `messageId`       | string       | いいえ | プラットフォームのメッセージID — 応答の関連付けに有用          |
+| `isGroup`         | boolean      | はい    | GroupGate がこれに依存                                       |
+| `isMentioned`     | boolean      | はい    | GroupGate がこれに依存                                       |
+| `isReplyToBot`    | boolean      | はい    | GroupGate がこれに依存                                       |
+| `referencedText`  | string       | いいえ | 引用メッセージ — コンテキストとして先頭に付加                   |
+| `imageBase64`     | string       | いいえ | Base64エンコードされた画像（レガシー — 代わりに `attachments` を推奨） |
+| `imageMimeType`   | string       | いいえ | 例: `image/jpeg`（レガシー — 代わりに `attachments` を推奨）   |
+| `attachments`     | Attachment[] | いいえ | 構造化されたメディア添付ファイル（下記参照）                   |
 
-### 添付ファイル (Attachments)
+### 添付ファイル
 
-画像、ファイル、音声、動画には `attachments` 配列を使用します。`handleInbound()` はこれらを自動的に解決します。base64 `data` を持つ画像はビジョン入力としてモデルに送信され、`filePath` を持つファイルはプロンプトにパスが追加され、エージェントが読み取れるようになります。
+画像、ファイル、音声、動画には `attachments` 配列を使用します。`handleInbound()` が自動的に解決します。base64 `data` を持つ画像はビジョン入力としてモデルに送信され、`filePath` を持つファイルは、エージェントが読み取れるようにプロンプトにパスが追加されます。
 
 ```typescript
 interface Attachment {
   type: 'image' | 'file' | 'audio' | 'video';
-  data?: string; // base64-encoded data (images, small files)
-  filePath?: string; // absolute path to local file (large files saved to disk)
-  mimeType: string; // e.g. 'application/pdf', 'image/jpeg'
-  fileName?: string; // original file name from the platform
+  data?: string; // base64エンコードされたデータ（画像、小さいファイル）
+  filePath?: string; // ローカルファイルの絶対パス（大きなファイルはディスクに保存）
+  mimeType: string; // 例: 'application/pdf', 'image/jpeg'
+  fileName?: string; // プラットフォーム上の元のファイル名
 }
 ```
 
-例：アダプターでのファイルアップロードの処理
+例 — アダプター内でファイルアップロードを処理する場合：
 
 ```typescript
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -122,11 +122,11 @@ envelope.attachments = [
 ];
 ```
 
-レガシーな `imageBase64` / `imageMimeType` フィールドは後方互換性のために引き続き機能しますが、新規コードでは `attachments` の使用を推奨します。
+従来の `imageBase64` / `imageMimeType` フィールドは後方互換性のために引き続き使用できますが、新しいコードでは `attachments` を推奨します。
 
 ## 拡張機能マニフェスト
 
-`qwen-extension.json` でチャネルタイプを宣言します。キーはプラグインオブジェクトの `channelType` と一致している必要があります：
+`qwen-extension.json` でチャネルタイプを宣言します。キーはプラグインオブジェクトの `channelType` と一致している必要があります。
 
 ```json
 {
@@ -143,20 +143,20 @@ envelope.attachments = [
 
 ## オプションの拡張ポイント
 
-**カスタムスラッシュコマンド** — コンストラクタ内で登録します：
+**カスタムスラッシュコマンド** — コンストラクタで登録します。
 
 ```typescript
 this.registerCommand('mycommand', async (envelope, args) => {
   await this.sendMessage(envelope.chatId, 'Response');
-  return true; // handled, don't forward to agent
+  return true; // 処理済み、エージェントに転送しない
 });
 ```
 
-**処理中表示 (Working indicators)** — プラットフォーム固有のタイピングインジケーターを表示するには、`onPromptStart()` と `onPromptEnd()` をオーバーライドします。これらのフックは、プロンプトの処理が実際に開始された場合にのみ発火します（バッファリングされたメッセージ（collect モード）や、ゲート/ブロックされたメッセージでは発火しません）：
+**入力中インジケータ** — `onPromptStart()` と `onPromptEnd()` をオーバーライドして、プラットフォーム固有の入力中インジケータを表示します。これらのフックは、プロンプトが実際に処理を開始したときにのみ起動します。バッファリングされたメッセージ（収集モード）やゲート/ブロックされたメッセージでは起動しません。
 
 ```typescript
 protected override onPromptStart(chatId: string, sessionId: string, messageId?: string): void {
-  this.platformClient.sendTyping(chatId); // your platform API
+  this.platformClient.sendTyping(chatId); // あなたのプラットフォームAPI
 }
 
 protected override onPromptEnd(chatId: string, sessionId: string, messageId?: string): void {
@@ -164,16 +164,16 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 }
 ```
 
-**ツール呼び出しフック** — エージェントのアクティビティ（例：「シェルコマンドを実行中...」）を表示するには、`onToolCall()` をオーバーライドします。
+**ツール呼び出しフック** — `onToolCall()` をオーバーライドして、エージェントのアクティビティ（例：「シェルコマンドを実行中...」）を表示します。
 
-**ストリーミングフック** — チャンクごとのプログレッシブ表示（例：メッセージのインプレース編集）を行うには、`onResponseChunk(chatId, chunk, sessionId)` をオーバーライドします。最終的な配信をカスタマイズするには、`onResponseComplete(chatId, fullText, sessionId)` をオーバーライドします。
+**ストリーミングフック** — `onResponseChunk(chatId, chunk, sessionId)` をオーバーライドして、チャンク単位のプログレッシブ表示（例：メッセージをその場で編集）を行います。`onResponseComplete(chatId, fullText, sessionId)` をオーバーライドして、最終配信をカスタマイズします。
 
-**ブロックストリーミング** — チャネル設定で `blockStreaming: "on"` を設定します。ベースクラスは、段落の境界でレスポンスを自動的に複数のメッセージに分割します。プラグイン側のコードは不要で、`onResponseChunk` と併用して動作します。
+**ブロックストリーミング** — チャネル設定で `blockStreaming: "on"` を設定します。基底クラスが自動的に応答を段落境界で複数のメッセージに分割します。プラグインコードは不要です。`onResponseChunk` と一緒に動作します。
 
-**メディア** — `envelope.attachments` に画像やファイルを設定します。上記の [添付ファイル (Attachments)](#attachments) を参照してください。
+**メディア** — `envelope.attachments` に画像やファイルを設定します。上記の [添付ファイル](#attachments) を参照してください。
 
-## 参考実装
+## リファレンス実装
 
-- **プラグインの例** (`packages/channels/plugin-example/`) — 最小限の WebSocket ベースアダプター。開発の起点として最適
-- **Telegram** (`packages/channels/telegram/`) — フル機能版：画像、ファイル、フォーマット、タイピングインジケーターに対応
-- **DingTalk** (`packages/channels/dingtalk/`) — ストリームベースでリッチテキスト処理に対応
+- **プラグイン例**（`packages/channels/plugin-example/`）— 最小限のWebSocketベースアダプター。出発点として最適です。
+- **Telegram**（`packages/channels/telegram/`）— フル機能：画像、ファイル、書式設定、入力中インジケータ。
+- **DingTalk**（`packages/channels/dingtalk/`）— ストリームベースでリッチテキストを処理。

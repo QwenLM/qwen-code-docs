@@ -1,167 +1,168 @@
-# AutoSkill: Entwurfsdokument für das automatische Skill-Extraktionssystem
+# AutoSkill：Automatische Skill-Extraktion – Systemdesign-Dokument
 
-## Übersicht
+## Überblick
 
-Dieses Dokument beschreibt das Design, um dem bestehenden Memory-Dream-Architektur von QwenCode die **AutoSkill**-Fähigkeit hinzuzufügen.
+Dieses Dokument beschreibt das Design zur Erweiterung der bestehenden Memory-Dream-Architektur von QwenCode um die **AutoSkill**-Fähigkeit.
 
-AutoSkill ist ein **automatischer Extraktionsmechanismus für prozedurales Gedächtnis**: Nachdem ein Agent eine werkzeugaufrufintensive Aufgabe abgeschlossen hat, bewertet das System im Hintergrund leise, ob in diesem Gespräch wiederverwendbare Arbeitsabläufe vorhanden sind, und speichert sie automatisch als projektweites Skill.
+AutoSkill ist ein **Mechanismus zur automatischen Extraktion prozeduraler Erinnerungen**: Nachdem ein Agent eine aufgabenintensive Sequenz mit vielen Tool-Aufrufen abgeschlossen hat, evaluiert das System im Hintergrund, ob in der Konversation wiederverwendbare Abläufe vorhanden sind, und speichert diese automatisch als projektweites Skill.
 
 ### Abgrenzung zu Memory Extract
 
-| Dimension        | Memory Extract                                     | AutoSkill                                            |
-| ---------------- | -------------------------------------------------- | ---------------------------------------------------- |
-| **Gedächtnistyp**  | Deklaratives Gedächtnis (wer der Benutzer ist, Projektkontext) | Prozedurales Gedächtnis (wie man eine bestimmte Aufgabe erledigt) |
-| **Auslösezeitpunkt** | Nach jeder Sitzung                                 | Wenn die Anzahl der Werkzeugaufrufe in der Sitzung einen Schwellwert erreicht |
-| **Zielpfad**       | `${projectRoot}/.qwen/memory/`                     | `${projectRoot}/.qwen/skills/`                       |
-| **Inhalt**         | Benutzerpräferenzen, Projektkontext, Feedback-Regeln | Wiederverwendbare Arbeitsschritte, Best Practices    |
-| **Lebenszyklus**   | Dream integriert/schneidet regelmäßig              | Wird nach Bedarf aktualisiert, vom Review-Agent gewartet |
+| Dimension         | Memory Extract                              | AutoSkill                                        |
+| ----------------- | ------------------------------------------- | ------------------------------------------------ |
+| **Speichertyp**   | Deklaratives Gedächtnis (Wer ist der Nutzer, Projektkontext) | Prozedurales Gedächtnis (Wie man eine bestimmte Aufgabe erledigt) |
+| **Auslöser**      | Nach jeder Sitzung                          | Wenn die Anzahl der Tool-Aufrufe in einer Sitzung einen Schwellenwert erreicht |
+| **Zielverzeichnis** | `${projectRoot}/.qwen/memory/`            | `${projectRoot}/.qwen/skills/`                   |
+| **Inhalt**        | Nutzerpräferenzen, Projektkontext, Feedbackregeln | Wiederverwendbare Arbeitsschritte, Best Practices |
+| **Lebenszyklus**  | Dream integriert / trimmt regelmäßig        | Aktualisierung nach Bedarf, gepflegt durch review agent |
 
 ---
 
-## Grundlegende Designprinzipien
+## Kern-Designprinzipien
 
-1. **Kein dediziertes Schreibwerkzeug**: Der Skill-Review-Agent verwendet direkt die universellen Werkzeuge `read_file`, `write_file`, `edit`, um auf `.qwen/skills/` zuzugreifen, ohne ein eigenes `skill_manage`-Werkzeug einzuführen. Gleiches gilt für die Hauptsitzung – wenn der Benutzer Skills manuell verwalten möchte, verwendet er dieselben universellen Werkzeuge.
-2. **Erkennung von Skill-Änderungen ersetzt Tool-Zählungsrücksetzung**: In Anlehnung an die Erkennung von `memory_tool`-Aufrufen bei Memory Extract erkennt das System, ob in der Hauptsitzung Schreibvorgänge im Verzeichnis `.qwen/skills/` stattgefunden haben. Wenn ja, hat der Benutzer in dieser Runde bereits aktiv Skills bearbeitet, und die automatische Skill-Überprüfung wird am Ende der Sitzung übersprungen.
-3. **`auto-skill`-Kennzeichnung schützt benutzererstellte Skills**: Ein vom Review-Agent erstellter Skill muss im YAML-Frontmatter die Markierung `source: auto-skill` enthalten. Der Skill-Review-Agent darf nur Skills mit dieser Markierung ändern und nicht die manuell vom Benutzer erstellten Skills berühren.
-4. **Auslöser durch Werkzeugaufrufdichte**: Wird nur ausgelöst, wenn die kumulierte Anzahl der Werkzeugaufrufe in dieser Sitzung ≥ 20 beträgt, um sicherzustellen, dass nur nach wirklich komplexen Aufgaben extrahiert wird.
-5. **Klare Schreibschutzgrenzen**: Der Berechtigungsmanager des Review-Agents beschränkt `write_file` und `edit` auf `${projectRoot}/.qwen/skills/` und darf nicht auf die Benutzer-/Erweiterungs-/gebündelten Ebenen zugreifen.
-6. **Maximale Beibehaltung des Hermes-Kern-Prompts**: Der vom Review-Agent verwendete Prompt wird direkt von Hermes' `_SKILL_REVIEW_PROMPT` übernommen, nur mit minimalen Anpassungen.
+1. **Kein spezielles Schreib-Tool**: Der Skill-Review-Agent verwendet direkt die allgemeinen Tools `read_file`, `write_file` und `edit`, um `.qwen/skills/` zu bearbeiten – es wird kein spezielles `skill_manage`-Tool eingeführt. Gleiches gilt für die Hauptsitzung: Möchte der Nutzer manuell Skills verwalten, nutzt er dieselben allgemeinen Tools.
+2. **Erkennung von Skill-Änderungen statt Zurücksetzen des Tool-Zählers**: Analog zur Erkennung von `memory_tool`-Aufrufen bei Memory Extract erkennt das System, ob Schreiboperationen in der Hauptsitzung auf das `.qwen/skills/`-Verzeichnis fallen. Falls ja, hat der Nutzer in dieser Runde bereits aktiv Skills bearbeitet, und die automatische Skill-Review am Ende der Sitzung wird übersprungen.
+3. **`auto-skill`-Flag schützt nutzerseitig erstellte Skills**: Skills, die vom Review-Agent erstellt werden, müssen im YAML-Frontmatter das Feld `source: auto-skill` enthalten. Der Skill-Review-Agent darf nur Skills mit diesem Flag ändern und niemals manuell erstellte Skills des Nutzers berühren.
+4. **Auslösung durch Tool-Aufruf-Dichte**: Nur wenn die Anzahl der Tool-Aufrufe in einer Sitzung ≥ 20 beträgt, wird die Extraktion ausgelöst. Dadurch wird sichergestellt, dass sie nur nach wirklich komplexen Aufgaben stattfindet.
+5. **Klare Schreibschutzgrenzen**: Der Permission-Manager des Review-Agents beschränkt `write_file` und `edit` auf `${projectRoot}/.qwen/skills/`. Das User-, Extension- und Bundled-Verzeichnis darf nicht berührt werden.
+6. **Maximale Beibehaltung des Hermes-Kern-Prompts**: Der Prompt für den Review-Agent wird direkt aus Hermes' `_SKILL_REVIEW_PROMPT` übernommen, nur mit minimalen Anpassungen.
 
 ---
 
 ## Architekturänderungen
 
-### 1. Zähler: `toolCallCount` und Erkennung von Skill-Änderungen
+### 1. Zähler: `toolCallCount` & Erkennung von Skill-Änderungen
 
-Im Sitzungszustand werden zwei parallele Verfolgungsgrößen verwaltet:
+Im Sitzungszustand werden zwei parallel verfolgte Größen verwaltet:
 
-**Werkzeugaufrufzähler** (entscheidet, ob eine Skill-Überprüfung ausgelöst wird):
+**Tool-Aufruf-Zähler** (bestimmt, ob ein Skill-Review ausgelöst wird):
 
 ```
-会话启动
+Sitzung startet
   toolCallCount = 0
 
-每次工具调用完成
+Nach jedem Tool-Aufruf
   toolCallCount += 1
 
-会话结束
-  if (toolCallCount >= AUTO_SKILL_THRESHOLD):  // 默认 20
-    检查 skillsModifiedInSession
-    ├─ true  → skip（本轮已手动操作 skill，无需自动 review）
+Sitzung endet
+  if (toolCallCount >= AUTO_SKILL_THRESHOLD):  // Standard: 20
+    Prüfe skillsModifiedInSession
+    ├─ true  → überspringen (Skill wurde in dieser Runde manuell bearbeitet, kein automatischer Review nötig)
     └─ false → scheduleSkillReview()
 ```
 
-**Erkennung von Skill-Änderungen** (ersetzt das Zurücksetzen des `skill_manage`-Aufrufs):
+**Erkennung von Skill-Änderungen** (ersetzt das Zurücksetzen durch `skill_manage`-Aufrufe):
 
 ```
-每次工具调用完成
-  if (工具调用的目标路径在 ${projectRoot}/.qwen/skills/ 下):
+Nach jedem Tool-Aufruf
+  if (Zielpfad des Tool-Aufrufs liegt unter ${projectRoot}/.qwen/skills/):
     skillsModifiedInSession = true
 ```
 
-Erkennungslogik: Durchläuft die von den Werkzeugaufrufen betroffenen Dateipfade und prüft, ob sie im Skills-Verzeichnis liegen. Konkrete Implementierung analog zum Muster von `historyCallsSkillManage()` – durchläuft die Werkzeugergebnisse im Verlauf, extrahiert die Zielpfade von `write_file`, `edit` usw. und führt einen Präfixabgleich durch.
+Erkennungslogik: Scanne die in den Tool-Ergebnissen enthaltenen Dateipfade und prüfe, ob sie unter dem Skills-Verzeichnis liegen. Die Implementierung orientiert sich am Muster von `historyCallsSkillManage()`: Durchlaufe die `history`-Einträge, extrahiere Zielpfade von Schreiboperationen (`write_file`, `edit`) und führe einen Präfixvergleich durch.
 
-> **Warum Erkennung von Skill-Änderungen anstelle von Werkzeugnamenserkennung?**
-> Es gibt kein spezielles `skill_manage`-Werkzeug mehr; sowohl die Hauptsitzung als auch der Review-Agent verwenden die universellen `write_file`/`edit`. Daher wechselt die Erkennungsdimension von "wurde ein bestimmtes Werkzeug aufgerufen" zu "gab es einen Schreibvorgang im Verzeichnis `.qwen/skills/`". Das ist semantisch genauer: Sobald der Benutzer in dieser Runde aktiv eine Skill-Datei bearbeitet hat, wird die automatische Überprüfung übersprungen.
+> **Warum Erkennung von Skill-Änderungen statt Tool-Namen-Erkennung?**
+> Es gibt kein dediziertes `skill_manage`-Tool mehr. Sowohl die Hauptsitzung als auch der Review-Agent verwenden die allgemeinen `write_file`/`edit`-Tools. Daher wechselt die Erkennungsdimension von „Wurde ein bestimmtes Tool aufgerufen?" zu „Gibt es Schreiboperationen im `.qwen/skills/`-Verzeichnis?". Dies ist semantisch genauer: Wenn der Nutzer in dieser Runde bereits aktiv Skill-Dateien bearbeitet hat, wird der automatische Review übersprungen.
 
-> **Warum Werkzeugaufrufanzahl anstelle von Gesprächsrunden?**
-> Die Anzahl der Werkzeugaufrufe spiegelt die Aufgabenkomplexität wider – eine einzige Benutzernachricht kann 1 oder 30 Werkzeugaufrufe auslösen. Eine hohe Werkzeugdichte bedeutet mehr Versuche und Strategieanpassungen, was die Wahrscheinlichkeit für wiederverwendbare Erfahrungen erhöht. Der Schwellwert von 20 ist konservativer als Hermes' 10, da QwenCode-Werkzeugaufrufe in der Regel feingranularer sind (z. B. zeilenweises Editieren).
+> **Warum Tool-Aufruf-Anzahl statt Konversationsrunden?**
+> Die Anzahl der Tool-Aufrufe spiegelt die Aufgabenkomplexität wider – eine einzige Nutzernachricht kann 1 oder 30 Tool-Aufrufe auslösen. Eine hohe Tool-Dichte bedeutet mehr Versuch-und-Irrtum, Strategiewechsel usw., was die Wahrscheinlichkeit für wiederverwendbare Erfahrungen erhöht. Der Schwellenwert von 20 ist konservativer als Hermes' 10, da die Tool-Aufruf-Granularität von QwenCode oft feiner ist (z. B. zeilenweise Edits).
 
 ### 2. Auslösepunkt
 
-Der bestehende `MemoryManager`-Aufrufpunkt (Sitzungsende) dient als einheitlicher Einstiegspunkt und wird erweitert, um gleichzeitig Skill-Reviews auszulösen.
+Der bestehende `MemoryManager`-Aufrufpunkt (Sitzungsende) dient als einheitlicher Einstiegspunkt und wird erweitert, um gleichzeitig einen Skill-Review zu planen.
 
 ```
-会话结束
-  ├─ scheduleExtract(params)           // 现有逻辑不变
-  └─ scheduleSkillReview(params)       // 新增
-       条件：toolCallCount >= AUTO_SKILL_THRESHOLD
+Sitzung endet
+  ├─ scheduleExtract(params)           // Bestehende Logik unverändert
+  └─ scheduleSkillReview(params)       // Neu
+        Bedingung: toolCallCount >= AUTO_SKILL_THRESHOLD
              && !skillsModifiedInSession
 ```
 
-Extract und Skill-Review werden jeweils unabhängig ausgelöst und über `MemoryManager.track()` parallel ausgeführt, ohne sich gegenseitig zu blockieren.
+Extract und Skill-Review werden unabhängig voneinander geplant und über `MemoryManager.track()` parallel ausgeführt – sie blockieren sich nicht gegenseitig.
 
-### 3. Tool-Zugriffsberechtigungen des Skill-Review-Agents
+### 3. Tool-Zugriffsrechte des Skill-Review-Agents
 
-Der Skill-Review-Agent **verwendet nicht** das spezielle `skill_manage`-Werkzeug, sondern direkt die universellen Dateiwerkzeuge:
+Der Skill-Review-Agent verwendet **kein** spezielles `skill_manage`-Tool, sondern direkt die allgemeinen Datei-Tools:
 
-| Werkzeug      | Zweck                                   | Bereichsbeschränkung                                                                        |
-| ------------- | --------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `read_file`   | Liest vorhandenen Skill-Inhalt, prüft Frontmatter | Keine Einschränkung                                                                         |
-| `ls`          | Durchsucht die Verzeichnisstruktur von `.qwen/skills/` | Keine Einschränkung                                                                         |
-| `write_file`  | Erstellt neue Skill-Dateien             | Nur innerhalb von `${projectRoot}/.qwen/skills/`                                            |
-| `edit`        | Ändert vorhandene Skill-Inhalte         | Nur innerhalb von `${projectRoot}/.qwen/skills/` und nur bei Dateien mit `source: auto-skill` |
-| `shell`       | Nur-Lese-Befehle (z. B. `cat`, `find`)  | Nur Nur-Lese-Befehle erlaubt (statische Shell-AST-Analyse)                                  |
+| Tool         | Zweck                                              | Bereichseinschränkung                                                                   |
+| ------------ | -------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `read_file`  | Vorhandenes Skill lesen, Frontmatter prüfen        | Keine Einschränkung                                                                     |
+| `ls`         | `.qwen/skills/`-Verzeichnisstruktur scannen        | Keine Einschränkung                                                                     |
+| `write_file` | Neue Skill-Datei erstellen                         | Nur innerhalb von `${projectRoot}/.qwen/skills/`                                        |
+| `edit`       | Vorhandenes Skill bearbeiten                       | Nur innerhalb von `${projectRoot}/.qwen/skills/` und die Zieldatei muss `source: auto-skill` enthalten |
+| `shell`      | Nur-Lese-Befehle (z. B. `cat`, `find`)             | Nur Lese-Befehle (statische Analyse des Shell-AST)                                      |
 
-**Zusätzliche Einschränkung für `edit` (Schutz von `auto-skill`)**:
+**Zusätzliche Einschränkung für `edit` (`auto-skill`-Schutz)**:
 
-Der Berechtigungsmanager des Skill-Review-Agents liest vor der Ausführung von `edit` oder `write_file` (Überschreiben vorhandener Dateien) das YAML-Frontmatter der Zieldatei und prüft das Feld `source: auto-skill`. Wenn das Feld fehlt, wird der Schreibvorgang verweigert und ein Fehler zurückgegeben:
+Der Permission-Manager des Skill-Review-Agents liest vor der Ausführung von `edit` oder `write_file` (Überschreiben einer bestehenden Datei) das YAML-Frontmatter der Zieldatei und prüft das Feld `source: auto-skill`. Fehlt dieses Feld, wird der Schreibvorgang abgelehnt und ein Fehler zurückgegeben:
 
 ```
 skill_review_agent: edit is only allowed on skills with 'source: auto-skill' in frontmatter.
 This skill appears to be user-created. Modify it manually or ask the user.
 ```
 
-Diese Prüfung wird auf der Berechtigungsebene von `createSkillScopedAgentConfig` implementiert, nicht nur über den System-Prompt, um sicherzustellen, dass auch bei Modellfehlern keine manuell erstellten Skills überschrieben werden.
+Diese Prüfung erfolgt auf der Berechtigungsebene von `createSkillScopedAgentConfig`, nicht nur über den System-Prompt, sodass selbst bei einem Modellfehler keine vom Nutzer erstellten Skills überschrieben werden.
 
-**Werkzeugzugriff in der Hauptsitzung**: Der Haupt-Agent unterliegt keinen Einschränkungen beim Lesen und Schreiben von `.qwen/skills/` – der Benutzer kann Skills über normale `write_file`/`edit`-Befehle verwalten. Solche Aktionen setzen `skillsModifiedInSession = true`, sodass am Ende der Sitzung keine automatische Skill-Überprüfung ausgelöst wird.
+**Tool-Zugriff in der Hauptsitzung**: Der Haupt-Agent hat keine Einschränkungen beim Lesen/Schreiben von `.qwen/skills/` – der Nutzer kann Skills über normale `write_file`/`edit`-Befehle verwalten. Solche Operationen setzen `skillsModifiedInSession = true` und führen dazu, dass der automatische Skill-Review am Ende der Sitzung übersprungen wird.
 
 ### 4. Berechtigungssandbox: `SkillScopedPermissionManager`
 
-Analog zu `createMemoryScopedAgentConfig` in `extractionAgentPlanner.ts` wird ein spezieller Berechtigungsbereich für den Skill-Review-Agent erstellt:
+Analog zu `createMemoryScopedAgentConfig` in `extractionAgentPlanner.ts` wird ein dedizierter Berechtigungsbereich für den Skill-Review-Agent erstellt:
 
 ```typescript
-// skill review agent 允许的操作
-read_file:    无路径限制（需要读取任意文件来了解项目上下文）
-ls:           无路径限制
-shell:        只读命令（Shell AST 静态分析，复用现有 isShellCommandReadOnlyAST）
-write_file:   仅限 ${projectRoot}/.qwen/skills/ 路径下的文件（创建新 skill）
-edit:         仅限 ${projectRoot}/.qwen/skills/ 内，且目标文件含 source: auto-skill
+// Vom Skill-Review-Agent erlaubte Operationen
+read_file:    Keine Pfadbeschränkung (muss beliebige Dateien lesen können, um den Projekthontext zu verstehen)
+ls:           Keine Pfadbeschränkung
+shell:        Nur-Lese-Befehle (statische Analyse des Shell-AST, Wiederverwendung von `isShellCommandReadOnlyAST`)
+write_file:   Nur Dateien unter ${projectRoot}/.qwen/skills/ (neue Skills anlegen)
+edit:         Nur Dateien unter ${projectRoot}/.qwen/skills/, und die Zieldatei muss `source: auto-skill` enthalten
 ```
 
 **Implementierungsebenen des `auto-skill`-Schutzes**:
 
-1. **Berechtigungsmanager-Ebene** (harte Einschränkung): Vor `edit` wird das Frontmatter gelesen; fehlt `source: auto-skill`, wird der Vorgang abgelehnt.
-2. **System-Prompt-Ebene** (weiche Einschränkung): Der Agent wird explizit angewiesen, nur Skills mit der Markierung `source: auto-skill` zu ändern.
-3. **Doppelte Absicherung**: Selbst wenn die Einschränkung im System-Prompt umgangen wird, greift der Berechtigungsmanager.
+1. **Permission-Manager-Ebene** (harte Einschränkung): Vor `edit` wird das Frontmatter gelesen. Fehlt `source: auto-skill`, wird der Vorgang abgelehnt.
+2. **System-Prompt-Ebene** (weiche Einschränkung): Der Agent wird explizit angewiesen, nur Skills mit `source: auto-skill` zu bearbeiten.
+3. **Doppelte Absicherung**: Selbst wenn die System-Prompt-Einschränkung umgangen wird, greift der Permission-Manager.
+
 ---
 
-## Skill Review Agent Design
+## Skill-Review-Agent – Design
 
-### Auslöser-Prompt (portiert von Hermes, minimal angepasst)
+### Trigger-Prompt (übernommen von Hermes, minimale Anpassung)
 
 ```
-Überprüfe die obige Konversation und erwäge, ein Skill zu speichern oder zu aktualisieren, falls angemessen.
+Review the conversation above and consider saving or updating a skill if appropriate.
 
-Konzentriere dich auf: Wurde ein nicht-trivialer Ansatz verwendet, um eine Aufgabe zu erledigen, die Versuch
-und Irrtum erforderte, oder eine Kursänderung aufgrund von Erfahrungen während des Vorgehens, oder erwartete
-der Benutzer eine andere Methode oder ein anderes Ergebnis? Falls ein relevanter Skill bereits existiert und
-'source: auto-skill' in seinem Frontmatter hat, aktualisiere ihn mit dem Gelernten. Erstelle andernfalls einen
-neuen Skill, falls der Ansatz wiederverwendbar ist.
+Focus on: was a non-trivial approach used to complete a task that required trial
+and error, or changing course due to experiential findings along the way, or did
+the user expect or desire a different method or outcome? If a relevant skill
+already exists and has 'source: auto-skill' in its frontmatter, update it with
+what you learned. Otherwise, create a new skill if the approach is reusable.
 
-WICHTIGE Einschränkungen:
-- Du darfst NUR Skill-Dateien ändern, die 'source: auto-skill' in ihrem YAML-Frontmatter enthalten. Lese
-  immer eine Skill-Datei, bevor du sie bearbeitest.
-- Bearbeite KEINE Skills, die diese Markierung nicht haben – sie wurden vom Benutzer erstellt.
-- Beim Erstellen eines neuen Skills MUSST du 'source: auto-skill' im Frontmatter angeben, damit zukünftige
-  Review-Agenten ihn sicher aktualisieren können.
-- Lösche KEINEN Skill. Nur erstellen oder aktualisieren.
+IMPORTANT constraints:
+- You may ONLY modify skill files that contain 'source: auto-skill' in their
+  YAML frontmatter. Always read a skill file before editing it.
+- Do NOT touch skills that lack this marker — they were created by the user.
+- When creating a new skill, you MUST include 'source: auto-skill' in the
+  frontmatter so future review agents can safely update it.
+- Do NOT delete any skill. Only create or update.
 
-Wenn nichts speicherwürdig ist, sage einfach 'Nothing to save.' und stoppe.
+If nothing is worth saving, just say 'Nothing to save.' and stop.
 
-Skills werden im aktuellen Projekt (.qwen/skills/) gespeichert.
-Verwende write_file, um einen neuen Skill zu erstellen, und edit, um einen bestehenden Auto-Skill zu aktualisieren.
-Jeder Skill liegt unter .qwen/skills/<name>/SKILL.md mit YAML-Frontmatter:
+Skills are saved to the current project (.qwen/skills/).
+Use write_file to create a new skill, edit to update an existing auto-skill.
+Each skill lives at .qwen/skills/<name>/SKILL.md with YAML frontmatter:
 
 ---
 name: <skill-name>
-description: <einzeilige Beschreibung>
+description: <one-line description>
 metadata:
   source: auto-skill
-  extracted_at: '<ISO-8601-Zeitstempel>'
+  extracted_at: '<ISO-8601 timestamp>'
 ---
 
-<Markdown-Text mit dem Verfahren/Ansatz>
+<markdown body with the procedure/approach>
 ```
 
 ### Agent-Konfiguration
@@ -170,20 +171,20 @@ metadata:
 {
   name: "managed-skill-extractor",
   tools: [
-    "read_file",   // Vorhandenen Skill-Inhalt lesen, source: auto-skill prüfen
-    "ls",          // .qwen/skills/ Verzeichnis durchsuchen
-    "write_file",  // Neue Skill-Datei erstellen (Permission Manager schränkt Pfad ein)
-    "edit",        // Vorhandenen Auto-Skill ändern (Permission Manager prüft Frontmatter)
-    "shell",       // Nur-Lese-Befehle (z.B. find, cat)
+    "read_file",   // Vorhandenes Skill lesen, source: auto-skill prüfen
+    "ls",          // .qwen/skills/-Verzeichnis scannen
+    "write_file",  // Neue Skill-Datei erstellen (Permission-Manager schränkt Pfad ein)
+    "edit",        // Vorhandenes Auto-Skill bearbeiten (Permission-Manager prüft Frontmatter)
+    "shell",       // Nur-Lese-Befehle (z. B. find, cat)
   ],
   permissionManager: createSkillScopedAgentConfig(config, projectRoot),
-  history: sessionHistory,  // Vollständigen Konversationsverlauf als Snapshot übergeben
+  history: sessionHistory,  // Vollständiger Schnappschuss des Konversationsverlaufs
 }
 ```
 
 ---
 
-## Integration mit dem vorhandenen MemoryManager
+## Integration mit dem bestehenden MemoryManager
 
 ### `ScheduleSkillReviewParams` (neuer Typ)
 
@@ -191,9 +192,9 @@ metadata:
 export interface ScheduleSkillReviewParams {
   projectRoot: string;
   sessionId: string;
-  history: Content[]; // Vollständiger Sitzungsverlauf als Snapshot
+  history: Content[]; // Vollständiger Schnappschuss des Konversationsverlaufs
   toolCallCount: number; // Anzahl der Tool-Aufrufe in dieser Sitzung
-  skillsModified: boolean; // Wurden in dieser Sitzung Schreiboperationen unter .qwen/skills/ ausgeführt?
+  skillsModified: boolean; // Gab es in dieser Sitzung Schreiboperationen unter .qwen/skills/?
   config?: Config;
   enabled?: boolean;
   threshold?: number;
@@ -217,18 +218,18 @@ scheduleSkillReview(params: ScheduleSkillReviewParams): SkillReviewScheduleResul
     return { status: 'skipped', skippedReason: 'disabled' };
   }
 
-  // 2. Schwellwertprüfung
+  // 2. Schwellenwertprüfung
   const threshold = params.threshold ?? AUTO_SKILL_THRESHOLD;
   if (params.toolCallCount < threshold) {
     return { status: 'skipped', skippedReason: 'below_threshold' };
   }
 
-  // 3. Bereits in dieser Sitzung manuell an Skills gearbeitet → automatisches Review überspringen
+  // 3. In dieser Runde wurden bereits Skills manuell bearbeitet – automatische Review überspringen
   if (params.skillsModified) {
     return { status: 'skipped', skippedReason: 'skills_modified_in_session' };
   }
 
-  // 4. Unabhängig einplanen
+  // 4. Unabhängige Planung
   const record = makeTaskRecord('skill-review', params.projectRoot, params.sessionId);
   const promise = this.track(record.id, this.runSkillReview(record, params));
   return { status: 'scheduled', taskId: record.id, promise };
@@ -238,11 +239,11 @@ scheduleSkillReview(params: ScheduleSkillReviewParams): SkillReviewScheduleResul
 ### Erweiterung der Aufgabentypen
 
 ```typescript
-// Erweitere den bestehenden MemoryTaskRecord.taskType
+// Erweiterung des bestehenden MemoryTaskRecord.taskType
 export type MemoryTaskType = 'extract' | 'dream' | 'skill-review';
 
 // Konstanten
-export const AUTO_SKILL_THRESHOLD = 20; // Schwellwert für Anzahl der Tool-Aufrufe
+export const AUTO_SKILL_THRESHOLD = 20; // Schwellenwert für die Anzahl der Tool-Aufrufe
 ```
 
 ---
@@ -251,93 +252,94 @@ export const AUTO_SKILL_THRESHOLD = 20; // Schwellwert für Anzahl der Tool-Aufr
 
 ```
 Sitzung läuft
-  Agent-Hauptschleife
-    ├─ Jeder Tool-Aufruf → toolCallCount += 1
-    └─ Falls Schreibzielpfad unter ${projectRoot}/.qwen/skills/
+  Haupt-Agent-Schleife
+    ├─ Nach jedem Tool-Aufruf → toolCallCount += 1
+    └─ Falls Zielpfad einer Schreiboperation unter ${projectRoot}/.qwen/skills/ liegt
          → skillsModifiedInSession = true
 
-Sitzung beendet (sessionEnd-Ereignis)
+Sitzung endet (sessionEnd-Ereignis)
   ├─ scheduleExtract(params)
-  │     └─ [Vorhandene Logik: extraction Agent forken → .qwen/memory/ schreiben]
+  │     └─ [Bestehende Logik: Fork des Extraktions-Agent → schreibt in .qwen/memory/]
   │
   └─ toolCallCount >= 20 && !skillsModifiedInSession ?
-       ├─ Nein → Überspringen (zu wenig Dichte oder bereits manuell Skill bearbeitet)
-       └─ Ja → scheduleSkillReview(params)
-                 └─ Unabhängigen skill review Agent forken
+       ├─ nein → Überspringen (Dichte zu niedrig oder Skills wurden in dieser Runde manuell bearbeitet)
+       └─ ja → scheduleSkillReview(params)
+                 └─ Unabhängiger Fork des Skill-Review-Agents
                         ↓
-                 skill review Agent (max 8 Runden, 2 Min, Sandbox-Berechtigungen)
-                 Werkzeuge: read_file, ls, write_file, edit, shell
-                 Vollständigen sessionHistory übergeben
+                 Skill-Review-Agent (max. 8 Runden, 2 Min., Sandbox-Berechtigungen)
+                 Tools: read_file, ls, write_file, edit, shell
+                 Erhält vollständigen sessionHistory
                         ↓
-                 Modell prüft auf wiederverwendbare Methode
-                 ├─ Ja → Vorhandenen Skill lesen (source: auto-skill prüfen)
-                 │         → write_file erstellt neuen Skill (mit source: auto-skill)
-                 │         → edit aktualisiert vorhandenen Auto-Skill
+                 Modell entscheidet, ob es einen wiederverwendbaren Ablauf gibt
+                 ├─ Ja → Vorhandenes Skill lesen (prüft source: auto-skill)
+                 │         → write_file erstellt neues Skill (enthält source: auto-skill)
+                 │         → edit aktualisiert vorhandenes Auto-Skill
                  │         → SkillManager-Cache ungültig (notifyChangeListeners)
-                 └─ Nein → "Nothing to save." beenden
+                 └─ Nein → "Nothing to save." Ende
 
 Nächste Sitzung
   SkillManager.listSkills({ level: 'project' })
-  → .qwen/skills/ durchsuchen, neu erstellte Skills finden
-  → In den System-Prompt einfügen als <available_skills>-Block (Tier 1)
+  → Scannt .qwen/skills/ und findet neu erstelltes Skill
+  → Injektion in den <available_skills>-Block des System-Prompts (Tier 1)
 ```
 
 ---
 
-## SKILL.md-Formatkonvention (project-level)
+## SKILL.md-Format-Konvention (Project-Level)
 
-Automatisch extrahierte Skills werden unter `${projectRoot}/.qwen/skills/<name>/SKILL.md` gespeichert, vollständig kompatibel mit dem bestehenden SkillManager:
+Automatisch extrahierte Skills werden unter `${projectRoot}/.qwen/skills/<name>/SKILL.md` gespeichert. Das Format ist vollständig kompatibel mit dem bestehenden SkillManager:
 
 ```yaml
 ---
-name: <skill-name> # Pflicht, Kleinbuchstaben + Bindestrich
+name: <skill-name> # Pflicht, Kleinbuchstaben + Bindestriche
 description: <description> # Pflicht, ≤ 1024 Zeichen
 version: 1.0.0
 metadata:
-  source: auto-skill # Pflicht (wird vom Review-Agent beim Erstellen erzwungen)
+  source: auto-skill # Pflicht (wird vom Review-Agent beim Erstellen zwingend gesetzt)
   extracted_at: '2026-04-24T12:00:00Z'
 ---
 # <Skill-Titel>
 
-<Vorgehensschritte / Best Practices / Hinweise>
+<Arbeitsschritte / Best Practices / Hinweise>
 ```
-**`source: auto-skill` 的约束语义**：
 
-| Markierungswert | Erstellt von | Kann vom Skill-Review-Agent geändert werden? | Kann vom Benutzer geändert werden? |
-| --------------- | ------------ | -------------------------------------------- | ----------------------------------- |
-| `auto-skill`    | Review-Agent | ✅ Ja                                        | ✅ Ja                               |
-| Kein Feld       | Manuell vom Benutzer | ❌ Nein (wird vom Berechtigungsmanager abgefangen) | ✅ Ja                               |
+**Bedeutung von `source: auto-skill`**:
 
-Wenn ein Benutzer seinem selbst erstellten Skill auch `source: auto-skill` hinzufügt, erlaubt er dem Review-Agenten, diesen in Zukunft automatisch zu aktualisieren.
+| Markierung     | Erstellt durch | Darf der Review-Agent ändern? | Darf der Nutzer ändern? |
+| -------------- | -------------- | ----------------------------- | ----------------------- |
+| `auto-skill`   | Review-Agent   | ✅ Ja                         | ✅ Ja                   |
+| Kein Feld      | Nutzer         | ❌ Nein (Permission-Manager blockt) | ✅ Ja |
+
+Legt der Nutzer bei einem selbst erstellten Skill ebenfalls `source: auto-skill` an, erlaubt er damit dem Review-Agent, diesen Skill in Zukunft automatisch zu aktualisieren.
 
 ---
 
 ## Sicherheitsaspekte
 
-| Risiko                                                 | Gegenmaßnahme                                                                                                                                                         |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Automatische Extraktion überschreibt sorgfältig erstellte Skills | Der Berechtigungsmanager liest das Frontmatter; ohne `source: auto-skill` wird `edit` verweigert; das System-Prompt stellt ebenfalls klar, dass nur `auto-skill` geändert werden darf |
-| Unbegrenztes Wachstum der Skills                       | Das Review-Prompt fordert explizit „vorhandene Skills priorisieren"; Aktualisieren vorhandener Skills hat Vorrang vor Neuanlage                                      |
-| Schreiben außerhalb des Projektpfads                   | `write_file`/`edit`-Berechtigungen auf `${projectRoot}/.qwen/skills/` beschränkt; `assertRealProjectSkillPath` verhindert Symlink-Ausbrüche                           |
-| Extrahieren von Inhalten mit Injektionsrisiken         | Vorhandene Logik zur Sicherheitsprüfung von Inhalten wird wiederverwendet                                                                                            |
-| Review-Agent löscht Skills                             | Der Werkzeugsatz des Review-Agenten enthält keine Löschoperationen (kein `rm`, keine `shell`-Schreiboperationen); das System-Prompt verbietet Löschen explizit        |
-| Hauptsitzung bearbeitet Skills, trotzdem Review       | `skillsModifiedInSession`-Prüfung: Wenn die Hauptsitzung Schreiboperationen unter `.qwen/skills/` hatte, wird das Review übersprungen                                |
-| Symlink-Ausbruch – Schreiben in Dateien außerhalb des Skills-Verzeichnisses | `assertRealProjectSkillPath` (async): Löst den tatsächlichen Pfad mittels `fs.realpath()` auf und erlaubt Schreiben nur, wenn er innerhalb des echten Skills-Roots liegt |
+| Risiko                                               | Gegenmaßnahme                                                                                                                                                     |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Automatische Extraktion überschreibt sorgfältig erstellte Skills | Permission-Manager liest Frontmatter; wenn `source: auto-skill` fehlt, wird `edit` verweigert; auch der System-Prompt klärt auf, dass nur Auto-Skills geändert werden dürfen |
+| Unbegrenztes Wachstum der Skills                     | Review-Prompt verlangt explizit „vorhandene Skills bevorzugen"; Aktualisierung ist dem Neuanlegen vorzuziehen                                                     |
+| Schreiben außerhalb des Projektpfads                 | `write_file`/`edit`-Berechtigungen auf `${projectRoot}/.qwen/skills/` beschränkt; `assertRealProjectSkillPath` verweigert Symlink-Traversal                      |
+| Extraktion von injektionsgefährdetem Inhalt          | Wiederverwendung der bestehenden Sicherheitsprüfungen für Inhalte                                                                                                |
+| Review-Agent löscht Skills                           | Zum Tool-Set des Review-Agents gehören keine Löschoperationen (kein `rm`, kein `shell`-Schreibbefehl); der System-Prompt verbietet das Löschen explizit           |
+| Nach manueller Skill-Bearbeitung wird trotzdem ein Review ausgelöst | `skillsModifiedInSession`-Prüfung: Gibt es in der Hauptsitzung Schreiboperationen unter `.qwen/skills/`, wird der Review übersprungen                              |
+| Symlink-Traversal in Dateien außerhalb des Skills-Verzeichnisses | `assertRealProjectSkillPath` (async): Verwendet `fs.realpath()`, um den echten Pfad aufzulösen. Schreiben wird nur erlaubt, wenn der echte Pfad innerhalb des echten Skills-Root liegt        |
 
 ---
 
 ## Konfiguration
 
-In der QwenCode-Konfiguration werden folgende neue Optionen hinzugefügt (optional, mit Standardwerten):
+Im QwenCode-Config werden die folgenden optionalen Konfigurationsfelder (mit Standardwerten) hinzugefügt:
 
 ```typescript
 // config schema neu (unter memory)
 memory?: {
-  enableAutoSkill?: boolean;   // Standard true
+  enableAutoSkill?: boolean;   // Standard: true
 }
 ```
 
-Konfigurationsbeispiel für QWEN.md / `~/.qwen/config.json`:
+Entsprechende Konfigurationsbeispiele in QWEN.md / `~/.qwen/config.json`:
 
 ```json
 {
@@ -351,80 +353,81 @@ Konfigurationsbeispiel für QWEN.md / `~/.qwen/config.json`:
 
 ## E2E-Test-Checkliste
 
-Nach der Funktionsimplementierung gemäß dem Workflow in `.qwen/skills/e2e-testing/SKILL.md` zuerst `npm run build && npm run bundle` ausführen, dann mit dem lokal erstellten Build-Artefakt `node dist/cli.js` einen End-to-End-Test durchführen.
+Nach Abschluss der Implementierung gemäß dem Ablauf in `.qwen/skills/e2e-testing/SKILL.md` zuerst `npm run build && npm run bundle` ausführen, dann das lokal erstellte Build `node dist/cli.js` zur End-to-End-Validierung verwenden.
 
-### 1. Geringe Werkzeugaufrufdichte löst nicht aus
+### 1. Keine Auslösung bei geringer Tool-Aufruf-Dichte
 
-- In einem temporären Projektverzeichnis im Headless-Modus ausführen.
+- Temporäres Projektverzeichnis im Headless-Modus verwenden.
 - `memory.enableAutoSkill: true` konfigurieren.
-- Eine einfache Aufgabe ausführen, die nur wenige Werkzeugaufrufe erfordert, und die Sitzung normal beenden.
-- Behaupten: Unter `.qwen/skills/` wurde kein Skill mit `source: auto-skill` neu erstellt; im JSON-Stream sollten keine Schreiboperationen auf `.qwen/skills/` vorkommen.
+- Eine einfache Aufgabe ausführen, die nur wenige Tool-Aufrufe erfordert, und die Sitzung normal beenden.
+- Sicherstellen, dass unter `.qwen/skills/` kein neues Skill mit `source: auto-skill` angelegt wurde; im JSON-Stream sollten keine Schreiboperationen auf `.qwen/skills/` auftauchen.
 
-### 2. Überschreitung des Schwellenwerts löst Skill-Review aus
+### 2. Auslösung bei Erreichen des Schwellenwerts
 
-- Im temporären Projektverzeichnis im Headless-Modus ausführen (`AUTO_SKILL_THRESHOLD` ist auf 20 hardcodiert; kann in Test-Fixtures gesenkt werden).
-- Eine Aufgabe senden, die mehrere Werkzeugaufrufe erfordert und einen wiederverwendbaren Ablauf enthält.
-- Behaupten: Nach der Sitzung wird ein Skill-Review ausgelöst; falls das Modell entscheidet, dass es sich lohnt, wird `.qwen/skills/<name>/SKILL.md` erstellt, dessen Frontmatter `source: auto-skill` enthält.
-- Falls das Modell `Nothing to save.` feststellt, behaupten, dass der Ablauf normal endet und keine Berechtigungsfehler auftreten.
+- Temporäres Projektverzeichnis im Headless-Modus verwenden (`AUTO_SKILL_THRESHOLD` ist hart auf 20 codiert; kann in Test-Fixtures heruntergesetzt werden).
+- Eine Aufgabe senden, die mehrere Tool-Aufrufe erfordert und einen wiederverwendbaren Ablauf enthält.
+- Sicherstellen, dass nach der Sitzung ein Skill-Review geplant wurde; falls das Modell eine Speicherung für sinnvoll hält, wird `.qwen/skills/<name>/SKILL.md` erstellt, und das Frontmatter enthält `source: auto-skill`.
+- Falls das Modell `Nothing to save.` meldet, muss der Vorgang normal beendet werden, ohne Berechtigungsfehler.
 
-### 3. Hauptsitzung bearbeitet Skill – Review wird übersprungen
+### 3. Überspringen des Reviews, nachdem in der Hauptsitzung Skills bearbeitet wurden
 
-- Eine Sitzung konstruieren, in der parallel zum Erreichen der Werkzeugaufruf-Schwelle durch `write_file` oder `edit` eine Datei unter `.qwen/skills/` geschrieben wird (simuliert manuelle Skill-Verwaltung durch den Benutzer).
-- Behaupten: Am Sitzungsende ist `skillsModifiedInSession = true`, `scheduleSkillReview` gibt `skippedReason: 'skills_modified_in_session'` zurück.
-- Behaupten: Der Review-Agent wird nicht gestartet, um doppeltes Schreiben zu vermeiden.
+- Eine Sitzung konstruieren, in der gleichzeitig der Tool-Aufruf-Schwellenwert erreicht wird und über `write_file` oder `edit` in `.qwen/skills/` geschrieben wird (simuliert manuelle Skill-Verwaltung durch den Nutzer).
+- Sicherstellen, dass am Sitzungsende `skillsModifiedInSession = true` und `scheduleSkillReview` den Status `skippedReason: 'skills_modified_in_session'` zurückgibt.
+- Sicherstellen, dass kein Review-Agent gestartet wird, um doppelte Schreibvorgänge zu vermeiden.
 
-### 4. Schreibschutz erlaubt nur projektbezogene Skills
+### 4. Schreibschutz erlaubt nur Project-Level-Skills
 
-- Der Skill-Review-Agent versucht, außerhalb des Projektpfads, in den user-level Skill-Pfad oder in den bundled Skill-Pfad zu schreiben.
-- Behaupten: Die Schreiboperation wird abgelehnt, die Fehlermeldung verweist darauf, dass nur in `${projectRoot}/.qwen/skills/` geschrieben werden darf.
-- Behaupten: Schreiben in `${projectRoot}/.qwen/skills/<name>/SKILL.md` ist erlaubt.
+- Der Skill-Review-Agent soll versuchen, in Pfade außerhalb des Projekts, in User-Level- oder Bundled-Skill-Pfade zu schreiben.
+- Sicherstellen, dass die Schreibvorgänge abgelehnt werden und die Fehlermeldung darauf hinweist, dass nur in `${projectRoot}/.qwen/skills/` geschrieben werden darf.
+- Sicherstellen, dass das Schreiben in `${projectRoot}/.qwen/skills/<name>/SKILL.md` erlaubt ist.
 
-### 5. `auto-skill`-Markierung schützt benutzererstellte Skills
+### 5. `auto-skill`-Flag schützt nutzerseitig erstellte Skills
 
-- Unter `.qwen/skills/` einen benutzererstellten Skill ohne `source: auto-skill` platzieren.
-- Skill-Review-Agent auslösen und das Modell anleiten, diesen Skill zu ändern.
-- Behaupten: Die Schreiboperation wird vom Berechtigungsmanager abgelehnt, die Fehlermeldung besagt, dass der Skill kein `auto-skill` ist.
-- Behaupten: Ein Skill mit `source: auto-skill` im selben Verzeichnis kann normal aktualisiert werden.
+- In `.qwen/skills/` ein vom Nutzer erstelltes Skill ohne `source: auto-skill` platzieren.
+- Den Skill-Review-Agent auslösen und das Modell anleiten, dieses Skill zu ändern.
+- Sicherstellen, dass der Schreibversuch vom Permission-Manager abgelehnt wird, mit einer Fehlermeldung, dass das Skill kein Auto-Skill ist.
+- Sicherstellen, dass ein im selben Verzeichnis befindliches Skill mit `source: auto-skill` normal aktualisiert werden kann.
 
-### 6. Symlink-Ausbruch wird abgelehnt
+### 6. Symlink-Traversal wird abgelehnt
 
-- Unter `.qwen/skills/` einen Symlink erstellen, der auf ein Verzeichnis außerhalb des Projekts zeigt.
-- Skill-Review-Agent auslösen und versuchen, in diesen Symlink-Pfad zu schreiben.
-- Behaupten: `assertRealProjectSkillPath` lehnt das Schreiben ab und gibt einen Fehler `symlink traversal detected` zurück.
+- In `.qwen/skills/` einen Symlink auf ein Verzeichnis außerhalb des Projekts erstellen.
+- Den Skill-Review-Agent auslösen und versuchen, in den Symlink-Pfad zu schreiben.
+- Sicherstellen, dass `assertRealProjectSkillPath` den Schreibvorgang mit dem Fehler `symlink traversal detected` ablehnt.
 
-### 7. Konfigurationsschalter wirkt
+### 7. Konfigurationsschalter wirksam
 
-- `memory.enableAutoSkill: false` konfigurieren – auch wenn die Anzahl der Werkzeugaufrufe den Schwellenwert überschreitet, wird kein Review ausgelöst.
-- Überprüfen, dass bei aktiviertem Standard (`enableAutoSkill` nicht konfiguriert oder `true`) das Review beim Erreichen des Schwellenwerts normal ausgelöst wird.
+- `memory.enableAutoSkill: false` konfigurieren; auch wenn die Anzahl der Tool-Aufrufe den Schwellenwert überschreitet, darf keine Auslösung erfolgen.
+- Prüfen, dass bei standardmäßig aktiviertem Feature (`enableAutoSkill` nicht konfiguriert oder `true`) die Auslösung nach Erreichen des Schwellenwerts normal erfolgt.
 
-### 8. Überprüfung mit lokalem Build-Artefakt
+### 8. Lokales Build-Artefakt validieren
 
-- Gemäß dem e2e-testing-Skill mit Headless-JSON-Ausgabe: `node dist/cli.js "<prompt>" --approval-mode yolo --output-format json 2>/dev/null`.
-- Bei Bedarf `--openai-logging --openai-logging-dir <tmp-dir>` hinzufügen, um die Werkzeug-Schemas, Prompts und Berechtigungskonfiguration im Request-Body zu prüfen.
-- Für Szenarien, die den TUI- oder sessionEnd-Status betreffen, einen tmux-interaktiven Workflow verwenden, um die finale Ausgabe zu erfassen.
+- Gemäß dem E2E-Testing-Skill die Headless-JSON-Ausgabe verwenden:
+  `node dist/cli.js "<prompt>" --approval-mode yolo --output-format json 2>/dev/null`.
+- Bei Bedarf `--openai-logging --openai-logging-dir <tmp-dir>` hinzufügen, um das Tool-Schema, den Prompt und die Berechtigungskonfiguration im Request-Body zu prüfen.
+- Für Szenarien, die den TUI- oder sessionEnd-Zustand betreffen, den Ablauf mit tmux interaktiv erfassen und die endgültige Ausgabe festhalten.
 
 ## Beziehung zum bestehenden System
 
 ```
-Vorhandener MemoryManager
-  ├─ scheduleExtract()       ← unverändert
-  ├─ scheduleDream()         ← unverändert
-  ├─ recall()                ← unverändert
-  ├─ forget()                ← unverändert
-  └─ scheduleSkillReview()   ← neu (dieses Dokument)
+Bestehender MemoryManager
+  ├─ scheduleExtract()       ← Unverändert
+  ├─ scheduleDream()         ← Unverändert
+  ├─ recall()                ← Unverändert
+  ├─ forget()                ← Unverändert
+  └─ scheduleSkillReview()   ← Neu (dieses Dokument)
 
-Vorhandener SkillManager
-  ├─ listSkills()            ← unverändert (erkennt automatisch neue Dateien unter .qwen/skills/)
-  └─ loadSkill()             ← unverändert
+Bestehender SkillManager
+  ├─ listSkills()            ← Unverändert (entdeckt automatisch neue Dateien unter .qwen/skills/)
+  └─ loadSkill()             ← Unverändert
 
-Vorhandene Dateiwerkzeuge (read_file / write_file / edit)
-  ├─ In Hauptsitzung: Benutzer können Skills manuell mit diesen Werkzeugen verwalten
-  │   └─ Schreiboperation unter .qwen/skills/ → skillsModifiedInSession = true
-  └─ Im Skill-Review-Agent: Direkt zum Erstellen/Aktualisieren von auto-skills
-      └─ Berechtigungsmanager schränkt Pfad ein + prüft source: auto-skill
+Bestehende Datei-Tools (read_file / write_file / edit)
+  ├─ In der Hauptsitzung: Nutzer können Skills manuell mit diesen Tools verwalten
+  │   └─ Schreiboperationen unter .qwen/skills/ → skillsModifiedInSession = true
+  └─ Im Skill-Review-Agent: Direkt zum Erstellen/Aktualisieren von Auto-Skills verwendet
+      └─ Permission-Manager schränkt Pfade ein + prüft source: auto-skill
 
-Auslöser (vorhandener sessionEnd-Hook)
-  └─ Ruft gleichzeitig scheduleExtract + scheduleSkillReview auf (wenn Bedingungen erfüllt)
+Auslösepunkt (bestehender sessionEnd-Hook)
+  └─ Gleichzeitiger Aufruf von scheduleExtract + scheduleSkillReview (bei erfüllter Bedingung)
 ```
 
-Die Leseseite des SkillManagers (`listSkills`, `loadSkill`) muss nicht geändert werden – nachdem der Review-Agent in `${projectRoot}/.qwen/skills/` geschrieben hat, erkennt `SkillManager` die Änderung automatisch über den vorhandenen `chokidar`-Dateiüberwachungsmechanismus, ruft `notifyChangeListeners()` auf, löst einen Cache-Refresh aus, und in der nächsten Konversation wird der neue Skill selbstverständlich im System-Prompt sichtbar.
+Die Lese-Seite des SkillManagers (`listSkills`, `loadSkill`) muss überhaupt nicht geändert werden – nachdem der Review-Agent in `${projectRoot}/.qwen/skills/` geschrieben hat, erkennt `SkillManager` die Änderungen automatisch über den bestehenden `chokidar`-Dateiüberwachungsmechanismus, ruft `notifyChangeListeners()` auf, um den Cache zu aktualisieren, und das neue Skill wird in der nächsten Konversation natürlich im System-Prompt sichtbar sein.

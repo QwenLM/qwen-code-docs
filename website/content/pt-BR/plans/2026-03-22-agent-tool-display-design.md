@@ -1,49 +1,49 @@
-# Plano de Implementação da Exibição de Ferramentas do Agent
+# Plano de Implementação de Exibição de Ferramentas do Agente
 
-> **Para o Claude:** SUB-SKILL OBRIGATÓRIA: Use superpowers:executing-plans para implementar este plano tarefa por tarefa.
+> **Para o Claude:** HABILIDADE SUBSIDIÁRIA OBRIGATÓRIA: Use superpowers:executing-plans para implementar este plano tarefa por tarefa.
 
-**Objetivo:** Adicionar uma exibição dedicada na UI do VSCode/web para execuções de ferramentas do Agent, de modo que o progresso, os resumos e as falhas dos subagents sejam renderizados a partir do `rawOutput` estruturado, em vez de recorrer ao card genérico de ferramentas.
+**Objetivo:** Adicionar uma exibição dedicada na UI do VSCode/web para execuções de ferramentas do Agente, de modo que progresso, resumos e falhas de subagentes sejam renderizados a partir do `rawOutput` estruturado, em vez de recorrer ao cartão genérico de ferramenta.
 
-**Arquitetura:** Preservar o `rawOutput` do ACP através do pipeline de sessão/atualização do VSCode até o `ToolCallData`, permitindo que o roteador compartilhado da web UI detecte payloads `task_execution` e renderize um componente dedicado `AgentToolCall`. Manter a alteração compartilhada em `packages/webui` para que o VSCode e o `ChatViewer` permaneçam alinhados.
+**Arquitetura:** Preservar o `rawOutput` do ACP através do pipeline de sessão/atualização do VSCode para `ToolCallData`, e então deixar que o roteador compartilhado da web UI detecte payloads `task_execution` e renderize um componente dedicado `AgentToolCall`. Manter a alteração compartilhada em `packages/webui` para que o VSCode e o `ChatViewer` permaneçam alinhados.
 
-**Stack Tecnológica:** TypeScript, React, Vitest, componentes compartilhados de chamadas de ferramentas do `@qwen-code/webui`.
+**Stack Tecnológico:** TypeScript, React, Vitest, componentes de tool-call compartilhados `@qwen-code/webui`.
 
-### Tarefa 1: Validar o comportamento de fluxo de dados com falha
+### Tarefa 1: Fixar o comportamento atual do fluxo de dados (falhando)
 
 **Arquivos:**
 
 - Modificar: `packages/vscode-ide-companion/src/services/qwenSessionUpdateHandler.test.ts`
 - Criar: `packages/vscode-ide-companion/src/webview/hooks/useToolCalls.test.tsx`
 
-**Etapa 1: Escrever os testes com falha**
+**Passo 1: Escrever os testes que falham**
 
-- Adicionar um teste no manipulador de sessão que verifique se `tool_call_update` encaminha o `rawOutput` quando o ACP envia um payload `task_execution`.
-- Adicionar um teste no hook que verifique se `useToolCalls` armazena e atualiza o `rawOutput` para uma chamada de ferramenta do agent.
+- Adicionar um teste no session handler que verifica se `tool_call_update` repassa o `rawOutput` quando o ACP envia um payload `task_execution`.
+- Adicionar um teste no hook que verifica se `useToolCalls` armazena e atualiza o `rawOutput` para uma chamada de ferramenta do agente.
 
-**Etapa 2: Executar o teste para verificar a falha**
+**Passo 2: Executar o teste para verificar que ele falha**
 
-Executar: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
+Execute: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
 
-Esperado: falhas, pois o `rawOutput` não é preservado no pipeline atual do manipulador/hook.
+Esperado: falhas porque `rawOutput` não é preservado no pipeline atual do handler/hook.
 
-### Tarefa 2: Validar o comportamento do renderizador com falha
+### Tarefa 2: Fixar o comportamento atual do renderizador (falhando)
 
 **Arquivos:**
 
 - Criar: `packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
-**Etapa 1: Escrever o teste com falha**
+**Passo 1: Escrever o teste que falha**
 
-- Renderizar a chamada de ferramenta roteada com `kind: 'other'` e `rawOutput.type === 'task_execution'`.
-- Verificar se a descrição da tarefa, a ferramenta filha ativa, o resumo e o motivo da falha são renderizados por uma exibição dedicada do agent, em vez da saída de texto genérica.
+- Renderizar a chamada de ferramenta roteada com `kind: 'other'` mais `rawOutput.type === 'task_execution'`.
+- Verificar que a descrição da tarefa, a ferramenta filha ativa, o resumo e o motivo da falha são renderizados a partir de uma exibição dedicada do agente, em vez de uma saída de texto genérica.
 
-**Etapa 2: Executar o teste para verificar a falha**
+**Passo 2: Executar o teste para verificar que ele falha**
 
-Executar: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+Execute: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
-Esperado: falha, pois o roteador utiliza apenas `kind` como chave e não existe um componente dedicado para o agent.
+Esperado: falha porque o roteador só usa `kind` como chave e não existe componente dedicado ao agente.
 
-### Tarefa 3: Preservar a saída estruturada do agent de ponta a ponta
+### Tarefa 3: Preservar a saída estruturada do agente de ponta a ponta
 
 **Arquivos:**
 
@@ -52,20 +52,20 @@ Esperado: falha, pois o roteador utiliza apenas `kind` como chave e não existe 
 - Modificar: `packages/vscode-ide-companion/src/webview/hooks/useToolCalls.ts`
 - Modificar: `packages/webui/src/components/toolcalls/shared/types.ts`
 
-**Etapa 1: Implementar as alterações mínimas no modelo de dados**
+**Passo 1: Implementar as mudanças mínimas no modelo de dados**
 
 - Adicionar `rawOutput` opcional aos tipos de chamada de ferramenta da sessão/webview do VSCode.
-- Encaminhar o `rawOutput` no `QwenSessionUpdateHandler`.
-- Armazenar/mesclar o `rawOutput` no `useToolCalls`.
-- Expor o `rawOutput` nos tipos de dados de chamada de ferramenta compartilhados da web UI.
+- Repassar `rawOutput` em `QwenSessionUpdateHandler`.
+- Armazenar/mesclar `rawOutput` em `useToolCalls`.
+- Expor `rawOutput` nos tipos de dados de chamada de ferramenta da web UI compartilhada.
 
-**Etapa 2: Executar os testes focados**
+**Passo 2: Executar os testes focados**
 
-Executar: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
+Execute: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx`
 
-Esperado: aprovação.
+Esperado: passar.
 
-### Tarefa 4: Adicionar a UI compartilhada de chamada de ferramenta do agent
+### Tarefa 4: Adicionar a UI compartilhada da chamada de ferramenta do agente
 
 **Arquivos:**
 
@@ -74,18 +74,18 @@ Esperado: aprovação.
 - Modificar: `packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.tsx`
 - Modificar: `packages/webui/src/components/ChatViewer/ChatViewer.tsx`
 
-**Etapa 1: Implementar o renderizador mínimo**
+**Passo 1: Implementar o renderizador mínimo**
 
-- Adicionar uma verificação (guard) para `rawOutput.type === 'task_execution'`.
+- Adicionar uma verificação para `rawOutput.type === 'task_execution'`.
 - Renderizar a descrição da tarefa como cabeçalho.
-- Exibir nome + status do agent, ferramentas filhas em execução, resumo de conclusão e motivo de falha/cancelamento.
-- Manter o layout compatível com múltiplos cards de agents em paralelo, renderizando cada chamada de ferramenta de forma independente.
+- Mostrar nome do agente + status, ferramentas filhas em execução no momento, resumo de conclusão e motivo de falha/cancelamento.
+- Manter o layout compatível com vários cartões de agente em paralelo, renderizando cada chamada de ferramenta de forma independente.
 
-**Etapa 2: Executar o teste focado do renderizador**
+**Passo 2: Executar o teste focado do renderizador**
 
-Executar: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+Execute: `npm test --workspace=packages/vscode-ide-companion -- --run packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
 
-Esperado: aprovação.
+Esperado: passar.
 
 ### Tarefa 5: Verificar a superfície integrada
 
@@ -93,14 +93,14 @@ Esperado: aprovação.
 
 - Modificar: `packages/webui/src/index.ts`
 
-**Etapa 1: Exportar o novo componente compartilhado, se necessário**
+**Passo 1: Exportar o novo componente compartilhado, se necessário**
 
-- Reexportar quaisquer novos componentes/tipos necessários para o VSCode ou `ChatViewer`.
+- Reexportar qualquer novo componente/tipo necessário para o VSCode ou `ChatViewer`.
 
-**Etapa 2: Executar a verificação do pacote**
+**Passo 2: Executar a verificação do pacote**
 
-Executar: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
-Executar: `npm run check-types --workspace=packages/vscode-ide-companion`
-Executar: `npm run typecheck --workspace=packages/webui`
+Execute: `npm test --workspace=packages/vscode-ide-companion -- --run qwenSessionUpdateHandler.test.ts useToolCalls.test.tsx packages/vscode-ide-companion/src/webview/components/messages/toolcalls/index.test.tsx`
+Execute: `npm run check-types --workspace=packages/vscode-ide-companion`
+Execute: `npm run typecheck --workspace=packages/webui`
 
-Esperado: aprovação de todos os testes e verificações de tipo direcionados.
+Esperado: todos os testes direcionados e as verificações de tipo passam.

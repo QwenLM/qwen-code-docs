@@ -1,11 +1,11 @@
-# Guide du développeur SDK Daemon UI
+# SDK UI Démon — Guide du développeur
 
-Le sous-chemin `@qwen-code/sdk/daemon` fournit des primitives UI partagées pour les clients daemon. La cible d'adoption actuelle est le chat web et le terminal web ; les intégrations natives locales TUI, les canaux et les IDE conservent leurs chemins par défaut existants pendant que le contrat UI du daemon se stabilise. Ce guide couvre la surface d'API introduite par la PR #4353 (la unification de suivi de la couche de transcription UI partagée de la PR #4328).
+Le sous-chemin `@qwen-code/sdk/daemon` fournit des primitives UI partagées pour les clients démon. La cible d'adoption actuelle est le web chat et le terminal web ; les intégrations natives TUI locale, canal et IDE conservent leurs chemins par défaut pendant que le contrat UI démon se stabilise. Ce guide couvre la surface API introduite par la PR #4353 (le suivi unifié de la couche de transcription UI partagée de la PR #4328).
 
-## Modèle en trois couches
+## Modèle à trois couches
 
 ```
-Daemon SSE wire (NDJSON envelopes)
+Daemon SSE wire (enveloppes NDJSON)
    │
    ▼
 normalizeDaemonEvent(envelope) → DaemonUiEvent[]
@@ -15,12 +15,12 @@ reduceDaemonTranscriptEvents(state, events) → DaemonTranscriptState
    │                                            { blocks, currentToolCallId,
    │                                              approvalMode, toolProgress, ... }
    ▼
-daemonBlockToMarkdown(block) / ToHtml / ToPlainText  ← your renderer plugs here
+daemonBlockToMarkdown(block) / ToHtml / ToPlainText  ← votre moteur de rendu se branche ici
 ```
 
-- **Normaliseur** : prend les enveloppes SSE brutes du daemon, retourne des événements UI typés
-- **Réducteur** : accumule les événements dans une machine d'état de transcription
-- **Aides de rendu** : projette les blocs d'état en chaînes rendables
+- **Normalisateur** : prend les enveloppes SSE brutes du démon, retourne des événements UI typés
+- **Réducteur** : accumule les événements dans une machine à états de transcription
+- **Aides de rendu** : projette les blocs d'état en chaînes affichables
 
 ## Démarrage rapide
 
@@ -47,7 +47,7 @@ for await (const envelope of session.events({ signal })) {
   store.dispatch(events);
 }
 
-// Read state from any subscriber
+// Lire l'état depuis n'importe quel abonné
 store.subscribe(() => {
   const state = store.getSnapshot();
   const currentTool = selectCurrentTool(state);
@@ -59,22 +59,22 @@ store.subscribe(() => {
 
 ## Taxonomie des événements (28+ types)
 
-`DaemonUiEvent` est une union discriminée de tous les événements destinés à l'UI :
+`DaemonUiEvent` est une union discriminée de tous les événements orientés UI :
 
 ### Événements de flux de chat
 
-| Événement                        | Quand                                                  |
-| -------------------------------- | ------------------------------------------------------ |
-| `user.text.delta`                | Un morceau de message utilisateur arrive du daemon     |
-| `assistant.text.delta`           | Morceau de streaming de l'assistant                    |
-| `assistant.done`                 | Fin de prompt (résolution de sendPrompt)               |
-| `thought.text.delta`             | Morceau de raisonnement de l'agent                     |
-| `tool.update`                    | Cycle de vie d'appel d'outil (en cours / terminé / annulé) |
-| `shell.output`                   | Morceau stdout/stderr d'outil shell                    |
-| `permission.request`             | L'outil nécessite une autorisation utilisateur          |
-| `permission.resolved`            | Décision de permission arrivée                         |
-| `model.changed`                  | Modèle de session changé                               |
-| `status` / `debug` / `error`    | Blocs de statut / debug / erreur                       |
+| Événement                    | Quand                                                  |
+| ---------------------------- | ------------------------------------------------------ |
+| `user.text.delta`            | Un fragment de message utilisateur arrive du démon      |
+| `assistant.text.delta`       | Fragment de flux de l'assistant                        |
+| `assistant.done`             | Complétion d'invite (depuis la résolution de sendPrompt)|
+| `thought.text.delta`         | Fragment de raisonnement de l'agent                    |
+| `tool.update`                | Cycle de vie d'un appel d'outil (en cours / terminé / annulé) |
+| `shell.output`               | Fragment stdout/stderr de l'outil shell                |
+| `permission.request`         | L'outil a besoin d'autorisation utilisateur            |
+| `permission.resolved`        | Décision d'autorisation arrivée                        |
+| `model.changed`              | Modèle de session changé                               |
+| `status` / `debug` / `error` | Blocs de statut / débogage / erreur                    |
 
 ### Événements de métadonnées de session (PR-A)
 
@@ -90,22 +90,23 @@ store.subscribe(() => {
 | ------------------------------------------ | -------------------------------------- |
 | `workspace.memory.changed`                 | QWEN.md / fichier mémoire modifié      |
 | `workspace.agent.changed`                  | Sous-agent créé / mis à jour / supprimé |
-| `workspace.tool.toggled`                   | Outil intégré activé / désactivé       |
+| `workspace.tool.toggled`                   | Outil intégré activé / désactivé        |
 | `workspace.initialized`                    | `qwen init` terminé                    |
 | `workspace.mcp.budget_warning`             | Nombre d'enfants MCP approchant la limite |
-| `workspace.mcp.child_refused`              | Serveur MCP refusé pour cause de budget |
-| `workspace.mcp.server_restarted`           | Redémarrage manuel MCP réussi          |
-| `workspace.mcp.server_restart_refused`     | Redémarrage manuel bloqué              |
+| `workspace.mcp.child_refused`              | Serveur MCP refusé à cause du budget    |
+| `workspace.mcp.server_restarted`           | Redémarrage manuel MCP réussi           |
+| `workspace.mcp.server_restart_refused`     | Redémarrage manuel bloqué               |
 
 ### Événements de flux d'appareil d'authentification (PR-A, Vague 4 OAuth)
 
 `auth.device_flow.{started,throttled,authorized,failed,cancelled}`
 
-Chacun porte le `deviceFlowId` du daemon. Les événements échoués portent un `errorKind` (enum fermé — voir `KNOWN_DEVICE_FLOW_ERROR_KINDS` exporté depuis `@qwen-code/sdk/daemon` pour la liste canonique, actuellement : `expired_token` / `access_denied` / `invalid_grant` / `upstream_error` / `persist_failed` / `not_found_or_evicted`).
+Chacun porte le `deviceFlowId` du démon. Les événements échoués portent une `errorKind` énumération fermée (voir `KNOWN_DEVICE_FLOW_ERROR_KINDS` exporté depuis `@qwen-code/sdk/daemon` pour la liste canonique, actuellement : `expired_token` / `access_denied` / `invalid_grant` / `upstream_error` / `persist_failed` / `not_found_or_evicted`).
 
-### Contrat de rendu (PR-D)
+## Contrat de rendu (PR-D)
 
-Trois helpers de projection, un helper d'aperçu. Tous discriminent sur `block.kind` ou `preview.kind` :
+Trois fonctions de projection, une fonction d'aperçu. Toutes discriminent sur `block.kind` ou `preview.kind` :
+
 ```ts
 daemonBlockToMarkdown(block, { sanitizeUrls?, maxFieldLength?, locale? })
 daemonBlockToHtml(block, { sanitizer?, ...renderOpts })
@@ -113,7 +114,7 @@ daemonBlockToPlainText(block, renderOpts)
 daemonToolPreviewToMarkdown(preview, renderOpts)
 ```
 
-### Livre de recettes : convertir une transcription en Markdown
+### Recette : afficher une transcription en Markdown
 
 ```ts
 const markdown = state.blocks
@@ -121,7 +122,7 @@ const markdown = state.blocks
   .join('\n\n');
 ```
 
-### Livre de recettes : convertir en HTML assaini pour le SSR
+### Recette : afficher en HTML assaini pour SSR
 
 ```ts
 import DOMPurify from 'dompurify';
@@ -130,14 +131,14 @@ const md = new MarkdownIt();
 
 const html = state.blocks
   .map((b) => {
-    // Pipeline en deux étapes : Markdown → HTML → DOMPurify
+    // Pipeline en deux étapes : markdown → HTML → DOMPurify
     const rawHtml = md.render(daemonBlockToMarkdown(b));
     return DOMPurify.sanitize(rawHtml);
   })
   .join('\n');
 ```
 
-Ou utilisez le moteur de rendu HTML conservateur intégré (pas d’analyse Markdown, simple échappement HTML) :
+Ou utilisez le moteur de rendu HTML conservateur intégré (pas d'analyse markdown, seulement échappement HTML) :
 
 ```ts
 const html = state.blocks
@@ -145,34 +146,34 @@ const html = state.blocks
   .join('\n');
 ```
 
-### Livre de recettes : copier-coller en texte brut
+### Recette : copier-coller en texte brut
 
 ```ts
 const plain = state.blocks.map(daemonBlockToPlainText).join('\n');
 navigator.clipboard.writeText(plain);
 ```
 
-## Taxonomie des aperçus d’outils (13 types)
+## Taxonomie des aperçus d'outils (13 types)
 
-| Type                   | Surface                                         |
-| ---------------------- | ----------------------------------------------- |
-| `ask_user_question`    | Question à choix multiples avec options         |
-| `command`              | Commande de type Bash + répertoire courant      |
-| `file_diff`            | Modification de fichier avec oldText/newText ou correctif |
-| `file_read`            | Chemin + plage de lignes optionnelle            |
-| `web_fetch`            | URL + méthode HTTP                              |
-| `mcp_invocation`       | Serveur MCP + outil + résumé des arguments      |
-| `code_block`           | Extrait de code étiqueté par langage            |
-| `search`               | Requête + nombre de résultats + meilleurs résultats |
-| `tabular`              | Colonnes + lignes (limité à 50, troncature signalée) |
-| `image_generation`     | Prompt + URL de miniature optionnelle           |
-| `subagent_delegation`  | Nom de l’agent + tâche                          |
-| `key_value`            | Lignes génériques étiquette/valeur              |
-| `generic`              | Résumé de repli                                |
+| Type                  | Surface                                           |
+| --------------------- | ------------------------------------------------- |
+| `ask_user_question`   | Question à choix multiples avec options           |
+| `command`             | Commande de style bash + cwd                      |
+| `file_diff`           | Modification de fichier avec oldText/newText ou correctif |
+| `file_read`           | Chemin + plage de lignes optionnelle              |
+| `web_fetch`           | URL + méthode HTTP                                |
+| `mcp_invocation`      | Serveur MCP + outil + résumé des arguments        |
+| `code_block`          | Extrait de code avec langage                      |
+| `search`              | Requête + nombre de résultats + meilleurs résultats |
+| `tabular`             | Colonnes + lignes (limité à 50, troncature signalée) |
+| `image_generation`    | Invite + URL miniature optionnelle                |
+| `subagent_delegation` | Nom d'agent + tâche                              |
+| `key_value`           | Lignes génériques étiquette/valeur                |
+| `generic`             | Résumé de secours                                 |
 
-Chacun dispose d’une projection `daemonToolPreviewToMarkdown`. Des moteurs de rendu personnalisés peuvent répartir sur `preview.kind` pour un affichage riche par type (diff de fichier avec coloration syntaxique, badge de serveur MCP, miniature d’image, etc.).
+Chacun a une projection `daemonToolPreviewToMarkdown`. Les moteurs de rendu personnalisés peuvent dispatcher sur `preview.kind` pour un affichage riche par type (diff de fichier avec coloration syntaxique, badge de serveur MCP, miniature d'image, etc.).
 
-## Sélecteurs d’état (PR-E)
+## Sélecteurs d'état (PR-E)
 
 ```ts
 selectCurrentTool(state); // → DaemonToolTranscriptBlock | undefined
@@ -180,33 +181,33 @@ selectApprovalMode(state); // → 'plan' | 'default' | 'auto-edit' | 'yolo' | un
 selectToolProgress(state, toolCallId); // → { ratio?, step? } | undefined
 selectPendingPermissionBlocks(state); // → ReadonlyArray<DaemonPermissionTranscriptBlock>
 selectTranscriptBlocks(state); // → ReadonlyArray<DaemonTranscriptBlock>
-selectTranscriptBlocksOrderedByEventId(state); // trié par identifiant monotone du démon
+selectTranscriptBlocksOrderedByEventId(state); // trié par id monotone du démon
 
-// PR-K — imbrication des sous-agents
+// PR-K — imbrication de sous-agents
 selectSubagentChildBlocks(state, parentToolCallId); // uniquement les enfants directs
 isSubagentChildBlock(block); // garde de type : cet outil a-t-il été invoqué dans un sous-agent ?
 ```
 
 `currentToolCallId` est automatiquement maintenu par le réducteur :
 
-- Défini lorsqu’un outil passe en statut en cours (`running` / `in_progress` / `pending` / `confirming`)
-- Effacé lorsque l’outil entre dans un statut terminal (`completed` / `failed` / `cancelled` / etc.)
-- Les statuts inconnus le laissent inchangé (compatibilité ascendante)
+- Défini lorsqu'un outil entre en statut en vol (`running` / `in_progress` / `pending` / `confirming`)
+- Effacé lorsque l'outil entre en statut terminal (`completed` / `failed` / `cancelled` / etc.)
+- Les statuts inconnus le laissent inchangé (compatibilité future)
 
-## Propagation d’annulation (PR-E)
+## Propagation d'annulation (PR-E)
 
-Lorsque `assistant.done.reason === 'cancelled'`, le réducteur parcourt chaque bloc d’outil en cours et force son statut à `'cancelled'`. Le démon ne garantit pas un `tool_call_update` terminal pour chaque outil en cours lorsque l’invite parente est annulée — cette propagation empêche les spinners de l’interface de tourner indéfiniment.
+Quand `assistant.done.reason === 'cancelled'`, le réducteur parcourt chaque bloc d'outil en vol et force son statut à `'cancelled'`. Le démon ne garantit pas un `tool_call_update` terminal pour chaque outil en vol lorsque l'invite parente est annulée — cette propagation empêche les spinners UI de tourner indéfiniment.
 
-Les enfants des sous-agents sont annulés en même temps que leur parent car l’annulation itère sur chaque bloc d’outil en cours dans `toolBlockByCallId`, pas seulement sur le pointeur courant.
+Les enfants de sous-agents sont annulés avec leur parent car l'annulation itère sur chaque bloc d'outil en vol dans `toolBlockByCallId`, pas seulement le pointeur courant.
 
-## Imbrication des sous-agents (PR-K)
+## Imbrication de sous-agents (PR-K)
 
-Lorsque l’agent principal délègue à un sous-agent (l’outil `Task`, ou équivalent), le démon estampille `parentToolCallId` et `subagentType` sur les appels d’outils **enfants** via `tool_call._meta`. Le réducteur lit les deux et :
+Lorsque l'agent principal délègue à un sous-agent (l'outil `Task`, ou équivalent), le démon appose `parentToolCallId` et `subagentType` sur les appels d'outil **enfant** via `tool_call._meta`. Le réducteur lit les deux et :
 
-- Reflète `parentToolCallId` + `subagentType` sur `DaemonToolTranscriptBlock`
-- Résout `parentBlockId` (l’`id` du bloc de transcription parent) lorsque le bloc parent est déjà dans l’état ; sinon le laisse `undefined` et le remplit ultérieurement lorsque le bloc parent apparaît
+- Reflete `parentToolCallId` + `subagentType` sur `DaemonToolTranscriptBlock`
+- Résout `parentBlockId` (l'`id` du bloc de transcription parent) lorsque le bloc parent est déjà dans l'état ; sinon le laisse `undefined` et le remplit plus tard lorsque le bloc parent apparaît
 
-L’arrivée dans le désordre (enfant avant parent) est traitée de manière transparente. Un enfant dont le parent est rogné par `maxBlocks` conserve `parentToolCallId` pour les requêtes des sélecteurs, mais `parentBlockId` est mis à null (l’identifiant pendant ne pourrait plus être résolu via `blockIndexById`).
+L'arrivée dans le désordre (enfant avant parent) est gérée de manière transparente. Un enfant dont le parent est rogné par `maxBlocks` conserve `parentToolCallId` pour les requêtes de sélecteur, mais `parentBlockId` est nullifié (l'id orphelin ne résoudrait plus via `blockIndexById`).
 
 ```ts
 import {
@@ -214,7 +215,7 @@ import {
   isSubagentChildBlock,
 } from '@qwen-code/sdk/daemon';
 
-// Afficher un bloc d’outil parent, puis parcourir les enfants :
+// Afficher un bloc d'outil parent, puis parcourir les enfants :
 function renderToolBlock(state, block) {
   if (block.kind !== 'tool') return renderOther(block);
   const children = selectSubagentChildBlocks(state, block.toolCallId);
@@ -229,56 +230,47 @@ function renderToolBlock(state, block) {
   );
 }
 
-// Ou filtrer niveau supérieur vs. imbriqué au moment du rendu :
+// Ou filtrer niveau supérieur vs imbriqué au moment du rendu :
 const topLevel = state.blocks.filter((b) => !isSubagentChildBlock(b));
 ```
-`selectSubagentChildBlocks` retourne uniquement les enfants **directs**. Parcourez
-récursivement pour afficher les sous-agents imbriqués (un sous-agent dans un
-sous-agent). Le démon n'émet pas de cycles, mais les moteurs d'affichage remontant via
-`parentBlockId` doivent toujours les détecter de manière défensive (par ex., limite de profondeur ou
-ensemble visité).
 
-Les auto-références (`parentToolCallId === toolCallId`) sont supprimées par le
-normalisateur avant d'atteindre le réducteur.
+`selectSubagentChildBlocks` retourne uniquement les enfants **directs**. Parcourez récursivement pour afficher les sous-agents imbriqués (un sous-agent dans un sous-agent). Le démon n'émet pas de cycles, mais les moteurs de rendu remontant via `parentBlockId` devraient quand même les détecter défensivement (par exemple, limite de profondeur ou ensemble visité).
+
+Les auto-références (`parentToolCallId === toolCallId`) sont supprimées par le normalisateur avant d'atteindre le réducteur.
 
 ## Sémantique temporelle (PR-B)
 
 ```ts
 interface DaemonTranscriptBlockBase {
-  eventId?: number; // Clé de tri PRIMAIRE — monotone du démon
-  serverTimestamp?: number; // Affichage PRÉFÉRÉ — autoritaire du démon
-  clientReceivedAt: number; // SOLUTION DE RECHANGE — horloge locale
-  createdAt: number; // @deprecated alias pour clientReceivedAt
+  eventId?: number; // CLÉ DE TRI PRIMAIRE — monotone du démon
+  serverTimestamp?: number; // AFFICHAGE PRÉFÉRÉ — faisant autorité côté démon
+  clientReceivedAt: number; // SOLUTION DE SECOURS — horloge locale
+  createdAt: number; // @deprecated alias de clientReceivedAt
 }
 ```
 
-**Trier toujours par `eventId`** (utiliser `selectTranscriptBlocksOrderedByEventId`)
-lors de l'affichage de longues sessions. Le curseur monotone du démon est conservé
-lors de la relecture SSE après reconnexion ; les horloges des clients ne le sont pas.
+**Triez toujours par `eventId`** (utilisez `selectTranscriptBlocksOrderedByEventId`) lors de l'affichage de longues sessions. Le curseur monotone du démon est préservé lors de la relecture SSE après reconnexion ; les horloges client ne le sont pas.
 
-**Toujours formater les horodatages d'affichage à partir de `serverTimestamp`** (avec
-repli sur `clientReceivedAt`). Plusieurs clients visualisant la même session
-voient le même « il y a 5 minutes » uniquement lorsque les deux lisent depuis l'horloge du démon.
+**Formatez toujours les horodatages d'affichage à partir de `serverTimestamp`** (avec repli sur `clientReceivedAt`). Plusieurs clients visualisant la même session voient le même « il y a 5 minutes » seulement s'ils lisent tous l'horloge du démon.
 
 ```ts
 import { formatBlockTimestamp } from '@qwen-code/sdk/daemon';
 
 const label = formatBlockTimestamp(block, {
-  locale: 'zh-CN',
-  timeZone: 'Asia/Shanghai',
+  locale: 'fr-FR',
+  timeZone: 'Europe/Paris',
   timeStyle: 'short',
 });
 ```
 
 ## Conformité de l'adaptateur (PR-G)
 
-Validez que votre adaptateur projette le corpus de référence du SDK vers une sortie
-sémantiquement équivalente :
+Validez que votre adaptateur projette le corpus de référence du SDK vers une sortie sémantiquement équivalente :
 
 ```ts
 import { runAdapterConformanceSuite } from '@qwen-code/sdk/daemon';
 
-it('mon adaptateur est conforme au corpus UI du démon', () => {
+it('mon adaptateur est conforme au corpus UI démon', () => {
   const result = runAdapterConformanceSuite({
     reduce: (events) => myReducer(events),
     renderToText: (state) => myRenderer(state),
@@ -287,20 +279,13 @@ it('mon adaptateur est conforme au corpus UI du démon', () => {
 });
 ```
 
-Le corpus de fixtures (`DAEMON_UI_CONFORMANCE_FIXTURES`) couvre le chat, le cycle de vie
-des outils, les modifications de fichiers, MCP, les permissions, les avertissements de budget MCP, l'annulation,
-la rédaction de charges utiles malformées, OAuth, les mises à jour de commandes et l'imbrication de
-sous-agents. (Le nombre est dérivable à l'exécution — lisez
-`DAEMON_UI_CONFORMANCE_FIXTURES.length`.)
+Le corpus de fixtures (`DAEMON_UI_CONFORMANCE_FIXTURES`) couvre le chat, le cycle de vie des outils, les modifications de fichiers, MCP, les permissions, l'avertissement de budget MCP, l'annulation, le masquage de charges utiles malformées, OAuth, les mises à jour de commandes et l'imbrication de sous-agents. (Le nombre est dérivable à l'exécution — lisez `DAEMON_UI_CONFORMANCE_FIXTURES.length`.)
 
-**Indépendant du format** — votre adaptateur peut générer de l'ANSI / HTML / markdown /
-JSX ; le framework vérifie uniquement le contenu sémantique via `expectedContains` et
-`expectedAbsent`.
+**Indépendant du format** — votre adaptateur peut afficher en ANSI / HTML / markdown / JSX ; le framework vérifie uniquement le contenu sémantique via `expectedContains` et `expectedAbsent`.
 
 ## Catégorisation des erreurs (PR-A)
 
-`DaemonUiErrorEvent.errorKind` est une énumération fermée propagée depuis la
-taxonomie d'erreurs typées du démon (lorsque le démon l'ajoute) :
+`DaemonUiErrorEvent.errorKind` est une énumération fermée propagée depuis la taxonomie d'erreurs typées du démon (lorsque le démon l'appose) :
 
 ```ts
 import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
@@ -308,12 +293,12 @@ import type { DaemonErrorKind } from '@qwen-code/sdk/daemon';
 // | 'protocol_error' | 'missing_file' | 'parse_error' | 'budget_exhausted'
 ```
 
-Les moteurs d'affichage doivent se baser sur `errorKind` pour des affordances actionnables :
+Les moteurs de rendu doivent bifurquer sur `errorKind` pour des affordances actionnables :
 
 ```ts
 function errorAffordance(errorKind?: DaemonErrorKind): React.ReactNode {
   switch (errorKind) {
-    case 'auth_env_error': return <button>Se réauthentifier</button>;
+    case 'auth_env_error': return <button>Ré-authentifier</button>;
     case 'missing_file':   return <button>Choisir un fichier</button>;
     case 'blocked_egress': return <span>Réseau bloqué — vérifier le proxy</span>;
     default:               return null;
@@ -321,11 +306,9 @@ function errorAffordance(errorKind?: DaemonErrorKind): React.ReactNode {
 }
 ```
 
-## Répartition de la provenance des outils (PR-A)
+## Dispatch de provenance d'outil (PR-A)
 
-`DaemonUiToolUpdateEvent.provenance` est une énumération fermée (`builtin` / `mcp` /
-`subagent` / `unknown`). Avec `serverId?: string` lorsque `mcp`. Utilisez-la pour la
-répartition des icônes et le marquage :
+`DaemonUiToolUpdateEvent.provenance` est une énumération fermée (`builtin` / `mcp` / `subagent` / `unknown`). Avec `serverId?: string` quand `mcp`. Utilisez-la pour le dispatch d'icônes et les badges :
 
 ```ts
 function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
@@ -338,28 +321,23 @@ function toolIcon(event: DaemonUiToolUpdateEvent): React.ReactNode {
 }
 ```
 
-Le SDK dispose d'une heuristique de repli de nommage `mcp__<server>__<tool>` — même
-lorsque le démon n'ajoute pas explicitement la provenance, les outils MCP sont détectables.
+Le SDK a une heuristique de repli de nommage `mcp__<server>__<tool>` — même lorsque le démon n'appose pas explicitement la provenance, les outils MCP sont détectables.
 
-## Principes de rétrocompatibilité
+## Principes de compatibilité future
 
-Chaque couche du SDK UI du démon suit le **principe de rétrocompatibilité** :
-les valeurs inconnues NE lèvent PAS d'exception ; elles se dégradent gracieusement.
+Chaque couche du SDK UI démon suit le **principe de compatibilité future** : les valeurs inconnues NE lèvent PAS d'exception ; elles dégradent gracieusement.
 
-- Types d'événements de démon inconnus → événement `debug` avec le nom de type brut
+- Types d'événements démon inconnus → événement `debug` avec le nom du type brut
 - Statut d'outil inconnu → `currentToolCallId` laissé inchangé (pas d'effacement)
-- Type d'erreur inconnu → `errorKind` non défini (le moteur d'affichage se replie sur le texte)
+- Type d'erreur inconnu → `errorKind` undefined (le moteur de rendu se replie sur le texte)
 - serverTimestamp manquant → repli sur `clientReceivedAt`
-- Forme non reconnue de l'aperçu → type `generic` avec `summary`
+- Forme d'aperçu non reconnue → type `generic` avec `summary`
 
-Cela signifie que **le SDK peut être livré avant l'émission du démon**. L'heuristique de
-provenance des outils de PR-A, l'extraction d'horodatage à trois emplacements de PR-B, et la
-préservation des statuts inconnus de PR-E sont tous des exemples de « prêt quand le démon envoie ;
-sûr quand il ne le fait pas ».
+Cela signifie que le **SDK peut être livré avant l'émission du démon**. L'heuristique de provenance d'outil de PR-A, l'extraction d'horodatage à trois emplacements de PR-B, et la préservation de statut inconnu de PR-E sont tous des exemples de « prêt quand le démon envoie ; sûr quand il ne le fait pas. »
 
 ## Références croisées
 
 - [PR #4328](https://github.com/QwenLM/qwen-code/pull/4328) — PR de base avec la couche de transcription UI partagée
-- [PR #4353](https://github.com/QwenLM/qwen-code/pull/4353) — cette PR (suivi unifié de complétude)
-- [Issue #3803](https://github.com/QwenLM/qwen-code/issues/3803) — proposition du mode démon
+- [PR #4353](https://github.com/QwenLM/qwen-code/pull/4353) — cette PR (suivi d'exhaustivité unifié)
+- [Issue #3803](https://github.com/QwenLM/qwen-code/issues/3803) — proposition de mode démon
 - [Issue #4175](https://github.com/QwenLM/qwen-code/issues/4175) — tracker d'implémentation Mode B v0.16

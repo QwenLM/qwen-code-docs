@@ -4,24 +4,24 @@
 
 ## Authentification
 
-Lorsque le démon a été démarré avec `--token` ou `QWEN_SERVER_TOKEN`, **chaque route sauf `/health` sur les liaisons loopback** doit comporter :
+Lorsque le démon a été démarré avec `--token` ou `QWEN_SERVER_TOKEN`, **toute route sauf `/health` sur les liaisons loopback** doit porter :
 
 ```
 Authorization: Bearer <token>
 ```
 
-Sans jeton configuré (par défaut de développement sur loopback), l'en-tête est facultatif. La comparaison des jetons est en temps constant. Les réponses 401 sont uniformes pour `en-tête manquant` / `mauvais schéma` / `mauvais jeton`.
+Sans token configuré (par défaut en développement sur loopback), l'en-tête est optionnel. La comparaison des tokens est à temps constant. Les réponses 401 sont uniformes entre `missing header` / `wrong scheme` / `wrong token`.
 
-**Exemption de `/health`** (Bctum) : sur les liaisons loopback (`127.0.0.1` / `localhost` / `::1` / `[::1]`), `/health` est enregistré AVANT le middleware bearer, donc les sondes de vivacité dans le pod n'ont pas besoin de porter le jeton même lorsque le démon a été démarré avec `--token`. Les liaisons non-loopback (`--hostname 0.0.0.0` etc.) placent `/health` derrière le bearer comme toutes les autres routes — voir la section [`GET /health`](#get-health) pour la justification.
+**Exemption `/health`** (Bctum) : sur les liaisons loopback (`127.0.0.1` / `localhost` / `::1` / `[::1]`), `/health` est enregistrée AVANT le middleware bearer, de sorte que les sondes de liveness dans le pod n'aient pas besoin de porter le token même lorsque le démon est démarré avec `--token`. Les liaisons non-loopback (`--hostname 0.0.0.0` etc.) soumettent `/health` au bearer comme toute autre route — voir la section [`GET /health`](#get-health) pour la justification.
 
-**`--require-auth` (#4175 PR 15).** Passez ce drapeau au démarrage pour étendre la règle « doit avoir un jeton » également à la boucle locale. Le démarrage échoue sans jeton ; l'exemption `/health` est supprimée (donc `/health` nécessite aussi `Authorization: Bearer …`).
+**`--require-auth` (#4175 PR 15).** En passant ce drapeau au démarrage, la règle « doit avoir un token » est étendue également au loopback. Le démarrage échoue sans token ; l'exemption `/health` est supprimée (`/health` nécessite donc aussi `Authorization: Bearer …`).
 
-Lorsque le drapeau est activé, le middleware global `bearerAuth` bloque **chaque** route — y compris `/capabilities`. Un client **non authentifié** ne peut donc pas pré-vérifier `caps.features` pour découvrir que l'authentification est requise : la surface de découverte pour ce cas est le **corps de la réponse 401** lui-même (uniforme sur toutes les routes selon la section [Authentification](#authentification)). La balise de capacité `require_auth` est une **confirmation post-authentification** — une fois qu'un client s'authentifie avec succès et lit `/capabilities`, la présence de la balise confirme que le démon a été démarré avec `--require-auth` (utile pour les interfaces d'audit/conformité et pour les clients SDK qui souhaitent afficher « ce déploiement est renforcé » dans un panneau de paramètres). Les routes de mutation qui optent pour le mode strict par route (suivis de Wave 4) refusent avec `401 { code: "token_required", error: "…" }` lorsqu'elles sont atteintes sur une boucle locale par défaut sans jeton — mais avec `--require-auth` activé, le middleware bearer global court-circuite la requête avant le contrôle par route, donc le corps `Unauthorized` hérité est ce que les appelants non authentifiés voient effectivement.
+Lorsque le drapeau est activé, le middleware global `bearerAuth` protège **toutes** les routes — y compris `/capabilities`. Un client **non authentifié** ne peut donc pas pré-identifier `caps.features` pour découvrir que l'authentification est requise : la surface de découverte pour ce cas est le **corps de la réponse 401** lui-même (uniforme sur toutes les routes conformément à la section [Authentification](#authentification)). Le tag de capacité `require_auth` est une **confirmation post-authentification** — une fois qu'un client s'authentifie avec succès et lit `/capabilities`, la présence du tag confirme que le démon a été démarré avec `--require-auth` (utile pour les interfaces d'audit / conformité et pour que les clients SDK puissent afficher « ce déploiement est renforcé » dans un panneau de paramètres). Les routes de mutation qui optent pour un mode strict par route (suites Wave 4) refusent avec `401 { code: "token_required", error: "…" }` lorsqu'elles sont atteintes sur une interface loopback par défaut sans token — mais avec `--require-auth` activé, le middleware bearer global court-circuite la requête avant la porte par route, donc le corps `Unauthorized` hérité est ce que les appelants non authentifiés voient réellement.
 
-**`--allow-origin <pattern>` (T2.4 [#4514](https://github.com/QwenLM/qwen-code/issues/4514)).** Les interfaces web des navigateurs qui accèdent au démon en cross-origin sont bloquées par défaut — toute requête portant un en-tête `Origin` renvoie `403 {"error":"Request denied by CORS policy"}` car les clients CLI/SDK n'envoient jamais `Origin` et le démon interprète sa présence comme un signe que la requête provient d'un contexte navigateur dans lequel l'opérateur n'a pas opté. Passez `--allow-origin <pattern>` (répétable) au démarrage pour installer une liste d'autorisation au lieu du blocage. Chaque motif est soit :
+**`--allow-origin <pattern>` (T2.4 [#4514](https://github.com/QwenLM/qwen-code/issues/4514)).** Les interfaces web navigateur accédant au démon depuis une origine différente sont bloquées par défaut — toute requête portant un en-tête `Origin` renvoie `403 {"error":"Request denied by CORS policy"}` car les clients CLI/SDK n'envoient jamais `Origin` et le démon interprète sa présence comme un signe que la requête provient d'un contexte navigateur que l'opérateur n'a pas autorisé. Passez `--allow-origin <pattern>` (répétable) au démarrage pour installer une liste d'autorisation au lieu du blocage. Chaque pattern est soit :
 
-- Le littéral `*` — admet n'importe quelle origine. **Risqué** : le démarrage refuse lorsque `*` est configuré mais qu'aucun jeton bearer n'est défini (toute source : `--token`, `QWEN_SERVER_TOKEN`, ou `--require-auth` qui impose un jeton au démarrage). Le fil d'Ariane de démarrage émet un avertissement sur stderr lorsque `*` est dans la liste. **Recommandation** : associez avec `--require-auth` sur les liaisons loopback afin que `/health` et `/demo` soient également protégés par le bearer — ils sont enregistrés avant le middleware bearer sur la boucle locale par défaut (pour que les sondes k8s/Compose puissent atteindre `/health` sans jeton), et une liste d'autorisation `*` les rend accessibles depuis n'importe quel navigateur cross-origin. Sur les liaisons non-loopback, le bearer est déjà obligatoire au démarrage, donc la surface d'exposition de `*` est juste `/health` (JSON d'état) et `/demo` (une page statique dont le JS appelle encore des routes protégées par jeton) — la surface API réelle est protégée quoi qu'il arrive.
-- Une origine d'URL canonique — `<scheme>://<host>[:<port>]`. **Pas de slash final, pas de chemin, pas d'info utilisateur, pas de requête.** Le démarrage refuse avec `InvalidAllowOriginPatternError` si l'entrée échoue au test `new URL(pattern).origin === pattern` ; le message d'erreur nomme le motif invalide et la forme canonique. Strict par conception : une normalisation silencieuse (par exemple, supprimer un slash final) laisserait passer des fautes de frappe et accepterait une entrée ambiguë.
+- Le littéral `*` — admet toute origine. **Risqué** : le démarrage refuse lorsque `*` est configuré mais qu'aucun token bearer n'est défini (quelle que soit la source : `--token`, `QWEN_SERVER_TOKEN`, ou `--require-auth` qui impose un token au démarrage). La trace de démarrage émet un avertissement sur stderr lorsque `*` est dans la liste. **Recommandation** : associer avec `--require-auth` sur les liaisons loopback afin que `/health` et `/demo` soient également protégés par le bearer — ils sont enregistrés avant le middleware bearer sur loopback par défaut (afin que les sondes k8s/Compose puissent atteindre `/health` sans token), et une liste d'autorisation `*` les rend accessibles depuis n'importe quel navigateur d'origine différente. Sur les liaisons non-loopback, le bearer est déjà obligatoire au démarrage, donc la surface d'exposition de `*` se limite à `/health` (JSON de statut) et `/demo` (une page statique dont le JS appelle tout de même des routes protégées par token) — la surface API réelle est protégée dans tous les cas.
+- Une origine d'URL canonique — `<scheme>://<host>[:<port>]`. **Pas de slash final, pas de chemin, pas d'userinfo, pas de requête.** Le démarrage refuse avec `InvalidAllowOriginPatternError` si l'entrée échoue au test aller-retour `new URL(pattern).origin === pattern` ; le message d'erreur nomme le mauvais pattern et la forme canonique. Stricte par intention : une normalisation silencieuse (par exemple, supprimer un slash final) laisserait passer des fautes de frappe et accepterait une entrée ambiguë.
 
 Les origines correspondantes reçoivent les en-têtes de réponse CORS standard sur chaque requête :
 
@@ -34,18 +34,19 @@ Access-Control-Max-Age: 86400
 Access-Control-Expose-Headers: Retry-After
 ```
 
-`Access-Control-Allow-Origin` renvoie l'origine de la requête textuellement (minuscules/majuscules comme le navigateur l'a envoyée) plutôt que le littéral `*`, même sous le motif `*` — les caches des navigateurs associent les réponses clés avec `Vary: Origin`, et le renvoi textuel laisse la possibilité d'ajouter `Access-Control-Allow-Credentials` dans une version ultérieure sans changement de schéma. `Access-Control-Expose-Headers: Retry-After` permet aux interfaces web des navigateurs de respecter les indices de nouvelle tentative du démon provenant des réponses `429` / `503`. `Access-Control-Allow-Credentials` n'est **PAS** envoyé aujourd'hui : le démon s'authentifie via le bearer dans `Authorization`, qui fonctionne en cross-origin sans `credentials: 'include'`.
-Les requêtes préliminaires OPTIONS (OPTIONS avec `Access-Control-Request-Method` ou `Access-Control-Request-Headers`) court-circuitent avec `204 No Content` plus les en-têtes ci-dessus. C'est le schéma CORS conventionnel et il est sûr — la pré-vérification confirme seulement quelles méthodes/en-têtes le daemon accepte ; la requête réelle ultérieure exécute toujours la chaîne complète (liste blanche des hôtes → authentification bearer → routes), donc la protection anti-rebinding DNS et l'application du bearer se déclenchent avant que tout état soit lu ou modifié. Les requêtes OPTIONS simples provenant d'origines autorisées continuent leur chemin aval avec les en-têtes CORS attachés.
+`Access-Control-Allow-Origin` renvoie l'origine de la requête textuellement (minuscules / majuscules telles que le navigateur les a envoyées) plutôt que le littéral `*`, même sous le pattern `*` — les caches navigateur indexent les réponses sur celui-ci associé à `Vary: Origin`, et le renvoi laisse la possibilité d'ajouter `Access-Control-Allow-Credentials` dans une version ultérieure sans changement de schéma. `Access-Control-Expose-Headers: Retry-After` permet aux interfaces web navigateur d'honorer les indications de nouvelle tentative du démon provenant des réponses `429` / `503`. `Access-Control-Allow-Credentials` n'est **PAS** envoyé aujourd'hui : le démon s'authentifie via le bearer dans `Authorization`, qui fonctionne entre origines sans `credentials: 'include'`.
 
-Les origines qui ne correspondent pas à la liste blanche reçoivent toujours `403 {"error":"Request denied by CORS policy"}` — même enveloppe que le mur par défaut, donc les clients qui ont déjà analysé la réponse du mur n'ont pas à traiter différemment les démons déployés avec liste blanche. Le chemin de rejet **n'émet** aucun en-tête `Access-Control-*` (le navigateur les ignorerait, et les émettre divulguerait indirectement la taille de la liste blanche via la présence des en-têtes).
+Les requêtes pré-vol OPTIONS (OPTIONS avec `Access-Control-Request-Method` ou `Access-Control-Request-Headers`) sont court-circuitées avec `204 No Content` et les en-têtes ci-dessus. C'est le modèle CORS classique et il est sûr — la pré-vol confirme uniquement quelles méthodes/en-têtes le démon acceptera ; la requête réelle suivante exécute toujours la chaîne complète (liste d'autorisation hôte → authentification bearer → routes), donc la protection anti-rebond DNS et l'application du bearer ont toujours lieu avant toute lecture ou modification d'état. Les requêtes OPTIONS simples provenant d'origines autorisées continuent leur traitement vers l'aval avec les en-têtes CORS attachés.
 
-La liste des motifs configurée n'est volontairement PAS reflétée dans `/capabilities` — l'interface web du navigateur connaît déjà sa propre origine (elle a appelé le démon, après tout), et exposer la liste permettrait à un lecteur non authentifié de `/capabilities` d'énumérer chaque origine de confiance (reconnaissance utile pour un déploiement mal configuré). Les clients SDK se basent sur le tag `caps.features.allow_origin` pour "ce démon honore les requêtes cross-origin du navigateur" sans avoir besoin de connaître les origines spécifiques.
+Les origines qui ne correspondent pas à la liste d'autorisation reçoivent toujours `403 {"error":"Request denied by CORS policy"}` — la même enveloppe que le blocage par défaut, afin que les clients qui analysent déjà la réponse du blocage n'aient pas à traiter différemment les démons déployés avec une liste d'autorisation. Le chemin de rejet **n'émet aucun** en-tête `Access-Control-*` (le navigateur les ignorerait, et les émettre divulguerait indirectement la taille de la liste d'autorisation via la présence d'en-têtes).
 
-Les requêtes loopback de même origine (par ex. la page `/demo` appelant le démon sur le même `127.0.0.1:port`) sont gérées par un **shim** distinct de suppression d'en-tête `Origin` qui s'exécute AVANT le middleware CORS et supprime l'en-tête `Origin` pour `127.0.0.1:port` / `localhost:port` / `[::1]:port` / `host.docker.internal:port`. Ainsi, elles passent quelle que soit la configuration `--allow-origin` — les opérateurs n'ont pas besoin de lister le port du démon lui-même pour que la page de démonstration fonctionne.
+La liste des patterns configurés n'est intentionnellement **pas** renvoyée dans `/capabilities` — l'interface web navigateur connaît déjà sa propre origine (elle a appelé le démon, après tout), et exposer la liste permettrait à un lecteur non authentifié de `/capabilities` d'énumérer chaque origine de confiance (utile pour une reconnaissance en cas de déploiement mal configuré). Les clients SDK se basent sur le tag `caps.features.allow_origin` pour savoir que « ce démon honore les requêtes navigateur d'origines différentes » sans avoir besoin de connaître les origines spécifiques.
 
-## Common error shape
+Les requêtes d'auto-origine loopback (par exemple, la page `/demo` appelant le démon sur le même `127.0.0.1:port`) sont traitées par un **intercepteur distinct** de suppression d'Origin qui s'exécute AVANT le middleware CORS et supprime l'en-tête `Origin` pour `127.0.0.1:port` / `localhost:port` / `[::1]:port` / `host.docker.internal:port`. Ainsi, elles passent quelle que soit la configuration `--allow-origin` — les opérateurs n'ont pas besoin de lister le propre port du démon pour que la page de démonstration fonctionne.
 
-Les réponses 5xx transportent le `code` et `data` de l'erreur d'origine lorsqu'ils sont présents (style JSON-RPC — le SDK ACP transmet `{code, message, data}` depuis l'agent) :
+## Structure d'erreur commune
+
+Les réponses 5xx transportent le `code` et les `data` d'origine de l'erreur lorsqu'ils sont présents (style JSON-RPC — le SDK ACP transmet `{code, message, data}` depuis l'agent) :
 
 ```json
 {
@@ -71,7 +72,7 @@ avec le statut `400`.
 
 avec le statut `404`.
 
-`WorkspaceMismatchError` pour un `POST /session` dont le `cwd` ne se canonicalise pas vers l'espace de travail lié du démon (#3803 §02 — 1 daemon = 1 workspace) renvoie `400` avec :
+`WorkspaceMismatchError` pour un `POST /session` dont le `cwd` ne se canonise pas vers l'espace de travail lié du démon (#3803 §02 — 1 démon = 1 espace de travail) renvoie `400` avec :
 
 ```json
 {
@@ -82,9 +83,9 @@ avec le statut `404`.
 }
 ```
 
-Utilisez ceci pour détecter une incompatibilité avant envol : lisez `workspaceCwd` dans `/capabilities` et omettez `cwd` de `POST /session` (il revient à l'espace de travail lié), ou acheminez la requête vers un démon lié à `requestedWorkspace`.
+Utilisez cette erreur pour détecter une incohérence en amont : lisez `workspaceCwd` dans `/capabilities` et omettez `cwd` de `POST /session` (il revient à l'espace de travail lié), ou acheminez la requête vers un démon lié à `requestedWorkspace`.
 
-`POST /session` au-delà du plafond `--max-sessions` du démon renvoie `503` avec un en-tête `Retry-After: 5` et :
+`POST /session` dépassant la limite `--max-sessions` du démon renvoie `503` avec un en-tête `Retry-After: 5` et :
 
 ```json
 {
@@ -94,9 +95,9 @@ Utilisez ceci pour détecter une incompatibilité avant envol : lisez `workspace
 }
 ```
 
-Les attachements à des sessions existantes ne sont PAS comptés dans le plafond, donc les reconnexions d'un démon inactif continuent de fonctionner même à pleine capacité.
+Les rattachements à des sessions existantes ne sont PAS comptés dans cette limite, donc les reconnexions d'un démon inactif continuent de fonctionner même lorsqu'il est à pleine capacité.
 
-`RestoreInProgressError` — uniquement émis par `POST /session/:id/load` et `POST /session/:id/resume` — renvoie `409` avec un en-tête `Retry-After: 5` (correspondant à `session_limit_exceeded`) et :
+`RestoreInProgressError` — émise uniquement par `POST /session/:id/load` et `POST /session/:id/resume` — renvoie `409` avec un en-tête `Retry-After: 5` (correspondant à `session_limit_exceeded`) et :
 
 ```json
 {
@@ -108,11 +109,11 @@ Les attachements à des sessions existantes ne sont PAS comptés dans le plafond
 }
 ```
 
-Déclenché lorsqu'un `session/load` est émis pour un id qui a déjà un `session/resume` en cours (ou vice versa). Attendez au moins `Retry-After` secondes et réessayez — la restauration sous-jacente se termine dans `initTimeoutMs` (10s par défaut). Les collisions de même action (`load` vs `load`, `resume` vs `resume`) se fusionnent au lieu de générer une erreur.
+Déclenché lorsqu'un `session/load` est émis pour un identifiant qui a déjà un `session/resume` en cours (ou vice versa). Attendez au moins `Retry-After` secondes et réessayez — la restauration sous-jacente se termine dans `initTimeoutMs` (10s par défaut). Les courses de même action (`load` vs `load`, `resume` vs `resume`) sont fusionnées au lieu de générer une erreur.
 
-## Capabilities
+## Capacités
 
-Le démon annonce ses tags de fonctionnalités pris en charge depuis le registre des capacités du serveur. Les clients **doivent** baser l'interface utilisateur sur `features`, pas sur `mode` (selon la conception §10).
+Le démon annonce ses tags de fonctionnalités pris en charge depuis le registre de capacités serve. Les clients **doivent** baser leur interface sur `features`, pas sur `mode` (selon la conception §10).
 
 ```
 ['health', 'capabilities', 'session_create', 'session_scope_override',
@@ -126,7 +127,7 @@ Le démon annonce ses tags de fonctionnalités pris en charge depuis le registre
  'workspace_agents', 'workspace_agent_generate', 'workspace_env',
  'workspace_preflight', 'session_context', 'session_context_usage',
  'session_supported_commands', 'session_tasks', 'session_stats',
- 'session_lsp',
+ 'session_lsp', 'session_status',
  'session_close', 'session_metadata', 'mcp_guardrails',
  'workspace_mcp_manage', 'mcp_guardrail_events',
  'mcp_server_runtime_mutation',
@@ -141,84 +142,83 @@ Le démon annonce ses tags de fonctionnalités pris en charge depuis le registre
  'workspace_hooks', 'session_hooks', 'workspace_extensions',
  'session_branch', 'rate_limit', 'workspace_reload']
 ```
-> Conditional tags appear only when their matching deployment toggle is on (see the table below). F3's `permission_mediation` tag is always-on and carries `modes: ['first-responder', 'designated', 'consensus', 'local-only']` so SDK clients can introspect the build-supported set; the runtime-active strategy is at `body.policy.permission`.
 
-`session_scope_override` est le point de négociation pour le champ `sessionScope` par requête sur `POST /session` (voir ci-dessous). Les anciens daemons ignorent silencieusement ce champ, donc les clients SDK doivent vérifier au préalable `caps.features` pour ce tag avant de l'envoyer.
+> Les tags conditionnels n'apparaissent que lorsque leur bascule de déploiement correspondante est activée (voir le tableau ci-dessous). Le tag `permission_mediation` de F3 est toujours présent et porte `modes: ['first-responder', 'designated', 'consensus', 'local-only']` afin que les clients SDK puissent inspecter l'ensemble pris en charge par la build ; la stratégie active au moment de l'exécution se trouve dans `body.policy.permission`.
 
-`session_load` et `session_resume` annoncent les routes de restauration explicite (`POST /session/:id/load` et `POST /session/:id/resume`). Les anciens daemons renvoient `404` pour ces chemins, donc les clients SDK doivent vérifier au préalable `caps.features` avant d'appeler. `unstable_session_resume` est toujours annoncé comme un alias déprécié pour la compatibilité avec les SDK qui ont été livrés alors que la méthode ACP sous-jacente s'appelait `connection.unstable_resumeSession` ; les nouveaux clients doivent se baser sur `session_resume`.
+`session_scope_override` est le gestionnaire de négociation pour le champ `sessionScope` par requête sur `POST /session` (voir ci-dessous). Les démons plus anciens ignorent silencieusement ce champ, donc les clients SDK doivent pré-vérifier `caps.features` pour ce tag avant de l'envoyer.
 
-`slow_client_warning` couvre deux boutons de régulation SSE co-publiés introduits dans #4175 Wave 2.5 PR 10 : (a) le daemon émet une trame de flux d'événements synthétique `slow_client_warning` lorsque la file d'attente d'un abonné dépasse 75% de remplissage, une fois par épisode de débordement (réarmé après que la file d'attente descend en dessous de 37,5%) ; (b) `GET /session/:id/events` accepte un paramètre de requête `?maxQueued=N` (plage `[16, 2048]`) pour pré-dimensionner le backlog par abonné lors de reconnexions à froid sur un grand anneau de rejeu. La taille de l'anneau du daemon est contrôlée par `--event-ring-size` (par défaut **8000**, selon #3803 §02). Les anciens daemons ne possèdent silencieusement ni l'un ni l'autre — vérifiez ce tag avant de les activer.
+`session_load` et `session_resume` annoncent les routes de restauration explicite (`POST /session/:id/load` et `POST /session/:id/resume`). Les démons plus anciens renvoient `404` pour ces chemins, donc les clients SDK doivent pré-vérifier `caps.features` avant d'appeler. `unstable_session_resume` est toujours annoncé comme un alias déprécié pour la compatibilité avec les SDK qui ont été livrés alors que la méthode ACP sous-jacente était nommée `connection.unstable_resumeSession` ; les nouveaux clients doivent se baser sur `session_resume`.
 
-`typed_event_schema` annonce les charges utiles des événements du daemon qui correspondent au schéma `KnownDaemonEvent` du SDK. Les anciens daemons peuvent encore diffuser des trames compatibles, mais les clients SDK doivent vérifier ce tag avant de supposer une couverture d'événements typés.
+`slow_client_warning` couvre deux fonctionnalités de backpressure SSE co-publiées dans #4175 Wave 2.5 PR 10 : (a) le démon émet une trame de flux d'événements synthétique `slow_client_warning` lorsque la file d'attente d'un abonné dépasse 75% de remplissage, une fois par épisode de débordement (réarmée après que la file d'attente descend en dessous de 37,5%) ; (b) `GET /session/:id/events` accepte un paramètre de requête `?maxQueued=N` (plage `[16, 2048]`) pour pré-dimensionner le backlog par abonné lors de reconnexions à froid sur un grand anneau de rejeu. La taille de l'anneau à l'échelle du démon est contrôlée par `--event-ring-size` (par défaut **8000**, selon #3803 §02). Les anciens démons ne possèdent silencieusement aucune de ces deux fonctionnalités — pré-vérifiez ce tag avant d'opter.
 
-`client_heartbeat` annonce `POST /session/:id/heartbeat`. Les anciens daemons renvoient `404` ; vérifiez ce tag avant d'émettre des battements de cœur périodiques.
+`typed_event_schema` annonce que les charges utiles des événements du démon correspondent au schéma `KnownDaemonEvent` du SDK. Les démons plus anciens peuvent encore diffuser des trames compatibles, mais les clients SDK doivent pré-vérifier ce tag avant de supposer une couverture typée des événements.
 
-`session_close` et `session_metadata` annoncent `DELETE /session/:id` et `PATCH /session/:id/metadata`. Les anciens daemons renvoient `404` ; vérifiez ces tags avant d'exposer les fonctions de fermeture ou de renommage.
+`client_heartbeat` annonce `POST /session/:id/heartbeat`. Les démons plus anciens renvoient `404` ; pré-vérifiez ce tag avant d'émettre des battements de cœur périodiques.
 
-`session_lsp` annonce `GET /session/:id/lsp`, l'instantané structuré en lecture seule de l'état LSP pour les clients du daemon. Les anciens daemons renvoient `404` ; vérifiez ce tag avant d'exposer l'état LSP distant.
+`session_close` et `session_metadata` annoncent `DELETE /session/:id` et `PATCH /session/:id/metadata`. Les démons plus anciens renvoient `404` ; pré-vérifiez ces tags avant d'exposer des fonctions de fermeture ou de renommage.
 
-`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_init` et `workspace_mcp_restart` (issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 17) annoncent les quatre routes de contrôle de mutation documentées ci-dessous sous « Mutation : approval, tools, init, MCP restart ». Les quatre sont strictement protégées par la porte de mutation PR 15 (un daemon configuré sans jeton d'authentification les rejette avec 401 `token_required`). Les anciens daemons renvoient `404` ; vérifiez chaque tag avant d'exposer la fonction correspondante.
+`session_lsp` annonce `GET /session/:id/lsp`, l'instantané de statut LSP structuré en lecture seule pour les clients du démon. Les démons plus anciens renvoient `404` ; pré-vérifiez ce tag avant d'exposer un statut LSP distant.
 
-`mcp_guardrails` (issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14) couvre la surface budgétaire MCP : les champs `clientCount` / `clientBudget` / `budgetMode` / `budgets[]` sur `GET /workspace/mcp`, le champ `disabledReason` dans les cellules par serveur, et les indicateurs CLI `--mcp-client-budget` / `--mcp-budget-mode`. Les anciens daemons omettent entièrement les nouveaux champs ; les clients SDK vérifient ce tag avant de se fier à la sémantique de `budgets[]`. Le descripteur de registre porte également `modes: ['warn', 'enforce']` pour une exposition future des modes de fonctionnalité — pour l'instant, les clients déduisent le mode à partir du champ `budgetMode` de l'instantané. Le refus du serveur en mode `enforce` est déterministe selon l'ordre de déclaration de `Object.entries(mcpServers)` ; une future couche de précédence de portée (si qwen-code en adopte une) déplacerait cela vers « précédence la plus faible d'abord » pour refléter la convention de claude-code `plugin < user < project < local`.
+`session_status` annonce `GET /session/:id/status`, le résumé du pont actif pour une seule session par identifiant (`clientCount` / `hasActivePrompt` et les champs principaux). Les démons plus anciens renvoient `404` ; pré-vérifiez ce tag avant d'interroger le statut d'une seule session au lieu de parcourir la liste complète des sessions.
 
-> ⚠️ **Portée v1 de PR 14 : par session, pas par espace de travail.** Chaque session ACP à l'intérieur du daemon construit son propre `Config` + `McpClientManager` (via `acpAgent.newSessionConfig`). Les limites budgétaires concernent les clients MCP actifs **par session** ; chaque session lit indépendamment `QWEN_SERVE_MCP_CLIENT_BUDGET` depuis les variables d'environnement transmises. Avec `--mcp-client-budget=10` et 5 sessions ACP concurrentes, le nombre réel de clients MCP actifs peut atteindre 5 × 10 = 50 dans le daemon. L'instantané `GET /workspace/mcp` lit uniquement la comptabilité du `McpClientManager` de la **session d'amorçage** — la valeur `budgets[0].scope: 'session'` est le signal honnête que c'est par session, pas agrégé. **Wave 5 PR 23 (pool MCP partagé)** introduira un gestionnaire à l'échelle de l'espace de travail et ajoutera une cellule `scope: 'workspace'` à côté de la cellule par session pour une véritable agrégation intersessions. v1 est le compteur en processus + la base d'application souple sur laquelle PR 23 s'appuie.
+`session_approval_mode_control`, `workspace_tool_toggle`, `workspace_init` et `workspace_mcp_restart` (issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 17) annoncent les quatre routes de contrôle de mutation documentées sous « Mutation : approval, tools, init, MCP restart » ci-dessous. Les quatre sont strictement protégées par la porte de mutation PR 15 (un démon configuré sans token bearer les rejette avec 401 `token_required`). Les démons plus anciens renvoient `404` ; pré-vérifiez chaque tag avant d'exposer la fonctionnalité correspondante.
 
-`workspace_file_read` couvre les routes de fichiers de l'espace de travail pour le texte/liste/stat/glob
-(`GET /file`, `GET /list`, `GET /glob`, `GET /stat`). `workspace_file_bytes`
-couvre `GET /file/bytes`, qui a été ajouté plus tard pour que les clients puissent vérifier au préalable la prise en charge des fenêtres d'octets brutes contre les daemons de l'ère PR19. `workspace_file_write` couvre
-les routes de mutation de texte avec hachage (`POST /file/write`, `POST /file/edit`).
-Le tag d'écriture signifie que le contrat de route existe ; cela ne signifie pas que le déploiement actuel est ouvert à la mutation anonyme. Les écritures/éditions sont des routes de mutation strictes
-et nécessitent un jeton d'authentification configuré même en boucle locale.
-`daemon_status` annonce `GET /daemon/status`, l’instantané de diagnostic opérateur consolidé en lecture seule décrit ci-dessous.
+`mcp_guardrails` (issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14) couvre la surface de budget MCP : les champs `clientCount` / `clientBudget` / `budgetMode` / `budgets[]` sur `GET /workspace/mcp`, le champ `disabledReason` sur les cellules par serveur, et les indicateurs CLI `--mcp-client-budget` / `--mcp-budget-mode`. Les démons plus anciens omettent complètement les nouveaux champs ; les clients SDK pré-vérifient ce tag avant de se fier à la sémantique de `budgets[]`. Le descripteur de registre porte également `modes: ['warn', 'enforce']` pour une future exposition des modes de fonctionnalité — pour l'instant, les clients déduisent le mode du champ `budgetMode` de l'instantané. Le refus du serveur en mode `enforce` est déterministe selon l'ordre de déclaration `Object.entries(mcpServers)` ; une future couche de priorité de portée (si qwen-code en adopte une) passerait à « priorité la plus faible d'abord » pour refléter la convention `plugin < user < project < local` de claude-code.
 
-**Balisage conditionnel.** Un petit nombre de balises de fonctionnalités ne sont annoncées que lorsque le basculement de déploiement correspondant est activé. Présence de la balise = comportement activé ; absence = soit un démon antérieur à la balise, soit un démon actuel pour lequel l’opérateur n’a pas opté. Actuellement :
+> ⚠️ **Portée PR 14 v1 : par session, pas par espace de travail.** Chaque session ACP à l'intérieur du démon construit sa propre `Config` + `McpClientManager` (via `acpAgent.newSessionConfig`). Les limites de budget concernent les clients MCP actifs **par session** ; chaque session lit indépendamment `QWEN_SERVE_MCP_CLIENT_BUDGET` depuis l'environnement transmis. Avec `--mcp-client-budget=10` et 5 sessions ACP concurrentes, le nombre réel de clients MCP actifs peut atteindre 5 × 10 = 50 dans tout le démon. L'instantané `GET /workspace/mcp` ne lit que la comptabilité du `McpClientManager` de la **session d'amorçage** — la valeur `budgets[0].scope: 'session'` est le signal honnête qu'il s'agit d'une mesure par session, non agrégée. **Wave 5 PR 23 (pool MCP partagé)** introduira un gestionnaire à portée d'espace de travail et ajoutera une cellule `scope: 'workspace'` à côté de la cellule par session pour une véritable agrégation inter-sessions. v1 est la base de compteur en processus et d'application souple sur laquelle PR 23 s'appuie.
 
-| Balise                      | Annoncée quand …                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `require_auth`              | le démon a été démarré avec `--require-auth` (ou `requireAuth: true` via l’API embarquée). Le jeton Bearer est obligatoire sur chaque route, y compris `/health` sur les liaisons loopback.                                                                                                                                                                                                                                                                                                                            |
-| `mcp_workspace_pool`        | le pool de transport MCP partagé est actif. Omis quand `QWEN_SERVE_NO_MCP_POOL=1` désactive le pool.                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `mcp_pool_restart`          | le pool de transport MCP partagé est actif ; les réponses de redémarrage peuvent inclure des formes multi-entrées tenant compte du pool.                                                                                                                                                                                                                                                                                                                                                                              |
-| `allow_origin`              | T2.4 ([#4514](https://github.com/QwenLM/qwen-code/issues/4514)). Le démon a été démarré avec au moins un `--allow-origin <motif>` (ou `allowOrigins: [...]` via l’API embarquée). Les requêtes cross-origin provenant d’origines correspondantes reçoivent les en-têtes CORS appropriés ; les origines non appariées reçoivent toujours le 403 par défaut. La liste des motifs configurés n’est volontairement PAS renvoyée dans `/capabilities` pour éviter de divulguer l’ensemble des origines de confiance aux lecteurs non authentifiés — l’interface web du navigateur connaît déjà sa propre origine. |
-| `prompt_absolute_deadline`  | `--prompt-deadline-ms` / `QWEN_SERVE_PROMPT_DEADLINE_MS` / `ServeOptions.promptDeadlineMs` est défini sur un entier positif.                                                                                                                                                                                                                                                                                                                                                                                          |
-| `writer_idle_timeout`       | `--writer-idle-timeout-ms` / `QWEN_SERVE_WRITER_IDLE_TIMEOUT_MS` / `ServeOptions.writerIdleTimeoutMs` est défini sur un entier positif.                                                                                                                                                                                                                                                                                                                                                                               |
-| `workspace_settings`        | le démon a été créé avec une persistance des paramètres disponible.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `session_shell_command`     | l’exécution de shell de session est explicitement activée.                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `rate_limit`                | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1` / `ServeOptions.rateLimit` est activé.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `workspace_reload`          | la prise en charge du rechargement de l’espace de travail est disponible dans la configuration de route embarquée.                                                                                                                                                                                                                                                                                                                                                                                                     |
-`mcp_guardrails` **ne figure pas** dans ce tableau conditionnel — c'est une balise toujours active, annoncée dès que le binaire supporte les nouveaux champs de budget `/workspace/mcp`, que l'opérateur ait configuré un budget ou non. Les opérateurs qui n'ont pas défini `--mcp-client-budget` reçoivent quand même les nouveaux champs (avec `budgetMode: 'off'`, `budgets: []`).
+`workspace_file_read` couvre les routes de fichiers de l'espace de travail en texte/liste/stat/glob (`GET /file`, `GET /list`, `GET /glob`, `GET /stat`). `workspace_file_bytes` couvre `GET /file/bytes`, qui a été ajouté plus tard pour que les clients puissent pré-vérifier la prise en charge brute des fenêtres d'octets par rapport aux démons de l'ère PR19. `workspace_file_write` couvre les routes de mutation de texte avec vérification de hachage (`POST /file/write`, `POST /file/edit`). Le tag d'écriture signifie que le contrat de route existe ; il ne signifie pas que le déploiement actuel est ouvert à une mutation anonyme. Write/edit sont des routes de mutation strictes et nécessitent un token bearer configuré même sur loopback.
 
-`mcp_guardrail_events` (problème [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14b) annonce les événements SSE typés qui remontent les franchissements d'état du budget MCP sans boucle d'interrogation. Deux types de trames arrivent sur `GET /session/:id/events` :
+`daemon_status` annonce `GET /daemon/status`, l'instantané de diagnostic opérateur consolidé en lecture seule documenté ci-dessous.
 
-- `mcp_budget_warning` — se déclenche une fois lors du franchissement à la hausse de 75% de `reservedSlots.size / clientBudget`. Se réarme uniquement après que le ratio soit repassé sous 37,5% (`MCP_BUDGET_REARM_FRACTION`). Reprend l'hystérésis de `slow_client_warning` de la PR 10, mais au niveau du gestionnaire plutôt qu'au niveau du backlog par abonné. Charge utile : `{ liveCount, reservedCount, budget, thresholdRatio: 0.75, mode: 'warn' | 'enforce' }`. Se déclenche en modes `warn` et `enforce` ; jamais en mode `off`.
-- `mcp_child_refused_batch` — se déclenche à la fin de chaque passage `discoverAllMcpTools*` lorsqu'un ou plusieurs serveurs ont été refusés, ET sous forme d'un lot de longueur 1 sur le chemin de refus de création à la demande de `readResource`. Charge utile : `{ refusedServers: [{ name, transport, reason: 'budget_exhausted' }, ...], budget, liveCount, reservedCount, mode: 'enforce' }`. `mode` est le littéral `'enforce'` car le mode `warn` ne refuse jamais.
+**Tags conditionnels.** Un petit nombre de tags de fonctionnalités ne sont annoncés que lorsque la bascule de déploiement correspondante est activée. Présence du tag = comportement activé ; absence = soit un démon plus ancien antérieur au tag, soit un démon actuel pour lequel l'opérateur n'a pas opté. Actuellement :
 
-Les deux événements résident dans l'anneau de rejeu SSE par session (ils portent un `id`), de sorte qu'un client se reconnectant avec `Last-Event-ID` les reçoit ; l'instantané de `GET /workspace/mcp` reste la source de vérité pour l'état après une déconnexion prolongée. Toujours actif une fois annoncé — il n'y a pas de bascule conditionnelle. L'état du réducteur du SDK (`DaemonSessionViewState`) expose `mcpBudgetWarningCount`, `lastMcpBudgetWarning`, `mcpChildRefusedBatchCount`, `lastMcpChildRefusedBatch` pour les adaptateurs qui souhaitent une interface utilisateur simple de type latence.
+| Tag                        | Annoncé lorsque …                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `require_auth`             | le démon a été démarré avec `--require-auth` (ou `requireAuth: true` via l'API embarquée). Le token bearer est obligatoire sur chaque route, y compris `/health` sur les liaisons loopback.                                                                                                                                                                                                                                                                                                                    |
+| `mcp_workspace_pool`       | le pool de transport MCP partagé est actif. Omis lorsque `QWEN_SERVE_NO_MCP_POOL=1` désactive le pool.                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `mcp_pool_restart`         | le pool de transport MCP partagé est actif ; les réponses de redémarrage peuvent inclure des formes multi-entrées tenant compte du pool.                                                                                                                                                                                                                                                                                                                                                                           |
+| `allow_origin`             | T2.4 ([#4514](https://github.com/QwenLM/qwen-code/issues/4514)). Le démon a été démarré avec au moins un `--allow-origin <pattern>` (ou `allowOrigins: [...]` via l'API embarquée). Les requêtes d'origines différentes provenant d'origines autorisées reçoivent les en-têtes de réponse CORS appropriés ; les origines non autorisées reçoivent toujours le 403 par défaut. La liste des patterns configurés n'est intentionnellement **pas** renvoyée dans `/capabilities` pour éviter de divulguer l'ensemble des origines de confiance à des lecteurs non authentifiés — l'interface web navigateur connaît déjà sa propre origine. |
+| `prompt_absolute_deadline` | `--prompt-deadline-ms` / `QWEN_SERVE_PROMPT_DEADLINE_MS` / `ServeOptions.promptDeadlineMs` est défini sur un entier positif.                                                                                                                                                                                                                                                                                                                                                                                        |
+| `writer_idle_timeout`      | `--writer-idle-timeout-ms` / `QWEN_SERVE_WRITER_IDLE_TIMEOUT_MS` / `ServeOptions.writerIdleTimeoutMs` est défini sur un entier positif.                                                                                                                                                                                                                                                                                                                                                                             |
+| `workspace_settings`       | le démon a été créé avec une persistance des paramètres disponible.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `session_shell_command`    | l'exécution de shell dans la session est explicitement activée.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `rate_limit`               | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1` / `ServeOptions.rateLimit` est activé.                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `workspace_reload`         | la prise en charge du rechargement de l'espace de travail est disponible dans la configuration de route embarquée.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+`mcp_guardrails` n'est **pas** dans ce tableau conditionnel — c'est une balise toujours active, annoncée dès que le binaire prend en charge les nouveaux champs de budget `/workspace/mcp`, que l'opérateur ait configuré un budget ou non. Les opérateurs qui n'ont pas défini `--mcp-client-budget` obtiennent quand même les nouveaux champs (avec `budgetMode: 'off'`, `budgets: []`).
+
+`mcp_guardrail_events` (issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14b) annonce les événements SSE typés qui remontent les franchissements d'état du budget MCP sans boucle de scrutation. Deux types de trames arrivent sur `GET /session/:id/events` :
+
+- `mcp_budget_warning` — se déclenche une fois lors du franchissement à la hausse de 75 % de `reservedSlots.size / clientBudget`. Ne se réarme qu'après que le ratio descend en dessous de 37,5 % (`MCP_BUDGET_REARM_FRACTION`). Reprend l'hystérésis de `slow_client_warning` de la PR 10, mais au niveau du gestionnaire plutôt qu'au niveau du backlog par abonné. Charge utile : `{ liveCount, reservedCount, budget, thresholdRatio: 0.75, mode: 'warn' | 'enforce' }`. Se déclenche sous les modes `warn` et `enforce` ; jamais sous `off`.
+- `mcp_child_refused_batch` — se déclenche à la fin de chaque passe `discoverAllMcpTools*` lorsqu'un ou plusieurs serveurs ont été refusés, ET en tant que lot de longueur 1 sur le chemin de refus paresseux de `readResource`. Charge utile : `{ refusedServers: [{ name, transport, reason: 'budget_exhausted' }, ...], budget, liveCount, reservedCount, mode: 'enforce' }`. `mode` est le littéral `'enforce'` car le mode `warn` ne refuse jamais.
+
+Les deux événements vivent dans l'anneau de rejeu SSE par session (ils portent un `id`) afin qu'un client se reconnectant avec `Last-Event-ID` puisse les rejouer ; l'instantané sur `GET /workspace/mcp` reste la source de vérité pour l'état après une déconnexion prolongée. Toujours actif une fois annoncé — il n'y a pas de bascule conditionnelle. L'état du réducteur SDK (`DaemonSessionViewState`) expose `mcpBudgetWarningCount`, `lastMcpBudgetWarning`, `mcpChildRefusedBatchCount`, `lastMcpChildRefusedBatch` pour les adaptateurs qui souhaitent une UI simple de type lag.
 
 ## Routes
 
 ### `GET /health`
 
-Sonde de vivacité. Le formulaire par défaut renvoie `200 {"status":"ok"}` si l'écouteur est actif — peu coûteux, sans accès au pont, adapté aux sondes de vivacité k8s/Compose à haute fréquence.
+Sonde de vivacité. La forme par défaut renvoie `200 {"status":"ok"}` si l'écouteur est actif — peu coûteuse, sans accès au bridge, adaptée aux sondes de vivacité k8s/Compose à haute fréquence.
 
-Passez `?deep=1` (accepte aussi `?deep=true` ou `?deep` seul) pour une sonde qui expose les **compteurs** du pont (uniquement à titre informatif, pas une véritable vérification de vivacité) :
+Passez `?deep=1` (accepte aussi `?deep=true` ou simplement `?deep`) pour une sonde qui expose les **compteurs** du bridge (uniquement informatif, pas un véritable contrôle de vivacité) :
 
 ```json
 { "status": "ok", "sessions": 3, "pendingPermissions": 1 }
 ```
 
-> ⚠️ La sonde approfondie est **informative**, pas une véritable vérification de vivacité. Elle lit les accesseurs de compteurs (`bridge.sessionCount`, `bridge.pendingPermissionCount`) qui sont de simples accesseurs de taille de Map ; ils n'interrogent pas les processus enfants / canaux individuellement et ne détecteront donc pas une session bloquée mais toujours comptée. Utilisez-la pour des tableaux de bord de capacité (simultanéité actuelle vs `--max-sessions`, profondeur de file d'attente) plutôt que comme déclencheur pour « retirer ce démon de la rotation ». Une réponse `503 {"status":"degraded"}` est théoriquement possible si les accesseurs d'une implémentation de pont personnalisée lèvent une exception, mais ceux du véritable pont ne lèvent jamais rien — en fonctionnement normal, la sonde approfondie renvoie toujours 200. Pour une véritable vivacité, fiez-vous au fait que l'écouteur accepte ou non une connexion TCP (c'est-à-dire le `/health` par défaut sans `?deep`).
+> ⚠️ La sonde approfondie est **informative**, pas une véritable vérification de vivacité. Elle lit des accesseurs de compteurs (`bridge.sessionCount`, `bridge.pendingPermissionCount`) qui sont de simples getters de taille de Map ; ils ne sondent pas les processus enfants / canaux individuels et ne détecteront donc pas une session bloquée mais toujours comptée. Utilisez-la pour des tableaux de bord de capacité (concurrence actuelle vs `--max-sessions`, profondeur de file d'attente) plutôt que comme déclencheur pour « retirer ce démon de la rotation ». Une réponse `503 {"status":"degraded"}` est théoriquement possible si les getters d'une implémentation de bridge personnalisée lèvent une exception, mais ceux du bridge réel ne le font jamais — en fonctionnement normal, la sonde approfondie renvoie toujours 200. Pour une véritable vivacité, fiez-vous au fait que l'écouteur accepte une connexion TCP (c'est-à-dire le `/health` par défaut sans `?deep`).
 
-**Authentification :** requise **uniquement sur les liaisons non locales**. En boucle locale (`127.0.0.1`, `::1`, `[::1]`), `/health` est enregistré avant le middleware porteur, de sorte que les sondes k8s/Compose à l'intérieur du pod n'ont pas besoin de porter le jeton. Sur une liaison non locale (`--hostname 0.0.0.0` etc.), la route est enregistrée après le middleware porteur et renvoie 401 sans jeton valide — sinon un appelant non authentifié pourrait sonder des adresses arbitraires pour confirmer l'existence d'un `qwen serve`, une fuite d'information de faible gravité qui se combine mal avec le balayage de ports. Le refus CORS + la liste blanche d'hôtes s'appliquent toujours sur l'exemption de boucle locale.
+**Auth :** requise **uniquement sur les liaisons non-loopback**. Sur loopback (`127.0.0.1`, `::1`, `[::1]`), `/health` est enregistré avant le middleware bearer, donc les sondes k8s/Compose dans le pod n'ont pas besoin de porter le jeton. Sur non-loopback (`--hostname 0.0.0.0` etc.), la route est enregistrée après le middleware bearer et renvoie 401 sans jeton valide — sinon un appelant non authentifié pourrait sonder des adresses arbitraires pour confirmer l'existence d'un `qwen serve`, une fuite d'informations de faible gravité qui se combine mal avec le scan de ports. Le refus CORS + la liste blanche d'hôtes s'appliquent toujours sur l'exemption loopback.
 
 ### `GET /daemon/status`
 
-Diagnostics opérateur en lecture seule. Contrairement à `/health`, il s'agit d'une API de démon normale : elle est enregistrée après l'authentification porteur et la limitation de débit, y compris sur les liaisons en boucle locale. Paramètre de requête :
+Diagnostics opérateur en lecture seule. Contrairement à `/health`, il s'agit d'une API de démon normale : elle est enregistrée après l'authentification bearer et la limitation de débit, y compris sur les liaisons loopback. Paramètre de requête :
 
 - `detail=summary` (par défaut) lit uniquement l'état du démon en mémoire.
-- `detail=full` inclut en plus les diagnostics de session en direct, les diagnostics de connexion ACP, les compteurs de flux d'appareil d'authentification et les sections d'état de l'espace de travail.
-- toute autre valeur `detail` renvoie `400 { "code": "invalid_detail" }`.
+- `detail=full` inclut également les diagnostics de session en direct, les diagnostics de connexion ACP, les compteurs de flux d'authentification par appareil et les sections d'état de l'espace de travail.
+- toute autre valeur de `detail` renvoie `400 { "code": "invalid_detail" }`.
 
-`summary` n'interroge intentionnellement pas les méthodes d'état de l'espace de travail, ne démarre pas un enfant ACP et ne crée pas de session. `full` interroge chaque section d'espace de travail indépendamment ; un délai d'attente ou une exception marque uniquement cette section comme `unavailable` et ajoute un problème `workspace_status_unavailable`.
+`summary` n'interroge intentionnellement pas les méthodes d'état de l'espace de travail, ne démarre pas un enfant ACP et ne lance pas de session. `full` interroge chaque section d'espace de travail indépendamment ; un délai d'attente ou une exception marque uniquement cette section comme `unavailable` et ajoute un problème `workspace_status_unavailable`.
 
 Forme de la réponse :
 
@@ -275,9 +275,10 @@ Forme de la réponse :
   }
 }
 ```
-`status` est `error` si un problème a une sévérité d'erreur, `warning` si un problème a une sévérité d'avertissement, sinon `ok`. Les codes d'incident sont stables et incluent `session_capacity_high`, `connection_capacity_high`, `pending_permissions`, `acp_channel_down`, `preflight_error`, `mcp_budget_warning`, `mcp_budget_exhausted`, `rate_limit_hits`, et `workspace_status_unavailable`. Pendant la courte fenêtre après que l'écouteur est prêt mais avant que l'exécution complète soit montée, `/daemon/status` peut rapporter `daemon_runtime_starting` ; si le montage asynchrone de l'exécution échoue, il rapporte `daemon_runtime_failed` tandis que les routes d'exécution non liées au statut renvoient `503`.
 
-Sécurité : la réponse n'inclut jamais les jetons d'authentification (bearer tokens), les identifiants clients, les identifiants complets de connexion ACP, les codes utilisateur de flux d'appareil, ni les URL de vérification. `summary` omet le chemin du journal du daemon ; `full` peut l'inclure pour les opérateurs authentifiés.
+`status` est `error` si un problème a une sévérité d'erreur, `warning` si un problème a une sévérité d'avertissement, sinon `ok`. Les codes de problème sont stables et incluent `session_capacity_high`, `connection_capacity_high`, `pending_permissions`, `acp_channel_down`, `preflight_error`, `mcp_budget_warning`, `mcp_budget_exhausted`, `rate_limit_hits`, et `workspace_status_unavailable`. Pendant la courte fenêtre après que l'écouteur est prêt mais avant que l'environnement d'exécution complet soit monté, `/daemon/status` peut signaler `daemon_runtime_starting` ; si le montage asynchrone de l'environnement d'exécution échoue, il signale `daemon_runtime_failed` tandis que les routes d'exécution non-statut renvoient `503`.
+
+Sécurité : la réponse n'inclut jamais de jetons bearer, d'identifiants clients, d'identifiants complets de connexion ACP, de codes utilisateur device-flow, ou d'URLs de vérification. `summary` omet le chemin du journal du démon ; `full` peut l'inclure pour les opérateurs authentifiés.
 
 ### `GET /capabilities`
 
@@ -295,17 +296,17 @@ Sécurité : la réponse n'inclut jamais les jetons d'authentification (bearer t
 }
 ```
 
-Contrat stable : lorsque `v` s'incrémente, la disposition du cadre a changé de manière rétrocompatible.
+Contrat stable : lorsque `v` s'incrémente, la disposition de la trame a changé de manière incompatible avec les versions précédentes.
 
-> **`protocolVersions`** décrit les versions du protocole de service que le daemon peut parler. `current` est la version préférée du daemon et `supported` est l'ensemble compatible. Les clients qui nécessitent un protocole spécifique doivent vérifier `supported` ; l'interface utilisateur spécifique à une fonctionnalité devrait toujours se baser sur `features`. Additif à v=1 : les anciens daemons v1 omettent ce champ, donc les clients SDK qui ciblent des versions plus anciennes doivent le traiter comme optionnel.
+> **`protocolVersions`** décrit les versions du protocole serve que le démon peut parler. `current` est la version préférée du démon et `supported` est l'ensemble compatible. Les clients qui nécessitent un protocole spécifique doivent vérifier `supported` ; l'interface utilisateur spécifique à une fonctionnalité devrait toujours se baser sur `features`. Additif à v=1 : les anciens démons v1 omettent ce champ, donc les clients SDK qui ciblent des versions plus anciennes doivent le traiter comme optionnel.
 
-> **`modelServices` est toujours `[]` dans l'étape 1.** L'agent utilise son unique service modèle par défaut et ne l'énumère pas sur le réseau. L'étape 2 remplira cela à partir des adaptateurs de modèles enregistrés afin que les clients SDK puissent construire des sélecteurs de services ; d'ici là, ne vous fiez PAS à ce champ pour être non vide.
+> **`modelServices` est toujours `[]` dans l'étape 1.** L'agent utilise son service de modèle par défaut unique et ne l'énumère pas sur le réseau. L'étape 2 peuplera ce champ à partir des adaptateurs de modèle enregistrés afin que les clients SDK puissent construire des sélecteurs de service ; d'ici là, ne vous fiez PAS à ce champ comme non vide.
 
-> **`workspaceCwd`** est le chemin absolu canonique auquel ce daemon se lie (#3803 §02 — 1 daemon = 1 workspace). Utilisez-le pour (a) détecter une discordance avant de poster `/session` et (b) omettre `cwd` sur `POST /session` (la route se replie sur ce chemin). Les déploiements multi-workspace exposent plusieurs daemons sur différents ports, chacun avec son propre `workspaceCwd`. Additif à v=1 : les daemons v1 antérieurs à §02 omettent le champ — les clients qui ciblent des constructions plus anciennes doivent vérifier la nullité avant de le consommer.
+> **`workspaceCwd`** est le chemin absolu canonique auquel ce démon est lié (#3803 §02 — 1 démon = 1 espace de travail). Utilisez-le pour (a) détecter une discordance avant de poster `/session` et (b) omettre `cwd` sur `POST /session` (la route se rabat sur ce chemin). Les déploiements multi-espaces de travail exposent plusieurs démons sur différents ports, chacun avec son propre `workspaceCwd`. Additif à v=1 : les démons v1 pré-§02 omettent le champ — les clients qui ciblent des versions plus anciennes doivent faire une vérification null avant de le consommer.
 
-### Read-only runtime status routes
+### Routes d'état d'exécution en lecture seule
 
-Ces routes rapportent des instantanés d'exécution côté daemon. Ce sont des routes v1 additives, elles ne modifient pas l'état et ne changent pas la version du protocole de service. Les routes de statut d'espace de travail ne démarrent intentionnellement **pas** le processus enfant ACP simplement parce qu'un client interroge une route GET : si le daemon est inactif, elles renvoient `initialized: false` avec un instantané vide. Les routes de statut de session nécessitent une session active et utilisent la forme standard `404 SessionNotFoundError` pour les identifiants inconnus.
+Ces routes fournissent des instantanés de l'environnement d'exécution côté démon. Ce sont des routes v1 additives, elles ne mutent pas l'état et ne changent pas la version du protocole serve. Les routes d'état de l'espace de travail ne démarrent **pas** intentionnellement le processus enfant ACP simplement parce qu'un client interroge une route GET : si le démon est inactif, elles renvoient `initialized: false` avec un instantané vide. Les routes d'état de session nécessitent une session active et utilisent la forme standard `404 SessionNotFoundError` pour les identifiants inconnus.
 
 Étiquettes de capacité :
 
@@ -317,8 +318,9 @@ Ces routes rapportent des instantanés d'exécution côté daemon. Ce sont des r
 - `session_context` → `GET /session/:id/context`
 - `session_supported_commands` → `GET /session/:id/supported-commands`
 - `session_tasks` → `GET /session/:id/tasks`
+- `session_status` → `GET /session/:id/status`
 
-Cellule de statut commune :
+Cellule d'état commune :
 
 ```ts
 type DaemonStatus =
@@ -347,9 +349,9 @@ interface DaemonStatusCell {
 }
 ```
 
-`errorKind` est une énumération fermée partagée par `/workspace/preflight`, `/workspace/env`, et (éventuellement) les garde-fous MCP afin que les clients SDK puissent afficher une correction par catégorie au lieu d'analyser des messages libres. La PR 13 (#4175) a introduit les sept littéraux listés ci-dessus ; la PR 14 peuplera `blocked_egress` une fois que la sonde de trafic sortant sera en place.
+`errorKind` est une énumération fermée partagée par `/workspace/preflight`, `/workspace/env`, et (éventuellement) les garde-fous MCP afin que les clients SDK puissent rendre la remédiation par catégorie au lieu d'analyser des messages libres. La PR 13 (#4175) a introduit les sept littéraux listés ci-dessus ; la PR 14 peuplera `blocked_egress` une fois que la sonde de sortie sera déployée.
 
-Les charges utiles de statut n'exposent jamais les valeurs d'environnement MCP, les en-têtes, les détails OAuth/compte de service, les clés API des fournisseurs, les `baseUrl` / `envKey` des fournisseurs, le corps des compétences, les chemins de fichiers des compétences, les définitions de hooks, ni les valeurs des variables d'environnement secrètes. `/workspace/env` rapporte uniquement la **présence** de variables d'environnement autorisées ; les URL proxy sont dépouillées des identifiants et réduites à `host:port` avant d'être transmises sur le réseau.
+Les charges utiles de statut n'exposent jamais les valeurs d'environnement MCP, les en-têtes, les détails OAuth/compte de service, les clés API des fournisseurs, les `baseUrl` / `envKey` des fournisseurs, le corps des compétences, les chemins système des compétences, les définitions de hooks, ou les valeurs des variables d'environnement secrètes. `/workspace/env` signale uniquement la **présence** des variables d'environnement de la liste blanche ; les URLs de proxy sont dépouillées des identifiants et réduites à `host:port` avant d'être transmises.
 
 ### `GET /workspace/mcp`
 
@@ -374,8 +376,9 @@ Les charges utiles de statut n'exposent jamais les valeurs d'environnement MCP, 
 }
 ```
 
-`discoveryState` est l'un de `not_started`, `in_progress`, ou `completed`. `transport` est l'un de `stdio`, `sse`, `http`, `websocket`, `sdk`, ou `unknown`. `errors` est omis lorsque la découverte réussit.
-**Garde-fous du client MCP (issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14).** Les démons post-PR-14 enrichissent la charge utile avec quatre champs additifs et une cellule au niveau de l'espace de travail :
+`discoveryState` est l'une des valeurs `not_started`, `in_progress` ou `completed`. `transport` est l'une des valeurs `stdio`, `sse`, `http`, `websocket`, `sdk` ou `unknown`. `errors` est omis lorsque la découverte réussit.
+
+**Garde-fous client MCP (issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) PR 14).** Les démons post-PR-14 étendent la charge utile avec quatre champs additifs et une cellule au niveau de l'espace de travail :
 
 ```jsonc
 {
@@ -392,7 +395,7 @@ Les charges utiles de statut n'exposent jamais les valeurs d'environnement MCP, 
       "scope": "session",
       "status": "error",
       "errorKind": "budget_exhausted",
-      "hint": "Augmentez --mcp-client-budget ou supprimez des serveurs de la configuration mcpServers.",
+      "hint": "Raise --mcp-client-budget or remove servers from mcpServers config.",
       "liveCount": 2,
       "budget": 2,
       "mode": "enforce",
@@ -431,22 +434,22 @@ Les charges utiles de statut n'exposent jamais les valeurs d'environnement MCP, 
 }
 ```
 
-`budgetMode` peut valoir `enforce`, `warn` ou `off`. `clientBudget` est absent lorsqu'aucun budget n'a été défini. `budgets[]` est **toujours un tableau** sur les démons post-PR-14 (éventuellement vide quand `budgetMode === 'off'`) ; les démons pré-PR-14 omettent complètement ce champ. La v1 émet une cellule avec `scope: 'session'` (application par session — voir la section sur les capacités ci-dessus pour la raison). Les consommateurs DOIVENT tolérer des entrées `budgets[]` supplémentaires avec des valeurs de `scope` inconnues — la vague 5 PR 23 ajoutera `scope: 'workspace'` (ou `'pool'`) aux côtés de la cellule par session, sans changement de schéma.
+`budgetMode` est l'une des valeurs `enforce`, `warn` ou `off`. `clientBudget` est absent lorsqu'aucun budget n'a été défini. `budgets[]` est **toujours un tableau** sur les démons post-PR-14 (éventuellement vide lorsque `budgetMode === 'off'`) ; les démons pré-PR-14 omettent complètement le champ. v1 émet une cellule avec `scope: 'session'` (application par session — voir la section des capacités ci-dessus pour savoir pourquoi). Les consommateurs DOIVENT tolérer des entrées supplémentaires dans `budgets[]` avec des valeurs `scope` non reconnues — la vague 5 PR 23 ajoutera `scope: 'workspace'` (ou `'pool'`) aux côtés de la cellule par session sans incrémentation de schéma.
 
-`disabledReason` sur les cellules par serveur distingue le désactivé par l'opérateur (`'config'` — liste de configuration `disabledMcpServers`) du refus lié au budget (`'budget'` — découvert mais jamais connecté à cause du mode `enforce`). Les refus sont déterministes selon l'ordre de déclaration de `Object.entries(mcpServers)`. Le champ `status: 'error', errorKind: 'budget_exhausted'` au niveau du serveur masque le `mcpStatus: 'disconnected'` brut (qui est vrai mais pas la sévérité vue par l'opérateur).
+`disabledReason` sur les cellules par serveur distingue le désactivé par l'opérateur (`'config'` — liste de configuration `disabledMcpServers`) du refusé par budget (`'budget'` — découvert mais jamais connecté en raison du mode `enforce`). Les refus sont déterministes selon l'ordre de déclaration `Object.entries(mcpServers)`. Le `status: 'error', errorKind: 'budget_exhausted'` par serveur occulte le `mcpStatus: 'disconnected'` brut (qui est vrai mais pas la sévérité pour l'opérateur).
 
-L'application du budget dans la v1 de PR 14 est **par session, pas par espace de travail**. Bien que les démons Mode B soient `1 démon = 1 espace de travail × N sessions` après #4113 au niveau du processus, le `McpClientManager` est construit à l'intérieur du `Config` de chaque session ACP via `acpAgent.newSessionConfig`, donc N sessions appliquent chacune leur propre copie de la limite. L'instantané représente la vue de la session d'amorçage. La vague 5 PR 23 introduit un pool MCP partagé au niveau de l'espace de travail, transformant cela en une véritable application par espace de travail.
+L'application du budget dans la PR 14 v1 est **par session, pas par espace de travail**. Bien que les démons Mode B soient `1 démon = 1 espace de travail × N sessions` post-#4113 au niveau du processus, le `McpClientManager` est construit à l'intérieur du `Config` de chaque session ACP via `acpAgent.newSessionConfig`, donc N sessions appliquent chacune leur propre copie de la limite. L'instantané représente la vue de la session d'amorçage. La vague 5 PR 23 introduit un pool MCP partagé à l'échelle de l'espace de travail qui fait passer cela à une véritable application par espace de travail.
 
-**Détection de la pression budgétaire.** Deux surfaces, toutes deux renseignées après PR-14b :
+**Détection de la pression budgétaire.** Deux surfaces, toutes deux peuplées post-PR-14b :
 
-- **Événements push** (annoncés via `mcp_guardrail_events`) : abonnez-vous à `GET /session/:id/events` et filtrez les trames `mcp_budget_warning` / `mcp_child_refused_batch` via `KnownDaemonEvent`. La machine d'état se déclenche une fois par franchissement à la hausse de 75 % (réarmement en dessous de 37,5 %) ; les refus sont regroupés une fois par passe de découverte en mode `enforce`.
-- **Interrogation de l'instantané** (annoncée via `mcp_guardrails`) : `GET /workspace/mcp` et inspectez la cellule budgétaire par session (`budgets[0]`) :
+- **Événements push** (annoncés via `mcp_guardrail_events`) : abonnez-vous à `GET /session/:id/events` et filtrez les trames `mcp_budget_warning` / `mcp_child_refused_batch` via `KnownDaemonEvent`. La machine d'état se déclenche une fois par franchissement à la hausse de 75 % (réarmement en dessous de 37,5 %) ; les refus sont regroupés une fois par passe de découverte sous le mode `enforce`.
+- **Interrogation d'instantané** (annoncée via `mcp_guardrails`) : `GET /workspace/mcp` et inspectez la cellule de budget par session (`budgets[0]`) :
 
-- `budgets[0].status === 'warning'` ⇔ `liveCount >= 0.75 * clientBudget` (correspond au seuil d'hystérésis de l'événement push de PR 14b).
-- `budgets[0].status === 'error'` ⇔ `refusedCount > 0` (au moins un serveur refusé lors de cette passe de découverte).
+- `budgets[0].status === 'warning'` ⇔ `liveCount >= 0.75 * clientBudget` (correspond au seuil d'hystérésis que l'événement push de la PR 14b utilisera).
+- `budgets[0].status === 'error'` ⇔ `refusedCount > 0` (un ou plusieurs serveurs refusés lors de cette passe de découverte).
 - `budgets[0].status === 'ok'` ⇔ en dessous du seuil de 75 % ET aucun refus.
 
-Cadence d'interrogation recommandée : alignée sur celle qui interroge déjà `/workspace/mcp` ; l'instantané est léger et la cellule budgétaire n'ajoute aucun coût de découverte supplémentaire. Les clients SDK qui s'abonnent aux événements push bénéficient également de l'instantané pour l'état après une déconnexion prolongée (la profondeur de rejeu SSE est finie — `--event-ring-size`, défaut 8000 — donc un client hors ligne plus longtemps que la couverture de l'anneau retombe sur une resynchronisation par instantané).
+Cadence d'interrogation recommandée : alignée sur ce qui interroge déjà `/workspace/mcp` ; l'instantané est peu coûteux et la cellule de budget n'entraîne aucun coût de découverte supplémentaire. Les clients SDK qui s'abonnent aux événements push bénéficient toujours de l'instantané pour l'état après une déconnexion prolongée (la profondeur de l'anneau de rejeu SSE est finie — `--event-ring-size`, par défaut 8000 — donc un client hors ligne plus longtemps que la couverture de l'anneau retombe sur la resynchronisation par instantané).
 
 ### `GET /workspace/skills`
 
@@ -469,7 +472,7 @@ Cadence d'interrogation recommandée : alignée sur celle qui interroge déjà `
 }
 ```
 
-`level` peut valoir `project`, `user`, `extension` ou `bundled`. `errors` est omis lorsque la découverte réussit.
+`level` est l'une des valeurs `project`, `user`, `extension` ou `bundled`. `errors` est omis lorsque la découverte réussit.
 
 ### `GET /workspace/providers`
 
@@ -500,11 +503,12 @@ Cadence d'interrogation recommandée : alignée sur celle qui interroge déjà `
   ]
 }
 ```
-Les modèles sont regroupés par type d'authentification. Les diagnostics de connexion des fournisseurs se trouvent dans la cellule `providers` de `/workspace/preflight` ; la vérification préalable de l'environnement se trouve dans `/workspace/preflight` et `/workspace/env` (ci-dessous). `errors` est omis lorsque la construction de l'instantané réussit.
+
+Les modèles sont regroupés par type d'authentification. Les diagnostics de connexion des fournisseurs se trouvent dans la cellule `providers` de `/workspace/preflight` ; le précontrôle d'environnement se trouve sur `/workspace/preflight` et `/workspace/env` (ci-dessous). `errors` est omis lorsque la construction de l'instantané réussit.
 
 ### `GET /workspace/env`
 
-Signale l'environnement d'exécution, la plateforme, le sandbox, le proxy, et la **présence** des variables d'environnement secrètes autorisées sur liste blanche du processus daemon. Répond toujours à partir de l'état `process.*` — le daemon ne génère jamais de processus enfant ACP pour servir cette route, et la réponse est identique qu'ACP soit actif ou inactif. Le champ `acpChannelLive` est uniquement informatif.
+Rapporte l'environnement d'exécution du processus du démon, la plateforme, le sandbox, le proxy et la **présence** des variables d'environnement secrètes de la liste blanche. Répond toujours à partir de l'état `process.*` — le démon ne lance jamais un enfant ACP pour servir cette route, et la réponse est identique que l'ACP soit actif ou inactif. Le champ `acpChannelLive` est uniquement informatif.
 
 ```json
 {
@@ -568,13 +572,13 @@ interface DaemonEnvCell extends DaemonStatusCell {
 }
 ```
 
-**Politique de rédaction.** Les cellules `kind: 'env_var'` n'incluent jamais de champ `value` ; les clients ne voient que `present: boolean`. Les cellules `kind: 'proxy'` soumettent la valeur brute de la variable d'environnement au masquage des identifiants (`redactProxyCredentials`) puis à l'analyse via `URL` afin que le câble ne transporte que `host:port`. `NO_PROXY` est transmis au masquage tel quel car il s'agit d'une liste d'hôtes plutôt que d'une URL. La liste blanche des variables d'environnement secrètes énumérées inclut actuellement `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `DASHSCOPE_API_KEY`, `OPENROUTER_API_KEY` et `QWEN_SERVER_TOKEN`. Les autres variables d'environnement ne sont pas énumérées, donc les secrets accidentellement définis restent invisibles.
+**Politique de réduction.** Les cellules `kind: 'env_var'` n'incluent jamais de champ `value` ; les clients voient uniquement `present: boolean`. Les cellules `kind: 'proxy'` passent la valeur brute de la variable d'environnement par la réduction des identifiants (`redactProxyCredentials`) puis par l'analyse `URL` afin que le réseau ne transporte que `host:port`. `NO_PROXY` est passé textuellement par la réduction car c'est une liste d'hôtes plutôt qu'une URL. La liste blanche des variables d'environnement secrètes énumérées inclut actuellement `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `DASHSCOPE_API_KEY`, `OPENROUTER_API_KEY` et `QWEN_SERVER_TOKEN`. Les autres variables d'environnement ne sont pas énumérées, donc les secrets définis accidentellement restent invisibles.
 
 ### `GET /workspace/preflight`
 
-Signale les vérifications d'état de préparation du daemon. **Les cellules de niveau daemon** (`node_version`, `cli_entry`, `workspace_dir`, `ripgrep`, `git`, `npm`) sont toujours remplies à partir de `process.*` et `node:fs`. **Les cellules de niveau ACP** (`auth`, `mcp_discovery`, `skills`, `providers`, `tool_registry`, `egress`) nécessitent un processus enfant ACP actif — lorsque le daemon est inactif, elles émettent des espaces réservés `status: 'not_started'`. La route ne génère jamais ACP uniquement pour remplir les cellules ; les cellules correspondantes se replient sur `not_started`.
+Rapporte les vérifications de préparation du démon. Les **cellules au niveau du démon** (`node_version`, `cli_entry`, `workspace_dir`, `ripgrep`, `git`, `npm`) sont toujours peuplées à partir de `process.*` et `node:fs`. Les **cellules au niveau ACP** (`auth`, `mcp_discovery`, `skills`, `providers`, `tool_registry`, `egress`) nécessitent un enfant ACP actif — lorsque le démon est inactif, elles émettent des espaces réservés `status: 'not_started'`. La route ne lance jamais l'ACP uniquement pour peupler les cellules ; les cellules correspondantes reviennent à `not_started`.
 
-Réponse inactive (aucun processus enfant ACP) :
+Réponse inactive (pas d'enfant ACP) :
 
 ```json
 {
@@ -653,9 +657,7 @@ Réponse inactive (aucun processus enfant ACP) :
   ]
 }
 ```
-Forme de la cellule :
-
-```ts
+```typescript
 type DaemonPreflightKind =
   | 'node_version'
   | 'cli_entry'
@@ -679,19 +681,19 @@ interface DaemonPreflightCell extends DaemonStatusCell {
 
 Sémantique de `errorKind` :
 
-- `missing_binary` — Version de Node inférieure à celle requise, `QWEN_CLI_ENTRY` manquant, ripgrep/git/npm absents du PATH (avertissements plutôt qu'erreurs pour les binaires optionnels).
-- `missing_file` — `boundWorkspace` n'existe pas ou n'est pas un répertoire ; erreur d'analyse d'une compétence pointant vers un fichier manquant ou illisible.
-- `parse_error` — Échec d'analyse de `SKILL.md`, configuration JSON malformée.
-- `auth_env_error` — `validateAuthMethod` a retourné une chaîne d'échec non nulle, ou une sous-classe de `ModelConfigError` propagée depuis la résolution du fournisseur.
-- `init_timeout` — Rejet de `withTimeout` dans le pont (un timeout réel lors de l'attente d'un aller-retour ACP). Reconnu via la classe typée `BridgeTimeoutError`. Note : une cellule `mcp_discovery` de type `warning` transitoire avec `connecting > 0` ne porte PAS ce kind — il s'agit d'un état normal de handshake en cours, distinct d'un vrai timeout.
-- `protocol_error` — `extMethod` de l'ACP rejeté parce que le canal s'est fermé en cours de requête, ou parce que le registre d'outils était inopinément absent.
-- `blocked_egress` — réservé pour la PR 14 (#4175). La PR 13 laisse la cellule `egress` en `status: 'not_started'`.
+- `missing_binary` — Version de Node inférieure à celle requise, variable `QWEN_CLI_ENTRY` manquante, ripgrep / git / npm absents du PATH (avertissements plutôt qu'erreurs pour les binaires optionnels).
+- `missing_file` — `boundWorkspace` n'existe pas ou n'est pas un répertoire ; erreur de parsing d'une skill pointant vers un fichier manquant ou illisible.
+- `parse_error` — Échec du parsing de `SKILL.md`, JSON de configuration mal formé.
+- `auth_env_error` — `validateAuthMethod` a renvoyé une chaîne d'échec non nulle, ou une sous-classe de `ModelConfigError` propagée depuis la résolution du fournisseur.
+- `init_timeout` — Rejet de `withTimeout` dans le bridge (un timeout réel lors de l'attente d'un aller-retour ACP). Reconnu via la classe typée `BridgeTimeoutError`. Note : une cellule `mcp_discovery` transitoire de type `warning` avec `connecting > 0` ne porte PAS ce kind — il s'agit d'un état normal de handshake en cours, distinct d'un vrai timeout.
+- `protocol_error` — `extMethod` ACP rejeté car le canal s'est fermé en cours de requête, ou parce que le registre d'outils était absent de manière inattendue.
+- `blocked_egress` — Réservé au PR 14 (#4175). Le PR 13 laisse la cellule `egress` en `status: 'not_started'`.
 
-Si le pont ne parvient pas à joindre le processus enfant ACP lors du traitement d'une requête de pré-vérification (par exemple, une fermeture du canal en cours de requête), le tableau `errors` de l'enveloppe contient une seule `ServeStatusCell` décrivant l'échec et les cellules reviennent aux espaces réservés ACP `not_started`. Les cellules du démon sont toujours renvoyées.
+Si le bridge ne parvient pas à joindre le processus enfant ACP pendant le traitement d'une requête preflight (par exemple, fermeture du canal en cours de requête), le tableau `errors` de l'enveloppe contient une seule `ServeStatusCell` décrivant l'échec, et les cellules retombent à des placeholders ACP `not_started`. Les cellules au niveau du daemon sont tout de même renvoyées.
 
-### Routes des fichiers de l'espace de travail
+### Routes de fichiers du workspace
 
-Tous les chemins de fichiers sont résolus dans l'espace de travail lié du démon. Les réponses utilisent des chemins relatifs à l'espace de travail et ne renvoient jamais de chemins absolus du système de fichiers pour les cas de succès normaux. Les réponses de fichiers réussies incluent :
+Tous les chemins de fichiers sont résolus via le workspace lié du daemon. Les réponses utilisent des chemins relatifs au workspace et ne renvoient jamais de chemins absolus du système de fichiers dans les cas de succès normaux. Les réponses de fichiers réussies incluent :
 
 ```http
 Cache-Control: no-store
@@ -709,17 +711,11 @@ Les erreurs du système de fichiers utilisent cette forme JSON :
 }
 ```
 
-Les valeurs de `errorKind` incluent `path_outside_workspace`, `symlink_escape`,
-`path_not_found`, `binary_file`, `file_too_large`, `untrusted_workspace`,
-`permission_denied`, `parse_error`, `hash_mismatch`,
-`file_already_exists`, `text_not_found`, et `ambiguous_text_match`.
+Les valeurs de `errorKind` incluent `path_outside_workspace`, `symlink_escape`, `path_not_found`, `binary_file`, `file_too_large`, `untrusted_workspace`, `permission_denied`, `parse_error`, `hash_mismatch`, `file_already_exists`, `text_not_found`, et `ambiguous_text_match`.
 
 #### `GET /file`
 
-Lit un fichier texte. Paramètres de requête : `path` (obligatoire), `maxBytes`, `line` et
-`limit`. Le démon rejette les fichiers binaires et les fichiers dépassant la limite de lecture texte.
-La réponse inclut `hash`, un haché SHA-256 des octets bruts sur disque pour
-l'ensemble du fichier, même lorsque `line`, `limit` ou `maxBytes` a renvoyé une tranche.
+Lit un fichier texte. Paramètres de requête : `path` (obligatoire), `maxBytes`, `line`, et `limit`. Le daemon rejette les fichiers binaires et les fichiers dont la taille dépasse la limite de lecture texte. La réponse inclut `hash`, un digest SHA-256 sur les octets bruts du fichier complet, même lorsque `line`, `limit` ou `maxBytes` n'ont renvoyé qu'une partie.
 
 ```json
 {
@@ -740,11 +736,7 @@ l'ensemble du fichier, même lorsque `line`, `limit` ou `maxBytes` a renvoyé un
 
 #### `GET /file/bytes`
 
-Lit les octets bruts d'un fichier sans décodage. Paramètres de requête : `path` (obligatoire),
-`offset` (par défaut `0`) et `maxBytes` (par défaut `65536`, max `262144`). Cette
-route prend en charge les fenêtres limitées sur les grands fichiers binaires sans engloutir tout le fichier.
-La réponse inclut `hash` uniquement lorsque la fenêtre renvoyée couvre
-l'intégralité du fichier.
+Lit les octets bruts d'un fichier sans le décoder. Paramètres de requête : `path` (obligatoire), `offset` (défaut `0`), et `maxBytes` (défaut `65536`, max `262144`). Cette route prend en charge les fenêtres bornées sur des fichiers binaires volumineux sans avoir à charger le fichier entier. La réponse inclut `hash` uniquement si la fenêtre renvoyée couvre l'intégralité du fichier.
 
 ```json
 {
@@ -761,10 +753,7 @@ l'intégralité du fichier.
 
 #### `POST /file/write`
 
-Crée ou remplace un fichier texte. Il s'agit d'une route de mutation stricte : en boucle locale
-sans jeton configuré, elle retourne `401 { "code": "token_required" }`.
-Avec `--require-auth`, le middleware global d'en-tête d'authentification rejette les requêtes non authentifiées
-avant que la route ne s'exécute.
+Crée ou remplace un fichier texte. C'est une route de mutation stricte : en boucle locale sans jeton configuré, elle renvoie `401 { "code": "token_required" }`. Avec `--require-auth`, le middleware global de bearer rejette les requêtes non authentifiées avant l'exécution de la route.
 
 Corps :
 
@@ -785,22 +774,12 @@ Corps :
 }
 ```
 
-`mode` doit être `create` ou `replace`. `create` n'écrase jamais un fichier existant
-(`409 file_already_exists`). `replace` nécessite `expectedHash` ; les hachés manquants ou
-mal formés donnent `400 parse_error`, et les hachés obsolètes donnent
-`409 hash_mismatch`. `expectedHash` est `sha256:` suivi de 64 caractères hexadécimaux
-minuscules, calculé sur les octets bruts du disque.
+`mode` doit être `create` ou `replace`. `create` n'écrase jamais un fichier existant (`409 file_already_exists`). `replace` nécessite `expectedHash` ; les hashs manquants ou malformés renvoient `400 parse_error`, et les hashs obsolètes renvoient `409 hash_mismatch`. `expectedHash` est `sha256:` suivi de 64 caractères hexadécimaux minuscules, calculé sur les octets bruts du fichier.
 
-`bom`, `encoding` et `lineEnding` peuvent être fournis. Le remplacement préserve par défaut le
-profil d'encodage du fichier existant ; les champs explicites le remplacent.
-Les écritures binaires sont hors du champ d'application.
+`bom`, `encoding`, et `lineEnding` peuvent être fournis. Le remplacement préserve par défaut le profil d'encodage du fichier existant ; les champs explicites le remplacent. Les écritures binaires ne sont pas prises en charge.
 
-Le démon écrit dans un fichier temporaire aléatoire dans le répertoire cible, effectue un fsync
-lorsque c'est pris en charge, revérifie le haché actuel immédiatement avant `rename()`, puis
-renomme en place. Cela empêche l'observation de fichiers partiels et sérialise
-les écritures provenant du démon sur le même fichier, mais ce n'est pas une opération
-de comparaison-et-échange noyau inter-processus : un éditeur externe peut encore entrer en concurrence
-dans la petite fenêtre entre la vérification finale du haché et le renommage.
+Le daemon écrit dans un fichier temporaire aléatoire dans le répertoire cible, effectue un fsync si supporté, revérifie le hash actuel immédiatement avant `rename()`, puis renomme le fichier à sa place. Cela empêche l'observation partielle du fichier et sérialise les écritures initiées par le daemon sur le même fichier, mais il ne s'agit pas d'un "compare-and-swap" inter-processus au niveau du noyau : un éditeur externe peut encore intervenir dans la petite fenêtre entre la vérification finale du hash et le renommage.
+
 ```json
 {
   "kind": "file_write",
@@ -818,7 +797,7 @@ dans la petite fenêtre entre la vérification finale du haché et le renommage.
 
 #### `POST /file/edit`
 
-Applique un remplacement textuel exact à un fichier texte existant. C'est également une route de mutation stricte et nécessite `expectedHash`.
+Applique un remplacement textuel exact à un fichier texte existant. C'est également une route de mutation stricte et elle nécessite `expectedHash`.
 
 ```json
 {
@@ -829,7 +808,7 @@ Applique un remplacement textuel exact à un fichier texte existant. C'est égal
 }
 ```
 
-`oldText` ne doit pas être vide et doit apparaître exactement une fois. Aucune correspondance renvoie `422 text_not_found` ; plusieurs correspondances renvoient `422 ambiguous_text_match`. La route préserve l'encodage, le BOM et les sauts de ligne, et revérifie `expectedHash` immédiatement avant le renommage atomique.
+`oldText` doit être non vide et apparaître exactement une fois. Aucune correspondance renvoie `422 text_not_found` ; plusieurs correspondances renvoient `422 ambiguous_text_match`. La route préserve l'encodage, la BOM et les fins de ligne, et revérifie `expectedHash` immédiatement avant le renommage atomique.
 
 Les écritures/éditions explicites sur des chemins ignorés sont autorisées car l'appelant authentifié a nommé le chemin. Les réponses de succès et les événements d'audit incluent `matchedIgnore: "file" | "directory" | null`.
 
@@ -862,7 +841,7 @@ Les écritures/éditions explicites sur des chemins ignorés sont autorisées ca
 }
 ```
 
-`state` reflète les mêmes formes de modèle/mode/option-de-configuration ACP que celles utilisées par `POST /session`, `POST /session/:id/load` et `POST /session/:id/resume`.
+`state` reflète les mêmes formes ACP de model/mode/config-option utilisées par `POST /session`, `POST /session/:id/load`, et `POST /session/:id/resume`.
 
 ### `GET /session/:id/supported-commands`
 
@@ -873,7 +852,7 @@ Les écritures/éditions explicites sur des chemins ignorés sont autorisées ca
   "availableCommands": [
     {
       "name": "init",
-      "description": "Initialiser le projet",
+      "description": "Initialize the project",
       "input": null,
       "_meta": { "source": "builtin" }
     }
@@ -882,7 +861,7 @@ Les écritures/éditions explicites sur des chemins ignorés sont autorisées ca
 }
 ```
 
-`availableCommands` est le même instantané de commandes utilisé par la notification SSE `available_commands_update`. `availableSkills` liste uniquement les noms des compétences ; les clients ne doivent pas s'attendre à des corps ou chemins de compétences via cette route.
+`availableCommands` est le même snapshot de commandes utilisé par la notification SSE `available_commands_update`. `availableSkills` liste uniquement les noms des skills ; les clients ne doivent pas s'attendre à recevoir les corps ou chemins des skills via cette route.
 
 ### `GET /session/:id/tasks`
 
@@ -895,8 +874,8 @@ Les écritures/éditions explicites sur des chemins ignorés sont autorisées ca
     {
       "kind": "agent",
       "id": "agent-1",
-      "label": "reviewer: vérifier l'échec",
-      "description": "vérifier l'échec",
+      "label": "reviewer: check failure",
+      "description": "check failure",
       "status": "running",
       "startTime": 1699999999000,
       "runtimeMs": 1000,
@@ -908,7 +887,7 @@ Les écritures/éditions explicites sur des chemins ignorés sont autorisées ca
 }
 ```
 
-Cette route est un instantané en lecture seule hors bande. Elle n'est intentionnellement pas une invite et peut être interrogée pendant que la session diffuse. La réponse ne contient que des métadonnées autorisées provenant des registres de tâches de l'agent, du shell et du moniteur ; les contrôleurs, minuteurs, offsets, messages en attente et objets de registre bruts ne sont jamais exposés.
+Cette route est un snapshot en lecture seule hors bande. Elle n'est intentionnellement pas une invite et peut être interrogée pendant que la session diffuse. La réponse contient uniquement les métadonnées autorisées des registres de tâches agent, shell et monitor ; les contrôleurs, timers, offsets, messages en attente et objets bruts du registre ne sont jamais exposés.
 
 ### `GET /session/:id/lsp`
 
@@ -935,13 +914,13 @@ Cette route est un instantané en lecture seule hors bande. Elle n'est intention
 }
 ```
 
-`status` est l'une des valeurs suivantes : `NOT_STARTED`, `IN_PROGRESS`, `READY` ou `FAILED`. Un champ `error` optionnel est présent sur les serveurs en échec lorsqu'il est disponible. Le LSP désactivé (y compris le mode nu) renvoie HTTP 200 avec `enabled: false`, des compteurs à zéro et `servers: []`. Le LSP activé sans serveur configuré renvoie `enabled: true`, `configuredServers: 0` et `servers: []`. Si l'initialisation échoue avant que le client n'existe, la réponse peut inclure `initializationError` ; si un client actif ne peut pas fournir d'instantané, la réponse inclut `statusUnavailable: true`.
+`status` est l'une des valeurs suivantes : `NOT_STARTED`, `IN_PROGRESS`, `READY`, ou `FAILED`. Un champ `error` optionnel est présent sur les serveurs en échec lorsqu'il est disponible. Un LSP désactivé (y compris le mode bare) renvoie HTTP 200 avec `enabled: false`, des compteurs à zéro et `servers: []`. Un LSP activé mais sans serveur configuré renvoie `enabled: true`, `configuredServers: 0` et `servers: []`. Si l'initialisation échoue avant que le client n'existe, la réponse peut inclure `initializationError` ; si un client actif ne peut pas fournir de snapshot, la réponse inclut `statusUnavailable: true`.
 
-Cette route n'expose que les champs stables côté client. Elle omet intentionnellement les éléments internes de débogage tels que les ID de processus, les arguments de lancement, les queues de stderr, les URI racines et les chemins de dossiers de l'espace de travail.
+Cette route expose uniquement les champs stables destinés au client. Elle omet intentionnellement les informations de débogage internes telles que les PID, arguments de lancement, stderr, URIs racines et chemins de dossiers de workspace.
 
 ### `POST /session`
 
-Crée un nouvel agent ou s'attache à un agent existant (sous `sessionScope: 'single'`, la valeur par défaut).
+Lancer un nouvel agent ou s'attacher à un agent existant (sous `sessionScope: 'single'`, le comportement par défaut).
 
 Requête :
 
@@ -953,11 +932,14 @@ Requête :
 }
 ```
 
-| Champ              | Obligatoire | Remarques                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cwd`               | non         | Chemin absolu correspondant à l'espace de travail lié du démon. S'il est omis, la route utilise `boundWorkspace` (lisez-le depuis `/capabilities.workspaceCwd`). Un `cwd` non vide et non concordant renvoie `400 workspace_mismatch` (#3803 §02 — 1 démon = 1 espace de travail). Les chemins d'espace de travail sont canonicalisés via `realpathSync.native` (avec un repli en résolution seule pour les chemins inexistants) afin que les systèmes de fichiers insensibles à la casse ne rejettent pas les sessions selon l'orthographe.                                                                                  |
-| `modelServiceId`    | non         | Sélectionne le _service de modèle_ configuré par lequel l'agent va router (le fournisseur back-end — Alibaba ModelStudio, OpenRouter, etc). S'il est omis, l'agent utilise son service par défaut. Si l'espace de travail a déjà une session, cela appelle `setSessionModel` sur celle existante et diffuse `model_switched`. Distinct de `modelId` sur `POST /session/:id/model`, qui sélectionne le modèle **au sein** d'un service déjà lié. Le tableau `modelServices` sur `/capabilities` est réservé pour annoncer les services configurés ; dans l'étape 1, il est toujours `[]` (le service par défaut de l'agent est utilisé et n'est pas énuméré via HTTP). |
-| `sessionScope`      | non         | Surcharge par requête pour le partage de session. `'single'` (la valeur par défaut à l'échelle du démon) fait qu'un deuxième `POST /session` sur le même espace de travail réutilise la session existante (`attached: true`) ; `'thread'` force une nouvelle session distincte à chaque appel. Omettre pour hériter de la valeur par défaut du démon. Les valeurs en dehors de l'énumération renvoient `400 { code: 'invalid_session_scope' }`. Les vieux démons (avant la PR 5 de #4175) ignorent silencieusement ce champ — pré-vérifiez `caps.features.session_scope_override` avant d'envoyer. La valeur par défaut du démon est codée en dur à `'single'` en production aujourd'hui ; #4175 pourrait ajouter un indicateur CLI `--sessionScope` dans un suivi. |
+| Champ             | Obligatoire | Remarques                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cwd`             | non         | Chemin absolu correspondant au workspace lié du daemon. S'il est omis, la route utilise `boundWorkspace` (lire via `/capabilities.workspaceCwd`). Un `cwd` non vide et non correspondant renvoie `400 workspace_mismatch` (#3803 §02 — 1 daemon = 1 workspace). Les chemins de workspace sont canonicalisés via `realpathSync.native` (avec un fallback de résolution seule pour les chemins inexistants) afin que les systèmes de fichiers insensibles à la casse ne rejettent pas les sessions selon l'orthographe.                                                                                                                 |
+| `modelServiceId`  | non         | Sélectionne le _service de modèle_ configuré par lequel l'agent va router (le fournisseur back-end — Alibaba ModelStudio, OpenRouter, etc.). S'il est omis, l'agent utilise son service par défaut. Si le workspace a déjà une session, cela appelle `setSessionModel` sur la session existante et diffuse `model_switched`. Distinct de `modelId` sur `POST /session/:id/model`, qui sélectionne le modèle **au sein** d'un service déjà lié. Le tableau `modelServices` sur `/capabilities` est réservé à la publicité des services configurés ; dans la phase 1, il est toujours `[]` (le service par défaut de l'agent est utilisé et non énuméré via HTTP). |
+| `sessionScope`    | non         | Surcharge par requête pour le partage de session. `'single'` (le défaut à l'échelle du daemon) fait qu'un deuxième `POST /session` sur le même workspace réutilise la session existante (`attached: true`) ; `'thread'` force une nouvelle session distincte à chaque appel. Omettre pour hériter du défaut du daemon. Les valeurs hors de l'énumération renvoient `400 { code: 'invalid_session_scope' }`. Les anciens daemons (avant #4175 PR 5) ignorent silencieusement le champ — vérifier `caps.features.session_scope_override` avant d'envoyer. Le défaut du daemon est codé en dur à `'single'` en production aujourd'hui ; #4175 pourrait ajouter un flag CLI `--sessionScope` dans un suivi. |
+
+Réponse :
+
 ```json
 {
   "sessionId": "<uuid>",
@@ -966,15 +948,16 @@ Requête :
 }
 ```
 
-`attached: true` signifie qu'une session pour cet espace de travail existait déjà et que vous la partagez désormais.
+`attached: true` signifie qu'une session pour ce workspace existait déjà et que vous la partagez maintenant.
 
-Les appels `POST /session` concurrents pour le même espace de travail sont **fusionnés** en un seul lancement — les deux appelants reçoivent le même `sessionId`, un seul rapporte `attached: false`. Si le lancement sous-jacent échoue (timeout d'initialisation, sortie d'agent malformée, OOM), **tous les appelants fusionnés reçoivent la même erreur** — l'emplacement en vol est nettoyé afin qu'un appel ultérieur puisse réessayer depuis le début.
+Les appels simultanés à `POST /session` pour le même workspace sont **fusionnés** en un seul lancement — les deux appelants reçoivent le même `sessionId`, un seul rapporte `attached: false`. Si le lancement sous-jacent échoue (timeout d'initialisation, sortie d'agent malformée, OOM), **tous les appelants fusionnés reçoivent la même erreur** — l'emplacement en vol est libéré afin qu'un appel ultérieur puisse retenter à partir de zéro.
 
-> ⚠️ **Le rejet de `modelServiceId` sur une session fraîche est silencieux sur la réponse HTTP.** Un `modelServiceId` incorrect (faute de frappe, service non configuré) ne provoque PAS un 500 lors de la création — la session reste opérationnelle sur le modèle par défaut de l'agent, de sorte que l'appelant reçoit quand même un `sessionId` avec lequel il peut réessayer le changement de modèle (via `POST /session/:id/model`). Le signal d'échec visible est un événement `model_switch_failed` sur le flux SSE de la session, émis entre la poignée de main du lancement et votre premier abonnement. **Les abonnés qui ont besoin d'observer cet événement doivent passer `Last-Event-ID: 0` sur leur premier `GET /session/:id/events`** pour rejouer à partir de l'événement le plus ancien disponible dans l'anneau (cela couvre le `model_switch_failed` du lancement même si l'abonnement arrive quelques ms après la réponse de création).
+> [!warning]
+> **Le rejet de `modelServiceId` sur une session fraîche est silencieux dans la réponse HTTP.** Un mauvais `modelServiceId` (faute de frappe, service non configuré) ne provoque PAS une erreur 500 de la création — la session reste opérationnelle sur le modèle par défaut de l'agent, de sorte que l'appelant reçoit toujours un `sessionId` avec lequel il peut réessayer le changement de modèle (via `POST /session/:id/model`). Le signal d'échec visible est un événement `model_switch_failed` sur le flux SSE de la session, émis entre le handshake de lancement et votre premier abonnement. **Les abonnés qui doivent observer cet événement doivent passer `Last-Event-ID: 0` sur leur premier `GET /session/:id/events`** pour rejouer à partir de l'événement le plus ancien disponible dans le ring (couvre le `model_switch_failed` du lancement même si l'abonnement arrive quelques ms après la réponse de création).
 
 ### `POST /session/:id/load`
 
-Restaure une session ACP persistée par son ID et rejoue son historique via SSE. L'ID dans le chemin est prioritaire ; tout champ `sessionId` dans le corps est ignoré. Pré-requis `caps.features.session_load` — les démons plus anciens retournent `404` pour cette route.
+Restaure une session ACP persistée par son identifiant et rejoue son historique via SSE. L'identifiant dans le chemin fait autorité ; tout champ `sessionId` dans le corps est ignoré. Vérifier `caps.features.session_load` avant d'envoyer — les anciens daemons renvoient `404` pour cette route.
 
 Requête :
 
@@ -984,9 +967,9 @@ Requête :
 }
 ```
 
-| Champ | Requis | Notes                                                                                                                                                                                                                             |
-| ----- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cwd` | non    | Mêmes règles de canonicalisation + `workspace_mismatch` que `POST /session`. Omettre pour hériter de `/capabilities.workspaceCwd`. `mcpServers` n'est volontairement PAS accepté ici — les MCP à l'échelle du démon sont pilotés par la configuration (comme pour `POST /session`). |
+| Champ | Obligatoire | Remarques                                                                                                                                                                                                                                                 |
+| ----- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cwd` | non         | Mêmes règles de canonicalisation et de `workspace_mismatch` que `POST /session`. Omettre pour hériter de `/capabilities.workspaceCwd`. `mcpServers` n'est intentionnellement PAS accepté ici — le MCP du daemon est piloté par la configuration (comme `POST /session`). |
 
 Réponse :
 
@@ -1003,37 +986,39 @@ Réponse :
 }
 ```
 
-`state` reflète `LoadSessionResponse` d'ACP — `models` est un `SessionModelState`, `modes` un `SessionModeState`, `configOptions` un tableau de `SessionConfigOption`. Les champs manquants sont décidés par l'agent. Les rattachements tardifs (les chemins `attached: true` ci-dessous) reçoivent le MÊME instantané `state` que l'appelant original du chargement — le démon le met en cache sur l'entrée ; les mutations d'exécution (par ex. `model_switched`) sont livrées sur le flux SSE, pas dans les réponses d'attachement ultérieures.
+`state` reflète `LoadSessionResponse` d'ACP — `models` est un `SessionModelState`, `modes` un `SessionModeState`, `configOptions` un tableau de `SessionConfigOption`. Les champs manquants sont décidés par l'agent. Les attachements tardifs (les chemins `attached: true` ci-dessous) reçoivent le MÊME snapshot `state` que l'appelant original du load a vu — le daemon le met en cache sur l'entrée ; les mutations à l'exécution (par exemple `model_switched`) sont délivrées sur le flux SSE, et non dans les réponses d'attachement suivantes.
 
-`attached: true` signifie que la session était déjà active (soit d'un `session/load`/`session/resume` précédent, soit parce qu'un appelant concurrent fusionné a devancé juste avant).
+`attached: true` signifie que la session était déjà active (soit d'un `session/load`/`session/resume` antérieur, soit parce qu'un appelant concurrent fusionné a été plus rapide).
 
-**Rejeu de l'historique via SSE.** Pendant que `loadSession` est en cours côté agent, l'agent émet des notifications `session_update` pour chaque tour persistant. Le démon les met en mémoire tampon sur le bus d'événements de la session avant que la réponse de la route ne soit renvoyée, de sorte que les abonnés qui appellent immédiatement `GET /session/:id/events` avec `Last-Event-ID: 0` voient le rejeu complet. **L'anneau de rejeu est limité** (8000 trames par session par défaut). Les longs historiques avec de nombreux tours d'appels d'outils / flux de pensée peuvent dépasser cette limite — les trames les plus anciennes sont supprimées silencieusement. Les clients qui ont besoin de l'historique complet doivent s'abonner immédiatement après le retour de `load` ; une alternative est de persister les ID d'événements SSE et d'utiliser `Last-Event-ID` pour reprendre à partir d'une limite de tour ultérieure.
+**Rejeu d'historique via SSE.** Pendant que `loadSession` est en vol côté agent, l'agent émet des notifications `session_update` pour chaque tour persistant. Le daemon les met en tampon sur le bus d'événements de la session avant que la réponse de route ne soit renvoyée, de sorte que les abonnés qui appellent immédiatement `GET /session/:id/events` avec `Last-Event-ID: 0` voient le rejeu complet. **Le ring de rejeu est borné** (8000 trames par défaut par session). Les historiques longs avec de nombreux tours d'appels d'outils / flux de pensée peuvent dépasser cette limite — les trames les plus anciennes sont supprimées silencieusement. Les clients qui ont besoin de tout l'historique doivent s'abonner immédiatement après le retour du `load` ; alternativement, ils peuvent persister les identifiants d'événements SSE et utiliser `Last-Event-ID` pour reprendre à partir d'une limite de tour ultérieure.
 
 **Erreurs :**
 
-- `404` — l'ID de session persisté n'existe pas (`SessionNotFoundError`).
+- `404` — l'identifiant de session persistée n'existe pas (`SessionNotFoundError`).
 - `400` — `workspace_mismatch` (même forme que `POST /session`).
-- `503` — `session_limit_exceeded` (compte dans `--max-sessions` ; les restaurations en vol sont également comptées).
-- `409` — `restore_in_progress` (un `session/resume` pour le même ID est déjà en vol). `Retry-After: 5`. Les courses de même action (deux `session/load` concurrents pour le même ID) sont fusionnées — exactement un retourne `attached: false`, les autres retournent `attached: true` avec le même `state`.
+- `503` — `session_limit_exceeded` (comptabilisé dans `--max-sessions` ; les restaurations en vol sont également comptées).
+- `409` — `restore_in_progress` (un `session/resume` pour le même identifiant est déjà en vol). `Retry-After: 5`. Les courses de même action (deux `session/load` concurrents pour le même identifiant) fusionnent — exactement un renvoie `attached: false`, les autres renvoient `attached: true` avec le même `state`.
 
 ### `POST /session/:id/resume`
 
-Restaure une session ACP persistée par son ID SANS rejouer l'historique via SSE. Le contexte du modèle est restauré en interne côté agent (via `geminiClient.initialize` lisant `config.getResumedSessionData`) ; le flux SSE reste propre pour les clients qui ont déjà l'historique affiché. Pré-requis `caps.features.session_resume` ; `unstable_session_resume` reste un alias de compatibilité déprécié pour les clients plus anciens.
+Restaure une session ACP persistée par son identifiant SANS rejouer l'historique via SSE. Le contexte du modèle est restauré en interne côté agent (via `geminiClient.initialize` lisant `config.getResumedSessionData`) ; le flux SSE reste propre pour les clients qui ont déjà leur historique affiché. Vérifier `caps.features.session_resume` avant d'envoyer ; `unstable_session_resume` reste un alias de compatibilité déprécié pour les clients plus anciens.
 
-Même forme de requête que `/load`. Même forme de réponse — `state` reflète `ResumeSessionResponse` d'ACP. Même enveloppe d'erreur, y compris `409 restore_in_progress` (déclenché quand un `session/load` est en vol ; `session/resume` en course derrière un autre `session/resume` est fusionné).
-Utilisez `/load` quand le client n’a aucun historique affiché (reconnexion à froid, sélecteur → ouverture). Utilisez `/resume` quand le client a déjà les tours à l’écran et a seulement besoin que le handle côté daemon soit restauré.
+Même forme de requête que `/load`. Même forme de réponse — `state` reflète `ResumeSessionResponse` d'ACP. Même enveloppe d'erreur, y compris `409 restore_in_progress` (qui se déclenche lorsqu'un `session/load` est en vol ; `session/resume` en concurrence derrière un autre `session/resume` fusionne).
 
-> ⚠️ **Pourquoi `unstable_session_resume` est-il encore annoncé ?** La route HTTP du daemon et la capacité `session_resume` sont stables pour la v1, mais le pont appelle encore `connection.unstable_resumeSession` d’ACP. L’ancien tag ne reste que pour que les SDK publiés avant `session_resume` continuent de fonctionner.
+Utilisez `/load` lorsque le client n'a pas d'historique affiché (reconnexion à froid, sélecteur → ouvrir). Utilisez `/resume` lorsque le client a déjà les tours à l'écran et n'a besoin que du handle côté daemon.
+
+> [!note]
+> **Pourquoi `unstable_session_resume` est-il encore annoncé ?** La route HTTP du daemon et la capacité `session_resume` sont stables pour v1, mais le bridge appelle toujours `connection.unstable_resumeSession` d'ACP. L'ancien tag reste uniquement pour que les SDKs publiés avant `session_resume` continuent de fonctionner.
 
 ### `GET /workspace/:id/sessions`
 
-Liste toutes les sessions actives dont l’espace de travail canonique correspond à `:id` (chemin absolu courant encodé en URL).
+Liste toutes les sessions actives dont le workspace canonique correspond à `:id` (chemin absolu encodé en URL).
 
 ```bash
 curl http://127.0.0.1:4170/workspace/$(jq -rn --arg c "$PWD" '$c|@uri')/sessions
 ```
 
-Réponse :
+Réponse :
 
 ```json
 {
@@ -1050,13 +1035,13 @@ Réponse :
 }
 ```
 
-Tableau vide (pas 404) quand aucune session n’existe – une interface de sélecteur de session ne doit pas générer d’erreur simplement parce que l’espace de travail est inactif.
+Un tableau vide (pas de 404) lorsqu'aucune session n'existe — une UI de sélecteur de session ne doit pas générer d'erreur simplement parce que le workspace est inactif.
 
 ### `POST /session/:id/prompt`
 
-Transmet une invite à l’agent. Les appelants multi-invites sont mis en file FIFO par session (ACP garantit une invite active par session).
+Transmettre une invite à l'agent. Les appelants multi-invites sont mis en file d'attente FIFO par session (ACP garantit une invite active par session).
 
-Requête :
+Requête :
 
 ```json
 {
@@ -1064,83 +1049,86 @@ Requête :
 }
 ```
 
-Validation : `prompt` doit être un tableau non vide d’objets. Les autres échecs retournent `400` avant d’atteindre le pont.
+Validation : `prompt` doit être un tableau non vide d'objets. Les autres échecs renvoient `400` avant d'atteindre le bridge.
 
-Réponse :
+Réponse :
 
 ```json
 { "stopReason": "end_turn" }
 ```
 
-Autres raisons d’arrêt : `cancelled`, `max_tokens`, `error`, `length` (selon la spécification ACP).
+Autres raisons d'arrêt : `cancelled`, `max_tokens`, `error`, `length` (selon la spécification ACP).
 
-Si le client HTTP se déconnecte pendant l’invite, le daemon envoie une notification ACP `cancel` à l’agent, qui termine l’invite avec `stopReason: "cancelled"`.
-
-> **Limitation de l’étape 1 – pas de délai d’attente côté serveur pour l’invite.** Le pont
-> ne fait que mettre en concurrence `prompt()` de l’agent avec `transportClosedReject`
->(le crash du processus enfant de l’agent) et le signal AbortSignal de la déconnexion HTTP de l’appelant.
-> Un agent vivant mais bloqué (par exemple un appel de modèle qui se bloque) bloque la FIFO par session
-> jusqu’à ce que le client HTTP expire de son côté et se déconnecte. Les invites de longue durée sont légitimes
-> (recherche approfondie, analyse de grandes bases de code) donc aucun délai par défaut n’est délibérément
-> défini ; l’étape 2 exposera un `promptTimeoutMs` configurable en option. En attendant, les appelants doivent
-> définir leur propre délai côté client et se déconnecter (ou appeler `POST /session/:id/cancel`) à l’expiration.
+Si le client HTTP se déconnecte en cours d'invite, le daemon envoie une notification ACP `cancel` à l'agent, qui termine l'invite avec `stopReason: "cancelled"`.
+> **Limitation de l'étape 1 — pas de délai d'attente côté serveur pour les prompts.** Le bridge
+> lance uniquement le `prompt()` de l'agent contre `transportClosedReject`
+> (plantage de l'agent enfant) et le signal d'annulation de déconnexion HTTP
+> de l'appelant. Un agent bloqué mais vivant (par exemple, un appel de modèle qui
+> se bloque) bloque le FIFO par session jusqu'à ce que le client HTTP expire
+> de son côté et se déconnecte. Les prompts de longue durée sont légitimes
+> (recherche approfondie, analyse de large base de code), donc aucun délai par défaut
+> n'est intentionnellement défini ; l'étape 2 exposera un
+> `promptTimeoutMs` configurable en option. D'ici là, les appelants doivent définir
+> leur propre délai d'attente côté client et se déconnecter (ou appeler
+> `POST /session/:id/cancel`) à l'expiration.
 
 ### `POST /session/:id/cancel`
 
-Annule l’invite **actuellement active** sur la session. Côté ACP, il s’agit d’une notification, pas d’une requête – l’agent accuse réception en résolvant la `prompt()` active avec `cancelled`.
+Annule le prompt **actuellement actif** sur la session. Côté ACP, il s'agit d'une notification, pas d'une requête — l'agent accuse réception en résolvant le `prompt()` actif avec `cancelled`.
 
 ```bash
 curl -X POST http://127.0.0.1:4170/session/$SID/cancel
 # → 204 No Content
 ```
 
-> **Contrat multi-invites :** cancel n’affecte que l’invite active. Les invites que le même client a précédemment publiées en POST et qui sont encore en attente derrière l’invite active continueront de s’exécuter. La mise en file d’attente multi-invites est un comportement introduit par le daemon (pas dans la spécification ACP) ; le contrat pour les invites en file d’attente est « elles continuent de s’exécuter sauf si vous annulez chacune d’elles, ou si vous tuez la session via une sortie de canal ».
+> **Contrat multi-prompts :** cancel n'affecte que le prompt actif. Tous les prompts que le même client a précédemment POSTés et qui sont encore en file d'attente derrière le prompt actif continueront à s'exécuter. La mise en file d'attente multi-prompts est un comportement introduit par le daemon (pas dans la spécification ACP) ; le contrat pour les prompts en file d'attente est "ils continuent à s'exécuter à moins que vous n'en annuliez chacun, ou que vous ne tuiez la session via la sortie du canal".
 
 ### `DELETE /session/:id`
 
-Ferme explicitement une session active. Force la fermeture même lorsque d’autres clients sont attachés – annule toute invite active, résout les autorisations en attente comme annulées, publie l’événement `session_closed`, ferme le EventBus et supprime la session des tables du daemon. Les sessions persistées sur disque NE sont PAS supprimées – elles peuvent être rechargées via `POST /session/:id/load`. Pré-vérification : `caps.features.session_close`.
+Ferme explicitement une session active. Force la fermeture même lorsque d'autres clients sont attachés — annule tout prompt actif, résout les autorisations en attente comme annulées, publie l'événement `session_closed`, ferme l'EventBus et supprime la session des maps du daemon. Les sessions persistées sur disque NE sont PAS supprimées — elles peuvent être rechargées via `POST /session/:id/load`. Pré-vérification `caps.features.session_close`.
 
 ```bash
 curl -X DELETE http://127.0.0.1:4170/session/$SID
 # → 204 No Content
 ```
 
-Idempotent : retourne `404` pour les sessions inconnues (même forme `SessionNotFoundError` que les autres routes).
+Idempotent : retourne `404` pour les sessions inconnues (même forme `SessionNotFoundError` que les autres routes).
 
-> **Événement `session_closed`.** Les abonnés SSE reçoivent un événement terminal `session_closed` avec `{ sessionId, reason: 'client_close', closedBy?: '<clientId>' }` avant la fin du flux. Les réducteurs SDK traitent cela de manière identique à `session_died` (met `alive: false`, efface `pendingPermissions`).
+> **Événement `session_closed`.** Les abonnés SSE reçoivent un événement terminal `session_closed` avec `{ sessionId, reason: 'client_close', closedBy?: '<clientId>' }` avant la fin du flux. Les réducteurs SDK traitent cela de manière identique à `session_died` (définit `alive: false`, efface `pendingPermissions`).
 
 ### `PATCH /session/:id/metadata`
 
-Met à jour les métadonnées modifiables d’une session. Ne prend actuellement en charge que `displayName`. Pré-vérification : `caps.features.session_metadata`.
+Met à jour les métadonnées de session modifiables. Prend actuellement en charge uniquement `displayName`. Pré-vérification `caps.features.session_metadata`.
 
-Requête :
+Requête :
 
 ```json
-{ "displayName": "Ma session d’investigation" }
+{ "displayName": "My Investigation Session" }
 ```
 
-| Champ        | Requis | Notes                                                                                |
-|--------------|--------|--------------------------------------------------------------------------------------|
-| `displayName`| non    | Chaîne, 256 caractères max. Une chaîne vide efface le nom. Omettre pour laisser inchangé. |
+| Champ         | Requis | Remarques                                                                         |
+| ------------- | ------ | --------------------------------------------------------------------------------- |
+| `displayName` | non    | Chaîne, 256 caractères max. Une chaîne vide efface le nom. Omettre pour laisser tel quel. |
 
-Réponse :
+Réponse :
 
 ```json
-{ "sessionId": "<uuid>", "displayName": "Ma session d’investigation" }
+{ "sessionId": "<uuid>", "displayName": "My Investigation Session" }
 ```
 
 Publie un événement `session_metadata_updated` sur le flux SSE de la session avec `{ sessionId, displayName }`.
 
 ### `POST /session/:id/heartbeat`
 
-Actualise la comptabilité de dernière vue du daemon pour cette session. Les adaptateurs longue durée (TUI/IDE/web) envoient ce signal à intervalles réguliers afin qu’une future politique de révocation (Wave 5 PR 24) puisse distinguer les clients morts des clients silencieux.
+Actualise la comptabilité de dernière visite du daemon pour cette session. Les adaptateurs longue durée (TUI/IDE/web) envoient ce ping à intervalles réguliers afin que la future politique de révocation (Wave 5 PR 24) puisse distinguer les clients morts des clients silencieux.
+
 En-têtes :
 
-| En-tête              | Requis | Remarques                                                                                                                                                                                                                                                                                                    |
-| -------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `X-Qwen-Client-Id`   | non    | Renvoie l'identifiant émis par le démon depuis `POST /session`. Les clients identifiés mettent également à jour leur horodatage par client ; les heartbeat anonymes ne font qu'incrémenter le watermark de session. Doit respecter la même forme `[A-Za-z0-9._:-]{1,128}` qu'ailleurs. |
+| En-tête             | Requis | Remarques                                                                                                                                                                                                                                   |
+| ------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `X-Qwen-Client-Id`  | non    | Renvoie l'id émis par le daemon depuis `POST /session`. Les clients identifiés mettent également à jour leur horodatage par client ; les heartbeats anonymes ne mettent à jour que le watermark par session. Doit respecter la même forme `[A-Za-z0-9._:-]{1,128}` qu'ailleurs. |
 
-Le corps de la requête est vide (`{}` convient — aucun champ n'est lu actuellement).
+Le corps de la requête est vide (`{}` convient — aucun champ n'est lu pour l'instant).
 
 Réponse :
 
@@ -1152,18 +1140,18 @@ Réponse :
 }
 ```
 
-`clientId` n'est renvoyé que lorsqu'un `X-Qwen-Client-Id` de confiance a été fourni. `lastSeenAt` correspond à l'epoch (ms) `Date.now()` côté démon que le bridge a stockée.
+`clientId` n'est renvoyé que lorsqu'un `X-Qwen-Client-Id` de confiance a été fourni. `lastSeenAt` est l'epoch `Date.now()` (ms) côté daemon que le bridge a stocké.
 
 Erreurs :
 
-- `400` — `{ code: 'invalid_client_id' }` lorsque l'en-tête est malformé (règle de format d'en-tête) ou lorsqu'il porte un `clientId` non enregistré pour cette session (le bridge lève `InvalidClientIdError` avant d'incrémenter tout horodatage).
+- `400` — `{ code: 'invalid_client_id' }` lorsque l'en-tête est mal formé (règle de forme de l'en-tête) ou lorsqu'il contient un `clientId` qui n'est pas enregistré pour cette session (le bridge lève `InvalidClientIdError` avant d'incrémenter tout horodatage).
 - `404` — session inconnue.
 
-Contrôle par capacité : pré-vérification `caps.features.client_heartbeat`. Les démons plus anciens renvoient `404` pour ce chemin.
+Passerelle de capacité : pré-vérification `caps.features.client_heartbeat`. Les daemons plus anciens retournent `404` pour ce chemin.
 
 ### `POST /session/:id/model`
 
-Changer le modèle actif **dans** le service de modèle actuellement lié à la session. Sérialisé via la file d'attente de changement de modèle par session.
+Change le modèle actif **dans** le service de modèle actuellement lié à la session. Sérialisé via la file d'attente de changement de modèle par session.
 
 (Pour changer le _service_ lui-même — Alibaba ModelStudio vs OpenRouter etc — passez `modelServiceId` sur `POST /session` pour une session fraîche. L'étape 1 n'a pas de route de changement de service en direct.)
 
@@ -1179,15 +1167,15 @@ Réponse :
 { "modelId": "qwen-staging" }
 ```
 
-En cas de succès, publie `model_switched` dans le flux SSE. En cas d'échec, publie `model_switch_failed` (afin que les abonnés passifs voient l'échec, pas seulement l'appelant). Entre en compétition avec la sortie du canal agent de sorte qu'un enfant bloqué ne puisse pas bloquer le gestionnaire HTTP.
+En cas de succès, publie `model_switched` sur le flux SSE. En cas d'échec, publie `model_switch_failed` (afin que les abonnés passifs voient l'échec, pas seulement l'appelant). Se bat contre la sortie du canal de l'agent afin qu'un enfant bloqué ne puisse pas bloquer le gestionnaire HTTP.
 
 ### `POST /session/:id/recap`
 
-Étiquette de capacité : `session_recap`. Bridge → ACP extMethod `qwen/control/session/recap`.
+Tag de capacité : `session_recap`. Bridge → ACP extMethod `qwen/control/session/recap`.
 
-Générer un résumé d'une phrase « où en êtes-vous » de la session. Englobe `generateSessionRecap` du noyau (`packages/core/src/services/sessionRecap.ts`), qui exécute une requête secondaire contre le modèle rapide avec les outils désactivés, `maxOutputTokens: 300`, et un format de sortie strict `<recap>...</recap>`. La requête secondaire lit l'historique de chat GeminiClient existant de la session et **ne l'ajoute pas**.
+Génère un résumé d'une phrase "où en étais-je" de la session. Encapsule `generateSessionRecap` du core (`packages/core/src/services/sessionRecap.ts`), qui exécute une requête secondaire contre le modèle rapide avec les outils désactivés, `maxOutputTokens: 300`, et un format de sortie strict `<recap>...</recap>`. La requête secondaire lit l'historique de chat GeminiClient existant de la session et ne l'**ajoute pas**.
 
-Le corps de la requête est ignoré (envoyez `{}` ou vide). Porte de mutation non stricte — la posture reflète `/session/:id/prompt` (l'appel coûte des tokens mais ne modifie aucun état). Aucun événement SSE n'est publié.
+Le corps de la requête est ignoré (envoyez `{}` ou vide). Porte de mutation non stricte — la posture reflète `/session/:id/prompt` (l'appel coûte des tokens mais ne mute aucun état). Aucun événement SSE n'est publié.
 
 Réponse (200) :
 
@@ -1201,30 +1189,31 @@ Réponse (200) :
 `recap` est `null` (un 200 normal, pas une erreur) lorsque :
 
 - la session a moins de deux tours de dialogue,
-- la requête secondaire n'a renvoyé aucune charge utile `<recap>...</recap>` extractible,
-- ou une erreur de modèle sous-jacente s'est produite (l'assistant noyau est au mieux et ne lève jamais).
+- la requête secondaire n'a retourné aucune charge utile `<recap>...</recap>` extractible,
+- ou toute erreur de modèle sous-jacente s'est produite (l'assistant core est au mieux et ne lève jamais d'exception).
 
 Erreurs :
 
-- `400 {code: 'invalid_client_id'}` — en-tête `X-Qwen-Client-Id` malformé.
+- `400 {code: 'invalid_client_id'}` — en-tête `X-Qwen-Client-Id` mal formé.
 - `404` — session inconnue.
 
-Annulation : **aucune dans la v1**. La route n'écoute pas la déconnexion du client HTTP, aucun `AbortSignal` n'est transmis au bridge, et l'enfant ACP exécute la requête secondaire jusqu'à son terme, que l'appelant soit déconnecté ou non. Les seuls plafonds sont le délai d'attente de sécurité du bridge de 60s (`SESSION_RECAP_TIMEOUT_MS`) et la course à la fermeture du transport contre la mort du canal ACP. Cela est acceptable car le résumé est court (tentative unique, `maxOutputTokens: 300`, ~1–5s typique) ; une méthode ext d'annulation basée sur l'ID de requête pourrait implémenter une annulation complète de bout en bout dans une future version si le coût en bande passante le justifie un jour.
+Annulation : **aucune dans v1**. La route n'écoute pas la déconnexion du client HTTP, aucun `AbortSignal` n'est branché dans le bridge, et l'enfant ACP exécute la requête secondaire jusqu'à son terme, que l'appelant soit déconnecté ou non. Les seuls plafonds sont le délai d'attente de 60 s du bridge (`SESSION_RECAP_TIMEOUT_MS`) et la course à la fermeture du transport contre la mort du canal ACP. Cela est acceptable car le recap est court (tentative unique, `maxOutputTokens: 300`, ~1 à 5 s typique) ; une ext-method d'annulation basée sur l'ID de requête pourrait brancher une annulation complète de bout en bout dans une future version si le coût en bande passante le justifie un jour.
 
-### Mutation : approbation, outils, initialisation, redémarrage MCP
+### Mutation : approbation, outils, init, redémarrage MCP
 
-Le problème [#4175](https://github.com/QwenLM/qwen-code/issues/4175) Wave 4 PR 17 ajoute quatre routes de contrôle de mutation qui permettent aux clients distants de modifier la posture d'exécution sans toucher à la CLI de l'hôte du démon. Les quatre :
+Problème [#4175](https://github.com/QwenLM/qwen-code/issues/4175) Wave 4 PR 17 ajoute quatre routes de contrôle de mutation qui permettent aux clients distants de modifier la posture d'exécution sans toucher au CLI de l'hôte du daemon. Les quatre :
 
-- Sont contrôlées par la porte de mutation **stricte** du PR 15. Un démon configuré sans jeton Bearer les rejette avec `401 {code: 'token_required'}`. Configurez `--token` (ou `QWEN_SERVER_TOKEN`) avant d'opter.
-- Acceptent et estampillent l'en-tête `X-Qwen-Client-Id` (chaîne d'audit PR 7). Lorsque l'en-tête porte un identifiant de confiance, le démon émet `originatorClientId` sur l'événement SSE correspondant afin que les interfaces utilisateur inter-clients puissent supprimer les échos de leurs propres mutations.
-- Pré-vérifient chaque capacité par étiquette avant d'exposer la fonctionnalité. Les démons plus anciens renvoient `404` pour la route.
+- Sont contrôlées par la porte de mutation **stricte** du PR 15. Un daemon configuré sans jeton bearer les rejette avec `401 {code: 'token_required'}`. Configurez `--token` (ou `QWEN_SERVER_TOKEN`) avant de les activer.
+- Acceptent et estampillent l'en-tête `X-Qwen-Client-Id` (chaîne d'audit PR 7). Lorsque l'en-tête porte un ID de confiance, le daemon émet `originatorClientId` sur l'événement SSE correspondant afin que les UIs multi-clients puissent supprimer les échos de leurs propres mutations.
+- Effectuent une pré-vérification de la capacité de chaque tag avant d'exposer la fonctionnalité. Les daemons plus anciens retournent `404` pour la route.
 
-Trois des quatre routes (`tools/:name/enable`, `init`, `mcp/:server/restart`) émettent des événements **au niveau de l'espace de travail** : chaque bus SSE de session active reçoit l'événement, quelle que soit la session attachée lors du déclenchement de la mutation. `approval-mode` émet un événement **au niveau de la session** car le changement est local à la `Config` d'une seule session.
+Trois des quatre routes (`tools/:name/enable`, `init`, `mcp/:server/restart`) émettent des événements **au niveau du workspace** : chaque bus SSE de session active reçoit l'événement, quelle que soit la session attachée lorsque la mutation a été déclenchée. `approval-mode` émet un événement **au niveau de la session** car le changement est local au `Config` d'une seule session.
+
 #### `POST /session/:id/approval-mode`
 
-Balisage de capacité : `session_approval_mode_control`. Pont → extension ACP `qwen/control/session/approval_mode`.
+Tag de capacité : `session_approval_mode_control`. Bridge → ACP extMethod `qwen/control/session/approval_mode`.
 
-Modifier le mode d'approbation d'une session en cours. Le nouveau mode est immédiatement appliqué dans la `Config` par session de l'enfant ACP. Les paramètres ne sont PAS écrits sur le disque par défaut — passez `persist: true` pour également écrire `tools.approvalMode` dans les paramètres de l'espace de travail.
+Change le mode d'approbation d'une session active. Le nouveau mode atterrit immédiatement dans le `Config` par session de l'enfant ACP. Les paramètres NE sont PAS écrits sur le disque par défaut — passez `persist: true` pour également écrire `tools.approvalMode` dans les paramètres du workspace.
 
 Requête :
 
@@ -1232,7 +1221,7 @@ Requête :
 { "mode": "auto-edit", "persist": false }
 ```
 
-`mode` doit être l'un des suivants : `'plan' | 'default' | 'auto-edit' | 'auto' | 'yolo'` (correspond à l'énumération `ApprovalMode` du cœur ; le SDK exporte `DAEMON_APPROVAL_MODES` pour la validation à l'exécution). `persist` par défaut à `false`.
+`mode` doit être l'un de `'plan' | 'default' | 'auto-edit' | 'auto' | 'yolo'` (miroir de l'énumération `ApprovalMode` du core ; le SDK exporte `DAEMON_APPROVAL_MODES` pour la validation à l'exécution). `persist` par défaut à `false`.
 
 Réponse (200) :
 
@@ -1248,23 +1237,23 @@ Réponse (200) :
 Erreurs :
 
 - `400 {code: 'invalid_approval_mode', allowed: [...]}` — littéral de mode inconnu.
-- `400 {code: 'invalid_persist_flag'}` — `persist` n'est pas un booléen.
-- `403 {code: 'trust_gate', errorKind: 'auth_env_error'}` — le mode demandé nécessite un dossier de confiance (les modes privilégiés dans des espaces de travail non fiables sont rejetés par `Config.setApprovalMode` du cœur).
+- `400 {code: 'invalid_persist_flag'}` — `persist` non booléen.
+- `403 {code: 'trust_gate', errorKind: 'auth_env_error'}` — le mode demandé nécessite un dossier de confiance (les modes privilégiés dans les workspaces non fiables sont rejetés par `Config.setApprovalMode` du core).
 - `404` — session inconnue.
 
-Événement SSE (portée session) : `approval_mode_changed` avec `{sessionId, previous, next, persisted, originatorClientId?}`.
+Événement SSE (au niveau de la session) : `approval_mode_changed` avec `{sessionId, previous, next, persisted, originatorClientId?}`.
 
 #### `POST /workspace/tools/:name/enable`
 
-Balisage de capacité : `workspace_tool_toggle`. Pur fichier E/S — pas d'aller-retour ACP.
+Tag de capacité : `workspace_tool_toggle`. Pure E/S fichier — pas d'aller-retour ACP.
 
-Activer ou désactiver un nom d'outil dans la liste `tools.disabled` des paramètres de l'espace de travail. Les outils listés ici ne sont **pas enregistrés** du tout (distinct de `permissions.deny`, qui garde l'outil enregistré et rejette l'appel). Les outils intégrés et les outils découverts par MCP transitent par `ToolRegistry.registerTool`, qui consulte l'ensemble désactivé.
+Bascule un nom d'outil dans la liste des paramètres `tools.disabled` du workspace. Les outils qui y sont listés ne sont **pas enregistrés** du tout (distinct de `permissions.deny`, qui maintient l'outil enregistré et rejette l'invocation). Les outils intégrés et les outils découverts via MCP transitent par `ToolRegistry.registerTool`, qui consulte l'ensemble désactivé.
 
-> ⚠️ **Les noms doivent correspondre exactement à l'identifiant exposé par le registre.** Aucune résolution d'alias n'est effectuée — la route stocke exactement la chaîne du paramètre de chemin dans `tools.disabled`, et le prochain enfant ACP la compare à `tool.name` au moment de l'enregistrement. Les outils intégrés utilisent leur nom de registre canonique (forme verbale en snake_case) : `run_shell_command`, `read_file`, `write_file`, `list_directory`, `glob`, `grep_search`, `web_fetch`, etc. — PAS les étiquettes d'affichage (`Shell`, `Read`, `Write`) que la CLI fait apparaître. Les outils découverts par MCP utilisent la forme qualifiée `mcp__<server>__<name>` (qui est également la forme diffusée par les événements `tool_toggled` et listée par `GET /workspace/mcp`). Désactiver `Bash` n'empêchera PAS `run_shell_command` de s'enregistrer lors de la prochaine session.
+> ⚠️ **Les noms doivent correspondre exactement à l'identifiant exposé du registre.** Aucune résolution d'alias n'a lieu — la route stocke la chaîne du paramètre de chemin dans `tools.disabled`, et le prochain enfant ACP la compare à `tool.name` au moment de l'enregistrement. Les outils intégrés utilisent leur nom de registre canonique (forme verbale en snake_case) : `run_shell_command`, `read_file`, `write_file`, `list_directory`, `glob`, `grep_search`, `web_fetch`, etc. — PAS les libellés d'affichage (`Shell`, `Read`, `Write`) que le CLI affiche. Les outils découverts via MCP utilisent la forme qualifiée `mcp__<server>__<name>` (qui est également la forme que les événements `tool_toggled` diffusent et que `GET /workspace/mcp` liste). Désactiver `Bash` n'EMPÊCHERA PAS `run_shell_command` de s'enregistrer lors de la prochaine session.
 
-Les enfants ACP en direct conservent les outils déjà enregistrés — la bascule prend effet lors du **prochain** démarrage d'un enfant ACP. Combinez avec `POST /workspace/mcp/:server/restart` (pour les outils provenant de MCP) ou la création d'une nouvelle session pour rendre le changement effectif dans le démon actuel.
+Les enfants ACP en direct conservent les outils déjà enregistrés — le basculement prend effet lors du **prochain** spawn d'enfant ACP. Combinez avec `POST /workspace/mcp/:server/restart` (pour les outils provenant de MCP) ou la création d'une nouvelle session pour rendre le changement effectif dans le daemon actuel.
 
-Les noms d'outils inconnus sont acceptés : pré-désactiver un outil MCP non encore installé est un cas d'usage légitime.
+Les noms d'outils inconnus sont acceptés : pré-désactiver un outil MCP pas encore installé est un cas d'utilisation légitime.
 
 Requête :
 
@@ -1280,18 +1269,18 @@ Réponse (200) :
 
 Erreurs :
 
-- `400 {code: 'invalid_tool_name'}` — paramètre de chemin vide, ou paramètre de chemin dépassant la limite de 256 caractères.
+- `400 {code: 'invalid_tool_name'}` — paramètre de chemin vide, ou paramètre de chemin dépasse la limite de 256 caractères.
 - `400 {code: 'invalid_enabled_flag'}` — `enabled` manquant ou non booléen.
 
-Événement SSE (portée espace de travail) : `tool_toggled` avec `{toolName, enabled, originatorClientId?}`.
+Événement SSE (au niveau du workspace) : `tool_toggled` avec `{toolName, enabled, originatorClientId?}`.
 
 #### `POST /workspace/init`
 
-Balisage de capacité : `workspace_init`. Pur fichier E/S — pas d'aller-retour ACP, **aucun appel LLM**.
+Tag de capacité : `workspace_init`. Pure E/S fichier — pas d'aller-retour ACP, **aucune invocation LLM**.
 
-Générer un `QWEN.md` vide (ou ce que `getCurrentGeminiMdFilename()` retourne avec les surcharges `--memory-file-name`) à la racine de l'espace de travail lié au démon. Mécanique uniquement — pour un remplissage piloté par l'IA, enchaînez avec `POST /session/:id/prompt`.
+Échafaude un `QWEN.md` vide (ou ce que `getCurrentGeminiMdFilename()` retourne sous `--memory-file-name`) à la racine du workspace lié du daemon. Mécanique uniquement — pour un remplissage de contenu par IA, suivez avec `POST /session/:id/prompt`.
 
-Par défaut, refuse d'écraser lorsque le fichier cible existe avec un contenu non blanc. Les fichiers contenant uniquement des espaces sont traités comme absents (correspond à la commande `/init` locale).
+Par défaut, refuse d'écraser lorsque le fichier cible existe avec un contenu non vide. Les fichiers contenant uniquement des espaces sont traités comme absents (correspond à la commande slash locale `/init`).
 
 Requête :
 
@@ -1305,21 +1294,22 @@ Réponse (200) :
 { "path": "/work/bound/QWEN.md", "action": "created" }
 ```
 
-`action` vaut `'created'` pour les créations vierges, `'noop'` lorsqu'un fichier existant ne contenant que des espaces a été laissé intact (aucune écriture effectuée), et `'overwrote'` lorsque `force: true` a remplacé un contenu non vide. L'événement SSE `workspace_initialized` reflète l'action de la réponse — les observateurs peuvent filtrer avec `action !== 'noop'` pour réagir uniquement aux changements réels sur le disque.
+`action` est `'created'` pour les créations fraîches, `'noop'` lorsqu'un fichier existant contenant uniquement des espaces a été laissé intact (aucune écriture effectuée), et `'overwrote'` lorsque `force: true` a remplacé un contenu non vide. L'événement SSE `workspace_initialized` reflète l'action de la réponse — les observateurs peuvent filtrer sur `action !== 'noop'` pour réagir uniquement aux modifications réelles sur le disque.
 
 Erreurs :
 
-- `400 {code: 'invalid_force_flag'}` — `force` n'est pas un booléen.
-- `409 {code: 'workspace_init_conflict', path, existingSize}` — le fichier existe avec un contenu non blanc et `force` est omis/faux. Le corps contient le chemin absolu et la taille (octets) afin que les clients SDK puissent afficher une invite « écraser N octets ? » sans avoir à refaire un `stat`.
+- `400 {code: 'invalid_force_flag'}` — `force` non booléen.
+- `409 {code: 'workspace_init_conflict', path, existingSize}` — le fichier existe avec un contenu non vide et `force` est omis/faux. Le corps contient le chemin absolu et la taille (octets) afin que les clients SDK puissent afficher une invite "écraser N octets ?" sans refaire un stat.
 
-Événement SSE (portée espace de travail) : `workspace_initialized` avec `{path, action, originatorClientId?}`.
+Événement SSE (au niveau du workspace) : `workspace_initialized` avec `{path, action, originatorClientId?}`.
 
 #### `POST /workspace/mcp/:server/restart`
 
-Balisage de capacité : `workspace_mcp_restart`. Pont → extension ACP `qwen/control/workspace/mcp/restart`.
+Tag de capacité : `workspace_mcp_restart`. Bridge → ACP extMethod `qwen/control/workspace/mcp/restart`.
 
-Redémarrer un serveur MCP configuré via `McpClientManager.discoverMcpToolsForServer` de l'enfant ACP (déconnexion + reconnexion + redécouverte). Vérifie préalablement l'instantané du budget en direct de la comptabilité PR 14 v1, de sorte qu'un redémarrage sur un espace de travail saturé en budget retourne un refus soft plutôt que de déclencher une cascade `BudgetExhaustedError`.
-Le corps de la requête est vide (`{}`). Le paramètre de chemin est le nom du serveur encodé en URL tel qu'il apparaît dans la configuration `mcpServers`.
+Redémarre un serveur MCP configuré via `McpClientManager.discoverMcpToolsForServer` de l'enfant ACP (déconnexion + reconnexion + redécouverte). Pré-vérifie l'instantané du budget actif de la comptabilité v1 du PR 14, de sorte qu'un redémarrage sur un workspace saturé en budget retourne un refus doux plutôt que de déclencher une cascade `BudgetExhaustedError`.
+
+Le corps de la requête est vide (`{}`). Le paramètre de chemin est le nom du serveur encodé dans l'URL tel qu'il apparaît dans la configuration `mcpServers`.
 
 Réponse (200) — union discriminée sur `restarted` :
 
@@ -1336,40 +1326,40 @@ Réponse (200) — union discriminée sur `restarted` :
 }
 ```
 
-Raisons de saut conditionnel (toutes retournent 200) :
+Raisons de saut doux (toutes retournent 200) :
 
-| `reason`                | Signification                                                                                                                                                                               |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `'in_flight'`           | Une autre découverte/redémarrage pour ce serveur est déjà en cours. La route retourne immédiatement plutôt que d'attendre la promesse originale. L'appelant doit réessayer après un court délai. |
-| `'disabled'`            | Le serveur est configuré mais listé dans `excludedMcpServers`. Réactivez-le avant le redémarrage.                                                                                             |
-| `'budget_would_exceed'` | Le daemon est en mode `--mcp-budget-mode=enforce`, le serveur cible n'est pas actuellement dans `reservedSlots`, et le total en direct a atteint `clientBudget`. L'appelant doit d'abord libérer un emplacement. |
+| `reason`                | Signification                                                                                                                                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'in_flight'`           | Une autre découverte/redémarrage pour ce serveur est déjà en cours. La route retourne immédiatement plutôt que d'attendre la promesse d'origine. L'appelant doit réessayer après un court délai. |
+| `'disabled'`            | Le serveur est configuré mais listé dans `excludedMcpServers`. Réactivez-le avant de redémarrer.                                                                                               |
+| `'budget_would_exceed'` | Le daemon est en `--mcp-budget-mode=enforce`, le serveur cible n'est pas actuellement dans `reservedSlots`, et le total actif a atteint `clientBudget`. L'appelant doit d'abord libérer un slot. |
 
 Erreurs (non-2xx) :
 
 - `400 {code: 'invalid_server_name'}` — paramètre de chemin vide.
-- `404` — nom du serveur absent de la configuration `mcpServers`, ou aucun canal ACP actif n'existe (le redémarrage nécessite intrinsèquement une instance `McpClientManager` active).
+- `404` — nom de serveur non présent dans la configuration `mcpServers`, ou aucun canal ACP actif n'existe (le redémarrage nécessite intrinsèquement une instance `McpClientManager` active).
 - `500` — erreur interne (par exemple, `ToolRegistry` non initialisé).
 
-Événements SSE (scope espace de travail) : `mcp_server_restarted` avec `{serverName, durationMs, originatorClientId?}` en cas de succès ; `mcp_server_restart_refused` avec `{serverName, reason, originatorClientId?}` en cas de saut conditionnel.
+Événements SSE (au niveau du workspace) : `mcp_server_restarted` avec `{serverName, durationMs, originatorClientId?}` en cas de succès ; `mcp_server_restart_refused` avec `{serverName, reason, originatorClientId?}` en cas de saut doux.
 
 ### `GET /session/:id/events` (SSE)
 
-S'abonner au flux d'événements de la session.
+S'abonne au flux d'événements de la session.
 
 En-têtes :
 
 ```
 Accept: text/event-stream
-Last-Event-ID: 42        ← optional, replays from after id 42
+Last-Event-ID: 42        ← optionnel, rejoue à partir de l'ID 42
 ```
 
 Paramètres de requête :
 
-| Paramètre   | Requis | Remarques                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ----------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `maxQueued` | non    | Limite de backlog en direct par abonné. Plage [16, 2048], défaut 256. Les trames de relecture forcées lors de l'abonnement sont exemptées de la limite ; ce qui la consomme réellement, ce sont les événements en direct qui arrivent pendant que l'abonné draine encore une grande relecture `Last-Event-ID: 0`. Augmentez pour les reconnexions à froid afin que la queue en direct ne déclenche pas l'avertissement/expulsion de client lent avant que le consommateur ne rattrape. Les valeurs hors plage / non décimales / présentes mais vides retournent `400 invalid_max_queued` avant l'ouverture de la liaison SSE. Pré-vol `caps.features.slow_client_warning` — les anciens daemons ignorent silencieusement le paramètre. |
+| Param       | Requis | Remarques                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `maxQueued` | non    | Limite **d'arriéré actif** par abonné. Plage `[16, 2048]`, par défaut 256. Les trames de relecture poussées de force au moment de l'abonnement sont exemptées de la limite ; ce qui la consomme réellement, ce sont les événements actifs qui arrivent pendant que l'abonné vide encore une grande relecture `Last-Event-ID: 0`. Augmentez pour les reconnexions à froid afin que la queue active ne déclenche pas l'avertissement/expulsion du client lent avant que le consommateur ne rattrape son retard. Les valeurs hors plage / non décimales / présentes mais vides retournent `400 invalid_max_queued` avant l'ouverture de la poignée de main SSE. Pré-vérification `caps.features.slow_client_warning` — les daemons anciens ignorent silencieusement le paramètre. |
 
-Format des trames. La ligne `data:` est l'**enveloppe complète de l'événement**, sérialisée en JSON sur une seule ligne — `{id?, v, type, data, originatorClientId?}`. La charge utile spécifique à l'ACP (arguments `sessionUpdate`, `requestPermission`, etc.) se trouve sous le champ `data` de l'enveloppe ; le `type` de l'enveloppe correspond à la ligne SSE `event:`.
+Format de trame. La ligne `data:` est l'**enveloppe complète de l'événement**, convertie en JSON sur une seule ligne — `{id?, v, type, data, originatorClientId?}`. La charge utile spécifique à ACP (`sessionUpdate`, arguments `requestPermission`, etc.) se trouve sous le champ `data` de l'enveloppe ; le `type` de l'enveloppe lui-même correspond à la ligne SSE `event:`.
 
 ```
 id: 7
@@ -1380,55 +1370,56 @@ id: 8
 event: permission_request
 data: {"id":8,"v":1,"type":"permission_request","data":{"requestId":"<uuid>","sessionId":"<sid>","toolCall":{...},"options":[...]}}
 
-: heartbeat              ← every 15s, no payload
+: heartbeat              ← toutes les 15s, pas de charge utile
 
-event: client_evicted    ← terminal frame, no id (synthetic)
+event: client_evicted    ← trame terminale, pas d'id (synthétique)
 data: {"v":1,"type":"client_evicted","data":{"reason":"queue_overflow","droppedAfter":42}}
 ```
 
-Les lignes `id:` / `event:` au niveau SSE dupliquent `envelope.id` / `envelope.type` pour la compatibilité EventSource. Les consommateurs bruts `fetch` (le `parseSseStream` du SDK) lisent tout depuis l'enveloppe JSON et ignorent les lignes préliminaires SSE.
-| Type d'événement            | Déclencheur                                                                                                                                                                                                                                                                                                                  |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `session_update`            | Toute notification ACP `sessionUpdate` (morceaux LLM, appels d'outils, utilisation)                                                                                                                                                                                                                                           |
-| `permission_request`        | L'agent a demandé l'approbation d'un outil                                                                                                                                                                                                                                                                                    |
-| `permission_resolved`       | Un client a voté sur une permission via `POST /permission/:requestId`                                                                                                                                                                                                                                                          |
-| `permission_partial_vote`   | (consensus uniquement) Un vote a été enregistré mais le quorum n'est pas encore atteint. Transporte `{requestId, sessionId, votesReceived, votesNeeded, quorum, optionTallies}`. Pré-vol `caps.features.permission_mediation`.                                                                                                   |
-| `permission_forbidden`      | Un vote a été rejeté par la politique active (non-concordance `designated`, `local-only` non-loopback, ou électeur `consensus` non dans l'instantané). Transporte `{requestId, sessionId, clientId?, reason}`. Pré-vol `caps.features.permission_mediation`.                                                                     |
-| `model_switched`            | `POST /session/:id/model` réussi                                                                                                                                                                                                                                                                                              |
-| `model_switch_failed`       | `POST /session/:id/model` rejeté                                                                                                                                                                                                                                                                                              |
-| `session_died`              | Le processus enfant de l'agent a planté de manière inattendue. **Terminal : le flux SSE se ferme après cette trame ; la session a disparu de `byId`.** Les abonnés doivent se reconnecter via `POST /session` pour en générer une nouvelle.                                                                                     |
-| `slow_client_warning`       | Local à l'abonné : file d'attente ≥ 75% pleine. **Non-terminal** — le flux continue ; l'avertissement est un préavis avant expulsion. Transporte `{queueSize, maxQueued, lastEventId}`. Se déclenche UNE FOIS par épisode de débordement ; se réarme après que la file d'attente descend en dessous de 37,5%. Pas de `id` (synthétique). Pré-vol `caps.features.slow_client_warning`. |
-| `client_evicted`            | Local à l'abonné : débordement de file d'attente. **Terminal : le flux SSE se ferme après cette trame** (pas de `id` — synthétique). Les autres abonnés sur la même session continuent.                                                                                                                                        |
-| `stream_error`              | Erreur côté démon lors de la distribution. **Terminal : le flux SSE se ferme après cette trame** (pas de `id` — synthétique).                                                                                                                                                                                                |
+Les lignes `id:` / `event:` au niveau SSE dupliquent `envelope.id` / `envelope.type` pour la compatibilité EventSource. Les consommateurs `fetch` bruts (le `parseSseStream` du SDK) lisent tout depuis l'enveloppe JSON et ignorent les lignes préambule SSE.
 
+| Type d'événement            | Déclencheur                                                                                                                                                                                                                                                                                                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `session_update`            | Toute notification `sessionUpdate` de l'ACP (morceaux LLM, appels d'outils, utilisation)                                                                                                                                                                                                                             |
+| `permission_request`        | L'agent a demandé une approbation d'outil                                                                                                                                                                                                                                                                             |
+| `permission_resolved`       | Un client a voté sur une permission via `POST /permission/:requestId`                                                                                                                                                                                                                                                 |
+| `permission_partial_vote`   | (consensus uniquement) Un vote a été enregistré mais le quorum n'est pas encore atteint. Porte `{requestId, sessionId, votesReceived, votesNeeded, quorum, optionTallies}`. Pré-vérification `caps.features.permission_mediation`.                                                                                    |
+| `permission_forbidden`      | Un vote a été rejeté par la politique active (`designated` non correspondant, `local-only` non boucle locale, ou `consensus` votant non dans l'instantané). Porte `{requestId, sessionId, clientId?, reason}`. Pré-vérification `caps.features.permission_mediation`.                                                  |
+| `model_switched`            | `POST /session/:id/model` a réussi                                                                                                                                                                                                                                                                                    |
+| `model_switch_failed`       | `POST /session/:id/model` a été rejeté                                                                                                                                                                                                                                                                                |
+| `session_died`              | L'agent enfant a planté de manière inattendue. **Terminal : le flux SSE se ferme après cette trame ; la session est supprimée de `byId`.** Les abonnés doivent se reconnecter via `POST /session` pour en créer une nouvelle.                                                                                          |
+| `slow_client_warning`       | Local à l'abonné : file d'attente ≥ 75 % pleine. **Non terminal** — le flux continue ; l'avertissement est un message d'alerte avant expulsion. Porte `{queueSize, maxQueued, lastEventId}`. Déclenché UNE FOIS par épisode de débordement ; se réarme après que la file descend en dessous de 37,5 %. Pas d'`id` (synthétique). Pré-vérification `caps.features.slow_client_warning`. |
+| `client_evicted`            | Local à l'abonné : débordement de file d'attente. **Terminal : le flux SSE se ferme après cette trame** (pas d'`id` — synthétique). Les autres abonnés sur la même session continuent.                                                                                                                                 |
+| `stream_error`              | Erreur côté daemon lors de la diffusion. **Terminal : le flux SSE se ferme après cette trame** (pas d'`id` — synthétique).                                                                                                                                                                                            |
 Sémantique de reconnexion :
 
-- Envoyez `Last-Event-ID: <n>` pour rejouer les événements avec `id > n` depuis l'anneau par session (profondeur par défaut **8000**, modifiable via `qwen serve --event-ring-size <n>`)
-- **Détection d'écart (côté client) :** si `<n>` est antérieur au plus ancien événement encore présent dans l'anneau (par exemple, vous vous reconnectez avec `Last-Event-ID: 50` mais l'anneau contient maintenant 200–1199), le démon rejoue depuis le plus ancien événement disponible sans lever d'alerte. Comparez le `id` du premier événement rejoué avec `n + 1` ; toute différence correspond à la taille de la fenêtre perdue. L'étape 2 injectera une trame synthétique explicite `stream_gap` côté démon ; à l'étape 1, la détection est la responsabilité du client.
-- Les IDs sont monotones par session, commençant à 1
-- Les trames synthétiques (`client_evicted`, `slow_client_warning`, `stream_error`) omettent intentionnellement `id` afin de ne pas brûler un slot de séquence pour les autres abonnés
+- Envoyez `Last-Event-ID: <n>` pour rejouer les événements avec `id > n` depuis le ring par session (profondeur par défaut **8000**, réglable via `qwen serve --event-ring-size <n>`)
+- **Détection d'écart (côté client) :** si `<n>` est antérieur au plus ancien événement encore dans le ring (par exemple, vous vous reconnectez avec `Last-Event-ID: 50` mais le ring contient maintenant 200–1199), le démon rejoue à partir du plus ancien événement disponible sans lever d'erreur. Comparez le `id` du premier événement rejoué à `n + 1` ; toute différence correspond à la taille de la fenêtre perdue. L'étape 2 injectera une trame synthétique explicite `stream_gap` côté démon ; à l'étape 1, la détection est de la responsabilité du client.
+- Les ID sont monotones par session, commençant à 1
+- Les trames synthétiques (`client_evicted`, `slow_client_warning`, `stream_error`) omettent intentionnellement `id` afin de ne pas consommer un créneau de séquence pour les autres abonnés
+
 Contre-pression :
 
-- Par défaut, la file d'attente par abonné est de `maxQueued: 256` éléments en direct (les trames de relecture lors de la reconnexion ne sont pas soumises à cette limite). Remplacez via `?maxQueued=N` (plage `[16, 2048]`) sur la requête SSE.
-- Lorsque la file d'attente d'un abonné dépasse 75 % de sa capacité, le bus envoie de force une trame synthétique `slow_client_warning` à cet abonné (une fois par épisode de débordement, réarmée après une vidange en dessous de 37,5 %). Le flux reste ouvert — l'avertissement est un signal pour que le client puisse vider plus vite ou se détacher et se reconnecter proprement.
-- Si la file d'attente dépasse réellement l'avertissement, le bus émet la trame terminale `client_evicted` et ferme l'abonnement.
+- La file d'attente par abonné est par défaut `maxQueued: 256` éléments en direct (les trames de rejeu pendant la reconnexion contournent la limite). Remplacez via `?maxQueued=N` (intervalle `[16, 2048]`) sur la requête SSE.
+- Lorsque la file d'un abonné dépasse 75% de remplissage, le bus pousse de force une trame synthétique `slow_client_warning` vers cet abonné (une fois par épisode de débordement ; réarmée après vidage en dessous de 37,5%). Le flux reste ouvert — l'avertissement est une notification pour que le client puisse vidanger plus rapidement ou se détacher et se reconnecter proprement.
+- Si la file déborde réellement après l'avertissement, le bus émet la trame terminale `client_evicted` et ferme l'abonnement.
 
 ### `POST /permission/:requestId`
 
-Votez sur une `permission_request` en attente. La **politique de médiation** active décide qui gagne :
+Voter sur une `permission_request` en attente. La **politique de médiation** active décide qui gagne :
 
-| Politique                     | Comportement                                                                                                                                                                                                                                                                            |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `first-responder` (par défaut) | Tout électeur validé gagne ; les suivants reçoivent `404`. Base de référence pré-F3.                                                                                                                                                                                                    |
-| `designated`                   | Seul l'initiateur de l'invite (`originatorClientId`) décide ; les non-initiateurs reçoivent `403 permission_forbidden / designated_mismatch`. Retour à first-responder pour les invites anonymes.                                                                                       |
-| `consensus`                    | Les électeurs N parmi M doivent être d'accord (par défaut `N = floor(M/2) + 1`, remplacez via `policy.consensusQuorum`). La première option qui atteint `N` gagne. Les votes non résolus reçoivent `200` + les trames SSE `permission_partial_vote`.                                     |
-| `local-only`                   | Seuls les électeurs en boucle locale décident ; les appelants distants reçoivent `403 permission_forbidden / remote_not_allowed`.                                                                                                                                                        |
+| Politique                    | Comportement                                                                                                                                                                                                                                                         |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `first-responder` (défaut)   | Tout votant validé gagne ; les votants suivants reçoivent `404`. Base de référence pré-F3.                                                                                                                                                                            |
+| `designated`                 | Seul l'initiateur de l'invite (`originatorClientId`) décide ; les non-initateurs reçoivent `403 permission_forbidden / designated_mismatch`. Retour à first-responder pour les invites anonymes.                                                                     |
+| `consensus`                  | N votants sur M doivent être d'accord (par défaut `N = floor(M/2) + 1`, remplacé via `policy.consensusQuorum`). La première option atteignant `N` gagne. Les votes non résolus reçoivent `200` + des trames SSE `permission_partial_vote`.                             |
+| `local-only`                 | Seuls les votants en boucle locale décident ; les appelants distants reçoivent `403 permission_forbidden / remote_not_allowed`.                                                                                                                                      |
 
-La politique active est configurée dans `settings.json` sous `policy.permissionStrategy` et exposée sur `/capabilities` à `body.policy.permission`. Pré-vérifiez `caps.features.permission_mediation` (avec `modes: [...]`) pour l'ensemble supporté par la build.
+La politique active est configurée dans `settings.json` sous `policy.permissionStrategy` et exposée sur `/capabilities` à `body.policy.permission`. Pré-vol `caps.features.permission_mediation` (avec `modes: [...]`) pour l'ensemble pris en charge par la build.
 
-> **F3 (#4175) : coordination des permissions multi-client.** F3 a ajouté les quatre politiques ci-dessus. Les daemons pré-F3 hardcodaient first-responder ; la forme du fil reste bit pour bit inchangée lorsque la politique configurée est `first-responder`. Les nouveaux événements (`permission_partial_vote`, `permission_forbidden`) sont additifs — les anciens SDK les voient comme `unrecognized_known_event` et les ignorent gracieusement.
+> **F3 (#4175) : coordination des permissions multi-client.** F3 a ajouté les quatre politiques ci-dessus. Les démons pré-F3 avaient first-responder en dur ; le format filaire reste inchangé bit pour bit lorsque la politique configurée est `first-responder`. Les nouveaux événements (`permission_partial_vote`, `permission_forbidden`) sont additifs — les anciens SDK les voient comme `unrecognized_known_event` et les ignorent gracieusement.
 
-> **Délai d'expiration des permissions (5 minutes par défaut).** Une `permission_request` reste en attente jusqu'à : (a) qu'un client vote ici, (b) que `POST /session/:id/cancel` soit déclenché, (c) que le client HTTP pilotant l'invite se déconnecte (annulation en cours d'invite résout les permissions en attente comme `cancelled`), (d) que la session soit tuée, (e) que le daemon s'arrête, **ou (f) que le délai d'expiration de permission par session soit déclenché** (`DEFAULT_PERMISSION_TIMEOUT_MS`, 5 minutes). Lors du déclenchement du délai, le `requestPermission` de l'agent se résout comme `{outcome: 'cancelled'}`, l'anneau d'audit enregistre une entrée `permission.timeout`, la sortie d'erreur du daemon émet un breadcrumb d'une ligne, et le bus SSE diffuse la trame standard `permission_resolved` annulée afin que les abonnés nettoient. Le délai est configurable via `BridgeOptions.permissionResponseTimeoutMs` ; les appelants sans tête exécutant des invites longues peuvent vouloir l'étendre.
+> **Délai d'expiration des permissions (5 minutes par défaut).** Une `permission_request` reste en attente jusqu'à ce que : (a) un client vote ici, (b) `POST /session/:id/cancel` soit déclenché, (c) le client HTTP conduisant l'invite se déconnecte (l'annulation en cours d'invite résout les permissions en attente comme `cancelled`), (d) la session soit tuée, (e) le démon s'arrête, **ou (f) le délai d'expiration de permission par session se déclenche** (`DEFAULT_PERMISSION_TIMEOUT_MS`, 5 minutes). Lors du déclenchement, `requestPermission` de l'agent se résout en `{outcome: 'cancelled'}`, le registre d'audit enregistre une entrée `permission.timeout`, la stderr du démon émet un fil d'Ariane d'une ligne, et le bus SSE diffuse la trame annulée `permission_resolved` standard afin que les abonnés nettoient. Le délai est configurable via `BridgeOptions.permissionResponseTimeoutMs` ; les appelants headless exécutant des invites longues peuvent vouloir le prolonger.
 
 Requête :
 
@@ -1443,40 +1434,38 @@ Requête :
 
 Résultats :
 
-- `{ "outcome": "selected", "optionId": "<one-of-the-options>" }` — accepter / refuser / proceed-once / etc, selon les choix offerts par l'agent.
-- `{ "outcome": "cancelled" }` — abandonner la requête (correspond à ce que `cancelSession` / `shutdown` font en interne).
+- `{ "outcome": "selected", "optionId": "<one-of-the-options>" }` — accepter / rejeter / proceed-once / etc, selon les choix proposés par l'agent
+- `{ "outcome": "cancelled" }` — abandonner la requête (correspond à ce que `cancelSession` / `shutdown` font en interne)
 
 Réponse :
 
-- `200 {}` — votre vote a été accepté (résolu OU enregistré sous quorum de consensus).
-- `403 { "code": "permission_forbidden", "reason": "designated_mismatch" | "remote_not_allowed", "requestId", "sessionId" }` — F3 : la politique active a rejeté votre vote.
-- `404 { "error": "..." }` — le requestId est inconnu (déjà résolu, n'a jamais existé, ou session supprimée).
-- `500 { "code": "cancel_sentinel_collision", ... }` — F3 : le `allowedOptionIds` de l'agent contient le sentinel réservé `'__cancelled__'` ; violation du contrat agent/daemon.
-- `501 { "code": "permission_policy_not_implemented", "policy": "<name>" }` — F3 forward-compat : un littéral de politique a atterri dans le schéma mais sa branche de médiation n'est pas encore construite (actuellement inaccessible, réservé pour les politiques futures).
+- `200 {}` — votre vote a été accepté (résolu OU enregistré sous quorum de consensus)
+- `403 { "code": "permission_forbidden", "reason": "designated_mismatch" | "remote_not_allowed", "requestId", "sessionId" }` — F3 : la politique active a rejeté votre vote
+- `404 { "error": "..." }` — le requestId est inconnu (déjà résolu, n'a jamais existé, ou session déchirée)
+- `500 { "code": "cancel_sentinel_collision", ... }` — F3 : `allowedOptionIds` de l'agent contient le sentinel réservé `'__cancelled__'` ; violation du contrat agent / démon
+- `501 { "code": "permission_policy_not_implemented", "policy": "<name>" }` — F3 forward-compat : un littéral de politique est apparu dans le schéma mais sa branche médiatrice n'est pas encore construite (actuellement inaccessible ; réservé pour les politiques futures)
 
-Après un vote réussi, chaque client connecté voit `permission_resolved` avec le même `requestId` et le `outcome` choisi. Sous `consensus`, les votes intermédiaires diffusent en plus `permission_partial_vote` jusqu'au quorum.
-### Routes de flux d'authentification par appareil (issue #4175 PR 21)
+Après un vote réussi, chaque client connecté voit `permission_resolved` avec le même `requestId` et le `outcome` choisi. En mode `consensus`, les votes intermédiaires diffusent en plus `permission_partial_vote` jusqu'au quorum.
 
-Le daemon orchestre un OAuth 2.0 Device Authorization Grant (RFC 8628) afin qu'un client SDK distant puisse déclencher une connexion dont les jetons aboutissent sur le système de fichiers du **daemon** — pas sur le client. Le daemon interroge lui-même le fournisseur d'identité (IdP) ; le seul rôle du client est d'afficher l'URL de vérification + le code utilisateur et (optionnellement) de s'abonner aux événements SSE pour les notifications d'achèvement.
+### Routes du flux d'authentification par appareil (issue #4175 PR 21)
 
-Tag de capacité : `auth_device_flow` (toujours annoncé). Fournisseurs pris en charge dans
-v1 : `qwen-oauth`.
+Le démon agit comme intermédiaire pour un OAuth 2.0 Device Authorization Grant (RFC 8628) afin qu'un client SDK distant puisse déclencher une connexion dont les jetons atterrissent sur le système de fichiers du **démon** — pas sur le client. Le démon interroge lui-même l'IdP ; le seul travail du client est d'afficher l'URL de vérification + le code utilisateur et (optionnellement) de s'abonner aux événements SSE de complétion.
+
+Tag de capacité : `auth_device_flow` (toujours annoncé). Fournisseurs pris en charge dans v1 : `qwen-oauth`.
 
 > [!note]
 >
-> Le niveau gratuit de Qwen OAuth a été interrompu le 2026-04-15. Traitez `qwen-oauth` comme
-> l'identifiant de fournisseur hérité v1 dans ce protocole ; les nouveaux clients devraient préférer un
-> fournisseur d'authentification actuellement pris en charge lorsqu'il est disponible.
+> L'offre gratuite Qwen OAuth a été interrompue le 2026-04-15. Traitez `qwen-oauth` comme l'identifiant de fournisseur v1 hérité dans ce protocole ; les nouveaux clients devraient préférer un fournisseur d'authentification actuellement pris en charge lorsqu'il est disponible.
 
-**Localité d'exécution.** Le daemon ne lance jamais de navigateur — même s'il le peut. Le client décide s'il doit appeler `open(verificationUri)` localement ; sur un pod sans tête (le déploiement canonique Mode B), l'utilisateur ouvre l'URL sur l'appareil dont il dispose avec un navigateur. Voir `docs/users/qwen-serve.md` pour l'UX recommandé.
+**Localité d'exécution.** Le démon ne lance jamais de navigateur — même s'il le peut. Le client décide d'appeler ou non `open(verificationUri)` localement ; sur un pod headless (le déploiement Mode B canonique) l'utilisateur ouvre l'URL sur l'appareil de son choix disposant d'un navigateur. Voir `docs/users/qwen-serve.md` pour l'UX recommandée.
 
-**Aucune fuite de jeton dans les événements.** `auth_device_flow_started` ne transporte que `{deviceFlowId, providerId, expiresAt}`. Le code utilisateur et l'URL de vérification reviennent point à point dans le corps de la réponse POST 201 et via `GET /workspace/auth/device-flow/:id` ; ils ne sont jamais diffusés sur SSE.
+**Aucune fuite de jeton dans les événements.** `auth_device_flow_started` ne contient que `{deviceFlowId, providerId, expiresAt}`. Le code utilisateur et l'URL de vérification sont renvoyés point à point dans le corps de la réponse POST 201 et via `GET /workspace/auth/device-flow/:id` ; ils ne sont jamais diffusés sur SSE.
 
-**Singleton par fournisseur.** Un deuxième `POST` pour le même fournisseur alors qu'un flux est en attente est une reprise idempotente — il renvoie l'entrée existante avec `attached: true` au lieu de lancer une nouvelle requête IdP.
+**Singleton par fournisseur.** Un second `POST` pour le même fournisseur alors qu'un flux est en attente est une reprise idempotente — il retourne l'entrée existante avec `attached: true` plutôt que de démarrer une nouvelle requête IdP.
 
 #### `POST /workspace/auth/device-flow`
 
-Porte d'entrée stricte pour les mutations : nécessite un jeton même sur les valeurs par défaut de la boucle de retour sans jeton (`401 token_required`).
+Porte de mutation stricte : nécessite un jeton bearer même sur les valeurs par défaut de boucle locale sans jeton (`401 token_required`).
 
 Requête :
 
@@ -1502,24 +1491,24 @@ Réponse (`201` nouveau départ, `200` reprise idempotente) :
 
 Erreurs :
 
-- `400 unsupported_provider` — `providerId` inconnu (la réponse inclut `supportedProviders`)
-- `409 too_many_active_flows` — limite de l'espace de travail (4) atteinte ; en annuler une avec `DELETE`
-- `401 token_required` — la porte d'entrée stricte a refusé une requête sans jeton
-- `502 upstream_error` — l'IdP a renvoyé une erreur inattendue
+- `400 unsupported_provider` — fournisseur inconnu `providerId` (la réponse inclut `supportedProviders`)
+- `409 too_many_active_flows` — limite du workspace (4) atteinte ; annulez-en un avec `DELETE`
+- `401 token_required` — la porte stricte a refusé une requête sans jeton
+- `502 upstream_error` — l'IdP a retourné une erreur inattendue
 
 #### `GET /workspace/auth/device-flow/:id`
 
-Lire l'état actuel. Les entrées en attente renvoient `userCode/verificationUri/expiresAt/intervalMs` ; les entrées terminales (grâce de 5 minutes) les suppriment et affichent `status` + éventuellement `errorKind/hint`.
+Lire l'état actuel. Les entrées en attente renvoient `userCode/verificationUri/expiresAt/intervalMs` ; les entrées terminales (grâce de 5 min) les suppriment et exposent `status` + optionnellement `errorKind/hint`.
 
-Renvoie `404 device_flow_not_found` pour les identifiants inconnus et les entrées expulsées après la grâce.
+Retourne `404 device_flow_not_found` pour les ID inconnus et les entrées expulsées après la grâce.
 
 #### `DELETE /workspace/auth/device-flow/:id`
 
 Annulation idempotente :
 
-- entrée en attente → `204` + émission de `auth_device_flow_cancelled`
+- entrée en attente → `204` + émet `auth_device_flow_cancelled`
 - entrée terminale → `204` sans opération (pas de réémission d'événement)
-- identifiant inconnu → `404`
+- ID inconnu → `404`
 
 #### `GET /workspace/auth/status`
 
@@ -1541,51 +1530,52 @@ Instantané des flux en attente + fournisseurs pris en charge :
 }
 ```
 
-#### Événements SSE de flux d'authentification par appareil
+#### Événements SSE du flux d'authentification par appareil
 
-Cinq événements typés (portée de l'espace de travail, diffusés à tous les bus de session actifs) :
+Cinq événements typés (portée workspace, diffusés vers chaque bus de session actif) :
 
-- `auth_device_flow_started` `{deviceFlowId, providerId, expiresAt}` — POST réussi ; le SDK doit s'abonner (pas de code utilisateur ici, récupérer via GET si nécessaire)
-- `auth_device_flow_throttled` `{deviceFlowId, intervalMs}` — le daemon a respecté le `slow_down` en amont ; les clients qui interrogent GET doivent augmenter leur intervalle pour correspondre
-- `auth_device_flow_authorized` `{deviceFlowId, providerId, expiresAt?, accountAlias?}` — les informations d'identification ont été persistées ; `accountAlias` est une étiquette non-PII (jamais email/téléphone)
-- `auth_device_flow_failed` `{deviceFlowId, errorKind, hint?}` — terminal ; `errorKind` peut être `expired_token | access_denied | invalid_grant | upstream_error | persist_failed`. `persist_failed` est interne au daemon : l'échange IdP a réussi mais le daemon n'a pas pu stocker durablement les informations d'identification (EACCES / EROFS / ENOSPC). L'utilisateur doit réessayer une fois le problème de disque sous-jacent résolu.
-- `auth_device_flow_cancelled` `{deviceFlowId}` — DELETE réussi sur une entrée en attente
+- `auth_device_flow_started` `{deviceFlowId, providerId, expiresAt}` — POST réussi ; le SDK doit s'abonner (pas de userCode ici, récupérer via GET si nécessaire)
+- `auth_device_flow_throttled` `{deviceFlowId, intervalMs}` — le démon a respecté le `slow_down` en amont ; les clients interrogeant GET doivent augmenter leur intervalle pour correspondre
+- `auth_device_flow_authorized` `{deviceFlowId, providerId, expiresAt?, accountAlias?}` — identifiants persistés ; `accountAlias` est une étiquette non-PII (jamais email/téléphone)
+- `auth_device_flow_failed` `{deviceFlowId, errorKind, hint?}` — terminal ; `errorKind` est l'un de `expired_token | access_denied | invalid_grant | upstream_error | persist_failed`. `persist_failed` est interne au démon : l'échange IdP a réussi mais le démon n'a pas pu stocker durablement les identifiants (EACCES / EROFS / ENOSPC). L'utilisateur doit réessayer une fois la condition sous-jacente du disque corrigée.
+- `auth_device_flow_cancelled` `{deviceFlowId}` — DELETE réussi contre une entrée en attente
 
-> **Non compatible MCP.** La spécification d'autorisation MCP (2025-06-18) impose OAuth 2.1 + PKCE auth-code avec un callback de redirection, ce qui ne fonctionne pas pour les daemons sur pods sans tête. La surface de flux d'authentification par appareil du Mode B est privée au daemon — les clients ciblant des serveurs conformes MCP doivent utiliser un chemin d'authentification différent.
+> **Non compatible MCP.** La spécification d'autorisation MCP (2025-06-18) impose OAuth 2.1 + PKCE auth-code avec un callback de redirection, ce qui ne fonctionne pas pour les démons en pod headless. La surface de flux d'appareil du Mode B est privée au démon — les clients ciblant des serveurs conformes MCP doivent utiliser un autre chemin d'authentification.
 
-## Format filaire de streaming
+## Format filaire du streaming
 
-Les événements sont émis sous forme de trames EventSource standard. Le daemon écrit une ligne `data:` par trame (le JSON n'a pas de sauts de ligne intégrés après `JSON.stringify`) ; l'analyseur SDK dans `packages/sdk-typescript/src/daemon/sse.ts` gère à la fois ce format et la forme multi-`data:` autorisée par la spécification côté réception.
+Les événements sont émis sous forme de trames EventSource standard. Le démon écrit une ligne `data:` par trame (le JSON n'a pas de nouvelles lignes après `JSON.stringify`) ; l'analyseur SDK à `packages/sdk-typescript/src/daemon/sse.ts` gère à la fois cela et la forme multi-`data:` autorisée par la spécification côté réception.
+
 ## Trames d'erreur pendant le streaming
 
-Si l'itérateur du pont lève une exception lors du service d'un abonné SSE, le démon émet une trame terminale `stream_error` (sans `id`). La ligne `data:` contient l'enveloppe complète (même forme que toutes les autres trames SSE de ce document) ; le message d'erreur réel se trouve sous `envelope.data.error` :
+Si l'itérateur du pont lève une exception lors du service d'un abonné SSE, le démon émet une trame terminale `stream_error` (sans `id`). La ligne `data:` est l'enveloppe complète (même forme que toute autre trame SSE dans ce document) ; le message d'erreur réel se trouve sous `envelope.data.error` :
 
 ```
 event: stream_error
 data: {"v":1,"type":"stream_error","data":{"error":"<message>"}}
 ```
 
-La connexion se ferme ensuite.
+La connexion se ferme alors.
 
 ## Variables d'environnement
 
-| Var                 | Objectif                                                        |
-| ------------------- | -------------------------------------------------------------- |
-| `QWEN_SERVER_TOKEN` | Jeton Bearer. Les espaces de début et de fin sont supprimés au démarrage. |
+| Var                 | Objectif                                                                   |
+| ------------------- | -------------------------------------------------------------------------- |
+| `QWEN_SERVER_TOKEN` | Jeton bearer. Supprime les espaces de début/fin au démarrage.             |
 
 ## Structure des sources
 
-| Chemin                                                 | Objectif                                                                                                    |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `packages/cli/src/commands/serve.ts`                 | commande yargs + schéma des drapeaux                                                                       |
-| `packages/cli/src/serve/run-qwen-serve.ts`           | cycle de vie de l'écouteur + gestion des signaux                                                                       |
-| `packages/cli/src/serve/server.ts`                   | routes Express + middleware                                                                                |
-| `packages/cli/src/serve/auth.ts`                     | Bearer + liste d'autorisation des hôtes + refus CORS                                                                        |
-| `packages/cli/src/serve/httpAcpBridge.ts`            | duplication ou attachement + FIFO par session + registre de permissions                                                   |
-| `packages/cli/src/serve/status.ts`                   | types fil de statut du démon en lecture seule + `ServeErrorKind` + `BridgeTimeoutError` + `mapDomainErrorToErrorKind` |
-| `packages/cli/src/serve/env-snapshot.ts`             | assistant pur qui construit les charges utiles `/workspace/env` à partir de l'état de `process.*`, y compris la rédaction des identifiants   |
-| `packages/acp-bridge/src/eventBus.ts`                | file d'attente asynchrone bornée + anneau de relecture                                                                          |
-| `packages/sdk-typescript/src/daemon/DaemonClient.ts` | client TS                                                                                                  |
-| `packages/sdk-typescript/src/daemon/sse.ts`          | analyseur de trames EventSource                                                                                   |
-| `integration-tests/cli/qwen-serve-routes.test.ts`    | 18 cas, sans LLM                                                                                           |
-| `integration-tests/cli/qwen-serve-streaming.test.ts` | 3 cas, enfant réel `qwen --acp` soutenu par le faux serveur OpenAI local (POSIX uniquement ; ignoré sur Windows)   |
+| Chemin                                                | Objectif                                                                                                 |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `packages/cli/src/commands/serve.ts`                  | Commande yargs + schéma de drapeaux                                                                      |
+| `packages/cli/src/serve/run-qwen-serve.ts`            | Cycle de vie de l'écouteur + gestion des signaux                                                         |
+| `packages/cli/src/serve/server.ts`                    | Routes Express + middleware                                                                              |
+| `packages/cli/src/serve/auth.ts`                      | Bearer + liste d'autorisation d'hôtes + refus CORS                                                       |
+| `packages/cli/src/serve/httpAcpBridge.ts`             | Spawn-ou-attache + FIFO par session + registre de permissions                                            |
+| `packages/cli/src/serve/status.ts`                    | Types filaires d'état de démon en lecture seule + `ServeErrorKind` + `BridgeTimeoutError` + `mapDomainErrorToErrorKind` |
+| `packages/cli/src/serve/env-snapshot.ts`              | Helper pur qui construit les payloads `/workspace/env` à partir de l'état `process.*`, y compris le masquage des identifiants |
+| `packages/acp-bridge/src/eventBus.ts`                 | File asynchrone bornée + ring de rejeu                                                                   |
+| `packages/sdk-typescript/src/daemon/DaemonClient.ts`  | Client TS                                                                                                |
+| `packages/sdk-typescript/src/daemon/sse.ts`           | Analyseur de trames EventSource                                                                          |
+| `integration-tests/cli/qwen-serve-routes.test.ts`     | 18 cas, pas de LLM                                                                                       |
+| `integration-tests/cli/qwen-serve-streaming.test.ts`  | 3 cas, processus enfant `qwen --acp` réel soutenu par le serveur OpenAI factice local (POSIX uniquement ; ignoré sur Windows) |

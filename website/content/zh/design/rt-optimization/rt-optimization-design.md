@@ -469,7 +469,6 @@ partial text 分布在多处，需**同时**清理，缺一会导致状态不一
 | `ChatRecordingService` buffered turn                           | 标记为 cancelled，不写入 JSONL                                                            |
 | `dualOutput.emitText`（如启用）                                | 发送 abort sentinel，sidecar 自行丢弃                                                     |
 | `loopDetectorRef` 累积 token                                   | 重置当前 turn 计数                                                                        |
-
 执行顺序：abort signal 触发 → 收齐上述五处清理 → 才允许新 user message 进入 `submitQuery`。竞态测试覆盖：abort 触发瞬间正好收到最后一个 chunk。
 
 #### 适用条件
@@ -872,7 +871,6 @@ Qwen Code 是本地 CLI，**没有运行时下发能力**——传统"5% / 25% /
 
 - §5.4 决策日志 schema 里 `user_prompt_classification: 'query' | 'action' | 'analysis'` 字段**没有数据源**——既不能从现有 PromptSuggestionEvent 推导，也不能从 ChatRecord 读出
 - §5.2 "用户追问'再详细些'频次" 监控信号同上，**最接近的现有锚点 `followupState.onOutcome` 不可复用**
-
 **建议修正**：
 
 - §3.2 前置条件中追加"用户输入分类器最小实现"（中英文模式匹配，~3d），否则 §5.4 决策日志的 `user_prompt_classification` 与 `requestImpliesFurtherAction` 都缺数据
