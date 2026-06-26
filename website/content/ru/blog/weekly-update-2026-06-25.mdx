@@ -1,0 +1,256 @@
+---
+title: "Qwen Code Еженедельно: Стоимость токенов на виду, голосовой ввод, сохранение и повторное использование рабочих процессов"
+date: "2026-06-25"
+description: "На этой неделе Qwen Code выпустил пять версий от v0.18.4 до v0.19.2. /stats показывает ежедневные затраты токенов, /voice позволяет говорить вместо печати, рабочие процессы можно сохранять как slash-команды и использовать повторно, а интерфейс значительно упростился."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Еженедельно: Стоимость токенов на виду, голосовой ввод, сохранение и повторное использование рабочих процессов"
+  date="2026-06-25"
+  author="Qwen Team"
+/>
+
+На этой неделе Qwen Code выпустил пять релизов — от v0.18.4 до v0.19.2 (major bump до v0.19.0) — с более чем 140 объединенными PR по трем направлениям:
+
+**Голосовой ввод — просто говорите, не нужно печатать.** Все входные данные раньше набирались вручную — длинные команды, сложные параметры, смесь китайского и английского. Медленно и подвержено опечаткам. На этой неделе `/voice` позволяет говорить в микрофон; после завершения быстрая модель автоматически удаляет слова-паразиты и опечатки, показывая чистую транскрипцию.
+
+**Рабочие процессы теперь можно сохранять и использовать повторно.** Раньше рабочий процесс исчезал после выполнения. В следующий раз приходилось заново писать prompt, и не было возможности возобновить прерванное выполнение в той же сессии. На этой неделе Dynamic Workflows закрывает этот пробел: после выполнения нажмите `s`, чтобы сохранить скрипт как slash-команду — в следующий раз просто введите `/<имя>` для вызова. Вы также можете возобновить ранее прерванное выполнение в той же сессии.
+
+**Интерфейс повсеместно упрощен.** Окна вызовов инструментов терминала складывались в стену из скругленных рамок, блоки thinking не имели выделенной клавиши для развертывания, а управление расширениями и серверами MCP требовало ручного редактирования файлов конфигурации. На этой неделе: рамки удалены, завершенные инструменты свернуты в одну строку, Alt+T специально управляет thinking, `/extensions` становится интерактивным менеджером, а ресурсы MCP можно просматривать и дополнять через `@`.
+
+### Голосовой ввод: Просто говорите в микрофон
+
+Все входные данные раньше набирались вручную. Длинные команды, сложные параметры, смесь китайского и английского — медленно и легко ошибиться при наборе.
+
+На этой неделе добавлен `/voice` для голосового ввода. Два режима: режим hold — удерживайте Пробел для разговора, отпустите для остановки; режим tap — нажмите один раз для начала, нажмите снова или тишина автоматически останавливает и отправляет. Аудио захватывается через нативный бэкенд микрофона (`@qwen-code/audio-capture` N-API addon). На Linux автоматически переключается на arecord/SoX; на macOS запрашивает разрешение микрофона.
+
+Транскрипция имеет два пути: пакетный режим (`qwen3-asr-flash`) использует API chat/completions совместимый с OpenAI + input_audio; режим реального времени (`qwen3-asr-flash-realtime`, `fun-asr-realtime`) передает PCM через WebSocket с отображением частичного текста в реальном времени. После завершения быстрая модель очищает слова-паразиты ("um", "嗯") и опечатки, сохраняя вашу оригинальную формулировку — без переписывания. При таймауте или ошибке используется сырой транскрипт напрямую. Голосовой ввод всегда производит текст.
+
+`/model --voice` выбирает модель транскрипции; `general.voice.{enabled,mode,language}` настраивает поведение.
+
+**Что вы можете сделать с этим:**
+
+- `/voice hold` — удерживайте Пробел для разговора, отпустите для остановки транскрипции
+- `/voice tap` — нажмите один раз для начала, скажите предложение или тишина остановит
+- `/model --voice qwen3-asr-flash-realtime` — выберите модель транскрипции потокового вещания в реальном времени
+- `/voice status` — проверьте текущую конфигурацию голоса
+- Web Shell: нажмите кнопку микрофона для голосового ввода (запись браузером, транскрипция на стороне daemon)
+
+Смотрите PR [#5502](https://github.com/QwenLM/qwen-code/pull/5502), [#5794](https://github.com/QwenLM/qwen-code/pull/5794), [#5755](https://github.com/QwenLM/qwen-code/pull/5755)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000007672/O1CN01cQTFg726XplXC7x8W_!!6000000007672-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/xSM0An5Xn8aZOyD5oPMN3poEtyqI8-S8C71k8ve6UHw.mp4" controls></video>
+
+### Dynamic Workflows: Сохраните после выполнения, вызывайте напрямую в следующий раз
+
+Раньше рабочий процесс исчезал сразу после завершения. Хотите запустить ту же задачу снова? Перепишите prompt с нуля. Прервано посреди сессии? Нет способа продолжить с места остановки.
+
+На этой неделе Dynamic Workflows закрывает этот пробел. После завершения рабочего процесса нажмите `s`, чтобы сохранить скрипт в `.qwen/workflows/<имя>.js`. После сохранения он становится slash-командой — в следующий раз просто введите `/<имя>` для выполнения без переписывания prompt. Вы можете выбрать уровень проекта (доступно только в текущем проекте) или уровень пользователя (доступно во всех проектах) при сохранении. Существующие скрипты с тем же именем запросят подтверждение перезаписи.
+
+В той же сессии вы также можете возобновить ранее запущенный рабочий процесс: `resumeFromRunId` воспроизводит из логов JSONL, возобновляет на самом длинном неизмененном префиксе из кэша, затем продолжает в первой точке расхождения. Каждое завершенное выполнение терминала автоматически сохраняется в `<projectDir>/workflows/<runId>.json`; панель `/workflows` показывает историю (сохраняется после перезапусков; самые старые записи автоматически очищаются).
+
+Дополнительные возможности: watchdog agent stall (таймауты под-агентов автоматически повторяют 3 раза), вложенные вызовы (`workflow('<имя>')` внутри другого рабочего процесса), мягкое перенаправление ключевого слова "workflow" к инструменту workflow (можно отключить с `ui.disableWorkflowKeywordTrigger`), и звуковое уведомление терминала при завершении/ошибке.
+
+**Что вы можете сделать с этим:**
+
+- После завершения рабочего процесса нажмите `s` для сохранения как slash-команда `/<имя>`
+- Панель `/workflows` показывает историю, сохраняется после перезапусков
+- Возобновите прерванный рабочий процесс в той же сессии
+- Сохраняйте на уровне проекта или пользователя, выбирайте область видимости по необходимости
+
+Смотрите PR [#5600](https://github.com/QwenLM/qwen-code/pull/5600)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000002851/O1CN01ZFEhlY1WvoKgVeWGy_!!6000000002851-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/3zW_YjyuBEjlL9twIVcavHGej85RiTfvay3BjhF2c4I.mp4" controls></video>
+
+### Опыт UI оптимизирован повсеместно
+
+На этой неделе и терминал, и Web Shell получили концентрированное упрощение — снижение визуального шума, эффективность взаимодействия и возможности управления все улучшены за один раз.
+
+**Удаление рамок TUI + сворачивание завершенных инструментов.** Каждый вызов инструмента раньше был обернут в скругленные рамки; параллельные вызовы складывались в стену коробок. На этой неделе рамки полностью удалены. В компактном режиме завершенные инструменты сворачиваются в одну строку (иконка статуса + имя инструмента + длительность); только активные и ошибочные вызовы остаются развернутыми. Некомпактный режим не затрагивается.
+
+**Thinking Alt+T + полноэкранный просмотрщик.** На прошлой неделе Thinking был сворачиваемым, но не имел выделенной клавиши для развертывания — вам приходилось делить Ctrl+O для переключения compactMode. На этой неделе Alt+T специально управляет развертыванием/сворачиванием всех блоков thinking. Нажатие на свернутую строку thinking открывает полноэкранный просмотрщик AlternateScreen с навигацией клавиатурой (↑↓, PgUp/PgDn) + прокруткой мышью.
+
+**`/extensions` становится интерактивным менеджером.** Ранее `/extensions` был плоским списком только для чтения; установка или настройка означали ручное редактирование настроек. На этой неделе он становится интерактивным многовкладочным менеджером: вкладка Installed группирует по уровню + меню действий для каждого расширения (включить/отключить/избранное/изменить scope/обновить/удалить); вкладка Discover ищет и устанавливает расширения marketplace одним кликом; вкладка Sources добавляет новые marketplace (поддерживает repo GitHub, marketplace Claude, пакет npm, локальный путь). CLI также имеет группу команд `qwen extensions sources add/list/update/remove`.
+
+**Ресурсы MCP просматриваемые и дополняемые через `@`.** Ресурсы серверов MCP не имели механизма обнаружения — пользователи не знали, какие данные доступны. На этой неделе диалог `/mcp` добавляет действие View resources, открывая список URI ресурсов с деталями; ввод `@server:` автоматически дополняет URI ресурсов этого сервера; ввод `@` ищет ресурсы на всех серверах. Prompts больше не перефильтровываются чрезмерно строгим gating возможностей.
+
+**Что вы можете сделать с этим:**
+
+- В компактном режиме завершенные инструменты сворачиваются в одну строку; Alt+T управляет thinking
+- `/extensions` открывает менеджер — поиск, установка, настройка, удаление расширений
+- `/mcp` → View resources для просмотра данных сервера MCP, `@server:` для дополнения ресурсов
+- Вкладка Sources `/extensions` для добавления marketplace Claude или repo GitHub
+
+Смотрите PR [#5003](https://github.com/QwenLM/qwen-code/pull/5003), [#5627](https://github.com/QwenLM/qwen-code/pull/5627), [#4850](https://github.com/QwenLM/qwen-code/pull/4850), [#5398](https://github.com/QwenLM/qwen-code/pull/5398), [#5544](https://github.com/QwenLM/qwen-code/pull/5544), [#5635](https://github.com/QwenLM/qwen-code/pull/5635), [#5733](https://github.com/QwenLM/qwen-code/pull/5733), [#5774](https://github.com/QwenLM/qwen-code/pull/5774)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01FXcw501LOPg5h2D7y_!!6000000001289-2-tps-3837-2160.png)
+
+### Artifact: Модель дает вам интерактивную веб-страницу
+
+Ранее, когда вы просили модель нарисовать диаграмму архитектуры или создать интерактивную панель управления, она могла выводить только текст и таблицы в терминале — вы видели форматированный вывод, а не настоящие графики, которые можно кликать или перетаскивать.
+
+На этой неделе добавлен инструмент Artifact (экспериментальный, opt-in). Когда включен, модель может упаковать сгенерированный контент как веб-страницу и открыть ее напрямую — диаграммы архитектуры, где вы кликаете узлы для просмотра деталей, таблицы данных с сортировкой и фильтрацией, walkthrough кода с кликабельными ссылками. Как получить прототип от дизайнера, который открывается в браузере.
+
+Весь контент записывается в локальные файлы (`~/.qwen/artifacts/`), открывается через URL `file://` — без доступа к сети. Повторный запуск того же файла перезаписывает старую версию; другой файл создает новую страницу. Сгенерированный контент должен быть полностью самодостаточным — без внешних ссылок CSS или JS, избегая неконтролируемых внешних ресурсов. Ограничение размера одной страницы: 16 МБ.
+
+Включение через настройки: установите `experimental.artifact`, или установите переменную окружения `QWEN_CODE_ENABLE_ARTIFACT=1`. По умолчанию недоступно в неинтерактивных режимах и SDK.
+
+**Что вы можете сделать с этим:**
+
+- Попросите модель сгенерировать интерактивную диаграмму архитектуры — кликайте узлы для деталей
+- Сгенерируйте панель данных с сортировкой и фильтрацией
+- Сгенерируйте страницу walkthrough кода с кликабельной навигацией
+- Включите `experimental.artifact` в настройках, или установите `QWEN_CODE_ENABLE_ARTIFACT=1`
+
+Смотрите PR [#5557](https://github.com/QwenLM/qwen-code/pull/5557)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000007494/O1CN01e3vlf425EJGYfSNAL_!!6000000007494-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/xNcVhC0ROxt9BL93SP57MXnSSjKuSFJTNKmTxTwVErs.mp4" controls></video>
+
+### Vision Bridge: Текстовые модели теперь могут видеть изображения
+
+Ранее при использовании текстовой модели (как DeepSeek V4), изображения, сосланные через `@`, заменялись индикатором "unsupported-image" — модель не видела никакого содержимого изображения.
+
+На этой неделе добавлена автоматическая совместимость Vision Bridge. Когда пользователь ссылается на изображение через `@`, primary модель известна как text-only, и тот же provider имеет модель capable к изображениям, Qwen Code автоматически занимает модель vision для транскрипции содержимого изображения в текст, затем отправляет этот текст primary модели. Никакой конфигурации пользователя не требуется — запускается автоматически, когда все условия выполнены: primary is text-only + same provider has vision model + user turn содержит image parts. Если primary уже поддерживает ввод изображений, изображения отправляются напрямую без bridge; если modalities primary неизвестны или нет доступной модели vision от того же provider, bridge не запускается и оригинальное поведение сохраняется.
+
+Bridge занимает модели только в пределах того же provider — нет cross-provider маршрутизации, credentials не утекают к третьим сторонам.
+
+**Что вы можете сделать с этим:**
+
+- Используйте текстовые модели как DeepSeek V4 и ссылаетесь на скриншоты через `@` — автоматически транскрибируются в текстовые описания
+- Никакой конфигурации не требуется; запускается автоматически, когда условия выполнены
+- Занимает модель vision в пределах того же provider, нет cross-provider маршрутизации
+
+Смотрите PR [#5126](https://github.com/QwenLM/qwen-code/pull/5126)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000003090/O1CN01zmZ6491YhGzaWeQy5_!!6000000003090-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/v5tSXL4m6iP5OGVFcWHQqWI-pzZ5GwW2oHBg5qjShmY.mp4" controls></video>
+
+### /stats: Стоимость токенов на виду
+
+Ранее вы могли только догадываться, сколько токенов использовали или сколько потратили. Запуск длительной задачи мог незаметно сжечь десятки тысяч токенов, но `/stats` показывал только итоги уровня сессии — без разбивки по дням, месяцам или моделям.
+
+На этой неделе `/stats` добавляет постоянный учет токенов. `/stats daily` показывает общие токены дня, количество запросов и разбивку input/output/cached/thought, сгруппированную по модели и типу auth; `/stats monthly` показывает сводку целого месяца; `/stats export daily YYYY-MM-DD --format csv` или `/stats export monthly YYYY-MM --format json --output <путь>` экспортирует файл, содержащий только агрегированные данные — без текста prompt/response или путей проекта. Пути экспорта ограничены рабочей директорией проекта; path traversal, symlinks и пути Windows alternate-data-stream отклоняются.
+
+Данные сохраняются в `~/.qwen/stats/` и переживают перезапуски.
+
+**Что вы можете сделать с этим:**
+
+- `/stats daily` — посмотрите расход токенов дня, сгруппированный по модели
+- `/stats monthly` — посмотрите сводку месячного потребления
+- `/stats export` — экспортируйте CSV/JSON только с агрегированными данными, без приватного контента
+- Данные сохраняются после перезапуска
+
+Смотрите PR [#4564](https://github.com/QwenLM/qwen-code/pull/4564)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN012AIyPr1gezx2OOfjC_!!6000000004168-2-tps-3854-2160.png)
+
+### Больше новых функций
+
+| Функция | PR | Влияние |
+| ------- | -- | ------- |
+| **Revivable subagent + transcript TTL** | [#5556](https://github.com/QwenLM/qwen-code/pull/5556) | Завершенные фоновые Agents могут быть реактивированы в той же сессии без перестроения контекста; старые transcripts автоматически истекают по `cleanupPeriodDays` |
+| **Боковая панель предпросмотра файла Desktop** | [#5730](https://github.com/QwenLM/qwen-code/pull/5730) | Предпросмотр файла приложения Desktop больше не закрывает весь экран; правая docked панель с изменяемой шириной, разговор и дерево файлов сосуществуют; исправлены пути CJK и ошибочная идентификация домена `.md` |
+| **Skill desktop-pet** | [#4808](https://github.com/QwenLM/qwen-code/pull/4808) | Введите `/desktop-pet` + имя персонажа для автоматической генерации spritesheet пиксельного питомца и активации |
+| **Иконка Liquid Glass macOS 26+** | [#5284](https://github.com/QwenLM/qwen-code/pull/5284) | brand-create автоматически компилирует Assets.car; рендеринг иконки Liquid Glass macOS 26+ |
+| **Жесткая блокировка деструктивных команд Auto mode** | [#5754](https://github.com/QwenLM/qwen-code/pull/5754) | `git reset --hard`, `git clean -fd`, `terraform destroy` и т.д. имеют детерминированный regex pre-filter в режиме AUTO, больше не полагаются на классификаторы LLM |
+| **/history collapse-on-resume** | [#4085](https://github.com/QwenLM/qwen-code/pull/4085) | История по умолчанию сворачивается при возобновлении длинных сессий; `/history collapse-on-resume` сохраняет предпочтение; `/history expand-now` временно разворачивает |
+| **Временные метки ответа [HH:MM:SS]** | [#5001](https://github.com/QwenLM/qwen-code/pull/5001) | Настройка `output.showTimestamps` показывает временную метку перед каждым ответом assistant; opt-in, по умолчанию выключено |
+| **Web Shell от qwen serve** | [#5392](https://github.com/QwenLM/qwen-code/pull/5392) | `qwen serve` напрямую обслуживает UI Web Shell, дополнительная настройка не нужна |
+| **Канал QQ Bot** | [#5202](https://github.com/QwenLM/qwen-code/pull/5202) | Новый адаптер канала QQ Bot; Qwen Code может подключаться к группам QQ |
+| **Движок пробуждения Loop с точностью до секунды** | [#5182](https://github.com/QwenLM/qwen-code/pull/5182) | Точность тайминга `/loop` улучшена с минут до секунд; диапазон delay `[60, 3600]s`; self-paced wakeup не считается в лимит MAX_JOBS |
+| **Self-paced цикл Loop** | [#5197](https://github.com/QwenLM/qwen-code/pull/5197) | `/loop <prompt>` (без interval) становится self-paced циклом — модель сама решает, когда перепроверять, больше нет фиксированного cron 10 минут; короткие интервалы при быстром polling, автоматически удлиняется при стабильности, останавливается при завершении задачи |
+| **API правил разрешений workspace** | [#5743](https://github.com/QwenLM/qwen-code/pull/5743) | Daemon и клиенты ACP могут читать/записывать правила allow/ask/deny workspace через REST API |
+| **Provider Requesty** | [#5478](https://github.com/QwenLM/qwen-code/pull/5478) | Новая поддержка provider модели Requesty |
+| **Бюджет токенов workflow P5 + UI per-run** | [#5231](https://github.com/QwenLM/qwen-code/pull/5231) | Рабочие процессы добавляют контроль бюджета токенов и отображение UI per-run |
+| **DashScope preserve_thinking включен по умолчанию** | [#5637](https://github.com/QwenLM/qwen-code/pull/5637) | Provider DashScope по умолчанию отправляет токены thinking; процесс рассуждения модели более полный |
+| **Теги модели fastOnly/voiceOnly** | [#5632](https://github.com/QwenLM/qwen-code/pull/5632) | Модели могут быть помечены `fastOnly` или `voiceOnly`, скрыты из основного списка моделей |
+| **Обнаружение изменений файла Settings** | [#4933](https://github.com/QwenLM/qwen-code/pull/4933) | chokidar watcher обнаруживает изменения файла settings и автоматически обновляет конфигурацию |
+| **Источник установки archive /extensions** | [#4909](https://github.com/QwenLM/qwen-code/pull/4909) | Поддерживает установку расширений из файлов archive |
+| **Инструмент чтения ресурса MCP** | [#5781](https://github.com/QwenLM/qwen-code/pull/5781) | Модель получает инструмент `read_mcp_resource` для автономного чтения URI ресурсов сервера MCP — не нужна ручная инъекция `@` |
+| **Branching сессии Web Shell** | [#5613](https://github.com/QwenLM/qwen-code/pull/5613) | Web Shell поддерживает branching сессии |
+| **Обнаружение простоя daemon** | [#4934](https://github.com/QwenLM/qwen-code/pull/4934) | `GET /health?deep=true` обнаруживает состояние простоя daemon |
+| **Настраиваемые игнорируемые файлы agent** | [#4653](https://github.com/QwenLM/qwen-code/pull/4653) | Agents могут настраивать списки игнорируемых файлов |
+| **Отображение скорости токенов ответа** | [#5401](https://github.com/QwenLM/qwen-code/pull/5401) | Строка состояния опционально показывает скорость токенов ответа |
+| **toolCallId системы hook** | [#4918](https://github.com/QwenLM/qwen-code/pull/4918) | Система hook получает сырой ID вызова API |
+| **Локализованные имена инструментов i18n** | [#5220](https://github.com/QwenLM/qwen-code/pull/5220) | Имена инструментов TUI и web-shell локализованы |
+| **Lint имени файла kebab-case** | [#4797](https://github.com/QwenLM/qwen-code/pull/4797) | ESLint принудительно применяет имена файлов kebab-case |
+| **Настраиваемый timeout разрешения ACP** | [#5260](https://github.com/QwenLM/qwen-code/pull/5260) | Длительность timeout разрешения ACP daemon настраиваема |
+| **Маршрут статуса Remote LSP** | [#5741](https://github.com/QwenLM/qwen-code/pull/5741) | `qwen serve` добавляет endpoint запроса статуса remote LSP |
+| **Polling операции расширения** | [#5753](https://github.com/QwenLM/qwen-code/pull/5753) | Операции расширения поддерживают polling ожидания завершения |
+
+## 🔧 Важные исправления
+
+| Исправление | PR | Влияние |
+| ----------- | -- | ------- |
+| **Отмена разрешения немедленно останавливает выполнение** | [#5258](https://github.com/QwenLM/qwen-code/pull/5258) | Когда пользователь отказывает в разрешении, agent немедленно останавливается — не пропускает gate |
+| **Circuit breaker вызова инструмента per-turn** | [#5279](https://github.com/QwenLM/qwen-code/pull/5279) | Жесткий лимит per turn + опциональное обнаружение loop предотвращает бесконечные циклы вызовов инструмента |
+| **Always-on guard последовательных идентичных вызовов инструмента** | [#5573](https://github.com/QwenLM/qwen-code/pull/5573) | Повторяющиеся идентичные вызовы инструмента автоматически блокируются, opt-in не нужен |
+| **Gate plan имеет escape path когда недоступен** | [#5430](https://github.com/QwenLM/qwen-code/pull/5430) | Сбой агента gate plan больше не блокирует весь turn; пользователь может продолжать |
+| **Ручной вход в режим plan требует подтверждения** | [#5595](https://github.com/QwenLM/qwen-code/pull/5595) | Предотвращает случайное переключение в режим plan |
+| **Защита path-traversal workflow** | [#5740](https://github.com/QwenLM/qwen-code/pull/5740) | Проверяет runId для предотвращения path-traversal, вызывающего ошибочное удаление директории |
+| **Лимит turn fork + эскалация разрешений** | [#5737](https://github.com/QwenLM/qwen-code/pull/5737) | Fork под-агенты имеют лимиты turn; запросы разрешений эскалируются к основному агенту для подтверждения |
+| **Desktop исправляет два бага ссылки markdown** | [#5730](https://github.com/QwenLM/qwen-code/pull/5730) | `readme.md` ошибочно идентифицируется как домен, перенаправляющий на parked страницу; пути CJK `/Users/me/项目/笔记.md` не линкуются из-за ASCII-only regex |
+| **Восстановлено позиционирование курсора IME** | [#4993](https://github.com/QwenLM/qwen-code/pull/4993) | Исправлена регрессия смещения курсора ввода композиции IME из #4779 |
+| **systemd-inhibit больше не всплывает окно пароля, ломая TUI** | [#5318](https://github.com/QwenLM/qwen-code/pull/5318) | Параметр `--no-ask-password` предотвращает запрос пароля systemd, портящий интерфейс терминала |
+| **auto-memory /quit больше не вызывает OOM** | [#5181](https://github.com/QwenLM/qwen-code/pull/5181) | Автоматическое извлечение памяти при выходе больше не крашится на больших разговорах |
+| **Сохранение сообщений изображений mid-turn** | [#5183](https://github.com/QwenLM/qwen-code/pull/5183) | Изображения, вставленные mid-model-reply, больше не теряются |
+| **Разрешение неоднозначности duplicate model name** | [#5769](https://github.com/QwenLM/qwen-code/pull/5769) | Одно и то же имя модели across providers больше не путается; показывает идентификатор provider |
+| **Voice addon упакован в standalone archive** | [#5628](https://github.com/QwenLM/qwen-code/pull/5628) | N-API addon `@qwen-code/audio-capture` включен в standalone tar.gz; голосовой ввод больше не缺少预构建二进制文件 |
+| **Отклонение stale prompt client** | [#5784](https://github.com/QwenLM/qwen-code/pull/5784) | Daemon отклоняет истекшие prompt clients, предотвращая ghost sessions |
+| **Маппинг типа transport сервера MCP Claude** | [#5812](https://github.com/QwenLM/qwen-code/pull/5812) | Типы transport sse/stdio/streamable-http сервера MCP Claude правильно маппятся в import и .mcp.json |
+| **Вставленный путь изображения автоматически promoted to attachment** | [#5803](https://github.com/QwenLM/qwen-code/pull/5803) | Пути файлов изображений, вставленные в терминал, автоматически распознаются как вложения, ручной @ не нужен |
+| **Модель запоминает выбранный provider** | [#5179](https://github.com/QwenLM/qwen-code/pull/5179) | Когда несколько providers разделяют один и тот же ID модели, выбор больше не теряет provider |
+| **Emoji thinking → символ Unicode** | [#5788](https://github.com/QwenLM/qwen-code/pull/5788) | Иконки thinking и summary переключаются с emoji на текстовые символы Unicode (💡→⟡), чтобы избежать несоответствий рендеринга терминала |
+
+## 🎉 Участники
+
+Благодарим следующих новых участников, которые提交了他们的第一个 PR на этой неделе:
+
+- **@shiloong** — toolCallId системы hook передает сырой ID вызова API ([#4918](https://github.com/QwenLM/qwen-code/pull/4918))
+- **@Eric-GoodBoy-Tech** — адаптер канала QQ Bot ([#5202](https://github.com/QwenLM/qwen-code/pull/5202))
+- **@aspnmy** — конфигурация сервера MCP ([#5311](https://github.com/QwenLM/qwen-code/pull/5311))
+- **@xxlaura** — skill pixel-art desktop-pet ([#4808](https://github.com/QwenLM/qwen-code/pull/4808))
+- **@mvanhorn** — расширение пути home Windows и исправление ghost entry сессии desktop ([#5253](https://github.com/QwenLM/qwen-code/pull/5253))
+- **@CubeLander** — изоляция AbortSignal gate plan ([#5185](https://github.com/QwenLM/qwen-code/pull/5185))
+- **@water-in-stone** — обнаружение изменений файла Settings ([#4933](https://github.com/QwenLM/qwen-code/pull/4933))
+- **@OrbitZore** — systemd-inhibit --no-ask-password ([#5318](https://github.com/QwenLM/qwen-code/pull/5318))
+- **@Gove2004** — /history collapse-on-resume ([#4085](https://github.com/QwenLM/qwen-code/pull/4085))
+- **@Zoean-z** — комментарии trustedFolders сохранены ([#4746](https://github.com/QwenLM/qwen-code/pull/4746))
+- **@ken-jo** — очистка мертвого поля hooks ([#5423](https://github.com/QwenLM/qwen-code/pull/5423))
+- **@Thibaultjaigu** — provider Requesty ([#5478](https://github.com/QwenLM/qwen-code/pull/5478))
+- **@interconnectedMe** — улучшения MCP ([#5488](https://github.com/QwenLM/qwen-code/pull/5488))
+- **@lcheng321** — исправление заполнения фона input box ([#5568](https://github.com/QwenLM/qwen-code/pull/5568))
+- **@russeell** — исправление лимита файла лога OpenAI ([#5569](https://github.com/QwenLM/qwen-code/pull/5569)) и валидация индекса ответа ask_user_question ([#5622](https://github.com/QwenLM/qwen-code/pull/5622))
+
+Благодарим следующих основных участников за их непрерывную итерацию на этой неделе:
+
+- **@he-yufeng** — исправление формата изображения BMP/WebP/AVI, тег text-only модели, рендеринг duration, экранирование пути emacs ediff, строгий парсинг переменных окружения (10+ PR)
+- **@wenshao** — circuit breaker, guard последовательных вызовов, события daemon mid-turn, идемпотентность миграции settings v5, исправление theme background, перехват triage cross-repo, бюджет bundle SDK (8+ PR)
+- **@doudouOUC** — история файла sed, сохранение изображений mid-turn, память provider модели, остановка при отмене разрешения, обновление provider workspace daemon, разрешение неоднозначности duplicate model, отклонение stale client, документация OAuth MCP (7+ PR)
+- **@yiliang114** — интервалы списка расширений, bare fast model auth, миграция settings, представление чата боковой панели VSCode (4+ PR)
+- **@qqqys** — подтверждение + отмена artifact, упаковка standalone voice addon, лимит turn fork + эскалация разрешений, исправление источника токена /context (4+ PR)
+- **@huww98** — McpServer per-session VSCode, дополнение модели Token Plan, исправление двойного подсчета stats
+- **@ZijianZhang989** — заголовок окна показывает имя сессии, исправление OOM auto-memory /quit
+- **@kkhomej33-netizen** — лимит буфера streaming thought, сокращение памяти interactive tool output
+- **@Alex-ai-future** — закрытие Enter dropdown @path, escape path gate plan, ранжирование completion slash
+- **@LaZzyMan** — ручное подтверждение режима plan, защита path-traversal workflow
+- **@DragonnZhang** — защита от краха telemetry, fallback secrets расширения
+- **@pomelo-nwu** — emoji thinking→Unicode, сохранение/восстановление custom model ID
+- **@chiga0** — заполнение background темы удалено из input box и сообщений пользователя
+- **@ZevGit** — стабилизация взаимодействия мыши VP
+- **@BZ-D** — исправление маппинга типа transport MCP Claude
+- **@cyphercodes** — рендеринг истории preview resume, сбой обнаружения loop non-interactive
+- **@BenGuanRan** — восстановление позиционирования курсора IME
+- **@Jerry2003826** — язык вывода эффективен в side queries
+- **@tanzhenxin** — GLM на DashScope больше не теряет контент web_fetch
+
+<Callout type="info">
+  **Как обновить**:
+  - CLI: выполните `npm i @qwen-code/qwen-code@latest -g` для обновления до последней версии.
+  - Desktop: скачайте установщик для вашей платформы с [GitHub Releases](https://github.com/QwenLM/qwen-code/releases/tag/desktop-latest).
+</Callout>
+
+Есть вопросы или предложения? Откройте issue на [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
