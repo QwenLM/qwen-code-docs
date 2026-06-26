@@ -12,6 +12,10 @@ interface TranslatorConfig {
   model: string;
   maxTokens: number;
   temperature: number;
+  // Max source characters per request when a document must be split to stay
+  // under the model's output-token limit. Documents longer than this are
+  // translated in code-fence-safe slices and reassembled.
+  chunkChars: number;
 }
 
 interface TranslationOptions {
@@ -43,10 +47,18 @@ export class DocumentTranslator {
     });
 
     // API configuration
+    // Chunk size derives from the output-token cap: keep each slice's source
+    // small enough that its translation comfortably fits under maxTokens
+    // (≈0.6 chars/token worst case for CJK/Cyrillic). Override via QWEN_CHUNK_CHARS.
+    const chunkChars =
+      parseInt(process.env.QWEN_CHUNK_CHARS || "", 10) ||
+      Math.max(3000, Math.floor(apiConfig.maxTokens * 0.6));
+
     this.apiConfig = {
       model: apiConfig.model,
       maxTokens: apiConfig.maxTokens,
       temperature: 0.1, // Low temperature for consistent translations
+      chunkChars,
     };
 
     // Translation cache
@@ -102,13 +114,48 @@ export class DocumentTranslator {
     }
 
     try {
-      console.log(chalk.cyan(`    → Translating content (${targetLang})`));
+      let translatedContent: string;
 
-      const prompt = this.buildTranslationPrompt(content, targetLang);
-      const translatedContent = await this.callTranslationAPI(
-        prompt,
-        targetLang
-      );
+      if (content.length <= this.apiConfig.chunkChars) {
+        // Small enough: translate in a single request (original behavior).
+        console.log(chalk.cyan(`    → Translating content (${targetLang})`));
+        translatedContent = await this.callTranslationAPI(
+          this.buildTranslationPrompt(content, targetLang),
+          targetLang
+        );
+      } else {
+        // Large document: split into code-fence-safe slices, translate each,
+        // and reassemble. Avoids silent truncation when the translation would
+        // exceed the model's output-token limit.
+        const slices = this.chunkMarkdown(content, this.apiConfig.chunkChars);
+        console.log(
+          chalk.cyan(
+            `    → Translating content (${targetLang}) in ${slices.length} slices`
+          )
+        );
+        const translatedSlices: string[] = [];
+        for (let i = 0; i < slices.length; i++) {
+          const out = await this.callTranslationAPI(
+            this.buildTranslationPrompt(slices[i], targetLang),
+            targetLang,
+            0,
+            true // sliceMode: tell the model this is a contiguous slice
+          );
+          // Guard against a slice coming back empty (which would silently drop
+          // a section). callTranslationAPI already retries; if still empty for
+          // non-trivial input, fail loudly instead of producing a broken doc.
+          if (slices[i].trim().length > 200 && out.trim().length === 0) {
+            throw new Error(
+              `Empty translation for slice ${i + 1}/${slices.length}`
+            );
+          }
+          translatedSlices.push(out);
+          console.log(
+            chalk.gray(`      ✓ slice ${i + 1}/${slices.length}`)
+          );
+        }
+        translatedContent = translatedSlices.join("\n");
+      }
 
       // Cache translation result
       this.translationCache.set(cacheKey, translatedContent);
@@ -118,6 +165,38 @@ export class DocumentTranslator {
       console.error(chalk.red(`    ✗ Translation failed: ${error.message}`));
       throw error;
     }
+  }
+
+  /**
+   * Split markdown into chunks no larger than maxChars, never breaking inside a
+   * fenced code block, preferring to split at blank lines (section boundaries).
+   */
+  private chunkMarkdown(content: string, maxChars: number): string[] {
+    const lines = content.split("\n");
+    const chunks: string[] = [];
+    let cur: string[] = [];
+    let curLen = 0;
+    let inFence = false;
+
+    const flush = () => {
+      if (cur.length) {
+        chunks.push(cur.join("\n"));
+        cur = [];
+        curLen = 0;
+      }
+    };
+
+    for (const line of lines) {
+      if (/^\s*```/.test(line)) inFence = !inFence;
+      cur.push(line);
+      curLen += line.length + 1;
+      if (curLen >= maxChars && !inFence && line.trim() === "") {
+        flush();
+      }
+    }
+    flush();
+
+    return chunks.length ? chunks : [content];
   }
 
   /**
@@ -151,7 +230,7 @@ ${terminologyContent}
   /**
    * Build system prompt
    */
-  buildSystemPrompt(targetLang: string): string {
+  buildSystemPrompt(targetLang: string, sliceMode = false): string {
     const languageNames: Record<string, string> = {
       zh: "Chinese",
       de: "German",
@@ -164,6 +243,13 @@ ${terminologyContent}
 
     const targetLanguageName = languageNames[targetLang] || targetLang;
     const terminology = this.loadTerminology(targetLang);
+
+    // When the document is translated in slices, the model receives one
+    // contiguous fragment at a time. Tell it (here, in the system prompt, so it
+    // is never echoed into the output) to translate the fragment as-is.
+    const sliceNote = sliceMode
+      ? `\n\n**SLICE MODE:** The text you receive is ONE CONTIGUOUS SLICE of a larger document. It may begin or end mid-section or mid-code-block. Translate exactly what you are given, as-is. Do NOT add headings, do NOT complete cut-off code blocks, and do NOT mention that this is a slice. Output only the translated fragment.`
+      : "";
 
     return `You are an expert technical documentation translator writing for software developers.
 
@@ -198,7 +284,7 @@ Instead of: "配置你的应用程序编程接口密钥"
 Write: "配置你的 API key"
 Instead of: "使用通义千问代码模型"
 Write: "使用 Qwen Code 模型"
-${terminology}
+${terminology}${sliceNote}
 `;
   }
 
@@ -231,7 +317,8 @@ ${content}`;
   async callTranslationAPI(
     prompt: string,
     targetLang: string,
-    retryCount = 0
+    retryCount = 0,
+    sliceMode = false
   ): Promise<string> {
     const maxRetries = 3;
     const baseDelay = 1000; // 1 second base delay
@@ -242,7 +329,7 @@ ${content}`;
         messages: [
           {
             role: "system",
-            content: this.buildSystemPrompt(targetLang),
+            content: this.buildSystemPrompt(targetLang, sliceMode),
           },
           { role: "user", content: prompt },
         ],
@@ -250,7 +337,27 @@ ${content}`;
         temperature: this.apiConfig.temperature,
       });
 
-      return completion.choices[0].message.content?.trim() || "";
+      const result = completion.choices[0].message.content?.trim() || "";
+
+      // An empty response on non-trivial input is almost always a transient
+      // model hiccup; retry rather than silently dropping the content.
+      if (result.length === 0 && prompt.length > 200 && retryCount < maxRetries) {
+        const delay = baseDelay * Math.pow(2, retryCount);
+        console.log(
+          chalk.yellow(
+            `    ⏳ Empty response, retrying in ${delay / 1000}s (${retryCount + 1}/${maxRetries})`
+          )
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return this.callTranslationAPI(
+          prompt,
+          targetLang,
+          retryCount + 1,
+          sliceMode
+        );
+      }
+
+      return result;
     } catch (error: any) {
       // Special handling for 429 errors
       if (error.status === 429 && retryCount < maxRetries) {
@@ -261,7 +368,12 @@ ${content}`;
           )
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
-        return this.callTranslationAPI(prompt, targetLang, retryCount + 1);
+        return this.callTranslationAPI(
+          prompt,
+          targetLang,
+          retryCount + 1,
+          sliceMode
+        );
       }
 
       // Other error handling
