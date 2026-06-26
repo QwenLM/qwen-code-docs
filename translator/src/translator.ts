@@ -80,7 +80,7 @@ export class DocumentTranslator {
       const content = await fs.readFile(filePath, "utf-8");
       const parsedContent = parseMarkdown(content);
 
-      // Full document translation (leverage large context models like qwen3.6-plus)
+      // Full document translation (leverage large context models like deepseek-v4-flash)
       console.log(
         chalk.blue(
           `  ✓ Translating full document (${content.length} characters)`

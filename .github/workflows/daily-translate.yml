@@ -1,0 +1,114 @@
+name: Daily Incremental Translation
+
+# Runs the translator's incremental `sync` once a day, then (if anything
+# changed) commits the new translations to main, rebuilds the site and
+# deploys it — all in one job.
+#
+# Prerequisites (set in repo Settings → Secrets and variables → Actions):
+#   - Secret  TRANSLATE_API_KEY : a PUBLIC, cloud-reachable model API key
+#                                 (Aliyun MaaS — github-hosted runners cannot
+#                                 reach the internal idealab endpoint).
+#   Model / base URL are set as plain env below; change them if you switch
+#   providers. The incremental baseline lives in website/last-sync.json
+#   (tracked in git), so each run only translates what changed upstream.
+#
+# Note: this job pushes to main with GITHUB_TOKEN, which by design does NOT
+# trigger other workflows (e.g. deploy-docs.yml), so there is no double build.
+# This job therefore builds + deploys itself.
+#
+# If main is a protected branch that forbids direct pushes, either allow the
+# github-actions bot to bypass protection, or switch the push step to a PR.
+
+on:
+  schedule:
+    # 20:00 UTC == 04:00 Asia/Shanghai (next day). Adjust as you like.
+    - cron: "0 20 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-translate
+  cancel-in-progress: false
+
+jobs:
+  translate-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Build translator (dist is gitignored)
+        working-directory: ./translator
+        run: |
+          npm install
+          npm run build
+
+      - name: Install website dependencies
+        working-directory: ./website
+        run: npm install
+
+      - name: Run incremental translation sync
+        working-directory: ./website
+        env:
+          OPENAI_API_KEY: ${{ secrets.TRANSLATE_API_KEY }}
+          OPENAI_BASE_URL: https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+          QWEN_MODEL: deepseek-v4-flash
+          # deepseek-v4-flash output cap is large (384K); 32K already exceeds any
+          # single doc's needs, and oversized files still auto-chunk under it.
+          QWEN_MAX_TOKENS: "32768"
+        run: |
+          set -o pipefail
+          node ../translator/bin/qwen-translator sync 2>&1 | tee /tmp/sync.log
+          # Fail the run if any file failed to translate, so we never commit a
+          # baseline that skips broken files (sync advances last-sync.json even
+          # on per-file failures). A failed run leaves main untouched and the
+          # next run retries from the same baseline.
+          if grep -qE '翻译完成: [0-9]+ 成功, [1-9][0-9]* 失败' /tmp/sync.log; then
+            echo "::error::Some files failed to translate; not committing."
+            exit 1
+          fi
+
+      - name: Detect changes
+        id: detect
+        run: |
+          if [ -n "$(git status --porcelain website/content website/last-sync.json website/translation-changelog.json)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected — will build, commit and deploy."
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No upstream doc changes today — nothing to do."
+          fi
+
+      - name: Build website
+        if: steps.detect.outputs.changed == 'true'
+        working-directory: ./website
+        env:
+          NODE_OPTIONS: --max-old-space-size=12288
+        run: npm run build
+
+      - name: Commit translations to main
+        if: steps.detect.outputs.changed == 'true'
+        run: |
+          git config user.name "qwen-docs-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add website/content website/last-sync.json website/translation-changelog.json
+          git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
+          git push origin HEAD:main
+
+      - name: Deploy to GitHub Pages
+        if: steps.detect.outputs.changed == 'true'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./website/out

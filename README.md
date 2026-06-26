@@ -109,13 +109,13 @@ The tool creates a `translation.config.json` file during initialization:
 Create a `.env` file with the following variables:
 
 ```env
-# Required: Qwen API key
-OPENAI_API_KEY=your_qwen_api_key
+# Required: OpenAI-compatible API key
+OPENAI_API_KEY=your_api_key_here
 
 # Optional: API configuration (defaults shown)
-OPENAI_BASE_URL=https://api.qwen.ai/v1
-QWEN_MODEL=qwen3.5-plus
-QWEN_MAX_TOKENS=4000
+OPENAI_BASE_URL=https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+QWEN_MODEL=deepseek-v4-flash
+QWEN_MAX_TOKENS=32768
 ```
 
 ### Alternative API Endpoints
@@ -132,7 +132,7 @@ QWEN_MODEL=qwen-turbo
 
 - Node.js >= 18.0.0
 - npm >= 8.0.0
-- Qwen API key (or compatible OpenAI-format API)
+- OpenAI-compatible API key
 
 ## Project Structure
 
