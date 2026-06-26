@@ -306,12 +306,20 @@ export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看�
     [selectedItemId, allItems]
   );
 
+  const categoryOrder = ["功能更新", "快速入门", "办公提效", "创作设计", "编程开发"];
   const categoryTags = useMemo(() => {
     const categories = new Set<string>();
     for (const item of allItems) {
       if (item.category) categories.add(item.category);
     }
-    return Array.from(categories).sort();
+    return Array.from(categories).sort((a, b) => {
+      const ia = categoryOrder.indexOf(a);
+      const ib = categoryOrder.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
   }, [allItems]);
 
   const featureTags = useMemo(() => {
