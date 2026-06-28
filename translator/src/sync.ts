@@ -315,6 +315,8 @@ export class SyncManager {
         };
       }
 
+      this.ensureCommitAvailable(tempDir, lastSync.commit);
+
       // 获取变更文件
       const changedFiles = execSync(
         `cd ${tempDir} && git diff --name-only ${lastSync.commit} HEAD -- ${this.docsPath}/`,
@@ -337,6 +339,46 @@ export class SyncManager {
     } finally {
       // 清理临时目录在需要时取消注释
       // await fs.remove(tempDir);
+    }
+  }
+
+  private ensureCommitAvailable(repoPath: string, commit: string): void {
+    try {
+      execSync(`cd ${repoPath} && git cat-file -e ${commit}^{commit}`, {
+        stdio: "ignore",
+      });
+      return;
+    } catch {
+      console.log(
+        chalk.yellow(
+          `⚠️  同步基线 ${commit.slice(0, 8)} 不在浅克隆历史中，正在补全源仓库历史...`
+        )
+      );
+    }
+
+    const isShallow = execSync(
+      `cd ${repoPath} && git rev-parse --is-shallow-repository`,
+      { encoding: "utf8" }
+    ).trim();
+
+    if (isShallow === "true") {
+      execSync(`cd ${repoPath} && git fetch --unshallow origin ${this.branch}`, {
+        stdio: "inherit",
+      });
+    } else {
+      execSync(`cd ${repoPath} && git fetch origin ${this.branch}`, {
+        stdio: "inherit",
+      });
+    }
+
+    try {
+      execSync(`cd ${repoPath} && git cat-file -e ${commit}^{commit}`, {
+        stdio: "ignore",
+      });
+    } catch {
+      throw new Error(
+        `同步基线 ${commit} 不存在于源仓库历史中，无法计算增量变更`
+      );
     }
   }
 
