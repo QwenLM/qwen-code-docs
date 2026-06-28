@@ -25,7 +25,7 @@ jobs:
           run_install: false
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --no-audit --no-fund
         working-directory: ./website
 
       - name: Build website
