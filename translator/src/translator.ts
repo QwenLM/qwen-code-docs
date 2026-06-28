@@ -29,6 +29,7 @@ export class DocumentTranslator {
   private apiConfig: TranslatorConfig;
   private translationCache: Map<string, string>;
   private projectRoot: string;
+  private maxRetries: number;
 
   constructor(options: TranslationOptions = {}) {
     this.projectRoot = options.projectRoot || process.cwd();
@@ -60,6 +61,8 @@ export class DocumentTranslator {
       temperature: 0.1, // Low temperature for consistent translations
       chunkChars,
     };
+    this.maxRetries =
+      parseInt(process.env.QWEN_API_MAX_RETRIES || "", 10) || 4;
 
     // Translation cache
     this.translationCache = new Map<string, string>();
@@ -320,8 +323,7 @@ ${content}`;
     retryCount = 0,
     sliceMode = false
   ): Promise<string> {
-    const maxRetries = 3;
-    const baseDelay = 1000; // 1 second base delay
+    const baseDelay = 2000; // 2 second base delay
 
     try {
       const completion = await this.openai.chat.completions.create({
@@ -341,11 +343,15 @@ ${content}`;
 
       // An empty response on non-trivial input is almost always a transient
       // model hiccup; retry rather than silently dropping the content.
-      if (result.length === 0 && prompt.length > 200 && retryCount < maxRetries) {
-        const delay = baseDelay * Math.pow(2, retryCount);
+      if (
+        result.length === 0 &&
+        prompt.length > 200 &&
+        retryCount < this.maxRetries
+      ) {
+        const delay = this.getRetryDelay(baseDelay, retryCount);
         console.log(
           chalk.yellow(
-            `    ⏳ Empty response, retrying in ${delay / 1000}s (${retryCount + 1}/${maxRetries})`
+            `    ⏳ Empty response, retrying in ${Math.round(delay / 1000)}s (${retryCount + 1}/${this.maxRetries})`
           )
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -359,12 +365,12 @@ ${content}`;
 
       return result;
     } catch (error: any) {
-      // Special handling for 429 errors
-      if (error.status === 429 && retryCount < maxRetries) {
-        const delay = baseDelay * Math.pow(2, retryCount); // Exponential backoff
+      if (this.isRetriableApiError(error) && retryCount < this.maxRetries) {
+        const delay = this.getRetryDelay(baseDelay, retryCount);
+        const details = this.formatApiErrorDetails(error);
         console.log(
           chalk.yellow(
-            `    ⏳ Rate limited, retrying in ${delay / 1000}s (${retryCount + 1}/${maxRetries})`
+            `    ⏳ Transient API error (${details}), retrying in ${Math.round(delay / 1000)}s (${retryCount + 1}/${this.maxRetries})`
           )
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -385,6 +391,60 @@ ${content}`;
         throw new Error(`Request configuration error: ${error.message}`);
       }
     }
+  }
+
+  private getRetryDelay(baseDelay: number, retryCount: number): number {
+    const jitter = Math.floor(Math.random() * 1000);
+    return baseDelay * Math.pow(2, retryCount) + jitter;
+  }
+
+  private isRetriableApiError(error: any): boolean {
+    const status = Number(error?.status || error?.cause?.status);
+    if (status === 408 || status === 429 || status >= 500) {
+      return true;
+    }
+
+    const code = String(error?.code || error?.cause?.code || "");
+    if (
+      [
+        "ECONNRESET",
+        "ECONNREFUSED",
+        "ETIMEDOUT",
+        "EAI_AGAIN",
+        "UND_ERR_SOCKET",
+        "UND_ERR_HEADERS_TIMEOUT",
+        "UND_ERR_BODY_TIMEOUT",
+      ].includes(code)
+    ) {
+      return true;
+    }
+
+    const message = this.formatApiErrorDetails(error).toLowerCase();
+    return [
+      "connection error",
+      "premature close",
+      "fetch failed",
+      "socket hang up",
+      "terminated",
+      "connection closed",
+      "connection reset",
+      "timeout",
+    ].some((needle) => message.includes(needle));
+  }
+
+  private formatApiErrorDetails(error: any): string {
+    const parts = [
+      error?.name,
+      error?.code,
+      error?.message,
+      error?.cause?.name,
+      error?.cause?.code,
+      error?.cause?.message,
+    ]
+      .filter(Boolean)
+      .map(String);
+
+    return parts.length > 0 ? parts.join(": ") : "unknown error";
   }
 
   /**

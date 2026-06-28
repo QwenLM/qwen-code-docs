@@ -1,8 +1,9 @@
 name: Daily Incremental Translation
 
-# Runs the translator's incremental `sync` once a day, then (if anything
+# Runs the translator's incremental `sync` on demand, then (if anything
 # changed) commits the new translations to main, rebuilds the site and
-# deploys it — all in one job.
+# deploys it — all in one job. The daily schedule is disabled while the
+# translation API is unstable from github-hosted runners.
 #
 # Prerequisites (set in repo Settings → Secrets and variables → Actions):
 #   - Secret  TRANSLATE_API_KEY : a PUBLIC, cloud-reachable model API key
@@ -20,9 +21,6 @@ name: Daily Incremental Translation
 # github-actions bot to bypass protection, or switch the push step to a PR.
 
 on:
-  schedule:
-    # 20:00 UTC == 04:00 Asia/Shanghai (next day). Adjust as you like.
-    - cron: "0 20 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -37,10 +35,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - name: Checkout main
+      - name: Checkout workflow ref
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.ref }}
           fetch-depth: 0
 
       - name: Install Node.js
@@ -64,9 +62,13 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_API_KEY }}
           OPENAI_BASE_URL: https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
           QWEN_MODEL: deepseek-v4-flash
-          # deepseek-v4-flash output cap is large (384K); 32K already exceeds any
-          # single doc's needs, and oversized files still auto-chunk under it.
-          QWEN_MAX_TOKENS: "32768"
+          # Keep each response moderate; larger docs auto-chunk from this cap.
+          QWEN_MAX_TOKENS: "8192"
+          # The MaaS compatible endpoint can close long responses when all
+          # target languages run at once. Keep CI conservative and let API
+          # retries handle transient disconnects.
+          QWEN_TRANSLATION_CONCURRENCY: "1"
+          QWEN_API_MAX_RETRIES: "4"
         run: |
           set -o pipefail
           node ../translator/bin/qwen-translator sync 2>&1 | tee /tmp/sync.log
@@ -84,7 +86,11 @@ jobs:
         run: |
           if [ -n "$(git status --porcelain website/content website/last-sync.json website/translation-changelog.json)" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "Changes detected — will build, commit and deploy."
+            if [ "$GITHUB_REF_NAME" = "main" ]; then
+              echo "Changes detected — will build, commit and deploy."
+            else
+              echo "Changes detected — will build only because this run is on $GITHUB_REF_NAME."
+            fi
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No upstream doc changes today — nothing to do."
@@ -98,7 +104,7 @@ jobs:
         run: npm run build
 
       - name: Commit translations to main
-        if: steps.detect.outputs.changed == 'true'
+        if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
         run: |
           git config user.name "qwen-docs-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -107,7 +113,7 @@ jobs:
           git push origin HEAD:main
 
       - name: Deploy to GitHub Pages
-        if: steps.detect.outputs.changed == 'true'
+        if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
