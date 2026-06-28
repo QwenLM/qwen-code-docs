@@ -37,10 +37,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - name: Checkout main
+      - name: Checkout workflow ref
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.ref }}
           fetch-depth: 0
 
       - name: Install Node.js
@@ -89,7 +89,11 @@ jobs:
         run: |
           if [ -n "$(git status --porcelain website/content website/last-sync.json website/translation-changelog.json)" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "Changes detected — will build, commit and deploy."
+            if [ "$GITHUB_REF_NAME" = "main" ]; then
+              echo "Changes detected — will build, commit and deploy."
+            else
+              echo "Changes detected — will build only because this run is on $GITHUB_REF_NAME."
+            fi
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No upstream doc changes today — nothing to do."
@@ -103,7 +107,7 @@ jobs:
         run: npm run build
 
       - name: Commit translations to main
-        if: steps.detect.outputs.changed == 'true'
+        if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
         run: |
           git config user.name "qwen-docs-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -112,7 +116,7 @@ jobs:
           git push origin HEAD:main
 
       - name: Deploy to GitHub Pages
-        if: steps.detect.outputs.changed == 'true'
+        if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
