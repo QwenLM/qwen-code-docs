@@ -64,9 +64,8 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_API_KEY }}
           OPENAI_BASE_URL: https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
           QWEN_MODEL: deepseek-v4-flash
-          # deepseek-v4-flash output cap is large (384K); 32K already exceeds any
-          # single doc's needs, and oversized files still auto-chunk under it.
-          QWEN_MAX_TOKENS: "32768"
+          # Keep each response moderate; larger docs auto-chunk from this cap.
+          QWEN_MAX_TOKENS: "8192"
           # The MaaS compatible endpoint can close long responses when all
           # target languages run at once. Keep CI conservative and let API
           # retries handle transient disconnects.

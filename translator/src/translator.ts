@@ -367,9 +367,10 @@ ${content}`;
     } catch (error: any) {
       if (this.isRetriableApiError(error) && retryCount < this.maxRetries) {
         const delay = this.getRetryDelay(baseDelay, retryCount);
+        const details = this.formatApiErrorDetails(error);
         console.log(
           chalk.yellow(
-            `    ⏳ Transient API error (${error.message}), retrying in ${Math.round(delay / 1000)}s (${retryCount + 1}/${this.maxRetries})`
+            `    ⏳ Transient API error (${details}), retrying in ${Math.round(delay / 1000)}s (${retryCount + 1}/${this.maxRetries})`
           )
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -398,15 +399,16 @@ ${content}`;
   }
 
   private isRetriableApiError(error: any): boolean {
-    const status = Number(error?.status);
+    const status = Number(error?.status || error?.cause?.status);
     if (status === 408 || status === 429 || status >= 500) {
       return true;
     }
 
-    const code = String(error?.code || "");
+    const code = String(error?.code || error?.cause?.code || "");
     if (
       [
         "ECONNRESET",
+        "ECONNREFUSED",
         "ETIMEDOUT",
         "EAI_AGAIN",
         "UND_ERR_SOCKET",
@@ -417,8 +419,9 @@ ${content}`;
       return true;
     }
 
-    const message = String(error?.message || "").toLowerCase();
+    const message = this.formatApiErrorDetails(error).toLowerCase();
     return [
+      "connection error",
       "premature close",
       "fetch failed",
       "socket hang up",
@@ -427,6 +430,21 @@ ${content}`;
       "connection reset",
       "timeout",
     ].some((needle) => message.includes(needle));
+  }
+
+  private formatApiErrorDetails(error: any): string {
+    const parts = [
+      error?.name,
+      error?.code,
+      error?.message,
+      error?.cause?.name,
+      error?.cause?.code,
+      error?.cause?.message,
+    ]
+      .filter(Boolean)
+      .map(String);
+
+    return parts.length > 0 ? parts.join(": ") : "unknown error";
   }
 
   /**
