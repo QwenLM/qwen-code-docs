@@ -51,12 +51,12 @@ jobs:
       - name: Build translator (dist is gitignored)
         working-directory: ./translator
         run: |
-          npm install
+          npm ci --no-audit --no-fund
           npm run build
 
       - name: Install website dependencies
         working-directory: ./website
-        run: npm install
+        run: npm ci --no-audit --no-fund
 
       - name: Run incremental translation sync
         working-directory: ./website
