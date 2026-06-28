@@ -67,6 +67,11 @@ jobs:
           # deepseek-v4-flash output cap is large (384K); 32K already exceeds any
           # single doc's needs, and oversized files still auto-chunk under it.
           QWEN_MAX_TOKENS: "32768"
+          # The MaaS compatible endpoint can close long responses when all
+          # target languages run at once. Keep CI conservative and let API
+          # retries handle transient disconnects.
+          QWEN_TRANSLATION_CONCURRENCY: "1"
+          QWEN_API_MAX_RETRIES: "4"
         run: |
           set -o pipefail
           node ../translator/bin/qwen-translator sync 2>&1 | tee /tmp/sync.log

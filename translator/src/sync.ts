@@ -444,15 +444,23 @@ export class SyncManager {
   async translateChangedFiles(
     changedFiles: string[]
   ): Promise<Record<string, TranslationResult>> {
+    const languageConcurrency = Math.max(
+      1,
+      Math.min(
+        this.targetLanguages.length,
+        parseInt(process.env.QWEN_TRANSLATION_CONCURRENCY || "", 10) || 2
+      )
+    );
     console.log(
-      chalk.yellow(`🌍 开始并行翻译 ${this.targetLanguages.length} 种语言...`)
+      chalk.yellow(
+        `🌍 开始翻译 ${this.targetLanguages.length} 种语言（并发: ${languageConcurrency}）...`
+      )
     );
 
     // 在并行翻译前构造翻译器（此处会校验 OPENAI_API_KEY，缺失则尽早抛错）
     const translator = this.getTranslator();
 
-    // 并行翻译所有语言
-    const languagePromises = this.targetLanguages.map(async (language) => {
+    const translateLanguage = async (language: string) => {
       const result: TranslationResult = {
         success: 0,
         failed: 0,
@@ -531,10 +539,18 @@ export class SyncManager {
       );
 
       return { language, result };
-    });
+    };
 
-    // 等待所有语言翻译完成
-    const languageResults = await Promise.all(languagePromises);
+    // 限制语言级并发，避免云端兼容接口在多路长输出请求下提前断流。
+    const languageResults: {
+      language: string;
+      result: TranslationResult;
+    }[] = [];
+    for (let i = 0; i < this.targetLanguages.length; i += languageConcurrency) {
+      const batch = this.targetLanguages.slice(i, i + languageConcurrency);
+      const batchResults = await Promise.all(batch.map(translateLanguage));
+      languageResults.push(...batchResults);
+    }
 
     // 整理结果
     const results: Record<string, TranslationResult> = {};
