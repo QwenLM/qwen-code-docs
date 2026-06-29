@@ -71,20 +71,25 @@ export class DocumentTranslator {
   }
 
   /**
-   * Translate entire document
+   * Translate entire document.
+   * Logs are buffered and flushed atomically so concurrent tasks never
+   * interleave their output.
    */
   async translateDocument(
     filePath: string,
     targetLang: string
   ): Promise<string> {
+    const logLines: string[] = [];
+    const log = (msg: string) => { logLines.push(msg); };
+
     try {
-      console.log(chalk.gray(`→ ${path.basename(filePath)} (${targetLang})`));
+      log(chalk.gray(`→ ${path.basename(filePath)} (${targetLang})`));
 
       const content = await fs.readFile(filePath, "utf-8");
       const parsedContent = parseMarkdown(content);
 
       // Full document translation (leverage large context models like deepseek-v4-flash)
-      console.log(
+      log(
         chalk.blue(
           `  ✓ Translating full document (${content.length} characters)`
         )
@@ -92,36 +97,52 @@ export class DocumentTranslator {
 
       const translatedContent = await this.translateContent(
         parsedContent.originalContent,
-        targetLang
+        targetLang,
+        path.basename(filePath),
+        log
       );
 
-      console.log(chalk.green(`✓ Completed ${path.basename(filePath)}`));
+      log(chalk.green(`✓ Completed ${path.basename(filePath)} (${targetLang})`));
       return translatedContent;
     } catch (error: any) {
-      console.error(chalk.red(`✗ Translation failed: ${error.message}`));
+      log(chalk.red(`✗ Translation failed: ${path.basename(filePath)} (${targetLang}): ${error.message}`));
       throw error;
+    } finally {
+      // Flush all collected logs in one atomic write so concurrent
+      // translations never interleave their progress lines.
+      if (logLines.length) {
+        process.stdout.write(logLines.join('\n') + '\n');
+      }
     }
   }
 
   /**
    * Translate text content
+   * @param label Optional label (e.g. filename) included in progress logs to
+   *              disambiguate output when multiple translations run concurrently.
+   * @param log   Logger function; defaults to console.log. Pass a buffered
+   *              logger to group output atomically.
    */
   async translateContent(
     content: string,
-    targetLang: string
+    targetLang: string,
+    label?: string,
+    log: (msg: string) => void = console.log
   ): Promise<string> {
     const cacheKey = `${content}-${targetLang}`;
     if (this.translationCache.has(cacheKey)) {
-      console.log(chalk.gray(`    ✓ Cached translation`));
+      log(chalk.gray(`    ✓ Cached translation`));
       return this.translationCache.get(cacheKey)!;
     }
 
     try {
       let translatedContent: string;
 
+      const logPrefix = label ? `${label} (${targetLang})` : `(${targetLang})`;
+
       if (content.length <= this.apiConfig.chunkChars) {
         // Small enough: translate in a single request (original behavior).
-        console.log(chalk.cyan(`    → Translating content (${targetLang})`));
+        log(chalk.cyan(`    → Translating content ${logPrefix}`));
         translatedContent = await this.callTranslationAPI(
           this.buildTranslationPrompt(content, targetLang),
           targetLang
@@ -131,9 +152,9 @@ export class DocumentTranslator {
         // and reassemble. Avoids silent truncation when the translation would
         // exceed the model's output-token limit.
         const slices = this.chunkMarkdown(content, this.apiConfig.chunkChars);
-        console.log(
+        log(
           chalk.cyan(
-            `    → Translating content (${targetLang}) in ${slices.length} slices`
+            `    → Translating content ${logPrefix} in ${slices.length} slices`
           )
         );
         const translatedSlices: string[] = [];
@@ -153,9 +174,7 @@ export class DocumentTranslator {
             );
           }
           translatedSlices.push(out);
-          console.log(
-            chalk.gray(`      ✓ slice ${i + 1}/${slices.length}`)
-          );
+          log(chalk.gray(`      ✓ slice ${i + 1}/${slices.length}`));
         }
         translatedContent = translatedSlices.join("\n");
       }
@@ -165,7 +184,7 @@ export class DocumentTranslator {
 
       return translatedContent;
     } catch (error: any) {
-      console.error(chalk.red(`    ✗ Translation failed: ${error.message}`));
+      log(chalk.red(`    ✗ Translation failed: ${error.message}`));
       throw error;
     }
   }
