@@ -1,14 +1,11 @@
 name: Daily Incremental Translation
 
-# Runs the translator's incremental `sync` on demand, then (if anything
+# Runs the translator's incremental `sync` once a day, then (if anything
 # changed) commits the new translations to main, rebuilds the site and
-# deploys it — all in one job. The daily schedule is disabled while the
-# translation API is unstable from github-hosted runners.
+# deploys it — all in one job.
 #
 # Prerequisites (set in repo Settings → Secrets and variables → Actions):
-#   - Secret  TRANSLATE_API_KEY : a PUBLIC, cloud-reachable model API key
-#                                 (Aliyun MaaS — github-hosted runners cannot
-#                                 reach the internal idealab endpoint).
+#   - Secret  TRANSLATE_CODING_PLAN_API_KEY : a cloud-reachable model API key
 #   Model / base URL are set as plain env below; change them if you switch
 #   providers. The incremental baseline lives in website/last-sync.json
 #   (tracked in git), so each run only translates what changed upstream.
@@ -21,6 +18,9 @@ name: Daily Incremental Translation
 # github-actions bot to bypass protection, or switch the push step to a PR.
 
 on:
+  schedule:
+    # 20:00 UTC == 04:00 Asia/Shanghai (next day). Adjust as you like.
+    - cron: "0 20 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -33,16 +33,16 @@ concurrency:
 jobs:
   translate-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 180
     steps:
       - name: Checkout workflow ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: 22
 
@@ -59,15 +59,15 @@ jobs:
       - name: Run incremental translation sync
         working-directory: ./website
         env:
-          OPENAI_API_KEY: ${{ secrets.TRANSLATE_API_KEY }}
-          OPENAI_BASE_URL: https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
-          QWEN_MODEL: deepseek-v4-flash
+          OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
+          OPENAI_BASE_URL: https://coding.dashscope.aliyuncs.com/v1
+          QWEN_MODEL: qwen3.7-plus
           # Keep each response moderate; larger docs auto-chunk from this cap.
-          QWEN_MAX_TOKENS: "8192"
+          QWEN_MAX_TOKENS: "32768"
           # The MaaS compatible endpoint can close long responses when all
           # target languages run at once. Keep CI conservative and let API
           # retries handle transient disconnects.
-          QWEN_TRANSLATION_CONCURRENCY: "1"
+          QWEN_TRANSLATION_CONCURRENCY: "6"
           QWEN_API_MAX_RETRIES: "4"
         run: |
           set -o pipefail
@@ -114,7 +114,7 @@ jobs:
 
       - name: Deploy to GitHub Pages
         if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./website/out
