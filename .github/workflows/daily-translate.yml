@@ -63,11 +63,11 @@ jobs:
           OPENAI_BASE_URL: https://coding.dashscope.aliyuncs.com/v1
           QWEN_MODEL: qwen3.7-plus
           # Keep each response moderate; larger docs auto-chunk from this cap.
-          QWEN_MAX_TOKENS: "8192"
+          QWEN_MAX_TOKENS: "32768"
           # The MaaS compatible endpoint can close long responses when all
           # target languages run at once. Keep CI conservative and let API
           # retries handle transient disconnects.
-          QWEN_TRANSLATION_CONCURRENCY: "1"
+          QWEN_TRANSLATION_CONCURRENCY: "6"
           QWEN_API_MAX_RETRIES: "4"
         run: |
           set -o pipefail
