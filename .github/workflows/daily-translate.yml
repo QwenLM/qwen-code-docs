@@ -43,6 +43,10 @@ jobs:
         with:
           ref: ${{ github.ref }}
           fetch-depth: 1
+          sparse-checkout: |
+            .github
+            translator
+            website
 
       - name: Install Node.js
         uses: actions/setup-node@v3
