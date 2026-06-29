@@ -38,6 +38,9 @@ jobs:
     runs-on: [self-hosted, Linux, X64, ecs-qwen]
     timeout-minutes: 90
     steps:
+      - name: Configure Git transport
+        run: git config --global http.version HTTP/1.1
+
       - name: Checkout workflow ref
         uses: actions/checkout@v4
         with:
