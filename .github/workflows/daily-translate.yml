@@ -61,7 +61,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
           OPENAI_BASE_URL: https://coding.dashscope.aliyuncs.com/v1
-          QWEN_MODEL: deepseek-v4-flash
+          QWEN_MODEL: qwen3.7-plus
           # Keep each response moderate; larger docs auto-chunk from this cap.
           QWEN_MAX_TOKENS: "8192"
           # The MaaS compatible endpoint can close long responses when all
