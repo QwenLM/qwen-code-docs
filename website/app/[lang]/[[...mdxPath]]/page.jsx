@@ -186,7 +186,12 @@ function getExcerptFromContent(lang, mdxPath) {
 // 移除 TS 类型，仅用 JS 语法
 export async function generateMetadata(props) {
   const params = await props.params;
-  const { metadata } = await importContentPage(params.mdxPath, params.lang);
+  let metadata;
+  try {
+    ({ metadata } = await importContentPage(params.mdxPath, params.lang));
+  } catch {
+    notFound();
+  }
 
   const mdxPathSegments = Array.isArray(params.mdxPath)
     ? params.mdxPath

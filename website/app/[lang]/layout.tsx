@@ -10,6 +10,7 @@ import { GitHubStarLink } from "../../src/components/github-star-link";
 import { Search } from "../../src/components/search";
 import { withBasePath } from "../../src/lib/utils";
 import NextLink from "next/link";
+import { notFound } from "next/navigation";
 import type { FC, ReactNode } from "react";
 
 type LayoutProps = Readonly<{
@@ -19,8 +20,14 @@ type LayoutProps = Readonly<{
   }>;
 }>;
 
+const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"];
+
 const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   const { lang } = await params;
+
+  if (!LOCALES.includes(lang)) {
+    notFound();
+  }
 
   let sourcePageMap = await getPageMap(`/${lang}`);
   //@ts-ignore
