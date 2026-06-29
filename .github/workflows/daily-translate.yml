@@ -35,7 +35,7 @@ concurrency:
 
 jobs:
   translate-and-deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, X64, ecs-qwen]
     timeout-minutes: 90
     steps:
       - name: Checkout workflow ref
