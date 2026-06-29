@@ -1,5 +1,9 @@
-import { generateStaticParamsFor, importPage } from "nextra/pages";
+import { notFound } from "next/navigation";
 import { useMDXComponents as getMDXComponents } from "../../../mdx-components";
+import {
+  importContentPage,
+  staticParams,
+} from "../../../src/generated/page-registry";
 import {
   getBlogPostingStructuredData,
   getBreadcrumbStructuredData,
@@ -10,10 +14,8 @@ import path from "node:path";
 import "./index.css";
 
 export const generateStaticParams = async () => {
-  const originalGenerateParams = generateStaticParamsFor("mdxPath");
-  const params = await originalGenerateParams();
   // 过滤掉图片文件路径
-  return params.filter((param) => {
+  return staticParams.filter((param) => {
     const path = Array.isArray(param.mdxPath)
       ? param.mdxPath.join("/")
       : param.mdxPath || "";
@@ -184,7 +186,7 @@ function getExcerptFromContent(lang, mdxPath) {
 // 移除 TS 类型，仅用 JS 语法
 export async function generateMetadata(props) {
   const params = await props.params;
-  const { metadata } = await importPage(params.mdxPath, params.lang);
+  const { metadata } = await importContentPage(params.mdxPath, params.lang);
 
   const mdxPathSegments = Array.isArray(params.mdxPath)
     ? params.mdxPath
@@ -242,7 +244,12 @@ const Wrapper = getMDXComponents().wrapper;
 
 const Page = async (props) => {
   const params = await props.params;
-  const result = await importPage(params.mdxPath, params.lang);
+  let result;
+  try {
+    result = await importContentPage(params.mdxPath, params.lang);
+  } catch {
+    notFound();
+  }
   const { default: MDXContent, toc, metadata, sourceCode } = result;
   const mdxPath = Array.isArray(params.mdxPath) ? params.mdxPath : [];
   const isLanguageIndex = mdxPath.length === 0;

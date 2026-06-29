@@ -5,8 +5,10 @@
   "scripts": {
     "clean": "rm -rf .next",
     "generate-showcase": "node scripts/generate-showcase-data.js",
-    "dev": "npm run generate-showcase && npm run clean && next dev",
-    "build": "npm run generate-showcase && npm run clean && next build",
+    "generate-pages": "node scripts/generate-page-registry.js",
+    "generate": "npm run generate-showcase && npm run generate-pages",
+    "dev": "npm run generate && npm run clean && next dev",
+    "build": "npm run generate && npm run clean && next build",
     "postbuild": "node scripts/set-html-lang.js && pagefind --site out --output-path out/_pagefind --exclude-selectors 'noscript,script,style,pre,code,.nextra-code-block,.nextra-toc,.nextra-sidebar,.nextra-breadcrumb,.nextra-banner'",
     "preview": "node scripts/preview.js"
   },
