@@ -33,7 +33,9 @@ concurrency:
 jobs:
   translate-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    # Large upstream batches can spend nearly three hours translating before
+    # the static site build starts.
+    timeout-minutes: 240
     steps:
       - name: Checkout workflow ref
         uses: actions/checkout@v7
