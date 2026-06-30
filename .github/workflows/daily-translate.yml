@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     # Large upstream batches can spend nearly three hours translating before
     # the static site build starts.
-    timeout-minutes: 240
+    timeout-minutes: 300
     steps:
       - name: Checkout workflow ref
         uses: actions/checkout@v7
