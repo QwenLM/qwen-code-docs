@@ -2,30 +2,30 @@
 
 ## Обзор
 
-`packages/sdk-typescript/src/daemon/` — это **клиент демона TypeScript SDK**. Это канонический способ подключения к работающему демону `qwen serve` из любого узла TypeScript/JavaScript (собственный TUI-адаптер CLI, бэкенды канальных ботов, компаньон для IDE VS Code, пользовательские скрипты и серверные веб-бэкенды). Все остальные адаптеры зависят от него.
+`packages/sdk-typescript/src/daemon/` — это **клиент демона TypeScript SDK**. Это каноничный способ подключения к работающему демону `qwen serve` из любого хоста на TypeScript / JavaScript (собственный TUI-адаптер CLI, бэкенды каналов ботов, IDE-компаньон для VS Code, пользовательские скрипты и серверные веб-бэкенды). Все остальные адаптеры зависят от него.
 
-Структура пакета намеренно компактна:
+Структура пакета намеренно минималистична:
 
-| Файл                     | Содержимое                                                                                                                              |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.ts`               | Публичный модуль (`DaemonClient`, `DaemonSessionClient`, `DaemonAuthFlow`, `parseSseStream`, редукторы событий, типы).                  |
-| `DaemonClient.ts`        | Низкоуровневая HTTP/SSE-обёртка — один метод на маршрут `qwen-serve-protocol.md`.                                                       |
-| `DaemonSessionClient.ts` | Сессионная обёртка с отслеживанием повторного воспроизведения SSE.                                                                      |
-| `DaemonAuthFlow.ts`      | Высокоуровневый помощник для OAuth Device Flow.                                                                                         |
-| `sse.ts`                 | `parseSseStream` (парсер NDJSON/SSE-фреймов).                                                                                           |
-| `events.ts`              | `asKnownDaemonEvent`, `reduceDaemonSessionEvent`, `reduceDaemonAuthEvent` (см. [`09-event-schema.md`](./09-event-schema.md)).           |
-| `types.ts`               | `DaemonCapabilities`, `DaemonSession`, `DaemonEvent`, `PermissionResponse`, `PromptResult`, типы MCP / агентов / памяти / аутентификации. |
+| Файл                     | Поверхность                                                                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `index.ts`               | Публичный barrel (экспорты `DaemonClient`, `DaemonSessionClient`, `DaemonAuthFlow`, `parseSseStream`, редьюсеры событий, типы).    |
+| `DaemonClient.ts`        | Низкоуровневый HTTP/SSE-фасад — по одному методу на каждый маршрут из `qwen-serve-protocol.md`.                                    |
+| `DaemonSessionClient.ts` | Обертка для сессии с отслеживанием повтора SSE.                                                                                    |
+| `DaemonAuthFlow.ts`      | Высокоуровневый хелпер для OAuth device-flow.                                                                                      |
+| `sse.ts`                 | `parseSseStream` (парсер фрейминга NDJSON / SSE).                                                                                  |
+| `events.ts`              | `asKnownDaemonEvent`, `reduceDaemonSessionEvent`, `reduceDaemonAuthEvent` (см. [`09-event-schema.md`](./09-event-schema.md)).      |
+| `types.ts`               | `DaemonCapabilities`, `DaemonSession`, `DaemonEvent`, `PermissionResponse`, `PromptResult`, типы MCP / агента / памяти / auth.    |
 
-Пошаговый пример находится в [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md); этот документ — справочник по архитектуре и контрактам.
+Пошаговый пример находится в [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md); этот документ представляет собой справочник по архитектуре и контрактам.
 
-## Обязанности
+## Функции
 
-- Предоставить один метод TypeScript на каждый HTTP-маршрут демона.
-- Правильно проставлять bearer-токен и заголовок `X-Qwen-Client-Id` в каждом запросе.
-- Комбинировать таймауты на вызов с предоставленным вызывающим кодом `AbortSignal` (не прерывая долгоживущие SSE).
-- Потоково передавать и парсить SSE-фреймы в типизированные `DaemonEvent`.
-- Отслеживать `lastSeenEventId` для каждой сессии, чтобы при переподключении корректно воспроизводить события.
-- Предоставлять интерфейс аутентификации через Device Flow, опрашивающий демона с заданными им интервалами.
+- Предоставлять по одному методу TypeScript для каждого HTTP-маршрута демона.
+- Корректно добавлять bearer-токен и заголовок `X-Qwen-Client-Id` в каждый запрос.
+- Композировать таймауты вызовов с переданным вызывающим кодом `AbortSignal` (не прерывая долгоживущие SSE-соединения).
+- Принимать в потоке и парсить SSE-фреймы в типизированные `DaemonEvent`.
+- Отслеживать `lastSeenEventId` для каждой сессии, чтобы переподключения корректно воспроизводили пропущенные события.
+- Предоставлять интерфейс аутентификации device-flow, который выполняет опрос с интервалами, заданными демоном.
 
 ## Архитектура
 
@@ -35,40 +35,40 @@
 
 ```ts
 new DaemonClient({
-  baseUrl: string,                  // по умолчанию 'http://127.0.0.1:4170'
+  baseUrl: string,                  // default 'http://127.0.0.1:4170'
   token?: string,
-  fetch?: typeof globalThis.fetch,  // вставляется для тестов
-  fetchTimeoutMs?: number,          // 0 = отключено; по умолчанию DEFAULT_FETCH_TIMEOUT_MS
+  fetch?: typeof globalThis.fetch,  // injectable for tests
+  fetchTimeoutMs?: number,          // 0 = disabled; default DEFAULT_FETCH_TIMEOUT_MS
 });
 ```
 
-Группы методов (каждый метод принимает необязательный `clientId` для заголовка `X-Qwen-Client-Id`):
+Группы методов (каждый метод принимает опциональный `clientId` для добавления заголовка `X-Qwen-Client-Id`):
 
-| Группа               | Методы                                                                                                                                                                                                                                                                                    |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Базовые              | `health()`, `capabilities()`, `auth` (ленивый аксессор `DaemonAuthFlow`)                                                                                                                                                                                                                  |
-| Сессии               | `createOrAttachSession`, `loadSession`, `resumeSession`, `listSessions`, `closeSession`, `setSessionMetadata`, `getSessionContext`, `getSessionSupportedCommands`, `setSessionApprovalMode`, `setSessionModel`                                                                             |
-| Промптинг            | `prompt`, `cancel`, `heartbeat`                                                                                                                                                                                                                                                           |
-| События              | `subscribeEvents` (генератор SSE), `subscribeEventsStream` (сырой ответ)                                                                                                                                                                                                                  |
-| Разрешения           | `respondToPermission`, `respondToSessionPermission`                                                                                                                                                                                                                                       |
-| Снимки workspace     | `getWorkspaceMcp`, `getWorkspaceSkills`, `getWorkspaceProviders`, `getWorkspaceEnv`, `getWorkspacePreflight`                                                                                                                                                                               |
-| Изменения workspace  | `writeWorkspaceMemory`, `readWorkspaceMemory`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `toggleWorkspaceTool`, `restartMcpServer`, `initializeWorkspace`                                                         |
-| Файлы                | `readFile`, `readFileBytes`, `writeFile`, `editFile`, `listDirectory`, `globPaths`, `statPath`                                                                                                                                                                                            |
-| Аутентификация       | `startDeviceFlow`, `pollDeviceFlow`, `cancelDeviceFlow`, `getAuthStatus`                                                                                                                                                                                                                  |
+| Группа                  | Методы                                                                                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Служебные               | `health()`, `capabilities()`, `auth` (ленивый аксессор `DaemonAuthFlow`)                                                                                                                                                        |
+| Сессии                  | `createOrAttachSession`, `loadSession`, `resumeSession`, `listSessions`, `closeSession`, `setSessionMetadata`, `getSessionContext`, `getSessionSupportedCommands`, `setSessionApprovalMode`, `setSessionModel`                  |
+| Промпты                 | `prompt`, `cancel`, `heartbeat`                                                                                                                                                                                                 |
+| События                 | `subscribeEvents` (SSE-генератор), `subscribeEventsStream` (сырой ответ)                                                                                                                                                        |
+| Разрешения              | `respondToPermission`, `respondToSessionPermission`                                                                                                                                                                             |
+| Снимки рабочего пространства | `getWorkspaceMcp`, `getWorkspaceSkills`, `getWorkspaceProviders`, `getWorkspaceEnv`, `getWorkspacePreflight`                                                                                                                |
+| Изменения рабочего пространства | `writeWorkspaceMemory`, `readWorkspaceMemory`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `toggleWorkspaceTool`, `restartMcpServer`, `initializeWorkspace` |
+| Файлы                   | `readFile`, `readFileBytes`, `writeFile`, `editFile`, `listDirectory`, `globPaths`, `statPath`                                                                                                                                  |
+| Аутентификация          | `startDeviceFlow`, `pollDeviceFlow`, `cancelDeviceFlow`, `getAuthStatus`                                                                                                                                                        |
 
 ### `fetchWithTimeout`
 
-Каждый запрос проходит через `fetchWithTimeout`. Ключевые детали:
+Каждый запрос проходит через `fetchWithTimeout`. Критически важные детали:
 
-- **Чтение тела находится в области действия таймера.** В предыдущих реализациях таймер очищался при получении заголовков; если прокси зависал в середине тела, `await res.json()` мог висеть дольше `fetchTimeoutMs`. Текущая версия передаёт код чтения тела как колбэк, так что таймер покрывает как получение заголовков, так и потребление тела.
-- **`perCallTimeoutMs`** позволяет отдельному вызову переопределить таймаут по умолчанию для всего клиента. Самый заметный вызывающий код — `restartMcpServer`: SDK использует `MCP_RESTART_DEFAULT_TIMEOUT_MS = 330_000` (5 мин 30 с). Собственный `MCP_RESTART_TIMEOUT_MS` демона составляет ровно 300 с; если бы клиент совпадал с этим значением, перезапуск, завершающийся около 300 с, мог бы проиграть гонку, пока демон сериализует и отправляет структурированный ответ, что привело бы к ложноположительной ошибке `TimeoutError`. Дополнительные 30 с покрывают сериализацию, передачу по сети и декодирование на обеих сторонах. Вызывающие коды, которым нужен более строгий бюджет, могут передать `timeoutMs`; передача `0` отключает таймаут.
-- **`AbortSignal.any`** объединяет сигнал вызывающего кода с сигналом таймера вызова, так что отмена вызывающим кодом и таймаут вызова корректно прерывают запрос.
-- **`AbortController` + отменяемый `setTimeout`** вместо `AbortSignal.timeout()` — чтобы быстро разрешающиеся запросы не оставляли ожидающие таймеры в цикле событий. Таймер очищается в блоке `finally`.
-- **Потоковые конечные точки (`subscribeEvents`) обходят таймаут** — долгоживущие SSE не должны им прерываться.
+- **Чтение тела запроса находится в области действия таймера.** В предыдущих реализациях таймер сбрасывался при получении заголовков; если прокси зависал в середине передачи тела, `await res.json()` мог зависнуть дольше `fetchTimeoutMs`. Текущая реализация передает код чтения тела как колбэк, поэтому таймер охватывает как получение заголовков, ТАК и чтение тела.
+- **`perCallTimeoutMs`** позволяет одному вызову переопределить дефолтный таймаут для всего клиента. Самый заметный вызывающий код — `restartMcpServer`: SDK использует `MCP_RESTART_DEFAULT_TIMEOUT_MS = 330_000` (5 мин 30 сек). Собственный таймаут демона `MCP_RESTART_TIMEOUT_MS` составляет ровно 300 сек; если бы клиент использовал то же значение, перезапуск, завершающийся около 300 сек, мог бы проиграть гонку, пока демон сериализует и отправляет структурированный ответ, что привело бы к ложному срабатыванию `TimeoutError`. Дополнительные 30 сек покрывают сериализацию, передачу по сети и декодирование на обеих сторонах. Вызывающий код, которому требуется более жесткий лимит, может передать `timeoutMs`; передача `0` отключает таймаут.
+- **`AbortSignal.any`** комбинирует сигнал, переданный вызывающим кодом, с сигналом таймера вызова, поэтому и отмена вызывающим кодом, и таймаут вызова корректно прерывают операцию.
+- **`AbortController` + отменяемый `setTimeout`** вместо `AbortSignal.timeout()`, чтобы быстро завершающиеся запросы не оставляли висящие таймеры в цикле событий. Таймер очищается в блоке `finally`.
+- **Потоковые эндпоинты (`subscribeEvents`) обходят таймаут** — долгоживущие SSE не должны прерываться им.
 
 ### `DaemonSessionClient` (`DaemonSessionClient.ts`)
 
-Привязывается к одной сессии и автоматически отслеживает `lastSeenEventId`, чтобы повторное воспроизведение SSE и переподключение работали без дополнительного состояния вызывающего кода.
+Привязывается к одной сессии и автоматически отслеживает `lastSeenEventId`, чтобы повтор и переподключение SSE работали без дополнительного состояния со стороны вызывающего кода.
 
 ```ts
 class DaemonSessionClient {
@@ -92,7 +92,7 @@ class DaemonSessionClient {
 }
 ```
 
-`events()` проксирует `client.subscribeEvents` с `resume: true` по умолчанию — он передаёт отслеживаемый `lastSeenEventId`, так что при переподключении воспроизведение начинается с того места, где остановилась предыдущая подписка. Каждое полученное событие увеличивает `lastSeenEventId`.
+`events()` проксирует `client.subscribeEvents` с параметром `resume: true` по умолчанию — он передает отслеживаемый `lastSeenEventId`, чтобы при переподключении воспроизведение начиналось с того места, где остановилась предыдущая подписка. Каждое полученное событие увеличивает `lastSeenEventId`.
 
 ### `DaemonAuthFlow` (`DaemonAuthFlow.ts`)
 
@@ -111,32 +111,32 @@ interface DaemonAuthFlowHandle {
 }
 ```
 
-`awaitCompletion()` опрашивает `GET /workspace/auth/device-flow/:id` с интервалом `intervalMs`, заданным демоном, пока поток не станет `authorized`, `failed` или `cancelled`. Конструкция ленивая — доступ через `client.auth`, так что клиенты, никогда не использующие аутентификацию, не несут затрат на выделение ресурсов.
+`awaitCompletion()` опрашивает `GET /workspace/auth/device-flow/:id` с интервалом `intervalMs`, заданным демоном, пока поток не перейдет в состояние `authorized`, `failed` или `cancelled`. Он создается лениво через `client.auth`, поэтому клиенты, которые никогда не взаимодействуют с аутентификацией, не несут затрат на выделение памяти.
 
 ### `parseSseStream` (`sse.ts`)
 
 Преобразует `Response.body` (`ReadableStream<Uint8Array>`) в `AsyncIterable<DaemonEvent>`. Обрабатывает:
 
 - Фрейминг LF и CRLF.
-- Ограничение переполнения буфера (16 МиБ) — защитная граница от демона, отправляющего один абсурдно большой фрейм.
-- Подключение `AbortSignal` — прерывание закрывает поток и итератор.
-- Фреймы, содержащие только комментарии, и неизвестные типы событий (передаются как `DaemonEvent`; потребители SDK сужают тип downstream через `asKnownDaemonEvent`).
+- Ограничение переполнения буфера (16 МиБ) — защитный лимит на случай, если демон отправит один абсурдно большой фрейм.
+- Интеграция AbortSignal — прерывание закрывает поток и итератор.
+- Фреймы, содержащие только комментарии, и неизвестные типы событий (передаются как `DaemonEvent`; потребители SDK сужают тип ниже по потоку с помощью `asKnownDaemonEvent`).
 
 ### Типы (`types.ts`)
 
-Примечательные экспорты: `DaemonCapabilities`, `DaemonSession` (`{ sessionId, workspaceCwd, attached, clientId?, createdAt? }`), `DaemonEvent`, `DaemonSessionState`, `DaemonSessionContextStatus`, `DaemonSessionSupportedCommandsStatus`, `PermissionResponse`, `PromptResult`, `HeartbeatResult`, `SetModelResult`, `SessionMetadataResult`, а также типы результатов MCP / агентов / памяти / аутентификации.
+Основные экспорты: `DaemonCapabilities`, `DaemonSession` (`{ sessionId, workspaceCwd, attached, clientId?, createdAt? }`), `DaemonEvent`, `DaemonSessionState`, `DaemonSessionContextStatus`, `DaemonSessionSupportedCommandsStatus`, `PermissionResponse`, `PromptResult`, `HeartbeatResult`, `SetModelResult`, `SessionMetadataResult`, а также типы результатов MCP / агента / памяти / аутентификации.
 
 ## Рабочий процесс
 
-### Создание/подключение + первый промпт
+### Создание или подключение + первый промпт
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as App code
+    participant App as Код приложения
     participant SC as DaemonSessionClient
     participant DC as DaemonClient
-    participant D as Daemon
+    participant D as Демон
 
     App->>SC: DaemonSessionClient.createOrAttach(client, {clientId: 'alice'})
     SC->>DC: client.createOrAttachSession({}, 'alice')
@@ -157,10 +157,10 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as App code
+    participant App as Код приложения
     participant SC as DaemonSessionClient
     participant DC as DaemonClient
-    participant D as Daemon
+    participant D as Демон
     participant P as parseSseStream
 
     App->>SC: for await (e of session.events())
@@ -176,15 +176,15 @@ sequenceDiagram
     end
 ```
 
-### Аутентификация через Device Flow
+### Аутентификация Device-flow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as App
+    participant App as Приложение
     participant AF as DaemonAuthFlow
     participant DC as DaemonClient
-    participant D as Daemon
+    participant D as Демон
 
     App->>AF: start({providerId: 'qwen-oauth'})
     AF->>DC: client.startDeviceFlow(...)
@@ -201,59 +201,156 @@ sequenceDiagram
     AF-->>App: final state
 ```
 
-`qwen-oauth` — это устаревший идентификатор провайдера v1. Бесплатный уровень Qwen OAuth был прекращён 2026-04-15, поэтому новые клиенты должны предпочитать текущие поддерживаемые провайдеры аутентификации, когда они доступны.
+`qwen-oauth` — это устаревший идентификатор провайдера v1. Бесплатный тариф Qwen OAuth был отменен 15.04.2026, поэтому новым клиентам следует использовать актуальный поддерживаемый провайдер аутентификации, если он доступен.
 
 ## Состояние и жизненный цикл
 
-- `DaemonClient` не поддерживает соединение; при создании ничего не происходит. Каждый метод открывает новый `fetch`.
-- `DaemonSessionClient` сохраняет `lastSeenEventId` между вызовами `events()`; при переподключении воспроизведение начинается с последнего просмотренного события.
-- `DaemonAuthFlow` ленивый — `client.auth` создаёт его при первом обращении.
-- Итератор SSE закрывается, когда (а) демон завершает поток, (б) срабатывает `AbortSignal.abort()`, (в) потребитель выходит из цикла `for await`, или (г) достигается ограничение буфера (16 МиБ).
+- `DaemonClient` не устанавливает постоянное соединение; при создании ничего не происходит. Каждый метод открывает новый `fetch`.
+- `DaemonSessionClient` сохраняет `lastSeenEventId` между вызовами `events()`; переподключения начинают воспроизведение с последнего просмотренного события.
+- `DaemonAuthFlow` создается лениво — `client.auth` инициализирует его при первом обращении.
+- Итератор SSE закрывается, когда: (a) демон завершает поток, (b) срабатывает `AbortSignal.abort()`, (c) потребитель выходит из цикла `for await` или (d) достигается лимит переполнения буфера (16 МиБ).
 
 ## Зависимости
 
-- `globalThis.fetch` (встроенный в Node 18+, браузер, undici и т.д.). Вставляется через `DaemonClient` для тестов.
+- `globalThis.fetch` (встроен в Node 18+, браузер, undici и т.д.). Можно инжектировать в `DaemonClient` для тестов.
 - Нативные `AbortController` / `AbortSignal.any` / `setTimeout`.
-- Нет транзитивных зависимостей от `@qwen-code/qwen-code-core` или `@qwen-code/acp-bridge` — пакет SDK полностью отделён, чтобы внешние потребители не тянули внутренности демона.
+- Нет транзитивных зависимостей от `@qwen-code/qwen-code-core` или `@qwen-code/acp-bridge` — пакет SDK полностью независим, чтобы внешние потребители не подключали внутренние компоненты демона.
 
 ## Подпакет `ui/*` ([#4328](https://github.com/QwenLM/qwen-code/pull/4328) + [#4353](https://github.com/QwenLM/qwen-code/pull/4353))
 
-SDK также экспортирует `packages/sdk-typescript/src/daemon/ui/` — набор нейтральных к среде примитивов, которые преобразуют события демона в блоки транскрипта:
+SDK также экспортирует `packages/sdk-typescript/src/daemon/ui/` — набор примитивов, не зависящих от хоста, которые преобразуют события демона в блоки транскрипта:
 
-- `normalizeDaemonEvent(evt)` отображает 43 известных проводных события демона в 37 удобных для UI значений `DaemonUiEventType`; немоделированные или некорректные события нормализуются в `debug`.
-- `createDaemonTranscriptState()` плюс `reduceDaemonTranscriptEvents(state, events)` проецирует UI-события в `DaemonTranscriptBlock[]`.
-- `createDaemonTranscriptStore()` оборачивает подписку/диспатч.
-- `render.ts` / `terminal.ts` предоставляют базовые рендереры для HTML и терминала, а `toolPreview.ts` создаёт сводки вызовов инструментов.
+- `normalizeDaemonEvent(evt)` сопоставляет 47 известных сетевых событий демона с 42 удобными для UI значениями `DaemonUiEventType`; немоделированные или некорректные события нормализуются в `debug`.
+- `createDaemonTranscriptState()` вместе с `reduceDaemonTranscriptEvents(state, events)` проецирует события UI в `DaemonTranscriptBlock[]`.
+- `createDaemonTranscriptStore()` оборачивает подписку / диспетчеризацию.
+- `render.ts` / `terminal.ts` предоставляют базовые рендереры для HTML и терминала, а `toolPreview.ts` генерирует сводки вызовов инструментов.
 - Селекторы включают `selectTranscriptBlocksOrderedByEventId`, `selectPendingPermissionBlocks`, `selectCurrentTool`, `selectApprovalMode`, `selectToolProgress`, `selectSubagentChildBlocks`, `formatMissedRange` и `formatBlockTimestamp`.
 - Публичные константы включают `DAEMON_PLAN_TOOL_CALL_ID`.
-- `conformance.ts` содержит набор тестов для проверки согласованности между средами.
+- `conformance.ts` содержит набор тестов на кросс-хостовую согласованность.
 
-Первым потребителем в производстве является `packages/webui/src/daemon/` через React-компонент `DaemonSessionProvider`. Подробная архитектура, глоссарий, таблица селекторов и связь с устаревшим `DaemonTuiAdapter` описаны в [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md).
+Первый production-потребитель — `packages/webui/src/daemon/` через React-провайдер `DaemonSessionProvider`. См. [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md) для подробного описания архитектуры, глоссария, таблицы селекторов и связи с устаревшим `DaemonTuiAdapter`.
 
 Подпакет экспортируется из подпути `@qwen-code/sdk/daemon`. Существующий код, использующий `import { DaemonClient }`, не затрагивается.
 
+## Переподключение по `Last-Event-ID` с помощью SDK
+
+### Автоматическое отслеживание через `DaemonSessionClient`
+
+`DaemonSessionClient` внутренне отслеживает `lastSeenEventId`. Каждое полученное событие с числовым `id` сдвигает курсор. Последующие вызовы `events()` автоматически передают отслеживаемый id как `Last-Event-ID`, поэтому переподключение с воспроизведением работает без дополнительного состояния со стороны вызывающего кода:
+
+```ts
+import { DaemonClient, DaemonSessionClient } from '@qwen-code/sdk/daemon';
+
+const client = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170', token });
+const session = await DaemonSessionClient.createOrAttach(client);
+
+// Первая подписка — начинает в реальном времени (или с начала кольцевого буфера для новых сессий).
+for await (const event of session.events()) {
+  console.log(event.type, event.id);
+  // session.lastEventId увеличивается для каждого фрейма с id.
+  if (shouldStop(event)) break;
+}
+
+// Переподключение — автоматически отправляет Last-Event-ID: <последний увиденный id>.
+// Демон воспроизводит пропущенные события из кольцевого буфера, затем переходит в режим реального времени.
+for await (const event of session.events()) {
+  // Сначала приходят фреймы воспроизведения, затем синтетический `replay_complete`,
+  // затем события реального времени.
+  handleEvent(event);
+}
+```
+
+### Ручное переподключение с `DaemonClient`
+
+Для более низкоуровневого управления используйте `DaemonClient.subscribeEvents` напрямую и управляйте курсором самостоятельно:
+
+```ts
+const client = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170', token });
+
+let cursor: number | undefined; // undefined = только реальное время при первом подключении
+
+async function* subscribe(sessionId: string, signal: AbortSignal) {
+  for await (const event of client.subscribeEvents(sessionId, {
+    lastEventId: cursor,
+    signal,
+  })) {
+    // Только фреймы с id сдвигают курсор.
+    if (event.id !== undefined) {
+      cursor = event.id;
+    }
+    // Обработка разрыва из-за вытеснения из кольцевого буфера.
+    if (event.type === 'state_resync_required') {
+      // Состояние устарело — перезагружаем полное состояние сессии.
+      await client.loadSession(sessionId);
+      continue;
+    }
+    yield event;
+  }
+}
+```
+
+### Переподключение с циклом повторных попыток
+
+SDK **не** выполняет автоматические повторные попытки при сетевых сбоях. Реализуйте цикл повторных попыток вокруг `events()`:
+
+```ts
+async function resilientSubscribe(session: DaemonSessionClient) {
+  const MAX_RETRIES = 10;
+  const BASE_DELAY_MS = 1000;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      // `resume: true` (по умолчанию) передает отслеживаемый lastSeenEventId.
+      for await (const event of session.events()) {
+        attempt = 0; // сброс при успешном событии
+        handleEvent(event);
+      }
+      break; // чистое завершение потока
+    } catch (err) {
+      const delay = BASE_DELAY_MS * 2 ** Math.min(attempt, 5);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+}
+```
+
+При переподключении демон воспроизводит события с `id > lastSeenEventId` из своего ограниченного кольцевого буфера (по умолчанию 8000 событий). Если разрыв превышает размер кольцевого буфера, фрейм `state_resync_required` сигнализирует клиенту о необходимости вызвать `loadSession` для полного восстановления состояния.
+
+### Инициализация `lastEventId` при создании
+
+Вызывающий код, который сохраняет курсор между перезапусками процесса, может инициализировать его:
+
+```ts
+const session = new DaemonSessionClient({
+  client,
+  session: { sessionId, workspaceCwd, attached: true },
+  lastEventId: persistedCursor, // возобновление с сохраненной позиции
+});
+```
+
+Значение должно быть конечным неотрицательным целым числом (проверяется при создании). Некорректные значения вызывают ошибку.
+
 ## Конфигурация
 
-| Параметр            | Где                                  | Эффект                                                                                               |
-| ------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `baseUrl`           | Конструктор `DaemonClient`           | URL демона; завершающие слэши удаляются.                                                             |
-| `token`             | Конструктор `DaemonClient`           | Проставляется как `Authorization: Bearer`.                                                           |
-| `fetch`             | Конструктор `DaemonClient`           | Точка внедрения для тестов.                                                                          |
-| `fetchTimeoutMs`    | Конструктор `DaemonClient`           | Таймаут на вызов; `0` = отключено.                                                                  |
-| `clientId`          | Необязательный аргумент методов      | Заголовок `X-Qwen-Client-Id` (см. [`08-session-lifecycle.md`](./08-session-lifecycle.md)).           |
-| `lastEventId`       | Конструктор `DaemonSessionClient`    | Начальный курсор воспроизведения.                                                                    |
-| `maxQueued`         | Опция подписки                       | `?maxQueued=N` для SSE-маршрута; сначала проверьте `caps.features.slow_client_warning`.              |
-| `perCallTimeoutMs`  | На уровне метода (например, `restartMcpServer`) | Переопределяет таймаут для всего клиента.                                                    |
+| Параметр           | Где                                  | Эффект                                                                                  |
+| ------------------ | ------------------------------------ | --------------------------------------------------------------------------------------- |
+| `baseUrl`          | Конструктор `DaemonClient`           | URL демона; конечные слеши удаляются.                                                   |
+| `token`            | Конструктор `DaemonClient`           | Добавляется как `Authorization: Bearer`.                                                |
+| `fetch`            | Конструктор `DaemonClient`           | Точка инжекции для тестов.                                                              |
+| `fetchTimeoutMs`   | Конструктор `DaemonClient`           | Таймаут вызова; `0` = отключено.                                                        |
+| `clientId`         | Опциональный аргумент метода         | Заголовок `X-Qwen-Client-Id` (см. [`08-session-lifecycle.md`](./08-session-lifecycle.md)). |
+| `lastEventId`      | Конструктор `DaemonSessionClient`    | Инициализация курсора воспроизведения.                                                  |
+| `maxQueued`        | Опция подписки                       | `?maxQueued=N` для SSE-маршрута; сначала проверьте pre-flight `caps.features.slow_client_warning`. |
+| `perCallTimeoutMs` | Метод (напр. `restartMcpServer`)     | Переопределяет общий таймаут клиента.                                                   |
 
-## Предостережения и известные ограничения
+## Ограничения и известные нюансы
 
-- **`fetchTimeoutMs` применяется к вызову, а не к соединению.** Длительное чтение тела использует общий таймер. Демон, передающий ответы в потоке, должен переопределить таймаут для вызова или установить его в `0`.
-- **SSE обходит таймаут fetch** — долгоживущие SSE-соединения не прерываются `fetchTimeoutMs`. Используйте `AbortSignal` для отмены со стороны вызывающего кода.
-- **Ограничение буфера `parseSseStream` — 16 МиБ** как защитная граница. Один фрейм больше этого размера прерывает итератор (демон никогда не отправляет такие фреймы легитимно).
-- **`asKnownDaemonEvent` возвращает `undefined` для нераспознанных типов событий.** Потребители SDK должны обрабатывать эту ветвь, не предполагая, что объединение исчерпывающее; это контракт обратной совместимости. Нераспознанные события увеличивают `DaemonSessionViewState.unrecognizedKnownEventCount`.
-- **`client_evicted`, `slow_client_warning`, `stream_error` отсутствуют в кольце воспроизведения.** При переподключении после вытеснения события берутся из кольца демона; вы не увидите фрейм вытеснения снова.
-- **`DaemonClient` не выполняет автоматические повторы.** Сбои сети приводят к отклонению; стратегия переподключения/воспроизведения — ответственность вызывающего кода (`DaemonSessionClient.events()` упрощает воспроизведение, но переподключение всё равно выполняется на каждый вызов).
-
+- **`fetchTimeoutMs` действует для каждого вызова, а не на уровне соединения.** Долгие чтения тела используют общий таймер. Демон, который стримит ответы, должен переопределять таймаут вызова или устанавливать его в `0`.
+- **SSE обходит таймаут fetch** — долгоживущие SSE-соединения не прерываются из-за `fetchTimeoutMs`. Используйте `AbortSignal` для отмены со стороны вызывающего кода.
+- **Лимит буфера `parseSseStream` составляет 16 МиБ** в качестве защитного ограничения. Один фрейм больше этого размера прерывает итератор (демон никогда легитимно не отправляет такие фреймы).
+- **`asKnownDaemonEvent` возвращает `undefined` для нераспознанных типов событий.** Потребители SDK должны обрабатывать эту ветку, а не предполагать, что объединение типов исчерпывающе; это контракт прямой совместимости. Нераспознанные события увеличивают `DaemonSessionViewState.unrecognizedKnownEventCount`.
+- **`client_evicted`, `slow_client_warning`, `stream_error` отсутствуют в кольцевом буфере воспроизведения.** Переподключение после вытеснения начинается с кольцевого буфера демона; вы больше не увидите фрейм вытеснения.
+- **`DaemonClient` не выполняет автоматические повторные попытки.** Сетевые сбои проявляются как отклонения (rejections); стратегия переподключения / воспроизведения лежит на вызывающем коде (`DaemonSessionClient.events()` упрощает воспроизведение, но переподключение все равно выполняется для каждого вызова).
 ## Ссылки
 
 - `packages/sdk-typescript/src/daemon/DaemonClient.ts`
@@ -262,4 +359,4 @@ SDK также экспортирует `packages/sdk-typescript/src/daemon/ui/`
 - `packages/sdk-typescript/src/daemon/sse.ts`
 - `packages/sdk-typescript/src/daemon/events.ts`
 - `packages/sdk-typescript/src/daemon/types.ts`
-- Полное пошаговое руководство: [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md).
+- Пошаговое руководство: [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md).

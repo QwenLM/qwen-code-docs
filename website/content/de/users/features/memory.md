@@ -1,111 +1,111 @@
-# Speicher
+# Memory
 
-Jede Qwen Code Sitzung beginnt mit einem neuen Kontextfenster. Zwei Mechanismen übertragen Wissen zwischen Sitzungen, damit du dich nicht jedes Mal wiederholen musst:
+Jede Qwen Code-Sitzung beginnt mit einem leeren Kontextfenster. Zwei Mechanismen übertragen Wissen über Sitzungen hinweg, damit du dich nicht jedes Mal neu erklären musst:
 
-- **QWEN.md** – Anweisungen, die _du_ einmal schreibst und Qwen jede Sitzung liest
-- **Auto-memory** – Notizen, die Qwen selbst schreibt, basierend auf dem, was es von dir lernt
+- **QWEN.md** — Anweisungen, die _du_ einmal schreibst und die Qwen in jeder Sitzung liest
+- **Auto-memory** — Notizen, die Qwen selbst basierend auf dem schreibt, was es von dir lernt
 
 ---
 
 ## QWEN.md: Deine Anweisungen an Qwen
 
-QWEN.md ist eine einfache Textdatei, in die du Dinge schreibst, die Qwen immer über dein Projekt oder deine Vorlieben wissen sollte. Stell es dir als ein dauerhaftes Briefing vor, das zu Beginn jeder Unterhaltung geladen wird.
+QWEN.md ist eine reine Textdatei, in die du Dinge schreibst, die Qwen immer über dein Projekt oder deine Präferenzen wissen sollte. Betrachte es als ein permanentes Briefing, das zu Beginn jedes Gesprächs geladen wird.
 
-### Was in QWEN.md stehen sollte
+### Was in QWEN.md gehört
 
-Füge Dinge hinzu, die du sonst jede Sitzung wiederholen müsstest:
+Füge Dinge hinzu, die du sonst in jeder Sitzung wiederholen müsstest:
 
 - Build- und Testbefehle (`npm run test`, `make build`)
-- Code-Konventionen, die dein Team befolgt („alle neuen Dateien müssen JSDoc-Kommentare haben“)
-- Architekturentscheidungen („wir verwenden das Repository-Pattern, rufe niemals die Datenbank direkt aus Controllern auf“)
-- Persönliche Vorlieben („verwende immer pnpm, nicht npm“)
+- Coding-Konventionen, die dein Team befolgt ("alle neuen Dateien müssen JSDoc-Kommentare haben")
+- Architekturentscheidungen ("wir verwenden das Repository-Pattern, rufen die Datenbank nie direkt aus den Controllern auf")
+- Persönliche Präferenzen ("immer pnpm verwenden, nicht npm")
 
-Füge keine Dinge hinzu, die Qwen durch Lesen deines Codes herausfinden kann. QWEN.md funktioniert am besten, wenn es kurz und spezifisch ist – je länger es wird, desto unzuverlässiger folgt Qwen ihm.
+Füge keine Dinge hinzu, die Qwen durch das Lesen deines Codes selbst herausfinden kann. QWEN.md funktioniert am besten, wenn es kurz und spezifisch ist – je länger es wird, desto unzuverlässiger befolgt Qwen die Anweisungen.
 
-### Wo QWEN.md erstellt werden soll
+### Wo QWEN.md erstellt wird
 
-| Datei                          | Für wen es gilt                                |
-| ----------------------------- | ------------------------------------------------ |
-| `~/.qwen/QWEN.md`             | Du, über alle deine Projekte hinweg                    |
-| `QWEN.md` im Projektstamm | Dein gesamtes Team (in die Versionsverwaltung einchecken)    |
-| `.qwen/QWEN.local.md`         | Nur du, nur in diesem Projekt (nicht in Git aufnehmen) |
+| Datei | Für wen sie gilt |
+| --- | --- |
+| `~/.qwen/QWEN.md` | Für dich, über alle deine Projekte hinweg |
+| `QWEN.md` im Projekt-Root | Für dein gesamtes Team (in die Versionskontrolle committen) |
+| `.qwen/QWEN.local.md` | Nur für dich, nur in diesem Projekt (aus git heraushalten) |
 
-Du kannst jede Kombination davon verwenden. Qwen lädt alle, wenn du eine Sitzung startest.
+Du kannst beliebige Kombinationen davon verwenden. Qwen lädt alle, wenn du eine Sitzung startest.
 
-Wenn dein Repository bereits eine `AGENTS.md`-Datei für andere KI-Tools enthält, liest Qwen diese ebenfalls. Keine Notwendigkeit, Anweisungen zu duplizieren.
+Wenn dein Repository bereits eine `AGENTS.md`-Datei für andere KI-Tools enthält, liest Qwen diese ebenfalls. Du musst Anweisungen nicht duplizieren.
 
-#### Wann `.qwen/QWEN.local.md` verwendet werden sollte
+#### Wann `.qwen/QWEN.local.md` verwendet wird
 
-Verwende es für **projektspezifische, aber persönliche** Anweisungen – Dinge, die zu diesem Projekt gehören, aber nicht mit dem Team geteilt werden sollten:
+Verwende sie für **projektspezifische, aber persönliche** Anweisungen – Dinge, die zu diesem Projekt gehören, aber nicht mit dem Team geteilt werden sollen:
 
-- Deine eigene Cluster-ID, Container-Registry-Namespace oder Cloud-Konto
-- Ein persönlicher Debug-Befehl, der deine lokale Umgebung fest kodiert
-- Notizen, die Qwen über deine laufenden Arbeiten wissen soll, aber nicht einchecken
+- Deine eigene Cluster-ID, der Namespace deiner Container Registry oder dein Cloud-Account
+- Ein persönlicher Debug-Befehl, der deine lokale Umgebung hardcodiert
+- Notizen, die Qwen über deine laufenden Arbeiten wissen soll, die du aber nicht committen möchtest
 
-Es wird **nach** dem gemeinsamen Projekt-`QWEN.md` geladen, sodass deine lokalen Anweisungen die des Teams ergänzen oder überschreiben können.
+Sie wird **nach** der geteilten Projekt-`QWEN.md` geladen, sodass deine lokalen Anweisungen die des Teams ergänzen oder überschreiben können.
 
-**Du musst es selbst zu .gitignore hinzufügen.** Obwohl `.qwen/` oft als lokales Verzeichnis behandelt wird, generiert qwen-code kein `.gitignore` für dich, und manche Projekte checken `.qwen/settings.json` ein. Füge diese Zeile zu deiner `.gitignore` (oder zu deinem globalen Git-Ignore) hinzu:
+**Du musst sie selbst in die .gitignore aufnehmen.** Obwohl `.qwen/` oft als lokales Verzeichnis behandelt wird, generiert qwen-code keine `.gitignore` für dich, und manche Projekte committen `.qwen/settings.json`. Füge diese Zeile zu deiner `.gitignore` (oder deiner globalen git ignore) hinzu:
 
 ```
 .qwen/QWEN.local.md
 ```
 
-### Automatisch mit `/init` generieren
+### Automatisch generieren mit `/init`
 
-Führe `/init` aus und Qwen analysiert deine Codebasis, um eine erste QWEN.md mit Build-Befehlen, Testanweisungen und gefundenen Konventionen zu erstellen. Wenn bereits eine existiert, schlägt es Ergänzungen vor, anstatt sie zu überschreiben.
+Führe `/init` aus und Qwen analysiert deine Codebasis, um eine initiale QWEN.md mit Build-Befehlen, Testanweisungen und gefundenen Konventionen zu erstellen. Wenn bereits eine existiert, schlägt es Ergänzungen vor, anstatt sie zu überschreiben.
 
 ### Auf andere Dateien verweisen
 
-Du kannst QWEN.md auf andere Dateien verweisen, sodass Qwen sie ebenfalls liest:
+Du kannst QWEN.md auf andere Dateien verweisen, damit Qwen diese ebenfalls liest:
 
 ```markdown
-See @README.md for project overview.
+Siehe @README.md für einen Projektüberblick.
 
-# Conventions
+# Konventionen
 
-- Git workflow: @docs/git-workflow.md
+- Git-Workflow: @docs/git-workflow.md
 ```
 
-Verwende `@path/to/file` an beliebiger Stelle in QWEN.md. Relative Pfade werden ausgehend von der QWEN.md-Datei selbst aufgelöst.
+Verwende `@path/to/file` an einer beliebigen Stelle in QWEN.md. Relative Pfade werden relativ zur QWEN.md-Datei selbst aufgelöst.
 
 ---
 
 ## Auto-memory: Was Qwen über dich lernt
 
-Auto-memory läuft im Hintergrund. Nach jeder deiner Unterhaltungen speichert Qwen still nützliche Dinge, die es gelernt hat – deine Vorlieben, dein Feedback, Projektkontext –, damit es sie in zukünftigen Sitzungen verwenden kann, ohne dass du dich wiederholen musst.
+Auto-memory läuft im Hintergrund. Nach jedem deiner Gespräche speichert Qwen leise nützliche Dinge, die es gelernt hat – deine Präferenzen, gegebenes Feedback, Projektkontext –, damit es diese in zukünftigen Sitzungen nutzen kann, ohne dass du dich wiederholen musst.
 
 Das unterscheidet sich von QWEN.md: Du schreibst es nicht, Qwen tut es.
 
 ### Was Qwen speichert
 
-Qwen sucht nach vier Arten von Dingen, die es sich zu merken lohnt:
+Qwen sucht nach vier Arten von Dingen, die es wert sind, erinnert zu werden:
 
-| Was                    | Beispiele                                                 |
-| ----------------------- | -------------------------------------------------------- |
-| **Über dich**           | Deine Rolle, Hintergrund, wie du gerne arbeitest              |
-| **Dein Feedback**       | Korrekturen, die du vorgenommen hast, Ansätze, die du bestätigt hast           |
-| **Projektkontext**     | Laufende Arbeiten, Entscheidungen, Ziele, die aus dem Code nicht ersichtlich sind |
-| **Externe Referenzen** | Dashboards, Ticket-Tracker, Doku-Links, die du erwähnt hast    |
+| Was | Beispiele |
+| --- | --- |
+| **Über dich** | Deine Rolle, dein Hintergrund, wie du gerne arbeitest |
+| **Dein Feedback** | Von dir vorgenommene Korrekturen, von dir bestätigte Ansätze |
+| **Projektkontext** | Laufende Arbeiten, Entscheidungen, Ziele, die nicht aus dem Code hervorgehen |
+| **Externe Referenzen** | Dashboards, Ticket-Tracker, Dokumentations-Links, die du erwähnt hast |
 
 Qwen speichert nicht alles – nur Dinge, die beim nächsten Mal tatsächlich nützlich wären.
 
 ### Wo es gespeichert wird
 
-Auto-memory-Dateien befinden sich unter `~/.qwen/projects/<project>/memory/`. Alle Branches und Worktrees desselben Repositorys teilen denselben Speicherordner, sodass das, was Qwen in einem Branch lernt, auch in anderen verfügbar ist.
+Auto-memory-Dateien befinden sich unter `~/.qwen/projects/<project>/memory/`. Alle Branches und Worktrees desselben Repositories teilen sich denselben Memory-Ordner, sodass das, was Qwen in einem Branch lernt, auch in anderen verfügbar ist.
 
-Alles Gespeicherte ist einfaches Markdown – du kannst jede Datei jederzeit öffnen, bearbeiten oder löschen.
+Alles Gespeicherte ist reines Markdown – du kannst jede Datei jederzeit öffnen, bearbeiten oder löschen.
 
-### Regelmäßige Bereinigung
+### Periodische Bereinigung
 
-Qwen durchläuft regelmäßig seine gespeicherten Erinnerungen, um Duplikate zu entfernen und veraltete Einträge zu bereinigen. Dies läuft automatisch im Hintergrund einmal täglich, nachdem genügend Sitzungen angesammelt wurden. Du kannst es manuell mit `/dream` auslösen, wenn du es jetzt ausführen möchtest.
+Qwen durchläuft periodisch seine gespeicherten Memories, um Duplikate zu entfernen und veraltete Einträge zu bereinigen. Dies läuft automatisch einmal täglich im Hintergrund, nachdem sich genügend Sitzungen angesammelt haben. Du kannst es manuell mit `/dream` auslösen, wenn du es jetzt ausführen möchtest.
 
 Während die Bereinigung läuft, erscheint **✦ dreaming** in der Ecke des Bildschirms. Deine Sitzung läuft normal weiter.
 
-### Ein- oder Ausschalten
+### Ein- und Ausschalten
 
-Auto-memory ist standardmäßig aktiviert. Um es umzuschalten, öffne `/memory` und verwende die Schalter oben. Du kannst nur das automatische Speichern, nur die regelmäßige Bereinigung oder beides deaktivieren.
+Auto-memory ist standardmäßig aktiviert. Um es umzuschalten, öffne `/memory` und verwende die Schalter oben. Du kannst nur das automatische Speichern, nur die periodische Bereinigung oder beides ausschalten.
 
-Du kannst sie auch in `~/.qwen/settings.json` (gilt für alle Projekte) oder `.qwen/settings.json` (nur dieses Projekt) festlegen:
+Du kannst sie auch in `~/.qwen/settings.json` (gilt für alle Projekte) oder `.qwen/settings.json` (nur für dieses Projekt) festlegen:
 
 ```json
 {
@@ -116,6 +116,58 @@ Du kannst sie auch in `~/.qwen/settings.json` (gilt für alle Projekte) oder `.q
 }
 ```
 
+### Team-Memory (mit Mitarbeitern geteilt)
+
+Standardmäßig ist Auto-memory **privat für dich** – es befindet sich in deinem Home-Verzeichnis und wird nie geteilt. Team-Memory ist eine optionale Ebene, die das gesamte Team **über git** teilt.
+
+Wenn aktiviert, erhält Qwen ein drittes Memory-Verzeichnis unter `.qwen/team-memory/` **innerhalb des Repositories**. Es verwendet dasselbe Layout (eine Datei pro Memory) und denselben `MEMORY.md`-Index wie die privaten Ebenen. Da es in das Repo committet wird, wird es auf normalem Weg mit jedem Mitarbeiter geteilt: Du führst `git pull` aus, um die Memories deiner Teammitglieder zu empfangen, und committest/pusht, um deine zu teilen. Qwen leitet langlebiges, projektweites Wissen hierhin – Konventionen, die jeder Contributor befolgen muss, geteilte Referenzzeiger (Tracker, Dashboards) –, während persönliche und schnell veraltende Notizen privat bleiben.
+
+Aktiviere es projektbezogen (oder global) in der `settings.json`:
+
+```json
+{
+  "memory": {
+    "enableTeamMemory": true
+  }
+}
+```
+
+Es ist **standardmäßig deaktiviert**. Beachte folgende Hinweise:
+
+- **Es ist versionskontrolliert und für jeden mit Repo-Zugriff sichtbar.** Behandle ein Team-Memory wie einen Commit in das Repo.
+- **Secrets werden blockiert.** Schreibvorgänge in `.qwen/team-memory/` werden auf Credentials (API-Keys, Tokens, Private Keys) gescannt; ein erkanntes Secret wird abgelehnt und nie geschrieben. Der Scan ist ein Sicherheitsnetz, keine Garantie – lege dort keine sensiblen Daten ab.
+- **Änderungen sind überprüfbar.** Team-Memory-Schreibvorgänge erscheinen in `git status` / dem PR-Diff wie jede andere Datei, sodass sie vor dem Commit überprüft werden können. Im Standard-Freigabemodus fragt Qwen auch vor jedem Team-Schreibvorgang nach; im `AUTO_EDIT`/YOLO-Modus (in dem du die automatische Freigabe aktiviert hast) werden sie ohne Aufforderung angewendet, tauchen aber dennoch im Diff auf.
+- **Das Verzeichnis muss von git getrackt werden.** Wenn die `.gitignore` deines Projekts `.qwen/*` ausschließt, schließe den Pfad wieder ein, damit er geteilt werden kann:
+
+  ```gitignore
+  !.qwen/team-memory/
+  !.qwen/team-memory/**
+  ```
+
+  Hinweis: Verwende das File-Glob-Ignore-Format (`.qwen/*`), nicht das Verzeichnisformat mit einem abschließenden Schrägstrich (`.qwen/`). Ein Ignore im Verzeichnisformat führt dazu, dass git den Ordner vollständig überspringt, sodass ein `!`-Wiedereinschluss darunter ein No-Op ist und die Team-Ebene in git stillschweigend leer bleibt. Qwen warnt beim Start einmal, wenn die Ebene aktiviert ist, aber ihr Verzeichnis von git ignoriert wird oder sich außerhalb eines git-Repositories befindet, sodass diese Fehlkonfiguration nicht unbemerkt bleibt.
+
+`QWEN_CODE_MEMORY_TEAM=1` / `=0` überschreibt die Einstellung für eine einzelne Ausführung.
+
+### Automatischer git-Sync (optional)
+
+Standardmäßig teilst du das Team-Memory mit dem normalen git-Workflow (`pull` zum Empfangen, `commit`/`push` zum Teilen). Damit Qwen das für dich erledigt, aktiviere den Sync:
+
+```json
+{
+  "memory": {
+    "enableTeamMemory": true,
+    "enableTeamMemorySync": true
+  }
+}
+```
+
+Wenn aktiviert, synchronisiert Qwen beim Sitzungsstart nach bestem Wissen das Verzeichnis `.qwen/team-memory/`: Es baut den geteilten `MEMORY.md`-Index neu, führt **zuerst** einen Fast-Forward-Pull der Updates der Mitarbeiter durch, committet dann deine Team-Memory-Änderungen oben drauf und pusht **nur diesen Sync-Commit** (über eine explizite Single-Branch-Refspec) – sodass der Index, den du lädst, den neuesten Stand widerspiegelt. Es **staged** nur das Team-Verzeichnis (deine anderen Arbeitsänderungen werden nie committet) und blockiert die Sitzung bei einem git-Fehler nie. Standardmäßig deaktiviert. `QWEN_CODE_MEMORY_TEAM_SYNC=1` / `=0` überschreibt die Einstellung für eine einzelne Ausführung.
+
+Zwei Dinge, die du vor der Aktivierung wissen solltest:
+
+- **Der Fast-Forward-Pull wirkt auf deinen gesamten aktuellen Branch, nicht nur auf `.qwen/team-memory/`** (git kennt keinen pfadbegrenzten Pull). Der Sync wird also deinen Branch per Fast-Forward auf den Remote-Tip vorziehen. Der Push hingegen ist begrenzt: Er veröffentlicht **nur den Commit, den dieser Sync gerade erstellt hat**, pusht also nie andere unpushte Commits, die du hast – wenn dein Branch bereits upstream voraus ist, committet der Sync lokal und überspringt den Push. Aktiviere ihn auf Branches, auf denen der Fast-Forward-Pull in Ordnung ist – oder führe ihn in einem dedizierten Checkout aus.
+- **Ein divergierter Branch bleibt unberührt** (`--ff-only` mergt nie). Wenn das passiert, tut der Sync in dieser Sitzung einfach nichts; löse die Divergenz auf (`git pull`) und er wird fortgesetzt. Ein Branch ohne Upstream (keine Tracking-Konfiguration) committet zwar lokal, überspringt aber den Push – es gibt kein Remote-Ziel zum Pushen.
+
 ---
 
 ## Befehle
@@ -124,23 +176,23 @@ Du kannst sie auch in `~/.qwen/settings.json` (gilt für alle Projekte) oder `.q
 
 Öffnet das Memory-Panel. Von hier aus kannst du:
 
-- Auto-memory-Speichern ein- oder ausschalten
-- Regelmäßige Bereinigung (dream) ein- oder ausschalten
+- Das Speichern von Auto-memory ein- oder ausschalten
+- Die periodische Bereinigung (dream) ein- oder ausschalten
 - Deine persönliche QWEN.md öffnen (`~/.qwen/QWEN.md`)
 - Die Projekt-QWEN.md öffnen
 - Den Auto-memory-Ordner durchsuchen
 
 ### `/init`
 
-Generiert eine erste QWEN.md für dein Projekt. Qwen liest deine Codebasis und füllt Build-Befehle, Testanweisungen und gefundene Konventionen ein.
+Generiert eine initiale QWEN.md für dein Projekt. Qwen liest deine Codebasis und füllt Build-Befehle, Testanweisungen und entdeckte Konventionen ein.
 
 ### `/remember <text>`
 
-Speichert sofort etwas im Auto-memory, ohne darauf zu warten, dass Qwen es automatisch aufnimmt:
+Speichert sofort etwas in Auto-memory, ohne zu warten, bis Qwen es automatisch aufgreift:
 
 ```
-/remember always use snake_case for Python variable names
-/remember the staging environment is at staging.example.com
+/remember für Python-Variablennamen immer snake_case verwenden
+/remember die Staging-Umgebung befindet sich unter staging.example.com
 ```
 
 ### `/forget <text>`
@@ -148,12 +200,12 @@ Speichert sofort etwas im Auto-memory, ohne darauf zu warten, dass Qwen es autom
 Entfernt Auto-memory-Einträge, die deiner Beschreibung entsprechen:
 
 ```
-/forget old workaround for the login bug
+/forget alter Workaround für den Login-Bug
 ```
 
 ### `/dream`
 
-Führt die Speicherbereinigung jetzt aus, anstatt auf den automatischen Zeitplan zu warten:
+Führt die Memory-Bereinigung jetzt aus, anstatt auf den automatischen Zeitplan zu warten:
 
 ```
 /dream
@@ -165,21 +217,21 @@ Führt die Speicherbereinigung jetzt aus, anstatt auf den automatischen Zeitplan
 
 ### Qwen befolgt meine QWEN.md nicht
 
-Öffne `/memory`, um zu sehen, welche Dateien geladen sind. Wenn deine Datei nicht aufgeführt ist, kann Qwen sie nicht sehen – stelle sicher, dass sie im Projektstammverzeichnis oder unter `~/.qwen/` liegt.
+Öffne `/memory`, um zu sehen, welche Dateien geladen werden. Wenn deine Datei nicht aufgeführt ist, kann Qwen sie nicht sehen – stelle sicher, dass sie sich im Projekt-Root oder in `~/.qwen/` befindet.
 
 Anweisungen funktionieren besser, wenn sie spezifisch sind:
 
-- ✓ `Use 2-space indentation for TypeScript files`
-- ✗ `Format code nicely`
+- ✓ `Verwende 2 Leerzeichen Einrückung für TypeScript-Dateien`
+- ✗ `Formatiere Code schön`
 
-Wenn du mehrere QWEN.md-Dateien mit widersprüchlichen Anweisungen hast, kann Qwen sich inkonsistent verhalten. Überprüfe sie und entferne alle Widersprüche.
+Wenn du mehrere QWEN.md-Dateien mit widersprüchlichen Anweisungen hast, verhält sich Qwen möglicherweise inkonsistent. Überprüfe sie und entferne alle Widersprüche.
 
 ### Ich möchte sehen, was Qwen gespeichert hat
 
-Führe `/memory` aus und wähle **Auto-memory-Ordner öffnen**. Alle gespeicherten Erinnerungen sind lesbare Markdown-Dateien, die du durchsuchen, bearbeiten oder löschen kannst.
+Führe `/memory` aus und wähle **Auto-memory-Ordner öffnen**. Alle gespeicherten Memories sind lesbare Markdown-Dateien, die du durchsuchen, bearbeiten oder löschen kannst.
 
 ### Qwen vergisst ständig Dinge
 
-Wenn Auto-memory aktiviert ist, Qwen aber scheinbar keine Dinge über Sitzungen hinweg merkt, versuche `/dream` auszuführen, um eine Bereinigung zu erzwingen. Überprüfe auch `/memory`, um sicherzustellen, dass beide Schalter aktiviert sind.
+Wenn Auto-memory aktiviert ist, Qwen sich aber scheinbar nicht über Sitzungen hinweg an Dinge erinnert, versuche `/dream` auszuführen, um einen Bereinigungsdurchlauf zu erzwingen. Überprüfe auch `/memory`, um zu bestätigen, dass beide Schalter aktiviert sind.
 
-Für Dinge, die Qwen sich immer merken soll, füge sie stattdessen zu QWEN.md hinzu – Auto-memory ist eine bestmögliche Bemühung, QWEN.md ist garantiert.
+Für Dinge, bei denen du immer möchtest, dass Qwen sie sich merkt, füge sie stattdessen zur QWEN.md hinzu – Auto-memory ist ein Best-Effort-Ansatz, QWEN.md ist garantiert.

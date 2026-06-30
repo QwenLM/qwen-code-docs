@@ -1,31 +1,31 @@
-# Client SDK TypeScript Daemon
+# Client Daemon du SDK TypeScript
 
-## Présentation générale
+## Vue d'ensemble
 
-`packages/sdk-typescript/src/daemon/` est le **client daemon du SDK TypeScript**. C'est la méthode canonique pour se connecter à un daemon `qwen serve` en cours d'exécution depuis n'importe quel hôte TypeScript / JavaScript (l'adaptateur TUI du CLI lui-même, les bots de canal, le compagnon IDE VS Code, les scripts personnalisés et les backends web côté serveur). Tous les autres adaptateurs en dépendent.
+`packages/sdk-typescript/src/daemon/` est le **client daemon du SDK TypeScript**. C'est la méthode canonique pour se connecter à un daemon `qwen serve` en cours d'exécution depuis n'importe quel hôte TypeScript / JavaScript (l'adaptateur TUI de la CLI, les backends de bots de canal, le compagnon IDE VS Code, les scripts personnalisés et les backends web côté serveur). Tous les autres adaptateurs en dépendent.
 
-La structure du paquet est intentionnellement réduite :
+La structure du package est volontairement minimaliste :
 
-| Fichier                   | Surface                                                                                                                                                                                              |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.ts`                | Baril public (`DaemonClient`, `DaemonSessionClient`, `DaemonAuthFlow`, `parseSseStream`, réducteurs d'événements, types).                                                                             |
-| `DaemonClient.ts`         | Façade HTTP/SSE bas niveau — une méthode par route du `qwen-serve-protocol.md`.                                                                                                                       |
-| `DaemonSessionClient.ts`  | Wrapper avec scope de session et suivi de rejeu SSE.                                                                                                                                                 |
-| `DaemonAuthFlow.ts`       | Helper haut niveau pour le flux OAuth device.                                                                                                                                                        |
-| `sse.ts`                  | `parseSseStream` (analyseur de trames NDJSON / SSE).                                                                                                                                                 |
-| `events.ts`               | `asKnownDaemonEvent`, `reduceDaemonSessionEvent`, `reduceDaemonAuthEvent` (voir [`09-event-schema.md`](./09-event-schema.md)).                                                                       |
-| `types.ts`                | `DaemonCapabilities`, `DaemonSession`, `DaemonEvent`, `PermissionResponse`, `PromptResult`, types MCP / agent / mémoire / auth.                                                                      |
+| Fichier                  | Surface                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `index.ts`               | Barrel public (`DaemonClient`, `DaemonSessionClient`, `DaemonAuthFlow`, `parseSseStream`, réducteurs d'événements, types).     |
+| `DaemonClient.ts`        | Facade HTTP/SSE bas niveau — une méthode par route de `qwen-serve-protocol.md`.                                                |
+| `DaemonSessionClient.ts` | Wrapper limité à la session avec suivi de la relecture SSE.                                                                    |
+| `DaemonAuthFlow.ts`      | Assistant haut niveau pour le device-flow OAuth.                                                                               |
+| `sse.ts`                 | `parseSseStream` (parseur de tramage NDJSON / SSE).                                                                            |
+| `events.ts`              | `asKnownDaemonEvent`, `reduceDaemonSessionEvent`, `reduceDaemonAuthEvent` (voir [`09-event-schema.md`](./09-event-schema.md)). |
+| `types.ts`               | `DaemonCapabilities`, `DaemonSession`, `DaemonEvent`, `PermissionResponse`, `PromptResult`, types MCP / agent / mémoire / auth. |
 
-L'exemple pas à pas se trouve à [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md) ; ce document est la référence d'architecture et de contrat.
+L'exemple de guide pratique se trouve dans [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md) ; ce document est la référence de l'architecture et du contrat.
 
 ## Responsabilités
 
 - Fournir une méthode TypeScript par route HTTP du daemon.
-- Apposer correctement le bearer token + `X-Qwen-Client-Id` sur chaque requête.
-- Composer les timeouts par appel avec le `AbortSignal` fourni par l'appelant (sans tuer les SSE longue durée).
-- Diffuser et analyser les trames SSE en `DaemonEvent`s typés.
-- Suivre `lastSeenEventId` par session pour que les reconnexions rejouent correctement.
-- Exposer une surface d'authentification par flux device qui interroge selon les intervalles fournis par le daemon.
+- Appliquer correctement le bearer token et le header `X-Qwen-Client-Id` sur chaque requête.
+- Composer les timeouts par appel avec l'`AbortSignal` fourni par l'appelant (sans interrompre les SSE de longue durée).
+- Streamer et parser les trames SSE en `DaemonEvent` typés.
+- Suivre le `lastSeenEventId` par session afin que les reconnexions rejouent correctement les événements.
+- Exposer une API d'authentification par device-flow qui interroge (poll) à des intervalles fournis par le daemon.
 
 ## Architecture
 
@@ -35,40 +35,40 @@ Constructeur :
 
 ```ts
 new DaemonClient({
-  baseUrl: string,                  // défaut 'http://127.0.0.1:4170'
+  baseUrl: string,                  // default 'http://127.0.0.1:4170'
   token?: string,
-  fetch?: typeof globalThis.fetch,  // injectable pour les tests
-  fetchTimeoutMs?: number,          // 0 = désactivé ; défaut DEFAULT_FETCH_TIMEOUT_MS
+  fetch?: typeof globalThis.fetch,  // injectable for tests
+  fetchTimeoutMs?: number,          // 0 = disabled; default DEFAULT_FETCH_TIMEOUT_MS
 });
 ```
 
-Groupes de méthodes (chaque méthode prend un `clientId` optionnel pour apposer `X-Qwen-Client-Id`) :
+Groupes de méthodes (chaque méthode prend un `clientId` optionnel pour appliquer le header `X-Qwen-Client-Id`) :
 
-| Groupe                | Méthodes                                                                                                                                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Infrastructure        | `health()`, `capabilities()`, `auth` (accesseur paresseux `DaemonAuthFlow`)                                                                                                                                                            |
-| Sessions              | `createOrAttachSession`, `loadSession`, `resumeSession`, `listSessions`, `closeSession`, `setSessionMetadata`, `getSessionContext`, `getSessionSupportedCommands`, `setSessionApprovalMode`, `setSessionModel`                          |
-| Invites               | `prompt`, `cancel`, `heartbeat`                                                                                                                                                                                                       |
-| Événements            | `subscribeEvents` (générateur SSE), `subscribeEventsStream` (réponse brute)                                                                                                                                                           |
-| Permissions           | `respondToPermission`, `respondToSessionPermission`                                                                                                                                                                                   |
-| Instantanés workspace | `getWorkspaceMcp`, `getWorkspaceSkills`, `getWorkspaceProviders`, `getWorkspaceEnv`, `getWorkspacePreflight`                                                                                                                          |
-| Mutations workspace   | `writeWorkspaceMemory`, `readWorkspaceMemory`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `toggleWorkspaceTool`, `restartMcpServer`, `initializeWorkspace` |
-| Fichiers              | `readFile`, `readFileBytes`, `writeFile`, `editFile`, `listDirectory`, `globPaths`, `statPath`                                                                                                                                        |
-| Auth                  | `startDeviceFlow`, `pollDeviceFlow`, `cancelDeviceFlow`, `getAuthStatus`                                                                                                                                                              |
+| Groupe                | Méthodes                                                                                                                                                                                                                          |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Plumbing              | `health()`, `capabilities()`, `auth` (accesseur lazy `DaemonAuthFlow`)                                                                                                                                                            |
+| Sessions              | `createOrAttachSession`, `loadSession`, `resumeSession`, `listSessions`, `closeSession`, `setSessionMetadata`, `getSessionContext`, `getSessionSupportedCommands`, `setSessionApprovalMode`, `setSessionModel`                    |
+| Prompting             | `prompt`, `cancel`, `heartbeat`                                                                                                                                                                                                   |
+| Événements            | `subscribeEvents` (générateur SSE), `subscribeEventsStream` (réponse brute)                                                                                                                                                       |
+| Permissions           | `respondToPermission`, `respondToSessionPermission`                                                                                                                                                                               |
+| Snapshots de workspace| `getWorkspaceMcp`, `getWorkspaceSkills`, `getWorkspaceProviders`, `getWorkspaceEnv`, `getWorkspacePreflight`                                                                                                                      |
+| Mutations de workspace| `writeWorkspaceMemory`, `readWorkspaceMemory`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `toggleWorkspaceTool`, `restartMcpServer`, `initializeWorkspace`|
+| Fichiers              | `readFile`, `readFileBytes`, `writeFile`, `editFile`, `listDirectory`, `globPaths`, `statPath`                                                                                                                                    |
+| Auth                  | `startDeviceFlow`, `pollDeviceFlow`, `cancelDeviceFlow`, `getAuthStatus`                                                                                                                                                          |
 
 ### `fetchWithTimeout`
 
 Chaque requête passe par `fetchWithTimeout`. Détails critiques :
 
-- **La lecture du corps est dans la portée du timer.** Les implémentations précédentes effaçaient le timer à l'arrivée des en-têtes ; si un proxy stallait au milieu du corps, `await res.json()` pouvait bloquer au-delà de `fetchTimeoutMs`. La forme actuelle passe le code de lecture du corps comme un callback afin que le timer couvre à la fois l'arrivée des en-têtes ET la consommation du corps.
-- **`perCallTimeoutMs`** permet à un seul appel de remplacer le timeout par défaut du client. L'appelant le plus visible est `restartMcpServer` : le SDK utilise `MCP_RESTART_DEFAULT_TIMEOUT_MS = 330_000` (5 min 30 s). Le `MCP_RESTART_TIMEOUT_MS` propre au daemon est exactement 300 s ; si le client correspondait à cette valeur, un redémarrage qui se termine près de 300 s pourrait perdre la course pendant que le daemon sérialise et envoie sa réponse structurée, provoquant une fausse `TimeoutError`. Les 30 s supplémentaires couvrent la sérialisation, le transfert réseau et le décodage des deux côtés. Les appelants qui ont besoin d’un budget plus serré peuvent passer `timeoutMs`; passer `0` désactive le timeout.
-- **`AbortSignal.any`** compose le signal fourni par l'appelant avec le signal du timer par appel, de sorte que l'annulation par l'appelant et le timeout par appel se terminent proprement.
-- **`AbortController` + `setTimeout` annulable** au lieu de `AbortSignal.timeout()` afin que les requêtes à résolution rapide ne laissent pas de timers en attente sur la boucle d'événements. Le timer est effacé dans `finally`.
-- **Les points de terminaison de streaming (`subscribeEvents`) contournent le timeout** — les SSE longue durée ne doivent pas être tués par celui-ci.
+- **La lecture du body est dans le scope du timer.** Les implémentations précédentes annulaient le timer à la réception des headers ; si un proxy bloquait au milieu du body, `await res.json()` pouvait rester en attente au-delà de `fetchTimeoutMs`. La forme actuelle passe le code de lecture du body en callback afin que le timer couvre à la fois l'arrivée des headers ET la consommation du body.
+- **`perCallTimeoutMs`** permet à un appel unique de surcharger le timeout par défaut du client. L'appelant le plus visible est `restartMcpServer` : le SDK utilise `MCP_RESTART_DEFAULT_TIMEOUT_MS = 330_000` (5 min 30s). Le `MCP_RESTART_TIMEOUT_MS` du daemon est exactement de 300s ; si le client utilisait cette même valeur, un redémarrage se terminant vers 300s pourrait perdre la course pendant que le daemon sérialise et envoie sa réponse structurée, provoquant une `TimeoutError` faussement positive. Les 30s supplémentaires couvrent la sérialisation, le transfert réseau et le décodage des deux côtés. Les appelants qui ont besoin d'un budget plus serré peuvent passer `timeoutMs` ; passer `0` désactive le timeout.
+- **`AbortSignal.any`** compose le signal fourni par l'appelant avec le signal du timer par appel, afin que l'annulation par l'appelant et le timeout par appel interrompent proprement l'opération.
+- **`AbortController` + `setTimeout` annulable** au lieu de `AbortSignal.timeout()` pour éviter que les requêtes à résolution rapide ne laissent des timers en attente dans l'event loop. Le timer est effacé dans le bloc `finally`.
+- **Les endpoints de streaming (`subscribeEvents`) contournent le timeout** — les SSE de longue durée ne doivent pas être interrompues par celui-ci.
 
 ### `DaemonSessionClient` (`DaemonSessionClient.ts`)
 
-Lie une session et suit automatiquement `lastSeenEventId` afin que le rejeu SSE et la reconnexion fonctionnent sans état supplémentaire de l'appelant.
+Lie une session et suit automatiquement le `lastSeenEventId` afin que la relecture et la reconnexion SSE fonctionnent sans état supplémentaire côté appelant.
 
 ```ts
 class DaemonSessionClient {
@@ -92,7 +92,7 @@ class DaemonSessionClient {
 }
 ```
 
-`events()` fait office de proxy pour `client.subscribeEvents` avec `resume: true` par défaut — il transmet le `lastSeenEventId` suivi afin que les reconnexions rejouent à partir de l'endroit où l'abonnement précédent s'est arrêté. Chaque événement produit augmente `lastSeenEventId`.
+`events()` proxyfie `client.subscribeEvents` avec `resume: true` par défaut — il passe le `lastSeenEventId` suivi afin que les reconnexions rejouent les événements depuis l'endroit où l'abonnement précédent s'est arrêté. Chaque événement généré incrémente le `lastSeenEventId`.
 
 ### `DaemonAuthFlow` (`DaemonAuthFlow.ts`)
 
@@ -111,29 +111,29 @@ interface DaemonAuthFlowHandle {
 }
 ```
 
-`awaitCompletion()` interroge `GET /workspace/auth/device-flow/:id` à l'`intervalMs` fourni par le daemon jusqu'à ce que le flux devienne `authorized`, `failed` ou `cancelled`. Il est construit paresseusement via `client.auth` afin que les clients qui n'utilisent jamais l'authentification n'aient aucun coût d'allocation.
+`awaitCompletion()` interroge (poll) `GET /workspace/auth/device-flow/:id` à l'intervalle `intervalMs` fourni par le daemon jusqu'à ce que le flux passe à `authorized`, `failed` ou `cancelled`. Il est construit paresseusement (lazy) via `client.auth` afin que les clients qui n'utilisent jamais l'authentification n'aient aucun coût d'allocation.
 
 ### `parseSseStream` (`sse.ts`)
 
 Transforme un `Response.body` (`ReadableStream<Uint8Array>`) en `AsyncIterable<DaemonEvent>`. Gère :
 
 - Le tramage LF et CRLF.
-- La limite de dépassement de tampon (16 Mio) — limite défensive contre un daemon émettant une seule trame anormalement grande.
-- Le câblage `AbortSignal` — l'abandon ferme le flux et l'itérateur.
-- Les trames ne contenant que des commentaires et les types d'événements inconnus (transmis en tant que `DaemonEvent` ; les consommateurs du SDK affinent en aval via `asKnownDaemonEvent`).
+- La limite de débordement de buffer (16 MiB) — une borne défensive contre un daemon émettant une seule trame absurdement grande.
+- Le câblage de l'AbortSignal — l'abort ferme le stream et l'itérateur.
+- Les trames contenant uniquement des commentaires et les types d'événements inconnus (transmis en tant que `DaemonEvent` ; les consommateurs du SDK filtrent en aval via `asKnownDaemonEvent`).
 
 ### Types (`types.ts`)
 
-Exportations notables : `DaemonCapabilities`, `DaemonSession` (`{ sessionId, workspaceCwd, attached, clientId?, createdAt? }`), `DaemonEvent`, `DaemonSessionState`, `DaemonSessionContextStatus`, `DaemonSessionSupportedCommandsStatus`, `PermissionResponse`, `PromptResult`, `HeartbeatResult`, `SetModelResult`, `SessionMetadataResult`, ainsi que les types de résultats MCP / agent / mémoire / auth.
+Exports notables : `DaemonCapabilities`, `DaemonSession` (`{ sessionId, workspaceCwd, attached, clientId?, createdAt? }`), `DaemonEvent`, `DaemonSessionState`, `DaemonSessionContextStatus`, `DaemonSessionSupportedCommandsStatus`, `PermissionResponse`, `PromptResult`, `HeartbeatResult`, `SetModelResult`, `SessionMetadataResult`, ainsi que les types de résultats MCP / agent / mémoire / auth.
 
 ## Workflow
 
-### Créer-ou-attacher + première invite
+### Création ou rattachement + premier prompt
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as Code applicatif
+    participant App as Code de l'application
     participant SC as DaemonSessionClient
     participant DC as DaemonClient
     participant D as Daemon
@@ -152,12 +152,12 @@ sequenceDiagram
     DC-->>SC: PromptResult
 ```
 
-### Abonnement avec rejeu
+### Abonnement avec relecture
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as Code applicatif
+    participant App as Code de l'application
     participant SC as DaemonSessionClient
     participant DC as DaemonClient
     participant D as Daemon
@@ -166,17 +166,17 @@ sequenceDiagram
     App->>SC: for await (e of session.events())
     SC->>DC: client.subscribeEvents(sessionId, {lastEventId: <tracked>}, 'alice')
     DC->>D: GET /session/:id/events<br/>Last-Event-ID: 42
-    D-->>DC: octets SSE (rejeu puis live)
+    D-->>DC: SSE bytes (replay then live)
     DC->>P: parseSseStream(res.body, signal)
-    loop par trame
+    loop per frame
         P-->>SC: DaemonEvent
-        SC->>SC: augmenter lastSeenEventId
+        SC->>SC: bump lastSeenEventId
         SC-->>App: DaemonEvent
         App->>App: asKnownDaemonEvent + reduce
     end
 ```
 
-### Authentification par flux device
+### Authentification par device-flow
 
 ```mermaid
 sequenceDiagram
@@ -191,75 +191,166 @@ sequenceDiagram
     DC->>D: POST /workspace/auth/device-flow
     D-->>DC: {deviceFlowId, verificationUrl, userCode, intervalMs, expiresAt}
     DC-->>AF: handle
-    AF-->>App: handle (avec awaitCompletion())
+    AF-->>App: handle (with awaitCompletion())
     App->>AF: handle.awaitCompletion()
-    loop jusqu'à terminaison
+    loop until done
         AF->>D: GET /workspace/auth/device-flow/:id
         D-->>AF: {status: 'pending' | 'authorized' | ...}
         AF->>AF: setTimeout(intervalMs)
     end
-    AF-->>App: état final
+    AF-->>App: final state
 ```
 
-`qwen-oauth` est l'identifiant de fournisseur hérité v1. Le niveau gratuit de l'authentification OAuth Qwen a été interrompu le 2026-04-15. Les nouveaux clients doivent donc privilégier un fournisseur d'authentification actuellement pris en charge lorsque cela est possible.
+`qwen-oauth` est l'identifiant legacy du fournisseur v1. Le niveau gratuit de Qwen OAuth a été interrompu le 15/04/2026, les nouveaux clients doivent donc préférer un fournisseur d'authentification actuellement pris en charge lorsqu'il y en a un de disponible.
 
 ## État et cycle de vie
 
-- `DaemonClient` est sans connexion ; rien ne se passe à la construction. Chaque méthode ouvre un nouveau `fetch`.
-- `DaemonSessionClient` conserve `lastSeenEventId` entre les appels à `events()` ; les reconnexions rejouent à partir du dernier vu.
-- `DaemonAuthFlow` est paresseux — `client.auth` le construit au premier accès.
-- L'itérateur SSE se ferme lorsque (a) le daemon termine le flux, (b) `AbortSignal.abort()` est déclenché, (c) le consommateur sort du `for await`, ou (d) la limite de dépassement de tampon (16 Mio) est atteinte.
+- `DaemonClient` est sans connexion (connection-less) ; rien ne se passe à la construction. Chaque méthode ouvre un nouveau `fetch`.
+- `DaemonSessionClient` conserve le `lastSeenEventId` entre les invocations de `events()` ; les reconnexions rejouent depuis le dernier événement vu.
+- `DaemonAuthFlow` est paresseux (lazy) — `client.auth` le construit lors du premier accès.
+- L'itérateur SSE se ferme lorsque (a) le daemon termine le stream, (b) `AbortSignal.abort()` est déclenché, (c) le consommateur sort de la boucle `for await`, ou (d) la limite de débordement de buffer (16 MiB) est atteinte.
 
 ## Dépendances
 
-- `globalThis.fetch` (intégré Node 18+, navigateur, undici, etc.). Injectable par `DaemonClient` pour les tests.
+- `globalThis.fetch` (natif dans Node 18+, navigateur, undici, etc.). Injectible par `DaemonClient` pour les tests.
 - `AbortController` / `AbortSignal.any` / `setTimeout` natifs.
-- Aucune dépendance transitive envers `@qwen-code/qwen-code-core` ou `@qwen-code/acp-bridge` — le paquet SDK est totalement découplé afin que les consommateurs externes n'importent pas les internes du daemon.
+- Aucune dépendance transitive sur `@qwen-code/qwen-code-core` ou `@qwen-code/acp-bridge` — le package SDK est entièrement découplé afin que les consommateurs externes n'embarquent pas les internes du daemon.
 
-## Sous-paquet `ui/*` ([#4328](https://github.com/QwenLM/qwen-code/pull/4328) + [#4353](https://github.com/QwenLM/qwen-code/pull/4353))
+## Sous-package `ui/*` ([#4328](https://github.com/QwenLM/qwen-code/pull/4328) + [#4353](https://github.com/QwenLM/qwen-code/pull/4353))
 
-Le SDK exporte également `packages/sdk-typescript/src/daemon/ui/`, un ensemble
-de primitives neutres par rapport à l'hôte qui transforment les événements du
-daemon en blocs de transcription :
+Le SDK exporte également `packages/sdk-typescript/src/daemon/ui/`, un ensemble de primitives neutres vis-à-vis de l'hôte qui transforment les événements du daemon en blocs de transcription :
 
-- `normalizeDaemonEvent(evt)` fait correspondre les 43 événements filaires connus du daemon en 37 valeurs `DaemonUiEventType` adaptées à l'interface utilisateur ; les événements non modélisés ou mal formés sont normalisés en `debug`.
-- `createDaemonTranscriptState()` plus `reduceDaemonTranscriptEvents(state, events)` projette les événements UI en `DaemonTranscriptBlock[]`.
+- `normalizeDaemonEvent(evt)` mappe les 47 événements wire connus du daemon en 42 valeurs `DaemonUiEventType` conviviales pour l'UI ; les événements non modélisés ou malformés sont normalisés en `debug`.
+- `createDaemonTranscriptState()` ainsi que `reduceDaemonTranscriptEvents(state, events)` projettent les événements UI dans un `DaemonTranscriptBlock[]`.
 - `createDaemonTranscriptStore()` encapsule subscribe / dispatch.
-- `render.ts` / `terminal.ts` fournissent des moteurs de rendu HTML et terminal de base, tandis que `toolPreview.ts` produit des résumés d'appels d'outils.
+- `render.ts` / `terminal.ts` fournissent des renderers de base pour HTML et le terminal, tandis que `toolPreview.ts` produit des résumés d'appels d'outils.
 - Les sélecteurs incluent `selectTranscriptBlocksOrderedByEventId`, `selectPendingPermissionBlocks`, `selectCurrentTool`, `selectApprovalMode`, `selectToolProgress`, `selectSubagentChildBlocks`, `formatMissedRange` et `formatBlockTimestamp`.
 - Les constantes publiques incluent `DAEMON_PLAN_TOOL_CALL_ID`.
-- `conformance.ts` contient la suite de tests de cohérence inter-hôtes.
+- `conformance.ts` contient la suite de tests de cohérence multi-hôtes.
 
-Le premier consommateur en production est `packages/webui/src/daemon/` via le
-`DaemonSessionProvider` de React. Voir [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)
-pour l'architecture détaillée, le glossaire, la table des sélecteurs et la relation avec
-l'ancien `DaemonTuiAdapter`.
+Le premier consommateur en production est `packages/webui/src/daemon/` via le `DaemonSessionProvider` de React. Voir [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md) pour l'architecture détaillée, le glossaire, le tableau des sélecteurs et la relation avec le `DaemonTuiAdapter` legacy.
 
-Le sous-paquet est exporté depuis le sous-chemin `@qwen-code/sdk/daemon`. Le
-code existant qui fait `import { DaemonClient }` n'est pas affecté.
+Le sous-package est exporté depuis le subpath `@qwen-code/sdk/daemon`. Le code existant qui fait `import { DaemonClient }` n'est pas affecté.
+
+## Reconnexion `Last-Event-ID` avec le SDK
+
+### Suivi automatique via `DaemonSessionClient`
+
+`DaemonSessionClient` suit le `lastSeenEventId` en interne. Chaque événement généré avec un `id` numérique incrémente le curseur. Les appels suivants à `events()` passent automatiquement l'id suivi en tant que `Last-Event-ID`, afin que la reconnexion avec relecture fonctionne sans état supplémentaire côté appelant :
+
+```ts
+import { DaemonClient, DaemonSessionClient } from '@qwen-code/sdk/daemon';
+
+const client = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170', token });
+const session = await DaemonSessionClient.createOrAttach(client);
+
+// Premier abonnement — démarre en direct (ou depuis le début du ring pour les nouvelles sessions).
+for await (const event of session.events()) {
+  console.log(event.type, event.id);
+  // session.lastEventId est incrémenté sur chaque trame portant un id.
+  if (shouldStop(event)) break;
+}
+
+// Reconnexion — envoie automatiquement Last-Event-ID: <dernier id vu>.
+// Le daemon rejoue les événements manqués depuis le ring, puis passe en direct.
+for await (const event of session.events()) {
+  // Les trames de relecture arrivent en premier, puis un replay_complete synthétique,
+  // puis les événements en direct.
+  handleEvent(event);
+}
+```
+
+### Reconnexion manuelle avec `DaemonClient`
+
+Pour un contrôle plus bas niveau, utilisez `DaemonClient.subscribeEvents` directement et gérez le curseur vous-même :
+
+```ts
+const client = new DaemonClient({ baseUrl: 'http://127.0.0.1:4170', token });
+
+let cursor: number | undefined; // undefined = direct uniquement lors de la première connexion
+
+async function* subscribe(sessionId: string, signal: AbortSignal) {
+  for await (const event of client.subscribeEvents(sessionId, {
+    lastEventId: cursor,
+    signal,
+  })) {
+    // Seules les trames portant un id avancent le curseur.
+    if (event.id !== undefined) {
+      cursor = event.id;
+    }
+    // Gérer le trou dû à l'éviction du ring.
+    if (event.type === 'state_resync_required') {
+      // L'état est obsolète — recharger l'état complet de la session.
+      await client.loadSession(sessionId);
+      continue;
+    }
+    yield event;
+  }
+}
+```
+
+### Reconnexion avec boucle de retry
+
+Le SDK ne retry **pas** automatiquement en cas d'échec réseau. Implémentez une boucle de retry autour de `events()` :
+
+```ts
+async function resilientSubscribe(session: DaemonSessionClient) {
+  const MAX_RETRIES = 10;
+  const BASE_DELAY_MS = 1000;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      // `resume: true` (par défaut) passe le lastSeenEventId suivi.
+      for await (const event of session.events()) {
+        attempt = 0; // réinitialiser lors d'un événement réussi
+        handleEvent(event);
+      }
+      break; // fin propre du stream
+    } catch (err) {
+      const delay = BASE_DELAY_MS * 2 ** Math.min(attempt, 5);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+}
+```
+
+Lors de la reconnexion, le daemon rejoue les événements avec `id > lastSeenEventId` depuis son ring borné (par défaut 8000 événements). Si le trou dépasse la capacité du ring, une trame `state_resync_required` signale au client d'appeler `loadSession` pour une reconstruction complète de l'état.
+
+### Initialisation de `lastEventId` à la construction
+
+Les appelants qui persistent le curseur entre les redémarrages de processus peuvent l'initialiser (seed) :
+
+```ts
+const session = new DaemonSessionClient({
+  client,
+  session: { sessionId, workspaceCwd, attached: true },
+  lastEventId: persistedCursor, // reprendre depuis la position persistée
+});
+```
+
+La valeur doit être un entier fini et non négatif (validé à la construction). Les valeurs invalides lèvent une erreur.
 
 ## Configuration
 
-| Réglage              | Où                                    | Effet                                                                                              |
-| -------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `baseUrl`            | Constructeur `DaemonClient`           | URL du daemon ; les barres obliques finales sont supprimées.                                       |
-| `token`              | Constructeur `DaemonClient`           | Apposé comme `Authorization: Bearer`.                                                              |
-| `fetch`              | Constructeur `DaemonClient`           | Point d'injection pour les tests.                                                                  |
-| `fetchTimeoutMs`     | Constructeur `DaemonClient`           | Timeout par appel ; `0` = désactivé.                                                               |
-| `clientId`           | Argument optionnel par méthode        | En-tête `X-Qwen-Client-Id` (voir [`08-session-lifecycle.md`](./08-session-lifecycle.md)).          |
-| `lastEventId`        | Constructeur `DaemonSessionClient`    | Curseur de rejeu initial.                                                                          |
-| `maxQueued`          | Option par abonnement                 | `?maxQueued=N` pour la route SSE ; vérifier d'abord `caps.features.slow_client_warning` en amont. |
-| `perCallTimeoutMs`   | Par méthode (ex. `restartMcpServer`)  | Remplace le timeout global du client.                                                              |
+| Paramètre            | Où                                   | Effet                                                                                   |
+| -------------------- | ------------------------------------ | --------------------------------------------------------------------------------------- |
+| `baseUrl`            | Constructeur `DaemonClient`          | URL du daemon ; les slashes finaux sont retirés.                                        |
+| `token`              | Constructeur `DaemonClient`          | Appliqué en tant que `Authorization: Bearer`.                                           |
+| `fetch`              | Constructeur `DaemonClient`          | Point d'injection pour les tests.                                                       |
+| `fetchTimeoutMs`     | Constructeur `DaemonClient`          | Timeout par appel ; `0` = désactivé.                                                    |
+| `clientId`           | Arg optionnel par méthode            | Header `X-Qwen-Client-Id` (voir [`08-session-lifecycle.md`](./08-session-lifecycle.md)).|
+| `lastEventId`        | Constructeur `DaemonSessionClient`   | Initialiser le curseur de relecture.                                                    |
+| `maxQueued`          | Option par abonnement                | `?maxQueued=N` pour la route SSE ; vérifier d'abord `caps.features.slow_client_warning` en pré-vol. |
+| `perCallTimeoutMs`   | Par méthode (ex. `restartMcpServer`) | Surcharger le timeout global du client.                                                 |
 
 ## Mises en garde et limites connues
 
-- **`fetchTimeoutMs` est par appel, pas au niveau de la connexion.** Les longues lectures du corps partagent le timer. Un daemon qui diffuse des réponses doit remplacer le timeout par appel ou le définir à `0`.
-- **Le SSE contourne le timeout fetch** — les connexions SSE longue durée ne sont pas tuées par `fetchTimeoutMs`. Utilisez `AbortSignal` pour une annulation contrôlée par l'appelant.
-- **La limite de tampon de `parseSseStream` est de 16 Mio** comme limite défensive. Une trame unique plus grande que cela abandonne l'itérateur (le daemon n'émet jamais légitimement de telles trames).
-- **`asKnownDaemonEvent` renvoie `undefined` pour les types d'événements non reconnus.** Les consommateurs du SDK doivent gérer cette branche plutôt que de supposer que l'union est exhaustive ; c'est le contrat de compatibilité ascendante. Les événements non reconnus incrémentent `DaemonSessionViewState.unrecognizedKnownEventCount`.
-- **`client_evicted`, `slow_client_warning`, `stream_error` ne sont pas dans l'anneau de rejeu.** Se reconnecter après une expulsion reprend à partir de l'anneau du daemon ; vous ne verrez pas à nouveau la trame d'expulsion.
-- **`DaemonClient` ne réessaie pas automatiquement.** Les échecs réseau sont signalés par des rejets ; la stratégie de reconnexion/rejeu est la responsabilité de l'appelant (`DaemonSessionClient.events()` facilite le rejeu mais la reconnexion reste par appel).
-
+- **`fetchTimeoutMs` est par appel, pas au niveau de la connexion.** Les lectures de body longues partagent le timer. Un daemon qui streame des réponses doit surcharger le timeout par appel ou le définir à `0`.
+- **Les SSE contournent le fetch timeout** — les connexions SSE de longue durée ne sont pas tuées par `fetchTimeoutMs`. Utilisez `AbortSignal` pour une annulation contrôlée par l'appelant.
+- **La limite de buffer de `parseSseStream` est de 16 MiB** en tant que borne défensive. Une seule trame plus grande que cela interrompt l'itérateur (le daemon n'émet jamais légitimement de telles trames).
+- **`asKnownDaemonEvent` retourne `undefined` pour les types d'événements non reconnus.** Les consommateurs du SDK doivent gérer cette branche plutôt que de supposer que l'union est exhaustive ; c'est le contrat de compatibilité ascendante (forward-compatibility). Les événements non reconnus incrémentent `DaemonSessionViewState.unrecognizedKnownEventCount`.
+- **`client_evicted`, `slow_client_warning`, `stream_error` ne sont pas dans le ring de relecture.** Se reconnecter après une éviction reprend depuis le ring du daemon ; vous ne reverrez pas la trame d'éviction.
+- **`DaemonClient` ne retry pas automatiquement.** Les échecs réseau se manifestent par des rejets ; la stratégie de reconnexion / relecture est de la responsabilité de l'appelant (`DaemonSessionClient.events()` facilite la relecture, mais la reconnexion reste par appel).
 ## Références
 
 - `packages/sdk-typescript/src/daemon/DaemonClient.ts`
@@ -268,4 +359,4 @@ code existant qui fait `import { DaemonClient }` n'est pas affecté.
 - `packages/sdk-typescript/src/daemon/sse.ts`
 - `packages/sdk-typescript/src/daemon/events.ts`
 - `packages/sdk-typescript/src/daemon/types.ts`
-- Exemple pas à pas complet : [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md).
+- Guide de bout en bout : [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md).

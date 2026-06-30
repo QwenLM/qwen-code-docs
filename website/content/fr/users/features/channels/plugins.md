@@ -1,17 +1,17 @@
-# Plugins de canal personnalisés
+# Plugins de canaux personnalisés
 
-Vous pouvez étendre le système de canaux avec des adaptateurs de plateforme personnalisés conditionnés en tant qu'[extensions](../../extension/introduction). Cela vous permet de connecter Qwen Code à n'importe quelle plateforme de messagerie, webhook ou transport personnalisé.
+Vous pouvez étendre le système de canaux avec des adaptateurs de plateforme personnalisés empaquetés sous forme d'[extensions](../../extension/introduction). Cela vous permet de connecter Qwen Code à n'importe quelle plateforme de messagerie, webhook ou transport personnalisé.
 
-## Comment ça fonctionne
+## Fonctionnement
 
-Les plugins de canal sont chargés au démarrage à partir des extensions actives. Lorsque `qwen channel start` s'exécute, il :
+Les plugins de canaux sont chargés au démarrage à partir des extensions actives. Lorsque `qwen channel start` s'exécute, il :
 
-1. Analyse toutes les extensions activées pour les entrées `channels` dans leur `qwen-extension.json`
+1. Analyse toutes les extensions activées pour y trouver les entrées `channels` dans leur `qwen-extension.json`
 2. Importe dynamiquement le point d'entrée de chaque canal
-3. Enregistre le type de canal pour qu'il puisse être référencé dans `settings.json`
-4. Crée des instances de canal à l'aide de la fonction d'usine du plugin
+3. Enregistre le type de canal afin qu'il puisse être référencé dans `settings.json`
+4. Crée les instances de canal en utilisant la fonction factory du plugin
 
-Votre canal personnalisé bénéficie gratuitement de l'ensemble du pipeline partagé : filtrage des expéditeurs, politiques de groupe, routage de session, commandes slash, reprise après panne et le pont ACP vers l'agent.
+Votre canal personnalisé bénéficie gratuitement du pipeline partagé complet : contrôle des expéditeurs, politiques de groupe, routage de session, commandes slash, récupération après crash et un bridge d'agent. Le `qwen channel start` autonome fournit actuellement `AcpBridge` ; le code de l'adaptateur du plugin doit dépendre du contrat `ChannelAgentBridge` destiné aux adaptateurs. Les plugins TypeScript existants avec un paramètre de bridge explicite `AcpBridge` doivent migrer cette annotation vers `ChannelAgentBridge` ; les plugins JavaScript ne sont pas affectés à l'exécution.
 
 ## Installation d'un canal personnalisé
 
@@ -21,7 +21,7 @@ Installez une extension qui fournit un plugin de canal :
 # Depuis un chemin local (pour le développement ou les plugins privés)
 qwen extensions install /path/to/my-channel-extension
 
-# Ou liez-le pour le développement (les modifications sont reflétées immédiatement)
+# Ou liez-le pour le développement (les modifications sont prises en compte immédiatement)
 qwen extensions link /path/to/my-channel-extension
 ```
 
@@ -42,46 +42,46 @@ Ajoutez une entrée de canal à `~/.qwen/settings.json` en utilisant le type per
 }
 ```
 
-Le `type` doit correspondre à un type de canal enregistré par une extension installée. Consultez la documentation de l'extension pour connaître les champs spécifiques au plugin requis (par exemple, `apiKey`, `webhookUrl`).
+Le `type` doit correspondre à un type de canal enregistré par une extension installée. Consultez la documentation de l'extension pour savoir quels champs spécifiques au plugin sont requis (par exemple, `apiKey`, `webhookUrl`).
 
 Toutes les options de canal standard fonctionnent avec les canaux personnalisés :
 
 | Option         | Description                                    |
 | -------------- | ---------------------------------------------- |
-| `senderPolicy` | `allowlist`, `pairing`, ou `open`              |
-| `allowedUsers` | Liste d'autorisation statique des ID d'expéditeurs |
-| `sessionScope` | `user`, `thread`, ou `single`                  |
-| `cwd`          | Répertoire de travail pour l'agent                |
-| `instructions` | Préfixé au premier message de chaque session |
-| `model`        | Remplacement de modèle pour le canal                 |
-| `groupPolicy`  | `disabled`, `allowlist`, ou `open`             |
-| `groups`       | Paramètres par groupe                             |
+| `senderPolicy` | `allowlist`, `pairing` ou `open`               |
+| `allowedUsers` | Liste statique d'identifiants d'expéditeurs autorisés |
+| `sessionScope` | `user`, `thread` ou `single`                   |
+| `cwd`          | Répertoire de travail pour l'agent             |
+| `instructions` | Ajoutées au début du premier message de chaque session |
+| `model`        | Remplacement de modèle pour le canal           |
+| `groupPolicy`  | `disabled`, `allowlist` ou `open`              |
+| `groups`       | Paramètres par groupe                          |
 
-Voir [Vue d'ensemble](./overview) pour les détails de chaque option.
+Voir la [vue d'ensemble](./overview) pour les détails sur chaque option.
 
 ## Démarrage du canal
 
 ```bash
-# Démarre tous les canaux, y compris les personnalisés
+# Démarre tous les canaux, y compris les canaux personnalisés
 qwen channel start
 
 # Démarre uniquement votre canal personnalisé
 qwen channel start my-bot
 ```
 
-## Ce que vous obtenez gratuitement
+## Fonctionnalités incluses d'office
 
-Les canaux personnalisés prennent automatiquement en charge tout ce que les canaux intégrés font :
+Les canaux personnalisés prennent automatiquement en charge tout ce que les canaux intégrés supportent :
 
-- **Politiques d'expéditeur** — contrôle d'accès `allowlist`, `pairing` et `open`
+- **Politiques d'expéditeur** — Contrôle d'accès `allowlist`, `pairing` et `open`
 - **Politiques de groupe** — Paramètres par groupe avec filtrage optionnel par @mention
-- **Routage de session** — Sessions par utilisateur, par fil de discussion ou partagées uniques
-- **Appairage DM** — Flux complet de code d'appairage pour les utilisateurs inconnus
-- **Commandes slash** — `/help`, `/clear`, `/status` fonctionnent immédiatement
-- **Instructions personnalisées** — Préfixé au premier message de chaque session
-- **Reprise après panne** — Redémarrage automatique avec conservation de la session
-- **Sérialisation par session** — Les messages sont mis en file d'attente pour éviter les conditions de concurrence
+- **Routage de session** — Sessions par utilisateur, par fil de discussion ou session unique partagée
+- **Appairage en MP** — Flux complet de code d'appairage pour les utilisateurs inconnus
+- **Commandes slash** — `/help`, `/clear`, `/status` fonctionnent d'emblée
+- **Instructions personnalisées** — Ajoutées au début du premier message de chaque session
+- **Récupération après crash** — Redémarrage automatique avec préservation de la session
+- **Sérialisation par session** — Les messages sont mis en file d'attente pour éviter les conditions de course
 
-## Construction de votre propre plugin de canal
+## Créer votre propre plugin de canal
 
 Vous souhaitez créer un plugin de canal pour une nouvelle plateforme ? Consultez le [Guide du développeur de plugins de canal](../../../developers/channel-plugins.md) pour l'interface `ChannelPlugin`, le format `Envelope` et les points d'extension.

@@ -1,16 +1,20 @@
-# Guide du développeur de plugin de canal
+# Guide du développeur pour les plugins de canal
 
-Un plugin de canal connecte Qwen Code à une plateforme de messagerie. Il est empaqueté en tant qu'[extension](../users/extension/introduction) et chargé au démarrage. Pour la documentation destinée aux utilisateurs sur l'installation et la configuration des plugins, consultez [Plugins](../users/features/channels/plugins).
+Un plugin de canal connecte Qwen Code à une plateforme de messagerie. Il est empaqueté sous forme d'[extension](../users/extension/introduction) et chargé au démarrage. Pour la documentation utilisateur sur l'installation et la configuration des plugins, consultez [Plugins](../users/features/channels/plugins).
 
 ## Comment tout s'articule
 
-Votre plugin se situe dans la couche d'adaptateur de plateforme. Vous gérez les aspects spécifiques à la plateforme (connexion, réception de messages, envoi de réponses). `ChannelBase` gère tout le reste (contrôle d'accès, routage des sessions, file d'attente des prompts, commandes slash, reprise après incident).
+Votre plugin se situe dans la couche Platform Adapter. Vous gérez les spécificités de la plateforme (connexion, réception des messages, envoi des réponses). `ChannelBase` gère tout le reste (contrôle d'accès, routage des sessions, mise en file d'attente des prompts, commandes slash, récupération après crash).
 
 ```
-Votre Plugin  →  construit Envelope  →  handleInbound()
-ChannelBase   →  gates → commandes → routage → AcpBridge.prompt()
-ChannelBase   →  appelle votre sendMessage() avec la réponse de l'agent
+Your Plugin  →  builds Envelope  →  handleInbound()
+ChannelBase  →  gates → commands → routing → ChannelAgentBridge.prompt()
+ChannelBase  →  calls your sendMessage() with the agent's response
 ```
+
+`ChannelAgentBridge` est le contrat de bridge destiné à l'adaptateur. Le chemin autonome actuel `qwen channel start` fournit un `AcpBridge`, mais le code du plugin doit typer les paramètres du constructeur en tant que `ChannelAgentBridge` afin que le même adaptateur puisse s'exécuter derrière d'autres implémentations de bridge à l'avenir.
+
+Note de migration pour les plugins TypeScript existants : si le constructeur ou la factory de votre adaptateur type explicitement `bridge` en tant que `AcpBridge`, remplacez cette annotation par `ChannelAgentBridge` et continuez à utiliser uniquement les méthodes exposées par ce contrat. Les plugins JavaScript ne sont pas affectés à l'exécution, et le chemin autonome `qwen channel start` transmet toujours l'implémentation actuelle de `AcpBridge`.
 
 ## L'objet Plugin
 
@@ -21,7 +25,7 @@ import type { ChannelPlugin } from '@qwen-code/channel-base';
 import { MyChannel } from './MyChannel.js';
 
 export const plugin: ChannelPlugin = {
-  channelType: 'my-platform', // Identifiant unique, utilisé dans le champ "type" de settings.json
+  channelType: 'my-platform', // ID unique, utilisé dans le champ "type" de settings.json
   displayName: 'My Platform', // Affiché dans la sortie CLI
   requiredConfigFields: ['apiKey'], // Validé au démarrage (au-delà de ChannelConfig standard)
   createChannel: (name, config, bridge, options) =>
@@ -35,18 +39,32 @@ export const plugin: ChannelPlugin = {
 
 ```typescript
 import { ChannelBase } from '@qwen-code/channel-base';
-import type { Envelope } from '@qwen-code/channel-base';
+import type {
+  ChannelBaseOptions,
+  ChannelAgentBridge,
+  ChannelConfig,
+  Envelope,
+} from '@qwen-code/channel-base';
 
 export class MyChannel extends ChannelBase {
+  constructor(
+    name: string,
+    config: ChannelConfig,
+    bridge: ChannelAgentBridge,
+    options?: ChannelBaseOptions,
+  ) {
+    super(name, config, bridge, options);
+  }
+
   async connect(): Promise<void> {
     // Connectez-vous à votre plateforme, enregistrez les gestionnaires de messages
-    // Quand un message arrive :
+    // Lorsqu'un message arrive :
     const envelope: Envelope = {
       channelName: this.name,
-      senderId: '...', // Identifiant de l'utilisateur stable et unique sur la plateforme
+      senderId: '...', // ID utilisateur de la plateforme stable et unique
       senderName: '...', // Nom d'affichage
-      chatId: '...', // Identifiant du chat/de la conversation (distinct pour les DM vs les groupes)
-      text: '...', // Texte du message (supprimez les @mentions)
+      chatId: '...', // ID de chat/conversation (distinct pour les MP et les groupes)
+      text: '...', // Texte du message (supprimer les @mentions)
       isGroup: false, // Précis — utilisé par GroupGate
       isMentioned: false, // Précis — utilisé par GroupGate
       isReplyToBot: false, // Précis — utilisé par GroupGate
@@ -55,7 +73,7 @@ export class MyChannel extends ChannelBase {
   }
 
   async sendMessage(chatId: string, text: string): Promise<void> {
-    // Formatez le markdown → format de la plateforme, découpez si nécessaire, livrez
+    // Formatez le markdown → format de la plateforme, découpez si nécessaire, délivrez
   }
 
   disconnect(): void {
@@ -64,42 +82,44 @@ export class MyChannel extends ChannelBase {
 }
 ```
 
+La plupart des adaptateurs doivent transmettre `options` sans modification. Si un adaptateur crée son propre `SessionRouter` et passe ce routeur à `super()`, définissez `registerBridgeEvents: true` dans `ChannelBaseOptions` afin que `ChannelBase` reçoive toujours directement les événements `toolCall` et `sessionDied`. Laissez cette option non définie pour les routeurs fournis par la passerelle de canal.
+
 ## L'Envelope
 
-L'objet message normalisé que vous construisez à partir des données de la plateforme. Les indicateurs booléens pilotent la logique des gates, ils doivent donc être précis.
+L'objet de message normalisé que vous construisez à partir des données de la plateforme. Les drapeaux booléens pilotent la logique des gates, ils doivent donc être précis.
 
-| Champ            | Type         | Requis | Notes                                                                      |
-| ---------------- | ------------ | ------ | -------------------------------------------------------------------------- |
-| `channelName`    | string       | Oui    | Utilisez `this.name`                                                       |
-| `senderId`       | string       | Oui    | Doit être stable d'un message à l'autre (utilisé pour le routage de session + contrôle d'accès) |
-| `senderName`     | string       | Oui    | Nom d'affichage                                                            |
-| `chatId`         | string       | Oui    | Doit distinguer les DM des groupes                                         |
-| `text`           | string       | Oui    | Supprimez les @mentions du bot                                             |
-| `threadId`       | string       | Non    | Pour `sessionScope: "thread"`                                              |
-| `messageId`      | string       | Non    | Identifiant du message sur la plateforme — utile pour la corrélation des réponses |
-| `isGroup`        | boolean      | Oui    | GroupGate repose sur ce champ                                              |
-| `isMentioned`    | boolean      | Oui    | GroupGate repose sur ce champ                                              |
-| `isReplyToBot`   | boolean      | Oui    | GroupGate repose sur ce champ                                              |
-| `referencedText` | string       | Non    | Message cité — ajouté en guise de contexte                                 |
-| `imageBase64`    | string       | Non    | Image encodée en base64 (héritage — préférez `attachments`)                |
-| `imageMimeType`  | string       | Non    | p. ex. `image/jpeg` (héritage — préférez `attachments`)                    |
-| `attachments`    | Attachment[] | Non    | Fichiers joints structurés (voir ci-dessous)                               |
+| Champ            | Type         | Obligatoire | Notes                                                                      |
+| ---------------- | ------------ | ----------- | -------------------------------------------------------------------------- |
+| `channelName`    | string       | Oui         | Utilisez `this.name`                                                       |
+| `senderId`       | string       | Oui         | Doit être stable d'un message à l'autre (utilisé pour le routage des sessions + le contrôle d'accès) |
+| `senderName`     | string       | Oui         | Nom d'affichage                                                            |
+| `chatId`         | string       | Oui         | Doit distinguer les MP des groupes                                         |
+| `text`           | string       | Oui         | Supprimer les @mentions du bot                                             |
+| `threadId`       | string       | Non         | Pour `sessionScope: "thread"`                                              |
+| `messageId`      | string       | Non         | ID de message de la plateforme — utile pour la corrélation des réponses    |
+| `isGroup`        | boolean      | Oui         | GroupGate s'appuie dessus                                                  |
+| `isMentioned`    | boolean      | Oui         | GroupGate s'appuie dessus                                                  |
+| `isReplyToBot`   | boolean      | Oui         | GroupGate s'appuie dessus                                                  |
+| `referencedText` | string       | Non         | Message cité — ajouté en préfixe comme contexte                            |
+| `imageBase64`    | string       | Non         | Image encodée en base64 (obsolète — préférez `attachments`)                |
+| `imageMimeType`  | string       | Non         | ex. : `image/jpeg` (obsolète — préférez `attachments`)                     |
+| `attachments`    | Attachment[] | Non         | Pièces jointes multimédias structurées (voir ci-dessous)                   |
 
-### Pièces jointes
+### Attachments
 
-Utilisez le tableau `attachments` pour les images, fichiers, audio et vidéo. `handleInbound()` les résout automatiquement : les images avec `data` en base64 sont envoyées au modèle en entrée visuelle, les fichiers avec un `filePath` voient leur chemin ajouté au prompt pour que l'agent puisse les lire.
+Utilisez le tableau `attachments` pour les images, les fichiers, l'audio et la vidéo. `handleInbound()` les résout automatiquement : les images avec des `data` en base64 sont envoyées au modèle en tant qu'entrée visuelle, les fichiers avec un `filePath` voient leur chemin ajouté au prompt afin que l'agent puisse les lire.
 
 ```typescript
 interface Attachment {
   type: 'image' | 'file' | 'audio' | 'video';
-  data?: string; // Données encodées en base64 (images, petits fichiers)
-  filePath?: string; // Chemin absolu vers un fichier local (fichiers volumineux sauvegardés sur disque)
-  mimeType: string; // p. ex. 'application/pdf', 'image/jpeg'
-  fileName?: string; // Nom de fichier d'origine depuis la plateforme
+  data?: string; // données encodées en base64 (images, petits fichiers)
+  filePath?: string; // chemin absolu vers le fichier local (gros fichiers enregistrés sur le disque)
+  mimeType: string; // ex. : 'application/pdf', 'image/jpeg'
+  fileName?: string; // nom de fichier original de la plateforme
 }
 ```
 
-Exemple — gestion d'un téléchargement de fichier dans votre adaptateur :
+Exemple — gestion du téléchargement d'un fichier dans votre adaptateur :
 
 ```typescript
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -122,7 +142,7 @@ envelope.attachments = [
 ];
 ```
 
-Les champs hérités `imageBase64`/`imageMimeType` fonctionnent toujours pour la rétrocompatibilité, mais `attachments` est préféré pour le nouveau code.
+Les champs obsolètes `imageBase64`/`imageMimeType` fonctionnent toujours pour la rétrocompatibilité, mais `attachments` est préféré pour le nouveau code.
 
 ## Manifeste de l'extension
 
@@ -147,16 +167,16 @@ Votre `qwen-extension.json` déclare le type de canal. La clé doit correspondre
 
 ```typescript
 this.registerCommand('mycommand', async (envelope, args) => {
-  await this.sendMessage(envelope.chatId, 'Réponse');
-  return true; // traitée, ne pas transmettre à l'agent
+  await this.sendMessage(envelope.chatId, 'Response');
+  return true; // géré, ne pas transmettre à l'agent
 });
 ```
 
-**Indicateurs de frappe** — remplacez `onPromptStart()` et `onPromptEnd()` pour afficher des indicateurs de frappe spécifiques à la plateforme. Ces hooks ne se déclenchent que lorsqu'un prompt commence effectivement à être traité — pas pour les messages mis en mémoire tampon (mode collecte) ni pour les messages bloqués par les gates :
+**Indicateurs de traitement** — surchargez `onPromptStart()` et `onPromptEnd()` pour afficher des indicateurs de frappe spécifiques à la plateforme. Ces hooks ne se déclenchent que lorsqu'un prompt commence réellement à être traité — pas pour les messages en mémoire tampon (mode collect) ou les messages bloqués/filtrés :
 
 ```typescript
 protected override onPromptStart(chatId: string, sessionId: string, messageId?: string): void {
-  this.platformClient.sendTyping(chatId); // votre API plateforme
+  this.platformClient.sendTyping(chatId); // votre API de plateforme
 }
 
 protected override onPromptEnd(chatId: string, sessionId: string, messageId?: string): void {
@@ -164,16 +184,16 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 }
 ```
 
-**Hooks d'appels d'outils** — remplacez `onToolCall()` pour afficher l'activité de l'agent (p. ex. « Exécution de la commande shell... »).
+**Hooks d'appel d'outils** — surchargez `onToolCall()` pour afficher l'activité de l'agent (ex. : "Exécution de la commande shell...").
 
-**Hooks de streaming** — remplacez `onResponseChunk(chatId, chunk, sessionId)` pour l'affichage progressif par morceau (p. ex. modification d'un message en place). Remplacez `onResponseComplete(chatId, fullText, sessionId)` pour personnaliser la livraison finale.
+**Hooks de streaming** — surchargez `onResponseChunk(chatId, chunk, sessionId)` pour un affichage progressif par chunk (ex. : modification d'un message sur place). Surchargez `onResponseComplete(chatId, fullText, sessionId)` pour personnaliser la livraison finale.
 
-**Bloc du streaming** — définissez `blockStreaming: "on"` dans la configuration du canal. La classe de base divise automatiquement les réponses en plusieurs messages aux limites des paragraphes. Aucun code de plugin nécessaire — cela fonctionne en parallèle de `onResponseChunk`.
+**Blocage du streaming** — définissez `blockStreaming: "on"` dans la configuration du canal. La classe de base divise automatiquement les réponses en plusieurs messages aux limites des paragraphes. Aucun code de plugin n'est nécessaire — cela fonctionne de concert avec `onResponseChunk`.
 
-**Médias** — remplissez `envelope.attachments` avec des images/fichiers. Voir [Pièces jointes](#pièces-jointes) ci-dessus.
+**Médias** — remplissez `envelope.attachments` avec des images/fichiers. Voir [Attachments](#attachments) ci-dessus.
 
 ## Implémentations de référence
 
-- **Exemple de plugin** (`packages/channels/plugin-example/`) — adaptateur WebSocket minimal, bon point de départ
+- **Plugin example** (`packages/channels/plugin-example/`) — adaptateur minimal basé sur WebSocket, bon point de départ
 - **Telegram** (`packages/channels/telegram/`) — complet : images, fichiers, formatage, indicateurs de frappe
 - **DingTalk** (`packages/channels/dingtalk/`) — basé sur le streaming avec gestion du texte enrichi

@@ -2,9 +2,9 @@
 
 ## 概要
 
-Qwen Code フックは、Qwen Code アプリケーションの動作を拡張・カスタマイズするための強力なメカニズムを提供します。フックを使用すると、ツール実行前、ツール実行後、セッション開始/終了時、その他の主要なイベントといった、アプリケーションライフサイクルの特定の時点でカスタムスクリプトやプログラムを実行できます。
+Qwen Code フックは、Qwen Code アプリケーションの動作を拡張・カスタマイズするための強力な仕組みを提供します。フックを使用すると、ツール実行前、ツール実行後、セッション開始/終了時、その他の主要なイベントなど、アプリケーションライフサイクルの特定のタイミングでカスタムスクリプトやプログラムを実行できます。
 
-フックはデフォルトで有効です。設定ファイルで `disableAllHooks` を `true` に設定すると (`hooks` と同じ階層に配置)、すべてのフックを一時的に無効化できます:
+フックはデフォルトで有効になっています。設定ファイルの最上位（`hooks` と同じ階層）で `disableAllHooks` を `true` に設定することで、すべてのフックを一時的に無効にできます。
 
 ```json
 {
@@ -15,29 +15,29 @@ Qwen Code フックは、Qwen Code アプリケーションの動作を拡張・
 }
 ```
 
-これにより、フックの設定を削除せずにすべてのフックが無効化されます。
+これにより、設定を削除せずにすべてのフックを無効にします。
 
-## フックとは
+## フックとは？
 
-フックは、ユーザーが定義したスクリプトやプログラムで、アプリケーションフローの所定の時点で Qwen Code によって自動的に実行されます。フックを使用すると、以下のことが可能になります:
+フックは、アプリケーションフローの事前定義されたポイントで Qwen Code によって自動的に実行される、ユーザー定義のスクリプトまたはプログラムです。これにより、ユーザーは以下のことが可能になります。
 
-- ツール使用状況の監視と監査
+- ツールの使用状況の監視と監査
 - セキュリティポリシーの適用
 - 会話への追加コンテキストの注入
-- イベントに基づくアプリケーション動作のカスタマイズ
-- 外部システムやサービスとの統合
-- ツールへの入力や応答のプログラムによる変更
+- イベントに基づいたアプリケーション動作のカスタマイズ
+- 外部システムやサービスとの連携
+- ツールの入力やレスポンスのプログラムによる変更
 
-## フックの種類
+## フックのタイプ
 
-Qwen Code は4つのフック実行タイプをサポートしています:
+Qwen Code は 4 種類のフック実行タイプをサポートしています。
 
-| タイプ      | 説明                                                                                           |
-| :---------- | :--------------------------------------------------------------------------------------------- |
-| `command`   | シェルコマンドを実行します。`stdin` 経由で JSON を受け取り、`stdout` 経由で結果を返します。     |
-| `http`      | JSON を `POST` リクエストボディとして指定された URL に送信します。HTTP レスポンスボディで結果を返します。 |
-| `function`  | 登録された JavaScript 関数を直接呼び出します（セッションレベルのフックのみ）。                 |
-| `prompt`    | LLM を使用してフック入力を評価し、決定を返します。                                             |
+| タイプ       | 説明                                                                                    |
+| :--------- | :--------------------------------------------------------------------------------------------- |
+| `command`  | シェルコマンドを実行します。`stdin` 経由で JSON を受け取り、`stdout` 経由で結果を返します。              |
+| `http`     | 指定された URL に JSON を `POST` リクエストのボディとして送信します。HTTP レスポンスボディ経由で結果を返します。 |
+| `function` | 登録済みの JavaScript 関数を直接呼び出します（セッションレベルのフックのみ）。                     |
+| `prompt`   | LLM を使用してフック入力を評価し、判断を返します。                                       |
 
 ### コマンドフック
 
@@ -45,17 +45,17 @@ Qwen Code は4つのフック実行タイプをサポートしています:
 
 **設定:**
 
-| フィールド       | タイプ                   | 必須 | 説明                                    |
-| :--------------- | :----------------------- | :--- | :-------------------------------------- |
-| `type`           | `"command"`              | はい | フックのタイプ                          |
-| `command`        | `string`                 | はい | 実行するコマンド                        |
-| `name`           | `string`                 | いいえ | フック名（ログ用）                      |
-| `description`    | `string`                 | いいえ | フックの説明                            |
-| `timeout`        | `number`                 | いいえ | タイムアウト（ミリ秒）、デフォルト 60000 |
-| `async`          | `boolean`                | いいえ | バックグラウンドで非同期実行するか      |
-| `env`            | `Record<string, string>` | いいえ | 環境変数                                |
-| `shell`          | `"bash" \| "powershell"` | いいえ | 使用するシェル                          |
-| `statusMessage`  | `string`                 | いいえ | 実行中に表示するステータスメッセージ    |
+| フィールド           | タイプ                     | 必須 | 説明                                 |
+| :-------------- | :----------------------- | :------- | :------------------------------------------ |
+| `type`          | `"command"`              | はい      | フックのタイプ                                   |
+| `command`       | `string`                 | はい      | 実行するコマンド                          |
+| `name`          | `string`                 | いいえ       | フック名（ログ用）                     |
+| `description`   | `string`                 | いいえ       | フックの説明                            |
+| `timeout`       | `number`                 | いいえ       | タイムアウト（ミリ秒単位）、デフォルト 60000      |
+| `async`         | `boolean`                | いいえ       | バックグラウンドで非同期に実行するかどうか |
+| `env`           | `Record<string, string>` | いいえ       | 環境変数                       |
+| `shell`         | `"bash" \| "powershell"` | いいえ       | 使用するシェル                                |
+| `statusMessage` | `string`                 | いいえ       | 実行中に表示されるステータスメッセージ   |
 
 **例:**
 
@@ -81,27 +81,27 @@ Qwen Code は4つのフック実行タイプをサポートしています:
 
 ### HTTP フック
 
-HTTP フックは、フック入力を POST リクエストとして指定された URL に送信します。URL ホワイトリスト、DNS レベルの SSRF 対策、環境変数補間、その他のセキュリティ機能をサポートします。
+HTTP フックは、フック入力を POST リクエストとして指定された URL に送信します。URL ホワイトリスト、DNS レベルの SSRF 保護、環境変数の補間、その他のセキュリティ機能をサポートしています。
 
 **設定:**
 
-| フィールド          | タイプ                     | 必須 | 説明                                                  |
-| :------------------ | :------------------------- | :--- | :---------------------------------------------------- |
-| `type`              | `"http"`                   | はい | フックのタイプ                                        |
-| `url`               | `string`                   | はい | ターゲット URL                                        |
-| `headers`           | `Record<string, string>`   | いいえ | リクエストヘッダー（環境変数補間をサポート）          |
-| `allowedEnvVars`    | `string[]`                 | いいえ | URL/ヘッダーで許可される環境変数のホワイトリスト      |
-| `timeout`           | `number`                   | いいえ | タイムアウト（秒）、デフォルト 600                    |
-| `name`              | `string`                   | いいえ | フック名（ログ用）                                    |
-| `statusMessage`     | `string`                   | いいえ | 実行中に表示するステータスメッセージ                  |
-| `once`              | `boolean`                  | いいえ | イベントごとにセッション内で1回のみ実行（HTTPフックのみ） |
+| フィールド            | タイプ                     | 必須 | 説明                                               |
+| :--------------- | :----------------------- | :------- | :-------------------------------------------------------- |
+| `type`           | `"http"`                 | はい      | フックのタイプ                                                 |
+| `url`            | `string`                 | はい      | ターゲット URL                                                |
+| `headers`        | `Record<string, string>` | いいえ       | リクエストヘッダー（環境変数の補間をサポート）          |
+| `allowedEnvVars` | `string[]`               | いいえ       | URL/ヘッダーで使用を許可される環境変数のホワイトリスト |
+| `timeout`        | `number`                 | いいえ       | タイムアウト（秒単位）、デフォルト 600                           |
+| `name`           | `string`                 | いいえ       | フック名（ログ用）                                   |
+| `statusMessage`  | `string`                 | いいえ       | 実行中に表示されるステータスメッセージ                 |
+| `once`           | `boolean`                | いいえ       | セッションごとにイベントごとに 1 回だけ実行する（HTTP フックのみ） |
 
 **セキュリティ機能:**
 
-- **URL ホワイトリスト**: `allowedUrls` で許可する URL パターンを設定可能
-- **SSRF 対策**: プライベート IP (10.x.x.x、172.16-31.x.x、192.168.x.x など) をブロックするが、ループバックアドレス (127.0.0.1、::1) は許可
-- **DNS 検証**: DNS リバインディング攻撃を防ぐため、リクエスト前にドメイン解決を検証
-- **環境変数補間**: `${VAR}` 構文、`allowedEnvVars` ホワイトリストに含まれる変数のみ許可
+- **URL ホワイトリスト**: `allowedUrls` を介して許可された URL パターンを設定します
+- **SSRF 保護**: プライベート IP（10.x.x.x、172.16-31.x.x、192.168.x.x など）をブロックしますが、ループバックアドレス（127.0.0.1、::1）は許可します
+- **DNS 検証**: DNS リバインディング攻撃を防ぐため、リクエスト前にドメイン解決を検証します
+- **環境変数の補間**: `${VAR}` 構文。`allowedEnvVars` ホワイトリストにある変数のみを許可します
 
 **例:**
 
@@ -131,60 +131,60 @@ HTTP フックは、フック入力を POST リクエストとして指定され
 
 ### 関数フック
 
-関数フックは、登録された JavaScript/TypeScript 関数を直接呼び出します。これは主にスキルシステム内部で使用され、現在エンドユーザー向けの公開 API としては公開されていません。
+関数フックは、登録済みの JavaScript/TypeScript 関数を直接呼び出します。これらは Skill システムによって内部的に使用され、現在はエンドユーザー向けのパブリック API として公開されていません。
 
-**注意**: ほとんどのユースケースでは、設定ファイルで設定可能な **コマンドフック** または **HTTP フック** を使用してください。
+**注**: ほとんどのユースケースでは、設定ファイルで設定可能な**コマンドフック**または **HTTP フック**を代わりに使用してください。
 
 ### プロンプトフック
 
-プロンプトフックは LLM を使用してフック入力を評価し、決定を返します。これは、操作を許可するかブロックするかの判断など、コンテキストに基づいたインテリジェントな決定を行うのに便利です。
+プロンプトフックは LLM を使用してフック入力を評価し、判断を返します。これは、操作を許可するかブロックするかを決定するなど、コンテキストに基づいてインテリジェントな判断を行う場合に便利です。
 
 **動作の仕組み:**
 
-1. フック入力 JSON は、`$ARGUMENTS` プレースホルダーを使用してプロンプトに注入されます
-2. プロンプトが LLM に送信されます（デフォルト: 現在のモデル）
-3. LLM が決定を含む JSON レスポンスを返します
-4. Qwen Code が決定を処理し、実行を続行またはブロックします
+1. フック入力の JSON は、`$ARGUMENTS` プレースホルダーを使用してプロンプトに注入されます
+2. プロンプトは LLM（デフォルト: 現在のモデル）に送信されます
+3. LLM は判断を含む JSON レスポンスを返します
+4. Qwen Code が判断を処理し、それに応じて実行を続行またはブロックします
 
 **設定:**
 
-| フィールド         | タイプ     | 必須 | 説明                                             |
-| :----------------- | :--------- | :--- | :----------------------------------------------- |
-| `type`             | `"prompt"` | はい | フックのタイプ                                   |
-| `prompt`           | `string`   | はい | LLM に送信するプロンプト。`$ARGUMENTS` でフック入力を使用 |
-| `model`            | `string`   | いいえ | 使用するモデル（デフォルトは現在のモデル）       |
-| `timeout`          | `number`   | いいえ | タイムアウト（秒）、デフォルト 30                |
-| `name`             | `string`   | いいえ | フック名（ログ用）                               |
-| `description`      | `string`   | いいえ | フックの説明                                     |
-| `statusMessage`    | `string`   | いいえ | 実行中に表示するステータスメッセージ             |
+| フィールド           | タイプ       | 必須 | 説明                                         |
+| :-------------- | :--------- | :------- | :-------------------------------------------------- |
+| `type`          | `"prompt"` | はい      | フックのタイプ                                           |
+| `prompt`        | `string`   | はい      | LLM に送信されるプロンプト。フック入力には `$ARGUMENTS` を使用します |
+| `model`         | `string`   | いいえ       | 使用するモデル（デフォルトは現在のモデル）       |
+| `timeout`       | `number`   | いいえ       | タイムアウト（秒単位）、デフォルト 30                      |
+| `name`          | `string`   | いいえ       | フック名（ログ用）                             |
+| `description`   | `string`   | いいえ       | フックの説明                                    |
+| `statusMessage` | `string`   | いいえ       | 実行中に表示されるステータスメッセージ           |
 
 **レスポンス形式:**
 
-LLM は以下の構造の JSON を返す必要があります:
+LLM は以下の構造を持つ JSON を返す必要があります。
 
 ```json
 {
   "ok": true,
-  "reason": "決定の説明",
-  "additionalContext": "会話に注入するオプションのコンテキスト"
+  "reason": "Explanation of the decision",
+  "additionalContext": "Optional context to inject into the conversation"
 }
 ```
 
-| フィールド            | 説明                                                                 |
-| :-------------------- | :------------------------------------------------------------------- |
-| `ok`                  | `true` で許可/続行、`false` でブロック/停止                          |
-| `reason`              | `ok` が `false` の場合に必須。ブロックの理由をモデルに伝える         |
-| `additionalContext`   | 任意。許可時に会話に注入する追加コンテキスト                         |
+| フィールド               | 説明                                                                |
+| :------------------ | :------------------------------------------------------------------------- |
+| `ok`                | 許可/続行する場合は `true`、ブロック/停止する場合は `false`                            |
+| `reason`            | `ok` が `false` の場合に必須。ブロックを説明するためにモデルに表示されます     |
+| `additionalContext` | オプション。許可時に会話に注入する追加コンテキスト |
 
 **サポートされるイベント:**
 
-プロンプトフックは以下のようなほとんどのフックイベントで使用できます:
+プロンプトフックは、以下のものを含むほとんどのフックイベントで使用できます。
 
-- `PreToolUse` - ツール呼び出しを許可するか評価
-- `PostToolUse` - ツール結果を評価し、コンテキストを注入
+- `PreToolUse` - ツール呼び出しを許可するかどうかを評価
+- `PostToolUse` - ツールの結果を評価し、コンテキストを注入する可能性あり
 - `Stop` - 続行するか停止するかを決定
-- `SubagentStop` - サブエージェント結果を評価
-- `UserPromptSubmit` - ユーザープロンプトを評価または補完
+- `SubagentStop` - サブエージェントの結果を評価
+- `UserPromptSubmit` - ユーザープロンプトを評価または強化
 
 **例: Stop フック**
 
@@ -233,45 +233,45 @@ LLM は以下の構造の JSON を返す必要があります:
 
 ## フックイベント
 
-フックは Qwen Code セッション中の特定の時点で発火します。イベントによって、トリガー条件をフィルタリングするための異なるマッチャーをサポートします。
+フックは Qwen Code セッション中の特定のポイントで発生します。異なるイベントは、トリガー条件をフィルタリングするために異なる matcher をサポートしています。
 
-| イベント               | トリガーされるタイミング                              | マッチャー対象                                                 |
-| :--------------------- | :---------------------------------------------------- | :------------------------------------------------------------- |
-| `PreToolUse`           | ツール実行前                                          | ツール名 (`WriteFile`, `ReadFile`, `Bash` など)                |
-| `PostToolUse`          | ツール実行成功後                                      | ツール名                                                       |
-| `PostToolUseFailure`   | ツール実行失敗後                                      | ツール名                                                       |
-| `UserPromptSubmit`     | ユーザーがプロンプトを送信した後                      | なし（常に発火）                                               |
-| `SessionStart`         | セッション開始または再開時                            | ソース (`startup`, `resume`, `clear`, `compact`)               |
-| `SessionEnd`           | セッション終了時                                      | 理由 (`clear`, `logout`, `prompt_input_exit` など)             |
-| `Stop`                 | Claude がレスポンスの結論を準備する時                  | なし（常に発火）                                               |
-| `SubagentStart`        | サブエージェント開始時                                | エージェントタイプ (`Bash`, `Explorer`, `Plan` など)           |
-| `SubagentStop`         | サブエージェント停止時                                | エージェントタイプ                                             |
-| `PreCompact`           | 会話のコンパクション前                                | トリガー (`manual`, `auto`)                                    |
-| `Notification`         | 通知送信時                                            | タイプ (`permission_prompt`, `idle_prompt`, `auth_success`)     |
-| `PermissionRequest`    | 許可ダイアログ表示時                                  | ツール名                                                       |
-| `TodoCreated`          | 新しい TODO アイテム作成時                            | なし（常に発火）                                               |
-| `TodoCompleted`        | TODO アイテムが完了とマークされた時                   | なし（常に発火）                                               |
+| イベント                | トリガー条件                            | Matcher ターゲット                                            |
+| :------------------- | :---------------------------------------- | :-------------------------------------------------------- |
+| `PreToolUse`         | ツール実行前                     | ツール名（`WriteFile`、`ReadFile`、`Bash` など）         |
+| `PostToolUse`        | ツールの正常な実行後           | ツール名                                                 |
+| `PostToolUseFailure` | ツール実行の失敗後                | ツール名                                                 |
+| `UserPromptSubmit`   | ユーザーがプロンプトを送信した後                 | なし（常に発生）                                       |
+| `SessionStart`       | セッションの開始または再開時            | ソース（`startup`、`resume`、`clear`、`compact`）          |
+| `SessionEnd`         | セッションの終了時                         | 理由（`clear`、`logout`、`prompt_input_exit` など）     |
+| `Stop`               | Claude がレスポンスの終了を準備しているとき | なし（常に発生）                                       |
+| `SubagentStart`      | サブエージェントの開始時                      | エージェントタイプ（`Bash`、`Explorer`、`Plan` など）             |
+| `SubagentStop`       | サブエージェントの停止時                       | エージェントタイプ                                                |
+| `PreCompact`         | 会話のコンパクション前            | トリガー（`manual`、`auto`）                                |
+| `Notification`       | 通知の送信時               | タイプ（`permission_prompt`、`idle_prompt`、`auth_success`） |
+| `PermissionRequest`  | 権限ダイアログの表示時           | ツール名                                                 |
+| `TodoCreated`        | 新しい todo アイテムの作成時           | なし（常に発生）                                       |
+| `TodoCompleted`      | todo アイテムが完了としてマークされたとき   | なし（常に発生）                                       |
 
-### マッチャーパターン
+### Matcher パターン
 
-`matcher` はトリガー条件をフィルタリングするための正規表現です。
+`matcher` は、トリガー条件をフィルタリングするために使用される正規表現です。
 
-| イベントタイプ     | イベント                                                                    | マッチャーサポート | マッチャー対象                                                |
-| :----------------- | :-------------------------------------------------------------------------- | :----------------- | :------------------------------------------------------------ |
-| ツールイベント     | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`       | ✅ 正規表現        | ツール名: `WriteFile`, `ReadFile`, `Bash` など                |
-| サブエージェントイベント | `SubagentStart`, `SubagentStop`                                            | ✅ 正規表現        | エージェントタイプ: `Bash`, `Explorer` など                   |
-| セッションイベント | `SessionStart`                                                              | ✅ 正規表現        | ソース: `startup`, `resume`, `clear`, `compact`               |
-| セッションイベント | `SessionEnd`                                                                | ✅ 正規表現        | 理由: `clear`, `logout`, `prompt_input_exit` など             |
-| 通知イベント       | `Notification`                                                              | ✅ 完全一致        | タイプ: `permission_prompt`, `idle_prompt`, `auth_success`    |
-| コンパクションイベント | `PreCompact`                                                            | ✅ 完全一致        | トリガー: `manual`, `auto`                                    |
-| TODO イベント      | `TodoCreated`, `TodoCompleted`                                              | ❌ なし            | N/A                                                           |
-| プロンプトイベント | `UserPromptSubmit`                                                          | ❌ なし            | N/A                                                           |
-| Stop イベント      | `Stop`                                                                      | ❌ なし            | N/A                                                           |
+| イベントタイプ          | イベント                                                                 | Matcher サポート | Matcher ターゲット                                           |
+| :------------------ | :--------------------------------------------------------------------- | :-------------- | :------------------------------------------------------- |
+| ツールイベント         | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest` | ✅ 正規表現        | ツール名: `WriteFile`, `ReadFile`, `Bash` など         |
+| サブエージェントイベント     | `SubagentStart`, `SubagentStop`                                        | ✅ 正規表現        | エージェントタイプ: `Bash`, `Explorer` など                     |
+| セッションイベント      | `SessionStart`                                                         | ✅ 正規表現        | ソース: `startup`, `resume`, `clear`, `compact`          |
+| セッションイベント      | `SessionEnd`                                                           | ✅ 正規表現        | 理由: `clear`, `logout`, `prompt_input_exit` など     |
+| 通知イベント | `Notification`                                                         | ✅ 完全一致  | タイプ: `permission_prompt`, `idle_prompt`, `auth_success` |
+| コンパクションイベント      | `PreCompact`                                                           | ✅ 完全一致  | トリガー: `manual`, `auto`                                |
+| Todo イベント         | `TodoCreated`, `TodoCompleted`                                         | ❌ なし           | N/A                                                      |
+| プロンプトイベント       | `UserPromptSubmit`                                                     | ❌ なし           | N/A                                                      |
+| 停止イベント         | `Stop`                                                                 | ❌ なし           | N/A                                                      |
 
-**マッチャー構文:**
+**Matcher 構文:**
 
-- 空文字列 `""` または `"*"` はそのタイプのすべてのイベントにマッチ
-- 標準的な正規表現構文をサポート（例: `^Bash$`, `Read.*`, `(WriteFile|Edit)`）
+- 空の文字列 `""` または `"*"` は、そのタイプのすべてのイベントに一致します
+- 標準的な正規表現構文がサポートされています（例: `^Bash$`、`Read.*`、`(WriteFile|Edit)`）
 
 **例:**
 
@@ -319,11 +319,11 @@ LLM は以下の構造の JSON を返す必要があります:
 }
 ```
 
-## 入力/出力ルール
+## 入出力ルール
 
 ### フック入力構造
 
-すべてのフックは標準化された JSON 形式の入力を、コマンドでは stdin 経由、HTTP では POST ボディ経由で受け取ります。
+すべてのフックは、stdin（command）または POST ボディ（http）を介して JSON 形式の標準化された入力を受け取ります。
 
 **共通フィールド:**
 
@@ -337,27 +337,27 @@ LLM は以下の構造の JSON を返す必要があります:
 }
 ```
 
-イベント固有のフィールドはフックの種類に応じて追加されます。サブエージェント内で実行される場合は、`agent_id` と `agent_type` も追加で含まれます。
+イベント固有のフィールドは、フックタイプに基づいて追加されます。サブエージェント内で実行されている場合、`agent_id` と `agent_type` も追加で含まれます。
 
 ### フック出力構造
 
-フックの出力は、コマンドでは `stdout`、HTTP では HTTP レスポンスボディを介して JSON として返されます。
+フック出力は、`stdout`（command）または HTTP レスポンスボディ（http）を介して JSON として返されます。
 
 **終了コードの動作（コマンドフック）:**
 
-| 終了コード | 動作                                                                                   |
-| :--------- | :------------------------------------------------------------------------------------- |
-| `0`        | 成功。`stdout` の JSON を解析して動作を制御します。                                    |
-| `2`        | **ブロッキングエラー**。`stdout` を無視し、`stderr` をエラーフィードバックとしてモデルに渡します。 |
-| その他     | 非ブロッキングエラー。`stderr` はデバッグモードでのみ表示され、実行は継続されます。    |
+| 終了コード | 動作                                                                              |
+| :-------- | :------------------------------------------------------------------------------------ |
+| `0`       | 成功。`stdout` の JSON を解析して動作を制御します。                                  |
+| `2`       | **ブロッキングエラー**。`stdout` を無視し、`stderr` をエラーフィードバックとしてモデルに渡します。 |
+| その他     | 非ブロッキングエラー。`stderr` はデバッグモードでのみ表示され、実行は続行されます。           |
 
 **出力構造:**
 
-フック出力は3つのカテゴリのフィールドをサポートします:
+フック出力は 3 つのカテゴリのフィールドをサポートしています。
 
 1. **共通フィールド**: `continue`, `stopReason`, `suppressOutput`, `systemMessage`
-2. **トップレベルの決定**: `decision`, `reason`（一部のイベントで使用）
-3. **イベント固有の制御**: `hookSpecificOutput`（`hookEventName` を含める必要あり）
+2. **トップレベルの判断**: `decision`, `reason`（一部のイベントで使用）
+3. **イベント固有の制御**: `hookSpecificOutput`（`hookEventName` を含む必要があります）
 
 ```json
 {
@@ -371,34 +371,34 @@ LLM は以下の構造の JSON を返す必要があります:
 }
 ```
 
-### 個別のフックイベント詳細
+### 各フックイベントの詳細
 
 #### PreToolUse
 
-**目的**: ツールが使用される前に実行され、許可チェック、入力検証、コンテキスト注入を可能にします。
+**目的**: ツールが使用される前に実行され、権限チェック、入力検証、またはコンテキストの注入を可能にします。
 
-**イベント固有のフィールド:**
+**イベント固有のフィールド**:
 
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "tool_name": "実行されるツールの名前",
-  "tool_input": "ツールの入力パラメータを含むオブジェクト",
-  "tool_use_id": "このツール使用インスタンスの一意識別子（内部形式、例: toolu_xxx）",
-  "tool_call_id": "LLM プロバイダーからの元の API 呼び出し ID（例: OpenAI/Qwen の call_xxx）（オプション）"
+  "tool_name": "name of the tool being executed",
+  "tool_input": "object containing the tool's input parameters",
+  "tool_use_id": "unique identifier for this tool use instance (internal format, e.g., toolu_xxx)",
+  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)"
 }
 ```
 
-**出力オプション:**
+**出力オプション**:
 
 - `hookSpecificOutput.permissionDecision`: "allow"、"deny"、または "ask"（必須）
-- `hookSpecificOutput.permissionDecisionReason`: 決定の説明（必須）
-- `hookSpecificOutput.updatedInput`: 元の代わりに使用する変更されたツール入力パラメータ
-- `hookSpecificOutput.additionalContext`: 追加コンテキスト情報
+- `hookSpecificOutput.permissionDecisionReason`: 判断の理由（必須）
+- `hookSpecificOutput.updatedInput`: 元の代わりに使用する、変更されたツール入力パラメータ
+- `hookSpecificOutput.additionalContext`: 追加のコンテキスト情報
 
-**注意**: 標準的なフック出力フィールド（`decision` や `reason`）は基盤のクラスで技術的にサポートされていますが、公式インターフェースは `hookSpecificOutput` 内の `permissionDecision` と `permissionDecisionReason` を期待しています。
+**注**: `decision` や `reason` などの標準的なフック出力フィールドは基盤クラスによって技術的にサポートされていますが、公式インターフェースは `permissionDecision` と `permissionDecisionReason` を含む `hookSpecificOutput` を想定しています。
 
-**出力例:**
+**出力例**:
 
 ```json
 {
@@ -413,28 +413,28 @@ LLM は以下の構造の JSON を返す必要があります:
 
 #### PostToolUse
 
-**目的**: ツールが正常に完了した後に実行され、結果の処理、結果のログ記録、追加コンテキストの注入を行います。
+**目的**: ツールが正常に完了した後に実行され、結果の処理、結果のログ記録、または追加コンテキストの注入を行います。
 
-**イベント固有のフィールド:**
+**イベント固有のフィールド**:
 
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "tool_name": "実行されたツールの名前",
-  "tool_input": "ツールの入力パラメータを含むオブジェクト",
-  "tool_response": "ツールの応答を含むオブジェクト",
-  "tool_use_id": "このツール使用インスタンスの一意識別子（内部形式、例: toolu_xxx）",
-  "tool_call_id": "LLM プロバイダーからの元の API 呼び出し ID（例: OpenAI/Qwen の call_xxx）（オプション）"
+  "tool_name": "name of the tool that was executed",
+  "tool_input": "object containing the tool's input parameters",
+  "tool_response": "object containing the tool's response",
+  "tool_use_id": "unique identifier for this tool use instance (internal format, e.g., toolu_xxx)",
+  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)"
 }
 ```
 
-**出力オプション:**
+**出力オプション**:
 
-- `decision`: "allow"、"deny"、"block"（指定がない場合はデフォルトで "allow"）
-- `reason`: 決定の理由
-- `hookSpecificOutput.additionalContext`: 追加情報
+- `decision`: "allow"、"deny"、"block"（指定されていない場合はデフォルトで "allow"）
+- `reason`: 判断の理由
+- `hookSpecificOutput.additionalContext`: 含める追加情報
 
-**出力例:**
+**出力例**:
 
 ```json
 {
@@ -448,19 +448,19 @@ LLM は以下の構造の JSON を返す必要があります:
 
 #### PostToolUseFailure
 
-**目的**: ツール実行が失敗したときに実行され、エラー処理、アラート送信、障害記録を行います。
+**目的**: ツール実行が失敗したときに実行され、エラーの処理、アラートの送信、または失敗の記録を行います。
 
-**イベント固有のフィールド:**
+**イベント固有のフィールド**:
 
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "tool_use_id": "ツール使用の一意識別子（内部形式、例: toolu_xxx）",
-  "tool_call_id": "LLM プロバイダーからの元の API 呼び出し ID（例: OpenAI/Qwen の call_xxx）（オプション）",
-  "tool_name": "失敗したツールの名前",
-  "tool_input": "ツールの入力パラメータを含むオブジェクト",
-  "error": "障害を説明するエラーメッセージ",
-  "is_interrupt": "ユーザーによる割り込みが原因かどうかを示すブール値（オプション）"
+  "tool_use_id": "unique identifier for the tool use (internal format, e.g., toolu_xxx)",
+  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)",
+  "tool_name": "name of the tool that failed",
+  "tool_input": "object containing the tool's input parameters",
+  "error": "error message describing the failure",
+  "is_interrupt": "boolean indicating if failure was due to user interruption (optional)"
 }
 ```
 **出力オプション**:
@@ -473,46 +473,46 @@ LLM は以下の構造の JSON を返す必要があります:
 ```json
 {
   "hookSpecificOutput": {
-    "additionalContext": "エラー: ファイルが見つかりません。監視システムに障害が記録されました。"
+    "additionalContext": "Error: File not found. Failure logged in monitoring system."
   }
 }
 ```
 
 #### UserPromptSubmit
 
-**目的**: ユーザーがプロンプトを送信した際に、入力を修正、検証、または拡充するために実行されます。
+**目的**: ユーザーがプロンプトを送信したときに実行され、入力の修正、検証、または拡張を行います。
 
 **イベント固有のフィールド**:
 
 ```json
 {
-  "prompt": "ユーザーが送信したプロンプトテキスト"
+  "prompt": "the user's submitted prompt text"
 }
 ```
 
 **出力オプション**:
 
-- `decision`: "allow"、"deny"、"block"、"ask" のいずれか
-- `reason`: 決定内容の人間が読める説明
-- `hookSpecificOutput.additionalContext`: プロンプトに追加するコンテキスト（オプション）
+- `decision`: "allow"、"deny"、"block"、または "ask"
+- `reason`: 決定に対する人間が読める説明
+- `hookSpecificOutput.additionalContext`: プロンプトに追加する追加コンテキスト（オプション）
 
-**注**: UserPromptSubmitOutput は HookOutput を拡張するため、すべての標準フィールドが利用可能ですが、`hookSpecificOutput` 内の `additionalContext` のみがこのイベント用に定義されています。
+**注**: UserPromptSubmitOutput は HookOutput を継承しているため、すべての標準フィールドが利用可能ですが、hookSpecificOutput 内でこのイベントに特化して定義されているのは additionalContext のみです。
 
 **出力例**:
 
 ```json
 {
   "decision": "allow",
-  "reason": "プロンプトをレビューし、承認しました。",
+  "reason": "Prompt reviewed and approved",
   "hookSpecificOutput": {
-    "additionalContext": "会社のコーディング標準に従うことを忘れないでください。"
+    "additionalContext": "Remember to follow company coding standards."
   }
 }
 ```
 
 #### SessionStart
 
-**目的**: 新しいセッションが開始されたときに、初期化タスクを実行するために実行されます。
+**目的**: 新しいセッションが開始されたときに実行され、初期化タスクを実行します。
 
 **イベント固有のフィールド**:
 
@@ -520,14 +520,14 @@ LLM は以下の構造の JSON を返す必要があります:
 {
   "permission_mode": "default | plan | auto_edit | yolo",
   "source": "startup | resume | clear | compact",
-  "model": "使用中のモデル",
-  "agent_type": "該当する場合、エージェントの種類（オプション）"
+  "model": "the model being used",
+  "agent_type": "the type of agent if applicable (optional)"
 }
 ```
 
 **出力オプション**:
 
-- `hookSpecificOutput.additionalContext`: セッション内で利用可能にするコンテキスト
+- `hookSpecificOutput.additionalContext`: セッションで利用可能にするコンテキスト
 - 標準フック出力フィールド
 
 **出力例**:
@@ -535,14 +535,14 @@ LLM は以下の構造の JSON を返す必要があります:
 ```json
 {
   "hookSpecificOutput": {
-    "additionalContext": "セキュリティポリシーを有効にしてセッションを開始しました。"
+    "additionalContext": "Session started with security policies enabled."
   }
 }
 ```
 
 #### SessionEnd
 
-**目的**: セッションが終了したときに、クリーンアップタスクを実行するために実行されます。
+**目的**: セッションが終了したときに実行され、クリーンアップタスクを実行します。
 
 **イベント固有のフィールド**:
 
@@ -554,65 +554,70 @@ LLM は以下の構造の JSON を返す必要があります:
 
 **出力オプション**:
 
-- 標準フック出力フィールド（通常はブロックには使用されません）
+- 標準フック出力フィールド（通常はブロッキングには使用されません）
 
 #### Stop
 
-**目的**: Qwen が応答を終了する前に、最終的なフィードバックやサマリーを提供するために実行されます。
+**目的**: Qwen が応答を完了する前に実行され、最終的なフィードバックや要約を提供します。
 
 **イベント固有のフィールド**:
 
 ```json
 {
-  "stop_hook_active": "ストップフックがアクティブかどうかを示すブール値",
-  "last_assistant_message": "アシスタントからの最後のメッセージ"
+  "stop_hook_active": "boolean indicating if stop hook is active",
+  "last_assistant_message": "the last message from the assistant",
+  "context_usage": "ratio of context window used (may exceed 1 when tokens exceed window; optional)",
+  "context_limit": "context window size in tokens (optional)",
+  "input_tokens": "prompt token count (may include output tokens depending on provider; optional)"
 }
 ```
 
+`context_usage`、`context_limit`、および `input_tokens` フィールドを使用すると、フックスクリプトでコンテキストの使用状況を確認し、カスタムコンパクト戦略を実装できます。たとえば、使用量がカスタムしきい値を超えたときに `/compact` を実行するようリマインダーを出力するスクリプトなどです。
+
 **出力オプション**:
 
-- `decision`: "allow"、"deny"、"block"、"ask" のいずれか
-- `reason`: 決定内容の人間が読める説明
-- `stopReason`: ストップ応答に含めるフィードバック
-- `continue`: false に設定すると実行を停止
+- `decision`: "allow"、"deny"、"block"、または "ask"
+- `reason`: 決定に対する人間が読める説明
+- `stopReason`: 停止応答に含めるフィードバック
+- `continue`: 実行を停止する場合は false に設定
 - `hookSpecificOutput.additionalContext`: 追加のコンテキスト情報
 
-**注**: StopOutput は HookOutput を拡張するため、すべての標準フィールドが利用可能ですが、`stopReason` フィールドはこのイベントに特に関連します。
+**注**: StopOutput は HookOutput を継承しているため、すべての標準フィールドが利用可能ですが、stopReason フィールドはこのイベントに特に重要です。
 
 **出力例**:
 
 ```json
 {
   "decision": "block",
-  "reason": "Qwen Code が停止をブロックされた場合に指定する必要があります。"
+  "reason": "Must be provided when Qwen Code is blocked from stopping"
 }
 ```
 
 #### StopFailure
 
-**目的**: API エラーによりターンが終了したときに、Stop の代わりに実行されます。これは**ファイア・アンド・フォーゲット**イベントです。フック出力と終了コードは無視されます。
+**目的**: API エラーによってターンが終了したときに実行されます（Stop の代わり）。これは**投げっぱなし（fire-and-forget）**イベントであり、フックの出力と終了コードは無視されます。
 
 **イベント固有のフィールド**:
 
 ```json
 {
   "error": "rate_limit | authentication_failed | billing_error | invalid_request | server_error | max_output_tokens | unknown",
-  "error_details": "詳細なエラーメッセージ（オプション）",
-  "last_assistant_message": "エラー発生直前のアシスタントからの最後のメッセージ（オプション）"
+  "error_details": "detailed error message (optional)",
+  "last_assistant_message": "the last message from the assistant before the error (optional)"
 }
 ```
 
-**マッチャー**: `error` フィールドに対してマッチします。たとえば、`"matcher": "rate_limit"` と設定すると、レート制限エラーの場合のみトリガーされます。
+**Matcher**: `error` フィールドに対してマッチングを行います。たとえば、`"matcher": "rate_limit"` はレートリミットエラーの場合のみトリガーされます。
 
 **出力オプション**:
 
-- **なし** - StopFailure はファイア・アンド・フォーゲットです。すべてのフック出力と終了コードは無視されます。
+- **なし** - StopFailure は投げっぱなしです。すべてのフック出力と終了コードは無視されます。
 
-**終了コードの扱い**:
+**終了コードの処理**:
 
-| 終了コード | 動作                  |
-| --------- | ---------------------- |
-| 任意       | 無視（ファイア・アンド・フォーゲット） |
+| 終了コード | 動作 |
+| --------- | ------------------------- |
+| すべて | 無視される（投げっぱなし） |
 
 **設定例**:
 
@@ -637,22 +642,22 @@ LLM は以下の構造の JSON を返す必要があります:
 
 **ユースケース**:
 
-- レート制限の監視とアラート
+- レートリミットの監視とアラート
 - 認証失敗のログ記録
-- 課金エラー通知
+- 課金エラーの通知
 - エラー統計の収集
 
 #### SubagentStart
 
-**目的**: サブエージェント（Task ツールなど）が起動されたときに、コンテキストや権限を設定するために実行されます。
+**目的**: サブエージェント（Task ツールなど）が開始されたときに実行され、コンテキストや権限を設定します。
 
 **イベント固有のフィールド**:
 
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "agent_id": "サブエージェントの識別子",
-  "agent_type": "エージェントの種類（Bash、Explorer、Plan、Custom など）"
+  "agent_id": "identifier for the subagent",
+  "agent_type": "type of agent (Bash, Explorer, Plan, Custom, etc.)"
 }
 ```
 
@@ -666,58 +671,58 @@ LLM は以下の構造の JSON を返す必要があります:
 ```json
 {
   "hookSpecificOutput": {
-    "additionalContext": "サブエージェントを制限付き権限で初期化しました。"
+    "additionalContext": "Subagent initialized with restricted permissions."
   }
 }
 ```
 
 #### SubagentStop
 
-**目的**: サブエージェントが終了したときに、後処理タスクを実行するために実行されます。
+**目的**: サブエージェントが終了したときに実行され、最終化タスクを実行します。
 
 **イベント固有のフィールド**:
 
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "stop_hook_active": "ストップフックがアクティブかどうかを示すブール値",
-  "agent_id": "サブエージェントの識別子",
-  "agent_type": "エージェントの種類",
-  "agent_transcript_path": "サブエージェントのトランスクリプトへのパス",
-  "last_assistant_message": "サブエージェントからの最後のメッセージ"
+  "stop_hook_active": "boolean indicating if stop hook is active",
+  "agent_id": "identifier for the subagent",
+  "agent_type": "type of agent",
+  "agent_transcript_path": "path to the subagent's transcript",
+  "last_assistant_message": "the last message from the subagent"
 }
 ```
 
 **出力オプション**:
 
-- `decision`: "allow"、"deny"、"block"、"ask" のいずれか
-- `reason`: 決定内容の人間が読める説明
+- `decision`: "allow"、"deny"、"block"、または "ask"
+- `reason`: 決定に対する人間が読める説明
 
 **出力例**:
 
 ```json
 {
   "decision": "block",
-  "reason": "Qwen Code が停止をブロックされた場合に指定する必要があります。"
+  "reason": "Must be provided when Qwen Code is blocked from stopping"
 }
 ```
 
 #### PreCompact
 
-**目的**: 会話の圧縮前に、圧縮の準備やログ記録のために実行されます。
+**目的**: 会話のコンパクト化の前に実行され、コンパクト化の準備やログ記録を行います。
 
 **イベント固有のフィールド**:
 
 ```json
 {
   "trigger": "manual | auto",
-  "custom_instructions": "現在設定されているカスタム指示"
+  "custom_instructions": "custom instructions currently set"
 }
 ```
 
 **出力オプション**:
 
-- `hookSpecificOutput.additionalContext`: 圧縮前に含めるコンテキスト
+- `hookSpecificOutput.additionalContext`: コンパクト化前に含めるコンテキスト
 - 標準フック出力フィールド
 
 **出力例**:
@@ -725,39 +730,39 @@ LLM は以下の構造の JSON を返す必要があります:
 ```json
 {
   "hookSpecificOutput": {
-    "additionalContext": "最適なコンテキストウィンドウを維持するため、会話を圧縮しています。"
+    "additionalContext": "Compacting conversation to maintain optimal context window."
   }
 }
 ```
 
 #### PostCompact
 
-**目的**: 会話の圧縮が完了した後に、サマリーのアーカイブや使用状況の追跡のために実行されます。
+**目的**: 会話のコンパクト化が完了した後に実行され、要約のアーカイブや使用状況の追跡を行います。
 
 **イベント固有のフィールド**:
 
 ```json
 {
   "trigger": "manual | auto",
-  "compact_summary": "圧縮処理で生成されたサマリー"
+  "compact_summary": "the summary generated by the compaction process"
 }
 ```
 
-**マッチャー**: `trigger` フィールドに対してマッチします。たとえば、`"matcher": "manual"` と設定すると、`/compact` コマンドによる手動圧縮の場合のみトリガーされます。
+**Matcher**: `trigger` フィールドに対してマッチングを行います。たとえば、`"matcher": "manual"` は `/compact` コマンドによる手動コンパクト化の場合のみトリガーされます。
 
 **出力オプション**:
 
 - `hookSpecificOutput.additionalContext`: 追加のコンテキスト（ログ記録専用）
 - 標準フック出力フィールド（ログ記録専用）
 
-**注**: PostCompact は、公式の decision モード対応イベントリストには**含まれていません**。`decision` フィールドやその他の制御フィールドは、制御効果を生じません。ログ記録目的でのみ使用されます。
+**注**: PostCompact は公式の決定モードサポートイベントリストには含まれて**いません**。`decision` フィールドやその他の制御フィールドは制御効果を生成せず、ログ記録目的でのみ使用されます。
 
-**終了コードの扱い**:
+**終了コードの処理**:
 
-| 終了コード | 動作                                                  |
-| --------- | ------------------------------------------------------ |
-| 0         | 成功 - 詳細モードでは stdout がユーザーに表示されます |
-| その他    | 非ブロッキングエラー - 詳細モードでは stderr がユーザーに表示されます |
+| 終了コード | 動作 |
+| --------- | --------------------------------------------------------- |
+| 0 | 成功 - 詳細モードで標準出力がユーザーに表示される |
+| その他 | 非ブロッキングエラー - 詳細モードで標準エラー出力がユーザーに表示される |
 
 **設定例**:
 
@@ -782,26 +787,26 @@ LLM は以下の構造の JSON を返す必要があります:
 
 **ユースケース**:
 
-- サマリーのファイルやデータベースへのアーカイブ
-- 使用統計の追跡
+- ファイルやデータベースへの要約のアーカイブ
+- 使用状況統計の追跡
 - コンテキスト変更の監視
-- 圧縮操作の監査ログ
+- コンパクト化操作の監査ログ
 
 #### Notification
 
-**目的**: 通知が送信されたときに、カスタマイズやインターセプトのために実行されます。
+**目的**: 通知が送信されたときに実行され、通知のカスタマイズやインターセプトを行います。
 
 **イベント固有のフィールド**:
 
 ```json
 {
-  "message": "通知メッセージの内容",
-  "title": "通知のタイトル（オプション）",
+  "message": "notification message content",
+  "title": "notification title (optional)",
   "notification_type": "permission_prompt | idle_prompt | auth_success"
 }
 ```
 
-> **注**: `elicitation_dialog` タイプは定義されていますが、現在は実装されていません。
+> **注**: `elicitation_dialog` タイプは定義されていますが、現在はまだ実装されていません。
 
 **出力オプション**:
 
@@ -813,23 +818,23 @@ LLM は以下の構造の JSON を返す必要があります:
 ```json
 {
   "hookSpecificOutput": {
-    "additionalContext": "監視システムによって処理された通知。"
+    "additionalContext": "Notification processed by monitoring system."
   }
 }
 ```
 
 #### PermissionRequest
 
-**目的**: 権限ダイアログが表示されたときに、決定の自動化や権限の更新のために実行されます。
+**目的**: 権限ダイアログが表示されたときに実行され、決定の自動化や権限の更新を行います。
 
 **イベント固有のフィールド**:
 
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "tool_name": "権限を要求しているツールの名前",
-  "tool_input": "ツールの入力パラメータを含むオブジェクト",
-  "permission_suggestions": "推奨される権限の配列（オプション）"
+  "tool_name": "name of the tool requesting permission",
+  "tool_input": "object containing the tool's input parameters",
+  "permission_suggestions": "array of suggested permissions (optional)"
 }
 ```
 
@@ -849,7 +854,7 @@ LLM は以下の構造の JSON を返す必要があります:
   "hookSpecificOutput": {
     "decision": {
       "behavior": "allow",
-      "message": "セキュリティポリシーに基づき権限を付与しました。",
+      "message": "Permission granted based on security policy",
       "interrupt": false
     }
   }
@@ -858,42 +863,42 @@ LLM は以下の構造の JSON を返す必要があります:
 
 #### TodoCreated
 
-**目的**: `todo_write` ツールを使用して新しい Todo アイテムが作成されたときに実行されます。Todo 作成の検証、ログ記録、ブロックを可能にします。
+**目的**: `todo_write` ツールを介して新しい todo アイテムが作成されたときに実行されます。todo の作成の検証、ログ記録、またはブロックを許可します。
 
 Todo フックは 2 つのフェーズで実行されます:
 
-- `validation`: 永続化の前に実行されます。このフェーズは検証のみに使用します。`block` または `deny` を返すと、書き込みが防止されます。
-- `postWrite`: 永続化後に実行されます。このフェーズはログ記録や同期などの副作用に使用します。このフェーズでは `block` や `deny` は無視されます。
+- `validation`: 永続化前に実行されます。このフェーズは検証専用で使用します。`block` または `deny` を返すと書き込みが防止されます。
+- `postWrite`: 永続化後に実行されます。このフェーズはログ記録や同期などの副作用に使用します。このフェーズでは `block` または `deny` は無視されます。
 
 **イベント固有のフィールド**:
 
 ```json
 {
-  "todo_id": "Todo アイテムの一意識別子",
-  "todo_content": "Todo アイテムの内容/説明",
+  "todo_id": "unique identifier for the todo item",
+  "todo_content": "content/description of the todo item",
   "todo_status": "pending | in_progress | completed",
-  "all_todos": "現在のリスト内のすべての Todo アイテムの配列",
+  "all_todos": "array of all todo items in the current list",
   "phase": "validation | postWrite"
 }
 ```
 
 **出力オプション**:
 
-- `decision`: "allow"、"block"、"deny" のいずれか
-- `reason`: 決定内容の人間が読める説明（ブロック時に必須）
+- `decision`: "allow"、"block"、または "deny"
+- `reason`: 決定に対する人間が読める説明（ブロック時に必須）
 
 **ブロック動作**:
 
-`validation` フェーズ中で、`decision` が `block` または `deny`（終了コード 2）の場合、Todo 作成は防止されます。Todo リストは変更されず、理由がモデルへのフィードバックとして提供されます。
+`validation` フェーズ中、`decision` が `block` または `deny`（終了コード 2）の場合、todo の作成が防止されます。todo リストは変更されず、理由はモデルへのフィードバックとして提供されます。
 
-`postWrite` フェーズ中では、Todo は既に永続化されています。フックは出力を返すことはできますが、`block` / `deny` は書き込みを取り消さず、検証に使用すべきではありません。
+`postWrite` フェーズ中、todo はすでに永続化されています。フックは引き続き出力を返すことができますが、`block` / `deny` は書き込みを元に戻さず、検証に使用すべきではありません。
 
 **出力例（許可）**:
 
 ```json
 {
   "decision": "allow",
-  "reason": "Todo の内容を検証しました。"
+  "reason": "Todo content validated successfully"
 }
 ```
 
@@ -902,7 +907,7 @@ Todo フックは 2 つのフェーズで実行されます:
 ```json
 {
   "decision": "block",
-  "reason": "Todo の内容が短すぎます。最低 5 文字必要です。"
+  "reason": "Todo content too short. Minimum 5 characters required."
 }
 ```
 
@@ -911,20 +916,20 @@ Todo フックは 2 つのフェーズで実行されます:
 ```bash
 #!/bin/bash
 # ~/.qwen/hooks/todo-validator.sh
-# Todo 作成前に内容を検証
+# Validates todo content before creation
 
 INPUT=$(cat)
 CONTENT=$(echo "$INPUT" | jq -r '.todo_content')
 
-# 最小文字数をチェック
+# Check minimum length
 if [ ${#CONTENT} -lt 5 ]; then
-  echo '{"decision": "block", "reason": "Todo の内容は少なくとも 5 文字必要です。"}'
+  echo '{"decision": "block", "reason": "Todo content must be at least 5 characters"}'
   exit 2
 fi
 
-# テスト関連の Todo をブロック
+# Block test-related todos
 if [[ "$CONTENT" =~ "test" ]]; then
-  echo '{"decision": "block", "reason": "テスト用 Todo は本番環境では許可されていません。"}'
+  echo '{"decision": "block", "reason": "Test todos are not allowed in production"}'
   exit 2
 fi
 
@@ -955,42 +960,42 @@ exit 0
 
 #### TodoCompleted
 
-**目的**: Todo アイテムが完了としてマークされたときに実行されます。Todo 完了の検証、ログ記録、ブロックを可能にします。
+**目的**: todo アイテムが完了としてマークされたときに実行されます。todo の完了の検証、ログ記録、またはブロックを許可します。
 
 Todo フックは 2 つのフェーズで実行されます:
 
-- `validation`: 永続化の前に実行されます。このフェーズは検証のみに使用します。`block` または `deny` を返すと、書き込みが防止されます。
-- `postWrite`: 永続化後に実行されます。このフェーズはログ記録や同期などの副作用に使用します。このフェーズでは `block` や `deny` は無視されます。
+- `validation`: 永続化前に実行されます。このフェーズは検証専用で使用します。`block` または `deny` を返すと書き込みが防止されます。
+- `postWrite`: 永続化後に実行されます。このフェーズはログ記録や同期などの副作用に使用します。このフェーズでは `block` または `deny` は無視されます。
 
 **イベント固有のフィールド**:
 
 ```json
 {
-  "todo_id": "Todo アイテムの一意識別子",
-  "todo_content": "Todo アイテムの内容/説明",
-  "previous_status": "pending | in_progress（完了前のステータス）",
-  "all_todos": "現在のリスト内のすべての Todo アイテムの配列",
+  "todo_id": "unique identifier for the todo item",
+  "todo_content": "content/description of the todo item",
+  "previous_status": "pending | in_progress (status before completion)",
+  "all_todos": "array of all todo items in the current list",
   "phase": "validation | postWrite"
 }
 ```
 
 **出力オプション**:
 
-- `decision`: "allow"、"block"、"deny" のいずれか
-- `reason`: 決定内容の人間が読める説明（ブロック時に必須）
+- `decision`: "allow"、"block"、または "deny"
+- `reason`: 決定に対する人間が読める説明（ブロック時に必須）
 
 **ブロック動作**:
 
-`validation` フェーズ中で、`decision` が `block` または `deny`（終了コード 2）の場合、Todo 完了は防止されます。Todo アイテムは以前のステータスのままで、理由がモデルへのフィードバックとして提供されます。
+`validation` フェーズ中、`decision` が `block` または `deny`（終了コード 2）の場合、todo の完了が防止されます。todo アイテムは前のステータスのままとなり、理由はモデルへのフィードバックとして提供されます。
 
-`postWrite` フェーズ中では、Todo は既に永続化されています。フックは出力を返すことはできますが、`block` / `deny` は書き込みを取り消さず、検証に使用すべきではありません。
+`postWrite` フェーズ中、todo はすでに永続化されています。フックは引き続き出力を返すことができますが、`block` / `deny` は書き込みを元に戻さず、検証に使用すべきではありません。
 
 **出力例（許可）**:
 
 ```json
 {
   "decision": "allow",
-  "reason": "Todo の完了を承認しました。"
+  "reason": "Todo completion approved"
 }
 ```
 
@@ -999,7 +1004,7 @@ Todo フックは 2 つのフェーズで実行されます:
 ```json
 {
   "decision": "block",
-  "reason": "依存するタスクが完了するまで、この Todo を完了できません。"
+  "reason": "Cannot complete this todo until dependent tasks are finished."
 }
 ```
 
@@ -1008,17 +1013,17 @@ Todo フックは 2 つのフェーズで実行されます:
 ```bash
 #!/bin/bash
 # ~/.qwen/hooks/todo-completion-validator.sh
-# Todo 完了条件を検証
+# Validates todo completion conditions
 
 INPUT=$(cat)
 TODO_ID=$(echo "$INPUT" | jq -r '.todo_id')
 ALL_TODOS=$(echo "$INPUT" | jq -r '.all_todos')
 
-# 未完了の依存 Todo があるかチェック（例）
+# Check if there are incomplete dependent todos (example logic)
 INCOMPLETE_COUNT=$(echo "$ALL_TODOS" | jq '[.[] | select(.status != "completed")] | length')
 
 if [ "$INCOMPLETE_COUNT" -gt 5 ]; then
-  echo '{"decision": "block", "reason": "未完了の Todo が多すぎます。先に他のタスクを完了してください。"}'
+  echo '{"decision": "block", "reason": "Too many incomplete todos. Complete other tasks first."}'
   exit 2
 fi
 
@@ -1049,14 +1054,14 @@ exit 0
 
 **ユースケース**:
 
-- **ログ記録**: 監査や分析のために Todo の作成と完了を追跡
-- **検証**: コンテンツの品質基準（最小文字数、必須キーワード）を強制
-- **ワークフロー制御**: 前提条件が満たされるまで完了をブロック
-- **統合**: 外部タスク管理システム（Jira、Trello など）と Todo を同期
+- **ログ記録**: 監査や分析のために todo の作成と完了を追跡する
+- **検証**: コンテンツの品質基準（最小文字数、必須キーワードなど）を強制する
+- **ワークフロー制御**: 前提条件が満たされるまで完了をブロックする
+- **統合**: todo を外部のタスク管理システム（Jira、Trello など）と同期する
 
-## フック設定
+## Hook Configuration
 
-フックは Qwen Code の設定（通常は `.qwen/settings.json` またはユーザー設定ファイル）で構成します:
+フックは Qwen Code の設定、通常は `.qwen/settings.json` またはユーザー設定ファイルで設定されます:
 
 ```json
 {
@@ -1070,7 +1075,7 @@ exit 0
             "type": "command",
             "command": "/path/to/security-check.sh",
             "name": "security-check",
-            "description": "ツール実行前にセキュリティチェックを実行",
+            "description": "Run security checks before tool execution",
             "timeout": 30000
           }
         ]
@@ -1091,25 +1096,25 @@ exit 0
 }
 ```
 
-## フックの実行
+## Hook Execution
 
 ### 並列実行と逐次実行
 
-- デフォルトでは、パフォーマンス向上のためフックは並列に実行されます。
-- フック定義で `sequential: true` を指定すると、順序に依存する実行が強制されます。
-- 逐次フックは、チェーン内の後続のフックのために入力を変更できます。
+- デフォルトでは、パフォーマンス向上のためフックは並列で実行されます
+- 順序に依存する実行を強制するには、フック定義で `sequential: true` を使用します
+- 逐次フックは、チェーン内の後続のフックの入力を変更できます
 
 ### 非同期フック
 
-非同期実行をサポートするのは `command` タイプのみです。`"async": true` を設定すると、フックはメインフローをブロックせずにバックグラウンドで実行されます。
+`command` タイプのみが非同期実行をサポートしています。`"async": true` を設定すると、メインフローをブロックせずにバックグラウンドでフックが実行されます。
 
-**特徴**:
+**機能:**
 
-- 決定制御を返すことはできません（操作は既に発生しています）。
-- 結果は次の会話ターンで `systemMessage` または `additionalContext` を介して注入されます。
-- 監査、ログ記録、バックグラウンドテストなどに適しています。
+- 決定制御を返すことはできません（操作はすでに発生しています）
+- 結果は次の会話ターンで `systemMessage` または `additionalContext` を介して注入されます
+- 監査、ログ記録、バックグラウンドテストなどに適しています
 
-**例**:
+**例:**
 
 ```json
 {
@@ -1146,56 +1151,56 @@ fi
 
 ### セキュリティモデル
 
-- フックはユーザーの環境で、ユーザーの権限で実行されます。
-- プロジェクトレベルのフックには信頼されたフォルダステータスが必要です。
-- タイムアウトによりハングしたフックを防止します（デフォルト: 60秒）。
+- フックはユーザー権限でユーザー環境内で実行されます
+- プロジェクトレベルのフックには信頼されたフォルダーステータスが必要です
+- タイムアウトによりハングするフックを防止します（デフォルト: 60 秒）
 
-## ベストプラクティス
+## Best Practices
 
 ### 例 1: セキュリティ検証フック
 
-危険なコマンドをログ記録し、ブロックする可能性のある PreToolUse フック:
+危険なコマンドをログに記録し、場合によってはブロックする PreToolUse フック:
 
 **security_check.sh**
 
 ```bash
 #!/bin/bash
 
-# 標準入力から入力を読み取る
+# Read input from stdin
 INPUT=$(cat)
 
-# 入力を解析してツール情報を抽出
+# Parse the input to extract tool info
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name')
 TOOL_INPUT=$(echo "$INPUT" | jq -r '.tool_input')
 
-# 潜在的に危険な操作をチェック
+# Check for potentially dangerous operations
 if echo "$TOOL_INPUT" | grep -qiE "(rm.*-rf|mv.*\/|chmod.*777)"; then
   echo '{
     "hookSpecificOutput": {
       "hookEventName": "PreToolUse",
       "permissionDecision": "deny",
-      "permissionDecisionReason": "セキュリティポリシーにより危険なコマンドをブロックします"
+      "permissionDecisionReason": "Security policy blocks dangerous command"
     }
   }'
-  exit 2  # ブロッキングエラー
+  exit 2  # Blocking error
 fi
 
-# 操作をログに記録
-echo "INFO: ツール $TOOL_NAME が $(date) に安全に実行されました" >> /var/log/qwen-security.log
+# Log the operation
+echo "INFO: Tool $TOOL_NAME executed safely at $(date)" >> /var/log/qwen-security.log
 
-# 追加コンテキスト付きで許可
+# Allow with additional context
 echo '{
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "allow",
-    "permissionDecisionReason": "セキュリティチェックに合格しました",
-    "additionalContext": "コマンドはセキュリティポリシーにより承認されました"
+    "permissionDecisionReason": "Security check passed",
+    "additionalContext": "Command approved by security policy"
   }
 }'
 exit 0
 ```
 
-`.qwen/settings.json` に設定:
+`.qwen/settings.json` で設定:
 
 ```json
 {
@@ -1207,7 +1212,7 @@ exit 0
             "type": "command",
             "command": "${SECURITY_CHECK_SCRIPT}",
             "name": "security-checker",
-            "description": "bash コマンドのセキュリティ検証",
+            "description": "Security validation for bash commands",
             "timeout": 10000
           }
         ]
@@ -1248,8 +1253,7 @@ exit 0
 
 ### 例 3: ユーザープロンプト検証フック
 
-ユーザープロンプトの機密情報を検証し、長いプロンプトにコンテキストを提供する UserPromptSubmit フック:
-
+機密情報を含むユーザープロンプトを検証し、長いプロンプトのコンテキストを提供する UserPromptSubmit フック:
 **prompt_validator.py**
 
 ```python
@@ -1257,25 +1261,25 @@ import json
 import sys
 import re
 
-# 標準入力から入力を読み込む
+# Load input from stdin
 try:
     input_data = json.load(sys.stdin)
 except json.JSONDecodeError as e:
-    print(f"エラー: 無効なJSON入力: {e}", file=sys.stderr)
+    print(f"Error: Invalid JSON input: {e}", file=sys.stderr)
     exit(1)
 
 user_prompt = input_data.get("prompt", "")
 
-# 機密ワードリスト
+# Sensitive words list
 sensitive_words = ["password", "secret", "token", "api_key"]
 
-# 機密情報をチェック
+# Check for sensitive information
 for word in sensitive_words:
     if re.search(rf"\b{word}\b", user_prompt.lower()):
-        # 機密情報を含むプロンプトをブロック
+        # Block prompts containing sensitive information
         output = {
             "decision": "block",
-            "reason": f"プロンプトに機密情報 '{word}' が含まれています。機密コンテンツを削除して再送信してください。",
+            "reason": f"Prompt contains sensitive information '{word}'. Please remove sensitive content and resubmit.",
             "hookSpecificOutput": {
                 "hookEventName": "UserPromptSubmit"
             }
@@ -1283,25 +1287,26 @@ for word in sensitive_words:
         print(json.dumps(output))
         exit(0)
 
-# プロンプトの長さをチェックし、長すぎる場合は警告コンテキストを追加
+# Check prompt length and add warning context if too long
 if len(user_prompt) > 1000:
     output = {
         "hookSpecificOutput": {
             "hookEventName": "UserPromptSubmit",
-            "additionalContext": "注: ユーザーが長いプロンプトを送信しました。注意深く読み、すべての要件を理解していることを確認してください。"
+            "additionalContext": "Note: User submitted a long prompt. Please read carefully and ensure all requirements are understood."
         }
     }
     print(json.dumps(output))
     exit(0)
 
-# 通常のケースでは処理不要
+# No processing needed for normal cases
 exit(0)
 ```
+
 ## トラブルシューティング
 
-- フックの実行詳細についてアプリケーションのログを確認する
-- フックスクリプトのパーミッションと実行可能性を確認する
-- フックの出力におけるJSONフォーマットが適切であることを確認する
-- 特定のマッチャーパターンを使用して、意図しないフックの実行を回避する
-- `--debug` モードを使用して、詳細なフックのマッチングと実行情報を表示する
-- すべてのフックを一時的に無効にするには、設定に `"disableAllHooks": true` を追加する
+- アプリケーションログで hook の実行詳細を確認する
+- hook スクリプトのパーミッションと実行権限を確認する
+- hook 出力の JSON フォーマットが適切であることを確認する
+- 意図しない hook の実行を避けるため、特定の matcher パターンを使用する
+- `--debug` モードを使用して、hook のマッチングと実行の詳細情報を確認する
+- 一時的にすべての hook を無効にする: 設定に `"disableAllHooks": true` を追加する
