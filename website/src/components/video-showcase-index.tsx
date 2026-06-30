@@ -62,6 +62,33 @@ interface VideoShowcaseIndexProps {
   copyLabel?: string;
 }
 
+function getShowcaseItemIdFromSearch(search: string, itemIds: Set<string>) {
+  const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  const namedCaseId = params.get("case");
+  if (namedCaseId && itemIds.has(namedCaseId)) return namedCaseId;
+
+  let legacyCaseId: string | null = null;
+  params.forEach((_, key) => {
+    if (!legacyCaseId && itemIds.has(key)) {
+      legacyCaseId = key;
+    }
+  });
+
+  return legacyCaseId;
+}
+
+function getCurrentPathWithoutTrailingSlash() {
+  if (typeof window === "undefined") return "";
+  const pathname = window.location.pathname;
+  return pathname !== "/" && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+}
+
+function compareTextStable(a: string, b: string) {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
+
 function CommandBlock({ command, copyLabel = "复制" }: { command: string; copyLabel?: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -263,43 +290,32 @@ export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看�
   const allItems = useMemo(() => [...items].reverse(), [items]);
   const allItemIds = useMemo(() => new Set(allItems.map((item) => item.id)), [allItems]);
 
-  const basePath = typeof window !== "undefined"
-    ? window.location.pathname.replace(/\/$/, "")
-    : "";
-
   // Read selected item from URL query parameter on mount
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const query = window.location.search.replace(/^\?/, "").split("&")[0].split("=")[0];
-    if (query && allItems.some((item) => item.id === query)) {
-      setSelectedItemId(query);
-    }
-  }, [allItems]);
+    setSelectedItemId(getShowcaseItemIdFromSearch(window.location.search, allItemIds));
+  }, [allItemIds]);
 
   const handleSelectItem = useCallback((itemId: string) => {
     setSelectedItemId(itemId);
-    window.history.pushState(null, "", `${basePath}?${itemId}`);
+    const currentPath = getCurrentPathWithoutTrailingSlash();
+    window.history.pushState(null, "", `${currentPath}?case=${encodeURIComponent(itemId)}`);
     window.scrollTo({ top: 0 });
-  }, [basePath]);
+  }, []);
 
   const handleCloseDetail = useCallback(() => {
     setSelectedItemId(null);
-    window.history.pushState(null, "", basePath || window.location.pathname);
-  }, [basePath]);
+    window.history.pushState(null, "", getCurrentPathWithoutTrailingSlash());
+  }, []);
 
   // Handle browser back button
   useEffect(() => {
     const handlePopState = () => {
-      const query = window.location.search.replace(/^\?/, "").split("&")[0].split("=")[0];
-      if (query && allItems.some((item) => item.id === query)) {
-        setSelectedItemId(query);
-      } else {
-        setSelectedItemId(null);
-      }
+      setSelectedItemId(getShowcaseItemIdFromSearch(window.location.search, allItemIds));
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [allItems]);
+  }, [allItemIds]);
 
   const selectedItem = useMemo(
     () => (selectedItemId ? allItems.find((item) => item.id === selectedItemId) ?? null : null),
@@ -315,7 +331,7 @@ export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看�
     return Array.from(categories).sort((a, b) => {
       const ia = categoryOrder.indexOf(a);
       const ib = categoryOrder.indexOf(b);
-      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1 && ib === -1) return compareTextStable(a, b);
       if (ia === -1) return 1;
       if (ib === -1) return -1;
       return ia - ib;
@@ -329,7 +345,7 @@ export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看�
         features.add(feature);
       }
     }
-    return Array.from(features).sort();
+    return Array.from(features).sort(compareTextStable);
   }, [allItems]);
 
   const filteredItems = useMemo(() => {
@@ -393,7 +409,7 @@ export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看�
 
   if (selectedItem) {
     return (
-      <div className="w-full min-h-[80vh] bg-transparent text-zinc-900 [html.dark_&]:text-zinc-100">
+      <div data-showcase-index className="w-full min-h-[80vh] bg-transparent text-zinc-900 [html.dark_&]:text-zinc-100">
         {/* Back Navigation */}
         <div className="w-full px-4 md:px-8 pt-8">
           <div className="max-w-4xl mx-auto">
@@ -523,7 +539,7 @@ export function VideoShowcaseIndex({ items, learningPaths, viewLabel = "查看�
   }
 
   return (
-    <div className="w-full bg-transparent text-zinc-900 [html.dark_&]:text-zinc-100">
+    <div data-showcase-index className="w-full bg-transparent text-zinc-900 [html.dark_&]:text-zinc-100">
       {/* Hero — left-aligned */}
       <section className="w-full px-4 md:px-8 pt-12 pb-6 md:pt-16 md:pb-8">
         <div className="max-w-7xl mx-auto">

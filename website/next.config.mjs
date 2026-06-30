@@ -24,7 +24,7 @@ export default withNextra({
   eslint: {
     ignoreDuringBuilds: true,
   },
-  output: "export",
+  output: isProduction ? "export" : undefined,
   trailingSlash: true,
   images: {
     unoptimized: true, // mandatory, otherwise won't export

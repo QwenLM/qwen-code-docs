@@ -16,10 +16,28 @@ const languages = [
   { locale: "pt-BR", name: "Português (BR)", flag: "🇧🇷" },
 ];
 
+const languageLocales = languages.map((language) => language.locale);
+
 interface LanguageDropdownProps {
   currentLang: string;
   className?: string;
   compactOnTablet?: boolean;
+}
+
+function getShowcaseCaseId(searchParams: URLSearchParams) {
+  const namedCaseId = searchParams.get("case");
+  if (namedCaseId) return namedCaseId;
+
+  const firstEntry = Array.from(searchParams.entries())[0];
+  if (!firstEntry) return null;
+
+  const [key, value] = firstEntry;
+  return value === "" ? key : null;
+}
+
+function isShowcasePageMounted() {
+  if (typeof document === "undefined") return false;
+  return Boolean(document.querySelector("[data-showcase-index]"));
 }
 
 export const LanguageDropdown: React.FC<LanguageDropdownProps> = (props) => {
@@ -85,11 +103,13 @@ const LanguageDropdownInner: React.FC<LanguageDropdownProps> = ({
 
     // 构建新的路径
     const pathSegments = pathname.split("/").filter(Boolean);
+    const isCurrentShowcasePage = isShowcasePageMounted();
+    const showcaseCaseId = getShowcaseCaseId(searchParams);
 
     // 如果当前路径包含语言代码，替换它
     if (
       pathSegments[0] &&
-      languages.some((lang) => lang.locale === pathSegments[0])
+      languageLocales.includes(pathSegments[0])
     ) {
       pathSegments[0] = newLang;
     } else {
@@ -98,7 +118,13 @@ const LanguageDropdownInner: React.FC<LanguageDropdownProps> = ({
     }
 
     const newPath = "/" + pathSegments.join("/");
-    const queryString = searchParams.toString();
+    const queryString = isCurrentShowcasePage
+      ? showcaseCaseId
+        ? `case=${encodeURIComponent(showcaseCaseId)}`
+        : ""
+      : showcaseCaseId
+        ? ""
+        : searchParams.toString();
     router.push(queryString ? `${newPath}?${queryString}` : newPath);
     setIsOpen(false);
   };
