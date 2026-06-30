@@ -1682,6 +1682,23 @@ export const showcaseItems = [
     ],
   },
   {
+    id: "code-add-unit-tests",
+    title: "给项目增加单元测试",
+    description: "让 Qwen Code 读懂项目规则，自动生成覆盖正常场景、边界场景和异常输入的单元测试，并运行验证、修复问题、补充测试覆盖。",
+    category: "编程开发",
+    features: ["Agent 模式", "Terminal", "终端操作"],
+    thumbnail: "https://img.alicdn.com/imgextra/i4/O1CN01wShvFg1X0OIGEkC7y_!!6000000002861-0-videocover-1920-1080.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/9BIzzviw4yBmKnq3wxoEQl67NzWLqowLKxn3Q2tpDHo.mp4",
+    model: "qwen3.7-max",
+    overview: "让 Qwen Code 读懂项目规则，自动生成覆盖正常场景、边界场景和异常输入的单元测试，并运行验证、修复问题、补充测试覆盖。",
+    steps: [
+      { title: "理解项目与测试目标", description: "Qwen Code 通读项目文件，理解业务规则、核心函数和测试目标，规划需要优先覆盖的测试场景。" },
+      { title: "生成测试并运行验证", description: "基于业务规则，为核心函数生成单元测试，覆盖正常场景、边界场景和异常输入，例如优惠券门槛、包邮临界值、空购物车和无效输入，并自动运行测试。" },
+      { title: "修复问题并跑通测试", description: "根据测试失败结果判断问题来源。如果源码实现与业务规则不一致，Qwen Code 会修改代码并重新运行测试，直到测试通过。" },
+      { title: "补充测试覆盖", description: "查看测试覆盖率报告，分析未覆盖的文件和分支，继续补充有价值的测试用例，提升关键逻辑的测试覆盖。" },
+    ],
+  },
+  {
     id: "bailian-ai-marketing",
     title: "AI 搞定电商营销全流程：出图、精修、文案、发布",
     description: "用 Qwen Code + 百炼 CLI，一句话生成营销图、手机拍照自动出商品图、AI 写多渠道文案并一键发布公众号。",
