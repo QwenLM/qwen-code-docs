@@ -1,20 +1,29 @@
 # Leitfaden für Channel-Plugin-Entwickler
 
-Ein Channel-Plugin verbindet Qwen Code mit einer Messaging-Plattform. Es wird als [Extension](../users/extension/introduction) gepackt und beim Start geladen. Benutzerdokumentation zur Installation und Konfiguration von Plugins findest du unter [Plugins](../users/features/channels/plugins).
+Ein Channel-Plugin verbindet Qwen Code mit einer Messaging-Plattform. Es wird als [Extension](../users/extension/introduction) paketiert und beim Start geladen. Benutzerdokumentation zur Installation und Konfiguration von Plugins findest du unter [Plugins](../users/features/channels/plugins).
 
 ## Wie alles zusammenhängt
 
-Dein Plugin befindet sich in der Platform-Adapter-Schicht. Du kümmerst dich um plattformspezifische Belange (Verbindung herstellen, Nachrichten empfangen, Antworten senden). `ChannelBase` übernimmt alles andere (Zugriffskontrolle, Session-Routing, Prompt-Queuing, Slash-Befehle, Crash-Recovery).
+Dein Plugin befindet sich in der Platform-Adapter-Schicht. Du kümmerst dich um plattformspezifische Belange (Verbinden, Nachrichten empfangen, Antworten senden). `ChannelBase` übernimmt alles andere (Zugriffskontrolle, Session-Routing, Prompt-Queuing, Slash-Befehle, Crash-Recovery).
 
 ```
-Your Plugin  →  builds Envelope  →  handleInbound()
+Dein Plugin  →  erstellt Envelope  →  handleInbound()
 ChannelBase  →  gates → commands → routing → ChannelAgentBridge.prompt()
-ChannelBase  →  calls your sendMessage() with the agent's response
+ChannelBase  →  ruft dein sendMessage() mit der Antwort des Agenten auf
 ```
 
 `ChannelAgentBridge` ist der Adapter-seitige Bridge-Vertrag. Der aktuelle eigenständige `qwen channel start`-Pfad stellt einen `AcpBridge` bereit, aber Plugin-Code sollte Konstruktorparameter als `ChannelAgentBridge` typisieren, damit derselbe Adapter später auch hinter anderen Bridge-Implementierungen laufen kann.
 
 Migrationshinweis für bestehende TypeScript-Plugins: Wenn dein Adapter-Konstruktor oder deine Factory `bridge` explizit als `AcpBridge` typisiert, ändere diese Annotation in `ChannelAgentBridge` und verwende weiterhin nur die Methoden, die von diesem Vertrag offengelegt werden. JavaScript-Plugins sind zur Laufzeit nicht betroffen, und der eigenständige `qwen channel start` übergibt weiterhin die aktuelle `AcpBridge`-Implementierung.
+
+## Laufzeitmodi
+
+Derselbe Plugin-Adapter kann von beiden Channel-Laufzeiten gehostet werden:
+
+- `qwen channel start [name]` ist der eigenständige, ACP-gestützte Dienst. Er verwendet weiterhin `AcpBridge` und bleibt der stabile Befehl zum Ausführen von Channels außerhalb eines Daemons.
+- `qwen serve --channel <name>` und wiederholbare `--channel`-Flags starten einen experimentellen, vom Daemon verwalteten Channel-Worker. `--channel all` startet alle konfigurierten Channels. Der Worker wird von `qwen serve` verwaltet, verbindet sich über das SDK mit diesem Daemon und übergibt den Adaptern eine `ChannelAgentBridge`-Fassade, die von `DaemonChannelBridge` unterstützt wird.
+
+Vom Daemon verwaltete Channels erben den Lebenszyklus und die Statusberichterstattung des Daemons. Sie sind absichtlich als Out-of-Process ausgelegt, damit Adapter- oder Plattform-SDK-Fehler den Daemon nicht zum Absturz bringen. Der Daemon ist weiterhin an einen Workspace gebunden, daher muss jede ausgewählte Channel-Konfiguration ein `cwd` verwenden, das in den Daemon-Workspace aufgelöst wird.
 
 ## Das Plugin-Objekt
 
@@ -57,7 +66,7 @@ export class MyChannel extends ChannelBase {
   }
 
   async connect(): Promise<void> {
-    // Verbinde dich mit deiner Plattform, registriere Message-Handler
+    // Verbinde dich mit deiner Plattform, registriere Nachrichten-Handler
     // Wenn eine Nachricht eintrifft:
     const envelope: Envelope = {
       channelName: this.name,
@@ -65,9 +74,9 @@ export class MyChannel extends ChannelBase {
       senderName: '...', // Anzeigename
       chatId: '...', // Chat-/Konversations-ID (unterscheidet zwischen DMs und Gruppen)
       text: '...', // Nachrichtentext (@mentions entfernen)
-      isGroup: false, // Muss korrekt sein — wird von GroupGate verwendet
-      isMentioned: false, // Muss korrekt sein — wird von GroupGate verwendet
-      isReplyToBot: false, // Muss korrekt sein — wird von GroupGate verwendet
+      isGroup: false, // Muss korrekt sein – wird von GroupGate verwendet
+      isMentioned: false, // Muss korrekt sein – wird von GroupGate verwendet
+      isReplyToBot: false, // Muss korrekt sein – wird von GroupGate verwendet
     };
     this.handleInbound(envelope);
   }
@@ -77,33 +86,35 @@ export class MyChannel extends ChannelBase {
   }
 
   disconnect(): void {
-    // Verbindungen aufräumen
+    // Verbindungen bereinigen
   }
 }
 ```
 
-Die meisten Adapter sollten `options` unverändert weiterreichen. Wenn ein Adapter seinen eigenen `SessionRouter` erstellt und diesen Router an `super()` übergibt, setze `registerBridgeEvents: true` in `ChannelBaseOptions`, damit `ChannelBase` die Ereignisse `toolCall` und `sessionDied` weiterhin direkt empfängt. Lasse es für Router, die vom Channel-Gateway bereitgestellt werden, nicht gesetzt.
+Die meisten Adapter sollten `options` unverändert durchreichen. Wenn ein Adapter seinen eigenen `SessionRouter` erstellt und diesen Router an `super()` übergibt, setze `registerBridgeEvents: true` in `ChannelBaseOptions`, damit `ChannelBase` die Ereignisse `toolCall` und `sessionDied` weiterhin direkt empfängt. Lasse es für Router, die vom Channel-Gateway bereitgestellt werden, nicht gesetzt.
+
+Wenn dein Adapter Shell-Befehlsverhalten verfügbar macht, prüfe, ob `bridge.shellCommand` existiert, bevor du es aktivierst. Vom Daemon verwaltete Worker lassen diese optionale Methode weg, es sei denn, der Daemon bewirbt die `session_shell_command`-Fähigkeit.
 
 ## Das Envelope
 
-Das normalisierte Nachrichtenobjekt, das du aus den Plattformdaten erstellst. Die booleschen Flags steuern die Gate-Logik, sie müssen also korrekt sein.
+Das normalisierte Nachrichtenobjekt, das du aus Plattformdaten erstellst. Die booleschen Flags steuern die Gate-Logik, sie müssen also korrekt sein.
 
-| Feld             | Typ          | Erforderlich | Hinweise                                                                   |
-| ---------------- | ------------ | ------------ | -------------------------------------------------------------------------- |
-| `channelName`    | string       | Ja           | `this.name` verwenden                                                      |
+| Feld             | Typ          | Erforderlich | Hinweise                                                                 |
+| ---------------- | ------------ | ------------ | ------------------------------------------------------------------------ |
+| `channelName`    | string       | Ja           | Verwende `this.name`                                                     |
 | `senderId`       | string       | Ja           | Muss über Nachrichten hinweg stabil sein (wird für Session-Routing + Zugriffskontrolle verwendet) |
-| `senderName`     | string       | Ja           | Anzeigename                                                                |
-| `chatId`         | string       | Ja           | Muss zwischen DMs und Gruppen unterscheiden                                |
-| `text`           | string       | Ja           | Bot-@mentions entfernen                                                    |
-| `threadId`       | string       | Nein         | Für `sessionScope: "thread"`                                               |
-| `messageId`      | string       | Nein         | Plattform-Nachrichten-ID – nützlich für die Antwortkorrelation             |
-| `isGroup`        | boolean      | Ja           | GroupGate verlässt sich darauf                                             |
-| `isMentioned`    | boolean      | Ja           | GroupGate verlässt sich darauf                                             |
-| `isReplyToBot`   | boolean      | Ja           | GroupGate verlässt sich darauf                                             |
-| `referencedText` | string       | Nein         | Zitierte Nachricht – wird als Kontext vorangestellt                        |
-| `imageBase64`    | string       | Nein         | Base64-kodiertes Bild (Legacy – bevorzuge `attachments`)                   |
-| `imageMimeType`  | string       | Nein         | z. B. `image/jpeg` (Legacy – bevorzuge `attachments`)                      |
-| `attachments`    | Attachment[] | Nein         | Strukturierte Medien-Attachments (siehe unten)                             |
+| `senderName`     | string       | Ja           | Anzeigename                                                              |
+| `chatId`         | string       | Ja           | Muss zwischen DMs und Gruppen unterscheiden                              |
+| `text`           | string       | Ja           | Bot-@mentions entfernen                                                  |
+| `threadId`       | string       | Nein         | Für `sessionScope: "thread"`                                             |
+| `messageId`      | string       | Nein         | Plattform-Nachrichten-ID – nützlich für die Antwortkorrelation           |
+| `isGroup`        | boolean      | Ja           | GroupGate verlässt sich darauf                                           |
+| `isMentioned`    | boolean      | Ja           | GroupGate verlässt sich darauf                                           |
+| `isReplyToBot`   | boolean      | Ja           | GroupGate verlässt sich darauf                                           |
+| `referencedText` | string       | Nein         | Zitierte Nachricht – wird als Kontext vorangestellt                      |
+| `imageBase64`    | string       | Nein         | Base64-kodiertes Bild (Legacy – bevorzuge `attachments`)                 |
+| `imageMimeType`  | string       | Nein         | z. B. `image/jpeg` (Legacy – bevorzuge `attachments`)                    |
+| `attachments`    | Attachment[] | Nein         | Strukturierte Medien-Attachments (siehe unten)                           |
 
 ### Attachments
 
@@ -119,7 +130,7 @@ interface Attachment {
 }
 ```
 
-Beispiel – Verarbeitung eines Datei-Uploads in deinem Adapter:
+Beispiel – Verarbeiten eines Datei-Uploads in deinem Adapter:
 
 ```typescript
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -142,7 +153,7 @@ envelope.attachments = [
 ];
 ```
 
-Die Legacy-Felder `imageBase64`/`imageMimeType` funktionieren aus Gründen der Abwärtskompatibilität weiterhin, aber `attachments` wird für neuen Code bevorzugt.
+Die Legacy-Felder `imageBase64`/`imageMimeType` funktionieren weiterhin für die Abwärtskompatibilität, aber `attachments` wird für neuen Code bevorzugt.
 
 ## Extension-Manifest
 
@@ -161,14 +172,14 @@ Deine `qwen-extension.json` deklariert den Channel-Typ. Der Schlüssel muss mit 
 }
 ```
 
-## Optionale Extension-Points
+## Optionale Erweiterungspunkte
 
-**Benutzerdefinierte Slash-Befehle** – in deinem Konstruktor registrieren:
+**Benutzerdefinierte Slash-Befehle** – registriere sie in deinem Konstruktor:
 
 ```typescript
 this.registerCommand('mycommand', async (envelope, args) => {
   await this.sendMessage(envelope.chatId, 'Response');
-  return true; // verarbeitet, nicht an den Agent weiterleiten
+  return true; // verarbeitet, nicht an den Agenten weiterleiten
 });
 ```
 
@@ -184,16 +195,16 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 }
 ```
 
-**Tool-Call-Hooks** – überschreibe `onToolCall()`, um Agent-Aktivitäten anzuzeigen (z. B. "Shell-Befehl wird ausgeführt...").
+**Tool-Call-Hooks** – überschreibe `onToolCall()`, um Agentenaktivität anzuzeigen (z. B. "Shell-Befehl wird ausgeführt...").
 
-**Streaming-Hooks** – überschreibe `onResponseChunk(chatId, chunk, sessionId)` für die progressive Anzeige pro Chunk (z. B. direktes Bearbeiten einer Nachricht). Überschreibe `onResponseComplete(chatId, fullText, sessionId)`, um die finale Zustellung anzupassen.
+**Streaming-Hooks** – überschreibe `onResponseChunk(chatId, chunk, sessionId)` für die progressive Anzeige pro Chunk (z. B. direktes Bearbeiten einer Nachricht). Überschreibe `onResponseComplete(chatId, fullText, sessionId)`, um die endgültige Zustellung anzupassen.
 
 **Block-Streaming** – setze `blockStreaming: "on"` in der Channel-Konfiguration. Die Basisklasse teilt Antworten automatisch an Absatzgrenzen in mehrere Nachrichten auf. Kein Plugin-Code erforderlich – es funktioniert parallel zu `onResponseChunk`.
 
-**Medien** – fülle `envelope.attachments` mit Bildern/Dateien. Siehe [Attachments](#attachments) oben.
+**Medien** – fülle `envelope.attachments` mit Bildern/Dateien. Siehe [Attachments](#attachments) weiter oben.
 
 ## Referenzimplementierungen
 
 - **Plugin-Beispiel** (`packages/channels/plugin-example/`) – minimaler WebSocket-basierter Adapter, guter Startpunkt
-- **Telegram** (`packages/channels/telegram/`) – voll ausgestattet: Bilder, Dateien, Formatierung, Tipp-Indikatoren
-- **DingTalk** (`packages/channels/dingtalk/`) – streambasiert mit Rich-Text-Verarbeitung
+- **Telegram** (`packages/channels/telegram/`) – vollumfänglich: Bilder, Dateien, Formatierung, Tipp-Indikatoren
+- **DingTalk** (`packages/channels/dingtalk/`) – Stream-basiert mit Rich-Text-Verarbeitung

@@ -3,7 +3,7 @@
 Cada sessão do Qwen Code começa com uma janela de contexto nova. Dois mecanismos transportam o conhecimento entre as sessões para que você não precise se explicar novamente todas as vezes:
 
 - **QWEN.md** — instruções que _você_ escreve uma vez e o Qwen lê em cada sessão
-- **Auto-memory** — anotações que o próprio Qwen escreve com base no que aprende sobre você
+- **Auto-memory** — notas que o próprio Qwen escreve com base no que aprende sobre você
 
 ---
 
@@ -13,38 +13,38 @@ O QWEN.md é um arquivo de texto simples onde você escreve coisas que o Qwen de
 
 ### O que colocar no QWEN.md
 
-Adicione coisas que, de outra forma, você teria que repetir em cada sessão:
+Adicione coisas que, de outra forma, você teria que repetir em todas as sessões:
 
 - Comandos de build e teste (`npm run test`, `make build`)
 - Convenções de código que sua equipe segue ("todos os novos arquivos devem ter comentários JSDoc")
 - Decisões de arquitetura ("usamos o padrão repository, nunca chamamos o banco de dados diretamente dos controllers")
 - Preferências pessoais ("sempre use pnpm, não npm")
 
-Não inclua coisas que o Qwen pode descobrir lendo o seu código. O QWEN.md funciona melhor quando é curto e específico — quanto mais longo ele fica, menos confiavelmente o Qwen o segue.
+Não inclua coisas que o Qwen pode descobrir lendo o seu código. O QWEN.md funciona melhor quando é curto e específico — quanto maior ele fica, menos confiavelmente o Qwen o segue.
 
 ### Onde criar o QWEN.md
 
 | Arquivo | A quem se aplica |
-| --- | --- |
-| `~/.qwen/QWEN.md` | Você, em todos os seus projetos |
-| `QWEN.md` na raiz do projeto | Toda a sua equipe (faça commit no controle de versão) |
-| `.qwen/QWEN.local.md` | Apenas você, apenas neste projeto (mantenha fora do git) |
+| ----------------------------- | ------------------------------------------------ |
+| `~/.qwen/QWEN.md`             | Você, em todos os seus projetos                    |
+| `QWEN.md` na raiz do projeto | Toda a sua equipe (faça commit no controle de versão)    |
+| `.qwen/QWEN.local.md`         | Apenas você, apenas neste projeto (mantenha fora do git) |
 
 Você pode ter qualquer combinação deles. O Qwen carrega todos quando você inicia uma sessão.
 
 Se o seu repositório já tiver um arquivo `AGENTS.md` para outras ferramentas de IA, o Qwen também o lê. Não há necessidade de duplicar instruções.
 
-#### Quando usar `.qwen/QWEN.local.md`
+#### Quando usar o `.qwen/QWEN.local.md`
 
 Use-o para instruções **específicas do projeto, mas pessoais** — coisas que pertencem a este projeto, mas não devem ser compartilhadas com a equipe:
 
 - Seu próprio ID de cluster, namespace do registro de contêineres ou conta em nuvem
-- Um comando de debug pessoal com hardcode do seu ambiente local
-- Anotações que você quer que o Qwen saiba sobre o seu trabalho em andamento, mas que não devem ir para o commit
+- Um comando de debug pessoal que faz hardcode do seu ambiente local
+- Notas que você quer que o Qwen saiba sobre o seu trabalho em andamento, mas sem dar commit
 
 Ele é carregado **depois** do `QWEN.md` compartilhado do projeto, então suas instruções locais podem complementar ou sobrescrever as da equipe.
 
-**Você mesmo deve adicionar ao .gitignore.** Embora `.qwen/` seja frequentemente tratado como um diretório local, o qwen-code não gera um `.gitignore` para você, e alguns projetos dão commit em `.qwen/settings.json`. Adicione esta linha ao seu `.gitignore` (ou ao seu git ignore global):
+**Você mesmo deve adicionar ao .gitignore.** Embora o `.qwen/` seja frequentemente tratado como um diretório local, o qwen-code não gera um `.gitignore` para você, e alguns projetos dão commit em `.qwen/settings.json`. Adicione esta linha ao seu `.gitignore` (ou ao seu git ignore global):
 
 ```
 .qwen/QWEN.local.md
@@ -81,11 +81,11 @@ Isso é diferente do QWEN.md: você não o escreve, o Qwen escreve.
 O Qwen procura por quatro tipos de coisas que valem a pena lembrar:
 
 | O quê | Exemplos |
-| --- | --- |
-| **Sobre você** | Seu cargo, background, como você gosta de trabalhar |
-| **Seu feedback** | Correções que você fez, abordagens que você confirmou |
-| **Contexto do projeto** | Trabalho em andamento, decisões, metas não óbvias a partir do código |
-| **Referências externas** | Dashboards, rastreadores de tickets, links de documentação que você mencionou |
+| ----------------------- | ------------------------------------------------ |
+| **Sobre você**           | Seu cargo, experiência, como você gosta de trabalhar              |
+| **Seu feedback**       | Correções que você fez, abordagens que você confirmou           |
+| **Contexto do projeto**     | Trabalho em andamento, decisões, metas não óbvias a partir do código |
+| **Referências externas** | Dashboards, rastreadores de tickets, links de documentação que você mencionou    |
 
 O Qwen não salva tudo — apenas coisas que seriam realmente úteis na próxima vez.
 
@@ -99,13 +99,13 @@ Tudo o que é salvo é markdown simples — você pode abrir, editar ou excluir 
 
 O Qwen revisa periodicamente suas memórias salvas para remover duplicatas e limpar entradas desatualizadas. Isso é executado automaticamente em segundo plano uma vez por dia, após o acúmulo de sessões suficientes. Você pode acioná-lo manualmente com `/dream` se quiser que seja executado agora.
 
-Enquanto a limpeza está em execução, **✦ dreaming** aparece no canto da tela. Sua sessão continua normalmente.
+Sua sessão continua normalmente enquanto a limpeza é executada em segundo plano.
 
 ### Ativando ou desativando
 
 A Auto-memory está ativada por padrão. Para alterná-la, abra `/memory` e use os interruptores na parte superior. Você pode desativar apenas o salvamento automático, apenas a limpeza periódica ou ambos.
 
-Você também pode configurá-los em `~/.qwen/settings.json` (aplica-se a todos os projetos) ou `.qwen/settings.json` (apenas este projeto):
+Você também pode defini-los em `~/.qwen/settings.json` (aplica-se a todos os projetos) ou `.qwen/settings.json` (apenas para este projeto):
 
 ```json
 {
@@ -116,11 +116,11 @@ Você também pode configurá-los em `~/.qwen/settings.json` (aplica-se a todos 
 }
 ```
 
-### Team memory (compartilhada com colaboradores)
+### Memória da equipe (compartilhada com colaboradores)
 
-Por padrão, a auto-memory é **privada para você** — ela fica no seu diretório home e nunca é compartilhada. A Team memory é uma camada opcional que toda a equipe compartilha **através do git**.
+Por padrão, a auto-memory é **privada para você** — ela fica no seu diretório home e nunca é compartilhada. A memória da equipe é uma camada opcional que toda a equipe compartilha **através do git**.
 
-Quando ativada, o Qwen ganha um terceiro diretório de memória em `.qwen/team-memory/` **dentro do repositório**. Ele usa o mesmo layout de um arquivo por memória e o índice `MEMORY.md` das camadas privadas. Como é commitada no repositório, é compartilhada com todos os colaboradores da maneira normal: você usa `git pull` para receber as memórias dos colegas e commit/push para compartilhar as suas. O Qwen direciona o conhecimento durável e de todo o projeto para cá — convenções que todo contribuidor deve seguir, ponteiros de referência compartilhados (trackers, dashboards) — enquanto anotações pessoais e de rápida expiração permanecem privadas.
+Quando ativada, o Qwen ganha um terceiro diretório de memória em `.qwen/team-memory/` **dentro do repositório**. Ele usa o mesmo layout de um arquivo por memória e o índice `MEMORY.md` que as camadas privadas. Como é enviado para o repo via commit, é compartilhado com todos os colaboradores da maneira normal: você faz `git pull` para receber as memórias dos colegas e commit/push para compartilhar as suas. O Qwen direciona o conhecimento durável e de todo o projeto para cá — convenções que todo contribuidor deve seguir, ponteiros de referência compartilhados (trackers, dashboards) — enquanto notas pessoais e de rápida decadência permanecem privadas.
 
 Ative-a por projeto (ou globalmente) no `settings.json`:
 
@@ -134,9 +134,9 @@ Ative-a por projeto (ou globalmente) no `settings.json`:
 
 Ela está **desativada por padrão**. Tenha estas ressalvas em mente:
 
-- **Ela é controlada por versão e visível para todos com acesso ao repositório.** Trate a team memory como um commit no repositório.
-- **Secrets são bloqueados.** Escrita em `.qwen/team-memory/` é verificada em busca de credenciais (API keys, tokens, chaves privadas); um secret detectado é rejeitado, nunca é escrito. A verificação é uma rede de segurança, não uma garantia — não coloque dados confidenciais lá.
-- **As alterações são revisáveis.** As escritas na team memory aparecem no `git status` / diff do PR como qualquer outro arquivo, para que possam ser revisadas antes do commit. No modo de aprovação padrão, o Qwen também pergunta antes de cada escrita na team memory; no modo `AUTO_EDIT`/YOLO (onde você optou pela aprovação automática), elas são aplicadas sem um prompt, mas ainda aparecem no diff.
+- **Ela é controlada por versão e visível para todos com acesso ao repo.** Trate a memória da equipe como um commit no repo.
+- **Secrets são bloqueados.** Escrita em `.qwen/team-memory/` é verificada em busca de credenciais (API keys, tokens, chaves privadas); um secret detectado é rejeitado, nunca é escrito. A verificação é uma rede de segurança, não uma garantia — não coloque dados sensíveis lá.
+- **As alterações são revisáveis.** As escritas na memória da equipe aparecem no `git status` / diff do PR como qualquer outro arquivo, para que possam ser revisadas antes de serem commitadas. No modo de aprovação padrão, o Qwen também pergunta antes de cada escrita na equipe; no modo `AUTO_EDIT`/YOLO (onde você optou pela aprovação automática), elas são aplicadas sem um prompt, mas ainda aparecem no diff.
 - **O diretório deve ser rastreado pelo git.** Se o `.gitignore` do seu projeto exclui `.qwen/*`, reinclua o caminho para que possa ser compartilhado:
 
   ```gitignore
@@ -144,13 +144,13 @@ Ela está **desativada por padrão**. Tenha estas ressalvas em mente:
   !.qwen/team-memory/**
   ```
 
-  Ressalva: use a forma de ignore com file-glob (`.qwen/*`), não a forma de diretório com uma barra no final (`.qwen/`). Um ignore no formato de diretório faz o git pular a pasta inteiramente, então uma reinclusão com `!` abaixo dele é uma não-operação (no-op) e a camada da equipe permanece silenciosamente vazia no git. O Qwen avisa uma vez na inicialização quando a camada está ativada, mas seu diretório está no git-ignored ou fora de qualquer repositório git, para que essa configuração incorreta não passe despercebida.
+  Ressalva: use a forma de ignore com file-glob (`.qwen/*`), não uma forma de diretório com uma barra no final (`.qwen/`). Um ignore em forma de diretório faz com que o git pule a pasta inteiramente, então uma reinclusão com `!` abaixo dele é uma não-operação (no-op) e a camada da equipe permanece silenciosamente vazia no git. O Qwen avisa uma vez na inicialização quando a camada está ativada, mas seu diretório está no git-ignored ou fora de qualquer repositório git, para que essa configuração incorreta não passe despercebida.
 
 `QWEN_CODE_MEMORY_TEAM=1` / `=0` sobrescreve a configuração para uma única execução.
 
-### Sincronização automática com git (opcional)
+### Sincronização automática do git (opcional)
 
-Por padrão, você compartilha a team memory com o fluxo de trabalho normal do git (`pull` para receber, `commit`/`push` para compartilhar). Para que o Qwen faça isso por você, ative a sincronização:
+Por padrão, você compartilha a memória da equipe com o fluxo de trabalho normal do git (`pull` para receber, `commit`/`push` para compartilhar). Para que o Qwen faça isso para você, ative a sincronização:
 
 ```json
 {
@@ -161,11 +161,11 @@ Por padrão, você compartilha a team memory com o fluxo de trabalho normal do g
 }
 ```
 
-Quando ativada, no início da sessão, o Qwen sincroniza da melhor forma possível o diretório `.qwen/team-memory/`: ele reconstrói o índice compartilhado `MEMORY.md`, faz pull com fast-forward das atualizações dos colaboradores **primeiro**, depois faz commit das suas alterações da team memory por cima, e faz push **apenas desse commit de sincronização** (via um refspec explícito de branch único) — para que o índice que você carrega reflita o mais recente. Ele apenas faz **stage** do diretório da equipe (suas outras alterações de trabalho nunca são commitadas), e nunca bloqueia a sessão em caso de falha no git. Desativado por padrão. `QWEN_CODE_MEMORY_TEAM_SYNC=1` / `=0` sobrescreve a configuração para uma única execução.
+Quando ativada, no início da sessão, o Qwen sincroniza da melhor forma possível (best-effort) o diretório `.qwen/team-memory/`: ele reconstrói o índice compartilhado `MEMORY.md`, faz fast-forward-pull das atualizações dos colaboradores **primeiro**, depois faz commit das suas alterações de memória da equipe por cima, e faz push **apenas daquele commit de sincronização** (via um refspec explícito de branch único) — para que o índice que você carrega reflita o mais recente. Ele apenas faz **stage** do diretório da equipe (suas outras alterações de trabalho nunca são commitadas), e nunca bloqueia a sessão em caso de falha do git. Desativado por padrão. `QWEN_CODE_MEMORY_TEAM_SYNC=1` / `=0` sobrescreve a configuração para uma única execução.
 
 Duas coisas para saber antes de ativá-la:
 
-- **O pull com fast-forward atua em todo o seu branch atual, não apenas em `.qwen/team-memory/`** (o git não tem pull com escopo de caminho). Portanto, a sincronização fará fast-forward do seu branch para a ponta remota. O push, por outro lado, tem escopo: ele publica **apenas o commit que esta sincronização acabou de criar**, então ele nunca faz push de outros commits não enviados que você tenha — se o seu branch já estiver à frente do upstream, a sincronização faz commit localmente e pula o push. Ative-a em branches onde o pull com fast-forward é aceitável — ou execute-a em um checkout dedicado.
+- **O fast-forward pull atua em todo o seu branch atual, não apenas no `.qwen/team-memory/`** (o git não tem pull com escopo de caminho). Portanto, a sincronização fará fast-forward do seu branch para a ponta remota. O push, por outro lado, tem escopo: ele publica **apenas o commit que esta sincronização acabou de criar**, então ele nunca faz push de outros commits não enviados que você tenha — se o seu branch já estiver à frente do upstream, a sincronização faz commit localmente e pula o push. Ative-a em branches onde o fast-forward pull é aceitável — ou execute-a em um checkout dedicado.
 - **Um branch divergente é deixado intacto** (`--ff-only` nunca faz merge). Quando isso acontece, a sincronização simplesmente não faz nada naquela sessão; resolva a divergência (`git pull`) e ela retoma. Um branch sem upstream (sem configuração de rastreamento) ainda faz commit localmente, mas pula o push — não há para onde fazer push.
 
 ---
@@ -180,15 +180,15 @@ Abre o painel de Memória. A partir daqui você pode:
 - Ativar ou desativar a limpeza periódica (dream)
 - Abrir seu QWEN.md pessoal (`~/.qwen/QWEN.md`)
 - Abrir o QWEN.md do projeto
-- Navegar pela pasta da auto-memory
+- Navegar na pasta da auto-memory
 
 ### `/init`
 
-Gera um QWEN.md inicial para o seu projeto. O Qwen lê sua base de código e preenche com comandos de build, instruções de teste e convenções que ele descobre.
+Gera um QWEN.md inicial para o seu projeto. O Qwen lê sua base de código e preenche comandos de build, instruções de teste e convenções que descobre.
 
 ### `/remember <text>`
 
-Salva imediatamente algo na auto-memory sem esperar o Qwen capturar automaticamente:
+Salva imediatamente algo na auto-memory sem esperar que o Qwen o capture automaticamente:
 
 ```
 /remember always use snake_case for Python variable names
@@ -234,4 +234,4 @@ Execute `/memory` e selecione **Abrir pasta da auto-memory**. Todas as memórias
 
 Se a auto-memory estiver ativada, mas o Qwen não parecer lembrar das coisas entre as sessões, tente executar `/dream` para forçar uma passagem de limpeza. Verifique também `/memory` para confirmar se ambos os interruptores estão ativados.
 
-Para coisas que você sempre quer que o Qwen lembre, adicione-as ao QWEN.md — a auto-memory é "best-effort" (melhor esforço), o QWEN.md é garantido.
+Para coisas que você sempre quer que o Qwen lembre, adicione-as ao QWEN.md em vez disso — a auto-memory é best-effort, o QWEN.md é garantido.

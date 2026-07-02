@@ -1,220 +1,181 @@
 # Code Review
 
-> Überprüfen Sie Code-Änderungen auf Korrektheit, Sicherheit, Leistung und Codequalität mit `/review`.
+> Überprüfe Code-Änderungen auf Korrektheit, Sicherheit, Performance und Codequalität mit `/review`.
 
-## Schnellstart
+## Quick Start
 
 ```bash
-# Uncommittete lokale Änderungen überprüfen
+# Review local uncommitted changes
 /review
 
-# Einen Pull Request (nach Nummer oder URL) überprüfen
+# Review a pull request (by number or URL)
 /review 123
 /review https://github.com/org/repo/pull/123
 
-# Überprüfen und Inline-Kommentare auf dem PR posten
+# Review and post inline comments on the PR
 /review 123 --comment
 
-# Eine bestimmte Datei überprüfen
+# Review a specific file
 /review src/utils/auth.ts
 ```
 
-Wenn keine uncommitteten Änderungen vorliegen, teilt `/review` dies mit und stoppt – es werden keine Agents gestartet.
+Wenn es keine uncommitted Änderungen gibt, informiert dich `/review` darüber und stoppt – es werden keine Agents gestartet.
 
 ## Funktionsweise
 
 Der Befehl `/review` führt eine mehrstufige Pipeline aus:
 
 ```
-Schritt 1:  Scope bestimmen (lokaler Diff / PR-Worktree / Datei)
+Schritt 1:  Umfang bestimmen (lokaler Diff / PR-Worktree / Datei)
 Schritt 2:  Projekt-Review-Regeln laden
-Schritt 3:  Deterministische Analyse ausführen (Linter, Typecheck)    [0 LLM-Aufrufe]
-Schritt 4:  9 parallele Review-Agents                                [9 LLM-Aufrufe]
+Schritt 3:  9 parallele Review-Agents                          [9 LLM-Aufrufe]
            |-- Agent 1: Korrektheit
            |-- Agent 2: Sicherheit
            |-- Agent 3: Codequalität
-           |-- Agent 4: Leistung & Effizienz
+           |-- Agent 4: Performance & Effizienz
            |-- Agent 5: Testabdeckung
-           |-- Agent 6: Ungerichtetes Audit (3 Personas: 6a/6b/6c)
+           |-- Agent 6: Undirected Audit (3 Personas: 6a/6b/6c)
            '-- Agent 7: Build & Test (führt Shell-Befehle aus)
-Schritt 5:  Deduplizieren --> Batch-Verifizieren --> Aggregieren      [1 LLM-Aufruf]
-Schritt 6:  Iteratives Reverse-Audit (1-3 Runden, Lückenfindung)     [1-3 LLM-Aufrufe]
-Schritt 7:  Ergebnisse + Urteil präsentieren
-Schritt 8:  Automatische Korrektur (benutzerbestätigt, optional)
-Schritt 9:  PR-Inline-Kommentare posten (falls angefordert)
-Schritt 10: Bericht + inkrementellen Cache speichern
-Schritt 11: Aufräumen (Worktree + temporäre Dateien entfernen)
+Schritt 4:  Deduplizieren --> Batch-Verifizierung --> Aggregieren [1 LLM-Aufruf]
+Schritt 5:  Iterativer Reverse-Audit (1-3 Runden, Lückenfindung)  [1-3 LLM-Aufrufe]
+Schritt 6:  Ergebnisse + Fazit präsentieren
+Schritt 7:  PR-Review einreichen (Inline-Kommentare, falls angefordert)
+Schritt 8:  Bericht + inkrementellen Cache speichern
+Schritt 9:  Aufräumen (Worktree + temporäre Dateien entfernen)
 ```
 
 ### Review-Agents
 
-| Agent                            | Fokus                                                                                   |
-| -------------------------------- | --------------------------------------------------------------------------------------- |
-| Agent 1: Korrektheit             | Logikfehler, Randfälle, Null-Behandlung, Race Conditions, Typsicherheit                 |
-| Agent 2: Sicherheit              | Injection, XSS, SSRF, Auth-Bypass, Offenlegung sensibler Daten                          |
-| Agent 3: Codequalität            | Stilkonsistenz, Benennung, Duplikate, toter Code                                        |
-| Agent 4: Leistung & Effizienz    | N+1-Abfragen, Speicherlecks, unnötige Re-Renders, Bundle-Größe                          |
-| Agent 5: Testabdeckung           | Ungetestete Codepfade im Diff, fehlende Branch-Abdeckung, schwache Assertions           |
-| Agent 6: Ungerichtetes Audit     | 3 parallele Personas (Angreifer / 3-Uhr-Nachtbereitschaft / Maintainer) – fängt bereichsübergreifende Probleme |
-| Agent 7: Build & Test            | Führt Build- und Testbefehle aus, meldet Fehler                                         |
+| Agent                             | Fokus                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------------------------------- |
+| Agent 1: Korrektheit              | Logikfehler, Edge Cases, Null-Handling, Race Conditions, Type Safety                        |
+| Agent 2: Sicherheit               | Injection, XSS, SSRF, Auth-Bypass, Offenlegung sensibler Daten                            |
+| Agent 3: Codequalität             | Stilkonsistenz, Naming, Duplikate, Dead Code                                                |
+| Agent 4: Performance & Effizienz  | N+1-Queries, Memory Leaks, unnötige Re-Renders, Bundle-Größe                                |
+| Agent 5: Testabdeckung            | Ungetestete Code-Pfade im Diff, fehlende Branch-Abdeckung, schwache Assertions              |
+| Agent 6: Undirected Audit         | 3 parallele Personas (Attacker / 3am-oncall / Maintainer) – erkennt übergreifende Probleme  |
+| Agent 7: Build & Test             | Führt Build- und Test-Befehle aus, meldet Fehler                                            |
 
-Alle Agents laufen parallel (Agent 6 startet 3 Persona-Varianten gleichzeitig, insgesamt 9 parallele Aufgaben für Reviews im selben Repository). Ergebnisse der Agents 1-6 werden in einem **einzelnen Batch-Verifizierungsdurchgang** verifiziert (ein Agent überprüft alle Ergebnisse auf einmal, die Verifizierungskosten bleiben unabhängig von der Anzahl der Ergebnisse konstant). Nach der Verifizierung führt das **iterative Reverse-Audit** 1-3 Runden der Lückenfindung durch – jede Runde erhält die kumulative Ergebnisliste der vorherigen Runden, sodass sich die nachfolgenden Runden auf das konzentrieren, was noch unentdeckt ist. Die Schleife stoppt, sobald eine Runde „Keine Probleme gefunden" zurückgibt, oder nach 3 Runden (harte Obergrenze). Reverse-Audit-Ergebnisse überspringen die Verifizierung (der Agent hat bereits den vollständigen Kontext) und werden als Ergebnisse mit hoher Vertrauenswürdigkeit eingestuft.
-
-## Deterministische Analyse
-
-Bevor die LLM-Agents ausgeführt werden, führt `/review` automatisch die vorhandenen Linter und Typ-Prüfer Ihres Projekts aus:
-
-| Sprache             | Erkannte Tools                                                          |
-| ------------------- | ----------------------------------------------------------------------- |
-| TypeScript/JavaScript | `tsc --noEmit`, `npm run lint`, `eslint`                                |
-| Python              | `ruff`, `mypy`, `flake8`                                                |
-| Rust                | `cargo clippy`                                                          |
-| Go                  | `go vet`, `golangci-lint`                                               |
-| Java                | `mvn compile`, `checkstyle`, `spotbugs`, `pmd`                          |
-| C/C++               | `clang-tidy` (wenn `compile_commands.json` verfügbar)                   |
-| Andere              | Automatisch aus CI-Konfiguration erkannt (`.github/workflows/*.yml`, usw.) |
-
-Für Projekte, die nicht den Standardmustern entsprechen (z.B. OpenJDK), liest `/review` CI-Konfigurationsdateien, um herauszufinden, welche Lint/Check-Befehle das Projekt verwendet. Keine Benutzerkonfiguration erforderlich.
-
-Deterministische Ergebnisse werden mit `[linter]` oder `[typecheck]` gekennzeichnet und überspringen die LLM-Verifizierung – sie sind Ground Truth.
-
-- **Fehler** → Kritischer Schweregrad
-- **Warnungen** → Nice to have (nur im Terminal, nicht als PR-Kommentare gepostet)
-
-Wenn ein Tool nicht installiert ist oder eine Zeitüberschreitung auftritt, wird es mit einem informativen Hinweis übersprungen.
+Alle Agents laufen parallel (Agent 6 startet 3 Persona-Varianten gleichzeitig, was bei Reviews im selben Repository insgesamt 9 parallele Tasks ergibt). Die Ergebnisse der Agents 1-6 werden in einem **einzigen Batch-Verifizierungsdurchlauf** überprüft (ein Agent prüft alle Ergebnisse auf einmal, wodurch die Verifizierungskosten unabhängig von der Anzahl der Ergebnisse konstant bleiben). Nach der Verifizierung führt ein **iterativer Reverse-Audit** 1 bis 3 Runden zur Lückenfindung durch – jede Runde erhält die kumulierte Ergebnisliste der vorherigen Runden, sodass sich nachfolgende Runden auf das konzentrieren, was noch unentdeckt ist. Die Schleife stoppt, sobald eine Runde "No issues found" zurückgibt, oder nach 3 Runden (hartes Limit). Reverse-Audit-Ergebnisse überspringen die Verifizierung (der Agent hat bereits den vollen Kontext) und werden als High-Confidence-Ergebnisse einbezogen.
 
 ## Schweregrade
 
-| Schweregrad       | Bedeutung                                                            | Als PR-Kommentar gepostet?      |
-| ----------------- | -------------------------------------------------------------------- | ------------------------------- |
-| **Kritisch**      | Muss vor dem Mergen behoben werden (Bugs, Sicherheit, Datenverlust, Build-Fehler) | Ja (nur hohe Vertrauenswürdigkeit) |
-| **Vorschlag**     | Empfohlene Verbesserung                                              | Ja (nur hohe Vertrauenswürdigkeit) |
-| **Nice to have**  | Optionale Optimierung                                                | Nein (nur Terminal)            |
+| Schweregrad      | Bedeutung                                                             | Als PR-Kommentar gepostet?     |
+| ---------------- | ------------------------------------------------------------------- | -------------------------- |
+| **Critical**     | Muss vor dem Mergen behoben werden (Bugs, Sicherheit, Datenverlust, Build-Fehler) | Ja (nur High-Confidence) |
+| **Suggestion**   | Empfohlene Verbesserung                                             | Ja (nur High-Confidence) |
+| **Nice to have** | Optionale Optimierung                                               | Nein (nur Terminal)         |
 
-Ergebnisse mit geringer Vertrauenswürdigkeit erscheinen in einem separaten Bereich „Benötigt menschliche Überprüfung" im Terminal und werden niemals als PR-Kommentare gepostet.
-
-## Automatische Korrektur
-
-Nach der Präsentation der Ergebnisse bietet `/review` an, automatische Korrekturen für kritische und vorschlagende Ergebnisse mit klaren Lösungen anzuwenden:
-
-```
-3 Probleme mit automatisch korrigierbaren Vorschlägen gefunden. Automatische Korrekturen anwenden? (j/n)
-```
-
-- Korrekturen werden mit dem `edit`-Tool angewendet (gezielte Ersetzungen, keine vollständigen Datei-Neuschreibungen)
-- Nach den Korrekturen werden dateibasierte Linter-Prüfungen durchgeführt, um sicherzustellen, dass keine neuen Probleme eingeführt wurden
-- Bei PR-Reviews werden Korrekturen automatisch committet und vom Worktree aus gepusht – Ihr Arbeitsverzeichnis bleibt sauber
-- Nice-to-have- und Ergebnisse mit geringer Vertrauenswürdigkeit werden niemals automatisch korrigiert
-- Die PR-Review-Einreichung verwendet immer das **Vor-Korrektur-Urteil** (z.B. „Änderungen anfordern"), da der entfernte PR erst aktualisiert wird, wenn der Autofix-Push abgeschlossen ist
+Low-Confidence-Ergebnisse erscheinen in einem separaten Bereich "Needs Human Review" im Terminal und werden niemals als PR-Kommentare gepostet.
 
 ## Worktree-Isolation
 
-Wenn ein PR überprüft wird, erstellt `/review` einen temporären git Worktree (`.qwen/tmp/review-pr-<numero>`) anstatt Ihren aktuellen Branch zu wechseln. Das bedeutet:
+Beim Reviewen eines PRs erstellt `/review` einen temporären Git-Worktree (`.qwen/tmp/review-pr-<number>`), anstatt deinen aktuellen Branch zu wechseln. Das bedeutet:
 
-- Ihr Arbeitsverzeichnis, gestagte Änderungen und Ihr aktueller Branch werden **niemals berührt**
-- Abhängigkeiten werden im Worktree installiert (`npm ci`, usw.), damit Linting und Build/Test funktionieren
-- Build- und Testbefehle laufen isoliert, ohne Ihren lokalen Build-Cache zu verschmutzen
-- Wenn etwas schiefgeht, ist Ihre Umgebung nicht betroffen – löschen Sie einfach den Worktree
-- Der Worktree wird nach Abschluss des Reviews automatisch bereinigt
-- Wenn ein Review unterbrochen wird (Strg+C, Absturz), bereinigt das nächste `/review` desselben PRs automatisch den veralteten Worktree, bevor es neu startet
+- Dein Working Tree, staged Changes und der aktuelle Branch werden **niemals angetastet**
+- Dependencies werden im Worktree installiert (`npm ci` usw.), damit Build/Test funktionieren
+- Build- und Test-Befehle laufen isoliert, ohne deinen lokalen Build-Cache zu verunreinigen
+- Wenn etwas schiefgeht, ist deine Umgebung nicht betroffen – lösche einfach den Worktree
+- Der Worktree wird nach Abschluss des Reviews automatisch aufgeräumt
+- Wenn ein Review unterbrochen wird (Strg+C, Crash), räumt das nächste `/review` desselben PRs den veralteten Worktree automatisch auf, bevor es neu startet
 - Review-Berichte und Cache werden im Hauptprojektverzeichnis gespeichert (nicht im Worktree)
 
-## PR-Review über Repositories hinweg
+## Cross-Repo-PR-Review
 
-Sie können PRs aus anderen Repositories überprüfen, indem Sie die vollständige URL angeben:
+Du kannst PRs aus anderen Repositories reviewen, indem du die vollständige URL übergibst:
 
 ```bash
 /review https://github.com/other-org/other-repo/pull/456
 ```
 
-Dies läuft im **Lightweight-Modus** – kein Worktree, kein Linter, kein Build/Test, keine automatische Korrektur. Die Überprüfung basiert nur auf dem Diff-Text (über die GitHub-API abgerufen). PR-Kommentare können dennoch gepostet werden, wenn Sie Schreibzugriff haben.
+Dies läuft im **Lightweight-Modus** – kein Worktree, kein Build/Test. Das Review basiert nur auf dem Diff-Text (über die GitHub API abgerufen). PR-Kommentare können weiterhin gepostet werden, wenn du Schreibzugriff hast.
 
-| Fähigkeit                                                   | Gleiches Repository | Remote-Repository           |
-| ----------------------------------------------------------- | ------------------- | --------------------------- |
-| LLM-Review (Agents 1-6 + Verifizierung + iteratives Reverse-Audit) | ✅                  | ✅                          |
-| Agent 7: Build & Test                                      | ✅                  | ❌ (keine lokale Codebasis) |
-| Deterministische Analyse (Linter/Typecheck)                  | ✅                  | ❌                          |
-| Analyse der Auswirkungen auf mehrere Dateien                  | ✅                  | ❌                          |
-| Automatische Korrektur                                      | ✅                  | ❌                          |
-| PR-Inline-Kommentare                                         | ✅                  | ✅ (bei Schreibzugriff)     |
-| Inkrementeller Review-Cache                                 | ✅                  | ❌                          |
+| Funktionsumfang                                                 | Same-Repo | Cross-Repo                    |
+| ---------------------------------------------------------- | --------- | ----------------------------- |
+| LLM-Review (Agents 1-6 + Verifizierung + iterativer Reverse-Audit) | ✅        | ✅                            |
+| Agent 7: Build & Test                                      | ✅        | ❌ (keine lokale Codebase)        |
+| Cross-File-Impact-Analyse                                 | ✅        | ❌                            |
+| PR-Inline-Kommentare                                         | ✅        | ✅ (bei Schreibzugriff) |
+| Inkrementeller Review-Cache                                   | ✅        | ❌                            |
 
 ## PR-Inline-Kommentare
 
-Verwenden Sie `--comment`, um Ergebnisse direkt auf dem PR zu posten:
+Verwende `--comment`, um Ergebnisse direkt im PR zu posten:
 
 ```bash
 /review 123 --comment
 ```
 
-Oder geben Sie nach dem Ausführen von `/review 123` `post comments` ein, um Ergebnisse zu veröffentlichen, ohne das Review erneut auszuführen.
+Oder gib nach dem Ausführen von `/review 123` den Befehl `post comments` ein, um Ergebnisse zu veröffentlichen, ohne das Review erneut auszuführen.
 
 **Was gepostet wird:**
 
-- Ergebnisse mit hoher Vertrauenswürdigkeit (Kritisch und Vorschlag) als Inline-Kommentare auf bestimmten Zeilen
-- Für Urteile „Genehmigen"/„Änderungen anfordern": eine Review-Zusammenfassung mit dem Urteil
-- Für das Urteil „Kommentieren" mit allen geposteten Inline-Kommentaren: keine separate Zusammenfassung (die Inline-Kommentare sind ausreichend)
-- Modellzuweisungs-Fußzeile auf jedem Kommentar (z.B. _— qwen3-coder via Qwen Code /review_)
+- High-Confidence-Ergebnisse der Schweregrade Critical und Suggestion als Inline-Kommentare zu spezifischen Zeilen
+- Bei Approve/Request-Changes-Verdikten: eine Review-Zusammenfassung mit dem Verdict
+- Bei Comment-Verdikten, bei denen alle Inline-Kommentare gepostet wurden: keine separate Zusammenfassung (Inline-Kommentare sind ausreichend)
+- Modell-Zuordnungs-Footer in jedem Kommentar (z. B. _— qwen3-coder via Qwen Code /review_)
 
 **Was nur im Terminal bleibt:**
 
-- Nice-to-have-Ergebnisse (einschließlich Linter-Warnungen)
-- Ergebnisse mit geringer Vertrauenswürdigkeit
+- Nice-to-have-Ergebnisse
+- Low-Confidence-Ergebnisse
 
-**Selbst verfasste PRs:** GitHub erlaubt es nicht, `APPROVE`- oder `REQUEST_CHANGES`-Reviews auf dem eigenen Pull Request einzureichen – beide schlagen mit HTTP 422 fehl. Wenn `/review` erkennt, dass der PR-Autor mit dem aktuell authentifizierten Benutzer übereinstimmt, wird das API-Ereignis automatisch auf `COMMENT` herabgestuft, unabhängig vom Urteil, sodass die Einreichung dennoch erfolgreich ist. Das Terminal zeigt weiterhin das ehrliche Urteil an („Genehmigen" / „Änderungen anfordern" / „Kommentieren") – nur das GitHub-seitige Review-Ereignis wird neutralisiert. Die tatsächlichen Ergebnisse erscheinen weiterhin als Inline-Kommentare auf bestimmten Zeilen, sodass das inhaltliche Feedback unverändert bleibt.
+**Selbst erstellte PRs:** GitHub erlaubt es nicht, `APPROVE`- oder `REQUEST_CHANGES`-Reviews für deine eigenen Pull Requests einzureichen – beide schlagen mit HTTP 422 fehl. Wenn `/review` erkennt, dass der PR-Autor dem aktuellen authentifizierten Benutzer entspricht, stuft es das API-Event unabhängig vom Verdict automatisch auf `COMMENT` herab, sodass die Einreichung trotzdem erfolgreich ist. Das Terminal zeigt weiterhin das ehrliche Verdict ("Approve" / "Request changes" / "Comment") – nur das GitHub-seitige Review-Event wird neutralisiert. Die eigentlichen Ergebnisse erscheinen weiterhin als Inline-Kommentare in spezifischen Zeilen, das substantive Feedback bleibt also unverändert.
 
-**Erneutes Review eines PRs mit vorherigen Qwen Code-Kommentaren:** Wenn `/review` auf einem PR ausgeführt wird, der bereits frühere Qwen Code-Review-Kommentare enthält, klassifiziert es diese, bevor es neue postet. Nur bei **gleichen Zeilenüberlappungen** (ein vorhandener Kommentar auf derselben `(Pfad, Zeile)` wie ein neues Ergebnis) werden Sie zur Bestätigung aufgefordert – das ist der Fall, bei dem Sie ein visuelles Duplikat auf derselben Codezeile sehen würden. Kommentare von älteren Commits, beantwortete Kommentare (als erledigt betrachtet) und Kommentare, die einfach kein neues Ergebnis überlappen, werden stillschweigend übersprungen, mit einer Terminal-Protokollzeile, damit Sie wissen, was gefiltert wurde.
+**Erneutes Reviewen eines PRs mit vorherigen Qwen Code-Kommentaren:** Wenn `/review` auf einem PR ausgeführt wird, der bereits frühere Qwen Code-Review-Kommentare enthält, klassifiziert es diese, bevor neue gepostet werden. Nur **Überlappungen in derselben Zeile** (ein vorhandener Kommentar in derselben `(path, line)` wie ein neues Ergebnis) fordern dich zur Bestätigung auf – das ist der Fall, in dem du ein visuelles Duplikat in derselben Codezeile sehen würdest. Kommentare aus älteren Commits, beantwortete Kommentare (werden als gelöst betrachtet) und Kommentare, die sich einfach nicht mit einem neuen Ergebnis überschneiden, werden stillschweigend übersprungen, mit einer Terminal-Logzeile, damit du weißt, was gefiltert wurde.
 
-**CI / Build-Status-Prüfung vor APPROVE:** Wenn das Urteil „Genehmigen" lautet, fragt `/review` die Check-Runs und Commit-Status des PRs ab, bevor es einreicht. Wenn ein Check fehlgeschlagen ist (oder alle Checks noch ausstehen), wird das API-Ereignis automatisch von `APPROVE` auf `COMMENT` herabgestuft, wobei der Review-Body den Grund erläutert. Begründung: Das LLM-Review liest Code statisch und kann keine Laufzeit-Testfehler sehen; eine Genehmigung bei rotem CI wäre irreführend. Die Inline-Ergebnisse werden dennoch unverändert gepostet. Wenn Sie trotzdem genehmigen möchten (z.B. bei einem bekannten flaky CI-Fehler), reichen Sie die GitHub-Genehmigung nach der Überprüfung manuell ein.
+**CI-/Build-Statusprüfung vor APPROVE:** Wenn das Verdict "Approve" ist, fragt `/review` die Check-Runs und Commit-Statuses des PRs vor der Einreichung ab. Wenn ein Check fehlgeschlagen ist (oder alle Checks noch ausstehen), wird das API-Event automatisch von `APPROVE` auf `COMMENT` herabgestuft, wobei der Review-Body erklärt, warum. Begründung: Das LLM-Review liest Code statisch und kann Laufzeit-Testfehler nicht sehen; ein Approve bei rotem CI wäre irreführend. Die Inline-Ergebnisse werden weiterhin unverändert gepostet. Wenn du trotzdem approven möchtest (z. B. bei einem bekannten flaky CI-Fehler), reiche die GitHub-Genehmigung nach der Überprüfung manuell ein.
 
 ## Folgeaktionen
 
-Nach dem Review erscheinen kontextbezogene Tipps als Ghost-Text. Drücken Sie Tab, um zu akzeptieren:
+Nach dem Review erscheinen kontextbezogene Tipps als Ghost-Text. Drücke Tab, um sie zu akzeptieren:
 
-| Status nach Review                              | Tipp                     | Was passiert                                    |
-| ----------------------------------------------- | ------------------------ | ----------------------------------------------- |
-| Lokales Review mit unkorrigierten Ergebnissen | `fix these issues`       | LLM korrigiert interaktiv jedes Ergebnis        |
-| PR-Review mit Ergebnissen                      | `post comments`          | Postet PR-Inline-Kommentare (kein erneutes Review) |
-| PR-Review, null Ergebnisse                     | `post comments`          | Genehmigt den PR auf GitHub (LGTM)              |
-| Lokales Review, alles klar                     | `commit`                 | Committet Ihre Änderungen                       |
+| Status nach dem Review                 | Tipp                | Was passiert                            |
+| ---------------------------------- | ------------------ | --------------------------------------- |
+| Lokales Review mit unbehobenen Ergebnissen | `fix these issues` | LLM behebt jedes Ergebnis interaktiv    |
+| PR-Review mit Ergebnissen            | `post comments`    | Postet PR-Inline-Kommentare (kein erneutes Review) |
+| PR-Review, keine Ergebnisse           | `post comments`    | Approved den PR auf GitHub (LGTM)        |
+| Lokales Review, alles in Ordnung            | `commit`           | Committet deine Änderungen                    |
 
-Hinweis: `fix these issues` ist nur für lokale Reviews verfügbar. Verwenden Sie für PR-Reviews die automatische Korrektur (Schritt 8) – der Worktree wird nach dem Review bereinigt, sodass eine interaktive Korrektur nach dem Review nicht möglich ist.
+Hinweis: `fix these issues` ist nur für lokale Reviews verfügbar. Bei PR-Reviews wird der Worktree nach dem Review aufgeräumt, daher ist ein interaktives Beheben nach dem Review nicht möglich – verwende stattdessen `--comment` oder `post comments`, um Ergebnisse zu veröffentlichen.
 
 ## Projekt-Review-Regeln
 
-Sie können die Review-Kriterien pro Projekt anpassen. `/review` liest Regeln aus folgenden Dateien (in dieser Reihenfolge):
+Du kannst Review-Kriterien pro Projekt anpassen. `/review` liest Regeln aus diesen Dateien (in dieser Reihenfolge):
 
 1. `.qwen/review-rules.md` (Qwen Code nativ)
 2. `.github/copilot-instructions.md` (bevorzugt) oder `copilot-instructions.md` (Fallback – es wird nur eine geladen, nicht beide)
 3. `AGENTS.md` – Abschnitt `## Code Review`
 4. `QWEN.md` – Abschnitt `## Code Review`
 
-Regeln werden den LLM-Review-Agents (1-6) als zusätzliche Kriterien injiziert. Bei PR-Reviews werden die Regeln aus dem **Basis-Branch** gelesen, um zu verhindern, dass ein böswilliger PR Umgehungsregeln einschleust.
+Regeln werden den LLM-Review-Agents (1-6) als zusätzliche Kriterien injiziert. Bei PR-Reviews werden Regeln aus dem **Base-Branch** gelesen, um zu verhindern, dass ein bösartiger PR Bypass-Regeln injiziert.
 
-Beispiel `.qwen/review-rules.md`:
+Beispiel für `.qwen/review-rules.md`:
 
 ```markdown
 # Review-Regeln
 
 - Alle API-Endpunkte müssen die Authentifizierung validieren
-- Datenbankabfragen müssen parametrisierte Anweisungen verwenden
-- React-Komponenten dürfen keine Inline-Stile verwenden
-- Fehlermeldungen dürfen keine internen Pfade preisgeben
+- Datenbankabfragen müssen parametrisierte Statements verwenden
+- React-Komponenten dürfen keine Inline-Styles verwenden
+- Fehlermeldungen dürfen keine internen Pfade offenlegen
 ```
 
 ## Inkrementelles Review
 
-Wenn ein PR überprüft wird, der zuvor bereits überprüft wurde, untersucht `/review` nur die Änderungen seit dem letzten Review:
+Beim Reviewen eines PRs, der bereits zuvor reviewed wurde, untersucht `/review` nur die Änderungen seit dem letzten Review:
 
 ```bash
-# Erstes Review – vollständiges Review, Cache wird erstellt
+# Erstes Review – vollständiges Review, Cache erstellt
 /review 123
 
-# PR mit neuen Commits aktualisiert – nur neue Änderungen werden überprüft
+# PR mit neuen Commits aktualisiert – nur neue Änderungen werden reviewed
 /review 123
+```
+
 ### Cross-Model-Review
 
-Wenn Sie das Modell wechseln (via `/model`) und denselben PR erneut überprüfen, erkennt `/review` den Modellwechsel und führt ein vollständiges Review anstelle eines Überspringens durch:
+Wenn du das Modell wechselst (über `/model`) und denselben PR erneut reviewst, erkennt `/review` die Modelländerung und führt ein vollständiges Review durch, anstatt es zu überspringen:
 
 ```bash
 # Review mit Modell A
@@ -223,67 +184,64 @@ Wenn Sie das Modell wechseln (via `/model`) und denselben PR erneut überprüfen
 # Modell wechseln
 /model
 
-# Erneutes Review – vollständiges Review mit Modell B (nicht übersprungen)
+# Erneut reviewen – vollständiges Review mit Modell B (nicht übersprungen)
 /review 123
-# → „Vorheriges Review verwendete qwen3-coder. Führe vollständiges Review mit gpt-4o für eine zweite Meinung durch."
+# → "Das vorherige Review hat qwen3-coder verwendet. Vollständiges Review mit gpt-4o für eine zweite Meinung wird durchgeführt."
 ```
 
-Der Cache wird in `.qwen/review-cache/` gespeichert und verfolgt sowohl den Commit-SHA als auch die Modell-ID. Stellen Sie sicher, dass dieses Verzeichnis in Ihrer `.gitignore` enthalten ist (eine breitere Regel wie `.qwen/*` funktioniert ebenfalls). Wenn der zwischengespeicherte Commit rebased wurde, wird auf ein vollständiges Review zurückgegriffen.
+Der Cache wird in `.qwen/review-cache/` gespeichert und trackt sowohl die Commit-SHA als auch die Modell-ID. Stelle sicher, dass dieses Verzeichnis in deiner `.gitignore` ist (eine breitere Regel wie `.qwen/*` funktioniert ebenfalls). Wenn der gecachte Commit weggerebt wurde, fällt es auf ein vollständiges Review zurück.
 
 ## Review-Berichte
 
-Für Reviews im selben Repository werden die Ergebnisse als Markdown-Datei im Verzeichnis `.qwen/reviews/` Ihres Projekts gespeichert (Cross-Repo-Lightweight-Reviews überspringen die Berichtspersistenz):
+Bei Same-Repo-Reviews werden die Ergebnisse als Markdown-Datei im Verzeichnis `.qwen/reviews/` deines Projekts gespeichert (Cross-Repo-Lightweight-Reviews überspringen die Persistierung von Berichten):
 
 ```
 .qwen/reviews/2026-04-06-143022-pr-123.md
 .qwen/reviews/2026-04-06-150510-local.md
 ```
 
-Berichte enthalten: Zeitstempel, Diff-Statistiken, Ergebnisse der deterministischen Analyse, alle Ergebnisse mit Verifizierungsstatus und das Urteil.
+Berichte enthalten: Zeitstempel, Diff-Statistiken, Build-/Test-Ergebnisse, alle Ergebnisse mit Verifizierungsstatus und das Verdict.
 
-## Analyse der Auswirkungen auf mehrere Dateien
+## Cross-File-Impact-Analyse
 
-Wenn Codeänderungen exportierte Funktionen, Klassen oder Schnittstellen verändern, durchsuchen die Review-Agents automatisch alle Aufrufer und prüfen die Kompatibilität:
+Wenn Codeänderungen exportierte Funktionen, Klassen oder Interfaces modifizieren, suchen die Review-Agents automatisch nach allen Aufrufern und prüfen die Kompatibilität:
 
-- Änderungen der Parameteranzahl / des Parametertyps
-- Änderungen des Rückgabetyps
-- Entfernte oder umbenannte öffentliche Methoden
+- Änderungen der Parameteranzahl/des Parametertyps
+- Änderungen des Return-Types
+- Entfernte oder umbenannte Public-Methods
 - Breaking-API-Änderungen
 
-Bei großen Diffs (>10 geänderte Symbole) priorisiert die Analyse Funktionen mit Signaturänderungen.
+Bei großen Diffs (>10 modifizierte Symbole) priorisiert die Analyse Funktionen mit Signaturänderungen.
 
 ## Token-Effizienz
 
 Die Review-Pipeline verwendet eine begrenzte Anzahl von LLM-Aufrufen, unabhängig davon, wie viele Ergebnisse produziert werden:
 
-| Phase                                 | LLM-Aufrufe        | Hinweise                                             |
-| ------------------------------------- | ------------------ | ---------------------------------------------------- |
-| Deterministische Analyse (Schritt 3)  | 0                  | Nur Shell-Befehle                                    |
-| Review-Agents (Schritt 4)             | 9 (oder 8)         | Laufen parallel; Agent 7 wird im Cross-Repo-Modus übersprungen |
-| Batch-Verifizierung (Schritt 5)       | 1                  | Ein einzelner Agent verifiziert alle Ergebnisse auf einmal |
-| Iteratives Reverse-Audit (Schritt 6)  | 1-3                | Schleife bis „Keine Probleme gefunden" oder 3-Runden-Obergrenze |
-| **Gesamt**                            | **11-13 (10-12)** | Gleiches Repository: 11-13; Cross-Repo: 10-12 (kein Agent 7) |
+| Stufe                            | LLM-Aufrufe         | Hinweise                                               |
+| -------------------------------- | ----------------- | --------------------------------------------------- |
+| Review-Agents (Schritt 3)           | 9 (oder 8)          | Laufen parallel; Agent 7 wird im Cross-Repo-Modus übersprungen |
+| Batch-Verifizierung (Schritt 4)      | 1                 | Ein einzelner Agent verifiziert alle Ergebnisse auf einmal          |
+| Iterativer Reverse-Audit (Schritt 5) | 1-3               | Schleife bis "No issues found" oder 3-Runden-Limit        |
+| **Gesamt**                        | **11-13 (10-12)** | Same-Repo: 11-13; Cross-Repo: 10-12 (ohne Agent 7)    |
 
-Die meisten PRs konvergieren zum unteren Ende des Bereichs (1 Reverse-Audit-Runde); die Obergrenze verhindert unkontrollierte Kosten bei pathologischen Fällen.
+Die meisten PRs konvergieren zum unteren Ende des Bereichs (1 Reverse-Audit-Runde); das Limit verhindert explodierende Kosten bei pathologischen Fällen.
 
 ## Was NICHT gemeldet wird
 
-Das Review schließt bewusst aus:
+Das Review schließt absichtlich Folgendes aus:
 
-- Bereits bestehende Probleme in unverändertem Code (Fokus nur auf dem Diff)
-- Stil/Formatierung/Benennung, die den Konventionen Ihrer Codebasis entsprechen
-- Probleme, die ein Linter oder Typprüfer erkennen würde (werden durch die deterministische Analyse behandelt)
-- Subjektive „Überlegen Sie, X zu tun"-Vorschläge ohne tatsächliches Problem
-- Kleine Refactoring-Vorschläge, die keinen Bug oder kein Risiko beheben
+- Bereits vorhandene Probleme in unverändertem Code (Fokus nur auf dem Diff)
+- Stil oder Formatierung, die ein Formatter automatisch normalisieren würde, oder Naming, das deinen Codebase-Konventionen entspricht – aber NICHT substantive Probleme, die ein Linter oder Type Checker melden würde (ungenutzte Variablen, unerreichbarer Code, Typfehler), die im Scope sind
+- Subjektive "consider doing X"-Vorschläge ohne echtes Problem
+- Kleine Refactorings, die keinen Bug oder kein Risiko beheben
 - Fehlende Dokumentation, es sei denn, die Logik ist wirklich verwirrend
-- Bereits in vorhandenen PR-Kommentaren diskutierte Probleme (vermeidet Duplizierung von menschlichem Feedback)
+- Probleme, die bereits in vorhandenen PR-Kommentaren diskutiert wurden (vermeidet Duplizierung von menschlichem Feedback)
 
 ## Design-Philosophie
 
-> **Schweigen ist besser als Rauschen.** Jeder Kommentar sollte die Zeit des Lesers wert sein.
+> **Stille ist besser als Rauschen.** Jeder Kommentar sollte die Zeit des Lesers wert sein.
 
-- Wenn Sie sich nicht sicher sind, ob etwas ein Problem ist → melden Sie es nicht
-- Linter/Typecheck-Probleme werden von Tools behandelt, nicht von LLM-Vermutungen
-- Gleiches Muster über N Dateien hinweg → zu einem Ergebnis zusammengefasst
-- PR-Kommentare sind nur mit hoher Vertrauenswürdigkeit
-- Stil/Formatierungsprobleme, die den Konventionen der Codebase entsprechen, werden ausgeschlossen
+- Wenn du unsicher bist, ob etwas ein Problem ist → nicht melden
+- Gleiches Muster über N Dateien → zu einem Ergebnis aggregiert
+- PR-Kommentare sind nur High-Confidence
+- Kosmetischer Stil/Formatierung, der den Codebase-Konventionen entspricht, wird ausgeschlossen

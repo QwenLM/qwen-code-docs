@@ -2,10 +2,10 @@
 
 ## Vue d'ensemble
 
-`GET /capabilities` est le point de terminaison de preflight du démon. Chaque client SDK doit le lire avant d'appeler toute autre route afin de connaître la version du protocole prise en charge par le démon, les tags de fonctionnalités activés et le workspace auquel le démon est lié. Le contrat :
+`GET /capabilities` est le point de terminaison de preflight du daemon. Chaque client SDK doit le lire avant d'appeler toute autre route afin de connaître la version du protocole prise en charge par le daemon, les tags de fonctionnalités activés et l'espace de travail auquel le daemon est lié. Le contrat :
 
-- **Il n'y a qu'une seule version de protocole : `v1`.** `SERVE_PROTOCOL_VERSION = 'v1'` et `SUPPORTED_SERVE_PROTOCOL_VERSIONS = ['v1']`. v1 est additif en interne ; les modifications cassantes (breaking changes) de la forme des trames sont réservées à v2.
-- **Chaque tag a une version `since`.** Les futurs démons v2 peuvent annoncer à la fois les tags v1 et v2.
+- **Il n'y a qu'une seule version de protocole : `v1`.** `SERVE_PROTOCOL_VERSION = 'v1'` et `SUPPORTED_SERVE_PROTOCOL_VERSIONS = ['v1']`. La v1 est additive en interne ; les modifications qui cassent la structure des frames sont réservées à la v2.
+- **Chaque tag a une version `since`.** Les futurs daemons v2 pourront annoncer à la fois des tags v1 et v2.
 - **Certains tags sont conditionnels.** Treize tags (`require_auth`, `mcp_workspace_pool`, `mcp_pool_restart`, `allow_origin`, `prompt_absolute_deadline`, `writer_idle_timeout`, `workspace_settings`, `workspace_voice`, `workspace_voice_transcription`, `session_shell_command`, `rate_limit`, `workspace_reload`, `voice_transcribe`) sont annoncés uniquement lorsque le toggle de déploiement correspondant est activé. La présence d'un tag signifie que le comportement existe.
 - **Tag de capacité = contrat de comportement.** Ajouter un nouveau comportement sous un tag existant peut casser silencieusement les clients qui ont effectué le preflight de l'ancien tag. Un nouveau comportement nécessite un nouveau tag.
 
@@ -13,10 +13,10 @@ Le registre complet se trouve dans `packages/cli/src/serve/capabilities.ts`.
 
 ## Responsabilités
 
-- Déclarer chaque fonctionnalité que le démon peut annoncer.
+- Déclarer chaque fonctionnalité que le daemon peut annoncer.
 - Filtrer les fonctionnalités annoncées par version de protocole et toggles de déploiement.
 - Exposer `getRegisteredServeFeatures()` (toutes les clés, non filtrées), `getAdvertisedServeFeatures(version, toggles)` (filtrées) et `getServeProtocolVersions()` (enveloppe `{ current, supported }`).
-- Préserver l'invariant "tag présent signifie comportement présent". `server.test.ts` inclut un test vérifiant que chaque tag conditionnel s'annonce lorsque son toggle est activé ; l'ajout d'un tag conditionnel sans prédicat fait échouer ce test.
+- Préserver l'invariant "tag présent signifie comportement présent". `server.test.ts` inclut un test vérifiant que chaque tag conditionnel est annoncé lorsque son toggle est activé ; l'ajout d'un tag conditionnel sans prédicat fait échouer ce test.
 
 ## Architecture
 
@@ -35,22 +35,22 @@ Le registre complet se trouve dans `packages/cli/src/serve/capabilities.ts`.
 }
 ```
 
-`workspaceCwd` est le workspace canonique lié au démarrage du démon (voir [`02-serve-runtime.md`](./02-serve-runtime.md)). `policy.permission` est la politique du médiateur actif.
+`workspaceCwd` est l'espace de travail canonique lié au démarrage du daemon (voir [`02-serve-runtime.md`](./02-serve-runtime.md)). `policy.permission` est la politique active du médiateur.
 
 ### `ServeCapabilityDescriptor`
 
 ```ts
 interface ServeCapabilityDescriptor {
   since: ServeProtocolVersion; // current = 'v1'
-  modes?: readonly string[]; // lists operation modes when a feature has modes
+  modes?: readonly string[]; // liste les modes d'opération lorsqu'une fonctionnalité a des modes
 }
 ```
 
 Quatre tags v1 utilisent `modes` :
 
-- `mcp_guardrails: { since: 'v1', modes: ['warn', 'enforce'] }` - les clients doivent effectuer le preflight de `'enforce'` avant de s'appuyer sur le comportement de refus.
-- `permission_mediation: { since: 'v1', modes: ['first-responder', 'designated', 'consensus', 'local-only'] }` - il s'agit de l'ensemble pris en charge au moment de la compilation (build-time) ; la politique active se trouve dans `policy.permission`.
-- `workspace_voice_transcription: { since: 'v1', modes: ['batch'] }` - le chemin de transcription que le démon propose.
+- `mcp_guardrails: { since: 'v1', modes: ['warn', 'enforce'] }` - les clients doivent effectuer un preflight de `'enforce'` avant de s'appuyer sur le comportement de refus.
+- `permission_mediation: { since: 'v1', modes: ['first-responder', 'designated', 'consensus', 'local-only'] }` - il s'agit de l'ensemble pris en charge au moment de la compilation ; la politique active se trouve dans `policy.permission`.
+- `workspace_voice_transcription: { since: 'v1', modes: ['batch'] }` - le chemin de transcription que le daemon propose.
 - `voice_transcribe: { since: 'v1', modes: ['streaming', 'batch'] }` - les deux chemins de transcription disponibles sur le WebSocket `/voice/stream`.
 
 ### Tags conditionnels
@@ -97,7 +97,7 @@ Les tags de base ne sont pas présents dans la `Map` et sont annoncés de maniè
 
 Fondation : `health`, `daemon_status`, `capabilities`.
 
-Sessions : `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_prompt`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditionnel), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
+Sessions : `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_prompt`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditionnel), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
 
 Streaming : `slow_client_warning`, `typed_event_schema`.
 
@@ -105,31 +105,31 @@ Identité et heartbeat : `client_identity`, `client_heartbeat`.
 
 Permissions : `session_permission_vote`, `permission_vote`, **`permission_mediation`** (`modes: ['first-responder', 'designated', 'consensus', 'local-only']`).
 
-Snapshots en lecture seule du workspace : `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
+Snapshots en lecture seule de l'espace de travail : `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
 
-Mutation du workspace (Wave 4+) : `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_tool_toggle`, **`workspace_settings`** (conditionnel), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write`, **`workspace_reload`** (conditionnel).
+Mutation de l'espace de travail (Wave 4+) : `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_tool_toggle`, **`workspace_settings`** (conditionnel), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write`, **`workspace_reload`** (conditionnel).
 
-MCP guardrails : **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (conditionnel), **`mcp_pool_restart`** (conditionnel).
+Garde-fous MCP : **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (conditionnel), **`mcp_pool_restart`** (conditionnel).
 
 Contrôle de prompt : **`prompt_absolute_deadline`** (conditionnel), **`writer_idle_timeout`** (conditionnel), `non_blocking_prompt`.
 
-Authentification : `auth_provider_install`, `auth_device_flow`, **`require_auth`** (conditionnel), **`allow_origin`** (conditionnel).
+Auth : `auth_provider_install`, `auth_device_flow`, **`require_auth`** (conditionnel), **`allow_origin`** (conditionnel).
 
 Voix : **`workspace_voice`** (conditionnel), **`workspace_voice_transcription`** (conditionnel, `modes: ['batch']`), **`voice_transcribe`** (conditionnel, `modes: ['streaming', 'batch']`).
 
-Rate limiting : **`rate_limit`** (conditionnel).
+Limitation de débit : **`rate_limit`** (conditionnel).
 
 Les tags en gras ont des `modes` ou sont conditionnels.
 
 ## Flux
 
-### Côté démon : assemblage de l'enveloppe
+### Côté daemon : assemblage de l'enveloppe
 
 ```mermaid
 flowchart LR
     A["GET /capabilities"] --> B["getAdvertisedServeFeatures(version, toggles)"]
     B --> C["filtrer par isFeatureAvailableInProtocol"]
-    C --> D["pour chaque fonctionnalité, vérifier CONDITIONAL_SERVE_FEATURES"]
+    C --> D["pour chaque feature, vérifier CONDITIONAL_SERVE_FEATURES"]
     D --> E["oui : predicate(toggles) ? inclure : ignorer"]
     D --> F["non : inclure de manière inconditionnelle"]
     E --> G["retourner ServeFeature[]"]
@@ -148,9 +148,9 @@ sequenceDiagram
 
     C->>D: GET /capabilities
     D-->>C: { v, mode, features, workspaceCwd, protocol, policy }
-    C->>C: features.includes('mcp_workspace_pool') ?
+    C->>C: features.includes('mcp_workspace_pool')?
     alt yes
-        C->>R: s'appuyer sur les formes de réponse compatibles avec le pool<br/>(par exemple entries[] de /workspace/mcp/:server/restart)
+        C->>R: s'appuyer sur les formes de réponse conscientes du pool<br/>(par exemple entries[] depuis /workspace/mcp/:server/restart)
     else no
         C->>R: forme de réponse héritée à entrée unique
     end
@@ -158,14 +158,14 @@ sequenceDiagram
 
 ## État et cycle de vie
 
-- `CAPABILITIES_SCHEMA_VERSION` est la version de la forme de l'enveloppe wire, actuellement `1`. Ne l'incrémenter qu'en cas de cassure de l'enveloppe.
-- `SERVE_PROTOCOL_VERSION = 'v1'` est la version des fonctionnalités du protocole. L'ajout de fonctionnalités dans v1 est additif ; les anciens clients ne voient pas le nouveau comportement à moins d'effectuer le preflight du nouveau tag. La suppression d'une fonctionnalité est une cassure v2.
-- `EVENT_SCHEMA_VERSION = 1` est le champ `v` de la trame SSE (voir [`09-event-schema.md`](./09-event-schema.md)). Il s'agit d'un axe de version indépendant ; l'incrémentation du schéma d'événement n'implique pas l'incrémentation de la version du protocole, et vice versa.
-- `session_resume` est la capacité stable du démon pour `POST /session/:id/resume`. `unstable_session_resume` reste annoncé comme un alias obsolète car la méthode ACP sous-jacente s'appelle toujours `connection.unstable_resumeSession` ; les nouveaux clients doivent détecter la fonctionnalité `session_resume`.
+- `CAPABILITIES_SCHEMA_VERSION` est la version de la forme de l'enveloppe wire, actuellement `1`. Ne l'incrémentez qu'en cas de cassure de l'enveloppe.
+- `SERVE_PROTOCOL_VERSION = 'v1'` est la version du protocole-fonctionnalité. L'ajout de fonctionnalités dans la v1 est additif ; les anciens clients ne voient pas le nouveau comportement à moins d'effectuer le preflight du nouveau tag. La suppression d'une fonctionnalité est une cassure pour la v2.
+- `EVENT_SCHEMA_VERSION = 1` est le champ `v` de la frame SSE (voir [`09-event-schema.md`](./09-event-schema.md)). C'est un axe de versioning indépendant ; l'incrémentation du schéma d'événement n'implique pas l'incrémentation de la version du protocole, et vice versa.
+- `session_resume` est la capacité stable du daemon pour `POST /session/:id/resume`. `unstable_session_resume` reste annoncé comme un alias obsolète car la méthode ACP sous-jacente s'appelle toujours `connection.unstable_resumeSession` ; les nouveaux clients doivent détecter la fonctionnalité `session_resume`.
 
 ## Dépendances
 
-- Lu par `packages/cli/src/serve/server.ts` lors de la construction des réponses `/capabilities`.
+- Lu par `packages/cli/src/serve/server.ts` lors de la construction des réponses de `/capabilities`.
 - L'entrée des toggles provient de `runQwenServe` / `createServeApp` : `{ requireAuth, mcpPoolActive, allowOriginActive, promptDeadlineMs, writerIdleTimeoutMs, persistSettingAvailable, sessionShellCommandEnabled, rateLimit, reloadAvailable }`.
 - La politique `permission` active dans l'enveloppe provient de `BridgeOptions.permissionPolicy`, qui lit lui-même `policy.permissionStrategy` dans `settings.json`.
 
@@ -188,7 +188,7 @@ sequenceDiagram
 
 - **`--require-auth` masque le preflight.** Avec `--require-auth`, toutes les routes, y compris `/capabilities`, nécessitent une authentification bearer. Un client non authentifié ne peut pas effectuer le preflight de `caps.features.require_auth` ; le corps de la réponse 401 est la surface de découverte. Le tag `require_auth` est une confirmation authentifiée pour les interfaces d'audit des déploiements sécurisés.
 - **La présence d'un tag signifie que le comportement existe.** Si un futur contributeur ajoute un comportement sous un tag existant sans incrémenter `since`, les clients qui ont effectué le preflight de l'ancien tag peuvent recevoir silencieusement le nouveau comportement. La convention est : un nouveau comportement obtient un nouveau tag.
-- **Les tags `unstable_*` peuvent changer de forme entre les versions** sans incrémenter la version du protocole. Fixez une version du SDK lorsque vous en dépendez.
+- **Les tags `unstable_*` peuvent changer de forme entre les versions** sans incrémenter le protocole. Épinglez une version du SDK lorsque vous en dépendez.
 - Le catalogue des routes se trouve dans [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md) ; cette page ne le duplique pas intentionnellement.
 
 ## Références

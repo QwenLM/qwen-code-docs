@@ -2,17 +2,22 @@
 
 ## Vue d'ensemble
 
-`packages/channels/` contient les **adaptateurs de canaux de messagerie instantanée (IM)** qui transforment un message entrant d'une plateforme de chat en un prompt pour le démon et les événements sortants du démon en messages de la plateforme de chat. Quatre canaux concrets sont fournis aujourd'hui : DingTalk, WeChat (Weixin), Telegram et Feishu. Ils partagent une couche de base (`packages/channels/base/`) ainsi qu'un `DaemonChannelBridge` qui gère le multiplexage des sessions et la consommation SSE.
+`packages/channels/` contient les **adaptateurs de canaux IM** qui transforment les messages entrants d'une plateforme de chat en prompt pour un agent et renvoient la réponse de l'agent à la plateforme de chat. Quatre canaux concrets sont disponibles aujourd'hui : DingTalk, WeChat (Weixin), Telegram et Feishu. Ils partagent une couche de base (`packages/channels/base/`) et un contrat `ChannelAgentBridge` destiné aux adaptateurs.
 
-Chaque canal associe le trafic de chat entrant à des sessions du démon sous un `SessionScope` configurable (`user`, `thread` ou `single`). L'adaptateur délègue à `DaemonChannelBridge`, qui délègue à `DaemonSessionClient` du SDK (voir [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)).
+Il existe actuellement deux modes d'hébergement :
+
+- `qwen channel start [name]` est le service de canal autonome pris en charge par ACP. Il transmet aux adaptateurs une implémentation `AcpBridge` de `ChannelAgentBridge`.
+- `qwen serve --channel <name>` et `qwen serve --channel all` sont des modes expérimentaux gérés par le daemon. `qwen serve` démarre un worker de canal hors processus, le worker se connecte au daemon via le SDK, et les adaptateurs reçoivent une façade `ChannelAgentBridge` basée sur `DaemonChannelBridge`.
+
+En mode géré par le daemon, chaque canal mappe le trafic de chat entrant aux sessions du daemon sous un `SessionScope` configurable (`user`, `thread` ou `single`). L'adaptateur délègue à `DaemonChannelBridge`, qui délègue au `DaemonSessionClient` du SDK (voir [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)). Un daemon est lié à un workspace, donc le `cwd` de chaque canal sélectionné doit résoudre vers le workspace du daemon.
 
 ## Responsabilités
 
-- Recevoir les messages entrants depuis le transport natif du canal (flux WebSocket DingTalk, long-poll HTTP WeChat, long-poll Bot Telegram, WebSocket Feishu ou webhook HTTP).
-- Résoudre `(senderId, groupId?)` en une session du démon via `DaemonChannelSessionFactory`.
-- Transférer le message utilisateur comme un prompt du démon et diffuser la réponse sous forme de messages de chat sortants, éventuellement fragmentés.
-- Afficher les demandes d'autorisation comme des invites natives du chat lorsqu'elles sont interactives ; sinon, approuver automatiquement selon `ChannelConfig.approvalMode`.
-- Appliquer le filtrage de l'expéditeur (listes autorisées / listes bloquées), le filtrage de groupe, et la normalisation du contenu (markdown / HTML par canal).
+- Recevoir les messages entrants depuis le transport natif du canal (flux WebSocket DingTalk, long-poll HTTP WeChat, long-poll Telegram Bot, WebSocket ou webhook HTTP Feishu).
+- Résoudre `(senderId, groupId?)` en une session de daemon via `DaemonChannelSessionFactory`.
+- Transférer le message utilisateur en tant que prompt de daemon et diffuser la réponse en streaming sous forme de messages de chat sortants, potentiellement découpés en chunks.
+- Afficher les demandes de permission sous forme de prompts natifs au chat lorsque c'est interactif ; sinon, les approuver automatiquement selon `ChannelConfig.approvalMode`.
+- Appliquer le filtrage des expéditeurs (allowlists / denylists), le filtrage des groupes et la normalisation du contenu (markdown / HTML selon le canal).
 
 ## Architecture
 
@@ -34,14 +39,14 @@ class DaemonChannelBridge extends EventEmitter {
 }
 ```
 
-Contient les clients de sessions du démon indexés par `sessionId` du démon ; `ChannelBase` et `SessionRouter` déterminent quelle cible de chat entrante correspond à cette session. Chaque session attachée possède :
+Contient les clients de session du daemon indexés par `sessionId` du daemon ; `ChannelBase` et `SessionRouter` décident quelle cible de chat entrant correspond à cette session. Chaque session attachée dispose de :
 
 - Un `DaemonChannelSessionClient` (forme de `DaemonSessionClient` sans les méthodes non pertinentes pour le canal).
-- Une pompe de consommation SSE active.
-- Un assembleur de prompt avec debounce (pour les adaptateurs qui fragmentent l'entrée utilisateur en plusieurs messages entrants).
-- Une politique d'auto-approbation par requête.
+- Un consumer pump SSE en direct.
+- Un assembleur de prompt avec debounce (pour les adaptateurs qui fragmentent la saisie utilisateur sur plusieurs messages entrants).
+- Une politique d'approbation automatique par requête.
 
-Événements émis : `textChunk`, `toolCall`, `sessionUpdate`, `permissionRequest`, `permissionResolved`, `modelSwitched`, `modelSwitchFailed`, `sessionDied`, `promptComplete`, et `error`. Les adaptateurs de canaux connectent ces événements aux API natives de la plateforme.
+Événements émis : `textChunk`, `toolCall`, `sessionUpdate`, `permissionRequest`, `permissionResolved`, `modelSwitched`, `modelSwitchFailed`, `sessionDied`, `promptComplete` et `error`. Les adaptateurs de canaux connectent ces événements aux API natives de la plateforme.
 
 ### `ChannelBase` (`packages/channels/base/src/ChannelBase.ts`)
 
@@ -56,35 +61,35 @@ abstract class ChannelBase {
 }
 ```
 
-Gère les préoccupations transversales communes : filtrage de l'expéditeur (liste autorisée / liste bloquée), filtrage de groupe, streaming par blocs de messages (taille des fragments, limitation), debounce des entrées.
+Gère les préoccupations transversales communes : filtrage des expéditeurs (allowlist / denylist), filtrage des groupes, streaming des blocs de messages (taille des chunks, throttling), debounce entrant.
 
 ### Adaptateurs par canal
 
-| Adaptateur      | Fichier                                               | Transport                                              | Notes                                                                                                        |
-| --------------- | ----------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| DingTalk        | `packages/channels/dingtalk/src/DingtalkAdapter.ts` | SDK Stream DingTalk WebSocket                          | Envoie via `sessionWebhook` POST ; les images média téléchargées via l'API DT, base64 dans l'enveloppe.                     |
-| WeChat (Weixin) | `packages/channels/weixin/src/WeixinAdapter.ts`     | iLink Bot HTTP long-poll                               | Envoie via l'API propriétaire `sendText` / `sendImage` ; indicateurs de saisie.                                       |
-| Telegram        | `packages/channels/telegram/src/TelegramAdapter.ts` | API Bot Telegram long-poll (grammy)                    | Envoie des fragments HTML via `sendMessage`.                                                                         |
-| Feishu          | `packages/channels/feishu/src/FeishuAdapter.ts`     | WebSocket Stream Feishu/Lark (par défaut) ou webhook HTTP | Envoie via le SDK Lark sous forme de cartes interactives ; le mode webhook nécessite `encryptKey` pour la vérification de signature HMAC. |
+| Adaptateur      | Fichier                                             | Transport                                              | Notes                                                                                                        |
+| --------------- | --------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| DingTalk        | `packages/channels/dingtalk/src/DingtalkAdapter.ts` | DingTalk Stream SDK WebSocket                          | Envoie via POST `sessionWebhook` ; les images média sont téléchargées via l'API DT, en base64 dans l'envelope.                     |
+| WeChat (Weixin) | `packages/channels/weixin/src/WeixinAdapter.ts`     | iLink Bot HTTP long-poll                               | Envoie via l'API propriétaire `sendText` / `sendImage` ; indicateurs de frappe.                                       |
+| Telegram        | `packages/channels/telegram/src/TelegramAdapter.ts` | Telegram Bot API long-poll (grammy)                    | Envoie des chunks HTML via `sendMessage`.                                                                         |
+| Feishu          | `packages/channels/feishu/src/FeishuAdapter.ts`     | Feishu/Lark Stream WebSocket (par défaut) ou HTTP webhook | Envoie via le SDK Lark sous forme de cartes interactives ; le mode webhook nécessite `encryptKey` pour la vérification de la signature HMAC. |
 
 Chaque adaptateur implémente :
 
-1. Transport entrant (souscrire / interroger les messages).
-2. Construction de l'enveloppe (`{ senderId, groupId?, text, media?, raw }`).
-3. Filtrage de l'expéditeur / groupe (délègue à `ChannelBase`).
-4. Sérialisation sortante (markdown → HTML / natif WeChat / natif DingTalk).
-5. Cycle de vie (démarrage / arrêt).
+1. Le transport entrant (abonnement / polling pour les messages).
+2. La construction de l'envelope (`{ senderId, groupId?, text, media?, raw }`).
+3. Le filtrage des expéditeurs / groupes (délégué à `ChannelBase`).
+4. La sérialisation sortante (markdown → HTML / natif WeChat / natif DingTalk).
+5. Le cycle de vie (start / shutdown).
 
 ### Matrice des adaptateurs
 
-| Adaptateur    | Transport                       | Identité                                                 | UX d'autorisation                       | Configuration d'auto-approbation                               |
+| Adaptateur   | Transport                       | Identité                                                 | UX de permission                       | Config d'auto-approbation                               |
 | ------------ | ------------------------------- | -------------------------------------------------------- | ----------------------------------- | ------------------------------------------------- |
-| **DingTalk** | Flux WebSocket                  | `senderStaffId` (+ optionnel `conversationId` pour les groupes) | Boutons en ligne via markdown DT      | `ChannelConfig.approvalMode = 'auto' \| 'prompt'` |
-| **WeChat**   | Long-poll HTTP                  | `senderWxid` (+ optionnel `groupWxid`)                    | Invites textuelles avec tokens de réponse | Identique                                              |
-| **Telegram** | Long-poll via Bot API           | `from.id` (+ optionnel `chat.id` pour les groupes)              | Boutons de clavier en ligne             | Identique                                              |
-| **Feishu**   | Flux WebSocket / webhook HTTP | `sender.open_id` (+ optionnel `chat_id` pour les groupes)       | Boutons de carte interactifs            | Identique                                              |
+| **DingTalk** | WebSocket stream                | `senderStaffId` (+ `conversationId` optionnel pour les groupes) | Boutons inline via markdown DT      | `ChannelConfig.approvalMode = 'auto' \| 'prompt'` |
+| **WeChat**   | HTTP long-poll                  | `senderWxid` (+ `groupWxid` optionnel)                    | Prompts en texte seul avec reply tokens | Identique                                              |
+| **Telegram** | Bot API long-poll               | `from.id` (+ `chat.id` optionnel pour les groupes)              | Boutons de clavier inline             | Identique                                              |
+| **Feishu**   | WebSocket stream / HTTP webhook | `sender.open_id` (+ `chat_id` optionnel pour les groupes)       | Boutons de cartes interactives            | Identique                                              |
 
-> **Remarque :** La colonne "UX d'autorisation" décrit les capacités natives de chaque plateforme, mais aucune n'est encore implémentée — `AcpBridge.requestPermission` approuve actuellement automatiquement toutes les demandes (`packages/channels/base/src/AcpBridge.ts`), et `ChannelConfig.approvalMode` est déclaré mais pas encore lu. L'approbation interactive est prévue (Phase 5).
+> **Note :** La colonne "UX de permission" décrit l'approche native de chaque plateforme, mais aucune n'est encore câblée — `AcpBridge.requestPermission` approuve actuellement automatiquement chaque requête (`packages/channels/base/src/AcpBridge.ts`), et `ChannelConfig.approvalMode` est déclaré mais pas encore lu. L'approbation interactive est prévue (Phase 5).
 
 ## Workflow
 
@@ -93,98 +98,98 @@ Chaque adaptateur implémente :
 ```mermaid
 sequenceDiagram
     autonumber
-    participant CH as Plateforme de chat
-    participant AD as Adaptateur de canal
+    participant CH as Channel platform
+    participant AD as Channel adapter
     participant CB as ChannelBase
     participant BR as DaemonChannelBridge
     participant SC as DaemonChannelSessionClient
-    participant D as Démon
+    participant D as Daemon
 
-    CH-->>AD: message entrant
-    AD->>AD: construire Envelope { senderId, groupId?, text, media? }
+    CH-->>AD: inbound message
+    AD->>AD: build Envelope { senderId, groupId?, text, media? }
     AD->>CB: handleInbound(envelope)
-    CB->>CB: filtrage expéditeur / groupe
+    CB->>CB: sender / group gating
     CB->>CB: SessionRouter.resolve(...) → sessionId
     CB->>BR: prompt(sessionId, promptText, attachments?)
     BR->>SC: session.prompt({...})
     SC->>D: POST /session/:id/prompt
 ```
 
-### Sortie pilotée par SSE
+### Flux sortant piloté par SSE
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant D as Démon
+    participant D as Daemon
     participant SC as DaemonChannelSessionClient
     participant BR as DaemonChannelBridge
     participant CB as ChannelBase
-    participant AD as Adaptateur de canal
-    participant CH as Plateforme de chat
+    participant AD as Channel adapter
+    participant CH as Channel platform
 
     D-->>SC: SSE: session_update (agent_message_chunk)
     SC-->>BR: DaemonEvent
     BR-->>CB: emit 'textChunk'
-    CB->>CB: assembler réponse / streaming par blocs
-    CB->>AD: sendMessage(chatId, chunk ou réponse complète)
+    CB->>CB: assemble response / block streaming
+    CB->>AD: sendMessage(chatId, chunk or full response)
     AD->>CH: sendText / sendMessage / sendChunk
 ```
 
-### Auto-approbation des autorisations
+### Auto-approbation des permissions
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant D as Démon
+    participant D as Daemon
     participant SC as DaemonChannelSessionClient
     participant BR as DaemonChannelBridge
-    participant AD as Adaptateur de canal
+    participant AD as Channel adapter
 
     D-->>SC: SSE: permission_request
     SC-->>BR: DaemonEvent
     alt config.approvalMode == 'auto'
         BR->>SC: session.respondToPermission({...})
     else 'prompt'
-        BR-->>AD: emit 'permissionRequest' (affiche l'IU native du chat)
-        AD->>BR: l'utilisateur choisit une option → respondToPermission
+        BR-->>AD: emit 'permissionRequest' (renders chat-native UI)
+        AD->>BR: user picks option → respondToPermission
     end
 ```
 
 ## État et cycle de vie
 
-- `DaemonChannelBridge` vit pendant toute la durée de vie de l'adaptateur de canal ; les sessions qu'il contient vivent selon le `SessionScope` configuré.
-- Chaque session active se reconnecte automatiquement si la connexion SSE est interrompue — `DaemonSessionClient.events()` suit `lastSeenEventId` pour garantir une relecture correcte.
+- `DaemonChannelBridge` vit pendant toute la durée de vie de l'adaptateur de canal ; les sessions à l'intérieur vivent selon le `SessionScope` configuré.
+- Chaque session active se reconnecte automatiquement si le SSE est interrompu — `DaemonSessionClient.events()` suit `lastSeenEventId` pour que le replay soit correct.
 - `shutdown()` ferme chaque session active et le transport sous-jacent (WebSocket / long-poll du canal).
-- Le flux WebSocket de DingTalk prend en charge le push serveur ; le long-poll de WeChat nécessite une stratégie de backoff sur les réponses inactives ; le long-poll de Telegram intègre un paramètre `timeout`.
+- Le flux WebSocket de DingTalk prend en charge le server-push ; le long-poll de WeChat nécessite une stratégie de backoff sur les réponses inactives ; le long-poll de Telegram a un paramètre `timeout` intégré.
 
 ## Dépendances
 
 - `packages/channels/base/` — `ChannelBase`, `DaemonChannelBridge`, `types.ts` (`ChannelConfig`, `Envelope`, `SessionScope`, `ChannelPlugin`).
-- `packages/sdk-typescript/src/daemon/` — `DaemonSessionClient` et compagnie.
-- SDK par canal : `@dingtalk/stream` (DingTalk), HTTP iLink Bot propriétaire (Weixin), `grammy` (Telegram).
+- `packages/sdk-typescript/src/daemon/` — `DaemonSessionClient` et associés.
+- SDKs par canal : `@dingtalk/stream` (DingTalk), HTTP iLink Bot propriétaire (Weixin), `grammy` (Telegram).
 
 ## Configuration
 
 `ChannelConfig` (depuis `packages/channels/base/src/types.ts`) :
 
-| Paramètre                               | Effet                                                                                                    |
+| Paramètre                                  | Effet                                                                                                    |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `sessionScope`                           | `'user'` (expéditeur + chat), `'thread'` (id du fil ou chat), ou `'single'` (une session partagée par canal). |
-| `approvalMode`                           | `'auto'` (réponse automatique) / `'prompt'` (afficher l'IU).                                                         |
-| `allowlist?: string[]`                   | Identifiants d'expéditeurs autorisés ; absent = ouvert.                                                                       |
-| `denylist?: string[]`                    | Identifiants d'expéditeurs bloqués.                                                                                        |
-| `chunkSize`, `chunkIntervalMs`           | Paramètres de streaming sortant par blocs.                                                                        |
+| `sessionScope`                           | `'user'` (expéditeur + chat), `'thread'` (thread id ou chat) ou `'single'` (une session partagée par canal). |
+| `approvalMode`                           | `'auto'` (réponse automatique) / `'prompt'` (affichage de l'UI).                                                         |
+| `allowlist?: string[]`                   | IDs des expéditeurs autorisés ; vide = ouvert à tous.                                                                       |
+| `denylist?: string[]`                    | IDs des expéditeurs refusés.                                                                                        |
+| `chunkSize`, `chunkIntervalMs`           | Paramètres de streaming des blocs sortants.                                                                        |
 | `daemon: { baseUrl, token?, clientId? }` | Transmis à `DaemonChannelSessionFactory`.                                                               |
 
-Les clés spécifiques au canal s'ajoutent par-dessus (DingTalk : `streamCredentials` ; WeChat : `ilinkUrl`, `botId` ; Telegram : `botToken` ; Feishu : `clientId` (appId), `clientSecret` (appSecret), `verificationToken`, `encryptKey` (mode webhook)).
+Des clés spécifiques au canal s'ajoutent par-dessus (DingTalk : `streamCredentials` ; WeChat : `ilinkUrl`, `botId` ; Telegram : `botToken` ; Feishu : `clientId` (appId), `clientSecret` (appSecret), `verificationToken`, `encryptKey` (mode webhook)).
 
 ## Mises en garde et limites connues
 
-- **Les canaux n'importent pas directement `@qwen-code/sdk`.** Ils passent par `ChannelBase` → `DaemonChannelBridge` → `DaemonChannelSessionClient` (que le bridge construit à partir du SDK). Cette indirection permet au bridge d'échanger des implémentations, comme un stub de test, sans nécessiter de modifications des canaux.
-- **L'UX d'autorisation est spécifique à chaque canal.** DingTalk utilise des boutons markdown ; WeChat est uniquement textuel ; Telegram utilise des claviers en ligne ; Feishu utilise des boutons de carte interactifs. (Tous sont actuellement en auto-approbation via `AcpBridge` ; l'approbation interactive est prévue.) Il n'existe pas encore d'abstraction commune de "widget d'autorisation interactif".
-- **L'auto-approbation est une décision côté déploiement**, non côté démon. La politique `permission_mediation` du démon s'applique toujours ; l'auto-approbation signifie seulement que le canal répond sans inviter l'humain. Ne pas combiner `auto` avec des workflows de niveau `enforce`.
-- **Les limites de débit / taille de message par canal sont de la responsabilité de l'adaptateur.** `DaemonChannelBridge` ne gère que le fragmentage ; dépasser la taille par message de WeChat ou la limite de flood de Telegram relève de l'adaptateur.
-- **Pas d'appel inverse DingTalk / WeChat / Telegram / Feishu** — les canaux sont unidirectionnels (chat → démon → chat). Le chemin de push natif de la plateforme IM, comme un callback de carte DingTalk, n'est pas encore connecté au bridge.
+- **Les canaux n'importent pas directement `@qwen-code/sdk`.** Ils passent par `ChannelBase` → `DaemonChannelBridge` → `DaemonChannelSessionClient` (que le bridge construit à partir du SDK). Cette indirection permet au bridge de changer d'implémentation, comme un stub de test, sans nécessiter de modifications dans les canaux.
+- **L'UX de permission est spécifique à chaque canal.** DingTalk utilise des boutons markdown ; WeChat est en texte seul ; Telegram utilise des claviers inline ; Feishu utilise des boutons de cartes interactives. (Tous approuvent actuellement automatiquement via `AcpBridge` ; l'approbation interactive est prévue.) Il n'y a pas encore d'abstraction commune de "widget de permission interactif".
+- **L'auto-approbation est une décision côté déploiement**, et non côté daemon. La politique `permission_mediation` du daemon s'applique toujours ; l'auto-approbation signifie simplement que le canal répond sans solliciter l'humain. Ne combinez pas `auto` avec des workflows de niveau `enforce`.
+- **Les rate limits et limites de taille des messages par canal sont gérées par l'adaptateur.** `DaemonChannelBridge` gère uniquement le chunking ; dépasser la taille maximale par message de WeChat ou la limite de flood de Telegram relève de l'adaptateur.
+- **Pas d'appel inverse DingTalk / WeChat / Telegram / Feishu** — les canaux sont unidirectionnels (chat → daemon → chat). Le chemin de push natif de la plateforme IM, comme un callback de carte DingTalk, n'est pas encore câblé au bridge.
 
 ## Références
 
@@ -196,4 +201,4 @@ Les clés spécifiques au canal s'ajoutent par-dessus (DingTalk : `streamCredent
 - `packages/channels/telegram/src/TelegramAdapter.ts`
 - `packages/channels/plugin-example/` (scaffold de plugin de référence)
 - Guide des plugins de canal : [`../channel-plugins.md`](../channel-plugins.md).
-- Référence SDK : [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md).
+- Référence du SDK : [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md).

@@ -1,5 +1,156 @@
 [
   {
+    "timestamp": "2026-07-02T00:09:21.354Z",
+    "commit": "2c95d9383f89ef5f6c43c630ce20fdd808498d20",
+    "sourceLanguage": "en",
+    "translatedFiles": {
+      "zh": {
+        "success": [
+          "developers/channel-plugins.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/11-capabilities-versioning.md",
+          "developers/daemon/15-channel-adapters.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/auto-mode.md",
+          "users/features/channels/overview.md",
+          "users/features/code-review.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/memory.md",
+          "users/features/scheduled-tasks.md",
+          "users/qwen-serve.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "de": {
+        "success": [
+          "developers/channel-plugins.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/11-capabilities-versioning.md",
+          "developers/daemon/15-channel-adapters.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/auto-mode.md",
+          "users/features/channels/overview.md",
+          "users/features/code-review.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/memory.md",
+          "users/features/scheduled-tasks.md",
+          "users/qwen-serve.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "fr": {
+        "success": [
+          "developers/channel-plugins.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/11-capabilities-versioning.md",
+          "developers/daemon/15-channel-adapters.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/auto-mode.md",
+          "users/features/channels/overview.md",
+          "users/features/code-review.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/memory.md",
+          "users/features/scheduled-tasks.md",
+          "users/qwen-serve.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ru": {
+        "success": [
+          "developers/channel-plugins.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/11-capabilities-versioning.md",
+          "developers/daemon/15-channel-adapters.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/auto-mode.md",
+          "users/features/channels/overview.md",
+          "users/features/code-review.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/memory.md",
+          "users/features/scheduled-tasks.md",
+          "users/qwen-serve.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "ja": {
+        "success": [
+          "developers/channel-plugins.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/11-capabilities-versioning.md",
+          "developers/daemon/15-channel-adapters.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/auto-mode.md",
+          "users/features/channels/overview.md",
+          "users/features/code-review.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/memory.md",
+          "users/features/scheduled-tasks.md",
+          "users/qwen-serve.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      },
+      "pt-BR": {
+        "success": [
+          "developers/channel-plugins.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/11-capabilities-versioning.md",
+          "developers/daemon/15-channel-adapters.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/auth.md",
+          "users/configuration/settings.md",
+          "users/features/approval-mode.md",
+          "users/features/auto-mode.md",
+          "users/features/channels/overview.md",
+          "users/features/code-review.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/mcp.md",
+          "users/features/memory.md",
+          "users/features/scheduled-tasks.md",
+          "users/qwen-serve.md",
+          "users/support/troubleshooting.md"
+        ],
+        "failed": []
+      }
+    },
+    "stats": {
+      "totalFiles": 19,
+      "languages": 6,
+      "successCount": 108,
+      "failedCount": 0
+    }
+  },
+  {
     "timestamp": "2026-06-30T22:19:44.851Z",
     "commit": "7b9e31885b9d25c56f1f22fec47e107041dc3faa",
     "sourceLanguage": "en",

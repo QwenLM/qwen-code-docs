@@ -2,17 +2,22 @@
 
 ## Обзор
 
-`packages/channels/` содержит **адаптеры IM-каналов**, которые преобразуют входящие сообщения из чат-платформы в промпт для демона, а исходящие события демона — в сообщения чат-платформы. В настоящее время поставляются четыре конкретных канала: DingTalk, WeChat (Weixin), Telegram и Feishu. Они используют общий базовый слой (`packages/channels/base/`) и `DaemonChannelBridge`, который отвечает за мультиплексирование сессий и потребление SSE.
+`packages/channels/` содержит **адаптеры IM-каналов**, которые преобразуют входящие сообщения чат-платформы в промпт для агента и отправляют ответ агента обратно в чат-платформу. На данный момент доступны четыре конкретных канала: DingTalk, WeChat (Weixin), Telegram и Feishu. Они используют общий базовый слой (`packages/channels/base/`) и контракт `ChannelAgentBridge` для адаптеров.
 
-Каждый канал сопоставляет входящий чат-трафик с сессиями демона в рамках настраиваемой `SessionScope` (`user`, `thread` или `single`). Адаптер делегирует работу `DaemonChannelBridge`, который, в свою очередь, делегирует её SDK-клиенту `DaemonSessionClient` (см. [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)).
+Существует два текущих режима запуска:
+
+- `qwen channel start [name]` — это автономный сервис каналов на базе ACP. Он передает адаптерам реализацию `AcpBridge` интерфейса `ChannelAgentBridge`.
+- `qwen serve --channel <name>` и `qwen serve --channel all` — это экспериментальные режимы с управлением через демон. `qwen serve` запускает один внепроцессный воркер канала, воркер подключается к демону через SDK, а адаптеры получают фасад `ChannelAgentBridge` на базе `DaemonChannelBridge`.
+
+В режиме управления демоном каждый канал сопоставляет входящий чат-трафик с сессиями демона в рамках настраиваемой области `SessionScope` (`user`, `thread` или `single`). Адаптер делегирует задачи `DaemonChannelBridge`, который, в свою очередь, делегирует их `DaemonSessionClient` из SDK (см. [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)). Один демон привязан к одному рабочему пространству, поэтому `cwd` каждого выбранного канала должен разрешаться в рабочее пространство демона.
 
 ## Обязанности
 
-- Получать входящие сообщения из нативного транспорта канала (WebSocket-поток DingTalk, HTTP long-poll WeChat, Bot API long-poll Telegram, WebSocket Feishu или HTTP-вебхук).
-- Преобразовывать `(senderId, groupId?)` в сессию демона через `DaemonChannelSessionFactory`.
-- Передавать сообщение пользователя как промпт демона и передавать ответ обратно в виде исходящих сообщений чата, возможно, разбитых на части.
-- Отображать запросы разрешений как нативные подсказки чата в интерактивном режиме; в противном случае — автоматически подтверждать в соответствии с `ChannelConfig.approvalMode`.
-- Применять фильтрацию отправителей (белые/чёрные списки), фильтрацию групп и нормализацию контента (markdown / HTML для каждого канала).
+- Получение входящих сообщений из нативного транспорта канала (DingTalk WebSocket stream, WeChat HTTP long-poll, Telegram Bot long-poll, Feishu WebSocket или HTTP webhook).
+- Разрешение `(senderId, groupId?)` в сессию демона через `DaemonChannelSessionFactory`.
+- Пересылка сообщения пользователя как промпта демона и потоковая передача ответа обратно в виде исходящих сообщений чата, возможно, разбитыми на чанки.
+- Отображение запросов разрешений в виде нативных для чата промптов в интерактивном режиме; в противном случае автоматическое одобрение согласно `ChannelConfig.approvalMode`.
+- Применение фильтрации отправителей (allowlists / denylists), фильтрации групп и нормализации контента (markdown / HTML в зависимости от канала).
 
 ## Архитектура
 
@@ -34,18 +39,18 @@ class DaemonChannelBridge extends EventEmitter {
 }
 ```
 
-Содержит клиенты сессий демона, ключи которых — `sessionId` демона; `ChannelBase` и `SessionRouter` определяют, какая входящая цель чата сопоставляется с этой сессией. Каждая подключённая сессия имеет:
+Хранит клиенты сессий демона, ключом которых является `sessionId` демона; `ChannelBase` и `SessionRouter` определяют, какая входящая цель чата сопоставляется с этой сессией. Каждая подключенная сессия имеет:
 
-- `DaemonChannelSessionClient` (по форме `DaemonSessionClient`, но без методов, нерелевантных для канала).
-- Активный насос потребителя SSE.
-- Debounced-сборщик промптов (для адаптеров, которые разбивают ввод пользователя на несколько входящих сообщений).
-- Политику авто-подтверждения для каждого запроса.
+- `DaemonChannelSessionClient` (форма `DaemonSessionClient` без методов, не относящихся к каналу).
+- Активный SSE consumer pump.
+- Сборщик промптов с debouncing (для адаптеров, которые разбивают ввод пользователя на несколько входящих сообщений).
+- Политику автоматического одобрения для каждого запроса.
 
-События, которые генерируются: `textChunk`, `toolCall`, `sessionUpdate`, `permissionRequest`, `permissionResolved`, `modelSwitched`, `modelSwitchFailed`, `sessionDied`, `promptComplete`, и `error`. Адаптеры каналов интегрируют их в нативные API платформ.
+Генерируемые события: `textChunk`, `toolCall`, `sessionUpdate`, `permissionRequest`, `permissionResolved`, `modelSwitched`, `modelSwitchFailed`, `sessionDied`, `promptComplete` и `error`. Адаптеры каналов связывают эти события с нативными API платформы.
 
 ### `ChannelBase` (`packages/channels/base/src/ChannelBase.ts`)
 
-Абстрактный базовый класс, от которого наследуют все адаптеры:
+Абстрактный базовый класс, который расширяет каждый адаптер:
 
 ```ts
 abstract class ChannelBase {
@@ -56,35 +61,35 @@ abstract class ChannelBase {
 }
 ```
 
-Обрабатывает общие сквозные задачи: фильтрацию отправителей (белый/чёрный список), фильтрацию групп, потоковую передачу блоков сообщений (размер чанка, троттлинг), debounce входящих сообщений.
+Обрабатывает общие сквозные задачи: фильтрация отправителей (allowlist / denylist), фильтрация групп, потоковая передача блоков сообщений (размер чанка, троттлинг), debouncing входящих сообщений.
 
-### Адаптеры для каждого канала
+### Адаптеры конкретных каналов
 
-| Адаптер         | Файл                                                | Транспорт                                              | Примечания                                                                                                  |
-| --------------- | --------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| DingTalk        | `packages/channels/dingtalk/src/DingtalkAdapter.ts` | WebSocket DingTalk Stream SDK                           | Отправка через `sessionWebhook` POST; медиа-изображения загружаются через API DingTalk, base64 в envelope.    |
-| WeChat (Weixin) | `packages/channels/weixin/src/WeixinAdapter.ts`     | HTTP long-poll iLink Bot                                | Отправка через проприетарное API `sendText` / `sendImage`; индикаторы набора текста.                         |
-| Telegram        | `packages/channels/telegram/src/TelegramAdapter.ts` | Bot API long-poll (grammy)                              | Отправка HTML-чанков через `sendMessage`.                                                                    |
-| Feishu          | `packages/channels/feishu/src/FeishuAdapter.ts`     | WebSocket Feishu/Lark Stream (по умолчанию) или HTTP webhook | Отправка через Lark SDK в виде интерактивных карточек; режим webhook требует `encryptKey` для проверки HMAC-подписи. |
+| Адаптер         | Файм                                                | Транспорт                                              | Примечания                                                                                                 |
+| --------------- | --------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| DingTalk        | `packages/channels/dingtalk/src/DingtalkAdapter.ts` | DingTalk Stream SDK WebSocket                          | Отправляет через `sessionWebhook` POST; медиа-изображения загружаются через DT API, base64 в envelope.     |
+| WeChat (Weixin) | `packages/channels/weixin/src/WeixinAdapter.ts`     | iLink Bot HTTP long-poll                               | Отправляет через проприетарное API `sendText` / `sendImage`; индикаторы набора текста.                     |
+| Telegram        | `packages/channels/telegram/src/TelegramAdapter.ts` | Telegram Bot API long-poll (grammy)                    | Отправляет HTML-чанки через `sendMessage`.                                                                 |
+| Feishu          | `packages/channels/feishu/src/FeishuAdapter.ts`     | Feishu/Lark Stream WebSocket (по умолчанию) или HTTP webhook | Отправляет через Lark SDK в виде интерактивных карточек; режим webhook требует `encryptKey` для проверки HMAC-подписи. |
 
 Каждый адаптер реализует:
 
-1. Входящий транспорт (подписка / опрос на сообщения).
-2. Построение Envelope (`{ senderId, groupId?, text, media?, raw }`).
-3. Фильтрацию отправителя / группы (делегируется `ChannelBase`).
-4. Сериализацию исходящих (markdown → HTML / WeChat-native / DingTalk-native).
-5. Жизненный цикл (запуск / остановка).
+1. Входящий транспорт (подписка / опрос сообщений).
+2. Формирование envelope (`{ senderId, groupId?, text, media?, raw }`).
+3. Фильтрация отправителей / групп (делегирование `ChannelBase`).
+4. Исходящая сериализация (markdown → HTML / нативный WeChat / нативный DingTalk).
+5. Жизненный цикл (start / shutdown).
 
 ### Матрица адаптеров
 
-| Адаптер      | Транспорт                       | Идентификация                                                 | Пользовательский интерфейс разрешений               | Конфигурация авто-подтверждения                       |
-| ------------ | ------------------------------- | ------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------- |
-| **DingTalk** | WebSocket-поток                 | `senderStaffId` (+ опционально `conversationId` для групп)     | Инлайн-кнопки через markdown DingTalk               | `ChannelConfig.approvalMode = 'auto' \| 'prompt'`     |
-| **WeChat**   | HTTP long-poll                  | `senderWxid` (+ опционально `groupWxid`)                      | Текстовые подсказки с токенами ответа               | То же                                                 |
-| **Telegram** | Bot API long-poll               | `from.id` (+ опционально `chat.id` для групп)                 | Инлайн-кнопки клавиатуры                             | То же                                                 |
-| **Feishu**   | WebSocket-поток / HTTP webhook  | `sender.open_id` (+ опционально `chat_id` для групп)           | Интерактивные карточки-кнопки                        | То же                                                 |
+| Адаптер      | Транспорт                       | Идентификация                                            | UX разрешений                       | Конфигурация авто-одобрения                     |
+| ------------ | ------------------------------- | -------------------------------------------------------- | ----------------------------------- | ----------------------------------------------- |
+| **DingTalk** | WebSocket stream                | `senderStaffId` (+ опционально `conversationId` для групп) | Inline-кнопки через DT markdown     | `ChannelConfig.approvalMode = 'auto' \| 'prompt'` |
+| **WeChat**   | HTTP long-poll                  | `senderWxid` (+ опционально `groupWxid`)                 | Только текстовые промпты с токенами ответа | То же                                           |
+| **Telegram** | Bot API long-poll               | `from.id` (+ опционально `chat.id` для групп)            | Кнопки inline-клавиатуры            | То же                                           |
+| **Feishu**   | WebSocket stream / HTTP webhook | `sender.open_id` (+ опционально `chat_id` для групп)     | Кнопки интерактивных карточек       | То же                                           |
 
-> **Примечание:** Столбец "Пользовательский интерфейс разрешений" описывает нативные возможности каждой платформы, но ни одна из них ещё не подключена — `AcpBridge.requestPermission` в настоящее время автоматически подтверждает каждый запрос (`packages/channels/base/src/AcpBridge.ts`), а `ChannelConfig.approvalMode` объявлен, но ещё не считывается. Интерактивное подтверждение запланировано (Фаза 5).
+> **Примечание:** Столбец "UX разрешений" описывает нативные возможности каждой платформы, но пока ни одна из них не подключена — `AcpBridge.requestPermission` в настоящее время автоматически одобряет каждый запрос (`packages/channels/base/src/AcpBridge.ts`), а `ChannelConfig.approvalMode` объявлен, но еще не читается. Интерактивное одобрение запланировано (Phase 5).
 
 ## Рабочий процесс
 
@@ -93,7 +98,7 @@ abstract class ChannelBase {
 ```mermaid
 sequenceDiagram
     autonumber
-    participant CH as Чат-платформа
+    participant CH as Платформа чата
     participant AD as Адаптер канала
     participant CB as ChannelBase
     participant BR as DaemonChannelBridge
@@ -101,7 +106,7 @@ sequenceDiagram
     participant D as Демон
 
     CH-->>AD: входящее сообщение
-    AD->>AD: построить Envelope { senderId, groupId?, text, media? }
+    AD->>AD: сборка Envelope { senderId, groupId?, text, media? }
     AD->>CB: handleInbound(envelope)
     CB->>CB: фильтрация отправителя / группы
     CB->>CB: SessionRouter.resolve(...) → sessionId
@@ -110,7 +115,7 @@ sequenceDiagram
     SC->>D: POST /session/:id/prompt
 ```
 
-### Исходящий поток через SSE
+### Исходящий трафик на базе SSE
 
 ```mermaid
 sequenceDiagram
@@ -120,17 +125,17 @@ sequenceDiagram
     participant BR as DaemonChannelBridge
     participant CB as ChannelBase
     participant AD as Адаптер канала
-    participant CH as Чат-платформа
+    participant CH as Платформа чата
 
     D-->>SC: SSE: session_update (agent_message_chunk)
     SC-->>BR: DaemonEvent
     BR-->>CB: emit 'textChunk'
-    CB->>CB: сборка ответа / блочная потоковая передача
-    CB->>AD: sendMessage(chatId, chunk или полный ответ)
+    CB->>CB: сборка ответа / потоковая передача блоков
+    CB->>AD: sendMessage(chatId, чанк или полный ответ)
     AD->>CH: sendText / sendMessage / sendChunk
 ```
 
-### Авто-подтверждение разрешений
+### Автоматическое одобрение разрешений
 
 ```mermaid
 sequenceDiagram
@@ -145,46 +150,46 @@ sequenceDiagram
     alt config.approvalMode == 'auto'
         BR->>SC: session.respondToPermission({...})
     else 'prompt'
-        BR-->>AD: emit 'permissionRequest' (отобразить нативный UI чата)
-        AD->>BR: пользователь выбирает вариант → respondToPermission
+        BR-->>AD: emit 'permissionRequest' (отображает нативный UI чата)
+        AD->>BR: пользователь выбирает опцию → respondToPermission
     end
 ```
 
 ## Состояние и жизненный цикл
 
-- `DaemonChannelBridge` живёт столько же, сколько адаптер канала; сессии внутри него живут в соответствии с настроенной `SessionScope`.
-- Каждая активная сессия автоматически переподключается при обрыве SSE — `DaemonSessionClient.events()` отслеживает `lastSeenEventId`, чтобы корректно воспроизвести события.
+- `DaemonChannelBridge` живет в течение всего времени жизни адаптера канала; сессии внутри него живут в соответствии с настроенной `SessionScope`.
+- Каждая активная сессия автоматически переподключается при обрыве SSE — `DaemonSessionClient.events()` отслеживает `lastSeenEventId`, чтобы повторное воспроизведение (replay) было корректным.
 - `shutdown()` закрывает каждую активную сессию и базовый транспорт (WebSocket / long-poll канала).
-- WebSocket-поток DingTalk поддерживает push от сервера; long-poll WeChat требует стратегии backoff при пустых ответах; long-poll Telegram имеет встроенный параметр `timeout`.
+- WebSocket stream DingTalk поддерживает server-push; long-poll WeChat требует стратегии backoff при пустых ответах; long-poll Telegram имеет встроенный параметр `timeout`.
 
 ## Зависимости
 
 - `packages/channels/base/` — `ChannelBase`, `DaemonChannelBridge`, `types.ts` (`ChannelConfig`, `Envelope`, `SessionScope`, `ChannelPlugin`).
-- `packages/sdk-typescript/src/daemon/` — `DaemonSessionClient` и связанные с ним.
+- `packages/sdk-typescript/src/daemon/` — `DaemonSessionClient` и связанные с ним компоненты.
 - SDK для каждого канала: `@dingtalk/stream` (DingTalk), проприетарный iLink Bot HTTP (Weixin), `grammy` (Telegram).
 
 ## Конфигурация
 
 `ChannelConfig` (из `packages/channels/base/src/types.ts`):
 
-| Параметр                                 | Эффект                                                                                                                |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `sessionScope`                           | `'user'` (отправитель + чат), `'thread'` (идентификатор треда или чат) или `'single'` (одна общая сессия на канал).   |
-| `approvalMode`                           | `'auto'` (авто-ответ) / `'prompt'` (отображение UI).                                                                  |
-| `allowlist?: string[]`                   | Идентификаторы отправителей, разрешённые; если отсутствует — открыты.                                                  |
-| `denylist?: string[]`                    | Идентификаторы отправителей, запрещённые.                                                                             |
-| `chunkSize`, `chunkIntervalMs`           | Настройки потоковой передачи блоков исходящих сообщений.                                                               |
-| `daemon: { baseUrl, token?, clientId? }` | Передаются в `DaemonChannelSessionFactory`.                                                                           |
+| Параметр                                 | Описание                                                                                                  |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `sessionScope`                           | `'user'` (отправитель + чат), `'thread'` (id треда или чат) или `'single'` (одна общая сессия на канал).  |
+| `approvalMode`                           | `'auto'` (авто-ответ) / `'prompt'` (отображение UI).                                                      |
+| `allowlist?: string[]`                   | Разрешенные id отправителей; если отсутствует = открытый доступ.                                          |
+| `denylist?: string[]`                    | Запрещенные id отправителей.                                                                              |
+| `chunkSize`, `chunkIntervalMs`           | Настройки потоковой передачи исходящих блоков.                                                            |
+| `daemon: { baseUrl, token?, clientId? }` | Передается в `DaemonChannelSessionFactory`.                                                               |
 
-Специфичные для канала ключи накладываются сверху (DingTalk: `streamCredentials`; WeChat: `ilinkUrl`, `botId`; Telegram: `botToken`; Feishu: `clientId` (appId), `clientSecret` (appSecret), `verificationToken`, `encryptKey` (режим webhook)).
+Специфичные для канала ключи добавляются поверх (DingTalk: `streamCredentials`; WeChat: `ilinkUrl`, `botId`; Telegram: `botToken`; Feishu: `clientId` (appId), `clientSecret` (appSecret), `verificationToken`, `encryptKey` (для режима webhook)).
 
-## Ограничения и известные проблемы
+## Ограничения и известные особенности
 
-- **Каналы не импортируют напрямую `@qwen-code/sdk`.** Они проходят через `ChannelBase` → `DaemonChannelBridge` → `DaemonChannelSessionClient` (который мост создаёт из SDK). Такая прослойка позволяет мосту менять реализации, например, тестовый заглушка, без изменения кода канала.
-- **Пользовательский интерфейс разрешений зависит от канала.** DingTalk использует markdown-кнопки; WeChat — только текст; Telegram — инлайн-клавиатуры; Feishu — интерактивные кнопки-карточки. (Всё в настоящее время автоматически подтверждается через `AcpBridge`; интерактивное подтверждение запланировано.) Единой абстракции "интерактивного виджета разрешений" пока нет.
-- **Авто-подтверждение — это решение на стороне развёртывания**, а не демона. Политика `permission_mediation` демона всё ещё применяется; auto-approve означает только то, что канал отвечает без запроса человеку. Не сочетайте `auto` с рабочими процессами уровня `enforce`.
-- **Ограничения скорости и размера сообщений на канал — это задача адаптера.** `DaemonChannelBridge` занимается только разбиением; превышение лимита на сообщение WeChat или flood-лимита Telegram — на адаптере.
-- **Обратные вызовы DingTalk / WeChat / Telegram / Feishu не реализованы** — каналы однонаправленные (чат → демон → чат). Нативный push-путь платформы IM, например, callback карточки DingTalk, пока не подключён к мосту.
+- **Каналы не импортируют `@qwen-code/sdk` напрямую.** Они идут через `ChannelBase` → `DaemonChannelBridge` → `DaemonChannelSessionClient` (который мост создает из SDK). Эта косвенность позволяет мосту подменять реализации, например, тестовые заглушки, без необходимости изменения каналов.
+- **UX разрешений зависит от канала.** DingTalk использует markdown-кнопки; WeChat только текст; Telegram использует inline-клавиатуры; Feishu использует кнопки интерактивных карточек. (Все они сейчас автоматически одобряются через `AcpBridge`; интерактивное одобрение запланировано.) Пока нет общего абстрактного виджета "интерактивного запроса разрешений".
+- **Автоматическое одобрение — это решение на стороне развертывания**, а не на стороне демона. Политика `permission_mediation` демона все равно применяется; авто-одобрение означает лишь то, что канал отвечает без запроса человека. Не комбинируйте `auto` с рабочими процессами уровня `enforce`.
+- **Лимиты частоты запросов / размера сообщений для каждого канала — это задача адаптера.** `DaemonChannelBridge` обрабатывает только разбиение на чанки; превышение размера сообщения WeChat или лимитов флуда Telegram лежит на адаптере.
+- **Нет обратных вызовов DingTalk / WeChat / Telegram / Feishu** — каналы однонаправленные (чат → демон → чат). Нативный путь push-уведомлений IM-платформы, такой как callback карточки DingTalk, пока не подключен к мосту.
 
 ## Ссылки
 
@@ -194,6 +199,6 @@ sequenceDiagram
 - `packages/channels/dingtalk/src/DingtalkAdapter.ts`
 - `packages/channels/weixin/src/WeixinAdapter.ts`
 - `packages/channels/telegram/src/TelegramAdapter.ts`
-- `packages/channels/plugin-example/` (пример каркаса плагина)
+- `packages/channels/plugin-example/` (reference plugin scaffold)
 - Руководство по плагинам каналов: [`../channel-plugins.md`](../channel-plugins.md).
 - Справочник SDK: [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md).
