@@ -919,6 +919,12 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/en/superpowers/plans/2026-06-30-channel-loop/</loc>
+<lastmod>2026-07-01T21:44:26.276Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/superpowers/specs/2026-05-26-daemon-logger-design/</loc>
 <lastmod>2026-06-25T08:46:52.000Z</lastmod>
 <changefreq>weekly</changefreq>
@@ -974,7 +980,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/configuration/settings/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1160,7 +1166,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/status-line/</loc>
-<lastmod>2026-06-25T08:46:52.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1208,7 +1214,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/ide-integration/ide-integration/</loc>
-<lastmod>2025-12-17T13:59:31.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2156,7 +2162,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/configuration/settings/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2342,7 +2348,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/status-line/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2390,7 +2396,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/ide-integration/ide-integration/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3320,7 +3326,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/configuration/settings/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3506,7 +3512,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/status-line/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3554,7 +3560,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/ide-integration/ide-integration/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4484,7 +4490,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/configuration/settings/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4670,7 +4676,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/status-line/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4718,7 +4724,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/ide-integration/ide-integration/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5648,7 +5654,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/configuration/settings/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5834,7 +5840,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/status-line/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5882,7 +5888,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/ide-integration/ide-integration/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6812,7 +6818,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/configuration/settings/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6998,7 +7004,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/status-line/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7046,7 +7052,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/ide-integration/ide-integration/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7976,7 +7982,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/configuration/settings/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8162,7 +8168,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/status-line/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8210,7 +8216,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/ide-integration/ide-integration/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-06-30T22:29:51.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
