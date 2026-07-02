@@ -476,7 +476,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/channel-plugins/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -536,7 +536,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/daemon/08-session-lifecycle/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -554,7 +554,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/daemon/11-capabilities-versioning/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -578,7 +578,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/daemon/15-channel-adapters/</loc>
-<lastmod>2026-06-25T08:46:52.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -710,7 +710,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -920,7 +920,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/superpowers/plans/2026-06-30-channel-loop/</loc>
-<lastmod>2026-07-01T21:44:26.276Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
+<loc>https://QwenLM.github.io/qwen-code-docs/en/superpowers/plans/2026-07-01-channel-p0-identity-task-lifecycle/</loc>
+<lastmod>2026-07-02T21:19:38.851Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -949,6 +955,12 @@
 <priority>0.6</priority>
 </url>
 <url>
+<loc>https://QwenLM.github.io/qwen-code-docs/en/superpowers/specs/2026-07-01-channel-p0-identity-task-lifecycle-design/</loc>
+<lastmod>2026-07-02T21:19:38.851Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>0.6</priority>
+</url>
+<url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/common-workflow/</loc>
 <lastmod>2026-06-25T08:46:52.000Z</lastmod>
 <changefreq>weekly</changefreq>
@@ -956,7 +968,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/configuration/auth/</loc>
-<lastmod>2026-06-25T08:46:52.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -980,7 +992,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/configuration/settings/</loc>
-<lastmod>2026-06-30T22:29:51.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1016,7 +1028,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/approval-mode/</loc>
-<lastmod>2026-06-25T08:46:52.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1028,7 +1040,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/auto-mode/</loc>
-<lastmod>2026-06-25T08:46:52.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1046,7 +1058,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/channels/overview/</loc>
-<lastmod>2026-06-25T08:46:52.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1082,13 +1094,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/code-review/</loc>
-<lastmod>2026-06-25T08:46:52.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/commands/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1106,7 +1118,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/headless/</loc>
-<lastmod>2026-06-25T08:46:52.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1136,13 +1148,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/mcp/</loc>
-<lastmod>2026-06-25T08:46:52.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/memory/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1154,7 +1166,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/features/scheduled-tasks/</loc>
-<lastmod>2026-06-25T08:46:52.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1262,7 +1274,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/qwen-serve/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1286,7 +1298,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/users/support/troubleshooting/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1778,7 +1790,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/channel-plugins/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1838,7 +1850,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/daemon/08-session-lifecycle/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1856,7 +1868,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/daemon/11-capabilities-versioning/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1880,7 +1892,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/daemon/15-channel-adapters/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2012,7 +2024,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2138,7 +2150,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/configuration/auth/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2162,7 +2174,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/configuration/settings/</loc>
-<lastmod>2026-06-30T22:29:51.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2198,7 +2210,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/approval-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2210,7 +2222,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/auto-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2228,7 +2240,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/channels/overview/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2264,13 +2276,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/code-review/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/commands/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2288,7 +2300,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/headless/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2318,13 +2330,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/mcp/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/memory/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2336,7 +2348,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/features/scheduled-tasks/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2444,7 +2456,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/qwen-serve/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2468,7 +2480,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/users/support/troubleshooting/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -2942,7 +2954,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/developers/channel-plugins/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3002,7 +3014,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/developers/daemon/08-session-lifecycle/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3020,7 +3032,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/developers/daemon/11-capabilities-versioning/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3044,7 +3056,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/developers/daemon/15-channel-adapters/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3176,7 +3188,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3302,7 +3314,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/configuration/auth/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3326,7 +3338,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/configuration/settings/</loc>
-<lastmod>2026-06-30T22:29:51.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3362,7 +3374,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/approval-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3374,7 +3386,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/auto-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3392,7 +3404,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/channels/overview/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3428,13 +3440,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/code-review/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/commands/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3452,7 +3464,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/headless/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3482,13 +3494,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/mcp/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/memory/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3500,7 +3512,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/features/scheduled-tasks/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3608,7 +3620,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/qwen-serve/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3632,7 +3644,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/users/support/troubleshooting/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4106,7 +4118,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/developers/channel-plugins/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4166,7 +4178,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/developers/daemon/08-session-lifecycle/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4184,7 +4196,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/developers/daemon/11-capabilities-versioning/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4208,7 +4220,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/developers/daemon/15-channel-adapters/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4340,7 +4352,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4466,7 +4478,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/configuration/auth/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4490,7 +4502,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/configuration/settings/</loc>
-<lastmod>2026-06-30T22:29:51.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4526,7 +4538,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/approval-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4538,7 +4550,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/auto-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4556,7 +4568,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/channels/overview/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4592,13 +4604,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/code-review/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/commands/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4616,7 +4628,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/headless/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4646,13 +4658,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/mcp/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/memory/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4664,7 +4676,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/features/scheduled-tasks/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4772,7 +4784,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/qwen-serve/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4796,7 +4808,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/users/support/troubleshooting/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5270,7 +5282,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/developers/channel-plugins/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5330,7 +5342,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/developers/daemon/08-session-lifecycle/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5348,7 +5360,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/developers/daemon/11-capabilities-versioning/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5372,7 +5384,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/developers/daemon/15-channel-adapters/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5504,7 +5516,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5630,7 +5642,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/configuration/auth/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5654,7 +5666,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/configuration/settings/</loc>
-<lastmod>2026-06-30T22:29:51.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5690,7 +5702,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/approval-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5702,7 +5714,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/auto-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5720,7 +5732,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/channels/overview/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5756,13 +5768,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/code-review/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/commands/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5780,7 +5792,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/headless/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5810,13 +5822,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/mcp/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/memory/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5828,7 +5840,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/features/scheduled-tasks/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5936,7 +5948,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/qwen-serve/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5960,7 +5972,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/users/support/troubleshooting/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6434,7 +6446,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/channel-plugins/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6494,7 +6506,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/daemon/08-session-lifecycle/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6512,7 +6524,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/daemon/11-capabilities-versioning/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6536,7 +6548,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/daemon/15-channel-adapters/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6668,7 +6680,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6794,7 +6806,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/configuration/auth/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6818,7 +6830,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/configuration/settings/</loc>
-<lastmod>2026-06-30T22:29:51.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6854,7 +6866,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/approval-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6866,7 +6878,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/auto-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6884,7 +6896,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/channels/overview/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6920,13 +6932,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/code-review/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/commands/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6944,7 +6956,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/headless/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6974,13 +6986,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/mcp/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/memory/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6992,7 +7004,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/features/scheduled-tasks/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7100,7 +7112,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/qwen-serve/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7124,7 +7136,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/users/support/troubleshooting/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7598,7 +7610,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/developers/channel-plugins/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7658,7 +7670,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/developers/daemon/08-session-lifecycle/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7676,7 +7688,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/developers/daemon/11-capabilities-versioning/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7700,7 +7712,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/developers/daemon/15-channel-adapters/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7832,7 +7844,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/developers/qwen-serve-protocol/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7958,7 +7970,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/configuration/auth/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7982,7 +7994,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/configuration/settings/</loc>
-<lastmod>2026-06-30T22:29:51.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8018,7 +8030,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/approval-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8030,7 +8042,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/auto-mode/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8048,7 +8060,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/channels/overview/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8084,13 +8096,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/code-review/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/commands/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8108,7 +8120,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/headless/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8138,13 +8150,13 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/mcp/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/memory/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8156,7 +8168,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/features/scheduled-tasks/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8264,7 +8276,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/qwen-serve/</loc>
-<lastmod>2026-06-26T08:07:01.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8288,7 +8300,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/users/support/troubleshooting/</loc>
-<lastmod>2026-06-30T06:37:07.000Z</lastmod>
+<lastmod>2026-07-02T00:19:54.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
