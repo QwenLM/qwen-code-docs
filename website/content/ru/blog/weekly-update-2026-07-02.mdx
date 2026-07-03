@@ -1,0 +1,209 @@
+---
+title: "Qwen Code Еженедельно: Автономный режим /loop, голосовой ввод на десктопе, вкладочный вид Settings"
+date: "2026-07-02"
+description: "На этой неделе выпущена версия v0.19.4 с автономным режимом /loop, голосовым вводом на десктопе, вкладочным видом Settings и другими функциями."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Еженедельно: Автономный режим /loop, голосовой ввод на десктопе, вкладочный вид Settings"
+  date="2026-07-02"
+  author="Qwen Team"
+/>
+
+На этой неделе Qwen Code выпустил v0.19.4 — более 80 объединенных PR по трем направлениям:
+
+**`/loop` работает, даже когда вас нет.** Простой `/loop` запускает автономный режим — agent продолжает начатую работу, пока вы отсутствуете, не придумывая новых задач и не выполняя необратимых операций. Добавьте файл задач `.qwen/loop.md`, и цикл будет перечитывать редактируемый список; удалите его — цикл перейдет в режим no-op tick, оставаясь живым. Claude Code на прошлой неделе опубликовал [руководство по агентским циклам](https://claude.com/blog/getting-started-with-loops), где описывается agent, многократно выполняющий заданный план. Автономный режим `/loop` делает то же самое, но с одним отличием: список задач можно редактировать в любой момент, и цикл автоматически отслеживает изменения.
+
+**Голосовой ввод на десктопе.** Голосовой ввод уже работал в CLI и Web Shell, но десктопное приложение отставало. Эта версия закрывает последний пробел — теперь все три интерфейса предлагают единый опыт.
+
+**Терминал становится удобнее.** `/settings` превратился из плоского списка во вкладочный вид — поиск, статус и статистика на одном экране; в режиме Virtualized History меню, автодополнение и поле ввода теперь поддерживают клики и наведение мыши.
+
+## ✨ Новые функции
+
+### Автономный режим `/loop` + файл задач loop.md
+
+`/loop` теперь поддерживает два новых режима:
+
+**Автономный режим**: простой `/loop` (без prompt и интервала) больше не выводит подсказку по использованию, а запускает автономный цикл с самоопределяемым шагом. Agent продолжает начатую работу, пока вы отсутствуете — поддерживает открытые PR, доделывает незавершенные задачи, выполняет обещания — но только то, что уже определено в transcript, не придумывая новых задач и не выполняя необратимых действий (push/delete/send) без явного разрешения. Замолчал — останавливается. Автономная преамбула отправляется один раз, далее каждый tick посылает короткое напоминание, сохраняя низкую стоимость токенов.
+
+**Файл задач loop.md**: создайте `.qwen/loop.md` в корне проекта или в `~/.qwen/`, установите prompt wakeup/cron на sentinel (`<<loop.md-dynamic>>` или `<<loop.md>>`), и цикл будет перечитывать файл при каждом срабатывании. Первый раз отправляется полный текст, далее при отсутствии изменений — короткое напоминание; после редактирования файла — снова полный текст. Если файл исчезает, цикл переходит в режим no-op tick (agent ничего не делает, только re-arm для поддержания цикла), возвращаясь к базовому поведению автономного режима. После восстановления loop.md следующий tick автоматически обнаруживает изменения и снова отправляет полный текст.
+
+**Циклы в каналах**: `/loop` не ограничивается терминалом — каналы DingTalk и Feishu тоже поддерживаются. В групповом чате используйте `/loop add "0 9 * * 1-5" проверить статус CI` для создания циклов по расписанию, `/loop list` для просмотра всех циклов текущего канала, `/loop inspect <id>` для просмотра количества запусков и последних результатов, `/loop cancel <id>` для остановки. Циклы выполняются через channel session router, дожидаясь завершения текущего активного turn, результаты записываются обратно через канал. Одноразовые циклы автоматически отключаются после успешного выполнения или ошибки.
+
+**Что вы можете сделать с этим:**
+
+- Простой `/loop` позволяет agent'у продолжать работу, пока вы отсутствуете
+- Используйте `.qwen/loop.md` для постоянного редактируемого списка задач без повторного описания каждый tick
+- Удалите loop.md — цикл перейдет в режим no-op, восстановите — seamlessly продолжит работу
+- В группах DingTalk/Feishu используйте `/loop add` для циклов по расписанию
+
+Смотрите PR [#5890](https://github.com/QwenLM/qwen-code/pull/5890), [#5991](https://github.com/QwenLM/qwen-code/pull/5991), [#6073](https://github.com/QwenLM/qwen-code/pull/6073)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000002454/O1CN01vw4qRY1Tzz61J45Mh_!!6000000002454-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/ytGdVb28ZDLZxgzI3BFhtGSTleBZemLHPiLqw_lI53E.mp4" controls></video>
+
+### Голосовой ввод на десктопе: единый опыт на всех платформах
+
+Голосовой ввод уже был доступен в CLI и Web Shell, но отсутствовал в десктопном приложении — пользователи, настроившие голос, теряли эту функциональность при переключении на десктоп. Эта версия закрывает последний пробел.
+
+На панели инструментов composer добавлена кнопка микрофона. Во время записи панель инструментов превращается в индикатор записи (пунктирная направляющая → живая форма волны → таймер), после остановки результат транскрипции вставляется в поле ввода для проверки. Транскрипция выполняется на стороне сервера, повторно используя голосовой конвейер CLI (пакетный `qwen3-asr-flash` и потоковый `*-realtime` модели), учетные данные provider не попадают в renderer. Голосовой ввод можно включить и выбрать модель в Settings → Input и в выпадающем списке моделей composer.
+
+**Что вы можете сделать с этим:**
+
+- Нажмите на микрофон и говорите — в реальном времени видите форму волны и таймер
+- Выберите модель realtime (например, `qwen3-asr-flash-realtime`) и видите промежуточный текст по мере произнесения
+- Свободные руки для ввода на планшете или при работе с несколькими мониторами
+
+Смотрите PR [#5856](https://github.com/QwenLM/qwen-code/pull/5856)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000007413/O1CN01JVZosB24dDBcBYKP7_!!6000000007413-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/J-6kYrUGwlI-KcGhRr1tuzipOySnNR78nq4SqeuEAG0.mp4" controls></video>
+
+> **Как использовать?**
+> 1. Клонируйте репозиторий:
+> ```
+> git clone https://github.com/QwenLM/qwen-code.git
+> ```
+> 2. Перейдите в каталог
+> ```
+> cd qwen-code/packages/desktop
+> ```
+> 3. Установите зависимости и запустите режим разработки
+> ```
+> bun install && bun run dev
+> ```
+
+### Mobile Sidebar Drawer + улучшение `qwen serve`
+
+Ранее при доступе к `qwen serve` с мобильного браузера боковая панель (список сессий, поиск, создание новой сессии) просто скрывалась через `display: none` при ширине менее 760px — переключить сессию было невозможно. Теперь используется overlay drawer: в заголовке чата появляется кнопка меню, по нажатию боковая панель выезжает слева с полупрозрачным затемнением. Выбор сессии, создание новой сессии или нажатие на затемнение закрывают drawer. Верстка десктопа не затрагивается.
+
+За этим стоит серия изменений, превращающих `qwen serve` из «работающего» в «удобный»:
+
+- **Отложенное создание сессии** ([#6066](https://github.com/QwenLM/qwen-code/pull/6066)): сессия создается только при первом prompt, снижая накладные расходы на пустые сессии — Web Shell запускается быстрее
+- **workspace remember** ([#5884](https://github.com/QwenLM/qwen-code/pull/5884)): режим serve запоминает рабочую область, после перезапуска не нужно указывать заново
+- **session archive** ([#6058](https://github.com/QwenLM/qwen-code/pull/6058)): daemon поддерживает архивирование сессий — долгосрочные сессии теперь можно управлять
+
+**Что вы можете сделать с этим:**
+
+- На мобильном браузере откройте `qwen serve` и переключайте сессии через меню
+- При переключении между проектами serve автоматически запоминает рабочую область
+- Долгосрочные сессии можно архивировать вместо удаления
+
+Смотрите PR [#6003](https://github.com/QwenLM/qwen-code/pull/6003)
+
+| Описание   | Боковая панель свернута                                                                                            | Боковая панель развернута                                                                                            |
+| ---- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Скриншот | ![](https://gw.alicdn.com/imgextra/i3/O1CN01f8YXr81lxqKPAKZed_!!6000000004886-2-tps-390-844.png) | ![](https://gw.alicdn.com/imgextra/i3/O1CN01ZQ5jCT1KMIEL5UmLi_!!6000000001149-2-tps-390-844.png) |
+
+### Клики и наведение мыши в TUI
+
+Ранее CLI в режиме Virtualized History поддерживал только колесо мыши и полосу прокрутки, но не взаимодействие указателем. Теперь при включенном Virtualized History (`ui.useTerminalBuffer`) доступны три типа взаимодействия:
+
+- **Меню выбора и диалоги** (подтверждение разрешений, `/model`, `/config`, темы и т.д.): наведение подсвечивает строку под указателем, клик выбирает
+- **Списки автодополнения `/` команд и `@` файлов**: наведение подсвечивает элемент, клик принимает
+- **Поле ввода**: левый клик позиционирует текстовый курсор (поддержка многострочного переноса, смещения прокрутки, широких символов)
+
+**Что вы можете сделать с этим:**
+
+- В диалоге `/model` выбирайте модель кликом мыши, не стрелками
+- После ввода `/` кликайте по элементу автодополнения
+- В многострочном вводе кликайте для перемещения курсора
+
+Смотрите PR [#6011](https://github.com/QwenLM/qwen-code/pull/6011)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01c0h5qw1vEdOGiDaqv_!!6000000006141-1-tps-1280-720.gif)
+
+### Вкладочный диалог Settings: поиск, статус и статистика на одном экране
+
+`/settings` переработан из плоского списка во вкладочный вид по образцу `/config` в Claude Code. Верхняя панель вкладок делит интерфейс на три страницы: Settings / Status / Stats. На странице Settings добавлено поле поиска — вводите текст для фильтрации.
+
+Страница Status показывает ту же системную информацию, что и `/status`; страница Stats содержит полный дашборд `/stats` (вложенные вкладки Session / Activity / Efficiency). Фокус клавиатуры перемещается вертикально между панелью вкладок → полем поиска → списком настроек, подсветка появляется только в области, действительно имеющей фокус.
+
+**Что вы можете сделать с этим:**
+
+- Откройте `/settings` и сразу вводите ключевое слово для фильтрации настроек
+- Переключайтесь ←/→ на вкладку Status для просмотра информации о среде выполнения без отдельного запуска `/status`
+- На вкладке Stats переключайтесь Tab между Session / Activity / Efficiency; если таблица Efficiency превышает высоту диалога, она автоматически сворачивается в "+N еще"
+
+Смотрите PR [#6044](https://github.com/QwenLM/qwen-code/pull/6044)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01X1ytLW1KtGkN6GEGW_!!6000000001221-1-tps-1280-720.gif)
+
+### Расширение Chrome: диалог и управление страницей прямо из браузера
+
+Расширение Chrome возрождено на архитектуре daemon-direct — расширение больше не является хостом Native Messaging, а выступает тонким клиентом локального daemon `qwen serve`.
+
+Чат в боковой панели подключается напрямую к `qwen serve` через `DaemonSessionProvider` (HTTP+SSE, тот же путь, что и web shell); при недоступности daemon предлагает запустить `qwen serve`. Инструменты браузера (чтение страницы, скриншот, консоль, навигация, клик, заполнение форм) реализованы как MCP server, управляемый клиентом, и доступны agent через WebSocket daemon — оба пути (чат и инструменты) обходятся без Native Messaging.
+
+> [!caution]
+>
+> Внимание: обратный канал инструментов в настоящее время включается через переменную окружения `QWEN_SERVE_CLIENT_MCP_OVER_WS` и по умолчанию выключен — необходимо явно установить этот флаг при запуске `qwen serve`.
+
+**Что вы можете сделать с этим:**
+
+- Общайтесь с Qwen Code в боковой панели Chrome без установки нативного хоста на уровне ОС
+- Позвольте agent'у читать текущую страницу, делать скриншоты, управлять элементами браузера
+- Используйте общий UI web shell — единый опыт
+
+Смотрите PR [#5777](https://github.com/QwenLM/qwen-code/pull/5777)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01lMYRsQ1k8G6Tq18M3_!!6000000004638-2-tps-3837-2160.png)
+
+## 📊 Больше новых функций
+
+| Функция | PR | Влияние |
+| ------- | -- | ------- |
+| **`/config key=value`**: изменение любой настройки прямо в prompt, Tab-дополнение + исправление опечаток | [#5773](https://github.com/QwenLM/qwen-code/pull/5773) | Больше не нужно открывать settings.json |
+| **Временная шкала сессии**: компактная шкала слева в web shell, наведение показывает детали turn | [#6078](https://github.com/QwenLM/qwen-code/pull/6078) | Быстрая навигация по turn в длинных сессиях |
+| **Улучшенный вывод /skills ACP**: отображение description и level | [#6117](https://github.com/QwenLM/qwen-code/pull/6117) | Более полная информация в списке skills |
+| **Полная классификация shell в auto-mode**: новая настройка `classifyAllShell` (по умолчанию выключена) | [#6040](https://github.com/QwenLM/qwen-code/pull/6040) | Многоуровневая защита в продакшене |
+| **qwen tag — многоролевая идентификация в групповом чате**: общие сессии DingTalk поддерживают маркер `[sender]` | [#5888](https://github.com/QwenLM/qwen-code/pull/5888) | Agent различает говорящих в групповом чате |
+| **group history backfill**: заполнение исторических сообщений группы | [#6074](https://github.com/QwenLM/qwen-code/pull/6074) | Новые участники видят историю |
+| **browser tab favicon**: иконка вкладки web shell | [#6091](https://github.com/QwenLM/qwen-code/pull/6091) | Легче различать вкладки |
+| **Оптимизация chat UI и рендеринга таблиц**: улучшения интерфейса web shell | [#6099](https://github.com/QwenLM/qwen-code/pull/6099) | Улучшение визуального опыта |
+| **queued-prompt UX**: более дружественное прерывание по Esc в web shell | [#6025](https://github.com/QwenLM/qwen-code/pull/6025) | Более плавное прерывание операций |
+| **resumable /acp session stream**: поддержка Last-Event-ID для возобновления с точки разрыва | [#5852](https://github.com/QwenLM/qwen-code/pull/5852) | Более стабильные подключения SDK |
+| **glob patterns в mcp.allowed/excluded**: поддержка подстановочных знаков в белых списках MCP | [#6012](https://github.com/QwenLM/qwen-code/pull/6012) | Более гибкая конфигурация MCP |
+| **inline model override**: `/model` поддерживает одноразовое переопределение модели | [#6022](https://github.com/QwenLM/qwen-code/pull/6022) | Удобнее временно сменить модель |
+| **leader approval для plan-required teammates**: участники, требующие план, нуждаются в одобрении leader | [#6138](https://github.com/QwenLM/qwen-code/pull/6138) | Более безопасная коллаборация нескольких agent |
+
+## 🔧 Важные исправления
+
+| Исправление | PR | Влияние |
+| ----------- | -- | ------- |
+| **Тайм-аут простоя MCP инструментов**: автоматическое прерывание после 5 минут без ответа сервера, предотвращает зависание сессии | [#6061](https://github.com/QwenLM/qwen-code/pull/6061) | Долго работающие MCP инструменты больше не ждут бесконечно |
+| **Отображение diff только с пробельными изменениями**: изменения только в пробелах больше не показывают "No changes detected" | [#6141](https://github.com/QwenLM/qwen-code/pull/6141) | Более точный вывод diff |
+| **Оптимизация задержки ввода TUI**: yield для React после addItem, уменьшает подвисание при наборе | [#6059](https://github.com/QwenLM/qwen-code/pull/6059) | Более плавный набор текста |
+| **Прокрутка при нескольких agent в режиме без VP**: transcript можно прокручивать при работе нескольких agent | [#6015](https://github.com/QwenLM/qwen-code/pull/6015) | Можно просматривать историю в сценариях с несколькими agent |
+| **Поддержка HTTPS/TLS**: `qwen serve` добавлены флаги `--tls-cert` и `--tls-key` | [#6032](https://github.com/QwenLM/qwen-code/pull/6032) | Работает в средах с самоподписанными сертификатами |
+| **Пути с тильдой на Windows**: поддержка раскрытия путей в стиле Windows `~` | [#6029](https://github.com/QwenLM/qwen-code/pull/6029) | Совместимость путей для пользователей Windows |
+
+## 👥 Участники
+
+| Участник | Вклад | Ссылки на PR |
+| -------- | ----- | ------------ |
+| **[@qqqys](https://github.com/qqqys)** | Автономный режим `/loop` + файл задач loop.md, голосовой ввод, многоролевая идентификация в групповом чате qwen tag, group history backfill, поддержка циклов в каналах | [#5890](https://github.com/QwenLM/qwen-code/pull/5890), [#5991](https://github.com/QwenLM/qwen-code/pull/5991), [#5856](https://github.com/QwenLM/qwen-code/pull/5856), [#5888](https://github.com/QwenLM/qwen-code/pull/5888), [#6074](https://github.com/QwenLM/qwen-code/pull/6074), [#6073](https://github.com/QwenLM/qwen-code/pull/6073) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | `/effort` — единая интенсивность рассуждений, клики и наведение мыши в TUI, вкладочный диалог Settings | [#6072](https://github.com/QwenLM/qwen-code/pull/6072), [#6011](https://github.com/QwenLM/qwen-code/pull/6011), [#6044](https://github.com/QwenLM/qwen-code/pull/6044) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | session archive, улучшенный вывод skills ACP, leader approval для plan-required teammates, отображение diff с пробельными изменениями | [#6058](https://github.com/QwenLM/qwen-code/pull/6058), [#6117](https://github.com/QwenLM/qwen-code/pull/6117), [#6138](https://github.com/QwenLM/qwen-code/pull/6138), [#6141](https://github.com/QwenLM/qwen-code/pull/6141) |
+| **[@DennisYu07](https://github.com/DennisYu07)** | Команда `/config`, полная классификация shell в auto-mode, подстановочные знаки в белых списках MCP, тайм-аут простоя MCP инструментов | [#5773](https://github.com/QwenLM/qwen-code/pull/5773), [#6040](https://github.com/QwenLM/qwen-code/pull/6040), [#6012](https://github.com/QwenLM/qwen-code/pull/6012), [#6061](https://github.com/QwenLM/qwen-code/pull/6061) |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)** | Mobile Sidebar Drawer, поддержка HTTPS/TLS | [#6003](https://github.com/QwenLM/qwen-code/pull/6003), [#6032](https://github.com/QwenLM/qwen-code/pull/6032) |
+| **[@callmeYe](https://github.com/callmeYe)** | workspace remember, временная шкала сессии | [#5884](https://github.com/QwenLM/qwen-code/pull/5884), [#6078](https://github.com/QwenLM/qwen-code/pull/6078) |
+| **[@ytahdn](https://github.com/ytahdn)** | Отложенное создание сессии, оптимизация chat UI и рендеринга таблиц | [#6066](https://github.com/QwenLM/qwen-code/pull/6066), [#6099](https://github.com/QwenLM/qwen-code/pull/6099) |
+| **[@chiga0](https://github.com/chiga0)** | resumable /acp session stream, прокрутка при нескольких agent в режиме без VP | [#5852](https://github.com/QwenLM/qwen-code/pull/5852), [#6015](https://github.com/QwenLM/qwen-code/pull/6015) |
+| **[@yiliang114](https://github.com/yiliang114)** | Возрождение расширения Chrome | [#5777](https://github.com/QwenLM/qwen-code/pull/5777) |
+| **[@wenshao](https://github.com/wenshao)** | browser tab favicon | [#6091](https://github.com/QwenLM/qwen-code/pull/6091) |
+| **[@carffuca](https://github.com/carffuca)** | Улучшение queued-prompt UX | [#6025](https://github.com/QwenLM/qwen-code/pull/6025) |
+| **[@Alex-ai-future](https://github.com/Alex-ai-future)** | Оптимизация задержки ввода TUI | [#6059](https://github.com/QwenLM/qwen-code/pull/6059) |
+| **[@VectorPeak](https://github.com/VectorPeak)** | Раскрытие путей с тильдой на Windows | [#6029](https://github.com/QwenLM/qwen-code/pull/6029) |
+| 🆕 **[@Minerest](https://github.com/Minerest)** | 🎉 Первый вклад: исправление — auto-memory вызывает вспоминание только при включении | [#5963](https://github.com/QwenLM/qwen-code/pull/5963) |
+| 🆕 **[@TianYuan1024](https://github.com/TianYuan1024)** | 🎉 Первый вклад: добавление флага `--insecure` для пропуска проверки TLS, `/model` inline model override | [#5962](https://github.com/QwenLM/qwen-code/pull/5962), [#6022](https://github.com/QwenLM/qwen-code/pull/6022) |
+| 🆕 **[@gauravyad86](https://github.com/gauravyad86)** | 🎉 Первый вклад: исправление уязвимостей npm уровня critical (`simple-git`, `shell-quote` и другие runtime-зависимости), добавлена проверка аудита в CI | [#6065](https://github.com/QwenLM/qwen-code/pull/6065) |
+
+<Callout type="info">
+  **Обновление**: выполните `npm i @qwen-code/qwen-code@latest -g` для обновления до последней версии.
+</Callout>
+
+Если у вас есть вопросы или предложения, обращайтесь через [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
