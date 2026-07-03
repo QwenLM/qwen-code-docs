@@ -1812,7 +1812,23 @@ export const showcaseItems = [
       { title: "Ver resumo mensal", description: "Digite /stats monthly para ver o resumo de consumo do mês inteiro.", command: "/stats monthly" },
       { title: "Exportar dados", description: "Digite /stats export para exportar um arquivo CSV ou JSON contendo apenas dados agregados, sem nenhum texto de prompt/resposta ou caminho de projeto. O caminho de exportação é restrito ao diretório de trabalho do projeto.", command: "/stats export daily 2026-06-25 --format csv" },
     ],
-  }
+  },
+  {
+    id: "code-review-demo",
+    title: "9 revisores de IA analisando seu código ao mesmo tempo",
+    description: "Execute /review para encontrar automaticamente vulnerabilidades de segurança e problemas de performance, corrija com um clique, ou revise PRs remotos com comentários inline no GitHub.",
+    category: "Desenvolvimento",
+    features: ["Revisão de código", "Modo Agent", "GitHub", "Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01tSdqZK1cCp7pMo9Z0_!!6000000003565-0-videocover-1920-1080.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/a50ytDTCsScQ2HKs2H9LdotbwecgCd5OcFLYJPwEVPE.mp4",
+    model: "qwen3.7-max",
+    overview: "Antes de fazer o commit, rode /review — 9 agentes de revisão entram em ação simultaneamente, escaneando seu código em paralelo por segurança, performance e qualidade. Encontrou problema? Corrige automaticamente e valida com o linter. PR do colega? Um comando só pra revisar, e os comentários aparecem direto nas linhas de código no GitHub, igual a um revisor de verdade.",
+    steps: [
+      { title: "Revisão do código do projeto", description: "Execute `/review` para escanear o código do seu projeto. 9 agentes trabalham em paralelo, detectando vulnerabilidades de segurança e problemas de performance automaticamente.", command: "/review" },
+      { title: "Correção automática", description: "Escolha a correção automática — o Qwen Code altera o código diretamente e executa o linter para garantir que nenhum novo problema seja introduzido." },
+      { title: "Revisão de PR & comentários", description: "Execute `/review <PR number> --comment` para revisar um PR remoto. Abra o GitHub e veja os comentários inline diretamente nas linhas de código.", command: "/review <PR number> --comment" },
+    ],
+  },
 ];
 
 <VideoShowcaseIndex

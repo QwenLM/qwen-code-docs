@@ -1813,6 +1813,22 @@ export const showcaseItems = [
       { title: "Daten exportieren", description: "Geben Sie /stats export ein, um eine CSV- oder JSON-Datei zu exportieren. Enthält nur aggregierte Daten, keine Prompt/Response-Texte oder Projektpfade. Der Export-Pfad ist auf das Projekt-Arbeitsverzeichnis beschränkt.", command: "/stats export daily 2026-06-25 --format csv" },
     ],
   },
+  {
+    id: "code-review-demo",
+    title: "9 KI-Reviewer prüfen deinen Code gleichzeitig",
+    description: "Starte /review, um Code automatisch auf Sicherheitslücken und Performance-Probleme zu prüfen, behebe sie mit einem Klick, oder reviewe Remote-PRs mit Inline-Kommentaren auf GitHub.",
+    category: "Programmierentwicklung",
+    features: ["Code-Review", "Agent-Modus", "GitHub", "Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01tSdqZK1cCp7pMo9Z0_!!6000000003565-0-videocover-1920-1080.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/a50ytDTCsScQ2HKs2H9LdotbwecgCd5OcFLYJPwEVPE.mp4",
+    model: "qwen3.7-max",
+    overview: "Vor dem Commit einfach /review laufen lassen — 9 Review-Agenten starten gleichzeitig und durchsuchen deinen Code parallel nach Sicherheitslücken, Performance-Problemen und Codequalität. Problem gefunden? Wird automatisch behoben und mit dem Linter validiert. Ein PR vom Teamkollegen? Ein Befehl zum Reviewn, und die Kommentare stehen direkt in den Codezeilen auf GitHub — wie bei einem menschlichen Reviewer.",
+    steps: [
+      { title: "Projekt-Code-Review", description: "Starte `/review`, um deinen Projektcode zu scannen. 9 Agenten arbeiten parallel und erkennen Sicherheitslücken und Performance-Probleme automatisch.", command: "/review" },
+      { title: "Automatische Korrektur", description: "Wähle die automatische Korrektur — Qwen Code ändert den Code direkt und führt den Linter aus, um sicherzustellen, dass keine neuen Probleme entstehen." },
+      { title: "PR-Review & Kommentare", description: "Starte `/review <PR number> --comment`, um eine Remote-PR zu reviewen. Wechsel zu GitHub und finde Inline-Kommentare direkt in den Codezeilen.", command: "/review <PR number> --comment" },
+    ],
+  },
 ];
 
 

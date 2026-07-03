@@ -1812,7 +1812,23 @@ export const showcaseItems = [
       { title: "月間集計を確認", description: "/stats monthly で月間の消費集計を表示します。", command: "/stats monthly" },
       { title: "データをエクスポート", description: "/stats export で CSV または JSON ファイルを出力します。集計データのみで prompt/response のテキストやプロジェクトパスは含まれません。エクスポートパスはプロジェクトの作業ディレクトリ内に制限されます。", command: "/stats export daily 2026-06-25 --format csv" },
     ],
-  }
+  },
+  {
+    id: "code-review-demo",
+    title: "9人のAIレビュアーが同時にコードをチェック",
+    description: "/review でコードをスキャンしてセキュリティ脆弱性やパフォーマンス問題を自動検出、その場で修正。リモートPRのレビューも、GitHubにインラインコメントを自動投稿。",
+    category: "プログラミング開発",
+    features: ["コードレビュー", "エージェントモード", "GitHub", "Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01tSdqZK1cCp7pMo9Z0_!!6000000003565-0-videocover-1920-1080.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/a50ytDTCsScQ2HKs2H9LdotbwecgCd5OcFLYJPwEVPE.mp4",
+    model: "qwen3.7-max",
+    overview: "コミット前に /review を実行すれば、9人のレビューエージェントが同時に動き出し、セキュリティ・パフォーマンス・コード品質を並列スキャン。問題が見つかればそのまま自動修正、linter で検証までしてくれます。チームメンバーのPRも、一つのコマンドでレビュー完了。GitHubのコード行に直接コメントが投稿されるので、まるで人間のレビュアーと同じです。",
+    steps: [
+      { title: "プロジェクトコードレビュー", description: "`/review` を実行してプロジェクトコードをスキャン。9つのエージェントが並列で動作し、セキュリティ脆弱性やパフォーマンス問題を自動検出します。", command: "/review" },
+      { title: "一括自動修正", description: "自動修正を選択すると、Qwen Code が直接コードを修正し、linter で検証して新しい問題が発生しないことを確認します。" },
+      { title: "PRレビュー＆コメント", description: "`/review <PR number> --comment` でリモートPRをレビュー。GitHub に切り替えると、コード行に直接インラインコメントが投稿されています。", command: "/review <PR number> --comment" },
+    ],
+  },
 ];
 
 
