@@ -4,93 +4,92 @@ Ce document liste les raccourcis clavier disponibles dans Qwen Code.
 
 ## Général
 
-| Raccourci                      | Description                                                                                                                                                                                                                                                                                                    |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Esc`                          | Fermer les dialogues et suggestions.                                                                                                                                                                                                                                                                           |
-| `Ctrl+C`                       | Annuler la requête en cours et effacer l'entrée. Appuyez deux fois pour quitter l'application.                                                                                                                                                                                                                 |
-| `Ctrl+D`                       | Quitter l'application si l'entrée est vide. Appuyez deux fois pour confirmer.                                                                                                                                                                                                                                  |
-| `Ctrl+L`                       | Effacer l'écran.                                                                                                                                                                                                                                                                                               |
-| `Ctrl+O`                       | Activer/désactiver le mode compact (masquer/afficher la sortie des outils et la réflexion).                                                                                                                                                                                                                    |
-| `Ctrl+S`                       | Permet aux réponses longues de s'afficher complètement, en désactivant la troncature. Utilisez le défilement arrière de votre terminal pour voir la sortie entière.                                                                                                                                             |
-| `Ctrl+T`                       | Activer/désactiver l'affichage des descriptions d'outils.                                                                                                                                                                                                                                                      |
-| `Ctrl+B`                       | Pendant qu'une commande shell de premier plan est en cours d'exécution : la promouvoir en tâche d'arrière-plan. L'enfant continue de s'exécuter, le tour de l'agent est débloqué, et le shell apparaît dans `/tasks` + la boîte de dialogue Tâches d'arrière-plan. Sans effet lorsqu'aucun shell ne s'exécute — Ctrl+B est alors redirigé vers sa liaison dans la zone de saisie (curseur vers la gauche). |
-| `Alt/Option+M`                 | Activer/désactiver la sortie Markdown entre les aperçus enrichis et le mode brut/source. Sur macOS, le terminal doit envoyer Option en tant que Meta.                                                                                                                                                          |
-| `Shift+Tab` (`Tab` sur Windows) | Faire défiler les modes d'approbation (`plan` → `default` → `auto-edit` → `auto` → `yolo`)                                                                                                                                                                                                                      |
+| Shortcut                       | Description                                                                                                                                                                                                                                                                                               |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Esc`                          | Ferme les boîtes de dialogue et les suggestions.                                                                                                                                                                                                                                                                            |
+| `Ctrl+C`                       | Annule la requête en cours et efface l'entrée. Appuyez deux fois pour quitter l'application.                                                                                                                                                                                                                      |
+| `Ctrl+D`                       | Quitte l'application si l'entrée est vide. Appuyez deux fois pour confirmer.                                                                                                                                                                                                                                       |
+| `Ctrl+L`                       | Efface l'écran.                                                                                                                                                                                                                                                                                         |
+| `Ctrl+O`                       | Active/désactive le mode compact (masque/affiche la sortie des outils et la réflexion).                                                                                                                                                                                                                                                 |
+| `Ctrl+S`                       | Permet d'afficher intégralement les réponses longues en désactivant la troncature. Utilisez le défilement de votre terminal pour voir la sortie complète.                                                                                                                                                                                     |
+| `Ctrl+T`                       | Active/désactive l'affichage des descriptions des outils.                                                                                                                                                                                                                                                                  |
+| `Ctrl+B`                       | Lorsqu'une commande shell au premier plan est en cours d'exécution : la transforme en tâche d'arrière-plan. Le processus enfant continue de s'exécuter, le tour de l'agent se débloque, et le shell apparaît dans `/tasks` + la boîte de dialogue des tâches d'arrière-plan. Aucune action si aucun shell n'est en cours d'exécution — Ctrl+B est alors transmis à son raccourci dans la zone de saisie (curseur à gauche). |
+| `Alt/Option+M`                 | Bascule la sortie Markdown entre les aperçus enrichis et le mode brut/source. Sur macOS, le terminal doit envoyer Option comme Meta.                                                                                                                                                                               |
+| `Shift+Tab` (`Tab` sur Windows) | Alterne entre les modes d'approbation (`plan` → `default` → `auto-edit` → `auto` → `yolo`)                                                                                                                                                                                                                                 |
 
 ## Invite de saisie
 
-| Raccourci                                             | Description                                                                                                                             |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `!`                                                   | Activer/désactiver le mode shell lorsque l'entrée est vide.                                                                             |
-| `?`                                                   | Afficher/masquer l'affichage des raccourcis clavier lorsque l'entrée est vide.                                                          |
-| `Ctrl+Enter` / `Cmd+Enter` / `Shift+Enter` / `Ctrl+J` | Insérer une nouvelle ligne.                                                                                                             |
-| `Down Arrow`                                          | Ligne suivante, puis accrocher à la fin, puis historique suivant.                                                                       |
-| `Enter`                                               | Soumettre l'invite actuelle.                                                                                                            |
-| `Meta+Delete` / `Ctrl+Delete`                         | Supprimer le mot à droite du curseur.                                                                                                   |
-| `Tab`                                                 | Compléter automatiquement la suggestion actuelle si elle existe.                                                                        |
-| `Up Arrow`                                            | Ligne précédente, puis accrocher au début, puis historique précédent.                                                                   |
-| `Ctrl+A` / `Home`                                     | Déplacer le curseur au début de la ligne.                                                                                               |
-| `Ctrl+B` / `Left Arrow`                               | Déplacer le curseur d'un caractère vers la gauche.                                                                                      |
-| `Ctrl+C`                                              | Effacer l'invite de saisie.                                                                                                             |
-| `Esc` (double pression)                               | Effacer l'invite de saisie.                                                                                                             |
-| `Ctrl+D` / `Delete`                                   | Supprimer le caractère à droite du curseur.                                                                                             |
-| `Ctrl+E` / `End`                                      | Déplacer le curseur à la fin de la ligne.                                                                                               |
-| `Ctrl+F` / `Right Arrow`                              | Déplacer le curseur d'un caractère vers la droite.                                                                                      |
-| `Ctrl+H` / `Backspace`                                | Supprimer le caractère à gauche du curseur.                                                                                             |
-| `Ctrl+K`                                              | Supprimer depuis le curseur jusqu'à la fin de la ligne.                                                                                 |
-| `Ctrl+Left Arrow` / `Meta+Left Arrow` / `Meta+B`      | Déplacer le curseur d'un mot vers la gauche.                                                                                            |
-| `Ctrl+N`                                              | Ligne suivante, puis accrocher à la fin, puis historique suivant.                                                                       |
-| `Ctrl+P`                                              | Ligne précédente, puis accrocher au début, puis historique précédent.                                                                   |
-| `Ctrl+R`                                              | Recherche inversée dans l'historique d'entrée/shell.                                                                                    |
-| `Ctrl+Y`                                              | Réessayer la dernière requête ayant échoué.                                                                                             |
-| `Ctrl+Right Arrow` / `Meta+Right Arrow` / `Meta+F`    | Déplacer le curseur d'un mot vers la droite.                                                                                            |
-| `Ctrl+U`                                              | Supprimer depuis le curseur jusqu'au début de la ligne.                                                                                 |
-| `Ctrl+V` (Windows : `Alt+V`)                          | Coller le contenu du presse-papier. Si le presse-papier contient une image, elle sera sauvegardée et une référence sera insérée dans l'invite. |
-| `Ctrl+W` / `Meta+Backspace` / `Ctrl+Backspace`        | Supprimer le mot à gauche du curseur.                                                                                                   |
-| `Ctrl+X` / `Meta+Enter`                               | Ouvrir l'entrée actuelle dans un éditeur externe.                                                                                       |
+| Shortcut                                              | Description                                                                                                                         |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `!`                                                   | Active/désactive le mode shell lorsque l'entrée est vide.                                                                                          |
+| `?`                                                   | Active/désactive l'affichage des raccourcis clavier lorsque l'entrée est vide.                                                                          |
+| `Ctrl+Enter` / `Cmd+Enter` / `Shift+Enter` / `Ctrl+J` | Insère un saut de ligne.                                                                                                                   |
+| `Flèche bas`                                          | Descend d'une ligne, puis saute à la fin, puis passe à l'historique suivant.                                                                                      |
+| `Enter`                                               | Soumet le prompt actuel.                                                                                                          |
+| `Meta+Delete` / `Ctrl+Delete`                         | Supprime le mot à droite du curseur.                                                                                         |
+| `Tab`                                                 | Complète automatiquement la suggestion actuelle si elle existe.                                                                                  |
+| `Flèche haut`                                            | Remonte d'une ligne, puis saute au début, puis passe à l'historique précédent.                                                                                      |
+| `Ctrl+A` / `Home`                                     | Déplace le curseur au début de la ligne.                                                                                       |
+| `Ctrl+B` / `Flèche gauche`                               | Déplace le curseur d'un caractère vers la gauche.                                                                                          |
+| `Ctrl+C`                                              | Efface l'invite de saisie.                                                                                                              |
+| `Esc` (double appui)                                  | Efface l'invite de saisie.                                                                                                             |
+| `Ctrl+D` / `Delete`                                   | Supprime le caractère à droite du curseur.                                                                                    |
+| `Ctrl+E` / `End`                                      | Déplace le curseur à la fin de la ligne.                                                                                             |
+| `Ctrl+F` / `Flèche droite`                              | Déplace le curseur d'un caractère vers la droite.                                                                                         |
+| `Ctrl+H` / `Backspace`                                | Supprime le caractère à gauche du curseur.                                                                                     |
+| `Ctrl+K`                                              | Supprime du curseur jusqu'à la fin de la ligne.                                                                                      |
+| `Ctrl+Flèche gauche` / `Meta+Flèche gauche` / `Meta+B`      | Déplace le curseur d'un mot vers la gauche.                                                                                               |
+| `Ctrl+N`                                              | Descend d'une ligne, puis saute à la fin, puis passe à l'historique suivant.                                                                                      |
+| `Ctrl+P`                                              | Remonte d'une ligne, puis saute au début, puis passe à l'historique précédent.                                                                                      |
+| `Ctrl+R`                                              | Recherche inversée dans l'historique de saisie/shell.                                                                                         |
+| `Ctrl+Y`                                              | Réessaie la dernière requête échouée.                                                                                                      |
+| `Ctrl+Flèche droite` / `Meta+Flèche droite` / `Meta+F`    | Déplace le curseur d'un mot vers la droite.                                                                                              |
+| `Ctrl+U`                                              | Supprime du curseur jusqu'au début de la ligne.                                                                                |
+| `Ctrl+V` (Windows : `Alt+V`)                           | Colle le contenu du presse-papiers. Si le presse-papiers contient une image, elle sera enregistrée et une référence y sera insérée dans le prompt. |
+| `Ctrl+W` / `Meta+Backspace` / `Ctrl+Backspace`        | Supprime le mot à gauche du curseur.                                                                                          |
+| `Ctrl+X`                                              | Ouvre la saisie actuelle dans un éditeur externe.                                                                                       |
 
 ## Suggestions
 
-| Raccourci                 | Description                                   |
-| ------------------------- | --------------------------------------------- |
-| `Down Arrow` / `Ctrl+N`   | Naviguer vers le bas dans les suggestions.    |
-| `Tab` / `Enter`           | Accepter la suggestion sélectionnée.          |
-| `Up Arrow` / `Ctrl+P`     | Naviguer vers le haut dans les suggestions.   |
+| Shortcut                | Description                            |
+| ----------------------- | -------------------------------------- |
+| `Flèche bas` / `Ctrl+N` | Navigue vers le bas dans les suggestions. |
+| `Tab` / `Enter`         | Accepte la suggestion sélectionnée.        |
+| `Flèche haut` / `Ctrl+P`   | Navigue vers le haut dans les suggestions.   |
 
 ## Sélection par bouton radio
 
-| Raccourci                      | Description                                                                                                    |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `Down Arrow` / `j` / `Ctrl+N`  | Déplacer la sélection vers le bas.                                                                             |
-| `Enter`                        | Confirmer la sélection.                                                                                        |
-| `Up Arrow` / `k` / `Ctrl+P`    | Déplacer la sélection vers le haut.                                                                            |
-| `1-9`                          | Sélectionner un élément par son numéro.                                                                        |
-| (plusieurs chiffres)           | Pour les éléments avec des numéros supérieurs à 9, appuyez rapidement sur les chiffres pour sélectionner l'élément correspondant. |
+| Shortcut                      | Description                                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Flèche bas` / `j` / `Ctrl+N` | Déplace la sélection vers le bas.                                                                                          |
+| `Enter`                       | Confirme la sélection.                                                                                            |
+| `Flèche haut` / `k` / `Ctrl+P`   | Déplace la sélection vers le haut.                                                                                            |
+| `1-9`                         | Sélectionne un élément par son numéro.                                                                                 |
+| (multi-chiffres)                 | Pour les éléments dont le numéro est supérieur à 9, appuyez rapidement sur les chiffres successifs pour sélectionner l'élément correspondant. |
 
-## Défilement arrière de l'historique
+## Défilement de l'historique
 
-Actif uniquement lorsque `ui.useTerminalBuffer` est activé (Paramètres → UI → Historique virtualisé). Dans ce mode, l'historique de la conversation est affiché dans une fenêtre interne à l'application au lieu du défilement arrière du terminal hôte, donc les touches ci-dessous remplacent le défilement natif du terminal.
+Actif uniquement lorsque `ui.useTerminalBuffer` est activé (Settings → UI → Virtualized History). Dans ce mode, l'historique des conversations est rendu dans une zone d'affichage interne à l'application au lieu du défilement du terminal hôte, les touches ci-dessous remplacent donc le défilement natif du terminal.
 
-| Raccourci        | Description                                                    |
-| ---------------- | -------------------------------------------------------------- |
-| `Shift+Up`       | Faire défiler l'historique d'une ligne vers le haut.           |
-| `Shift+Down`     | Faire défiler l'historique d'une ligne vers le bas.            |
-| `PgUp`           | Faire défiler l'historique d'une page (hauteur de la fenêtre). |
-| `PgDn`           | Faire défiler l'historique d'une page (hauteur de la fenêtre). |
-| `Ctrl+Home`      | Aller au début de la conversation.                             |
-| `Ctrl+End`       | Aller à la fin (et réactiver le suivi automatique en direct).  |
-| **Molette**      | Faire défiler l'historique (3 lignes par pas).                 |
+| Shortcut        | Description                                          |
+| --------------- | ---------------------------------------------------- |
+| `Shift+Flèche haut`      | Fait défiler l'historique d'une ligne vers le haut.                          |
+| `Shift+Flèche bas`    | Fait défiler l'historique d'une ligne vers le bas.                        |
+| `PgUp`          | Fait défiler l'historique d'une page vers le haut (hauteur de la zone d'affichage).        |
+| `PgDn`          | Fait défiler l'historique d'une page vers le bas (hauteur de la zone d'affichage).      |
+| `Ctrl+Home`     | Saute au début de la conversation.                 |
+| `Ctrl+End`      | Saute à la fin (et réactive le suivi automatique en direct). |
+| **Molette de la souris** | Fait défiler l'historique (3 lignes par cran).                   |
+Lorsque `ui.useTerminalBuffer` est activé, le terminal transmet les événements de la souris à qwen-code afin que la molette puisse contrôler le viewport de l'application. Comme effet secondaire, **la sélection de texte native par clic et glisser est interceptée par le programme** — maintenez `Shift` (ou `Option` sur macOS Terminal / iTerm) enfoncé lors du glissement pour contourner la capture de la souris et sélectionner le texte de manière habituelle.
 
-Lorsque `ui.useTerminalBuffer` est activé, le terminal transmet les événements de souris à qwen-code afin que la molette puisse contrôler la fenêtre interne. Par conséquent, **la sélection de texte native par clic et glissement est consommée par le programme** — maintenez `Shift` (ou `Option` sur Terminal macOS / iTerm) enfoncé lors du glissement pour contourner la capture de la souris et sélectionner le texte de la manière habituelle.
+### Défilement au trackpad dans tmux
 
-### Défilement tactile dans tmux
+Dans tmux, certains terminaux traduisent les gestes du trackpad ou de la molette en simples séquences `Up Arrow` et `Down Arrow` avant que qwen-code ne les reçoive. Ces octets sont identiques à de véritables pressions sur les touches fléchées, donc qwen-code ne peut pas déterminer si vous vouliez faire défiler le viewport ou naviguer dans l'historique des prompts.
 
-Dans tmux, certains terminaux traduisent les gestes du pavé tactile ou de la molette en simples séquences `Up Arrow` et `Down Arrow` avant que qwen-code ne les voie. Ces octets sont identiques à des pressions réelles de touches fléchées, donc qwen-code ne peut pas distinguer si vous vouliez faire défiler la fenêtre ou naviguer dans l'historique des invites.
-
-Si le défilement tactile modifie l'historique des invites dans tmux, activez `ui.useTerminalBuffer` ; utilisez ensuite `Shift+Up` / `Shift+Down`, ou la molette de la souris lorsque tmux transmet les événements de molette à l'application. Si vous préférez le défilement arrière de l'hôte, ajustez les liaisons de souris de tmux pour les événements de molette.
+Si le défilement au trackpad modifie l'historique des prompts dans tmux, activez `ui.useTerminalBuffer` ; utilisez ensuite `Shift+Up` / `Shift+Down`, ou la molette de la souris lorsque tmux transmet les événements de la molette à l'application. Si vous préférez le scrollback de l'hôte, ajustez les raccourcis souris de tmux pour les événements de la molette.
 
 ## Intégration IDE
 
-| Raccourci | Description                       |
-| --------- | --------------------------------- |
-| `Ctrl+G`  | Voir le contexte CLI reçu de l'IDE |
+| Raccourci | Description |
+| --------- | ----------- |
+| `Ctrl+G` | Afficher le contexte CLI reçu de l'IDE |

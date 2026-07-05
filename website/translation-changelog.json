@@ -1,5 +1,156 @@
 [
   {
+    "timestamp": "2026-07-05T19:19:08.974Z",
+    "commit": "802c382ce1a2a42d0c9c5471cc8492cb08b53ab2",
+    "sourceLanguage": "en",
+    "translatedFiles": {
+      "zh": {
+        "success": [
+          "design/daemon-session-artifacts/session-artifacts-daemon-api-implementation-design.md",
+          "design/daemon-sidechannel-coordination/design.md",
+          "design/daemon-workspace-remember.md",
+          "design/prompt-cache/global-tool-schema-stable-sort.md",
+          "design/skill-required-capabilities.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/09-event-schema.md",
+          "developers/daemon/10-event-bus.md",
+          "developers/daemon/13-sdk-daemon-client.md",
+          "developers/daemon/19-observability.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/settings.md",
+          "users/features/channels/overview.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/scheduled-tasks.md",
+          "users/features/skills.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "de": {
+        "success": [
+          "design/daemon-session-artifacts/session-artifacts-daemon-api-implementation-design.md",
+          "design/daemon-sidechannel-coordination/design.md",
+          "design/daemon-workspace-remember.md",
+          "design/prompt-cache/global-tool-schema-stable-sort.md",
+          "design/skill-required-capabilities.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/09-event-schema.md",
+          "developers/daemon/10-event-bus.md",
+          "developers/daemon/13-sdk-daemon-client.md",
+          "developers/daemon/19-observability.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/settings.md",
+          "users/features/channels/overview.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/scheduled-tasks.md",
+          "users/features/skills.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "fr": {
+        "success": [
+          "design/daemon-session-artifacts/session-artifacts-daemon-api-implementation-design.md",
+          "design/daemon-sidechannel-coordination/design.md",
+          "design/daemon-workspace-remember.md",
+          "design/prompt-cache/global-tool-schema-stable-sort.md",
+          "design/skill-required-capabilities.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/09-event-schema.md",
+          "developers/daemon/10-event-bus.md",
+          "developers/daemon/13-sdk-daemon-client.md",
+          "developers/daemon/19-observability.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/settings.md",
+          "users/features/channels/overview.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/scheduled-tasks.md",
+          "users/features/skills.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "ru": {
+        "success": [
+          "design/daemon-session-artifacts/session-artifacts-daemon-api-implementation-design.md",
+          "design/daemon-sidechannel-coordination/design.md",
+          "design/daemon-workspace-remember.md",
+          "design/prompt-cache/global-tool-schema-stable-sort.md",
+          "design/skill-required-capabilities.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/09-event-schema.md",
+          "developers/daemon/10-event-bus.md",
+          "developers/daemon/13-sdk-daemon-client.md",
+          "developers/daemon/19-observability.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/settings.md",
+          "users/features/channels/overview.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/scheduled-tasks.md",
+          "users/features/skills.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "ja": {
+        "success": [
+          "design/daemon-session-artifacts/session-artifacts-daemon-api-implementation-design.md",
+          "design/daemon-sidechannel-coordination/design.md",
+          "design/daemon-workspace-remember.md",
+          "design/prompt-cache/global-tool-schema-stable-sort.md",
+          "design/skill-required-capabilities.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/09-event-schema.md",
+          "developers/daemon/10-event-bus.md",
+          "developers/daemon/13-sdk-daemon-client.md",
+          "developers/daemon/19-observability.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/settings.md",
+          "users/features/channels/overview.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/scheduled-tasks.md",
+          "users/features/skills.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      },
+      "pt-BR": {
+        "success": [
+          "design/daemon-session-artifacts/session-artifacts-daemon-api-implementation-design.md",
+          "design/daemon-sidechannel-coordination/design.md",
+          "design/daemon-workspace-remember.md",
+          "design/prompt-cache/global-tool-schema-stable-sort.md",
+          "design/skill-required-capabilities.md",
+          "developers/daemon/08-session-lifecycle.md",
+          "developers/daemon/09-event-schema.md",
+          "developers/daemon/10-event-bus.md",
+          "developers/daemon/13-sdk-daemon-client.md",
+          "developers/daemon/19-observability.md",
+          "developers/qwen-serve-protocol.md",
+          "users/configuration/settings.md",
+          "users/features/channels/overview.md",
+          "users/features/commands.md",
+          "users/features/headless.md",
+          "users/features/scheduled-tasks.md",
+          "users/features/skills.md",
+          "users/reference/keyboard-shortcuts.md"
+        ],
+        "failed": []
+      }
+    },
+    "stats": {
+      "totalFiles": 19,
+      "languages": 6,
+      "successCount": 108,
+      "failedCount": 0
+    }
+  },
+  {
     "timestamp": "2026-07-02T21:28:35.625Z",
     "commit": "2126474c281898f32442383c79fe7c0f5990d784",
     "sourceLanguage": "en",
