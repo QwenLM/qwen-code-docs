@@ -440,10 +440,12 @@ ${content}`;
 
     const message = this.formatApiErrorDetails(error).toLowerCase();
     return [
+      "api timeout",
       "connection error",
       "premature close",
       "fetch failed",
       "socket hang up",
+      "timed out",
       "terminated",
       "connection closed",
       "connection reset",
