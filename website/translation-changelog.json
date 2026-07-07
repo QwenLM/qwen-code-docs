@@ -1,5 +1,102 @@
 [
   {
+    "timestamp": "2026-07-07T01:12:53.794Z",
+    "commit": "881d6824f5ce1f7467590b0de6a6bde7dddbd7c8",
+    "sourceLanguage": "en",
+    "translatedFiles": {
+      "zh": {
+        "success": [
+          "design/channels/qwen-tag.md",
+          "design/hot-reload/README.md",
+          "design/hot-reload/lsp-runtime-reinitialization.md",
+          "design/skill-required-capabilities.md",
+          "developers/roadmap.md",
+          "users/configuration/model-providers.md",
+          "users/configuration/settings.md",
+          "users/features/code-review.md",
+          "users/integration-github-action.md"
+        ],
+        "failed": []
+      },
+      "de": {
+        "success": [
+          "design/channels/qwen-tag.md",
+          "design/hot-reload/README.md",
+          "design/hot-reload/lsp-runtime-reinitialization.md",
+          "design/skill-required-capabilities.md",
+          "developers/roadmap.md",
+          "users/configuration/model-providers.md",
+          "users/configuration/settings.md",
+          "users/features/code-review.md",
+          "users/integration-github-action.md"
+        ],
+        "failed": []
+      },
+      "fr": {
+        "success": [
+          "design/channels/qwen-tag.md",
+          "design/hot-reload/README.md",
+          "design/hot-reload/lsp-runtime-reinitialization.md",
+          "design/skill-required-capabilities.md",
+          "developers/roadmap.md",
+          "users/configuration/model-providers.md",
+          "users/configuration/settings.md",
+          "users/features/code-review.md",
+          "users/integration-github-action.md"
+        ],
+        "failed": []
+      },
+      "ru": {
+        "success": [
+          "design/channels/qwen-tag.md",
+          "design/hot-reload/README.md",
+          "design/hot-reload/lsp-runtime-reinitialization.md",
+          "design/skill-required-capabilities.md",
+          "developers/roadmap.md",
+          "users/configuration/model-providers.md",
+          "users/configuration/settings.md",
+          "users/features/code-review.md",
+          "users/integration-github-action.md"
+        ],
+        "failed": []
+      },
+      "ja": {
+        "success": [
+          "design/channels/qwen-tag.md",
+          "design/hot-reload/README.md",
+          "design/hot-reload/lsp-runtime-reinitialization.md",
+          "design/skill-required-capabilities.md",
+          "developers/roadmap.md",
+          "users/configuration/model-providers.md",
+          "users/configuration/settings.md",
+          "users/features/code-review.md",
+          "users/integration-github-action.md"
+        ],
+        "failed": []
+      },
+      "pt-BR": {
+        "success": [
+          "design/channels/qwen-tag.md",
+          "design/hot-reload/README.md",
+          "design/hot-reload/lsp-runtime-reinitialization.md",
+          "design/skill-required-capabilities.md",
+          "developers/roadmap.md",
+          "users/configuration/model-providers.md",
+          "users/configuration/settings.md",
+          "users/features/code-review.md",
+          "users/integration-github-action.md"
+        ],
+        "failed": []
+      }
+    },
+    "stats": {
+      "totalFiles": 9,
+      "languages": 6,
+      "successCount": 54,
+      "failedCount": 0
+    }
+  },
+  {
     "timestamp": "2026-07-05T19:19:08.974Z",
     "commit": "802c382ce1a2a42d0c9c5471cc8492cb08b53ab2",
     "sourceLanguage": "en",
