@@ -1,17 +1,17 @@
 # Channels
 
-Channels ermöglichen es dir, über Messaging-Plattformen wie Telegram, WeChat, QQ, DingTalk oder Feishu mit einem Qwen Code Agenten zu interagieren, anstatt über das Terminal. Du sendest Nachrichten von deinem Smartphone oder deiner Desktop-Chat-App, und der Agent antwortet genauso wie in der CLI.
+Mit Channels kannst du über Messaging-Plattformen wie Telegram, WeChat, QQ, DingTalk oder Feishu mit einem Qwen Code Agenten interagieren, anstatt über das Terminal. Du sendest Nachrichten von deinem Smartphone oder einer Desktop-Chat-App, und der Agent antwortet genauso wie in der CLI.
 
 ## Funktionsweise
 
-Wenn du `qwen channel start` ausführst, macht Qwen Code Folgendes:
+Wenn du `qwen channel start` ausführst, tut Qwen Code Folgendes:
 
 1. Liest die Channel-Konfigurationen aus deiner `settings.json`
-2. Startet einen einzigen Agenten-Prozess über das [Agent Client Protocol (ACP)](../../../developers/architecture.md)
-3. Verbindet sich mit jeder Messaging-Plattform und beginnt, auf Nachrichten zu lauschen
-4. Leitet eingehende Nachrichten an den Agenten weiter und sendet Antworten zurück an den richtigen Chat
+2. Startet einen einzigen Agenten-Prozess unter Verwendung des [Agent Client Protocol (ACP)](../../../developers/architecture.md)
+3. Stellt eine Verbindung zu jeder Messaging-Plattform her und beginnt, auf Nachrichten zu warten
+4. Leitet eingehende Nachrichten an den Agenten weiter und sendet Antworten zurück an den entsprechenden Chat
 
-Alle Channels teilen sich einen Agenten-Prozess mit isolierten Sessions pro Benutzer. Jeder Channel kann sein eigenes Arbeitsverzeichnis, Modell und eigene Instruktionen haben.
+Alle Channels teilen sich einen Agenten-Prozess mit isolierten Sessions pro Benutzer. Jeder Channel kann sein eigenes Arbeitsverzeichnis, Modell und eigene Anweisungen haben.
 
 ## Schnellstart
 
@@ -47,27 +47,27 @@ Channels werden unter dem Schlüssel `channels` in der `settings.json` konfiguri
 
 ### Optionen
 
-| Option                   | Required         | Description                                                                                                                                                            |
+| Option                   | Erforderlich     | Beschreibung                                                                                                                                                            |
 | ------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                   | Yes              | Channel-Typ: `telegram`, `weixin`, `qq`, `dingtalk`, `feishu` oder ein benutzerdefinierter Typ aus einer Erweiterung (siehe [Plugins](./plugins))                                          |
+| `type`                   | Ja               | Channel-Typ: `telegram`, `weixin`, `qq`, `dingtalk`, `feishu` oder ein benutzerdefinierter Typ aus einer Erweiterung (siehe [Plugins](./plugins))                                          |
 | `token`                  | Telegram         | Bot-Token. Unterstützt die `$ENV_VAR`-Syntax zum Lesen aus Umgebungsvariablen. Nicht erforderlich für WeChat, DingTalk oder Feishu                                                   |
 | `clientId`               | DingTalk, Feishu | DingTalk AppKey oder Feishu App ID. Unterstützt die `$ENV_VAR`-Syntax                                                                                                           |
 | `clientSecret`           | DingTalk, Feishu | DingTalk AppSecret oder Feishu App Secret. Unterstützt die `$ENV_VAR`-Syntax                                                                                                    |
-| `model`                  | No               | Modell, das für diesen Channel verwendet werden soll (z. B. `qwen3.5-plus`). Überschreibt das Standardmodell. Nützlich für multimodale Modelle, die Bildeingaben unterstützen                               |
-| `senderPolicy`           | No               | Wer mit dem Bot kommunizieren kann: `allowlist` (Standard), `open` oder `pairing`                                                                                                   |
-| `allowedUsers`           | No               | Liste der Benutzer-IDs, die den Bot verwenden dürfen (wird von den Richtlinien `allowlist` und `pairing` verwendet)                                                                                   |
-| `sessionScope`           | No               | Wie Sessions abgegrenzt werden: `user` (Standard), `thread` oder `single`                                                                                                       |
-| `cwd`                    | No               | Arbeitsverzeichnis für den Agenten. Standardmäßig das aktuelle Verzeichnis                                                                                                     |
-| `instructions`           | No               | Benutzerdefinierte Instruktionen, die der ersten Nachricht jeder Session vorangestellt werden                                                                                                     |
-| `groupPolicy`            | No               | Gruppenchat-Zugriff: `disabled` (Standard), `allowlist` oder `open`. Siehe [Group Chats](#group-chats)                                                                       |
-| `groupHistoryLimit`      | No               | Optionales Nachladen der Gruppenhistorie. `0` oder weggelassen deaktiviert es. Eine positive Zahl speichert so viele autorisierte, nicht erwähnte Gruppennachrichten für die nächste Bot-Erwähnung/Antwort. |
-| `groups`                 | No               | Einstellungen pro Gruppe. Schlüssel sind Gruppenchat-IDs oder `"*"` für Standardwerte. Siehe [Group Chats](#group-chats)                                                                     |
-| `dispatchMode`           | No               | Was passiert, wenn du eine Nachricht sendest, während der Bot beschäftigt ist: `steer` (Standard), `collect` oder `followup`. Siehe [Dispatch Modes](#dispatch-modes)                         |
-| `blockStreaming`         | No               | Progressive Antwortauslieferung: `on` oder `off` (Standard). Siehe [Block Streaming](#block-streaming)                                                                        |
-| `blockStreamingChunk`    | No               | Chunk-Größen-Grenzen: `{ "minChars": 400, "maxChars": 1000 }`. Siehe [Block Streaming](#block-streaming)                                                                    |
-| `blockStreamingCoalesce` | No               | Idle-Flush: `{ "idleMs": 1500 }`. Siehe [Block Streaming](#block-streaming)                                                                                              |
+| `model`                  | Nein             | Modell, das für diesen Channel verwendet werden soll (z. B. `qwen3.5-plus`). Überschreibt das Standardmodell. Nützlich für multimodale Modelle, die Bildeingaben unterstützen                               |
+| `senderPolicy`           | Nein             | Wer mit dem Bot kommunizieren kann: `allowlist` (Standard), `open` oder `pairing`                                                                                                   |
+| `allowedUsers`           | Nein             | Liste der Benutzer-IDs, die den Bot verwenden dürfen (wird von den Richtlinien `allowlist` und `pairing` verwendet)                                                                                   |
+| `sessionScope`           | Nein             | Wie Sessions abgegrenzt werden: `user` (Standard), `thread` oder `single`                                                                                                       |
+| `cwd`                    | Nein             | Arbeitsverzeichnis für den Agenten. Standardmäßig das aktuelle Verzeichnis                                                                                                     |
+| `instructions`           | Nein             | Benutzerdefinierte Anweisungen, die der ersten Nachricht jeder Session vorangestellt werden                                                                                                     |
+| `groupPolicy`            | Nein             | Gruppenchat-Zugriff: `disabled` (Standard), `allowlist` oder `open`. Siehe [Group Chats](#group-chats)                                                                       |
+| `groupHistoryLimit`      | Nein             | Optionales Nachladen der Gruppenhistorie. `0` oder weggelassen deaktiviert es. Eine positive Zahl speichert so viele autorisierte, nicht erwähnte Gruppennachrichten für die nächste Bot-Erwähnung/Antwort. |
+| `groups`                 | Nein             | Einstellungen pro Gruppe. Schlüssel sind Gruppenchat-IDs oder `"*"` für Standardwerte. Siehe [Group Chats](#group-chats)                                                                     |
+| `dispatchMode`           | Nein             | Was passiert, wenn du eine Nachricht sendest, während der Bot beschäftigt ist: `steer` (Standard), `collect` oder `followup`. Siehe [Dispatch Modes](#dispatch-modes)                         |
+| `blockStreaming`         | Nein             | Progressive Antwortauslieferung: `on` oder `off` (Standard). Siehe [Block Streaming](#block-streaming)                                                                        |
+| `blockStreamingChunk`    | Nein             | Chunk-Größenbegrenzungen: `{ "minChars": 400, "maxChars": 1000 }`. Siehe [Block Streaming](#block-streaming)                                                                    |
+| `blockStreamingCoalesce` | Nein             | Idle-Flush: `{ "idleMs": 1500 }`. Siehe [Block Streaming](#block-streaming)                                                                                              |
 
-### Sender Policy
+### Sender-Richtlinie
 
 Steuert, wer mit dem Bot interagieren kann:
 
@@ -85,19 +85,22 @@ Steuert, wie Konversations-Sessions verwaltet werden:
 
 ### Channel Memory
 
-Channel Memory ermöglicht es einem autorisierten Channel-Mitglied, stabilen Kontext für einen Chat oder Thread zu speichern. Qwen Code injiziert diesen Speicher, wenn eine neue Channel-Session startet, auch nach `/clear`.
+Channel Memory ermöglicht es einem autorisierten Channel-Mitglied, stabilen Kontext für einen Chat oder Thread zu speichern. Qwen Code injiziert diesen Kontext, wenn eine neue Channel-Session startet, auch nach `/clear`.
 
-Befehle:
+Beispiele in natürlicher Sprache:
 
-- `/remember-channel <text>` speichert eine Memory-Zeile für den aktuellen Chat oder Thread.
-- `/channel-memory` zeigt den gespeicherten Speicher für den aktuellen Chat oder Thread an.
-- `/forget-channel confirm` löscht den gespeicherten Speicher für den aktuellen Chat oder Thread.
+- `记住：默认使用 staging 环境` speichert den Kontext für den aktuellen Chat oder Thread.
+- `你记一下以后回复前要说 1122` speichert den extrahierten persistenten Kontext.
+- `你现在都记住了什么` zeigt den gespeicherten Kontext für den aktuellen Chat oder Thread an.
+- `把这个聊天的记忆清空` startet den Löschvorgang; `确认清空记忆` bestätigt ihn.
 
-Nur Benutzer, die in `allowedUsers` aufgeführt sind, können Channel Memory lesen, schreiben oder löschen. Wenn `allowedUsers` leer ist, sind Channel-Memory-Befehle für alle deaktiviert.
+Gruppenchats können den gespeicherten Kontext anzeigen, aber Schreib- und Löschvorgänge sind blockiert, um zu verhindern, dass der gemeinsame Kontext zu einem Prompt-Injection-Pfad für andere Teilnehmer wird.
+
+Nur Benutzer, die in `allowedUsers` aufgeführt sind, können den Channel-Speicher lesen, schreiben oder löschen. Wenn `allowedUsers` leer ist, sind die Channel-Memory-Befehle für alle deaktiviert.
 
 ### Token-Sicherheit
 
-Bot-Tokens sollten nicht direkt in der `settings.json` gespeichert werden. Verwende stattdessen Referenzen auf Umgebungsvariablen:
+Bot-Tokens sollten nicht direkt in der `settings.json` gespeichert werden. Verwende stattdessen Umgebungsvariablen-Referenzen:
 
 ```json
 {
@@ -109,11 +112,11 @@ Setze das eigentliche Token in deiner Shell-Umgebung oder in einer `.env`-Datei,
 
 ## DM Pairing
 
-Wenn `senderPolicy` auf `"pairing"` gesetzt ist, durchlaufen unbekannte Absender einen Genehmigungs-Flow:
+Wenn `senderPolicy` auf `"pairing"` gesetzt ist, durchlaufen unbekannte Absender einen Genehmigungsprozess:
 
 1. Ein unbekannter Benutzer sendet eine Nachricht an den Bot
 2. Der Bot antwortet mit einem 8-stelligen Pairing-Code (z. B. `VEQDDWXJ`)
-3. Der Benutzer teilt den Code mit dir (dem Bot-Betreiber)
+3. Der Benutzer teilt den Code dir (dem Bot-Betreiber) mit
 4. Du genehmigst ihn über die CLI:
 
 ```bash
@@ -142,9 +145,9 @@ qwen channel pairing approve my-channel <CODE>
 
 ## Gruppenchats
 
-Standardmäßig funktioniert der Bot nur in Direktnachrichten. Um Gruppenchat-Support zu aktivieren, setze `groupPolicy` auf `"allowlist"` oder `"open"`.
+Standardmäßig funktioniert der Bot nur in Direktnachrichten. Um die Gruppenchat-Unterstützung zu aktivieren, setze `groupPolicy` auf `"allowlist"` oder `"open"`.
 
-### Group Policy
+### Gruppenrichtlinie
 
 Steuert, ob der Bot überhaupt an Gruppenchats teilnimmt:
 
@@ -167,13 +170,13 @@ Konfiguriere dies pro Gruppe mit der `groups`-Einstellung:
 }
 ```
 
-- **`"*"`** — Standardeinstellungen für alle Gruppen. Setzt nur Konfigurations-Standardwerte, keinen Allowlist-Eintrag.
+- **`"*"`** — Standardeinstellungen für alle Gruppen. Setzt nur Konfigurationsstandardwerte, keinen Allowlist-Eintrag.
 - **Gruppenchat-ID** — Überschreibt Einstellungen für eine bestimmte Gruppe. Überschreibt die `"*"`-Standardwerte.
-- **`requireMention`** (Standard: `true`) — Wenn `true`, antwortet der Bot nur auf Nachrichten, die ihn @mentionen oder auf eine seiner Nachrichten antworten. Wenn `false`, antwortet der Bot auf alle Nachrichten (nützlich für dedizierte Aufgaben-Gruppen).
+- **`requireMention`** (Standard: `true`) — Wenn `true`, antwortet der Bot nur auf Nachrichten, die ihn @mentionen oder auf eine seiner Nachrichten antworten. Wenn `false`, antwortet der Bot auf alle Nachrichten (nützlich für dedizierte Aufgabengruppen).
 
-### Group History Backfill
+### Nachladen der Gruppenhistorie
 
-Standardmäßig ignoriert Qwen nicht erwähnte Gruppennachrichten und speichert sie nicht als Session-Turns. Um das nächste `@mention` mit aktuellem Gruppenkontext zu versehen, setze `groupHistoryLimit` auf eine positive Zahl.
+Standardmäßig ignoriert Qwen nicht erwähnte Gruppennachrichten und speichert sie nicht als Session-Turns. Damit das nächste `@mention` den aktuellen Gruppenkontext einschließt, setze `groupHistoryLimit` auf eine positive Zahl.
 
 ```json
 {
@@ -196,40 +199,40 @@ Standardmäßig ignoriert Qwen nicht erwähnte Gruppennachrichten und speichert 
 }
 ```
 
-- Weggelassen oder `0` deaktiviert das Backfill.
+- Weggelassen oder `0` deaktiviert das Nachladen.
 - `groupHistoryLimit` auf Gruppenebene überschreibt den Wert auf Channel-Ebene.
-- Nur Nachrichten von autorisierten Absendern werden persistiert.
-- Nachrichten, die von `groupPolicy` oder der Gruppen-Allowlist abgelehnt werden, werden nicht persistiert.
+- Nur Nachrichten von autorisierten Absendern werden persistent gespeichert.
+- Nachrichten, die von `groupPolicy` oder der Gruppen-Allowlist abgelehnt werden, werden nicht persistent gespeichert.
 - Ausstehende Gruppenhistorie wird als lokales JSONL unter `~/.qwen/channels/<channel-name>-group-history.jsonl` oder `$QWEN_HOME/channels/<channel-name>-group-history.jsonl` gespeichert.
 - Zwischengespeicherte Nachrichten werden beim nächsten echten Trigger als nicht vertrauenswürdiger Kontext injiziert und nicht als eigenständige Session-Turns geschrieben.
 
-### Auswertung von Gruppennachrichten
+### Wie Gruppennachrichten ausgewertet werden
 
 ```
 1. groupPolicy — ist diese Gruppe erlaubt?           (nein → ignorieren)
 2. requireMention — wurde der Bot erwähnt/auf ihn geantwortet? (nein → ignorieren)
-3. senderPolicy — ist dieser Absender autorisiert?   (nein → Pairing-Flow)
+3. senderPolicy — ist dieser Absender genehmigt?     (nein → Pairing-Prozess)
 4. An Session weiterleiten
 ```
 
 ### Telegram-Einrichtung für Gruppen
 
 1. Füge den Bot zu einer Gruppe hinzu
-2. **Deaktiviere den Privacy Mode** im BotFather (`/mybots` → Bot Settings → Group Privacy → Turn Off) – andernfalls sieht der Bot keine Nicht-Befehls-Nachrichten
-3. **Entferne den Bot und füge ihn wieder hinzu**, nachdem du den Privacy Mode geändert hast (Telegram cacht diese Einstellung)
+2. **Deaktiviere den Privacy-Modus** im BotFather (`/mybots` → Bot Settings → Group Privacy → Turn Off) — andernfalls sieht der Bot keine Nicht-Befehls-Nachrichten
+3. **Entferne den Bot und füge ihn wieder hinzu**, nachdem du den Privacy-Modus geändert hast (Telegram cached diese Einstellung)
+### Eine Gruppen-Chat-ID finden
 
-### Gruppenchat-ID finden
-
-So findest du die Chat-ID einer Gruppe für die `groups`-Allowlist:
+Um die Chat-ID einer Gruppe für die `groups`-Allowlist zu finden:
 
 1. Stoppe den Bot, falls er läuft
-2. Sende eine Nachricht, die den Bot in der Gruppe erwähnt
-3. Verwende die Telegram Bot API, um ausstehende Updates zu überprüfen:
+2. Sende eine Nachricht mit einer Erwähnung des Bots in der Gruppe
+3. Nutze die Telegram Bot API, um wartende Updates zu prüfen:
+
 ```bash
 curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3 -m json.tool
 ```
 
-Suche in der Antwort nach `message.chat.id` — Gruppen-IDs sind negative Zahlen (z. B. `-5170296765`).
+Suche in der Response nach `message.chat.id` — Gruppen-IDs sind negative Zahlen (z. B. `-5170296765`).
 
 ## Media-Support
 
@@ -263,9 +266,9 @@ Dateien funktionieren mit jedem Modell – keine multimodale Unterstützung erfo
 
 | Feature  | Telegram                                     | WeChat                           | DingTalk                                      | Feishu                                                      |
 | -------- | -------------------------------------------- | -------------------------------- | --------------------------------------------- | ----------------------------------------------------------- |
-| Bilder   | Direkter Download über die Bot API           | CDN-Download mit AES-Entschlüsselung | downloadCode API (zweistufig)                   | Open API Resources Endpoint (authentifizierter GET, 50-MB-Limit) |
-| Dateien  | Direkter Download über die Bot API (20-MB-Limit) | CDN-Download mit AES-Entschlüsselung | downloadCode API (zweistufig)                   | Open API Resources Endpoint (50-MB-Limit)                    |
-| Bildunterschriften | Foto-/Datei-Bildunterschriften werden als Nachrichtentext eingefügt | Nicht zutreffend                   | Rich Text: gemischter Text + Bilder in einer Nachricht | Rich Text (`post`): Text wird extrahiert; eingebettete Bilder werden ignoriert |
+| Bilder   | Direkter Download über Bot API               | CDN-Download mit AES-Entschlüsselung | downloadCode API (zweistufig)                 | Open-API-Resources-Endpoint (authentifizierter GET, 50-MB-Limit) |
+| Dateien  | Direkter Download über Bot API (20-MB-Limit) | CDN-Download mit AES-Entschlüsselung | downloadCode API (zweistufig)                 | Open-API-Resources-Endpoint (50-MB-Limit)                   |
+| Captions | Foto-/Datei-Captions als Nachrichtentext enthalten | Nicht zutreffend               | Rich Text: gemischter Text + Bilder in einer Nachricht | Rich Text (`post`): Text extrahiert; eingebettete Bilder ignoriert |
 
 > Der QQ Bot verarbeitet keine eingehenden Medien – Bild- und Sticker-Nachrichten werden ignoriert, daher gibt es oben keine Zeile für die Medienverarbeitung.
 
@@ -273,7 +276,7 @@ Dateien funktionieren mit jedem Modell – keine multimodale Unterstützung erfo
 
 Steuert, was passiert, wenn du eine neue Nachricht sendest, während der Bot noch eine vorherige verarbeitet.
 
-- **`steer`** (Standard) – Der Bot bricht die aktuelle Anfrage ab und beginnt mit der Verarbeitung deiner neuen Nachricht. Am besten für normale Chats, wo eine Folge-Nachricht normalerweise bedeutet, dass du den Bot korrigieren oder umleiten möchtest.
+- **`steer`** (Standard) – Der Bot bricht die aktuelle Anfrage ab und beginnt mit der Verarbeitung deiner neuen Nachricht. Am besten für normale Chats, wo ein Follow-up normalerweise bedeutet, dass du den Bot korrigieren oder umleiten möchtest.
 - **`collect`** – Deine neuen Nachrichten werden gepuffert. Wenn die aktuelle Anfrage abgeschlossen ist, werden alle gepufferten Nachrichten zu einem einzigen Follow-up-Prompt zusammengefasst. Gut für asynchrone Workflows, bei denen du Gedanken sammeln möchtest.
 - **`followup`** – Jede Nachricht wird in die Warteschlange gestellt und der Reihe nach als eigener, separater Turn verarbeitet. Nützlich für Batch-Workflows, bei denen jede Nachricht unabhängig ist.
 
@@ -300,9 +303,9 @@ Du kannst den Dispatch-Modus auch pro Gruppe festlegen und damit den Channel-Sta
 }
 ```
 
-## Block Streaming
+## Block-Streaming
 
-Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige große Antwort. Wenn Block Streaming aktiviert ist, trifft die Antwort in mehreren kürzeren Nachrichten ein, während der Agent noch arbeitet – ähnlich wie ChatGPT oder Claude progressive Ausgaben anzeigen.
+Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige große Response. Wenn Block-Streaming aktiviert ist, trifft die Response in mehreren kürzeren Nachrichten ein, während der Agent noch arbeitet – ähnlich wie ChatGPT oder Claude progressive Ausgaben anzeigen.
 
 ```json
 {
@@ -318,25 +321,25 @@ Standardmäßig arbeitet der Agent eine Weile und sendet dann eine einzige groß
 }
 ```
 
-### Funktionsweise
+### So funktioniert es
 
-- Die Antwort des Agenten wird an Absatzgrenzen in Blöcke aufgeteilt und als separate Nachrichten gesendet
+- Die Response des Agenten wird an Absatzgrenzen in Blöcke aufgeteilt und als separate Nachrichten gesendet
 - `minChars` (Standard 400) – Sende einen Block erst, wenn er mindestens diese Länge hat, um Spam durch winzige Nachrichten zu vermeiden
 - `maxChars` (Standard 1000) – Wenn ein Block diese Länge ohne natürliche Pause erreicht, wird er trotzdem gesendet
 - `idleMs` (Standard 1500) – Wenn der Agent pausiert (z. B. bei der Ausführung eines Tools), sende den bisher gepufferten Inhalt
-- Wenn der Agent fertig ist, wird jeglicher verbleibende Text sofort gesendet
+- Wenn der Agent fertig ist, wird der restliche Text sofort gesendet
 
 Nur `blockStreaming` ist erforderlich. Die Chunk- und Coalesce-Einstellungen sind optional und haben sinnvolle Standardwerte.
 
-## Slash-Befehle
+## Slash Commands
 
-Channels unterstützen Slash-Befehle. Diese werden lokal verarbeitet (kein Agent-Roundtrip):
+Channels unterstützen Slash Commands. Diese werden lokal verarbeitet (kein Agent-Roundtrip):
 
 - `/help` – Verfügbare Befehle auflisten
 - `/clear` – Deine Session löschen und neu starten (Aliase: `/reset`, `/new`)
-- `/status` – Session-Infos und Zugriffsrichtlinie anzeigen
+- `/status` – Session-Infos und Access-Policy anzeigen
 
-Alle anderen Slash-Befehle (z. B. `/compress`, `/summary`) werden an den Agenten weitergeleitet.
+Alle anderen Slash Commands (z. B. `/compress`, `/summary`) werden an den Agenten weitergeleitet.
 
 Diese Befehle funktionieren bei allen Channel-Typen (Telegram, WeChat, QQ, DingTalk, Feishu).
 
@@ -370,15 +373,15 @@ qwen serve --channel my-channel
 qwen serve --channel all
 ```
 
-Dieser Modus startet einen Channel-Worker-Prozess, der `qwen serve` gehört. Der Worker verbindet sich über das SDK zurück mit dem Daemon und verwendet dieselben Channel-Adapter. Er ist vom Daemon-Prozess getrennt, sodass ein Absturz eines Channel-Adapters nicht den Daemon zum Absturz bringt.
+Dieser Modus startet einen Channel-Worker-Prozess, der von `qwen serve` verwaltet wird. Der Worker verbindet sich über das SDK zurück mit dem Daemon und verwendet dieselben Channel-Adapter. Er ist vom Daemon-Prozess getrennt, sodass ein Absturz eines Channel-Adapters nicht den Daemon zum Absturz bringt.
 
-`qwen serve --channel` ist nicht derselbe Service wie `qwen channel start`. Das eigenständige `qwen channel start` verwendet weiterhin den ACP-gestützten Channel-Service und kann Channel-Konfigurationen mit unterschiedlichen `cwd`-Werten ausführen. Daemon-verwaltete Channels erfordern, dass das `cwd` jedes ausgewählten Channels in den Daemon-Workspace aufgelöst wird.
+`qwen serve --channel` ist nicht derselbe Service wie `qwen channel start`. Das eigenständige `qwen channel start` verwendet weiterhin den ACP-gestützten Channel-Service und kann Channel-Konfigurationen mit unterschiedlichen `cwd`-Werten ausführen. Daemon-verwaltete Channels erfordern, dass das `cwd` jedes ausgewählten Channels zum Daemon-Workspace aufgelöst wird.
 
 Wenn Channels über `serve` verwaltet werden, zeigt `qwen channel status` als Owner `qwen serve` an, und `qwen channel stop` weist dich an, den Daemon zu stoppen, anstatt den Worker direkt zu signalisieren. Wenn ein bereiter Worker unerwartet beendet wird, läuft der Daemon weiter und meldet eine Channel-Worker-Warnung in `/daemon/status`.
 
 ### Multi-Channel-Modus
 
-Wenn du `qwen channel start` ohne Namen ausführst, starten alle in `settings.json` definierten Channels gemeinsam und teilen sich einen einzigen Agent-Prozess. Jeder Channel verwaltet seine eigenen Sessions – ein Telegram-Nutzer und ein WeChat-Nutzer erhalten separate Unterhaltungen, auch wenn sie sich denselben Agenten teilen.
+Wenn du `qwen channel start` ohne Namen ausführst, starten alle in `settings.json` definierten Channels gemeinsam und teilen sich einen einzigen Agent-Prozess. Jeder Channel verwaltet seine eigenen Sessions – ein Telegram-Nutzer und ein WeChat-Nutzer erhalten separate Konversationen, auch wenn sie sich denselben Agenten teilen.
 
 Jeder Channel verwendet sein eigenes `cwd` aus seiner Konfiguration, sodass verschiedene Channels gleichzeitig an unterschiedlichen Projekten arbeiten können.
 
@@ -392,9 +395,9 @@ Der Channel-Service verwendet eine PID-Datei (`~/.qwen/channels/service.pid`), u
 
 ### Crash-Recovery
 
-Wenn der Agent-Prozess unerwartet abstürzt, startet der Channel-Service ihn automatisch neu und versucht, alle aktiven Sessions wiederherzustellen. Nutzer können ihre Unterhaltungen fortsetzen, ohne von vorne beginnen zu müssen.
+Wenn der Agent-Prozess unerwartet abstürzt, startet der Channel-Service ihn automatisch neu und versucht, alle aktiven Sessions wiederherzustellen. Nutzer können ihre Konversationen fortsetzen, ohne von vorne beginnen zu müssen.
 
 - Sessions werden während der Laufzeit des Service in `~/.qwen/channels/sessions.json` persistiert
-- Bei einem Absturz: Der Agent startet innerhalb von 3 Sekunden neu und lädt die gespeicherten Sessions
-- Nach 3 aufeinanderfolgenden Abstürzen beendet sich der Service mit einem Fehler
+- Bei einem Crash: Der Agent startet innerhalb von 3 Sekunden neu und lädt die gespeicherten Sessions
+- Nach 3 aufeinanderfolgenden Crashes beendet sich der Service mit einem Fehler
 - Bei einem sauberen Shutdown (Strg+C oder `qwen channel stop`): Session-Daten werden gelöscht – der nächste Start ist immer frisch
