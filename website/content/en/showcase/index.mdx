@@ -1813,6 +1813,22 @@ export const showcaseItems = [
       { title: "Export Data", description: "Enter /stats export to export a CSV or JSON file containing only aggregated data — no prompt/response text or project paths. Export paths are restricted to within the project working directory.", command: "/stats export daily 2026-06-25 --format csv" },
     ],
   },
+  {
+    id: "code-review-demo",
+    title: "9 AI Reviewers, Checking Your Code Simultaneously",
+    description: "Run /review to scan your code for security vulnerabilities and performance issues, auto-fix them instantly, or review remote PRs with inline comments on GitHub.",
+    category: "Development",
+    features: ["Code Review", "Agent Mode", "GitHub", "Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01tSdqZK1cCp7pMo9Z0_!!6000000003565-0-videocover-1920-1080.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/a50ytDTCsScQ2HKs2H9LdotbwecgCd5OcFLYJPwEVPE.mp4",
+    model: "qwen3.7-max",
+    overview: "Before you commit, run /review — 9 review agents kick in simultaneously, scanning your code for security, performance, and quality issues in parallel. Found something wrong? It auto-fixes and validates with linters. Got a PR from a teammate? One command reviews it and posts inline comments right on GitHub, just like a human reviewer.",
+    steps: [
+      { title: "Project Code Review", description: "Run `/review` to scan your project code. 9 agents work in parallel, catching security vulnerabilities, performance bottlenecks, and code quality issues.", command: "/review" },
+      { title: "Fix All Issues", description: "Choose auto-fix — Qwen Code patches the code directly and runs linter to verify no new issues are introduced." },
+      { title: "PR Review & Comment", description: "Run `/review <PR number> --comment` to review a remote PR. Switch to GitHub and see inline comments posted right on the code lines.", command: "/review <PR number> --comment" },
+    ],
+  },
 ];
 
 <VideoShowcaseIndex
