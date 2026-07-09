@@ -1879,6 +1879,20 @@ export const showcaseItems = [
       { title: "搜索设置项", description: "在 Settings 页直接输入关键词筛选设置项。" },
       { title: "切换到 Status 页", description: "用 ←/→ 切换到 Status 页查看运行时信息，不用单独跑 /status。" },
       { title: "查看 Stats 仪表盘", description: "切换到 Stats 页，按 Tab 切换 Session / Activity / Efficiency 子标签。" },
+  {
+    id: "code-review-demo",
+    title: "9 个 AI 审查员，同时帮你看代码",
+    description: "用 /review 审查项目代码，自动发现安全漏洞和性能问题，一键修复，还能审查远程 PR 并在 GitHub 上留行内批注。",
+    category: "编程开发",
+    features: ["代码审查", "Agent 模式", "GitHub", "Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN0125Uqjz1jIVLevSaJR_!!6000000004525-0-videocover-1920-1080.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/q8e6oXagz7e6S3nXqzdz9uX9Jc2vU1M5cTQc5KYxnLQ.mp4",
+    model: "qwen3.7-max",
+    overview: "写完代码提交前，跑一遍 /review，9 个审查 Agent 同时开工，从安全、性能、代码质量等维度并行扫描，发现问题直接帮你修好。同事提了 PR，一条命令审查，意见自动写到 GitHub 代码行上，跟真人 review 一样。",
+    steps: [
+      { title: "项目代码审查", description: "运行 `/review` 审查项目代码，9 个 Agent 并行扫描，自动发现硬编码密钥、SQL 注入等安全和性能问题。" },
+      { title: "一键修复问题", description: "选择自动修复，Qwen Code 直接修改代码并运行 linter 验证，确保修复不引入新问题。" },
+      { title: "PR 审查并评论", description: "运行 `/review <PR number> --comment` 审查远程 PR，切到 GitHub 查看行内批注，审查意见直接写在代码行上。", command: "/review <PR number> --comment" },
     ],
   },
 ];

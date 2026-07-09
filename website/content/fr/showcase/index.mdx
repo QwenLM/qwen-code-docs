@@ -1879,6 +1879,20 @@ export const showcaseItems = [
       { title: "Rechercher un paramètre", description: "Tapez un mot-clé dans la page Settings pour filtrer les paramètres instantanément." },
       { title: "Passer à l'onglet Status", description: "Utilisez ←/→ pour passer à l'onglet Status et consulter les informations d'exécution sans lancer /status séparément." },
       { title: "Consulter le tableau de bord Stats", description: "Passez à l'onglet Stats et utilisez Tab pour basculer entre les sous-onglets Session / Activity / Efficiency." },
+  {
+    id: "code-review-demo",
+    title: "9 agents IA qui reviewent votre code en même temps",
+    description: "Lancez /review pour détecter automatiquement les failles de sécurité et les problèmes de performance, corrigez-les en un clic, ou review des PR à distance avec des commentaires inline sur GitHub.",
+    category: "Développement",
+    features: ["Revue de code", "Mode Agent", "GitHub", "Terminal"],
+    thumbnail: "https://img.alicdn.com/imgextra/i1/O1CN01tSdqZK1cCp7pMo9Z0_!!6000000003565-0-videocover-1920-1080.jpg",
+    videoUrl: "https://cloud.video.taobao.com/vod/a50ytDTCsScQ2HKs2H9LdotbwecgCd5OcFLYJPwEVPE.mp4",
+    model: "qwen3.7-max",
+    overview: "Avant de committer, lancez /review — 9 agents de revue se mettent en route simultanément, scannant votre code en parallèle sur la sécurité, la performance et la qualité. Un problème trouvé ? Il le corrige automatiquement et valide avec le linter. Un PR d'un collègue ? Une seule commande pour le reviewer, et les commentaires apparaissent directement sur les lignes de code dans GitHub, comme un vrai reviewer.",
+    steps: [
+      { title: "Revue de code du projet", description: "Lancez `/review` pour scanner le code de votre projet. 9 agents travaillent en parallèle pour détecter les failles de sécurité et les problèmes de performance.", command: "/review" },
+      { title: "Correction automatique", description: "Choisissez la correction automatique — Qwen Code modifie le code directement et lance le linter pour vérifier qu'aucun nouveau problème n'est introduit." },
+      { title: "Revue de PR & commentaires", description: "Lancez `/review <PR number> --comment` pour reviewer une PR à distance. Passez sur GitHub et retrouvez les commentaires inline directement sur les lignes de code.", command: "/review <PR number> --comment" },
     ],
   },
 ];

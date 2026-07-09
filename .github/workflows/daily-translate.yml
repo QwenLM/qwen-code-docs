@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     # Large upstream batches can spend nearly three hours translating before
     # the static site build starts.
-    timeout-minutes: 300
+    timeout-minutes: 360
     steps:
       - name: Checkout workflow ref
         uses: actions/checkout@v7
@@ -69,8 +69,9 @@ jobs:
           # The MaaS compatible endpoint can close long responses when all
           # target languages run at once. Keep CI conservative and let API
           # retries handle transient disconnects.
-          QWEN_TRANSLATION_CONCURRENCY: "6"
-          QWEN_API_MAX_RETRIES: "4"
+          QWEN_TRANSLATION_CONCURRENCY: "3"
+          QWEN_API_MAX_RETRIES: "6"
+          QWEN_CHUNK_CHARS: "12000"
         run: |
           set -o pipefail
           node ../translator/bin/qwen-translator sync 2>&1 | tee /tmp/sync.log

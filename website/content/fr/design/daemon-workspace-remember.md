@@ -1,4 +1,4 @@
-# Daemon Workspace Remember — Ingestion de mémoire sans session
+# Tâches de mémoire d'espace de travail du démon — Mémoire gérée sans session
 
 > **Statut** : Proposé — implémentation dans la [PR #5884](https://github.com/QwenLM/qwen-code/pull/5884) (branche `codex/sessionless-daemon-remember`), pas encore fusionnée.
 
@@ -6,51 +6,51 @@
 
 ## 1. Énoncé du problème
 
-Le système de mémoire gérée du daemon (auto-extraction, dream agent) nécessitait auparavant une session de chat active pour écrire des mémoires. Cela posait deux problèmes :
+Le système de mémoire gérée du démon (auto-extraction, agent de rêve) nécessitait auparavant une session de chat active pour écrire des mémoires. Cela posait deux problèmes :
 
-1. **L'interface des paramètres ne peut pas écrire de mémoires** — le panneau de paramètres du web-shell doit pouvoir sauvegarder des faits fournis par l'utilisateur (par ex. "toujours utiliser le mode strict de TypeScript") sans créer ni polluer une session de chat visible.
+1. **L'interface des paramètres ne peut pas écrire de mémoires** — le panneau de paramètres du web-shell doit sauvegarder des faits fournis par l'utilisateur (par ex. "toujours utiliser le mode strict de TypeScript") sans créer ni polluer une session de chat visible.
 2. **Pollution de la liste des sessions** — créer une session jetable juste pour exécuter une commande `/remember` ajoute du bruit à la liste des sessions et perturbe les utilisateurs qui voient des sessions fantômes qu'ils n'ont jamais ouvertes.
 
-La solution est un **endpoint remember au niveau du workspace sans session** qui met en file d'attente les tâches d'écriture de mémoire, les exécute via un fork `AgentHeadless` caché (aucune session créée), et expose le statut via du polling.
+La solution est une **API de tâches de mémoire au niveau de l'espace de travail sans session** qui met en file d'attente les tâches remember, forget et dream, les exécute sans créer de session visible, et expose le statut via du polling.
 
 ---
 
-## 2. Aperçu de la conception
+## 2. Vue d'ensemble de la conception
 
 ```
-┌──────────────┐  POST /workspace/memory/remember   ┌─────────────────────────┐
+┌──────────────┐  POST /workspace/memory/{task}      ┌─────────────────────────┐
 │  SDK / UI    │ ─────────────────────────────────►  │  workspace-remember.ts  │
 │  client      │                                     │  (WorkspaceRemember-    │
-│              │  GET  /workspace/memory/remember/:id │   TaskLane)             │
+│              │  GET  /workspace/memory/{task}/:id  │   TaskLane)             │
 │              │ ─────────────────────────────────►  │                         │
 └──────────────┘                                     └────────────┬────────────┘
-                                                                  │ bridge.runWorkspaceMemoryRemember()
+                                                                  │ bridge.runWorkspaceMemory*
                                                      ┌────────────▼────────────┐
                                                      │  HttpAcpBridge          │
                                                      │  extMethod(             │
                                                      │    'qwen/control/       │
                                                      │     workspace/memory/   │
-                                                     │     remember')          │
+                                                     │     {task}')            │
                                                      └────────────┬────────────┘
                                                                   │ ACP stdio (JSON-RPC)
                                                      ┌────────────▼────────────┐
                                                      │  qwen --acp child       │
                                                      │  (QwenAgent.extMethod)  │
-                                                     │  → runManagedRemember-  │
-                                                     │    ByAgent (forked)     │
+                                                     │  → remember / forget /  │
+                                                     │    dream core logic     │
                                                      └─────────────────────────┘
 ```
 
 Propriétés clés :
 
-- **Aucune session requise** — le bridge garantit le lancement du processus enfant ACP sans créer, charger ni reprendre de session ACP.
-- **Exécution sérielle** — les tâches s'exécutent une à la fois via une file de promesses chaînées, empêchant les écritures concurrentes sur le système de fichiers de la mémoire gérée.
-- **Caché** — l'agent forké s'exécute avec `name: 'managed-auto-memory-remember'` et est invisible dans la liste des sessions.
-- **Annoncé comme capacité** — `workspace_memory_remember` dans la réponse `/capabilities` du daemon, avec les `modes` pris en charge : `['workspace', 'clean']`.
+- **Aucune session requise** — le bridge garantit que le processus enfant ACP est lancé, mais ne crée, ne charge ni ne reprend de session ACP.
+- **Exécution sérielle** — les tâches s'exécutent une par une via une file de chaînes de promesses (promise-chain lane), empêchant les écritures concurrentes sur le système de fichiers de la mémoire gérée.
+- **Caché** — remember/dream s'exécutent via des agents cachés et forget utilise une configuration de mémoire cachée ; aucune de ces opérations ne crée de sessions visibles.
+- **Annoncé dans les capacités** — `workspace_memory_remember`, `workspace_memory_forget` et `workspace_memory_dream` dans la réponse `/capabilities` du démon. Remember annonce également `modes: ['workspace', 'clean']`.
 
 ---
 
-## 3. Endpoints de l'API
+## 3. Points de terminaison de l'API
 
 ### 3.1 `POST /workspace/memory/remember`
 
@@ -66,9 +66,9 @@ Met en file d'attente une nouvelle tâche remember.
 ```
 
 | Champ         | Type     | Requis | Description                                                                                                 |
-| ------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------- |
-| `content`     | `string` | oui      | Le fait à mémoriser. Max 64 KiB (longueur en octets UTF-8).                                                       |
-| `contextMode` | `string` | non       | `"workspace"` (par défaut) — l'agent voit le contexte de la mémoire du workspace. `"clean"` — l'agent ne voit aucune mémoire utilisateur préalable. |
+| ------------- | -------- | ------ | ----------------------------------------------------------------------------------------------------------- |
+| `content`     | `string` | oui    | Le fait à mémoriser. Max 64 Kio (longueur en octets UTF-8).                                                 |
+| `contextMode` | `string` | non    | `"workspace"` (par défaut) — l'agent voit le contexte de mémoire de l'espace de travail. `"clean"` — l'agent ne voit aucune mémoire utilisateur préalable. |
 
 **En-têtes :**
 
@@ -91,16 +91,16 @@ Met en file d'attente une nouvelle tâche remember.
 
 | Statut | Code                         | Condition                                       |
 | ------ | ---------------------------- | ----------------------------------------------- |
-| 400    | `invalid_content`            | Contenu manquant, vide ou trop volumineux            |
-| 400    | `invalid_context_mode`       | Valeur contextMode non reconnue                  |
-| 400    | `invalid_client_id`          | X-Qwen-Client-Id non enregistré auprès du bridge |
-| 409    | `managed_memory_unavailable` | Mémoire gérée non configurée pour le workspace     |
-| 429    | `remember_queue_full`        | 16 tâches en attente déjà en file d'attente                 |
-| 500    | `remember_failed`            | La vérification de disponibilité a levé une erreur inattendue           |
+| 400    | `invalid_content`            | Contenu manquant, vide ou trop volumineux       |
+| 400    | `invalid_context_mode`       | Valeur contextMode non reconnue                 |
+| 400    | `invalid_client_id`          | X-Qwen-Client-Id non enregistré auprès du bridge|
+| 409    | `managed_memory_unavailable` | Mémoire gérée non configurée pour l'espace de travail |
+| 429    | `remember_queue_full`        | 16 tâches en attente déjà en file d'attente     |
+| 500    | `remember_failed`            | La vérification de disponibilité a échoué de manière inattendue |
 
 ### 3.2 `GET /workspace/memory/remember/:taskId`
 
-Récupère le statut de la tâche par polling.
+Récupère le statut de la tâche via polling.
 
 **En-têtes :**
 
@@ -163,11 +163,73 @@ Récupère le statut de la tâche par polling.
 | Statut | Code                      | Condition                                            |
 | ------ | ------------------------- | ---------------------------------------------------- |
 | 400    | `invalid_client_id`       | X-Qwen-Client-Id non enregistré                      |
-| 404    | `remember_task_not_found` | La tâche n'existe pas ou appartient à un autre client |
+| 404    | `remember_task_not_found` | La tâche n'existe pas ou appartient à un autre client|
 
 ---
 
-## 4. Cycle de vie de la tâche
+### 3.3 `POST /workspace/memory/forget`
+
+Met en file d'attente une tâche forget. Le démon sélectionne les entrées de mémoire automatique gérée correspondantes et les supprime sans créer de session.
+
+**Requête :**
+
+```json
+{
+  "query": "old preference"
+}
+```
+
+| Champ   | Type     | Requis | Description                                                             |
+| ------- | -------- | ------ | ----------------------------------------------------------------------- |
+| `query` | `string` | oui    | Description en langage naturel à oublier. Max 64 Kio (longueur en octets UTF-8). |
+
+La réponse initiale est `202 Accepted` avec un id de tâche `forget-...`. Interroge `GET /workspace/memory/forget/:taskId` via polling jusqu'à l'état terminal.
+
+**Résultat terminé (completed) :**
+
+```json
+{
+  "summary": "Forgot 1 memory entry.",
+  "removedEntries": [
+    {
+      "topic": "project",
+      "summary": "old preference",
+      "filePath": "/path/to/memory.md"
+    }
+  ],
+  "touchedTopics": ["project"]
+}
+```
+
+### 3.4 `GET /workspace/memory/forget/:taskId`
+
+Récupère le statut de la tâche forget via polling. La structure correspond à celle du polling des tâches remember, à l'exception qu'il n'y a pas de champ `contextMode` et que les échecs terminaux utilisent `forget_task_not_found` pour les ids de tâches inconnus ou non autorisés.
+
+### 3.5 `POST /workspace/memory/dream`
+
+Met en file d'attente une tâche dream. Le démon exécute le flux de compaction de rêve de la mémoire automatique gérée sans créer de session.
+
+**Requête :** objet JSON vide ou pas de corps (body).
+
+La réponse initiale est `202 Accepted` avec un id de tâche `dream-...`. Interroge `GET /workspace/memory/dream/:taskId` via polling jusqu'à l'état terminal.
+
+**Résultat terminé (completed) :**
+
+```json
+{
+  "summary": "Managed auto-memory dream completed.",
+  "touchedTopics": ["project"],
+  "dedupedEntries": 1
+}
+```
+
+### 3.6 `GET /workspace/memory/dream/:taskId`
+
+Récupère le statut de la tâche dream via polling. La structure correspond à celle du polling des tâches remember, à l'exception qu'il n'y a pas de champ `contextMode` et que les échecs terminaux utilisent `dream_task_not_found` pour les ids de tâches inconnus ou non autorisés.
+
+---
+
+## 4. Cycle de vie des tâches
 
 ```
             enqueue()
@@ -190,11 +252,11 @@ Récupère le statut de la tâche par polling.
 ```
 
 - **queued** — la tâche est créée et attend dans la file sérielle.
-- **running** — l'appel au bridge est en cours ; l'agent forké s'exécute.
+- **running** — l'appel au bridge est en cours ; l'agent forké est en cours d'exécution.
 - **completed** — l'agent a terminé avec succès ; `result` est rempli.
-- **failed** — l'agent a levé une erreur ou a expiré (timeout) ; `error` est rempli.
+- **failed** — l'agent a levé une exception ou a expiré (timed out) ; `error` est rempli.
 
-La file stocke jusqu'à **1000 tâches** au total (les tâches terminales sont évincées en FIFO lorsque la limite est atteinte). Au maximum **16 tâches** peuvent être en attente (queued + running) à tout moment.
+La file stocke jusqu'à **1000 tâches** au total (les tâches terminales sont évincées en FIFO lorsque la limite est atteinte). Au maximum **16 tâches** peuvent être en attente (queued + running) à tout moment. Les tâches forget et dream partagent une limite plus petite de **8 tâches en attente** afin qu'une maintenance manuelle par à-coups ne puisse pas consommer tous les emplacements nécessaires au travail automatique de remember.
 
 ---
 
@@ -202,45 +264,54 @@ La file stocke jusqu'à **1000 tâches** au total (les tâches terminales sont �
 
 ### 5.1 File de tâches sérielle (`WorkspaceRememberTaskLane`)
 
-Située dans `packages/cli/src/serve/workspace-remember.ts`. Elle maintient une `Map<taskId, TaskRecord>` et une seule chaîne de promesses (`this.tail`). Chaque `enqueue()` ajoute une fonction `run` qui :
+Situé dans `packages/cli/src/serve/workspace-remember.ts`. Maintient une `Map<taskId, TaskRecord>` et une seule chaîne de promesses (`this.tail`). Chaque `enqueue()` ajoute une fonction `run` qui :
 
 1. Définit le statut à `running`.
-2. Appelle `bridge.runWorkspaceMemoryRemember({ content, contextMode })`.
-3. En cas de succès : définit le statut à `completed`, remplit `result`, publie l'événement `memory_changed`.
-4. En cas d'échec : définit le statut à `failed`, remplit `error` avec un code d'erreur public stable.
+2. Appelle la méthode correspondante du bridge : `runWorkspaceMemoryRemember`, `runWorkspaceMemoryForget` ou `runWorkspaceMemoryDream`.
+3. En cas de succès : définit le statut à `completed`, remplit `result` et publie un événement `memory_changed` lorsque la tâche a effectivement modifié la mémoire gérée.
+4. En cas d'échec : définit le statut à `failed` et remplit `error` avec un code d'erreur public stable.
 
-La file garantit une sérialisation stricte : une seule tâche remember s'exécute à la fois, empêchant les écritures concurrentes sur le système de fichiers de la mémoire gérée.
+La file garantit une sérialisation stricte : une seule tâche de mémoire d'espace de travail s'exécute à la fois, empêchant les écritures concurrentes sur le système de fichiers de la mémoire gérée.
 
 ### 5.2 Couche Bridge (`HttpAcpBridge`)
 
-Deux méthodes ajoutées à `BridgeInterface` (`packages/acp-bridge/src/bridgeTypes.ts`) :
+Méthodes de mémoire d'espace de travail ajoutées à `BridgeInterface` (`packages/acp-bridge/src/bridgeTypes.ts`) :
 
-- `isWorkspaceMemoryRememberAvailable()` — appelle l'ext-method `qwen/control/workspace/memory/remember/availability` sur l'enfant. Retourne un `boolean`. Utilisé pour un échec rapide (fast-fail) `409` avant la mise en file d'attente.
-- `runWorkspaceMemoryRemember(request)` — appelle l'ext-method `qwen/control/workspace/memory/remember`. Expire après **300 s** (`WORKSPACE_MEMORY_REMEMBER_TIMEOUT_MS`). Ne crée ni ne charge de session.
+- `isWorkspaceMemoryRememberAvailable()` — appelle la méthode étendue `qwen/control/workspace/memory/remember/availability` sur le processus enfant. Retourne un `boolean`. Utilisé pour un échec rapide (fast-fail) `409` avant la mise en file d'attente.
+- `runWorkspaceMemoryRemember(request)` — appelle la méthode étendue `qwen/control/workspace/memory/remember`. Expire après **300 s** (`WORKSPACE_MEMORY_REMEMBER_TIMEOUT_MS`). Ne crée ni ne charge de session.
+- `runWorkspaceMemoryForget(request)` — appelle la méthode étendue `qwen/control/workspace/memory/forget` et utilise le même délai d'expiration du bridge. Ne crée ni ne charge de session.
+- `runWorkspaceMemoryDream()` — appelle la méthode étendue `qwen/control/workspace/memory/dream` et utilise le même délai d'expiration du bridge. Ne crée ni ne charge de session.
 
-Les deux méthodes appellent `ensureChannel()` (lançant le processus enfant ACP si nécessaire) et redémarrent le minuteur d'inactivité ensuite si aucune session n'est active.
+Ces méthodes appellent `ensureChannel()` (en lançant le processus enfant ACP si nécessaire) et redémarrent le minuteur d'inactivité ensuite si aucune session n'est active.
+### 5.3 Exécution enfant ACP (`QwenAgent.extMethod`)
 
-### 5.3 Exécution de l'enfant ACP (`QwenAgent.extMethod`)
+Dans `packages/cli/src/acp-integration/acpAgent.ts`, le gestionnaire pour
+`workspaceMemoryRemember`, `workspaceMemoryForget` et `workspaceMemoryDream` :
 
-Dans `packages/cli/src/acp-integration/acpAgent.ts`, le gestionnaire pour `workspaceMemoryRemember` :
-
-1. Valide `content` (chaîne non vide, ≤64 KiB) et `contextMode`.
+1. Valide les entrées spécifiques à la tâche (`content`/`contextMode` pour remember,
+   `query` pour forget).
 2. Vérifie `config.isManagedMemoryAvailable()`.
-3. Appelle `runManagedRememberByAgent()` avec un signal d'annulation de **295 s** (`WORKSPACE_MEMORY_REMEMBER_CHILD_TIMEOUT_MS` — légèrement inférieur au timeout du bridge pour garantir que l'enfant s'annule avant la limite du bridge).
+3. Appelle l'opération principale correspondante avec un signal d'abandon de **295 s**
+   (`WORKSPACE_MEMORY_REMEMBER_CHILD_TIMEOUT_MS` — légèrement inférieur au timeout du bridge
+   pour garantir que l'enfant abandonne avant le filet de sécurité du bridge). Pour forget,
+   le signal est transmis via `MemoryManager.forget`, la sélection, la requête côté modèle
+   et les mutations du système de fichiers au moment de l'application.
 
-### 5.4 Logique Remember principale (`packages/core/src/memory/remember.ts`)
+### 5.4 Logique principale de Remember (`packages/core/src/memory/remember.ts`)
 
 `runManagedRememberByAgent()` :
 
 1. Construit un prompt système de mémoire propre à partir de l'index de mémoire gérée du projet.
 2. Supprime éventuellement la mémoire utilisateur précédente (si `contextMode === 'clean'`).
-3. Crée une `memoryScopedAgentConfig` qui restreint les E/S de fichiers aux seuls répertoires de mémoire.
+3. Crée un `memoryScopedAgentConfig` qui restreint les E/S de fichiers aux répertoires de mémoire uniquement.
 4. Exécute un **agent headless forké** (`runForkedAgent`) avec :
    - Nom : `managed-auto-memory-remember`
    - Outils : `read_file`, `grep`, `ls`, `write_file`, `edit`
    - Tours max : 6
    - Temps max : 5 minutes
-5. Valide que tous les fichiers touchés se trouvent dans les chemins de mémoire autorisés (`classifyTouchedScopes`). Lève une erreur `remember_path_escape` si l'agent a écrit en dehors des répertoires de mémoire.
+5. Valide que tous les fichiers touchés se trouvent dans les chemins de mémoire autorisés
+   (`classifyTouchedScopes`). Lève `remember_path_escape` si l'agent a écrit
+   en dehors des répertoires de mémoire.
 6. Reconstruit les index de mémoire pour tous les scopes touchés.
 7. Retourne `{ summary, filesTouched, touchedScopes }`.
 
@@ -248,18 +319,23 @@ Dans `packages/cli/src/acp-integration/acpAgent.ts`, le gestionnaire pour `works
 
 `createMemoryScopedAgentConfig()` crée un wrapper `Config` à permissions restreintes qui :
 
-- **Outils d'écriture** (`write_file`, `edit`) : autorisés uniquement dans la racine auto-memory du projet ou la racine de mémoire utilisateur (`~/.qwen/memories`).
-- **Outils de lecture** (`read_file`, `grep`, `ls`) : lorsque `restrictReadsToMemoryPaths` est vrai, autorisés uniquement dans les répertoires de mémoire.
+- **Outils d'écriture** (`write_file`, `edit`) : autorisés uniquement dans la racine
+  auto-memory du projet ou la racine user memory (`~/.qwen/memories`).
+- **Outils de lecture** (`read_file`, `grep`, `ls`) : lorsque `restrictReadsToMemoryPaths`
+  est vrai, autorisés uniquement dans les répertoires de mémoire.
 - **Shell** : désactivé par défaut ; si activé, seules les commandes en lecture seule sont autorisées.
-- Résout les liens symboliques pour empêcher les évasions par path-traversal.
+- Résout les liens symboliques pour empêcher les échappements de chemin (path-traversal).
 
 ---
 
 ## 6. Événements
 
-### `memory_changed` (scope: `managed`)
+### `memory_changed` (scope : `managed`)
 
-Publié sur le flux d'événements SSE du daemon (`GET /session/:id/events`) en tant qu'événement `memory_changed` avec `scope: 'managed'` lorsqu'une tâche remember se termine avec succès. Les clients abonnés au flux d'événements par session reçoivent cette notification.
+Publié sur le flux d'événements SSE du daemon (`GET /session/:id/events`) en tant
+qu'événement `memory_changed` avec `scope: 'managed'` lorsqu'une tâche de mémoire de workspace
+se termine avec succès et modifie effectivement la mémoire gérée. Les clients abonnés
+au flux d'événements par session reçoivent cette notification.
 
 **Payload :**
 
@@ -275,14 +351,15 @@ Publié sur le flux d'événements SSE du daemon (`GET /session/:id/events`) en 
 }
 ```
 
-| Champ           | Type        | Description                                             |
-| --------------- | ----------- | ------------------------------------------------------- |
-| `scope`         | `"managed"` | Discrimine par rapport aux événements `memory_changed` basés sur des fichiers   |
-| `source`        | `string`    | Toujours `"workspace_memory_remember"` pour cette fonctionnalité   |
-| `taskId`        | `string`    | Corrélé à la tâche retournée par POST               |
-| `touchedScopes` | `string[]`  | Quels scopes de mémoire ont été écrits : `"user"`, `"project"` |
+| Champ           | Type        | Description                                                                               |
+| --------------- | ----------- | ----------------------------------------------------------------------------------------- |
+| `scope`         | `"managed"` | Permet de distinguer des événements `memory_changed` basés sur des fichiers               |
+| `source`        | `string`    | `"workspace_memory_remember"`, `"workspace_memory_forget"` ou `"workspace_memory_dream"`  |
+| `taskId`        | `string`    | Est en corrélation avec la tâche retournée par POST                                       |
+| `touchedScopes` | `string[]`  | Scopes de mémoire qui ont été écrits : `"user"`, `"project"`                              |
 
-Le `originatorClientId` (s'il est fourni au moment du POST) est attaché à l'enveloppe de l'événement afin que le bus d'événements puisse le router vers le client d'origine.
+L'`originatorClientId` (s'il est fourni au moment du POST) est attaché à l'enveloppe
+de l'événement afin que le bus d'événements puisse le router vers le client d'origine.
 
 ---
 
@@ -290,51 +367,62 @@ Le `originatorClientId` (s'il est fourni au moment du POST) est attaché à l'en
 
 ### Codes d'erreur
 
-| Code                         | Origine              | Signification                                                |
-| ---------------------------- | ------------------- | ------------------------------------------------------ |
-| `invalid_content`            | Route HTTP          | Contenu manquant, vide ou dépasse 64 KiB              |
-| `invalid_context_mode`       | Route HTTP          | contextMode différent de `"workspace"` ou `"clean"`             |
-| `invalid_client_id`          | Route HTTP          | En-tête Client-Id absent de l'ensemble connu du bridge             |
-| `managed_memory_unavailable` | Bridge / enfant ACP  | Workspace non configuré pour la mémoire gérée            |
-| `remember_queue_full`        | File de tâches           | Limite de 16 tâches en attente atteinte                         |
-| `remember_path_escape`       | Logique Remember principale | L'agent a écrit dans un chemin en dehors des répertoires de mémoire gérée      |
-| `remember_failed`            | Catch-all           | Échec d'agent non classé, timeout ou erreur interne |
-| `remember_task_not_found`    | Route HTTP          | GET pour un ID de tâche inconnu ou non autorisé                |
+| Code                         | Origine               | Signification                                                |
+| ---------------------------- | --------------------- | ------------------------------------------------------------ |
+| `invalid_content`            | Route HTTP            | Contenu manquant, vide ou dépasse 64 KiB                     |
+| `invalid_context_mode`       | Route HTTP            | contextMode différent de `"workspace"` ou `"clean"`          |
+| `invalid_query`              | Route HTTP            | Requête forget manquante, vide ou dépasse 64 KiB             |
+| `invalid_client_id`          | Route HTTP            | En-tête Client-Id absent de l'ensemble connu du bridge       |
+| `managed_memory_unavailable` | Bridge / enfant ACP   | Workspace non configuré pour la mémoire gérée                |
+| `remember_queue_full`        | Task lane             | Limite de 16 tâches en attente atteinte                      |
+| `remember_path_escape`       | Logique principale de remember | L'agent a écrit dans un chemin en dehors des répertoires de mémoire gérée |
+| `remember_failed`            | Catch-all             | Échec d'agent non classé, timeout ou erreur interne          |
+| `remember_task_not_found`    | Route HTTP            | GET pour un ID de tâche inconnu ou non autorisé              |
+| `forget_task_not_found`      | Route HTTP            | GET pour un ID de tâche forget inconnu ou non autorisé       |
+| `dream_task_not_found`       | Route HTTP            | GET pour un ID de tâche dream inconnu ou non autorisé        |
 
-### Chaîne de timeout
+### Chaîne de timeouts
 
 ```
 Agent forked runner:   5 min maxTimeMinutes
-Child abort signal:  295 s  (WORKSPACE_MEMORY_REMEMBER_CHILD_TIMEOUT_MS)
-Bridge timeout:      300 s  (WORKSPACE_MEMORY_REMEMBER_TIMEOUT_MS)
+Signal d'abandon enfant : 295 s  (WORKSPACE_MEMORY_REMEMBER_CHILD_TIMEOUT_MS)
+Timeout du bridge :    300 s  (WORKSPACE_MEMORY_REMEMBER_TIMEOUT_MS)
 ```
 
-L'enfant s'annule avant que le bridge n'expire, garantissant qu'une erreur propre se propage plutôt qu'un timeout au niveau du transport.
+L'enfant abandonne avant que le bridge n'expire, garantissant qu'une erreur propre se propage
+plutôt qu'un timeout au niveau du transport.
 
 ---
 
-## 8. Intégration au SDK
+## 8. Intégration SDK
 
 ### SDK TypeScript (`@qwen-code/sdk-typescript`)
 
-Deux nouvelles méthodes sur `DaemonClient` :
+Méthodes de mémoire de workspace sur `DaemonClient` :
 
 ```typescript
-// Queue a remember task
+// Mettre en file d'attente une tâche remember
 const task = await client.rememberWorkspaceMemory(
   'The project uses pnpm workspaces',
   { contextMode: 'workspace' },
 );
 // task.taskId, task.status === 'queued'
 
-// Poll until terminal
+// Sonder jusqu'à l'état terminal
 const result = await client.getWorkspaceMemoryRememberTask(task.taskId);
 // result.status === 'completed' | 'failed'
+
+const forget = await client.forgetWorkspaceMemory('old preference');
+const forgetResult = await client.getWorkspaceMemoryForgetTask(forget.taskId);
+
+const dream = await client.dreamWorkspaceMemory();
+const dreamResult = await client.getWorkspaceMemoryDreamTask(dream.taskId);
 ```
 
 ### Normalisation des événements UI
 
-Le normaliseur du SDK mappe l'événement SSE brut `memory_changed` (avec `scope: 'managed'`) vers un `DaemonUiWorkspaceMemoryChangedEvent` :
+Le normaliseur du SDK mappe l'événement SSE brut `memory_changed` (avec
+`scope: 'managed'`) vers un `DaemonUiWorkspaceMemoryChangedEvent` :
 
 ```typescript
 {
@@ -346,7 +434,9 @@ Le normaliseur du SDK mappe l'événement SSE brut `memory_changed` (avec `scope
 }
 ```
 
-Cela étend le type d'événement existant `workspace.memory.changed`, qui ne portait auparavant que `scope: 'workspace' | 'global'` pour les écritures de QWEN.md basées sur des fichiers.
+Cela étend le type d'événement `workspace.memory.changed` existant, qui
+ne portait auparavant que `scope: 'workspace' | 'global'` pour les écritures QWEN.md
+basées sur des fichiers.
 
 ---
 
@@ -354,21 +444,21 @@ Cela étend le type d'événement existant `workspace.memory.changed`, qui ne po
 
 ### Pourquoi sans session ?
 
-La commande slash `/remember` dans le CLI fonctionne déjà au sein d'une session. Mais l'interface des paramètres et les appelants programmatiques du SDK ne devraient pas avoir à créer une session juste pour persister un fait. Une session implique un historique de conversation, un suivi des tours et une visibilité dans la liste des sessions — ce qui ne s'applique pas à une écriture de mémoire de type fire-and-forget.
+La commande slash `/remember` dans le CLI fonctionne déjà au sein d'une session. Mais l'UI des paramètres et les appelants SDK programmatiques ne devraient pas avoir besoin de créer une session juste pour persister un fait. Une session implique un historique de conversation, un suivi des tours et une visibilité dans la liste des sessions — aucune de ces choses ne s'applique à une écriture de mémoire de type fire-and-forget.
 
 ### Pourquoi une exécution sérielle ?
 
-Le système de mémoire gérée stocke les faits dans des fichiers markdown avec des index. Des écritures concurrentes provenant de plusieurs tâches remember pourraient corrompre les index ou produire des conflits de fusion. Une file mono-threadée est la solution correcte la plus simple.
+Le système de mémoire gérée stocke les faits dans des fichiers markdown avec des index. Des écritures concurrentes provenant de plusieurs tâches remember pourraient corrompre les index ou produire des conflits de fusion. Une lane mono-thread est la solution correcte la plus simple.
 
 ### Pourquoi une file de tâches (et non synchrone) ?
 
-Les écritures de mémoire impliquent un agent LLM qui décide _où_ et _comment_ stocker le fait (choix entre le scope utilisateur et projet, choix du bon fichier, formatage). Cela prend de 2 à 30 secondes. Une requête HTTP synchrone expirerait ou bloquerait le client. Le modèle file asynchrone + polling garde le contrat HTTP simple et permet aux clients d'afficher une UI de progression.
+Les écritures de mémoire impliquent un agent LLM qui décide _où_ et _comment_ stocker le fait (choix entre le scope user et project, choix du bon fichier, formatage). Cela prend de 2 à 30 secondes. Une requête HTTP synchrone expirerait ou bloquerait le client. Le modèle de file d'attente asynchrone + polling garde le contrat HTTP simple et permet aux clients d'afficher une UI de progression.
 
 ### Pourquoi contextMode ?
 
 - `"workspace"` (par défaut) — l'agent remember voit les mémoires existantes comme contexte, ce qui lui permet de dédupliquer ou de mettre à jour les entrées existantes.
-- `"clean"` — l'agent ne voit aucune mémoire utilisateur préalable, utile lorsque l'appelant souhaite forcer une nouvelle écriture sans logique de déduplication (par ex. import en masse).
+- `"clean"` — l'agent ne voit aucune mémoire utilisateur précédente, ce qui est utile lorsque l'appelant souhaite forcer une nouvelle écriture sans logique de déduplication (par ex. import en masse).
 
 ### Pourquoi restreindre les lectures aux chemins de mémoire ?
 
-L'agent remember ne doit lire/écrire que dans les répertoires de mémoire gérée. Cela empêche un scénario d'injection de prompt où un `content` conçu spécialement tromperait l'agent pour qu'il lise des fichiers de projet sensibles et les fuite dans les entrées de mémoire.
+L'agent remember ne devrait lire/écrire que dans les répertoires de mémoire gérée. Cela empêche un scénario d'injection de prompt où un `content` conçu spécialement tromperait l'agent pour qu'il lise des fichiers de projet sensibles et les fuite dans les entrées de mémoire.
