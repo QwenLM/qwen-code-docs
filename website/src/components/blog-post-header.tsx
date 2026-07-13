@@ -35,6 +35,7 @@ export const BlogPostHeader: React.FC<BlogPostHeaderProps> = ({
     ja: "ブログに戻る",
     ru: "Назад в блог",
     'pt-BR': "Voltar ao Blog",
+    ko: "블로그로 돌아가기",
   };
 
   const blogPath = `/${langPrefix}/blog`;

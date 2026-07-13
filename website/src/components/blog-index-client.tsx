@@ -50,6 +50,10 @@ const BLOG_COPY: Record<string, { title: string; description: string }> = {
     title: "Blog Qwen Code",
     description: "Atualizações de programação com IA, lançamentos, fluxos de trabalho e guias práticos para desenvolvedores.",
   },
+  ko: {
+    title: "Qwen Code 블로그",
+    description: "AI 코딩 소식, 제품 릴리스, 워크플로우, 개발자를 위한 실용 가이드.",
+  },
 };
 
 export const BlogIndexClient = ({ posts, lang }: BlogIndexClientProps) => {
