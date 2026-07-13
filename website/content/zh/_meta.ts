@@ -26,9 +26,5 @@ export default {
   blog: {
     type: 'page',
     title: '博客',
-    theme: {
-      sidebar: false,
-      layout: 'full'
-    }
   },
 };
