@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { getPageMap } from "nextra/page-map";
 import { ArrowRight } from "lucide-react";
-import { getLocale, isWithinDays, NEW_BADGE_DAYS } from "../lib/blog-utils";
+import { getLocale, isWithinDays, NEW_BADGE_DAYS, getCategoryInfo, getBlogText } from "../lib/blog-utils";
 
 interface Post {
   title: string;
@@ -12,25 +12,6 @@ interface Post {
   route: string;
 }
 
-const CATEGORY_INFO: Record<string, { title: string; description: string }> = {
-  quickstart: {
-    title: "入门",
-    description: "了解 Qwen Code 的核心概念，快速上手 AI 编程。",
-  },
-  cases: {
-    title: "实战案例",
-    description: "真实使用场景和教程，从办公自动化到代码开发。",
-  },
-  advanced: {
-    title: "进阶应用",
-    description: "Skills、百炼 CLI、公众号封面等高级功能指南。",
-  },
-  updates: {
-    title: "周报更新",
-    description: "每周产品版本发布记录、新功能与社区动态。",
-  },
-};
-
 export const BlogCategoryList = async ({
   directory,
   lang = "zh",
@@ -39,7 +20,7 @@ export const BlogCategoryList = async ({
   lang?: string;
 }) => {
   const pageMap = await getPageMap(`/${lang}/blog/${directory}`);
-  const info = CATEGORY_INFO[directory] || { title: directory, description: "" };
+  const info = getCategoryInfo(directory, lang);
 
   const posts: Post[] = [];
 
@@ -121,7 +102,7 @@ export const BlogCategoryList = async ({
 
         {posts.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-muted-foreground">暂无文章</p>
+            <p className="text-muted-foreground">{getBlogText("noArticles", lang)}</p>
           </div>
         )}
       </div>

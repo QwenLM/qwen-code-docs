@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { isWithinDays, normalizeHref, NEW_BADGE_DAYS } from "../lib/blog-utils";
+import { isWithinDays, normalizeHref, NEW_BADGE_DAYS, getBasePath } from "../lib/blog-utils";
 
 const BADGE_ATTR = "data-sidebar-new";
 const STYLE_ID = "sidebar-enhancer-style";
@@ -166,7 +166,7 @@ export default function SidebarNewTag() {
 
     async function init() {
       try {
-        const basePath = "/qwen-code-docs";
+        const basePath = getBasePath();
         const res = await fetch(basePath + "/blog-dates.json");
         if (!res.ok) throw new Error("fetch failed");
         blogDates = await res.json();

@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { getPageMap } from "nextra/page-map";
 import { ArrowRight, Sparkles, BookOpen, Layers, Newspaper } from "lucide-react";
-import { getLocale, isWithinDays, NEW_BADGE_DAYS } from "../lib/blog-utils";
+import { getLocale, isWithinDays, NEW_BADGE_DAYS, getCategoryInfo, getBlogText } from "../lib/blog-utils";
 
 interface Post {
   title: string;
@@ -12,36 +12,14 @@ interface Post {
   category: string;
 }
 
-const CATEGORIES = [
-  {
-    id: "quickstart",
-    title: "入门",
-    description: "了解 Qwen Code 的核心概念，快速上手 AI 编程",
-    icon: BookOpen,
-    href: "quickstart",
-  },
-  {
-    id: "cases",
-    title: "实战案例",
-    description: "真实使用场景和教程，从办公自动化到代码开发",
-    icon: Sparkles,
-    href: "cases",
-  },
-  {
-    id: "advanced",
-    title: "进阶应用",
-    description: "Skills、百炼 CLI、公众号封面等高级功能指南",
-    icon: Layers,
-    href: "advanced",
-  },
-  {
-    id: "updates",
-    title: "周报更新",
-    description: "每周产品版本发布记录、新功能与社区动态",
-    icon: Newspaper,
-    href: "updates",
-  },
-];
+const CATEGORY_IDS = ["quickstart", "cases", "advanced", "updates"] as const;
+
+const CATEGORY_ICONS: Record<string, typeof BookOpen> = {
+  quickstart: BookOpen,
+  cases: Sparkles,
+  advanced: Layers,
+  updates: Newspaper,
+};
 
 function extractPosts(pageMap: any[]): Post[] {
   const posts: Post[] = [];
@@ -84,9 +62,9 @@ export const BlogCategoryGrid = async ({ lang = "zh" }: { lang?: string }) => {
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  const counts = CATEGORIES.reduce(
-    (acc, cat) => {
-      acc[cat.id] = allPosts.filter((p) => p.category === cat.id).length;
+  const counts = CATEGORY_IDS.reduce(
+    (acc, catId) => {
+      acc[catId] = allPosts.filter((p) => p.category === catId).length;
       return acc;
     },
     {} as Record<string, number>
@@ -99,26 +77,27 @@ export const BlogCategoryGrid = async ({ lang = "zh" }: { lang?: string }) => {
       <div className="max-w-[90rem] mx-auto px-6 md:px-8">
         <header className="mb-10">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-            Qwen Code 博客
+            {getBlogText("blogTitle", lang)}
           </h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">
-            获取产品更新、AI 编程实践、功能发布和真实案例。
+            {getBlogText("blogDescription", lang)}
           </p>
         </header>
 
         {/* Category Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
-          {CATEGORIES.map((cat) => {
-            const Icon = cat.icon;
-            const count = counts[cat.id] || 0;
+          {CATEGORY_IDS.map((catId) => {
+            const Icon = CATEGORY_ICONS[catId];
+            const info = getCategoryInfo(catId, lang);
+            const count = counts[catId] || 0;
             const hasNew = allPosts
-              .filter((p) => p.category === cat.id)
+              .filter((p) => p.category === catId)
               .some((p) => isWithinDays(p.date, NEW_BADGE_DAYS));
 
             return (
               <Link
-                key={cat.id}
-                href={`/${lang}/blog/${cat.href}`}
+                key={catId}
+                href={`/${lang}/blog/${catId}`}
                 className="group relative rounded-xl border border-border/60 bg-card p-6 hover:border-primary/40 hover:shadow-md transition-all"
               >
                 <div className="flex items-center justify-between mb-4">
@@ -132,13 +111,13 @@ export const BlogCategoryGrid = async ({ lang = "zh" }: { lang?: string }) => {
                   )}
                 </div>
                 <h3 className="text-lg font-bold mb-1.5 group-hover:text-primary transition-colors">
-                  {cat.title}
+                  {info.title}
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                  {cat.description}
+                  {info.description}
                 </p>
                 <div className="flex items-center gap-1 mt-4 text-xs text-muted-foreground">
-                  <span>{count} 篇文章</span>
+                  <span>{count} {getBlogText("articles", lang)}</span>
                   <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
                 </div>
               </Link>
@@ -150,9 +129,9 @@ export const BlogCategoryGrid = async ({ lang = "zh" }: { lang?: string }) => {
         {recentPosts.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-xl font-bold">最近更新</h2>
+              <h2 className="text-xl font-bold">{getBlogText("recentUpdates", lang)}</h2>
               <span className="text-xs text-muted-foreground">
-                （{NEW_BADGE_DAYS} 天内）
+                （{NEW_BADGE_DAYS} {getBlogText("withinDays", lang)}）
               </span>
             </div>
             <div className="flex flex-col gap-0 border-t border-border/40">
