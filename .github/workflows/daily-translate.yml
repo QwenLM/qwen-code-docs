@@ -1,46 +1,69 @@
 name: Daily Incremental Translation
 
-# Runs the translator's incremental `sync` once a day, then (if anything
-# changed) commits the new translations to main, rebuilds the site and
-# deploys it — all in one job.
-#
-# Prerequisites (set in repo Settings → Secrets and variables → Actions):
-#   - Secret  TRANSLATE_CODING_PLAN_API_KEY : a cloud-reachable model API key
-#   Model / base URL are set as plain env below; change them if you switch
-#   providers. The incremental baseline lives in website/last-sync.json
-#   (tracked in git), so each run only translates what changed upstream.
-#
-# Note: this job pushes to main with GITHUB_TOKEN, which by design does NOT
-# trigger other workflows (e.g. deploy-docs.yml), so there is no double build.
-# This job therefore builds + deploys itself.
-#
-# If main is a protected branch that forbids direct pushes, either allow the
-# github-actions bot to bypass protection, or switch the push step to a PR.
+# Detect upstream changes once, translate balanced language shards in isolated
+# matrix jobs, then merge, build and publish only after every shard succeeds.
+# This keeps each unit of work safely below GitHub's six-hour per-job limit.
 
 on:
   schedule:
-    # 20:00 UTC == 04:00 Asia/Shanghai (next day). Adjust as you like.
+    # 20:00 UTC == 04:00 Asia/Shanghai (next day).
     - cron: "0 20 * * *"
   workflow_dispatch: {}
+  pull_request:
+    paths:
+      - .github/scripts/merge-translation-artifacts.mjs
+      - .github/scripts/merge-translation-artifacts.test.mjs
+      - .github/scripts/sync-helpers.test.cjs
+      - .github/workflows/daily-translate.yml
+      - translator/**
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: daily-translate
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('daily-translate-pr-{0}', github.event.pull_request.number) || 'daily-translate-production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  translate-and-deploy:
+  validate:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    # Large upstream batches can spend nearly three hours translating before
-    # the static site build starts.
-    timeout-minutes: 360
+    timeout-minutes: 15
+    steps:
+      - name: Checkout workflow commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Build translator
+        working-directory: ./translator
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Test translation workflow helpers
+        run: node --test .github/scripts/*.test.*
+
+  prepare:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      changed: ${{ steps.detect.outputs.changed }}
+      source_commit: ${{ steps.detect.outputs.source_commit }}
+      languages: ${{ steps.detect.outputs.languages }}
+      shards: ${{ steps.detect.outputs.shards }}
+      shard_count: ${{ steps.detect.outputs.shard_count }}
     steps:
       - name: Checkout workflow ref
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Install Node.js
@@ -48,75 +71,168 @@ jobs:
         with:
           node-version: 22
 
-      - name: Build translator (dist is gitignored)
+      - name: Build translator
         working-directory: ./translator
         run: |
           npm ci --no-audit --no-fund
           npm run build
 
-      - name: Install website dependencies
+      - name: Detect upstream changes
+        id: detect
         working-directory: ./website
-        run: npm ci --no-audit --no-fund
+        env:
+          FORCE_COLOR: "0"
+          SHARD_COUNT: "2"
+        run: |
+          set -o pipefail
+          node ../translator/bin/qwen-translator sync \
+            --detect-only \
+            --result-file /tmp/detect-result.json
+          echo "source_commit=$(git -C .temp-source-repo rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "languages=$(node -p 'JSON.stringify(require("./translation.config.json").targetLanguages)')" >> "$GITHUB_OUTPUT"
+          echo "shards=$(node -p 'JSON.stringify(Array.from({ length: Number(process.env.SHARD_COUNT) }, (_, index) => index))')" >> "$GITHUB_OUTPUT"
+          echo "shard_count=$SHARD_COUNT" >> "$GITHUB_OUTPUT"
+          if [ "$(node -p "require('/tmp/detect-result.json').changes")" -eq 0 ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No upstream doc changes today."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Upstream changes detected; starting language jobs."
+          fi
 
-      - name: Run incremental translation sync
+  translate:
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      # Keep the API load at the previously hardened concurrency of three,
+      # while giving every language shard its own six-hour job budget.
+      max-parallel: 3
+      matrix:
+        language: ${{ fromJSON(needs.prepare.outputs.languages) }}
+        shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
+    steps:
+      - name: Checkout workflow ref
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Build translator
+        working-directory: ./translator
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Translate ${{ matrix.language }} (shard ${{ matrix.shard }})
         working-directory: ./website
         env:
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
           OPENAI_BASE_URL: https://coding.dashscope.aliyuncs.com/v1
           QWEN_MODEL: qwen3.7-plus
-          # Keep each response moderate; larger docs auto-chunk from this cap.
           QWEN_MAX_TOKENS: "32768"
-          # The MaaS compatible endpoint can close long responses when all
-          # target languages run at once. Keep CI conservative and let API
-          # retries handle transient disconnects.
-          QWEN_TRANSLATION_CONCURRENCY: "3"
           QWEN_API_MAX_RETRIES: "6"
           QWEN_CHUNK_CHARS: "12000"
+          FORCE_COLOR: "0"
         run: |
           set -o pipefail
-          node ../translator/bin/qwen-translator sync 2>&1 | tee /tmp/sync.log
-          # Fail the run if any file failed to translate, so we never commit a
-          # baseline that skips broken files (sync advances last-sync.json even
-          # on per-file failures). A failed run leaves main untouched and the
-          # next run retries from the same baseline.
-          if grep -qE '翻译完成: [0-9]+ 成功, [1-9][0-9]* 失败' /tmp/sync.log; then
-            echo "::error::Some files failed to translate; not committing."
-            exit 1
-          fi
+          node ../translator/bin/qwen-translator sync \
+            --language "${{ matrix.language }}" \
+            --source-commit "${{ needs.prepare.outputs.source_commit }}" \
+            --shard-index "${{ matrix.shard }}" \
+            --shard-count "${{ needs.prepare.outputs.shard_count }}"
 
-      - name: Detect changes
-        id: detect
+      - name: Stage ${{ matrix.language }} shard ${{ matrix.shard }} result
+        working-directory: ./website
+        env:
+          LANGUAGE: ${{ matrix.language }}
         run: |
-          if [ -n "$(git status --porcelain website/content website/last-sync.json website/translation-changelog.json)" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            if [ "$GITHUB_REF_NAME" = "main" ]; then
-              echo "Changes detected — will build, commit and deploy."
-            else
-              echo "Changes detected — will build only because this run is on $GITHUB_REF_NAME."
-            fi
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No upstream doc changes today — nothing to do."
-          fi
+          mkdir -p translation-output
+          while IFS= read -r -d '' file; do
+            mkdir -p "translation-output/$(dirname "$file")"
+            cp "$file" "translation-output/$file"
+          done < <(git ls-files -z --modified --others --exclude-standard -- "content/$LANGUAGE")
+          cp last-sync.json translation-changelog.json translation-output/
+
+      - name: Upload ${{ matrix.language }} shard ${{ matrix.shard }} result
+        uses: actions/upload-artifact@v7
+        with:
+          name: translation-${{ matrix.language }}-${{ matrix.shard }}
+          if-no-files-found: error
+          retention-days: 2
+          path: website/translation-output
+
+  finalize:
+    needs: [prepare, translate]
+    if: needs.prepare.outputs.changed == 'true' && needs.translate.result == 'success'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout workflow ref
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Build translator
+        working-directory: ./translator
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Update source-language documents
+        working-directory: ./website
+        run: >-
+          node ../translator/bin/qwen-translator sync --source-only
+          --source-commit "${{ needs.prepare.outputs.source_commit }}"
+
+      - name: Download translation results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: translation-*
+          path: .translation-artifacts
+
+      - name: Merge translation results
+        run: >-
+          node .github/scripts/merge-translation-artifacts.mjs
+          .translation-artifacts website "${{ needs.prepare.outputs.shard_count }}"
+
+      - name: Install website dependencies
+        working-directory: ./website
+        run: npm ci --no-audit --no-fund
 
       - name: Build website
-        if: steps.detect.outputs.changed == 'true'
         working-directory: ./website
         env:
           NODE_OPTIONS: --max-old-space-size=12288
         run: npm run build
 
       - name: Commit translations to main
-        if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
+        if: github.ref_name == 'main'
         run: |
           git config user.name "qwen-docs-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add website/content website/last-sync.json website/translation-changelog.json
           git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
+          git pull --rebase origin main
           git push origin HEAD:main
 
       - name: Deploy to GitHub Pages
-        if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
+        if: github.ref_name == 'main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

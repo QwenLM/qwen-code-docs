@@ -12,6 +12,46 @@ function isMetaFile(filePath: string): boolean {
   return /^_meta\.(ts|tsx|js|jsx|mjs|cjs|json)$/.test(path.basename(filePath));
 }
 
+export function parseDeletedDocFiles(
+  nameStatus: string,
+  docsPath: string
+): string[] {
+  return nameStatus
+    ? nameStatus
+        .trim()
+        .split("\n")
+        .flatMap((line) => {
+          const [status, firstPath] = line.split("\t");
+          return status === "D" || status.startsWith("R") ? [firstPath] : [];
+        })
+        .filter(
+          (file) => file.endsWith(".md") && file.startsWith(`${docsPath}/`)
+        )
+    : [];
+}
+
+export function partitionFilesByWeight(
+  weightedFiles: { file: string; size: number }[],
+  shardCount: number
+): { size: number; files: string[] }[] {
+  const shards = Array.from({ length: shardCount }, () => ({
+    size: 0,
+    files: [] as string[],
+  }));
+  const sorted = [...weightedFiles].sort(
+    (a, b) => b.size - a.size || a.file.localeCompare(b.file)
+  );
+
+  for (const item of sorted) {
+    const target = shards.reduce((smallest, shard) =>
+      shard.size < smallest.size ? shard : smallest
+    );
+    target.files.push(item.file);
+    target.size += item.size;
+  }
+  return shards;
+}
+
 /**
  * 版本同步管理器
  * 检测原仓库文档变更，自动同步和翻译更新
@@ -27,6 +67,9 @@ interface SyncOptions {
   projectRoot?: string; // 项目根目录
   outputDir?: string; // 输出目录
   branch?: string; // 新增：源仓库分支
+  sourceCommit?: string; // 可选：固定本次同步的源仓库提交
+  shardIndex?: number; // 可选：本次只翻译指定分片（从 0 开始）
+  shardCount?: number; // 可选：翻译分片总数
   // 新增：跳过翻译的路径（目录前缀或精确文件名，相对 docsPath）。
   // 这些文档仍会同步到 content/<sourceLanguage>，但不会翻译到目标语言。
   excludeFromTranslation?: string[];
@@ -40,6 +83,7 @@ interface SyncRecord {
 
 interface ChangeDetectionResult {
   files: string[];
+  deletedFiles: string[];
   latestCommit: string;
   isFirstSync: boolean;
 }
@@ -48,6 +92,7 @@ interface TranslationResult {
   success: number;
   failed: number;
   files: string[];
+  failedFiles: string[];
 }
 
 interface TranslationChangelogEntry {
@@ -66,6 +111,11 @@ interface TranslationChangelogEntry {
     successCount: number;
     failedCount: number;
   };
+  shard?: {
+    index: number;
+    count: number;
+  };
+  deletedFiles?: string[];
 }
 
 interface SyncResult {
@@ -83,6 +133,9 @@ export class SyncManager {
   private sourceLanguage: string; // 新增：源文档语言
   private targetLanguages: string[];
   private branch: string; // 新增：源仓库分支
+  private sourceCommit?: string;
+  private shardIndex: number;
+  private shardCount: number;
   private lastSyncFile: string;
   private changelogFile: string;
   private translator: DocumentTranslator | null = null; // 懒加载：仅在需要翻译时构造
@@ -117,6 +170,26 @@ export class SyncManager {
       "es",
     ];
     this.branch = options.branch || "main"; // 默认使用 main 分支
+    this.sourceCommit = options.sourceCommit;
+    if (
+      this.sourceCommit &&
+      !/^[0-9a-f]{40}$/i.test(this.sourceCommit)
+    ) {
+      throw new Error(`无效的源仓库提交: ${this.sourceCommit}`);
+    }
+    this.shardIndex = options.shardIndex ?? 0;
+    this.shardCount = options.shardCount ?? 1;
+    if (
+      !Number.isInteger(this.shardIndex) ||
+      !Number.isInteger(this.shardCount) ||
+      this.shardCount < 1 ||
+      this.shardIndex < 0 ||
+      this.shardIndex >= this.shardCount
+    ) {
+      throw new Error(
+        `无效的翻译分片: ${this.shardIndex}/${this.shardCount}`
+      );
+    }
     this.excludeFromTranslation = options.excludeFromTranslation || [];
 
     // 设置输出目录
@@ -218,7 +291,7 @@ export class SyncManager {
       // 刻意不推进同步基线：目标语言译文此时会落后于源文档，待配置 key 后再次运行
       // sync 即可补齐翻译（届时仍会检测到这些文件，可自愈）。
       if (options.sourceOnly) {
-        await this.updateBaseDocs();
+        await this.updateBaseDocs(changes.deletedFiles);
         console.log(
           chalk.green(
             "✅ 已更新源文档（source-only：未翻译；未推进 last-sync.json，配置 key 后再次 sync 可补齐翻译）"
@@ -241,18 +314,32 @@ export class SyncManager {
       this.getTranslator();
 
       // 更新基础文档
-      await this.updateBaseDocs();
+      await this.updateBaseDocs(changes.deletedFiles);
+
+      const shardFiles = await this.selectTranslationShard(changes.files);
 
       // 翻译更新的文件
       const translationResults = await this.translateChangedFiles(
-        changes.files
+        shardFiles
       );
+
+      const failedCount = Object.values(translationResults).reduce(
+        (total, result) => total + result.failed,
+        0
+      );
+      if (failedCount > 0) {
+        throw new Error(
+          `${failedCount} 个文件翻译失败，未推进同步基线`
+        );
+      }
 
       // 记录翻译日志
       await this.saveTranslationChangelog(
         changes.latestCommit,
         changes.files,
-        translationResults
+        translationResults,
+        { index: this.shardIndex, count: this.shardCount },
+        changes.deletedFiles
       );
 
       // 更新同步记录
@@ -297,6 +384,15 @@ export class SyncManager {
         );
       }
 
+      // Matrix jobs may start hours apart. Pin every job to the commit found
+      // by the prepare job so their artifacts always describe one snapshot.
+      if (this.sourceCommit) {
+        execSync(
+          `cd ${tempDir} && git fetch origin ${this.sourceCommit} && git checkout --detach ${this.sourceCommit}`,
+          { stdio: "pipe" }
+        );
+      }
+
       // 获取最新提交
       const latestCommit = execSync(`cd ${tempDir} && git rev-parse HEAD`, {
         encoding: "utf8",
@@ -310,6 +406,7 @@ export class SyncManager {
         const allFiles = await this.getAllDocFiles(tempDir);
         return {
           files: allFiles,
+          deletedFiles: [],
           latestCommit,
           isFirstSync: true,
         };
@@ -331,8 +428,15 @@ export class SyncManager {
             )
         : [];
 
+      const nameStatus = execSync(
+        `cd ${tempDir} && git diff --name-status ${lastSync.commit} HEAD -- ${this.docsPath}/`,
+        { encoding: "utf8" }
+      ).trim();
+      const deletedFiles = parseDeletedDocFiles(nameStatus, this.docsPath);
+
       return {
         files,
+        deletedFiles,
         latestCommit,
         isFirstSync: false,
       };
@@ -418,7 +522,7 @@ export class SyncManager {
   /**
    * 更新基础文档
    */
-  async updateBaseDocs(): Promise<void> {
+  async updateBaseDocs(deletedFiles: string[] = []): Promise<void> {
     // 使用项目根目录下的临时目录
     const tempDir = path.join(this.projectRoot, ".temp-source-repo");
     const sourceDocsDir = path.join(tempDir, this.docsPath);
@@ -430,6 +534,13 @@ export class SyncManager {
     );
 
     console.log(chalk.blue("📂 更新基础文档..."));
+
+    for (const file of deletedFiles) {
+      const relativePath = file.replace(`${this.docsPath}/`, "");
+      await fs.remove(path.join(sourceDocsTargetDir, relativePath));
+      await fs.remove(path.join(contentSourceDir, relativePath));
+      console.log(chalk.gray(`  → 删除上游文档: ${relativePath}`));
+    }
 
     // 1. 复制到 .source-docs 目录
     await fs.ensureDir(sourceDocsTargetDir);
@@ -483,6 +594,49 @@ export class SyncManager {
     });
   }
 
+  /**
+   * 将需翻译的文档按源文件字节数做贪心均衡分片。
+   * 所有 job 面对同一 source commit，因此会得到完全相同的分片结果。
+   */
+  private async selectTranslationShard(
+    changedFiles: string[]
+  ): Promise<string[]> {
+    if (this.shardCount === 1) {
+      return changedFiles;
+    }
+
+    const tempDir = path.join(this.projectRoot, ".temp-source-repo");
+    const weightedFiles: { file: string; size: number }[] = [];
+
+    for (const file of changedFiles) {
+      const relativePath = file.replace(`${this.docsPath}/`, "");
+      if (
+        isMetaFile(relativePath) ||
+        this.isExcludedFromTranslation(relativePath)
+      ) {
+        continue;
+      }
+
+      const sourcePath = path.join(tempDir, file);
+      if (!(await fs.pathExists(sourcePath))) {
+        continue;
+      }
+      const stat = await fs.stat(sourcePath);
+      weightedFiles.push({ file, size: stat.size });
+    }
+
+    const shards = partitionFilesByWeight(weightedFiles, this.shardCount);
+
+    const selected = new Set(shards[this.shardIndex].files);
+    const files = changedFiles.filter((file) => selected.has(file));
+    console.log(
+      chalk.blue(
+        `🧩 翻译分片 ${this.shardIndex + 1}/${this.shardCount}: ${files.length} 个文件, ${shards[this.shardIndex].size} 字节`
+      )
+    );
+    return files;
+  }
+
   async translateChangedFiles(
     changedFiles: string[]
   ): Promise<Record<string, TranslationResult>> {
@@ -507,6 +661,7 @@ export class SyncManager {
         success: 0,
         failed: 0,
         files: [],
+        failedFiles: [],
       };
 
       console.log(chalk.blue(`🚀 启动 ${language} 翻译任务`));
@@ -571,6 +726,7 @@ export class SyncManager {
             chalk.red(`❌ ${language}: ${file} - ${error.message}`)
           );
           result.failed++;
+          result.failedFiles.push(file.replace(`${this.docsPath}/`, ""));
         }
       }
 
@@ -628,7 +784,9 @@ export class SyncManager {
   async saveTranslationChangelog(
     commitHash: string,
     changedFiles: string[],
-    translationResults: Record<string, TranslationResult>
+    translationResults: Record<string, TranslationResult>,
+    shard: { index: number; count: number } = { index: 0, count: 1 },
+    deletedFiles: string[] = []
   ): Promise<void> {
     const entry: TranslationChangelogEntry = {
       timestamp: new Date().toISOString(),
@@ -641,13 +799,17 @@ export class SyncManager {
         successCount: 0,
         failedCount: 0,
       },
+      shard,
+      deletedFiles: deletedFiles.map((file) =>
+        file.replace(`${this.docsPath}/`, "")
+      ),
     };
 
     // 整理翻译结果
     for (const [language, result] of Object.entries(translationResults)) {
       entry.translatedFiles[language] = {
         success: result.files,
-        failed: [], // 可以从 result 中提取失败的文件
+        failed: result.failedFiles,
       };
       entry.stats.successCount += result.success;
       entry.stats.failedCount += result.failed;

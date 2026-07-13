@@ -341,7 +341,12 @@ class TranslationCLI {
   async syncDocuments(
     force: boolean = false,
     detectOnly: boolean = false,
-    sourceOnly: boolean = false
+    sourceOnly: boolean = false,
+    targetLanguage?: string,
+    sourceCommit?: string,
+    shardIndex?: number,
+    shardCount?: number,
+    resultFile?: string
   ): Promise<void> {
     const projectConfig = await this.loadProjectConfig();
     if (!projectConfig) {
@@ -355,14 +360,30 @@ class TranslationCLI {
 
     console.log(chalk.blue("🔄 Starting document synchronization..."));
 
+    if (
+      targetLanguage &&
+      !projectConfig.targetLanguages.includes(targetLanguage)
+    ) {
+      throw new Error(
+        `Unsupported target language: ${targetLanguage}. Configured languages: ${projectConfig.targetLanguages.join(
+          ", "
+        )}`
+      );
+    }
+
     const syncManager = new SyncManager({
       sourceRepo: projectConfig.sourceRepo,
       docsPath: projectConfig.docsPath,
       sourceLanguage: projectConfig.sourceLanguage, // 传递源语言
       projectRoot: process.cwd(), // 传递项目根目录
-      targetLanguages: projectConfig.targetLanguages, // 传递目标语言
+      targetLanguages: targetLanguage
+        ? [targetLanguage]
+        : projectConfig.targetLanguages, // 传递目标语言
       outputDir: projectConfig.outputDir, // 传递输出目录
       branch: projectConfig.branch, // 传递分支参数
+      sourceCommit,
+      shardIndex,
+      shardCount,
       excludeFromTranslation: projectConfig.excludeFromTranslation, // 传递排除翻译列表
     });
 
@@ -371,6 +392,12 @@ class TranslationCLI {
         detectOnly,
         sourceOnly,
       });
+
+      if (resultFile) {
+        const outputPath = path.resolve(resultFile);
+        await fs.ensureDir(path.dirname(outputPath));
+        await fs.writeJson(outputPath, result, { spaces: 2 });
+      }
 
       if (result.success) {
         console.log(
@@ -744,11 +771,31 @@ async function main() {
       "-s, --source-only",
       "Detect changes and write source-language docs, but skip translation; does not advance last-sync.json (no API key required)"
     )
+    .option(
+      "-l, --language <lang>",
+      "Translate only one configured target language"
+    )
+    .option(
+      "--source-commit <sha>",
+      "Pin synchronization to a specific source repository commit"
+    )
+    .option("--shard-index <index>", "Zero-based translation shard index")
+    .option("--shard-count <count>", "Total number of translation shards")
+    .option("--result-file <path>", "Write the structured sync result as JSON")
     .action(async (options) => {
       await cli.syncDocuments(
         options.force,
         options.detectOnly,
-        options.sourceOnly
+        options.sourceOnly,
+        options.language,
+        options.sourceCommit,
+        options.shardIndex === undefined
+          ? undefined
+          : Number(options.shardIndex),
+        options.shardCount === undefined
+          ? undefined
+          : Number(options.shardCount),
+        options.resultFile
       );
     });
 
