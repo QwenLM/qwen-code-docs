@@ -87,15 +87,6 @@ export const BlogCategoryList = async ({
                 href={post.route}
                 className="group flex items-start gap-6 py-6 border-b border-border/40 hover:bg-muted/20 transition-colors -mx-4 px-4"
               >
-                <div className="hidden sm:flex flex-col items-center justify-center w-16 shrink-0 text-center">
-                  <span className="text-2xl font-bold text-foreground leading-none">
-                    {date.getDate()}
-                  </span>
-                  <span className="text-xs text-muted-foreground uppercase mt-1">
-                    {date.toLocaleDateString(locale, { month: "short" })}
-                  </span>
-                </div>
-
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     {isNew && (
@@ -103,11 +94,8 @@ export const BlogCategoryList = async ({
                         NEW
                       </span>
                     )}
-                    <span className="sm:hidden text-xs text-muted-foreground">
-                      {date.toLocaleDateString(locale)}
-                    </span>
-                    <span className="hidden sm:inline text-xs text-muted-foreground">
-                      {date.getFullYear()}年{date.getMonth() + 1}月
+                    <span className="text-xs text-muted-foreground">
+                      {date.toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" })}
                     </span>
                   </div>
                   <h2 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors leading-snug">
