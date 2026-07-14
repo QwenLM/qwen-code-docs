@@ -1,6 +1,6 @@
 export default {
   index: { display: 'hidden' },
-  'qwencode-bailian-ai-marketing': '百炼 CLI 电商营销',
-  'qwencode-mpcover-skill-guide': '公众号封面技能',
-  'feat-skills-oss-styles': 'Skills 开源样式',
+  'qwencode-bailian-ai-marketing': '百炼 CLI + Qwen Code 搞定电商营销全流程',
+  'qwencode-mpcover-skill-guide': '一句话生成封面：我给公众号做了4种风格的AI封面生成技能',
+  'feat-skills-oss-styles': '一句话，给你的开源项目拍部电影级宣传片',
 };

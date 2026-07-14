@@ -27,6 +27,7 @@ const CSS = `
   white-space: nowrap;
   flex-shrink: 0;
   pointer-events: none;
+  vertical-align: middle;
 }
 html.dark [data-sidebar-new] {
   color: #4ade80;
@@ -101,7 +102,12 @@ function addNewBadges(blogDates: Record<string, string>) {
       const badge = document.createElement("span");
       badge.setAttribute(BADGE_ATTR, "true");
       badge.textContent = "NEW";
-      link.appendChild(badge);
+      const textEl = link.firstElementChild;
+      if (textEl && textEl.tagName !== "SVG" && !textEl.hasAttribute(BADGE_ATTR)) {
+        textEl.appendChild(badge);
+      } else {
+        link.appendChild(badge);
+      }
     }
   }
 }
