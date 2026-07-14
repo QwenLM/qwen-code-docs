@@ -1,0 +1,97 @@
+---
+title: "Desenvolvimento na Prática: Dos Requisitos aos Testes Unitários"
+date: "2026-07-13"
+description: "Três cenários reais de desenvolvimento: de requisitos vagos a um protótipo interativo, 9 Agentes de IA revisando código simultaneamente, geração automática de testes unitários e correção de problemas. Use o Qwen Code para percorrer todo o fluxo de desenvolvimento a entrega."
+author: "Qwen Team"
+tags: ["Tutorial", "Coding"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Desenvolvimento na Prática: Dos Requisitos aos Testes Unitários"
+  date="13 de julho de 2026"
+  author="Qwen Team"
+/>
+
+Desenvolvimento de software não é só escrever código. Desde entender o que fazer até garantir a qualidade do código, cada passo consome tempo. Nos três cenários abaixo, o Qwen Code participa de ponta a ponta — ajudando a organizar requisitos, revisar código e complementar testes.
+
+## De Requisitos Vagos a um Protótipo Interativo
+
+Tem uma ideia na cabeça, mas ainda não pensou nos detalhes? Diga ao Qwen Code o que você quer fazer, e ele não vai correr para escrever código. Em vez disso, vai conversar com você como um gerente de produto — quais são as funcionalidades principais, como definir a interação, qual abordagem técnica usar, etc. Quando você e a IA estiverem satisfeitos com os requisitos, ele começa a desenvolver a ferramenta completa. De uma frase a um protótipo funcional, sem precisar escrever uma linha de código.
+
+<video
+  src="https://cloud.video.taobao.com/vod/cW5Zjsai4Lq-TBJIV4LQO0u8xaeNReyALue5L-HtwtQ.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/O1CN01db5Tho1Xeh95OTYfP_!!6000000002949-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Passos
+
+1. **Refinar Requisitos** — Conte sua ideia ao Qwen Code, mesmo que seja apenas uma descrição vaga. A IA vai fazer uma série de perguntas para detalhar — funcionalidades principais, interação, implementação técnica — e por fim gerar um documento de requisitos completo.
+2. **Confirmar Plano de Requisitos** — Depois que a IA gerar o plano de requisitos, você pode verificar item por item, ver se há algo para alterar ou adicionar. Quando estiver tudo certo, passe para a próxima etapa.
+3. **Iniciar Desenvolvimento** — Com o plano de requisitos confirmado, peça ao Qwen Code para começar o desenvolvimento. Ele vai seguir o documento de requisitos e construir a ferramenta completa, passo a passo, de forma automática.
+
+<Callout>
+    **Dica**: Quanto mais específica a fase de requisitos, menos retrabalho na fase de desenvolvimento. Não tenha pressa de deixar a IA escrever código, primeiro converse.
+</Callout>
+
+## 9 Agentes de IA Revisando Seu Código Simultaneamente
+
+Antes de commitar o código escrito, execute `/review`: 9 Agentes de revisão começam ao mesmo tempo, escaneando em paralelo segurança, performance, qualidade de código e outras dimensões, e corrigindo os problemas diretamente. Um colega abriu um PR? Um comando revisa, e os comentários vão automaticamente para as linhas de código no GitHub, como uma revisão de pessoa real.
+
+<video
+  src="https://cloud.video.taobao.com/vod/q8e6oXagz7e6S3nXqzdz9uX9Jc2vU1M5cTQc5KYxnLQ.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/O1CN0125Uqjz1jIVLevSaJR_!!6000000004525-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Passos
+
+1. **Revisão de Código do Projeto** — Execute `/review` para revisar o código do projeto, com 9 Agentes escaneando em paralelo, descobrindo automaticamente chaves hardcoded, injeção de SQL e outros problemas de segurança e performance.
+2. **Corrigir Problemas com Um Clique** — Escolha a correção automática, e o Qwen Code modifica o código diretamente e executa o linter para verificar, garantindo que a correção não introduza novos problemas.
+3. **Revisar PR e Comentar** — Execute `/review <PR number> --comment` para revisar um PR remoto, mude para o GitHub para ver as anotações inline, com comentários de revisão diretamente nas linhas de código.
+
+```bash
+/review <PR number> --comment
+```
+
+## Adicionar Testes Unitários ao Projeto
+
+Deixe o Qwen Code entender as regras do projeto, gerar automaticamente testes unitários cobrindo cenários normais, cenários de borda e entradas inválidas, executar a verificação, corrigir problemas e complementar a cobertura de testes.
+
+<video
+  src="https://cloud.video.taobao.com/vod/9BIzzviw4yBmKnq3wxoEQl67NzWLqowLKxn3Q2tpDHo.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/O1CN01wShvFg1X0OIGEkC7y_!!6000000002861-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Passos
+
+1. **Entender o Projeto e os Objetivos de Teste** — O Qwen Code lê os arquivos do projeto, entende as regras de negócio, funções principais e objetivos de teste, e planeja os cenários de teste que precisam ser cobertos primeiro.
+2. **Gerar Testes e Executar Verificação** — Com base nas regras de negócio, gera testes unitários para funções principais, cobrindo cenários normais, cenários de borda e entradas inválidas, como limite de cupom, valor mínimo para frete grátis, carrinho vazio e entrada inválida, e executa os testes automaticamente.
+3. **Corrigir Problemas e Fazer os Testes Passarem** — Com base nos resultados de testes que falharam, identifica a origem do problema. Se a implementação do código não estiver consistente com as regras de negócio, o Qwen Code modifica o código e reexecuta os testes até que passem.
+4. **Complementar Cobertura de Testes** — Veja o relatório de cobertura de testes, analise arquivos e branches não cobertos, continue adicionando casos de teste valiosos, melhorando a cobertura de testes da lógica principal.
+
+<Callout type="error">
+    **Atenção**: Os casos de teste gerados pela IA precisam que você confirme se a lógica de negócio está correta. A IA pode ajudar a escrever testes, mas não pode julgar o que é correto por você.
+</Callout>
+
+## Próximos Passos
+
+- [Trabalhos, Portfólios e Projetos Open Source em Dez Minutos](/pt-BR/blog/cases/qwencode-coding-plan-guide-build-website) — Construa um site do zero com o modo Plan
+- [Avançado](/pt-BR/blog/advanced) — Bailian CLI, Skills e outros recursos avançados
+- [Demonstrações em Vídeo](/pt-BR/showcase) — Mais cenários em vídeo

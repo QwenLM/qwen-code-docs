@@ -1,0 +1,97 @@
+---
+title: "Pratiques de développement : de l'exigence à la revue de code et aux tests unitaires"
+date: "2026-07-13"
+description: "Trois scénarios de développement réels : d'une exigence floue à un prototype interactif, 9 IA qui审查 le code en parallèle, et génération automatique de tests unitaires avec correction. Utilisez Qwen Code pour couvrir tout le flux, du développement à la livraison."
+author: "Qwen Team"
+tags: ["Tutorial", "Coding"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Pratiques de développement : de l'exigence à la revue de code et aux tests unitaires"
+  date="13 juillet 2026"
+  author="Qwen Team"
+/>
+
+Le développement ne se résume pas à écrire du code. Du cadrage du besoin à la garantie de qualité, chaque étape prend du temps. Voici trois scénarios où Qwen Code intervient à chaque étape — clarifier les exigences, examiner le code, compléter les tests.
+
+## D'une exigence floue à un prototype interactif
+
+Vous avez une idée en tête, mais les détails ne sont pas encore clairs ? Décrivez simplement ce que vous voulez faire à Qwen Code. Il ne se précipite pas sur le code — il commence par échanger avec vous comme un chef de produit : fonctionnalités clés, mode d'interaction, approche technique. Une fois que vous et l'IA êtes alignés sur le besoin, il développe l'outil complet. D'une phrase à un prototype fonctionnel, sans écrire une seule ligne de code vous-même.
+
+<video
+  src="https://cloud.video.taobao.com/vod/cW5Zjsai4Lq-TBJIV4LQO0u8xaeNReyALue5L-HtwtQ.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/O1CN01db5Tho1Xeh95OTYfP_!!6000000002949-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Étapes
+
+1. **Affiner le besoin** — Décrivez votre idée à Qwen Code, même de façon vague. L'IA vous pose une série de questions pour préciser les détails — fonctionnalités clés, mode d'interaction, approche technique — puis génère un document de besoins complet.
+2. **Valider le besoin** — Une fois la proposition générée, vérifiez chaque point, ajoutez ou modifiez si nécessaire. Quand tout est confirmé, passez à l'étape suivante.
+3. **Lancer le développement** — Le besoin étant validé, demandez à Qwen Code de commencer le développement. Il construit l'outil étape par étape selon le document de besoins, de façon entièrement automatique.
+
+<Callout>
+    **Astuce** : Plus le besoin est précis, moins il y aura de retravail en développement. Ne vous précipitez pas sur le code, discutez d'abord.
+</Callout>
+
+## 9 réviseurs IA examinent votre code en parallèle
+
+Avant de soumettre votre code, lancez `/review` : 9 Agents examinent en parallèle la sécurité, les performances, la qualité du code et détectent les problèmes. Ils peuvent même les corriger directement. Un collègue a soumis une PR ? Une commande suffit pour l'examiner, et les commentaires s'écrivent directement sur les lignes de code GitHub, comme une revue humaine.
+
+<video
+  src="https://cloud.video.taobao.com/vod/q8e6oXagz7e6S3nXqzdz9uX9Jc2vU1M5cTQc5KYxnLQ.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/O1CN0125Uqjz1jIVLevSaJR_!!6000000004525-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Étapes
+
+1. **Examen du code du projet** — Exécutez `/review` pour examiner le code du projet. 9 Agents scannent en parallèle et détectent les problèmes de sécurité et de performance (clés codées en dur, injections SQL, etc.).
+2. **Correction en un clic** — Choisissez la correction automatique : Qwen Code modifie le code et lance le linter pour vérifier que la correction n'introduit pas de nouveau problème.
+3. **Revue de PR et commentaires** — Exécutez `/review <PR number> --comment` pour examiner une PR distante. Allez sur GitHub pour voir les annotations en ligne, les commentaires sont écrits directement sur les lignes de code.
+
+```bash
+/review <PR number> --comment
+```
+
+## Ajouter des tests unitaires au projet
+
+Laissez Qwen Code comprendre les règles du projet, générer automatiquement des tests unitaires couvrant les cas normaux, les cas limites et les entrées invalides, puis exécuter les tests, corriger les problèmes et compléter la couverture.
+
+<video
+  src="https://cloud.video.taobao.com/vod/9BIzzviw4yBmKnq3wxoEQl67NzWLqowLKxn3Q2tpDHo.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/O1CN01wShvFg1X0OIGEkC7y_!!6000000002861-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Étapes
+
+1. **Comprendre le projet et les objectifs de test** — Qwen Code lit les fichiers du projet, comprend les règles métier, les fonctions clés et les objectifs de test, puis planifie les scénarios à couvrir en priorité.
+2. **Générer les tests et les exécuter** — À partir des règles métier, Qwen Code génère des tests unitaires pour les fonctions clés, couvrant les cas normaux, les cas limites et les entrées invalides (par exemple : seuil de réduction, montant de livraison gratuite, panier vide, entrée invalide), et les exécute automatiquement.
+3. **Corriger les problèmes et passer les tests** — En cas d'échec, Qwen Code analyse la source du problème. Si l'implémentation ne correspond pas aux règles métier, il modifie le code et relance les tests jusqu'à ce qu'ils passent.
+4. **Compléter la couverture de test** — Consultez le rapport de couverture, analysez les fichiers et branches non couverts, et continuez à ajouter des tests pertinents pour améliorer la couverture des logiques critiques.
+
+<Callout type="error">
+    **Attention** : Les tests générés par l'IA nécessitent votre validation de la logique métier. L'IA peut écrire les tests, mais ne peut pas juger à votre place ce qui est correct.
+</Callout>
+
+## Pour la suite
+
+- [Devoirs, portfolios et projets open source en dix minutes](/fr/blog/cases/qwencode-coding-plan-guide-build-website) — Construire un site de zéro avec le mode Plan
+- [Avancé](/fr/blog/advanced) — Bailian CLI, Skills et autres fonctionnalités avancées
+- [Showcase en vidéo](/fr/showcase) — Plus de démonstrations vidéo

@@ -1,0 +1,97 @@
+---
+title: "Programmierpraxis: Von Anforderungen über Code-Review bis zu Unit-Tests"
+date: "2026-07-13"
+description: "Drei reale Programmierszenarien: Von vagen Anforderungen zu einem interaktiven Prototyp, 9 AI-Agenten, die gleichzeitig Code prüfen, automatische Unit-Test-Generierung mit Fehlerbehebung. Mit Qwen Code den gesamten Ablauf von Entwicklung bis Lieferung durchlaufen."
+author: "Qwen Team"
+tags: ["Tutorial", "Coding"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Programmierpraxis: Von Anforderungen über Code-Review bis zu Unit-Tests"
+  date="13. Juli 2026"
+  author="Qwen Team"
+/>
+
+Softwareentwicklung besteht nicht nur aus dem Schreiben von Code. Jeder Schritt kostet Zeit – von der Klärung der Anforderungen bis zur Sicherstellung der Codequalität. Die folgenden drei Szenarien zeigen, wie Qwen Code den gesamten Prozess begleitet: Anforderungen klären, Code prüfen, Testfälle ergänzen.
+
+## Von vagen Anforderungen zu einem interaktiven Prototyp
+
+Sie haben eine Idee im Kopf, aber die Details sind noch unklar? Erzählen Sie Qwen Code einfach, was Sie machen möchten. Es fängt nicht sofort an, Code zu schreiben, sondern spricht erst mit Ihnen wie ein Product Manager – Kernfunktionen, Interaktionsweise, technische Umsetzung. Wenn Sie und die AI mit den Anforderungen zufrieden sind, entwickelt es das gesamte Tool. Von einem Satz zu einem lauffähigen Prototyp – ohne dass Sie eine Zeile Code selbst schreiben.
+
+<video
+  src="https://cloud.video.taobao.com/vod/cW5Zjsai4Lq-TBJIV4LQO0u8xaeNReyALue5L-HtwtQ.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/O1CN01db5Tho1Xeh95OTYfP_!!6000000002949-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Vorgehensweise
+
+1. **Anforderungen ausarbeiten** — Erzählen Sie Qwen Code Ihre Idee, auch wenn es nur eine vage Beschreibung ist. Die AI stellt proaktiv Fragen zu den Details: Kernfunktionen, Interaktionsweise, technische Umsetzung und erstellt am Ende ein vollständiges Anforderungsdokument.
+2. **Anforderungskonzept bestätigen** — Nachdem die AI das Konzept erstellt hat, können Sie es Punkt für Punkt prüfen und Anpassungen vornehmen. Wenn alles passt, geht es weiter.
+3. **Entwicklung starten** — Sobald das Konzept bestätigt ist, lassen Sie Qwen Code mit der Entwicklung beginnen. Es erstellt das Tool Schritt für Schritt gemäß dem Anforderungsdokument – automatisch.
+
+<Callout>
+    **Tipp**: Je konkreter die Anforderungsphase, desto weniger Nachbesserungen in der Entwicklungsphase. Keine Eile beim Coden – zuerst klären.
+</Callout>
+
+## 9 AI-Reviewer prüfen gleichzeitig Ihren Code
+
+Führen Sie vor dem Commit `/review` aus, und 9 Review-Agenten starten parallel: Sicherheit, Performance, Codequalität und weitere Dimensionen werden gescannt, gefundene Probleme direkt behoben. Ein Kollege hat einen PR eingereicht? Ein Befehl für das Review, Kommentare werden automatisch in die GitHub-Codezeilen geschrieben – wie ein echtes Review.
+
+<video
+  src="https://cloud.video.taobao.com/vod/q8e6oXagz7e6S3nXqzdz9uX9Jc2vU1M5cTQc5KYxnLQ.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/O1CN0125Uqjz1jIVLevSaJR_!!6000000004525-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Vorgehensweise
+
+1. **Projekt-Code-Review** — Führen Sie `/review` aus, um den Projektcode zu prüfen. 9 Agenten scannen parallel und finden automatisch Sicherheits- und Performance-Probleme wie hartcodierte Secrets oder SQL-Injection.
+2. **Probleme per Klick beheben** — Wählen Sie die automatische Reparatur. Qwen Code ändert den Code direkt und führt den Linter zur Verifikation aus, sodass keine neuen Probleme entstehen.
+3. **PR prüfen und kommentieren** — Führen Sie `/review <PR number> --comment` aus, um einen Remote-PR zu prüfen. Wechseln Sie zu GitHub, um die Inline-Kommentare zu sehen – die Review-Hinweise stehen direkt in den Codezeilen.
+
+```bash
+/review <PR number> --comment
+```
+
+## Unit-Tests für das Projekt hinzufügen
+
+Lassen Sie Qwen Code die Projektregeln verstehen und automatisch Unit-Tests generieren, die normale Szenarien, Randfälle und fehlerhafte Eingaben abdecken – mit automatischer Ausführung, Fehlerbehebung und Ergänzung der Testabdeckung.
+
+<video
+  src="https://cloud.video.taobao.com/vod/9BIzzviw4yBmKnq3wxoEQl67NzWLqowLKxn3Q2tpDHo.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/O1CN01wShvFg1X0OIGEkC7y_!!6000000002861-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Vorgehensweise
+
+1. **Projekt und Testziele verstehen** — Qwen Code liest die Projektdateien, versteht Geschäftsregeln, Kernfunktionen und Testziele und plant, welche Testszenarien priorisiert abgedeckt werden müssen.
+2. **Tests generieren und ausführen** — Basierend auf den Geschäftsregeln werden Unit-Tests für Kernfunktionen generiert, die normale Szenarien, Randfälle und fehlerhafte Eingaben abdecken – z. B. Rabattschwellen, Versandkosten-Grenzwerte, leerer Warenkorb und ungültige Eingaben. Die Tests werden automatisch ausgeführt.
+3. **Probleme beheben und Tests zum Laufen bringen** — Bei Testfehlern wird die Fehlerursache ermittelt. Wenn die Codeimplementierung nicht mit den Geschäftsregeln übereinstimmt, ändert Qwen Code den Code und führt die Tests neu aus, bis sie durchlaufen.
+4. **Testabdeckung ergänzen** — Prüfen Sie den Coverage-Report, analysieren Sie nicht abgedeckte Dateien und Branches und ergänzen Sie weitere wertvolle Testfälle, um die Testabdeckung der Kernlogik zu verbessern.
+
+<Callout type="error">
+    **Hinweis**: Bei AI-generierten Testfällen müssen Sie selbst beurteilen, ob die Geschäftslogik korrekt ist. AI kann Tests schreiben, aber nicht beurteilen, was richtig ist.
+</Callout>
+
+## Nächste Schritte
+
+- [Hausarbeiten, Portfolios und Open-Source-Projekte in zehn Minuten](/de/blog/cases/qwencode-coding-plan-guide-build-website) — Mit dem Plan-Modell eine Website von Grund auf erstellen
+- [Fortgeschritten](/de/blog/advanced) — Bailian CLI, Skills und weitere erweiterte Funktionen
+- [Showcase-Videodemonstrationen](/de/showcase) — Weitere Videodemonstrationen zu verschiedenen Szenarien
