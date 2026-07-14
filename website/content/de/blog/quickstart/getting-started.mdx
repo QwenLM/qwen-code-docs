@@ -1,0 +1,174 @@
+---
+title: "Qwen Code Schnellstart: Von der Installation bis zur ersten KI-Programmieraufgabe"
+date: "2026-07-13"
+description: "Von Null mit Qwen Code starten: CLI installieren, Modell konfigurieren, erste Konversation starten, Skills-Erweiterungen installieren – in 10 Minuten Ihre erste KI-Programmieraufgabe abschließen."
+author: "Qwen Team"
+tags: ["Tutorial", "Quickstart"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code Schnellstart: Von der Installation bis zur ersten KI-Programmieraufgabe"
+  date="13. Juli 2026"
+  author="Qwen Team"
+/>
+
+Wenn Sie zum ersten Mal mit Qwen Code arbeiten, führt Sie dieser Artikel von Grund auf: Installation, Konfiguration, Konversation, Erweiterung – vier Schritte für den gesamten Ablauf. Jeder Schritt hat eine Videodemonstration, folgen Sie einfach mit.
+
+## Qwen Code installieren
+
+Qwen Code unterstützt die Ein-Klick-Installation per Skript und deckt Windows, macOS und Linux ab.
+
+**macOS / Linux:**
+
+```bash
+bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source website
+```
+
+**Windows (PowerShell):**
+
+```powershell
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat --source website
+```
+
+Führen Sie nach der Installation `qwen --version` aus, um die erfolgreiche Installation zu bestätigen. Wenn Sie lieber mit npm installieren, geht das auch:
+
+```bash
+npm i @qwen-code/qwen-code@latest -g
+```
+
+Die detaillierten Installationsschritte zeigt dieses Video – vom Download bis zur Verifikation:
+
+<video
+  src="https://cloud.video.taobao.com/vod/WwpTKWA47iLT4DPh-Rk8763V-ihd50bAbD5_-op5Js4.mp4"
+  poster="https://img.alicdn.com/imgextra/i3/O1CN01wNWdtR1iVxMQbXtqa_!!6000000004419-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Modellanbieter konfigurieren
+
+Nach der Installation führt Sie Qwen Code durch die Verbindung mit einem Modellanbieter. Empfohlen wird die Alibaba Cloud Bailian-Plattform.
+
+1. Gehen Sie zu [Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing/?tab=model#/api-key), um Ihren API Key zu erhalten
+2. Starten Sie im Terminal mit `qwen`, wählen Sie Alibaba ModelStudio
+3. Fügen Sie Ihren API Key ein und wählen Sie das Modell
+
+Wenn Sie lieber manuell konfigurieren, bearbeiten Sie `~/.qwen/settings.json`:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.5-plus",
+        "name": "[Bailian] qwen3.5-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "envKey": "BAILIAN_API_KEY"
+      }
+    ]
+  },
+  "env": {
+    "BAILIAN_API_KEY": "Ihr-API-KEY"
+  }
+}
+```
+
+Verwenden Sie nach der Konfiguration den Befehl `/model`, um Modelle anzuzeigen und zu wechseln:
+
+<video
+  src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+  poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Erste Konversation starten
+
+Wechseln Sie in Ihr Projektverzeichnis und starten Sie Qwen Code:
+
+```bash
+cd your-project && qwen
+```
+
+Beschreiben Sie in natürlicher Sprache, was Sie tun möchten. Zum Beispiel:
+
+```
+Schreibe mir eine Python-Funktion, die die Fibonacci-Folge berechnet
+```
+
+Oder lassen Sie AI beim Organisieren von Dateien helfen:
+
+```
+Sortiere die Dateien in diesem Ordner nach Typ in verschiedene Unterordner
+```
+
+Qwen Code zerlegt die Aufgabe automatisch, führt Operationen aus und liefert Ergebnisse. Sie müssen nicht Schritt für Schritt anleiten – beschreiben Sie einfach das Ziel.
+
+<video
+  src="https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Skills-Erweiterungen installieren
+
+Skills ist das Erweiterungssystem von Qwen Code. Sie können nach Bedarf von der Community entwickelte Skills installieren, um der AI zusätzliche Fachkompetenzen zu verleihen.
+
+Ein Skill zu installieren ist ganz einfach – ein Satz reicht:
+
+```
+Installiere find-skills
+```
+
+Oder direkt mit dem Befehl:
+
+```bash
+/skills find-skills install web-component-design -y -a qwen-code
+```
+
+Verwenden Sie nach der Installation `/skills`, um die installierten Skills anzuzeigen.
+
+<video
+  src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## VS Code Integration
+
+Wenn Sie lieber im Editor arbeiten, bietet Qwen Code eine VS Code Erweiterung. Suchen Sie im Extension Marketplace nach „Qwen Code" und installieren Sie sie. Nach der Installation können Sie direkt in der Seitenleiste mit der AI chatten und ein nahtloses Programmiererlebnis genießen.
+
+<video
+  src="https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Nächste Schritte
+
+Nach dem Einstieg können Sie weiter erkunden:
+
+- [Ein Assistent, der wie ein Programmierer denkt](/de/blog/quickstart/thinks-like-a-programmer) — Die Designphilosophie von Qwen Code verstehen
+- [Anwendungsfälle](/de/blog/cases) — Reale Nutzungsszenarien und Tutorials ansehen
+- [Fortgeschritten](/de/blog/advanced) — Skills, Bailian CLI und weitere erweiterte Funktionen
+- [Showcase-Videodemonstrationen](/de/showcase) — Weitere Video-Walkthroughs zu verschiedenen Szenarien
