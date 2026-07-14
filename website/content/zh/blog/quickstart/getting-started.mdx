@@ -1,0 +1,174 @@
+---
+title: "Qwen Code 快速入门：从安装到第一个 AI 编程任务"
+date: "2026-07-13"
+description: "从零开始使用 Qwen Code：安装 CLI、配置模型、发起第一次对话、安装 Skills 扩展，10 分钟完成你的第一个 AI 编程任务。"
+author: "Qwen Team"
+tags: ["Tutorial", "Quickstart"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code 快速入门：从安装到第一个 AI 编程任务"
+  date="2026年7月13日"
+  author="Qwen Team"
+/>
+
+如果你第一次接触 Qwen Code，这篇文章带你从零开始：安装、配置、对话、扩展，四步跑通整个流程。每个环节都有视频演示，跟着做就行。
+
+## 安装 Qwen Code
+
+Qwen Code 支持通过脚本一键安装，Windows、macOS、Linux 都覆盖。
+
+**macOS / Linux：**
+
+```bash
+bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source website
+```
+
+**Windows（PowerShell）：**
+
+```powershell
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat --source website
+```
+
+安装完成后，运行 `qwen --version` 确认安装成功。如果你想用 npm 安装，也可以：
+
+```bash
+npm i @qwen-code/qwen-code@latest -g
+```
+
+详细的安装步骤可以看这个视频，从下载到验证全程演示：
+
+<video
+  src="https://cloud.video.taobao.com/vod/WwpTKWA47iLT4DPh-Rk8763V-ihd50bAbD5_-op5Js4.mp4"
+  poster="https://img.alicdn.com/imgextra/i3/O1CN01wNWdtR1iVxMQbXtqa_!!6000000004419-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 配置模型服务商
+
+安装完成后，Qwen Code 会引导你连接模型服务商。推荐使用阿里云百炼平台。
+
+1. 前往[阿里云百炼](https://bailian.console.aliyun.com/cn-beijing/?tab=model#/api-key)获取 API Key
+2. 在终端运行 `qwen` 启动，选择 Alibaba ModelStudio
+3. 粘贴你的 API Key，选择模型
+
+如果你更喜欢手动配置，编辑 `~/.qwen/settings.json`：
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.5-plus",
+        "name": "[Bailian] qwen3.5-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "envKey": "BAILIAN_API_KEY"
+      }
+    ]
+  },
+  "env": {
+    "BAILIAN_API_KEY": "你的API-KEY"
+  }
+}
+```
+
+配置完成后用 `/model` 命令查看和切换模型：
+
+<video
+  src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+  poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 开始第一次对话
+
+进入你的项目目录，启动 Qwen Code：
+
+```bash
+cd your-project && qwen
+```
+
+直接用自然语言描述你想做的事情。比如：
+
+```
+帮我写一个 Python 函数，计算斐波那契数列
+```
+
+或者让 AI 帮你整理文件：
+
+```
+把这个文件夹里的文件按类型整理到不同文件夹中
+```
+
+Qwen Code 会自动拆解任务、执行操作、返回结果。你不需要一步步教它怎么做，描述目标就行。
+
+<video
+  src="https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 安装 Skills 扩展
+
+Skills 是 Qwen Code 的能力扩展系统。你可以按需安装社区开发的 Skill，让 AI 具备更多专业能力。
+
+安装一个 Skill 很简单，一句话就行：
+
+```
+帮我安装 find-skills
+```
+
+或者直接用命令：
+
+```bash
+/skills find-skills install web-component-design -y -a qwen-code
+```
+
+安装完成后用 `/skills` 查看已安装的 Skills。
+
+<video
+  src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## VS Code 集成
+
+如果你更习惯在编辑器里工作，Qwen Code 提供了 VS Code 扩展。在扩展市场搜索 "Qwen Code" 安装即可。安装后可以在侧边栏直接与 AI 对话，享受无缝的编程体验。
+
+<video
+  src="https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 接下来
+
+入门之后，你可以继续探索：
+
+- [像程序员一样思考的助手](/zh/blog/quickstart/thinks-like-a-programmer) — 了解 Qwen Code 的设计理念
+- [实战案例](/zh/blog/cases) — 看真实使用场景和教程
+- [进阶应用](/zh/blog/advanced) — Skills、百炼 CLI 等高级功能
+- [Showcase 视频演示](/zh/showcase) — 更多场景的视频 walkthrough
