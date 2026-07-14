@@ -1,0 +1,118 @@
+---
+title: "Qwen Code in Your Pocket: One Command, and You're Coding from Your Phone"
+date: "2026-07-14"
+description: "qwen serve turns the Qwen Code on your machine into a local service your phone's browser connects to — the same agent session. No cloud, no middleman, your code never leaves your machine."
+author: "pomelo-nwu"
+tags: ["Tutorials", "feature"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code in Your Pocket: One Command, and You're Coding from Your Phone"
+  date="2026-07-14"
+  author="pomelo-nwu"
+/>
+
+You've handed Qwen Code a decent-sized job on your machine — refactoring a module and filling in the tests to match. It's reading files, editing code, running tests, doing just fine.
+
+Then a meeting starts pulling at you, or you just want to leave the chair and collapse on the couch for a while.
+
+Usually you have two options: sit and watch it finish before you move, or leave it running and check back later. Neither feels great.
+
+But there's a third: pull out your phone and keep watching it work — approve when it needs approval, follow up when you want to — as if you never left the chair.
+
+That's what `qwen serve` gives you.
+
+## What it actually is
+
+In one line: `qwen serve` turns the Qwen Code you're already using into a local service on your machine.
+
+Your terminal, your IDE plugin, and any browser — including the one on your phone — all connect to the **same agent session**. The same conversation, the same file diffs, the same permission prompts.
+
+It isn't a fresh cloud instance, and it doesn't sync your project anywhere else. It's the very same Qwen Code on your computer — it just opens one more door.
+
+## One command opens the door
+
+The best part is starting it — you don't even have to remember any flags.
+
+Tell Qwen Code to "start remote access", or trigger the `serve` skill you set up, and it does the whole job for you. Under the hood, it roughly does this:
+
+```bash
+# 1. Find this machine's LAN IP
+ipconfig getifaddr en0
+# → 192.168.0.105
+
+# 2. Start the service in the background (with a token, allowing your IP)
+QWEN_SERVER_TOKEN=my-token qwen serve \
+  --hostname 0.0.0.0 \
+  --allow-origin "http://192.168.0.105:4170"
+# → qwen serve listening on http://0.0.0.0:4170
+#   (mode=http-bridge, workspace=/Users/you/your-project)
+```
+
+Then it hands you a **link with the token baked in, ready to click**:
+
+```
+http://192.168.0.105:4170?token=my-token
+```
+
+It handles three things you'd rather not do yourself: looking up the LAN IP, starting the service in the background, and stitching the token straight into the link. All you do is copy that one link.
+
+That's what "easy" should feel like — the hassle hidden behind a single command, leaving you with just one action.
+
+## On your phone, it's unbeatable
+
+This is the highlight.
+
+Connect your phone to the same Wi-Fi as your computer, paste that address into a browser, and you get a Web Shell you already know well — the same one as on your computer.
+
+It's absolutely not a stripped-down chat box. Everything you see on your computer is here, none of it missing:
+
+- Which file it read, which lines it changed — the diff, crystal clear
+- Tool calls, collapsed; tap to see the details
+- Before it touches your files or runs a command, it raises a permission card and waits for you to approve
+
+You kicked it off on your computer; now you're lying on the couch watching it run. It's "Converting coffee into code..." on the screen over there, and you're watching it finish the job from over here.
+
+Dropping the connection isn't a problem either. You step into an elevator, switch to 5G, switch back to Wi-Fi, and reopen the page — thanks to SSE reconnect, it fills in the part you missed. Not a blank page on refresh, but a seamless continuation from the exact line where you left.
+
+## Why not something else?
+
+You might think: couldn't I make do with something else for this?
+
+**An IM bot?** (Telegram, DingTalk, Feishu, and the like)
+
+Sure — but then every conversation, every chunk of code context, has to detour through a third party's IM server first. And what you see in the IM is a flattened plain-text bubble — no diff highlighting, no collapsible tool calls, no permission cards. `qwen serve` skips the middleman entirely: your browser connects straight to your own machine, showing a native, far denser interface.
+
+**A cloud remote-control / cloud IDE?**
+
+That means moving your whole development environment to the cloud: code, dependencies, secrets, your carefully configured git and shell. One move, and you're forever worrying the two sides don't match. `qwen serve` moves nothing — your environment stays exactly where it is, on your own machine; you just look at it through a different screen. Seamless switching during the workday, none of the "the cloud env isn't set up yet" mess.
+
+When it comes down to it, these three things are what `qwen serve` actually wants to be:
+
+**Restrained.** By default it listens only on `127.0.0.1`, sitting quietly on your machine; the outside world sees nothing.
+
+**Secure.** The moment you open it to `0.0.0.0` for someone else (or your phone) to reach, it refuses to start without a token; CORS keeps every browser origin out by default; token checks use constant-time comparison, so even side channels are closed off.
+
+**Private.** Your code, your secrets, your project — none of it ever leaves your machine. The root of trust is you, the user, yourself.
+
+## A few details worth knowing
+
+- **One session, many devices:** your computer and phone share the same session. Whichever device sees a permission request first can answer it — first-responder, no scrambling.
+- **Voice input on your phone:** want to dictate instructions to it? Add `--tls-cert` / `--tls-key` to serve over HTTPS, and the browser's secure-context restriction lifts.
+- **One daemon, many workspaces:** repeat `--workspace` and a single service can host several projects at once.
+
+## An honest note on where it stands
+
+Right now it's best suited to **local / LAN, single-user** scenarios, focused on text chat and coding. Heavier uses — multi-user collaboration, containerized deployment, public-internet exposure — are still being hardened in upcoming releases. In other words: running it on your own machine and continuing work from your phone is great today; using it as a production multi-tenant service — hold on a bit.
+
+## Closing
+
+A genuinely good tool is like this: strong in capability, but quiet by default; it shows up exactly when you need it, and only then.
+
+`qwen serve` is exactly that. It didn't invent anything new — it just made "your agent should follow you around" the obvious thing it always should have been.
+
+Next time you hand Qwen Code a long-running task, try standing up and pulling out your phone.
+
+You'll find it's been there the whole time.
