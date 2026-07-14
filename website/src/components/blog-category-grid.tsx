@@ -2,15 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { getPageMap } from "nextra/page-map";
 import { ArrowRight, Sparkles, BookOpen, Layers, Newspaper } from "lucide-react";
-import { getLocale, isWithinDays, NEW_BADGE_DAYS, getCategoryInfo, getBlogText } from "../lib/blog-utils";
-
-interface Post {
-  title: string;
-  date: string;
-  description: string;
-  route: string;
-  category: string;
-}
+import { getLocale, isWithinDays, NEW_BADGE_DAYS, getCategoryInfo, getBlogText, extractPosts, sortPostsByDate } from "../lib/blog-utils";
 
 const CATEGORY_IDS = ["quickstart", "cases", "advanced", "updates"] as const;
 
@@ -21,46 +13,9 @@ const CATEGORY_ICONS: Record<string, typeof BookOpen> = {
   updates: Newspaper,
 };
 
-function extractPosts(pageMap: any[]): Post[] {
-  const posts: Post[] = [];
-
-  for (const item of pageMap) {
-    if (item.children) {
-      for (const child of item.children) {
-        if (child.frontMatter && child.route && child.name !== "index") {
-          posts.push({
-            title: child.frontMatter.title || child.name,
-            date: child.frontMatter.date || "",
-            description: child.frontMatter.description || "",
-            route: child.route,
-            category: item.name,
-          });
-        }
-      }
-    } else if (
-      item.frontMatter &&
-      item.route &&
-      item.name !== "index" &&
-      item.name !== "recent-update"
-    ) {
-      posts.push({
-        title: item.frontMatter.title || item.name,
-        date: item.frontMatter.date || "",
-        description: item.frontMatter.description || "",
-        route: item.route,
-        category: "root",
-      });
-    }
-  }
-
-  return posts;
-}
-
 export const BlogCategoryGrid = async ({ lang = "zh" }: { lang?: string }) => {
   const pageMap = await getPageMap(`/${lang}/blog`);
-  const allPosts = extractPosts(pageMap).sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  const allPosts = sortPostsByDate(extractPosts(pageMap));
 
   const counts = CATEGORY_IDS.reduce(
     (acc, catId) => {

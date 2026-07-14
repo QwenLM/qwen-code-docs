@@ -139,3 +139,55 @@ export function getCategoryInfo(directory: string, lang: string): CategoryInfo {
 export function getBlogText(key: keyof typeof BLOG_I18N, lang: string): string {
   return BLOG_I18N[key]?.[lang] || BLOG_I18N[key]?.["en"] || key;
 }
+
+export interface BlogPost {
+  title: string;
+  date: string;
+  description: string;
+  author: string;
+  route: string;
+  category: string;
+}
+
+export function extractPosts(pageMap: any[]): BlogPost[] {
+  const posts: BlogPost[] = [];
+
+  for (const item of pageMap) {
+    if (item.children) {
+      for (const child of item.children) {
+        if (child.frontMatter && child.route && child.name !== "index") {
+          posts.push({
+            title: child.frontMatter.title || child.name,
+            date: child.frontMatter.date || "",
+            description: child.frontMatter.description || "",
+            author: child.frontMatter.author || "",
+            route: child.route,
+            category: item.name,
+          });
+        }
+      }
+    } else if (
+      item.frontMatter &&
+      item.route &&
+      item.name !== "index" &&
+      item.name !== "recent-update"
+    ) {
+      posts.push({
+        title: item.frontMatter.title || item.name,
+        date: item.frontMatter.date || "",
+        description: item.frontMatter.description || "",
+        author: item.frontMatter.author || "",
+        route: item.route,
+        category: "root",
+      });
+    }
+  }
+
+  return posts;
+}
+
+export function sortPostsByDate(posts: BlogPost[]): BlogPost[] {
+  return [...posts].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+}

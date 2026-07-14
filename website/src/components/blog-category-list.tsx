@@ -2,15 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { getPageMap } from "nextra/page-map";
 import { ArrowRight } from "lucide-react";
-import { getLocale, isWithinDays, NEW_BADGE_DAYS, getCategoryInfo, getBlogText } from "../lib/blog-utils";
-
-interface Post {
-  title: string;
-  date: string;
-  description: string;
-  author: string;
-  route: string;
-}
+import { getLocale, isWithinDays, NEW_BADGE_DAYS, getCategoryInfo, getBlogText, extractPosts, sortPostsByDate } from "../lib/blog-utils";
 
 export const BlogCategoryList = async ({
   directory,
@@ -22,27 +14,7 @@ export const BlogCategoryList = async ({
   const pageMap = await getPageMap(`/${lang}/blog/${directory}`);
   const info = getCategoryInfo(directory, lang);
 
-  const posts: Post[] = [];
-
-  for (const item of pageMap as any[]) {
-    if (
-      item.frontMatter &&
-      item.route &&
-      item.name !== "index"
-    ) {
-      posts.push({
-        title: item.frontMatter.title || item.name,
-        date: item.frontMatter.date || "",
-        description: item.frontMatter.description || "",
-        author: item.frontMatter.author || "",
-        route: item.route,
-      });
-    }
-  }
-
-  posts.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  const posts = sortPostsByDate(extractPosts(pageMap as any[]));
 
   return (
     <div className="pt-4 pb-20">

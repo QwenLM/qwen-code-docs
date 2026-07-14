@@ -12,26 +12,30 @@ const COLLAPSE_COUNT = 3;
 
 const CSS = `
 [data-sidebar-new] {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
   font-size: 9px;
   font-weight: 600;
-  line-height: 1;
+  line-height: 18px;
+  height: 18px;
   color: #16a34a;
   background: #dcfce7;
-  padding: 2px 5px;
+  padding: 0 5px;
   border-radius: 9999px;
   margin-left: 4px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
-  flex-shrink: 0;
-  pointer-events: none;
   vertical-align: middle;
+  pointer-events: none;
 }
 html.dark [data-sidebar-new] {
   color: #4ade80;
   background: rgba(74, 222, 128, 0.15);
+}
+aside a[href*="/blog/"] > *:first-child {
+  overflow: visible !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
 }
 [data-updates-list]:not([data-updates-expanded]) > li:nth-child(n+${COLLAPSE_COUNT + 1}):not([data-updates-toggle]) {
   display: none !important;
@@ -151,14 +155,19 @@ function setupUpdatesCollapse() {
 
 let isProcessing = false;
 
-function enhanceSidebar(blogDates: Record<string, string>) {
+function enhanceSidebar(blogDates: Record<string, string>, observer?: MutationObserver) {
   if (isProcessing) return;
   isProcessing = true;
+  if (observer) observer.disconnect();
   try {
     addNewBadges(blogDates);
     setupUpdatesCollapse();
   } finally {
     isProcessing = false;
+    if (observer) {
+      const sidebar = document.querySelector("aside") || document.body;
+      observer.observe(sidebar, { childList: true, subtree: true });
+    }
   }
 }
 
@@ -189,7 +198,7 @@ export default function SidebarNewTag() {
       const run = () => {
         if (isProcessing) return;
         cancelAnimationFrame(raf!);
-        raf = requestAnimationFrame(() => enhanceSidebar(blogDates!));
+        raf = requestAnimationFrame(() => enhanceSidebar(blogDates!, observer));
       };
 
       enhanceSidebar(blogDates);
