@@ -389,9 +389,28 @@ export function validateMarkdown(content: string): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  // 检查未闭合的代码块
-  const codeBlockMatches = content.match(/```/g);
-  if (codeBlockMatches && codeBlockMatches.length % 2 !== 0) {
+  // 检查未闭合的代码块，只把行首的 Markdown fence 当作分隔符。
+  let openFence: { marker: "`" | "~"; length: number } | undefined;
+  for (const line of content.split("\n")) {
+    if (openFence) {
+      const closingFence = line.match(/^ {0,3}(`{3,}|~{3,})\s*$/);
+      if (
+        closingFence?.[1]?.[0] === openFence.marker &&
+        closingFence[1].length >= openFence.length
+      ) {
+        openFence = undefined;
+      }
+      continue;
+    }
+
+    const openingFence = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+    if (!openingFence?.[1]) continue;
+    const marker = openingFence[1][0];
+    if (marker !== "`" && marker !== "~") continue;
+    if (marker === "`" && openingFence[2]?.includes("`")) continue;
+    openFence = { marker, length: openingFence[1].length };
+  }
+  if (openFence) {
     errors.push("发现未闭合的代码块");
   }
 

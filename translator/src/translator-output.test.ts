@@ -68,6 +68,15 @@ describe("DocumentTranslator output safeguards", { concurrency: false }, () => {
     );
   });
 
+  it("accepts literal fence markers inside inline code", async () => {
+    const translator = getTranslator();
+    translator.response = () => "Use ```` ``` ```` to describe a code fence.";
+
+    await assert.doesNotReject(
+      translator.translateContent("Describe a code fence.", "de")
+    );
+  });
+
   it("splits an oversized paragraph into bounded requests", async () => {
     const maxChars = 48;
     const translator = getTranslator();
