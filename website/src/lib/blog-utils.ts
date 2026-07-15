@@ -129,6 +129,15 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ru: "Статей пока нет",
     "pt-BR": "Nenhum artigo ainda",
   },
+  pastUpdates: {
+    zh: "往期更新",
+    en: "Past Updates",
+    de: "Frühere Updates",
+    fr: "Anciennes mises à jour",
+    ja: "過去の更新",
+    ru: "Предыдущие обновления",
+    "pt-BR": "Atualizações Anteriores",
+  },
 };
 
 export function getCategoryInfo(directory: string, lang: string): CategoryInfo {
@@ -190,4 +199,103 @@ export function sortPostsByDate(posts: BlogPost[]): BlogPost[] {
   return [...posts].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
+}
+
+export const RECENT_SIDEBAR_COUNT = 3;
+
+interface PageMapItem {
+  name?: string;
+  route?: string;
+  title?: string;
+  children?: PageMapItem[];
+  data?: Record<string, any>;
+  frontMatter?: Record<string, any>;
+}
+
+export function modifyUpdatesSidebar(pageMap: PageMapItem[], lang: string): PageMapItem[] {
+  const label = getBlogText("pastUpdates", lang);
+  const cloned = JSON.parse(JSON.stringify(pageMap)) as PageMapItem[];
+
+  const blogFolder = cloned.find((item) => item.name === "blog" && item.children);
+  if (!blogFolder) return cloned;
+
+  const updatesFolder = blogFolder.children!.find(
+    (item) => item.name === "updates" && item.children
+  );
+  if (!updatesFolder) return cloned;
+
+  let metaFile: PageMapItem | null = null;
+  const posts: PageMapItem[] = [];
+  let indexItem: PageMapItem | null = null;
+
+  for (const child of updatesFolder.children!) {
+    if (child.data && !child.name) {
+      metaFile = child;
+    } else if (child.name === "index") {
+      indexItem = child;
+    } else if (child.name && child.route) {
+      posts.push(child);
+    }
+  }
+
+  if (metaFile && metaFile.data) {
+    const metaOrder = Object.keys(metaFile.data).filter(
+      (k) => k !== "index" && !k.startsWith("--")
+    );
+    posts.sort((a, b) => {
+      const aIdx = metaOrder.indexOf(a.name!);
+      const bIdx = metaOrder.indexOf(b.name!);
+      return (aIdx === -1 ? Infinity : aIdx) - (bIdx === -1 ? Infinity : bIdx);
+    });
+  }
+
+  if (posts.length <= RECENT_SIDEBAR_COUNT) return cloned;
+
+  const recentPosts = posts.slice(0, RECENT_SIDEBAR_COUNT);
+  const archivePosts = posts.slice(RECENT_SIDEBAR_COUNT);
+
+  const archiveMetaFile: PageMapItem = { data: {} };
+  if (metaFile && metaFile.data) {
+    for (const post of archivePosts) {
+      if (metaFile.data[post.name!]) {
+        archiveMetaFile.data![post.name!] = metaFile.data[post.name!];
+      }
+    }
+  }
+
+  if (metaFile && metaFile.data) {
+    const newData: Record<string, any> = {};
+    let postCount = 0;
+    for (const [key, value] of Object.entries(metaFile.data)) {
+      if (key === "index" || key.startsWith("--")) {
+        newData[key] = value;
+        continue;
+      }
+      postCount++;
+      if (postCount <= RECENT_SIDEBAR_COUNT) {
+        newData[key] = value;
+      }
+      if (postCount === RECENT_SIDEBAR_COUNT) {
+        newData["past-updates"] = label;
+      }
+    }
+    metaFile.data = newData;
+  }
+
+  const pastUpdatesFolder: PageMapItem = {
+    name: "past-updates",
+    route: `${updatesFolder.route}/past-updates`,
+    title: label,
+    children: [archiveMetaFile, ...archivePosts],
+  };
+
+  const newChildren: PageMapItem[] = [];
+  if (metaFile) newChildren.push(metaFile);
+  if (indexItem) newChildren.push(indexItem);
+  newChildren.push(...recentPosts);
+  newChildren.push(pastUpdatesFolder);
+
+  updatesFolder.children = newChildren;
+
+  return cloned;
 }
