@@ -9,6 +9,7 @@ import { ThemeToggle } from "../../src/components/theme-toggle";
 import { GitHubStarLink } from "../../src/components/github-star-link";
 import { Search } from "../../src/components/search";
 import { withBasePath } from "../../src/lib/utils";
+import { modifyUpdatesSidebar } from "../../src/lib/blog-utils";
 import NextLink from "next/link";
 import { notFound } from "next/navigation";
 import type { FC, ReactNode } from "react";
@@ -30,6 +31,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   }
 
   let sourcePageMap = await getPageMap(`/${lang}`);
+  sourcePageMap = modifyUpdatesSidebar(sourcePageMap, lang);
   //@ts-ignore
   // 用 fs 模块将 sourcePageMap 保存到本地
 
