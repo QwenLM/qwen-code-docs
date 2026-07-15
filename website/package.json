@@ -11,7 +11,8 @@
     "dev": "npm run generate && npm run clean && next dev",
     "build": "npm run generate && npm run clean && next build",
     "postbuild": "node scripts/set-html-lang.js && pagefind --site out --output-path out/_pagefind --exclude-selectors 'noscript,script,style,pre,code,.nextra-code-block,.nextra-toc,.nextra-sidebar,.nextra-breadcrumb,.nextra-banner'",
-    "preview": "node scripts/preview.js"
+    "preview": "node scripts/preview.js",
+    "test": "tsx --test src/**/*.test.ts"
   },
   "keywords": [
     "qwen",
