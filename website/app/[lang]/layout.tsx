@@ -31,7 +31,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   }
 
   let sourcePageMap = await getPageMap(`/${lang}`);
-  sourcePageMap = modifyUpdatesSidebar(sourcePageMap, lang);
+  sourcePageMap = modifyUpdatesSidebar(sourcePageMap as any, lang) as any;
   //@ts-ignore
   // 用 fs 模块将 sourcePageMap 保存到本地
 
