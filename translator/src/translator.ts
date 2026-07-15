@@ -6,6 +6,7 @@ import { createEnvLoader } from "./utils/env";
 import {
   parseMarkdown,
   type ParsedContent,
+  validateMarkdown,
 } from "./utils/markdown-parser";
 
 interface TranslatorConfig {
@@ -22,6 +23,17 @@ interface TranslationOptions {
   model?: string;
   maxTokens?: number;
   projectRoot?: string;
+}
+
+/** Indicates that translated output is not structurally valid Markdown. */
+export class InvalidTranslationError extends Error {
+  readonly validationErrors: readonly string[];
+
+  constructor(validationErrors: readonly string[]) {
+    super(`Invalid translated Markdown: ${validationErrors.join("; ")}`);
+    this.name = "InvalidTranslationError";
+    this.validationErrors = validationErrors;
+  }
 }
 
 export class DocumentTranslator {
@@ -179,6 +191,11 @@ export class DocumentTranslator {
         translatedContent = translatedSlices.join("\n");
       }
 
+      const validation = validateMarkdown(translatedContent);
+      if (!validation.isValid) {
+        throw new InvalidTranslationError(validation.errors);
+      }
+
       // Cache translation result
       this.translationCache.set(cacheKey, translatedContent);
 
@@ -190,8 +207,9 @@ export class DocumentTranslator {
   }
 
   /**
-   * Split markdown into chunks no larger than maxChars, never breaking inside a
-   * fenced code block, preferring to split at blank lines (section boundaries).
+   * Split Markdown into bounded chunks without breaking fenced code blocks.
+   * A fenced block or unbroken token larger than the limit remains intact
+   * because dividing either one can change the source Markdown.
    */
   private chunkMarkdown(content: string, maxChars: number): string[] {
     const lines = content.split("\n");
@@ -209,16 +227,56 @@ export class DocumentTranslator {
     };
 
     for (const line of lines) {
-      if (/^\s*```/.test(line)) inFence = !inFence;
+      const isFence = /^\s*```/.test(line);
+
+      if (!inFence && !isFence && line.length > maxChars) {
+        flush();
+        chunks.push(...this.splitLongLine(line, maxChars));
+        continue;
+      }
+
+      if (!inFence && cur.length > 0 && curLen + line.length + 1 > maxChars) {
+        flush();
+      }
+
       cur.push(line);
       curLen += line.length + 1;
-      if (curLen >= maxChars && !inFence && line.trim() === "") {
-        flush();
+
+      if (isFence) {
+        inFence = !inFence;
+        if (!inFence && curLen >= maxChars) flush();
       }
     }
     flush();
 
     return chunks.length ? chunks : [content];
+  }
+
+  private splitLongLine(line: string, maxChars: number): string[] {
+    const slices: string[] = [];
+    let remaining = line;
+
+    while (remaining.length > maxChars) {
+      const prefix = remaining.slice(0, maxChars);
+      let splitAt = -1;
+      for (const match of prefix.matchAll(/[.!?。！？](?:\s+|$)/g)) {
+        splitAt = (match.index ?? 0) + 1;
+      }
+      if (splitAt < 1) splitAt = prefix.lastIndexOf(" ");
+      if (splitAt < 1) {
+        splitAt = remaining.indexOf(" ", maxChars);
+        if (splitAt < 1) {
+          slices.push(remaining);
+          return slices;
+        }
+      }
+
+      slices.push(remaining.slice(0, splitAt).trimEnd());
+      remaining = remaining.slice(splitAt).trimStart();
+    }
+
+    if (remaining) slices.push(remaining);
+    return slices;
   }
 
   /**
