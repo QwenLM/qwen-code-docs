@@ -117,4 +117,13 @@ describe("DocumentTranslator output safeguards", { concurrency: false }, () => {
 
     assert.deepEqual(translator.requestedContents, [url]);
   });
+
+  it("does not split an oversized Markdown table row", async () => {
+    const translator = getTranslator();
+    const tableRow = `| Feature | ${"A long table cell. ".repeat(5)}|`;
+
+    await translator.translateContent(tableRow, "de");
+
+    assert.deepEqual(translator.requestedContents, [tableRow]);
+  });
 });

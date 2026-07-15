@@ -241,7 +241,12 @@ export class DocumentTranslator {
           !(fence.marker === "`" && fence.rest.includes("`"))
       );
 
-      if (!openFence && !opensFence && line.length > maxChars) {
+      if (
+        !openFence &&
+        !opensFence &&
+        line.length > maxChars &&
+        this.isPlainParagraphLine(line)
+      ) {
         flush();
         chunks.push(...this.splitLongLine(line, maxChars));
         continue;
@@ -291,6 +296,13 @@ export class DocumentTranslator {
 
     if (remaining) slices.push(remaining);
     return slices;
+  }
+
+  private isPlainParagraphLine(line: string): boolean {
+    if (line.includes("|")) return false;
+    return !/^(?: {4}|\t| {0,3}(?:#{1,6}\s|>|[-+*]\s|\d+[.)]\s|<|\[[^\]]+\]:|\{))/.test(
+      line
+    );
   }
 
   /**
