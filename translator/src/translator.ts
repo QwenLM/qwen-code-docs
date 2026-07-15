@@ -5,6 +5,7 @@ import chalk from "chalk";
 import { createEnvLoader } from "./utils/env";
 import {
   parseMarkdown,
+  parseMarkdownFence,
   type ParsedContent,
   validateMarkdown,
 } from "./utils/markdown-parser";
@@ -216,7 +217,7 @@ export class DocumentTranslator {
     const chunks: string[] = [];
     let cur: string[] = [];
     let curLen = 0;
-    let inFence = false;
+    let openFence: { marker: "`" | "~"; length: number } | undefined;
 
     const flush = () => {
       if (cur.length) {
@@ -227,24 +228,37 @@ export class DocumentTranslator {
     };
 
     for (const line of lines) {
-      const isFence = /^\s*```/.test(line);
+      const fence = parseMarkdownFence(line);
+      const closesFence = Boolean(
+        openFence &&
+          fence?.marker === openFence.marker &&
+          fence.length >= openFence.length &&
+          fence.rest.trim() === ""
+      );
+      const opensFence = Boolean(
+        !openFence &&
+          fence &&
+          !(fence.marker === "`" && fence.rest.includes("`"))
+      );
 
-      if (!inFence && !isFence && line.length > maxChars) {
+      if (!openFence && !opensFence && line.length > maxChars) {
         flush();
         chunks.push(...this.splitLongLine(line, maxChars));
         continue;
       }
 
-      if (!inFence && cur.length > 0 && curLen + line.length + 1 > maxChars) {
+      if (!openFence && cur.length > 0 && curLen + line.length + 1 > maxChars) {
         flush();
       }
 
       cur.push(line);
       curLen += line.length + 1;
 
-      if (isFence) {
-        inFence = !inFence;
-        if (!inFence && curLen >= maxChars) flush();
+      if (closesFence) {
+        openFence = undefined;
+        if (curLen >= maxChars) flush();
+      } else if (opensFence && fence) {
+        openFence = { marker: fence.marker, length: fence.length };
       }
     }
     flush();

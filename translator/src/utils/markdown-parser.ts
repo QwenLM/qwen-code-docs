@@ -382,6 +382,26 @@ export function extractImages(content: string): ImageInfo[] {
   return images;
 }
 
+export interface MarkdownFence {
+  marker: "`" | "~";
+  length: number;
+  rest: string;
+}
+
+/** Parses a line-level backtick or tilde Markdown fence delimiter. */
+export function parseMarkdownFence(line: string): MarkdownFence | undefined {
+  const match = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+  if (!match?.[1]) return undefined;
+  const marker = match[1][0];
+  if (marker !== "`" && marker !== "~") return undefined;
+
+  return {
+    marker,
+    length: match[1].length,
+    rest: match[2] ?? "",
+  };
+}
+
 /**
  * 验证Markdown语法
  */
@@ -392,23 +412,21 @@ export function validateMarkdown(content: string): ValidationResult {
   // 检查未闭合的代码块，只把行首的 Markdown fence 当作分隔符。
   let openFence: { marker: "`" | "~"; length: number } | undefined;
   for (const line of content.split("\n")) {
+    const fence = parseMarkdownFence(line);
     if (openFence) {
-      const closingFence = line.match(/^ {0,3}(`{3,}|~{3,})\s*$/);
       if (
-        closingFence?.[1]?.[0] === openFence.marker &&
-        closingFence[1].length >= openFence.length
+        fence?.marker === openFence.marker &&
+        fence.length >= openFence.length &&
+        fence.rest.trim() === ""
       ) {
         openFence = undefined;
       }
       continue;
     }
 
-    const openingFence = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
-    if (!openingFence?.[1]) continue;
-    const marker = openingFence[1][0];
-    if (marker !== "`" && marker !== "~") continue;
-    if (marker === "`" && openingFence[2]?.includes("`")) continue;
-    openFence = { marker, length: openingFence[1].length };
+    if (!fence) continue;
+    if (fence.marker === "`" && fence.rest.includes("`")) continue;
+    openFence = { marker: fence.marker, length: fence.length };
   }
   if (openFence) {
     errors.push("发现未闭合的代码块");

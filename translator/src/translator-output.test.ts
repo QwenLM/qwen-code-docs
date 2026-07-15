@@ -100,6 +100,15 @@ describe("DocumentTranslator output safeguards", { concurrency: false }, () => {
     assert.equal(translator.requestedContents[0], fencedBlock);
   });
 
+  it("keeps an oversized tilde-fenced block in one request", async () => {
+    const translator = getTranslator();
+    const fencedBlock = `~~~ts\n${"const value = 1;\n".repeat(5)}~~~`;
+
+    await translator.translateContent(`${fencedBlock}\n\nAfter the block.`, "de");
+
+    assert.equal(translator.requestedContents[0], fencedBlock);
+  });
+
   it("does not split an oversized unbroken token", async () => {
     const translator = getTranslator();
     const url = `https://example.com/${"long-path-segment".repeat(5)}`;
