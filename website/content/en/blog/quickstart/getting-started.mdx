@@ -1,0 +1,174 @@
+---
+title: "Qwen Code Quick Start: From Installation to Your First AI Coding Task"
+date: "2026-07-13"
+description: "Get started with Qwen Code from scratch: install the CLI, configure your model, start your first conversation, install Skills extensions, and complete your first AI coding task in 10 minutes."
+author: "Qwen Team"
+tags: ["Tutorial", "Quickstart"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code Quick Start: From Installation to Your First AI Coding Task"
+  date="July 13, 2026"
+  author="Qwen Team"
+/>
+
+If you're new to Qwen Code, this guide walks you through everything from scratch: installation, configuration, conversation, and extensions — four steps to get the full workflow running. Each step includes a video demo, so just follow along.
+
+## Installing Qwen Code
+
+Qwen Code supports one-click installation via a script, covering Windows, macOS, and Linux.
+
+**macOS / Linux:**
+
+```bash
+bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source website
+```
+
+**Windows (PowerShell):**
+
+```powershell
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat --source website
+```
+
+After installation, run `qwen --version` to confirm it's installed successfully. You can also install via npm:
+
+```bash
+npm i @qwen-code/qwen-code@latest -g
+```
+
+For a detailed walkthrough of the installation process, watch this video covering everything from download to verification:
+
+<video
+  src="https://cloud.video.taobao.com/vod/WwpTKWA47iLT4DPh-Rk8763V-ihd50bAbD5_-op5Js4.mp4"
+  poster="https://img.alicdn.com/imgextra/i3/O1CN01wNWdtR1iVxMQbXtqa_!!6000000004419-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Configuring a Model Provider
+
+After installation, Qwen Code will guide you through connecting to a model provider. We recommend using Alibaba Cloud's Model Studio (Bailian) platform.
+
+1. Go to [Alibaba Cloud Model Studio](https://bailian.console.aliyun.com/cn-beijing/?tab=model#/api-key) to get your API Key
+2. Run `qwen` in your terminal to start, then select Alibaba ModelStudio
+3. Paste your API Key and select a model
+
+If you prefer manual configuration, edit `~/.qwen/settings.json`:
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.5-plus",
+        "name": "[Bailian] qwen3.5-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "envKey": "BAILIAN_API_KEY"
+      }
+    ]
+  },
+  "env": {
+    "BAILIAN_API_KEY": "your-api-key"
+  }
+}
+```
+
+Once configured, use the `/model` command to view and switch models:
+
+<video
+  src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+  poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Starting Your First Conversation
+
+Navigate to your project directory and launch Qwen Code:
+
+```bash
+cd your-project && qwen
+```
+
+Just describe what you want to do in natural language. For example:
+
+```
+Write a Python function to calculate the Fibonacci sequence
+```
+
+Or ask the AI to help organize your files:
+
+```
+Organize the files in this folder by type into different subfolders
+```
+
+Qwen Code will automatically break down the task, execute operations, and return results. You don't need to guide it step by step — just describe the goal.
+
+<video
+  src="https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Installing Skills Extensions
+
+Skills are Qwen Code's capability extension system. You can install community-developed Skills on demand to give the AI additional specialized abilities.
+
+Installing a Skill is simple — just one sentence:
+
+```
+Install find-skills for me
+```
+
+Or use the command directly:
+
+```bash
+/skills find-skills install web-component-design -y -a qwen-code
+```
+
+After installation, use `/skills` to view your installed Skills.
+
+<video
+  src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## VS Code Integration
+
+If you prefer working inside an editor, Qwen Code offers a VS Code extension. Search for "Qwen Code" in the extension marketplace and install it. Once installed, you can chat with the AI directly from the sidebar for a seamless coding experience.
+
+<video
+  src="https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## What's Next
+
+Now that you're up and running, here are some directions to explore next:
+
+- [An Assistant That Thinks Like a Programmer](/en/blog/quickstart/thinks-like-a-programmer) — Learn about Qwen Code's design philosophy
+- [Real-World Cases](/en/blog/cases) — See actual use cases and tutorials
+- [Advanced Usage](/en/blog/advanced) — Skills, Bailian CLI, and other advanced features
+- [Showcase Video Demos](/en/showcase) — More video walkthroughs of various scenarios
