@@ -1,0 +1,243 @@
+---
+title: "Qwen Code 周报：/learn 把知识变成 Skill、Code Review 质量把关大升级、Web Shell 界面大范围翻新"
+date: "2026-07-16"
+description: "本周发布 v0.19.9、v0.19.10、v0.19.11 三个正式版本，160+ 个 PR 合入。/learn 命令创建可复用 Skill、Code Review verifier + reverse-audit、Web Shell shadcn 翻新 + Artifact 面板、Voice Bridge 语音接入、PDF 自动转图片、CLI /update 一键升级。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：/learn 把知识变成 Skill、Code Review 质量把关大升级、Web Shell 界面大范围翻新"
+  date="2026-07-16"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 v0.19.9、v0.19.10 和 v0.19.11 三个正式版本，160+ 个 PR 合入。
+
+**`/learn` 命令上线。** 用户主动创建 skill——给一段知识来源（目录、URL、对话、文本），Qwen Code 自动整理成 SKILL.md，下次直接复用。
+
+**Code Review 从"能用"到"好用"。** Suggestion 直接发 PR inline 评论，review 加入程序正确性检查、发布前验证、Step 4 verifier 和 Step 5 reverse-audit。
+
+**Web Shell 大改版。** shadcn 组件库打底，Artifact 审查面板、extension 管理页、Mermaid 缩放拖拽。多工作区全链路打通，split pane 按 workspace 着色。
+
+**Voice Bridge 语音接入 ACP。** 纯文本主模型也能处理语音 prompt——音频先转写为文本再交给模型，支持音频的模型直接透传。
+
+**PDF 扫描件不再卡死 Agent。** 文本提取超限时自动渲染页面图片，视觉模型直接看图作答。
+
+**CLI 工作流补齐了。** `/update` 一键升级、Ctrl+O 冻结对话、Ctrl+S 暂存 prompt、Explore 继承主模型、Alt+T 完整思考。
+
+## ✨ 新增特性
+
+### `/learn`：把知识变成可复用的 Skill
+
+`/learn` 是一个新斜杠命令，让你从知识来源创建可复用的 skill。知识来源可以是本地目录、URL、对话历史，或者你直接写一段文本。主模型会收集知识，自动整理成 SKILL.md，保存在 `.qwen/skills/learned-skill-<name>/` 下，带 `source: learned` 标记，和你手写的 skill、自动生成的 skill 互不干扰。
+
+你可以用它做什么：
+
+- `/learn Deploy process: ...` 把部署流程写成一个 skill，下次部署直接调用
+- 给一个文档目录让 Qwen Code 学习项目的开发规范，后续编码自动遵循
+- 从一段对话中提取知识，沉淀成可复用的指令模板
+
+详见 PR [#6440](https://github.com/QwenLM/qwen-code/pull/6440)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000003713/O1CN01CNOwiR1dIbkJ51Ux0_!!6000000003713-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/L10eFO90zfXOWEU7dkbDdvSfGHhxqU5eYo7acVmPf_I.mp4" controls></video>
+
+### Code Review 质量把关大升级
+
+Code Review 这周从多个维度加强了质量把关，从 inline 评论到 review 质量验证都做了升级。
+
+`/review` 现在会**把 Suggestion 类型的发现直接作为 PR inline 评论发布**——不用再手动从 review 输出里复制建议贴到 PR 上。Review 本身也新增了程序正确性检查器（procedural correctness finders）和可调的 effort 等级，并且在发布评论前有 guardrail 验证每个 finding 确实成立。
+
+**大 diff 的 review 不再笼统分配——每一行 diff 都有明确的 reviewer 负责，确保审查覆盖率**。Review chunk agent 会收到完整构建的 prompt，不会再出现空上下文运行的情况。PR triage 评论新增了置信度评分、序列图、文件概览和 review footer，给 reviewer 更丰富的上下文。自动化 review 默认超时调整为 180 分钟，允许最高 240 分钟的 override，大 PR 不再因为超时被中断。
+
+你能用它做什么：
+
+- `/review` 自动在 PR 上发 inline suggestion 评论，省掉手动贴评论的步骤
+- 可调 effort 等级适配不同规模的 review 需求
+- PR triage 的置信度评分帮你判断哪些 PR 需要重点关注
+
+v0.19.11 进一步加入了 **Step 4 verifier 和 Step 5 reverse-audit**——review 流程从 " 发现问题→发评论 " 变成了 " 发现问题→验证发现确实成立→反向审计确认没有遗漏 " 的完整链路。findings 列表被折叠进 verify/reverse-audit prompt 中，减少 prompt 体积。Agent 7 的 build/test 范围也缩小到 diff 实际涉及的 workspace，大仓库不再全量构建。
+
+详见 PR [#6593](https://github.com/QwenLM/qwen-code/pull/6593)、[#6711](https://github.com/QwenLM/qwen-code/pull/6711)、[#6612](https://github.com/QwenLM/qwen-code/pull/6612)、[#6789](https://github.com/QwenLM/qwen-code/pull/6789)、[#6771](https://github.com/QwenLM/qwen-code/pull/6771)、[#6840](https://github.com/QwenLM/qwen-code/pull/6840)、[#6942](https://github.com/QwenLM/qwen-code/pull/6942)、[#6965](https://github.com/QwenLM/qwen-code/pull/6965)、[#6892](https://github.com/QwenLM/qwen-code/pull/6892)、[#6955](https://github.com/QwenLM/qwen-code/pull/6955)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/O1CN0125Uqjz1jIVLevSaJR_!!6000000004525-0-videocover-1920-1080.jpg" src="https://cloud.video.taobao.com/vod/q8e6oXagz7e6S3nXqzdz9uX9Jc2vU1M5cTQc5KYxnLQ.mp4" controls></video>
+
+### Web Shell UI 大范围翻新
+
+Web Shell 本周有 15+ 个 PR 集中更新，从底层 UI 组件库到侧边栏、设置页面、模型选择器都做了翻新。
+
+底层引入 shadcn 作为 UI 基础组件库，统一设计 token 和组件规范。**多工作区侧边栏重新设计，布局更清晰**。设置页面换上了现代组件库，用户级设置可以直接在面板中编辑，模型管理也集成在设置面板内。模型选择器重新设计，模型元数据更清晰，切换更快。详见 PR [#6760](https://github.com/QwenLM/qwen-code/pull/6760)、[#6804](https://github.com/QwenLM/qwen-code/pull/6804)、[#6817](https://github.com/QwenLM/qwen-code/pull/6817)、[#6758](https://github.com/QwenLM/qwen-code/pull/6758)
+
+**多工作区支持全链路打通**。Daemon ACP 端点支持 workspace 作用域，频道 worker 按 workspace 分组绑定，split view 支持跨 workspace 会话和 workspace 标签。动态添加的 workspace 注册会持久化，daemon 重启后不需要重新配置。Workspace 可以在运行时移除，不需要重启 server。详见 PR [#6621](https://github.com/QwenLM/qwen-code/pull/6621)、[#6635](https://github.com/QwenLM/qwen-code/pull/6635)、[#6746](https://github.com/QwenLM/qwen-code/pull/6746)、[#6716](https://github.com/QwenLM/qwen-code/pull/6716)、[#6745](https://github.com/QwenLM/qwen-code/pull/6745)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000002530/O1CN01Ly4J571UYnCU2tMMh_!!6000000002530-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/b1Eo9DCpyMz40O7eDow4C_SfGHhxqU5eYo7acVmPf_I.mp4" controls></video>
+
+**新增右侧 Artifact 审查面板**——编辑过的文件以 turn 卡片形式展示，带行数统计和可展开的单文件 diff，右侧面板支持文件列表/树形导航和可拖拽调整宽度。Artifact 和定时任务也有独立的 turn output 卡片，HTML artifact 在 sandbox iframe 中渲染。详见 PR [#6591](https://github.com/QwenLM/qwen-code/pull/6591)
+
+v0.19.11 新增了 **extension 管理页面**，可以在 Web Shell 中直接查看和管理已安装的 extension。**Mermaid 图表支持缩放、平移和拖拽**，流程图和序列图不再只能看不能动。Split pane 可以最大化单个面板，每个 pane 按 workspace 着色区分。Composer 控件改为 popover 形式，会话列表显示正在等待用户操作的会话。详见 PR [#6815](https://github.com/QwenLM/qwen-code/pull/6815)、[#6881](https://github.com/QwenLM/qwen-code/pull/6881)、[#6951](https://github.com/QwenLM/qwen-code/pull/6951)、[#6971](https://github.com/QwenLM/qwen-code/pull/6971)、[#6877](https://github.com/QwenLM/qwen-code/pull/6877)、[#6956](https://github.com/QwenLM/qwen-code/pull/6956)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000006984/O1CN0193dBiH21SjHFM9WSn_!!6000000006984-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/x92aOU2HCnuLwJr9eWIxZ7qx4BWF5wUv1MU2L-Y8HRc.mp4" controls></video>
+
+其他改进：Markdown 表格双击单元格弹窗显示完整内容方便复制；输入框工具栏显示当前 Git 分支 chip；会话分组支持自定义 Hex 颜色代码；定时任务从所有 workspace 汇总到一个视图统一查看；Composer 支持自定义 placeholder 文本；workspace 路径锁定。详见 PR [#6530](https://github.com/QwenLM/qwen-code/pull/6530)、[#6725](https://github.com/QwenLM/qwen-code/pull/6725)、[#6752](https://github.com/QwenLM/qwen-code/pull/6752)、[#6759](https://github.com/QwenLM/qwen-code/pull/6759)、[#6765](https://github.com/QwenLM/qwen-code/pull/6765)、[#6853](https://github.com/QwenLM/qwen-code/pull/6853)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i1/6000000005732/O1CN01x77uEd1sDJP1IUuXG_!!6000000005732-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/IyzjuL8SwFsAwEFFhjGhEpSG4U75__Lb6MHHCokvsE4.mp4" controls></video>
+
+### Voice Bridge：语音输入接入 ACP
+
+之前通过 ACP（Agent Communication Protocol）发送语音 prompt，如果主模型是纯文本模型，音频无法被处理。现在加了 voice bridge——音频先由配置的 voice model 转写为文本，再交给主模型处理。如果主模型本身支持音频输入，原始音频直接透传，不经过转写。转写不可用或失败时，主模型会收到一条安全的 " 音频不可用 " 说明，不会透传裸音频。
+
+你能用它做什么：
+
+- 通过 ACP 客户端发送语音指令，纯文本模型也能理解你的语音内容
+- 支持音频的主模型（如多模态模型）保持原始音频直通，不损失语音信息
+- 转写失败时有安全降级，不会因为音频问题导致对话中断
+
+详见 PR [#6576](https://github.com/QwenLM/qwen-code/pull/6576)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000005705/O1CN013eOo4w1s0wi1RqIMk_!!6000000005705-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/VEGmw6hmP0H6pXMupavMLaBMqXJ7RzNFjnuDAH8okQ8.mp4" controls></video>
+
+### PDF 自动转图片：扫描件不再卡死 Agent
+
+之前遇到扫描件或文字密集的 PDF，文本提取超过 12000 token 的预算就会报 `FILE_TOO_LARGE` 死循环——Agent 反复用更小的页范围重试，每次仍然超限，上下文被撑爆直到会话崩溃。现在加了页→图片渲染回退：文本提取超限或失败时，自动用 `pdftoppm` 把页面渲染成 JPEG 图片交给视觉模型处理。每页 token 成本固定，不受文字密度影响。文本提取仍然是默认路径（可 grep、精确取字），渲染只在超限或失败时触发。对于配了视觉模型的纯文本主模型，通过 `@` 附加的扫描件会被渲染为少量页面交给 vision bridge 转写。
+
+你能用它做什么：
+
+- 扫描件 PDF 不再报 `FILE_TOO_LARGE`，视觉模型直接看图作答
+- 密集 PDF（超过 token 预算）自动降级为图片，不会撑爆上下文
+- 纯文本 PDF 仍然走文本提取，不损失精确度
+
+详见 PR [#6585](https://github.com/QwenLM/qwen-code/pull/6585)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000006276/O1CN01qI9MfL1wESrZCZZ9g_!!6000000006276-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/rranbkNN8_vhUrf2KZZXec7F9nJYK_eKGorqE5DOWaI.mp4" controls></video>
+
+### CLI 工作流升级：一键升级、对话不丢失
+
+之前升级 Qwen Code 得自己记安装方式——npm 装的跑 `npm install`，standalone 装的要重新下载安装包。这周加了 `qwen update` CLI 命令和 `/update` 斜杠命令，自动检测安装类型执行升级。Standalone 安装会直接从 npm registry 拉最新版本，SHA256 校验 + Ed25519 签名验证（可选）+ smoke test（新二进制必须通过 `--version`）+ 原子替换，失败自动回滚。npm 安装显示对应的 `npm install -g` 命令。支持 9 种语言的 i18n。详见 PR [#5780](https://github.com/QwenLM/qwen-code/pull/5780)
+
+**Ctrl+O 新增冻结 transcript 视图**——按下去打开一个备用屏幕，显示完整对话记录，所有工具输出展开，可以上下滚动。Esc/q/Ctrl+C/Ctrl+O 退出回到主界面。同时重构了工具输出渲染：read/search/list 类工具结果折叠为单行摘要，mutation 类工具保持展开。原来的 compactMode 设置被静默忽略。详见 PR [#5666](https://github.com/QwenLM/qwen-code/pull/5666)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01b2Flxy1UBR05kJjrS_!!6000000002479-2-tps-3837-2160.png)
+
+**Ctrl+S 新增 prompt 暂存**——输入框有内容时按 Ctrl+S，prompt 保存到项目级暂存文件，下次从同一项目启动自动恢复。提交后自动删除暂存。大段粘贴的占位符在保存前展开，恢复的是原始内容。不同项目之间互不干扰。详见 PR [#6709](https://github.com/QwenLM/qwen-code/pull/6709)
+
+**Shell 命令超时可以配了**。新增 `tools.shell.defaultTimeoutMs` 设置，在项目或会话级别调整前台命令的默认超时，不用每次在命令参数里单独指定。默认仍为 120 秒，设为 0 禁用超时。详见 PR [#6628](https://github.com/QwenLM/qwen-code/pull/6628)
+
+**Explore subagent 默认继承主模型了**。内置 Explore subagent 不再自动选择 fastModel，改为继承主会话模型。你用 Claude Opus 做主模型，Explore 也用 Claude Opus——推理能力不打折。如果仍想用快速模型，设置 `agents.builtin.exploreModel` 为 `fast` 或具体模型 ID 即可。详见 PR [#6807](https://github.com/QwenLM/qwen-code/pull/6807)
+
+**Alt+T 展开完整思考过程**。流式输出时按 Alt+T 展开 thinking block，现在能看到完整的推理内容实时流式输出，不再是之前硬编码的 4 行尾部预览。跟踪模型的思维链终于能跟上了。超长推理受视口高度限制，不会无限展开。详见 PR [#6678](https://github.com/QwenLM/qwen-code/pull/6678)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01xOR0hN1b8PhMzl5mz_!!6000000003420-2-tps-3854-2160.png)
+
+## 📊 更多新功能
+
+| 功能                                             | PR                                                     | 对你的影响                             |
+| ---------------------------------------------- | ------------------------------------------------------ | --------------------------------- |
+| **Channel daemon 重启后自动恢复**：DingTalk/Feishu 频道 worker 自动重连 | [#6680](https://github.com/QwenLM/qwen-code/pull/6680) | daemon 重启后频道不再断连 |
+| **钉钉 Markdown 表格保留**：发送表格时结构不被拆散 | [#6673](https://github.com/QwenLM/qwen-code/pull/6673) | 钉钉频道不再收到一行行纯文本 |
+| **钉钉群 @ 发送者**：可选 mention 群消息发送者 | [#6679](https://github.com/QwenLM/qwen-code/pull/6679) | 钉钉频道回复时可以 @ 提问者 |
+| **钉钉 webhook 私聊投递**：webhook 支持发到 DM | [#6891](https://github.com/QwenLM/qwen-code/pull/6891) | 钉钉通知可以发到个人而不是群 |
+| **Channel 结构化记忆管理** | [#6860](https://github.com/QwenLM/qwen-code/pull/6860) | 频道对话记忆管理更结构化 |
+| **SDK 交互式问答**：ask_user_question 回传答案给模型 | [#6655](https://github.com/QwenLM/qwen-code/pull/6655) | SDK 集成可以做交互式问答流程 |
+| **SDK 控制方法**：effort、models、usage、context 查询 | [#6492](https://github.com/QwenLM/qwen-code/pull/6492) | SDK 集成可以更精细地控制模型和查询用量 |
+| **ACP tool-call 生命周期暴露** | [#6819](https://github.com/QwenLM/qwen-code/pull/6819) | SDK 可以感知工具调用的准备阶段 |
+| **子代理可观测性增强**：完整命令、transcript 路径、审批上下文 | [#6580](https://github.com/QwenLM/qwen-code/pull/6580) | 子代理在干什么看得更清楚了 |
+| **子代理时间线**：按时间顺序展示 + 并行 agent 时间线 | [#6772](https://github.com/QwenLM/qwen-code/pull/6772) | 多任务并行时更容易追踪进度 |
+| **Daemon session 来源元数据**：不可变来源标记 | [#6932](https://github.com/QwenLM/qwen-code/pull/6932) | daemon 会话可以追溯创建来源 |
+| **Daemon 深度健康聚合**：跨 workspace 健康检查 | [#6961](https://github.com/QwenLM/qwen-code/pull/6961) | daemon 状态监控覆盖所有 workspace |
+| **Workspace MCP 管理**：serve 模式 MCP 管理 | [#6954](https://github.com/QwenLM/qwen-code/pull/6954) | 多 workspace 下 MCP server 可以按 workspace 管理 |
+| **归档会话导出**：`/export` 导出归档会话 | [#6911](https://github.com/QwenLM/qwen-code/pull/6911) | 会话历史可以导出备份 |
+| **Shell 前台命令存活心跳** | [#6876](https://github.com/QwenLM/qwen-code/pull/6876) | 静默运行的长命令不再被误判为超时 |
+| **`/goal` 条件加长**：允许更长的 goal 条件描述 | [#6665](https://github.com/QwenLM/qwen-code/pull/6665) | 复杂目标不用缩减描述了 |
+| **xAI Grok 内置 provider**：通过 `/auth` 向导配置 xAI 模型 | [#6805](https://github.com/QwenLM/qwen-code/pull/6805) | 不用写自定义 provider 配置就能用 Grok |
+| **定时任务引用标签**：prompt 中插入 extension/skill/MCP 引用 | [#6589](https://github.com/QwenLM/qwen-code/pull/6589) | 定时任务 prompt 可以直接引用技能和 MCP |
+| **MessageDisplay hook**：流式输出中途触发回调 | [#6489](https://github.com/QwenLM/qwen-code/pull/6489) | 插件可以在回复中途跟踪文本内容 |
+| **QQ Bot 群消息处理** | [#6457](https://github.com/QwenLM/qwen-code/pull/6457) | QQ 频道场景的群消息支持 |
+
+## 🔧 重要修复
+
+| 修复 | PR | 对你的影响 |
+|------|-----|-----------|
+| **Channel 不再发送子代理中间输出** | [#6696](https://github.com/QwenLM/qwen-code/pull/6696) | 钉钉/飞书不再收到半成品回复 |
+| **钉钉入站媒体 token 刷新** | [#6903](https://github.com/QwenLM/qwen-code/pull/6903) | 钉钉频道图片/文件消息不再因为 token 过期而失败 |
+| **企业微信 requireMention 不再禁用群聊** | [#6948](https://github.com/QwenLM/qwen-code/pull/6948) | 企业微信群聊功能恢复正常 |
+| **飞书凭证校验** | [#6780](https://github.com/QwenLM/qwen-code/pull/6780) | 无效凭证不再静默失败 |
+| **/mcp 详情新增 Approve 按钮** | [#6518](https://github.com/QwenLM/qwen-code/pull/6518) | pending/rejected 的 MCP server 可以直接批准 |
+| **MCP URL query 保留** | [#6587](https://github.com/QwenLM/qwen-code/pull/6587) | 远程 MCP 连接不再因为 URL 尾部被截断而失败 |
+| **MCP OAuth 401 自动恢复** | [#6732](https://github.com/QwenLM/qwen-code/pull/6732) | OAuth 过期后自动重试，不用手动重连 |
+| **MCP OAuth HTTP 握手保留 challenge** | [#7022](https://github.com/QwenLM/qwen-code/pull/7022) | MCP OAuth 连接不再因为 challenge 丢失而失败 |
+| **MCP 只读自动审批需要 trust** | [#6924](https://github.com/QwenLM/qwen-code/pull/6924) | 不受信任的 MCP server 不会静默自动审批 |
+| **VS Code 光标位置 =0 不再被覆盖** | [#2971](https://github.com/QwenLM/qwen-code/pull/2971) | 行首光标不会跳到行尾 |
+| **VS Code ACP 进程 Electron Node 模式** | [#6866](https://github.com/QwenLM/qwen-code/pull/6866) | VS Code 扩展中 ACP 进程不再因为 Node 版本问题失败 |
+| **Web Shell composer 高度自适应** | [#6872](https://github.com/QwenLM/qwen-code/pull/6872) | 长 prompt 不再被固定高度截断 |
+| **Web Shell session 分组折叠状态持久化** | [#6878](https://github.com/QwenLM/qwen-code/pull/6878) | 刷新后 session 分组不会全部展开 |
+| **YOLO 模式不再被 plan mode 静默禁用** | [#6630](https://github.com/QwenLM/qwen-code/pull/6630) | 进了 plan mode 不会偷偷关掉你的 YOLO |
+| **Approval mode UI 标签本地化** | [#6592](https://github.com/QwenLM/qwen-code/pull/6592) | Shift+Tab 切模式时不再冒出英文标签 |
+| **Shell 超时归类为工具错误** | [#6864](https://github.com/QwenLM/qwen-code/pull/6864) | shell 超时不再被当成模型错误 |
+| **ACP 用户指令优先** | [#6607](https://github.com/QwenLM/qwen-code/pull/6607) | Agent 模式下你的指令不再被附件内容挤到后面 |
+| **子代理模板占位符修复** | [#6672](https://github.com/QwenLM/qwen-code/pull/6672) | `${0}` 等数字模式不再被误解析 |
+| **Claude Opus 4.6-4.8 token 限制** | [#6718](https://github.com/QwenLM/qwen-code/pull/6718) | 不再过早触发 compaction |
+| **Claude 代理 thinking 签名处理** | [#6893](https://github.com/QwenLM/qwen-code/pull/6893) | 通过代理使用 Claude 不再因为无签名 thinking 报错 |
+| **Managed memory 压缩时保留** | [#6714](https://github.com/QwenLM/qwen-code/pull/6714) | microcompaction 不再丢失记忆条目 |
+| **Skill 结果参与 microcompaction** | [#6788](https://github.com/QwenLM/qwen-code/pull/6788) | skill 执行结果不再在压缩时丢失 |
+| **无效模型流恢复** | [#6712](https://github.com/QwenLM/qwen-code/pull/6712) | 模型返回无效流不再直接崩溃 |
+| **max-token 续写失败自动回滚** | [#6921](https://github.com/QwenLM/qwen-code/pull/6921) | 续写失败后不会留在半截状态 |
+| **trusted-folders 缓存不再被污染** | [#6900](https://github.com/QwenLM/qwen-code/pull/6900) | 预览信任检查不会影响后续判断 |
+| **启动性能优化**：tree-sitter 懒加载 | [#6747](https://github.com/QwenLM/qwen-code/pull/6747) | 启动更快 |
+| **Git 快照进程减少** | [#6784](https://github.com/QwenLM/qwen-code/pull/6784) | 会话中性能更好 |
+| **长会话 OOM 防护** | [#6682](https://github.com/QwenLM/qwen-code/pull/6682) | 长交互会话退出时不再 OOM 崩溃 |
+| **会话恢复统一方案** | [#6731](https://github.com/QwenLM/qwen-code/pull/6731) | 中断/悬挂/降级历史的恢复更可靠 |
+
+## 👥 贡献者
+
+| 贡献者 | 贡献内容 | 参考 PR 链接 |
+|--------|---------|-------------|
+| **[@wenshao](https://github.com/wenshao)** | Code Review 大升级（inline 评论、verifier/reverse-audit、triage 评分）、Web Shell 改进（split view、Mermaid 缩放、workspace 着色、视觉预览） | [#6593](https://github.com/QwenLM/qwen-code/pull/6593), [#6942](https://github.com/QwenLM/qwen-code/pull/6942), [#6965](https://github.com/QwenLM/qwen-code/pull/6965), [#6971](https://github.com/QwenLM/qwen-code/pull/6971), [#6881](https://github.com/QwenLM/qwen-code/pull/6881) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | 多工作区全链路（ACP 端点、频道 worker 分组、workspace 持久化）、PDF 自动转图片、会话列表、transcript reader | [#6621](https://github.com/QwenLM/qwen-code/pull/6621), [#6635](https://github.com/QwenLM/qwen-code/pull/6635), [#6585](https://github.com/QwenLM/qwen-code/pull/6585), [#6716](https://github.com/QwenLM/qwen-code/pull/6716), [#6741](https://github.com/QwenLM/qwen-code/pull/6741) |
+| **[@yiliang114](https://github.com/yiliang114)** | 子代理循环修复、shell 自杀修复、CI 多项改进、Claude token 限制、managed memory 保留、流容错 | [#6543](https://github.com/QwenLM/qwen-code/pull/6543), [#6544](https://github.com/QwenLM/qwen-code/pull/6544), [#6682](https://github.com/QwenLM/qwen-code/pull/6682), [#6714](https://github.com/QwenLM/qwen-code/pull/6714), [#6718](https://github.com/QwenLM/qwen-code/pull/6718) |
+| **[@qqqys](https://github.com/qqqys)** | Channel 全面改进（daemon 恢复、钉钉 Stream 修复、markdown 表格保留、频道 payload 诊断）、goal 生命周期修复 | [#6680](https://github.com/QwenLM/qwen-code/pull/6680), [#6715](https://github.com/QwenLM/qwen-code/pull/6715), [#6673](https://github.com/QwenLM/qwen-code/pull/6673), [#6617](https://github.com/QwenLM/qwen-code/pull/6617), [#6620](https://github.com/QwenLM/qwen-code/pull/6620) |
+| **[@chinesepowered](https://github.com/chinesepowered)** | VS Code 光标修复、mobile-mcp 优化、cua-driver 坐标归一化、LRU cache 修复、dotfiles 语言检测 | [#2971](https://github.com/QwenLM/qwen-code/pull/2971), [#6624](https://github.com/QwenLM/qwen-code/pull/6624), [#6785](https://github.com/QwenLM/qwen-code/pull/6785), [#6787](https://github.com/QwenLM/qwen-code/pull/6787) |
+| **[@ytahdn](https://github.com/ytahdn)** | Web Shell 多项改进（shadcn、侧边栏、设置页面、extension 管理页、workspace 路径锁定、split view） | [#6760](https://github.com/QwenLM/qwen-code/pull/6760), [#6804](https://github.com/QwenLM/qwen-code/pull/6804), [#6815](https://github.com/QwenLM/qwen-code/pull/6815), [#6853](https://github.com/QwenLM/qwen-code/pull/6853), [#6956](https://github.com/QwenLM/qwen-code/pull/6956) |
+| **[@dreamWB](https://github.com/dreamWB)** | Web Shell（底部状态栏、assistant turn footer、context mention、可配置侧边栏、模型选择器、session group 颜色） | [#6613](https://github.com/QwenLM/qwen-code/pull/6613), [#6611](https://github.com/QwenLM/qwen-code/pull/6611), [#6578](https://github.com/QwenLM/qwen-code/pull/6578), [#6750](https://github.com/QwenLM/qwen-code/pull/6750), [#6758](https://github.com/QwenLM/qwen-code/pull/6758) |
+| **[@callmeYe](https://github.com/callmeYe)** | 记忆对话对齐、daemon 记忆任务错误详情、记忆 remember 刷新、skill 安装路径、workspace skill API | [#6434](https://github.com/QwenLM/qwen-code/pull/6434), [#6431](https://github.com/QwenLM/qwen-code/pull/6431), [#6497](https://github.com/QwenLM/qwen-code/pull/6497), [#6811](https://github.com/QwenLM/qwen-code/pull/6811), [#6816](https://github.com/QwenLM/qwen-code/pull/6816) |
+| **[@chiga0](https://github.com/chiga0)** | Ctrl+O 冻结 transcript 视图、VP mode inline thought expand、session artifact 持久化 | [#5666](https://github.com/QwenLM/qwen-code/pull/5666), [#6079](https://github.com/QwenLM/qwen-code/pull/6079), [#6557](https://github.com/QwenLM/qwen-code/pull/6557) |
+| **[@jifeng](https://github.com/jifeng)** | Markdown 表格可读性改进、双击单元格查看完整内容 | [#6626](https://github.com/QwenLM/qwen-code/pull/6626), [#6530](https://github.com/QwenLM/qwen-code/pull/6530), [#6838](https://github.com/QwenLM/qwen-code/pull/6838) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | SDK 交互式问答回传、子代理可观测性增强、xAI Grok provider | [#6655](https://github.com/QwenLM/qwen-code/pull/6655), [#6580](https://github.com/QwenLM/qwen-code/pull/6580), [#6805](https://github.com/QwenLM/qwen-code/pull/6805) |
+| **[@tanzhenxin](https://github.com/tanzhenxin)** | NO_PROXY 模型请求支持、max_tokens context window clamp、Explore subagent 继承主模型 | [#6640](https://github.com/QwenLM/qwen-code/pull/6640), [#6556](https://github.com/QwenLM/qwen-code/pull/6556), [#6807](https://github.com/QwenLM/qwen-code/pull/6807) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | `/learn` 命令、mobile-mcp 坐标归一化修复、/mcp Approve 按钮 | [#6440](https://github.com/QwenLM/qwen-code/pull/6440), [#6610](https://github.com/QwenLM/qwen-code/pull/6610), [#6518](https://github.com/QwenLM/qwen-code/pull/6518) |
+| **[@Nas01010101](https://github.com/Nas01010101)** | Shell 命令默认超时可配、cron step 修复、tools.disabled 文档、YOLO plan mode 修复 | [#6628](https://github.com/QwenLM/qwen-code/pull/6628), [#6627](https://github.com/QwenLM/qwen-code/pull/6627), [#6641](https://github.com/QwenLM/qwen-code/pull/6641), [#6630](https://github.com/QwenLM/qwen-code/pull/6630) |
+| **[@zjunothing](https://github.com/zjunothing)** | 记忆 agent 超时可配、vision bridge 超时重试、桌面版剪贴板图片修复 | [#6459](https://github.com/QwenLM/qwen-code/pull/6459), [#6541](https://github.com/QwenLM/qwen-code/pull/6541), [#6708](https://github.com/QwenLM/qwen-code/pull/6708) |
+| **[@huww98](https://github.com/huww98)** | Alt+T 流式展开完整推理内容 | [#6678](https://github.com/QwenLM/qwen-code/pull/6678) |
+| **[@yuanyuanAli](https://github.com/yuanyuanAli)** | Web Shell AskUserQuestion 折叠/展开、mobile welcome composer slots | [#6588](https://github.com/QwenLM/qwen-code/pull/6588), [#6584](https://github.com/QwenLM/qwen-code/pull/6584) |
+| **[@Alex-ai-future](https://github.com/Alex-ai-future)** | CLI 命令名匹配优先、plan mode 错误响应改进 | [#6504](https://github.com/QwenLM/qwen-code/pull/6504), [#6667](https://github.com/QwenLM/qwen-code/pull/6667), [#6764](https://github.com/QwenLM/qwen-code/pull/6764) |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | QQ Bot 群消息处理 | [#6457](https://github.com/QwenLM/qwen-code/pull/6457) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | model-provider 配置文档、/goal 条件加长、CI 桌面 release notes 截断 | [#6552](https://github.com/QwenLM/qwen-code/pull/6552), [#6665](https://github.com/QwenLM/qwen-code/pull/6665), [#6792](https://github.com/QwenLM/qwen-code/pull/6792) |
+| **[@dexhunter](https://github.com/dexhunter)** | 纯 ASCII token 快速路径、tree-sitter 懒加载启动优化 | [#6551](https://github.com/QwenLM/qwen-code/pull/6551), [#6747](https://github.com/QwenLM/qwen-code/pull/6747) |
+| **[@han-dreamer](https://github.com/han-dreamer)** | Approval mode UI 本地化、Git branch chip、记忆 remember 刷新 | [#6592](https://github.com/QwenLM/qwen-code/pull/6592), [#6725](https://github.com/QwenLM/qwen-code/pull/6725), [#6497](https://github.com/QwenLM/qwen-code/pull/6497) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | 会话分组自定义 Hex 颜色 | [#6752](https://github.com/QwenLM/qwen-code/pull/6752) |
+| **[@water-in-stone](https://github.com/water-in-stone)** | 统一 session 恢复方案 | [#6731](https://github.com/QwenLM/qwen-code/pull/6731) |
+| **[@BZ-D](https://github.com/BZ-D)** | 定时任务 prompt 引用标签 | [#6589](https://github.com/QwenLM/qwen-code/pull/6589) |
+| **[@VectorPeak](https://github.com/VectorPeak)** | MCP URL query 保留、ACP readTextFile 修复 | [#6587](https://github.com/QwenLM/qwen-code/pull/6587), [#6704](https://github.com/QwenLM/qwen-code/pull/6704) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | 飞书凭证校验、钉钉 webhook 私聊投递、企业微信 requireMention 修复 | [#6780](https://github.com/QwenLM/qwen-code/pull/6780), [#6891](https://github.com/QwenLM/qwen-code/pull/6891), [#6948](https://github.com/QwenLM/qwen-code/pull/6948) |
+| 🆕 **[@liziwl](https://github.com/liziwl)** | 🎉 首次贡献：`qwen update` 和 `/update` 一键升级命令 | [#5780](https://github.com/QwenLM/qwen-code/pull/5780) |
+| 🆕 **[@C0d3N1nja97342](https://github.com/C0d3N1nja97342)** | 🎉 首次贡献：Windows extension tempDir 清理修复 | [#6545](https://github.com/QwenLM/qwen-code/pull/6545) |
+| 🆕 **[@cxruan](https://github.com/cxruan)** | 🎉 首次贡献：Web Shell dialog backdrop z-index 可配 | [#6572](https://github.com/QwenLM/qwen-code/pull/6572) |
+| 🆕 **[@harbin1053020115](https://github.com/harbin1053020115)** | 🎉 首次贡献：Web Shell harness 基础设施 | [#6517](https://github.com/QwenLM/qwen-code/pull/6517) |
+| 🆕 **[@juhuan](https://github.com/juhuan)** | 🎉 首次贡献：SDK 控制方法和 transport 选项 | [#6492](https://github.com/QwenLM/qwen-code/pull/6492), [#6491](https://github.com/QwenLM/qwen-code/pull/6491) |
+| 🆕 **[@ksws00684315](https://github.com/ksws00684315)** | 🎉 首次贡献：子代理模板占位符修复 | [#6672](https://github.com/QwenLM/qwen-code/pull/6672) |
+| 🆕 **[@kaymeer](https://github.com/kaymeer)** | 🎉 首次贡献：ACP 用户指令优先级修复 | [#6607](https://github.com/QwenLM/qwen-code/pull/6607) |
+| 🆕 **[@destire-mio](https://github.com/destire-mio)** | 🎉 首次贡献：Ctrl+S 项目级 prompt 暂存 | [#6709](https://github.com/QwenLM/qwen-code/pull/6709) |
+| 🆕 **[@yanchenko](https://github.com/yanchenko)** | 🎉 首次贡献：MessageDisplay 流式 hook | [#6489](https://github.com/QwenLM/qwen-code/pull/6489) |
+| 🆕 **[@ever-o](https://github.com/ever-o)** | 🎉 首次贡献：Web Shell 用户消息引用标签渲染 | [#6537](https://github.com/QwenLM/qwen-code/pull/6537) |
+| 🆕 **[@ran411285752](https://github.com/ran411285752)** | 🎉 首次贡献：ACP tool-call 生命周期暴露 | [#6819](https://github.com/QwenLM/qwen-code/pull/6819) |
+| 🆕 **[@morluto](https://github.com/morluto)** | 🎉 首次贡献：畸形工具结果保留显示、session 配置校验、续写回滚 | [#6925](https://github.com/QwenLM/qwen-code/pull/6925), [#6920](https://github.com/QwenLM/qwen-code/pull/6920), [#6921](https://github.com/QwenLM/qwen-code/pull/6921) |
+| 🆕 **[@AriaZhao-coder](https://github.com/AriaZhao-coder)** | 🎉 首次贡献：trusted-folders 缓存不再被预览检查污染 | [#6900](https://github.com/QwenLM/qwen-code/pull/6900) |
+| 🆕 **[@xurik](https://github.com/xurik)** | 🎉 首次贡献：daemon session channel 来源标记 | [#6991](https://github.com/QwenLM/qwen-code/pull/6991) |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。也可以在 Qwen Code 中直接使用 `/update` 命令一键升级。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！

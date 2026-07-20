@@ -26,9 +26,11 @@ export default {
   blog: {
     type: 'page',
     title: 'Blog',
-    theme: {
-      sidebar: false,
-      layout: 'full'
-    }
   },
+  'e2e-tests': { display: 'hidden' },
+  plans: { display: 'hidden' },
+  superpowers: { display: 'hidden' },
+  verification: { display: 'hidden' },
+  'declarative-agents-port': { display: 'hidden' },
+  'yaml-parser-replacement': { display: 'hidden' },
 };
