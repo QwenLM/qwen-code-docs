@@ -6,4 +6,5 @@ export default {
   'obsidian': 'Thinking and Writing with Qwen Code in Obsidian',
   'qwencode-coding-plan-guide-build-website': 'Build Assignments, Portfolios, and Open Source Projects in Ten Minutes',
   'coding-development-practices': 'Coding Development: From Requirements to Testing',
+  'qwencode-bailian-skill-openai-cover-gen': 'GPT-Style Cover Generation Skill',
 };

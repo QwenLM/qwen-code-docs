@@ -6,4 +6,5 @@ export default {
   'obsidian': 'ObsidianでQwen Codeと対話しながら思考する',
   'qwencode-coding-plan-guide-build-website': '10分で課題、ポートフォリオ、OSSプロジェクトを作成',
   'coding-development-practices': 'プログラミング開発：要件からテストまで',
+  'qwencode-bailian-skill-openai-cover-gen': 'GPTスタイルのカバー生成Skill',
 };
