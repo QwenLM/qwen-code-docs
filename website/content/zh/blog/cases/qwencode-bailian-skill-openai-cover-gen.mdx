@@ -1,0 +1,124 @@
+---
+title: "用 Qwen 3.8-max 做一个 GPT 风格封面生成 Skill"
+date: "2026-07-21"
+description: "用 Qwen 3.8-max 从 0 制作一个技能，一键生成 GPT 风格文章封面（支持微调和一键导出）。"
+author: "joeytoday"
+tags: ["Tutorials", "Skills", "Model Studio"]
+image: https://gw.alicdn.com/imgextra/i4/O1CN01leN1ID1hFBFJQT7sl_!!6000000004247-2-tps-900-383.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="用 Qwen 3.8-max 做一个 GPT 风格封面生成 Skill"
+  date="2026年7月21日"
+  author="joeytoday"
+/>
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01leN1ID1hFBFJQT7sl_!!6000000004247-2-tps-900-383.png)
+
+写技术博客最头疼的就是封面问题，我也被困扰很久了，不仅要适合文章的调性，老板还希望看起来「高级」，我正思考如何解决这个问题，刚好翻到 [OpenAI 的 Customer Stories](https://openai.com/zh-Hans-CN/business/customer-stories/) 页面，封面真是很不错，既不张扬，又有美观。每张图就是纯色材质或一道光，上面一行标题。克制又高级，看起来非常适合技术博客。
+
+![OpenAI 封面概览](https://gw.alicdn.com/imgextra/i4/O1CN01QVii5R1sL68XNdunU_!!6000000005749-2-tps-1545-895.png)
+
+👆 这里就是 OpenAI 博客页面的预览。
+
+技术文章的封面一直是个尴尬的存在。用截图吧，太糙。用插画吧，跟内容不搭。Unsplash 翻二十分钟，挑出来的图跟文章总隔一层。OpenAI 这套 " 纯材质 + 标题 " 的思路，刚好绕开了这个问题。不需要图跟内容 " 相关 "，调性对就行。
+
+既然找封面是个重复性且 AI 可以替代的活，那为什么不做个 skill 呢？说干就干。
+
+先给大家看看结果，再看我怎么实现和如何安装使用吧：
+
+<video
+  src="https://cloud.video.taobao.com/vod/9uWNCXQZXaxYIH3Wajcg7iUBnOA1g_TSd0KrBgfD29o.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/6000000007071/O1CN01t5eU1N226Zjg11zhE_!!6000000007071-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 创建技能：Qwen Code + 百炼 CLI
+
+整个方案就两样东西。
+
+**Qwen Code 做流程编排**。我直接给 Qwen Code 截图网站的内容，并告诉它我想要做个生成此类封面的技能，虽然 qwen3.8-max 并没有多模态能力，**Qwen Code 会自己调用我已经配置的视觉模型**，比如 qwen3.6-plus，识别内容并生成描述给 qwen 3.8-max，然后 3.8 会开始分析和实现，非常便捷。Qwen Code 会分析截图的内容，判断内容的分类，当然我自己也做了一些工作，然后 3.8-max 组装提示词。
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01eeOy4R1jz6BcBI7mI_!!6000000004618-2-tps-2808-1486.png)
+
+**百炼 CLI 使用 qwen-image 模型生成对应风格的图片**，最后把底图和标题拼成一个可交互的 HTML 页面。你可以打开页面进行微调，比如标题、字体、logo、清晰度自定义导出。
+
+最后把两个过程组装成可稳定生产的 skills。
+
+<Callout>
+    **提示**：这里的 qwen3.8-max 都是指 qwen 3.8-max-preview 版本。
+</Callout>
+
+## 封面生成：四种风格
+
+风格是这套方案里我最花心思的部分。OpenAI 的封面看着简单，细看其实有好几条路线。我拆成了四类：
+
+**实物**。材质微距。木纹、皮革、叶脉、金属拉丝、沙丘、复眼。满铺，没有留白。适合讲产品、讲手艺、讲质感。
+
+**晕染**。单色水彩渐变。从浅到深，同一个色相里过渡。丝绸感，磨砂感，水波纹。适合创意、艺术、情绪向的内容。
+
+**光束弧影**。一道光束，或一个弧面反光。背景是同色系的深或浅。克制，精密。科技内容用这个最对味。
+
+**波形**。柔和水彩波纹。给播客和对话类内容做的。波幅在画面中间收敛，留一条安静区域放标题。
+
+四种风格，七种色系（蓝、绿、红、紫、橙、黑、金），再加上四种画布比例。排列组合下来，选择空间很大。但每一种都守着同一条线：颜色不过多，视觉干净不冲击。OpenAI 那套设计的好，好在克制。我不想破坏它。
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN014PJQL81dQqsN8QHFU_!!6000000003731-1-tps-1800-1080.gif)
+
+## 如何使用？
+
+在 Qwen Code 里说一句"根据 @文章 帮我生成封面" 。
+
+它读你的文章，推荐 1-3 个风格。你选，可以多选。每个风格各出一张底图，最后在页面上切换对比。色系从预设里选。不自由发挥。当然你也可以直接指定。
+
+百炼 CLI 跑两张备选。不满意，调提示词重跑。图定了，一条命令组装成 HTML。打开就是一个编辑器：
+
+- 点画布上的标题，直接改字
+- 五种字体点选：PingFang、宋体、黑体、Noto Serif、站酷
+- 遮罩、字号，滑杆拖
+- 文字颜色：白、黑、米
+- 传 Logo（可选，如果你需要高清图的话）
+- 导出选 1x、@2x、@3x，或按 ⌘Enter
+
+所见即所得。Canvas 渲染，直接下载 PNG。
+
+<video
+  src="https://cloud.video.taobao.com/vod/KW-shQqldtg6U23gaI6-zbWIOReFLBI_5SoKlRF6SRk.mp4"
+  poster="https://img.alicdn.com/imgextra/i3/6000000000509/O1CN01nlo6R31FdAkgsL7TD_!!6000000000509-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+我做了几个关键设计决定：
+
+**底图不带字。** AI 生图写中文，出来全是乱码。所以图片归图片，文字用 HTML 叠。这是整个方案的地基。
+
+**生图尺寸跟画布比例锁死。** 公众号首图 900×383，比例 2.35:1，生图就用 1344×572。比例不对，导出裁切，构图全废。
+
+**波形可以多色，但必须柔。** 其他三种严格单色。波形允许 2-3 个相邻色相，低饱和，像水彩晕开。高饱和撞色不行。
+
+**提示词全英文。** 中文提示词出图质量不稳。模板都是英文写的。
+
+**不限于公众号**：默认画布是公众号首图。但预设了正方形 1080×1080、横版 16:9、竖版 3:4。自定义也行。同一篇文章，公众号封面、小红书封面、视频封面，可以一起出。
+
+## 怎么拿到这个 skill
+
+如果你只想要这个技能，可以直接跟你的 AI Agent 说：
+
+```
+从 https://github.com/joeytoday/open1v-skills 克隆仓库，把 open1v-openai-cover 目录复制到 ~/.agents/skills/，验证 SKILL.md 存在后删除克隆的仓库。
+```
+
+---
+
+封面从翻图二十分钟，变成说一句话等两分钟，还有多风格可选。写技术博客的朋友们，可以试试。
