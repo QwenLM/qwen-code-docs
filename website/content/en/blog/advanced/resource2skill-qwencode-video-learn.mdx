@@ -1,0 +1,393 @@
+---
+title: "From Video Tutorials to Reusable Skills: Resource2Skill and Qwen Code /learn"
+date: "2026-07-22"
+description: "A detailed analysis of Resource2Skill and an engineering report on native video input, skill distillation, and real end-to-end validation in Qwen Code /learn"
+author: "LaZzyMan"
+tags: ["Research", "Skills", "Video", "Qwen Code", "Engineering"]
+---
+
+import { BlogPostHeader } from "@/components/blog-post-header";
+import { Callout } from "nextra/components";
+
+<BlogPostHeader
+  title="From Video Tutorials to Reusable Skills: Resource2Skill and Qwen Code /learn"
+  date="2026-07-22"
+  author="LaZzyMan"
+/>
+
+Can a software agent turn a human tutorial video into a Skill that future sessions can discover and reuse?
+
+This sounds like a video-summarization problem, but a production implementation must answer at least three separate questions: can the model receive the complete video, can it compress observations into structured and retrievable procedural knowledge, and can the generated Skill reproduce the tutorial in a real execution environment? Proving only the first question can easily turn “the API received a video” into a false claim that “the Skill works.”
+
+This article analyzes the [Resource2Skill paper](https://arxiv.org/abs/2606.29538) and its [official implementation](https://github.com/microsoft/Resource2Skill), then documents an engineering experiment that adds native video input to Qwen Code `/learn`.
+
+The main conclusions are:
+
+- Resource2Skill is not primarily about asking a vision model to watch a video. Its contribution is a closed pipeline that combines multimodal distillation, structured storage, retrieval, and deterministic acceptance gates.
+- Qwen Code already has a filesystem Skill format, main-agent file tools, OpenAI-compatible video conversion, and model modality declarations. `/learn` is therefore a natural entry point for native video.
+- The implementation successfully completed the real chain from a full local video to a two-file Skill, fresh-session discovery and invocation, and a rendered browser artifact.
+- Final fidelity to the official tutorial still failed. The sliced-text motion was correct, but the sweeping line used the wrong containing block.
+- The next step should be deterministic schema, provenance, structural-execution, and render gates—not more prompt tuning.
+
+## 1. The problem Resource2Skill addresses
+
+Most Skill libraries are written by experts, mined from agent trajectories, or extracted from text and code. This leaves out one of the main ways people learn software workflows: tutorial videos.
+
+Video carries temporal order, interface-state changes, animation timing, spatial relationships, and tacit choices that are hard to express in prose. It is also long, repetitive, and expensive to keep in every inference context. Reducing a tutorial to a plain summary removes much of the dynamic evidence that made the video useful.
+
+Resource2Skill does not keep raw videos in the agent's long-term context. It distills videos, repositories, articles, and reference artifacts into a validated multimodal Skill Wiki. At task time, the agent retrieves a small number of relevant Skills. When the offline library has a real coverage gap, the same construction operator can create controlled online candidates.
+
+The system has four stages:
+
+1. **Construction** extracts modality-specific evidence and creates candidate Skills.
+2. **Wiki organization** stores text, visual, code, taxonomy, and provenance views.
+3. **Selection** narrows the hierarchy lexically, then lets a model select a composable subset.
+4. **Execution and online acquisition** applies Skills through MCP and fills genuine gaps with separately managed online candidates.
+
+## 2. The important Resource2Skill mechanisms
+
+### A Skill is more than text
+
+Each wiki entry combines:
+
+- a text view describing mechanism, applicability, inputs, and expected effects;
+- a visual view with key frames, screenshots, previews, or diagrams;
+- a code view containing executable or adaptable procedure fragments;
+- metadata including taxonomy path, tags, provenance, and audit information.
+
+The views serve different purposes. Video captures sequence and visual change. Code preserves exact tool patterns. Articles and reference artifacts add concepts, style, and target-state grounding. The representation ablation supports this division: curated text alone helps, while visual and code views add further value, and the full multimodal entry performs best across domains.
+
+### Video goes through deterministic preprocessing
+
+Appendix D describes a more concrete construction operator than the high-level diagram. A resource connector retrieves resource bytes. Videos undergo key-frame sampling, repositories use AST-aware code-region extraction, articles are segmented into passages, and reference artifacts receive image preprocessing. A vision-capable language model then produces a structured skill payload from the extracted evidence.
+
+Resource2Skill therefore does not pass a YouTube watch page directly as native video input. The URL is provenance in a manifest; the distiller receives media bytes retrieved and prepared by a connector.
+
+### Model output is followed by deterministic post-processing
+
+The model produces structured JSON fields such as `skill_name`, `category_path`, `applicability`, tags, text, code, visual caption, and provenance. A deterministic post-processor normalizes formatting, validates the JSON shape, computes a stable identifier from domain/source/node information, and writes the entry.
+
+The language model proposes structured knowledge, but does not independently decide that the candidate is trustworthy.
+
+### Five gates define an acceptable Skill
+
+Resource2Skill applies five independent deterministic checks:
+
+| Gate                     | What it checks                                       | Failure prevented                    |
+| ------------------------ | ---------------------------------------------------- | ------------------------------------ |
+| Completeness             | Required fields, minimum body, at least one modality | Empty or truncated entries           |
+| Provenance               | Source resolves through the connector manifest       | Invented or untraceable sources      |
+| Deduplication            | Stable IDs and normalized same-source names          | Repeated pollution from one resource |
+| Modality consistency     | Every declared modality exists on disk               | Metadata/filesystem drift            |
+| Structural executability | Sandboxed import/run and domain render checks        | Plausible-looking but unusable code  |
+
+A structurally failing candidate may remain reference-only, but the default verified-only path filters it out. This is a better production state model than a single generated/not-generated flag.
+
+### Retrieval is not just vector similarity
+
+MetaBrowse scores names, tags, applicability text, and taxonomy paths to narrow the candidate hierarchy. A language model then selects zero, one, or multiple complementary Skills.
+
+The selection ablation reports that hierarchy-then-LM beats BM25, embeddings, hybrid retrieval, and random full-pool sampling. Topical similarity is not the same as task fit or composability.
+
+### Online acquisition fills gaps instead of expanding every prompt
+
+Online acquisition uses the same connector, distiller, and validator only when the offline set is inadequate. Online candidates remain separate from the offline pool during evaluation.
+
+The paper reports little benefit on ordinary tasks whose common operations are already covered, but a clear benefit on stress tasks designed around missing capabilities. The practical default is a stable offline library plus controlled gap filling—not unrestricted web expansion for every request.
+
+## 3. How to interpret the experiments
+
+Resource2Skill evaluates Web, Excel, Reaper, PowerPoint, Blender, CAD, and UE5 across four agent backends. The reliable high-level findings are:
+
+1. The Skill system beats the no-Skill condition in every main model-domain aggregate cell.
+2. Gains are largest in convention-heavy workflows such as Web, Blender, and UE5, and smallest in Reaper.
+3. Video is non-substitutable in the source ablation. Code, articles, and reference artifacts do not fully recover temporal and visual-sequence information when video is removed.
+4. Appendix J includes both successes and failures. Failures often come from partial grounding, unresolved symbolic bindings, or overly literal composition—not just API execution errors.
+
+The paper does not claim that every single video distillation is correct. Structural executability means code can run and produce a non-trivial artifact; it does not prove semantic fidelity to every future task.
+
+## 4. Why Qwen Code `/learn`
+
+Qwen Code `/learn` already converts files, directories, URLs, text, or the current conversation into project Skills. The original route submits a text prompt to the main agent. URLs are read with `web_fetch`, and the agent writes `SKILL.md` under `.qwen/skills/learned-skill-*`.
+
+The existing system already provides:
+
+- project Skill storage, discovery, and lazy loading;
+- main-agent file tools and workspace security boundaries;
+- an OpenAI-compatible content converter that maps video parts to `video_url`;
+- effective input-modality declarations in the model registry.
+
+The missing piece is a native video route. A tutorial URL currently exposes webpage metadata rather than media, and a local video has no video-specific distillation contract.
+
+This first implementation deliberately supports only models that already accept video. It does not add a text-only fallback or silently switch models. That keeps video-model quality, transcription quality, and frame-sampling quality from being mixed into one uninterpretable result.
+
+## 5. Qwen Code implementation
+
+### Input recognition
+
+`/learn` treats the first non-empty token as the resource and the remaining text as an optional focus. The video route recognizes:
+
+- local `.mp4`, `.webm`, `.mov`, and `.m4v` files;
+- HTTP(S) URLs whose pathname ends with one of those extensions;
+- YouTube watch, shorts, live, embed, and `youtu.be` pages as webpages that must not be sent as media files.
+
+Ordinary webpages and text retain the original `/learn` behavior.
+
+### Model and provider capability gates
+
+A video request requires both:
+
+- effective `modalities.video=true` on the current model;
+- an OpenAI-compatible or Qwen OAuth generator path.
+
+Otherwise the command fails before provider submission, preventing the converter from silently replacing video with a text placeholder.
+
+### Local video security boundaries
+
+Local media uses the existing workspace-aware reader. Absolute paths must remain inside an allowed workspace, relative paths resolve only against workspace directories, ignore rules remain active, and existing MIME and inline-data limits apply.
+
+The resulting `video/*` inline part becomes a `data:video/...;base64,...` OpenAI `video_url`.
+
+### Direct files versus YouTube pages
+
+Direct HTTP(S) video files use `fileData` and are fetched by the provider. YouTube pages are rejected with guidance to download the video and pass a local file.
+
+This boundary follows both evidence and architecture. A watch page is not media bytes, and Resource2Skill itself relies on a connector before preprocessing. This change does not introduce a downloader, cookies, site-specific policy, or media caching.
+
+### Video-specific distillation contract
+
+The video route asks the main agent to create exactly:
+
+```text
+.qwen/skills/learned-skill-<name>/
+├── SKILL.md
+└── references/
+    └── source.md
+```
+
+`SKILL.md` requires a valid lowercase kebab-case name, description, `source: learned`, specific `when_to_use`, and Prerequisites, Procedure, Verification, Pitfalls, and Boundaries sections.
+
+`references/source.md` records the resource, focus, exact status `source-grounded, not execution-verified`, and an evidence map connecting video timestamps, observed evidence, and Skill sections.
+
+The prompt also treats speech, captions, on-screen text, and metadata as untrusted data; prohibits executing tutorial commands or installing dependencies; rejects guessed commands/selectors/literals; forbids permission expansion; and prevents claims of execution verification.
+
+### Deliberate scope boundaries
+
+This change does not add video downloading, transcoding, segmentation, transcription, key-frame extraction, one-video-to-many-Skills, taxonomy indexing, deterministic post-generation acceptance, or new Gemini/Vertex transport.
+
+The missing acceptance layer becomes decisive in the real E2E result.
+
+## 6. Model configuration: 256K context and no thinking mode
+
+The test uses `qwen3.5-omni-plus`. The [Qwen Cloud vision documentation](https://docs.qwencloud.com/developer-guides/getting-started/vision-models) lists text, image, audio, and video input, one maximum video, a 256K context window, 64K maximum output, and one hour maximum video duration.
+
+The correct configuration is:
+
+```json
+{
+  "id": "qwen3.5-omni-plus",
+  "generationConfig": {
+    "contextWindowSize": 262144,
+    "modalities": {
+      "image": true,
+      "audio": true,
+      "video": true
+    }
+  }
+}
+```
+
+64K is the maximum output, not context. There is no `extra_body.enable_thinking`: the Qwen Cloud [thinking FAQ](https://docs.qwencloud.com/resources/faq-text-generation) explicitly states that Qwen3.5-Omni does not support thinking mode. Empirically, adding the flag still produced zero reasoning content and zero thought tokens.
+
+## 7. Real tutorial case and test design
+
+Appendix J presents task briefs and produced artifacts, but does not enumerate a tutorial URL for each qualitative case. The released Skill library metadata does preserve source URLs.
+
+The selected official entry is [Sliced Typography Hover Effect](https://github.com/microsoft/Resource2Skill/blob/main/skills_library/web/navigation/sliced_typography_hover_effect_68a7d75a/skill.json):
+
+- source tutorial: [Split Text on Hover](https://www.youtube.com/watch?v=vOlZg1LRFp0);
+- metadata duration: 896 seconds; downloaded MP4 measured by `ffprobe`: 895.2 seconds;
+- file size: 6,533,189 bytes;
+- SHA-256: `92cee2611ebbf1e74c4643d6e9c0f3c05feceb1e6e6e0c78ba6d50f305341084`.
+
+This case has a complete source video, released metadata, precise HTML/CSS mechanics, and browser-measurable hover states without proprietary software.
+
+The official mechanics include `data-text` duplication into anchor pseudo-elements, complementary 50% clip paths, top/bottom transforms of `(10px, -2px)` and `(-10px, 2px)`, a shared red accent, and a line contained by a positioned overflow-hidden item while sweeping across it.
+
+## 8. Test sequence and results
+
+### YouTube page as native `video_url`
+
+The exact YouTube URL was first sent as one video part. Request logging confirmed the model and `video_url`, but no provider response arrived within five minutes. Cancellation produced no files.
+
+A reachable watch page is not evidence that the provider obtained a media stream.
+
+### Full MP4 through a temporary HTTPS URL
+
+The complete MP4 was then exposed through a temporary HTTPS URL. The local server observed multiple successful GETs, but the model request timed out after 483 seconds.
+
+This demonstrated remote retrieval attempts, but not an acceptable end-to-end result.
+
+### Original generic `/learn` with the complete local MP4
+
+The video was copied into an isolated workspace and passed through the old generic route. The provider accepted roughly 180K video tokens and returned, proving that `qwen3.5-omni-plus` could process the full tutorial.
+
+The old path created only `SKILL.md`, omitted provenance, and generated incorrect selectors, color values, transforms, and line endpoints. Transport was not the remaining problem; the route needed a video-specific contract and validation.
+
+### New local-video `/learn` route
+
+The final run used isolated project, runtime, logs, and `QWEN_HOME` directories, with an explicit 262144 context, video modality, and no thinking flag.
+
+One `/learn` invocation created exactly:
+
+```text
+learned-skill-sliced-typography/SKILL.md
+learned-skill-sliced-typography/references/source.md
+```
+
+Passing checks:
+
+- the first request carried one full inline MP4 `video_url`;
+- every transcript assistant entry recorded `contextWindowSize: 262144`;
+- the frontmatter name `sliced-typography` was loadable;
+- provenance status exactly matched the contract;
+- the evidence map contained 18 timestamp ranges;
+- no third artifact was created.
+
+After both write tools succeeded, the optional closing response encountered one token-limit 429 and one terminated connection. This is recorded as no closing verdict, not as failed file creation.
+
+### Fresh-session Skill invocation
+
+A new session in the same project was explicitly instructed to invoke the learned Skill before creating a demo. The transcript recorded:
+
+```text
+skill({"skill":"sliced-typography"})
+```
+
+It then created only `demo/index.html`. This prevents the previous video's conversation context from being mistaken for Skill reuse.
+
+### Browser validation with Playwright
+
+The browser test measured real DOM and pseudo-element computed styles:
+
+- five menu items and zero scripts;
+- `"Home"` content in both pseudo-elements;
+- complementary top/bottom clip polygons;
+- final transforms `(10, -2)` and `(-10, 2)`;
+- line `left` moving from `-296.781px` to `296.781px`;
+- no page errors; the only console error was an irrelevant missing favicon.
+
+This proves that the sliced-text motion actually ran in a browser.
+
+## 9. The final fidelity failure
+
+The learned `SKILL.md` still contained three important defects:
+
+1. hover selectors omitted the anchor, colliding with the line's `li::before` role;
+2. default pseudo-element color was missing while the anchor was transparent;
+3. line positioning, containing block, and overflow constraints were not fully bound to the item.
+
+The fresh application session corrected the selector, default color, and transforms, but introduced two deviations:
+
+- the shared official red became pink and cyan;
+- each `li` remained `position: static`, making the line's containing block the whole `ul`.
+
+Playwright measured:
+
+| Measurement     | Y coordinate |
+| --------------- | -----------: |
+| Home row center |          272 |
+| Sweeping line   |        449.5 |
+| Error           |     177.5 px |
+
+The line crossed Services instead of the hovered Home row. The final verdict is therefore:
+
+| Layer                                          | Result |
+| ---------------------------------------------- | ------ |
+| Native video transport                         | PASS   |
+| Two-file provenance contract                   | PASS   |
+| Valid Skill name and loading                   | PASS   |
+| Fresh-session Skill invocation                 | PASS   |
+| Renderable pure-CSS demo                       | PASS   |
+| Structural and visual fidelity to the tutorial | FAIL   |
+
+<Callout type="warning">
+  “The model saw the video,” “files were generated,” “the Skill was invoked,”
+  and “the artifact opens” are not substitutes for behavioral validation. This
+  case required measuring the line's containing block to expose the real error.
+</Callout>
+
+## 10. Code-level verification
+
+The change includes parser, prompt-builder, command-routing, locale, and focused test coverage. Validation commands:
+
+```bash
+cd packages/core
+npx vitest run src/memory/learn-skill-agent.test.ts
+
+cd ../cli
+npx vitest run src/ui/commands/learn-command.test.ts
+
+cd ../..
+npm run build
+npm run typecheck
+npm run bundle
+```
+
+Final results:
+
+- core focused tests: 36/36;
+- CLI focused tests: 11/11;
+- both focused ESLint runs: pass;
+- repository build: pass;
+- typecheck: pass;
+- bundle: pass;
+- `git diff --check`: pass.
+
+## 11. What was borrowed, and what remains
+
+| Resource2Skill concept                        | Current Qwen Code state                                      |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| Vision-capable LM distillation                | Implemented: native video enters the current model           |
+| Separate Skill and source evidence            | Implemented: `SKILL.md` plus `references/source.md`          |
+| Timestamp provenance                          | Implemented as an evidence-map contract                      |
+| Untrusted resource boundary                   | Implemented in the prompt                                    |
+| Modality/capability gate                      | Implemented for model and provider                           |
+| Resource connector                            | Partial: local workspace reader; no network-video downloader |
+| Deterministic key-frame preprocessing         | Not implemented                                              |
+| Structured intermediate JSON                  | Not implemented                                              |
+| Stable ID and deduplication                   | Existing directory-collision rules only                      |
+| Deterministic schema/provenance validation    | Not implemented                                              |
+| Sandboxed structural executability            | Not implemented                                              |
+| Verified-only/reference-only states           | Not implemented                                              |
+| Taxonomy, hierarchical retrieval, composition | Not implemented                                              |
+| Controlled online acquisition                 | Not implemented                                              |
+
+## 12. Recommended next stage
+
+The next change should establish a minimum acceptance loop before adding more video sites or models:
+
+1. **Deterministic schema gate**: parse frontmatter and validate name, directory, required sections, two-file contract, and exact provenance status.
+2. **Evidence gate**: validate timestamp format, referenced sections, and source membership in the current resource manifest.
+3. **Structured candidate**: request constrained JSON, then let Qwen Code write files deterministically instead of letting free-form tool calls choose paths and schema.
+4. **Domain validator**: for HTML/CSS Skills, generate a minimal fixture and use a sandboxed browser to check selector matches, pseudo-element ownership, containing blocks, overflow, and state transitions.
+5. **State separation**: mark accepted candidates verified; keep source-grounded but unexecuted candidates reference-only and out of the default executable path.
+6. **Connector after validation**: then add downloading, transcoding, key-frame sampling, and caching. Keep a YouTube URL as provenance rather than pretending it is media bytes.
+
+## Conclusion
+
+The most transferable idea in Resource2Skill is not a particular video prompt. It is the engineering boundary between a multimodal model that proposes candidate knowledge and a deterministic system that decides whether the candidate can enter an executable capability library.
+
+Native video `/learn` proved that a full tutorial can reach the model, produce a Skill, be discovered, and be invoked in a fresh session. The same real case also proved that without post-processing and acceptance gates, the result can still fail on one CSS containing block.
+
+The layered result is useful and precise: transport is solved, the distillation contract is partially solved, and trustworthy execution remains the next engineering milestone.
+
+## References
+
+- [Resource2Skill paper](https://arxiv.org/abs/2606.29538)
+- [Resource2Skill official repository](https://github.com/microsoft/Resource2Skill)
+- [RESOURCE2SKILL dataset](https://huggingface.co/datasets/microsoft/RESOURCE2SKILL)
+- [Official Sliced Typography Skill entry](https://github.com/microsoft/Resource2Skill/blob/main/skills_library/web/navigation/sliced_typography_hover_effect_68a7d75a/skill.json)
+- [Original video tutorial](https://www.youtube.com/watch?v=vOlZg1LRFp0)
+- [Qwen Cloud vision model documentation](https://docs.qwencloud.com/developer-guides/getting-started/vision-models)
+- [Qwen Cloud thinking mode FAQ](https://docs.qwencloud.com/resources/faq-text-generation)

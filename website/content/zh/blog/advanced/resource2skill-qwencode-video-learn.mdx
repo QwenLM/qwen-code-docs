@@ -1,0 +1,425 @@
+---
+title: "从视频教程到可复用 Skill：Resource2Skill 论文分析与 Qwen Code /learn 实践"
+date: "2026-07-22"
+description: "深入分析 Resource2Skill 的构建、检索与验收机制，并记录 Qwen Code /learn 原生视频输入的实现、真实教程测试和工程结论"
+author: "LaZzyMan"
+tags: ["Research", "Skills", "Video", "Qwen Code", "Engineering"]
+---
+
+import { BlogPostHeader } from "@/components/blog-post-header";
+import { Callout } from "nextra/components";
+
+<BlogPostHeader
+  title="从视频教程到可复用 Skill：Resource2Skill 论文分析与 Qwen Code /learn 实践"
+  date="2026-07-22"
+  author="LaZzyMan"
+/>
+
+把一段人类教程视频直接交给软件 Agent，能不能得到一个以后可以反复调用的 Skill？
+
+这个问题看起来像“让多模态模型总结视频”，但真正落地时至少包含三件不同的事：模型能否接收完整视频、能否把观察压缩成结构化且可检索的过程知识、生成结果能否在真实软件环境中复现原教程。只验证第一件事，很容易把“API 收到了视频”误报成“Skill 已经可用”。
+
+本文围绕微软研究院的 [Resource2Skill 论文](https://arxiv.org/abs/2606.29538) 与 [官方开源实现](https://github.com/microsoft/Resource2Skill)，分析其资源构建、Skill Wiki、检索、在线获取和确定性验收机制，并记录一次将原生视频输入接入 Qwen Code `/learn` 的完整工程实验。
+
+结论先行：
+
+- Resource2Skill 的核心贡献不是“用视觉模型看视频”，而是把多模态蒸馏、结构化存储、检索和确定性验收组成一条闭环流水线。
+- Qwen Code 已经具备 Skill 文件系统、主 Agent 写文件、OpenAI 兼容视频传输和模型模态声明，适合先补齐 `/learn` 的原生视频入口。
+- 本次实现已真实跑通“完整本地视频 → 两文件 Skill → 新会话发现并调用 Skill → 生成浏览器产物”的链路。
+- 对官方教程的最终忠实度验收仍然失败：文字切片动画正确，扫线却绑定到了错误的 containing block。链路可用不等于蒸馏结果可信。
+- 下一阶段不应继续堆提示词，而应借鉴论文补上确定性的 schema、provenance、结构执行与渲染验收 gate。
+
+## 一、论文到底解决了什么问题
+
+现有 Skill 通常来自三类来源：专家手写、Agent 自身轨迹、文本或代码语料。它们容易忽略人类最常用的学习载体之一：教程视频。
+
+视频有两种互相冲突的特征。一方面，它能表达操作先后顺序、界面状态变化、动画节奏、空间关系和难以文字化的隐性选择；另一方面，原始视频长、重复、成本高，直接塞进每次推理既浪费上下文，也不适合作为可组合记忆。把视频压成普通摘要又会丢失最有价值的动态证据。
+
+Resource2Skill 的回答不是长期保存原始视频上下文，而是把视频、代码仓库、文章和参考产物统一蒸馏为经过验证的多模态 Skill Wiki。Agent 在执行任务时只检索少量相关 Skill；离线库覆盖不足时，再复用同一个构建算子做受控的在线补充。
+
+这使“资源到能力”的过程被拆成四个阶段：
+
+1. **Construction**：从资源中提取模态相关证据并生成候选 Skill。
+2. **Wiki organization**：按领域 taxonomy 组织文本、视觉、代码和 provenance。
+3. **Selection**：先用层级与词法信号缩小范围，再由模型选择一个可组合子集。
+4. **Execution and online acquisition**：通过统一 MCP 接口应用 Skill；覆盖不足时在线获取临时候选。
+
+## 二、Resource2Skill 的关键机制
+
+### 1. Skill 不是一段文本，而是三个互补视图
+
+论文中的 Wiki 条目同时保留：
+
+- 文本视图：名称、适用场景、机制、输入和预期效果；
+- 视觉视图：关键帧、截图、预览或示意图；
+- 代码视图：可执行或可改写的过程片段；
+- 元数据：taxonomy path、标签、来源和审计信息。
+
+这里的设计重点是信息分工。视频擅长表达时间顺序和视觉变化；代码擅长保存精确调用模式；文章和参考产物补足概念、风格与目标状态。Ablation 的方向性结果也支持这一点：纯文本 Skill 已经优于无 Skill，但加入视觉和代码后仍继续提升；完整多模态条目在各领域表现最好。
+
+### 2. 视频先经过确定性预处理
+
+论文 Appendix D 对构建算子给出了比正文更具体的描述：资源 connector 先取回资源 bytes；视频执行关键帧采样，代码执行 AST-aware 区域抽取，文章做段落切分，参考产物做图像预处理；然后视觉语言模型按领域模板生成结构化 Skill payload。
+
+因此，Resource2Skill 并不是把 YouTube watch page 当成 `video_url` 直接交给模型。网页 URL 只是 manifest 中的 provenance；真正进入蒸馏器的是 connector 获取并预处理后的媒体内容。
+
+### 3. 模型输出后还有确定性 post-processing
+
+模型生成包含 `skill_name`、`category_path`、`applicability`、tags、text、code、visual caption 和 provenance 的结构化 JSON。后处理器再完成：
+
+- 空白与格式规范化；
+- JSON shape 校验；
+- 基于领域、来源路径和节点索引生成稳定 ID；
+- 写入磁盘。
+
+模型负责提取和组织候选知识，但不独自决定候选是否可信。
+
+### 4. 五个 gate 才是“可用 Skill”的边界
+
+论文的 acceptance predicate 包含五个互相独立的确定性检查：
+
+| Gate                     | 检查内容                                                       | 防止的问题           |
+| ------------------------ | -------------------------------------------------------------- | -------------------- |
+| Completeness             | 必需字段、最小正文、至少一种内容模态                           | 空壳或截断条目       |
+| Provenance               | 来源必须存在于 connector manifest 且可解析                     | 编造或不可追踪来源   |
+| Deduplication            | 稳定 ID 与同源规范化名称去重                                   | 同一资源反复污染库   |
+| Modality consistency     | 声明的视觉、代码等文件必须真实存在                             | metadata 与磁盘脱节  |
+| Structural executability | 在 sandbox 中导入/运行代码，并按领域执行 render/overlap 等检查 | 看起来合理但无法运行 |
+
+值得注意的是，结构执行失败的候选可以作为 reference-only 保留，但不会进入默认 verified-only 执行路径。这个状态区分比“生成成功/失败”更适合真实 Agent 系统。
+
+### 5. 检索不是简单向量相似度
+
+MetaBrowse 先把 Skill 的名称、标签、适用文本和 taxonomy path 交给词法评分器，将候选缩小到相关子树，再让模型选择一个子集。模型可以选择零个 Skill，也可以组合多个互补 Skill。
+
+论文的 selection ablation 显示，hierarchy-then-LM 策略优于 BM25、embedding、二者组合和随机抽取。这说明“主题相似”不足以代表“能否一起完成任务”；适用性、互补性和执行绑定仍需要显式判断。
+
+### 6. Online acquisition 是补洞，不是默认扩上下文
+
+在线获取只在离线候选覆盖不足时触发，使用与离线构建相同的 connector、蒸馏器和验收规则。在线候选与离线库在实验中分开保存，不会未经控制地回写正式库。
+
+论文报告的方向性结果是：普通任务上在线获取收益接近噪声；在特意覆盖离线能力缺口的 stress set 上才有明显价值。因此更合理的默认是稳定离线库，加受控 gap-filling，而不是每次任务都上网扩张记忆。
+
+## 三、论文实验应如何解读
+
+论文覆盖 Web、Excel、Reaper、PPT、Blender、CAD 和 UE5 七个创作领域，并在四个 Agent backend 上比较有 Skill、无 Skill及两种现成 agent harness。
+
+可以稳妥得到四个结论：
+
+1. 有 Skill 的系统在主实验的全部 model-domain aggregate cells 中优于无 Skill。
+2. 最大收益集中在约定密集、需要重建复杂工作流的领域，例如 Web、Blender 和 UE5；Reaper 的增益最小。
+3. 视频是 source ablation 中不可替代的来源。移除视频后，代码、文章和参考产物不能完全补回时间操作与视觉序列信息。
+4. 论文 Appendix J 同时公开成功与失败案例。失败主要来自部分 grounding、符号绑定没有解析、或 Agent 过度字面地组合 Skill，而不是简单的 API 执行失败。
+
+这些结论也限定了论文不能证明的内容：它没有证明单次视频蒸馏必然正确，也没有证明所有生成代码都语义忠实；结构 executability 只保证候选可运行并产生非平凡产物，不保证它解决任意具体任务。
+
+## 四、为什么选择接入 Qwen Code `/learn`
+
+Qwen Code 已有 `/learn`：它把文件、目录、URL、文本或当前对话转换为项目级 Skill。原来的路径最终向主 Agent 提交一段文字 prompt；URL 由 `web_fetch` 读取，主 Agent 在 `.qwen/skills/learned-skill-*` 下写入 `SKILL.md`。
+
+这套基础设施已经提供四个关键组件：
+
+- 项目级 Skill 存储、发现和按需加载；
+- 主 Agent 的文件工具与 workspace 安全边界；
+- OpenAI 兼容 content converter，可将视频 part 转为 `video_url`；
+- 模型 registry 中的有效输入模态声明。
+
+缺口是：教程视频 URL 仍会走网页抓取，模型只能看到页面 metadata，而看不到真实视频；本地视频也没有 video-specific distillation contract。
+
+本阶段明确限制为“只支持本身具有视频输入能力的模型”，不做 text-only fallback，也不自动切换模型。这样可以先验证最短的原生链路，避免把转录质量、抽帧质量和视频模型质量混成一个不可解释的结果。
+
+## 五、Qwen Code 实现
+
+### 1. 输入识别
+
+`/learn` 将第一个非空 token 解析为资源，其余文本作为可选 focus。视频输入只识别明确格式：
+
+- 本地 `.mp4`、`.webm`、`.mov`、`.m4v`；
+- pathname 以这些扩展名结尾的 HTTP(S) 直链；
+- YouTube watch、shorts、live、embed 和 `youtu.be` 页面会被识别，但不会当成原生媒体文件发送。
+
+普通网页和文本继续走原有 `/learn` 行为。
+
+### 2. 模型与 provider capability gate
+
+提交视频前必须同时满足：
+
+- 当前有效模型声明 `modalities.video=true`；
+- 当前生成器是 OpenAI-compatible 或 Qwen OAuth 路径。
+
+不满足时，命令在发起 provider 请求前返回明确错误，避免视频被 content converter 静默替换成占位文本。
+
+### 3. 本地视频安全边界
+
+本地资源复用已有 workspace-aware reader，因此继续受以下规则约束：
+
+- 绝对路径必须位于允许的 workspace；
+- 相对路径只在 workspace 目录内解析；
+- respect `.gitignore` 与 `.qwenignore`；
+- 复用已有 MIME 检测和 inline media 大小上限。
+
+成功读取后，命令提取 `video/*` inline part，由 OpenAI converter 转为 `data:video/...;base64,...` 的 `video_url`。
+
+### 4. 直链与 YouTube 的不同处理
+
+直达视频文件的 HTTP(S) URL 使用 `fileData`，由 provider 获取资源。YouTube 页面则在本地直接拒绝，并提示先下载视频再传本地文件。
+
+这不是任意限制，而是实测结果与论文架构共同决定的：YouTube page 并不是视频 bytes；Resource2Skill 也依赖 connector 下载资源后再预处理。本阶段没有引入 downloader、cookies、站点条款处理或媒体缓存，所以不能把 watch page 支持伪装成视频支持。
+
+### 5. Video-specific distillation contract
+
+视频路径要求主 Agent 只创建：
+
+```text
+.qwen/skills/learned-skill-<name>/
+├── SKILL.md
+└── references/
+    └── source.md
+```
+
+`SKILL.md` 必须包含合法的 lowercase kebab-case name、description、`source: learned`、具体 `when_to_use`，以及 Prerequisites、Procedure、Verification、Pitfalls、Boundaries。
+
+`references/source.md` 记录来源、focus、精确状态 `source-grounded, not execution-verified`，并用“视频时间戳—观察证据—Skill 章节”组成 evidence map。
+
+Prompt 还明确要求：
+
+- 把视频语音、字幕、画面文字和 metadata 当成不可信数据；
+- 不执行教程命令，不安装依赖，不与教程中的服务交互；
+- 看不清的 selector、命令或 literal 不得猜测；
+- 不添加 allowed tools、hooks、model override 或权限；
+- 不声称已经执行验证。
+
+### 6. 当前没有实现的部分
+
+为了保持首个变更可审查，本阶段没有加入：
+
+- 视频下载、转码、分段、转录或关键帧抽取；
+- YouTube 页面直接摄取；
+- 一段视频生成多个 Skill；
+- taxonomy 与检索索引；
+- 生成后的 deterministic schema/lint/render acceptance gate；
+- Gemini 或 Vertex provider 的新视频传输。
+
+最后一项缺口在真实 E2E 中成为决定性问题。
+
+## 六、模型配置：256K context，不支持 thinking
+
+测试模型为 `qwen3.5-omni-plus`。根据 [Qwen Cloud 视觉模型文档](https://docs.qwencloud.com/developer-guides/getting-started/vision-models)，它支持 text、image、audio、video 输入，最多一个视频，context 为 256K，max output 为 64K，最大视频时长一小时。
+
+因此测试配置为：
+
+```json
+{
+  "id": "qwen3.5-omni-plus",
+  "generationConfig": {
+    "contextWindowSize": 262144,
+    "modalities": {
+      "image": true,
+      "audio": true,
+      "video": true
+    }
+  }
+}
+```
+
+64K 是最大输出，不是上下文。配置中也没有 `extra_body.enable_thinking`：Qwen Cloud [Thinking mode FAQ](https://docs.qwencloud.com/resources/faq-text-generation) 明确说明 Qwen3.5-Omni 不支持 thinking mode。实测即使发送该 flag，响应中的 `reasoning_content` 和 thoughts token 仍为零，因此不应把一个无效参数当作推理增强。
+
+## 七、真实教程案例与测试方法
+
+论文 Appendix J 的 qualitative case studies 展示的是任务 brief 与最终产物，不逐条列出原始教程 URL。作者发布的 Skill library metadata 则保留了真实来源。
+
+本次选择官方条目 [Sliced Typography Hover Effect](https://github.com/microsoft/Resource2Skill/blob/main/skills_library/web/navigation/sliced_typography_hover_effect_68a7d75a/skill.json)：
+
+- 原始教程：[Split Text on Hover](https://www.youtube.com/watch?v=vOlZg1LRFp0)；
+- 视频时长：metadata 为 896 秒，下载文件经 `ffprobe` 测得 895.2 秒；
+- 文件大小：6,533,189 bytes；
+- SHA-256：`92cee2611ebbf1e74c4643d6e9c0f3c05feceb1e6e6e0c78ba6d50f305341084`。
+
+选择该案例是因为它同时具备：完整原视频、作者生成的 Skill metadata、明确 HTML/CSS 结构、可在浏览器中测量的 hover 状态，以及不依赖商业软件的复现环境。
+
+官方实现的关键真值包括：
+
+- anchor 通过 `data-text` 向 `::before`、`::after` 复制文本；
+- top/bottom 使用互补的 50% `clip-path`；
+- top hover 位移 `(10px, -2px)`，bottom 为 `(-10px, 2px)`；
+- 两半切换为红色；
+- 扫线必须在 positioned、overflow-hidden item 内从一侧完整扫到另一侧。
+
+## 八、测试流程与逐轮结果
+
+### 1. YouTube page 直接作为 `video_url`
+
+第一轮把官方 YouTube URL 原样作为一个视频 part 发送。请求日志确认模型、参数和 `video_url` 都正确，但五分钟内没有 provider response，取消后没有生成文件。
+
+结论：watch page 可访问不等于 provider 能取到媒体流，不能把无响应算成视频理解失败或成功。
+
+### 2. 完整 MP4 通过临时 HTTPS 直链
+
+第二轮将同一个完整 MP4 暴露为临时 HTTPS URL。本地服务器观察到多次成功 GET，说明 provider 已尝试获取资源，但模型请求在 483 秒后超时。
+
+结论：远端视频直链传输路径成立，但这个临时链路没有形成可接受的端到端结果。
+
+### 3. 修改前的通用 `/learn` + 本地完整 MP4
+
+第三轮把完整视频复制到隔离 workspace，通过原有通用 `/learn` 路径读取。provider 接收约 18 万视频 token 并返回，证明 `qwen3.5-omni-plus` 可以处理这段完整视频。
+
+但旧路径只创建 `SKILL.md`，没有 provenance reference；生成内容还出现 selector、颜色、位移和扫线终点错误。这确认了问题不在“视频能否进入模型”，而在缺少视频专用 contract 与验收。
+
+### 4. 新实现的 `/learn` 本地视频路径
+
+最终测试使用新的隔离 project、runtime、logs 与 `QWEN_HOME`，明确配置 262144 context、video modality，并移除 thinking flag。
+
+一次 `/learn` 创建且只创建：
+
+```text
+learned-skill-sliced-typography/SKILL.md
+learned-skill-sliced-typography/references/source.md
+```
+
+通过项：
+
+- 第一请求包含一个完整 MP4 inline `video_url`；
+- transcript 全部记录 `contextWindowSize: 262144`；
+- frontmatter name 为可加载的 `sliced-typography`；
+- provenance status 精确匹配 contract；
+- evidence map 覆盖 18 组时间戳；
+- 没有第三个产物文件。
+
+Learn turn 在两次写文件完成后，收尾响应遇到一次 token-limit 429 和一次连接终止，但这不影响已完成的两个 write tool。报告中将其记为“收尾无 verdict”，而不是内容写入失败。
+
+### 5. 新会话显式调用 Skill
+
+在同一 project 启动全新会话，要求先调用 learned Skill，再只基于 Skill 创建 demo。Transcript 明确记录：
+
+```text
+skill({"skill":"sliced-typography"})
+```
+
+随后生成单文件 `demo/index.html`。这一步排除了“模型仍在利用上一轮原始视频上下文”的可能性。
+
+### 6. Playwright 浏览器验收
+
+浏览器测试不只检查文件存在，而是测量真实 DOM 与 pseudo-element computed style：
+
+- 5 个菜单项；
+- 0 个 script；
+- `::before` 与 `::after` 都读取到 `"Home"`；
+- top/bottom clip polygon 互补；
+- hover 后位移分别为 `(10, -2)` 与 `(-10, 2)`；
+- 扫线的 `left` 从 `-296.781px` 移到 `296.781px`；
+- 无 page error，唯一 console error 是无关的 favicon 404。
+
+这些检查证明切片文字动画本身真实工作，而不是静态 HTML 猜测。
+
+## 九、最终失败在哪里
+
+Learned `SKILL.md` 仍有三个关键缺陷：
+
+1. hover selector 写成 `li:hover::before/::after`，漏掉 anchor，和 line 使用的 `li::before` 冲突；
+2. anchor 已设 `color: transparent`，但默认文字 pseudo-element 颜色没有完整定义；
+3. line 的定位、containing block 与 overflow 约束没有被完整绑定到 item。
+
+新会话在生成 demo 时自行修正了 selector、默认颜色和两个位移，却又引入两个偏差：
+
+- 将官方统一红色改为粉色和青色；
+- `li` 仍为 `position: static`，所以 line 的 containing block 实际是整个 `ul`。
+
+Playwright 测得 hover Home 时：
+
+| 测量对象    |   Y 坐标 |
+| ----------- | -------: |
+| Home 行中心 |      272 |
+| 扫线        |    449.5 |
+| 误差        | 177.5 px |
+
+截图中扫线穿过 Services，而不是正在 hover 的 Home。因此最终 verdict 是：
+
+| 层级                         | 结果 |
+| ---------------------------- | ---- |
+| 原生视频传输                 | PASS |
+| 两文件 provenance contract   | PASS |
+| 合法 Skill name 与加载       | PASS |
+| 新会话 Skill invocation      | PASS |
+| 生成可渲染纯 CSS demo        | PASS |
+| 对官方教程的结构与视觉忠实度 | FAIL |
+
+<Callout type="warning">
+  “模型看过视频”“写出了 Skill”“Skill
+  被调用”“产物能打开”都不能替代最终行为验收。本案例直到浏览器测量 line 的
+  containing block 才暴露真正错误。
+</Callout>
+
+## 十、代码级验证
+
+实现包含 parser、prompt builder、command routing、三种 locale 与定向测试。验证命令如下：
+
+```bash
+cd packages/core
+npx vitest run src/memory/learn-skill-agent.test.ts
+
+cd ../cli
+npx vitest run src/ui/commands/learn-command.test.ts
+
+cd ../..
+npm run build
+npm run typecheck
+npm run bundle
+```
+
+最终结果：
+
+- core 定向测试：36/36；
+- CLI 定向测试：11/11；
+- 两组定向 ESLint：通过；
+- repository build：通过；
+- typecheck：通过；
+- bundle：通过；
+- `git diff --check`：通过。
+
+## 十一、从论文借鉴了什么，哪些还没落地
+
+| Resource2Skill 思想                           | 当前 Qwen Code 状态                                |
+| --------------------------------------------- | -------------------------------------------------- |
+| vision-capable LM 蒸馏多模态资源              | 已落地：视频 part 进入当前主模型                   |
+| 来源与 Skill 分离                             | 已落地：`SKILL.md` + `references/source.md`        |
+| timestamp provenance                          | 已落地：evidence map contract                      |
+| 不执行来源中的不可信指令                      | 已落地：prompt security boundary                   |
+| modality/capability gate                      | 已落地：模型与 provider 双 gate                    |
+| resource connector                            | 部分：本地 workspace reader；无网络视频 downloader |
+| deterministic key-frame preprocessing         | 未落地                                             |
+| structured intermediate JSON                  | 未落地                                             |
+| stable ID 与 deduplication                    | 只复用现有目录 collision 规则                      |
+| deterministic schema/provenance validation    | 未落地                                             |
+| sandboxed structural executability            | 未落地                                             |
+| verified-only / reference-only 状态           | 未落地                                             |
+| taxonomy、hierarchical retrieval、composition | 未落地                                             |
+| controlled online acquisition                 | 未落地                                             |
+
+## 十二、下一阶段建议
+
+真实测试表明，下一个 PR 的优先级不应是再支持更多视频网站或模型，而应先建立最小验收闭环：
+
+1. **Deterministic schema gate**：解析 frontmatter，校验 name、目录、必需章节、两文件 contract 和 exact provenance status。
+2. **Evidence gate**：检查 timestamp 格式、引用章节存在、来源在本次 resource manifest 中。
+3. **Structured candidate**：先让模型返回受约束 JSON，再由 Qwen Code 确定性写文件，避免路径和 schema 由自由文本工具调用决定。
+4. **Domain validator**：对 HTML/CSS Skill 生成最小 fixture，在 sandbox 中启动浏览器，检查 selector 命中、pseudo-element owner、containing block、overflow 和前后状态变化。
+5. **状态分层**：验收通过标记 verified；只满足来源与结构要求的候选标记 reference-only，默认不作为执行 Skill 自动加载。
+6. **再做 connector**：在验收闭环存在后，引入下载、转码、关键帧采样和缓存；YouTube URL 只作为 provenance，不直接冒充媒体 bytes。
+
+## 结语
+
+Resource2Skill 最值得借鉴的不是某个视频 prompt，而是一条明确的工程边界：多模态模型负责从复杂资源中提出候选知识，确定性系统负责决定候选能否进入可执行能力库。
+
+Qwen Code `/learn` 的原生视频入口已经证明完整视频可以进入模型、Skill 可以写入、发现并在新会话中使用。真实案例也同样证明，缺少 post-processing 和 acceptance gate 时，结果仍可能在最后一个 CSS containing block 上失败。
+
+这不是一次失败的演示，而是一个有价值的分层结论：transport 已经解决，distillation contract 部分解决，trustworthy execution 仍需要下一阶段的确定性验证。
+
+## 参考资料
+
+- [Resource2Skill 论文](https://arxiv.org/abs/2606.29538)
+- [Resource2Skill 官方代码](https://github.com/microsoft/Resource2Skill)
+- [RESOURCE2SKILL 数据集](https://huggingface.co/datasets/microsoft/RESOURCE2SKILL)
+- [官方 Sliced Typography Skill 条目](https://github.com/microsoft/Resource2Skill/blob/main/skills_library/web/navigation/sliced_typography_hover_effect_68a7d75a/skill.json)
+- [原始视频教程](https://www.youtube.com/watch?v=vOlZg1LRFp0)
+- [Qwen Cloud 视觉模型文档](https://docs.qwencloud.com/developer-guides/getting-started/vision-models)
+- [Qwen Cloud Thinking mode FAQ](https://docs.qwencloud.com/resources/faq-text-generation)
