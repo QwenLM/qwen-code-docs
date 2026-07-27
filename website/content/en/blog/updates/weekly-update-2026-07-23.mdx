@@ -1,0 +1,245 @@
+---
+title: "Qwen Code Weekly: Real-Time Steering to Correct Agent Direction Mid-Stream, Worktree Isolated Sessions for Conflict-Free Parallelism, Built-in web_search Returns"
+date: "2026-07-23"
+description: "This week we shipped v0.19.12, v0.20.0, and v0.20.1 — 3 stable releases with 220+ PRs merged. Real-time steering to correct Agent direction mid-stream, one-click Worktree isolation for parallel tasks, built-in web_search powered by your existing Bailian API key, web_fetch rebuilt from scratch, multimodal whole-turn routing."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Weekly: Real-Time Steering to Correct Agent Direction Mid-Stream, Worktree Isolated Sessions for Conflict-Free Parallelism, Built-in web_search Returns"
+  date="2026-07-23"
+  author="Qwen Team"
+/>
+
+Qwen Code shipped v0.19.12, v0.20.0, and v0.20.1 this week — 3 stable releases with 220+ PRs merged.
+
+**Agent going off track? Just type to correct it.** Press Enter while the model is streaming and your message steers the current turn at the next sampling boundary; press Ctrl+Q to defer it to the next turn. Messages typed during tool execution also take effect. No more waiting for the Agent to finish before correcting it.
+
+**Parallel tasks finally stop fighting each other.** Web Shell now supports one-click Worktree isolated sessions — multiple tasks in the same repo each run in their own git worktree, so file edits, `git add`, and `git checkout` never interfere. A purple ⑂ badge runs through the git chip, session list, and workspace dropdown.
+
+**Web search is back.** The built-in `web_search` tool is powered by the Bailian Responses API — just use your existing Bailian API key to search. The community kept asking for it after it was removed; this time it's reimplemented with server-side search + page reading, and responses automatically include a Sources section with citation links. Off by default — you must explicitly enable it.
+
+**`web_fetch` rebuilt from scratch.** Previously, fetching web pages would drop links, turn PDFs into garbled text, and truncate large pages so the answer got lost. Now HTML is converted to markdown before truncation, PDFs get inline text extraction, binary files are saved correctly, and there's a 60-second timeout with a 10 MB cap for protection.
+
+## ✨ New Features
+
+### Real-Time Steering: Type to Correct the Agent While It's Still Streaming
+
+Previously, if you typed something while the Agent was streaming, you had to wait for it to finish before your message could be sent as a new prompt. If the Agent was heading in the wrong direction, all you could do was watch it finish and then correct it.
+
+Now Enter and Ctrl+Q have clearly defined roles:
+
+- **Enter**: Your message enters the steering queue and takes effect at the next model sampling boundary — still within the current turn. If the Agent is writing code and you type "rewrite in TypeScript", it receives that guidance at the next sampling point.
+- **Ctrl+Q**: Your message is deferred until the current turn ends, becoming the opening of a new conversation turn.
+- **During tool execution**: Messages you type are consumed after the tool result returns, within the same turn.
+- **Changed your mind?** Press Up or Escape and the queued message returns to the input box.
+
+@ attachments are preserved alongside the message — no synthetic prefix is added. If delivery fails or is cancelled, the message is never lost.
+
+What you can do with this:
+
+- Agent writing code in the wrong direction? Type to correct it without waiting for it to finish
+- Add context while a tool is still running
+- Queue up your next question with Ctrl+Q — it sends automatically when the current turn ends
+
+See PR [#7090](https://github.com/QwenLM/qwen-code/pull/7090)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000006324/O1CN01pd4mvG1waRsKgNkB7_!!6000000006324-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/TT8i90AAAUO89OdH-nYJDYS7j2gABz5rAUagJjlIYOI.mp4" controls></video>
+
+### Worktree Isolated Sessions: Parallel Tasks Run Independently
+
+Working on two tasks in the same repo simultaneously — one session edits a file and the other's `git status` goes haywire. Previously you had to manually `git worktree add` + `cd`; now it's one click in Web Shell.
+
+Click "New Worktree Task" in the workspace branch pill dropdown, and the daemon automatically creates a git worktree at `<repoRoot>/.qwen/worktrees/<slug>`, switching the session's working directory to the worktree. The entire UI uses a purple ⑂ badge for distinction: the git chip turns purple, the session list shows a ⑂ marker, and the workspace dropdown includes an explanation. This option doesn't appear for non-git repos.
+
+Worktree info is persisted to a sidecar file and survives daemon restarts. When restoring a session, worktree isolation is automatically rebuilt, and the status bar shows the worktree branch name instead of the main workspace branch.
+
+What you can do with this:
+
+- Run two feature branches simultaneously without interference
+- Fix a bug while continuing a feature — no more stash juggling
+- Let the Agent make experimental changes in an isolated environment while keeping your main workspace clean
+
+See PRs [#7221](https://github.com/QwenLM/qwen-code/pull/7221), [#7262](https://github.com/QwenLM/qwen-code/pull/7262), [#7365](https://github.com/QwenLM/qwen-code/pull/7365), [#7367](https://github.com/QwenLM/qwen-code/pull/7367)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01dsWPDv1w6g8Aw98ya_!!6000000006259-2-tps-2632-1432.png)
+
+### Built-in web_search: Web Search with Just Your Bailian Key
+
+Previously Qwen Code had no built-in search — the docs told you to configure the Bailian WebSearch MCP. But in practice, that MCP couldn't handle complex queries — a Medicare rate lookup with a definitive answer returned 0/5 relevant results across multiple MCP runs.
+
+This week the built-in `web_search` tool is back. Powered by server-side search via the Bailian Responses API, it uses your already-configured Bailian API key — no extra MCP server, no extra provider, no extra key. The search agent opens result pages for more grounded answers, distinguishing between "pages actually read" and "candidate links not opened." The model must append a Sources citation section at the end of its response.
+
+**Off by default** — two configuration items are required to enable it: `tools.webSearch.enabled: true` and a search model `tools.webSearch.model`. If configured but not paired correctly, the tool stays disabled and startup tells you exactly which condition isn't met. Pure environment variable configuration is also supported (`ENABLE_WEB_SEARCH`, `WEB_SEARCH_MODEL`, etc.) for environments where you can't write settings.json. Each search call requires confirmation (shows the query, with an "always allow" option).
+
+What you can do with this:
+
+- Look up time-sensitive info: latest version changes for a library, API doc updates, security advisories
+- Investigate issues after the model's knowledge cutoff: breaking changes in new versions, recent bug reports
+- Replace the workflow of leaving the terminal to search in a browser
+
+See PR [#7215](https://github.com/QwenLM/qwen-code/pull/7215)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000000300/O1CN01wJ7QDc1E5RyVg4CiD_!!6000000000300-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/wZOcvzmHWmTa_SgrL4Vi6tGm0KKckJjgjp6k55ouPcc.mp4" controls></video>
+
+### web_fetch Rebuilt from Scratch: No More Garbled PDFs, No More Lost Links
+
+Previously `web_fetch` had several real-world problems: large listing pages were truncated on raw HTML before conversion, cutting off the answer; all link URLs were lost, and the model confidently told you "the target doesn't exist." PDFs were decoded as text, producing tens of thousands of tokens of garbled output. Certain government sites returned 403 for anonymous User-Agents.
+
+This week the entire pipeline was rebuilt from scratch:
+
+- **HTML is converted to markdown before truncation** — content deep in large pages is preserved, and all hyperlinks retain their URLs. Truncation has an explicit marker; scripts and styles don't consume the content budget.
+- **PDF inline text extraction** — a single `web_fetch` call can answer questions about PDF content. Binary files are identified via magic bytes (not just Content-Type) and saved with the correct extension.
+- **60-second timeout + 10 MB cap** — press Esc to cancel the transfer immediately (previously the UI could freeze). Repeated fetches of the same URL within 15 minutes are served from cache.
+- **Cross-host redirects are no longer silently followed** — you're prompted to re-issue the request through the normal permission flow.
+- **Permission model**: First access to each host requires confirmation (GET exposes the full path and query, which is a data exfiltration channel). Once approved, it persists as a per-host rule. GitHub blob URLs are automatically normalized to raw addresses before permission evaluation.
+
+What you can do with this:
+
+- Fetch a PDF link and get answers about its content directly
+- Fetch a long listing page and ask about entries deep in the page — links are no longer lost
+- Cross-host redirects prompt you to re-issue instead of silently following to an unfamiliar domain
+
+See PR [#7146](https://github.com/QwenLM/qwen-code/pull/7146)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000004859/O1CN01jO8Kek1llTdfArmJO_!!6000000004859-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/iEQf6u929VB-j4OEe3kC_zTG0pEdN7tL63mUaI347Bs.mp4" controls></video>
+
+### Web Shell: A Big Week of Updates
+
+Web Shell had a massive amount of changes this week — from git integration to session management to workspace experience. Here's the roundup.
+
+**Git integration trifecta.** The `/log` command opens a commit history browser — a graphical popup showing the commit list; click to expand for the full message and file change stats, one-click SHA copy, with paginated loading. The `/diff` popup also gained a History tab so you don't need to switch commands. A git status chip appears in the composer toolbar, the sidebar shows workspace git status, and the Changes popup displays a visual working-tree diff. See PRs [#7204](https://github.com/QwenLM/qwen-code/pull/7204), [#7054](https://github.com/QwenLM/qwen-code/pull/7054)
+
+**Skill management page and Goals page.** Web Shell now has a dedicated skill management page — view and manage workspace skills without going back to the terminal. The Goals page visualizes `/goal` targets in Web Shell, and goals survive daemon restarts. See PRs [#7018](https://github.com/QwenLM/qwen-code/pull/7018), [#6561](https://github.com/QwenLM/qwen-code/pull/6561)
+
+**Session management improvements.** Cmd+B / Ctrl+B toggles the sidebar, split view layout persists across refreshes (per tab), restored session history supports paginated loading instead of pulling everything at once, and archived sessions support export. The Add Workspace popup now has directory autocomplete. See PRs [#7135](https://github.com/QwenLM/qwen-code/pull/7135), [#7136](https://github.com/QwenLM/qwen-code/pull/7136), [#7064](https://github.com/QwenLM/qwen-code/pull/7064), [#6910](https://github.com/QwenLM/qwen-code/pull/6910), [#7125](https://github.com/QwenLM/qwen-code/pull/7125)
+
+**Workspace experience.** Custom workspace display names — no more staring at paths in multi-workspace setups. Custom slash command actions, sidebar customization API (branding, navigation, session actions, footer). New topic drafts suggest opening a new session instead of continuing in an old one. See PRs [#7179](https://github.com/QwenLM/qwen-code/pull/7179), [#7267](https://github.com/QwenLM/qwen-code/pull/7267), [#7379](https://github.com/QwenLM/qwen-code/pull/7379), [#7098](https://github.com/QwenLM/qwen-code/pull/7098)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000008143/O1CN01WfFJh32A1YJpkZdNi_!!6000000008143-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/9Er9mwNWGynLMWe-6IEegLOv7lBhk4Wz5Pn2tAQfz9A.mp4" controls></video>
+
+## 📊 More New Features
+
+**Artifact defaults and write confirmation.** Agent now has default configuration when creating artifacts, with a confirmation prompt before writing — fewer accidental file writes. See PR [#7068](https://github.com/QwenLM/qwen-code/pull/7068)
+
+**Tool summary shows active file path.** Compact tool summaries now display the file path being operated on — instantly see which file is being modified during multi-file operations. See PR [#7043](https://github.com/QwenLM/qwen-code/pull/7043)
+
+**Sub-agent delegation defaults and guardrails.** Improved default configuration and safety boundaries for sub-agent delegation — sub-agent behavior is more predictable. See PR [#7048](https://github.com/QwenLM/qwen-code/pull/7048)
+
+**VSCode log routing.** Logs output to a dedicated Qwen Code Companion output channel — troubleshooting in VSCode without digging through other panels. See PR [#7121](https://github.com/QwenLM/qwen-code/pull/7121)
+
+**Daemon log rotation.** Bounded log rotation — no more infinite growth; daemon logs won't fill your disk. See PR [#6969](https://github.com/QwenLM/qwen-code/pull/6969)
+
+**WebShell read-only history replay.** Replay ChatRecord history in a read-only WebShell — easily share session records with colleagues. See PR [#6999](https://github.com/QwenLM/qwen-code/pull/6999)
+
+**MCP tool name normalization.** Normalizes MCP tool names for strict providers — fewer MCP tool call failures. See PR [#6976](https://github.com/QwenLM/qwen-code/pull/6976)
+
+**Channel memory recall.** Each message automatically recalls relevant memories, confirms natural memory changes, and safely saves multi-fact memories — the Agent remembers prior context in Channel conversations. See PRs [#7157](https://github.com/QwenLM/qwen-code/pull/7157), [#7066](https://github.com/QwenLM/qwen-code/pull/7066), [#7092](https://github.com/QwenLM/qwen-code/pull/7092)
+
+**Channel group name observation.** Automatically picks up group names from inbound messages — in multi-group scenarios the Agent knows which group it's in. See PR [#7155](https://github.com/QwenLM/qwen-code/pull/7155)
+
+**Formatted paths in tool descriptions.** Tools like grep/glob now display formatted file paths in their descriptions — results are clearer and more readable. See PR [#7050](https://github.com/QwenLM/qwen-code/pull/7050)
+
+**`/cd` tab completion enhancement.** Pressing tab after typing a directory name now includes the typed directory — more accurate completions. See PR [#7320](https://github.com/QwenLM/qwen-code/pull/7320)
+
+## 👏 Experience Improvements
+
+**VP mode mouse selection is back.** Previously mouse events in VP mode were consumed by the CLI — you couldn't select and copy. Now drag to select, double-click to select a word, triple-click to select a line; releasing automatically copies to clipboard. See PR [#6937](https://github.com/QwenLM/qwen-code/pull/6937)
+
+**Plan mode security hardening.** Exiting Plan mode now requires your explicit approval — no more silent exits. Shell commands in Plan mode are classified by safety: read-only commands execute normally, state-modifying commands are blocked outright, and ambiguous commands require per-command approval without exiting Plan mode. The exit confirmation shows the full plan content. See PRs [#6967](https://github.com/QwenLM/qwen-code/pull/6967), [#7172](https://github.com/QwenLM/qwen-code/pull/7172), [#7060](https://github.com/QwenLM/qwen-code/pull/7060)
+
+**Output language auto-follow.** When set to auto, output language follows the user's input language — no more manual switching. See PR [#6953](https://github.com/QwenLM/qwen-code/pull/6953)
+
+**Ctrl+C accidental exit prevention.** Exiting the TUI now requires pressing Ctrl+C twice within 1 second — a single press no longer quits. See PR [#7129](https://github.com/QwenLM/qwen-code/pull/7129)
+
+**Sub-agent concurrency control.** Supports per-model sub-agent concurrency limits — different models can have different concurrency caps. Fork sub-agents gained a `fork_turns` parameter to inherit only the most recent turns instead of the full history. See PRs [#6984](https://github.com/QwenLM/qwen-code/pull/6984), [#7346](https://github.com/QwenLM/qwen-code/pull/7346)
+
+**Model adaptations.** kimi-k3 token limits (1M context, 128K output), qwen3.8-max-preview added to the Token Plan model list, Singapore Token Plan region support. See PRs [#7144](https://github.com/QwenLM/qwen-code/pull/7144), [#7199](https://github.com/QwenLM/qwen-code/pull/7199), [#7280](https://github.com/QwenLM/qwen-code/pull/7280)
+
+**Other improvements.** Per-turn tool call cap is now adaptive, headless mode supports context-inheriting sub-agents, active loops can use goal control, streaming output shows a mode indicator, npm updates run safely in the background. See PRs [#7052](https://github.com/QwenLM/qwen-code/pull/7052), [#7378](https://github.com/QwenLM/qwen-code/pull/7378), [#7202](https://github.com/QwenLM/qwen-code/pull/7202), [#7219](https://github.com/QwenLM/qwen-code/pull/7219), [#7322](https://github.com/QwenLM/qwen-code/pull/7322)
+
+## 🔧 Important Fixes
+
+| Fix | PR | What it means for you |
+|-----|-----|----------------------|
+| **TUI auto-redraws after system sleep/wake** | [#7265](https://github.com/QwenLM/qwen-code/pull/7265) | UI no longer garbled after waking |
+| **Cancelled operations during permission prompts no longer lost** | [#7295](https://github.com/QwenLM/qwen-code/pull/7295) | Cancelled operations don't vanish |
+| **Cancelled prompts after streaming restore to input box** | [#7149](https://github.com/QwenLM/qwen-code/pull/7149) | No need to retype cancelled prompts |
+| **Streaming code blocks stay intact when split across commits** | [#7020](https://github.com/QwenLM/qwen-code/pull/7020) | Code blocks no longer truncated |
+| **Sticky task panel hidden when Agent is idle** | [#7062](https://github.com/QwenLM/qwen-code/pull/7062) | Cleaner interface |
+| **Update check failure downgraded to warning** | [#7409](https://github.com/QwenLM/qwen-code/pull/7409) | Offline startup no longer errors out |
+| **Correct reasoning token estimation when `completion_tokens_details` is missing** | [#7239](https://github.com/QwenLM/qwen-code/pull/7239) | More accurate token usage stats |
+| **qwen3.8 side query works on Bailian** | [#7303](https://github.com/QwenLM/qwen-code/pull/7303) | Bailian users' side queries no longer fail |
+| **`web_fetch` post-processing has boundary limits** | [#7305](https://github.com/QwenLM/qwen-code/pull/7305) | Already-fetched content preserved on failure |
+| **Existing work content preserved in system prompt** | [#7087](https://github.com/QwenLM/qwen-code/pull/7087) | System prompt no longer loses existing content |
+| **Empty tool-result auto-retry** | [#7039](https://github.com/QwenLM/qwen-code/pull/7039) | Model returning empty results no longer stalls |
+| **Relaxed OpenAI wire additionalProperties restriction** | [#7344](https://github.com/QwenLM/qwen-code/pull/7344) | Broader model compatibility |
+| **Subagents created after startup no longer rejected by stale cache** | [#7112](https://github.com/QwenLM/qwen-code/pull/7112) | Subagent creation no longer occasionally fails |
+| **Malformed duplicate thinking tag auto-retry** | [#7100](https://github.com/QwenLM/qwen-code/pull/7100) | Model thinking format anomalies no longer crash |
+| **Plan mode entry boundary hardening** | [#7248](https://github.com/QwenLM/qwen-code/pull/7248) | Plan mode can't be entered accidentally |
+| **Artifact paths resolve correctly in Worktree sessions** | [#7429](https://github.com/QwenLM/qwen-code/pull/7429) | Artifacts no longer written to wrong location in Worktree |
+| **MCP discovery timeout kills child process** | [#6926](https://github.com/QwenLM/qwen-code/pull/6926) | No more leaked processes |
+| **MCP opt-in model payload filtering** | [#7413](https://github.com/QwenLM/qwen-code/pull/7413) | Reduced unnecessary payload transfer |
+| **Desktop MCP permission request lifecycle hardening** | [#7013](https://github.com/QwenLM/qwen-code/pull/7013) | Pending prompts no longer hang or leak |
+| **VSCode ACP process retains Electron Node mode** | [#7106](https://github.com/QwenLM/qwen-code/pull/7106) | VSCode extension no longer fails due to Node version |
+| **Root symlinks in memory paths resolve correctly** | [#6842](https://github.com/QwenLM/qwen-code/pull/6842) | Symlink paths no longer error |
+| **`enableManagedAutoMemory` setting takes effect correctly** | [#6941](https://github.com/QwenLM/qwen-code/pull/6941) | Auto-memory toggle no longer broken |
+| **Web Shell restored images and sidebar shortcut deduplication** | [#7169](https://github.com/QwenLM/qwen-code/pull/7169) | No more duplicate items |
+| **Web Shell approval and question popups support keyboard** | [#7074](https://github.com/QwenLM/qwen-code/pull/7074) | Keyboard-operable popups |
+| **Web Shell restored prompt text no longer stacks** | [#7134](https://github.com/QwenLM/qwen-code/pull/7134) | No more duplicate copies |
+| **Worktree sessions open correctly while running** | [#7424](https://github.com/QwenLM/qwen-code/pull/7424) | Worktree sessions no longer fail to open |
+| **Web Shell daemon token persisted per tab** | [#7374](https://github.com/QwenLM/qwen-code/pull/7374) | No re-authentication after refresh |
+| **Channel background agent replies delivered correctly** | [#7336](https://github.com/QwenLM/qwen-code/pull/7336) | Background replies no longer lost |
+| **Channel pairing and allow-list isolated per workspace** | [#7065](https://github.com/QwenLM/qwen-code/pull/7065) | Multiple workspaces no longer interfere |
+| **DingTalk transient emotion failure auto-retry** | [#7329](https://github.com/QwenLM/qwen-code/pull/7329) | Emoji reactions no longer occasionally fail |
+| **DingTalk @mention regex anchored to text start** | [#7401](https://github.com/QwenLM/qwen-code/pull/7401) | @mention no longer false-matches |
+| **DingTalk media download size limit 50 MB** | [#7361](https://github.com/QwenLM/qwen-code/pull/7361) | Aligned with Feishu; large files no longer fail |
+
+## 👥 Contributors
+
+| Contributor | Contributions | PR Links |
+| ----------- | ------------- | -------- |
+| **[@wenshao](https://github.com/wenshao)** | Worktree isolated sessions, Git commit history browser, git status chip + diff, Worktree session restore, multiple Web Shell improvements | [#7221](https://github.com/QwenLM/qwen-code/pull/7221), [#7204](https://github.com/QwenLM/qwen-code/pull/7204), [#7054](https://github.com/QwenLM/qwen-code/pull/7054), [#7262](https://github.com/QwenLM/qwen-code/pull/7262) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Plan mode exit approval, Plan mode Shell safety routing, Daemon log rotation, session branch check, multi-workspace hardening | [#6967](https://github.com/QwenLM/qwen-code/pull/6967), [#7172](https://github.com/QwenLM/qwen-code/pull/7172), [#6969](https://github.com/QwenLM/qwen-code/pull/6969), [#7185](https://github.com/QwenLM/qwen-code/pull/7185) |
+| **[@yiliang114](https://github.com/yiliang114)** | Multimodal whole-turn routing, npm background update, reasoning token estimation, qwen3.8 support, model routing fixes | [#7045](https://github.com/QwenLM/qwen-code/pull/7045), [#7322](https://github.com/QwenLM/qwen-code/pull/7322), [#7239](https://github.com/QwenLM/qwen-code/pull/7239), [#7303](https://github.com/QwenLM/qwen-code/pull/7303) |
+| **[@zjunothing](https://github.com/zjunothing)** | VP mode mouse selection, Cmd+B sidebar toggle, directory autocomplete, Plan full display, multiple Web Shell fixes | [#6937](https://github.com/QwenLM/qwen-code/pull/6937), [#7135](https://github.com/QwenLM/qwen-code/pull/7135), [#7125](https://github.com/QwenLM/qwen-code/pull/7125), [#7060](https://github.com/QwenLM/qwen-code/pull/7060) |
+| **[@chinesepowered](https://github.com/chinesepowered)** | SDK SSE cleanup, multiple typo fixes, i18n corrections, DingTalk media limit | [#7257](https://github.com/QwenLM/qwen-code/pull/7257), [#7057](https://github.com/QwenLM/qwen-code/pull/7057), [#7131](https://github.com/QwenLM/qwen-code/pull/7131), [#7361](https://github.com/QwenLM/qwen-code/pull/7361) |
+| **[@tanzhenxin](https://github.com/tanzhenxin)** | Built-in web_search, web_fetch full rebuild, kimi-k3 token limits, ask-user-question fix | [#7215](https://github.com/QwenLM/qwen-code/pull/7215), [#7146](https://github.com/QwenLM/qwen-code/pull/7146), [#7144](https://github.com/QwenLM/qwen-code/pull/7144), [#7063](https://github.com/QwenLM/qwen-code/pull/7063) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | Sub-agent concurrency limits, Channel memory recall, goal control, mode indicator, multiple CI fixes | [#6984](https://github.com/QwenLM/qwen-code/pull/6984), [#7157](https://github.com/QwenLM/qwen-code/pull/7157), [#7202](https://github.com/QwenLM/qwen-code/pull/7202), [#7219](https://github.com/QwenLM/qwen-code/pull/7219) |
+| **[@ytahdn](https://github.com/ytahdn)** | Skill management page, custom slash commands, sidebar customization API, Web Shell fixes | [#7018](https://github.com/QwenLM/qwen-code/pull/7018), [#7267](https://github.com/QwenLM/qwen-code/pull/7267), [#7379](https://github.com/QwenLM/qwen-code/pull/7379), [#7294](https://github.com/QwenLM/qwen-code/pull/7294) |
+| **[@qqqys](https://github.com/qqqys)** | Channel memory confirmation, multi-fact memory saving, background agent reply delivery, DingTalk fixes | [#7066](https://github.com/QwenLM/qwen-code/pull/7066), [#7092](https://github.com/QwenLM/qwen-code/pull/7092), [#7336](https://github.com/QwenLM/qwen-code/pull/7336), [#7401](https://github.com/QwenLM/qwen-code/pull/7401) |
+| **[@chiga0](https://github.com/chiga0)** | Artifact defaults and write confirmation, VP mode control optimization, ink patch fix | [#7068](https://github.com/QwenLM/qwen-code/pull/7068), [#6931](https://github.com/QwenLM/qwen-code/pull/6931), [#7407](https://github.com/QwenLM/qwen-code/pull/7407) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | Real-time steering, Auto Mode classifier fallback prompt, MCP payload filtering, mobile-mcp fix | [#7090](https://github.com/QwenLM/qwen-code/pull/7090), [#7331](https://github.com/QwenLM/qwen-code/pull/7331), [#7413](https://github.com/QwenLM/qwen-code/pull/7413), [#7321](https://github.com/QwenLM/qwen-code/pull/7321) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | Sub-agent delegation guardrails, fork_turns, headless sub-agent, system prompt fix | [#7048](https://github.com/QwenLM/qwen-code/pull/7048), [#7346](https://github.com/QwenLM/qwen-code/pull/7346), [#7378](https://github.com/QwenLM/qwen-code/pull/7378), [#7087](https://github.com/QwenLM/qwen-code/pull/7087) |
+| **[@han-dreamer](https://github.com/han-dreamer)** | Output language auto-follow, Singapore Token Plan region, managedAutoMemory fix | [#6953](https://github.com/QwenLM/qwen-code/pull/6953), [#7280](https://github.com/QwenLM/qwen-code/pull/7280), [#6941](https://github.com/QwenLM/qwen-code/pull/6941) |
+| **[@callmeYe](https://github.com/callmeYe)** | Extension tag localization, voice settings fix, skill description preservation, tag icon fix | [#7337](https://github.com/QwenLM/qwen-code/pull/7337), [#7345](https://github.com/QwenLM/qwen-code/pull/7345), [#7032](https://github.com/QwenLM/qwen-code/pull/7032), [#7024](https://github.com/QwenLM/qwen-code/pull/7024) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | Workspace display names, session-info aggregation endpoint | [#7179](https://github.com/QwenLM/qwen-code/pull/7179), [#7077](https://github.com/QwenLM/qwen-code/pull/7077) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | Channel workspace contacts, group name observation | [#7109](https://github.com/QwenLM/qwen-code/pull/7109), [#7155](https://github.com/QwenLM/qwen-code/pull/7155) |
+| **[@mvanhorn](https://github.com/mvanhorn)** | Desktop MCP permission hardening, stdout resize listener fix, connection error cause exposure | [#7013](https://github.com/QwenLM/qwen-code/pull/7013), [#7186](https://github.com/QwenLM/qwen-code/pull/7186), [#7010](https://github.com/QwenLM/qwen-code/pull/7010) |
+| **[@morluto](https://github.com/morluto)** | MCP discovery timeout child process kill, permission path normalization | [#6926](https://github.com/QwenLM/qwen-code/pull/6926), [#6923](https://github.com/QwenLM/qwen-code/pull/6923) |
+| **[@barry166](https://github.com/barry166)** | Cancelled prompt restore, deferred stream-json startup warning | [#7149](https://github.com/QwenLM/qwen-code/pull/7149), [#7174](https://github.com/QwenLM/qwen-code/pull/7174) |
+| **[@xurik](https://github.com/xurik)** | Channel daemon sourceId tagging, session source labels | [#7078](https://github.com/QwenLM/qwen-code/pull/7078), [#6991](https://github.com/QwenLM/qwen-code/pull/6991) |
+| **[@ZijianZhang989](https://github.com/ZijianZhang989)** | CLI docs correction, Feishu markdown limit, batch fixes | [#7326](https://github.com/QwenLM/qwen-code/pull/7326), [#7324](https://github.com/QwenLM/qwen-code/pull/7324), [#7373](https://github.com/QwenLM/qwen-code/pull/7373) |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)** | CODEOWNERS core modules, simplified to package-level rules | [#7304](https://github.com/QwenLM/qwen-code/pull/7304), [#7376](https://github.com/QwenLM/qwen-code/pull/7376) |
+| **[@jordimas](https://github.com/jordimas)** | Catalan translation update | [#7253](https://github.com/QwenLM/qwen-code/pull/7253) |
+| **[@cxruan](https://github.com/cxruan)** | WebShell read-only history replay, dangling tool history tagging | [#6999](https://github.com/QwenLM/qwen-code/pull/6999), [#7340](https://github.com/QwenLM/qwen-code/pull/7340) |
+| **[@carffuca](https://github.com/carffuca)** | New topic draft suggestion, toolbar label clipping fix | [#7098](https://github.com/QwenLM/qwen-code/pull/7098), [#7196](https://github.com/QwenLM/qwen-code/pull/7196) |
+| **[@dreamWB](https://github.com/dreamWB)** | Context tag restore fix | [#7312](https://github.com/QwenLM/qwen-code/pull/7312) |
+| **[@BZ-D](https://github.com/BZ-D)** | Scheduled task reference interaction fix | [#7313](https://github.com/QwenLM/qwen-code/pull/7313) |
+| **[@ran411285752](https://github.com/ran411285752)** | MCP tool name normalization | [#6976](https://github.com/QwenLM/qwen-code/pull/6976) |
+| **[@yuanyuanAli](https://github.com/yuanyuanAli)** | Sidebar customization API | [#7379](https://github.com/QwenLM/qwen-code/pull/7379) |
+| 🆕 **[@azurecgx](https://github.com/azurecgx)** | 🎉 First contribution: TUI MaxSizedBox line count and show-more diff fix | [#6957](https://github.com/QwenLM/qwen-code/pull/6957) |
+| 🆕 **[@makwingchi](https://github.com/makwingchi)** | 🎉 First contribution: Daemon prompt ID propagation to turn events | [#7082](https://github.com/QwenLM/qwen-code/pull/7082) |
+| 🆕 **[@ARE404](https://github.com/ARE404)** | 🎉 First contribution: Sub-agent model metadata persistence | [#7104](https://github.com/QwenLM/qwen-code/pull/7104) |
+| 🆕 **[@ghisguth](https://github.com/ghisguth)** | 🎉 First contribution: Gemma 4 native tool-calling schema adaptation | [#7177](https://github.com/QwenLM/qwen-code/pull/7177) |
+| 🆕 **[@ComplexSimply](https://github.com/ComplexSimply)** | 🎉 First contribution: Update check failure downgraded to warning, timeout raised to 5s | [#7409](https://github.com/QwenLM/qwen-code/pull/7409) |
+
+<Callout type="info">
+  **Upgrade**: Run `npm i @qwen-code/qwen-code@latest -g` to upgrade to the latest version.
+</Callout>
+
+If you have questions or feedback, feel free to open an issue on [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!
