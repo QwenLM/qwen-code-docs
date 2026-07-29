@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/blog/advanced/feat-skills-oss-styles/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -20,7 +20,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/blog/advanced/qwencode-mpcover-skill-guide/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -50,7 +50,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/blog/cases/obsidian/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -62,7 +62,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/blog/cases/qwencode-coding-plan-guide-build-website/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -110,7 +110,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/blog/updates/weekly-update-2026-02-03/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -140,7 +140,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/blog/updates/weekly-update-2026-03-20/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -170,7 +170,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/blog/updates/weekly-update-2026-05-07/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -200,7 +200,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/blog/updates/weekly-update-2026-06-11/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -230,7 +230,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/en/blog/updates/weekly-update-2026-07-16/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1652,7 +1652,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/blog/advanced/feat-skills-oss-styles/</loc>
-<lastmod>2026-07-29T02:38:19.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1670,7 +1670,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/blog/advanced/qwencode-mpcover-skill-guide/</loc>
-<lastmod>2026-07-29T02:38:19.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1700,7 +1700,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/blog/cases/obsidian/</loc>
-<lastmod>2026-07-29T02:38:19.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1712,7 +1712,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/blog/cases/qwencode-coding-plan-guide-build-website/</loc>
-<lastmod>2026-07-29T02:38:19.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1760,7 +1760,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/blog/updates/weekly-update-2026-02-03/</loc>
-<lastmod>2026-07-29T02:38:19.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1790,7 +1790,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/blog/updates/weekly-update-2026-03-20/</loc>
-<lastmod>2026-07-29T02:38:19.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1820,7 +1820,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/blog/updates/weekly-update-2026-05-07/</loc>
-<lastmod>2026-07-29T02:38:19.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1850,7 +1850,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/blog/updates/weekly-update-2026-06-11/</loc>
-<lastmod>2026-07-29T02:38:19.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -1880,7 +1880,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/zh/blog/updates/weekly-update-2026-07-16/</loc>
-<lastmod>2026-07-29T02:38:19.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3086,7 +3086,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/blog/advanced/feat-skills-oss-styles/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3104,7 +3104,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/blog/advanced/qwencode-mpcover-skill-guide/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3134,7 +3134,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/blog/cases/obsidian/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3146,7 +3146,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/blog/cases/qwencode-coding-plan-guide-build-website/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3194,7 +3194,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/blog/updates/weekly-update-2026-02-03/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3224,7 +3224,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/blog/updates/weekly-update-2026-03-20/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3254,7 +3254,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/blog/updates/weekly-update-2026-05-07/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3284,7 +3284,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/blog/updates/weekly-update-2026-06-11/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -3314,7 +3314,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/de/blog/updates/weekly-update-2026-07-16/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4520,7 +4520,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/blog/advanced/feat-skills-oss-styles/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4538,7 +4538,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/blog/advanced/qwencode-mpcover-skill-guide/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4568,7 +4568,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/blog/cases/obsidian/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4580,7 +4580,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/blog/cases/qwencode-coding-plan-guide-build-website/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4628,7 +4628,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/blog/updates/weekly-update-2026-02-03/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4658,7 +4658,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/blog/updates/weekly-update-2026-03-20/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4688,7 +4688,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/blog/updates/weekly-update-2026-05-07/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4718,7 +4718,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/blog/updates/weekly-update-2026-06-11/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -4748,7 +4748,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/fr/blog/updates/weekly-update-2026-07-16/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5954,7 +5954,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/blog/advanced/feat-skills-oss-styles/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -5972,7 +5972,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/blog/advanced/qwencode-mpcover-skill-guide/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6002,7 +6002,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/blog/cases/obsidian/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6014,7 +6014,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/blog/cases/qwencode-coding-plan-guide-build-website/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6062,7 +6062,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/blog/updates/weekly-update-2026-02-03/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6092,7 +6092,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/blog/updates/weekly-update-2026-03-20/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6122,7 +6122,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/blog/updates/weekly-update-2026-05-07/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6152,7 +6152,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/blog/updates/weekly-update-2026-06-11/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -6182,7 +6182,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ru/blog/updates/weekly-update-2026-07-16/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7388,7 +7388,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/blog/advanced/feat-skills-oss-styles/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7406,7 +7406,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/blog/advanced/qwencode-mpcover-skill-guide/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7436,7 +7436,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/blog/cases/obsidian/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7448,7 +7448,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/blog/cases/qwencode-coding-plan-guide-build-website/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7496,7 +7496,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/blog/updates/weekly-update-2026-02-03/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7526,7 +7526,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/blog/updates/weekly-update-2026-03-20/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7556,7 +7556,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/blog/updates/weekly-update-2026-05-07/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7586,7 +7586,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/blog/updates/weekly-update-2026-06-11/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -7616,7 +7616,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/ja/blog/updates/weekly-update-2026-07-16/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8822,7 +8822,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/blog/advanced/feat-skills-oss-styles/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8840,7 +8840,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/blog/advanced/qwencode-mpcover-skill-guide/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8870,7 +8870,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/blog/cases/obsidian/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8882,7 +8882,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/blog/cases/qwencode-coding-plan-guide-build-website/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8930,7 +8930,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/blog/updates/weekly-update-2026-02-03/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8960,7 +8960,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/blog/updates/weekly-update-2026-03-20/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -8990,7 +8990,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/blog/updates/weekly-update-2026-05-07/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -9020,7 +9020,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/blog/updates/weekly-update-2026-06-11/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
@@ -9050,7 +9050,7 @@
 </url>
 <url>
 <loc>https://QwenLM.github.io/qwen-code-docs/pt-BR/blog/updates/weekly-update-2026-07-16/</loc>
-<lastmod>2026-07-29T03:19:09.000Z</lastmod>
+<lastmod>2026-07-29T08:11:03.000Z</lastmod>
 <changefreq>weekly</changefreq>
 <priority>0.6</priority>
 </url>
