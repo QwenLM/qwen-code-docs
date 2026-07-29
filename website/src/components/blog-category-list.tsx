@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getPageMap } from "nextra/page-map";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { getLocale, isWithinDays, NEW_BADGE_DAYS, getCategoryInfo, getBlogText, extractPosts, sortPostsByDate, type BlogPost } from "../lib/blog-utils";
+import { withFileDates } from "../lib/blog-file-dates";
 
 function PostItem({ post, lang }: { post: BlogPost; lang: string }) {
   const isNew = isWithinDays(post.date, NEW_BADGE_DAYS);
@@ -64,7 +65,7 @@ export const BlogCategoryList = async ({
   const pageMap = await getPageMap(`/${lang}/blog/${directory}`);
   const info = getCategoryInfo(directory, lang);
 
-  const posts = sortPostsByDate(extractPosts(pageMap as any[]));
+  const posts = sortPostsByDate(withFileDates(extractPosts(pageMap as any[])));
   const recentPosts = recentCount ? posts.slice(0, recentCount) : posts;
   const archivePosts = recentCount ? posts.slice(recentCount) : [];
 
