@@ -30,6 +30,12 @@ export function getBasePath(): string {
   return BASE_PATH;
 }
 
+export function resolveImageUrl(image: string): string {
+  if (!image) return "";
+  if (/^https?:\/\//.test(image) || image.startsWith("data:")) return image;
+  return `${BASE_PATH}${image}`;
+}
+
 interface CategoryInfo {
   title: string;
   description: string;
@@ -64,13 +70,13 @@ const CATEGORY_I18N: Record<string, Record<string, CategoryInfo>> = {
     "pt-BR": { title: "Avançado", description: "Guias avançados para Skills, Bailian CLI, geração de capas WeChat e mais." },
   },
   updates: {
-    zh: { title: "周报更新", description: "每周产品版本发布记录、新功能与社区动态。" },
-    en: { title: "Weekly Updates", description: "Weekly product releases, new features, and community highlights." },
-    de: { title: "Wöchentliche Updates", description: "Wöchentliche Produktveröffentlichungen, neue Funktionen und Community-Highlights." },
-    fr: { title: "Mises à jour hebdomadaires", description: "Versions hebdomadaires, nouvelles fonctionnalités et actualités communautaires." },
-    ja: { title: "週次アップデート", description: "毎週の製品リリース、新機能、コミュニティのハイライト。" },
-    ru: { title: "Еженедельные обновления", description: "Еженедельные релизы, новые функции и новости сообщества." },
-    "pt-BR": { title: "Atualizações Semanais", description: "Lançamentos semanais, novos recursos e destaques da comunidade." },
+    zh: { title: "功能更新", description: "每周产品版本发布记录、新功能与社区动态。" },
+    en: { title: "Feature Updates", description: "Weekly product releases, new features, and community highlights." },
+    de: { title: "Funktionsupdates", description: "Wöchentliche Produktveröffentlichungen, neue Funktionen und Community-Highlights." },
+    fr: { title: "Mises à jour des fonctionnalités", description: "Versions hebdomadaires, nouvelles fonctionnalités et actualités communautaires." },
+    ja: { title: "機能アップデート", description: "毎週の製品リリース、新機能、コミュニティのハイライト。" },
+    ru: { title: "Обновления функций", description: "Еженедельные релизы, новые функции и новости сообщества." },
+    "pt-BR": { title: "Atualizações de Recursos", description: "Lançamentos semanais, novos recursos e destaques da comunidade." },
   },
 };
 
@@ -102,24 +108,6 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ru: "Последние обновления",
     "pt-BR": "Atualizações Recentes",
   },
-  withinDays: {
-    zh: "天内",
-    en: "days",
-    de: "Tagen",
-    fr: "jours",
-    ja: "日以内",
-    ru: "дней",
-    "pt-BR": "dias",
-  },
-  articles: {
-    zh: "篇文章",
-    en: "articles",
-    de: "Artikel",
-    fr: "articles",
-    ja: "件の記事",
-    ru: "статей",
-    "pt-BR": "artigos",
-  },
   noArticles: {
     zh: "暂无文章",
     en: "No articles yet",
@@ -137,6 +125,24 @@ const BLOG_I18N: Record<string, Record<string, string>> = {
     ja: "過去の更新",
     ru: "Предыдущие обновления",
     "pt-BR": "Atualizações Anteriores",
+  },
+  allArticles: {
+    zh: "全部",
+    en: "All",
+    de: "Alle",
+    fr: "Tous",
+    ja: "すべて",
+    ru: "Все",
+    "pt-BR": "Todos",
+  },
+  loadMore: {
+    zh: "显示更多",
+    en: "Show more",
+    de: "Mehr anzeigen",
+    fr: "Voir plus",
+    ja: "もっと見る",
+    ru: "Показать ещё",
+    "pt-BR": "Mostrar mais",
   },
 };
 
@@ -156,6 +162,7 @@ export interface BlogPost {
   author: string;
   route: string;
   category: string;
+  image: string;
 }
 
 export function extractPosts(pageMap: any[]): BlogPost[] {
@@ -172,6 +179,7 @@ export function extractPosts(pageMap: any[]): BlogPost[] {
             author: child.frontMatter.author || "",
             route: child.route,
             category: item.name,
+            image: child.frontMatter.image || "",
           });
         }
       }
@@ -188,6 +196,7 @@ export function extractPosts(pageMap: any[]): BlogPost[] {
         author: item.frontMatter.author || "",
         route: item.route,
         category: "root",
+        image: item.frontMatter.image || "",
       });
     }
   }
