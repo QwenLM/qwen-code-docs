@@ -1,0 +1,268 @@
+---
+title: "Qwen Code Hebdo : @ pour référencer directement l'historique de conversation, Agent en arrière-plan résident après complétion, /learn apprend une compétence depuis une vidéo"
+date: "2026-07-30"
+description: "Deux versions stables cette semaine (v0.21.0 et v0.21.1), 290+ PR fusionnés. @mention pour référencer l'historique de conversation, Agent en arrière-plan résident sans reconstruction, /learn supporte les vidéos en entrée, répertoires de skills personnalisés partagés entre Agents, /stats affiche TTFT et TPS, adaptateur GitHub Channel, refonte complète du Web Shell."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: "https://gw.alicdn.com/imgextra/i3/O1CN01eNI37hj09YL2jBZY_!!6000000002230-0-tps-1344-576.jpg"
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Hebdo : @ pour référencer directement l'historique de conversation, Agent en arrière-plan résident après complétion, /learn apprend une compétence depuis une vidéo"
+  date="2026-07-30"
+  author="Qwen Team"
+/>
+
+Cette semaine, Qwen Code sort deux versions stables — v0.21.0 et v0.21.1 — avec plus de 290 PR fusionnés.
+
+**Deux lacunes comblées dans le cycle de vie des sessions et des Agents.** Avant, pour réutiliser le contexte d'une conversation antérieure, il fallait faire resume ou fork — la conversation en cours était interrompue. Désormais, tapez `@` et la liste de complétion affiche l'historique des sessions du projet : sélectionnez-en une, un résumé en lecture seule est injecté, et votre conversation en cours reste indépendante. Côté Agent en arrière-plan, avant il était détruit après complétion — la moindre question de suivi exigeait une reconstruction complète. Désormais, le runtime d'un Agent terminé reste résident dans la session parente : `send_message` reprend la conversation, et même après un redémarrage du processus, le roster permet de le restaurer.
+
+**Le système de skills passe en semi-automatique.** `/learn` ne traitait que du texte, des documents et des pages web — une vidéo tutorielle, il fallait la regarder soi-même puis rédiger le skill à la main. Désormais, déposez un MP4 et l'Agent le visionne, puis le distille automatiquement en un Skill réutilisable. Plus besoin de dupliquer vos répertoires de skills non plus — configurez un chemin dans settings, et Claude Code, Codex, Qwen Code partagent la même bibliothèque.
+
+**L'observabilité et les intégrations se complètent.** `/stats` affiche enfin le TTFT, la durée de génération et le TPS — comparer les performances streaming entre modèles ne repose plus sur l'impression. L'adaptateur GitHub Channel est en ligne : mentionnez le bot dans une Issue ou un PR et l'Agent répond en commentaire. Le Web Shell a reçu plus de 40 PR cette semaine : sélecteur de branche Git, boîte de dialogue de commit, création de PR, page de gestion des Channels, aperçu de fichiers, saisie vocale — tout d'un coup.
+
+## ✨ Nouvelles fonctionnalités
+
+### /learn supporte les vidéos : un tutoriel vidéo devient une compétence réutilisable
+
+Avant, `/learn` traitait le texte, les documents, les répertoires et les pages web, mais pas les vidéos. Vous avez un enregistrement d'écran de 15 minutes et vous voulez le transformer en skill utilisable par l'Agent ? Il fallait le regarder en entier puis rédiger le SKILL.md à la main.
+
+Désormais, `/learn` accepte les fichiers MP4, WebM, MOV, M4V locaux et les liens directs HTTP(S) vers des vidéos. La commande vérifie d'abord si le modèle actuel supporte l'entrée vidéo, puis confie la vidéo à l'Agent pour distillation. Le résultat est un répertoire `learned-skill-*` contenant un `SKILL.md` et un fichier `references/source.md` horodaté. Les URL de pages YouTube sont détectées et rejetées, avec une invitation à télécharger la vidéo en local. Les entrées non-vidéo conservent le comportement existant.
+
+Ce que cela vous permet de faire :
+
+- Transformer l'enregistrement d'écran d'un collègue en skill réutilisable pour l'équipe
+- Regarder un tutoriel vidéo, puis `/learn tutorial.mp4` pour extraire les étapes en un clic
+- Le fichier source indique « source-grounded, not execution-verified » — distinction claire entre « vu » et « vérifié »
+
+Voir le PR [#7497](https://github.com/QwenLM/qwen-code/pull/7497)
+
+<video class="mt-5" poster="https://gw.alicdn.com/imgextra/i3/O1CN01utxmGG1rHbV8Q7ojC_!!6000000005606-0-tps-3647-2160.jpg" src="https://cloud.video.taobao.com/vod/w5VFE2n8T-sX4TyoRk9lrGEk4xBH4HcO4a2LaVZ-DQ4.mp4" controls></video>
+
+### @ pour référencer l'historique de conversation : sans resume ni fork, le contexte passé dans la conversation en cours
+
+Avant, pour réutiliser le contexte d'une session antérieure, il fallait faire resume ou fork. Resume quitte la conversation en cours, fork crée une nouvelle branche — pour « juste référencer une conclusion précédente », les deux sont disproportionnés.
+
+Désormais, tapez `@` dans le champ de saisie : la liste déroulante de complétion affiche les résultats par catégorie (Tout, Fichiers, Sessions, MCP, Extensions), les flèches gauche/droite basculent entre catégories. Sélectionnez une session passée et Qwen Code injecte un résumé en lecture seule généré de manière déterministe : le texte visible de l'utilisateur et de l'assistant est conservé, les résultats d'outils sont compressés en une ligne d'état, le tout dans un budget de 8k tokens avec priorité au contenu le plus récent. La conversation en cours n'est pas affectée, l'ancienne session n'est ni restaurée ni forkée.
+
+Ce que cela vous permet de faire :
+
+- Référencer les conclusions d'une session de débogage antérieure dans la tâche en cours, sans changer de contexte
+- Transmettre le feedback d'une revue de code précédente comme contexte à une nouvelle tâche
+- Accumuler la connaissance du projet entre sessions, sans réexpliquer le contexte à chaque fois
+
+Voir le PR [#7302](https://github.com/QwenLM/qwen-code/pull/7302)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN0151GXdJlRRFE7P635_!!6000000001561-0-tps-3647-2160.jpg)
+
+### Agent en arrière-plan résident et restauration cross-session : plus de reconstruction après complétion
+
+Avant, un Agent en arrière-plan terminé voyait son runtime détruit. Une question de suivi ? Il fallait reconstruire intégralement le chat, les outils, le registry et le cache provider depuis le transcript JSONL — lent, et tout l'état in-process était perdu. Pire : après un redémarrage du processus, la reprise de la session parente transformait les Agents terminés en `Task not found`.
+
+Deux PR cette semaine résolvent le problème. D'abord, le runtime d'un Agent en arrière-plan terminé reste résident dans la session parente : un `send_message` vers le même `task_id` réutilise le chat actif, les outils préparés, le cache provider et le modèle de démarrage — plus de reconstruction depuis le transcript. Ensuite, lors d'un redémarrage du processus et de la reprise de la session parente, les Agents interrompus reviennent en état `paused`, les terminés en état `completed`, avec le même identifiant de tâche. Le nouvel outil `list_agents` permet de consulter tous les Agents en arrière-plan adressables de la session.
+
+Ce que cela vous permet de faire :
+
+- L'Agent termine une revue de code en arrière-plan, vous demandez « développe le troisième point » — sans reconstruction
+- Vous quittez le terminal, revenez le lendemain, `list_agents` montre que l'Agent de la veille est toujours là — vous reprenez
+- En itération, l'Agent conserve son modèle de démarrage, indépendamment des changements de modèle de la session parente
+
+Voir les PR [#7426](https://github.com/QwenLM/qwen-code/pull/7426), [#7459](https://github.com/QwenLM/qwen-code/pull/7459)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000007425/O1CN0162iim024ihwZct9sY_!!6000000007425-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/mdX95pqX9TM2SSjClgCnVymP4ZBVmvjcJvzKRuA5ork.mp4" controls></video>
+
+### Répertoires de skills personnalisés : une bibliothèque partagée entre plusieurs Agents
+
+Avant, les skills ne pouvaient vivre que dans `~/.qwen/skills/`. Si vous utilisez Claude Code et Qwen Code simultanément, il fallait dupliquer la bibliothèque — et oublier de synchroniser l'une des copies était la norme.
+
+Désormais, ajoutez un tableau `skills.directories` dans settings.json pour spécifier des chemins de scan supplémentaires. Les chemins supportent l'expansion `~`, le scan est récursif sur les fichiers SKILL.md. Le répertoire par défaut a priorité : en cas de nom identique, c'est la version du répertoire par défaut qui l'emporte.
+
+Ce que cela vous permet de faire :
+
+- Une bibliothèque dans `~/.agent/skills`, partagée entre Claude Code, Codex et Qwen Code
+- Une bibliothèque d'équipe dans `/shared/team-skills`, synchronisée automatiquement pour tous
+- Organiser les skills par projet, sans tout entasser dans un seul répertoire
+
+Voir le PR [#7395](https://github.com/QwenLM/qwen-code/pull/7395)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01GM9qzR1bhgCMkXrng_!!6000000003497-2-tps-2858-1532.png)
+
+### /stats affiche les métriques de génération : TTFT et TPS en un coup d'œil
+
+Avant, `/stats` affichait la durée de session, le nombre total de requêtes, les appels d'outils et les modifications de fichiers. Comparer la vitesse de réponse streaming entre deux modèles ? Pas de TTFT, pas de TPS — uniquement l'impression.
+
+Désormais, `/stats` et l'onglet Session incluent une section Generation Metrics : le nom du modèle de la dernière requête, le TTFT (latence du premier token), la durée de génération, le nombre de tokens en sortie et le TPS, ainsi que les métriques au niveau session (requêtes chronométrées, TTFT moyen, TPS pondéré). La durée de génération est calculée par `api_duration - ttft`, le dénominateur du TPS couvre l'intervalle entre le premier token visible et la fin de la génération. Les prompts auxiliaires internes sont exclus, les relevés d'utilisation quotidiens/mensuels restent inchangés.
+
+Ce que cela vous permet de faire :
+
+- Changer de modèle, lancer `/stats`, et voir directement l'écart de TTFT et de TPS
+- Comparer les performances streaming entre un backend local et une API cloud
+- Le TPS pondéré au niveau session reflète le débit réel de l'ensemble de la conversation
+
+Voir le PR [#7677](https://github.com/QwenLM/qwen-code/pull/7677)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01rFbCqp0xxyB2T4cK_!!6000000001568-1-tps-1216-720.gif)
+
+### Adaptateur GitHub Channel : mentionnez le bot dans une Issue ou un PR pour déclencher l'Agent
+
+Avant, les Channels de Qwen Code supportaient Feishu, WeChat, QQ et Telegram, mais pas GitHub. Mentionner le bot dans une Issue pour qu'il examine un problème ? Impossible.
+
+L'adaptateur GitHub Channel est désormais en ligne. Configurez un PAT classique, lancez le Channel, et il interroge l'API de notifications GitHub par polling. Mentionnez le bot dans un commentaire d'Issue ou de PR : l'Agent lit le contenu et répond dans le même fil. Mentionner le bot dans le corps d'une nouvelle Issue fonctionne aussi (premier contact). Le dédoublonnage repose sur une fenêtre de commentaires par cursor plutôt que sur le `markNotificationsAsRead` asynchrone de GitHub, et les auto-commentaires du bot sont filtrés pour éviter les boucles. GitHub Enterprise (via `baseUrl`) et les proxys sont supportés.
+
+Ce que cela vous permet de faire :
+
+- Mentionner le bot dans une Issue : « regarde cette erreur » — l'Agent répond directement en commentaire
+- Pendant une revue de PR, mentionner le bot pour ajouter du contexte, sans quitter GitHub
+- L'intervalle de polling est configurable (60 s par défaut), ajustez la réactivité selon vos besoins
+
+Voir le PR [#7632](https://github.com/QwenLM/qwen-code/pull/7632)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01C7ktsE1tWNVdNcnL9_!!6000000005909-0-tps-3837-2160.jpg)
+
+### Web Shell : mise à jour massive — Git, gestion des Channels, aperçu de fichiers, saisie vocale
+
+Le Web Shell a reçu plus de 40 PR cette semaine — du workflow Git à la gestion des Channels en passant par l'expérience de saisie, pratiquement tout a bougé.
+
+**Le workflow Git est complet.** Avant, le Web Shell permettait de voir les branches, mais pas de basculer, de commiter ou de créer un PR. Désormais, un sélecteur de mode Git apparaît à la création de session ([#7471](https://github.com/QwenLM/qwen-code/pull/7471)), vous pouvez changer de branche en session, ouvrir la boîte de dialogue de commit et créer un PR directement ([#7731](https://github.com/QwenLM/qwen-code/pull/7731)). Les sessions Worktree accèdent aussi aux boîtes de dialogue Changes et History ([#7695](https://github.com/QwenLM/qwen-code/pull/7695)). Un panneau GitHub PR en lecture seule a été ajouté à la barre latérale ([#7683](https://github.com/QwenLM/qwen-code/pull/7683)) — consultez l'état d'un PR sans ouvrir le navigateur.
+
+**La gestion des Channels a sa page.** Avant, configurer un Channel exigeait d'éditer settings.json à la main. Le Web Shell dispose désormais d'une page complète de gestion des Channels ([#7793](https://github.com/QwenLM/qwen-code/pull/7793)), avec flux de configuration ([#7893](https://github.com/QwenLM/qwen-code/pull/7893)) et gestion des demandes de pairing ([#7909](https://github.com/QwenLM/qwen-code/pull/7909)).
+
+**Aperçu de fichiers et gestion des Agents.** La liste de fichiers supporte le rendu d'aperçu ([#7467](https://github.com/QwenLM/qwen-code/pull/7467)) — plus besoin d'ouvrir pour voir le contenu brut. Les sessions de sous-Agents sont visibles dans le panneau de détails ([#7380](https://github.com/QwenLM/qwen-code/pull/7380)), l'état des Agents en arrière-plan se synchronise en temps réel ([#7561](https://github.com/QwenLM/qwen-code/pull/7561)). Le sélecteur de Workspace ([#7390](https://github.com/QwenLM/qwen-code/pull/7390)) et le sélecteur de dossiers natif ([#7849](https://github.com/QwenLM/qwen-code/pull/7849)) facilitent le passage d'un projet à l'autre.
+
+**Expérience de saisie.** La saisie vocale est limitée au composer workspace en cours ([#7754](https://github.com/QwenLM/qwen-code/pull/7754)), le mode push-to-talk est supporté ([#7839](https://github.com/QwenLM/qwen-code/pull/7839)), et la stabilité mobile est corrigée ([#7806](https://github.com/QwenLM/qwen-code/pull/7806)). Les appareils tactiles basculent sur un composer textarea pur ([#7587](https://github.com/QwenLM/qwen-code/pull/7587)). Le contenu collé n'est plus perdu ([#7824](https://github.com/QwenLM/qwen-code/pull/7824)). Le terminal supporte le parsing des séquences SGR 256 couleurs et truecolor ([#7620](https://github.com/QwenLM/qwen-code/pull/7620)).
+
+**Autres améliorations.** La barre latérale peut s'étendre jusqu'à la moitié de la fenêtre ([#7778](https://github.com/QwenLM/qwen-code/pull/7778)), le nom de session s'affiche en entier au survol ([#7662](https://github.com/QwenLM/qwen-code/pull/7662)), les tâches Monitor ont un panneau de détails ([#7817](https://github.com/QwenLM/qwen-code/pull/7817)), et le rendu des longues sessions est optimisé ([#7408](https://github.com/QwenLM/qwen-code/pull/7408)). L'isolation Shadow DOM empêche le CSS hôte de polluer les styles des composants ([#7551](https://github.com/QwenLM/qwen-code/pull/7551)). Taper « BTW » suggère d'ouvrir une question latérale ([#7935](https://github.com/QwenLM/qwen-code/pull/7935)).
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000000486/O1CN01QwpvkvH1XVE3Y2m4_!!6000000000486-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/-W13AXrZheiSe6KCgFoRh2vQes4sH7MzVv9I0dt8Xuc.mp4" controls></video>
+
+## 📊 Autres nouvelles fonctionnalités
+
+**Outil de zoom d'image.** Les grandes images sont réduites avant envoi au modèle — les petits textes et les étiquettes de graphiques deviennent illisibles. Désormais, les modèles supportant l'entrée image disposent de l'outil `zoom_image` qui recadre une région du fichier original en pleine résolution et retourne une vue JPEG agrandie. Supporte PNG, JPEG, WebP, avec gestion automatique de l'orientation EXIF. Voir le PR [#7809](https://github.com/QwenLM/qwen-code/pull/7809)
+
+**Niveaux de modèle pour les sous-Agents.** Différentes tâches nécessitent des modèles de coût différent, mais l'appelant ne devrait pas manipuler d'identifiants de modèle concrets. Vous pouvez désormais mapper des niveaux sémantiques (`small`, `high`, etc.) à des sélecteurs de modèle dans settings — le schéma de l'outil Agent n'expose que les noms de niveaux. Les forks et les teammates nommés n'acceptent pas ce paramètre. Voir le PR [#7702](https://github.com/QwenLM/qwen-code/pull/7702)
+
+**Modèle de génération d'images configurable.** La génération d'images n'est plus liée au modèle par défaut — vous pouvez spécifier un modèle dédié dans la configuration. Voir le PR [#7607](https://github.com/QwenLM/qwen-code/pull/7607)
+
+**Outil de recherche de corpus externe.** Nouvel outil MCP `context_search` pour récupérer du contexte à la demande depuis une base de connaissances externe ou un service RAG. Lecture seule, pas de rappel automatique, pas d'écriture — le provider et le corpus sont configurés par l'administrateur. Inclut deux adaptateurs : Mem0 et HTTP générique. Voir le PR [#7586](https://github.com/QwenLM/qwen-code/pull/7586)
+
+**Override d'identité système.** La variable d'environnement `QWEN_SYSTEM_IDENTITY_MD` permet de remplacer le prompt d'identité principal. Voir le PR [#7478](https://github.com/QwenLM/qwen-code/pull/7478)
+
+**Reconnexion forcée MCP.** `qwen serve` supporte la reconnexion forcée d'un serveur MCP sans redémarrer le processus entier. Voir le PR [#7488](https://github.com/QwenLM/qwen-code/pull/7488)
+
+**Rechargement à chaud du workspace trust.** Après modification de la configuration de workspace trust, le daemon en cours applique immédiatement la nouvelle politique, sans redémarrage. Voir le PR [#7268](https://github.com/QwenLM/qwen-code/pull/7268)
+
+**État désactivé par défaut des Skills.** Un skill peut être désactivé par défaut tout en permettant une activation explicite (soft default), ou désactivé de manière irréversible (hard). Voir le PR [#7357](https://github.com/QwenLM/qwen-code/pull/7357)
+
+**MCP runtime par session.** Les sessions ACP supportent une configuration MCP runtime au niveau session. Voir le PR [#7847](https://github.com/QwenLM/qwen-code/pull/7847)
+
+**Envoi d'images DingTalk.** Le Channel DingTalk supporte l'envoi de messages image. Voir le PR [#7698](https://github.com/QwenLM/qwen-code/pull/7698)
+
+**Routage des forum topics Telegram.** Les réponses du Channel Telegram sont désormais correctement routées vers le forum topic. Voir le PR [#7612](https://github.com/QwenLM/qwen-code/pull/7612)
+
+**Commentaires bilingues pour /review.** Quand la description d'un PR est en chinois, les commentaires de revue publiés par `/review` sont automatiquement en chinois et en anglais. Voir le PR [#7564](https://github.com/QwenLM/qwen-code/pull/7564)
+
+**Lien de connexion OAuth optimisé.** L'URL de connexion OAuth est désormais émise au format hyperlien OSC 8 — cliquez directement dans le terminal pour ouvrir. Voir le PR [#7255](https://github.com/QwenLM/qwen-code/pull/7255)
+
+**Copie en mode VP : texte sémantique préservé.** La sélection et copie en mode VP préserve le texte sémantique plutôt que le formatage rendu. Voir le PR [#7286](https://github.com/QwenLM/qwen-code/pull/7286)
+
+## 👏 Améliorations de l'expérience
+
+**Shift+Enter fonctionne enfin pour les retours à la ligne.** Dans les terminaux comme Ghostty, quand le protocole Kitty n'est pas activé, Shift+Enter était interprété à tort comme Escape, déclenchant l'invite de retour en arrière. Le parsing CSI-u est corrigé : Shift/Ctrl/Alt+Enter produisent un retour à la ligne en mode VP et non-VP. La hauteur des blocs Thinking en streaming ne tremble plus — la fenêtre ne fait que croître, sans suivre les fluctuations de hauteur du terminal. Voir le PR [#7397](https://github.com/QwenLM/qwen-code/pull/7397)
+
+**Les gros collages ne figent plus.** Avant, coller 260K caractères déclenchait 260K événements keypress caractère par caractère, bloquant pendant environ 1,7 seconde. Désormais, les marqueurs de bracketed paste sont interceptés au niveau stdin et traités en bloc — latence réduite à environ 8 ms. Le Footer affiche une barre de progression pendant le collage (`Pasting… ████████░░░░░░░░ 42% (128 KB)`), Ctrl+C interrompt. Voir le PR [#6506](https://github.com/QwenLM/qwen-code/pull/6506)
+
+**Délai de retry streaming configurable.** Nouveaux paramètres `retryInitialDelayMs` et `retryMaxDelayMs` pour ajuster le délai de retry SSE selon la fenêtre de quota d'un provider spécifique. Voir les PR [#7674](https://github.com/QwenLM/qwen-code/pull/7674), [#7666](https://github.com/QwenLM/qwen-code/pull/7666)
+
+**Alignement des colonnes d'icônes TUI.** Toutes les colonnes d'icônes du TUI sont uniformisées à 2 caractères de large — fini l'alignement irrégulier. Voir le PR [#7633](https://github.com/QwenLM/qwen-code/pull/7633)
+
+**Affichage des messages en file corrigé.** Le style et l'ordre des messages en file d'attente sont corrigés. Voir le PR [#7381](https://github.com/QwenLM/qwen-code/pull/7381)
+
+**/copy corrigé.** `/copy` avec un index simple et `/copy <message> <index>` pour sélectionner un bloc de code fonctionnent correctement. Voir les PR [#7789](https://github.com/QwenLM/qwen-code/pull/7789), [#7883](https://github.com/QwenLM/qwen-code/pull/7883)
+
+**Vérification de mise à jour via npm view.** La vérification de version passe de update-notifier à `npm view` — plus fiable. Voir le PR [#7528](https://github.com/QwenLM/qwen-code/pull/7528)
+
+**Alignement du curseur IME.** Le curseur de l'éditeur de méthode de saisie n'est plus décalé après la mise à jour du Footer. Voir le PR [#7711](https://github.com/QwenLM/qwen-code/pull/7711)
+
+## 🔧 Corrections importantes
+
+| Correction | PR | Impact pour vous |
+|------|-----|-----------|
+| **Normalisation du working_dir vide en isolation Worktree** | [#7403](https://github.com/QwenLM/qwen-code/pull/7403) | Un `working_dir` vide avec `isolation: worktree` ne provoque plus d'exception |
+| **Support de la modalité image pour qwen3.8-max et kimi-k3** | [#7491](https://github.com/QwenLM/qwen-code/pull/7491) | Ces deux modèles traitent correctement les entrées image |
+| **Libération de slot unique pour l'Agent en arrière-plan** | [#7258](https://github.com/QwenLM/qwen-code/pull/7258) | En mode slot unique, l'Agent en arrière-plan cède correctement la place au premier plan |
+| **Contournement des outils requis en mode thinking DashScope** | [#7661](https://github.com/QwenLM/qwen-code/pull/7661) | Les modèles DashScope en mode thinking ne produisent plus d'erreur d'outils requis |
+| **Découverte des sous-Agents fork** | [#7460](https://github.com/QwenLM/qwen-code/pull/7460) | Les sous-Agents forkés sont désormais correctement découverts et adressables |
+| **Pont d'images des résultats d'outils vers les modèles texte seul** | [#7484](https://github.com/QwenLM/qwen-code/pull/7484) | Les modèles texte seul ne crashent plus en recevant des images dans les résultats d'outils |
+| **Échec rapide sur quota 429 épuisé** | [#7842](https://github.com/QwenLM/qwen-code/pull/7842) | Un 429 pour quota définitivement épuisé ne retry plus en silence — erreur immédiate |
+| **Retry automatique des erreurs réseau transitoires** | [#7898](https://github.com/QwenLM/qwen-code/pull/7898) | Les erreurs réseau transitoires lors des appels API sont automatiquement retentées |
+| **Parsing des motifs gitignore** | [#7763](https://github.com/QwenLM/qwen-code/pull/7763), [#7764](https://github.com/QwenLM/qwen-code/pull/7764), [#7765](https://github.com/QwenLM/qwen-code/pull/7765) | Les espaces en tête, slash en fin et échappements par backslash des règles gitignore sont correctement interprétés |
+| **Gestion des guillemets dans splitCommands** | [#7526](https://github.com/QwenLM/qwen-code/pull/7526), [#7870](https://github.com/QwenLM/qwen-code/pull/7870) | Les backslashes dans les guillemets simples et les guillemets dans les substitutions de commande ne sont plus mal interprétés |
+| **Rejet sécurisé de motifs sed** | [#7775](https://github.com/QwenLM/qwen-code/pull/7775), [#7790](https://github.com/QwenLM/qwen-code/pull/7790) | Les expressions entre crochets commençant par `]` et les combinaisons de flags avec `-i` en position non-terminale sont rejetées en sécurité |
+| **Tiret en tête de motif Grep** | [#7863](https://github.com/QwenLM/qwen-code/pull/7863) | Un motif de recherche commençant par `-` n'est plus confondu avec une option |
+| **Sémantique du champ jour avec pas dans Cron** | [#7464](https://github.com/QwenLM/qwen-code/pull/7464) | Le champ jour avec pas est désormais conforme à la sémantique Vixie cron |
+| **Protection des données d'utilisation lors de la suppression de session** | [#7425](https://github.com/QwenLM/qwen-code/pull/7425) | Les données d'utilisation ne sont plus perdues lors de la suppression d'une session |
+| **Rejet des requêtes en arrière-plan imbriquées** | [#7593](https://github.com/QwenLM/qwen-code/pull/7593) | Les requêtes d'Agent en arrière-plan imbriquées sont correctement rejetées |
+| **Maintien du reasoning effort désactivé** | [#7541](https://github.com/QwenLM/qwen-code/pull/7541) | Le paramètre reasoning effort désactivé n'est plus réinitialisé accidentellement |
+| **Repli sur le rg système** | [#7203](https://github.com/QwenLM/qwen-code/pull/7203) | Si le ripgrep intégré échoue, repli automatique sur le rg système |
+| **Notification de sortie du mode Plan** | [#7682](https://github.com/QwenLM/qwen-code/pull/7682), [#7744](https://github.com/QwenLM/qwen-code/pull/7744) | Le modèle est notifié quand l'utilisateur quitte manuellement le mode Plan |
+| **Agents d'extension non modifiables** | [#7245](https://github.com/QwenLM/qwen-code/pull/7245) | Les Agents fournis par des extensions ne sont plus écrasés par des mises à jour |
+| **Reconnaissance des mathématiques inline** | [#7701](https://github.com/QwenLM/qwen-code/pull/7701), [#7741](https://github.com/QwenLM/qwen-code/pull/7741) | Les expressions mathématiques à un seul caractère, les signes dollar échappés et les mathématiques dans les spans de code sont correctement reconnus |
+
+## 👥 Contributeurs
+
+| Contributeur | Contributions | PR de référence |
+|--------|---------|-------------|
+| **[@wenshao](https://github.com/wenshao)** | Multiples améliorations autofix (restauration stale base, retry infrastructure, rapports bilingues), améliorations review (mutation test, emprunt de lens, gate script-lint), opérations Git Web Shell (sélecteur de branche, boîte de dialogue commit, panneau PR), renforcement du triage | [#7482](https://github.com/QwenLM/qwen-code/pull/7482), [#7564](https://github.com/QwenLM/qwen-code/pull/7564), [#7731](https://github.com/QwenLM/qwen-code/pull/7731), [#7683](https://github.com/QwenLM/qwen-code/pull/7683) |
+| **[@chinesepowered](https://github.com/chinesepowered)** | Sécurité daemon (nettoyage des secrets, isolation env), sécurité des outils principaux (corrections sed/grep/gitignore/splitCommands), renforcement de la validation SDK, correction de conversion OpenAPI | [#7256](https://github.com/QwenLM/qwen-code/pull/7256), [#7527](https://github.com/QwenLM/qwen-code/pull/7527), [#7763](https://github.com/QwenLM/qwen-code/pull/7763), [#7863](https://github.com/QwenLM/qwen-code/pull/7863) |
+| **[@ytahdn](https://github.com/ytahdn)** | Développement cœur Web Shell (aperçu de fichiers, isolation Shadow DOM, panneau sous-Agents, performance des longues sessions, gestion des Channels, saisie vocale, adaptation mobile) | [#7467](https://github.com/QwenLM/qwen-code/pull/7467), [#7551](https://github.com/QwenLM/qwen-code/pull/7551), [#7380](https://github.com/QwenLM/qwen-code/pull/7380), [#7408](https://github.com/QwenLM/qwen-code/pull/7408) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Alignement télémétrie ARMS, optimisation des performances de démarrage (lazy loading undici/GenAI SDK, initialisation différée ACP), fiabilité serve (epoch cursor, renforcement SSE), transport daemon SDK-Java | [#7536](https://github.com/QwenLM/qwen-code/pull/7536), [#7455](https://github.com/QwenLM/qwen-code/pull/7455), [#7458](https://github.com/QwenLM/qwen-code/pull/7458), [#7463](https://github.com/QwenLM/qwen-code/pull/7463) |
+| **[@yiliang114](https://github.com/yiliang114)** | Corrections CI/release, support modalité image des modèles, correction de race condition serve, amélioration de la vérification de mise à jour, niveaux de modèle sous-Agents, renforcement des scripts release | [#7491](https://github.com/QwenLM/qwen-code/pull/7491), [#7556](https://github.com/QwenLM/qwen-code/pull/7556), [#7702](https://github.com/QwenLM/qwen-code/pull/7702), [#7528](https://github.com/QwenLM/qwen-code/pull/7528) |
+| **[@qqqys](https://github.com/qqqys)** | Goal v3 complet (protocole d'état, validation de preuves, orchestration runtime, worker tools, replay persistant), infrastructure Channel (configuration workspace, cycle de vie, API de gestion, daemon loop), configuration du modèle de génération d'images | [#7517](https://github.com/QwenLM/qwen-code/pull/7517), [#7664](https://github.com/QwenLM/qwen-code/pull/7664), [#7637](https://github.com/QwenLM/qwen-code/pull/7637), [#7607](https://github.com/QwenLM/qwen-code/pull/7607) |
+| **[@chiga0](https://github.com/chiga0)** | Correction Shift+Enter, correction du scintillement des blocs Thinking, copie texte sémantique VP, affichage des messages en file, alignement des icônes TUI, correction du patch ink, retry des erreurs réseau | [#7397](https://github.com/QwenLM/qwen-code/pull/7397), [#7286](https://github.com/QwenLM/qwen-code/pull/7286), [#7381](https://github.com/QwenLM/qwen-code/pull/7381), [#7898](https://github.com/QwenLM/qwen-code/pull/7898) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | Résidence des Agents en arrière-plan, restauration du roster, découverte des sous-Agents fork, persistance de l'utilisation, construction hiérarchique du prompt système, cache breakpoint Anthropic | [#7426](https://github.com/QwenLM/qwen-code/pull/7426), [#7459](https://github.com/QwenLM/qwen-code/pull/7459), [#7460](https://github.com/QwenLM/qwen-code/pull/7460), [#7912](https://github.com/QwenLM/qwen-code/pull/7912) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | Répertoires de skills personnalisés, correction mention DingTalk, corrections mode Plan, corrections conteneurs CI, polling de branche git | [#7395](https://github.com/QwenLM/qwen-code/pull/7395), [#7473](https://github.com/QwenLM/qwen-code/pull/7473), [#7682](https://github.com/QwenLM/qwen-code/pull/7682), [#7830](https://github.com/QwenLM/qwen-code/pull/7830) |
+| **[@ComplexSimply](https://github.com/ComplexSimply)** | Composer textarea tactile, sidecar d'état shell en arrière-plan, attente de flush du flux de sortie, heure locale insight | [#7587](https://github.com/QwenLM/qwen-code/pull/7587), [#7669](https://github.com/QwenLM/qwen-code/pull/7669), [#7833](https://github.com/QwenLM/qwen-code/pull/7833), [#7670](https://github.com/QwenLM/qwen-code/pull/7670) |
+| **[@zjunothing](https://github.com/zjunothing)** | Renforcement du salvage d'utilisation, correction des messages multi-tâches Channel, notification de sortie Plan, correction de l'ID d'extension plugin, lecture de fichier Plan | [#7425](https://github.com/QwenLM/qwen-code/pull/7425), [#7608](https://github.com/QwenLM/qwen-code/pull/7608), [#7676](https://github.com/QwenLM/qwen-code/pull/7676), [#7678](https://github.com/QwenLM/qwen-code/pull/7678) |
+| **[@patrick-andstar](https://github.com/patrick-andstar)** | Initialisation du sélecteur de workspace, rejet des requêtes en arrière-plan imbriquées, correction de l'annulation idle ACP, nettoyage de mise à jour npm | [#7518](https://github.com/QwenLM/qwen-code/pull/7518), [#7593](https://github.com/QwenLM/qwen-code/pull/7593), [#7598](https://github.com/QwenLM/qwen-code/pull/7598), [#7539](https://github.com/QwenLM/qwen-code/pull/7539) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | Entrée vidéo /learn, référence d'historique @, optimisation des gros collages, pont d'images des résultats d'outils | [#7497](https://github.com/QwenLM/qwen-code/pull/7497), [#7302](https://github.com/QwenLM/qwen-code/pull/7302), [#6506](https://github.com/QwenLM/qwen-code/pull/6506), [#7484](https://github.com/QwenLM/qwen-code/pull/7484) |
+| **[@hogeheer499-commits](https://github.com/hogeheer499-commits)** | Libération de slot unique Agent en arrière-plan, routage forum topic Telegram, correction thinking DashScope, délai de retry SSE | [#7258](https://github.com/QwenLM/qwen-code/pull/7258), [#7612](https://github.com/QwenLM/qwen-code/pull/7612), [#7661](https://github.com/QwenLM/qwen-code/pull/7661), [#7666](https://github.com/QwenLM/qwen-code/pull/7666) |
+| **[@destire-mio](https://github.com/destire-mio)** | Correction sémantique du pas jour cron, métriques de génération /stats, protection des Agents d'extension | [#7464](https://github.com/QwenLM/qwen-code/pull/7464), [#7677](https://github.com/QwenLM/qwen-code/pull/7677), [#7245](https://github.com/QwenLM/qwen-code/pull/7245) |
+| **[@OrbitZore](https://github.com/OrbitZore)** | Adaptateur GitHub Channel, correction senderId | [#7632](https://github.com/QwenLM/qwen-code/pull/7632), [#7727](https://github.com/QwenLM/qwen-code/pull/7727) |
+| **[@CubeLander](https://github.com/CubeLander)** | Correction de la reconnaissance des mathématiques inline, gestion des signes dollar échappés | [#7701](https://github.com/QwenLM/qwen-code/pull/7701), [#7741](https://github.com/QwenLM/qwen-code/pull/7741) |
+| **[@dreamWB](https://github.com/dreamWB)** | Correction des opérations de session en workspace verrouillé, renderer du footer composer | [#7629](https://github.com/QwenLM/qwen-code/pull/7629), [#7856](https://github.com/QwenLM/qwen-code/pull/7856) |
+| **[@mvanhorn](https://github.com/mvanhorn)** | Normalisation du working_dir worktree, silenciation des logs de diagnostic xterm | [#7403](https://github.com/QwenLM/qwen-code/pull/7403), [#7663](https://github.com/QwenLM/qwen-code/pull/7663) |
+| **[@water-in-stone](https://github.com/water-in-stone)** | Bouton sélecteur de workspace, alignement du curseur IME | [#7390](https://github.com/QwenLM/qwen-code/pull/7390), [#7711](https://github.com/QwenLM/qwen-code/pull/7711) |
+| **[@jay666mnj](https://github.com/jay666mnj)** | Configuration du délai de retry SSE, tests de régression de pagination du transcript | [#7674](https://github.com/QwenLM/qwen-code/pull/7674), [#7657](https://github.com/QwenLM/qwen-code/pull/7657) |
+| **[@callmeYe](https://github.com/callmeYe)** | Propagation du contexte d'appel daemon, mode push-to-talk vocal | [#7279](https://github.com/QwenLM/qwen-code/pull/7279), [#7839](https://github.com/QwenLM/qwen-code/pull/7839) |
+| **[@he-yufeng](https://github.com/he-yufeng)** | Correction du routage tool-call, renforcement du retry des scripts release | [#6981](https://github.com/QwenLM/qwen-code/pull/6981), [#7535](https://github.com/QwenLM/qwen-code/pull/7535) |
+| **[@BZ-D](https://github.com/BZ-D)** | Reconnexion forcée MCP | [#7488](https://github.com/QwenLM/qwen-code/pull/7488) |
+| **[@ZijianZhang989](https://github.com/ZijianZhang989)** | Télémétrie du rappel de mémoire | [#7393](https://github.com/QwenLM/qwen-code/pull/7393) |
+| **[@yuanyuanAli](https://github.com/yuanyuanAli)** | Slot renderChatHeader Web Shell | [#7553](https://github.com/QwenLM/qwen-code/pull/7553) |
+| **[@tanzhenxin](https://github.com/tanzhenxin)** | Override par variable d'environnement des statistiques d'utilisation | [#7579](https://github.com/QwenLM/qwen-code/pull/7579) |
+| **[@han-dreamer](https://github.com/han-dreamer)** | Journalisation des lectures d'index auto-memory | [#7468](https://github.com/QwenLM/qwen-code/pull/7468) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | Livraison explicite Channel | [#7388](https://github.com/QwenLM/qwen-code/pull/7388) |
+| 🆕 **[@ovochouovo](https://github.com/ovochouovo)** | 🎉 Première contribution : alignement des noms de paramètres JSDoc, affichage des descriptions d'outils dans les résumés compact multi-outils | [#7492](https://github.com/QwenLM/qwen-code/pull/7492), [#7589](https://github.com/QwenLM/qwen-code/pull/7589) |
+| 🆕 **[@Truraly](https://github.com/Truraly)** | 🎉 Première contribution : ignorance du placeholder working_dir vide | [#7343](https://github.com/QwenLM/qwen-code/pull/7343) |
+| 🆕 **[@zjgzx1988](https://github.com/zjgzx1988)** | 🎉 Première contribution : override d'identité système QWEN_SYSTEM_IDENTITY_MD | [#7478](https://github.com/QwenLM/qwen-code/pull/7478) |
+| 🆕 **[@dtometzki](https://github.com/dtometzki)** | 🎉 Première contribution : vérification de mise à jour via npm view | [#7528](https://github.com/QwenLM/qwen-code/pull/7528) |
+| 🆕 **[@WladmirJunior](https://github.com/WladmirJunior)** | 🎉 Première contribution : maintien du reasoning effort désactivé | [#7541](https://github.com/QwenLM/qwen-code/pull/7541) |
+| 🆕 **[@nerdalytics](https://github.com/nerdalytics)** | 🎉 Première contribution : correction de faux positif du shim npm | [#7545](https://github.com/QwenLM/qwen-code/pull/7545) |
+| 🆕 **[@harjothkhara](https://github.com/harjothkhara)** | 🎉 Première contribution : repli sur le rg système | [#7203](https://github.com/QwenLM/qwen-code/pull/7203) |
+| 🆕 **[@PratikWayase](https://github.com/PratikWayase)** | 🎉 Première contribution : persistance des erreurs de pagination de l'historique terminal | [#7709](https://github.com/QwenLM/qwen-code/pull/7709) |
+| 🆕 **[@Sparkle6979](https://github.com/Sparkle6979)** | 🎉 Première contribution : complétion des commandes slash de skills dupliqués | [#7720](https://github.com/QwenLM/qwen-code/pull/7720) |
+| 🆕 **[@VitaliBabkin](https://github.com/VitaliBabkin)** | 🎉 Première contribution : conservation des serveurs MCP de l'appelant en safe-mode | [#7827](https://github.com/QwenLM/qwen-code/pull/7827) |
+| 🆕 **[@VectorPeak](https://github.com/VectorPeak)** | 🎉 Première contribution : parsing strict du paramètre heatmapDays | [#7218](https://github.com/QwenLM/qwen-code/pull/7218) |
+| 🆕 **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | 🎉 Première contribution : correction de la restauration de session QQ Bot | [#7722](https://github.com/QwenLM/qwen-code/pull/7722) |
+| 🆕 **[@carffuca](https://github.com/carffuca)** | 🎉 Première contribution : suggestion de question latérale BTW | [#7935](https://github.com/QwenLM/qwen-code/pull/7935) |
+| 🆕 **[@samuelhsin](https://github.com/samuelhsin)** | 🎉 Première contribution : état désactivé par défaut des Skills | [#7357](https://github.com/QwenLM/qwen-code/pull/7357) |
+| 🆕 **[@ZevGit](https://github.com/ZevGit)** | 🎉 Première contribution : historique de terminal virtualisé activé par défaut | [#5738](https://github.com/QwenLM/qwen-code/pull/5738) |
+| 🆕 **[@gauravyad86](https://github.com/gauravyad86)** | 🎉 Première contribution : renforcement du callback OAuth MCP | [#7510](https://github.com/QwenLM/qwen-code/pull/7510) |
+
+<Callout type="info">
+  **Mise à jour** : exécutez `npm i @qwen-code/qwen-code@latest -g` pour passer à la dernière version.
+</Callout>
+
+Si vous avez des questions ou des suggestions, n'hésitez pas à nous les faire part sur [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) !
