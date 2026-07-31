@@ -8,6 +8,7 @@ import { LanguageDropdown } from "../../src/components/language-dropdown";
 import { ThemeToggle } from "../../src/components/theme-toggle";
 import { GitHubStarLink } from "../../src/components/github-star-link";
 import { Search } from "../../src/components/search";
+import { MobileMenu } from "../../src/components/mobile-menu";
 import { withBasePath } from "../../src/lib/utils";
 import { modifyUpdatesSidebar } from "../../src/lib/blog-utils";
 import NextLink from "next/link";
@@ -81,6 +82,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
       <GitHubStarLink projectLink='https://github.com/QwenLM/qwen-code' className='shrink-0' />
       <LanguageDropdown currentLang={lang} compactOnTablet className='max-md:hidden shrink-0' />
       <ThemeToggle />
+      <MobileMenu lang={lang} />
     </Navbar>
   );
 

@@ -280,11 +280,11 @@ function WeeklyHighlightRow({ post, lang }: { post: BlogPost; lang: string }) {
   return (
     <Link
       href={post.route}
-      className="group flex items-center gap-6 py-4"
+      className="group flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:gap-6"
     >
       <Cover
         post={post}
-        className="w-64 shrink-0 rounded-xl border border-border/50 sm:w-80"
+        className="w-full shrink-0 rounded-xl border border-border/50 sm:w-80"
       />
       <div className="min-w-0">
         <div className="flex items-center gap-3">
