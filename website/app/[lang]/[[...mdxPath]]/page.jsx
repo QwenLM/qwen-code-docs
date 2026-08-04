@@ -298,7 +298,7 @@ const Page = async (props) => {
     : null;
 
   return (
-    <div className={isBlogIndex ? "blog-index-page" : undefined}>
+    <div className={isBlogIndex ? "blog-index-page" : isBlogPost ? "blog-post-page" : undefined}>
       <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
         <script
           type="application/ld+json"

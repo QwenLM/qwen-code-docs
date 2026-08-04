@@ -6,10 +6,10 @@ Os canais permitem que você interaja com um agente do Qwen Code a partir de pla
 
 Ao executar `qwen channel start`, o Qwen Code:
 
-1. Lê as configurações dos canais no seu `settings.json`
+1. Lê as configurações de canais do seu `settings.json`
 2. Inicia um único processo de agente usando o [Agent Client Protocol (ACP)](../../../developers/architecture.md)
 3. Conecta-se a cada plataforma de mensagens e começa a ouvir as mensagens
-4. Encaminha as mensagens recebidas para o agente e envia as respostas de volta para o chat correto
+4. Roteia as mensagens recebidas para o agente e envia as respostas de volta para o chat correto
 
 Todos os canais compartilham um único processo de agente com sessões isoladas por usuário. Cada canal pode ter seu próprio diretório de trabalho, modelo e instruções.
 
@@ -60,19 +60,19 @@ Os canais são configurados sob a chave `channels` no `settings.json`. Cada cana
 | `cwd`                    | Não              | Diretório de trabalho para o agente. O padrão é o diretório atual                                                                                                     |
 | `instructions`           | Não              | Instruções personalizadas adicionadas no início da primeira mensagem de cada sessão                                                                                                     |
 | `groupPolicy`            | Não              | Acesso a chats em grupo: `disabled` (padrão), `allowlist` ou `open`. Consulte [Chats em Grupo](#group-chats)                                                                       |
-| `groupHistoryLimit`      | Não              | Preenchimento retroativo opcional do histórico do grupo. `0` ou omitido desativa. Um número positivo persiste essa quantidade de mensagens de grupo autorizadas e não mencionadas para a próxima menção/resposta do bot. |
-| `groups`                 | Não              | Configurações por grupo. As chaves são IDs de chat em grupo ou `"*"` para os padrões. Consulte [Chats em Grupo](#group-chats)                                                                     |
+| `groupHistoryLimit`      | Não              | Preenchimento retroativo opt-in do histórico do grupo. `0` ou omitido desativa. Um número positivo persiste essa quantidade de mensagens de grupo autorizadas e não mencionadas para a próxima menção/resposta do bot. |
+| `groups`                 | Não              | Configurações por grupo. As chaves são IDs de chats em grupo ou `"*"` para os padrões. Consulte [Chats em Grupo](#group-chats)                                                                     |
 | `dispatchMode`           | Não              | O que acontece quando você envia uma mensagem enquanto o bot está ocupado: `steer` (padrão), `collect` ou `followup`. Consulte [Modos de Despacho](#dispatch-modes)                         |
-| `blockStreaming`         | Não              | Entrega progressiva de respostas: `on` ou `off` (padrão). Consulte [Streaming em Blocos](#block-streaming)                                                                        |
-| `blockStreamingChunk`    | Não              | Limites de tamanho do bloco: `{ "minChars": 400, "maxChars": 1000 }`. Consulte [Streaming em Blocos](#block-streaming)                                                                    |
-| `blockStreamingCoalesce` | Não              | Flush por inatividade: `{ "idleMs": 1500 }`. Consulte [Streaming em Blocos](#block-streaming)                                                                                              |
+| `blockStreaming`         | Não              | Entrega progressiva de respostas: `on` ou `off` (padrão). Consulte [Block Streaming](#block-streaming)                                                                        |
+| `blockStreamingChunk`    | Não              | Limites de tamanho do chunk: `{ "minChars": 400, "maxChars": 1000 }`. Consulte [Block Streaming](#block-streaming)                                                                    |
+| `blockStreamingCoalesce` | Não              | Flush por ociosidade: `{ "idleMs": 1500 }`. Consulte [Block Streaming](#block-streaming)                                                                                              |
 
 ### Política de Remetente
 
 Controla quem pode interagir com o bot:
 
 - **`allowlist`** (padrão) — Apenas os usuários listados em `allowedUsers` podem enviar mensagens. Os demais são ignorados silenciosamente.
-- **`pairing`** — Remetentes desconhecidos recebem um código de pareamento. O operador do bot os aprova via CLI e eles são adicionados a uma lista de permissões persistente. Os usuários em `allowedUsers` pulam o pareamento completamente. Consulte [Pareamento de DM](#dm-pairing) abaixo.
+- **`pairing`** — Remetentes desconhecidos recebem um código de pareamento. O operador do bot os aprova via CLI e eles são adicionados a uma allowlist persistente. Os usuários em `allowedUsers` pulam o pareamento completamente. Consulte [Pareamento de DM](#dm-pairing) abaixo.
 - **`open`** — Qualquer pessoa pode enviar mensagens. Use com cautela.
 
 ### Escopo da Sessão
@@ -85,19 +85,22 @@ Controla como as sessões de conversa são gerenciadas:
 
 ### Memória do Canal
 
-A memória do canal permite que um membro autorizado do canal salve um contexto estável para um chat ou thread. O Qwen Code injeta essa memória quando uma nova sessão de canal é iniciada, inclusive após um `/clear`.
+A memória do canal permite que um membro autorizado do canal salve um contexto estável para um chat ou thread. O Qwen Code injeta essa memória quando uma nova sessão do canal é iniciada, inclusive após um `/clear`.
 
-Comandos:
+Exemplos em linguagem natural:
 
-- `/remember-channel <text>` salva uma linha de memória para o chat ou thread atual.
-- `/channel-memory` mostra a memória salva para o chat ou thread atual.
-- `/forget-channel confirm` limpa a memória salva para o chat ou thread atual.
+- `记住：默认使用 staging 环境` salva a memória para o chat ou thread atual.
+- `你记一下以后回复前要说 1122` salva a memória durável extraída.
+- `你现在都记住了什么` mostra a memória salva para o chat ou thread atual.
+- `把这个聊天的记忆清空` inicia o fluxo de limpeza; `确认清空记忆` o confirma.
 
-Apenas os usuários listados em `allowedUsers` podem ler, escrever ou limpar a memória do canal. Se `allowedUsers` estiver vazio, os comandos de memória do canal serão desativados para todos.
+Chats em grupo podem mostrar a memória salva, mas escritas e limpezas são bloqueadas para evitar transformar a memória compartilhada em um caminho de injeção de prompt para outros participantes.
+
+Apenas os usuários listados em `allowedUsers` podem ler, escrever ou limpar a memória do canal. Se `allowedUsers` estiver vazio, os comandos de memória do canal são desativados para todos.
 
 ### Segurança do Token
 
-Os tokens de bot não devem ser armazenados diretamente no `settings.json`. Em vez disso, use referências a variáveis de ambiente:
+Os tokens do bot não devem ser armazenados diretamente no `settings.json`. Em vez disso, use referências a variáveis de ambiente:
 
 ```json
 {
@@ -128,7 +131,7 @@ Uma vez aprovado, o ID do usuário é salvo em `~/.qwen/channels/<name>-allowlis
 # Lista solicitações de pareamento pendentes
 qwen channel pairing list my-channel
 
-# Aprova uma solicitação por código
+# Aprova uma solicitação pelo código
 qwen channel pairing approve my-channel <CODE>
 ```
 
@@ -138,7 +141,7 @@ qwen channel pairing approve my-channel <CODE>
 - Os códigos expiram após 1 hora
 - Máximo de 3 solicitações pendentes por canal por vez — solicitações adicionais são ignoradas até que uma expire ou seja aprovada
 - Os usuários listados em `allowedUsers` no `settings.json` sempre pulam o pareamento
-- Os usuários aprovados são armazenados em `~/.qwen/channels/<name>-allowlist.json` — trate este arquivo como confidencial
+- Os usuários aprovados são armazenados em `~/.qwen/channels/<name>-allowlist.json` — trate este arquivo como sensível
 
 ## Chats em Grupo
 
@@ -150,11 +153,11 @@ Controla se o bot participa de chats em grupo:
 
 - **`disabled`** (padrão) — O bot ignora todas as mensagens de grupo. Opção mais segura.
 - **`allowlist`** — O bot responde apenas em grupos listados explicitamente em `groups` pelo ID do chat. A chave `"*"` fornece configurações padrão, mas **não** atua como um curinga de permissão.
-- **`open`** — O bot responde em todos os grupos aos quais for adicionado. Use com cautela.
+- **`open`** — O bot responde em todos os grupos aos quais é adicionado. Use com cautela.
 
 ### Filtragem por Menção
 
-Em grupos, o bot exige uma `@mention` ou uma resposta a uma de suas mensagens por padrão. Isso evita que o bot responda a todas as mensagens em um chat de grupo.
+Em grupos, o bot exige uma `@mention` ou uma resposta a uma de suas mensagens por padrão. Isso evita que o bot responda a todas as mensagens em um chat em grupo.
 
 Configure por grupo com a configuração `groups`:
 
@@ -167,7 +170,7 @@ Configure por grupo com a configuração `groups`:
 }
 ```
 
-- **`"*"`** — Configurações padrão para todos os grupos. Apenas define os padrões de configuração, não é uma entrada de lista de permissões.
+- **`"*"`** — Configurações padrão para todos os grupos. Apenas define os padrões de configuração, não é uma entrada de allowlist.
 - **ID do chat em grupo** — Substitui as configurações para um grupo específico. Substitui os padrões de `"*"`.
 - **`requireMention`** (padrão: `true`) — Quando `true`, o bot responde apenas a mensagens que o @mencionam ou respondem a uma de suas mensagens. Quando `false`, o bot responde a todas as mensagens (útil para grupos de tarefas dedicadas).
 
@@ -199,7 +202,7 @@ Por padrão, o Qwen ignora mensagens de grupo não mencionadas e não as armazen
 - Omitido ou `0` desativa o preenchimento retroativo.
 - O `groupHistoryLimit` no nível do grupo substitui o valor no nível do canal.
 - Apenas mensagens de remetentes autorizados são persistidas.
-- Mensagens rejeitadas por `groupPolicy` ou pela lista de permissões do grupo não são persistidas.
+- Mensagens rejeitadas por `groupPolicy` ou pela allowlist do grupo não são persistidas.
 - O histórico de grupo pendente é armazenado como JSONL local em `~/.qwen/channels/<channel-name>-group-history.jsonl` ou `$QWEN_HOME/channels/<channel-name>-group-history.jsonl`.
 - As mensagens em cache são injetadas como contexto não confiável no próximo gatilho real e não são escritas como turnos de sessão independentes.
 
@@ -209,7 +212,7 @@ Por padrão, o Qwen ignora mensagens de grupo não mencionadas e não as armazen
 1. groupPolicy — este grupo é permitido?           (não → ignorar)
 2. requireMention — o bot foi mencionado/teve resposta? (não → ignorar)
 3. senderPolicy — este remetente é aprovado?         (não → fluxo de pareamento)
-4. Encaminhar para a sessão
+4. Roteia para a sessão
 ```
 
 ### Configuração do Telegram para Grupos
@@ -217,14 +220,14 @@ Por padrão, o Qwen ignora mensagens de grupo não mencionadas e não as armazen
 1. Adicione o bot a um grupo
 2. **Desative o modo de privacidade** no BotFather (`/mybots` → Bot Settings → Group Privacy → Turn Off) — caso contrário, o bot não verá mensagens que não sejam comandos
 3. **Remova e readicione o bot** ao grupo após alterar o modo de privacidade (o Telegram armazena essa configuração em cache)
+### Encontrando o ID do Chat de um Grupo
 
-### Como Encontrar o ID de um Chat em Grupo
-
-Para encontrar o ID do chat de um grupo para a lista de permissões `groups`:
+Para encontrar o ID do chat de um grupo para a allowlist `groups`:
 
 1. Pare o bot se ele estiver em execução
 2. Envie uma mensagem mencionando o bot no grupo
-3. Use a API do Telegram Bot para verificar as atualizações na fila:
+3. Use a Telegram Bot API para verificar as atualizações na fila:
+
 ```bash
 curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" | python3 -m json.tool
 ```
@@ -237,7 +240,7 @@ Os canais suportam o envio de imagens e arquivos para o agente, não apenas text
 
 ### Imagens
 
-Envie uma foto para o bot e o agente a verá — útil para compartilhar capturas de tela, mensagens de erro ou diagramas. A imagem é enviada diretamente para o modelo como uma entrada de visão.
+Envie uma foto para o bot e o agente a verá — útil para compartilhar capturas de tela, mensagens de erro ou diagramas. A imagem é enviada diretamente para o modelo como uma entrada visual.
 
 Para usar o suporte a imagens, configure um modelo multimodal para o canal:
 
@@ -255,26 +258,26 @@ Para usar o suporte a imagens, configure um modelo multimodal para o canal:
 
 ### Arquivos
 
-Envie um documento (PDF, arquivo de código, arquivo de texto, etc.) para o bot. O arquivo é baixado e salvo em um diretório temporário, e o agente recebe o caminho do arquivo para que possa ler o conteúdo usando suas ferramentas de leitura de arquivos.
+Envie um documento (PDF, arquivo de código, arquivo de texto, etc.) para o bot. O arquivo é baixado e salvo em um diretório temporário, e o caminho do arquivo é informado ao agente para que ele possa ler o conteúdo usando suas ferramentas de leitura de arquivos.
 
-Os arquivos funcionam com qualquer modelo — não é necessário suporte multimodal.
+Arquivos funcionam com qualquer modelo — não é necessário suporte multimodal.
 
 ### Diferenças entre plataformas
 
-| Recurso | Telegram | WeChat | DingTalk | Feishu |
+| Recurso  | Telegram                                     | WeChat                           | DingTalk                                      | Feishu                                                      |
 | -------- | -------------------------------------------- | -------------------------------- | --------------------------------------------- | ----------------------------------------------------------- |
-| Imagens | Download direto via Bot API | Download via CDN com descriptografia AES | API downloadCode (duas etapas) | Endpoint de recursos da Open API (GET autenticado, limite de 50MB) |
-| Arquivos | Download direto via Bot API (limite de 20MB) | Download via CDN com descriptografia AES | API downloadCode (duas etapas) | Endpoint de recursos da Open API (limite de 50MB) |
-| Legendas | Legendas de fotos/arquivos incluídas como texto da mensagem | Não aplicável | Rich text: texto misto + imagens em uma mensagem | Rich text (`post`): texto extraído; imagens incorporadas ignoradas |
+| Imagens  | Download direto via Bot API                  | Download via CDN com descriptografia AES | API downloadCode (duas etapas)              | Endpoint de recursos da Open API (GET autenticado, limite de 50MB) |
+| Arquivos | Download direto via Bot API (limite de 20MB) | Download via CDN com descriptografia AES | API downloadCode (duas etapas)              | Endpoint de recursos da Open API (limite de 50MB)           |
+| Legendas | Legendas de foto/arquivo incluídas como texto da mensagem | Não se aplica                  | Rich text: texto + imagens misturados em uma mensagem | Rich text (`post`): texto extraído; imagens incorporadas ignoradas |
 
-> O QQ Bot não processa mídias recebidas — mensagens de imagem e sticker são ignoradas, por isso não há linha de tratamento de mídia acima.
+> O QQ Bot não processa mídias recebidas — mensagens de imagem e sticker são ignoradas, por isso não há uma linha de tratamento de mídia acima.
 
 ## Modos de Dispatch
 
-Controla o que acontece quando você envia uma nova mensagem enquanto o bot ainda está processando a anterior.
+Controla o que acontece quando você envia uma nova mensagem enquanto o bot ainda está processando uma anterior.
 
 - **`steer`** (padrão) — O bot cancela a solicitação atual e começa a trabalhar na sua nova mensagem. Melhor para chats normais, onde um acompanhamento geralmente significa que você quer corrigir ou redirecionar o bot.
-- **`collect`** — Suas novas mensagens são armazenadas em buffer. Quando a solicitação atual termina, todas as mensagens em buffer são combinadas em um único prompt de acompanhamento. Bom para fluxos de trabalho assíncronos onde você quer enfileirar ideias.
+- **`collect`** — Suas novas mensagens são armazenadas em buffer. Quando a solicitação atual termina, todas as mensagens em buffer são combinadas em um único prompt de acompanhamento. Bom para fluxos de trabalho assíncronos onde você deseja enfileirar ideias.
 - **`followup`** — Cada mensagem é enfileirada e processada como sua própria vez separada, em ordem. Útil para fluxos de trabalho em lote onde cada mensagem é independente.
 
 ```json
@@ -302,7 +305,7 @@ Você também pode definir o modo de dispatch por grupo, substituindo o padrão 
 
 ## Block Streaming
 
-Por padrão, o agente trabalha por um tempo e depois envia uma resposta grande. Com o block streaming habilitado, a resposta chega como várias mensagens mais curtas enquanto o agente ainda está trabalhando — semelhante a como o ChatGPT ou o Claude mostram a saída progressiva.
+Por padrão, o agente trabalha por um tempo e depois envia uma resposta grande. Com o block streaming ativado, a resposta chega como várias mensagens mais curtas enquanto o agente ainda está trabalhando — semelhante a como o ChatGPT ou o Claude mostram a saída progressiva.
 
 ```json
 {
@@ -321,12 +324,12 @@ Por padrão, o agente trabalha por um tempo e depois envia uma resposta grande. 
 ### Como funciona
 
 - A resposta do agente é dividida em blocos nos limites dos parágrafos e enviada como mensagens separadas
-- `minChars` (padrão 400) — não envia um bloco até que ele tenha pelo menos esse tamanho, para evitar enviar mensagens minúsculas em spam
+- `minChars` (padrão 400) — não envia um bloco até que ele tenha pelo menos esse tamanho, para evitar spam de mensagens muito curtas
 - `maxChars` (padrão 1000) — se um bloco atingir esse tamanho sem uma quebra natural, envia-o mesmo assim
 - `idleMs` (padrão 1500) — se o agente pausar (por exemplo, ao executar uma ferramenta), envia o que está em buffer até o momento
 - Quando o agente termina, qualquer texto restante é enviado imediatamente
 
-Apenas `blockStreaming` é obrigatório. As configurações de chunk e coalesce são opcionais e têm padrões sensatos.
+Apenas `blockStreaming` é obrigatório. As configurações de chunk e coalesce são opcionais e possuem padrões sensatos.
 
 ## Comandos Slash
 
@@ -343,16 +346,16 @@ Esses comandos funcionam em todos os tipos de canal (Telegram, WeChat, QQ, DingT
 ## Executando
 
 ```bash
-# Inicia todos os canais configurados (processo de agente compartilhado)
+# Start all configured channels (shared agent process)
 qwen channel start
 
-# Inicia um único canal
+# Start a single channel
 qwen channel start my-channel
 
-# Verifica se o serviço está em execução
+# Check if the service is running
 qwen channel status
 
-# Para o serviço em execução
+# Stop the running service
 qwen channel stop
 ```
 
@@ -363,16 +366,16 @@ O bot é executado em primeiro plano. Pressione `Ctrl+C` para parar ou use `qwen
 Você também pode executar canais configurados sob o `qwen serve`:
 
 ```bash
-# Inicia um canal sob o ciclo de vida do daemon
+# Start one channel under the daemon lifecycle
 qwen serve --channel my-channel
 
-# Inicia todos os canais configurados
+# Start all configured channels
 qwen serve --channel all
 ```
 
 Este modo inicia um processo de worker de canal pertencente ao `qwen serve`. O worker se conecta de volta ao daemon através do SDK e usa os mesmos adaptadores de canal. Ele é separado do processo do daemon, portanto, uma falha no adaptador de canal não derruba o daemon.
 
-`qwen serve --channel` não é o mesmo serviço que `qwen channel start`. O `qwen channel start` autônomo ainda usa o serviço de canal com suporte ACP e pode executar configurações de canal com valores de `cwd` diferentes. Os canais gerenciados pelo daemon exigem que o `cwd` de cada canal selecionado seja resolvido para o workspace do daemon.
+`qwen serve --channel` não é o mesmo serviço que `qwen channel start`. O `qwen channel start` independente ainda usa o serviço de canal com suporte ACP e pode executar configurações de canal com valores de `cwd` diferentes. Os canais gerenciados pelo daemon exigem que o `cwd` de cada canal selecionado seja resolvido para o workspace do daemon.
 
 Quando os canais são gerenciados pelo serve, `qwen channel status` mostra o proprietário como `qwen serve`, e `qwen channel stop` instrui você a parar o daemon em vez de sinalizar o worker diretamente. Se um worker pronto sair inesperadamente, o daemon continua em execução e relata um aviso de channel-worker em `/daemon/status`.
 

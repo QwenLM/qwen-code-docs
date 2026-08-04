@@ -1,0 +1,122 @@
+---
+title: "Einen GPT-Stil-Cover-Generierungs-Skill mit Qwen 3.8-max bauen"
+date: "2026-07-21"
+description: "Mit Qwen 3.8-max von null einen Skill erstellen, der Artikel-Cover im GPT-Stil generiert – mit Feinabstimmung und Ein-Klick-Export."
+author: "joeytoday"
+tags: ["Tutorials", "Skills", "Model Studio"]
+image: https://gw.alicdn.com/imgextra/i4/O1CN01QnbbbB1qBMUGPdyGN_!!6000000005457-2-tps-1344-572.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Einen GPT-Stil-Cover-Generierungs-Skill mit Qwen 3.8-max bauen"
+  date="21. Juli 2026"
+  author="joeytoday"
+/>
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01leN1ID1hFBFJQT7sl_!!6000000004247-2-tps-900-383.png)
+
+Das nervigste Thema beim Schreiben von Tech-Blogposts: das Cover. Mich hat das ewig genervt. Es muss zum Ton des Artikels passen, und mein Chef will, dass es „hochwertig" aussieht. Ich habe überlegt, wie ich das lösen kann, und bin zufällig auf die [Customer-Stories-Seite von OpenAI](https://openai.com/zh-Hans-CN/business/customer-stories/) gestoßen. Die Cover dort sind wirklich gut – nicht aufdringlich, aber ästhetisch. Jede Grafik ist einfach ein einfarbiges Material oder ein Lichtstrahl, darüber eine Titelzeile. Zurückhaltend und trotzdem edel. Perfekt für einen Tech-Blog.
+
+![OpenAI-Cover-Übersicht](https://gw.alicdn.com/imgextra/i4/O1CN01QVii5R1sL68XNdunU_!!6000000005749-2-tps-1545-895.png)
+
+👆 So sieht die OpenAI-Blogseite aus.
+
+Cover für Tech-Artikel sind immer so eine Sache. Screenshots? Zu billig. Illustrationen? Passen nicht zum Inhalt. Zwanzig Minuten auf Unsplash rumscrollen, und das Ergebnis fühlt sich trotzdem nicht richtig an. Der Ansatz von OpenAI – „reines Material + Titel" – umgeht das Problem komplett. Das Bild muss nicht „relevant" zum Inhalt sein. Der Ton muss stimmen, das reicht.
+
+Wenn die Coversuche eine wiederkehrende Aufgabe ist, die AI übernehmen kann – warum nicht einen Skill daraus machen? Gesagt, getan.
+
+Zuerst das Ergebnis, dann zeige ich, wie ich es gebaut habe und wie man es installiert:
+
+<video
+  src="https://cloud.video.taobao.com/vod/9uWNCXQZXaxYIH3Wajcg7iUBnOA1g_TSd0KrBgfD29o.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/6000000007071/O1CN01t5eU1N226Zjg11zhE_!!6000000007071-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Skill erstellen: Qwen Code + Bailian CLI
+
+Das ganze Setup besteht aus zwei Komponenten.
+
+**Qwen Code übernimmt die Ablaufsteuerung.** Ich habe Qwen Code einfach einen Screenshot der Website gegeben und gesagt, dass ich einen Skill für solche Cover bauen will. Qwen 3.8-max hat zwar keine multimodalen Fähigkeiten, aber **Qwen Code ruft automatisch mein konfiguriertes Vision-Modell auf** – zum Beispiel qwen3.6-plus – erkennt den Inhalt, generiert eine Beschreibung für qwen 3.8-max, und dann legt 3.8 los mit Analyse und Umsetzung. Sehr komfortabel. Qwen Code analysiert den Screenshot, klassifiziert den Inhalt – ich habe da auch selbst noch Vorarbeit geleistet – und 3.8-max setzt dann die Prompts zusammen.
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN01eeOy4R1jz6BcBI7mI_!!6000000004618-2-tps-2808-1486.png)
+
+**Die Bailian CLI generiert mit dem qwen-image-Modell das Bild im gewünschten Stil**, und am Ende werden Hintergrundbild und Titel zu einer interaktiven HTML-Seite zusammengesetzt. Dort kann man Feinabstimmungen vornehmen: Titel, Schriftart, Logo, Schärfe – und dann direkt exportieren.
+
+Zum Schluss habe ich beide Schritte zu einem stabil produzierbaren Skill zusammengefügt.
+
+<Callout>
+    **Hinweis**: Mit qwen3.8-max ist hier die Version qwen 3.8-max-preview gemeint.
+</Callout>
+
+## Cover-Generierung: Vier Stile
+
+Die Stile sind der Teil, in den ich am meisten Arbeit gesteckt habe. Die OpenAI-Cover sehen simpel aus, aber bei genauem Hinsehen gibt es mehrere gestalterische Richtungen. Ich habe vier Kategorien definiert:
+
+**Material.** Makroaufnahmen von Texturen. Holzmaserung, Leder, Blattadern, gebürstetes Metall, Sanddünen, Facettenaugen. Vollflächig, kein Weißraum. Passt zu Produktthemen, Handwerk, Haptik.
+
+**Verlauf.** Einfarbiger Aquarellverlauf. Von hell nach dunkel, Übergänge innerhalb desselben Farbtons. Seidenoptik, Matt-Effekt, Wasserwellen. Für kreative, künstlerische, emotionale Inhalte.
+
+**Lichtbogen.** Ein Lichtstrahl oder eine gewölbte Reflexion. Der Hintergrund ist ein hellerer oder dunklerer Ton derselben Farbfamilie. Zurückhaltend, präzise. Für Tech-Inhalte genau richtig.
+
+**Welle.** Sanfte Aquarellwellen. Für Podcasts und Dialogformate gemacht. Die Wellenamplitude konvergiert zur Bildmitte und lässt eine ruhige Zone für den Titel.
+
+Vier Stile, sieben Farbfamilien (Blau, Grün, Rot, Lila, Orange, Schwarz, Gold), dazu vier Seitenverhältnisse. Die Kombinationsmöglichkeiten sind groß. Aber jeder Stil folgt derselben Regel: nicht zu viele Farben, visuell sauber, kein visueller Overload. Das Gute am OpenAI-Design ist die Zurückhaltung. Die wollte ich nicht zerstören.
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN014PJQL81dQqsN8QHFU_!!6000000003731-1-tps-1800-1080.gif)
+
+## Wie benutzt man es?
+
+Einfach in Qwen Code sagen: „Generiere ein Cover basierend auf @Artikel".
+
+Der Agent liest den Artikel und schlägt 1–3 Stile vor. Man wählt aus, Mehrfachauswahl möglich. Pro Stil wird ein Hintergrundbild generiert, am Ende kann man auf der Seite zwischen den Varianten wechseln und vergleichen. Die Farbfamilie kommt aus den Presets – kein freies Experimentieren. Man kann aber auch direkt einen Stil angeben.
+
+Die Bailian CLI generiert zwei Varianten. Nicht zufrieden? Prompt anpassen und neu laufen lassen. Bild steht? Ein Befehl baut die HTML-Seite. Öffnen – und man hat einen Editor:
+
+- Titel auf dem Canvas anklicken und direkt bearbeiten
+- Fünf Schriftarten zur Auswahl: PingFang, Songti, Heiti, Noto Serif, Zanku
+- Maske und Schriftgröße per Slider
+- Textfarbe: Weiß, Schwarz, Creme
+- Logo hochladen (optional, falls man hochauflösende Grafiken braucht)
+- Export als 1x, @2x, @3x – oder ⌘Enter
+
+What you see is what you get. Canvas-Rendering, direkter PNG-Download.
+
+<video
+  src="https://cloud.video.taobao.com/vod/KW-shQqldtg6U23gaI6-zbWIOReFLBI_5SoKlRF6SRk.mp4"
+  poster="https://img.alicdn.com/imgextra/i3/6000000000509/O1CN01nlo6R31FdAkgsL7TD_!!6000000000509-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+Ein paar wichtige Designentscheidungen:
+
+**Hintergrundbild ohne Text.** AI-Bildgenerierung mit chinesischem Text produziert nur Zeichensalat. Also: Bild ist Bild, Text wird per HTML darübergelegt. Das ist das Fundament des ganzen Setups.
+
+**Bildgröße ist fest an das Seitenverhältnis gekoppelt.** WeChat-Titelbild 900×383, Verhältnis 2,35:1, also wird das Bild mit 1344×572 generiert. Stimmt das Verhältnis nicht, schneidet der Export ab und die Komposition ist hinüber.
+
+**Wellen dürfen mehrfarbig sein, müssen aber weich bleiben.** Die anderen drei Stile sind strikt einfarbig. Bei Wellen sind 2–3 benachbarte Farbtöne erlaubt, niedrige Sättigung, wie Aquarell, das sich ausbreitet. Hohe Sättigung mit Komplementärkontrast geht nicht.
+
+**Prompts komplett auf Englisch.** Chinesische Prompts liefern instabile Bildqualität. Alle Templates sind auf Englisch geschrieben.
+
+**Nicht nur für WeChat**: Das Standard-Canvas ist das WeChat-Titelbild. Aber es gibt Presets für quadratisch 1080×1080, quer 16:9, hochkant 3:4. Eigene Maße gehen auch. Derselbe Artikel – WeChat-Cover, Xiaohongshu-Cover, Video-Thumbnail – alles in einem Durchgang.
+
+Wie installiert man den Skill? Einfach dem AI-Agenten sagen:
+
+```
+Klone das Repository von https://github.com/joeytoday/open1v-skills, kopiere das Verzeichnis open1v-openai-cover nach ~/.agents/skills/, verifiziere, dass SKILL.md existiert, und lösche dann das geklonte Repository.
+```
+
+---
+
+Das Cover ist nicht mehr zwanzig Minuten Bildersuche, sondern ein Satz und zwei Minuten Wartezeit – mit mehreren Stilen zur Auswahl. Wer Tech-Blogs schreibt, sollte es ausprobieren.

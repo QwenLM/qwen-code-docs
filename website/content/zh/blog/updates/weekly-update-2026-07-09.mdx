@@ -1,0 +1,251 @@
+---
+title: "Qwen Code 周报：模型过载自动切换、子代理嵌套派生、企业微信频道接入"
+date: "2026-07-09"
+description: "本周发布 v0.19.6 ~ v0.19.8 共 3 个正式版本，150+ 个 PR 合入。模型 fallback 链、子代理嵌套派生、Web Shell 会话管理、企业微信频道接入等。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i4/O1CN012636Yt27UST9fbtkR_!!6000000007800-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：模型过载自动切换、子代理嵌套派生、企业微信频道接入"
+  date="2026-07-09"
+  author="Qwen Team"
+/>
+
+Qwen Code 本周发布 v0.19.6 ~ v0.19.8 共 3 个正式版本，150+ 个 PR 合入，覆盖四个方向：
+
+**模型过载不再卡死。** 之前遇到 429/503/529，对话直接中断，你得手动换模型重发。现在 fallback 链在主模型重试预算耗尽后自动切到备选模型继续回复。加上 `/model --project` 让不同项目绑定不同模型，不用每次手动切。
+
+**子代理可以派生子代理了。** 之前子代理是 " 叶子节点 "——接到任务只能自己干完，没法再分活。现在默认 5 层嵌套深度，子代理可以把子任务拆给下一层。TUI 和 Web Shell 都能看到树形结构，谁派生了谁一目了然。
+
+**Web Shell 会话管理成体系了。** 归档/删除/命名分组/颜色标签/定时任务管理页/会话总览分屏——之前会话侧边栏只能切换，现在能整理、分类、监控、并行操作。7 个 PR 把会话从 " 平铺列表 " 变成可管理的资源。
+
+**企业微信和权限控制补齐。** 企业微信智能机器人频道接入——Bot ID + Secret 两项配置就能用，不需要企业管理员权限开回调。PreToolUse hook 的 "ask" 现在真的会弹确认框了，之前这个选项等于静默拒绝。权限规则也支持 `Tool(param:value)` 语法，按参数值粒度控制。
+
+## ✨ 新增特性
+
+### 模型过载自动切换 + 项目级模型配置
+
+模型 429/503/529 的时候，你的对话会直接卡住。这个版本加了 opt-in 的 fallback 链——主模型在同一个模型的重试预算耗尽后，自动切到 fallback 列表里的下一个模型继续回复。只有容量和限流问题才走 fallback 路径。认证、配额、配置、客户端错误会直接失败，因为这些不是 " 模型过载 "，是 " 你的配置有问题 "。
+
+fallback 在向用户输出可见内容之前推进。如果 fallback 模型已经输出了部分内容然后挂了，剩余 fallback 不会继续尝试——你看到的是截断的回复。但下一个用户 turn 会重新从主模型开始，不会卡在 fallback 模型上。
+
+配合 `/model --project`，你可以把不同模型绑定到不同项目。`--project` 写入项目 `.qwen/settings.json`，`--global` 写入用户 `~/.qwen/settings.json`。不带标志时保持当前行为。作用域标志也适用于 `--fast`、`--voice`、`--vision`。
+
+你能用它做什么：
+
+- 配置 fallback 模型列表，模型过载时自动切换，不用手动改模型
+- 认证/配额错误不会被 fallback 掩盖，问题更早暴露
+- `/model --project` 让不同项目用不同模型，配置跟项目走
+- `/model --global` 设全局默认，新项目继承
+
+详见 PR [#6273](https://github.com/QwenLM/qwen-code/pull/6273)、[#6060](https://github.com/QwenLM/qwen-code/pull/6060)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01Jls06o24BH1mL0Pzr_!!6000000007352-2-tps-3837-2160.png)
+
+### 子代理嵌套派生 + 树形视图
+
+子代理现在可以再派生子代理了。默认深度上限 5 层，通过 `model.maxSubagentDepth` 配置。设为 1 就回到老的行为——子代理不能派生子代理。
+
+两层保护机制：schema 准备阶段，最深层的子代理不会看到 agent 工具（它根本不知道有这个工具可用）；运行时守卫，超过深度上限的派生请求会被拒绝。
+
+TUI 和 Web Shell 都能看到嵌套树形结构。子代理显示在父代理下方，带 ↳ 标记和缩进。父代理离开后，子代理提升为根节点，标注 "from \<parent\>"。详情视图显示 "Level N · from \<parent type\>"。blocking 标签和停止确认也变成链路感知的——只有取消会导致 turn 结束时才弹出确认。
+
+**这个能力默认开启**——升级后所有现有环境都获得嵌套派生能力。Fork 子进程、teammates、workflow agents 仍然排除在外。Arena 会话现在可以嵌套了。后台 agent 恢复时会恢复原始深度和启动时的 cap。
+
+你能用它做什么：
+
+- 让子代理处理复杂任务时，自己派生子代理分担子任务
+- 在 TUI 和 Web Shell 里看到完整的代理树形结构
+- 通过 `model.maxSubagentDepth` 调整嵌套深度上限
+
+详见 PR [#6189](https://github.com/QwenLM/qwen-code/pull/6189)、[#6239](https://github.com/QwenLM/qwen-code/pull/6239)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01dRNryi24AMEfTcSnl_!!6000000007350-2-tps-1400-900.png)
+
+### Web Shell 会话管理：归档、分组、定时任务、分屏
+
+7 个 PR 把 Web Shell 的会话侧边栏从 " 平铺列表 " 改造成一个可以整理、分类、监控、并行操作的管理面板。
+
+**归档与删除。** 每个会话行新增快捷操作和 "…" 溢出菜单（重命名/归档/删除）。归档后的会话收在可折叠的 "Archived" 区域，可以恢复或彻底删除。当前正在使用的会话不允许归档或删除，已归档的会话无法打开（409 `session_archived`），删除是硬删除，有二次确认。底层走 daemon 的 `archiveState` 和 `/sessions/archive`、`/sessions/unarchive` 端点。
+
+**命名分组与颜色标签。** 可以创建、重命名、删除分组，把会话拖进去，给分组打颜色标签和置顶/归档状态。分组数据从 daemon 层贯穿到 UI——daemon 侧的项目级 sidecar 文件存储分组元数据，REST/ACP 路由提供 CRUD 操作，能力门控下按客户端支持情况暴露。
+
+**会话总览与分屏。** 大屏下侧边栏出现会话总览面板，所有会话以实时卡片展示，按优先级排序：需要审批的排最前，然后是运行中的，最后是空闲的。每张卡片显示当前模型和客户端数量。多选后可以分屏查看——当前标签页内分屏，或者在新浏览器标签页打开（`?split=a,b` URL 参数）。N 个独立聊天面板并排显示，每个有自己的会话上下文，键盘焦点只作用于点击的面板。
+
+你能用它做什么：
+
+- 长期积累的会话归档整理，按项目分组、打颜色标签
+- 可视化创建和管理定时任务，不用手写 cron 表达式
+- 每个定时任务有独立会话，运行历史和转录随时可查
+- 大屏下分屏并行查看多个会话的实时状态
+
+详见 PR [#6293](https://github.com/QwenLM/qwen-code/pull/6293)、[#6350](https://github.com/QwenLM/qwen-code/pull/6350)、[#6305](https://github.com/QwenLM/qwen-code/pull/6305)、[#6348](https://github.com/QwenLM/qwen-code/pull/6348)、[#6389](https://github.com/QwenLM/qwen-code/pull/6389)、[#6453](https://github.com/QwenLM/qwen-code/pull/6453)、[#6400](https://github.com/QwenLM/qwen-code/pull/6400)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000006688/O1CN01TU0baW1zHA2Xr4Jlb_!!6000000006688-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/VdEHljK9q2bAx4k7vJS5yZ68heAa6ofvg0VP3manbL0.mp4" controls></video>
+
+### 企业微信频道接入
+
+通过 `@wecom/aibot-node-sdk` 接入企业微信智能机器人。配置只需要 Bot ID 和 Secret——不需要 Corp ID、Agent ID、回调 Token、EncodingAESKey，也不需要公网回调地址。
+
+通过 WebSocket 长连接接收消息，支持文本、语音转写、图文混排、图片、文件、视频、引用内容。Assistant 回复以企业微信 markdown 格式发送。出站只支持本地图片标记（频道临时目录内），文件/视频/语音标记会被忽略。
+
+配置方式：
+
+```json
+{
+  "type": "wecom",
+  "botId": "your-bot-id",
+  "secret": "your-secret",
+  "cwd": "/path/to/project"
+}
+```
+
+启动命令：`qwen channel start my-wecom`
+
+你能用它做什么：
+
+- 用 Bot ID + Secret 两项配置接入企业微信，不需要企业管理员权限
+- 接收文本、语音、图片、文件、视频、引用消息
+- 在企业微信群里让 Qwen Code 回复 markdown 格式消息
+
+详见 PR [#6436](https://github.com/QwenLM/qwen-code/pull/6436)
+
+![](https://gw.alicdn.com/imgextra/i4/O1CN010iHMUW20ZJLrg2c4m_!!6000000006863-2-tps-3837-2160.png)
+
+### PreToolUse hook 原生确认框
+
+PreToolUse hook 返回 `permissionDecision: "ask"` 之前等同于 "deny"——确认框根本不会出现，hook 开发者以为用户会看到选择，实际上被静默拒绝了。
+
+现在 "ask" 会弹出原生 TUI 确认框。选项是 "Yes, allow once" 和 "No, suggest changes"——没有 "always allow"，因为 hook 每次调用都会重新评估。批准后工具重新执行，拒绝则取消。
+
+非交互式 CLI 和后台 agent 场景，"ask" 回退到 deny——不会挂起等待。复用现有的 awaiting_approval 机制，没有另起一条路径。"denied" 和 "stop" 行为不变，PermissionRequest hook 不受影响。
+
+你能用它做什么：
+
+- PreToolUse hook 里用 "ask" 让用户决定是否执行工具
+- 不用担心非交互场景挂起
+- 每次调用 hook 都重新评估，不会永久放行
+
+详见 PR [#5629](https://github.com/QwenLM/qwen-code/pull/5629)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01P3ckV91x9FyOw6ky5_!!6000000006400-2-tps-3837-2160.png)
+
+### 自动生成 Skills 预览审查
+
+agent 自动生成 skill 时，之前只能看到文件名，确认后才知道里面写了什么。现在审查对话框内联预览完整内容——包括 frontmatter。
+
+模型生成的内容会被消毒：ANSI/VT 控制序列变成无害转义，CRLF 变成普通换行。读取上限 64 KiB，显示上限 12 行（自动换行计算），超出部分标记 "lines hidden" / "truncated"。
+
+按 `o` 可以在配置的编辑器里打开 skill 文件，不跳过当前 skill 审查。文件保存后自动刷新预览——配合 GUI 编辑器（macOS 默认行为）可以改完再看。
+
+"Turn off auto-generated skills" 选项在列表最后，选中后立即生效（不需要重启），workspace 级持久化。当前批次会被搁置（不删除），从 `/memory` 重新开启后批次会回来。
+
+你能用它做什么：
+
+- 在确认前看到 skill 的完整内容，不用先接受再去翻文件
+- 按 `o` 直接在编辑器里修改 skill 内容，保存后预览自动刷新
+- 一键关闭自动生成 skills，当前批次不会被删，随时从 /memory 恢复
+
+详见 PR [#6393](https://github.com/QwenLM/qwen-code/pull/6393)
+
+| Before (global qwen 0.19.6) — name + description only | After — single-skill review with inline preview and turn-off option |
+| :---: | :---: |
+| <img alt="Before — global qwen 0.19.6: name and description only, no preview" src="https://github.com/user-attachments/assets/e763c801-f9b1-4b17-a24e-d8ebacac58a1" /> | <img alt="After — single-skill review with inline SKILL.md preview and turn-off option" src="https://github.com/user-attachments/assets/7ccbf888-3e1e-49a1-b5da-0d24da19cc7f" /> |
+
+| After — last batch item, bulk options hidden | After — "Turn off auto-generated skills" selected |
+| :---: | :---: |
+| <img alt="After — last batch item: bulk options hidden" src="https://github.com/user-attachments/assets/39fb8416-0cc2-46e6-8ebd-5e193488a0fe" /> | <img alt="After — turn-off selected: batch closed with re-enable hint" src="https://github.com/user-attachments/assets/7caaa210-0228-4635-b9a3-ed578e8234fb" /> |
+
+## 📊 更多新功能
+
+| 功能 | PR | 对你的影响 |
+|------|-----|-----------|
+| **Daemon 状态仪表盘**：侧边栏查看运行状态、时序指标、Token 用量 | [#6272](https://github.com/QwenLM/qwen-code/pull/6272)、[#6307](https://github.com/QwenLM/qwen-code/pull/6307)、[#6388](https://github.com/QwenLM/qwen-code/pull/6388) | 不用敲命令，健康度和趋势一屏全览 |
+| **maxSubAgents**：限制并行子代理数量 | [#6354](https://github.com/QwenLM/qwen-code/pull/6354) | 控制资源消耗，防止子代理失控 |
+| **Tool(param:value) 权限**：按参数值粒度控制工具 | [#6106](https://github.com/QwenLM/qwen-code/pull/6106) | 精确禁止特定 model/skill 的子代理派生 |
+| **堆叠 slash-skill 调用**：`/skill1 /skill2` 连续执行 | [#6361](https://github.com/QwenLM/qwen-code/pull/6361) | 多技能串联不用分步操作 |
+| **tools.visible 配置**：选择性暴露延迟工具 | [#6372](https://github.com/QwenLM/qwen-code/pull/6372) | 启动时只看到你需要的工具 |
+| **定时任务过期可配置**：cron/loop 任务过期时间 | [#6173](https://github.com/QwenLM/qwen-code/pull/6173) | 长期定时任务不再意外失效 |
+| **Hook 状态注入**：Stop/SubagentStop hook 获取后台任务信息 | [#6531](https://github.com/QwenLM/qwen-code/pull/6531) | hook 可感知定时任务和 cron 状态 |
+| **权限模式徽标**：DEFAULT 模式底部显示当前权限 | [#6498](https://github.com/QwenLM/qwen-code/pull/6498) | 一眼确认当前安全模式 |
+| **紧凑 echarts 数据块**：Web Shell 支持图表 | [#6232](https://github.com/QwenLM/qwen-code/pull/6232) | 数据可视化直接在终端看 |
+| **MCP mentions + 图标化 @ 引用**：Web Shell | [#6279](https://github.com/QwenLM/qwen-code/pull/6279) | @ 引用更直观 |
+| **Markdown 表格控件**：列重排/缩放/冻结 | [#6444](https://github.com/QwenLM/qwen-code/pull/6444) | 大表格浏览体验提升 |
+| **LSP 热重载**：语言服务器支持热重载 | [#5953](https://github.com/QwenLM/qwen-code/pull/5953) | 改配置不用重启 LSP |
+| **频道记忆意图**：自然语言频道记忆 | [#6376](https://github.com/QwenLM/qwen-code/pull/6376) | 频道场景记忆更自然 |
+| **/review 质量门控**：issue 精确度和根因归属 | [#6395](https://github.com/QwenLM/qwen-code/pull/6395) | review 结果更可信 |
+| **glob 性能优化**：遍历时剪枝忽略目录 | [#6123](https://github.com/QwenLM/qwen-code/pull/6123) | 大型项目文件搜索更快 |
+| **slash 命令发现**：更高菜单、分组计数、模糊搜索 | [#6267](https://github.com/QwenLM/qwen-code/pull/6267) | 找命令更快 |
+| **per-worktree auto-memory**：每个 worktree 独立记忆 | [#6462](https://github.com/QwenLM/qwen-code/pull/6462) | 不同分支记忆不混淆 |
+| **Agent working_dir**：子代理固定到 worktree | [#6456](https://github.com/QwenLM/qwen-code/pull/6456) | 子代理在指定目录工作 |
+| **扩展热重载**：插件变更自动重载 | [#6347](https://github.com/QwenLM/qwen-code/pull/6347) | 改插件不用重启 |
+| **dmPolicy**：禁用私聊消息 | [#6521](https://github.com/QwenLM/qwen-code/pull/6521) | 频道机器人只响应群聊 |
+| **serve 环境隔离**：serve 模式环境隔离 + 总量控制 | [#6416](https://github.com/QwenLM/qwen-code/pull/6416) | 多项目 serve 互不干扰 |
+| **多工作区会话路由**：serve 支持多工作区 | [#6511](https://github.com/QwenLM/qwen-code/pull/6511) | 一个 serve 实例服务多项目 |
+| **per-tool-call 超时**：单次工具调用超时 | [#6136](https://github.com/QwenLM/qwen-code/pull/6136) | 单个工具挂起不会拖垮整个会话 |
+| **dataviz 内置 skill**：数据可视化技能 | [#6198](https://github.com/QwenLM/qwen-code/pull/6198) | 开箱即用的图表生成 |
+
+## 🔧 重要修复
+
+| 修复 | PR | 对你的影响 |
+|------|-----|-----------|
+| **auth 401 修复**：认证失效后 401 不再卡住 | [#6284](https://github.com/QwenLM/qwen-code/pull/6284) | token 过期不再阻塞会话 |
+| **OpenAI 非 SSE 检测**：正确识别非流式响应 | [#6466](https://github.com/QwenLM/qwen-code/pull/6466) | OpenAI 兼容端点不再误判 |
+| **流式滚动锁定**：流式输出时不再抢滚动位置 | [#6170](https://github.com/QwenLM/qwen-code/pull/6170)、[#6421](https://github.com/QwenLM/qwen-code/pull/6421) | 长输出时可以自由滚动查看历史 |
+| **Windows pager 修复**：Windows 下 pager 不再崩溃 | [#6390](https://github.com/QwenLM/qwen-code/pull/6390) | Windows 用户体验稳定 |
+| **qqbot 安全修复**：频道安全加固 | [#6200](https://github.com/QwenLM/qwen-code/pull/6200) | QQ 频道机器人更安全 |
+| **上下文窗口默认 200k**：修正默认值 | [#6387](https://github.com/QwenLM/qwen-code/pull/6387) | 上下文窗口配置更准确 |
+| **ACP settings 竞态修复**：设置读写竞态 | [#6292](https://github.com/QwenLM/qwen-code/pull/6292) | 并发设置不再出错 |
+| **/clear 解除阻塞**：/clear 不再卡住 | [#6499](https://github.com/QwenLM/qwen-code/pull/6499) | 清屏命令恢复正常 |
+
+## 👥 贡献者
+
+| 贡献者                                                            | 贡献内容                                                                                                                         | 参考 PR 链接                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[@wenshao](https://github.com/wenshao)**                     | Daemon 状态仪表盘、时序指标、Token 用量分析、会话归档/删除、会话分组 + 颜色标签、定时任务管理页、定时任务独立会话、统一任务会话、会话总览 + 分屏、slash 命令发现、Agent working_dir、serve 端口自动重试 | [#6272](https://github.com/QwenLM/qwen-code/pull/6272)、[#6307](https://github.com/QwenLM/qwen-code/pull/6307)、[#6388](https://github.com/QwenLM/qwen-code/pull/6388)、[#6293](https://github.com/QwenLM/qwen-code/pull/6293)、[#6350](https://github.com/QwenLM/qwen-code/pull/6350)、[#6348](https://github.com/QwenLM/qwen-code/pull/6348)、[#6389](https://github.com/QwenLM/qwen-code/pull/6389)、[#6453](https://github.com/QwenLM/qwen-code/pull/6453)、[#6400](https://github.com/QwenLM/qwen-code/pull/6400)、[#6267](https://github.com/QwenLM/qwen-code/pull/6267)、[#6456](https://github.com/QwenLM/qwen-code/pull/6456)、[#6513](https://github.com/QwenLM/qwen-code/pull/6513)                                                                                                               |
+| **[@ytahdn](https://github.com/ytahdn)**                       | 会话恢复、禁用 skill 设置、自定义 @mention 面板、会话回调、虚拟滚动、工具详情、中断流错误处理、待办刷新、工具调用摘要、外部分屏控制                                                   | [#6220](https://github.com/QwenLM/qwen-code/pull/6220)、[#6223](https://github.com/QwenLM/qwen-code/pull/6223)、[#6242](https://github.com/QwenLM/qwen-code/pull/6242)、[#6333](https://github.com/QwenLM/qwen-code/pull/6333)、[#6342](https://github.com/QwenLM/qwen-code/pull/6342)、[#6352](https://github.com/QwenLM/qwen-code/pull/6352)、[#6357](https://github.com/QwenLM/qwen-code/pull/6357)、[#6362](https://github.com/QwenLM/qwen-code/pull/6362)、[#6399](https://github.com/QwenLM/qwen-code/pull/6399)、[#6422](https://github.com/QwenLM/qwen-code/pull/6422)、[#6424](https://github.com/QwenLM/qwen-code/pull/6424)、[#6425](https://github.com/QwenLM/qwen-code/pull/6425)、[#6450](https://github.com/QwenLM/qwen-code/pull/6450)、[#6523](https://github.com/QwenLM/qwen-code/pull/6523) |
+| **[@yiliang114](https://github.com/yiliang114)**               | 模型 fallback 链、maxSubAgents、auth 401 修复                                                                                       | [#6273](https://github.com/QwenLM/qwen-code/pull/6273)、[#6354](https://github.com/QwenLM/qwen-code/pull/6354)、[#6284](https://github.com/QwenLM/qwen-code/pull/6284)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **[@tanzhenxin](https://github.com/tanzhenxin)**               | 子代理嵌套派生、Web Shell 树形视图、自动生成 Skills 预览审查、上下文窗口默认值修正                                                                           | [#6189](https://github.com/QwenLM/qwen-code/pull/6189)、[#6239](https://github.com/QwenLM/qwen-code/pull/6239)、[#6393](https://github.com/QwenLM/qwen-code/pull/6393)、[#6387](https://github.com/QwenLM/qwen-code/pull/6387)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **[@doudouOUC](https://github.com/doudouOUC)**                 | Daemon 会话组织后端、serve 环境隔离、多工作区会话路由                                                                                            | [#6305](https://github.com/QwenLM/qwen-code/pull/6305)、[#6416](https://github.com/QwenLM/qwen-code/pull/6416)、[#6511](https://github.com/QwenLM/qwen-code/pull/6511)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **[@qqqys](https://github.com/qqqys)**                         | 企业微信频道接入、频道记忆意图、频道循环工具、dataviz 内置 skill                                                                                      | [#6436](https://github.com/QwenLM/qwen-code/pull/6436)、[#6376](https://github.com/QwenLM/qwen-code/pull/6376)、[#6287](https://github.com/QwenLM/qwen-code/pull/6287)、[#6198](https://github.com/QwenLM/qwen-code/pull/6198)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **[@DennisYu07](https://github.com/DennisYu07)**               | Tool(param:value) 权限、堆叠 slash-skill 调用、权限模式徽标、Hook 状态注入                                                                      | [#6106](https://github.com/QwenLM/qwen-code/pull/6106)、[#6361](https://github.com/QwenLM/qwen-code/pull/6361)、[#6498](https://github.com/QwenLM/qwen-code/pull/6498)、[#6531](https://github.com/QwenLM/qwen-code/pull/6531)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **[@LaZzyMan](https://github.com/LaZzyMan)**                   | PreToolUse hook 原生确认框                                                                                                        | [#5629](https://github.com/QwenLM/qwen-code/pull/5629)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **[@DragonnZhang](https://github.com/DragonnZhang)**           | /review 质量门控                                                                                                                 | [#6395](https://github.com/QwenLM/qwen-code/pull/6395)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **[@Alex-ai-future](https://github.com/Alex-ai-future)**       | 项目级模型配置 /model --project                                                                                                     | [#6060](https://github.com/QwenLM/qwen-code/pull/6060)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **[@VectorPeak](https://github.com/VectorPeak)**               | OpenAI 非 SSE 检测修复                                                                                                            | [#6466](https://github.com/QwenLM/qwen-code/pull/6466)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **[@han-dreamer](https://github.com/han-dreamer)**             | Windows pager 修复                                                                                                             | [#6390](https://github.com/QwenLM/qwen-code/pull/6390)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **[@MikeWang0316tw](https://github.com/MikeWang0316tw)**       | 流式滚动锁定修复                                                                                                                     | [#6170](https://github.com/QwenLM/qwen-code/pull/6170)、[#6421](https://github.com/QwenLM/qwen-code/pull/6421)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **[@water-in-stone](https://github.com/water-in-stone)**       | LSP 热重载                                                                                                                      | [#5953](https://github.com/QwenLM/qwen-code/pull/5953)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **[@ZijianZhang989](https://github.com/ZijianZhang989)**       | 扩展热重载                                                                                                                        | [#6347](https://github.com/QwenLM/qwen-code/pull/6347)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **[@BZ-D](https://github.com/BZ-D)**                           | MCP mentions + 图标化 @ 引用                                                                                                      | [#6279](https://github.com/QwenLM/qwen-code/pull/6279)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **[@jifeng](https://github.com/jifeng)**                       | Markdown 表格控件（列重排/缩放/冻结）                                                                                                     | [#6444](https://github.com/QwenLM/qwen-code/pull/6444)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **[@zhangxy-zju](https://github.com/zhangxy-zju)**             | 紧凑 echarts 数据块                                                                                                               | [#6232](https://github.com/QwenLM/qwen-code/pull/6232)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **[@Eric-GoodBoy-Tech](https://github.com/Eric-GoodBoy-Tech)** | qqbot 安全修复                                                                                                                   | [#6200](https://github.com/QwenLM/qwen-code/pull/6200)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **[@TianYuan1024](https://github.com/TianYuan1024)**           | 定时任务过期时间可配置                                                                                                                  | [#6173](https://github.com/QwenLM/qwen-code/pull/6173)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 🆕 **[@callmeYe](https://github.com/callmeYe)**                | 🎉 首次贡献：会话记忆遗忘/梦境、定时任务时间线 UI、用户管理记忆                                                                                          | [#6227](https://github.com/QwenLM/qwen-code/pull/6227)、[#6386](https://github.com/QwenLM/qwen-code/pull/6386)、[#6432](https://github.com/QwenLM/qwen-code/pull/6432)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 🆕 **[@kagura-agent](https://github.com/kagura-agent)**        | 🎉 首次贡献：prompt-cache 保留 tools 前缀、前台并发上限、skill 扫描缓存                                                                           | [#6225](https://github.com/QwenLM/qwen-code/pull/6225)、[#6300](https://github.com/QwenLM/qwen-code/pull/6300)、[#6155](https://github.com/QwenLM/qwen-code/pull/6155)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 🆕 **[@Aleks-0](https://github.com/Aleks-0)**                  | 🎉 首次贡献：tools.visible 配置、UTF-8 cmd.exe、KV-cache                                                                              | [#6372](https://github.com/QwenLM/qwen-code/pull/6372)、[#6216](https://github.com/QwenLM/qwen-code/pull/6216)、[#6420](https://github.com/QwenLM/qwen-code/pull/6420)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 🆕 **[@Nas01010101](https://github.com/Nas01010101)**          | 🎉 首次贡献：请求超时、@-attached 文件                                                                                                   | [#6288](https://github.com/QwenLM/qwen-code/pull/6288)、[#6295](https://github.com/QwenLM/qwen-code/pull/6295)、[#6324](https://github.com/QwenLM/qwen-code/pull/6324)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 🆕 **[@zjunothing](https://github.com/zjunothing)**            | 🎉 首次贡献：per-worktree auto-memory、/clear 解除阻塞、状态行抖动修复                                                                         | [#6462](https://github.com/QwenLM/qwen-code/pull/6462)、[#6499](https://github.com/QwenLM/qwen-code/pull/6499)、[#6533](https://github.com/QwenLM/qwen-code/pull/6533)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 🆕 **[@minmax](https://github.com/minmax)**                    | 🎉 首次贡献：glob 性能优化、per-tool-call 超时                                                                                           | [#6123](https://github.com/QwenLM/qwen-code/pull/6123)、[#6136](https://github.com/QwenLM/qwen-code/pull/6136)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 🆕 **[@pomelo-nwu](https://github.com/pomelo-nwu)**            | 🎉 首次贡献：PR 门控强化、review 建议路由                                                                                                  | [#5723](https://github.com/QwenLM/qwen-code/pull/5723)、[#5786](https://github.com/QwenLM/qwen-code/pull/5786)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 🆕 **[@chiga0](https://github.com/chiga0)**                    | 🎉 首次贡献：会话 artifact API、daemon side-channel 文档                                                                               | [#5895](https://github.com/QwenLM/qwen-code/pull/5895)、[#4511](https://github.com/QwenLM/qwen-code/pull/4511)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 🆕 **[@gauravyad86](https://github.com/gauravyad86)**          | 🎉 首次贡献：bootstrap 快速路径、transform_data 隔离                                                                                     | [#6188](https://github.com/QwenLM/qwen-code/pull/6188)、[#6285](https://github.com/QwenLM/qwen-code/pull/6285)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 🆕 **[@mvanhorn](https://github.com/mvanhorn)**                | 🎉 首次贡献：macOS seatbelt 配置路径、流式空闲超时默认值                                                                                        | [#6172](https://github.com/QwenLM/qwen-code/pull/6172)、[#6107](https://github.com/QwenLM/qwen-code/pull/6107)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 🆕 **[@AmariahAK](https://github.com/AmariahAK)**              | 🎉 首次贡献：视觉模型选择                                                                                                               | [#6209](https://github.com/QwenLM/qwen-code/pull/6209)、[#6236](https://github.com/QwenLM/qwen-code/pull/6236)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 🆕 **[@barry166](https://github.com/barry166)**                | 🎉 首次贡献：VSCode 认证、audio prebuild                                                                                             | [#6274](https://github.com/QwenLM/qwen-code/pull/6274)、[#6275](https://github.com/QwenLM/qwen-code/pull/6275)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 🆕 **[@chenghuichen](https://github.com/chenghuichen)**        | 🎉 首次贡献：dmPolicy 禁用私聊消息                                                                                                      | [#6521](https://github.com/QwenLM/qwen-code/pull/6521)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 🆕 **[@beantownbytes](https://github.com/beantownbytes)**      | 🎉 首次贡献：非 DashScope 环境禁用 qwen thinking                                                                                       | [#6271](https://github.com/QwenLM/qwen-code/pull/6271)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 🆕 **[@heyparth1](https://github.com/heyparth1)**              | 🎉 首次贡献：上下文窗口计算修复                                                                                                            | [#6266](https://github.com/QwenLM/qwen-code/pull/6266)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 🆕 **[@tomsen-ai](https://github.com/tomsen-ai)**              | 🎉 首次贡献：无参数工具调用                                                                                                              | [#6250](https://github.com/QwenLM/qwen-code/pull/6250)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！

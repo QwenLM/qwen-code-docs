@@ -1,0 +1,211 @@
+---
+title: "Qwen Code Weekly: /loop Autonomous Mode, Desktop Voice Dictation, Tabbed Settings View"
+date: "2026-07-02"
+description: "This week we shipped v0.19.4 with 80+ PRs merged, introducing /loop autonomous mode, desktop voice dictation, tabbed settings view, and more."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01AYqMKM1aRorovg0v7_!!6000000003327-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code Weekly: /loop Autonomous Mode, Desktop Voice Dictation, Tabbed Settings View"
+  date="2026-07-02"
+  author="Qwen Team"
+/>
+
+
+Qwen Code shipped v0.19.4 this week with 80+ PRs merged across three directions:
+
+**`/loop` keeps working while you're away.** A bare `/loop` launches autonomous mode — the agent advances established work while you're gone, without inventing new tasks or performing irreversible operations. Add a `.qwen/loop.md` task file and the loop re-reads the editable checklist each tick; delete it and the loop fires no-op ticks to stay alive. Claude Code recently published a [getting-started guide on agent loops](https://claude.com/blog/getting-started-with-loops) about agents repeatedly executing an established plan — `/loop` autonomous mode does something similar, with one addition: the task list is editable at any time and the loop picks up changes automatically.
+
+**Desktop voice dictation is here.** Voice dictation was already available in CLI and Web Shell, but the desktop app was missing it. This release closes the gap — all three surfaces now share the same experience.
+
+**Terminal interaction catches up.** `/settings` is now a tabbed view instead of a flat list — search, status, and stats all on one screen. Virtualized History mode now supports mouse clicks and hover on menus, completions, and the input box.
+
+## New Features
+
+### `/loop` Autonomous Mode + loop.md Task File
+
+`/loop` now supports two new modes:
+
+**Autonomous mode**: A bare `/loop` (no prompt, no interval) no longer prints usage hints — it launches a self-paced autonomous loop. The agent advances established work while you're away — maintaining open PRs, continuing half-finished tasks, delivering on commitments — but only what the transcript has already established. It won't invent new tasks, won't perform irreversible actions (push/delete/send) without explicit authorization, and stops when things go quiet. The autonomous preamble fires once at the start; each subsequent tick sends only a short reminder to keep token costs low.
+
+**loop.md task file**: Create `.qwen/loop.md` at the project root or under `~/.qwen/`, set the wakeup/cron prompt to a sentinel (`<<loop.md-dynamic>>` or `<<loop.md>>`), and the loop re-reads the file on every fire. The full content is delivered on first read; subsequent ticks send a short reminder if unchanged; editing the file triggers full re-delivery. When the file is missing, the loop fires no-op ticks (the agent does nothing, just re-arms to keep the loop alive), falling back to autonomous-mode base behavior. Recreate loop.md and the next tick auto-detects the change and re-delivers the full content.
+
+**Channel loops**: `/loop` isn't limited to the terminal — DingTalk and Feishu channels work too. Use `/loop add "0 9 * * 1-5" check CI status` in a group chat to create a scheduled loop, `/loop list` to see all loops in the current channel, `/loop inspect <id>` to check run count and recent results, and `/loop cancel <id>` to stop one. Loops execute through the channel session router, waiting for the current active turn to finish before starting; results are written back through the channel's proactive send. One-shot loops auto-disable after success or failure.
+
+**What you can do with it:**
+
+- Bare `/loop` lets the agent watch and advance work while you're away
+- Use `.qwen/loop.md` to maintain a persistent, editable task list without re-describing it every tick
+- Delete loop.md and the loop fires no-op ticks to stay alive; recreate it to seamlessly resume
+- Use `/loop add` in DingTalk/Feishu group chats to schedule recurring agent work
+
+See PR [#5890](https://github.com/QwenLM/qwen-code/pull/5890), [#5991](https://github.com/QwenLM/qwen-code/pull/5991), [#6073](https://github.com/QwenLM/qwen-code/pull/6073)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000002454/O1CN01vw4qRY1Tzz61J45Mh_!!6000000002454-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/ytGdVb28ZDLZxgzI3BFhtGSTleBZemLHPiLqw_lI53E.mp4" controls></video>
+
+### Desktop Voice Dictation: All Three Surfaces Aligned
+
+Voice dictation was already available in CLI and Web Shell, but missing from the desktop app — users who configured voice input lost the capability when switching to the desktop. This release closes the last gap.
+
+A microphone button has been added to the composer toolbar. During recording, the toolbar transforms into a recording bar (dotted guide line, live waveform, timer). When stopped, the transcription result is inserted into the input box for review. Transcription runs server-side, reusing the CLI voice pipeline (batch `qwen3-asr-flash` and realtime `*-realtime` models); provider credentials never enter the renderer. Voice can be toggled and the model selected in Settings > Input and the composer model dropdown.
+
+**What you can do with it:**
+
+- Click the microphone and speak — see live waveform and timer
+- Select a realtime model (e.g. `qwen3-asr-flash-realtime`) to see interim text as you speak
+- Go hands-free for input on a tablet or multi-monitor setup
+
+See PR [#5856](https://github.com/QwenLM/qwen-code/pull/5856)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000007413/O1CN01JVZosB24dDBcBYKP7_!!6000000007413-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/J-6kYrUGwlI-KcGhRr1tuzipOySnNR78nq4SqeuEAG0.mp4" controls></video>
+
+> **How to get started:**
+> 1. Clone the repo:
+> ```
+> git clone https://github.com/QwenLM/qwen-code.git
+> ```
+> 2. Navigate to the desktop package
+> ```
+> cd qwen-code/packages/desktop
+> ```
+> 3. Install dependencies and start dev mode
+> ```
+> bun install && bun run dev
+> ```
+
+### Mobile Sidebar Drawer + `qwen serve` Experience Improvements
+
+Previously, when accessing `qwen serve` from a mobile browser, the sidebar (session list, search, new session) was hidden below 760px with `display: none` — there was no way to switch sessions. Now it uses an overlay drawer instead: a menu button appears in the chat panel header, and tapping it slides the sidebar in from the left with a semi-transparent backdrop. Selecting a session, creating a new one, or tapping the backdrop all close the drawer. The desktop layout is completely unaffected.
+
+Behind this is a series of changes that take `qwen serve` from "usable" to "good":
+
+- **Lazy session creation** ([#6066](https://github.com/QwenLM/qwen-code/pull/6066)): Sessions are only created on first prompt, reducing empty-session overhead and speeding up Web Shell startup
+- **Workspace remember** ([#5884](https://github.com/QwenLM/qwen-code/pull/5884)): Serve mode remembers the workspace, no need to re-specify after restart
+- **Session archive** ([#6058](https://github.com/QwenLM/qwen-code/pull/6058)): Daemon supports session archival — long-lived sessions finally have a management path
+
+**What you can do with it:**
+
+- Access `qwen serve` from a mobile browser and tap the menu to switch sessions
+- Serve mode auto-remembers the workspace when switching between projects
+- Archive long-lived sessions instead of deleting them
+
+See PR [#6003](https://github.com/QwenLM/qwen-code/pull/6003)
+
+| Description | Sidebar collapsed | Sidebar expanded |
+| ---- | --- | --- |
+| Screenshot | ![](https://gw.alicdn.com/imgextra/i3/O1CN01f8YXr81lxqKPAKZed_!!6000000004886-2-tps-390-844.png) | ![](https://gw.alicdn.com/imgextra/i3/O1CN01ZQ5jCT1KMIEL5UmLi_!!6000000001149-2-tps-390-844.png) |
+
+### TUI Mouse Click and Hover
+
+The CLI previously only supported mouse wheel and scrollbar in Virtualized History mode — no pointer interaction. Now with Virtualized History enabled (`ui.useTerminalBuffer`), three types of interaction are available:
+
+- **Selection menus and dialogs** (permission confirmations, `/model`, `/config`, themes, etc.): hover highlights the row under the pointer, click to select
+- **`/` command and `@` file suggestion lists**: hover highlights suggestions, click to accept
+- **Input box**: left-click positions the text cursor (supports multi-line wrapping, scroll offsets, wide characters)
+
+**What you can do with it:**
+
+- Click to select a model in the `/model` dialog instead of arrow-keying through
+- Click a completion item after typing `/`
+- Click to reposition the cursor in multi-line input
+
+See PR [#6011](https://github.com/QwenLM/qwen-code/pull/6011)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01c0h5qw1vEdOGiDaqv_!!6000000006141-1-tps-1280-720.gif)
+
+### Tabbed Settings Dialog: Search, Status, and Stats on One Screen
+
+`/settings` has been redesigned from a flat list into a tabbed view, inspired by Claude Code's `/config`. A top tab bar splits into Settings / Status / Stats pages. The Settings page adds a search box — type to filter instantly.
+
+The Status page shows the same system info as `/status`. The Stats page embeds the full `/stats` dashboard (Session / Activity / Efficiency sub-tabs). Keyboard focus moves vertically through tab bar, search box, and settings list — highlights only appear on the region that actually holds focus.
+
+**What you can do with it:**
+
+- Open `/settings` and immediately type a keyword to filter settings
+- Use left/right arrows to switch to the Status page for runtime info — no need to run `/status` separately
+- In the Stats page, Tab through Session / Activity / Efficiency; the Efficiency table auto-collapses to "+N more" when it exceeds the dialog height
+
+See PR [#6044](https://github.com/QwenLM/qwen-code/pull/6044)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01X1ytLW1KtGkN6GEGW_!!6000000001221-1-tps-1280-720.gif)
+
+### Chrome Extension: Chat and Operate Pages Directly from the Browser
+
+The Chrome extension has been revived on a daemon-direct architecture — the extension is no longer a Native Messaging host, but a thin client of the local `qwen serve` daemon.
+
+Sidebar chat connects directly to `qwen serve` via `DaemonSessionProvider` (HTTP+SSE, same path as Web Shell); when the daemon isn't reachable, it prompts "run `qwen serve`". Browser tools (read page, screenshot, console, navigate, click, fill forms) are exposed to the agent as client-hosted MCP servers via daemon WebSocket. Both chat and tool paths have eliminated Native Messaging entirely.
+
+> [!caution]
+>
+> Note: The reverse tool channel is currently enabled via the `QWEN_SERVE_CLIENT_MCP_OVER_WS` environment variable and is off by default — you need to explicitly set this flag when starting `qwen serve`.
+
+**What you can do with it:**
+
+- Chat with Qwen Code directly in the Chrome sidebar — no OS-level native host installation needed
+- Let the agent read the current page, take screenshots, and interact with browser elements
+- Reuse the shared Web Shell UI for a consistent experience
+
+See PR [#5777](https://github.com/QwenLM/qwen-code/pull/5777)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01lMYRsQ1k8G6Tq18M3_!!6000000004638-2-tps-3837-2160.png)
+
+## More New Features
+
+| Feature | PR | Impact |
+| ------- | -- | ------ |
+| **`/config key=value`**: Change any config directly at the prompt, with Tab completion + spell-check | [#5773](https://github.com/QwenLM/qwen-code/pull/5773) | No more editing settings.json manually |
+| **Session timeline rail**: Compact timeline on the web shell left edge, hover to show turn details | [#6078](https://github.com/QwenLM/qwen-code/pull/6078) | Quickly locate turns in long sessions |
+| **/skills ACP output enhanced**: Shows description and level | [#6117](https://github.com/QwenLM/qwen-code/pull/6117) | More complete skills listing info |
+| **Auto-mode full shell classification**: New `classifyAllShell` setting (off by default) | [#6040](https://github.com/QwenLM/qwen-code/pull/6040) | Defense in depth for production |
+| **qwen tag multi-identity in group chats**: DingTalk shared sessions support `[sender]` speaker tags | [#5888](https://github.com/QwenLM/qwen-code/pull/5888) | Agent can tell who's talking in group chats |
+| **Group history backfill**: Backfill group history messages | [#6074](https://github.com/QwenLM/qwen-code/pull/6074) | New members can see past messages |
+| **Browser tab favicon**: Web Shell browser tab icon | [#6091](https://github.com/QwenLM/qwen-code/pull/6091) | Easier to distinguish across tabs |
+| **Chat UI and table rendering polish**: Web Shell chat interface refinements | [#6099](https://github.com/QwenLM/qwen-code/pull/6099) | Improved visual experience |
+| **Queued-prompt UX**: Web Shell Esc interruption is friendlier | [#6025](https://github.com/QwenLM/qwen-code/pull/6025) | Smoother interruption flow |
+| **Resumable /acp session stream**: Supports Last-Event-ID for resume | [#5852](https://github.com/QwenLM/qwen-code/pull/5852) | More stable SDK connections |
+| **Glob patterns in mcp.allowed/excluded**: MCP allowlist supports wildcards | [#6012](https://github.com/QwenLM/qwen-code/pull/6012) | More flexible MCP configuration |
+| **Inline model override**: `/model` supports one-shot model override | [#6022](https://github.com/QwenLM/qwen-code/pull/6022) | Easier temporary model switching |
+| **Leader approval for plan-required teammates**: Plan-required teammates need leader approval | [#6138](https://github.com/QwenLM/qwen-code/pull/6138) | Safer multi-agent collaboration |
+
+## Key Fixes
+
+| Fix | PR | Impact |
+| --- | -- | ------ |
+| **MCP tool idle timeout**: Server auto-aborts after 5 minutes of no response, preventing hung sessions | [#6061](https://github.com/QwenLM/qwen-code/pull/6061) | Long-running MCP tools no longer block indefinitely |
+| **Diff whitespace-only edits**: Whitespace-only changes no longer show "No changes detected" | [#6141](https://github.com/QwenLM/qwen-code/pull/6141) | More accurate diff output |
+| **TUI input latency**: Yields to React after addItem, reducing input jank | [#6059](https://github.com/QwenLM/qwen-code/pull/6059) | Smoother typing |
+| **Non-VP multi-agent scrolling**: Transcript is scrollable during multi-agent runs | [#6015](https://github.com/QwenLM/qwen-code/pull/6015) | Can review history in multi-agent scenarios |
+| **HTTPS/TLS support**: `qwen serve` adds `--tls-cert` and `--tls-key` flags | [#6032](https://github.com/QwenLM/qwen-code/pull/6032) | Works in self-signed cert environments |
+| **Windows tilde paths**: Supports Windows-style `~` path expansion | [#6029](https://github.com/QwenLM/qwen-code/pull/6029) | Path compatibility for Windows users |
+
+## Contributors
+
+| Contributor | Contributions | PR Links |
+| ----------- | ------------- | -------- |
+| **[@qqqys](https://github.com/qqqys)** | `/loop` autonomous mode + loop.md task file, voice dictation, qwen tag multi-identity in group chats, group history backfill, channel loop support | [#5890](https://github.com/QwenLM/qwen-code/pull/5890), [#5991](https://github.com/QwenLM/qwen-code/pull/5991), [#5856](https://github.com/QwenLM/qwen-code/pull/5856), [#5888](https://github.com/QwenLM/qwen-code/pull/5888), [#6074](https://github.com/QwenLM/qwen-code/pull/6074), [#6073](https://github.com/QwenLM/qwen-code/pull/6073) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | `/effort` unified reasoning intensity, TUI mouse click and hover, tabbed settings dialog | [#6072](https://github.com/QwenLM/qwen-code/pull/6072), [#6011](https://github.com/QwenLM/qwen-code/pull/6011), [#6044](https://github.com/QwenLM/qwen-code/pull/6044) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Session archive, skills ACP output enhancements, leader approval for plan-required teammates, diff whitespace-only edit display | [#6058](https://github.com/QwenLM/qwen-code/pull/6058), [#6117](https://github.com/QwenLM/qwen-code/pull/6117), [#6138](https://github.com/QwenLM/qwen-code/pull/6138), [#6141](https://github.com/QwenLM/qwen-code/pull/6141) |
+| **[@DennisYu07](https://github.com/DennisYu07)** | `/config` command, auto-mode full shell classification, MCP allowlist wildcards, MCP tool idle timeout | [#5773](https://github.com/QwenLM/qwen-code/pull/5773), [#6040](https://github.com/QwenLM/qwen-code/pull/6040), [#6012](https://github.com/QwenLM/qwen-code/pull/6012), [#6061](https://github.com/QwenLM/qwen-code/pull/6061) |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)** | Mobile Sidebar Drawer, HTTPS/TLS support | [#6003](https://github.com/QwenLM/qwen-code/pull/6003), [#6032](https://github.com/QwenLM/qwen-code/pull/6032) |
+| **[@callmeYe](https://github.com/callmeYe)** | Workspace remember, session timeline rail | [#5884](https://github.com/QwenLM/qwen-code/pull/5884), [#6078](https://github.com/QwenLM/qwen-code/pull/6078) |
+| **[@ytahdn](https://github.com/ytahdn)** | Lazy session creation, chat UI and table rendering polish | [#6066](https://github.com/QwenLM/qwen-code/pull/6066), [#6099](https://github.com/QwenLM/qwen-code/pull/6099) |
+| **[@chiga0](https://github.com/chiga0)** | Resumable /acp session stream, non-VP multi-agent scrolling | [#5852](https://github.com/QwenLM/qwen-code/pull/5852), [#6015](https://github.com/QwenLM/qwen-code/pull/6015) |
+| **[@yiliang114](https://github.com/yiliang114)** | Chrome extension revival | [#5777](https://github.com/QwenLM/qwen-code/pull/5777) |
+| **[@wenshao](https://github.com/wenshao)** | Browser tab favicon | [#6091](https://github.com/QwenLM/qwen-code/pull/6091) |
+| **[@carffuca](https://github.com/carffuca)** | Queued-prompt UX improvements | [#6025](https://github.com/QwenLM/qwen-code/pull/6025) |
+| **[@Alex-ai-future](https://github.com/Alex-ai-future)** | TUI input latency optimization | [#6059](https://github.com/QwenLM/qwen-code/pull/6059) |
+| **[@VectorPeak](https://github.com/VectorPeak)** | Windows tilde path expansion | [#6029](https://github.com/QwenLM/qwen-code/pull/6029) |
+| **[@Minerest](https://github.com/Minerest)** | First contribution: Fixed memory recall to only trigger when auto-memory is enabled | [#5963](https://github.com/QwenLM/qwen-code/pull/5963) |
+| **[@TianYuan1024](https://github.com/TianYuan1024)** | First contribution: Added `--insecure` flag to skip TLS verification, `/model` inline model override | [#5962](https://github.com/QwenLM/qwen-code/pull/5962), [#6022](https://github.com/QwenLM/qwen-code/pull/6022) |
+| **[@gauravyad86](https://github.com/gauravyad86)** | First contribution: Fixed critical-severity npm security vulnerabilities (`simple-git`, `shell-quote`, and other runtime dependencies), added CI audit check | [#6065](https://github.com/QwenLM/qwen-code/pull/6065) |
+
+<Callout type="info">
+  **Upgrade**: Run `npm i @qwen-code/qwen-code@latest -g` to upgrade to the latest version.
+</Callout>
+
+If you have questions or feedback, feel free to open an issue on [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!

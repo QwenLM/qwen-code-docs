@@ -3,7 +3,8 @@
 @import "nextra-theme-docs/style.css";
 @source "../**/*.{ts,tsx}";
 
-.blog-index-page .nextra-breadcrumb {
+.blog-index-page .nextra-breadcrumb,
+.blog-post-page .nextra-breadcrumb {
   display: none;
 }
 

@@ -1,0 +1,246 @@
+---
+title: "Qwen Code: Steering в реальном времени, изоляция сессий через Worktree, встроенный web_search снова в строю"
+date: "2026-07-23"
+description: "На этой неделе выпущены 3 стабильные версии v0.19.12, v0.20.0 и v0.20.1, принято более 220 PR. Steering в реальном времени для мгновенной корректировки Agent, изоляция параллельных задач через Worktree в один клик, встроенный web_search на ключах Bailian, полная переработка web_fetch, мультимодальная маршрутизация на уровне turn."
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i4/O1CN01SSTt6S1ZXU9QHIEdP_!!6000000003204-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code: Steering в реальном времени, изоляция сессий через Worktree, встроенный web_search снова в строю"
+  date="2026-07-23"
+  author="Qwen Team"
+/>
+
+На этой неделе Qwen Code выпустил 3 стабильные версии v0.19.12, v0.20.0 и v0.20.1, принято более 220 PR.
+
+**Agent свернул не туда? Просто напишите.** Нажмите Enter во время вывода модели — сообщение направит текущий turn на следующем sampling boundary. Ctrl+Q откладывает сообщение до следующего turn. Сообщения, введённые во время выполнения инструмента, тоже работают. Больше не нужно ждать, пока Agent закончит, чтобы скорректировать направление.
+
+**Параллельные задачи больше не конфликтуют.** Web Shell поддерживает создание изолированных сессий Worktree в один клик — несколько задач в одном репозитории работают в независимых git worktree, правки файлов, `git add`, `git checkout` не мешают друг другу. Фиолетовый символ ⑂ присутствует в git chip, списке сессий и выпадающем меню workspace.
+
+**Поиск в интернете вернулся.** Встроенный инструмент `web_search` работает на Bailian Responses API — достаточно уже настроенного ключа Bailian API. После удаления сообщество постоянно просило вернуть; теперь поиск реализован через серверный поиск + чтение страниц, в конце ответа автоматически добавляется секция Sources со ссылками. По умолчанию выключен, включается явно.
+
+**`web_fetch` перестроен с нуля.** Раньше при захвате страниц терялись ссылки, PDF превращался в мусор, большие страницы обрезались и ответ пропадал. Теперь HTML сначала конвертируется в markdown, потом обрезается; PDF извлекает текст инлайн; бинарные файлы сохраняются корректно; добавлены таймаут 60 секунд и лимит 10 МБ.
+
+## ✨ Новые возможности
+
+### Steering в реальном времени: корректировка Agent прямо во время вывода
+
+Раньше, если вы писали сообщение во время вывода Agent, приходилось ждать окончания — оно становилось новым prompt. Agent свернул не туда, а вы могли только наблюдать, пока он не закончит.
+
+Теперь Enter и Ctrl+Q чётко разделены:
+
+- **Enter**: сообщение попадает в очередь steering и применяется на следующем sampling boundary модели, оставаясь в текущем turn. Agent пишет код, вы вводите «перепиши на TypeScript» — он получит это указание на следующей точке sampling.
+- **Ctrl+Q**: сообщение откладывается до завершения текущего turn и становится началом нового turn.
+- **Во время выполнения инструмента**: введённое сообщение потребляется после возврата результата инструмента, в том же turn.
+- **Передумали?** Нажмите Up или Escape — сообщение из очереди вернётся в поле ввода.
+
+Вложения через @ тоже сохраняются, без добавления синтетического префикса. При сбое доставки или отмене сообщение не теряется.
+
+Что это даёт:
+
+- Agent пишет код не в том направлении — исправьте на лету, не дожидаясь завершения
+- Добавьте контекст, пока выполняется инструмент
+- Запланируйте вопрос на следующий turn через Ctrl+Q — он отправится автоматически по завершении текущего
+
+Подробнее в PR [#7090](https://github.com/QwenLM/qwen-code/pull/7090)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000006324/O1CN01pd4mvG1waRsKgNkB7_!!6000000006324-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/TT8i90AAAUO89OdH-nYJDYS7j2gABz5rAUagJjlIYOI.mp4" controls></video>
+
+### Изоляция сессий через Worktree: параллельные задачи без конфликтов
+
+Две задачи в одном репозитории — одна сессия изменила файл, и `git status` другой тут же «поплыл». Раньше приходилось вручную делать `git worktree add` + `cd`, теперь в Web Shell это один клик.
+
+В выпадающем меню ветки workspace выберите «New Worktree Task» — daemon автоматически создаёт git worktree в `<repoRoot>/.qwen/worktrees/<slug>`, рабочая директория сессии переключается на worktree. Фиолетовый символ ⑂ маркирует всё: git chip становится фиолетовым, в списке сессий появляется ⑂, в меню workspace есть пояснение. Для репозиториев без git эта опция не отображается.
+
+Информация о Worktree сохраняется в sidecar-файл и не теряется при перезапуске daemon. При восстановлении сессии изоляция worktree восстанавливается автоматически, статусная строка показывает ветку worktree, а не основную ветку workspace.
+
+Что это даёт:
+
+- Два feature параллельно, без взаимных помех
+- Исправляйте bug, продолжая работу над feature — без бесконечных stash
+- Экспериментальные правки Agent в изолированной среде, основная рабочая зона остаётся чистой
+
+Подробнее в PR [#7221](https://github.com/QwenLM/qwen-code/pull/7221), [#7262](https://github.com/QwenLM/qwen-code/pull/7262), [#7365](https://github.com/QwenLM/qwen-code/pull/7365), [#7367](https://github.com/QwenLM/qwen-code/pull/7367)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01dsWPDv1w6g8Aw98ya_!!6000000006259-2-tps-2632-1432.png)
+
+### Встроенный web_search: поиск в интернете по ключу Bailian
+
+Раньше в Qwen Code не было встроенного поиска — документация предлагала настроить Bailian WebSearch MCP. Но на практике этот MCP не справлялся со сложными запросами: запрос тарифов Medicare с однозначным ответом возвращал 0 из 5 релевантных результатов при нескольких попытках.
+
+На этой неделе встроенный `web_search` вернулся. Серверный поиск на Bailian Responses API — достаточно уже настроенного ключа Bailian API, без дополнительных MCP-сервисов, провайдеров и ключей. Поисковый агент открывает страницы результатов для более обоснованных ответов; результаты разделяют «фактически прочитанные страницы» и «кандидаты, которые не открывались»; модель обязана добавить секцию Sources в конце ответа.
+
+**По умолчанию выключен**, для включения нужны два параметра: `tools.webSearch.enabled: true` и модель поиска `tools.webSearch.model`. Если параметры заданы, но некорректно, инструмент остаётся выключенным, а при запуске сообщается, какое условие не выполнено. Поддерживается конфигурация через переменные окружения (`ENABLE_WEB_SEARCH`, `WEB_SEARCH_MODEL` и др.) — для сред, где settings.json недоступен. Каждый вызов поиска требует подтверждения (показывается запрос, можно выбрать «Всегда разрешать»).
+
+Что это даёт:
+
+- Актуальная информация: изменения в новых версиях библиотек, обновления API-документации, security advisory
+- Проблемы после cutoff знаний модели: breaking change в новых версиях, недавние bug report
+- Замена ручному уходу из терминала в браузер
+
+Подробнее в PR [#7215](https://github.com/QwenLM/qwen-code/pull/7215)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000000300/O1CN01wJ7QDc1E5RyVg4CiD_!!6000000000300-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/wZOcvzmHWmTa_SgrL4Vi6tGm0KKckJjgjp6k55ouPcc.mp4" controls></video>
+
+### Полная переработка web_fetch: PDF без мусора, ссылки без потерь
+
+Ранее `web_fetch` имел ряд реальных проблем: большие страницы-списки обрезались по исходному HTML до конвертации — ответ терялся, все URL ссылок пропадали, и модель уверенно сообщала «цель не существует». PDF декодировался как текст, превращаясь в десятки тысяч token мусора. Некоторые государственные сайты возвращали 403 для анонимного User-Agent.
+
+На этой неделе весь пайплайн перестроен с нуля:
+
+- **HTML сначала конвертируется в markdown, затем обрезается** — содержимое в глубине больших страниц сохраняется, все гиперссылки сохраняют URL. Обрезка помечена явно, скрипты и стили не расходуют контентный бюджет.
+- **PDF извлекает текст инлайн** — один вызов `web_fetch` отвечает на вопросы по содержимому PDF. Бинарные файлы определяются по magic bytes (не только Content-Type) и сохраняются с правильным расширением.
+- **Таймаут 60 секунд + лимит 10 МБ**, Esc мгновенно отменяет передачу — раньше UI мог зависнуть. Повторный захват того же URL в течение 15 минут идёт из кэша.
+- **Межхостовые редиректы больше не следуют молча** — предлагается повторный запрос через стандартный процесс разрешений.
+- **Модель разрешений**: первый доступ к каждому хосту требует подтверждения (GET раскрывает полный путь и query — канал утечки данных). После одобрения правило сохраняется по хосту. GitHub blob URL автоматически нормализуются в raw-адрес перед оценкой разрешений.
+
+Что это даёт:
+
+- Захватите ссылку на PDF — получите ответ по содержимому
+- Захватите длинную страницу-список — спросите об элементе в глубине страницы, ссылки больше не теряются
+- Межхостовые редиректы предлагают повторный запрос, не следуя молча на незнакомый домен
+
+Подробнее в PR [#7146](https://github.com/QwenLM/qwen-code/pull/7146)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i3/6000000004859/O1CN01jO8Kek1llTdfArmJO_!!6000000004859-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/iEQf6u929VB-j4OEe3kC_zTG0pEdN7tL63mUaI347Bs.mp4" controls></video>
+
+### Крупное обновление Web Shell на этой неделе
+
+Web Shell получил большой объём изменений — от git-интеграции до управления сессиями и опыта workspace.
+
+**Git-интеграция: три в одном.** Команда `/log` открывает браузер истории коммитов — графическое всплывающее окно со списком commit, клик разворачивает полное сообщение и статистику изменений файлов, копирование SHA в один клик, пагинация. В окно `/diff` добавлена вкладка History — не нужно переключать команды. Git status chip отображается на панели инструментов composer, боковая панель показывает git-состояние workspace, окно Changes показывает визуальный working-tree diff. Подробнее в PR [#7204](https://github.com/QwenLM/qwen-code/pull/7204), [#7054](https://github.com/QwenLM/qwen-code/pull/7054)
+
+**Страница управления Skill и страница Goals.** В Web Shell появилась отдельная страница управления skill — просмотр и управление skill workspace без возврата в терминал. Страница Goals визуализирует цели `/goal` в Web Shell, цели не теряются при перезапуске daemon. Подробнее в PR [#7018](https://github.com/QwenLM/qwen-code/pull/7018), [#6561](https://github.com/QwenLM/qwen-code/pull/6561)
+
+**Улучшения управления сессиями.** Cmd+B / Ctrl+B переключает боковую панель, раскладка split view сохраняется между обновлениями (по вкладкам независимо), восстановленные сессии поддерживают пагинацию истории вместо полной загрузки, архивные сессии можно экспортировать. В окне Add Workspace добавлено автодополнение каталогов. Подробнее в PR [#7135](https://github.com/QwenLM/qwen-code/pull/7135), [#7136](https://github.com/QwenLM/qwen-code/pull/7136), [#7064](https://github.com/QwenLM/qwen-code/pull/7064), [#6910](https://github.com/QwenLM/qwen-code/pull/6910), [#7125](https://github.com/QwenLM/qwen-code/pull/7125)
+
+**Опыт Workspace.** Поддержка пользовательских отображаемых имён workspace — в мульти-workspace сценариях больше не нужно смотреть на пути. Пользовательские slash-команды, API кастомизации sidebar (брендирование, навигация, действия сессий, footer). Черновик новой темы предлагает открыть новую сессию, а не продолжать в старой. Подробнее в PR [#7179](https://github.com/QwenLM/qwen-code/pull/7179), [#7267](https://github.com/QwenLM/qwen-code/pull/7267), [#7379](https://github.com/QwenLM/qwen-code/pull/7379), [#7098](https://github.com/QwenLM/qwen-code/pull/7098)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000008143/O1CN01WfFJh32A1YJpkZdNi_!!6000000008143-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/9Er9mwNWGynLMWe-6IEegLOv7lBhk4Wz5Pn2tAQfz9A.mp4" controls></video>
+
+## 📊 Другие новые возможности
+
+**Значения по умолчанию и напоминание при записи Artifact.** При создании artifact Agent использует конфигурацию по умолчанию и запрашивает подтверждение перед записью — меньше случайных записей файлов. Подробнее в PR [#7068](https://github.com/QwenLM/qwen-code/pull/7068)
+
+**Активный путь в сводке инструмента.** Компактная сводка инструмента показывает текущий путь файла — при работе с несколькими файлами сразу видно, какой редактируется. Подробнее в PR [#7043](https://github.com/QwenLM/qwen-code/pull/7043)
+
+**Значения по умолчанию и guardrail для делегирования субагентам.** Улучшены конфигурация по умолчанию и границы безопасности делегирования субагентам — поведение субагентов стало предсказуемее. Подробнее в PR [#7048](https://github.com/QwenLM/qwen-code/pull/7048)
+
+**Маршрутизация логов VSCode.** Логи выводятся в отдельный output channel Qwen Code Companion — при диагностике в VSCode не нужно искать в других панелях. Подробнее в PR [#7121](https://github.com/QwenLM/qwen-code/pull/7121)
+
+**Ротация логов Daemon.** Логи с ограничением размера, больше не растут бесконечно — диск не заполняется логами daemon. Подробнее в PR [#6969](https://github.com/QwenLM/qwen-code/pull/6969)
+
+**Воспроизведение истории в read-only WebShell.** Воспроизведение истории ChatRecord в read-only WebShell — удобно делиться записями сессий с коллегами. Подробнее в PR [#6999](https://github.com/QwenLM/qwen-code/pull/6999)
+
+**Нормализация имён MCP-инструментов.** Нормализация имён MCP-инструментов для строгих провайдеров — меньше сбоев при вызовах MCP-инструментов. Подробнее в PR [#6976](https://github.com/QwenLM/qwen-code/pull/6976)
+
+**Воспроизведение памяти Channel.** Каждое сообщение автоматически вызывает релевантные воспоминания, подтверждает изменения естественной памяти, безопасно сохраняет многофактную память — Agent в Channel помнит предыдущий контекст. Подробнее в PR [#7157](https://github.com/QwenLM/qwen-code/pull/7157), [#7066](https://github.com/QwenLM/qwen-code/pull/7066), [#7092](https://github.com/QwenLM/qwen-code/pull/7092)
+
+**Наблюдение имени группы Channel.** Автоматическое получение имени группы из входящих сообщений — в мультигрупповых сценариях Agent знает, в какой группе находится. Подробнее в PR [#7155](https://github.com/QwenLM/qwen-code/pull/7155)
+
+**Форматированные пути в описаниях инструментов.** Описания инструментов grep/glob показывают форматированные пути файлов — результаты чище и читаемее. Подробнее в PR [#7050](https://github.com/QwenLM/qwen-code/pull/7050)
+
+**Улучшение tab-дополнения `/cd`.** После ввода имени каталога tab включает уже введённый каталог — дополнение точнее. Подробнее в PR [#7320](https://github.com/QwenLM/qwen-code/pull/7320)
+
+## 👏 Улучшения опыта
+
+**Выбор мышью в VP mode вернулся.** Раньше события мыши в VP mode перехватывались CLI — выделить и скопировать было нельзя. Теперь перетаскивание для выделения, двойной клик для выбора слова, тройной клик для выбора строки, отпускание автоматически копирует в буфер обмена. Подробнее в PR [#6937](https://github.com/QwenLM/qwen-code/pull/6937)
+
+**Усиление безопасности Plan mode.** Выход из Plan mode теперь требует явного подтверждения — молчаливый выход исключён. Shell-команды в Plan mode классифицируются по безопасности: read-only команды выполняются нормально, команды изменения состояния блокируются, неоднозначные команды требуют поочерёдного одобрения без выхода из Plan mode. При подтверждении выхода виден полный текст плана. Подробнее в PR [#6967](https://github.com/QwenLM/qwen-code/pull/6967), [#7172](https://github.com/QwenLM/qwen-code/pull/7172), [#7060](https://github.com/QwenLM/qwen-code/pull/7060)
+
+**Автоопределение языка вывода.** В режиме auto язык вывода следует за языком ввода пользователя — ручное переключение не нужно. Подробнее в PR [#6953](https://github.com/QwenLM/qwen-code/pull/6953)
+
+**Защита от случайного Ctrl+C.** Для выхода из TUI нужно нажать Ctrl+C дважды в течение 1 секунды — одиночное нажатие больше не завершает сессию. Подробнее в PR [#7129](https://github.com/QwenLM/qwen-code/pull/7129)
+
+**Управление параллелизмом субагентов.** Поддержка ограничения параллелизма субагентов по модели — разные модели могут иметь разный лимит. Для fork-субагентов добавлен параметр `fork_turns` — можно наследовать только последние несколько turn вместо всей истории. Подробнее в PR [#6984](https://github.com/QwenLM/qwen-code/pull/6984), [#7346](https://github.com/QwenLM/qwen-code/pull/7346)
+
+**Адаптация моделей.** Лимиты token kimi-k3 (контекст 1M, вывод 128K), qwen3.8-max-preview добавлен в список моделей Token Plan, поддержка региона Token Plan Сингапур. Подробнее в PR [#7144](https://github.com/QwenLM/qwen-code/pull/7144), [#7199](https://github.com/QwenLM/qwen-code/pull/7199), [#7280](https://github.com/QwenLM/qwen-code/pull/7280)
+
+**Другие улучшения.** Лимит вызовов инструментов за turn стал адаптивным, headless-режим поддерживает субагентов с наследованием контекста, goal-управление доступно в активном loop, индикатор режима при потоковом выводе, обновление npm выполняется безопасно в фоне. Подробнее в PR [#7052](https://github.com/QwenLM/qwen-code/pull/7052), [#7378](https://github.com/QwenLM/qwen-code/pull/7378), [#7202](https://github.com/QwenLM/qwen-code/pull/7202), [#7219](https://github.com/QwenLM/qwen-code/pull/7219), [#7322](https://github.com/QwenLM/qwen-code/pull/7322)
+
+## 🔧 Важные исправления
+
+| Исправление | PR | Что это даёт |
+|-------------|-----|-------------|
+| **Автоперерисовка TUI после сна/пробуждения** | [#7265](https://github.com/QwenLM/qwen-code/pull/7265) | Интерфейс не ломается после пробуждения |
+| **Отмена операции во время запроса разрешения не теряется** | [#7295](https://github.com/QwenLM/qwen-code/pull/7295) | Отменённые операции не исчезают |
+| **Отменённый prompt после потокового вывода возвращается в поле ввода** | [#7149](https://github.com/QwenLM/qwen-code/pull/7149) | Отменённый prompt не нужно набирать заново |
+| **Потоковые блоки кода сохраняют целостность при разделении между commit** | [#7020](https://github.com/QwenLM/qwen-code/pull/7020) | Блоки кода не обрезаются |
+| **Панель sticky-задач скрывается при простое Agent** | [#7062](https://github.com/QwenLM/qwen-code/pull/7062) | Интерфейс чище |
+| **Сбой проверки обновлений — предупреждение вместо ошибки** | [#7409](https://github.com/QwenLM/qwen-code/pull/7409) | Автономный запуск не прерывается ошибкой |
+| **Корректная оценка reasoning token при отсутствии `completion_tokens_details`** | [#7239](https://github.com/QwenLM/qwen-code/pull/7239) | Статистика использования token точнее |
+| **Side query qwen3.8 работает на Bailian** | [#7303](https://github.com/QwenLM/qwen-code/pull/7303) | Side query пользователей Bailian больше не падают |
+| **Постобработка `web_fetch` с ограничением** | [#7305](https://github.com/QwenLM/qwen-code/pull/7305) | При сбое захвата сохраняется уже полученное содержимое |
+| **Сохранение существующего рабочего содержимого в системном prompt** | [#7087](https://github.com/QwenLM/qwen-code/pull/7087) | Системный prompt не теряет имеющееся содержимое |
+| **Автоповтор при пустом tool-result** | [#7039](https://github.com/QwenLM/qwen-code/pull/7039) | Пустой результат модели не вызывает зависание |
+| **Ослабление ограничения additionalProperties для OpenAI wire** | [#7344](https://github.com/QwenLM/qwen-code/pull/7344) | Совместимость с большим числом моделей |
+| **Субагент, созданный после запуска, не отклоняется из-за истёкшего кэша** | [#7112](https://github.com/QwenLM/qwen-code/pull/7112) | Создание субагента больше не падает эпизодически |
+| **Автоповтор при некорректных дублирующихся thinking-тегах** | [#7100](https://github.com/QwenLM/qwen-code/pull/7100) | Аномальный формат thinking модели не вызывает сбой |
+| **Усиление границ входа в Plan mode** | [#7248](https://github.com/QwenLM/qwen-code/pull/7248) | Plan mode не активируется случайно |
+| **Корректное разрешение путей artifact в сессиях Worktree** | [#7429](https://github.com/QwenLM/qwen-code/pull/7429) | Artifact в Worktree записываются в правильное место |
+| **Завершение дочернего процесса при таймауте обнаружения MCP** | [#6926](https://github.com/QwenLM/qwen-code/pull/6926) | Утечка процессов устранена |
+| **Opt-in фильтрация payload модели для MCP** | [#7413](https://github.com/QwenLM/qwen-code/pull/7413) | Меньше ненужной передачи payload |
+| **Усиление жизненного цикла запроса разрешений Desktop MCP** | [#7013](https://github.com/QwenLM/qwen-code/pull/7013) | Pending-запросы не зависают и не утекают |
+| **Процесс VSCode ACP сохраняет режим Electron Node** | [#7106](https://github.com/QwenLM/qwen-code/pull/7106) | Расширение VSCode не падает из-за версии Node |
+| **Корректное разрешение корневых симлинков в путях памяти** | [#6842](https://github.com/QwenLM/qwen-code/pull/6842) | Пути с симлинками не вызывают ошибок |
+| **Настройка `enableManagedAutoMemory` работает корректно** | [#6941](https://github.com/QwenLM/qwen-code/pull/6941) | Переключатель автопамяти больше не игнорируется |
+| **Дедупликация изображений и горячих клавиш sidebar при восстановлении Web Shell** | [#7169](https://github.com/QwenLM/qwen-code/pull/7169) | Дубликаты больше не появляются |
+| **Клавиатурное управление окнами одобрения и вопросов Web Shell** | [#7074](https://github.com/QwenLM/qwen-code/pull/7074) | Окна управляются с клавиатуры |
+| **Текст prompt при восстановлении Web Shell не дублируется** | [#7134](https://github.com/QwenLM/qwen-code/pull/7134) | Повторные копии не появляются |
+| **Сессии Worktree открываются во время выполнения** | [#7424](https://github.com/QwenLM/qwen-code/pull/7424) | Сессии Worktree больше не блокируются |
+| **Токен daemon Web Shell сохраняется по вкладкам** | [#7374](https://github.com/QwenLM/qwen-code/pull/7374) | После обновления не нужно проходить аутентификацию заново |
+| **Корректная доставка ответов фонового агента Channel** | [#7336](https://github.com/QwenLM/qwen-code/pull/7336) | Фоновые ответы не теряются |
+| **Изоляция сопряжения и allowlist Channel по workspace** | [#7065](https://github.com/QwenLM/qwen-code/pull/7065) | Мульти-workspace не мешают друг другу |
+| **Автоповтор при транзиентном сбое emotion DingTalk** | [#7329](https://github.com/QwenLM/qwen-code/pull/7329) | Эмодзи-реакции не падают эпизодически |
+| **Привязка регулярного выражения @mention DingTalk к началу текста** | [#7401](https://github.com/QwenLM/qwen-code/pull/7401) | @mention не срабатывает ложно |
+| **Лимит загрузки медиа DingTalk 50 МБ** | [#7361](https://github.com/QwenLM/qwen-code/pull/7361) | Выравнивание с Feishu, большие файлы не падают |
+
+## 👥 Участники
+
+| Участник | Вклад | Ссылки на PR |
+|----------|-------|-------------|
+| **[@wenshao](https://github.com/wenshao)** | Изоляция сессий Worktree, браузер истории git-коммитов, git status chip + diff, восстановление сессий Worktree, множественные улучшения Web Shell | [#7221](https://github.com/QwenLM/qwen-code/pull/7221), [#7204](https://github.com/QwenLM/qwen-code/pull/7204), [#7054](https://github.com/QwenLM/qwen-code/pull/7054), [#7262](https://github.com/QwenLM/qwen-code/pull/7262) |
+| **[@doudouOUC](https://github.com/doudouOUC)** | Подтверждение выхода из Plan mode, безопасная маршрутизация Shell в Plan mode, ротация логов Daemon, проверка ветки сессии, усиление мульти-workspace | [#6967](https://github.com/QwenLM/qwen-code/pull/6967), [#7172](https://github.com/QwenLM/qwen-code/pull/7172), [#6969](https://github.com/QwenLM/qwen-code/pull/6969), [#7185](https://github.com/QwenLM/qwen-code/pull/7185) |
+| **[@yiliang114](https://github.com/yiliang114)** | Мультимодальная маршрутизация на уровне turn, фоновое обновление npm, оценка reasoning token, поддержка qwen3.8, исправление маршрутизации моделей | [#7045](https://github.com/QwenLM/qwen-code/pull/7045), [#7322](https://github.com/QwenLM/qwen-code/pull/7322), [#7239](https://github.com/QwenLM/qwen-code/pull/7239), [#7303](https://github.com/QwenLM/qwen-code/pull/7303) |
+| **[@zjunothing](https://github.com/zjunothing)** | Выбор мышью в VP mode, переключение sidebar по Cmd+B, автодополнение каталогов, полный показ плана, множественные исправления Web Shell | [#6937](https://github.com/QwenLM/qwen-code/pull/6937), [#7135](https://github.com/QwenLM/qwen-code/pull/7135), [#7125](https://github.com/QwenLM/qwen-code/pull/7125), [#7060](https://github.com/QwenLM/qwen-code/pull/7060) |
+| **[@chinesepowered](https://github.com/chinesepowered)** | Очистка SDK SSE, исправление опечаток, коррекция i18n, лимит медиа DingTalk | [#7257](https://github.com/QwenLM/qwen-code/pull/7257), [#7057](https://github.com/QwenLM/qwen-code/pull/7057), [#7131](https://github.com/QwenLM/qwen-code/pull/7131), [#7361](https://github.com/QwenLM/qwen-code/pull/7361) |
+| **[@tanzhenxin](https://github.com/tanzhenxin)** | Встроенный web_search, полная переработка web_fetch, лимиты token kimi-k3, исправление ask-user-question | [#7215](https://github.com/QwenLM/qwen-code/pull/7215), [#7146](https://github.com/QwenLM/qwen-code/pull/7146), [#7144](https://github.com/QwenLM/qwen-code/pull/7144), [#7063](https://github.com/QwenLM/qwen-code/pull/7063) |
+| **[@qwen-code-dev-bot](https://github.com/qwen-code-dev-bot)** | Ограничение параллелизма субагентов, воспроизведение памяти Channel, goal-управление, индикатор режима, множественные исправления CI | [#6984](https://github.com/QwenLM/qwen-code/pull/6984), [#7157](https://github.com/QwenLM/qwen-code/pull/7157), [#7202](https://github.com/QwenLM/qwen-code/pull/7202), [#7219](https://github.com/QwenLM/qwen-code/pull/7219) |
+| **[@ytahdn](https://github.com/ytahdn)** | Страница управления Skill, пользовательские slash-команды, API кастомизации sidebar, исправления Web Shell | [#7018](https://github.com/QwenLM/qwen-code/pull/7018), [#7267](https://github.com/QwenLM/qwen-code/pull/7267), [#7379](https://github.com/QwenLM/qwen-code/pull/7379), [#7294](https://github.com/QwenLM/qwen-code/pull/7294) |
+| **[@qqqys](https://github.com/qqqys)** | Подтверждение памяти Channel, сохранение многофактной памяти, доставка ответов фонового агента, исправления DingTalk | [#7066](https://github.com/QwenLM/qwen-code/pull/7066), [#7092](https://github.com/QwenLM/qwen-code/pull/7092), [#7336](https://github.com/QwenLM/qwen-code/pull/7336), [#7401](https://github.com/QwenLM/qwen-code/pull/7401) |
+| **[@chiga0](https://github.com/chiga0)** | Значения по умолчанию и напоминание при записи Artifact, оптимизация контролов VP mode, исправление ink patch | [#7068](https://github.com/QwenLM/qwen-code/pull/7068), [#6931](https://github.com/QwenLM/qwen-code/pull/6931), [#7407](https://github.com/QwenLM/qwen-code/pull/7407) |
+| **[@LaZzyMan](https://github.com/LaZzyMan)** | Steering в реальном времени, запрос при недоступности классификатора Auto Mode, фильтрация payload MCP, исправление mobile-mcp | [#7090](https://github.com/QwenLM/qwen-code/pull/7090), [#7331](https://github.com/QwenLM/qwen-code/pull/7331), [#7413](https://github.com/QwenLM/qwen-code/pull/7413), [#7321](https://github.com/QwenLM/qwen-code/pull/7321) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)** | Guardrail делегирования субагентам, fork_turns, headless-субагенты, исправление системного prompt | [#7048](https://github.com/QwenLM/qwen-code/pull/7048), [#7346](https://github.com/QwenLM/qwen-code/pull/7346), [#7378](https://github.com/QwenLM/qwen-code/pull/7378), [#7087](https://github.com/QwenLM/qwen-code/pull/7087) |
+| **[@han-dreamer](https://github.com/han-dreamer)** | Автоопределение языка вывода, регион Token Plan Сингапур, исправление managedAutoMemory | [#6953](https://github.com/QwenLM/qwen-code/pull/6953), [#7280](https://github.com/QwenLM/qwen-code/pull/7280), [#6941](https://github.com/QwenLM/qwen-code/pull/6941) |
+| **[@callmeYe](https://github.com/callmeYe)** | Локализация тегов extension, исправление настроек голоса, сохранение описания skill, исправление иконки тега | [#7337](https://github.com/QwenLM/qwen-code/pull/7337), [#7345](https://github.com/QwenLM/qwen-code/pull/7345), [#7032](https://github.com/QwenLM/qwen-code/pull/7032), [#7024](https://github.com/QwenLM/qwen-code/pull/7024) |
+| **[@samuelhsin](https://github.com/samuelhsin)** | Отображаемое имя workspace, агрегирующий эндпоинт session-info | [#7179](https://github.com/QwenLM/qwen-code/pull/7179), [#7077](https://github.com/QwenLM/qwen-code/pull/7077) |
+| **[@BenGuanRan](https://github.com/BenGuanRan)** | Контакты workspace Channel, наблюдение имени группы | [#7109](https://github.com/QwenLM/qwen-code/pull/7109), [#7155](https://github.com/QwenLM/qwen-code/pull/7155) |
+| **[@mvanhorn](https://github.com/mvanhorn)** | Усиление разрешений Desktop MCP, исправление мониторинга resize stdout,透出 cause ошибки подключения | [#7013](https://github.com/QwenLM/qwen-code/pull/7013), [#7186](https://github.com/QwenLM/qwen-code/pull/7186), [#7010](https://github.com/QwenLM/qwen-code/pull/7010) |
+| **[@morluto](https://github.com/morluto)** | Завершение дочернего процесса при таймауте обнаружения MCP, нормализация путей разрешений | [#6926](https://github.com/QwenLM/qwen-code/pull/6926), [#6923](https://github.com/QwenLM/qwen-code/pull/6923) |
+| **[@barry166](https://github.com/barry166)** | Восстановление отменённого prompt, предупреждение запуска deferred stream-json | [#7149](https://github.com/QwenLM/qwen-code/pull/7149), [#7174](https://github.com/QwenLM/qwen-code/pull/7174) |
+| **[@xurik](https://github.com/xurik)** | Маркировка sourceId daemon Channel, метки source сессии | [#7078](https://github.com/QwenLM/qwen-code/pull/7078), [#6991](https://github.com/QwenLM/qwen-code/pull/6991) |
+| **[@ZijianZhang989](https://github.com/ZijianZhang989)** | Коррекция документации CLI, ограничение markdown Feishu, пакетные исправления | [#7326](https://github.com/QwenLM/qwen-code/pull/7326), [#7324](https://github.com/QwenLM/qwen-code/pull/7324), [#7373](https://github.com/QwenLM/qwen-code/pull/7373) |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)** | Основные модули CODEOWNERS, упрощение до правил уровня пакета | [#7304](https://github.com/QwenLM/qwen-code/pull/7304), [#7376](https://github.com/QwenLM/qwen-code/pull/7376) |
+| **[@jordimas](https://github.com/jordimas)** | Обновление перевода на каталанский | [#7253](https://github.com/QwenLM/qwen-code/pull/7253) |
+| **[@cxruan](https://github.com/cxruan)** | Воспроизведение истории в read-only WebShell, маркировка висячей истории инструментов | [#6999](https://github.com/QwenLM/qwen-code/pull/6999), [#7340](https://github.com/QwenLM/qwen-code/pull/7340) |
+| **[@carffuca](https://github.com/carffuca)** | Предложение черновика новой темы, исправление обрезки меток панели инструментов | [#7098](https://github.com/QwenLM/qwen-code/pull/7098), [#7196](https://github.com/QwenLM/qwen-code/pull/7196) |
+| **[@dreamWB](https://github.com/dreamWB)** | Исправление восстановления тегов контекста | [#7312](https://github.com/QwenLM/qwen-code/pull/7312) |
+| **[@BZ-D](https://github.com/BZ-D)** | Исправление взаимодействия ссылок в запланированных задачах | [#7313](https://github.com/QwenLM/qwen-code/pull/7313) |
+| **[@ran411285752](https://github.com/ran411285752)** | Нормализация имён MCP-инструментов | [#6976](https://github.com/QwenLM/qwen-code/pull/6976) |
+| **[@yuanyuanAli](https://github.com/yuanyuanAli)** | API кастомизации Sidebar | [#7379](https://github.com/QwenLM/qwen-code/pull/7379) |
+| 🆕 **[@azurecgx](https://github.com/azurecgx)** | 🎉 Первый вклад: исправление строк MaxSizedBox TUI и show-more diff | [#6957](https://github.com/QwenLM/qwen-code/pull/6957) |
+| 🆕 **[@makwingchi](https://github.com/makwingchi)** | 🎉 Первый вклад: распространение prompt ID Daemon в события turn | [#7082](https://github.com/QwenLM/qwen-code/pull/7082) |
+| 🆕 **[@ARE404](https://github.com/ARE404)** | 🎉 Первый вклад: персистентность метаданных модели субагента | [#7104](https://github.com/QwenLM/qwen-code/pull/7104) |
+| 🆕 **[@ghisguth](https://github.com/ghisguth)** | 🎉 Первый вклад: адаптация schema нативных вызовов инструментов Gemma 4 | [#7177](https://github.com/QwenLM/qwen-code/pull/7177) |
+| 🆕 **[@ComplexSimply](https://github.com/ComplexSimply)** | 🎉 Первый вклад: сбой проверки обновлений как предупреждение, таймаут увеличен до 5 секунд | [#7409](https://github.com/QwenLM/qwen-code/pull/7409) |
+
+<Callout type="info">
+  **Обновление**: выполните `npm i @qwen-code/qwen-code@latest -g` для обновления до последней версии.
+</Callout>
+
+Если у вас есть вопросы или предложения, пишите в [GitHub Issues](https://github.com/QwenLM/qwen-code/issues)!

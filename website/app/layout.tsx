@@ -2,18 +2,19 @@
 
 import type { Metadata } from "next";
 import Script from "next/script";
-import { JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { Head } from "nextra/components";
 import type { FC, ReactNode } from "react";
 import "nextra-theme-docs/style.css";
 import "../src/styles/globals.css";
 import { FontLoader } from "../src/components/font-loader";
+import SidebarNewTag from "../src/components/sidebar-new-tag";
 import { ThemeProvider } from "../src/components/theme-provider";
 import { getSiteStructuredData, stringifyJsonLd } from "../src/lib/structured-data";
 import { withBasePath } from "../src/lib/utils";
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
+const jetbrainsMono = localFont({
+  src: "../public/fonts/JetBrainsMono/JetBrainsMono-Variable.ttf",
   variable: "--font-jetbrains",
   display: "swap",
 });
@@ -133,6 +134,7 @@ const RootLayout: FC<LayoutProps> = ({ children }) => {
           }}
         />
         <FontLoader />
+        <SidebarNewTag />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

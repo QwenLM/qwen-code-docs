@@ -1,0 +1,212 @@
+---
+title: "Qwen Code 周报：/loop 自主模式、桌面端语音听写、Settings 标签式视图"
+date: "2026-07-02"
+description: "本周发布 v0.19.4 版本，新增 /loop 自主模式、桌面端语音听写、Settings 标签式视图等功能。"
+author: "Qwen Team"
+tags: ["Product Updates", "release", "weekly"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01AYqMKM1aRorovg0v7_!!6000000003327-0-tps-1344-576.jpg
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Qwen Code 周报：/loop 自主模式、桌面端语音听写、Settings 标签式视图"
+  date="2026-07-02"
+  author="Qwen Team"
+/>
+
+
+Qwen Code 本周发布 v0.19.4，80+ 个 PR 合入，覆盖三个方向：
+
+**`/loop` 离开也能跑。** 裸 `/loop` 启动自主模式——agent 在你离开时推进已确立的工作，不发明新活也不做不可逆操作。加上 `.qwen/loop.md` 任务文件，循环重读可编辑的清单，删除后循环发 no-op tick 保持存活。Claude Code 上周刚发了一篇[智能体循环入门指南](https://claude.com/blog/getting-started-with-loops)，讲的是 agent 按既定计划反复执行——`/loop` 的自主模式做的事类似，但多了一层：任务清单可以随时编辑，循环会自动感知变化。
+
+**桌面端语音听写上线。** CLI 和 Web Shell 的语音听写已经有了，但桌面端一直缺。这个版本补齐了最后一个界面，三端体验统一。
+
+**终端交互体验缩小差距。** `/settings` 从扁平列表变成标签式视图，搜索、状态、统计一屏搞定；Virtualized History 模式下菜单、补全、输入框支持鼠标点击和悬停了。
+
+## ✨ 新增特性
+
+### `/loop` 自主模式 + loop.md 任务文件
+
+`/loop` 现在支持两种新模式：
+
+**自主模式**：裸 `/loop`（无 prompt、无间隔）不再打印用法提示，而是启动一个自定步自主循环。agent 会在你离开时推进已确立的工作——维护在建 PR、续半截的活、兑现承诺——但只按 transcript 已确立的来做，不发明新活，未经明确授权不做不可逆动作（push/delete/send），安静了就停。自主 preamble 首发一次，之后每个 tick 只发短提醒，保持 token 成本低。
+
+**loop.md 任务文件**：在项目根目录或 `~/.qwen/` 下创建 `.qwen/loop.md`，把 wakeup/cron 的 prompt 设为 sentinel（`<<loop.md-dynamic>>` 或 `<<loop.md>>`），循环每次 fire 时重读文件。首次投递全文，之后未变则发短提醒，编辑文件后重新全文投递。文件消失时循环发 no-op tick（agent 什么都不做，只 re-arm 保持循环存活），回到自主模式的基础行为。重建 loop.md 后，下一个 tick 自动检测变更，重新全文投递。
+
+**频道循环**：`/loop` 不只限于终端——钉钉、飞书频道也能跑。在群里用 `/loop add "0 9 * * 1-5" 检查 CI 状态` 创建定时循环，`/loop list` 查看当前频道的所有循环，`/loop inspect <id>` 看运行次数和最近结果，`/loop cancel <id>` 停掉。循环通过 channel session router 执行，等当前活跃 turn 结束后再启动，结果经频道主动发送回写。一次性循环成功或失败后自动禁用。
+
+你能用它做什么：
+
+- 裸 `/loop` 让 agent 在你离开时盯着推进工作
+- 用 `.qwen/loop.md` 维护一份持久、可编辑的任务清单，不用每个 tick 重述
+- 删除 loop.md 后循环发 no-op tick 保持存活，重建后无缝接回
+- 在钉钉/飞书群里用 `/loop add` 设定时循环，让 agent 定时推进工作
+
+详见 PR [#5890](https://github.com/QwenLM/qwen-code/pull/5890)、[#5991](https://github.com/QwenLM/qwen-code/pull/5991)、[#6073](https://github.com/QwenLM/qwen-code/pull/6073)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i2/6000000002454/O1CN01vw4qRY1Tzz61J45Mh_!!6000000002454-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/ytGdVb28ZDLZxgzI3BFhtGSTleBZemLHPiLqw_lI53E.mp4" controls></video>
+
+### 桌面端语音听写：三端能力对齐
+
+语音听写在 CLI 和 Web Shell 里已经有了，但桌面端缺失——用户配置好语音后一切到桌面端就失去这个能力。本版本补齐了最后一个界面。
+
+composer 工具栏新增麦克风按钮，录音时工具栏变成录音条（点线引导 → 实时波形 → 计时），停止后转写结果插入输入框供复核。转写在服务端进行，复用 CLI 的语音管线（批量 `qwen3-asr-flash` 与实时 `*-realtime` 模型），provider 凭证不会进入 renderer。语音可在 Settings → Input 和 composer 模型下拉里开关并选择模型。
+
+你能用它做什么：
+
+- 点击麦克风说话，实时看到波形和计时
+- 选择 realtime 模型（如 `qwen3-asr-flash-realtime`）边说边看 interim 文本
+- 在平板或多显示器场景下解放双手输入
+
+详见 PR [#5856](https://github.com/QwenLM/qwen-code/pull/5856)
+
+<video class="mt-5" poster="https://img.alicdn.com/imgextra/i4/6000000007413/O1CN01JVZosB24dDBcBYKP7_!!6000000007413-0-tbvideo.jpg" src="https://cloud.video.taobao.com/vod/J-6kYrUGwlI-KcGhRr1tuzipOySnNR78nq4SqeuEAG0.mp4" controls></video>
+
+> **如何使用？**
+> 1. 克隆仓库：
+> ```
+> git clone https://github.com/QwenLM/qwen-code.git
+> ```
+> 2. 进入目录
+> ```
+> cd qwen-code/packages/desktop
+> ```
+> 3. 安装依赖并启动开发模式
+> ```
+> bun install && bun run dev
+> ```
+
+### Mobile Sidebar Drawer + `qwen serve` 体验完善
+
+之前手机浏览器访问 `qwen serve` 时，侧边栏（会话列表、搜索、新建会话）在 760px 以下直接 `display: none` 隐藏——你没有任何方式切换会话。现在用 overlay drawer 模式替代了直接隐藏：聊天面板头部出现菜单按钮，点击后侧边栏从左侧滑入，带半透明遮罩。选择会话、新建会话、点击遮罩均可关闭 drawer。桌面端布局完全不受影响。
+
+这背后是一系列让 `qwen serve` 从“能用”变成“好用”的改动：
+
+- **会话延迟创建**（[#6066](https://github.com/QwenLM/qwen-code/pull/6066)）：直到首次 prompt 才创建会话，减少空会话开销，Web Shell 启动更快
+- **workspace remember**（[#5884](https://github.com/QwenLM/qwen-code/pull/5884)）：serve 模式记住工作区，重启后无需重新指定
+- **session archive**（[#6058](https://github.com/QwenLM/qwen-code/pull/6058)）：daemon 支持会话归档，长期会话有管理了
+
+你能用它做什么：
+
+- 手机浏览器访问 `qwen serve`，点击菜单切换会话
+- 在多个项目中切换时，serve 自动记住工作区
+- 长期会话可以归档，不用删掉
+
+详见 PR [#6003](https://github.com/QwenLM/qwen-code/pull/6003)
+
+| 描述   | 侧边栏收起                                                                                            | 侧边栏展开                                                                                            |
+| ---- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| 测试截图 | ![](https://gw.alicdn.com/imgextra/i3/O1CN01f8YXr81lxqKPAKZed_!!6000000004886-2-tps-390-844.png) | ![](https://gw.alicdn.com/imgextra/i3/O1CN01ZQ5jCT1KMIEL5UmLi_!!6000000001149-2-tps-390-844.png) |
+
+### TUI 鼠标点击与悬停
+
+CLI 之前在 Virtualized History 模式下只支持鼠标滚轮和滚动条，不支持指针交互。现在开启了 Virtualized History（`ui.useTerminalBuffer`）后，三类交互可用：
+
+- **选择菜单和对话框**（权限确认、`/model`、`/config`、主题等）：悬停高亮指针所在行，点击即选中
+- **`/` 命令和 `@` 文件建议列表**：悬停高亮建议项，点击接受
+- **输入框**：左键点击定位文本光标（支持多行换行、滚动偏移、宽字符）
+
+你能用它做什么：
+
+- 在 `/model` 对话框里直接用鼠标点选模型，不用按方向键
+- 输入 `/` 后用鼠标点击补全项
+- 在多行输入中点击重新定位光标
+
+详见 PR [#6011](https://github.com/QwenLM/qwen-code/pull/6011)
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01c0h5qw1vEdOGiDaqv_!!6000000006141-1-tps-1280-720.gif)
+
+### Settings 标签式对话框：搜索、状态、统计一屏搞定
+
+`/settings` 从扁平列表改造成了标签式视图，参照 Claude Code 的 `/config` 设计。顶部标签栏分 Settings / Status / Stats 三页，Settings 页新增搜索框，输入即筛选。
+
+Status 页展示与 `/status` 相同的系统信息，Stats 页嵌入完整的 `/stats` 仪表盘（Session / Activity / Efficiency 子标签）。键盘焦点在标签栏 → 搜索框 → 设置列表间纵向移动，高亮只出现在真正持有焦点的区域。
+
+你能用它做什么：
+
+- `/settings` 打开后直接输入关键词筛选设置项
+- 用 ←/→ 切换到 Status 页查看运行时信息，不用单独跑 `/status`
+- 在 Stats 页按 Tab 切换 Session / Activity / Efficiency，Efficiency 表超出对话框高度时自动折叠为 "+N more"
+
+详见 PR [#6044](https://github.com/QwenLM/qwen-code/pull/6044)
+
+![](https://gw.alicdn.com/imgextra/i1/O1CN01X1ytLW1KtGkN6GEGW_!!6000000001221-1-tps-1280-720.gif)
+
+### Chrome 扩展：浏览器里直接对话 + 操作页面
+
+Chrome 扩展基于 daemon-direct 架构复活——扩展不再是 Native Messaging 宿主，而是本地 `qwen serve` daemon 的薄客户端。
+
+侧边栏聊天通过 `DaemonSessionProvider` 直连 `qwen serve`（HTTP+SSE，和 web shell 同一条路径），连不上 daemon 时提示 " 运行 `qwen serve`"。浏览器工具（读页面、截图、控制台、导航、点击、填表）以客户端托管的 MCP server 形式经 daemon WebSocket 暴露给 agent，聊天和工具两条路径都去掉了 Native Messaging。
+
+> [!caution]
+> 
+> 注意：反向工具通道目前通过 `QWEN_SERVE_CLIENT_MCP_OVER_WS` 环境变量开启，默认关闭——需要启动 `qwen serve` 时显式设置该标志。
+
+
+你能用它做什么：
+
+- 在 Chrome 侧边栏直接与 Qwen Code 对话，无需安装 OS 级原生宿主
+- 让 agent 读取当前页面、截图、操作浏览器元素
+- 复用 web shell 的共享 UI，体验一致
+
+详见 PR [#5777](https://github.com/QwenLM/qwen-code/pull/5777)
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN01lMYRsQ1k8G6Tq18M3_!!6000000004638-2-tps-3837-2160.png)
+
+## 📊 更多新功能
+
+| 功能                                                                         | PR                                                     | 对你的影响              |
+| -------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------ |
+| **`/config key=value`**：提示符里直接改任意配置，Tab 补全 + 拼写纠错                          | [#5773](https://github.com/QwenLM/qwen-code/pull/5773) | 不用再翻 settings.json |
+| **会话时间轴 rail**：web shell 左侧紧凑时间轴，悬停展示 turn 详情                              | [#6078](https://github.com/QwenLM/qwen-code/pull/6078) | 长会话快速定位 turn       |
+| **/skills ACP 输出增强**：显示 description 和 level                                | [#6117](https://github.com/QwenLM/qwen-code/pull/6117) | skills 列表信息更完整     |
+| **auto-mode 全量 shell 分类**：新增 `classifyAllShell` 设置（默认关闭）                   | [#6040](https://github.com/QwenLM/qwen-code/pull/6040) | 生产环境纵深防御           |
+| **qwen tag 群聊多人身份**：钉钉群共享会话支持 `[sender]` 发言人标记                             | [#5888](https://github.com/QwenLM/qwen-code/pull/5888) | 群聊中 agent 能区分谁在说话  |
+| **group history backfill**：群组历史消息回填                                        | [#6074](https://github.com/QwenLM/qwen-code/pull/6074) | 新加入成员可看历史          |
+| **browser tab favicon**：web shell 浏览器标签图标                                  | [#6091](https://github.com/QwenLM/qwen-code/pull/6091) | 多标签页易区分            |
+| **chat UI 和表格渲染优化**：web shell 聊天界面打磨                                       | [#6099](https://github.com/QwenLM/qwen-code/pull/6099) | 视觉体验提升             |
+| **queued-prompt UX**：web shell Esc 中断更友好                                   | [#6025](https://github.com/QwenLM/qwen-code/pull/6025) | 中断操作更顺滑            |
+| **resumable /acp session stream**：支持 Last-Event-ID 断点续传                    | [#5852](https://github.com/QwenLM/qwen-code/pull/5852) | SDK 连接更稳定          |
+| **glob patterns in mcp.allowed/excluded**：MCP 白名单支持通配符                     | [#6012](https://github.com/QwenLM/qwen-code/pull/6012) | MCP 配置更灵活          |
+| **inline model override**：`/model` 支持一次性模型覆盖                               | [#6022](https://github.com/QwenLM/qwen-code/pull/6022) | 临时切模型更方便           |
+| **leader approval for plan-required teammates**：计划必需的 teammate 需 leader 批准 | [#6138](https://github.com/QwenLM/qwen-code/pull/6138) | 多 agent 协作更安全      |
+
+## 🔧 重要修复
+
+| 修复 | PR | 对你的影响 |
+|------|-----|-----------|
+| **MCP 工具空闲超时**：服务器 5 分钟无响应自动中止，防止挂起阻塞会话 | [#6061](https://github.com/QwenLM/qwen-code/pull/6061) | 长运行 MCP 工具不再无限等待 |
+| **diff 空白编辑显示**：仅空白变更不再显示 "No changes detected" | [#6141](https://github.com/QwenLM/qwen-code/pull/6141) | diff 输出更准确 |
+| **TUI 输入延迟优化**：addItem 后 yield 给 React，减少输入卡顿 | [#6059](https://github.com/QwenLM/qwen-code/pull/6059) | 打字更流畅 |
+| **非 VP 模式多 agent 滚动**：transcript 在多 agent 运行时可滚动 | [#6015](https://github.com/QwenLM/qwen-code/pull/6015) | 多 agent 场景下可查看历史 |
+| **HTTPS/TLS 支持**：`qwen serve` 新增 `--tls-cert` 和 `--tls-key` 标志 | [#6032](https://github.com/QwenLM/qwen-code/pull/6032) | 自签名证书环境可用 |
+| **Windows 波浪号路径**：支持 Windows 风格的 `~` 路径展开 | [#6029](https://github.com/QwenLM/qwen-code/pull/6029) | Windows 用户路径兼容 |
+
+## 👥 贡献者
+
+| 贡献者                                                      | 贡献内容                                                                                    | 参考 PR 链接                                                                                                                                                                                                                                                                                                                                       |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[@qqqys](https://github.com/qqqys)**                   | `/loop` 自主模式 + loop.md 任务文件、语音听写、qwen tag 群聊多人身份、group history backfill、channel loop 支持 | [#5890](https://github.com/QwenLM/qwen-code/pull/5890), [#5991](https://github.com/QwenLM/qwen-code/pull/5991), [#5856](https://github.com/QwenLM/qwen-code/pull/5856), [#5888](https://github.com/QwenLM/qwen-code/pull/5888), [#6074](https://github.com/QwenLM/qwen-code/pull/6074), [#6073](https://github.com/QwenLM/qwen-code/pull/6073) |
+| **[@DragonnZhang](https://github.com/DragonnZhang)**     | `/effort` 统一推理强度、TUI 鼠标点击与悬停、Settings 标签式对话框                                            | [#6072](https://github.com/QwenLM/qwen-code/pull/6072), [#6011](https://github.com/QwenLM/qwen-code/pull/6011), [#6044](https://github.com/QwenLM/qwen-code/pull/6044)                                                                                                                                                                         |
+| **[@doudouOUC](https://github.com/doudouOUC)**           | session archive、skills ACP 输出增强、leader approval for plan-required teammates、diff 空白编辑显示 | [#6058](https://github.com/QwenLM/qwen-code/pull/6058), [#6117](https://github.com/QwenLM/qwen-code/pull/6117), [#6138](https://github.com/QwenLM/qwen-code/pull/6138), [#6141](https://github.com/QwenLM/qwen-code/pull/6141)                                                                                                                 |
+| **[@DennisYu07](https://github.com/DennisYu07)**         | `/config` 命令、auto-mode 全量 shell 分类、MCP 白名单通配符、MCP 工具空闲超时                                | [#5773](https://github.com/QwenLM/qwen-code/pull/5773), [#6040](https://github.com/QwenLM/qwen-code/pull/6040), [#6012](https://github.com/QwenLM/qwen-code/pull/6012), [#6061](https://github.com/QwenLM/qwen-code/pull/6061)                                                                                                                 |
+| **[@pomelo-nwu](https://github.com/pomelo-nwu)**         | Mobile Sidebar Drawer、HTTPS/TLS 支持                                                      | [#6003](https://github.com/QwenLM/qwen-code/pull/6003), [#6032](https://github.com/QwenLM/qwen-code/pull/6032)                                                                                                                                                                                                                                 |
+| **[@callmeYe](https://github.com/callmeYe)**             | workspace remember、会话时间轴 rail                                                           | [#5884](https://github.com/QwenLM/qwen-code/pull/5884), [#6078](https://github.com/QwenLM/qwen-code/pull/6078)                                                                                                                                                                                                                                 |
+| **[@ytahdn](https://github.com/ytahdn)**                 | 会话延迟创建、chat UI 和表格渲染优化                                                                  | [#6066](https://github.com/QwenLM/qwen-code/pull/6066), [#6099](https://github.com/QwenLM/qwen-code/pull/6099)                                                                                                                                                                                                                                 |
+| **[@chiga0](https://github.com/chiga0)**                 | resumable /acp session stream、非 VP 模式多 agent 滚动                                         | [#5852](https://github.com/QwenLM/qwen-code/pull/5852), [#6015](https://github.com/QwenLM/qwen-code/pull/6015)                                                                                                                                                                                                                                 |
+| **[@yiliang114](https://github.com/yiliang114)**         | Chrome 扩展复活                                                                             | [#5777](https://github.com/QwenLM/qwen-code/pull/5777)                                                                                                                                                                                                                                                                                         |
+| **[@wenshao](https://github.com/wenshao)**               | browser tab favicon                                                                     | [#6091](https://github.com/QwenLM/qwen-code/pull/6091)                                                                                                                                                                                                                                                                                         |
+| **[@carffuca](https://github.com/carffuca)**             | queued-prompt UX 优化                                                                     | [#6025](https://github.com/QwenLM/qwen-code/pull/6025)                                                                                                                                                                                                                                                                                         |
+| **[@Alex-ai-future](https://github.com/Alex-ai-future)** | TUI 输入延迟优化                                                                              | [#6059](https://github.com/QwenLM/qwen-code/pull/6059)                                                                                                                                                                                                                                                                                         |
+| **[@VectorPeak](https://github.com/VectorPeak)**         | Windows 波浪号路径展开                                                                         | [#6029](https://github.com/QwenLM/qwen-code/pull/6029)                                                                                                                                                                                                                                                                                         |
+| 🆕 **[@Minerest](https://github.com/Minerest)**          | 🎉 首次贡献：修复 auto-memory 启用时才触发记忆召回                                                               | [#5963](https://github.com/QwenLM/qwen-code/pull/5963)                                                                                                                                                                                                                                                                                         |
+| 🆕 **[@TianYuan1024](https://github.com/TianYuan1024)**  | 🎉 首次贡献：添加 `--insecure` 标志跳过 TLS 验证、`/model` 内联模型覆盖                                             | [#5962](https://github.com/QwenLM/qwen-code/pull/5962), [#6022](https://github.com/QwenLM/qwen-code/pull/6022)                                                                                                                                                                                                                                 |
+| 🆕 **[@gauravyad86](https://github.com/gauravyad86)**    | 🎉 首次贡献：修复 critical 级别 npm 安全漏洞（`simple-git`、`shell-quote` 等运行时依赖），并添加 CI 审计检查                  | [#6065](https://github.com/QwenLM/qwen-code/pull/6065)                                                                                                                                                                                                                                                                                         |
+
+<Callout type="info">
+  **升级方式**：运行 `npm i @qwen-code/qwen-code@latest -g` 即可升级到最新版本。
+</Callout>
+
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/QwenLM/qwen-code/issues) 反馈！

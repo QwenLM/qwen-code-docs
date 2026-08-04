@@ -1,0 +1,175 @@
+---
+title: "Qwen Code クイックスタートガイド：インストールから最初の AI プログラミングタスクまで"
+date: "2026-07-13"
+description: "ゼロから Qwen Code を使い始める：CLI のインストール、モデルの設定、最初の対話、Skills 拡張のインストール。10 分で最初の AI プログラミングタスクを完了しましょう。"
+author: "Qwen Team"
+tags: ["Tutorial", "Quickstart"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01sqP9AK1Zvl8tWso5b_!!6000000003257-2-tps-1344-572.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+
+<BlogPostHeader
+  title="Qwen Code クイックスタートガイド：インストールから最初の AI プログラミングタスクまで"
+  date="2026年7月13日"
+  author="Qwen Team"
+/>
+
+初めて Qwen Code に触れる方へ、この記事でゼロから始めましょう。インストール、設定、対話、拡張の 4 ステップで全体の流れを跑通します。各ステップには動画デモがあり、そのまま進めれば OK です。
+
+## Qwen Code のインストール
+
+Qwen Code はスクリプトによるワンクリックインストールに対応し、Windows、macOS、Linux を網羅しています。
+
+**macOS / Linux：**
+
+```bash
+bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source website
+```
+
+**Windows（PowerShell）：**
+
+```powershell
+curl -fsSL -o %TEMP%\install-qwen.bat https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.bat && %TEMP%\install-qwen.bat --source website
+```
+
+インストール完了後、`qwen --version` を実行してインストール成功を確認します。npm でインストールすることも可能です：
+
+```bash
+npm i @qwen-code/qwen-code@latest -g
+```
+
+詳細なインストール手順はこちらの動画で、ダウンロードから検証まで全工程をデモしています：
+
+<video
+  src="https://cloud.video.taobao.com/vod/WwpTKWA47iLT4DPh-Rk8763V-ihd50bAbD5_-op5Js4.mp4"
+  poster="https://img.alicdn.com/imgextra/i3/O1CN01wNWdtR1iVxMQbXtqa_!!6000000004419-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## モデルプロバイダーの設定
+
+インストール完了後、Qwen Code がモデルプロバイダーへの接続をガイドします。Alibaba Cloud Bailian プラットフォームの使用を推奨します。
+
+1. [Alibaba Cloud Bailian](https://bailian.console.aliyun.com/cn-beijing/?tab=model#/api-key)で API Key を取得
+2. ターミナルで `qwen` を起動し、Alibaba ModelStudio を選択
+3. API Key を貼り付け、モデルを選択
+
+手動設定を希望する場合は、`~/.qwen/settings.json` を編集します：
+
+```json
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.5-plus",
+        "name": "[Bailian] qwen3.5-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "envKey": "BAILIAN_API_KEY"
+      }
+    ]
+  },
+  "env": {
+    "BAILIAN_API_KEY": "あなたのAPI-KEY"
+  }
+}
+```
+
+設定完了後、`/model` コマンドでモデルの確認と切り替えができます：
+
+<video
+  src="https://cloud.video.taobao.com/vod/0OxPp8uqJhNIO31ZqvRsffEWr1QOdl5ecMgbO9TTXPU.mp4"
+  poster="https://gw.alicdn.com/imgextra/i2/O1CN01hjcyxO1zyfe1Ovgm4_!!6000000006783-2-tps-1700-954.png"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 最初の対話を始める
+
+プロジェクトディレクトリに移動し、Qwen Code を起動します：
+
+```bash
+cd your-project && qwen
+```
+
+自然言語でやりたいことをそのまま記述します。例えば：
+
+```
+Python でフィボナッチ数列を計算する関数を書いて
+```
+
+または AI にファイル整理を頼むこともできます：
+
+```
+このフォルダ内のファイルをタイプ別に分類して別のフォルダに整理して
+```
+
+Qwen Code がタスクを自動的に分解、操作を実行、結果を返します。やり方を一歩ずつ教える必要はなく、ゴールを記述すれば OK です。
+
+<video
+  src="https://cloud.video.taobao.com/vod/RBM4WS95LE5RkGA82JbBjTG1oVokxC-SJlMi8Jv4_fA.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000002613/O1CN019Vn4y71VAo2xDVswb_!!6000000002613-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## Skills 拡張のインストール
+
+Skills は Qwen Code の機能拡張システムです。コミュニティが開発した Skill を必要に応じてインストールし、AI にさらに多くの専門能力を持たせることができます。
+
+Skill のインストールは簡単で、一言で完了します：
+
+```
+find-skills をインストールして
+```
+
+または直接コマンドを使います：
+
+```bash
+/skills find-skills install web-component-design -y -a qwen-code
+```
+
+インストール完了後は `/skills` でインストール済みの Skills を確認できます。
+
+<video
+  src="https://cloud.video.taobao.com/vod/_3BD_A4_-nQRKqdyyHw9e8Nm1qtusA7gHKtoJlaJP28.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/6000000005414/O1CN01WFKT3D1prfQWynZFH_!!6000000005414-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## VS Code 統合
+
+エディタ内で作業したい方へ、Qwen Code は VS Code 拡張を提供しています。拡張マーケットで「Qwen Code」を検索してインストールするだけです。インストール後はサイドバーから直接 AI と対話でき、シームレスなプログラミング体験を楽しめます。
+
+<video
+  src="https://cloud.video.taobao.com/vod/IQbMf47caWPNeRPe2Z0DcCUJgip2IY5IzKRIG77yI5I.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/6000000003274/O1CN014Km30B1a3XqInHBJC_!!6000000003274-0-tbvideo.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+## 次のステップ
+
+入門が終わったら、さらに探索を続けましょう：
+
+- [プログラマーのように考えるアシスタント](/ja/blog/quickstart/thinks-like-a-programmer) — Qwen Code の設計理念を理解する
+- [活用事例](/ja/blog/cases) — 実際の使用シナリオとチュートリアルを見る
+- [上級ガイド](/ja/blog/advanced) — Skills、Bailian CLI などの高度な機能
+- [Showcase 動画デモ](/ja/showcase) — さらに多くのシナリオの動画ウォークスルー

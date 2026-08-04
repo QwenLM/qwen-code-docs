@@ -1,10 +1,10 @@
 # Qwen Code Hooks
 
-## Overview
+## Vue d'ensemble
 
-Les hooks de Qwen Code offrent un mécanisme puissant pour étendre et personnaliser le comportement de l'application Qwen Code. Les hooks permettent aux utilisateurs d'exécuter des scripts ou des programmes personnalisés à des points spécifiques du cycle de vie de l'application, tels qu'avant l'exécution d'un outil, après l'exécution d'un outil, au début/fin de session, et lors d'autres événements clés.
+Les hooks de Qwen Code offrent un mécanisme puissant pour étendre et personnaliser le comportement de l'application Qwen Code. Les hooks permettent aux utilisateurs d'exécuter des scripts ou des programmes personnalisés à des points spécifiques du cycle de vie de l'application, comme avant l'exécution d'un outil, après son exécution, au début/fin d'une session, et lors d'autres événements clés.
 
-Les hooks sont activés par défaut. Vous pouvez temporairement désactiver tous les hooks en définissant `disableAllHooks` sur `true` dans votre fichier de configuration (au niveau supérieur, aux côtés de `hooks`) :
+Les hooks sont activés par défaut. Vous pouvez désactiver temporairement tous les hooks en définissant `disableAllHooks` sur `true` dans votre fichier de configuration (au niveau supérieur, à côté de `hooks`) :
 
 ```json
 {
@@ -26,7 +26,7 @@ Les hooks sont des scripts ou des programmes définis par l'utilisateur qui sont
 - Injecter du contexte supplémentaire dans les conversations
 - Personnaliser le comportement de l'application en fonction des événements
 - S'intégrer à des systèmes et services externes
-- Modifier par programmation les entrées ou les réponses des outils
+- Modifier programmatiquement les entrées ou les réponses des outils
 
 ## Types de hooks
 
@@ -34,28 +34,28 @@ Qwen Code prend en charge quatre types d'exécuteurs de hooks :
 
 | Type       | Description                                                                                    |
 | :--------- | :--------------------------------------------------------------------------------------------- |
-| `command`  | Exécute une commande shell. Reçoit du JSON via `stdin`, renvoie les résultats via `stdout`.              |
-| `http`     | Envoie du JSON dans le corps d'une requête `POST` à une URL spécifiée. Renvoie les résultats via le corps de la réponse HTTP. |
-| `function` | Appelle directement une fonction JavaScript enregistrée (hooks de niveau session uniquement).                     |
-| `prompt`   | Utilise un LLM pour évaluer l'entrée du hook et renvoyer une décision.                                       |
+| `command`  | Exécute une commande shell. Reçoit du JSON via `stdin`, renvoie les résultats via `stdout`.    |
+| `http`     | Envoie du JSON dans le corps d'une requête `POST` vers une URL spécifiée. Renvoie les résultats via le corps de la réponse HTTP. |
+| `function` | Appelle directement une fonction JavaScript enregistrée (hooks au niveau de la session uniquement). |
+| `prompt`   | Utilise un LLM pour évaluer l'entrée du hook et renvoyer une décision.                         |
 
 ### Command Hooks
 
-Les hooks de commande exécutent des commandes via des processus enfants. L'entrée JSON est passée via stdin, et la sortie est renvoyée via stdout.
+Les command hooks exécutent des commandes via des processus enfants. Le JSON d'entrée est transmis via stdin, et la sortie est renvoyée via stdout.
 
 **Configuration :**
 
 | Field           | Type                     | Required | Description                                 |
 | :-------------- | :----------------------- | :------- | :------------------------------------------ |
-| `type`          | `"command"`              | Yes      | Type de hook                                   |
-| `command`       | `string`                 | Yes      | Commande à exécuter                          |
-| `name`          | `string`                 | No       | Nom du hook (pour les logs)                     |
-| `description`   | `string`                 | No       | Description du hook                            |
-| `timeout`       | `number`                 | No       | Délai d'attente en millisecondes, 60000 par défaut      |
-| `async`         | `boolean`                | No       | Indique s'il faut exécuter de manière asynchrone en arrière-plan |
-| `env`           | `Record<string, string>` | No       | Variables d'environnement                       |
-| `shell`         | `"bash" \| "powershell"` | No       | Shell à utiliser                                |
-| `statusMessage` | `string`                 | No       | Message de statut affiché pendant l'exécution   |
+| `type`          | `"command"`              | Yes      | Type de hook                                |
+| `command`       | `string`                 | Yes      | Commande à exécuter                         |
+| `name`          | `string`                 | No       | Nom du hook (pour les logs)                 |
+| `description`   | `string`                 | No       | Description du hook                         |
+| `timeout`       | `number`                 | No       | Délai d'expiration en millisecondes, 60000 par défaut |
+| `async`         | `boolean`                | No       | Exécution asynchrone en arrière-plan        |
+| `env`           | `Record<string, string>` | No       | Variables d'environnement                   |
+| `shell`         | `"bash" \| "powershell"` | No       | Shell à utiliser                            |
+| `statusMessage` | `string`                 | No       | Message de statut affiché pendant l'exécution |
 
 **Exemple :**
 
@@ -81,27 +81,27 @@ Les hooks de commande exécutent des commandes via des processus enfants. L'entr
 
 ### HTTP Hooks
 
-Les hooks HTTP envoient l'entrée du hook sous forme de requêtes POST à des URL spécifiées. Ils prennent en charge les listes blanches d'URL, la protection SSRF au niveau DNS, l'interpolation de variables d'environnement et d'autres fonctionnalités de sécurité.
+Les HTTP hooks envoient l'entrée du hook sous forme de requêtes POST vers des URL spécifiées. Ils prennent en charge les listes blanches d'URL, la protection SSRF au niveau DNS, l'interpolation de variables d'environnement et d'autres fonctionnalités de sécurité.
 
 **Configuration :**
 
 | Field            | Type                     | Required | Description                                               |
 | :--------------- | :----------------------- | :------- | :-------------------------------------------------------- |
-| `type`           | `"http"`                 | Yes      | Type de hook                                                 |
-| `url`            | `string`                 | Yes      | URL cible                                                |
-| `headers`        | `Record<string, string>` | No       | En-têtes de requête (prend en charge l'interpolation de variables d'environnement)          |
+| `type`           | `"http"`                 | Yes      | Type de hook                                              |
+| `url`            | `string`                 | Yes      | URL cible                                                 |
+| `headers`        | `Record<string, string>` | No       | En-têtes de requête (prend en charge l'interpolation des variables d'environnement) |
 | `allowedEnvVars` | `string[]`               | No       | Liste blanche des variables d'environnement autorisées dans l'URL/les en-têtes |
-| `timeout`        | `number`                 | No       | Délai d'attente en secondes, 600 par défaut                           |
-| `name`           | `string`                 | No       | Nom du hook (pour les logs)                                   |
-| `statusMessage`  | `string`                 | No       | Message de statut affiché pendant l'exécution                 |
-| `once`           | `boolean`                | No       | Exécuter une seule fois par événement et par session (hooks HTTP uniquement) |
+| `timeout`        | `number`                 | No       | Délai d'expiration en secondes, 600 par défaut            |
+| `name`           | `string`                 | No       | Nom du hook (pour les logs)                               |
+| `statusMessage`  | `string`                 | No       | Message de statut affiché pendant l'exécution             |
+| `once`           | `boolean`                | No       | Exécuter une seule fois par événement et par session (HTTP hooks uniquement) |
 
 **Fonctionnalités de sécurité :**
 
 - **Liste blanche d'URL** : Configurez les modèles d'URL autorisés via `allowedUrls`
-- **Protection SSRF** : Bloque les IP privées (10.x.x.x, 172.16-31.x.x, 192.168.x.x, etc.) mais autorise les adresses de bouclage (127.0.0.1, ::1)
-- **Validation DNS** : Valide la résolution du domaine avant les requêtes pour prévenir les attaques par rebond DNS
-- **Interpolation de variables d'environnement** : Syntaxe `${VAR}`, autorise uniquement les variables de la liste blanche `allowedEnvVars`
+- **Protection SSRF** : Bloque les IP privées (10.x.x.x, 172.16-31.x.x, 192.168.x.x, etc.) mais autorise les adresses de boucle locale (127.0.0.1, ::1)
+- **Validation DNS** : Valide la résolution du domaine avant les requêtes pour prévenir les attaques par rebinding DNS
+- **Interpolation de variables d'environnement** : Syntaxe `${VAR}`, autorise uniquement les variables présentes dans la liste blanche `allowedEnvVars`
 
 **Exemple :**
 
@@ -131,13 +131,13 @@ Les hooks HTTP envoient l'entrée du hook sous forme de requêtes POST à des UR
 
 ### Function Hooks
 
-Les hooks de fonction appellent directement des fonctions JavaScript/TypeScript enregistrées. Ils sont utilisés en interne par le système de Skills et ne sont actuellement pas exposés en tant qu'API publique pour les utilisateurs finaux.
+Les function hooks appellent directement des fonctions JavaScript/TypeScript enregistrées. Ils sont utilisés en interne par le système de Skills et ne sont actuellement pas exposés en tant qu'API publique pour les utilisateurs finaux.
 
-**Remarque** : Pour la plupart des cas d'utilisation, utilisez plutôt les **hooks de commande** ou les **hooks HTTP**, qui peuvent être configurés dans les fichiers de configuration.
+**Remarque** : Pour la plupart des cas d'usage, utilisez plutôt des **command hooks** ou des **HTTP hooks**, qui peuvent être configurés dans les fichiers de paramètres.
 
 ### Prompt Hooks
 
-Les hooks de prompt utilisent un LLM pour évaluer l'entrée du hook et renvoyer une décision. Cela est utile pour prendre des décisions intelligentes basées sur le contexte, comme déterminer s'il faut autoriser ou bloquer une opération.
+Les prompt hooks utilisent un LLM pour évaluer l'entrée du hook et renvoyer une décision. Cela s'avère utile pour prendre des décisions intelligentes basées sur le contexte, comme déterminer s'il faut autoriser ou bloquer une opération.
 
 **Fonctionnement :**
 
@@ -150,17 +150,17 @@ Les hooks de prompt utilisent un LLM pour évaluer l'entrée du hook et renvoyer
 
 | Field           | Type       | Required | Description                                         |
 | :-------------- | :--------- | :------- | :-------------------------------------------------- |
-| `type`          | `"prompt"` | Yes      | Type de hook                                           |
+| `type`          | `"prompt"` | Yes      | Type de hook                                        |
 | `prompt`        | `string`   | Yes      | Prompt envoyé au LLM. Utilisez `$ARGUMENTS` pour l'entrée du hook |
-| `model`         | `string`   | No       | Modèle à utiliser (par défaut : votre modèle actuel)       |
-| `timeout`       | `number`   | No       | Délai d'attente en secondes, 30 par défaut                      |
-| `name`          | `string`   | No       | Nom du hook (pour les logs)                             |
-| `description`   | `string`   | No       | Description du hook                                    |
-| `statusMessage` | `string`   | No       | Message de statut affiché pendant l'exécution           |
+| `model`         | `string`   | No       | Modèle à utiliser (par défaut : votre modèle actuel) |
+| `timeout`       | `number`   | No       | Délai d'expiration en secondes, 30 par défaut       |
+| `name`          | `string`   | No       | Nom du hook (pour les logs)                         |
+| `description`   | `string`   | No       | Description du hook                                 |
+| `statusMessage` | `string`   | No       | Message de statut affiché pendant l'exécution       |
 
 **Format de réponse :**
 
-Le LLM doit renvoyer un JSON avec la structure suivante :
+Le LLM doit renvoyer du JSON avec la structure suivante :
 
 ```json
 {
@@ -172,21 +172,21 @@ Le LLM doit renvoyer un JSON avec la structure suivante :
 
 | Field               | Description                                                                |
 | :------------------ | :------------------------------------------------------------------------- |
-| `ok`                | `true` pour autoriser/poursuivre, `false` pour bloquer/arrêter                            |
-| `reason`            | Requis lorsque `ok` est `false`. Affiché au modèle pour expliquer le blocage     |
+| `ok`                | `true` pour autoriser/poursuivre, `false` pour bloquer/arrêter             |
+| `reason`            | Requis lorsque `ok` est `false`. Affiché au modèle pour expliquer le blocage |
 | `additionalContext` | Optionnel. Contexte supplémentaire à injecter dans la conversation lors de l'autorisation |
 
 **Événements pris en charge :**
 
-Les hooks de prompt peuvent être utilisés avec la plupart des événements de hook, notamment :
+Les prompt hooks peuvent être utilisés avec la plupart des événements de hooks, notamment :
 
 - `PreToolUse` - Évalue s'il faut autoriser un appel d'outil
 - `PostToolUse` - Évalue les résultats de l'outil et injecte potentiellement du contexte
-- `Stop` - Détermine s'il faut continuer ou s'arrêter
+- `Stop` - Détermine s'il faut poursuivre ou arrêter
 - `SubagentStop` - Évalue les résultats du sous-agent
 - `UserPromptSubmit` - Évalue ou enrichit les prompts de l'utilisateur
 
-**Exemple : Hook Stop**
+**Exemple : Stop Hook**
 
 ```json
 {
@@ -206,9 +206,9 @@ Les hooks de prompt peuvent être utilisés avec la plupart des événements de 
 }
 ```
 
-Lorsque `ok` est `false`, Qwen Code continuera à travailler et utilisera le `reason` comme contexte pour la réponse suivante.
+Lorsque `ok` est `false`, Qwen Code continuera à travailler et utilisera la `reason` comme contexte pour la réponse suivante.
 
-**Exemple : Hook PreToolUse**
+**Exemple : PreToolUse Hook**
 
 ```json
 {
@@ -233,45 +233,44 @@ Lorsque `ok` est `false`, Qwen Code continuera à travailler et utilisera le `re
 
 ## Événements des hooks
 
-Les hooks se déclenchent à des points spécifiques lors d'une session Qwen Code. Différents événements prennent en charge différents matchers pour filtrer les conditions de déclenchement.
+Les hooks se déclenchent à des moments spécifiques lors d'une session Qwen Code. Différents événements prennent en charge différents matchers pour filtrer les conditions de déclenchement.
 
 | Event                | Triggered When                            | Matcher Target                                            |
 | :------------------- | :---------------------------------------- | :-------------------------------------------------------- |
-| `PreToolUse`         | Avant l'exécution de l'outil                     | Nom de l'outil (`WriteFile`, `ReadFile`, `Bash`, etc.)         |
-| `PostToolUse`        | Après l'exécution réussie de l'outil           | Nom de l'outil                                                 |
-| `PostToolUseFailure` | Après l'échec de l'exécution de l'outil                | Nom de l'outil                                                 |
-| `UserPromptSubmit`   | Après que l'utilisateur a soumis le prompt                 | Aucun (se déclenche toujours)                                       |
-| `SessionStart`       | Au démarrage ou à la reprise de la session            | Source (`startup`, `resume`, `clear`, `compact`)          |
-| `SessionEnd`         | À la fin de la session                         | Raison (`clear`, `logout`, `prompt_input_exit`, etc.)     |
-| `Stop`               | Lorsque Claude se prépare à conclure la réponse | Aucun (se déclenche toujours)                                       |
-| `SubagentStart`      | Au démarrage du sous-agent                      | Type d'agent (`Bash`, `Explorer`, `Plan`, etc.)             |
-| `SubagentStop`       | À l'arrêt du sous-agent                       | Type d'agent                                                |
-| `PreCompact`         | Avant la compaction de la conversation            | Déclencheur (`manual`, `auto`)                                |
-| `Notification`       | Lors de l'envoi des notifications               | Type (`permission_prompt`, `idle_prompt`, `auth_success`) |
-| `PermissionRequest`  | Lors de l'affichage de la boîte de dialogue de permission           | Nom de l'outil                                                 |
-| `TodoCreated`        | Lors de la création d'un nouvel élément todo           | Aucun (se déclenche toujours)                                       |
-| `TodoCompleted`      | Lorsqu'un élément todo est marqué comme terminé   | Aucun (se déclenche toujours)                                       |
-
+| `PreToolUse`         | Avant l'exécution de l'outil              | Nom de l'outil (`WriteFile`, `ReadFile`, `Bash`, etc.)    |
+| `PostToolUse`        | Après l'exécution réussie de l'outil      | Nom de l'outil                                            |
+| `PostToolUseFailure` | Après l'échec de l'exécution de l'outil   | Nom de l'outil                                            |
+| `UserPromptSubmit`   | Après que l'utilisateur soumet un prompt  | Aucun (se déclenche toujours)                             |
+| `SessionStart`       | Lorsque la session démarre ou reprend     | Source (`startup`, `resume`, `clear`, `compact`)          |
+| `SessionEnd`         | Lorsque la session se termine             | Raison (`clear`, `logout`, `prompt_input_exit`, etc.)     |
+| `Stop`               | Lorsque Claude se prépare à conclure sa réponse | Aucun (se déclenche toujours)                             |
+| `SubagentStart`      | Lorsque le sous-agent démarre             | Type d'agent (`Bash`, `Explorer`, `Plan`, etc.)           |
+| `SubagentStop`       | Lorsque le sous-agent s'arrête            | Type d'agent                                              |
+| `PreCompact`         | Avant la compaction de la conversation    | Déclencheur (`manual`, `auto`)                            |
+| `Notification`       | Lorsque des notifications sont envoyées   | Type (`permission_prompt`, `idle_prompt`, `auth_success`) |
+| `PermissionRequest`  | Lorsque la boîte de dialogue de permission s'affiche | Nom de l'outil                                     |
+| `TodoCreated`        | Lorsqu'un nouvel élément todo est créé    | Aucun (se déclenche toujours)                             |
+| `TodoCompleted`      | Lorsqu'un élément todo est marqué comme terminé | Aucun (se déclenche toujours)                       |
 ### Patterns de matcher
 
 `matcher` est une expression régulière utilisée pour filtrer les conditions de déclenchement.
 
-| Event Type          | Events                                                                 | Matcher Support | Matcher Target                                           |
-| :------------------ | :--------------------------------------------------------------------- | :-------------- | :------------------------------------------------------- |
-| Événements d'outil         | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest` | ✅ Regex        | Nom de l'outil : `WriteFile`, `ReadFile`, `Bash`, etc.         |
-| Événements de sous-agent     | `SubagentStart`, `SubagentStop`                                        | ✅ Regex        | Type d'agent : `Bash`, `Explorer`, etc.                     |
-| Événements de session      | `SessionStart`                                                         | ✅ Regex        | Source : `startup`, `resume`, `clear`, `compact`          |
-| Événements de session      | `SessionEnd`                                                           | ✅ Regex        | Raison : `clear`, `logout`, `prompt_input_exit`, etc.     |
-| Événements de notification | `Notification`                                                         | ✅ Correspondance exacte  | Type : `permission_prompt`, `idle_prompt`, `auth_success` |
-| Événements de compaction      | `PreCompact`                                                           | ✅ Correspondance exacte  | Déclencheur : `manual`, `auto`                                |
-| Événements Todo         | `TodoCreated`, `TodoCompleted`                                         | ❌ Non           | N/A                                                      |
-| Événements de prompt       | `UserPromptSubmit`                                                     | ❌ Non           | N/A                                                      |
-| Événements d'arrêt         | `Stop`                                                                 | ❌ Non           | N/A                                                      |
+| Type d'événement    | Événements                                                             | Support du matcher | Cible du matcher                                         |
+| :------------------ | :--------------------------------------------------------------------- | :----------------- | :------------------------------------------------------- |
+| Événements d'outils | `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest` | ✅ Regex           | Nom de l'outil : `WriteFile`, `ReadFile`, `Bash`, etc.   |
+| Événements de sous-agent | `SubagentStart`, `SubagentStop`                                   | ✅ Regex           | Type d'agent : `Bash`, `Explorer`, etc.                  |
+| Événements de session | `SessionStart`                                                       | ✅ Regex           | Source : `startup`, `resume`, `clear`, `compact`         |
+| Événements de session | `SessionEnd`                                                         | ✅ Regex           | Raison : `clear`, `logout`, `prompt_input_exit`, etc.    |
+| Événements de notification | `Notification`                                                  | ✅ Correspondance exacte | Type : `permission_prompt`, `idle_prompt`, `auth_success` |
+| Événements de compactage | `PreCompact`                                                      | ✅ Correspondance exacte | Déclencheur : `manual`, `auto`                           |
+| Événements Todo     | `TodoCreated`, `TodoCompleted`                                         | ❌ Non             | N/A                                                      |
+| Événements de prompt | `UserPromptSubmit`                                                    | ❌ Non             | N/A                                                      |
+| Événements d'arrêt  | `Stop`                                                                 | ❌ Non             | N/A                                                      |
 
 **Syntaxe du matcher :**
 
 - Une chaîne vide `""` ou `"*"` correspond à tous les événements de ce type
-- Syntaxe regex standard prise en charge (ex. : `^Bash$`, `Read.*`, `(WriteFile|Edit)`)
+- Syntaxe regex standard prise en charge (par ex., `^Bash$`, `Read.*`, `(WriteFile|Edit)`)
 
 **Exemples :**
 
@@ -321,7 +320,7 @@ Les hooks se déclenchent à des points spécifiques lors d'une session Qwen Cod
 
 ## Règles d'entrée/sortie
 
-### Structure d'entrée du hook
+### Structure d'entrée des hooks
 
 Tous les hooks reçoivent une entrée standardisée au format JSON via stdin (command) ou le corps de la requête POST (http).
 
@@ -339,17 +338,17 @@ Tous les hooks reçoivent une entrée standardisée au format JSON via stdin (co
 
 Des champs spécifiques à l'événement sont ajoutés en fonction du type de hook. Lors de l'exécution dans un sous-agent, `agent_id` et `agent_type` sont également inclus.
 
-### Structure de sortie du hook
+### Structure de sortie des hooks
 
 La sortie du hook est renvoyée via `stdout` (command) ou le corps de la réponse HTTP (http) au format JSON.
 
-**Comportement des codes de sortie (Hooks de commande) :**
+**Comportement des codes de sortie (Command Hooks) :**
 
-| Exit Code | Behavior                                                                              |
-| :-------- | :------------------------------------------------------------------------------------ |
-| `0`       | Succès. Analyse le JSON dans `stdout` pour contrôler le comportement.                                  |
-| `2`       | **Erreur bloquante**. Ignore `stdout`, passe `stderr` comme retour d'erreur au modèle. |
-| Other     | Erreur non bloquante. `stderr` affiché uniquement en mode debug, l'exécution se poursuit.           |
+| Code de sortie | Comportement                                                                        |
+| :------------- | :---------------------------------------------------------------------------------- |
+| `0`            | Succès. Analyse le JSON dans `stdout` pour contrôler le comportement.               |
+| `2`            | **Erreur bloquante**. Ignore `stdout`, transmet `stderr` comme retour d'erreur au modèle. |
+| Autre          | Erreur non bloquante. `stderr` affiché uniquement en mode debug, l'exécution continue. |
 
 **Structure de sortie :**
 
@@ -375,26 +374,32 @@ La sortie du hook prend en charge trois catégories de champs :
 
 #### PreToolUse
 
-**Objectif** : Exécuté avant l'utilisation d'un outil pour permettre des vérifications de permission, la validation des entrées ou l'injection de contexte.
+**Objectif** : Exécuté avant l'utilisation d'un outil pour permettre des vérifications de permissions, la validation des entrées ou l'injection de contexte.
 
 **Champs spécifiques à l'événement** :
 
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "tool_name": "name of the tool being executed",
-  "tool_input": "object containing the tool's input parameters",
-  "tool_use_id": "unique identifier for this tool use instance (internal format, e.g., toolu_xxx)",
-  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)"
+  "tool_name": "nom de l'outil en cours d'exécution",
+  "tool_input": "objet contenant les paramètres d'entrée de l'outil",
+  "tool_use_id": "identifiant unique pour cette instance d'utilisation de l'outil (format interne, par ex., toolu_xxx)",
+  "tool_call_id": "ID d'appel API original du fournisseur LLM (par ex., call_xxx pour OpenAI/Qwen) (optionnel)"
 }
 ```
 
 **Options de sortie** :
 
-- `hookSpecificOutput.permissionDecision` : "allow", "deny" ou "ask" (REQUIS)
-- `hookSpecificOutput.permissionDecisionReason` : explication de la décision (REQUIS)
+- `hookSpecificOutput.permissionDecision` : "allow", "deny" ou "ask" (OBLIGATOIRE)
+- `hookSpecificOutput.permissionDecisionReason` : explication de la décision (OBLIGATOIRE)
 - `hookSpecificOutput.updatedInput` : paramètres d'entrée de l'outil modifiés à utiliser à la place de l'original
 - `hookSpecificOutput.additionalContext` : informations de contexte supplémentaires
+
+La valeur de `permissionDecision` contrôle si l'outil s'exécute :
+
+- `"allow"` — exécute l'outil sans la demande d'approbation habituelle.
+- `"deny"` — bloque l'outil ; il ne s'exécute pas et une erreur est renvoyée au modèle.
+- `"ask"` — met en pause et demande à l'utilisateur de confirmer l'appel de l'outil dans la TUI avant son exécution. Confirmer exécute l'outil une fois ; refuser l'annule. Dans les contextes qui ne peuvent pas demander de confirmation — exécutions headless (`--prompt`) et sous-agents en arrière-plan — `"ask"` revient à `"deny"`.
 
 **Remarque** : Bien que les champs de sortie standard des hooks comme `decision` et `reason` soient techniquement pris en charge par la classe sous-jacente, l'interface officielle attend le `hookSpecificOutput` avec `permissionDecision` et `permissionDecisionReason`.
 
@@ -405,32 +410,32 @@ La sortie du hook prend en charge trois catégories de champs :
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "deny",
-    "permissionDecisionReason": "Security policy blocks database writes",
-    "additionalContext": "Current environment: production. Proceed with caution."
+    "permissionDecisionReason": "La politique de sécurité bloque les écritures en base de données",
+    "additionalContext": "Environnement actuel : production. Procédez avec prudence."
   }
 }
 ```
 
 #### PostToolUse
 
-**Objectif** : Exécuté après qu'un outil s'est terminé avec succès pour traiter les résultats, journaliser les résultats ou injecter du contexte supplémentaire.
+**Objectif** : Exécuté après la réussite d'un outil pour traiter les résultats, journaliser les résultats ou injecter du contexte supplémentaire.
 
 **Champs spécifiques à l'événement** :
 
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "tool_name": "name of the tool that was executed",
-  "tool_input": "object containing the tool's input parameters",
-  "tool_response": "object containing the tool's response",
-  "tool_use_id": "unique identifier for this tool use instance (internal format, e.g., toolu_xxx)",
-  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)"
+  "tool_name": "nom de l'outil qui a été exécuté",
+  "tool_input": "objet contenant les paramètres d'entrée de l'outil",
+  "tool_response": "objet contenant la réponse de l'outil",
+  "tool_use_id": "identifiant unique pour cette instance d'utilisation de l'outil (format interne, par ex., toolu_xxx)",
+  "tool_call_id": "ID d'appel API original du fournisseur LLM (par ex., call_xxx pour OpenAI/Qwen) (optionnel)"
 }
 ```
 
 **Options de sortie** :
 
-- `decision` : "allow", "deny", "block" (par défaut sur "allow" si non spécifié)
+- `decision` : "allow", "deny", "block" (par défaut à "allow" si non spécifié)
 - `reason` : raison de la décision
 - `hookSpecificOutput.additionalContext` : informations supplémentaires à inclure
 
@@ -439,9 +444,9 @@ La sortie du hook prend en charge trois catégories de champs :
 ```json
 {
   "decision": "allow",
-  "reason": "Tool executed successfully",
+  "reason": "Outil exécuté avec succès",
   "hookSpecificOutput": {
-    "additionalContext": "File modification recorded in audit log"
+    "additionalContext": "Modification du fichier enregistrée dans le journal d'audit"
   }
 }
 ```
@@ -455,14 +460,15 @@ La sortie du hook prend en charge trois catégories de champs :
 ```json
 {
   "permission_mode": "default | plan | auto_edit | yolo",
-  "tool_use_id": "unique identifier for the tool use (internal format, e.g., toolu_xxx)",
-  "tool_call_id": "original API call ID from the LLM provider (e.g., call_xxx for OpenAI/Qwen) (optional)",
-  "tool_name": "name of the tool that failed",
-  "tool_input": "object containing the tool's input parameters",
-  "error": "error message describing the failure",
-  "is_interrupt": "boolean indicating if failure was due to user interruption (optional)"
+  "tool_use_id": "identifiant unique pour l'utilisation de l'outil (format interne, par ex., toolu_xxx)",
+  "tool_call_id": "ID d'appel API original du fournisseur LLM (par ex., call_xxx pour OpenAI/Qwen) (optionnel)",
+  "tool_name": "nom de l'outil qui a échoué",
+  "tool_input": "objet contenant les paramètres d'entrée de l'outil",
+  "error": "message d'erreur décrivant l'échec",
+  "is_interrupt": "booléen indiquant si l'échec est dû à une interruption de l'utilisateur (optionnel)"
 }
 ```
+
 **Options de sortie** :
 
 - `hookSpecificOutput.additionalContext` : informations de gestion des erreurs
@@ -473,7 +479,7 @@ La sortie du hook prend en charge trois catégories de champs :
 ```json
 {
   "hookSpecificOutput": {
-    "additionalContext": "Error: File not found. Failure logged in monitoring system."
+    "additionalContext": "Erreur : Fichier introuvable. Échec enregistré dans le système de monitoring."
   }
 }
 ```
@@ -486,7 +492,7 @@ La sortie du hook prend en charge trois catégories de champs :
 
 ```json
 {
-  "prompt": "the user's submitted prompt text"
+  "prompt": "texte du prompt soumis par l'utilisateur"
 }
 ```
 
@@ -503,9 +509,9 @@ La sortie du hook prend en charge trois catégories de champs :
 ```json
 {
   "decision": "allow",
-  "reason": "Prompt reviewed and approved",
+  "reason": "Prompt examiné et approuvé",
   "hookSpecificOutput": {
-    "additionalContext": "Remember to follow company coding standards."
+    "additionalContext": "N'oubliez pas de suivre les standards de codage de l'entreprise."
   }
 }
 ```
@@ -520,8 +526,8 @@ La sortie du hook prend en charge trois catégories de champs :
 {
   "permission_mode": "default | plan | auto_edit | yolo",
   "source": "startup | resume | clear | compact",
-  "model": "the model being used",
-  "agent_type": "the type of agent if applicable (optional)"
+  "model": "modèle utilisé",
+  "agent_type": "type d'agent le cas échéant (optionnel)"
 }
 ```
 
@@ -535,7 +541,7 @@ La sortie du hook prend en charge trois catégories de champs :
 ```json
 {
   "hookSpecificOutput": {
-    "additionalContext": "Session started with security policies enabled."
+    "additionalContext": "Session démarrée avec les politiques de sécurité activées."
   }
 }
 ```
@@ -564,11 +570,11 @@ La sortie du hook prend en charge trois catégories de champs :
 
 ```json
 {
-  "stop_hook_active": "boolean indicating if stop hook is active",
-  "last_assistant_message": "the last message from the assistant",
-  "context_usage": "ratio of context window used (may exceed 1 when tokens exceed window; optional)",
-  "context_limit": "context window size in tokens (optional)",
-  "input_tokens": "prompt token count (may include output tokens depending on provider; optional)"
+  "stop_hook_active": "booléen indiquant si le hook d'arrêt est actif",
+  "last_assistant_message": "dernier message de l'assistant",
+  "context_usage": "ratio de la fenêtre de contexte utilisée (peut dépasser 1 lorsque les tokens dépassent la fenêtre ; optionnel)",
+  "context_limit": "taille de la fenêtre de contexte en tokens (optionnel)",
+  "input_tokens": "nombre de tokens du prompt (peut inclure les tokens de sortie selon le fournisseur ; optionnel)"
 }
 ```
 
@@ -589,35 +595,34 @@ Les champs `context_usage`, `context_limit` et `input_tokens` permettent aux scr
 ```json
 {
   "decision": "block",
-  "reason": "Must be provided when Qwen Code is blocked from stopping"
+  "reason": "Doit être fourni lorsque Qwen Code est empêché de s'arrêter"
 }
 ```
 
 #### StopFailure
 
-**Objectif** : Exécuté lorsque le tour se termine en raison d'une erreur API (au lieu de Stop). Il s'agit d'un événement **fire-and-forget** (lancer et oublier) : la sortie du hook et les codes de retour sont ignorés.
+**Objectif** : Exécuté lorsque le tour se termine en raison d'une erreur API (au lieu de Stop). Il s'agit d'un événement **fire-and-forget** - la sortie du hook et les codes de sortie sont ignorés.
 
 **Champs spécifiques à l'événement** :
 
 ```json
 {
   "error": "rate_limit | authentication_failed | billing_error | invalid_request | server_error | max_output_tokens | unknown",
-  "error_details": "detailed error message (optional)",
-  "last_assistant_message": "the last message from the assistant before the error (optional)"
+  "error_details": "message d'erreur détaillé (optionnel)",
+  "last_assistant_message": "dernier message de l'assistant avant l'erreur (optionnel)"
 }
 ```
-
-**Matcher** : Correspond au champ `error`. Par exemple, `"matcher": "rate_limit"` ne se déclenchera que pour les erreurs de limite de débit.
+**Matcher** : Correspond au champ `error`. Par exemple, `"matcher": "rate_limit"` ne se déclenchera que pour les erreurs de rate limit.
 
 **Options de sortie** :
 
-- **Aucune** - `StopFailure` est fire-and-forget. Toutes les sorties de hook et codes de retour sont ignorés.
+- **None** - StopFailure fonctionne en mode fire-and-forget. Toutes les sorties des hooks et les codes de retour sont ignorés.
 
 **Gestion des codes de retour** :
 
-| Code de retour | Comportement                |
-| -------------- | --------------------------- |
-| N'importe lequel | Ignoré (fire-and-forget)  |
+| Code de retour | Comportement              |
+| -------------- | ------------------------- |
+| Tous           | Ignoré (fire-and-forget)  |
 
 **Exemple de configuration** :
 
@@ -640,16 +645,16 @@ Les champs `context_usage`, `context_limit` et `input_tokens` permettent aux scr
 }
 ```
 
-**Cas d'utilisation** :
+**Cas d'usage** :
 
-- Surveillance et alerte sur les limites de débit (rate limits)
+- Surveillance et alertes de rate limit
 - Journalisation des échecs d'authentification
 - Notifications d'erreurs de facturation
-- Collecte de statistiques sur les erreurs
+- Collecte de statistiques d'erreurs
 
 #### SubagentStart
 
-**Objectif** : Exécuté au démarrage d'un sous-agent (comme l'outil Task) pour configurer le contexte ou les permissions.
+**Objectif** : Exécuté lorsqu'un sous-agent (comme l'outil Task) est démarré pour configurer le contexte ou les permissions.
 
 **Champs spécifiques à l'événement** :
 
@@ -664,7 +669,7 @@ Les champs `context_usage`, `context_limit` et `input_tokens` permettent aux scr
 **Options de sortie** :
 
 - `hookSpecificOutput.additionalContext` : contexte initial pour le sous-agent
-- Champs de sortie standard des hooks
+- Champs de sortie standards des hooks
 
 **Exemple de sortie** :
 
@@ -709,7 +714,7 @@ Les champs `context_usage`, `context_limit` et `input_tokens` permettent aux scr
 
 #### PreCompact
 
-**Objectif** : Exécuté avant le compactage de la conversation pour préparer ou journaliser le compactage.
+**Objectif** : Exécuté avant la compaction de la conversation pour préparer ou journaliser la compaction.
 
 **Champs spécifiques à l'événement** :
 
@@ -722,8 +727,8 @@ Les champs `context_usage`, `context_limit` et `input_tokens` permettent aux scr
 
 **Options de sortie** :
 
-- `hookSpecificOutput.additionalContext` : contexte à inclure avant le compactage
-- Champs de sortie standard des hooks
+- `hookSpecificOutput.additionalContext` : contexte à inclure avant la compaction
+- Champs de sortie standards des hooks
 
 **Exemple de sortie** :
 
@@ -737,7 +742,7 @@ Les champs `context_usage`, `context_limit` et `input_tokens` permettent aux scr
 
 #### PostCompact
 
-**Objectif** : Exécuté après la fin du compactage de la conversation pour archiver les résumés ou suivre l'utilisation.
+**Objectif** : Exécuté après la fin de la compaction de la conversation pour archiver les résumés ou suivre l'utilisation.
 
 **Champs spécifiques à l'événement** :
 
@@ -748,14 +753,14 @@ Les champs `context_usage`, `context_limit` et `input_tokens` permettent aux scr
 }
 ```
 
-**Matcher** : Correspond au champ `trigger`. Par exemple, `"matcher": "manual"` ne se déclenchera que pour le compactage manuel via la commande `/compact`.
+**Matcher** : Correspond au champ `trigger`. Par exemple, `"matcher": "manual"` ne se déclenchera que pour la compaction manuelle via la commande `/compact`.
 
 **Options de sortie** :
 
 - `hookSpecificOutput.additionalContext` : contexte supplémentaire (pour la journalisation uniquement)
-- Champs de sortie standard des hooks (pour la journalisation uniquement)
+- Champs de sortie standards des hooks (pour la journalisation uniquement)
 
-**Remarque** : `PostCompact` n'est **pas** dans la liste officielle des événements pris en charge en mode décision. Le champ `decision` et les autres champs de contrôle ne produisent aucun effet de contrôle : ils sont uniquement utilisés à des fins de journalisation.
+**Note** : PostCompact n'est **pas** dans la liste officielle des événements pris en charge en mode décision. Le champ `decision` et les autres champs de contrôle ne produisent aucun effet de contrôle - ils sont uniquement utilisés à des fins de journalisation.
 
 **Gestion des codes de retour** :
 
@@ -785,16 +790,16 @@ Les champs `context_usage`, `context_limit` et `input_tokens` permettent aux scr
 }
 ```
 
-**Cas d'utilisation** :
+**Cas d'usage** :
 
 - Archivage des résumés dans des fichiers ou des bases de données
 - Suivi des statistiques d'utilisation
 - Surveillance des changements de contexte
-- Journalisation d'audit pour les opérations de compactage
+- Journalisation d'audit pour les opérations de compaction
 
 #### Notification
 
-**Objectif** : Exécuté lors de l'envoi de notifications pour les personnaliser ou les intercepter.
+**Objectif** : Exécuté lorsque des notifications sont envoyées pour les personnaliser ou les intercepter.
 
 **Champs spécifiques à l'événement** :
 
@@ -806,12 +811,12 @@ Les champs `context_usage`, `context_limit` et `input_tokens` permettent aux scr
 }
 ```
 
-> **Remarque** : Le type `elicitation_dialog` est défini mais n'est pas encore implémenté.
+> **Note** : le type `elicitation_dialog` est défini mais n'est pas encore implémenté.
 
 **Options de sortie** :
 
 - `hookSpecificOutput.additionalContext` : informations supplémentaires à inclure
-- Champs de sortie standard des hooks
+- Champs de sortie standards des hooks
 
 **Exemple de sortie** :
 
@@ -825,7 +830,7 @@ Les champs `context_usage`, `context_limit` et `input_tokens` permettent aux scr
 
 #### PermissionRequest
 
-**Objectif** : Exécuté lorsque les boîtes de dialogue de permission sont affichées pour automatiser les décisions ou mettre à jour les permissions.
+**Objectif** : Exécuté lorsque des boîtes de dialogue de permission sont affichées pour automatiser les décisions ou mettre à jour les permissions.
 
 **Champs spécifiques à l'événement** :
 
@@ -885,11 +890,11 @@ Les hooks de todo s'exécutent en deux phases :
 **Options de sortie** :
 
 - `decision` : "allow", "block" ou "deny"
-- `reason` : explication lisible par un humain pour la décision (requise en cas de blocage)
+- `reason` : explication lisible par un humain pour la décision (requis en cas de blocage)
 
 **Comportement de blocage** :
 
-Pendant la phase `validation`, lorsque `decision` est `block` ou `deny` (code de retour 2), la création du todo est empêchée. La liste des todos reste inchangée et la raison est fournie comme retour au modèle.
+Pendant la phase `validation`, lorsque `decision` est `block` ou `deny` (code de retour 2), la création du todo est empêchée. La liste des todos reste inchangée et la raison est fournie comme feedback au modèle.
 
 Pendant la phase `postWrite`, le todo a déjà été persisté. Les hooks peuvent toujours retourner une sortie, mais `block` / `deny` n'annule pas l'écriture et ne doit pas être utilisé pour la validation.
 
@@ -982,11 +987,11 @@ Les hooks de todo s'exécutent en deux phases :
 **Options de sortie** :
 
 - `decision` : "allow", "block" ou "deny"
-- `reason` : explication lisible par un humain pour la décision (requise en cas de blocage)
+- `reason` : explication lisible par un humain pour la décision (requis en cas de blocage)
 
 **Comportement de blocage** :
 
-Pendant la phase `validation`, lorsque `decision` est `block` ou `deny` (code de retour 2), l'achèvement du todo est empêché. L'élément todo reste dans son statut précédent et la raison est fournie comme retour au modèle.
+Pendant la phase `validation`, lorsque `decision` est `block` ou `deny` (code de retour 2), l'achèvement du todo est empêché. L'élément todo reste dans son statut précédent et la raison est fournie comme feedback au modèle.
 
 Pendant la phase `postWrite`, le todo a déjà été persisté. Les hooks peuvent toujours retourner une sortie, mais `block` / `deny` n'annule pas l'écriture et ne doit pas être utilisé pour la validation.
 
@@ -1052,7 +1057,7 @@ exit 0
 }
 ```
 
-**Cas d'utilisation** :
+**Cas d'usage** :
 
 - **Journalisation** : Suivre la création et l'achèvement des todos pour l'audit ou l'analyse
 - **Validation** : Appliquer des standards de qualité de contenu (longueur minimale, mots-clés requis)
@@ -1097,11 +1102,10 @@ Les hooks sont configurés dans les paramètres de Qwen Code, généralement dan
 ```
 
 ## Exécution des hooks
-
 ### Exécution parallèle vs séquentielle
 
 - Par défaut, les hooks s'exécutent en parallèle pour de meilleures performances
-- Utilisez `sequential: true` dans la définition du hook pour imposer une exécution dépendante de l'ordre
+- Utilisez `sequential: true` dans la définition du hook pour forcer une exécution dépendante de l'ordre
 - Les hooks séquentiels peuvent modifier l'entrée pour les hooks suivants dans la chaîne
 
 ### Hooks asynchrones
@@ -1111,7 +1115,7 @@ Seul le type `command` prend en charge l'exécution asynchrone. Définir `"async
 **Fonctionnalités :**
 
 - Ne peut pas retourner de contrôle de décision (l'opération a déjà eu lieu)
-- Les résultats sont injectés dans le prochain tour de conversation via `systemMessage` ou `additionalContext`
+- Les résultats sont injectés dans le tour de conversation suivant via `systemMessage` ou `additionalContext`
 - Adapté pour l'audit, la journalisation, les tests en arrière-plan, etc.
 
 **Exemple :**
@@ -1151,9 +1155,9 @@ fi
 
 ### Modèle de sécurité
 
-- Les hooks s'exécutent dans l'environnement de l'utilisateur avec les privilèges de l'utilisateur
-- Les hooks au niveau du projet nécessitent un statut de dossier de confiance
-- Les timeouts empêchent les hooks de rester bloqués (par défaut : 60 secondes)
+- Les hooks s'exécutent dans l'environnement de l'utilisateur avec les privilèges de celui-ci
+- Les hooks au niveau du projet nécessitent que le dossier soit considéré comme fiable
+- Les timeouts empêchent les hooks de bloquer indéfiniment (par défaut : 60 secondes)
 
 ## Bonnes pratiques
 
@@ -1200,7 +1204,7 @@ echo '{
 exit 0
 ```
 
-Configurer dans `.qwen/settings.json` :
+Configurez dans `.qwen/settings.json` :
 
 ```json
 {
@@ -1224,7 +1228,7 @@ Configurer dans `.qwen/settings.json` :
 
 ### Exemple 2 : Hook d'audit HTTP
 
-Un hook HTTP `PostToolUse` qui envoie tous les enregistrements d'exécution d'outils à un service d'audit distant :
+Un hook HTTP `PostToolUse` qui envoie tous les enregistrements d'exécution des outils à un service d'audit distant :
 
 ```json
 {
@@ -1251,9 +1255,10 @@ Un hook HTTP `PostToolUse` qui envoie tous les enregistrements d'exécution d'ou
 }
 ```
 
-### Exemple 3 : Hook de validation de prompt utilisateur
+### Exemple 3 : Hook de validation des prompts utilisateur
 
 Un hook `UserPromptSubmit` qui valide les prompts utilisateur pour détecter des informations sensibles et fournit du contexte pour les prompts longs :
+
 **prompt_validator.py**
 
 ```python
@@ -1304,9 +1309,9 @@ exit(0)
 
 ## Dépannage
 
-- Vérifiez les logs de l'application pour les détails d'exécution du hook
-- Vérifiez les permissions et l'exécutabilité du script du hook
-- Assurez-vous que le formatage JSON est correct dans les sorties du hook
-- Utilisez des motifs de correspondance spécifiques pour éviter l'exécution involontaire des hooks
-- Utilisez le mode `--debug` pour afficher les détails de correspondance et d'exécution des hooks
+- Vérifiez les logs de l'application pour les détails d'exécution des hooks
+- Vérifiez les permissions et l'exécutabilité des scripts de hooks
+- Assurez-vous que le format JSON est correct dans les sorties des hooks
+- Utilisez des patterns de matcher spécifiques pour éviter l'exécution involontaire des hooks
+- Utilisez le mode `--debug` pour voir les informations détaillées sur le matching et l'exécution des hooks
 - Désactivez temporairement tous les hooks : ajoutez `"disableAllHooks": true` dans les paramètres

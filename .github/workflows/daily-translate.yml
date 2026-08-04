@@ -6,9 +6,11 @@ name: Daily Incremental Translation
 #
 # Prerequisites (set in repo Settings → Secrets and variables → Actions):
 #   - Secret  TRANSLATE_CODING_PLAN_API_KEY : a cloud-reachable model API key
-#   Model / base URL are set as plain env below; change them if you switch
-#   providers. The incremental baseline lives in website/last-sync.json
-#   (tracked in git), so each run only translates what changed upstream.
+#   - Variable (optional) TRANSLATE_BASE_URL : override the API endpoint.
+#     Defaults to https://coding.dashscope.aliyuncs.com/v1 when unset.
+#   QWEN_MODEL is still hardcoded below; change it if you switch models.
+#   The incremental baseline lives in website/last-sync.json (tracked in
+#   git), so each run only translates what changed upstream.
 #
 # Note: this job pushes to main with GITHUB_TOKEN, which by design does NOT
 # trigger other workflows (e.g. deploy-docs.yml), so there is no double build.
@@ -62,7 +64,7 @@ jobs:
         working-directory: ./website
         env:
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
-          OPENAI_BASE_URL: https://coding.dashscope.aliyuncs.com/v1
+          OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
           QWEN_MODEL: qwen3.7-plus
           # Keep each response moderate; larger docs auto-chunk from this cap.
           QWEN_MAX_TOKENS: "32768"
