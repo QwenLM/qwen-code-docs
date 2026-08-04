@@ -14,6 +14,7 @@ export default {
   design: {
     type: 'page',
     title: '设计',
+    display: 'hidden',
   },
   showcase: {
     type: 'page',
