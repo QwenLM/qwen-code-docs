@@ -68,10 +68,10 @@ jobs:
           QWEN_MODEL: qwen3.7-plus
           # Keep each response moderate; larger docs auto-chunk from this cap.
           QWEN_MAX_TOKENS: "32768"
-          # The MaaS compatible endpoint can close long responses when all
-          # target languages run at once. Keep CI conservative and let API
-          # retries handle transient disconnects.
-          QWEN_TRANSLATION_CONCURRENCY: "3"
+          # Total in-flight API calls = QWEN_TRANSLATION_CONCURRENCY ×
+          # QWEN_FILE_CONCURRENCY. Tune down if the endpoint rate-limits.
+          QWEN_TRANSLATION_CONCURRENCY: "6"
+          QWEN_FILE_CONCURRENCY: "4"
           QWEN_API_MAX_RETRIES: "6"
           QWEN_CHUNK_CHARS: "12000"
         run: |
