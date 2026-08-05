@@ -428,6 +428,7 @@ V1 合并后应作为一项完整的 session artifact 管理能力发布试用�
 - 改变 `artifact_changed.data.change.action` 的 `created` / `updated` / `removed` 语义。
 - 改变 `GET /session/:id/artifacts` 的 envelope shape。
 - 让普通 assistant 文本链接或普通文件编辑默认进入 artifact list。
+
 ## 5. 数据模型
 
 ### 5.1 Public SDK 类型
@@ -819,6 +820,7 @@ return {
 - ACP `Session.runTool()` 中，成功工具结果携带的 artifacts 继续附着到 `tool_call_update._meta.artifacts`；PostToolUse / PostToolUseFailure hook 返回的 artifacts 统一通过 `client.extNotification('qwen/notify/session/artifact-event', payload)` 单独发送。该 notification 必须在 hook artifacts 收集完成后同步 await；发送失败只记录 warning，不改变原工具失败/成功结果；这批 hook artifacts 不进入 daemon store，V1 不做持久重试。
 - hook artifacts 与 `record_artifact` / client POST 走同一套 validation：URL scheme、workspace path containment、metadata size/type。
 - batch-level artifacts 没有单一 tool call 时，只有在该运行时已经能向 bridge 发送 ACP `extNotification` 的情况下，才可使用 `qwen/notify/session/artifact-event`。
+
 `qwen/notify/session/artifact-event` payload：
 
 ```json
@@ -1003,7 +1005,7 @@ Phase A 优先接入 `ToolResult.artifacts` 和 `ArtifactTool`；`record_artifac
 
 - `packages/cli/src/acp-integration/session/types.ts`
   - `ToolCallResultParams.artifacts?`
-- `packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`
+- `packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`
   - `_meta.artifacts = params.artifacts`
 - `packages/cli/src/acp-integration/session/Session.ts`
   - 工具成功后收集 `toolResult.artifacts`。
@@ -1079,6 +1081,7 @@ GET 行为：
 - managed / URL artifact 不探测本机路径，始终返回 `status: 'available'`。
 
 ### 8.5 Phase C-3: SDK list/event support
+
 改动：
 
 - `packages/sdk-typescript/src/daemon/types.ts`
@@ -1335,7 +1338,7 @@ cd packages/core && npx vitest run src/tools/artifact/artifact-tool.test.ts
 命令：
 
 ```bash
-cd packages/cli && npx vitest run src/acp-integration/session/emitters/ToolCallEmitter.test.ts
+cd packages/cli && npx vitest run src/acp-integration/session/emitters/tool-call-emitter.test.ts
 cd packages/cli && npx vitest run src/acp-integration/session/Session.test.ts
 ```
 
@@ -1378,6 +1381,7 @@ cd packages/cli && npx vitest run src/acp-integration/session/Session.test.ts
 cd packages/acp-bridge && npx vitest run src/sessionArtifacts.test.ts
 cd packages/acp-bridge && npx vitest run src/bridgeClient.test.ts
 ```
+
 ### 13.4 Phase C-2 serve
 
 覆盖：
