@@ -1,5 +1,13 @@
 # Daemon ACP-over-HTTP → Transport ACP Streamable HTTP officiel
 
+> **Document de décision historique.** Ce design est antérieur aux runtimes
+> multi-workspaces enregistrés. Ses références à un bearer token plus une
+> liaison à un seul workspace comme frontière de confiance sont remplacées :
+> un seul bearer token couvre désormais tous les workspaces enregistrés, et la
+> confiance du workspace est une porte d'exécution plutôt qu'une ACL. Voir
+> [`../daemon-multi-workspace-hardening.md`](../daemon-multi-workspace-hardening.md)
+> pour le contrat actuel de propriété et d'isolation.
+
 > Cible : `daemon_mode_b_main`. Branche : `feat/daemon-acp-http-streamable`.
 > Auteur : arnoo.gao. Date : 2026-05-24. Statut : **Design v1 → implémentation**.
 > Workflow design-first par dépôt : ce document atterrit avant/avec la PR d'implémentation pour que le contrat filaire soit révisable.

@@ -1,5 +1,10 @@
 # Daemon ACP-over-HTTP → 官方 ACP Streamable HTTP 传输协议
 
+> **历史决策记录。** 本设计早于已注册的多工作区运行时。其中关于 bearer token 加
+> 单工作区绑定作为信任边界的描述已被取代：现在一个 bearer token
+> 覆盖所有已注册的工作区，工作区信任是执行闸门，而不是 ACL。当前的所有权与隔离契约参见
+> [`../daemon-multi-workspace-hardening.md`](../daemon-multi-workspace-hardening.md)。
+
 > 目标分支：`daemon_mode_b_main`。分支名称：`feat/daemon-acp-http-streamable`。
 > 作者：arnoo.gao。日期：2026-05-24。状态：**设计 v1 → 实现中**。
 > 遵循仓库优先设计的工作流：本文档在实现 PR 之前（或与之同时）落地，以便 wire contract 可审查。
