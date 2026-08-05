@@ -1,5 +1,13 @@
 # F2: Gemeinsamer MCP-Transport-Pool – Design v2.2
 
+> **Historischer Entscheidungsbericht.** Die ursprüngliche Prämisse `1 daemon = 1 workspace`
+> wurde durch Multi-Workspace-Runtimes abgelöst. Der implementierte Pool hat weiterhin
+> dieselbe Isolationsgrenze, aber diese Grenze ist jetzt eine
+> `WorkspaceRuntime`: Sessions teilen innerhalb einer Runtime und niemals
+> Runtime-übergreifend. Siehe
+> [`daemon-multi-workspace-hardening.md`](./daemon-multi-workspace-hardening.md)
+> für den aktuellen Ownership-Vertrag.
+>
 > Zielt auf `daemon_mode_b_main` (gemäß #4175 Branching-Strategie). Ersetzt #4175 Wave 5 PR 23.
 > **Single-PR-Lieferung** gemäß der Anleitung des Maintainers zur funktionskohärenten Batch-Bereitstellung (2026-05-19).
 > Autor: doudouOUC. Datum: 2026-05-20. Überarbeitet: 2026-05-20 (v2.2 – Überarbeitungsfaltungen aus der Implementierungsprüfung).
