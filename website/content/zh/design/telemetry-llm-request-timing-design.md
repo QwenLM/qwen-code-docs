@@ -1,5 +1,17 @@
 # LLM 请求时序分解设计（P3 阶段 4）
 
+> **GenAI 属性迁移：**
+> [`gen-ai-arms-field-alignment.md`](./gen-ai-arms-field-alignment.md) 取代了
+> 本文档的 `gen_ai.usage.cached_tokens`、
+> `gen_ai.server.time_to_first_token` 和
+> `gen_ai.usage.reasoning_tokens` 别名，并用标准 GenAI 属性替换了 LLM Span
+> 的 `qwen-code.model`、`input_tokens`、`output_tokens` 和
+> `cached_input_tokens` 别名。本文档描述的私有
+> `ttft_ms` Span 属性、`ApiResponseEvent.ttft_ms`、`sampling_ms`、
+> 吞吐量、`/stats` 和 API 请求分解指标仍然
+> 有效。对齐文档在 `ttft_ms` 之外添加了独立的标准
+> `gen_ai.response.time_to_first_chunk` 属性。
+
 > Issue #3731 — 分层会话追踪的阶段 4。为 `qwen-code.llm_request` span 添加首 token 时间、请求建立耗时、采样耗时以及每次重试的遥测数据，使运维人员无需猜测就能回答“这个 LLM 调用为什么慢？”。
 >
 > 建立在阶段 1 (#4126)、阶段 1.5 (#4302)、阶段 2 (#4321) 的基础上。与阶段 3 (#4410，审核中) 独立——建议先合入阶段 3，以便阶段 4 的每次尝试字段能干净地在子代理子树下聚合。
@@ -530,7 +542,7 @@ call_C: attemptStart_C, ttftMs_C, ... (闭包)
 
 - **在阶段 3（#4410，审查中）之后**：并非硬性依赖。阶段 4 的属性附加到 `qwen-code.llm_request` span，无论其父级是 `qwen-code.subagent`（阶段 3）还是 `qwen-code.interaction`（阶段 1）。建议先落地阶段 3，这样子代理子树下的每次尝试聚合能正常工作。
 - **独立于 #4384**（`traceparent` + `X-Qwen-Code-Session-Id` 出站传播）。它们涉及 HTTP 层；阶段 4 涉及流/重试/指标层。
-- **独立于 `clearDetailedSpanState` 聊天压缩后续**（#4097 后续）。不同的接触面。
+- **独立于 GenAI 内容捕获**。聊天压缩不再重置进程全局的敏感属性哈希状态，因为该状态已被移除；请求时序仍然是独立的表面。
 
 ## 未解决问题
 
