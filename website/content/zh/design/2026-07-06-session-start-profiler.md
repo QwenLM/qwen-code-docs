@@ -10,13 +10,13 @@
 
 仅当 `QWEN_CODE_PROFILE_SESSION_START=1` 时，profiler 才会启用。
 
-启用后，core 会将 JSONL 记录写入 `Storage.getRuntimeBaseDir()/session-start-perf/` 目录下。每日的 JSONL 文件名使用记录时间戳中的 UTC 日期。每条记录包含时间戳、`SessionStartSource`、成功标志、总耗时、有界阶段耗时，以及历史长度和渲染快照数量等小型聚合计数。
+启用后，core 会将 JSONL 记录写入 `Storage.getRuntimeBaseDir()/session-start-perf/` 目录下。每日的 JSONL 文件名使用记录时间戳中的 UTC 日期。每条记录包含时间戳、`SessionStartSource`、成功标志、总耗时、有界阶段耗时，以及历史长度和渲染快照数量等小型聚合计数。#4748 的 daemon profiling 后续工作会在调用方提供可选的不透明 Session ID 时将其加入，使该明细记录能够与跨进程 trace 关联。
 
 测量的阶段遵循现有的 `startChat()` 顺序：工具注册表预热、恢复的延迟工具揭示扫描、延迟提醒设置、初始聊天历史构建、skill 提醒去重 seeding、agent 提醒去重 seeding、系统指令构建、`GeminiChat` 构建、孤立 tool-use 修复、SessionStart hook、可选的 SessionStart 上下文应用以及 `setTools()`。
 
 ## 安全边界
 
-输出内容有意排除了 session ID、prompt、模型响应、hook 输出、tool 名称、文件路径和工作目录。阶段名称是静态的代码内置字符串。
+输出内容有意排除了 prompt、模型响应、hook 输出、tool 名称、文件路径和工作目录。其唯一的可选标识符是用于将 opt-in 记录与 daemon 遥测关联的不透明 Session ID；它不会添加用户、租户或工作空间身份。阶段名称是静态的代码内置字符串。
 
 所有 profiler 写入都是尽力而为的。文件系统故障会被静默处理，因此性能分析不会因错误处理而中断或拖慢会话。
 

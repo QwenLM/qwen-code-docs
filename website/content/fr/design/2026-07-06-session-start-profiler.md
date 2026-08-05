@@ -10,13 +10,13 @@ Cela ne modifie pas le comportement des sessions, les champs de protocole public
 
 Le profileur est activé uniquement lorsque `QWEN_CODE_PROFILE_SESSION_START=1`.
 
-Lorsqu'il est activé, le core écrit des enregistrements JSONL sous `Storage.getRuntimeBaseDir()/session-start-perf/`. Les noms de fichiers JSONL quotidiens utilisent la date UTC de l'horodatage de l'enregistrement. Chaque enregistrement inclut un horodatage, `SessionStartSource`, un indicateur de succès, la durée totale, les durées limitées des étapes, et de petits compteurs agrégés tels que la longueur de l'historique et le nombre de snapshots rendus.
+Lorsqu'il est activé, le core écrit des enregistrements JSONL sous `Storage.getRuntimeBaseDir()/session-start-perf/`. Les noms de fichiers JSONL quotidiens utilisent la date UTC de l'horodatage de l'enregistrement. Chaque enregistrement inclut un horodatage, `SessionStartSource`, un indicateur de succès, la durée totale, les durées limitées des étapes, et de petits compteurs agrégés tels que la longueur de l'historique et le nombre de snapshots rendus. Le suivi du profilage du démon #4748 ajoute un Session ID opaque optionnel lorsque l'appelant en fournit un, afin que cet enregistrement détaillé puisse être joint à la trace inter-processus.
 
 Les étapes mesurées suivent la séquence existante de `startChat()` : préchauffage du registre des outils, scan de révélation des outils différés repris, configuration des rappels différés, construction de l'historique de chat initial, amorçage de la déduplication des rappels de skill, amorçage de la déduplication des rappels d'agent, construction de l'instruction système, instanciation de `GeminiChat`, réparation des tool-use orphelins, hook SessionStart, application optionnelle du contexte SessionStart, et `setTools()`.
 
 ## Périmètre de sécurité
 
-La sortie exclut intentionnellement les ID de session, les prompts, les réponses du modèle, la sortie des hooks, les noms des outils, les chemins de fichiers et les répertoires de travail. Les noms des étapes sont des chaînes statiques appartenant au code.
+La sortie exclut intentionnellement les prompts, les réponses du modèle, la sortie des hooks, les noms des outils, les chemins de fichiers et les répertoires de travail. Son seul identifiant optionnel est le Session ID opaque utilisé pour corréler un enregistrement opt-in avec la télémétrie du démon ; il n'ajoute aucune identité d'utilisateur, de tenant ou de workspace. Les noms des étapes sont des chaînes statiques appartenant au code.
 
 Toutes les écritures du profileur sont effectuées en best-effort. Les erreurs du système de fichiers sont silencieusement ignorées afin que le profilage ne puisse pas interrompre ou ralentir une session via la gestion des erreurs.
 

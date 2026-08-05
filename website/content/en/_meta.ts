@@ -32,6 +32,4 @@ export default {
   plans: { display: 'hidden' },
   superpowers: { display: 'hidden' },
   verification: { display: 'hidden' },
-  'declarative-agents-port': { display: 'hidden' },
-  'yaml-parser-replacement': { display: 'hidden' },
 };

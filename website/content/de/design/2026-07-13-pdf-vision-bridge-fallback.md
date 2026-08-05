@@ -1,0 +1,25 @@
+# PDF vision bridge fallback
+
+## Kontext
+
+`read_file` verfährt bei PDFs text-first, wenn dem primären Modell die native PDF-Unterstützung fehlt. Die Textextraktion kann bei gescannten Dokumenten weiterhin fehlschlagen, und eine einzelne dichte Seite kann das sichere 12K-Token-Budget für Tool-Ergebnisse überschreiten. Gerenderte Seiten direkt zurückzugeben ist für einen Text-only-Provider nicht sicher, während die Behandlung jedes großen Textergebnisses als Bild gewöhnliche mehrseitige Lesevorgänge langsamer und ungenauer machen würde.
+
+## Design
+
+Die Dateiverarbeitungsschicht kann einen internen, PDF-only Vision-Bridge-Kandidaten vorbereiten. Diese Option ist getrennt von der bestehenden Unsupported-Image-Vorhaltung, die von interaktiven `@`-Anhängen verwendet wird, sodass sich gewöhnliche Bild-Lesevorgänge nicht ändern. Ein Kandidat enthält gerenderte Bild-Parts, den Auslösegrund, den tatsächlich gerenderten Seitenbereich, strukturierte Fortsetzungs-Metadaten und den ursprünglichen Textextraktionsfehler, der wiederhergestellt wird, falls die Transkription nicht abgeschlossen werden kann. Die Fortsetzungs-Metadaten unterscheiden Seiten, die bekanntermaßen existieren, von Seiten, die existieren könnten, wenn die Seitenzählung nicht verfügbar ist.
+
+Kandidaten werden nur erzeugt, wenn die PDF-Textextraktion fehlschlägt oder wenn ein expliziter oder tatsächlicher einseitiger Lesevorgang weiterhin geschätzte 12K Token überschreitet. Mehrseitiges Text-Overflow, Seitenbereich-Gates für große Dokumente und Dateigrößen-Gates behalten ihre bestehende Anleitung. Das Rendern beginnt auf der angefragten ersten Seite und verarbeitet höchstens vier Seiten pro `read_file`-Aufruf. Der angefragte Bereich wird auf die tatsächliche Seitenzahl des PDFs gekürzt, wenn diese bekannt ist: ein sechsseitiges Dokument, das mit `pages: "4-8"` angefragt wird, rendert die Seiten 4-6 und erfindet nicht die Seiten 7-8. Wenn die Seitenzählung nicht verfügbar ist, wird ein kurzes, nicht Byte-trunkiertes Rendering als Dateiende behandelt; ein vollständiges Vier-Seiten-Rendering oder eine Byte-Trunkierung meldet nur, dass zusätzliche angefragte Seiten existieren könnten.
+
+`ReadFileTool` aktiviert die Vorbereitung nur, wenn das primäre Modell text-only ist und ein Vision-Bridge-Modell konfiguriert oder verfügbar ist. Es ruft die Bridge auf, bevor die finale Tool-Antwort gebaut wird, und übergibt nur die gerenderten Bildseiten plus den strukturierten PDF-Seitenkontext. Die Bridge wird angewiesen, Transkriptionsabschnitte mit den ursprünglichen PDF-Seitennummern zu beschriften. Die Fortsetzungs-Anleitung wird nach der Transkription angehängt und verweist nur auf das ursprüngliche PDF, niemals auf temporäre gerenderte Bilder.
+
+Bei Erfolg liefert `read_file` eine nicht vertrauenswürdige, verlustbehaftete Maschinen-Transkription und keine Bilddaten. Ein strukturierter Anzeigehinweis legt das gewählte Vision-Modell, den Endpoint sofern bekannt, den transkribierten Seitenbereich und die bekannte oder mögliche Fortsetzung offen. Die TUI rendert diesen Hinweis auch dann, wenn erfolgreicher Lese-Output eingeklappt ist und wenn das Transkript-Detail aufgeklappt ist; ACP, nicht-interaktiver strukturierter Output und Session-Exporte enthalten denselben Text im Tool-Call-Content, statt sich auf opaque Roh-Ausgabe zu verlassen. Bei Bridge-Fehler, leerer Ausgabe, Timeout oder Modellwahl-Änderungen werden die Bilddaten verworfen und der exakte ursprüngliche PDF-Fehler wird dem Modell wiederhergestellt, während der Bridge-Versuch nur in der Benutzeranzeige sichtbar bleibt. Benutzer-Abbruch wird propagiert. Folglich kann kein Kandidatenbild über ein Tool-Ergebnis einen text-only primären Provider erreichen.
+
+Ein explizit konfiguriertes `visionModel` wird als Autorisierung behandelt, dieses Modell zu verwenden, selbst wenn es von einem anderen Provider gehostet wird. Der bestehende Bridge-Hinweis meldet den tatsächlichen Endpoint, damit die Datengrenze sichtbar bleibt.
+
+## Kompatibilität
+
+Das öffentliche `read_file`-Schema ist unverändert. Native PDF-Modelle, Vision-fähige primäre Modelle, Konfigurationen ohne Bridge-Modell, gewöhnliche PNG/JPEG-Lesevorgänge und bestehendes interaktives Bildverhalten behalten ihre aktuellen Pfade. Die interaktive `@`-PDF-Auflösung profitiert zusätzlich vom Ein-Seiten-Overflow-Fallback.
+
+## Verifikation
+
+Die Unit-Abdeckung prüft angefragte Bereiche, die nicht auf Seite 1 beginnen, Anfragen über das tatsächliche Dokumentende hinaus, unbekannte Seitenzahlen, Byte-Trunkierung, leere Renderings, einseitiges versus mehrseitiges Overflow, Bridge-Erfolg und -Fehler, Abbruch, Konfigurationsänderungen, Endpoint-Offenlegung über TUI-/ACP-/Export-Oberflächen, Seitennummer-Prompts und die Invariante, dass text-only Ergebnisse kein `inlineData` enthalten. Die E2E-Verifikation vergleicht die globale Baseline mit dem lokalen Build unter Verwendung eines sechsseitigen gescannten PDFs, eines dichten einseitigen PDFs und eines mehrseitigen textlastigen PDFs.

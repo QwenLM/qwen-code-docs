@@ -1,1 +1,0 @@
-<!-- Por favor, forneça o conteúdo Markdown para tradução. -->

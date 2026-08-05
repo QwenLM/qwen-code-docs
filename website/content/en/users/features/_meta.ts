@@ -9,9 +9,6 @@ export default {
   memory: 'Memory',
   headless: 'Headless Mode',
   'dual-output': 'Dual Output',
-  checkpointing: {
-    display: 'hidden',
-  },
   'approval-mode': 'Approval Mode',
   mcp: 'MCP',
   lsp: 'LSP (Language Server Protocol)',
