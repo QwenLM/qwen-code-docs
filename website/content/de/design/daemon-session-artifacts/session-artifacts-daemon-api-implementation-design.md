@@ -428,6 +428,7 @@ Breaking-Änderungen, die eine neue Capability oder eine neue Version erfordern:
 - Änderung der Semantik von `created` / `updated` / `removed` in `artifact_changed.data.change.action`.
 - Änderung der Envelope-Shape von `GET /session/:id/artifacts`.
 - Standardmäßiges Hinzufügen normaler Assistant-Textlinks oder normaler Dateibearbeitungen zur Artifact-Liste.
+
 ## 5. Datenmodell
 
 ### 5.1 Public SDK-Typen
@@ -819,6 +820,7 @@ Erforderliche Code-Änderungen:
 - In ACP `Session.runTool()` werden Artefakte aus erfolgreichen Tool-Ergebnissen weiterhin an `tool_call_update._meta.artifacts` angehängt. Artefakte, die von PostToolUse-/PostToolUseFailure-Hooks zurückgegeben werden, werden einheitlich und separat über `client.extNotification('qwen/notify/session/artifact-event', payload)` gesendet. Diese Benachrichtigung muss synchron geawaitet werden, nachdem die Hook-Artefakte gesammelt wurden. Ein Sendefehler wird nur als Warning protokolliert und ändert nicht das ursprüngliche Tool-Fehler-/Erfolgsergebnis. Diese Hook-Artefakte gelangen nicht in den Daemon-Store, V1 führt keine persistente Wiederholung durch.
 - Hook-Artefakte durchlaufen dieselbe Validierung wie `record_artifact` / Client-POST: URL-Schema, Workspace-Pfad-Containment, Metadaten-Größe/-Typ.
 - Wenn Batch-Level-Artefakte keinen einzelnen Tool-Call haben, kann `qwen/notify/session/artifact-event` nur verwendet werden, wenn zur Laufzeit bereits ACP-`extNotification` an die Bridge gesendet werden kann.
+
 `qwen/notify/session/artifact-event` Payload:
 
 ```json
@@ -1079,6 +1081,7 @@ GET-Verhalten:
 - Managed-/URL-Artifacts prüfen keine lokalen Pfade und geben immer `status: 'available'` zurück.
 
 ### 8.5 Phase C-3: SDK-List/Event-Support
+
 Änderungen:
 
 - `packages/sdk-typescript/src/daemon/types.ts`
@@ -1233,16 +1236,16 @@ Wenn das Geschäftsumfeld eine starke Notwendigkeit zur URL-Extraktion aus Text 
 Nachdem V1 `record_artifact` bereitstellt, kann ein Skill oder eine `agent.md` Folgendes enthalten:
 
 ```md
-Wenn du basierend auf den Tool-Ergebnissen eine Business-Ressourcen-URL konstruierst, die für den Benutzer sichtbar ist, rufe das record_artifact-Tool auf, um sie zu registrieren.
+当你根据工具结果构造出可供用户查看的业务资源 URL 时，调用 record_artifact 工具登记它。
 
-Registrierungsregeln:
+登记规则：
 
-- title verwendet den menschenlesbaren Namen der Ressource.
-- kind verwendet link.
-- storage verwendet external_url.
-- url verwendet die endgültige klickbare URL.
-- metadata.resourceType füllt den Ressourcentyp, z. B. data_platform_resource, scheduler_task.
-- Normale Referenzdokumentationslinks nicht als Artifact registrieren.
+- title 使用资源的人类可读名称。
+- kind 使用 link。
+- storage 使用 external_url。
+- url 使用最终可点击 URL。
+- metadata.resourceType 填资源类型，例如 data_platform_resource、scheduler_task。
+- 不要把普通参考文档链接登记为 artifact。
 ```
 
 Nach der Modellausführung:
@@ -1289,7 +1292,7 @@ Skript-Stdout:
       {
         "kind": "link",
         "storage": "external_url",
-        "title": "Details der Benutzerprofil-Ressource",
+        "title": "用户画像资源详情",
         "url": "https://platform.example.com/resources/user-profile",
         "mimeType": "text/html",
         "metadata": {
@@ -1335,7 +1338,7 @@ Abdeckung:
 Befehle:
 
 ```bash
-cd packages/cli && npx vitest run src/acp-integration/session/emitters/ToolCallEmitter.test.ts
+cd packages/cli && npx vitest run src/acp-integration/session/emitters/tool-call-emitter.test.ts
 cd packages/cli && npx vitest run src/acp-integration/session/Session.test.ts
 ```
 
@@ -1378,6 +1381,7 @@ Befehle:
 cd packages/acp-bridge && npx vitest run src/sessionArtifacts.test.ts
 cd packages/acp-bridge && npx vitest run src/bridgeClient.test.ts
 ```
+
 ### 13.4 Phase C-2 serve
 
 Abdeckung:
