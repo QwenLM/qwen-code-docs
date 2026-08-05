@@ -197,7 +197,8 @@ La réponse initiale est `202 Accepted` avec un id de tâche `forget-...`. Inter
       "filePath": "/path/to/memory.md"
     }
   ],
-  "touchedTopics": ["project"]
+  "touchedTopics": ["project"],
+  "touchedScopes": ["project"]
 }
 ```
 
@@ -356,7 +357,7 @@ au flux d'événements par session reçoivent cette notification.
 | `scope`         | `"managed"` | Permet de distinguer des événements `memory_changed` basés sur des fichiers               |
 | `source`        | `string`    | `"workspace_memory_remember"`, `"workspace_memory_forget"` ou `"workspace_memory_dream"`  |
 | `taskId`        | `string`    | Est en corrélation avec la tâche retournée par POST                                       |
-| `touchedScopes` | `string[]`  | Scopes de mémoire qui ont été écrits : `"user"`, `"project"`                              |
+| `touchedScopes` | `string[]`  | Quels scopes de mémoire gérée ont changé : `"user"`, `"project"`                          |
 
 L'`originatorClientId` (s'il est fourni au moment du POST) est attaché à l'enveloppe
 de l'événement afin que le bus d'événements puisse le router vers le client d'origine.
@@ -385,8 +386,8 @@ de l'événement afin que le bus d'événements puisse le router vers le client 
 
 ```
 Agent forked runner:   5 min maxTimeMinutes
-Signal d'abandon enfant : 295 s  (WORKSPACE_MEMORY_REMEMBER_CHILD_TIMEOUT_MS)
-Timeout du bridge :    300 s  (WORKSPACE_MEMORY_REMEMBER_TIMEOUT_MS)
+Child abort signal:  295 s  (WORKSPACE_MEMORY_REMEMBER_CHILD_TIMEOUT_MS)
+Bridge timeout:      300 s  (WORKSPACE_MEMORY_REMEMBER_TIMEOUT_MS)
 ```
 
 L'enfant abandonne avant que le bridge n'expire, garantissant qu'une erreur propre se propage
@@ -454,7 +455,7 @@ Le système de mémoire gérée stocke les faits dans des fichiers markdown avec
 
 Les écritures de mémoire impliquent un agent LLM qui décide _où_ et _comment_ stocker le fait (choix entre le scope user et project, choix du bon fichier, formatage). Cela prend de 2 à 30 secondes. Une requête HTTP synchrone expirerait ou bloquerait le client. Le modèle de file d'attente asynchrone + polling garde le contrat HTTP simple et permet aux clients d'afficher une UI de progression.
 
-### Pourquoi contextMode ?
+### Pourquoi `contextMode` ?
 
 - `"workspace"` (par défaut) — l'agent remember voit les mémoires existantes comme contexte, ce qui lui permet de dédupliquer ou de mettre à jour les entrées existantes.
 - `"clean"` — l'agent ne voit aucune mémoire utilisateur précédente, ce qui est utile lorsque l'appelant souhaite forcer une nouvelle écriture sans logique de déduplication (par ex. import en masse).
