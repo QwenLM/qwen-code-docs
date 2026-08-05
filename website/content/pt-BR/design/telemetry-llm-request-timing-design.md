@@ -1,5 +1,17 @@
 # Decomposição Temporal da Requisição LLM - Design (P3 Fase 4)
 
+> **Migração de atributos GenAI:**
+> [`gen-ai-arms-field-alignment.md`](./gen-ai-arms-field-alignment.md)
+> substitui os aliases `gen_ai.usage.cached_tokens`,
+> `gen_ai.server.time_to_first_token` e `gen_ai.usage.reasoning_tokens` deste
+> documento, e substitui os aliases `qwen-code.model`, `input_tokens`,
+> `output_tokens` e `cached_input_tokens` do Span LLM por atributos GenAI
+> padrão. O atributo privado de Span `ttft_ms`, `ApiResponseEvent.ttft_ms`,
+> `sampling_ms`, throughput, `/stats` e as métricas de detalhamento de
+> requisição API descritas aqui permanecem válidas. O documento de
+> alinhamento adiciona o atributo padrão independente
+> `gen_ai.response.time_to_first_chunk` ao lado de `ttft_ms`.
+
 > Issue #3731 — Fase 4 do rastreamento hierárquico de sessão. Adiciona tempo-para-primeiro-token, duração de configuração da requisição, duração de amostragem e telemetria de tentativas por retry ao span `qwen-code.llm_request`, permitindo que operadores respondam "por que essa chamada LLM foi lenta?" sem precisar adivinhar.
 >
 > Baseia-se na Fase 1 (#4126), Fase 1.5 (#4302), Fase 2 (#4321). Independente da Fase 3 (#4410, em revisão) — recomenda-se finalizar a Fase 3 primeiro para que os campos por tentativa da Fase 4 sejam agregados de forma limpa nas subárvores dos subagentes.
@@ -531,7 +543,10 @@ Caminho de rollback: reverter o PR único (ou cada um de 4a/4b/4c independenteme
 
 - **Após a Fase 3 (#4410, em revisão)**: não é uma dependência obrigatória. Os atributos da Fase 4 se anexam aos spans `qwen-code.llm_request` independentemente de estarem sob um pai `qwen-code.subagent` (Fase 3) ou `qwen-code.interaction` (Fase 1). Recomendo que a Fase 3 seja aprovada primeiro para que a agregação por tentativa sob as subárvores de subagente funcione naturalmente.
 - **Independente de #4384** (propagação de saída de `traceparent` + `X-Qwen-Code-Session-Id`). Eles tocam a camada HTTP; a Fase 4 toca a camada de stream/retry/métrica.
-- **Independente do acompanhamento de compressão de chat `clearDetailedSpanState`** (acompanhamento de #4097). Superfície diferente.
+- **Independente da captura de conteúdo GenAI**. A compactação do chat não
+  redefine mais o estado de hash de atributos sensíveis global do processo,
+  porque esse estado foi removido; o timing de requisição permanece uma
+  superfície separada.
 
 ## Perguntas em aberto
 

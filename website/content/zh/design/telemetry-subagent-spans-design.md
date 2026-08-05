@@ -1,5 +1,11 @@
 # Subagent 跟踪树设计（P3 第 3 阶段）
 
+> **GenAI 属性迁移：**
+> [`gen-ai-arms-field-alignment.md`](./gen-ai-arms-field-alignment.md) 取代了
+> 本文档对 `gen_ai.provider.name=qwen-code` 和临时
+> `gen_ai.agent.id` 的使用。此处描述的 `qwen-code.subagent.*` 生命周期、
+> 身份、父子关系和链接设计仍然有效。
+
 > Issue #3731 — 分层会话跟踪的第 3 阶段。新增 `qwen-code.subagent` span，使子代理调用获得独立的、可查询的跟踪结构，而不是静默交错在父级 `qwen-code.interaction` span 之下。
 >
 > 构建于第 1 阶段 (#4126)、第 1.5 阶段 (#4302) 和第 2 阶段 (#4321) 之上。
