@@ -286,17 +286,21 @@ lecture de métadonnées vers un fichier sans rapport.
 
 ### Ordre des gardes de déclenchement
 
-`maybeTriggerAutoTitle` vérifie six conditions dans cet ordre exact — chacune
+`maybeTriggerAutoTitle` vérifie ces conditions dans cet ordre exact — chacune
 court-circuite les suivantes afin que les moins coûteuses s'exécutent en premier :
 
 1. `currentCustomTitle` défini → ignorer. Ne jamais écraser un titre manuel / auto précédent.
-2. `autoTitleController !== undefined` → ignorer. Une seule tentative à la fois.
-3. `autoTitleAttempts >= 3` → ignorer. Le plafond limite le gaspillage total.
-4. `!config.isInteractive()` → ignorer. `qwen -p` / CI sans tête ne dépense jamais
-   de jetons de modèle rapide pour une session unique.
-5. `autoTitleDisabledByEnv()` → ignorer. `QWEN_DISABLE_AUTO_TITLE=1`
-   désactivation explicite.
-6. `!config.getFastModel()` → ignorer. Pas de modèle rapide → aucune opération.
+2. Writer dégradé → ignorer. Un recorder fail-stop ne peut pas persister un titre,
+   il ne faut donc pas dépenser davantage de jetons de modèle rapide.
+3. Écriture d'un titre explicite en attente → ignorer. L'intention de l'utilisateur
+   et du contrôle à distance gagne même avant que son écriture JSONL ne se stabilise.
+4. `autoTitleController !== undefined` → ignorer. Une seule tentative à la fois.
+5. `autoTitleAttempts >= 3` → ignorer. Le plafond limite le gaspillage total.
+6. `autoTitleDisabledByEnv()` → ignorer. `QWEN_DISABLE_AUTO_TITLE=1`
+   désactivation explicite (opt-out).
+7. `!config.isInteractive()` → ignorer. `qwen -p` / CI headless ne dépense jamais
+   de jetons de modèle rapide pour une session à usage unique.
+8. `!config.getFastModel()` → ignorer. Pas de modèle rapide → aucune opération.
 
 ### Pourquoi le plafond est 3, pas 1
 
@@ -331,13 +335,60 @@ lent. Le bloc `finally` de l'IIFE efface
 `autoTitleController` uniquement s'il est toujours actif, donc une finalisation
 en plein vol ne fait pas la course avec un `recordAssistantTurn` simultané.
 
-### `/rename` manuel atterrit en plein vol
+### Un renommage explicite atterrit en plein vol
 
-Entre la fin de l'attente de l'IIFE et l'appel `recordCustomTitle('auto')`,
-l'utilisateur pourrait faire `/rename foo`. L'IIFE revérifie
-`this.currentTitleSource === 'manual'` et abandonne. La vérification en cours
-ET la re-lecture inter-processus s'exécutent toutes deux ; le manuel gagne aux deux
-niveaux.
+Chaque appel public à `recordCustomTitle()` incrémente un compteur de
+renommages explicites en attente et interrompt le contrôleur d'arrière-plan
+actif avant d'attendre le JSONL. Cela inclut `/rename --auto`, donc un
+renommage explicite généré par le modèle a la même priorité qu'un titre
+utilisateur littéral. La tâche d'arrière-plan vérifie le compteur, le signal
+d'interruption, le titre actuel et l'état du writer à la fois après la
+génération et juste avant la persistance. Les renommages explicites
+concurrents sont sérialisés par le writer ; leurs résultats en mémoire sont
+validés dans ce même ordre. Si un titre explicite arrive après qu'un titre
+d'arrière-plan est déjà en file, l'ordre normal du writer fait du titre
+explicite l'enregistrement final.
+
+Pendant qu'une écriture de titre explicite est en attente, `finalize()` ne
+ré-ancre pas le titre précédent mis en cache. Sinon, cet enregistrement
+obsolète pourrait être mis en file derrière le renommage et devenir la queue
+du JSONL après que le nouveau titre a atterri avec succès. La comptabilité de
+l'ancrage de titre suit l'ordre logique de la file du writer. Les
+enregistrements descendants mis en file derrière une écriture de titre non
+résolue sont comptés, mais le ré-ancrage au seuil est différé jusqu'à ce que
+le titre final mis en cache soit connu, afin que ni l'arrêt ni le chemin
+d'ancrage de 32 Ko ne puissent ajouter un titre obsolète derrière un
+renommage réussi.
+
+La re-lecture inter-processus protège toujours les titres manuels écrits par
+un autre processus CLI. Ce n'est pas un compare-and-swap ; un renommage
+externe dans la fenêtre finale entre vérification et écriture reste une
+course acceptée.
+
+### Ordre des titres de branche
+
+`/branch` finalise et draine le recorder source avant de le copier. Il charge
+ensuite le fork provisoire, calcule un titre de branche unique, persiste ce
+titre via `SessionService`, puis recharge le fork afin que sa queue finale et
+son cache de titre incluent l'enregistrement ajouté. Ce n'est qu'après la
+réussite de ces étapes qu'il bascule le recorder principal et l'UI. Un échec
+de drain de la source, un échec de titre ou un échec de rechargement final
+supprime le fork incomplet et laisse la session d'origine active.
+`forkSession()` supprime également sa cible créée exclusivement si l'écriture
+ou la fermeture du nouveau JSONL échoue avant que l'appel puisse signaler un
+succès, afin que l'appelant ne puisse pas laisser fuiter un fichier partiel
+pendant la fenêtre précédant le marquage du fork comme créé.
+
+### Frontière du démon
+
+Les opérations de titre ACP live attendent `recordCustomTitle()` et signalent
+donc un résultat `persisted` ou `success` véridique, sans second `flush()`
+qui pourrait attribuer au renommage un échec d'écriture ultérieur sans
+rapport. Le PATCH de métadonnées du démon reste intentionnellement optimiste :
+il met à jour l'état live et publie son événement immédiatement, tandis que
+la persistance de l'enfant est best-effort et qu'un résultat faux est
+consigné dans le journal de débogage. Les mises à jour de métadonnées HTTP
+fortement cohérentes sont hors du périmètre de ce design.
 
 ## Configuration
 
