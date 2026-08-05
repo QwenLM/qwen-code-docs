@@ -26,7 +26,7 @@
  *   --baseline --temp-dir --langs csv --limit N --manifest --model
  * Zero dependencies: node builtins + git CLI only.
  */
-import { execSync, spawnSync } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -98,6 +98,46 @@ function gitRetry(cmd, label) {
       );
       cmd = cmd.split(" && ").map(http11).join(" && ");
     }
+  }
+}
+
+/**
+ * Serialize access to the shared upstream clone (OPTS.tempDir). Parallel
+ * per-language `translate` dispatches each ensure+hash the same working
+ * tree; concurrent `git fetch/reset` trips git's lock files and a reset
+ * racing upstreamDocs() would hash a half-updated tree. O_EXCL lock file
+ * with stale-lock recovery; no extra deps.
+ */
+function withUpstreamLock(fn) {
+  const lockFile = `${OPTS.tempDir}.lock`;
+  const staleMs = 10 * 60 * 1000;
+  const start = Date.now();
+  for (;;) {
+    try {
+      fs.closeSync(
+        fs.openSync(
+          lockFile,
+          fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL
+        )
+      );
+      break;
+    } catch (err) {
+      if (err.code !== "EEXIST") throw err;
+      try {
+        if (Date.now() - fs.statSync(lockFile).mtimeMs > staleMs) {
+          fs.rmSync(lockFile, { force: true });
+          continue;
+        }
+      } catch {}
+      if (Date.now() - start > staleMs)
+        throw new Error(`timed out waiting for ${lockFile}`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1000);
+    }
+  }
+  try {
+    return fn();
+  } finally {
+    fs.rmSync(lockFile, { force: true });
   }
 }
 
@@ -273,9 +313,14 @@ function renderPrompt(lang, batch) {
     .replaceAll("{{FILES}}", files);
 }
 
-function cmdTranslate(lang) {
-  const ensure = ensureUpstream();
-  const upstream = upstreamDocs();
+async function cmdTranslate(lang) {
+  // Parallel per-language dispatches share .temp-source-repo; serialize
+  // ensure+hash so concurrent fetch/reset cannot trip git locks or hash a
+  // half-updated tree.
+  const upstream = withUpstreamLock(() => {
+    ensureUpstream();
+    return upstreamDocs();
+  });
   const base = loadBaseline();
   const batch = backlogFor(base, upstream, lang).slice(0, OPTS.limit);
   if (batch.length === 0) {
@@ -297,19 +342,29 @@ function cmdTranslate(lang) {
   // gated), which matches the prompt's "do not run builds or commands".
   const args = ["--approval-mode", "auto-edit", "-p", prompt, "-o", "text"];
   if (OPTS.model) args.push("--model", OPTS.model);
-  const res = spawnSync("qwen", args, {
-    cwd: ROOT,
-    encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024,
-  });
   const log = path.join(
     path.dirname(manifestPath(lang)),
     `orchestrator-agent-${lang}.log`
   );
-  fs.writeFileSync(log, (res.stdout || "") + "\n--- stderr ---\n" + (res.stderr || ""));
-  console.log(`[orch] ${lang}: agent exit=${res.status} (log: ${log})`);
-  console.log((res.stdout || "").trim().split("\n").slice(-15).join("\n"));
-  if (res.status !== 0) process.exitCode = 1;
+  // Stream agent output live (CI step log + runner-side log file) instead
+  // of capturing it: a 20-file batch ran tens of minutes silent otherwise.
+  const fd = fs.openSync(log, "w");
+  const child = spawn("qwen", args, {
+    cwd: ROOT,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  child.stdout.on("data", (c) => {
+    process.stdout.write(c);
+    fs.writeSync(fd, c);
+  });
+  child.stderr.on("data", (c) => {
+    process.stderr.write(c);
+    fs.writeSync(fd, c);
+  });
+  const status = await new Promise((resolve) => child.on("close", resolve));
+  fs.closeSync(fd);
+  console.log(`[orch] ${lang}: agent exit=${status} (log: ${log})`);
+  if (status !== 0) process.exitCode = 1;
 }
 
 // ---------- structural gate ----------
@@ -421,7 +476,7 @@ switch (cmd) {
     cmdSyncEn();
     break;
   case "translate":
-    cmdTranslate(flags.lang);
+    await cmdTranslate(flags.lang);
     break;
   case "verify":
     cmdVerify(flags.lang);

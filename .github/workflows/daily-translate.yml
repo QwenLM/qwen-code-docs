@@ -86,16 +86,23 @@ jobs:
           grep -oE 'backlog [A-Za-z-]+:' /tmp/orch-detect.log \
             | awk '{print $2}' | tr -d ':' > /tmp/orch-langs.txt
 
-      - name: Translate, verify, advance per language
+      - name: Translate languages in parallel, then advance baseline
         if: steps.detect.outputs.changed == 'true'
         run: |
           cd translator/orchestrator
+          pids=""
           while read -r lang; do
-            echo "::group::translate $lang"
-            node orchestrator.mjs translate --lang "$lang" --limit "${TRANSLATE_DAILY_LIMIT:-20}" --model "$QWEN_MODEL" || true
-            node orchestrator.mjs verify --lang "$lang" || true
+            { node orchestrator.mjs translate --lang "$lang" --limit "${TRANSLATE_DAILY_LIMIT:-20}" --model "$QWEN_MODEL" || true
+              node orchestrator.mjs verify --lang "$lang" || true
+            } 2>&1 | sed -u "s/^/${lang} | /" &
+            pids="$pids $!"
+          done < /tmp/orch-langs.txt
+          for pid in $pids; do wait "$pid"; done
+          # advance is a cheap read-modify-write on the shared baseline
+          # (last-sync.json); keep it serial so parallel languages cannot
+          # clobber each other's records.
+          while read -r lang; do
             node orchestrator.mjs advance --lang "$lang"
-            echo "::endgroup::"
           done < /tmp/orch-langs.txt
         env:
           TRANSLATE_DAILY_LIMIT: ${{ vars.TRANSLATE_DAILY_LIMIT }}
