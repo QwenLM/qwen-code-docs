@@ -197,7 +197,8 @@ forgetタスクをキューに追加します。デーモンは一致する管�
       "filePath": "/path/to/memory.md"
     }
   ],
-  "touchedTopics": ["project"]
+  "touchedTopics": ["project"],
+  "touchedScopes": ["project"]
 }
 ```
 
