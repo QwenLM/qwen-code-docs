@@ -1,5 +1,8 @@
 # LLM リクエストタイミング分解設計 (P3 Phase 4)
 
+> **GenAI 属性の移行:**
+> [`gen-ai-arms-field-alignment.md`](./gen-ai-arms-field-alignment.md) が、本文書における `gen_ai.usage.cached_tokens`、`gen_ai.server.time_to_first_token`、`gen_ai.usage.reasoning_tokens` のエイリアスに取って代わり、LLM スパンの `qwen-code.model`、`input_tokens`、`output_tokens`、`cached_input_tokens` のエイリアスを標準の GenAI 属性に置き換える。ここで説明されているプライベートな `ttft_ms` スパン属性、`ApiResponseEvent.ttft_ms`、`sampling_ms`、スループット、`/stats`、API リクエストの breakdown メトリクスは引き続き有効である。alignment ドキュメントは、`ttft_ms` と並べて独立した標準の `gen_ai.response.time_to_first_chunk` 属性を追加する。
+
 > Issue #3731 — 階層セッショントレーシングのフェーズ4。time-to-first-token、リクエストセットアップ時間、サンプリング時間、試行ごとのリトライテレメトリを `qwen-code.llm_request` スパンに追加し、オペレータが「このLLM呼び出しはなぜ遅かったのか？」を推測せずに判断できるようにする。
 >
 > フェーズ1 (#4126)、フェーズ1.5 (#4302)、フェーズ2 (#4321) を基盤とする。フェーズ3 (#4410、レビュー中) とは独立 — フェーズ3を先にマージすることで、フェーズ4の試行ごとのフィールドがサブエージェントサブツリー下でクリーンに集約されるため、先にフェーズ3を適用することを推奨する。
@@ -532,7 +535,7 @@ call_C: attemptStart_C, ttftMs_C, ... (クロージャ)
 
 - **フェーズ3 (#4410、レビュー中) の後**: ハードな依存関係ではありません。フェーズ4の属性は、親が `qwen-code.subagent`（フェーズ3）であろうと `qwen-code.interaction`（フェーズ1）であろうと、`qwen-code.llm_request` スパンにアタッチされます。フェーズ3を先に導入して、サブエージェントサブツリー下での試行ごとの集約が自然に機能するようにすることを推奨します。
 - **#4384 から独立**（`traceparent` + `X-Qwen-Code-Session-Id` のアウトバウンド伝搬）。これらはHTTPレイヤーに影響します; フェーズ4はストリーム/リトライ/メトリクスレイヤーに影響します。
-- **`clearDetailedSpanState` チャット圧縮フォローアップから独立** (#4097 フォローアップ)。対象領域が異なります。
+- **GenAI コンテンツキャプチャから独立**。チャット圧縮は、その状態が削除されたため、プロセスグローバルの機微属性ハッシュ状態をリセットしなくなった。リクエストタイミングは引き続き独立した対象領域である。
 
 ## 未解決の質問
 
