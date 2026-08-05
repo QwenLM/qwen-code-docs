@@ -130,6 +130,7 @@ Les plugins s'exécutent dans le processus (pas de bac à sable), même modèle 
       "model": "qwen3.5-plus",
       "instructions": "Keep responses short.",
       "groupPolicy": "disabled", // disabled | allowlist | open
+      "dmPolicy": "open", // open | disabled
       "groups": { "*": { "requireMention": true } },
     },
   },
