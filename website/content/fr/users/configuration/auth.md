@@ -236,7 +236,7 @@ Modifiez `~/.qwen/settings.json` (créez-le s'il n'existe pas). Vous pouvez mél
 >
 > Lors de l'utilisation du champ `env` dans `settings.json`, les identifiants sont stockés en texte clair. Pour une meilleure sécurité, préférez les fichiers `.env` ou les `export` du shell — consultez l'[Étape 2](#step-2-set-environment-variables).
 
-Pour le schéma complet de `modelProviders` et les options avancées comme `generationConfig`, `customHeaders` et `extra_body`, consultez la [Référence des Model Providers](model-providers.md).
+Pour le schéma complet de `modelProviders` et les options avancées comme `generationConfig`, `customHeaders` et `extra_body`, consultez la [Référence des Model Providers](./model-providers.md).
 
 #### Étape 2 : Définir les variables d'environnement
 

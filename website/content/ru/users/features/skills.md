@@ -167,7 +167,7 @@ my-skill/
 Ссылайтесь на эти файлы из `SKILL.md`:
 
 ````markdown
-For advanced usage, see [reference.md](reference.md).
+For advanced usage, see [reference.md](./reference.md).
 
 Run the helper script:
 

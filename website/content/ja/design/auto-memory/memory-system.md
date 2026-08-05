@@ -442,9 +442,9 @@ flowchart TD
 `MEMORY.md` は全トピックファイルのナビゲーションインデックスであり、Extract または Dream のたびに `rebuildManagedAutoMemoryIndex` を呼び出して再構築されます。
 
 ```
-- [ユーザーの嗜好](user/preferences.md) — ユーザーはベテランの Go エンジニアで、React は初めて
-- [フィードバック規範](feedback/style.md) — 返信は簡潔に、末尾の要約は不要
-- [プロジェクトマイルストーン](project/milestone.md) — モバイルリリースのブランチカット前のマージフリーズ期間
+- [ユーザーの嗜好](./user/preferences.md) — ユーザーはベテランの Go エンジニアで、React は初めて
+- [フィードバック規範](./feedback/style.md) — 返信は簡潔に、末尾の要約は不要
+- [プロジェクトマイルストーン](./project/milestone.md) — モバイルリリースのブランチカット前のマージフリーズ期間
 ```
 
 **インデックスの制限**：

@@ -442,9 +442,9 @@ flowchart TD
 `MEMORY.md` ist der Navigationsindex aller Themendateien; wird nach jedem Extract oder Dream durch Aufruf von `rebuildManagedAutoMemoryIndex` neu erstellt:
 
 ```
-- [Benutzerpräferenzen](user/preferences.md) — Benutzer ist Senior Go-Entwickler, zum ersten Mal mit React
-- [Feedbackregeln](feedback/style.md) — Antworten kurz halten, keine Zusammenfassung am Ende
-- [Projektmeilenstein](project/milestone.md) — Merge-Freeze-Fenster vor dem Branch für den Mobile-Release
+- [Benutzerpräferenzen](./user/preferences.md) — Benutzer ist Senior Go-Entwickler, zum ersten Mal mit React
+- [Feedbackregeln](./feedback/style.md) — Antworten kurz halten, keine Zusammenfassung am Ende
+- [Projektmeilenstein](./project/milestone.md) — Merge-Freeze-Fenster vor dem Branch für den Mobile-Release
 ```
 
 **Index-Beschränkungen**:

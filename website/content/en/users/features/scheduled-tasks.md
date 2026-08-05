@@ -12,7 +12,7 @@ Messaging channels use a separate persistent scheduler so results can be pushed 
 
 ## Schedule a recurring prompt with /loop
 
-The `/loop` [bundled skill](skills.md) is the quickest way to schedule a recurring prompt. Pass an optional interval and a prompt, and Qwen Code sets up a cron job that fires in the background while the session stays open.
+The `/loop` [bundled skill](./skills.md) is the quickest way to schedule a recurring prompt. Pass an optional interval and a prompt, and Qwen Code sets up a cron job that fires in the background while the session stays open.
 
 ```text
 /loop 5m check if the deployment finished and tell me what happened

@@ -442,9 +442,9 @@ flowchart TD
 `MEMORY.md` 是所有主题文件的导航索引，每次 Extract 或 Dream 后调用 `rebuildManagedAutoMemoryIndex` 重建：
 
 ```
-- [用户偏好](user/preferences.md) — 用户是资深 Go 工程师，第一次接触 React
-- [反馈规范](feedback/style.md) — 保持回复简洁，不要尾部总结
-- [项目里程碑](project/milestone.md) — 移动端发布切分支前的合并冻结窗口
+- [用户偏好](./user/preferences.md) — 用户是资深 Go 工程师，第一次接触 React
+- [反馈规范](./feedback/style.md) — 保持回复简洁，不要尾部总结
+- [项目里程碑](./project/milestone.md) — 移动端发布切分支前的合并冻结窗口
 ```
 
 **索引限制**：

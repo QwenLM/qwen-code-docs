@@ -442,9 +442,9 @@ flowchart TD
 `MEMORY.md` est l’index de navigation de tous les fichiers thématiques. Il est reconstruit après chaque Extract ou Dream via `rebuildManagedAutoMemoryIndex` :
 
 ```
-- [Préférences utilisateur](user/preferences.md) — L’utilisateur est un ingénieur Go expérimenté, découvre React
-- [Règles de feedback](feedback/style.md) — Réponses concises, pas de résumé final
-- [Jalon projet](project/milestone.md) — Fenêtre de gel avant la branche de release mobile
+- [Préférences utilisateur](./user/preferences.md) — L’utilisateur est un ingénieur Go expérimenté, découvre React
+- [Règles de feedback](./feedback/style.md) — Réponses concises, pas de résumé final
+- [Jalon projet](./project/milestone.md) — Fenêtre de gel avant la branche de release mobile
 ```
 
 **Limites de l’index** :

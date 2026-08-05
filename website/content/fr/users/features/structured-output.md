@@ -299,8 +299,8 @@ fi
 
 ## Voir aussi
 
-- [Mode sans tête](headless.md) — le flux basé sur `-p` sur lequel `--json-schema`
+- [Mode sans tête](./headless.md) — le flux basé sur `-p` sur lequel `--json-schema`
   s'appuie.
-- [Sortie double](dual-output.md) — enregistre un fichier latéral d'événements JSON
+- [Sortie double](./dual-output.md) — enregistre un fichier latéral d'événements JSON
   parallèlement au TUI (une approche différente de la sortie lisible par machine ;
   ne nécessite pas `--json-schema`).

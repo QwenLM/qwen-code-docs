@@ -283,7 +283,7 @@ Starten Sie die CLI erneut. Das Modell hat nun in jeder Sitzung, in der die Erwe
 
 Sobald Sie mit Ihrer Erweiterung zufrieden sind, können Sie sie mit anderen teilen. Die beiden wichtigsten Methoden zur Veröffentlichung von Erweiterungen sind über ein Git-Repository oder über GitHub Releases. Die Verwendung eines öffentlichen Git-Repositorys ist die einfachste Methode.
 
-Eine detaillierte Anleitung zu beiden Methoden finden Sie im [Leitfaden zur Veröffentlichung von Erweiterungen](extension-releasing.md).
+Eine detaillierte Anleitung zu beiden Methoden finden Sie im [Leitfaden zur Veröffentlichung von Erweiterungen](./extension-releasing.md).
 
 ## Fazit
 

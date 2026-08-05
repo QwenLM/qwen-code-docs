@@ -10,7 +10,7 @@ As tarefas têm escopo de sessão: elas existem no processo atual do Qwen Code e
 
 ## Agendar um prompt recorrente com /loop
 
-A [skill integrada](skills.md) `/loop` é a maneira mais rápida de agendar um prompt recorrente. Passe um intervalo opcional e um prompt, e o Qwen Code configurará um cron job que é executado em segundo plano enquanto a sessão permanecer aberta.
+A [skill integrada](./skills.md) `/loop` é a maneira mais rápida de agendar um prompt recorrente. Passe um intervalo opcional e um prompt, e o Qwen Code configurará um cron job que é executado em segundo plano enquanto a sessão permanecer aberta.
 
 ```text
 /loop 5m verifique se o deploy terminou e me diga o que aconteceu

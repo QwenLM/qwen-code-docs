@@ -11,9 +11,9 @@
 1. **大窗口下预留过多**：1M 模型 70% 阈值在 700K 触发，剩余 300K 远超摘要 + 输出实际所需的 ~33K
 2. **失败 1 次永久锁**：`hasFailedCompressionAttempt = true` 之后整个 session 不再尝试 auto-compact（geminiChat.ts:504），比 claude-code 的「连续 3 次熔断」更严苛
 3. **tip 系统与 auto 阈值脱钩**：`tipRegistry.ts` 里的三条 `context-*` tip 使用固定的 50/80/95 百分比，与 auto-compact 阈值（70%）完全独立。这意味着在「auto 正常工作」的主路径上 80% / 95% tip 极少触发，而在「auto 失败 / 反应式兜底」的边缘路径上又缺乏与阈值对齐的语义
-4. **压缩调用本身没有输出预算控制**：[chatCompressionService.ts:374-376](packages/core/src/services/chatCompressionService.ts:374) 显式开启 `thinkingConfig.includeThoughts = true`（注释：「Compression quality drives every subsequent main turn」），同时 sideQuery 调用未设 `maxOutputTokens` 上限。代码注释（[:436-437](packages/core/src/services/chatCompressionService.ts:436)）也承认 `compressionOutputTokenCount may include non-persisted tokens (thoughts)`。在压缩接近窗口顶时，总输出可能膨胀，使 buffer 预留缺乏可预测上限。<br/><br/>更糟糕的是跨 provider 行为不一致：Anthropic 的 thinking budget 与 max_tokens 完全独立；OpenAI 的 reasoning tokens 不受 max_completion_tokens 限制；Gemini 的行为又因模型版本而异。这意味着「单靠加 maxOutputTokens 就能控制总输出」在 Qwen Code 这种多 provider 项目里不成立
+4. **压缩调用本身没有输出预算控制**：[chatCompressionService.ts:374-376](./packages/core/src/services/chatCompressionService.ts:374) 显式开启 `thinkingConfig.includeThoughts = true`（注释：「Compression quality drives every subsequent main turn」），同时 sideQuery 调用未设 `maxOutputTokens` 上限。代码注释（[:436-437](./packages/core/src/services/chatCompressionService.ts:436)）也承认 `compressionOutputTokenCount may include non-persisted tokens (thoughts)`。在压缩接近窗口顶时，总输出可能膨胀，使 buffer 预留缺乏可预测上限。<br/><br/>更糟糕的是跨 provider 行为不一致：Anthropic 的 thinking budget 与 max_tokens 完全独立；OpenAI 的 reasoning tokens 不受 max_completion_tokens 限制；Gemini 的行为又因模型版本而异。这意味着「单靠加 maxOutputTokens 就能控制总输出」在 Qwen Code 这种多 provider 项目里不成立
 
-5. **阈值判断使用的 `lastPromptTokenCount` 系统性下偏。** [geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217) 表明这个数来自上一轮 API 响应的 `usageMetadata.totalTokenCount`。两个 gap：(a) 不包含本轮即将加入的 user message，每次 cheap-gate 判断都比真实 prompt 小一段；(b) 首轮初始值是 0，`--continue` 恢复巨大 session / sub-agent 继承大量历史时第一次 send 永远绕过所有阈值。对比 claude-code 的 `tokenCountWithEstimation`（[query.ts:638](src/query.ts:638)）走「最后一条 assistant API usage + 之后新增 message 估算」的双轨制能闭合这两个 gap
+5. **阈值判断使用的 `lastPromptTokenCount` 系统性下偏。** [geminiChat.ts:1217-1232](./packages/core/src/core/geminiChat.ts:1217) 表明这个数来自上一轮 API 响应的 `usageMetadata.totalTokenCount`。两个 gap：(a) 不包含本轮即将加入的 user message，每次 cheap-gate 判断都比真实 prompt 小一段；(b) 首轮初始值是 0，`--continue` 恢复巨大 session / sub-agent 继承大量历史时第一次 send 永远绕过所有阈值。对比 claude-code 的 `tokenCountWithEstimation`（[query.ts:638](./src/query.ts:638)）走「最后一条 assistant API usage + 之后新增 message 估算」的双轨制能闭合这两个 gap
 
 ## 设计目标
 
@@ -75,7 +75,7 @@ const HARD_BUFFER = 3_000; // hard 与 effectiveWindow 间距
 const MAX_CONSECUTIVE_FAILURES = 3; // 失败熔断阈值
 ```
 
-数值来源：全部沿用 claude-code 的实测值（[autoCompact.ts:30,62-65](src/services/compact/autoCompact.ts:30)）。
+数值来源：全部沿用 claude-code 的实测值（[autoCompact.ts:30,62-65](./src/services/compact/autoCompact.ts:30)）。
 
 `SUMMARY_RESERVE = COMPACT_MAX_OUTPUT_TOKENS` 是关键关系：模型受 `maxOutputTokens` 硬限制约束，输出不可能超出 20K，因此 reserve 不需要额外 safety margin。注意：本设计关闭 thinking 后该等式成立（output budget 全部给 summary）；若保留 thinking，`thinking + summary` 共享预算（Gemini SDK / 多数 provider 的 `maxOutputTokens` 语义），模型自行在两者间分配，此时 summary 的实际可用空间小于 20K（见「风险与注意事项」第 1、2 条）。
 
@@ -156,7 +156,7 @@ export interface ChatCompressionSettings {
 
 ## Token 估算补偿
 
-Qwen Code 的 `lastPromptTokenCount` 来自上一轮 API 响应的 `usageMetadata.totalTokenCount`（[geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217)）。这导致：
+Qwen Code 的 `lastPromptTokenCount` 来自上一轮 API 响应的 `usageMetadata.totalTokenCount`（[geminiChat.ts:1217-1232](./packages/core/src/core/geminiChat.ts:1217)）。这导致：
 
 1. **滞后一轮**：cheap-gate 用 `lastPromptTokenCount` 判断，但本次 send 实际 prompt = 它 + 本轮 user message。少算的部分可能让阈值判断 false-negative
 2. **首轮为 0**：初始值是 0，第一次 send 时无论历史多大都不会触发任何阈值（含 `--continue` 恢复 / sub-agent 继承场景）
@@ -237,13 +237,13 @@ export function estimatePromptTokens(
    });
    ```
 
-   或者直接删掉 `thinkingConfig` 让 `runSideQuery` 默认值（[sideQuery.ts:118](packages/core/src/utils/sideQuery.ts:118) 默认 `includeThoughts: false`）接管。
+   或者直接删掉 `thinkingConfig` 让 `runSideQuery` 默认值（[sideQuery.ts:118](./packages/core/src/utils/sideQuery.ts:118) 默认 `includeThoughts: false`）接管。
 
    关 thinking 后，`maxOutputTokens` 直接约束总输出（不存在 thinking 单独 budget 的问题），`SUMMARY_RESERVE = maxOutput = 20K` 是干净的硬关系。
 
-   同时更新 [chatCompressionService.ts:374-376](packages/core/src/services/chatCompressionService.ts:374) 的注释，从「Compression quality drives every subsequent main turn — keep reasoning on」改为说明「为保证跨 provider 可预测的输出上限，与 claude-code 设计对齐」。
+   同时更新 [chatCompressionService.ts:374-376](./packages/core/src/services/chatCompressionService.ts:374) 的注释，从「Compression quality drives every subsequent main turn — keep reasoning on」改为说明「为保证跨 provider 可预测的输出上限，与 claude-code 设计对齐」。
 
-   token math 一段（[:436-437](packages/core/src/services/chatCompressionService.ts:436)）的 "may include non-persisted tokens (thoughts)" 注释也可以同步清理
+   token math 一段（[:436-437](./packages/core/src/services/chatCompressionService.ts:436)）的 "may include non-persisted tokens (thoughts)" 注释也可以同步清理
 
 ### geminiChat.ts: `sendMessageStream` 入口（line 562）
 
@@ -410,13 +410,13 @@ const { warn, auto, hard, effectiveWindow } =
 
 1. **关 thinking 可能影响摘要质量。** 原作者注释 "Compression quality drives every subsequent main turn — keep reasoning on" 表达过对此的担忧。本 spec 的判断是「可预测的 token 上限」优先于「最大化质量」，但落地后需要观察 telemetry 里 `compression_input_token_count` / `compression_output_token_count` 的分布，以及主对话在压缩后的质量变化（用户反馈、`COMPRESSION_FAILED_*` 状态率）。如果质量下降明显，再考虑回退到 thinking 开启 + provider-specific thinkingBudget 控制。
 
-2. **`maxOutputTokens` 触顶可能导致 summary 被截断。** 关 thinking 后，20K 直接限制 summary 主体；claude-code 实测 p99.99 ≈ 17K，留 ~3K 安全冗余。但 Qwen Code 的压缩 prompt 与 claude-code 不同，分布需要观测。建议在压缩失败分支（[chatCompressionService.ts:464-491](packages/core/src/services/chatCompressionService.ts:464)）追加「检测到 finish_reason = MAX_TOKENS」的 NOOP 路径，避免持久化半截 summary。
+2. **`maxOutputTokens` 触顶可能导致 summary 被截断。** 关 thinking 后，20K 直接限制 summary 主体；claude-code 实测 p99.99 ≈ 17K，留 ~3K 安全冗余。但 Qwen Code 的压缩 prompt 与 claude-code 不同，分布需要观测。建议在压缩失败分支（[chatCompressionService.ts:464-491](./packages/core/src/services/chatCompressionService.ts:464)）追加「检测到 finish_reason = MAX_TOKENS」的 NOOP 路径，避免持久化半截 summary。
 
-3. **跨 provider 的 maxOutputTokens 映射差异。** OpenAI compat (dashscope) → `max_tokens`、Anthropic → `max_tokens`、Gemini SDK → `maxOutputTokens`。当前 Qwen Code 已有这层映射（[contentGenerator.ts:94](packages/core/src/core/contentGenerator.ts:94) 等），需要在 P6 实现时验证 sideQuery 路径上 `maxOutputTokens` 字段确实贯穿到所有 provider 的请求体。
+3. **跨 provider 的 maxOutputTokens 映射差异。** OpenAI compat (dashscope) → `max_tokens`、Anthropic → `max_tokens`、Gemini SDK → `maxOutputTokens`。当前 Qwen Code 已有这层映射（[contentGenerator.ts:94](./packages/core/src/core/contentGenerator.ts:94) 等），需要在 P6 实现时验证 sideQuery 路径上 `maxOutputTokens` 字段确实贯穿到所有 provider 的请求体。
 
 4. **Token 估算是粗略下界，不应反向用作"跳过触发"的依据。** `char/4` 与各 provider 真实 tokenizer 偏差可能 ±30%。本 spec 只用估算来「让阈值更早触发」（false-positive 方向，宁可早压不可晚压）。所有「降低 token 计数 / 跳过压缩」的代码路径仍应使用 `lastPromptTokenCount`（API 权威值）。
 
-5. **估算函数与现有 `estimateContentChars` 的关系。** [compactionInputSlimming.ts](packages/core/src/services/compactionInputSlimming.ts) 已经有 `estimateContentChars`（用于压缩 split point 计算），新增的 `estimateContentTokens` 应复用它（除以 bytesPerToken）而非新写一套，避免两套估算口径出现分歧。
+5. **估算函数与现有 `estimateContentChars` 的关系。** [compactionInputSlimming.ts](./packages/core/src/services/compactionInputSlimming.ts) 已经有 `estimateContentChars`（用于压缩 split point 计算），新增的 `estimateContentTokens` 应复用它（除以 bytesPerToken）而非新写一套，避免两套估算口径出现分歧。
 
 ## 不在本 spec 范围
 

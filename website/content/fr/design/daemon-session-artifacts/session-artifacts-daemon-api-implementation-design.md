@@ -428,6 +428,7 @@ Modifications breaking nécessitant une nouvelle capability ou une nouvelle vers
 - Modification de la sémantique de `created` / `updated` / `removed` pour `artifact_changed.data.change.action`.
 - Modification de la forme de l'enveloppe de `GET /session/:id/artifacts`.
 - Faire en sorte que les liens textuels ordinaires de l'assistant ou les modifications de fichiers ordinaires entrent par défaut dans la liste des artifacts.
+
 ## 5. Modèle de données
 
 ### 5.1 Types du SDK public
@@ -819,6 +820,7 @@ Modifications de code requises :
 - Dans l'ACP `Session.runTool()`, les artifacts portés par les résultats d'outils réussis continuent d'être attachés à `tool_call_update._meta.artifacts` ; les artifacts retournés par les hooks PostToolUse / PostToolUseFailure sont envoyés séparément et de manière unifiée via `client.extNotification('qwen/notify/session/artifact-event', payload)`. Cette notification doit être attendue de manière synchrone après la collecte des artifacts du hook ; un échec d'envoi enregistre uniquement un warning et ne modifie pas le résultat d'échec/succès de l'outil d'origine ; ce lot d'artifacts de hook n'entre pas dans le store du daemon, la V1 ne fait pas de retry persistant.
 - Les artifacts de hook suivent la même validation que `record_artifact` / POST client : schéma d'URL, confinement du chemin du workspace, taille/type des métadonnées.
 - Lorsque les artifacts de niveau batch n'ont pas d'appel d'outil unique, `qwen/notify/session/artifact-event` ne peut être utilisé que si l'exécution est déjà capable d'envoyer une `extNotification` ACP au bridge.
+
 Payload `qwen/notify/session/artifact-event` :
 
 ```json
@@ -1378,6 +1380,7 @@ Commandes :
 cd packages/acp-bridge && npx vitest run src/sessionArtifacts.test.ts
 cd packages/acp-bridge && npx vitest run src/bridgeClient.test.ts
 ```
+
 ### 13.4 Phase C-2 serve
 
 Couverture :

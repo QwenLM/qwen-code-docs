@@ -10,7 +10,7 @@
 
 ## 使用 /loop 安排循环 prompt
 
-`/loop` [内置 skill](skills.md) 是安排循环 prompt 的最快方法。传入一个可选的间隔和 prompt，Qwen Code 就会设置一个 cron 任务，在会话保持打开期间于后台触发。
+`/loop` [内置 skill](./skills.md) 是安排循环 prompt 的最快方法。传入一个可选的间隔和 prompt，Qwen Code 就会设置一个 cron 任务，在会话保持打开期间于后台触发。
 
 ```text
 /loop 5m check if the deployment finished and tell me what happened

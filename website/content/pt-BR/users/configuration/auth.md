@@ -236,7 +236,7 @@ Edite o `~/.qwen/settings.json` (crie-o se não existir). Você pode misturar m�
 >
 > Ao usar o campo `env` no `settings.json`, as credenciais são armazenadas em texto simples. Para uma segurança melhor, prefira arquivos `.env` ou `export` do shell — veja o [Passo 2](#step-2-set-environment-variables).
 
-Para o esquema completo de `modelProviders` e opções avançadas como `generationConfig`, `customHeaders` e `extra_body`, consulte a [Referência de Model Providers](model-providers.md).
+Para o esquema completo de `modelProviders` e opções avançadas como `generationConfig`, `customHeaders` e `extra_body`, consulte a [Referência de Model Providers](./model-providers.md).
 
 #### Passo 2: Definir variáveis de ambiente
 

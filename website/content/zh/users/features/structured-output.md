@@ -159,5 +159,5 @@ fi
 
 ## 另请参阅
 
-- [无头模式](headless.md)——`--json-schema` 所基于的 `-p` 流程。
-- [双输出](dual-output.md)——在 TUI 旁边记录 JSON 事件侧车文件（一种不同的机器可读输出方法；不需要 `--json-schema`）。
+- [无头模式](./headless.md)——`--json-schema` 所基于的 `-p` 流程。
+- [双输出](./dual-output.md)——在 TUI 旁边记录 JSON 事件侧车文件（一种不同的机器可读输出方法；不需要 `--json-schema`）。

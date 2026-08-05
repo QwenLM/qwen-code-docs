@@ -11,9 +11,9 @@
 1. **大きなウィンドウで予約が多すぎる**: 1M モデルの 70% 閾値では 700K でトリガーされ、残り 300K は要約 + 出力に実際に必要な約 33K を大きく超えている
 2. **1 回の失敗で永久ロック**: `hasFailedCompressionAttempt = true` になると、セッション全体で auto-compact が試行されなくなる（geminiChat.ts:504）。claude-code の「連続 3 回のサーキットブレーカー」よりも厳しい
 3. **tip システムと auto 閾値の連動がない**: `tipRegistry.ts` の 3 つの `context-*` tip は固定の 50/80/95 パーセンテージを使用しており、auto-compact の閾値（70%）とは完全に独立している。その結果、「auto が正常に動作する」主パスでは 80% / 95% の tip がほとんどトリガーされず、「auto が失敗 / リアクティブなフォールバック」というエッジパスでは、閾値に合わせた意味付けが欠けている
-4. **圧縮呼び出し自体に出力予算の制御がない**: [chatCompressionService.ts:374-376](packages/core/src/services/chatCompressionService.ts:374) で `thinkingConfig.includeThoughts = true` が明示的に有効化されており（コメント：「Compression quality drives every subsequent main turn」）、同時に sideQuery 呼び出しでは `maxOutputTokens` 上限が設定されていない。コードコメント（[:436-437](packages/core/src/services/chatCompressionService.ts:436)）でも `compressionOutputTokenCount may include non-persisted tokens (thoughts)` と認めている。圧縮がウィンドウ上限に近い場合、総出力が膨張する可能性があり、バッファ予約に予測可能な上限がない。<br/><br/>さらに悪いことに、プロバイダ間で動作が一貫していない: Anthropic の thinking budget は `max_tokens` と完全に独立している；OpenAI の reasoning tokens は `max_completion_tokens` の制限を受けない；Gemini の動作はモデルバージョンによって異なる。つまり、「単に `maxOutputTokens` を追加すれば総出力を制御できる」という前提は、qwen-code のようなマルチプロバイダプロジェクトでは成立しない
+4. **圧縮呼び出し自体に出力予算の制御がない**: [chatCompressionService.ts:374-376](./packages/core/src/services/chatCompressionService.ts:374) で `thinkingConfig.includeThoughts = true` が明示的に有効化されており（コメント：「Compression quality drives every subsequent main turn」）、同時に sideQuery 呼び出しでは `maxOutputTokens` 上限が設定されていない。コードコメント（[:436-437](./packages/core/src/services/chatCompressionService.ts:436)）でも `compressionOutputTokenCount may include non-persisted tokens (thoughts)` と認めている。圧縮がウィンドウ上限に近い場合、総出力が膨張する可能性があり、バッファ予約に予測可能な上限がない。<br/><br/>さらに悪いことに、プロバイダ間で動作が一貫していない: Anthropic の thinking budget は `max_tokens` と完全に独立している；OpenAI の reasoning tokens は `max_completion_tokens` の制限を受けない；Gemini の動作はモデルバージョンによって異なる。つまり、「単に `maxOutputTokens` を追加すれば総出力を制御できる」という前提は、qwen-code のようなマルチプロバイダプロジェクトでは成立しない
 
-5. **閾値判定に使用される `lastPromptTokenCount` が系統的に下方バイアスされている。** [geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217) は、この値が前回の API レスポンスの `usageMetadata.totalTokenCount` から取得されていることを示している。2 つのギャップがある: (a) 今回追加されるユーザーメッセージが含まれていないため、cheap-gate 判定ごとに実際のプロンプトより小さくなる；(b) 初期値が 0 であるため、`--continue` で巨大なセッションを復元したり、sub-agent が大量の履歴を継承した場合、最初の send ではすべての閾値をすり抜ける。これに対し、claude-code の `tokenCountWithEstimation`（[query.ts:638](src/query.ts:638)）は「最後の assistant API usage + その後に追加されたメッセージの推定」という二重方式でこれらのギャップを解消している
+5. **閾値判定に使用される `lastPromptTokenCount` が系統的に下方バイアスされている。** [geminiChat.ts:1217-1232](./packages/core/src/core/geminiChat.ts:1217) は、この値が前回の API レスポンスの `usageMetadata.totalTokenCount` から取得されていることを示している。2 つのギャップがある: (a) 今回追加されるユーザーメッセージが含まれていないため、cheap-gate 判定ごとに実際のプロンプトより小さくなる；(b) 初期値が 0 であるため、`--continue` で巨大なセッションを復元したり、sub-agent が大量の履歴を継承した場合、最初の send ではすべての閾値をすり抜ける。これに対し、claude-code の `tokenCountWithEstimation`（[query.ts:638](./src/query.ts:638)）は「最後の assistant API usage + その後に追加されたメッセージの推定」という二重方式でこれらのギャップを解消している
 
 ## 設計目標
 
@@ -75,7 +75,7 @@ const HARD_BUFFER = 3_000; // hard と effectiveWindow の間隔
 const MAX_CONSECUTIVE_FAILURES = 3; // 失敗時のサーキットブレーカー閾値
 ```
 
-数値の出典: すべて claude-code の実測値（[autoCompact.ts:30,62-65](src/services/compact/autoCompact.ts:30)）を踏襲。
+数値の出典: すべて claude-code の実測値（[autoCompact.ts:30,62-65](./src/services/compact/autoCompact.ts:30)）を踏襲。
 
 `SUMMARY_RESERVE = COMPACT_MAX_OUTPUT_TOKENS` は重要な関係である。モデルは `maxOutputTokens` のハード制限に従うため、出力が 20K を超えることはなく、したがって reserve に追加の safety margin は不要である。注意: 本設計では thinking を無効にすることでこの等式が成立する（output budget はすべて summary に割り当てられる）。thinking を維持する場合、`thinking + summary` が予算を共有する（Gemini SDK / 多くのプロバイダの `maxOutputTokens` の意味論）、モデルが両者を自由に配分するため、summary の実際の利用可能スペースは 20K 未満になる（「リスクと注意事項」第 1、2 条を参照）。
 
@@ -156,7 +156,7 @@ export interface ChatCompressionSettings {
 
 ## トークン推定補償
 
-qwen-code の `lastPromptTokenCount` は前回の API レスポンスの `usageMetadata.totalTokenCount` から取得される（[geminiChat.ts:1217-1232](packages/core/src/core/geminiChat.ts:1217)）。これにより以下の問題が生じる:
+qwen-code の `lastPromptTokenCount` は前回の API レスポンスの `usageMetadata.totalTokenCount` から取得される（[geminiChat.ts:1217-1232](./packages/core/src/core/geminiChat.ts:1217)）。これにより以下の問題が生じる:
 
 1. **1 回遅れ**: cheap-gate は `lastPromptTokenCount` で判定するが、今回送信する実際のプロンプトは「それ + 今回のユーザーメッセージ」である。過小評価により閾値判定が false-negative になる可能性がある
 2. **初回が 0**: 初期値が 0 のため、最初の send では履歴のサイズにかかわらずどの閾値もトリガーされない（`--continue` で復元 / sub-agent 継承のシナリオを含む）
@@ -237,13 +237,13 @@ export function estimatePromptTokens(
    });
    ```
 
-   または、`thinkingConfig` を削除して `runSideQuery` のデフォルト値（[sideQuery.ts:118](packages/core/src/utils/sideQuery.ts:118) のデフォルト `includeThoughts: false`）に任せることもできる。
+   または、`thinkingConfig` を削除して `runSideQuery` のデフォルト値（[sideQuery.ts:118](./packages/core/src/utils/sideQuery.ts:118) のデフォルト `includeThoughts: false`）に任せることもできる。
 
    thinking を無効にすることで、`maxOutputTokens` が直接総出力を制約する（thinking に個別の budget がある問題はなくなる）。`SUMMARY_RESERVE = maxOutput = 20K` はクリーンなハードな関係になる。
 
-   同時に [chatCompressionService.ts:374-376](packages/core/src/services/chatCompressionService.ts:374) のコメントを更新し、「Compression quality drives every subsequent main turn — keep reasoning on」から「プロバイダ間で予測可能な出力上限を確保するため、claude-code の設計に合わせる」という説明に変更する。
+   同時に [chatCompressionService.ts:374-376](./packages/core/src/services/chatCompressionService.ts:374) のコメントを更新し、「Compression quality drives every subsequent main turn — keep reasoning on」から「プロバイダ間で予測可能な出力上限を確保するため、claude-code の設計に合わせる」という説明に変更する。
 
-   token math の部分（[:436-437](packages/core/src/services/chatCompressionService.ts:436)）にある "may include non-persisted tokens (thoughts)" のコメントも合わせて削除できる
+   token math の部分（[:436-437](./packages/core/src/services/chatCompressionService.ts:436)）にある "may include non-persisted tokens (thoughts)" のコメントも合わせて削除できる
 
 ### geminiChat.ts: `sendMessageStream` 入口（line 562）
 
@@ -410,13 +410,13 @@ const { warn, auto, hard, effectiveWindow } =
 
 1. **thinking を無効にすることで要約品質が低下する可能性がある。** 元の作者のコメント "Compression quality drives every subsequent main turn — keep reasoning on" はこの懸念を示している。本仕様の判断は「予測可能なトークン上限」を「品質の最大化」より優先するというものだが、実装後は telemetry の `compression_input_token_count` / `compression_output_token_count` の分布、および主対話における圧縮後の品質変化（ユーザーフィードバック、`COMPRESSION_FAILED_*` ステータス率）を観測する必要がある。品質の低下が顕著な場合は、thinking 有効 + provider-specific な thinkingBudget 制御に戻すことを検討する。
 
-2. **`maxOutputTokens` に達すると summary が途中で切れる可能性がある。** thinking を無効にした後、20K は summary 本体を直接制限する。claude-code の実測値 p99.99 ≈ 17K であり、約 3K の安全余裕が残る。しかし qwen-code の圧縮プロンプトは claude-code と異なるため、分布を観測する必要がある。圧縮失敗ブランチ（[chatCompressionService.ts:464-491](packages/core/src/services/chatCompressionService.ts:464)）に「finish_reason = MAX_TOKENS を検出した場合の NOOP パス」を追加し、中途半端な summary が永続化されるのを防ぐことを推奨する。
+2. **`maxOutputTokens` に達すると summary が途中で切れる可能性がある。** thinking を無効にした後、20K は summary 本体を直接制限する。claude-code の実測値 p99.99 ≈ 17K であり、約 3K の安全余裕が残る。しかし qwen-code の圧縮プロンプトは claude-code と異なるため、分布を観測する必要がある。圧縮失敗ブランチ（[chatCompressionService.ts:464-491](./packages/core/src/services/chatCompressionService.ts:464)）に「finish_reason = MAX_TOKENS を検出した場合の NOOP パス」を追加し、中途半端な summary が永続化されるのを防ぐことを推奨する。
 
-3. **プロバイダ間の maxOutputTokens マッピングの違い。** OpenAI compat (dashscope) → `max_tokens`、Anthropic → `max_tokens`、Gemini SDK → `maxOutputTokens`。現在の qwen-code はこのマッピングを既に持っている（[contentGenerator.ts:94](packages/core/src/core/contentGenerator.ts:94) など）。P6 実装時に、sideQuery パスで `maxOutputTokens` フィールドがすべてのプロバイダのリクエストボディに正しく伝達されることを確認する必要がある。
+3. **プロバイダ間の maxOutputTokens マッピングの違い。** OpenAI compat (dashscope) → `max_tokens`、Anthropic → `max_tokens`、Gemini SDK → `maxOutputTokens`。現在の qwen-code はこのマッピングを既に持っている（[contentGenerator.ts:94](./packages/core/src/core/contentGenerator.ts:94) など）。P6 実装時に、sideQuery パスで `maxOutputTokens` フィールドがすべてのプロバイダのリクエストボディに正しく伝達されることを確認する必要がある。
 
 4. **トークン推定は大まかな下界であり、「トリガーをスキップする」方向の判断に使用してはならない。** `char/4` と各プロバイダの実際のトークナイザーとの乖離は ±30% の可能性がある。本仕様では推定を「閾値をより早くトリガーする」ためにのみ使用する（false-positive 方向、早めに圧縮するほうが安全）。「トークン数を減らす / 圧縮をスキップする」コードパスでは、引き続き `lastPromptTokenCount`（API の権威値）を使用する必要がある。
 
-5. **推定関数と既存の `estimateContentChars` の関係。** [compactionInputSlimming.ts](packages/core/src/services/compactionInputSlimming.ts) には既に `estimateContentChars`（圧縮分割ポイントの計算に使用）が存在する。新しく追加する `estimateContentTokens` は、これを再利用して（bytesPerToken で割る）実装し、2 つの推定方式が乖離しないようにする必要がある。
+5. **推定関数と既存の `estimateContentChars` の関係。** [compactionInputSlimming.ts](./packages/core/src/services/compactionInputSlimming.ts) には既に `estimateContentChars`（圧縮分割ポイントの計算に使用）が存在する。新しく追加する `estimateContentTokens` は、これを再利用して（bytesPerToken で割る）実装し、2 つの推定方式が乖離しないようにする必要がある。
 
 ## 本仕様の対象外
 

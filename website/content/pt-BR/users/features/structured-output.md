@@ -299,8 +299,8 @@ fi
 
 ## Veja também
 
-- [Modo Headless](headless.md) — o fluxo baseado em `-p` no qual `--json-schema`
+- [Modo Headless](./headless.md) — o fluxo baseado em `-p` no qual `--json-schema`
   se baseia.
-- [Saída Dupla](dual-output.md) — grava um sidecar de eventos JSON
+- [Saída Dupla](./dual-output.md) — grava um sidecar de eventos JSON
   junto com a TUI (uma abordagem diferente para saída legível por máquina;
   não requer `--json-schema`).

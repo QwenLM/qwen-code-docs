@@ -283,7 +283,7 @@ Reinicie o CLI novamente. O modelo agora terá o contexto do seu arquivo `QWEN.m
 
 Depois que estiver satisfeito com sua extensão, você pode compartilhá-la com outras pessoas. As duas principais formas de publicar extensões são por meio de um repositório Git ou via GitHub Releases. Usar um repositório Git público é o método mais simples.
 
-Para instruções detalhadas sobre ambos os métodos, consulte o [Guia de Publicação de Extensões](extension-releasing.md).
+Para instruções detalhadas sobre ambos os métodos, consulte o [Guia de Publicação de Extensões](./extension-releasing.md).
 
 ## Conclusão
 

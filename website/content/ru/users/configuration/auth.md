@@ -236,7 +236,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 >
 > При использовании поля `env` в `settings.json` учетные данные хранятся в открытом виде. Для большей безопасности предпочитайте файлы `.env` или `export` в shell — см. [Шаг 2](#step-2-set-environment-variables).
 
-Полную схему `modelProviders` и расширенные параметры, такие как `generationConfig`, `customHeaders` и `extra_body`, см. в [Model Providers Reference](model-providers.md).
+Полную схему `modelProviders` и расширенные параметры, такие как `generationConfig`, `customHeaders` и `extra_body`, см. в [Model Providers Reference](./model-providers.md).
 
 #### Шаг 2: Установка переменных окружения
 

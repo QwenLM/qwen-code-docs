@@ -1056,11 +1056,11 @@ Return `activeCategory`, `availableCategories`, `switchCategory` from the hook.
 - In `InputPrompt.tsx` inside the `showCompletionSuggestions` block (~line 1386), BEFORE the `ACCEPT_SUGGESTION` handling:
 
 ```ts
-if (keyMatchers[Command.COMPLETION_TAB_RIGHT](key)) {
+if (keyMatchers[Command.COMPLETION_TAB_RIGHT](./key)) {
   completion.switchCategory(1);
   return true;
 }
-if (keyMatchers[Command.COMPLETION_TAB_LEFT](key)) {
+if (keyMatchers[Command.COMPLETION_TAB_LEFT](./key)) {
   completion.switchCategory(-1);
   return true;
 }

@@ -167,7 +167,7 @@ my-skill/
 从 `SKILL.md` 中引用这些文件：
 
 ````markdown
-For advanced usage, see [reference.md](reference.md).
+For advanced usage, see [reference.md](./reference.md).
 
 Run the helper script:
 

@@ -236,7 +236,7 @@ API キー認証を開始する最も簡単な方法は、すべてを単一の 
 >
 > `settings.json` の `env` フィールドを使用する場合、認証情報は平文で保存されます。セキュリティを高めるには、`.env` ファイルまたはシェルの `export` を優先してください。[ステップ 2](#step-2-set-environment-variables) を参照してください。
 
-完全な `modelProviders` スキーマや `generationConfig`、`customHeaders`、`extra_body` などの高度なオプションについては、[Model Providers Reference](model-providers.md) を参照してください。
+完全な `modelProviders` スキーマや `generationConfig`、`customHeaders`、`extra_body` などの高度なオプションについては、[Model Providers Reference](./model-providers.md) を参照してください。
 
 #### ステップ 2: 環境変数を設定する
 

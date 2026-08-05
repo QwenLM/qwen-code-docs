@@ -97,7 +97,7 @@ Expected: FAIL — 现在传入的是 `{ thinkingConfig: { includeThoughts: true
 
 - [ ] **Step 3: Implement — 修改 chatCompressionService.ts**
 
-替换 [chatCompressionService.ts:374-376](packages/core/src/services/chatCompressionService.ts:374) 整段 `config:`：
+替换 [chatCompressionService.ts:374-376](./packages/core/src/services/chatCompressionService.ts:374) 整段 `config:`：
 
 ```ts
 const summaryResult = await runSideQuery(config, {
@@ -458,7 +458,7 @@ Expected: FAIL — 当前 cheap-gate 只看 `originalTokenCount`，会判定 NOO
 
 - [ ] **Step 3: Implement — 改 compress() cheap-gate**
 
-修改 [chatCompressionService.ts:235-249](packages/core/src/services/chatCompressionService.ts:235) 这段：
+修改 [chatCompressionService.ts:235-249](./packages/core/src/services/chatCompressionService.ts:235) 这段：
 
 ```ts
 // Don't compress if not forced and we are under the limit. This is the
@@ -490,7 +490,7 @@ if (!force) {
 }
 ```
 
-`CompressOptions` 接口（[:172-196](packages/core/src/services/chatCompressionService.ts:172)）加新字段：
+`CompressOptions` 接口（[:172-196](./packages/core/src/services/chatCompressionService.ts:172)）加新字段：
 
 ```ts
 export interface CompressOptions {
@@ -588,7 +588,7 @@ Expected: FAIL — 当前 `tryCompress` 用的是 `lastPromptTokenCount = 0`，c
 
 - [ ] **Step 3: Implement — 改 sendMessageStream 与 tryCompress**
 
-[geminiChat.ts:562](packages/core/src/core/geminiChat.ts:562) 改为：
+[geminiChat.ts:562](./packages/core/src/core/geminiChat.ts:562) 改为：
 
 ```ts
 compressionInfo = await this.tryCompress(
@@ -602,7 +602,7 @@ compressionInfo = await this.tryCompress(
 );
 ```
 
-`tryCompress` 函数签名（约 [:460-478](packages/core/src/core/geminiChat.ts:460)）的 `options` 接口 `TryCompressOptions` 加：
+`tryCompress` 函数签名（约 [:460-478](./packages/core/src/core/geminiChat.ts:460)）的 `options` 接口 `TryCompressOptions` 加：
 
 ```ts
 interface TryCompressOptions {
@@ -730,7 +730,7 @@ Expected: FAIL — `computeThresholds` 不存在。
 
 - [ ] **Step 3: Implement — 加常量与函数**
 
-在 [chatCompressionService.ts](packages/core/src/services/chatCompressionService.ts) 文件常量区（紧跟 `COMPACT_MAX_OUTPUT_TOKENS`）加：
+在 [chatCompressionService.ts](./packages/core/src/services/chatCompressionService.ts) 文件常量区（紧跟 `COMPACT_MAX_OUTPUT_TOKENS`）加：
 
 ```ts
 /**
@@ -886,7 +886,7 @@ Expected: FAIL — 当前阈值是 `threshold * contextLimit = 0.7 * 200K = 140K
 
 - [ ] **Step 3: Implement — 切换 cheap-gate 公式**
 
-修改 [chatCompressionService.ts:235-249](packages/core/src/services/chatCompressionService.ts:235) 那段 `if (!force) { ... }` 块：
+修改 [chatCompressionService.ts:235-249](./packages/core/src/services/chatCompressionService.ts:235) 那段 `if (!force) { ... }` 块：
 
 ```ts
 if (!force) {
@@ -916,7 +916,7 @@ if (!force) {
 }
 ```
 
-同时删除 [chatCompressionService.ts:214-217](packages/core/src/services/chatCompressionService.ts:214) 那段 `const threshold = chatCompressionSettings?.contextPercentageThreshold ?? COMPRESSION_TOKEN_THRESHOLD;`，因为 `threshold` 现在不再被 cheap-gate 使用。同时去掉 line 221 那个 `threshold <= 0` 分支（隐式禁用语义，详细在 P4 处理）。
+同时删除 [chatCompressionService.ts:214-217](./packages/core/src/services/chatCompressionService.ts:214) 那段 `const threshold = chatCompressionSettings?.contextPercentageThreshold ?? COMPRESSION_TOKEN_THRESHOLD;`，因为 `threshold` 现在不再被 cheap-gate 使用。同时去掉 line 221 那个 `threshold <= 0` 分支（隐式禁用语义，详细在 P4 处理）。
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -1008,7 +1008,7 @@ Expected: FAIL — 当前一次失败就永久锁，第 2 次 send 已经被 che
 
 - [ ] **Step 3: Implement —替换字段**
 
-[geminiChat.ts](packages/core/src/core/geminiChat.ts) 内部字段（grep `hasFailedCompressionAttempt`）：
+[geminiChat.ts](./packages/core/src/core/geminiChat.ts) 内部字段（grep `hasFailedCompressionAttempt`）：
 
 ```ts
 // 替换前
@@ -1018,7 +1018,7 @@ private hasFailedCompressionAttempt = false;
 private consecutiveFailures = 0;
 ```
 
-[geminiChat.ts:467-478](packages/core/src/core/geminiChat.ts:467) 的 `tryCompress` 函数传给 `service.compress` 的字段：
+[geminiChat.ts:467-478](./packages/core/src/core/geminiChat.ts:467) 的 `tryCompress` 函数传给 `service.compress` 的字段：
 
 ```ts
 const { newHistory, info } = await service.compress(this, {
@@ -1035,7 +1035,7 @@ const { newHistory, info } = await service.compress(this, {
 });
 ```
 
-[geminiChat.ts:503-510](packages/core/src/core/geminiChat.ts:503) 失败/成功分支：
+[geminiChat.ts:503-510](./packages/core/src/core/geminiChat.ts:503) 失败/成功分支：
 
 ```ts
 if (info.compressionStatus === CompressionStatus.COMPRESSED && newHistory) {
@@ -1052,7 +1052,7 @@ if (info.compressionStatus === CompressionStatus.COMPRESSED && newHistory) {
 }
 ```
 
-[chatCompressionService.ts](packages/core/src/services/chatCompressionService.ts) 的 `CompressOptions` 接口：
+[chatCompressionService.ts](./packages/core/src/services/chatCompressionService.ts) 的 `CompressOptions` 接口：
 
 ```ts
 export interface CompressOptions {
@@ -1067,7 +1067,7 @@ export interface CompressOptions {
 }
 ```
 
-`compress()` 函数内 [:221](packages/core/src/services/chatCompressionService.ts:221) 那段 cheap-gate 检查：
+`compress()` 函数内 [:221](./packages/core/src/services/chatCompressionService.ts:221) 那段 cheap-gate 检查：
 
 ```ts
 // Cheap gates first — these don't need the curated history.
@@ -1179,7 +1179,7 @@ Expected: FAIL — Config 当前完全接受这个字段，无 warning。
 
 - [ ] **Step 3: Implement — 改 ChatCompressionSettings + Config 构造函数**
 
-[config.ts:217-227](packages/core/src/config/config.ts:217)：
+[config.ts:217-227](./packages/core/src/config/config.ts:217)：
 
 ```ts
 export interface ChatCompressionSettings {
@@ -1196,7 +1196,7 @@ export interface ChatCompressionSettings {
 
 （删除 `contextPercentageThreshold` 字段。）
 
-[config.ts](packages/core/src/config/config.ts) 找到 Config 构造函数中处理 `params.chatCompression` 的位置（约 line 933），在赋值前加：
+[config.ts](./packages/core/src/config/config.ts) 找到 Config 构造函数中处理 `params.chatCompression` 的位置（约 line 933），在赋值前加：
 
 ```ts
 if (
@@ -1212,12 +1212,12 @@ if (
 this.chatCompression = params.chatCompression;
 ```
 
-`chatCompressionService.ts` 同时清理：[:214-217](packages/core/src/services/chatCompressionService.ts:214) 那段已经在 Task 6 删除，再检查文件里有没有残留 `chatCompressionSettings?.contextPercentageThreshold` 或导出的常量 `COMPRESSION_TOKEN_THRESHOLD`：
+`chatCompressionService.ts` 同时清理：[:214-217](./packages/core/src/services/chatCompressionService.ts:214) 那段已经在 Task 6 删除，再检查文件里有没有残留 `chatCompressionSettings?.contextPercentageThreshold` 或导出的常量 `COMPRESSION_TOKEN_THRESHOLD`：
 
 - 如果 `COMPRESSION_TOKEN_THRESHOLD` 已经无任何引用，删除该常量。
 - 如果还有引用（比如 telemetry 或 doc），改为引用 `DEFAULT_PCT`。
 
-cli/config/settingsSchema.ts 不需要改 —— `chatCompression` 仍然是 `type: 'object'`，里面没有 schema 字段（[settingsSchema.ts:1020-1028](packages/cli/src/config/settingsSchema.ts:1020)）。如果 schema 内部有对 `contextPercentageThreshold` 的引用，删除。
+cli/config/settingsSchema.ts 不需要改 —— `chatCompression` 仍然是 `type: 'object'`，里面没有 schema 字段（[settingsSchema.ts:1020-1028](./packages/cli/src/config/settingsSchema.ts:1020)）。如果 schema 内部有对 `contextPercentageThreshold` 的引用，删除。
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -1314,7 +1314,7 @@ Expected: FAIL — sendMessageStream 当前永远以 `force=false` 调 tryCompre
 
 - [ ] **Step 3: Implement —在 sendMessageStream 入口加 hard 判断**
 
-[geminiChat.ts:560-567](packages/core/src/core/geminiChat.ts:560)：
+[geminiChat.ts:560-567](./packages/core/src/core/geminiChat.ts:560)：
 
 ```ts
 // Hard-tier rescue: if pending prompt is large enough to risk overflow,
@@ -1346,7 +1346,7 @@ compressionInfo = await this.tryCompress(
 );
 ```
 
-注意：`createUserContent` 在 sendMessageStream 内部本来在 [:569](packages/core/src/core/geminiChat.ts:569) 调一次；现在我们提前调，所以 [:569](packages/core/src/core/geminiChat.ts:569) 那行 `const userContent = createUserContent(params.message);` 可以删除/替换为 `const userContent = pendingUserMessage;`。
+注意：`createUserContent` 在 sendMessageStream 内部本来在 [:569](./packages/core/src/core/geminiChat.ts:569) 调一次；现在我们提前调，所以 [:569](./packages/core/src/core/geminiChat.ts:569) 那行 `const userContent = createUserContent(params.message);` 可以删除/替换为 `const userContent = pendingUserMessage;`。
 
 加 import：`import { computeThresholds } from '../services/chatCompressionService.js';`
 加 import：`import { estimatePromptTokens } from '../services/tokenEstimation.js';`
@@ -1485,7 +1485,7 @@ Expected: FAIL — `TipContext` 没有 `thresholds` 字段；三条 tip 仍按 5
 
 - [ ] **Step 3: Implement — 改 tipRegistry**
 
-[tipRegistry.ts:15-21](packages/cli/src/services/tips/tipRegistry.ts:15)：
+[tipRegistry.ts:15-21](./packages/cli/src/services/tips/tipRegistry.ts:15)：
 
 ```ts
 import type { CompactionThresholds } from '@qwen-code/qwen-code-core';
@@ -1509,7 +1509,7 @@ export interface TipContext {
 
 `getContextUsagePercent` 保留（其他 startup tip 可能用到），但 context-\* tips 不再依赖它。
 
-替换 [tipRegistry.ts:37-69](packages/cli/src/services/tips/tipRegistry.ts:37) 三条 tip 的 `isRelevant`：
+替换 [tipRegistry.ts:37-69](./packages/cli/src/services/tips/tipRegistry.ts:37) 三条 tip 的 `isRelevant`：
 
 ```ts
 export const tipRegistry: ContextualTip[] = [
@@ -1646,11 +1646,11 @@ describe('/context shows three-tier thresholds', () => {
 npm test --workspace=packages/cli -- --run packages/cli/src/ui/commands/contextCommand.test.ts -t 'three-tier'
 ```
 
-Expected: FAIL — 当前 [contextCommand.ts:177-183](packages/cli/src/ui/commands/contextCommand.ts:177) 用的是 `(1 - threshold) * contextWindowSize` 公式，只显示单个 "autocompactBuffer" 数。
+Expected: FAIL — 当前 [contextCommand.ts:177-183](./packages/cli/src/ui/commands/contextCommand.ts:177) 用的是 `(1 - threshold) * contextWindowSize` 公式，只显示单个 "autocompactBuffer" 数。
 
 - [ ] **Step 3: Implement — 改 contextCommand 输出**
 
-替换 [contextCommand.ts:177-183](packages/cli/src/ui/commands/contextCommand.ts:177) 那段：
+替换 [contextCommand.ts:177-183](./packages/cli/src/ui/commands/contextCommand.ts:177) 那段：
 
 ```ts
 import { computeThresholds } from '@qwen-code/qwen-code-core';
@@ -1679,7 +1679,7 @@ const lines = [
 
 注：`formatNum` 是现有项目里的 `.toLocaleString()` 等；如未在文件内则 inline 一个 `(n: number) => n.toLocaleString('en-US')`。
 
-同时**删除**原来计算 `autocompactBuffer` 的代码（[:180-183](packages/cli/src/ui/commands/contextCommand.ts:180)）和对 `compressionThreshold` 的使用 —— 现在直接看 `auto`。
+同时**删除**原来计算 `autocompactBuffer` 的代码（[:180-183](./packages/cli/src/ui/commands/contextCommand.ts:180)）和对 `compressionThreshold` 的使用 —— 现在直接看 `auto`。
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -1749,4 +1749,4 @@ npm run lint
 
 - [ ] **Step 5: PR 描述统一脚本（可选）**
 
-如果 PR 是分批提交的，每个 PR 描述里链接 [docs/design/auto-compaction-threshold-redesign.md](docs/design/auto-compaction-threshold-redesign.md) 并标注 Phase / Task。
+如果 PR 是分批提交的，每个 PR 描述里链接 [docs/design/auto-compaction-threshold-redesign.md](./docs/design/auto-compaction-threshold-redesign.md) 并标注 Phase / Task。

@@ -184,7 +184,7 @@ Claude Code の transcript を忠実に再現（claude-code のソースコー�
 ```ts
 // 削除：TOGGLE_COMPACT_MODE 分岐
 // 新規：
-} else if (keyMatchers[Command.TOGGLE_TRANSCRIPT](key)) {
+} else if (keyMatchers[Command.TOGGLE_TRANSCRIPT](./key)) {
   toggleTranscript();           // open <-> close
 }
 ```
@@ -203,7 +203,7 @@ Claude Code の transcript を忠実に再現（claude-code のソースコー�
         (key.name === 'escape' || key.name === 'q' || (key.ctrl && key.name === 'c'))) {
       closeTranscript(); return;
     }
-    if (keyMatchers[Command.QUIT](key)) { ... }   // 既存 :3104
+    if (keyMatchers[Command.QUIT](./key)) { ... }   // 既存 :3104
     ...
   ```
   さもなくば：transcript が開いているときに Ctrl+C を押すと、まず終了/`ctrlCPressedOnce` がトリガーされる。Esc を押すと vim INSERT ガードに飲み込まれて transcript を閉じられない。この分岐は `isTranscriptOpenRef` でガードされるため、transcript が開いているときのみ有効で、vim の通常編集には影響しない。**テスト**：`Ctrl+C closes transcript and does NOT set quit/ctrlCPressedOnce`；`Esc closes transcript even when vim INSERT mode is active`。

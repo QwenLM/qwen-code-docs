@@ -167,7 +167,7 @@ my-skill/
 Verweise auf diese Dateien aus `SKILL.md`:
 
 ````markdown
-Für fortgeschrittene Verwendung siehe [reference.md](reference.md).
+Für fortgeschrittene Verwendung siehe [reference.md](./reference.md).
 
 Führe das Helper-Skript aus:
 

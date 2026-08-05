@@ -284,7 +284,7 @@ Redémarrez à nouveau le CLI. Le modèle aura désormais le contexte de votre f
 
 Une fois satisfait de votre extension, vous pouvez la partager avec d'autres. Les deux principales façons de publier des extensions sont via un dépôt Git ou via les GitHub Releases. L'utilisation d'un dépôt Git public est la méthode la plus simple.
 
-Pour des instructions détaillées sur les deux méthodes, veuillez consulter le [Guide de publication des extensions](extension-releasing.md).
+Pour des instructions détaillées sur les deux méthodes, veuillez consulter le [Guide de publication des extensions](./extension-releasing.md).
 
 ## Conclusion
 

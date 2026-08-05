@@ -208,7 +208,7 @@ my-skill/
 Reference these files from `SKILL.md`:
 
 ````markdown
-For advanced usage, see [reference.md](reference.md).
+For advanced usage, see [reference.md](./reference.md).
 
 Run the helper script:
 

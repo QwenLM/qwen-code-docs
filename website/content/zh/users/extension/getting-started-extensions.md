@@ -283,7 +283,7 @@ await server.connect(transport);
 
 对你的扩展满意后，可以与他人分享。发布扩展的两种主要方式是通过 Git 仓库或 GitHub Releases。使用公共 Git 仓库是最简单的方法。
 
-有关两种方法的详细说明，请参阅[扩展发布指南](extension-releasing.md)。
+有关两种方法的详细说明，请参阅[扩展发布指南](./extension-releasing.md)。
 
 ## 总结
 

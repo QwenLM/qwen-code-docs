@@ -10,7 +10,7 @@
 
 ## /loop を使用してプロンプトを定期実行する
 
-`/loop` [バンドルスキル](skills.md) は、プロンプトを定期実行するための最も迅速な方法です。オプションの間隔とプロンプトを渡すと、Qwen Code はセッションが開いている間バックグラウンドで実行される cron ジョブを設定します。
+`/loop` [バンドルスキル](./skills.md) は、プロンプトを定期実行するための最も迅速な方法です。オプションの間隔とプロンプトを渡すと、Qwen Code はセッションが開いている間バックグラウンドで実行される cron ジョブを設定します。
 
 ```text
 /loop 5m check if the deployment finished and tell me what happened

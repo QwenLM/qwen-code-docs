@@ -10,7 +10,7 @@ Les tâches sont limitées à la session : elles vivent dans le processus Qwen C
 
 ## Planifier un prompt récurrent avec /loop
 
-Le [skill intégré](skills.md) `/loop` est le moyen le plus rapide de planifier un prompt récurrent. Passez un intervalle optionnel et un prompt, et Qwen Code configure une tâche cron qui s'exécute en arrière-plan tant que la session reste ouverte.
+Le [skill intégré](./skills.md) `/loop` est le moyen le plus rapide de planifier un prompt récurrent. Passez un intervalle optionnel et un prompt, et Qwen Code configure une tâche cron qui s'exécute en arrière-plan tant que la session reste ouverte.
 
 ```text
 /loop 5m check if the deployment finished and tell me what happened

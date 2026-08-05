@@ -159,5 +159,5 @@ fi
 
 ## Siehe auch
 
-- [Kopfloser Modus](headless.md) – der `-p`-basierte Ablauf, auf dem `--json-schema` aufbaut.
-- [Duale Ausgabe](dual-output.md) – zeichnet einen JSON-Ereignis-Beleg neben der TUI auf (ein anderer Ansatz für maschinenlesbare Ausgabe; erfordert kein `--json-schema`).
+- [Kopfloser Modus](./headless.md) – der `-p`-basierte Ablauf, auf dem `--json-schema` aufbaut.
+- [Duale Ausgabe](./dual-output.md) – zeichnet einen JSON-Ereignis-Beleg neben der TUI auf (ein anderer Ansatz für maschinenlesbare Ausgabe; erfordert kein `--json-schema`).

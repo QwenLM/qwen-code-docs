@@ -159,5 +159,5 @@ fi
 
 ## 関連情報
 
-- [ヘッドレスモード](headless.md) — `--json-schema` が基盤とする `-p` ベースのフロー。
-- [デュアル出力](dual-output.md) — TUI と並行して JSON イベントサイドカーを記録 (機械可読出力への別のアプローチ。`--json-schema` は不要)。
+- [ヘッドレスモード](./headless.md) — `--json-schema` が基盤とする `-p` ベースのフロー。
+- [デュアル出力](./dual-output.md) — TUI と並行して JSON イベントサイドカーを記録 (機械可読出力への別のアプローチ。`--json-schema` は不要)。

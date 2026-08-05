@@ -122,11 +122,11 @@ Les deux captures suivantes sont des avant/après capturés séquentiellement su
 
 **Vue principale (baseline par défaut, §3.1)** — les trois outils read/search/list sont repliés en une seule ligne de résumé de partition `✔ Searched 1 pattern, read 1 file, listed 1 directory`, les blocs de réflexion sont repliés en `Thought for Ns (option+t to expand)` :
 
-![Vue principale : outils repliés en résumé sur une ligne](assets/main-view-collapsed.png)
+![Vue principale : outils repliés en résumé sur une ligne](./assets/main-view-collapsed.png)
 
 **Écran Ctrl+O Transcript (§3.2 + §4.5 `fullDetail`)** — alt-screen plein écran, header « 完整记录 », footer « Esc/q 关闭 ↑↓ 滚动 PgUp/PgDn Ctrl+Home/End » ; sur la même session, les trois outils passent du **résumé fusionné sur une ligne** de la vue principale à **des lignes distinctes chacune**, les blocs de réflexion sont dépliés (`option+t to collapse`) et affichent le texte complet :
 
-![Ctrl+O Transcript : expansion outil par outil (avant implémentation de §4.9)](assets/ctrl-o-transcript-expanded.png)
+![Ctrl+O Transcript : expansion outil par outil (avant implémentation de §4.9)](./assets/ctrl-o-transcript-expanded.png)
 
 > ⚠️ **Cette capture est l'état avant l'implémentation de §4.9** : ici les outils read/search/list n'affichent encore que des résultats **au niveau résumé** (`Listed 3 item(s)` / `Found 4 matches` / `读取文件 README.md`), **pas encore le détail complet** (entrées de répertoire, lignes de correspondance grep, texte complet du fichier). C'est-à-dire que le `fullDetail` de §4.5 n'a levé que "le repli de partition / la porte de repli des résultats / la contrainte de hauteur", mais le `returnDisplay` des outils collapsible est lui-même un simple résumé — le passage du détail complet au niveau des données est §4.9 (**merge blocker**), une fois livré cette capture sera **réenregistrée** pour refléter le véritable "détail complet".
 >
@@ -184,7 +184,7 @@ Dans `AppContainer.handleGlobalKeypress` :
 ```ts
 // 删除：TOGGLE_COMPACT_MODE 分支
 // 新增：
-} else if (keyMatchers[Command.TOGGLE_TRANSCRIPT](key)) {
+} else if (keyMatchers[Command.TOGGLE_TRANSCRIPT](./key)) {
   toggleTranscript();           // open <-> close
 }
 ```
@@ -203,7 +203,7 @@ Dans `AppContainer.handleGlobalKeypress` :
         (key.name === 'escape' || key.name === 'q' || (key.ctrl && key.name === 'c'))) {
       closeTranscript(); return;
     }
-    if (keyMatchers[Command.QUIT](key)) { ... }   // 现有 :3104
+    if (keyMatchers[Command.QUIT](./key)) { ... }   // 现有 :3104
     ...
   ```
   Sinon : avec le transcript ouvert, presser Ctrl+C déclencherait d'abord la sortie/`ctrlCPressedOnce` ; presser Esc serait avalé par la garde vim INSERT sans pouvoir fermer le transcript. Comme cette branche est gardée par `isTranscriptOpenRef`, elle n'agit que quand le transcript est ouvert, sans impact sur l'édition vim normale. **Tests** : `Ctrl+C closes transcript and does NOT set quit/ctrlCPressedOnce` ; `Esc closes transcript even when vim INSERT mode is active`.

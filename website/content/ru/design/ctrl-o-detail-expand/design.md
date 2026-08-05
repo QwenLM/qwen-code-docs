@@ -184,7 +184,7 @@
 ```ts
 // 删除：TOGGLE_COMPACT_MODE 分支
 // 新增：
-} else if (keyMatchers[Command.TOGGLE_TRANSCRIPT](key)) {
+} else if (keyMatchers[Command.TOGGLE_TRANSCRIPT](./key)) {
   toggleTranscript();           // open <-> close
 }
 ```
@@ -203,7 +203,7 @@
         (key.name === 'escape' || key.name === 'q' || (key.ctrl && key.name === 'c'))) {
       closeTranscript(); return;
     }
-    if (keyMatchers[Command.QUIT](key)) { ... }   // 现有 :3104
+    if (keyMatchers[Command.QUIT](./key)) { ... }   // 现有 :3104
     ...
   ```
   Иначе: при открытом transcript нажатие Ctrl+C сначала запустит выход/`ctrlCPressedOnce`; нажатие Esc будет поглощено vim-гвардом INSERT и transcript не закроется. Поскольку эта ветка охраняется `isTranscriptOpenRef` и действует только при открытом transcript, на нормальное редактирование vim влияния нет. **Тесты**: `Ctrl+C closes transcript and does NOT set quit/ctrlCPressedOnce`; `Esc closes transcript even when vim INSERT mode is active`.

@@ -184,7 +184,7 @@ Em `AppContainer.handleGlobalKeypress`:
 ```ts
 // Remover: branch TOGGLE_COMPACT_MODE
 // Adicionar:
-} else if (keyMatchers[Command.TOGGLE_TRANSCRIPT](key)) {
+} else if (keyMatchers[Command.TOGGLE_TRANSCRIPT](./key)) {
   toggleTranscript();           // open <-> close
 }
 ```
@@ -203,7 +203,7 @@ Em `AppContainer.handleGlobalKeypress`:
         (key.name === 'escape' || key.name === 'q' || (key.ctrl && key.name === 'c'))) {
       closeTranscript(); return;
     }
-    if (keyMatchers[Command.QUIT](key)) { ... }   // existente :3104
+    if (keyMatchers[Command.QUIT](./key)) { ... }   // existente :3104
     ...
   ```
   Caso contrário: com o transcript aberto, pressionar Ctrl+C acionaria primeiro o quit/`ctrlCPressedOnce`; pressionar Esc seria engolido pela guarda vim INSERT sem conseguir fechar o transcript. Como este branch é guardado por `isTranscriptOpenRef`, só vale com o transcript aberto, sem impacto na edição vim normal. **Testes**: `Ctrl+C closes transcript and does NOT set quit/ctrlCPressedOnce`; `Esc closes transcript even when vim INSERT mode is active`.

@@ -184,7 +184,7 @@ qwen-code 当前把 **Ctrl+O 绑定为 `TOGGLE_COMPACT_MODE`**：一个**全局�
 ```ts
 // 删除：TOGGLE_COMPACT_MODE 分支
 // 新增：
-} else if (keyMatchers[Command.TOGGLE_TRANSCRIPT](key)) {
+} else if (keyMatchers[Command.TOGGLE_TRANSCRIPT](./key)) {
   toggleTranscript();           // open <-> close
 }
 ```
@@ -203,7 +203,7 @@ qwen-code 当前把 **Ctrl+O 绑定为 `TOGGLE_COMPACT_MODE`**：一个**全局�
         (key.name === 'escape' || key.name === 'q' || (key.ctrl && key.name === 'c'))) {
       closeTranscript(); return;
     }
-    if (keyMatchers[Command.QUIT](key)) { ... }   // 现有 :3104
+    if (keyMatchers[Command.QUIT](./key)) { ... }   // 现有 :3104
     ...
   ```
   否则：transcript 打开时按 Ctrl+C 会先触发退出/`ctrlCPressedOnce`；按 Esc 会被 vim INSERT 守卫吞掉而关不掉 transcript。因为本分支由 `isTranscriptOpenRef` 守卫，仅在 transcript 打开时生效，对 vim 正常编辑无影响。**测试**：`Ctrl+C closes transcript and does NOT set quit/ctrlCPressedOnce`；`Esc closes transcript even when vim INSERT mode is active`。

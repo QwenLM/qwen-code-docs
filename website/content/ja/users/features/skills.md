@@ -167,7 +167,7 @@ my-skill/
 `SKILL.md` からこれらのファイルを参照します。
 
 ````markdown
-For advanced usage, see [reference.md](reference.md).
+For advanced usage, see [reference.md](./reference.md).
 
 Run the helper script:
 
