@@ -58,6 +58,11 @@ O Managed Auto-Memory é um sistema de memória persistente que **automaticament
 >
 > - `QWEN_CODE_MEMORY_BASE_DIR`: Substitui o diretório base global
 > - `QWEN_CODE_MEMORY_LOCAL=1`: Usa o caminho `.qwen/memory/` dentro do projeto
+> - `QWEN_CODE_MEMORY_PROJECT_SCOPE=workspace`: Particiona a memória de projeto por diretório de workspace exato (o padrão `git-root` compartilha pelo diretório raiz do Git). O valor passa por trim / normalização para minúsculas; valores não reconhecidos geram um aviso uma vez e fazem fallback para `git-root`.
+>   - A memória de equipe (`getTeamAutoMemoryRoot`) continua particionada pelo diretório raiz do Git: workspaces aninhados dentro do mesmo checkout ainda compartilham a memória de equipe — a memória de equipe deve ser compartilhada entre workspaces por natureza, e isso não muda com esta opção.
+>   - Trocar o scope não faz migração: após mudar para `workspace`, a memória de projeto antes gravada sob a chave git-root fica "desconectada" (e, ao voltar, o conteúdo novo gravado sob a chave workspace não fica visível).
+>   - A chave de diretório é gerada por `sanitizeCwd` (caracteres não alfanuméricos são substituídos por `-`); diretórios irmãos que diferem apenas na pontuação (como `feature_1` e `feature-1`) mapeiam para o mesmo diretório de memória; sob o particionamento `workspace`, esses nomes compartilhariam memória, então devem ser evitados.
+>   - O limite de tarefas pendentes (`MAX_PENDING = 16`) é **por lane**: N workspaces permitem 16·N tarefas de memória concorrentes; não há atualmente um limite total em nível de daemon.
 
 ### Descrição dos Arquivos Chave
 

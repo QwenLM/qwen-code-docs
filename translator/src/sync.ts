@@ -38,6 +38,19 @@ function isMetaFile(filePath: string): boolean {
 }
 
 /**
+ * 上游文档可能包含未带 ./ 前缀的相对链接/图片引用(如 `](assets/foo.png)`),
+ * 在 GitHub 上能正常渲染,但本站 Nextra/webpack 构建会将其当作模块请求
+ * 直接报错(Module not found: Can't resolve 'assets/...')。
+ * 复制源文档到 content/ 时,统一把 .md/.mdx 中这类相对链接改写为 ./ 形式。
+ */
+function normalizeMarkdownRelativeLinks(text: string): string {
+  return text.replace(
+    /\]\((?!\.|\/|#|[a-zA-Z][a-zA-Z0-9+.-]*:)([^)\s]+)(\s+"[^"]*")?\)/g,
+    (_m, target: string, title?: string) => `](./${target}${title ?? ""})`
+  );
+}
+
+/**
  * 版本同步管理器
  * 检测原仓库文档变更，自动同步和翻译更新
  */
@@ -487,10 +500,31 @@ export class SyncManager {
     //    注意：排除上游的 _meta.* 导航文件，避免覆盖本库定制的导航
     //    （本库各语言包的 _meta 由站点自行维护，不应被上游同步覆盖）。
     await fs.ensureDir(contentSourceDir);
-    await fs.copy(sourceDocsTargetDir, contentSourceDir, {
-      overwrite: true,
-      filter: (src) => !isMetaFile(src),
-    });
+    async function copyNormalized(dir: string): Promise<void> {
+      for (const item of await fs.readdir(dir)) {
+        const src = path.join(dir, item);
+        if ((await fs.stat(src)).isDirectory()) {
+          await copyNormalized(src);
+          continue;
+        }
+        if (isMetaFile(src)) continue;
+        const dest = path.join(
+          contentSourceDir,
+          path.relative(sourceDocsTargetDir, src)
+        );
+        await fs.ensureDir(path.dirname(dest));
+        if (/\.(md|mdx)$/.test(item)) {
+          await fs.writeFile(
+            dest,
+            normalizeMarkdownRelativeLinks(await fs.readFile(src, "utf8")),
+            "utf8"
+          );
+        } else {
+          await fs.copyFile(src, dest);
+        }
+      }
+    }
+    await copyNormalized(sourceDocsTargetDir);
     console.log(chalk.green(`✅ 源文档已复制到: ${contentSourceDir}`));
   }
 

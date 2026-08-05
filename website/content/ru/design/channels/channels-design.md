@@ -130,6 +130,7 @@ Outbound: Agent response → AcpBridge → SessionRouter → Adapter → User
       "model": "qwen3.5-plus",
       "instructions": "Keep responses short.",
       "groupPolicy": "disabled", // disabled | allowlist | open
+      "dmPolicy": "open", // open | disabled
       "groups": { "*": { "requireMention": true } },
     },
   },

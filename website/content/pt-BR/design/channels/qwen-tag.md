@@ -1,6 +1,14 @@
 # RFC: "qwen tag" — um agente persistente, multiplayer e residente de canal para o qwen-code (priorizando o DingTalk)
 
-**Status:** Rascunho (v2)
+> **Registro de decisão histórica.** A premissa de um processo por workspace /
+> um daemon por workspace neste rascunho foi substituída. Canais nomeados
+> gerenciados pelo daemon agora são agrupados pelo workspace proprietário, com
+> um worker por runtime proprietário; `--channel all` permanece restrito ao
+> primário. O token global único e a falta de identidade por pessoa continuam
+> sendo limitações atuais. Veja
+> [`../daemon-multi-workspace-hardening.md`](../daemon-multi-workspace-hardening.md).
+
+**Status:** Rascunho histórico (v2)
 **Data:** 2026-06-25
 **Autor:** (qwen-code)
 

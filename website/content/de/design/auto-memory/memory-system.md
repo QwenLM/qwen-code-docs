@@ -58,6 +58,11 @@ Managed Auto-Memory ist ein persistentes Erinnerungssystem, das während KI-Gesp
 >
 > - `QWEN_CODE_MEMORY_BASE_DIR`: Ersetzt das globale Basisverzeichnis
 > - `QWEN_CODE_MEMORY_LOCAL=1`: Nutzt stattdessen den projektinternen Pfad `.qwen/memory/`
+> - `QWEN_CODE_MEMORY_PROJECT_SCOPE=workspace`: Partitioniert Projekt-Erinnerungen nach exaktem Workspace-Verzeichnis (Standard `git-root` teilt über das Git-Root-Verzeichnis). Der Wert wird getrimmt / kleingeschrieben normalisiert; nicht erkennbare Werte warnen einmal und fallen auf `git-root` zurück.
+>   - Team-Erinnerungen (`getTeamAutoMemoryRoot`) werden weiterhin nach Git-Root-Verzeichnis partitioniert: verschachtelte Workspaces innerhalb desselben Checkouts teilen weiterhin Team-Erinnerungen — Team-Erinnerungen sollen ohnehin Workspace-übergreifend geteilt werden und ändern sich durch diesen Schalter nicht.
+>   - Ein Scope-Wechsel migriert nicht: Nach dem Wechsel zu `workspace` sind Projekt-Erinnerungen, die zuvor unter dem git-root-Schlüssel geschrieben wurden, „nicht mehr erreichbar" (beim Zurückwechseln sind neu unter dem workspace-Schlüssel geschriebene Inhalte nicht sichtbar).
+>   - Der Verzeichnisschlüssel wird von `sanitizeCwd` erzeugt (nicht-alphanumerische Zeichen werden durch `-` ersetzt); Schwester-Verzeichnisse, die sich nur in Satzzeichen unterscheiden (wie `feature_1` und `feature-1`), werden auf dasselbe Erinnerungsverzeichnis abgebildet; unter `workspace`-Partitionierung teilen solche Namensgebungen Erinnerungen — bei der Benennung vermeiden.
+>   - Das Limit anstehender Tasks (`MAX_PENDING = 16`) gilt **pro Lane**; N Workspaces erlauben also 16·N parallele Erinnerungs-Tasks. Es gibt derzeit kein daemon-weites Gesamtlimit.
 
 ### Wichtige Dateien
 

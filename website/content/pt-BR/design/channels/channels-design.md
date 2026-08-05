@@ -130,6 +130,7 @@ Plugins executam in-process (sem sandbox), mesmo modelo de confiança que depend
       "model": "qwen3.5-plus",
       "instructions": "Mantenha as respostas curtas.",
       "groupPolicy": "disabled", // disabled | allowlist | open
+      "dmPolicy": "open", // open | disabled
       "groups": { "*": { "requireMention": true } },
     },
   },

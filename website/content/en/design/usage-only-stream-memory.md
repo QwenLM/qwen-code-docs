@@ -51,7 +51,7 @@ for telemetry and optional OpenAI interaction logging.
 
 ## Local result
 
-![Usage-only stream heap before and after the fix](usage-only-stream-memory/assets/usage-only-stream-memory.png)
+![Usage-only stream heap before and after the fix](./usage-only-stream-memory/assets/usage-only-stream-memory.png)
 
 With a 512 MiB heap limit, the old build reached 515 MiB and crashed with VP
 enabled. The fixed build stayed between 101 and 131 MiB for 177 seconds while

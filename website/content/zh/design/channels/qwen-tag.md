@@ -1,6 +1,9 @@
 # RFC: "qwen tag" —— 面向 qwen-code 的持久化、多用户、频道常驻 agent（钉钉优先）
 
-**状态：** 草案 (v2)
+> **历史决策记录。** 本草案中“每个 workspace 一个进程 / 每个 workspace 一个 daemon”的前提已被取代。命名的 daemon 管理 channel 现在按归属 workspace 分组，每个归属运行时一个 worker；`--channel all` 仍然仅限主运行时。单一全局 token 和缺少按人类身份仍是当前限制。参见
+> [`../daemon-multi-workspace-hardening.md`](../daemon-multi-workspace-hardening.md)。
+
+**状态：** 历史草案 (v2)
 **日期：** 2026-06-25
 **作者：** (qwen-code)
 
@@ -121,7 +124,7 @@ v1 中经过验证的基准事实（AcpBridge 拓扑、AcpBridge 自动批准、
 
 ### 非目标
 
-- **NG1 — 不是托管的多租户 SaaS。** 一个“qwen tag”是一个绑定到**一个** workspace 的 agent 进程（`serve.ts:165-171`；多 workspace = 每个 workspace 一个 daemon 运行在不同端口）。没有中央控制平面。
+- **NG1 — 不是托管的多租户 SaaS。** 一个 daemon 可以托管多个隔离的 workspace 运行时，但它仍然只有一个进程级全局 token、限流器、监听器和故障半径。没有中央控制平面，也没有按人类身份的授权边界。
 - **NG2 — 本 RFC 中不包含按人类身份、计费或成本预算。** daemon 的身份模型是**单一全局 bearer token**（`auth.ts:259-266`），并在整个事件总线和权限审计中采用 `clientId` 级别的归属。我们在 prompt 中添加发送者_标记_（G2），但**不**引入经过身份验证的每用户主体、每用户配额或成本跟踪。发送者标记是建议性的 prompt 文本，不是鉴权边界——每个群成员共享 daemon 的单一 workspace 凭据，并且在共享的 `'thread'` 会话中是_同一个_ daemon `clientId`。
 - **NG3 — Phase-3 多身份网关不在本文范围内**，仅作为前瞻提及。本 RFC 涵盖 Phase 0–2。
 - **NG4 — 飞书是次要的，不是并列主要的。** 钉钉是参考实现，也是所有具体示例的来源。

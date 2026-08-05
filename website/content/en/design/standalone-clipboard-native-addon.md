@@ -48,4 +48,4 @@ user-visible error on the first clipboard-image paste attempt. Existing Linux
   its bundled Node.js runtime, and exercised against an actual PNG in the
   system clipboard.
 
-![Standalone clipboard paste before and after](standalone-clipboard-native-addon/assets/before-after.png)
+![Standalone clipboard paste before and after](./standalone-clipboard-native-addon/assets/before-after.png)

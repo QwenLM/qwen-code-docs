@@ -1,4 +1,3 @@
-```markdown
 # Memory 記憶管理システム
 
 > 本稿では、Qwen Code の **Managed Auto-Memory**（管理自動記憶）における記憶管理メカニズム、トリガー条件、実装の詳細について説明します。
@@ -59,6 +58,11 @@ Managed Auto-Memory は、AI とのセッション中にユーザーに関連す
 >
 > - `QWEN_CODE_MEMORY_BASE_DIR`：グローバルベースディレクトリを置き換え
 > - `QWEN_CODE_MEMORY_LOCAL=1`：プロジェクト内パス `.qwen/memory/` を使用
+> - `QWEN_CODE_MEMORY_PROJECT_SCOPE=workspace`：正確な workspace ディレクトリ単位でプロジェクト記憶を分割する（デフォルトの `git-root` は Git ルートディレクトリ単位で共有）。値は trim / 小文字への正規化が行われ、認識できない値は一度警告したうえで `git-root` にフォールバックする。
+>   - チーム記憶（`getTeamAutoMemoryRoot`）は引き続き Git ルートディレクトリ単位で分割される：同一 checkout 内のネストした workspace はチーム記憶を共有し続ける——チーム記憶はそもそも workspace をまたいで共有されるべきものであり、このスイッチでは変わらない。
+>   - scope の切り替え時にマイグレーションは行われない：`workspace` に切り替えると、それ以前に git-root キー配下に書かれたプロジェクト記憶は「行方不明」になる（元に戻すと、workspace キー配下に新しく書かれた内容が見えなくなる）。
+>   - ディレクトリキーは `sanitizeCwd` によって生成される（英数字以外の文字は `-` に置換）。句読点のみが異なる兄弟ディレクトリ（`feature_1` と `feature-1` など）は同一の記憶ディレクトリにマップされる。`workspace` 分割ではこのような命名は記憶を共有してしまうため、命名時に避ける必要がある。
+>   - 未処理タスクの上限（`MAX_PENDING = 16`）は **lane ごと**であり、N 個の workspace があれば 16·N 個の並行記憶タスクが許可される。現在のところデーモンレベルの総量上限はない。
 
 ### 主要ファイルの説明
 
@@ -509,4 +513,3 @@ flowchart TD
 | `packages/core/src/memory/governance.ts`              | ガバナンス提案タイプ：`AutoMemoryGovernanceSuggestionType`                       |
 | `packages/core/src/memory/state.ts`                   | 抽出実行状態：`isExtractRunning`、`markExtractRunning`、`clearExtractRunning`    |
 | `packages/core/src/memory/memoryAge.ts`               | 新鮮度記述：`memoryAge`、`memoryFreshnessText`                                 |
-```
