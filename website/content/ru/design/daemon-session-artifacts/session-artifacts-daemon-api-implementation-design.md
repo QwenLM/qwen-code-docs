@@ -141,7 +141,7 @@ Link artifact — это не «содержимое веб-страницы», 
 - `packages/core/src/tools/tool-names.ts`
 - `packages/core/src/tools/artifact/artifact-tool.ts`
 - `packages/cli/src/acp-integration/session/Session.ts`
-- `packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`
+- `packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`
 
 Текущее состояние:
 
@@ -1003,7 +1003,7 @@ Store в V1 представляет собой индекс в памяти д�
 
 - `packages/cli/src/acp-integration/session/types.ts`
   - `ToolCallResultParams.artifacts?`
-- `packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`
+- `packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`
   - `_meta.artifacts = params.artifacts`
 - `packages/cli/src/acp-integration/session/Session.ts`
   - Сбор `toolResult.artifacts` после успешного выполнения инструмента.
@@ -1335,7 +1335,7 @@ cd packages/core && npx vitest run src/tools/artifact/artifact-tool.test.ts
 Команды:
 
 ```bash
-cd packages/cli && npx vitest run src/acp-integration/session/emitters/ToolCallEmitter.test.ts
+cd packages/cli && npx vitest run src/acp-integration/session/emitters/tool-call-emitter.test.ts
 cd packages/cli && npx vitest run src/acp-integration/session/Session.test.ts
 ```
 
