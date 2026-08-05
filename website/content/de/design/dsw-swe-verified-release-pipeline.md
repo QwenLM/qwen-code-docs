@@ -80,7 +80,7 @@ auf, bleibt aber für die Dauer des Benchmarks nicht am Leben.
 - GitHub Self-Hosted-Runner: langlebiger GitHub-Job-Empfänger.
 - Dispatch / Pool-Submit: One-Shot-Erzeuger für Run und Tasks.
 - PostgreSQL: geteilter persistenter State-Speicher, nicht der Scheduler.
-- Coordinator: Wiederherstellung abgelaufener Leases, Run-Abgleich und
+- Coordinator: Wiederherstellung abgelaufener Leases, Run-Reconciliation und
   Completion-Gate.
 - Executors: Task-Claim, Ausführung von Harbor/Qwen Code/Grader, Heartbeat und
   Ergebnis-Einreichung.
