@@ -197,7 +197,8 @@
       "filePath": "/path/to/memory.md"
     }
   ],
-  "touchedTopics": ["project"]
+  "touchedTopics": ["project"],
+  "touchedScopes": ["project"]
 }
 ```
 
@@ -385,9 +386,9 @@
 ### Цепочка таймаутов
 
 ```
-Форкнутый раннер агента:       5 мин maxTimeMinutes
-Сигнал прерывания дочернего процесса: 295 с  (WORKSPACE_MEMORY_REMEMBER_CHILD_TIMEOUT_MS)
-Таймаут моста:                 300 с  (WORKSPACE_MEMORY_REMEMBER_TIMEOUT_MS)
+Agent forked runner:   5 min maxTimeMinutes
+Child abort signal:  295 s  (WORKSPACE_MEMORY_REMEMBER_CHILD_TIMEOUT_MS)
+Bridge timeout:      300 s  (WORKSPACE_MEMORY_REMEMBER_TIMEOUT_MS)
 ```
 
 Дочерний процесс прерывается до истечения таймаута моста, что гарантирует передачу
@@ -402,14 +403,14 @@
 Методы памяти рабочего пространства в `DaemonClient`:
 
 ```typescript
-// Поставить задачу remember в очередь
+// Queue a remember task
 const task = await client.rememberWorkspaceMemory(
   'The project uses pnpm workspaces',
   { contextMode: 'workspace' },
 );
 // task.taskId, task.status === 'queued'
 
-// Опрос до получения терминального статуса
+// Poll until terminal
 const result = await client.getWorkspaceMemoryRememberTask(task.taskId);
 // result.status === 'completed' | 'failed'
 

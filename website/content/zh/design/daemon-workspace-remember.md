@@ -284,6 +284,7 @@ Daemon 的托管内存系统（自动提取、dream agent）以前需要活跃�
 - `runWorkspaceMemoryDream()` — 调用 `qwen/control/workspace/memory/dream` ext-method 并使用相同的 bridge 超时。不创建或加载会话。
 
 这些方法都会调用 `ensureChannel()`（如果需要则生成 ACP 子进程），并在之后如果没有活跃会话则重启空闲计时器。
+
 ### 5.3 ACP 子进程执行 (`QwenAgent.extMethod`)
 
 在 `packages/cli/src/acp-integration/acpAgent.ts` 中，`workspaceMemoryRemember`、`workspaceMemoryForget` 和 `workspaceMemoryDream` 的处理程序：
