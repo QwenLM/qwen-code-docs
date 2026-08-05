@@ -1,8 +1,8 @@
-# Härtung des Daemon Todo Stop Guard
+# Härtung des Daemon-Todo-Stop-Guard
 
 ## Kontext
 
-Der Todo Stop Guard des Daemons kann eine begrenzte automatische Fortsetzung
+Der Todo-Stop-Guard des Daemons kann eine begrenzte automatische Fortsetzung
 anhängen, nachdem ein Modell-Turn vertrauenswürdige Todo-Einträge unfertig
 gelassen hat. Eine Bridge kann einen weiteren User-Prompt aufnehmen, während
 der aktuelle Turn drainet, und Hintergrund-Agenten, Monitore,
