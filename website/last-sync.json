@@ -1,6 +1,6 @@
 {
-  "commit": "c73b5ed8870495f2b330f61225458676263fce49",
-  "timestamp": "2026-08-05T12:41:31.792Z",
+  "commit": "a123d0030ae6fce4554d0723e07ca518d0a54214",
+  "timestamp": "2026-08-05T13:22:19.044Z",
   "files": {
     "docs/design/2026-05-15-async-memory-recall-design.md": {
       "langs": {
@@ -164,8 +164,8 @@
     },
     "docs/design/daemon-workspace-remember.md": {
       "langs": {
-        "zh": "0331e4b054d1332ea4252aa8bf9a3960c581bb69f9e4412eab19e33e47ddf729",
-        "de": "0331e4b054d1332ea4252aa8bf9a3960c581bb69f9e4412eab19e33e47ddf729",
+        "zh": "89fcb8c53cc74f59b394e964cbf840d13366043695534bfc6ad4f8aac681ffab",
+        "de": "89fcb8c53cc74f59b394e964cbf840d13366043695534bfc6ad4f8aac681ffab",
         "fr": "0331e4b054d1332ea4252aa8bf9a3960c581bb69f9e4412eab19e33e47ddf729",
         "ja": "0331e4b054d1332ea4252aa8bf9a3960c581bb69f9e4412eab19e33e47ddf729",
         "ru": "0331e4b054d1332ea4252aa8bf9a3960c581bb69f9e4412eab19e33e47ddf729",
@@ -315,7 +315,7 @@
     "docs/design/daemon-session-artifacts/session-artifacts-daemon-api-implementation-design.md": {
       "langs": {
         "zh": "1f6fe04e5aac02b2b880ce9387a04a430d26921c92f609b36b39da3eeaaa9660",
-        "de": "0402734c4cbd74b04a5b03c67d32165db8fea78c4a2fb60125d182a6d352a267",
+        "de": "1f6fe04e5aac02b2b880ce9387a04a430d26921c92f609b36b39da3eeaaa9660",
         "fr": "1f6fe04e5aac02b2b880ce9387a04a430d26921c92f609b36b39da3eeaaa9660",
         "ja": "1f6fe04e5aac02b2b880ce9387a04a430d26921c92f609b36b39da3eeaaa9660",
         "ru": "1f6fe04e5aac02b2b880ce9387a04a430d26921c92f609b36b39da3eeaaa9660",
@@ -544,8 +544,8 @@
     },
     "docs/design/f2-mcp-transport-pool.md": {
       "langs": {
-        "zh": "89b1ce21eedc8249e35f0df8d8f5e28a17b70ee43f1a3d4a0728bc816d96f340",
-        "de": "89b1ce21eedc8249e35f0df8d8f5e28a17b70ee43f1a3d4a0728bc816d96f340",
+        "zh": "2adf3a6d2a309904c5da3ea61ff9cea319d5db4ebdabe7e04c691d9999608d00",
+        "de": "2adf3a6d2a309904c5da3ea61ff9cea319d5db4ebdabe7e04c691d9999608d00",
         "fr": "89b1ce21eedc8249e35f0df8d8f5e28a17b70ee43f1a3d4a0728bc816d96f340",
         "ja": "89b1ce21eedc8249e35f0df8d8f5e28a17b70ee43f1a3d4a0728bc816d96f340",
         "ru": "89b1ce21eedc8249e35f0df8d8f5e28a17b70ee43f1a3d4a0728bc816d96f340",
@@ -2894,7 +2894,114 @@
     "docs/design/daemon-session-maintenance-writer-lease.md": {
       "langs": {
         "zh": "c7f5c0dc99333d44f4e8fe05aebb4dc6b7ce854ed5c6e7cc06103ab87c388962",
-        "ru": "c7f5c0dc99333d44f4e8fe05aebb4dc6b7ce854ed5c6e7cc06103ab87c388962"
+        "ru": "c7f5c0dc99333d44f4e8fe05aebb4dc6b7ce854ed5c6e7cc06103ab87c388962",
+        "de": "c7f5c0dc99333d44f4e8fe05aebb4dc6b7ce854ed5c6e7cc06103ab87c388962"
+      }
+    },
+    "docs/design/daemon-session-runtime-status.md": {
+      "langs": {
+        "zh": "27702ef204089fd688486787105df07c40625d61b6d418122aa066b143ea0cd2",
+        "de": "27702ef204089fd688486787105df07c40625d61b6d418122aa066b143ea0cd2"
+      }
+    },
+    "docs/design/daemon-skill-toggle.md": {
+      "langs": {
+        "zh": "7a5ef546e4fa63ec74cd60a4f8132a3d7e26c486d9cc7d5f2cf4bf729fe0ef72",
+        "de": "7a5ef546e4fa63ec74cd60a4f8132a3d7e26c486d9cc7d5f2cf4bf729fe0ef72"
+      }
+    },
+    "docs/design/daemon-todo-stop-guard-hardening.md": {
+      "langs": {
+        "zh": "5d6e5850b800462e1976e498b0805ab67994130622b00d69f396cd034123d068",
+        "de": "5d6e5850b800462e1976e498b0805ab67994130622b00d69f396cd034123d068"
+      }
+    },
+    "docs/design/daemon-todo-stop-guard.md": {
+      "langs": {
+        "zh": "1bd22b7c561f7dbff2cf35d6e6fe3d34382dc8dc8d2ef5ce422ee46224fc3a77",
+        "de": "1bd22b7c561f7dbff2cf35d6e6fe3d34382dc8dc8d2ef5ce422ee46224fc3a77"
+      }
+    },
+    "docs/design/daemon-untrusted-workspace-session-catalog.md": {
+      "langs": {
+        "zh": "60a74a66f2862704ac6d12d76ef32f514249e73cd3d530fa3824d2cdb0aaa158",
+        "de": "60a74a66f2862704ac6d12d76ef32f514249e73cd3d530fa3824d2cdb0aaa158"
+      }
+    },
+    "docs/design/desktop-electron-to-tauri-update-bridge.md": {
+      "langs": {
+        "zh": "6cc3602fe674d8d0b79a1c37bbe1d1d39c713915600fbbc865e5b7e680c8aded",
+        "de": "6cc3602fe674d8d0b79a1c37bbe1d1d39c713915600fbbc865e5b7e680c8aded"
+      }
+    },
+    "docs/design/direct-external-context-auto-recall.md": {
+      "langs": {
+        "zh": "2f07310ae4ac1aada5240295da6416dd1762423742ff8157a3f5f1b9032e6528",
+        "de": "2f07310ae4ac1aada5240295da6416dd1762423742ff8157a3f5f1b9032e6528"
+      }
+    },
+    "docs/design/direct-external-context-provider.md": {
+      "langs": {
+        "zh": "9c3688520144fd1b6b0d11450f539b915ca7ac259d86e2c5a6a66214f1576a71",
+        "de": "9c3688520144fd1b6b0d11450f539b915ca7ac259d86e2c5a6a66214f1576a71"
+      }
+    },
+    "docs/design/dsw-swe-verified-release-pipeline.md": {
+      "langs": {
+        "zh": "c1891d7bb32ce493f07c6954e15b747e1617b87da88a61e646056bdc634fb436",
+        "de": "c1891d7bb32ce493f07c6954e15b747e1617b87da88a61e646056bdc634fb436"
+      }
+    },
+    "docs/design/experimental-session-plan-review.md": {
+      "langs": {
+        "zh": "9d098c637a22681d3b87d679badb0d4c674d1744a207ccdaf408d84baabaa73a",
+        "de": "9d098c637a22681d3b87d679badb0d4c674d1744a207ccdaf408d84baabaa73a"
+      }
+    },
+    "docs/design/explicit-plan-exit-approval.md": {
+      "langs": {
+        "zh": "a2581037ab53a36b498fef5a01d271e2a8224fc60be54f039660e01ef8585d8e",
+        "de": "a2581037ab53a36b498fef5a01d271e2a8224fc60be54f039660e01ef8585d8e"
+      }
+    },
+    "docs/design/extension-file-reload.md": {
+      "langs": {
+        "zh": "46cf597569c23b07b63c0d0b2e6e6e92d1fb6c4c28418d5961a9e46a9a10bb97",
+        "de": "46cf597569c23b07b63c0d0b2e6e6e92d1fb6c4c28418d5961a9e46a9a10bb97"
+      }
+    },
+    "docs/design/extension-management-v2.md": {
+      "langs": {
+        "zh": "41a0ee8fc8deffe075d7db4953171425435a919026c3e5403b6ee942ac9e48b8",
+        "de": "41a0ee8fc8deffe075d7db4953171425435a919026c3e5403b6ee942ac9e48b8"
+      }
+    },
+    "docs/design/final-tool-response-budget.md": {
+      "langs": {
+        "zh": "bfb53997467f9f9612ac26a1ddc376fe72b7bd2a18ff7f2b582563d59425c99d",
+        "de": "bfb53997467f9f9612ac26a1ddc376fe72b7bd2a18ff7f2b582563d59425c99d"
+      }
+    },
+    "docs/design/fork-profiles.md": {
+      "langs": {
+        "zh": "90cf61c9b252db9c9e56c4e8f20d7e037eb081fa0fd7cefa30530ea5912a05d3",
+        "de": "90cf61c9b252db9c9e56c4e8f20d7e037eb081fa0fd7cefa30530ea5912a05d3"
+      }
+    },
+    "docs/design/fork-resume-live-capabilities.md": {
+      "langs": {
+        "zh": "5a4a0ad29330cabc6d6ed4d878e629f8234f73dbf75fc094180daf41e196138b",
+        "de": "5a4a0ad29330cabc6d6ed4d878e629f8234f73dbf75fc094180daf41e196138b"
+      }
+    },
+    "docs/design/fork-tool-execution-allowlist.md": {
+      "langs": {
+        "zh": "5ea5100ba53dd5de57d7d48a09d04bc3bff04f89fecaa86532420c51f808c59b"
+      }
+    },
+    "docs/design/full-turn-multimodal-routing.md": {
+      "langs": {
+        "zh": "ff6a45b887cec5ff1390f4289e8d9dd54183bced1ee268fe7a254c28d3a2a213"
       }
     }
   }
