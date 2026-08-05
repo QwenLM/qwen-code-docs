@@ -20,7 +20,7 @@ Ziel ist es, Sitzungsnamen **standardmäßig nützlich** zu machen:
 
 | Auslöser    | Bedingungen                                                                                                                                                     | Implementierung                                                |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| **Auto**    | Nachdem `recordAssistantTurn` ausgelöst wurde. Übersprungen, wenn ein vorhandener Titel gesetzt ist, ein anderer Versuch läuft, das Limit erreicht ist, nicht-interaktiv, Umgebungsvariable deaktiviert oder kein schnelles Modell. | `ChatRecordingService.maybeTriggerAutoTitle` – Feuer-Vergiss |
+| **Auto**    | Nachdem `recordAssistantTurn` ausgelöst wurde. Übersprungen, wenn ein vorhandener oder ausstehender expliziter Titel gesetzt ist, die Aufzeichnung fehlgeschlagen ist, ein anderer Versuch läuft, das Limit erreicht ist, nicht-interaktiv, Umgebungsvariable deaktiviert oder kein schnelles Modell. | `ChatRecordingService.maybeTriggerAutoTitle` – Feuer-Vergiss |
 | **Manuell** | Benutzer führt `/rename --auto` aus                                                                                                                              | `renameCommand.ts` über `tryGenerateSessionTitle`               |
 
 Beide Pfade münden in eine einzige Funktion – `tryGenerateSessionTitle(config, signal)` – um identischen Prompt, Schema, Modellauswahl und Bereinigung zu gewährleisten. Der automatische Auslöser ist ein Best-Effort-Hintergrundaufruf; das manuelle `/rename --auto` ist eine blockierende Benutzeraktion, die bei Fehlschlag einen grundspezifischen Fehler anzeigt.
@@ -37,12 +37,13 @@ Beide Pfade münden in eine einzige Funktion – `tryGenerateSessionTitle(config
 │  │  recordAssistantTurn()   │                                           │
 │  │     │                    │                                           │
 │  │     ↓                    │                                           │
-│  │  maybeTriggerAutoTitle() │── 6 Wächter ──→ IIFE(autoTitleController) │
+│  │  maybeTriggerAutoTitle() │── Wächter ────→ IIFE(autoTitleController) │
 │  │     │                    │                       │                   │
-│  │     └── hydrate über     │                       ↓                   │
-│  │         getSessionTitle- │          tryGenerateSessionTitle          │
-│  │         Info             │          (sessionTitle.ts)                │
-│  │                          │                       │                   │
+│  │     └── Hydrierung beim  │                       ↓                   │
+│  │         Resume über      │          tryGenerateSessionTitle          │
+│  │         getSessionTitle- │          (sessionTitle.ts)                │
+│  │         Info             │                       │                   │
+│  │                          │                       ↓                   │
 │  └──────────────────────────┘          BaseLlmClient.generateJson       │
 │                                        (schnelles Modell + JSON-Schema) │
 │                                                       │                 │
@@ -163,6 +164,14 @@ Eine Sitzung, die mit `hilf mir, X zu debuggen` beginnt, aber zu Refactoring von
 
 ## Persistenz
 
+### Dauerhafter Ergebnisvertrag
+
+`ChatRecordingService.recordCustomTitle()` gibt `Promise<boolean>` zurück. `true` bedeutet, dass der `custom_title`-Datensatz den geordneten JSONL-Schreibvorgang des Recorders abgeschlossen hat, der In-Memory-Titel und die Quelle aktualisiert wurden und der Titel-Observer benachrichtigt wurde. Es bedeutet nicht lediglich die Aufnahme in die Schreibwarteschlange. Ein Fehlschlag der Dateierstellung, ein bestehender Recorder-Fehler, ein früherer fehlgeschlagener Schreibvorgang in der Warteschlange oder die Ablehnung des Titelschreibens selbst gibt `false` zurück und lässt den vorherigen Titel und den Observer-Zustand unverändert. Der maßgebliche `flush()` des Recorders meldet weiterhin den anhaltenden Writer-Fehler.
+
+Der Observer läuft erst nach der Persistierung. Observer-Ausnahmen werden isoliert, weil ein bereits geschriebener Titel nicht nachträglich als fehlgeschlagene Umbenennung klassifiziert werden kann. Der Callback erhält außerdem die im persistierten Datensatz erfasste Session-ID; Konsumenten dürfen zum Zeitpunkt des Callbacks nicht die mutable Config-Session lesen. Dies verhindert, dass ein verzögertes Schreiben eines scheidenden Recorders den neuen Composer umbenennt, nachdem `/clear`, Resume oder Branch die Session gewechselt haben.
+
+Die automatische Hintergrundtitelvergabe nutzt denselben privaten Persistierungspfad, bleibt aber Best-Effort. Öffentliche Aufrufe sind explizite Titelanfragen, einschließlich `recordCustomTitle(title, 'auto')` von `/rename --auto` und Fernsteuerungsflächen.
+
 ### Datensatzform
 
 `CustomTitleRecordPayload` erhält ein optionales Feld `titleSource: 'auto' | 'manual'`:
@@ -200,14 +209,16 @@ Sitzungslesevorgänge öffnen mit `O_NOFOLLOW` (fällt auf reines Lesen zurück 
 
 ### Reihenfolge der Auslöser-Wächter
 
-`maybeTriggerAutoTitle` prüft sechs Bedingungen in genau dieser Reihenfolge – jede unterbricht die weiteren kurz, sodass die günstigen zuerst ausgeführt werden:
+`maybeTriggerAutoTitle` prüft diese Bedingungen in genau dieser Reihenfolge – jede unterbricht die weiteren kurz, sodass die günstigen zuerst ausgeführt werden:
 
 1. `currentCustomTitle` gesetzt → überspringen. Niemals manuellen / vorherigen Auto-Titel überschreiben.
-2. `autoTitleController !== undefined` → überspringen. Nur ein Versuch gleichzeitig.
-3. `autoTitleAttempts >= 3` → überspringen. Limit begrenzt den Gesamtaufwand.
-4. `!config.isInteractive()` → überspringen. Headless `qwen -p` / CI verbraucht niemals Fast-Model-Token für eine einmalige Sitzung.
-5. `autoTitleDisabledByEnv()` → überspringen. `QWEN_DISABLE_AUTO_TITLE=1` expliziter Opt-out.
-6. `!config.getFastModel()` → überspringen. Kein schnelles Modell → keine Aktion.
+2. Writer degradiert → überspringen. Ein Fail-Stop-Recorder kann keinen Titel persistieren, daher keine weiteren Fast-Model-Token ausgeben.
+3. Explizites Titelschreiben ausstehend → überspringen. Die Absicht von Benutzer und Remote gewinnt, noch bevor ihr JSONL-Schreibvorgang abgeschlossen ist.
+4. `autoTitleController !== undefined` → überspringen. Nur ein Versuch gleichzeitig.
+5. `autoTitleAttempts >= 3` → überspringen. Limit begrenzt den Gesamtaufwand.
+6. `autoTitleDisabledByEnv()` → überspringen. `QWEN_DISABLE_AUTO_TITLE=1` expliziter Opt-out.
+7. `!config.isInteractive()` → überspringen. Headless `qwen -p` / CI verbraucht niemals Fast-Model-Token für eine einmalige Sitzung.
+8. `!config.getFastModel()` → überspringen. Kein schnelles Modell → keine Aktion.
 
 ### Warum das Limit 3 und nicht 1 ist
 
@@ -223,9 +234,21 @@ Nach Auflösung des LLM-Aufrufs liest die IIFE die JSONL erneut über `sessionSe
 
 `autoTitleController` dient gleichzeitig als In-Flight-Flag. `finalize()` (ausgeführt bei Sitzungswechsel und Prozessbeendigung) ruft `autoTitleController.abort()` auf, bevor der Titeldatensatz erneut angehängt wird. Die LLM-Socket wird sofort abgebrochen; der Sitzungswechsel wartet nicht auf einen langsamen Fast-Model-Aufruf. Der `finally`-Block der IIFE löscht `autoTitleController` nur, wenn er noch der aktive ist, sodass eine Finalisierung während des Flugs nicht mit einem gleichzeitigen `recordAssistantTurn` in Konflikt gerät.
 
-### Manuelles `/rename` während des Flugs
+### Explizite Umbenennung während des Flugs
 
-Zwischen der Fertigstellung des `await` der IIFE und dem Aufruf von `recordCustomTitle('auto')` könnte der Benutzer `/rename foo` ausführen. Die IIFE prüft erneut `this.currentTitleSource === 'manual'` und bricht ab. Die In-Process-Prüfung UND die prozessübergreifende erneute Lektüre werden beide ausgeführt; manuell gewinnt auf beiden Ebenen.
+Jeder öffentliche `recordCustomTitle()`-Aufruf erhöht einen Zähler für ausstehende explizite Titel und bricht den aktiven Hintergrund-Controller ab, bevor er auf die JSONL wartet. Dies schließt `/rename --auto` ein, sodass eine modellgenerierte explizite Umbenennung dieselbe Priorität wie ein wörtlicher Benutzertitel hat. Die Hintergrundaufgabe prüft den Zähler, das Abbruchsignal, den aktuellen Titel und den Writer-Zustand sowohl nach der Generierung als auch unmittelbar vor der Persistierung. Gleichzeitige explizite Umbenennungen werden vom Writer serialisiert; ihre In-Memory-Ergebnisse werden in derselben Reihenfolge übernommen. Trifft ein expliziter Titel ein, nachdem ein Hintergrundtitel bereits eingereiht ist, macht die normale Writer-Reihenfolge den expliziten Titel zum letzten Datensatz.
+
+Während ein explizites Titelschreiben aussteht, verankert `finalize()` den zuvor gecachten Titel nicht neu. Andernfalls könnte dieser veraltete Datensatz hinter der Umbenennung eingereiht werden und zum JSONL-Tail werden, nachdem der neue Titel erfolgreich angekommen ist. Die Titel-Anker-Buchhaltung folgt der logischen Writer-Warteschlangenreihenfolge. Nachfolgende Datensätze, die hinter einem noch nicht abgeschlossenen Titelschreiben eingereiht sind, werden gezählt, aber die Schwellenwert-Neuverankerung wird aufgeschoben, bis der endgültig gecachte Titel bekannt ist, sodass weder das Herunterfahren noch der 32KB-Ankerpfad einen veralteten Titel hinter einer erfolgreichen Umbenennung anhängen kann.
+
+Das prozessübergreifende erneute Lesen schützt weiterhin manuelle Titel, die von einem anderen CLI-Prozess geschrieben wurden. Es ist kein Compare-and-Swap; eine externe Umbenennung im letzten Fenster zwischen Prüfung und Schreiben bleibt ein akzeptierter Race.
+
+### Branch-Titel-Reihenfolge
+
+`/branch` finalisiert und leert den Quell-Recorder, bevor es ihn kopiert. Anschließend lädt es den provisorischen Fork, berechnet einen eindeutigen Branch-Titel, persistiert diesen Titel über `SessionService` und lädt den Fork neu, sodass dessen endgültiger Tail und Titel-Cache den angehängten Datensatz enthalten. Erst nachdem diese Schritte erfolgreich sind, wechselt es den Core-Recorder und die UI. Ein Fehlschlag beim Quell-Flush, beim Titel oder beim finalen Neuladen löscht den unvollständigen Fork und lässt die ursprüngliche Session aktiv. `forkSession()` entfernt außerdem sein exklusiv erstelltes Ziel, falls das Schreiben oder Schließen der neuen JSONL fehlschlägt, bevor der Aufruf Erfolg melden kann, sodass der Aufrufer in dem Fenster, bevor er den Fork als erstellt markiert, keine unvollständige Datei hinterlassen kann.
+
+### Daemon-Grenze
+
+Live-ACP-Titeloperationen warten auf `recordCustomTitle()` und melden daher ein wahrheitsgemäßes `persisted`- oder `success`-Ergebnis ohne ein zweites `flush()`, durch das ein späterer, unabhängiger Schreibfehler der Umbenennung zugerechnet werden könnte. Der Daemon-Metadaten-PATCH bleibt bewusst optimistisch: Er aktualisiert den Live-Zustand und veröffentlicht sein Ereignis sofort, während die Kind-Persistierung Best-Effort ist und ein `false`-Ergebnis im Debug-Log protokolliert wird. Stark konsistente HTTP-Metadatenaktualisierungen liegen außerhalb dieses Entwurfs.
 
 ## Konfiguration
 

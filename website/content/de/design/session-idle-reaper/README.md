@@ -28,7 +28,7 @@ die noch nicht implementiert ist).
 | Szenario                                                                          | Symptom                                                                                             |
 | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | Benutzer öffnet mehrere Browser-Tabs, schließt sie ohne `DELETE /session`-Aufruf  | Sessions sammeln sich in `byId` an, jede hält einen EventBus-Ring (~2-4 MB)                         |
-| 20 Sessions (Standard `maxSessions`) sammeln sich an                              | `SessionLimitExceededError` bei neuem `spawnOrAttach` – Benutzer wird ausgesperrt                   |
+| 32 Sessions (Standard `maxSessions`) sammeln sich an                              | `SessionLimitExceededError` bei neuem `spawnOrAttach` – Benutzer wird ausgesperrt                   |
 | Langlebiger Daemon mit häufigen Tab-Wechseln                                      | Unbegrenztes Speicherwachstum in den EventBus-Wiederholungsringen und dem ACP-seitigen Session-Zustand |
 | IDE-Erweiterung startet neu / stürzt ab                                           | Verwaiste Sessions werden nie bereinigt                                                             |
 
