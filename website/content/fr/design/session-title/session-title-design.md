@@ -28,7 +28,7 @@ L'objectif est de rendre les noms de session _utiles par défaut_ :
 
 | Déclencheur | Conditions                                                                                                                                                                     | Implémentation                                                  |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| **Auto**    | Après le déclenchement de `recordAssistantTurn`. Ignoré si un titre existant est défini, une autre tentative est en cours, le plafond est atteint, non interactif, env désactivé, ou pas de modèle rapide. | `ChatRecordingService.maybeTriggerAutoTitle` — fire-and-forget  |
+| **Auto**    | Après le déclenchement de `recordAssistantTurn`. Ignoré si un titre existant ou un titre explicite en attente est défini, si l'enregistrement a échoué, si une autre tentative est en cours, si le plafond est atteint, en mode non interactif, si l'env est désactivée, ou sans modèle rapide. | `ChatRecordingService.maybeTriggerAutoTitle` — fire-and-forget  |
 | **Manuel**  | L'utilisateur exécute `/rename --auto`                                                                                                                                          | `renameCommand.ts` via `tryGenerateSessionTitle`                |
 
 Les deux chemins convergent vers une seule fonction — `tryGenerateSessionTitle(config,

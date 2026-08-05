@@ -28,7 +28,7 @@ O objetivo é tornar os nomes das sessões _úteis por padrão_:
 
 | Gatilho   | Condições                                                                                                                                                                  | Implementação                                                 |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| **Auto**  | Após `recordAssistantTurn` disparar. Ignorado se um título existente já foi definido, outra tentativa está em andamento, limite atingido, não interativo, env desabilitado ou sem modelo rápido. | `ChatRecordingService.maybeTriggerAutoTitle` — dispara e esquece |
+| **Auto**  | Após `recordAssistantTurn` disparar. Ignorado se um título existente ou explícito pendente está definido, a gravação falhou, outra tentativa está em andamento, limite atingido, não interativo, env desabilitado ou sem modelo rápido. | `ChatRecordingService.maybeTriggerAutoTitle` — fire-and-forget |
 | **Manual** | Usuário executa `/rename --auto`                                                                                                                                          | `renameCommand.ts` via `tryGenerateSessionTitle`               |
 
 Ambos os caminhos convergem para uma única função — `tryGenerateSessionTitle(config,
@@ -49,7 +49,7 @@ específico do motivo em caso de falha.
 │  │  recordAssistantTurn()   │                                           │
 │  │     │                    │                                           │
 │  │     ↓                    │                                           │
-│  │  maybeTriggerAutoTitle() │── 6 guards ──→ IIFE(autoTitleController)  │
+│  │  maybeTriggerAutoTitle() │── guards ────→ IIFE(autoTitleController)  │
 │  │     │                    │                       │                   │
 │  │     └── resume hydrate   │                       ↓                   │
 │  │         via              │          tryGenerateSessionTitle          │
@@ -63,7 +63,7 @@ específico do motivo em caso de falha.
 │  │ sessionService.ts        │         sanitizeTitle + sanity checks     │
 │  │                          │                         │                 │
 │  │  getSessionTitleInfo()   │◀── cross-process        ↓                 │
-│  │      uses                │    re-read             recordCustomTitle  │
+│  │      uses                │    re-read          persistCustomTitle    │
 │  │  readLastJsonString-     │    before write        (…, 'auto')        │
 │  │  FieldsSync              │                                           │
 │  │  (sessionStorageUtils)   │                                           │
@@ -203,6 +203,31 @@ surrogate baixo órfão inicial; `sanitizeTitle` remove qualquer surrogate
 
 ## Persistência
 
+### Contrato de resultado durável
+
+`ChatRecordingService.recordCustomTitle()` retorna `Promise<boolean>`.
+`true` significa que o registro `custom_title` completou a escrita JSONL
+ordenada do gravador, o título e a fonte em memória foram atualizados, e o
+observador de título foi notificado. Não significa meramente aceito na fila de
+escrita. Uma falha de criação de arquivo, uma falha existente do gravador, uma
+falha de escrita enfileirada anteriormente, ou a rejeição da própria escrita
+do título retorna `false` e deixa o título anterior e o estado do observador
+inalterados. O `flush()` canônico do gravador ainda reporta a falha persistente
+do gravador.
+
+O observador executa somente após a persistência. Exceções do observador são
+isoladas porque um título já escrito não pode ser retroativamente classificado
+como uma renomeação com falha. O callback também recebe o ID da sessão
+capturado no registro persistido; os consumidores não devem ler a sessão
+mutável do Config no momento do callback. Isso evita que uma escrita atrasada
+de um gravador em saída renomeie a nova barra de prompt após `/clear`,
+retomada ou troca de sessão por branch.
+
+O auto-título em segundo plano usa o mesmo caminho privado de persistência,
+mas continua sendo de melhor esforço. Chamadas públicas são requisições
+explícitas de título, incluindo `recordCustomTitle(title, 'auto')` de
+`/rename --auto` e superfícies de controle remoto.
+
 ### Formato do Registro
 
 `CustomTitleRecordPayload` recebe um campo opcional `titleSource: 'auto' |
@@ -261,17 +286,21 @@ de metadados para um arquivo não relacionado.
 
 ### Ordem das Guards do Gatilho
 
-`maybeTriggerAutoTitle` verifica seis condições nesta ordem exata — cada uma
+`maybeTriggerAutoTitle` verifica estas condições nesta ordem exata — cada uma
 curto-circuita as demais para que as mais baratas executem primeiro:
 
 1. `currentCustomTitle` definido → pular. Nunca sobrescrever manual / auto anterior.
-2. `autoTitleController !== undefined` → pular. Uma tentativa por vez.
-3. `autoTitleAttempts >= 3` → pular. Limite superior limita desperdício total.
-4. `!config.isInteractive()` → pular. `qwen -p` headless / CI nunca gasta
-   tokens do modelo rápido em uma sessão única.
-5. `autoTitleDisabledByEnv()` → pular. `QWEN_DISABLE_AUTO_TITLE=1`
+2. Gravador degradado → pular. Um gravador fail-stop não consegue persistir um
+   título, então não gastar mais tokens do modelo rápido.
+3. Escrita de título explícito pendente → pular. A intenção do usuário e remota
+   vence mesmo antes de sua escrita JSONL se concretizar.
+4. `autoTitleController !== undefined` → pular. Uma tentativa por vez.
+5. `autoTitleAttempts >= 3` → pular. O limite restringe o desperdício total.
+6. `autoTitleDisabledByEnv()` → pular. `QWEN_DISABLE_AUTO_TITLE=1`
    exclusão explícita.
-6. `!config.getFastModel()` → pular. Sem modelo rápido → sem operação.
+7. `!config.isInteractive()` → pular. `qwen -p` headless / CI nunca gasta
+   tokens do modelo rápido em uma sessão única.
+8. `!config.getFastModel()` → pular. Sem modelo rápido → sem operação.
 
 ### Por que o limite é 3, não 1
 
@@ -288,7 +317,7 @@ um modelo rápido com falha persistente.
 Duas abas CLI no mesmo arquivo de sessão podem divergir em memória. A aba A
 executa `/rename foo` e escreve `titleSource: manual`. O
 `ChatRecordingService` da aba B tem seu próprio `currentCustomTitle = undefined` e
-subscreveria ingenuamente com um título automático.
+sobrescreveria ingenuamente com um título automático.
 
 Após a chamada LLM resolver, a IIFE relê o JSONL via
 `sessionService.getSessionTitleInfo`. Se o arquivo mostrar
