@@ -141,7 +141,7 @@ Client 点击时打开 URL；Daemon 不读取、不验证、不预渲染该 URL�
 - `packages/core/src/tools/tool-names.ts`
 - `packages/core/src/tools/artifact/artifact-tool.ts`
 - `packages/cli/src/acp-integration/session/Session.ts`
-- `packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`
+- `packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`
 
 现状：
 
