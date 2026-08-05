@@ -1,5 +1,11 @@
 # Subagent Trace Tree Design (P3 Phase 3)
 
+> **Миграция атрибутов GenAI:**
+> [`gen-ai-arms-field-alignment.md`](./gen-ai-arms-field-alignment.md) заменяет
+> используемые в этом документе `gen_ai.provider.name=qwen-code` и временный
+> `gen_ai.agent.id`. Описанные здесь жизненный цикл, идентификация,
+> родительские связи и линки `qwen-code.subagent.*` остаются в силе.
+
 > Issue #3731 — Фаза 3 иерархической трассировки сессий. Добавляет span `qwen-code.subagent`, чтобы вызовы subagent'ов получали изолированную, запрашиваемую структуру трассы вместо бесшумного перемешивания под родительским span'ом `qwen-code.interaction`.
 >
 > Основана на Фазе 1 (#4126), Фазе 1.5 (#4302) и Фазе 2 (#4321).
