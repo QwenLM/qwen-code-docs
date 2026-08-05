@@ -1,5 +1,8 @@
 # LLM-Request-Timing-Zerlegung – Design (P3 Phase 4)
 
+> **GenAI-Attribut-Migration:**
+> [`gen-ai-arms-field-alignment.md`](./gen-ai-arms-field-alignment.md) ersetzt die Aliase `gen_ai.usage.cached_tokens`, `gen_ai.server.time_to_first_token` und `gen_ai.usage.reasoning_tokens` dieses Dokuments und ersetzt die Aliase `qwen-code.model`, `input_tokens`, `output_tokens` und `cached_input_tokens` des LLM-Spans durch Standard-GenAI-Attribute. Das private Span-Attribut `ttft_ms`, `ApiResponseEvent.ttft_ms`, `sampling_ms`, Durchsatz, `/stats` und die hier beschriebenen API-Request-Breakdown-Metriken bleiben gültig. Das Alignment-Dokument fügt das unabhängige Standardattribut `gen_ai.response.time_to_first_chunk` ergänzend zu `ttft_ms` hinzu.
+
 > Issue #3731 – Phase 4 des hierarchischen Session-Tracings. Fügt Time-to-First-Token, Request-Setup-Dauer, Sampling-Dauer und Telemetrie pro Wiederholungsversuch zum `qwen-code.llm_request`-Span hinzu, damit Betreiber beantworten können „Warum war dieser LLM-Aufruf langsam?“, ohne raten zu müssen.
 >
 > Baut auf Phase 1 (#4126), Phase 1.5 (#4302), Phase 2 (#4321) auf. Unabhängig von Phase 3 (#4410, in Review) – es wird empfohlen, Phase 3 zuerst zu landen, damit die Felder pro Versuch von Phase 4 sauber unter den Subagent-Unterbäumen aggregiert werden können.
@@ -218,7 +221,7 @@ recordApiRequestBreakdown(config, model, [
 ]);
 ```
 
-**Warum `TOKEN_PROCESSING** überspringen**: qwen-code führt die Stream-Chunk-Verarbeitung inline durch (Konsolidierung erfolgt im Wrapper bei `loggingContentGenerator.ts:644`); die Post-Stream-Abschlussphase dauert <10ms und ist architektonisch nicht eigenständig. Das Füllen mit einem bedeutungslosen Wert verschmutzt das Histogramm. Den Enum-Wert ungenutzt zu lassen, ist sicher – `apiRequestBreakdownHistogram.record(value, {model, phase})` ist nur ein Histogramm mit `phase` als Label; fehlende Labels sind in Abfragen einfach nicht vorhanden.
+**Warum `TOKEN_PROCESSING` überspringen**: qwen-code führt die Stream-Chunk-Verarbeitung inline durch (Konsolidierung erfolgt im Wrapper bei `loggingContentGenerator.ts:644`); die Post-Stream-Abschlussphase dauert <10ms und ist architektonisch nicht eigenständig. Das Füllen mit einem bedeutungslosen Wert verschmutzt das Histogramm. Den Enum-Wert ungenutzt zu lassen, ist sicher – `apiRequestBreakdownHistogram.record(value, {model, phase})` ist nur ein Histogramm mit `phase` als Label; fehlende Labels sind in Abfragen einfach nicht vorhanden.
 
 **Warum `NETWORK_LATENCY` nicht neu definieren**: Der Spec-Name ist etwas irreführend (es ist Netzwerk + First-Token-Generierung, nicht reine Netzwerklatenz), aber:
 
@@ -465,7 +468,7 @@ Lokale Variablen pro Aufruf überschneiden sich nie. Stream-Chunks werden gegen 
 | `packages/core/src/core/loggingContentGenerator/loggingContentGenerator.test.ts`| `hasUserVisibleContent` (text / functionCall / inlineData / executableCode / thought / role-only / usage-only); gleichzeitige Aufrufe kontaminieren sich nicht gegenseitig; TTFT undefiniert bei Abbruch vor erstem Chunk; TTFT undefiniert bei Nicht-Streaming | +100          |
 | `packages/core/src/utils/retry.test.ts`                                         | `onRetry` wird pro fehlgeschlagenem Versuch mit korrektem `attempt`, `delayMs`, `error`, `errorStatus` aufgerufen; Fehlen von `onRetry` ist still (keine Telemetrie ausgelöst)                                                              | +50           |
 | `packages/core/src/telemetry/loggers.test.ts`                                   | `logApiRetry` gibt LogRecord mit erwartetem Payload aus; bridget über LogToSpanProcessor in einen unter dem aktiven LLM-Span geschachtelten Span                                                                                           | +40           |
-```
+
 Gesamt: 14 Dateien, ~610 LOC. Größer als Phase 2 (#4321) aber vergleichbar mit Phase 3 (#4410) und gerechtfertigt durch die Breite der Integration (4 Retry-Stellen + Telemetrie-Infrastruktur + Streaming-Wrapper).
 
 Falls das Review wegen der Größe Druck macht: Aufteilen in **Phase 4a + 4b + 4c**:
@@ -532,7 +535,7 @@ Rollback-Pfad: Den einzelnen PR zurücksetzen (oder unabhängig jeden von 4a/4b/
 
 - **Nach Phase 3 (#4410, im Review)**: keine harte Abhängigkeit. Phase-4-Attribute werden an `qwen-code.llm_request`-Spans angehängt, unabhängig davon, ob sie unter einem `qwen-code.subagent` (Phase 3) oder `qwen-code.interaction` (Phase 1) als Parent liegen. Empfehlung: Phase 3 zuerst landen lassen, damit die Aggregation pro Versuch unter Subagenten-Subbäumen natürlich funktioniert.
 - **Unabhängig von #4384** (`traceparent` + `X-Qwen-Code-Session-Id`-Outbound-Propagation). Sie betreffen die HTTP-Schicht; Phase 4 betrifft die Stream-/Retry-/Metrik-Schicht.
-- **Unabhängig vom `clearDetailedSpanState`-Chat-Kompaktierungs-Follow-up** (#4097 Follow-up). Unterschiedliche Oberfläche.
+- **Unabhängig von GenAI-Content-Capture**. Die Chat-Komprimierung setzt den prozessglobalen Hash-Zustand für sensible Attribute nicht mehr zurück, da dieser Zustand entfernt wurde; Request-Timing bleibt eine separate Oberfläche.
 
 ## Offene Fragen
 
