@@ -8,6 +8,11 @@ name: Daily Incremental Translation
 #   - Secret  TRANSLATE_CODING_PLAN_API_KEY : a cloud-reachable model API key
 #   - Variable (optional) TRANSLATE_BASE_URL : override the API endpoint.
 #     Defaults to https://coding.dashscope.aliyuncs.com/v1 when unset.
+#   - Variable (optional) TRANSLATE_LANG_CONCURRENCY : languages translated
+#     in parallel (default 6).
+#   - Variable (optional) TRANSLATE_FILE_CONCURRENCY : files translated in
+#     parallel per language (default 4). Total in-flight API calls are the
+#     product of the two; lower them if the endpoint rate-limits.
 #   QWEN_MODEL is still hardcoded below; change it if you switch models.
 #   The incremental baseline lives in website/last-sync.json (tracked in
 #   git), so each run only translates what changed upstream.
@@ -68,10 +73,12 @@ jobs:
           QWEN_MODEL: qwen3.7-plus
           # Keep each response moderate; larger docs auto-chunk from this cap.
           QWEN_MAX_TOKENS: "32768"
-          # The MaaS compatible endpoint can close long responses when all
-          # target languages run at once. Keep CI conservative and let API
-          # retries handle transient disconnects.
-          QWEN_TRANSLATION_CONCURRENCY: "3"
+          # Total in-flight API calls = QWEN_TRANSLATION_CONCURRENCY ×
+          # QWEN_FILE_CONCURRENCY. Both are repo variables so they can be
+          # tuned in Settings → Variables without a code change; defaults
+          # below apply when unset. Tune down if the endpoint rate-limits.
+          QWEN_TRANSLATION_CONCURRENCY: ${{ vars.TRANSLATE_LANG_CONCURRENCY || '6' }}
+          QWEN_FILE_CONCURRENCY: ${{ vars.TRANSLATE_FILE_CONCURRENCY || '4' }}
           QWEN_API_MAX_RETRIES: "6"
           QWEN_CHUNK_CHARS: "12000"
         run: |
