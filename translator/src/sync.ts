@@ -115,6 +115,7 @@ export class SyncManager {
       "ru",
       "pt-BR",
       "es",
+      "ko",
     ];
     this.branch = options.branch || "main"; // 默认使用 main 分支
     this.excludeFromTranslation = options.excludeFromTranslation || [];

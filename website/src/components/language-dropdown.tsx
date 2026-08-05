@@ -14,6 +14,7 @@ export const languages = [
   { locale: "ru", name: "Русский", flag: "🇷🇺" },
   { locale: "ja", name: "日本語", flag: "🇯🇵" },
   { locale: "pt-BR", name: "Português (BR)", flag: "🇧🇷" },
+  { locale: "ko", name: "한국어", flag: "🇰🇷" },
 ];
 
 const languageLocales = languages.map((language) => language.locale);

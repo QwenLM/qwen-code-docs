@@ -26,6 +26,7 @@ const NAV_I18N: Record<string, Record<string, string>> = {
     ja: "ドキュメント",
     ru: "Документация",
     "pt-BR": "Documentação",
+    ko: "문서",
   },
   blog: {
     zh: "博客",
@@ -35,6 +36,7 @@ const NAV_I18N: Record<string, Record<string, string>> = {
     ja: "ブログ",
     ru: "Блог",
     "pt-BR": "Blog",
+    ko: "블로그",
   },
   showcase: {
     zh: "案例展示",
@@ -44,6 +46,7 @@ const NAV_I18N: Record<string, Record<string, string>> = {
     ja: "ショーケース",
     ru: "Витрина",
     "pt-BR": "Showcase",
+    ko: "쇼케이스",
   },
   language: {
     zh: "语言",
@@ -53,6 +56,7 @@ const NAV_I18N: Record<string, Record<string, string>> = {
     ja: "言語",
     ru: "Язык",
     "pt-BR": "Idioma",
+    ko: "언어",
   },
   menu: {
     zh: "打开菜单",
@@ -62,6 +66,7 @@ const NAV_I18N: Record<string, Record<string, string>> = {
     ja: "メニューを開く",
     ru: "Открыть меню",
     "pt-BR": "Abrir menu",
+    ko: "메뉴 열기",
   },
   close: {
     zh: "关闭菜单",
@@ -71,6 +76,7 @@ const NAV_I18N: Record<string, Record<string, string>> = {
     ja: "メニューを閉じる",
     ru: "Закрыть меню",
     "pt-BR": "Fechar menu",
+    ko: "메뉴 닫기",
   },
 };
 

@@ -261,6 +261,7 @@ ${terminologyContent}
       ja: "Japanese",
       "pt-BR": "Portuguese (Brazil)",
       es: "Spanish",
+      ko: "Korean",
     };
 
     const targetLanguageName = languageNames[targetLang] || targetLang;
@@ -322,6 +323,7 @@ ${terminology}${sliceNote}
       ja: "Japanese",
       "pt-BR": "Portuguese (Brazil)",
       es: "Spanish",
+      ko: "Korean",
     };
 
     const targetLanguageName = languageNames[targetLang] || targetLang;
