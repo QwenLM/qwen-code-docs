@@ -99,11 +99,11 @@ OpenAI 互換、Anthropic、Qwen OAuth のリクエストは operation `chat` �
 
 ## Response and usage provenance
 
-プロバイダーコンバーターは、正規化された Gemini の usage オブジェクトに `WeakMap` で内部のプロベナンスを付与する。これは、キャッシュ読み取りフィールドが実際に存在したかどうかと、Anthropic のキャッシュ作成トークンを記録する。これにより公開レスポンスの JSON 形状が保持され、ガベージコレクションが正規化された usage オブジェクトに追随できる。
+プロバイダーコンバーターは、正規化された Gemini の usage オブジェクトに `WeakMap` で内部の provenance を付与する。これは、キャッシュ読み取りフィールドが実際に存在したかどうかと、Anthropic のキャッシュ作成トークンを記録する。これにより公開レスポンスの JSON 形状が保持され、ガベージコレクションが正規化された usage オブジェクトに追随できる。
 
 OpenAI 互換プロバイダーが `total_tokens` のみを報告する場合、正規化された合計は既存の内部コンシューマーが引き続き利用できるが、input/output の分割は合成されず、標準の usage 属性はいずれも出力されない。
 
-OpenAI の `response.model`/`chunk.model` と Anthropic のメッセージモデルは `modelVersion` として保持される。プロバイダーモデルの欠落はトレースでも欠落のままであり、リクエストモデルへのフォールバックは既存の API ログと UI の挙動に限定される。ストリームのマージは、最後に判明しているプロバイダーモデルと usage プロベナンスを終端レスポンスへ引き継ぐ。Anthropic の `message_start` の input とキャッシュ usage は、その後に yield される最初のチャンクに付与され、部分的なストリーム失敗でもプロバイダー報告の usage が保持され、output 数を合成しない。
+OpenAI の `response.model`/`chunk.model` と Anthropic のメッセージモデルは `modelVersion` として保持される。プロバイダーモデルの欠落はトレースでも欠落のままであり、リクエストモデルへのフォールバックは既存の API ログと UI の挙動に限定される。ストリームのマージは、最後に判明しているプロバイダーモデルと usage の provenance を終端レスポンスへ引き継ぐ。Anthropic の `message_start` の input とキャッシュ usage は、その後に yield される最初のチャンクに付与され、部分的なストリーム失敗でもプロバイダー報告の usage が保持され、output 数を合成しない。
 
 ## ARMS configuration
 
