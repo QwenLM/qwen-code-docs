@@ -1,5 +1,18 @@
 # Conception de la Décomposition Temporelle des Requêtes LLM (P3 Phase 4)
 
+> **Migration des attributs GenAI :**
+> [`gen-ai-arms-field-alignment.md`](./gen-ai-arms-field-alignment.md) remplace
+> les alias `gen_ai.usage.cached_tokens`,
+> `gen_ai.server.time_to_first_token` et
+> `gen_ai.usage.reasoning_tokens` de ce document, et remplace les alias
+> `qwen-code.model`, `input_tokens`, `output_tokens` et
+> `cached_input_tokens` de la span LLM par des attributs GenAI standard.
+> L'attribut de span privé `ttft_ms`, `ApiResponseEvent.ttft_ms`,
+> `sampling_ms`, le throughput, `/stats` et les métriques de décomposition
+> des requêtes API décrits ici restent valides. Le document d'alignement
+> ajoute l'attribut standard indépendant
+> `gen_ai.response.time_to_first_chunk` aux côtés de `ttft_ms`.
+
 > Issue #3731 — Phase 4 du tracing hiérarchique des sessions. Ajoute le temps jusqu'au premier token, la durée de configuration de la requête, la durée d'échantillonnage et la télémétrie de tentative par tentative à la span `qwen-code.llm_request`, permettant aux opérateurs de répondre à la question « pourquoi cet appel LLM était-il lent ? » sans avoir à deviner.
 >
 > S'appuie sur la Phase 1 (#4126), la Phase 1.5 (#4302), la Phase 2 (#4321). Indépendant de la Phase 3 (#4410, en relecture) — il est recommandé de livrer la Phase 3 en premier pour que les champs par tentative de la Phase 4 s'agrègent proprement sous les arborescences des sous-agents.
@@ -532,7 +545,10 @@ Chemin de rollback : annuler la PR unique (ou chacune des PR 4a/4b/4c indépenda
 
 - **Après la Phase 3 (#4410, en relecture)** : pas une dépendance stricte. Les attributs de Phase 4 s'attachent aux spans `qwen-code.llm_request` indépendamment du fait qu'ils soient sous un parent `qwen-code.subagent` (Phase 3) ou `qwen-code.interaction` (Phase 1). Recommandation que la Phase 3 soit intégrée d'abord pour que l'agrégation par tentative sous les arbres de sous-agents fonctionne naturellement.
 - **Indépendant de #4384** (`traceparent` + `X-Qwen-Code-Session-Id` propagation sortante). Ils touchent la couche HTTP ; la Phase 4 touche la couche stream/retry/métrique.
-- **Indépendant du suivi `clearDetailedSpanState` de compression de chat** (suivi de #4097). Surface différente.
+- **Indépendant de la capture de contenu GenAI**. La compression du chat ne
+  réinitialise plus l'état de hachage des attributs sensibles global au
+  processus, car cet état a été supprimé ; le timing des requêtes reste une
+  surface distincte.
 
 ## Questions ouvertes
 
