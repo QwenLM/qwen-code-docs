@@ -141,7 +141,7 @@ Client がクリックすると URL が開く。Daemon はその URL の読み�
 - `packages/core/src/tools/tool-names.ts`
 - `packages/core/src/tools/artifact/artifact-tool.ts`
 - `packages/cli/src/acp-integration/session/Session.ts`
-- `packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`
+- `packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`
 
 現状：
 
@@ -1003,7 +1003,7 @@ Phase A ではまず `ToolResult.artifacts` と `ArtifactTool` を組み込む�
 
 - `packages/cli/src/acp-integration/session/types.ts`
   - `ToolCallResultParams.artifacts?`
-- `packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`
+- `packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`
   - `_meta.artifacts = params.artifacts`
 - `packages/cli/src/acp-integration/session/Session.ts`
   - ツール成功後に `toolResult.artifacts` を収集。
@@ -1335,7 +1335,7 @@ cd packages/core && npx vitest run src/tools/artifact/artifact-tool.test.ts
 コマンド：
 
 ```bash
-cd packages/cli && npx vitest run src/acp-integration/session/emitters/ToolCallEmitter.test.ts
+cd packages/cli && npx vitest run src/acp-integration/session/emitters/tool-call-emitter.test.ts
 cd packages/cli && npx vitest run src/acp-integration/session/Session.test.ts
 ```
 
