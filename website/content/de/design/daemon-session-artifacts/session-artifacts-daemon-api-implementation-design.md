@@ -78,7 +78,7 @@ Kernkriterien:
 
 Ein Link-Artifact ist nicht "Webseiteninhalt", sondern ein "Ressourceneinstiegspunkt". Es sollte im Artefaktbereich auf der rechten Seite als anklickbarer Eintrag dargestellt werden:
 
-- Titel: `User-Profile-Ressourcendetails`
+- Titel: `用户画像资源详情`
 - Untertitel: `internal data platform / prod`
 - Typ: `link`
 - URL-Host: `platform.example.com`
@@ -141,7 +141,7 @@ Relevanter Quellcode:
 - `packages/core/src/tools/tool-names.ts`
 - `packages/core/src/tools/artifact/artifact-tool.ts`
 - `packages/cli/src/acp-integration/session/Session.ts`
-- `packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`
+- `packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`
 
 Aktueller Stand:
 
@@ -1003,7 +1003,7 @@ Phase A integriert zunächst `ToolResult.artifacts` und `ArtifactTool`; `record_
 
 - `packages/cli/src/acp-integration/session/types.ts`
   - `ToolCallResultParams.artifacts?`
-- `packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`
+- `packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`
   - `_meta.artifacts = params.artifacts`
 - `packages/cli/src/acp-integration/session/Session.ts`
   - Sammeln von `toolResult.artifacts` nach Tool-Erfolg.
