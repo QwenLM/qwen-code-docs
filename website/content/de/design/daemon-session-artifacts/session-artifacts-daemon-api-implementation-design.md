@@ -219,8 +219,8 @@ Response:
       "id": "a1b2c3d4e5f6",
       "kind": "link",
       "storage": "external_url",
-      "title": "User-Profile-Ressourcendetails",
-      "description": "Interne Datenplattform-Ressourcendetailseite",
+      "title": "用户画像资源详情",
+      "description": "内部数据平台资源详情页",
       "url": "https://platform.example.com/resources/user-profile",
       "mimeType": "text/html",
       "status": "available",
@@ -261,8 +261,8 @@ Neues Event:
         "id": "a1b2c3d4e5f6",
         "kind": "link",
         "storage": "external_url",
-        "title": "User-Profile-Ressourcendetails",
-        "description": "Interne Datenplattform-Ressourcendetailseite",
+        "title": "用户画像资源详情",
+        "description": "内部数据平台资源详情页",
         "url": "https://platform.example.com/resources/user-profile",
         "mimeType": "text/html",
         "status": "available",
@@ -310,8 +310,8 @@ Request:
 {
   "kind": "link",
   "storage": "external_url",
-  "title": "Task-Details",
-  "description": "Detailseite für Scheduler-Task task_123",
+  "title": "任务详情",
+  "description": "调度任务 task_123 的详情页",
   "url": "https://ops.example.com/tasks/task_123",
   "mimeType": "text/html",
   "metadata": {
@@ -334,8 +334,8 @@ Response:
         "id": "a1b2c3d4e5f6",
         "kind": "link",
         "storage": "external_url",
-        "title": "Task-Details",
-        "description": "Detailseite für Scheduler-Task task_123",
+        "title": "任务详情",
+        "description": "调度任务 task_123 的详情页",
         "url": "https://ops.example.com/tasks/task_123",
         "mimeType": "text/html",
         "status": "available",
@@ -827,7 +827,7 @@ Erforderliche Code-Änderungen:
     {
       "kind": "link",
       "storage": "external_url",
-      "title": "Batch-Task-Details",
+      "title": "批处理任务详情",
       "url": "https://ops.example.com/task/batch_123",
       "mimeType": "text/html"
     }
