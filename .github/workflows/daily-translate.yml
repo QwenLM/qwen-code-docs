@@ -1,25 +1,34 @@
 name: Daily Incremental Translation
 
-# Runs the translator's incremental `sync` once a day, then (if anything
-# changed) commits the new translations to main, rebuilds the site and
-# deploys it — all in one job.
+# Once a day, runs the orchestrator's incremental pipeline against the
+# upstream qwen-code docs, then (if anything changed) commits the new
+# translations to main, rebuilds the site and deploys it - all in one job.
 #
-# Prerequisites (set in repo Settings → Secrets and variables → Actions):
-#   - Secret  TRANSLATE_CODING_PLAN_API_KEY : a cloud-reachable model API key
-#   - Variable (optional) TRANSLATE_BASE_URL : override the API endpoint.
-#     Defaults to https://coding.dashscope.aliyuncs.com/v1 when unset.
-#   - Variable (optional) TRANSLATE_LANG_CONCURRENCY : languages translated
-#     in parallel (default 6).
-#   - Variable (optional) TRANSLATE_FILE_CONCURRENCY : files translated in
-#     parallel per language (default 4). Total in-flight API calls are the
-#     product of the two; lower them if the endpoint rate-limits.
-#   QWEN_MODEL is still hardcoded below; change it if you switch models.
-#   The incremental baseline lives in website/last-sync.json (tracked in
-#   git), so each run only translates what changed upstream.
+# Pipeline (translator/orchestrator/orchestrator.mjs):
+#   sync-en    mirror upstream English docs into website/content/en
+#   detect     per-language backlog vs website/last-sync.json (the baseline)
+#   translate  dispatch the qwen CLI agent for up to N backlog files per lang
+#   verify     structural gate (fence parity, frontmatter, non-empty, mtime)
+#   advance    promote only verified translations into the baseline
+# Translations that fail the gate never advance; they stay in the backlog
+# and are retried on the next run.
+#
+# Prerequisites (repo Settings -> Secrets and variables -> Actions):
+# - Secret   TRANSLATE_CODING_PLAN_API_KEY : a cloud-reachable model API key
+# - Variable TRANSLATE_BASE_URL (optional): OpenAI-compatible endpoint,
+#   defaults to https://coding.dashscope.aliyuncs.com/v1
+# - Variable QWEN_MODEL (optional): model id, defaults to qwen3.7-plus
+# - Variable TRANSLATE_DAILY_LIMIT (optional): max files translated per
+#   language per run, defaults to 20
+#
+# The qwen CLI authenticates via OpenAI-compatible env vars
+# (OPENAI_API_KEY / OPENAI_BASE_URL) plus a minimal ~/.qwen/settings.json
+# selecting the "openai" auth type - headless mode does not infer the auth
+# type from env alone.
 #
 # Note: this job pushes to main with GITHUB_TOKEN, which by design does NOT
-# trigger other workflows (e.g. deploy-docs.yml), so there is no double build.
-# This job therefore builds + deploys itself.
+# trigger other workflows (e.g. deploy-docs.yml), so there is no double
+# build. This job therefore builds + deploys itself.
 #
 # If main is a protected branch that forbids direct pushes, either allow the
 # github-actions bot to bypass protection, or switch the push step to a PR.
@@ -33,21 +42,19 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: daily-translate
-  cancel-in-progress: false
+env:
+  OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
+  OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
+  QWEN_MODEL: ${{ vars.QWEN_MODEL || 'qwen3.7-plus' }}
 
 jobs:
-  translate-and-deploy:
+  sync-translate-deploy:
     runs-on: ubuntu-latest
-    # Large upstream batches can spend nearly three hours translating before
-    # the static site build starts.
     timeout-minutes: 360
     steps:
-      - name: Checkout workflow ref
+      - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.ref }}
           fetch-depth: 0
 
       - name: Install Node.js
@@ -55,72 +62,60 @@ jobs:
         with:
           node-version: 22
 
-      - name: Build translator (dist is gitignored)
-        working-directory: ./translator
+      - name: Install qwen CLI
+        run: npm i -g @qwen-code/qwen-code@0.21.1
+
+      - name: Configure qwen auth type
         run: |
-          npm ci --no-audit --no-fund
-          npm run build
+          mkdir -p "$HOME/.qwen"
+          printf '%s\n' '{"security":{"auth":{"selectedType":"openai"}}}' > "$HOME/.qwen/settings.json"
 
-      - name: Install website dependencies
-        working-directory: ./website
-        run: npm ci --no-audit --no-fund
-
-      - name: Run incremental translation sync
-        working-directory: ./website
-        env:
-          OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
-          OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
-          QWEN_MODEL: qwen3.7-plus
-          # Keep each response moderate; larger docs auto-chunk from this cap.
-          QWEN_MAX_TOKENS: "32768"
-          # Total in-flight API calls = QWEN_TRANSLATION_CONCURRENCY ×
-          # QWEN_FILE_CONCURRENCY. Both are repo variables so they can be
-          # tuned in Settings → Variables without a code change; defaults
-          # below apply when unset. Tune down if the endpoint rate-limits.
-          QWEN_TRANSLATION_CONCURRENCY: ${{ vars.TRANSLATE_LANG_CONCURRENCY || '6' }}
-          QWEN_FILE_CONCURRENCY: ${{ vars.TRANSLATE_FILE_CONCURRENCY || '4' }}
-          QWEN_API_MAX_RETRIES: "6"
-          QWEN_CHUNK_CHARS: "12000"
-        run: |
-          set -o pipefail
-          node ../translator/bin/qwen-translator sync 2>&1 | tee /tmp/sync.log
-          # Fail the run if any file failed to translate, so we never commit a
-          # baseline that skips broken files (sync advances last-sync.json even
-          # on per-file failures). A failed run leaves main untouched and the
-          # next run retries from the same baseline.
-          if grep -qE '翻译完成: [0-9]+ 成功, [1-9][0-9]* 失败' /tmp/sync.log; then
-            echo "::error::Some files failed to translate; not committing."
-            exit 1
-          fi
-
-      - name: Detect changes
+      - name: Sync EN mirror and detect backlog
         id: detect
         run: |
-          if [ -n "$(git status --porcelain website/content website/last-sync.json website/translation-changelog.json)" ]; then
+          set -o pipefail
+          cd translator/orchestrator
+          node orchestrator.mjs sync-en | tee /tmp/orch-sync-en.log
+          node orchestrator.mjs detect | tee /tmp/orch-detect.log
+          if grep -qE 'copied=[1-9][0-9]*|deleted=[1-9][0-9]*' /tmp/orch-sync-en.log \
+            || grep -qE 'backlog [A-Za-z-]+: [1-9][0-9]*' /tmp/orch-detect.log; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            if [ "$GITHUB_REF_NAME" = "main" ]; then
-              echo "Changes detected — will build, commit and deploy."
-            else
-              echo "Changes detected — will build only because this run is on $GITHUB_REF_NAME."
-            fi
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No upstream doc changes today — nothing to do."
           fi
+          grep -oE 'backlog [A-Za-z-]+:' /tmp/orch-detect.log \
+            | awk '{print $2}' | tr -d ':' > /tmp/orch-langs.txt
+
+      - name: Translate, verify, advance per language
+        if: steps.detect.outputs.changed == 'true'
+        run: |
+          cd translator/orchestrator
+          while read -r lang; do
+            echo "::group::translate $lang"
+            node orchestrator.mjs translate --lang "$lang" --limit "${TRANSLATE_DAILY_LIMIT:-20}" --model "$QWEN_MODEL" || true
+            node orchestrator.mjs verify --lang "$lang" || true
+            node orchestrator.mjs advance --lang "$lang"
+            echo "::endgroup::"
+          done < /tmp/orch-langs.txt
+        env:
+          TRANSLATE_DAILY_LIMIT: ${{ vars.TRANSLATE_DAILY_LIMIT }}
 
       - name: Build website
         if: steps.detect.outputs.changed == 'true'
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
         working-directory: ./website
         env:
+          # Full multi-locale docs set is memory-heavy to statically export.
           NODE_OPTIONS: --max-old-space-size=12288
-        run: npm run build
 
       - name: Commit translations to main
         if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
         run: |
           git config user.name "qwen-docs-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add website/content website/last-sync.json website/translation-changelog.json
+          git add website/content website/last-sync.json
           git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
           git push origin HEAD:main
 

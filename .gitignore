@@ -70,5 +70,10 @@ jspm_packages/
 .claude
 .qwen
 
+# Orchestrator run artifacts (per-language manifests and agent logs)
+website/orchestrator-manifest-*.json
+website/orchestrator-agent-*.log
+website/tsconfig.tsbuildinfo
+
 # other
 skills/
