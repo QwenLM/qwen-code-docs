@@ -1,5 +1,8 @@
 # サブエージェントトレースツリー設計 (P3 フェーズ 3)
 
+> **GenAI 属性の移行:**
+> [`gen-ai-arms-field-alignment.md`](./gen-ai-arms-field-alignment.md) が、本文書における `gen_ai.provider.name=qwen-code` の使用と一時的な `gen_ai.agent.id` に取って代わる。ここで説明されている `qwen-code.subagent.*` のライフサイクル、識別、親子付け、リンクの設計は引き続き有効である。
+
 > Issue #3731 — 階層型セッショントレーシングのフェーズ 3。`qwen-code.subagent` スパンを追加することで、サブエージェント呼び出しが分離され、クエリ可能なトレース構造になり、親の `qwen-code.interaction` スパンに暗黙的に混在することがなくなります。
 >
 > フェーズ 1 (#4126)、フェーズ 1.5 (#4302)、フェーズ 2 (#4321) の上に構築されます。

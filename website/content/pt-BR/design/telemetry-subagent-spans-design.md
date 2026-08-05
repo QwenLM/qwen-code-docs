@@ -1,5 +1,12 @@
 # Design da Árvore de Trace de Subagente (P3 Fase 3)
 
+> **Migração de atributos GenAI:**
+> [`gen-ai-arms-field-alignment.md`](./gen-ai-arms-field-alignment.md)
+> substitui o uso de `gen_ai.provider.name=qwen-code` e o temporário
+> `gen_ai.agent.id` neste documento. O design de ciclo de vida, identidade,
+> parentesco e vínculo de `qwen-code.subagent.*` descrito aqui permanece
+> válido.
+
 > Issue #3731 — Fase 3 do rastreamento hierárquico de sessão. Adiciona um span `qwen-code.subagent` para que invocações de subagentes tenham uma estrutura de trace isolada e consultável, em vez de se misturarem silenciosamente sob o span pai `qwen-code.interaction`.
 >
 > Baseia-se na Fase 1 (#4126), Fase 1.5 (#4302) e Fase 2 (#4321).
