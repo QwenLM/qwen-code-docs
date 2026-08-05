@@ -48,7 +48,7 @@ manuel `/rename --auto` est une action bloquante qui remonte une erreur spécifi
 │  │  recordAssistantTurn()   │                                           │
 │  │     │                    │                                           │
 │  │     ↓                    │                                           │
-│  │  maybeTriggerAutoTitle() │── 6 gardes ──→ IIFE(autoTitleController)  │
+│  │  maybeTriggerAutoTitle() │── gardes ────→ IIFE(autoTitleController)  │
 │  │     │                    │                       │                   │
 │  │     └── reprise hydrate   │                       ↓                   │
 │  │         via              │          tryGenerateSessionTitle          │
@@ -62,7 +62,7 @@ manuel `/rename --auto` est une action bloquante qui remonte une erreur spécifi
 │  │ sessionService.ts        │         sanitizeTitle + vérifications     │
 │  │                          │                         │                 │
 │  │  getSessionTitleInfo()   │◀── re-lecture            ↓                 │
-│  │      utilise             │    inter-processus     recordCustomTitle  │
+│  │      utilise             │    inter-processus    persistCustomTitle  │
 │  │  readLastJsonString-     │    avant écriture      (…, 'auto')        │
 │  │  FieldsSync              │                                           │
 │  │  (sessionStorageUtils)   │                                           │
@@ -201,6 +201,32 @@ substitut bas orphelin en début ; `sanitizeTitle` nettoie tout substitut
 orphelin après la troncature de longueur maximale sur le chemin de sortie aussi.
 
 ## Persistance
+
+### Contrat de résultat durable
+
+`ChatRecordingService.recordCustomTitle()` renvoie `Promise<boolean>`.
+`true` signifie que l'enregistrement `custom_title` a terminé l'écriture JSONL
+ordonnée du recorder, que le titre et la source en mémoire ont été mis à jour,
+et que l'observateur de titre a été notifié. Cela ne signifie pas simplement
+accepté dans la file d'écriture. Un échec de création de fichier, un échec
+existant du recorder, un échec d'écriture mise en file plus tôt, ou le rejet
+de l'écriture du titre lui-même renvoie `false` et laisse le titre précédent
+et l'état de l'observateur inchangés. Le `flush()` canonique du recorder
+signale toujours l'échec persistant du writer.
+
+L'observateur ne s'exécute qu'après la persistance. Les exceptions de
+l'observateur sont isolées, car un titre déjà écrit ne peut pas être classé
+rétroactivement comme un renommage échoué. Le callback reçoit également l'ID
+de session capturé dans l'enregistrement persisté ; les consommateurs ne
+doivent pas lire la session mutable de Config au moment du callback. Cela
+empêche une écriture retardée d'un recorder sortant de renommer la nouvelle
+barre de prompt après que `/clear`, la reprise ou le branchement a changé de
+session.
+
+Le titrage automatique en arrière-plan utilise le même chemin de persistance
+privé mais reste best-effort. Les appels publics sont des demandes de titre
+explicites, y compris `recordCustomTitle(title, 'auto')` depuis
+`/rename --auto` et les surfaces de contrôle à distance.
 
 ### Forme de l'enregistrement
 

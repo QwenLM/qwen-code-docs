@@ -335,12 +335,57 @@ lenta de modelo rápido. O bloco `finally` da IIFE limpa
 `autoTitleController` apenas se ainda for o ativo, de modo que uma finalização
 no meio do voo não entre em corrida com um `recordAssistantTurn` concorrente.
 
-### `/rename` Manual Atinge Meio do Voo
+### Renomeação explícita chega no meio do voo
 
-Entre o `await` da IIFE completar e a chamada
-`recordCustomTitle('auto')`, o usuário poderia `/rename foo`. A IIFE
-reverifica `this.currentTitleSource === 'manual'` e aborta. A verificação
-em processo E a releitura entre processos ambas executam; manual vence em ambas as camadas.
+Toda chamada pública de `recordCustomTitle()` incrementa um contador de
+explícitos pendentes e aborta o controlador de segundo plano ativo antes de
+esperar pelo JSONL. Isso inclui `/rename --auto`, então uma renomeação
+explícita gerada pelo modelo tem a mesma prioridade que um título literal do
+usuário. A tarefa de segundo plano verifica o contador, o sinal de aborto, o
+título atual e o estado do gravador tanto após a geração quanto logo antes da
+persistência. Renomeações explícitas concorrentes são serializadas pelo
+gravador; seus resultados em memória são confirmados nessa mesma ordem. Se um
+título explícito chega depois que um título de segundo plano já foi
+enfileirado, a ordenação normal do gravador torna o título explícito o
+registro final.
+
+Enquanto uma escrita de título explícito está pendente, `finalize()` não
+reancora o título em cache anterior. Caso contrário, esse registro obsoleto
+poderia ser enfileirado atrás da renomeação e se tornar a cauda do JSONL
+depois que o novo título chegar com sucesso. A contabilidade de âncora de
+título segue a ordem lógica da fila do gravador. Registros descendentes
+enfileirados atrás de qualquer escrita de título não resolvida são contados,
+mas a reancoragem por limite é adiada até que o título final em cache seja
+conhecido, para que nem o desligamento nem o caminho de âncora de 32KB possam
+anexar um título obsoleto atrás de uma renomeação bem-sucedida.
+
+A releitura entre processos ainda protege títulos manuais escritos por outro
+processo CLI. Não é um compare-and-swap; uma renomeação externa na janela
+final entre verificação e escrita continua sendo uma corrida aceita.
+
+### Ordenação de título de branch
+
+`/branch` finaliza e faz flush do gravador de origem antes de copiá-lo. Em
+seguida, carrega o fork provisório, calcula um título de branch único,
+persiste esse título via `SessionService`, e recarrega o fork para que sua
+cauda final e cache de título incluam o registro anexado. Somente após esses
+passos terem sucesso ele troca o gravador core e a UI. Uma falha de flush da
+origem, falha de título ou falha de recarga final exclui o fork incompleto e
+deixa a sessão original ativa. `forkSession()` também remove seu alvo criado
+exclusivamente se a escrita ou o fechamento do novo JSONL falhar antes que a
+chamada possa reportar sucesso, para que o chamador não possa vazar um arquivo
+parcial durante a janela antes de marcar o fork como criado.
+
+### Fronteira do daemon
+
+As operações de título do ACP ao vivo aguardam `recordCustomTitle()` e
+portanto reportam um resultado `persisted` ou `success` verdadeiro, sem um
+segundo `flush()` que poderia atribuir uma falha de escrita posterior não
+relacionada à renomeação. O PATCH de metadados do daemon permanece
+intencionalmente otimista: ele atualiza o estado ao vivo e publica seu evento
+imediatamente, enquanto a persistência do filho é de melhor esforço e um
+resultado falso é registrado em log de debug. Atualizações de metadados HTTP
+fortemente consistentes estão fora deste design.
 
 ## Configuração
 
