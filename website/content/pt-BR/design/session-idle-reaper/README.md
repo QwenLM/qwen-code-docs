@@ -24,7 +24,7 @@ Uma vez criada, uma sessão da bridge permanece em memória (`byId: Map<string, 
 | Cenário                                                                      | Sintoma                                                                                         |
 | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | Usuário abre várias abas do navegador, as fecha sem chamar `DELETE /session` | Sessões acumulam em `byId`, cada uma mantendo um ring buffer do EventBus (~2-4 MB)              |
-| 20 sessões (`maxSessions` padrão) acumulam                                   | `SessionLimitExceededError` ao tentar `spawnOrAttach` — usuário fica bloqueado                  |
+| 32 sessões (`maxSessions` padrão) acumulam                                   | `SessionLimitExceededError` ao tentar `spawnOrAttach` — usuário fica bloqueado                  |
 | Daemon de longa duração com troca frequente de abas                          | Crescimento ilimitado de memória nos ring buffers do EventBus e estado da sessão no lado do ACP |
 | Extensão IDE reinicia / falha                                                | Sessões órfãs nunca são limpas                                                                  |
 
@@ -337,8 +337,8 @@ Isso é compatível com versões anteriores — o código SDK existente que veri
 
 ## 7. Observabilidade
 
-- **Log stderr**: `qwen serve: reapando sessão ociosa "<id>" (ociosa por Nms)` a
-  cada varredura, mantendo a convenção de prefixo `qwen serve:` existente.
+- **Log stderr**: `qwen serve: reaping idle session "<id>" (idle for Nms)` a
+  cada coleta, mantendo a convenção de prefixo `qwen serve:` existente.
 - **Evento de telemetria**: `session.close` com operação
   `qwen-code.daemon.bridge.operation: 'session.close'` (reutiliza o caminho de
   telemetria `closeSession` existente).
