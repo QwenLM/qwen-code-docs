@@ -410,7 +410,15 @@ function verifyFile(lang, f, manifest) {
   if (!fs.existsSync(enPath)) return { ok: false, problems: ["missing EN source"] };
   if (!fs.existsSync(target)) return { ok: false, problems: ["missing target"] };
   const en = fs.readFileSync(enPath, "utf8");
-  const tg = fs.readFileSync(target, "utf8");
+  let tg = fs.readFileSync(target, "utf8");
+  // Self-heal: translation agents sometimes drop the "./" on relative links
+  // (GitHub renders bare paths; webpack resolves them as modules and fails).
+  // Repair at the gate so stale on-disk files never break the build.
+  const healed = normalizeRelativeLinks(tg);
+  if (healed !== tg) {
+    fs.writeFileSync(target, healed);
+    tg = healed;
+  }
   if (tg.trim().length === 0) problems.push("empty target");
   if (fs.statSync(target).mtimeMs < manifest.createdAt)
     problems.push("target not touched this session");

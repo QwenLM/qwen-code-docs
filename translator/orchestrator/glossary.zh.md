@@ -61,3 +61,7 @@ English term → Chinese rendering. Follow existing entries; append new ones as 
 - curator → curator（不翻译）
 - work chain → work chain（不翻译）
 - work-chain owner → work chain owner（不翻译）
+- dwell → dwell（不翻译）
+- immediate prompt → immediate prompt（不翻译）
+- non-inferiority → 非劣性
+- sidecar → sidecar（不翻译）
