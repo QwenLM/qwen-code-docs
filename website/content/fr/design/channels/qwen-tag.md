@@ -1,6 +1,13 @@
 # RFC : "qwen tag" — un agent persistant, multijoueur et résident de canal pour qwen-code (DingTalk en priorité)
 
-**Statut :** Brouillon (v2)
+> **Registre de décisions historique.** La prémisse de ce brouillon d'un processus par
+> workspace / d'un démon par workspace est remplacée. Les canaux nommés gérés par
+> le démon sont désormais regroupés par workspace propriétaire avec un worker par
+> runtime propriétaire ; `--channel all` reste limité au primaire. Le token global
+> unique et l'absence d'identité par humain demeurent des limitations actuelles.
+> Voir [`../daemon-multi-workspace-hardening.md`](../daemon-multi-workspace-hardening.md).
+
+**Statut :** Brouillon historique (v2)
 **Date :** 2026-06-25
 **Auteur :** (qwen-code)
 
@@ -121,7 +128,7 @@ Les quatre axes de développement, détaillés dans la §6 :
 
 ### Non-Objectifs
 
-- **NG1 — Pas de SaaS hébergé et multi-tenant.** Un "qwen tag" est un processus agent lié à **un seul** espace de travail (`serve.ts:165-171` ; multi-espace de travail = un démon par espace de travail sur des ports séparés). Pas de plan de contrôle central.
+- **NG1 — Pas de SaaS hébergé et multi-tenant.** Un démon peut héberger plusieurs runtimes de workspace isolés, mais il n'en a pas moins un token global au processus, un limiteur de débit, un listener et un rayon de faute uniques. Il n'y a pas de plan de contrôle central ni de frontière d'autorisation par humain.
 - **NG2 — Pas d'identité par humain, de facturation ou de budgets de coûts dans cette RFC.** Le modèle d'identité du démon est un **bearer token global unique** (`auth.ts:259-266`) et une attribution au niveau `clientId` dans tout le bus d'événements et l'audit des permissions. Nous ajoutons des _marqueurs d'expéditeur dans les prompts_ (G2) mais n'introduisons **pas** de principaux authentifiés par utilisateur, de quotas par utilisateur ou de suivi des coûts. Les marqueurs d'expéditeur sont du texte de prompt à titre indicatif, pas une limite d'authentification — chaque membre du groupe partage les identifiants de l'unique espace de travail du démon, et dans une session `'thread'` partagée, il est le _même_ `clientId` de démon.
 - **NG3 — La passerelle multi-identités de la Phase 3 est hors sujet** ici, mentionnée uniquement comme indication pour l'avenir. Cette RFC couvre les Phases 0 à 2.
 - **NG4 — Feishu est secondaire, pas co-principal.** DingTalk est l'implémentation de référence et la source de tous les exemples détaillés.
