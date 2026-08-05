@@ -197,7 +197,8 @@ A resposta inicial é `202 Accepted` com um id de tarefa `forget-...`. Faça pol
       "filePath": "/path/to/memory.md"
     }
   ],
-  "touchedTopics": ["project"]
+  "touchedTopics": ["project"],
+  "touchedScopes": ["project"]
 }
 ```
 
