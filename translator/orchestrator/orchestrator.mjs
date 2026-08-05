@@ -266,6 +266,15 @@ function cmdSeed() {
   console.log(`[orch] seeded ${seeded} (file, lang) pairs as up-to-date`);
 }
 
+// 上游文档可能带未加 ./ 的相对链接(`](assets/x.png)`):GitHub 上能渲染,
+// 但 Nextra/webpack 构建会当作模块请求报错。同步 EN 镜像时统一改写为 ./ 形式。
+function normalizeRelativeLinks(text) {
+  return text.replace(
+    /\]\((?!\.|\/|#|[a-zA-Z][a-zA-Z0-9+.-]*:)([^)\s]+)(\s+"[^"]*")?\)/g,
+    (_m, target, title) => `](./${target}${title ?? ""})`
+  );
+}
+
 function cmdSyncEn() {
   const commit = ensureUpstream();
   const upstream = upstreamDocs();
@@ -274,10 +283,18 @@ function cmdSyncEn() {
   let copied = 0;
   for (const [f, hash] of upstream) {
     const dest = path.join(enDir, relInContent(f));
-    if (fs.existsSync(dest) && sha256(fs.readFileSync(dest)) === hash) continue;
-    fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(path.join(OPTS.tempDir, f), dest);
-    copied++;
+    const srcPath = path.join(OPTS.tempDir, f);
+    if (/\.(md|mdx)$/.test(f)) {
+      const normalized = normalizeRelativeLinks(fs.readFileSync(srcPath, "utf8"));
+      if (fs.existsSync(dest) && fs.readFileSync(dest, "utf8") === normalized)
+        continue;
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, normalized);
+    } else {
+      if (fs.existsSync(dest) && sha256(fs.readFileSync(dest)) === hash) continue;
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.copyFileSync(srcPath, dest);
+    }
   }
   // Deletions: recorded upstream files that are gone now.
   let deleted = 0;

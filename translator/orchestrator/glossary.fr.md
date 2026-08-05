@@ -1,0 +1,87 @@
+# Glossary (fr)
+
+English term → French rendering. Follow existing entries; append new ones as `- term → rendering` when you coin a term.
+
+- hook → hook (untranslated)
+- skill → skill (untranslated)
+- subagent → sous-agent
+- sandbox → sandbox (untranslated)
+- checkpoint → checkpoint (untranslated)
+- slash command → slash command (untranslated)
+- headless → headless (untranslated)
+- approval mode → mode d'approbation
+- daemon → démon
+- turn → tour
+- snapshot → snapshot (untranslated)
+- replay → relecture
+- replay window → fenêtre de relecture
+- live turn → tour live
+- live session → session live
+- fail closed → fail closed (refus en cas d'échec)
+- secondary runtime → runtime secondaire
+- hot removal → retrait à chaud
+- workspace → workspace (untranslated)
+- heartbeat → heartbeat (untranslated)
+- embedding host → hôte d'intégration
+- unattached session → session non attachée
+- session picker → sélecteur de session
+- memory lane → lane mémoire
+- sub-session launcher → lanceur de sous-session
+- fallback → fallback (untranslated)
+- best-effort → best-effort (untranslated)
+- opt-in → opt-in (untranslated)
+- opt-out → opt-out (untranslated)
+- fire-and-forget → fire-and-forget (untranslated)
+- worktree → worktree (untranslated)
+- lease → bail
+- tombstone → pierre tombale
+- claim → revendication
+- token bucket → token bucket (untranslated)
+- transcript → transcription
+- rewind → rewind (untranslated)
+- throttle → throttle (untranslated)
+- chunk → chunk (untranslated)
+- bridge → bridge (untranslated)
+- barrel → barrel (untranslated)
+- history gap → trou d'historique
+- trust → confiance (trusted → fiable)
+- hot reload → rechargement à chaud
+- generation guard → garde de génération
+- display name → nom d'affichage
+- observed contacts → contacts observés
+- freshness → fraîcheur
+- eager → eager (untranslated)
+- roster → roster (untranslated)
+- mid-turn → en cours de tour
+- Vision Bridge → Vision Bridge (untranslated)
+- speculation → spéculation
+- single-flight → single-flight (untranslated)
+- generation time → temps de génération
+- curator → curator (untranslated)
+- stale → obsolète
+- presenter → présentateur
+- Tool Guard → Tool Guard (untranslated)
+- guard → garde
+- triage → triage (untranslated)
+- revert → revert (untranslated)
+- flip-flop → flip-flop (untranslated)
+- knob → knob (untranslated)
+- overcommit → sur-engagement
+- admission → admission
+- chip → chip (untranslated)
+- composer → composer (untranslated)
+- fail-open → fail-open (untranslated)
+- Web Shell → Web Shell (untranslated)
+- sentinel → sentinelle
+- pending-delivery → remise en attente
+- compile cache → cache de compilation
+- review thread → fil de review
+- watermark → watermark (untranslated)
+- preheat → préchauffage (verb: préchauffer)
+- sidecar → sidecar (untranslated)
+- worker → worker (untranslated)
+- polling → polling (untranslated)
+- backoff → backoff (untranslated)
+- shimmer → shimmer (untranslated)
+- transcript screen → écran transcript (UI screen name kept in English)
+- fail loud → fail loud (échec bruyant)
