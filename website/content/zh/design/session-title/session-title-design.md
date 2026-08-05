@@ -19,7 +19,7 @@
 
 | 触发方式   | 条件                                                                                                                               | 实现                                                     |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| **自动**   | 在 `recordAssistantTurn` 触发后执行。如果已有标题、其他尝试进行中、已达上限、非交互模式、环境变量禁用或没有快速模型，则跳过。     | `ChatRecordingService.maybeTriggerAutoTitle` —— 即发即忘 |
+| **自动**   | 在 `recordAssistantTurn` 触发后执行。如果已存在标题或有挂起的显式标题、录制已失败、其他尝试进行中、已达上限、非交互模式、环境变量禁用或没有快速模型，则跳过。     | `ChatRecordingService.maybeTriggerAutoTitle` —— 即发即忘 |
 | **手动**   | 用户运行 `/rename --auto`                                                                                                          | `renameCommand.ts` 通过 `tryGenerateSessionTitle`         |
 
 两条路径最终都汇聚到同一个函数 —— `tryGenerateSessionTitle(config, signal)` —— 以确保提示词、schema、模型选择以及清理逻辑完全一致。自动触发是后台的尽力而为调用；手动 `/rename --auto` 是阻塞用户操作，失败时会显示具体原因的错误。
@@ -36,7 +36,7 @@
 │  │  recordAssistantTurn()   │                                           │
 │  │     │                    │                                           │
 │  │     ↓                    │                                           │
-│  │  maybeTriggerAutoTitle() │── 6 个守卫条件 ──→ IIFE(autoTitleController)│
+│  │  maybeTriggerAutoTitle() │── 守卫条件 ──→ IIFE(autoTitleController)│
 │  │     │                    │                       │                   │
 │  │     └── resume 时通过    │                       ↓                   │
 │  │         getSessionTitle- │          tryGenerateSessionTitle          │
@@ -49,7 +49,7 @@
 │  │ sessionService.ts        │         sanitizeTitle + sanity 检查       │
 │  │                          │                         │                 │
 │  │  getSessionTitleInfo()   │◀── 跨进程重新读取       ↓                 │
-│  │     使用                 │    写入前重新读取      recordCustomTitle  │
+│  │     使用                 │    写入前重新读取      persistCustomTitle │
 │  │  readLastJsonString-     │                         (…, 'auto')       │
 │  │  FieldsSync              │                                           │
 │  │  (sessionStorageUtils)   │                                           │
@@ -157,6 +157,24 @@ const TITLE_SCHEMA = {
 
 ## 持久化
 
+### 持久结果契约
+
+`ChatRecordingService.recordCustomTitle()` 返回 `Promise<boolean>`。
+`true` 表示 `custom_title` 记录已完成记录器的有序 JSONL 写入、内存中的标题和
+来源已更新、且标题观察者已被通知。它并不意味着仅仅被写队列接受。文件创建
+失败、记录器已存在的失败、更早排队的写入失败，或标题写入自身被拒绝，都会
+返回 `false`，并保持先前的标题和观察者状态不变。记录器的权威 `flush()` 仍会
+报告粘性的写入者失败。
+
+观察者只在持久化之后运行。观察者异常被隔离，因为已写入的标题不能被追溯地
+归类为失败的重命名。回调还会收到持久化记录中捕获的会话 ID；消费者不得在
+回调时读取可变的 Config 会话。这可以防止退出中的记录器的延迟写入在
+`/clear`、resume 或分支切换会话之后重命名新的 prompt 栏。
+
+后台自动标题使用相同的私有持久化路径，但仍然是尽力而为的。公共调用是显式
+的标题请求，包括来自 `/rename --auto` 和远程控制界面的
+`recordCustomTitle(title, 'auto')`。
+
 ### 记录结构
 
 `CustomTitleRecordPayload` 增加了一个可选的 `titleSource: 'auto' | 'manual'` 字段：
@@ -194,14 +212,16 @@ const TITLE_SCHEMA = {
 
 ### 触发守卫顺序
 
-`maybeTriggerAutoTitle` 按此确切顺序检查六个条件——每个立即短路，以便廉价条件先执行：
+`maybeTriggerAutoTitle` 按此确切顺序检查以下条件——每个条件都会短路其余检查，以便廉价条件先执行：
 
 1. `currentCustomTitle` 已设置 → 跳过。绝不覆盖手动/之前的自动标题。
-2. `autoTitleController !== undefined` → 跳过。一次只进行一次尝试。
-3. `autoTitleAttempts >= 3` → 跳过。上限限制总浪费。
-4. `!config.isInteractive()` → 跳过。无头 `qwen -p` / CI 从不在一性会话上消耗快速模型 token。
-5. `autoTitleDisabledByEnv()` → 跳过。`QWEN_DISABLE_AUTO_TITLE=1` 显式退出。
-6. `!config.getFastModel()` → 跳过。没有快速模型 → 无操作。
+2. 写入者降级 → 跳过。fail-stop 的记录器无法持久化标题，因此不要再消耗快速模型 token。
+3. 显式标题写入挂起 → 跳过。用户和远程意图即使在其 JSONL 写入落定之前也优先。
+4. `autoTitleController !== undefined` → 跳过。一次只进行一次尝试。
+5. `autoTitleAttempts >= 3` → 跳过。上限限制总浪费。
+6. `autoTitleDisabledByEnv()` → 跳过。`QWEN_DISABLE_AUTO_TITLE=1` 显式退出。
+7. `!config.isInteractive()` → 跳过。无头 `qwen -p` / CI 从不在一次性会话上消耗快速模型 token。
+8. `!config.getFastModel()` → 跳过。没有快速模型 → 无操作。
 
 ### 为什么上限是 3 而不是 1
 
