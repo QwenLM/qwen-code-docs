@@ -17,7 +17,7 @@
 
 | トリガー   | 条件                                                                                                                                                              | 実装                                                        |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| **自動**   | `recordAssistantTurn` が発火した後。既存のタイトルが設定されている、別の試行が進行中、上限に達した、非対話モード、環境変数で無効化、高速モデルがない場合はスキップ。 | `ChatRecordingService.maybeTriggerAutoTitle` — ファイア＆フォーゲット |
+| **自動**   | `recordAssistantTurn` が発火した後。既存または保留中の明示的タイトルが設定されている、記録が失敗している、別の試行が進行中、上限に達した、非対話モード、環境変数で無効化、高速モデルがない場合はスキップ。 | `ChatRecordingService.maybeTriggerAutoTitle` — ファイア＆フォーゲット |
 | **手動**   | ユーザーが`/rename --auto`を実行                                                                                                                                    | `renameCommand.ts` 経由で `tryGenerateSessionTitle`          |
 
 両方のパスは単一の関数 `tryGenerateSessionTitle(config, signal)` に集約され、プロンプト、スキーマ、モデル選択、サニタイズが同一であることを保証します。自動トリガーはベストエフォートのバックグラウンド呼び出し、手動`/rename --auto`はブロッキングなユーザーアクションで、失敗時には理由固有のエラーが表示されます。
@@ -34,7 +34,7 @@
 │  │  recordAssistantTurn()   │                                           │
 │  │     │                    │                                           │
 │  │     ↓                    │                                           │
-│  │  maybeTriggerAutoTitle() │── 6つのガード ──→ IIFE(autoTitleController)│
+│  │  maybeTriggerAutoTitle() │── ガード ─────→ IIFE(autoTitleController)  │
 │  │     │                    │                       │                   │
 │  │     └── resume hydration │                       ↓                   │
 │  │         via              │          tryGenerateSessionTitle          │

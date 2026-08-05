@@ -24,7 +24,7 @@ Il n’y a **aucun délai d’inactivité automatique** pour les sessions. Les h
 | Scénario                                                                        | Symptôme                                                                         |
 | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | L’utilisateur ouvre plusieurs onglets de navigateur, les ferme sans appeler `DELETE /session` | Les sessions s’accumulent dans `byId`, chacune occupant un anneau EventBus (~2-4 Mo)          |
-| 20 sessions (maximum `maxSessions` par défaut) s’accumulent                                  | Erreur `SessionLimitExceededError` lors d’un nouveau `spawnOrAttach` — utilisateur bloqué            |
+| 32 sessions (`maxSessions` par défaut) s’accumulent                                  | Erreur `SessionLimitExceededError` lors d’un nouveau `spawnOrAttach` — utilisateur bloqué            |
 | Daemon de longue durée avec rotation d’onglets                                                | Croissance mémoire illimitée des anneaux de rejeu EventBus et de l’état de session côté ACP |
 | Extension IDE redémarre / plante                                                | Sessions orphelines jamais nettoyées                                              |
 
