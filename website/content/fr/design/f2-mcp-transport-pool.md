@@ -1,5 +1,13 @@
 # F2 : Pool de transports MCP partagé — Conception v2.2
 
+> **Record de décision historique.** La prémisse originale `1 démon = 1 workspace`
+> est remplacée par les runtimes multi-workspaces. Le pool implémenté conserve
+> la même frontière d'isolation, mais cette frontière est désormais un seul
+> `WorkspaceRuntime` : les sessions partagent au sein d'un runtime et jamais
+> entre runtimes. Voir
+> [`daemon-multi-workspace-hardening.md`](./daemon-multi-workspace-hardening.md)
+> pour le contrat de propriété actuel.
+>
 > Cible `daemon_mode_b_main` (selon la stratégie de branchement #4175). Remplace la PR 23 de la vague 5 de #4175.
 > **Livraison mono-PR** conformément aux consignes de lotissement par cohérence fonctionnelle du mainteneur (2026-05-19).
 > Auteur : doudouOUC. Date : 2026-05-20. Révisé : 2026-05-20 (v2.2 — intégration des retours de revue).
@@ -143,7 +151,7 @@ La PR #4336 a livré F2 en 6 commits atomiques + 6 commits de correction sur env
 
 **Non-objectifs (périmètre F2)**
 
-- Pool inter-espaces de travail (1 démon = 1 espace de travail, invariant de PR #4113 maintenu)
+- Pool entre runtimes de workspace (chaque runtime possède un pool indépendant)
 - Pool inter-démons (hors périmètre — territoire d'orchestrateur multi-processus)
 - Révision du routage OAuth (F3 avec `PermissionMediator`)
 - Persistance du pool au redémarrage du démon (mémoire uniquement)
