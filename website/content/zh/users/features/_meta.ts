@@ -6,9 +6,6 @@ export default {
   arena: '智能体竞技场',
   skills: '技能',
   headless: '无头模式',
-  checkpointing: {
-    display: 'hidden',
-  },
   'approval-mode': '审批模式',
   mcp: 'MCP',
   lsp: 'LSP（语言服务器协议）',

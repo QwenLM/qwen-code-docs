@@ -6,9 +6,6 @@ export default {
   arena: 'Arène des agents',
   skills: 'Compétences',
   headless: 'Mode sans interface graphique',
-  checkpointing: {
-    display: 'hidden',
-  },
   'approval-mode': 'Mode d\'approbation',
   mcp: 'MCP',
   lsp: 'LSP (Language Server Protocol)',

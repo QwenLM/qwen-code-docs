@@ -6,9 +6,6 @@ export default {
   arena: 'エージェントアリーナ',
   skills: 'スキル',
   headless: 'ヘッドレスモード',
-  checkpointing: {
-    display: 'hidden',
-  },
   'approval-mode': '承認モード',
   mcp: 'MCP',
   lsp: 'LSP（言語サーバープロトコル）',
