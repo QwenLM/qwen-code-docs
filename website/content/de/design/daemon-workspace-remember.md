@@ -197,7 +197,8 @@ Die initiale Response ist `202 Accepted` mit einer `forget-...`-Task-ID. `GET /w
       "filePath": "/path/to/memory.md"
     }
   ],
-  "touchedTopics": ["project"]
+  "touchedTopics": ["project"],
+  "touchedScopes": ["project"]
 }
 ```
 
@@ -283,6 +284,7 @@ Workspace-Memory-Methoden zu `BridgeInterface` hinzugefügt (`packages/acp-bridg
 - `runWorkspaceMemoryDream()` — Ruft die `qwen/control/workspace/memory/dream`-Ext-Method auf und verwendet dasselbe Bridge-Timeout. Erstellt oder lädt KEINE Session.
 
 Beide Methoden rufen `ensureChannel()` auf (spawnt das ACP-Child bei Bedarf) und starten danach den Idle-Timer neu, wenn keine Sessions aktiv sind.
+
 ### 5.3 ACP-Child-Ausführung (`QwenAgent.extMethod`)
 
 In `packages/cli/src/acp-integration/acpAgent.ts` validiert und verarbeitet der Handler für

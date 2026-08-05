@@ -197,7 +197,8 @@ Daemon 的托管内存系统（自动提取、dream agent）以前需要活跃�
       "filePath": "/path/to/memory.md"
     }
   ],
-  "touchedTopics": ["project"]
+  "touchedTopics": ["project"],
+  "touchedScopes": ["project"]
 }
 ```
 
