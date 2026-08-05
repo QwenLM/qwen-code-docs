@@ -428,6 +428,7 @@ Mudanças breaking que exigem nova capability ou nova versão:
 - Alterar a semântica de `created` / `updated` / `removed` em `artifact_changed.data.change.action`.
 - Alterar o envelope shape de `GET /session/:id/artifacts`.
 - Fazer com que links de texto comuns do assistant ou edições de arquivos comuns entrem na artifact list por padrão.
+
 ## 5. Modelo de Dados
 
 ### 5.1 Tipos do Public SDK
