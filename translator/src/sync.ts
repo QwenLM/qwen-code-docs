@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import path from "path";
 import { execSync } from "child_process";
 import chalk from "chalk";
-import { DocumentTranslator } from "./translator";
+import { DocumentTranslator, TranslationBatchError } from "./translator";
 
 /**
  * 并发池：以最多 concurrency 个并行任务处理 items 数组。
@@ -125,6 +125,7 @@ interface TranslationResult {
   success: number;
   failed: number;
   files: string[];
+  failedFiles: string[];
 }
 
 interface TranslationChangelogEntry {
@@ -331,6 +332,14 @@ export class SyncManager {
         changes.files,
         translationResults
       );
+
+      const failedFiles = Object.entries(translationResults).flatMap(
+        ([language, result]) =>
+          result.failedFiles.map((file) => `${language}:${file}`)
+      );
+      if (failedFiles.length > 0) {
+        throw new TranslationBatchError(failedFiles);
+      }
 
       // 更新同步记录
       await this.updateSyncRecord(changes.latestCommit);
@@ -666,6 +675,7 @@ export class SyncManager {
         success: 0,
         failed: 0,
         files: [],
+        failedFiles: [],
       };
 
       console.log(chalk.blue(`🚀 启动 ${language} 翻译任务`));
@@ -730,6 +740,7 @@ export class SyncManager {
           const message = error instanceof Error ? error.message : String(error);
           console.error(chalk.red(`❌ ${language}: ${file} - ${message}`));
           result.failed++;
+          result.failedFiles.push(file.replace(`${this.docsPath}/`, ""));
         }
       });
 
@@ -806,7 +817,7 @@ export class SyncManager {
     for (const [language, result] of Object.entries(translationResults)) {
       entry.translatedFiles[language] = {
         success: result.files,
-        failed: [], // 可以从 result 中提取失败的文件
+        failed: result.failedFiles,
       };
       entry.stats.successCount += result.success;
       entry.stats.failedCount += result.failed;
