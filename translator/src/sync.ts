@@ -38,6 +38,41 @@ function isMetaFile(filePath: string): boolean {
 }
 
 /**
+ * 上游文档可能包含未带 ./ 前缀的相对链接/图片引用(如 `](assets/foo.png)`),
+ * 在 GitHub 上能正常渲染,但本站 Nextra/webpack 构建会将其当作模块请求
+ * 直接报错(Module not found: Can't resolve 'assets/...')。
+ * 复制源文档到 content/ 时,统一把 .md/.mdx 中这类相对链接改写为 ./ 形式。
+ * 按行跟踪代码栅栏:围栏内是示例代码,改写会悄悄偏离上游,必须跳过。
+ */
+const RELATIVE_LINK =
+  /\]\((?!\.|\/|#|[a-zA-Z][a-zA-Z0-9+.-]*:)([^)\s]+)(\s+"[^"]*")?\)/g;
+
+function normalizeMarkdownRelativeLinks(text: string): string {
+  let inFence = false;
+  let fenceMark = "";
+  return text
+    .split("\n")
+    .map((line) => {
+      const fence = line.match(/^\s*(```|~~~)/);
+      if (fence) {
+        if (!inFence) {
+          inFence = true;
+          fenceMark = fence[1];
+        } else if (fence[1] === fenceMark) {
+          inFence = false;
+        }
+        return line;
+      }
+      if (inFence) return line;
+      return line.replace(
+        RELATIVE_LINK,
+        (_m, target: string, title?: string) => `](./${target}${title ?? ""})`
+      );
+    })
+    .join("\n");
+}
+
+/**
  * Asset extensions mirrored into every target-language directory by
  * updateBaseDocs() stage 3. Language-agnostic by nature; any other file
  * class upstream ships (.json/.ts/extensionless) stays EN-only.
@@ -507,17 +542,35 @@ export class SyncManager {
     //    - 排除 excludeFromTranslation 中的路径：这些是内部文档，既不翻译到
     //      目标语言，也不作为源语言页面发布，因此不拷进 content/<sourceLanguage>。
     await fs.ensureDir(contentSourceDir);
-    await fs.copy(sourceDocsTargetDir, contentSourceDir, {
-      overwrite: true,
-      filter: (src) => {
-        if (isMetaFile(src)) return false;
+    // 箭头函数：递归拷贝需要访问 isExcludedFromTranslation（普通函数声明会丢 this）。
+    const copyNormalized = async (dir: string): Promise<void> => {
+      for (const item of await fs.readdir(dir)) {
+        const src = path.join(dir, item);
         const relativePath = path
           .relative(sourceDocsTargetDir, src)
           .replace(/\\/g, "/");
-        // 根目录（relativePath === ""）与未排除的路径正常拷贝。
-        return !relativePath || !this.isExcludedFromTranslation(relativePath);
-      },
-    });
+        // 排除 excludeFromTranslation 中的内部文档：整棵子树跳过，
+        // 与排除规则一致（这些路径不进 content/<sourceLanguage>）。
+        if (this.isExcludedFromTranslation(relativePath)) continue;
+        if ((await fs.stat(src)).isDirectory()) {
+          await copyNormalized(src);
+          continue;
+        }
+        if (isMetaFile(src)) continue;
+        const dest = path.join(contentSourceDir, relativePath);
+        await fs.ensureDir(path.dirname(dest));
+        if (/\.(md|mdx)$/.test(item)) {
+          await fs.writeFile(
+            dest,
+            normalizeMarkdownRelativeLinks(await fs.readFile(src, "utf8")),
+            "utf8"
+          );
+        } else {
+          await fs.copyFile(src, dest);
+        }
+      }
+    };
+    await copyNormalized(sourceDocsTargetDir);
     console.log(chalk.green(`✅ 源文档已复制到: ${contentSourceDir}`));
 
     // 3. Mirror language-agnostic assets (images etc.) into every
