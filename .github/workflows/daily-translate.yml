@@ -92,6 +92,11 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          # Restores ~/.npm keyed on the lockfile. Benefits both the global
+          # qwen CLI install below and the website `npm ci` on days that have
+          # changes; on quiet days the restore is cheap and `npm ci` is skipped.
+          cache: npm
+          cache-dependency-path: website/package-lock.json
 
       - name: Install qwen CLI
         run: npm i -g @qwen-code/qwen-code@0.21.1

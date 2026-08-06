@@ -22,6 +22,10 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          # Restores ~/.npm keyed on the lockfile, so `npm ci` below resolves
+          # from cache instead of re-downloading the whole tree every run.
+          cache: npm
+          cache-dependency-path: website/package-lock.json
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
