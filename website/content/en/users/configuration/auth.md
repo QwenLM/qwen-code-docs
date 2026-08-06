@@ -75,18 +75,15 @@ If you prefer to skip the interactive `/auth` flow, add the following to `~/.qwe
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus (Coding Plan)",
-          "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
-          "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
-          "envKey": "BAILIAN_CODING_PLAN_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus (Coding Plan)",
+        "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
+        "description": "qwen3-coder-plus from Alibaba Cloud Coding Plan",
+        "envKey": "BAILIAN_CODING_PLAN_API_KEY"
+      }
+    ]
   },
   "env": {
     "BAILIAN_CODING_PLAN_API_KEY": "sk-sp-xxxxxxxxx"
@@ -117,18 +114,15 @@ The simplest way to get started with API Key authentication is to put everything
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus",
-          "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-          "description": "Qwen3-Coder via Dashscope",
-          "envKey": "DASHSCOPE_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "description": "Qwen3-Coder via Dashscope",
+        "envKey": "DASHSCOPE_API_KEY"
+      }
+    ]
   },
   "env": {
     "DASHSCOPE_API_KEY": "sk-xxxxxxxxxxxxx"
@@ -183,37 +177,28 @@ Edit `~/.qwen/settings.json` (create it if it doesn't exist). You can mix multip
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "gpt-4o",
-          "name": "GPT-4o",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1"
-        }
-      ]
-    },
-    "anthropic": {
-      "protocol": "anthropic",
-      "models": [
-        {
-          "id": "claude-sonnet-4-20250514",
-          "name": "Claude Sonnet 4",
-          "envKey": "ANTHROPIC_API_KEY"
-        }
-      ]
-    },
-    "gemini": {
-      "protocol": "gemini",
-      "models": [
-        {
-          "id": "gemini-2.5-pro",
-          "name": "Gemini 2.5 Pro",
-          "envKey": "GEMINI_API_KEY"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "gpt-4o",
+        "name": "GPT-4o",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1"
+      }
+    ],
+    "anthropic": [
+      {
+        "id": "claude-sonnet-4-20250514",
+        "name": "Claude Sonnet 4",
+        "envKey": "ANTHROPIC_API_KEY"
+      }
+    ],
+    "gemini": [
+      {
+        "id": "gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro",
+        "envKey": "GEMINI_API_KEY"
+      }
+    ]
   }
 }
 ```
@@ -236,7 +221,7 @@ Edit `~/.qwen/settings.json` (create it if it doesn't exist). You can mix multip
 >
 > When using the `env` field in `settings.json`, credentials are stored in plain text. For better security, prefer `.env` files or shell `export` — see [Step 2](#step-2-set-environment-variables).
 
-For the full `modelProviders` schema and advanced options like `generationConfig`, `customHeaders`, and `extra_body`, see [Model Providers Reference](model-providers.md).
+For the full `modelProviders` schema and advanced options like `generationConfig`, `customHeaders`, and `extra_body`, see [Model Providers Reference](./model-providers.md).
 
 #### Step 2: Set environment variables
 
