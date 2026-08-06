@@ -51,6 +51,22 @@ function normalizeMarkdownRelativeLinks(text: string): string {
 }
 
 /**
+ * Asset extensions mirrored into every target-language directory by
+ * updateBaseDocs() stage 3. Language-agnostic by nature; any other file
+ * class upstream ships (.json/.ts/extensionless) stays EN-only.
+ */
+const ASSET_EXTENSIONS = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".svg",
+  ".webp",
+  ".avif",
+  ".ico",
+]);
+
+/**
  * 版本同步管理器
  * 检测原仓库文档变更，自动同步和翻译更新
  */
@@ -534,6 +550,54 @@ export class SyncManager {
     };
     await copyNormalized(sourceDocsTargetDir);
     console.log(chalk.green(`✅ 源文档已复制到: ${contentSourceDir}`));
+
+    // 3. Mirror language-agnostic assets (images etc.) into every
+    //    target-language directory. Translation only produces .md; when a
+    //    translated page references a relative asset (e.g. ./assets/*.png)
+    //    that only exists under content/<sourceLanguage>, webpack fails
+    //    with Module not found and the whole run's work is discarded
+    //    (see #183). Assets are language-agnostic, so unconditional
+    //    overwrite is safe. Mirror the stage-2 exclusions: skip _meta
+    //    files and excludeFromTranslation paths.
+    let mirroredAssets = 0;
+    for (const lang of this.targetLanguages) {
+      const targetDir = path.join(this.outputBasePath, "content", lang);
+      await fs.ensureDir(targetDir);
+      await fs.copy(sourceDocsTargetDir, targetDir, {
+        overwrite: true,
+        filter: (src) => {
+          const relativePath = path
+            .relative(sourceDocsTargetDir, src)
+            .replace(/\\/g, "/");
+          // Allow the root; never descend into excluded subtrees.
+          if (!relativePath) return true;
+          if (this.isExcludedFromTranslation(relativePath)) return false;
+          if (isMetaFile(src)) return false;
+          // fs-extra's copy only recurses into directories that pass the
+          // filter. Use lstat, not stat: stat follows symlinks and throws
+          // on broken ones, which would abort the whole run; fs-extra
+          // copies symlinks as links regardless.
+          const st = fs.lstatSync(src, { throwIfNoEntry: false });
+          if (st?.isDirectory()) return true;
+          // Mirror assets only. Never copy markdown (that would overwrite
+          // translations with English) and no other file class either:
+          // .json/.ts/extensionless files are not assets and could surface
+          // as pages inside the site build.
+          const ext = path.extname(src).toLowerCase();
+          if (!ASSET_EXTENSIONS.has(ext)) return false;
+          // Count once (first target language only) for the log line.
+          if (lang === this.targetLanguages[0]) mirroredAssets++;
+          return true;
+        },
+      });
+    }
+    if (mirroredAssets > 0) {
+      console.log(
+        chalk.green(
+          `✅ 已镜像 ${mirroredAssets} 个资源文件到 ${this.targetLanguages.length} 个目标语言目录`
+        )
+      );
+    }
   }
 
   /**
