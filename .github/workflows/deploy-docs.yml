@@ -16,12 +16,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0
+          # The build only needs the current tree; Nextra's git-based
+          # "last modified" timestamps were already degraded with full
+          # history (logged warnings), so depth 1 loses nothing that
+          # worked before.
+          fetch-depth: 1
 
       - name: Install Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
