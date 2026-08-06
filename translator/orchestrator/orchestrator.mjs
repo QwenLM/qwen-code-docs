@@ -295,6 +295,10 @@ function cmdSyncEn() {
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.copyFileSync(srcPath, dest);
     }
+    // Both branches `continue` when the target is already current, so
+    // reaching here means a write happened. The workflow's `changed` gate
+    // greps this counter, so it must reflect reality.
+    copied++;
   }
   // Deletions: recorded upstream files that are gone now.
   let deleted = 0;
@@ -344,10 +348,13 @@ async function cmdTranslate(lang) {
     console.log(`[orch] ${lang}: backlog empty, nothing to dispatch`);
     return;
   }
+  // Record the upstream hash each file carried *at dispatch time*. advance
+  // records these rather than re-reading upstream, so an upstream change
+  // during the run cannot mark a stale translation as up-to-date.
   const manifest = {
     lang,
     createdAt: Date.now(),
-    files: batch.map((b) => b.file),
+    files: batch.map((b) => ({ file: b.file, hash: b.hash })),
   };
   fs.writeFileSync(manifestPath(lang), JSON.stringify(manifest, null, 2));
   const prompt = renderPrompt(lang, batch);
@@ -447,6 +454,17 @@ function readManifest(lang) {
   }
 }
 
+/**
+ * Manifest entries normalized to { file, hash }. Manifests written before
+ * dispatch-time hashes were recorded stored bare path strings; treat those
+ * as "no recorded hash" so an older manifest still verifies and advances.
+ */
+function manifestFiles(manifest) {
+  return (manifest.files || []).map((e) =>
+    typeof e === "string" ? { file: e, hash: undefined } : e
+  );
+}
+
 function cmdVerify(lang) {
   const manifest = readManifest(lang);
   if (!manifest) {
@@ -454,8 +472,9 @@ function cmdVerify(lang) {
     process.exitCode = 1;
     return;
   }
+  const entries = manifestFiles(manifest);
   let fail = 0;
-  for (const f of manifest.files) {
+  for (const { file: f } of entries) {
     const { ok, problems } = verifyFile(lang, f, manifest);
     if (!ok) fail++;
     console.log(
@@ -464,7 +483,7 @@ function cmdVerify(lang) {
     );
   }
   console.log(
-    `[orch] ${lang}: verify ${manifest.files.length - fail}/${manifest.files.length} passed`
+    `[orch] ${lang}: verify ${entries.length - fail}/${entries.length} passed`
   );
   if (fail > 0) process.exitCode = 1;
 }
@@ -472,26 +491,53 @@ function cmdVerify(lang) {
 function cmdAdvance(lang) {
   const manifest = readManifest(lang);
   if (!manifest) {
-    console.log(`[orch] ${lang}: no manifest (run translate first)`);
-    process.exitCode = 1;
+    // No manifest means nothing was dispatched for this language this run
+    // (empty backlog is the common case). That is a no-op, not a failure:
+    // exiting non-zero here fails the workflow's serial advance loop under
+    // `bash -e`, which skips build/commit/deploy for *every* language and
+    // never self-heals once backlogs diverge.
+    console.log(`[orch] ${lang}: no manifest, nothing to advance`);
     return;
   }
   const commit = ensureUpstream();
   const upstream = upstreamDocs();
   const base = loadBaseline();
+  const entries = manifestFiles(manifest);
   let advanced = 0;
-  for (const f of manifest.files) {
+  let requeued = 0;
+  for (const { file: f, hash } of entries) {
     const { ok, problems } = verifyFile(lang, f, manifest);
     if (!ok) {
       console.log(`SKIP ${lang} ${relInContent(f)}  [${problems.join("; ")}]`);
       continue;
     }
+    const current = upstream.get(f);
+    if (current === undefined) {
+      // Deleted upstream mid-run. Recording `undefined` would be dropped by
+      // JSON.stringify while still counting as advanced; leave it alone and
+      // let the next sync-en handle the deletion.
+      console.log(`SKIP ${lang} ${relInContent(f)}  [gone from upstream]`);
+      continue;
+    }
+    if (hash !== undefined && current !== hash) {
+      // Upstream moved between dispatch and now; the agent translated the
+      // old content. Leave it in the backlog rather than marking a stale
+      // translation up-to-date against content nobody translated.
+      console.log(
+        `SKIP ${lang} ${relInContent(f)}  [upstream changed mid-run; re-queued]`
+      );
+      requeued++;
+      continue;
+    }
     const rec = (base.files[f] ??= { langs: {} });
-    (rec.langs ??= {})[lang] = upstream.get(f);
+    (rec.langs ??= {})[lang] = hash ?? current;
     advanced++;
   }
   saveBaseline(base, commit);
-  console.log(`[orch] ${lang}: advanced ${advanced}/${manifest.files.length}`);
+  console.log(
+    `[orch] ${lang}: advanced ${advanced}/${entries.length}` +
+      (requeued ? ` (${requeued} re-queued: upstream moved mid-run)` : "")
+  );
 }
 
 // ---------- main ----------

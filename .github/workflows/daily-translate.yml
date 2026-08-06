@@ -45,9 +45,16 @@ permissions:
   # issue when a scheduled run fails.
   issues: write
 
+# A manual dispatch overlapping the 20:00 UTC cron would put two runners
+# through the same translation at double API spend, and the loser of the
+# `git push origin HEAD:main` race fails non-fast-forward with its deploy
+# skipped. Serialize instead of cancelling: a cancelled run loses its
+# translation work without advancing the baseline.
+concurrency:
+  group: daily-translate
+  cancel-in-progress: false
+
 env:
-  OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
-  OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
   QWEN_MODEL: ${{ vars.QWEN_MODEL || 'qwen3.7-plus' }}
 
 jobs:
@@ -86,7 +93,10 @@ jobs:
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
-          grep -oE 'backlog [A-Za-z-]+:' /tmp/orch-detect.log \
+          # Only languages with a non-zero backlog. `detect` prints a line
+          # for every language including `backlog xx: 0`; dispatching those
+          # produces no manifest, and advance would then have nothing to do.
+          grep -oE 'backlog [A-Za-z-]+: [1-9][0-9]*' /tmp/orch-detect.log \
             | awk '{print $2}' | tr -d ':' > /tmp/orch-langs.txt
 
       - name: Translate languages in parallel, then advance baseline
@@ -109,6 +119,11 @@ jobs:
           done < /tmp/orch-langs.txt
         env:
           TRANSLATE_DAILY_LIMIT: ${{ vars.TRANSLATE_DAILY_LIMIT }}
+          # Scoped to this step: only the agent talks to the model. At job
+          # level the key was also exposed to `npm ci`/`npm run build` over
+          # the website dependency tree and to the commit/deploy steps.
+          OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
+          OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
 
       # Runs after the sync has rewritten last-sync.json, so the age reported
       # here reflects this run's outcome. Catches the failure mode a
@@ -143,7 +158,11 @@ jobs:
         run: |
           git config user.name "qwen-docs-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add website/content website/last-sync.json
+          # Glossaries are appended to by the agent (see prompts/translate.md
+          # rules 3 and 6); without them staged, every run's coined terms are
+          # discarded and term choices drift from day to day.
+          git add website/content website/last-sync.json \
+            translator/orchestrator/glossary.*.md
           git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
           git push origin HEAD:main
 
