@@ -47,6 +47,23 @@ jobs:
     # the static site build starts.
     timeout-minutes: 360
     steps:
+      # The commit and deploy steps below are gated on `main`, so a dispatch
+      # on any other ref translates for hours at real API cost and then throws
+      # the result away when the runner is torn down — while still reporting
+      # success. Run 31074093979 lost a complete 1h53m catch-up that way.
+      # Say so before the spend rather than after it (see #196).
+      - name: Warn that this run cannot commit
+        if: github.ref_name != 'main'
+        run: |
+          echo "::warning title=Translations will not be committed::This run is on '${GITHUB_REF_NAME}', not main, so the commit and deploy steps are skipped. Any translation produced is kept only as the 'translation-output' artifact on this run."
+          {
+            echo "### ⚠️ This run cannot commit"
+            echo
+            echo "Ref \`${GITHUB_REF_NAME}\` is not \`main\`, so **Commit translations to main** and **Deploy to GitHub Pages** will be skipped."
+            echo
+            echo "Any translated content is uploaded as the \`translation-output\` artifact instead — download it from this run if you need the work."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Checkout workflow ref
         uses: actions/checkout@v7
         with:
@@ -104,7 +121,7 @@ jobs:
             if [ "$GITHUB_REF_NAME" = "main" ]; then
               echo "Changes detected — will build, commit and deploy."
             else
-              echo "Changes detected — will build only because this run is on $GITHUB_REF_NAME."
+              echo "::warning::Changes detected, but this run is on $GITHUB_REF_NAME (not main) — they will not be committed. Download the 'translation-output' artifact from this run to keep them."
             fi
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -135,6 +152,21 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=12288
         run: npm run build
+
+      # Runs that cannot commit would otherwise lose their translation when the
+      # runner is torn down. Keep it downloadable so a dispatch used for
+      # testing is recoverable rather than a total loss (#196).
+      - name: Upload translations that cannot be committed
+        if: steps.detect.outputs.changed == 'true' && github.ref_name != 'main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-output
+          path: |
+            website/content
+            website/last-sync.json
+            website/translation-changelog.json
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Commit translations to main
         if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
