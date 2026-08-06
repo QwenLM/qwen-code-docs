@@ -74,13 +74,13 @@ jobs:
       - name: Warn that this run cannot commit
         if: github.ref_name != 'main'
         run: |
-          echo "::warning title=Translations will not be committed::This run is on '${GITHUB_REF_NAME}', not main, so the commit and deploy steps are skipped. Any translation produced is kept only as the 'translation-output' artifact on this run."
+          echo "::warning title=Translations will not be committed::This run is on '${GITHUB_REF_NAME}', not main, so the commit and deploy steps are skipped. If changes are detected, any translation produced is kept only as the 'translation-output' artifact on this run."
           {
             echo "### ⚠️ This run cannot commit"
             echo
             echo "Ref \`${GITHUB_REF_NAME}\` is not \`main\`, so **Commit translations to main** and **Deploy to GitHub Pages** will be skipped."
             echo
-            echo "Any translated content is uploaded as the \`translation-output\` artifact instead — download it from this run if you need the work."
+            echo "If changes are detected, translated content is uploaded as the \`translation-output\` artifact — download it from this run if you need the work."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Checkout
@@ -189,9 +189,11 @@ jobs:
 
       # Runs that cannot commit would otherwise lose their translation when the
       # runner is torn down. Keep it downloadable so a dispatch used for
-      # testing is recoverable rather than a total loss (#196).
+      # testing is recoverable rather than a total loss (#196). `always()`
+      # because a failed build must not discard the translation work too —
+      # that is the exact loss this step exists to prevent.
       - name: Upload translations that cannot be committed
-        if: steps.detect.outputs.changed == 'true' && github.ref_name != 'main'
+        if: always() && steps.detect.outputs.changed == 'true' && github.ref_name != 'main'
         uses: actions/upload-artifact@v4
         with:
           name: translation-output
