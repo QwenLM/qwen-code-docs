@@ -21,9 +21,9 @@ Nota de migração para plugins TypeScript existentes: se o construtor ou a fact
 O mesmo adaptador de plugin pode ser hospedado por qualquer um dos runtimes de canal:
 
 - `qwen channel start [name]` é o serviço standalone com suporte a ACP. Ele ainda usa `AcpBridge` e continua sendo o comando estável para executar canais fora de um daemon.
-- `qwen serve --channel <name>` e as flags `--channel` repetíveis iniciam um worker de canal experimental gerenciado por daemon. `--channel all` inicia todos os canais configurados. O worker é gerenciado pelo `qwen serve`, conecta-se a esse daemon através do SDK e passa aos adaptadores uma facade `ChannelAgentBridge` com suporte do `DaemonChannelBridge`.
+- `qwen serve --channel <name>` e as flags `--channel` repetíveis iniciam workers de canal experimentais gerenciados por daemon. Canais nomeados são agrupados pelo workspace proprietário, com um worker por runtime proprietário. `--channel all` inicia intencionalmente apenas os canais configurados do workspace primário. Os workers são gerenciados pelo `qwen serve`, conectam-se a esse daemon através do SDK e passam aos adaptadores uma facade `ChannelAgentBridge` com suporte do `DaemonChannelBridge`.
 
-Canais gerenciados por daemon herdam o ciclo de vida e o relatório de status do daemon. Eles são intencionalmente out-of-process para que falhas no adaptador ou no SDK da plataforma não derrubem o daemon. O daemon ainda está vinculado a um workspace, portanto, toda configuração de canal selecionada deve usar um `cwd` que resolva para o workspace do daemon.
+Canais gerenciados por daemon herdam o ciclo de vida e o relatório de status do daemon. Eles são intencionalmente out-of-process para que falhas no adaptador ou no SDK da plataforma não derrubem o daemon. Cada canal nomeado deve resolver para exatamente um workspace registrado e confiável; seu worker recebe o cwd canônico e o overlay de ambiente desse runtime. Um canal de usuário/sistema sem cwd é ambíguo quando vários workspaces estão registrados, enquanto um canal em um arquivo de configurações local de workspace pertence àquele workspace por padrão. `--channel all` permanece somente-primário e não pode ser combinado com seleções nomeadas.
 
 ## O Objeto Plugin
 
@@ -53,6 +53,7 @@ import type {
   ChannelAgentBridge,
   ChannelConfig,
   Envelope,
+  SessionTarget,
 } from '@qwen-code/channel-base';
 
 export class MyChannel extends ChannelBase {
@@ -105,6 +106,7 @@ O objeto de mensagem normalizado que você constrói a partir dos dados da plata
 | `senderId`       | string       | Yes      | Deve ser estável entre mensagens (usado para roteamento de sessão + controle de acesso) |
 | `senderName`     | string       | Yes      | Nome de exibição                                                               |
 | `chatId`         | string       | Yes      | Deve distinguir DMs de grupos                                           |
+| `chatName`       | string       | No       | Nome do grupo/conversa quando fornecido pela plataforma                  |
 | `text`           | string       | Yes      | Remover @menções do bot                                                        |
 | `threadId`       | string       | No       | Para `sessionScope: "thread"`                                               |
 | `messageId`      | string       | No       | ID da mensagem da plataforma — útil para correlação de respostas                      |
@@ -200,6 +202,27 @@ protected override onPromptEnd(chatId: string, sessionId: string, messageId?: st
 **Hooks de streaming** — sobrescreva `onResponseChunk(chatId, chunk, sessionId)` para exibição progressiva por chunk (ex.: editar uma mensagem no local). Sobrescreva `onResponseComplete(chatId, fullText, sessionId)` para personalizar a entrega final.
 
 **Streaming em blocos** — defina `blockStreaming: "on"` na configuração do canal. A classe base divide automaticamente as respostas em várias mensagens nos limites dos parágrafos. Nenhum código de plugin é necessário — funciona junto com `onResponseChunk`.
+
+**Entrega proativa** — sobrescreva `supportsProactiveSend()` para retornar `true` quando o adaptador puder enviar sem uma requisição de entrada ativa. O `ChannelBase` usa essa capability para loops de canal persistentes, tarefas de webhook, resultados de agente em background e entrega do daemon. A política de alvo padrão rejeita alvos com thread; sobrescreva as verificações de alvo protegidas apenas para formas de alvo que sua plataforma pode entregar com segurança:
+
+```typescript
+override supportsProactiveSend(): boolean {
+  return true;
+}
+
+protected override supportsProactiveTarget(target: SessionTarget): boolean {
+  return target.threadId === undefined;
+}
+
+protected override async pushProactive(
+  target: SessionTarget,
+  text: string,
+): Promise<void> {
+  await this.platformClient.send(target.chatId, text);
+}
+```
+
+Use `supportsProactiveDeliveryTarget()` quando a entrega genérica do daemon aceitar uma forma de alvo diferente, e `supportsProactiveWebhookTarget()` quando a entrega de webhook diferir de loops e resultados de background. Mantenha alvos não suportados rejeitados em vez de fazer fallback para outra conversa.
 
 **Mídia** — popule `envelope.attachments` com imagens/arquivos. Consulte [Anexos](#attachments) acima.
 

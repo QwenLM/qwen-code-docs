@@ -7,12 +7,13 @@ Un exemple minimal de bout en bout : démarrez un démon `qwen serve` dans un au
 Dans un terminal :
 
 ```bash
-cd your-project/
-qwen serve --port 4170
-# → qwen serve écoute sur http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
+qwen serve --port 4170 \
+  --workspace /path/to/project-a \
+  --workspace /path/to/project-b
+# → qwen serve écoute sur http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-D'après [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02, chaque démon se lie à un espace de travail au démarrage (le `cwd` actuel, ou peut être remplacé par `--workspace /path/to/dir`). Le chemin lié du démon est annoncé sur `/capabilities.workspaceCwd` afin que les clients puissent effectuer une vérification préalable et omettre `cwd` dans `POST /session`.
+Chaque valeur `--workspace` doit être un répertoire absolu. Le workspace de démarrage est le primaire et reste la valeur par défaut de compatibilité pour les requêtes qui omettent `cwd` ; `/capabilities.workspaces[]` est le catalogue que les clients doivent utiliser pour sélectionner explicitement un runtime.
 
 Dans un autre terminal :
 
@@ -38,22 +39,21 @@ const client = new DaemonClient({
 });
 
 // 1. Confirm we can reach the daemon, gate UI on its features, and
-//    read back the daemon's bound workspace (#3803 §02).
+//    select a trusted workspace from the advertised catalog.
 const caps = await client.capabilities();
 console.log('Daemon features:', caps.features);
-console.log('Daemon workspace:', caps.workspaceCwd); // canonical bound path
+const selectedWorkspace =
+  caps.workspaces?.find(
+    (workspace) => workspace.trusted && !workspace.primary,
+  ) ?? caps.workspaces?.find((workspace) => workspace.trusted);
+if (!selectedWorkspace) throw new Error('No trusted workspace is available');
+console.log('Selected workspace:', selectedWorkspace.id, selectedWorkspace.cwd);
 
-// 2. Spawn-or-attach a session. Two equally-valid shapes:
-//    (a) pass `workspaceCwd: caps.workspaceCwd` to be explicit, or
-//    (b) omit `workspaceCwd` entirely — the SDK then sends no `cwd`
-//        field and the daemon route falls back to its bound
-//        workspace. The (b) shape is concise but assumes you trust
-//        `caps.workspaceCwd` to be whatever you intended.
-//    A non-empty `workspaceCwd` that doesn't canonicalize to the
-//    daemon's bound path yields `400 workspace_mismatch` (see
-//    "Workspace mismatch" below).
+// 2. Spawn-or-attach inside that runtime. The SDK maps `workspaceCwd`
+//    to the wire-level POST /session `cwd` field. Omitting it is allowed
+//    only when the caller intentionally wants the legacy primary default.
 const session = await client.createOrAttachSession({
-  workspaceCwd: caps.workspaceCwd,
+  workspaceCwd: selectedWorkspace.cwd,
 });
 console.log(`session=${session.sessionId} attached=${session.attached}`);
 
@@ -118,12 +118,13 @@ function handleEvent(event: DaemonEvent): void {
 
 ## Aides pour les fichiers de l'espace de travail
 
-Les routes de fichiers sont limitées à l'espace de travail, pas à la session, donc elles résident directement sur `DaemonClient` :
+Les routes de fichiers sont limitées à l'espace de travail, pas à la session. Liez un assistant qualifié à l'id du workspace sélectionné afin que chaque requête reste dans ce runtime :
 
 ```ts
-const file = await client.readWorkspaceFile('src/main.ts');
+const selected = client.workspaceById(selectedWorkspace.id);
+const file = await selected.readWorkspaceFile('src/main.ts');
 
-const updated = await client.editWorkspaceFile({
+const updated = await selected.editWorkspaceFile({
   path: 'src/main.ts',
   oldText: 'timeout: 30000',
   newText: 'timeout: 60000',
@@ -177,7 +178,7 @@ case 'permission_request': {
 
 ## Collaboration en session partagée
 
-Deux clients pointant vers le **même démon** se retrouvent sur la même session. D'après #3803 §02, chaque démon est lié à UN seul espace de travail au démarrage, donc le démon lancé avec `qwen serve --workspace /work/repo` (ou `cd /work/repo && qwen serve`) est celui auquel les deux clients se connectent :
+Deux clients pointant vers le **même workspace du démon** se retrouvent sur la même session lorsqu'ils utilisent le `sessionScope: 'single'` par défaut. Pour un démon mono-workspace lancé avec `qwen serve --workspace /work/repo` (ou `cd /work/repo && qwen serve`), les deux clients se connectent à ce workspace primaire :
 
 ```ts
 // Daemon was launched as `qwen serve --workspace /work/repo` so
@@ -197,7 +198,7 @@ Les deux clients voient le même flux `session_update` / `permission_request`. C
 
 ## Incompatibilité d'espace de travail
 
-Si `workspaceCwd` ne correspond pas à l'espace de travail lié du démon, `createOrAttachSession` est rejetée avec `DaemonHttpError` portant le statut `400` et un corps structuré :
+Si `workspaceCwd` ne correspond à aucun workspace enregistré annoncé, `createOrAttachSession` est rejetée avec `DaemonHttpError` portant le statut `400` et un corps structuré. Un workspace enregistré mais non fiable retourne plutôt `403 untrusted_workspace` et ne doit pas être retenté contre le primaire :
 
 ```ts
 import { DaemonHttpError } from '@qwen-code/sdk';
@@ -213,16 +214,16 @@ try {
     };
     if (body.code === 'workspace_mismatch') {
       console.error(
-        `This daemon is bound to ${body.boundWorkspace}, ` +
-          `not ${body.requestedWorkspace}. Start a separate daemon ` +
-          `for that workspace, or route to the right one.`,
+        `Workspace ${body.requestedWorkspace} is not registered. ` +
+          `Refresh capabilities and select an advertised workspace, ` +
+          `or register it before retrying.`,
       );
     }
   }
 }
 ```
 
-Les déploiements multi-espaces de travail exécutent un démon par espace de travail sur des ports séparés — il n'y a pas de routage intra-démon selon §02. Un orchestrateur (ou le lanceur de l'utilisateur) choisit le bon démon en fonction du projet avec lequel le client souhaite communiquer.
+Ne réessayez pas contre le workspace primaire après une incompatibilité. Rafraîchissez `/capabilities`, sélectionnez l'entrée prévue dans `workspaces[]`, ou enregistrez un workspace dynamique éligible via `POST /workspaces`. N'utilisez des démons séparés que lorsque l'authentification, la limite de débit ou les limites de fault de processus doivent aussi être indépendantes.
 
 ## Authentification
 

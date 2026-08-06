@@ -14,16 +14,72 @@ Subagentes são assistentes de IA independentes que:
 
 ## Subagente Fork
 
-Além dos subagentes nomeados, o Qwen Code suporta **forking** — selecionado explicitamente com `subagent_type: "fork"` (disponível em sessões interativas). Um fork herda o contexto completo de conversa do pai e executa de forma destacada em segundo plano. Omitir `subagent_type` **não** faz fork; ele inicia o subagente de uso geral, que executa até a conclusão e retorna seu resultado inline.
+Além dos subagentes nomeados, o Qwen Code suporta **forking** — selecionado explicitamente com `subagent_type: "fork"`. Um fork herda o contexto completo de conversa do pai e normalmente executa de forma destacada em segundo plano. Forks funcionam tanto em sessões interativas quanto headless; forks headless sempre usam o caminho em segundo plano. Omitir `subagent_type` **não** faz fork; inicia o subagente de uso geral. Subagentes nomeados de nível superior executam em segundo plano por padrão e entregam seus resultados através de notificações de conclusão. Defina `run_in_background: false` quando o turno atual precisa aguardar o resultado de um subagente regular inline.
+
+## Contexto do Fork com `fork_turns`
+
+Apenas `subagent_type: "fork"` aceita `fork_turns`:
+
+- Omitir ou usar `all` herda a conversa completa do pai.
+- Uma string de inteiro positivo como `"3"` herda os três turnos de usuário reais mais recentes.
+
+Respostas de ferramentas e lembretes puros do sistema não contam como turnos de usuário. Subagentes nomeados regulares e colegas de equipe não aceitam `fork_turns`; eles mantêm seu contexto de conversa separado.
+
+## Restringindo a Execução de Ferramentas do Fork com `fork_tools`
+
+Apenas `subagent_type: "fork"` aceita `fork_tools`. O array pode conter nomes canônicos exatos de ferramentas, como `read_file` e `grep_search`, ou padrões de servidor MCP como `mcp__github`. O fork ainda recebe as mesmas declarações de ferramentas visíveis pelo modelo que um fork sem restrições, preservando seu prefixo de cache de prompt, mas seu prompt de tarefa identifica a restrição e uma chamada não correspondida por `fork_tools` é rejeitada antes do agendamento ou aprovação.
+
+- Forks nunca executam `ask_user_question`; quando entrada do usuário é necessária, eles reportam o bloqueio ao seu agente pai.
+- Omitir `fork_tools` permite todas as outras ferramentas herdadas.
+- Um array vazio rejeita toda chamada de ferramenta.
+- `*` não é aceito; omita `fork_tools` para permitir toda ferramenta herdada caso contrário executável.
+- Nomes de ferramenta não podem ter espaços em branco ao redor. Wildcards são aceitos apenas como `mcp__*` ou como um padrão de prefixo de ferramenta MCP final como `mcp__github__read_*`.
+- `mcp__*` intencionalmente permite toda ferramenta MCP enquanto ainda nega ferramentas integradas não listadas.
+- Padrões de argumento de comando shell não são suportados. Listar `run_shell_command` permite que a ferramenta prossiga através de suas verificações de permissão normais, mas não pré-aprova nenhum comando.
+
+Esta é uma restrição por invocação fornecida pelo chamador. Ela estreita as capacidades de um fork filho, mas não é um sandbox de segurança imposto por administrador porque o chamador pode omitir ou expandir a lista.
+
+## Reutilizando Restrições de Fork com `fork_profile`
+
+Um projeto pode salvar uma restrição de fork nomeada em `.qwen/fork-profiles/<name>.md` e selecioná-la com `fork_profile`. Isso é útil quando várias chamadas precisam do mesmo limite de ferramentas e orientação de tarefa:
+
+```markdown
+---
+name: ro-research
+tools:
+  - read_file
+  - grep_search
+  - glob
+  - mcp__search__*
+promptHint: |
+  Work read-only. Prefer targeted searches and cite file evidence.
+---
+```
+
+Em seguida, lance o fork com:
+
+```text
+agent(description="Research", prompt="Inspect the retry path", subagent_type="fork", fork_profile="ro-research")
+```
+
+- `fork_profile` é válido apenas para um fork e não pode ser combinado com `fork_tools` ou um colega de equipe nomeado.
+- Perfis são atualmente apenas de projeto. O nome solicitado, o nome do arquivo e o `name` do frontmatter devem corresponder exatamente. O perfil deve resolver para um arquivo regular dentro de `.qwen/fork-profiles/` e não pode exceder 64 KiB.
+- `tools` é obrigatório e segue as regras de `fork_tools`, incluindo o comportamento deny-all de array vazio.
+- `promptHint` é opcional e limitado a 200 caracteres. É escapado e enquadrado como orientação fornecida pelo projeto após a diretiva do fork e antes da restrição de ferramenta autoritativa.
+- O perfil é resolvido uma vez no lançamento. Um fork retido continua com o snapshot de ferramentas resolvido mesmo que o arquivo do projeto mude depois.
+- Perfis de fork de projeto não estão disponíveis em modo seguro e modo bare, que desabilitam personalizações locais.
+
+Como `fork_tools`, um perfil de fork é uma restrição selecionada pelo chamador em vez de um sandbox de administrador.
 
 ### Como o Fork Difere dos Subagentes Nomeados
 
-|               | Subagente Nomeado                   | Subagente Fork                                       |
-| ------------- | ----------------------------------- | ---------------------------------------------------- |
-| Contexto      | Começa do zero, sem histórico do pai | Herda o histórico completo de conversa do pai        |
-| Prompt de sistema | Usa seu próprio prompt configurado  | Usa o prompt de sistema exato do pai (para compartilhamento de cache) |
-| Execução      | Bloqueia o pai até terminar         | Executa em segundo plano, o pai continua imediatamente |
-| Caso de uso   | Tarefas especializadas (testes, docs) | Tarefas paralelas que precisam do contexto atual      |
+|               | Subagente Nomeado                                                 | Subagente Fork                                                                                                                                                                                        |
+| ------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contexto      | Começa do zero, sem histórico de conversa do pai                  | Herda todo o histórico do pai por padrão; `fork_turns` pode selecionar uma janela recente limitada                                                                                                    |
+| Prompt de sistema | Usa seu próprio prompt configurado                             | Usa o prompt de sistema exato do pai (para compartilhamento de cache)                                                                                                                                 |
+| Ferramentas   | Conjunto de declarações configurado sem ferramentas de pergunta interativa | Mantém o conjunto de declarações derivado do pai para cache; a execução sempre rejeita `ask_user_question`, e `fork_tools` ou `fork_profile` podem estreitá-lo independentemente                        |
+| Execução      | Segundo plano por padrão; suporta opt-out explícito de primeiro plano | Sempre destacado; o pai continua imediatamente                                                                                                                                                        |
+| Caso de uso   | Tarefas especializadas (testes, docs)                             | Tarefas paralelas que precisam do contexto atual                                                                                                                                                      |
 
 ### Quando o Fork é Usado
 
@@ -37,20 +93,19 @@ A IA usa fork automaticamente quando precisa:
 
 Todos os forks compartilham o prefixo de requisição da API exato do pai (prompt de sistema, ferramentas, histórico de conversa), permitindo hits de cache de prompt do DashScope. Quando 3 forks rodam em paralelo, o prefixo compartilhado é armazenado em cache uma vez e reutilizado — economizando 80%+ de custos de token em comparação com subagentes independentes.
 
-### Prevenção de Fork Recursivo
+### Prevenção de Delegação Recursiva
 
-Filhos de fork não podem criar novos forks. Isso é aplicado em tempo de execução — se um fork tentar gerar outro fork, ele recebe um erro instruindo-o a executar tarefas diretamente.
+Filhos de fork não podem criar nenhum subagente adicional. Isso é aplicado em tempo de execução — se um fork chamar a ferramenta Agent, ele recebe um erro instruindo-o a executar tarefas diretamente.
 
-### Limitações Atuais
+### Limitação Atual
 
-- **Sem retorno de resultado**: Os resultados do fork são refletidos na exibição de progresso da UI, mas não são automaticamente realimentados na conversa principal. A IA pai vê uma mensagem placeholder e não pode agir com base na saída do fork.
-- **Sem isolamento de worktree**: Os forks compartilham o diretório de trabalho do pai. Modificações concorrentes em arquivos de múltiplos forks podem entrar em conflito.
+- **Sem isolamento de worktree**: Forks compartilham o diretório de trabalho do pai. Modificações concorrentes em arquivos de múltiplos forks podem entrar em conflito.
 
 ## Principais Benefícios
 
 - **Especialização de Tarefas**: Crie agentes otimizados para fluxos de trabalho específicos (testes, documentação, refatoração, etc.)
 - **Isolamento de Contexto**: Mantenha trabalhos especializados separados da sua conversa principal
-- **Herança de Contexto**: Subagentes fork herdam a conversa completa para tarefas paralelas que exigem contexto
+- **Herança de Contexto**: Subagentes fork herdam a conversa completa por padrão e podem selecionar um número limitado de turnos recentes do pai
 - **Compartilhamento de Cache de Prompt**: Subagentes fork compartilham o prefixo de cache do pai, reduzindo custos de token
 - **Reutilização**: Salve e reutilize configurações de agentes entre projetos e sessões
 - **Acesso Controlado**: Limite quais ferramentas cada agente pode usar para segurança e foco
@@ -59,9 +114,28 @@ Filhos de fork não podem criar novos forks. Isso é aplicado em tempo de execu�
 ## Como os Subagentes Funcionam
 
 1. **Configuração**: Você cria configurações de Subagentes que definem seu comportamento, ferramentas e prompts de sistema
-2. **Delegação**: A IA principal pode delegar tarefas automaticamente para Subagentes apropriados — ou fazer fork de si mesma (`subagent_type: "fork"`) quando quiser herdar o contexto completo da conversa e descartar a saída intermediária
+2. **Delegação**: A IA principal pode delegar tarefas automaticamente para Subagentes apropriados — ou fazer fork de si mesma (`subagent_type: "fork"`) quando precisar do contexto da conversa pai
 3. **Execução**: Subagentes trabalham independentemente, usando suas ferramentas configuradas para completar tarefas
-4. **Resultados**: Eles retornam resultados e sumários de execução de volta para a conversa principal
+4. **Resultados**: Execuções em segundo plano enviam uma notificação de conclusão contendo o resultado para a conversa principal; subagentes regulares em primeiro plano retornam resultados inline
+5. **Continuação**: A IA principal pode usar `list_agents` para encontrar agentes em segundo plano e `send_message` para continuar um agente em execução, pausado ou concluído
+
+## Continuação de Agente em Segundo Plano
+
+Subagentes regulares de nível superior executam em segundo plano por padrão. Após um agente em segundo plano terminar, o Qwen Code mantém estado suficiente para continuar trabalho relacionado sem lançar um agente duplicado:
+
+- `list_agents` retorna os agentes em segundo plano endereçáveis na sessão atual, incluindo agentes compatíveis restaurados com uma sessão retomada. Cada entrada inclui um `task_id`, status e se pode receber uma mensagem.
+- `send_message` com esse `task_id` enfileira uma mensagem para um agente em execução, retoma um agente pausado ou continua um agente concluído. Agentes continuados reutilizam seu runtime residente quando disponível e caso contrário revivem de sua transcrição retida.
+- Um agente continuado reporta seu próximo resultado através de outra notificação de conclusão.
+
+Quando uma sessão é restaurada, agentes em segundo plano compatíveis são adicionados de volta ao roster da sessão. Uma tarefa pode estar visível mas não continuável quando seu estado retido está ausente ou incompatível; `list_agents` reporta o motivo nesse caso.
+
+Use continuação para trabalho de acompanhamento relacionado. Lance um novo agente quando a tarefa não for relacionada ou o agente anterior não puder ser retomado.
+
+## Diretório de Trabalho do Agente
+
+Para um subagente regular nomeado, `working_dir` fixa o agente em um git worktree existente no repositório atual. Caminhos relativos resolvem a partir do diretório atual, e o worktree já deve estar registrado no git e viver dentro do repositório.
+
+Um lançamento com `working_dir` executa em primeiro plano porque o Qwen Code não possui o ciclo de vida desse worktree. Não pode ser combinado com `subagent_type: "fork"` ou execução em segundo plano. Se tanto `working_dir` quanto `isolation: "worktree"` forem fornecidos, o Qwen Code reutiliza o worktree do chamador em vez de criar outro.
 
 ## Primeiros Passos
 
@@ -193,6 +267,46 @@ modelo sob outro tipo de autenticação configurado, como `openai:deepseek-v4-fl
 Quando o seletor resolve para outro tipo de autenticação, o Qwen Code cria um
 provedor de runtime dedicado para aquela requisição do subagente e envia ao provedor apenas o
 ID do modelo puro.
+
+O agente integrado Explore herda o modelo da sessão principal por padrão. Para
+selecionar um modelo diferente apenas para esse agente integrado, configure
+`agents.builtin.exploreModel` no `settings.json` e reinicie o Qwen Code:
+
+Versões anteriores usavam `fastModel` para o Explore por padrão. Para preservar esse
+comportamento, defina `agents.builtin.exploreModel` como `fast`.
+
+```json
+{
+  "agents": {
+    "builtin": {
+      "exploreModel": "fast"
+    }
+  }
+}
+```
+
+Esta configuração aceita os mesmos seletores descritos acima. É aplicada apenas
+quando o Qwen Code resolve a definição integrada do Explore; um agente de sessão, projeto,
+usuário ou extensão chamado Explore mantém sua própria configuração `model`.
+
+Para permitir que o modelo selecione entre grades definidas pelo usuário sem expor IDs de modelo concretos,
+configure `agents.modelGrades` e opcionalmente restrinja-os com `agents.allowedGrades`:
+
+```json
+{
+  "agents": {
+    "modelGrades": {
+      "small": "fast",
+      "high": "qwen-max"
+    },
+    "allowedGrades": ["small", "high"]
+  }
+}
+```
+
+A ferramenta Agent então aceita `model: "small"` ou `model: "high"` para subagentes
+regulares. Seleções de grade desconhecidas, não permitidas, de fork e de colega de equipe nomeado são
+rejeitadas. O modelo explícito de um agente personalizado ainda tem precedência sobre uma grade.
 
 #### Modo de Permissão
 

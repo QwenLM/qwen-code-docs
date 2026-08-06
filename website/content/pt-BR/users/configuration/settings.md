@@ -862,7 +862,7 @@ Para nos ajudar a melhorar o Qwen Code, coletamos estatísticas de uso anonimiza
 
 **O que coletamos:**
 
-- **Chamadas de Ferramentas:** Registramos os nomes das ferramentas que são chamadas, se elas têm sucesso ou falham, e quanto tempo levam para executar. Não coletamos os argumentos passados para as ferramentas nem nenhum dado retornado por elas.
+- **Chamadas de Ferramentas:** Registramos os nomes e categorias (nativas ou MCP) das ferramentas que são chamadas, seu status final (sucesso, erro ou cancelada) e quanto tempo levam para executar. Não coletamos os argumentos passados para as ferramentas nem nenhum dado retornado por elas.
 - **Requisições de API:** Registramos o modelo usado para cada requisição, a duração da requisição e se ela foi bem-sucedida. Não coletamos o conteúdo dos prompts ou das respostas.
 - **Informações da Sessão:** Coletamos informações sobre a configuração da CLI, como as ferramentas habilitadas e o modo de aprovação.
 
@@ -883,6 +883,8 @@ Você pode desativar a coleta de estatísticas de uso a qualquer momento definin
   }
 }
 ```
+
+Como alternativa, defina `QWEN_USAGE_STATISTICS_ENABLED=false` (ou `0`) no ambiente. A variável de ambiente tem precedência sobre a configuração. Reinicie o Qwen Code após alterar qualquer um dos valores.
 
 > [!note]
 >

@@ -38,6 +38,26 @@ Skill を明示的に呼び出したい場合は、Skill の名前を使用し�
 
 Skill は、`SKILL.md` ファイルを含むディレクトリとして保存されます。
 
+### `/learn` でプロジェクト Skill を生成する
+
+`/learn` を使用して、既存の知識源を再利用可能なプロジェクト Skill に蒸留します。
+
+```text
+/learn https://docs.example.com/api
+/learn ~/projects/acme-sdk
+/learn Our deploy process: run migrate, deploy the service, then check health
+```
+
+このコマンドは通常のエージェントターンとして実行され、`.qwen/skills/learned-skill-<name>/SKILL.md` に結果を作成します。フロントマターには `source: learned` が含まれます。生成された指示を使用または共有する前にレビューしてください。
+
+`/learn` はローカルまたは直接リンクの `.mp4`、`.webm`、`.mov`、`.m4v` ビデオも受け付けます。パスや URL の後にテキストを追加して、生成される Skill をチュートリアルの特定の部分にフォーカスできます。
+
+```text
+/learn ./tutorial.mp4 focus on the deployment workflow
+```
+
+ビデオ学習には、OpenAI 互換プロバイダー上のビデオ対応モデルが必要です。YouTube ページ URL は直接ビデオ入力ではありません。ビデオをワークスペースにダウンロードし、そのローカルパスを渡してください。
+
 ### パーソナル Skill
 
 パーソナル Skill はすべてのプロジェクトで利用可能です。`~/.qwen/skills/` に保存します。
@@ -67,6 +87,20 @@ mkdir -p .qwen/skills/my-skill-name
 - 共有ユーティリティとスクリプト
 
 プロジェクト Skill は git にチェックインでき、チームメンバーが自動的に利用できるようになります。
+
+### 自動生成されたプロジェクト Skill のメンテナンス
+
+Qwen Code は、新しい Auto Skill 生成が無効になっている間も、生成されたプロジェクト Skill の正常な使用をローカルで追跡します。これにより、メンテナンスを再度有効にしたときに、最近使用された Skill を非アクティブなものと誤認することはありません。**Auto Skill** が有効な場合、非アクティブな生成 Skill を定期的にアクティブライブラリから移動します。`SKILL.md` のフロントマターに `source: auto-skill` を含む `.qwen/skills/auto-skill-*` という名前のディレクトリのみが管理対象です。パーソナル、拡張機能、バンドル、および手動で作成した Skill は選択されません。
+
+- 正常な使用または `SKILL.md` の編集から 30 日経過すると、auto-skill は古いものとしてマークされます。
+- 90 日経過すると、完全なディレクトリが `.qwen/archived-skills/` に移動されます。完全に削除されることはありません。
+- 自動メンテナンスは、信頼されたワークスペースで最大 7 日に 1 回実行されます。新しく観測された auto-skill は、メンテナンスが開始される前に十分な猶予期間を受け取ります。
+- ピン留めされた auto-skill は、ピン留めが解除されるまで、自動的な古いものとしてのマークおよびアーカイブ遷移から除外されます。
+- アーカイブされたディレクトリ名は予約されたままです。既存のアーカイブ宛先は、その衝突のみをスキップし、他の Skill のメンテナンスを停止することはありません。
+
+`/curator` を使用して、アクティブ、古い、アーカイブ済み、およびピン留めされた auto-skill を確認できます。`/curator run --dry-run` でメンテナンスパスをプレビューし、`/curator run` で即座に適用し、`/curator pin <directory>` または `/curator unpin <directory>` で Skill ごとのメンテナンスを制御し、`/curator restore <directory>` でアーカイブされた auto-skill をアクティブライブラリに戻します。
+
+ステータスとドライランプレビューは、セーフモードおよび信頼されていないワークスペースで利用可能です。メンテナンスの適用、ピンの変更、およびアーカイブされた auto-skill の復元には、セーフモード外の信頼されたワークスペースが必要です。
 
 ## SKILL.md の作成
 
@@ -183,6 +217,7 @@ Qwen Code は以下の場所から Skill を検出します。
 - パーソナル Skill: `~/.qwen/skills/`
 - プロジェクト Skill: `.qwen/skills/`
 - 拡張機能 Skill: インストールされた拡張機能によって提供される Skill
+- バンドル Skill: Qwen Code に同梱される Skill
 
 ### 拡張機能 Skill
 
@@ -310,7 +345,7 @@ code ~/.qwen/skills/my-skill/SKILL.md
 code .qwen/skills/my-skill/SKILL.md
 ```
 
-変更は次回 Qwen Code を起動したときに有効になります。Qwen Code がすでに実行中の場合は、再起動して更新をロードしてください。
+通常のセッション中、Qwen Code はパーソナルおよびプロジェクトの Skill ディレクトリを監視しています。Skill の追加、編集、削除を行うと、短い遅延の後に Skill リストと呼出し状態が自動的に更新されます。ベアモードではこれらのウォッチャーが起動しないため、そのモードで Skill の変更をロードするには Qwen Code を再起動してください。
 
 ## Skill の削除
 

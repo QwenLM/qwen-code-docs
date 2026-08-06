@@ -121,7 +121,9 @@ flowchart LR
 
 `code: 'token_required'` 的形式与 `bearerAuth` 的纯 `Unauthorized` 不同，因此 SDK 客户端可以渲染"配置 --token / --require-auth"提示，而不是通用的 401。
 
-**Wave 4+ 严格路由**：`/workspace/memory`、`/workspace/agents/*`、`/workspace/agents/generate`、`/file/write`、`/file/edit`、`/workspace/tools/:name/enable`、`/workspace/mcp/:server/restart`、`/workspace/mcp/:server/{enable,disable,authenticate,clear-auth}`、`/workspace/mcp/servers`（POST/DELETE）、`/workspace/auth/device-flow`、`/workspace/init`、`/session/:id/approval-mode`。
+**Wave 4+ 严格路由**：`/workspace/memory`、`/workspace/agents/*`、`/workspace/agents/generate`、`/file/write`、`/file/edit`、`/workspace/tools/:name/enable`、`/workspace/mcp/:server/restart`、`/workspace/mcp/:server/{enable,disable,authenticate,clear-auth}`、`/workspace/mcp/servers`（POST/DELETE）、`/workspace/auth/device-flow`、`/workspace/init`、`/session/:id/approval-mode`、`/session/:id/rewind` 以及 `/session/:id/shell`。
+
+即使配置了 ACP 传输，Rewind 在 TypeScript SDK 中仍然保持纯 REST。这保留了严格的变更门控和 bearer/客户端身份头；ACP 路由表故意不包含 rewind 映射。在 rewind 或 shell 到达次级运行时 bridge 之前，owner 路由还会重新检查工作区信任。重复的实时会话 ID 会 fail closed 为 `ambiguous_session_owner`，而不是回退到主运行时。
 
 ### `/health` 豁免
 

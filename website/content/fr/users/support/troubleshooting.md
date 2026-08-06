@@ -59,6 +59,7 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
   - R : Démarrez Qwen Code avec le flag `--safe-mode` pour désactiver toutes les personnalisations — fichiers de contexte, hooks, extensions, skills, serveurs MCP, subagents personnalisés (seuls les subagents intégrés se chargent), règles de permission, remplacements du mode d'approbation provenant des paramètres, fonctionnalités de mémoire et paramètres de sandbox — pour la session. Remarque : les flags CLI `--yolo` et `--approval-mode` prennent toujours effet en mode sans échec. Si le problème disparaît en mode sans échec, réactivez vos personnalisations une par une pour trouver le coupable.
     - Exemple : `qwen --safe-mode`
     - Alternative : définissez la variable d'environnement `QWEN_CODE_SAFE_MODE=true` si la CLI ne peut pas accepter de flags.
+    - Remarque : « serveurs MCP » désigne ici les serveurs configurés dans `settings.json` / `.mcp.json` du projet — un état local et ambiant que le mode sans échec est conçu pour isoler. Les serveurs MCP que vous fournissez explicitement pour l'invocation en cours (le `mcpServers` de `session/new` d'un client ACP d'embedding, ou `--mcp-config`) ne sont pas un état local/ambiant et restent honorés en mode sans échec.
 
 ## Messages d'erreur courants et solutions
 
@@ -99,7 +100,12 @@ Ce guide fournit des solutions aux problèmes courants et des conseils de débog
 - **Le défilement du trackpad dans tmux modifie l'historique des invites au lieu de faire défiler la conversation**
   - **Problème :** Dans une session tmux, le défilement avec le trackpad ou la molette peut faire défiler les invites précédentes, de la même manière que d'appuyer sur `Up Arrow` ou `Down Arrow`.
   - **Cause :** tmux peut traduire les gestes de la molette en simples séquences de touches fléchées. Ces séquences sont indiscernables des véritables pressions sur les touches fléchées au moment où qwen-code les reçoit.
-  - **Solution :** Activez `ui.useTerminalBuffer` ; utilisez ensuite `Shift+Up` / `Shift+Down`, ou la molette de la souris lorsque tmux transmet les événements de la molette à l'application. Si vous préférez le scrollback de l'hôte, ajustez vos bindings de souris tmux pour les événements de la molette.
+  - **Solution :** Si le mode lecteur d'écran est désactivé, assurez-vous que `ui.useTerminalBuffer` est activé ; utilisez ensuite `Shift+Up` / `Shift+Down`, ou la molette de la souris lorsque tmux transmet les événements de la molette à l'application (nécessite `ui.mouseTracking`). Si vous préférez le scrollback de l'hôte, ajustez vos bindings de souris tmux pour les événements de la molette.
+
+- **Le clic droit ne fait rien, les liens ne s'ouvrent pas, ou le texte ne peut pas être sélectionné dans le terminal**
+  - **Problème :** Les menus contextuels natifs au clic droit, les clics sur les liens OSC 8 (Ctrl+Clic ou simple clic sur des URL) et la sélection de texte native du terminal cessent de fonctionner lorsque Qwen Code est en cours d'exécution.
+  - **Cause :** Lorsque `ui.mouseTracking` est activé (par défaut), Qwen Code capture tous les événements de souris via le suivi SGR pour alimenter la sélection de texte dans l'application, le clic pour positionner le curseur, le survol de ligne et le défilement de la vue. Le terminal transmet tous les événements de souris à l'application au lieu de les gérer nativement.
+  - **Solution :** Définissez `"ui.mouseTracking": false` dans votre `settings.json` pour restaurer les menus natifs au clic droit et les liens URL cliquables. Cela désactive toute interaction souris dans l'application. Dans l'historique virtualisé (`ui.useTerminalBuffer: true`, la valeur par défaut), la molette ne fera plus défiler la transcription — utilisez `Shift+↑/↓`, `PgUp/PgDn`, ou `Ctrl+Home/End` à la place. Pour restaurer également le scrollback natif du terminal, définissez `"ui.useTerminalBuffer": false`. Nécessite un redémarrage.
 
 ## IDE Companion ne se connecte pas
 

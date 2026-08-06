@@ -7,7 +7,7 @@
 ## Responsabilidades
 
 - Analisar e validar `ServeOptions`: endereço de escuta, autenticação, workspace, limites de sessão/conexão, orçamento/pool de MCP, CORS, timeouts de inatividade de prompt/SSE/sessão, limite de taxa (rate limit) e toggles relacionados.
-- **Canonicalizar** o workspace vinculado exatamente uma vez. A mesma forma canônica é compartilhada por `/capabilities`, o fallback de `POST /session` e a bridge.
+- **Canonicalizar** o workspace primário exatamente uma vez e canonicalizar cada `--workspace` repetido antes de registrar os runtimes de sessão. A forma canônica primária é compartilhada por `/capabilities.workspaceCwd`, o fallback de `POST /session` e a bridge primária.
 - Rejeitar configurações de inicialização inseguras ou inválidas: bind fora do loopback sem token, `--require-auth` sem token, `--allow-origin '*'` sem token, `mcpBudgetMode='enforce'` sem um `mcpClientBudget` positivo, um `--workspace` inexistente ou que não seja um diretório, e valores inválidos de timeout ou rate limit.
 - Construir a factory `WorkspaceFileSystem`, o publisher de auditoria de permissões, o `DaemonStatusProvider` e a `acp-bridge`.
 - Construir o app Express, conectar os middlewares (`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> access log -> `bearerAuth` -> rate limit -> JSON parser -> telemetry -> `mutationGate` por rota) e montar as rotas HTTP de sessão, CRUD de workspace, arquivo, autenticação de device-flow, votação de permissão e ACP.
@@ -20,7 +20,7 @@
 
 **Factory do app**: `createServeApp(opts, getPort, deps)` em `packages/cli/src/serve/server.ts`. Constrói o `Application` do Express. Embedders diretos e testes o chamam sem o wrapper de bootstrap.
 
-**Registro de capacidades**: `SERVE_CAPABILITY_REGISTRY` em `packages/cli/src/serve/capabilities.ts`. Cada tag tem uma versão `since` e `modes` opcionais. Dez tags condicionais (`require_auth`, `mcp_workspace_pool`, `mcp_pool_restart`, `allow_origin`, `prompt_absolute_deadline`, `writer_idle_timeout`, `workspace_settings`, `session_shell_command`, `rate_limit`, `workspace_reload`) são omitidas quando seu respectivo toggle está desativado. Consulte [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).
+**Registro de capacidades**: `SERVE_CAPABILITY_REGISTRY` em `packages/cli/src/serve/capabilities.ts`. Cada tag tem uma versão `since` e `modes` opcionais. Tags condicionais são omitidas quando seu predicado de deployment ou runtime é falso; o registro e o mapa de predicados são a fonte da verdade. Consulte [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).
 
 **Middleware** (`packages/cli/src/serve/auth.ts` e `server.ts`):
 
@@ -32,7 +32,7 @@
 | `bearerAuth(token)`                          | Comparação de bearer em tempo constante usando SHA-256 mais `timingSafeEqual`.                                             | Passthrough aberto quando nenhum token está configurado (padrão de dev no loopback). O esquema `Bearer` não diferencia maiúsculas de minúsculas. |
 | Rate-limit middleware                        | Token bucket opcional por tier para rotas de prompt, mutação e leitura.                                                    | Registrado após o `bearerAuth` e antes da análise do JSON; retorna 429 antes da análise quando um bucket é esgotado. |
 | `express.json({ limit: '10mb' })`            | Análise do corpo (body) JSON.                                                                                              | Erros de análise retornam 400.                                                                                    |
-| `daemonTelemetryMiddleware`                  | Envolve cada requisição HTTP em um span do OpenTelemetry através do `withDaemonRequestSpan`.                               | Os atributos incluem rota, sessionId, clientId e código de status.                                                |
+| `daemonTelemetryMiddleware`                  | Envolve as requisições classificadas da API do daemon que chegam até aqui em um span do OpenTelemetry através do `withDaemonRequestSpan`. | Os atributos incluem rota canônica, hash do workspace resolvido, sessionId, clientId e código de status. Rejeições anteriores de autenticação, rate limit e body-parser estão fora desse limite de span. |
 | `createMutationGate` (por rota)              | Gate de opt-in no nível da rota para rotas de mutação que exigem token mesmo no loopback.                                  | Retorna `401 { code: 'token_required' }`. Não é um `app.use` global; as rotas chamam `mutate({ strict: true })` conforme necessário. |
 
 **Subsistemas**:
@@ -121,11 +121,11 @@ Chamar `createServeApp` diretamente retorna apenas um `Application`; o embedder 
 | Env             | `QWEN_SERVE_DEBUG=1`                                                                            | Logs detalhados no stderr. Consulte [`19-observability.md`](./19-observability.md).                   |
 | Flags           | `--hostname`, `--port`                                                                          | Vinculação de escuta.                                                                                 |
 | Flags           | `--token`, `--require-auth`, `--enable-session-shell`                                           | Token bearer, reforço de autenticação no loopback e switch explícito de execução de shell.            |
-| Flag            | `--workspace`                                                                                   | Substitui `process.cwd()`.                                                                            |
+| Flag            | `--workspace`                                                                                   | Substitui `process.cwd()`; repita para registrar runtimes de workspace isolados adicionais.            |
 | Flags           | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size` | Limites da Bridge / Express.                                                                          |
 | Flags           | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                                 | Encaminhado para o filho ACP.                                                                         |
 | Flags           | `--allow-origin`, `--allow-private-auth-base-url`                                               | Allowlist de CORS do navegador e switch de instalação do provedor de autenticação localhost/privado.  |
-| Flags           | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`                 | Controle do ciclo de vida de inatividade de prompt, writer SSE e filho ACP.                           |
+| Flags           | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`, `--initialize-timeout-ms` | Controle do ciclo de vida de inatividade de prompt, writer SSE e filho ACP, e timeout de requisição do filho ACP. |
 | Flags           | `--session-reap-interval-ms`, `--session-idle-timeout-ms`                                       | Controle de reaping de sessões desconectadas.                                                         |
 | Flags           | `--rate-limit*`                                                                                 | Limite de taxa HTTP por tier.                                                                         |
 | `settings.json` | `policy.permissionStrategy`, `policy.consensusQuorum`                                           | Política e quórum do `MultiClientPermissionMediator`.                                                 |

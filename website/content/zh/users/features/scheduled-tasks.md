@@ -6,11 +6,13 @@
 
 任务的作用域限定在当前会话：它们存在于当前的 Qwen Code 进程中，退出时即被销毁。不会向磁盘写入任何内容。
 
+消息通道使用独立的持久调度器，以便在当前轮次之后将结果推送回发起聊天的通道。请参阅[定时通道循环](./channels/overview#scheduled-channel-loops)了解通道命令、持久化行为和投递约束。
+
 > **提示：** 定时任务默认启用。要禁用它们，请在[设置](../configuration/settings.md)中设置 `experimental.cron: false`，或在环境变量中设置 `QWEN_CODE_DISABLE_CRON=1`。
 
 ## 使用 /loop 安排循环 prompt
 
-`/loop` [内置 skill](skills.md) 是安排循环 prompt 的最快方法。传入一个可选的间隔和 prompt，Qwen Code 就会设置一个 cron 任务，在会话保持打开期间于后台触发。
+`/loop` [内置 skill](./skills.md) 是安排循环 prompt 的最快方法。传入一个可选的间隔和 prompt，Qwen Code 就会设置一个 cron 任务，在会话保持打开期间于后台触发。
 
 ```text
 /loop 5m check if the deployment finished and tell me what happened

@@ -37,6 +37,8 @@ Cada ferramenta MCP descoberta é encapsulada em uma instância `DiscoveredMCPTo
 - **Processa respostas** tanto para o contexto do LLM quanto para exibição ao usuário
 - **Mantém o estado da conexão** e lida com timeouts
 
+Após uma perda de conexão, a invocação atual é repetida apenas para um servidor confiável em um workspace confiável quando a ferramenta declara explicitamente `idempotentHint: true`, ou declara `readOnlyHint: true` sem um `destructiveHint: true` ou `idempotentHint: false` conflitante. Anotações ausentes ou conflitantes, e anotações de um servidor ou workspace não confiável, são tratadas como inseguras porque o servidor pode ter completado um efeito colateral antes da resposta ser perdida. Autores de ferramentas devem publicar anotações MCP precisas; administradores devem verificá-las antes de habilitar a confiança do servidor.
+
 ### Mecanismos de Transporte
 
 A CLI suporta três tipos de transporte MCP:
@@ -114,7 +116,7 @@ Cada configuração de servidor suporta as seguintes propriedades:
 - **`env`** (object): Variáveis de ambiente para o processo do servidor. Valores podem referenciar variáveis de ambiente usando a sintaxe `$VAR_NAME` ou `${VAR_NAME}`
 - **`cwd`** (string): Diretório de trabalho para transporte Stdio
 - **`timeout`** (number): Tempo limite da requisição em milissegundos (padrão: 600.000ms = 10 minutos)
-- **`trust`** (boolean): Quando `true`, ignora todas as confirmações de chamada de ferramenta para este servidor (padrão: `false`)
+- **`trust`** (boolean): Quando `true`, ignora as confirmações de chamada de ferramenta para este servidor em um workspace confiável (padrão: `false`)
 - **`includeTools`** (string[]): Lista de nomes de ferramentas a serem incluídas deste servidor MCP. Quando especificado, apenas as ferramentas listadas aqui estarão disponíveis a partir deste servidor (comportamento de lista de permissões). Se não especificado, todas as ferramentas do servidor são habilitadas por padrão.
 - **`excludeTools`** (string[]): Lista de nomes de ferramentas a serem excluídas deste servidor MCP. Ferramentas listadas aqui não estarão disponíveis para o modelo, mesmo que sejam expostas pelo servidor. **Nota:** `excludeTools` tem precedência sobre `includeTools` - se uma ferramenta estiver em ambas as listas, ela será excluída.
 - **`targetAudience`** (string): O Client ID OAuth permitido na lista de permissões do aplicativo protegido por IAP que você está tentando acessar. Usado com `authProviderType: 'service_account_impersonation'`.

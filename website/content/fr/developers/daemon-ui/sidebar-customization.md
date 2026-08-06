@@ -311,3 +311,4 @@ L'état réduit est persisté dans `localStorage` sous la clé
 | Styles de la sidebar| `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css` |
 | Intégration App     | `packages/web-shell/client/App.tsx` (chercher `WebShellSidebar`)          |
 | Point d'entrée (dev)| `packages/web-shell/client/main.tsx` (`sidebar: true`)                    |
+

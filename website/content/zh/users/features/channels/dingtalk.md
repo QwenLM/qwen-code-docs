@@ -30,11 +30,13 @@
       "type": "dingtalk",
       "clientId": "$DINGTALK_CLIENT_ID",
       "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "useConnectionManager": true,
       "senderPolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "你是一个通过钉钉响应的简洁编码助手。",
       "groupPolicy": "open",
+      "atSender": true,
       "groups": {
         "*": { "requireMention": true }
       }
@@ -61,6 +63,12 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 }
 ```
 
+### 连接恢复
+
+`useConnectionManager` 默认为 `true`。连接管理器监控 Stream WebSocket，并在连接停止响应时替换 DingTalk SDK 客户端。通常应保持启用状态。
+
+设置 `"useConnectionManager": false` 可禁用 Qwen Code 的连接管理器，并回退到 SDK 的保活和自动重连行为。
+
 ## 运行
 
 ```bash
@@ -73,6 +81,36 @@ qwen channel start
 
 打开钉钉并向机器人发送消息。你应该会看到 👀 表情反应出现，表示代理正在处理，随后返回响应。
 
+## Daemon Webhook 投递
+
+当频道在 `qwen serve` 下运行时，经过身份验证的外部 Webhook 事件可以触发无人值守的代理任务，并将最终的 Markdown 响应投递给钉钉用户或群组。使用现有的 Webhook 目标字段，无需单独的频道类型：
+
+```json
+{
+  "webhooks": {
+    "sources": {
+      "manual-test": {
+        "secretEnv": "QWEN_CHANNEL_DINGTALK_TEST_SECRET",
+        "targets": {
+          "operator": {
+            "chatId": "DINGTALK_USER_ID",
+            "senderId": "webhook:manual-test",
+            "isGroup": false
+          },
+          "team": {
+            "chatId": "OPEN_CONVERSATION_ID",
+            "senderId": "webhook:manual-test",
+            "isGroup": true
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+每个目标都必须显式设置 `isGroup`。对于私聊消息，`chatId` 是收件人的钉钉用户 ID。对于群聊消息，`chatId` 是群组的 `openConversationId`。不支持线程目标和传入机器人 Webhook URL 进行主动投递。完整的频道配置和请求格式请参见 [Webhook 触发的任务](./overview#webhook-triggered-tasks)。
+
 ## 群聊
 
 钉钉机器人支持私聊和群聊。要启用群聊支持：
@@ -82,6 +120,8 @@ qwen channel start
 3. 在群组中 @提及 机器人以触发响应
 
 默认情况下，机器人在群聊中需要 @提及（`requireMention: true`）。将特定群组的 `"requireMention": false` 可使其响应所有消息。参见[群聊](./overview#group-chats)了解完整详情。
+
+设置 `"atSender": true` 可使机器人在回复时 @提及触发其响应的群成员。默认关闭，且仅适用于具有钉钉员工 ID 的代理回复。带提及的回复使用纯文本以使 @ 可见；不带提及的回复使用 Markdown 格式。
 
 ### 查找群聊的 Conversation ID
 
@@ -99,14 +139,14 @@ qwen channel start
 
 - **认证：** 使用 AppKey + AppSecret 而非静态的机器人令牌。SDK 会自动管理访问令牌刷新。
 - **连接：** WebSocket 流而非轮询——无需公共 IP 或 webhook URL。
-- **格式化：** 响应使用钉钉的 markdown 方言（有限子集）。由于钉钉不支持表格，表格会自动转换为纯文本。长消息会在约 3800 字符处分块。
+- **格式化：** 响应使用钉钉的 markdown 方言。Markdown 表格会直接传递给钉钉客户端；长消息会在约 3800 字符处分块。
 - **工作指示：** 处理过程中，会在用户消息上添加 👀 表情反应，发送响应后移除。
 - **媒体下载：** 两步流程——从消息中获取 `downloadCode`，再通过钉钉 API 换取临时下载 URL。
 - **群组：** 钉钉使用 `isInAtList` 检测 @提及，而非解析消息实体。
 
 ## 提示
 
-- **使用钉钉 markdown 感知指令**——钉钉支持有限的 markdown 子集（标题、粗体、链接、代码块，但不支持表格）。添加类似“使用钉钉 markdown。避免使用表格。”的指令有助于代理正确格式化响应。
+- **使用钉钉 markdown 感知指令**——钉钉支持标题、粗体、链接、代码块和表格。由于窄屏可能会水平滚动，请保持表格紧凑。
 - **限制访问**——在组织环境下，`senderPolicy: "open"` 可能可以接受。如需更严格的控制，使用 `"allowlist"` 或 `"pairing"`。参见[私聊配对](./overview#dm-pairing)了解详情。
 - **引用消息**——引用（回复）用户消息会将引用的文本作为上下文提供给代理。暂不支持引用机器人回复。
 

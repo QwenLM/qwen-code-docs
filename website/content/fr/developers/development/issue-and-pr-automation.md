@@ -12,12 +12,12 @@ Avant toute chose, presque chaque Pull Request (PR) doit être liée à un Issue
 
 Voici une description des workflows d'automatisation spécifiques exécutés dans notre dépôt.
 
-### 1. Lorsque vous ouvrez un Issue : `Automated Issue Triage`
+### 1. Lorsque vous ouvrez un Issue : `Qwen Triage`
 
 C'est le premier bot avec lequel vous interagirez lorsque vous créez un issue. Son rôle est d'effectuer une analyse initiale et d'appliquer les labels corrects.
 
-- **Fichier du workflow** : `.github/workflows/qwen-automated-issue-triage.yml`
-- **Quand il s'exécute** : Immédiatement après la création ou la réouverture d'un issue.
+- **Fichier du workflow** : `.github/workflows/qwen-triage.yml`
+- **Quand il s'exécute** : Immédiatement après la création, la modification ou la réouverture d'un issue, ou lorsqu'un mainteneur demande manuellement le triage.
 - **Ce qu'il fait** :
   - Il utilise un modèle Qwen pour analyser le titre et le corps de l'issue par rapport à un ensemble détaillé de directives.
   - **Applique un label `area/*`** : Catégorise l'issue dans un domaine fonctionnel du projet (ex. `area/ux`, `area/models`, `area/platform`).
@@ -28,6 +28,7 @@ C'est le premier bot avec lequel vous interagirez lorsque vous créez un issue. 
 - **Ce que vous devez faire** :
   - Remplissez le modèle d'issue aussi complètement que possible. Plus vous fournissez de détails, plus le triage sera précis.
   - Si le label `status/need-information` est ajouté, veuillez fournir les informations demandées dans un commentaire.
+  - Les mainteneurs peuvent commenter `@qwen-code /triage` pour relancer le triage.
 
 ### 2. Lorsque vous ouvrez une Pull Request : `Continuous Integration (CI)`
 
@@ -43,33 +44,7 @@ Ce workflow garantit que toutes les modifications respectent nos normes de quali
   - Assurez-vous que toutes les vérifications CI passent. Une coche verte ✅ apparaîtra à côté de votre commit lorsque tout est réussi.
   - Si une vérification échoue (une croix rouge ❌), cliquez sur le lien « Détails » à côté de la vérification échouée pour consulter les logs, identifier le problème et pousser un correctif.
 
-### 3. Triage continu des Pull Requests : `PR Auditing and Label Sync`
-
-Ce workflow s'exécute périodiquement pour garantir que toutes les PR ouvertes sont correctement liées à des issues et ont des labels cohérents.
-
-- **Fichier du workflow** : `.github/workflows/qwen-scheduled-pr-triage.yml`
-- **Quand il s'exécute** : Toutes les 15 minutes sur toutes les pull requests ouvertes.
-- **Ce qu'il fait** :
-  - **Vérifie la présence d'un issue lié** : Le bot analyse la description de votre PR pour trouver un mot-clé qui la lie à un issue (ex. `Fixes #123`, `Closes #456`).
-  - **Ajoute `status/need-issue`** : Si aucun issue lié n'est trouvé, le bot ajoute le label `status/need-issue` à votre PR. C'est un signal clair qu'un issue doit être créé et lié.
-  - **Synchronise les labels** : Si un issue est lié, le bot s'assure que les labels de la PR correspondent parfaitement à ceux de l'issue. Il ajoute les labels manquants et supprime ceux qui ne devraient pas être présents, et retire le label `status/need-issue` s'il était présent.
-- **Ce que vous devez faire** :
-  - **Lie toujours votre PR à un issue.** C'est l'étape la plus importante. Ajoutez une ligne comme `Resolves #<numéro-issue>` dans la description de votre PR.
-  - Cela garantira que votre PR est correctement catégorisée et progresse sans problème dans le processus de révision.
-
-### 4. Triage continu des Issues : `Scheduled Issue Triage`
-
-Il s'agit d'un workflow de secours pour garantir qu'aucun issue ne soit oublié par le processus de triage.
-
-- **Fichier du workflow** : `.github/workflows/qwen-scheduled-issue-triage.yml`
-- **Quand il s'exécute** : Toutes les heures sur tous les issues ouverts.
-- **Ce qu'il fait** :
-  - Il recherche activement les issues qui n'ont aucun label ou qui portent encore le label `status/need-triage`.
-  - Il déclenche alors la même analyse puissante basée sur QwenCode que le bot de triage initial pour appliquer les labels corrects.
-- **Ce que vous devez faire** :
-  - Vous n'avez généralement rien à faire. Ce workflow est un filet de sécurité pour garantir que chaque issue soit finalement catégorisé, même si le triage initial échoue.
-
-### 5. Automatisation des publications
+### 3. Automatisation des publications
 
 Ce workflow gère le processus de packaging et de publication des nouvelles versions de Qwen Code.
 

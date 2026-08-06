@@ -126,7 +126,15 @@ flowchart LR
 `/workspace/tools/:name/enable`, `/workspace/mcp/:server/restart`,
 `/workspace/mcp/:server/{enable,disable,authenticate,clear-auth}`,
 `/workspace/mcp/servers` (POST/DELETE), `/workspace/auth/device-flow`,
-`/workspace/init`, `/session/:id/approval-mode`.
+`/workspace/init`, `/session/:id/approval-mode`, `/session/:id/rewind` и
+`/session/:id/shell`.
+
+Rewind остаётся только REST в TypeScript SDK, даже когда настроен транспорт ACP.
+Это сохраняет строгий шлюз мутаций и заголовки bearer/client identity; таблица
+маршрутов ACP намеренно не содержит маппинга для rewind. Маршрутизация владельца
+также повторно проверяет доверие рабочему пространству перед тем, как rewind или
+shell достигнут bridge вторичного runtime. Дублирующиеся id живых сессий
+завершаются с ошибкой `ambiguous_session_owner` вместо отката к основному runtime.
 
 ### Исключение для `/health`
 

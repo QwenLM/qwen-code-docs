@@ -94,7 +94,7 @@ Ce workflow agit comme un répartiteur central pour Qwen Code CLI, acheminant le
 
 ### Tri des Issues
 
-Cette action peut être utilisée pour trier les issues GitHub automatiquement ou selon une planification. Pour une configuration fonctionnelle de tri des issues, consultez le [workflow de tri automatisé des issues](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-automated-issue-triage.yml).
+Cette action peut être utilisée pour trier les issues GitHub automatiquement ou à la demande. Pour une configuration fonctionnelle de tri des issues, consultez le [workflow de tri Qwen](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-triage.yml).
 
 ### Revue de Pull Request
 

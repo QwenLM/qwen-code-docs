@@ -272,6 +272,33 @@ GitHubトリガーのレビュー（PRレビューワークフロー）の場合
 
 ルールはLLMレビューエージェント（0-6）に追加の基準として注入されます。PRレビューでは、悪意のあるPRによるバイパスルールの注入を防ぐため、ルールは**ベースブランチ**から読み込まれます。
 
+## リポジトリコンテキスト
+
+リポジトリは、厳密なJSONマニフェストを `.qwen/review-context.json` にコミットすることで、レビュアーに対してリポジトリ固有のガイダンスを渡すことができます。mediumまたはhighの努力レベルで、`/review` はプランのキャプチャ後にマニフェストを読み取り、エージェントが起動する前に対応するガイダンスを添付します。
+
+```json
+{
+  "version": 1,
+  "label": "Example repository",
+  "rules": [
+    {
+      "paths": ["packages/*/src/**"],
+      "domains": ["runtime"],
+      "relatedPaths": ["packages/runtime/src/**"],
+      "recommendedTests": ["npm run test:runtime"],
+      "requiredConfigurations": ["debug"],
+      "requiredAgents": ["test-matrix"],
+      "unverifiedDimensions": ["Alternate runtime was not exercised"],
+      "verificationNotes": ["Use the repository native test runner"]
+    }
+  ]
+}
+```
+
+ルールは、変更されたファイルのいずれかが `paths` glob（`*`、`?`、`**` セグメント。大文字小文字を区別）のいずれかに一致する場合に適用されます。一致するすべてのルールはガイダンスをマージします。レビューエージェント用のドメインと関連ファイル、ビルド＆テストエージェント用の推奨テストと必須設定、追加のレビュアーロール（選択された努力レベルとトポロジーがそれらを実行する場合にのみ尊重される）、および最終レビューで未検証の次元として開示される証明境界です。配列は任意の順序で記述でき、重複するエントリは拒否されます。
+
+PRレビューでは、マニフェストはマージベースから読み取られるため、レビュー対象のPRがガイダンスの追加や除外を自分自身で行うことはできません。ローカルレビューは現在のワークツリーから読み取ります。low努力とクロスリポジトリのレビューはリポジトリコンテキストをスキップします。完全な契約と信頼モデルは [design doc](../../design/review-repository-context.md) にあります。
+
 ## Issue Fidelity
 
 バグ修正のPRの場合、Issue FidelityエージェントはPRの説明文に依存するのではなく、Issueの証拠を直接取得します。GitHubの強力なクローズIssueメタデータのために `gh pr view <pr> --repo <owner/repo> --json closingIssuesReferences` を使用し、次に元のレポートと議論のために `gh issue view <number> --repo <issue_owner>/<issue_repo> --json title,body,comments` を使用します。`--json` 形式はIssueの**本文**（報告者の元の再現手順）を含みますが、`--comments` だけでは省略されます。また、Issue自体のリポジトリは各参照から読み取られます（PRは別のリポジトリのIssueをクローズできます）。このエージェントはPRターゲットに対してのみ実行されます。ローカルdiffおよびファイルパスのレビューではスキップされます。

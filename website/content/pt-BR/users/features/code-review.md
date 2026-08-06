@@ -268,6 +268,33 @@ Você pode personalizar os critérios de revisão por projeto. O `/review` lê a
 
 As regras são injetadas nos agentes de revisão por LLM (0-6) como critérios adicionais. Para revisões de PR, as regras são lidas a partir do **branch base** para evitar que um PR malicioso injete regras de bypass.
 
+## Contexto do Repositório
+
+Repositórios podem fornecer aos revisores orientações limitadas e específicas do repositório commitando um manifesto JSON estrito em `.qwen/review-context.json`. No esforço medium ou high, o `/review` lê o manifesto após capturar o plano e anexa a orientação correspondente antes de qualquer agente ser iniciado:
+
+```json
+{
+  "version": 1,
+  "label": "Example repository",
+  "rules": [
+    {
+      "paths": ["packages/*/src/**"],
+      "domains": ["runtime"],
+      "relatedPaths": ["packages/runtime/src/**"],
+      "recommendedTests": ["npm run test:runtime"],
+      "requiredConfigurations": ["debug"],
+      "requiredAgents": ["test-matrix"],
+      "unverifiedDimensions": ["Alternate runtime was not exercised"],
+      "verificationNotes": ["Use the repository native test runner"]
+    }
+  ]
+}
+```
+
+Uma regra se aplica quando qualquer arquivo alterado corresponde a um de seus globs em `paths` (`*`, `?` e segmentos `**`; case-sensitive). Todas as regras correspondentes combinam suas orientações: domínios e arquivos relacionados para os agentes de revisão, testes recomendados e configurações obrigatórias para o agente de build-e-teste, papéis extras de revisor (honrados apenas quando o esforço e a topologia escolhidos os executam) e limites de prova que a revisão final divulga como dimensões não verificadas. Arrays podem ser escritos em qualquer ordem; entradas duplicadas são rejeitadas.
+
+Para revisões de PR, o manifesto é lido a partir da base de merge, para que o PR em revisão não possa se incluir ou excluir de orientações; revisões locais o leem a partir do worktree atual. Revisões de esforço low e entre repositórios ignoram o contexto do repositório. O contrato completo e o modelo de confiança estão no [design doc](../../design/review-repository-context.md).
+
 ## Fidelidade da Issue
 
 Para PRs de correção de bugs, o agente de Fidelidade da Issue busca evidências da issue diretamente, em vez de depender do texto de descrição do PR. Ele usa `gh pr view <pr> --repo <owner/repo> --json closingIssuesReferences` para os metadados fortes de issues fechadas do GitHub, e então `gh issue view <number> --repo <issue_owner>/<issue_repo> --json title,body,comments` para o relatório original e discussão — a forma `--json` inclui o **corpo** da issue (a reprodução original do reportador), que apenas `--comments` omite, e o repositório próprio da issue é lido a partir de cada referência (um PR pode fechar uma issue em um repositório diferente). Este agente é executado apenas para alvos de PR; revisões de diff local e caminho de arquivo o ignoram.

@@ -4,7 +4,11 @@ Qwen Code では、`settings.json` の `modelProviders` 設定を通じて複数
 
 ## 概要
 
-`modelProviders` を使用して、`/model` ピッカーで切り替え可能なモデルを認証タイプごとに宣言します。キーは有効な認証タイプ（`openai`、`anthropic`、`gemini` など）である必要があります。各認証タイプは、`protocol` フィールドと `models` フィールド（モデル定義の配列）を持つ `ProviderConfig` オブジェクトにマッピングされます。`models` の各エントリには `id` が必要です。`envKey` は**任意ですが推奨されます**（省略した場合、認証タイプのデフォルトの環境変数キー、例えば `openai` の場合は `OPENAI_API_KEY` にフォールバックします）。その他、`name`、`description`、`baseUrl`、`generationConfig` は任意です。認証情報は設定に永続化されることはなく、ランタイムは `process.env[envKey]` から読み取ります。Qwen OAuth モデルはハードコードされたままとなり、上書きすることはできません。
+`modelProviders` を使用して、`/model` ピッカーで切り替え可能なモデルをプロバイダー ID ごとに宣言します。各キーはプロバイダー ID で、その値は**モデル定義の配列**（`ModelConfig[]`）です。組み込みプロバイダーの場合、キーは有効な認証タイプ（`openai`、`anthropic`、`gemini`、`vertex-ai`）である必要があります。カスタムプロバイダー ID（例: `idealab`）も、トップレベルの [`providerProtocol`](#カスタムプロバイダー-idproviderprotocol) 設定でプロトコルにマッピングされていれば使用できます。各モデルエントリには `id` が必要です。`envKey` は**任意ですが推奨されます**（省略した場合、認証タイプのデフォルトの環境変数キー、例えば `openai` の場合は `OPENAI_API_KEY` にフォールバックします）。その他、`name`、`description`、`baseUrl`、`generationConfig` は任意です。認証情報は設定に永続化されることはなく、ランタイムは `process.env[envKey]` から読み取ります。Qwen OAuth モデルはハードコードされたままとなり、上書きすることはできません。
+
+> [!note]
+>
+> 以前のプレビューでは、各プロバイダーのモデルを `{ "protocol": ..., "models": [...] }` オブジェクトでラップしていましたが、この形式は廃止されました。現在の値は、このページ全体で示されている裸の `ModelConfig[]` 配列です。すでに移行済みの（`$version: 4`）設定ファイル内のラップされたエントリはサイレントにスキップされるため、古い設定は配列形式に更新してください。
 
 > [!note]
 >
@@ -31,7 +35,30 @@ Qwen Code では、`settings.json` の `modelProviders` 設定を通じて複数
 | `vertex-ai`  | Google Vertex AI（Vertex AI モードで `gemini` プロトコルと `@google/genai` SDK を使用します。選択すると `GOOGLE_GENAI_USE_VERTEXAI=true` が設定されます） |
 
 > [!warning]
-> 不明な認証タイプキー（例: `"openai-custom"` のようなタイプミス）が使用された場合、空でないキーはそのまま独自の認証タイプグループとして受け入れられますが、既知のプロトコルにはマッピングされません。そのため、そのモデルは意図したとおりに動作せず、`/model` ピッカーでも正しく動作しません。空（空文字列または空白のみ）のキーのみがスキップされます。常に上記のサポートされている認証タイプ値のいずれかを使用してください。
+> 組み込みプロトコルでも `providerProtocol` 経由でマッピングされていないプロバイダー ID（例: `"openai-custom"` のようなタイプミス）はルーティングできないため、エントリ全体が警告とともに**スキップ**されます。モデルは `/model` ピッカーに表示されません。組み込みプロバイダーには上記のサポートされている認証タイプ値のいずれかを使用するか、カスタム ID には [`providerProtocol`](#カスタムプロバイダー-idproviderprotocol) マッピングを追加してください。
+
+### カスタムプロバイダー ID（`providerProtocol`）
+
+組み込みのプロバイダー ID（`openai`、`gemini`、`anthropic`、`vertex-ai`、`qwen-oauth`）は自動的に SDK プロトコルにルーティングされます。より分かりやすい名前で複数の OpenAI 互換エンドポイントをグループ化するなど、**カスタム**プロバイダー ID を使用するには、`modelProviders` 配下に宣言し、トップレベルの `providerProtocol` 設定で組み込みプロトコルにマッピングします。
+
+```json
+{
+  "modelProviders": {
+    "idealab": [
+      {
+        "id": "my-model",
+        "envKey": "IDEALAB_API_KEY",
+        "baseUrl": "https://idealab.example.com/v1"
+      }
+    ]
+  },
+  "providerProtocol": {
+    "idealab": "openai"
+  }
+}
+```
+
+一致する `providerProtocol` エントリがない場合、カスタムプロバイダー ID はスキップされます（上記の警告を参照）。
 
 ### API リクエストに使用される SDK
 
@@ -58,79 +85,78 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
     "REQUESTY_API_KEY": "sk-your-actual-requesty-key-here"
   },
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "gpt-4o",
-          "name": "GPT-4o",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1",
-          "generationConfig": {
-            "timeout": 60000,
-            "maxRetries": 3,
-            "enableCacheControl": true,
-            "contextWindowSize": 128000,
-            "modalities": {
-              "image": true
-            },
-            "customHeaders": {
-              "X-Client-Request-ID": "req-123"
-            },
-            "extra_body": {
-              "enable_thinking": true,
-              "service_tier": "priority"
-            },
-            "samplingParams": {
-              "temperature": 0.2,
-              "top_p": 0.8,
-              "max_tokens": 4096,
-              "presence_penalty": 0.1,
-              "frequency_penalty": 0.1
-            }
-          }
-        },
-        {
-          "id": "gpt-4o-mini",
-          "name": "GPT-4o Mini",
-          "envKey": "OPENAI_API_KEY",
-          "baseUrl": "https://api.openai.com/v1",
-          "generationConfig": {
-            "timeout": 30000,
-            "samplingParams": {
-              "temperature": 0.5,
-              "max_tokens": 2048
-            }
-          }
-        },
-        {
-          "id": "openai/gpt-4o",
-          "name": "GPT-4o (via OpenRouter)",
-          "envKey": "OPENROUTER_API_KEY",
-          "baseUrl": "https://openrouter.ai/api/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 3,
-            "samplingParams": {
-              "temperature": 0.7
-            }
-          }
-        },
-        {
-          "id": "openai/gpt-4o-mini",
-          "name": "GPT-4o Mini (via Requesty)",
-          "envKey": "REQUESTY_API_KEY",
-          "baseUrl": "https://router.requesty.ai/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 3,
-            "samplingParams": {
-              "temperature": 0.7
-            }
+    "openai": [
+      {
+        "id": "gpt-4o",
+        "name": "GPT-4o",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1",
+        "generationConfig": {
+          "timeout": 60000,
+          "maxRetries": 3,
+          "retryInitialDelayMs": 3000,
+          "retryMaxDelayMs": 30000,
+          "enableCacheControl": true,
+          "contextWindowSize": 128000,
+          "modalities": {
+            "image": true
+          },
+          "customHeaders": {
+            "X-Client-Request-ID": "req-123"
+          },
+          "extra_body": {
+            "enable_thinking": true,
+            "service_tier": "priority"
+          },
+          "samplingParams": {
+            "temperature": 0.2,
+            "top_p": 0.8,
+            "max_tokens": 4096,
+            "presence_penalty": 0.1,
+            "frequency_penalty": 0.1
           }
         }
-      ]
-    }
+      },
+      {
+        "id": "gpt-4o-mini",
+        "name": "GPT-4o Mini",
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "https://api.openai.com/v1",
+        "generationConfig": {
+          "timeout": 30000,
+          "samplingParams": {
+            "temperature": 0.5,
+            "max_tokens": 2048
+          }
+        }
+      },
+      {
+        "id": "openai/gpt-4o",
+        "name": "GPT-4o (via OpenRouter)",
+        "envKey": "OPENROUTER_API_KEY",
+        "baseUrl": "https://openrouter.ai/api/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 3,
+          "samplingParams": {
+            "temperature": 0.7
+          }
+        }
+      },
+      {
+        "id": "openai/gpt-4o-mini",
+        "name": "GPT-4o Mini (via Requesty)",
+        "envKey": "REQUESTY_API_KEY",
+        "baseUrl": "https://router.requesty.ai/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 3,
+          "samplingParams": {
+            "temperature": 0.7
+          }
+        }
+      }
+    ]
   }
 }
 ```
@@ -143,40 +169,37 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
     "ANTHROPIC_API_KEY": "sk-ant-your-actual-anthropic-key-here"
   },
   "modelProviders": {
-    "anthropic": {
-      "protocol": "anthropic",
-      "models": [
-        {
-          "id": "claude-3-5-sonnet",
-          "name": "Claude 3.5 Sonnet",
-          "envKey": "ANTHROPIC_API_KEY",
-          "baseUrl": "https://api.anthropic.com/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 3,
-            "contextWindowSize": 200000,
-            "samplingParams": {
-              "temperature": 0.7,
-              "max_tokens": 8192,
-              "top_p": 0.9
-            }
-          }
-        },
-        {
-          "id": "claude-3-opus",
-          "name": "Claude 3 Opus",
-          "envKey": "ANTHROPIC_API_KEY",
-          "baseUrl": "https://api.anthropic.com/v1",
-          "generationConfig": {
-            "timeout": 180000,
-            "samplingParams": {
-              "temperature": 0.3,
-              "max_tokens": 4096
-            }
+    "anthropic": [
+      {
+        "id": "claude-3-5-sonnet",
+        "name": "Claude 3.5 Sonnet",
+        "envKey": "ANTHROPIC_API_KEY",
+        "baseUrl": "https://api.anthropic.com/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 3,
+          "contextWindowSize": 200000,
+          "samplingParams": {
+            "temperature": 0.7,
+            "max_tokens": 8192,
+            "top_p": 0.9
           }
         }
-      ]
-    }
+      },
+      {
+        "id": "claude-3-opus",
+        "name": "Claude 3 Opus",
+        "envKey": "ANTHROPIC_API_KEY",
+        "baseUrl": "https://api.anthropic.com/v1",
+        "generationConfig": {
+          "timeout": 180000,
+          "samplingParams": {
+            "temperature": 0.3,
+            "max_tokens": 4096
+          }
+        }
+      }
+    ]
   }
 }
 ```
@@ -189,35 +212,43 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
     "GEMINI_API_KEY": "AIza-your-actual-gemini-key-here"
   },
   "modelProviders": {
-    "gemini": {
-      "protocol": "gemini",
-      "models": [
-        {
-          "id": "gemini-2.0-flash",
-          "name": "Gemini 2.0 Flash",
-          "envKey": "GEMINI_API_KEY",
-          "baseUrl": "https://generativelanguage.googleapis.com",
-          "capabilities": {
-            "vision": true
-          },
-          "generationConfig": {
-            "timeout": 60000,
-            "maxRetries": 2,
-            "contextWindowSize": 1000000,
-            "schemaCompliance": "auto",
-            "samplingParams": {
-              "temperature": 0.4,
-              "top_p": 0.95,
-              "max_tokens": 8192,
-              "top_k": 40
-            }
+    "gemini": [
+      {
+        "id": "gemini-2.0-flash",
+        "name": "Gemini 2.0 Flash",
+        "envKey": "GEMINI_API_KEY",
+        "baseUrl": "https://generativelanguage.googleapis.com",
+        "capabilities": {
+          "vision": true
+        },
+        "generationConfig": {
+          "timeout": 60000,
+          "maxRetries": 2,
+          "contextWindowSize": 1000000,
+          "schemaCompliance": "auto",
+          "samplingParams": {
+            "temperature": 0.4,
+            "top_p": 0.95,
+            "max_tokens": 8192,
+            "top_k": 40
           }
         }
-      ]
-    }
+      }
+    ]
   }
 }
 ```
+
+通常の Qwen Code エージェントポリシーに従い、ツールも使用できるビジョンモデルの場合、両方の機能を指定してフルターンの画像ルーティングにオプトインします。
+
+```json
+"capabilities": {
+  "vision": true,
+  "agent": true
+}
+```
+
+テキストのみのプライマリモデルがそのモデルをビジョンフォールバックとして使用している場合、画像付きの完全なターンは、ツール呼び出しとリトライを通じて、その正確なプロバイダー、モデル、エンドポイント上に保持されます。次の独立したターンはプライマリに戻り、各モデルリクエストはそのターゲットでサポートされるメディアモダリティのみを受け取ります。`agent` を省略する（または `false` に設定する）と、より安全な Vision Bridge トランスクリプションフローが維持されます。
 
 ### ローカルセルフホストモデル（OpenAI 互換 API 経由）
 
@@ -231,54 +262,51 @@ Qwen Code は、各プロバイダーへのリクエスト送信に以下の公�
     "LMSTUDIO_API_KEY": "lm-studio"
   },
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen2.5-7b",
-          "name": "Qwen2.5 7B (Ollama)",
-          "envKey": "OLLAMA_API_KEY",
-          "baseUrl": "http://localhost:11434/v1",
-          "generationConfig": {
-            "timeout": 300000,
-            "maxRetries": 1,
-            "contextWindowSize": 32768,
-            "samplingParams": {
-              "temperature": 0.7,
-              "top_p": 0.9,
-              "max_tokens": 4096
-            }
-          }
-        },
-        {
-          "id": "llama-3.1-8b",
-          "name": "Llama 3.1 8B (vLLM)",
-          "envKey": "VLLM_API_KEY",
-          "baseUrl": "http://localhost:8000/v1",
-          "generationConfig": {
-            "timeout": 120000,
-            "maxRetries": 2,
-            "contextWindowSize": 128000,
-            "samplingParams": {
-              "temperature": 0.6,
-              "max_tokens": 8192
-            }
-          }
-        },
-        {
-          "id": "local-model",
-          "name": "Local Model (LM Studio)",
-          "envKey": "LMSTUDIO_API_KEY",
-          "baseUrl": "http://localhost:1234/v1",
-          "generationConfig": {
-            "timeout": 60000,
-            "samplingParams": {
-              "temperature": 0.5
-            }
+    "openai": [
+      {
+        "id": "qwen2.5-7b",
+        "name": "Qwen2.5 7B (Ollama)",
+        "envKey": "OLLAMA_API_KEY",
+        "baseUrl": "http://localhost:11434/v1",
+        "generationConfig": {
+          "timeout": 300000,
+          "maxRetries": 1,
+          "contextWindowSize": 32768,
+          "samplingParams": {
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_tokens": 4096
           }
         }
-      ]
-    }
+      },
+      {
+        "id": "llama-3.1-8b",
+        "name": "Llama 3.1 8B (vLLM)",
+        "envKey": "VLLM_API_KEY",
+        "baseUrl": "http://localhost:8000/v1",
+        "generationConfig": {
+          "timeout": 120000,
+          "maxRetries": 2,
+          "contextWindowSize": 128000,
+          "samplingParams": {
+            "temperature": 0.6,
+            "max_tokens": 8192
+          }
+        }
+      },
+      {
+        "id": "local-model",
+        "name": "Local Model (LM Studio)",
+        "envKey": "LMSTUDIO_API_KEY",
+        "baseUrl": "http://localhost:1234/v1",
+        "generationConfig": {
+          "timeout": 60000,
+          "samplingParams": {
+            "temperature": 0.5
+          }
+        }
+      }
+    ]
   }
 }
 ```
@@ -393,18 +421,15 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 ```json
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "qwen3-coder-plus",
-          "name": "qwen3-coder-plus",
-          "description": "Alibaba Cloud Coding Plan 経由の Qwen3-Coder",
-          "envKey": "YOUR_CUSTOM_ENV_KEY",
-          "baseUrl": "https://coding.dashscope.aliyuncs.com/v1"
-        }
-      ]
-    }
+    "openai": [
+      {
+        "id": "qwen3-coder-plus",
+        "name": "qwen3-coder-plus",
+        "description": "Qwen3-Coder via Alibaba Cloud Coding Plan",
+        "envKey": "YOUR_CUSTOM_ENV_KEY",
+        "baseUrl": "https://coding.dashscope.aliyuncs.com/v1"
+      }
+    ]
   }
 }
 ```
@@ -496,17 +521,14 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 // modelProviders の設定
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [{
-        "id": "gpt-4o",
-        "envKey": "OPENAI_API_KEY",
-        "generationConfig": {
-          "timeout": 60000,
-          "samplingParams": { "temperature": 0.2 }
-        }
-      }]
-    }
+    "openai": [{
+      "id": "gpt-4o",
+      "envKey": "OPENAI_API_KEY",
+      "generationConfig": {
+        "timeout": 60000,
+        "samplingParams": { "temperature": 0.2 }
+      }
+    }]
   }
 }
 ```
@@ -532,25 +554,22 @@ Coding Plan モデルを手動で構成したい場合は、他の OpenAI 互換
 ```jsonc
 {
   "modelProviders": {
-    "openai": {
-      "protocol": "openai",
-      "models": [
-        {
-          "id": "deepseek-v4-pro",
-          "name": "DeepSeek V4 Pro",
-          "baseUrl": "https://api.deepseek.com/v1",
-          "envKey": "DEEPSEEK_API_KEY",
-          "generationConfig": {
-            // 4段階のスケール:
-            //   'low'    | 'medium' — DeepSeek ではサーバー側で 'high' にマッピングされる
-            //   'high'   — デフォルトの推論強度
-            //   'max'    — DeepSeek 固有の超強力なティア
-            // または、推論を完全に無効にするには `false` を設定する。
-            "reasoning": { "effort": "max" },
-          },
+    "openai": [
+      {
+        "id": "deepseek-v4-pro",
+        "name": "DeepSeek V4 Pro",
+        "baseUrl": "https://api.deepseek.com/v1",
+        "envKey": "DEEPSEEK_API_KEY",
+        "generationConfig": {
+          // 4段階のスケール:
+          //   'low'    | 'medium' — DeepSeek ではサーバー側で 'high' にマッピングされる
+          //   'high'   — デフォルトの推論強度
+          //   'max'    — DeepSeek 固有の超強力なティア
+          // または、推論を完全に無効にするには `false` を設定する。
+          "reasoning": { "effort": "max" },
         },
-      ],
-    },
+      },
+    ],
   },
 }
 ```

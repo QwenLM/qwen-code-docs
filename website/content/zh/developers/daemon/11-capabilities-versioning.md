@@ -6,7 +6,7 @@
 
 - **只有一个协议版本：`v1`。** `SERVE_PROTOCOL_VERSION = 'v1'` 且 `SUPPORTED_SERVE_PROTOCOL_VERSIONS = ['v1']`。v1 在内部是增量添加的；破坏性的 frame-shape 更改保留给 v2。
 - **每个 tag 都有一个 `since` 版本。** 未来的 v2 daemon 可以同时广播 v1 和 v2 tag。
-- **部分 tag 是有条件的。** 有十三个 tag（`require_auth`, `mcp_workspace_pool`, `mcp_pool_restart`, `allow_origin`, `prompt_absolute_deadline`, `writer_idle_timeout`, `workspace_settings`, `workspace_voice`, `workspace_voice_transcription`, `session_shell_command`, `rate_limit`, `workspace_reload`, `voice_transcribe`）仅在启用相应的部署开关时才会被广播。tag 的存在意味着该行为存在。
+- **部分 tag 是有条件的。** 列在 `CONDITIONAL_SERVE_FEATURES` 中的 tag 仅在相应的部署开关启用时才会被广播。tag 的存在意味着该行为存在。
 - **Capability tag = 行为契约。** 在现有 tag 下添加新行为可能会悄悄破坏预检了旧 tag 的客户端。新行为需要新 tag。
 
 完整的注册表位于 `packages/cli/src/serve/capabilities.ts`。

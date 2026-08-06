@@ -1,6 +1,6 @@
 # Résumés d'utilisation d'outils
 
-Qwen Code peut générer une brève étiquette, dans le style d'un sujet de commit git, après chaque lot d'outils terminé, résumant ce que le lot a accompli. L'étiquette apparaît en ligne dans la transcription et remplace l'en-tête générique `Tool × N` en mode compact.
+Qwen Code peut générer une brève étiquette, dans le style d'un sujet de commit git, après chaque lot d'outils terminé, résumant ce que le lot a accompli. L'étiquette apparaît en ligne : pour un groupe d'outils terminé dans la vue principale, elle remplace l'en-tête générique `Tool × N` ; lorsque le groupe est déplié de force (en mode détail déplié `Ctrl+O`, ou pour les lots d'erreur / initiés par l'utilisateur), elle apparaît sous la forme d'une ligne atténuée `● <étiquette>` sous le groupe.
 
 Il s'agit d'une aide UX pour les appels d'outils parallèles : lorsque le modèle se déploie en plusieurs appels `Read` + `Grep` + `Bash` à la fois, le résumé vous indique l'intention en un coup d'œil, sans vous obliger à parcourir la liste des outils.
 
@@ -8,9 +8,21 @@ Cette fonctionnalité est activée par défaut et s'exécute silencieusement en 
 
 ## Ce que vous voyez
 
-### Mode complet (par défaut)
+### Vue principale (groupe terminé)
 
-Le résumé apparaît sous la forme d'une ligne de badge atténuée directement sous le groupe d'outils :
+Dans la transcription principale, un lot pliable terminé se replie en une seule ligne étiquetée — le résumé remplace l'en-tête générique `Tool × N` :
+
+```
+╭──────────────────────────────────────────────╮
+│✓  Read 4 text files                          │
+╰──────────────────────────────────────────────╯
+```
+
+La sortie complète par outil est accessible d'une simple touche : appuyez sur `Ctrl+O` pour basculer en mode détail déplié.
+
+### Mode détail déplié (`Ctrl+O`) et groupes dépliés de force
+
+Lorsqu'un groupe est déplié de force — en mode détail déplié `Ctrl+O`, ou pour les lots d'erreur / initiés par l'utilisateur dans la vue principale — chaque outil s'affiche individuellement et le résumé apparaît sous la forme d'une ligne de badge atténuée sous le groupe :
 
 ```
 ╭──────────────────────────────────────────────╮
@@ -20,25 +32,12 @@ Le résumé apparaît sous la forme d'une ligne de badge atténuée directement 
 │ ✓  ReadFile d.txt                            │
 ╰──────────────────────────────────────────────╯
 
- ● Lecture de 4 fichiers texte
+● Read 4 text files
 ```
-
-### Mode compact (`Ctrl+O` ou `ui.compactMode: true`)
-
-L'étiquette remplace l'en-tête générique `Tool × N` dans la ligne unique compacte :
-
-```
-╭──────────────────────────────────────────────╮
-│✓  Lecture de fichiers txt  · 4 outils        │
-│Appuyez sur Ctrl+O pour afficher le détail    │
-╰──────────────────────────────────────────────╯
-```
-
-Les appels d'outils individuels restent accessibles d'une simple touche (`Ctrl+O` pour basculer en mode complet).
 
 ## Fonctionnement
 
-Une fois qu'un lot d'outils est finalisé, Qwen Code déclenche un appel de type *fire-and-forget* vers le fast model configuré avec :
+Une fois qu'un lot d'outils est finalisé, Qwen Code déclenche un appel fire-and-forget vers le fast model configuré avec :
 
 - Les noms des outils, les arguments tronqués et les résultats tronqués (chacun limité à 300 caractères).
 - Le texte le plus récent de l'assistant (200 premiers caractères) comme préfixe d'intention.
@@ -123,7 +122,7 @@ Ces paramètres peuvent être configurés dans `settings.json` :
 
 Trois points qui peuvent surprendre à la première lecture de cette fonctionnalité :
 
-1. **Une seule génération par lot, partagée par les deux modes d'affichage.** L'appel au fast model a lieu exactement une fois dans `handleCompletedTools` lorsqu'un lot d'outils se finalise. Basculer avec `Ctrl+O` par la suite ne déclenche **pas** un nouvel appel — les deux modes lisent la même entrée d'historique `tool_use_summary` qui a été capturée la première fois. Vous pouvez activer/désactiver le mode compact librement sans coût supplémentaire.
+1. **Une seule génération par lot, partagée par les deux modes d'affichage.** L'appel au fast model a lieu exactement une fois dans `handleCompletedTools` lorsqu'un lot d'outils se finalise. Basculer en mode détail déplié `Ctrl+O` par la suite ne déclenche **pas** un nouvel appel — le rendu plié et le rendu déplié lisent tous deux la même entrée d'historique `tool_use_summary` qui a été capturée la première fois.
 2. **Pas de backfill lors du basculement ou de la reprise de session.** Un `tool_group` qui s'est terminé avant que la fonctionnalité ne soit activée (ou avant que vous n'ayez activé le paramètre, ou dans une session reprise — `ChatRecordingService` ne persiste pas les entrées de résumé) n'obtiendra jamais d'étiquette. Il n'y a pas de « parcours de l'historique existant ». Si vous activez ce paramètre en milieu de session, seuls les lots *futurs* afficheront une étiquette ; les groupes plus anciens conservent le rendu par défaut sans indication qu'une étiquette manque.
 3. **Uniquement les lots de l'agent principal.** Le déclencheur se trouve dans la boucle de tour de la session principale (`useGeminiStream`), donc :
    - ✅ Les opérations Shell, MCP, les opérations sur fichiers et *l'appel lui-même* à l'outil `Task` / sous-agent (tel qu'il apparaît dans le lot principal) sont résumés.
@@ -131,22 +130,20 @@ Trois points qui peuvent surprendre à la première lecture de cette fonctionnal
 
    Un lot externe qui *contient* un outil `Task` sera quand même étiqueté, mais le fast model ne voit que l'appel à l'outil sous-agent et son résultat agrégé — pas les appels d'outils individuels à l'intérieur du sous-agent. Attendez-vous à des étiquettes comme `Exécution de research-agent` ou `Délégation de recherche de fichiers` plutôt que `14 fichiers parcourus`. C'est intentionnel — résumer les internes des sous-agents multiplierait le coût du fast model et ferait apparaître du bruit qui n'apparaît jamais dans l'interface utilisateur principale.
 
-## Association recommandée : activer le mode compact
+## Comportement d'affichage
 
-Pour les lots de 3 appels d'outils parallèles ou plus, associer cette fonctionnalité avec `ui.compactMode: true` produit la transcription la plus propre. La vue compacte plie tout le lot en une seule ligne étiquetée (`✓  Lecture de fichiers txt  · 4 outils`) au lieu d'afficher chaque ligne d'outil plus le résumé final. Les détails restent accessibles en une touche via `Ctrl+O`.
+La vue principale replie déjà un lot pliable terminé en une seule ligne étiquetée (`✓  Read 4 text files`) — le résumé fait le travail de l'ancienne liste par outil. Pour le détail complet par outil, appuyez sur `Ctrl+O` pour basculer en mode détail déplié, où chaque outil s'affiche individuellement avec le résumé sous la forme d'une ligne `● <étiquette>` finale sous le groupe.
 
 ```json
 {
   "fastModel": "qwen3-coder-flash",
-  "ui": {
-    "compactMode": true
-  },
   "experimental": {
     "emitToolUseSummaries": true
   }
 }
 ```
-En mode complet (par défaut), le résumé s'affiche sous la forme d'une ligne `● <étiquette>` finale sous le groupe d'outils — utile pour les lots volumineux ou hétérogènes, mais pour les petits lots de même type (par exemple `Read × 3`), l'étiquette peut sembler redondante par rapport aux lignes d'outils visibles. Si cela correspond à votre flux de travail habituel, activez le mode compact comme ci-dessus, ou désactivez complètement le résumé via `experimental.emitToolUseSummaries: false`.
+
+Pour les petits lots de même type (par exemple `Read × 3`), la ligne `● <étiquette>` dépliée peut sembler être une reformulation des lignes d'outils visibles ; si cela correspond à votre flux de travail habituel, vous pouvez désactiver complètement le résumé via `experimental.emitToolUseSummaries: false`.
 
 ## Surveillance
 
@@ -167,11 +164,11 @@ La limite de 300 caractères par champ réduit l'exposition mais ne l'élimine p
 
 ## Coût
 
-Un appel au fast model par lot d'outils éligible. L'entrée est une petite invite système fixe plus les entrées/sorties d'outils tronquées (chaque champ limité à 300 caractères). La sortie est une seule ligne courte (limitée à 100 caractères, typiquement 20 jetons ou moins). Sur un fast model typique, cela coûte environ 0,001 $ par lot.
+Un appel au fast model par lot d'outils éligible. L'entrée est un petit prompt système fixe plus les entrées/sorties d'outils tronquées (chaque champ limité à 300 caractères). La sortie est une seule ligne courte (limitée à 100 caractères, typiquement 20 jetons ou moins). Sur un fast model typique, cela coûte environ 0,001 $ par lot.
 
 Si vous ne voulez pas ce coût supplémentaire, désactivez la fonctionnalité via `experimental.emitToolUseSummaries: false` ou `QWEN_CODE_EMIT_TOOL_USE_SUMMARIES=0`.
 
 ## Rubriques connexes
 
-- [Mode Compact](../configuration/settings#ui) — basculez avec `Ctrl+O` ; le résumé remplace l'en-tête générique du groupe d'outils lorsque le mode compact est activé.
+- [Mode détail déplié](../configuration/settings#ui) — appuyez sur `Ctrl+O` pour déplier toutes les sorties d'outils en ligne ; le résumé remplace l'en-tête générique du groupe d'outils pour les groupes terminés dans la vue principale.
 - [Suggestions de suites](./followup-suggestions) — une autre amélioration UX pilotée par le fast model qui partage le même paramètre `fastModel`.

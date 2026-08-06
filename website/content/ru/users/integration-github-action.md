@@ -94,7 +94,7 @@ gha-creds-*.json
 
 ### Сортировка Issues
 
-Этот action можно использовать для автоматической сортировки GitHub Issues или по расписанию. Пример работающей настройки сортировки issues см. в [workflow для автоматической сортировки issues](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-automated-issue-triage.yml).
+Этот action можно использовать для автоматической сортировки GitHub Issues или по запросу. Пример работающей настройки сортировки issues см. в [workflow для сортировки issues Qwen](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-triage.yml).
 
 ### Ревью Pull Request
 

@@ -4,7 +4,7 @@
 
 `packages/acp-bridge/` é responsável pela fronteira entre a camada HTTP do daemon e o processo filho ACP. É consumido por `packages/cli/src/serve/` (o daemon `qwen serve`) e foi extraído no passo 3 do #4175 F1 para que futuros consumidores (`channels/base/AcpBridge.ts`, o companion de IDE do VS Code) possam usar o mesmo núcleo da bridge sem acessar diretamente o pacote CLI.
 
-A bridge fornece uma instância de `HttpAcpBridge`, um `AcpChannel` para o processo filho ACP, sessões multiplexadas nesse canal, `EventBus`es por sessão, um `MultiClientPermissionMediator`, um adaptador `BridgeFileSystem` e auxiliares orientados a ACP (`spawnOrAttach`, `loadSession`, `resumeSession`, `sendPrompt`, `cancelSession`, `respondToPermission`, além de RPCs extMethod para status do workspace e reinício do MCP).
+Cada `WorkspaceRuntime` ativo possui uma instância de `HttpAcpBridge`. A produção tenta pré-aquecer a bridge primária e tenta novamente no primeiro uso após falha. Um secundário confiável abre seu `AcpChannel` e inicia seu filho sob demanda; um secundário não confiável não consegue iniciar o ACP. Dentro do runtime, a bridge fornece sessões multiplexadas sobre o canal, `EventBus`es por sessão, um `MultiClientPermissionMediator`, um adaptador `BridgeFileSystem` e auxiliares orientados a ACP (`spawnOrAttach`, `loadSession`, `resumeSession`, `sendPrompt`, `cancelSession`, `respondToPermission`, além de RPCs extMethod para status do workspace e reinício do MCP). Bridges e filhos nunca são compartilhados entre runtimes de workspace.
 
 ## Responsabilidades
 
@@ -16,7 +16,7 @@ A bridge fornece uma instância de `HttpAcpBridge`, um `AcpChannel` para o proce
 - `EventBus` por sessão que aciona `GET /session/:id/events` (ver [`10-event-bus.md`](./10-event-bus.md)).
 - Fluxo de permissão: `BridgeClient.requestPermission` → `MultiClientPermissionMediator.request` → fan-out → coleta de votos → resposta ACP (ver [`04-permission-mediation.md`](./04-permission-mediation.md)).
 - E/S de arquivos: adaptador `BridgeFileSystem` para chamadas ACP `readTextFile` / `writeTextFile` (ver [`07-workspace-filesystem.md`](./07-workspace-filesystem.md)).
-- RPCs extMethod para status em nível de workspace (`/workspace/mcp`, `/workspace/skills`, `/workspace/providers`) e reinício do MCP.
+- RPCs extMethod para status em nível de workspace (`/workspace/mcp`, `/workspace/skills`, `/workspace/providers`), reinício do MCP e o callback privado e gerenciado opcional do Tool Guard.
 - Ciclo de vida: `shutdown()` gracioso com `KILL_HARD_DEADLINE_MS` (10s) por canal; `killAllSync()` síncrono para forçar saída no segundo sinal.
 
 ## Arquitetura
@@ -45,7 +45,7 @@ A bridge fornece uma instância de `HttpAcpBridge`, um `AcpChannel` para o proce
 | `defaultEntry`  | `SessionEntry \| null`          | A sessão "única" usada quando `sessionScope: 'single'`.                                                                                                                                                                                                                                                                                                                                                  |
 | `defaultPolicy` | `PermissionPolicy`              | Configurado via `BridgeOptions.permissionPolicy`.                                                                                                                                                                                                                                                                                                                                                        |
 | `mediator`      | `MultiClientPermissionMediator` | Um por instância da bridge.                                                                                                                                                                                                                                                                                                                                                                              |
-| Constants       | —                               | `DEFAULT_INIT_TIMEOUT_MS = 10_000`, `MCP_RESTART_TIMEOUT_MS = 300_000`, `DEFAULT_MAX_SESSIONS = 20`, `MAX_EVENT_RING_SIZE = 1_000_000`, `DEFAULT_PERMISSION_TIMEOUT_MS = 5min`, `DEFAULT_MAX_PENDING_PER_SESSION = 64`.                                                                                                                                                                                  |
+| Constants       | —                               | `DEFAULT_INIT_TIMEOUT_MS = 10_000`, `MCP_RESTART_TIMEOUT_MS = 300_000`, `DEFAULT_MAX_SESSIONS = 32`, `MAX_EVENT_RING_SIZE = 1_000_000`, `DEFAULT_PERMISSION_TIMEOUT_MS = 5min`, `DEFAULT_MAX_PENDING_PER_SESSION = 64`.                                                                                                                                                                                  |
 
 **Invariante `isDying`**: qualquer caminho de teardown deve definir `ChannelInfo.isDying = true` de forma síncrona **antes** de aguardar `channel.kill()`. `ensureChannel` trata um canal moribundo como ausente e cria (spawn) um novo. Sem essa flag, um `spawnOrAttach` concorrente chegando durante a janela de graça do SIGTERM (até 10s) se anexaria a um transporte prestes a fechar e o sessionId do chamador retornaria 404 em todas as requisições subsequentes. **Locais de definição** (devem ser mantidos sincronizados): `ensureChannel` (falha de inicialização + re-verificação de shutdown tardio), `doSpawn` (falha de newSession em canal vazio), `killSession` (última sessão saindo), `shutdown` (em massa).
 
@@ -176,7 +176,7 @@ sequenceDiagram
 
 ## Estado e ciclo de vida
 
-- A construção da bridge é síncrona; o primeiro `spawnOrAttach` inicializa a frio o processo filho ACP.
+- A construção da bridge é síncrona. O chamador pode pré-aquecer o canal antes da primeira sessão; caso contrário, o primeiro `spawnOrAttach` inicializa a frio o processo filho ACP. Um pré-aquecimento com falha deixa o primeiro uso livre para tentar novamente.
 - `defaultEntry` vive durante todo o ciclo de vida da bridge sob `sessionScope: 'single'`; o canal é recolhido (reaped) quando `sessionIds.size === 0` (após `killSession`) E `isDying` vira true.
 - `MAX_EVENT_RING_SIZE = 1_000_000` é um limite superior flexível para `BridgeOptions.eventRingSize` para capturar erros de digitação do operador antes de OOMs de ~500 MB por sessão.
 - `DEFAULT_PERMISSION_TIMEOUT_MS = 5 * 60 * 1000` impede que uma requisição de permissão travada bloqueie o `promptQueue` por sessão para sempre.
@@ -200,11 +200,12 @@ sequenceDiagram
 | `sessionScope`                                | `'single'`                                         | `'single'` compartilha uma sessão entre todos os clientes; `'thread'` cria uma sessão separada para cada thread de conversa. |
 | `channelFactory`                              | `defaultSpawnChannelFactory`                       | Fábrica plugável do processo filho ACP.                                                                               |
 | `initializeTimeoutMs`                         | `DEFAULT_INIT_TIMEOUT_MS = 10_000`                 | Timeout do handshake `initialize` do ACP.                                                                             |
-| `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 20`                        | Limite para `byId.size`. `0` / `Infinity` = ilimitado; NaN/negativo lança erro.                                       |
+| `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 32`                        | Limite para `byId.size`. `0` / `Infinity` = ilimitado; NaN/negativo lança erro.                                       |
 | `eventRingSize`                               | `DEFAULT_RING_SIZE` (de `eventBus.ts`)             | Anel de eventos por sessão; limite flexível em `MAX_EVENT_RING_SIZE`.                                                 |
 | `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5 min`            | Tempo de relógio (wallclock) por requisição para o mediador.                                                          |
 | `maxPendingPermissionsPerSession`             | `DEFAULT_MAX_PENDING_PER_SESSION = 64`             | Backpressure para agentes de alto volume.                                                                             |
 | `childEnvOverrides`                           | `{}`                                               | Adições / limpezas de variáveis de ambiente por handle para o processo filho ACP.                                     |
+| `externalToolGuard`                           | (nenhum)                                           | Handler opcional para a decisão privada filho-para-pai de pré-execução. A bridge o aceita apenas do canal proprietário para o Prompt ativo no momento. |
 | `persistApprovalMode`, `persistDisabledTools` | —                                                  | Hooks de escrita de configurações para as rotas de mutação da Wave 4.                                                 |
 | `contextFilename`                             | de `context.fileName` em `settings.json`           | Sobrescreve `getCurrentGeminiMdFilename`.                                                                             |
 | `statusProvider`                              | (nenhum)                                           | Células de pré-voo do host do daemon (`DaemonStatusProvider`).                                                        |
@@ -241,7 +242,16 @@ Além das chamadas principais `spawnOrAttach`, `sendPrompt`, `cancelSession`,
 
 `BridgeSpawnRequest.sessionScope` foi renomeado de `'per-client'` para
 `'thread'`. `BridgeRestoredSession` agora carrega `compactedReplay`,
-`liveJournal` e `lastEventId`. `BridgeClientRequestContext` é o contexto de
+`liveJournal` e `lastEventId`. Esses campos de replay são uma janela limitada
+em memória para sessões ativas, limitada por `BridgeOptions.compactedReplayMaxBytes`
+(padrão 4 MiB, teto rígido 256 MiB). O `liveJournal` em voo é limitado
+separadamente por `BridgeOptions.maxJournalEvents` (padrão 10 000) e
+`BridgeOptions.maxJournalBytes` (padrão 8 MiB). Se um replay retido mais antigo
+foi descartado, `compactedReplay[0]` é o marcador `history_truncated` sem id;
+se entradas do journal foram descartadas, `liveJournal[0]` carrega um marcador
+`history_truncated` com `scope: 'live_journal'`. A transcrição persistida
+completa permanece em disco e não é exposta por essa resposta da bridge.
+`BridgeClientRequestContext` é o contexto de
 requisição propagado através das chamadas da bridge; ele carrega `clientId`,
 `fromLoopback: boolean` e `promptId`.
 

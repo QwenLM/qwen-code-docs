@@ -24,7 +24,7 @@ O Qwen Code fornece um conjunto abrangente de ferramentas para interagir com o s
 
 ## 2. `read_file` (ReadFile)
 
-`read_file` lê e retorna o conteúdo de um arquivo especificado. Esta ferramenta lida com arquivos de texto e arquivos de mídia (imagens, PDFs, áudio, vídeo) cuja modalidade é suportada pelo modelo atual. Para arquivos de texto, pode ler intervalos de linhas específicos. Arquivos de mídia cuja modalidade não é suportada pelo modelo atual são rejeitados com uma mensagem de erro útil. Outros tipos de arquivos binários são geralmente ignorados.
+`read_file` lê e retorna o conteúdo de um arquivo especificado. Esta ferramenta lida com arquivos de texto e arquivos de mídia (imagens, PDFs, áudio, vídeo) cuja modalidade é suportada pelo modelo atual. Para arquivos de texto, pode ler intervalos de linhas específicos. PDFs não suportados tentam extração de texto e o fallback de visão limitado descrito abaixo; outros arquivos de mídia não suportados retornam uma mensagem de erro útil. Outros tipos de arquivos binários são geralmente ignorados.
 
 - **Nome da ferramenta:** `read_file`
 - **Nome de exibição:** ReadFile
@@ -33,9 +33,12 @@ O Qwen Code fornece um conjunto abrangente de ferramentas para interagir com o s
   - `path` (string, obrigatório): O caminho absoluto para o arquivo a ser lido.
   - `offset` (número, opcional): Para arquivos de texto, o número da linha baseado em 0 para começar a ler. Requer que `limit` seja definido.
   - `limit` (número, opcional): Para arquivos de texto, o número máximo de linhas a serem lidas. Se omitido, lê um máximo padrão (ex.: 2000 linhas) ou o arquivo inteiro se viável.
+  - `pages` (string, opcional): Para PDFs, uma página 1-indexada ou intervalo fechado de páginas como `"3"` ou `"20-25"`. Uma requisição pode conter no máximo 20 páginas.
 - **Comportamento:**
   - Para arquivos de texto: Retorna o conteúdo. Se `offset` e `limit` forem usados, retorna apenas aquele intervalo de linhas. Indica se o conteúdo foi truncado devido a limites de linha ou limites de comprimento de linha.
   - Para arquivos de mídia (imagens, PDFs, áudio, vídeo): Se o modelo atual suportar a modalidade do arquivo, retorna o conteúdo do arquivo como um objeto `inlineData` codificado em base64. Se o modelo não suportar a modalidade, retorna uma mensagem de erro com orientação (ex.: sugerindo skills ou ferramentas externas).
+  - Para PDFs com um modelo principal somente-texto: A extração de texto é tentada primeiro. Se a extração falhar, ou uma página única solicitada explicitamente (ou real) ainda exceder o orçamento de 12K tokens de texto, uma bridge de visão configurada renderiza e transcreve automaticamente no máximo quatro páginas começando na primeira página solicitada. O intervalo solicitado é recortado ao final real do documento quando conhecido. O resultado identifica o intervalo transcrito e seja as páginas conhecidas como restantes ou, quando a contagem de páginas não está disponível, que páginas adicionais podem existir. Estouro de texto multi-página ordinário ainda pede um intervalo `pages` mais restrito em vez de mudar para visão.
+  - A transcrição de PDF pela bridge de visão é lossy e marcada como conteúdo gerado por máquina não confiável. O resultado da ferramenta contém texto em vez de imagens renderizadas, e sua TUI voltada ao usuário, ACP, saída estruturada não-interativa e exibições de exportação identificam o modelo e endpoint de visão quando conhecidos. Se a bridge falhar, o erro exato de extração de PDF original é retornado ao modelo enquanto a exibição do usuário ainda divulga a tentativa da bridge.
   - Para outros arquivos binários: Tenta identificá-los e ignorá-los, retornando uma mensagem indicando que é um arquivo binário genérico.
 - **Saída:** (`llmContent`):
   - Para arquivos de texto: O conteúdo do arquivo, potencialmente prefixado com uma mensagem de truncamento (ex.: `[File content truncated: showing lines 1-100 of 500 total lines...]\nActual file content...`).

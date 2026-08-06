@@ -18,7 +18,7 @@
 
 ### Prérequis
 
-- VS Code 1.85.0 ou version ultérieure
+- VS Code 1.96.0 ou version ultérieure
 
 ### Installation
 
@@ -28,7 +28,7 @@ Téléchargez et installez l'extension depuis le [Visual Studio Code Extension M
 
 ### L'extension ne s'installe pas
 
-- Assurez-vous d'avoir VS Code 1.85.0 ou version ultérieure
+- Assurez-vous d'avoir VS Code 1.96.0 ou version ultérieure
 - Vérifiez que VS Code a l'autorisation d'installer des extensions
 - Essayez d'installer directement depuis le site du Marketplace
 

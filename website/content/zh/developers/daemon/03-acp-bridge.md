@@ -4,7 +4,7 @@
 
 `packages/acp-bridge/` 负责守护进程 HTTP 层与 ACP 子进程之间的边界。它被 `packages/cli/src/serve/`（即 `qwen serve` 守护进程）消费，并在 #4175 F1 第 3 步中被提取出来，以便未来的消费者（如 `channels/base/AcpBridge.ts`、VS Code IDE 伴侣插件）能够使用相同的 bridge 核心，而无需深入 CLI 包。
 
-该 bridge 提供一个 `HttpAcpBridge` 实例、一个通往 ACP 子进程的 `AcpChannel`、基于该 channel 的多路复用 session、每个 session 的 `EventBus`、一个 `MultiClientPermissionMediator`、一个 `BridgeFileSystem` 适配器，以及面向 ACP 的辅助函数（`spawnOrAttach`、`loadSession`、`resumeSession`、`sendPrompt`、`cancelSession`、`respondToPermission`，以及用于 workspace 状态和 MCP 重启的 extMethod RPC）。
+每个活跃的 `WorkspaceRuntime` 拥有一个 `HttpAcpBridge` 实例。生产环境会尝试预热主 bridge，并在失败后于首次使用时重试。受信任的次级运行时会打开其 `AcpChannel` 并按需启动其子进程；不受信任的次级运行时无法启动 ACP。在 runtime 内部，bridge 通过 channel 提供多路复用的 session、每个 session 的 `EventBus`、一个 `MultiClientPermissionMediator`、一个 `BridgeFileSystem` 适配器，以及面向 ACP 的辅助函数（`spawnOrAttach`、`loadSession`、`resumeSession`、`sendPrompt`、`cancelSession`、`respondToPermission`，以及用于 workspace 状态和 MCP 重启的 extMethod RPC）。Bridge 和子进程不会在 workspace runtime 之间共享。
 
 ## 职责
 
@@ -16,7 +16,7 @@
 - 每个 session 的 `EventBus` 驱动 `GET /session/:id/events`（参见 [`10-event-bus.md`](./10-event-bus.md)）。
 - 权限流程：`BridgeClient.requestPermission` → `MultiClientPermissionMediator.request` → 扇出（fan-out） → 投票收集 → ACP 响应（参见 [`04-permission-mediation.md`](./04-permission-mediation.md)）。
 - 文件 I/O：`BridgeFileSystem` 适配器用于处理 ACP 的 `readTextFile` / `writeTextFile` 调用（参见 [`07-workspace-filesystem.md`](./07-workspace-filesystem.md)）。
-- 用于 workspace 级别状态（`/workspace/mcp`、`/workspace/skills`、`/workspace/providers`）和 MCP 重启的 extMethod RPC。
+- 用于 workspace 级别状态（`/workspace/mcp`、`/workspace/skills`、`/workspace/providers`）、MCP 重启以及可选的私有托管 Tool Guard 回调的 extMethod RPC。
 - 生命周期：优雅的 `shutdown()`，每个 channel 的超时时间为 `KILL_HARD_DEADLINE_MS`（10 秒）；同步的 `killAllSync()` 用于二次信号强制退出。
 
 ## 架构
@@ -45,7 +45,7 @@
 | `defaultEntry`  | `SessionEntry \| null`          | 当 `sessionScope: 'single'` 时使用的“单一” session。                                                                                                                                                                                                                                                                                                                                                 |
 | `defaultPolicy` | `PermissionPolicy`              | 通过 `BridgeOptions.permissionPolicy` 配置。                                                                                                                                                                                                                                                                                                                                                         |
 | `mediator`      | `MultiClientPermissionMediator` | 每个 bridge 实例一个。                                                                                                                                                                                                                                                                                                                                                                                 |
-| Constants       | —                               | `DEFAULT_INIT_TIMEOUT_MS = 10_000`、`MCP_RESTART_TIMEOUT_MS = 300_000`、`DEFAULT_MAX_SESSIONS = 20`、`MAX_EVENT_RING_SIZE = 1_000_000`、`DEFAULT_PERMISSION_TIMEOUT_MS = 5min`、`DEFAULT_MAX_PENDING_PER_SESSION = 64`。                                                                                                                                                                                  |
+| Constants       | —                               | `DEFAULT_INIT_TIMEOUT_MS = 10_000`、`MCP_RESTART_TIMEOUT_MS = 300_000`、`DEFAULT_MAX_SESSIONS = 32`、`MAX_EVENT_RING_SIZE = 1_000_000`、`DEFAULT_PERMISSION_TIMEOUT_MS = 5min`、`DEFAULT_MAX_PENDING_PER_SESSION = 64`。                                                                                                                                                                                  |
 
 **`isDying` 不变量**：任何 teardown 路径都必须在 await `channel.kill()` **之前**同步设置 `ChannelInfo.isDying = true`。`ensureChannel` 将 dying channel 视为不存在并生成一个新的。如果没有这个标志，在 SIGTERM 宽限期（最长 10 秒）内到达的并发 `spawnOrAttach` 将会附加到一个即将关闭的 transport 上，并且调用者的 sessionId 在后续每次操作中都会返回 404。**设置点**（必须保持同步）：`ensureChannel`（初始化失败 + 延迟 shutdown 重新检查）、`doSpawn`（空 channel 上的 newSession 失败）、`killSession`（最后一个 session 离开）、`shutdown`（批量）。
 
@@ -169,7 +169,7 @@ sequenceDiagram
 
 ## 状态与生命周期
 
-- Bridge 构造是同步的；第一次 `spawnOrAttach` 会冷启动 ACP 子进程。
+- Bridge 构造是同步的。调用者可以在第一个 session 之前预热 channel；否则第一次 `spawnOrAttach` 会冷启动 ACP 子进程。预热失败后，首次使用时可以自由重试。
 - 在 `sessionScope: 'single'` 下，`defaultEntry` 的生命周期与 bridge 相同；当 `sessionIds.size === 0`（在 `killSession` 之后）且 `isDying` 变为 true 时，channel 会被清理。
 - `MAX_EVENT_RING_SIZE = 1_000_000` 是 `BridgeOptions.eventRingSize` 的软上限，用于在导致每个 session 约 500 MB 的 OOM 之前捕获操作员的拼写错误。
 - `DEFAULT_PERMISSION_TIMEOUT_MS = 5 * 60 * 1000` 防止卡住的权限请求永久阻塞每个 session 的 `promptQueue`。
@@ -193,11 +193,12 @@ sequenceDiagram
 | `sessionScope`                                | `'single'`                                         | `'single'` 在所有客户端之间共享一个 session；`'thread'` 为每个对话线程创建独立的 session。 |
 | `channelFactory`                              | `defaultSpawnChannelFactory`                       | 可插拔的 ACP 子进程 factory。                                                                                          |
 | `initializeTimeoutMs`                         | `DEFAULT_INIT_TIMEOUT_MS = 10_000`                 | ACP `initialize` 握手超时时间。                                                                                   |
-| `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 20`                        | `byId.size` 的上限。`0` / `Infinity` = 无限制；NaN/负数会抛出异常。                                                |
+| `maxSessions`                                 | `DEFAULT_MAX_SESSIONS = 32`                        | `byId.size` 的上限。`0` / `Infinity` = 无限制；NaN/负数会抛出异常。                                                |
 | `eventRingSize`                               | `DEFAULT_RING_SIZE`（来自 `eventBus.ts`）           | 每个 session 的事件环；软上限为 `MAX_EVENT_RING_SIZE`。                                                         |
 | `permissionResponseTimeoutMs`                 | `DEFAULT_PERMISSION_TIMEOUT_MS = 5 min`            | mediator 的每个请求挂钟时间。                                                                               |
 | `maxPendingPermissionsPerSession`             | `DEFAULT_MAX_PENDING_PER_SESSION = 64`             | 针对高并发 agent 的背压控制。                                                                                   |
 | `childEnvOverrides`                           | `{}`                                               | 每个句柄为 ACP 子进程添加/清理的环境变量。                                                                  |
+| `externalToolGuard`                           | （无）                                             | 可选的私有子进程到父进程的预执行决策处理器。Bridge 仅接受来自当前活跃 Prompt 所属 channel 的该处理器。 |
 | `persistApprovalMode`、`persistDisabledTools` | —                                                  | Wave 4 mutation 路由的设置写入钩子。                                                                  |
 | `contextFilename`                             | 来自 `settings.json` 的 `context.fileName`          | 覆盖 `getCurrentGeminiMdFilename`。                                                                               |
 | `statusProvider`                              | （无）                                             | 守护进程宿主预检单元（`DaemonStatusProvider`）。                                                                 |
@@ -230,7 +231,8 @@ sequenceDiagram
 | `getWorkspaceToolsStatus()`                                  | 返回内置工具注册表快照。                      |
 | `getWorkspaceMcpToolsStatus(serverName)`                     | 返回特定 MCP 服务器的工具。                   |
 
-`BridgeSpawnRequest.sessionScope` 已从 `'per-client'` 重命名为 `'thread'`。`BridgeRestoredSession` 现在包含 `compactedReplay`、`liveJournal` 和 `lastEventId`。`BridgeClientRequestContext` 是贯穿 bridge 调用的请求上下文；它包含 `clientId`、`fromLoopback: boolean` 和 `promptId`。
+`BridgeSpawnRequest.sessionScope` 已从 `'per-client'` 重命名为 `'thread'`。`BridgeRestoredSession` 现在包含 `compactedReplay`、`liveJournal` 和 `lastEventId`。这些重放字段是活跃会话的有界内存窗口，上限由 `BridgeOptions.compactedReplayMaxBytes`（默认 4 MiB，硬上限 256 MiB）控制。正在进行的 `liveJournal` 由 `BridgeOptions.maxJournalEvents`（默认 10 000）和 `BridgeOptions.maxJournalBytes`（默认 8 MiB）单独限制。如果较旧的保留重放被丢弃，`compactedReplay[0]` 是无 id 的 `history_truncated` 标记；如果日志条目被丢弃，`liveJournal[0]` 携带 `scope: 'live_journal'` 的 `history_truncated` 标记。完整的持久化转录保留在磁盘上，不由此 bridge 响应暴露。
+`BridgeClientRequestContext` 是贯穿 bridge 调用的请求上下文；它包含 `clientId`、`fromLoopback: boolean` 和 `promptId`。
 
 ## 注意事项与已知限制
 

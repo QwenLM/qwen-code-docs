@@ -37,6 +37,8 @@ Chaque outil MCP découvert est encapsulé dans une instance `DiscoveredMCPTool`
 - **Traite les réponses** à la fois pour le contexte LLM et l'affichage utilisateur
 - **Maintient l'état de la connexion** et gère les timeouts
 
+Après une perte de connexion, l'invocation en cours est rejouée uniquement pour un serveur fiable dans un workspace fiable lorsque l'outil déclare explicitement `idempotentHint: true`, ou déclare `readOnlyHint: true` sans `destructiveHint: true` ou `idempotentHint: false` contradictoire. Les annotations manquantes ou contradictoires, et les annotations provenant d'un serveur ou workspace non fiable, sont traitées comme non sûres car le serveur peut avoir effectué un effet de bord avant que la réponse ne soit perdue. Les auteurs d'outils devraient publier des annotations MCP précises ; les administrateurs devraient toujours les vérifier avant d'activer la confiance du serveur.
+
 ### Mécanismes de transport
 
 La CLI prend en charge trois types de transport MCP :

@@ -1,18 +1,18 @@
 # SDK Java pour Qwen Code
 
-Le SDK Java pour Qwen Code est un SDK expérimental minimal offrant un accès programmatique aux fonctionnalités de Qwen Code. Il fournit une interface Java pour interagir avec la CLI de Qwen Code, permettant aux développeurs d'intégrer les capacités de Qwen Code dans leurs applications Java.
+Le SDK Java pour Qwen Code fournit un transport démon recommandé pour `qwen serve` et conserve l'API stdio legacy expérimentale pour la compatibilité. Les deux API sont livrées dans le même artefact `com.alibaba:qwencode-sdk`.
 
 ## Prérequis
 
-- Java >= 1.8
-- Maven >= 3.6.0 (pour la construction à partir des sources)
-- qwen-code >= 0.5.0
+- Java >= 11 pour `0.1.0-alpha`
+- Maven >= 3.9.2 pour la construction ou la publication de ce SDK depuis les sources
+- Un `qwen serve` compatible pour l'API démon, ou qwen-code >= 0.5.0 pour l'API stdio legacy
 
 ### Dépendances
 
-- **Logging** : ch.qos.logback:logback-classic
+- **Logging API** : org.slf4j:slf4j-api (choisissez un fournisseur SLF4J dans votre application)
 - **Utilitaires** : org.apache.commons:commons-lang3
-- **Traitement JSON** : com.alibaba.fastjson2:fastjson2
+- **Traitement JSON** : Fastjson2 pour l'encodage et Jackson Core pour le décodage strict
 - **Tests** : JUnit 5 (org.junit.jupiter:junit-jupiter)
 
 ## Installation
@@ -23,7 +23,7 @@ Ajoutez la dépendance suivante à votre fichier `pom.xml` Maven :
 <dependency>
     <groupId>com.alibaba</groupId>
     <artifactId>qwencode-sdk</artifactId>
-    <version>{$version}</version>
+    <version>0.1.0-alpha</version>
 </dependency>
 ```
 
@@ -51,9 +51,44 @@ mvn package
 mvn install
 ```
 
-## Démarrage rapide
+### E2E avec démon réel depuis les sources
 
-La façon la plus simple d'utiliser le SDK est via la méthode `QwenCodeCli.simpleQuery()` :
+Exécutez les tests d'intégration Java avec démon réel depuis la racine du dépôt après avoir construit les workspaces et le bundle CLI racine :
+
+```bash
+npm run build
+npm run bundle
+npx tsx scripts/run-java-daemon-sdk-e2e.ts
+```
+
+`npm run build` seul ne rafraîchit pas `dist/cli.js` ; le harnais E2E lance ce bundle et échoue avec une erreur de prérequis explicite lorsqu'il est absent.
+
+## API démon recommandée
+
+Démarrez `qwen serve`, puis créez une session thread-scoped indépendante. `promptText` retourne uniquement après un `turn_complete` correspondant ; les flux incomplets échouent avec `PromptOutcomeIndeterminateException` plutôt que de retourner du texte partiel comme succès.
+
+```java
+import com.alibaba.qwen.code.daemon.DaemonClient;
+import com.alibaba.qwen.code.daemon.DaemonSessionClient;
+import com.alibaba.qwen.code.daemon.PromptTextResult;
+import java.net.URI;
+
+try (DaemonClient daemon = DaemonClient.builder()
+        .baseUri(URI.create("http://127.0.0.1:4170"))
+        .build();
+     DaemonSessionClient session = daemon.createSession()) {
+    PromptTextResult result = session.promptText("Explain this repository");
+    System.out.println(result.getText());
+}
+```
+
+Si `qwen serve` nécessite une authentification, ajoutez `.bearerToken(System.getenv("QWEN_SERVER_TOKEN"))` au builder `DaemonClient`. Le SDK envoie le bearer sur les requêtes REST et SSE et ne le met jamais dans l'URL.
+
+## API stdio legacy
+
+L'API `com.alibaba.qwen.code.cli` existante reste disponible :
+
+La façon la plus simple d'utiliser le SDK legacy est via la méthode `QwenCodeCli.simpleQuery()` :
 
 ```java
 public static void runSimpleExample() {

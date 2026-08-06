@@ -510,7 +510,7 @@ Contrôle les [Skills](../features/skills) exposées au modèle.
 
 | Paramètre                | Type             | Description                                                                                                                                                                                                                                                                                                                                                              | Par défaut     |
 | ---------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
-| `skills.disabledLevels`  | array of strings | Niveaux de découverte de skills à ignorer entièrement. Les niveaux pris en charge sont `user`, `project` et `extension`. Les skills des niveaux exclus ne sont pas découvertes, même si elles sont explicitement listées dans `skills.enabled`. **Fusionné en union** à travers les scopes.                                                                                             | `undefined` |
+| `skills.disabledLevels`  | array of strings | Niveaux de découverte de skills à ignorer entièrement. Les niveaux pris en charge sont `project`, `user`, `extension` et `bundled`. Fusionné en union à travers les scopes de paramètres. Utilisez `["bundled"]` pour masquer toutes les skills intégrées tout en conservant les skills fournies par l'hôte. Remarque : les entrées de `skills.directories` sont découvertes au niveau `user`, donc `["user"]` les masque aussi. | `undefined` |
 | `skills.disabled`        | array of strings | Noms des skills désactivées de manière stricte. La correspondance se fait sans casse sur le nom du skill et **fusionné en union** à travers les scopes de paramètres, ainsi les paramètres du projet ne peuvent pas écraser une entrée utilisateur ou système. Les skills masquées n'apparaissent pas dans `<available_skills>` ni en tant que commandes slash `/<name>`.                                                                  | `undefined` |
 | `skills.defaultDisabled` | array of strings | Noms des skills qui commencent désactivées mais peuvent être activées via `skills.enabled`. La correspondance se fait sans casse et fusionné en union à travers les scopes de paramètres.                                                                                                                                                                                 | `undefined` |
 | `skills.enabled`         | array of strings | Activations explicites qui remplacent les entrées correspondantes de `skills.defaultDisabled`. La correspondance se fait sans casse et fusionné en union à travers les scopes de paramètres. Ce paramètre ne peut pas écraser `skills.disabled` ni réactiver des skills d'un niveau exclu par `skills.disabledLevels`.                                                      | `undefined` |
@@ -883,6 +883,8 @@ Vous pouvez désactiver la collecte des statistiques d'utilisation à tout momen
   }
 }
 ```
+
+Vous pouvez également définir `QWEN_USAGE_STATISTICS_ENABLED=false` (ou `0`) dans l'environnement. La variable d'environnement est prioritaire sur le paramètre. Redémarrez Qwen Code après avoir modifié l'une ou l'autre valeur.
 
 > [!note]
 >

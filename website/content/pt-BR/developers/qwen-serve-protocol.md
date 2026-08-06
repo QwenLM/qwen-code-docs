@@ -31,12 +31,12 @@ Origins correspondentes recebem os cabeçalhos de resposta CORS padrão em cada 
 Access-Control-Allow-Origin: <echoed origin>
 Vary: Origin
 Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS
-Access-Control-Allow-Headers: Authorization, Content-Type, X-Qwen-Client-Id, Last-Event-ID
+Access-Control-Allow-Headers: Authorization, Content-Type, X-Qwen-Client-Id, Last-Event-ID, X-Qwen-Event-Epoch
 Access-Control-Max-Age: 86400
-Access-Control-Expose-Headers: Retry-After
+Access-Control-Expose-Headers: Retry-After, X-Qwen-Event-Epoch, X-Qwen-SSE-Stream-Id
 ```
 
-`Access-Control-Allow-Origin` ecoa o origin da requisição literalmente (maiúsculas/minúsculas como o navegador enviou) em vez do literal `*`, mesmo sob o padrão `*` — caches de navegador indexam respostas com ele emparelhado a `Vary: Origin`, e ecoar deixa espaço para adicionar `Access-Control-Allow-Credentials` em uma versão futura sem mudança de schema. `Access-Control-Expose-Headers: Retry-After` permite que webUIs de navegador respeitem as dicas de retry do daemon em respostas `429` / `503`. `Access-Control-Allow-Credentials` **NÃO** é enviado hoje: o daemon autentica via bearer no `Authorization`, que funciona cross-origin sem `credentials: 'include'`.
+`Access-Control-Allow-Origin` ecoa o origin da requisição literalmente (maiúsculas/minúsculas como o navegador enviou) em vez do literal `*`, mesmo sob o padrão `*` — caches de navegador indexam respostas com ele emparelhado a `Vary: Origin`, e ecoar deixa espaço para adicionar `Access-Control-Allow-Credentials` em uma versão futura sem mudança de schema. Os headers expostos permitem que webUIs de navegador respeitem as dicas de retry, retenham o epoch do SSE e corrijam streams físicos aceitos. `Access-Control-Allow-Credentials` **NÃO** é enviado hoje: o daemon autentica via bearer no `Authorization`, que funciona cross-origin sem `credentials: 'include'`.
 
 Requisições OPTIONS de preflight (OPTIONS com `Access-Control-Request-Method` ou `Access-Control-Request-Headers`) retornam imediatamente com `204 No Content` mais os cabeçalhos acima. Este é o padrão CORS convencional e é seguro — o preflight apenas confirma quais métodos/cabeçalhos o daemon aceitará; a requisição subsequente real ainda executa toda a cadeia (allowlist de host → auth bearer → rotas), então a anti-DNS-rebinding e a aplicação do bearer ainda disparam antes de qualquer estado ser lido ou mutado. Requisições OPTIONS simples de origins correspondentes continuam fluindo downstream com os cabeçalhos CORS anexados.
 

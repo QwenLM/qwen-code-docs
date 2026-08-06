@@ -1,3 +1,5 @@
+---
+
 # TypeScript SDK デーモンクライアント
 
 ## 概要
@@ -44,17 +46,17 @@ new DaemonClient({
 
 メソッドグループ（すべてのメソッドはオプションの `clientId` を受け取り、`X-Qwen-Client-Id` を付与します）:
 
-| グループ               | メソッド                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 基盤処理               | `health()`, `capabilities()`, `auth` (lazy `DaemonAuthFlow` accessor)                                                                                                                                                                                                                                                                                                                                            |
-| セッション             | `createOrAttachSession`, `loadSession`, `resumeSession`, `listSessions`, `closeSession`, `setSessionMetadata`, `getSessionContext`, `getSessionSupportedCommands`, `setSessionApprovalMode`, `setSessionModel`                                                                                                                                                                                                   |
-| プロンプト実行         | `prompt`, `cancel`, `heartbeat`                                                                                                                                                                                                                                                                                                                                                                                  |
-| イベント               | `subscribeEvents` (SSE generator), `subscribeEventsStream` (raw response)                                                                                                                                                                                                                                                                                                                                        |
-| 権限                   | `respondToPermission`, `respondToSessionPermission`                                                                                                                                                                                                                                                                                                                                                              |
-| ワークスペーススナップショット | `getWorkspaceMcp`, `getWorkspaceSkills`, `getWorkspaceProviders`, `getWorkspaceEnv`, `getWorkspacePreflight`                                                                                                                                                                                                                                                                                                     |
-| ワークスペース変更     | `writeWorkspaceMemory`, `readWorkspaceMemory`, `rememberWorkspaceMemory`, `getWorkspaceMemoryRememberTask`, `forgetWorkspaceMemory`, `getWorkspaceMemoryForgetTask`, `dreamWorkspaceMemory`, `getWorkspaceMemoryDreamTask`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `toggleWorkspaceTool`, `restartMcpServer`, `initializeWorkspace` |
-| ファイル               | `readFile`, `readFileBytes`, `writeFile`, `editFile`, `listDirectory`, `globPaths`, `statPath`                                                                                                                                                                                                                                                                                                                   |
-| 認証                   | `startDeviceFlow`, `pollDeviceFlow`, `cancelDeviceFlow`, `getAuthStatus`                                                                                                                                                                                                                                                                                                                                         |
+| グループ               | メソッド                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 基盤処理               | `health()`, `capabilities()`, `auth` (lazy `DaemonAuthFlow` accessor)                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| セッション             | `createOrAttachSession`, `loadSession`, `resumeSession`, `listSessions`, `closeSession`, `setSessionMetadata`, `getSessionContext`, `getSessionSupportedCommands`, `setSessionApprovalMode`, `setSessionModel`                                                                                                                                                                                                                                                                              |
+| プロンプト実行         | `prompt`, `cancel`, `heartbeat`                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| イベント               | `subscribeEvents` (SSE generator), `subscribeEventsStream` (raw response)                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| 権限                   | `respondToPermission`, `respondToSessionPermission`                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ワークスペーススナップショット | `getWorkspaceMcp`, `getWorkspaceSkills`, `getWorkspaceProviders`, `getWorkspaceEnv`, `getWorkspacePreflight`                                                                                                                                                                                                                                                                                                                                                                               |
+| ワークスペース変更     | `addWorkspace`, `updateWorkspace`, `writeWorkspaceMemory`, `readWorkspaceMemory`, `rememberWorkspaceMemory`, `getWorkspaceMemoryRememberTask`, `forgetWorkspaceMemory`, `getWorkspaceMemoryForgetTask`, `dreamWorkspaceMemory`, `getWorkspaceMemoryDreamTask`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `setWorkspaceToolEnabled`, `setWorkspaceSkillEnabled`, `restartMcpServer`, `initWorkspace` |
+| ファイル               | `readFile`, `readFileBytes`, `writeFile`, `editFile`, `listDirectory`, `globPaths`, `statPath`                                                                                                                                                                                                                                                                                                                                                                                              |
+| 認証                   | `startDeviceFlow`, `pollDeviceFlow`, `cancelDeviceFlow`, `getAuthStatus`                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ### `fetchWithTimeout`
 
@@ -140,6 +142,36 @@ await client.getWorkspaceMemoryForgetTask('forget-...');
 await client.dreamWorkspaceMemory();
 await client.getWorkspaceMemoryDreamTask('dream-...');
 ```
+
+ワークスペースのスキルトグルは、両方のクライアント形状で利用できます。
+
+```ts
+await client.setWorkspaceSkillEnabled('review', false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
+```
+
+事前に `capabilities.features.includes('workspace_skill_toggle')` を確認してください。型付きの `DaemonSkillToggleResult` は、正規の `skillName`、ディスク状態の `changed`、アクティベーション状態（`applied`、`deferred`、または `partial`）、およびリフレッシュ/失敗したセッション数を報告します。`DaemonWorkspaceSkillStatus.userInvocable` はオプションの false のみのフィールドです。不在の場合、スキルはユーザーが呼び出し可能であることを意味します。
+
+ワークスペースの表示名はオプションのプレゼンテーションメタデータです。事前に `capabilities.features.includes('workspace_display_name')` を確認してください。ワークスペース ID と正規パスが唯一のセレクターであり、表示名の重複は有効です。
+
+```ts
+const workspace = await client.addWorkspace('/srv/repos/payments', {
+  persist: true,
+  displayName: 'Payments Production',
+});
+
+await client.updateWorkspace(workspace.id, {
+  displayName: 'Payments',
+});
+await client.updateWorkspace(workspace.id, { displayName: null });
+```
+
+`addWorkspace` は `displayName?: string` を受け取り、設定されている場合にそれを返します。`updateWorkspace` は ID または cwd セレクターと `{ displayName: string | null }` を受け入れます。`null` は名前をクリアします。名前はトリミング後 256 文字に制限され、内部の C0/DEL 制御文字は拒否されます。プロセスローカルのワークスペースは、現在のデーモンプロセス間のみ名前を保持します。一致する永続化された登録は、既存のストアを通じて更新されます。`DaemonWorkspaceCapability.displayName` はオプションのままなので、SDK は古いデーモンとも引き続き相互運用できます。
+
 ## ワークフロー
 
 ### Create-or-attach + 最初のプロンプト
@@ -228,13 +260,13 @@ sequenceDiagram
 
 - `globalThis.fetch`（Node 18+ の組み込み、ブラウザー、undici など）。テスト用に `DaemonClient` ごとに注入可能です。
 - ネイティブの `AbortController` / `AbortSignal.any` / `setTimeout`。
-- `@qwen-code/qwen-code-core` や `@qwen-code/acp-bridge` への推移的な依存関係はありません — SDK パッケージは完全に分離されており、外部のコンシューマーがデーモンの内部実装を取り込むことはありません。
+- `@qwen-code/qwen-codeCore` や `@qwen-code/acp-bridge` への推移的な依存関係はありません — SDK パッケージは完全に分離されており、外部のコンシューマーがデーモンの内部実装を取り込むことはありません。
 
 ## `ui/*` サブパッケージ ([#4328](https://github.com/QwenLM/qwen-code/pull/4328) + [#4353](https://github.com/QwenLM/qwen-code/pull/4353))
 
 SDK は `packages/sdk-typescript/src/daemon/ui/` もエクスポートします。これは、デーモンイベントをトランスクリプトブロックに変換する、ホストに依存しないプリミティブのセットです。
 
-- `normalizeDaemonEvent(evt)` は、既知の 47 種類のデーモンワイヤーイベントを、UI で扱いやすい 42 種類の `DaemonUiEventType` 値にマッピングします。モデル化されていないイベントや不正なイベントは `debug` に正規化されます。
+- `normalizeDaemonEvent(evt)` は、既知の 53 種類のデーモンワイヤーイベントを、UI で扱いやすい 43 種類の `DaemonUiEventType` 値にマッピングします。モデル化されていないイベントや不正なイベントは `debug` に正規化されます。
 - `createDaemonTranscriptState()` と `reduceDaemonTranscriptEvents(state, events)` は、UI イベントを `DaemonTranscriptBlock[]` に射影します。
 - `createDaemonTranscriptStore()` はサブスクライブ / ディスパッチをラップします。
 - `render.ts` / `terminal.ts` は HTML とターミナルのベースラインレンダラーを提供し、`toolPreview.ts` はツール呼び出しのサマリーを生成します。
@@ -294,9 +326,13 @@ async function* subscribe(sessionId: string, signal: AbortSignal) {
     }
     // リングからのエビクションによるギャップを処理します。
     if (event.type === 'state_resync_required') {
-      // 状態が古くなっています — セッションの全状態をリロードします。
+      // 状態が古くなっています — デーモンのバウンドされたリプレイスナップショットウィンドウをリロードします。
       await client.loadSession(sessionId);
       continue;
+    }
+    if (event.type === 'history_truncated') {
+      // 情報のみ。ステータス通知をレンダリングし、保持されたリプレイイベントの適用を
+      // 続行します。別のリロードはトリガーしません。
     }
     yield event;
   }
@@ -328,7 +364,15 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 }
 ```
 
-再接続時、デーモンはサイズ制限付きリング（デフォルト 8000 イベント）から `id > lastSeenEventId` のイベントをリプレイします。ギャップがリングの容量を超える場合、`state_resync_required` フレームがクライアントにシグナルを送信し、`loadSession` を呼び出して状態を完全に再構築します。
+再接続時、デーモンはサイズ制限付きリング（デフォルト 8000 イベント）から `id > lastSeenEventId` のイベントをリプレイします。ギャップがリングの容量を超える場合、`state_resync_required` フレームがクライアントにシグナルを送信し、`loadSession` を呼び出してバウンドされたリプレイスナップショットウィンドウから再構築します。そのスナップショットは `history_truncated` で始まる可能性があります。これをオペレーターが確認できるステータスマーカーとして扱い、別の再同期リクエストとして扱わないでください。
+
+`history_truncated.fullTranscriptAvailable` は真偽値のケイパビリティフラグです。`true` の場合、呼び出し元は `DaemonClient.getSessionTranscriptPage(sessionId, { cursor, limit })` でフルアクティブ永続化リプレイをページングできます。`false` の場合、クライアントはバウンドされたリプレイのレンダリングを通常通り続行する必要があります。
+
+`workspace_persisted_transcript` がアドバタイズされている場合、`client.workspaceById(workspaceId).getSessionTranscriptPage(sessionId, { cursor, limit })` は、選択された登録済みワークスペースに ACP にアタッチせずに読み取ります。ワークスペース修飾メソッドは、クライアントが置換可能なトランスポートを持っている場合でも常にネイティブ REST を使用します。そのカーソルはデーモンが再起動すると期限切れになります。
+
+`workspace_session_export` がアドバタイズされている場合、`client.workspaceById(workspaceId).exportSession(sessionId, { format })` または `client.workspaceByCwd(workspaceCwd).exportSession(...)` は、選択された信頼されたワークスペースのアクティブな永続化トランスクリプトをエクスポートします。既存の `DaemonSessionExportResult` を返し、オプションのクライアント ID とクライアント全体の fetch タイムアウト動作を保持し、クライアントが置換可能なトランスポートを持っている場合でも常にネイティブ REST を使用します。`session_export` や `workspace_qualified_rest_core` からこのメソッドのサーバーサポートを推測しないでください。古いデーモンはプライマリのみのエクスポートを保持します。
+
+`workspace_archived_session_export` がアドバタイズされている場合、`client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` または対応する `workspaceByCwd` メソッドを使用して、選択されたワークスペースのアーカイブされた永続化トランスクリプトのみをエクスポートします。このメソッドはアクティブエクスポートと同じ結果型とネイティブ REST 動作を使用しますが、アクティブセッションにフォールバックすることはありません。サポートはアクティブエクスポートのケイパビリティから推測できません。
 
 ### 構築時の `lastEventId` のシード
 

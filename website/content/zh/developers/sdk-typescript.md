@@ -61,7 +61,7 @@ for await (const message of result) {
 | `cwd`                    | `string`                                       | `process.cwd()`  | 查询会话的工作目录。决定文件操作和命令执行的上下文。                                                                                                                                                                                                                                                                                                                                                                      |
 | `model`                  | `string`                                       | -                | 要使用的 AI 模型（例如 `'qwen-max'`、`'qwen-plus'`、`'qwen-turbo'`）。优先级高于 `OPENAI_MODEL` 和 `QWEN_MODEL` 环境变量。                                                                                                                                                                                                                                                                                               |
 | `pathToQwenExecutable`   | `string`                                       | 自动检测          | Qwen Code 可执行文件的路径。支持多种格式：`'qwen'`（从 PATH 获取的原生二进制文件）、`'/path/to/qwen'`（显式路径）、`'/path/to/cli.js'`（Node.js 打包文件）、`'node:/path/to/cli.js'`（强制使用 Node.js 运行时）、`'bun:/path/to/cli.js'`（强制使用 Bun 运行时）。如果未提供，会自动检测以下位置的 `qwen`：`QWEN_CODE_CLI_PATH` 环境变量、`~/.volta/bin/qwen`、`~/.npm-global/bin/qwen`、`/usr/local/bin/qwen`、`~/.local/bin/qwen`、`~/node_modules/.bin/qwen`、`~/.yarn/bin/qwen`。 |
-| `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'yolo'` | `'default'`      | 控制工具执行审批的权限模式。详见[权限模式](#权限模式)。                                                                                                                                                                                                                                                                                                                                                                      |
+| `permissionMode`         | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`      | 控制工具执行审批的权限模式。详见[权限模式](#权限模式)。                                                                                                                                                                                                                                                                                                                                                                      |
 | `canUseTool`             | `CanUseTool`                                   | -                | 自定义工具执行审批处理函数。当某个工具需要确认时被调用。必须在 60 秒内响应，否则请求将被自动拒绝。详见[自定义权限处理函数](#自定义权限处理函数)。                                                                                                                                                                                                                                                                              |
 | `env`                    | `Record<string, string>`                       | -                | 传递给 Qwen Code 进程的环境变量。会与当前进程的环境变量合并。                                                                                                                                                                                                                                                                                                                                                         |
 | `systemPrompt`           | `string \| QuerySystemPromptPreset`            | -                | 主会话的系统提示配置。使用字符串可以完全覆盖内置的 Qwen Code 系统提示，使用预设对象可以保留内置提示并附加额外指令。                                                                                                                                                                                                                                                                                                      |
@@ -165,6 +165,7 @@ SDK 支持不同的权限模式来控制工具执行：
 - **`default`**：写工具被拒绝，除非通过 `canUseTool` 回调或 `allowedTools` 批准。只读工具无需确认即可执行。
 - **`plan`**：阻止所有写工具，指示 AI 先提出计划。
 - **`auto-edit`**：自动批准编辑工具（`edit`、`write_file`、`notebook_edit`），其他工具需要确认。
+- **`auto`**：使用内置分类器自动批准安全的工具调用并阻止高风险调用，在多次策略阻止或分类器不可用后回退到手动审批。
 - **`yolo`**：所有工具自动执行，无需确认。
 
 ### 权限优先级链
@@ -178,8 +179,9 @@ SDK 支持不同的权限模式来控制工具执行：
 3. `permissionMode: 'plan'` - 阻止所有非只读工具
 4. `permissionMode: 'yolo'` - 自动批准所有工具
 5. `allowedTools` / `permissions.allow` - 自动批准匹配的工具
-6. `canUseTool` 回调 - 自定义批准逻辑（如果提供，已允许的工具不会调用此回调）
-7. 默认行为 - SDK 模式下自动拒绝（写工具需要显式批准）
+6. `permissionMode: 'auto'` - 对剩余工具进行分类器中介的审批
+7. `canUseTool` 回调 - 自定义批准逻辑（如果提供，已允许的工具不会调用此回调）
+8. 默认行为 - SDK 模式下自动拒绝（写工具需要显式批准）
 
 ## 示例
 

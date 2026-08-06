@@ -100,8 +100,8 @@ sequenceDiagram
 
 ### Load / resume
 
-`POST /session/:id/load` — replica o histórico completo do ACP (as notificações de `session/load` são disparadas antes da resposta retornar).
-`POST /session/:id/resume` — restaura sem replicar (`connection.unstable_resumeSession`, exposto sob a capability estável `session_resume` do daemon; `unstable_session_resume` permanece como um alias depreciado).
+`POST /session/:id/load` — restaura uma sessão persistida e retorna a janela atual de snapshot de replay limitado (as notificações de `session/load` ou o replay em modo resposta são semeados antes da resposta retornar).
+`POST /session/:id/resume` — restaura sem replay (`connection.unstable_resumeSession`, exposto sob a capability estável `session_resume` do daemon; `unstable_session_resume` permanece como um alias depreciado).
 
 Ambos:
 
@@ -185,7 +185,11 @@ best-effort.
 
 ### Execução de Comandos Shell
 
-`POST /session/:id/shell` executa um comando shell diretamente no host do daemon, sem roteamento pelo LLM. Ele transmite a saída no barramento SSE da sessão por meio dos eventos `user_shell_command` / `user_shell_result` e injeta o comando e o resultado no histórico de conversas do LLM. A resposta é `{ exitCode, output, aborted }`.
+`POST /session/:id/shell` executa um comando shell diretamente no host do daemon, sem roteamento pelo LLM. Ele transmite a saída no barramento SSE da sessão por meio dos eventos `user_shell_command` / `user_shell_result` e injeta o comando e o resultado no histórico de conversas do LLM. A resposta é `{ exitCode, output, aborted }`. Para uma sessão ativa de workspace secundário, a rota REST singular resolve o proprietário da sessão e executa na bridge daquele runtime, então o comando inicia no cwd do workspace proprietário. A rota não fornece um sandbox de caminho. Clientes ACP qualificados por workspace podem continuar a usar `_qwen/session/shell` na conexão do workspace proprietário.
+
+### Rewind da Sessão
+
+`GET /session/:id/rewind/snapshots` e `POST /session/:id/rewind` resolvem o runtime ativo do workspace proprietário. Sessões persistidas devem ser carregadas ou retomadas antes do rewind. O rewind trunca o histórico de conversas e opcionalmente restaura arquivos rastreados por `edit` e `write_file`; não desfaz comandos shell, Git, scripts ou alterações manuais. A restauração de arquivos é best-effort, então uma resposta pode reportar `rewound: false` e `filesFailed[]` depois que o histórico de conversas já avançou. Chamadas de rewind do SDK sempre usam REST consciente do proprietário, inclusive quando o cliente usa transporte ACP, porque a mutação deve reter autenticação REST estrita.
 
 ### Desanexar Sessão
 
@@ -213,13 +217,15 @@ best-effort.
 
 `GET /session/:id/tasks` retorna um snapshot de tarefas em segundo plano para tarefas de agente, tarefas de shell, tarefas de monitor e seus estados de ciclo de vida. Entradas de agente geradas por outro subagente carregam campos de linhagem opcionais (`parentAgentId`, `parentName`, `depth`) para que os clientes possam renderizar subagentes aninhados como uma árvore; veja o exemplo de payload em `qwen-serve-protocol.md`.
 
+A capability `session_monitor_tool_correlation` garante adicionalmente que entradas de monitor carregam `toolUseId`, permitindo que clientes correlacionem uma chamada de ferramenta da transcrição com os detalhes da tarefa.
+
 ### Status LSP da Sessão (tag de capability `session_lsp`)
 
 `GET /session/:id/lsp` retorna o status LSP por sessão higienizado para clientes do daemon: habilitação, contagens agregadas de servidores, estado indisponível/inicialização e `name`, `status`, `languages`, `transport`, `command` e `error` por servidor. LSP desabilitado ou indisponível é representado como dados de status HTTP 200, não como um erro de transporte.
 
 ### Replay Compactado
 
-`POST /session/:id/load` agora retorna um `BridgeRestoredSession` que pode incluir `compactedReplay?: BridgeEvent[]`, `liveJournal?: BridgeEvent[]` e `lastEventId?: number`. `compactedReplay` é produzido pelo `TurnBoundaryCompactionEngine`: nos limites de turno, ele consolida blocos consecutivos de texto/pensamento, colapsa sequências de chamadas de ferramentas para seu estado final, descarta sinais transitórios e produz logs de replay O(turnos) em vez de logs O(tokens) (tipicamente uma redução de 25-30x).
+`POST /session/:id/load` agora retorna um `BridgeRestoredSession` que pode incluir `compactedReplay?: BridgeEvent[]`, `liveJournal?: BridgeEvent[]` e `lastEventId?: number`. Esses campos são a janela de replay em memória limitada do daemon para uma sessão ativa, não uma API de transcrição completa. O limite padrão da janela é 4 MiB por sessão ativa (`--compacted-replay-max-bytes`), e a inicialização rejeita limites inválidos; o teto rígido é 256 MiB. `compactedReplay` é produzido pelo `TurnBoundaryCompactionEngine`: nos limites de turno, ele consolida blocos consecutivos de texto/pensamento, colapsa sequências de chamadas de ferramentas para seu estado final, descarta sinais transitórios e produz logs de replay O(turnos) em vez de logs O(tokens) (tipicamente uma redução de 25-30x). Quando entradas de replay mais antigas foram descartadas dessa janela de bytes, `compactedReplay[0]` é um marcador sintético sem id `history_truncated` com `{reason: 'replay_window_exceeded', truncatedEvents, retainedEvents, maxBytes, truncatedTurns?, fullTranscriptAvailable: boolean}`. `fullTranscriptAvailable` é uma flag de capability: `true` significa que o cliente pode paginar a transcrição completa persistida com `GET /session/:id/transcript`, enquanto `false` significa que apenas o replay limitado está disponível. Clientes devem renderizá-lo como status e aplicar o replay retido normalmente; não deve disparar um loop de ressincronização.
 
 ### Pré-aquecimento do Filho ACP
 
@@ -227,11 +233,15 @@ best-effort.
 
 ## Configuração
 
-- `BridgeOptions.maxSessions` (padrão 20) — limite máximo.
+- `BridgeOptions.maxSessions` (padrão 32) — limite máximo.
 - `BridgeOptions.sessionScope` (padrão `'single'`; opcional `'thread'`).
 - `BridgeOptions.initializeTimeoutMs` (padrão 10s) — handshake `initialize` do ACP.
 - `BridgeOptions.channelIdleTimeoutMs` (padrão 0; descarta o filho ACP imediatamente).
-- Tags de capability: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (alias depreciado), `session_list`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_btw`, `session_context_usage`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Tags de capability: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (alias depreciado), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+
+### Geração sem estado (tag de capability `session_generation`)
+
+`POST /session/:id/generate` aceita `{ "prompt": string }` e retorna um stream SSE escopo-da-requisição com eventos `started`, `thinking` opcional, `delta`, `done` ou `error`. A requisição não lê histórico de conversas, não grava turno e não expõe ferramentas. O filho ACP usa um modelo rápido configurado válido quando disponível e caso contrário usa o modelo principal da sessão.
 
 ## Ressalvas e Limites Conhecidos
 

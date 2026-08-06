@@ -11,7 +11,13 @@ Este guia aborda a configuração do Qwen Code com um robô inteligente do WeCom
 ## Criando o Robô
 
 1. Abra o console de administração do WeCom e crie um robô inteligente.
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN017w1jWj1TTvNBcfya8_!!6000000002384-2-tps-2212-887.png)
+
 2. Escolha o modo API.
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01buuik0207paQUuLQW_!!6000000006803-1-tps-1276-720.gif)
+
 3. Copie o Bot ID e o Secret.
 4. Adicione o robô aos chats diretos ou grupos onde ele deve estar disponível.
 
@@ -33,10 +39,7 @@ Adicione o canal ao `~/.qwen/settings.json`:
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "You are a concise coding assistant responding via WeCom.",
-      "groupPolicy": "open",
-      "groups": {
-        "*": { "requireMention": true }
-      }
+      "groupPolicy": "open"
     }
   }
 }
@@ -76,9 +79,13 @@ Abra o WeCom e envie uma mensagem para o robô inteligente.
 - `pairing`: os usuários devem fazer o pareamento antes de usar o bot.
 - `open`: qualquer pessoa que possa enviar mensagens para o robô pode usá-lo.
 
-Para grupos, defina `groupPolicy` como `"allowlist"` ou `"open"`. Por padrão, as mensagens de grupo exigem uma menção através de `"requireMention": true`.
+Para grupos, defina `groupPolicy` como `"allowlist"` ou `"open"`. O WeCom só entrega mensagens de grupo que mencionam o robô inteligente, então todo callback de grupo entregue é tratado como mencionado. A configuração `requireMention` não pode habilitar respostas a mensagens de grupo não mencionadas porque essas mensagens não são entregues ao bot.
 
-Quando o SDK do WeCom inclui metadados de menção explícitos, o Qwen Code os usa para essa verificação. Se não houver metadados de menção, o canal trata as mensagens de grupo entregues como não mencionadas. Defina `"requireMention": false` apenas se você quiser depender do escopo de entrega do lado do WeCom.
+### Compatibilidade de Menções em Grupo
+
+Versões anteriores do Qwen Code também aplicavam o filtro genérico `requireMention` após o WeCom entregar um callback de grupo. Como o callback não inclui metadados de menção separados, `requireMention: true` — incluindo o valor padrão — podia rejeitar toda mensagem de grupo entregue e fazer o chat em grupo parecer não funcional.
+
+O Qwen Code agora depende da entrega com escopo de menção do WeCom e não aplica uma segunda decisão de menção. Configurações existentes do WeCom contendo `requireMention: true` ou `requireMention: false` permanecem válidas e não produzem erros de configuração. Ambos os valores têm o mesmo comportamento para o WeCom, então o campo pode ser removido. Outras configurações na mesma entrada de grupo, como `dispatchMode`, continuam se aplicando. `groupHistoryLimit` continua aceito, mas não pode coletar novo histórico do WeCom porque mensagens de grupo não mencionadas não são entregues.
 
 ## Imagens e Arquivos
 
@@ -103,7 +110,7 @@ Por segurança, os caminhos das imagens locais devem estar dentro do diretório 
 ### O bot não responde em grupos
 
 - Verifique o `groupPolicy`.
-- Mencione o bot, a menos que a configuração do grupo defina `"requireMention": false`.
+- Mencione o bot no grupo.
 - Confirme se o robô foi adicionado ao grupo.
 
 ### As credenciais do aplicativo próprio não funcionam

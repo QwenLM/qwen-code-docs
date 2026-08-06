@@ -7,7 +7,7 @@
 ## 責務
 
 - `ServeOptions` の解析と検証: リッスンアドレス、認証、ワークスペース、セッション/接続の上限、MCP バジェット/プール、CORS、プロンプト/SSE/セッションのアイドルタイムアウト、レート制限、および関連するトグル。
-- バインドされたワークスペースを正確に 1 回だけ**正規化**します。同じ正規化形式は、`/capabilities`、`POST /session` のフォールバック、およびブリッジで共有されます。
+- プライマリワークスペースを正確に 1 回だけ**正規化**し、セッションランタイムを登録する前に繰り返された `--workspace` もすべて正規化します。プライマリの正規化形式は、`/capabilities.workspaceCwd`、`POST /session` のフォールバック、およびプライマリブリッジで共有されます。
 - 安全でない、または無効な起動構成を拒否します: トークンなしの非ループバックバインド、トークンなしの `--require-auth`、トークンなしの `--allow-origin '*'`、正の `mcpClientBudget` なしの `mcpBudgetMode='enforce'`、存在しないまたはディレクトリではない `--workspace`、および無効なタイムアウトまたはレート制限値。
 - `WorkspaceFileSystem` ファクトリ、権限監査パブリッシャー、`DaemonStatusProvider`、および `acp-bridge` を構築します。
 - Express アプリを構築し、ミドルウェア（`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> アクセスログ -> `bearerAuth` -> レート制限 -> JSON パーサー -> テレメトリ -> ルートごとの `mutationGate`）を接続し、セッション、ワークスペース CRUD、ファイル、デバイスフロー認証、権限投票、および ACP HTTP ルートをマウントします。
@@ -20,7 +20,7 @@
 
 **アプリファクトリ**: `packages/cli/src/serve/server.ts` の `createServeApp(opts, getPort, deps)`。Express の `Application` を構築します。直接組み込む場合やテストでは、ブートストラップラッパーなしで呼び出します。
 
-**ケイパビリティレジストリ**: `packages/cli/src/serve/capabilities.ts` の `SERVE_CAPABILITY_REGISTRY`。各タグには `since` バージョンとオプションの `modes` があります。10 個の条件付きタグ（`require_auth`、`mcp_workspace_pool`、`mcp_pool_restart`、`allow_origin`、`prompt_absolute_deadline`、`writer_idle_timeout`、`workspace_settings`、`session_shell_command`、`rate_limit`、`workspace_reload`）は、対応するトグルがオフの場合に省略されます。[`11-capabilities-versioning.md`](./11-capabilities-versioning.md) を参照してください。
+**ケイパビリティレジストリ**: `packages/cli/src/serve/capabilities.ts` の `SERVE_CAPABILITY_REGISTRY`。各タグには `since` バージョンとオプションの `modes` があります。条件付きタグは、デプロイメントまたはランタイムの述語が false の場合に省略されます。レジストリと述語マップが一次情報源です。[`11-capabilities-versioning.md`](./11-capabilities-versioning.md) を参照してください。
 
 **ミドルウェア** (`packages/cli/src/serve/auth.ts` および `server.ts`):
 
@@ -32,7 +32,7 @@
 | `bearerAuth(token)`                         | SHA-256 と `timingSafeEqual` による定数時間ベアラートークン比較。                                                            | トークンが設定されていない場合（ループバック開発のデフォルト）はオープンパススルーになります。`Bearer` スキームは大文字と小文字を区別しません。         |
 | レート制限ミドルウェア                       | プロンプト、ミューテーション、および読み取りルート用のオプションの階層ごとのトークンバケット。                                                      | `bearerAuth` の後、JSON 解析の前に登録されます。バケットが枯渇した場合、解析前に 429 を返します。     |
 | `express.json({ limit: '10mb' })`           | JSON ボディの解析。                                                                                                         | 解析エラーは 400 を返します。                                                                                          |
-| `daemonTelemetryMiddleware`                 | `withDaemonRequestSpan` を介して各 HTTP リクエストを OpenTelemetry スパンでラップします。                                          | 属性にはルート、sessionId、clientId、およびステータスコードが含まれます。                                                   |
+| `daemonTelemetryMiddleware`                 | `withDaemonRequestSpan` を介して、このポイントに到達した分類済みデーモン API リクエストを OpenTelemetry スパンでラップします。       | 属性には正規化ルート、解決済みワークスペースハッシュ、sessionId、clientId、およびステータスコードが含まれます。これより前の認証、レート制限、およびボディパーサーによる拒否はこのスパン境界の外側にあります。 |
 | `createMutationGate` (ルートごと)            | ループバックでもトークンを必要とするミューテーションルート用のルートレベルのオプトインゲート。                                           | `401 { code: 'token_required' }` を返します。グローバルな `app.use` ではありません。ルートは必要に応じて `mutate({ strict: true })` を呼び出します。 |
 
 **サブシステム**:
@@ -121,11 +121,11 @@
 | 環境変数             | `QWEN_SERVE_DEBUG=1`                                                                            | 詳細な stderr ログ。[`19-observability.md`](./19-observability.md) を参照。                              |
 | フラグ           | `--hostname`、`--port`                                                                          | リッスンバインディング。                                                                                       |
 | フラグ           | `--token`、`--require-auth`、`--enable-session-shell`                                           | ベアラートークン、ループバック認証の強化、および明示的なシェル実行スイッチ。                           |
-| フラグ            | `--workspace`                                                                                   | `process.cwd()` をオーバーライドします。                                                                            |
+| フラグ            | `--workspace`                                                                                   | `process.cwd()` をオーバーライドします。繰り返して追加の分離されたワークスペースランタイムを登録できます。                 |
 | フラグ           | `--max-sessions`、`--max-pending-prompts-per-session`、`--max-connections`、`--event-ring-size` | ブリッジ / Express の上限。                                                                                |
 | フラグ           | `--mcp-client-budget=N`、`--mcp-budget-mode={off,warn,enforce}`                                 | ACP 子プロセスに転送されます。                                                                           |
 | フラグ           | `--allow-origin`、`--allow-private-auth-base-url`                                               | ブラウザ CORS 許可リストと、localhost/プライベート認証プロバイダーのインストールスイッチ。                       |
-| フラグ           | `--prompt-deadline-ms`、`--writer-idle-timeout-ms`、`--channel-idle-timeout-ms`                 | プロンプト、SSE ライター、および ACP 子プロセスのアイドルライフサイクル制御。                                             |
+| フラグ           | `--prompt-deadline-ms`、`--writer-idle-timeout-ms`、`--channel-idle-timeout-ms`、`--initialize-timeout-ms` | プロンプト、SSE ライター、ACP 子プロセスのアイドルライフサイクル、および ACP 子プロセスのリクエストタイムアウト制御。                  |
 | フラグ           | `--session-reap-interval-ms`、`--session-idle-timeout-ms`                                       | 切断されたセッションの回収制御。                                                                 |
 | フラグ           | `--rate-limit*`                                                                                 | 階層ごとの HTTP レート制限。                                                                             |
 | `settings.json` | `policy.permissionStrategy`、`policy.consensusQuorum`                                           | `MultiClientPermissionMediator` のポリシーとクォーラム。                                                    |

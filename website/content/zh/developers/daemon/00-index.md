@@ -11,7 +11,7 @@
 | [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md) | SDK 用户              | 端到端 TypeScript 实战指南                                 |
 | [`../daemon-client-adapters/`](../daemon-client-adapters/)                           | 适配器开发者          | 旧版客户端适配器设计文档                                   |
 | [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)                                   | 适配器开发者          | 客户端适配器设计说明                                       |
-| [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)     | F2 维护者             | 工作区 MCP transport pool 设计 v2.2                        |
+| [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)     | F2 维护者             | 工作区 MCP transport pool 设计 v2.2                        |
 
 如果你想**启动并使用 daemon**，请先阅读 `qwen-serve.md`。如果你想**基于线格式构建客户端**，请阅读 `qwen-serve-protocol.md`。如果你想**理解、扩展或调试 daemon 内部机制**，请阅读本文档集。
 
@@ -41,7 +41,7 @@
 - [`06-mcp-budget-guardrails.md`](./06-mcp-budget-guardrails.md) - `WorkspaceMcpBudget`、模式（`off`/`warn`/`enforce`）、迟滞效应、拒绝批次合并。
 - [`07-workspace-filesystem.md`](./07-workspace-filesystem.md) - `WorkspaceFileSystem` 沙箱、路径策略、审计、`BridgeFileSystem` 契约。
 - [`08-session-lifecycle.md`](./08-session-lifecycle.md) - 创建 / 附加 / 加载 / 恢复、`X-Qwen-Client-Id`、心跳、驱逐、元数据。
-- [`09-event-schema.md`](./09-event-schema.md) - 类型化 event schema v1：所有 47 种已知事件类型及其 payload、reducer、向前兼容性。
+- [`09-event-schema.md`](./09-event-schema.md) - 类型化 event schema v1：所有 53 种已知事件类型及其 payload、reducer、向前兼容性。
 - [`10-event-bus.md`](./10-event-bus.md) - `EventBus`、单调递增 ID、环形重放、`Last-Event-ID`、慢客户端背压、`client_evicted`。
 - [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) - 能力注册表、协议版本、schema 版本、条件通告。
 - [`12-auth-security.md`](./12-auth-security.md) - bearer 中间件、主机白名单、CORS 拒绝、变更门控、`--require-auth`、`/health` 豁免、设备流。
@@ -63,7 +63,7 @@
 ## 术语表
 
 - **ACP** - Agent Client Protocol。daemon bridge 与 ACP 子进程之间通过 stdio 进行的 JSON-RPC 通信。这不是客户端用于连接 daemon 的 HTTP 协议。
-- **ACP child** - daemon 生成的子进程（`qwen --acp`），用于承载实际的 agent 运行时。bridge 将一个 ACP child 多路复用于多个连接的客户端。
+- **ACP child** - 承载一个工作区 agent 运行时的 `qwen --acp` 子进程。生产环境会尝试预热主 bridge，并在失败后首次使用时重试；受信任的次级运行时按需启动其子进程，而不受信任的次级运行时则不会。拥有的 bridge 将多个会话和客户端多路复用到该子进程上。
 - **acp-bridge** - `@qwen-code/acp-bridge` 包（`packages/acp-bridge/`）。负责会话多路复用、权限仲裁器、事件总线和 channel factory。
 - **BridgeClient** - `packages/acp-bridge/src/bridgeClient.ts`。封装单个 ACP `ClientSideConnection`，处理 `requestPermission`、`sendPrompt` 和 `cancelSession`。
 - **Channel factory** - 用于生成或附加到 ACP child 的可插拔策略。默认的 `spawnChannel` 将 `qwen --acp` 作为子进程运行；`inMemoryChannel` 则在进程内运行以用于测试。
@@ -78,7 +78,7 @@
 - **PoolEntry** - `packages/core/src/tools/mcp-pool-entry.ts`。`McpTransportPool` 中的一个条目：一个 MCP transport、附加会话的引用计数以及空闲排空计时器。
 - **Session scope** - `single`（所有客户端共享一个 ACP 会话）或 `thread`（每个对话线程一个会话）。默认值为 `single`。
 - **SSE** - Server-Sent Events。daemon 出站事件通道（`GET /session/:id/events`）。
-- **Workspace** - daemon 启动时绑定的目录（`--workspace` 或 `cwd`）。一个 daemon 进程等于一个 workspace。
+- **Workspace** - 在 daemon 启动时注册的目录，从注册存储中恢复，或动态添加。`workspaceCwd` 是旧版主默认值；`workspaces[]` 是隔离运行时及其信任/移除元数据的目录。
 
 ## 实现源码锚点
 
@@ -92,7 +92,7 @@
 | MCP transport pool                | `packages/core/src/tools/mcp-transport-pool.ts`, `mcp-pool-key.ts`, `pid-descendants.ts`, `session-mcp-view.ts`, `/mcp refresh`, `MCPCallInterruptedError`                                                                                               | [`05`](./05-mcp-transport-pool.md), [`06`](./06-mcp-budget-guardrails.md)                                              |
 | MCP budget 防护机制               | `packages/core/src/tools/mcp-workspace-budget.ts`, `ServeMcpBudgetStatusCell.scope`, `budgets[]`                                                                                                                                                         | [`06`](./06-mcp-budget-guardrails.md)                                                                                  |
 | Workspace 文件系统                | `packages/cli/src/serve/fs/`, `assertTrustedForIntent(trusted, intent)`, `meta.matchedIgnore`, `includeIgnored`                                                                                                                                          | [`07`](./07-workspace-filesystem.md)                                                                                   |
-| Event schema 与 SSE 写入器        | `packages/sdk-typescript/src/daemon/events.ts`, `packages/cli/src/serve/routes/sse-events.ts`, `formatSseFrame`, `packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`, `ToolCallEmitter.resolveToolProvenance`, `tool_call.provenance`, `serverId` | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                                |
+| Event schema 与 SSE 写入器        | `packages/sdk-typescript/src/daemon/events.ts`, `packages/cli/src/serve/routes/sse-events.ts`, `formatSseFrame`, `packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`, `ToolCallEmitter.resolveToolProvenance`, `tool_call.provenance`, `serverId` | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                                |
 | 事件重同步                        | `state_resync_required`, `awaitingResync`, `RESYNC_PASSTHROUGH_TYPES`, `asKnownDaemonEvent`, `unrecognizedKnownEventCount`                                                                                                                             | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                                |
 | Capabilities                      | `packages/cli/src/serve/capabilities.ts`, `mcp_server_restart_refused.reason`, `MCP_RESTART_REFUSED_REASONS.has`                                                                                                                                         | [`11`](./11-capabilities-versioning.md)                                                                                |
 | 认证与设备流                      | `packages/cli/src/serve/auth.ts`, `packages/cli/src/serve/auth/device-flow.ts`                                                                                                                                                                           | [`12`](./12-auth-security.md)                                                                                          |
@@ -125,35 +125,36 @@
 | 模块          | 当前状态                                                                                                                                                                                        | 主要文档                                                                                                  |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | HTTP 路由     | 路由目录位于 `qwen-serve-protocol.md`；本 daemon 文档集仅引用它并说明实现归属。                                                                                                                 | [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md), [`20`](./20-quickstart-operations.md)           |
-| Event schema  | `EVENT_SCHEMA_VERSION = 1`；47 种已知事件类型；无 ID 订阅者的合成帧；`_meta.serverTimestamp` 由 `EventBus.publish()` 打时间戳（合成帧回退使用 `formatSseFrame()`）。                              | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                   |
+| Event schema  | `EVENT_SCHEMA_VERSION = 1`；53 种已知事件类型；无 ID 订阅者的合成帧；`_meta.serverTimestamp` 由 `EventBus.publish()` 打时间戳（合成帧回退使用 `formatSseFrame()`）。                              | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                   |
 | Capabilities  | `SERVE_PROTOCOL_VERSION = 'v1'`；75 个已注册标签；13 个条件标签。                                                                                                                               | [`11`](./11-capabilities-versioning.md)                                                                   |
 | Session shell | `POST /session/:id/shell` 接口在启用 `--enable-session-shell`、bearer 认证及会话绑定的 `X-Qwen-Client-Id` 后可用；能力标签为条件性。                                                            | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md), [`20`](./20-quickstart-operations.md) |
 | 速率限制      | 可选的按层级 HTTP 速率限制通过 CLI 参数/环境变量和条件能力标签暴露。                                                                                                                            | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md)                                    |
+
 ### 客户端 / SDK
 
 | 领域                         | 当前状态                                                                                                                                                | 主要文档                                                                                                                                  |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| TypeScript SDK daemon 客户端 | `DaemonClient`、`DaemonSessionClient`、`DaemonAuthFlow`、SSE 解析器、事件 reducer、功能预检及 UI transcript 导出均已文档化。            | [`13`](./13-sdk-daemon-client.md)                                                                                                             |
-| 共享 UI transcript 层   | SDK `daemon/ui/*` 将 daemon 事件标准化为 42 种 UI 语义事件类型，将其归约为 transcript 块，并提供渲染器/一致性辅助工具。 | [`14`](./14-cli-tui-adapter.md), [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) |
-| Web UI daemon 消费端       | `packages/webui/src/daemon/` 通过 React providers 和 adapters 消费 SDK transcript store。                                                         | [`14`](./14-cli-tui-adapter.md), [`../daemon-client-adapters/web-ui.md`](../daemon-client-adapters/web-ui.md)                                 |
-| CLI TUI / channels / VS Code | 旧版路径仍然存在；向共享 transcript 原语的迁移已作为后续工作记录，而非已完成的行为。                                 | [`14`](./14-cli-tui-adapter.md), [`15`](./15-channel-adapters.md), [`16`](./16-vscode-ide-adapter.md)                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| TypeScript SDK daemon 客户端 | `DaemonClient`、`DaemonSessionClient`、`DaemonAuthFlow`、SSE 解析器、事件 reducer、功能预检及 UI transcript 导出均已文档化。                            | [`13`](./13-sdk-daemon-client.md)                                                                                                         |
+| 共享 UI transcript 层        | SDK `daemon/ui/*` 将 daemon 事件标准化为 42 种 UI 语义事件类型，将其归约为 transcript 块，并提供渲染器/一致性辅助工具。                                  | [`14`](./14-cli-tui-adapter.md), [`../daemon-ui/README.md`](../daemon-ui/README.md), [`../daemon-ui/MIGRATION.md`](../daemon-ui/MIGRATION.md) |
+| Web UI daemon 消费端         | `packages/webui/src/daemon/` 通过 React providers 和 adapters 消费 SDK transcript store。                                                               | [`14`](./14-cli-tui-adapter.md), [`../daemon-client-adapters/web-ui.md`](../daemon-client-adapters/web-ui.md)                             |
+| CLI TUI / channels / VS Code | 旧版路径仍然存在；向共享 transcript 原语的迁移已作为后续工作记录，而非已完成的行为。                                                                     | [`14`](./14-cli-tui-adapter.md), [`15`](./15-channel-adapters.md), [`16`](./16-vscode-ide-adapter.md)                                     |
 
 ### 参考与运维
 
-| 领域                    | 当前状态                                                                                                                                             | 主要文档                          |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| 配置           | 完整的 `qwen serve` 标志、环境变量、`settings.json`、`ServeOptions`、`BridgeOptions` 及重要常量均汇总在一个页面中。                   | [`17`](./17-configuration.md)         |
-| 快速入门 / 运维 | 涵盖最短启动路径、启动方案、curl 检查、演示页面鉴权行为、路由拆分、关闭行为以及嵌入式调用方案。 | [`20`](./20-quickstart-operations.md) |
-| 错误                  | 总结了启动时的显式失败、路由错误、bridge 错误、EventBus 错误、文件系统错误和 mediator 错误，并提供了修复建议。        | [`18`](./18-error-taxonomy.md)        |
-| 可观测性           | 记录了 `QWEN_SERVE_DEBUG`、curl 方案、有用事件、遥测盲区以及排查清单。                                             | [`19`](./19-observability.md)         |
+| 领域              | 当前状态                                                                                                                                             | 主要文档                              |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| 配置              | 完整的 `qwen serve` 标志、环境变量、`settings.json`、`ServeOptions`、`BridgeOptions` 及重要常量均汇总在一个页面中。                                   | [`17`](./17-configuration.md)         |
+| 快速入门 / 运维   | 涵盖最短启动路径、启动方案、curl 检查、演示页面鉴权行为、路由拆分、关闭行为以及嵌入式调用方案。                                                       | [`20`](./20-quickstart-operations.md) |
+| 错误              | 总结了启动时的显式失败、路由错误、bridge 错误、EventBus 错误、文件系统错误和 mediator 错误，并提供了修复建议。                                        | [`18`](./18-error-taxonomy.md)        |
+| 可观测性          | 记录了 `QWEN_SERVE_DEBUG`、curl 方案、有用事件、遥测盲区以及排查清单。                                                                              | [`19`](./19-observability.md)         |
 
 ### 历史或已弃用的接口
 
-| 接口                                            | 状态                                                                                                         |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `docs/developers/daemon-client-adapters/tui.md`    | 旧版 `DaemonTuiAdapter` 技术预研的历史草案；当前共享 UI transcript 架构见文档 14。 |
-| `packages/cli/src/ui/daemon/daemon-tui-adapter.ts` | 旧版实验性 adapter 仍保留在代码库中。新的共享 UI 工作应优先使用 SDK `daemon/ui/*`。                 |
-| `--no-http-bridge`                                 | 为兼容起见予以接受，但会回退到 http-bridge 并在 stderr 打印提示。                                    |
+| 接口                                               | 状态                                                                                                           |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `docs/developers/daemon-client-adapters/tui.md`    | 旧版 `DaemonTuiAdapter` 技术预研的历史草案；当前共享 UI transcript 架构见文档 14。                               |
+| `packages/cli/src/ui/daemon/daemon-tui-adapter.ts` | 旧版实验性 adapter 仍保留在代码库中。新的共享 UI 工作应优先使用 SDK `daemon/ui/*`。                                |
+| `--no-http-bridge`                                 | 为兼容起见予以接受，但会回退到 http-bridge 并在 stderr 打印提示。                                                 |
 
 ### 前向兼容性
 

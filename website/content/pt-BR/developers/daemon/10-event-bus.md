@@ -36,7 +36,7 @@ O `EventBus` é atualmente privado ao pacote `acp-bridge` e consumido pela facto
 interface BridgeEvent {
   id?: number; // monotônico por sessão; ausente em frames terminais sintéticos
   v: 1; // EVENT_SCHEMA_VERSION
-  type: string; // um dos 47 tipos conhecidos ou extensível no futuro
+  type: string; // um dos 53 tipos conhecidos ou extensível no futuro
   data: unknown; // payload (tipado por tipo pelo SDK; veja 09-event-schema.md)
   _meta?: { serverTimestamp?: number; [key: string]: unknown }; // aplicado por EventBus.publish
   originatorClientId?: string; // definido quando o evento deriva de uma requisição com clientId

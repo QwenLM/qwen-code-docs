@@ -55,6 +55,7 @@ qwen extensions link /path/to/my-channel-extension
 | `instructions`   | 追加到每个会话的第一条消息之前                 |
 | `model`          | 该 channel 的模型覆盖配置                      |
 | `groupPolicy`    | `disabled`、`allowlist` 或 `open`              |
+| `dmPolicy`       | `open` 或 `disabled`                           |
 | `groups`         | 每个群组的设置                                 |
 
 有关每个选项的详细信息，请参阅[概述](./overview)。

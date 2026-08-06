@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) é o pool de escopo do workspace F2 (#4175 commit 5): múltiplas sessões ACP em um mesmo daemon compartilham um único transporte por tupla única `(serverName + configFingerprint)`, em vez de cada uma instanciar seu próprio processo filho MCP. O pool reside **dentro do filho ACP** (`QwenAgent.mcpPool`), é construído uma vez na inicialização do agente com o `Config` de bootstrap do daemon e sobrevive ao ciclo de vida das sessões. As entradas contam referências de anexos de sessão e são fechadas após um período de carência configurável quando a contagem de referências chega a zero.
+`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) é o pool de escopo do workspace F2 (#4175 commit 5): múltiplas sessões ACP em um mesmo runtime compartilham um único transporte por tupla única `(serverName + configFingerprint)`, em vez de cada uma instanciar seu próprio processo filho MCP. Quando o modo pool está habilitado, cada filho ACP iniciado possui um pool independente (`QwenAgent.mcpPool`). A produção tenta pré-aquecer o filho primário e tenta novamente no primeiro uso após falha; um secundário confiável inicia seu filho sob demanda, enquanto um secundário não confiável não inicia nenhum. O pool é construído uma vez na inicialização do agente com o `Config` de bootstrap do runtime e sobrevive ao ciclo de vida das sessões. As entradas contam referências de anexos de sessão e são fechadas após um período de carência configurável quando a contagem de referências chega a zero.
 
 É o mecanismo principal que impede que um daemon com várias sessões bifurque uma cópia de cada servidor MCP por sessão.
 
@@ -310,6 +310,7 @@ promessas `callTool` pendentes para `MCPCallInterruptedError`, de modo que um
 `await client.callTool(...)` travado seja rejeitado de forma limpa em vez de
 ficar pendurado. `forceShutdown` usa a mesma ordem de emitir e depois
 desanexar.
+
 ## Normalização da fingerprint e do `canonicalOAuth`
 
 A chave do pool vem de `fingerprint(cfg)` em `mcp-pool-key.ts`. O hash cobre
@@ -459,7 +460,7 @@ Esses auxiliares são internos, mas leitores do código-fonte podem vê-los:
 - `McpTransportPool.acquire()` usa `attachPooledSession` e `rollbackReservationOnSpawnFailure` para compartilhar o comportamento de atalho de attach rápido, attach pós-spawn e captura de spawn em andamento no pool. O comportamento em tempo de execução não é alterado; os invariantes de janela de corrida ainda residem nos pontos de chamada.
 - `SessionMcpView.applyTools` / `applyPrompts` compila `includeTools` / `excludeTools` uma vez via `compileNameFilter(cfg)` e verifica cada ferramenta com `compiledFilterAccepts(compiled, name)`. As funções exportadas `passesSessionFilter` / `passesSessionPromptFilter` usam o mesmo caminho compilado. `excludeTools` é correspondência exata; `includeTools` remove o primeiro sufixo `(...)` para que `toolName(args)` corresponda a `toolName`.
 
-Documento de design: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §6 cobre a máquina de estados do pool de transporte, reconexão, dreno e caminhos de varredura de descendentes.
+Documento de design: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §6 cobre a máquina de estados do pool de transporte, reconexão, dreno e caminhos de varredura de descendentes.
 
 ## Riscos e Limitações Conhecidas
 
@@ -476,5 +477,5 @@ Documento de design: [`docs/design/f2-mcp-transport-pool.md`](https://github.com
 - `packages/core/src/tools/mcp-pool-key.ts` (`connectionIdOf`, `parseConnectionId`)
 - `packages/core/src/tools/mcp-pool-events.ts` (tipos de evento)
 - `packages/core/src/tools/session-mcp-view.ts` (visão filtrada por sessão)
-- Documento de design F2 (v2.2, com o changelog de inclusão dos 32 itens): [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md). Trate o contrato de design como autoritativo; esta página é o mergulho profundo do desenvolvedor.
+- Documento de design F2 (v2.2, com o changelog de inclusão dos 32 itens): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md). Trate o contrato de design como autoritativo; esta página é o mergulho profundo do desenvolvedor.
 - Notas de design F2: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (commits 4-6 da série F2).

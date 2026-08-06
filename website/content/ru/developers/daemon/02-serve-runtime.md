@@ -7,7 +7,7 @@
 ## Функции
 
 - Парсинг и валидация `ServeOptions`: адрес прослушивания, аутентификация, рабочее пространство (workspace), лимиты сессий/подключений, бюджет/пул MCP, CORS, таймауты простоя для промптов/SSE/сессий, rate limit и связанные переключатели.
-- **Канонизация** привязанного рабочего пространства ровно один раз. Одна и та же каноническая форма используется в `/capabilities`, fallback для `POST /session` и в bridge.
+- **Канонизация** основного рабочего пространства ровно один раз, а также канонизация каждого повторного `--workspace` перед регистрацией сессионных сред выполнения. Основная каноническая форма используется в `/capabilities.workspaceCwd`, fallback для `POST /session` и в основном bridge.
 - Отклонение небезопасных или невалидных конфигураций запуска: привязка не к loopback-интерфейсу без токена, `--require-auth` без токена, `--allow-origin '*'` без токена, `mcpBudgetMode='enforce'` без положительного `mcpClientBudget`, несуществующий или не являющийся директорией `--workspace`, а также невалидные значения таймаутов или rate-limit.
 - Создание фабрики `WorkspaceFileSystem`, издателя аудита разрешений (permission audit publisher), `DaemonStatusProvider` и `acp-bridge`.
 - Сборка приложения Express, подключение middleware (`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> access log -> `bearerAuth` -> rate limit -> JSON parser -> telemetry -> per-route `mutationGate`) и монтирование маршрутов для сессий, CRUD-операций с рабочим пространством, файлами, аутентификации через device-flow, голосования за разрешения и ACP HTTP.
@@ -20,7 +20,7 @@
 
 **Фабрика приложения**: `createServeApp(opts, getPort, deps)` в `packages/cli/src/serve/server.ts`. Собирает Express `Application`. Прямые встраивающие модули и тесты вызывают её без обёртки бутстрапа.
 
-**Реестр возможностей**: `SERVE_CAPABILITY_REGISTRY` в `packages/cli/src/serve/capabilities.ts`. Каждый тег имеет версию `since` и опциональные `modes`. Десять условных тегов (`require_auth`, `mcp_workspace_pool`, `mcp_pool_restart`, `allow_origin`, `prompt_absolute_deadline`, `writer_idle_timeout`, `workspace_settings`, `session_shell_command`, `rate_limit`, `workspace_reload`) исключаются, если соответствующий переключатель выключен. См. [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).
+**Реестр возможностей**: `SERVE_CAPABILITY_REGISTRY` в `packages/cli/src/serve/capabilities.ts`. Каждый тег имеет версию `since` и опциональные `modes`. Условные теги исключаются, если их деплойментный или рантаймный предикат ложен; реестр и карта предикатов являются источником истины. См. [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).
 
 **Middleware** (`packages/cli/src/serve/auth.ts` и `server.ts`):
 
@@ -32,7 +32,7 @@
 | `bearerAuth(token)`                       | Сравнение bearer-токена с постоянным временем выполнения с использованием SHA-256 и `timingSafeEqual`.                     | Открытый пропуск (passthrough), если токен не настроен (дефолт для loopback-разработки). Схема `Bearer` регистронезависима. |
 | Rate-limit middleware                     | Опциональный token bucket для каждого уровня для маршрутов промптов, мутаций и чтения.                                     | Регистрируется после `bearerAuth` и до парсинга JSON; возвращает 429 до парсинга, когда bucket исчерпан.          |
 | `express.json({ limit: '10mb' })`         | Парсинг тела JSON.                                                                                                         | Ошибки парсинга возвращают 400.                                                                                   |
-| `daemonTelemetryMiddleware`               | Оборачивает каждый HTTP-запрос в span OpenTelemetry через `withDaemonRequestSpan`.                                         | Атрибуты включают маршрут, sessionId, clientId и код статуса.                                                     |
+| `daemonTelemetryMiddleware`               | Оборачивает классифицированные запросы daemon API, достигшие этой точки, в span OpenTelemetry через `withDaemonRequestSpan`. | Атрибуты включают канонический маршрут, хеш разрешённого рабочего пространства, sessionId, clientId и код статуса. Отказы на более ранних этапах аутентификации, rate-limit и парсинга тела находятся за границей этого span. |
 | `createMutationGate` (per-route)          | Шлюз на уровне маршрута для маршрутов мутаций, требующих токен даже на loopback.                                           | Возвращает `401 { code: 'token_required' }`. Не является глобальным `app.use`; маршруты вызывают `mutate({ strict: true })` по мере необходимости. |
 
 **Подсистемы**:
@@ -121,11 +121,11 @@
 | Env                   | `QWEN_SERVE_DEBUG=1`                                                                              | Подробные логи stderr. См. [`19-observability.md`](./19-observability.md).                          |
 | Флаги                 | `--hostname`, `--port`                                                                            | Привязка прослушивания.                                                                             |
 | Флаги                 | `--token`, `--require-auth`, `--enable-session-shell`                                             | Bearer-токен, усиление аутентификации на loopback и явный переключатель выполнения shell.           |
-| Флаг                  | `--workspace`                                                                                     | Переопределяет `process.cwd()`.                                                                     |
+| Флаг                  | `--workspace`                                                                                     | Переопределяет `process.cwd()`; повторите для регистрации дополнительных изолированных сессионных сред выполнения. |
 | Флаги                 | `--max-sessions`, `--max-pending-prompts-per-session`, `--max-connections`, `--event-ring-size`   | Лимиты Bridge / Express.                                                                            |
 | Флаги                 | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`                                   | Передается дочернему процессу ACP.                                                                  |
 | Флаги                 | `--allow-origin`, `--allow-private-auth-base-url`                                                 | Allowlist CORS для браузера и переключатель установки провайдера аутентификации localhost/private.  |
-| Флаги                 | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`                   | Управление жизненным циклом простоя промпта, SSE writer и дочернего процесса ACP.                   |
+| Флаги                 | `--prompt-deadline-ms`, `--writer-idle-timeout-ms`, `--channel-idle-timeout-ms`, `--initialize-timeout-ms` | Управление таймаутом промпта, SSE writer, жизненным циклом простоя дочернего процесса ACP и таймаутом запросов дочернего процесса ACP. |
 | Флаги                 | `--session-reap-interval-ms`, `--session-idle-timeout-ms`                                         | Управление очисткой (reaping) отключенных сессий.                                                   |
 | Флаги                 | `--rate-limit*`                                                                                   | HTTP rate limit для каждого уровня.                                                                 |
 | `settings.json`       | `policy.permissionStrategy`, `policy.consensusQuorum`                                             | Политика и кворум `MultiClientPermissionMediator`.                                                  |

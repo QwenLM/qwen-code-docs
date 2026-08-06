@@ -6,18 +6,18 @@
 
 - **路径解析** — 规范化路径，拒绝任何逃逸出绑定工作区的路径（包括通过符号链接逃逸）。
 - **信任门控** — 当工作区不被信任时拒绝写入（`untrusted_workspace`）。
-- **大小与内容策略** — 读取上限（`MAX_READ_BYTES = 256 KiB`），写入上限（`MAX_WRITE_BYTES = 5 MiB`），二进制文件检测。
+- **大小与内容策略** — 完整快照/输出上限（`MAX_READ_BYTES = 256 KiB`），大文本窗口在输出和扫描成本上均有限制（`MAX_TEXT_SCAN_BYTES = 8 MiB`），写入上限（`MAX_WRITE_BYTES = 5 MiB`），二进制文件检测。
 - **原子性** — 先写入再重命名，保留目标文件权限模式，新文件默认权限为 `0o600`。
 - **审计** — 每次访问/拒绝都会发出结构化事件，供 `PermissionAuditRing` / 监控使用。
 - **类型化错误** — 封闭的 `FsErrorKind` 联合类型，映射到 HTTP 状态码。
 
-HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）以及 ACP 侧的 `BridgeFileSystem` 适配器（使 Agent 驱动的 `readTextFile` / `writeTextFile` 调用也受到相同的门控限制）都经过此边界。
+HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST /file/edit`、`GET /list`、`GET /glob`、`GET /stat`）以及 ACP 侧的 `BridgeFileSystem` 适配器（使 Agent 驱动的 `readTextFile` / `writeTextFile` 调用获得相同的门控限制）都经过此边界。
 
 ## 职责
 
 - 将用户提供的路径解析为具有品牌标记的 `ResolvedPath` 值，边界内的其余部分可以安全地使用这些值。
 - 拒绝超出绑定工作区的路径（`path_outside_workspace`），以及目标为符号链接的路径（`symlink_escape`）。
-- 拒绝超过 `MAX_READ_BYTES` 的读取、超过 `MAX_WRITE_BYTES` 的写入以及二进制文件（`binary_file`）。
+- 拒绝超过 `MAX_READ_BYTES` 的完整快照读取，同时允许显式窗口（输出上限为 `MAX_READ_BYTES`，扫描成本上限为 `MAX_TEXT_SCAN_BYTES`）；拒绝超过 `MAX_WRITE_BYTES` 的写入以及二进制文件（`binary_file`）。
 - 当工作区不被信任时，拒绝写入/编辑（`untrusted_workspace`）— 通过 `assertTrustedForIntent(trusted, intent)` 门控。
 - 通过 `shouldIgnore` 遵循 `.gitignore` / `.qwenignore` 模式。
 - 执行原子性的写入-重命名操作，并保留目标文件权限模式；新文件默认权限为 `0o600`。
@@ -31,7 +31,7 @@ HTTP 文件路由（`GET /file`、`GET /file/bytes`、`POST /file/write`、`POST
 | 文件                       | 用途                                                                                                                                                                                                                         |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `paths.ts`               | `canonicalizeWorkspace`、`resolveWithinWorkspace`、`hasSuspiciousPathPattern`、品牌标记 `ResolvedPath`、`Intent` 联合类型（`read \| write \| list \| stat \| glob`）。                                                                 |
-| `policy.ts`              | `MAX_READ_BYTES`、`MAX_WRITE_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                                              |
+| `policy.ts`              | `MAX_READ_BYTES`、`MAX_TEXT_SCAN_BYTES`、`MAX_WRITE_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                                      |
 | `audit.ts`               | `FS_ACCESS_EVENT_TYPE`、`FS_DENIED_EVENT_TYPE`、`createAuditPublisher`、审计载荷类型。                                                                                                                                         |
 | `errors.ts`              | `FsError` 类、`isFsError`、`FsErrorKind` 联合类型（14 种）、`FsErrorStatus` 联合类型（`400 / 403 / 404 / 409 / 413 / 422 / 500 / 503`）。                                                                                          |
 | `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`、`WorkspaceFileSystem`（编排器，执行读/写/列出操作）、`WriteMode`、`ContentHash`、`FsEntry`、`FsStat`、`ListOptions`、`GlobOptions`、`ReadTextOptions`、`ReadBytesOptions`、`WriteTextAtomicOptions`。 |
@@ -68,10 +68,10 @@ interface BridgeFileSystem {
 
 这是 ACP `readTextFile` / `writeTextFile` 的注入点。Bridge 测试和 Mode A 嵌入式调用者可以在 `BridgeOptions` 上省略它；`BridgeClient` 会回退到其内联的 `fs.readFile` / `fs.writeFile` 代理（保留 F1 之前的行为）。生产环境的 `qwen serve` 通过 `createBridgeFileSystemAdapter(fsFactory)`（`packages/cli/src/serve/bridge-file-system-adapter.ts`）将 `BridgeFileSystem` 连接起来，以便 Agent 侧的 ACP 写入能够应用与 HTTP 路由相同的 TOCTOU、符号链接、信任门控和审计门控。
 
-适配器必须复制以下两个防御门控（因为当适配器被注入时，内联代理会完全绕过）：
+适配器必须保留以下两个防御属性（因为当适配器被注入时，内联代理会完全绕过）：
 
 1. **拒绝非普通文件** — 套接字/管道/字符设备/procfs/sysfs 条目尽管 `stats.size === 0` 也能流式传输无界数据。内联路径会抛出异常，消息中包含 `describeStatKind(stats)`。
-2. **限制缓冲大小** 为 `READ_FILE_SIZE_CAP = 100 MiB`。对一个 500 MB 的日志文件发起 `{ line: 1, limit: 10 }` 的小请求，如果仅为了返回 10 行，代价可能是 500 MB 的 RSS 内存。
+2. **避免无界的全文件缓冲。** 内联回退将缓冲读取上限设为 `READ_FILE_SIZE_CAP = 100 MiB`。注入的适配器则应用更严格的 WorkspaceFileSystem 契约：完整快照在 256 KiB 处停止，而较大的 UTF-8 文件需要有限的 `limit`，并从 inode 绑定的句柄流式传输，最多返回 256 KiB。它不能为了返回 `{ line: 1, limit: 10 }` 而读取整个 500 MB 的日志。
 
 适配器更进一步：它使用 `WorkspaceFileSystem.writeTextOverwrite`（PR 18 原语）执行原子性的临时文件与重命名写入，保留权限模式，默认 `0o600`，并在每个路径的锁内拒绝符号链接。这与 **F1 之前的内联代理有所不同**，后者会解析符号链接并写入其目标——依赖通过符号链接点文件写入的 Agent 现在必须直接处理已解析的路径。
 
@@ -130,15 +130,27 @@ sequenceDiagram
     FS->>FSP: stat(path)
     FSP-->>FS: stats
     FS->>FS: 如果不是普通文件则拒绝 (describeStatKind)
-    FS->>POL: enforceReadSize(stats.size, opts.maxBytes?)<br/>→ 抛出 file_too_large 或切片计划
-    FS->>FSP: readFile(path)
-    FSP-->>FS: buffer
-    FS->>POL: detectBinary(buffer)
+    alt 提供了 cursor
+        FS->>FSP: 打开稳定的 FileHandle
+        FS->>FS: 验证 cursor {dev,ino,size}；寻址到字节偏移
+        FS->>FS: 返回完整行；发出下一个 cursor
+    else 文件 <= 256 KiB
+        FS->>FSP: 打开 + 读取稳定的完整快照
+        FSP-->>FS: buffer
+        FS->>FS: 对完整快照计算哈希；应用行/输出限制
+    else 文件 > 256 KiB 且有显式窗口参数
+        FS->>FSP: 打开稳定的 FileHandle
+        FS->>FS: 从同一 inode 流式传输请求的行
+        FS->>FS: 输出上限 256 KiB，扫描上限 8 MiB；省略全文件哈希
+    else 无窗口的大文件读取
+        FS-->>R: file_too_large
+    end
+    FS->>POL: detectBinary(sample)
     POL-->>FS: isBinary?
-    FS->>FS: 如果是二进制则拒绝; 计算 sha256 哈希; 截断到行窗口
+    FS->>FS: 如果是二进制则拒绝
     FS->>FS: shouldIgnore? → 注释 meta.matchedIgnore
     FS->>FS: 审计 fs.access
-    FS-->>R: { content, sha256, truncated?, meta }
+    FS-->>R: { content, 可选 sha256, truncated?, meta }
 ```
 
 `readText` 不会因为忽略规则而跳过或拒绝读取。它会正常读取文件，并在 `meta.matchedIgnore` 中记录匹配的忽略分类。`list` 和 `glob` 只有在未启用 `includeIgnored` 时才会过滤被忽略的结果。
@@ -205,7 +217,8 @@ flowchart LR
 | 来源                                              | 旋钮                                                                  | 效果                                                                                                            |
 | ------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `WorkspaceFileSystemFactoryDeps.trusted: boolean` | 构造函数输入                                                          | 是否允许写入；`runQwenServe` 下默认为 `true`，`createServeApp` 下默认为 `false`（带警告）。                     |
-| 常量                                              | `MAX_READ_BYTES = 256 KiB`                                            | 读取上限；超过则抛出 `file_too_large`。                                                                         |
+| 常量                                              | `MAX_READ_BYTES = 256 KiB`                                            | 完整快照和返回文本的上限；更大的文本需要显式窗口参数。                                                             |
+| 常量                                              | `MAX_TEXT_SCAN_BYTES = 8 MiB`                                         | 大文本读取为定位行偏移可扫描的字节数；超过则返回 `file_too_large`。                                                |
 | 常量                                              | `MAX_WRITE_BYTES = 5 MiB`                                             | 写入上限；大小低于 `express.json({ limit: '10mb' })`。                                                           |
 | 常量                                              | `BINARY_PROBE_BYTES = 4096`                                           | 基于内容的二进制检测采样大小。                                                                                 |
 | 能力标签                                          | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_write` | 参见 [`11-capabilities-versioning.md`](./11-capabilities-versioning.md)。                                       |
@@ -217,8 +230,12 @@ flowchart LR
 - **`io_error` 与 `permission_denied` 是分开的。** 不要混为一谈。监控流水线依靠 `errorKind` 进行告警 — 将 ENOSPC 归入 permission_denied 会因 `df -h` 问题而通知安全响应人员。
 - **新文件权限默认为 `0o600`，而非 umask 默认值。** 写入系统调用的 `mode` 参数会绕过 umask。写入公开文件的 Agent 应显式传递权限覆盖。
 - **`createServeApp` 默认 `trusted: false`** 对于没有注入自定义 `fsFactory` 或 `bridge` 的嵌入器，会静默拒绝 ACP 写入并返回 `untrusted_workspace`。第一次使用时会在 stderr 发出一次性警告；后续调用者看不到提醒。参见 [`02-serve-runtime.md`](./02-serve-runtime.md)。
-- **读取上限在解码前执行。** 即使请求只需 10 行，如果文件大小为 `MAX_READ_BYTES + 1` 也会被拒绝 — 因为底层 `readFileWithLineAndLimit` 在切片前会将整个文件读入内存。
-- **`BridgeFileSystem` 适配器必须同时复制两个内联代理门控**（拒绝非普通文件 + 缓冲大小上限）。当适配器被注入时，内联路径会被完全绕过。
+- **大文本需要显式窗口参数**，可以是 `line` / `limit` / `maxBytes` 中的任意一个。如果都不提供，读取将返回 `file_too_large`，因为认为自身持有整个文件的调用方可能会将其截断后写回。窗口从 inode 绑定的句柄流式传输，且永远不会返回超过 `MAX_READ_BYTES` 的内容。
+- **`MAX_READ_BYTES` 限制读取返回的内容；`MAX_TEXT_SCAN_BYTES` 限制读取的成本。** 行偏移通过从字节 0 扫描来解析，因此 `{ line: 900_000_000, limit: 20 }` 几乎不返回内容但仍需遍历整个文件。扫描超过 8 MiB 后，读取将以 `file_too_large` 被拒绝，指向 `readBytes`，它可以以 O(1) 复杂度到达任何偏移量。
+- **流式窗口容忍追加，不容忍截断。** 完整快照路径可以要求字节级的稳定性，因为它返回整个文件；前缀窗口则不能，否则每次读取活跃日志都会失败。流式路径断言 inode 身份加上"未缩小"，因此追加通过而截断/替换仍被拒绝。`sizeBytes` 报告 `open` 时的大小，描述窗口所截取快照的状态。
+- **大型部分读取省略全文件哈希。** 当流式传输在 EOF 之前停止时，`originalLineCount` 会被省略。
+- **分页基于字节 cursor，而非行。** 留下内容的读取会返回 `hasMore`，以及在可以推导字节偏移时返回不透明的 `nextCursor`。从 cursor 恢复是 O(1)；按 `line` 恢复会从字节 0 重新扫描，并在超过 `MAX_TEXT_SCAN_BYTES` 时被拒绝。cursor 携带 `{dev, ino, size}`，因此被替换或截断的文件会产生 `hash_mismatch` 而不是来自错误位置的字节，而追加则使其保持有效。非 UTF-8 快照读取会报告 `hasMore` 但不返回 cursor — 其解码文本是 UTF-8 重新编码，其长度无法映射回文件偏移量。
+- **`BridgeFileSystem` 适配器必须同时复制两个内联代理门控**（拒绝非普通文件 + 有界缓冲/流式传输）。当适配器被注入时，内联路径会被完全绕过。
 
 ## 参考
 

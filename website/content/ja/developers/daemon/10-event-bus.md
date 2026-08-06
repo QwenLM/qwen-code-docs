@@ -1,3 +1,5 @@
+---
+
 # SSE Event Bus と Backpressure
 
 ## 概要
@@ -36,7 +38,7 @@
 interface BridgeEvent {
   id?: number; // monotonic per session; absent on synthetic terminal frames
   v: 1; // EVENT_SCHEMA_VERSION
-  type: string; // one of the 47 known types or future-extensible
+  type: string; // one of the 53 known types or future-extensible
   data: unknown; // payload (typed per-type by the SDK; see 09-event-schema.md)
   _meta?: { serverTimestamp?: number; [key: string]: unknown }; // stamped by EventBus.publish
   originatorClientId?: string; // set when the event derives from a clientId-stamped request
@@ -167,6 +169,7 @@ sequenceDiagram
 3. コンシューマーイテレーターが 1 つのターミナルフレームを認識できるように、`queue.forcePush(evictionFrame)` を実行します。
 4. ターミナルフレームの後にイテレーションが巻き戻るように、`queue.close()` を実行します。
 5. `sub.dispose()` を呼び出します。これにより `subs` から削除され、`AbortSignal` リスナーがデタッチされます。このクリーンアップがないと、停滞したコンシューマーのクロージャは `AbortSignal` のガベージコレクションまでライブのままになります。
+
 ### Abort フロー
 
 `AbortSignal.abort()` → `onAbort()`:
@@ -241,7 +244,7 @@ Accept: text/event-stream
 | `Last-Event-ID` 不在 | ライブのみのストリーム。リプレイなし。レジューム以前のクライアントと後方互換性があります。 |
 | `Last-Event-ID: 0` | 最初からリングバッファ全体をリプレイ（`--event-ring-size` で制限され、デフォルトは 8000）。 |
 | `Last-Event-ID: N` （`ring[0].id <= N+1` の場合） | `id > N` のイベントを連続してリプレイし、その後ライブへ。 |
-| `Last-Event-ID: N` （`ring[0].id > N+1` の場合） | ギャップが検出されました。存続するサフィックスのリプレイの前に `state_resync_required` (`reason: 'ring_evicted'`) が発行されます。SDK は完全な状態を回復するために `loadSession` を呼び出す必要があります。 |
+| `Last-Event-ID: N` （`ring[0].id > N+1` の場合） | ギャップが検出されました。存続するサフィックスのリプレイの前に `state_resync_required` (`reason: 'ring_evicted'`) が発行されます。SDK はバウンドされたリプレイスナップショットウィンドウを回復するために `loadSession` を呼び出す必要があります。返される `compactedReplay` は、古いインメモリリプレイエントリがドロップされていた場合、`history_truncated` で始まる可能性があります。 |
 | `Last-Event-ID: N` （`N >= nextId` の場合） | エポックのリセット（デーモンの再起動）。`state_resync_required` (`reason: 'epoch_reset'`) が発行され、その後リング全体のリプレイが行われます。 |
 
 ### バリデーションルール

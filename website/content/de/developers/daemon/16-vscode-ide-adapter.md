@@ -2,7 +2,7 @@
 
 ## Übersicht
 
-`packages/vscode-ide-companion/src/services/daemonIdeConnection.ts` ist der **Daemon-Adapter der VS Code-Erweiterung**. Er ermöglicht es dem IDE Companion, sich über HTTP + SSE mit einem laufenden `qwen serve`-Daemon zu verbinden, anstatt einen prozessinternen `qwen --acp`-Stdio-Child (den veralteten `AcpConnectionState`-Pfad) zu starten. Es ist das Transport-Pendant von [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md) für VS Code-Hosts.
+`packages/vscode-ide-companion/src/services/daemonIdeConnection.ts` ist der **Daemon-Adapter der VS Code-Erweiterung**. Er ermöglicht es dem IDE Companion, sich über HTTP + SSE mit einem laufenden `qwen serve`-Daemon zu verbinden, anstatt einen prozessinternen `qwen --acp`-Stdio-Child (den veralteten `AcpConnectionState`-Pfad) zu starten. Er ist das Transport-Pendant von [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md) für VS Code-Hosts.
 
 Das Chat-Webview der IDE konsumiert Daemon-Ereignisse über diesen Adapter; Berechtigungsabfragen erscheinen als native VS Code Quick-Pick-Dialoge.
 
@@ -57,7 +57,7 @@ In `connectInternal()`:
 const baseUrl = validateDaemonBaseUrl(options.baseUrl);
 ```
 
-Dies ist eine **clientseitige harte Einschränkung**, die sich von der eigenen `hostAllowlist` des Daemons unterscheidet (siehe [`12-auth-security.md`](./12-auth-security.md)). Der IDE Companion wird sich niemals mit einem entfernten Daemon verbinden – selbst wenn der Betreiber einen konfiguriert hat. Begründung: Das Bedrohungsmodell von VS Code geht davon aus, dass der Arbeitsbereich und der Daemon denselben Host teilen, einschließlich Dateisystemvertrauen und damit verbundener Annahmen.
+Dies ist eine **clientseitige harte Einschränkung**, die sich von der eigenen `hostAllowlist` des Daemons unterscheidet (siehe [`12-auth-security.md`](./12-auth-security.md)). Der IDE Companion verbindet sich niemals mit einem entfernten Daemon – selbst wenn der Betreiber einen konfiguriert hat. Begründung: Das Bedrohungsmodell von VS Code geht davon aus, dass der Workspace und der Daemon denselben Host teilen, einschließlich Dateisystemvertrauen und damit verbundener Annahmen.
 
 ### `createSdkDaemonSessionFactory()`
 
@@ -75,7 +75,7 @@ Die Verbindung betreibt einen SSE-Consumer (`for await` über `session.events()`
 | `session_update`                                                                                        | `onSessionUpdate`                                                        |
 | Normales `permission_request`                                                                             | `onPermissionRequest`, dann `respondToPermission()`                      |
 | `permission_request` mit `toolCall.kind === 'ask_user_question'` und `rawInput.questions` als Array      | `onAskUserQuestion`, dann `answers` an den Daemon weiterleiten           |
-| `session_died` mit einer `sessionId`, die der aktuellen Sitzung entspricht                               | `onDisconnected(null, reason)`                                           |
+| `session_died` mit einer `sessionId`, die der aktuellen Session entspricht                               | `onDisconnected(null, reason)`                                           |
 | SSE-natürliches Ende / Stream-Fehler / manuelles `disconnect()`                                            | `onDisconnected(null, 'stream_ended' / 'daemon_error' / 'disconnected')` |
 | Andere Daemon-Ereignisse                                                                                 | Debug-Level-Log; heute kein IDE-Callback.                                |
 
@@ -87,7 +87,7 @@ Die Verbindungsklasse ist **rein transportbezogen**. Die eigentliche VS Code-Int
 
 ### Connect-Serialisierung
 
-`connect()` verwendet eine interne Warteschlange, sodass ein schneller doppelter Aufruf vom Host (z. B. der Benutzer öffnet das Panel zweimal während eines laufenden Handshakes) keine Wettlaufsituation verursacht. Der zweite Aufruf wartet auf den ersten; die Verbindung landet in einem einzigen, deterministischen Zustand.
+`connect()` verwendet eine interne Warteschlange, sodass ein schneller doppelter Aufruf vom Host (z. B. der Benutzer öffnet das Panel zweimal während eines laufenden Handshakes) keine Wettlaufsituation verursacht. Der zweite Aufruf wartet auf den ersten; die Verbindung landet in einem einzigen, deterministischen Zustand.
 
 ## Arbeitsablauf
 
@@ -176,22 +176,22 @@ sequenceDiagram
 
 ## Konfiguration
 
-| Knopf                                                 | Wo                             | Wirkung                                                            |
-| ---------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------ |
-| `baseUrl`                                            | `connect(options)`             | Daemon-URL; muss Loopback sein.                                     |
-| `token`                                              | `connect(options)`             | Bearer-Token (über SDK gestempelt).                                 |
-| `workspaceCwd`                                       | `connect(options)`             | Wird für `POST /session` verwendet; muss mit dem gebundenen Arbeitsbereich des Daemons übereinstimmen. |
-| `modelServiceId`                                     | `connect(options)` / `setModel()` | Anfangsmodell.                                                    |
-| `lastEventId`                                        | `connect(options)`             | Fortsetzungs-Cursor (normalerweise aus dem Host-Status wiederhergestellt). |
-| VS Code-Einstellung `qwen.ide.daemonUrl` (oder Äquivalent) | Arbeitsbereichseinstellungen | Vom Betreiber konfigurierte Daemon-URL.                            |
+| Einstellung                                              | Wo                             | Wirkung                                                                                                              |
+| -------------------------------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `baseUrl`                                                | `connect(options)`             | Daemon-URL; muss Loopback sein.                                                                                       |
+| `token`                                                  | `connect(options)`             | Bearer-Token (über SDK gestempelt).                                                                                   |
+| `workspaceCwd`                                           | `connect(options)`             | Wird für `POST /session` verwendet; muss mit dem primären Workspace des Daemons oder einer registrierten Multi-Workspace-Session-Runtime übereinstimmen. |
+| `modelServiceId`                                         | `connect(options)` / `setModel()` | Anfangsmodell.                                                                                                      |
+| `lastEventId`                                            | `connect(options)`             | Fortsetzungs-Cursor (normalerweise aus dem Host-Status wiederhergestellt).                                            |
+| VS Code-Einstellung `qwen.ide.daemonUrl` (oder Äquivalent) | Workspace-Einstellungen      | Vom Betreiber konfigurierte Daemon-URL.                                                                               |
 
 ## Einschränkungen & bekannte Grenzen
 
 - **Nur Loopback – harte Ablehnung in `connect(options)`.** Betreiber, die die IDE auf einen entfernten Daemon ausrichten möchten, müssen SSH-Port-Forwarding / lokalen Proxy verwenden; der Adapter verbindet sich nicht mit einer Nicht-Loopback-URL.
-- **Der veraltete `AcpConnectionState`-Pfad ist immer noch primär** im IDE Companion (Stdio-Child). Dieser Adapter ist das Geschwister-Transport für die Mode-B-Migration; siehe [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md) für die Migrationshindernisse und die geplanten `BridgeFileSystem`-Paritätsarbeiten.
-- **Noch keine Reverse-RPC- oder Editor-Funktionsfläche über HTTP.** Funktionen, die vom Agenten einen Rückruf in die IDE erfordern (z. B. schreibgeschützter Pufferzugriff, Diff-Vorschau-Integration), sind derzeit nur auf dem Stdio-Pfad vorhanden.
-- **Die Kopplung von Webview und Verbindung ist hosteigen**, nicht in diesem Adapter. Verlagern Sie keine Webview-spezifische Logik in `DaemonIdeConnection`.
-- **`workspaceCwd`-Konflikt** mit dem gebundenen Arbeitsbereich des Daemons gibt `400 workspace_mismatch` zurück – zeigen Sie dies als klaren Einrichtungsfehler an, anstatt es erneut zu versuchen.
+- **Der veraltete `AcpConnectionState`-Pfad ist immer noch primär** im IDE Companion (Stdio-Child). Dieser Adapter ist der Geschwister-Transport für die Mode-B-Migration; siehe [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md) für die Migrationshindernisse und die geplanten `BridgeFileSystem`-Paritätsarbeiten.
+- **Noch keine Reverse-RPC- oder Editor-Funktionsfläche über HTTP.** Funktionen, die vom Agenten einen Rückruf in die IDE erfordern (z. B. schreibgeschützter Pufferzugriff, Diff-Vorschau-Integration), sind derzeit nur auf dem Stdio-Pfad vorhanden.
+- **Die Kopplung von Webview und Verbindung ist hosteigen**, nicht in diesem Adapter. Verlagere keine Webview-spezifische Logik in `DaemonIdeConnection`.
+- **`workspaceCwd`-Konflikt** mit den registrierten Workspaces des Daemons gibt `400 workspace_mismatch` zurück – zeige dies als klaren Einrichtungsfehler an, anstatt es erneut zu versuchen.
 
 ## Referenzen
 

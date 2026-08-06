@@ -142,7 +142,7 @@ sequenceDiagram
 - **`warn` 模式从不拒绝。** 它仍然跟踪预留并触发 `mcp_budget_warning`，但 `tryReserve` 始终返回 `'reserved'`。拒绝语义仅由 `enforce` 模式实现。
 - **工作空间范围的预算事件携带 `scope: 'workspace'`**，因此它们会同时扩散到每个附属会话。同一连接上所有会话的 SDK 订约方（reducer）会同步递增 `mcpBudgetWarningCount` / `mcpChildRefusedBatchCount`。来自 `McpClientManager` 的按会话旧事件不携带 `scope`（语义上默认为 `'session'`）。
 - **开关 `QWEN_SERVE_NO_MCP_POOL=1`** 会完全禁用池；工作空间预算也会被禁用，由按会话的 `McpClientManager` 预算接管。能力包会移除 `mcp_workspace_pool` 和 `mcp_pool_restart` 以准确报告这一情况。
-- **`ServeMcpBudgetStatusCell.scope` 是一个向前兼容的列表形状。** 快照单元格暴露 `budgets[]`，而不是单个 `budget?` 字段。PR 14 v1 为每个 ACP 会话发送一个 `scope: 'session'` 的单元格，因为 `acpAgent.newSessionConfig()` 会构造该会话的 `Config` / `McpClientManager`。`'pool'` 作用域保留给 Wave 5 PR 23 中的池作用域单元格，该单元格将与会话作用域单元格并存。消费者必须通过丢弃未知的 `scope` 值来处理其他未知值，而不是失败。
+- **`ServeMcpBudgetStatusCell.scope` 由能力标签驱动且向前兼容。** 快照单元格暴露 `budgets[]`，而不是单个 `budget?` 字段。启用 `mcp_workspace_pool` 时，所选 runtime 发出 `scope: 'workspace'`；当池被禁用或不可用时，旧版 manager 发出 `scope: 'session'`。消费者必须通过丢弃未知的 `scope` 值来容忍额外的未知值，而不是失败。
 
 ## 参考资料
 

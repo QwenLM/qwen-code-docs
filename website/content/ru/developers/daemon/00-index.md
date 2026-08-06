@@ -11,7 +11,7 @@
 | [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md)   | Пользователи SDK        | Пошаговое руководство по TypeScript от начала до конца       |
 | [`../daemon-client-adapters/`](../daemon-client-adapters/)                             | Авторы адаптеров        | Проектная документация по устаревшим клиентским адаптерам    |
 | [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)                                     | Авторы адаптеров        | Заметки по проектированию клиентских адаптеров               |
-| [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)       | Мейнтейнеры F2          | Дизайн пула транспортов MCP рабочего пространства v2.2       |
+| [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)     | Мейнтейнеры F2        | Дизайн пула транспортов MCP рабочего пространства v2.2                 |
 
 Если вы хотите **запустить демон и использовать его**, сначала прочитайте `qwen-serve.md`. Если вы хотите **создать клиент для работы с сетевым протоколом**, прочитайте `qwen-serve-protocol.md`. Если вы хотите **понять, расширить или отладить внутреннее устройство демона**, читайте этот набор документов.
 
@@ -41,7 +41,7 @@
 - [`06-mcp-budget-guardrails.md`](./06-mcp-budget-guardrails.md) - `WorkspaceMcpBudget`, режимы (`off`/`warn`/`enforce`), гистерезис, объединение отклоненных пакетов.
 - [`07-workspace-filesystem.md`](./07-workspace-filesystem.md) - песочница `WorkspaceFileSystem`, политика путей, аудит, контракт `BridgeFileSystem`.
 - [`08-session-lifecycle.md`](./08-session-lifecycle.md) - создание / подключение / загрузка / возобновление, `X-Qwen-Client-Id`, heartbeat, вытеснение, метаданные.
-- [`09-event-schema.md`](./09-event-schema.md) - типизированная схема событий v1: все 47 известных типов событий с полезными нагрузками, редьюсеры, прямая совместимость.
+- [`09-event-schema.md`](./09-event-schema.md) - типизированная схема событий v1: все 53 известных типов событий с полезными нагрузками, редьюсеры, прямая совместимость.
 - [`10-event-bus.md`](./10-event-bus.md) - `EventBus`, монотонные ID, кольцевой повтор, `Last-Event-ID`, backpressure для медленных клиентов, `client_evicted`.
 - [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) - реестр возможностей, версия протокола, версия схемы, условное анонсирование.
 - [`12-auth-security.md`](./12-auth-security.md) - bearer-промежуточное ПО, белый список хостов, запрет CORS, шлюз мутаций, `--require-auth`, исключение для `/health`, device flow.
@@ -63,7 +63,7 @@
 ## Глоссарий
 
 - **ACP** - Agent Client Protocol. JSON-RPC поверх stdio, используемый для связи между мостом демона и дочерним процессом ACP. Это не HTTP-протокол, который клиенты используют для работы с демоном.
-- **Дочерний процесс ACP** - дочерний процесс, который демон создает (`qwen --acp`) для размещения фактической среды выполнения агента. Мост мультиплексирует один дочерний процесс ACP для множества подключенных клиентов.
+- **Дочерний процесс ACP** - дочерний процесс `qwen --acp`, размещающий среду выполнения агента одного рабочего пространства. В продакшене выполняется попытка прогрева основного бриджа с повтором при первом использовании после сбоя; доверенный вторичный запускает свой дочерний процесс по запросу, а недоверенный вторичный — нет. Владеющий бридж мультиплексирует сессии и клиенты на этот дочерний процесс.
 - **acp-bridge** - пакет `@qwen-code/acp-bridge` (`packages/acp-bridge/`). Отвечает за мультиплексирование сессий, посредник разрешений, шину событий и фабрику каналов.
 - **BridgeClient** - `packages/acp-bridge/src/bridgeClient.ts`. Оборачивает одно ACP `ClientSideConnection` и обрабатывает `requestPermission`, `sendPrompt` и `cancelSession`.
 - **Фабрика каналов** - подключаемая стратегия для создания или подключения к дочернему процессу ACP. По умолчанию `spawnChannel` запускает `qwen --acp` как подпроцесс; `inMemoryChannel` запускает его в том же процессе для тестов.
@@ -78,7 +78,7 @@
 - **PoolEntry** - `packages/core/src/tools/mcp-pool-entry.ts`. Одна запись в `McpTransportPool`: один транспорт MCP, счетчик ссылок подключенных сессий и таймер простоя для дренирования.
 - **Область действия сессии** - `single` (одна сессия ACP, используемая всеми клиентами) или `thread` (одна сессия на каждый поток диалога). По умолчанию используется `single`.
 - **SSE** - Server-Sent Events. Исходящий канал событий демона (`GET /session/:id/events`).
-- **Рабочее пространство** - директория, к которой был привязан демон при запуске (`--workspace` или `cwd`). Один процесс демона равен одному рабочему пространству.
+- **Рабочее пространство** - директория, зарегистрированная при запуске демона, восстановленная из хранилища регистраций или добавленная динамически. `workspaceCwd` — устаревший основной фолбэк; `workspaces[]` — каталог изолированных сред выполнения и их метаданные доверия/удаления.
 
 ## Привязки к исходному коду
 
@@ -92,7 +92,7 @@
 | Пул транспортов MCP                 | `packages/core/src/tools/mcp-transport-pool.ts`, `mcp-pool-key.ts`, `pid-descendants.ts`, `session-mcp-view.ts`, `/mcp refresh`, `MCPCallInterruptedError`                                                                                                             | [`05`](./05-mcp-transport-pool.md), [`06`](./06-mcp-budget-guardrails.md)                                            |
 | Ограничения бюджета MCP             | `packages/core/src/tools/mcp-workspace-budget.ts`, `ServeMcpBudgetStatusCell.scope`, `budgets[]`                                                                                                                                                                       | [`06`](./06-mcp-budget-guardrails.md)                                                                                |
 | Файловая система рабочего пространства | `packages/cli/src/serve/fs/`, `assertTrustedForIntent(trusted, intent)`, `meta.matchedIgnore`, `includeIgnored`                                                                                                                                                      | [`07`](./07-workspace-filesystem.md)                                                                                 |
-| Схема событий и модуль записи SSE   | `packages/sdk-typescript/src/daemon/events.ts`, `packages/cli/src/serve/routes/sse-events.ts`, `formatSseFrame`, `packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`, `ToolCallEmitter.resolveToolProvenance`, `tool_call.provenance`, `serverId` | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                              |
+| Схема событий и модуль записи SSE   | `packages/sdk-typescript/src/daemon/events.ts`, `packages/cli/src/serve/routes/sse-events.ts`, `formatSseFrame`, `packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`, `ToolCallEmitter.resolveToolProvenance`, `tool_call.provenance`, `serverId` | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                              |
 | Ресинхронизация событий             | `state_resync_required`, `awaitingResync`, `RESYNC_PASSTHROUGH_TYPES`, `asKnownDaemonEvent`, `unrecognizedKnownEventCount`                                                                                                                                           | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                              |
 | Возможности                         | `packages/cli/src/serve/capabilities.ts`, `mcp_server_restart_refused.reason`, `MCP_RESTART_REFUSED_REASONS.has`                                                                                                                                                       | [`11`](./11-capabilities-versioning.md)                                                                              |
 | Аутентификация и device flow        | `packages/cli/src/serve/auth.ts`, `packages/cli/src/serve/auth/device-flow.ts`                                                                                                                                                                                         | [`12`](./12-auth-security.md)                                                                                        |
@@ -125,7 +125,7 @@
 | Область          | Текущее состояние                                                                                                                                                                                           | Основные документы                                                                                              |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | HTTP-маршруты    | Каталог маршрутов находится в `qwen-serve-protocol.md`; этот набор документов демона только ссылается на него и объясняет принадлежность реализации.                                                          | [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md), [`20`](./20-quickstart-operations.md)                 |
-| Схема событий    | `EVENT_SCHEMA_VERSION = 1`; 47 известных типов событий; синтетические фреймы подписчика без ID; `_meta.serverTimestamp` проставляется `EventBus.publish()` (с резервным `formatSseFrame()` для синтетических фреймов). | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                         |
+| Схема событий    | `EVENT_SCHEMA_VERSION = 1`; 53 известных типов событий; синтетические фреймы подписчика без ID; `_meta.serverTimestamp` проставляется `EventBus.publish()` (с резервным `formatSseFrame()` для синтетических фреймов). | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                         |
 | Возможности      | `SERVE_PROTOCOL_VERSION = 'v1'`; 75 зарегистрированных тегов; 13 условных тегов.                                                                                                                            | [`11`](./11-capabilities-versioning.md)                                                                         |
 | Оболочка сессии  | `POST /session/:id/shell` доступен при использовании `--enable-session-shell`, bearer-аутентификации и привязанного к сессии `X-Qwen-Client-Id`; тег возможности является условным.                             | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md), [`20`](./20-quickstart-operations.md)   |
 | Ограничение скорости | Опциональное ограничение скорости HTTP для каждого уровня предоставляется через флаги CLI/переменные окружения и условный тег возможности.                                                                 | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md)                                          |
@@ -164,4 +164,4 @@
 
 ## Происхождение версии
 
-Данный набор документов отражает интерфейс режима daemon, который в настоящее время интегрирован в `main`, включая последующие работы из [#4412](https://github.com/QwenLM/qwen-code/pull/4412). Он намеренно описывает текущее поведение, а не более ранние снимки планирования серии F.
+Данный набор документов отражает интерфейс режима демона, на текущий момент интегрированный в `main`, включая последующие работы из [#4412](https://github.com/QwenLM/qwen-code/pull/4412). Он намеренно описывает текущее поведение, а не более ранние снимки планирования серии F.

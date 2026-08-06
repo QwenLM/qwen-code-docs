@@ -100,8 +100,8 @@ sequenceDiagram
 
 ### Load / resume
 
-`POST /session/:id/load` — rejoue l'historique ACP complet (les notifications `session/load` sont déclenchées avant le retour de la réponse).
-`POST /session/:id/resume` — restaure sans rejouer (`connection.unstable_resumeSession`, exposé sous la capacité stable `session_resume` du démon ; `unstable_session_resume` reste un alias obsolète).
+`POST /session/:id/load` — restaure une session persistée et renvoie la fenêtre de snapshot de relecture bornée actuelle (les notifications `session/load` ou la relecture en mode réponse sont amorcées avant le retour de la réponse).
+`POST /session/:id/resume` — restaure sans relecture (`connection.unstable_resumeSession`, exposé sous la capacité stable `session_resume` du démon ; `unstable_session_resume` reste un alias obsolète).
 
 Les deux :
 
@@ -178,6 +178,7 @@ flux SSE.
 `POST /session/:id/recap` demande au modèle rapide un résumé en une ligne de type « où en étais-je ». Il renvoie `{ sessionId, recap: string | null }` ; `null` signifie que
 l'historique était trop court ou que le modèle a temporairement échoué. Ce point de terminaison fonctionne en
 best-effort.
+
 ### Session BTW / Side Question (tag de capacité `session_btw`)
 
 `POST /session/:id/btw` pose une question ponctuelle dans le contexte de la session
@@ -188,11 +189,27 @@ chemin du cache pour un appel LLM à tour unique et sans outil, et renvoie
 
 ### Exécution de commandes Shell
 
-`POST /session/:id/shell` exécute une commande shell directement sur l'hôte du daemon,
+`POST /session/:id/shell` exécute une commande shell directement sur l'hôte du démon,
 sans passer par le LLM. Il diffuse la sortie sur le bus SSE de la session via
 les événements `user_shell_command` / `user_shell_result` et injecte la commande ainsi que
 son résultat dans l'historique de conversation du LLM. La réponse est
-`{ exitCode, output, aborted }`.
+`{ exitCode, output, aborted }`. Pour une session live de workspace secondaire, la
+route REST singulière résout le propriétaire de session et s'exécute sur le bridge de ce runtime,
+donc la commande démarre dans le cwd du workspace propriétaire. La route ne
+fournit pas de sandbox de chemin. Les clients ACP qualifiés par workspace peuvent continuer à utiliser
+`_qwen/session/shell` sur la connexion du workspace propriétaire.
+
+### Session Rewind
+
+`GET /session/:id/rewind/snapshots` et `POST /session/:id/rewind` résolvent le
+runtime live du workspace propriétaire. Les sessions persistées doivent être chargées ou reprises
+avant le rewind. Le rewind tronque l'historique de conversation et restaure optionnellement les
+fichiers suivis par `edit` et `write_file` ; il ne défait pas les commandes shell, Git,
+les scripts ou les modifications manuelles. La restauration de fichiers est best-effort, donc une réponse peut
+signaler `rewound: false` et `filesFailed[]` après que l'historique de conversation a
+déjà avancé. Les appels de rewind du SDK utilisent toujours le REST conscient du propriétaire, y compris lorsque le
+client utilise par ailleurs le transport ACP, car la mutation doit conserver une authentification
+REST stricte.
 
 ### Détachement de session
 
@@ -211,7 +228,7 @@ actifs et archivés, mais laisse intacts les instantanés de l'historique des fi
 ### Archivage de session
 
 `POST /sessions/archive` déplace les fichiers JSONL des sessions inactives de `chats/` vers
-`chats/archive/`. Si la session cible est active, le daemon entre d'abord dans
+`chats/archive/`. Si la session cible est active, le démon entre d'abord dans
 une barrière d'archivage par session et effectue une fermeture stricte qui exige que l'enfant ACP
 flush `ChatRecordingService` ; l'archivage laisse le JSONL en place si la fermeture ou
 le flush échoue.
@@ -225,41 +242,56 @@ load/resume, et les mutations entrant en concurrence avec une transition d'archi
 ### Utilisation du contexte (tag de capacité `session_context_usage`)
 
 `GET /session/:id/context-usage` renvoie l'utilisation structurée de la fenêtre de contexte.
-`?detail=true` inclut une utilisation plus détaillée regroupée par outil, mémoire et `skill`.
+`?detail=true` inclut une utilisation plus détaillée regroupée par outil, mémoire et skill.
 
 ### Statistiques de session (tag de capacité `session_stats`)
 
 `GET /session/:id/stats` renvoie les statistiques d'utilisation : métriques du modèle
 (tokens d'entrée/sortie, lectures/écritures du cache, coût total), nombres d'appels et
-latences par outil, nombres de modifications de fichiers, et nombres d'invocations par `skill` pour la session
-active. Le bloc `skills` reflète les chargements de corps de `skill` et les commandes slash de `skill`
+latences par outil, nombres de modifications de fichiers, et nombres d'invocations par skill pour la session
+active. Le bloc `skills` reflète les chargements de corps de skill et les slash commands de skill
 uniquement dans cette session ; il ne s'agit pas d'un agrégat d'activité inter-sessions.
 
 ### Tâches de session (tag de capacité `session_tasks`)
 
 `GET /session/:id/tasks` renvoie un instantané des tâches en arrière-plan pour les tâches d'agent,
-les tâches shell, les tâches de monitoring, et leurs états de cycle de vie. Les entrées d'agent générées
+les tâches shell, les tâches de monitor, et leurs états de cycle de vie. Les entrées d'agent générées
 par un autre sous-agent contiennent des champs de lignée optionnels (`parentAgentId`,
 `parentName`, `depth`) afin que les clients puissent afficher les sous-agents imbriqués sous forme d'arborescence ; voir
 l'exemple de payload dans `qwen-serve-protocol.md`.
 
+La capacité `session_monitor_tool_correlation` garantit en outre que les entrées de monitor
+portent `toolUseId`, permettant aux clients de corréler un appel d'outil de transcription
+avec les détails de sa tâche.
+
 ### Statut LSP de la session (tag de capacité `session_lsp`)
 
 `GET /session/:id/lsp` renvoie le statut LSP par session épuré pour les clients
-du daemon : activation, nombre total de serveurs, état indisponible/en cours d'initialisation,
+du démon : activation, nombre total de serveurs, état indisponible/en cours d'initialisation,
 et pour chaque serveur : `name`, `status`, `languages`, `transport`, `command`, et
 `error`. Un LSP désactivé ou indisponible est représenté sous forme de données de statut HTTP 200,
 et non comme une erreur de transport.
 
-### Replay compacté
+### Relecture compactée
 
 `POST /session/:id/load` renvoie désormais une `BridgeRestoredSession` qui peut inclure
 `compactedReplay?: BridgeEvent[]`, `liveJournal?: BridgeEvent[]`, et
-`lastEventId?: number`. `compactedReplay` est produit par
+`lastEventId?: number`. Ces champs constituent la fenêtre de relecture en mémoire bornée du démon
+pour une session live, et non une API de transcription complète. La limite de fenêtre par défaut est
+de 4 MiB par session live (`--compacted-replay-max-bytes`), et le démarrage rejette
+les limites invalides ; le plafond dur est de 256 MiB. `compactedReplay` est produit par
 `TurnBoundaryCompactionEngine` : aux limites de tour, il replie les blocs de texte /
 pensée consécutifs, réduit les séquences d'appels d'outils à leur état final, écarte les
-signaux transitoires, et produit des logs de replay en O(tours) au lieu de logs en O(tokens)
-(généralement une réduction de 25 à 30 fois).
+signaux transitoires, et produit des logs de relecture en O(tours) au lieu de logs en O(tokens)
+(généralement une réduction de 25 à 30 fois). Lorsque d'anciennes entrées de relecture ont été supprimées
+de cette fenêtre d'octets, `compactedReplay[0]` est un marqueur synthétique sans id
+`history_truncated` avec `{reason: 'replay_window_exceeded',
+truncatedEvents, retainedEvents, maxBytes, truncatedTurns?,
+fullTranscriptAvailable: boolean}`. `fullTranscriptAvailable` est un flag de capacité
+: `true` signifie que le client peut paginer la transcription persistée complète avec
+`GET /session/:id/transcript`, tandis que `false` signifie que seule la relecture bornée est
+disponible. Les clients doivent l'afficher comme un statut et appliquer la relecture conservée
+normalement ; il ne doit pas déclencher une boucle de resync.
 
 ### Préchauffage du processus enfant ACP
 
@@ -271,15 +303,23 @@ nouvelle session arrive.
 
 ## Configuration
 
-- `BridgeOptions.maxSessions` (par défaut 20) — limite maximale.
+- `BridgeOptions.maxSessions` (par défaut 32) — limite maximale.
 - `BridgeOptions.sessionScope` (par défaut `'single'` ; optionnel `'thread'`).
 - `BridgeOptions.initializeTimeoutMs` (par défaut 10s) — handshake ACP `initialize`.
 - `BridgeOptions.channelIdleTimeoutMs` (par défaut 0 ; nettoie l'enfant ACP immédiatement).
-- Tags de capacité : `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (alias obsolète), `session_list`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_btw`, `session_context_usage`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Tags de capacité : `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (alias obsolète), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+
+### Génération sans état (tag de capacité `session_generation`)
+
+`POST /session/:id/generate` accepte `{ "prompt": string }` et renvoie un
+flux SSE limité à la requête avec les événements `started`, `thinking` optionnel, `delta`, `done`,
+ou `error`. La requête ne lit aucun historique de conversation, n'enregistre aucun tour,
+et n'expose aucun outil. L'enfant ACP utilise un modèle rapide configuré valide lorsqu'il
+est disponible et utilise sinon le modèle principal de la session.
 
 ## Mises en garde et limites connues
 
-- `connection.unstable_resumeSession` peut encore être instable au niveau de la couche ACP, mais le daemon annonce le contrat de route v1 engagé avec `session_resume`. `unstable_session_resume` est conservé uniquement comme alias de compatibilité obsolète.
+- `connection.unstable_resumeSession` peut encore être instable au niveau de la couche ACP, mais le démon annonce le contrat de route v1 engagé avec `session_resume`. `unstable_session_resume` est conservé uniquement comme alias de compatibilité obsolète.
 - La v1 n'a **pas d'éviction par client** ; seulement une terminaison par session et par abonné. La politique de révocation est F-series Wave 5 / PR 24.
 - `client_evicted` s'applique par abonné, et non par session. Un client dont l'abonné SSE a été évincé peut se reconnecter.
 - Les clients anonymes (sans `X-Qwen-Client-Id`) ne peuvent pas voter sous les politiques `designated` ou `consensus`.

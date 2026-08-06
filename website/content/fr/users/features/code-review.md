@@ -271,6 +271,33 @@ Vous pouvez personnaliser les critères de revue par projet. `/review` lit les r
 
 Les règles sont injectées dans les agents de revue LLM (0-6) en tant que critères supplémentaires. Pour les revues de PR, les règles sont lues depuis la **branche de base** pour empêcher une PR malveillante d'injecter des règles de contournement.
 
+## Contexte du dépôt
+
+Les dépôts peuvent fournir aux relecteurs des indications bornées et spécifiques au dépôt en commitant un manifeste JSON strict dans `.qwen/review-context.json`. À effort moyen ou élevé, `/review` lit le manifeste après avoir capturé le plan et attache les indications correspondantes avant qu'un agent ne se lance :
+
+```json
+{
+  "version": 1,
+  "label": "Example repository",
+  "rules": [
+    {
+      "paths": ["packages/*/src/**"],
+      "domains": ["runtime"],
+      "relatedPaths": ["packages/runtime/src/**"],
+      "recommendedTests": ["npm run test:runtime"],
+      "requiredConfigurations": ["debug"],
+      "requiredAgents": ["test-matrix"],
+      "unverifiedDimensions": ["Alternate runtime was not exercised"],
+      "verificationNotes": ["Use the repository native test runner"]
+    }
+  ]
+}
+```
+
+Une règle s'applique lorsque tout fichier modifié correspond à l'un de ses globs `paths` (`*`, `?`, et segments `**` ; sensible à la casse). Toutes les règles correspondantes fusionnent leurs indications : domaines et fichiers liés pour les agents de revue, tests recommandés et configurations requises pour l'agent build-and-test, rôles de relecteur supplémentaires (honorés uniquement quand le niveau d'effort et la topologie choisis les exécutent), et limites de preuve que la revue finale divulgue comme dimensions non vérifiées. Les tableaux peuvent être écrits dans n'importe quel ordre ; les entrées dupliquées sont rejetées.
+
+Pour les revues de PR, le manifeste est lu depuis la base de merge, afin que la PR en cours de revue ne puisse pas s'ajouter ou se retirer des indications ; les revues locales le lisent depuis le worktree actuel. Les revues à effort faible et inter-dépôts ignorent le contexte du dépôt. Le contrat complet et le modèle de confiance se trouvent dans le [document de conception](../../design/review-repository-context.md).
+
 ## Fidélité aux issues
 
 Pour les PR de correction de bugs, l'agent de fidélité aux issues récupère les preuves de l'issue directement au lieu de s'appuyer sur le texte de description de la PR. Il utilise `gh pr view <pr> --repo <owner/repo> --json closingIssuesReferences` pour les métadonnées solides de GitHub concernant les issues de clôture, puis `gh issue view <number> --repo <issue_owner>/<issue_repo> --json title,body,comments` pour le rapport original et la discussion — la forme `--json` inclut le **corps** de l'issue (la reproduction originale du rapporteur), ce que `--comments` seul omet, et le propre dépôt de l'issue est lu depuis chaque référence (une PR peut fermer une issue dans un dépôt différent). Cet agent s'exécute uniquement pour les cibles de PR ; les revues de diff local et de chemin de fichier l'ignorent.

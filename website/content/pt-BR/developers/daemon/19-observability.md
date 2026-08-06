@@ -1,6 +1,6 @@
 # Observabilidade e Debugging
 
-## Overview
+## Visão Geral
 
 O `qwen serve` atualmente vem com **instrumentação de spans do OpenTelemetry**, **logs estruturados em arquivo** (`DaemonLogger`), **logs de acesso por requisição**, logs de debug no stderr, células de preflight estruturadas e um anel de auditoria de permissões em memória. Esta página é um guia prático para a superfície de observabilidade atual e as lacunas a serem lembradas durante a triagem.
 
@@ -9,10 +9,10 @@ O `qwen serve` atualmente vem com **instrumentação de spans do OpenTelemetry**
 | Superfície                                  | Localização                                    | Propósito                                                                                                                                                                                                                                                                                   |
 | ------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `QWEN_SERVE_DEBUG` stderr logs              | `bridge.ts` e pontos de chamada                | Valores de env `1` / `true` / `on` / `yes` (case-insensitive) imprimem linhas `qwen serve debug: ...` no stderr.                                                                                                                                                                            |
-| OpenTelemetry span instrumentation          | `server.ts` `daemonTelemetryMiddleware`        | Cada requisição HTTP é envolvida em `withDaemonRequestSpan`; atributos incluem route, sessionId, clientId e status code. Rotas de permissão têm spans dedicados. O ciclo de vida do prompt é rastreado de ponta a ponta. A configuração fica em `settings.json` `telemetry`.             |
+| OpenTelemetry span instrumentation          | `server.ts` `daemonTelemetryMiddleware`        | Requisições classificadas da API do daemon que passam pelo middleware de telemetria são envolvidas em `withDaemonRequestSpan`; atributos incluem rota canônica, hash do workspace quando resolvido, sessionId, clientId e status code. Rotas de permissão têm spans dedicados. O ciclo de vida do prompt é rastreado de ponta a ponta. A configuração fica em `settings.json` `telemetry`. |
 | OpenTelemetry daemon perf metrics           | `telemetry/*event-loop-lag*`, `daemon-metrics` | Gauges de event loop lag para o daemon e processos filhos ACP, além de histogramas de bytes de mensagens do pipe daemon-filho.                                                                                                                                                              |
-| `DaemonLogger` structured file logs         | `serve/daemon-logger.ts`                       | Linhas de log estruturadas em formato JSON-like são escritas em um arquivo. O boot imprime `daemon log -> <path>`. Suporta níveis `info` / `warn` / `error`, com campos estruturados como `route`, `sessionId`, `clientId`, `childPid` e `channelId`.                                     |
-| Per-request access-log middleware           | `server.ts`, registrado antes de `bearerAuth`   | Loga `method`, `path`, `status`, `durationMs`, `sessionId` e `clientId` após cada requisição. Ignora `GET /health` e heartbeat. 4xx+ usa `warn`; sucesso usa `info`.                                                                                                                        |
+| `DaemonLogger` structured file logs         | `serve/daemon-logger.ts`                       | Anexa a um `daemon.log` estável e rotacionado por tamanho. Registros de arquivo incluem `runId` e PID. O boot imprime o caminho estável/fallback selecionado; o status completo expõe saúde, problemas e contadores de perda de cópia de arquivo.                                           |
+| Per-request access-log middleware           | `server/access-log.ts`                         | Loga method/path, status, duração, sessão e primeiro ID bruto de cliente após cada requisição. Um burst de 60 tokens / bucket de 2 por segundo agrega o tráfego excedente em cinco contadores fixos de status. Exclusões de health, heartbeat e SSE bem-sucedido permanecem.              |
 | `/health`                                   | rota `server.ts`                               | Liveness probe; `?deep=1` retorna detalhes estendidos.                                                                                                                                                                                                                                      |
 | `/capabilities`                             | rota `server.ts`                               | Descoberta de recursos de preflight. Veja [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).                                                                                                                                                                               |
 | `/workspace/preflight`                      | Rota -> `DaemonStatusProvider`                 | Células de readiness estruturadas: versão do Node, entrada da CLI, ripgrep, git, npm, além de células no nível ACP assim que um filho estiver ativo.                                                                                                                                        |
@@ -38,8 +38,10 @@ curl -s http://127.0.0.1:4170/health
 # {"status":"ok"}
 
 curl -s 'http://127.0.0.1:4170/health?deep=1' | jq
-# {"status":"ok","workspaceCwd":"/path","sessions":N,...}
+# {"status":"ok","workspaceCount":N,"sessions":N,...}
 ```
+
+O deep health soma todos os runtimes de workspace gerenciados, incluindo runtimes ainda em drenagem. É um snapshot informativo de contadores, não readiness por workspace; use `/daemon/status` quando diagnósticos individuais de workspace ou transporte importarem.
 
 Um 401 no loopback significa que `--require-auth` provavelmente está habilitado. Use `QWEN_SERVE_DEBUG=1` na inicialização para ver os logs de boot.
 
@@ -101,7 +103,12 @@ Um **segundo** SIGTERM/SIGINT aciona intencionalmente `bridge.killAllSync()` + `
   "runtime": {
     "perf": {
       "eventLoop": { "meanMs": 1.2, "p50Ms": 1.0, "p99Ms": 9.5, "maxMs": 25 },
-      "promptQueueWait": { "count": 3, "meanMs": 12.5, "maxMs": 35, "lastMs": 4 },
+      "promptQueueWait": {
+        "count": 3,
+        "meanMs": 12.5,
+        "maxMs": 35,
+        "lastMs": 4
+      },
       "pipe": {
         "inbound": { "count": 42, "totalBytes": 100000, "maxBytes": 12000 },
         "outbound": { "count": 41, "totalBytes": 90000, "maxBytes": 11000 }
@@ -119,6 +126,17 @@ Novos nomes de métricas OTel:
 - `qwen-code.acp.event_loop.lag`, gauge em milissegundos com `stat=mean|p50|p99|max`.
 - `qwen-code.daemon.prompt.queue_wait`, histograma em milissegundos.
 - `qwen-code.daemon.pipe.message_bytes`, histograma em bytes com `direction=inbound|outbound`.
+
+### 10. O log em arquivo degradou ou perdeu registros?
+
+Use o status completo do daemon:
+
+```bash
+curl -s 'http://127.0.0.1:4170/daemon/status?detail=full' | \
+  jq '{status, issues, daemon: {runId: .daemon.runId, logMode: .daemon.logMode, logHealth: .daemon.logHealth, logPath: .daemon.logPath, logIssues: .daemon.logIssues, droppedRecords: .daemon.logDroppedRecords, droppedBytes: .daemon.logDroppedBytes}}'
+```
+
+`stable` é o proprietário normal, `fallback` significa que outro daemon possui a família estável, e `stderr-only` significa que o log em arquivo está desabilitado ou indisponível. `fallback/ok` é esperado sob concorrência intencional. Um aviso `daemon_log_degraded` não contém caminho; solicite o detalhe completo para o caminho real e os códigos de problema do logger. Use `runId` para separar reinicializações dentro do arquivo estável.
 
 ## Fluxo
 
@@ -142,6 +160,7 @@ flowchart TD
 - O `QWEN_SERVE_DEBUG` é lido em cada verificação através de `isServeDebugMode()` de `debug-mode.ts`; alterná-lo não requer reinicialização. Os logs de boot não estão disponíveis a menos que o env tenha sido definido no boot.
 - O `PermissionAuditRing` é limitado a 512 entradas FIFO; registros mais antigos são descartados silenciosamente.
 - O `DaemonStatusProvider` reconstrói as células por requisição e não faz cache; evite polling de alta frequência desnecessário.
+
 ## Dependências
 
 - `process.stderr.write` para stderr de depuração.
@@ -156,14 +175,18 @@ flowchart TD
 | --------------------------------- | -------------------------------------------------------------------------------------------- |
 | `QWEN_SERVE_DEBUG`                | Habilita logs detalhados no stderr. Consulte [`17-configuration.md`](./17-configuration.md). |
 | `settings.json` `telemetry`       | Controla o comportamento do OTel: `enabled`, `otlpEndpoint`, `otlpProtocol` e endpoints por sinal. |
-| Caminho de log do `DaemonLogger`  | Gerado na inicialização e impresso no stderr como `daemon log -> <path>`.                    |
+| Caminho de log do `DaemonLogger`  | `debug/daemon/daemon.log` estável, ou um fallback específico de execução selecionado no boot. |
 | Tamanho do `PermissionAuditRing`  | Fixado em 512 atualmente.                                                                    |
 | Limiar de `slow_client_warning`   | `0.75` / `0.375`, fixado em `eventBus.ts`.                                                   |
 
 ## Ressalvas e limitações conhecidas
 
 - **Os logs em arquivo do DaemonLogger são estruturados** e podem ser filtrados por `route`, `sessionId` e `clientId`. Os logs de stderr do `QWEN_SERVE_DEBUG` permanecem como texto não estruturado.
-- **Os spans do OpenTelemetry incluem correlação por requisição.** Cada span de requisição HTTP carrega os atributos route, sessionId e clientId, que podem ser correlacionados em um backend de rastreamento.
+- **A retenção do DaemonLogger é baseada em tamanho, não em idade.** O arquivo ativo e quatro arquivos são limitados por família; proprietários fallback ativos nunca são excluídos.
+- **Os resumos de acesso são contabilidade intencional de perda.** Um WARN `access logs suppressed` representa registros de acesso individuais omitidos tanto do stderr quanto do arquivo; não indica requisições HTTP perdidas.
+- **O logrotate externo não deve mutar a família ativa.** Use um shipper que lê/copia e reabre o caminho estável após a substituição.
+- **Os spans do OpenTelemetry incluem correlação por requisição.** Requisições classificadas da API do daemon que passam pela autenticação bearer, rate limiting e parsing do body carregam atributos de rota canônica, sessionId, clientId e (quando resolvido de forma única) `qwen-code.workspace.hash`. Requisições rejeitadas por um gate de middleware anterior não possuem esses spans de requisição.
+- **As métricas HTTP são globais do daemon.** As métricas de requisição HTTP do OpenTelemetry e o anel de métricas de status do Web Shell não incluem uma dimensão de workspace. Uma conexão SSE de sessão bem-sucedida tem um span de requisição, mas é excluída das métricas comuns de contagem/duração de requisições porque seu tempo de vida não é latência de requisição; handshakes SSE com falha são contados normalmente.
 - **`runtime.perf` é exclusivo do daemon.** O lag do event loop dos processos filhos não é reportado ali por design; use o OTel ou os avisos de stall encaminhados para o stderr para stalls nos filhos do ACP.
 - **As células `/workspace/preflight` no nível do ACP requerem uma sessão ativa.** Em um daemon ocioso, auth / MCP / skills / providers podem mostrar `status: 'not_started'`; isso é o esperado.
 - **`/workspace/env` reporta apenas a presença de secrets, não seus valores.** Não exponha a resposta em casos onde a mera presença de um secret seja sensível.
