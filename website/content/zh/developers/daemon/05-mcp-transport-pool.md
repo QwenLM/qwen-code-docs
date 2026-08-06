@@ -376,7 +376,7 @@ new McpClientManager(config, toolRegistry, {
 - `McpTransportPool.acquire()` 使用 `attachPooledSession` 和 `rollbackReservationOnSpawnFailure` 来共享快速路径附加、生成后附加和池化生成中捕获行为。运行时行为不变；竞态窗口不变量仍然存在于调用点。
 - `SessionMcpView.applyTools` / `applyPrompts` 通过 `compileNameFilter(cfg)` 编译 `includeTools` / `excludeTools` 一次，并使用 `compiledFilterAccepts(compiled, name)` 检查每个工具。导出的 `passesSessionFilter` / `passesSessionPromptFilter` 使用相同的编译路径。`excludeTools` 是精确匹配；`includeTools` 去除第一个 `(...)` 后缀，以便 `toolName(args)` 匹配 `toolName`。
 
-设计文档：[`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §6 介绍了传输池状态机、重连、排空和后代清理路径。
+设计文档：[`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §6 介绍了传输池状态机、重连、排空和后代清理路径。
 
 ## 注意事项与已知限制
 
@@ -393,5 +393,5 @@ new McpClientManager(config, toolRegistry, {
 - `packages/core/src/tools/mcp-pool-key.ts`（`connectionIdOf`、`parseConnectionId`）
 - `packages/core/src/tools/mcp-pool-events.ts`（事件类型）
 - `packages/core/src/tools/session-mcp-view.ts`（按会话过滤视图）
-- F2 设计文档（v2.2，包含 32 项审查折叠变更日志）：[`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)。设计契约是权威的；此页面是开发者深度讲解。
+- F2 设计文档（v2.2，包含 32 项审查折叠变更日志）：[`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)。设计契约是权威的；此页面是开发者深度讲解。
 - F2 设计说明：issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175)（F2 系列的提交 4-6）。

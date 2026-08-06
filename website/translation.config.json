@@ -7,6 +7,7 @@
   "outputDir": "content",
   "branch": "main",
   "excludeFromTranslation": [
+    "design",
     "e2e-tests",
     "plans",
     "superpowers",

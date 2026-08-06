@@ -347,5 +347,5 @@ sequenceDiagram
 - 设计问题: [#3803](https://github.com/QwenLM/qwen-code/issues/3803) (守护进程设计), [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (F 系列里程碑).
 - 用户指南: [`../../users/qwen-serve.md`](../../users/qwen-serve.md).
 - 有线协议参考: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
-- F2 设计文档: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md).
+- F2 设计文档: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md).
 - F2 设计说明: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) 提交 4-6.

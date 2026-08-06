@@ -459,7 +459,7 @@ These helpers are internal, but source readers may see them:
 - `McpTransportPool.acquire()` uses `attachPooledSession` and `rollbackReservationOnSpawnFailure` to share fast-path attach, post-spawn attach, and pooled spawn-in-flight catch behavior. Runtime behavior is unchanged; race-window invariants still live at the call sites.
 - `SessionMcpView.applyTools` / `applyPrompts` compile `includeTools` / `excludeTools` once via `compileNameFilter(cfg)` and check each tool with `compiledFilterAccepts(compiled, name)`. Exported `passesSessionFilter` / `passesSessionPromptFilter` use the same compiled path. `excludeTools` is exact-match; `includeTools` strips the first `(...)` suffix so `toolName(args)` matches `toolName`.
 
-Design document: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §6 covers the transport pool state machine, reconnect, drain, and descendant sweep paths.
+Design document: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §6 covers the transport pool state machine, reconnect, drain, and descendant sweep paths.
 
 ## Caveats & Known Limits
 
@@ -476,5 +476,5 @@ Design document: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-t
 - `packages/core/src/tools/mcp-pool-key.ts` (`connectionIdOf`, `parseConnectionId`)
 - `packages/core/src/tools/mcp-pool-events.ts` (event types)
 - `packages/core/src/tools/session-mcp-view.ts` (per-session filtered view)
-- F2 design document (v2.2, with the 32-item review fold-in changelog): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md). Treat the design contract as authoritative; this page is the developer deep dive.
+- F2 design document (v2.2, with the 32-item review fold-in changelog): [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md). Treat the design contract as authoritative; this page is the developer deep dive.
 - F2 design notes: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (commits 4-6 of the F2 series).

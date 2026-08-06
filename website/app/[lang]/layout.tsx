@@ -8,7 +8,9 @@ import { LanguageDropdown } from "../../src/components/language-dropdown";
 import { ThemeToggle } from "../../src/components/theme-toggle";
 import { GitHubStarLink } from "../../src/components/github-star-link";
 import { Search } from "../../src/components/search";
+import { MobileMenu } from "../../src/components/mobile-menu";
 import { withBasePath } from "../../src/lib/utils";
+import { modifyUpdatesSidebar } from "../../src/lib/blog-utils";
 import NextLink from "next/link";
 import { notFound } from "next/navigation";
 import type { FC, ReactNode } from "react";
@@ -30,6 +32,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   }
 
   let sourcePageMap = await getPageMap(`/${lang}`);
+  sourcePageMap = modifyUpdatesSidebar(sourcePageMap as any, lang) as any;
   //@ts-ignore
   // 用 fs 模块将 sourcePageMap 保存到本地
 
@@ -79,6 +82,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
       <GitHubStarLink projectLink='https://github.com/QwenLM/qwen-code' className='shrink-0' />
       <LanguageDropdown currentLang={lang} compactOnTablet className='max-md:hidden shrink-0' />
       <ThemeToggle />
+      <MobileMenu lang={lang} />
     </Navbar>
   );
 

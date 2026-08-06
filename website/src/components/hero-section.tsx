@@ -38,7 +38,7 @@ export const HeroSection = () => {
 
       <div className='container mx-auto px-6 text-center relative z-10 max-w-5xl flex-grow flex flex-col items-center justify-center'>
         {/* Main Heading */}
-        <h1 className='text-5xl md:text-7xl font-bold mb-6 leading-[1.08] tracking-tighter animate-in fade-in slide-in-from-bottom-8 duration-700'>
+        <h1 className='text-4xl sm:text-5xl md:text-7xl font-bold mb-6 leading-[1.08] tracking-tighter animate-in fade-in slide-in-from-bottom-8 duration-700'>
           <span className='gradient-text-white'>An open-source AI agent</span>
           <br />
           <span className='gradient-text'>that lives in your terminal</span>
@@ -101,7 +101,7 @@ export const HeroSection = () => {
         </div>
 
         {/* Tech Stack Strip */}
-        <div className="mt-16 pt-6 border-t border-border w-full max-w-3xl flex justify-center gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+        <div className="mt-16 pt-6 border-t border-border w-full max-w-3xl flex flex-wrap justify-center gap-x-8 gap-y-3 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
              <div className="flex items-center gap-2"><Cpu className="w-4 h-4" /> <span className="text-xs font-mono">Qwen3-Coder</span></div>
              <div className="flex items-center gap-2"><Code2 className="w-4 h-4" /> <span className="text-xs font-mono">VS Code</span></div>
              <div className="flex items-center gap-2"><Box className="w-4 h-4" /> <span className="text-xs font-mono">Docker</span></div>

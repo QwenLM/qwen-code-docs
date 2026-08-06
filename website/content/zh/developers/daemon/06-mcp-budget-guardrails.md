@@ -149,5 +149,5 @@ sequenceDiagram
 - `packages/core/src/tools/mcp-workspace-budget.ts`（完整类）
 - `packages/core/src/tools/mcp-client-manager.ts`（`BudgetExhaustedError`、`McpBudgetEvent`、滞回常量）
 - `packages/core/src/tools/mcp-transport-pool.ts`（池中调用 `tryReserve` 的 `acquire` 站点）
-- F2 设计文档（v2.2）：[`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §11，关于工作空间级别的预算以及 v2.2 变更日志中关于预算和指纹后续内容的条目。
+- F2 设计文档（v2.2）：[`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §11，关于工作空间级别的预算以及 v2.2 变更日志中关于预算和指纹后续内容的条目。
 - F2 设计注释：issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) commit 6。

@@ -37,6 +37,17 @@ export class InvalidTranslationError extends Error {
   }
 }
 
+/** Reports every document that failed during a directory translation. */
+export class TranslationBatchError extends Error {
+  readonly failedFiles: readonly string[];
+
+  constructor(failedFiles: readonly string[]) {
+    super(`Failed to translate: ${failedFiles.join(", ")}`);
+    this.name = "TranslationBatchError";
+    this.failedFiles = failedFiles;
+  }
+}
+
 export class DocumentTranslator {
   private openai: OpenAI;
   private apiConfig: TranslatorConfig;
@@ -566,6 +577,7 @@ ${content}`;
     );
 
     console.log(chalk.blue(`📁 Found ${markdownFiles.length} Markdown files`));
+    const failedFiles: string[] = [];
 
     for (const file of markdownFiles) {
       // Ensure file is string type
@@ -584,10 +596,15 @@ ${content}`;
         await fs.writeFile(targetPath, translatedContent, "utf-8");
         console.log(chalk.green(`✓ Saved: ${path.basename(targetPath)}`));
       } catch (error: any) {
+        failedFiles.push(fileName);
         console.error(
           chalk.red(`✗ Failed to translate ${file}: ${error.message}`)
         );
       }
+    }
+
+    if (failedFiles.length > 0) {
+      throw new TranslationBatchError(failedFiles);
     }
   }
 }

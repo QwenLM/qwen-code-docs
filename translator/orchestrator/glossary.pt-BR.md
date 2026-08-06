@@ -1,0 +1,96 @@
+# Glossary (pt-BR)
+
+English term → pt-BR rendering. Follow existing entries; append new ones as `- term → rendering` when you coin a term.
+
+- hook → hook (não traduzir)
+- skill → skill (não traduzir)
+- subagent → subagente
+- sandbox → sandbox (não traduzir)
+- checkpoint → checkpoint (não traduzir)
+- slash command → comando slash
+- headless → headless (não traduzir)
+- approval mode → modo de aprovação
+- session → sessão
+- snapshot → snapshot (não traduzir)
+- replay → replay (não traduzir)
+- turn → turno
+- live turn → turno ao vivo
+- replay window → janela de replay
+- fail closed → fail closed (não traduzir)
+- secondary runtime → runtime secundário
+- secondary path → caminho secundário
+- hot removal → remoção a quente
+- memory lane → memory lane (não traduzir)
+- sub-session launcher → iniciador de sub-sessão
+- embedding host → host de embedding
+- unattached session → sessão não anexada
+- session picker → seletor de sessão
+- workspace → workspace (não traduzir)
+- daemon → daemon (não traduzir)
+- tool call → chamada de ferramenta
+- prompt → prompt (não traduzir)
+- microcompaction → microcompactação
+- compaction → compactação
+- managed memory → memória gerenciada
+- full compaction → compactação completa
+- vision bridge → vision bridge (não traduzir)
+- tool result → resultado de ferramenta
+- heartbeat → heartbeat (não traduzir)
+- liveness signal → sinal de atividade
+- live output → saída ao vivo
+- log rotation → rotação de log
+- lease → lease (não traduzir)
+- fallback → fallback (não traduzir)
+- fail closed → fail closed (rejeitar em caso de falha)
+- settlement → liquidação
+- pending permission → permissão pendente
+- streaming → streaming (não traduzir)
+- hard cap → limite rígido
+- soft cap → limite suave
+- circuit breaker → circuit breaker (não traduzir)
+- roster → roster (não traduzir)
+- sidecar → sidecar (não traduzir)
+- capability → capability (não traduzir, em contexto de protocolo)
+- cold start → cold start (não traduzir)
+- fire-and-forget → fire-and-forget (não traduzir)
+- single-flight → single-flight (não traduzir)
+- worktree → worktree (não traduzir)
+- workspace trust → confiança de workspace
+- generation guard → guarda de geração
+- drain → drenar / drenagem
+- hot continuation → continuação a quente
+- transcript → transcrição
+- speculation → especulação
+- fast path → fast path (não traduzir)
+- closure → closure (não traduzir, em contexto de bundle/importação)
+- preheat → pré-aquecimento
+- run → execução (em contexto de prompt/canal)
+- output segment → segmento de saída
+- presenter → apresentador
+- projection → projeção
+- tombstone → tombstone (não traduzir)
+- pinned → fixado (em contexto de memória; diretório `pinned/` mantido)
+- stale → obsoleto
+- curator → curador
+- triage → triagem
+- sentinel → sentinela
+- gate → gate (não traduzir)
+- fail-open → fail-open (não traduzir)
+- span → span (não traduzir)
+- profiler → profiler (não traduzir)
+- sink → sink (não traduzir)
+- dispatcher → dispatcher (não traduzir)
+- compile cache → cache de compilação
+- reverse control → controle reverso
+- work chain → cadeia de trabalho
+- semantic leaf → folha semântica
+- neutral tail → cauda neutra
+- antichain → antichain (não traduzir)
+- wake-up signal → sinal de ativação
+- vendored → vendored (não traduzir)
+- channel worker → worker de canal
+- desired state → estado desejado
+- pidfile → pidfile (não traduzir)
+- rollback → rollback (não traduzir)
+- dwell → dwell (não traduzir)
+- warmup → warmup (não traduzir)

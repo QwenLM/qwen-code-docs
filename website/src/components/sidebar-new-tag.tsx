@@ -91,7 +91,7 @@ function addNewBadges(blogDates: Record<string, string>) {
   if (newRoutes.size === 0) return;
 
   const links = Array.from(
-    document.querySelectorAll<HTMLElement>('a[href*="/blog/"]')
+    document.querySelectorAll<HTMLElement>('aside a[href*="/blog/"]')
   );
 
   for (const link of links) {

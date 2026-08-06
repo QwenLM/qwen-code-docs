@@ -399,7 +399,7 @@ Diese Hilfsfunktionen sind intern, aber Leser des Quellcodes können sie sehen:
 - `McpTransportPool.acquire()` verwendet `attachPooledSession` und `rollbackReservationOnSpawnFailure`, um das Fast-Path-Anhängen, das Anhängen nach dem Start und das gebündelte Verhalten von "Spawn in Flight" zu teilen. Das Laufzeitverhalten ist unverändert; die Invarianten der Race-Fenster liegen weiterhin an den Aufrufstellen.
 - `SessionMcpView.applyTools` / `applyPrompts` kompilieren `includeTools` / `excludeTools` einmal über `compileNameFilter(cfg)` und prüfen jedes Tool mit `compiledFilterAccepts(compiled, name)`. Die exportierten `passesSessionFilter` / `passesSessionPromptFilter` verwenden denselben kompilierten Pfad. `excludeTools` ist eine exakte Übereinstimmung; `includeTools` entfernt das erste `(...)`-Suffix, sodass `toolName(args)` mit `toolName` übereinstimmt.
 
-Design-Dokument: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §6 behandelt die Transport-Pool-Zustandsmaschine, Wiederverbindung, Drain und Descendant-Sweep-Pfade.
+Design-Dokument: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §6 behandelt die Transport-Pool-Zustandsmaschine, Wiederverbindung, Drain und Descendant-Sweep-Pfade.
 
 ## Einschränkungen & Bekannte Grenzen
 
@@ -416,5 +416,5 @@ Design-Dokument: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-t
 - `packages/core/src/tools/mcp-pool-key.ts` (`connectionIdOf`, `parseConnectionId`)
 - `packages/core/src/tools/mcp-pool-events.ts` (Ereignistypen)
 - `packages/core/src/tools/session-mcp-view.ts` (gefilterte Ansicht pro Sitzung)
-- F2-Design-Dokument (v2.2, mit dem 32-Änderungs-Changelog): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md). Behandeln Sie den Design-Vertrag als maßgeblich; diese Seite ist der tiefgehende Entwickler-Einblick.
+- F2-Design-Dokument (v2.2, mit dem 32-Änderungs-Changelog): [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md). Behandeln Sie den Design-Vertrag als maßgeblich; diese Seite ist der tiefgehende Entwickler-Einblick.
 - F2-Design-Notizen: Issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (Commits 4-6 der F2-Serie).

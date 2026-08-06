@@ -149,5 +149,5 @@ Recusas fora da passagem (por exemplo, spawn lazy de `readResource` que ignora c
 - `packages/core/src/tools/mcp-workspace-budget.ts` (classe inteira)
 - `packages/core/src/tools/mcp-client-manager.ts` (`BudgetExhaustedError`, `McpBudgetEvent`, hysteresis constants)
 - `packages/core/src/tools/mcp-transport-pool.ts` (local do `acquire` do pool que chama `tryReserve`)
-- Documento de design F2 (v2.2): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §11 para orçamento em nível de workspace e as entradas do changelog v2.2 sobre orçamento e acompanhamentos de fingerprint.
+- Documento de design F2 (v2.2): [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §11 para orçamento em nível de workspace e as entradas do changelog v2.2 sobre orçamento e acompanhamentos de fingerprint.
 - Notas de design F2: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) commit 6.

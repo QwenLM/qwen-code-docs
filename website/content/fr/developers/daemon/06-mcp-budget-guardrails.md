@@ -149,5 +149,5 @@ Les refus hors phase (par exemple un spawn `readResource` paresseux qui contourn
 - `packages/core/src/tools/mcp-workspace-budget.ts` (classe entière)
 - `packages/core/src/tools/mcp-client-manager.ts` (`BudgetExhaustedError`, `McpBudgetEvent`, constantes d’hystérésis)
 - `packages/core/src/tools/mcp-transport-pool.ts` (site `acquire` du pool qui appelle `tryReserve`)
-- Document de conception F2 (v2.2) : [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §11 pour le budget au niveau de l’espace de travail et les entrées du journal des modifications v2.2 concernant le budget et les suivis d’empreintes.
+- Document de conception F2 (v2.2) : [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §11 pour le budget au niveau de l’espace de travail et les entrées du journal des modifications v2.2 concernant le budget et les suivis d’empreintes.
 - Notes de conception F2 : issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) commit 6.

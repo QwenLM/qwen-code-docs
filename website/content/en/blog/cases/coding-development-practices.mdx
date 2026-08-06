@@ -1,0 +1,98 @@
+---
+title: "Coding in Practice: From Prototyping to Code Review and Unit Testing"
+date: "2026-07-13"
+description: "Three real coding scenarios: turning vague requirements into interactive prototypes, running 9 AI agents simultaneously for code review, and automatically generating unit tests with issue fixing. Cover the full development-to-delivery workflow with Qwen Code."
+author: "Qwen Team"
+tags: ["Tutorial", "Coding"]
+image: https://gw.alicdn.com/imgextra/i3/O1CN01cd6BKs21zFOser3vI_!!6000000007055-2-tps-1344-572.png
+---
+
+import { BlogPostHeader } from '@/components/blog-post-header'
+import { Callout } from 'nextra/components'
+
+<BlogPostHeader
+  title="Coding in Practice: From Prototyping to Code Review and Unit Testing"
+  date="July 13, 2026"
+  author="Qwen Team"
+/>
+
+Coding isn't just about writing code. From figuring out what to build to ensuring code quality, every step takes time. In the three scenarios below, Qwen Code is involved throughout — helping you refine requirements, review code, and fill in test cases.
+
+## From Vague Requirements to Interactive Prototypes
+
+Got an idea in your head but haven't worked out the details yet? Just tell Qwen Code what you want to build. Instead of rushing to write code, it starts by talking with you like a product manager — what the core features are, how interactions should work, what the technical approach looks like. Once you and the AI are both satisfied with the requirements, it gets to work and builds the entire tool. From a single sentence to a working product prototype, the whole process doesn't require you to write a single line of code.
+
+<video
+  src="https://cloud.video.taobao.com/vod/cW5Zjsai4Lq-TBJIV4LQO0u8xaeNReyALue5L-HtwtQ.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/O1CN01db5Tho1Xeh95OTYfP_!!6000000002949-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Steps
+
+1. **Refine requirements** — Tell Qwen Code your idea, even if it's just a vague one-liner. The AI will proactively ask you a series of questions to fill in the details — core features, interaction patterns, technical implementation, etc. — and ultimately generate a complete requirements document for you.
+2. **Confirm the plan** — Once the AI generates a requirements plan, review it item by item to see if anything needs changing or adding. Once you're satisfied, move on to the next step.
+3. **Start development** — With the requirements confirmed, let Qwen Code start building. It follows the requirements document step by step to scaffold the entire tool, fully automated.
+
+<Callout>
+    **Tip**: The more specific you are during the requirements phase, the less rework you'll do during development. Don't rush the AI into writing code — talk it through first.
+</Callout>
+
+## 9 AI Reviewers Scanning Your Code Simultaneously
+
+Before committing your code, run `/review` and 9 review Agents start working in parallel — scanning across security, performance, code quality, and other dimensions, fixing issues as they find them. A colleague submitted a PR? One command reviews it, and comments are automatically posted inline on GitHub — just like a real person's review.
+
+<video
+  src="https://cloud.video.taobao.com/vod/q8e6oXagz7e6S3nXqzdz9uX9Jc2vU1M5cTQc5KYxnLQ.mp4"
+  poster="https://img.alicdn.com/imgextra/i1/O1CN0125Uqjz1jIVLevSaJR_!!6000000004525-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Steps
+
+1. **Project code review** — Run `/review` to review your project code. 9 Agents scan in parallel, automatically detecting hardcoded secrets, SQL injection, and other security and performance issues.
+2. **One-click fix** — Choose auto-fix, and Qwen Code directly modifies the code and runs the linter to verify, ensuring the fix doesn't introduce new issues.
+3. **PR review with comments** — Run `/review <PR number> --comment` to review a remote PR. Switch to GitHub to see inline annotations — review comments are posted directly on the code lines.
+
+```bash
+/review <PR number> --comment
+```
+
+## Adding Unit Tests to Your Project
+
+Let Qwen Code understand your project rules, automatically generate unit tests covering normal scenarios, edge cases, and invalid inputs, then run verification, fix issues, and expand test coverage.
+
+<video
+  src="https://cloud.video.taobao.com/vod/9BIzzviw4yBmKnq3wxoEQl67NzWLqowLKxn3Q2tpDHo.mp4"
+  poster="https://img.alicdn.com/imgextra/i4/O1CN01wShvFg1X0OIGEkC7y_!!6000000002861-0-videocover-1920-1080.jpg"
+  controls
+  width="100%"
+  height="100%"
+  class="mt-5"
+  style={{ borderRadius: '10px' }}
+/>
+
+### Steps
+
+1. **Understand the project and testing goals** — Qwen Code reads through your project files, understands business rules, core functions, and testing goals, and plans which test scenarios to prioritize for coverage.
+2. **Generate tests and run verification** — Based on business rules, it generates unit tests for core functions, covering normal scenarios, edge cases, and invalid inputs — e.g., coupon thresholds, free-shipping cutoffs, empty carts, and invalid input — and automatically runs the tests.
+3. **Fix issues and pass tests** — Based on test failures, it determines the source of the problem. If the source code implementation doesn't match the business rules, Qwen Code modifies the code and re-runs the tests until they pass.
+4. **Expand test coverage** — Review the test coverage report, analyze uncovered files and branches, and continue adding valuable test cases to improve coverage of critical logic.
+
+<Callout type="error">
+    **Note**: AI-generated test cases need your confirmation on whether the business logic is correct. AI can help you write tests, but it can't decide what's right for you.
+</Callout>
+
+## What's Next
+
+- [Build a Website in 10 Minutes: Homework, Portfolios, and Open Source Projects](/en/blog/cases/qwencode-coding-plan-guide-build-website) — Use Plan mode to build a website from scratch
+- [Advanced Usage](/en/blog/advanced) — Bailian CLI, Skills, and other advanced features
+- [Showcase Video Demos](/en/showcase) — More scenario-based video demos
