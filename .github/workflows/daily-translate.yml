@@ -96,8 +96,20 @@ jobs:
           # Only languages with a non-zero backlog. `detect` prints a line
           # for every language including `backlog xx: 0`; dispatching those
           # produces no manifest, and advance would then have nothing to do.
+          # `|| true`: grep exits 1 on zero matches, which is the NORMAL case
+          # at steady state (~14 file-translations/day) — without it, every
+          # quiet day dies here under `bash -e` before translate even runs.
           grep -oE 'backlog [A-Za-z-]+: [1-9][0-9]*' /tmp/orch-detect.log \
-            | awk '{print $2}' | tr -d ':' > /tmp/orch-langs.txt
+            | awk '{print $2}' | tr -d ':' > /tmp/orch-langs.txt || true
+
+      # Installs BEFORE translation on purpose: the agent runs auto-edit over
+      # the whole checkout, so a malicious translation could modify
+      # website/package.json. If `npm ci` ran after translation, it would
+      # execute that modified tree's install scripts with the checkout token.
+      - name: Install website dependencies
+        if: steps.detect.outputs.changed == 'true'
+        working-directory: ./website
+        run: npm ci --no-audit --no-fund
 
       - name: Translate languages in parallel, then advance baseline
         if: steps.detect.outputs.changed == 'true'
@@ -145,26 +157,42 @@ jobs:
 
       - name: Build website
         if: steps.detect.outputs.changed == 'true'
-        run: |
-          npm ci --no-audit --no-fund
-          npm run build
         working-directory: ./website
         env:
           # Full multi-locale docs set is memory-heavy to statically export.
           NODE_OPTIONS: --max-old-space-size=12288
+        run: npm run build
 
       - name: Commit translations to main
         if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
         run: |
           git config user.name "qwen-docs-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Quarantine: staging `website/content` wholesale would also commit
+          # files the verify gate rejected (empty output, fence mismatch...).
+          # advance writes per-language .failed.txt lists; restore those files
+          # from HEAD (or remove ones that never existed) so only verified
+          # translations plus the deterministic EN mirror get committed.
+          shopt -s nullglob
+          for fl in website/orchestrator-manifest-*.failed.txt; do
+            while IFS= read -r p; do
+              [ -n "$p" ] || continue
+              git checkout HEAD -- "website/content/$p" 2>/dev/null \
+                || rm -f "website/content/$p"
+            done < "$fl"
+            rm -f "$fl"
+          done
           # Glossaries are appended to by the agent (see prompts/translate.md
           # rules 3 and 6); without them staged, every run's coined terms are
           # discarded and term choices drift from day to day.
           git add website/content website/last-sync.json \
             translator/orchestrator/glossary.*.md
-          git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
-          git push origin HEAD:main
+          if git diff --cached --quiet; then
+            echo "::warning::nothing verified to commit this run — check the agent logs above"
+          else
+            git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
+            git push origin HEAD:main
+          fi
 
       - name: Deploy to GitHub Pages
         if: steps.detect.outputs.changed == 'true' && github.ref_name == 'main'
