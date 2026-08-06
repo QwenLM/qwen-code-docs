@@ -397,8 +397,11 @@ function hasFrontmatter(text) {
 function frontmatterClosed(text) {
   const lines = text.split("\n");
   if (lines[0].trim() !== "---") return false;
+  // No line cap: a doc with long frontmatter must not fail the gate
+  // forever (retried daily, never advancing). Scanning the whole file
+  // is cheap next to the translation that produced it.
   return lines
-    .slice(1, 60)
+    .slice(1)
     .some((l) => l.trim() === "---" || l.trim() === "...");
 }
 
