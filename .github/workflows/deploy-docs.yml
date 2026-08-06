@@ -16,7 +16,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
+          # Full history is required: website/app/sitemap.ts derives every
+          # entry's lastModified from `git log`, so a shallow checkout would
+          # collapse those dates. blob:none keeps all commit/tree metadata
+          # (which is all `git log --name-only` needs) while skipping file
+          # contents, so history stays correct and the fetch stays cheap.
           fetch-depth: 0
+          filter: blob:none
 
       - name: Install Node.js
         uses: actions/setup-node@v6
