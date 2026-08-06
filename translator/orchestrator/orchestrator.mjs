@@ -81,6 +81,35 @@ function manifestPath(lang) {
       );
 }
 
+// ---------- excludes ----------
+
+/**
+ * The orchestrator must honor the same excludeFromTranslation list the
+ * legacy pipeline enforces (website/translation.config.json): without it,
+ * sync-en/detect/translate/advance would mirror, translate, and publish
+ * the internal docs that #146 removed from the site.
+ */
+function loadExcludes() {
+  try {
+    const cfgPath = path.join(
+      path.dirname(OPTS.contentDir),
+      "translation.config.json"
+    );
+    const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
+    return (cfg.excludeFromTranslation || []).map((p) =>
+      String(p).replace(/\/+$/, "")
+    );
+  } catch {
+    return [];
+  }
+}
+const EXCLUDES = loadExcludes();
+
+/** rel is relative to docsPath, e.g. "design/foo.md". */
+function isExcluded(rel) {
+  return EXCLUDES.some((p) => rel === p || rel.startsWith(p + "/"));
+}
+
 // ---------- upstream ----------
 
 function gitRetry(cmd, label) {
@@ -179,6 +208,7 @@ function upstreamDocs() {
     for (const item of fs.readdirSync(dir)) {
       const full = path.join(dir, item);
       const rel = base ? `${base}/${item}` : item;
+      if (isExcluded(rel)) continue; // internal docs: never index, mirror, or translate
       const st = fs.statSync(full);
       if (st.isDirectory()) walk(full, rel);
       else if (item.endsWith(".md"))
@@ -268,11 +298,73 @@ function cmdSeed() {
 
 // 上游文档可能带未加 ./ 的相对链接(`](assets/x.png)`):GitHub 上能渲染,
 // 但 Nextra/webpack 构建会当作模块请求报错。同步 EN 镜像时统一改写为 ./ 形式。
+// 按行跟踪代码栅栏:围栏内的内容是示例代码,改写会悄悄偏离上游,必须跳过。
+const RELATIVE_LINK =
+  /\]\((?!\.|\/|#|[a-zA-Z][a-zA-Z0-9+.-]*:)([^)\s]+)(\s+"[^"]*")?\)/g;
+
 function normalizeRelativeLinks(text) {
-  return text.replace(
-    /\]\((?!\.|\/|#|[a-zA-Z][a-zA-Z0-9+.-]*:)([^)\s]+)(\s+"[^"]*")?\)/g,
-    (_m, target, title) => `](./${target}${title ?? ""})`
+  let inFence = false;
+  let fenceMark = "";
+  return text
+    .split("\n")
+    .map((line) => {
+      const fence = line.match(/^\s*(```|~~~)/);
+      if (fence) {
+        if (!inFence) {
+          inFence = true;
+          fenceMark = fence[1];
+        } else if (fence[1] === fenceMark) {
+          inFence = false;
+        }
+        return line;
+      }
+      if (inFence) return line;
+      return line.replace(
+        RELATIVE_LINK,
+        (_m, target, title) => `](./${target}${title ?? ""})`
+      );
+    })
+    .join("\n");
+}
+
+function mirrorAssets() {
+  const docsDir = path.join(OPTS.tempDir, OPTS.docsPath);
+  if (!fs.existsSync(docsDir)) return 0;
+  // Assets are language-agnostic: mirror into EN *and* every target locale.
+  // Translated pages reference them with relative paths and webpack resolves
+  // those relative to the page, so each locale needs its own copy (same
+  // capability #195 added to the legacy pipeline).
+  const targets = ["en", ...OPTS.langs].map((l) =>
+    path.join(OPTS.contentDir, l)
   );
+  let copied = 0;
+  (function walk(dir, base) {
+    for (const item of fs.readdirSync(dir)) {
+      const full = path.join(dir, item);
+      const rel = base ? `${base}/${item}` : item;
+      if (isExcluded(rel)) continue;
+      const st = fs.lstatSync(full);
+      if (st.isSymbolicLink()) continue; // never follow links out of the docs tree
+      if (st.isDirectory()) {
+        walk(full, rel);
+        continue;
+      }
+      // Markdown is handled by the doc loop (and gets translated); _meta is
+      // site-maintained navigation. Everything else is an asset.
+      if (/\.(md|mdx)$/.test(item)) continue;
+      if (/^_meta\.(ts|tsx|js|jsx|mjs|cjs|json)$/.test(item)) continue;
+      const srcHash = sha256(fs.readFileSync(full));
+      for (const t of targets) {
+        const dest = path.join(t, rel);
+        if (fs.existsSync(dest) && sha256(fs.readFileSync(dest)) === srcHash)
+          continue;
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.copyFileSync(full, dest);
+        copied++;
+      }
+    }
+  })(docsDir, "");
+  return copied;
 }
 
 function cmdSyncEn() {
@@ -281,25 +373,22 @@ function cmdSyncEn() {
   const base = loadBaseline();
   const enDir = path.join(OPTS.contentDir, "en");
   let copied = 0;
-  for (const [f, hash] of upstream) {
+  for (const [f] of upstream) {
+    // upstreamDocs() indexes .md only; assets are mirrored below.
     const dest = path.join(enDir, relInContent(f));
     const srcPath = path.join(OPTS.tempDir, f);
-    if (/\.(md|mdx)$/.test(f)) {
-      const normalized = normalizeRelativeLinks(fs.readFileSync(srcPath, "utf8"));
-      if (fs.existsSync(dest) && fs.readFileSync(dest, "utf8") === normalized)
-        continue;
-      fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.writeFileSync(dest, normalized);
-    } else {
-      if (fs.existsSync(dest) && sha256(fs.readFileSync(dest)) === hash) continue;
-      fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.copyFileSync(srcPath, dest);
-    }
-    // Both branches `continue` when the target is already current, so
-    // reaching here means a write happened. The workflow's `changed` gate
+    const normalized = normalizeRelativeLinks(
+      fs.readFileSync(srcPath, "utf8")
+    );
+    if (fs.existsSync(dest) && fs.readFileSync(dest, "utf8") === normalized)
+      continue;
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, normalized);
+    // Reaching here means a write happened. The workflow's `changed` gate
     // greps this counter, so it must reflect reality.
     copied++;
   }
+  copied += mirrorAssets();
   // Deletions: recorded upstream files that are gone now.
   let deleted = 0;
   for (const f of Object.keys(base.files)) {
@@ -421,6 +510,11 @@ function verifyFile(lang, f, manifest) {
   if (!fs.existsSync(target)) return { ok: false, problems: ["missing target"] };
   const en = fs.readFileSync(enPath, "utf8");
   let tg = fs.readFileSync(target, "utf8");
+  // The mtime gate must see the file as the agent left it: stat BEFORE the
+  // self-heal below, whose write would otherwise refresh mtime and let a
+  // stale (pre-session) translation pass as "touched this session".
+  const touchedThisSession =
+    fs.statSync(target).mtimeMs >= manifest.createdAt;
   // Self-heal: translation agents sometimes drop the "./" on relative links
   // (GitHub renders bare paths; webpack resolves them as modules and fails).
   // Repair at the gate so stale on-disk files never break the build.
@@ -430,8 +524,7 @@ function verifyFile(lang, f, manifest) {
     tg = healed;
   }
   if (tg.trim().length === 0) problems.push("empty target");
-  if (fs.statSync(target).mtimeMs < manifest.createdAt)
-    problems.push("target not touched this session");
+  if (!touchedThisSession) problems.push("target not touched this session");
   if (fenceCount(en) !== fenceCount(tg))
     problems.push(
       `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(tg)})`
@@ -447,11 +540,29 @@ function verifyFile(lang, f, manifest) {
 }
 
 function readManifest(lang) {
+  let raw;
   try {
-    return JSON.parse(fs.readFileSync(manifestPath(lang), "utf8"));
-  } catch {
-    return null;
+    raw = fs.readFileSync(manifestPath(lang), "utf8");
+  } catch (err) {
+    if (err.code === "ENOENT") return null; // nothing dispatched: legitimate no-op
+    throw err;
   }
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    // A corrupt manifest is NOT "no manifest": treating it as empty would
+    // silently drop a day of recorded translation work (redone tomorrow,
+    // no warning anywhere). Fail loudly instead.
+    console.error(
+      `::error::manifest for ${lang} is corrupt (${err.message}); refusing to treat it as empty`
+    );
+    throw err;
+  }
+}
+
+/** Quarantine list for the commit step: files the verify gate rejected. */
+function failedListPath(lang) {
+  return manifestPath(lang).replace(/\.json$/, ".failed.txt");
 }
 
 /**
@@ -505,10 +616,12 @@ function cmdAdvance(lang) {
   const entries = manifestFiles(manifest);
   let advanced = 0;
   let requeued = 0;
+  const failed = [];
   for (const { file: f, hash } of entries) {
     const { ok, problems } = verifyFile(lang, f, manifest);
     if (!ok) {
       console.log(`SKIP ${lang} ${relInContent(f)}  [${problems.join("; ")}]`);
+      failed.push(`${lang}/${relInContent(f)}`);
       continue;
     }
     const current = upstream.get(f);
@@ -534,9 +647,13 @@ function cmdAdvance(lang) {
     advanced++;
   }
   saveBaseline(base, commit);
+  // Quarantine list for the workflow's commit step: verify-failed files must
+  // be restored/removed before staging, or broken output gets deployed.
+  fs.writeFileSync(failedListPath(lang), failed.length ? failed.join("\n") + "\n" : "");
   console.log(
     `[orch] ${lang}: advanced ${advanced}/${entries.length}` +
-      (requeued ? ` (${requeued} re-queued: upstream moved mid-run)` : "")
+      (requeued ? ` (${requeued} re-queued: upstream moved mid-run)` : "") +
+      (failed.length ? ` (${failed.length} quarantined)` : "")
   );
 }
 

@@ -42,12 +42,34 @@ function isMetaFile(filePath: string): boolean {
  * 在 GitHub 上能正常渲染,但本站 Nextra/webpack 构建会将其当作模块请求
  * 直接报错(Module not found: Can't resolve 'assets/...')。
  * 复制源文档到 content/ 时,统一把 .md/.mdx 中这类相对链接改写为 ./ 形式。
+ * 按行跟踪代码栅栏:围栏内是示例代码,改写会悄悄偏离上游,必须跳过。
  */
+const RELATIVE_LINK =
+  /\]\((?!\.|\/|#|[a-zA-Z][a-zA-Z0-9+.-]*:)([^)\s]+)(\s+"[^"]*")?\)/g;
+
 function normalizeMarkdownRelativeLinks(text: string): string {
-  return text.replace(
-    /\]\((?!\.|\/|#|[a-zA-Z][a-zA-Z0-9+.-]*:)([^)\s]+)(\s+"[^"]*")?\)/g,
-    (_m, target: string, title?: string) => `](./${target}${title ?? ""})`
-  );
+  let inFence = false;
+  let fenceMark = "";
+  return text
+    .split("\n")
+    .map((line) => {
+      const fence = line.match(/^\s*(```|~~~)/);
+      if (fence) {
+        if (!inFence) {
+          inFence = true;
+          fenceMark = fence[1];
+        } else if (fence[1] === fenceMark) {
+          inFence = false;
+        }
+        return line;
+      }
+      if (inFence) return line;
+      return line.replace(
+        RELATIVE_LINK,
+        (_m, target: string, title?: string) => `](./${target}${title ?? ""})`
+      );
+    })
+    .join("\n");
 }
 
 /**
