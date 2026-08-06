@@ -207,10 +207,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: translation-output
+          # translation-changelog.json is deliberately not listed: the
+          # orchestrator pipeline does not produce it (legacy-pipeline
+          # residue from #197), so every non-main run warned about it.
           path: |
             website/content
             website/last-sync.json
-            website/translation-changelog.json
           retention-days: 14
           if-no-files-found: warn
 
