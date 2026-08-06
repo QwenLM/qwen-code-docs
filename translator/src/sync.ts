@@ -5,6 +5,31 @@ import chalk from "chalk";
 import { DocumentTranslator } from "./translator";
 
 /**
+ * 并发池：以最多 concurrency 个并行任务处理 items 数组。
+ * 保持结果顺序与 items 一致，单线程事件循环下对共享计数器的
+ * 同步自增操作是安全的。
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      results[index] = await fn(items[index]);
+    }
+  }
+
+  const workerCount = Math.min(concurrency, items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
+}
+
+/**
  * 判断是否为 Nextra 导航文件（_meta.ts/js/json 等）。
  * 这类文件属于本库各语言包自行维护的导航定制，不应被上游同步覆盖或翻译。
  */
@@ -504,9 +529,15 @@ export class SyncManager {
         parseInt(process.env.QWEN_TRANSLATION_CONCURRENCY || "", 10) || 2
       )
     );
+    // 文件级并发：每种语言内部同时翻译多少个文件。默认 6；设为 1 即
+    // 退化为原来的串行行为。总并发 = languageConcurrency × fileConcurrency。
+    const fileConcurrency = Math.max(
+      1,
+      parseInt(process.env.QWEN_FILE_CONCURRENCY || "", 10) || 6
+    );
     console.log(
       chalk.yellow(
-        `🌍 开始翻译 ${this.targetLanguages.length} 种语言（并发: ${languageConcurrency}）...`
+        `🌍 开始翻译 ${this.targetLanguages.length} 种语言（语言并发: ${languageConcurrency}, 文件并发: ${fileConcurrency}）...`
       )
     );
 
@@ -522,7 +553,7 @@ export class SyncManager {
 
       console.log(chalk.blue(`🚀 启动 ${language} 翻译任务`));
 
-      for (const file of changedFiles) {
+      await mapWithConcurrency(changedFiles, fileConcurrency, async (file) => {
         try {
           const relativePath = file.replace(`${this.docsPath}/`, "");
 
@@ -532,7 +563,7 @@ export class SyncManager {
             console.log(
               chalk.gray(`  ↪ 跳过导航文件（不覆盖本地 _meta）: ${relativePath}`)
             );
-            continue;
+            return;
           }
 
           // 跳过配置中排除的内部文档：不翻译到目标语言。
@@ -542,7 +573,7 @@ export class SyncManager {
             console.log(
               chalk.gray(`  ↪ 跳过翻译（excludeFromTranslation）: ${relativePath}`)
             );
-            continue;
+            return;
           }
           const sourcePath = path.join(
             this.outputBasePath,
@@ -564,7 +595,7 @@ export class SyncManager {
           // 检查源文件是否存在
           if (!(await fs.pathExists(sourcePath))) {
             console.log(chalk.yellow(`⚠️  源文件不存在: ${sourcePath}`));
-            continue;
+            return;
           }
 
           // 翻译文件
@@ -578,13 +609,12 @@ export class SyncManager {
 
           result.success++;
           result.files.push(relativePath);
-        } catch (error: any) {
-          console.error(
-            chalk.red(`❌ ${language}: ${file} - ${error.message}`)
-          );
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(chalk.red(`❌ ${language}: ${file} - ${message}`));
           result.failed++;
         }
-      }
+      });
 
       console.log(
         chalk.blue(
