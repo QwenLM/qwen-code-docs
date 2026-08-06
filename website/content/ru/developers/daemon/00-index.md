@@ -11,7 +11,7 @@
 | [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md)   | Пользователи SDK        | Пошаговое руководство по TypeScript от начала до конца       |
 | [`../daemon-client-adapters/`](../daemon-client-adapters/)                             | Авторы адаптеров        | Проектная документация по устаревшим клиентским адаптерам    |
 | [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)                                     | Авторы адаптеров        | Заметки по проектированию клиентских адаптеров               |
-| [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)       | Мейнтейнеры F2          | Дизайн пула транспортов MCP рабочего пространства v2.2       |
+| [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)       | Мейнтейнеры F2          | Дизайн пула транспортов MCP рабочего пространства v2.2       |
 
 Если вы хотите **запустить демон и использовать его**, сначала прочитайте `qwen-serve.md`. Если вы хотите **создать клиент для работы с сетевым протоколом**, прочитайте `qwen-serve-protocol.md`. Если вы хотите **понять, расширить или отладить внутреннее устройство демона**, читайте этот набор документов.
 

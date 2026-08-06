@@ -11,7 +11,7 @@ Elle complète, sans les remplacer, les documentations existantes suivantes :
 | [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md)     | Utilisateurs du SDK     | Guide complet de bout en bout en TypeScript                |
 | [`../daemon-client-adapters/`](../daemon-client-adapters/)                               | Auteurs d'adaptateurs   | Documents de conception des adaptateurs clients hérités    |
 | [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)                                       | Auteurs d'adaptateurs   | Notes de conception des adaptateurs clients                |
-| [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)         | Mainteneurs F2          | Conception du pool de transports MCP par workspace v2.2    |
+| [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)         | Mainteneurs F2          | Conception du pool de transports MCP par workspace v2.2    |
 
 Si vous souhaitez **démarrer un daemon et l'utiliser**, lisez d'abord `qwen-serve.md`. Si vous souhaitez **développer un client basé sur le wire format**, lisez `qwen-serve-protocol.md`. Si vous souhaitez **comprendre, étendre ou déboguer le fonctionnement interne du daemon**, lisez cette documentation.
 

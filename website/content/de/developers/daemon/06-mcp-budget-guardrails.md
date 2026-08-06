@@ -149,5 +149,5 @@ Ablehnungen außerhalb eines Durchlaufs (z. B. ein faul gestarteter `readResou
 - `packages/core/src/tools/mcp-workspace-budget.ts` (gesamte Klasse)
 - `packages/core/src/tools/mcp-client-manager.ts` (`BudgetExhaustedError`, `McpBudgetEvent`, Hysterese-Konstanten)
 - `packages/core/src/tools/mcp-transport-pool.ts` (`acquire`-Stelle des Pools, die `tryReserve` aufruft)
-- F2-Designdokument (v2.2): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §11 für das Arbeitsbereichs-Budget und die v2.2-Changelog-Einträge zu Budget- und Fingerprint-Nacharbeiten.
+- F2-Designdokument (v2.2): [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §11 für das Arbeitsbereichs-Budget und die v2.2-Changelog-Einträge zu Budget- und Fingerprint-Nacharbeiten.
 - F2-Designnotizen: Issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) Commit 6.

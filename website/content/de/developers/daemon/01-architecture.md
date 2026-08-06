@@ -347,5 +347,5 @@ Die zweiphasige Abschaltung ist wichtig, weil laufende HTTP-Requests, laufende S
 - Design-Issues: [#3803](https://github.com/QwenLM/qwen-code/issues/3803) (Daemon-Design), [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (F-Serie-Meilensteine).
 - Benutzerhandbuch: [`../../users/qwen-serve.md`](../../users/qwen-serve.md).
 - Wire-Protokoll-Referenz: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
-- F2-Designdokument: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md).
+- F2-Designdokument: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md).
 - F2-Designnotizen: Issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) Commits 4-6.
