@@ -792,26 +792,6 @@
         "pt-BR": "214ddb4e3acb87e6698ddeed42fa7ad09d7be681b1667c2b05c9784a41bc18b8"
       }
     },
-    "docs/developers/architecture.md": {
-      "langs": {
-        "zh": "6b8e3b5ff5ed9cf6dba3260e63451cb5ebf37780bf28ec34ed848a10ed329b15",
-        "de": "6b8e3b5ff5ed9cf6dba3260e63451cb5ebf37780bf28ec34ed848a10ed329b15",
-        "fr": "6b8e3b5ff5ed9cf6dba3260e63451cb5ebf37780bf28ec34ed848a10ed329b15",
-        "ja": "6b8e3b5ff5ed9cf6dba3260e63451cb5ebf37780bf28ec34ed848a10ed329b15",
-        "ru": "6b8e3b5ff5ed9cf6dba3260e63451cb5ebf37780bf28ec34ed848a10ed329b15",
-        "pt-BR": "6b8e3b5ff5ed9cf6dba3260e63451cb5ebf37780bf28ec34ed848a10ed329b15"
-      }
-    },
-    "docs/developers/channel-plugins.md": {
-      "langs": {
-        "zh": "2695052bf97cbb885718edc8c649a9bc438971599e9acf4d5330c90e727c23b0",
-        "de": "2695052bf97cbb885718edc8c649a9bc438971599e9acf4d5330c90e727c23b0",
-        "fr": "2695052bf97cbb885718edc8c649a9bc438971599e9acf4d5330c90e727c23b0",
-        "ja": "2695052bf97cbb885718edc8c649a9bc438971599e9acf4d5330c90e727c23b0",
-        "ru": "2695052bf97cbb885718edc8c649a9bc438971599e9acf4d5330c90e727c23b0",
-        "pt-BR": "2695052bf97cbb885718edc8c649a9bc438971599e9acf4d5330c90e727c23b0"
-      }
-    },
     "docs/developers/contributing.md": {
       "langs": {
         "zh": "82892d21be558fef3cc82b009354c97d92247e0eb5e6a193128c218f497c0162",
@@ -822,46 +802,6 @@
         "pt-BR": "82892d21be558fef3cc82b009354c97d92247e0eb5e6a193128c218f497c0162"
       }
     },
-    "docs/developers/daemon/00-index.md": {
-      "langs": {
-        "zh": "2a6fa561037b2d2a0ad1ac668a9d727151b3dc014beaa02dd5872da89d0a1573",
-        "de": "2a6fa561037b2d2a0ad1ac668a9d727151b3dc014beaa02dd5872da89d0a1573",
-        "fr": "2a6fa561037b2d2a0ad1ac668a9d727151b3dc014beaa02dd5872da89d0a1573",
-        "ja": "2a6fa561037b2d2a0ad1ac668a9d727151b3dc014beaa02dd5872da89d0a1573",
-        "ru": "2a6fa561037b2d2a0ad1ac668a9d727151b3dc014beaa02dd5872da89d0a1573",
-        "pt-BR": "2a6fa561037b2d2a0ad1ac668a9d727151b3dc014beaa02dd5872da89d0a1573"
-      }
-    },
-    "docs/developers/daemon/01-architecture.md": {
-      "langs": {
-        "zh": "1b72ba3f790b37e1d6a915f22b39c9ec5fdb1b2f730a9c67c977d84fc964379c",
-        "de": "1b72ba3f790b37e1d6a915f22b39c9ec5fdb1b2f730a9c67c977d84fc964379c",
-        "fr": "1b72ba3f790b37e1d6a915f22b39c9ec5fdb1b2f730a9c67c977d84fc964379c",
-        "ja": "1b72ba3f790b37e1d6a915f22b39c9ec5fdb1b2f730a9c67c977d84fc964379c",
-        "ru": "1b72ba3f790b37e1d6a915f22b39c9ec5fdb1b2f730a9c67c977d84fc964379c",
-        "pt-BR": "1b72ba3f790b37e1d6a915f22b39c9ec5fdb1b2f730a9c67c977d84fc964379c"
-      }
-    },
-    "docs/developers/daemon/02-serve-runtime.md": {
-      "langs": {
-        "zh": "1d369466771032cf2c5d2b3464e142dcd4fb1a32f4c9c862b7301dd95bf23a06",
-        "de": "1d369466771032cf2c5d2b3464e142dcd4fb1a32f4c9c862b7301dd95bf23a06",
-        "fr": "1d369466771032cf2c5d2b3464e142dcd4fb1a32f4c9c862b7301dd95bf23a06",
-        "ja": "1d369466771032cf2c5d2b3464e142dcd4fb1a32f4c9c862b7301dd95bf23a06",
-        "ru": "1d369466771032cf2c5d2b3464e142dcd4fb1a32f4c9c862b7301dd95bf23a06",
-        "pt-BR": "1d369466771032cf2c5d2b3464e142dcd4fb1a32f4c9c862b7301dd95bf23a06"
-      }
-    },
-    "docs/developers/daemon/03-acp-bridge.md": {
-      "langs": {
-        "zh": "01d5e5551e9138c812ac137ad4053114ec94be0adf03146d9fed36917e9a7fe9",
-        "de": "01d5e5551e9138c812ac137ad4053114ec94be0adf03146d9fed36917e9a7fe9",
-        "fr": "01d5e5551e9138c812ac137ad4053114ec94be0adf03146d9fed36917e9a7fe9",
-        "ja": "01d5e5551e9138c812ac137ad4053114ec94be0adf03146d9fed36917e9a7fe9",
-        "ru": "01d5e5551e9138c812ac137ad4053114ec94be0adf03146d9fed36917e9a7fe9",
-        "pt-BR": "01d5e5551e9138c812ac137ad4053114ec94be0adf03146d9fed36917e9a7fe9"
-      }
-    },
     "docs/developers/daemon/04-permission-mediation.md": {
       "langs": {
         "zh": "1592ebe28c5490b3c9bb5c79d4f4b065566e628f4be60ddbac4b3743ea1e2496",
@@ -870,176 +810,6 @@
         "ja": "1592ebe28c5490b3c9bb5c79d4f4b065566e628f4be60ddbac4b3743ea1e2496",
         "ru": "1592ebe28c5490b3c9bb5c79d4f4b065566e628f4be60ddbac4b3743ea1e2496",
         "pt-BR": "1592ebe28c5490b3c9bb5c79d4f4b065566e628f4be60ddbac4b3743ea1e2496"
-      }
-    },
-    "docs/developers/daemon/05-mcp-transport-pool.md": {
-      "langs": {
-        "zh": "0be7f624050ec9102faf0f6d872e110f338380a1fd349e36c8d202c6071d725c",
-        "de": "0be7f624050ec9102faf0f6d872e110f338380a1fd349e36c8d202c6071d725c",
-        "fr": "0be7f624050ec9102faf0f6d872e110f338380a1fd349e36c8d202c6071d725c",
-        "ja": "0be7f624050ec9102faf0f6d872e110f338380a1fd349e36c8d202c6071d725c",
-        "ru": "0be7f624050ec9102faf0f6d872e110f338380a1fd349e36c8d202c6071d725c",
-        "pt-BR": "0be7f624050ec9102faf0f6d872e110f338380a1fd349e36c8d202c6071d725c"
-      }
-    },
-    "docs/developers/daemon/06-mcp-budget-guardrails.md": {
-      "langs": {
-        "zh": "f4235846055609d5946b0d54b13575e53572663049e2869b69b4df588a3f5d09",
-        "de": "f4235846055609d5946b0d54b13575e53572663049e2869b69b4df588a3f5d09",
-        "fr": "f4235846055609d5946b0d54b13575e53572663049e2869b69b4df588a3f5d09",
-        "ja": "f4235846055609d5946b0d54b13575e53572663049e2869b69b4df588a3f5d09",
-        "ru": "f4235846055609d5946b0d54b13575e53572663049e2869b69b4df588a3f5d09",
-        "pt-BR": "f4235846055609d5946b0d54b13575e53572663049e2869b69b4df588a3f5d09"
-      }
-    },
-    "docs/developers/daemon/07-workspace-filesystem.md": {
-      "langs": {
-        "zh": "e3456309db02408c806f4af528cbf403cbc971cf45744f5881ef0a42ab79707f",
-        "de": "e3456309db02408c806f4af528cbf403cbc971cf45744f5881ef0a42ab79707f",
-        "fr": "e3456309db02408c806f4af528cbf403cbc971cf45744f5881ef0a42ab79707f",
-        "ja": "e3456309db02408c806f4af528cbf403cbc971cf45744f5881ef0a42ab79707f",
-        "ru": "e3456309db02408c806f4af528cbf403cbc971cf45744f5881ef0a42ab79707f",
-        "pt-BR": "e3456309db02408c806f4af528cbf403cbc971cf45744f5881ef0a42ab79707f"
-      }
-    },
-    "docs/developers/daemon/08-session-lifecycle.md": {
-      "langs": {
-        "zh": "070af7bff6baf8a100a804d415e919cfc44cfd90991e70a044a9fa0384617348",
-        "de": "070af7bff6baf8a100a804d415e919cfc44cfd90991e70a044a9fa0384617348",
-        "fr": "070af7bff6baf8a100a804d415e919cfc44cfd90991e70a044a9fa0384617348",
-        "ja": "070af7bff6baf8a100a804d415e919cfc44cfd90991e70a044a9fa0384617348",
-        "ru": "070af7bff6baf8a100a804d415e919cfc44cfd90991e70a044a9fa0384617348",
-        "pt-BR": "070af7bff6baf8a100a804d415e919cfc44cfd90991e70a044a9fa0384617348"
-      }
-    },
-    "docs/developers/daemon/09-event-schema.md": {
-      "langs": {
-        "zh": "89ec18c2945f429f5f33c2429fd8b7a8bc2bc9ecbdb78b2fb7604197582efaaa",
-        "de": "89ec18c2945f429f5f33c2429fd8b7a8bc2bc9ecbdb78b2fb7604197582efaaa",
-        "fr": "89ec18c2945f429f5f33c2429fd8b7a8bc2bc9ecbdb78b2fb7604197582efaaa",
-        "ja": "89ec18c2945f429f5f33c2429fd8b7a8bc2bc9ecbdb78b2fb7604197582efaaa",
-        "ru": "89ec18c2945f429f5f33c2429fd8b7a8bc2bc9ecbdb78b2fb7604197582efaaa",
-        "pt-BR": "89ec18c2945f429f5f33c2429fd8b7a8bc2bc9ecbdb78b2fb7604197582efaaa"
-      }
-    },
-    "docs/developers/daemon/10-event-bus.md": {
-      "langs": {
-        "zh": "796ef9de5903197d6d09523bebb18543c6199074365c4ba920fc391966acec4b",
-        "de": "796ef9de5903197d6d09523bebb18543c6199074365c4ba920fc391966acec4b",
-        "fr": "796ef9de5903197d6d09523bebb18543c6199074365c4ba920fc391966acec4b",
-        "ja": "796ef9de5903197d6d09523bebb18543c6199074365c4ba920fc391966acec4b",
-        "ru": "796ef9de5903197d6d09523bebb18543c6199074365c4ba920fc391966acec4b",
-        "pt-BR": "796ef9de5903197d6d09523bebb18543c6199074365c4ba920fc391966acec4b"
-      }
-    },
-    "docs/developers/daemon/11-capabilities-versioning.md": {
-      "langs": {
-        "zh": "a458e8488da1eb3705cad9a6330b16b359a89b80a09a8db24d0b74d6b24e4e58",
-        "de": "a458e8488da1eb3705cad9a6330b16b359a89b80a09a8db24d0b74d6b24e4e58",
-        "fr": "a458e8488da1eb3705cad9a6330b16b359a89b80a09a8db24d0b74d6b24e4e58",
-        "ja": "a458e8488da1eb3705cad9a6330b16b359a89b80a09a8db24d0b74d6b24e4e58",
-        "ru": "a458e8488da1eb3705cad9a6330b16b359a89b80a09a8db24d0b74d6b24e4e58",
-        "pt-BR": "a458e8488da1eb3705cad9a6330b16b359a89b80a09a8db24d0b74d6b24e4e58"
-      }
-    },
-    "docs/developers/daemon/12-auth-security.md": {
-      "langs": {
-        "zh": "590024e48e18bd87de600570891c62723aab5ca13a56a7c8da9c57344b60ad10",
-        "de": "590024e48e18bd87de600570891c62723aab5ca13a56a7c8da9c57344b60ad10",
-        "fr": "590024e48e18bd87de600570891c62723aab5ca13a56a7c8da9c57344b60ad10",
-        "ja": "590024e48e18bd87de600570891c62723aab5ca13a56a7c8da9c57344b60ad10",
-        "ru": "590024e48e18bd87de600570891c62723aab5ca13a56a7c8da9c57344b60ad10",
-        "pt-BR": "590024e48e18bd87de600570891c62723aab5ca13a56a7c8da9c57344b60ad10"
-      }
-    },
-    "docs/developers/daemon/13-sdk-daemon-client.md": {
-      "langs": {
-        "zh": "8850ac2ab6e08768fb5d038c6606e1fc99902cd63b26f6dc4e27d5c030901c73",
-        "de": "8850ac2ab6e08768fb5d038c6606e1fc99902cd63b26f6dc4e27d5c030901c73",
-        "fr": "8850ac2ab6e08768fb5d038c6606e1fc99902cd63b26f6dc4e27d5c030901c73",
-        "ja": "8850ac2ab6e08768fb5d038c6606e1fc99902cd63b26f6dc4e27d5c030901c73",
-        "ru": "8850ac2ab6e08768fb5d038c6606e1fc99902cd63b26f6dc4e27d5c030901c73",
-        "pt-BR": "8850ac2ab6e08768fb5d038c6606e1fc99902cd63b26f6dc4e27d5c030901c73"
-      }
-    },
-    "docs/developers/daemon/14-cli-tui-adapter.md": {
-      "langs": {
-        "zh": "1e2a8c589b71ad7534dc15f38ef3f6351b6f31aaa239636e99be9bc1b1be4c12",
-        "de": "1e2a8c589b71ad7534dc15f38ef3f6351b6f31aaa239636e99be9bc1b1be4c12",
-        "fr": "1e2a8c589b71ad7534dc15f38ef3f6351b6f31aaa239636e99be9bc1b1be4c12",
-        "ja": "1e2a8c589b71ad7534dc15f38ef3f6351b6f31aaa239636e99be9bc1b1be4c12",
-        "ru": "1e2a8c589b71ad7534dc15f38ef3f6351b6f31aaa239636e99be9bc1b1be4c12",
-        "pt-BR": "1e2a8c589b71ad7534dc15f38ef3f6351b6f31aaa239636e99be9bc1b1be4c12"
-      }
-    },
-    "docs/developers/daemon/15-channel-adapters.md": {
-      "langs": {
-        "zh": "44f4215e08b6bf6ef31ff85903d06d706dc0b0f17d383368b4ddfbfbec62b409",
-        "de": "44f4215e08b6bf6ef31ff85903d06d706dc0b0f17d383368b4ddfbfbec62b409",
-        "fr": "44f4215e08b6bf6ef31ff85903d06d706dc0b0f17d383368b4ddfbfbec62b409",
-        "ja": "44f4215e08b6bf6ef31ff85903d06d706dc0b0f17d383368b4ddfbfbec62b409",
-        "ru": "44f4215e08b6bf6ef31ff85903d06d706dc0b0f17d383368b4ddfbfbec62b409",
-        "pt-BR": "44f4215e08b6bf6ef31ff85903d06d706dc0b0f17d383368b4ddfbfbec62b409"
-      }
-    },
-    "docs/developers/daemon/16-vscode-ide-adapter.md": {
-      "langs": {
-        "zh": "51f35c7e4219d74cc6994bc2ab3e9f39248d425f54c13c51684a274f9f45e66f",
-        "de": "51f35c7e4219d74cc6994bc2ab3e9f39248d425f54c13c51684a274f9f45e66f",
-        "fr": "51f35c7e4219d74cc6994bc2ab3e9f39248d425f54c13c51684a274f9f45e66f",
-        "ja": "51f35c7e4219d74cc6994bc2ab3e9f39248d425f54c13c51684a274f9f45e66f",
-        "ru": "51f35c7e4219d74cc6994bc2ab3e9f39248d425f54c13c51684a274f9f45e66f",
-        "pt-BR": "51f35c7e4219d74cc6994bc2ab3e9f39248d425f54c13c51684a274f9f45e66f"
-      }
-    },
-    "docs/developers/daemon/17-configuration.md": {
-      "langs": {
-        "zh": "6978a93b5b13b384a28a8d6bd64e0b20571d07de3117077f597be73dd87a9379",
-        "de": "6978a93b5b13b384a28a8d6bd64e0b20571d07de3117077f597be73dd87a9379",
-        "fr": "6978a93b5b13b384a28a8d6bd64e0b20571d07de3117077f597be73dd87a9379",
-        "ja": "6978a93b5b13b384a28a8d6bd64e0b20571d07de3117077f597be73dd87a9379",
-        "ru": "6978a93b5b13b384a28a8d6bd64e0b20571d07de3117077f597be73dd87a9379",
-        "pt-BR": "6978a93b5b13b384a28a8d6bd64e0b20571d07de3117077f597be73dd87a9379"
-      }
-    },
-    "docs/developers/daemon/18-error-taxonomy.md": {
-      "langs": {
-        "zh": "43d657a53efd20d623b14c8d5c2ab59426d0edfd51d81975a8658a52e61f265d",
-        "de": "43d657a53efd20d623b14c8d5c2ab59426d0edfd51d81975a8658a52e61f265d",
-        "fr": "43d657a53efd20d623b14c8d5c2ab59426d0edfd51d81975a8658a52e61f265d",
-        "ja": "43d657a53efd20d623b14c8d5c2ab59426d0edfd51d81975a8658a52e61f265d",
-        "ru": "43d657a53efd20d623b14c8d5c2ab59426d0edfd51d81975a8658a52e61f265d",
-        "pt-BR": "43d657a53efd20d623b14c8d5c2ab59426d0edfd51d81975a8658a52e61f265d"
-      }
-    },
-    "docs/developers/daemon/19-observability.md": {
-      "langs": {
-        "zh": "2702c823ccc1fbd5edc00adc1eba6acfb7bc63e2cd829fda72b8fa64e7e03adf",
-        "de": "2702c823ccc1fbd5edc00adc1eba6acfb7bc63e2cd829fda72b8fa64e7e03adf",
-        "fr": "2702c823ccc1fbd5edc00adc1eba6acfb7bc63e2cd829fda72b8fa64e7e03adf",
-        "ja": "2702c823ccc1fbd5edc00adc1eba6acfb7bc63e2cd829fda72b8fa64e7e03adf",
-        "ru": "2702c823ccc1fbd5edc00adc1eba6acfb7bc63e2cd829fda72b8fa64e7e03adf",
-        "pt-BR": "2702c823ccc1fbd5edc00adc1eba6acfb7bc63e2cd829fda72b8fa64e7e03adf"
-      }
-    },
-    "docs/developers/daemon/20-quickstart-operations.md": {
-      "langs": {
-        "zh": "abc979f14cc60e0326b55a63efc58c3355f2fb0fe8c1ff6affde3b697b6a5d46",
-        "de": "abc979f14cc60e0326b55a63efc58c3355f2fb0fe8c1ff6affde3b697b6a5d46",
-        "fr": "abc979f14cc60e0326b55a63efc58c3355f2fb0fe8c1ff6affde3b697b6a5d46",
-        "ja": "abc979f14cc60e0326b55a63efc58c3355f2fb0fe8c1ff6affde3b697b6a5d46",
-        "ru": "abc979f14cc60e0326b55a63efc58c3355f2fb0fe8c1ff6affde3b697b6a5d46",
-        "pt-BR": "abc979f14cc60e0326b55a63efc58c3355f2fb0fe8c1ff6affde3b697b6a5d46"
-      }
-    },
-    "docs/developers/daemon-client-adapters/channel-web.md": {
-      "langs": {
-        "zh": "3f3efce8f3aa5d6b2d30fcd4536f262226b7e96bcdc9fdd89b055e65fc375701",
-        "de": "3f3efce8f3aa5d6b2d30fcd4536f262226b7e96bcdc9fdd89b055e65fc375701",
-        "fr": "3f3efce8f3aa5d6b2d30fcd4536f262226b7e96bcdc9fdd89b055e65fc375701",
-        "ja": "3f3efce8f3aa5d6b2d30fcd4536f262226b7e96bcdc9fdd89b055e65fc375701",
-        "ru": "3f3efce8f3aa5d6b2d30fcd4536f262226b7e96bcdc9fdd89b055e65fc375701",
-        "pt-BR": "3f3efce8f3aa5d6b2d30fcd4536f262226b7e96bcdc9fdd89b055e65fc375701"
       }
     },
     "docs/developers/daemon-client-adapters/ide.md": {
@@ -1112,16 +882,6 @@
         "pt-BR": "b44aafbd71861ca7708ad20316c9a776ab2925dcd05f2da9661fc7c29e0a96c5"
       }
     },
-    "docs/developers/development/issue-and-pr-automation.md": {
-      "langs": {
-        "zh": "ab788d5a7176930c7e4b1683451a85380bd9121274861f13dce2b5f136451799",
-        "de": "ab788d5a7176930c7e4b1683451a85380bd9121274861f13dce2b5f136451799",
-        "fr": "ab788d5a7176930c7e4b1683451a85380bd9121274861f13dce2b5f136451799",
-        "ja": "ab788d5a7176930c7e4b1683451a85380bd9121274861f13dce2b5f136451799",
-        "ru": "ab788d5a7176930c7e4b1683451a85380bd9121274861f13dce2b5f136451799",
-        "pt-BR": "ab788d5a7176930c7e4b1683451a85380bd9121274861f13dce2b5f136451799"
-      }
-    },
     "docs/developers/development/npm.md": {
       "langs": {
         "zh": "c50784533630f005e09976ffcaba3bd10853364fae6b9d1b55dedbcf2dd924a8",
@@ -1130,26 +890,6 @@
         "ja": "c50784533630f005e09976ffcaba3bd10853364fae6b9d1b55dedbcf2dd924a8",
         "ru": "c50784533630f005e09976ffcaba3bd10853364fae6b9d1b55dedbcf2dd924a8",
         "pt-BR": "c50784533630f005e09976ffcaba3bd10853364fae6b9d1b55dedbcf2dd924a8"
-      }
-    },
-    "docs/developers/development/telemetry.md": {
-      "langs": {
-        "zh": "b121d201ea4d6ddb6434a3d0938cc3569148be455a00801975d47a79fd82ee43",
-        "de": "b121d201ea4d6ddb6434a3d0938cc3569148be455a00801975d47a79fd82ee43",
-        "fr": "b121d201ea4d6ddb6434a3d0938cc3569148be455a00801975d47a79fd82ee43",
-        "ja": "b121d201ea4d6ddb6434a3d0938cc3569148be455a00801975d47a79fd82ee43",
-        "ru": "b121d201ea4d6ddb6434a3d0938cc3569148be455a00801975d47a79fd82ee43",
-        "pt-BR": "b121d201ea4d6ddb6434a3d0938cc3569148be455a00801975d47a79fd82ee43"
-      }
-    },
-    "docs/developers/examples/daemon-client-quickstart.md": {
-      "langs": {
-        "zh": "e3d2058ab64c791159c849311de51a6d6581c690757e4c9cd475c9398135beb1",
-        "de": "e3d2058ab64c791159c849311de51a6d6581c690757e4c9cd475c9398135beb1",
-        "fr": "e3d2058ab64c791159c849311de51a6d6581c690757e4c9cd475c9398135beb1",
-        "ja": "e3d2058ab64c791159c849311de51a6d6581c690757e4c9cd475c9398135beb1",
-        "ru": "e3d2058ab64c791159c849311de51a6d6581c690757e4c9cd475c9398135beb1",
-        "pt-BR": "e3d2058ab64c791159c849311de51a6d6581c690757e4c9cd475c9398135beb1"
       }
     },
     "docs/developers/examples/proxy-script.md": {
@@ -1162,16 +902,6 @@
         "pt-BR": "5aaa7b4fadb37212379317c0979ce9b883fdc3022001000b1e5a20c033252cdc"
       }
     },
-    "docs/developers/qwen-serve-protocol.md": {
-      "langs": {
-        "zh": "73cfa2a2e737f2a6d543262b580771b63c28f85a2b9dad6fabf4c85b8690a0c6",
-        "de": "73cfa2a2e737f2a6d543262b580771b63c28f85a2b9dad6fabf4c85b8690a0c6",
-        "fr": "73cfa2a2e737f2a6d543262b580771b63c28f85a2b9dad6fabf4c85b8690a0c6",
-        "ja": "73cfa2a2e737f2a6d543262b580771b63c28f85a2b9dad6fabf4c85b8690a0c6",
-        "ru": "00b16d17c1684705754aff85121d034f843276e6ba0b7a2a48c94a541d2d995e",
-        "pt-BR": "00b16d17c1684705754aff85121d034f843276e6ba0b7a2a48c94a541d2d995e"
-      }
-    },
     "docs/developers/roadmap.md": {
       "langs": {
         "zh": "829bdfd5edec4499d4b209dce5871870887d28dbb84e8c79baf91a343f77b0c0",
@@ -1180,16 +910,6 @@
         "ja": "829bdfd5edec4499d4b209dce5871870887d28dbb84e8c79baf91a343f77b0c0",
         "ru": "829bdfd5edec4499d4b209dce5871870887d28dbb84e8c79baf91a343f77b0c0",
         "pt-BR": "829bdfd5edec4499d4b209dce5871870887d28dbb84e8c79baf91a343f77b0c0"
-      }
-    },
-    "docs/developers/sdk-java.md": {
-      "langs": {
-        "zh": "7cddfd816eb24e161b2f5a82758109c30853f01eb935216b580f0d7e5b9a2302",
-        "de": "7cddfd816eb24e161b2f5a82758109c30853f01eb935216b580f0d7e5b9a2302",
-        "fr": "7cddfd816eb24e161b2f5a82758109c30853f01eb935216b580f0d7e5b9a2302",
-        "ja": "7cddfd816eb24e161b2f5a82758109c30853f01eb935216b580f0d7e5b9a2302",
-        "ru": "7cddfd816eb24e161b2f5a82758109c30853f01eb935216b580f0d7e5b9a2302",
-        "pt-BR": "7cddfd816eb24e161b2f5a82758109c30853f01eb935216b580f0d7e5b9a2302"
       }
     },
     "docs/developers/sdk-python.md": {
@@ -1202,36 +922,6 @@
         "pt-BR": "2e2593ddbf53aab9a072c595bc6862e209764c83feb7dc5dc96924cfa035c67c"
       }
     },
-    "docs/developers/sdk-typescript.md": {
-      "langs": {
-        "zh": "cef6ad9b5a40ebd39bca9d7e6333e402e47bc60524cf47c4904a6fb98d985385",
-        "de": "cef6ad9b5a40ebd39bca9d7e6333e402e47bc60524cf47c4904a6fb98d985385",
-        "fr": "cef6ad9b5a40ebd39bca9d7e6333e402e47bc60524cf47c4904a6fb98d985385",
-        "ja": "cef6ad9b5a40ebd39bca9d7e6333e402e47bc60524cf47c4904a6fb98d985385",
-        "ru": "cef6ad9b5a40ebd39bca9d7e6333e402e47bc60524cf47c4904a6fb98d985385",
-        "pt-BR": "cef6ad9b5a40ebd39bca9d7e6333e402e47bc60524cf47c4904a6fb98d985385"
-      }
-    },
-    "docs/developers/tools/exit-plan-mode.md": {
-      "langs": {
-        "zh": "0f1be1c108c28b5d18fdc344fb99b238fe5b8309874ede19cc48e639244ba7e3",
-        "de": "0f1be1c108c28b5d18fdc344fb99b238fe5b8309874ede19cc48e639244ba7e3",
-        "fr": "0f1be1c108c28b5d18fdc344fb99b238fe5b8309874ede19cc48e639244ba7e3",
-        "ja": "0f1be1c108c28b5d18fdc344fb99b238fe5b8309874ede19cc48e639244ba7e3",
-        "ru": "0f1be1c108c28b5d18fdc344fb99b238fe5b8309874ede19cc48e639244ba7e3",
-        "pt-BR": "0f1be1c108c28b5d18fdc344fb99b238fe5b8309874ede19cc48e639244ba7e3"
-      }
-    },
-    "docs/developers/tools/file-system.md": {
-      "langs": {
-        "zh": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc",
-        "de": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc",
-        "fr": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc",
-        "ja": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc",
-        "ru": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc",
-        "pt-BR": "183095abca952d0bfbc450869762d9b173d435db0459022a6a805f9a884e02cc"
-      }
-    },
     "docs/developers/tools/introduction.md": {
       "langs": {
         "zh": "68e30ea57c1042dfce60602a2b42855cf39719db5d7c9bf8d524b9b54d3de3ef",
@@ -1240,16 +930,6 @@
         "ja": "68e30ea57c1042dfce60602a2b42855cf39719db5d7c9bf8d524b9b54d3de3ef",
         "ru": "68e30ea57c1042dfce60602a2b42855cf39719db5d7c9bf8d524b9b54d3de3ef",
         "pt-BR": "68e30ea57c1042dfce60602a2b42855cf39719db5d7c9bf8d524b9b54d3de3ef"
-      }
-    },
-    "docs/developers/tools/mcp-server.md": {
-      "langs": {
-        "zh": "099c542e32bc97ed4dfce5e990a368e34765546a72fa14a9248bee727d1aa8e9",
-        "de": "099c542e32bc97ed4dfce5e990a368e34765546a72fa14a9248bee727d1aa8e9",
-        "fr": "099c542e32bc97ed4dfce5e990a368e34765546a72fa14a9248bee727d1aa8e9",
-        "ja": "099c542e32bc97ed4dfce5e990a368e34765546a72fa14a9248bee727d1aa8e9",
-        "ru": "099c542e32bc97ed4dfce5e990a368e34765546a72fa14a9248bee727d1aa8e9",
-        "pt-BR": "099c542e32bc97ed4dfce5e990a368e34765546a72fa14a9248bee727d1aa8e9"
       }
     },
     "docs/developers/tools/monitor.md": {
@@ -1292,16 +972,6 @@
         "pt-BR": "6258db14ebc494e7b1bebadd5fa1458a2cec1c4b822201e23b931cd59296d7d0"
       }
     },
-    "docs/developers/tools/task.md": {
-      "langs": {
-        "zh": "2d6b9e85a364719a4b65bacffe5f11dfebf18d8de5250593f7751bd966dc289b",
-        "de": "2d6b9e85a364719a4b65bacffe5f11dfebf18d8de5250593f7751bd966dc289b",
-        "fr": "2d6b9e85a364719a4b65bacffe5f11dfebf18d8de5250593f7751bd966dc289b",
-        "ja": "2d6b9e85a364719a4b65bacffe5f11dfebf18d8de5250593f7751bd966dc289b",
-        "ru": "2d6b9e85a364719a4b65bacffe5f11dfebf18d8de5250593f7751bd966dc289b",
-        "pt-BR": "2d6b9e85a364719a4b65bacffe5f11dfebf18d8de5250593f7751bd966dc289b"
-      }
-    },
     "docs/developers/tools/todo-write.md": {
       "langs": {
         "zh": "4ca0f202c78855b4161b76f724ba0ee84540ccc72ebacb53d77b9abcf6bb4e6b",
@@ -1320,16 +990,6 @@
         "ja": "de53fe8a40340b8fbec96a282f8a7651312f42dbe85eacbc6f64b0b40c1cec3d",
         "ru": "de53fe8a40340b8fbec96a282f8a7651312f42dbe85eacbc6f64b0b40c1cec3d",
         "pt-BR": "de53fe8a40340b8fbec96a282f8a7651312f42dbe85eacbc6f64b0b40c1cec3d"
-      }
-    },
-    "docs/developers/tools/web-search.md": {
-      "langs": {
-        "zh": "3b8f6be6d441a862c6553f88ffe0804397008fd56a7d6e33d3d17e8f14acae27",
-        "de": "3b8f6be6d441a862c6553f88ffe0804397008fd56a7d6e33d3d17e8f14acae27",
-        "fr": "3b8f6be6d441a862c6553f88ffe0804397008fd56a7d6e33d3d17e8f14acae27",
-        "ja": "3b8f6be6d441a862c6553f88ffe0804397008fd56a7d6e33d3d17e8f14acae27",
-        "ru": "3b8f6be6d441a862c6553f88ffe0804397008fd56a7d6e33d3d17e8f14acae27",
-        "pt-BR": "3b8f6be6d441a862c6553f88ffe0804397008fd56a7d6e33d3d17e8f14acae27"
       }
     },
     "docs/index.md": {
@@ -1352,26 +1012,6 @@
         "pt-BR": "481349dd37cae82c6fc4c9e4add50f4a2e6ac96f72b09418616cec04d9ef3742"
       }
     },
-    "docs/users/configuration/auth.md": {
-      "langs": {
-        "zh": "e9b7b4a44d75b9553b14bc2f58d03b001a773c08fd585106b7b6d8445ceaa4e6",
-        "de": "e9b7b4a44d75b9553b14bc2f58d03b001a773c08fd585106b7b6d8445ceaa4e6",
-        "fr": "e9b7b4a44d75b9553b14bc2f58d03b001a773c08fd585106b7b6d8445ceaa4e6",
-        "ja": "e9b7b4a44d75b9553b14bc2f58d03b001a773c08fd585106b7b6d8445ceaa4e6",
-        "ru": "e9b7b4a44d75b9553b14bc2f58d03b001a773c08fd585106b7b6d8445ceaa4e6",
-        "pt-BR": "e9b7b4a44d75b9553b14bc2f58d03b001a773c08fd585106b7b6d8445ceaa4e6"
-      }
-    },
-    "docs/users/configuration/model-providers.md": {
-      "langs": {
-        "zh": "84cfe7adb8c6d086771d495077b4dbfc203261c61a55c6a4c8c8854485a3f9b2",
-        "de": "84cfe7adb8c6d086771d495077b4dbfc203261c61a55c6a4c8c8854485a3f9b2",
-        "fr": "84cfe7adb8c6d086771d495077b4dbfc203261c61a55c6a4c8c8854485a3f9b2",
-        "ja": "84cfe7adb8c6d086771d495077b4dbfc203261c61a55c6a4c8c8854485a3f9b2",
-        "ru": "84cfe7adb8c6d086771d495077b4dbfc203261c61a55c6a4c8c8854485a3f9b2",
-        "pt-BR": "84cfe7adb8c6d086771d495077b4dbfc203261c61a55c6a4c8c8854485a3f9b2"
-      }
-    },
     "docs/users/configuration/qwen-ignore.md": {
       "langs": {
         "zh": "a6df68cfe645c777a7ba28b68f229ff8bf809d5ce4a28910d7048e11bd2154f8",
@@ -1380,16 +1020,6 @@
         "ja": "a6df68cfe645c777a7ba28b68f229ff8bf809d5ce4a28910d7048e11bd2154f8",
         "ru": "a6df68cfe645c777a7ba28b68f229ff8bf809d5ce4a28910d7048e11bd2154f8",
         "pt-BR": "a6df68cfe645c777a7ba28b68f229ff8bf809d5ce4a28910d7048e11bd2154f8"
-      }
-    },
-    "docs/users/configuration/settings.md": {
-      "langs": {
-        "zh": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9",
-        "de": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9",
-        "fr": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9",
-        "ja": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9",
-        "ru": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9",
-        "pt-BR": "4e28ddede2dacd789f82c3fbbce6405a4fac09d4fffc1c4ee7af18e42a0a83f9"
       }
     },
     "docs/users/configuration/themes.md": {
@@ -1442,16 +1072,6 @@
         "pt-BR": "eb24eb6c11a8a18ed39f075b0291901e1ff7aca729134bff3cc8dfcca57e00de"
       }
     },
-    "docs/users/features/approval-mode.md": {
-      "langs": {
-        "zh": "5d28d4d78d666c2e4b39407c4c7f8c6000fb807e3bfaf670b9fe0566a2fd02ed",
-        "de": "5d28d4d78d666c2e4b39407c4c7f8c6000fb807e3bfaf670b9fe0566a2fd02ed",
-        "fr": "5d28d4d78d666c2e4b39407c4c7f8c6000fb807e3bfaf670b9fe0566a2fd02ed",
-        "ja": "5d28d4d78d666c2e4b39407c4c7f8c6000fb807e3bfaf670b9fe0566a2fd02ed",
-        "ru": "5d28d4d78d666c2e4b39407c4c7f8c6000fb807e3bfaf670b9fe0566a2fd02ed",
-        "pt-BR": "5d28d4d78d666c2e4b39407c4c7f8c6000fb807e3bfaf670b9fe0566a2fd02ed"
-      }
-    },
     "docs/users/features/arena.md": {
       "langs": {
         "zh": "2b25be5a0431bc53ff58536d07a3448f05a5f96d20184f57ca01b42a708f4052",
@@ -1462,26 +1082,6 @@
         "pt-BR": "2b25be5a0431bc53ff58536d07a3448f05a5f96d20184f57ca01b42a708f4052"
       }
     },
-    "docs/users/features/auto-mode.md": {
-      "langs": {
-        "zh": "917471d6528ce0a932ca3a8e43335e6506d01abc7e5dc5d29cd33f9eddb728ce",
-        "de": "917471d6528ce0a932ca3a8e43335e6506d01abc7e5dc5d29cd33f9eddb728ce",
-        "fr": "917471d6528ce0a932ca3a8e43335e6506d01abc7e5dc5d29cd33f9eddb728ce",
-        "ja": "917471d6528ce0a932ca3a8e43335e6506d01abc7e5dc5d29cd33f9eddb728ce",
-        "ru": "917471d6528ce0a932ca3a8e43335e6506d01abc7e5dc5d29cd33f9eddb728ce",
-        "pt-BR": "917471d6528ce0a932ca3a8e43335e6506d01abc7e5dc5d29cd33f9eddb728ce"
-      }
-    },
-    "docs/users/features/channels/dingtalk.md": {
-      "langs": {
-        "zh": "7377d3645e45e508da86a7786981825e1e0bf8473c6821c497afe7b5c5ffc14d",
-        "de": "7377d3645e45e508da86a7786981825e1e0bf8473c6821c497afe7b5c5ffc14d",
-        "fr": "7377d3645e45e508da86a7786981825e1e0bf8473c6821c497afe7b5c5ffc14d",
-        "ja": "7377d3645e45e508da86a7786981825e1e0bf8473c6821c497afe7b5c5ffc14d",
-        "ru": "7377d3645e45e508da86a7786981825e1e0bf8473c6821c497afe7b5c5ffc14d",
-        "pt-BR": "7377d3645e45e508da86a7786981825e1e0bf8473c6821c497afe7b5c5ffc14d"
-      }
-    },
     "docs/users/features/channels/feishu.md": {
       "langs": {
         "zh": "e3549455d850281623a880b4f359da2243cc5ef2a893edda88eb1f1d6eade7c0",
@@ -1490,26 +1090,6 @@
         "ja": "e3549455d850281623a880b4f359da2243cc5ef2a893edda88eb1f1d6eade7c0",
         "ru": "e3549455d850281623a880b4f359da2243cc5ef2a893edda88eb1f1d6eade7c0",
         "pt-BR": "e3549455d850281623a880b4f359da2243cc5ef2a893edda88eb1f1d6eade7c0"
-      }
-    },
-    "docs/users/features/channels/overview.md": {
-      "langs": {
-        "zh": "e87cac2bcc7b604baf5105bcebd6a2c1b3d1527acbd859e0688cb38e6017ea26",
-        "de": "e87cac2bcc7b604baf5105bcebd6a2c1b3d1527acbd859e0688cb38e6017ea26",
-        "fr": "e87cac2bcc7b604baf5105bcebd6a2c1b3d1527acbd859e0688cb38e6017ea26",
-        "ja": "e87cac2bcc7b604baf5105bcebd6a2c1b3d1527acbd859e0688cb38e6017ea26",
-        "ru": "e87cac2bcc7b604baf5105bcebd6a2c1b3d1527acbd859e0688cb38e6017ea26",
-        "pt-BR": "e87cac2bcc7b604baf5105bcebd6a2c1b3d1527acbd859e0688cb38e6017ea26"
-      }
-    },
-    "docs/users/features/channels/plugins.md": {
-      "langs": {
-        "zh": "500333242b6dbf1e06e59123378cf4d1e8041db489de55099c291663ebd36635",
-        "de": "500333242b6dbf1e06e59123378cf4d1e8041db489de55099c291663ebd36635",
-        "fr": "500333242b6dbf1e06e59123378cf4d1e8041db489de55099c291663ebd36635",
-        "ja": "500333242b6dbf1e06e59123378cf4d1e8041db489de55099c291663ebd36635",
-        "ru": "500333242b6dbf1e06e59123378cf4d1e8041db489de55099c291663ebd36635",
-        "pt-BR": "500333242b6dbf1e06e59123378cf4d1e8041db489de55099c291663ebd36635"
       }
     },
     "docs/users/features/channels/qqbot.md": {
@@ -1532,16 +1112,6 @@
         "pt-BR": "8c167b92e2d18f74167ed6dd34257963a50e79c7e2e7b1c53900ac58bb15e667"
       }
     },
-    "docs/users/features/channels/wecom.md": {
-      "langs": {
-        "zh": "676742defb73d014fff35544915c11abc63064a5486fc3efaa3b07957e324479",
-        "de": "676742defb73d014fff35544915c11abc63064a5486fc3efaa3b07957e324479",
-        "fr": "676742defb73d014fff35544915c11abc63064a5486fc3efaa3b07957e324479",
-        "ja": "676742defb73d014fff35544915c11abc63064a5486fc3efaa3b07957e324479",
-        "ru": "676742defb73d014fff35544915c11abc63064a5486fc3efaa3b07957e324479",
-        "pt-BR": "676742defb73d014fff35544915c11abc63064a5486fc3efaa3b07957e324479"
-      }
-    },
     "docs/users/features/channels/weixin.md": {
       "langs": {
         "zh": "00e108a815485ef71310f84de9ae37feaa74e83a9965ed83b0d588929fb9149a",
@@ -1550,26 +1120,6 @@
         "ja": "00e108a815485ef71310f84de9ae37feaa74e83a9965ed83b0d588929fb9149a",
         "ru": "00e108a815485ef71310f84de9ae37feaa74e83a9965ed83b0d588929fb9149a",
         "pt-BR": "00e108a815485ef71310f84de9ae37feaa74e83a9965ed83b0d588929fb9149a"
-      }
-    },
-    "docs/users/features/code-review.md": {
-      "langs": {
-        "zh": "0da488bda866bc158f6fe6bf63ab59de8b7ab0d662058bd55d8f53c23ff9471e",
-        "de": "0da488bda866bc158f6fe6bf63ab59de8b7ab0d662058bd55d8f53c23ff9471e",
-        "fr": "0da488bda866bc158f6fe6bf63ab59de8b7ab0d662058bd55d8f53c23ff9471e",
-        "ja": "0da488bda866bc158f6fe6bf63ab59de8b7ab0d662058bd55d8f53c23ff9471e",
-        "ru": "0da488bda866bc158f6fe6bf63ab59de8b7ab0d662058bd55d8f53c23ff9471e",
-        "pt-BR": "0da488bda866bc158f6fe6bf63ab59de8b7ab0d662058bd55d8f53c23ff9471e"
-      }
-    },
-    "docs/users/features/commands.md": {
-      "langs": {
-        "zh": "224f72316c7b2f4e2599ee53b5ee5ce1070c18096e46faff75f6f61758e1b0e4",
-        "de": "224f72316c7b2f4e2599ee53b5ee5ce1070c18096e46faff75f6f61758e1b0e4",
-        "fr": "224f72316c7b2f4e2599ee53b5ee5ce1070c18096e46faff75f6f61758e1b0e4",
-        "ja": "224f72316c7b2f4e2599ee53b5ee5ce1070c18096e46faff75f6f61758e1b0e4",
-        "ru": "224f72316c7b2f4e2599ee53b5ee5ce1070c18096e46faff75f6f61758e1b0e4",
-        "pt-BR": "224f72316c7b2f4e2599ee53b5ee5ce1070c18096e46faff75f6f61758e1b0e4"
       }
     },
     "docs/users/features/dual-output.md": {
@@ -1590,26 +1140,6 @@
         "ja": "0f107b0bcd0285ceae001301e5c7f6246111844260c69c9fddc3c5be9fa1db22",
         "ru": "0f107b0bcd0285ceae001301e5c7f6246111844260c69c9fddc3c5be9fa1db22",
         "pt-BR": "0f107b0bcd0285ceae001301e5c7f6246111844260c69c9fddc3c5be9fa1db22"
-      }
-    },
-    "docs/users/features/headless.md": {
-      "langs": {
-        "zh": "fcf1f447dc4a61490ca48d4ce4a01de364b25b8b66f8a44d4871bb38b5cb6143",
-        "de": "fcf1f447dc4a61490ca48d4ce4a01de364b25b8b66f8a44d4871bb38b5cb6143",
-        "fr": "fcf1f447dc4a61490ca48d4ce4a01de364b25b8b66f8a44d4871bb38b5cb6143",
-        "ja": "fcf1f447dc4a61490ca48d4ce4a01de364b25b8b66f8a44d4871bb38b5cb6143",
-        "ru": "fcf1f447dc4a61490ca48d4ce4a01de364b25b8b66f8a44d4871bb38b5cb6143",
-        "pt-BR": "fcf1f447dc4a61490ca48d4ce4a01de364b25b8b66f8a44d4871bb38b5cb6143"
-      }
-    },
-    "docs/users/features/hooks.md": {
-      "langs": {
-        "zh": "9cd66e378ed8c321cd5dc7ab8d0ba87b4134cd0beddb1167af6b8171dcb873fe",
-        "de": "9cd66e378ed8c321cd5dc7ab8d0ba87b4134cd0beddb1167af6b8171dcb873fe",
-        "fr": "9cd66e378ed8c321cd5dc7ab8d0ba87b4134cd0beddb1167af6b8171dcb873fe",
-        "ja": "9cd66e378ed8c321cd5dc7ab8d0ba87b4134cd0beddb1167af6b8171dcb873fe",
-        "ru": "9cd66e378ed8c321cd5dc7ab8d0ba87b4134cd0beddb1167af6b8171dcb873fe",
-        "pt-BR": "9cd66e378ed8c321cd5dc7ab8d0ba87b4134cd0beddb1167af6b8171dcb873fe"
       }
     },
     "docs/users/features/language.md": {
@@ -1642,56 +1172,6 @@
         "pt-BR": "8da1e1576f10d4a07ee3e355d5ed07322a0f18f25ab907ef0f7b46aa5ff8a4d6"
       }
     },
-    "docs/users/features/mcp.md": {
-      "langs": {
-        "zh": "1b951f71f74bca8c4dc0b4713c3ede52b3580c05a5092c3f6202e857edf8423e",
-        "de": "1b951f71f74bca8c4dc0b4713c3ede52b3580c05a5092c3f6202e857edf8423e",
-        "fr": "1b951f71f74bca8c4dc0b4713c3ede52b3580c05a5092c3f6202e857edf8423e",
-        "ja": "1b951f71f74bca8c4dc0b4713c3ede52b3580c05a5092c3f6202e857edf8423e",
-        "ru": "1b951f71f74bca8c4dc0b4713c3ede52b3580c05a5092c3f6202e857edf8423e",
-        "pt-BR": "1b951f71f74bca8c4dc0b4713c3ede52b3580c05a5092c3f6202e857edf8423e"
-      }
-    },
-    "docs/users/features/memory.md": {
-      "langs": {
-        "zh": "24617d0109e28fc7cef8a625d24fe46be4a0de55bf685975c7f6fb9d2cc5b6db",
-        "de": "24617d0109e28fc7cef8a625d24fe46be4a0de55bf685975c7f6fb9d2cc5b6db",
-        "fr": "24617d0109e28fc7cef8a625d24fe46be4a0de55bf685975c7f6fb9d2cc5b6db",
-        "ja": "24617d0109e28fc7cef8a625d24fe46be4a0de55bf685975c7f6fb9d2cc5b6db",
-        "ru": "24617d0109e28fc7cef8a625d24fe46be4a0de55bf685975c7f6fb9d2cc5b6db",
-        "pt-BR": "24617d0109e28fc7cef8a625d24fe46be4a0de55bf685975c7f6fb9d2cc5b6db"
-      }
-    },
-    "docs/users/features/sandbox.md": {
-      "langs": {
-        "zh": "ec5b413deb39c1eb2909ca1c5710be203e1d6c97ca44fe3a24567ed522766699",
-        "de": "ec5b413deb39c1eb2909ca1c5710be203e1d6c97ca44fe3a24567ed522766699",
-        "fr": "ec5b413deb39c1eb2909ca1c5710be203e1d6c97ca44fe3a24567ed522766699",
-        "ja": "ec5b413deb39c1eb2909ca1c5710be203e1d6c97ca44fe3a24567ed522766699",
-        "ru": "ec5b413deb39c1eb2909ca1c5710be203e1d6c97ca44fe3a24567ed522766699",
-        "pt-BR": "ec5b413deb39c1eb2909ca1c5710be203e1d6c97ca44fe3a24567ed522766699"
-      }
-    },
-    "docs/users/features/scheduled-tasks.md": {
-      "langs": {
-        "zh": "0586117eb8f76b505f2ee541ff9f3bfc1af4c732eb677ff64973f1b01547f478",
-        "de": "0586117eb8f76b505f2ee541ff9f3bfc1af4c732eb677ff64973f1b01547f478",
-        "fr": "0586117eb8f76b505f2ee541ff9f3bfc1af4c732eb677ff64973f1b01547f478",
-        "ja": "0586117eb8f76b505f2ee541ff9f3bfc1af4c732eb677ff64973f1b01547f478",
-        "ru": "0586117eb8f76b505f2ee541ff9f3bfc1af4c732eb677ff64973f1b01547f478",
-        "pt-BR": "0586117eb8f76b505f2ee541ff9f3bfc1af4c732eb677ff64973f1b01547f478"
-      }
-    },
-    "docs/users/features/skills.md": {
-      "langs": {
-        "zh": "bf333af2a53a7aaef49baa877dce3f1ee2d8993b99e52108004defc2232319e9",
-        "de": "bf333af2a53a7aaef49baa877dce3f1ee2d8993b99e52108004defc2232319e9",
-        "fr": "bf333af2a53a7aaef49baa877dce3f1ee2d8993b99e52108004defc2232319e9",
-        "ja": "bf333af2a53a7aaef49baa877dce3f1ee2d8993b99e52108004defc2232319e9",
-        "ru": "bf333af2a53a7aaef49baa877dce3f1ee2d8993b99e52108004defc2232319e9",
-        "pt-BR": "bf333af2a53a7aaef49baa877dce3f1ee2d8993b99e52108004defc2232319e9"
-      }
-    },
     "docs/users/features/status-line.md": {
       "langs": {
         "zh": "6aec7c2c9ce98029020444c7008c333d202640933b450f2be82f7a877a290668",
@@ -1710,16 +1190,6 @@
         "ja": "e85a70e764c62341c7f735d93e075aa32676ff243ee907b7bad5534d579803e1",
         "ru": "e85a70e764c62341c7f735d93e075aa32676ff243ee907b7bad5534d579803e1",
         "pt-BR": "e85a70e764c62341c7f735d93e075aa32676ff243ee907b7bad5534d579803e1"
-      }
-    },
-    "docs/users/features/sub-agents.md": {
-      "langs": {
-        "zh": "8bfc87b2b826854d617e55f179d679a05437bcef1cef141e59781875bcdc9b2c",
-        "de": "8bfc87b2b826854d617e55f179d679a05437bcef1cef141e59781875bcdc9b2c",
-        "fr": "8bfc87b2b826854d617e55f179d679a05437bcef1cef141e59781875bcdc9b2c",
-        "ja": "8bfc87b2b826854d617e55f179d679a05437bcef1cef141e59781875bcdc9b2c",
-        "ru": "8bfc87b2b826854d617e55f179d679a05437bcef1cef141e59781875bcdc9b2c",
-        "pt-BR": "8bfc87b2b826854d617e55f179d679a05437bcef1cef141e59781875bcdc9b2c"
       }
     },
     "docs/users/features/tips.md": {
@@ -1742,26 +1212,6 @@
         "pt-BR": "15a31a032f81250eeee603dd75e1d69194de0e5dddda89013be4d04ac2606d3d"
       }
     },
-    "docs/users/features/tool-use-summaries.md": {
-      "langs": {
-        "zh": "f5552126ee5f024272f66d8e141d48eab22692d54fb471caf4ed8654afa5ec6a",
-        "de": "f5552126ee5f024272f66d8e141d48eab22692d54fb471caf4ed8654afa5ec6a",
-        "fr": "f5552126ee5f024272f66d8e141d48eab22692d54fb471caf4ed8654afa5ec6a",
-        "ja": "f5552126ee5f024272f66d8e141d48eab22692d54fb471caf4ed8654afa5ec6a",
-        "ru": "f5552126ee5f024272f66d8e141d48eab22692d54fb471caf4ed8654afa5ec6a",
-        "pt-BR": "f5552126ee5f024272f66d8e141d48eab22692d54fb471caf4ed8654afa5ec6a"
-      }
-    },
-    "docs/users/features/worktree.md": {
-      "langs": {
-        "zh": "626cec7289b5bdde05cf7f572d73ba3d7f9343f6ccc75825a0ea4c9c8cbd4378",
-        "de": "626cec7289b5bdde05cf7f572d73ba3d7f9343f6ccc75825a0ea4c9c8cbd4378",
-        "fr": "626cec7289b5bdde05cf7f572d73ba3d7f9343f6ccc75825a0ea4c9c8cbd4378",
-        "ja": "626cec7289b5bdde05cf7f572d73ba3d7f9343f6ccc75825a0ea4c9c8cbd4378",
-        "ru": "626cec7289b5bdde05cf7f572d73ba3d7f9343f6ccc75825a0ea4c9c8cbd4378",
-        "pt-BR": "626cec7289b5bdde05cf7f572d73ba3d7f9343f6ccc75825a0ea4c9c8cbd4378"
-      }
-    },
     "docs/users/ide-integration/ide-companion-spec.md": {
       "langs": {
         "zh": "3192d9835f79fbb7b5daabdf3a8905614d2458d8573c3a903258f0136a26af0d",
@@ -1782,16 +1232,6 @@
         "pt-BR": "fe0e64c04ae51e6dfa41ad50a131df9d3e6a187f0d0888fcbfc5bdff74171f94"
       }
     },
-    "docs/users/integration-github-action.md": {
-      "langs": {
-        "zh": "25ace22f078a8fa13d618e29ac9e1575199cae084470a5031825465822a6b700",
-        "de": "25ace22f078a8fa13d618e29ac9e1575199cae084470a5031825465822a6b700",
-        "fr": "25ace22f078a8fa13d618e29ac9e1575199cae084470a5031825465822a6b700",
-        "ja": "25ace22f078a8fa13d618e29ac9e1575199cae084470a5031825465822a6b700",
-        "ru": "25ace22f078a8fa13d618e29ac9e1575199cae084470a5031825465822a6b700",
-        "pt-BR": "25ace22f078a8fa13d618e29ac9e1575199cae084470a5031825465822a6b700"
-      }
-    },
     "docs/users/integration-jetbrains.md": {
       "langs": {
         "zh": "dbd4923b8921440ca0de5fd7663396d0f8f7057db554aac7b5ac6a0e7eebd282",
@@ -1800,16 +1240,6 @@
         "ja": "dbd4923b8921440ca0de5fd7663396d0f8f7057db554aac7b5ac6a0e7eebd282",
         "ru": "dbd4923b8921440ca0de5fd7663396d0f8f7057db554aac7b5ac6a0e7eebd282",
         "pt-BR": "dbd4923b8921440ca0de5fd7663396d0f8f7057db554aac7b5ac6a0e7eebd282"
-      }
-    },
-    "docs/users/integration-vscode.md": {
-      "langs": {
-        "zh": "02a56faa38864b1cbb47b07a171910f0cfa290b274cabe93c9d6eac3757b9c52",
-        "de": "02a56faa38864b1cbb47b07a171910f0cfa290b274cabe93c9d6eac3757b9c52",
-        "fr": "02a56faa38864b1cbb47b07a171910f0cfa290b274cabe93c9d6eac3757b9c52",
-        "ja": "02a56faa38864b1cbb47b07a171910f0cfa290b274cabe93c9d6eac3757b9c52",
-        "ru": "02a56faa38864b1cbb47b07a171910f0cfa290b274cabe93c9d6eac3757b9c52",
-        "pt-BR": "02a56faa38864b1cbb47b07a171910f0cfa290b274cabe93c9d6eac3757b9c52"
       }
     },
     "docs/users/integration-zed.md": {
@@ -1842,36 +1272,6 @@
         "pt-BR": "54f785d64cfd0ef25be0aad655ee90ff120de5610486d73cad2780a5b87e1482"
       }
     },
-    "docs/users/qwen-serve-deploy-local.md": {
-      "langs": {
-        "zh": "11c693c2cb08c8afcb063f2f48d281eb3ad082fdd60bad4c90fdbf25bdca86f1",
-        "de": "11c693c2cb08c8afcb063f2f48d281eb3ad082fdd60bad4c90fdbf25bdca86f1",
-        "fr": "11c693c2cb08c8afcb063f2f48d281eb3ad082fdd60bad4c90fdbf25bdca86f1",
-        "ja": "11c693c2cb08c8afcb063f2f48d281eb3ad082fdd60bad4c90fdbf25bdca86f1",
-        "ru": "11c693c2cb08c8afcb063f2f48d281eb3ad082fdd60bad4c90fdbf25bdca86f1",
-        "pt-BR": "11c693c2cb08c8afcb063f2f48d281eb3ad082fdd60bad4c90fdbf25bdca86f1"
-      }
-    },
-    "docs/users/qwen-serve.md": {
-      "langs": {
-        "zh": "93dc85b7d7ce167b1c7e3f2eaf05d05c3ad609e80b112f521800c3e9a9726ca8",
-        "de": "93dc85b7d7ce167b1c7e3f2eaf05d05c3ad609e80b112f521800c3e9a9726ca8",
-        "fr": "93dc85b7d7ce167b1c7e3f2eaf05d05c3ad609e80b112f521800c3e9a9726ca8",
-        "ja": "93dc85b7d7ce167b1c7e3f2eaf05d05c3ad609e80b112f521800c3e9a9726ca8",
-        "ru": "93dc85b7d7ce167b1c7e3f2eaf05d05c3ad609e80b112f521800c3e9a9726ca8",
-        "pt-BR": "93dc85b7d7ce167b1c7e3f2eaf05d05c3ad609e80b112f521800c3e9a9726ca8"
-      }
-    },
-    "docs/users/reference/keyboard-shortcuts.md": {
-      "langs": {
-        "zh": "1ca881e9299f8d1f1298ffd0c98d23449adb6e467f028e54a1db4ab6f142c32f",
-        "de": "1ca881e9299f8d1f1298ffd0c98d23449adb6e467f028e54a1db4ab6f142c32f",
-        "fr": "1ca881e9299f8d1f1298ffd0c98d23449adb6e467f028e54a1db4ab6f142c32f",
-        "ja": "1ca881e9299f8d1f1298ffd0c98d23449adb6e467f028e54a1db4ab6f142c32f",
-        "ru": "1ca881e9299f8d1f1298ffd0c98d23449adb6e467f028e54a1db4ab6f142c32f",
-        "pt-BR": "1ca881e9299f8d1f1298ffd0c98d23449adb6e467f028e54a1db4ab6f142c32f"
-      }
-    },
     "docs/users/support/Uninstall.md": {
       "langs": {
         "zh": "110c6c2c39fe5565d428e120968484f48d5ca7af4b8939f56466517149f8c62c",
@@ -1890,56 +1290,6 @@
         "ja": "25df89d38cf5194a208ea1dfdf08ba18a252b1d44d21a2b20d63b938b0ec4c2f",
         "ru": "25df89d38cf5194a208ea1dfdf08ba18a252b1d44d21a2b20d63b938b0ec4c2f",
         "pt-BR": "25df89d38cf5194a208ea1dfdf08ba18a252b1d44d21a2b20d63b938b0ec4c2f"
-      }
-    },
-    "docs/users/support/troubleshooting.md": {
-      "langs": {
-        "zh": "a222d962ef1d2bfac9f16895a49d24c1e62b0aaf136b67d2b50edf34f81b44fd",
-        "de": "a222d962ef1d2bfac9f16895a49d24c1e62b0aaf136b67d2b50edf34f81b44fd",
-        "fr": "a222d962ef1d2bfac9f16895a49d24c1e62b0aaf136b67d2b50edf34f81b44fd",
-        "ja": "a222d962ef1d2bfac9f16895a49d24c1e62b0aaf136b67d2b50edf34f81b44fd",
-        "ru": "a222d962ef1d2bfac9f16895a49d24c1e62b0aaf136b67d2b50edf34f81b44fd",
-        "pt-BR": "a222d962ef1d2bfac9f16895a49d24c1e62b0aaf136b67d2b50edf34f81b44fd"
-      }
-    },
-    "docs/developers/daemon-ui/sidebar-customization.md": {
-      "langs": {
-        "zh": "57221790c86012e214d96ca7c7785bafe0ebb0ba771ffbd01e8093c513397aae",
-        "de": "57221790c86012e214d96ca7c7785bafe0ebb0ba771ffbd01e8093c513397aae",
-        "fr": "57221790c86012e214d96ca7c7785bafe0ebb0ba771ffbd01e8093c513397aae",
-        "ja": "57221790c86012e214d96ca7c7785bafe0ebb0ba771ffbd01e8093c513397aae",
-        "ru": "57221790c86012e214d96ca7c7785bafe0ebb0ba771ffbd01e8093c513397aae",
-        "pt-BR": "57221790c86012e214d96ca7c7785bafe0ebb0ba771ffbd01e8093c513397aae"
-      }
-    },
-    "docs/users/features/channels/github.md": {
-      "langs": {
-        "zh": "554313fda0ad9dd2629d629709fa316a60d3cbfd38286c0db72f58df05ffd0bf",
-        "de": "554313fda0ad9dd2629d629709fa316a60d3cbfd38286c0db72f58df05ffd0bf",
-        "fr": "554313fda0ad9dd2629d629709fa316a60d3cbfd38286c0db72f58df05ffd0bf",
-        "ja": "554313fda0ad9dd2629d629709fa316a60d3cbfd38286c0db72f58df05ffd0bf",
-        "ru": "554313fda0ad9dd2629d629709fa316a60d3cbfd38286c0db72f58df05ffd0bf",
-        "pt-BR": "554313fda0ad9dd2629d629709fa316a60d3cbfd38286c0db72f58df05ffd0bf"
-      }
-    },
-    "docs/users/features/channels/gitlab.md": {
-      "langs": {
-        "zh": "78ad6a5a9480a162e8923571289e400d40dedeef23960baefb07ac71d61857cd",
-        "de": "78ad6a5a9480a162e8923571289e400d40dedeef23960baefb07ac71d61857cd",
-        "fr": "78ad6a5a9480a162e8923571289e400d40dedeef23960baefb07ac71d61857cd",
-        "ja": "78ad6a5a9480a162e8923571289e400d40dedeef23960baefb07ac71d61857cd",
-        "ru": "78ad6a5a9480a162e8923571289e400d40dedeef23960baefb07ac71d61857cd",
-        "pt-BR": "78ad6a5a9480a162e8923571289e400d40dedeef23960baefb07ac71d61857cd"
-      }
-    },
-    "docs/users/features/computer-use.md": {
-      "langs": {
-        "zh": "01b96dd25e085d298ee705aecd6e4bb99f0818559344bc39694c3b644cc0b4b1",
-        "de": "01b96dd25e085d298ee705aecd6e4bb99f0818559344bc39694c3b644cc0b4b1",
-        "fr": "01b96dd25e085d298ee705aecd6e4bb99f0818559344bc39694c3b644cc0b4b1",
-        "ja": "01b96dd25e085d298ee705aecd6e4bb99f0818559344bc39694c3b644cc0b4b1",
-        "ru": "01b96dd25e085d298ee705aecd6e4bb99f0818559344bc39694c3b644cc0b4b1",
-        "pt-BR": "01b96dd25e085d298ee705aecd6e4bb99f0818559344bc39694c3b644cc0b4b1"
       }
     }
   }
