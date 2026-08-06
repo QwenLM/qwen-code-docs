@@ -501,6 +501,31 @@ function frontmatterClosed(text) {
     .some((l) => l.trim() === "---" || l.trim() === "...");
 }
 
+/**
+ * Cheap structural sanity check of the frontmatter YAML, without a YAML
+ * parser: every non-empty, non-indented line must open a mapping entry
+ * (`key:`) or a list item (`- `). An unindented bare-text line (typically
+ * a wrapped description) is exactly what fails the site build with
+ * "YAMLParseError: Unexpected scalar token" — run 31115350719. Indented
+ * continuation lines are left alone. False positives are safe: the file
+ * just stays in the backlog and gets retried.
+ */
+function frontmatterYamlish(text) {
+  const lines = text.split("\n");
+  if (lines[0].trim() !== "---") return false;
+  for (let i = 1; i < lines.length; i++) {
+    const l = lines[i];
+    const t = l.trim();
+    if (t === "---" || t === "...") return true;
+    if (t === "") continue;
+    if (/^\s/.test(l)) continue; // indented continuation
+    if (/^[^\s:][^:]*:(\s|$)/.test(l)) continue; // key: value
+    if (/^-(\s|$)/.test(l)) continue; // list item
+    return false;
+  }
+  return false; // no closing delimiter
+}
+
 function verifyFile(lang, f, manifest) {
   const rel = relInContent(f);
   const enPath = path.join(OPTS.contentDir, "en", rel);
@@ -529,8 +554,12 @@ function verifyFile(lang, f, manifest) {
     problems.push(
       `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(tg)})`
     );
-  if (hasFrontmatter(en) && (!hasFrontmatter(tg) || !frontmatterClosed(tg)))
-    problems.push("frontmatter missing/unclosed");
+  if (hasFrontmatter(en)) {
+    if (!hasFrontmatter(tg) || !frontmatterClosed(tg))
+      problems.push("frontmatter missing/unclosed");
+    else if (!frontmatterYamlish(tg))
+      problems.push("frontmatter not parseable YAML");
+  }
   const linksEn = (en.match(/\]\(/g) || []).length;
   const linksTg = (tg.match(/\]\(/g) || []).length;
   if (linksEn !== linksTg)

@@ -171,6 +171,25 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
           OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
 
+      # advance wrote per-language .failed.txt quarantine lists. Broken files
+      # must be restored to HEAD BEFORE the build: run 31115350719 proved
+      # that a single verify-evading broken file fails `npm run build`,
+      # which skips the commit step and discards the whole run's good
+      # translations (#185). Restoring early keeps the build green; the
+      # failed files simply stay in the backlog for the next run. The commit
+      # step repeats the same restore as a safety net.
+      - name: Quarantine failed translations before build
+        if: steps.detect.outputs.changed == 'true'
+        run: |
+          shopt -s nullglob
+          for fl in website/orchestrator-manifest-*.failed.txt; do
+            while IFS= read -r p; do
+              [ -n "$p" ] || continue
+              git checkout HEAD -- "website/content/$p" 2>/dev/null \
+                || rm -f "website/content/$p"
+            done < "$fl"
+          done
+
       # Runs after the sync has rewritten last-sync.json, so the age reported
       # here reflects this run's outcome. Catches the failure mode a
       # failure()-gated alert cannot: the job goes green but the baseline
