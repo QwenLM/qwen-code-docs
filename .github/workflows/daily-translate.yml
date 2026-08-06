@@ -86,12 +86,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0
+          # Nothing in this pipeline needs repo history: the commit step
+          # pushes HEAD:main (serialized by the concurrency group below),
+          # and the upstream diff uses its own shallow clone of qwen-code.
+          # Nextra's git-based "last modified" timestamps were already
+          # degraded with full history (logged warnings), so depth 1 loses
+          # nothing that worked before.
+          fetch-depth: 1
 
       - name: Install Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            website/package-lock.json
+            translator/package-lock.json
 
       - name: Install qwen CLI
         run: npm i -g @qwen-code/qwen-code@0.21.1
