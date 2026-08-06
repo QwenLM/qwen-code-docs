@@ -232,7 +232,19 @@ jobs:
             echo "::warning::nothing verified to commit this run — check the agent logs above"
           else
             git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
-            git push origin HEAD:main
+            if ! git push origin HEAD:main; then
+              # main moved while this run was translating (e.g. a PR merged
+              # mid-run — that race discarded the first orchestrator run's
+              # completed translation, run 31106251398). Rebase our content
+              # commit on top and retry once. Content is only ever written
+              # by this pipeline, so a rebase conflict is near-impossible;
+              # if one happens anyway the step fails and the next run
+              # retries from the same baseline.
+              echo "::warning::main moved during this run — rebasing and retrying push"
+              git fetch origin main
+              git rebase origin/main
+              git push origin HEAD:main
+            fi
           fi
 
       - name: Deploy to GitHub Pages
