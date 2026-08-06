@@ -41,6 +41,9 @@ on:
 
 permissions:
   contents: write
+  # Needed by the failure-reporting step below, which files/updates a tracking
+  # issue when a scheduled run fails.
+  issues: write
 
 env:
   OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
@@ -107,6 +110,24 @@ jobs:
         env:
           TRANSLATE_DAILY_LIMIT: ${{ vars.TRANSLATE_DAILY_LIMIT }}
 
+      # Runs after the sync has rewritten last-sync.json, so the age reported
+      # here reflects this run's outcome. Catches the failure mode a
+      # failure()-gated alert cannot: the job goes green but the baseline
+      # never actually advanced, so the backlog keeps growing silently.
+      - name: Warn if baseline is stale
+        run: |
+          set -euo pipefail
+          TS="$(jq -r '.timestamp // empty' website/last-sync.json)"
+          if [ -z "$TS" ]; then
+            echo "::warning::last-sync.json has no timestamp field; cannot check baseline age."
+            exit 0
+          fi
+          AGE=$(( ( $(date -u +%s) - $(date -u -d "$TS" +%s) ) / 86400 ))
+          echo "Baseline age: ${AGE}d (last sync: $TS)"
+          if [ "$AGE" -gt 3 ]; then
+            echo "::warning::last-sync.json has not advanced in ${AGE} days — the translation backlog is growing."
+          fi
+
       - name: Build website
         if: steps.detect.outputs.changed == 'true'
         run: |
@@ -132,3 +153,37 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./website/out
+
+      # Must stay last so it observes failures from any step above.
+      #
+      # Scheduled failures are otherwise invisible: GitHub only emails the
+      # workflow author on cron-triggered failures, and that mail is easy to
+      # filter. An expired API key took down six consecutive nightly runs
+      # (07-29..08-03) before anyone noticed, freezing the sync baseline at
+      # 2026-07-08 while the backlog grew to ~1800 file-translations.
+      #
+      # Gated to `schedule` so manual workflow_dispatch debugging runs — which
+      # are expected to fail while iterating — never file issues.
+      - name: Report scheduled failure
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="Daily translation sync is failing"
+          BODY="Scheduled run failed: ${RUN_URL} (commit \`${GITHUB_SHA}\`)"
+          # Collapse a run of consecutive failures onto one open issue: a week
+          # of breakage becomes one issue with seven comments, not seven
+          # issues. Closing the issue after a fix re-arms the alert.
+          NUM="$(gh issue list --repo "$GITHUB_REPOSITORY" \
+                   --state open --label ci-failure --search "$TITLE in:title" \
+                   --json number --jq '.[0].number // empty')"
+          if [ -n "$NUM" ]; then
+            echo "Commenting on existing tracking issue #${NUM}"
+            gh issue comment "$NUM" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          else
+            echo "Filing new tracking issue"
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "$TITLE" --label ci-failure --body "$BODY"
+          fi

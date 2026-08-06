@@ -459,7 +459,7 @@ Esses auxiliares são internos, mas leitores do código-fonte podem vê-los:
 - `McpTransportPool.acquire()` usa `attachPooledSession` e `rollbackReservationOnSpawnFailure` para compartilhar o comportamento de atalho de attach rápido, attach pós-spawn e captura de spawn em andamento no pool. O comportamento em tempo de execução não é alterado; os invariantes de janela de corrida ainda residem nos pontos de chamada.
 - `SessionMcpView.applyTools` / `applyPrompts` compila `includeTools` / `excludeTools` uma vez via `compileNameFilter(cfg)` e verifica cada ferramenta com `compiledFilterAccepts(compiled, name)`. As funções exportadas `passesSessionFilter` / `passesSessionPromptFilter` usam o mesmo caminho compilado. `excludeTools` é correspondência exata; `includeTools` remove o primeiro sufixo `(...)` para que `toolName(args)` corresponda a `toolName`.
 
-Documento de design: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §6 cobre a máquina de estados do pool de transporte, reconexão, dreno e caminhos de varredura de descendentes.
+Documento de design: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §6 cobre a máquina de estados do pool de transporte, reconexão, dreno e caminhos de varredura de descendentes.
 
 ## Riscos e Limitações Conhecidas
 
@@ -476,5 +476,5 @@ Documento de design: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-m
 - `packages/core/src/tools/mcp-pool-key.ts` (`connectionIdOf`, `parseConnectionId`)
 - `packages/core/src/tools/mcp-pool-events.ts` (tipos de evento)
 - `packages/core/src/tools/session-mcp-view.ts` (visão filtrada por sessão)
-- Documento de design F2 (v2.2, com o changelog de inclusão dos 32 itens): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md). Trate o contrato de design como autoritativo; esta página é o mergulho profundo do desenvolvedor.
+- Documento de design F2 (v2.2, com o changelog de inclusão dos 32 itens): [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md). Trate o contrato de design como autoritativo; esta página é o mergulho profundo do desenvolvedor.
 - Notas de design F2: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (commits 4-6 da série F2).

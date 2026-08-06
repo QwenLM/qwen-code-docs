@@ -347,5 +347,5 @@ O desligamento em duas fases é importante porque requisições HTTP em andament
 - Issues de design: [#3803](https://github.com/QwenLM/qwen-code/issues/3803) (design do daemon), [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (marcos da série F).
 - Guia do usuário: [`../../users/qwen-serve.md`](../../users/qwen-serve.md).
 - Referência do protocolo wire: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
-- Documento de design F2: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md).
+- Documento de design F2: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md).
 - Notas de design F2: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) commits 4-6.

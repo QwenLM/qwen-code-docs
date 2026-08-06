@@ -149,5 +149,5 @@ sequenceDiagram
 - `packages/core/src/tools/mcp-workspace-budget.ts` (весь класс)
 - `packages/core/src/tools/mcp-client-manager.ts` (`BudgetExhaustedError`, `McpBudgetEvent`, константы гистерезиса)
 - `packages/core/src/tools/mcp-transport-pool.ts` (место вызова `acquire` пула, которое вызывает `tryReserve`)
-- Дизайн-документ F2 (v2.2): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §11 для бюджета на уровне рабочего пространства и записей в changelog v2.2 о доработках бюджета и отпечатков.
+- Дизайн-документ F2 (v2.2): [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §11 для бюджета на уровне рабочего пространства и записей в changelog v2.2 о доработках бюджета и отпечатков.
 - Заметки к дизайну F2: задача [#4175](https://github.com/QwenLM/qwen-code/issues/4175), коммит 6.

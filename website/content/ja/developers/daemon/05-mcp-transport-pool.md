@@ -375,7 +375,7 @@ new McpClientManager(config, toolRegistry, {
 - `McpTransportPool.acquire()` は `attachPooledSession` と `rollbackReservationOnSpawnFailure` を使用して、高速パスアタッチ、スポーン後アタッチ、およびプールされたスポーン中のキャッチ動作を共有します。ランタイム動作は変更されていません。レースウィンドウの不変条件は依然として呼び出しサイトにあります。
 - `SessionMcpView.applyTools` / `applyPrompts` は `compileNameFilter(cfg)` を介して `includeTools` / `excludeTools` を一度コンパイルし、各ツールを `compiledFilterAccepts(compiled, name)` でチェックします。エクスポートされた `passesSessionFilter` / `passesSessionPromptFilter` は同じコンパイル済みパスを使用します。`excludeTools` は完全一致です。`includeTools` は最初の `(...)` サフィックスを除去するため、`toolName(args)` は `toolName` に一致します。
 
-設計ドキュメント: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §6 では、トランスポートプールのステートマシン、再接続、ドレイン、および子孫スイープパスについて説明しています。
+設計ドキュメント: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §6 では、トランスポートプールのステートマシン、再接続、ドレイン、および子孫スイープパスについて説明しています。
 
 ## 注意事項と既知の制限
 
@@ -392,5 +392,5 @@ new McpClientManager(config, toolRegistry, {
 - `packages/core/src/tools/mcp-pool-key.ts` (`connectionIdOf`, `parseConnectionId`)
 - `packages/core/src/tools/mcp-pool-events.ts` (event types)
 - `packages/core/src/tools/session-mcp-view.ts` (per-session filtered view)
-- F2 設計ドキュメント（v2.2、32項目のレビューフォールドインチェンジログ付き）: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)。設計契約を権威あるものとして扱ってください。このページは開発者向けの詳細解説です。
+- F2 設計ドキュメント（v2.2、32項目のレビューフォールドインチェンジログ付き）: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)。設計契約を権威あるものとして扱ってください。このページは開発者向けの詳細解説です。
 - F2 設計ノート: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175)（F2 シリーズのコミット 4-6）。

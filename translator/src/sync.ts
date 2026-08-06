@@ -65,8 +65,9 @@ interface SyncOptions {
   projectRoot?: string; // 项目根目录
   outputDir?: string; // 输出目录
   branch?: string; // 新增：源仓库分支
-  // 新增：跳过翻译的路径（目录前缀或精确文件名，相对 docsPath）。
-  // 这些文档仍会同步到 content/<sourceLanguage>，但不会翻译到目标语言。
+  // 新增：从站点发布中排除的路径（目录前缀或精确文件名，相对 docsPath）。
+  // 这些是内部文档：既不会翻译到目标语言，也不会作为源语言页面拷进
+  // content/<sourceLanguage>，因此完全不出现在站点上。
   excludeFromTranslation?: string[];
 }
 
@@ -497,21 +498,28 @@ export class SyncManager {
     }
 
     // 2. 复制到 content/{sourceLanguage} 目录
-    //    注意：排除上游的 _meta.* 导航文件，避免覆盖本库定制的导航
-    //    （本库各语言包的 _meta 由站点自行维护，不应被上游同步覆盖）。
+    //    注意：
+    //    - 排除上游的 _meta.* 导航文件，避免覆盖本库定制的导航
+    //      （本库各语言包的 _meta 由站点自行维护，不应被上游同步覆盖）。
+    //    - 排除 excludeFromTranslation 中的路径：这些是内部文档，既不翻译到
+    //      目标语言，也不作为源语言页面发布，因此不拷进 content/<sourceLanguage>。
     await fs.ensureDir(contentSourceDir);
-    async function copyNormalized(dir: string): Promise<void> {
+    // 箭头函数：递归拷贝需要访问 isExcludedFromTranslation（普通函数声明会丢 this）。
+    const copyNormalized = async (dir: string): Promise<void> => {
       for (const item of await fs.readdir(dir)) {
         const src = path.join(dir, item);
+        const relativePath = path
+          .relative(sourceDocsTargetDir, src)
+          .replace(/\\/g, "/");
+        // 排除 excludeFromTranslation 中的内部文档：整棵子树跳过，
+        // 与排除规则一致（这些路径不进 content/<sourceLanguage>）。
+        if (this.isExcludedFromTranslation(relativePath)) continue;
         if ((await fs.stat(src)).isDirectory()) {
           await copyNormalized(src);
           continue;
         }
         if (isMetaFile(src)) continue;
-        const dest = path.join(
-          contentSourceDir,
-          path.relative(sourceDocsTargetDir, src)
-        );
+        const dest = path.join(contentSourceDir, relativePath);
         await fs.ensureDir(path.dirname(dest));
         if (/\.(md|mdx)$/.test(item)) {
           await fs.writeFile(
@@ -523,7 +531,7 @@ export class SyncManager {
           await fs.copyFile(src, dest);
         }
       }
-    }
+    };
     await copyNormalized(sourceDocsTargetDir);
     console.log(chalk.green(`✅ 源文档已复制到: ${contentSourceDir}`));
   }
@@ -589,8 +597,9 @@ export class SyncManager {
             return;
           }
 
-          // 跳过配置中排除翻译的文档（内部文档/不在站点导航显示的页面）。
-          // 这些文档仍同步进 content/<sourceLanguage>，但不翻译到目标语言。
+          // 跳过配置中排除的内部文档：不翻译到目标语言。
+          // 这些文档也已在 updateBaseDocs 中被排除，不会拷进
+          // content/<sourceLanguage>，因此完全不在站点发布。
           if (this.isExcludedFromTranslation(relativePath)) {
             console.log(
               chalk.gray(`  ↪ 跳过翻译（excludeFromTranslation）: ${relativePath}`)

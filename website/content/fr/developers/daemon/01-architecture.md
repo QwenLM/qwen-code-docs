@@ -347,5 +347,5 @@ L'arrêt en deux phases est important car les requêtes HTTP en cours, les abonn
 - Problèmes de conception : [#3803](https://github.com/QwenLM/qwen-code/issues/3803) (conception du démon), [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (jalons série F).
 - Guide utilisateur : [`../../users/qwen-serve.md`](../../users/qwen-serve.md).
 - Référence du protocole filaire : [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
-- Document de conception F2 : [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md).
+- Document de conception F2 : [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md).
 - Notes de conception F2 : issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) commits 4-6.

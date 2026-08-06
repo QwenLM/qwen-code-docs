@@ -347,5 +347,5 @@ The two-phase shutdown matters because in-flight HTTP requests, in-flight SSE su
 - Design issues: [#3803](https://github.com/QwenLM/qwen-code/issues/3803) (daemon design), [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (F-series milestones).
 - User guide: [`../../users/qwen-serve.md`](../../users/qwen-serve.md).
 - Wire protocol reference: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
-- F2 design document: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md).
+- F2 design document: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md).
 - F2 design notes: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) commits 4-6.

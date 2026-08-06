@@ -347,5 +347,5 @@ sequenceDiagram
 - 設計イシュー: [#3803](https://github.com/QwenLM/qwen-code/issues/3803)（デーモン設計）、[#4175](https://github.com/QwenLM/qwen-code/issues/4175)（F シリーズマイルストーン）
 - ユーザーガイド: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)
 - ワイヤープロトコルリファレンス: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)
-- F2 設計文書: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)
+- F2 設計文書: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)
 - F2 設計ノート: イシュー [#4175](https://github.com/QwenLM/qwen-code/issues/4175) コミット 4-6

@@ -347,5 +347,5 @@ sequenceDiagram
 - Вопросы дизайна: [#3803](https://github.com/QwenLM/qwen-code/issues/3803) (дизайн демона), [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (вехи серии F).
 - Руководство пользователя: [`../../users/qwen-serve.md`](../../users/qwen-serve.md).
 - Справочник по протоколу: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
-- Документ дизайна F2: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md).
+- Документ дизайна F2: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md).
 - Заметки по дизайну F2: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175), коммиты 4–6.

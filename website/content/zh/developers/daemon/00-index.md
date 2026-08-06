@@ -11,7 +11,7 @@
 | [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md) | SDK 用户              | 端到端 TypeScript 实战指南                                 |
 | [`../daemon-client-adapters/`](../daemon-client-adapters/)                           | 适配器开发者          | 旧版客户端适配器设计文档                                   |
 | [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)                                   | 适配器开发者          | 客户端适配器设计说明                                       |
-| [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)     | F2 维护者             | 工作区 MCP transport pool 设计 v2.2                        |
+| [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)     | F2 维护者             | 工作区 MCP transport pool 设计 v2.2                        |
 
 如果你想**启动并使用 daemon**，请先阅读 `qwen-serve.md`。如果你想**基于线格式构建客户端**，请阅读 `qwen-serve-protocol.md`。如果你想**理解、扩展或调试 daemon 内部机制**，请阅读本文档集。
 

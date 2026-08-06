@@ -149,5 +149,5 @@ sequenceDiagram
 - `packages/core/src/tools/mcp-workspace-budget.ts`（クラス全体）
 - `packages/core/src/tools/mcp-client-manager.ts`（`BudgetExhaustedError`、`McpBudgetEvent`、ヒステリシス定数）
 - `packages/core/src/tools/mcp-transport-pool.ts`（`tryReserve` を呼び出すプールの `acquire` サイト）
-- F2 設計ドキュメント（v2.2）：[`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §11 ワークスペースレベルのバジェットと、v2.2 のチェンジログエントリ（バジェットとフィンガープリントのフォローアップについて）。
+- F2 設計ドキュメント（v2.2）：[`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §11 ワークスペースレベルのバジェットと、v2.2 のチェンジログエントリ（バジェットとフィンガープリントのフォローアップについて）。
 - F2 設計ノート：issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) コミット6。

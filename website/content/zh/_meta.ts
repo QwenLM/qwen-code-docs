@@ -11,11 +11,6 @@ export default {
     type: 'page',
     title: '开发者指南',
   },
-  design: {
-    type: 'page',
-    title: '设计',
-    display: 'hidden',
-  },
   showcase: {
     type: 'page',
     title: '视频演示',
