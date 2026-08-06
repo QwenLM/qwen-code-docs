@@ -462,7 +462,7 @@ new McpClientManager(config, toolRegistry, {
 - `McpTransportPool.acquire()` использует `attachPooledSession` и `rollbackReservationOnSpawnFailure` для совместного использования поведения быстрого присоединения, присоединения после запуска и перехвата конкуренции во время запуска пула. Поведение во время выполнения не изменилось; инварианты в окне гонки по-прежнему находятся в точках вызова.
 - `SessionMcpView.applyTools` / `applyPrompts` компилируют `includeTools` / `excludeTools` один раз через `compileNameFilter(cfg)` и проверяют каждый инструмент с помощью `compiledFilterAccepts(compiled, name)`. Экспортируемые `passesSessionFilter` / `passesSessionPromptFilter` используют тот же скомпилированный путь. `excludeTools` — это точное совпадение; `includeTools` отбрасывает первый суффикс `(...)`, так что `toolName(args)` соответствует `toolName`.
 
-Дизайн-документ: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §6 описывает конечный автомат пула транспортов, переподключение, слив и путь очистки дочерних процессов.
+Дизайн-документ: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §6 описывает конечный автомат пула транспортов, переподключение, слив и путь очистки дочерних процессов.
 
 ## Оговорки и известные ограничения
 
@@ -479,5 +479,5 @@ new McpClientManager(config, toolRegistry, {
 - `packages/core/src/tools/mcp-pool-key.ts` (`connectionIdOf`, `parseConnectionId`)
 - `packages/core/src/tools/mcp-pool-events.ts` (типы событий)
 - `packages/core/src/tools/session-mcp-view.ts` (фильтрованное представление на сессию)
-- Дизайн-документ F2 (v2.2, с журналом изменений на 32 пункта): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md). Считайте дизайн-контракт авторитетным; эта страница — глубокое погружение для разработчиков.
+- Дизайн-документ F2 (v2.2, с журналом изменений на 32 пункта): [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md). Считайте дизайн-контракт авторитетным; эта страница — глубокое погружение для разработчиков.
 - Заметки к дизайну F2: issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (коммиты 4-6 серии F2).

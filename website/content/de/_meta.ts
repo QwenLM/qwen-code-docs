@@ -11,11 +11,6 @@ export default {
     type: 'page',
     title: 'Entwicklerhandbuch',
   },
-  design: {
-    type: 'page',
-    title: 'Design',
-    display: 'hidden',
-  },
   showcase: {
     type: 'page',
     title: 'Showcase',

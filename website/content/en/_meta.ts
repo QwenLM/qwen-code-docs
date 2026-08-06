@@ -11,11 +11,6 @@ export default {
     type: 'page',
     title: 'Developer Guide',
   },
-  design: {
-    type: 'page',
-    title: 'Design',
-    display: 'hidden',
-  },
   showcase: {
     type: 'page',
     title: 'Showcase',
@@ -28,10 +23,4 @@ export default {
     type: 'page',
     title: 'Blog',
   },
-  'e2e-tests': { display: 'hidden' },
-  plans: { display: 'hidden' },
-  superpowers: { display: 'hidden' },
-  verification: { display: 'hidden' },
-  'declarative-agents-port': { display: 'hidden' },
-  'yaml-parser-replacement': { display: 'hidden' },
 };

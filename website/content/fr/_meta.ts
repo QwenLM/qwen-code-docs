@@ -11,11 +11,6 @@ export default {
     type: 'page',
     title: 'Guide développeur',
   },
-  design: {
-    type: 'page',
-    title: 'Design',
-    display: 'hidden',
-  },
   showcase: {
     type: 'page',
     title: 'Vitrine',

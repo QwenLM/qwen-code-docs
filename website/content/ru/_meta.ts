@@ -11,11 +11,6 @@ export default {
     type: 'page',
     title: 'Руководство для разработчиков',
   },
-  design: {
-    type: 'page',
-    title: 'Дизайн',
-    display: 'hidden',
-  },
   showcase: {
     type: 'page',
     title: 'Витрина',
