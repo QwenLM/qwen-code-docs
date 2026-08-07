@@ -1,4 +1,3 @@
-```md
 # ワークスペースファイルシステム境界
 
 ## 概要
@@ -7,7 +6,7 @@
 
 - **パス解決** — パスを正規化し、バインドされたワークスペースから逸脱するもの（シンボリックリンク経由も含む）を拒否します。
 - **信頼ゲート** — ワークスペースが信頼されていない場合（`untrusted_workspace`）、書き込みを拒否します。
-- **サイズ＆コンテンツポリシー** — 読み取り上限（`MAX_READ_BYTES = 256 KiB`）、書き込み上限（`MAX_WRITE_BYTES = 5 MiB`）、バイナリ検出。
+- **サイズ＆コンテンツポリシー** — フルスナップショット/出力上限（`MAX_READ_BYTES = 256 KiB`）、出力とスキャンコストの両方が制限されたラージテキストウィンドウ（`MAX_TEXT_SCAN_BYTES = 8 MiB`）、書き込み上限（`MAX_WRITE_BYTES = 5 MiB`）、バイナリ検出。
 - **アトミック性** — 書き込み後にリネームし、ターゲットのモードを保存、新しいファイルのデフォルトは `0o600`。
 - **監査** — すべてのアクセス／拒否は、`PermissionAuditRing` / モニタリングのための構造化イベントを発行します。
 - **型付きエラー** — 閉じた `FsErrorKind` ユニオンを HTTP ステータスにマッピングします。
@@ -18,7 +17,7 @@ HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write
 
 - ユーザー指定のパスを、境界内で安全に使用できるブランド化された `ResolvedPath` 値に解決します。
 - バインドされたワークスペース外のパス（`path_outside_workspace`）と、ターゲットがシンボリックリンクであるパス（`symlink_escape`）を拒否します。
-- `MAX_READ_BYTES` を超える読み取り、`MAX_WRITE_BYTES` を超える書き込み、およびバイナリファイル（`binary_file`）を拒否します。
+- `MAX_READ_BYTES` を超えるフルスナップショット読み取りを拒否しつつ、出力が `MAX_READ_BYTES` に制限され、スキャンコストが `MAX_TEXT_SCAN_BYTES` に制限された明示的なウィンドウを許可します。`MAX_WRITE_BYTES` を超える書き込みとバイナリファイル（`binary_file`）を拒否します。
 - ワークスペースが信頼されていない場合（`untrusted_workspace`）、`assertTrustedForIntent(trusted, intent)` によってゲート制御される書き込み/編集を拒否します。
 - `.gitignore` / `.qwenignore` パターンを `shouldIgnore` を介して尊重します。
 - アトミックな書き込み後のリネームとターゲットモードの保存を実行します。新しいファイルのデフォルトモードは `0o600` です。
@@ -32,7 +31,7 @@ HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write
 | ファイル                     | 目的                                                                                                                                                                                                                                                   |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `paths.ts`               | `canonicalizeWorkspace`、`resolveWithinWorkspace`、`hasSuspiciousPathPattern`、ブランド化された `ResolvedPath`、`Intent` ユニオン（`read \| write \| list \| stat \| glob`）。                                                                                      |
-| `policy.ts`              | `MAX_READ_BYTES`、`MAX_WRITE_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                                                                   |
+| `policy.ts`              | `MAX_READ_BYTES`、`MAX_TEXT_SCAN_BYTES`、`MAX_WRITE_BYTES`、`BINARY_PROBE_BYTES`、`assertTrustedForIntent`、`detectBinary`、`enforceReadBytesSize`、`enforceReadSize`、`enforceWriteSize`、`shouldIgnore`。                                                                   |
 | `audit.ts`               | `FS_ACCESS_EVENT_TYPE`、`FS_DENIED_EVENT_TYPE`、`createAuditPublisher`、監査ペイロード型。                                                                                                                                                          |
 | `errors.ts`              | `FsError` クラス、`isFsError`、`FsErrorKind` ユニオン（14種類）、`FsErrorStatus` ユニオン（`400 / 403 / 404 / 409 / 413 / 422 / 500 / 503`）。                                                                                                                |
 | `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`、`WorkspaceFileSystem`（読み取り/書き込み/リストを実行するオーケストレーター）、`WriteMode`、`ContentHash`、`FsEntry`、`FsStat`、`ListOptions`、`GlobOptions`、`ReadTextOptions`、`ReadBytesOptions`、`WriteTextAtomicOptions`。 |
@@ -44,9 +43,9 @@ HTTP ファイルルート（`GET /file`、`GET /file/bytes`、`POST /file/write
 | `path_outside_workspace` | 400          | 解決されたパスがバインドされたワークスペース外。                                                                                                                                                 |
 | `symlink_escape`         | 400          | ターゲットがシンボリックリンク（PR 18 + PR 20 の保守的な姿勢に基づき拒否）。                                                                                                                    |
 | `path_not_found`         | 404          | `ENOENT`。                                                                                                                                                                                     |
-| `binary_file`            | 422          | テキストルートでコンテンツがバイナリと検出された。                                                                                                                                                       |
-| `file_too_large`         | 413          | `MAX_READ_BYTES` または `MAX_WRITE_BYTES` を超過。                                                                                                                                                  |
-| `hash_mismatch`          | 409          | 楽観的同時実行制御の `expectedSha256` が失敗。                                                                                                                                               |
+| `binary_file`            | 422          | テキストルートでコンテンツがバイナリと検出された、またはテキストルートがデコードできないエンコーディングのラージテキスト。                                                                                                                                                       |
+| `file_too_large`         | 413          | ウィンドウなし/フルスナップショットのテキストが `MAX_READ_BYTES` を超えた、`MAX_TEXT_SCAN_BYTES` を超える行オフセット、または `MAX_WRITE_BYTES` を超える書き込み。                                                         |
+| `hash_mismatch`          | 409          | 楽観的同時実行制御の `expectedSha256` が失敗、または安定読み取り中にファイルが変更された。                                                                                                                                               |
 | `file_already_exists`    | 409          | 既存ファイルに対する `mode: 'create'`。                                                                                                                                                    |
 | `text_not_found`         | 422          | `POST /file/edit` の検索文字列がファイル内に見つからない。                                                                                                                                         |
 | `ambiguous_text_match`   | 422          | 1つだけ必要な場合に複数のマッチがあった。                                                                                                                                               |
@@ -72,7 +71,7 @@ interface BridgeFileSystem {
 アダプタが必ず複製しなければならない2つの防御ゲート（アダプタが注入されるとインラインプロキシが完全にバイパスされるため）:
 
 1. **通常ファイル以外を拒否** — ソケット / パイプ / キャラクタデバイス / procfs / sysfs エントリは、`stats.size === 0` にもかかわらず無制限のデータをストリーミングする可能性があります。インラインパスは、メッセージ内に `describeStatKind(stats)` を含めてスローします。
-2. **バッファサイズを制限** `READ_FILE_SIZE_CAP = 100 MiB`。500 MB のログに対する小さな `{ line: 1, limit: 10 }` リクエストは、10行を返すためだけに 500 MB の RSS を消費することになります。
+2. **無制限のフルファイルバッファリングを避ける。** インラインフォールバックはバッファされた読み取りを `READ_FILE_SIZE_CAP = 100 MiB` に制限します。注入されたアダプタは代わりに、より厳格な WorkspaceFileSystem 契約を適用します。フルスナップショットは 256 KiB で停止し、それより大きい UTF-8 ファイルには有限の `limit` が必要で、inode にバインドされたハンドルからストリーミングされ、最大 256 KiB が返されます。`{ line: 1, limit: 10 }` を返すためだけに 500 MB のログ全体を読み込むことはあってはなりません。
 
 アダプタはさらに、`WorkspaceFileSystem.writeTextOverwrite`（PR 18 プリミティブ）を使用して、アトミックなテンポラリファイル・アンド・リネーム書き込みを、モード保存、`0o600` デフォルト、パスごとのロック内でのシンボリックリンク拒否とともに行います。これは、**F1 以前のインラインプロキシからの逸脱**です。以前はシンボリックリンクを解決し、そのターゲットに書き込んでいました。シンボリックリンクされた dotfile を経由して書き込んでいたエージェントは、解決されたパスを直接指定する必要があります。
 
@@ -131,15 +130,27 @@ sequenceDiagram
     FS->>FSP: stat(path)
     FSP-->>FS: stats
     FS->>FS: reject if not regular file (describeStatKind)
-    FS->>POL: enforceReadSize(stats.size, opts.maxBytes?)<br/>→ throw file_too_large OR slice plan
-    FS->>FSP: readFile(path)
-    FSP-->>FS: buffer
-    FS->>POL: detectBinary(buffer)
+    alt cursor supplied
+        FS->>FSP: open stable FileHandle
+        FS->>FS: validate cursor {dev,ino,size}; seek to the byte offset
+        FS->>FS: return whole lines; emit the next cursor
+    else file <= 256 KiB
+        FS->>FSP: open + read stable full snapshot
+        FSP-->>FS: buffer
+        FS->>FS: hash full snapshot; apply line/output limits
+    else file > 256 KiB AND an explicit window arg
+        FS->>FSP: open stable FileHandle
+        FS->>FS: stream requested lines from the same inode
+        FS->>FS: cap output at 256 KiB and scan at 8 MiB; omit full-file hash
+    else windowless large read
+        FS-->>R: file_too_large
+    end
+    FS->>POL: detectBinary(sample)
     POL-->>FS: isBinary?
-    FS->>FS: reject if binary; sha256 hash; truncate to line window
+    FS->>FS: reject if binary
     FS->>FS: shouldIgnore? → annotate meta.matchedIgnore
     FS->>FS: audit fs.access
-    FS-->>R: { content, sha256, truncated?, meta }
+    FS-->>R: { content, optional sha256, truncated?, meta }
 ```
 
 `readText` は、無視ルールのために読み取りをスキップしたり拒否したりしません。通常通りファイルを読み取り、マッチする無視分類を `meta.matchedIgnore` に記録します。`list` と `glob` は、`includeIgnored` が有効でない場合、無視された結果をフィルタリングします。
@@ -203,10 +214,11 @@ flowchart LR
 
 ## 設定
 
-| ソース                                            | つまみ                                                                  | 効果                                                                                                            |
+| ソース                                            | 設定項目                                                                  | 効果                                                                                                            |
 | ------------------------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `WorkspaceFileSystemFactoryDeps.trusted: boolean` | コンストラクタ入力                                                     | 書き込みが許可されるかどうか。`runQwenServe` からのデフォルトは `true`、`createServeApp` からのデフォルトは `false`（警告あり）。 |
-| 定数                                          | `MAX_READ_BYTES = 256 KiB`                                            | 読み取り上限。これを超えると `file_too_large`。                                                                             |
+| 定数                                          | `MAX_READ_BYTES = 256 KiB`                                            | フルスナップショットおよび返却テキストの上限。それより大きいテキストには明示的なウィンドウ引数が必要。                            |
+| 定数                                          | `MAX_TEXT_SCAN_BYTES = 8 MiB`                                         | ラージテキスト読み取りが行オフセットを特定するためにスキャンできるバイト数。これを超えると `file_too_large`。                              |
 | 定数                                          | `MAX_WRITE_BYTES = 5 MiB`                                             | 書き込み上限。`express.json({ limit: '10mb' })` より小さいサイズに設定。                                                         |
 | 定数                                          | `BINARY_PROBE_BYTES = 4096`                                           | コンテンツベースのバイナリ検出のためのサンプルサイズ。                                                                   |
 | 機能タグ                                   | `workspace_file_read`、`workspace_file_bytes`、`workspace_file_write` | [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) を参照。                                           |
@@ -218,8 +230,12 @@ flowchart LR
 - **`io_error` と `permission_denied` は区別されます。** 混同しないでください。モニタリングパイプラインはアラートのために `errorKind` をキーにしています。ENOSPC を permission_denied に含めると、`df -h` の問題でセキュリティ対応者にページングが行われることになります。
 - **新しいファイルのモードは `0o600` がデフォルトであり、umask のデフォルトではありません。** write システムコールの `mode` 引数は umask をバイパスします。公開ファイルを書き込むエージェントは、明示的にモードオーバーライドを渡す必要があります。
 - **`createServeApp` のデフォルト `trusted: false`** は、カスタム `fsFactory` や `bridge` を注入しない組み込み者に対して、ACP 書き込みを `untrusted_workspace` でサイレントに拒否します。最初の1回だけ stderr に警告が出力され、以降の呼び出し元にはリマインダーは表示されません。[`02-serve-runtime.md`](./02-serve-runtime.md) を参照してください。
-- **読み取り上限はデコード前に適用されます。** `MAX_READ_BYTES + 1` のファイルは、リクエストが10行だけを欲しい場合でも拒否されます。これは、基礎となる `readFileWithLineAndLimit` がスライス前にファイル全体をメモリに読み込むためです。
-- **`BridgeFileSystem` アダプタは、両方のインラインプロキシゲート（非通常ファイル拒否 + バッファサイズ上限）を複製する必要があります。** アダプタが注入されると、インラインパスは完全にバイパスされます。
+- **ラージテキストには明示的なウィンドウ引数が必要です。** `line` / `limit` / `maxBytes` のいずれか。いずれもない読み取りは `file_too_large` になります。ファイル全体を保持していると信じている呼び出し元が切り詰めて書き戻す可能性があるためです。ウィンドウは inode にバインドされたハンドルからストリーミングされ、`MAX_READ_BYTES` を超えて返すことはありません。
+- **`MAX_READ_BYTES` は読み取りが返すものを制限し、`MAX_TEXT_SCAN_BYTES` はコストを制限します。** 行オフセットはバイト0からスキャンして解決されるため、`{ line: 900_000_000, limit: 20 }` はほとんど何も返さず、それでもファイル全体を走査します。8 MiB を超えるスキャン past の読み取りは `file_too_large` で拒否されます。`readBytes` は任意のオフセットに O(1) で到達します。
+- **ストリーミングされたウィンドウは追記には耐えますが、切り詰めには耐えません。** フルスナップショットパスはファイル全体を返すため、バイト単位の安定性を要求できます。プレフィックスウィンドウはそうできません。そうでなければ、ライブログの読み取りは毎回失敗します。ストリーミングパスは inode の同一性加上「縮小しなかった」ことをアサートするため、追記は通過し、切り詰め/置換は引き続き拒否されます。`sizeBytes` は `open` 時のサイズを報告し、ウィンドウが切り取られたスナップショットを記述します。
+- **ラージ部分的読み取りはフルファイルハッシュを省略します。** ストリーミングが EOF より前に停止した場合、`originalLineCount` は省略されます。
+- **ページングは行ではなくバイトカーソルで行われます。** コンテンツを残した読み取りは `hasMore` と、バイトオフセットが導出可能な場合は不透明な `nextCursor` を返します。そこから再開すると O(1) です。`line` で再開するとバイト0から再スキャンされ、`MAX_TEXT_SCAN_BYTES` を超えると拒否されます。カーソルは `{dev, ino, size}` を保持するため、置換または切り詰めされたファイルは誤った場所のバイトではなく `hash_mismatch` を返しますが、追記の場合は有効なままです。非 UTF-8 スナップショット読み取りは `hasMore` を報告しますがカーソルは報告しません。デコードされたテキストは UTF-8 に再エンコードされたもので、その長さがファイルオフセットにマッピングされないためです。
+- **`BridgeFileSystem` アダプタは、両方のインラインプロキシゲート（非通常ファイル拒否 + バッファサイズ上限/ストリーミング）を複製する必要があります。** アダプタが注入されると、インラインパスは完全にバイパスされます。
 
 ## 参考資料
 
@@ -232,4 +248,3 @@ flowchart LR
 - `packages/cli/src/serve/bridge-file-system-adapter.ts`
 - `packages/acp-bridge/src/bridgeFileSystem.ts`
 - HTTP ルートリファレンス: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md).
-```

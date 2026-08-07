@@ -75,3 +75,4 @@ Computer Use のすべての設定は `settings.json` の `tools.computerUse` �
 - [承認モード](./approval-mode.md) — ツール実行の許可方法
 - [サンドボックス](./sandbox.md) — ツールがアクセス可能な範囲の隔離
 - [設定リファレンス](../configuration/settings.md) — `tools.computerUse.*` の完全なスキーマ
+

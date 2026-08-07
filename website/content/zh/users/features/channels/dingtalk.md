@@ -121,7 +121,7 @@ qwen channel start
 
 默认情况下，机器人在群聊中需要 @提及（`requireMention: true`）。将特定群组的 `"requireMention": false` 可使其响应所有消息。参见[群聊](./overview#group-chats)了解完整详情。
 
-设置 `"atSender": true` 可使机器人在回复时 @提及触发其响应的群成员。默认关闭，且仅适用于具有钉钉员工 ID 的代理回复。带提及的回复使用纯文本以使 @ 可见；不带提及的回复使用 Markdown 格式。
+设置 `"atSender": true` 可使机器人在回复时 @提及触发其响应的群成员。默认关闭，且仅适用于具有钉钉员工 ID 的代理回复。无论是否带有提及，回复均以钉钉 markdown 发送；提及前缀包含在第一条消息块中。
 
 ### 查找群聊的 Conversation ID
 

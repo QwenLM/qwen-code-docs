@@ -142,7 +142,7 @@ sequenceDiagram
 - **`warn` モードは決して拒否しません。** 予約の追跡と `mcp_budget_warning` の発火は行いますが、`tryReserve` は常に `'reserved'` を返します。拒否のセマンティクスは `enforce` 限定です。
 - **ワークスペーススコープのバジェットイベントは `scope: 'workspace'` を運びます** そのため、接続されているすべてのセッションに同時にファンアウトします。SDK リデューサの `mcpBudgetWarningCount` / `mcpChildRefusedBatchCount` は、同じ接続上のセッション間で同期してインクリメントされます。`McpClientManager` からのセッションごとのレガシーイベントは `scope` を運びません（セマンティクス的にはデフォルトで `'session'`）。
 - **キルスイッチ `QWEN_SERVE_NO_MCP_POOL=1`** はプール全体を無効にします；ワークスペースバジェットも無効になり、セッションごとの `McpClientManager` バジェットが引き継ぎます。機能エンベロープはこれを正確に報告するために `mcp_workspace_pool` と `mcp_pool_restart` を削除します。
-- **`ServeMcpBudgetStatusCell.scope` は前方互換性のあるリスト形状です。** スナップショットセルは単一の `budget?` フィールドではなく `budgets[]` を公開します。PR 14 v1 は各 ACP セッションに対して1つの `scope: 'session'` セルを発火します。これは `acpAgent.newSessionConfig()` がそのセッションの `Config` / `McpClientManager` を構築するためです。`'pool'` スコープは、セッションスコープのセルと並んで配置される Wave 5 PR 23 のプールスコープセル用に予約されています。コンシューマは、不明な `scope` 値をエラーにするのではなく、ドロップして許容する必要があります。
+- **`ServeMcpBudgetStatusCell.scope` は機能駆動であり、前方互換性があります。** スナップショットセルは単一の `budget?` フィールドではなく `budgets[]` を公開します。`mcp_workspace_pool` がある場合、選択されたランタイムは `scope: 'workspace'` を発行します。プールが無効または利用できない場合、レガシーマネージャは `scope: 'session'` を発行します。コンシューマは、不明な追加の `scope` 値を失敗させるのではなく、ドロップして許容する必要があります。
 
 ## 参照
 

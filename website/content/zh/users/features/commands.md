@@ -21,7 +21,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | 命令          | 描述                                                              | 使用示例                                                |
 | ---------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------- |
 | `/init`          | 分析当前目录并创建初始上下文文件                | `/init`                                                       |
-| `/summary`       | 根据对话历史生成项目摘要                   | `/summary`                                                    |
+| `/summary`       | 根据对话历史生成项目摘要                   | `/summary` 或 `/summary docs/my-summary.md`                   |
 | `/compress`      | 用摘要替换聊天历史以节省 Tokens                         | `/compress` 或 `/summarize`                                   |
 | `/compress-fast` | 无需 AI 的快速压缩 — 剥离旧的工具输出和思考过程 | `/compress-fast`                                              |
 | `/resume`        | 恢复之前的对话会话                                   | `/resume` 或 `/continue`                                      |
@@ -38,6 +38,10 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 >
 > `/summarize` 是 `/compress` 的别名（它会压缩聊天历史 — 这是一个破坏性操作）。若要生成非破坏性的项目摘要，请使用 `/summary`。
 
+> [!note]
+>
+> `/summary` 接受可选的 `[path]` 参数，将摘要保存到项目根目录内的自定义位置。不带参数时，保存到 `.qwen/PROJECT_SUMMARY.md`。自定义路径的摘要不会被欢迎回流程（`ui.enableWelcomeBack`）检测到，该流程仅读取默认的 `.qwen/PROJECT_SUMMARY.md` 位置。
+
 ### 1.2 界面与工作区控制
 
 用于调整界面外观和工作环境的命令。
@@ -49,6 +53,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | → `detail`           | 显示各项上下文使用情况明细                                                                                                                                             | `/context detail`                                                                 |
 | `/history`           | 控制历史记录显示偏好和可见性                                                                                                                                | `/history collapse-on-resume`, `/history expand-on-resume`, `/history expand-now` |
 | `/diff`              | 打开交互式 diff 查看器，显示未提交的更改和每轮 diff。使用 ←/→ 在当前 git diff 和各个对话轮次之间切换，使用 ↑/↓ 浏览文件 | `/diff`                                                                           |
+| `/log`               | 打开工作区的 commit 历史查看器（仅限 Web Shell）                                                                                                                   | `/log`                                                                            |
 | `/theme`             | 更改 Qwen Code 视觉主题                                                                                                                                                     | `/theme`                                                                          |
 | `/vim`               | 开启/关闭输入区域的 Vim 编辑模式                                                                                                                                           | `/vim`                                                                            |
 | `/voice`             | 切换语音听写输入                                                                                                                                                      | `/voice`, `/voice hold`, `/voice tap`, `/voice off`, `/voice status`              |
@@ -82,6 +87,8 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/import-config`  | 从 Claude 配置中导入 MCP 服务器                                           | `/import-config all`, `/import-config claude-code`, `/import-config claude-desktop --scope user\|project` |
 | `/tools`          | 显示当前可用的工具列表                                            | `/tools`, `/tools desc`                                                                                   |
 | `/skills`         | 打开 Skills 面板以浏览、搜索、切换和启动 skills               | `/skills`, `/<skill-name>`                                                                                |
+| `/learn`          | 从文件、目录、URL、视频或文本创建可复用的项目 skill             | `/learn https://docs.example.com/api`, `/learn ./tutorial.mp4 focus on deployment`                        |
+| `/curator`        | 检查、固定、归档或恢复不活跃的项目自动 skills                  | `/curator`, `/curator run --dry-run`, `/curator pin <directory>`, `/curator restore <directory>`          |
 | `/plan`           | 切换到计划模式或退出计划模式                                            | `/plan`, `/plan <task>`, `/plan exit`                                                                     |
 | `/approval-mode`  | 更改工具审批模式（仅限当前会话）                             | `/approval-mode`, `/approval-mode auto-edit`                                                              |
 | → `plan`          | 仅分析，不执行（安全审查）                                      | `/approval-mode plan`                                                                                     |
@@ -93,6 +100,8 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/model --fast`   | 为提示建议设置更轻量的模型                                       | `/model --fast qwen3-coder-flash`                                                                         |
 | `/model --voice`  | 设置用于语音转录的模型                                       | `/model --voice <model-id>`                                                                               |
 | `/model --vision` | 设置 vision-bridge 模型，用于为纯文本主模型转录图像 | `/model --vision <model-id>`                                                                              |
+| `/model --compaction` | 设置用于聊天压缩的模型                                                                 | `/model --compaction <model-id>`, `/model --compaction clear`                                             |
+| `/model --image`  | 为内置图片生成工具设置纯图片模型                                                           | `/model --image <model-id>`                                                                               |
 | `/effort`         | 设置具备思考能力的模型的推理 effort                                 | `/effort` (打开选择器), `/effort high` (low/medium/high/xhigh/max；根据提供商进行映射和限制)       |
 | `/extensions`     | 管理扩展                                                                | `/extensions list`, `/extensions manage`                                                                  |
 | → `list`          | 列出已安装的扩展                                                        | `/extensions list`                                                                                        |
@@ -104,6 +113,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 | `/forget`         | 从 auto-memory 中移除匹配的条目                                         | `/forget <query>`                                                                                         |
 | `/dream`          | 手动运行 auto-memory 整合                                           | `/dream`                                                                                                  |
 | `/hooks`          | 管理 Qwen Code hooks                                                           | `/hooks`, `/hooks list`                                                                                   |
+| `/reload-plugins` | 从磁盘重新加载扩展变更（命令、skills、agents、hooks、MCP/LSP 服务器）           | `/reload-plugins`                                                                                         |
 | `/permissions`    | 管理权限规则                                                          | `/permissions`                                                                                            |
 | `/agents`         | 管理 subagents                                                                 | `/agents manage`, `/agents create`                                                                        |
 | `/arena`          | 管理 Arena 会话                                                            | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (别名 `choose`)                          |
@@ -122,7 +132,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 > [!note]
 >
-> `/workflows`、`/lsp` 和 `/trust` 仅在其对应功能启用时才会注册——分别通过 `QWEN_CODE_ENABLE_WORKFLOWS=1` 环境变量、`--experimental-lsp` CLI 标志和 `security.folderTrust.enabled` 设置。禁用时它们不会出现，并会报告未知命令。
+> `/workflows`、`/lsp` 和 `/trust` 仅在其对应功能启用时才会注册——分别通过 `QWEN_CODE_ENABLE_WORKFLOWS=1` 环境变量、`--experimental-lsp` CLI 标志和 `security.folderTrust.enabled` 设置。禁用时它们不会出现，并会报告未知命令。同样，`/dream` 和 `/forget` 仅在托管 auto-memory 可用时才会注册；不可用时它们不会出现。
 
 ### 1.5 内置 Skills
 
@@ -130,7 +140,7 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
 
 | 命令         | 描述                                                        | 使用示例                                          |
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
-| `/review`    | 使用 9 个并行 review agent 审查代码更改                     | `/review`, `/review 123`, `/review 123 --comment` |
+| `/review`    | 多 agent 代码审查（high effort 下 12 个并行 agent）         | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
 | `/loop`      | 按定期计划运行 prompt                                       | `/loop 5m check the build`                        |
 | `/simplify`  | 审查最近的更改并直接应用安全的清理编辑                      | `/simplify`, `/simplify focus on duplication`     |
 | `/qc-helper` | 回答有关 Qwen Code 使用和配置的问题                         | `/qc-helper how do I configure MCP?`              |
@@ -289,6 +299,59 @@ Qwen Code 命令通过特定前缀触发，分为以下三类：
   +12  -2  src/utils/parser.test.ts
    +3  -2  README.md
 ```
+
+**Web Shell：** 在 Web Shell UI（`qwen serve`）中，`/diff` 会打开一个图形化的 diff 对话框。顶部的标签栏允许你在 **Changes** 视图和 **History** 视图（`/log`）之间切换。
+
+#### History Viewer (`/log`) — 仅限 Web Shell
+
+`/log` 命令打开当前工作区的 commit 历史浏览器。它仅在 Web Shell UI 中可用；CLI/TUI 没有此命令。
+
+**工作原理：**
+
+`/log` 打开一个对话框，按时间倒序列出 commit（最新的在前）。每行显示：
+
+- 短 SHA（等宽字体，带有复制完整 SHA 的按钮）
+- Commit 主题（单行）
+- 作者姓名和相对时间（例如 "2h ago"）
+- 分支/标签 ref 标签（如果存在）
+- 合并 commit 的合并图标（⎇）
+
+点击 commit 行可按需展开其详细信息：
+
+- 完整的 commit 消息正文
+- 文件变更统计（变更的文件数、增加/删除的行数、按文件分类的明细）
+
+使用底部的 **Load more** 获取下一页 commit（每页 50 个）。
+
+**示例：**
+
+```
+┌─ History ──────────────────────────── 50 commits ─ ✕ ┐
+│                                                       │
+│  a1b2c3d  feat(cli): add --json flag        2h ago   │
+│           wenshao                                    │
+│                                                       │
+│  e4f5g6h  fix(core): handle null config     5h ago   │
+│           dev · main  v1.2.0                         │
+│                                                       │
+│ ▼ 789abcd  refactor: simplify parser        1d ago   │
+│   ┌─────────────────────────────────────────────┐    │
+│   │  Broke the monolithic parse() into smaller  │    │
+│   │  functions for readability.                 │    │
+│   │                                             │    │
+│   │  3 files · +45 −12                          │    │
+│   │   +30 −8   src/parser.ts                    │    │
+│   │   +10 −2   src/utils.ts                     │    │
+│   │   +5  −2   test/parser.test.ts              │    │
+│   └─────────────────────────────────────────────┘    │
+│                                                       │
+│              [ Load more ]                            │
+└───────────────────────────────────────────────────────┘
+```
+
+> [!note]
+>
+> `/log` 需要 git 仓库工作区。如果工作区不是 git 仓库或没有 commit，对话框会显示占位消息。
 
 ### 1.9 信息、设置和帮助
 

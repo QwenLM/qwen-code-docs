@@ -30,11 +30,13 @@ Füge den Kanal zu `~/.qwen/settings.json` hinzu:
       "type": "dingtalk",
       "clientId": "$DINGTALK_CLIENT_ID",
       "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "useConnectionManager": true,
       "senderPolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "You are a concise coding assistant responding via DingTalk.",
       "groupPolicy": "open",
+      "atSender": true,
       "groups": {
         "*": { "requireMention": true }
       }
@@ -61,6 +63,12 @@ Oder definiere sie im `env`-Abschnitt der `settings.json`:
 }
 ```
 
+### Connection Recovery
+
+`useConnectionManager` ist standardmäßig `true`. Der Connection Manager überwacht das Stream-WebSocket und ersetzt den DingTalk-SDK-Client, wenn die Verbindung nicht mehr reagiert. Du solltest ihn normalerweise aktiviert lassen.
+
+Setze `"useConnectionManager": false`, um den Connection Manager von Qwen Code zu deaktivieren und auf das Keepalive- und automatische Reconnect-Verhalten des SDKs zurückzufallen.
+
 ## Ausführen
 
 ```bash
@@ -73,6 +81,36 @@ qwen channel start
 
 Öffne DingTalk und sende eine Nachricht an den Bot. Du solltest eine 👀 Emoji-Reaktion sehen, während der Agent verarbeitet, gefolgt von der Antwort.
 
+## Daemon Webhook Delivery
+
+Wenn der Channel unter `qwen serve` läuft, können authentifizierte externe Webhook-Ereignisse unbeaufsichtigte Agenten-Tasks auslösen und die finale Markdown-Antwort an einen DingTalk-Benutzer oder eine Gruppe zustellen. Verwende die bestehenden Webhook-Zielfelder; kein separater Channel-Typ erforderlich:
+
+```json
+{
+  "webhooks": {
+    "sources": {
+      "manual-test": {
+        "secretEnv": "QWEN_CHANNEL_DINGTALK_TEST_SECRET",
+        "targets": {
+          "operator": {
+            "chatId": "DINGTALK_USER_ID",
+            "senderId": "webhook:manual-test",
+            "isGroup": false
+          },
+          "team": {
+            "chatId": "OPEN_CONVERSATION_ID",
+            "senderId": "webhook:manual-test",
+            "isGroup": true
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Jedes Ziel muss `isGroup` explizit setzen. Für eine Direktnachricht ist `chatId` die DingTalk-Benutzer-ID des Empfängers. Für eine Gruppennachricht ist `chatId` die `openConversationId` der Gruppe. Thread-Ziele und eingehende Robot-Webhook-URLs werden für die proaktive Zustellung nicht unterstützt. Siehe [Webhook-triggered tasks](./overview#webhook-triggered-tasks) für die vollständige Channel-Konfiguration und das Anfrageformat.
+
 ## Gruppenchats
 
 DingTalk-Bots funktionieren sowohl in Direktnachrichten als auch in Gruppenunterhaltungen. Um die Gruppenunterstützung zu aktivieren:
@@ -82,6 +120,8 @@ DingTalk-Bots funktionieren sowohl in Direktnachrichten als auch in Gruppenunter
 3. Erwähne den Bot in der Gruppe mit @, um eine Antwort auszulösen
 
 Standardmäßig erfordert der Bot eine @-Erwähnung in Gruppenchats (`requireMention: true`). Setze `"requireMention": false` für eine bestimmte Gruppe, damit der Bot auf alle Nachrichten antwortet. Vollständige Details findest du unter [Gruppenchats](./overview#group-chats).
+
+Setze `"atSender": true`, damit der Bot das Mitglied mit @ erwähnt, dessen Gruppennachricht seine Antwort ausgelöst hat. Dies ist standardmäßig ausgeschaltet und gilt nur für Agent-Antworten mit einer DingTalk-Personal-ID. Antworten werden als DingTalk-Markdown gesendet, unabhängig davon, ob sie eine Erwähnung tragen; das Erwähnungspräfix wird in den ersten Nachrichten-Chunk eingefügt.
 
 ### Conversation-ID einer Gruppe finden
 
@@ -99,14 +139,14 @@ Du kannst Fotos und Dokumente an den Bot senden, nicht nur Text.
 
 - **Authentifizierung:** AppKey + AppSecret anstelle eines statischen Bot-Tokens. Das SDK verwaltet die Aktualisierung des Zugriffstokens automatisch.
 - **Verbindung:** WebSocket-Stream anstelle von Polling – keine öffentliche IP oder Webhook-URL erforderlich.
-- **Formatierung:** Antworten verwenden DingTalks Markdown-Dialekt (eine eingeschränkte Teilmenge). Tabellen werden automatisch in Klartext umgewandelt, da DingTalk sie nicht rendert. Lange Nachrichten werden bei ~3800 Zeichen aufgeteilt.
+- **Formatierung:** Antworten verwenden DingTalks Markdown-Dialekt. Markdown-Tabellen werden an den DingTalk-Client durchgereicht; lange Nachrichten werden bei ~3800 Zeichen in Chunks aufgeteilt.
 - **Verarbeitungsanzeige:** Eine 👀 Emoji-Reaktion wird zur Nachricht des Benutzers hinzugefügt, während die Verarbeitung läuft, und dann entfernt, wenn die Antwort gesendet wird.
 - **Medien-Download:** Zweistufiger Prozess – ein `downloadCode` aus der Nachricht wird über DingTalks API gegen eine temporäre Download-URL eingetauscht.
 - **Gruppen:** DingTalk verwendet `isInAtList` zur Erkennung von @-Erwähnungen anstatt der Analyse von Nachrichten-Entities.
 
 ## Tipps
 
-- **Verwende DingTalk-Markdown-bewusste Anweisungen** – DingTalk unterstützt eine eingeschränkte Markdown-Teilmenge (Überschriften, Fett, Links, Codeblöcke, aber keine Tabellen). Das Hinzufügen von Anweisungen wie „Verwende DingTalk-Markdown. Vermeide Tabellen.“ hilft dem Agenten, Antworten korrekt zu formatieren.
+- **Verwende DingTalk-Markdown-bewusste Anweisungen** – DingTalk unterstützt Überschriften, Fettdruck, Links, Codeblöcke und Tabellen. Halte Tabellen kompakt, da schmale Bildschirme horizontal scrollen können.
 - **Zugriff einschränken** – In einem Organisationskontext kann `senderPolicy: "open"` akzeptabel sein. Für strengere Kontrolle verwende `"allowlist"` oder `"pairing"`. Details findest du unter [DM Pairing](./overview#dm-pairing).
 - **Referenzierte Nachrichten** – Das Zitieren (Antworten auf) einer Benutzernachricht fügt den zitierten Text als Kontext für den Agenten hinzu. Das Zitieren von Bot-Antworten wird noch nicht unterstützt.
 

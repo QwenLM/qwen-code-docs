@@ -56,6 +56,37 @@ qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refac
 > - Sitzungsdaten sind projektbezogene JSONL-Dateien unter `~/.qwen/projects/<sanitized-cwd>/chats`.
 > - Stellt den Konversationsverlauf, Tool-Ausgaben und Chat-Komprimierungs-Checkpoints wieder her, bevor der neue Prompt gesendet wird.
 
+## Ein persistentes Ziel ausführen
+
+Der Headless-Modus akzeptiert `/goal` als vollständigen Prompt. Der Goal-Zustand wird in der Sitzung gespeichert, verwende also `--continue` oder `--resume <sessionId>`, um dasselbe Goal von einem späteren Prozess aus zu inspizieren oder zu steuern. Dies erfordert, dass `general.chatRecording` aktiviert bleibt (Standard).
+
+```bash
+# Ein Goal erstellen und seinen Worker starten
+qwen -p "/goal Finish the release checklist"
+
+# Seinen gespeicherten Zustand in derselben Sitzung inspizieren
+qwen --continue -p "/goal"
+```
+
+Verwende das gleiche `qwen --continue -p "<control>"`-Muster für die anderen Operationen:
+
+| Control                              | Verhalten                                                                              |
+| ------------------------------------ | -------------------------------------------------------------------------------------- |
+| `/goal`                              | Den gespeicherten Zustand ohne Modellaufruf melden.                                    |
+| `/goal <objective>` oder `/goal set …` | Das Goal erstellen oder ersetzen und die Headless-Goal-Arbeit starten.                 |
+| `/goal edit <objective>`             | Ein nicht abgeschlossenes Goal überarbeiten; die Arbeit startet sofort, wenn der resultierende Zustand aktiv ist. |
+| `/goal pause`                        | Ein aktives Goal pausieren, ohne das Modell aufzurufen.                                |
+| `/goal resume`                       | Ein berechtigtes Goal fortsetzen und die Headless-Goal-Arbeit starten.                 |
+| `/goal clear`                        | Das Goal ohne Bestätigung oder Modellaufruf löschen.                                   |
+
+Laufzeitgeplante Goal-Fortsetzungssegmente zählen nicht gegen `--max-session-turns`, aber echte Benutzer-Prompts schon. Explizite `--max-wall-time`- und `--max-tool-calls`-Budgets gelten weiterhin; das Überschreiten eines davon pausiert aktive Goal-Arbeit, bevor der Lauf mit dem budget-spezifischen Fehler beendet wird.
+
+Mit `--output-format stream-json` gibt jede Goal-Zustandsänderung ein `stream_event` aus, dessen `event.type` `goal_state` ist. Dieses kanonische Zustands-Event wird auch ohne `--include-partial-messages` ausgegeben. Wenn Partial Messages aktiviert sind, folgt das ältere `active_goal`-Event als Kompatibilitätsprojektion; Automatisierungen sollten `goal_state` als maßgeblich betrachten.
+
+> [!note]
+>
+> Dieses Verhalten gilt für standardmäßige Headless-CLI-Läufe. ACP verwendet weiterhin den Legacy-Goal-Befehlspfad.
+
 ## Haupt-Sitzungsprompt anpassen
 
 Du kannst den System-Prompt der Hauptsitzung für einen einzelnen CLI-Lauf ändern, ohne gemeinsam genutzte Speicherdateien zu bearbeiten.

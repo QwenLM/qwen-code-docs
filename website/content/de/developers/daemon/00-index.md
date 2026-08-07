@@ -11,7 +11,7 @@ Sie ergänzt die folgenden bestehenden Dokumentationen, ersetzt sie aber nicht:
 | [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md)     | SDK-Nutzer            | End-to-End-TypeScript-Anleitung                        |
 | [`../daemon-client-adapters/`](../daemon-client-adapters/)                               | Adapter-Entwickler    | Design-Dokumentation für Legacy-Client-Adapter         |
 | [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)                                       | Adapter-Entwickler    | Design-Notizen für Client-Adapter                      |
-| [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)         | F2-Maintainer         | Workspace-MCP-Transport-Pool-Design v2.2               |
+| [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)     | F2-Maintainer         | Workspace-MCP-Transport-Pool-Design v2.2                 |
 
 Wenn du einen **Daemon starten und nutzen** möchtest, lies zuerst `qwen-serve.md`. Wenn du einen **Client für das Wire-Format entwickeln** möchtest, lies `qwen-serve-protocol.md`. Wenn du die **Daemon-Interna verstehen, erweitern oder debuggen** möchtest, lies diese Dokumentationsreihe.
 
@@ -41,7 +41,7 @@ Wähle den Pfad, der deinem Ziel entspricht:
 - [`06-mcp-budget-guardrails.md`](./06-mcp-budget-guardrails.md) - `WorkspaceMcpBudget`, Modi (`off`/`warn`/`enforce`), Hysterese, Refused-Batch-Coalescing.
 - [`07-workspace-filesystem.md`](./07-workspace-filesystem.md) - `WorkspaceFileSystem`-Sandbox, Path-Policy, Audit, `BridgeFileSystem`-Kontrakt.
 - [`08-session-lifecycle.md`](./08-session-lifecycle.md) - Create / Attach / Load / Resume, `X-Qwen-Client-Id`, Heartbeat, Eviction, Metadaten.
-- [`09-event-schema.md`](./09-event-schema.md) - Typisiertes Event-Schema v1: alle 47 bekannten Event-Typen mit Payloads, Reducern, Forward-Kompatibilität.
+- [`09-event-schema.md`](./09-event-schema.md) - Typisiertes Event-Schema v1: alle 53 bekannten Event-Typen mit Payloads, Reducern, Forward-Kompatibilität.
 - [`10-event-bus.md`](./10-event-bus.md) - `EventBus`, monotone IDs, Ring-Replay, `Last-Event-ID`, Slow-Client-Backpressure, `client_evicted`.
 - [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) - Capability-Registry, Protokollversion, Schema-Version, Conditional Advertisement.
 - [`12-auth-security.md`](./12-auth-security.md) - Bearer-Middleware, Host-Allowlist, CORS-Deny, Mutation-Gate, `--require-auth`, `/health`-Ausnahme, Device-Flow.
@@ -63,7 +63,7 @@ Wähle den Pfad, der deinem Ziel entspricht:
 ## Glossar
 
 - **ACP** - Agent Client Protocol. JSON-RPC über stdio, das zwischen der Daemon-Bridge und dem ACP-Child-Prozess gesprochen wird. Dies ist nicht das HTTP-Protokoll, das Clients für den Daemon verwenden.
-- **ACP child** - Der Child-Prozess, den der Daemon (`qwen --acp`) startet, um die eigentliche Agent-Runtime zu hosten. Die Bridge multiplext einen ACP-Child über viele verbundene Clients.
+- **ACP child** - Der `qwen --acp`-Child, der die Agent-Runtime eines Workspace hostet. Die Produktion versucht, die primäre Bridge vorzuwärmen und wiederholt den ersten Versuch nach einem Fehler; ein vertrauenswürdiger sekundärer Workspace startet seinen Child bei Bedarf, während ein nicht vertrauenswürdiger sekundärer Workspace dies nicht tut. Die owning Bridge multiplext Sessions und Clients auf diesen Child.
 - **acp-bridge** - Das `@qwen-code/acp-bridge`-Paket (`packages/acp-bridge/`). Verantwortlich für Session-Multiplexing, den Permission-Mediator, den Event-Bus und die Channel-Factory.
 - **BridgeClient** - `packages/acp-bridge/src/bridgeClient.ts`. Wrapper für eine ACP-`ClientSideConnection` und verarbeitet `requestPermission`, `sendPrompt` und `cancelSession`.
 - **Channel factory** - Plugbare Strategie zum Spawnen oder Anhängen an einen ACP-Child. Der Standard `spawnChannel` führt `qwen --acp` als Subprozess aus; `inMemoryChannel` führt ihn für Tests im Prozess aus.
@@ -78,7 +78,7 @@ Wähle den Pfad, der deinem Ziel entspricht:
 - **PoolEntry** - `packages/core/src/tools/mcp-pool-entry.ts`. Ein Eintrag in `McpTransportPool`: ein MCP-Transport, ein Refcount der angehängten Sessions und ein Idle-Drain-Timer.
 - **Session scope** - `single` (eine von allen Clients geteilte ACP-Session) oder `thread` (eine Session pro Konversations-Thread). Der Standard ist `single`.
 - **SSE** - Server-Sent Events. Der ausgehende Event-Channel des Daemons (`GET /session/:id/events`).
-- **Workspace** - Das Verzeichnis, an das der Daemon beim Start gebunden wurde (`--workspace` oder `cwd`). Ein Daemon-Prozess entspricht einem Workspace.
+- **Workspace** - Ein Verzeichnis, das beim Daemon-Boot registriert, aus dem Registration-Store wiederhergestellt oder dynamisch hinzugefügt wird. `workspaceCwd` ist der Legacy-Primary-Standard; `workspaces[]` ist der Katalog der isolierten Runtimes und deren Trust-/Removal-Metadaten.
 
 ## Implementierungs-Quellanker
 

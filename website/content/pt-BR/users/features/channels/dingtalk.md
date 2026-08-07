@@ -121,7 +121,7 @@ Os bots do DingTalk funcionam tanto em conversas DM quanto em grupos. Para habil
 
 Por padrão, o bot exige menção com @ em conversas de grupo (`requireMention: true`). Defina `"requireMention": false` para um grupo específico para fazê-lo responder a todas as mensagens. Consulte [Conversas em Grupo](./overview#group-chats) para detalhes completos.
 
-Defina `"atSender": true` para que o bot @mencione o membro cuja mensagem no grupo acionou sua resposta. Está desativado por padrão e só se aplica a respostas do agente com um ID de funcionário do DingTalk. Respostas com menção usam texto simples para que o @ fique visível; respostas sem menção usam formatação Markdown.
+Defina `"atSender": true` para que o bot @mencione o membro cuja mensagem no grupo acionou sua resposta. Está desativado por padrão e só se aplica a respostas do agente com um ID de funcionário do DingTalk. As respostas são enviadas como markdown do DingTalk independentemente de conterem uma menção; o prefixo de menção é incluído no primeiro bloco da mensagem.
 
 ### Encontrando o ID de Conversa de um Grupo
 

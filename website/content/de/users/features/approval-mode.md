@@ -19,9 +19,9 @@ Qwen Code bietet fünf verschiedene Berechtigungsmodi, mit denen du flexibel ste
 ### Kurzübersicht
 
 - **Im Plan-Modus starten**: Ideal, um den Code zu verstehen, bevor Änderungen vorgenommen werden
-- **Im Ask Permissions-Modus arbeiten**: Die ausgewogene Wahl für die meisten Entwicklungsaufgaben
+- **Auto-Modus (Standard)**: Das Standard-Erlebnis ab Werk – ein LLM-Classifier genehmigt sichere Aktionen automatisch und blockiert riskante, minimiert Unterbrechungen und bietet dennoch ein Sicherheitsnetz
+- **Zu Ask Permissions wechseln**: Wenn du für jede Dateiänderung und jeden Shell-Befehl eine manuelle Genehmigung möchtest
 - **Zu Auto-Edit wechseln**: Wenn du viele sichere Codeänderungen vornimmst
-- **Auto-Modus ausprobieren**: Wenn du weniger Unterbrechungen möchtest, aber dennoch Sicherheit bei Shell-Befehlen und Netzwerkaufrufen brauchst – ein LLM-Classifier bewertet jeden Aufruf
 - **YOLO sparsam einsetzen**: Nur für vertrauenswürdige Automatisierung in kontrollierten Umgebungen
 
 > [!tip]

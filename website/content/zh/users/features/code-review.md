@@ -271,6 +271,33 @@ export QWEN_REVIEW_ASSETS_REPO=your-org/your-repo   # 你可以推送的仓库
 
 规则会作为附加标准注入到 LLM 审查 agent（0-6）中。对于 PR 审查，规则从**基础分支**读取，以防止恶意 PR 注入绕过规则。
 
+## 仓库上下文
+
+仓库可以通过将严格的 JSON manifest 提交到 `.qwen/review-context.json`，为审查者提供有界的、仓库特定的指导。在 medium 或 high effort 下，`/review` 会在捕获计划后读取 manifest，并在任何 agent 启动之前附加匹配的指导：
+
+```json
+{
+  "version": 1,
+  "label": "Example repository",
+  "rules": [
+    {
+      "paths": ["packages/*/src/**"],
+      "domains": ["runtime"],
+      "relatedPaths": ["packages/runtime/src/**"],
+      "recommendedTests": ["npm run test:runtime"],
+      "requiredConfigurations": ["debug"],
+      "requiredAgents": ["test-matrix"],
+      "unverifiedDimensions": ["Alternate runtime was not exercised"],
+      "verificationNotes": ["Use the repository native test runner"]
+    }
+  ]
+}
+```
+
+当任何已更改的文件匹配其 `paths` glob 之一时（`*`、`?` 和 `**` 片段；区分大小写），该规则生效。所有匹配的规则合并其指导：审查 agent 的域和相关文件、构建与测试 agent 的推荐测试和必需配置、额外的审查者角色（仅在所选 effort 和拓扑运行它们时生效），以及最终审查作为未验证维度披露的证明边界。数组可以按任何顺序编写；重复条目会被拒绝。
+
+对于 PR 审查，manifest 从合并基础读取，因此被审查的 PR 无法选择加入或退出指导；本地审查从当前 worktree 读取。Low-effort 和跨仓库审查跳过仓库上下文。完整契约和信任模型见[设计文档](../../design/review-repository-context.md)。
+
 ## Issue 保真度
 
 对于 bugfix PR，Issue 保真度 agent 直接获取 issue 证据，而不是依赖 PR 描述文本。它使用 `gh pr view <pr> --repo <owner/repo> --json closingIssuesReferences` 获取 GitHub 的强关联 issue 元数据，然后使用 `gh issue view <number> --repo <issue_owner>/<issue_repo> --json title,body,comments` 获取原始报告和讨论——`--json` 形式包含 issue **正文**（报告者的原始复现步骤），而仅使用 `--comments` 会遗漏这些，并且 issue 自身的仓库是从每个引用中读取的（一个 PR 可以关闭不同仓库中的 issue）。此 agent 仅针对 PR 目标运行；本地 diff 和文件路径审查会跳过它。

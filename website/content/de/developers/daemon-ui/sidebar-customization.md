@@ -305,5 +305,5 @@ Der Einklapp-Status wird in `localStorage` unter dem Schlüssel
 | SessionGroupSection | `packages/web-shell/client/components/sidebar/SessionGroupSection.tsx`  |
 | WorkspaceSection  | `packages/web-shell/client/components/sidebar/WorkspaceSection.tsx`       |
 | Sidebar-Stiles    | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css` |
-| App-Integration   | `packages/web-shell/client/App.tsx` (nach `WebShellSidebar` suchen)       |
+| App-Integration   | `packages/web-shell/client/App.tsx` (nach `WebShellSidebar` suchen)         |
 | Einstiegspunkt (Dev) | `packages/web-shell/client/main.tsx` (`sidebar: true`)                 |

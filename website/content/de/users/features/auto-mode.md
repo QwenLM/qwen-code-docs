@@ -153,14 +153,12 @@ Dies ist nützlich für Produktions- oder Hochsicherheitsumgebungen, in denen du
 
 ## Auswerten der Entscheidung
 
-Wenn der Klassifizierer eine Aktion blockiert, schlägt der Tool-Aufruf mit einem der folgenden Fehlertexte fehl:
+Wenn der Klassifizierer eine Aktion blockiert, schlägt der Tool-Aufruf fehl mit:
 
 - **`Blocked by auto mode policy: <reason>`** —
   der Klassifizierer hat die Aktion als unsicher eingestuft. Der Grund stammt aus Stufe 2 des Klassifizierers.
-- **`Auto mode classifier unavailable; action blocked for safety`** —
-  die Klassifizierer-API war nicht erreichbar, hat ein Timeout ausgelöst oder eine nicht parsbare Antwort zurückgegeben. Dies ist ein Fail-Closed-Verhalten: Im Zweifel wird blockiert.
 
-Beide Meldungen werden von einer nachgestellten Anweisungszeile gefolgt, die dem Agenten mitteilt, dass die **spezifisch abgelehnte Aktion** nicht durch ein anderes Tool, Shell-Indirektion, generiertes Skript, Alias, Symlink, Config-Change, Hook, Command-File, MCP-Konfiguration, kodierten Payload oder einen gleichwertigen Pfad abgeschlossen werden darf. **Unabhängige sichere Arbeit und tatsächlich sicherere Alternativen sind weiterhin erlaubt** — nur Versuche, dieselbe abgelehnte Absicht über eine andere Oberfläche zu erreichen, werden blockiert.
+Diese Meldung wird von einer nachgestellten Anweisungszeile gefolgt, die dem Agenten mitteilt, dass die **spezifisch abgelehnte Aktion** nicht durch ein anderes Tool, Shell-Indirektion, generiertes Skript, Alias, Symlink, Config-Change, Hook, Command-File, MCP-Konfiguration, kodierten Payload oder einen gleichwertigen Pfad abgeschlossen werden darf. **Unabhängige sichere Arbeit und tatsächlich sicherere Alternativen sind weiterhin erlaubt** — nur Versuche, dieselbe abgelehnte Absicht über eine andere Oberfläche zu erreichen, werden blockiert.
 
 Wenn die abgelehnte Aktion tatsächlich erforderlich ist, sollte der Agent stoppen und dich um ausdrückliche Genehmigung bitten, anstatt die Ablehnung zu umgehen.
 
@@ -173,10 +171,12 @@ Begründungen des Klassifizierers werden vom LLM erstellt und nicht übersetzt. 
 
 Auto Mode schützt dich davor, stecken zu bleiben:
 
-- Nach **3 aufeinanderfolgenden Policy-Blockierungen** fällt der nächste Tool-Aufruf auf den Standard-Prompt für manuelle Genehmigung zurück. Dies fängt den Fall ab, dass der Agent immer wieder kleine Varianten eines verbotenen Befehls ausprobiert.
-- Nach **2 aufeinanderfolgenden "unavailable"**-Ergebnissen (Klassifizierer-API-Fehler) fällt ebenfalls der nächste Tool-Aufruf zurück. Dies verhindert das Warten auf einen defekten Klassifizierer.
+- Wenn die Classifier-API nicht erreichbar ist, ein Timeout auftritt, das Kontextfenster überschritten wird oder eine ungültige Antwort zurückgegeben wird, fällt die aktuelle Aktion sofort auf die manuelle Genehmigung zurück. Die Bestätigung empfiehlt den Default Mode und bietet **Switch to Default Mode and allow once** neben Allow once und Reject an. Der Wechsel betrifft nur die aktuelle Runtime-Session; er ändert nicht deine gespeicherten Einstellungen.
 
-Die Sitzung selbst bleibt im Auto Mode – nur der einzelne Fallback-Aufruf durchläuft die manuelle Genehmigung. Die Zähler werden zurückgesetzt, wenn du den Fallback-Aufruf genehmigst oder den Modus wechselst.
+- Nach **3 aufeinanderfolgenden Policy-Blockierungen** fällt der nächste Tool-Aufruf auf den Standard-Prompt für manuelle Genehmigung zurück. Dies fängt den Fall ab, dass der Agent immer wieder kleine Varianten eines verbotenen Befehls ausprobiert.
+- Nach **2 aufeinanderfolgenden "unavailable"**-Ergebnissen (Classifier-API-Fehler) überspringen spätere Aufrufe den bekanntermaßen defekten Classifier und gehen direkt zur manuellen Genehmigung. Das erste "unavailable"-Ergebnis fragt bereits nach; die Schwelle verhindert wiederholtes Warten auf Classifier-Retries.
+
+Die Sitzung bleibt im Auto Mode, es sei denn, du wählst explizit die Wechsel-Option. Nur der Fallback-Aufruf durchläuft die manuelle Genehmigung. Die Zähler werden zurückgesetzt, wenn du den Fallback-Aufruf genehmigst oder den Modus wechselst.
 
 Wenn du ständig auf den Fallback triffst, sind die wahrscheinlichsten Ursachen ein Ausfall der Klassifizierer-API oder Hints, die angepasst werden müssen. Wechsle zum Default Mode, während du das untersuchst.
 

@@ -21,7 +21,7 @@ Diese Befehle helfen dir, den Arbeitsfortschritt zu speichern, wiederherzustelle
 | Befehl | Beschreibung | Nutzungsbeispiele |
 | ---------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------- |
 | `/init` | Aktuelles Verzeichnis analysieren und initiale Kontextdatei erstellen | `/init` |
-| `/summary` | Projektzusammenfassung basierend auf dem Konversationsverlauf generieren | `/summary` |
+| `/summary` | Projektzusammenfassung basierend auf dem Konversationsverlauf generieren | `/summary` oder `/summary docs/my-summary.md` |
 | `/compress` | Chat-Verlauf durch Zusammenfassung ersetzen, um Tokens zu sparen | `/compress` oder `/summarize` |
 | `/compress-fast` | Schnelle Komprimierung ohne KI – entfernt alte Tool-Ausgaben und Denkprozesse | `/compress-fast` |
 | `/resume` | Eine vorherige Konversationssitzung fortsetzen | `/resume` oder `/continue` |
@@ -38,6 +38,10 @@ Diese Befehle helfen dir, den Arbeitsfortschritt zu speichern, wiederherzustelle
 >
 > `/summarize` ist ein Alias für `/compress` (es komprimiert den Chat-Verlauf – eine destruktive Operation). Um stattdessen eine nicht-destruktive Projektzusammenfassung zu generieren, verwende `/summary`.
 
+> [!note]
+>
+> `/summary` akzeptiert ein optionales `[path]`-Argument, um die Zusammenfassung an einem benutzerdefinierten Speicherort innerhalb des Projekt-Roots zu speichern. Ohne Argument wird sie unter `.qwen/PROJECT_SUMMARY.md` gespeichert. Zusammenfassungen mit benutzerdefiniertem Pfad werden vom Welcome-Back-Flow (`ui.enableWelcomeBack`) nicht erkannt, der nur den Standardpfad `.qwen/PROJECT_SUMMARY.md` liest.
+
 ### 1.2 Benutzeroberflächen- und Workspace-Steuerung
 
 Befehle zum Anpassen der Benutzeroberfläche und der Arbeitsumgebung.
@@ -49,6 +53,7 @@ Befehle zum Anpassen der Benutzeroberfläche und der Arbeitsumgebung.
 | → `detail` | Aufschlüsselung der Kontextnutzung pro Element anzeigen | `/context detail` |
 | `/history` | Einstellungen für die Verlaufsanzeige und Sichtbarkeit steuern | `/history collapse-on-resume`, `/history expand-on-resume`, `/history expand-now` |
 | `/diff` | Öffnet einen interaktiven Diff-Viewer, der uncommitted Änderungen und Diffs pro Schritt anzeigt. Verwende ←/→, um zwischen dem aktuellen Git-Diff und einzelnen Konversationsschritten zu wechseln, ↑/↓, um Dateien zu durchsuchen | `/diff` |
+| `/log` | Öffnet einen Commit-Verlauf-Viewer für den Workspace (nur Web Shell) | `/log` |
 | `/theme` | Visuelles Theme von Qwen Code ändern | `/theme` |
 | `/vim` | Vim-Bearbeitungsmodus im Eingabebereich ein-/ausschalten | `/vim` |
 | `/voice` | Spracheingabe per Diktat umschalten | `/voice`, `/voice hold`, `/voice tap`, `/voice off`, `/voice status` |
@@ -82,6 +87,8 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 | `/import-config` | MCP-Server aus Claude-Konfigurationen importieren | `/import-config all`, `/import-config claude-code`, `/import-config claude-desktop --scope user\|project` |
 | `/tools` | Aktuell verfügbare Tool-Liste anzeigen | `/tools`, `/tools desc` |
 | `/skills` | Das Skills-Panel öffnen, um Skills zu durchsuchen, zu suchen, umzuschalten und zu starten | `/skills`, `/<skill-name>` |
+| `/learn` | Einen wiederverwendbaren Projekt-Skill aus einer Datei, einem Verzeichnis, einer URL, einem Video oder Text erstellen | `/learn https://docs.example.com/api`, `/learn ./tutorial.mp4 focus on deployment` |
+| `/curator` | Inaktive Projekt-Auto-Skills inspizieren, pinnen, archivieren oder wiederherstellen | `/curator`, `/curator run --dry-run`, `/curator pin <directory>`, `/curator restore <directory>` |
 | `/plan` | In den Plan-Modus wechseln oder den Plan-Modus beenden | `/plan`, `/plan <task>`, `/plan exit` |
 | `/approval-mode` | Den Tool-Freigabemodus ändern (nur aktuelle Sitzung) | `/approval-mode`, `/approval-mode auto-edit` |
 | → `plan` | Nur Analyse, keine Ausführung (sichere Überprüfung) | `/approval-mode plan` |
@@ -93,6 +100,8 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 | `/model --fast` | Ein leichteres Modell für Prompt-Vorschläge festlegen | `/model --fast qwen3-coder-flash` |
 | `/model --voice` | Das für die Sprachtranskription verwendete Modell festlegen | `/model --voice <model-id>` |
 | `/model --vision` | Das Vision-Bridge-Modell festlegen, das verwendet wird, um Bilder für ein reines Text-Hauptmodell zu transkribieren | `/model --vision <model-id>` |
+| `/model --compaction` | Das für die Chat-Komprimierung verwendete Modell festlegen | `/model --compaction <model-id>`, `/model --compaction clear` |
+| `/model --image` | Ein reines Bildmodell für das integrierte Bildgenerierungs-Tool festlegen | `/model --image <model-id>` |
 | `/effort` | Reasoning-Aufwand für denkfähige Modelle festlegen | `/effort` (öffnet Picker), `/effort high` (low/medium/high/xhigh/max; wird je nach Provider gemappt und begrenzt) |
 | `/extensions` | Extensions verwalten | `/extensions list`, `/extensions manage` |
 | → `list` | Installierte Extensions auflisten | `/extensions list` |
@@ -104,6 +113,7 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 | `/forget` | Passende Einträge aus dem Auto-Memory entfernen | `/forget <query>` |
 | `/dream` | Auto-Memory-Konsolidierung manuell ausführen | `/dream` |
 | `/hooks` | Qwen Code-Hooks verwalten | `/hooks`, `/hooks list` |
+| `/reload-plugins` | Extension-Änderungen (Befehle, Skills, Agenten, Hooks, MCP/LSP-Server) von der Festplatte neu laden | `/reload-plugins` |
 | `/permissions` | Berechtigungsregeln verwalten | `/permissions` |
 | `/agents` | Subagenten verwalten | `/agents manage`, `/agents create` |
 | `/arena` | Arena-Sitzungen verwalten | `/arena start`, `/arena stop`, `/arena status`, `/arena select` (Alias `choose`) |
@@ -122,7 +132,7 @@ Befehle zur Verwaltung von KI-Tools und -Modellen.
 
 > [!note]
 >
-> `/workflows`, `/lsp` und `/trust` werden nur registriert, wenn die jeweilige Funktion aktiviert ist – über die Umgebungsvariable `QWEN_CODE_ENABLE_WORKFLOWS=1`, das CLI-Flag `--experimental-lsp` bzw. die Einstellung `security.folderTrust.enabled`. Wenn sie deaktiviert sind, werden sie nicht angezeigt und melden einen unbekannten Befehl.
+> `/workflows`, `/lsp` und `/trust` werden nur registriert, wenn die jeweilige Funktion aktiviert ist – über die Umgebungsvariable `QWEN_CODE_ENABLE_WORKFLOWS=1`, das CLI-Flag `--experimental-lsp` bzw. die Einstellung `security.folderTrust.enabled`. Wenn sie deaktiviert sind, werden sie nicht angezeigt und melden einen unbekannten Befehl. Ebenso werden `/dream` und `/forget` nur registriert, wenn verwaltetes Auto-Memory verfügbar ist; andernfalls werden sie nicht angezeigt.
 
 ### 1.5 Integrierte Skills
 
@@ -130,7 +140,7 @@ Diese Befehle rufen gebündelte Skills auf, die spezialisierte Workflows bereits
 
 | Befehl       | Beschreibung                                                | Anwendungsbeispiele                               |
 | ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
-| `/review`    | Codeänderungen mit 9 parallelen Review-Agenten überprüfen   | `/review`, `/review 123`, `/review 123 --comment` |
+| `/review`    | Multi-Agent-Code-Review (12 parallele Agenten bei hohem Aufwand) | `/review`, `/review 123`, `/review 123 --comment`, `/review --effort low` |
 | `/loop`      | Einen Prompt nach einem wiederkehrenden Zeitplan ausführen  | `/loop 5m check the build`                        |
 | `/simplify`  | Kürzliche Änderungen prüfen und sichere Bereinigungs-Edits direkt anwenden | `/simplify`, `/simplify focus on duplication`     |
 | `/qc-helper` | Beantwortet Fragen zur Nutzung und Konfiguration von Qwen Code | `/qc-helper how do I configure MCP?`              |
@@ -289,6 +299,59 @@ In Headless- (`--prompt`) oder nicht-interaktiven Kontexten gibt `/diff` eine Pl
   +12  -2  src/utils/parser.test.ts
    +3  -2  README.md
 ```
+
+**Web Shell:** In der Web-Shell-UI (`qwen serve`) öffnet `/diff` einen grafischen Diff-Dialog. Eine Tab-Leiste oben ermöglicht das Umschalten zwischen der **Changes**-Ansicht und der **History**-Ansicht (`/log`).
+
+#### History Viewer (`/log`) — nur Web Shell
+
+Der Befehl `/log` öffnet einen Commit-Verlauf-Browser für den aktuellen Workspace. Er ist nur in der Web-Shell-UI verfügbar; die CLI/TUI hat diesen Befehl nicht.
+
+**Funktionsweise:**
+
+`/log` öffnet einen Dialog, der Commits in umgekehrter chronologischer Reihenfolge auflistet (neueste zuerst). Jede Zeile zeigt:
+
+- Kurze SHA (Monospace, mit Kopier-Button für die volle SHA)
+- Commit-Subject (einzeilig)
+- Autorname und relative Zeit (z. B. "2h ago")
+- Branch/Tag-Ref-Labels, falls vorhanden
+- Ein Merge-Icon (⎇) für Merge-Commits
+
+Klicke auf eine Commit-Zeile, um ihre Details on demand zu erweitern:
+
+- Vollständiger Commit-Message-Body
+- Dateiänderungsstatistiken (geänderte Dateien, hinzugefügte/entfernte Zeilen, Aufschlüsselung pro Datei)
+
+Verwende **Load more** unten, um die nächste Seite mit Commits abzurufen (50 pro Seite).
+
+**Beispiel:**
+
+```
+┌─ History ──────────────────────────── 50 commits ─ ✕ ┐
+│                                                       │
+│  a1b2c3d  feat(cli): add --json flag        2h ago   │
+│           wenshao                                    │
+│                                                       │
+│  e4f5g6h  fix(core): handle null config     5h ago   │
+│           dev · main  v1.2.0                         │
+│                                                       │
+│ ▼ 789abcd  refactor: simplify parser        1d ago   │
+│   ┌─────────────────────────────────────────────┐    │
+│   │  Broke the monolithic parse() into smaller  │    │
+│   │  functions for readability.                 │    │
+│   │                                             │    │
+│   │  3 files · +45 −12                          │    │
+│   │   +30 −8   src/parser.ts                    │    │
+│   │   +10 −2   src/utils.ts                     │    │
+│   │   +5  −2   test/parser.test.ts              │    │
+│   └─────────────────────────────────────────────┘    │
+│                                                       │
+│              [ Load more ]                            │
+└───────────────────────────────────────────────────────┘
+```
+
+> [!note]
+>
+> `/log` erfordert ein Git-Repository als Workspace. Wenn der Workspace kein Git-Repository ist oder keine Commits hat, zeigt der Dialog eine Platzhalter-Nachricht an.
 
 ### 1.9 Informationen, Einstellungen und Hilfe
 

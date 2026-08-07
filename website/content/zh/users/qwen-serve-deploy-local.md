@@ -20,6 +20,17 @@ export QWEN_SERVER_TOKEN="$(cat ~/.qwen-serve-token)"
 
 一个 shell 级别的 `export` 即可同时覆盖服务器启动和 SDK 客户端构造（只需按照上述说明将其限制在当前会话内即可）。
 
+## 工作区生命周期与进程边界
+
+一个守护进程可以在同一个监听器下托管多个隔离的工作区运行时。
+重复使用 `--workspace` 并指定绝对目录来创建显式的启动
+运行时；第一个为主要运行时。主要运行时和其他显式启动/静态
+运行时在不重启进程的情况下无法移除。
+
+额外的工作区也可以在守护进程运行时通过 `POST /workspaces` 注册。传递 `persist: true` 可以将动态次要运行时保留在用户级注册存储中，以便在下次启动时恢复。不受信任的注册对诊断、有界文件读取和声明的持久读取仍然可见，但无法启动 ACP。动态和持久恢复的次要运行时是可移除的：正常移除在运行时繁忙时会拒绝，而强制移除会请求终止活跃资源并在相同 cwd 可以重新添加之前提交逻辑移除。清理是有界的且在持久化提交点之后尽力而为；失败会被记录而不是恢复已移除的运行时。
+
+运行时隔离涵盖 cwd、环境覆盖、文件系统/信任边界、工作区服务、bridge、Voice 租约状态、channel worker 和 ACP/MCP 资源边界。生产环境会尝试预热主要 ACP 子进程，并在失败后首次使用时重试；受信任的次要运行时按需启动其子进程，不受信任的次要运行时不启动 ACP。身份验证、HTTP 速率限制、监听器和 Voice 准入上限、总会话准入、指标、关闭和进程故障半径仍然为守护进程全局。当这些进程级边界必须独立时，请运行单独的守护进程。
+
 ## Linux：systemd 用户单元
 
 > **首先找到你的 `qwen` 二进制文件。** 单元文件中的 `ExecStart=` 必须是**绝对路径** —— 服务管理器不会读取你的 shell 的 `PATH`。运行 `which qwen` 来找到它。常见位置：`/usr/local/bin/qwen`（Linuxbrew、手动安装）、`~/.nvm/versions/node/vX.Y.Z/bin/qwen`（nvm）、`~/.fnm/aliases/default/bin/qwen`（fnm）、`~/.volta/bin/qwen`（Volta）。在下方模板显示 `/PATH/TO/qwen` 的地方替换为实际路径。
@@ -34,9 +45,9 @@ After=network.target
 [Service]
 Type=simple
 # 替换为你的项目；在用户单元下，%h 展开为 $HOME。
-WorkingDirectory=%h/your-project
+WorkingDirectory=%h/project-a
 # 运行 `which qwen` 找到绝对路径。systemd 不会读取 $PATH。
-ExecStart=/PATH/TO/qwen serve --hostname 127.0.0.1 --port 4170
+ExecStart=/PATH/TO/qwen serve --hostname 127.0.0.1 --port 4170 --workspace %h/project-a --workspace %h/project-b
 # 从 chmod 600 的文件中读取 bearer token，而不是将其内联到单元中。
 # `Environment=` 会将 token 暴露在单元文件中（通常权限为 644 = 世界可读）。
 # EnvironmentFile 将 token 保留在你已创建的 `chmod 600` 用户私有文件中。
@@ -94,10 +105,14 @@ systemctl --user disable --now qwen-serve.service
     <string>127.0.0.1</string>
     <string>--port</string>
     <string>4170</string>
+    <string>--workspace</string>
+    <string>/Users/YOUR-USERNAME/project-a</string>
+    <string>--workspace</string>
+    <string>/Users/YOUR-USERNAME/project-b</string>
   </array>
   <!-- launchd 不会展开 `~` 或 `$HOME` —— 使用绝对路径。 -->
   <key>WorkingDirectory</key>
-  <string>/Users/YOUR-USERNAME/your-project</string>
+  <string>/Users/YOUR-USERNAME/project-a</string>
   <key>EnvironmentVariables</key>
   <dict>
     <!-- 不要将包含真实 token 的此文件提交到版本控制。同时将 plist 设置为 chmod 600，
@@ -150,7 +165,7 @@ tail -f ~/Library/Logs/qwen-serve/out.log ~/Library/Logs/qwen-serve/err.log
 假设 `QWEN_SERVER_TOKEN` 已在你的 shell 中导出（见上面的设置章节）：
 
 ```bash
-tmux new -d -s qwen-serve "cd ~/your-project && qwen serve --hostname 127.0.0.1"
+tmux new -d -s qwen-serve "qwen serve --hostname 127.0.0.1 --workspace /absolute/path/project-a --workspace /absolute/path/project-b"
 tmux attach -t qwen-serve   # 查看实时日志；Ctrl-b d 分离
 tmux kill-session -t qwen-serve
 ```
@@ -162,11 +177,14 @@ tmux kill-session -t qwen-serve
 假设 `QWEN_SERVER_TOKEN` 已在你的 shell 中导出：
 
 ```bash
-nohup bash -c 'cd ~/your-project && qwen serve --hostname 127.0.0.1' > qwen-serve.log 2>&1 &
+nohup qwen serve --hostname 127.0.0.1 \
+  --workspace /absolute/path/project-a \
+  --workspace /absolute/path/project-b \
+  > qwen-serve.log 2>&1 &
 echo $!  # 守护进程 PID；如果后续想干净地 `kill`，请记下它
 ```
 
-外层的 `bash -c '...'` 确保守护进程绑定到 `~/your-project` 而不是你执行命令时的随机目录。如果没有这个 `cd`，`qwen serve` 默认使用 `process.cwd()`，而客户端的 `POST /session` 如果期望你的项目工作区，会返回 `400 workspace_mismatch` —— 这是一个隐蔽的陷阱。
+显式的绝对 `--workspace` 值使守护进程独立于 shell 的当前目录。客户端应选择已通告的 `capabilities.workspaces[]` 条目之一，并在创建会话时传递其 cwd。
 
 适用于一次性“让我在后台运行一下，同时调试 API”的工作流。**不推荐**用于任何超出单个会话的场景 —— 没有崩溃重启机制，日志文件无限增长，如果忘记 PID 则无法干净地找到守护进程。对于交互式监督，优先使用 tmux；对于需要跨重启运行的任何东西，优先使用 systemd 或 launchd。
 
@@ -178,7 +196,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
   http://127.0.0.1:4170/capabilities | jq .protocolVersions         # 守护进程的功能集
 ```
 
-当配置了认证（即守护进程是通过 `--token` / `QWEN_SERVER_TOKEN` 启动的，或者使用了 `--require-auth=true`）时，回环接口上的除 `/health` 之外的所有路由都需要 `Authorization: Bearer <token>`。如果你在没有 token 的情况下使用回环默认值启动守护进程（`qwen serve` 零配置路径），则两个调用都不需要请求头。上面的模板都配置了 token，因此实践中需要 `Authorization` 请求头。如果 `/capabilities` 返回 401，说明单元/plist 中的 token 与你的 `curl` 使用的环境变量中的 token 不匹配。
+当配置了认证（即守护进程是通过 `--token` / `QWEN_SERVER_TOKEN` 启动的，或者使用了 `--require-auth=true`）时，回环绑定上的除 `/health` 之外的所有路由都需要 `Authorization: Bearer <token>`。如果你在没有 token 的情况下使用回环默认值启动守护进程（`qwen serve` 零配置路径），则两个调用都不需要请求头。上面的模板都配置了 token，因此实践中需要 `Authorization` 请求头。如果 `/capabilities` 返回 `401`，说明单元 / plist 中的 token 与你的 `curl` 使用的环境导出的 token 不匹配。
 
 ## Token 轮换
 
@@ -211,7 +229,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
 ## 超出范围（推迟至 v0.16.x 或更晚）
 
 - **容器化部署** —— Dockerfile、docker-compose、Kubernetes 清单、nginx + TLS 反向代理、多实例 token 隔离。推迟至 v0.16.x，届时将有一个企业试点项目；否则文档会因无人验证而过时。
-- **跨主机联邦 / 单主机上的多守护进程协调** —— 强制 `1 个守护进程 = 1 个工作区 × N 个会话`。实例路径 token 键控 + 过期 token 清理推迟至 v0.16.x。
+- **跨主机联邦 / 单主机上的多守护进程协调** —— 一个守护进程可以托管多个已注册的工作区运行时，但守护进程之间不会协调。实例路径 token 键控 + 过期 token 清理推迟至 v0.16.x。
 - **自动生成守护进程 token** —— alpha 版本为 BYO token。自动生成 + token 存储基础设施推迟至 v0.16.x。
 - **Windows 原生服务**（`nssm`、服务控制管理器包装器）—— 目前请使用 [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) 并参考上面的 systemd 章节。
 

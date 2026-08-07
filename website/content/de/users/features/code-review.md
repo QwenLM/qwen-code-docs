@@ -198,7 +198,7 @@ Oder gib nach dem Ausführen von `/review 123` den Befehl `post comments` ein, u
 
 ## Ergebnisse anwenden (`--fix`)
 
-`--fix` ist `--comment` gespiegelt. `--fix` schreibt in einen **Working Tree**, also braucht es einen, der das Review überlebt:
+`--fix` ist `--comment` gespiegelt. `--comment` schreibt in einen **Pull Request**, braucht also einen; `--fix` schreibt in einen **Working Tree**, braucht also einen, der das Review überlebt:
 
 ```bash
 /review --fix                 # lokale uncommitted Änderungen
@@ -229,7 +229,7 @@ Der Befehl validiert beim Schreiben: eine doppelte ID, ein Ergebnis ohne Fehlers
 
 ## Beweisbilder in PR-Kommentaren
 
-Die GitHub-API kann keine Bilder an Review-Kommentare anhängen, also kann `/review` Beweisbilder (TUI-Screenshots, Diagramme) in einem separaten Repo hosten und sie per URL in Kommentare einbetten. Setze `QWEN_REVIEW_ASSETS_REPO` auf ein Repo, in das du pushen kannst:
+Die GitHub-API kann keine Bilder an Review-Kommentare anhängen, daher kann `/review` Beweisbilder (TUI-Screenshots, Vergleiche gerenderter Ausgaben) in einem von dir bestimmten Repository hosten und sie per URL einbetten:
 
 
 ```bash
@@ -237,7 +237,7 @@ export QWEN_REVIEW_ASSETS_REPO=your-org/your-repo   # ein Repo, in das du pushen
 /review 123 --comment
 ```
 
-Maintainer richten es typischer auf das zu reviewende Repo aus; alle anderen können einen Fork oder ein Scratch-Repo verwenden. Bilder landen auf dem `pr-assets/<pr>-review`-Branch mit Content-gehashten Namen, und Kommentare referenzieren sie über **Commit-gepinnte** URLs – unveränderlich, selbst wenn der Branch sich später bewegt, und unverändert funktional auf GitHub Enterprise.
+Maintainer richten es typischerweise auf das zu reviewende Repo aus; alle anderen können einen Fork oder ein Scratch-Repo verwenden. Bilder landen auf dem `pr-assets/<pr>-review`-Branch mit Content-gehashten Namen, und Kommentare referenzieren sie über **Commit-gepinnte** URLs – unveränderlich, selbst wenn der Branch sich später bewegt, und unverändert funktional auf GitHub Enterprise.
 
 Für GitHub-getriggerte Reviews (der PR-Review-Workflow) wird dieselbe Variable aus einer **Repository-Variable** desselben Namens gespeist: ohne gesetzte Variable übergibt der Workflow einen leeren Wert und das Veröffentlichen verweigert – nichts ändert sich. Ein Maintainer, der `QWEN_REVIEW_ASSETS_REPO` in den Actions-Variablen des Repos setzt (typischerweise auf das Repository selbst), ermöglicht es Review-Kommentaren, Capture-PNGs einzubetten; die Branches, die er schreibt, werden vom Visuals-Cleanup-Workflow aufgeräumt, wenn die Variable auf dasselbe Repository zeigt, während ein Fork oder Scratch-Ziel seine eigene Retention verwaltet.
 
@@ -266,6 +266,33 @@ Du kannst die Review-Kriterien pro Projekt anpassen. `/review` liest Regeln aus 
 4. `QWEN.md` — Abschnitt `## Code Review`
 
 Regeln werden den LLM-Review-Agents (0-6) als zusätzliche Kriterien injiziert. Bei PR-Reviews werden die Regeln aus dem **Base-Branch** gelesen, um zu verhindern, dass ein bösartiger PR Bypass-Regeln injiziert.
+
+## Repository-Kontext
+
+Repositories können den Reviewern abgegrenzte, repository-spezifische Hinweise geben, indem sie ein striktes JSON-Manifest unter `.qwen/review-context.json` committen. Bei medium oder high Effort liest `/review` das Manifest nach dem Erfassen des Plans und hängt die passenden Hinweise an, bevor ein Agent startet:
+
+```json
+{
+  "version": 1,
+  "label": "Example repository",
+  "rules": [
+    {
+      "paths": ["packages/*/src/**"],
+      "domains": ["runtime"],
+      "relatedPaths": ["packages/runtime/src/**"],
+      "recommendedTests": ["npm run test:runtime"],
+      "requiredConfigurations": ["debug"],
+      "requiredAgents": ["test-matrix"],
+      "unverifiedDimensions": ["Alternate runtime was not exercised"],
+      "verificationNotes": ["Use the repository native test runner"]
+    }
+  ]
+}
+```
+
+Eine Regel gilt, wenn eine geänderte Datei auf einen ihrer `paths`-Globs passt (`*`, `?` und `**`-Segmente; case-sensitive). Alle passenden Regeln führen ihre Hinweise zusammen: Domains und zugehörige Dateien für die Review-Agents, empfohlene Tests und erforderliche Konfigurationen für den Build-and-Test-Agenten, zusätzliche Reviewer-Rollen (nur berücksichtigt, wenn der gewählte Effort und die Topologie sie ausführen), und Proof-Boundaries, die das finale Review als unverifizierte Dimensionen offenlegt. Arrays können in beliebiger Reihenfolge geschrieben werden; doppelte Einträge werden abgelehnt.
+
+Bei PR-Reviews wird das Manifest aus der Merge-Basis gelesen, sodass der PR unter Review sich nicht selbst Hinweise zu- oder abwählen kann; lokale Reviews lesen es aus dem aktuellen Worktree. Low-Effort- und Cross-Repository-Reviews überspringen den Repository-Kontext. Der vollständige Vertrag und das Trust-Modell stehen im [Design-Doc](../../design/review-repository-context.md).
 
 ## Issue Fidelity
 

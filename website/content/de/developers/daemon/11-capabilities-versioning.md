@@ -2,11 +2,11 @@
 
 ## Übersicht
 
-`GET /capabilities` ist der Preflight-Endpunkt des Daemons. Jeder SDK-Client sollte ihn vor dem Aufruf einer anderen Route lesen, um zu erfahren, welche Protokollversion der Daemon spricht, welche Feature-Tags aktiviert sind und an welchen Workspace der Daemon gebunden ist. Die Vereinbarung:
+`GET /capabilities` ist der Preflight-Endpunkt des Daemons. Jeder SDK-Client sollte ihn vor dem Aufruf einer anderen Route lesen, um zu erfahren, welche Protokollversion der Daemon spricht, welche Feature-Tags aktiviert sind und an welchen Workspace-Runtimes der Daemon akzeptiert. Die Vereinbarung:
 
 - **Es gibt nur eine Protokollversion: `v1`.** `SERVE_PROTOCOL_VERSION = 'v1'` und `SUPPORTED_SERVE_PROTOCOL_VERSIONS = ['v1']`. v1 ist intern additiv; brechende Änderungen an der Frame-Form sind für v2 vorbehalten.
 - **Jedes Tag hat eine `since`-Version.** Zukünftige v2-Daemons können sowohl v1- als auch v2-Tags bewerben.
-- **Einige Tags sind konditional.** Dreizehn Tags (`require_auth`, `mcp_workspace_pool`, `mcp_pool_restart`, `allow_origin`, `prompt_absolute_deadline`, `writer_idle_timeout`, `workspace_settings`, `workspace_voice`, `workspace_voice_transcription`, `session_shell_command`, `rate_limit`, `workspace_reload`, `voice_transcribe`) werden nur beworben, wenn der entsprechende Deployment-Toggle aktiviert ist. Das Vorhandensein eines Tags bedeutet, dass das Verhalten existiert.
+- **Einige Tags sind konditional.** Tags in `CONDITIONAL_SERVE_FEATURES` werden nur beworben, wenn der entsprechende Deployment-Toggle aktiviert ist. Das Vorhandensein eines Tags bedeutet, dass das Verhalten existiert.
 - **Capability-Tag = Verhaltensvertrag.** Das Hinzufügen von neuem Verhalten unter einem bestehenden Tag kann bei Clients, die das alte Tag im Preflight geprüft haben, zu stillschweigenden Brüchen führen. Neues Verhalten benötigt ein neues Tag.
 
 Die vollständige Registry befindet sich in `packages/cli/src/serve/capabilities.ts`.
@@ -30,12 +30,13 @@ Die vollständige Registry befindet sich in `packages/cli/src/serve/capabilities
   mode: 'http-bridge',
   features: ServeFeature[],
   workspaceCwd: string,
+  workspaces?: Array<{ id: string, cwd: string, primary: boolean, trusted: boolean }>,
   protocol?: { current: 'v1', supported: ['v1'] },
   policy?: { permission: PermissionPolicy },
 }
 ```
 
-`workspaceCwd` ist der kanonische Workspace, der beim Daemon-Start gebunden wird (siehe [`02-serve-runtime.md`](./02-serve-runtime.md)). `policy.permission` ist die aktive Mediator-Richtlinie.
+`workspaceCwd` ist der kanonische primäre Workspace-Pfad (siehe [`02-serve-runtime.md`](./02-serve-runtime.md)). Aktuelle Daemons verwenden `workspaces[]` als registrierten Runtime-Katalog; `multi_workspace_sessions` zeigt an, dass mehr als eine Runtime aktiv ist. `policy.permission` ist die aktive Mediator-Richtlinie.
 
 ### `ServeCapabilityDescriptor`
 

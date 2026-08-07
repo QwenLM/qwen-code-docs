@@ -100,7 +100,7 @@ sequenceDiagram
 
 ### Load / resume
 
-`POST /session/:id/load` — воспроизводит полную историю ACP (уведомления `session/load` отправляются до возврата ответа).
+`POST /session/:id/load` — восстанавливает сохранённую сессию и возвращает текущее ограниченное окно снимка воспроизведения (уведомления `session/load` или воспроизведение в режиме ответа инициализируются до возврата ответа).
 `POST /session/:id/resume` — восстанавливает без воспроизведения (`connection.unstable_resumeSession`, доступно через стабильную возможность демона `session_resume`; `unstable_session_resume` остается устаревшим псевдонимом).
 
 Оба метода:
@@ -176,7 +176,7 @@ sequenceDiagram
 
 ### Выполнение shell-команд
 
-`POST /session/:id/shell` выполняет shell-команду напрямую на хосте демона, без маршрутизации через LLM. Он транслирует вывод в SSE-шину сессии через события `user_shell_command` / `user_shell_result` и добавляет команду вместе с результатом в историю диалога LLM. Ответ имеет вид `{ exitCode, output, aborted }`.
+`POST /session/:id/shell` выполняет shell-команду напрямую на хосте демона, без маршрутизации через LLM. Он транслирует вывод в SSE-шину сессии через события `user_shell_command` / `user_shell_result` и добавляет команду вместе с результатом в историю диалога LLM. Ответ имеет вид `{ exitCode, output, aborted }`. Для live-сессии вторичного рабочего пространства единичный REST-маршрут определяет владельца сессии и выполняет команду через bridge этого runtime, так что команда запускается в cwd рабочего пространства владельца. Маршрут не предоставляет песочницу для путей. ACP-клиенты с квалификацией рабочего пространства могут продолжать использовать `_qwen/session/shell` на соединении рабочего пространства владельца.
 
 ### Отсоединение от сессии
 
@@ -204,13 +204,15 @@ sequenceDiagram
 
 `GET /session/:id/tasks` возвращает снимок фоновых задач для задач агента, shell-задач, задач монитора и их состояний жизненного цикла. Записи агентов, порожденные другим подагентом, содержат опциональные поля происхождения (`parentAgentId`, `parentName`, `depth`), чтобы клиенты могли отображать вложенные подагенты в виде дерева; см. пример payload в `qwen-serve-protocol.md`.
 
+Возможность `session_monitor_tool_correlation` дополнительно гарантирует, что записи монитора содержат `toolUseId`, позволяя клиентам связывать вызов инструмента в транскрипте с деталями его задачи.
+
 ### Статус LSP сессии (тег возможности `session_lsp`)
 
 `GET /session/:id/lsp` возвращает очищенный статус LSP для конкретной сессии для клиентов демона: включение, агрегированное количество серверов, состояние недоступности/инициализации, а также `name`, `status`, `languages`, `transport`, `command` и `error` для каждого сервера. Отключенный или недоступный LSP представляется как данные статуса HTTP 200, а не как ошибка транспорта.
 
 ### Сжатое воспроизведение
 
-`POST /session/:id/load` теперь возвращает `BridgeRestoredSession`, который может включать `compactedReplay?: BridgeEvent[]`, `liveJournal?: BridgeEvent[]` и `lastEventId?: number`. `compactedReplay` создается `TurnBoundaryCompactionEngine`: на границах ходов он сворачивает последовательные блоки текста / мыслей, схлопывает последовательности вызовов инструментов до их конечного состояния, отбрасывает переходные сигналы и создает журналы воспроизведения порядка O(turns) вместо журналов порядка O(tokens) (обычно сокращение в 25-30 раз).
+`POST /session/:id/load` теперь возвращает `BridgeRestoredSession`, который может включать `compactedReplay?: BridgeEvent[]`, `liveJournal?: BridgeEvent[]` и `lastEventId?: number`. Эти поля представляют собой ограниченное окно воспроизведения демона в памяти для активной сессии, а не полный API транскриптов. Лимит окна по умолчанию — 4 МиБ на активную сессию (`--compacted-replay-max-bytes`), при запуске отклоняются некорректные лимиты; жёсткий потолок — 256 МиБ. `compactedReplay` создаётся `TurnBoundaryCompactionEngine`: на границах ходов он сворачивает последовательные блоки текста / мыслей, схлопывает последовательности вызовов инструментов до их конечного состояния, отбрасывает переходные сигналы и создаёт журналы воспроизведения порядка O(turns) вместо журналов порядка O(tokens) (обычно сокращение в 25-30 раз). Когда более старые записи воспроизведения были удалены из байтового окна, `compactedReplay[0]` является синтетическим маркером `history_truncated` без id с полями `{reason: 'replay_window_exceeded', truncatedEvents, retainedEvents, maxBytes, truncatedTurns?, fullTranscriptAvailable: boolean}`. `fullTranscriptAvailable` — это флаг возможности: `true` означает, что клиент может листать полный сохранённый транскрипт через `GET /session/:id/transcript`, тогда как `false` означает доступность только ограниченного воспроизведения. Клиенты должны отображать его как статус и применять сохранённое воспроизведение в обычном режиме; он не должен вызывать цикл ресинхронизации.
 
 ### Прогрев дочернего процесса ACP
 
@@ -218,11 +220,15 @@ sequenceDiagram
 
 ## Конфигурация
 
-- `BridgeOptions.maxSessions` (по умолчанию 20) — лимит.
+- `BridgeOptions.maxSessions` (по умолчанию 32) — лимит.
 - `BridgeOptions.sessionScope` (по умолчанию `'single'`; опционально `'thread'`).
 - `BridgeOptions.initializeTimeoutMs` (по умолчанию 10 с) — рукопожатие ACP `initialize`.
 - `BridgeOptions.channelIdleTimeoutMs` (по умолчанию 0; немедленное уничтожение дочернего процесса ACP).
-- Теги возможностей: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (устаревший псевдоним), `session_list`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_btw`, `session_context_usage`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Теги возможностей: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (устаревший псевдоним), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+
+### Stateless generation (тег возможности `session_generation`)
+
+`POST /session/:id/generate` принимает `{ "prompt": string }` и возвращает SSE-поток, привязанный к запросу, с событиями `started`, опциональным `thinking`, `delta`, `done` или `error`. Запрос не читает историю диалога, не записывает ход и не предоставляет инструменты. Дочерний процесс ACP использует настроенную быструю модель, если она доступна, в противном случае — основную модель сессии.
 
 ## Оговорки и известные ограничения
 

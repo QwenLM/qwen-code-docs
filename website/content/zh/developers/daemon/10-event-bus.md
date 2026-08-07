@@ -36,7 +36,7 @@
 interface BridgeEvent {
   id?: number; // 每个会话单调递增；在合成终止帧中缺失
   v: 1; // EVENT_SCHEMA_VERSION
-  type: string; // 47 种已知类型之一或未来可扩展类型
+  type: string; // 53 种已知类型之一或未来可扩展类型
   data: unknown; // 负载（由 SDK 按类型进行类型检查；请参阅 09-event-schema.md）
   _meta?: { serverTimestamp?: number; [key: string]: unknown }; // 由 EventBus.publish 打上时间戳
   originatorClientId?: string; // 当事件派生自带有 clientId 时间戳的请求时设置

@@ -180,8 +180,8 @@ Worktrees 通过四种独立的路径激活：
 
 两个约束：
 
-- `isolation: "worktree"` 需要指定 `subagent_type`——fork 的子代理（没有 `subagent_type`）会重用父级的完整对话上下文，隔离它们会割裂意图和工作树。
-- 后台代理（`run_in_background: true`）可以很好地与隔离配合使用；清理工作在代理报告完成时运行。
+- `isolation: "worktree"` 需要非 fork 的 `subagent_type`——fork 的子代理（`subagent_type: "fork"`）重用父级的完整对话上下文，隔离它们会割裂意图和工作树。
+- 使用 `isolation: "worktree"` 的代理遵循默认后台行为；清理在代理报告完成时运行。设置 `run_in_background: false` 以获取内联结果。调用者拥有的 `working_dir` 启动默认保持前台，因为其生命周期由外部管理。
 
 ### 自动清理过期项
 

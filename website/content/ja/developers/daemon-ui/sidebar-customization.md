@@ -294,3 +294,4 @@ sidebar={{
 | Sidebar styles       | `packages/web-shell/client/components/sidebar/WebShellSidebar.module.css`   |
 | App integration      | `packages/web-shell/client/App.tsx`（`WebShellSidebar` を検索）              |
 | Entry point (dev)    | `packages/web-shell/client/main.tsx`（`sidebar: true`）                      |
+

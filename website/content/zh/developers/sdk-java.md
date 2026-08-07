@@ -1,19 +1,19 @@
 # Qwen Code Java SDK
 
-Qwen Code Java SDK 是一个用于程序化访问 Qwen Code 功能的最小实验性 SDK。它提供了与 Qwen Code CLI 交互的 Java 接口，使开发者能够将 Qwen Code 的能力集成到 Java 应用程序中。
+Qwen Code Java SDK 提供了推荐的 `qwen serve` daemon 传输方式，并保留了实验性的旧版 stdio API 以兼容。两个 API 都包含在同一个 `com.alibaba:qwencode-sdk` 构件中。
 
 ## 环境要求
 
-- Java >= 1.8
-- Maven >= 3.6.0（从源码构建时必需）
-- qwen-code >= 0.5.0
+- Java >= 11（`0.1.0-alpha`）
+- Maven >= 3.9.2（从源码构建或发布此 SDK 时必需）
+- daemon API 需要兼容的 `qwen serve`，或旧版 stdio API 需要 qwen-code >= 0.5.0
 
 ### 依赖项
 
-- **日志**: ch.qos.logback:logback-classic
-- **工具库**: org.apache.commons:commons-lang3
-- **JSON 处理**: com.alibaba.fastjson2:fastjson2
-- **测试**: JUnit 5 (org.junit.jupiter:junit-jupiter)
+- **日志 API**：org.slf4j:slf4j-api（在应用程序中选择 SLF4J provider）
+- **工具库**：org.apache.commons:commons-lang3
+- **JSON 处理**：Fastjson2 用于编码，Jackson Core 用于严格解码
+- **测试**：JUnit 5 (org.junit.jupiter:junit-jupiter)
 
 ## 安装
 
@@ -23,14 +23,14 @@ Qwen Code Java SDK 是一个用于程序化访问 Qwen Code 功能的最小实�
 <dependency>
     <groupId>com.alibaba</groupId>
     <artifactId>qwencode-sdk</artifactId>
-    <version>{$version}</version>
+    <version>0.1.0-alpha</version>
 </dependency>
 ```
 
 如果使用 Gradle，则在 `build.gradle` 中添加：
 
 ```gradle
-implementation 'com.alibaba:qwencode-sdk:{$version}'
+implementation 'com.alibaba:qwencode-sdk:0.1.0-alpha'
 ```
 
 ## 构建与运行
@@ -51,9 +51,62 @@ mvn package
 mvn install
 ```
 
-## 快速开始
+### 从源码运行真实 daemon E2E
 
-使用 SDK 最简单的方式是通过 `QwenCodeCli.simpleQuery()` 方法：
+在构建 workspace 和根 CLI bundle 后，从仓库根目录运行真实 daemon Java 集成测试：
+
+```bash
+npm run build
+npm run bundle
+npx tsx scripts/run-java-daemon-sdk-e2e.ts
+```
+
+仅运行 `npm run build` 不会刷新 `dist/cli.js`；E2E 测试工具会启动该 bundle，如果缺少会报明确的前置条件错误。
+
+## 推荐的 daemon API
+
+启动 `qwen serve`，然后创建独立的线程作用域会话。`promptText` 仅在匹配的 `turn_complete` 到达后才返回；不完整的流会以 `PromptOutcomeIndeterminateException` 失败，而不是将部分文本作为成功返回。
+
+对于 `0.1.0-alpha` 所假设的生命周期保证，请使用与 SDK 相同源码修订版发布的 qwen-code 构建。daemon 必须包含 [#7386](https://github.com/QwenLM/qwen-code/pull/7386) 中的幂等每客户端 detach 账本、[#7400](https://github.com/QwenLM/qwen-code/pull/7400) 中的每轮次终端保证，以及此版本的已确认准入取消加 FIFO 取消 drain 围栏。仅有 #7400 commit 是不够的：相同线路的 daemon 可能在 agent 分发前确认取消而未停止已准入的 prompt，或者让未确认的会话级取消到达排队的后续 prompt。捆绑的 ACP 子进程使用一个已确认的准入感知取消握手；没有该扩展的自定义标准兼容 ACP 子进程会收到一个标准的 `session/cancel` 通知。功能协商无法区分较旧的相同线路 daemon 构建，因此 SDK 采用 fail closed 策略，而不是将部分输出报告为成功。
+
+捆绑的取消握手会故意等待目标 prompt 调用在 daemon 分发其排队后续之前完成。它没有仅确认取消的超时：这样做可能让迟到的会话级取消到达下一个 prompt。如果 provider、工具或自定义集成无限期忽略其 `AbortSignal`，取消变更可能仍然处于结果未知状态，该会话不得被重用。将调用者观察边界内收到的正式 prompt 终端视为权威；否则在观察失败后关闭或销毁会话。在不干扰兄弟会话的情况下恢复卡住的共享 ACP 子进程需要更强的运行时隔离，这超出了此 alpha 合约的范围。
+
+```java
+import com.alibaba.qwen.code.daemon.DaemonClient;
+import com.alibaba.qwen.code.daemon.DaemonSessionClient;
+import com.alibaba.qwen.code.daemon.PromptTextResult;
+import java.net.URI;
+
+try (DaemonClient daemon = DaemonClient.builder()
+        .baseUri(URI.create("http://127.0.0.1:4170"))
+        .build();
+     DaemonSessionClient session = daemon.createSession()) {
+    PromptTextResult result = session.promptText("Explain this repository");
+    System.out.println(result.getText());
+}
+```
+
+如果 `qwen serve` 需要身份验证，请在 `DaemonClient` builder 中添加
+`.bearerToken(System.getenv("QWEN_SERVER_TOKEN"))`。SDK 在 REST 和 SSE 请求上发送 bearer，
+永远不会将其放在 URL 中。
+
+使用 `startPrompt` 配合 `PromptObserver` 来获取有序的文本、思考、工具、用量、权限和原始事件回调。其 `acceptanceFuture()` 和 `completionFuture()` 视图分别暴露 daemon 准入和可靠的轮次终端。`respondToPermission()` 在请求已解决或不再待处理时返回 `false`。取消 future 视图不会取消 daemon prompt；使用 `cancelActivePrompt()` 执行会话级 daemon 取消操作，并仍然等待匹配的终端。协作取消会以 `turn_complete` 和 `stopReason=cancelled` 完成；`promptText()` 返回其 `PromptTextResult`，因此区分取消的调用者必须检查 `result.getTerminal().getStopReason()`。如果 agent 或 provider 在取消期间失败，daemon 可能改为发布 `turn_error`，使 `promptText()` 抛出 `PromptTurnException`。
+
+当取消、截止时间、拆卸或 agent 结算发生竞争时，daemon 的恰好一次锁存器会发布第一个正式终端并抑制后续候选。始终根据收到的终端本身进行分支；客户端发送的最后一个控制变更不决定终端类型或错误代码。
+
+SSE 传输发送 `Accept-Encoding: identity` 和 `Last-Event-ID`，验证帧和事件 ID，去重重放，并且仅重连 SSE GET。Prompt 和其他变更请求永远不会自动重试。HTTP 408 和 5xx 对 prompt 准入、会话创建、权限、取消、心跳、detach 或删除的响应会被报告为结果未知，因为它们不能证明 daemon 拒绝了该变更。有限响应体和 SSE 观察具有独立的截止时间。
+
+在此 alpha 中，创建时模型选择故意不通过 Java daemon SDK API 暴露。daemon 仅在 create 响应之前发出的 SSE 事件中报告被拒绝的 `modelServiceId`，而此 SDK 从较晚的 prompt 准入水位线开始其流。在 daemon 返回确定的 create 结果或 SDK 拥有从 `Last-Event-ID: 0` 开始的独立会话事件订阅之前，请使用 daemon 配置的默认模型。
+
+`PromptRequest.Builder.deadline(Duration)` 请求 daemon 强制执行的 prompt 截止时间，仅在 daemon 通告 `prompt_absolute_deadline` 时被接受；否则 SDK 在发送 prompt 之前就会失败。该值必须在 1 到 2,147,483,647 毫秒之间，匹配 daemon 的 Node 计时器范围。这与 `observationTimeout(Duration)` 不同，后者仅限制本地 SSE 观察，永远不会发送取消变更。
+
+在创建会话之前，SDK 要求 daemon 通告 REST 传输和 `session_scope_override`；这可以防止旧版 daemon 静默忽略请求的 `thread` 作用域并将客户端附加到共享会话。当 `client_heartbeat` 被通告时，打开的会话每分钟发送一次新心跳，以防止 daemon 回收空闲客户端。在 `DaemonClient` builder 上设置 `heartbeatInterval(Duration.ZERO)` 可禁用此行为，或选择不同的正间隔。心跳永远不会重试；下一个计划的心跳是独立的 keepalive。Prompt 观察默认限制为每个客户端 32 个并发 prompt，可以通过 `maximumConcurrentPrompts` 调整。准入和终端 future 回调在传输 worker 之外运行；保持阻塞的回调会消耗有界的发布容量。SSE 流清理也是有界的，保持阻塞的关闭会保留其清理预留。任一条件都可能导致后续的 `startPrompt` 以 `DaemonClientCapacityException` 失败，而不是丢弃超时关闭或无限制地增长线程和排队工作。
+
+不确定的完成是结果边界，而不是会话重用边界。在 `PromptAdmissionUnknownException` 或 `PromptOutcomeIndeterminateException` 之后，该 `DaemonSessionClient` 会永久拒绝进一步的 prompt，即使本地流清理后来成功；请关闭或销毁会话。观察超时的发布不会无限等待阻塞的流关闭，同时清理异步继续并保留有界的客户端容量直到完成。
+
+## 旧版 stdio API
+
+现有的 `com.alibaba.qwen.code.cli` API 仍然可用：
 
 ```java
 public static void runSimpleExample() {
@@ -124,23 +177,30 @@ public static void runStreamingExample() {
 }
 ```
 
-更多示例请参考 `src/test/java/com/alibaba/qwen/code/cli/example`
+更多示例请参考 src/test/java/com/alibaba/qwen/code/cli/example
+
+## Java 11 迁移与 alpha 限制
+
+`0.1.0-alpha` 将整个构件的最低 Java 版本从 8 提升到 11。Java 8 应用程序必须继续使用 `0.0.3-alpha`。Logback 不再是运行时依赖项；请添加应用程序使用的 SLF4J provider。
+
+此 alpha 在无法证明 prompt 终端时故意采用 fail closed 策略。它不保证跨 daemon 重启的恰好一次执行、自动轮次恢复、快照/重同步、持久化游标或真正的 prompt-ID 定向取消。`prompt_cancelled` 和队列事件是建议性的；只有匹配的 `turn_complete` 和 `turn_error` 是终端性的。
+
+如果会话创建的传输结果不明确，daemon 可能保留一个其 ID 从未到达调用者的会话。SDK 不会重试创建，也无法 detach 该未知会话；daemon 端生命周期回收是恢复边界。
 
 ## 架构
 
-SDK 采用分层架构：
+构件包含两个隔离的实现：
 
-- **API 层**：通过 `QwenCodeCli` 类提供主要入口，包含简单静态方法供基本使用
-- **会话层**：通过 `Session` 类管理与 Qwen Code CLI 的通信会话
-- **传输层**：处理 SDK 与 CLI 进程之间的通信机制（当前使用基于进程传输的 `ProcessTransport`）
-- **协议层**：根据 CLI 协议定义通信所需的数据结构
-- **工具类**：提供并发执行、超时处理、错误管理的通用工具
+- **Daemon API**：`DaemonClient` 和 `DaemonSessionClient` 使用 REST 变更加可恢复 SSE，并拥有有界的 HTTP、prompt、维护和计时器资源。
+- **旧版 stdio API**：`QwenCodeCli`、`Session` 和 `ProcessTransport` 使用现有的 CLI 协议 DTO 和工具类管理子 CLI 进程。
 
-## 主要特性
+daemon 实现不复用旧版进程传输、会话模型、DTO 或全局执行器。
+
+## 旧版 stdio 功能
 
 ### 权限模式
 
-SDK 支持多种权限模式来控制工具的执行：
+SDK 支持多种权限模式来控制工具执行：
 
 - **`default`**：写入工具默认被拒绝，除非通过 `canUseTool` 回调或在 `allowedTools` 中批准。只读工具无需确认即可执行。
 - **`plan`**：阻止所有写入工具，指示 AI 先提出计划。
@@ -284,11 +344,12 @@ SDK 针对不同错误场景提供了特定的异常类型：
 
 ### Q: 是否需要单独安装 Qwen CLI？
 
-A: 是的，需要安装 Qwen CLI 0.5.5 或更高版本。
+A: 是的。daemon API 需要兼容的 `qwen serve`；旧版 stdio
+API 需要 qwen-code 0.5.0 或更高版本。
 
 ### Q: 支持哪些 Java 版本？
 
-A: SDK 需要 Java 1.8 或更高版本。
+A: `0.1.0-alpha` 需要 Java 11 或更高版本。Java 8 用户必须继续使用 `0.0.3-alpha`。
 
 ### Q: 如何处理长时间运行的请求？
 

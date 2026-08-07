@@ -9,10 +9,10 @@
 | 対象                                     | 実装箇所                                       | 目的                                                                                                                                                                                                                                                                                   |
 | ------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `QWEN_SERVE_DEBUG` 標準エラーログ              | `bridge.ts` および呼び出し元                     | 環境変数に `1` / `true` / `on` / `yes`（大文字小文字を区別しない）を指定すると、`qwen serve debug: ...` の行が標準エラー出力に出力されます。                                                                                                                                                                                  |
-| OpenTelemetry スパン計装          | `server.ts` `daemonTelemetryMiddleware`        | 各 HTTP リクエストは `withDaemonRequestSpan` でラップされ、属性には route、sessionId、clientId、およびステータスコードが含まれます。権限関連ルートには専用スパンがあります。プロンプトのライフサイクルはエンドツーエンドでトレースされます。設定は `settings.json` の `telemetry` に存在します。                               |
+| OpenTelemetry スパン計装          | `server.ts` `daemonTelemetryMiddleware`        | 分類されたデーモン API リクエストでテレメトリミドルウェアに到達したものは `withDaemonRequestSpan` でラップされます。属性には正規化されたルート、解決された場合のワークスペースハッシュ、sessionId、clientId、およびステータスコードが含まれます。権限ルートには専用スパンがあります。プロンプトのライフサイクルはエンドツーエンドでトレースされます。設定は `settings.json` の `telemetry` に存在します。                               |
 | OpenTelemetry デーモンパフォーマンスメトリクス           | `telemetry/*event-loop-lag*`, `daemon-metrics` | デーモンおよび ACP 子プロセスのイベントループラグゲージと、デーモン-子プロセス間パイプメッセージのバイト数ヒストグラム。                                                                                                                                                                                 |
-| `DaemonLogger` 構造化ファイルログ         | `serve/daemon-logger.ts`                       | 構造化された JSON 形式のログ行がファイルに書き込まれます。起動時に `daemon log -> <path>` が出力されます。`info` / `warn` / `error` レベルをサポートし、`route`、`sessionId`、`clientId`、`childPid`、`channelId` などの構造化フィールドを含みます。                                                        |
-| リクエストごとのアクセスログミドルウェア           | `server.ts`、`bearerAuth` より前に登録    | 各リクエスト後に `method`、`path`、`status`、`durationMs`、`sessionId`、`clientId` をログに記録します。`GET /health` とハートビートはスキップされます。4xx 以上は `warn`、成功時は `info` を使用します。                                                                                                                  |
+| `DaemonLogger` 構造化ファイルログ         | `serve/daemon-logger.ts`                       | 安定した、サイズローテーションされる `daemon.log` に追記します。ファイルレコードには `runId` と PID が含まれます。起動時に選択された安定/フォールバックパスを出力します。フルステータスはヘルス、問題、およびファイルコピー損失カウンタを公開します。                                                        |
+| リクエストごとのアクセスログミドルウェア           | `server/access-log.ts`                         | 各リクエスト後に method/path、ステータス、所要時間、セッション、および最初の生のクライアント ID をログに記録します。60トークンのバースト / 毎秒2トークンのバケットが、超過トラフィックを5つの固定ステータスカウンタに集約します。ヘルス、ハートビート、および成功した SSE 除外はそのまま残ります。                                                                                                                  |
 | `/health`                                   | `server.ts` ルート                              | 生存プローブ。`?deep=1` を指定すると拡張詳細情報を返します。                                                                                                                                                                                                                                       |
 | `/capabilities`                             | `server.ts` ルート                              | プリフライト機能の検出。[`11-capabilities-versioning.md`](./11-capabilities-versioning.md) を参照してください。                                                                                                                                                                                      |
 | `/workspace/preflight`                      | ルート -> `DaemonStatusProvider`                | 構造化された準備状態セル: Node バージョン、CLI エントリ、ripgrep、git、npm。子プロセスが起動すると ACP レベルのセルも追加されます。                                                                                                                                                                       |
@@ -38,8 +38,10 @@ curl -s http://127.0.0.1:4170/health
 # {"status":"ok"}
 
 curl -s 'http://127.0.0.1:4170/health?deep=1' | jq
-# {"status":"ok","workspaceCwd":"/path","sessions":N,...}
+# {"status":"ok","workspaceCount":N,"sessions":N,...}
 ```
+
+ディープヘルスは、drain 中のランタイムを含め、管理下のすべてのワークスペースランタイムを合計します。これは情報提供用のカウンタスナップショットであり、ワークスペースごとの準備状態ではありません。個別のワークスペースやトランスポートの診断が必要な場合は `/daemon/status` を使用してください。
 
 ループバックで 401 が返る場合、`--require-auth` が有効になっている可能性が高いです。起動時に `QWEN_SERVE_DEBUG=1` を使用してブートログを確認してください。
 
@@ -101,7 +103,12 @@ curl -N -H 'Accept: text/event-stream' \
   "runtime": {
     "perf": {
       "eventLoop": { "meanMs": 1.2, "p50Ms": 1.0, "p99Ms": 9.5, "maxMs": 25 },
-      "promptQueueWait": { "count": 3, "meanMs": 12.5, "maxMs": 35, "lastMs": 4 },
+      "promptQueueWait": {
+        "count": 3,
+        "meanMs": 12.5,
+        "maxMs": 35,
+        "lastMs": 4
+      },
       "pipe": {
         "inbound": { "count": 42, "totalBytes": 100000, "maxBytes": 12000 },
         "outbound": { "count": 41, "totalBytes": 90000, "maxBytes": 11000 }
@@ -119,6 +126,17 @@ curl -N -H 'Accept: text/event-stream' \
 - `qwen-code.acp.event_loop.lag`、`stat=mean|p50|p99|max` を持つミリ秒単位のゲージ。
 - `qwen-code.daemon.prompt.queue_wait`、ミリ秒単位のヒストグラム。
 - `qwen-code.daemon.pipe.message_bytes`、`direction=inbound|outbound` を持つバイト単位のヒストグラム。
+
+### 10. ファイルログが degradation またはレコード損失を起こしたか？
+
+フルデーモンステータスを使用します:
+
+```bash
+curl -s 'http://127.0.0.1:4170/daemon/status?detail=full' | \
+  jq '{status, issues, daemon: {runId: .daemon.runId, logMode: .daemon.logMode, logHealth: .daemon.logHealth, logPath: .daemon.logPath, logIssues: .daemon.logIssues, droppedRecords: .daemon.logDroppedRecords, droppedBytes: .daemon.logDroppedBytes}}'
+```
+
+`stable` が通常のオーナーです。`fallback` は別のデーモンが stable ファミリを所有していることを意味し、`stderr-only` はファイルログが無効または利用できないことを意味します。意図的な同時実行下では `fallback/ok` が想定されます。`daemon_log_degraded` 警告はパスを含みません。実際のパスとロガーの問題コードについてはフル詳細をリクエストしてください。`runId` を使用して、stable ファイル内の再起動を分離します。
 
 ## フロー
 
@@ -156,15 +174,19 @@ flowchart TD
 | ------------------------------- | -------------------------------------------------------------------------------------------- |
 | `QWEN_SERVE_DEBUG`              | 詳細な stderr ログを有効にします。[`17-configuration.md`](./17-configuration.md) を参照してください。             |
 | `settings.json` の `telemetry`     | OTel の動作を制御します: `enabled`、`otlpEndpoint`、`otlpProtocol`、およびシグナルごとのエンドポイント。 |
-| `DaemonLogger` のログパス         | ブート時に生成され、`daemon log -> <path>` として stderr に出力されます。                           |
+| `DaemonLogger` のログパス         | 安定した `debug/daemon/daemon.log`、またはブート時に選択されたランタイム固有のフォールバック。                           |
 | `PermissionAuditRing` のサイズ      | 現在は 512 にハードコードされています。                                                                     |
 | `slow_client_warning` のしきい値 | `0.75` / `0.375`。`eventBus.ts` にハードコードされています。                                               |
 
 ## 注意事項と既知の制限
 
 - **DaemonLogger のファイルログは構造化されており**、`route`、`sessionId`、`clientId` でフィルタリングできます。`QWEN_SERVE_DEBUG` の stderr ログは非構造化テキストのままです。
-- **OpenTelemetry のスパンにはリクエストごとの相関情報が含まれます。** 各 HTTP リクエストスパンには route、sessionId、clientId 属性が含まれ、トレーシングバックエンドで結合できます。
-- **`runtime.perf` は daemon 専用です。** 設計上、子プロセスのイベントループ遅延はここで報告されません。ACP 子プロセスのストールには、OTel または転送された stderr のストール警告を使用してください。
+- **DaemonLogger のリテンションは年齢ベースではなくサイズベースです。** アクティブファイルと4つのアーカイブがファミリごとに制限されます。ライブなフォールバックオーナーは削除されません。
+- **アクセスサマリは意図的な損失アカウンティングです。** WARN の `access logs suppressed` は、stderr とファイルの両方から省略された個別のアクセスレコードを表します。ドロップされた HTTP リクエストを示すものではありません。
+- **外部 logrotate はアクティブファミリを変更してはいけません。** 読み取り/コピーしてから安定したパス名を置換後に再オープンするシッパーを使用してください。
+- **OpenTelemetry のスパンにはリクエストごとの相関情報が含まれます。** ベアラ認証、レート制限、およびボディパースを通過した分類されたデーモン API リクエストは、正規化されたルート、sessionId、clientId、および（一意に解決された場合）`qwen-code.workspace.hash` 属性を運びます。より早いミドルウェアゲートで拒否されたリクエストにはこれらのリクエストスパンがありません。
+- **HTTP メトリクスはデーモングローバルです。** OpenTelemetry HTTP リクエストメトリクスと Web Shell ステータスメトリクスリングにはワークスペース次元が含まれません。成功したセッション SSE 接続はリクエストスパンを持ちますが、その生存期間はリクエストレイテンシではないため、通常のリクエストカウント/所要時間メトリクスから除外されます。失敗した SSE ハンドシェイクは通常通りカウントされます。
+- **`runtime.perf` はデーモンのみです。** 設計上、子プロセスのイベントループ遅延はここで報告されません。ACP 子プロセスのストールには、OTel または転送された stderr のストール警告を使用してください。
 - **ACP レベルの `/workspace/preflight` セルにはアクティブなセッションが必要です。** アイドル状態の daemon では、auth / MCP / skills / providers が `status: 'not_started'` を示す場合がありますが、これは想定内の動作です。
 - **`/workspace/env` はシークレットの存在のみを報告し、値は報告しません。** シークレットの存在自体が機密である場合、そのレスポンスを公開しないでください。
 - **監査リングはプロセスローカルであり**、daemon の再起動時に履歴は失われます。

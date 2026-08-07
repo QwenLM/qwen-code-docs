@@ -7,7 +7,7 @@
 ## Responsibilities
 
 - Parsen und Validieren von `ServeOptions`: Listen-Adresse, Auth, Workspace, Session-/Connection-Caps, MCP-Budget/-Pool, CORS, Prompt-/SSE-/Session-Idle-Timeouts, Rate-Limit und zugehörige Toggles.
-- Den gebundenen Workspace genau einmal **kanonisieren**. Dieselbe kanonische Form wird von `/capabilities`, dem `POST /session`-Fallback und der Bridge gemeinsam genutzt.
+- Den primären Workspace genau einmal **kanonisieren** und jedes wiederholte `--workspace` kanonisieren, bevor Session-Runtimes registriert werden. Die primäre kanonische Form wird von `/capabilities.workspaceCwd`, dem `POST /session`-Fallback und der primären Bridge gemeinsam genutzt.
 - Unsichere oder ungültige Startkonfigurationen ablehnen: Non-Loopback-Bind ohne Token, `--require-auth` ohne Token, `--allow-origin '*'` ohne Token, `mcpBudgetMode='enforce'` ohne positives `mcpClientBudget`, ein nicht existierender oder kein Verzeichnis-`--workspace` sowie ungültige Timeout- oder Rate-Limit-Werte.
 - Die `WorkspaceFileSystem`-Factory, den Permission-Audit-Publisher, den `DaemonStatusProvider` und die `acp-bridge` konstruieren.
 - Die Express-App bauen, Middleware verdrahten (`denyBrowserOriginCors` / `allowOriginCors` -> `hostAllowlist` -> Access-Log -> `bearerAuth` -> Rate-Limit -> JSON-Parser -> Telemetrie -> routenbezogene `mutationGate`) sowie Session-, Workspace-CRUD-, File-, Device-Flow-Auth-, Permission-Vote- und ACP-HTTP-Routen mounten.
@@ -20,7 +20,7 @@
 
 **App-Factory**: `createServeApp(opts, getPort, deps)` in `packages/cli/src/serve/server.ts`. Baut die Express-`Application`. Direkte Embedder und Tests rufen sie ohne den Bootstrap-Wrapper auf.
 
-**Capability-Registry**: `SERVE_CAPABILITY_REGISTRY` in `packages/cli/src/serve/capabilities.ts`. Jeder Tag hat eine `since`-Version und optionale `modes`. Zehn bedingte Tags (`require_auth`, `mcp_workspace_pool`, `mcp_pool_restart`, `allow_origin`, `prompt_absolute_deadline`, `writer_idle_timeout`, `workspace_settings`, `session_shell_command`, `rate_limit`, `workspace_reload`) werden weggelassen, wenn der zugehörige Toggle ausgeschaltet ist. Siehe [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).
+**Capability-Registry**: `SERVE_CAPABILITY_REGISTRY` in `packages/cli/src/serve/capabilities.ts`. Jeder Tag hat eine `since`-Version und optionale `modes`. Bedingte Tags werden weggelassen, wenn ihr Deployment- oder Runtime-Prädikat falsch ist; die Registry und die Prädikat-Map sind maßgeblich. Siehe [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).
 
 **Middleware** (`packages/cli/src/serve/auth.ts` und `server.ts`):
 

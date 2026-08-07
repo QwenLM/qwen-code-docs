@@ -121,7 +121,7 @@ Les bots DingTalk fonctionnent à la fois en messages privés et en conversation
 
 Par défaut, le bot exige une mention @ dans les conversations de groupe (`requireMention: true`). Définissez `"requireMention": false` pour un groupe spécifique afin qu'il réponde à tous les messages. Consultez [Conversations de groupe](./overview#group-chats) pour plus de détails.
 
-Définissez `"atSender": true` pour que le bot @mentionne le membre dont le message de groupe a déclenché sa réponse. C'est désactivé par défaut et ne s'applique qu'aux réponses de l'agent avec un ID de personnel DingTalk. Les réponses avec mention utilisent du texte brut pour que le @ soit visible ; les réponses sans mention utilisent le formatage Markdown.
+Définissez `"atSender": true` pour que le bot @mentionne le membre dont le message de groupe a déclenché sa réponse. C'est désactivé par défaut et ne s'applique qu'aux réponses de l'agent avec un ID de personnel DingTalk. Les réponses sont envoyées au format markdown DingTalk qu'elles portent ou non une mention ; le préfixe de mention est inclus dans le premier chunk de message.
 
 ### Trouver l'ID de conversation d'un groupe
 
