@@ -1,7 +1,7 @@
 ---
-title: "Qwen Code 周报：Qwen Code Desktop 正式发布、Session Workflow 一眼看清任务执行流、子 Agent 按活发钥匙管权限"
+title: "Qwen Code 周报：Qwen Code 桌面端正式发布、Session Workflow 一眼看清任务执行流、子 Agent 按活发钥匙管权限"
 date: "2026-08-06"
-description: "本周发布 v0.21.2 至 v0.21.6 五个正式版本，300+ 个 PR 合入。Qwen Code Desktop 正式发布覆盖三大操作系统，Session Workflow 把计划和任务执行画成流程图，AI 画的图直接显示在终端里，子 Agent 权限管控全套落地。"
+description: "本周发布 v0.21.2 至 v0.21.6 五个正式版本，300+ 个 PR 合入。Qwen Code 桌面端正式发布覆盖三大操作系统，Session Workflow 把计划和任务执行画成流程图，AI 画的图直接显示在终端里，子 Agent 权限管控全套落地。"
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 image: "https://img.alicdn.com/imgextra/i2/O1CN01w2Y6QU83J6K2jBZY_!!6000000004771-2-tps-1344-576.png"
@@ -11,14 +11,14 @@ import { BlogPostHeader } from '@/components/blog-post-header'
 import { Callout } from 'nextra/components'
 
 <BlogPostHeader
-  title="Qwen Code 周报：Qwen Code Desktop 正式发布、Session Workflow 一眼看清任务执行流、子 Agent 按活发钥匙管权限"
+  title="Qwen Code 周报：Qwen Code 桌面端正式发布、Session Workflow 一眼看清任务执行流、子 Agent 按活发钥匙管权限"
   date="2026-08-06"
   author="Qwen Team"
 />
 
-Qwen Code 本周发布 v0.21.2 到 v0.21.6 五个正式版本，300+ 个 PR 合入。另外还有一个大动作：Qwen Code Desktop v0.1.0 正式发布。
+Qwen Code 本周发布 v0.21.2 到 v0.21.6 五个正式版本，300+ 个 PR 合入。另外还有一个大动作：Qwen Code 桌面端 v0.1.0 正式发布。
 
-**桌面端来了！** 上周 Web Shell 刚做完一轮大更新，这周它直接变成了一个独立的桌面应用：Qwen Code Desktop v0.1.0 发布，macOS、Windows、Linux 三大操作系统都有原生安装包，GitHub Releases 可直接下载。
+**桌面端来了！** 上周 Web Shell 刚做完一轮大更新，这周它直接变成了一个独立的桌面应用：Qwen Code 桌面端 v0.1.0 发布，macOS、Windows、Linux 三大操作系统都有原生安装包，GitHub Releases 可直接下载。
 
 **任务执行能"看见"了。** 新的 Session Workflow 视图把任务计划和执行进度画成一张流程图：计划有几步、哪步在跑、哪步在等、哪个子任务派给了哪个 AI，一目了然。AI 开工前还会先把这张图给你过目，你点头它才开工。
 
@@ -26,9 +26,9 @@ Qwen Code 本周发布 v0.21.2 到 v0.21.6 五个正式版本，300+ 个 PR 合�
 
 ## ✨ 新增特性
 
-### Qwen Code Desktop 正式发布：三大操作系统都有原生应用
+### Qwen Code 桌面端正式发布：三大操作系统都有原生应用
 
-之前 Qwen Code 的桌面体验分散在两处：Electron 桌面应用和浏览器里的 Web Shell。这周两者合流了：Qwen Code Desktop v0.1.0 正式发布，界面是上周大更新后的 Web Shell。macOS、Windows、Linux 三大操作系统的安装包都已上线，[GitHub Releases](https://github.com/QwenLM/qwen-code/releases#release-desktop-v0.1.0) 直接下载。
+之前 Qwen Code 的桌面体验分散在两处：Electron 桌面应用和浏览器里的 Web Shell。这周两者合流了：Qwen Code 桌面端 v0.1.0 正式发布，界面是上周大更新后的 Web Shell。macOS、Windows、Linux 三大操作系统的安装包都已上线，[GitHub Releases](https://github.com/QwenLM/qwen-code/releases#release-desktop-v0.1.0) 直接下载。
 
 已有 Electron 版的 macOS 用户不用手动迁移：新版本带一次性的迁移引导，切换后之后的更新也自动跟上。
 
@@ -40,7 +40,7 @@ Qwen Code 本周发布 v0.21.2 到 v0.21.6 五个正式版本，300+ 个 PR 合�
 
 详见 PR [#8132](https://github.com/QwenLM/qwen-code/pull/8132)、[#8392](https://github.com/QwenLM/qwen-code/pull/8392)、[#8511](https://github.com/QwenLM/qwen-code/pull/8511)、[#8518](https://github.com/QwenLM/qwen-code/pull/8518)
 
-{/* [🎥 待补：Desktop 下载、安装、启动的演示视频] */}
+![Qwen Code 桌面端](https://img.alicdn.com/imgextra/i2/O1CN01Hruduy5HZ1J7ntYq_!!6000000005324-2-tps-3844-2160.png)
 
 ### Session Workflow：计划、子任务、执行进度画成一张图
 
@@ -58,19 +58,21 @@ Qwen Code 本周发布 v0.21.2 到 v0.21.6 五个正式版本，300+ 个 PR 合�
 
 详见 PR [#7580](https://github.com/QwenLM/qwen-code/pull/7580)、[#8391](https://github.com/QwenLM/qwen-code/pull/8391)、[#8240](https://github.com/QwenLM/qwen-code/pull/8240)、[#8303](https://github.com/QwenLM/qwen-code/pull/8303)
 
-{/* [📸 待补：Session Workflow 流程图视图截图] */}
+![Session Workflow 流程图](https://img.alicdn.com/imgextra/i3/O1CN01fCrSJtLENMC7ntYq_!!6000000007546-2-tps-3844-2160.png)
 
-### display_image：AI 画的图直接显示在终端里
+### display_image：AI 生成的图直接显示在终端里
 
-AI 画完图表、截完图，以前只能告诉你文件路径，你得自己打开看。现在 AI 能把图片直接显示在终端里，不用切窗口就能验收结果。如果终端不支持显示图片时，也会明确告诉你。
+以前 AI 生成一张图，会丢给你一个文件路径，你得自己打开看。现在它直接把图显示在终端里，生成完你就看到。这期周报的封面就是这么选的：AI 生成几张候选图，直接显示在终端里，生成完就能对比着挑，不用一张张开文件。如果终端不支持显示图片时，也会明确告诉你。
 
 你能用它做什么：
 
-- AI 生成的图表、截图直接在终端里验收
+- AI 生成的图，生成完立刻看到，不用自己开文件
+- AI 拿数据画的图表、搭好网页后截的效果图，也能直接显示
+- 仓库里已有的设计稿、截图，让 AI 调出来一起看
 
 详见 PR [#8217](https://github.com/QwenLM/qwen-code/pull/8217)
 
-{/* [📸 待补：终端内渲染图片的截图] */}
+![display_image 终端显示图片](https://img.alicdn.com/imgextra/i2/O1CN01HMtTrNyiFjB7ntYq_!!6000000007560-2-tps-3844-2160.png)
 
 ### 子 Agent 权限管控：按活发钥匙，并行任务互不干扰
 
@@ -90,7 +92,7 @@ AI 画完图表、截完图，以前只能告诉你文件路径，你得自己�
 
 详见 PR [#8066](https://github.com/QwenLM/qwen-code/pull/8066)、[#8148](https://github.com/QwenLM/qwen-code/pull/8148)、[#8344](https://github.com/QwenLM/qwen-code/pull/8344)
 
-{/* [📸 待补：fork-profiles 目录配置示例截图] */}
+<video src="https://cloud.video.taobao.com/vod/7eQGp5uaVBEPdSIb43lResSOHiSOSJGOmuHHpyai3AQ.mp4" controls playsInline className="w-full rounded-xl" />
 
 ### 对话压缩成本优化：压缩可以指定便宜模型
 
@@ -106,7 +108,7 @@ AI 画完图表、截完图，以前只能告诉你文件路径，你得自己�
 
 详见 PR [#7818](https://github.com/QwenLM/qwen-code/pull/7818)、[#8339](https://github.com/QwenLM/qwen-code/pull/8339)、[#8419](https://github.com/QwenLM/qwen-code/pull/8419)、[#8048](https://github.com/QwenLM/qwen-code/pull/8048)
 
-{/* [📸 待补：/model --compaction 模型选择对话框截图] */}
+![压缩可以指定便宜模型](https://img.alicdn.com/imgextra/i4/O1CN01T6V9XQHKp5G3LCha_!!6000000004160-1-tps-1646-1080.gif)
 
 ### Channel 生态：GitLab 接入、钉钉互动卡片、Channel 配对管理
 
@@ -116,11 +118,15 @@ AI 画完图表、截完图，以前只能告诉你文件路径，你得自己�
 
 **钉钉有互动卡片了。** 钉钉 Channel 支持互动卡片：AI 的运行状态实时更新在卡片上，需要你输入时弹出结构化提问，不用盯着一大段文字看。其他平台不受影响。详见 PR [#6930](https://github.com/QwenLM/qwen-code/pull/6930)
 
+![钉钉互动卡片](https://img.alicdn.com/imgextra/i3/O1CN01rlQ42T6JklK3OTaQ_!!6000000002748-2-tps-1672-942.png)
+
 **"谁能使唤 AI"的名单能查能撤了。** 接聊天平台时出于安全可以开配对模式：陌生人第一次 @ 机器人，要先经你批准才能用。但之前批准完就没地方看名单、没法撤销——批错了人、或者人走了，他还一直能用你的 AI。现在 Channel 编辑器里能看到谁被批准了、单独撤销某个人，各个 workspace 的名单各管各的。详见 PR [#8045](https://github.com/QwenLM/qwen-code/pull/8045)、[#8081](https://github.com/QwenLM/qwen-code/pull/8081)
 
 **GitHub/GitLab Channel 不用手编配置了。** 之前给 AI 接 GitHub/GitLab，要自己打开配置文件 `settings.json` 手写：凭证、接哪些范围、哪些人能用，写错一个符号就不生效。现在 Web Shell 里有专门的管理界面，这些都在表单里填、界面上选，保存就生效，不用碰配置文件。详见 PR [#8310](https://github.com/QwenLM/qwen-code/pull/8310)
 
 **GitHub Channel 细节打磨。** 本地已经登录 `gh` 的话，GitHub Channel 可以直接复用这份登录状态，不用再单独建一个 token。回复行为也收敛了：每个事件最多发一条最终评论；AI 处理期间原评论挂一个临时 👀 表情，结束自动移除。被中断的任务重启后可恢复。详见 PR [#8461](https://github.com/QwenLM/qwen-code/pull/8461)、[#8033](https://github.com/QwenLM/qwen-code/pull/8033)、[#8061](https://github.com/QwenLM/qwen-code/pull/8061)、[#8306](https://github.com/QwenLM/qwen-code/pull/8306)
+
+![Channel 管理](https://img.alicdn.com/imgextra/i4/O1CN01HSdkdqhk9rD2PY7k_!!6000000006213-2-tps-1188-860.png)
 
 ## 📊 更多新功能
 
@@ -191,7 +197,7 @@ AI 画完图表、截完图，以前只能告诉你文件路径，你得自己�
 | 贡献者 | 贡献内容 | 参考 PR 链接 |
 |--------|---------|-------------|
 | **[@wenshao](https://github.com/wenshao)** | /review 与 /verify 全线增强、Web Shell 审查视图、autofix 轮次控制、会话上限提升、GitHub Channel 登录态复用、Qwen 3.8 参数修复 | [#8215](https://github.com/QwenLM/qwen-code/pull/8215), [#8402](https://github.com/QwenLM/qwen-code/pull/8402), [#8461](https://github.com/QwenLM/qwen-code/pull/8461), [#8488](https://github.com/QwenLM/qwen-code/pull/8488) |
-| **[@yiliang114](https://github.com/yiliang114)** | Desktop 打包发布与旧版迁移、Session Workflow 视图与开关、/autofix 本地支持、GitHub Channel 回复收敛、Chrome 扩展 alpha | [#8132](https://github.com/QwenLM/qwen-code/pull/8132), [#8392](https://github.com/QwenLM/qwen-code/pull/8392), [#7580](https://github.com/QwenLM/qwen-code/pull/7580), [#8121](https://github.com/QwenLM/qwen-code/pull/8121), [#8033](https://github.com/QwenLM/qwen-code/pull/8033) |
+| **[@yiliang114](https://github.com/yiliang114)** | 桌面端打包发布与旧版迁移、Session Workflow 视图与开关、/autofix 本地支持、GitHub Channel 回复收敛、Chrome 扩展 alpha | [#8132](https://github.com/QwenLM/qwen-code/pull/8132), [#8392](https://github.com/QwenLM/qwen-code/pull/8392), [#7580](https://github.com/QwenLM/qwen-code/pull/7580), [#8121](https://github.com/QwenLM/qwen-code/pull/8121), [#8033](https://github.com/QwenLM/qwen-code/pull/8033) |
 | **[@qqqys](https://github.com/qqqys)** | Goal v3 全套（含无限重试修复）、Channel 配对审批管理、子任务审批上浮与后台执行 | [#8005](https://github.com/QwenLM/qwen-code/pull/8005), [#8045](https://github.com/QwenLM/qwen-code/pull/8045), [#8240](https://github.com/QwenLM/qwen-code/pull/8240), [#8430](https://github.com/QwenLM/qwen-code/pull/8430) |
 | **[@doudouOUC](https://github.com/doudouOUC)** | Auto Recall 自动检索、大文件分页读取、MCP 断连重放安全、换行符检测修复、缓存优化 | [#7877](https://github.com/QwenLM/qwen-code/pull/7877), [#8002](https://github.com/QwenLM/qwen-code/pull/8002), [#8387](https://github.com/QwenLM/qwen-code/pull/8387), [#8464](https://github.com/QwenLM/qwen-code/pull/8464) |
 | **[@ytahdn](https://github.com/ytahdn)** | Web Shell 多项改进（任务面板、主题视觉、表格控件、历史分页、产物下载、移动端输入） | [#7929](https://github.com/QwenLM/qwen-code/pull/7929), [#8098](https://github.com/QwenLM/qwen-code/pull/8098), [#8234](https://github.com/QwenLM/qwen-code/pull/8234), [#8230](https://github.com/QwenLM/qwen-code/pull/8230) |
