@@ -1,7 +1,7 @@
 ---
-title: "Qwen Code 周报：Qwen Code Desktop 正式发布，打开就能用、Session Workflow 一眼看清任务执行流"
+title: "Qwen Code 周报：Qwen Code Desktop 正式发布、Session Workflow 一眼看清任务执行流、子 Agent 按活发钥匙管权限"
 date: "2026-08-06"
-description: "本周发布 v0.21.2 至 v0.21.6 五个正式版本，300+ 个 PR 合入。Qwen Code Desktop 正式发布覆盖三大平台，Session Workflow 把计划和任务执行画成流程图，AI 画的图直接显示在终端里，子 Agent 权限管控全套落地。"
+description: "本周发布 v0.21.2 至 v0.21.6 五个正式版本，300+ 个 PR 合入。Qwen Code Desktop 正式发布覆盖三大操作系统，Session Workflow 把计划和任务执行画成流程图，AI 画的图直接显示在终端里，子 Agent 权限管控全套落地。"
 author: "Qwen Team"
 tags: ["Product Updates", "release", "weekly"]
 image: "https://img.alicdn.com/imgextra/i2/O1CN01w2Y6QU83J6K2jBZY_!!6000000004771-2-tps-1344-576.png"
@@ -11,31 +11,31 @@ import { BlogPostHeader } from '@/components/blog-post-header'
 import { Callout } from 'nextra/components'
 
 <BlogPostHeader
-  title="Qwen Code 周报：Qwen Code Desktop 正式发布，打开就能用、Session Workflow 一眼看清任务执行流"
+  title="Qwen Code 周报：Qwen Code Desktop 正式发布、Session Workflow 一眼看清任务执行流、子 Agent 按活发钥匙管权限"
   date="2026-08-06"
   author="Qwen Team"
 />
 
 Qwen Code 本周发布 v0.21.2 到 v0.21.6 五个正式版本，300+ 个 PR 合入。另外还有一个大动作：Qwen Code Desktop v0.1.0 正式发布。
 
-**桌面端来了。** 上周 Web Shell 刚做完一轮大更新，这周它直接变成了一个独立的桌面应用：Qwen Code Desktop v0.1.0 发布，macOS、Windows、Linux 三平台都有原生安装包，GitHub Releases 可直接下载。启动恢复、单实例窗口、自动更新这些桌面应用该有的基本功都齐了，界面还是你熟悉的 Web Shell。
+**桌面端来了！** 上周 Web Shell 刚做完一轮大更新，这周它直接变成了一个独立的桌面应用：Qwen Code Desktop v0.1.0 发布，macOS、Windows、Linux 三大操作系统都有原生安装包，GitHub Releases 可直接下载。
 
-**任务执行能"看见"了。** 新的 Session Workflow 视图把任务计划和执行进度画成一张流程图：计划有几步、哪步在跑、哪步在等、哪个子任务派给了哪个 AI，一目了然。AI 开工前还会先把这张图给你过目，你点头它才开工。默认关闭，settings 里打开即用。
+**任务执行能"看见"了。** 新的 Session Workflow 视图把任务计划和执行进度画成一张流程图：计划有几步、哪步在跑、哪步在等、哪个子任务派给了哪个 AI，一目了然。AI 开工前还会先把这张图给你过目，你点头它才开工。
 
 **终端体验和权限管控也在补齐。** AI 画的图表现在能直接显示在终端里，不用自己开文件。子 Agent 现在能按活配权限：只读的活只给读权限，常用权限组合还能存成模板复用。长会话压缩可以单独指定便宜模型，成本更可控。
 
 ## ✨ 新增特性
 
-### Qwen Code Desktop 正式发布：三大平台原生应用，打开就能用
+### Qwen Code Desktop 正式发布：三大操作系统都有原生应用
 
-之前 Qwen Code 的桌面体验分散在两处：Electron 桌面应用和浏览器里的 Web Shell。这周两者合流了：Qwen Code Desktop v0.1.0 正式发布，界面是上周大更新后的 Web Shell，启动、窗口管理、崩溃恢复、自动更新这些桌面的事归原生应用管。macOS、Windows、Linux 三大平台的安装包都已上线，GitHub Releases 直接下载。
+之前 Qwen Code 的桌面体验分散在两处：Electron 桌面应用和浏览器里的 Web Shell。这周两者合流了：Qwen Code Desktop v0.1.0 正式发布，界面是上周大更新后的 Web Shell。macOS、Windows、Linux 三大操作系统的安装包都已上线，[GitHub Releases](https://github.com/QwenLM/qwen-code/releases#release-desktop-v0.1.0) 直接下载。
 
 已有 Electron 版的 macOS 用户不用手动迁移：新版本带一次性的迁移引导，切换后之后的更新也自动跟上。
 
 你能用它做什么：
 
-- 不用开终端，桌面端打开就能用 Qwen Code 的全部能力
-- 三大平台体验一致
+- 桌面端 Qwen Code 拥有跟终端版一样的能力
+- 三大操作系统体验一致
 - 自动更新检查，后续版本不用手动重装
 
 详见 PR [#8132](https://github.com/QwenLM/qwen-code/pull/8132)、[#8392](https://github.com/QwenLM/qwen-code/pull/8392)、[#8511](https://github.com/QwenLM/qwen-code/pull/8511)、[#8518](https://github.com/QwenLM/qwen-code/pull/8518)
@@ -62,7 +62,7 @@ Qwen Code 本周发布 v0.21.2 到 v0.21.6 五个正式版本，300+ 个 PR 合�
 
 ### display_image：AI 画的图直接显示在终端里
 
-AI 画完图表、截完图，以前只能告诉你文件路径，你得自己打开看。现在 AI 能把图片直接显示在终端里，不用切窗口就能验收结果。终端支不支持显示图片会当场识别：支持就画出来，不支持会明确告诉你，不会装成功。
+AI 画完图表、截完图，以前只能告诉你文件路径，你得自己打开看。现在 AI 能把图片直接显示在终端里，不用切窗口就能验收结果。如果终端不支持显示图片时，也会明确告诉你。
 
 你能用它做什么：
 
@@ -100,7 +100,7 @@ AI 画完图表、截完图，以前只能告诉你文件路径，你得自己�
 
 你能用它做什么：
 
-- 压缩交给便宜模型，长会话账单更好看
+- 压缩交给便宜模型，长会话更省钱
 - 主模型压缩复用缓存，响应更快
 - 低频会话不再每次都吃缓存失效的亏
 
@@ -108,7 +108,7 @@ AI 画完图表、截完图，以前只能告诉你文件路径，你得自己�
 
 {/* [📸 待补：/model --compaction 模型选择对话框截图] */}
 
-### Channel 生态：GitLab 接入、钉钉互动卡片、配对审批管理
+### Channel 生态：GitLab 接入、钉钉互动卡片、Channel 配对管理
 
 上周 GitHub Channel 上线，这周 Channel 生态继续扩。
 
@@ -116,11 +116,11 @@ AI 画完图表、截完图，以前只能告诉你文件路径，你得自己�
 
 **钉钉有互动卡片了。** 钉钉 Channel 支持互动卡片：AI 的运行状态实时更新在卡片上，需要你输入时弹出结构化提问，不用盯着一大段文字看。其他平台不受影响。详见 PR [#6930](https://github.com/QwenLM/qwen-code/pull/6930)
 
-**配对审批能管了。** 之前 Channel 配对模式批准过的发送者没地方查看，更没法撤销。现在 Channel 编辑器里能看到谁被批准了、单独撤销某个审批，各个 workspace 的审批各管各的。详见 PR [#8045](https://github.com/QwenLM/qwen-code/pull/8045)、[#8081](https://github.com/QwenLM/qwen-code/pull/8081)
+**"谁能使唤 AI"的名单能查能撤了。** 接聊天平台时出于安全可以开配对模式：陌生人第一次 @ 机器人，要先经你批准才能用。但之前批准完就没地方看名单、没法撤销——批错了人、或者人走了，他还一直能用你的 AI。现在 Channel 编辑器里能看到谁被批准了、单独撤销某个人，各个 workspace 的名单各管各的。详见 PR [#8045](https://github.com/QwenLM/qwen-code/pull/8045)、[#8081](https://github.com/QwenLM/qwen-code/pull/8081)
 
-**GitHub/GitLab Channel 不用手编配置了。** Web Shell 里可以直接创建、编辑、配置 GitHub/GitLab Channel：token、访问范围、白名单等都在界面上操作，不用再打开 `settings.json`。详见 PR [#8310](https://github.com/QwenLM/qwen-code/pull/8310)
+**GitHub/GitLab Channel 不用手编配置了。** 之前给 AI 接 GitHub/GitLab，要自己打开配置文件 `settings.json` 手写：凭证、接哪些范围、哪些人能用，写错一个符号就不生效。现在 Web Shell 里有专门的管理界面，这些都在表单里填、界面上选，保存就生效，不用碰配置文件。详见 PR [#8310](https://github.com/QwenLM/qwen-code/pull/8310)
 
-**GitHub Channel 细节打磨。** 本地已经登录 `gh` 的话，GitHub Channel 可以直接复用这份登录状态，不用再单独建一个 token。回复行为也收敛了：每个事件最多发一条最终评论，不刷屏；AI 处理期间原评论挂一个临时 👀 表情，结束自动移除。被中断的任务重启后可恢复，不用重跑。详见 PR [#8461](https://github.com/QwenLM/qwen-code/pull/8461)、[#8033](https://github.com/QwenLM/qwen-code/pull/8033)、[#8061](https://github.com/QwenLM/qwen-code/pull/8061)、[#8306](https://github.com/QwenLM/qwen-code/pull/8306)
+**GitHub Channel 细节打磨。** 本地已经登录 `gh` 的话，GitHub Channel 可以直接复用这份登录状态，不用再单独建一个 token。回复行为也收敛了：每个事件最多发一条最终评论；AI 处理期间原评论挂一个临时 👀 表情，结束自动移除。被中断的任务重启后可恢复。详见 PR [#8461](https://github.com/QwenLM/qwen-code/pull/8461)、[#8033](https://github.com/QwenLM/qwen-code/pull/8033)、[#8061](https://github.com/QwenLM/qwen-code/pull/8061)、[#8306](https://github.com/QwenLM/qwen-code/pull/8306)
 
 ## 📊 更多新功能
 
@@ -170,21 +170,21 @@ AI 画完图表、截完图，以前只能告诉你文件路径，你得自己�
 
 ## 🔧 重要修复
 
-| 修复 | PR | 对你的影响 |
-|------|-----|-----------|
-| **DashScope Qwen 3.8 参数冲突** | [#8488](https://github.com/QwenLM/qwen-code/pull/8488)、[#8536](https://github.com/QwenLM/qwen-code/pull/8536) | qwen3.8-max 不再因参数冲突报错；设置"不思考"真正生效 |
-| **Claude 4.6+/5.x 请求问题一组** | [#8040](https://github.com/QwenLM/qwen-code/pull/8040)、[#8164](https://github.com/QwenLM/qwen-code/pull/8164)、[#8163](https://github.com/QwenLM/qwen-code/pull/8163)、[#8165](https://github.com/QwenLM/qwen-code/pull/8165)、[#8166](https://github.com/QwenLM/qwen-code/pull/8166) | Claude 新版模型的请求报错、思考内容不显示等问题修复 |
-| **Goal 模式无限重试** | [#8430](https://github.com/QwenLM/qwen-code/pull/8430) | Goal 模式找不到更多证据时会停下来等你处理，不再无限自动续跑 |
-| **MCP 断连重放安全** | [#8387](https://github.com/QwenLM/qwen-code/pull/8387) | MCP 连接断开后，不该重复执行的操作不会被自动重跑，避免副作用 |
-| **Windows 敏感配置粘贴** | [#8342](https://github.com/QwenLM/qwen-code/pull/8342) | Windows 终端里粘贴 API key 等敏感配置不再被忽略 |
-| **换行符检测** | [#8383](https://github.com/QwenLM/qwen-code/pull/8383) | Windows 换行格式的文件不再被静默改掉 |
-| **长回复断连恢复** | [#7896](https://github.com/QwenLM/qwen-code/pull/7896) | 长回复被网络中断打断后可以恢复，不用从头再来 |
-| **中日韩文字输出超限** | [#7963](https://github.com/QwenLM/qwen-code/pull/7963) | 中文、日文、韩文输出不再意外超限导致 API 报错 |
-| **Firefox 文本选择** | [#8417](https://github.com/QwenLM/qwen-code/pull/8417) | Web Shell 消息内容在 Firefox 里恢复可见的选择高亮 |
-| **对话里的链接能打开浏览器** | [#8198](https://github.com/QwenLM/qwen-code/pull/8198) | 之前对话里的链接点了没反应，现在点一下就能打开浏览器 |
-| **崩溃报错可见** | [#8088](https://github.com/QwenLM/qwen-code/pull/8088) | 之前有些崩溃没有任何报错信息，现在错误会显示在终端，方便反馈问题 |
-| **send_message 兼容 Anthropic** | [#7989](https://github.com/QwenLM/qwen-code/pull/7989) | Agent 之间互发消息的工具在 Anthropic 模型下恢复正常 |
-| **daemon 锁文件异常** | [#8442](https://github.com/QwenLM/qwen-code/pull/8442) | 锁文件异常时 daemon 不再直接崩溃 |
+| 修复 | 对你的影响 | PR |
+|------|-----------|-----|
+| **DashScope Qwen 3.8 参数冲突** | qwen3.8-max 不再因参数冲突报错；设置"不思考"真正生效 | [#8488](https://github.com/QwenLM/qwen-code/pull/8488)、[#8536](https://github.com/QwenLM/qwen-code/pull/8536) |
+| **Claude 4.6+/5.x 请求问题一组** | Claude 新版模型的请求报错、思考内容不显示等问题修复 | [#8040](https://github.com/QwenLM/qwen-code/pull/8040)、[#8164](https://github.com/QwenLM/qwen-code/pull/8164)、[#8163](https://github.com/QwenLM/qwen-code/pull/8163)、[#8165](https://github.com/QwenLM/qwen-code/pull/8165)、[#8166](https://github.com/QwenLM/qwen-code/pull/8166) |
+| **Goal 模式无限重试** | Goal 模式找不到更多证据时会停下来等你处理，不再无限自动续跑 | [#8430](https://github.com/QwenLM/qwen-code/pull/8430) |
+| **MCP 断连重放安全** | MCP 连接断开后，不该重复执行的操作不会被自动重跑，避免副作用 | [#8387](https://github.com/QwenLM/qwen-code/pull/8387) |
+| **Windows 敏感配置粘贴** | Windows 终端里粘贴 API key 等敏感配置不再被忽略 | [#8342](https://github.com/QwenLM/qwen-code/pull/8342) |
+| **换行符检测** | Windows 换行格式的文件不再被静默改掉 | [#8383](https://github.com/QwenLM/qwen-code/pull/8383) |
+| **长回复断连恢复** | 长回复被网络中断打断后可以恢复，不用从头再来 | [#7896](https://github.com/QwenLM/qwen-code/pull/7896) |
+| **中日韩文字输出超限** | 中文、日文、韩文输出不再意外超限导致 API 报错 | [#7963](https://github.com/QwenLM/qwen-code/pull/7963) |
+| **Firefox 文本选择** | Web Shell 消息内容在 Firefox 里恢复可见的选择高亮 | [#8417](https://github.com/QwenLM/qwen-code/pull/8417) |
+| **对话里的链接能打开浏览器** | 之前对话里的链接点了没反应，现在点一下就能打开浏览器 | [#8198](https://github.com/QwenLM/qwen-code/pull/8198) |
+| **崩溃报错可见** | 之前有些崩溃没有任何报错信息，现在错误会显示在终端，方便反馈问题 | [#8088](https://github.com/QwenLM/qwen-code/pull/8088) |
+| **send_message 兼容 Anthropic** | Agent 之间互发消息的工具在 Anthropic 模型下恢复正常 | [#7989](https://github.com/QwenLM/qwen-code/pull/7989) |
+| **daemon 锁文件异常** | 锁文件异常时 daemon 不再直接崩溃 | [#8442](https://github.com/QwenLM/qwen-code/pull/8442) |
 
 ## 👥 贡献者
 
