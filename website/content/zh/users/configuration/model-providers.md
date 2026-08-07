@@ -4,7 +4,11 @@ Qwen Code 允许你通过 `settings.json` 中的 `modelProviders` 设置来配�
 
 ## 概述
 
-使用 `modelProviders` 按 auth type 声明 `/model` 选择器可切换的模型。键必须是有效的 auth type（如 `openai`、`anthropic`、`gemini` 等）。每个 auth type 映射到一个 `ProviderConfig` 对象，该对象包含 `protocol` 字段和 `models` 字段（模型定义数组）。`models` 中的每个条目都需要一个 `id`；`envKey` 是**可选但推荐**的（如果省略，将回退到该 auth type 的默认环境变量键，例如 `openai` 对应 `OPENAI_API_KEY`），此外还有可选的 `name`、`description`、`baseUrl` 和 `generationConfig`。凭据永远不会持久化在设置中；运行时会从 `process.env[envKey]` 读取它们。Qwen OAuth 模型保持硬编码，无法被覆盖。
+使用 `modelProviders` 按 provider id 声明 `/model` 选择器可切换的模型。每个键是一个 provider id，其值是**一个模型定义数组**（`ModelConfig[]`）。对于内置 provider，键必须是有效的 auth type（`openai`、`anthropic`、`gemini`、`vertex-ai`）；自定义 provider id（例如 `idealab`）也是允许的，只要你通过顶层的 [`providerProtocol`](#自定义 provider-idproviderprotocol) 设置将其映射到某个协议。每个模型条目需要一个 `id`；`envKey` 是**可选但推荐**的（如果省略，将回退到该 auth type 的默认环境变量键，例如 `openai` 对应 `OPENAI_API_KEY`），此外还有可选的 `name`、`description`、`baseUrl` 和 `generationConfig`。凭据永远不会持久化在设置中；运行时会从 `process.env[envKey]` 读取它们。Qwen OAuth 模型保持硬编码，无法被覆盖。
+
+> [!note]
+>
+> 早期预览版本曾将每个 provider 的模型包装在 `{ "protocol": ..., "models": [...] }` 对象中。该格式已被回退——当前值为本页展示的裸 `ModelConfig[]` 数组。在已迁移（`$version: 4`）的设置文件中，包装格式的条目会被静默跳过，因此请将任何旧配置更新为数组形式。
 
 > [!note]
 >
@@ -31,7 +35,30 @@ Qwen Code 允许你通过 `settings.json` 中的 `modelProviders` 设置来配�
 | `vertex-ai`  | Google Vertex AI（在 Vertex AI 模式下使用 `gemini` 协议和 `@google/genai` SDK；选择它会设置 `GOOGLE_GENAI_USE_VERTEXAI=true`）                |
 
 > [!warning]
-> 如果使用了未知的 auth type 键（例如拼写错误如 `"openai-custom"`），非空键会按原样被接受为其自身的 auth-type 组，但它不会映射到已知协议 —— 因此其模型无法按预期工作，也不会在 `/model` 选择器中正确表现。只有空白（空或仅包含空格）的键会被跳过。请始终使用上面列出的受支持的 auth type 值之一。
+> 既不是内置协议也未通过 `providerProtocol` 映射的 provider id（例如拼写错误如 `"openai-custom"`）无法被路由，因此其整个条目会被**跳过**并附带警告——其模型不会出现在 `/model` 选择器中。内置 provider 请使用上面列出的受支持 auth type 值之一，自定义 id 请添加 [`providerProtocol`](#自定义-provider-idproviderprotocol) 映射。
+
+### 自定义 provider id（`providerProtocol`）
+
+内置 provider id（`openai`、`gemini`、`anthropic`、`vertex-ai`、`qwen-oauth`）会自动路由到其对应的 SDK 协议。要使用**自定义** provider id——例如将多个兼容 OpenAI 的端点归组到一个更友好的名称下——请在 `modelProviders` 中声明它，并通过顶层的 `providerProtocol` 设置将其映射到内置协议：
+
+```json
+{
+  "modelProviders": {
+    "idealab": [
+      {
+        "id": "my-model",
+        "envKey": "IDEALAB_API_KEY",
+        "baseUrl": "https://idealab.example.com/v1"
+      }
+    ]
+  },
+  "providerProtocol": {
+    "idealab": "openai"
+  }
+}
+```
+
+如果没有匹配的 `providerProtocol` 条目，自定义 provider id 会被跳过（见上方警告）。
 
 ### 用于 API 请求的 SDK
 
@@ -218,6 +245,17 @@ Qwen Code 使用以下官方 SDK 向各个提供商发送请求：
   }
 }
 ```
+
+对于也能遵循正常 Qwen Code agent 策略并使用工具的视觉模型，请同时启用两个 capabilities 以开启完整轮次的图像路由：
+
+```json
+"capabilities": {
+  "vision": true,
+  "agent": true
+}
+```
+
+当纯文本主模型将该模型配置为视觉回退时，完整的带图像轮次会在该 provider、模型和端点上保持完整，跨越工具调用和重试。下一个独立轮次会返回到主模型，每个模型请求只接收其目标支持的媒体模态。省略 `agent`（或设为 `false`）则保留更安全的 Vision Bridge 转录流程。
 
 ### 本地自托管模型（通过兼容 OpenAI 的 API）
 
@@ -559,6 +597,7 @@ Coding Plan 模型配置具有版本控制。当 Qwen Code 检测到模型模板
 
 | 协议 / provider | 网络请求结构 | 备注 |
 | --- | --- | --- |
+| **OpenAI / DashScope**（`qwen3.8-max` 系列） | 扁平的 `reasoning_effort: <effort>` body 参数 | 五个 `/effort` 级别（`low`、`medium`、`high`、`xhigh`、`max`）对于任何以 `qwen3.8-max` 开头的模型 id（包括带日期的快照和 `-latest` 别名）会原样传递；DashScope 会应用任何模型特定的映射。该系列的级别单独发送：冲突的 `enable_thinking` 或 `thinking_budget` 会被丢弃（warn 日志，每个 generator 一次）—— DashScope 会拒绝将 `reasoning_effort` 与 `thinking_budget` 组合的请求，两个思考控制参数不应同时发送。`extra_body` 中的显式 `enable_thinking: false` 会被遵从而非丢弃：它会以 `reasoning_effort: 'none'` 覆盖配置的级别，这是 `extra_body` 少数不按原样生效的地方之一。其他 Qwen 模型继续将所选级别映射为 `enable_thinking: true`；`reasoning_effort` 覆盖会在那里原样传递，除非它与 `thinking_budget` 冲突（DashScope 会拒绝该组合），此时无效的 `reasoning_effort` 会被丢弃，`enable_thinking` 和 `thinking_budget` 均保留。 |
 | **OpenAI / DeepSeek** (`api.deepseek.com`) | 扁平的 `reasoning_effort: <effort>` body 参数 | 当在嵌套配置中设置 `reasoning.effort` 时，它会被重写为扁平的 `reasoning_effort`，并且 `'low'`/`'medium'` 会被规范化为 `'high'`，`'xhigh'` 规范化为 `'max'` —— 这反映了 DeepSeek 的[服务端向后兼容](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)机制。顶层的 `samplingParams.reasoning_effort` 或 `extra_body.reasoning_effort` 覆盖会跳过此规范化并原样发送。 |
 | **OpenAI**（其他兼容服务器） | `reasoning: { effort, ... }` 原样传递 | 当 provider 期望不同的结构时，通过 `samplingParams` 设置（例如 GPT-5/o-series 的 `samplingParams.reasoning_effort`）。 |
 | **Anthropic**（真实的 `api.anthropic.com`） | `output_config: { effort }` 加上 `effort-2025-11-24` beta header | 真实的 Anthropic 仅接受 `'low'`/`'medium'`/`'high'`。`'max'` 会被**截断为 `'high'`** 并输出一行 `debugLogger.warn`（每个 generator 一次）；如果你需要最大强度，请将 baseURL 切换为支持该强度的 DeepSeek 兼容端点。 |

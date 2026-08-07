@@ -182,14 +182,14 @@ sequenceDiagram
 
 ## Configuração
 
-| Parâmetro                                           | Onde                               | Efeito                                                           |
-| --------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------- |
-| `baseUrl`                                           | `connect(options)`                 | URL do daemon; deve ser loopback.                                |
-| `token`                                             | `connect(options)`                 | Token Bearer (carimbado via SDK).                                |
-| `workspaceCwd`                                      | `connect(options)`                 | Usado em `POST /session`; deve corresponder ao workspace vinculado do daemon. |
-| `modelServiceId`                                    | `connect(options)` / `setModel()`  | Modelo inicial.                                                  |
-| `lastEventId`                                       | `connect(options)`                 | Cursor de retomada (normalmente restaurado do estado do host).   |
-| Configuração do VS Code `qwen.ide.daemonUrl` (ou equivalente) | Configurações do workspace | URL do daemon configurada pelo operador.                          |
+| Parâmetro                                           | Onde                               | Efeito                                                                                                              |
+| --------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `baseUrl`                                           | `connect(options)`                 | URL do daemon; deve ser loopback.                                                                                   |
+| `token`                                             | `connect(options)`                 | Token Bearer (carimbado via SDK).                                                                                   |
+| `workspaceCwd`                                      | `connect(options)`                 | Usado em `POST /session`; deve corresponder ao workspace primário do daemon ou a um runtime de sessão multi-workspace registrado. |
+| `modelServiceId`                                    | `connect(options)` / `setModel()`  | Modelo inicial.                                                                                                     |
+| `lastEventId`                                       | `connect(options)`                 | Cursor de retomada (normalmente restaurado do estado do host).                                                      |
+| Configuração do VS Code `qwen.ide.daemonUrl` (ou equivalente) | Configurações do workspace | URL do daemon configurada pelo operador.                                                                            |
 
 ## Riscos e Limitações Conhecidas
 
@@ -197,7 +197,7 @@ sequenceDiagram
 - **O caminho legado `AcpConnectionState` ainda é o principal** no IDE companion (filho stdio). Este adaptador é o transporte irmão para a migração Mode-B; veja [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md) para os bloqueadores da migração e o trabalho planejado de paridade do `BridgeFileSystem`.
 - **Nenhuma RPC reversa ou superfície de affordances do editor ainda via HTTP.** Recursos que exigem que o agente chame de volta para a IDE (ex.: acesso a buffer somente leitura, integração de pré-visualização de diff) atualmente existem apenas no caminho stdio.
 - **O acoplamento webview ↔ conexão é de propriedade do host**, não está neste adaptador. Não coloque lógica específica do webview dentro de `DaemonIdeConnection`.
-- **Incompatibilidade de `workspaceCwd`** com o workspace vinculado do daemon retorna `400 workspace_mismatch` — exiba isso como um erro de configuração claro em vez de tentar novamente.
+- **Incompatibilidade de `workspaceCwd`** com os workspaces registrados do daemon retorna `400 workspace_mismatch` — exiba isso como um erro claro de configuração em vez de tentar novamente.
 
 ## Referências
 

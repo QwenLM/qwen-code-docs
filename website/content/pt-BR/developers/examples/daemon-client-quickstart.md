@@ -7,12 +7,13 @@ Um exemplo mínimo de ponta a ponta: inicie um daemon `qwen serve` em outro term
 Em um terminal:
 
 ```bash
-cd your-project/
-qwen serve --port 4170
-# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/your-project)
+qwen serve --port 4170 \
+  --workspace /path/to/project-a \
+  --workspace /path/to/project-b
+# → qwen serve listening on http://127.0.0.1:4170 (mode=http-bridge, workspace=/path/to/project-a)
 ```
 
-Conforme [#3803](https://github.com/QwenLM/qwen-code/issues/3803) §02, cada daemon se vincula a um workspace na inicialização (o `cwd` atual, ou pode ser substituído com `--workspace /path/to/dir`). O caminho vinculado do daemon é anunciado em `/capabilities.workspaceCwd` para que os clientes possam fazer uma verificação prévia e omitir `cwd` de `POST /session`.
+Cada valor de `--workspace` deve ser um diretório absoluto. O primeiro workspace de inicialização é o primário e continua sendo o padrão de compatibilidade para requisições que omitem `cwd`; `/capabilities.workspaces[]` é o catálogo que os clientes devem usar ao selecionar qualquer runtime explicitamente.
 
 Em outro terminal:
 
@@ -37,23 +38,23 @@ const client = new DaemonClient({
   //   token: process.env.MY_TOKEN,
 });
 
-// 1. Confirm we can reach the daemon, gate UI on its features, and
-//    read back the daemon's bound workspace (#3803 §02).
+// 1. Confirme que podemos alcançar o daemon, baseie a UI em suas
+//    features e selecione um workspace confiável do catálogo anunciado.
 const caps = await client.capabilities();
 console.log('Daemon features:', caps.features);
-console.log('Daemon workspace:', caps.workspaceCwd); // canonical bound path
+const selectedWorkspace =
+  caps.workspaces?.find(
+    (workspace) => workspace.trusted && !workspace.primary,
+  ) ?? caps.workspaces?.find((workspace) => workspace.trusted);
+if (!selectedWorkspace) throw new Error('No trusted workspace is available');
+console.log('Selected workspace:', selectedWorkspace.id, selectedWorkspace.cwd);
 
-// 2. Spawn-or-attach a session. Two equally-valid shapes:
-//    (a) pass `workspaceCwd: caps.workspaceCwd` to be explicit, or
-//    (b) omit `workspaceCwd` entirely — the SDK then sends no `cwd`
-//        field and the daemon route falls back to its bound
-//        workspace. The (b) shape is concise but assumes you trust
-//        `caps.workspaceCwd` to be whatever you intended.
-//    A non-empty `workspaceCwd` that doesn't canonicalize to the
-//    daemon's bound path yields `400 workspace_mismatch` (see
-//    "Workspace mismatch" below).
+// 2. Spawn-or-attach dentro desse runtime. O SDK mapeia `workspaceCwd`
+//    para o campo `cwd` no nível de wire do POST /session. Omiti-lo é
+//    permitido apenas quando o chamador intencionalmente quer o padrão
+//    primário legado.
 const session = await client.createOrAttachSession({
-  workspaceCwd: caps.workspaceCwd,
+  workspaceCwd: selectedWorkspace.cwd,
 });
 console.log(`session=${session.sessionId} attached=${session.attached}`);
 
@@ -118,12 +119,13 @@ function handleEvent(event: DaemonEvent): void {
 
 ## Helpers de arquivos do workspace
 
-As rotas de arquivo têm escopo de workspace, não de sessão, portanto, residem diretamente no `DaemonClient`:
+As rotas de arquivo têm escopo de workspace, não de sessão. Vincule um helper qualificado ao id do workspace selecionado para que cada requisição permaneça dentro daquele runtime:
 
 ```ts
-const file = await client.readWorkspaceFile('src/main.ts');
+const selected = client.workspaceById(selectedWorkspace.id);
+const file = await selected.readWorkspaceFile('src/main.ts');
 
-const updated = await client.editWorkspaceFile({
+const updated = await selected.editWorkspaceFile({
   path: 'src/main.ts',
   oldText: 'timeout: 30000',
   newText: 'timeout: 60000',
@@ -177,7 +179,7 @@ case 'permission_request': {
 
 ## Colaboração em sessão compartilhada
 
-Dois clientes apontados para o **mesmo daemon** acabam na mesma sessão. Conforme #3803 §02, cada daemon está vinculado a UM workspace na inicialização, então o daemon iniciado como `qwen serve --workspace /work/repo` (ou `cd /work/repo && qwen serve`) é o que ambos os clientes conectam:
+Dois clientes apontados para o **mesmo workspace do daemon** acabam na mesma sessão quando usam o `sessionScope: 'single'` padrão. Para um daemon single-workspace iniciado como `qwen serve --workspace /work/repo` (ou `cd /work/repo && qwen serve`), ambos os clientes conectam àquele workspace primário:
 
 ```ts
 // Daemon foi iniciado como `qwen serve --workspace /work/repo` então
@@ -197,7 +199,7 @@ Ambos os clientes veem o mesmo fluxo de `session_update` / `permission_request`.
 
 ## Incompatibilidade de workspace
 
-Se `workspaceCwd` não corresponder ao workspace vinculado ao daemon, `createOrAttachSession` rejeita com `DaemonHttpError` carregando status `400` e um corpo estruturado:
+Se `workspaceCwd` não corresponder a nenhum workspace anunciado registrado, `createOrAttachSession` rejeita com `DaemonHttpError` carregando status `400` e um corpo estruturado. Um workspace secundário registrado mas não confiável retorna `403 untrusted_workspace` e não deve ser retestado contra o primário:
 
 ```ts
 import { DaemonHttpError } from '@qwen-code/sdk';
@@ -213,16 +215,16 @@ try {
     };
     if (body.code === 'workspace_mismatch') {
       console.error(
-        `Este daemon está vinculado a ${body.boundWorkspace}, ` +
-          `não a ${body.requestedWorkspace}. Inicie um daemon separado ` +
-          `para esse workspace ou direcione para o correto.`,
+        `Workspace ${body.requestedWorkspace} não está registrado. ` +
+          `Atualize as capabilities e selecione um workspace anunciado, ` +
+          `ou registre-o antes de tentar novamente.`,
       );
     }
   }
 }
 ```
 
-Implantações multi-workspace executam um daemon por workspace em portas separadas – não há roteamento intra-daemon sob a §02. Um orquestrador (ou o lançador do usuário) escolhe o daemon correto com base no projeto com o qual o cliente deseja se comunicar.
+Não faça retry contra o workspace primário após um mismatch. Atualize `/capabilities`, selecione a entrada pretendida de `workspaces[]` ou registre um workspace dinâmico elegível via `POST /workspaces`. Use daemons separados apenas quando autenticação, limite de taxa ou boundaries de falha de processo também precisarem ser independentes.
 
 ## Autenticação
 

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 
-const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"] as const;
+const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"] as const;
 
 export function generateStaticParams() {
   return [{ __metadata_id__: [] }];

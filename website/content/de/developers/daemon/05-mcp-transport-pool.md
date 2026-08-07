@@ -2,7 +2,7 @@
 
 ## Überblick
 
-`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) ist der F2 (#4175 Commit 5) Workspace-weite Pool: Mehrere ACP-Sitzungen auf einem Daemon teilen sich einen Transport pro eindeutigem `(serverName + configFingerprint)`-Tupel, anstatt dass jede ihren eigenen MCP-Kindprozess startet. Der Pool lebt **innerhalb des ACP-Kindprozesses** (`QwenAgent.mcpPool`), wird einmalig beim Start des Agenten mit der Bootstrap-`Config` des Daemons erstellt und überlebt Sitzungslebenszyklen. Einträge zählen die Referenzen der Sitzungszuordnungen und schließen nach einer konfigurierbaren Nachlaufzeit, wenn der Referenzzähler null erreicht.
+`McpTransportPool` (`packages/core/src/tools/mcp-transport-pool.ts`) ist der F2 (#4175 Commit 5) Workspace-weite Pool: Mehrere ACP-Sessions innerhalb einer Runtime teilen sich einen Transport pro eindeutigem `(serverName + configFingerprint)`-Tupel, anstatt dass jede ihren eigenen MCP-Kindprozess startet. Wenn der Pool-Modus aktiviert ist, besitzt jeder gestartete ACP-Kindprozess einen unabhängigen Pool (`QwenAgent.mcpPool`). Die Produktion versucht, den primären Kindprozess vorzuwärmen und wiederholt den ersten Versuch nach einem Fehlschlag; ein vertrauenswürdiger Secondary startet seinen Kindprozess on demand, während ein nicht vertrauenswürdiger Secondary weder den Pool noch den Kindprozess startet. Der Pool wird einmalig beim Agentenstart mit der Bootstrap-`Config` der Runtime erstellt und überlebt Session-Lebenszyklen. Einträge zählen die Referenzen der Session-Zuordnungen und schließen nach einer konfigurierbaren Nachlaufzeit, wenn der Referenzzähler null erreicht.
 
 Es ist der Hauptmechanismus, der verhindert, dass ein Multi-Sitzungs-Daemon für jede Sitzung eine Kopie jedes MCP-Servers fork-t.
 
@@ -399,7 +399,7 @@ Diese Hilfsfunktionen sind intern, aber Leser des Quellcodes können sie sehen:
 - `McpTransportPool.acquire()` verwendet `attachPooledSession` und `rollbackReservationOnSpawnFailure`, um das Fast-Path-Anhängen, das Anhängen nach dem Start und das gebündelte Verhalten von "Spawn in Flight" zu teilen. Das Laufzeitverhalten ist unverändert; die Invarianten der Race-Fenster liegen weiterhin an den Aufrufstellen.
 - `SessionMcpView.applyTools` / `applyPrompts` kompilieren `includeTools` / `excludeTools` einmal über `compileNameFilter(cfg)` und prüfen jedes Tool mit `compiledFilterAccepts(compiled, name)`. Die exportierten `passesSessionFilter` / `passesSessionPromptFilter` verwenden denselben kompilierten Pfad. `excludeTools` ist eine exakte Übereinstimmung; `includeTools` entfernt das erste `(...)`-Suffix, sodass `toolName(args)` mit `toolName` übereinstimmt.
 
-Design-Dokument: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §6 behandelt die Transport-Pool-Zustandsmaschine, Wiederverbindung, Drain und Descendant-Sweep-Pfade.
+Design-Dokument: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §6 behandelt die Transport-Pool-Zustandsmaschine, Wiederverbindung, Drain und Descendant-Sweep-Pfade.
 
 ## Einschränkungen & Bekannte Grenzen
 
@@ -416,5 +416,5 @@ Design-Dokument: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/Qwe
 - `packages/core/src/tools/mcp-pool-key.ts` (`connectionIdOf`, `parseConnectionId`)
 - `packages/core/src/tools/mcp-pool-events.ts` (Ereignistypen)
 - `packages/core/src/tools/session-mcp-view.ts` (gefilterte Ansicht pro Sitzung)
-- F2-Design-Dokument (v2.2, mit dem 32-Änderungs-Changelog): [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md). Behandeln Sie den Design-Vertrag als maßgeblich; diese Seite ist der tiefgehende Entwickler-Einblick.
+- F2-Design-Dokument (v2.2, mit dem 32-Änderungs-Changelog): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md). Behandeln Sie den Design-Vertrag als maßgeblich; diese Seite ist der tiefgehende Entwickler-Einblick.
 - F2-Design-Notizen: Issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) (Commits 4-6 der F2-Serie).

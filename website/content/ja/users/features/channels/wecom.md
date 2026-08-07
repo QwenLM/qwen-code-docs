@@ -1,6 +1,6 @@
 # WeCom (Enterprise WeChat)
 
-本ガイドでは、WeCom インテリジェントロボット（企業微信智能机器人）と Qwen Code を連携させる設定方法について説明します。
+本ガイドでは、WeCom インテリジェントロボット（企业微信智能机器人）と Qwen Code を連携させる設定方法について説明します。
 
 ## 前提条件
 
@@ -11,7 +11,13 @@
 ## ロボットの作成
 
 1. WeCom 管理コンソールを開き、インテリジェントロボットを作成します。
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN017w1jWj1TTvNBcfya8_!!6000000002384-2-tps-2212-887.png)
+
 2. API モードを選択します。
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01buuik0207paQUuLQW_!!6000000006803-1-tps-1276-720.gif)
+
 3. Bot ID と Secret をコピーします。
 4. ロボットを利用させたいダイレクトチャットまたはグループに追加します。
 
@@ -33,10 +39,7 @@
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "You are a concise coding assistant responding via WeCom.",
-      "groupPolicy": "open",
-      "groups": {
-        "*": { "requireMention": true }
-      }
+      "groupPolicy": "open"
     }
   }
 }
@@ -70,15 +73,19 @@ WeCom を開き、インテリジェントロボットにメッセージを送�
 
 ## アクセス制御
 
-`senderPolicy` は他の IM チャネルと同じように機能します。
+`senderPolicy` は他の IM チャンネルと同じように機能します。
 
 - `allowlist`: `allowedUsers` に含まれるユーザーのみがボットを使用できます。これは推奨される企業のデフォルト設定です。
 - `pairing`: ボットを使用する前に、ユーザーはペアリングを行う必要があります。
 - `open`: ロボットにメッセージを送信できる誰でも使用できます。
 
-グループの場合、`groupPolicy` を `"allowlist"` または `"open"` に設定します。デフォルトでは、グループメッセージは `"requireMention": true` によりメンションを必要とします。
+グループの場合、`groupPolicy` を `"allowlist"` または `"open"` に設定します。WeCom はインテリジェントロボットにメンションされたグループメッセージのみを配信するため、配信されたグループコールバックはすべてメンション付きとして扱われます。`requireMention` 設定は、メンションなしのグループメッセージへの応答を有効にできません。そのようなメッセージはボットに配信されないためです。
 
-WeCom SDK に明示的なメンションメタデータが含まれている場合、Qwen Code はこのゲートにそれを使用します。メンションメタデータが存在しない場合、チャネルは配信されたグループメッセージをメンションなしとして扱います。WeCom 側の配信スコープに依存したい場合にのみ、`"requireMention": false` を設定してください。
+### グループメンションの互換性
+
+以前の Qwen Code バージョンでは、WeCom がグループコールバックを配信した後に汎用の `requireMention` ゲートも適用されていました。コールバックには個別のメンションメタデータが含まれていないため、`requireMention: true`（デフォルト値を含む）は配信されたすべてのグループメッセージを拒否し、グループチャットが機能していないように見える可能性がありました。
+
+Qwen Code は現在、WeCom のメンションスコープの配信に依存し、2 回目のメンション判定は適用しません。`requireMention: true` または `requireMention: false` を含む既存の WeCom 設定は有効なままであり、設定エラーを発生させません。どちらの値も WeCom では同じ動作をするため、このフィールドは削除できます。同じグループエントリ内の他の設定（`dispatchMode` など）は引き続き適用されます。`groupHistoryLimit` は引き続き受け付けられますが、メンションなしのグループメッセージは配信されないため、新しい WeCom 履歴を収集できません。
 
 ## 画像とファイル
 
@@ -103,9 +110,9 @@ WeCom SDK に明示的なメンションメタデータが含まれている場�
 ### ボットがグループで応答しない
 
 - `groupPolicy` を確認します。
-- グループ設定で `"requireMention": false` が設定されていない限り、ボットにメンションを付けます。
+- グループ内でボットにメンションを付けます。
 - ロボットがグループに追加されていることを確認します。
 
 ### 自作アプリケーションの認証情報が機能しない
 
-このチャネルは WeCom インテリジェントロボット用のものです。Corp ID、Agent ID、Token、EncodingAESKey などの自作アプリケーションのコールバック認証情報は、このチャネルでは使用されません。
+このチャンネルは WeCom インテリジェントロボット用のものです。Corp ID、Agent ID、Token、EncodingAESKey などの自作アプリケーションのコールバック認証情報は、このチャンネルでは使用されません。

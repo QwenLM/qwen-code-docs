@@ -423,6 +423,42 @@ function renderPrompt(lang, batch) {
     .replaceAll("{{FILES}}", files);
 }
 
+// One agent session per chunk, not one session per language: the CLI's
+// loop detection kills an entire session on one blocked/retried tool call
+// (runs 31115350719/31119970640 lost de almost entirely that way). Chunks
+// bound the blast radius of a halted session.
+const TRANSLATE_CHUNK = 15;
+
+// --safe-mode is read-only (no write/edit tools), so the agent could never
+// write translations. auto-edit approves read/write/edit (shell stays
+// gated), which matches the prompt's "do not run builds or commands".
+async function runAgent(lang, prompt, logSuffix) {
+  const args = ["--approval-mode", "auto-edit", "-p", prompt, "-o", "text"];
+  if (OPTS.model) args.push("--model", OPTS.model);
+  const log = path.join(
+    path.dirname(manifestPath(lang)),
+    `orchestrator-agent-${lang}${logSuffix}.log`
+  );
+  // Stream agent output live (CI step log + runner-side log file) instead
+  // of capturing it: a 20-file batch ran tens of minutes silent otherwise.
+  const fd = fs.openSync(log, "w");
+  const child = spawn("qwen", args, {
+    cwd: ROOT,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  child.stdout.on("data", (c) => {
+    process.stdout.write(c);
+    fs.writeSync(fd, c);
+  });
+  child.stderr.on("data", (c) => {
+    process.stderr.write(c);
+    fs.writeSync(fd, c);
+  });
+  const status = await new Promise((resolve) => child.on("close", resolve));
+  fs.closeSync(fd);
+  return { status, log };
+}
+
 async function cmdTranslate(lang) {
   // Parallel per-language dispatches share .temp-source-repo; serialize
   // ensure+hash so concurrent fetch/reset cannot trip git locks or hash a
@@ -446,38 +482,33 @@ async function cmdTranslate(lang) {
     files: batch.map((b) => ({ file: b.file, hash: b.hash })),
   };
   fs.writeFileSync(manifestPath(lang), JSON.stringify(manifest, null, 2));
-  const prompt = renderPrompt(lang, batch);
-  console.log(
-    `[orch] ${lang}: dispatching agent for ${batch.length} file(s)...`
-  );
-  // --safe-mode is read-only (no write/edit tools), so the agent could never
-  // write translations. auto-edit approves read/write/edit (shell stays
-  // gated), which matches the prompt's "do not run builds or commands".
-  const args = ["--approval-mode", "auto-edit", "-p", prompt, "-o", "text"];
-  if (OPTS.model) args.push("--model", OPTS.model);
-  const log = path.join(
-    path.dirname(manifestPath(lang)),
-    `orchestrator-agent-${lang}.log`
-  );
-  // Stream agent output live (CI step log + runner-side log file) instead
-  // of capturing it: a 20-file batch ran tens of minutes silent otherwise.
-  const fd = fs.openSync(log, "w");
-  const child = spawn("qwen", args, {
-    cwd: ROOT,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  child.stdout.on("data", (c) => {
-    process.stdout.write(c);
-    fs.writeSync(fd, c);
-  });
-  child.stderr.on("data", (c) => {
-    process.stderr.write(c);
-    fs.writeSync(fd, c);
-  });
-  const status = await new Promise((resolve) => child.on("close", resolve));
-  fs.closeSync(fd);
-  console.log(`[orch] ${lang}: agent exit=${status} (log: ${log})`);
-  if (status !== 0) process.exitCode = 1;
+  const chunks = [];
+  for (let i = 0; i < batch.length; i += TRANSLATE_CHUNK)
+    chunks.push(batch.slice(i, i + TRANSLATE_CHUNK));
+  let part = 0;
+  for (const chunk of chunks) {
+    part++;
+    const suffix = chunks.length > 1 ? `-part${part}` : "";
+    console.log(
+      `[orch] ${lang}: dispatching agent for ${chunk.length} file(s)` +
+        (chunks.length > 1 ? ` (part ${part}/${chunks.length})...` : "...")
+    );
+    const { status, log } = await runAgent(
+      lang,
+      renderPrompt(lang, chunk),
+      suffix
+    );
+    console.log(`[orch] ${lang}: agent exit=${status} (log: ${log})`);
+    if (status !== 0) {
+      // The workflow's `|| true` keeps the step alive; surface the failure
+      // in the run summary anyway, and leave the chunk's files in the
+      // backlog (verify fails them; they are retried next run).
+      console.log(
+        `::warning::${lang}: agent exited ${status} on part ${part}/${chunks.length}; its files stay in the backlog`
+      );
+      process.exitCode = 1;
+    }
+  }
 }
 
 // ---------- structural gate ----------
@@ -499,6 +530,31 @@ function frontmatterClosed(text) {
   return lines
     .slice(1)
     .some((l) => l.trim() === "---" || l.trim() === "...");
+}
+
+/**
+ * Cheap structural sanity check of the frontmatter YAML, without a YAML
+ * parser: every non-empty, non-indented line must open a mapping entry
+ * (`key:`) or a list item (`- `). An unindented bare-text line (typically
+ * a wrapped description) is exactly what fails the site build with
+ * "YAMLParseError: Unexpected scalar token" — run 31115350719. Indented
+ * continuation lines are left alone. False positives are safe: the file
+ * just stays in the backlog and gets retried.
+ */
+function frontmatterYamlish(text) {
+  const lines = text.split("\n");
+  if (lines[0].trim() !== "---") return false;
+  for (let i = 1; i < lines.length; i++) {
+    const l = lines[i];
+    const t = l.trim();
+    if (t === "---" || t === "...") return true;
+    if (t === "") continue;
+    if (/^\s/.test(l)) continue; // indented continuation
+    if (/^[^\s:][^:]*:(\s|$)/.test(l)) continue; // key: value
+    if (/^-(\s|$)/.test(l)) continue; // list item
+    return false;
+  }
+  return false; // no closing delimiter
 }
 
 function verifyFile(lang, f, manifest) {
@@ -529,8 +585,12 @@ function verifyFile(lang, f, manifest) {
     problems.push(
       `code fence mismatch (en=${fenceCount(en)} ${lang}=${fenceCount(tg)})`
     );
-  if (hasFrontmatter(en) && (!hasFrontmatter(tg) || !frontmatterClosed(tg)))
-    problems.push("frontmatter missing/unclosed");
+  if (hasFrontmatter(en)) {
+    if (!hasFrontmatter(tg) || !frontmatterClosed(tg))
+      problems.push("frontmatter missing/unclosed");
+    else if (!frontmatterYamlish(tg))
+      problems.push("frontmatter not parseable YAML");
+  }
   const linksEn = (en.match(/\]\(/g) || []).length;
   const linksTg = (tg.match(/\]\(/g) || []).length;
   if (linksEn !== linksTg)

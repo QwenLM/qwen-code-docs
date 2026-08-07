@@ -1,8 +1,10 @@
+---
+
 # 認証・セキュリティモデル
 
 ## 概要
 
-`qwen serve` はデフォルトではローカルデーモンであり、設定を誤ると外部に露出する面となります。そのセキュリティモデルは**階層化**されており、設定ミスがあっても安全側に倒れるようになっています（fail closed）。
+`qwen serve` はデフォルトではローカルデーモンであり、設定を誤すると外部に露出する面となります。そのセキュリティモデルは**階層化**されており、設定ミスがあっても安全側に倒れるようになっています（fail closed）。
 
 1. **バインド** — ループバック以外のバインドでベアラートークンがない場合、**起動を拒否**します。
 2. **ベアラー認証** — `bearerAuth` ミドルウェアは、ループバック上の `/health` を除くすべてのルートを定数時間の SHA-256 比較で保護します（`require_auth` を有効にすると、ループバックと `/health` にも適用されます）。
@@ -97,7 +99,7 @@ flowchart LR
 
 ### `allowOriginCors`（`--allow-origin` モード）
 
-`--allow-origin <pattern>` が設定されると、`denyBrowserOriginCors` は `allowOriginCors(parsedPatterns)` に置き換えられます:
+`--allow-origin <pattern>` が設定されると、`denyBrowserOriginCors` は `allowOriginCors(parsed_patterns)` に置き換えられます:
 
 - 一致する `Origin` 値には、`Access-Control-Allow-Origin`、`Access-Control-Allow-Headers`、`Access-Control-Allow-Methods` が付与されます。`OPTIONS` プリフライトは `204` を返します。
 - 一致しない `Origin` 値には、拒否モードと同じ決定論的な `403 { error: 'Request denied by CORS policy' }` が返されます。
@@ -121,11 +123,25 @@ flowchart LR
 
 `code: 'token_required'` の形式は `bearerAuth` の単なる `Unauthorized` とは異なり、SDK クライアントは汎用的な 401 の代わりに「`--token` / `--require-auth` を設定してください」というヒントを表示できます。
 
-**Wave 4+ の strict ルート**: `/workspace/memory`、`/workspace/agents/*`、`/workspace/agents/generate`、`/file/write`、`/file/edit`、`/workspace/tools/:name/enable`、`/workspace/mcp/:server/restart`、`/workspace/mcp/:server/{enable,disable,authenticate,clear-auth}`、`/workspace/mcp/servers`（POST/DELETE）、`/workspace/auth/device-flow`、`/workspace/init`、`/session/:id/approval-mode`。
+**Wave 4+ の strict ルート**: `/workspace/memory`、`/workspace/agents/*`、
+`/workspace/agents/generate`、`/file/write`、`/file/edit`、
+`/workspace/tools/:name/enable`、`/workspace/mcp/:server/restart`、
+`/workspace/mcp/:server/{enable,disable,authenticate,clear-auth}`、
+`/workspace/mcp/servers`（POST/DELETE）、`/workspace/auth/device-flow`、
+`/workspace/init`、`/session/:id/approval-mode`、`/session/:id/rewind`、および
+`/session/:id/shell`。
+
+rewind は、ACP トランスポートが設定されている場合でも、TypeScript SDK では
+REST のみです。これにより、strict ミューテーションゲートとベアラー/クライアント
+ID ヘッダーが保持されます。ACP ルートテーブルには意図的に rewind マッピングが
+ありません。オーナールーティングは、rewind と shell の両方がセカンダリ
+ランタイムブリッジに到達する前に、ワークスペースの信頼を再チェックします。
+重複したライブセッション ID は、プライマリランタイムにフォールバックする
+のではなく、`ambiguous_session_owner` として fail closed します。
 
 ### `/health` の例外
 
-ループバックバインドの場合、`/health` はベアラーミドルウェアの**前に**登録されるため、Pod 内の生存確認（liveness probe）がトークンを運ぶ必要はありません。ループバック以外のバインドでは、`/health` も他のルートと同様にベアラーで保護されます。`--require-auth` はこの例外を無効にします。ループバックでも `/health` に `Authorization: Bearer <token>` が必要になります。
+ループバックバインドの場合、`/health` はベアラーミドルウェアの**前に**登録されるため、Pod 内の liveness probe がトークンを運ぶ必要はありません。ループバック以外のバインドでは、`/health` も他のルートと同様にベアラーで保護されます。`--require-auth` はこの例外を無効にします。ループバックでも `/health` に `Authorization: Bearer <token>` が必要になります。
 
 ### v1 クライアント ID（`X-Qwen-Client-Id`）は自己申告
 
@@ -142,7 +158,7 @@ flowchart LR
 
 ### デバイスフロー認証
 
-プロバイダー認証のための独立した OAuth 面。v1 プロバイダー識別子は `qwen-oauth` ですが、Qwen OAuth の無料ティアは 2026 年 4 月 15 日をもって廃止されました。新しいセットアップでは、利用可能な場合、現在サポートされている認証プロバイダーを使用してください。
+プロバイダー認証のための独立した OAuth 面。v1 プロバイダー識別子は `qwen-oauth` ですが、Qwen OAuth の無料ティアは 2026-04-15 に廃止されました。新しいセットアップでは、利用可能な場合、現在サポートされている認証プロバイダーを使用してください。
 
 - `POST /workspace/auth/device-flow` — フローを開始します。`{deviceFlowId, providerId, expiresAt, verificationUrl, userCode}` を返します。
 - `GET /workspace/auth/device-flow/:id` — 状態をポーリングします。

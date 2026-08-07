@@ -55,6 +55,7 @@ Alle Standard-Channel-Optionen funktionieren auch mit benutzerdefinierten Channe
 | `instructions` | Wird der ersten Nachricht jeder Session vorangestellt |
 | `model`        | Model-Override für den Channel                 |
 | `groupPolicy`  | `disabled`, `allowlist` oder `open`            |
+| `dmPolicy`     | `open` oder `disabled`                           |
 | `groups`       | Einstellungen pro Gruppe                       |
 
 Details zu den einzelnen Optionen findest du in der [Übersicht](./overview).

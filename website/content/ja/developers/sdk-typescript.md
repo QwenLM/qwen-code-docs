@@ -61,7 +61,7 @@ Qwen Code との新しいクエリセッションを作成します。
 | `cwd`                      | `string`                                       | `process.cwd()`    | クエリセッションの作業ディレクトリ。ファイル操作やコマンドが実行されるコンテキストを決定します。                                                                                                                                                                                                                                                                                                                                                                                    |
 | `model`                    | `string`                                       | -                  | 使用する AI モデル（例: `'qwen-max'`, `'qwen-plus'`, `'qwen-turbo'`）。`OPENAI_MODEL` および `QWEN_MODEL` 環境変数より優先されます。                                                                                                                                                                                                                                                                                                                                                       |
 | `pathToQwenExecutable`     | `string`                                       | 自動検出           | Qwen Code 実行ファイルへのパス。複数の形式に対応: `'qwen'`（PATH からのネイティブバイナリ）、`'/path/to/qwen'`（明示的なパス）、`'/path/to/cli.js'`（Node.js バンドル）、`'node:/path/to/cli.js'`（Node.js ランタイムを強制）、`'bun:/path/to/cli.js'`（Bun ランタイムを強制）。未指定の場合、以下から自動検出: `QWEN_CODE_CLI_PATH` 環境変数、`~/.volta/bin/qwen`、`~/.npm-global/bin/qwen`、`/usr/local/bin/qwen`、`~/.local/bin/qwen`、`~/node_modules/.bin/qwen`、`~/.yarn/bin/qwen`。 |
-| `permissionMode`           | `'default' \| 'plan' \| 'auto-edit' \| 'yolo'` | `'default'`        | ツール実行の承認を制御するパーミッションモード。詳細は [パーミッションモード](#permission-modes) を参照。                                                                                                                                                                                                                                                                                                                                                                               |
+| `permissionMode`           | `'default' \| 'plan' \| 'auto-edit' \| 'auto' \| 'yolo'` | `'default'`        | ツール実行の承認を制御するパーミッションモード。詳細は [パーミッションモード](#permission-modes) を参照。                                                                                                                                                                                                                                                                                                                                                                               |
 | `canUseTool`               | `CanUseTool`                                   | -                  | ツール実行承認のためのカスタムパーミッションハンドラ。ツールが確認を必要とするときに呼び出されます。60 秒以内に応答しないと自動拒否されます。[カスタムパーミッションハンドラ](#custom-permission-handler) を参照。                                                                                                                                                                                                                                                                |
 | `env`                      | `Record<string, string>`                       | -                  | Qwen Code プロセスに渡す環境変数。現在のプロセス環境とマージされます。                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `systemPrompt`             | `string \| QuerySystemPromptPreset`            | -                  | メインセッションのシステムプロンプト設定。文字列を使用すると組み込みの Qwen Code システムプロンプトを完全に上書きし、プリセットオブジェクトを使用すると組み込みプロンプトを維持しつつ追加の指示を付け加えます。                                                                                                                                                                                                                                   |
@@ -165,6 +165,7 @@ SDK はツール実行を制御するための異なるパーミッションモ�
 - **`default`**: 書き込みツールは `canUseTool` コールバックまたは `allowedTools` で承認されない限り拒否されます。読み取り専用ツールは確認なしで実行されます。
 - **`plan`**: すべての書き込みツールをブロックし、AI にまず計画を提示するよう指示します。
 - **`auto-edit`**: 編集ツール（`edit`、`write_file`、`notebook_edit`）を自動承認し、その他のツールは確認が必要です。
+- **`auto`**: 組み込みのクラシファイアを使用して安全なツール呼び出しを自動承認し、リスクのあるものをブロックします。ポリシーによる繰り返しブロックまたはクラシファイアの障害後には手動承認フォールバックに切り替わります。
 - **`yolo`**: すべてのツールが確認なしで自動実行されます。
 
 ### パーミッションの優先順位チェーン
@@ -178,8 +179,9 @@ SDK はツール実行を制御するための異なるパーミッションモ�
 3. `permissionMode: 'plan'` - 読み取り専用以外のすべてのツールをブロック
 4. `permissionMode: 'yolo'` - すべてのツールを自動承認
 5. `allowedTools` / `permissions.allow` - 一致するツールを自動承認
-6. `canUseTool` コールバック - カスタム承認ロジック（指定された場合、許可されたツールでは呼び出されない）
-7. デフォルト動作 - SDK モードでは自動拒否（書き込みツールは明示的な承認が必要）
+6. `permissionMode: 'auto'` - 残りのツールのクラシファイア仲介の承認
+7. `canUseTool` コールバック - カスタム承認ロジック（指定された場合、許可されたツールでは呼び出されない）
+8. デフォルト動作 - SDK モードでは自動拒否（書き込みツールは明示的な承認が必要）
 
 ## 使用例
 

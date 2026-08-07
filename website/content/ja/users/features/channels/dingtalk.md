@@ -30,11 +30,13 @@ DingTalk Stream モードはアウトバウンドの WebSocket 接続を使用�
       "type": "dingtalk",
       "clientId": "$DINGTALK_CLIENT_ID",
       "clientSecret": "$DINGTALK_CLIENT_SECRET",
+      "useConnectionManager": true,
       "senderPolicy": "open",
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "You are a concise coding assistant responding via DingTalk.",
       "groupPolicy": "open",
+      "atSender": true,
       "groups": {
         "*": { "requireMention": true }
       }
@@ -61,6 +63,12 @@ export DINGTALK_CLIENT_SECRET=<your-app-secret>
 }
 ```
 
+### 接続リカバリ
+
+`useConnectionManager` のデフォルトは `true` です。接続マネージャーは Stream WebSocket を監視し、接続が応答を停止した際に DingTalk SDK クライアントを置き換えます。通常は有効のままにしておくべきです。
+
+`"useConnectionManager": false` に設定すると、Qwen Code の接続マネージャーを無効にし、SDK のキープアライブと自動再接続の動作にフォールバックします。
+
 ## 実行
 
 ```bash
@@ -73,6 +81,36 @@ qwen channel start
 
 DingTalk を開き、ボットにメッセージを送信します。エージェントが処理中は 👀 の絵文字リアクションが表示され、その後応答が返ってきます。
 
+## デーモン Webhook 配信
+
+チャンネルが `qwen serve` 配下で動作しているとき、認証済み外部 Webhook イベントは無人のエージェントタスクをトリガーし、最終的な Markdown 応答を DingTalk ユーザーまたはグループに配信できます。既存の Webhook ターゲットフィールドを使用します。別のチャンネルタイプは不要です。
+
+```json
+{
+  "webhooks": {
+    "sources": {
+      "manual-test": {
+        "secretEnv": "QWEN_CHANNEL_DINGTALK_TEST_SECRET",
+        "targets": {
+          "operator": {
+            "chatId": "DINGTALK_USER_ID",
+            "senderId": "webhook:manual-test",
+            "isGroup": false
+          },
+          "team": {
+            "chatId": "OPEN_CONVERSATION_ID",
+            "senderId": "webhook:manual-test",
+            "isGroup": true
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+各ターゲットは `isGroup` を明示的に設定する必要があります。1対1チャットの場合、`chatId` は受信者の DingTalk ユーザー ID です。グループメッセージの場合、`chatId` はグループの `openConversationId` です。スレッドターゲットと受信ボット Webhook URL はプロアクティブ配信ではサポートされていません。完全なチャンネル設定とリクエスト形式については [Webhook トリガータスク](./overview#webhook-triggered-tasks) を参照してください。
+
 ## グループチャット
 
 DingTalk ボットは DM とグループ会話の両方で動作します。グループ対応を有効にするには:
@@ -82,6 +120,8 @@ DingTalk ボットは DM とグループ会話の両方で動作します。グ�
 3. グループ内でボットを @メンションすると応答がトリガーされます。
 
 デフォルトでは、グループチャットでは @メンションが必要です（`requireMention: true`）。特定のグループで全メッセージに応答させるには、`"requireMention": false` に設定します。詳細は [グループチャット](./overview#group-chats) を参照してください。
+
+`"atSender": true` を設定すると、ボットがグループメッセージのトリガーとなったメンバーを @メンションします。デフォルトではオフで、DingTalk スタッフ ID を持つエージェントの応答にのみ適用されます。応答はメンションの有無に関わらず DingTalk markdown として送信され、メンションプレフィックスは最初のメッセージチャンクに含まれます。
 
 ### グループの会話 ID を確認する
 
@@ -99,14 +139,14 @@ DingTalk ではグループを識別するために `conversationId` が使用�
 
 - **認証:** 静的なボットトークンの代わりに AppKey + AppSecret を使用します。SDK がアクセストークンのリフレッシュを自動的に管理します。
 - **接続:** ポーリングではなく WebSocket ストリームを使用するため、パブリック IP や Webhook URL は不要です。
-- **フォーマット:** 応答は DingTalk の Markdown 方言（限られたサブセット）を使用します。テーブルは DingTalk でレンダリングされないため、自動的にプレーンテキストに変換されます。長いメッセージは約 3800 文字で分割されます。
+- **フォーマット:** 応答は DingTalk の Markdown 方言を使用します。Markdown テーブルは DingTalk クライアントにそのまま渡され、長いメッセージは約 3800 文字で分割されます。
 - **動作中のインジケーター:** 処理中はユーザーのメッセージに 👀 の絵文字リアクションが追加され、応答送信時に削除されます。
 - **メディアのダウンロード:** 2 段階のプロセスです。メッセージ内の `downloadCode` を DingTalk の API を介して一時的なダウンロード URL と交換します。
 - **グループ:** DingTalk では、メッセージエンティティの解析ではなく `isInAtList` を使用して @メンションを検出します。
 
 ## ヒント
 
-- **DingTalk Markdown に対応した指示を設定する** — DingTalk は限られた Markdown サブセット（見出し、太字、リンク、コードブロック。ただしテーブルは不可）をサポートします。「DingTalk markdown を使用し、テーブルは避けてください」などの指示を追加すると、エージェントが適切にフォーマットするのに役立ちます。
+- **DingTalk Markdown に対応した指示を設定する** — DingTalk は見出し、太字、リンク、コードブロック、テーブルをサポートします。狭い画面では横スクロールする可能性があるため、テーブルはコンパクトに保ってください。
 - **アクセスを制限する** — 組織のコンテキストでは `senderPolicy: "open"` が許容される場合があります。より厳密に制御するには `"allowlist"` または `"pairing"` を使用してください。詳細は [DM ペアリング](./overview#dm-pairing) を参照してください。
 - **参照メッセージ** — ユーザーのメッセージに引用（返信）すると、その引用テキストがエージェントのコンテキストとして含まれます。ボットの応答の引用はまだサポートされていません。
 

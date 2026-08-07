@@ -55,6 +55,7 @@ Toutes les options de canal standard fonctionnent avec les canaux personnalisés
 | `instructions` | Ajoutées au début du premier message de chaque session |
 | `model`        | Remplacement de modèle pour le canal           |
 | `groupPolicy`  | `disabled`, `allowlist` ou `open`              |
+| `dmPolicy`     | `open` ou `disabled`                           |
 | `groups`       | Paramètres par groupe                          |
 
 Voir la [vue d'ensemble](./overview) pour les détails sur chaque option.

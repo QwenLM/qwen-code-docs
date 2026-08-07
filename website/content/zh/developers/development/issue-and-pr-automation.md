@@ -12,12 +12,12 @@
 
 以下是我们在仓库中运行的具体自动化工作流分解。
 
-### 1. 当你创建一个 Issue 时：`自动 Issue 分类`
+### 1. 当你创建一个 Issue 时：`Qwen Triage`
 
 这是你在创建 Issue 时第一个与之交互的机器人。它的职责是进行初步分析并应用正确的标签。
 
-- **工作流文件**：`.github/workflows/qwen-automated-issue-triage.yml`
-- **触发时机**：Issue 创建或重新打开后立即执行。
+- **工作流文件**：`.github/workflows/qwen-triage.yml`
+- **触发时机**：Issue 创建、编辑或重新打开后立即执行，或由维护者手动请求分类时执行。
 - **执行内容**：
   - 使用 Qwen 模型分析 Issue 的标题和正文，对照详细的准则。
   - **应用一个 `area/*` 标签**：将 Issue 归类到项目的某个功能领域（例如 `area/ux`、`area/models`、`area/platform`）。
@@ -28,6 +28,7 @@
 - **你应该做什么**：
   - 尽可能完整地填写 Issue 模板。你提供的细节越多，分类就越准确。
   - 如果添加了 `status/need-information` 标签，请在评论中提供所要求的详细信息。
+  - 维护者可以评论 `@qwen-code /triage` 来重新运行分类。
 
 ### 2. 当你创建一个 Pull Request 时：`持续集成（CI）`
 
@@ -43,33 +44,7 @@
   - 确保所有 CI 检查通过。当一切成功时，你的提交旁边会出现一个绿色勾 ✅。
   - 如果检查失败（红色“X” ❌），请点击失败检查旁的“Details”链接查看日志，找出问题并推送修复。
 
-### 3. Pull Request 的持续分类：`PR 审计与标签同步`
-
-此工作流定期运行，确保所有开放的 PR 都正确链接到 Issue 并具有一致的标签。
-
-- **工作流文件**：`.github/workflows/qwen-scheduled-pr-triage.yml`
-- **触发时机**：每 15 分钟对所有开放的 Pull Request 执行一次。
-- **执行内容**：
-  - **检查链接的 Issue**：机器人扫描你的 PR 描述，查找将其链接到 Issue 的关键词（例如 `Fixes #123`、`Closes #456`）。
-  - **添加 `status/need-issue`**：如果未找到链接的 Issue，机器人会为你的 PR 添加 `status/need-issue` 标签。这是一个明确的信号，表明需要创建并关联一个 Issue。
-  - **同步标签**：如果确实链接了 Issue，机器人会确保 PR 的标签与 Issue 的标签完全匹配。它会添加任何缺失的标签，并移除不相关的标签；如果之前存在 `status/need-issue` 标签，也会将其移除。
-- **你应该做什么**：
-  - **始终将你的 PR 链接到一个 Issue。** 这是最重要的一步。请在 PR 描述中添加一行如 `Resolves #<issue-number>` 的内容。
-  - 这样做将确保你的 PR 得到正确分类，并顺利通过审查流程。
-
-### 4. Issue 的持续分类：`定期 Issue 分类`
-
-这是一个兜底工作流，确保没有 Issue 被分类流程遗漏。
-
-- **工作流文件**：`.github/workflows/qwen-scheduled-issue-triage.yml`
-- **触发时机**：每小时对所有开放的 Issue 执行一次。
-- **执行内容**：
-  - 主动查找那些没有标签或仍带有 `status/need-triage` 标签的 Issue。
-  - 然后触发与初始分类机器人相同的基于 QwenCode 的强大分析，以应用正确的标签。
-- **你应该做什么**：
-  - 通常你不需要做任何事。此工作流是一个安全网，确保每个 Issue 最终都会被分类，即使初始分类失败了。
-
-### 5. 发布自动化
+### 3. 发布自动化
 
 此工作流负责打包和发布 Qwen Code 的新版本。
 

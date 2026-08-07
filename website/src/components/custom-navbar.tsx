@@ -81,7 +81,7 @@ const getUserLanguage = (): string => {
 
   if (pathSegments.length > 0) {
     const possibleLang = pathSegments[0];
-    const supportedLanguages = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"];
+    const supportedLanguages = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"];
     if (supportedLanguages.includes(possibleLang)) {
       return possibleLang;
     }
@@ -95,6 +95,7 @@ const getUserLanguage = (): string => {
   if (browserLang.startsWith("ru")) return "ru";
   if (browserLang.startsWith("ja")) return "ja";
   if (browserLang.startsWith("pt")) return "pt-BR";
+  if (browserLang.startsWith("ko")) return "ko";
 
   return "en"; // 默认英文
 };

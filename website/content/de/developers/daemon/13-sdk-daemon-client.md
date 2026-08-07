@@ -52,7 +52,7 @@ Methodengruppen (jede Methode akzeptiert eine optionale `clientId`, um `X-Qwen-C
 | Events              | `subscribeEvents` (SSE-Generator), `subscribeEventsStream` (Raw-Response)                                                                                                                                                                                                                                                                                                                                        |
 | Permissions         | `respondToPermission`, `respondToSessionPermission`                                                                                                                                                                                                                                                                                                                                                              |
 | Workspace snapshots | `getWorkspaceMcp`, `getWorkspaceSkills`, `getWorkspaceProviders`, `getWorkspaceEnv`, `getWorkspacePreflight`                                                                                                                                                                                                                                                                                                     |
-| Workspace mutations | `writeWorkspaceMemory`, `readWorkspaceMemory`, `rememberWorkspaceMemory`, `getWorkspaceMemoryRememberTask`, `forgetWorkspaceMemory`, `getWorkspaceMemoryForgetTask`, `dreamWorkspaceMemory`, `getWorkspaceMemoryDreamTask`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `toggleWorkspaceTool`, `restartMcpServer`, `initializeWorkspace` |
+| Workspace mutations | `addWorkspace`, `updateWorkspace`, `writeWorkspaceMemory`, `readWorkspaceMemory`, `rememberWorkspaceMemory`, `getWorkspaceMemoryRememberTask`, `forgetWorkspaceMemory`, `getWorkspaceMemoryForgetTask`, `dreamWorkspaceMemory`, `getWorkspaceMemoryDreamTask`, `listWorkspaceAgents`, `getWorkspaceAgent`, `createWorkspaceAgent`, `updateWorkspaceAgent`, `deleteWorkspaceAgent`, `setWorkspaceToolEnabled`, `setWorkspaceSkillEnabled`, `restartMcpServer`, `initWorkspace` |
 | Files               | `readFile`, `readFileBytes`, `writeFile`, `editFile`, `listDirectory`, `globPaths`, `statPath`                                                                                                                                                                                                                                                                                                                   |
 | Auth                | `startDeviceFlow`, `pollDeviceFlow`, `cancelDeviceFlow`, `getAuthStatus`                                                                                                                                                                                                                                                                                                                                         |
 
@@ -140,6 +140,36 @@ await client.getWorkspaceMemoryForgetTask('forget-...');
 await client.dreamWorkspaceMemory();
 await client.getWorkspaceMemoryDreamTask('dream-...');
 ```
+
+Workspace-Skill-Toggles sind auf beiden Client-Formen verfügbar:
+
+```ts
+await client.setWorkspaceSkillEnabled('review', false, {
+  clientId: 'dashboard-1',
+});
+await client
+  .workspaceByCwd('/work/secondary')
+  .setWorkspaceSkillEnabled('review', true, { clientId: 'dashboard-1' });
+```
+
+Pre-flight `capabilities.features.includes('workspace_skill_toggle')`. Der typisierte `DaemonSkillToggleResult` berichtet den kanonischen `skillName`, ob der Disk-State `changed` wurde, den Aktivierungszustand (`applied`, `deferred` oder `partial`) und die aktualisierten/fehlgeschlagenen Session-Zahlen. `DaemonWorkspaceSkillStatus.userInvocable` ist ein optionales False-only-Feld; Fehlen bedeutet, dass der Skill vom Benutzer aufrufbar ist.
+
+Workspace-Anzeigenamen sind optionale Präsentationsmetadaten. Pre-flight `capabilities.features.includes('workspace_display_name')`; Workspace-IDs und kanonische Pfade bleiben die einzigen Selektoren, und doppelte Anzeigenamen sind zulässig.
+
+```ts
+const workspace = await client.addWorkspace('/srv/repos/payments', {
+  persist: true,
+  displayName: 'Payments Production',
+});
+
+await client.updateWorkspace(workspace.id, {
+  displayName: 'Payments',
+});
+await client.updateWorkspace(workspace.id, { displayName: null });
+```
+
+`addWorkspace` akzeptiert `displayName?: string` und gibt ihn zurück, wenn gesetzt. `updateWorkspace` akzeptiert einen ID- oder CWD-Selektor und `{ displayName: string | null }`; `null` löscht den Namen. Namen sind nach dem Trimmen auf 256 Zeichen begrenzt und lehnen interne C0/DEL-Steuerzeichen ab. Ein prozesslokaler Workspace behält seinen Namen nur für den aktuellen Daemon-Prozess; übereinstimmende persistente Registrierungen werden über den bestehenden Store aktualisiert. `DaemonWorkspaceCapability.displayName` bleibt optional, sodass das SDK weiterhin mit älteren Daemons interoperabel ist.
+
 ## Workflow
 
 ### Create-or-attach + erster Prompt
@@ -234,7 +264,7 @@ sequenceDiagram
 
 Das SDK exportiert auch `packages/sdk-typescript/src/daemon/ui/`, ein host-neutrales Set an Primitiven, das Daemon-Events in Transcript-Blöcke umwandelt:
 
-- `normalizeDaemonEvent(evt)` mappt die 47 bekannten Daemon-Wire-Events auf 42 UI-freundliche `DaemonUiEventType`-Werte; nicht modellierte oder fehlerhafte Events werden auf `debug` normalisiert.
+- `normalizeDaemonEvent(evt)` mappt die 53 bekannten Daemon-Wire-Events auf 43 UI-freundliche `DaemonUiEventType`-Werte; nicht modellierte oder fehlerhafte Events werden auf `debug` normalisiert.
 - `createDaemonTranscriptState()` plus `reduceDaemonTranscriptEvents(state, events)` projiziert UI-Events in `DaemonTranscriptBlock[]`.
 - `createDaemonTranscriptStore()` kapselt Subscribe / Dispatch.
 - `render.ts` / `terminal.ts` stellen HTML- und Terminal-Baseline-Renderer bereit, während `toolPreview.ts` Tool-Call-Zusammenfassungen erzeugt.
@@ -294,9 +324,13 @@ async function* subscribe(sessionId: string, signal: AbortSignal) {
     }
     // Ring-Eviction-Gap behandeln.
     if (event.type === 'state_resync_required') {
-      // State ist veraltet — vollständigen Session-State neu laden.
+      // State ist veraltet — das begrenzte Replay-Snapshot-Fenster des Daemons neu laden.
       await client.loadSession(sessionId);
       continue;
+    }
+    if (event.type === 'history_truncated') {
+      // Nur informativ. Eine Statusnotiz rendern, dann die behaltenen
+      // Replay-Events weiter anwenden; keinen erneuten Reload auslösen.
     }
     yield event;
   }
@@ -328,7 +362,15 @@ async function resilientSubscribe(session: DaemonSessionClient) {
 }
 ```
 
-Beim Reconnect spielt der Daemon Events mit `id > lastSeenEventId` aus seinem begrenzten Ring (Standard 8000 Events) als Replay ab. Wenn die Lücke den Ring überschreitet, signalisiert ein `state_resync_required`-Frame dem Client, `loadSession` für einen vollständigen State-Rebuild aufzurufen.
+Beim Reconnect spielt der Daemon Events mit `id > lastSeenEventId` aus seinem begrenzten Ring (Standard 8000 Events) als Replay ab. Wenn die Lücke den Ring überschreitet, signalisiert ein `state_resync_required`-Frame dem Client, `loadSession` aufzurufen und aus dem aktuellen begrenzten Replay-Snapshot-Fenster neu aufzubauen. Dieser Snapshot kann mit `history_truncated` beginnen; behandle ihn als für Operatoren sichtbare Statusmarkierung, nicht als erneute Resync-Anfrage.
+
+`history_truncated.fullTranscriptAvailable` ist ein boolescher Capability-Flag. Wenn er `true` ist, können Caller das vollständige aktive persistierte Replay mit `DaemonClient.getSessionTranscriptPage(sessionId, { cursor, limit })` seitenweise abrufen; wenn er `false` ist, sollten Clients das begrenzte Replay normal weiter rendern.
+
+Wenn `workspace_persisted_transcript` angekündigt wird, liest `client.workspaceById(workspaceId).getSessionTranscriptPage(sessionId, { cursor, limit })` den ausgewählten registrierten Workspace ohne Anheften an ACP. Die workspace-qualifizierte Methode verwendet immer natives REST, selbst wenn der Client einen austauschbaren Transport hat; ihr Cursor erlischt beim Daemon-Neustart.
+
+Wenn `workspace_session_export` angekündigt wird, exportiert `client.workspaceById(workspaceId).exportSession(sessionId, { format })` oder `client.workspaceByCwd(workspaceCwd).exportSession(...)` das aktive persistierte Transkript des ausgewählten vertrauenswürdigen Workspace. Es gibt den bestehenden `DaemonSessionExportResult` zurück, bewahrt das optionale Client-Identity- und clientweite Fetch-Timeout-Verhalten und verwendet immer natives REST, selbst wenn der Client einen austauschbaren Transport hat. Leite die Serverunterstützung dieser Methode nicht von `session_export` oder `workspace_qualified_rest_core` ab; ältere Daemons behalten nur den primären Export.
+
+Wenn `workspace_archived_session_export` angekündigt wird, verwende `client.workspaceById(workspaceId).exportArchivedSession(sessionId, { format })` oder die entsprechende `workspaceByCwd`-Methode, um nur das archivierte persistierte Transkript des ausgewählten Workspace zu exportieren. Die Methode verwendet denselben Result-Type und dasselbe native REST-Verhalten wie der aktive Export, fällt aber niemals auf eine aktive Session zurück; die Unterstützung kann aus keiner aktiven Export-Capability abgeleitet werden.
 
 ### Seeding von `lastEventId` bei der Konstruktion
 

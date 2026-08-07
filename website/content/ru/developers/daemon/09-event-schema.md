@@ -2,7 +2,7 @@
 
 ## Обзор
 
-Каждый SSE-фрейм, генерируемый демоном на эндпоинте `GET /session/:id/events`, имеет структуру `{ id, v, type, data, originatorClientId?, _meta? }`. `v: 1` — это текущая версия `EVENT_SCHEMA_VERSION`. Поле `type` берется из закрытого, зафиксированного по версии набора `DAEMON_KNOWN_EVENT_TYPE_VALUES` в `packages/sdk-typescript/src/daemon/events.ts`; текущий набор содержит 47 известных типов событий. Поле `_meta` в обертке проставляется на границе записи SSE функцией `formatSseFrame()` в `packages/cli/src/serve/routes/sse-events.ts`; см. [Метаданные уровня обертки](#envelope-level-metadata).
+Каждый SSE-фрейм, генерируемый демоном на эндпоинте `GET /session/:id/events`, имеет структуру `{ id, v, type, data, originatorClientId?, _meta? }`. `v: 1` — это текущая версия `EVENT_SCHEMA_VERSION`. Поле `type` берется из закрытого, зафиксированного по версии набора `DAEMON_KNOWN_EVENT_TYPE_VALUES` в `packages/sdk-typescript/src/daemon/events.ts`. Поле `_meta` в обертке проставляется на границе записи SSE функцией `formatSseFrame()` в `packages/cli/src/serve/routes/sse-events.ts`; см. [Метаданные уровня обертки](#envelope-level-metadata).
 
 SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он возвращает дискриминированный объект `KnownDaemonEvent` для известных типов событий и `undefined` для остальных. Таким образом, потребители SDK могут обеспечивать прямую совместимость без необходимости синхронного обновления SDK, когда более новая версия демона добавляет новый тип события; редьюсер сессии записывает такие события как `unrecognizedKnownEventCount`.
 
@@ -15,7 +15,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 - Предоставляет чистые редьюсеры (`reduceDaemonSessionEvent`, `reduceDaemonAuthEvent`), которые проецируют поток событий в состояние представления SDK.
 - Транслирует тег возможности `typed_event_schema` в качестве информационного сигнала. Если тег отсутствует, `asKnownDaemonEvent` все равно возвращает `unknown`.
 
-## Словарь событий (47 известных типов)
+## Словарь событий
 
 Сгруппированы по доменам.
 
@@ -27,7 +27,8 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | `session_metadata_updated` | S->C | `PATCH /session/:id/metadata` | `sessionId, displayName?` |
 | `session_died` | S->C terminal | `channel.exited` | `sessionId, reason, exitCode? \| null, signalCode? \| null` |
 | `session_closed` | S->C terminal | `DELETE /session/:id` или программное закрытие | `sessionId, reason: 'client_close' \| string, closedBy?` |
-| `session_snapshot` | S->C synthetic | Снимочный фрейм после подключения / воспроизведения SSE | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null` |
+| `session_snapshot` | S->C synthetic | Снимочный фрейм после подключения / воспроизведения SSE | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null, recordingDegraded: boolean` |
+| `session_recording_degraded` | S->C | Транскрипт сессии был безвозвратно остановлен после асинхронной ошибки записи | `sessionId, reason: 'write_failed'` |
 
 ### Синтетические фреймы уровня подписчика
 
@@ -37,7 +38,10 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | `slow_client_warning` | Отставание по живым фреймам или живым сериализованным байтам >= 75%; принудительно отправляется и **не имеет `id`** | `queueSize, maxQueued, lastEventId, queuedBytes?, maxQueuedBytes?, threshold?: 'frames' \| 'bytes' \| 'frames_and_bytes'`; повторно активируется после того, как показатели по фреймам и байтам падают ниже 37.5%. |
 | `stream_error` | `SubscriberLimitExceededError` или другая ошибка потока маршрута | `error: string`; завершающее событие для подписки. |
 | `state_resync_required` | `subscribe({lastEventId})` обнаруживает, что кольцевой буфер демона больше не содержит `[lastEventId+1, earliestInRing-1]`, или курсор клиента относится к предыдущей эпохе шины. Принудительно отправляется **до** оставшихся фреймов воспроизведения и **не имеет `id`**. | `reason: 'ring_evicted' \| 'epoch_reset' \| string`, `lastDeliveredId: number`, `earliestAvailableId: number`. Это сигнал восстановления, а не завершающее событие: поток SSE остается открытым, и воспроизведение + живые фреймы продолжаются. Редьюсер SDK устанавливает `awaitingResync = true` и пропускает дельты, пока вызывающий код не выполнит сброс с помощью `loadSession`. |
+| `history_truncated`     | `POST /session/:id/load` возвращает ограниченный снимок воспроизведения после удаления старых записей воспроизведения из памяти. Добавляется в начало `compactedReplay` и **не имеет `id`**. | `reason: 'replay_window_exceeded'`, `truncatedEvents: number`, `retainedEvents: number`, `maxBytes: number`, `truncatedTurns?: number`, `fullTranscriptAvailable: boolean`. Это маркер состояния, а не запрос ресинхронизации; клиенты отображают его и продолжают применять сохранённое воспроизведение. |
 | `replay_complete` | Сигнальное событие без id, генерируемое после завершения цикла воспроизведения `Last-Event-ID`, как для чистого воспроизведения, так и для путей с выселением из кольца, даже если `data.replayedCount === 0`. **Нет `id`** | `replayedCount: number`; позволяет потребителям детерминированно скрывать UI синхронизации без использования таймаута. |
+
+`fullTranscriptAvailable` — это булев флаг возможности (capability), а не литеральный тип `true`. Текущие демоны выдают `true`, когда `/session/:id/transcript` может использоваться для постраничного просмотра сохранённого транскрипта; старые или ограниченные демоны могут выдавать `false`, и клиенты должны продолжать нормально отображать ограниченное воспроизведение.
 
 ### Разрешения (F3 + base)
 
@@ -129,7 +133,7 @@ SDK предоставляет метод `asKnownDaemonEvent(evt)`. Он воз
 | Аспект                                 | Источник                                       | Примечания                                                                                                         |
 | -------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `EVENT_SCHEMA_VERSION = 1`             | `packages/acp-bridge/src/eventBus.ts`          | Отправляется в каждом фрейме.                                                                                      |
-| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | Закрытый список из 47 типов.                                                                                       |
+| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | Закрытый список из 53 типов.                                                                                       |
 | `DaemonEventEnvelope<TType, TData>`    | `events.ts`                                    | Общая оболочка.                                                                                                    |
 | `DaemonKnownEventType`                 | `events.ts`                                    | `typeof DAEMON_KNOWN_EVENT_TYPE_VALUES[number]`.                                                                   |
 | Типы полезных нагрузок для каждого события | `events.ts`                                | Большинство типов событий имеют интерфейс `DaemonXxxData`; `user_shell_*` в настоящее время разбирается нормализатором UI ad hoc. |

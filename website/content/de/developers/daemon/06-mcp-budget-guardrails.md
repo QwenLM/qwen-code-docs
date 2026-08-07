@@ -142,12 +142,12 @@ Ablehnungen außerhalb eines Durchlaufs (z. B. ein faul gestarteter `readResou
 - **Der Modus `warn` lehnt niemals ab.** Er verfolgt weiterhin Reservierungen und löst `mcp_budget_warning` aus, aber `tryReserve` gibt immer `'reserved'` zurück. Ablehnungssemantik ist nur für `enforce`.
 - **Arbeitsbereichsbezogene Budget-Ereignisse tragen `scope: 'workspace'`**, sodass sie gleichzeitig an jede angeschlossene Sitzung verteilt werden. Die `mcpBudgetWarningCount` / `mcpChildRefusedBatchCount` der SDK-Reducer erhöhen sich synchron über alle Sitzungen derselben Verbindung hinweg. Sitzungsbezogene Legacy-Ereignisse von `McpClientManager` tragen kein `scope` (semantisch standardmäßig `'session'`).
 - **Der Kill-Switch `QWEN_SERVE_NO_MCP_POOL=1`** deaktiviert den Pool vollständig; das Arbeitsbereichs-Budget wird ebenfalls deaktiviert, und das sitzungsbezogene Budget von `McpClientManager` übernimmt. Der Capabilities-Block entfernt `mcp_workspace_pool` und `mcp_pool_restart`, um dies korrekt zu melden.
-- **`ServeMcpBudgetStatusCell.scope` ist eine vorwärtskompatible Listenform.** Snapshot-Zellen geben `budgets[]` aus, nicht ein einzelnes `budget?`-Feld. PR 14 v1 sendet eine `scope: 'session'`-Zelle für jede ACP-Sitzung, weil `acpAgent.newSessionConfig()` das `Config` / `McpClientManager` dieser Sitzung erstellt. Der Bereich `'pool'` ist für die Wave-5-PR-23-Pool-Zelle reserviert, die neben den sitzungsbezogenen Zellen platziert wird. Konsumenten müssen unbekannte zusätzliche `scope`-Werte tolerieren, indem sie sie ignorieren, anstatt fehlzuschlagen.
+- **`ServeMcpBudgetStatusCell.scope` ist capability-gesteuert und vorwärtskompatibel.** Snapshot-Zellen geben `budgets[]` aus, nicht ein einzelnes `budget?`-Feld. Mit `mcp_workspace_pool` emittiert die ausgewählte Runtime `scope: 'workspace'`; bei deaktiviertem oder nicht verfügbarem Pool emittiert der Legacy-Manager `scope: 'session'`. Konsumenten müssen zusätzliche unbekannte `scope`-Werte tolerieren, indem sie sie verwerfen, anstatt fehlzuschlagen.
 
 ## Referenzen
 
 - `packages/core/src/tools/mcp-workspace-budget.ts` (gesamte Klasse)
 - `packages/core/src/tools/mcp-client-manager.ts` (`BudgetExhaustedError`, `McpBudgetEvent`, Hysterese-Konstanten)
 - `packages/core/src/tools/mcp-transport-pool.ts` (`acquire`-Stelle des Pools, die `tryReserve` aufruft)
-- F2-Designdokument (v2.2): [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md) §11 für das Arbeitsbereichs-Budget und die v2.2-Changelog-Einträge zu Budget- und Fingerprint-Nacharbeiten.
+- F2-Designdokument (v2.2): [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md) §11 für das Arbeitsbereichs-Budget und die v2.2-Changelog-Einträge zu Budget- und Fingerprint-Nacharbeiten.
 - F2-Designnotizen: Issue [#4175](https://github.com/QwenLM/qwen-code/issues/4175) Commit 6.

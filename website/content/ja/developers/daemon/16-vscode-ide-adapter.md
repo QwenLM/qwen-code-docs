@@ -167,9 +167,9 @@ sequenceDiagram
 
 ## 依存関係
 
-- `packages/sdk-typescript/src/daemon/` — `DaemonClient`, `DaemonSessionClient` (the actual transport).
-- VS Code extension API (`vscode.*`) — host APIs, quick-pick, webview.
-- `packages/webui/src/adapters/ACPAdapter.ts` — webview rendering of ACP-shaped messages relayed via `postMessage`.
+- `packages/sdk-typescript/src/daemon/` — `DaemonClient`、`DaemonSessionClient` (実際のトランスポート)。
+- VS Code extension API (`vscode.*`) — ホスト API、クイックピック、Webview。
+- `packages/webui/src/adapters/ACPAdapter.ts` — `postMessage` 経由で中継される ACP 形状メッセージの Webview レンダリング。
 
 ## 設定
 
@@ -177,7 +177,7 @@ sequenceDiagram
 | ---------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------ |
 | `baseUrl`                                            | `connect(options)`                 | デーモンURL。ループバックである必要があります。                    |
 | `token`                                              | `connect(options)`                 | Bearer トークン（SDK によってスタンプされます）。                  |
-| `workspaceCwd`                                       | `connect(options)`                 | `POST /session` で使用されます。デーモンのバインドされたワークスペースと一致する必要があります。 |
+| `workspaceCwd`                                       | `connect(options)`                 | `POST /session` で使用されます。デーモンのプライマリワークスペースまたは登録されたマルチワークスペースセッションランタイムと一致する必要があります。 |
 | `modelServiceId`                                     | `connect(options)` / `setModel()`  | 初期モデル。                                                       |
 | `lastEventId`                                        | `connect(options)`                 | 再開カーソル（通常はホスト状態から復元されます）。                 |
 | VS Code 設定 `qwen.ide.daemonUrl` (または同等のもの) | ワークスペース設定                 | オペレーターが設定するデーモンURL。                                |
@@ -188,7 +188,7 @@ sequenceDiagram
 - **従来の `AcpConnectionState` パスは依然として IDE コンパニオン（stdio 子プロセス）のプライマリです。** このアダプターは Mode-B 移行のための sibling-transport です。移行のブロッカーと計画されている `BridgeFileSystem` のパリティ作業については [`../daemon-client-adapters/ide.md`](../daemon-client-adapters/ide.md) を参照してください。
 - **HTTP 経由のリバース RPC やエディターアフォーダンスの表面はまだありません。** エージェントが IDE にコールバックする必要がある機能（読み取り専用バッファアクセス、差分プレビュー統合など）は、現在 stdio パスでのみ動作します。
 - **Webview ↔ コネクションの結合はホストが所有しており**、このアダプターには含まれません。Webview 固有のロジックを `DaemonIdeConnection` に組み込まないでください。
-- **`workspaceCwd` がデーモンのバインドされたワークスペースと一致しない** 場合、`400 workspace_mismatch` が返されます。再試行するのではなく、明確なセットアップエラーとして表示してください。
+- **`workspaceCwd` がデーモンの登録されたワークスペースと一致しない** 場合、`400 workspace_mismatch` が返されます。再試行するのではなく、明確なセットアップエラーとして表示してください。
 
 ## 参考
 

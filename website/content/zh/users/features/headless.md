@@ -56,6 +56,37 @@ qwen --resume 123e4567-e89b-12d3-a456-426614174000 -p "Apply the follow-up refac
 > - 会话数据是限定在项目范围内的 JSONL 文件，存储在 `~/.qwen/projects/<sanitized-cwd>/chats` 目录下。
 > - 在发送新 prompt 之前，恢复对话历史、工具输出和聊天压缩检查点。
 
+## 运行持久目标
+
+无头模式接受 `/goal` 作为完整的 prompt。Goal 状态与会话一起存储，因此请使用 `--continue` 或 `--resume <sessionId>` 从后续进程中检查或控制同一个 Goal。这需要 `general.chatRecording` 保持启用状态（默认值）。
+
+```bash
+# 创建一个 Goal 并启动其 worker
+qwen -p "/goal Finish the release checklist"
+
+# 在同一会话中检查其保存的状态
+qwen --continue -p "/goal"
+```
+
+对其余操作使用相同的 `qwen --continue -p "<control>"` 模式：
+
+| 控制                                 | 行为                                                                                       |
+| ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `/goal`                              | 报告存储的状态，不调用模型。                                                               |
+| `/goal <objective>` 或 `/goal set …` | 创建或替换 Goal 并启动无头 Goal 工作。                                                     |
+| `/goal edit <objective>`             | 修改未完成的 Goal；当结果状态为 active 时，工作立即开始。                                  |
+| `/goal pause`                        | 暂停一个 active 的 Goal，不调用模型。                                                      |
+| `/goal resume`                       | 恢复符合条件的 Goal 并启动无头 Goal 工作。                                                 |
+| `/goal clear`                        | 清除 Goal，无需确认也不调用模型。                                                          |
+
+运行时调度的 Goal 续接段不计入 `--max-session-turns`，但真实用户 prompt 仍然计入。显式的 `--max-wall-time` 和 `--max-tool-calls` 预算继续生效；超过任一限制会在运行以预算特定的错误退出之前暂停 active 的 Goal 工作。
+
+使用 `--output-format stream-json` 时，每次 Goal 状态变更都会发出一个 `stream_event`，其 `event.type` 为 `goal_state`。即使没有 `--include-partial-messages` 也会发出此规范状态事件。当启用部分消息时，较旧的 `active_goal` 事件会作为兼容性投影跟随其后；自动化应将 `goal_state` 视为权威来源。
+
+> [!note]
+>
+> 此行为适用于标准无头 CLI 运行。ACP 仍使用旧版 Goal 命令路径。
+
 ## 自定义主会话 Prompt
 
 你可以在单次 CLI 运行中更改主会话的系统 prompt，而无需编辑共享内存文件。

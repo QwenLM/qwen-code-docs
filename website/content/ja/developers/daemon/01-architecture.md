@@ -2,7 +2,7 @@
 
 ## 概要
 
-`qwen serve` プロセスは **1 デーモン = 1 ワークスペース** です。単一の Express HTTP サーバーをホストし、`@qwen-code/acp-bridge` インスタンスを所有し、実際のエージェントランタイムを実行する 1 つの ACP 子プロセス (`qwen --acp`) を生成します。複数のクライアント（CLI TUI、IDE コンパニオン、IM チャネルボット、Web BFF、カスタムスクリプト）は HTTP + SSE を介して接続し、1 つの ACP セッションを共有するか（`sessionScope: 'single'`、デフォルト）、会話スレッドごとにセッションを分割します（`sessionScope: 'thread'`）。
+`qwen serve` プロセスは 1 つの Express HTTP サーバーとデフォルトで 1 つのプライマリワークスペースをホストします。`multi_workspace_sessions` が有効になっている場合、ライブセッションのクローズドループ用の追加ワークスペースランタイムもホストする可能性があります。各登録されたワークスペースは、独自の `@qwen-code/acp-bridge` / `qwen --acp` 子プロセスのペアを所有します。複数のクライアント（CLI TUI、IDE コンパニオン、IM チャネルボット、Web BFF、カスタムスクリプト）は HTTP + SSE を介して接続し、1 つの ACP セッションを共有するか（`sessionScope: 'single'`、デフォルト）、会話スレッドごとにセッションを分割します（`sessionScope: 'thread'`）。
 
 ACP 子プロセス内では、MCP サーバーは `McpTransportPool`（F2）によってワークスペース全体で共有されます。つまり、（サーバー名 + 設定フィンガープリント）のタプルは、それを検出するセッションの数に関係なく、1 つの MCP トランスポートにマッピングされます。ブリッジの `MultiClientPermissionMediator`（F3）は、4 つのポリシーのいずれかの下で、接続されたすべてのクライアント間の権限投票を調整します。
 
@@ -20,7 +20,7 @@ flowchart LR
         SDK["Any SDK consumer<br/>(packages/sdk-typescript/src/daemon)"]
     end
 
-    subgraph daemon["qwen serve process (one workspace)"]
+    subgraph daemon["qwen serve process (primary workspace plus optional session runtimes)"]
         EXP["Express app<br/>(packages/cli/src/serve/server.ts)"]
         BR["AcpBridge<br/>(packages/acp-bridge/src/bridge.ts)"]
         MED["MultiClientPermissionMediator<br/>(F3)"]
@@ -196,7 +196,7 @@ sequenceDiagram
     Note over EB,SR: If subscriber queue >= maxQueued,<br/>EventBus emits client_evicted terminal frame<br/>and closes subscriber.
 ```
 
-リングバッファは有限です（`eventRingSize`、デフォルト 8000）。`Last-Event-ID` がリングの先頭より古い再接続クライアントは、合成されたキャッチアップ信号を受け取り、`loadSession` / `resumeSession` を呼び出してより深い状態を再構築する必要があります。低速クライアントは、キューフィル率 75% で `slow_client_warning` を、上限に達すると `client_evicted` をトリガーします。
+リングバッファは有限です（`eventRingSize`、デフォルト 8000）。`Last-Event-ID` がリングの先頭より古い再接続クライアントは `state_resync_required` を受信し、`loadSession` の有界リプレイスナップショットウィンドウから再構築するか、ローカル履歴をすでに持っている場合は `resumeSession` を使用する必要があります。低速クライアントは、キューフィル率 75% で `slow_client_warning` を、上限に達すると `client_evicted` をトリガーします。
 
 ## ワークフロー 3: マルチクライアント権限調整
 
@@ -347,5 +347,5 @@ sequenceDiagram
 - 設計イシュー: [#3803](https://github.com/QwenLM/qwen-code/issues/3803)（デーモン設計）、[#4175](https://github.com/QwenLM/qwen-code/issues/4175)（F シリーズマイルストーン）
 - ユーザーガイド: [`../../users/qwen-serve.md`](../../users/qwen-serve.md)
 - ワイヤープロトコルリファレンス: [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md)
-- F2 設計文書: [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)
+- F2 設計文書: [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)
 - F2 設計ノート: イシュー [#4175](https://github.com/QwenLM/qwen-code/issues/4175) コミット 4-6

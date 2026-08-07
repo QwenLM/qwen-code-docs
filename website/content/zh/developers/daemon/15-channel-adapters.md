@@ -7,9 +7,15 @@
 目前有两种宿主模式：
 
 - `qwen channel start [name]` 是独立的 ACP 支持的渠道服务。它向适配器传递 `ChannelAgentBridge` 的 `AcpBridge` 实现。
-- `qwen serve --channel <name>` 和 `qwen serve --channel all` 是实验性的守护进程管理模式。`qwen serve` 会启动一个进程外的渠道 worker，该 worker 通过 SDK 连接到守护进程，适配器接收由 `DaemonChannelBridge` 支持的 `ChannelAgentBridge` 门面。
+- `qwen serve --channel <name>` 和 `qwen serve --channel all` 是实验性的守护进程管理模式。命名选择按所属工作区分组，`qwen serve` 为每个所属运行时启动一个进程外 worker；每个 worker 通过 SDK 连接到守护进程，适配器接收由 `DaemonChannelBridge` 支持的 `ChannelAgentBridge` 门面。`--channel all` 仍然是仅主工作区的选择。
 
-在守护进程管理模式下，每个渠道将入站聊天流量映射到可配置 `SessionScope`（`user`、`thread` 或 `single`）下的守护进程会话。适配器委托给 `DaemonChannelBridge`，后者再委托给 SDK 的 `DaemonSessionClient`（参见 [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)）。一个守护进程绑定到一个工作区，因此每个所选渠道的 `cwd` 必须解析为该守护进程的工作区。
+在守护进程管理模式下，每个渠道将入站聊天流量映射到可配置 `SessionScope`（`user`、`thread` 或 `single`）下的守护进程会话。适配器委托给 `DaemonChannelBridge`，后者再委托给 SDK 的 `DaemonSessionClient`（参见 [`13-sdk-daemon-client.md`](./13-sdk-daemon-client.md)）。每个命名渠道必须解析到一个已注册的、可信的工作区。worker 使用该运行时的规范 cwd、`QWEN_DAEMON_WORKSPACE` 和环境覆盖；所属关系解析不会回退到主工作区。
+
+### Webhook 触发的渠道任务
+
+Webhook 触发的任务由 `qwen serve` 托管，并在守护进程管理的渠道 worker 内执行。HTTP 路由验证来源并通过 IPC 将 `ChannelWebhookTask` 转发给 worker。worker 调用 `ChannelBase.runWebhookTask()`，因此适配器无需实现 webhook 解析。
+
+适配器仍然通过主动发送支持参与：`supportsProactiveSend()` 告诉宿主渠道是否可以在没有入站消息的情况下发送，`supportsProactiveTarget()` 处理特定目标形态的投递限制，`pushProactive()` 承载出站内容。
 
 ## 职责
 
@@ -61,6 +67,8 @@ abstract class ChannelBase {
 }
 ```
 
+所有内部消息投递都通过 `sendThreadMessage(chatId, threadId, text)` 路由。默认实现会回退到 `sendMessage(chatId, text)`，忽略 `threadId`——IM 适配器不受影响。轮询适配器（例如 GitHub）覆盖 `sendThreadMessage` 以使用 `threadId` 在特定的 issue/PR 上发布评论。
+
 处理常见的横切关注点：发送者过滤（白名单/黑名单）、群组过滤、消息块流式传输（分块大小、节流）、入站防抖。
 
 ### 各渠道适配器
@@ -71,6 +79,8 @@ abstract class ChannelBase {
 | 微信 (Weixin) | `packages/channels/weixin/src/WeixinAdapter.ts` | iLink Bot HTTP 长轮询 | 通过专有的 `sendText` / `sendImage` API 发送；支持输入中指示器。 |
 | Telegram | `packages/channels/telegram/src/TelegramAdapter.ts` | Telegram Bot API 长轮询 (grammy) | 通过 `sendMessage` 发送 HTML 分块。 |
 | 飞书 | `packages/channels/feishu/src/FeishuAdapter.ts` | 飞书/Lark Stream WebSocket（默认）或 HTTP webhook | 通过 Lark SDK 作为交互卡片发送；webhook 模式需要 `encryptKey` 进行 HMAC 签名验证。 |
+| GitHub | `packages/channels/github/src/GithubAdapter.ts` | GitHub Notifications API 轮询（`@octokit/rest`） | 扩展 `PollingChannelBase`；基于游标的评论窗口去重；通过 Issues API 发布评论。 |
+| GitLab | `packages/channels/gitlab/src/GitlabAdapter.ts` | GitLab Todos API 轮询（`@gitbeaker/rest`） | 扩展 `PollingChannelBase`；直接分发 `todo.body`；`action_prompt_template` 配置驱动事件过滤和元数据渲染。 |
 
 每个适配器实现：
 
@@ -88,6 +98,8 @@ abstract class ChannelBase {
 | **微信** | HTTP 长轮询 | `senderWxid`（群组可选 `groupWxid`） | 带有回复 token 的纯文本提示 | 同上 |
 | **Telegram** | Bot API 长轮询 | `from.id`（群组可选 `chat.id`） | 内联键盘按钮 | 同上 |
 | **飞书** | WebSocket 流 / HTTP webhook | `sender.open_id`（群组可选 `chat_id`） | 交互卡片按钮 | 同上 |
+| **GitHub** | Notifications API 轮询 | 数字 `user.id`（不可变；login 在连接时解析） | 错误评论 + 重新 @提及 | `senderPolicy: 'allowlist' \| 'open'` |
+| **GitLab** | Todos API 轮询 | `author.username`（小写化） | 日志 + 重新 @提及 | `senderPolicy: 'allowlist' \| 'open'` |
 
 > **注意：** “权限 UX”列描述了各平台的原生交互方式，但目前尚未接入——`AcpBridge.requestPermission` 当前会自动批准所有请求（`packages/channels/base/src/AcpBridge.ts`），并且 `ChannelConfig.approvalMode` 已声明但尚未被读取。交互式批准功能已在计划中（Phase 5）。
 
@@ -162,11 +174,21 @@ sequenceDiagram
 - `shutdown()` 会关闭所有活跃会话和底层传输（渠道的 WebSocket/长轮询）。
 - 钉钉的 WebSocket 流支持服务端推送；微信的长轮询在空闲响应时需要退避策略；Telegram 的长轮询内置了 `timeout` 参数。
 
+### 运行时选择与设置重新加载
+
+长生命周期的 `ChannelWorkerManager` 持有已提交的 daemon 选择和按工作区分组的 supervisor。daemon 可以在启动时不带 `--channel`；第一个严格门控的 `PUT /workspace/channel` 会动态加载渠道运行时、保留服务 pidfile、解析工作区所属关系，并启动所选的 worker。`GET /workspace/channel` 读取管理器快照，`DELETE /workspace/channel` 幂等地停止它。SDK 辅助方法有 `getChannelWorkerControl()`、`setChannelWorkerSelection()` 和 `stopChannelWorker()`；CLI 入口是 `qwen channel set` 以及远程 `status` 和 `stop` 变体。
+
+守护进程在每个 worker 启动时从 `settings.json` 读取渠道设置（`packages/cli/src/commands/channel/daemon-worker.ts` → `loadSettings` → `loadChannelsConfig`）。`POST /workspace/channel/reload` 重新读取这些设置并强制调和已提交的选择。所有生命周期变更共享一个 FIFO 通道。未变更的工作区分组在普通选择替换中保留；变更的分组按顺序停止和启动，同时 serve 持有的 PID 租约保持不变。
+
+如果替换失败，新启动的 worker 会被停止，旧 worker 会在请求返回前恢复。无法在 SIGTERM 和 SIGKILL 后观察到退出的 supervisor 会保留其子引用并导致停止失败；管理器保留 PID 租约，永远不会启动第二个 worker。Webhook 配置和路由仅在选择提交成功时才会变更。运行时选择是进程本地的，在 daemon 重启时消失。
+
+适配器 `connect()` 失败与 worker 生命周期错误分开报告。worker 通过启动 IPC 发送每个有界的、凭证已编辑的失败，并在尝试下一个适配器之前等待 supervisor 确认。部分连接的 worker 保持运行并在其快照中暴露 `startupFailures`。如果动态尝试中的每个适配器都失败，`502 channel_worker_start_failed` 响应携带带工作区注释的尝试失败信息，而 `state` 反映回滚结果；后续 GET 响应不保留尝试信息。daemon 启动时没有已连接的适配器仍然快速失败。可选的适配器 `code` 仅用于诊断，当前 `phase` 为 `connect`。
+
 ## 依赖
 
 - `packages/channels/base/` — `ChannelBase`、`DaemonChannelBridge`、`types.ts`（`ChannelConfig`、`Envelope`、`SessionScope`、`ChannelPlugin`）。
 - `packages/sdk-typescript/src/daemon/` — `DaemonSessionClient` 及相关模块。
-- 各渠道 SDK：`@dingtalk/stream`（钉钉）、专有的 iLink Bot HTTP（微信）、`grammy`（Telegram）。
+- 各渠道 SDK：`@dingtalk/stream`（钉钉）、专有的 iLink Bot HTTP（微信）、`grammy`（Telegram）、`@octokit/rest`（GitHub 轮询）、`@gitbeaker/rest`（GitLab 轮询）。
 
 ## 配置
 
@@ -174,7 +196,7 @@ sequenceDiagram
 
 | 配置项 | 作用 |
 | --- | --- |
-| `sessionScope` | `'user'`（发送者 + 聊天）、`'thread'`（线程 id 或聊天）或 `'single'`（每个渠道一个共享会话）。 |
+| `sessionScope` | `'user'`（发送者 + 聊天）、`'thread'`（线程 id 或聊天）、`'chat_thread'`（渠道 + chatId + threadId，用于轮询适配器）或 `'single'`（每个渠道一个共享会话）。 |
 | `approvalMode` | `'auto'`（自动响应）/ `'prompt'`（渲染 UI）。 |
 | `allowlist?: string[]` | 允许的发送者 id；缺失则表示开放。 |
 | `denylist?: string[]` | 拒绝的发送者 id。 |
@@ -196,6 +218,10 @@ sequenceDiagram
 - `packages/channels/base/src/DaemonChannelBridge.ts`
 - `packages/channels/base/src/ChannelBase.ts`
 - `packages/channels/base/src/types.ts`
+- `packages/cli/src/serve/channel-worker-manager.ts`（选择生命周期 + 序列化）
+- `packages/cli/src/serve/channel-worker-group.ts`（工作区差异调和）
+- `packages/cli/src/serve/channel-worker-supervisor.ts`（子进程监督）
+- `packages/cli/src/serve/routes/workspace-channel-control.ts`（GET/PUT/DELETE/reload 资源）
 - `packages/channels/dingtalk/src/DingtalkAdapter.ts`
 - `packages/channels/weixin/src/WeixinAdapter.ts`
 - `packages/channels/telegram/src/TelegramAdapter.ts`

@@ -21,6 +21,7 @@ const langMap = {
   ru: 'ru',
   ja: 'ja',
   'pt-BR': 'pt-BR',
+  ko: 'ko',
 };
 
 function processDirectory(dirPath, lang) {

@@ -1,4 +1,4 @@
-# Limites du système de fichiers de l'espace de travail
+# Limite du système de fichiers du workspace
 
 ## Vue d'ensemble
 
@@ -6,7 +6,7 @@ Le démon ne laisse jamais les routes HTTP ou les appels d'agent côté ACP touc
 
 - **Résolution de chemin** — canonicalise les chemins et rejette tout ce qui sort de l'espace de travail lié, y compris via les liens symboliques.
 - **Protection par confiance** — refuse les écritures lorsque l'espace de travail n'est pas approuvé (`untrusted_workspace`).
-- **Politique de taille et de contenu** — limite de lecture (`MAX_READ_BYTES = 256 Ko`), limite d'écriture (`MAX_WRITE_BYTES = 5 Mo`), détection binaire.
+- **Politique de taille et de contenu** — limite de snapshot complet/retour (`MAX_READ_BYTES = 256 KiB`), fenêtres de texte large bornées à la fois en sortie et en coût de scan (`MAX_TEXT_SCAN_BYTES = 8 MiB`), limite d'écriture (`MAX_WRITE_BYTES = 5 MiB`), détection binaire.
 - **Atomicité** — écriture puis renommage avec préservation du mode cible et valeur par défaut `0o600` pour les nouveaux fichiers.
 - **Audit** — chaque accès / refus émet un événement structuré pour `PermissionAuditRing` / la supervision.
 - **Erreurs typées** — union fermée `FsErrorKind` mappée sur des statuts HTTP.
@@ -17,7 +17,7 @@ Les routes HTTP de fichiers (`GET /file`, `GET /file/bytes`, `POST /file/write`,
 
 - Résoudre les chemins fournis par l'utilisateur en valeurs `ResolvedPath` typées que le reste de la limite peut utiliser en toute sécurité.
 - Refuser les chemins en dehors de l'espace de travail lié (`path_outside_workspace`) et les chemins dont la cible est un lien symbolique (`symlink_escape`).
-- Refuser les lectures au-dessus de `MAX_READ_BYTES`, les écritures au-dessus de `MAX_WRITE_BYTES`, et les fichiers binaires (`binary_file`).
+- Refuser les lectures de snapshot complet au-dessus de `MAX_READ_BYTES`, tout en autorisant des fenêtres explicites avec une sortie limitée à `MAX_READ_BYTES` et un coût de scan limité à `MAX_TEXT_SCAN_BYTES` ; refuser les écritures au-dessus de `MAX_WRITE_BYTES` et les fichiers binaires (`binary_file`).
 - Refuser les écritures/éditions lorsque l'espace de travail n'est pas approuvé (`untrusted_workspace`) — protégé par `assertTrustedForIntent(trusted, intent)`.
 - Respecter les motifs `.gitignore` / `.qwenignore` via `shouldIgnore`.
 - Effectuer une écriture atomique (écriture puis renommage) avec préservation du mode cible ; le mode par défaut pour un nouveau fichier est `0o600`.
@@ -31,7 +31,7 @@ Les routes HTTP de fichiers (`GET /file`, `GET /file/bytes`, `POST /file/write`,
 | Fichier                     | Objectif                                                                                                                                                                                                                                                 |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `paths.ts`                 | `canonicalizeWorkspace`, `resolveWithinWorkspace`, `hasSuspiciousPathPattern`, `ResolvedPath` typé, union `Intent` (`read \| write \| list \| stat \| glob`).                                                                                           |
-| `policy.ts`                | `MAX_READ_BYTES`, `MAX_WRITE_BYTES`, `BINARY_PROBE_BYTES`, `assertTrustedForIntent`, `detectBinary`, `enforceReadBytesSize`, `enforceReadSize`, `enforceWriteSize`, `shouldIgnore`.                                                                      |
+| `policy.ts`                | `MAX_READ_BYTES`, `MAX_TEXT_SCAN_BYTES`, `MAX_WRITE_BYTES`, `BINARY_PROBE_BYTES`, `assertTrustedForIntent`, `detectBinary`, `enforceReadBytesSize`, `enforceReadSize`, `enforceWriteSize`, `shouldIgnore`.                                            |
 | `audit.ts`                 | `FS_ACCESS_EVENT_TYPE`, `FS_DENIED_EVENT_TYPE`, `createAuditPublisher`, types de charge utile d'audit.                                                                                                                                                   |
 | `errors.ts`                | Classe `FsError`, `isFsError`, union `FsErrorKind` (14 types), union `FsErrorStatus` (`400 / 403 / 404 / 409 / 413 / 422 / 500 / 503`).                                                                                                                 |
 | `workspace-file-system.ts` | `createWorkspaceFileSystemFactory`, `WorkspaceFileSystem` (l'orchestrateur qui lit/écrit/liste), `WriteMode`, `ContentHash`, `FsEntry`, `FsStat`, `ListOptions`, `GlobOptions`, `ReadTextOptions`, `ReadBytesOptions`, `WriteTextAtomicOptions`. |
@@ -43,8 +43,8 @@ Les routes HTTP de fichiers (`GET /file`, `GET /file/bytes`, `POST /file/write`,
 | `path_outside_workspace`   | 400             | Le chemin résolu est en dehors de l'espace de travail lié.                                                                                                                                           |
 | `symlink_escape`           | 400             | La cible est un lien symbolique (rejeté conformément à la posture prudente PR 18 + PR 20).                                                                                                          |
 | `path_not_found`           | 404             | `ENOENT`.                                                                                                                                                                                            |
-| `binary_file`              | 422             | Contenu détecté binaire sur une route texte.                                                                                                                                                         |
-| `file_too_large`           | 413             | Au-dessus de `MAX_READ_BYTES` ou `MAX_WRITE_BYTES`.                                                                                                                                                  |
+| `binary_file`              | 422             | Contenu détecté binaire sur une route texte, ou texte large dans un encodage que la route texte ne peut pas décoder.                                                                                                        |
+| `file_too_large`           | 413             | Texte de snapshot complet/sans fenêtre au-dessus de `MAX_READ_BYTES`, un décalage de ligne au-delà de `MAX_TEXT_SCAN_BYTES`, ou une écriture au-dessus de `MAX_WRITE_BYTES`.                                                 |
 | `hash_mismatch`            | 409             | Échec de la concurrence optimiste `expectedSha256`.                                                                                                                                                  |
 | `file_already_exists`      | 409             | `mode: 'create'` contre un fichier existant.                                                                                                                                                         |
 | `text_not_found`           | 422             | La chaîne de recherche de `POST /file/edit` n'a pas été trouvée dans le fichier.                                                                                                                     |
@@ -71,7 +71,7 @@ C'est le point d'injection pour `readTextFile` / `writeTextFile` de l'ACP. Les t
 Deux protections défensives que l'adaptateur DOIT reproduire (car le proxy en ligne est totalement contourné lorsque l'adaptateur est injecté) :
 
 1. **Rejeter les fichiers non réguliers** — les sockets / pipes / périphériques de caractères / entrées procfs / sysfs peuvent diffuser des données illimitées malgré `stats.size === 0`. Le chemin en ligne lance une exception avec `describeStatKind(stats)` dans le message.
-2. **Limiter la taille du tampon** à `READ_FILE_SIZE_CAP = 100 Mo`. Une petite requête `{ line: 1, limit: 10 }` contre un fichier journal de 500 Mo coûterait autrement 500 Mo de RSS pour simplement retourner 10 lignes.
+2. **Éviter le buffering borné de fichier complet.** Le fallback en ligne limite une lecture bufferisée à `READ_FILE_SIZE_CAP = 100 MiB`. L'adaptateur injecté applique à la place le contrat plus strict de WorkspaceFileSystem : les snapshots complets s'arrêtent à 256 KiB, tandis que les fichiers UTF-8 plus grands nécessitent un `limit` fini et sont streamés depuis un handle lié à l'inode avec au plus 256 KiB retournés. Il ne doit pas lire un journal de 500 Mo entier pour simplement retourner `{ line: 1, limit: 10 }`.
 
 L'adaptateur va plus loin : il utilise `WorkspaceFileSystem.writeTextOverwrite` (primitive PR 18) pour les écritures atomiques avec fichier temporaire et renommage, préservation du mode, valeur par défaut `0o600`, et rejet des liens symboliques à l'intérieur d'un verrou par chemin. Il s'agit d'une **divergence par rapport au proxy en ligne pré-F1** qui résolvait les liens symboliques et écrivait vers leur cible — les agents qui écrivaient via des fichiers points liés symboliquement doivent désormais utiliser le chemin résolu directement.
 
@@ -130,15 +130,27 @@ sequenceDiagram
     FS->>FSP: stat(path)
     FSP-->>FS: stats
     FS->>FS: rejeter si fichier non régulier (describeStatKind)
-    FS->>POL: enforceReadSize(stats.size, opts.maxBytes?)<br/>→ lever file_too_large OU plan de découpage
-    FS->>FSP: readFile(path)
-    FSP-->>FS: buffer
-    FS->>POL: detectBinary(buffer)
+    alt curseur fourni
+        FS->>FSP: ouvrir FileHandle stable
+        FS->>FS: valider le curseur {dev,ino,size} ; seek à l'offset d'octets
+        FS->>FS: retourner les lignes complètes ; émettre le prochain curseur
+    else fichier <= 256 KiB
+        FS->>FSP: ouvrir + lire le snapshot complet stable
+        FSP-->>FS: buffer
+        FS->>FS: hacher le snapshot complet ; appliquer les limites de lignes/sortie
+    else fichier > 256 KiB ET un argument de fenêtre explicite
+        FS->>FSP: ouvrir FileHandle stable
+        FS->>FS: streamer les lignes demandées depuis le même inode
+        FS->>FS: limiter la sortie à 256 KiB et le scan à 8 MiB ; omettre le hachage complet
+    else lecture large sans fenêtre
+        FS-->>R: file_too_large
+    end
+    FS->>POL: detectBinary(sample)
     POL-->>FS: isBinary?
-    FS->>FS: rejeter si binaire ; hash sha256 ; tronquer à la fenêtre de lignes
+    FS->>FS: rejeter si binaire
     FS->>FS: shouldIgnore? → annoter meta.matchedIgnore
     FS->>FS: audit fs.access
-    FS-->>R: { content, sha256, truncated?, meta }
+    FS-->>R: { content, sha256 optionnel, truncated?, meta }
 ```
 
 `readText` ne saute ni ne rejette les lectures à cause des règles d'ignorance. Il lit le fichier normalement et enregistre la classification d'ignorance correspondante dans `meta.matchedIgnore`. `list` et `glob` filtrent les résultats ignorés uniquement lorsque `includeIgnored` n'est pas activé.
@@ -205,8 +217,9 @@ flowchart LR
 | Source                                            | Paramètre                                                          | Effet                                                                                                              |
 | ------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | `WorkspaceFileSystemFactoryDeps.trusted: boolean` | Entrée du constructeur                                             | Autorise ou non les écritures ; par défaut `true` depuis `runQwenServe`, `false` depuis `createServeApp` (avec avertissement). |
-| Constante                                         | `MAX_READ_BYTES = 256 Ko`                                          | Limite de lecture ; `file_too_large` au-delà.                                                                      |
-| Constante                                         | `MAX_WRITE_BYTES = 5 Mo`                                           | Limite d'écriture ; dimensionnée en dessous de `express.json({ limit: '10mb' })`.                                  |
+| Constante                                         | `MAX_READ_BYTES = 256 KiB`                                         | Limite de snapshot complet et de texte retourné ; un texte plus large nécessite un argument de fenêtre explicite.   |
+| Constante                                         | `MAX_TEXT_SCAN_BYTES = 8 MiB`                                      | Octets qu'une lecture de texte large peut scanner pour localiser un décalage de ligne ; au-delà, `file_too_large`. |
+| Constante                                         | `MAX_WRITE_BYTES = 5 MiB`                                          | Limite d'écriture ; dimensionnée en dessous de `express.json({ limit: '10mb' })`.                                  |
 | Constante                                         | `BINARY_PROBE_BYTES = 4096`                                        | Taille d'échantillon pour la détection binaire basée sur le contenu.                                               |
 | Étiquettes de capacité                            | `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write` | Voir [`11-capabilities-versioning.md`](./11-capabilities-versioning.md).                                          |
 | Fichiers de l'espace de travail                   | `.gitignore`, `.qwenignore`                                        | Les chemins ignorés remontent comme `ignored: true` depuis `shouldIgnore`.                                         |
@@ -217,8 +230,12 @@ flowchart LR
 - **`io_error` et `permission_denied` sont distincts.** Ne pas les confondre. Les pipelines de supervision se basent sur `errorKind` pour les alertes — fusionner ENOSPC dans permission_denied déclencherait des alertes de sécurité pour des problèmes de `df -h`.
 - **Le mode par défaut des nouveaux fichiers est `0o600`, pas les valeurs par défaut d'umask.** L'argument `mode` de l'appel système d'écriture contourne umask. Les agents qui écrivent des fichiers publics doivent passer explicitement un mode différent.
 - **`createServeApp` avec `trusted: false` par défaut** rejette silencieusement les écritures ACP avec `untrusted_workspace` pour les intégrateurs qui n'injectent pas de `fsFactory` ou `bridge` personnalisé. Un avertissement sur stderr est émis une fois la première fois ; les appelants suivants ne voient pas de rappel. Voir [`02-serve-runtime.md`](./02-serve-runtime.md).
-- **La limite de lecture est appliquée avant le décodage.** Un fichier à `MAX_READ_BYTES + 1` est refusé même si la requête ne demande que 10 lignes — car `readFileWithLineAndLimit` lit tout le fichier en mémoire avant de découper.
-- **L'adaptateur `BridgeFileSystem` DOIT reproduire les deux protections du proxy en ligne** (refus des fichiers non réguliers + limite de taille du tampon). Le chemin en ligne est totalement contourné lorsque l'adaptateur est injecté.
+- **Un texte large nécessite un argument de fenêtre explicite**, parmi `line` / `limit` / `maxBytes`. Une lecture sans aucun de ces arguments reste `file_too_large`, car un appelant qui croit détenir le fichier entier pourrait le réécrire tronqué. Les fenêtres sont streamées depuis un handle lié à l'inode et ne retournent jamais plus de `MAX_READ_BYTES`.
+- **`MAX_READ_BYTES` limite ce qu'une lecture retourne ; `MAX_TEXT_SCAN_BYTES` limite ce qu'elle coûte.** Les décalages de ligne sont résolus en scannant depuis l'octet 0, donc `{ line: 900_000_000, limit: 20 }` ne retourne presque rien mais parcourt quand même le fichier. Au-delà de 8 MiB de scan, la lecture est refusée avec `file_too_large` pointant vers `readBytes`, qui atteint n'importe quel décalage en O(1).
+- **Les fenêtres streamées tolèrent les ajouts, pas les troncatures.** Le chemin de snapshot complet peut exiger une stabilité octet par octet car il retourne le fichier entier ; une fenêtre de préfixe ne le peut pas, sinon chaque lecture d'un journal actif échouerait. Le chemin streamé vérifie l'identité de l'inode plus « n'a pas rétréci », donc les ajouts passent et les troncatures / remplacements sont toujours rejetés. `sizeBytes` rapporte la taille à l'`open`, décrivant le snapshot depuis lequel la fenêtre a été coupée.
+- **Les lectures partielles larges omettent le hachage complet du fichier.** `originalLineCount` est omis lorsque le streaming s'arrête avant l'EOF.
+- **La pagination se fait par curseur d'octets, pas par ligne.** Une lecture qui laisse du contenu derrière retourne `hasMore` et, lorsqu'un décalage d'octets est dérivable, un `nextCursor` opaque. Reprendre depuis celui-ci est O(1) ; reprendre par `line` re-scanne depuis l'octet 0 et est refusé au-delà de `MAX_TEXT_SCAN_BYTES`. Le curseur transporte `{dev, ino, size}`, donc un fichier remplacé ou tronqué produit `hash_mismatch` plutôt que des octets provenant du mauvais endroit, tandis qu'un ajout le laisse valide. Les lectures de snapshot non-UTF-8 rapportent `hasMore` mais pas de curseur — leur texte décodé est un ré-encodage UTF-8 dont les longueurs ne correspondent pas aux décalages du fichier.
+- **L'adaptateur `BridgeFileSystem` DOIT reproduire les deux protections du proxy en ligne** (refus des fichiers non réguliers + buffering/streaming bornés). Le chemin en ligne est totalement contourné lorsque l'adaptateur est injecté.
 
 ## Références
 

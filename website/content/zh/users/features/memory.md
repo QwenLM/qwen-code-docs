@@ -91,9 +91,19 @@ Qwen 不会保存所有内容——只保存下次真正有用的内容。
 
 ### 存储位置
 
-自动记忆文件位于 `~/.qwen/projects/<project>/memory/`。同一仓库的所有分支和工作树共享同一个记忆文件夹，因此 Qwen 在一个分支中学到的内容在其他分支中也可用。
+自动记忆文件位于 `~/.qwen/projects/<project>/memory/`。同一 checkout 的所有分支共享同一个记忆文件夹，因此 Qwen 在一个分支中学到的内容在其他分支中也可用。每个链接的 git worktree 拥有独立的记忆文件夹，与聊天和其他会话状态的 per-worktree 隔离方式一致——你希望在每个 worktree 中都可用的全仓库规范应放在[团队记忆](#团队记忆与协作者共享)中。
 
 所有保存的内容都是纯 Markdown 格式——你可以随时打开、编辑或删除任何文件。
+
+#### 固定记忆
+
+将需要自动记忆维护保留的手动整理文档放在托管记忆目录下的 `pinned/` 中，例如 `~/.qwen/projects/<project>/memory/pinned/architecture.md` 或 `~/.qwen/memories/pinned/preferences.md`。使用与其他记忆文档相同的 frontmatter。有效的固定文件可被 Qwen 读取，并在下次重建 `MEMORY.md` 时被包含在内，遵循与其他记忆文档相同的文件大小和文件数量限制。
+
+仅直接位于托管记忆根目录内的顶层 `pinned/` 目录受保护；嵌套目录（如 `memory/project/pinned/`）是普通的可写记忆。自动提取和 Dream worker 以不区分大小写的方式匹配该保留目录名称。
+
+自动提取被指示保持固定记录及其有效索引条目不变，而 Dream 被指示在合并期间跳过 `pinned/`。自动提取和 fork 的 Dream worker（包括后台清理）都会在其写入和编辑工具上执行固定文件边界检查，包括通过符号链接解析到 `pinned/` 的路径；其现有的只读 shell 策略会阻止命令行删除。你仍然可以直接控制这些文件，并可以通过显式的 `/forget` 请求移除它们。
+
+> **注意：** 可见的 `/dream` 斜杠命令在主 Agent 上运行。它接收相同的跳过指令，但尚未接收 fork worker 的确定性逐轮工具门控。
 
 ### 定期清理
 

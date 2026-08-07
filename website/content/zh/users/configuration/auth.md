@@ -236,7 +236,7 @@ export OPENAI_MODEL="qwen3-coder-plus"
 >
 > 在 `settings.json` 中使用 `env` 字段时，凭据将以明文形式存储。为了更高的安全性，建议使用 `.env` 文件或 shell `export` —— 请参阅[步骤 2](#step-2-set-environment-variables)。
 
-有关完整的 `modelProviders` schema 以及 `generationConfig`、`customHeaders` 和 `extra_body` 等高级选项，请参阅 [Model Providers Reference](model-providers.md)。
+有关完整的 `modelProviders` schema 以及 `generationConfig`、`customHeaders` 和 `extra_body` 等高级选项，请参阅 [Model Providers Reference](./model-providers.md)。
 
 #### 步骤 2：设置环境变量
 

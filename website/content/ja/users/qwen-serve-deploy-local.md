@@ -1,3 +1,4 @@
+
 # `qwen serve` のローカル起動テンプレート (v0.16-alpha)
 
 開発者ワークステーション上で `qwen serve` を長期稼働するバックグラウンドプロセスとして実行するためのリファレンステンプレートです。[v0.16-alpha 既知の制限](./qwen-serve.md#v016-alpha-known-limits) と対になっています — ローカルのみ、シングルユーザー、BYO ベアラトークン。コンテナ化 / マルチホスト / TLS フロントのデプロイメントは v0.16.x で対応予定です。
@@ -20,6 +21,20 @@ export QWEN_SERVER_TOKEN="$(cat ~/.qwen-serve-token)"
 
 シェルレベルの一度の `export` で、サーバー起動と SDK クライアント構築の両方をカバーできます (上記の注意に従い、必ずセッション内にスコープしてください)。
 
+## ワークスペースのライフサイクルとプロセス境界
+
+1つのデーモンで、同じリスナーの下に複数の分離されたワークスペースランタイムをホストできます。
+`--workspace` を絶対パスディレクトリで繰り返し指定すると、明示的な起動時ランタイムが作成されます。
+最初のものがプライマリです。プライマリおよびその他の明示的な起動時/静的ランタイムは、プロセスを再起動せずに削除できません。
+
+追加のワークスペースは、デーモンの実行中に `POST /workspaces` で登録することもできます。
+`persist: true` を渡すと、動的なセカンダリがユーザーレベルの登録ストアに保持され、次回の起動時に復元されます。
+信頼されていない登録は、診断、バウンディングされたファイル読み取り、および宣言された永続化読み取りに表示されますが、ACP を開始できません。動的および永続化復元されたセカンダリは削除可能です。通常の削除は、ランタイムがビジーの場合は拒否します。強制削除は、アクティブリソースの終了を要求し、同じ cwd が再追加可能になる前に論理的削除をコミットします。
+クリーンアップは永続化コミットポイント以降でバウンディングされ、ベストエフォートです。障害は削除されたランタイムを復元する代わりにログに記録されます。
+
+ランタイムの分離は、cwd、環境オーバーレイ、ファイルシステム/信頼境界、ワークスペースサービス、ブリッジ、Voice リース状態、チャネルワーカー、および ACP/MCP リソース境界をカバーします。本番環境では、プライマリ ACP チャイルドの予熱を試み、障害時に最初の使用時にリトライします。信頼されたセカンダリはオンデマンドで開始し、信頼されていないセカンダリは ACP を開始しません。
+認証、HTTP レート制限、リスナーおよび Voice の受信キャップ、合計セッション受信、メトリクス、シャットダウン、およびプロセス障害半径はデーモン全体で共通です。それらのプロセスレベルの境界を独立させる必要がある場合は、別のデーモンを実行してください。
+
 ## Linux: systemd ユーザーユニット
 
 > **最初に `qwen` バイナリの場所を確認してください。** ユニットファイルの `ExecStart=` は**絶対パス**である必要があります — サービス管理はシェルの `PATH` を読み取りません。`which qwen` を実行して確認してください。一般的な場所: `/usr/local/bin/qwen` (Linuxbrew、手動インストール)、`~/.nvm/versions/node/vX.Y.Z/bin/qwen` (nvm)、`~/.fnm/aliases/default/bin/qwen` (fnm)、`~/.volta/bin/qwen` (Volta)。以下のテンプレートで `/PATH/TO/qwen` と表示されている箇所を実際のパスに置き換えてください。
@@ -34,9 +49,9 @@ After=network.target
 [Service]
 Type=simple
 # プロジェクトに合わせて置き換え; %h はユーザーユニット下で $HOME に展開されます。
-WorkingDirectory=%h/your-project
+WorkingDirectory=%h/project-a
 # `which qwen` を実行して絶対パスを確認してください。systemd は $PATH を読み取りません。
-ExecStart=/PATH/TO/qwen serve --hostname 127.0.0.1 --port 4170
+ExecStart=/PATH/TO/qwen serve --hostname 127.0.0.1 --port 4170 --workspace %h/project-a --workspace %h/project-b
 # ベアラトークンをユニットに直接記述するのではなく、chmod 600 のファイルから読み取ります。
 # `Environment=` はトークンをユニットファイルに露出します (通常 644 = 全ユーザー可読)。
 # EnvironmentFile は、既に `chmod 600` で作成したユーザー所有のシークレットファイルにトークンを保持します。
@@ -94,10 +109,14 @@ systemctl --user disable --now qwen-serve.service
     <string>127.0.0.1</string>
     <string>--port</string>
     <string>4170</string>
+    <string>--workspace</string>
+    <string>/Users/YOUR-USERNAME/project-a</string>
+    <string>--workspace</string>
+    <string>/Users/YOUR-USERNAME/project-b</string>
   </array>
   <!-- launchd は `~` や `$HOME` を展開しません — 絶対パスを使用してください。 -->
   <key>WorkingDirectory</key>
-  <string>/Users/YOUR-USERNAME/your-project</string>
+  <string>/Users/YOUR-USERNAME/project-a</string>
   <key>EnvironmentVariables</key>
   <dict>
     <!-- 実際のトークンを入れたままこのファイルをコミットしないでください。また、plist 自体も chmod 600 にして、
@@ -148,7 +167,7 @@ plist を編集した後 (例: トークンのローテーション) は、必�
 `QWEN_SERVER_TOKEN` がシェルに既にエクスポートされていることを前提とします (上記のセットアップセクションを参照):
 
 ```bash
-tmux new -d -s qwen-serve "cd ~/your-project && qwen serve --hostname 127.0.0.1"
+tmux new -d -s qwen-serve "qwen serve --hostname 127.0.0.1 --workspace /absolute/path/project-a --workspace /absolute/path/project-b"
 tmux attach -t qwen-serve   # ライブログを表示; Ctrl-b d でデタッチ
 tmux kill-session -t qwen-serve
 ```
@@ -160,11 +179,14 @@ tmux kill-session -t qwen-serve
 `QWEN_SERVER_TOKEN` がシェルに既にエクスポートされていることを前提とします:
 
 ```bash
-nohup bash -c 'cd ~/your-project && qwen serve --hostname 127.0.0.1' > qwen-serve.log 2>&1 &
+nohup qwen serve --hostname 127.0.0.1 \
+  --workspace /absolute/path/project-a \
+  --workspace /absolute/path/project-b \
+  > qwen-serve.log 2>&1 &
 echo $!  # デーモンの PID; 後でクリーンに kill したい場合は控えておきます
 ```
 
-`bash -c '...'` でラップすることで、デーモンがコマンドを実行した場所ではなく `~/your-project` にバインドするようになります。この `cd` がない場合、`qwen serve` は `process.cwd()` をデフォルトとし、クライアントがプロジェクトのワークスペースを期待して `POST /session` を送信すると `400 workspace_mismatch` が返ります — 静かな落とし穴です。
+明示的な絶対パスの `--workspace` 値により、デーモンはシェルのカレントディレクトリに依存しません。クライアントは、公開された `capabilities.workspaces[]` のいずれかを選択し、セッション作成時にその cwd を渡すべきです。
 
 「バックグラウンドで実行して API を叩きたい」という一回限りのワークフローには問題ありません。**単一セッションを超える用途には推奨しません** — クラッシュ時の再起動なし、ログファイルは無制限に増加、PID を覚えていない場合にデーモンを見つけるクリーンな方法がありません。インタラクティブな監督には tmux を、再起動を超えて持続させたいものには systemd / launchd を推奨します。
 
@@ -209,7 +231,7 @@ curl -H "Authorization: Bearer $QWEN_SERVER_TOKEN" \
 ## 対象外 (v0.16.x 以降で対応)
 
 - **コンテナ化デプロイメント** — Dockerfile、docker-compose、Kubernetes マニフェスト、nginx + TLS リバースプロキシ、マルチインスタンストークン分離。エンタープライズパイロットが確定したら v0.16.x で対応予定。検証する人がいないとドキュメントは腐ります。
-- **クロスホスト連携 / 単一ホスト上のマルチデーモン調整** — `1 デーモン = 1 ワークスペース × N セッション` が強制されます。インスタンスパストークンキーイングと期限切れトークンのクリーンアップは v0.16.x で対応予定。
+- **クロスホスト連携 / 単一ホスト上のマルチデーモン調整** — 1つのデーモンで複数の登録されたワークスペースランタイムをホストできますが、デーモン間の調整は行いません。インスタンスパストークンキーイングと期限切れトークンのクリーンアップは v0.16.x で対応予定。
 - **自動生成デーモントークン** — アルファ版は BYO トークン。自動生成 + トークンストアのインフラは v0.16.x で対応予定。
 - **Windows ネイティブサービス** (`nssm`、Service Control Manager ラッパー) — 当面は [WSL2](https://learn.microsoft.com/ja-jp/windows/wsl/) を使用し、上記の systemd セクションに従ってください。
 

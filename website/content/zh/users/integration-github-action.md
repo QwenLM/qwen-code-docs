@@ -94,7 +94,7 @@ gha-creds-*.json
 
 ### Issue 分类
 
-此 action 可用于自动或按计划对 GitHub Issues 进行分类。有关可运行的 issue 分类设置，请参阅[自动化 issue 分类工作流](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-automated-issue-triage.yml)。
+此 action 可用于自动或按计划对 GitHub Issues 进行分类。有关可运行的 issue 分类设置，请参阅 [Qwen 分类工作流](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-triage.yml)。
 
 ### Pull Request 审查
 

@@ -55,6 +55,7 @@ qwen extensions link /path/to/my-channel-extension
 | `instructions` | Добавляются в начало первого сообщения каждой сессии |
 | `model`        | Переопределение модели для канала              |
 | `groupPolicy`  | `disabled`, `allowlist` или `open`             |
+| `dmPolicy`     | `open` или `disabled`                          |
 | `groups`       | Настройки для каждой группы                    |
 
 Подробнее о каждом параметре см. в разделе [Обзор](./overview).

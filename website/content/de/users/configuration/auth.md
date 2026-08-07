@@ -236,7 +236,7 @@ Bearbeite `~/.qwen/settings.json` (erstelle sie, falls sie nicht existiert). Du 
 >
 > Bei Verwendung des `env`-Feldes in `settings.json` werden die Anmeldedaten im Klartext gespeichert. Für bessere Sicherheit solltest du `.env`-Dateien oder Shell-`export` bevorzugen – siehe [Schritt 2](#step-2-set-environment-variables).
 
-Das vollständige `modelProviders`-Schema und erweiterte Optionen wie `generationConfig`, `customHeaders` und `extra_body` findest du in der [Model Providers Reference](model-providers.md).
+Das vollständige `modelProviders`-Schema und erweiterte Optionen wie `generationConfig`, `customHeaders` und `extra_body` findest du in der [Model Providers Reference](./model-providers.md).
 
 #### Schritt 2: Umgebungsvariablen festlegen
 

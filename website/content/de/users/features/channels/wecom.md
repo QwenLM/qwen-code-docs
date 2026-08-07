@@ -1,3 +1,5 @@
+---
+
 # WeCom (Enterprise WeChat)
 
 Dieser Leitfaden behandelt die Einrichtung von Qwen Code mit einem intelligenten WeCom-Roboter (企业微信智能机器人).
@@ -11,7 +13,13 @@ Dieser Leitfaden behandelt die Einrichtung von Qwen Code mit einem intelligenten
 ## Erstellen des Roboters
 
 1. Öffne die WeCom-Admin-Konsole und erstelle einen intelligenten Roboter.
+
+![](https://gw.alicdn.com/imgextra/i2/O1CN017w1jWj1TTvNBcfya8_!!6000000002384-2-tps-2212-887.png)
+
 2. Wähle den API-Modus.
+
+![](https://gw.alicdn.com/imgextra/i3/O1CN01buuik0207paQUuLQW_!!6000000006803-1-tps-1276-720.gif)
+
 3. Kopiere die Bot ID und das Secret.
 4. Füge den Roboter den Direktnachrichten oder Gruppen hinzu, in denen er verfügbar sein soll.
 
@@ -33,10 +41,7 @@ Füge den Channel zu `~/.qwen/settings.json` hinzu:
       "sessionScope": "user",
       "cwd": "/path/to/your/project",
       "instructions": "You are a concise coding assistant responding via WeCom.",
-      "groupPolicy": "open",
-      "groups": {
-        "*": { "requireMention": true }
-      }
+      "groupPolicy": "open"
     }
   }
 }
@@ -76,9 +81,13 @@ qwen channel start my-wecom
 - `pairing`: Benutzer müssen sich koppeln, bevor sie den Bot verwenden können.
 - `open`: Jeder, der dem Roboter Nachrichten senden kann, kann ihn verwenden.
 
-Für Gruppen setze `groupPolicy` auf `"allowlist"` oder `"open"`. Standardmäßig erfordern Gruppennachrichten eine Erwähnung durch `"requireMention": true`.
+Für Gruppen setze `groupPolicy` auf `"allowlist"` oder `"open"`. WeCom stellt nur Gruppennachrichten zu, die den intelligenten Roboter erwähnen, daher wird jeder zugestellte Gruppen-Callback als erwähnt behandelt. Die `requireMention`-Einstellung kann keine Antworten auf nicht erwähnte Gruppennachrichten aktivieren, da diese Nachrichten nicht an den Bot zugestellt werden.
 
-Wenn das WeCom SDK explizite Erwähnungs-Metadaten enthält, verwendet Qwen Code diese für diese Prüfung. Wenn keine Erwähnungs-Metadaten vorhanden sind, behandelt der Channel zugestellte Gruppennachrichten als nicht erwähnt. Setze `"requireMention": false` nur, wenn du dich stattdessen auf die WeCom-seitige Zustellungsfilterung verlassen möchtest.
+### Group Mention Compatibility
+
+Frühere Qwen Code-Versionen haben nach der WeCom-Zustellung eines Gruppen-Callbacks zusätzlich das generische `requireMention`-Gate angewendet. Da der Callback keine separaten Erwähnungs-Metadaten enthält, konnte `requireMention: true` – einschließlich des Standardwerts – jede zugestellte Gruppennachricht ablehnen und den Gruppenchat nicht funktionsfähig erscheinen lassen.
+
+Qwen Code verlässt sich jetzt auf die WeCom-seitige erwähnungsbezogene Zustellung und wendet keine zweite Erwähnungsentscheidung an. Bestehende WeCom-Konfigurationen, die entweder `requireMention: true` oder `requireMention: false` enthalten, bleiben gültig und erzeugen keine Konfigurationsfehler. Beide Werte haben dasselbe Verhalten für WeCom, das Feld kann also entfernt werden. Andere Einstellungen im selben Gruppeneintrag, wie `dispatchMode`, gelten weiterhin. `groupHistoryLimit` wird weiterhin akzeptiert, kann aber keine neue WeCom-Historie sammeln, da nicht erwähnte Gruppennachrichten nicht zugestellt werden.
 
 ## Bilder und Dateien
 
@@ -103,7 +112,7 @@ Aus Sicherheitsgründen müssen lokale Bildpfade innerhalb des Channel-Dateiverz
 ### Bot antwortet nicht in Gruppen
 
 - Überprüfe `groupPolicy`.
-- Erwähne den Bot, es sei denn, die Gruppenkonfiguration setzt `"requireMention": false`.
+- Erwähne den Bot in der Gruppe.
 - Stelle sicher, dass der Roboter der Gruppe hinzugefügt wurde.
 
 ### Zugangsdaten für selbst erstellte Anwendungen funktionieren nicht

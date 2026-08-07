@@ -94,7 +94,7 @@ Dieser Workflow fungiert als zentraler Dispatcher für die Qwen Code CLI und lei
 
 ### Issue Triage
 
-Diese Action kann verwendet werden, um GitHub Issues automatisch oder nach Zeitplan zu triagieren. Ein funktionierendes Setup für das Issue Triage findest du im [automatisierten Issue-Triage-Workflow](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-automated-issue-triage.yml).
+Diese Action kann verwendet werden, um GitHub Issues automatisch oder nach Zeitplan zu triagieren. Ein funktionierendes Setup für das Issue Triage findest du im [Qwen triage workflow](https://github.com/QwenLM/qwen-code/blob/main/.github/workflows/qwen-triage.yml).
 
 ### Pull Request Review
 

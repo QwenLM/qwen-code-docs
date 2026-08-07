@@ -77,6 +77,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
     lang === "fr" ? "Rechercher dans la documentation..." :
     lang === "ru" ? "Поиск в документации..." :
     lang === "pt-BR" ? "Pesquisar documentação..." :
+    lang === "ko" ? "문서 검색..." :
     "Search documentation..."
   } lang={lang} className='shrink-0' />
       <GitHubStarLink projectLink='https://github.com/QwenLM/qwen-code' className='shrink-0' />
@@ -100,6 +101,7 @@ const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
         { locale: "ru", name: "Русский" },
         { locale: "ja", name: "日本語" },
         { locale: "pt-BR", name: "Português (BR)" },
+        { locale: "ko", name: "한국어" },
       ]}
       search={false}
       sidebar={{ defaultMenuCollapseLevel: 2 }}

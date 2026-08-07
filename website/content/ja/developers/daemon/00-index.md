@@ -11,7 +11,7 @@
 | [`../examples/daemon-client-quickstart.md`](../examples/daemon-client-quickstart.md) | SDK ユーザー             | エンドツーエンドの TypeScript 解説                        |
 | [`../daemon-client-adapters/`](../daemon-client-adapters/)                           | アダプター作成者       | レガシークライアントアダプターの設計ドキュメント                        |
 | [`14-cli-tui-adapter.md`](./14-cli-tui-adapter.md)                                   | アダプター作成者       | クライアントアダプターの設計メモ                              |
-| [`docs/design/f2-mcp-transport-pool.md`](https://github.com/QwenLM/qwen-code/blob/main/docs/design/f2-mcp-transport-pool.md)     | F2 メンテナー        | ワークスペース MCP transport pool 設計 v2.2                 |
+| [`../../design/f2-mcp-transport-pool.md`](../../design/f2-mcp-transport-pool.md)     | F2 メンテナー        | ワークスペース MCP transport pool 設計 v2.2                 |
 
 **daemon を起動して使用したい**場合は、まず `qwen-serve.md` をお読みください。**ワイヤーフォーマットに対してクライアントを構築したい**場合は、`qwen-serve-protocol.md` をお読みください。**daemon の内部を理解、拡張、またはデバッグしたい**場合は、このドキュメントセットをお読みください。
 
@@ -41,7 +41,7 @@
 - [`06-mcp-budget-guardrails.md`](./06-mcp-budget-guardrails.md) - `WorkspaceMcpBudget`、モード (`off`/`warn`/`enforce`)、ヒステリシス、拒否バッチの統合。
 - [`07-workspace-filesystem.md`](./07-workspace-filesystem.md) - `WorkspaceFileSystem` サンドボックス、パスポリシー、監査、`BridgeFileSystem` 契約。
 - [`08-session-lifecycle.md`](./08-session-lifecycle.md) - 作成 / アタッチ / ロード / 再開、`X-Qwen-Client-Id`、ハートビート、エビクション、メタデータ。
-- [`09-event-schema.md`](./09-event-schema.md) - 型付き event schema v1: ペイロード、リデューサー、前方互換性を持つ既知の47種類のイベントタイプ。
+- [`09-event-schema.md`](./09-event-schema.md) - 型付き event schema v1: ペイロード、リデューサー、前方互換性を持つ既知の53種類のイベントタイプ。
 - [`10-event-bus.md`](./10-event-bus.md) - `EventBus`、単調増加 ID、リングリプレイ、`Last-Event-ID`、低速クライアントのバックプレッシャー、`client_evicted`。
 - [`11-capabilities-versioning.md`](./11-capabilities-versioning.md) - ケイパビリティレジストリ、プロトコルバージョン、スキーマバージョン、条件付きアドバタイズメント。
 - [`12-auth-security.md`](./12-auth-security.md) - Bearer ミドルウェア、ホスト許可リスト、CORS 拒否、ミューテーションゲート、`--require-auth`、`/health` 除外、デバイスフロー。
@@ -63,7 +63,7 @@
 ## 用語集
 
 - **ACP** - Agent Client Protocol。daemon ブリッジと ACP チャイルドプロセスの間で stdio 経由で通信する JSON-RPC。クライアントが daemon に対して使用する HTTP プロトコルではありません。
-- **ACP child** - daemon が実際のエージェントランタイムをホストするために生成するチャイルドプロセス (`qwen --acp`)。ブリッジは1つの ACP チャイルドを多数の接続されたクライアント間で多重化します。
+- **ACP child** - 1 つのワークスペースのエージェントランタイムをホストする `qwen --acp` 子プロセス。本番環境ではプライマリブリッジのプリヒートと、障害発生時の初回使用時のリトライを試みます。信頼されたセカンダリはオンデマンドで子プロセスを開始しますが、信頼されていないセカンダリは開始しません。所有ブリッジはセッションとクライアントをその子プロセスに多重化します。
 - **acp-bridge** - `@qwen-code/acp-bridge` パッケージ (`packages/acp-bridge/`)。セッション多重化、権限調停、イベントバス、チャネルファクトリを所有します。
 - **BridgeClient** - `packages/acp-bridge/src/bridgeClient.ts`。1つの ACP `ClientSideConnection` をラップし、`requestPermission`、`sendPrompt`、`cancelSession` を処理します。
 - **Channel factory** - ACP チャイルドの生成またはアタッチのためのプラグ可能な戦略。デフォルトの `spawnChannel` は `qwen --acp` をサブプロセスとして実行し、`inMemoryChannel` はテスト用にプロセス内で実行します。
@@ -78,7 +78,7 @@
 - **PoolEntry** - `packages/core/src/tools/mcp-pool-entry.ts`。`McpTransportPool` 内の1つのエントリ: 1つの MCP transport、アタッチされたセッションの参照カウント、およびアイドルドレインタイマー。
 - **Session scope** - `single` (すべてのクライアントで共有される1つの ACP セッション) または `thread` (会話スレッドごとに1つのセッション)。デフォルトは `single` です。
 - **SSE** - Server-Sent Events。daemon の送信イベントチャネル (`GET /session/:id/events`)。
-- **Workspace** - 起動時に daemon がバインドされたディレクトリ (`--workspace` または `cwd`)。1つの daemon プロセスは1つのワークスペースに相当します。
+- **Workspace** - デーモン起動時に登録されたディレクトリ、登録ストアから復元されたディレクトリ、または動的に追加されたディレクトリ。`workspaceCwd` はレガシーなプライマリのデフォルトです。`workspaces[]` は分離されたランタイムとその信頼/削除メタデータのカタログです。
 
 ## 実装ソースアンカー
 
@@ -92,7 +92,7 @@
 | MCP transport pool                  | `packages/core/src/tools/mcp-transport-pool.ts`, `mcp-pool-key.ts`, `pid-descendants.ts`, `session-mcp-view.ts`, `/mcp refresh`, `MCPCallInterruptedError`                                                                                                           | [`05`](./05-mcp-transport-pool.md), [`06`](./06-mcp-budget-guardrails.md)                                              |
 | MCP budget ガードレール               | `packages/core/src/tools/mcp-workspace-budget.ts`, `ServeMcpBudgetStatusCell.scope`, `budgets[]`                                                                                                                                                                     | [`06`](./06-mcp-budget-guardrails.md)                                                                                  |
 | ワークスペースファイルシステム                | `packages/cli/src/serve/fs/`, `assertTrustedForIntent(trusted, intent)`, `meta.matchedIgnore`, `includeIgnored`                                                                                                                                                      | [`07`](./07-workspace-filesystem.md)                                                                                   |
-| イベントスキーマと SSE ライター         | `packages/sdk-typescript/src/daemon/events.ts`, `packages/cli/src/serve/routes/sse-events.ts`, `formatSseFrame`, `packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`, `ToolCallEmitter.resolveToolProvenance`, `tool_call.provenance`, `serverId` | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                                |
+| イベントスキーマと SSE ライター         | `packages/sdk-typescript/src/daemon/events.ts`, `packages/cli/src/serve/routes/sse-events.ts`, `formatSseFrame`, `packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`, `ToolCallEmitter.resolveToolProvenance`, `tool_call.provenance`, `serverId` | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                                |
 | イベントの再同期                        | `state_resync_required`, `awaitingResync`, `RESYNC_PASSTHROUGH_TYPES`, `asKnownDaemonEvent`, `unrecognizedKnownEventCount`                                                                                                                                           | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                                |
 | ケイパビリティ                        | `packages/cli/src/serve/capabilities.ts`, `mcp_server_restart_refused.reason`, `MCP_RESTART_REFUSED_REASONS.has`                                                                                                                                                     | [`11`](./11-capabilities-versioning.md)                                                                                |
 | 認証とデバイスフロー                | `packages/cli/src/serve/auth.ts`, `packages/cli/src/serve/auth/device-flow.ts`                                                                                                                                                                                       | [`12`](./12-auth-security.md)                                                                                          |
@@ -125,7 +125,7 @@
 | 領域          | 現在の状態                                                                                                                                                                                           | 主要ドキュメント                                                                                                  |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | HTTP ルート   | ルートカタログは `qwen-serve-protocol.md` にあります。この daemon セットはそれを参照し、実装の所有権を説明するのみです。                                                                          | [`../qwen-serve-protocol.md`](../qwen-serve-protocol.md), [`20`](./20-quickstart-operations.md)               |
-| イベントスキーマ  | `EVENT_SCHEMA_VERSION = 1`。既知の47種類のイベントタイプ。ID なしサブスクライバーの合成フレーム。`_meta.serverTimestamp` は `EventBus.publish()` によってタイムスタンプが押されます (合成フレームの場合は `formatSseFrame()` がフォールバックとして使用されます)。 | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                       |
+| イベントスキーマ  | `EVENT_SCHEMA_VERSION = 1`。既知の53種類のイベントタイプ。ID なしサブスクライバーの合成フレーム。`_meta.serverTimestamp` は `EventBus.publish()` によってタイムスタンプが押されます (合成フレームの場合は `formatSseFrame()` がフォールバックとして使用されます)。 | [`09`](./09-event-schema.md), [`10`](./10-event-bus.md)                                                       |
 | ケイパビリティ  | `SERVE_PROTOCOL_VERSION = 'v1'`。75個の登録済みタグ。13個の条件付きタグ。                                                                                                                               | [`11`](./11-capabilities-versioning.md)                                                                       |
 | セッションシェル | `POST /session/:id/shell` は `--enable-session-shell`、Bearer 認証、およびセッションにバインドされた `X-Qwen-Client-Id` の背後に存在します。ケイパビリティタグは条件付きです。                                                     | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md), [`20`](./20-quickstart-operations.md) |
 | レート制限 | オプションのティアごとの HTTP レート制限は、CLI フラグ/環境変数および条件付きケイパビリティタグによって公開されます。                                                                                                           | [`11`](./11-capabilities-versioning.md), [`17`](./17-configuration.md)                                        |

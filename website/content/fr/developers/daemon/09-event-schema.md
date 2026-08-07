@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-Chaque trame SSE émise par le démon sur `GET /session/:id/events` a la forme `{ id, v, type, data, originatorClientId?, _meta? }`. `v: 1` est la `EVENT_SCHEMA_VERSION` actuelle. `type` provient de l'ensemble fermé et épinglé par version `DAEMON_KNOWN_EVENT_TYPE_VALUES` dans `packages/sdk-typescript/src/daemon/events.ts` ; l'ensemble actuel compte 47 types d'événements connus. Le champ d'enveloppe `_meta` est estampillé à la limite d'écriture SSE par `formatSseFrame()` dans `packages/cli/src/serve/routes/sse-events.ts` ; voir [Métadonnées au niveau de l'enveloppe](#envelope-level-metadata).
+Chaque trame SSE émise par le démon sur `GET /session/:id/events` a la forme `{ id, v, type, data, originatorClientId?, _meta? }`. `v: 1` est la `EVENT_SCHEMA_VERSION` actuelle. `type` provient de l'ensemble fermé et épinglé par version `DAEMON_KNOWN_EVENT_TYPE_VALUES` dans `packages/sdk-typescript/src/daemon/events.ts`. Le champ d'enveloppe `_meta` est estampillé à la limite d'écriture SSE par `formatSseFrame()` dans `packages/cli/src/serve/routes/sse-events.ts` ; voir [Métadonnées au niveau de l'enveloppe](#envelope-level-metadata).
 
 Le SDK expose `asKnownDaemonEvent(evt)`. Il retourne un `KnownDaemonEvent` discriminé pour les types d'événements connus et `undefined` pour les autres types. Les consommateurs du SDK peuvent ainsi gérer la compatibilité ascendante sans nécessiter une mise à jour du SDK au même rythme lorsqu'un démon plus récent ajoute un type d'événement ; le réducteur de session les enregistre sous `unrecognizedKnownEventCount`.
 
@@ -15,19 +15,20 @@ Le format de transmission se trouve dans [`../qwen-serve-protocol.md`](../qwen-s
 - Fournir des réducteurs purs (`reduceDaemonSessionEvent`, `reduceDaemonAuthEvent`) qui projettent un flux d'événements dans l'état de vue du SDK.
 - Diffuser le tag de capacité `typed_event_schema` comme signal informatif. Si le tag est absent, `asKnownDaemonEvent` retombe tout de même sur `unknown`.
 
-## Vocabulaire des événements (47 types connus)
+## Vocabulaire des événements
 
 Regroupés par domaine.
 
 ### Session principale
 
-| Type                       | Direction      | Déclencheur                                                                       | Champs clés de la charge utile                                                               |
-| -------------------------- | -------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `session_update`           | S->C           | Toute notification ACP `sessionUpdate` : texte de l'agent, réflexion, appel d'outil ou plan | `sessionUpdate: string, content?: ...` (forme ACP opaque)                        |
-| `session_metadata_updated` | S->C           | `PATCH /session/:id/metadata`                                                 | `sessionId, displayName?`                                                        |
-| `session_died`             | S->C terminal  | `channel.exited`                                                              | `sessionId, reason, exitCode? \| null, signalCode? \| null`                      |
-| `session_closed`           | S->C terminal  | `DELETE /session/:id` ou fermeture programmatique                                   | `sessionId, reason: 'client_close' \| string, closedBy?`                         |
-| `session_snapshot`         | S->C synthetic | Trame de snapshot après attachement / relecture SSE                                      | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null` |
+| Type                         | Direction      | Déclencheur                                                                               | Champs clés de la charge utile                                                                                           |
+| ---------------------------- | -------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `session_update`             | S->C           | Toute notification ACP `sessionUpdate` : texte de l'agent, réflexion, appel d'outil ou plan | `sessionUpdate: string, content?: ...` (forme ACP opaque)                                                    |
+| `session_metadata_updated`   | S->C           | `PATCH /session/:id/metadata`                                                         | `sessionId, displayName?`                                                                                    |
+| `session_died`               | S->C terminal  | `channel.exited`                                                                      | `sessionId, reason, exitCode? \| null, signalCode? \| null`                                                  |
+| `session_closed`             | S->C terminal  | `DELETE /session/:id` ou fermeture programmatique                                           | `sessionId, reason: 'client_close' \| string, closedBy?`                                                     |
+| `session_snapshot`           | S->C synthetic | Trame de snapshot après attachement / relecture SSE                                      | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null, recordingDegraded: boolean` |
+| `session_recording_degraded` | S->C           | Le writer de transcription de session a définitivement arrêté après un échec d'écriture asynchrone | `sessionId, reason: 'write_failed'`                                                                          |
 
 ### Trames synthétiques au niveau de l'abonné
 
@@ -37,7 +38,10 @@ Regroupés par domaine.
 | `slow_client_warning`   | Arriéré de trames en direct ou arriéré d'octets sérialisés en direct >= 75 % ; poussé de force et **n'a pas d'`id`**                                                                                                                                          | `queueSize, maxQueued, lastEventId, queuedBytes?, maxQueuedBytes?, threshold?: 'frames' \| 'bytes' \| 'frames_and_bytes'` ; réarmé après que les mesures de trames et d'octets passent toutes deux sous les 37,5 %.                                                                                                                                   |
 | `stream_error`          | `SubscriberLimitExceededError` ou une autre erreur de flux de route                                                                                                                                                                         | `error: string` ; terminal pour l'abonnement.                                                                                                                                                                                                                                                                                |
 | `state_resync_required` | `subscribe({lastEventId})` détecte que l'anneau du démon ne contient plus `[lastEventId+1, earliestInRing-1]`, ou que le curseur du client provient d'une époque de bus précédente. Poussé de force **avant** les trames de relecture restantes et **n'a pas d'`id`**. | `reason: 'ring_evicted' \| 'epoch_reset' \| string`, `lastDeliveredId: number`, `earliestAvailableId: number`. Il s'agit d'un signal de récupération, non terminal : le flux SSE reste ouvert et la relecture + les trames en direct continuent. Le réducteur du SDK définit `awaitingResync = true` et ignore les deltas jusqu'à ce que l'appelant réinitialise avec `loadSession`. |
+| `history_truncated`     | `POST /session/:id/load` renvoie un snapshot de relecture borné après que des entrées de relecture en mémoire plus anciennes ont été supprimées. Préfixé à `compactedReplay` et **n'a pas d'`id`**.                                                                    | `reason: 'replay_window_exceeded'`, `truncatedEvents: number`, `retainedEvents: number`, `maxBytes: number`, `truncatedTurns?: number`, `fullTranscriptAvailable: boolean`. Ceci est un marqueur de statut, pas une demande de resync ; les clients l'affichent et continuent à appliquer la relecture conservée.                                            |
 | `replay_complete`       | Sentinelle sans `id` émise après la fin de la boucle de relecture `Last-Event-ID`, pour les chemins de relecture propre et d'éviction d'anneau, même lorsque `data.replayedCount === 0`. **Pas d'`id`**                                                             | `replayedCount: number` ; permet aux consommateurs de supprimer l'UI de rattrapage de manière déterministe sans délai d'attente.                                                                                                                                                                                                                                |
+
+`fullTranscriptAvailable` est un flag de capacité booléen, pas un type littéral `true`. Les démons actuels émettent `true` lorsque `/session/:id/transcript` peut être utilisé pour paginer la transcription persistée ; les démons plus anciens ou contraints peuvent émettre `false`, et les clients doivent continuer à afficher la relecture bornée normalement.
 
 ### Permissions (F3 + base)
 
@@ -129,7 +133,7 @@ Ces événements sont indexés par workspace, et non par session. Le reducer de 
 | Sujet                                | Source                                         | Notes                                                                                                              |
 | -------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `EVENT_SCHEMA_VERSION = 1`             | `packages/acp-bridge/src/eventBus.ts`          | Envoyé sur chaque frame.                                                                                               |
-| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | Liste fermée avec 47 types.                                                                                         |
+| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | Liste fermée avec 53 types.                                                                                         |
 | `DaemonEventEnvelope<TType, TData>`    | `events.ts`                                    | Enveloppe générique.                                                                                                  |
 | `DaemonKnownEventType`                 | `events.ts`                                    | `typeof DAEMON_KNOWN_EVENT_TYPE_VALUES[number]`.                                                                   |
 | Types de payload par événement                | `events.ts`                                    | La plupart des types d'événements ont une interface `DaemonXxxData` ; `user_shell_*` est actuellement analysé de manière ad hoc par le normalisateur d'UI. |
@@ -145,6 +149,7 @@ Ces événements sont indexés par workspace, et non par session. Le reducer de 
 - `alive: boolean` - devient `false` après une frame terminale (`session_died`, `session_closed`, `client_evicted`, `stream_error`).
 - `currentModelId?: string` - provenant de `model_switched`.
 - `displayName?: string` - provenant de `session_metadata_updated`.
+- `recordingDegraded: boolean` - état d'enregistrement de session sticky provenant de `session_recording_degraded` ; une valeur explicite `session_snapshot.recordingDegraded` est autoritaire.
 - `pendingPermissions: Record<string, DaemonPermissionRequestData>` - requêtes ouvertes indexées par `requestId` ; vidées par `permission_resolved` / `permission_already_resolved`.
 - `lastSessionUpdate?: DaemonSessionUpdateData` - dernier `session_update`.
 - `lastModelSwitchFailure?: DaemonModelSwitchFailedData` - provenant de `model_switch_failed`.
@@ -233,7 +238,7 @@ Les événements déclenchés par une requête portant un `X-Qwen-Client-Id` enr
 
 ## `_meta` des appels d'outils (provenance / serverId)
 
-Ceci est distinct du `_meta` de l'enveloppe : les charges utiles ACP `session/update` peuvent porter leur propre `_meta` dans `event.data._meta`. `ToolCallEmitter` (`packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`) ajoute deux champs lors de `emitStart`, `emitResult` et `emitError` :
+Ceci est distinct du `_meta` de l'enveloppe : les charges utiles ACP `session/update` peuvent porter leur propre `_meta` dans `event.data._meta`. `ToolCallEmitter` (`packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`) ajoute deux champs lors de `emitStart`, `emitResult` et `emitError` :
 
 | Champ        | Type                                      | Règle de résolution                                                                                                                                                            |
 | ------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -260,6 +265,7 @@ Tant que `awaitingResync = true`, le reducer **ignore l'application des deltas**
 | `client_evicted`        | Idem ci-dessus.                                                                 |
 | `stream_error`          | Idem ci-dessus.                                                                 |
 | `session_snapshot`      | Trame faisant autorité pour l'état complet ; sûre à appliquer pendant la resynchronisation.                   |
+| `session_recording_degraded` | Signal de sécurité sticky indépendant de l'état de delta de transcription.                    |
 
 `lastEventId` continue d'avancer de manière monotone via `advanceLastEventId(base)` pendant la resynchronisation. Après que l'appelant a réinitialisé et effacé `awaitingResync`, les deltas suivants s'alignent sur le bon curseur.
 

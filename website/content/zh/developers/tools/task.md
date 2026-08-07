@@ -13,8 +13,12 @@
 - `description`（字符串，必需）：任务的简短描述（3-5 个词），用于用户可见性和跟踪。
 - `prompt`（字符串，必需）：子代理执行的详细任务提示。应包含自主执行的全面指令。
 - `subagent_type`（字符串，可选）：用于此任务的专用代理类型。如果省略，默认为 `general-purpose`。
-- `run_in_background`（布尔值，可选）：设置为 `true` 可让代理在后台运行。完成后你会收到通知。
-- `isolation`（字符串，可选）：设置为 `"worktree"` 可在隔离的 Git worktree 中运行代理。
+- `fork_turns`（字符串，可选）：仅在 `subagent_type="fork"` 时有效。省略或使用 `all` 继承完整的父会话上下文，或使用正整数字符串（如 `"3"`）继承最近三个真实用户轮次。工具响应和纯系统提醒不计入轮次。
+- `fork_tools`（字符串数组，可选）：仅在 `subagent_type="fork"` 时有效。将执行限制为精确的规范工具名称或 MCP 服务器模式，同时保持 fork 当前对模型可见的工具声明不变以共享 prompt 缓存。条目不能包含前后空白；通配符仅限于 `mcp__*` 或尾部 MCP 工具前缀模式（如 `mcp__github__read_*`）。Fork 永远不会执行 `ask_user_question`；省略 `fork_tools` 以允许所有其他继承的工具，或使用空数组拒绝所有工具调用。
+- `fork_profile`（字符串，可选）：仅在 `subagent_type="fork"` 时有效。从活动项目根目录加载一个仅含 frontmatter 的普通 `.qwen/fork-profiles/<name>.md` 文件（最大 64 KiB），并应用其必需的 `tools` 数组以及可选的最多 200 个字符的 `promptHint`。该文件不能解析到项目 profile 目录之外。`fork_profile` 不能与 `fork_tools` 或命名的 teammate 组合使用，且在安全模式或裸模式下不可用。
+- `run_in_background`（布尔值，可选）：默认为 `true`（针对顶层常规代理）。设置为 `false` 以同步等待常规代理的结果。无头 fork 始终在后台运行。嵌套代理在前台运行，除非 `run_in_background` 显式为 `true`（这会被拒绝，因为嵌套代理无法接收后台完成通知）。调用者拥有的 `working_dir` 启动在前台运行，并拒绝显式或配置的后台执行。
+- `isolation`（字符串，可选）：设置为 `"worktree"` 可在 Qwen Code 创建和管理的隔离 Git worktree 中运行显式命名的非 fork 代理。
+- `working_dir`（字符串，可选）：将显式命名的非 fork 代理固定到当前仓库中已有的已注册 Git worktree。调用者拥有 worktree 的生命周期，因此此模式在前台运行。如果同时提供 `working_dir` 和 `isolation`，则 `working_dir` 优先。
 
 ## 如何使用 `agent` 与 Qwen Code
 
@@ -22,16 +26,21 @@ Agent 工具从你的配置中动态加载可用的子代理，并将任务委�
 
 当你使用 Agent 工具时，子代理将：
 
-1. 接收任务提示并获得完全自主权
+1. 接收任务提示，对于 fork，还会接收选定的父会话上下文
 2. 使用其可用工具执行任务
-3. 返回最终结果消息
-4. 终止（子代理无状态且单次使用）
+3. 默认报告完成通知，或者当常规代理在前台运行时返回最终结果消息
+4. 在后台运行后，当其保留状态支持继续时仍可被寻址
 
 用法：
 
 ```
 agent(description="Brief task description", prompt="Detailed task instructions for the subagent", subagent_type="agent_name")
+agent(description="Brief task description", prompt="Detailed task instructions for the fork", subagent_type="fork", fork_turns="3")
+agent(description="Read-only investigation", prompt="Inspect the implementation", subagent_type="fork", fork_tools=["read_file", "grep_search", "mcp__github"])
+agent(description="Profiled investigation", prompt="Inspect the implementation", subagent_type="fork", fork_profile="ro-research")
 ```
+
+当当前轮次必须在继续之前使用子代理结果时，设置 `run_in_background=false`。
 
 ## 可用的子代理
 
@@ -67,6 +76,16 @@ Agent 工具提供实时更新，显示：
 - 专门的系统提示和指令
 - 自定义模型配置
 - 特定领域的知识和能力
+
+### 后台代理继续
+
+后台代理在初始完成后可以接收后续工作：
+
+1. 调用 `list_agents` 发现当前会话可寻址的后台代理及其 `task_id` 值。这包括父会话恢复后兼容的已恢复代理。
+2. 使用 `task_id` 和后续指令调用 `send_message`。运行中的代理在下一个工具轮次边界接收消息，暂停的代理以此消息恢复，已完成的代理在有可用常驻运行时继续运行，或从其保留的转录中复活。
+3. 等待下一个完成通知后再使用后续结果。
+
+如果代理无法继续，`list_agents` 会返回 `resume_blocked_reason`。将已恢复或已继续代理的输出视为证据，并在集成更改之前进行验证。
 
 ## `agent` 示例
 
@@ -128,9 +147,13 @@ agent(
 
 ## 重要说明
 
-- **无状态执行**：每次子代理调用都是独立的，不会记忆之前的执行
-- **单次通信**：子代理只提供一条最终结果消息，不进行持续交流
-- **全面的提示**：你的提示应包含自主执行所需的所有上下文和指令
+- **独立上下文**：常规子代理在没有父会话历史的情况下启动。Fork 默认继承完整会话，并在有限的近期窗口足够时接受 `fork_turns`。
+- **子代理交互**：常规子代理不会接收 `ask_user_question`。Fork 保留父级的声明列表以共享缓存，但在调度或审批之前拒绝该工具；当缺少用户输入阻碍工作时，子代理会向父级报告阻塞。
+- **Fork 执行限制**：`fork_tools` 进一步缩小 fork 可以执行的已声明工具范围。不允许的调用在调度或审批之前返回错误；相同的声明列表仍对模型可见以共享缓存。这是调用者选择的每调用限制，而非管理员强制的沙箱。
+- **Fork profile**：`.qwen/fork-profiles/` 下的项目 profile 复用与 `fork_tools` 相同的执行门控。它在启动前解析一次；解析后的列表会被持久化以供复活使用，可选的 `promptHint` 仅添加到任务指令中。
+- **完成交付**：后台结果通过后续轮次中的完成通知到达。在通知到达之前不要假设结果。
+- **继续**：对相关的后续工作使用 `list_agents` 和 `send_message`，而不是启动重复的代理。继续取决于兼容的保留状态，可能不可用。
+- **全面的提示**：你的初始提示应包含自主执行所需的所有上下文和指令。常规子代理看不到父会话。
 - **工具访问**：子代理只能访问其特定配置中设置的工具
 - **并行能力**：多个子代理可以同时运行以提高效率
 - **配置依赖**：可用的子代理类型取决于系统配置

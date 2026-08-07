@@ -2,12 +2,12 @@
 
 ## Visão Geral
 
-`GET /capabilities` é o endpoint de preflight do daemon. Todo cliente SDK deve lê-lo antes de chamar qualquer outra rota para que possa descobrir qual versão de protocolo o daemon fala, quais tags de recursos estão habilitadas e a qual workspace o daemon está vinculado. O contrato:
+`GET /capabilities` é o endpoint de preflight do daemon. Todo cliente SDK deve lê-lo antes de chamar qualquer outra rota para descobrir qual versão de protocolo o daemon fala, quais tags de recurso estão habilitadas e quais workspace runtimes o daemon aceita. O contrato:
 
 - **Há apenas uma versão de protocolo: `v1`.** `SERVE_PROTOCOL_VERSION = 'v1'` e `SUPPORTED_SERVE_PROTOCOL_VERSIONS = ['v1']`. A v1 é aditiva internamente; mudanças que quebram o formato do frame são reservadas para a v2.
 - **Cada tag tem uma versão `since`.** Daemons v2 futuros podem anunciar tanto tags v1 quanto v2.
-- **Algumas tags são condicionais.** Treze tags (`require_auth`, `mcp_workspace_pool`, `mcp_pool_restart`, `allow_origin`, `prompt_absolute_deadline`, `writer_idle_timeout`, `workspace_settings`, `workspace_voice`, `workspace_voice_transcription`, `session_shell_command`, `rate_limit`, `workspace_reload`, `voice_transcribe`) são anunciadas apenas quando o toggle de deployment correspondente está habilitado. A presença da tag significa que o comportamento existe.
-- **Tag de capacidade = contrato de comportamento.** Adicionar um novo comportamento sob uma tag existente pode quebrar silenciosamente clientes que fizeram preflight da tag antiga. Um novo comportamento precisa de uma nova tag.
+- **Algumas tags são condicionais.** As tags listadas em `CONDITIONAL_SERVE_FEATURES` são anunciadas apenas quando o toggle de deployment correspondente está habilitado. A presença da tag significa que o comportamento existe.
+- **Tag de capability = contrato de comportamento.** Adicionar um novo comportamento sob uma tag existente pode quebrar silenciosamente clientes que fizeram preflight da tag antiga. Um novo comportamento precisa de uma nova tag.
 
 O registro completo fica em `packages/cli/src/serve/capabilities.ts`.
 
@@ -30,12 +30,13 @@ O registro completo fica em `packages/cli/src/serve/capabilities.ts`.
   mode: 'http-bridge',
   features: ServeFeature[],
   workspaceCwd: string,
+  workspaces?: Array<{ id: string, cwd: string, primary: boolean, trusted: boolean }>,
   protocol?: { current: 'v1', supported: ['v1'] },
   policy?: { permission: PermissionPolicy },
 }
 ```
 
-`workspaceCwd` é o workspace canônico vinculado na inicialização do daemon (veja [`02-serve-runtime.md`](./02-serve-runtime.md)). `policy.permission` é a política ativa do mediador.
+`workspaceCwd` é o caminho canônico do workspace primário (veja [`02-serve-runtime.md`](./02-serve-runtime.md)). Os daemons atuais usam `workspaces[]` como o catálogo de runtimes registrados; `multi_workspace_sessions` indica que mais de um runtime está ativo. `policy.permission` é a política ativa do mediador.
 
 ### `ServeCapabilityDescriptor`
 
@@ -80,6 +81,16 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
     (t) => t.voiceTranscriptionAvailable === true,
   ],
   ['session_shell_command', (t) => t.sessionShellCommandEnabled === true],
+  [
+    'multi_workspace_session_rewind',
+    (t) => t.multiWorkspaceSessionsEnabled === true,
+  ],
+  [
+    'multi_workspace_session_shell',
+    (t) =>
+      t.multiWorkspaceSessionsEnabled === true &&
+      t.sessionShellCommandEnabled === true,
+  ],
   ['rate_limit', (t) => t.rateLimit === true],
   ['workspace_reload', (t) => t.reloadAvailable === true],
   ['voice_transcribe', (t) => t.voiceWsAvailable !== false],
@@ -93,11 +104,11 @@ O `Map` armazena a associação e o predicado juntos. Adicionar uma nova tag con
 
 As tags base não estão presentes no `Map` e são anunciadas incondicionalmente. Isso é representado intencionalmente pela ausência, em vez de por um Set separado.
 
-### 75 tags (v1, agrupadas por domínio)
+### Tags v1 agrupadas por domínio
 
 Fundação: `health`, `daemon_status`, `capabilities`.
 
-Sessões: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_prompt`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (condicional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
+Sessões: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (condicional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
 
 Streaming: `slow_client_warning`, `typed_event_schema`.
 
@@ -105,9 +116,13 @@ Identidade e heartbeat: `client_identity`, `client_heartbeat`.
 
 Permissões: `session_permission_vote`, `permission_vote`, **`permission_mediation`** (`modes: ['first-responder', 'designated', 'consensus', 'local-only']`).
 
-Snapshots read-only do workspace: `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
+Snapshots read-only do workspace: `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_acp_status`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
 
-Mutação do workspace (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_tool_toggle`, **`workspace_settings`** (condicional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write`, **`workspace_reload`** (condicional).
+Gerenciamento de extensões: `extension_management_v2` adiciona o contrato global de catálogo/mutação/operação `/extensions/*` e a projeção de ativação do workspace. É separado da superfície de compatibilidade publicada `workspace_extensions` e de `workspace_qualified_rest_core`.
+
+Leituras de sessão qualificadas por workspace: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`. As tags de exportação ativa e arquivada são independentes entre si e de `session_export` e `workspace_qualified_rest_core`, então os clientes devem fazer pre-flight do estado exato de armazenamento que pretendem exportar. A paginação de transcrição persistida permite um secundário não confiável sob sua política de leitura limitada; ambos os caminhos de exportação completa permanecem apenas para confiáveis.
+
+Mutação do workspace (Wave 4+): `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (condicional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, **`workspace_reload`** (condicional).
 
 Guardrails do MCP: **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (condicional), **`mcp_pool_restart`** (condicional).
 
@@ -117,7 +132,16 @@ Autenticação: `auth_provider_install`, `auth_device_flow`, **`require_auth`** 
 
 Voz: **`workspace_voice`** (condicional), **`workspace_voice_transcription`** (condicional, `modes: ['batch']`), **`voice_transcribe`** (condicional, `modes: ['streaming', 'batch']`).
 
-Rate limiting: **`rate_limit`** (condicional).
+Limite de taxa: **`rate_limit`** (condicional).
+
+Roteamento de sessão multi-workspace: **`multi_workspace_sessions`** (condicional),
+**`multi_workspace_session_rewind`** (condicional) e
+**`multi_workspace_session_shell`** (condicional). Um cliente pode usar rewind
+para uma sessão primária com `session_rewind`; uma sessão secundária ativa
+adicionalmente requer `multi_workspace_session_rewind`. Shell usa o pareamento
+equivalente `session_shell_command` mais `multi_workspace_session_shell` para
+uma sessão secundária. Clientes nativos ACP continuam usando os `_qwen.methods`
+retornados pelo initialize; nenhum método vendor de rewind ACP é anunciado.
 
 Tags em negrito têm `modes` ou são condicionais.
 
@@ -128,13 +152,13 @@ Tags em negrito têm `modes` ou são condicionais.
 ```mermaid
 flowchart LR
     A["GET /capabilities"] --> B["getAdvertisedServeFeatures(version, toggles)"]
-    B --> C["filtrar por isFeatureAvailableInProtocol"]
-    C --> D["para cada feature, verificar CONDITIONAL_SERVE_FEATURES"]
-    D --> E["sim: predicate(toggles) ? incluir : descartar"]
-    D --> F["não: incluir incondicionalmente"]
+    B --> C["filter by isFeatureAvailableInProtocol"]
+    C --> D["for each feature, check CONDITIONAL_SERVE_FEATURES"]
+    D --> E["yes: predicate(toggles) ? include : drop"]
+    D --> F["no: include unconditionally"]
     E --> G["return ServeFeature[]"]
     F --> G
-    G --> H["envolver no envelope:<br/>{ v: 1, mode, features, workspaceCwd, protocol, policy }"]
+    G --> H["wrap in envelope:<br/>{ v: 1, mode, features, workspaceCwd, protocol, policy }"]
 ```
 
 ### Lado do cliente: preflight de recursos
@@ -142,47 +166,50 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     autonumber
-    participant C as Cliente
+    participant C as Client
     participant D as GET /capabilities
-    participant R as Rota
+    participant R as Route
 
     C->>D: GET /capabilities
     D-->>C: { v, mode, features, workspaceCwd, protocol, policy }
     C->>C: features.includes('mcp_workspace_pool')?
-    alt sim
-        C->>R: depender de formatos de resposta pool-aware<br/>(por exemplo, entries[] de /workspace/mcp/:server/restart)
-    else não
-        C->>R: formato de resposta legacy de entrada única
+    alt yes
+        C->>R: rely on pool-aware response shapes<br/>(for example entries[] from /workspace/mcp/:server/restart)
+    else no
+        C->>R: legacy single-entry response shape
     end
 ```
 
 ## Estado e ciclo de vida
 
 - `CAPABILITIES_SCHEMA_VERSION` é a versão do formato do envelope na rede, atualmente `1`. Incremente apenas em caso de quebra no envelope.
-- `SERVE_PROTOCOL_VERSION = 'v1'` é a versão do protocolo-recurso. Adicionar recursos dentro da v1 é aditivo; clientes antigos não veem o novo comportamento a menos que façam preflight da nova tag. Remover um recurso é uma quebra na v2.
+- `SERVE_PROTOCOL_VERSION = 'v1'` é a versão de protocolo-recurso. Adicionar recursos dentro da v1 é aditivo; clientes antigos não veem o novo comportamento a menos que façam preflight da nova tag. Remover um recurso é uma quebra na v2.
 - `EVENT_SCHEMA_VERSION = 1` é o campo `v` do frame SSE (veja [`09-event-schema.md`](./09-event-schema.md)). É um eixo de versão independente; incrementar o schema de eventos não implica incrementar a versão do protocolo, e vice-versa.
-- `session_resume` é o recurso estável do daemon para `POST /session/:id/resume`. `unstable_session_resume` continua sendo anunciado como um alias depreciado porque o método ACP subjacente ainda se chama `connection.unstable_resumeSession`; novos clientes devem detectar o recurso `session_resume`.
+- `session_resume` é a capability estável do daemon para `POST /session/:id/resume`. `unstable_session_resume` continua sendo anunciado como um alias depreciado porque o método ACP subjacente ainda se chama `connection.unstable_resumeSession`; novos clientes devem detectar o recurso `session_resume`.
 
 ## Dependências
 
 - Lido por `packages/cli/src/serve/server.ts` ao construir respostas de `/capabilities`.
-- A entrada de toggles vem de `runQwenServe` / `createServeApp`: `{ requireAuth, mcpPoolActive, allowOriginActive, promptDeadlineMs, writerIdleTimeoutMs, persistSettingAvailable, sessionShellCommandEnabled, rateLimit, reloadAvailable }`.
+- A entrada de toggles vem de `runQwenServe` / `createServeApp`, incluindo
+  autenticação, MCP, origin, prompt, configurações, shell, rate-limit, reload e
+  estado dinâmico de contagem de workspace runtime.
 - A política `permission` ativa no envelope vem de `BridgeOptions.permissionPolicy`, que por sua vez lê `policy.permissionStrategy` em `settings.json`.
 
 ## Configuração
 
-| Origem                     | Opção                                                           | Efeito nas capacidades                                                                                                        |
-| -------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Flag da CLI                | `--require-auth`                                                | Anuncia `require_auth`.                                                                                                       |
-| Env                        | `QWEN_SERVE_NO_MCP_POOL=1`                                      | Para de anunciar `mcp_workspace_pool` e `mcp_pool_restart`; eventos do MCP não estampam mais `scope: 'workspace'`.            |
-| Flag da CLI                | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}` | Não altera o conjunto de tags (`mcp_guardrails` é sempre anunciado), mas altera a reserva por servidor e o comportamento de recusa. |
-| Flag da CLI / env          | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1`                      | Anuncia `rate_limit`.                                                                                                         |
-| Opção embutida             | `persistSettingAvailable`                                       | Anuncia `workspace_settings` e `workspace_voice`.                                                                             |
-| Opção embutida             | `voiceTranscriptionAvailable`                                   | Anuncia `workspace_voice_transcription`.                                                                                      |
-| Flag da CLI / opção embutida | `--enable-session-shell` / `sessionShellCommandEnabled`         | Anuncia `session_shell_command`.                                                                                              |
-| Opção embutida             | `reloadAvailable`                                               | Anuncia `workspace_reload`.                                                                                                   |
-| Opção embutida             | `voiceWsAvailable`                                              | Anuncia `voice_transcribe`.                                                                                                   |
-| `settings.json`            | `policy.permissionStrategy`                                     | Define `policy.permission` no envelope.                                                                                       |
+| Origem                       | Opção                                                           | Efeito nas capacidades                                                                                                                                                   |
+| ---------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Flag da CLI                  | `--require-auth`                                                | Anuncia `require_auth`.                                                                                                                                                  |
+| Env                          | `QWEN_SERVE_NO_MCP_POOL=1`                                      | Para de anunciar `mcp_workspace_pool` e `mcp_pool_restart`; eventos do MCP não estampam mais `scope: 'workspace'`.                                                       |
+| Flag da CLI                  | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}` | Não altera o conjunto de tags (`mcp_guardrails` é sempre anunciado), mas altera a reserva por servidor e o comportamento de recusa.                                      |
+| Flag da CLI / env            | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1`                      | Anuncia `rate_limit`.                                                                                                                                                    |
+| Opção embutida               | `persistSettingAvailable`                                       | Anuncia `workspace_settings` e `workspace_voice`.                                                                                                                        |
+| Opção embutida               | `voiceTranscriptionAvailable`                                   | Anuncia `workspace_voice_transcription`.                                                                                                                                 |
+| Flag da CLI / opção embutida | `--enable-session-shell` / `sessionShellCommandEnabled`         | Anuncia `session_shell_command`.                                                                                                                                         |
+| Estado de runtime            | Mais de um workspace runtime registrado                         | Anuncia `multi_workspace_sessions` e `multi_workspace_session_rewind`; também anuncia `multi_workspace_session_shell` quando o shell de sessão está efetivamente habilitado. |
+| Opção embutida               | `reloadAvailable`                                               | Anuncia `workspace_reload`.                                                                                                                                              |
+| Opção embutida               | `voiceWsAvailable`                                              | Anuncia `voice_transcribe`.                                                                                                                                              |
+| `settings.json`              | `policy.permissionStrategy`                                     | Define `policy.permission` no envelope.                                                                                                                                  |
 
 ## Ressalvas e limitações conhecidas
 

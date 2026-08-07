@@ -59,6 +59,7 @@ Dieser Leitfaden bietet Lösungen für häufige Probleme und Tipps zur Fehlerbeh
   - A: Starte Qwen Code mit dem `--safe-mode`-Flag, um alle Anpassungen für die Sitzung zu deaktivieren – Kontextdateien, Hooks, Extensions, Skills, MCP-Server, benutzerdefinierte Subagents (nur integrierte Subagents werden geladen), Berechtigungsregeln, aus den Einstellungen übernommene Approval-Mode-Overrides, Speicherfunktionen und Sandbox-Einstellungen. Hinweis: Die CLI-Flags `--yolo` und `--approval-mode` sind im Safe Mode weiterhin wirksam. Wenn das Problem im Safe Mode nicht mehr auftritt, aktiviere deine Anpassungen nacheinander wieder, um den Verursacher zu finden.
     - Beispiel: `qwen --safe-mode`
     - Alternative: Setze die Umgebungsvariable `QWEN_CODE_SAFE_MODE=true`, wenn die CLI keine Flags akzeptieren kann.
+    - Hinweis: „MCP-Server" bezieht sich hier auf Server, die in `settings.json` / `.mcp.json` des Projekts konfiguriert sind — lokaler, ambienter Zustand, gegen den der Safe Mode isolieren soll. MCP-Server, die du explizit für den aktuellen Aufruf bereitstellst (die `mcpServers` eines Embedding-ACP-Clients bei `session/new` oder `--mcp-config`), sind kein lokaler/ambienter Zustand und werden auch im Safe Mode berücksichtigt.
 
 ## Häufige Fehlermeldungen und Lösungen
 
@@ -99,7 +100,12 @@ Dieser Leitfaden bietet Lösungen für häufige Probleme und Tipps zur Fehlerbeh
 - **Trackpad-Scrollen in tmux ändert die Prompt-Historie, anstatt durch die Konversation zu scrollen**
   - **Problem:** In einer tmux-Sitzung kann das Scrollen mit dem Trackpad oder Mausrad durch vorherige Prompts blättern, ähnlich wie das Drücken von `Pfeil nach oben` oder `Pfeil nach unten`.
   - **Ursache:** tmux kann Radgesten in einfache Pfeiltasten-Sequenzen übersetzen. Diese Sequenzen sind für qwen-code nicht mehr von echten Pfeiltastendrücken zu unterscheiden.
-  - **Lösung:** Aktiviere `ui.useTerminalBuffer`; verwende dann `Shift+Up` / `Shift+Down` oder das Mausrad, wenn tmux Radereignisse an die App weiterleitet. Wenn du den Host-Scrollback bevorzugst, passe deine tmux-Mausbindungen für Radereignisse an.
+  - **Lösung:** Wenn der Screen-Reader-Modus deaktiviert ist, stelle sicher, dass `ui.useTerminalBuffer` aktiviert ist; verwende dann `Shift+Up` / `Shift+Down` oder das Mausrad, wenn tmux Mausrad-Ereignisse an die App weiterleitet (erfordert `ui.mouseTracking`). Wenn du den Host-Scrollback bevorzugst, passe deine tmux-Maus-Bindings für Mausrad-Ereignisse an.
+
+- **Rechtsklick funktioniert nicht, Links öffnen sich nicht oder Text kann im Terminal nicht ausgewählt werden**
+  - **Problem:** Native Rechtsklick-Kontextmenüs, OSC-8-Hyperlink-Klicks (Strg+Klick oder einfacher Klick auf URLs) und die native Textauswahl des Terminals funktionieren nicht, während Qwen Code läuft.
+  - **Ursache:** Wenn `ui.mouseTracking` aktiviert ist (Standard), erfasst Qwen Code alle Mausereignisse über SGR-Maus-Tracking, um die In-App-Textauswahl, Klick-zum-Positionieren, Zeilen-Hover und Viewport-Scrolling zu ermöglichen. Das Terminal leitet jedes Mausereignis an die App weiter, anstatt es nativ zu verarbeiten.
+  - **Lösung:** Setze `"ui.mouseTracking": false` in deiner `settings.json`, um native Rechtsklick-Menüs und anklickbare URL-Links wiederherzustellen. Dadurch wird jegliche In-App-Mausinteraktion deaktiviert. In der Virtualized History (`ui.useTerminalBuffer: true`, Standard) scrollt das Mausrad dann nicht mehr durch das Transkript — verwende stattdessen `Shift+↑/↓`, `PgUp/PgDn` oder `Ctrl+Home/End`. Um auch den nativen Terminal-Scrollback wiederherzustellen, setze `"ui.useTerminalBuffer": false`. Erfordert Neustart.
 
 ## IDE Companion verbindet nicht
 

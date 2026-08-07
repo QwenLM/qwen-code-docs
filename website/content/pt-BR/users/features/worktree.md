@@ -181,8 +181,8 @@ A ferramenta `agent` aceita um parâmetro opcional `isolation: "worktree"`. Quan
 
 Duas restrições:
 
-- `isolation: "worktree"` requer um `subagent_type` — subagentes bifurcados (sem `subagent_type`) reutilizam o contexto completo da conversa do pai, então isolá-los dividiria a intenção da árvore de trabalho.
-- Agentes em segundo plano (`run_in_background: true`) funcionam bem com isolamento; a limpeza ocorre quando o agente reporta conclusão.
+- `isolation: "worktree"` requer um `subagent_type` não-fork — subagentes bifurcados (`subagent_type: "fork"`) reutilizam o contexto completo da conversa do pai, então isolá-los dividiria a intenção da árvore de trabalho.
+- Agentes usando `isolation: "worktree"` seguem o comportamento padrão em segundo plano; a limpeza é executada quando o agente reporta conclusão. Defina `run_in_background: false` para um resultado inline. Lançamentos com `working_dir` de propriedade do chamador permanecem em primeiro plano por padrão, pois seu ciclo de vida é gerenciado externamente.
 
 ### Limpeza Automática de Worktrees Obsoletas
 

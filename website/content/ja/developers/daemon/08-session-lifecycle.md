@@ -100,8 +100,8 @@ sequenceDiagram
 
 ### ロード / 再開
 
-`POST /session/:id/load` — 完全なACP履歴をリプレイします（レスポンスが返る前に `session/load` 通知が発行されます）。
-`POST /session/:id/resume` — リプレイなしで復元します（`connection.unstable_resumeSession`。安定版の `session_resume` デーモン機能の下で公開されます。`unstable_session_resume` は非推奨のエイリアスとして残っています）。
+`POST /session/:id/load` — 永続化されたセッションを復元し、現在のバウンドされたリプレイスナップショットウィンドウを返します（`session/load` 通知またはレスポンスモードのリプレイは、レスポンスが返る前にシードされます）。
+`POST /session/:id/resume` — リプレイなしで復元します（`connection.unstable_resumeSession`。安定版の `session_resume` デーモンケーパビリティの下で公開されます。`unstable_session_resume` は非推奨のエイリアスとして残っています）。
 
 両者とも:
 
@@ -176,7 +176,11 @@ sequenceDiagram
 
 ### シェルコマンドの実行
 
-`POST /session/:id/shell` は、LLM を経由せずに daemon ホスト上で直接シェルコマンドを実行します。`user_shell_command` / `user_shell_result` イベントを介してセッション SSE バス上で出力をストリーミングし、コマンドと結果を LLM の会話履歴に注入します。レスポンスは `{ exitCode, output, aborted }` です。
+`POST /session/:id/shell` は、LLM を経由せずにデーモンホスト上で直接シェルコマンドを実行し、LLM を経由しません。`user_shell_command` / `user_shell_result` イベントを介してセッション SSE バス上で出力をストリーミングし、コマンドと結果を LLM の会話履歴に注入します。レスポンスは `{ exitCode, output, aborted }` です。ライブのセカンダリワークスペースセッションの場合、単一の REST ルートはセッションオーナーを解決し、そのランタイムのブリッジ上で実行するため、コマンドは所有ワークスペースの cwd で開始されます。このルートはパスサンドボックスを提供しません。ワークスペース限定の ACP クライアントは、所有ワークスペース接続上で `_qwen/session/shell` を引き続き使用できます。
+
+### セッションの rewind
+
+`GET /session/:id/rewind/snapshots` と `POST /session/:id/rewind` は、所有するライブワークスペースランタイムを解決します。永続化されたセッションは、rewind 前にロードまたは再開する必要があります。Rewind は会話履歴を切り詰め、`edit` と `write_file` によって追跡されたファイルを選択的に復元します。シェルコマンド、Git、スクリプト、または手動の変更は元に戻しません。ファイルの復元はベストエフォート型のため、レスポンスは会話履歴がすでに移動した後でも `rewound: false` と `filesFailed[]` を報告する可能性があります。SDK の rewind 呼び出しは、クライアントがそうでない場合でも ACP トランスポートを使用している場合でも、常にオーナー認識 REST を使用します。これは、ミューテーションが厳格な REST 認証を保持する必要があるためです。
 
 ### セッションのデタッチ
 
@@ -188,7 +192,7 @@ sequenceDiagram
 
 ### セッションのアーカイブ
 
-`POST /sessions/archive` は、非アクティブなセッションの JSONL ファイルを `chats/` から `chats/archive/` に移動します。対象のセッションがライブの場合、daemon はまずセッションごとのアーカイブゲートに入り、ACP 子プロセスに `ChatRecordingService` のフラッシュを要求する厳格なクローズを実行します。クローズまたはフラッシュが失敗した場合、アーカイブは JSONL をそのまま残します。
+`POST /sessions/archive` は、非アクティブなセッションの JSONL ファイルを `chats/` から `chats/archive/` に移動します。対象のセッションがライブの場合、デーモンはまずセッションごとのアーカイブゲートに入り、ACP 子プロセスが `ChatRecordingService` をフラッシュする必要がある厳格なクローズを実行します。クローズまたはフラッシュが失敗した場合、アーカイブは JSONL をそのまま残します。
 
 `POST /sessions/unarchive` は、アーカイブされた JSONL ファイルを `chats/` に戻します。これはストレージ状態の遷移に過ぎないため、クライアントはその後 `session/load` または `session/resume` を呼び出す必要があります。アーカイブされたセッションは load/resume に対して `409 session_archived` を返し、アーカイブ遷移と競合するミューテーションは `409 session_archiving` を返します。
 
@@ -204,25 +208,31 @@ sequenceDiagram
 
 `GET /session/:id/tasks` は、エージェントタスク、シェルタスク、モニタータスク、およびそれらのライフサイクル状態のバックグラウンドタスクのスナップショットを返します。別のサブエージェントによって生成されたエージェントエントリには、オプションの系統フィールド（`parentAgentId`、`parentName`、`depth`）が含まれるため、クライアントはネストされたサブエージェントをツリーとしてレンダリングできます。ペイロードの例は `qwen-serve-protocol.md` を参照してください。
 
+`session_monitor_tool_correlation` ケーパビリティは、モニターエントリが `toolUseId` を持つことを追加で保証し、クライアントがトランスクリプトのツール呼び出しとそのタスク詳細を関連付けられるようにします。
+
 ### セッション LSP ステータス (`session_lsp` capability tag)
 
 `GET /session/:id/lsp` は、daemon クライアント向けにサニタイズされたセッションごとの LSP ステータスを返します。これには、有効化状態、集計されたサーバー数、利用不可/初期化状態、およびサーバーごとの `name`、`status`、`languages`、`transport`、`command`、`error` が含まれます。無効または利用不可の LSP は、トランスポートエラーではなく HTTP 200 のステータスデータとして表現されます。
 
 ### コンパクトリプレイ
 
-`POST /session/:id/load` は、`compactedReplay?: BridgeEvent[]`、`liveJournal?: BridgeEvent[]`、および `lastEventId?: number` を含むことができる `BridgeRestoredSession` を返すようになりました。`compactedReplay` は `TurnBoundaryCompactionEngine` によって生成されます。ターンの境界で、連続するテキスト/思考ブロックを折りたたみ、ツール呼び出しシーケンスを最終状態に圧縮し、一時的なシグナルを破棄して、O(tokens) ログではなく O(turns) リプレイログを生成します（通常 25〜30 倍の削減）。
+`POST /session/:id/load` は、`compactedReplay?: BridgeEvent[]`、`liveJournal?: BridgeEvent[]`、および `lastEventId?: number` を含むことができる `BridgeRestoredSession` を返すようになりました。これらのフィールドは、ライブセッションのためのデーモンのバウンドされたインメモリリプレイウィンドウであり、完全なトランスクリプト API ではありません。デフォルトのウィンドウキャップはライブセッションあたり 4 MiB（`--compacted-replay-max-bytes`）で、起動は無効なキャップを拒否します。ハード上限は 256 MiB です。`compactedReplay` は `TurnBoundaryCompactionEngine` によって生成されます。ターンの境界で、連続するテキスト/思考ブロックを折りたたみ、ツール呼び出しシーケンスを最終状態に圧縮し、一時的なシグナルを破棄して、O(tokens) ログではなく O(turns) リプレイログを生成します（通常 25〜30 倍の削減）。古いリプレイエントリがそのバイトウィンドウから削除された場合、`compactedReplay[0]` は合成の ID なし `history_truncated` マーカーであり、`{reason: 'replay_window_exceeded', truncatedEvents, retainedEvents, maxBytes, truncatedTurns?, fullTranscriptAvailable: boolean}` を持ちます。`fullTranscriptAvailable` はケーパビリティフラグです。`true` はクライアントが `GET /session/:id/transcript` で完全な永続化トランスクリプトをページングできることを意味し、`false` はバウンドされたリプレイのみが利用可能であることを意味します。クライアントはそれをステータスとしてレンダリングし、保持されたリプレイを通常通り適用する必要があります。再同期ループをトリガーしてはなりません。
 
 ### ACP 子プロセスのプレヒート
 
 `bridge.preheat()` は、最初のセッションの前に ACP 子プロセスをウォームアップし、最初の本セッションでコールドスタートのレイテンシを回避します。これは、最後のセッションが閉じた後も ACP 子プロセスを存続させる `channelIdleTimeoutMs` と、新しいセッションが到着したときにすでにアイドル状態の子プロセスを再利用する skip-relaunch 動作と組み合わせて使用されます。
 
+### ステートレス生成（`session_generation` ケーパビリティタグ）
+
+`POST /session/:id/generate` は `{ "prompt": string }` を受け取り、`started`、オプションの `thinking`、`delta`、`done`、または `error` イベントを含むリクエストスコープの SSE ストリームを返します。リクエストは会話履歴を読み取らず、ターンを記録せず、ツールを公開しません。ACP 子プロセスは、有効な設定済みの高速モデルが利用可能な場合はそれを使用し、そうでない場合はセッションのメインモデルを使用します。
+
 ## 設定
 
-- `BridgeOptions.maxSessions`（デフォルト 20）— 上限。
+- `BridgeOptions.maxSessions`（デフォルト 32）— 上限。
 - `BridgeOptions.sessionScope`（デフォルト `'single'`、オプションで `'thread'`）。
 - `BridgeOptions.initializeTimeoutMs`（デフォルト 10s）— ACP `initialize` ハンドシェイク。
 - `BridgeOptions.channelIdleTimeoutMs`（デフォルト 0、ACP 子プロセスを即座に回収）。
-- Capability tags: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`（非推奨のエイリアス）, `session_list`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_btw`, `session_context_usage`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Capability tags: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`（非推奨のエイリアス）, `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
 
 ## 注意事項と既知の制限
 

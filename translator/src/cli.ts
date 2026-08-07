@@ -93,6 +93,7 @@ class TranslationCLI {
           { name: "Russian (ru)", value: "ru" },
           { name: "Japanese (ja)", value: "ja" },
           { name: "Spanish (es)", value: "es" },
+          { name: "Korean (ko)", value: "ko" },
         ],
         default: "en",
       },
@@ -114,6 +115,11 @@ class TranslationCLI {
           {
             name: "Spanish (es)",
             value: "es",
+            checked: false,
+          },
+          {
+            name: "Korean (ko)",
+            value: "ko",
             checked: false,
           },
         ],
@@ -547,6 +553,7 @@ class TranslationCLI {
           { name: "Japanese (ja)", value: "ja" },
           { name: "Portuguese (Brazil) (pt-BR)", value: "pt-BR" },
           { name: "Spanish (es)", value: "es" },
+          { name: "Korean (ko)", value: "ko" },
         ],
         default: currentConfig.targetLanguages,
       },

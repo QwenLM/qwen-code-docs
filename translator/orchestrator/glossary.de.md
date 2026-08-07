@@ -87,3 +87,7 @@ English term → German rendering. Follow existing entries; append new ones as `
 - partition (tool rendering) → Partition
 - freeze snapshot → Freeze-Snapshot
 - fullDetail (TUI flag) → fullDetail (not translated)
+- rewind selector → Rewind-Selector
+- ghost text → Ghost-Text
+- foreground shell → Foreground Shell
+- mouse tracking → Maus-Tracking

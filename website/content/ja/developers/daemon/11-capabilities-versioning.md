@@ -1,12 +1,14 @@
+---
+
 # ケイパビリティとプロトコルバージョニング
 
 ## 概要
 
-`GET /capabilities` はデーモンのプリフライトエンドポイントです。すべての SDK クライアントは、他のルートを呼び出す前にこれを読み取り、デーモンが使用するプロトコルバージョン、有効になっている機能タグ、およびデーモンがバインドされているワークスペースを把握する必要があります。契約（コントラクト）は以下の通りです。
+`GET /capabilities` はデーモンのプリフライトエンドポイントです。すべての SDK クライアントは、他のルートを呼び出す前にこれを読み取り、デーモンが使用するプロトコルバージョン、有効になっている機能タグ、およびデーモンが受け付けるワークスペースランタイムを把握する必要があります。契約（コントラクト）は以下の通りです。
 
 - **プロトコルバージョンは `v1` のみです。** `SERVE_PROTOCOL_VERSION = 'v1'` であり、`SUPPORTED_SERVE_PROTOCOL_VERSIONS = ['v1']` です。v1 は内部的に追加のみ可能です。フレーム形状を破壊するような変更は v2 用に予約されています。
 - **各タグには `since` バージョンがあります。** 将来の v2 デーモンは、v1 と v2 の両方のタグをアドバタイズできます。
-- **一部のタグは条件付きです。** 13 個のタグ（`require_auth`, `mcp_workspace_pool`, `mcp_pool_restart`, `allow_origin`, `prompt_absolute_deadline`, `writer_idle_timeout`, `workspace_settings`, `workspace_voice`, `workspace_voice_transcription`, `session_shell_command`, `rate_limit`, `workspace_reload`, `voice_transcribe`）は、対応するデプロイトグルが有効な場合にのみアドバタイズされます。タグの存在は、その動作（ビヘイビア）が存在することを意味します。
+- **一部のタグは条件付きです。** `CONDITIONAL_SERVE_FEATURES` に記載されたタグは、対応するデプロイトグルが有効な場合にのみアドバタイズされます。タグの存在は、その動作（ビヘイビア）が存在することを意味します。
 - **ケイパビリティタグ = 動作のコントラクト。** 既存のタグの下に新しい動作を追加すると、古いタグをプリフライトしたクライアントが暗黙的に破壊される可能性があります。新しい動作には新しいタグが必要です。
 
 完全なレジストリは `packages/cli/src/serve/capabilities.ts` にあります。
@@ -30,12 +32,13 @@
   mode: 'http-bridge',
   features: ServeFeature[],
   workspaceCwd: string,
+  workspaces?: Array<{ id: string, cwd: string, primary: boolean, trusted: boolean }>,
   protocol?: { current: 'v1', supported: ['v1'] },
   policy?: { permission: PermissionPolicy },
 }
 ```
 
-`workspaceCwd` はデーモン起動時にバインドされる正規のワークスペースです（[`02-serve-runtime.md`](./02-serve-runtime.md) を参照）。`policy.permission` はアクティブなメディエーターポリシーです。
+`workspaceCwd` は正規のプライマリワークスペースパスです（[`02-serve-runtime.md`](./02-serve-runtime.md) を参照）。現在のデーモンは `workspaces[]` を登録済みランタイムカタログとして使用します。`multi_workspace_sessions` は、複数のランタイムがアクティブであることを示します。`policy.permission` はアクティブなメディエーターポリシーです。
 
 ### `ServeCapabilityDescriptor`
 
@@ -80,6 +83,16 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
     (t) => t.voiceTranscriptionAvailable === true,
   ],
   ['session_shell_command', (t) => t.sessionShellCommandEnabled === true],
+  [
+    'multi_workspace_session_rewind',
+    (t) => t.multiWorkspaceSessionsEnabled === true,
+  ],
+  [
+    'multi_workspace_session_shell',
+    (t) =>
+      t.multiWorkspaceSessionsEnabled === true &&
+      t.sessionShellCommandEnabled === true,
+  ],
   ['rate_limit', (t) => t.rateLimit === true],
   ['workspace_reload', (t) => t.reloadAvailable === true],
   ['voice_transcribe', (t) => t.voiceWsAvailable !== false],
@@ -93,31 +106,45 @@ export const CONDITIONAL_SERVE_FEATURES: ReadonlyMap<
 
 ベースラインタグは `Map` に存在せず、無条件でアドバタイズされます。これは意図的に、別の Set を使用するのではなく、存在しないことで表現されています。
 
-### 75 個のタグ（v1、ドメイン別にグループ化）
+### v1 タグ（ドメイン別にグループ化）
 
-基盤（Foundation）: `health`, `daemon_status`, `capabilities`.
+基盤: `health`, `daemon_status`, `capabilities`.
 
-セッション（Sessions）: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_prompt`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
+セッション: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume`, `session_list`, `session_info`, `session_prompt`, `session_mid_turn_message_mutation`, `session_cancel`, `session_events`, `session_set_model`, `session_close`, `session_metadata`, `session_archive`, `session_export`, `session_transcript`, `session_context`, `session_context_usage`, `session_supported_commands`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `session_approval_mode_control`, `session_recap`, `session_btw`, **`session_shell_command`** (conditional), `session_language`, `session_rewind`, `session_hooks`, `session_branch`.
 
-ストリーミング（Streaming）: `slow_client_warning`, `typed_event_schema`.
+ストリーミング: `slow_client_warning`, `typed_event_schema`.
 
-ID とハートビート（Identity and heartbeat）: `client_identity`, `client_heartbeat`.
+ID と heartbeat: `client_identity`, `client_heartbeat`.
 
-権限（Permissions）: `session_permission_vote`, `permission_vote`, **`permission_mediation`** (`modes: ['first-responder', 'designated', 'consensus', 'local-only']`).
+権限: `session_permission_vote`, `permission_vote`, **`permission_mediation`** (`modes: ['first-responder', 'designated', 'consensus', 'local-only']`).
 
-ワークスペースの読み取り専用スナップショット（Workspace read-only snapshots）: `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
+ワークスペースの読み取り専用スナップショット: `workspace_mcp`, `workspace_skills`, `workspace_providers`, `workspace_acp_status`, `workspace_env`, `workspace_preflight`, `workspace_hooks`, `workspace_extensions`.
 
-ワークスペースのミューテーション（Wave 4 以降）: `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_tool_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_write`, **`workspace_reload`** (conditional).
+拡張機能管理: `extension_management_v2` は、グローバルな `/extensions/*` カタログ/ミューテーション/オペレーションの契約と、ワークスペースアクティベーションの投影を追加します。これは公開されている `workspace_extensions` 互換性サーフェスおよび `workspace_qualified_rest_core` とは別物です。
 
-MCP ガードレール（MCP guardrails）: **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (conditional), **`mcp_pool_restart`** (conditional).
+ワークスペース修飾セッション読み取り: `workspace_persisted_transcript`, `workspace_session_export`, `workspace_archived_session_export`。アクティブおよびアーカイブのエクスポートタグは互いに、また `session_export` や `workspace_qualified_rest_core` とも独立しています。そのため、クライアントはエクスポートする正確なストレージ状態をプリフライトする必要があります。永続化トランスクリプトのページングは、バウンドされた読み取りポリシーの下で信頼されないセカンダリを許可します。両方のフルエクスポートパスは信頼されたのみです。
 
-プロンプト制御（Prompt control）: **`prompt_absolute_deadline`** (conditional), **`writer_idle_timeout`** (conditional), `non_blocking_prompt`.
+ワークスペースのミューテーション（Wave 4 以降）: `workspace_memory`, `workspace_agents`, `workspace_agent_generate`, `workspace_acp_preheat`, `workspace_tool_toggle`, **`workspace_settings`** (conditional), `workspace_permissions`, `workspace_init`, `workspace_github_setup`, `workspace_trust`, `workspace_mcp_restart`, `workspace_mcp_manage`, `workspace_file_read`, `workspace_file_bytes`, `workspace_file_read_cursor`, `workspace_file_write`, **`workspace_reload`** (conditional).
 
-認証（Auth）: `auth_provider_install`, `auth_device_flow`, **`require_auth`** (conditional), **`allow_origin`** (conditional).
+MCP ガードレール: **`mcp_guardrails`** (`modes: ['warn', 'enforce']`), `mcp_guardrail_events`, `mcp_server_runtime_mutation`, **`mcp_workspace_pool`** (conditional), **`mcp_pool_restart`** (conditional).
 
-音声（Voice）: **`workspace_voice`** (conditional), **`workspace_voice_transcription`** (conditional, `modes: ['batch']`), **`voice_transcribe`** (conditional, `modes: ['streaming', 'batch']`).
+プロンプト制御: **`prompt_absolute_deadline`** (conditional), **`writer_idle_timeout`** (conditional), `non_blocking_prompt`.
 
-レート制限（Rate limiting）: **`rate_limit`** (conditional).
+認証: `auth_provider_install`, `auth_device_flow`, **`require_auth`** (conditional), **`allow_origin`** (conditional).
+
+音声: **`workspace_voice`** (conditional), **`workspace_voice_transcription`** (conditional, `modes: ['batch']`), **`voice_transcribe`** (conditional, `modes: ['streaming', 'batch']`).
+
+レート制限: **`rate_limit`** (conditional).
+
+マルチワークスペースセッションルーティング: **`multi_workspace_sessions`** (conditional)、
+**`multi_workspace_session_rewind`** (conditional)、および
+**`multi_workspace_session_shell`** (conditional)。クライアントは
+`session_rewind` を使用してプライマリセッションの rewind を利用できます。セカンダリの
+ライブセッションには `multi_workspace_session_rewind` も 추가로必要です。シェルは
+セカンダリセッションに対して、同等の `session_shell_command` と
+`multi_workspace_session_shell` のペアを使用します。ACP ネイティブのクライアントは、
+initialize が返す `_qwen.methods` を引き続き使用します。ACP rewind ベンダーメソッドは
+アドバタイズされません。
 
 太字のタグは `modes` を持つか、条件付きです。
 
@@ -166,23 +193,24 @@ sequenceDiagram
 ## 依存関係
 
 - `/capabilities` レスポンスの構築時に `packages/cli/src/serve/server.ts` によって読み取られます。
-- トグル入力は `runQwenServe` / `createServeApp` から渡されます: `{ requireAuth, mcpPoolActive, allowOriginActive, promptDeadlineMs, writerIdleTimeoutMs, persistSettingAvailable, sessionShellCommandEnabled, rateLimit, reloadAvailable }`。
+- トグル入力は `runQwenServe` / `createServeApp` から渡されます。認証、MCP、オリジン、プロンプト、設定、シェル、レート制限、リロード、およびライブワークスペースランタイム数の状態を含みます。
 - エンベロープ内のアクティブな `permission` ポリシーは `BridgeOptions.permissionPolicy` から取得され、これは `settings.json` の `policy.permissionStrategy` を読み取ります。
 
 ## 設定
 
-| ソース | 設定項目 | ケイパビリティへの影響 |
-| --- | --- | --- |
-| CLI フラグ | `--require-auth` | `require_auth` をアドバタイズします。 |
-| 環境変数 | `QWEN_SERVE_NO_MCP_POOL=1` | `mcp_workspace_pool` と `mcp_pool_restart` のアドバタイズを停止します。MCP イベントは `scope: 'workspace'` をスタンプしなくなります。 |
-| CLI フラグ | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}` | タグセットは変更しません（`mcp_guardrails` は常にアドバタイズされます）が、サーバーごとのリザベーションと拒否動作を変更します。 |
-| CLI フラグ / 環境変数 | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1` | `rate_limit` をアドバタイズします。 |
-| 組み込みオプション | `persistSettingAvailable` | `workspace_settings` と `workspace_voice` をアドバタイズします。 |
-| 組み込みオプション | `voiceTranscriptionAvailable` | `workspace_voice_transcription` をアドバタイズします。 |
-| CLI フラグ / 組み込みオプション | `--enable-session-shell` / `sessionShellCommandEnabled` | `session_shell_command` をアドバタイズします。 |
-| 組み込みオプション | `reloadAvailable` | `workspace_reload` をアドバタイズします。 |
-| 組み込みオプション | `voiceWsAvailable` | `voice_transcribe` をアドバタイズします。 |
-| `settings.json` | `policy.permissionStrategy` | エンベロープの `policy.permission` を設定します。 |
+| ソース                     | 設定項目                                                          | ケイパビリティへの影響                                                                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CLI フラグ                 | `--require-auth`                                                  | `require_auth` をアドバタイズします。                                                                                                                                             |
+| 環境変数                   | `QWEN_SERVE_NO_MCP_POOL=1`                                        | `mcp_workspace_pool` と `mcp_pool_restart` のアドバタイズを停止します。MCP イベントは `scope: 'workspace'` をスタンプしなくなります。                                                        |
+| CLI フラグ                 | `--mcp-client-budget=N`, `--mcp-budget-mode={off,warn,enforce}`   | タグセットは変更しません（`mcp_guardrails` は常にアドバタイズされます）が、サーバーごとのリザベーションと拒否動作を変更します。                                          |
+| CLI フラグ / 環境変数      | `--rate-limit` / `QWEN_SERVE_RATE_LIMIT=1`                        | `rate_limit` をアドバタイズします。                                                                                                                                               |
+| 組み込みオプション         | `persistSettingAvailable`                                         | `workspace_settings` と `workspace_voice` をアドバタイズします。                                                                                                                 |
+| 組み込みオプション         | `voiceTranscriptionAvailable`                                     | `workspace_voice_transcription` をアドバタイズします。                                                                                                                            |
+| CLI フラグ / 組み込みオプション | `--enable-session-shell` / `sessionShellCommandEnabled`       | `session_shell_command` をアドバタイズします。                                                                                                                                    |
+| ランタイム状態             | 登録されたワークスペースランタイムが 2 つ以上                      | `multi_workspace_sessions` と `multi_workspace_session_rewind` をアドバタイズします。セッションシェルが実質的に有効な場合、`multi_workspace_session_shell` もアドバタイズします。 |
+| 組み込みオプション         | `reloadAvailable`                                                 | `workspace_reload` をアドバタイズします。                                                                                                                                         |
+| 組み込みオプション         | `voiceWsAvailable`                                                | `voice_transcribe` をアドバタイズします。                                                                                                                                         |
+| `settings.json`            | `policy.permissionStrategy`                                       | エンベロープの `policy.permission` を設定します。                                                                                                                                     |
 
 ## 注意事項と既知の制限
 

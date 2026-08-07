@@ -4,7 +4,7 @@ A documentation translation tool specifically designed for the github project. A
 
 ## Features
 
-- 🌍 **Multi-language Support**: Translate documentation to Chinese (zh), German (de), French (fr), Russian (ru), Japanese (ja), and Spanish (es)
+- 🌍 **Multi-language Support**: Translate documentation to Chinese (zh), German (de), French (fr), Russian (ru), Japanese (ja), Portuguese (pt-BR), Spanish (es), and Korean (ko)
 - 🤖 **Qwen AI Translation**: Powered by Qwen API for high-quality technical document translation
 - 📚 **Nextra Integration**: Automatically generates a modern documentation site using Nextra
 - 🔄 **Git Synchronization**: Automatically syncs with source repositories to keep translations up-to-date
@@ -71,7 +71,7 @@ Sync source repository documents and automatically translate changed files into 
 
 Translate the Markdown documents under `content/<sourceLanguage>/` into the target languages. Translates the whole directory by default, or a single file with `-f`.
 
-- `-l, --language <lang>`: Specify target language (zh, de, fr, ru, ja, pt-BR, es)
+- `-l, --language <lang>`: Specify target language (zh, de, fr, ru, ja, pt-BR, es, ko)
 - `-f, --file <file>`: Specify single file to translate
 
 ### `meta [options]`

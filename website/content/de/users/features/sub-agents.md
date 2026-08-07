@@ -14,22 +14,78 @@ Subagents sind unabhängige KI-Assistenten, die:
 
 ## Fork-Subagent
 
-Zusätzlich zu benannten Subagents unterstützt Qwen Code **Forking** – explizit ausgewählt mit `subagent_type: "fork"` (verfügbar in interaktiven Sitzungen). Ein Fork erbt den vollständigen Gesprächskontext des übergeordneten Agents und läuft abgekoppelt im Hintergrund. Wird `subagent_type` weggelassen, wird **nicht** geforkt; es wird der Allzweck-Subagent gestartet, der vollständig ausgeführt wird und sein Ergebnis inline zurückgibt.
+Zusätzlich zu benannten Subagents unterstützt Qwen Code **Forking** – explizit ausgewählt mit `subagent_type: "fork"`. Ein Fork erbt den vollständigen Gesprächskontext des übergeordneten Agents und läuft normalerweise abgekoppelt im Hintergrund. Forks funktionieren sowohl in interaktiven als auch in Headless-Sitzungen; Headless-Forks verwenden immer den Hintergrundpfad. Wird `subagent_type` weggelassen, wird **nicht** geforkt; es wird der Allzweck-Subagent gestartet. Top-Level benannte Subagents laufen standardmäßig im Hintergrund und liefern ihre Ergebnisse über Abschlussbenachrichtigungen. Setze `run_in_background: false`, wenn der aktuelle Turn auf das Ergebnis eines regulären Subagents inline warten muss.
+
+## Fork-Kontext mit `fork_turns`
+
+Nur `subagent_type: "fork"` akzeptiert `fork_turns`:
+
+- Weglassen oder `all` erbt das vollständige Elterngespräch.
+- Ein positiver Integer-String wie `"3"` erbt die letzten drei echten Benutzer-Turns.
+
+Tool-Antworten und reine System-Reminder zählen nicht als Benutzer-Turns. Reguläre benannte Subagents und Agent-Team-Teammates akzeptieren `fork_turns` nicht; sie behalten ihren eigenen Gesprächskontext.
+
+## Fork-Tool-Ausführung einschränken mit `fork_tools`
+
+Nur `subagent_type: "fork"` akzeptiert `fork_tools`. Das Array kann exakte kanonische Tool-Namen wie `read_file` und `grep_search` oder MCP-Server-Muster wie `mcp__github` enthalten. Der Fork erhält weiterhin dieselben modell sichtbaren Tool-Deklarationen wie ein uneingeschränkter Fork, um sein Prompt-Cache-Präfix zu bewahren, aber sein Aufgaben-Prompt identifiziert die Einschränkung und ein Aufruf, der nicht von `fork_tools` abgedeckt ist, wird vor dem Scheduling oder der Genehmigung abgelehnt.
+
+- Forks führen niemals `ask_user_question` aus; wenn Benutzereingaben erforderlich sind, melden sie den Blocker an ihren Eltern-Agenten.
+- Das Weglassen von `fork_tools` erlaubt jedes andere vererbte Tool.
+- Ein leeres Array lehnt jeden Tool-Aufruf ab.
+- `*` wird nicht akzeptiert; lasse `fork_tools` weg, um jedes anderweitig ausführbare vererbte Tool zu erlauben.
+- Tool-Namen dürfen keine umgebenden Leerzeichen haben. Wildcards werden nur als `mcp__*` oder als MCP-Tool-Präfix-Muster wie `mcp__github__read_*` akzeptiert.
+- `mcp__*` erlaubt absichtlich jedes MCP-Tool, während nicht aufgeführte integrierte Tools abgelehnt werden.
+- Shell-Befehlsargumentmuster werden nicht unterstützt. Das Auflisten von `run_shell_command` erlaubt dem Tool, seine normalen Berechtigungsprüfungen zu durchlaufen, genehmigt aber keinen Befehl vorab.
+
+Dies ist eine vom Aufrufer bereitgestellte pro-Aufruf-Einschränkung. Sie schränkt die Fähigkeiten eines Kind-Forks ein, ist aber kein von einem Administrator erzwungenes Sicherheits-Sandbox, da der Aufrufer die Liste weglassen oder erweitern kann.
+
+## Fork-Einschränkungen wiederverwenden mit `fork_profile`
+
+Ein Projekt kann eine benannte Fork-Einschränkung in `.qwen/fork-profiles/<name>.md` speichern und sie mit `fork_profile` auswählen. Dies ist nützlich, wenn mehrere Aufrufe dieselbe Tool-Grenze und Aufgabenhinweise benötigen:
+
+```markdown
+---
+name: ro-research
+tools:
+  - read_file
+  - grep_search
+  - glob
+  - mcp__search__*
+promptHint: |
+  Work read-only. Prefer targeted searches and cite file evidence.
+---
+```
+
+Dann starte den Fork mit:
+
+```text
+agent(description="Research", prompt="Inspect the retry path", subagent_type="fork", fork_profile="ro-research")
+```
+
+- `fork_profile` ist nur für einen Fork gültig und kann nicht mit `fork_tools` oder einem benannten Teammate kombiniert werden.
+- Profile sind derzeit nur projektbezogen. Der angeforderte Name, Dateiname und Frontmatter-`name` müssen exakt übereinstimmen. Das Profil muss zu einer regulären Datei innerhalb von `.qwen/fork-profiles/` aufgelöst werden und darf 64 KiB nicht überschreiten.
+- `tools` ist erforderlich und folgt den `fork_tools`-Regeln, einschließlich des Empty-Array-Deny-All-Verhaltens.
+- `promptHint` ist optional und auf 200 Zeichen begrenzt. Er wird escaped und als projektgelieferter Hinweis nach der Fork-Direktive und vor der maßgeblichen Tool-Einschränkung gerahmt; er ändert nicht die vererbte Systemanweisung oder die modell sichtbaren Tool-Deklarationen. Profil-Dateien sind Frontmatter-only, daher wird nicht-leeres Markdown nach dem schließenden `---` abgelehnt, anstatt stillschweigend ignoriert zu werden.
+- Das Profil wird einmal beim Start aufgelöst. Ein behaltener Fork fährt mit dem aufgelösten Tool-Snapshot fort, auch wenn sich die Projektdatei später ändert.
+- Projekt-Fork-Profile sind im Safe-Modus und Bare-Modus nicht verfügbar, die lokale Anpassungen deaktivieren.
+
+Wie `fork_tools` ist ein Fork-Profil eine vom Aufrufer gewählte Einschränkung und kein Administrator-Sandbox. Seine optionale Prompt-Anleitung ist projektgesteuerter Inhalt.
 
 ### Wie sich Fork von benannten Subagents unterscheidet
 
-|               | Benannter Subagent                    | Fork-Subagent                                         |
-| ------------- | ------------------------------------- | ----------------------------------------------------- |
-| Kontext       | Startet frisch, keine Eltern-Historie | Erbt die vollständige Gesprächshistorie des Eltern-Agents |
-| System-Prompt | Verwendet eigenen konfigurierten Prompt | Verwendet den exakten System-Prompt des Eltern-Agents (für Cache-Sharing) |
-| Ausführung    | Blockiert den Eltern-Agent bis zur Fertigstellung | Läuft im Hintergrund, Eltern-Agent fährt sofort fort |
-| Anwendungsfall | Spezialisierte Aufgaben (Tests, Doku) | Parallele Aufgaben, die den aktuellen Kontext benötigen |
+|               | Benannter Subagent                                                 | Fork-Subagent                                                                                                                                                                                        |
+| ------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Kontext       | Startet frisch ohne Eltern-Gesprächshistorie                       | Erbt standardmäßig die gesamte Eltern-Historie; `fork_turns` kann ein begrenztes jüngeres Fenster auswählen                                                                                          |
+| System-Prompt | Verwendet eigenen konfigurierten Prompt                            | Verwendet den exakten System-Prompt des Eltern-Agents (für Cache-Sharing)                                                                                                                            |
+| Tools         | Konfigurierte Deklarationsmenge ohne interaktive Fragetools        | Behält die vom Eltern abgeleitete Deklarationsmenge für Caching; Ausführung lehnt immer `ask_user_question` ab, und `fork_tools` oder `fork_profile` können sie unabhängig einengen, ohne die Deklaration zu ändern |
+| Ausführung    | Standardmäßig im Hintergrund; unterstützt expliziten Vordergrund-Opt-Out | Immer abgekoppelt; Eltern-Agent fährt sofort fort                                                                                                                                                     |
+| Anwendungsfall | Spezialisierte Aufgaben (Tests, Doku)                              | Parallele Aufgaben, die den aktuellen Kontext benötigen                                                                                                                                              |
 
 ### Wann Fork verwendet wird
 
 Die KI verwendet Fork automatisch, wenn sie:
 
-- Mehrere Rechercheaufgaben parallel ausführen muss (z. B. „Modul A, B und C untersuchen“)
+- Mehrere Rechercheaufgaben parallel ausführen muss (z. B. „Modul A, B und C untersuchen")
 - Hintergrundarbeit erledigen muss, während das Hauptgespräch fortgesetzt wird
 - Aufgaben delegieren muss, die Verständnis des aktuellen Gesprächskontexts erfordern
 
@@ -37,31 +93,49 @@ Die KI verwendet Fork automatisch, wenn sie:
 
 Alle Forks teilen sich das exakte API-Request-Präfix des Eltern-Agents (System-Prompt, Werkzeuge, Gesprächshistorie), was DashScope-Prompt-Cache-Treffer ermöglicht. Wenn 3 Forks parallel laufen, wird das gemeinsame Präfix einmal zwischengespeichert und wiederverwendet – das spart über 80 % Token-Kosten im Vergleich zu unabhängigen Subagents.
 
-### Rekursive Fork-Prävention
+### Rekursive Delegationsverhinderung
 
-Fork-Kinder können keine weiteren Forks erstellen. Dies wird zur Laufzeit erzwungen – wenn ein Fork versucht, einen weiteren Fork zu starten, erhält er einen Fehler, der ihn anweist, Aufgaben direkt auszuführen.
+Fork-Kinder können keine weiteren Sub-Agenten starten. Dies wird zur Laufzeit erzwungen – wenn ein Fork das Agent-Tool aufruft, erhält er einen Fehler, der ihn anweist, Aufgaben direkt auszuführen.
 
-### Aktuelle Einschränkungen
+### Aktuelle Einschränkung
 
-- **Keine Rückmeldung der Ergebnisse**: Fork-Ergebnisse werden in der UI-Fortschrittsanzeige reflektiert, aber nicht automatisch in das Hauptgespräch zurückgespeist. Die Eltern-KI sieht eine Platzhalternachricht und kann nicht auf die Ausgabe des Forks reagieren.
 - **Keine Worktree-Isolation**: Forks teilen sich das Arbeitsverzeichnis des Eltern-Agents. Gleichzeitige Dateiänderungen durch mehrere Forks können sich gegenseitig beeinflussen.
 
 ## Hauptvorteile
 
-- **Aufgabenspezialisierung**: Erstellen Sie Agenten, die für bestimmte Arbeitsabläufe optimiert sind (Tests, Dokumentation, Refactoring usw.)
-- **Kontextisolierung**: Halten Sie spezialisierte Arbeiten getrennt von Ihrem Hauptgespräch
-- **Kontextvererbung**: Fork-Subagents erben das vollständige Gespräch für kontextintensive parallele Aufgaben
+- **Aufgabenspezialisierung**: Erstelle Agenten, die für bestimmte Arbeitsabläufe optimiert sind (Tests, Dokumentation, Refactoring usw.)
+- **Kontextisolierung**: Halte spezialisierte Arbeiten getrennt von deinem Hauptgespräch
+- **Kontextvererbung**: Fork-Subagents erben standardmäßig das vollständige Gespräch und können eine begrenzte Anzahl jüngster Eltern-Turns auswählen
 - **Prompt-Cache-Sharing**: Fork-Subagents teilen sich das Cache-Präfix des Eltern-Agents, wodurch Token-Kosten reduziert werden
-- **Wiederverwendbarkeit**: Speichern und verwenden Sie Agentenkonfigurationen projekt- und sitzungsübergreifend
-- **Kontrollierter Zugriff**: Beschränken Sie, welche Werkzeuge jeder Agent aus Sicherheits- und Fokusgründen verwenden kann
-- **Fortschrittstransparenz**: Überwachen Sie die Agentenausführung mit Echtzeit-Fortschrittsaktualisierungen
+- **Wiederverwendbarkeit**: Speichere und verwende Agentenkonfigurationen projekt- und sitzungsübergreifend
+- **Kontrollierter Zugriff**: Beschränke, welche Werkzeuge jeder Agent aus Sicherheits- und Fokusgründen verwenden kann
+- **Fortschrittstransparenz**: Überwache die Agentenausführung mit Echtzeit-Fortschrittsaktualisierungen
 
 ## Wie Subagents funktionieren
 
-1. **Konfiguration**: Sie erstellen Subagent-Konfigurationen, die deren Verhalten, Werkzeuge und System-Prompts definieren
-2. **Delegation**: Die Haupt-KI kann Aufgaben automatisch an geeignete Subagents delegieren – oder sich selbst forken (`subagent_type: "fork"`), wenn sie den vollständigen Gesprächskontext erben und die Zwischenausgabe verwerfen möchte
+1. **Konfiguration**: Du erstellst Subagent-Konfigurationen, die deren Verhalten, Werkzeuge und System-Prompts definieren
+2. **Delegation**: Die Haupt-KI kann Aufgaben automatisch an geeignete Subagents delegieren – oder sich selbst forken (`subagent_type: "fork"`), wenn sie den Gesprächskontext des Eltern-Agents benötigt
 3. **Ausführung**: Subagents arbeiten unabhängig und verwenden ihre konfigurierten Werkzeuge, um Aufgaben zu erledigen
-4. **Ergebnisse**: Sie geben Ergebnisse und Ausführungszusammenfassungen an das Hauptgespräch zurück
+4. **Ergebnisse**: Hintergrundläufe senden eine Abschlussbenachrichtigung mit dem Ergebnis an das Hauptgespräch; reguläre Vordergrund-Subagents geben Ergebnisse inline zurück
+5. **Fortsetzung**: Die Haupt-KI kann `list_agents` verwenden, um Hintergrundagenten zu finden, und `send_message`, um einen laufenden, pausierten oder abgeschlossenen Agenten fortzusetzen
+
+## Fortsetzung von Hintergrund-Agenten
+
+Top-Level reguläre Subagents laufen standardmäßig im Hintergrund. Nachdem ein Hintergrund-Agent fertig ist, behält Qwen Code genügend Zustand, um verwandte Arbeit fortzusetzen, ohne einen doppelten Agenten zu starten:
+
+- `list_agents` gibt die adressierbaren Hintergrund-Agenten in der aktuellen Sitzung zurück, einschließlich kompatibler Agenten, die mit einer fortgesetzten Sitzung wiederhergestellt wurden. Jeder Eintrag enthält eine `task_id`, den Status und ob er eine Nachricht empfangen kann.
+- `send_message` mit dieser `task_id` stellt eine Nachricht für einen laufenden Agenten in die Warteschlange, setzt einen pausierten Agenten fort oder setzt einen abgeschlossenen Agenten fort. Abgeschlossene Agenten verwenden ihren vorhandenen Runtime wenn verfügbar und werden andernfalls aus ihrem behaltenen Transkript wiederbelebt.
+- Ein fortgesetzter Agent meldet sein nächstes Ergebnis über eine weitere Abschlussbenachrichtigung.
+
+Wenn eine Sitzung wiederhergestellt wird, werden kompatible Hintergrund-Agenten wieder zum Sitzungsregister hinzugefügt. Eine Aufgabe kann sichtbar, aber nicht fortsetzbar sein, wenn ihr behaltener Zustand fehlt oder inkompatibel ist; `list_agents` meldet in diesem Fall den Grund.
+
+Verwende die Fortsetzung für verwandte Folgeaufgaben. Starte einen neuen Agenten, wenn die Aufgabe nicht verwandt ist oder der vorherige Agent nicht fortgesetzt werden kann.
+
+## Arbeitsverzeichnis von Agenten
+
+Für einen benannten regulären Subagenten pinnt `working_dir` den Agenten an einen vorhandenen Git-Worktree im aktuellen Repository. Relative Pfade werden vom aktuellen Verzeichnis aufgelöst, und der Worktree muss bereits bei git registriert sein und sich innerhalb des Repositorys befinden.
+
+Ein `working_dir`-Start läuft im Vordergrund, da Qwen Code den Lebenszyklus dieses Worktrees nicht besitzt. Er kann nicht mit `subagent_type: "fork"` oder Hintergrundausführung kombiniert werden. Wenn sowohl `working_dir` als auch `isolation: "worktree"` angegeben werden, verwendet Qwen Code den vom Aufrufer possessierten Worktree wieder, anstatt einen weiteren zu erstellen.
 
 ## Erste Schritte
 
@@ -182,7 +256,39 @@ tools:
 ---
 ```
 
-Der Selektor `fast` verwendet dieselbe `fastModel`-Einstellung, die in `settings.json` oder mit `/model --fast` konfiguriert ist. Diese Einstellung kann selbst auf ein Modell unter einem anderen konfigurierten Authentifizierungstyp verweisen, wie z. B. `openai:deepseek-v4-flash`. Wenn der Selektor zu einem anderen Authentifizierungstyp auflöst, erstellt Qwen Code einen dedizierten Laufzeit-Provider für diese Subagent-Anfrage und sendet dem Provider nur die nackte Modell-ID.
+Der Selektor `fast` verwendet dieselbe `fastModel`-Einstellung, die in `settings.json` oder mit `/model --fast` konfiguriert ist. Diese Einstellung kann selbst auf ein Modell unter einem anderen konfigurierten Authentifizierungstyp verweisen, wie z. B. `openai:deepseek-v4-flash`. Wenn der Selektor zu einem anderen Authentifizierungstyp auflöst, erstellt Qwen Code einen dedizierten Laufzeit-Provider für diese Subagent-Anfrage und sendet dem Provider nur die nackte Modell-ID.
+
+Der integrierte Explore-Agent erbt standardmäßig das Hauptsitzungsmodell. Um ein anderes Modell nur für diesen integrierten Agenten auszuwählen, konfiguriere `agents.builtin.exploreModel` in der `settings.json` und starte Qwen Code neu:
+
+Frühere Versionen verwendeten standardmäßig `fastModel` für Explore. Um dieses Verhalten beizubehalten, setze `agents.builtin.exploreModel` auf `fast`.
+
+```json
+{
+  "agents": {
+    "builtin": {
+      "exploreModel": "fast"
+    }
+  }
+}
+```
+
+Diese Einstellung akzeptiert dieselben Selektoren, die oben beschrieben werden. Sie wird nur angewendet, wenn Qwen Code die integrierte Explore-Definition auflöst; ein Sitzungs-, Projekt-, Benutzer- oder Erweiterungs-Agent namens Explore behält seine eigene `model`-Einstellung.
+
+Um dem Modell die Auswahl aus benutzerdefinierten Grades zu ermöglichen, ohne konkrete Modell-IDs offenzulegen, konfiguriere `agents.modelGrades` und schränke sie optional mit `agents.allowedGrades` ein:
+
+```json
+{
+  "agents": {
+    "modelGrades": {
+      "small": "fast",
+      "high": "qwen-max"
+    },
+    "allowedGrades": ["small", "high"]
+  }
+}
+```
+
+Das Agent-Tool akzeptiert dann `model: "small"` oder `model: "high"` für reguläre Subagents. Unbekannte, nicht erlaubte, Fork- und Named-Teammate-Grade-Auswahlen werden abgelehnt. Das explizite Modell eines benutzerdefinierten Agenten hat weiterhin Vorrang vor einem Grade.
 
 #### Berechtigungsmodus
 

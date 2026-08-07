@@ -2,7 +2,7 @@
 
 ## Présentation
 
-`qwen serve` est un démon local par défaut et une surface exposée dans une mauvaise configuration. Son modèle de sécurité est **en couches** afin qu'une mauvaise configuration échoue de manière sécurisée :
+`qwen serve` est un démon local par défaut et une surface exposée dans une mauvaise configuration. Son modèle de sécurité est **en couches** afin qu'une mauvaise configuration échoue de manière sécurisée (fail closed) :
 
 1. **Bind** — une liaison non-loopback sans jeton bearer **refuse de démarrer**.
 2. **Authentification Bearer** — middleware `bearerAuth` avec comparaison SHA-256 à temps constant protège chaque route sauf `/health` sur loopback (`require_auth` étend cela à loopback et `/health` aussi).
@@ -131,7 +131,15 @@ La forme `code: 'token_required'` est distincte du simple `Unauthorized` de `bea
 `/workspace/tools/:name/enable`, `/workspace/mcp/:server/restart`,
 `/workspace/mcp/:server/{enable,disable,authenticate,clear-auth}`,
 `/workspace/mcp/servers` (POST/DELETE), `/workspace/auth/device-flow`,
-`/workspace/init`, `/session/:id/approval-mode`.
+`/workspace/init`, `/session/:id/approval-mode`, `/session/:id/rewind`, et
+`/session/:id/shell`.
+
+Le rewind reste REST-only dans le SDK TypeScript même lorsqu'un transport ACP est
+configuré. Cela préserve la porte de mutation stricte et les en-têtes bearer/identité client ;
+la table de routes ACP n'a intentionnellement pas de mapping de rewind. Le routage propriétaire
+revérifie aussi la confiance du workspace avant que le rewind ou le shell n'atteigne un bridge
+de runtime secondaire. Les IDs de session live dupliqués échouent en fail closed avec
+`ambiguous_session_owner` au lieu de revenir au runtime primaire.
 
 ### Exemption `/health`
 
@@ -233,7 +241,7 @@ sequenceDiagram
     C->>CAPS: GET /capabilities (pas d'Authorization)
     CAPS->>BA: passer à travers le middleware
     BA-->>C: 401 Unauthorized
-    Note over C,BA: le client ne peut pas pré-vérifier la balise require_auth<br/>avant de s'authentifier. La surface de découverte est le corps 401.
+    Note over C,BA : le client ne peut pas pré-vérifier la balise require_auth<br/>avant de s'authentifier. La surface de découverte est le corps 401.
 ```
 
 Après authentification, `caps.features.includes('require_auth')` confirme que le déploiement est renforcé.

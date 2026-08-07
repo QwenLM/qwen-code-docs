@@ -21,7 +21,7 @@ Qwen Code のコマンドは特定のプレフィックスでトリガーされ�
 | コマンド | 説明 | 使用例 |
 | ---------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------- |
 | `/init` | 現在のディレクトリを分析し、初期コンテキストファイルを作成する | `/init` |
-| `/summary` | 会話履歴に基づいてプロジェクトの要約を生成する | `/summary` |
+| `/summary` | 会話履歴に基づいてプロジェクトの要約を生成する | `/summary` または `/summary docs/my-summary.md` |
 | `/compress` | トークンを節約するためにチャット履歴を要約で置き換える | `/compress` または `/summarize` |
 | `/compress-fast` | AI を使用しない高速圧縮 — 古いツール出力と考え部分を削除する | `/compress-fast` |
 | `/resume` | 以前の会話セッションを再開する | `/resume` または `/continue` |
@@ -38,6 +38,10 @@ Qwen Code のコマンドは特定のプレフィックスでトリガーされ�
 >
 > `/summarize` は `/compress` のエイリアスです（チャット履歴を圧縮する破壊的な操作です）。代わりに非破壊的なプロジェクトの要約を生成するには、`/summary` を使用してください。
 
+> [!note]
+>
+> `/summary` はオプションの `[path]` 引数を受け取り、プロジェクトルート内の任意の場所に要約を保存できます。引数がない場合は `.qwen/PROJECT_SUMMARY.md` に保存されます。カスタムパスの要約は、welcome-back フロー（`ui.enableWelcomeBack`）では検出されません。welcome-back フローはデフォルトの `.qwen/PROJECT_SUMMARY.md` の位置のみを読み取ります。
+
 ### 1.2 インターフェースとワークスペースの制御
 
 インターフェースの外観と作業環境を調整するためのコマンド。
@@ -49,6 +53,7 @@ Qwen Code のコマンドは特定のプレフィックスでトリガーされ�
 | → `detail` | 項目ごとのコンテキスト使用内訳を表示する | `/context detail` |
 | `/history` | 履歴の表示設定と可視性を制御する | `/history collapse-on-resume`、`/history expand-on-resume`、`/history expand-now` |
 | `/diff` | コミットされていない変更とターンごとの差分を表示するインタラクティブな diff ビューアを開きます。←/→ で現在の git diff と個々の会話ターンを切り替え、↑/↓ でファイルを閲覧します | `/diff` |
+| `/log` | ワークスペースのコミット履歴ビューアを開く（Web Shell のみ） | `/log` |
 | `/theme` | Qwen Code のビジュアルテーマを変更する | `/theme` |
 | `/vim` | 入力エリアの Vim 編集モードのオン/オフを切り替える | `/vim` |
 | `/voice` | 音声入力（ディクテーション）を切り替える | `/voice`、`/voice hold`、`/voice tap`、`/voice off`、`/voice status` |
@@ -82,6 +87,8 @@ AI ツールとモデルを管理するためのコマンド。
 | `/import-config` | Claude の設定から MCP サーバーをインポートする | `/import-config all`、`/import-config claude-code`、`/import-config claude-desktop --scope user\|project` |
 | `/tools` | 現在利用可能なツールリストを表示する | `/tools`、`/tools desc` |
 | `/skills` | Skills パネルを開いて、スキルを閲覧、検索、切り替え、起動する | `/skills`、`/<skill-name>` |
+| `/learn` | ファイル、ディレクトリ、URL、動画、またはテキストから再利用可能なプロジェクトスキルを作成する | `/learn https://docs.example.com/api`、`/learn ./tutorial.mp4 focus on deployment` |
+| `/curator` | 非アクティブなプロジェクト自動スキルの検査、ピン留め、アーカイブ、復元を行う | `/curator`、`/curator run --dry-run`、`/curator pin <directory>`、`/curator restore <directory>` |
 | `/plan` | プランモードに切り替える、またはプランモードを終了する | `/plan`、`/plan <task>`、`/plan exit` |
 | `/approval-mode` | ツール承認モードを変更する（現在のセッションのみ） | `/approval-mode`、`/approval-mode auto-edit` |
 | → `plan` | 分析のみ、実行なし（安全なレビュー） | `/approval-mode plan` |
@@ -93,6 +100,8 @@ AI ツールとモデルを管理するためのコマンド。
 | `/model --fast` | プロンプト提案用に軽量モデルを設定する | `/model --fast qwen3-coder-flash` |
 | `/model --voice` | 音声文字起こしに使用されるモデルを設定する | `/model --voice <model-id>` |
 | `/model --vision` | テキスト専用メインモデル用に画像を文字起こしするための vision-bridge モデルを設定する | `/model --vision <model-id>` |
+| `/model --compaction` | チャット圧縮に使用されるモデルを設定する | `/model --compaction <model-id>`、`/model --compaction clear` |
+| `/model --image` | 組み込み画像生成ツール用の画像専用モデルを設定する | `/model --image <model-id>` |
 | `/effort` | 思考可能モデルの推論努力（effort）を設定する | `/effort`（ピッカーを開く）、`/effort high`（low/medium/high/xhigh/max；プロバイダーごとにマッピング・クランプされる） |
 | `/extensions` | 拡張機能を管理する | `/extensions list`、`/extensions manage` |
 | → `list` | インストール済みの拡張機能を一覧表示する | `/extensions list` |
@@ -104,6 +113,7 @@ AI ツールとモデルを管理するためのコマンド。
 | `/forget` | 一致するエントリを自動メモリから削除する | `/forget <query>` |
 | `/dream` | 自動メモリの統合を手動で実行する | `/dream` |
 | `/hooks` | Qwen Code のフックを管理する | `/hooks`、`/hooks list` |
+| `/reload-plugins` | ディスクから拡張機能の変更（コマンド、スキル、エージェント、フック、MCP/LSP サーバー）をリロードする | `/reload-plugins` |
 | `/permissions` | 権限ルールを管理する | `/permissions` |
 | `/agents` | サブエージェントを管理する | `/agents manage`、`/agents create` |
 | `/arena` | Arena セッションを管理する | `/arena start`、`/arena stop`、`/arena status`、`/arena select`（エイリアス `choose`） |
@@ -122,15 +132,15 @@ AI ツールとモデルを管理するためのコマンド。
 
 > [!note]
 >
-> `/workflows`、`/lsp`、`/trust` は、それぞれの機能が有効な場合にのみ登録されます。具体的には、`QWEN_CODE_ENABLE_WORKFLOWS=1` 環境変数、`--experimental-lsp` CLI フラグ、および `security.folderTrust.enabled` 設定で有効化されます。無効な場合、これらは表示されず、不明なコマンドとして報告されます。
+> `/workflows`、`/lsp`、`/trust` は、それぞれの機能が有効な場合にのみ登録されます。具体的には、`QWEN_CODE_ENABLE_WORKFLOWS=1` 環境変数、`--experimental-lsp` CLI フラグ、および `security.folderTrust.enabled` 設定で有効化されます。無効な場合、これらは表示されず、不明なコマンドとして報告されます。同様に、`/dream` と `/forget` は管理された自動メモリが利用可能な場合にのみ登録されます。利用できない場合、これらは表示されません。
 
 ### 1.5 組み込み Skill
 
 これらのコマンドは、特殊なワークフローを提供するバンドルされた skill を呼び出します。
 
-| Command      | Description                                                 | Usage Examples                                    |
-| ------------ | ----------------------------------------------------------- | ------------------------------------------------- |
-| `/review`    | 9つの並列レビューエージェントでコード変更をレビューする       | `/review`, `/review 123`, `/review 123 --comment` |
+| Command      | Description                                                 | Usage Examples                                                            |
+| ------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `/review`    | マルチエージェントによるコードレビュー（高努力で12の並列エージェント） | `/review`、`/review 123`、`/review 123 --comment`、`/review --effort low` |
 | `/loop`      | 定期的なスケジュールでプロンプトを実行する                  | `/loop 5m check the build`                        |
 | `/simplify`  | 最近の変更をレビューし、安全なクリーンアップ編集を直接適用する | `/simplify`, `/simplify focus on duplication`     |
 | `/qc-helper` | Qwen Code の使用方法と設定に関する質問に答える              | `/qc-helper how do I configure MCP?`              |
@@ -292,6 +302,59 @@ AI ツールとモデルを管理するためのコマンド。
   +12  -2  src/utils/parser.test.ts
    +3  -2  README.md
 ```
+
+**Web Shell:** Web Shell UI（`qwen serve`）では、`/diff` はグラフィカルな diff ダイアログを開きます。上部のタブバーで**Changes** ビューと**History** ビュー（`/log`）を切り替えることができます。
+
+#### History Viewer (`/log`) — Web Shell のみ
+
+`/log` コマンドは、現在のワークスペースのコミット履歴ブラウザを開きます。Web Shell UI でのみ利用可能で、CLI/TUI にはこのコマンドはありません。
+
+**動作の仕組み:**
+
+`/log` はコミットを時系列の逆順（新しい順）で一覧表示するダイアログを開きます。各行には以下が表示されます。
+
+- 短い SHA（モノスペース、フル SHA のコピーボタン付き）
+- コミット件名（1行）
+- 作成者名と相対時間（例: 「2h ago」）
+- ブランチ/タグの参照ラベル（存在する場合）
+- マージコミットのマージアイコン（⎇）
+
+コミット行をクリックすると、詳細がオンデマンドで展開されます。
+
+- 完全なコミットメッセージ本文
+- ファイル変更統計（変更ファイル数、追加/削除行数、ファイルごとの内訳）
+
+下部の**Load more**を使用して、次のページ（50件/ページ）のコミットを取得します。
+
+**例:**
+
+```
+┌─ History ──────────────────────────── 50 commits ─ ✕ ┐
+│                                                       │
+│  a1b2c3d  feat(cli): add --json flag        2h ago   │
+│           wenshao                                    │
+│                                                       │
+│  e4f5g6h  fix(core): handle null config     5h ago   │
+│           dev · main  v1.2.0                         │
+│                                                       │
+│ ▼ 789abcd  refactor: simplify parser        1d ago   │
+│   ┌─────────────────────────────────────────────┐    │
+│   │  Broke the monolithic parse() into smaller  │    │
+│   │  functions for readability.                 │    │
+│   │                                             │    │
+│   │  3 files · +45 −12                          │    │
+│   │   +30 −8   src/parser.ts                    │    │
+│   │   +10 −2   src/utils.ts                     │    │
+│   │   +5  −2   test/parser.test.ts              │    │
+│   └─────────────────────────────────────────────┘    │
+│                                                       │
+│              [ Load more ]                            │
+└───────────────────────────────────────────────────────┘
+```
+
+> [!note]
+>
+> `/log` には git リポジトリのワークスペースが必要です。ワークスペースが git リポジトリでない場合、またはコミットが存在しない場合、ダイアログにはプレースホルダーメッセージが表示されます。
 
 ### 1.9 情報、設定、およびヘルプ
 

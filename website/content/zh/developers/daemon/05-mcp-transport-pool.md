@@ -2,7 +2,7 @@
 
 ## 概述
 
-`McpTransportPool`（`packages/core/src/tools/mcp-transport-pool.ts`）是 F2（#4175 commit 5）工作区范围的池：同一守护进程上的多个 ACP 会话共享一个唯一的 `(serverName + configFingerprint)` 元组对应的传输通道，而不是每个会话都创建自己的 MCP 子进程。该池**位于 ACP 子进程内部**（`QwenAgent.mcpPool`），在代理启动时使用守护进程的引导 `Config` 构造一次，并在会话生命周期内持续存在。`PoolEntry` 会对会话的附加进行引用计数，当引用计数降为零后，经过可配置的宽限期间隔，该条目会被关闭。
+`McpTransportPool`（`packages/core/src/tools/mcp-transport-pool.ts`）是 F2（#4175 commit 5）工作区范围的池：一个 runtime 内的多个 ACP 会话共享每个唯一 `(serverName + configFingerprint)` 元组对应的一个传输通道，而不是每个会话都创建自己的 MCP 子进程。当池模式启用时，每个启动的 ACP 子进程拥有一个独立的池（`QwenAgent.mcpPool`）。生产环境会尝试预热主子进程，并在失败后于首次使用时重试；受信任的次级运行时会按需启动其子进程，而不受信任的次级运行时则两者都不启动。该池在代理启动时使用 runtime 的引导 `Config` 构造一次，并在会话生命周期内持续存在。`PoolEntry` 会对会话的附加进行引用计数，当引用计数降为零后，经过可配置的宽限期间隔，该条目会被关闭。
 
 它是防止多会话守护进程为每个会话都 fork 一份 MCP 服务器的主要机制。
 

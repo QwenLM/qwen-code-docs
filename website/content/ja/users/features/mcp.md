@@ -229,6 +229,14 @@ Qwen Codeは、UIがすでにインタラクティブになった後、バック
 
 - **サーバー信頼**（`trust: true`）: そのサーバーの確認プロンプトをバイパスします（使用は慎重に）。
 
+### 接続損失時のリプレイ
+
+Qwen Code は、サーバーに `trust: true` が設定され、ワークスペースが信頼されており、ツールが `idempotentHint: true` または一貫した読み取り専用の注釈を明示的に宣言している場合にのみ、現在の MCP ツール呼び出しを再接続してリプレイします。読み取り専用の注釈は `destructiveHint: true` または `idempotentHint: false` と競合し、リプレイされません。
+
+注釈が欠落している場合、注釈が競合している場合、信頼されていないサーバーの場合、または信頼されていないワークスペースの場合は、接続障害後にリプレイされません。Qwen Code は、サーバーが応答が失われる前に操作を完了していた可能性があるため、結果が不明である可能性があることを報告します。再試行する前に結果を確認してください。この保守的な動作は、注釈のないツールを透過的にリトライしていた以前のリリースとは異なる場合があります。
+
+注釈はサーバーが提供する動作のヒントであり、権限や認可の境界ではありません。自身が制御し、注釈を検証したサーバーに対してのみ `trust: true` を設定してください。
+
 ### OAuth認証
 
 Qwen CodeはMCPサーバーのOAuth 2.0認証をサポートしています。これは、認証を必要とするリモートサーバーにアクセスする場合に便利です。
@@ -251,13 +259,21 @@ OAuthフローには、認証プロバイダーが認証コードを送信する
 
 - **ローカル開発**: デフォルトでは、Qwen Codeは`http://localhost:7777/oauth/callback`を使用します。これは、ローカルマシンでローカルブラウザを使用してQwen Codeを実行している場合に機能します。
 
-- **リモート/クラウドデプロイ**: リモートサーバー、クラウドIDE、またはWebターミナルでQwen Codeを実行する場合、デフォルトの`localhost`リダイレクトは機能**しません**。OAuthコールバックを受信できる公開アクセス可能なURLを指すように`--oauth-redirect-uri`を必ず設定する必要があります。
+- **リモート/クラウドデプロイ**: リモートサーバー、クラウドIDE、またはWebターミナルでQwen Codeを実行する場合、デフォルトの`localhost`リダイレクトは機能**しません**。`--oauth-redirect-uri` に `/oauth/callback` で終わる公開 URL を設定し、そのパスを Qwen Code が動作しているマシンの `http://127.0.0.1:7777/oauth/callback` にリバースプロキシしてください。Qwen Code は TLS を終端しません。プロキシが TLS を終端する必要があります。
 
 リモートサーバーの例:
 
 ```bash
 qwen mcp add --transport sse remote-server https://api.example.com/sse/ \
   --oauth-redirect-uri https://your-remote-server.example.com/oauth/callback
+```
+
+例えば、リバースプロキシでこのコールバックパスのみをローカルリスナーに転送できます。
+
+```nginx
+location = /oauth/callback {
+  proxy_pass http://127.0.0.1:7777;
+}
 ```
 
 #### settings.jsonによる手動設定

@@ -6,7 +6,7 @@
 
 `packages/sdk-typescript/src/daemon/ui/` 为 SDK 添加了一个 `ui/*` 子包。它通过可复用的原语将 daemon SSE 事件流转换为 UI 可渲染的对话记录块：
 
-- **规范化**（`normalizer.ts`）：将 daemon wire 协议的 47 种已知事件类型（参见 [`09-event-schema.md`](./09-event-schema.md)）映射为 37 种对 UI 友好的 `DaemonUiEventType` 语义事件，例如 `assistant.text.delta`、`tool.update` 和 `session.metadata.changed`。
+- **规范化**（`normalizer.ts`）：将 daemon wire 协议的 53 种已知事件类型（参见 [`09-event-schema.md`](./09-event-schema.md)）映射为 43 种对 UI 友好的 `DaemonUiEventType` 语义事件，例如 `assistant.text.delta`、`tool.update` 和 `session.metadata.changed`。
 - **状态机**（`transcript.ts`、`store.ts`）：纯 reducer 加上可订阅的 store，将 UI 事件投影为有序的 `DaemonTranscriptBlock[]`。
 - **渲染器**（`render.ts`、`terminal.ts`、`toolPreview.ts`）：将对话记录块渲染为 HTML、终端文本和工具预览字符串。宿主可以使用或替换它们。
 - **一致性**（`conformance.ts`）：跨宿主一致性测试，在渠道、TUI 和 IDE 界面迁移到这些原语时使用。
@@ -15,7 +15,7 @@
 
 ## 职责
 
-- 将 47 种 daemon wire 事件规范化为稳定的 UI 词汇表（`DaemonUiEventType`），使渲染器无需检查 `rawEvent.data`。
+- 将 53 种 daemon wire 事件规范化为稳定的 UI 词汇表（`DaemonUiEventType`），使渲染器无需检查 `rawEvent.data`。
 - 保持 daemon 单调递增的 SSE `eventId` 作为**主要排序键**，确保不同客户端以相同顺序渲染对话记录。
 - 使用纯 reducer 生成对话记录块，并提供用于待处理权限、当前工具、审批模式、工具进度和子 agent 子项的 selectors。
 - 提供基线 HTML 和终端渲染器，同时允许宿主特定的渲染。
@@ -41,7 +41,7 @@
 
 ### `DaemonUiEventType` 词汇表
 
-`ui/types.ts` 定义了 37 种 UI 事件类型，按领域分组。
+`ui/types.ts` 定义了 43 种 UI 事件类型，按领域分组。
 
 **聊天流（阶段 1）**
 
@@ -71,7 +71,7 @@
 - `auth.device_flow.started`、`auth.device_flow.throttled`、`auth.device_flow.authorized`
 - `auth.device_flow.failed`、`auth.device_flow.cancelled`
 
-`normalizeDaemonEvent` 将 47 种已知的 daemon wire 事件映射到此词汇表中。未知、未建模或格式错误的事件类型会被规范化为 `debug`，并保留 `rawEvent` 以供宿主诊断。
+`normalizeDaemonEvent` 将 53 种已知的 daemon wire 事件映射到此词汇表中。未知、未建模或格式错误的事件类型会被规范化为 `debug`，并保留 `rawEvent` 以供宿主诊断。
 
 ### Reducer 和 selectors
 
@@ -117,7 +117,7 @@ flowchart LR
     A --> B["DaemonClient.subscribeEvents<br/>parseSseStream"]
     B --> C["asKnownDaemonEvent<br/>(09-event-schema.md)"]
     C --> D["normalizeDaemonEvent<br/>ui/normalizer.ts"]
-    D --> E["DaemonUiEvent<br/>(37 种 UI 友好类型)"]
+    D --> E["DaemonUiEvent<br/>(43 种 UI 友好类型)"]
     E --> F["reduceDaemonTranscriptEvents<br/>ui/transcript.ts"]
     F --> G["DaemonTranscriptState +<br/>DaemonTranscriptBlock[]"]
     G --> H["renderer<br/>(render.ts HTML / terminal.ts / 宿主自定义)"]
@@ -128,7 +128,7 @@ flowchart LR
 
 ### `state_resync_required`
 
-`session.state_resync_required` 映射为对话记录的“错过范围”标记。UI 代码可以调用 `formatMissedRange(state)` 来渲染诸如“错过事件 X-Y”的文本。reducer **会继续应用后续事件**，但会将受影响的块标记为 `resyncRecovery: true`，以便渲染器添加视觉上下文。有关 ring-eviction 和 `state_resync_required` 语义，请参见 [`10-event-bus.md`](./10-event-bus.md)。
+`session.state_resync_required` 映射为对话记录的"错过范围"标记。UI 代码可以调用 `formatMissedRange(state)` 来渲染诸如"错过事件 X-Y"的文本。reducer 会设置 `awaitingResync` 并跳过普通的 delta 事件，直到消费者代码重新加载会话的有界重放快照窗口并清除该锁存器。加载的快照可能以 `history_truncated` 开头；该标记仅渲染为状态信息，不得触发新一轮重同步。有关 ring-eviction 和 `state_resync_required` 语义，请参见 [`10-event-bus.md`](./10-event-bus.md)。
 
 ## 使用者
 

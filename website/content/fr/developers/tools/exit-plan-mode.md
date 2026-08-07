@@ -10,9 +10,11 @@ L'outil est spécifiquement conçu pour les tâches qui nécessitent de planifie
 
 ### Arguments
 
-`exit_plan_mode` prend un argument :
+`exit_plan_mode` prend ces arguments :
 
 - `plan` (chaîne de caractères, obligatoire) : Le plan d'implémentation que vous souhaitez présenter à l'utilisateur pour approbation. Il doit s'agir d'un plan concis, formaté en Markdown, décrivant les étapes d'implémentation.
+- `originalRequest` (chaîne de caractères, optionnel) : La requête originale, utilisée lorsqu'un coéquipier nécessitant un plan demande l'approbation de son leader.
+- `researchSummary` (chaîne de caractères, optionnel) : Le contexte d'investigation pour la revue par le leader d'un coéquipier nécessitant un plan.
 
 ## Comment utiliser `exit_plan_mode` avec Qwen Code
 
@@ -24,6 +26,7 @@ L'outil Exit Plan Mode fait partie du workflow de planification de Qwen Code. Lo
 
 L'outil présentera votre plan à l'utilisateur et proposera les options suivantes :
 
+- **Restore Previous** : Approuver le plan et restaurer le mode actif avant le mode Plan
 - **Proceed Once** : Approuver le plan pour cette session uniquement
 - **Proceed Always** : Approuver le plan et activer l'approbation automatique pour les futures opérations d'édition
 - **Cancel** : Rejeter le plan et rester en mode planification
@@ -125,7 +128,7 @@ Après avoir appelé `exit_plan_mode`, l'utilisateur peut répondre de plusieurs
 - **Proceed Always** : Le plan est approuvé et l'approbation automatique est activée pour les opérations d'édition ultérieures
 - **Cancel** : Le plan est rejeté et le système reste en mode planification pour une planification ultérieure
 
-L'outil ajuste automatiquement le mode d'approbation en fonction du choix de l'utilisateur, simplifiant le processus d'implémentation selon les préférences de l'utilisateur.
+L'outil ne modifie le mode d'approbation qu'après que la décision explicite a été acceptée et que l'exécution commence. Les règles de permission, les modes d'approbation automatique et les hooks permission-allow ne peuvent pas approuver une sortie de plan de session principale au nom de l'utilisateur.
 
 ## Notes importantes
 
@@ -135,6 +138,7 @@ L'outil ajuste automatiquement le mode d'approbation en fonction du choix de l'u
 - **Support Markdown** : Les plans prennent en charge le formatage Markdown pour une meilleure lisibilité.
 - **Utilisation unique** : L'outil doit être utilisé une seule fois par session de planification lorsque vous êtes prêt à procéder.
 - **Contrôle utilisateur** : La décision finale de procéder revient toujours à l'utilisateur.
+- **Fail closed** : Les annulations, les approbations obsolètes, les défaillances de l'hôte et les échecs de transition restent en mode Plan.
 
 ## Intégration avec le workflow de planification
 

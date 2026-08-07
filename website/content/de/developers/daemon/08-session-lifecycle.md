@@ -100,7 +100,7 @@ sequenceDiagram
 
 ### Load / resume
 
-`POST /session/:id/load` – spielt die vollständige ACP-Historie ab (`session/load`-Benachrichtigungen werden ausgelöst, bevor die Response zurückkehrt).
+`POST /session/:id/load` – stellt eine persistierte Session wieder her und gibt das aktuelle begrenzte Replay-Snapshot-Fenster zurück (`session/load`-Benachrichtigungen oder Response-Mode-Replay werden vor der Response-Ausgabe gespeist).
 `POST /session/:id/resume` – stellt wieder her, ohne abzuspielen (`connection.unstable_resumeSession`, verfügbar unter der stabilen `session_resume`-Daemon-Capability; `unstable_session_resume` bleibt ein deprecated Alias).
 
 Beide:
@@ -137,7 +137,7 @@ Ausstehende Permissions werden auf jedem Terminierungspfad über `mediator.forge
 
 Wenn die HTTP-Response des Spawn-owning Clients nicht geschrieben werden kann (TCP-Reset mitten im Handshake), ruft die Route `killSession({ requireZeroAttaches: true })` auf. Wenn bereits ein anderer Client angehängt ist (`attachCount > 0`), greift der Guard nicht und die Session bleibt bestehen. Das Setzen von `spawnOwnerWantedKill = true` merkt sich die Absicht, sodass ein späteres `detachClient()`, das `attachCount` wieder auf 0 bringt, das aufgeschobene Aufräumen (reap) abschließt. Ohne dies würde ein schnell trennender Spawn-Owner bei jedem zweiten Reconnect eine gesunde Session abbauen.
 
-## State & Lifecycle
+## Zustand & Lebenszyklus
 
 Für den Lifecycle kritische `SessionEntry`-Felder:
 
@@ -180,7 +180,7 @@ eigentliche Ergebnis trifft auf SSE als `turn_complete` / `turn_error` ein, und 
 
 ### Shell Command Execution
 
-`POST /session/:id/shell` führt einen Shell-Befehl direkt auf dem Daemon-Host aus, ohne Routing über das LLM. Es streamt die Ausgabe über den Session-SSE-Bus via `user_shell_command` / `user_shell_result` Events und injiziert den Befehl sowie das Ergebnis in den LLM-Konversationsverlauf. Die Antwort ist `{ exitCode, output, aborted }`.
+`POST /session/:id/shell` führt einen Shell-Befehl direkt auf dem Daemon-Host aus, ohne Routing über das LLM. Es streamt die Ausgabe über den Session-SSE-Bus via `user_shell_command` / `user_shell_result` Events und injiziert den Befehl sowie das Ergebnis in den LLM-Konversationsverlauf. Die Antwort ist `{ exitCode, output, aborted }`. Für eine Live-Secondary-Workspace-Session löst die singuläre REST-Route den Session-Owner auf und führt auf der Bridge dieser Runtime aus, sodass der Befehl im Workspace-Cwd des Owners startet. Die Route stellt keine Pfad-Sandbox bereit. Workspace-qualifizierte ACP-Clients können weiterhin `_qwen/session/shell` auf der Owner-Workspace-Verbindung verwenden.
 
 ### Session Detach
 
@@ -208,34 +208,36 @@ eigentliche Ergebnis trifft auf SSE als `turn_complete` / `turn_error` ein, und 
 
 `GET /session/:id/tasks` gibt einen Background-Task-Snapshot für Agent-Tasks, Shell-Tasks, Monitor-Tasks und deren Lifecycle-States zurück. Agent-Einträge, die von einem anderen Sub-Agenten erzeugt wurden, tragen optionale Lineage-Felder (`parentAgentId`, `parentName`, `depth`), sodass Clients verschachtelte Sub-Agenten als Baum rendern können; siehe das Payload-Beispiel in `qwen-serve-protocol.md`.
 
+Die `session_monitor_tool_correlation`-Capability garantiert zusätzlich, dass Monitor-Einträge `toolUseId` tragen, sodass Clients einen Transkript-Tool-Call mit seinen Task-Details korrelieren können.
+
 ### Session LSP Status (`session_lsp` Capability-Tag)
 
 `GET /session/:id/lsp` gibt den bereinigten, sessionspezifischen LSP-Status für Daemon-Clients zurück: Enablement-Status, aggregierte Server-Anzahlen, Unavailable/Initialization-Status sowie pro-Server `name`, `status`, `languages`, `transport`, `command` und `error`. Deaktivierter oder nicht verfügbarer LSP wird als HTTP-200-Statusdaten dargestellt, nicht als Transport-Fehler.
 
 ### Compacted Replay
 
-`POST /session/:id/load` gibt nun eine `BridgeRestoredSession` zurück, die `compactedReplay?: BridgeEvent[]`, `liveJournal?: BridgeEvent[]` und `lastEventId?: number` enthalten kann. `compactedReplay` wird von der `TurnBoundaryCompactionEngine` erzeugt: An Turn-Grenzen faltet sie aufeinanderfolgende Text-/Thought-Blöcke, komprimiert Tool-Call-Sequenzen auf ihren Endzustand, verwirft transiente Signale und erzeugt O(turns) Replay-Logs anstelle von O(tokens) Logs (typischerweise eine 25-30-fache Reduzierung).
+`POST /session/:id/load` gibt nun eine `BridgeRestoredSession` zurück, die `compactedReplay?: BridgeEvent[]`, `liveJournal?: BridgeEvent[]` und `lastEventId?: number` enthalten kann. Diese Felder sind das begrenzte In-Memory-Replay-Fenster des Daemons für eine Live-Session, keine vollständige Transkript-API. Der Standard-Fenster-Cap beträgt 4 MiB pro Live-Session (`--compacted-replay-max-bytes`), und der Boot weist ungültige Caps zurück; die harte Obergrenze liegt bei 256 MiB. `compactedReplay` wird von der `TurnBoundaryCompactionEngine` erzeugt: An Turn-Grenzen faltet sie aufeinanderfolgende Text-/Thought-Blöcke, komprimiert Tool-Call-Sequenzen auf ihren Endzustand, verwirft transiente Signale und erzeugt O(turns) Replay-Logs anstelle von O(tokens) Logs (typischerweise eine 25-30-fache Reduzierung). Wenn ältere Replay-Einträge aus diesem Byte-Fenster entfernt wurden, ist `compactedReplay[0]` ein synthetischer ID-loser `history_truncated`-Marker mit `{reason: 'replay_window_exceeded', truncatedEvents, retainedEvents, maxBytes, truncatedTurns?, fullTranscriptAvailable: boolean}`. `fullTranscriptAvailable` ist ein Capability-Flag: `true` bedeutet, dass der Client das vollständige persistierte Transkript mit `GET /session/:id/transcript` seitenweise abrufen kann, während `false` bedeutet, dass nur das begrenzte Replay verfügbar ist. Clients sollten es als Status darstellen und das behaltene Replay normal anwenden; es darf keinen Resync-Loop auslösen.
 
 ### ACP Child Preheat
 
 `bridge.preheat()` wärmt den ACP-Child-Prozess vor der ersten Session auf, sodass die erste echte Session die Cold-Start-Latenz vermeidet. Es wird gepaart mit `channelIdleTimeoutMs`, das den ACP-Child nach dem Schließen der letzten Session am Leben hält, und dem Skip-Relaunch-Verhalten, das ein bereits idles Child wiederverwendet, wenn eine neue Session eintrifft.
 
-## Configuration
+## Konfiguration
 
-- `BridgeOptions.maxSessions` (Standard 20) — Obergrenze.
+- `BridgeOptions.maxSessions` (Standard 32) — Obergrenze.
 - `BridgeOptions.sessionScope` (Standard `'single'`; optional `'thread'`).
 - `BridgeOptions.initializeTimeoutMs` (Standard 10s) — ACP-`initialize`-Handshake.
 - `BridgeOptions.channelIdleTimeoutMs` (Standard 0; ACP-Child sofort bereinigen).
-- Capability-Tags: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (deprecated alias), `session_list`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_btw`, `session_context_usage`, `session_tasks`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
+- Capability-Tags: `session_create`, `session_scope_override`, `session_load`, `session_resume`, `unstable_session_resume` (deprecated alias), `session_list`, `session_info`, `session_close`, `session_metadata`, `session_set_model`, `client_identity`, `client_heartbeat`, `session_recap`, `session_generation`, `session_btw`, `session_context_usage`, `session_tasks`, `session_monitor_tool_correlation`, `session_stats`, `session_lsp`, `session_status`, `non_blocking_prompt`.
 
-## Caveats & Known Limits
+## Hinweise & bekannte Grenzen
 
 - `connection.unstable_resumeSession` kann auf der ACP-Ebene noch instabil sein, aber der Daemon bietet den festgeschriebenen v1-Route-Contract mit `session_resume` an. `unstable_session_resume` wird nur als deprecated Kompatibilitäts-Alias beibehalten.
 - v1 hat **keine client-spezifische Eviction**; nur session-spezifische und subscriber-spezifische Terminierung. Die Revocation-Policy ist F-Series Wave 5 / PR 24.
 - `client_evicted` ist subscriber-spezifisch, nicht session-spezifisch. Ein Client, dessen SSE-Subscriber evicted wurde, kann sich erneut verbinden.
 - Anonyme Clients (ohne `X-Qwen-Client-Id`) können unter `designated`- oder `consensus`-Policies nicht voten.
 
-## References
+## Referenzen
 
 - `packages/acp-bridge/src/bridge.ts` (SessionEntry-Definition)
 - `packages/acp-bridge/src/bridgeTypes.ts` (`HttpAcpBridge`, `BridgeSession`, `BridgeSessionState`)

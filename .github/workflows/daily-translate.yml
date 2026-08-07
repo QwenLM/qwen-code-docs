@@ -101,6 +101,9 @@ jobs:
           # Restores ~/.npm keyed on the lockfile. Benefits both the global
           # qwen CLI install below and the website `npm ci` on days that have
           # changes; on quiet days the restore is cheap and `npm ci` is skipped.
+          # translator/package-lock.json is deliberately not in the key: this
+          # workflow never runs npm ci in translator (the orchestrator is
+          # plain node), so including it would only bust the cache uselessly.
           cache: npm
           cache-dependency-path: website/package-lock.json
 
@@ -172,6 +175,25 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.TRANSLATE_CODING_PLAN_API_KEY }}
           OPENAI_BASE_URL: ${{ vars.TRANSLATE_BASE_URL || 'https://coding.dashscope.aliyuncs.com/v1' }}
 
+      # advance wrote per-language .failed.txt quarantine lists. Broken files
+      # must be restored to HEAD BEFORE the build: run 31115350719 proved
+      # that a single verify-evading broken file fails `npm run build`,
+      # which skips the commit step and discards the whole run's good
+      # translations (#185). Restoring early keeps the build green; the
+      # failed files simply stay in the backlog for the next run. The commit
+      # step repeats the same restore as a safety net.
+      - name: Quarantine failed translations before build
+        if: steps.detect.outputs.changed == 'true'
+        run: |
+          shopt -s nullglob
+          for fl in website/orchestrator-manifest-*.failed.txt; do
+            while IFS= read -r p; do
+              [ -n "$p" ] || continue
+              git checkout HEAD -- "website/content/$p" 2>/dev/null \
+                || rm -f "website/content/$p"
+            done < "$fl"
+          done
+
       # Runs after the sync has rewritten last-sync.json, so the age reported
       # here reflects this run's outcome. Catches the failure mode a
       # failure()-gated alert cannot: the job goes green but the baseline
@@ -214,10 +236,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: translation-output
+          # translation-changelog.json is deliberately not listed: the
+          # orchestrator pipeline does not produce it (legacy-pipeline
+          # residue from #197), so every non-main run warned about it.
           path: |
             website/content
             website/last-sync.json
-            website/translation-changelog.json
           retention-days: 14
           if-no-files-found: warn
 
@@ -249,7 +273,19 @@ jobs:
             echo "::warning::nothing verified to commit this run — check the agent logs above"
           else
             git commit -m "docs(i18n): daily incremental translation sync [skip ci]"
-            git push origin HEAD:main
+            if ! git push origin HEAD:main; then
+              # main moved while this run was translating (e.g. a PR merged
+              # mid-run — that race discarded the first orchestrator run's
+              # completed translation, run 31106251398). Rebase our content
+              # commit on top and retry once. Content is only ever written
+              # by this pipeline, so a rebase conflict is near-impossible;
+              # if one happens anyway the step fails and the next run
+              # retries from the same baseline.
+              echo "::warning::main moved during this run — rebasing and retrying push"
+              git fetch origin main
+              git rebase origin/main
+              git push origin HEAD:main
+            fi
           fi
 
       - name: Deploy to GitHub Pages

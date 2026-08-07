@@ -18,7 +18,7 @@
 
 ### Voraussetzungen
 
-- VS Code 1.85.0 oder höher
+- VS Code 1.96.0 oder höher
 
 ### Installation
 
@@ -28,7 +28,7 @@ Lade die Erweiterung aus dem [Visual Studio Code Extension Marketplace](https://
 
 ### Erweiterung wird nicht installiert
 
-- Stelle sicher, dass du VS Code 1.85.0 oder höher verwendest
+- Stelle sicher, dass du VS Code 1.96.0 oder höher verwendest
 - Prüfe, ob VS Code die Berechtigung zum Installieren von Erweiterungen hat
 - Versuche, die Erweiterung direkt über die Marketplace-Website zu installieren
 

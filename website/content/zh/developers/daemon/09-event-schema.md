@@ -2,7 +2,7 @@
 
 ## 概述
 
-Daemon 在 `GET /session/:id/events` 上发出的每个 SSE 帧都具有 `{ id, v, type, data, originatorClientId?, _meta? }` 的结构。`v: 1` 是当前的 `EVENT_SCHEMA_VERSION`。`type` 来自 `packages/sdk-typescript/src/daemon/events.ts` 中封闭且版本固定的 `DAEMON_KNOWN_EVENT_TYPE_VALUES` 集合；当前集合包含 47 种已知事件类型。envelope 的 `_meta` 字段由 `packages/cli/src/serve/routes/sse-events.ts` 中的 `formatSseFrame()` 在 SSE 写入边界处注入；请参阅 [Envelope-level metadata](#envelope-level-metadata)。
+Daemon 在 `GET /session/:id/events` 上发出的每个 SSE 帧都具有 `{ id, v, type, data, originatorClientId?, _meta? }` 的结构。`v: 1` 是当前的 `EVENT_SCHEMA_VERSION`。`type` 来自 `packages/sdk-typescript/src/daemon/events.ts` 中封闭且版本固定的 `DAEMON_KNOWN_EVENT_TYPE_VALUES` 集合。envelope 的 `_meta` 字段由 `packages/cli/src/serve/routes/sse-events.ts` 中的 `formatSseFrame()` 在 SSE 写入边界处注入；请参阅 [Envelope-level metadata](#envelope-level-metadata)。
 
 SDK 暴露了 `asKnownDaemonEvent(evt)`。它为已知事件类型返回一个可区分的 `KnownDaemonEvent`，为其他类型返回 `undefined`。因此，当较新的 daemon 添加新事件类型时，SDK 使用者可以处理向前兼容性，而无需 SDK 同步升级；session reducer 会将这些事件记录为 `unrecognizedKnownEventCount`。
 
@@ -15,7 +15,7 @@ SDK 暴露了 `asKnownDaemonEvent(evt)`。它为已知事件类型返回一个�
 - 提供纯 reducer（`reduceDaemonSessionEvent`, `reduceDaemonAuthEvent`），将事件流投影到 SDK 视图状态中。
 - 广播 `typed_event_schema` 能力标签作为信息信号。如果缺少该标签，`asKnownDaemonEvent` 仍会回退到 `unknown`。
 
-## 事件词汇表（47 种已知类型）
+## 事件词汇表
 
 按领域分组。
 
@@ -27,7 +27,8 @@ SDK 暴露了 `asKnownDaemonEvent(evt)`。它为已知事件类型返回一个�
 | `session_metadata_updated` | S->C           | `PATCH /session/:id/metadata`                                                 | `sessionId, displayName?`                                                        |
 | `session_died`             | S->C 终止  | `channel.exited`                                                              | `sessionId, reason, exitCode? \| null, signalCode? \| null`                      |
 | `session_closed`           | S->C 终止  | `DELETE /session/:id` 或编程式关闭                                   | `sessionId, reason: 'client_close' \| string, closedBy?`                         |
-| `session_snapshot`         | S->C 合成 | SSE 附加/重放后的快照帧                                      | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null` |
+| `session_snapshot`         | S->C 合成 | SSE 附加/重放后的快照帧                                      | `sessionId, currentModelId: string \| null, currentApprovalMode: string \| null, recordingDegraded: boolean` |
+| `session_recording_degraded` | S->C   | 会话 transcript writer 在异步写入失败后永久停止               | `sessionId, reason: 'write_failed'`                                                                          |
 
 ### 订阅者级别的合成帧
 
@@ -37,7 +38,10 @@ SDK 暴露了 `asKnownDaemonEvent(evt)`。它为已知事件类型返回一个�
 | `slow_client_warning`   | 实时帧积压或实时序列化字节积压 >= 75%；强制推送且**无 `id`**                                                                                                                                          | `queueSize, maxQueued, lastEventId, queuedBytes?, maxQueuedBytes?, threshold?: 'frames' \| 'bytes' \| 'frames_and_bytes'`；当帧和字节测量值均降至 37.5% 以下时重新触发。                                                                                                                                   |
 | `stream_error`          | `SubscriberLimitExceededError` 或其他路由流错误                                                                                                                                                                         | `error: string`；对订阅终止。                                                                                                                                                                                                                                                                                |
 | `state_resync_required` | `subscribe({lastEventId})` 检测到 daemon ring 不再包含 `[lastEventId+1, earliestInRing-1]`，或者客户端游标来自上一个 bus epoch。在剩余的重放帧**之前**强制推送且**无 `id`**。 | `reason: 'ring_evicted' \| 'epoch_reset' \| string`, `lastDeliveredId: number`, `earliestAvailableId: number`。这是一个恢复信号，而非终止信号：SSE 流保持打开，重放 + 实时帧继续。SDK reducer 设置 `awaitingResync = true` 并跳过增量，直到调用者使用 `loadSession` 重置。 |
+| `history_truncated`     | `POST /session/:id/load` 在较旧的内存中重放条目被丢弃后返回有界重放快照。前置于 `compactedReplay` 且**无 `id`**。                                                                                                                                  | `reason: 'replay_window_exceeded'`, `truncatedEvents: number`, `retainedEvents: number`, `maxBytes: number`, `truncatedTurns?: number`, `fullTranscriptAvailable: boolean`。这是一个状态标记，而非重同步请求；客户端渲染它并继续应用保留的重放。                                                    |
 | `replay_complete`       | 在 `Last-Event-ID` 重放循环完成后发出的无 id 哨兵，适用于干净重放和 ring 驱逐路径，即使 `data.replayedCount === 0`。**无 `id`**                                                             | `replayedCount: number`；允许使用者确定性地移除追赶 UI，而无需超时。                                                                                                                                                                                                                                |
+
+`fullTranscriptAvailable` 是一个布尔能力标志，而非字面量 `true` 类型。当前 daemon 在 `/session/:id/transcript` 可用于分页持久化 transcript 时发出 `true`；较旧或受限的 daemon 可能发出 `false`，客户端应继续正常渲染有界重放。
 
 ### 权限（F3 + base）
 
@@ -129,7 +133,7 @@ SDK 暴露了 `asKnownDaemonEvent(evt)`。它为已知事件类型返回一个�
 | Concern                                | Source                                         | Notes                                                                                                              |
 | -------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `EVENT_SCHEMA_VERSION = 1`             | `packages/acp-bridge/src/eventBus.ts`          | 每一帧都会发送。                                                                                               |
-| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | 包含 47 种类型的封闭列表。                                                                                         |
+| `DAEMON_KNOWN_EVENT_TYPE_VALUES`       | `packages/sdk-typescript/src/daemon/events.ts` | 包含 53 种类型的封闭列表。                                                                                         |
 | `DaemonEventEnvelope<TType, TData>`    | `events.ts`                                    | 泛型 Envelope。                                                                                                  |
 | `DaemonKnownEventType`                 | `events.ts`                                    | `typeof DAEMON_KNOWN_EVENT_TYPE_VALUES[number]`。                                                                   |
 | 每种事件的 payload 类型                | `events.ts`                                    | 大多数事件类型都有一个 `DaemonXxxData` 接口；`user_shell_*` 目前由 UI 规范化器临时解析。 |
@@ -230,7 +234,7 @@ SDK 访问方式：优先使用 `event._meta?.serverTimestamp`。兼容路径可
 
 ## 工具调用 `_meta`（provenance / serverId）
 
-这与信封 `_meta` 不同：ACP `session/update` 负载可以在 `event.data._meta` 中携带自己的 `_meta`。`ToolCallEmitter`（`packages/cli/src/acp-integration/session/emitters/ToolCallEmitter.ts`）在 `emitStart`、`emitResult` 和 `emitError` 时打上两个字段：
+这与信封 `_meta` 不同：ACP `session/update` 负载可以在 `event.data._meta` 中携带自己的 `_meta`。`ToolCallEmitter`（`packages/cli/src/acp-integration/session/emitters/tool-call-emitter.ts`）在 `emitStart`、`emitResult` 和 `emitError` 时打上两个字段：
 
 | 字段 | 类型 | 解析规则 |
 | ------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -257,6 +261,7 @@ SDK 访问方式：优先使用 `event._meta?.serverTimestamp`。兼容路径可
 | `client_evicted` | 同上。 |
 | `stream_error` | 同上。 |
 | `session_snapshot` | 全状态权威帧；在 resync 期间应用是安全的。 |
+| `session_recording_degraded` | 粘性安全信号，独立于 transcript delta 状态。 |
 
 在 resync 期间，`lastEventId` 仍然通过 `advanceLastEventId(base)` 单调递增。在调用方重置并清除 `awaitingResync` 后，后续的 delta 将对齐到正确的游标。
 
@@ -284,7 +289,7 @@ SDK 访问方式：优先使用 `event._meta?.serverTimestamp`。兼容路径可
 
 ## 注意事项与已知限制
 
-- 六种合成帧类型故意没有 `id`；SDK 代码不得假设每个事件都有 id。
+- 七种合成帧类型故意没有 `id`；SDK 代码不得假设每个事件都有 id。
 - `permission_partial_vote` 仅出现在 `consensus` 下。`permission_forbidden` 出现在 `designated`、`consensus` 和 `local-only` 下，但不出现在 `first-responder` 下。
 - `mcp_child_refused_batch` 仅出现在 `mode: 'enforce'` 中；`warn` 模式永远不会拒绝。
 - `auth_device_flow_*` 事件不是 session 键控的。通过 `DaemonSessionClient` 消费时，请使用 `reduceDaemonAuthEvent` 处理它们，而不是使用 session reducer。
