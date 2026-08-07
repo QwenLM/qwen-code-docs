@@ -86,22 +86,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          # Nothing in this pipeline needs repo history: the commit step
-          # pushes HEAD:main (serialized by the concurrency group below),
-          # and the upstream diff uses its own shallow clone of qwen-code.
-          # Nextra's git-based "last modified" timestamps were already
-          # degraded with full history (logged warnings), so depth 1 loses
-          # nothing that worked before.
-          fetch-depth: 1
+          # Full history is required: website/app/sitemap.ts derives every
+          # entry's lastModified from `git log`, so a shallow checkout would
+          # collapse those dates. blob:none keeps all commit/tree metadata
+          # (which is all `git log --name-only` needs) while skipping file
+          # contents, so history stays correct and the fetch stays cheap.
+          fetch-depth: 0
+          filter: blob:none
 
       - name: Install Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          # Restores ~/.npm keyed on the lockfile. Benefits both the global
+          # qwen CLI install below and the website `npm ci` on days that have
+          # changes; on quiet days the restore is cheap and `npm ci` is skipped.
+          # translator/package-lock.json is deliberately not in the key: this
+          # workflow never runs npm ci in translator (the orchestrator is
+          # plain node), so including it would only bust the cache uselessly.
           cache: npm
-          cache-dependency-path: |
-            website/package-lock.json
-            translator/package-lock.json
+          cache-dependency-path: website/package-lock.json
 
       - name: Install qwen CLI
         run: npm i -g @qwen-code/qwen-code@0.21.1
@@ -221,8 +225,14 @@ jobs:
       # testing is recoverable rather than a total loss (#196). `always()`
       # because a failed build must not discard the translation work too —
       # that is the exact loss this step exists to prevent.
+      #
+      # This also covers `main`, but only on failure: a green run on main
+      # commits the work, so there is nothing to preserve. A red one used to
+      # discard hours of translation *and* the advanced baseline, because
+      # `advance` writes last-sync.json into the working tree and only the
+      # commit step persists it — the acute half of #184/#185.
       - name: Upload translations that cannot be committed
-        if: always() && steps.detect.outputs.changed == 'true' && github.ref_name != 'main'
+        if: always() && steps.detect.outputs.changed == 'true' && (github.ref_name != 'main' || failure())
         uses: actions/upload-artifact@v4
         with:
           name: translation-output

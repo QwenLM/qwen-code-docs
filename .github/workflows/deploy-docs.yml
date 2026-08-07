@@ -16,16 +16,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          # The build only needs the current tree; Nextra's git-based
-          # "last modified" timestamps were already degraded with full
-          # history (logged warnings), so depth 1 loses nothing that
-          # worked before.
-          fetch-depth: 1
+          # Full history is required: website/app/sitemap.ts derives every
+          # entry's lastModified from `git log`, so a shallow checkout would
+          # collapse those dates. blob:none keeps all commit/tree metadata
+          # (which is all `git log --name-only` needs) while skipping file
+          # contents, so history stays correct and the fetch stays cheap.
+          fetch-depth: 0
+          filter: blob:none
 
       - name: Install Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          # Restores ~/.npm keyed on the lockfile, so `npm ci` below resolves
+          # from cache instead of re-downloading the whole tree every run.
           cache: npm
           cache-dependency-path: website/package-lock.json
 
