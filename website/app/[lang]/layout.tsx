@@ -22,7 +22,7 @@ type LayoutProps = Readonly<{
   }>;
 }>;
 
-const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR"];
+const LOCALES = ["en", "zh", "de", "fr", "ru", "ja", "pt-BR", "ko"];
 
 const LanguageLayout: FC<LayoutProps> = async ({ children, params }) => {
   const { lang } = await params;
